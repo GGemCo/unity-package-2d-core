@@ -10,11 +10,13 @@ namespace GGemCo.Scripts
     {
         [HideInInspector] public AddressableSettingsLoader addressableSettingsLoader;
         
-        [Header("기본오브젝트")]
-        [Tooltip("계속하기 버튼")]
-        [SerializeField] private Button buttonGameContinue;
+        [Header("필수 항목")]
         [Tooltip("새로운 게임 버튼")]
         [SerializeField] private Button buttonNewGame;
+        
+        [Header("선택 항목")]
+        [Tooltip("계속하기 버튼")]
+        [SerializeField] private Button buttonGameContinue;
         [Tooltip("불러오기 버튼")]
         [SerializeField] private Button buttonOpenSaveDataWindow;
         [Tooltip("옵션 버튼")]
