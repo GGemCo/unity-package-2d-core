@@ -1,5 +1,8 @@
 using System;
+using System.Threading.Tasks;
 using UnityEngine;
+using UnityEngine.AddressableAssets;
+using UnityEngine.ResourceManagement.AsyncOperations;
 
 namespace GGemCo.Scripts
 {
@@ -60,12 +63,38 @@ namespace GGemCo.Scripts
                 ConfigTableFileName.Quest
             };
         }
+        /// <summary>
+        /// 제네릭을 사용하여 Addressables에서 설정을 로드하는 함수
+        /// </summary>
+        private async Task<T> LoadTextAsync<T>(string key) where T : TextAsset
+        {
+            // 키가 Addressables에 등록되어 있는지 확인
+            var locationsHandle = Addressables.LoadResourceLocationsAsync(key);
+            await locationsHandle.Task;
 
-        public void LoadDataFile(string fileName)
+            if (!locationsHandle.Status.Equals(AsyncOperationStatus.Succeeded) || locationsHandle.Result.Count == 0)
+            {
+                GcLogger.LogError($"[AddressableSettingsLoader] '{key}' 가 Addressables에 등록되지 않았습니다. '{key}' 를 생성한 후 GGemCoTool > 기본 셋팅하기 메뉴를 열고 Addressable 추가하기 버튼을 클릭해주세요.");
+                Addressables.Release(locationsHandle);
+                return null;
+            }
+
+            // 설정 로드
+            AsyncOperationHandle<T> handle = Addressables.LoadAssetAsync<T>(key);
+            T asset = await handle.Task;
+
+            // 핸들 해제
+            Addressables.Release(locationsHandle);
+            return asset;
+        }
+        public async Task LoadDataFile(string fileName)
         {
             try
             {
-                TextAsset textFile = Resources.Load<TextAsset>($"Tables/{fileName}");
+                var settingsTask = LoadTextAsync<TextAsset>($"{ConfigAddressables.LabelTable}_{fileName}");
+                await Task.WhenAll(settingsTask);
+                TextAsset textFile = settingsTask.Result;
+                
                 if (textFile != null)
                 {
                     string content = textFile.text;

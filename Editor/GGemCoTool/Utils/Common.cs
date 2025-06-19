@@ -10,6 +10,10 @@ namespace GGemCo.Editor
         {
             GUILayout.Label($"[ {title} ]", EditorStyles.whiteLargeLabel);
         }
+        public static void OnGUITitleBold(string title)
+        {
+            GUILayout.Label($"{title}", EditorStyles.boldLabel);
+        }
         public static void GUILine( int lineHeight = 1, string hexCode = "" ) {
             EditorGUILayout.Space();
             Rect rect = EditorGUILayout.GetControlRect(false, lineHeight );

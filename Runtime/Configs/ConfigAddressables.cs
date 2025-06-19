@@ -34,10 +34,10 @@ namespace GGemCo.Scripts
         
         public static readonly (string key, string path)[] AssetsToAdd =
         {
-            (KeySettings, "Assets/GGemCoSettings/GGemCoSettings.asset"),
-            (KeyPlayerSettings, "Assets/GGemCoSettings/GGemCoPlayerSettings.asset"),
-            (KeyMapSettings, "Assets/GGemCoSettings/GGemCoMapSettings.asset"),
-            (KeySaveSettings, "Assets/GGemCoSettings/GGemCoSaveSettings.asset"),
+            (KeySettings, "Assets/GGemCo/Settings/GGemCoSettings.asset"),
+            (KeyPlayerSettings, "Assets/GGemCo/Settings/GGemCoPlayerSettings.asset"),
+            (KeyMapSettings, "Assets/GGemCo/Settings/GGemCoMapSettings.asset"),
+            (KeySaveSettings, "Assets/GGemCo/Settings/GGemCoSaveSettings.asset"),
             
             (KeyTextFloatingDamage, "Assets/Data/Prefabs/UI/TextDamage.prefab"),
             (KeyPrefabSlot, "Assets/Data/Prefabs/UI/Icon/Slot.prefab"),
@@ -71,5 +71,33 @@ namespace GGemCo.Scripts
             { KeyPrefabIconQuestReady, LabelPreLoadGamePrefabs },
             { KeyPrefabIconQuestInProgress, LabelPreLoadGamePrefabs },
         };
+        
+        // 테이블
+        public const string LabelTable = "GGemCo_Table";
+        public static readonly (string key, string path)[] AssetsToAddTable =
+        {
+            ($"{LabelTable}_{ConfigTableFileName.Map}", $"{ConfigTableFileName.Path}/{ConfigTableFileName.Map}.txt"),
+            ($"{LabelTable}_{ConfigTableFileName.Monster}", $"{ConfigTableFileName.Path}/{ConfigTableFileName.Monster}.txt"),
+            ($"{LabelTable}_{ConfigTableFileName.Npc}", $"{ConfigTableFileName.Path}/{ConfigTableFileName.Npc}.txt"),
+            ($"{LabelTable}_{ConfigTableFileName.Animation}", $"{ConfigTableFileName.Path}/{ConfigTableFileName.Animation}.txt"),
+            ($"{LabelTable}_{ConfigTableFileName.Item}", $"{ConfigTableFileName.Path}/{ConfigTableFileName.Item}.txt"),
+            ($"{LabelTable}_{ConfigTableFileName.MonsterDropRate}", $"{ConfigTableFileName.Path}/{ConfigTableFileName.MonsterDropRate}.txt"),
+            ($"{LabelTable}_{ConfigTableFileName.ItemDropGroup}", $"{ConfigTableFileName.Path}/{ConfigTableFileName.ItemDropGroup}.txt"),
+            ($"{LabelTable}_{ConfigTableFileName.Exp}", $"{ConfigTableFileName.Path}/{ConfigTableFileName.Exp}.txt"),
+            ($"{LabelTable}_{ConfigTableFileName.Window}", $"{ConfigTableFileName.Path}/{ConfigTableFileName.Window}.txt"),
+            ($"{LabelTable}_{ConfigTableFileName.Status}", $"{ConfigTableFileName.Path}/{ConfigTableFileName.Status}.txt"),
+            ($"{LabelTable}_{ConfigTableFileName.Skill}", $"{ConfigTableFileName.Path}/{ConfigTableFileName.Skill}.txt"),
+            ($"{LabelTable}_{ConfigTableFileName.Affect}", $"{ConfigTableFileName.Path}/{ConfigTableFileName.Affect}.txt"),
+            ($"{LabelTable}_{ConfigTableFileName.Effect}", $"{ConfigTableFileName.Path}/{ConfigTableFileName.Effect}.txt"),
+            ($"{LabelTable}_{ConfigTableFileName.Interaction}", $"{ConfigTableFileName.Path}/{ConfigTableFileName.Interaction}.txt"),
+            ($"{LabelTable}_{ConfigTableFileName.Shop}", $"{ConfigTableFileName.Path}/{ConfigTableFileName.Shop}.txt"),
+            ($"{LabelTable}_{ConfigTableFileName.ItemUpgrade}", $"{ConfigTableFileName.Path}/{ConfigTableFileName.ItemUpgrade}.txt"),
+            ($"{LabelTable}_{ConfigTableFileName.ItemSalvage}", $"{ConfigTableFileName.Path}/{ConfigTableFileName.ItemSalvage}.txt"),
+            ($"{LabelTable}_{ConfigTableFileName.ItemCraft}", $"{ConfigTableFileName.Path}/{ConfigTableFileName.ItemCraft}.txt"),
+            ($"{LabelTable}_{ConfigTableFileName.Cutscene}", $"{ConfigTableFileName.Path}/{ConfigTableFileName.Cutscene}.txt"),
+            ($"{LabelTable}_{ConfigTableFileName.Dialogue}", $"{ConfigTableFileName.Path}/{ConfigTableFileName.Dialogue}.txt"),
+            ($"{LabelTable}_{ConfigTableFileName.Quest}", $"{ConfigTableFileName.Path}/{ConfigTableFileName.Quest}.txt"),
+        };
+
     }
 }

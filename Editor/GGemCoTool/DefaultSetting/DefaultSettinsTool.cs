@@ -8,9 +8,8 @@ namespace GGemCo.Editor
         private readonly SettingTags settingTags = new SettingTags();
         private readonly SettingSortingLayers settingSortingLayers = new SettingSortingLayers();
         private readonly SettingLayers settingLayers = new SettingLayers();
-        private readonly SettingAddressable settingAddressable = new SettingAddressable();
 
-        [MenuItem(ConfigEditor.NameToolDefaultSetting, false, 1)]
+        [MenuItem(ConfigEditor.NameToolDefaultSetting, false, (int)ConfigEditor.ToolOrdering.DefaultSetting)]
         public static void ShowWindow()
         {
             GetWindow<DefaultSettinsTool>("기본 셋팅하기");
@@ -25,8 +24,6 @@ namespace GGemCo.Editor
             settingSortingLayers.OnGUI();
             EditorGUILayout.Space(10);
             settingLayers.OnGUI();
-            EditorGUILayout.Space(10);
-            settingAddressable.OnGUI();
         }
     }
 }

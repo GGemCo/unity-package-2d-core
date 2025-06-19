@@ -73,10 +73,9 @@ namespace GGemCo.Scripts
 
             for (int i = 0; i < fileCount; i++)
             {
-                tableLoader.LoadDataFile(dataFiles[i]);
+                yield return tableLoader.LoadDataFile(dataFiles[i]);
                 tableLoadProgress = (float)(i + 1) / fileCount * baseProgress;
                 UpdateLoadingProgress(Type.Table);
-                yield return null;
             }
         }
         /// <summary>

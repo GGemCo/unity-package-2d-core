@@ -5,6 +5,9 @@
     /// </summary>
     public static class ConfigTableFileName
     {
+        // 테이블 파일이 있는 경로
+        public const string Path = "Assets/GGemCo/DataAddressable/Tables";
+        
         public const string Map = "map";
         public const string Monster = "monster";
         public const string Npc = "npc";

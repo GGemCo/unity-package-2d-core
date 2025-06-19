@@ -5,6 +5,7 @@
         public enum ToolOrdering
         {
             DefaultSetting = 1,
+            SettingAddressable = 2,
             Development = 100,
             CreateDialogue,
             MapExporter,
@@ -19,7 +20,9 @@
         }
         private const string NameToolGGemCo = "GGemCoTool/";
         // 기본 셋팅하기
-        public const string NameToolDefaultSetting = NameToolGGemCo + "기본 셋팅하기";
+        private const string NameToolSettings = NameToolGGemCo + "설정하기/";
+        public const string NameToolDefaultSetting = NameToolSettings + "기본 셋팅하기";
+        public const string NameToolAddressableSetting = NameToolSettings + "Addressable 셋팅하기";
         
         // 개발툴
         private const string NameToolDevelopment = NameToolGGemCo + "개발툴/";
@@ -38,5 +41,7 @@
         public const string NameToolPlayerPrefs = NameToolEtc + "PlayerPrefs 데이터 관리";
         public const string NameToolOpenSaveDataFolder = NameToolEtc + "게임 데이터 관리";
         
+        // 프리팹 경로
+        public const string PrefabPathDefaultUIButton = "Packages/com.ggemco.2d.core/Data/Prefabs/UI/DefaultButton.prefab";
     }
 }
