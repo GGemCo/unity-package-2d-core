@@ -1,0 +1,152 @@
+{
+  "nodes": [
+    {
+      "guid": "ee3aa757-c506-4a4d-849d-4fde67077d2a",
+      "title": null,
+      "dialogueText": "야옹! 너 또 내 생선 훔쳐갔지?",
+      "position": {
+        "x": 55.5,
+        "y": 375.0
+      },
+      "characterType": 3,
+      "characterUid": 110001,
+      "fontSize": 0.0,
+      "thumbnailImage": "",
+      "options": [],
+      "nextNodeGuid": "a73a2754-5532-49b3-a43b-97248c649808"
+    },
+    {
+      "guid": "a73a2754-5532-49b3-a43b-97248c649808",
+      "title": null,
+      "dialogueText": "뭐? 내가? 왜 자꾸 나만 의심하는 거야!",
+      "position": {
+        "x": 371.5,
+        "y": 374.0
+      },
+      "characterType": 3,
+      "characterUid": 110002,
+      "fontSize": 0.0,
+      "thumbnailImage": "",
+      "options": [],
+      "nextNodeGuid": "57aeaf2d-2646-437e-ab21-cb61731f4828"
+    },
+    {
+      "guid": "57aeaf2d-2646-437e-ab21-cb61731f4828",
+      "title": null,
+      "dialogueText": "어제 너희 집 앞에 생선 가시가 있었단 말이야!",
+      "position": {
+        "x": 673.5,
+        "y": 371.0
+      },
+      "characterType": 3,
+      "characterUid": 110001,
+      "fontSize": 0.0,
+      "thumbnailImage": "",
+      "options": [
+        {
+          "optionText": "고양이2 말도 좀 들어보자.",
+          "nextNodeGuid": "8dd9524a-b9bf-4b0b-adad-76c3ba71d69c"
+        },
+        {
+          "optionText": "고양이1 말이 맞는 것 같아.",
+          "nextNodeGuid": "19709843-b8e8-4762-b422-a5e01a21370a"
+        },
+        {
+          "optionText": "그냥 생선을 하나 더 구해줄게.",
+          "nextNodeGuid": "4c1ecba7-7444-452f-8958-974b6bb883bd"
+        }
+      ],
+      "nextNodeGuid": ""
+    },
+    {
+      "guid": "8dd9524a-b9bf-4b0b-adad-76c3ba71d69c",
+      "title": null,
+      "dialogueText": "고마워, 인간! 드디어 누가 내 편 좀 들어주는구나.",
+      "position": {
+        "x": 951.5,
+        "y": 174.0
+      },
+      "characterType": 3,
+      "characterUid": 110002,
+      "fontSize": 0.0,
+      "thumbnailImage": "",
+      "options": [],
+      "nextNodeGuid": "bf04d709-aa92-475b-a82d-f0ed5a795a83"
+    },
+    {
+      "guid": "bf04d709-aa92-475b-a82d-f0ed5a795a83",
+      "title": null,
+      "dialogueText": "흥… 너희 둘 다 믿을 수 없어.",
+      "position": {
+        "x": 1243.5,
+        "y": 175.0
+      },
+      "characterType": 3,
+      "characterUid": 110001,
+      "fontSize": 0.0,
+      "thumbnailImage": "",
+      "options": [],
+      "nextNodeGuid": ""
+    },
+    {
+      "guid": "19709843-b8e8-4762-b422-a5e01a21370a",
+      "title": null,
+      "dialogueText": "역시 인간은 나를 이해해주는구나! 감동이야!",
+      "position": {
+        "x": 971.5,
+        "y": 401.0
+      },
+      "characterType": 3,
+      "characterUid": 110001,
+      "fontSize": 0.0,
+      "thumbnailImage": "",
+      "options": [],
+      "nextNodeGuid": "c8c11f91-bc1a-45b8-b00e-25217ea9d4fe"
+    },
+    {
+      "guid": "c8c11f91-bc1a-45b8-b00e-25217ea9d4fe",
+      "title": null,
+      "dialogueText": "쳇, 둘이 한패였군...",
+      "position": {
+        "x": 1267.5,
+        "y": 392.0
+      },
+      "characterType": 3,
+      "characterUid": 110002,
+      "fontSize": 0.0,
+      "thumbnailImage": "",
+      "options": [],
+      "nextNodeGuid": ""
+    },
+    {
+      "guid": "4c1ecba7-7444-452f-8958-974b6bb883bd",
+      "title": null,
+      "dialogueText": "...대신 너 생선 구해오면 믿어줄게.",
+      "position": {
+        "x": 930.5,
+        "y": 602.0
+      },
+      "characterType": 3,
+      "characterUid": 110002,
+      "fontSize": 0.0,
+      "thumbnailImage": "",
+      "options": [],
+      "nextNodeGuid": "4d1aa8c4-3a2e-4b7c-a16f-b0a7cfe6c132"
+    },
+    {
+      "guid": "4d1aa8c4-3a2e-4b7c-a16f-b0a7cfe6c132",
+      "title": null,
+      "dialogueText": "좋아, 그럼 생선을 가져올 동안 기다릴게.",
+      "position": {
+        "x": 1222.5,
+        "y": 601.0
+      },
+      "characterType": 3,
+      "characterUid": 110001,
+      "fontSize": 0.0,
+      "thumbnailImage": "",
+      "options": [],
+      "nextNodeGuid": ""
+    }
+  ]
+}

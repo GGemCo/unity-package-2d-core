@@ -1,0 +1,37 @@
+{
+	"name": "com.ggemco.2d.core",
+	"version": "0.0.1",
+	"displayName": "GGemCo 2D Core",
+	"description": "타일맵 시스템, 캐릭터 시스템, 개발툴 등 공통 기능 패키지",
+	"unity": "2022.3",
+	"author": {
+		"name": "GGemCo",
+		"url": "https://github.com/GGemCo/unity-package-2d-core.git",
+		"email": "ggemco.master@gmail.com"
+	},
+	"dependencies": {
+		"com.unity.addressables": "2.2.2",
+		"com.unity.nuget.newtonsoft-json": "3.2.1",
+		"com.unity.textmeshpro": "3.0.9"
+	},
+	"samples": [
+		{
+			"displayName": "Data Resource",
+			"description": "기본 리소스",
+			"path": "Samples~/Data"
+		},
+		{
+			"displayName": "Addressables Data Resource",
+			"description": "Addressables 에 사용되는 리소스",
+			"path": "Samples~/DataAddressables"
+		},
+		{
+			"displayName": "Fonts ",
+			"description": "네이버 나눔고딕 폰트",
+			"path": "Samples~/Fonts"
+		}
+	],
+	"keywords": [
+		"unity"
+	]
+}

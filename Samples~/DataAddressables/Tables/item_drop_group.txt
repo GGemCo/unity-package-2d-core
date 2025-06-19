@@ -1,0 +1,10 @@
+﻿Uid	Memo	Type	Value	Rate
+10001	좀비	ItemUid	101011001	100
+10001	좀비	ItemSubCategory	Chest	0
+10001	좀비	ItemSubCategory	Boots	0
+10002	스켈레톤	ItemSubCategory	RecoverHp	30
+10002	스켈레톤	ItemSubCategory	RecoverMp	70
+10003	사나운 좀비	ItemUid	101011002	50
+10003	사나운 좀비	ItemUid	102001003	50
+10004	사나운 스켈레톤	ItemSubCategory	IncreaseAttackSpeed	50
+10004	사나운 스켈레톤	ItemSubCategory	IncreaseMoveSpeed	50

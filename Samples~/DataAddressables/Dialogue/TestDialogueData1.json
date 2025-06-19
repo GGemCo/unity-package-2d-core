@@ -1,0 +1,21 @@
+{
+  "nodes": [
+    {
+      "guid": "5c64d63f-0066-4145-9097-a1421a5736e2",
+      "title": null,
+      "dialogueText": "대사를 입력하세요",
+      "position": {
+        "x": 211.0,
+        "y": 335.5
+      },
+      "characterType": 2,
+      "characterUid": 120001,
+      "fontSize": 0.0,
+      "thumbnailImage": "",
+      "options": [],
+      "nextNodeGuid": "",
+      "startQuestUid": 1002,
+      "startQuestStep": 0
+    }
+  ]
+}

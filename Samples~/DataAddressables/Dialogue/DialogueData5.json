@@ -1,0 +1,133 @@
+{
+  "nodes": [
+    {
+      "guid": "bac76c16-6d25-4379-bdb2-49d86b46d33a",
+      "title": null,
+      "dialogueText": "안녕하세요, 여행자님! 마을에 처음 오셨나요?",
+      "position": {
+        "x": 127.0,
+        "y": 343.0
+      },
+      "characterType": 3,
+      "characterUid": 110001,
+      "fontSize": 0.0,
+      "thumbnailImage": "",
+      "options": [
+        {
+          "optionText": "네, 처음입니다.",
+          "nextNodeGuid": "face67fc-180d-4eb3-af15-993d296491d0"
+        },
+        {
+          "optionText": "아니요, 몇 번 와본 적 있어요.",
+          "nextNodeGuid": "271af1c2-2a44-4870-ba4f-914f612b5625"
+        }
+      ],
+      "nextNodeGuid": "",
+      "startQuestUid": 0,
+      "startQuestStep": 0
+    },
+    {
+      "guid": "face67fc-180d-4eb3-af15-993d296491d0",
+      "title": null,
+      "dialogueText": "그렇군요! 우리 마을을 소개해드릴까요?",
+      "position": {
+        "x": 489.4348,
+        "y": 238.4348
+      },
+      "characterType": 3,
+      "characterUid": 110001,
+      "fontSize": 0.0,
+      "thumbnailImage": "",
+      "options": [
+        {
+          "optionText": "네, 부탁드려요.",
+          "nextNodeGuid": "0b6bade4-84db-4f52-879e-87dcd92099ae"
+        },
+        {
+          "optionText": "괜찮아요, 혼자 둘러볼게요.",
+          "nextNodeGuid": "b72fa78b-f7af-4cba-817a-21775ce69416"
+        }
+      ],
+      "nextNodeGuid": "",
+      "startQuestUid": 0,
+      "startQuestStep": 0
+    },
+    {
+      "guid": "271af1c2-2a44-4870-ba4f-914f612b5625",
+      "title": null,
+      "dialogueText": "오, 이미 익숙하시겠군요! 그래도 새로운 소문이 있는데 듣고 가시겠어요?",
+      "position": {
+        "x": 490.869568,
+        "y": 476.695557
+      },
+      "characterType": 3,
+      "characterUid": 110001,
+      "fontSize": 0.0,
+      "thumbnailImage": "",
+      "options": [
+        {
+          "optionText": "소문이라니, 무슨 이야기죠?",
+          "nextNodeGuid": "5fed9819-324e-43a0-a8f6-51a4e2e415c8"
+        },
+        {
+          "optionText": "다음에 듣겠습니다.",
+          "nextNodeGuid": "b72fa78b-f7af-4cba-817a-21775ce69416"
+        }
+      ],
+      "nextNodeGuid": "",
+      "startQuestUid": 0,
+      "startQuestStep": 0
+    },
+    {
+      "guid": "0b6bade4-84db-4f52-879e-87dcd92099ae",
+      "title": null,
+      "dialogueText": "이 마을은 오래된 전설이 숨겨져 있다고 해요. 서쪽 숲에서 보물이 발견됐다는 소문도 있고요!",
+      "position": {
+        "x": 865.2621,
+        "y": 138.219208
+      },
+      "characterType": 3,
+      "characterUid": 110001,
+      "fontSize": 0.0,
+      "thumbnailImage": "",
+      "options": [],
+      "nextNodeGuid": "",
+      "startQuestUid": 0,
+      "startQuestStep": 0
+    },
+    {
+      "guid": "5fed9819-324e-43a0-a8f6-51a4e2e415c8",
+      "title": null,
+      "dialogueText": "최근에 마을 근처 동굴에서 이상한 소리가 들린다고 해요. 혹시 시간이 되시면 한 번 확인해주실 수 있을까요?",
+      "position": {
+        "x": 881.8043,
+        "y": 579.934753
+      },
+      "characterType": 3,
+      "characterUid": 110001,
+      "fontSize": 0.0,
+      "thumbnailImage": "",
+      "options": [],
+      "nextNodeGuid": "",
+      "startQuestUid": 0,
+      "startQuestStep": 0
+    },
+    {
+      "guid": "b72fa78b-f7af-4cba-817a-21775ce69416",
+      "title": null,
+      "dialogueText": "알겠습니다. 마을에서 좋은 시간 보내시길 바랍니다!",
+      "position": {
+        "x": 867.4132,
+        "y": 345.326019
+      },
+      "characterType": 3,
+      "characterUid": 110001,
+      "fontSize": 0.0,
+      "thumbnailImage": "",
+      "options": [],
+      "nextNodeGuid": "",
+      "startQuestUid": 0,
+      "startQuestStep": 0
+    }
+  ]
+}

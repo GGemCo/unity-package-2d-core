@@ -1,0 +1,9 @@
+﻿Uid	Memo	MonsterUid	Type	Value	Rate
+10001	좀비	110001	ItemDropGroupUid	10001	100
+10003	좀비	110001	Nothing	0	0
+10004	스켈레톤	110002	ItemDropGroupUid	10002	95
+10005	스켈레톤	110002	Nothing	0	5
+10006	사나운 좀비	120001	ItemDropGroupUid	10003	95
+10007	사나운 좀비	120001	Nothing	0	5
+10008	사나운 스켈레톤	120002	ItemDropGroupUid	10004	95
+10009	사나운 스켈레톤	120002	Nothing	0	5

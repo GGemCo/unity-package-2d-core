@@ -1,0 +1,7 @@
+﻿Uid	Memo	SourceItemUid	NeedCurrencyType	NeedCurrencyValue	ResultItemUid	ResultItemCount
+1	무딘 칼	101011001	Gold	10	401011006	2
+2	무딘 칼+1	101011002	Silver	20	401011007	4
+3	무딘 칼+2	101011003	Gold	30	401011008	6
+4	무딘 칼+3	101011004	Gold	40	401011009	8
+5	무딘 칼+4	101011005	Gold	50	401011010	10
+6	무딘 칼+5	101011006	Gold	60	401011011	12

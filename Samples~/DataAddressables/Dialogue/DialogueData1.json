@@ -1,0 +1,64 @@
+{
+  "nodes": [
+    {
+      "guid": "a5db09ad-0bbb-466e-9b47-c6916b958e13",
+      "title": null,
+      "dialogueText": "야옹~ 넌 믿음직해 보여! 우리 마을에 문제가 생겼어.\n내 동생 고양이2가 뭔가 이상한 걸 봤다는데, 걱정돼서 그래.\n가서 무사한지 확인해줄래?",
+      "position": {
+        "x": 215.0,
+        "y": 306.0
+      },
+      "characterType": 3,
+      "characterUid": 110001,
+      "fontSize": 0.0,
+      "thumbnailImage": "",
+      "options": [
+        {
+          "optionText": "알았어",
+          "nextNodeGuid": "6556be13-76f4-4a9c-be1a-172f4a464c13"
+        },
+        {
+          "optionText": "미안해, 지금은 바빠",
+          "nextNodeGuid": "b8bd15a5-7973-4a26-8198-51ae8912f03a"
+        }
+      ],
+      "nextNodeGuid": "",
+      "startQuestUid": 0,
+      "startQuestStep": 0
+    },
+    {
+      "guid": "6556be13-76f4-4a9c-be1a-172f4a464c13",
+      "title": null,
+      "dialogueText": "고마워!\n역시 넌 착한 인간이야.\n고양이2는 숲 근처에 있을 거야.\n조심해서 가!",
+      "position": {
+        "x": 587.0,
+        "y": 218.0
+      },
+      "characterType": 3,
+      "characterUid": 110001,
+      "fontSize": 0.0,
+      "thumbnailImage": "",
+      "options": [],
+      "nextNodeGuid": "",
+      "startQuestUid": 0,
+      "startQuestStep": 0
+    },
+    {
+      "guid": "b8bd15a5-7973-4a26-8198-51ae8912f03a",
+      "title": null,
+      "dialogueText": "아쉽지만 어쩔 수 없지… \n그래도 혹시 마음이 바뀌면 꼭 부탁할게. 야옹…",
+      "position": {
+        "x": 585.0,
+        "y": 455.0
+      },
+      "characterType": 3,
+      "characterUid": 110001,
+      "fontSize": 0.0,
+      "thumbnailImage": "",
+      "options": [],
+      "nextNodeGuid": "",
+      "startQuestUid": 0,
+      "startQuestStep": 0
+    }
+  ]
+}

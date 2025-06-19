@@ -1,0 +1,7 @@
+decreasemove.png
+size:39,52
+filter:Linear,Linear
+pma:true
+fire1
+bounds:2,2,35,48
+offsets:1,1,39,58

@@ -1,0 +1,147 @@
+{
+  "duration": 14.5,
+  "events": [
+    {
+      "time": 0.0,
+      "duration": 1.0,
+      "type": 1,
+      "cameraZoom": {
+        "startSize": 0.0,
+        "endSize": 200.0,
+        "easing": 4
+      }
+    },
+    {
+      "time": 1.5,
+      "duration": 1.0,
+      "type": 0,
+      "cameraMove": {
+        "startPosition": {
+          "x": 0.0,
+          "y": 0.0
+        },
+        "endPosition": {
+          "x": 366.0,
+          "y": 209.0
+        },
+        "endTargetPlayer": true,
+        "easing": 4
+      }
+    },
+    {
+      "time": 3.0,
+      "duration": 2.0,
+      "type": 4,
+      "characterMove": {
+        "isFollowTarget": false,
+        "characterType": 3,
+        "characterUid": 110001,
+        "characterScale": 0.0,
+        "characterMoveSpeed": 100,
+        "startPosition": {
+          "x": 654.0,
+          "y": 593.0
+        },
+        "endPosition": {
+          "x": 654.0,
+          "y": 393.0
+        }
+      }
+    },
+    {
+      "time": 3.0,
+      "duration": 2.0,
+      "type": 5,
+      "dialogueBalloon": {
+        "isFollowTarget": false,
+        "characterType": 3,
+        "characterUid": 110001,
+        "message": "나는 상점 고양이",
+        "fontSize": 14.0
+      }
+    },
+    {
+      "time": 5.5,
+      "duration": 1.0,
+      "type": 5,
+      "dialogueBalloon": {
+        "isFollowTarget": true,
+        "characterType": 3,
+        "characterUid": 110004,
+        "message": "나는 분해 고양이",
+        "fontSize": 24.0
+      }
+    },
+    {
+      "time": 7.0,
+      "duration": 2.53,
+      "type": 4,
+      "characterMove": {
+        "isFollowTarget": true,
+        "characterType": 2,
+        "characterUid": 110001,
+        "characterScale": 0.3,
+        "characterMoveSpeed": 200,
+        "startPosition": {
+          "x": 205.0,
+          "y": 471.0
+        },
+        "endPosition": {
+          "x": 852.0,
+          "y": 471.0
+        }
+      }
+    },
+    {
+      "time": 10.0,
+      "duration": 2.0,
+      "type": 5,
+      "dialogueBalloon": {
+        "isFollowTarget": true,
+        "characterType": 2,
+        "characterUid": 110001,
+        "message": "나는 몬스터",
+        "fontSize": 14.0
+      }
+    },
+    {
+      "time": 10.0,
+      "duration": 2.0,
+      "type": 6,
+      "characterAnimation": {
+        "isFollowTarget": true,
+        "characterType": 2,
+        "characterUid": 110001,
+        "characterScale": 0.0,
+        "spawnPosition": {
+          "x": 0.0,
+          "y": 0.0
+        },
+        "isFlip": false,
+        "animationName": "attack",
+        "animationLoop": false,
+        "animationTimeScale": 1.0
+      }
+    },
+    {
+      "time": 12.5,
+      "duration": 2.0,
+      "type": 4,
+      "characterMove": {
+        "isFollowTarget": false,
+        "characterType": 2,
+        "characterUid": 110001,
+        "characterScale": 0.3,
+        "characterMoveSpeed": 200,
+        "startPosition": {
+          "x": 852.0,
+          "y": 471.0
+        },
+        "endPosition": {
+          "x": 2082.0,
+          "y": 471.0
+        }
+      }
+    }
+  ]
+}

@@ -1,0 +1,41 @@
+{
+  "uid": 1002,
+  "title": "두번째 퀘스트",
+  "steps": [
+    {
+      "step": 0,
+      "objectiveType": 1,
+      "targetUid": 110001,
+      "count": 0,
+      "position": {
+        "x": 0.0,
+        "y": 0.0
+      }
+    },
+    {
+      "step": 1,
+      "objectiveType": 2,
+      "targetUid": 110001,
+      "count": 10,
+      "position": {
+        "x": 0.0,
+        "y": 0.0
+      }
+    }
+  ],
+  "reward": {
+    "experience": 1000,
+    "gold": 10,
+    "silver": 5,
+    "items": [
+      {
+        "itemUid": "201011001",
+        "amount": 2
+      },
+      {
+        "itemUid": "201011002",
+        "amount": 4
+      }
+    ]
+  }
+}

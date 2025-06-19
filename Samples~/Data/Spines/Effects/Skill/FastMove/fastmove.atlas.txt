@@ -1,0 +1,5 @@
+fastmove.png
+size:512,512
+filter:Linear,Linear
+effect1
+bounds:2,2,312,312

@@ -1,0 +1,21 @@
+{
+  "nodes": [
+    {
+      "guid": "62eeb293-349a-48df-9351-5c653d94bd7f",
+      "title": null,
+      "dialogueText": "야옹~ 역시 넌 대단해! \n동생 말도 들어주고, 위험한 녀석들도 물리쳐줬지.\n이 무딘 칼… 뭔가 수상해. \n다른 누군가가 이 좀비들을 보낸 걸지도 몰라.\n앞으로 조사가 필요하겠지만, 지금은 충분히 애썼어.\n이건 보상이야. 정말 고마워!",
+      "position": {
+        "x": 295.0,
+        "y": 341.0
+      },
+      "characterType": 3,
+      "characterUid": 110001,
+      "fontSize": 0.0,
+      "thumbnailImage": "",
+      "options": [],
+      "nextNodeGuid": "",
+      "startQuestUid": 0,
+      "startQuestStep": 0
+    }
+  ]
+}

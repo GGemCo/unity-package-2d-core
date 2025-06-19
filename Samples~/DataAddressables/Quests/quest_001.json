@@ -1,0 +1,84 @@
+{
+  "uid": 1001,
+  "title": "마을 탐방",
+  "steps": [
+    {
+      "objectiveType": 1,
+      "mapUid": 101,
+      "targetUid": 110001,
+      "position": {
+        "x": 0.0,
+        "y": 0.0
+      },
+      "count": 0,
+      "dialogueUid": 10001
+    },
+    {
+      "objectiveType": 1,
+      "mapUid": 101,
+      "targetUid": 110002,
+      "position": {
+        "x": 0.0,
+        "y": 0.0
+      },
+      "count": 5,
+      "dialogueUid": 10002
+    },
+    {
+      "objectiveType": 2,
+      "mapUid": 102,
+      "targetUid": 110001,
+      "position": {
+        "x": 0.0,
+        "y": 0.0
+      },
+      "count": 3,
+      "dialogueUid": 0
+    },
+    {
+      "objectiveType": 3,
+      "mapUid": 0,
+      "targetUid": 101011001,
+      "position": {
+        "x": 0.0,
+        "y": 0.0
+      },
+      "count": 2,
+      "dialogueUid": 0
+    },
+    {
+      "objectiveType": 1,
+      "mapUid": 101,
+      "targetUid": 110001,
+      "position": {
+        "x": 0.0,
+        "y": 0.0
+      },
+      "count": 0,
+      "dialogueUid": 10003
+    }
+  ],
+  "reward": {
+    "experience": 100,
+    "gold": 10,
+    "silver": 5,
+    "items": [
+      {
+        "itemUid": 401011001,
+        "amount": 1
+      },
+      {
+        "itemUid": 401011002,
+        "amount": 2
+      },
+      {
+        "itemUid": 401011003,
+        "amount": 3
+      },
+      {
+        "itemUid": 401011004,
+        "amount": 4
+      }
+    ]
+  }
+}

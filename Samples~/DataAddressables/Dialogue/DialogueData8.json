@@ -1,0 +1,21 @@
+{
+  "nodes": [
+    {
+      "guid": "9c18c49d-10fa-4859-8828-337fd6f944ca",
+      "title": null,
+      "dialogueText": "수고했어, 여기 보상을 줄개.",
+      "position": {
+        "x": 306.5,
+        "y": 336.0
+      },
+      "characterType": 3,
+      "characterUid": 110001,
+      "fontSize": 0.0,
+      "thumbnailImage": "",
+      "options": [],
+      "nextNodeGuid": "",
+      "startQuestUid": 0,
+      "startQuestStep": 0
+    }
+  ]
+}

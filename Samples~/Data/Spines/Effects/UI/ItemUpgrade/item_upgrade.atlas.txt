@@ -1,0 +1,10 @@
+item_upgrade.png
+size:1475,880
+filter:Linear,Linear
+pma:true
+mangchi
+bounds:2,2,666,876
+offsets:151,80,1024,1024
+moru
+bounds:670,332,803,546
+offsets:111,194,1024,1024

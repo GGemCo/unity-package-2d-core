@@ -1,0 +1,3 @@
+﻿Uid	Memo	ResultItemUid	Rate	NeedCurrencyType	NeedCurrencyValue	NeedItemUid1	NeedItemCount1	NeedItemUid2	NeedItemCount2	NeedItemUid3	NeedItemCount3	NeedItemUid4	NeedItemCount4
+1	제작 무딘 칼1	101011007	100	Gold	1000	401011006	2	401011007	3	401011008	4	401011009	5
+2	제작 무딘 칼2	101011008	80	Gold	2000	401011007	4	401011008	5	401011009	6	401011010	7

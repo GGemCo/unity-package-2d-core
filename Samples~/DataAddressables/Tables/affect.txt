@@ -1,0 +1,20 @@
+﻿Uid	Name	IconFileName	Type	Group	TickTime	StatusID	StatusSuffix	Value	Duration	EffectUid	EffectScale
+# 아이템											
+110001	이동속도 증가	MoveSpeed	Buff	MoveSpeed	0	STAT_MOVE_SPEED	INCREASE	30	10	200003	1
+110002	공격속도 증가	AttackSpeed	Buff	AttackSpeed	0	STAT_ATTACK_SPEED	INCREASE	30	10	0	1
+110003	생명력 회복	HealHp	Buff	HealHp	2	HEAL_HP	PLUS	10	10	0	1
+110004	마력 회복	HealMp	Buff	HealMp	2	HEAL_MP	PLUS	10	10	0	1
+# 스킬											
+210001	파이어월 도트 데미지	Firewall	Buff	Firewall	1	DAMAGE_FIRE	PLUS	10	5	0	1
+210002	패스트 무브	FastMove	Buff	FastMove	0	STAT_MOVE_SPEED	INCREASE	50	10	200003	0.2
+210003	패스트 무브	FastMove	Buff	FastMove	0	STAT_MOVE_SPEED	INCREASE	60	10	200003	0.2
+210004	패스트 무브	FastMove	Buff	FastMove	0	STAT_MOVE_SPEED	INCREASE	70	10	200003	0.2
+210006	디크리즈 무브	DecreaseMove	DeBuff	DecreaseMove	0	STAT_MOVE_SPEED	DECREASE	50	10	200002	0.5
+210007	디크리즈 무브	DecreaseMove	DeBuff	DecreaseMove	0	STAT_MOVE_SPEED	DECREASE	50	10	200002	0.5
+210008	디크리즈 무브	DecreaseMove	DeBuff	DecreaseMove	0	STAT_MOVE_SPEED	DECREASE	50	10	200002	0.5
+210010	디크리즈 무브 범위	DecreaseMoveRange	DeBuff	DecreaseMoveRange	0	STAT_MOVE_SPEED	DECREASE	90	10	200002	0.5
+210011	디크리즈 무브 범위	DecreaseMoveRange	DeBuff	DecreaseMoveRange	0	STAT_MOVE_SPEED	DECREASE	90	10	200002	0.5
+210012	디크리즈 무브 범위	DecreaseMoveRange	DeBuff	DecreaseMoveRange	0	STAT_MOVE_SPEED	DECREASE	90	10	200002	0.5
+210013	디크리즈 어텍 범위	DecreaseAttackRange	DeBuff	DecreaseAttackRange	0	STAT_ATTACK_SPEED	DECREASE	90	10	200005	0.5
+210014	디크리즈 어텍 범위	DecreaseAttackRange	DeBuff	DecreaseAttackRange	0	STAT_ATTACK_SPEED	DECREASE	90	10	200005	0.5
+210015	디크리즈 어텍 범위	DecreaseAttackRange	DeBuff	DecreaseAttackRange	0	STAT_ATTACK_SPEED	DECREASE	90	10	200005	0.5

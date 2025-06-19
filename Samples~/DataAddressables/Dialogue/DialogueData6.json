@@ -1,0 +1,58 @@
+{
+  "nodes": [
+    {
+      "guid": "0e7a8026-9547-4c39-b3e4-196c44632941",
+      "title": null,
+      "dialogueText": "1 대사를 입력하세요\n2 대사를 입력하세요\n3 대사를 입력하세요",
+      "position": {
+        "x": 238.5,
+        "y": 407.0
+      },
+      "characterType": 0,
+      "characterUid": 0,
+      "fontSize": 0.0,
+      "thumbnailImage": "",
+      "options": [
+        {
+          "optionText": "선택지1",
+          "nextNodeGuid": "768947d2-e4ba-45f7-8bda-db6b9999b351"
+        },
+        {
+          "optionText": "선택지2",
+          "nextNodeGuid": "368b6704-a933-441a-af0b-d3dfa1ca25be"
+        }
+      ],
+      "nextNodeGuid": null
+    },
+    {
+      "guid": "768947d2-e4ba-45f7-8bda-db6b9999b351",
+      "title": null,
+      "dialogueText": "선택지 1 선택",
+      "position": {
+        "x": 618.5,
+        "y": 229.0
+      },
+      "characterType": 0,
+      "characterUid": 0,
+      "fontSize": 0.0,
+      "thumbnailImage": "",
+      "options": [],
+      "nextNodeGuid": "0e7a8026-9547-4c39-b3e4-196c44632941"
+    },
+    {
+      "guid": "368b6704-a933-441a-af0b-d3dfa1ca25be",
+      "title": null,
+      "dialogueText": "선택지2 선택",
+      "position": {
+        "x": 614.0,
+        "y": 494.0
+      },
+      "characterType": 0,
+      "characterUid": 0,
+      "fontSize": 0.0,
+      "thumbnailImage": "",
+      "options": [],
+      "nextNodeGuid": ""
+    }
+  ]
+}
