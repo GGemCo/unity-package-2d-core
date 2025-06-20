@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Threading.Tasks;
 using GGemCo.Scripts;
 using UnityEditor;
 using UnityEngine;
@@ -10,46 +11,33 @@ namespace GGemCo.Editor
     /// </summary>
     public class ToolbarHandler
     {
-        private readonly DialogueEditorWindow editorWindow;
+        private readonly DialogueEditorWindowWindow _editorWindowWindow;
 
-        private readonly TableDialogue tableDialogue;
-        private int selectedDialogueIndex;
+        private readonly TableDialogue _tableDialogue;
+        private int _selectedDialogueIndex;
 
-        private readonly List<string> dialogueMemos = new List<string>();
-        private readonly Dictionary<int, StruckTableDialogue> dialogueInfos = new Dictionary<int, StruckTableDialogue>(); 
+        private readonly List<string> _dialogueMemos = new List<string>();
+        private readonly Dictionary<int, StruckTableDialogue> _dialogueInfos = new Dictionary<int, StruckTableDialogue>(); 
         
-        private int previousIndex;
-        public ToolbarHandler(DialogueEditorWindow window)
+        private int _previousIndex;
+        public ToolbarHandler(DialogueEditorWindowWindow windowWindow, List<string> dialogueMemos, Dictionary<int, StruckTableDialogue> dialogueInfos)
         {
-            editorWindow = window;
-            
-            var tableLoaderManager = new TableLoaderManager();
-            tableDialogue = tableLoaderManager.LoadDialogueTable();
-            LoadCutsceneInfoData();
+            _editorWindowWindow = windowWindow;
+            _previousIndex = 0;
+            _selectedDialogueIndex = 0;
+            _dialogueMemos = dialogueMemos;
+            _dialogueInfos = dialogueInfos;
         }
-
-        private void LoadCutsceneInfoData()
-        {
-            if (tableDialogue == null) return;
-            Dictionary<int, Dictionary<string, string>> npcDictionary = tableDialogue.GetDatas();
-             
-            dialogueMemos.Clear();
-            dialogueInfos.Clear();
-            int index = 0;
-            // foreach 문을 사용하여 딕셔너리 내용을 출력
-            foreach (KeyValuePair<int, Dictionary<string, string>> outerPair in npcDictionary)
-            {
-                var info = tableDialogue.GetDataByUid(outerPair.Key);
-                if (info.Uid <= 0) continue;
-                dialogueMemos.Add($"{info.Uid} - {info.Memo}");
-                dialogueInfos.TryAdd(index, info);
-                index++;
-            }
-        }
-
         public void DrawToolbar()
         {
-            if (editorWindow == null) return;
+            if (_editorWindowWindow == null) return;
+            
+            // 방어 코드 추가
+            if (_dialogueMemos.Count == 0)
+            {
+                EditorGUILayout.LabelField("등록된 아이템이 없습니다.");
+                return;
+            }
             GUILayout.BeginVertical(EditorStyles.toolbar, GUILayout.Width(250));
 
             // if (GUILayout.Button("자동 배치"))
@@ -57,25 +45,29 @@ namespace GGemCo.Editor
             //     AutoLayout();
             // }
             EditorGUILayout.Space(20);
-            
-            selectedDialogueIndex = EditorGUILayout.Popup("", selectedDialogueIndex, dialogueMemos.ToArray());
-            if (previousIndex != selectedDialogueIndex)
+
+            if (_selectedDialogueIndex >= _dialogueMemos.Count)
+            {
+                _selectedDialogueIndex = 0;
+            }
+            _selectedDialogueIndex = EditorGUILayout.Popup("", _selectedDialogueIndex, _dialogueMemos.ToArray());
+            if (_previousIndex != _selectedDialogueIndex)
             {
                 // 선택이 바뀌었을 때 실행할 코드
                 // Debug.Log($"선택이 변경되었습니다: {questTitle[selectedQuestIndex]}");
                 if (LoadDialogue())
                 {
-                    previousIndex = selectedDialogueIndex;
+                    _previousIndex = _selectedDialogueIndex;
                 }
                 else
                 {
-                    selectedDialogueIndex = previousIndex;
+                    _selectedDialogueIndex = _previousIndex;
                 }
             }
             GUILayout.BeginHorizontal();
             if (GUILayout.Button("저장"))
             {
-                editorWindow.FileHandler?.SaveToJson(selectedDialogueIndex, dialogueInfos);
+                _editorWindowWindow.FileHandler?.SaveToJson(_selectedDialogueIndex, _dialogueInfos);
             }
             if (GUILayout.Button("불러오기"))
             {
@@ -89,7 +81,7 @@ namespace GGemCo.Editor
                     EditorUtility.DisplayDialog("대사 생성툴", "게임을 실행해주세요.", "OK");
                     return;
                 }
-                var info = dialogueInfos.GetValueOrDefault(selectedDialogueIndex);
+                var info = _dialogueInfos.GetValueOrDefault(_selectedDialogueIndex);
                 UIWindowDialogue uiWindowDialogue =
                     SceneGame.Instance.uIWindowManager.GetUIWindowByUid<UIWindowDialogue>(UIWindowManager.WindowUid
                         .Dialogue);
@@ -102,14 +94,14 @@ namespace GGemCo.Editor
             EditorGUILayout.Space();
             if (GUILayout.Button("노드 추가"))
             {
-                editorWindow.NodeHandler?.AddNode();
+                _editorWindowWindow.NodeHandler?.AddNode();
             }
 
             // 100% 보기 버튼
             if (GUILayout.Button("100% 보기"))
             {
-                editorWindow.ZoomPanHandler?.SetZoom(1.0f);
-                editorWindow.panOffset = Vector2.zero; // 위치도 초기화
+                _editorWindowWindow.ZoomPanHandler?.SetZoom(1.0f);
+                _editorWindowWindow.panOffset = Vector2.zero; // 위치도 초기화
             }
             EditorGUILayout.Space();
             Common.GUILine(2);
@@ -119,7 +111,7 @@ namespace GGemCo.Editor
                 bool result = EditorUtility.DisplayDialog("삭제", "정말로 삭제하시겠습니까?", "확인", "취소");
                 if (result)
                 {
-                    editorWindow?.nodes?.Clear();
+                    _editorWindowWindow?.nodes?.Clear();
                 }
             }
 
@@ -134,13 +126,13 @@ namespace GGemCo.Editor
 
         private bool LoadDialogue()
         {
-            if (editorWindow.nodes?.Count > 0)
+            if (_editorWindowWindow.nodes?.Count > 0)
             {
                 bool result = EditorUtility.DisplayDialog("불러오기", "현재 대사 Node 가 만들어진 상태입니다.\n저장 하셨나요?", "네", "아니요");
                 if (result)
                 {
-                    var info = dialogueInfos.GetValueOrDefault(selectedDialogueIndex);
-                    editorWindow.FileHandler?.LoadFromJson(info.FileName);
+                    var info = _dialogueInfos.GetValueOrDefault(_selectedDialogueIndex);
+                    _editorWindowWindow.FileHandler?.LoadFromJson(info.FileName);
                 }
                 else
                 {
@@ -149,8 +141,8 @@ namespace GGemCo.Editor
             }
             else
             {
-                var info = dialogueInfos.GetValueOrDefault(selectedDialogueIndex);
-                editorWindow.FileHandler?.LoadFromJson(info.FileName);
+                var info = _dialogueInfos.GetValueOrDefault(_selectedDialogueIndex);
+                _editorWindowWindow.FileHandler?.LoadFromJson(info.FileName);
             }
             return true;
         }

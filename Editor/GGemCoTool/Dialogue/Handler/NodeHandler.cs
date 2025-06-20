@@ -11,23 +11,23 @@ namespace GGemCo.Editor
     /// </summary>
     public class NodeHandler
     {
-        private readonly DialogueEditorWindow editorWindow;
+        private readonly DialogueEditorWindowWindow _editorWindowWindow;
         private readonly Vector2 defaultNodeSize = new Vector2(250, 150);
 
-        public NodeHandler(DialogueEditorWindow window)
+        public NodeHandler(DialogueEditorWindowWindow windowWindow)
         {
-            editorWindow = window;
+            _editorWindowWindow = windowWindow;
         }
 
         public void DrawNodes()
         {
             Matrix4x4 oldMatrix = GUI.matrix;
-            GUIUtility.ScaleAroundPivot(Vector2.one * editorWindow.zoom, Vector2.zero);
-            GUI.matrix = Matrix4x4.TRS(editorWindow.panOffset, Quaternion.identity, Vector3.one) * GUI.matrix;
+            GUIUtility.ScaleAroundPivot(Vector2.one * _editorWindowWindow.zoom, Vector2.zero);
+            GUI.matrix = Matrix4x4.TRS(_editorWindowWindow.panOffset, Quaternion.identity, Vector3.one) * GUI.matrix;
 
             DialogueNode nodeToDelete = null;
 
-            foreach (DialogueNode node in editorWindow.nodes)
+            foreach (DialogueNode node in _editorWindowWindow.nodes)
             {
                 DrawNode(node, ref nodeToDelete);
             }
@@ -47,7 +47,7 @@ namespace GGemCo.Editor
                 padding = new RectOffset(10, 10, 10, 10)
             };
 
-            if (node == editorWindow.selectedNode)
+            if (node == _editorWindowWindow.selectedNode)
             {
                 style.normal.background = EditorGUIUtility.Load("builtin skins/darkskin/images/node1 on.png") as Texture2D;
                 style.border = new RectOffset(12, 12, 12, 12);
@@ -75,7 +75,7 @@ namespace GGemCo.Editor
             totalHeight += wrappedLabel.CalcHeight(new GUIContent(node.dialogueText), defaultNodeSize.x - 20) + 10;
             GUILayout.EndVertical();
             
-            bool isDialogueConnecting = (editorWindow.draggingFromDialogue == node);
+            bool isDialogueConnecting = (_editorWindowWindow.draggingFromDialogue == node);
             bool clickedDialogueToggle = GUILayout.Toggle(isDialogueConnecting, GUIContent.none, GUILayout.Width(20));
 
             if (clickedDialogueToggle && !isDialogueConnecting)
@@ -83,13 +83,13 @@ namespace GGemCo.Editor
                 GenericMenu menu = new GenericMenu();
                 menu.AddItem(new GUIContent("연결 하기"), false, () =>
                 {
-                    editorWindow.draggingFromDialogue = node;
-                    editorWindow.isDraggingConnection = true;
+                    _editorWindowWindow.draggingFromDialogue = node;
+                    _editorWindowWindow.isDraggingConnection = true;
                 });
                 menu.AddItem(new GUIContent("연결 삭제"), false, () =>
                 {
                     node.nextNodeGuid = null;
-                    editorWindow.Repaint();
+                    _editorWindowWindow.Repaint();
                 });
                 menu.ShowAsContext();
             }
@@ -116,21 +116,21 @@ namespace GGemCo.Editor
                     Rect optionRect = GUILayoutUtility.GetLastRect();
                     GUILayout.EndVertical();
 
-                    bool isConnecting = (editorWindow.draggingFromOption == option);
+                    bool isConnecting = (_editorWindowWindow.draggingFromOption == option);
                     bool clicked = GUILayout.Toggle(isConnecting, GUIContent.none, GUILayout.Width(20));
                     if (clicked && !isConnecting)
                     {
                         GenericMenu menu = new GenericMenu();
                         menu.AddItem(new GUIContent("연결 하기"), false, () =>
                         {
-                            editorWindow.draggingFromOption = option;
-                            editorWindow.draggingFromNode = node;
-                            editorWindow.isDraggingConnection = true;
+                            _editorWindowWindow.draggingFromOption = option;
+                            _editorWindowWindow.draggingFromNode = node;
+                            _editorWindowWindow.isDraggingConnection = true;
                         });
                         menu.AddItem(new GUIContent("연결 삭제"), false, () =>
                         {
                             option.nextNodeGuid = null;
-                            editorWindow.Repaint();
+                            _editorWindowWindow.Repaint();
                         });
                         menu.ShowAsContext();
                     }
@@ -163,11 +163,11 @@ namespace GGemCo.Editor
         
         private void DeleteNode(DialogueNode node)
         {
-            if (editorWindow.nodes.Contains(node))
+            if (_editorWindowWindow.nodes.Contains(node))
             {
-                editorWindow.nodes.Remove(node);
+                _editorWindowWindow.nodes.Remove(node);
 
-                foreach (DialogueNode n in editorWindow.nodes)
+                foreach (DialogueNode n in _editorWindowWindow.nodes)
                 {
                     foreach (var option in n.options)
                     {
@@ -180,41 +180,41 @@ namespace GGemCo.Editor
 
         public void ProcessNodeEvents(Event e)
         {
-            if (editorWindow.nodes == null) return;
+            if (_editorWindowWindow.nodes == null) return;
 
-            Vector2 adjustedMousePosition = (e.mousePosition - editorWindow.panOffset) / editorWindow.zoom;
+            Vector2 adjustedMousePosition = (e.mousePosition - _editorWindowWindow.panOffset) / _editorWindowWindow.zoom;
 
             if (e.type == EventType.MouseDown && e.button == 0)
             {
-                editorWindow.draggingNode = GetNodeAtPoint(adjustedMousePosition);
-                if (editorWindow.draggingNode != null)
+                _editorWindowWindow.draggingNode = GetNodeAtPoint(adjustedMousePosition);
+                if (_editorWindowWindow.draggingNode != null)
                 {
-                    editorWindow.selectedNode = editorWindow.draggingNode;
-                    Selection.activeObject = editorWindow.draggingNode;
-                    editorWindow.draggingOffset = editorWindow.draggingNode.position - adjustedMousePosition;
+                    _editorWindowWindow.selectedNode = _editorWindowWindow.draggingNode;
+                    Selection.activeObject = _editorWindowWindow.draggingNode;
+                    _editorWindowWindow.draggingOffset = _editorWindowWindow.draggingNode.position - adjustedMousePosition;
                 }
                 else
                 {
-                    editorWindow.selectedNode = null;
+                    _editorWindowWindow.selectedNode = null;
                     Selection.activeObject = null;
                 }
             }
 
-            if (e.type == EventType.MouseDrag && e.button == 0 && editorWindow.draggingNode != null)
+            if (e.type == EventType.MouseDrag && e.button == 0 && _editorWindowWindow.draggingNode != null)
             {
-                editorWindow.draggingNode.position = adjustedMousePosition + editorWindow.draggingOffset;
+                _editorWindowWindow.draggingNode.position = adjustedMousePosition + _editorWindowWindow.draggingOffset;
                 GUI.changed = true;
             }
 
             if (e.type == EventType.MouseUp && e.button == 0)
             {
-                editorWindow.draggingNode = null;
+                _editorWindowWindow.draggingNode = null;
             }
         }
 
         private DialogueNode GetNodeAtPoint(Vector2 point)
         {
-            foreach (DialogueNode node in editorWindow.nodes)
+            foreach (DialogueNode node in _editorWindowWindow.nodes)
             {
                 Vector2 size = node.cachedSize != Vector2.zero ? node.cachedSize : defaultNodeSize;
                 Rect rect = new Rect(node.position, new Vector2(defaultNodeSize.x, Mathf.Max(size.y, defaultNodeSize.y)));
@@ -226,7 +226,7 @@ namespace GGemCo.Editor
         
         private DialogueNode FindNodeAtPosition(Vector2 pos)
         {
-            return editorWindow.nodes.FirstOrDefault(node =>
+            return _editorWindowWindow.nodes.FirstOrDefault(node =>
             {
                 Vector2 size = node.cachedSize != Vector2.zero ? node.cachedSize : defaultNodeSize;
                 return new Rect(node.position, new Vector2(defaultNodeSize.x, Mathf.Max(size.y, defaultNodeSize.y))).Contains(pos);
@@ -235,29 +235,29 @@ namespace GGemCo.Editor
 
         public void HandleEvents()
         {
-            if (editorWindow.isDraggingConnection && Event.current.type == EventType.MouseUp)
+            if (_editorWindowWindow.isDraggingConnection && Event.current.type == EventType.MouseUp)
             {
                 Vector2 adjustedMousePosition =
-                    (Event.current.mousePosition - editorWindow.panOffset) / editorWindow.zoom;
+                    (Event.current.mousePosition - _editorWindowWindow.panOffset) / _editorWindowWindow.zoom;
 
                 DialogueNode targetNode = FindNodeAtPosition(adjustedMousePosition);
                 if (targetNode != null)
                 {
-                    if (editorWindow.draggingFromOption != null && targetNode != editorWindow.draggingFromNode)
+                    if (_editorWindowWindow.draggingFromOption != null && targetNode != _editorWindowWindow.draggingFromNode)
                     {
-                        editorWindow.draggingFromOption.nextNodeGuid = targetNode.guid;
+                        _editorWindowWindow.draggingFromOption.nextNodeGuid = targetNode.guid;
                     }
-                    else if (editorWindow.draggingFromDialogue != null &&
-                             editorWindow.draggingFromDialogue != targetNode)
+                    else if (_editorWindowWindow.draggingFromDialogue != null &&
+                             _editorWindowWindow.draggingFromDialogue != targetNode)
                     {
-                        editorWindow.draggingFromDialogue.nextNodeGuid = targetNode.guid;
+                        _editorWindowWindow.draggingFromDialogue.nextNodeGuid = targetNode.guid;
                     }
                 }
 
-                editorWindow.draggingFromNode = null;
-                editorWindow.draggingFromOption = null;
-                editorWindow.draggingFromDialogue = null;
-                editorWindow.isDraggingConnection = false;
+                _editorWindowWindow.draggingFromNode = null;
+                _editorWindowWindow.draggingFromOption = null;
+                _editorWindowWindow.draggingFromDialogue = null;
+                _editorWindowWindow.isDraggingConnection = false;
                 Event.current.Use();
             }
         }
@@ -266,15 +266,15 @@ namespace GGemCo.Editor
             DialogueNode node = ScriptableObject.CreateInstance<DialogueNode>();
             node.guid = Guid.NewGuid().ToString();
             node.position = nodePosition;
-            editorWindow.nodes.Add(node);
+            _editorWindowWindow.nodes.Add(node);
         }
 
         public void AddNode()
         {
             DialogueNode node = ScriptableObject.CreateInstance<DialogueNode>();
             node.guid = Guid.NewGuid().ToString();
-            node.position = new Vector2(editorWindow.position.width / 2, editorWindow.position.height / 2);
-            editorWindow.nodes.Add(node);
+            node.position = new Vector2(_editorWindowWindow.position.width / 2, _editorWindowWindow.position.height / 2);
+            _editorWindowWindow.nodes.Add(node);
         }
     }
 }

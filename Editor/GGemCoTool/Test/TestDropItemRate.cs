@@ -35,16 +35,16 @@ namespace GGemCo.Editor
 
             itemManager = new ItemManager();
             TableLoaderManager tableLoaderManager = new TableLoaderManager();
-            tableMonster = tableLoaderManager.LoadMonsterTable();
+            // tableMonster = tableLoaderManager.LoadMonsterTable();
             
-            tableItem = tableLoaderManager.LoadItemTable();
-            TableItemDropGroup tableItemDropGroup = tableLoaderManager.LoadItemDropGroupTable();
-            TableMonsterDropRate tableMonsterDropRate = tableLoaderManager.LoadMonsterDropRateTable();
+            // tableItem = tableLoaderManager.LoadItemTable();
+            // TableItemDropGroup tableItemDropGroup = tableLoaderManager.LoadItemDropGroupTable();
+            // TableMonsterDropRate tableMonsterDropRate = tableLoaderManager.LoadMonsterDropRateTable();
             
             dictionaryByCategory = tableItem.GetDictionaryByCategory();
             dictionaryBySubCategory = tableItem.GetDictionaryBySubCategory();
-            dropGroupDictionary = tableItemDropGroup.GetDropGroups();
-            monsterDropDictionary = tableMonsterDropRate.GetMonsterDropDictionary();
+            // dropGroupDictionary = tableItemDropGroup.GetDropGroups();
+            // monsterDropDictionary = tableMonsterDropRate.GetMonsterDropDictionary();
 
             LoadMonsterInfoData();
         }

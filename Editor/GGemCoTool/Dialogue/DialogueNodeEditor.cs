@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Threading.Tasks;
 using GGemCo.Scripts;
 using UnityEditor;
 using UnityEditorInternal;
@@ -7,128 +8,166 @@ using UnityEngine;
 namespace GGemCo.Editor
 {
     /// <summary>
-    /// 대사 노드 커스텀 inspector 
+    /// 대사 노드 커스텀 Inspector 
     /// </summary>
     [CustomEditor(typeof(DialogueNode))]
-    public class DialogueNodeEditor : UnityEditor.Editor
+    public class DialogueNodeEditor : DefaultEditor
     {
-        private ReorderableList optionList;
-        private int selectedQuestIndex;
+        private const string Title = "대사 노드 커스텀 Inspector";
+        private ReorderableList _optionList;
         
-        private TableLoaderManager tableLoaderManager;
-        private TableNpc tableNpc;
-        private TableMonster tableMonster;
-        private TableQuest tableQuest;
+        private TableNpc _tableNpc;
+        private TableMonster _tableMonster;
+        private TableQuest _tableQuest;
         
-        private List<string> nameNpc = new List<string>();
-        private List<string> nameMonster = new List<string>();
-        private List<string> nameQuest = new List<string>();
+        private readonly List<string> _nameNpc = new List<string>();
+        private readonly List<string> _nameMonster = new List<string>();
+        private readonly List<string> _nameQuest = new List<string>();
         
-        private Dictionary<int, StruckTableNpc> struckTableNpcs = new Dictionary<int, StruckTableNpc>(); 
-        private Dictionary<int, StruckTableMonster> struckTableMonsters = new Dictionary<int, StruckTableMonster>(); 
-        private Dictionary<int, StruckTableQuest> struckTableQuest = new Dictionary<int, StruckTableQuest>(); 
+        private readonly Dictionary<int, StruckTableNpc> _struckTableNpcs = new Dictionary<int, StruckTableNpc>(); 
+        private readonly Dictionary<int, StruckTableMonster> _struckTableMonsters = new Dictionary<int, StruckTableMonster>(); 
+        private readonly Dictionary<int, StruckTableQuest> _struckTableQuest = new Dictionary<int, StruckTableQuest>(); 
         
-        private int selectedIndexNpc;
-        private int selectedIndexMonster;
-        private int selectedIndexQuest;
+        private int _selectedIndexNpc;
+        private int _selectedIndexMonster;
+        private int _selectedIndexQuest;
         
-        private void OnEnable()
+        protected override void OnEnable()
         {
-            optionList = new ReorderableList(serializedObject,
-                serializedObject.FindProperty("options"),
-                true, true, true, true)
-            {
-                drawHeaderCallback = (rect) =>
-                {
-                    EditorGUI.LabelField(rect, "선택지 목록");
-                }
-            };
+            base.OnEnable();
+            _selectedIndexNpc = 0;
+            _selectedIndexMonster = 0;
+            _selectedIndexQuest = 0;
             
-            tableLoaderManager = new TableLoaderManager();
-            tableNpc = tableLoaderManager.LoadNpcTable();
-            tableMonster = tableLoaderManager.LoadMonsterTable();
-            tableQuest = tableLoaderManager.LoadQuestTable();
-            LoadNpcInfoData();
-            LoadMonsterInfoData();
-            LoadQuestInfoData();
-            
-            DialogueNode dialogueNode = serializedObject.targetObject as DialogueNode;
-            if (dialogueNode != null)
-            {
-                selectedIndexNpc = dialogueNode.characterUid > 0 ? nameNpc.FindIndex(x => x.Contains(dialogueNode.characterUid.ToString())) : 0;
-                selectedIndexMonster = dialogueNode.characterUid > 0 ? nameMonster.FindIndex(x => x.Contains(dialogueNode.characterUid.ToString())) : 0;
-                selectedIndexQuest = dialogueNode.startQuestUid > 0 ? nameQuest.FindIndex(x => x.Contains(dialogueNode.startQuestUid.ToString())) : 0;
-            }
+            _ = LoadAsync();
+        }
 
-            optionList.drawElementCallback = (rect, index, isActive, isFocused) =>
+        private async Task LoadAsync()
+        {
+            try
             {
-                SerializedProperty element = optionList.serializedProperty.GetArrayElementAtIndex(index);
-                rect.y += 2;
-                EditorGUI.PropertyField(
-                    new Rect(rect.x, rect.y, rect.width * 0.5f, EditorGUIUtility.singleLineHeight),
-                    element.FindPropertyRelative("optionText"), GUIContent.none);
+                // 순차 로드
+                // _tableNpc = await TableLoaderManager.LoadNpcTableAsync();
                 
-                // nextNodeGuid 읽기 전용 처리
-                GUI.enabled = false;
-                EditorGUI.PropertyField(
-                    new Rect(rect.x + rect.width * 0.55f, rect.y, rect.width * 0.45f, EditorGUIUtility.singleLineHeight),
-                    element.FindPropertyRelative("nextNodeGuid"), GUIContent.none);
-                GUI.enabled = true;
-            };
+                // 병렬 로드
+                var loadNpcTask = TableLoaderManager.LoadNpcTableAsync();
+                var loadMonsterTask = TableLoaderManager.LoadMonsterTableAsync();
+                var loadQuestTask = TableLoaderManager.LoadQuestTableAsync();
+                await Task.WhenAll(loadNpcTask, loadMonsterTask, loadQuestTask);
+
+                _tableNpc = loadNpcTask.Result;
+                _tableMonster = loadMonsterTask.Result;
+                _tableQuest = loadQuestTask.Result;
+
+                LoadNpcInfoData();
+                LoadMonsterInfoData();
+                LoadQuestInfoData();
+
+                _optionList = new ReorderableList(serializedObject,
+                    serializedObject.FindProperty("options"),
+                    true, true, true, true)
+                {
+                    drawHeaderCallback = (rect) => { EditorGUI.LabelField(rect, "선택지 목록"); }
+                };
+
+                DialogueNode dialogueNode = serializedObject.targetObject as DialogueNode;
+                if (dialogueNode != null)
+                {
+                    _selectedIndexNpc = dialogueNode.characterUid > 0
+                        ? _nameNpc.FindIndex(x => x.Contains(dialogueNode.characterUid.ToString()))
+                        : 0;
+                    _selectedIndexMonster = dialogueNode.characterUid > 0
+                        ? _nameMonster.FindIndex(x => x.Contains(dialogueNode.characterUid.ToString()))
+                        : 0;
+                    _selectedIndexQuest = dialogueNode.startQuestUid > 0
+                        ? _nameQuest.FindIndex(x => x.Contains(dialogueNode.startQuestUid.ToString()))
+                        : 0;
+                }
+
+                _optionList.drawElementCallback = (rect, index, isActive, isFocused) =>
+                {
+                    SerializedProperty element = _optionList.serializedProperty.GetArrayElementAtIndex(index);
+                    rect.y += 2;
+                    EditorGUI.PropertyField(
+                        new Rect(rect.x, rect.y, rect.width * 0.5f, EditorGUIUtility.singleLineHeight),
+                        element.FindPropertyRelative("optionText"), GUIContent.none);
+
+                    // nextNodeGuid 읽기 전용 처리
+                    GUI.enabled = false;
+                    EditorGUI.PropertyField(
+                        new Rect(rect.x + rect.width * 0.55f, rect.y, rect.width * 0.45f,
+                            EditorGUIUtility.singleLineHeight),
+                        element.FindPropertyRelative("nextNodeGuid"), GUIContent.none);
+                    GUI.enabled = true;
+                };
+
+
+                IsLoading = false;
+                Repaint();
+            }
+            catch (System.Exception ex)
+            {
+                Debug.LogError($"[CreateItemTool] LoadAsync 예외 발생: {ex.Message}");
+                EditorUtility.DisplayDialog(Title, "아이템 테이블 로딩 중 오류가 발생했습니다.", "OK");
+                IsLoading = false;
+            }
         }
 
         private void LoadQuestInfoData()
         {
-            Dictionary<int, Dictionary<string, string>> dictionary = tableQuest.GetDatas();
+            Dictionary<int, Dictionary<string, string>> dictionary = _tableQuest.GetDatas();
              
-            nameQuest = new List<string>();
             int index = 0;
-            nameQuest.Add("0");
-            struckTableQuest.TryAdd(index++, new StruckTableQuest());
+            _nameQuest.Add("0");
+            _struckTableQuest.TryAdd(index++, new StruckTableQuest());
             foreach (KeyValuePair<int, Dictionary<string, string>> outerPair in dictionary)
             {
-                var info = tableQuest.GetDataByUid(outerPair.Key);
+                var info = _tableQuest.GetDataByUid(outerPair.Key);
                 if (info.Uid <= 0) continue;
-                nameQuest.Add($"{info.Uid} - {info.Name}");
-                struckTableQuest.TryAdd(index, info);
+                _nameQuest.Add($"{info.Uid} - {info.Name}");
+                _struckTableQuest.TryAdd(index, info);
                 index++;
             }
         }
 
         private void LoadMonsterInfoData()
         {
-            Dictionary<int, Dictionary<string, string>> monsterDictionary = tableMonster.GetDatas();
+            Dictionary<int, Dictionary<string, string>> monsterDictionary = _tableMonster.GetDatas();
              
-            nameMonster = new List<string>();
             int index = 0;
             foreach (KeyValuePair<int, Dictionary<string, string>> outerPair in monsterDictionary)
             {
-                var info = tableMonster.GetDataByUid(outerPair.Key);
+                var info = _tableMonster.GetDataByUid(outerPair.Key);
                 if (info.Uid <= 0) continue;
-                nameMonster.Add($"{info.Uid} - {info.Name}");
-                struckTableMonsters.TryAdd(index, info);
+                _nameMonster.Add($"{info.Uid} - {info.Name}");
+                _struckTableMonsters.TryAdd(index, info);
                 index++;
             }
         }
-
+        
         private void LoadNpcInfoData()
         {
-            Dictionary<int, Dictionary<string, string>> npcDictionary = tableNpc.GetDatas();
+            Dictionary<int, Dictionary<string, string>> npcDictionary = _tableNpc.GetDatas();
              
-            nameNpc = new List<string>();
             int index = 0;
             foreach (KeyValuePair<int, Dictionary<string, string>> outerPair in npcDictionary)
             {
-                var info = tableNpc.GetDataByUid(outerPair.Key);
+                var info = _tableNpc.GetDataByUid(outerPair.Key);
                 if (info.Uid <= 0) continue;
-                nameNpc.Add($"{info.Uid} - {info.Name}");
-                struckTableNpcs.TryAdd(index, info);
+                _nameNpc.Add($"{info.Uid} - {info.Name}");
+                _struckTableNpcs.TryAdd(index, info);
                 index++;
             }
         }
 
         public override void OnInspectorGUI()
         {
+            if (IsLoading)
+            {
+                EditorGUILayout.LabelField("테이블 로딩 중...");
+                return;
+            }
+            
             serializedObject.Update();
 
             EditorGUILayout.PropertyField(serializedObject.FindProperty("dialogueText"));
@@ -145,13 +184,13 @@ namespace GGemCo.Editor
             {
                 if (dialogueNode.characterType == CharacterConstants.Type.Npc)
                 {
-                    selectedIndexNpc = EditorGUILayout.Popup("characterUid", selectedIndexNpc, nameNpc.ToArray());
-                    dialogueNode.characterUid = struckTableNpcs.GetValueOrDefault(selectedIndexNpc)?.Uid ?? 0;
+                    _selectedIndexNpc = EditorGUILayout.Popup("characterUid", _selectedIndexNpc, _nameNpc.ToArray());
+                    dialogueNode.characterUid = _struckTableNpcs.GetValueOrDefault(_selectedIndexNpc)?.Uid ?? 0;
                 }
                 else if (dialogueNode.characterType == CharacterConstants.Type.Monster)
                 {
-                    selectedIndexMonster = EditorGUILayout.Popup("characterUid", selectedIndexMonster, nameMonster.ToArray());
-                    dialogueNode.characterUid = struckTableMonsters.GetValueOrDefault(selectedIndexMonster)?.Uid ?? 0;
+                    _selectedIndexMonster = EditorGUILayout.Popup("characterUid", _selectedIndexMonster, _nameMonster.ToArray());
+                    dialogueNode.characterUid = _struckTableMonsters.GetValueOrDefault(_selectedIndexMonster)?.Uid ?? 0;
                 }
                 else
                 {
@@ -168,14 +207,14 @@ namespace GGemCo.Editor
             GUILayout.Label("퀘스트", EditorStyles.boldLabel);
             if (dialogueNode != null)
             {
-                selectedIndexQuest = EditorGUILayout.Popup("startQuestUid", selectedIndexQuest, nameQuest.ToArray());
-                dialogueNode.startQuestUid = struckTableQuest.GetValueOrDefault(selectedIndexQuest)?.Uid ?? 0;
+                _selectedIndexQuest = EditorGUILayout.Popup("startQuestUid", _selectedIndexQuest, _nameQuest.ToArray());
+                dialogueNode.startQuestUid = _struckTableQuest.GetValueOrDefault(_selectedIndexQuest)?.Uid ?? 0;
             }
 
             EditorGUILayout.PropertyField(serializedObject.FindProperty("startQuestStep"));
             
             GUILayout.Space(20);
-            optionList.DoLayoutList();
+            _optionList.DoLayoutList();
 
             serializedObject.ApplyModifiedProperties();
         }

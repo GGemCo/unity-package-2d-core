@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 using GGemCo.Scripts;
 using UnityEditor;
 using UnityEngine;
@@ -9,12 +10,13 @@ namespace GGemCo.Editor
     /// <summary>
     /// 대사 생성툴
     /// </summary>
-    public class DialogueEditorWindow : EditorWindow
+    public class DialogueEditorWindowWindow : DefaultEditorWindow
     {
+        private const string Title = "대사 생성툴";
         public List<DialogueNode> nodes = new List<DialogueNode>();
         public DialogueNode selectedNode;
 
-        private Vector2 offset;
+        private Vector2 _offset;
         public DialogueNode draggingNode;
         public Vector2 draggingOffset;
         
@@ -22,7 +24,7 @@ namespace GGemCo.Editor
         public DialogueNode draggingFromDialogue;
         public DialogueNode draggingFromNode;
         public DialogueOption draggingFromOption;
-        private Vector2 draggingPosition;
+        private Vector2 _draggingPosition;
         public bool isDraggingConnection;
         
         // 줌 인,아웃
@@ -36,41 +38,94 @@ namespace GGemCo.Editor
         public NodeHandler NodeHandler;
         public FileHandler FileHandler;
         
-        private ConnectionHandler connectionHandler;
-        private ToolbarHandler toolbarHandler;
+        private ConnectionHandler _connectionHandler;
+        private ToolbarHandler _toolbarHandler;
+        
+        private TableDialogue _tableDialogue;
+        private readonly List<string> dialogueMemos = new List<string>();
+        private readonly Dictionary<int, StruckTableDialogue> dialogueInfos = new Dictionary<int, StruckTableDialogue>(); 
         
         [MenuItem(ConfigEditor.NameToolCreateDialogue, false, (int)ConfigEditor.ToolOrdering.CreateDialogue)]
         static void OpenWindow()
         {
-            GetWindow<DialogueEditorWindow>("대사 생성툴");
+            GetWindow<DialogueEditorWindowWindow>(Title);
         }
 
-        private void OnEnable()
+        protected override void OnEnable()
         {
-            ZoomPanHandler = new ZoomPanHandler(this);
-            NodeHandler = new NodeHandler(this);
-            connectionHandler = new ConnectionHandler(this);
-            FileHandler = new FileHandler(this);
-            toolbarHandler = new ToolbarHandler(this);
+            base.OnEnable();
+            _ = LoadAsync();
         }
+        private async Task LoadAsync()
+        {
+            try
+            {
+                // 병렬 로딩
+                var loadDialogueTask = TableLoaderManager.LoadDialogueTableAsync();
+                await Task.WhenAll(loadDialogueTask);
 
+                _tableDialogue = loadDialogueTask.Result;
+                
+                LoadCutsceneInfoData();
+                
+                ZoomPanHandler = new ZoomPanHandler(this);
+                NodeHandler = new NodeHandler(this);
+                _connectionHandler = new ConnectionHandler(this);
+                FileHandler = new FileHandler(this);
+                _toolbarHandler = new ToolbarHandler(this, dialogueMemos, dialogueInfos);
+                
+                IsLoading = false;
+                Repaint();
+            }
+            catch (System.Exception ex)
+            {
+                Debug.LogError($"[CreateItemTool] LoadAsync 예외 발생: {ex.Message}");
+                EditorUtility.DisplayDialog(Title, "아이템 테이블 로딩 중 오류가 발생했습니다.", "OK");
+                IsLoading = false;
+            }
+        }
+        private void LoadCutsceneInfoData()
+        {
+            if (_tableDialogue == null) return;
+            Dictionary<int, Dictionary<string, string>> npcDictionary = _tableDialogue.GetDatas();
+             
+            dialogueMemos.Clear();
+            dialogueInfos.Clear();
+            int index = 0;
+            // foreach 문을 사용하여 딕셔너리 내용을 출력
+            foreach (KeyValuePair<int, Dictionary<string, string>> outerPair in npcDictionary)
+            {
+                var info = _tableDialogue.GetDataByUid(outerPair.Key);
+                if (info.Uid <= 0) continue;
+                dialogueMemos.Add($"{info.Uid} - {info.Memo}");
+                dialogueInfos.TryAdd(index, info);
+                index++;
+            }
+        }
         private void OnGUI()
         {
             // DrawGrid(20, 0.2f, Color.gray);
             // DrawGrid(100, 0.4f, Color.gray);
+            
+            if (IsLoading)
+            {
+                EditorGUILayout.LabelField("테이블 로딩 중...");
+                return;
+            }
+            
             ZoomPanHandler?.HandleZoom();
             ZoomPanHandler?.HandlePan();
             
             GUILayout.BeginHorizontal();
 
-            toolbarHandler?.DrawToolbar();
+            _toolbarHandler?.DrawToolbar();
 
             // 오른쪽 메인 에디터 영역
             GUILayout.BeginVertical();
             
             NodeHandler?.DrawNodes();
             
-            connectionHandler?.DrawConnections();
+            _connectionHandler?.DrawConnections();
             NodeHandler?.HandleEvents(); // 추가
 
             ProcessEvents(Event.current);
@@ -90,7 +145,7 @@ namespace GGemCo.Editor
             Handles.BeginGUI();
             Handles.color = new Color(gridColor.r, gridColor.g, gridColor.b, gridOpacity);
 
-            Vector3 newOffset = new Vector3(offset.x % gridSpacing, offset.y % gridSpacing, 0);
+            Vector3 newOffset = new Vector3(_offset.x % gridSpacing, _offset.y % gridSpacing, 0);
 
             for (int i = 0; i < widthDivs; i++)
                 Handles.DrawLine(new Vector3(gridSpacing * i, 0, 0) + newOffset,

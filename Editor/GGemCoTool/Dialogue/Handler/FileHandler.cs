@@ -13,18 +13,18 @@ namespace GGemCo.Editor
     /// </summary>
     public class FileHandler
     {
-        private readonly DialogueEditorWindow editorWindow;
+        private readonly DialogueEditorWindowWindow _editorWindowWindow;
 
-        public FileHandler(DialogueEditorWindow window)
+        public FileHandler(DialogueEditorWindowWindow windowWindow)
         {
-            editorWindow = window;
+            _editorWindowWindow = windowWindow;
         }
 
         public void SaveToJson(int selectedQuestIndex, Dictionary<int, StruckTableDialogue> dialogueInfos)
         {
             DialogueData data = new DialogueData();
 
-            foreach (var node in editorWindow.nodes)
+            foreach (var node in _editorWindowWindow.nodes)
             {
                 DialogueNodeData nodeData = new DialogueNodeData
                 {
@@ -67,7 +67,7 @@ namespace GGemCo.Editor
                     if (string.IsNullOrEmpty(content)) return;
                     DialogueData data = JsonConvert.DeserializeObject<DialogueData>(content);
 
-                    editorWindow.nodes.Clear();
+                    _editorWindowWindow.nodes.Clear();
 
                     foreach (var nodeData in data.nodes)
                     {
@@ -83,7 +83,7 @@ namespace GGemCo.Editor
                         node.nextNodeGuid = nodeData.nextNodeGuid;
                         node.startQuestUid = nodeData.startQuestUid;
                         node.startQuestStep = nodeData.startQuestStep;
-                        editorWindow.nodes.Add(node);
+                        _editorWindowWindow.nodes.Add(node);
                     }
                 }
                 else

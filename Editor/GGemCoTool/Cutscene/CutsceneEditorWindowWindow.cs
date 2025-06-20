@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.IO;
+using System.Threading.Tasks;
 using GGemCo.Scripts;
 using Newtonsoft.Json;
 using UnityEditor;
@@ -9,75 +10,111 @@ using UnityEngine.Timeline;
 
 namespace GGemCo.Editor
 {
-    public class CutsceneEditorWindow : EditorWindow
+    public class CutsceneEditorWindowWindow : DefaultEditorWindow
     {
         private const string Title = "연출툴";
-        private CutsceneData data;
-        private ReorderableList list;
-        private const string IMPORT_FOLDER = "Assets/_test";
+        private CutsceneData _data;
+        private ReorderableList _list;
+        private const string ImportFolder = "Assets/_test";
 
-        private TextAsset selectedJson;
+        private TextAsset _selectedJson;
         
-        private TableLoaderManager tableLoaderManager;
-        private TableCutscene tableCutscene;
-        private int selectedCutsceneIndex;
+        private TableCutscene _tableCutscene;
+        private int _selectedCutsceneIndex;
         
-        private List<string> cutsceneMemos = new List<string>();
-        private Dictionary<int, StruckTableCutscene> cutsceneInfos = new Dictionary<int, StruckTableCutscene>(); 
+        private readonly List<string> _cutsceneMemos = new List<string>();
+        private readonly Dictionary<int, StruckTableCutscene> _cutsceneInfos = new Dictionary<int, StruckTableCutscene>(); 
         
         [MenuItem(ConfigEditor.NameToolCutscene, false, (int)ConfigEditor.ToolOrdering.Cutscene)]
-        static void Open() => GetWindow<CutsceneEditorWindow>(Title);
+        static void Open() => GetWindow<CutsceneEditorWindowWindow>(Title);
 
-        private void OnEnable()
+        protected override void OnEnable()
         {
-            
-            tableLoaderManager = new TableLoaderManager();
-            tableCutscene = tableLoaderManager.LoadCutsceneTable();
-            LoadCutsceneInfoData();
+            base.OnEnable();
+            _selectedCutsceneIndex = 0;
+            _ = LoadAsync();
+        }
+        private async Task LoadAsync()
+        {
+            try
+            {
+                _tableCutscene = await TableLoaderManager.LoadCutsceneTableAsync();
+                if (_tableCutscene == null)
+                {
+                    EditorUtility.DisplayDialog(Title, "Cutscene 테이블을 불러오지 못했습니다.", "OK");
+                    return;
+                }
+                LoadCutsceneInfoData();
+                IsLoading = false;
+                Repaint();
+            }
+            catch (System.Exception ex)
+            {
+                Debug.LogError($"[CreateItemTool] LoadAsync 예외 발생: {ex.Message}");
+                EditorUtility.DisplayDialog(Title, "아이템 테이블 로딩 중 오류가 발생했습니다.", "OK");
+                IsLoading = false;
+            }
         }
         /// <summary>
         /// npc 정보 불러오기
         /// </summary>
         private void LoadCutsceneInfoData()
         {
-            Dictionary<int, Dictionary<string, string>> npcDictionary = tableCutscene.GetDatas();
+            Dictionary<int, Dictionary<string, string>> npcDictionary = _tableCutscene.GetDatas();
              
-            cutsceneMemos.Clear();
-            cutsceneInfos.Clear();
+            _cutsceneMemos.Clear();
+            _cutsceneInfos.Clear();
             int index = 0;
             // foreach 문을 사용하여 딕셔너리 내용을 출력
             foreach (KeyValuePair<int, Dictionary<string, string>> outerPair in npcDictionary)
             {
-                var info = tableCutscene.GetDataByUid(outerPair.Key);
+                var info = _tableCutscene.GetDataByUid(outerPair.Key);
                 if (info.Uid <= 0) continue;
-                cutsceneMemos.Add($"{info.Uid} - {info.Memo}");
-                cutsceneInfos.TryAdd(index, info);
+                _cutsceneMemos.Add($"{info.Uid} - {info.Memo}");
+                _cutsceneInfos.TryAdd(index, info);
                 index++;
             }
+            _selectedCutsceneIndex = 0; // 추가
         }
 
         private void OnGUI()
         {
-            selectedCutsceneIndex = EditorGUILayout.Popup("연출 선택", selectedCutsceneIndex, cutsceneMemos.ToArray());
+            if (IsLoading)
+            {
+                EditorGUILayout.LabelField("Cutscene 테이블 로딩 중...");
+                return;
+            }
+            // 방어 코드 추가
+            if (_cutsceneMemos.Count == 0)
+            {
+                EditorGUILayout.LabelField("등록된 연출이 없습니다.");
+                return;
+            }
+
+            if (_selectedCutsceneIndex >= _cutsceneMemos.Count)
+            {
+                _selectedCutsceneIndex = 0;
+            }
+            _selectedCutsceneIndex = EditorGUILayout.Popup("연출 선택", _selectedCutsceneIndex, _cutsceneMemos.ToArray());
             if (GUILayout.Button("연출 플레이"))
             {
-                if (SceneGame.Instance == null)
+                if (!SceneGame.Instance)
                 {
                     EditorUtility.DisplayDialog(Title, "게임을 실행해주세요.", "OK");
                     return;
                 }
-                var info = cutsceneInfos.GetValueOrDefault(selectedCutsceneIndex);
+                var info = _cutsceneInfos.GetValueOrDefault(_selectedCutsceneIndex);
                 SceneGame.Instance.CutsceneManager.PlayCutscene(info.Uid);
             }
             
             GUILayout.Space(20);
             GUILayout.Label("JSON -> Timeline 생성", EditorStyles.boldLabel);
-            selectedJson = (TextAsset)EditorGUILayout.ObjectField("JSON 파일", selectedJson, typeof(TextAsset), false);
+            _selectedJson = (TextAsset)EditorGUILayout.ObjectField("JSON 파일", _selectedJson, typeof(TextAsset), false);
 
             if (GUILayout.Button("JSON으로부터 타임라인 생성"))
             {
-                if (selectedJson != null)
-                    ImportJsonToTimeline(selectedJson);
+                if (_selectedJson)
+                    ImportJsonToTimeline(_selectedJson);
                 else
                     Debug.LogWarning("JSON 파일을 선택해주세요.");
             }
@@ -87,10 +124,10 @@ namespace GGemCo.Editor
             CutsceneData cutsceneData = JsonConvert.DeserializeObject<CutsceneData>(jsonAsset.text);
             string assetName = Path.GetFileNameWithoutExtension(AssetDatabase.GetAssetPath(jsonAsset));
 
-            if (!Directory.Exists(IMPORT_FOLDER))
-                Directory.CreateDirectory(IMPORT_FOLDER);
+            if (!Directory.Exists(ImportFolder))
+                Directory.CreateDirectory(ImportFolder);
 
-            string timelinePath = Path.Combine(IMPORT_FOLDER, $"{assetName}.playable");
+            string timelinePath = Path.Combine(ImportFolder, $"{assetName}.playable");
             var timelineAsset = ScriptableObject.CreateInstance<TimelineAsset>();
             AssetDatabase.CreateAsset(timelineAsset, timelinePath);
 
@@ -118,10 +155,8 @@ namespace GGemCo.Editor
                 clip.duration = evt.duration > 0 ? evt.duration : 1.0; // 최소 duration 보장
 
                 var asset = clip.asset as CutsceneEventClip;
-                if (asset != null)
-                {
-                    asset.SetEvent(evt);
-                }
+                if (!asset) continue;
+                asset.SetEvent(evt);
             }
 
             EditorUtility.SetDirty(timelineAsset);

@@ -6,6 +6,8 @@ namespace GGemCo.Editor
     {
         private readonly SettingScriptableObject _settingScriptableObject = new SettingScriptableObject();
         private readonly SettingTable _settingTable = new SettingTable();
+        private readonly SettingCharacter _settingCharacter = new SettingCharacter();
+        private readonly SettingMap _settingMap = new SettingMap();
 
         [MenuItem(ConfigEditor.NameToolAddressableSetting, false, (int)ConfigEditor.ToolOrdering.SettingAddressable)]
         public static void ShowWindow()
@@ -19,6 +21,10 @@ namespace GGemCo.Editor
             _settingScriptableObject.OnGUI();
             EditorGUILayout.Space(10);
             _settingTable.OnGUI();
+            EditorGUILayout.Space(10);
+            _settingMap.OnGUI();
+            EditorGUILayout.Space(10);
+            _settingCharacter.OnGUI();
         }
     }
 }
