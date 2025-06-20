@@ -16,7 +16,7 @@ namespace GGemCo.Scripts
         }
         [SerializeField] private GameObject[] popupTypePrefabs;
         [SerializeField] private Transform canvasPopup; // 팝업이 들어갈 canvas
-        [SerializeField] private GameObject elementRewardItem;
+        private GameObject elementRewardItem;
     
         private readonly Queue<DefaultPopup> popupQueue = new Queue<DefaultPopup>();
         private DefaultPopup currentDefaultPopup;

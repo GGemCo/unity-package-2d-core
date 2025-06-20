@@ -99,5 +99,8 @@ namespace GGemCo.Scripts
             ($"{LabelTable}_{ConfigTableFileName.Quest}", $"{ConfigTableFileName.Path}/{ConfigTableFileName.Quest}.txt"),
         };
 
+        // 맵
+        public const string LabelMap = "GGemCo_Map";
+        public const string PathMap = "Assets/GGemCo/DataAddressable/Maps";
     }
 }

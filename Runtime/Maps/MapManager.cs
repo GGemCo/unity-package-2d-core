@@ -338,7 +338,9 @@ namespace GGemCo.Scripts
                 yield break;
             }
             string path = GetFilePath(MapConstants.FileNameTilemap);
+            
             GameObject prefab = Resources.Load<GameObject>(path);
+            
             if (prefab == null)
             {
                 SetLoadFailed($"타일맵 prefab 이 없습니다. path: {path} / currentMapUid: {currentMapUid}");

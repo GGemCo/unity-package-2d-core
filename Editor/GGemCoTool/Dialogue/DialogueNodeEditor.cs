@@ -71,7 +71,7 @@ namespace GGemCo.Editor
                 };
 
                 DialogueNode dialogueNode = serializedObject.targetObject as DialogueNode;
-                if (dialogueNode != null)
+                if (dialogueNode)
                 {
                     _selectedIndexNpc = dialogueNode.characterUid > 0
                         ? _nameNpc.FindIndex(x => x.Contains(dialogueNode.characterUid.ToString()))
@@ -107,9 +107,7 @@ namespace GGemCo.Editor
             }
             catch (System.Exception ex)
             {
-                Debug.LogError($"[CreateItemTool] LoadAsync 예외 발생: {ex.Message}");
-                EditorUtility.DisplayDialog(Title, "아이템 테이블 로딩 중 오류가 발생했습니다.", "OK");
-                IsLoading = false;
+                ShowLoadTableException(Title, ex);
             }
         }
 
@@ -180,7 +178,7 @@ namespace GGemCo.Editor
             
             EditorGUILayout.PropertyField(serializedObject.FindProperty("characterType"));
             DialogueNode dialogueNode = serializedObject.targetObject as DialogueNode;
-            if (dialogueNode != null)
+            if (dialogueNode)
             {
                 if (dialogueNode.characterType == CharacterConstants.Type.Npc)
                 {
@@ -205,7 +203,7 @@ namespace GGemCo.Editor
 
             GUILayout.Space(20);
             GUILayout.Label("퀘스트", EditorStyles.boldLabel);
-            if (dialogueNode != null)
+            if (dialogueNode)
             {
                 _selectedIndexQuest = EditorGUILayout.Popup("startQuestUid", _selectedIndexQuest, _nameQuest.ToArray());
                 dialogueNode.startQuestUid = _struckTableQuest.GetValueOrDefault(_selectedIndexQuest)?.Uid ?? 0;

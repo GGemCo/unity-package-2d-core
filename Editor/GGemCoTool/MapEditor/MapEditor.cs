@@ -3,6 +3,8 @@ using System.Threading.Tasks;
 using GGemCo.Scripts;
 using UnityEditor;
 using UnityEngine;
+using UnityEngine.AddressableAssets;
+using UnityEngine.ResourceManagement.AsyncOperations;
 
 namespace GGemCo.Editor
 {
@@ -11,15 +13,15 @@ namespace GGemCo.Editor
         private List<CharacterRegenData> _npcList;
         private List<CharacterRegenData> _monsterDatas;
         private List<WarpData> _warpDatas;
-        private static MapTileCommon _defaultMap;
+        public MapTileCommon defaultMap;
         private static GameObject _gridTileMap;
         private static GameObject _player;
 
-        private CharacterManager _characterManager;
+        public CharacterManager CharacterManager;
         private static TableMap _tableMap;
         private static TableNpc _tableNpc;
-        private static TableMonster _tableMonster;
-        private static TableAnimation _tableAnimation;
+        public TableMonster TableMonster;
+        public TableAnimation TableAnimation;
 
         private const string Title = "Map 배치툴";
         private readonly string _jsonFolderPath = Application.dataPath+"/Resources/Maps/";
@@ -41,12 +43,15 @@ namespace GGemCo.Editor
         private static List<string> _nameMap;
         private static readonly Dictionary<int, StruckTableMap> StruckTableMaps = new Dictionary<int, StruckTableMap>();
         
-        private int _loadMapUid = 0;
-        private int _previousIndexMap = 0;
+        private int _loadMapUid;
+        private int _previousIndexMap;
         private int _selectedIndexNpc;
         private int _selectedIndexMonster;
         private int _selectedIndexMap;
         private Vector2 _scrollPos = Vector2.zero;
+
+        private bool _isLoadingCharacter;
+        public AddressableMonsterLoader AddressableMonsterLoader;
 
         [MenuItem(ConfigEditor.NameToolMapExporter, false, (int)ConfigEditor.ToolOrdering.MapExporter)]
         public static void ShowWindow()
@@ -58,6 +63,9 @@ namespace GGemCo.Editor
         protected override void OnEnable()
         {
             base.OnEnable();
+            _isLoadingCharacter = false;
+            _loadMapUid = 0;
+            _previousIndexMap = 0;
             _selectedIndexNpc = 0;
             _selectedIndexMonster = 0;
             _selectedIndexMap = 0;
@@ -78,7 +86,7 @@ namespace GGemCo.Editor
         {
             // 타일맵을 추가할 grid
             _gridTileMap = GameObject.Find(ConfigTags.GetValue(ConfigTags.Keys.GridTileMap));
-            if (_gridTileMap == null)
+            if (!_gridTileMap)
             {
                 _gridTileMap = new GameObject(ConfigTags.GetValue(ConfigTags.Keys.GridTileMap))
                 {
@@ -117,28 +125,29 @@ namespace GGemCo.Editor
 
                 _tableMap = loadMapTask.Result;
                 _tableNpc = loadNpcTask.Result;
-                _tableMonster = loadMonsterTask.Result;
-                _tableAnimation = loadSpineTask.Result;
+                TableMonster = loadMonsterTask.Result;
+                TableAnimation = loadSpineTask.Result;
                 
-                _characterManager = new CharacterManager();
-                _characterManager.Initialize(_tableNpc, _tableMonster, _tableAnimation);
+                CharacterManager = new CharacterManager();
+                CharacterManager.Initialize(_tableNpc, TableMonster, TableAnimation);
             
-                _npcExporter.Initialize(_tableNpc, _tableAnimation, defaultMap, _characterManager);
-                _monsterExporter.Initialize(_tableMonster, _tableAnimation, defaultMap, _characterManager);
+                _npcExporter.Initialize(_tableNpc, TableAnimation, defaultMap, CharacterManager);
+                _monsterExporter.Initialize(this);
                 _warpExporter.Initialize(defaultMap);
             
                 LoadInfoDataNpc();
                 LoadInfoDataMonster();
                 LoadInfoDataMap();
                 
-                IsLoading = false;
+                AddressableMonsterLoader = new AddressableMonsterLoader();
+                AddressableMonsterLoader.LoadAllMonster();
+                
+                isLoading = false;
                 Repaint();
             }
             catch (System.Exception ex)
             {
-                Debug.LogError($"[CreateItemTool] LoadAsync 예외 발생: {ex.Message}");
-                EditorUtility.DisplayDialog(Title, "아이템 테이블 로딩 중 오류가 발생했습니다.", "OK");
-                IsLoading = false;
+                ShowLoadTableException(Title, ex);
             }
         }
         private void OnDestroy()
@@ -160,13 +169,19 @@ namespace GGemCo.Editor
 
         private void OnGUI()
         {
-            if (IsLoading)
+            if (isLoading)
             {
                 EditorGUILayout.LabelField("테이블 로딩 중...");
                 return;
             }
             
             if (_nameNpc == null) return;
+            
+            if (_isLoadingCharacter)
+            {
+                EditorGUILayout.LabelField("json 로딩 중...");
+                return;
+            }
             
             _scrollPos = EditorGUILayout.BeginScrollView(_scrollPos);
             
@@ -178,19 +193,34 @@ namespace GGemCo.Editor
             {
                 // 선택이 바뀌었을 때 실행할 코드
                 // Debug.Log($"선택이 변경되었습니다: {questTitle[selectedQuestIndex]}");
-                if (LoadJsonData())
+                // if (_isLoadingCharacter)
+                // {
+                //     _previousIndexMap = _selectedIndexMap;
+                // }
+                // else
+                // {
+                //     _selectedIndexMap = _previousIndexMap;
+                // }
+                if (!_isLoadingCharacter)
                 {
-                    _previousIndexMap = _selectedIndexMap;
-                }
-                else
-                {
-                    _selectedIndexMap = _previousIndexMap;
+                    bool result = EditorUtility.DisplayDialog("불러오기", "현재 불러온 내용이 초기화 됩니다.\n계속 진행할가요?", "네", "아니요");
+                    if (!result)
+                    {
+                        _selectedIndexMap = _previousIndexMap;
+                    }
+                    else 
+                    {
+                        _ = LoadJsonData();
+                    }
                 }
             }
             
             GUILayout.BeginHorizontal();
             // 불러오기 버튼
-            if (GUILayout.Button("불러오기")) LoadJsonData();
+            if (GUILayout.Button("불러오기"))
+            {
+                _ = LoadJsonData();
+            }
             if (GUILayout.Button("저장하기")) ExportDataToJson();
             GUILayout.EndHorizontal();
             
@@ -234,7 +264,7 @@ namespace GGemCo.Editor
             // 태그가 'Map'인 오브젝트를 찾습니다.
             GameObject mapObject = GameObject.FindGameObjectWithTag(ConfigTags.GetValue(ConfigTags.Keys.Map));
         
-            if (mapObject == null)
+            if (!mapObject)
             {
                 Debug.LogWarning("No GameObject with the tag 'Map' found in the scene.");
                 return;
@@ -247,22 +277,29 @@ namespace GGemCo.Editor
             EditorUtility.DisplayDialog(Title, "Json 저장하기 완료", "OK");
         }
 
-        private bool LoadJsonData()
+        private async Task LoadJsonData()
         {
-            bool result = EditorUtility.DisplayDialog("불러오기", "현재 불러온 내용이 초기화 됩니다.\n계속 진행할가요?", "네", "아니요");
-            if (!result) return false;
+            // bool result = EditorUtility.DisplayDialog("불러오기", "현재 불러온 내용이 초기화 됩니다.\n계속 진행할가요?", "네", "아니요");
+            // if (!result)
+            // {
+            //     _selectedIndexMap = _previousIndexMap;
+            //     return;
+            // }
             var mapData = _tableMap.GetDataByUid(_loadMapUid);
             
-            LoadTileData();
-            _npcExporter.LoadNpcData(ResourcesFolderPath + mapData.FolderName + "/" + MapConstants.FileNameRegenNpc);
-            _monsterExporter.LoadMonsterData(ResourcesFolderPath + mapData.FolderName + "/" + MapConstants.FileNameRegenMonster);
-            _warpExporter.LoadWarpData(ResourcesFolderPath + mapData.FolderName + "/" + MapConstants.FileNameWarp);
-            return true;
+            _isLoadingCharacter = true;
+            
+            await LoadTileData();
+            // _npcExporter.LoadNpcData(ResourcesFolderPath + mapData.FolderName + "/" + MapConstants.FileNameRegenNpc);
+            await _monsterExporter.LoadMonsterData($"{ConfigAddressables.LabelMap}_{mapData.FolderName}_{MapConstants.FileNameRegenMonster}");
+            // _warpExporter.LoadWarpData(ResourcesFolderPath + mapData.FolderName + "/" + MapConstants.FileNameWarp);
+            _isLoadingCharacter = false;
+            _previousIndexMap = _selectedIndexMap;
         }
         /// <summary>
         /// MapManager.cs:25
         /// </summary>
-        private void LoadTileData()
+        private async Task LoadTileData()
         {
             var mapData = _tableMap.GetDataByUid(_loadMapUid);
             if (mapData.Uid <= 0)
@@ -277,26 +314,53 @@ namespace GGemCo.Editor
                 DestroyImmediate(map);
             }
 
-            string tilemapPath = ResourcesFolderPath + mapData.FolderName + "/" + MapConstants.FileNameTilemap;
-            GameObject prefab = Resources.Load<GameObject>(tilemapPath);
-            if (prefab == null)
+            // Addressables 키 생성 (예: "GGemCo_Map_Map1_Tilemap" 등으로 라벨링 했다면 해당 이름으로)
+            string addressKey = $"{ConfigAddressables.LabelMap}_{mapData.FolderName}_{MapConstants.FileNameTilemap}";
+    
+            try
             {
-                GcLogger.LogError("맵 프리팹이 없습니다. mapUid : " + _loadMapUid + " / path : "+tilemapPath);
-                return;
-            }
+                var handle = Addressables.LoadAssetAsync<GameObject>(addressKey);
+                await handle.Task;
 
-            if (_gridTileMap == null)
-            {
-                _gridTileMap = GameObject.Find(ConfigTags.GetValue(ConfigTags.Keys.GridTileMap));
+                if (handle.Status != AsyncOperationStatus.Succeeded || !handle.Result)
+                {
+                    GcLogger.LogError("맵 프리팹 로드 실패. addressKey: " + addressKey);
+                    return;
+                }
+
+                GameObject prefab = handle.Result;
+
+                if (!_gridTileMap)
+                {
+                    _gridTileMap = GameObject.Find(ConfigTags.GetValue(ConfigTags.Keys.GridTileMap));
+                }
+
+                GameObject currentMap = PrefabUtility.InstantiatePrefab(prefab) as GameObject;
+                if (_gridTileMap && currentMap)
+                {
+                    currentMap.transform.SetParent(_gridTileMap.transform, false);
+                }
+
+                defaultMap = currentMap?.GetComponent<MapTileCommon>();
+                if (defaultMap)
+                {
+                    defaultMap.InitComponents();
+                    defaultMap.InitTagSortingLayer();
+                    defaultMap.Initialize(mapData.Uid, mapData.Name, mapData.Type, mapData.Subtype);
+
+                    _npcExporter.SetDefaultMap(defaultMap);
+                    _monsterExporter.SetDefaultMap(defaultMap);
+                    _warpExporter.SetDefaultMap(defaultMap);
+                }
+                else
+                {
+                    Debug.LogError("MapTileCommon 컴포넌트를 찾을 수 없습니다.");
+                }
             }
-            GameObject currentMap = Instantiate(prefab, _gridTileMap.transform);
-            _defaultMap = currentMap.GetComponent<MapTileCommon>();
-            _defaultMap.InitComponents();
-            _defaultMap.InitTagSortingLayer();
-            _defaultMap.Initialize(mapData.Uid, mapData.Name, mapData.Type, mapData.Subtype);
-            _npcExporter.SetDefaultMap(_defaultMap);
-            _monsterExporter.SetDefaultMap(_defaultMap);
-            _warpExporter.SetDefaultMap(_defaultMap);
+            catch (System.Exception e)
+            {
+                Debug.LogError($"맵 프리팹 로드 중 예외 발생 {e.Message}");
+            }
         }
         /// <summary>
         /// npc 정보 불러오기
@@ -318,12 +382,12 @@ namespace GGemCo.Editor
         /// </summary>
         private void LoadInfoDataMonster()
         {
-            Dictionary<int, Dictionary<string, string>> monsterDictionary = _tableMonster.GetDatas();
+            Dictionary<int, Dictionary<string, string>> monsterDictionary = TableMonster.GetDatas();
              
             _nameMonster = new List<string>();
             foreach (KeyValuePair<int, Dictionary<string, string>> outerPair in monsterDictionary)
             {
-                var info = _tableMonster.GetDataByUid(outerPair.Key);
+                var info = TableMonster.GetDataByUid(outerPair.Key);
                 if (info.Uid <= 0) continue;
                 _nameMonster.Add($"{info.Uid} - {info.Name}");
             }

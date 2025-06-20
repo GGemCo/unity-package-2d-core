@@ -10,7 +10,6 @@ namespace GGemCo.Scripts
         public int Uid;
         public string Name;
         public string PrefabPath;
-        public GameObject Prefab;
         public float MoveStep;
         public float Width;
         public float Height;
@@ -39,7 +38,6 @@ namespace GGemCo.Scripts
                 Uid = int.Parse(data["Uid"]),
                 Name = data["Name"],
                 PrefabPath = data["PrefabPath"],
-                Prefab = LoadPrefab(data["PrefabPath"]),
                 MoveStep = float.Parse(data["MoveStep"]),
                 AttackRange = int.Parse(data["AttackRange"]),
                 Width = float.Parse(data["Width"]),
@@ -47,16 +45,6 @@ namespace GGemCo.Scripts
                 HitAreaSize = ConvertVector2(data["HitAreaSize"]),
                 DefaultFacing = ConvertFacing(data["DefaultFacing"]),
             };
-        }
-
-        public GameObject GetPrefab(int uid) {
-            var info = GetDataByUid(uid);
-            if (info == null)
-            {
-                GcLogger.LogError("animation 테이블에 프리팹이 없습니다. uid: "+uid);
-                return null;
-            }
-            return info.Prefab;
         }
     }
 }

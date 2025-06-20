@@ -42,8 +42,8 @@ namespace GGemCo.Editor
         private ToolbarHandler _toolbarHandler;
         
         private TableDialogue _tableDialogue;
-        private readonly List<string> dialogueMemos = new List<string>();
-        private readonly Dictionary<int, StruckTableDialogue> dialogueInfos = new Dictionary<int, StruckTableDialogue>(); 
+        private readonly List<string> _dialogueMemos = new List<string>();
+        private readonly Dictionary<int, StruckTableDialogue> _dialogueInfos = new Dictionary<int, StruckTableDialogue>(); 
         
         [MenuItem(ConfigEditor.NameToolCreateDialogue, false, (int)ConfigEditor.ToolOrdering.CreateDialogue)]
         static void OpenWindow()
@@ -72,16 +72,14 @@ namespace GGemCo.Editor
                 NodeHandler = new NodeHandler(this);
                 _connectionHandler = new ConnectionHandler(this);
                 FileHandler = new FileHandler(this);
-                _toolbarHandler = new ToolbarHandler(this, dialogueMemos, dialogueInfos);
+                _toolbarHandler = new ToolbarHandler(this, _dialogueMemos, _dialogueInfos);
                 
-                IsLoading = false;
+                isLoading = false;
                 Repaint();
             }
             catch (System.Exception ex)
             {
-                Debug.LogError($"[CreateItemTool] LoadAsync 예외 발생: {ex.Message}");
-                EditorUtility.DisplayDialog(Title, "아이템 테이블 로딩 중 오류가 발생했습니다.", "OK");
-                IsLoading = false;
+                ShowLoadTableException(Title, ex);
             }
         }
         private void LoadCutsceneInfoData()
@@ -89,16 +87,16 @@ namespace GGemCo.Editor
             if (_tableDialogue == null) return;
             Dictionary<int, Dictionary<string, string>> npcDictionary = _tableDialogue.GetDatas();
              
-            dialogueMemos.Clear();
-            dialogueInfos.Clear();
+            _dialogueMemos.Clear();
+            _dialogueInfos.Clear();
             int index = 0;
             // foreach 문을 사용하여 딕셔너리 내용을 출력
             foreach (KeyValuePair<int, Dictionary<string, string>> outerPair in npcDictionary)
             {
                 var info = _tableDialogue.GetDataByUid(outerPair.Key);
                 if (info.Uid <= 0) continue;
-                dialogueMemos.Add($"{info.Uid} - {info.Memo}");
-                dialogueInfos.TryAdd(index, info);
+                _dialogueMemos.Add($"{info.Uid} - {info.Memo}");
+                _dialogueInfos.TryAdd(index, info);
                 index++;
             }
         }
@@ -107,7 +105,7 @@ namespace GGemCo.Editor
             // DrawGrid(20, 0.2f, Color.gray);
             // DrawGrid(100, 0.4f, Color.gray);
             
-            if (IsLoading)
+            if (isLoading)
             {
                 EditorGUILayout.LabelField("테이블 로딩 중...");
                 return;
@@ -200,7 +198,7 @@ namespace GGemCo.Editor
             while (true)
             {
                 var parent = nodes.FirstOrDefault(n => n.options.Any(o => o.nextNodeGuid == current.guid));
-                if (parent == null) break;
+                if (!parent) break;
                 current = parent;
                 depth++;
             }

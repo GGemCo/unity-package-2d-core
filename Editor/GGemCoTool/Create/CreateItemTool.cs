@@ -44,20 +44,18 @@ namespace GGemCo.Editor
 
                 _itemDictionary = _tableItem.GetDatas();
                 LoadItemInfoData();
-                IsLoading = false;
+                isLoading = false;
                 Repaint();
             }
             catch (System.Exception ex)
             {
-                Debug.LogError($"[CreateItemTool] LoadAsync 예외 발생: {ex.Message}");
-                EditorUtility.DisplayDialog(Title, "아이템 테이블 로딩 중 오류가 발생했습니다.", "OK");
-                IsLoading = false;
+                ShowLoadTableException(Title, ex);
             }
         }
 
         private void OnGUI()
         {
-            if (IsLoading)
+            if (isLoading)
             {
                 EditorGUILayout.LabelField("아이템 테이블 로딩 중...");
                 return;

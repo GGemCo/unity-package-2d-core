@@ -1,6 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Runtime.InteropServices.WindowsRuntime;
+using System.Threading.Tasks;
 using UnityEngine;
+using UnityEngine.AddressableAssets;
+using UnityEngine.ResourceManagement.AsyncOperations;
 
 namespace GGemCo.Scripts
 {
@@ -139,18 +143,44 @@ namespace GGemCo.Scripts
             }
             return position;
         }
-        protected GameObject LoadPrefab(string prefabPath) {
-            if (prefabPath == "") {
-                GcLogger.LogError("prefab 경로가 없습니다. prefabPath: "+prefabPath+"");
-                return null;
-            }
-            GameObject prefab = Resources.Load<GameObject>(prefabPath);
-            if (prefab == null) {
-                GcLogger.LogError("prefab 오브젝트가 없습니다. prefabPath: "+prefabPath);
-                return null;
-            }
-            return prefab;
-        }
+        // protected GameObject LoadPrefab(string prefabPath) {
+        //     if (prefabPath == "") {
+        //         GcLogger.LogError("prefab 경로가 없습니다. prefabPath: "+prefabPath+"");
+        //         return null;
+        //     }
+        //
+        //     var loadPrefab = LoadPrefabAsync(prefabPath);
+        //     GameObject prefab = loadPrefab.Result;
+        //     
+        //     if (prefab == null) {
+        //         GcLogger.LogError("prefab 오브젝트가 없습니다. prefabPath: "+prefabPath);
+        //         return null;
+        //     }
+        //     return prefab;
+        // }
+        //
+        // private async Task<GameObject> LoadPrefabAsync(string addressKey)
+        // {
+        //     try
+        //     {
+        //         var handle = Addressables.LoadAssetAsync<GameObject>(addressKey);
+        //         await handle.Task;
+        //
+        //         if (handle.Status != AsyncOperationStatus.Succeeded || !handle.Result)
+        //         {
+        //             Debug.LogError("맵 프리팹 로드 실패. addressKey: " + addressKey);
+        //             return null;
+        //         }
+        //
+        //         GameObject prefab = handle.Result;
+        //         return prefab;
+        //     }
+        //     catch (Exception ex)
+        //     {
+        //         Debug.LogError($"설정 로딩 중 오류 발생: {ex.Message}");
+        //         return null;
+        //     }
+        // }
 
         protected bool ConvertBoolean(string value)
         {

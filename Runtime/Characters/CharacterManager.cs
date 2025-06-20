@@ -8,16 +8,16 @@ namespace GGemCo.Scripts
     /// </summary>
     public class CharacterManager
     {
-        private readonly List<GameObject> characters = new List<GameObject>();
-        private TableNpc tableNpc;
-        private TableMonster tableMonster;
-        private TableAnimation tableAnimation;
+        private readonly List<GameObject> _characters = new List<GameObject>();
+        private TableNpc _tableNpc;
+        private TableMonster _tableMonster;
+        private TableAnimation _tableAnimation;
 
         public void Initialize(TableNpc pTableNpc, TableMonster pTableMonster, TableAnimation pTableAnimation)
         {
-            tableNpc = pTableNpc;
-            tableMonster = pTableMonster;
-            tableAnimation = pTableAnimation;
+            _tableNpc = pTableNpc;
+            _tableMonster = pTableMonster;
+            _tableAnimation = pTableAnimation;
         }
 
         /// <summary>
@@ -67,7 +67,7 @@ namespace GGemCo.Scripts
             }
 
             characterBase.CharacterAnimationController = iCharacterAnimationController;
-            characters.Add(characterObj);
+            _characters.Add(characterObj);
             return characterObj;
         }
 
@@ -85,39 +85,61 @@ namespace GGemCo.Scripts
         public GameObject CreateNpc(int uid, CharacterRegenData regenData = null)
         {
             if (uid <= 0) return null;
-            var infoNpc = tableNpc.GetDataByUid(uid);
+            var infoNpc = _tableNpc.GetDataByUid(uid);
             if (infoNpc == null) return null;
-            GameObject prefab = tableAnimation.GetPrefab(infoNpc.SpineUid);
-            if (prefab == null) return null;
-            
-            GameObject npc = CreateCharacter(CharacterConstants.Type.Npc, prefab, regenData);
-            if (npc == null) return null;
-            
-            var info = tableNpc.GetDataByUid(uid);
-            if (info == null) return null;
-            
-            npc.GetComponent<Npc>()?.SetScale(info.Scale);
-            
-            return npc;
+            // kdh
+            return null;
+            // GameObject prefab = _tableAnimation.GetPrefab(infoNpc.SpineUid);
+            // if (prefab == null) return null;
+            //
+            // GameObject npc = CreateCharacter(CharacterConstants.Type.Npc, prefab, regenData);
+            // if (npc == null) return null;
+            //
+            // var info = _tableNpc.GetDataByUid(uid);
+            // if (info == null) return null;
+            //
+            // npc.GetComponent<Npc>()?.SetScale(info.Scale);
+            //
+            // return npc;
         }
 
-        public GameObject CreateMonster(int uid, CharacterRegenData regenData = null)
+        public GameObject CreateMonster2(int uid, CharacterRegenData regenData = null, GameObject prefab = null)
         {
             if (uid <= 0) return null;
-            var infoMonster = tableMonster.GetDataByUid(uid);
+            var infoMonster = _tableMonster.GetDataByUid(uid);
             if (infoMonster == null) return null;
-            GameObject prefab = tableAnimation.GetPrefab(infoMonster.SpineUid);
-            if (prefab == null) return null;
+            if (!prefab) return null;
             
             GameObject monster = CreateCharacter(CharacterConstants.Type.Monster, prefab, regenData);
-            if (monster == null) return null;
+            if (!monster) return null;
             
-            var info = tableMonster.GetDataByUid(uid);
+            var info = _tableMonster.GetDataByUid(uid);
             if (info == null) return null;
             
             monster.GetComponent<Monster>()?.SetScale(info.Scale);
             
             return monster;
+        }
+
+        public GameObject CreateMonster(int uid, CharacterRegenData regenData = null)
+        {
+            if (uid <= 0) return null;
+            var infoMonster = _tableMonster.GetDataByUid(uid);
+            if (infoMonster == null) return null;
+            // kdh
+            return null;
+            // GameObject prefab = _tableAnimation.GetPrefab(infoMonster.SpineUid);
+            // if (prefab == null) return null;
+            //
+            // GameObject monster = CreateCharacter(CharacterConstants.Type.Monster, prefab, regenData);
+            // if (monster == null) return null;
+            //
+            // var info = _tableMonster.GetDataByUid(uid);
+            // if (info == null) return null;
+            //
+            // monster.GetComponent<Monster>()?.SetScale(info.Scale);
+            //
+            // return monster;
         }
 
         public GameObject CreateCharacter(CharacterConstants.Type type, int characterUid)
@@ -132,8 +154,8 @@ namespace GGemCo.Scripts
         }
         public void RemoveCharacter(GameObject character)
         {
-            if (!characters.Contains(character)) return;
-            characters.Remove(character);
+            if (!_characters.Contains(character)) return;
+            _characters.Remove(character);
             Object.Destroy(character.gameObject);
         }
 

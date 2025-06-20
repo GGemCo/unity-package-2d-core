@@ -10,15 +10,13 @@ namespace GGemCo.Editor
     /// <summary>
     /// 테이블 등록하기
     /// </summary>
-    public class SettingTable : DefaultAddressable
+    public class SettingMonster : DefaultAddressable
     {
-        private const string Title = "테이블 추가하기";
-        private readonly EditorAddressable _editorAddressable;
+        private const string Title = "캐릭터 추가하기";
 
-        public SettingTable(EditorAddressable editorWindow)
+        public SettingMonster()
         {
-            _editorAddressable = editorWindow;
-            TargetGroupName = "GGemCo_Tables";
+            TargetGroupName = "GGemCo_Monsters";
         }
         public void OnGUI()
         {
@@ -87,9 +85,6 @@ namespace GGemCo.Editor
             // 설정 저장
             settings.SetDirty(AddressableAssetSettings.ModificationEvent.EntryMoved, null, true);
             AssetDatabase.SaveAssets();
-            // 테이블 다시 로드하기
-            _ = _editorAddressable.LoadAsync();
-            
             EditorUtility.DisplayDialog(Title, "Addressable 설정 완료", "OK");
         }
 

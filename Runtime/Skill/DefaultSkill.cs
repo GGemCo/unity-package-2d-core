@@ -96,13 +96,14 @@ namespace GGemCo.Scripts
             if (struckTableSkill.EffectUid <= 0) return;
 
             var effectInfo = tableEffect.GetDataByUid(struckTableSkill.EffectUid);
-            var effectPrefab = tableEffect.GetPrefab(struckTableSkill.EffectUid);
-            if (effectPrefab == null)
-            {
-                GcLogger.LogError($"이펙트 프리팹이 없습니다. effect Uid: {struckTableSkill.EffectUid}");
-                DestroySkill();
-                return;
-            }
+            // kdh
+            // var effectPrefab = tableEffect.GetPrefab(struckTableSkill.EffectUid);
+            // if (effectPrefab == null)
+            // {
+                // GcLogger.LogError($"이펙트 프리팹이 없습니다. effect Uid: {struckTableSkill.EffectUid}");
+                // DestroySkill();
+                // return;
+            // }
 
             if (struckTableSkill.TargetType == SkillConstants.TargetType.Range && struckTableSkill.DamageRange > 0)
             {
@@ -122,7 +123,8 @@ namespace GGemCo.Scripts
         private void SpawnRangeEffect(Vector3 targetPos)
         {
             var effectInfo = tableEffect.GetDataByUid(struckTableSkill.EffectUid);
-            GameObject prefab = tableEffect.GetPrefab(struckTableSkill.EffectUid);
+            // kdh
+            // GameObject prefab = tableEffect.GetPrefab(struckTableSkill.EffectUid);
 
             float effectScale = struckTableSkill.EffectScale > 0 ? struckTableSkill.EffectScale : 1;
             float effectSize = effectInfo.Width * effectScale;

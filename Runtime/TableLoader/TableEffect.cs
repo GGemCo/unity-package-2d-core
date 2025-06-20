@@ -10,7 +10,6 @@ namespace GGemCo.Scripts
         public int Uid;
         public string Name;
         public string PrefabPath;
-        public GameObject Prefab;
         public int Width;
         public int Height;
         public Vector2 ColliderSize;
@@ -36,18 +35,12 @@ namespace GGemCo.Scripts
                 Uid = int.Parse(data["Uid"]),
                 Name = data["Name"],
                 PrefabPath = data["PrefabPath"],
-                Prefab = LoadPrefab(data["PrefabPath"]),
                 Width = int.Parse(data["Width"]),
                 Height = int.Parse(data["Height"]),
                 ColliderSize = ConvertVector2(data["ColliderSize"]),
                 NeedRotation = ConvertBoolean(data["NeedRotation"]),
                 Color = data["Color"],
             };
-        }
-        public GameObject GetPrefab(int uid) {
-            var info = GetDataByUid(uid);
-            if (info == null) return null;
-            return info.Prefab;
         }
     }
 }
