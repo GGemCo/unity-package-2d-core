@@ -51,7 +51,7 @@ namespace GGemCo.Scripts
             uiElementShops.Clear();
             currentShopUid = shopUid;
             
-            if (AddressableSettingsLoader.Instance == null || containerIcon == null) return;
+            if (AddressableLoaderSettings.Instance == null || containerIcon == null) return;
             if (prefabUIElementShop == null)
             {
                 GcLogger.LogError("UIElementShop 프리팹이 없습니다.");
@@ -69,8 +69,8 @@ namespace GGemCo.Scripts
             slots = new GameObject[maxCountIcon];
             icons = new GameObject[maxCountIcon];
             
-            GameObject iconItem = AddressablePrefabLoader.Instance.GetPreLoadGamePrefabByName(ConfigAddressables.KeyPrefabIconItem);
-            GameObject slot = AddressablePrefabLoader.Instance.GetPreLoadGamePrefabByName(ConfigAddressables.KeyPrefabSlot);
+            GameObject iconItem = ConfigResources.IconItem.Load();
+            GameObject slot = ConfigResources.Slot.Load();
             if (iconItem == null) return;
 
             index = 0;

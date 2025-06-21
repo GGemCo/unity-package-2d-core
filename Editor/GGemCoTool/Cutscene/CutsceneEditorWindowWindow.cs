@@ -1,6 +1,5 @@
 ﻿using System.Collections.Generic;
 using System.IO;
-using System.Threading.Tasks;
 using GGemCo.Scripts;
 using Newtonsoft.Json;
 using UnityEditor;
@@ -32,26 +31,9 @@ namespace GGemCo.Editor
         {
             base.OnEnable();
             _selectedCutsceneIndex = 0;
-            _ = LoadAsync();
-        }
-        private async Task LoadAsync()
-        {
-            try
-            {
-                _tableCutscene = await TableLoaderManager.LoadCutsceneTableAsync();
-                if (_tableCutscene == null)
-                {
-                    EditorUtility.DisplayDialog(Title, "Cutscene 테이블을 불러오지 못했습니다.", "OK");
-                    return;
-                }
-                LoadCutsceneInfoData();
-                isLoading = false;
-                Repaint();
-            }
-            catch (System.Exception ex)
-            {
-                ShowLoadTableException(Title, ex);
-            }
+            
+            _tableCutscene = TableLoaderManager.LoadCutsceneTable();
+            LoadCutsceneInfoData();
         }
         /// <summary>
         /// npc 정보 불러오기
@@ -77,11 +59,6 @@ namespace GGemCo.Editor
 
         private void OnGUI()
         {
-            if (isLoading)
-            {
-                EditorGUILayout.LabelField("Cutscene 테이블 로딩 중...");
-                return;
-            }
             // 방어 코드 추가
             if (_cutsceneMemos.Count == 0)
             {

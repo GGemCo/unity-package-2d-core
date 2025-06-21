@@ -10,10 +10,16 @@ namespace GGemCo.Editor
     /// <summary>
     /// 설정 ScriptableObject 등록하기
     /// </summary>
-    public class SettingScriptableObject
+    public class SettingScriptableObject : DefaultAddressable
     {
         private const string Title = "설정 ScriptableObject 추가하기";
-        private const string DefaultGroupName = "Default Local Group"; // 기본 그룹 이름
+        private readonly EditorAddressable _editorAddressable;
+
+        public SettingScriptableObject(EditorAddressable editorWindow)
+        {
+            _editorAddressable = editorWindow;
+            TargetGroupName = "GGemCo_Common";
+        }
 
         public void OnGUI()
         {
@@ -21,64 +27,45 @@ namespace GGemCo.Editor
 
             if (GUILayout.Button(Title))
             {
-                SetupAddressable();
+                Setup();
             }
         }
         /// <summary>
         /// Addressable 설정하기
         /// </summary>
-        private void SetupAddressable()
+        private void Setup()
         {
             // AddressableSettings 가져오기 (없으면 생성)
             AddressableAssetSettings settings = AddressableAssetSettingsDefaultObject.Settings;
-            if (settings == null)
+            if (!settings)
             {
                 GcLogger.LogWarning("Addressable 설정을 찾을 수 없습니다. 새로 생성합니다.");
                 settings = CreateAddressableSettings();
             }
 
-            // 기본 그룹 가져오기 (없으면 생성)
-            AddressableAssetGroup defaultGroup = settings.DefaultGroup ?? CreateDefaultGroup(settings);
+            // GGemCo_Tables 그룹 가져오기 또는 생성
+            AddressableAssetGroup group = GetOrCreateGroup(settings, TargetGroupName);
 
-            if (defaultGroup == null)
+            if (!group)
             {
-                GcLogger.LogError("기본 Addressable 그룹을 설정할 수 없습니다.");
+                GcLogger.LogError($"'{TargetGroupName}' 그룹을 설정할 수 없습니다.");
                 return;
             }
 
-            foreach (var (keyName, assetPath) in ConfigAddressables.AssetsToAdd)
+            // 설정 scriptable object
+            foreach (var addressableAssetInfo in ConfigAddressableSetting.NeedLoadInLoadingScene)
             {
-                // 대상 파일 가져오기
-                var asset = AssetDatabase.LoadMainAssetAtPath(assetPath);
-                if (asset == null)
-                {
-                    GcLogger.LogError($"파일을 찾을 수 없습니다: {assetPath}");
-                    continue;
-                }
-
-                // 기존 Addressable 항목 확인
-                AddressableAssetEntry entry = settings.FindAssetEntry(AssetDatabase.AssetPathToGUID(assetPath));
-
-                if (entry == null)
-                {
-                    // 신규 Addressable 항목 추가
-                    entry = settings.CreateOrMoveEntry(AssetDatabase.AssetPathToGUID(assetPath), defaultGroup);
-                    GcLogger.Log($"Addressable 항목을 추가했습니다: {assetPath}");
-                }
-                else
-                {
-                    GcLogger.Log($"이미 Addressable에 등록된 항목입니다: {assetPath}");
-                }
-
-                // 키 값 설정
-                entry.address = keyName;
-                // 라벨 값 설정
-                if (ConfigAddressables.AssetsToAddLabel.ContainsKey(keyName))
-                {
-                    entry.SetLabel(ConfigAddressables.AssetsToAddLabel.GetValueOrDefault(keyName), true, true);
-                }
-
-                // GcLogger.Log($"Addressable 키 값 설정: {keyName}");
+                Add(settings, group, addressableAssetInfo);
+            }
+            // ui 에 사용되는 리소스
+            foreach (var addressableAssetInfo in ConfigAddressables.NeedLoadInLoadingScene)
+            {
+                Add(settings, group, addressableAssetInfo);
+            }
+            // 맵 워프
+            foreach (var addressableAssetInfo in ConfigAddressableMap.NeedLoadInLoadingScene)
+            {
+                Add(settings, group, addressableAssetInfo);
             }
 
             // 설정 저장
@@ -87,40 +74,40 @@ namespace GGemCo.Editor
             EditorUtility.DisplayDialog(Title, "Addressable 설정 완료", "OK");
         }
 
-        /// <summary>
-        /// Addressable 설정이 없을 경우 새로 생성
-        /// </summary>
-        private AddressableAssetSettings CreateAddressableSettings()
+        private void Add(AddressableAssetSettings settings, AddressableAssetGroup group, AddressableAssetInfo addressableAssetInfo)
         {
-            var settings = AddressableAssetSettings.Create(
-                "Assets/AddressableAssetsData", 
-                "AddressableAssetSettings", 
-                true, 
-                true
-            );
+            string assetPath = addressableAssetInfo.Path;
+            // 대상 파일 가져오기
+            var asset = AssetDatabase.LoadMainAssetAtPath(assetPath);
+            if (!asset)
+            {
+                GcLogger.LogError($"파일을 찾을 수 없습니다: {assetPath}");
+                return;
+            }
 
-            AddressableAssetSettingsDefaultObject.Settings = settings;
-            AssetDatabase.SaveAssets();
-            // GcLogger.Log("새로운 Addressable 설정을 생성했습니다.");
-            return settings;
-        }
+            // 기존 Addressable 항목 확인
+            AddressableAssetEntry entry = settings.FindAssetEntry(AssetDatabase.AssetPathToGUID(assetPath));
 
-        /// <summary>
-        /// 기본 Addressable 그룹이 없을 경우 생성
-        /// </summary>
-        private AddressableAssetGroup CreateDefaultGroup(AddressableAssetSettings settings)
-        {
-            var defaultGroup = settings.CreateGroup(
-                DefaultGroupName, 
-                false, 
-                false, 
-                true, 
-                settings.DefaultGroup.Schemas
-            );
+            if (entry == null)
+            {
+                // 신규 Addressable 항목 추가
+                entry = settings.CreateOrMoveEntry(AssetDatabase.AssetPathToGUID(assetPath), group);
+                GcLogger.Log($"Addressable 항목을 추가했습니다: {assetPath}");
+            }
+            else
+            {
+                GcLogger.Log($"이미 Addressable에 등록된 항목입니다: {assetPath}");
+            }
 
-            settings.DefaultGroup = defaultGroup;
-            // GcLogger.Log("새로운 기본 Addressable 그룹을 생성했습니다.");
-            return defaultGroup;
+            // 키 값 설정
+            entry.address = addressableAssetInfo.Key;
+            // 라벨 값 설정
+            if (!string.IsNullOrEmpty(addressableAssetInfo.Label))
+            {
+                entry.SetLabel(addressableAssetInfo.Label, true, true);
+            }
+
+            // GcLogger.Log($"Addressable 키 값 설정: {keyName}");
         }
     }
 }

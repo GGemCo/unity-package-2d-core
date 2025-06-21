@@ -1,13 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Threading.Tasks;
 using GGemCo.Scripts;
 using Newtonsoft.Json;
 using TMPro;
 using UnityEngine;
-using UnityEngine.AddressableAssets;
-using UnityEngine.ResourceManagement.AsyncOperations;
 
 namespace GGemCo.Editor
 {
@@ -21,19 +18,20 @@ namespace GGemCo.Editor
         private TableAnimation _tableAnimation;
         private DefaultMap _defaultMap;
         private CharacterManager _characterManager;
-        private MapExporter _mapExporter;
         
         /// <summary>
         /// 초기화
         /// </summary>
-        /// <param name="mapExporter"></param>
-        public void Initialize(MapExporter mapExporter)
+        /// <param name="pTableMonster"></param>
+        /// <param name="pTableAnimation"></param>
+        /// <param name="pDefaultMap"></param>
+        /// <param name="pcharacterManager"></param>
+        public void Initialize(TableMonster pTableMonster, TableAnimation pTableAnimation, DefaultMap pDefaultMap, CharacterManager pcharacterManager)
         {
-            _mapExporter = mapExporter;
-            _tableMonster = _mapExporter.TableMonster;
-            _tableAnimation = _mapExporter.TableAnimation;
-            _defaultMap = _mapExporter.defaultMap;
-            _characterManager = _mapExporter.CharacterManager;
+            _tableMonster = pTableMonster;
+            _tableAnimation = pTableAnimation;
+            _defaultMap = pDefaultMap;
+            _characterManager = pcharacterManager;
         }
         /// <summary>
         /// 배치할 맵 셋팅
@@ -68,17 +66,14 @@ namespace GGemCo.Editor
                 }
                 index++;
             }
+            var infoAnimation = _tableAnimation.GetDataByUid(monsterData.SpineUid);
+            if (infoAnimation == null) return;
+            string monsterPath = ConfigAddressableMap.GetPathCharacter(infoAnimation.PrefabPath);
+            GameObject npcPrefab = AssetDatabaseLoaderManager.LoadAsset<GameObject>(monsterPath);
+            
             CharacterRegenData characterRegenData =
                 new CharacterRegenData(monsterData.Uid, Vector3.zero, false, _defaultMap.GetChapterNumber(), true);
-
-            var infoAnimation = _tableAnimation.GetDataByUid(monsterData.SpineUid);
-            GameObject prefabMonster = null;
-            if (infoAnimation != null && infoAnimation.Uid > 0)
-            {
-                prefabMonster = _mapExporter.AddressableMonsterLoader.GetMonster(infoAnimation.Uid);
-            }
-
-            GameObject monster = _characterManager.CreateMonster2(monsterData.Uid, characterRegenData, prefabMonster);
+            GameObject monster = _characterManager.CreateMonster(monsterData.Uid, characterRegenData, npcPrefab);
             if (!monster)
             {
                 Debug.LogError("몬스터 데이터가 없습니다.");
@@ -128,86 +123,64 @@ namespace GGemCo.Editor
         /// json 에 저장된 몬스터 정보 불러오기
         /// </summary>
         /// <param name="regenFileName"></param>
-        public async Task LoadMonsterData(string regenFileName)
+        public void LoadMonsterData(string regenFileName)
         {
             // JSON 파일을 읽기
             try
             {
-                var handle = Addressables.LoadAssetAsync<TextAsset>(regenFileName);
-                await handle.Task;
-
-                if (handle.Status != AsyncOperationStatus.Succeeded || !handle.Result)
-                {
-                    Debug.LogError("monster regen file 로드 실패. addressKey: " + regenFileName);
-                    return;
-                }
-                
-                TextAsset textAsset = handle.Result;
-                string content = textAsset.text;
+                string content = AssetDatabaseLoaderManager.LoadFileJson(regenFileName);
                 if (string.IsNullOrEmpty(content)) return;
                 CharacterRegenDataList regenDataList = JsonConvert.DeserializeObject<CharacterRegenDataList>(content);
                 _monsterList = regenDataList.CharacterRegenDatas;
-                
-                await SpawnMonster();
+                SpawnMonster();
             }
             catch (Exception ex)
             {
-                Debug.LogError($"Error reading file {regenFileName}: {ex.Message}");
+                GcLogger.LogError($"Error reading file {regenFileName}: {ex.Message}");
             }
         }
         /// <summary>
         /// 몬스터 생성하기
         /// </summary>
-        private async Task SpawnMonster()
+        private void SpawnMonster()
         {
-            // JSON 파일을 읽기
-            try
+            if (!_defaultMap)
             {
-                if (!_defaultMap)
-                {
-                    Debug.LogError("_defaultMap 이 없습니다.");
-                    return;
-                }
+                Debug.LogError("_defaultMap 이 없습니다.");
+                return;
+            }
 
-                foreach (CharacterRegenData monsterData in _monsterList)
-                {
-                    int uid = monsterData.Uid;
-                    var infoMonster = _tableMonster.GetDataByUid(uid);
-                    if (infoMonster == null) continue;
-                    
-                    var infoAnimation = _tableAnimation.GetDataByUid(infoMonster.SpineUid);
-                    GameObject prefabMonster = null;
-                    if (infoAnimation != null && infoAnimation.Uid > 0)
-                    {
-                        prefabMonster = _mapExporter.AddressableMonsterLoader.GetMonster(infoAnimation.Uid);
-                    }
-                    GameObject monster = _characterManager.CreateMonster2(uid, monsterData, prefabMonster);
-                    
-                    if (!monster) continue;
-                    monster.transform.SetParent(_defaultMap.gameObject.transform);
+            foreach (CharacterRegenData monsterData in _monsterList)
+            {
+                int uid = monsterData.Uid;
+                var info = _tableMonster.GetDataByUid(uid);
+                if (info == null) continue;
+                var infoAnimation = _tableAnimation.GetDataByUid(info.SpineUid);
+                if (infoAnimation == null) continue;
                 
-                    // 몬스터의 속성을 설정하는 스크립트가 있을 경우 적용
-                    Monster myMonsterScript = monster.GetComponent<Monster>();
-                    if (myMonsterScript)
-                    {
-                        // MapManager.cs:138 도 수정
-                        myMonsterScript.uid = monsterData.Uid;
-                        myMonsterScript.CharacterRegenData = monsterData;
-                        // SetScale 다음에 처리해야 함
-                        myMonsterScript.SetFlip(monsterData.IsFlip);
-                        myMonsterScript.InitTagSortingLayer();
-                    }
-                    // npc 정보 보여줄 canvas 추가
-                    TextMeshProUGUI text = CreateInfoCanvas(myMonsterScript);
-                    text.text = $"Uid: {monsterData.Uid}\nPos: ({monsterData.x}, {monsterData.y})\nScale: {Math.Abs(monster.transform.localScale.x):F2}";
+                string monsterPath = ConfigAddressableMap.GetPathCharacter(infoAnimation.PrefabPath);
+                GameObject monsterPrefab = AssetDatabaseLoaderManager.LoadAsset<GameObject>(monsterPath);
+                GameObject monster = _characterManager.CreateMonster(uid, monsterData, monsterPrefab);
+                if (!monster) continue;
+                monster.transform.SetParent(_defaultMap.gameObject.transform);
+                
+                // 몬스터의 속성을 설정하는 스크립트가 있을 경우 적용
+                Monster myMonsterScript = monster.GetComponent<Monster>();
+                if (myMonsterScript)
+                {
+                    // MapManager.cs:138 도 수정
+                    myMonsterScript.uid = monsterData.Uid;
+                    myMonsterScript.CharacterRegenData = monsterData;
+                    // SetScale 다음에 처리해야 함
+                    myMonsterScript.SetFlip(monsterData.IsFlip);
+                    myMonsterScript.InitTagSortingLayer();
                 }
+                // npc 정보 보여줄 canvas 추가
+                TextMeshProUGUI text = CreateInfoCanvas(myMonsterScript);
+                text.text = $"Uid: {monsterData.Uid}\nPos: ({monsterData.x}, {monsterData.y})\nScale: {Math.Abs(monster.transform.localScale.x):F2}";
+            }
 
-                Debug.Log("monster spawned successfully.");
-            }
-            catch (Exception ex)
-            {
-                Debug.LogError($"몬스터 불러오기 오류: {ex.Message}");
-            }
+            Debug.Log("monster spawned successfully.");
         }
     }
 }

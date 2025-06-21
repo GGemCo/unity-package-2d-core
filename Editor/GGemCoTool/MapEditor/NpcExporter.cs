@@ -13,11 +13,11 @@ namespace GGemCo.Editor
     /// </summary>
     public class NpcExporter : DefaultExporter
     {
-        private List<CharacterRegenData> npcList;
-        private TableNpc tableNpc;
-        private TableAnimation tableAnimation;
-        private DefaultMap defaultMap;
-        private CharacterManager characterManager;
+        private List<CharacterRegenData> _npcList;
+        private TableNpc _tableNpc;
+        private TableAnimation _tableAnimation;
+        private DefaultMap _defaultMap;
+        private CharacterManager _characterManager;
         
         /// <summary>
         /// 초기화
@@ -25,12 +25,13 @@ namespace GGemCo.Editor
         /// <param name="pTableNpc"></param>
         /// <param name="pTableAnimation"></param>
         /// <param name="pDefaultMap"></param>
+        /// <param name="pcharacterManager"></param>
         public void Initialize(TableNpc pTableNpc, TableAnimation pTableAnimation, DefaultMap pDefaultMap, CharacterManager pcharacterManager)
         {
-            tableNpc = pTableNpc;
-            tableAnimation = pTableAnimation;
-            defaultMap = pDefaultMap;
-            characterManager = pcharacterManager;
+            _tableNpc = pTableNpc;
+            _tableAnimation = pTableAnimation;
+            _defaultMap = pDefaultMap;
+            _characterManager = pcharacterManager;
         }
         /// <summary>
         /// 배치할 맵 셋팅
@@ -38,7 +39,7 @@ namespace GGemCo.Editor
         /// <param name="pDefaultMap"></param>
         public void SetDefaultMap(DefaultMap pDefaultMap)
         {
-            defaultMap = pDefaultMap;
+            _defaultMap = pDefaultMap;
         }
         /// <summary>
         /// 맵에 npc 추가하기
@@ -46,13 +47,13 @@ namespace GGemCo.Editor
         /// <param name="selectedNpcIndex"></param>
         public void AddNpcToMap(int selectedNpcIndex)
         {
-            if (defaultMap == null)
+            if (!_defaultMap)
             {
                 Debug.LogError("_defaultMap 이 없습니다.");
                 return;
             }
 
-            var npcDictionary = tableNpc.GetDatas();
+            var npcDictionary = _tableNpc.GetDatas();
             int index = 0;
             StruckTableNpc npcData = new StruckTableNpc();
 
@@ -60,24 +61,28 @@ namespace GGemCo.Editor
             {
                 if (index == selectedNpcIndex)
                 {
-                    npcData = tableNpc.GetDataByUid(outerPair.Key);
+                    npcData = _tableNpc.GetDataByUid(outerPair.Key);
                     break;
                 }
                 index++;
             }
-
+            var infoAnimation = _tableAnimation.GetDataByUid(npcData.SpineUid);
+            if (infoAnimation == null) return;
+            
+            string npcPath = ConfigAddressableMap.GetPathCharacter(infoAnimation.PrefabPath);
+            GameObject npcPrefab = AssetDatabaseLoaderManager.LoadAsset<GameObject>(npcPath);
             CharacterRegenData characterRegenData =
-                new CharacterRegenData(npcData.Uid, Vector3.zero, false, defaultMap.GetChapterNumber(), true);
-            GameObject npc = characterManager.CreateNpc(npcData.Uid, characterRegenData);
-            if (npc == null)
+                new CharacterRegenData(npcData.Uid, Vector3.zero, false, _defaultMap.GetChapterNumber(), true);
+            GameObject npc = _characterManager.CreateNpc(npcData.Uid, characterRegenData, npcPrefab);
+            if (!npc)
             {
                 Debug.LogError("NPC 데이터가 없습니다.");
                 return;
             }
-            npc.transform.SetParent(defaultMap.gameObject.transform);
+            npc.transform.SetParent(_defaultMap.gameObject.transform);
             
             var npcScript = npc.GetComponent<Npc>();
-            if (npcScript != null)
+            if (npcScript)
             {
                 npcScript.uid = npcData.Uid;
                 npcScript.SetScale(npcData.Scale);
@@ -103,13 +108,15 @@ namespace GGemCo.Editor
 
             foreach (Transform child in mapObject.transform)
             {
-                if (child.CompareTag(ConfigTags.GetValue(ConfigTags.Keys.Npc)))
-                {
-                    var npc = child.gameObject.GetComponent<Npc>();
-                    if (npc == null) continue;
-                    saveNpcList.CharacterRegenDatas.Add(new CharacterRegenData(npc.uid, child.position, npc.isFlip,
-                        mapUid, true));
-                }
+                if (!child.CompareTag(ConfigTags.GetValue(ConfigTags.Keys.Npc))) continue;
+                var npc = child.gameObject.GetComponent<Npc>();
+                if (!npc) continue;
+                saveNpcList.CharacterRegenDatas.Add(new CharacterRegenData(npc.uid, child.position, npc.isFlip,
+                    mapUid, true));
+                
+                // addressables 에 등록됬는지 확인
+                
+                // addressables label 등록하기
             }
 
             string json = JsonConvert.SerializeObject(saveNpcList);
@@ -126,17 +133,11 @@ namespace GGemCo.Editor
             // JSON 파일을 읽기
             try
             {
-                TextAsset textFile = Resources.Load<TextAsset>($"{regenFileName}");
-                if (textFile != null)
-                {
-                    string content = textFile.text;
-                    if (!string.IsNullOrEmpty(content))
-                    {
-                        CharacterRegenDataList regenDataList = JsonConvert.DeserializeObject<CharacterRegenDataList>(content);
-                        npcList = regenDataList.CharacterRegenDatas;
-                        SpawnNpc();
-                    }
-                }
+                string content = AssetDatabaseLoaderManager.LoadFileJson(regenFileName);
+                if (string.IsNullOrEmpty(content)) return;
+                CharacterRegenDataList regenDataList = JsonConvert.DeserializeObject<CharacterRegenDataList>(content);
+                _npcList = regenDataList.CharacterRegenDatas;
+                SpawnNpc();
             }
             catch (Exception ex)
             {
@@ -148,22 +149,29 @@ namespace GGemCo.Editor
         /// </summary>
         private void SpawnNpc()
         {
-            if (defaultMap == null)
+            if (!_defaultMap)
             {
                 Debug.LogError("_defaultMap 이 없습니다.");
                 return;
             }
 
-            foreach (CharacterRegenData npcData in npcList)
+            foreach (CharacterRegenData npcData in _npcList)
             {
                 int uid = npcData.Uid;
-                GameObject npc = characterManager.CreateNpc(uid, npcData);
-                if (npc == null) continue;
-                npc.transform.SetParent(defaultMap.gameObject.transform);
+                var info = _tableNpc.GetDataByUid(uid);
+                if (info == null) continue;
+                var infoAnimation = _tableAnimation.GetDataByUid(info.SpineUid);
+                if (infoAnimation == null) continue;
+                
+                string npcPath = ConfigAddressableMap.GetPathCharacter(infoAnimation.PrefabPath);
+                GameObject npcPrefab = AssetDatabaseLoaderManager.LoadAsset<GameObject>(npcPath);
+                GameObject npc = _characterManager.CreateNpc(uid, npcData, npcPrefab);
+                if (!npc) continue;
+                npc.transform.SetParent(_defaultMap.gameObject.transform);
                 
                 // NPC의 속성을 설정하는 스크립트가 있을 경우 적용
                 Npc myNpcScript = npc.GetComponent<Npc>();
-                if (myNpcScript != null)
+                if (myNpcScript)
                 {
                     // MapManager.cs:138 도 수정
                     myNpcScript.uid = npcData.Uid;

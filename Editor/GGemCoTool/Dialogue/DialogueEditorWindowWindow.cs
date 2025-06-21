@@ -1,6 +1,5 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
-using System.Threading.Tasks;
 using GGemCo.Scripts;
 using UnityEditor;
 using UnityEngine;
@@ -54,33 +53,15 @@ namespace GGemCo.Editor
         protected override void OnEnable()
         {
             base.OnEnable();
-            _ = LoadAsync();
-        }
-        private async Task LoadAsync()
-        {
-            try
-            {
-                // 병렬 로딩
-                var loadDialogueTask = TableLoaderManager.LoadDialogueTableAsync();
-                await Task.WhenAll(loadDialogueTask);
-
-                _tableDialogue = loadDialogueTask.Result;
-                
-                LoadCutsceneInfoData();
-                
-                ZoomPanHandler = new ZoomPanHandler(this);
-                NodeHandler = new NodeHandler(this);
-                _connectionHandler = new ConnectionHandler(this);
-                FileHandler = new FileHandler(this);
-                _toolbarHandler = new ToolbarHandler(this, _dialogueMemos, _dialogueInfos);
-                
-                isLoading = false;
-                Repaint();
-            }
-            catch (System.Exception ex)
-            {
-                ShowLoadTableException(Title, ex);
-            }
+            
+            _tableDialogue = TableLoaderManager.LoadDialogueTable();
+            LoadCutsceneInfoData();
+            
+            ZoomPanHandler = new ZoomPanHandler(this);
+            NodeHandler = new NodeHandler(this);
+            _connectionHandler = new ConnectionHandler(this);
+            FileHandler = new FileHandler(this);
+            _toolbarHandler = new ToolbarHandler(this, _dialogueMemos, _dialogueInfos);
         }
         private void LoadCutsceneInfoData()
         {
@@ -104,12 +85,6 @@ namespace GGemCo.Editor
         {
             // DrawGrid(20, 0.2f, Color.gray);
             // DrawGrid(100, 0.4f, Color.gray);
-            
-            if (isLoading)
-            {
-                EditorGUILayout.LabelField("테이블 로딩 중...");
-                return;
-            }
             
             ZoomPanHandler?.HandleZoom();
             ZoomPanHandler?.HandlePan();

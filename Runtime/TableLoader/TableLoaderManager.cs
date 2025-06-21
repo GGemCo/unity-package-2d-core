@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using System.Threading.Tasks;
 using UnityEngine;
 using UnityEngine.AddressableAssets;
@@ -13,8 +14,6 @@ namespace GGemCo.Scripts
     {
         public static TableLoaderManager Instance;
 
-        private string[] dataFiles;
-        
         public TableNpc TableNpc { get; private set; } = new TableNpc();
         public TableMap TableMap { get; private set; } = new TableMap();
         public TableMonster TableMonster { get; private set; } = new TableMonster();
@@ -39,7 +38,7 @@ namespace GGemCo.Scripts
 
         protected void Awake()
         {
-            if (Instance == null)
+            if (!Instance)
             {
                 Instance = this;
                 DontDestroyOnLoad(gameObject);
@@ -48,20 +47,6 @@ namespace GGemCo.Scripts
             {
                 Destroy(gameObject);
             }
-
-            dataFiles = new[]
-            {
-                ConfigTableFileName.Map, ConfigTableFileName.Monster, ConfigTableFileName.Npc,
-                ConfigTableFileName.Animation, ConfigTableFileName.Item,
-                ConfigTableFileName.MonsterDropRate, ConfigTableFileName.ItemDropGroup, ConfigTableFileName.Exp,
-                ConfigTableFileName.Window, ConfigTableFileName.Status, ConfigTableFileName.Skill,
-                ConfigTableFileName.Affect,
-                ConfigTableFileName.Effect, ConfigTableFileName.Interaction, ConfigTableFileName.Shop,
-                ConfigTableFileName.ItemUpgrade,
-                ConfigTableFileName.ItemSalvage, ConfigTableFileName.ItemCraft, ConfigTableFileName.Cutscene,
-                ConfigTableFileName.Dialogue,
-                ConfigTableFileName.Quest
-            };
         }
         /// <summary>
         /// 제네릭을 사용하여 Addressables에서 설정을 로드하는 함수
@@ -87,82 +72,83 @@ namespace GGemCo.Scripts
             Addressables.Release(locationsHandle);
             return asset;
         }
-        public async Task LoadDataFile(string fileName)
+        public async Task LoadDataFile(AddressableAssetInfo addressableAssetInfo)
         {
+            
             try
             {
-                var settingsTask = LoadTextAsync<TextAsset>($"{ConfigAddressables.LabelTable}_{fileName}");
+                var settingsTask = LoadTextAsync<TextAsset>(addressableAssetInfo.Key);
                 await Task.WhenAll(settingsTask);
                 TextAsset textFile = settingsTask.Result;
                 
-                if (textFile != null)
+                if (textFile)
                 {
                     string content = textFile.text;
                     if (!string.IsNullOrEmpty(content))
                     {
-                        switch (fileName)
+                        switch (addressableAssetInfo.Etc1)
                         {
-                            case ConfigTableFileName.Animation:
+                            case ConfigAddressableTable.Animation:
                                 TableAnimation.LoadData(content);
                                 break;
-                            case ConfigTableFileName.Monster:
+                            case ConfigAddressableTable.Monster:
                                 TableMonster.LoadData(content);
                                 break;
-                            case ConfigTableFileName.Npc:
+                            case ConfigAddressableTable.Npc:
                                 TableNpc.LoadData(content);
                                 break;
-                            case ConfigTableFileName.Map:
+                            case ConfigAddressableTable.Map:
                                 TableMap.LoadData(content);
                                 break;
-                            case ConfigTableFileName.Item:
+                            case ConfigAddressableTable.Item:
                                 TableItem.LoadData(content);
                                 break;
-                            case ConfigTableFileName.MonsterDropRate:
+                            case ConfigAddressableTable.MonsterDropRate:
                                 TableMonsterDropRate.LoadData(content);
                                 break;
-                            case ConfigTableFileName.ItemDropGroup:
+                            case ConfigAddressableTable.ItemDropGroup:
                                 TableItemDropGroup.LoadData(content);
                                 break;
-                            case ConfigTableFileName.Exp:
+                            case ConfigAddressableTable.Exp:
                                 TableExp.LoadData(content);
                                 break;
-                            case ConfigTableFileName.Window:
+                            case ConfigAddressableTable.Window:
                                 TableWindow.LoadData(content);
                                 break;
-                            case ConfigTableFileName.Status:
+                            case ConfigAddressableTable.Status:
                                 TableStatus.LoadData(content);
                                 break;
-                            case ConfigTableFileName.Skill:
+                            case ConfigAddressableTable.Skill:
                                 TableSkill.LoadData(content);
                                 break;
-                            case ConfigTableFileName.Affect:
+                            case ConfigAddressableTable.Affect:
                                 TableAffect.LoadData(content);
                                 break;
-                            case ConfigTableFileName.Effect:
+                            case ConfigAddressableTable.Effect:
                                 TableEffect.LoadData(content);
                                 break;
-                            case ConfigTableFileName.Interaction:
+                            case ConfigAddressableTable.Interaction:
                                 TableInteraction.LoadData(content);
                                 break;
-                            case ConfigTableFileName.Shop:
+                            case ConfigAddressableTable.Shop:
                                 TableShop.LoadData(content);
                                 break;
-                            case ConfigTableFileName.ItemUpgrade:
+                            case ConfigAddressableTable.ItemUpgrade:
                                 TableItemUpgrade.LoadData(content);
                                 break;
-                            case ConfigTableFileName.ItemSalvage:
+                            case ConfigAddressableTable.ItemSalvage:
                                 TableItemSalvage.LoadData(content);
                                 break;
-                            case ConfigTableFileName.ItemCraft:
+                            case ConfigAddressableTable.ItemCraft:
                                 TableItemCraft.LoadData(content);
                                 break;
-                            case ConfigTableFileName.Cutscene:
+                            case ConfigAddressableTable.Cutscene:
                                 TableCutscene.LoadData(content);
                                 break;
-                            case ConfigTableFileName.Dialogue:
+                            case ConfigAddressableTable.Dialogue:
                                 TableDialogue.LoadData(content);
                                 break;
-                            case ConfigTableFileName.Quest:
+                            case ConfigAddressableTable.Quest:
                                 TableQuest.LoadData(content);
                                 break;
                         }
@@ -171,15 +157,9 @@ namespace GGemCo.Scripts
             }
             catch (Exception ex)
             {
-                GcLogger.LogError($"테이블 파싱중 오류. file {fileName}: {ex.Message}");
+                GcLogger.LogError($"테이블 파싱중 오류. file {addressableAssetInfo.Key}: {ex.Message}");
             }
         }
-
-        public string[] GetDataFiles()
-        {
-            return dataFiles;
-        }
-
         private float GetNpcMoveStep(int npcUid)
         {
             var info = TableNpc.GetDataByUid(npcUid);

@@ -7,7 +7,7 @@ namespace GGemCo.Editor
 {
     public class DefaultExporter
     {
-        public TextMeshProUGUI CreateInfoCanvas(CharacterBase character) 
+        protected TextMeshProUGUI CreateInfoCanvas(CharacterBase character) 
         {
             GameObject canvasObject = new GameObject("canvas");
             canvasObject.transform.SetParent(character.transform);

@@ -1,5 +1,4 @@
-﻿using System.Threading.Tasks;
-using GGemCo.Scripts;
+﻿using GGemCo.Scripts;
 using UnityEditor;
 
 namespace GGemCo.Editor
@@ -8,14 +7,19 @@ namespace GGemCo.Editor
     {
         private const string Title = "Addressable 셋팅하기";
         
-        private readonly SettingScriptableObject _settingScriptableObject = new SettingScriptableObject();
+        private SettingScriptableObject _settingScriptableObject;
         private SettingTable _settingTable;
-        private SettingMonster _settingMonster;
+        private SettingCharacters _settingCharacters;
         private SettingMap _settingMap;
+        private SettingEffect _settingEffect;
+        private SettingItem _settingItem;
 
         public TableMap TableMap;
         public TableNpc TableNpc;
         public TableMonster TableMonster;
+        public TableAnimation TableAnimation;
+        public TableEffect TableEffect;
+        public TableItem TableItem;
 
         [MenuItem(ConfigEditor.NameToolAddressableSetting, false, (int)ConfigEditor.ToolOrdering.SettingAddressable)]
         public static void ShowWindow()
@@ -25,41 +29,46 @@ namespace GGemCo.Editor
         protected override void OnEnable()
         {
             base.OnEnable();
+            // _settingMap 에서 테이블을 사용하기 때문에 테이블 먼저 로드해야 함
+            LoadTables();
+            
+            _settingScriptableObject = new SettingScriptableObject(this);
             _settingTable = new SettingTable(this);
-            _settingMonster = new SettingMonster();
             _settingMap = new SettingMap(this);
-            _ = LoadAsync();
+            _settingCharacters = new SettingCharacters(this);
+            _settingEffect = new SettingEffect(this);
+            _settingItem = new SettingItem(this);
         }
-        public async Task LoadAsync()
+
+        public void LoadTables()
         {
-            try
-            {
-                var loadMap = TableLoaderManager.LoadMapTableAsync();
-                var loadNpc = TableLoaderManager.LoadNpcTableAsync();
-                var loadMonster = TableLoaderManager.LoadMonsterTableAsync();
-                
-                await Task.WhenAll(loadMap, loadNpc, loadMonster);
-
-                TableMap = loadMap.Result;
-                TableNpc = loadNpc.Result;
-                TableMonster = loadMonster.Result;
-
-                isLoading = false;
-                Repaint();
-            }
-            catch (System.Exception ex)
-            {
-                ShowLoadTableException(Title, ex);
-            }
+            TableMap = TableLoaderManager.LoadMapTable();
+            TableNpc = TableLoaderManager.LoadNpcTable();
+            TableMonster = TableLoaderManager.LoadMonsterTable();
+            TableAnimation = TableLoaderManager.LoadSpineTable();
+            TableEffect = TableLoaderManager.LoadEffectTable();
+            TableItem = TableLoaderManager.LoadItemTable();
         }
 
         private void OnGUI()
         {
+            EditorGUILayout.HelpBox("캐릭터 추가후 맵을 추가해야 Regen 정보가 반영됩니다.", MessageType.Info);
+            
             EditorGUILayout.Space(10);
             _settingScriptableObject.OnGUI();
             EditorGUILayout.Space(10);
             _settingTable.OnGUI();
-
+            
+            if (TableMonster == null)
+            {
+                EditorGUILayout.Space(10);
+                EditorGUILayout.HelpBox("monster 테이블이 없습니다.", MessageType.Info);
+            }
+            else {
+                EditorGUILayout.Space(10);
+                _settingCharacters.OnGUI();
+            }
+            
             if (TableMap == null)
             {
                 EditorGUILayout.Space(10);
@@ -70,15 +79,25 @@ namespace GGemCo.Editor
                 EditorGUILayout.Space(10);
                 _settingMap.OnGUI();
             }
-
-            if (TableMonster == null)
+            if (TableEffect == null)
             {
                 EditorGUILayout.Space(10);
-                EditorGUILayout.HelpBox("monster 테이블이 없습니다.", MessageType.Info);
+                EditorGUILayout.HelpBox("effect 테이블이 없습니다.", MessageType.Info);
             }
-            else {
+            else
+            {
                 EditorGUILayout.Space(10);
-                _settingMonster.OnGUI();
+                _settingEffect.OnGUI();
+            }
+            if (TableItem == null)
+            {
+                EditorGUILayout.Space(10);
+                EditorGUILayout.HelpBox("item 테이블이 없습니다.", MessageType.Info);
+            }
+            else
+            {
+                EditorGUILayout.Space(10);
+                _settingItem.OnGUI();
             }
         }
     }

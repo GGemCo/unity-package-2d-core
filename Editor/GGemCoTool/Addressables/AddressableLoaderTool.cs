@@ -3,20 +3,19 @@ using UnityEngine;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using GGemCo.Scripts;
-using UnityEditor.AddressableAssets;
 
 namespace GGemCo.Editor
 {
     public class AddressableLoaderTool : EditorWindow
     {
-        private string keyInput = "";
-        private string labelInput = "";
+        private string _keyInput = "";
+        private string _labelInput = "";
 
-        private UnityEngine.Object loadedByKey;
-        private List<UnityEngine.Object> loadedByLabel = new List<UnityEngine.Object>();
-        private bool isLoading = false;
+        private Object _loadedByKey;
+        private Dictionary<string, Object> _loadedByLabel = new Dictionary<string, Object>();
+        private bool _isLoading;
 
-        [MenuItem("GGemCo/툴/Addressable 로더 툴")]
+        [MenuItem(ConfigEditor.NameToolLoadAddressable, false, (int)ConfigEditor.ToolOrdering.LoadAddressable)]
         public static void ShowWindow()
         {
             var window = GetWindow<AddressableLoaderTool>();
@@ -29,75 +28,73 @@ namespace GGemCo.Editor
             GUILayout.Label("Addressable 리소스 로더", EditorStyles.boldLabel);
 
             GUILayout.Space(10);
-            keyInput = EditorGUILayout.TextField("Key 로드", keyInput);
+            _keyInput = EditorGUILayout.TextField("Key 로드", _keyInput);
             if (GUILayout.Button("Key 로드하기"))
             {
-                _ = LoadByKeyAsync(keyInput);
+                _ = LoadByKeyAsync(_keyInput);
             }
 
-            if (loadedByKey != null)
+            if (_loadedByKey)
             {
-                EditorGUILayout.ObjectField("로드된 리소스", loadedByKey, typeof(UnityEngine.Object), false);
+                EditorGUILayout.ObjectField("로드된 리소스", _loadedByKey, typeof(Object), false);
                 if (GUILayout.Button("Key 리소스 해제"))
                 {
-                    AddressableLoaderManager.Release(loadedByKey);
-                    loadedByKey = null;
+                    AddressableLoaderController.Release(_loadedByKey);
+                    _loadedByKey = null;
                 }
             }
 
             GUILayout.Space(20);
-            labelInput = EditorGUILayout.TextField("Label 로드", labelInput);
+            _labelInput = EditorGUILayout.TextField("Label 로드", _labelInput);
             if (GUILayout.Button("Label로 리소스 로드하기"))
             {
-                _ = LoadByLabelAsync(labelInput);
+                _ = LoadByLabelAsync(_labelInput);
             }
-            if (isLoading)
+            if (_isLoading)
             {
                 GUILayout.Label("로드 중입니다...", EditorStyles.helpBox);
             }
 
-            if (loadedByLabel.Count > 0)
+            if (_loadedByLabel.Count <= 0) return;
+            GUILayout.Label($"로드된 개수: {_loadedByLabel.Count}", EditorStyles.miniLabel);
+            foreach (var obj in _loadedByLabel)
             {
-                GUILayout.Label($"로드된 개수: {loadedByLabel.Count}", EditorStyles.miniLabel);
-                foreach (var obj in loadedByLabel)
-                {
-                    EditorGUILayout.ObjectField(obj.name, obj, typeof(UnityEngine.Object), false);
-                }
+                EditorGUILayout.ObjectField(obj.Value.name, obj.Value, typeof(Object), false);
+            }
 
-                if (GUILayout.Button("모든 Label 리소스 해제"))
-                {
-                    ReleaseAllLabelResources();
-                }
+            if (GUILayout.Button("모든 Label 리소스 해제"))
+            {
+                ReleaseAllLabelResources();
             }
         }
 
         private async Task LoadByKeyAsync(string key)
         {
-            isLoading = true;
-            loadedByKey = await AddressableLoaderManager.LoadByKeyAsync<UnityEngine.Object>(key);
-            isLoading = false;
-            if (loadedByKey == null)
+            _isLoading = true;
+            _loadedByKey = await AddressableLoaderController.LoadByKeyAsync<Object>(key);
+            _isLoading = false;
+            if (!_loadedByKey)
                 Debug.LogError("[AddressableLoaderTool] Key 로드 실패");
         }
 
         private async Task LoadByLabelAsync(string label)
         {
-            isLoading = true;
-            var results = await AddressableLoaderManager.LoadByLabelAsync<UnityEngine.Object>(label);
-            isLoading = false;
+            _isLoading = true;
+            var results = await AddressableLoaderController.LoadByLabelAsync<Object>(label);
+            _isLoading = false;
             if (results != null)
-                loadedByLabel = results;
+                _loadedByLabel = results;
             else
                 Debug.LogError("[AddressableLoaderTool] Label 로드 실패");
         }
         private void ReleaseAllLabelResources()
         {
-            foreach (var obj in loadedByLabel)
+            foreach (var obj in _loadedByLabel)
             {
-                AddressableLoaderManager.Release(obj);
+                AddressableLoaderController.Release(obj.Value);
             }
 
-            loadedByLabel.Clear();
+            _loadedByLabel.Clear();
         }
     }
 }

@@ -8,7 +8,7 @@ namespace GGemCo.Scripts
     /// </summary>
     public class SceneIntro : MonoBehaviour
     {
-        [HideInInspector] public AddressableSettingsLoader addressableSettingsLoader;
+        [HideInInspector] public AddressableLoaderSettings addressableLoaderSettings;
         
         [Header("필수 항목")]
         [Tooltip("새로운 게임 버튼")]
@@ -28,14 +28,14 @@ namespace GGemCo.Scripts
         [Tooltip("팝업 매니저")]
         [SerializeField] private PopupManager popupManager;
 
-        private SlotMetaDatController slotMetaDatController;
-        private GGemCoSaveSettings saveDataSettings;
+        private SlotMetaDatController _slotMetaDatController;
+        private GGemCoSaveSettings _saveDataSettings;
         private void Awake()
         {
             InitButtons();
             InitializeAddressableSettingLoader();
 
-            if (uIWindowLoadSaveData != null)
+            if (uIWindowLoadSaveData)
             {
                 uIWindowLoadSaveData.OnUpdateSlotData += UpdateButtons;
             }
@@ -46,14 +46,14 @@ namespace GGemCo.Scripts
         private void InitializeAddressableSettingLoader()
         {
             GameObject gameObjectAddressableSettingsLoader = new GameObject("AddressableSettingsLoader");
-            addressableSettingsLoader = gameObjectAddressableSettingsLoader.AddComponent<AddressableSettingsLoader>();
-            _ = addressableSettingsLoader.InitializeAsync();
-            addressableSettingsLoader.OnLoadSettings += InitializeSlotMetaDataManager;
+            addressableLoaderSettings = gameObjectAddressableSettingsLoader.AddComponent<AddressableLoaderSettings>();
+            _ = addressableLoaderSettings.InitializeAsync();
+            addressableLoaderSettings.OnLoadSettings += InitializeSlotMetaDataManager;
         }
 
         private void OnDestroy()
         {
-            addressableSettingsLoader.OnLoadSettings -= InitializeSlotMetaDataManager;
+            addressableLoaderSettings.OnLoadSettings -= InitializeSlotMetaDataManager;
             buttonGameContinue?.onClick.RemoveAllListeners();
             buttonNewGame?.onClick.RemoveAllListeners();
             buttonOption?.onClick.RemoveAllListeners();
@@ -66,13 +66,13 @@ namespace GGemCo.Scripts
         private void InitializeSlotMetaDataManager(GGemCoSettings settings, GGemCoPlayerSettings playerSettings,
             GGemCoMapSettings mapSettings, GGemCoSaveSettings saveSettings)
         {
-            slotMetaDatController = new SlotMetaDatController(saveSettings.SaveDataFolderName, saveSettings.saveDataMaxSlotCount);
-            if (uIWindowLoadSaveData != null)
+            _slotMetaDatController = new SlotMetaDatController(saveSettings.SaveDataFolderName, saveSettings.saveDataMaxSlotCount);
+            if (uIWindowLoadSaveData)
             {
-                uIWindowLoadSaveData.InitializeSaveDataSlots(saveSettings, slotMetaDatController);
+                uIWindowLoadSaveData.InitializeSaveDataSlots(saveSettings, _slotMetaDatController);
             }
 
-            saveDataSettings = saveSettings;
+            _saveDataSettings = saveSettings;
 
             UpdateButtons();
         }
@@ -96,11 +96,11 @@ namespace GGemCo.Scripts
         private void UpdateButtons()
         {
             // 남은 슬롯 index 채크해서 없으면 buttonNewGame 버튼 disable 처리 
-            int slotIndex = slotMetaDatController.GetEmptySlotIndex();
+            int slotIndex = _slotMetaDatController.GetEmptySlotIndex();
             buttonNewGame?.gameObject.SetActive(slotIndex > 0);
             buttonGameContinue?.gameObject.SetActive(PlayerPrefsManager.LoadSaveDataSlotIndex() > 0);
             // slot 데이터가 있는지 채크해서 있으면 buttonOpenSaveDataWindow 버튼 enable 처리 
-            buttonOpenSaveDataWindow?.gameObject.SetActive(slotMetaDatController.GetExistSlotCounts() > 0);
+            buttonOpenSaveDataWindow?.gameObject.SetActive(_slotMetaDatController.GetExistSlotCounts() > 0);
         }
         
         /// <summary>
@@ -108,7 +108,7 @@ namespace GGemCo.Scripts
         /// </summary>
         private void OnClickGameContinue()
         {
-            if (saveDataSettings != null && saveDataSettings.UseSaveData)
+            if (_saveDataSettings && _saveDataSettings.UseSaveData)
             {
                 // PlayerPrefs 에서 가져온 값이 있는지 체크 
                 if (PlayerPrefsManager.LoadSaveDataSlotIndex() <= 0)
@@ -126,10 +126,10 @@ namespace GGemCo.Scripts
         /// </summary>
         private void OnClickNewGame()
         {
-            if (saveDataSettings != null && saveDataSettings.UseSaveData)
+            if (_saveDataSettings && _saveDataSettings.UseSaveData)
             {
                 // 남은 슬롯이 있는지 체크
-                int slotIndex = slotMetaDatController.GetEmptySlotIndex();
+                int slotIndex = _slotMetaDatController.GetEmptySlotIndex();
                 if (slotIndex <= 0)
                 {
                     GcLogger.LogError("남은 저장 슬롯이 없습니다. 저장되어있는 데이터를 지워주세요.");

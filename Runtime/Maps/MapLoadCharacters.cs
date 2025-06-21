@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 using Newtonsoft.Json;
 using UnityEngine;
 using Object = UnityEngine.Object;
@@ -30,7 +31,7 @@ namespace GGemCo.Scripts
             tableNpc = tableLoaderManager.TableNpc;
             tableAnimation = tableLoaderManager.TableAnimation;
             tableMonster = tableLoaderManager.TableMonster;
-            defaultMonsterRegenTimeSec = AddressableSettingsLoader.Instance.settings.defaultMonsterRegenTimeSec;
+            defaultMonsterRegenTimeSec = AddressableLoaderSettings.Instance.settings.defaultMonsterRegenTimeSec;
         }
         /// <summary>
         /// 플레이어 스폰
@@ -39,39 +40,44 @@ namespace GGemCo.Scripts
         /// <param name="currentMapTableData"></param>
         /// <param name="mapTileCommon"></param>
         /// <returns></returns>
-        public IEnumerator LoadPlayer(Vector3 playSpawnPosition, StruckTableMap currentMapTableData, DefaultMap mapTileCommon)
+        public async Task LoadPlayer(Vector3 playSpawnPosition, StruckTableMap currentMapTableData, DefaultMap mapTileCommon)
         {
-            if (SceneGame.Instance.player == null)
+            try
             {
-                GameObject player = SceneGame.Instance.CharacterManager.CreatePlayer();
-                SceneGame.Instance.player = player;
-            }
+                if (!SceneGame.Instance.player)
+                {
+                    GameObject player = await SceneGame.Instance.CharacterManager.CreatePlayer();
+                    SceneGame.Instance.player = player;
+                }
             
-            // 플레이어 위치
-            Vector3 spawnPosition = currentMapTableData.PlayerSpawnPosition;
-            if (playSpawnPosition != Vector3.zero)
-            {
-                spawnPosition = playSpawnPosition;
+                // 플레이어 위치
+                Vector3 spawnPosition = currentMapTableData.PlayerSpawnPosition;
+                if (playSpawnPosition != Vector3.zero)
+                {
+                    spawnPosition = playSpawnPosition;
+                }
+                SceneGame.Instance.player?.GetComponent<Player>().MoveTeleport(spawnPosition.x, spawnPosition.y);
+                SceneGame.Instance.player?.GetComponent<Player>().SetMapSize(mapTileCommon.GetMapSize());
+                SceneGame.Instance.cameraManager?.SetFollowTarget(SceneGame.Instance.player?.transform);
             }
-            SceneGame.Instance.player?.GetComponent<Player>().MoveTeleport(spawnPosition.x, spawnPosition.y);
-            SceneGame.Instance.player?.GetComponent<Player>().SetMapSize(mapTileCommon.GetMapSize());
-            SceneGame.Instance.cameraManager?.SetFollowTarget(SceneGame.Instance.player?.transform);
-
-            // yield return new WaitForSeconds(ConfigCommon.CharacterFadeSec/2);
-            yield return null;
+            catch (Exception e)
+            {
+                Console.WriteLine(e);
+                throw;
+            }
         }
         /// <summary>
         /// 몬스터 스폰하기
         /// </summary>
         /// <returns></returns>
-        public IEnumerator LoadMonsters(MapTileCommon mapTileCommon)
+        public async Task LoadMonsters(MapTileCommon mapTileCommon, StruckTableMap currentMapTableData)
         {
-            string regenFileName = mapManager.GetFilePath(MapConstants.FileNameRegenMonster);
-
+            string key = ConfigAddressableMap.GetKeyJsonRegenMonster(currentMapTableData.FolderName);
             try
             {
-                TextAsset textFile = Resources.Load<TextAsset>($"{regenFileName}");
-                if (textFile != null)
+                TextAsset textFile = await AddressableLoaderController.LoadByKeyAsync<TextAsset>(key);
+                
+                if (textFile)
                 {
                     string content = textFile.text;
                     if (!string.IsNullOrEmpty(content))
@@ -83,11 +89,8 @@ namespace GGemCo.Scripts
             }
             catch (Exception ex)
             {
-                GcLogger.LogError($"몬스터 regen json 파싱중 오류. file {regenFileName}: {ex.Message}");
-                yield break;
+                GcLogger.LogError($"몬스터 regen json 파싱중 오류. file {key}: {ex.Message}");
             }
-
-            yield return null;
         }
         /// <summary>
         /// 몬스터 스폰하기
@@ -114,7 +117,7 @@ namespace GGemCo.Scripts
         private void SpawnMonster(int monsterUid, CharacterRegenData monsterData, MapTileCommon mapTileCommon)
         {
             GameObject monster = SceneGame.Instance.CharacterManager.CreateMonster(monsterUid, monsterData);
-            if (monster == null) return;
+            if (!monster) return;
             monster.transform.SetParent(mapTileCommon.gameObject.transform);
             
             Monster myMonsterScript = monster.GetComponent<Monster>();
@@ -128,14 +131,14 @@ namespace GGemCo.Scripts
         /// npc 스폰하기
         /// </summary>
         /// <returns></returns>
-        public IEnumerator LoadNpcs(MapTileCommon mapTileCommon)
+        public async Task LoadNpcs(MapTileCommon mapTileCommon, StruckTableMap currentMapTableData)
         {
-            string regenFileName = mapManager.GetFilePath(MapConstants.FileNameRegenNpc);
-
+            string key = ConfigAddressableMap.GetKeyJsonRegenNpc(currentMapTableData.FolderName);
             try
             {
-                TextAsset textFile = Resources.Load<TextAsset>($"{regenFileName}");
-                if (textFile != null)
+                TextAsset textFile = await AddressableLoaderController.LoadByKeyAsync<TextAsset>(key);
+                
+                if (textFile)
                 {
                     string content = textFile.text;
                     if (!string.IsNullOrEmpty(content))
@@ -147,11 +150,8 @@ namespace GGemCo.Scripts
             }
             catch (Exception ex)
             {
-                GcLogger.LogError($"npc json 파싱중 오류. file {regenFileName}: {ex.Message}");
-                yield break;
+                GcLogger.LogError($"npc json 파싱중 오류. file {key}: {ex.Message}");
             }
-
-            yield return null;
         }
         /// <summary>
         /// npc 스폰하기
@@ -164,21 +164,19 @@ namespace GGemCo.Scripts
             {
                 int uid = npcData.Uid;
                 GameObject npc = SceneGame.Instance.CharacterManager.CreateNpc(uid, npcData);
-                if (npc == null) continue;
+                if (!npc) continue;
                 npc.transform.SetParent(mapTileCommon.gameObject.transform);
             
                 // NPC의 이름과 기타 속성 설정
                 Npc myNpcScript = npc.GetComponent<Npc>();
-                if (myNpcScript != null)
-                {
-                    // npcExporter.cs:158 도 수정
-                    myNpcScript.vid = characterVid;
-                    myNpcScript.uid = npcData.Uid;
-                    myNpcScript.CharacterRegenData = npcData;
+                if (!myNpcScript) continue;
+                // npcExporter.cs:158 도 수정
+                myNpcScript.vid = characterVid;
+                myNpcScript.uid = npcData.Uid;
+                myNpcScript.CharacterRegenData = npcData;
                     
-                    mapTileCommon.AddNpc(characterVid, npc);
-                    characterVid++;
-                }
+                mapTileCommon.AddNpc(characterVid, npc);
+                characterVid++;
             }
         }
         /// <summary>
@@ -203,14 +201,14 @@ namespace GGemCo.Scripts
         /// 워프 스폰하기
         /// </summary>
         /// <returns></returns>
-        public IEnumerator LoadWarps(MapTileCommon mapTileCommon)
+        public async Task LoadWarps(MapTileCommon mapTileCommon, StruckTableMap currentMapTableData)
         {
-            string rPathWarp = mapManager.GetFilePath(MapConstants.FileNameWarp);
-
+            string key = ConfigAddressableMap.GetKeyJsonWarp(currentMapTableData.FolderName);
             try
             {
-                TextAsset textFile = Resources.Load<TextAsset>($"{rPathWarp}");
-                if (textFile != null)
+                TextAsset textFile = await AddressableLoaderController.LoadByKeyAsync<TextAsset>(key);
+                
+                if (textFile)
                 {
                     string content = textFile.text;
                     if (!string.IsNullOrEmpty(content))
@@ -222,10 +220,8 @@ namespace GGemCo.Scripts
             }
             catch (Exception ex)
             {
-                GcLogger.LogError($"워프 json 파싱중 오류. file {rPathWarp}: {ex.Message}");
-                yield break;
+                GcLogger.LogError($"워프 json 파싱중 오류. file {key}: {ex.Message}");
             }
-            yield return null;
         }
         /// <summary>
         /// 워프 스폰하기
@@ -234,23 +230,19 @@ namespace GGemCo.Scripts
         /// <param name="mapTileCommon"></param>
         private void SpawnWarps(List<WarpData> warpDatas, MapTileCommon mapTileCommon)
         {
-            GameObject warpPrefab = Resources.Load<GameObject>(MapConstants.PathPrefabWarp);
-            if (warpPrefab == null)
-            {
-                GcLogger.LogError("워프 프리팹이 없습니다. path:"+MapConstants.PathPrefabWarp);
-                return;
-            }
+            GameObject warpPrefab =
+                AddressableLoaderPrefabCommon.Instance.GetPreLoadGamePrefabByName(ConfigAddressableMap.ObjectWarp.Key);
+            if (!warpPrefab) return;
+            
             foreach (WarpData warpData in warpDatas)
             {
                 GameObject warp = Object.Instantiate(warpPrefab, new Vector3(warpData.x, warpData.y, warpData.z), Quaternion.identity, mapTileCommon.gameObject.transform);
             
                 // 워프의 이름과 기타 속성 설정
                 ObjectWarp objectWarp = warp.GetComponent<ObjectWarp>();
-                if (objectWarp != null)
-                {
-                    // warpExporter.cs:128 도 수정
-                    objectWarp.WarpData = warpData;
-                }
+                if (!objectWarp) continue;
+                // warpExporter.cs:128 도 수정
+                objectWarp.WarpData = warpData;
             }
         }
     }

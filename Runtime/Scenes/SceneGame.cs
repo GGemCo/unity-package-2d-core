@@ -53,6 +53,7 @@ namespace GGemCo.Scripts
         public InteractionManager InteractionManager;
         public CutsceneManager CutsceneManager;
         public QuestManager QuestManager;
+        public AddressableLoaderPrefabCharacter AddressableLoaderPrefabCharacter;
         
         private UIWindowInventory uiWindowInventory;
 
@@ -93,11 +94,13 @@ namespace GGemCo.Scripts
             damageTextManager = CreateManager<DamageTextManager>(managerContainer);
             uIIconCoolTimeManager = CreateManager<UIIconCoolTimeManager>(managerContainer);
             
+            AddressableLoaderPrefabCharacter = new AddressableLoaderPrefabCharacter();
+            AddressableLoaderPrefabCharacter.Initialize(this);
             ItemManager = new ItemManager();
             ItemManager.Initialize(this);
             CharacterManager = new CharacterManager();
             CharacterManager.Initialize(TableLoaderManager.Instance.TableNpc, TableLoaderManager.Instance.TableMonster,
-                TableLoaderManager.Instance.TableAnimation);
+                TableLoaderManager.Instance.TableAnimation, AddressableLoaderPrefabCharacter);
             KeyboardManager = new KeyboardManager();
             KeyboardManager.Initialize(this);
             InteractionManager = new InteractionManager();

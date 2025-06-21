@@ -32,8 +32,7 @@ namespace GGemCo.Scripts
         /// </summary>
         private void CreateTagName()
         {
-            GameObject prefabTagNameNpc =
-                AddressablePrefabLoader.Instance.GetPreLoadGamePrefabByName(ConfigAddressables.KeyPrefabTextNpcNameTag);
+            GameObject prefabTagNameNpc = ConfigResources.TextNpcNameTag.Load();
             if (prefabTagNameNpc == null) return;
             if (containerNpcName == null)
             {

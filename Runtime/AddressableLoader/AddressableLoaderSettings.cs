@@ -9,9 +9,9 @@ namespace GGemCo.Scripts
     /// <summary>
     /// GGemCo Settings 불러오기
     /// </summary>
-    public class AddressableSettingsLoader : MonoBehaviour
+    public class AddressableLoaderSettings : MonoBehaviour
     {
-        public static AddressableSettingsLoader Instance { get; private set; }
+        public static AddressableLoaderSettings Instance { get; private set; }
 
         [HideInInspector] public GGemCoSettings settings;
         [HideInInspector] public GGemCoPlayerSettings playerSettings;
@@ -24,7 +24,7 @@ namespace GGemCo.Scripts
 
         private void Awake()
         {
-            if (Instance == null)
+            if (!Instance)
             {
                 Instance = this;
                 DontDestroyOnLoad(gameObject);
@@ -51,10 +51,10 @@ namespace GGemCo.Scripts
             try
             {
                 // 여러 개의 설정을 병렬적으로 로드
-                var settingsTask = LoadSettingsAsync<GGemCoSettings>(ConfigAddressables.KeySettings);
-                var playerSettingsTask = LoadSettingsAsync<GGemCoPlayerSettings>(ConfigAddressables.KeyPlayerSettings);
-                var mapSettingsTask = LoadSettingsAsync<GGemCoMapSettings>(ConfigAddressables.KeyMapSettings);
-                var saveSettingsTask = LoadSettingsAsync<GGemCoSaveSettings>(ConfigAddressables.KeySaveSettings);
+                var settingsTask = LoadSettingsAsync<GGemCoSettings>(ConfigAddressableSetting.Settings.Key);
+                var playerSettingsTask = LoadSettingsAsync<GGemCoPlayerSettings>(ConfigAddressableSetting.PlayerSettings.Key);
+                var mapSettingsTask = LoadSettingsAsync<GGemCoMapSettings>(ConfigAddressableSetting.MapSettings.Key);
+                var saveSettingsTask = LoadSettingsAsync<GGemCoSaveSettings>(ConfigAddressableSetting.SaveSettings.Key);
 
                 // 모든 작업이 완료될 때까지 대기
                 await Task.WhenAll(settingsTask, playerSettingsTask, mapSettingsTask, saveSettingsTask);

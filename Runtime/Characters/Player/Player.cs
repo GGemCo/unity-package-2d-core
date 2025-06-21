@@ -117,8 +117,8 @@ namespace GGemCo.Scripts
         /// </summary>
         protected override void InitializeByTable()
         {
-            if (AddressableSettingsLoader.Instance == null) return;
-            GGemCoPlayerSettings playerSettings = AddressableSettingsLoader.Instance.playerSettings;
+            if (AddressableLoaderSettings.Instance == null) return;
+            GGemCoPlayerSettings playerSettings = AddressableLoaderSettings.Instance.playerSettings;
             SetBaseInfos(playerSettings.statAtk, playerSettings.statDef, playerSettings.statHp, playerSettings.statMp,
                 playerSettings.statMoveSpeed, playerSettings.statAttackSpeed, playerSettings.statRegistFire,
                 playerSettings.statRegistCold, playerSettings.statRegistLightning);

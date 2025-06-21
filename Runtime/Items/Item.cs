@@ -57,7 +57,7 @@ namespace GGemCo.Scripts
             circleCollider2D = GetComponent<CircleCollider2D>();
             circleCollider2D.enabled = false;
             
-            dropItemDestroyTimeSec = AddressableSettingsLoader.Instance.settings.dropItemDestroyTimeSec;
+            dropItemDestroyTimeSec = AddressableLoaderSettings.Instance.settings.dropItemDestroyTimeSec;
         }
 
         private void Start()
@@ -83,7 +83,8 @@ namespace GGemCo.Scripts
             timeElapsed = 0f;
             isBouncing = false;
             transform.localScale = Vector3.one;
-            spriteRenderer.sprite = Resources.Load<Sprite>(info.ImageItemPath);
+
+            spriteRenderer.sprite = AddressableLoaderItem.Instance.GetImageDropByName(info.FileName);
 
             // 특정 반경 내에서 랜덤한 위치 선택 (X, Y 축 모두 분산)
             int maxAttempts = 10; // 겹치지 않도록 최대 시도 횟수
@@ -142,8 +143,7 @@ namespace GGemCo.Scripts
         /// </summary>
         private void CreateTagName()
         {
-            GameObject prefabTagNameItem =
-                AddressablePrefabLoader.Instance.GetPreLoadGamePrefabByName(ConfigAddressables.KeyPrefabTextDropItemNameTag);
+            GameObject prefabTagNameItem = ConfigResources.TextDropItemNameTag.Load();
             if (prefabTagNameItem == null) return;
             if (containerItemName == null)
             {

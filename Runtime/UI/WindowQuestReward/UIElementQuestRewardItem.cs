@@ -1,5 +1,4 @@
-﻿using System;
-using TMPro;
+﻿using TMPro;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
@@ -17,11 +16,11 @@ namespace GGemCo.Scripts
         [Tooltip("아이템 이름")]
         public TextMeshProUGUI textName;
         
-        private UIWindowQuestReward uiWindowQuestReward;
-        private UIWindowItemInfo uiWindowItemInfo;
-        private int itemUid;
-        private int itemCount;
-        private TableItem tableItem;
+        private UIWindowQuestReward _uiWindowQuestReward;
+        private UIWindowItemInfo _uiWindowItemInfo;
+        private int _itemUid;
+        private int _itemCount;
+        private TableItem _tableItem;
         
         /// <summary>
         /// 초기화
@@ -31,34 +30,34 @@ namespace GGemCo.Scripts
         /// <param name="itemCount"></param>
         public void Initialize(UIWindowQuestReward puiWindowQuestReward, int itemUid, int itemCount)
         {
-            uiWindowQuestReward = puiWindowQuestReward;
-            this.itemUid = itemUid;
-            this.itemCount = itemCount;
+            _uiWindowQuestReward = puiWindowQuestReward;
+            this._itemUid = itemUid;
+            this._itemCount = itemCount;
         }
         private void Start()
         {
-            uiWindowItemInfo =
+            _uiWindowItemInfo =
                 SceneGame.Instance.uIWindowManager.GetUIWindowByUid<UIWindowItemInfo>(
                     UIWindowManager.WindowUid.ItemInfo);
-            tableItem = TableLoaderManager.Instance.TableItem;
-            var info = tableItem.GetDataByUid(itemUid);
+            _tableItem = TableLoaderManager.Instance.TableItem;
+            var info = _tableItem.GetDataByUid(_itemUid);
             if (info == null) return;
             if (textName == null) return;
-            textName.text = $"{info.Name} x {itemCount}";
+            textName.text = $"{info.Name} x {_itemCount}";
             imageIcon.sprite = Resources.Load<Sprite>(info.ImageItemPath);
         }
 
         public void OnPointerEnter(PointerEventData eventData)
         {
-            uiWindowItemInfo.SetItemUid(itemUid, gameObject,
-                UIWindowItemInfo.PositionType.None, uiWindowQuestReward.containerIcon.cellSize, new Vector2(0, 1f),
+            _uiWindowItemInfo.SetItemUid(_itemUid, gameObject,
+                UIWindowItemInfo.PositionType.None, _uiWindowQuestReward.containerIcon.cellSize, new Vector2(0, 1f),
                 new Vector2(
-                    transform.position.x + uiWindowQuestReward.containerIcon.cellSize.x / 2f,
-                    transform.position.y + uiWindowQuestReward.containerIcon.cellSize.y / 2f));
+                    transform.position.x + _uiWindowQuestReward.containerIcon.cellSize.x / 2f,
+                    transform.position.y + _uiWindowQuestReward.containerIcon.cellSize.y / 2f));
         }
         public void OnPointerExit(PointerEventData eventData)
         {
-            uiWindowItemInfo.Show(false);
+            _uiWindowItemInfo.Show(false);
         }
     }
 }

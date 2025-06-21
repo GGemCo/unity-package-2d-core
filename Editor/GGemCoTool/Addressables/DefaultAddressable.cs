@@ -2,6 +2,7 @@
 using UnityEditor;
 using UnityEditor.AddressableAssets;
 using UnityEditor.AddressableAssets.Settings;
+using UnityEngine;
 
 namespace GGemCo.Editor
 {
@@ -65,6 +66,41 @@ namespace GGemCo.Editor
 
             GcLogger.Log($"새로운 Addressable 그룹을 생성했습니다: {groupName}");
             return newGroup;
+        }
+        
+        protected void Add(AddressableAssetSettings settings, AddressableAssetGroup group, string keyName, string assetPath, string labelName = "")
+        {
+            // 대상 파일 가져오기
+            var asset = AssetDatabase.LoadMainAssetAtPath(assetPath);
+            if (!asset)
+            {
+                Debug.LogError($"파일을 찾을 수 없습니다: {assetPath}");
+                return;
+            }
+
+            // 기존 Addressable 항목 확인
+            AddressableAssetEntry entry = settings.FindAssetEntry(AssetDatabase.AssetPathToGUID(assetPath));
+
+            if (entry == null)
+            {
+                // 신규 Addressable 항목 추가
+                entry = settings.CreateOrMoveEntry(AssetDatabase.AssetPathToGUID(assetPath), group);
+                Debug.Log($"Addressable 항목을 추가했습니다: {assetPath}");
+            }
+            else
+            {
+                Debug.Log($"이미 Addressable에 등록된 항목입니다: {assetPath}");
+            }
+
+            // 키 값 설정
+            entry.address = keyName;
+            // 라벨 값 설정
+            if (!string.IsNullOrEmpty(labelName))
+            {
+                entry.SetLabel(labelName, true, true);
+            }
+
+            // GcLogger.Log($"Addressable 키 값 설정: {keyName}");
         }
     }
 }

@@ -85,7 +85,7 @@ namespace GGemCo.Scripts
         public void Initialize(TableLoaderManager loader, SaveDataContainer saveDataContainer = null)
         {
             tableLoaderManager = loader;
-            maxPlayerLevel = AddressableSettingsLoader.Instance.playerSettings.maxLevel;
+            maxPlayerLevel = AddressableLoaderSettings.Instance.playerSettings.maxLevel;
             // 최대 레벨이 없을때는 경험치 테이블에서 가져온다
             if (maxPlayerLevel <= 0)
             {

@@ -18,6 +18,7 @@ namespace GGemCo.Scripts
         public string ImageItemPath;
         public ItemConstants.Class Class;
         public string ImagePath;
+        public string FileName;
         public int Upgrade;
         public int MaxOverlayCount;
         public float CoolTime;
@@ -181,8 +182,13 @@ namespace GGemCo.Scripts
             ItemConstants.SubCategory subCategory = ConvertSubCategory(data["SubCategory"]);
             data["Description"] = ParsePlaceholders(data["Description"], data);
             data["PartsImagePath"] = $"Images/Parts/{data["PartsID"]}/{data["ImagePath"]}";
+            if (data["PartsID"] == "")
+            {
+                data["PartsImagePath"] = $"Images/Parts/{data["ImagePath"]}";
+            }
             
             // 아이콘 이미지 경로
+            data["FileName"] = data["ImagePath"];
             data["ImagePath"] = ConvertImagePath(data, category, subCategory);
             // 드랍 아이템 이미지 경로
             data["ImageItemPath"] = data["ImagePath"].Replace("/Icon/Item/", "/Item/");
@@ -266,6 +272,8 @@ namespace GGemCo.Scripts
                 OptionType5 = data["OptionType5"],
                 OptionSuffix5 = ConvertSuffixType(data["OptionSuffix5"]),
                 OptionValue5 = int.Parse(data["OptionValue5"]),
+                
+                FileName = data["FileName"],
             };
         }
         public override bool TryGetDataByUid(int uid, out object info)

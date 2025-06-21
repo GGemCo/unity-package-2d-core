@@ -17,6 +17,7 @@
             Etc = 900,
             PlayerPrefs,
             OpenSaveDataFolder,
+            LoadAddressable,
         }
         private const string NameToolGGemCo = "GGemCoTool/";
         // 기본 셋팅하기
@@ -40,6 +41,7 @@
         private const string NameToolEtc = NameToolGGemCo + "기타/";
         public const string NameToolPlayerPrefs = NameToolEtc + "PlayerPrefs 데이터 관리";
         public const string NameToolOpenSaveDataFolder = NameToolEtc + "게임 데이터 관리";
+        public const string NameToolLoadAddressable = NameToolEtc + "Addressable 로더 툴";
         
         // 프리팹 경로
         public const string PrefabPathDefaultUIButton = "Packages/com.ggemco.2d.core/Data/Prefabs/UI/DefaultButton.prefab";

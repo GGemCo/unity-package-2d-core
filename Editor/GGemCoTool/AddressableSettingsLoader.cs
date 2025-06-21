@@ -12,10 +12,10 @@ namespace GGemCo.Editor
     /// </summary>
     public class AddressableSettingsLoader
     {
-        public GGemCoSettings settings;
-        public GGemCoPlayerSettings playerSettings;
-        public GGemCoMapSettings mapSettings;
-        public GGemCoSaveSettings saveSettings;
+        private GGemCoSettings _settings;
+        private GGemCoPlayerSettings _playerSettings;
+        private GGemCoMapSettings _mapSettings;
+        private GGemCoSaveSettings _saveSettings;
 
         public delegate void DelegateLoadSettings(GGemCoSettings settings, GGemCoPlayerSettings playerSettings,
             GGemCoMapSettings mapSettings, GGemCoSaveSettings saveSettings);
@@ -41,19 +41,19 @@ namespace GGemCo.Editor
             try
             {
                 // 여러 개의 설정을 병렬적으로 로드
-                var settingsTask = LoadSettingsAsync<GGemCoSettings>(ConfigAddressables.KeySettings);
-                var playerSettingsTask = LoadSettingsAsync<GGemCoPlayerSettings>(ConfigAddressables.KeyPlayerSettings);
-                var mapSettingsTask = LoadSettingsAsync<GGemCoMapSettings>(ConfigAddressables.KeyMapSettings);
-                var saveSettingsTask = LoadSettingsAsync<GGemCoSaveSettings>(ConfigAddressables.KeySaveSettings);
+                var settingsTask = LoadSettingsAsync<GGemCoSettings>(ConfigAddressableSetting.Settings.Key);
+                var playerSettingsTask = LoadSettingsAsync<GGemCoPlayerSettings>(ConfigAddressableSetting.PlayerSettings.Key);
+                var mapSettingsTask = LoadSettingsAsync<GGemCoMapSettings>(ConfigAddressableSetting.MapSettings.Key);
+                var saveSettingsTask = LoadSettingsAsync<GGemCoSaveSettings>(ConfigAddressableSetting.SaveSettings.Key);
 
                 // 모든 작업이 완료될 때까지 대기
                 await Task.WhenAll(settingsTask, playerSettingsTask, mapSettingsTask, saveSettingsTask);
 
                 // 결과 저장
-                settings = settingsTask.Result;
-                playerSettings = playerSettingsTask.Result;
-                mapSettings = mapSettingsTask.Result;
-                saveSettings = saveSettingsTask.Result;
+                _settings = settingsTask.Result;
+                _playerSettings = playerSettingsTask.Result;
+                _mapSettings = mapSettingsTask.Result;
+                _saveSettings = saveSettingsTask.Result;
 
                 // 로그 출력
                 // if (settings != null)
@@ -66,7 +66,7 @@ namespace GGemCo.Editor
                 //     GcLogger.Log("최대 저장 슬롯 개수 : " + saveSettings.saveDataMaxSlotCount);
 
                 // 이벤트 호출
-                OnLoadSettings?.Invoke(settings, playerSettings, mapSettings, saveSettings);
+                OnLoadSettings?.Invoke(_settings, _playerSettings, _mapSettings, _saveSettings);
             }
             catch (Exception ex)
             {

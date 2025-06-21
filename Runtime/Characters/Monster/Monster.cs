@@ -109,12 +109,8 @@ namespace GGemCo.Scripts
                 GcLogger.LogError("SceneGame 에 containerMonsterHpBar 가 설정되지 않았습니다.");
                 return;
             }
-            prefabSliderHpBar = AddressablePrefabLoader.Instance.GetPreLoadGamePrefabByName(ConfigAddressables.KeyPrefabSliderMonsterHp);
-            if (prefabSliderHpBar == null)
-            {
-                GcLogger.LogError($"Addressable group 에 {ConfigAddressables.KeyPrefabSliderMonsterHp} 가 없습니다.");
-                return;
-            }
+            prefabSliderHpBar = ConfigResources.SliderMonsterHp.Load();
+            if (prefabSliderHpBar == null) return;
             containerMonsterHpBar = SceneGame.Instance.containerMonsterHpBar.transform;
             sliderHpBar = Instantiate(prefabSliderHpBar, containerMonsterHpBar);
             MonsterHpBar monsterHpBar = sliderHpBar.GetComponent<MonsterHpBar>();

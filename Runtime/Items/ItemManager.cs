@@ -73,8 +73,8 @@ namespace GGemCo.Scripts
         /// </summary>
         private void InitializePool()
         {
-            if (AddressableSettingsLoader.Instance == null) return;
-            prefabDropItem = AddressablePrefabLoader.Instance.GetPreLoadGamePrefabByName(ConfigAddressables.KeyPrefabDropItem);
+            if (AddressableLoaderSettings.Instance == null) return;
+            prefabDropItem = ConfigResources.DropItem.Load();
             if (prefabDropItem == null) return;
             containerPoolDropItem = new GameObject("ContainerPoolDropItem");
             ExpandPool(poolSize); // 초기 풀 생성

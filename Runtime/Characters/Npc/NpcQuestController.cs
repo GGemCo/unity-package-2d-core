@@ -61,10 +61,8 @@ namespace GGemCo.Scripts
             {
                 containerNpcName = SceneGame.Instance.containerDropItemName;
             }
-            GameObject prefabIconQuestReady =
-                AddressablePrefabLoader.Instance.GetPreLoadGamePrefabByName(ConfigAddressables.KeyPrefabIconQuestReady);
-            GameObject prefabIconQuestInProgress =
-                AddressablePrefabLoader.Instance.GetPreLoadGamePrefabByName(ConfigAddressables.KeyPrefabIconQuestInProgress);
+            GameObject prefabIconQuestReady = ConfigResources.IconQuestReady.Load();
+            GameObject prefabIconQuestInProgress = ConfigResources.IconQuestInProgress.Load();
             if (prefabIconQuestReady != null)
             {
                 iconQuestReady = Instantiate(prefabIconQuestReady, containerNpcName.transform);

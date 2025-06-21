@@ -1,5 +1,4 @@
 ﻿using System.Collections.Generic;
-using System.Threading.Tasks;
 using GGemCo.Scripts;
 using UnityEditor;
 using UnityEngine;
@@ -28,45 +27,12 @@ namespace GGemCo.Editor
         {
             base.OnEnable();
             _selectedItemIndex = 0;
-            _ = LoadAsync();
+            _tableItem = TableLoaderManager.LoadItemTable();
+            _itemDictionary = _tableItem.GetDatas();
+            LoadItemInfoData();
         }
-        private async Task LoadAsync()
-        {
-            try
-            {
-                _tableItem = await TableLoaderManager.LoadItemTableAsync();
-
-                if (_tableItem == null)
-                {
-                    EditorUtility.DisplayDialog(Title, "Item 테이블을 불러오지 못했습니다.", "OK");
-                    return;
-                }
-
-                _itemDictionary = _tableItem.GetDatas();
-                LoadItemInfoData();
-                isLoading = false;
-                Repaint();
-            }
-            catch (System.Exception ex)
-            {
-                ShowLoadTableException(Title, ex);
-            }
-        }
-
         private void OnGUI()
         {
-            if (isLoading)
-            {
-                EditorGUILayout.LabelField("아이템 테이블 로딩 중...");
-                return;
-            }
-            // 방어 코드 추가
-            if (_itemNames.Count == 0)
-            {
-                EditorGUILayout.LabelField("등록된 아이템이 없습니다.");
-                return;
-            }
-
             if (_selectedItemIndex >= _itemNames.Count)
             {
                 _selectedItemIndex = 0;

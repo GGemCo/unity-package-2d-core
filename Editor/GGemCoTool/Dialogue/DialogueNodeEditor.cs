@@ -1,5 +1,4 @@
 ﻿using System.Collections.Generic;
-using System.Threading.Tasks;
 using GGemCo.Scripts;
 using UnityEditor;
 using UnityEditorInternal;
@@ -39,37 +38,31 @@ namespace GGemCo.Editor
             _selectedIndexMonster = 0;
             _selectedIndexQuest = 0;
             
-            _ = LoadAsync();
+            LoadTable();
         }
 
-        private async Task LoadAsync()
+        private void LoadTable()
         {
             try
             {
                 // 순차 로드
                 // _tableNpc = await TableLoaderManager.LoadNpcTableAsync();
                 
-                // 병렬 로드
-                var loadNpcTask = TableLoaderManager.LoadNpcTableAsync();
-                var loadMonsterTask = TableLoaderManager.LoadMonsterTableAsync();
-                var loadQuestTask = TableLoaderManager.LoadQuestTableAsync();
-                await Task.WhenAll(loadNpcTask, loadMonsterTask, loadQuestTask);
-
-                _tableNpc = loadNpcTask.Result;
-                _tableMonster = loadMonsterTask.Result;
-                _tableQuest = loadQuestTask.Result;
-
+                _tableNpc = TableLoaderManager.LoadNpcTable();
+                _tableMonster = TableLoaderManager.LoadMonsterTable();
+                _tableQuest = TableLoaderManager.LoadQuestTable();
+            
                 LoadNpcInfoData();
                 LoadMonsterInfoData();
                 LoadQuestInfoData();
-
+            
                 _optionList = new ReorderableList(serializedObject,
                     serializedObject.FindProperty("options"),
                     true, true, true, true)
                 {
                     drawHeaderCallback = (rect) => { EditorGUI.LabelField(rect, "선택지 목록"); }
                 };
-
+            
                 DialogueNode dialogueNode = serializedObject.targetObject as DialogueNode;
                 if (dialogueNode)
                 {
@@ -83,7 +76,7 @@ namespace GGemCo.Editor
                         ? _nameQuest.FindIndex(x => x.Contains(dialogueNode.startQuestUid.ToString()))
                         : 0;
                 }
-
+            
                 _optionList.drawElementCallback = (rect, index, isActive, isFocused) =>
                 {
                     SerializedProperty element = _optionList.serializedProperty.GetArrayElementAtIndex(index);
@@ -91,7 +84,7 @@ namespace GGemCo.Editor
                     EditorGUI.PropertyField(
                         new Rect(rect.x, rect.y, rect.width * 0.5f, EditorGUIUtility.singleLineHeight),
                         element.FindPropertyRelative("optionText"), GUIContent.none);
-
+            
                     // nextNodeGuid 읽기 전용 처리
                     GUI.enabled = false;
                     EditorGUI.PropertyField(
@@ -100,8 +93,8 @@ namespace GGemCo.Editor
                         element.FindPropertyRelative("nextNodeGuid"), GUIContent.none);
                     GUI.enabled = true;
                 };
-
-
+            
+            
                 IsLoading = false;
                 Repaint();
             }

@@ -16,11 +16,11 @@ namespace GGemCo.Scripts
                 GcLogger.LogError("아이콘을 담을 Container Icon 항목을 설정해주세요.");
                 return;
             }
-            if (AddressablePrefabLoader.Instance == null) return;
+            if (AddressableLoaderPrefabCommon.Instance == null) return;
             GameObject iconPrefab = iconType == IconConstants.Type.Skill
-                ? AddressablePrefabLoader.Instance.GetPreLoadGamePrefabByName(ConfigAddressables.KeyPrefabIconSkill)
-                : AddressablePrefabLoader.Instance.GetPreLoadGamePrefabByName(ConfigAddressables.KeyPrefabIconItem);
-            GameObject slotPrefab = AddressablePrefabLoader.Instance.GetPreLoadGamePrefabByName(ConfigAddressables.KeyPrefabSlot);
+                ? ConfigResources.IconSkill.Load()
+                : ConfigResources.IconItem.Load();
+            GameObject slotPrefab = ConfigResources.Slot.Load();
 
             for (int i = 0; i < maxCount; i++)
             {

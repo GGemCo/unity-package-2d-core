@@ -22,7 +22,7 @@ namespace GGemCo.Scripts
         private int currentCheckSlotIndex;
         // UIElementSaveDataSlot 배열
         private List<UIElementSaveDataSlot> uiElementSaveDataSlots;
-        private AddressableSettingsLoader addressableSettingsLoader;
+        private AddressableLoaderSettings _addressableLoaderSettings;
         private SlotMetaDatController slotMetaDatController;
         
         // 델리게이트 선언

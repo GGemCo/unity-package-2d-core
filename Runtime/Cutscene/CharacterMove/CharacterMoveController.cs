@@ -92,7 +92,7 @@ namespace GGemCo.Scripts
             {
                 targetCharacter = target.GetComponent<CharacterBase>();
                 // step 적용
-                characterMoveStep = AddressableSettingsLoader.Instance.playerSettings.statMoveStep;
+                characterMoveStep = AddressableLoaderSettings.Instance.playerSettings.statMoveStep;
                 if (data.characterType != CharacterConstants.Type.Player)
                 {
                     characterMoveStep = TableLoaderManager.Instance.GetCharacterMoveStep(data.characterType, data.characterUid);

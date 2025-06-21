@@ -12,42 +12,56 @@ namespace GGemCo.Scripts
             None,
             Table,
             GamePrefab,
-            SaveData
+            SaveData,
+            GamePrefabEffect,
+            Item
         }
 
         public TextMeshProUGUI textLoadingPercent; // 진행률 표시
-        private TableLoaderManager tableLoader;
-        private AddressablePrefabLoader prefabLoader;
-        private SaveDataLoader saveDataLoader;
+        private TableLoaderManager _tableLoader;
+        private SaveDataLoader _saveDataLoader;
+        private AddressableLoaderPrefabCommon _addressableLoaderPrefabCommon;
+        private AddressableLoaderPrefabEffect _addressableLoaderPrefabEffect;
+        private AddressableLoaderItem _addressableLoaderItem;
 
-        private float tableLoadProgress;
-        private float prefabLoadProgress;
-        private float saveDataLoadProgress;
-        private float totalProgress;
-        private float baseProgress;
+        private float _loadProgressTable;
+        private float _loadProgressPrefabCommon;
+        private float _loadProgressPrefabEffect;
+        private float _loadProgressItem;
+        private float _loadProgressSaveData;
+        private float _progressTotal;
+        private float _progressBase;
 
         private void Awake()
         {
-            tableLoadProgress = 0f;
-            prefabLoadProgress = 0f;
-            saveDataLoadProgress = 0f;
-            totalProgress = 0f;
+            _loadProgressTable = 0f;
+            _loadProgressPrefabCommon = 0f;
+            _loadProgressPrefabEffect = 0f;
+            _loadProgressItem = 0f;
+            _loadProgressSaveData = 0f;
+            _progressTotal = 0f;
             // 3 가지 경우를 로드 하고 있다
-            baseProgress = 100f / 4f;
+            _progressBase = 100f / 5f;
 
-            if (textLoadingPercent != null)
+            if (textLoadingPercent)
             {
                 textLoadingPercent.text = "0%";
             }
             
             GameObject gameObjectTableLoaderManager = new GameObject("TableLoaderManager");
-            tableLoader = gameObjectTableLoaderManager.AddComponent<TableLoaderManager>();
+            _tableLoader = gameObjectTableLoaderManager.AddComponent<TableLoaderManager>();
             
-            GameObject gameObjectAddressablePrefabLoader = new GameObject("AddressablePrefabLoader");
-            prefabLoader = gameObjectAddressablePrefabLoader.AddComponent<AddressablePrefabLoader>();
+            GameObject gameObjectAddressablePrefabLoader = new GameObject("AddressableLoaderPrefabCommon");
+            _addressableLoaderPrefabCommon = gameObjectAddressablePrefabLoader.AddComponent<AddressableLoaderPrefabCommon>();
+            
+            GameObject gameObjectAddressableLoaderPrefabEffect = new GameObject("AddressableLoaderPrefabEffect");
+            _addressableLoaderPrefabEffect = gameObjectAddressableLoaderPrefabEffect.AddComponent<AddressableLoaderPrefabEffect>();
+            
+            GameObject gameObjectAddressableLoaderItem = new GameObject("AddressableLoaderItem");
+            _addressableLoaderItem = gameObjectAddressableLoaderItem.AddComponent<AddressableLoaderItem>();
             
             GameObject gameObjectSaveDataLoader = new GameObject("SaveDataLoader");
-            saveDataLoader = gameObjectSaveDataLoader.AddComponent<SaveDataLoader>();
+            _saveDataLoader = gameObjectSaveDataLoader.AddComponent<SaveDataLoader>();
         }
 
         private void Start()
@@ -58,7 +72,9 @@ namespace GGemCo.Scripts
         private IEnumerator LoadGameData()
         {
             yield return LoadTableData();
-            yield return LoadAddressablePrefabs();
+            yield return LoadAddressablePrefabCommon();
+            yield return LoadAddressablePrefabEffect();
+            yield return LoadAddressableItem();
             yield return LoadSaveData();
             UnityEngine.SceneManagement.SceneManager.LoadScene(ConfigDefine.SceneNameGame);
         }
@@ -68,38 +84,62 @@ namespace GGemCo.Scripts
         /// </summary>
         private IEnumerator LoadTableData()
         {
-            string[] dataFiles = tableLoader.GetDataFiles();
-            int fileCount = dataFiles.Length;
-
-            for (int i = 0; i < fileCount; i++)
+            int i = 0;
+            int fileCount = ConfigAddressableTable.All.Count;
+            foreach (AddressableAssetInfo addressableAssetInfo in ConfigAddressableTable.All)
             {
-                yield return tableLoader.LoadDataFile(dataFiles[i]);
-                tableLoadProgress = (float)(i + 1) / fileCount * baseProgress;
+                yield return _tableLoader.LoadDataFile(addressableAssetInfo);
+                _loadProgressTable = (float)(i + 1) / fileCount * _progressBase;
                 UpdateLoadingProgress(Type.Table);
+                i++;
             }
         }
         /// <summary>
         /// Addressable 리소스를 로드하고 진행률을 업데이트합니다.
         /// </summary>
-        private IEnumerator LoadAddressablePrefabs()
+        private IEnumerator LoadAddressablePrefabCommon()
         {
-            Task prefabLoadTask = prefabLoader.LoadAllPreLoadGamePrefabsAsync();
+            Task prefabLoadTask = _addressableLoaderPrefabCommon.LoadAllPreLoadGamePrefabsAsync();
 
             while (!prefabLoadTask.IsCompleted)
             {
-                prefabLoadProgress = prefabLoader.GetPrefabLoadProgress() * baseProgress;
+                _loadProgressPrefabCommon = _addressableLoaderPrefabCommon.GetPrefabLoadProgress() * _progressBase;
                 UpdateLoadingProgress(Type.GamePrefab);
                 yield return null;
             }
         }
+
+        private IEnumerator LoadAddressablePrefabEffect()
+        {
+            Task prefabLoadTask = _addressableLoaderPrefabEffect.LoadPrefabsAsync();
+
+            while (!prefabLoadTask.IsCompleted)
+            {
+                _loadProgressPrefabEffect = _addressableLoaderPrefabEffect.GetPrefabLoadProgress() * _progressBase;
+                UpdateLoadingProgress(Type.GamePrefabEffect);
+                yield return null;
+            }
+        }
+        private IEnumerator LoadAddressableItem()
+        {
+            Task prefabLoadTask = _addressableLoaderItem.LoadPrefabsAsync();
+
+            while (!prefabLoadTask.IsCompleted)
+            {
+                _loadProgressItem = _addressableLoaderItem.GetPrefabLoadProgress() * _progressBase;
+                UpdateLoadingProgress(Type.Item);
+                yield return null;
+            }
+        }
+
         /// <summary>
         /// 세이브 데이터를 로드하고 진행률을 업데이트합니다.
         /// </summary>
         private IEnumerator LoadSaveData()
         {
-            yield return saveDataLoader.LoadData(progress =>
+            yield return _saveDataLoader.LoadData(progress =>
             {
-                saveDataLoadProgress = progress * baseProgress; // 전체 로드의 33.3% 비중
+                _loadProgressSaveData = progress * _progressBase; // 전체 로드의 33.3% 비중
                 UpdateLoadingProgress(Type.SaveData);
             });
         }
@@ -108,7 +148,7 @@ namespace GGemCo.Scripts
         /// </summary>
         private void UpdateLoadingProgress(Type type)
         {
-            totalProgress = tableLoadProgress + prefabLoadProgress + saveDataLoadProgress;
+            _progressTotal = _loadProgressTable + _loadProgressPrefabCommon + _loadProgressPrefabEffect + _loadProgressItem + _loadProgressSaveData;
             string subTitle = "테이블";
             if (type == Type.GamePrefab)
             {
@@ -118,9 +158,17 @@ namespace GGemCo.Scripts
             {
                 subTitle = "세이브 데이터";
             }
+            else if (type == Type.GamePrefabEffect)
+            {
+                subTitle = "이펙트 리소스";
+            }
+            else if (type == Type.Item)
+            {
+                subTitle = "아이템 데이터";
+            }
             if (textLoadingPercent != null)
             {
-                textLoadingPercent.text = $"{subTitle} 로드 중... {Mathf.Floor(totalProgress)}%";
+                textLoadingPercent.text = $"{subTitle} 로드 중... {Mathf.Floor(_progressTotal)}%";
             }
         }
     }

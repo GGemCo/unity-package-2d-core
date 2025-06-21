@@ -12,9 +12,7 @@ namespace GGemCo.Scripts
 
         public DialogueBalloonPool(Transform parent = null)
         {
-            prefab =
-                AddressablePrefabLoader.Instance.GetPreLoadGamePrefabByName(ConfigAddressables
-                    .KeyPrefabDialogueBalloon);
+            prefab = ConfigResources.DialogueBalloon.Load();
             this.parent = parent;
         }
 

@@ -8,9 +8,9 @@ namespace GGemCo.Scripts
         public void BuildSlotsAndIcons(UIWindow window, GridLayoutGroup container, int maxCount,
             IconConstants.Type iconType, Vector2 slotSize, Vector2 iconSize, GameObject[] slots, GameObject[] icons)
         {
-            if (AddressableSettingsLoader.Instance == null) return;
+            if (AddressableLoaderSettings.Instance == null) return;
             if (maxCount <= 0) return;
-            GameObject iconItem = AddressablePrefabLoader.Instance.GetPreLoadGamePrefabByName(ConfigAddressables.KeyPrefabIconItem);
+            GameObject iconItem = ConfigResources.IconItem.Load();
             if (iconItem == null) return;
             for (int i = 0; i < maxCount; i++)
             {

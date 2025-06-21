@@ -11,7 +11,7 @@ namespace GGemCo.Scripts
         public void BuildSlotsAndIcons(UIWindow window, GridLayoutGroup container, int maxCount,
             IconConstants.Type iconType, Vector2 slotSize, Vector2 iconSize, GameObject[] slots, GameObject[] icons)
         {
-            if (AddressableSettingsLoader.Instance == null || window.containerIcon == null) return;
+            if (AddressableLoaderSettings.Instance == null || window.containerIcon == null) return;
             UIWindowItemCraft uiWindowItemCraft = window as UIWindowItemCraft;
             if (uiWindowItemCraft == null) return;
             GameObject prefabUIElementSkill = uiWindowItemCraft.prefabUIElementCraft;
@@ -26,8 +26,8 @@ namespace GGemCo.Scripts
             slots = new GameObject[uiWindowItemCraft.maxCountIcon];
             icons = new GameObject[uiWindowItemCraft.maxCountIcon];
             
-            GameObject iconItem = AddressablePrefabLoader.Instance.GetPreLoadGamePrefabByName(ConfigAddressables.KeyPrefabIconItem);
-            GameObject slot = AddressablePrefabLoader.Instance.GetPreLoadGamePrefabByName(ConfigAddressables.KeyPrefabSlot);
+            GameObject iconItem = ConfigResources.IconItem.Load();
+            GameObject slot = ConfigResources.Slot.Load();
             if (iconItem == null) return;
 
             int index = 0;

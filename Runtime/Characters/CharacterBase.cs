@@ -74,7 +74,7 @@ namespace GGemCo.Scripts
         
         protected override void Awake()
         {
-            if (AddressableSettingsLoader.Instance == null) return;
+            if (AddressableLoaderSettings.Instance == null) return;
             base.Awake();
             CharacterRegenData = null;
             AffectController = new AffectController(this);
@@ -85,13 +85,13 @@ namespace GGemCo.Scripts
             // 태그 먼저 처리
             InitTagSortingLayer();
             InitComponents();
-            delayDestroyMonster = AddressableSettingsLoader.Instance.settings.delayDestroyMonster;
+            delayDestroyMonster = AddressableLoaderSettings.Instance.settings.delayDestroyMonster;
             if (IsUseSkill)
             {
                 SkillController = new SkillController();
                 SkillController.Initialize(this);
             }
-            characterFacing = AddressableSettingsLoader.Instance.playerSettings.characterFacing;
+            characterFacing = AddressableLoaderSettings.Instance.playerSettings.characterFacing;
         }
         /// <summary>
         /// tag, sorting layer, layer 셋팅하기

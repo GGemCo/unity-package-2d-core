@@ -1,66 +1,86 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Threading.Tasks;
 using GGemCo.Scripts;
 using UnityEngine;
-using UnityEngine.AddressableAssets;
-using UnityEngine.ResourceManagement.AsyncOperations;
 
 namespace GGemCo.Editor
 {
     public class TableLoaderManager
     {
-        private Dictionary<string, DefaultTable> loadedTables = new Dictionary<string, DefaultTable>();
-
-        private async Task<T> LoadTableAsync<T>(string addressKey) where T : DefaultTable, new()
+        private readonly Dictionary<string, DefaultTable> _loadedTables = new Dictionary<string, DefaultTable>();
+        
+        // 공통적인 로드 메서드로, 제네릭 타입과 파일명을 받아 로드
+        private T LoadTable<T>(string filePath) where T : DefaultTable, new()
         {
-            addressKey = $"GGemCo_Table_{addressKey}";
-            if (loadedTables.TryGetValue(addressKey, out var cached))
-                return cached as T;
-
             T tableData = null;
             try
             {
-                AsyncOperationHandle<TextAsset> handle = Addressables.LoadAssetAsync<TextAsset>(addressKey);
-                await handle.Task;
-
-                if (handle.Status == AsyncOperationStatus.Succeeded)
+                string content = AssetDatabaseLoaderManager.LoadFileText(filePath);
+                if (!string.IsNullOrEmpty(content))
                 {
-                    string content = handle.Result.text;
-                    if (!string.IsNullOrEmpty(content))
-                    {
-                        tableData = new T();
-                        tableData.LoadData(content);
-                        loadedTables.TryAdd(addressKey, tableData);
-                    }
-                    else
-                    {
-                        GcLogger.LogError($"테이블 내용이 없습니다. Addressables Key: {addressKey}");
-                    }
+                    tableData = new T();
+                    tableData.LoadData(content);
                 }
                 else
                 {
-                    GcLogger.LogError($"테이블 로드 실패: Addressables Key: {addressKey}");
+                    GcLogger.LogError($"테이블 내용이 없습니다. {filePath}");
                 }
             }
             catch (Exception ex)
             {
-                GcLogger.LogError($"테이블 로드 중 오류 발생: {addressKey} - {ex.Message}");
+                GcLogger.LogError($"테이블 파일을 읽는중 오류 발생. {filePath}: {ex.Message}");
             }
-
+            _loadedTables.TryAdd(filePath, tableData);
             return tableData;
         }
 
-        public Task<TableItem> LoadItemTableAsync() => LoadTableAsync<TableItem>(ConfigTableFileName.Item);
-        public Task<TableMap> LoadMapTableAsync() => LoadTableAsync<TableMap>(ConfigTableFileName.Map);
-        public Task<TableNpc> LoadNpcTableAsync() => LoadTableAsync<TableNpc>(ConfigTableFileName.Npc);
-        public Task<TableMonster> LoadMonsterTableAsync() => LoadTableAsync<TableMonster>(ConfigTableFileName.Monster);
-        public Task<TableAnimation> LoadSpineTableAsync() => LoadTableAsync<TableAnimation>(ConfigTableFileName.Animation);
-        public Task<TableItemDropGroup> LoadItemDropGroupTableAsync() => LoadTableAsync<TableItemDropGroup>(ConfigTableFileName.ItemDropGroup);
-        public Task<TableMonsterDropRate> LoadMonsterDropRateTableAsync() => LoadTableAsync<TableMonsterDropRate>(ConfigTableFileName.MonsterDropRate);
-        public Task<TableCutscene> LoadCutsceneTableAsync() => LoadTableAsync<TableCutscene>(ConfigTableFileName.Cutscene);
-        public Task<TableDialogue> LoadDialogueTableAsync() => LoadTableAsync<TableDialogue>(ConfigTableFileName.Dialogue);
-        public Task<TableQuest> LoadQuestTableAsync() => LoadTableAsync<TableQuest>(ConfigTableFileName.Quest);
+        public TableMap LoadMapTable()
+        {
+            return LoadTable<TableMap>(ConfigAddressableTable.TableMap.Path);
+        }
+        public TableNpc LoadNpcTable()
+        {
+            return LoadTable<TableNpc>(ConfigAddressableTable.TableNpc.Path);
+        }
+        public TableMonster LoadMonsterTable()
+        {
+            return LoadTable<TableMonster>(ConfigAddressableTable.TableMonster.Path);
+        }
+        public TableAnimation LoadSpineTable()
+        {
+            return LoadTable<TableAnimation>(ConfigAddressableTable.TableAnimation.Path);
+        }
+        public TableItem LoadItemTable()
+        {
+            return LoadTable<TableItem>(ConfigAddressableTable.TableItem.Path);
+        }
+        public TableItemDropGroup LoadItemDropGroupTable()
+        {
+            return LoadTable<TableItemDropGroup>(ConfigAddressableTable.TableItemDropGroup.Path);
+        }
+        public TableMonsterDropRate LoadMonsterDropRateTable()
+        {
+            return LoadTable<TableMonsterDropRate>(ConfigAddressableTable.TableMonsterDropRate.Path);
+        }
+
+        public TableCutscene LoadCutsceneTable()
+        {
+            return LoadTable<TableCutscene>(ConfigAddressableTable.TableCutscene.Path);
+        }
+
+        public TableDialogue LoadDialogueTable()
+        {
+            return LoadTable<TableDialogue>(ConfigAddressableTable.TableDialogue.Path);
+        }
+        public TableQuest LoadQuestTable()
+        {
+            return LoadTable<TableQuest>(ConfigAddressableTable.TableQuest.Path);
+        }
+
+        public TableEffect LoadEffectTable()
+        {
+            return LoadTable<TableEffect>(ConfigAddressableTable.TableEffect.Path);
+        }
 
         /// <summary>
         /// 툴에서 드롭다운 메뉴를 만들기 위해 사용중
@@ -73,42 +93,33 @@ namespace GGemCo.Editor
         /// <param name="displayNameFunc"></param>
         /// <typeparam name="TTable"></typeparam>
         /// <typeparam name="TStruct"></typeparam>
-        public async Task LoadTableDataAsync<TTable, TStruct>(
-            string tableFileName,
-            Action<TTable, List<string>, Dictionary<int, TStruct>> onLoaded,
-            Func<TStruct, string> displayNameFunc)
+        public void LoadTableData<TTable, TStruct>(string tableFileName, 
+            out TTable table,
+            out List<string> nameList, 
+            out Dictionary<int, TStruct> structTable,
+            Func<TStruct, string> displayNameFunc) 
             where TTable : DefaultTable, new()
-            where TStruct : class
+            where TStruct : class 
         {
-            var nameList = new List<string>();
-            var structTable = new Dictionary<int, TStruct>();
-
-            TTable table = loadedTables.GetValueOrDefault($"GGemCo_Table_{tableFileName}") as TTable;
-            if (table == null)
-            {
-                table = await LoadTableAsync<TTable>(tableFileName);
-            }
+            nameList = new List<string>();
+            structTable = new Dictionary<int, TStruct>();
+            table = _loadedTables.GetValueOrDefault(tableFileName) as TTable ?? LoadTable<TTable>(tableFileName);
 
             if (table == null)
             {
                 GcLogger.LogError($"{tableFileName} 테이블을 불러오지 못 했습니다.");
-                onLoaded?.Invoke(null, nameList, structTable);
                 return;
             }
-
-            Dictionary<int, Dictionary<string, string>> dataDictionary = table.GetDatas();
+ 
+            Dictionary<int, Dictionary<string, string>> monsterDictionary = table.GetDatas();
             int index = 0;
-            foreach (KeyValuePair<int, Dictionary<string, string>> outerPair in dataDictionary)
+            foreach (KeyValuePair<int, Dictionary<string, string>> outerPair in monsterDictionary)
             {
                 if (!table.TryGetDataByUid(outerPair.Key, out var rawInfo)) continue;
-                if (rawInfo is TStruct casted)
-                {
-                    nameList.Add(displayNameFunc(casted));
-                    structTable.TryAdd(index++, casted);
-                }
+                if (rawInfo is not TStruct casted) continue;
+                nameList.Add(displayNameFunc(casted));
+                structTable.TryAdd(index++, casted);
             }
-
-            onLoaded?.Invoke(table, nameList, structTable);
         }
     }
 }

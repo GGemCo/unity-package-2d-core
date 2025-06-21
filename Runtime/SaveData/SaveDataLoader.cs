@@ -41,8 +41,8 @@ namespace GGemCo.Scripts
         {
             int slotIndex = PlayerPrefsManager.LoadSaveDataSlotIndex();
 
-            int maxSlotCount = AddressableSettingsLoader.Instance.saveSettings.saveDataMaxSlotCount;
-            string saveDirectory = AddressableSettingsLoader.Instance.saveSettings.SaveDataFolderName;
+            int maxSlotCount = AddressableLoaderSettings.Instance.saveSettings.saveDataMaxSlotCount;
+            string saveDirectory = AddressableLoaderSettings.Instance.saveSettings.SaveDataFolderName;
             SaveFileController saveFileController = new SaveFileController(saveDirectory, maxSlotCount);
             string filePath = saveFileController.GetSaveFilePath(slotIndex);
 

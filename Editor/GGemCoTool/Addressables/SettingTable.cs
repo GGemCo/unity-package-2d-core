@@ -1,5 +1,4 @@
-﻿using System.Collections.Generic;
-using GGemCo.Scripts;
+﻿using GGemCo.Scripts;
 using UnityEditor;
 using UnityEditor.AddressableAssets;
 using UnityEditor.AddressableAssets.Settings;
@@ -52,8 +51,9 @@ namespace GGemCo.Editor
                 return;
             }
 
-            foreach (var (keyName, assetPath) in ConfigAddressables.AssetsToAddTable)
+            foreach (var addressableAssetInfo in ConfigAddressableTable.All)
             {
+                string assetPath = addressableAssetInfo.Path;
                 // 대상 파일 가져오기
                 var asset = AssetDatabase.LoadMainAssetAtPath(assetPath);
                 if (!asset)
@@ -77,9 +77,9 @@ namespace GGemCo.Editor
                 }
 
                 // 키 값 설정
-                entry.address = keyName;
+                entry.address = addressableAssetInfo.Key;
                 // 라벨 값 설정
-                entry.SetLabel(ConfigAddressables.LabelTable, true, true);
+                entry.SetLabel(ConfigAddressableLabel.Table, true, true);
 
                 // GcLogger.Log($"Addressable 키 값 설정: {keyName}");
             }
@@ -88,7 +88,7 @@ namespace GGemCo.Editor
             settings.SetDirty(AddressableAssetSettings.ModificationEvent.EntryMoved, null, true);
             AssetDatabase.SaveAssets();
             // 테이블 다시 로드하기
-            _ = _editorAddressable.LoadAsync();
+            _editorAddressable.LoadTables();
             
             EditorUtility.DisplayDialog(Title, "Addressable 설정 완료", "OK");
         }

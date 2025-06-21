@@ -55,10 +55,10 @@ namespace GGemCo.Scripts
         /// </summary>
         private void InitializePool()
         {
-            if (AddressableSettingsLoader.Instance == null) return;
+            if (AddressableLoaderSettings.Instance == null) return;
             textPool.Clear();
             if (poolSize <= 0) return;
-            GameObject textFloatingDamage = AddressablePrefabLoader.Instance.GetPreLoadGamePrefabByName(ConfigAddressables.KeyTextFloatingDamage);
+            GameObject textFloatingDamage = ConfigResources.TextDamage.Load();
             if (textFloatingDamage == null) return;
             for (int i = 0; i < poolSize; i++)
             {

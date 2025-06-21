@@ -105,91 +105,91 @@ namespace GGemCo.Editor
         {
             try
             {
-                await TableLoaderManager.LoadTableDataAsync<TableQuest, StruckTableQuest>(
-                    ConfigTableFileName.Quest,
-                    (table, names, dict) =>
-                    {
-                        // 이후 처리
-                        _tableQuest = table;
-                        _nameQuest = names;
-                        _struckTableQuests = dict;
-                    },
-                    info => $"{info.Uid} - {info.Name}"
-                );
-                await TableLoaderManager.LoadTableDataAsync<TableNpc, StruckTableNpc>(
-                    ConfigTableFileName.Npc,
-                    (table, names, dict) =>
-                    {
-                        // 이후 처리
-                        _tableNpc = table;
-                        _nameNpc = names;
-                        _struckTableNpcs = dict;
-                    },
-                    info => $"{info.Uid} - {info.Name}"
-                );
-                await TableLoaderManager.LoadTableDataAsync<TableMonster, StruckTableMonster>(
-                    ConfigTableFileName.Monster,
-                    (table, names, dict) =>
-                    {
-                        // 이후 처리
-                        _tableMonster = table;
-                        _nameMonster = names;
-                        _struckTableMonsters = dict;
-                    },
-                    info => $"{info.Uid} - {info.Name}"
-                );
-                await TableLoaderManager.LoadTableDataAsync<TableMap, StruckTableMap>(
-                    ConfigTableFileName.Map,
-                    (table, names, dict) =>
-                    {
-                        // 이후 처리
-                        _tableMap = table;
-                        _nameMap = names;
-                        _struckTableMaps = dict;
-                    },
-                    info => $"{info.Uid} - {info.Name}"
-                );
-                await TableLoaderManager.LoadTableDataAsync<TableDialogue, StruckTableDialogue>(
-                    ConfigTableFileName.Dialogue,
-                    (table, names, dict) =>
-                    {
-                        // 이후 처리
-                        _tableDialogue = table;
-                        _nameDialogue = names;
-                        _struckTableDialogues = dict;
-                    },
-                    info => $"{info.Uid} - {info.Memo}"
-                );
-                await TableLoaderManager.LoadTableDataAsync<TableItem, StruckTableItem>(
-                    ConfigTableFileName.Item,
-                    (table, names, dict) =>
-                    {
-                        // 이후 처리
-                        _tableItem = table;
-                        _nameItem = names;
-                        _struckTableItems = dict;
-                    },
-                    info => $"{info.Uid} - {info.Name}"
-                );
-                
-                _quest.steps ??= new List<QuestStep>();
-                _quest.reward ??= new QuestReward();
-                _quest.reward.items ??= new List<RewardItem>();
-
-                MetadataQuestStepListDrawer metadataQuestStepListDrawer = new MetadataQuestStepListDrawer(
-                    _nameQuest, _nameNpc, _nameMonster, _nameMap, _nameDialogue, _nameItem, 
-                    _struckTableQuests, 
-                    _struckTableNpcs,
-                    _struckTableMonsters,
-                    _struckTableMaps, 
-                    _struckTableDialogues, 
-                    _struckTableItems
-                );
-                _questStepListDrawer = new QuestStepListDrawer(_quest.steps, metadataQuestStepListDrawer);
-                _rewardItemListDrawer = new RewardItemListDrawer(_quest.reward, metadataQuestStepListDrawer);
-                
-                isLoading = false;
-                Repaint();
+                // await TableLoaderManager.LoadTableDataAsync<TableQuest, StruckTableQuest>(
+                //     ConfigTableFileName.Quest,
+                //     (table, names, dict) =>
+                //     {
+                //         // 이후 처리
+                //         _tableQuest = table;
+                //         _nameQuest = names;
+                //         _struckTableQuests = dict;
+                //     },
+                //     info => $"{info.Uid} - {info.Name}"
+                // );
+                // await TableLoaderManager.LoadTableDataAsync<TableNpc, StruckTableNpc>(
+                //     ConfigTableFileName.Npc,
+                //     (table, names, dict) =>
+                //     {
+                //         // 이후 처리
+                //         _tableNpc = table;
+                //         _nameNpc = names;
+                //         _struckTableNpcs = dict;
+                //     },
+                //     info => $"{info.Uid} - {info.Name}"
+                // );
+                // await TableLoaderManager.LoadTableDataAsync<TableMonster, StruckTableMonster>(
+                //     ConfigTableFileName.Monster,
+                //     (table, names, dict) =>
+                //     {
+                //         // 이후 처리
+                //         _tableMonster = table;
+                //         _nameMonster = names;
+                //         _struckTableMonsters = dict;
+                //     },
+                //     info => $"{info.Uid} - {info.Name}"
+                // );
+                // await TableLoaderManager.LoadTableDataAsync<TableMap, StruckTableMap>(
+                //     ConfigTableFileName.Map,
+                //     (table, names, dict) =>
+                //     {
+                //         // 이후 처리
+                //         _tableMap = table;
+                //         _nameMap = names;
+                //         _struckTableMaps = dict;
+                //     },
+                //     info => $"{info.Uid} - {info.Name}"
+                // );
+                // await TableLoaderManager.LoadTableDataAsync<TableDialogue, StruckTableDialogue>(
+                //     ConfigTableFileName.Dialogue,
+                //     (table, names, dict) =>
+                //     {
+                //         // 이후 처리
+                //         _tableDialogue = table;
+                //         _nameDialogue = names;
+                //         _struckTableDialogues = dict;
+                //     },
+                //     info => $"{info.Uid} - {info.Memo}"
+                // );
+                // await TableLoaderManager.LoadTableDataAsync<TableItem, StruckTableItem>(
+                //     ConfigTableFileName.Item,
+                //     (table, names, dict) =>
+                //     {
+                //         // 이후 처리
+                //         _tableItem = table;
+                //         _nameItem = names;
+                //         _struckTableItems = dict;
+                //     },
+                //     info => $"{info.Uid} - {info.Name}"
+                // );
+                //
+                // _quest.steps ??= new List<QuestStep>();
+                // _quest.reward ??= new QuestReward();
+                // _quest.reward.items ??= new List<RewardItem>();
+                //
+                // MetadataQuestStepListDrawer metadataQuestStepListDrawer = new MetadataQuestStepListDrawer(
+                //     _nameQuest, _nameNpc, _nameMonster, _nameMap, _nameDialogue, _nameItem, 
+                //     _struckTableQuests, 
+                //     _struckTableNpcs,
+                //     _struckTableMonsters,
+                //     _struckTableMaps, 
+                //     _struckTableDialogues, 
+                //     _struckTableItems
+                // );
+                // _questStepListDrawer = new QuestStepListDrawer(_quest.steps, metadataQuestStepListDrawer);
+                // _rewardItemListDrawer = new RewardItemListDrawer(_quest.reward, metadataQuestStepListDrawer);
+                //
+                // isLoading = false;
+                // Repaint();
             }
             catch (System.Exception ex)
             {

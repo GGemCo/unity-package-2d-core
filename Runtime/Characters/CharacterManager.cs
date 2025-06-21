@@ -1,5 +1,8 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
+using System.Threading.Tasks;
 using UnityEngine;
+using Object = UnityEngine.Object;
 
 namespace GGemCo.Scripts
 {
@@ -12,12 +15,14 @@ namespace GGemCo.Scripts
         private TableNpc _tableNpc;
         private TableMonster _tableMonster;
         private TableAnimation _tableAnimation;
+        private AddressableLoaderPrefabCharacter _addressableLoaderPrefabCharacter;
 
-        public void Initialize(TableNpc pTableNpc, TableMonster pTableMonster, TableAnimation pTableAnimation)
+        public void Initialize(TableNpc pTableNpc, TableMonster pTableMonster, TableAnimation pTableAnimation, AddressableLoaderPrefabCharacter addressableLoaderPrefabCharacter)
         {
             _tableNpc = pTableNpc;
             _tableMonster = pTableMonster;
             _tableAnimation = pTableAnimation;
+            _addressableLoaderPrefabCharacter = addressableLoaderPrefabCharacter;
         }
 
         /// <summary>
@@ -71,49 +76,61 @@ namespace GGemCo.Scripts
             return characterObj;
         }
 
-        public GameObject CreatePlayer()
+        public async Task<GameObject> CreatePlayer()
         {
-            GameObject prefab = Resources.Load<GameObject>(ConfigCommon.PathPlayerPrefab);
-            if (prefab == null)
+            try
             {
+                // GameObject prefab = Resources.Load<GameObject>(ConfigCommon.PathPlayerPrefab);
+                string key = $"{ConfigAddressables.KeyPrefabPlayer}";
+                GameObject prefab = await AddressableLoaderController.InstantiateAsync(key);
+
+                if (prefab) return CreateCharacter(CharacterConstants.Type.Player, prefab);
                 GcLogger.LogError("플레이어 프리팹이 없습니다. path:"+ConfigCommon.PathPlayerPrefab);
                 return null;
             }
-            return CreateCharacter(CharacterConstants.Type.Player, prefab);
+            catch (Exception e)
+            {
+                Console.WriteLine(e);
+                throw;
+            }
         }
 
-        public GameObject CreateNpc(int uid, CharacterRegenData regenData = null)
+        public GameObject CreateNpc(int uid, CharacterRegenData regenData = null, GameObject prefab = null)
         {
             if (uid <= 0) return null;
-            var infoNpc = _tableNpc.GetDataByUid(uid);
+            var infoNpc = _tableNpc?.GetDataByUid(uid);
             if (infoNpc == null) return null;
-            // kdh
-            return null;
-            // GameObject prefab = _tableAnimation.GetPrefab(infoNpc.SpineUid);
-            // if (prefab == null) return null;
-            //
-            // GameObject npc = CreateCharacter(CharacterConstants.Type.Npc, prefab, regenData);
-            // if (npc == null) return null;
-            //
-            // var info = _tableNpc.GetDataByUid(uid);
-            // if (info == null) return null;
-            //
-            // npc.GetComponent<Npc>()?.SetScale(info.Scale);
-            //
-            // return npc;
-        }
+            if (!prefab)
+            {
+                prefab = _addressableLoaderPrefabCharacter?.GetCharacterNpc(infoNpc.SpineUid);
+                if (!prefab) return null;
+            }
 
-        public GameObject CreateMonster2(int uid, CharacterRegenData regenData = null, GameObject prefab = null)
+            GameObject npc = CreateCharacter(CharacterConstants.Type.Npc, prefab, regenData);
+            if (!npc) return null;
+            
+            var info = _tableNpc?.GetDataByUid(uid);
+            if (info == null) return null;
+            
+            npc.GetComponent<Npc>()?.SetScale(info.Scale);
+            
+            return npc;
+        }
+        public GameObject CreateMonster(int uid, CharacterRegenData regenData = null, GameObject prefab = null)
         {
             if (uid <= 0) return null;
-            var infoMonster = _tableMonster.GetDataByUid(uid);
+            var infoMonster = _tableMonster?.GetDataByUid(uid);
             if (infoMonster == null) return null;
-            if (!prefab) return null;
+            if (!prefab)
+            {
+                prefab = _addressableLoaderPrefabCharacter?.GetCharacterMonster(infoMonster.SpineUid);
+                if (!prefab) return null;
+            }
             
             GameObject monster = CreateCharacter(CharacterConstants.Type.Monster, prefab, regenData);
             if (!monster) return null;
             
-            var info = _tableMonster.GetDataByUid(uid);
+            var info = _tableMonster?.GetDataByUid(uid);
             if (info == null) return null;
             
             monster.GetComponent<Monster>()?.SetScale(info.Scale);
@@ -121,32 +138,14 @@ namespace GGemCo.Scripts
             return monster;
         }
 
-        public GameObject CreateMonster(int uid, CharacterRegenData regenData = null)
-        {
-            if (uid <= 0) return null;
-            var infoMonster = _tableMonster.GetDataByUid(uid);
-            if (infoMonster == null) return null;
-            // kdh
-            return null;
-            // GameObject prefab = _tableAnimation.GetPrefab(infoMonster.SpineUid);
-            // if (prefab == null) return null;
-            //
-            // GameObject monster = CreateCharacter(CharacterConstants.Type.Monster, prefab, regenData);
-            // if (monster == null) return null;
-            //
-            // var info = _tableMonster.GetDataByUid(uid);
-            // if (info == null) return null;
-            //
-            // monster.GetComponent<Monster>()?.SetScale(info.Scale);
-            //
-            // return monster;
-        }
-
         public GameObject CreateCharacter(CharacterConstants.Type type, int characterUid)
         {
+            if (type == CharacterConstants.Type.Player)
+            {
+                _ = CreatePlayer();
+            }
             return type switch
             {
-                CharacterConstants.Type.Player => CreatePlayer(),
                 CharacterConstants.Type.Npc => CreateNpc(characterUid),
                 CharacterConstants.Type.Monster => CreateMonster(characterUid),
                 _ => null

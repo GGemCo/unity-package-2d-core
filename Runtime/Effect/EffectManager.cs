@@ -12,22 +12,21 @@ namespace GGemCo.Scripts
                 GcLogger.LogError("effect 테이블에 없는 이펙트 입니다. effect Uid: "+effectUid);
                 return null;
             }
-            // kdh
-            return null;
-//             GameObject prefab = TableLoaderManager.Instance.TableEffect.GetPrefab(effectUid);
-//             if (prefab == null) return null;
-//             GameObject effect = Object.Instantiate(prefab);
-//             DefaultEffect defaultEffect = effect.AddComponent<DefaultEffect>();
-// #if GGEMCO_USE_SPINE
-//             EffectAnimationControllerSpine effectAnimationControllerSpine = effect.AddComponent<EffectAnimationControllerSpine>();
-//             defaultEffect.EffectAnimationController = effectAnimationControllerSpine;
-// #else
-//             EffectAnimationControllerSprite effectAnimationControllerSprite = effect.AddComponent<EffectAnimationControllerSprite>();
-//             defaultEffect.EffectAnimationController = effectAnimationControllerSprite;
-// #endif
-//             defaultEffect.Initialize(info);
-//             // defaultEffect.Initialize();
-//             return defaultEffect;
+            string key = $"GGemCo_Effect_{effectUid}";
+            GameObject prefab = AddressableLoaderPrefabEffect.Instance.GetPrefabByName(key);
+            if (prefab == null) return null;
+            GameObject effect = Object.Instantiate(prefab);
+            DefaultEffect defaultEffect = effect.AddComponent<DefaultEffect>();
+#if GGEMCO_USE_SPINE
+            EffectAnimationControllerSpine effectAnimationControllerSpine = effect.AddComponent<EffectAnimationControllerSpine>();
+            defaultEffect.EffectAnimationController = effectAnimationControllerSpine;
+#else
+            EffectAnimationControllerSprite effectAnimationControllerSprite = effect.AddComponent<EffectAnimationControllerSprite>();
+            defaultEffect.EffectAnimationController = effectAnimationControllerSprite;
+#endif
+            defaultEffect.Initialize(info);
+            // defaultEffect.Initialize();
+            return defaultEffect;
         }
     }
 }

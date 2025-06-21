@@ -1,6 +1,6 @@
 ﻿using UnityEngine;
 
-namespace GGemCo.Scripts.UI
+namespace GGemCo.Scripts
 {
     /// <summary>
     /// 윈도우 아이콘 드래그 앤 드랍 관리
