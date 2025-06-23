@@ -18,7 +18,7 @@ namespace GGemCo.Editor
         public SettingScriptableObject(EditorAddressable editorWindow)
         {
             _editorAddressable = editorWindow;
-            TargetGroupName = "GGemCo_Common";
+            TargetGroupName = ConfigAddressableGroupName.Common;
         }
 
         public void OnGUI()

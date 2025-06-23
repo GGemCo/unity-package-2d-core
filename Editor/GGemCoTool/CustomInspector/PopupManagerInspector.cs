@@ -17,7 +17,7 @@ namespace GGemCo.Editor
             Common.OnGUITitleBold("생성하기");
             // GGemCo.Scripts.SceneIntro sceneIntro = (GGemCo.Scripts.SceneIntro)target;
 
-            var canvasPopupField = typeof(GGemCo.Scripts.PopupManager)
+            var canvasPopupField = typeof(Scripts.PopupManager)
                 .GetField("canvasPopup", BindingFlags.NonPublic | BindingFlags.Instance);
             Button currentValueButtonNewGame = canvasPopupField?.GetValue(target) as Button;
             

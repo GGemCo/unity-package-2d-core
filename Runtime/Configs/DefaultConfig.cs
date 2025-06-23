@@ -11,7 +11,7 @@ namespace GGemCo.Scripts
         {
             foreach (T key in Enum.GetValues(typeof(T)))
             {
-                Values[key] = $"GGemCo_{key}";
+                Values[key] = $"{ConfigDefine.NameSDK}_{key}";
             }
         }
 

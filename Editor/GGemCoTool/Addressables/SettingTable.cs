@@ -17,7 +17,7 @@ namespace GGemCo.Editor
         public SettingTable(EditorAddressable editorWindow)
         {
             _editorAddressable = editorWindow;
-            TargetGroupName = "GGemCo_Tables";
+            TargetGroupName = ConfigAddressableGroupName.Table;
         }
         public void OnGUI()
         {

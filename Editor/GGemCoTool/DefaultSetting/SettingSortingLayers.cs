@@ -6,13 +6,13 @@ namespace GGemCo.Editor
 {
     public class SettingSortingLayers
     {
-        private readonly string title = "Sorting Layer 추가하기";
+        private const string Title = "Sorting Layer 추가하기";
 
         public void OnGUI()
         {
-            Common.OnGUITitle(title);
+            Common.OnGUITitle(Title);
 
-            if (GUILayout.Button(title))
+            if (GUILayout.Button(Title))
             {
                 AddSortingLayers();
             }
@@ -44,7 +44,7 @@ namespace GGemCo.Editor
             AssetDatabase.SaveAssets();
             EditorUtility.SetDirty(tagManager.targetObject);
             AssetDatabase.Refresh();
-            EditorUtility.DisplayDialog(title, "Sorting Layer 추가 완료", "OK");
+            EditorUtility.DisplayDialog(Title, "Sorting Layer 추가 완료", "OK");
         }
 
         private bool SortingLayerExists(SerializedProperty sortingLayersProp, string layer)

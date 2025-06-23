@@ -23,9 +23,9 @@ namespace GGemCo.Editor
         public SettingItem(EditorAddressable editorWindow)
         {
             _editorAddressable = editorWindow;
-            TargetGroupName = "GGemCo_Item_DropImage";
-            _groupNameIconImage = "GGemCo_Item_IconImage";
-            _groupNameEquipImage = "GGemCo_Item_EquipImage";
+            TargetGroupName = ConfigAddressableGroupName.ItemDropImage;
+            _groupNameIconImage = ConfigAddressableGroupName.ItemIconImage;
+            _groupNameEquipImage = ConfigAddressableGroupName.ItemEquipImage;
         }
         public void OnGUI()
         {

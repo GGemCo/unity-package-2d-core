@@ -2,7 +2,7 @@
 
 namespace GGemCo.Scripts
 {
-    [CreateAssetMenu(fileName = "GGemCoMapSettings", menuName = "GGemCo/Settings/GGemCoMapSettings", order = 3)]
+    [CreateAssetMenu(fileName = ConfigScriptableObject.Map.FileName, menuName = ConfigScriptableObject.Map.MenuName, order = ConfigScriptableObject.Map.Ordering)]
     public class GGemCoMapSettings : ScriptableObject
     {
         [Header("맵 설정")] 

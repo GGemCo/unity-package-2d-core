@@ -105,8 +105,9 @@ namespace GGemCo.Editor
         {
             try
             {
-                // await TableLoaderManager.LoadTableDataAsync<TableQuest, StruckTableQuest>(
-                //     ConfigTableFileName.Quest,
+                // ggemco_temp
+                // await TableLoaderManager.LoadTableDataAsync<Scripts.TableQuest, Scripts.StruckTableQuest>(
+                //     ConfigTableFileName.Scripts.Quest,
                 //     (table, names, dict) =>
                 //     {
                 //         // 이후 처리
@@ -116,7 +117,7 @@ namespace GGemCo.Editor
                 //     },
                 //     info => $"{info.Uid} - {info.Name}"
                 // );
-                // await TableLoaderManager.LoadTableDataAsync<TableNpc, StruckTableNpc>(
+                // await TableLoaderManager.LoadTableDataAsync<Scripts.TableNpc, Scripts.StruckTableNpc>(
                 //     ConfigTableFileName.Npc,
                 //     (table, names, dict) =>
                 //     {
@@ -127,7 +128,7 @@ namespace GGemCo.Editor
                 //     },
                 //     info => $"{info.Uid} - {info.Name}"
                 // );
-                // await TableLoaderManager.LoadTableDataAsync<TableMonster, StruckTableMonster>(
+                // await TableLoaderManager.LoadTableDataAsync<Scripts.TableMonster, Scripts.StruckTableMonster>(
                 //     ConfigTableFileName.Monster,
                 //     (table, names, dict) =>
                 //     {
@@ -138,7 +139,7 @@ namespace GGemCo.Editor
                 //     },
                 //     info => $"{info.Uid} - {info.Name}"
                 // );
-                // await TableLoaderManager.LoadTableDataAsync<TableMap, StruckTableMap>(
+                // await TableLoaderManager.LoadTableDataAsync<Scripts.TableMap, Scripts.StruckTableMap>(
                 //     ConfigTableFileName.Map,
                 //     (table, names, dict) =>
                 //     {
@@ -149,7 +150,7 @@ namespace GGemCo.Editor
                 //     },
                 //     info => $"{info.Uid} - {info.Name}"
                 // );
-                // await TableLoaderManager.LoadTableDataAsync<TableDialogue, StruckTableDialogue>(
+                // await TableLoaderManager.LoadTableDataAsync<Scripts.TableDialogue, Scripts.StruckTableDialogue>(
                 //     ConfigTableFileName.Dialogue,
                 //     (table, names, dict) =>
                 //     {
@@ -160,7 +161,7 @@ namespace GGemCo.Editor
                 //     },
                 //     info => $"{info.Uid} - {info.Memo}"
                 // );
-                // await TableLoaderManager.LoadTableDataAsync<TableItem, StruckTableItem>(
+                // await TableLoaderManager.LoadTableDataAsync<Scripts.TableItem, Scripts.StruckTableItem>(
                 //     ConfigTableFileName.Item,
                 //     (table, names, dict) =>
                 //     {
@@ -173,8 +174,8 @@ namespace GGemCo.Editor
                 // );
                 //
                 // _quest.steps ??= new List<QuestStep>();
-                // _quest.reward ??= new QuestReward();
-                // _quest.reward.items ??= new List<RewardItem>();
+                // _quest.reward ??= new Scripts.QuestReward();
+                // _quest.reward.items ??= new List<Scripts.RewardItem>();
                 //
                 // MetadataQuestStepListDrawer metadataQuestStepListDrawer = new MetadataQuestStepListDrawer(
                 //     _nameQuest, _nameNpc, _nameMonster, _nameMap, _nameDialogue, _nameItem, 
@@ -191,7 +192,7 @@ namespace GGemCo.Editor
                 // isLoading = false;
                 // Repaint();
             }
-            catch (System.Exception ex)
+            catch (Exception ex)
             {
                 ShowLoadTableException(Title, ex);
             }
@@ -339,7 +340,7 @@ namespace GGemCo.Editor
             }
             catch (Exception ex)
             {
-                GcLogger.LogError($"퀘스트 json 파일을 불러오는중 오류가 발생했습니다. {path}: {ex.Message}");
+                Debug.LogError($"퀘스트 json 파일을 불러오는중 오류가 발생했습니다. {path}: {ex.Message}");
             }
 
             return false;

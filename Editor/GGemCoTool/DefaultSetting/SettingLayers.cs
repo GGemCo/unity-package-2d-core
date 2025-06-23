@@ -6,15 +6,15 @@ namespace GGemCo.Editor
 {
     public class SettingLayers
     {
-        private readonly string title = "Layer 추가하기";
+        private const string Title = "Layer 추가하기";
 
         // 추가할 Layer 목록
 
         public void OnGUI()
         {
-            Common.OnGUITitle(title);
+            Common.OnGUITitle(Title);
 
-            if (GUILayout.Button(title))
+            if (GUILayout.Button(Title))
             {
                 AddLayers();
             }
@@ -56,11 +56,11 @@ namespace GGemCo.Editor
                 AssetDatabase.SaveAssets();
                 EditorUtility.SetDirty(tagManager.targetObject);
                 AssetDatabase.Refresh();
-                EditorUtility.DisplayDialog(title, "Layer 추가 완료", "OK");
+                EditorUtility.DisplayDialog(Title, "Layer 추가 완료", "OK");
             }
             else
             {
-                EditorUtility.DisplayDialog(title, "추가된 Layer가 없습니다.", "OK");
+                EditorUtility.DisplayDialog(Title, "추가된 Layer가 없습니다.", "OK");
             }
         }
 

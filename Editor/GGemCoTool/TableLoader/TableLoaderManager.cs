@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using GGemCo.Scripts;
-using UnityEngine;
 
 namespace GGemCo.Editor
 {

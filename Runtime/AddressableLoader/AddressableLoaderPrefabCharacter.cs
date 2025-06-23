@@ -24,7 +24,7 @@ namespace GGemCo.Scripts
             {
                 _prefabCharacters.Clear();
 
-                Dictionary<string, GameObject> prefabCharacters = await AddressableLoaderController.LoadByLabelAsync<GameObject>($"GGemCo_Map_{mapTableInfo.FolderName}");
+                Dictionary<string, GameObject> prefabCharacters = await AddressableLoaderController.LoadByLabelAsync<GameObject>(ConfigAddressableMap.GetLabel(mapTableInfo.FolderName));
                 foreach (var data in prefabCharacters)
                 {
                     // Debug.Log($"Loading monster {data.Key}");

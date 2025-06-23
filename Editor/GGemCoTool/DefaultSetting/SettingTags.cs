@@ -6,13 +6,13 @@ namespace GGemCo.Editor
 {
     public class SettingTags
     {
-        private readonly string title = "태그 추가하기";
-        
+        private const string Title = "태그 추가하기";
+
         public void OnGUI()
         {
-            Common.OnGUITitle(title);
+            Common.OnGUITitle(Title);
 
-            if (GUILayout.Button(title))
+            if (GUILayout.Button(Title))
             {
                 AddTags();
             }
@@ -42,7 +42,7 @@ namespace GGemCo.Editor
             // Inspector 갱신
             EditorUtility.SetDirty(tagManager.targetObject); // TargetObject를 '더럽힘' 상태로 만들어 갱신 유도
             AssetDatabase.Refresh(); // 에디터 갱신
-            EditorUtility.DisplayDialog(title, "태그 추가 완료", "OK");
+            EditorUtility.DisplayDialog(Title, "태그 추가 완료", "OK");
         }
 
         private bool TagExists(SerializedProperty tagsProp, string tag)

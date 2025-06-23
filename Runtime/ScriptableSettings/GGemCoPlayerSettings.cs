@@ -3,7 +3,7 @@ using UnityEngine.Serialization;
 
 namespace GGemCo.Scripts
 {
-    [CreateAssetMenu(fileName = "GGemCoPlayerSettings", menuName = "GGemCo/Settings/GGemCoPlayerSettings", order = 2)]
+    [CreateAssetMenu(fileName = ConfigScriptableObject.Player.FileName, menuName = ConfigScriptableObject.Player.MenuName, order = ConfigScriptableObject.Player.Ordering)]
     public class GGemCoPlayerSettings :ScriptableObject
     {
         [FormerlySerializedAs("defaultFacing")]

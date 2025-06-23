@@ -21,9 +21,9 @@ namespace GGemCo.Editor
         public SettingCharacters(EditorAddressable editorWindow)
         {
             _editorAddressable = editorWindow;
-            _targetGroupNameMonster = "GGemCo_Character_Monster";
-            _targetGroupNameNpc = "GGemCo_Character_Npc";
-            _targetGroupNamePlayer = "GGemCo_Character_Player";
+            _targetGroupNameMonster = ConfigAddressableGroupName.Monster;
+            _targetGroupNameNpc = ConfigAddressableGroupName.Npc;
+            _targetGroupNamePlayer = ConfigAddressableGroupName.Player;
         }
         public void OnGUI()
         {
@@ -64,7 +64,7 @@ namespace GGemCo.Editor
                     var infoAnimation = _editorAddressable.TableAnimation.GetDataByUid(info.SpineUid);
                     if (info.Uid <= 0) continue;
                 
-                    string key = $"GGemCo_Character_Monster_{infoAnimation.Uid}";
+                    string key = $"{ConfigAddressables.KeyPrefabMonster}_{infoAnimation.Uid}";
                     string assetPath = $"{ConfigAddressables.Path}/{infoAnimation.PrefabPath}.prefab";
                     string label = "";
                 
@@ -85,7 +85,7 @@ namespace GGemCo.Editor
                     var infoAnimation = _editorAddressable.TableAnimation.GetDataByUid(info.SpineUid);
                     if (info.Uid <= 0) continue;
                 
-                    string key = $"GGemCo_Character_Npc_{infoAnimation.Uid}";
+                    string key = $"{ConfigAddressables.KeyPrefabNpc}_{infoAnimation.Uid}";
                     string assetPath = $"{ConfigAddressables.Path}/{infoAnimation.PrefabPath}.prefab";
                 
                     Add(settings, groupNpc, key, assetPath);

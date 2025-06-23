@@ -3,7 +3,7 @@ using UnityEngine;
 
 namespace GGemCo.Scripts
 {
-    [CreateAssetMenu(fileName = "GGemCoSaveSettings", menuName = "GGemCo/Settings/GGemCoSaveSettings", order = 4)]
+    [CreateAssetMenu(fileName = ConfigScriptableObject.Save.FileName, menuName = ConfigScriptableObject.Save.MenuName, order = ConfigScriptableObject.Save.Ordering)]
     public class GGemCoSaveSettings: ScriptableObject
     {
         [Header("세이브 데이터 설정")] 

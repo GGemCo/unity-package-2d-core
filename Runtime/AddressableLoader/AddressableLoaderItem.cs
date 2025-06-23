@@ -127,11 +127,11 @@ namespace GGemCo.Scripts
             }
         }
 
-        public SpriteAtlas GetImageIconByName(string prefabName)
+        public Sprite GetImageIconByName(string prefabName)
         {
             if (_dicImageIcon.TryGetValue(ConfigAddressableLabel.ImageItemIcon, out var prefab))
             {
-                return prefab;
+                return prefab.GetSprite(prefabName);
             }
 
             GcLogger.LogError($"Addressables에서 {prefabName} 프리팹을 찾을 수 없습니다.");

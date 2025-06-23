@@ -28,7 +28,7 @@ namespace GGemCo.Editor
         public SettingMap(EditorAddressable editorWindow)
         {
             _editorAddressable = editorWindow;
-            TargetGroupName = "GGemCo_Map";
+            TargetGroupName = ConfigAddressableGroupName.Map;
             
             _tableMonster = _editorAddressable.TableMonster;
             _tableNpc = _editorAddressable.TableNpc;

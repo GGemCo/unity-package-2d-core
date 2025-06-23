@@ -12,7 +12,7 @@ namespace GGemCo.Scripts
                 GcLogger.LogError("effect 테이블에 없는 이펙트 입니다. effect Uid: "+effectUid);
                 return null;
             }
-            string key = $"GGemCo_Effect_{effectUid}";
+            string key = $"{ConfigAddressableGroupName.Effect}_{effectUid}";
             GameObject prefab = AddressableLoaderPrefabEffect.Instance.GetPrefabByName(key);
             if (prefab == null) return null;
             GameObject effect = Object.Instantiate(prefab);

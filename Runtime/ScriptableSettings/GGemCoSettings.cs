@@ -2,7 +2,7 @@ using UnityEngine;
 
 namespace GGemCo.Scripts
 {
-    [CreateAssetMenu(fileName = "GGemCoSettings", menuName = "GGemCo/Settings/GGemCoSettings", order = 1)]
+    [CreateAssetMenu(fileName = ConfigScriptableObject.Main.FileName, menuName = ConfigScriptableObject.Main.MenuName, order = ConfigScriptableObject.Main.Ordering)]
     public class GGemCoSettings : ScriptableObject
     {
         [Header("기본 설정")] 

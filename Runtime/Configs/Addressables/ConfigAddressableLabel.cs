@@ -2,11 +2,11 @@
 {
     public static class ConfigAddressableLabel
     {
-        public const string PreLoadGamePrefabs = "GGemCo_PreLoadGamePrefabs";
-        public const string Table = "GGemCo_Table";
-        public const string Effect = "GGemCo_Effect";
-        public const string ImageItemDrop = "GGemCo_Item_Drop";
-        public const string ImageItemEquip = "GGemCo_Item_Equip";
-        public const string ImageItemIcon = "GGemCo_Item_Icon";
+        public const string PreLoadGamePrefabs = ConfigDefine.NameSDK+"_PreLoadGamePrefabs";
+        public const string Table = ConfigDefine.NameSDK+"_Table";
+        public const string Effect = ConfigDefine.NameSDK+"_Effect";
+        public const string ImageItemDrop = ConfigDefine.NameSDK+"_Item_Drop";
+        public const string ImageItemEquip = ConfigDefine.NameSDK+"_Item_Equip";
+        public const string ImageItemIcon = ConfigDefine.NameSDK+"_Item_Icon";
     }
 }

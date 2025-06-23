@@ -10,20 +10,20 @@ namespace GGemCo.Editor
 {
     public class SettingGGemCo
     {
-        private readonly string title = "설정 ScriptableObject 추가하기";
-        private const string SettingsFolder = "Assets/GGemCo/Settings/";
+        private const string Title = "설정 ScriptableObject 추가하기";
+        private const string SettingsFolder = "Assets/"+ConfigDefine.NameSDK+"/Settings/";
 
-        private readonly Dictionary<string, Type> settingsTypes = new()
+        private readonly Dictionary<string, Type> _settingsTypes = new()
         {
-            { "GGemCoSettings", typeof(GGemCoSettings) },
-            { "GGemCoMapSettings", typeof(GGemCoMapSettings) },
-            { "GGemCoPlayerSettings", typeof(GGemCoPlayerSettings) },
-            { "GGemCoSaveSettings", typeof(GGemCoSaveSettings) }
+            { $"{ConfigDefine.NameSDK}Settings", typeof(GGemCoSettings) },
+            { $"{ConfigDefine.NameSDK}MapSettings", typeof(GGemCoMapSettings) },
+            { $"{ConfigDefine.NameSDK}PlayerSettings", typeof(GGemCoPlayerSettings) },
+            { $"{ConfigDefine.NameSDK}SaveSettings", typeof(GGemCoSaveSettings) }
         };
 
         public void OnGUI()
         {
-            Common.OnGUITitle(title);
+            Common.OnGUITitle(Title);
 
             if (GUILayout.Button("설정 ScriptableObject 생성하기"))
             {
@@ -40,7 +40,7 @@ namespace GGemCo.Editor
 
         private void CreateSettings()
         {
-            foreach (var kvp in settingsTypes)
+            foreach (var kvp in _settingsTypes)
             {
                 CreateOrSelectSettings(kvp.Key, kvp.Value);
             }

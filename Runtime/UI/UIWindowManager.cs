@@ -293,7 +293,7 @@ namespace GGemCo.Scripts
             }
 
             // 문자열 → Type
-            Type type = Type.GetType($"GGemCo.Scripts.{className}");
+            Type type = Type.GetType($"{ConfigDefine.NameSDK}.Scripts.{className}");
             if (type == null)
             {
                 GcLogger.LogError($"{className} 스크립트를 찾지 못 했습니다. 네임스페이스 설정을 확인해주세요.");

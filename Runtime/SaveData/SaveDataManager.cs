@@ -155,7 +155,7 @@ namespace GGemCo.Scripts
         {
             if (!_useSaveData)
             {
-                GcLogger.LogWarning("저장 하기가 비활성화 상태 입니다. GGemCoSaveSettings 에서 활성화 시켜주세요.");
+                GcLogger.LogWarning($"저장 하기가 비활성화 상태 입니다. {ConfigDefine.NameSDK}SaveSettings 에서 활성화 시켜주세요.");
                 return;
             }
             if (_currentSaveSlot < 1 || _currentSaveSlot > _maxSaveSlotCount)

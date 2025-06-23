@@ -18,7 +18,7 @@ namespace GGemCo.Editor
         public SettingEffect(EditorAddressable editorWindow)
         {
             _editorAddressable = editorWindow;
-            TargetGroupName = "GGemCo_Effect";
+            TargetGroupName = $"{ConfigAddressableGroupName.Effect}";
         }
         public void OnGUI()
         {
@@ -56,7 +56,7 @@ namespace GGemCo.Editor
                     var info = _editorAddressable.TableEffect.GetDataByUid(outerPair.Key);
                     if (info.Uid <= 0) continue;
                 
-                    string key = $"GGemCo_Effect_{info.Uid}";
+                    string key = $"{ConfigAddressableGroupName.Effect}_{info.Uid}";
                     string assetPath = $"{ConfigAddressables.Path}/{info.PrefabPath}.prefab";
                     string label = ConfigAddressableLabel.Effect;
                 

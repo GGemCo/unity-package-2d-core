@@ -67,7 +67,7 @@ namespace GGemCo.Scripts
             Vector2 tilemapGridSize = AddressableLoaderSettings.Instance.mapSettings.tilemapGridCellSize;
             if (tilemapGridSize == Vector2.zero)
             {
-                GcLogger.LogError("타일맵 Grid 사이즈가 정해지지 않았습니다. GGemCoMapSettings 에 Tilemap Grid Cell Size 를 입력해주세요.");
+                GcLogger.LogError($"타일맵 Grid 사이즈가 정해지지 않았습니다. {ConfigDefine.NameSDK}MapSettings 에 Tilemap Grid Cell Size 를 입력해주세요.");
                 return;
             }
             grid.cellSize = new Vector3(tilemapGridSize.x, tilemapGridSize.y, 0);
@@ -98,14 +98,14 @@ namespace GGemCo.Scripts
                 startMapUid = AddressableLoaderSettings.Instance.mapSettings.startMapUid;
                 if (startMapUid <= 0)
                 {
-                    GcLogger.LogError("시작 맵 고유번호가 잘 못 되었습니다. GGemCoMapSettins 에 startMapUid 를 입력해주세요.");
+                    GcLogger.LogError($"시작 맵 고유번호가 잘 못 되었습니다. {ConfigDefine.NameSDK}MapSettins 에 startMapUid 를 입력해주세요.");
                     return 0;
                 }
 
                 var info = TableLoaderManager.Instance.TableMap.GetDataByUid(startMapUid);
                 if (info == null)
                 {
-                    GcLogger.LogError("맵 테이블에 없는 고유번호 입니다. GGemCoMapSettins 에 startMapUid 를 확인해주세요.");
+                    GcLogger.LogError($"맵 테이블에 없는 고유번호 입니다. {ConfigDefine.NameSDK}MapSettins 에 startMapUid 를 확인해주세요.");
                     return 0;
                 }
             }

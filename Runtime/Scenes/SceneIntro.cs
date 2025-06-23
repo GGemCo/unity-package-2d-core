@@ -97,7 +97,15 @@ namespace GGemCo.Scripts
         {
             // 남은 슬롯 index 채크해서 없으면 buttonNewGame 버튼 disable 처리 
             int slotIndex = _slotMetaDatController.GetEmptySlotIndex();
-            buttonNewGame?.gameObject.SetActive(slotIndex > 0);
+            if (_saveDataSettings.UseSaveData)
+            {
+                buttonNewGame?.gameObject.SetActive(slotIndex > 0);
+            }
+            else
+            {
+                buttonNewGame?.gameObject.SetActive(true);
+            }
+
             buttonGameContinue?.gameObject.SetActive(PlayerPrefsManager.LoadSaveDataSlotIndex() > 0);
             // slot 데이터가 있는지 채크해서 있으면 buttonOpenSaveDataWindow 버튼 enable 처리 
             buttonOpenSaveDataWindow?.gameObject.SetActive(_slotMetaDatController.GetExistSlotCounts() > 0);

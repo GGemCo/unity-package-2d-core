@@ -81,7 +81,7 @@ namespace GGemCo.Editor
                 if (tilemapGridSize == Vector2.zero)
                 {
                     GcLogger.LogError(
-                        "타일맵 Grid 사이즈가 정해지지 않았습니다. GGemCoMapSettings 에 Tilemap Grid Cell Size 를 입력해주세요.");
+                        $"타일맵 Grid 사이즈가 정해지지 않았습니다. {ConfigDefine.NameSDK}MapSettings 에 Tilemap Grid Cell Size 를 입력해주세요.");
                     return;
                 }
                 grid.cellSize = new Vector3(tilemapGridSize.x, tilemapGridSize.y, 0);

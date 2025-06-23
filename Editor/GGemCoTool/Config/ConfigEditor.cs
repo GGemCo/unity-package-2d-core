@@ -1,4 +1,6 @@
-﻿namespace GGemCo.Editor
+﻿using GGemCo.Scripts;
+
+namespace GGemCo.Editor
 {
     public static class ConfigEditor
     {
@@ -20,7 +22,7 @@
             OpenSaveDataFolder,
             LoadAddressable,
         }
-        private const string NameToolGGemCo = GGemCo.Scripts.ConfigDefine.NameSDK+"Tool/";
+        private const string NameToolGGemCo = ConfigDefine.NameSDK+"Tool/";
         // 기본 셋팅하기
         private const string NameToolSettings = NameToolGGemCo + "설정하기/";
         public const string NameToolSettingDefault = NameToolSettings + "기본 셋팅하기";

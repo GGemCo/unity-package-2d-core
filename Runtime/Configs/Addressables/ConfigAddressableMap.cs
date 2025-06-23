@@ -7,7 +7,7 @@ namespace GGemCo.Scripts
     /// </summary>
     public static class ConfigAddressableMap
     {
-        private const string KeyPrefixMap = "GGemCo_Map";
+        private const string KeyPrefixMap = ConfigDefine.NameSDK+"_Map";
         private const string KeyPrefabWarp = KeyPrefixMap + "_Warp";
         
         private const string KeyNameTilemap = "tilemap";
