@@ -1,4 +1,5 @@
 ﻿using System;
+using GGemCo.Scripts;
 using UnityEditor;
 using UnityEngine;
 
@@ -20,6 +21,50 @@ namespace GGemCo.Editor
             Debug.LogError($"{ptitle} LoadAsync 예외 발생: {ex.Message}");
             EditorUtility.DisplayDialog(ptitle, "테이블 로딩 중 오류가 발생했습니다.", "OK");
             isLoading = false;
+        }
+        
+        // GGemCo GameObject 만들기
+            // GGemCo 스크립트 AddComponent 하기
+            // 스크립트의 필수 항목을 만들어서 연결하기
+            
+        // GGemCo 매니저 만들기
+            
+        // 유니티 Empty GameObject 만들기
+        
+        // 유니티 UI 컴포넌트 만들기 
+            // Canvas
+                // Render Mode : World Space
+            // 버튼
+            // 텍스트 (TMP)
+            
+        /// <summary>
+        /// 모든 오브젝트는 GGemCo 오브젝트 하위에 생성한다.
+        /// UI 는 Canvas 에 생성한다.
+        /// </summary>
+        protected GameObject GetOrCreateRootGameObject()
+        {
+            var obj = GameObject.Find(ConfigDefine.NameSDK);
+            return obj == null ? new  GameObject(ConfigDefine.NameSDK) : obj;
+        }
+        protected GameObject GetOrCreateGameObject(string objectName)
+        {
+            if (!objectName.StartsWith($"{ConfigDefine.NameSDK}_")) objectName = $"{ConfigDefine.NameSDK}_{objectName}";
+            var obj = GameObject.Find(objectName);
+            if (obj == null)
+            {
+                obj = new GameObject(objectName);
+            }
+            GameObject root = GetOrCreateRootGameObject();
+            obj.transform.SetParent(root.transform);
+            return obj;
+        }
+        /// <summary>
+        /// 지정한 이름의 GameObject가 없으면 생성하고, 해당 컴포넌트를 추가 또는 가져옵니다.
+        /// </summary>
+        protected T CreateOrAddComponent<T>(string objectName) where T : Component
+        {
+            GameObject targetObj = GetOrCreateGameObject(objectName);
+            return !targetObj.TryGetComponent<T>(out _) ? targetObj.AddComponent<T>() : targetObj.GetComponent<T>();
         }
     }
 }

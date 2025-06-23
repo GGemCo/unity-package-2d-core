@@ -10,6 +10,13 @@ namespace GGemCo.Editor
     {
         public static Button CreateObjectButton(FieldInfo buttonField, string text)
         {
+            // 버튼 찾기 
+            GameObject objButton = GameObject.Find(buttonField.Name);
+            if (objButton)
+            {
+                return objButton.GetComponentInChildren<Button>();
+            }
+            
             // 캔버스 찾기 또는 생성
 #if UNITY_6000
             Canvas canvas = GameObject.FindFirstObjectByType<Canvas>();
