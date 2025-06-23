@@ -5,7 +5,7 @@ using UnityEngine;
 
 namespace GGemCo.Editor
 {
-    public class MapExporter : DefaultEditorWindow
+    public class MapEditor : DefaultEditorWindow
     {
         private List<CharacterRegenData> _npcList;
         private List<CharacterRegenData> _monsterDatas;
@@ -43,7 +43,7 @@ namespace GGemCo.Editor
         [MenuItem(ConfigEditor.NameToolMapExporter, false, (int)ConfigEditor.ToolOrdering.MapExporter)]
         public static void ShowWindow()
         {
-            GetWindow<MapExporter>(Title);
+            GetWindow<MapEditor>(Title);
         }
 
         protected override void OnEnable()

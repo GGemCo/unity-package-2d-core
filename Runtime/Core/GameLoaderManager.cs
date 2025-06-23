@@ -149,26 +149,26 @@ namespace GGemCo.Scripts
         private void UpdateLoadingProgress(Type type)
         {
             _progressTotal = _loadProgressTable + _loadProgressPrefabCommon + _loadProgressPrefabEffect + _loadProgressItem + _loadProgressSaveData;
-            string subTitle = "테이블";
+            string subTitle = "Tables";
             if (type == Type.GamePrefab)
             {
-                subTitle = "리소스";
+                subTitle = "Resources";
             }
             else if (type == Type.SaveData)
             {
-                subTitle = "세이브 데이터";
+                subTitle = "Save Data";
             }
             else if (type == Type.GamePrefabEffect)
             {
-                subTitle = "이펙트 리소스";
+                subTitle = "Effect Resources";
             }
             else if (type == Type.Item)
             {
-                subTitle = "아이템 데이터";
+                subTitle = "Item Data";
             }
             if (textLoadingPercent != null)
             {
-                textLoadingPercent.text = $"{subTitle} 로드 중... {Mathf.Floor(_progressTotal)}%";
+                textLoadingPercent.text = $"{subTitle} Loading... {Mathf.Floor(_progressTotal)}%";
             }
         }
     }

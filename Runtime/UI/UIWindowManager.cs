@@ -108,7 +108,7 @@ namespace GGemCo.Scripts
         /// <returns></returns>
         public T GetUIWindowByUid<T>(WindowUid windowUid) where T : UIWindow
         {
-            if (uiWindows.Length < (int)windowUid) return null;
+            if (uiWindows.Length <= (int)windowUid) return null;
             UIWindow uiWindow = uiWindows[(int)windowUid];
             if (uiWindow == null)
             {

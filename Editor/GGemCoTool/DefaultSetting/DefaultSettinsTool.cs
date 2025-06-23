@@ -9,7 +9,7 @@ namespace GGemCo.Editor
         private readonly SettingSortingLayers settingSortingLayers = new SettingSortingLayers();
         private readonly SettingLayers settingLayers = new SettingLayers();
 
-        [MenuItem(ConfigEditor.NameToolDefaultSetting, false, (int)ConfigEditor.ToolOrdering.DefaultSetting)]
+        [MenuItem(ConfigEditor.NameToolSettingDefault, false, (int)ConfigEditor.ToolOrdering.DefaultSetting)]
         public static void ShowWindow()
         {
             GetWindow<DefaultSettinsTool>("기본 셋팅하기");

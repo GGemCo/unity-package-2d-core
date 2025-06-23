@@ -267,7 +267,8 @@ namespace GGemCo.Scripts
                 ImageIcon.sprite = null;
                 return;
             }
-            ImageIcon.sprite = Resources.Load<Sprite>(path);
+
+            ImageIcon.sprite = AddressableLoaderItem.Instance.GetImageIconByName(path);
         }
         /// <summary>
         /// 이미지 사이즈 변경하기

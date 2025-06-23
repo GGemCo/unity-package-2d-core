@@ -1,11 +1,12 @@
 ﻿namespace GGemCo.Editor
 {
-    public class ConfigEditor
+    public static class ConfigEditor
     {
         public enum ToolOrdering
         {
             DefaultSetting = 1,
             SettingAddressable = 2,
+            SettingSceneIntro = 3,
             Development = 100,
             CreateDialogue,
             MapExporter,
@@ -19,11 +20,14 @@
             OpenSaveDataFolder,
             LoadAddressable,
         }
-        private const string NameToolGGemCo = "GGemCoTool/";
+        private const string NameToolGGemCo = GGemCo.Scripts.ConfigDefine.NameSDK+"Tool/";
         // 기본 셋팅하기
         private const string NameToolSettings = NameToolGGemCo + "설정하기/";
-        public const string NameToolDefaultSetting = NameToolSettings + "기본 셋팅하기";
-        public const string NameToolAddressableSetting = NameToolSettings + "Addressable 셋팅하기";
+        public const string NameToolSettingDefault = NameToolSettings + "기본 셋팅하기";
+        public const string NameToolSettingAddressable = NameToolSettings + "Addressable 셋팅하기";
+        public const string NameToolSettingSceneIntro = NameToolSettings + "인트로 씬 셋팅하기";
+        public const string NameToolSettingSceneLoading = NameToolSettings + "로딩 씬 셋팅하기";
+        public const string NameToolSettingSceneGame = NameToolSettings + "게임 씬 셋팅하기";
         
         // 개발툴
         private const string NameToolDevelopment = NameToolGGemCo + "개발툴/";
@@ -44,6 +48,6 @@
         public const string NameToolLoadAddressable = NameToolEtc + "Addressable 로더 툴";
         
         // 프리팹 경로
-        public const string PrefabPathDefaultUIButton = "Packages/com.ggemco.2d.core/Data/Prefabs/UI/DefaultButton.prefab";
+        public const string PrefabPathDefaultUIButton = "Packages/com.ggemco.2d.core/Editor/Data/Prefabs/UI/DefaultButton.prefab";
     }
 }

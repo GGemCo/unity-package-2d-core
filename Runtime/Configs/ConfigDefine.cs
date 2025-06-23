@@ -2,10 +2,13 @@
 {
     public static class ConfigDefine
     {
+        public const string NameSDK = "GGemCo";
+        public const string NameSDKUpperCase = "GGEMCO";
+        
         public const string SceneNameIntro = "Intro";
         public const string SceneNameLoading = "Loading";
         public const string SceneNameGame = "Game";
         // 스파인 2d 사용 y/n
-        public const string SpineDefineSymbol = "GGEMCO_USE_SPINE";
+        public const string SpineDefineSymbol = NameSDKUpperCase+"_USE_SPINE";
     }
 }

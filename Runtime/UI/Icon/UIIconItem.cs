@@ -111,7 +111,7 @@ namespace GGemCo.Scripts
         /// <returns></returns>
         protected override string GetIconImagePath()
         {
-            return struckTableItem?.ImagePath;
+            return struckTableItem?.FileName;
         }
         /// <summary>
         /// 장착 가능한 타입 인지 체크 

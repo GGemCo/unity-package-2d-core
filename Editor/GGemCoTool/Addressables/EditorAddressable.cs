@@ -21,7 +21,7 @@ namespace GGemCo.Editor
         public TableEffect TableEffect;
         public TableItem TableItem;
 
-        [MenuItem(ConfigEditor.NameToolAddressableSetting, false, (int)ConfigEditor.ToolOrdering.SettingAddressable)]
+        [MenuItem(ConfigEditor.NameToolSettingAddressable, false, (int)ConfigEditor.ToolOrdering.SettingAddressable)]
         public static void ShowWindow()
         {
             GetWindow<EditorAddressable>(Title);
