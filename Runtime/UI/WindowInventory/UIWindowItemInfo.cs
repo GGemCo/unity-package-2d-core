@@ -134,7 +134,7 @@ namespace GGemCo.Scripts
         private void SetName()
         {
             if (currentStruckTableItem == null) return;
-            textName.text = $"이름: {currentStruckTableItem.Name}";
+            textName.text = $"Name: {currentStruckTableItem.Name}";
         }
         /// <summary>
         /// 타입 설정하기
@@ -142,7 +142,7 @@ namespace GGemCo.Scripts
         private void SetType()
         {
             if (currentStruckTableItem == null) return;
-            textType.text = $"타입: {currentStruckTableItem.Type}";
+            textType.text = $"Type: {currentStruckTableItem.Type}";
         }
         
         private void SetCategoryUI()
@@ -163,8 +163,8 @@ namespace GGemCo.Scripts
         private void SetCategory()
         {
             if (currentStruckTableItem == null) return;
-            textCategory.text = $"카테고리: {currentStruckTableItem.Category}";
-            textSubCategory.text = $"서브카테고리: {currentStruckTableItem.SubCategory}";
+            textCategory.text = $"Category: {currentStruckTableItem.Category}";
+            textSubCategory.text = $"SubCategory: {currentStruckTableItem.SubCategory}";
         }
         private void SetStatusOptions()
         {
@@ -218,7 +218,8 @@ namespace GGemCo.Scripts
                     return;
                 }
                 textMesh.gameObject.SetActive(true);
-                textMesh.text = $"{info.Duration} 초 동안 {GetStatusName(info.StatusID)} {GetValueText(info.StatusSuffix, info.Value)} 가 발동합니다.";
+                // textMesh.text = $"{info.Duration} 초 동안 {GetStatusName(info.StatusID)} {GetValueText(info.StatusSuffix, info.Value)} 가 발동합니다.";
+                textMesh.text = $"{GetStatusName(info.StatusID)} {GetValueText(info.StatusSuffix, info.Value)} is activated for {info.Duration} seconds.";
             }
             else
             {
@@ -271,7 +272,7 @@ namespace GGemCo.Scripts
             if (currentStruckTableItem.StatusID1 == ConfigCommon.StatusAffectId) return;
             
             textStatus1.gameObject.SetActive(true);
-            textStatus1.text = $"회복량 : {currentStruckTableItem.StatusValue1}";
+            textStatus1.text = $"Recovery: {currentStruckTableItem.StatusValue1}"; // 회복량
         }
 
         private void SetDefaultUI()

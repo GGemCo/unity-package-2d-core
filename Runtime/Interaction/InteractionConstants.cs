@@ -18,12 +18,12 @@ namespace GGemCo.Scripts
         private static readonly Dictionary<Type, string> DictionaryTypeName = new Dictionary<Type, string>
         {
             { Type.None, "" },
-            { Type.Shop, "아이템 구매" },
-            { Type.ShopSale, "아이템 판매" },
-            { Type.ItemUpgrade, "아이템 강화" },
-            { Type.ItemSalvage, "아이템 분해" },
-            { Type.Stash, "창고" },
-            { Type.ItemCraft, "아이템 제작" },
+            { Type.Shop, "Buy Item" }, // 아이템 구매
+            { Type.ShopSale, "Sell Item" }, //아이템 판매
+            { Type.ItemUpgrade, "Item Upgrade" }, // 아이템 강화
+            { Type.ItemSalvage, "Item Salvage" },//아이템 분해
+            { Type.Stash, "Stash" }, //창고
+            { Type.ItemCraft, "Item Craft" },//아이템 제작
         };
 
         public static string GetTypeName(Type type)

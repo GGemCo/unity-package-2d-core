@@ -32,7 +32,7 @@ namespace GGemCo.Scripts
                 GcLogger.LogError("TextMeshProUGUI 컴포넌트가 없습니다.");
                 return;
             }
-            textGold.text = $"골드 {newLevel}";
+            textGold.text = $"Gold {newLevel}";
         }
     }
 }
