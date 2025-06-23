@@ -14,7 +14,7 @@ namespace GGemCo.Scripts
         };
         
         // 플레이어
-        public const string KeyPrefabPlayer = "GGemCo_Character_Player";
         public const string KeyCharacter = "GGemCo_Character";
+        public const string KeyPrefabPlayer = KeyCharacter + "_Player";
     }
 }

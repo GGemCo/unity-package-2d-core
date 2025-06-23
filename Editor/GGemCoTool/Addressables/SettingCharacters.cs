@@ -16,12 +16,14 @@ namespace GGemCo.Editor
         private readonly EditorAddressable _editorAddressable;
         private readonly string _targetGroupNameMonster;
         private readonly string _targetGroupNameNpc;
+        private readonly string _targetGroupNamePlayer;
 
         public SettingCharacters(EditorAddressable editorWindow)
         {
             _editorAddressable = editorWindow;
             _targetGroupNameMonster = "GGemCo_Character_Monster";
             _targetGroupNameNpc = "GGemCo_Character_Npc";
+            _targetGroupNamePlayer = "GGemCo_Character_Player";
         }
         public void OnGUI()
         {
@@ -89,6 +91,16 @@ namespace GGemCo.Editor
                     Add(settings, groupNpc, key, assetPath);
                 }
             }
+            
+            AddressableAssetGroup groupPlayer = GetOrCreateGroup(settings, _targetGroupNamePlayer);
+            if (groupPlayer)
+            {
+                string key = ConfigAddressables.KeyPrefabPlayer;
+                string assetPath = $"{ConfigAddressables.Path}/Characters/Player/Player.prefab";
+                
+                Add(settings, groupPlayer, key, assetPath);
+            }
+
 
             // 설정 저장
             settings.SetDirty(AddressableAssetSettings.ModificationEvent.EntryMoved, null, true);
