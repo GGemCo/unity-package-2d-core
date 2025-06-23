@@ -17,18 +17,28 @@
 	"samples": [
 		{
 			"displayName": "Data Resource",
-			"description": "기본 리소스",
+			"description": "기본 샘플 리소스 입니다.",
 			"path": "Samples~/Data"
 		},
 		{
 			"displayName": "Addressables Data Resource",
-			"description": "Addressables 에 사용되는 리소스",
-			"path": "Samples~/DataAddressables"
+			"description": "Addressables 에 사용되는 샘플 리소스 입니다.\nAssets/GGemCo/DataAddressable 폴더를 생성하고, 모든 파일을 복사하면 바로 사용할 수 있습니다.",
+			"path": "Samples~/DataAddressable"
 		},
 		{
-			"displayName": "Fonts ",
-			"description": "네이버 나눔고딕 폰트",
+			"displayName": "Fonts",
+			"description": "네이버 나눔고딕 폰트 입니다.\nhttps://hangeul.naver.com/font",
 			"path": "Samples~/Fonts"
+		},
+		{
+			"displayName": "UI Windows",
+			"description": "UI 윈도우 프리팹 샘플 리소스 입니다.\n복사 후 바로 사용할 수 있습니다.\n복사 후 디자인을 변경해서 사용할 수 있습니다.",
+			"path": "Samples~/UIWindows"
+		},
+		{
+			"displayName": "Required Resource",
+			"description": "GGemCoSDK 에 필요한 리소스 입니다.\nAssets/Resources/GGemCo 폴더를 생성하고, 모든 파일을 복사해주세요.",
+			"path": "Samples~/RequiredResource"
 		}
 	],
 	"keywords": [
