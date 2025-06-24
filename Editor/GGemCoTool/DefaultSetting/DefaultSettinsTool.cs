@@ -1,4 +1,5 @@
-﻿using GGemCo2DCore;
+﻿using System.IO;
+using GGemCo2DCore;
 using UnityEditor;
 using UnityEngine;
 
@@ -30,11 +31,20 @@ namespace GGemCo2DCoreEditor
             Common.OnGUITitle("Scene 추가하기");
             if (GUILayout.Button("Scene 추가하기"))
             {
-                string path = $"Assets/GGemCo/Scenes/{ConfigDefine.SceneNameIntro}.unity";
+                string path = $"{ConfigDefine.PathScene}/{ConfigDefine.SceneNameIntro}.unity";
+                // 폴더가 없으면 생성
+                string directory = Path.GetDirectoryName(path);
+                if (directory == null) return;
+                if (!Directory.Exists(directory))
+                {
+                    Directory.CreateDirectory(directory);
+                    AssetDatabase.Refresh();
+                }
+
                 AddSceneToBuildSettings(path);
-                path = $"Assets/GGemCo/Scenes/{ConfigDefine.SceneNameLoading}.unity";
+                path = $"{ConfigDefine.PathScene}/{ConfigDefine.SceneNameLoading}.unity";
                 AddSceneToBuildSettings(path);
-                path = $"Assets/GGemCo/Scenes/{ConfigDefine.SceneNameGame}.unity";
+                path = $"{ConfigDefine.PathScene}/{ConfigDefine.SceneNameGame}.unity";
                 AddSceneToBuildSettings(path);
             }
         }

@@ -43,7 +43,10 @@ namespace GGemCo2DCoreEditor
         /// </summary>
         private void SetupRequiredObjects()
         {
-            var scene = CreateOrAddComponent<SceneGame>("SceneGame");
+            SceneGame scene = CreateOrAddComponent<SceneGame>("SceneGame");
+            if (scene == null) return;
+            // SceneGame 은 싱글톤으로 활용하고 있어 root 로 이동
+            scene.gameObject.transform.SetParent(null);
             SetupCamera(scene);
             SetupCanvasUI(scene);
             SetupCanvasFromWorld(scene);

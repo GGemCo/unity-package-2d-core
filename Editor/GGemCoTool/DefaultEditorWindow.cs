@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using GGemCo2DCore;
 using UnityEditor;
+using UnityEditor.SceneManagement;
 using UnityEngine;
 
 namespace GGemCo2DCoreEditor
@@ -96,11 +97,17 @@ namespace GGemCo2DCoreEditor
         {
             // string scenePath = "Assets/Scenes/ExampleScene.unity";
 
-            // 씬이 존재하는지 확인
+            // 씬이 없으면 새로 생성
             if (!File.Exists(scenePath))
             {
-                Debug.LogError($"씬 경로가 잘못되었거나 존재하지 않습니다: {scenePath}");
-                return;
+                // 새로운 빈 씬 생성
+                var newScene = EditorSceneManager.NewScene(NewSceneSetup.DefaultGameObjects, NewSceneMode.Single);
+                EditorSceneManager.SaveScene(newScene, scenePath);
+                Debug.Log($"씬이 새로 생성되었습니다: {scenePath}");
+            }
+            else
+            {
+                Debug.Log($"씬이 이미 존재합니다: {scenePath}");
             }
 
             // 현재 Build Settings에 등록된 씬 목록 가져오기
