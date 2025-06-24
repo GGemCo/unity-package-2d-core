@@ -16,6 +16,7 @@ namespace GGemCo2DCore
         public static AddressableLoaderItem Instance { get; private set; }
         private readonly Dictionary<string, SpriteAtlas> _dicImageDrop = new Dictionary<string, SpriteAtlas>();
         private readonly Dictionary<string, SpriteAtlas> _dicImageIcon = new Dictionary<string, SpriteAtlas>();
+        private readonly Dictionary<string, SpriteAtlas> _dicImageEquip = new Dictionary<string, SpriteAtlas>();
         private readonly HashSet<AsyncOperationHandle> _activeHandles = new HashSet<AsyncOperationHandle>();
         private float _prefabLoadProgress;
 
@@ -49,14 +50,14 @@ namespace GGemCo2DCore
         {
             try
             {
-                _dicImageDrop.Clear();
+                // 아이콘 이미지
                 _dicImageIcon.Clear();
                 var locationHandle = Addressables.LoadResourceLocationsAsync(ConfigAddressableLabel.ImageItemIcon);
                 await locationHandle.Task;
 
                 if (!locationHandle.IsValid() || locationHandle.Status != AsyncOperationStatus.Succeeded)
                 {
-                    GcLogger.LogError($"{ConfigAddressableLabel.Effect} 레이블을 가진 리소스를 찾을 수 없습니다.");
+                    GcLogger.LogError($"{ConfigAddressableLabel.ImageItemIcon} 레이블을 가진 리소스를 찾을 수 없습니다.");
                     return;
                 }
 
@@ -82,15 +83,15 @@ namespace GGemCo2DCore
                 }
                 _activeHandles.Add(locationHandle);
                 
+                // 드랍 아이템 이미지
                 {
-                    
                     _dicImageDrop.Clear();
                     locationHandle = Addressables.LoadResourceLocationsAsync(ConfigAddressableLabel.ImageItemDrop);
                     await locationHandle.Task;
 
                     if (!locationHandle.IsValid() || locationHandle.Status != AsyncOperationStatus.Succeeded)
                     {
-                        GcLogger.LogError($"{ConfigAddressableLabel.Effect} 레이블을 가진 리소스를 찾을 수 없습니다.");
+                        GcLogger.LogError($"{ConfigAddressableLabel.ImageItemDrop} 레이블을 가진 리소스를 찾을 수 없습니다.");
                         return;
                     }
 
@@ -115,7 +116,41 @@ namespace GGemCo2DCore
                         loadedCount++;
                     }
                     _activeHandles.Add(locationHandle);
-                    
+                }
+                
+                // 장착 이미지 
+                {
+                    _dicImageEquip.Clear();
+                    locationHandle = Addressables.LoadResourceLocationsAsync(ConfigAddressableLabel.ImageItemEquip);
+                    await locationHandle.Task;
+
+                    if (!locationHandle.IsValid() || locationHandle.Status != AsyncOperationStatus.Succeeded)
+                    {
+                        GcLogger.LogError($"{ConfigAddressableLabel.ImageItemEquip} 레이블을 가진 리소스를 찾을 수 없습니다.");
+                        return;
+                    }
+
+                    totalCount = locationHandle.Result.Count;
+                    loadedCount = 0;
+
+                    foreach (var location in locationHandle.Result)
+                    {
+                        string address = location.PrimaryKey;
+                        var loadHandle = Addressables.LoadAssetAsync<SpriteAtlas>(address);
+
+                        while (!loadHandle.IsDone)
+                        {
+                            _prefabLoadProgress = (loadedCount + loadHandle.PercentComplete) / totalCount;
+                            await Task.Yield();
+                        }
+                        _activeHandles.Add(loadHandle);
+
+                        SpriteAtlas prefab = await loadHandle.Task;
+                        if (!prefab) continue;
+                        _dicImageEquip[address] = prefab;
+                        loadedCount++;
+                    }
+                    _activeHandles.Add(locationHandle);
                 }
 
                 _prefabLoadProgress = 1f; // 100%
@@ -148,6 +183,17 @@ namespace GGemCo2DCore
             return null;
         }
 
+        public Sprite GetImageEquipByName(string prefabName)
+        {
+            if (_dicImageEquip.TryGetValue(ConfigAddressableLabel.ImageItemEquip, out var prefab))
+            {
+                return prefab.GetSprite(prefabName);
+            }
+
+            GcLogger.LogError($"Addressables에서 {prefabName} 프리팹을 찾을 수 없습니다.");
+            return null;
+        }
         public float GetPrefabLoadProgress() => _prefabLoadProgress;
+
     }
 }

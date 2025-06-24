@@ -101,10 +101,27 @@ namespace GGemCo2DCoreEditor
                     }
                 }
             }
+            // 기본 장비 이미지
+            foreach (var data in ItemConstants.FolderNameByPartsType)
+            {
+                var partType = data.Key;
+                if (partType == ItemConstants.PartsType.None) continue;
+                string folderName = data.Value;
+                if (string.IsNullOrEmpty(folderName)) continue;
+                List<string> slotNames = ItemConstants.SlotNameByPartsType.GetValueOrDefault(partType);
+                foreach (var slotName in slotNames)
+                {
+                    if (string.IsNullOrEmpty(slotName)) continue;
+                    string baseKey = $"{ConfigAddressableLabel.ImageItemEquip}_{folderName}_{slotName}";
+                    string equipPath = $"{ConfigAddressables.PathItemParts}/{folderName}/{slotName}.png";
+                    Add(settings, groupEquipImage, baseKey, equipPath);
+                    AddToListIfExists(assetsEquip, equipPath);
+                }
+            }
 
-            atlasDrop.Add(assetsDrop.ToArray());
-            atlasIcon.Add(assetsIcon.ToArray());
-            atlasEquip.Add(assetsEquip.ToArray());
+            ClearAndAddToAtlas(atlasDrop, assetsDrop);
+            ClearAndAddToAtlas(atlasIcon, assetsIcon);
+            ClearAndAddToAtlas(atlasEquip, assetsEquip);
 
             // Atlas 를 Addressables 에 등록
             Add(settings, groupDropImage, ConfigAddressableLabel.ImageItemDrop, AssetDatabase.GetAssetPath(atlasDrop), ConfigAddressableLabel.ImageItemDrop);
@@ -146,6 +163,11 @@ namespace GGemCo2DCoreEditor
             {
                 list.Add(asset);
             }
+        }
+        private void ClearAndAddToAtlas(SpriteAtlas atlas, List<Object> assets)
+        {
+            atlas.Remove(atlas.GetPackables()); // 기존 등록된 에셋 제거
+            atlas.Add(assets.ToArray());        // 새로 추가
         }
     }
 }

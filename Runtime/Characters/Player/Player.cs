@@ -184,9 +184,9 @@ namespace GGemCo2DCore
             {
                 string attachmentName = ItemConstants.AttachmentNameBySlotName[slotName];
                 
-                string changeSpritePath = $"{info.PartsImagePath}_{slotName}";
-                var sprite = Resources.Load<Sprite>(changeSpritePath);
-
+                string changeSpritePath = $"{info.FileName}_{slotName}";
+                var sprite = AddressableLoaderItem.Instance.GetImageEquipByName(changeSpritePath);
+                
                 StruckChangeSlotImage struckChangeSlotImage = new StruckChangeSlotImage(slotName, attachmentName, sprite);
                 changeImages.Add(struckChangeSlotImage);
             }
@@ -209,8 +209,8 @@ namespace GGemCo2DCore
             {
                 string attachmentName = ItemConstants.AttachmentNameBySlotName[slotName];
                 
-                string changeSpritePath = $"Images/Parts/{ItemConstants.FolderNameByPartsType[partsType]}/{attachmentName}";
-                var sprite = Resources.Load<Sprite>(changeSpritePath);
+                string changeSpritePath = attachmentName;
+                var sprite = AddressableLoaderItem.Instance.GetImageEquipByName(changeSpritePath);
 
                 StruckChangeSlotImage struckChangeSlotImage = new StruckChangeSlotImage(slotName, attachmentName, sprite);
                 changeImages.Add(struckChangeSlotImage);
@@ -299,17 +299,17 @@ namespace GGemCo2DCore
         {
             statBindings.AddRange(new[]
             {
-                new StatUIBinding { textUI = UIWindowPlayerInfo.IndexPlayerInfo.Atk, GetStat = p => p.TotalAtk, label = "공격력" },
-                new StatUIBinding { textUI = UIWindowPlayerInfo.IndexPlayerInfo.Def, GetStat = p => p.TotalDef, label = "방어력" },
-                new StatUIBinding { textUI = UIWindowPlayerInfo.IndexPlayerInfo.Hp, GetStat = p => p.TotalHp, label = "생명력" },
-                new StatUIBinding { textUI = UIWindowPlayerInfo.IndexPlayerInfo.Mp, GetStat = p => p.TotalMp, label = "마력" },
-                new StatUIBinding { textUI = UIWindowPlayerInfo.IndexPlayerInfo.MoveSpeed, GetStat = p => p.TotalMoveSpeed, label = "이동속도" },
-                new StatUIBinding { textUI = UIWindowPlayerInfo.IndexPlayerInfo.AttackSpeed, GetStat = p => p.TotalAttackSpeed, label = "공격속도" },
-                new StatUIBinding { textUI = UIWindowPlayerInfo.IndexPlayerInfo.CriticalDamage, GetStat = p => p.TotalCriticalDamage, label = "크리티컬 데미지" },
-                new StatUIBinding { textUI = UIWindowPlayerInfo.IndexPlayerInfo.CriticalProbability, GetStat = p => p.TotalCriticalProbability, label = "크리티컬 확률" },
-                new StatUIBinding { textUI = UIWindowPlayerInfo.IndexPlayerInfo.RegistFire, GetStat = p => p.TotalRegistFire, label = "불 속성 저항" },
-                new StatUIBinding { textUI = UIWindowPlayerInfo.IndexPlayerInfo.RegistCold, GetStat = p => p.TotalRegistCold, label = "얼음 속성 저항" },
-                new StatUIBinding { textUI = UIWindowPlayerInfo.IndexPlayerInfo.RegistLightning, GetStat = p => p.TotalRegistLightning, label = "전기 속성 저항" },
+                new StatUIBinding { textUI = UIWindowPlayerInfo.IndexPlayerInfo.Atk, GetStat = p => p.TotalAtk, label = "ATK" },
+                new StatUIBinding { textUI = UIWindowPlayerInfo.IndexPlayerInfo.Def, GetStat = p => p.TotalDef, label = "DEF" },
+                new StatUIBinding { textUI = UIWindowPlayerInfo.IndexPlayerInfo.Hp, GetStat = p => p.TotalHp, label = "HP" },
+                new StatUIBinding { textUI = UIWindowPlayerInfo.IndexPlayerInfo.Mp, GetStat = p => p.TotalMp, label = "MP" },
+                new StatUIBinding { textUI = UIWindowPlayerInfo.IndexPlayerInfo.MoveSpeed, GetStat = p => p.TotalMoveSpeed, label = "Move Speed" },
+                new StatUIBinding { textUI = UIWindowPlayerInfo.IndexPlayerInfo.AttackSpeed, GetStat = p => p.TotalAttackSpeed, label = "Attack Speed" },
+                new StatUIBinding { textUI = UIWindowPlayerInfo.IndexPlayerInfo.CriticalDamage, GetStat = p => p.TotalCriticalDamage, label = "Critical DMG" },
+                new StatUIBinding { textUI = UIWindowPlayerInfo.IndexPlayerInfo.CriticalProbability, GetStat = p => p.TotalCriticalProbability, label = "Critical Rate" },
+                new StatUIBinding { textUI = UIWindowPlayerInfo.IndexPlayerInfo.RegistFire, GetStat = p => p.TotalRegistFire, label = "Regist Fire" },
+                new StatUIBinding { textUI = UIWindowPlayerInfo.IndexPlayerInfo.RegistCold, GetStat = p => p.TotalRegistCold, label = "Regist Cold" },
+                new StatUIBinding { textUI = UIWindowPlayerInfo.IndexPlayerInfo.RegistLightning, GetStat = p => p.TotalRegistLightning, label = "Regist Lighting" },
             });
             foreach (var binding in statBindings)
             {

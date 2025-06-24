@@ -13,6 +13,9 @@ namespace GGemCo2DCore
         {
         };
         
+        // 아이템
+        public const string PathItemParts = Path + "/Images/Parts";
+        
         // 플레이어
         public const string KeyCharacter = ConfigDefine.NameSDK+"_Character";
         
