@@ -1,5 +1,5 @@
 ﻿
-namespace GGemCo.Scripts
+namespace GGemCo2DCore
 {
     /// <summary>
     /// 연출 - Const 값

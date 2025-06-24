@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-namespace GGemCo.Scripts
+namespace GGemCo2DCore
 {
     /// <summary>
     /// 디폴트 이펙트

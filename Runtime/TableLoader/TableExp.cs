@@ -1,6 +1,6 @@
 ﻿using System.Linq;
 
-namespace GGemCo.Scripts
+namespace GGemCo2DCore
 {
     /// <summary>
     /// 경험치 테이블 

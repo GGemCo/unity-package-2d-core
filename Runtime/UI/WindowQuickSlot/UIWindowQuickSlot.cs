@@ -2,7 +2,7 @@
 using UnityEngine;
 using UnityEngine.UI;
 
-namespace GGemCo.Scripts
+namespace GGemCo2DCore
 {
     /// <summary>
     /// 퀵슬롯 윈도우

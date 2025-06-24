@@ -1,7 +1,7 @@
 using System.Linq;
 using UnityEngine.EventSystems;
 
-namespace GGemCo.Scripts
+namespace GGemCo2DCore
 {
     /// <summary>
     /// 아이템 아이콘

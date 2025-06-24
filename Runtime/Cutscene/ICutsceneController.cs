@@ -1,6 +1,6 @@
 ﻿using System.Collections;
 
-namespace GGemCo.Scripts
+namespace GGemCo2DCore
 {
     /// <summary>
     /// 연출 - 클립별 컨트롤러 인터페이스

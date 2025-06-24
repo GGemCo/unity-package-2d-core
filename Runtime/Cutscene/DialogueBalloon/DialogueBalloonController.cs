@@ -1,8 +1,7 @@
 ﻿using System.Collections;
-using GGemCo.Scripts.UI;
 using UnityEngine;
 
-namespace GGemCo.Scripts
+namespace GGemCo2DCore
 {
     /// <summary>
     /// 연출 - 캐릭터 이동

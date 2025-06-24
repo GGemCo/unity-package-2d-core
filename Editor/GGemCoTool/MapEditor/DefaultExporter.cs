@@ -1,5 +1,5 @@
 ﻿using System;
-using GGemCo.Scripts;
+using GGemCo2DCore;
 using TMPro;
 using UnityEngine;
 

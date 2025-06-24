@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 
-namespace GGemCo.Scripts
+namespace GGemCo2DCore
 {
     public class SoundManager : MonoBehaviour
     {

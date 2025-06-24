@@ -1,5 +1,5 @@
 ﻿
-namespace GGemCo.Scripts
+namespace GGemCo2DCore
 {
     public class Icon
     {

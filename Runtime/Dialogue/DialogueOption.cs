@@ -1,7 +1,7 @@
 ﻿using System;
 using UnityEngine;
 
-namespace GGemCo.Scripts
+namespace GGemCo2DCore
 {
     /// <summary>
     /// 대사 노드 - 선택지

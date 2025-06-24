@@ -6,7 +6,7 @@ using Spine.Unity.AttachmentTools;
 using UnityEngine;
 using Event = Spine.Event;
 
-namespace GGemCo.Scripts
+namespace GGemCo2DCore
 {
     /// <summary>
     /// 스파인 컨트롤러

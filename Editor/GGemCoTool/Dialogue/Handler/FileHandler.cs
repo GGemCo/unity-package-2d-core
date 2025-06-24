@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using Newtonsoft.Json;
 using System.IO;
-using GGemCo.Scripts;
+using GGemCo2DCore;
 using UnityEditor;
 using UnityEngine;
 

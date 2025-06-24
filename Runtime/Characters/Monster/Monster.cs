@@ -2,7 +2,7 @@ using System;
 using UnityEngine;
 using R3;
 
-namespace GGemCo.Scripts
+namespace GGemCo2DCore
 {
     /// <summary>
     /// 몬스터 기본 클레스

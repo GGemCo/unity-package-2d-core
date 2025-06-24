@@ -2,7 +2,7 @@
 using UnityEngine;
 using UnityEngine.Events;
 
-namespace GGemCo.Scripts
+namespace GGemCo2DCore
 {
     public class UIPanelFadeInOut : MonoBehaviour
     {

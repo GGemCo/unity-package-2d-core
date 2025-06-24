@@ -1,6 +1,6 @@
 ﻿using System;
 using System.Threading.Tasks;
-using GGemCo.Scripts;
+using GGemCo2DCore;
 using UnityEngine;
 using UnityEngine.AddressableAssets;
 using UnityEngine.ResourceManagement.AsyncOperations;

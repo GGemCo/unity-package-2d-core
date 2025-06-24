@@ -31,7 +31,7 @@ namespace GGemCo.Editor.Scene
         private void DrawRequiredSection()
         {
             Common.OnGUITitle("필수 항목");
-            EditorGUILayout.HelpBox($"{GGemCo.Scripts.ConfigDefine.NameSDK}.Scripts.SceneIntro 오브젝트와 게임 시작 버튼을 설정합니다.", MessageType.Info);
+            EditorGUILayout.HelpBox($"{GGemCo2DCore.ConfigDefine.NameSDK}.Scripts.SceneIntro 오브젝트와 게임 시작 버튼을 설정합니다.", MessageType.Info);
 
             if (GUILayout.Button("필수 항목 셋팅하기"))
             {
@@ -43,11 +43,11 @@ namespace GGemCo.Editor.Scene
         /// </summary>
         private void SetupRequiredObjects()
         {
-            // GGemCo.Scripts.SceneIntro GameObject 만들기
-            GGemCo.Scripts.SceneIntro sceneIntro = CreateGameObjectSceneIntro();
+            // GGemCo2DCore.SceneIntro GameObject 만들기
+            GGemCo2DCore.SceneIntro sceneIntro = CreateGameObjectSceneIntro();
             
             // 새 게임 버튼 만들고 연결하기
-            FieldInfo fieldInfo = typeof(GGemCo.Scripts.SceneIntro)
+            FieldInfo fieldInfo = typeof(GGemCo2DCore.SceneIntro)
                 .GetField("buttonNewGame", BindingFlags.NonPublic | BindingFlags.Instance);
             if (fieldInfo == null)
             {
@@ -72,11 +72,11 @@ namespace GGemCo.Editor.Scene
             }
         }
         /// <summary>
-        /// GGemCo.Scripts.SceneIntro 오브젝트 만들기
+        /// GGemCo2DCore.SceneIntro 오브젝트 만들기
         /// </summary>
-        private GGemCo.Scripts.SceneIntro CreateGameObjectSceneIntro()
+        private GGemCo2DCore.SceneIntro CreateGameObjectSceneIntro()
         {
-            return CreateOrAddComponent<GGemCo.Scripts.SceneIntro>("SceneIntro");
+            return CreateOrAddComponent<GGemCo2DCore.SceneIntro>("SceneIntro");
         }
         
         /// <summary>
@@ -102,7 +102,7 @@ namespace GGemCo.Editor.Scene
         }
         private void CreateGameObjectPopupManager()
         {
-            GGemCo.Scripts.PopupManager popupManager = CreateOrAddComponent<GGemCo.Scripts.PopupManager>("PopupManager");
+            GGemCo2DCore.PopupManager popupManager = CreateOrAddComponent<GGemCo2DCore.PopupManager>("PopupManager");
         }
     }
 }

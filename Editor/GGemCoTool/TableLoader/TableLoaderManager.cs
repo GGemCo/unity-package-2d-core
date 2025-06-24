@@ -1,6 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
-using GGemCo.Scripts;
+using GGemCo2DCore;
 
 namespace GGemCo.Editor
 {

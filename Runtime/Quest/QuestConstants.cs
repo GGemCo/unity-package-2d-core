@@ -1,7 +1,7 @@
 ﻿
 using UnityEngine;
 
-namespace GGemCo.Scripts
+namespace GGemCo2DCore
 {
     public static class QuestConstants
     {

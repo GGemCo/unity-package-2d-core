@@ -1,7 +1,7 @@
 ﻿using System;
 using UnityEngine.Playables;
 
-namespace GGemCo.Scripts
+namespace GGemCo2DCore
 {
     [Serializable]
     public class CutsceneEventMixerBehaviour : PlayableBehaviour

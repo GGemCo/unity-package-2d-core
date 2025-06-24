@@ -1,6 +1,6 @@
 ﻿using System.Collections.Generic;
 using GGemCo.Editor;
-using GGemCo.Scripts;
+using GGemCo2DCore;
 
 public static class QuestStepDrawerFactory
 {

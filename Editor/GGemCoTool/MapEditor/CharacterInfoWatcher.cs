@@ -1,6 +1,6 @@
 ﻿#if UNITY_EDITOR
 using System.Collections.Generic;
-using GGemCo.Scripts;
+using GGemCo2DCore;
 using TMPro;
 using UnityEditor;
 using UnityEngine;

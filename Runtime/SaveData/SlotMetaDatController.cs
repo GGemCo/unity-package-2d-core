@@ -4,7 +4,7 @@ using System.IO;
 using System.Linq;
 using Newtonsoft.Json;
 
-namespace GGemCo.Scripts
+namespace GGemCo2DCore
 {
     public class SlotMetaInfo
     {

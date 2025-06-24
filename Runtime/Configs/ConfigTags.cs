@@ -1,4 +1,4 @@
-﻿namespace GGemCo.Scripts
+﻿namespace GGemCo2DCore
 {
     /// <summary>
     /// 게임에서 사용되는 tag 관리

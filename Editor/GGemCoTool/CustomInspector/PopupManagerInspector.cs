@@ -5,7 +5,7 @@ using UnityEngine.UI;
 
 namespace GGemCo.Editor
 {
-    [CustomEditor(typeof(GGemCo.Scripts.PopupManager))]
+    [CustomEditor(typeof(GGemCo2DCore.PopupManager))]
     public class PopupManagerInspector : UnityEditor.Editor
     {
         public override void OnInspectorGUI()
@@ -15,9 +15,9 @@ namespace GGemCo.Editor
             Common.GUILineBlue(1);
 
             Common.OnGUITitleBold("생성하기");
-            // GGemCo.Scripts.SceneIntro sceneIntro = (GGemCo.Scripts.SceneIntro)target;
+            // GGemCo2DCore.SceneIntro sceneIntro = (GGemCo2DCore.SceneIntro)target;
 
-            var canvasPopupField = typeof(Scripts.PopupManager)
+            var canvasPopupField = typeof(GGemCo2DCore.PopupManager)
                 .GetField("canvasPopup", BindingFlags.NonPublic | BindingFlags.Instance);
             Button currentValueButtonNewGame = canvasPopupField?.GetValue(target) as Button;
             

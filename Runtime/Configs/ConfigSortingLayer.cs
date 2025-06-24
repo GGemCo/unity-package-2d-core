@@ -1,4 +1,4 @@
-﻿namespace GGemCo.Scripts
+﻿namespace GGemCo2DCore
 {
     /// <summary>
     /// Sorting Layer 에 사용되는 Config 값

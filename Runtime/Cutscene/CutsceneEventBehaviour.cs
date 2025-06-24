@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using UnityEngine.Playables;
 
-namespace GGemCo.Scripts
+namespace GGemCo2DCore
 {
     [Serializable]
     public class CutsceneEventBehaviour : PlayableBehaviour

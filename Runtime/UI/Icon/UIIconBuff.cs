@@ -1,4 +1,4 @@
-﻿namespace GGemCo.Scripts
+﻿namespace GGemCo2DCore
 {
     /// <summary>
     /// 버프 아이콘

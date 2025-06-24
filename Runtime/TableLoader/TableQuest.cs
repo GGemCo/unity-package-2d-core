@@ -2,7 +2,7 @@
 using System.IO;
 using UnityEngine;
 
-namespace GGemCo.Scripts
+namespace GGemCo2DCore
 {
     /// <summary>
     /// Window 테이블 Structure

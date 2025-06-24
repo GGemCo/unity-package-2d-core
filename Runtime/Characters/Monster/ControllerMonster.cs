@@ -2,7 +2,7 @@
 using UnityEngine;
 using Event = UnityEngine.Event;
 
-namespace GGemCo.Scripts
+namespace GGemCo2DCore
 {
     /// <summary>
     /// 몬스터 선공, 후공 처리 

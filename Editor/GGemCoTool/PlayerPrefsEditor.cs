@@ -2,7 +2,7 @@
 using UnityEngine;
 using System.Collections.Generic;
 using System.Linq;
-using GGemCo.Scripts;
+using GGemCo2DCore;
 
 namespace GGemCo.Editor
 {

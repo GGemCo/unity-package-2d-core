@@ -1,4 +1,4 @@
-﻿namespace GGemCo.Scripts
+﻿namespace GGemCo2DCore
 {
     /// <summary>
     /// 아이템 구매하기 윈도우 - 아이콘 관리

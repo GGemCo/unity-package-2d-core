@@ -1,7 +1,7 @@
 ﻿using TMPro;
 using UnityEngine;
 
-namespace GGemCo.Scripts.UI
+namespace GGemCo2DCore
 {
     /// <summary>
     /// 말풍선

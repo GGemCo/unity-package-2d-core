@@ -1,7 +1,7 @@
 ﻿using UnityEngine;
 using UnityEngine.EventSystems;
 
-namespace GGemCo.Scripts
+namespace GGemCo2DCore
 {
     public class IconDragDropHandler
     {

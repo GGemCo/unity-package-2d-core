@@ -2,7 +2,7 @@
 using System.IO;
 using UnityEngine;
 
-namespace GGemCo.Scripts
+namespace GGemCo2DCore
 {
     /// <summary>
     /// 게임 데이터 저장시 만드는 썸네일 매니저

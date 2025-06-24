@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace GGemCo.Scripts
+namespace GGemCo2DCore
 {
     [Serializable]
     public class CameraShakeData

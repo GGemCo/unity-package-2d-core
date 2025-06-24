@@ -2,7 +2,7 @@
 using TMPro;
 using UnityEngine;
 
-namespace GGemCo.Scripts
+namespace GGemCo2DCore
 {
     /// <summary>
     /// 실버 재화 데이터 변경 시 UI 업데이트

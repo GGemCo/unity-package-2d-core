@@ -4,7 +4,7 @@ using UnityEngine;
 using UnityEngine.Playables;
 using UnityEngine.Timeline;
 
-namespace GGemCo.Scripts
+namespace GGemCo2DCore
 {
     [Serializable]
     public class CutsceneEventClip : PlayableAsset, ITimelineClipAsset

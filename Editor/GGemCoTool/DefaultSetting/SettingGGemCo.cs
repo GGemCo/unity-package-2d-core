@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
-using GGemCo.Scripts;
+using GGemCo2DCore;
 using UnityEditor;
 using UnityEditor.Build;
 using UnityEngine;

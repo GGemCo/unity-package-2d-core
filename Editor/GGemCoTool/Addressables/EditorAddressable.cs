@@ -1,4 +1,4 @@
-﻿using GGemCo.Scripts;
+﻿using GGemCo2DCore;
 using UnityEditor;
 
 namespace GGemCo.Editor

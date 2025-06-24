@@ -1,5 +1,5 @@
 ﻿
-namespace GGemCo.Scripts
+namespace GGemCo2DCore
 {
     /// <summary>
     /// 플레이어 장비 윈도우

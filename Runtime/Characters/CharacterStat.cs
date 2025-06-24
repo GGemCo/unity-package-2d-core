@@ -3,7 +3,7 @@ using System.Linq;
 using R3;
 using UnityEngine;
 
-namespace GGemCo.Scripts
+namespace GGemCo2DCore
 {
     /// <summary>
     /// 캐릭터 스탯 관리

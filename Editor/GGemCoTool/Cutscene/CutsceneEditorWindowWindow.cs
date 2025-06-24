@@ -1,6 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.IO;
-using GGemCo.Scripts;
+using GGemCo2DCore;
 using Newtonsoft.Json;
 using UnityEditor;
 using UnityEditorInternal;

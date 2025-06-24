@@ -1,6 +1,6 @@
 ﻿using System;
 using System.Linq;
-using GGemCo.Scripts;
+using GGemCo2DCore;
 using UnityEditor;
 using UnityEngine;
 

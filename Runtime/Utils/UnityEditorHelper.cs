@@ -2,7 +2,7 @@
 using UnityEditor;
 
 
-namespace GGemCo.Scripts
+namespace GGemCo2DCore
 {
     public static class UnityEditorHelper
     {

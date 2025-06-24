@@ -4,7 +4,7 @@ using UnityEngine;
 using UnityEngine.AddressableAssets;
 using UnityEngine.ResourceManagement.AsyncOperations;
 
-namespace GGemCo.Scripts
+namespace GGemCo2DCore
 {
     public static class AddressableLoaderController
     {

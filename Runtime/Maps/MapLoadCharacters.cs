@@ -6,7 +6,7 @@ using Newtonsoft.Json;
 using UnityEngine;
 using Object = UnityEngine.Object;
 
-namespace GGemCo.Scripts
+namespace GGemCo2DCore
 {
     public class MapLoadCharacters
     {

@@ -1,7 +1,7 @@
 ﻿using System.IO;
 using UnityEngine;
 
-namespace GGemCo.Scripts
+namespace GGemCo2DCore
 {
     [CreateAssetMenu(fileName = ConfigScriptableObject.Save.FileName, menuName = ConfigScriptableObject.Save.MenuName, order = ConfigScriptableObject.Save.Ordering)]
     public class GGemCoSaveSettings: ScriptableObject

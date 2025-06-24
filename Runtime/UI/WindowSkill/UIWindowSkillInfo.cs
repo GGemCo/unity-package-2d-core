@@ -2,7 +2,7 @@
 using TMPro;
 using UnityEngine;
 
-namespace GGemCo.Scripts
+namespace GGemCo2DCore
 {
     /// <summary>
     /// 플레이어 스킬 정보 윈도우

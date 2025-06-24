@@ -2,7 +2,7 @@
 using UnityEngine;
 using UnityEngine.Tilemaps;
 
-namespace GGemCo.Scripts
+namespace GGemCo2DCore
 {
     public class MapTileCommon : DefaultMap
     {

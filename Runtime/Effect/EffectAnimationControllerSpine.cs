@@ -1,7 +1,7 @@
 ﻿
 using System.Collections.Generic;
 
-namespace GGemCo.Scripts
+namespace GGemCo2DCore
 {
 #if GGEMCO_USE_SPINE
     public class EffectAnimationControllerSpine : Spine2dController, IEffectAnimationController

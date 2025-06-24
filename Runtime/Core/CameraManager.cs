@@ -2,7 +2,7 @@ using System.Collections;
 using UnityEngine;
 using Random = UnityEngine.Random;
 
-namespace GGemCo.Scripts
+namespace GGemCo2DCore
 {
     public class CameraManager : MonoBehaviour
     {

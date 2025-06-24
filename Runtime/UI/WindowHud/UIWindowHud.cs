@@ -1,7 +1,7 @@
 ﻿using TMPro;
 using UnityEngine.UI;
 
-namespace GGemCo.Scripts
+namespace GGemCo2DCore
 {
     /// <summary>
     /// 플레이어 정보 Hud

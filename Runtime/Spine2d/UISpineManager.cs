@@ -1,7 +1,7 @@
 #if GGEMCO_USE_SPINE
 using UnityEngine;
 
-namespace GGemCo.Scripts
+namespace GGemCo2DCore
 {
     public abstract class UISpineMetadata
     {

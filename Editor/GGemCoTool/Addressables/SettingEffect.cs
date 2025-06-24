@@ -1,5 +1,5 @@
 ﻿using System.Collections.Generic;
-using GGemCo.Scripts;
+using GGemCo2DCore;
 using UnityEditor;
 using UnityEditor.AddressableAssets;
 using UnityEditor.AddressableAssets.Settings;

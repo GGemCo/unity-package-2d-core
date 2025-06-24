@@ -1,7 +1,7 @@
 ﻿
 using System.Collections.Generic;
 
-namespace GGemCo.Scripts
+namespace GGemCo2DCore
 {
     public abstract class CurrencyConstants
     {

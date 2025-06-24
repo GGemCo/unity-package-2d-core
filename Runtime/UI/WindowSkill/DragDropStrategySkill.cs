@@ -1,7 +1,6 @@
-﻿using GGemCo.Scripts.UI;
-using UnityEngine;
+﻿using UnityEngine;
 
-namespace GGemCo.Scripts
+namespace GGemCo2DCore
 {
     /// <summary>
     /// 플레이어 스킬 윈도우 - 아이콘 드래그 앤 드랍 관리

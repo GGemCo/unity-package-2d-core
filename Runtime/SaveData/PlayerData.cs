@@ -2,7 +2,7 @@
 using R3;
 using UnityEngine;
 
-namespace GGemCo.Scripts
+namespace GGemCo2DCore
 {
     /// <summary>
     /// 세이브 데이터 - 플레이어 정보

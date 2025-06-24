@@ -3,7 +3,7 @@ using System.Collections;
 using R3;
 using UnityEngine;
 
-namespace GGemCo.Scripts
+namespace GGemCo2DCore
 {
     /// <summary>
     /// 캐릭터 공용 

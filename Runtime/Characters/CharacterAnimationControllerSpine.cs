@@ -6,7 +6,7 @@ using Spine.Unity;
 using UnityEngine;
 using Event = Spine.Event;
 
-namespace GGemCo.Scripts
+namespace GGemCo2DCore
 {
     /// <summary>
     /// 캐릭터 스파인 애니메이션 처리
