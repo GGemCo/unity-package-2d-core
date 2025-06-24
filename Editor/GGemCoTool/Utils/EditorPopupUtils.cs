@@ -3,7 +3,7 @@ using GGemCo2DCore;
 using UnityEditor;
 using UnityEngine;
 
-namespace GGemCo.Editor
+namespace GGemCo2DCoreEditor
 {
     public static class EditorPopupUtils
     {

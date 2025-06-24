@@ -5,7 +5,7 @@ using UnityEditor.AddressableAssets;
 using UnityEditor.AddressableAssets.Settings;
 using UnityEngine;
 
-namespace GGemCo.Editor
+namespace GGemCo2DCoreEditor
 {
     /// <summary>
     /// 설정 ScriptableObject 등록하기

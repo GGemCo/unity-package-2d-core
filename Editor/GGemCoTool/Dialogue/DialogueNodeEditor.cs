@@ -4,7 +4,7 @@ using UnityEditor;
 using UnityEditorInternal;
 using UnityEngine;
 
-namespace GGemCo.Editor
+namespace GGemCo2DCoreEditor
 {
     /// <summary>
     /// 대사 노드 커스텀 Inspector 

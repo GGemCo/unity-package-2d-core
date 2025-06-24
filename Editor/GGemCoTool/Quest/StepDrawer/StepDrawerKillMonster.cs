@@ -2,7 +2,7 @@
 using UnityEditor;
 using UnityEngine;
 
-namespace GGemCo.Editor
+namespace GGemCo2DCoreEditor
 {
     public class StepDrawerKillMonster : IQuestStepDrawer
     {

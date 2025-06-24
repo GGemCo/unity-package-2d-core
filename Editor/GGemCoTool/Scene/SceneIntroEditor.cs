@@ -3,7 +3,7 @@ using UnityEditor;
 using UnityEngine;
 using UnityEngine.UI;
 
-namespace GGemCo.Editor.Scene
+namespace GGemCo2DCoreEditor.Scene
 {
     /// <summary>
     /// 인트로 씬 설정 툴

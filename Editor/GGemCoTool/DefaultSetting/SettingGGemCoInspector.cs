@@ -3,7 +3,7 @@ using UnityEditor;
 using UnityEditor.Build;
 using UnityEngine;
 
-namespace GGemCo.Editor
+namespace GGemCo2DCoreEditor
 {
     [CustomEditor(typeof(GGemCoSettings))]
     public class SettingGGemCoInspector : UnityEditor.Editor

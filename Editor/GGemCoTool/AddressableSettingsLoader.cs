@@ -5,7 +5,7 @@ using UnityEngine;
 using UnityEngine.AddressableAssets;
 using UnityEngine.ResourceManagement.AsyncOperations;
 
-namespace GGemCo.Editor
+namespace GGemCo2DCoreEditor
 {
     /// <summary>
     /// GGemCo Settings 불러오기

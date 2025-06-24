@@ -1,6 +1,6 @@
 ﻿using UnityEngine;
 
-namespace GGemCo.Editor
+namespace GGemCo2DCoreEditor
 {
     /// <summary>
     /// Node 확대/축소, 이동

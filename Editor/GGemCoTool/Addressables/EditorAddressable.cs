@@ -1,7 +1,7 @@
 ﻿using GGemCo2DCore;
 using UnityEditor;
 
-namespace GGemCo.Editor
+namespace GGemCo2DCoreEditor
 {
     public class EditorAddressable : DefaultEditorWindow
     {

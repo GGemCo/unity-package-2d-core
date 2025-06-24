@@ -4,7 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using GGemCo2DCore;
 
-namespace GGemCo.Editor
+namespace GGemCo2DCoreEditor
 {
     /// <summary>
     /// PlayerPrefs 데이터 관리 툴

@@ -1,21 +1,23 @@
 ﻿using System.Collections.Generic;
-using GGemCo.Editor;
 using GGemCo2DCore;
 
-public static class QuestStepDrawerFactory
+namespace GGemCo2DCoreEditor
 {
-    private static readonly Dictionary<QuestConstants.ObjectiveType, IQuestStepDrawer> drawers =
-        new Dictionary<QuestConstants.ObjectiveType, IQuestStepDrawer>
-        {
-            { QuestConstants.ObjectiveType.TalkToNpc, new StepDrawerTalkToNpc() },
-            { QuestConstants.ObjectiveType.KillMonster, new StepDrawerKillMonster() },
-            { QuestConstants.ObjectiveType.ReachPosition, new StepDrawerReachPosition() },
-            { QuestConstants.ObjectiveType.CollectItem, new StepDrawerCollectItem() },
-            // 나머지 ObjectiveType들도 여기에 추가
-        };
-
-    public static IQuestStepDrawer GetDrawer(QuestConstants.ObjectiveType type)
+    public static class QuestStepDrawerFactory
     {
-        return drawers.TryGetValue(type, out var drawer) ? drawer : null;
+        private static readonly Dictionary<QuestConstants.ObjectiveType, IQuestStepDrawer> drawers =
+            new Dictionary<QuestConstants.ObjectiveType, IQuestStepDrawer>
+            {
+                { QuestConstants.ObjectiveType.TalkToNpc, new StepDrawerTalkToNpc() },
+                { QuestConstants.ObjectiveType.KillMonster, new StepDrawerKillMonster() },
+                { QuestConstants.ObjectiveType.ReachPosition, new StepDrawerReachPosition() },
+                { QuestConstants.ObjectiveType.CollectItem, new StepDrawerCollectItem() },
+                // 나머지 ObjectiveType들도 여기에 추가
+            };
+
+        public static IQuestStepDrawer GetDrawer(QuestConstants.ObjectiveType type)
+        {
+            return drawers.TryGetValue(type, out var drawer) ? drawer : null;
+        }
     }
 }

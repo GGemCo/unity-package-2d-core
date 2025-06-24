@@ -3,7 +3,7 @@ using GGemCo2DCore;
 using TMPro;
 using UnityEngine;
 
-namespace GGemCo.Editor
+namespace GGemCo2DCoreEditor
 {
     public class DefaultExporter
     {

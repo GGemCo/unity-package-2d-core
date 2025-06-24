@@ -6,7 +6,7 @@ using Newtonsoft.Json;
 using UnityEngine;
 using Object = UnityEngine.Object;
 
-namespace GGemCo.Editor
+namespace GGemCo2DCoreEditor
 {
     public class WarpExporter
     {

@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using GGemCo2DCore;
 
-namespace GGemCo.Editor
+namespace GGemCo2DCoreEditor
 {
     public class TableLoaderManager
     {

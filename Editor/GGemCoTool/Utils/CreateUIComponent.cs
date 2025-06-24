@@ -4,7 +4,7 @@ using UnityEditor;
 using UnityEngine;
 using UnityEngine.UI;
 
-namespace GGemCo.Editor
+namespace GGemCo2DCoreEditor
 {
     public abstract class CreateUIComponent
     {

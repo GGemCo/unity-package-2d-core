@@ -1,6 +1,6 @@
 ﻿using GGemCo2DCore;
 
-namespace GGemCo.Editor
+namespace GGemCo2DCoreEditor
 {
     public static class ConfigEditor
     {

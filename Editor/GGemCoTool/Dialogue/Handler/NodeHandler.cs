@@ -4,7 +4,7 @@ using GGemCo2DCore;
 using UnityEditor;
 using UnityEngine;
 
-namespace GGemCo.Editor
+namespace GGemCo2DCoreEditor
 {
     /// <summary>
     /// 대사 Node 추가, 삭제, 이동

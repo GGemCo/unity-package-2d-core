@@ -3,7 +3,7 @@ using UnityEditor;
 using UnityEngine;
 using UnityEngine.UI;
 
-namespace GGemCo.Editor
+namespace GGemCo2DCoreEditor
 {
     [CustomEditor(typeof(GGemCo2DCore.PopupManager))]
     public class PopupManagerInspector : UnityEditor.Editor

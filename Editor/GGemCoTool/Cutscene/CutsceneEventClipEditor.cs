@@ -7,7 +7,7 @@ using UnityEditor.Timeline;
 using UnityEngine;
 using UnityEngine.Timeline;
 
-namespace GGemCo.Editor
+namespace GGemCo2DCoreEditor
 {
     [CustomEditor(typeof(CutsceneEventClip))]
     public class CutsceneEventClipEditor : UnityEditor.Editor

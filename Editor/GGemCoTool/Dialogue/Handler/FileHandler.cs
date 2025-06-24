@@ -6,7 +6,7 @@ using GGemCo2DCore;
 using UnityEditor;
 using UnityEngine;
 
-namespace GGemCo.Editor
+namespace GGemCo2DCoreEditor
 {
     /// <summary>
     /// 대사 저장, 불러오기

@@ -7,7 +7,7 @@ using UnityEditorInternal;
 using UnityEngine;
 using UnityEngine.Timeline;
 
-namespace GGemCo.Editor
+namespace GGemCo2DCoreEditor
 {
     public class CutsceneEditorWindowWindow : DefaultEditorWindow
     {

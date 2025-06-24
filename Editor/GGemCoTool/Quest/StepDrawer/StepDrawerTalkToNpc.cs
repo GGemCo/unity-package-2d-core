@@ -1,7 +1,7 @@
 ﻿using GGemCo2DCore;
 using UnityEngine;
 
-namespace GGemCo.Editor
+namespace GGemCo2DCoreEditor
 {
     public class StepDrawerTalkToNpc : IQuestStepDrawer
     {

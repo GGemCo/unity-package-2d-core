@@ -6,7 +6,7 @@ using Newtonsoft.Json;
 using TMPro;
 using UnityEngine;
 
-namespace GGemCo.Editor
+namespace GGemCo2DCoreEditor
 {
     /// <summary>
     /// 맵 배치툴 > 몬스터 배치, 내보내기

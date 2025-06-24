@@ -5,7 +5,7 @@ using UnityEditor;
 using UnityEngine;
 using UnityEngine.UI;
 
-namespace GGemCo.Editor
+namespace GGemCo2DCoreEditor
 {
     [CustomEditor(typeof(GGemCo.Scripts.SceneIntro))]
     public class SceneIntroInspector : UnityEditor.Editor
