@@ -105,10 +105,10 @@ namespace GGemCo2DCore
         private static readonly Dictionary<AntiFlag, string> AntiFlagName = new Dictionary<AntiFlag, string>
         {
             { AntiFlag.None, "" },
-            { AntiFlag.ShopSale, "상점 판매 불가" },
-            { AntiFlag.Stash, "창고 보관 불가" },
-            { AntiFlag.Salvage, "분해 불가" },
-            { AntiFlag.Upgrade, "강화 불가" },
+            { AntiFlag.ShopSale, "Unsellable" }, //상점 판매 불가
+            { AntiFlag.Stash, "Unstorable" },//창고 보관 불가
+            { AntiFlag.Salvage, "Undismantlable" },//분해 불가
+            { AntiFlag.Upgrade, "Unenhanceable" }//강화 불가
         };
 
         public static string GetAntiFlagName(AntiFlag antiFlag)

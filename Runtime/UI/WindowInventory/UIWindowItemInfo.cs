@@ -96,7 +96,7 @@ namespace GGemCo2DCore
         {
             if (currentStruckTableItem == null) return;
             textSalePrice.text =
-                $"상점 판매가: {CurrencyConstants.GetNameByCurrencyType(currentStruckTableItem.SaleCurrencyType)} {currentStruckTableItem.SaleCurrencyValue}";
+                $"Sell Price: {CurrencyConstants.GetNameByCurrencyType(currentStruckTableItem.SaleCurrencyType)} {currentStruckTableItem.SaleCurrencyValue}";
         }
 
         private void SetDescription()

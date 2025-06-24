@@ -17,8 +17,8 @@ namespace GGemCo2DCore
 
         private static readonly Dictionary<Type, string> DictionaryNames = new Dictionary<Type, string>
         {
-            { Type.Gold, "골드" },
-            { Type.Silver, "실버" },
+            { Type.Gold, "Gold" },
+            { Type.Silver, "Silver" },
         };
 
         public static string GetNameByCurrencyType(Type type)
