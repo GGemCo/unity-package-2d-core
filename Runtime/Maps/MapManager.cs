@@ -379,8 +379,6 @@ namespace GGemCo2DCore
                 SceneGame.Instance.cameraManager?.ChangeMapSize(result.x, result.y);
             
                 _onLoadTileMap?.Invoke();
-                
-                _currentState = MapConstants.State.LoadPlayerPrefabs;
                 // Logger.Log("타일맵 프리팹 로드 완료");
             }
             catch (Exception e)

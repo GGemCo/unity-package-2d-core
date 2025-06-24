@@ -80,10 +80,8 @@ namespace GGemCo2DCore
         {
             try
             {
-                // GameObject prefab = Resources.Load<GameObject>(ConfigCommon.PathPlayerPrefab);
                 string key = $"{ConfigAddressables.KeyPrefabPlayer}";
-                GameObject prefab = await AddressableLoaderController.InstantiateAsync(key);
-
+                GameObject prefab = await AddressableLoaderController.LoadByKeyAsync<GameObject>(key);
                 if (prefab) return CreateCharacter(CharacterConstants.Type.Player, prefab);
                 GcLogger.LogError("플레이어 프리팹이 없습니다. path:"+ConfigCommon.PathPlayerPrefab);
                 return null;
