@@ -32,7 +32,7 @@ namespace GGemCo2DCoreEditor
         private void DrawRequiredSection()
         {
             Common.OnGUITitle("필수 항목");
-            EditorGUILayout.HelpBox($"* 인트로 씬 오브젝트\n* 게임 시작 버튼", MessageType.Info);
+            EditorGUILayout.HelpBox($"* 인트로 씬 오브젝트\n* 게임 시작 버튼\n* 계속 하기 버튼", MessageType.Info);
 
             if (GUILayout.Button("필수 항목 셋팅하기"))
             {
@@ -51,6 +51,11 @@ namespace GGemCo2DCoreEditor
             string fieldName = "buttonNewGame";
             Button createdButton = CreateUIComponent.CreateObjectButton(fieldName, "New Game");
             scene.SetButtonNewGame(createdButton);
+            
+            // 계속 하기 버튼 만들고 연결하기
+            fieldName = "buttonGameContinue";
+            Button buttonGameContinue = CreateUIComponent.CreateObjectButton(fieldName, "Continue Game");
+            scene.SetButtonGameContinue(buttonGameContinue);
             
             EditorUtility.SetDirty(scene);
             Debug.Log($"{fieldName} 버튼이 생성되어 {scene.name} 에 연결되었습니다.");
