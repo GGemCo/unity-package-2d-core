@@ -66,8 +66,8 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: 21300000, guid: 24e6102786fb31843a54368458ae0435, type: 3}
-  m_Type: 0
+  m_Sprite: {fileID: 10905, guid: 0000000000000000f000000000000000, type: 0}
+  m_Type: 1
   m_PreserveAspect: 0
   m_FillCenter: 1
   m_FillMethod: 4
@@ -243,10 +243,10 @@ MonoBehaviour:
   textCount: {fileID: 0}
   imageCoolTimeGauge: {fileID: 8629950485076226934}
   imageSelected: {fileID: 0}
+  imageLock: {fileID: 0}
   window: {fileID: 0}
   windowUid: 0
   index: 0
   slotIndex: 0
   uid: 0
   imageGrade: {fileID: 0}
-  imageLock: {fileID: 0}
