@@ -88,12 +88,12 @@ namespace GGemCo2DCoreEditor
                 }
                 else
                 {
-                    GcLogger.LogError("파일이 없습니다. path: " + jsonFilePath);
+                    Debug.LogError("파일이 없습니다. path: " + jsonFilePath);
                 }
             }
             catch (Exception ex)
             {
-                GcLogger.LogError($"json 파일을 읽어오는데 오류가 발생하였습니다. path: {jsonFilePath}, error message: {ex.Message}");
+                Debug.LogError($"json 파일을 읽어오는데 오류가 발생하였습니다. path: {jsonFilePath}, error message: {ex.Message}");
             }
         }
     }

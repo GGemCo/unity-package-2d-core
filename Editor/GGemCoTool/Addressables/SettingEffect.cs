@@ -41,7 +41,7 @@ namespace GGemCo2DCoreEditor
             AddressableAssetSettings settings = AddressableAssetSettingsDefaultObject.Settings;
             if (!settings)
             {
-                GcLogger.LogWarning("Addressable 설정을 찾을 수 없습니다. 새로 생성합니다.");
+                Debug.LogWarning("Addressable 설정을 찾을 수 없습니다. 새로 생성합니다.");
                 settings = CreateAddressableSettings();
             }
 

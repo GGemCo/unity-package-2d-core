@@ -24,7 +24,7 @@ namespace GGemCo2DCoreEditor
 
             AddressableAssetSettingsDefaultObject.Settings = settings;
             AssetDatabase.SaveAssets();
-            // GcLogger.Log("새로운 Addressable 설정을 생성했습니다.");
+            // Debug.Log("새로운 Addressable 설정을 생성했습니다.");
             return settings;
         }
 
@@ -42,7 +42,7 @@ namespace GGemCo2DCoreEditor
             );
 
             settings.DefaultGroup = defaultGroup;
-            // GcLogger.Log("새로운 기본 Addressable 그룹을 생성했습니다.");
+            // Debug.Log("새로운 기본 Addressable 그룹을 생성했습니다.");
             return defaultGroup;
         }
         /// <summary>
@@ -64,7 +64,7 @@ namespace GGemCo2DCoreEditor
                 settings.DefaultGroup.Schemas // 기존 기본 그룹의 스키마 복사
             );
 
-            GcLogger.Log($"새로운 Addressable 그룹을 생성했습니다: {groupName}");
+            Debug.Log($"새로운 Addressable 그룹을 생성했습니다: {groupName}");
             return newGroup;
         }
         
@@ -100,7 +100,7 @@ namespace GGemCo2DCoreEditor
                 entry.SetLabel(labelName, true, true);
             }
 
-            // GcLogger.Log($"Addressable 키 값 설정: {keyName}");
+            // Debug.Log($"Addressable 키 값 설정: {keyName}");
         }
     }
 }

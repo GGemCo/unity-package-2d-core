@@ -80,7 +80,7 @@ namespace GGemCo2DCoreEditor
                 Vector2 tilemapGridSize = mapSettings.tilemapGridCellSize;
                 if (tilemapGridSize == Vector2.zero)
                 {
-                    GcLogger.LogError(
+                    Debug.LogError(
                         $"타일맵 Grid 사이즈가 정해지지 않았습니다. {ConfigDefine.NameSDK}MapSettings 에 Tilemap Grid Cell Size 를 입력해주세요.");
                     return;
                 }
@@ -218,7 +218,7 @@ namespace GGemCo2DCoreEditor
             var mapData = _tableMap.GetDataByUid(_loadMapUid);
             if (mapData.Uid <= 0)
             {
-                GcLogger.LogError("맵 데이터가 없거나 리젠 파일명이 없습니다.");
+                Debug.LogError("맵 데이터가 없거나 리젠 파일명이 없습니다.");
                 return;
             }
             
@@ -232,7 +232,7 @@ namespace GGemCo2DCoreEditor
             GameObject prefab = AssetDatabaseLoaderManager.LoadAsset<GameObject>(tilemapPath);
             if (!prefab)
             {
-                GcLogger.LogError("맵 프리팹이 없습니다. mapUid : " + _loadMapUid + " / path : "+tilemapPath);
+                Debug.LogError("맵 프리팹이 없습니다. mapUid : " + _loadMapUid + " / path : "+tilemapPath);
                 return;
             }
 

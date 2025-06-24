@@ -57,20 +57,20 @@ namespace GGemCo2DCoreEditor
 
                 // 로그 출력
                 // if (settings != null)
-                //     GcLogger.Log("Spine2d 사용여부 : " + settings.useSpine2d);
+                //     Debug.Log("Spine2d 사용여부 : " + settings.useSpine2d);
                 // if (playerSettings != null)
-                //     GcLogger.Log("Player statAtk : " + playerSettings.statAtk);
+                //     Debug.Log("Player statAtk : " + playerSettings.statAtk);
                 // if (mapSettings != null)
-                //     GcLogger.Log("Tilemap 크기 : " + mapSettings.tilemapGridCellSize);
+                //     Debug.Log("Tilemap 크기 : " + mapSettings.tilemapGridCellSize);
                 // if (saveSettings != null)
-                //     GcLogger.Log("최대 저장 슬롯 개수 : " + saveSettings.saveDataMaxSlotCount);
+                //     Debug.Log("최대 저장 슬롯 개수 : " + saveSettings.saveDataMaxSlotCount);
 
                 // 이벤트 호출
                 OnLoadSettings?.Invoke(_settings, _playerSettings, _mapSettings, _saveSettings);
             }
             catch (Exception ex)
             {
-                GcLogger.LogError($"설정 로딩 중 오류 발생: {ex.Message}");
+                Debug.LogError($"설정 로딩 중 오류 발생: {ex.Message}");
             }
         }
 
@@ -85,7 +85,7 @@ namespace GGemCo2DCoreEditor
 
             if (!locationsHandle.Status.Equals(AsyncOperationStatus.Succeeded) || locationsHandle.Result.Count == 0)
             {
-                GcLogger.LogError($"[AddressableSettingsLoader] '{key}' 가 Addressables에 등록되지 않았습니다. '{key}' 를 생성한 후 {ConfigDefine.NameSDK}Tool > 기본 셋팅하기 메뉴를 열고 Addressable 추가하기 버튼을 클릭해주세요.");
+                Debug.LogError($"[AddressableSettingsLoader] '{key}' 가 Addressables에 등록되지 않았습니다. '{key}' 를 생성한 후 {ConfigDefine.NameSDK}Tool > 기본 셋팅하기 메뉴를 열고 Addressable 추가하기 버튼을 클릭해주세요.");
                 Addressables.Release(locationsHandle);
                 return null;
             }

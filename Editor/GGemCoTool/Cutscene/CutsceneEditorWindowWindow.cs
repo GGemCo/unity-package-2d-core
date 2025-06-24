@@ -138,7 +138,7 @@ namespace GGemCo2DCoreEditor
             AssetDatabase.SaveAssets();
             // TimelineEditorUtility.SelectTimelineAsset(timeline);
 
-            GcLogger.Log($"Timeline 생성 완료: {timelinePath}");
+            Debug.Log($"Timeline 생성 완료: {timelinePath}");
             AssetDatabase.Refresh();
             EditorUtility.DisplayDialog(Title, "Timeline 생성 완료", "OK");
         }

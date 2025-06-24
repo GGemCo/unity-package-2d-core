@@ -141,7 +141,7 @@ namespace GGemCo2DCoreEditor
             }
             catch (Exception ex)
             {
-                GcLogger.LogError($"Error reading file {regenFileName}: {ex.Message}");
+                Debug.LogError($"Error reading file {regenFileName}: {ex.Message}");
             }
         }
         /// <summary>

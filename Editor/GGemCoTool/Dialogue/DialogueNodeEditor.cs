@@ -190,7 +190,7 @@ namespace GGemCo2DCoreEditor
             }
             else
             {
-                GcLogger.LogError("퀘스트 node 가 없습니다.");
+                Debug.LogError("퀘스트 node 가 없습니다.");
             }
             EditorGUILayout.PropertyField(serializedObject.FindProperty("thumbnailImage"));
 

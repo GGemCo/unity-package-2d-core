@@ -88,7 +88,7 @@ namespace GGemCo2DCoreEditor
             }
             catch (Exception ex)
             {
-                GcLogger.LogError($"Error reading file {regenFileName}: {ex.Message}");
+                Debug.LogError($"Error reading file {regenFileName}: {ex.Message}");
             }
         }
         private void SpawnWarps()
@@ -102,7 +102,7 @@ namespace GGemCo2DCoreEditor
             GameObject warpPrefab = AssetDatabaseLoaderManager.LoadAsset<GameObject>(ConfigAddressableMap.ObjectWarp.Path);
             if (!warpPrefab)
             {
-                GcLogger.LogError("워프 프리팹이 없습니다. ");
+                Debug.LogError("워프 프리팹이 없습니다. ");
                 return;
             }
             foreach (WarpData warpData in _warpDatas)

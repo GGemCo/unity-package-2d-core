@@ -80,12 +80,12 @@ namespace GGemCo2DCoreEditor
             TimelineAsset timeline = FindTimelineAsset();
             if (timeline == null)
             {
-                GcLogger.LogWarning("TimelineAsset을 찾을 수 없습니다.");
+                Debug.LogWarning("TimelineAsset을 찾을 수 없습니다.");
                 return;
             }
 
             // JSON 저장
-            GcLogger.Log(timeline);
+            Debug.Log(timeline);
             ExportToJson(timeline);
         }
         private TimelineAsset FindTimelineAsset()
@@ -124,7 +124,7 @@ namespace GGemCo2DCoreEditor
                                      e.cameraChangeTarget.characterType == CharacterConstants.Type.None)
                                 ))
                             {
-                                GcLogger.LogError($"type: {e.type} / 캐릭터 타입을 정하지 않았습니다.");
+                                Debug.LogError($"type: {e.type} / 캐릭터 타입을 정하지 않았습니다.");
                                 continue;
                             }
 

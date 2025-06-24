@@ -1,5 +1,4 @@
-﻿using System.Collections.Generic;
-using GGemCo2DCore;
+﻿using GGemCo2DCore;
 using UnityEditor;
 using UnityEditor.AddressableAssets;
 using UnityEditor.AddressableAssets.Settings;
@@ -39,7 +38,7 @@ namespace GGemCo2DCoreEditor
             AddressableAssetSettings settings = AddressableAssetSettingsDefaultObject.Settings;
             if (!settings)
             {
-                GcLogger.LogWarning("Addressable 설정을 찾을 수 없습니다. 새로 생성합니다.");
+                Debug.LogWarning("Addressable 설정을 찾을 수 없습니다. 새로 생성합니다.");
                 settings = CreateAddressableSettings();
             }
 
@@ -48,7 +47,7 @@ namespace GGemCo2DCoreEditor
 
             if (!group)
             {
-                GcLogger.LogError($"'{TargetGroupName}' 그룹을 설정할 수 없습니다.");
+                Debug.LogError($"'{TargetGroupName}' 그룹을 설정할 수 없습니다.");
                 return;
             }
 
@@ -81,7 +80,7 @@ namespace GGemCo2DCoreEditor
             var asset = AssetDatabase.LoadMainAssetAtPath(assetPath);
             if (!asset)
             {
-                GcLogger.LogError($"파일을 찾을 수 없습니다: {assetPath}");
+                Debug.LogError($"파일을 찾을 수 없습니다: {assetPath}");
                 return;
             }
 
@@ -92,11 +91,11 @@ namespace GGemCo2DCoreEditor
             {
                 // 신규 Addressable 항목 추가
                 entry = settings.CreateOrMoveEntry(AssetDatabase.AssetPathToGUID(assetPath), group);
-                GcLogger.Log($"Addressable 항목을 추가했습니다: {assetPath}");
+                Debug.Log($"Addressable 항목을 추가했습니다: {assetPath}");
             }
             else
             {
-                GcLogger.Log($"이미 Addressable에 등록된 항목입니다: {assetPath}");
+                Debug.Log($"이미 Addressable에 등록된 항목입니다: {assetPath}");
             }
 
             // 키 값 설정
@@ -107,7 +106,7 @@ namespace GGemCo2DCoreEditor
                 entry.SetLabel(addressableAssetInfo.Label, true, true);
             }
 
-            // GcLogger.Log($"Addressable 키 값 설정: {keyName}");
+            // Debug.Log($"Addressable 키 값 설정: {keyName}");
         }
     }
 }

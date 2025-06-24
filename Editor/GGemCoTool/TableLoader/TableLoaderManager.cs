@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using GGemCo2DCore;
+using UnityEngine;
 
 namespace GGemCo2DCoreEditor
 {
@@ -22,12 +23,12 @@ namespace GGemCo2DCoreEditor
                 }
                 else
                 {
-                    GcLogger.LogError($"테이블 내용이 없습니다. {filePath}");
+                    Debug.LogError($"테이블 내용이 없습니다. {filePath}");
                 }
             }
             catch (Exception ex)
             {
-                GcLogger.LogError($"테이블 파일을 읽는중 오류 발생. {filePath}: {ex.Message}");
+                Debug.LogError($"테이블 파일을 읽는중 오류 발생. {filePath}: {ex.Message}");
             }
             _loadedTables.TryAdd(filePath, tableData);
             return tableData;
@@ -106,7 +107,7 @@ namespace GGemCo2DCoreEditor
 
             if (table == null)
             {
-                GcLogger.LogError($"{tableFileName} 테이블을 불러오지 못 했습니다.");
+                Debug.LogError($"{tableFileName} 테이블을 불러오지 못 했습니다.");
                 return;
             }
  

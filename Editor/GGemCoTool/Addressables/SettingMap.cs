@@ -54,7 +54,7 @@ namespace GGemCo2DCoreEditor
             AddressableAssetSettings settings = AddressableAssetSettingsDefaultObject.Settings;
             if (!settings)
             {
-                GcLogger.LogWarning("Addressable 설정을 찾을 수 없습니다. 새로 생성합니다.");
+                Debug.LogWarning("Addressable 설정을 찾을 수 없습니다. 새로 생성합니다.");
                 settings = CreateAddressableSettings();
             }
             
@@ -70,7 +70,7 @@ namespace GGemCo2DCoreEditor
 
                 if (!group)
                 {
-                    GcLogger.LogError($"'{TargetGroupName}' 그룹을 설정할 수 없습니다.");
+                    Debug.LogError($"'{TargetGroupName}' 그룹을 설정할 수 없습니다.");
                     return;
                 }
                 
