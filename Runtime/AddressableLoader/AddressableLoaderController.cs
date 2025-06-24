@@ -16,6 +16,14 @@ namespace GGemCo2DCore
         /// </summary>
         public static async Task<T> LoadByKeyAsync<T>(string key) where T : UnityEngine.Object
         {
+            // 이미 로드된 리소스가 있는 경우 반환
+            foreach (var pair in loadedResources)
+            {
+                if (pair.Value.IsValid() && pair.Value.DebugName == key && pair.Key is T loaded)
+                {
+                    return loaded;
+                }
+            }
             var handle = Addressables.LoadAssetAsync<T>(key);
             await handle.Task;
 
@@ -52,6 +60,20 @@ namespace GGemCo2DCore
             foreach (var location in locations)
             {
                 string key = location.PrimaryKey;
+                
+                // 이미 로드된 오브젝트가 있는 경우 캐시에서 꺼냄
+                bool alreadyLoaded = false;
+                foreach (var pair in loadedResources)
+                {
+                    if (pair.Value.IsValid() && pair.Value.DebugName == key && pair.Key is T cachedObj)
+                    {
+                        result[key] = cachedObj;
+                        alreadyLoaded = true;
+                        break;
+                    }
+                }
+                if (alreadyLoaded) continue;
+                
                 var handle = Addressables.LoadAssetAsync<T>(key);
                 await handle.Task;
 
