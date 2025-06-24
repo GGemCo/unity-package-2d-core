@@ -1,4 +1,4 @@
-Uid	Name	Chapter	Type	Subtype	FolderName	PlayerSpawnPosition	PlayerDeadSpawnUid
-101	마을	1	Common	None	Map1_1	703,464	101
-102	사냥터	1	Common	None	Map1_2	1123,445	101
-103	사냥터2	1	Common	None	Map1_3	1192,209	101
+Uid	Name	Chapter	Type	Subtype	FolderName	PlayerSpawnPosition	PlayerDeadSpawnUid	BgmUid
+101	Town1	1	Common	None	Map1_1	703,464	101	0
+102	Hunting Forest1	1	Common	None	Map1_2	1123,445	101	0
+103	Hunting Forest2	1	Common	None	Map1_3	1192,209	101	0
