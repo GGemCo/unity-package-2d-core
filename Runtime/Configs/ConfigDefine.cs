@@ -1,9 +1,12 @@
 ﻿namespace GGemCo.Scripts
 {
-    public static class ConfigDefine
+    public class ConfigDefine
     {
         public const string NameSDK = "GGemCo";
         public const string NameSDKUpperCase = "GGEMCO";
+        
+        public const string NamePackageCore = "Core";
+        public const string NamePackagePlatformer = "Platformer";
         
         public const string SceneNameIntro = "Intro";
         public const string SceneNameLoading = "Loading";

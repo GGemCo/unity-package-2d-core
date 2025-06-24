@@ -39,16 +39,37 @@ namespace GGemCo.Editor
             
         /// <summary>
         /// 모든 오브젝트는 GGemCo 오브젝트 하위에 생성한다.
+        /// Core 패키지 이기때문에 Core 오브젝트 하위에 생성한다.
         /// UI 는 Canvas 에 생성한다.
         /// </summary>
         protected GameObject GetOrCreateRootGameObject()
         {
             var obj = GameObject.Find(ConfigDefine.NameSDK);
-            return obj == null ? new  GameObject(ConfigDefine.NameSDK) : obj;
+            GameObject objPackage;
+            if (obj == null)
+            {
+                obj = new  GameObject(ConfigDefine.NameSDK);
+                objPackage = new GameObject(ConfigDefine.NamePackageCore);
+                objPackage.transform.SetParent(obj.transform);
+            }
+            else
+            {
+                var transformPackage = obj.transform.Find(ConfigDefine.NamePackageCore);
+                if (transformPackage == null)
+                {
+                    objPackage = new GameObject(ConfigDefine.NamePackageCore);
+                    objPackage.transform.SetParent(obj.transform);
+                }
+                else
+                {
+                    objPackage = transformPackage.gameObject;
+                }
+            }
+            return objPackage;
         }
         protected GameObject GetOrCreateGameObject(string objectName)
         {
-            if (!objectName.StartsWith($"{ConfigDefine.NameSDK}_")) objectName = $"{ConfigDefine.NameSDK}_{objectName}";
+            if (!objectName.StartsWith($"{ConfigDefine.NameSDK}_{ConfigDefine.NamePackageCore}")) objectName = $"{ConfigDefine.NameSDK}_{ConfigDefine.NamePackageCore}_{objectName}";
             var obj = GameObject.Find(objectName);
             if (obj == null)
             {

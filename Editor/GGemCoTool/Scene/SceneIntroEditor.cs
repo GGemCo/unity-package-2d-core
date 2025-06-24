@@ -1,5 +1,4 @@
 ﻿using System.Reflection;
-using GGemCo.Scripts;
 using UnityEditor;
 using UnityEngine;
 using UnityEngine.UI;
@@ -32,7 +31,7 @@ namespace GGemCo.Editor.Scene
         private void DrawRequiredSection()
         {
             Common.OnGUITitle("필수 항목");
-            EditorGUILayout.HelpBox($"{ConfigDefine.NameSDK}.Scripts.SceneIntro 오브젝트와 게임 시작 버튼을 설정합니다.", MessageType.Info);
+            EditorGUILayout.HelpBox($"{GGemCo.Scripts.ConfigDefine.NameSDK}.Scripts.SceneIntro 오브젝트와 게임 시작 버튼을 설정합니다.", MessageType.Info);
 
             if (GUILayout.Button("필수 항목 셋팅하기"))
             {
@@ -103,7 +102,7 @@ namespace GGemCo.Editor.Scene
         }
         private void CreateGameObjectPopupManager()
         {
-            PopupManager popupManager = CreateOrAddComponent<PopupManager>("PopupManager");
+            GGemCo.Scripts.PopupManager popupManager = CreateOrAddComponent<GGemCo.Scripts.PopupManager>("PopupManager");
         }
     }
 }
