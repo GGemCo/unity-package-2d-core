@@ -127,7 +127,7 @@ namespace GGemCo2DCore
         {
             if (icon == null) return;
             // 상점 판매창이 열려있으면
-            if (uiWindowShopSale.IsOpen())
+            if (uiWindowShopSale != null && uiWindowShopSale.IsOpen())
             {
                 if (icon.IsAntiFlag(ItemConstants.AntiFlag.ShopSale))
                 {
@@ -139,7 +139,7 @@ namespace GGemCo2DCore
                     icon.GetCount());
             }
             // 창고가 열려 있으면 창고로 이동
-            else if (uiWindowStash.IsOpen())
+            else if (uiWindowStash != null && uiWindowStash.IsOpen())
             {
                 if (icon.IsAntiFlag(ItemConstants.AntiFlag.Stash))
                 {
@@ -149,7 +149,7 @@ namespace GGemCo2DCore
                 SceneGame.uIWindowManager.MoveIcon(uid, icon.slotIndex, UIWindowManager.WindowUid.Stash, icon.GetCount());
             }
             // 아이템 강화
-            else if (uiWindowItemUpgrade.IsOpen())
+            else if (uiWindowItemUpgrade != null && uiWindowItemUpgrade.IsOpen())
             {
                 if (icon.IsAntiFlag(ItemConstants.AntiFlag.Upgrade))
                 {
@@ -165,7 +165,7 @@ namespace GGemCo2DCore
                 SceneGame.uIWindowManager.RegisterIcon(uid, icon.slotIndex, UIWindowManager.WindowUid.ItemUpgrade, 1);
             }
             // 아이템 분해
-            else if (uiWindowItemSalvage.IsOpen())
+            else if (uiWindowItemSalvage != null && uiWindowItemSalvage.IsOpen())
             {
                 if (icon.IsAntiFlag(ItemConstants.AntiFlag.Salvage))
                 {

@@ -221,6 +221,7 @@ namespace GGemCo2DCore
             {
                 UIWindowManager.WindowUid windowUid = (UIWindowManager.WindowUid)openWindowUid;
                 UIWindow uiWindow = SceneGame.uIWindowManager.GetUIWindowByUid<UIWindow>(windowUid);
+                if (uiWindow == null) continue;
                     
                 if (uiWindow.uiWindowFade == null)
                 {
