@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.IO;
 using GGemCo2DCore;
 using UnityEditor;
 using UnityEngine;
@@ -86,6 +88,38 @@ namespace GGemCo2DCoreEditor
         {
             GameObject targetObj = GetOrCreateGameObject(objectName);
             return !targetObj.TryGetComponent<T>(out _) ? targetObj.AddComponent<T>() : targetObj.GetComponent<T>();
+        }
+        /// <summary>
+        /// Scene Build Profiles 에 등록하기 
+        /// </summary>
+        public static void AddSceneToBuildSettings(string scenePath)
+        {
+            // string scenePath = "Assets/Scenes/ExampleScene.unity";
+
+            // 씬이 존재하는지 확인
+            if (!File.Exists(scenePath))
+            {
+                Debug.LogError($"씬 경로가 잘못되었거나 존재하지 않습니다: {scenePath}");
+                return;
+            }
+
+            // 현재 Build Settings에 등록된 씬 목록 가져오기
+            List<EditorBuildSettingsScene> currentScenes = new List<EditorBuildSettingsScene>(EditorBuildSettings.scenes);
+
+            // 이미 등록되어 있는지 확인
+            bool alreadyExists = currentScenes.Exists(s => s.path == scenePath);
+
+            if (!alreadyExists)
+            {
+                // 새 씬 추가
+                currentScenes.Add(new EditorBuildSettingsScene(scenePath, true));
+                EditorBuildSettings.scenes = currentScenes.ToArray();
+                Debug.Log($"Build Settings에 씬이 추가되었습니다: {scenePath}");
+            }
+            else
+            {
+                Debug.Log($"이미 등록된 씬입니다: {scenePath}");
+            }
         }
     }
 }

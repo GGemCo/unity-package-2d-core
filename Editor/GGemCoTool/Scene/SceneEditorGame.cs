@@ -1,6 +1,4 @@
-﻿using System.Reflection;
-using GGemCo2DCore;
-using TMPro;
+﻿using GGemCo2DCore;
 using UnityEditor;
 using UnityEngine;
 
@@ -67,9 +65,16 @@ namespace GGemCo2DCoreEditor
             }
 
             scene.SetMainCamera(mainCameraObj.GetComponent<Camera>());
-            scene.SetCameraManager(mainCameraObj.GetComponent<CameraManager>());
+            CameraManager cameraManager = mainCameraObj.GetComponent<CameraManager>();
+            if (!cameraManager)
+            {
+                cameraManager = mainCameraObj.AddComponent<CameraManager>();
+            }
+            cameraManager.SetCameraMoveSpeed(10);
+            scene.SetCameraManager(cameraManager);
+            
+            // todo 생성한 씬 빌드 프로파일에 넣어야함
 
-            mainCameraObj.GetComponent<CameraManager>()?.SetCameraMoveSpeed(10);
         }
 
         private void SetupCanvasUI(SceneGame scene)

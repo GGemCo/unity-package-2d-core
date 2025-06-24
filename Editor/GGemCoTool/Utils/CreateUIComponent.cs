@@ -1,6 +1,8 @@
 ﻿using TMPro;
 using UnityEditor;
 using UnityEngine;
+using UnityEngine.EventSystems;
+using UnityEngine.InputSystem.UI;
 using UnityEngine.UI;
 
 namespace GGemCo2DCoreEditor
@@ -18,17 +20,31 @@ namespace GGemCo2DCoreEditor
                 canvas.renderMode = RenderMode.ScreenSpaceOverlay;
 
                 // 이벤트 시스템 생성
-#if UNITY_6000
-                if (!GameObject.FindFirstObjectByType<UnityEngine.EventSystems.EventSystem>())
-#else
-                if (!GameObject.FindObjectOfType<UnityEngine.EventSystems.EventSystem>())
-#endif
-                {
-                    GameObject eventSystem = new GameObject("EventSystem", typeof(UnityEngine.EventSystems.EventSystem), typeof(UnityEngine.EventSystems.StandaloneInputModule));
-                }
+                CreateEventSystemIfNotExists();
             }
 
             return canvas;
+        }
+        
+        private static void CreateEventSystemIfNotExists()
+        {
+#if UNITY_6000_0_OR_NEWER
+            // Unity 6 이상
+            if (Object.FindFirstObjectByType<EventSystem>() == null)
+#else
+            if (Object.FindObjectOfType<EventSystem>() == null)
+#endif
+            {
+                GameObject eventSystem = new GameObject("EventSystem", typeof(EventSystem));
+
+#if ENABLE_INPUT_SYSTEM
+                // 새로운 Input System을 사용하는 경우
+                eventSystem.AddComponent<InputSystemUIInputModule>();
+#else
+                // 기존 Input Manager를 사용하는 경우
+                eventSystem.AddComponent<StandaloneInputModule>();
+#endif
+            }
         }
         public static GameObject CreateGameObjectByPrefab(string objectName, Transform parent = null, string prefabPath = "")
         {

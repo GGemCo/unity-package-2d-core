@@ -1,13 +1,15 @@
-﻿using UnityEditor;
+﻿using GGemCo2DCore;
+using UnityEditor;
+using UnityEngine;
 
 namespace GGemCo2DCoreEditor
 {
-    public class DefaultSettinsTool : EditorWindow
+    public class DefaultSettinsTool : DefaultEditorWindow
     {
-        private readonly SettingGGemCo settingGGemCo = new SettingGGemCo();
-        private readonly SettingTags settingTags = new SettingTags();
-        private readonly SettingSortingLayers settingSortingLayers = new SettingSortingLayers();
-        private readonly SettingLayers settingLayers = new SettingLayers();
+        private readonly SettingGGemCo _settingGGemCo = new SettingGGemCo();
+        private readonly SettingTags _settingTags = new SettingTags();
+        private readonly SettingSortingLayers _settingSortingLayers = new SettingSortingLayers();
+        private readonly SettingLayers _settingLayers = new SettingLayers();
 
         [MenuItem(ConfigEditor.NameToolSettingDefault, false, (int)ConfigEditor.ToolOrdering.DefaultSetting)]
         public static void ShowWindow()
@@ -17,13 +19,24 @@ namespace GGemCo2DCoreEditor
 
         private void OnGUI()
         {
-            settingGGemCo.OnGUI();
+            _settingGGemCo.OnGUI();
             EditorGUILayout.Space(10);
-            settingTags.OnGUI();
+            _settingTags.OnGUI();
             EditorGUILayout.Space(10);
-            settingSortingLayers.OnGUI();
+            _settingSortingLayers.OnGUI();
             EditorGUILayout.Space(10);
-            settingLayers.OnGUI();
+            _settingLayers.OnGUI();
+            EditorGUILayout.Space(10);
+            Common.OnGUITitle("Scene 추가하기");
+            if (GUILayout.Button("Scene 추가하기"))
+            {
+                string path = $"Assets/GGemCo/Scenes/{ConfigDefine.SceneNameIntro}.unity";
+                AddSceneToBuildSettings(path);
+                path = $"Assets/GGemCo/Scenes/{ConfigDefine.SceneNameLoading}.unity";
+                AddSceneToBuildSettings(path);
+                path = $"Assets/GGemCo/Scenes/{ConfigDefine.SceneNameGame}.unity";
+                AddSceneToBuildSettings(path);
+            }
         }
     }
 }
