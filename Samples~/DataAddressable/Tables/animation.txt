@@ -3,5 +3,5 @@ Uid	Type	Name	PrefabPath	DefaultFacing	Width	Height	MoveStep	AttackRange	HitArea
 1001	Npc	npc1	Characters/Npc/Npc1	Left	233	334	128	340	0,0
 1002	Npc	npc2	Characters/Npc/Npc2	Left	233	334	128	340	0,0
 # 몬스터									
-2001	Monster	좀비	Characters/Monster/Zombie1	Left	312	318	128	340	109,216
-2002	Monster	스켈레톤	Characters/Monster/Skeleton1	Left	293	343	128	340	109,256
+2001	Monster	Zombie	Characters/Monster/Zombie1	Left	312	318	128	340	109,216
+2002	Monster	Skeleton	Characters/Monster/Skeleton1	Left	293	343	128	340	109,256

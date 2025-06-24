@@ -1,7 +1,7 @@
 Uid	Name	SpineUid	DefaultSkin	Type	Scale	Grade	Level	StatHp	StatAtk	StatDef	StatMoveSpeed	StatAttackSpeed	RewardExp	RewardGold	RegistFire	RegistCold	RegistLightning
 #사냥터 1																	
-110001	좀비	2001	default	Passive Defense	0.3	Common	1	500	10	1	50	50	10	100	30	30	30
-110002	스켈레톤	2002	default	Passive Defense	0.3	Common	1	500	10	1	50	50	10	100	30	30	30
+110001	Zombie1	2001	default	Passive Defense	0.3	Common	1	500	10	1	50	50	10	100	30	30	30
+110002	Skeleton1	2002	default	Passive Defense	0.3	Common	1	500	10	1	50	50	10	100	30	30	30
 #사냥터 2																	
-120001	사나운 좀비	2001	default	Passive Defense	0.5	Common	5	800	100	1	100	100	50	100	60	60	60
-120002	사나운 스켈레톤	2002	default	Passive Defense	0.5	Common	5	800	100	1	100	100	50	100	60	60	60
+120001	Angry Zombie1	2001	default	Passive Defense	0.5	Common	5	800	100	1	100	100	50	100	60	60	60
+120002	Angry Skeleton1	2002	default	Passive Defense	0.5	Common	5	800	100	1	100	100	50	100	60	60	60
