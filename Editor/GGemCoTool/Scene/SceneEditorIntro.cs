@@ -1,29 +1,30 @@
-﻿using System.Reflection;
+﻿using GGemCo2DCore;
 using UnityEditor;
 using UnityEngine;
 using UnityEngine.UI;
 
-namespace GGemCo2DCoreEditor.Scene
+namespace GGemCo2DCoreEditor
 {
     /// <summary>
     /// 인트로 씬 설정 툴
     /// </summary>
-    public class SceneIntroEditor : DefaultEditorWindow
+    public class SceneEditorIntro : DefaultSceneEditor
     {
         private const string Title = "인트로 씬 셋팅하기";
         
         [MenuItem(ConfigEditor.NameToolSettingSceneIntro, false, (int)ConfigEditor.ToolOrdering.SettingSceneIntro)]
         public static void ShowWindow()
         {
-            GetWindow<SceneIntroEditor>(Title);
-        }
-
-        protected override void OnEnable()
-        {
+            GetWindow<SceneEditorIntro>(Title);
         }
 
         private void OnGUI()
         {
+            if (!CheckCurrentLoadedScene(ConfigDefine.SceneNameIntro))
+            {
+                EditorGUILayout.HelpBox($"인트로 씬을 불러와 주세요.", MessageType.Error);
+                return;
+            }
             DrawRequiredSection();
             Common.GUILine();
             DrawOptionalSection();
@@ -31,7 +32,7 @@ namespace GGemCo2DCoreEditor.Scene
         private void DrawRequiredSection()
         {
             Common.OnGUITitle("필수 항목");
-            EditorGUILayout.HelpBox($"{GGemCo2DCore.ConfigDefine.NameSDK}.Scripts.SceneIntro 오브젝트와 게임 시작 버튼을 설정합니다.", MessageType.Info);
+            EditorGUILayout.HelpBox($"* 인트로 씬 오브젝트\n* 게임 시작 버튼", MessageType.Info);
 
             if (GUILayout.Button("필수 항목 셋팅하기"))
             {
@@ -44,41 +45,16 @@ namespace GGemCo2DCoreEditor.Scene
         private void SetupRequiredObjects()
         {
             // GGemCo2DCore.SceneIntro GameObject 만들기
-            GGemCo2DCore.SceneIntro sceneIntro = CreateGameObjectSceneIntro();
+            GGemCo2DCore.SceneIntro scene = CreateOrAddComponent<GGemCo2DCore.SceneIntro>("SceneIntro");
             
             // 새 게임 버튼 만들고 연결하기
-            FieldInfo fieldInfo = typeof(GGemCo2DCore.SceneIntro)
-                .GetField("buttonNewGame", BindingFlags.NonPublic | BindingFlags.Instance);
-            if (fieldInfo == null)
-            {
-                Debug.LogError("buttonNewGame 필드를 찾을 수 없습니다.");
-                return;
-            }
-            Button button = fieldInfo.GetValue(sceneIntro) as Button;
+            string fieldName = "buttonNewGame";
+            Button createdButton = CreateUIComponent.CreateObjectButton(fieldName, "New Game");
+            scene.SetButtonNewGame(createdButton);
             
-            if (!button)
-            {
-                // 버튼 생성
-                Button createdButton = CreateUIComponent.CreateObjectButton(fieldInfo, "New Game");
-                Undo.RecordObject(sceneIntro, "Assign Button");
-                // 필드에 버튼 연결
-                fieldInfo.SetValue(sceneIntro, createdButton);
-                EditorUtility.SetDirty(sceneIntro);
-                Debug.Log($"{fieldInfo.Name} 버튼이 생성되어 SceneIntro에 연결되었습니다.");
-            }
-            else
-            {
-                Debug.Log($"{fieldInfo.Name} 버튼이 이미 설정되어 있습니다.");
-            }
+            EditorUtility.SetDirty(scene);
+            Debug.Log($"{fieldName} 버튼이 생성되어 {scene.name} 에 연결되었습니다.");
         }
-        /// <summary>
-        /// GGemCo2DCore.SceneIntro 오브젝트 만들기
-        /// </summary>
-        private GGemCo2DCore.SceneIntro CreateGameObjectSceneIntro()
-        {
-            return CreateOrAddComponent<GGemCo2DCore.SceneIntro>("SceneIntro");
-        }
-        
         /// <summary>
         /// 옵션 항목 셋팅 하기
         /// </summary>

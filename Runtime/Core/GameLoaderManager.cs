@@ -18,6 +18,7 @@ namespace GGemCo2DCore
         }
 
         public TextMeshProUGUI textLoadingPercent; // 진행률 표시
+        public void SetTextLoadingPercent(TextMeshProUGUI value) => textLoadingPercent = value;
         private TableLoaderManager _tableLoader;
         private SaveDataLoader _saveDataLoader;
         private AddressableLoaderPrefabCommon _addressableLoaderPrefabCommon;
@@ -34,6 +35,10 @@ namespace GGemCo2DCore
 
         private void Awake()
         {
+            if (!AddressableLoaderSettings.Instance)
+            {
+                return;
+            }
             _loadProgressTable = 0f;
             _loadProgressPrefabCommon = 0f;
             _loadProgressPrefabEffect = 0f;

@@ -9,6 +9,8 @@ namespace GGemCo2DCoreEditor
             DefaultSetting = 1,
             SettingAddressable = 2,
             SettingSceneIntro = 3,
+            SettingSceneLoading = 4,
+            SettingSceneGame = 5,
             Development = 100,
             CreateDialogue,
             MapExporter,
@@ -51,5 +53,8 @@ namespace GGemCo2DCoreEditor
         
         // 프리팹 경로
         public const string PrefabPathDefaultUIButton = "Packages/com.ggemco.2d.core/Editor/Data/Prefabs/UI/DefaultButton.prefab";
+        public const string PrefabPathDefaultUITextMeshProGUI = "Packages/com.ggemco.2d.core/Editor/Data/Prefabs/UI/DefaultText.prefab";
+        public const string PrefabPathCanvasFromWorld = "Packages/com.ggemco.2d.core/Editor/Data/Prefabs/UI/CanvasFromWorld.prefab";
+        public const string PrefabPathCanvasBlack = "Packages/com.ggemco.2d.core/Editor/Data/Prefabs/UI/CanvasBlack.prefab";
     }
 }

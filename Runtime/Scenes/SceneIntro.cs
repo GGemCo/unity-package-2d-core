@@ -13,6 +13,7 @@ namespace GGemCo2DCore
         [Header("필수 항목")]
         [Tooltip("새로운 게임 버튼")]
         [SerializeField] private Button buttonNewGame;
+        public void SetButtonNewGame(Button value) => buttonNewGame = value;
         
         [Header("선택 항목")]
         [Tooltip("계속하기 버튼")]

@@ -80,6 +80,12 @@ namespace GGemCo2DCoreEditor
             TextAsset textAsset = LoadAsset<TextAsset>(assetPath);
             return textAsset ? textAsset.text : null;
         }
+        public static ScriptableObject LoadScriptableObject(string assetPath)
+        {
+            if (string.IsNullOrEmpty(assetPath)) return null;
+            ScriptableObject scriptable = LoadAsset<ScriptableObject>(assetPath);
+            return scriptable ? scriptable : null;
+        }
 
         /// <summary>
         /// 캐시를 초기화합니다.

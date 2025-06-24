@@ -1,5 +1,4 @@
-﻿using System.Reflection;
-using TMPro;
+﻿using TMPro;
 using UnityEditor;
 using UnityEngine;
 using UnityEngine.UI;
@@ -8,21 +7,9 @@ namespace GGemCo2DCoreEditor
 {
     public abstract class CreateUIComponent
     {
-        public static Button CreateObjectButton(FieldInfo buttonField, string text)
+        public static Canvas CreateObjectCanvas()
         {
-            // 버튼 찾기 
-            GameObject objButton = GameObject.Find(buttonField.Name);
-            if (objButton)
-            {
-                return objButton.GetComponentInChildren<Button>();
-            }
-            
-            // 캔버스 찾기 또는 생성
-#if UNITY_6000
-            Canvas canvas = GameObject.FindFirstObjectByType<Canvas>();
-#else
-            Canvas canvas = GameObject.FindObjectOfType<Canvas>();
-#endif
+            Canvas canvas = GameObject.Find("Canvas")?.GetComponent<Canvas>();
             
             if (!canvas)
             {
@@ -41,8 +28,16 @@ namespace GGemCo2DCoreEditor
                 }
             }
 
-            // 패키지 프리팹 로드
-            string prefabPath = ConfigEditor.PrefabPathDefaultUIButton;
+            return canvas;
+        }
+        public static GameObject CreateGameObjectByPrefab(string objectName, Transform parent = null, string prefabPath = "")
+        {
+            GameObject gameObject = GameObject.Find(objectName);
+            if (gameObject)
+            {
+                return gameObject;
+            }
+            
             GameObject prefab = AssetDatabase.LoadAssetAtPath<GameObject>(prefabPath);
 
             if (prefab == null)
@@ -52,26 +47,45 @@ namespace GGemCo2DCoreEditor
             }
 
             // 프리팹 인스턴스화
-            GameObject buttonObj = PrefabUtility.InstantiatePrefab(prefab) as GameObject;
-            if (!buttonObj)
+            gameObject = PrefabUtility.InstantiatePrefab(prefab) as GameObject;
+            if (!gameObject)
             {
                 Debug.LogError("프리팹 인스턴스 생성 실패");
                 return null;
             }
 
-            Undo.RegisterCreatedObjectUndo(buttonObj, "Create Default Button");
-            buttonObj.name = buttonField.Name;
-            buttonObj.transform.SetParent(canvas.transform, false);
-            
+            Undo.RegisterCreatedObjectUndo(gameObject, "Create Default Button");
+            gameObject.name = objectName;
+            if (parent != null)
+            {
+                gameObject.transform.SetParent(parent, false);
+            }
+
             // 프리팹 해제
             PrefabUtility.UnpackPrefabInstance(
-                buttonObj,
+                gameObject,
                 PrefabUnpackMode.Completely,
                 InteractionMode.UserAction
             );
+            return gameObject;
+        }
+        public static Button CreateObjectButton(string objectName, string text)
+        {
+            // 버튼 찾기 
+            GameObject obj = GameObject.Find(objectName);
+            if (obj)
+            {
+                return obj.GetComponentInChildren<Button>();
+            }
             
-            // 필드에 할당
-            Button button = buttonObj.GetComponent<Button>();
+            // 캔버스 찾기 또는 생성
+            Canvas canvas = CreateObjectCanvas();
+
+            // 패키지 프리팹 로드
+            string prefabPath = ConfigEditor.PrefabPathDefaultUIButton;
+            obj = CreateGameObjectByPrefab(objectName, canvas.transform, prefabPath);
+            
+            Button button = obj.GetComponent<Button>();
             if (!button)
             {
                 Debug.LogError("Button 컴포넌트를 찾을 수 없습니다.");
@@ -80,10 +94,30 @@ namespace GGemCo2DCoreEditor
 
             button.GetComponentInChildren<TextMeshProUGUI>().text = text;
             return button;
+        }
+        public static TextMeshProUGUI CreateObjectText(string objectName)
+        {
+            // 버튼 찾기 
+            GameObject obj = GameObject.Find(objectName);
+            if (obj)
+            {
+                return obj.GetComponentInChildren<TextMeshProUGUI>();
+            }
             
-            // Undo.RecordObject(sceneIntro, "Assign Button");
-            // buttonField.SetValue(sceneIntro, button);
-            // EditorUtility.SetDirty(sceneIntro);
+            // 캔버스 찾기 또는 생성
+            Canvas canvas = CreateObjectCanvas();
+
+            // 패키지 프리팹 로드
+            string prefabPath = ConfigEditor.PrefabPathDefaultUITextMeshProGUI;
+            obj = CreateGameObjectByPrefab(objectName, canvas.transform, prefabPath);
+            
+            TextMeshProUGUI textMeshProUGUI = obj.GetComponent<TextMeshProUGUI>();
+            if (!textMeshProUGUI)
+            {
+                Debug.LogError("Button 컴포넌트를 찾을 수 없습니다.");
+                return null;
+            }
+            return textMeshProUGUI;
         }
     }
 }

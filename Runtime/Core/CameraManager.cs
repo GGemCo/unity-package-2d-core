@@ -235,5 +235,10 @@ namespace GGemCo2DCore
         {
             
         }
+
+        public void SetCameraMoveSpeed(float speed)
+        {
+            cameraMoveSpeed = speed;
+        }
     }
 }

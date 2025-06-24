@@ -13,9 +13,6 @@ namespace GGemCo2DCore
         [Header("공격시 최대 피해 몬스터 개수")] public int maxEnemyValue;
         [Header("몬스터 죽었을때 없어지기까지 시간(초)")] public float delayDestroyMonster;
         [Header("드랍된 아이템 사라지는 시간(초)")] public int dropItemDestroyTimeSec;
-        [Header("Intro 씬 이름")] public string nameSceneIntro;
-        [Header("Loading 씬 이름")] public string nameSceneLoading;
-        [Header("Game 씬 이름")] public string nameSceneGame;
         
         // [Tooltip("이 값은 0~100 범위에서 설정할 수 있습니다.")]
         // [Range(0, 100)]
@@ -41,9 +38,6 @@ namespace GGemCo2DCore
             maxEnemyValue = 10;
             delayDestroyMonster = 2f;
             dropItemDestroyTimeSec = 10;
-            nameSceneIntro = "Intro";
-            nameSceneLoading = "Loading";
-            nameSceneGame = "Game";
         }
     }
 }

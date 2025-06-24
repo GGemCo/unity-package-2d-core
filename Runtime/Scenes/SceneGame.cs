@@ -21,16 +21,23 @@ namespace GGemCo2DCore
         [Header("기본오브젝트")]
         [Tooltip("메인으로 사용되는 Camera")]
         public Camera mainCamera;
+        public void SetMainCamera(Camera value) => mainCamera = value;
+        
         [Tooltip("UI 에 사용되는 메인 Canvas")]
         public Canvas canvasUI;
+        public void SetCanvasUI(Canvas value) => canvasUI = value;
         [Tooltip("드랍 아이템의 이름 text, Npc 이름 text, Npc 퀘스트 마크 오브젝트가 들어갈 오브젝트 입니다.")]
         public GameObject containerDropItemName;
+        public void SetContainerDropItemName(GameObject value) => containerDropItemName = value;
         [Tooltip("워프로 맵 이동시 화면을 가려줄 검정화면")]
         public GameObject bgBlackForMapLoading;
+        public void SetBgBlackForMapLoading(GameObject value) => bgBlackForMapLoading = value;
         [Tooltip("몬스터 Hp Bar 오브젝트가 들어갈 오브젝트 입니다.")]
         public GameObject containerMonsterHpBar;
+        public void SetContainerMonsterHpBar(GameObject value) => containerMonsterHpBar = value;
         [Tooltip("연출 말풍선이 들어갈 오브젝트 입니다.")]
         public GameObject containerDialogueBalloon;
+        public void SetContainerDialogueBalloon(GameObject value) => containerDialogueBalloon = value;
         
         [Header("매니저")]
         [Tooltip("윈도우 매니저")]
@@ -39,6 +46,7 @@ namespace GGemCo2DCore
         public SystemMessageManager systemMessageManager;
         [Tooltip("카메라 매니저")]
         public CameraManager cameraManager;
+        public void SetCameraManager(CameraManager value) => cameraManager = value;
         [Tooltip("팝업 매니저")]
         public PopupManager popupManager;
 
@@ -61,7 +69,7 @@ namespace GGemCo2DCore
         {
             if (TableLoaderManager.Instance == null)
             {
-                UnityEngine.SceneManagement.SceneManager.LoadScene("Intro");
+                UnityEngine.SceneManagement.SceneManager.LoadScene(ConfigDefine.SceneNameIntro);
                 return;
             }
 
