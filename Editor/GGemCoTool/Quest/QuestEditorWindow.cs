@@ -273,7 +273,6 @@ namespace GGemCo2DCoreEditor
             
             try
             {
-                // TextAsset textFile = Resources.Load<TextAsset>($"{path}");
                 TextAsset textFile = AssetDatabaseLoaderManager.LoadAsset<TextAsset>(path);
                 if (textFile != null)
                 {

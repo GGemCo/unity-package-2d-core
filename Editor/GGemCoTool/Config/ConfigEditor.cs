@@ -58,5 +58,7 @@ namespace GGemCo2DCoreEditor
         public const string PathPrefabDefaultUITextMeshProGUI = PathPrefab+"/UI/DefaultText.prefab";
         public const string PathPrefabCanvasFromWorld = PathPrefab+"/UI/CanvasFromWorld.prefab";
         public const string PathPrefabCanvasBlack = PathPrefab+"/UI/CanvasBlack.prefab";
+        public const string PathPrefabSystemMessageManager = PathPrefab+"/UI/SystemMessageManager.prefab";
+        public const string PathPrefabPopupManager = PathPrefab+"/UI/PopupManager.prefab";
     }
 }

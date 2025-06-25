@@ -51,13 +51,16 @@ namespace GGemCo2DCoreEditor
             SetupCanvasUI(scene);
             SetupCanvasFromWorld(scene);
             SetupCanvasBlack(scene);
+            SetupSystemMessageManager(scene);
+            SetupPopupManager(scene);
             
-            // CanvasBlack 프리팹 복사하기
-
             EditorUtility.SetDirty(scene);
             
         }
-
+        /// <summary>
+        /// 메인 카메라
+        /// </summary>
+        /// <param name="scene"></param>
         private void SetupCamera(SceneGame scene)
         {
             GameObject mainCameraObj = GameObject.FindWithTag("MainCamera");
@@ -79,13 +82,19 @@ namespace GGemCo2DCoreEditor
             // todo 생성한 씬 빌드 프로파일에 넣어야함
 
         }
-
+        /// <summary>
+        /// 기본 canvas
+        /// </summary>
+        /// <param name="scene"></param>
         private void SetupCanvasUI(SceneGame scene)
         {
             Canvas canvas = CreateUIComponent.CreateObjectCanvas();
             scene.SetCanvasUI(canvas);
         }
-
+        /// <summary>
+        /// 월드 좌표 사용하는 canvas
+        /// </summary>
+        /// <param name="scene"></param>
         private void SetupCanvasFromWorld(SceneGame scene)
         {
             GameObject canvasFromWorld = CreateUIComponent.CreateGameObjectByPrefab("CanvasFromWorld", null, ConfigEditor.PathPrefabCanvasFromWorld);
@@ -95,13 +104,43 @@ namespace GGemCo2DCoreEditor
             scene.SetContainerMonsterHpBar(canvasFromWorld.transform.Find("ContainerMonsterHpBar")?.gameObject);
             scene.SetContainerDialogueBalloon(canvasFromWorld.transform.Find("ContainerDialogueBalloon")?.gameObject);
         }
-
+        /// <summary>
+        /// 로딩 화면
+        /// </summary>
+        /// <param name="scene"></param>
         private void SetupCanvasBlack(SceneGame scene)
         {
             GameObject canvasBlack = CreateUIComponent.CreateGameObjectByPrefab("CanvasBlack", null, ConfigEditor.PathPrefabCanvasBlack);
             if (!canvasBlack) return;
             scene.SetBgBlackForMapLoading(canvasBlack.transform.GetChild(0).gameObject);
         }
+        /// <summary>
+        /// 시스템 메시지 매니저 
+        /// </summary>
+        /// <param name="scene"></param>
+        private void SetupSystemMessageManager(SceneGame scene)
+        {
+            GameObject obj = CreateUIComponent.CreateGameObjectByPrefab("SystemMessageManager", null, ConfigEditor.PathPrefabSystemMessageManager);
+            if (!obj) return;
+            scene.SetSystemMessageManager(obj.GetComponent<SystemMessageManager>());
+        }
+        /// <summary>
+        /// 팝업 매니저
+        /// </summary>
+        /// <param name="scene"></param>
+        private void SetupPopupManager(SceneGame scene)
+        {
+            GameObject obj = CreateUIComponent.CreateGameObjectByPrefab("PopupManager", null, ConfigEditor.PathPrefabPopupManager);
+            if (!obj) return;
+            PopupManager popupManager = obj.GetComponent<PopupManager>();
+            Transform transform = GameObject.Find("Canvas").transform;
+            popupManager.SetCanvasPopup(transform);
+            GameObject[] prefabs = new[] { null, ConfigResources.PopupDefault.Load() };
+            popupManager.SetPopupTypePrefabs(prefabs);
+            
+            scene.SetPopupManager(popupManager);
+        }
+
         /// <summary>
         /// 옵션 항목 셋팅 하기
         /// </summary>

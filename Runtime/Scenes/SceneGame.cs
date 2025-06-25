@@ -44,11 +44,13 @@ namespace GGemCo2DCore
         public UIWindowManager uIWindowManager;
         [Tooltip("시스템 메시지 매니저")]
         public SystemMessageManager systemMessageManager;
+        public void SetSystemMessageManager(SystemMessageManager value) => systemMessageManager = value;
         [Tooltip("카메라 매니저")]
         public CameraManager cameraManager;
         public void SetCameraManager(CameraManager value) => cameraManager = value;
         [Tooltip("팝업 매니저")]
         public PopupManager popupManager;
+        public void SetPopupManager(PopupManager value) => popupManager = value;
 
         [HideInInspector] public SaveDataManager saveDataManager;
         [HideInInspector] public CalculateManager calculateManager;

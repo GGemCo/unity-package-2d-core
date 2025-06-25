@@ -45,6 +45,8 @@ namespace GGemCo2DCore
         public static readonly ResourcesAssetInfo Slot = new($"{ConfigDefine.NameSDK}/UI/Icon/Slot");
         public static readonly ResourcesAssetInfo SlotBuff = new($"{ConfigDefine.NameSDK}/UI/Icon/SlotBuff");
         
+        public static readonly ResourcesAssetInfo PopupDefault = new($"{ConfigDefine.NameSDK}/UI/Popup/PopupDefault");
+        
         /// <summary>
         /// Assets/Resources/GGemCo/ 폴더에 복사할 리스트
         /// </summary>

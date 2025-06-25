@@ -1,4 +1,5 @@
-﻿using System.Reflection;
+﻿/*
+using System.Reflection;
 using UnityEditor;
 using UnityEngine;
 using UnityEngine.UI;
@@ -30,3 +31,4 @@ namespace GGemCo2DCoreEditor
         }
     }
 }
+*/

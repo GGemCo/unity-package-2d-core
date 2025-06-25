@@ -15,11 +15,15 @@ namespace GGemCo2DCore
             Default // 메시지, 확인, 취소 버튼 있는 타입
         }
         [SerializeField] private GameObject[] popupTypePrefabs;
+        public void SetPopupTypePrefabs(GameObject[] prefabs) => popupTypePrefabs = prefabs;
+        
         [SerializeField] private Transform canvasPopup; // 팝업이 들어갈 canvas
-        private GameObject elementRewardItem;
+        public void SetCanvasPopup(Transform value) => canvasPopup = value;
+
+        private GameObject _elementRewardItem;
     
-        private readonly Queue<DefaultPopup> popupQueue = new Queue<DefaultPopup>();
-        private DefaultPopup currentDefaultPopup;
+        private readonly Queue<DefaultPopup> _popupQueue = new Queue<DefaultPopup>();
+        private DefaultPopup _currentDefaultPopup;
         
         /// <summary>
         /// 공통 팝업 생성 메서드
@@ -49,7 +53,7 @@ namespace GGemCo2DCore
             }
             else
             {
-                popupQueue.Enqueue(newPopup);
+                _popupQueue.Enqueue(newPopup);
                 ShowNextPopup();
             }
         }
@@ -115,26 +119,26 @@ namespace GGemCo2DCore
         /// </summary>
         private void ShowNextPopup()
         {
-            if (currentDefaultPopup != null)
+            if (_currentDefaultPopup != null)
             {
-                currentDefaultPopup.ClosePopup();
-                currentDefaultPopup = null;
+                _currentDefaultPopup.ClosePopup();
+                _currentDefaultPopup = null;
             }
 
-            if (popupQueue.Count == 0) return;
+            if (_popupQueue.Count == 0) return;
 
-            currentDefaultPopup = popupQueue.Dequeue();
-            currentDefaultPopup.ShowPopup();
+            _currentDefaultPopup = _popupQueue.Dequeue();
+            _currentDefaultPopup.ShowPopup();
 
-            if (currentDefaultPopup.buttonConfirm != null)
+            if (_currentDefaultPopup.buttonConfirm != null)
             {
-                currentDefaultPopup.buttonConfirm.onClick.RemoveAllListeners();
-                currentDefaultPopup.buttonConfirm.onClick.AddListener(OnPopupClosed);
+                _currentDefaultPopup.buttonConfirm.onClick.RemoveAllListeners();
+                _currentDefaultPopup.buttonConfirm.onClick.AddListener(OnPopupClosed);
             }
-            if (currentDefaultPopup.buttonCancel != null)
+            if (_currentDefaultPopup.buttonCancel != null)
             {
-                currentDefaultPopup.buttonCancel.onClick.RemoveAllListeners();
-                currentDefaultPopup.buttonCancel.onClick.AddListener(OnPopupClosed);
+                _currentDefaultPopup.buttonCancel.onClick.RemoveAllListeners();
+                _currentDefaultPopup.buttonCancel.onClick.AddListener(OnPopupClosed);
             }
         }
         /// <summary>
@@ -142,10 +146,10 @@ namespace GGemCo2DCore
         /// </summary>
         private void OnPopupClosed()
         {
-            if (currentDefaultPopup != null)
+            if (_currentDefaultPopup != null)
             {
-                RemovePopupListeners(currentDefaultPopup);
-                currentDefaultPopup = null;
+                RemovePopupListeners(_currentDefaultPopup);
+                _currentDefaultPopup = null;
             }
             ShowNextPopup();
         }
@@ -177,10 +181,6 @@ namespace GGemCo2DCore
                 return null;
             }
             return popupTypePrefabs[(int)popupType];
-        }
-        private void OnDestroy()
-        {
-            
         }
     }
 }
