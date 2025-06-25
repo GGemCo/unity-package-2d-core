@@ -18,12 +18,12 @@ namespace GGemCo2DCore
         public Button buttonLearn;
         public Button buttonLevelUp;
         
-        private UIWindowSkill uiWindowSkill;
-        private UIWindowSkillInfo uiWindowSkillInfo;
-        private StruckTableSkill struckTableSkill;
-        private SaveDataIcon saveDataIcon;
-        private TableSkill tableSkill;
-        private int slotIndex;
+        private UIWindowSkill _uiWindowSkill;
+        private UIWindowSkillInfo _uiWindowSkillInfo;
+        private StruckTableSkill _struckTableSkill;
+        private SaveDataIcon _saveDataIcon;
+        private TableSkill _tableSkill;
+        private int _slotIndex;
         
         /// <summary>
         /// 초기화
@@ -34,9 +34,9 @@ namespace GGemCo2DCore
         /// <param name="pstructSkillIcon"></param>
         public void Initialize(UIWindowSkill puiWindowSkill, int pslotIndex, StruckTableSkill pstruckTableSkill, SaveDataIcon pstructSkillIcon = null)
         {
-            slotIndex = pslotIndex;
-            struckTableSkill = pstruckTableSkill;
-            saveDataIcon = pstructSkillIcon;
+            _slotIndex = pslotIndex;
+            _struckTableSkill = pstruckTableSkill;
+            _saveDataIcon = pstructSkillIcon;
             if (buttonLearn != null)
             {
                 buttonLearn.gameObject.SetActive(true);
@@ -50,14 +50,14 @@ namespace GGemCo2DCore
                 buttonLevelUp.onClick.AddListener(OnClickLevelUp);
             }
 
-            uiWindowSkill = puiWindowSkill;
-            uiWindowSkillInfo =
+            _uiWindowSkill = puiWindowSkill;
+            _uiWindowSkillInfo =
                 SceneGame.Instance.uIWindowManager.GetUIWindowByUid<UIWindowSkillInfo>(
                     UIWindowManager.WindowUid.SkillInfo);
-            tableSkill = TableLoaderManager.Instance.TableSkill;
+            _tableSkill = TableLoaderManager.Instance.TableSkill;
             
-            if (textName != null) textName.text = struckTableSkill.Name;
-            UpdateInfos(pstruckTableSkill, saveDataIcon);
+            if (textName != null) textName.text = _struckTableSkill.Name;
+            UpdateInfos(pstruckTableSkill, _saveDataIcon);
         }
 
         /// <summary>
@@ -66,49 +66,49 @@ namespace GGemCo2DCore
         /// </summary>
         public void UpdateInfos(StruckTableSkill pstruckTableSkill, SaveDataIcon psaveDataIcon)
         {
-            struckTableSkill = pstruckTableSkill;
-            saveDataIcon = psaveDataIcon;
-            if (struckTableSkill == null)
+            _struckTableSkill = pstruckTableSkill;
+            _saveDataIcon = psaveDataIcon;
+            if (_struckTableSkill == null)
             {
                 GcLogger.LogError($"스킬 테이블에 없는 스킬입니다. struckTableSkill is null");
                 return;
             }
 
-            int level = saveDataIcon?.Level ?? 1;
+            int level = _saveDataIcon?.Level ?? 1;
             if (textLevel != null) textLevel.text = $"Lv.{level}";
-            if (textNeedLevel != null) textNeedLevel.text = $"필요레벨 : {struckTableSkill.NeedPlayerLevel}";
+            if (textNeedLevel != null) textNeedLevel.text = $"NeedLevel : {_struckTableSkill.NeedPlayerLevel}";
 
             // 필요 재화
             if (textNeedCurrency != null)
             {
-                textNeedCurrency.text = $"{struckTableSkill.NeedCurrencyType} {struckTableSkill.NeedCurrencyValue}";
-                if (struckTableSkill.NeedCurrencyType == CurrencyConstants.Type.None)
+                textNeedCurrency.text = $"{_struckTableSkill.NeedCurrencyType} {_struckTableSkill.NeedCurrencyValue}";
+                if (_struckTableSkill.NeedCurrencyType == CurrencyConstants.Type.None)
                 {
                     textNeedCurrency.gameObject.SetActive(false);
                 }
             }
             
             // 최대 레벨
-            if (saveDataIcon != null && struckTableSkill != null && saveDataIcon.Level >= struckTableSkill.Maxlevel)
+            if (_saveDataIcon != null && _struckTableSkill != null && _saveDataIcon.Level >= _struckTableSkill.Maxlevel)
             {
                 buttonLearn.gameObject.SetActive(false);
-                buttonLevelUp.GetComponentInChildren<TextMeshProUGUI>().text = "최대레벨";
+                buttonLevelUp.GetComponentInChildren<TextMeshProUGUI>().text = "MaxLevel";
                 buttonLevelUp.gameObject.SetActive(true);
                 buttonLevelUp.interactable = false;
             }
             // 레벨업 할때는 다음 레벨 정보로 셋팅
-            else if (saveDataIcon is { IsLearned: true })
+            else if (_saveDataIcon is { IsLearned: true })
             {
                 buttonLearn.gameObject.SetActive(false);
                 buttonLevelUp.gameObject.SetActive(true);
                 int nextLevel = level + 1;
-                var infoNextLevel = tableSkill.GetDataByUidLevel(struckTableSkill.Uid, nextLevel);
+                var infoNextLevel = _tableSkill.GetDataByUidLevel(_struckTableSkill.Uid, nextLevel);
                 if (infoNextLevel == null)
                 {
-                    GcLogger.LogError("skill 테이블에 정보가 없습니다. skill uid: " + struckTableSkill.Uid + " / Level: " + nextLevel);
+                    GcLogger.LogError("skill 테이블에 정보가 없습니다. skill uid: " + _struckTableSkill.Uid + " / Level: " + nextLevel);
                     return;
                 }
-                if (textNeedLevel != null) textNeedLevel.text = $"필요레벨 : {infoNextLevel.NeedPlayerLevel}";
+                if (textNeedLevel != null) textNeedLevel.text = $"NeedLevel : {infoNextLevel.NeedPlayerLevel}";
                 
                 // 필요 재화
                 if (textNeedCurrency != null)
@@ -131,19 +131,19 @@ namespace GGemCo2DCore
         /// </summary>
         private void OnClickLevelUp()
         {
-            bool result = SceneGame.Instance.player.GetComponent<Player>().IsRequireLevel(struckTableSkill.NeedPlayerLevel);
+            bool result = SceneGame.Instance.player.GetComponent<Player>().IsRequireLevel(_struckTableSkill.NeedPlayerLevel);
             if (!result) return;
             // 다음 레벨 있는지 체크, 아니면 최대 레벨
-            int nextLevel = struckTableSkill.Level + 1;
-            if (nextLevel > struckTableSkill.Maxlevel)
+            int nextLevel = _struckTableSkill.Level + 1;
+            if (nextLevel > _struckTableSkill.Maxlevel)
             {
-                SceneGame.Instance.systemMessageManager.ShowMessageWarning("최대 레벨입니다.");
+                SceneGame.Instance.systemMessageManager.ShowMessageWarning("This is the maximum level.");
                 return;
             }
-            var infoNextLevel = tableSkill.GetDataByUidLevel(struckTableSkill.Uid, nextLevel);
+            var infoNextLevel = _tableSkill.GetDataByUidLevel(_struckTableSkill.Uid, nextLevel);
             if (infoNextLevel == null)
             {
-                GcLogger.LogError("skill 테이블에 정보가 없습니다. skill uid: " + struckTableSkill.Uid + " / Level: " + nextLevel);
+                GcLogger.LogError("skill 테이블에 정보가 없습니다. skill uid: " + _struckTableSkill.Uid + " / Level: " + nextLevel);
                 return;
             }
             bool resultRequireLevel = CheckLevelCurrency(infoNextLevel.NeedPlayerLevel, infoNextLevel.NeedCurrencyType,
@@ -151,13 +151,13 @@ namespace GGemCo2DCore
             if (!resultRequireLevel) return;
 
             var result2 =
-                SceneGame.Instance.saveDataManager.Skill.SetSkillLevelUp(slotIndex, struckTableSkill.Uid, 1, nextLevel,
+                SceneGame.Instance.saveDataManager.Skill.SetSkillLevelUp(_slotIndex, _struckTableSkill.Uid, 1, nextLevel,
                     true);
             if (result2.Code == ResultCommon.Type.Success)
             {
                 MinusNeedCurrency(infoNextLevel.NeedCurrencyType, infoNextLevel.NeedCurrencyValue);
             }
-            uiWindowSkill.SetIcons(result2);
+            _uiWindowSkill.SetIcons(result2);
         }
         /// <summary>
         /// 레벨, 재화 체크
@@ -207,27 +207,27 @@ namespace GGemCo2DCore
         private void OnClickLearn()
         {
             // GcLogger.Log("click learn");
-            bool result = CheckLevelCurrency(struckTableSkill.NeedPlayerLevel, struckTableSkill.NeedCurrencyType,
-                struckTableSkill.NeedCurrencyValue);
+            bool result = CheckLevelCurrency(_struckTableSkill.NeedPlayerLevel, _struckTableSkill.NeedCurrencyType,
+                _struckTableSkill.NeedCurrencyValue);
             if (!result) return;
 
-            var result2 = SceneGame.Instance.saveDataManager.Skill.SetSkillLearn(slotIndex, struckTableSkill.Uid, 1, struckTableSkill.Level, true);
+            var result2 = SceneGame.Instance.saveDataManager.Skill.SetSkillLearn(_slotIndex, _struckTableSkill.Uid, 1, _struckTableSkill.Level, true);
             if (result2.Code == ResultCommon.Type.Success)
             {
-                MinusNeedCurrency(struckTableSkill.NeedCurrencyType, struckTableSkill.NeedCurrencyValue);
+                MinusNeedCurrency(_struckTableSkill.NeedCurrencyType, _struckTableSkill.NeedCurrencyValue);
             }
-            uiWindowSkill.SetIcons(result2);
+            _uiWindowSkill.SetIcons(result2);
         }
 
         public void OnPointerEnter(PointerEventData eventData)
         {
-            uiWindowSkillInfo.SetSkillUid(struckTableSkill.Uid, struckTableSkill.Level, new Vector2(1f, 1f), new Vector3(transform.position.x - uiWindowSkill.containerIcon.cellSize.x / 2f,
-                transform.position.y + uiWindowSkill.containerIcon.cellSize.y / 2f));
+            _uiWindowSkillInfo.SetSkillUid(_struckTableSkill.Uid, _struckTableSkill.Level, new Vector2(1f, 1f), new Vector3(transform.position.x - _uiWindowSkill.containerIcon.cellSize.x / 2f,
+                transform.position.y + _uiWindowSkill.containerIcon.cellSize.y / 2f));
         }
 
         public void OnPointerExit(PointerEventData eventData)
         {
-            uiWindowSkillInfo.Show(false);
+            _uiWindowSkillInfo.Show(false);
         }
 
         public void OnPointerClick(PointerEventData eventData)

@@ -26,13 +26,13 @@ namespace GGemCo2DCore
             Lightning
         }
 
-        public static Dictionary<DamageType, string> NameByDamageType = new Dictionary<DamageType, string>
+        public static readonly Dictionary<DamageType, string> NameByDamageType = new Dictionary<DamageType, string>
         {
             { DamageType.None, "None" },
-            { DamageType.Physic, "물리 데미지" },
-            { DamageType.Fire, "파이어 데미지" },
-            { DamageType.Cold, "얼음 데미지" },
-            { DamageType.Lightning, "전기 데미지" },
+            { DamageType.Physic, "Physic DMG" },
+            { DamageType.Fire, "Fire DMG" },
+            { DamageType.Cold, "Cold DMG" },
+            { DamageType.Lightning, "Lighting DMG" },
         };
     }
 }

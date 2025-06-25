@@ -11,5 +11,6 @@
         public const string Dialogue = ConfigDefine.NameSDK+"_Dialouge";
         public const string Quest = ConfigDefine.NameSDK+"_Quest";
         public const string Cutscene = ConfigDefine.NameSDK+"_Cutscene";
+        public const string ImageSkillIcon = ConfigDefine.NameSDK+"_Skill_Icon";
     }
 }

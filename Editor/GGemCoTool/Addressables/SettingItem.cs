@@ -58,7 +58,7 @@ namespace GGemCo2DCoreEditor
             AddressableAssetGroup groupIconImage = GetOrCreateGroup(settings, _groupNameIconImage);
 
             // SpriteAtlas 생성
-            string atlasFolderPath = $"{ConfigAddressables.Path}/SpriteAtlas";
+            string atlasFolderPath = ConfigAddressables.PathSpriteAtlas;
             Directory.CreateDirectory(atlasFolderPath);
     
             var atlasDrop = GetOrCreateSpriteAtlas($"{atlasFolderPath}/ItemDropAtlas.spriteatlas");
@@ -138,36 +138,6 @@ namespace GGemCo2DCoreEditor
             // 테이블 다시 로드하기
             _editorAddressable.LoadTables();
             EditorUtility.DisplayDialog(Title, "Addressable 설정 완료", "OK");
-        }
-        private SpriteAtlas GetOrCreateSpriteAtlas(string path)
-        {
-            var atlas = AssetDatabase.LoadAssetAtPath<SpriteAtlas>(path);
-            if (atlas == null)
-            {
-                atlas = new SpriteAtlas();
-                SpriteAtlasPackingSettings packing = atlas.GetPackingSettings();
-                packing.enableRotation = false;
-                packing.enableTightPacking = false;
-                atlas.SetPackingSettings(packing);
-
-                AssetDatabase.CreateAsset(atlas, path);
-                AssetDatabase.SaveAssets();
-            }
-            return atlas;
-        }
-
-        private void AddToListIfExists(List<Object> list, string assetPath)
-        {
-            var asset = AssetDatabase.LoadAssetAtPath<Object>(assetPath);
-            if (asset != null)
-            {
-                list.Add(asset);
-            }
-        }
-        private void ClearAndAddToAtlas(SpriteAtlas atlas, List<Object> assets)
-        {
-            atlas.Remove(atlas.GetPackables()); // 기존 등록된 에셋 제거
-            atlas.Add(assets.ToArray());        // 새로 추가
         }
     }
 }

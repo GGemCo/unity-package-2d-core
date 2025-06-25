@@ -54,18 +54,15 @@ namespace GGemCo2DCore
         /// </summary>
         protected override void UpdateIconImage()
         {
-            if (ImageIcon == null)
-            {
-                ImageIcon.sprite = null;
-                return;
-            }
+            if (ImageIcon == null) return;
             string path = GetIconImagePath();
-            if (path == null || path == "")
+            if (string.IsNullOrEmpty(path))
             {
                 ImageIcon.sprite = null;
                 return;
             }
-            ImageIcon.sprite = Resources.Load<Sprite>(path);
+
+            ImageIcon.sprite = AddressableLoaderSkill.Instance.GetImageIconByName(path);
         }
         /// <summary>
         /// 아이콘 이미지 경로 가져오기 
@@ -74,7 +71,7 @@ namespace GGemCo2DCore
         protected override string GetIconImagePath()
         {
             if (struckSkill == null) return null;
-            return $"Images/Icon/Skill/{struckSkill.IconFileName}";
+            return struckSkill.IconFileName;
         }
         public override bool CheckRequireLevel()
         {

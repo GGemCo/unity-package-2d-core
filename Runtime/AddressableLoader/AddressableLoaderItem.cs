@@ -162,7 +162,7 @@ namespace GGemCo2DCore
             }
         }
 
-        public Sprite GetImageIconByName(string prefabName)
+        public Sprite GetImageIconItemByName(string prefabName)
         {
             if (_dicImageIcon.TryGetValue(ConfigAddressableLabel.ImageItemIcon, out var prefab))
             {

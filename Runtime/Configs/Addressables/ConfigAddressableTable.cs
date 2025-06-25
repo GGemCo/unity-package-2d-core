@@ -178,6 +178,7 @@ namespace GGemCo2DCore
             TableCutscene,
             TableDialogue,
             TableQuest,
+            TableSkill
         };
     }
 }

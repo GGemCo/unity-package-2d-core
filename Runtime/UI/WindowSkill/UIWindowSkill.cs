@@ -13,11 +13,11 @@ namespace GGemCo2DCore
 
         public TableSkill TableSkill;
         public readonly Dictionary<int, UIElementSkill> UIElementSkills = new Dictionary<int, UIElementSkill>();
-        private SkillData skillData;
-        private QuickSlotData quickSlotData;
+        private SkillData _skillData;
+        private QuickSlotData _quickSlotData;
         
-        private UIWindowQuickSlot uiWindowQuickSlot;
-        private UIWindowSkillInfo uIWindowSkillInfo;
+        private UIWindowQuickSlot _uiWindowQuickSlot;
+        private UIWindowSkillInfo _uIWindowSkillInfo;
         
         protected override void Awake()
         {
@@ -34,12 +34,12 @@ namespace GGemCo2DCore
         protected override void Start()
         {
             base.Start();
-            skillData = SceneGame.saveDataManager.Skill;
-            quickSlotData = SceneGame.saveDataManager.QuickSlot;
-            uIWindowSkillInfo =
+            _skillData = SceneGame.saveDataManager.Skill;
+            _quickSlotData = SceneGame.saveDataManager.QuickSlot;
+            _uIWindowSkillInfo =
                 SceneGame.uIWindowManager.GetUIWindowByUid<UIWindowSkillInfo>(UIWindowManager.WindowUid
                     .SkillInfo);
-            uiWindowQuickSlot =
+            _uiWindowQuickSlot =
                 SceneGame.uIWindowManager.GetUIWindowByUid<UIWindowQuickSlot>(UIWindowManager.WindowUid
                     .QuickSlot);
         }
@@ -62,7 +62,7 @@ namespace GGemCo2DCore
             if (SceneGame.Instance == null || TableLoaderManager.Instance == null) return;
             if (!show)
             {
-                uIWindowSkillInfo?.Show(false);
+                _uIWindowSkillInfo?.Show(false);
                 return;
             }
             LoadIcons();
@@ -125,10 +125,10 @@ namespace GGemCo2DCore
                 return;
             }
             if (!icon.CheckRequireLevel()) return;
-            if (uiWindowQuickSlot == null) return;
+            if (_uiWindowQuickSlot == null) return;
             // 퀵슬롯에 하나 넣기
-            var result = quickSlotData.AddSkill(icon.uid, icon.GetCount(), icon.GetLevel(), icon.IsLearn());
-            uiWindowQuickSlot.SetIcons(result);
+            var result = _quickSlotData.AddSkill(icon.uid, icon.GetCount(), icon.GetLevel(), icon.IsLearn());
+            _uiWindowQuickSlot.SetIcons(result);
         }
         public UIElementSkill GetElementSkillByIndex(int slotIndex)
         {

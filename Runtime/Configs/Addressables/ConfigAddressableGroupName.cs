@@ -32,5 +32,7 @@
         public const string Quest = ConfigDefine.NameSDK+"_Quest";
         // 연출
         public const string Cutscene = ConfigDefine.NameSDK+"_Cutscene";
+        // 스킬
+        public const string SkillIconImage = ConfigDefine.NameSDK+"_Skill_IconImage";
     }
 }

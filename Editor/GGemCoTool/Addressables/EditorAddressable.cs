@@ -16,6 +16,7 @@ namespace GGemCo2DCoreEditor
         private SettingDialogue _settingDialogue;
         private SettingQuest _settingQuest;
         private SettingCutscene _settingCutscene;
+        private SettingSkill _settingSkill;
 
         public TableMap TableMap;
         public TableNpc TableNpc;
@@ -26,6 +27,7 @@ namespace GGemCo2DCoreEditor
         public TableDialogue TableDialogue;
         public TableQuest TableQuest;
         public TableCutscene TableCutscene;
+        public TableSkill TableSkill;
 
         [MenuItem(ConfigEditor.NameToolSettingAddressable, false, (int)ConfigEditor.ToolOrdering.SettingAddressable)]
         public static void ShowWindow()
@@ -47,6 +49,7 @@ namespace GGemCo2DCoreEditor
             _settingDialogue = new SettingDialogue(this);
             _settingQuest = new SettingQuest(this);
             _settingCutscene = new SettingCutscene(this);
+            _settingSkill = new SettingSkill(this);
         }
 
         public void LoadTables()
@@ -60,6 +63,7 @@ namespace GGemCo2DCoreEditor
             TableDialogue = TableLoaderManager.LoadDialogueTable();
             TableQuest = TableLoaderManager.LoadQuestTable();
             TableCutscene = TableLoaderManager.LoadCutsceneTable();
+            TableSkill = TableLoaderManager.LoadSkillTable();
         }
 
         private void OnGUI()
@@ -110,6 +114,16 @@ namespace GGemCo2DCoreEditor
             {
                 EditorGUILayout.Space(10);
                 _settingItem.OnGUI();
+            }
+            if (TableSkill == null)
+            {
+                EditorGUILayout.Space(10);
+                EditorGUILayout.HelpBox($"{ConfigAddressableTable.Skill} 테이블이 없습니다.", MessageType.Info);
+            }
+            else
+            {
+                EditorGUILayout.Space(10);
+                _settingSkill.OnGUI();
             }
             if (TableDialogue == null)
             {

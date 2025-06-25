@@ -14,7 +14,8 @@ namespace GGemCo2DCore
             GamePrefab,
             SaveData,
             GamePrefabEffect,
-            Item
+            Item,
+            Skill
         }
 
         public TextMeshProUGUI textLoadingPercent; // 진행률 표시
@@ -24,11 +25,13 @@ namespace GGemCo2DCore
         private AddressableLoaderPrefabCommon _addressableLoaderPrefabCommon;
         private AddressableLoaderPrefabEffect _addressableLoaderPrefabEffect;
         private AddressableLoaderItem _addressableLoaderItem;
+        private AddressableLoaderSkill _addressableLoaderSkill;
 
         private float _loadProgressTable;
         private float _loadProgressPrefabCommon;
         private float _loadProgressPrefabEffect;
         private float _loadProgressItem;
+        private float _loadProgressSkill;
         private float _loadProgressSaveData;
         private float _progressTotal;
         private float _progressBase;
@@ -43,10 +46,11 @@ namespace GGemCo2DCore
             _loadProgressPrefabCommon = 0f;
             _loadProgressPrefabEffect = 0f;
             _loadProgressItem = 0f;
+            _loadProgressSkill = 0f;
             _loadProgressSaveData = 0f;
             _progressTotal = 0f;
-            // 3 가지 경우를 로드 하고 있다
-            _progressBase = 100f / 5f;
+            // 6 가지 경우를 로드 하고 있다
+            _progressBase = 100f / 6f;
 
             if (textLoadingPercent)
             {
@@ -65,6 +69,9 @@ namespace GGemCo2DCore
             GameObject gameObjectAddressableLoaderItem = new GameObject("AddressableLoaderItem");
             _addressableLoaderItem = gameObjectAddressableLoaderItem.AddComponent<AddressableLoaderItem>();
             
+            GameObject gameObjectAddressableLoaderSkill = new GameObject("AddressableLoaderSkill");
+            _addressableLoaderSkill = gameObjectAddressableLoaderSkill.AddComponent<AddressableLoaderSkill>();
+            
             GameObject gameObjectSaveDataLoader = new GameObject("SaveDataLoader");
             _saveDataLoader = gameObjectSaveDataLoader.AddComponent<SaveDataLoader>();
         }
@@ -80,10 +87,10 @@ namespace GGemCo2DCore
             yield return LoadAddressablePrefabCommon();
             yield return LoadAddressablePrefabEffect();
             yield return LoadAddressableItem();
+            yield return LoadAddressableSkill();
             yield return LoadSaveData();
             UnityEngine.SceneManagement.SceneManager.LoadScene(ConfigDefine.SceneNameGame);
         }
-
         /// <summary>
         /// 테이블 데이터를 로드하고 진행률을 업데이트합니다.
         /// </summary>
@@ -136,6 +143,17 @@ namespace GGemCo2DCore
                 yield return null;
             }
         }
+        private IEnumerator LoadAddressableSkill()
+        {
+            Task prefabLoadTask = _addressableLoaderSkill.LoadPrefabsAsync();
+
+            while (!prefabLoadTask.IsCompleted)
+            {
+                _loadProgressSkill = _addressableLoaderSkill.GetPrefabLoadProgress() * _progressBase;
+                UpdateLoadingProgress(Type.Item);
+                yield return null;
+            }
+        }
 
         /// <summary>
         /// 세이브 데이터를 로드하고 진행률을 업데이트합니다.
@@ -153,7 +171,8 @@ namespace GGemCo2DCore
         /// </summary>
         private void UpdateLoadingProgress(Type type)
         {
-            _progressTotal = _loadProgressTable + _loadProgressPrefabCommon + _loadProgressPrefabEffect + _loadProgressItem + _loadProgressSaveData;
+            _progressTotal = _loadProgressTable + _loadProgressPrefabCommon + _loadProgressPrefabEffect +
+                             _loadProgressItem + _loadProgressSkill + _loadProgressSaveData;
             string subTitle = "Tables";
             if (type == Type.GamePrefab)
             {
@@ -170,6 +189,10 @@ namespace GGemCo2DCore
             else if (type == Type.Item)
             {
                 subTitle = "Item Data";
+            }
+            else if (type == Type.Skill)
+            {
+                subTitle = "Skill Data";
             }
             if (textLoadingPercent != null)
             {

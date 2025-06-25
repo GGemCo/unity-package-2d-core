@@ -161,6 +161,7 @@ namespace GGemCo2DCore
         private void SpawnProjectileEffect(Vector3 from, Vector3 to)
         {
             arrowDefaultEffect = EffectManager.CreateEffect(struckTableSkill.EffectUid);
+            if (arrowDefaultEffect == null) return;
             // SetParent 보다 먼저 scale 을 바꿔야 한다.
             if (struckTableSkill.EffectScale > 0)
             {

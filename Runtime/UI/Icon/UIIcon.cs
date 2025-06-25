@@ -268,7 +268,7 @@ namespace GGemCo2DCore
                 return;
             }
 
-            ImageIcon.sprite = AddressableLoaderItem.Instance.GetImageIconByName(path);
+            ImageIcon.sprite = AddressableLoaderItem.Instance.GetImageIconItemByName(path);
         }
         /// <summary>
         /// 이미지 사이즈 변경하기

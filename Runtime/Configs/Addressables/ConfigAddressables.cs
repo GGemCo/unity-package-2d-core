@@ -5,7 +5,7 @@ namespace GGemCo2DCore
     public static class ConfigAddressables
     {
         public const string Path = "Assets/"+ConfigDefine.NameSDK+"/DataAddressable";
-        
+        public const string PathSpriteAtlas = Path+"/SpriteAtlas";
         /// <summary>
         /// 로딩 씬에서 로드 해야 되는 리스트
         /// </summary>
@@ -42,5 +42,9 @@ namespace GGemCo2DCore
         // 연출
         public const string KeyCutscene = ConfigDefine.NameSDK+"_Cutscene";
         public const string PathJsonCutscene = Path + "/Cutscene";
+        
+        // 스킬
+        public const string KeyImageIconSkill = ConfigDefine.NameSDK+"_Skill_Icon";
+        public const string PathImageIconSkill = Path + "/Images/Icon/Skill";
     }
 }

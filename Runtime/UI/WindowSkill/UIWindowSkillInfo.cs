@@ -67,23 +67,23 @@ namespace GGemCo2DCore
         private void SetBasicInfo()
         {
             if (struckTableSkill == null) return;
-            textName.text = $"이름: {struckTableSkill.Name}";
-            textLevel.text = $"레벨: {struckTableSkill.Level}";
-            textNeedLevel.text = $"필요레벨: {struckTableSkill.NeedPlayerLevel}";
-            textTarget.text = $"타겟: {struckTableSkill.Target}";
+            textName.text = $"Name: {struckTableSkill.Name}";
+            textLevel.text = $"Level: {struckTableSkill.Level}";
+            textNeedLevel.text = $"NeedLevel: {struckTableSkill.NeedPlayerLevel}";
+            textTarget.text = $"Target: {struckTableSkill.Target}";
             textDamageType.text = $"{SkillConstants.NameByDamageType[struckTableSkill.DamageType]} : {struckTableSkill.DamageValue}";
             textDamageType.gameObject.SetActive(struckTableSkill.DamageValue > 0);
 
-            textNeedMp.text = $"소모Mp: {struckTableSkill.NeedMp}";
-            textCoolTime.text = $"쿨타임: {struckTableSkill.CoolTime}";
+            textNeedMp.text = $"Mp: {struckTableSkill.NeedMp}";
+            textCoolTime.text = $"CoolTime: {struckTableSkill.CoolTime}";
             textCoolTime.gameObject.SetActive(struckTableSkill.CoolTime > 0);
             
-            textDamageRange.text = $"데미지범위: {struckTableSkill.DamageRange}";
+            textDamageRange.text = $"Damage: {struckTableSkill.DamageRange}";
             textDamageRange.gameObject.SetActive(struckTableSkill.DamageRange > 0);
             
-            textDistance.text = $"사거리: {struckTableSkill.Distance}";
+            textDistance.text = $"Distance: {struckTableSkill.Distance}";
             textDistance.gameObject.SetActive(struckTableSkill.Distance > 0);
-            textDuration.text = $"효과지속시간: {struckTableSkill.Duration}";
+            textDuration.text = $"Duration: {struckTableSkill.Duration}";
             textDuration.gameObject.SetActive(struckTableSkill.Duration > 0);
         }
 
@@ -121,7 +121,8 @@ namespace GGemCo2DCore
             if (info == null) return;
             textAffect.gameObject.SetActive(true);
             string option =
-                $"{struckTableSkill.AffectRate}% 확률로 {GetStatusName(info.StatusID)} {GetValueText(info.StatusSuffix, info.Value)} 가 {info.Duration} 초 동안 발동합니다.";
+                // $"{struckTableSkill.AffectRate}% 확률로 {GetStatusName(info.StatusID)} {GetValueText(info.StatusSuffix, info.Value)} 가 {info.Duration} 초 동안 발동합니다.";
+                $"{struckTableSkill.AffectRate}% chance to trigger {GetStatusName(info.StatusID)} {GetValueText(info.StatusSuffix, info.Value)} for {info.Duration} seconds.";
             textAffect.text = option;
         }
         /// <summary>
