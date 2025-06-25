@@ -8,16 +8,16 @@ namespace GGemCo2DCore
 {
     public static class AddressableLoaderController
     {
-        private static Dictionary<object, AsyncOperationHandle> loadedResources = new Dictionary<object, AsyncOperationHandle>();
-        private static HashSet<AsyncOperationHandle> activeHandles = new HashSet<AsyncOperationHandle>();
+        private static readonly Dictionary<object, AsyncOperationHandle> LoadedResources = new Dictionary<object, AsyncOperationHandle>();
+        private static readonly HashSet<AsyncOperationHandle> ActiveHandles = new HashSet<AsyncOperationHandle>();
 
         /// <summary>
         /// key를 통해 단일 리소스를 비동기로 로드합니다.
         /// </summary>
-        public static async Task<T> LoadByKeyAsync<T>(string key) where T : UnityEngine.Object
+        public static async Task<T> LoadByKeyAsync<T>(string key) where T : Object
         {
             // 이미 로드된 리소스가 있는 경우 반환
-            foreach (var pair in loadedResources)
+            foreach (var pair in LoadedResources)
             {
                 if (pair.Value.IsValid() && pair.Value.DebugName == key && pair.Key is T loaded)
                 {
@@ -30,8 +30,8 @@ namespace GGemCo2DCore
             if (handle.Status == AsyncOperationStatus.Succeeded)
             {
                 var result = handle.Result;
-                loadedResources[result] = handle;
-                activeHandles.Add(handle);
+                LoadedResources[result] = handle;
+                ActiveHandles.Add(handle);
                 return result;
             }
 
@@ -42,7 +42,7 @@ namespace GGemCo2DCore
         /// <summary>
         /// label을 통해 여러 리소스를 비동기로 로드합니다.
         /// </summary>
-        public static async Task<Dictionary<string, T>> LoadByLabelAsync<T>(string label) where T : UnityEngine.Object
+        public static async Task<Dictionary<string, T>> LoadByLabelAsync<T>(string label) where T : Object
         {
             // 리소스 위치를 먼저 가져옵니다.
             var locationsHandle = Addressables.LoadResourceLocationsAsync(label, typeof(T));
@@ -63,7 +63,7 @@ namespace GGemCo2DCore
                 
                 // 이미 로드된 오브젝트가 있는 경우 캐시에서 꺼냄
                 bool alreadyLoaded = false;
-                foreach (var pair in loadedResources)
+                foreach (var pair in LoadedResources)
                 {
                     if (pair.Value.IsValid() && pair.Value.DebugName == key && pair.Key is T cachedObj)
                     {
@@ -82,8 +82,8 @@ namespace GGemCo2DCore
                     T obj = handle.Result;
                     result[key] = obj;
 
-                    loadedResources[obj] = handle;
-                    activeHandles.Add(handle);
+                    LoadedResources[obj] = handle;
+                    ActiveHandles.Add(handle);
                 }
                 else
                 {
@@ -107,8 +107,8 @@ namespace GGemCo2DCore
             if (handle.Status == AsyncOperationStatus.Succeeded)
             {
                 GameObject instance = handle.Result;
-                loadedResources[instance] = handle;
-                activeHandles.Add(handle);
+                LoadedResources[instance] = handle;
+                ActiveHandles.Add(handle);
                 return instance;
             }
 
@@ -123,15 +123,15 @@ namespace GGemCo2DCore
         {
             if (obj == null) return;
 
-            if (loadedResources.TryGetValue(obj, out var handle))
+            if (LoadedResources.TryGetValue(obj, out var handle))
             {
                 if (handle.IsValid())
                 {
                     Addressables.Release(handle);
                 }
 
-                loadedResources.Remove(obj);
-                activeHandles.Remove(handle);
+                LoadedResources.Remove(obj);
+                ActiveHandles.Remove(handle);
             }
             else
             {
@@ -144,7 +144,7 @@ namespace GGemCo2DCore
         /// </summary>
         public static void ReleaseAll()
         {
-            foreach (var handle in activeHandles)
+            foreach (var handle in ActiveHandles)
             {
                 if (handle.IsValid())
                 {
@@ -152,8 +152,8 @@ namespace GGemCo2DCore
                 }
             }
 
-            activeHandles.Clear();
-            loadedResources.Clear();
+            ActiveHandles.Clear();
+            LoadedResources.Clear();
         }
         public static void ReleaseByHandles(HashSet<AsyncOperationHandle> handles)
         {

@@ -93,7 +93,7 @@ namespace GGemCo2DCoreEditor
                     // 썸네일 있으면 추가
                     if (!string.IsNullOrEmpty(info.ImageThumbnailPath))
                     {
-                        key = $"{ConfigAddressables.KeyCharacterThumbnailNpc}_{info.Uid}";
+                        key = $"{ConfigAddressables.KeyCharacterThumbnailNpc}_{info.ImageThumbnailPath}";
                         assetPath = $"{ConfigAddressables.PathCharacterThumbnailNpc}/{info.ImageThumbnailPath}.png";
                         Add(settings, groupNpc, key, assetPath);
                     }

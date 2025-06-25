@@ -1,5 +1,4 @@
-﻿using System;
-using TMPro;
+﻿using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -19,8 +18,8 @@ namespace GGemCo2DCore
         [Tooltip("확인 버튼")] 
         public Button buttonConfirm;
         
-        private int currentQuestUid;
-        private UIWindowItemInfo uiWindowItemInfo;
+        private int _currentQuestUid;
+        private UIWindowItemInfo _uiWindowItemInfo;
         protected override void Awake()
         {
             uid = UIWindowManager.WindowUid.QuestReward;
@@ -31,36 +30,43 @@ namespace GGemCo2DCore
         protected override void Start()
         {
             base.Start();
-            uiWindowItemInfo =
+            _uiWindowItemInfo =
                 SceneGame.Instance.uIWindowManager.GetUIWindowByUid<UIWindowItemInfo>(
                     UIWindowManager.WindowUid.ItemInfo);
         }
         protected void OnEnable()
         {
-            if (currentQuestUid <= 0) return;
-            Quest info = SceneGame.Instance.QuestManager.GetQuestInfo(currentQuestUid);
+            if (_currentQuestUid <= 0) return;
+            Quest info = SceneGame.Instance.QuestManager.GetQuestInfo(_currentQuestUid);
             if (info == null)
             {
-                GcLogger.LogError("quest json 정보가 없습니다. quest Uid: " + currentQuestUid);
+                GcLogger.LogError("quest json 정보가 없습니다. quest Uid: " + _currentQuestUid);
+                return;
+            }
+
+            var infoQuest = TableLoaderManager.Instance.TableQuest.GetDataByUid(_currentQuestUid);
+            if (infoQuest == null)
+            {
+                GcLogger.LogError("quest 테이블에 정보가 없습니다. quest Uid: " + _currentQuestUid);
                 return;
             }
 
             if (textTitle != null)
             {
-                textTitle.text = info.title;
+                textTitle.text = infoQuest.Name;
             }
 
             if (textExp != null)
             {
-                textExp.text = $"경험치: {info.reward.experience}";
+                textExp.text = $"EXP: {info.reward.experience}";
             }
             if (textGold != null)
             {
-                textGold.text = $"골드: {info.reward.gold}";
+                textGold.text = $"{CurrencyConstants.GetNameGold()}: {info.reward.gold}";
             }
             if (textSilver != null)
             {
-                textSilver.text = $"실버: {info.reward.silver}";
+                textSilver.text = $"{CurrencyConstants.GetNameSilver()}: {info.reward.silver}";
             }
 
             if (info.reward.items.Count <= 0) return;
@@ -79,7 +85,7 @@ namespace GGemCo2DCore
 
         public void SetRewardInfoByQuestUid(int questUid)
         {
-            currentQuestUid = questUid;
+            _currentQuestUid = questUid;
             Show(true);
         }
 
@@ -93,7 +99,7 @@ namespace GGemCo2DCore
         /// <param name="icon"></param>
         public override void ShowItemInfo(UIIcon icon)
         {
-            uiWindowItemInfo?.SetItemUid(icon.uid, icon.gameObject, UIWindowItemInfo.PositionType.Left, slotSize);
+            _uiWindowItemInfo?.SetItemUid(icon.uid, icon.gameObject, UIWindowItemInfo.PositionType.Left, slotSize);
         }
     }
 }

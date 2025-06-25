@@ -13,6 +13,8 @@ namespace GGemCo2DCoreEditor
         private SettingMap _settingMap;
         private SettingEffect _settingEffect;
         private SettingItem _settingItem;
+        private SettingDialogue _settingDialogue;
+        private SettingQuest _settingQuest;
 
         public TableMap TableMap;
         public TableNpc TableNpc;
@@ -20,6 +22,8 @@ namespace GGemCo2DCoreEditor
         public TableAnimation TableAnimation;
         public TableEffect TableEffect;
         public TableItem TableItem;
+        public TableDialogue TableDialogue;
+        public TableQuest TableQuest;
 
         [MenuItem(ConfigEditor.NameToolSettingAddressable, false, (int)ConfigEditor.ToolOrdering.SettingAddressable)]
         public static void ShowWindow()
@@ -38,6 +42,8 @@ namespace GGemCo2DCoreEditor
             _settingCharacters = new SettingCharacters(this);
             _settingEffect = new SettingEffect(this);
             _settingItem = new SettingItem(this);
+            _settingDialogue = new SettingDialogue(this);
+            _settingQuest = new SettingQuest(this);
         }
 
         public void LoadTables()
@@ -48,6 +54,8 @@ namespace GGemCo2DCoreEditor
             TableAnimation = TableLoaderManager.LoadSpineTable();
             TableEffect = TableLoaderManager.LoadEffectTable();
             TableItem = TableLoaderManager.LoadItemTable();
+            TableDialogue = TableLoaderManager.LoadDialogueTable();
+            TableQuest = TableLoaderManager.LoadQuestTable();
         }
 
         private void OnGUI()
@@ -98,6 +106,26 @@ namespace GGemCo2DCoreEditor
             {
                 EditorGUILayout.Space(10);
                 _settingItem.OnGUI();
+            }
+            if (TableDialogue == null)
+            {
+                EditorGUILayout.Space(10);
+                EditorGUILayout.HelpBox("dialogue 테이블이 없습니다.", MessageType.Info);
+            }
+            else
+            {
+                EditorGUILayout.Space(10);
+                _settingDialogue.OnGUI();
+            }
+            if (TableQuest == null)
+            {
+                EditorGUILayout.Space(10);
+                EditorGUILayout.HelpBox("quest 테이블이 없습니다.", MessageType.Info);
+            }
+            else
+            {
+                EditorGUILayout.Space(10);
+                _settingQuest.OnGUI();
             }
         }
     }

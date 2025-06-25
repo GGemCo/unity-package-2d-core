@@ -53,7 +53,7 @@ namespace GGemCo2DCore
                     break;
                 case QuestConstants.ObjectiveType.TalkToNpc:
                     var infoNpc = tableNpc.GetDataByUid(questStep.targetUid);
-                    textQuestObjective.text = $"{infoNpc.Name}와 대화하기";
+                    textQuestObjective.text = $"Talk to {infoNpc.Name}";//$"{infoNpc.Name}와 대화하기";
                     break;
                 case QuestConstants.ObjectiveType.CollectItem:
                 case QuestConstants.ObjectiveType.KillMonster:
@@ -76,12 +76,12 @@ namespace GGemCo2DCore
                 case QuestConstants.ObjectiveType.KillMonster:
                     var infoMonster = tableMonster.GetDataByUid(questStep.targetUid);
                     if (infoMonster == null) return;
-                    textQuestObjective.text = $"({count}/{questStep.count}) {infoMonster.Name} 사냥하기";
+                    textQuestObjective.text = $"Hunt {infoMonster.Name} ({count}/{questStep.count})";//$"({count}/{questStep.count}) {infoMonster.Name} 사냥하기";
                     break;
                 case QuestConstants.ObjectiveType.CollectItem:
                     var infoItem = tableItem.GetDataByUid(questStep.targetUid);
                     if (infoItem == null) return;
-                    textQuestObjective.text = $"({count}/{questStep.count}) {infoItem.Name} 수집하기";
+                    textQuestObjective.text = $"Collect {infoItem.Name} ({count}/{questStep.count})";//$"({count}/{questStep.count}) {infoItem.Name} 수집하기";
                     break;
                 default:
                     break;

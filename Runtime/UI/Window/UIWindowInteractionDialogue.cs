@@ -1,4 +1,6 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
+using System.Threading.Tasks;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
@@ -23,22 +25,22 @@ namespace GGemCo2DCore
 
         // 최대 interaction 버튼 개수
         private const int ButtonCount = 10;
-        private readonly Dictionary<int, Button> buttonChoices = new Dictionary<int, Button>();
-        private int currentCharacterUid;
+        private readonly Dictionary<int, Button> _buttonChoices = new Dictionary<int, Button>();
+        private int _currentCharacterUid;
         
-        private UIWindowShop uiWindowShop;
-        private UIWindowShopSale uiWindowShopSale;
-        private UIWindowStash uiWindowStash;
-        private UIWindowItemUpgrade uiWindowItemUpgrade;
-        private UIWindowItemSalvage uiWindowItemSalvage;
-        private UIWindowItemCraft uiWindowItemCraft;
+        private UIWindowShop _uiWindowShop;
+        private UIWindowShopSale _uiWindowShopSale;
+        private UIWindowStash _uiWindowStash;
+        private UIWindowItemUpgrade _uiWindowItemUpgrade;
+        private UIWindowItemSalvage _uiWindowItemSalvage;
+        private UIWindowItemCraft _uiWindowItemCraft;
         
-        private TableQuest tableQuest;
-        private QuestManager questManager;
+        private TableQuest _tableQuest;
+        private QuestManager _questManager;
         
         protected override void Awake()
         {
-            currentCharacterUid = 0;
+            _currentCharacterUid = 0;
             uid = UIWindowManager.WindowUid.InteractionDialogue;
             base.Awake();
             InitializeButtonChoice();
@@ -47,20 +49,20 @@ namespace GGemCo2DCore
         protected override void Start()
         {
             base.Start();
-            uiWindowShop =
+            _uiWindowShop =
                 SceneGame.uIWindowManager?.GetUIWindowByUid<UIWindowShop>(UIWindowManager.WindowUid.Shop);
-            uiWindowStash =
+            _uiWindowStash =
                 SceneGame.uIWindowManager?.GetUIWindowByUid<UIWindowStash>(UIWindowManager.WindowUid.Stash);
-            uiWindowShopSale =
+            _uiWindowShopSale =
                 SceneGame.uIWindowManager?.GetUIWindowByUid<UIWindowShopSale>(UIWindowManager.WindowUid.ShopSale);
-            uiWindowItemUpgrade =
+            _uiWindowItemUpgrade =
                 SceneGame.uIWindowManager?.GetUIWindowByUid<UIWindowItemUpgrade>(UIWindowManager.WindowUid.ItemUpgrade);
-            uiWindowItemSalvage =
+            _uiWindowItemSalvage =
                 SceneGame.uIWindowManager?.GetUIWindowByUid<UIWindowItemSalvage>(UIWindowManager.WindowUid.ItemSalvage);
-            uiWindowItemCraft =
+            _uiWindowItemCraft =
                 SceneGame.uIWindowManager?.GetUIWindowByUid<UIWindowItemCraft>(UIWindowManager.WindowUid.ItemCraft);
-            tableQuest = TableLoaderManager.Instance.TableQuest;
-            questManager = SceneGame.Instance.QuestManager;
+            _tableQuest = TableLoaderManager.Instance.TableQuest;
+            _questManager = SceneGame.Instance.QuestManager;
         }
 
         /// <summary>
@@ -78,7 +80,7 @@ namespace GGemCo2DCore
                 GcLogger.LogError("선택 버튼 container 가 없습니다.");
                 return;
             }
-            buttonChoices.Clear();
+            _buttonChoices.Clear();
 
             for (int i = 0; i < ButtonCount; i++)
             {
@@ -86,7 +88,7 @@ namespace GGemCo2DCore
                 Button button = buttonObj.GetComponent<Button>();
                 if (button != null)
                 {
-                    buttonChoices.TryAdd(i, button);
+                    _buttonChoices.TryAdd(i, button);
                     button.gameObject.SetActive(false); // 초기 상태 비활성화
                 }
             }
@@ -97,11 +99,17 @@ namespace GGemCo2DCore
         /// <param name="npcData"></param>
         /// <param name="interactionData"></param>
         /// <param name="npcQuestDatas"></param>
-        public void SetInfos(StruckTableNpc npcData, StruckTableInteraction interactionData, List<NpcQuestData> npcQuestDatas)
+        public async Task SetInfos(StruckTableNpc npcData, StruckTableInteraction interactionData, List<NpcQuestData> npcQuestDatas)
         {
-            imageThumbnail.sprite = Resources.Load<Sprite>($"Images/Thumbnail/Npc/{npcData.ImageThumbnailPath}");
+            string key = $"{ConfigAddressables.KeyCharacterThumbnailNpc}_{npcData.ImageThumbnailPath}";
+            Sprite sprite = await AddressableLoaderController.LoadByKeyAsync<Sprite>(key);
+            if (sprite != null)
+            {
+                imageThumbnail.sprite = sprite;
+            }
+
             textName.text = npcData.Name;
-            currentCharacterUid = npcData.Uid;
+            _currentCharacterUid = npcData.Uid;
             
             if (interactionData != null)
             {
@@ -115,7 +123,7 @@ namespace GGemCo2DCore
 
             for (int i = 0; i < ButtonCount; i++)
             {
-                Button button = buttonChoices.GetValueOrDefault(i);
+                Button button = _buttonChoices.GetValueOrDefault(i);
                 if (button == null) continue;
                 button.gameObject.SetActive(false);
             }
@@ -145,7 +153,7 @@ namespace GGemCo2DCore
         {
             if (index < 0 || index >= ButtonCount)
                 return;
-            Button button = buttonChoices.GetValueOrDefault(index);
+            Button button = _buttonChoices.GetValueOrDefault(index);
             if (button == null) return;
             button.gameObject.SetActive(true);
             
@@ -155,7 +163,7 @@ namespace GGemCo2DCore
             TextMeshProUGUI textComponent = button.GetComponentInChildren<TextMeshProUGUI>();
             if (textComponent != null)
             {
-                var info = tableQuest.GetDataByUid(npcQuestData.QuestUid);
+                var info = _tableQuest.GetDataByUid(npcQuestData.QuestUid);
                 textComponent.text = $"{info.Name}";
             }
         }
@@ -163,16 +171,23 @@ namespace GGemCo2DCore
         /// 퀘스트 버튼 클릭 처리 
         /// </summary>
         /// <param name="npcQuestData"></param>
-        private void OnClickChoiceQuest(NpcQuestData npcQuestData)
+        private async void OnClickChoiceQuest(NpcQuestData npcQuestData)
         {
-            Show(false);
-            if (npcQuestData.Status == QuestConstants.Status.Ready)
+            try
             {
-                if (questManager.StartQuest(npcQuestData.QuestUid, currentCharacterUid) == false) return;
+                Show(false);
+                if (npcQuestData.Status == QuestConstants.Status.Ready)
+                {
+                    if (await _questManager.StartQuest(npcQuestData.QuestUid, _currentCharacterUid) == false) return;
+                }
+                else if (npcQuestData.Status == QuestConstants.Status.InProgress)
+                {
+                    GameEventManager.DialogStart(_currentCharacterUid);
+                }
             }
-            else if (npcQuestData.Status == QuestConstants.Status.InProgress)
+            catch (Exception e)
             {
-                GameEventManager.DialogStart(currentCharacterUid);
+                GcLogger.LogError(e.Message);
             }
         }
 
@@ -187,7 +202,7 @@ namespace GGemCo2DCore
             if (index < 0 || index >= ButtonCount)
                 return;
 
-            Button button = buttonChoices.GetValueOrDefault(index);
+            Button button = _buttonChoices.GetValueOrDefault(index);
             if (button == null) return;
             bool isActive = interactionType != InteractionConstants.Type.None;
             button.gameObject.SetActive(isActive);
@@ -213,28 +228,28 @@ namespace GGemCo2DCore
             if (interactionType == InteractionConstants.Type.None) return;
             if (interactionType == InteractionConstants.Type.Shop)
             {
-                uiWindowShop.Show(true);
-                uiWindowShop.SetInfoByShopUid(value);
+                _uiWindowShop.Show(true);
+                _uiWindowShop.SetInfoByShopUid(value);
             }
             else if (interactionType == InteractionConstants.Type.Stash)
             {
-                uiWindowStash?.Show(true);
+                _uiWindowStash?.Show(true);
             }
             else if (interactionType == InteractionConstants.Type.ShopSale)
             {
-                uiWindowShopSale?.Show(true);
+                _uiWindowShopSale?.Show(true);
             }
             else if (interactionType == InteractionConstants.Type.ItemUpgrade)
             {
-                uiWindowItemUpgrade?.Show(true);
+                _uiWindowItemUpgrade?.Show(true);
             }
             else if (interactionType == InteractionConstants.Type.ItemSalvage)
             {
-                uiWindowItemSalvage?.Show(true);
+                _uiWindowItemSalvage?.Show(true);
             }
             else if (interactionType == InteractionConstants.Type.ItemCraft)
             {
-                uiWindowItemCraft?.Show(true);
+                _uiWindowItemCraft?.Show(true);
             }
 
             Show(false);

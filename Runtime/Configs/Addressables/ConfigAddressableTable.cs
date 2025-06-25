@@ -25,8 +25,8 @@ namespace GGemCo2DCore
         public const string Cutscene = "cutscene";
         public const string Dialogue = "dialogue";
         public const string Quest = "quest";
-        
-        private static string TablePath() => $"{ConfigAddressables.Path}/Tables";
+
+        public static string TablePath() => $"{ConfigAddressables.Path}/Tables";
 
         public static readonly AddressableAssetInfo TableMap = new(
             $"{ConfigAddressableLabel.Table}_{Map}",

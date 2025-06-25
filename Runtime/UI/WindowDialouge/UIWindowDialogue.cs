@@ -1,4 +1,6 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
+using System.Threading.Tasks;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
@@ -27,18 +29,18 @@ namespace GGemCo2DCore
         [Tooltip("선택지 왼쪽, 오른쪽 여백 사이즈ㅂ")]
         public int paddingWidth = 20;
 
-        private float originalFontSize;
-        private int indexMessage;
-        private List<string> messages;
-        private Dictionary<string, DialogueNodeData> dialogueNodeDatas;
+        private float _originalFontSize;
+        private int _indexMessage;
+        private List<string> _messages;
+        private Dictionary<string, DialogueNodeData> _dialogueNodeDatas;
         
-        private int currentDialogueUid;
-        private int currentNpcUid;
-        private DialogueNodeData currentDialogue;
+        private int _currentDialogueUid;
+        private int _currentNpcUid;
+        private DialogueNodeData _currentDialogue;
         
-        private SystemMessageManager systemMessageManager;
+        private SystemMessageManager _systemMessageManager;
         // 필드 추가
-        private ChoiceButtonHandler choiceButtonHandler;
+        private ChoiceButtonHandler _choiceButtonHandler;
         
         protected override void Awake()
         {
@@ -50,48 +52,48 @@ namespace GGemCo2DCore
         {
             if (textMessage != null)
             {
-                originalFontSize = textMessage.fontSize;
+                _originalFontSize = textMessage.fontSize;
             }
             buttonNextMessage?.onClick.RemoveAllListeners();
             buttonNextMessage?.onClick.AddListener(OnClickNext);
-            messages = new List<string>();
-            dialogueNodeDatas = new Dictionary<string, DialogueNodeData>();
+            _messages = new List<string>();
+            _dialogueNodeDatas = new Dictionary<string, DialogueNodeData>();
 
             // 선택지 버튼 관리
-            choiceButtonHandler = new ChoiceButtonHandler(containerAnswer, paddingWidth, prefabButtonAnswer)
+            _choiceButtonHandler = new ChoiceButtonHandler(containerAnswer, paddingWidth, prefabButtonAnswer)
                 {
                     OnChoiceSelected = OnClickAnswer
                 };
-            choiceButtonHandler.InitializeButtonChoice(); // 버튼 생성만
+            _choiceButtonHandler.InitializeButtonChoice(); // 버튼 생성만
         }
 
         protected override void Start()
         {
             base.Start();
-            systemMessageManager = SceneGame.Instance.systemMessageManager;
+            _systemMessageManager = SceneGame.Instance.systemMessageManager;
         }
         private void ResetDialogue()
         {
-            messages.Clear();
-            dialogueNodeDatas.Clear();
-            currentDialogueUid = 0;
-            currentDialogue = null;
-            indexMessage = 0;
-            currentNpcUid = 0;
-            choiceButtonHandler.HideButtons();
+            _messages.Clear();
+            _dialogueNodeDatas.Clear();
+            _currentDialogueUid = 0;
+            _currentDialogue = null;
+            _indexMessage = 0;
+            _currentNpcUid = 0;
+            _choiceButtonHandler.HideButtons();
         }
         /// <summary>
         /// 대사 json 불러오기
         /// </summary>
         /// <param name="dialogueUid"></param>
         /// <param name="npcUid"></param>
-        public void LoadDialogue(int dialogueUid, int npcUid = 0)
+        public async Task LoadDialogue(int dialogueUid, int npcUid = 0)
         {
-            var data = DialogueLoader.LoadDialogueData(dialogueUid);
+            var data = await DialogueLoader.LoadDialogueData(dialogueUid);
             if (data != null)
             {
                 SetDialogue(data);
-                currentNpcUid = npcUid;
+                _currentNpcUid = npcUid;
             }
         }
         /// <summary>
@@ -104,7 +106,7 @@ namespace GGemCo2DCore
             ResetDialogue();
             foreach (var nodeData in data.nodes)
             {
-                dialogueNodeDatas.TryAdd(nodeData.guid, nodeData);
+                _dialogueNodeDatas.TryAdd(nodeData.guid, nodeData);
             }
 
             if (!gameObject.activeSelf)
@@ -112,7 +114,7 @@ namespace GGemCo2DCore
                 Show(true);
             }
             
-            indexMessage = 0;
+            _indexMessage = 0;
             // 첫번째 대사 선택
             DialogueNodeData dialogue = data.nodes[0];
 
@@ -121,34 +123,41 @@ namespace GGemCo2DCore
         /// <summary>
         /// 다음 대사 처리
         /// </summary>
-        private void ProcessNextDialogue(string guid)
+        private async void ProcessNextDialogue(string guid)
         {
-            if (string.IsNullOrEmpty(guid))
+            try
             {
-                EndDialogue();
-                return;
+                if (string.IsNullOrEmpty(guid))
+                {
+                    EndDialogue();
+                    return;
+                }
+
+                _indexMessage = 0;
+                _currentDialogue = _dialogueNodeDatas.GetValueOrDefault(guid);
+
+                if (textName != null)
+                {
+                    textName.text = DialogueCharacterHelper.GetName(_currentDialogue);
+                }
+
+                if (imageThumbnail != null)
+                {
+                    imageThumbnail.sprite = await DialogueCharacterHelper.GetThumbnail(_currentDialogue);
+                }
+
+                if (textMessage != null)
+                {
+                    textMessage.fontSize = _currentDialogue.fontSize>0?_currentDialogue.fontSize:_originalFontSize;
+                }
+
+                _messages = DialogueTextFormatter.SplitMessage(_currentDialogue.dialogueText, maxLineCount);
+                DisplayNextMessage();
             }
-
-            indexMessage = 0;
-            currentDialogue = dialogueNodeDatas.GetValueOrDefault(guid);
-
-            if (textName != null)
+            catch (Exception e)
             {
-                textName.text = DialogueCharacterHelper.GetName(currentDialogue);
+                GcLogger.LogError(e.Message);
             }
-
-            if (imageThumbnail != null)
-            {
-                imageThumbnail.sprite = DialogueCharacterHelper.GetThumbnail(currentDialogue);
-            }
-
-            if (textMessage != null)
-            {
-                textMessage.fontSize = currentDialogue.fontSize>0?currentDialogue.fontSize:originalFontSize;
-            }
-
-            messages = DialogueTextFormatter.SplitMessage(currentDialogue.dialogueText, maxLineCount);
-            DisplayNextMessage();
         }
 
         /// <summary>
@@ -156,25 +165,25 @@ namespace GGemCo2DCore
         /// </summary>
         private void DisplayNextMessage()
         {
-            if (indexMessage >= messages.Count)
+            if (_indexMessage >= _messages.Count)
             {
-                if (currentDialogue.options.Count > 0)
+                if (_currentDialogue.options.Count > 0)
                 {
-                    systemMessageManager.ShowMessageWarning("선택지를 선택해주세요.");
+                    _systemMessageManager.ShowMessageWarning("선택지를 선택해주세요.");
                     return;
                 }
-                ProcessNextDialogue(currentDialogue.nextNodeGuid);
+                ProcessNextDialogue(_currentDialogue.nextNodeGuid);
                 return;
             }
 
-            textMessage.text = messages[indexMessage];
+            textMessage.text = _messages[_indexMessage];
 
-            if (indexMessage == messages.Count - 1 && currentDialogue.options.Count > 0)
+            if (_indexMessage == _messages.Count - 1 && _currentDialogue.options.Count > 0)
             {
-                choiceButtonHandler.SetupButtons(currentDialogue.options);
+                _choiceButtonHandler.SetupButtons(_currentDialogue.options);
             }
 
-            indexMessage++;
+            _indexMessage++;
         }
         /// <summary>
         /// maxLineCount 만큼 대사 보기
@@ -189,10 +198,10 @@ namespace GGemCo2DCore
         /// <param name="buttonIndex"></param>
         private void OnClickAnswer(int buttonIndex)
         {
-            var option = currentDialogue.options[buttonIndex];
+            var option = _currentDialogue.options[buttonIndex];
             if (option == null) return;
 
-            choiceButtonHandler.HideButtons();
+            _choiceButtonHandler.HideButtons();
             ProcessNextDialogue(option.nextNodeGuid);
         }
         /// <summary>
@@ -208,7 +217,7 @@ namespace GGemCo2DCore
         /// </summary>
         private void EndDialogue()
         {
-            GameEventManager.DialogEnd(currentNpcUid);
+            GameEventManager.DialogEnd(_currentNpcUid);
             ResetDialogue();
             gameObject.SetActive(false);
         }

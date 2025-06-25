@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using Newtonsoft.Json;
 using System.IO;
+using System.Threading.Tasks;
 using GGemCo2DCore;
 using UnityEditor;
 using UnityEngine;
@@ -48,7 +49,7 @@ namespace GGemCo2DCoreEditor
             var info = dialogueInfos.GetValueOrDefault(selectedQuestIndex);
             if (info == null) return;
             string fileName = info.FileName;
-            string path = Path.Combine(DialogueConstants.GetJsonFolderPath(), fileName+".json");
+            string path = $"{ConfigAddressables.PathJsonDialogue}/{fileName}.json";
             string json = JsonConvert.SerializeObject(data, Formatting.Indented);
             File.WriteAllText(path, json);
             AssetDatabase.Refresh();
@@ -57,38 +58,31 @@ namespace GGemCo2DCoreEditor
 
         public void LoadFromJson(string fileName)
         {
-            string jsonFilePath = $"Dialogue/{fileName}";
+            string jsonFilePath = $"{ConfigAddressables.PathJsonDialogue}/{fileName}.json";
             try
             {
-                TextAsset textFile = Resources.Load<TextAsset>($"{jsonFilePath}");
-                if (textFile != null)
-                {
-                    string content = textFile.text;
-                    if (string.IsNullOrEmpty(content)) return;
-                    DialogueData data = JsonConvert.DeserializeObject<DialogueData>(content);
+                string content = AssetDatabaseLoaderManager.LoadFileJson(jsonFilePath);
+                
+                if (string.IsNullOrEmpty(content)) return;
+                DialogueData data = JsonConvert.DeserializeObject<DialogueData>(content);
 
-                    _editorWindowWindow.nodes.Clear();
+                _editorWindowWindow.nodes.Clear();
 
-                    foreach (var nodeData in data.nodes)
-                    {
-                        DialogueNode node = ScriptableObject.CreateInstance<DialogueNode>();
-                        node.guid = nodeData.guid;
-                        node.dialogueText = nodeData.dialogueText;
-                        node.characterType = nodeData.characterType;
-                        node.characterUid = nodeData.characterUid;
-                        node.fontSize = nodeData.fontSize;
-                        node.thumbnailImage = nodeData.thumbnailImage;
-                        node.position = nodeData.position.ToVector2();
-                        node.options = nodeData.options;
-                        node.nextNodeGuid = nodeData.nextNodeGuid;
-                        node.startQuestUid = nodeData.startQuestUid;
-                        node.startQuestStep = nodeData.startQuestStep;
-                        _editorWindowWindow.nodes.Add(node);
-                    }
-                }
-                else
+                foreach (var nodeData in data.nodes)
                 {
-                    Debug.LogError("파일이 없습니다. path: " + jsonFilePath);
+                    DialogueNode node = ScriptableObject.CreateInstance<DialogueNode>();
+                    node.guid = nodeData.guid;
+                    node.dialogueText = nodeData.dialogueText;
+                    node.characterType = nodeData.characterType;
+                    node.characterUid = nodeData.characterUid;
+                    node.fontSize = nodeData.fontSize;
+                    node.thumbnailImage = nodeData.thumbnailImage;
+                    node.position = nodeData.position.ToVector2();
+                    node.options = nodeData.options;
+                    node.nextNodeGuid = nodeData.nextNodeGuid;
+                    node.startQuestUid = nodeData.startQuestUid;
+                    node.startQuestStep = nodeData.startQuestStep;
+                    _editorWindowWindow.nodes.Add(node);
                 }
             }
             catch (Exception ex)

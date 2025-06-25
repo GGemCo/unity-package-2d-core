@@ -24,5 +24,11 @@
         
         // 테이블
         public const string Table = ConfigDefine.NameSDK+"_Table";
+        
+        // 대사 
+        public const string Dialogue = ConfigDefine.NameSDK+"_Dialogue";
+        
+        // 퀘스트
+        public const string Quest = ConfigDefine.NameSDK+"_Quest";
     }
 }

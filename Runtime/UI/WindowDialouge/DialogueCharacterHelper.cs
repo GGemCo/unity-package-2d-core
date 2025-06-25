@@ -1,4 +1,5 @@
-﻿using UnityEngine;
+﻿using System.Threading.Tasks;
+using UnityEngine;
 
 namespace GGemCo2DCore
 {
@@ -26,18 +27,22 @@ namespace GGemCo2DCore
         /// </summary>
         /// <param name="dialogue"></param>
         /// <returns></returns>
-        public static Sprite GetThumbnail(DialogueNodeData dialogue)
+        public static async Task<Sprite> GetThumbnail(DialogueNodeData dialogue)
         {
             if (dialogue == null) return null;
             if (dialogue.thumbnailImage != "")
             {
-                return Resources.Load<Sprite>($"Images/Thumbnail/{dialogue.thumbnailImage}");
+                string key = $"{ConfigAddressables.KeyCharacterThumbnail}_{dialogue.thumbnailImage}";
+                return await AddressableLoaderController.LoadByKeyAsync<Sprite>(key);
             }
             if (dialogue.characterType == CharacterConstants.Type.Npc)
             {
                 var data = TableLoaderManager.Instance.TableNpc.GetDataByUid(dialogue.characterUid);
                 if (data != null)
-                    return Resources.Load<Sprite>($"Images/Thumbnail/Npc/{data.ImageThumbnailPath}");
+                {
+                    string key = $"{ConfigAddressables.KeyCharacterThumbnailNpc}_{data.ImageThumbnailPath}";
+                    return await AddressableLoaderController.LoadByKeyAsync<Sprite>(key);
+                }
             }
             return null;
         }

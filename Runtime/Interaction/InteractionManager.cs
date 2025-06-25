@@ -1,24 +1,23 @@
-﻿
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 
 namespace GGemCo2DCore
 {
     public class InteractionManager
     {
-        private SceneGame sceneGame;
-        private TableNpc tableNpc;
-        private TableInteraction tableInteraction;
-        private UIWindowInteractionDialogue uiWindowInteractionDialogue;
-        private CharacterBase currentNpc;
+        private SceneGame _sceneGame;
+        private TableNpc _tableNpc;
+        private TableInteraction _tableInteraction;
+        private UIWindowInteractionDialogue _uiWindowInteractionDialogue;
+        private CharacterBase _currentNpc;
         
         public void Initialize(SceneGame scene)
         {
-            sceneGame = scene;
-            tableNpc = TableLoaderManager.Instance.TableNpc;
-            tableInteraction = TableLoaderManager.Instance.TableInteraction;
-            uiWindowInteractionDialogue =
-                sceneGame.uIWindowManager?.GetUIWindowByUid<UIWindowInteractionDialogue>(UIWindowManager.WindowUid.InteractionDialogue);
-                sceneGame.uIWindowManager?.GetUIWindowByUid<UIWindowShopSale>(UIWindowManager.WindowUid.ShopSale);
+            _sceneGame = scene;
+            _tableNpc = TableLoaderManager.Instance.TableNpc;
+            _tableInteraction = TableLoaderManager.Instance.TableInteraction;
+            _uiWindowInteractionDialogue =
+                _sceneGame.uIWindowManager?.GetUIWindowByUid<UIWindowInteractionDialogue>(UIWindowManager.WindowUid.InteractionDialogue);
+                _sceneGame.uIWindowManager?.GetUIWindowByUid<UIWindowShopSale>(UIWindowManager.WindowUid.ShopSale);
         }
         /// <summary>
         /// Npc 의 interaction 정보 가져오기
@@ -27,7 +26,7 @@ namespace GGemCo2DCore
         public void SetInfo(CharacterBase characterBase)
         {
             // 연출 중이면 실행하지 않는다.
-            if (sceneGame.CutsceneManager.IsPlaying()) return;
+            if (_sceneGame.CutsceneManager.IsPlaying()) return;
             
             if (characterBase == null)
             {
@@ -35,27 +34,27 @@ namespace GGemCo2DCore
                 return;
             }
 
-            var infoNpc = tableNpc.GetDataByUid(characterBase.uid);
+            var infoNpc = _tableNpc.GetDataByUid(characterBase.uid);
             if (infoNpc == null)
             {
                 GcLogger.LogError("npc 테이블에 정보가 없습니다. npc uid: "+characterBase.uid);
                 return;
             }
 
-            currentNpc = characterBase;
+            _currentNpc = characterBase;
             
             // 퀘스트 정보
-            Npc npc = currentNpc as Npc;
+            Npc npc = _currentNpc as Npc;
             List<NpcQuestData> npcQuestDatas = npc?.GetQuestInfos();
             
             // 인터렉션 정보
             StruckTableInteraction infoInteraction = null;
             if (infoNpc.InteractionUid > 0)
             {
-                infoInteraction = tableInteraction.GetDataByUid(infoNpc.InteractionUid);
+                infoInteraction = _tableInteraction.GetDataByUid(infoNpc.InteractionUid);
             }
             // 다른 윈도우가 열려있으면 닫아주기
-            sceneGame.uIWindowManager?.CloseAll(new List<UIWindowManager.WindowUid>
+            _sceneGame.uIWindowManager?.CloseAll(new List<UIWindowManager.WindowUid>
                 { UIWindowManager.WindowUid.InteractionDialogue });
             // 인터렉션 대화창 보여주기
             ShowDialogue(infoNpc, infoInteraction, npcQuestDatas);
@@ -63,13 +62,13 @@ namespace GGemCo2DCore
 
         private void ShowDialogue(StruckTableNpc struckTableNpc, StruckTableInteraction struckTableInteraction, List<NpcQuestData> questInfos)
         {
-            uiWindowInteractionDialogue?.SetInfos(struckTableNpc, struckTableInteraction, questInfos);
-            uiWindowInteractionDialogue?.Show(true);
+            _uiWindowInteractionDialogue?.SetInfos(struckTableNpc, struckTableInteraction, questInfos);
+            _uiWindowInteractionDialogue?.Show(true);
         }
 
         public void RemoveCurrentNpc()
         {
-            currentNpc = null;
+            _currentNpc = null;
         }
         /// <summary>
         /// interaction 종료하기
@@ -77,19 +76,19 @@ namespace GGemCo2DCore
         public void EndInteraction()
         {
             // npc 가 interaction 범위면 다시 열기
-            if (currentNpc != null)
+            if (_currentNpc != null)
             {
-                sceneGame?.uIWindowManager?.CloseAll(new List<UIWindowManager.WindowUid>
+                _sceneGame?.uIWindowManager?.CloseAll(new List<UIWindowManager.WindowUid>
                     { UIWindowManager.WindowUid.InteractionDialogue });
-                SetInfo(currentNpc);
+                SetInfo(_currentNpc);
                 return;
             }
-            sceneGame?.uIWindowManager?.CloseAll();
-            uiWindowInteractionDialogue?.OnEndInteraction();
+            _sceneGame?.uIWindowManager?.CloseAll();
+            _uiWindowInteractionDialogue?.OnEndInteraction();
         }
         public bool IsInteractioning()
         {
-            return currentNpc != null;
+            return _currentNpc != null;
         }
 
         public void OnDestroy()

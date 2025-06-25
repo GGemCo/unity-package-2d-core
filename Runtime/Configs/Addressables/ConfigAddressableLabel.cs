@@ -8,5 +8,7 @@
         public const string ImageItemDrop = ConfigDefine.NameSDK+"_Item_Drop";
         public const string ImageItemEquip = ConfigDefine.NameSDK+"_Item_Equip";
         public const string ImageItemIcon = ConfigDefine.NameSDK+"_Item_Icon";
+        public const string Dialogue = ConfigDefine.NameSDK+"_Dialouge";
+        public const string Quest = ConfigDefine.NameSDK+"_Quest";
     }
 }

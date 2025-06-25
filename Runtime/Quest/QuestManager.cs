@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Threading.Tasks;
 using Newtonsoft.Json;
 using UnityEngine;
 
@@ -11,53 +12,51 @@ namespace GGemCo2DCore
     /// </summary>
     public class QuestManager
     {
-        private SceneGame sceneGame;
-        private TableQuest tableQuest;
-        private UIWindowHudQuest uiWindowHudQuest;
-        private UIWindowQuestReward uiWindowQuestReward;
-        private UIWindowInventory uiWindowInventory;
-        private QuestData questData;
-        private PlayerData playerData;
-        private InventoryData inventoryData;
+        private SceneGame _sceneGame;
+        private TableQuest _tableQuest;
+        private UIWindowHudQuest _uiWindowHudQuest;
+        private UIWindowQuestReward _uiWindowQuestReward;
+        private UIWindowInventory _uiWindowInventory;
+        private QuestData _questData;
+        private PlayerData _playerData;
+        private InventoryData _inventoryData;
         
-        private readonly ObjectiveHandlerFactory handlerFactory = new ObjectiveHandlerFactory();
+        private readonly ObjectiveHandlerFactory _handlerFactory = new ObjectiveHandlerFactory();
 
         // QuestUid → StepIndex → Handler
-        private readonly Dictionary<int, Dictionary<int, IObjectiveHandler>> activeHandlers =
+        private readonly Dictionary<int, Dictionary<int, IObjectiveHandler>> _activeHandlers =
             new Dictionary<int, Dictionary<int, IObjectiveHandler>>();
         
-        private readonly Dictionary<int, Quest> quests = new Dictionary<int, Quest>();
+        private readonly Dictionary<int, Quest> _quests = new Dictionary<int, Quest>();
         
         public void Initialize(SceneGame scene)
         {
-            quests.Clear();
-            activeHandlers.Clear();
-            sceneGame = scene;
+            _quests.Clear();
+            _activeHandlers.Clear();
+            _sceneGame = scene;
             
-            questData = sceneGame.saveDataManager.Quest;
-            playerData = sceneGame.saveDataManager.Player;
-            inventoryData = sceneGame.saveDataManager.Inventory;
+            _questData = _sceneGame.saveDataManager.Quest;
+            _playerData = _sceneGame.saveDataManager.Player;
+            _inventoryData = _sceneGame.saveDataManager.Inventory;
             
-            tableQuest = TableLoaderManager.Instance.TableQuest;
+            _tableQuest = TableLoaderManager.Instance.TableQuest;
             
-            uiWindowHudQuest =
-                sceneGame.uIWindowManager?.GetUIWindowByUid<UIWindowHudQuest>(UIWindowManager.WindowUid.HudQuest);
-            uiWindowQuestReward =
-                sceneGame.uIWindowManager?.GetUIWindowByUid<UIWindowQuestReward>(UIWindowManager.WindowUid.QuestReward);
-            uiWindowInventory =
-                sceneGame.uIWindowManager?.GetUIWindowByUid<UIWindowInventory>(UIWindowManager.WindowUid.Inventory);
+            _uiWindowHudQuest =
+                _sceneGame.uIWindowManager?.GetUIWindowByUid<UIWindowHudQuest>(UIWindowManager.WindowUid.HudQuest);
+            _uiWindowQuestReward =
+                _sceneGame.uIWindowManager?.GetUIWindowByUid<UIWindowQuestReward>(UIWindowManager.WindowUid.QuestReward);
+            _uiWindowInventory =
+                _sceneGame.uIWindowManager?.GetUIWindowByUid<UIWindowInventory>(UIWindowManager.WindowUid.Inventory);
             
-            LoadAllQuestJson();
-            
-            LoadQuestDatas();
+            _ = LoadAllQuestJson();
         }
         /// <summary>
         /// 저장되어있는 퀘스트 불러오기
         /// </summary>
         private void LoadQuestDatas()
         {
-            questData = sceneGame.saveDataManager.Quest;
-            var datas = questData.GetQuestDatas();
+            _questData = _sceneGame.saveDataManager.Quest;
+            var datas = _questData.GetQuestDatas();
             if (datas == null) return;
             foreach (var data in datas)
             {
@@ -70,13 +69,15 @@ namespace GGemCo2DCore
         /// <summary>
         /// 모든 json 파일 읽어두기
         /// </summary>
-        private void LoadAllQuestJson()
+        private async Task LoadAllQuestJson()
         {
-            var datas = tableQuest.GetDatas();
+            var datas = _tableQuest.GetDatas();
             foreach (var data in datas)
             {
-                LoadQuestJson(data.Key);
+                await LoadQuestJson(data.Key);
             }
+            
+            LoadQuestDatas();
         }
         /// <summary>
         /// 퀘스트 시작 처리
@@ -84,19 +85,19 @@ namespace GGemCo2DCore
         /// <param name="questUid"></param>
         /// <param name="npcUid"></param>
         /// <returns></returns>
-        public bool StartQuest(int questUid, int npcUid)
+        public async Task<bool> StartQuest(int questUid, int npcUid)
         {
             if (questUid <= 0) return false;
-            var info = tableQuest.GetDataByUid(questUid);
+            var info = _tableQuest.GetDataByUid(questUid);
             if (info == null) return false;
 
-            if (questData.IsStatusNone(questUid) != true)
+            if (_questData.IsStatusNone(questUid) != true)
             {
-                sceneGame.systemMessageManager.ShowMessageWarning("진행중인 퀘스트 입니다.");
+                _sceneGame.systemMessageManager.ShowMessageWarning("진행중인 퀘스트 입니다.");
                 return false;
             }
 
-            Quest quest = LoadQuestJson(questUid);
+            Quest quest = await LoadQuestJson(questUid);
             if (quest == null)
             {
                 GcLogger.LogError("퀘스트 json 파일을 불러오지 못 했습니다. uid: " + questUid);
@@ -119,19 +120,20 @@ namespace GGemCo2DCore
         /// </summary>
         /// <param name="questUid"></param>
         /// <returns></returns>
-        private Quest LoadQuestJson(int questUid)
+        private async Task<Quest> LoadQuestJson(int questUid)
         {
             if (questUid <= 0) return null;
             // 기존에 불러온 정보가 있으면
-            Quest quest = quests.GetValueOrDefault(questUid);
+            Quest quest = _quests.GetValueOrDefault(questUid);
             if (quest != null) return quest;
             
-            var info = tableQuest.GetDataByUid(questUid);
+            var info = _tableQuest.GetDataByUid(questUid);
             if (info == null) return null;
-            string path = Path.Combine(QuestConstants.JsonFolderName, info.FileName);
+            string key = $"{ConfigAddressables.KeyQuest}_{info.Uid}";
             try
             {
-                TextAsset textFile = Resources.Load<TextAsset>($"{path}");
+                TextAsset textFile = await AddressableLoaderController.LoadByKeyAsync<TextAsset>(key);
+                
                 if (textFile != null)
                 {
                     string content = textFile.text;
@@ -140,7 +142,7 @@ namespace GGemCo2DCore
                         quest = JsonConvert.DeserializeObject<Quest>(content);
                         if (quest != null)
                         {
-                            quests.TryAdd(questUid, quest);
+                            _quests.TryAdd(questUid, quest);
                             return quest;
                         }
                     }
@@ -148,7 +150,7 @@ namespace GGemCo2DCore
             }
             catch (Exception ex)
             {
-                GcLogger.LogError($"퀘스트 json 파일을 불러오는중 오류가 발생했습니다. {path}: {ex.Message}");
+                GcLogger.LogError($"퀘스트 json 파일을 불러오는중 오류가 발생했습니다. {key}: {ex.Message}");
             }
             return null;
         }
@@ -160,7 +162,7 @@ namespace GGemCo2DCore
         /// <param name="status"></param>
         private void ChangeStatus(int questUid, int stepIndex, QuestConstants.Status status)
         {
-            questData.SaveStatus(questUid, stepIndex, status);
+            _questData.SaveStatus(questUid, stepIndex, status);
         }
         /// <summary>
         /// UIWindowHudQuest 에 element 추가하기 
@@ -170,7 +172,7 @@ namespace GGemCo2DCore
         private void AddHudQuestElement(int questUid, int questStepIndex)
         {
             if (questUid <= 0) return;
-            uiWindowHudQuest?.AddQuestElement(questUid, questStepIndex);
+            _uiWindowHudQuest?.AddQuestElement(questUid, questStepIndex);
         }
         /// <summary>
         /// 다음 목표 시작
@@ -179,13 +181,13 @@ namespace GGemCo2DCore
         /// <param name="questUid"></param>
         public void NextStep(int questUid)
         {
-            var quest = quests.GetValueOrDefault(questUid);
+            var quest = _quests.GetValueOrDefault(questUid);
             if (quest == null)
             {
                 GcLogger.LogError("quest 테이블에 없는 퀘스트 입니다. quest uid:"+questUid);
                 return;
             }
-            var stepDict = activeHandlers.GetValueOrDefault(questUid);
+            var stepDict = _activeHandlers.GetValueOrDefault(questUid);
             if (stepDict == null)
             {
                 GcLogger.LogError("진행중인 퀘스트가 아닙니다. quest uid:"+questUid);
@@ -193,7 +195,7 @@ namespace GGemCo2DCore
             }
             
             // 현재 step 가져오기
-            QuestSaveData questSaveData = questData.GetQuestData(questUid);
+            QuestSaveData questSaveData = _questData.GetQuestData(questUid);
             // 현제 handler 지우기
             DisposeQuestStepHandlers(questUid, questSaveData.QuestStepIndex);
             
@@ -207,7 +209,7 @@ namespace GGemCo2DCore
             else
             {
                 // count 초기화 먼저 해주기
-                questData.SaveCount(questUid, 0);
+                _questData.SaveCount(questUid, 0);
                 StartObjective(questUid, nextStepIndex, questStep.targetUid);
             }
         }
@@ -218,24 +220,24 @@ namespace GGemCo2DCore
         private void EndQuest(int questUid)
         {
             if (questUid <= 0) return;
-            QuestSaveData questSaveData = questData.GetQuestData(questUid);
+            QuestSaveData questSaveData = _questData.GetQuestData(questUid);
             if (questSaveData == null) return;
             // 보상 주기
             GiveReward(questUid);
             // 인벤토리 공간 부족할때
-            uiWindowQuestReward?.SetRewardInfoByQuestUid(questUid);
+            _uiWindowQuestReward?.SetRewardInfoByQuestUid(questUid);
             
             // 저장하기
-            questData.SaveStatus(questUid, questSaveData.QuestStepIndex, QuestConstants.Status.End);
+            _questData.SaveStatus(questUid, questSaveData.QuestStepIndex, QuestConstants.Status.End);
             
             // UIWindowHudQuest 에 element 빼기
-            uiWindowHudQuest?.RemoveQuestElement(questUid);
+            _uiWindowHudQuest?.RemoveQuestElement(questUid);
         }
 
         private void GiveReward(int questUid)
         {
             if (questUid <= 0) return;
-            Quest quest = quests.GetValueOrDefault(questUid);
+            Quest quest = _quests.GetValueOrDefault(questUid);
             if (quest == null)
             {
                 GcLogger.LogError("quest json 정보가 없습니다. uid: "+questUid);
@@ -248,15 +250,15 @@ namespace GGemCo2DCore
                 return;
             }
 
-            playerData?.AddExp(quest.reward.experience);
-            playerData?.AddCurrency(CurrencyConstants.Type.Gold, quest.reward.gold);
-            playerData?.AddCurrency(CurrencyConstants.Type.Silver, quest.reward.silver);
+            _playerData?.AddExp(quest.reward.experience);
+            _playerData?.AddCurrency(CurrencyConstants.Type.Gold, quest.reward.gold);
+            _playerData?.AddCurrency(CurrencyConstants.Type.Silver, quest.reward.silver);
             if (quest.reward.items.Count <= 0) return;
             foreach (var rewardItem in quest.reward.items)
             {
                 if (rewardItem == null) continue;
-                ResultCommon result = inventoryData?.AddItem(rewardItem.itemUid, rewardItem.amount);
-                uiWindowInventory?.SetIcons(result);
+                ResultCommon result = _inventoryData?.AddItem(rewardItem.itemUid, rewardItem.amount);
+                _uiWindowInventory?.SetIcons(result);
             }
         }
 
@@ -274,7 +276,7 @@ namespace GGemCo2DCore
                 GcLogger.LogError("퀘스트 json에 단계 정보가 없습니다. uid: "+questUid + ", stepIndex: "+stepIndex);
                 return;
             }
-            var handler = handlerFactory.CreateHandler(questStep.objectiveType);
+            var handler = _handlerFactory.CreateHandler(questStep.objectiveType);
             if (handler == null)
             {
                 GcLogger.LogError("퀘스트 목표 정보가 없습니다. uid: "+questUid + ", stepIndex: "+stepIndex+", objecitve: "+questStep.objectiveType);
@@ -292,10 +294,10 @@ namespace GGemCo2DCore
             }
             handler.StartObjective(questUid, questStep, stepIndex, npcUid);
 
-            if (!activeHandlers.ContainsKey(questUid))
-                activeHandlers[questUid] = new Dictionary<int, IObjectiveHandler>();
+            if (!_activeHandlers.ContainsKey(questUid))
+                _activeHandlers[questUid] = new Dictionary<int, IObjectiveHandler>();
 
-            activeHandlers[questUid][stepIndex] = handler;
+            _activeHandlers[questUid][stepIndex] = handler;
             
             // UIWindowHudQuest 에 element 추가
             AddHudQuestElement(questUid, stepIndex);
@@ -303,7 +305,7 @@ namespace GGemCo2DCore
 
         public void CheckStepComplete(int questUid, int stepIndex, QuestStep step)
         {
-            if (!activeHandlers.TryGetValue(questUid, out var stepDict)) return;
+            if (!_activeHandlers.TryGetValue(questUid, out var stepDict)) return;
             if (!stepDict.TryGetValue(stepIndex, out var handler)) return;
             if (handler.IsObjectiveComplete(step))
             {
@@ -314,21 +316,21 @@ namespace GGemCo2DCore
 
         public void DisposeQuestHandlers(int questUid)
         {
-            if (activeHandlers.TryGetValue(questUid, out var stepDict))
+            if (_activeHandlers.TryGetValue(questUid, out var stepDict))
             {
                 foreach (var handler in stepDict.Values)
                     handler.OnDispose();
             }
 
-            activeHandlers.Remove(questUid);
+            _activeHandlers.Remove(questUid);
         }
 
         private void DisposeQuestStepHandlers(int questUid, int stepIndex)
         {
-            if (!activeHandlers.TryGetValue(questUid, out var stepDict)) return;
+            if (!_activeHandlers.TryGetValue(questUid, out var stepDict)) return;
             if (!stepDict.TryGetValue(stepIndex, out var handler)) return;
             handler.OnDispose();
-            activeHandlers[questUid].Remove(stepIndex);
+            _activeHandlers[questUid].Remove(stepIndex);
         }
 
         public void OnDestroy()
@@ -337,18 +339,18 @@ namespace GGemCo2DCore
         }
         private void DisposeAllHandlers()
         {
-            foreach (var kvp in activeHandlers)
+            foreach (var kvp in _activeHandlers)
             {
                 foreach (var handler in kvp.Value.Values)
                     handler.OnDispose();
             }
 
-            activeHandlers.Clear();
+            _activeHandlers.Clear();
         }
 
         public QuestStep GetQuestStep(int questUid, int stepIndex)
         {
-            Quest quest = quests.GetValueOrDefault(questUid);
+            Quest quest = _quests.GetValueOrDefault(questUid);
             if (quest == null) return null;
             if (stepIndex < 0 || stepIndex >= quest.steps.Count) return null;
             return quest.steps[stepIndex];
@@ -356,7 +358,7 @@ namespace GGemCo2DCore
 
         public Quest GetQuestInfo(int questUid)
         {
-            return quests.GetValueOrDefault(questUid);
+            return _quests.GetValueOrDefault(questUid);
         }
     }
 }
