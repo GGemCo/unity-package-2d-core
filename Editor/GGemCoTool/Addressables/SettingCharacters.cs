@@ -89,6 +89,14 @@ namespace GGemCo2DCoreEditor
                     string assetPath = $"{ConfigAddressables.Path}/{infoAnimation.PrefabPath}.prefab";
                 
                     Add(settings, groupNpc, key, assetPath);
+                    
+                    // 썸네일 있으면 추가
+                    if (!string.IsNullOrEmpty(info.ImageThumbnailPath))
+                    {
+                        key = $"{ConfigAddressables.KeyCharacterThumbnailNpc}_{info.Uid}";
+                        assetPath = $"{ConfigAddressables.PathCharacterThumbnailNpc}/{info.ImageThumbnailPath}.png";
+                        Add(settings, groupNpc, key, assetPath);
+                    }
                 }
             }
             

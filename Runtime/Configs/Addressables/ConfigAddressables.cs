@@ -23,5 +23,21 @@ namespace GGemCo2DCore
         public const string KeyPrefabNpc = KeyCharacter + "_Npc";
         public const string KeyPrefabPlayer = KeyCharacter + "_Player";
         
+        // 대사
+        public const string KeyDialogue = ConfigDefine.NameSDK+"_Dialogue";
+        public const string PathJsonDialogue = Path + "/Dialogue";
+        
+        // 퀘스트
+        public const string KeyQuest = ConfigDefine.NameSDK+"_Quest";
+        public const string PathJsonQuest = Path + "/Quests";
+        
+        // 썸네일
+        public const string KeyCharacterThumbnail = ConfigDefine.NameSDK+"_CharacterThumbnail";
+        public const string KeyCharacterThumbnailNpc = KeyCharacterThumbnail+"_Npc";
+        public const string KeyCharacterThumbnailMonster = KeyCharacterThumbnail+"_Monster";
+
+        public const string PathCharacterThumbnail = Path + "/Images/Thumbnail";
+        public const string PathCharacterThumbnailNpc = PathCharacterThumbnail + "/Npc";
+        
     }
 }
