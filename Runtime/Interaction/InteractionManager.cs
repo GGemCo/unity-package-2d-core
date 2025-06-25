@@ -55,7 +55,7 @@ namespace GGemCo2DCore
                 infoInteraction = tableInteraction.GetDataByUid(infoNpc.InteractionUid);
             }
             // 다른 윈도우가 열려있으면 닫아주기
-            sceneGame.uIWindowManager.CloseAll(new List<UIWindowManager.WindowUid>
+            sceneGame.uIWindowManager?.CloseAll(new List<UIWindowManager.WindowUid>
                 { UIWindowManager.WindowUid.InteractionDialogue });
             // 인터렉션 대화창 보여주기
             ShowDialogue(infoNpc, infoInteraction, npcQuestDatas);
