@@ -58,6 +58,18 @@ namespace GGemCo2DCoreEditor
                 settings = CreateAddressableSettings();
             }
             
+            // object 셋팅하기
+            // 현재는 warp object 처리 중
+            AddressableAssetGroup group = GetOrCreateGroup(settings, ConfigAddressableGroupName.Common);
+
+            if (group)
+            {
+                foreach (var addressableAssetInfo in ConfigAddressableMap.NeedLoadInLoadingScene)
+                {
+                    Add(settings, group, addressableAssetInfo.Key, addressableAssetInfo.Path, addressableAssetInfo.Label);
+                }
+            }
+            
             // foreach 문을 사용하여 딕셔너리 내용을 출력
             foreach (KeyValuePair<int, Dictionary<string, string>> outerPair in dictionaryMap)
             {
@@ -66,7 +78,7 @@ namespace GGemCo2DCoreEditor
 
                 string groupName = $"{TargetGroupName}_{info.FolderName}";
                 // GGemCo_Tables 그룹 가져오기 또는 생성
-                AddressableAssetGroup group = GetOrCreateGroup(settings, groupName);
+                group = GetOrCreateGroup(settings, groupName);
 
                 if (!group)
                 {

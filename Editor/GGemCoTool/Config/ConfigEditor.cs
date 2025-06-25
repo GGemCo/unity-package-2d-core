@@ -50,11 +50,13 @@ namespace GGemCo2DCoreEditor
         public const string NameToolPlayerPrefs = NameToolEtc + "PlayerPrefs 데이터 관리";
         public const string NameToolOpenSaveDataFolder = NameToolEtc + "게임 데이터 관리";
         public const string NameToolLoadAddressable = NameToolEtc + "Addressable 로더 툴";
-        
-        // 프리팹 경로
-        public const string PrefabPathDefaultUIButton = "Packages/com.ggemco.2d.core/Editor/Data/Prefabs/UI/DefaultButton.prefab";
-        public const string PrefabPathDefaultUITextMeshProGUI = "Packages/com.ggemco.2d.core/Editor/Data/Prefabs/UI/DefaultText.prefab";
-        public const string PrefabPathCanvasFromWorld = "Packages/com.ggemco.2d.core/Editor/Data/Prefabs/UI/CanvasFromWorld.prefab";
-        public const string PrefabPathCanvasBlack = "Packages/com.ggemco.2d.core/Editor/Data/Prefabs/UI/CanvasBlack.prefab";
+
+        // 에디터에서 사용되는 프리팹 경로
+        public const string PathResource = "Packages/com.ggemco.2d.core/EditorResource";
+        public const string PathPrefab = PathResource+"/Prefabs";
+        public const string PathPrefabDefaultUIButton = PathPrefab+"/UI/DefaultButton.prefab";
+        public const string PathPrefabDefaultUITextMeshProGUI = PathPrefab+"/UI/DefaultText.prefab";
+        public const string PathPrefabCanvasFromWorld = PathPrefab+"/UI/CanvasFromWorld.prefab";
+        public const string PathPrefabCanvasBlack = PathPrefab+"/UI/CanvasBlack.prefab";
     }
 }

@@ -1,4 +1,5 @@
-﻿using UnityEngine;
+﻿using System.Collections.Generic;
+using UnityEngine;
 
 namespace GGemCo2DCore
 {
@@ -44,5 +45,23 @@ namespace GGemCo2DCore
         public static readonly ResourcesAssetInfo Slot = new($"{ConfigDefine.NameSDK}/UI/Icon/Slot");
         public static readonly ResourcesAssetInfo SlotBuff = new($"{ConfigDefine.NameSDK}/UI/Icon/SlotBuff");
         
+        /// <summary>
+        /// Assets/Resources/GGemCo/ 폴더에 복사할 리스트
+        /// </summary>
+        public static readonly List<ResourcesAssetInfo> All = new()
+        {
+            DropItem,
+            TextDropItemNameTag,
+            SliderMonsterHp,
+            TextDamage,
+            TextNpcNameTag,
+            DialogueBalloon,
+            IconItem,
+            IconQuestInProgress,
+            IconQuestReady,
+            IconSkill,
+            Slot,
+            SlotBuff,
+        };
     }
 }

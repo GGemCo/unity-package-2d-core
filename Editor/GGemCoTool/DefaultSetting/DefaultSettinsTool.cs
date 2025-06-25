@@ -11,6 +11,7 @@ namespace GGemCo2DCoreEditor
         private readonly SettingTags _settingTags = new SettingTags();
         private readonly SettingSortingLayers _settingSortingLayers = new SettingSortingLayers();
         private readonly SettingLayers _settingLayers = new SettingLayers();
+        private readonly SettingResource _settingResource = new SettingResource();
 
         [MenuItem(ConfigEditor.NameToolSettingDefault, false, (int)ConfigEditor.ToolOrdering.DefaultSetting)]
         public static void ShowWindow()
@@ -27,6 +28,9 @@ namespace GGemCo2DCoreEditor
             _settingSortingLayers.OnGUI();
             EditorGUILayout.Space(10);
             _settingLayers.OnGUI();
+            EditorGUILayout.Space(10);
+            _settingResource.OnGUI();
+            
             EditorGUILayout.Space(10);
             Common.OnGUITitle("Scene 추가하기");
             if (GUILayout.Button("Scene 추가하기"))

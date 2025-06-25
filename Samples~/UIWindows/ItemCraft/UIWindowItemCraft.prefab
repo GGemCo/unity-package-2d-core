@@ -1520,7 +1520,7 @@ MonoBehaviour:
   preLoadSlots: []
   containerIcon: {fileID: 2089109331896640959}
   prefabUIElementCraft: {fileID: 2420619010078796932, guid: a33d0a542958dda4b97e38d236f734fc, type: 3}
-  prefabElementMaterial: {fileID: 267064315484284890, guid: 633e9658e9f2965458aaa725292ab59a, type: 3}
+  prefabElementMaterial: {fileID: 267064315484284890, guid: 6370ed90e1b394646bdb9423bc487a01, type: 3}
   containerMaterial: {fileID: 3801740298745420939}
   textRate: {fileID: 5822625976880103392}
   textNeedCurrency: {fileID: 1446346241581628696}

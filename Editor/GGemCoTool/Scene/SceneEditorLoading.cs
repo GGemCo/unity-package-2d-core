@@ -52,7 +52,10 @@ namespace GGemCo2DCoreEditor
             
             // 진행률 텍스트 만들고 연결하기
             string fieldName = "textLoadingPercent";
-            TextMeshProUGUI textMeshProUGUI = CreateUIComponent.CreateObjectText(fieldName);
+            MetaDataTextMeshProGUI metaDataTextMeshProGUI =
+                new MetaDataTextMeshProGUI(new Vector2(1, 0), new Vector2(-100, 100), AnchorPresets.BottomRight, 1000,
+                    50, 0, TextMeshProHelper.HorizontalAlignment.Right);
+            TextMeshProUGUI textMeshProUGUI = CreateUIComponent.CreateObjectText(fieldName, metaDataTextMeshProGUI);
             gameLoaderManager.SetTextLoadingPercent(textMeshProUGUI);
             
             EditorUtility.SetDirty(gameLoaderManager);

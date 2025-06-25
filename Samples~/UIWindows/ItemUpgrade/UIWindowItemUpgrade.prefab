@@ -2299,7 +2299,7 @@ MonoBehaviour:
   textStatusID1: {fileID: 5054221513659041957}
   textStatusID2: {fileID: 1502371889207763083}
   textResult: {fileID: 2722183105265174936}
-  prefabElementMaterial: {fileID: 267064315484284890, guid: 633e9658e9f2965458aaa725292ab59a, type: 3}
+  prefabElementMaterial: {fileID: 267064315484284890, guid: 1ade5d01a562898419297b86e862bae2, type: 3}
   containerMaterial: {fileID: 573685328923089825}
   buttonUpgrade: {fileID: 1138617457940112665}
   effectItemUpgrade: {fileID: 270847345743193234}

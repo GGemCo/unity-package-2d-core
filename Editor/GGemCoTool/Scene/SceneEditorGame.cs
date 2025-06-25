@@ -88,7 +88,7 @@ namespace GGemCo2DCoreEditor
 
         private void SetupCanvasFromWorld(SceneGame scene)
         {
-            GameObject canvasFromWorld = CreateUIComponent.CreateGameObjectByPrefab("CanvasFromWorld", null, ConfigEditor.PrefabPathCanvasFromWorld);
+            GameObject canvasFromWorld = CreateUIComponent.CreateGameObjectByPrefab("CanvasFromWorld", null, ConfigEditor.PathPrefabCanvasFromWorld);
             if (!canvasFromWorld) return;
 
             scene.SetContainerDropItemName(canvasFromWorld.transform.Find("ContainerDropItemName")?.gameObject);
@@ -98,7 +98,7 @@ namespace GGemCo2DCoreEditor
 
         private void SetupCanvasBlack(SceneGame scene)
         {
-            GameObject canvasBlack = CreateUIComponent.CreateGameObjectByPrefab("CanvasBlack", null, ConfigEditor.PrefabPathCanvasBlack);
+            GameObject canvasBlack = CreateUIComponent.CreateGameObjectByPrefab("CanvasBlack", null, ConfigEditor.PathPrefabCanvasBlack);
             if (!canvasBlack) return;
             scene.SetBgBlackForMapLoading(canvasBlack.transform.GetChild(0).gameObject);
         }

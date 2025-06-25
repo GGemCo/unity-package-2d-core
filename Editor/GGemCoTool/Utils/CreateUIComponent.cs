@@ -1,4 +1,5 @@
-﻿using TMPro;
+﻿using GGemCo2DCore;
+using TMPro;
 using UnityEditor;
 using UnityEngine;
 using UnityEngine.EventSystems;
@@ -7,6 +8,32 @@ using UnityEngine.UI;
 
 namespace GGemCo2DCoreEditor
 {
+    public class MetaDataTextMeshProGUI
+    {
+        public Vector2 Pivot;
+        public Vector2 Position;
+        public AnchorPresets AnchorPresets;
+        public float Width;
+        public float Height;
+        public float FontSize;
+        public TextMeshProHelper.HorizontalAlignment HorizontalAlignment;
+        public TextMeshProHelper.VerticalAlignment VerticalAlignment;
+
+        public MetaDataTextMeshProGUI(Vector2 pivot, Vector2 position, AnchorPresets anchorPresets, float width = 0,
+            float height = 0, float fontSize = 0,
+            TextMeshProHelper.HorizontalAlignment horizontalAlignment = TextMeshProHelper.HorizontalAlignment.Center,
+            TextMeshProHelper.VerticalAlignment verticalAlignment = TextMeshProHelper.VerticalAlignment.Middle)
+        {
+            Pivot = pivot;
+            Position = position;
+            AnchorPresets = anchorPresets;
+            Width = width;
+            Height = height;
+            FontSize = fontSize;
+            HorizontalAlignment = horizontalAlignment;
+            VerticalAlignment = verticalAlignment;
+        }
+    }
     public abstract class CreateUIComponent
     {
         public static Canvas CreateObjectCanvas()
@@ -98,7 +125,7 @@ namespace GGemCo2DCoreEditor
             Canvas canvas = CreateObjectCanvas();
 
             // 패키지 프리팹 로드
-            string prefabPath = ConfigEditor.PrefabPathDefaultUIButton;
+            string prefabPath = ConfigEditor.PathPrefabDefaultUIButton;
             obj = CreateGameObjectByPrefab(objectName, canvas.transform, prefabPath);
             
             Button button = obj.GetComponent<Button>();
@@ -111,7 +138,7 @@ namespace GGemCo2DCoreEditor
             button.GetComponentInChildren<TextMeshProUGUI>().text = text;
             return button;
         }
-        public static TextMeshProUGUI CreateObjectText(string objectName)
+        public static TextMeshProUGUI CreateObjectText(string objectName, MetaDataTextMeshProGUI metaDataTextMeshProGUI = null)
         {
             // 버튼 찾기 
             GameObject obj = GameObject.Find(objectName);
@@ -124,7 +151,7 @@ namespace GGemCo2DCoreEditor
             Canvas canvas = CreateObjectCanvas();
 
             // 패키지 프리팹 로드
-            string prefabPath = ConfigEditor.PrefabPathDefaultUITextMeshProGUI;
+            string prefabPath = ConfigEditor.PathPrefabDefaultUITextMeshProGUI;
             obj = CreateGameObjectByPrefab(objectName, canvas.transform, prefabPath);
             
             TextMeshProUGUI textMeshProUGUI = obj.GetComponent<TextMeshProUGUI>();
@@ -133,6 +160,24 @@ namespace GGemCo2DCoreEditor
                 Debug.LogError("Button 컴포넌트를 찾을 수 없습니다.");
                 return null;
             }
+
+            if (metaDataTextMeshProGUI == null) return textMeshProUGUI;
+            
+            textMeshProUGUI.rectTransform.SetAnchor(metaDataTextMeshProGUI.AnchorPresets);
+            textMeshProUGUI.rectTransform.anchoredPosition = metaDataTextMeshProGUI.Position;
+            if (metaDataTextMeshProGUI.Width > 0 && metaDataTextMeshProGUI.Height > 0)
+            {
+                textMeshProUGUI.rectTransform.sizeDelta =
+                    new Vector2(metaDataTextMeshProGUI.Width, metaDataTextMeshProGUI.Height);
+            }
+
+            if (metaDataTextMeshProGUI.FontSize > 0)
+            {
+                textMeshProUGUI.fontSize = metaDataTextMeshProGUI.FontSize;
+            }
+
+            TextMeshProHelper.SetAlignment(textMeshProUGUI, metaDataTextMeshProGUI.HorizontalAlignment, metaDataTextMeshProGUI.VerticalAlignment);
+
             return textMeshProUGUI;
         }
     }

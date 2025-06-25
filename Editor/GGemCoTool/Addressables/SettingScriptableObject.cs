@@ -42,7 +42,7 @@ namespace GGemCo2DCoreEditor
                 settings = CreateAddressableSettings();
             }
 
-            // GGemCo_Tables 그룹 가져오기 또는 생성
+            // 그룹 가져오기 또는 생성
             AddressableAssetGroup group = GetOrCreateGroup(settings, TargetGroupName);
 
             if (!group)
@@ -53,16 +53,6 @@ namespace GGemCo2DCoreEditor
 
             // 설정 scriptable object
             foreach (var addressableAssetInfo in ConfigAddressableSetting.NeedLoadInLoadingScene)
-            {
-                Add(settings, group, addressableAssetInfo);
-            }
-            // ui 에 사용되는 리소스
-            foreach (var addressableAssetInfo in ConfigAddressables.NeedLoadInLoadingScene)
-            {
-                Add(settings, group, addressableAssetInfo);
-            }
-            // 맵 워프
-            foreach (var addressableAssetInfo in ConfigAddressableMap.NeedLoadInLoadingScene)
             {
                 Add(settings, group, addressableAssetInfo);
             }
