@@ -1,6 +1,6 @@
 {
 	"name": "com.ggemco.2d.core",
-	"version": "0.0.1",
+	"version": "0.0.2",
 	"displayName": "GGemCo 2D Core",
 	"description": "타일맵 시스템, 캐릭터 시스템, 개발툴 등 공통 기능 패키지",
 	"unity": "2022.3",
