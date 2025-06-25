@@ -14,7 +14,8 @@ namespace GGemCo2DCoreEditor
         private const string Title = "연출툴";
         private CutsceneData _data;
         private ReorderableList _list;
-        private const string ImportFolder = "Assets/_test";
+        // 임시 저장 폴더
+        public const string TempImportFolder = "Assets/_test";
 
         private TextAsset _selectedJson;
         
@@ -79,7 +80,7 @@ namespace GGemCo2DCoreEditor
                     return;
                 }
                 var info = _cutsceneInfos.GetValueOrDefault(_selectedCutsceneIndex);
-                SceneGame.Instance.CutsceneManager.PlayCutscene(info.Uid);
+                _ = SceneGame.Instance.CutsceneManager.PlayCutscene(info.Uid);
             }
             
             GUILayout.Space(20);
@@ -99,10 +100,10 @@ namespace GGemCo2DCoreEditor
             CutsceneData cutsceneData = JsonConvert.DeserializeObject<CutsceneData>(jsonAsset.text);
             string assetName = Path.GetFileNameWithoutExtension(AssetDatabase.GetAssetPath(jsonAsset));
 
-            if (!Directory.Exists(ImportFolder))
-                Directory.CreateDirectory(ImportFolder);
+            if (!Directory.Exists(TempImportFolder))
+                Directory.CreateDirectory(TempImportFolder);
 
-            string timelinePath = Path.Combine(ImportFolder, $"{assetName}.playable");
+            string timelinePath = Path.Combine(TempImportFolder, $"{assetName}.playable");
             var timelineAsset = ScriptableObject.CreateInstance<TimelineAsset>();
             AssetDatabase.CreateAsset(timelineAsset, timelinePath);
 

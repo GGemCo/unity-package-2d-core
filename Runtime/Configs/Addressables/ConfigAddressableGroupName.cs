@@ -30,5 +30,7 @@
         
         // 퀘스트
         public const string Quest = ConfigDefine.NameSDK+"_Quest";
+        // 연출
+        public const string Cutscene = ConfigDefine.NameSDK+"_Cutscene";
     }
 }

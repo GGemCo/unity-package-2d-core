@@ -1,7 +1,10 @@
-﻿using System.Collections;
+﻿using System;
+using System.Collections;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 using Newtonsoft.Json;
 using UnityEngine;
+using Object = UnityEngine.Object;
 
 namespace GGemCo2DCore
 {
@@ -65,30 +68,39 @@ namespace GGemCo2DCore
         /// 연출 플레이
         /// </summary>
         /// <param name="uid"></param>
-        public void PlayCutscene(int uid)
+        public async Task PlayCutscene(int uid)
         {
-            var info = TableLoaderManager.Instance.TableCutscene.GetDataByUid(uid);
-            if (info == null)
+            try
             {
-                return;
-            }
-            Reset();
-            currentState = State.Loading;
+                var info = TableLoaderManager.Instance.TableCutscene.GetDataByUid(uid);
+                if (info == null)
+                {
+                    return;
+                }
+                Reset();
+                currentState = State.Loading;
 
-            TextAsset asset = Resources.Load<TextAsset>($"Cutscene/{info.FileName}");
-            if (asset == null)
-            {
-                GcLogger.LogError("연출 json 파일이 없습니다. " + info.FileName);
-                return;
+                string key = $"{ConfigAddressables.KeyCutscene}_{info.Uid}";
+                TextAsset asset = await AddressableLoaderController.LoadByKeyAsync<TextAsset>(key);
+            
+                if (asset == null)
+                {
+                    GcLogger.LogError("연출 json 파일이 없습니다. " + info.FileName);
+                    return;
+                }
+                // 카메라 원본 size 저장 
+                originalOrthographicSize = SceneGame.Instance.mainCamera.orthographicSize;
+                // 모든 캐릭터 활성화, 컬링 적용되지 않음
+                sceneGame.mapManager.ActiveAllCharacters();
+                // json 파싱하기
+                currentCutscene = JsonConvert.DeserializeObject<CutsceneData>(asset.text);    
+                // 리소스 생성, 프리팹 로딩, 사운드 등 선행 처리
+                sceneGame.StartCoroutine(PrepareAndPlay());
             }
-            // 카메라 원본 size 저장 
-            originalOrthographicSize = SceneGame.Instance.mainCamera.orthographicSize;
-            // 모든 캐릭터 활성화, 컬링 적용되지 않음
-            sceneGame.mapManager.ActiveAllCharacters();
-            // json 파싱하기
-            currentCutscene = JsonConvert.DeserializeObject<CutsceneData>(asset.text);    
-            // 리소스 생성, 프리팹 로딩, 사운드 등 선행 처리
-            sceneGame.StartCoroutine(PrepareAndPlay());
+            catch (Exception e)
+            {
+                GcLogger.LogError(e.Message);
+            }
         }
         /// <summary>
         /// 연출 준비

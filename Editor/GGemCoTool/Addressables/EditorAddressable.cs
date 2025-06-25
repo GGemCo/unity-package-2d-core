@@ -15,6 +15,7 @@ namespace GGemCo2DCoreEditor
         private SettingItem _settingItem;
         private SettingDialogue _settingDialogue;
         private SettingQuest _settingQuest;
+        private SettingCutscene _settingCutscene;
 
         public TableMap TableMap;
         public TableNpc TableNpc;
@@ -24,6 +25,7 @@ namespace GGemCo2DCoreEditor
         public TableItem TableItem;
         public TableDialogue TableDialogue;
         public TableQuest TableQuest;
+        public TableCutscene TableCutscene;
 
         [MenuItem(ConfigEditor.NameToolSettingAddressable, false, (int)ConfigEditor.ToolOrdering.SettingAddressable)]
         public static void ShowWindow()
@@ -44,6 +46,7 @@ namespace GGemCo2DCoreEditor
             _settingItem = new SettingItem(this);
             _settingDialogue = new SettingDialogue(this);
             _settingQuest = new SettingQuest(this);
+            _settingCutscene = new SettingCutscene(this);
         }
 
         public void LoadTables()
@@ -56,6 +59,7 @@ namespace GGemCo2DCoreEditor
             TableItem = TableLoaderManager.LoadItemTable();
             TableDialogue = TableLoaderManager.LoadDialogueTable();
             TableQuest = TableLoaderManager.LoadQuestTable();
+            TableCutscene = TableLoaderManager.LoadCutsceneTable();
         }
 
         private void OnGUI()
@@ -70,7 +74,7 @@ namespace GGemCo2DCoreEditor
             if (TableMonster == null)
             {
                 EditorGUILayout.Space(10);
-                EditorGUILayout.HelpBox("monster 테이블이 없습니다.", MessageType.Info);
+                EditorGUILayout.HelpBox($"{ConfigAddressableTable.Monster} 테이블이 없습니다.", MessageType.Info);
             }
             else {
                 EditorGUILayout.Space(10);
@@ -80,7 +84,7 @@ namespace GGemCo2DCoreEditor
             if (TableMap == null)
             {
                 EditorGUILayout.Space(10);
-                EditorGUILayout.HelpBox("map 테이블이 없습니다.", MessageType.Info);
+                EditorGUILayout.HelpBox($"{ConfigAddressableTable.Map} 테이블이 없습니다.", MessageType.Info);
             }
             else
             {
@@ -90,7 +94,7 @@ namespace GGemCo2DCoreEditor
             if (TableEffect == null)
             {
                 EditorGUILayout.Space(10);
-                EditorGUILayout.HelpBox("effect 테이블이 없습니다.", MessageType.Info);
+                EditorGUILayout.HelpBox($"{ConfigAddressableTable.Effect} 테이블이 없습니다.", MessageType.Info);
             }
             else
             {
@@ -100,7 +104,7 @@ namespace GGemCo2DCoreEditor
             if (TableItem == null)
             {
                 EditorGUILayout.Space(10);
-                EditorGUILayout.HelpBox("item 테이블이 없습니다.", MessageType.Info);
+                EditorGUILayout.HelpBox($"{ConfigAddressableTable.Item} 테이블이 없습니다.", MessageType.Info);
             }
             else
             {
@@ -110,7 +114,7 @@ namespace GGemCo2DCoreEditor
             if (TableDialogue == null)
             {
                 EditorGUILayout.Space(10);
-                EditorGUILayout.HelpBox("dialogue 테이블이 없습니다.", MessageType.Info);
+                EditorGUILayout.HelpBox($"{ConfigAddressableTable.Dialogue} 테이블이 없습니다.", MessageType.Info);
             }
             else
             {
@@ -120,12 +124,22 @@ namespace GGemCo2DCoreEditor
             if (TableQuest == null)
             {
                 EditorGUILayout.Space(10);
-                EditorGUILayout.HelpBox("quest 테이블이 없습니다.", MessageType.Info);
+                EditorGUILayout.HelpBox($"{ConfigAddressableTable.Quest} 테이블이 없습니다.", MessageType.Info);
             }
             else
             {
                 EditorGUILayout.Space(10);
                 _settingQuest.OnGUI();
+            }
+            if (TableCutscene == null)
+            {
+                EditorGUILayout.Space(10);
+                EditorGUILayout.HelpBox($"{ConfigAddressableTable.Cutscene} 테이블이 없습니다.", MessageType.Info);
+            }
+            else
+            {
+                EditorGUILayout.Space(10);
+                _settingCutscene.OnGUI();
             }
         }
     }
