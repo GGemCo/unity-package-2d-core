@@ -19,7 +19,7 @@ namespace GGemCo2DCore
         [Tooltip("잠금 표시 이미지")]
         public Image imageLock;
 
-        private bool isSelected;
+        private bool _isSelected;
         
         // 윈도우 
         [HideInInspector] public UIWindow window;
@@ -33,50 +33,50 @@ namespace GGemCo2DCore
         [HideInInspector] public int uid;
         
         // 부모 윈도우 uid
-        private UIWindowManager.WindowUid parentWindowUid;
+        private UIWindowManager.WindowUid _parentWindowUid;
         // 부모 아이콘 슬롯 index
-        private int parentSlotIndex;
+        private int _parentSlotIndex;
 
         protected IconConstants.Type IconType;
-        private IconConstants.Status iconStatus;
+        private IconConstants.Status _iconStatus;
 
         // 아이콘 이미지
         protected Image ImageIcon;
         // 개수
-        private int count;
+        private int _count;
         // 레벨
-        private int level;
+        private int _level;
         // 배웠는지
-        private bool isLearn;
+        private bool _isLearn;
         // 등급
-        private IconConstants.Grade grade;
+        private IconConstants.Grade _grade;
         // 등급 아이콘
         [HideInInspector] public Image imageGrade;
             
         // 드래그 핸들러
-        private UIDragHandler dragHandler;
-        private RectTransform rectTransform;
-        protected bool possibleClick;
+        private UIDragHandler _dragHandler;
+        private RectTransform _rectTransform;
+        protected bool PossibleClick;
 
         protected virtual void Awake()
         {
-            possibleClick = true;
+            PossibleClick = true;
             uid = 0;
-            count = 0;
-            level = 0;
+            _count = 0;
+            _level = 0;
             index = 0;
             slotIndex = 0;
-            parentWindowUid = 0;
-            parentSlotIndex = 0;
-            isLearn = false;
+            _parentWindowUid = 0;
+            _parentSlotIndex = 0;
+            _isLearn = false;
             window = null;
             windowUid = UIWindowManager.WindowUid.None;
-            iconStatus = IconConstants.Status.Normal;
+            _iconStatus = IconConstants.Status.Normal;
             IconType = IconConstants.Type.None;
             
             ImageIcon = GetComponent<Image>();
-            dragHandler = gameObject.AddComponent<UIDragHandler>();
-            rectTransform = GetComponent<RectTransform>();
+            _dragHandler = gameObject.AddComponent<UIDragHandler>();
+            _rectTransform = GetComponent<RectTransform>();
 
             if (imageCoolTimeGauge != null)
             {
@@ -149,12 +149,12 @@ namespace GGemCo2DCore
             return false;
         }
         public IconConstants.Type GetIconType() => IconType;
-        public IconConstants.Grade GetGrade() => grade;
-        private void SetStatus(IconConstants.Status status) => this.iconStatus = status;
+        public IconConstants.Grade GetGrade() => _grade;
+        private void SetStatus(IconConstants.Status status) => this._iconStatus = status;
 
         protected bool IsLock()
         {
-            return iconStatus == IconConstants.Status.Lock;
+            return _iconStatus == IconConstants.Status.Lock;
         }
 
         protected void UpdateInfo()
@@ -189,17 +189,17 @@ namespace GGemCo2DCore
         /// 개수 추가하기
         /// </summary>
         /// <param name="value"></param>
-        public void AddCount(int value) => SetCount(count + value);
+        public void AddCount(int value) => SetCount(_count + value);
         /// <summary>
         /// 총 개수 가져오기
         /// </summary>
         /// <param name="value"></param>
         public void SetCount(int value)
         {
-            count = value;
+            _count = value;
             if (textCount != null)
             {
-                textCount.text = count <= 1 ? "" : count.ToString();
+                textCount.text = _count <= 1 ? "" : _count.ToString();
             }
         }
         /// <summary>
@@ -223,8 +223,8 @@ namespace GGemCo2DCore
         /// <param name="set"></param>
         public void SetDrag(bool set)
         {
-            if (dragHandler == null) return;
-            dragHandler.SetIsPossibleDrag(set);
+            if (_dragHandler == null) return;
+            _dragHandler.SetIsPossibleDrag(set);
         }
         /// <summary>
         /// 아이템 정보 지우기
@@ -234,7 +234,7 @@ namespace GGemCo2DCore
             SceneGame.Instance.uIIconCoolTimeManager.ResetCoolTime(windowUid, uid);
             
             uid = 0;
-            Sprite newSprite = Resources.Load<Sprite>($"Images/UI/blank");
+            Sprite newSprite = AddressableLoaderItem.Instance.GetImageIconItemByName("blank");
             if (ImageIcon != null)
             {
                 ImageIcon.sprite = newSprite;
@@ -278,7 +278,7 @@ namespace GGemCo2DCore
         /// <param name="slotSize"></param>
         private void ChangeIconImageSize(Vector2 size, Vector2 slotSize)
         {
-            rectTransform.sizeDelta = size;
+            _rectTransform.sizeDelta = size;
             var diff = (slotSize.x - size.x)/2;
             ImageIcon.raycastPadding = new Vector4(-diff, -diff, -diff, -diff);
         }
@@ -288,12 +288,12 @@ namespace GGemCo2DCore
         /// <returns></returns>
         public Vector3 GetDragOriginalPosition()
         {
-            return dragHandler.GetOriginalPosition();
+            return _dragHandler.GetOriginalPosition();
         }
         public void SetSelected(bool selected)
         {
             if (imageSelected == null) return;
-            isSelected = selected;
+            _isSelected = selected;
             ShowSelected(selected);
         }
 
@@ -301,7 +301,7 @@ namespace GGemCo2DCore
         {
             if (imageSelected == null) return;
             // 선택된 아이콘이면 끄지 않는다.
-            if (isSelected && !selected) return;
+            if (_isSelected && !selected) return;
             imageSelected.gameObject.SetActive(selected);
         }
         public virtual ItemConstants.PartsType GetPartsType()
@@ -345,17 +345,17 @@ namespace GGemCo2DCore
 
         private void SetLevel(int value)
         {
-            level = value;
+            _level = value;
         }
 
         private void SetIsLearn(bool value)
         {
-            isLearn = value;
+            _isLearn = value;
         }
-        public int GetLevel() => level;
-        public int GetCount() => count;
+        public int GetLevel() => _level;
+        public int GetCount() => _count;
 
-        public bool IsLearn() => isLearn;
+        public bool IsLearn() => _isLearn;
         public Sprite GetImageIconSprite() => ImageIcon.sprite;
 
         public virtual ConfigCommon.SuffixType GetStatusSuffix1()
@@ -403,12 +403,12 @@ namespace GGemCo2DCore
         /// <param name="fromIndex"></param>
         public void SetParentInfo(UIWindowManager.WindowUid fromWindowUid, int fromIndex)
         {
-            parentWindowUid = fromWindowUid;
-            parentSlotIndex = fromIndex;
+            _parentWindowUid = fromWindowUid;
+            _parentSlotIndex = fromIndex;
         }
         public (UIWindowManager.WindowUid, int) GetParentInfo()
         {
-            return (parentWindowUid, parentSlotIndex);
+            return (_parentWindowUid, _parentSlotIndex);
         }
 
         public virtual float GetCoolTime()
@@ -425,7 +425,7 @@ namespace GGemCo2DCore
 
         public void SetClick(bool set)
         {
-            possibleClick = set;
+            PossibleClick = set;
         }
     }
 }

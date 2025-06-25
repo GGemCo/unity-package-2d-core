@@ -89,7 +89,7 @@ namespace GGemCo2DCore
 
         public void OnPointerClick(PointerEventData eventData)
         {
-            if (!possibleClick) return;
+            if (!PossibleClick) return;
             if (IsLock()) return;
             if(eventData.button == PointerEventData.InputButton.Left)
             {

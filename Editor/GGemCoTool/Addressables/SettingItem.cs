@@ -118,7 +118,12 @@ namespace GGemCo2DCoreEditor
                     AddToListIfExists(assetsEquip, equipPath);
                 }
             }
-
+            // blank 이미지
+            string key = $"{ConfigAddressableLabel.ImageItemIcon}_blank";
+            string path = $"{ConfigAddressables.Path}/Images/Icon/blank.png";
+            Add(settings, groupIconImage, key, path);
+            AddToListIfExists(assetsIcon, path);
+            
             ClearAndAddToAtlas(atlasDrop, assetsDrop);
             ClearAndAddToAtlas(atlasIcon, assetsIcon);
             ClearAndAddToAtlas(atlasEquip, assetsEquip);
