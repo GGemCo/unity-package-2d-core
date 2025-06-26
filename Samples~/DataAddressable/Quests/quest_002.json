@@ -1,26 +1,28 @@
 {
   "uid": 1002,
-  "title": "두번째 퀘스트",
+  "title": "Strange Rumor",
   "steps": [
     {
-      "step": 0,
       "objectiveType": 1,
+      "mapUid": 101,
       "targetUid": 110001,
-      "count": 0,
       "position": {
         "x": 0.0,
         "y": 0.0
-      }
+      },
+      "count": 0,
+      "dialogueUid": 10003
     },
     {
-      "step": 1,
       "objectiveType": 2,
+      "mapUid": 102,
       "targetUid": 110001,
-      "count": 10,
       "position": {
         "x": 0.0,
         "y": 0.0
-      }
+      },
+      "count": 10,
+      "dialogueUid": 0
     }
   ],
   "reward": {
@@ -29,11 +31,11 @@
     "silver": 5,
     "items": [
       {
-        "itemUid": "201011001",
+        "itemUid": 201011001,
         "amount": 2
       },
       {
-        "itemUid": "201011002",
+        "itemUid": 201011002,
         "amount": 4
       }
     ]

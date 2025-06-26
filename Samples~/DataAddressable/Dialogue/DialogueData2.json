@@ -3,7 +3,7 @@
     {
       "guid": "695e17b5-1577-4ce3-b727-d36c0ec07fe2",
       "title": null,
-      "dialogueText": "야옹! 정말 와줬구나!\n조금 전에 숲속에서 이상한 좀비들을 봤어… \n눈이 반짝이고… 물컹거리고…\n",
+      "dialogueText": "Meow! You really came!\r\nI just saw some weird zombies in the woods... \r\nMy eyes are shining... with a wobble...",
       "position": {
         "x": 207.0,
         "y": 357.0
@@ -20,7 +20,7 @@
     {
       "guid": "ab8d3bc6-d10e-4663-babd-667f0c0d32f2",
       "title": null,
-      "dialogueText": "처음엔 그냥 아픈 사람인 줄 알았어. \n그런데 가까이서 보니 살이 썩어 있었고, \n이상한 신음 소리를 내고 있었지…\n게다가… 눈이 완전히 텅 빈 느낌이었어.\n사람도, 동물도 아닌 무언가 같았어.\n분명히 마법이나 저주에 걸린 존재일 거야!",
+      "dialogueText": "At first, I thought it was just a sick person. \r\nBut when I looked up close, the flesh was rotten, \r\nI was making a strange groan...\r\nWhat's more... My eyes felt completely empty.\r\nIt was like something, not a human, not an animal.\r\nI'm sure he's under a spell or a curse!",
       "position": {
         "x": 914.0,
         "y": 158.0
@@ -37,7 +37,7 @@
     {
       "guid": "7f5d5436-7e27-4aeb-ac66-95c73df1f49b",
       "title": null,
-      "dialogueText": "고마워!",
+      "dialogueText": "Thank you!",
       "position": {
         "x": 905.0,
         "y": 452.0
@@ -54,7 +54,7 @@
     {
       "guid": "0ca7bd97-c340-4792-8c04-d193cff29e5e",
       "title": null,
-      "dialogueText": "무서워서 도망쳤지만, 분명히 마을 쪽으로 오고 있었어!\n부탁이야, 녀석들을 처치해줘!",
+      "dialogueText": "I ran away because I was scared, but I'm sure it was coming towards the village!\r\nPlease, get rid of them!",
       "position": {
         "x": 545.0,
         "y": 347.0
@@ -65,11 +65,11 @@
       "thumbnailImage": "",
       "options": [
         {
-          "optionText": "좀비에 대해 물어본다",
+          "optionText": "Ask about zombies",
           "nextNodeGuid": "ab8d3bc6-d10e-4663-babd-667f0c0d32f2"
         },
         {
-          "optionText": "알았어",
+          "optionText": "Okay.",
           "nextNodeGuid": "7f5d5436-7e27-4aeb-ac66-95c73df1f49b"
         }
       ],
