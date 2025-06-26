@@ -24,15 +24,15 @@ namespace GGemCo2DCore
         public Button buttonCancel;
 
         // 내가 가지고 있는 아이템 개수
-        private int maxItemCount;
+        private int _maxItemCount;
         // 구매 하는 아이템 uid
-        private int itemUid;
+        private int _itemUid;
         // 구매 하는 아이템 개수
-        private int buyItemCount;
+        private int _buyItemCount;
         // 구매 하는 아이템의 인벤토리 slot index
-        private int buyItemIndex;
+        private int _buyItemIndex;
         // 판매하는 아이템의 shop 테이블 정보
-        private StruckTableShop struckTableShop;
+        private StruckTableShop _struckTableShop;
         
         protected override void Awake()
         {
@@ -51,9 +51,14 @@ namespace GGemCo2DCore
         {
             var info = TableLoaderManager.Instance.TableItem.GetDataByUid(iconUid);
             if (info == null) return;
+            var icon = GetIconByUid(iconUid);
+            if (icon)
+            {
+                icon.SetCount(0);
+            }
             textItemName.text = info.Name;
             textItemCount.text = $"{iconCount / iconCount}";
-            maxItemCount = iconCount;
+            _maxItemCount = iconCount;
             Show(true);
             sliderSplit.value = 0.5f;
             // 강제로 특정 값으로 이벤트 호출 (값은 그대로 유지)
@@ -62,17 +67,17 @@ namespace GGemCo2DCore
         private void OnValueChanged(float value)
         {
             if (sliderSplit == null) return;
-            buyItemCount = (int)(maxItemCount * value);
-            if (buyItemCount == 0)
+            _buyItemCount = (int)(_maxItemCount * value);
+            if (_buyItemCount == 0)
             {
-                buyItemCount = 1;
-                sliderSplit.value = (float)buyItemCount / maxItemCount;
+                _buyItemCount = 1;
+                sliderSplit.value = (float)_buyItemCount / _maxItemCount;
             }
-            textItemCount.text = $"{buyItemCount} / {maxItemCount}";
+            textItemCount.text = $"{_buyItemCount} / {_maxItemCount}";
             textTotalPrice.text = "0";
-            if (struckTableShop != null)
+            if (_struckTableShop != null)
             {
-                textTotalPrice.text = $"{CurrencyConstants.GetNameByCurrencyType(struckTableShop.CurrencyType)} {struckTableShop.CurrencyValue * buyItemCount}";
+                textTotalPrice.text = $"{CurrencyConstants.GetNameByCurrencyType(_struckTableShop.CurrencyType)} {_struckTableShop.CurrencyValue * _buyItemCount}";
             }
         }
         /// <summary>
@@ -80,24 +85,24 @@ namespace GGemCo2DCore
         /// </summary>
         private void OnClickConfirm()
         {
-            if (struckTableShop == null) return;
+            if (_struckTableShop == null) return;
             // 구매 하기
-            SceneGame.Instance.BuyItem(struckTableShop.ItemUid, struckTableShop.CurrencyType,
-                struckTableShop.CurrencyValue, buyItemCount);
+            SceneGame.Instance.BuyItem(_struckTableShop.ItemUid, _struckTableShop.CurrencyType,
+                _struckTableShop.CurrencyValue, _buyItemCount);
 
-            struckTableShop = null;
+            _struckTableShop = null;
             Show(false);
         }
 
         private void OnClickCancel()
         {
-            struckTableShop = null;
+            _struckTableShop = null;
             Show(false);
         }
 
         public void SetPriceInfo(StruckTableShop pstruckTableShop)
         {
-            struckTableShop = pstruckTableShop;
+            _struckTableShop = pstruckTableShop;
         }
         /// <summary>
         /// 창 닫힐때 register 됬던 아이콘 정보 지워주기
