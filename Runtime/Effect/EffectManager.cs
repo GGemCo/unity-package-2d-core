@@ -19,12 +19,13 @@ namespace GGemCo2DCore
             GameObject effect = Object.Instantiate(prefab);
             DefaultEffect defaultEffect = effect.AddComponent<DefaultEffect>();
 #if GGEMCO_USE_SPINE
-            EffectAnimationControllerSpine effectAnimationControllerSpine = effect.AddComponent<EffectAnimationControllerSpine>();
-            defaultEffect.EffectAnimationController = effectAnimationControllerSpine;
+            EffectAnimationControllerSpine effectAnimationController = effect.AddComponent<EffectAnimationControllerSpine>();
+            defaultEffect.EffectAnimationController = effectAnimationController;
 #else
-            EffectAnimationControllerSprite effectAnimationControllerSprite = effect.AddComponent<EffectAnimationControllerSprite>();
-            defaultEffect.EffectAnimationController = effectAnimationControllerSprite;
+            EffectAnimationControllerSprite effectAnimationController = effect.AddComponent<EffectAnimationControllerSprite>();
+            defaultEffect.EffectAnimationController = effectAnimationController;
 #endif
+            effectAnimationController.Initialize(defaultEffect);
             defaultEffect.Initialize(info);
             // defaultEffect.Initialize();
             return defaultEffect;
