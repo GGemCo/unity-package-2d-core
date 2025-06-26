@@ -19,6 +19,7 @@
             if (icon == null) return;
             UIWindowItemUpgrade uiWindowItemUpgrade = window as UIWindowItemUpgrade;
             if (uiWindowItemUpgrade == null) return;
+            uiWindowItemUpgrade.InitializeText();
             uiWindowItemUpgrade.ClearMaterials();
         }
     }

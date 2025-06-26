@@ -1,5 +1,6 @@
 ﻿using UnityEngine;
 using UnityEngine.EventSystems;
+using UnityEngine.InputSystem;
 using UnityEngine.UI;
 
 namespace GGemCo2DCore
@@ -42,7 +43,12 @@ namespace GGemCo2DCore
         public void OnDrag(PointerEventData eventData)
         {
             if (!_isPossibleDrag) return;
+            
+#if GGEMCO_USE_OLD_INPUT
             transform.position = Input.mousePosition;
+#elif GGEMCO_USE_NEW_INPUT
+            transform.position= Mouse.current.position.ReadValue();
+#endif
         }
         /// <summary>
         /// 드래그 끝났을때

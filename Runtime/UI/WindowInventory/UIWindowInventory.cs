@@ -163,6 +163,8 @@ namespace GGemCo2DCore
                 {
                     SceneGame.uIWindowManager.UnRegisterIcon(UIWindowManager.WindowUid.ItemUpgrade, 0);
                 }
+
+                _uiWindowItemUpgrade.ShowTextResult(false);
                 SceneGame.uIWindowManager.RegisterIcon(uid, icon.slotIndex, UIWindowManager.WindowUid.ItemUpgrade, 1);
             }
             // 아이템 분해

@@ -38,33 +38,33 @@ namespace GGemCo2DCore
 #if GGEMCO_USE_SPINE
         [Header("강화 이펙트 오브젝트")] public Spine2dUIController effectItemUpgrade;
 #endif
-        private TableItem tableItem;
-        private TableStatus tableStatus;
-        private TableItemUpgrade tableItemUpgrade;
-        private StruckTableItemUpgrade struckTableItemUpgrade;
+        private TableItem _tableItem;
+        private TableStatus _tableStatus;
+        private TableItemUpgrade _tableItemUpgrade;
+        private StruckTableItemUpgrade _struckTableItemUpgrade;
         
-        private UIWindowItemInfo uiWindowItemInfo;
-        private UIWindowInventory uiWindowInventory;
+        private UIWindowItemInfo _uiWindowItemInfo;
+        private UIWindowInventory _uiWindowInventory;
 
-        private InventoryData inventoryData;
+        private InventoryData _inventoryData;
         
         // 재료 최대 개수. item_upgrade 테이블에 있는 컬럼수와 맞아야 한다
         private const int MaxElementCount = 4;
-        private readonly List<UIElementMaterial> elementMaterials = new List<UIElementMaterial>();
+        private readonly List<UIElementMaterial> _elementMaterials = new List<UIElementMaterial>();
         // 성공, 실패 결과
-        private bool updateResult;
+        private bool _updateResult;
         private const int SourceIconSlotIndex = 0;
         private const int ResultIconSlotIndex = 1;
         
         protected override void Awake()
         {
-            updateResult = false;
-            elementMaterials.Clear();
+            _updateResult = false;
+            _elementMaterials.Clear();
             uid = UIWindowManager.WindowUid.ItemUpgrade;
             if (TableLoaderManager.Instance == null) return;
-            tableItem = TableLoaderManager.Instance.TableItem;
-            tableItemUpgrade = TableLoaderManager.Instance.TableItemUpgrade;
-            tableStatus = TableLoaderManager.Instance.TableStatus;
+            _tableItem = TableLoaderManager.Instance.TableItem;
+            _tableItemUpgrade = TableLoaderManager.Instance.TableItemUpgrade;
+            _tableStatus = TableLoaderManager.Instance.TableStatus;
             base.Awake();
             SetSetIconHandler(new SetIconHandlerItemUpgrade());
             DragDropHandler.SetStrategy(new DragDropStrategyItemUpgrade());
@@ -75,7 +75,7 @@ namespace GGemCo2DCore
                 for (int i = 0; i < MaxElementCount; i++)
                 {
                     GameObject elementMaterial = Instantiate(prefabElementMaterial, containerMaterial.transform);
-                    elementMaterials.Add(elementMaterial.GetComponent<UIElementMaterial>());
+                    _elementMaterials.Add(elementMaterial.GetComponent<UIElementMaterial>());
                     elementMaterial.SetActive(false);
                 }
             }
@@ -85,23 +85,21 @@ namespace GGemCo2DCore
                 buttonUpgrade.onClick.RemoveAllListeners();
                 buttonUpgrade.onClick.AddListener(OnClickUpgrade);
             }
-            if (textResult != null)
-            {
-                textResult.gameObject.SetActive(false);
-            }
+            
+            ShowTextResult(false);
 
             InitializeInfo();
         }
         protected override void Start()
         {
             base.Start();
-            uiWindowItemInfo =
+            _uiWindowItemInfo =
                 SceneGame.uIWindowManager.GetUIWindowByUid<UIWindowItemInfo>(UIWindowManager.WindowUid
                     .ItemInfo);
-            uiWindowInventory =
+            _uiWindowInventory =
                 SceneGame.uIWindowManager.GetUIWindowByUid<UIWindowInventory>(UIWindowManager.WindowUid
                     .Inventory);
-            inventoryData = SceneGame.saveDataManager.Inventory;
+            _inventoryData = SceneGame.saveDataManager.Inventory;
         }
         /// <summary>
         /// 아이콘 우클릭했을때 처리 
@@ -114,6 +112,7 @@ namespace GGemCo2DCore
             if (icon.slotIndex > SourceIconSlotIndex) return;
             SceneGame.Instance.uIWindowManager.UnRegisterIcon(uid, icon.slotIndex);
             DetachIcon(ResultIconSlotIndex);
+            ShowTextResult(false);
         }
         /// <summary>
         /// 아이템 정보 보기
@@ -121,17 +120,16 @@ namespace GGemCo2DCore
         /// <param name="icon"></param>
         public override void ShowItemInfo(UIIcon icon)
         {
-            uiWindowItemInfo.SetItemUid(icon.uid, icon.gameObject, UIWindowItemInfo.PositionType.Left, slotSize);
+            _uiWindowItemInfo.SetItemUid(icon.uid, icon.gameObject, UIWindowItemInfo.PositionType.Left, slotSize);
         }
-        /// <summary>
-        /// 강화 정보 초기화하기
-        /// </summary>
-        private void InitializeInfo()
+
+        public void ShowTextResult(bool show)
         {
-            // 강화 테이블 정보 초기화
-            struckTableItemUpgrade = null;
-            // 재료 정보 초기화
-            ClearMaterials();
+            textResult?.gameObject.SetActive(show);
+        }
+
+        public void InitializeText()
+        {
             if (textItemName != null)
             {
                 textItemName.gameObject.SetActive(false);
@@ -152,6 +150,17 @@ namespace GGemCo2DCore
             {
                 textStatusID2.gameObject.SetActive(false); 
             }
+        }
+        /// <summary>
+        /// 강화 정보 초기화하기
+        /// </summary>
+        private void InitializeInfo()
+        {
+            // 강화 테이블 정보 초기화
+            _struckTableItemUpgrade = null;
+            // 재료 정보 초기화
+            ClearMaterials();
+            InitializeText();
             DetachIcon(ResultIconSlotIndex);
         }
         public void SetInfo(UIIcon icon)
@@ -159,13 +168,13 @@ namespace GGemCo2DCore
             InitializeInfo();
             
             if (icon == null) return;
-            var info = tableItemUpgrade.GetDataBySourceItemUid(icon.uid);
+            var info = _tableItemUpgrade.GetDataBySourceItemUid(icon.uid);
             if (info == null)
             {
                 GcLogger.LogError("item_upgrade 테이블에 정보가 없습니다. item uid: " + icon.uid);
                 return;
             }
-            var sourceInfo = tableItem.GetDataByUid(info.SourceItemUid);
+            var sourceInfo = _tableItem.GetDataByUid(info.SourceItemUid);
             if (sourceInfo == null)
             {
                 GcLogger.LogError("강화하는 아이템 정보가 없습니다. item uid:"+info.SourceItemUid);
@@ -177,14 +186,14 @@ namespace GGemCo2DCore
                 SceneGame.systemMessageManager.ShowMessageWarning("더이상 강화 할 수 없습니다.");
                 return;
             }
-            var resultInfo = tableItem.GetDataByUid(info.ResultItemUid);
+            var resultInfo = _tableItem.GetDataByUid(info.ResultItemUid);
             if (resultInfo == null)
             {
                 GcLogger.LogError("강화 후 아이템 정보가 없습니다. item uid:"+info.ResultItemUid);
                 return;
             }
 
-            struckTableItemUpgrade = info;
+            _struckTableItemUpgrade = info;
 
             UIIcon resultItemIcon = GetIconByIndex(ResultIconSlotIndex);
             if (resultItemIcon == null) return;
@@ -199,7 +208,7 @@ namespace GGemCo2DCore
             if (textRate != null)
             {
                 textRate.gameObject.SetActive(true);
-                textRate.text = $"강화 확률: {info.Rate}%";
+                textRate.text = $"Rate: {info.Rate}%"; // 강화 확률
             }
             if (textNeedCurrency != null)
             {
@@ -227,26 +236,23 @@ namespace GGemCo2DCore
         private string GetStatusName(string statusId)
         {
             if (string.IsNullOrEmpty(statusId)) return "";
-            var info = tableStatus.GetDataById(statusId);
+            var info = _tableStatus.GetDataById(statusId);
             return info?.Name ?? "";
         }
         private void SetMaterialInfo(int index, int itemUid, int itemCount)
         {
             if (itemUid <= 0 || itemCount <= 0) return;
 
-            if (index < 0 || index >= elementMaterials.Count) return;
+            if (index < 0 || index >= _elementMaterials.Count) return;
 
-            var material = elementMaterials[index];
+            var material = _elementMaterials[index];
             material?.InitializeSetInfo(itemUid, itemCount, this);
         }
         public override void OnShow(bool show)
         {
             if (SceneGame == null || TableLoaderManager.Instance == null) return;
             if (show) return;
-            if (textResult != null)
-            {
-                textResult.gameObject.SetActive(false);
-            }
+            ShowTextResult(false);
             // 윈도우가 닫힐때
             UnRegisterAllIcons(uid);
             InitializeInfo();
@@ -256,7 +262,7 @@ namespace GGemCo2DCore
         /// </summary>
         public void ClearMaterials()
         {
-            foreach (var elementMaterial in elementMaterials)
+            foreach (var elementMaterial in _elementMaterials)
             {
                 elementMaterial.gameObject.SetActive(false);
                 elementMaterial.ClearInfo();
@@ -265,13 +271,13 @@ namespace GGemCo2DCore
 
         private void OnClickUpgrade()
         {
-            if (struckTableItemUpgrade == null)
+            if (_struckTableItemUpgrade == null)
             {
                 SceneGame.systemMessageManager.ShowMessageWarning("강화할 아이템을 선택해주세요.");
                 return;
             }
             // 재료 체크
-            foreach (var elementMaterial in elementMaterials)
+            foreach (var elementMaterial in _elementMaterials)
             {
                 bool result = elementMaterial.CheckHaveCount();
                 if (!result)
@@ -281,27 +287,27 @@ namespace GGemCo2DCore
                 }
             }
             // 재화 체크
-            var resultCommon = SceneGame.saveDataManager.Player.CheckNeedCurrency(struckTableItemUpgrade.NeedCurrencyType,
-                struckTableItemUpgrade.NeedCurrencyValue);
+            var resultCommon = SceneGame.saveDataManager.Player.CheckNeedCurrency(_struckTableItemUpgrade.NeedCurrencyType,
+                _struckTableItemUpgrade.NeedCurrencyValue);
             if (resultCommon.Code == ResultCommon.Type.Fail)
             {
                 SceneGame.systemMessageManager.ShowMessageWarning(resultCommon.Message);
                 return;
             }
             // 재료 개수 빼주기
-            foreach (var elementMaterial in elementMaterials)
+            foreach (var elementMaterial in _elementMaterials)
             {
                 if (elementMaterial == null) continue;
                 var materialInfo = elementMaterial.GetItemUidCount();
                 if (materialInfo.Item1 == 0 || materialInfo.Item2 == 0) continue;
-                ResultCommon resultMaterial = inventoryData.MinusItem(materialInfo.Item1, materialInfo.Item2);
-                uiWindowInventory.SetIcons(resultMaterial);
+                ResultCommon resultMaterial = _inventoryData.MinusItem(materialInfo.Item1, materialInfo.Item2);
+                _uiWindowInventory.SetIcons(resultMaterial);
             }
 
             // 확률 체크
-            if (struckTableItemUpgrade.Rate <= 0)
+            if (_struckTableItemUpgrade.Rate <= 0)
             {
-                GcLogger.LogError("item_upgrade 테이블에 확률값이 잘 못되었습니다. rate: "+struckTableItemUpgrade.Rate);
+                GcLogger.LogError("item_upgrade 테이블에 확률값이 잘 못되었습니다. rate: "+_struckTableItemUpgrade.Rate);
                 return;
             }
             // 인벤토리에 아이템 체크
@@ -313,28 +319,34 @@ namespace GGemCo2DCore
                 return;
             }
 
-            if (textResult != null)
+            ShowTextResult(false);
+            
+            // 확률 계산
+            _updateResult = false;
+            int random = Random.Range(0, 100);
+            if (random < _struckTableItemUpgrade.Rate)
             {
-                textResult.gameObject.SetActive(false);
+                _updateResult = true;
             }
 #if GGEMCO_USE_SPINE            
             // 이펙트 실행
-            List<StruckAddAnimation> addAnimations = new List<StruckAddAnimation>
+            if (effectItemUpgrade != null)
             {
-                new ("play", false, 0, 1.0f),
-                new ("play", false, 0, 1.0f),
-            };
-            TrackEntry entry = effectItemUpgrade.PlayAnimation("play", false, 1.0f, addAnimations);
-            entry.Complete += OnAnimationComplete;
+                List<StruckAddAnimation> addAnimations = new List<StruckAddAnimation>
+                {
+                    new("play", false, 0, 1.0f),
+                    new("play", false, 0, 1.0f),
+                };
+                TrackEntry entry = effectItemUpgrade.PlayAnimation("play", false, 1.0f, addAnimations);
+                entry.Complete += OnAnimationComplete;
+            }
+            else
+            {
+                OnAnimationComplete();
+            }
 #else
             OnAnimationComplete();
 #endif
-            updateResult = false;
-            int random = Random.Range(0, 100);
-            if (random < struckTableItemUpgrade.Rate)
-            {
-                updateResult = true;
-            }
         }
         /// <summary>
         /// 강화 연출 스파인 애니메이션이 종료된 후 UI에 결과를 반영합니다.
@@ -346,33 +358,33 @@ namespace GGemCo2DCore
         private void OnAnimationComplete()
 #endif
         {
-            textResult.gameObject.SetActive(true);
-            if (updateResult)
+            ShowTextResult(true);
+            if (_updateResult)
             {
-                textResult.text = "강화에 성공하였습니다.";
+                textResult.text = "Success"; // "강화에 성공하였습니다.";
                 textResult.color = Color.blue;
             }
             else
             {
-                textResult.text = "강화에 실패하였습니다.";
+                textResult.text = "Fail"; //"강화에 실패하였습니다.";
                 textResult.color = Color.red;
             }
             // 인벤토리에 아이템 체크
             UIIcon icon = GetIconByIndex(SourceIconSlotIndex);
             var parent = icon.GetParentInfo();
             // 성공, 실패 체크 
-            if (updateResult)
+            if (_updateResult)
             {
                 // 강화 처리, inventoryData 에서 item uid 바꿔주기
-                var resultUpgrade = inventoryData.UpgradeItem(parent.Item2, struckTableItemUpgrade.ResultItemUid);
-                uiWindowInventory.SetIcons(resultUpgrade);
+                var resultUpgrade = _inventoryData.UpgradeItem(parent.Item2, _struckTableItemUpgrade.ResultItemUid);
+                _uiWindowInventory.SetIcons(resultUpgrade);
             
                 // 기존 정보에서 업그레이드 된 아이콘으로 다시 셋팅하기
                 SceneGame.uIWindowManager.UnRegisterIcon(UIWindowManager.WindowUid.ItemUpgrade, SourceIconSlotIndex);
             
-                var inventoryIcon = uiWindowInventory.GetIconByIndex(parent.Item2) as UIIconItem;
+                var inventoryIcon = _uiWindowInventory.GetIconByIndex(parent.Item2) as UIIconItem;
                 if (inventoryIcon == null) return;
-                if (inventoryIcon.GetUpgrade() >= struckTableItemUpgrade.MaxUpgrade)
+                if (inventoryIcon.GetUpgrade() >= _struckTableItemUpgrade.MaxUpgrade)
                 {
                     SceneGame.systemMessageManager.ShowMessageWarning("강화수치가 최대치 입니다.\n더이상 강화 할 수 없습니다.");
                     InitializeInfo();
