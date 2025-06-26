@@ -7,7 +7,8 @@
         
         public const string NamePackageCore = "Core";
         public const string NamePackagePlatformer = "Platformer";
-
+        
+        // 씬
         public const string PathScene = "Assets/"+NameSDK+"/Scenes";
         public const string SceneNameIntro = NameSDK+"_Intro";
         public const string SceneNameLoading = NameSDK+"_Loading";

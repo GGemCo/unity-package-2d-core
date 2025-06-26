@@ -39,6 +39,7 @@ namespace GGemCo2DCore
         [Header("기본속성")]
         [Tooltip("윈도우 리스트")]
         [SerializeField] private UIWindow[] uiWindows;
+        public void SetUIWindow(UIWindow[] prefabs) => uiWindows = prefabs;
 
         private void Awake()
         {

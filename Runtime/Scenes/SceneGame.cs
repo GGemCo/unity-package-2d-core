@@ -42,6 +42,7 @@ namespace GGemCo2DCore
         [Header("매니저")]
         [Tooltip("윈도우 매니저")]
         public UIWindowManager uIWindowManager;
+        public void SetUIWindowManager(UIWindowManager value) => uIWindowManager = value;
         [Tooltip("시스템 메시지 매니저")]
         public SystemMessageManager systemMessageManager;
         public void SetSystemMessageManager(SystemMessageManager value) => systemMessageManager = value;

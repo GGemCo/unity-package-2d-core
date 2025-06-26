@@ -87,6 +87,11 @@ namespace GGemCo2DCoreEditor
             return LoadTable<TableSkill>(ConfigAddressableTable.TableSkill.Path);
         }
 
+        public TableWindow LoadWindowTable()
+        {
+            return LoadTable<TableWindow>(ConfigAddressableTable.TableWindow.Path);
+        }
+
         /// <summary>
         /// 툴에서 드롭다운 메뉴를 만들기 위해 사용중
         /// 사용하려면 Table 에 TryGetDataByUid 함수를 추가해야 함

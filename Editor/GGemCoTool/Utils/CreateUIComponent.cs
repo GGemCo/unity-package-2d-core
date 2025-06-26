@@ -36,13 +36,18 @@ namespace GGemCo2DCoreEditor
     }
     public abstract class CreateUIComponent
     {
+        private static string GenerateObjectName(string objectName)
+        {
+            return $"{ConfigEditor.NamePrefixCore}_{objectName}";
+        }
         public static Canvas CreateObjectCanvas()
         {
-            Canvas canvas = GameObject.Find("Canvas")?.GetComponent<Canvas>();
+            string objectName = GenerateObjectName("Canvas");
+            Canvas canvas = GameObject.Find(objectName)?.GetComponent<Canvas>();
             
             if (!canvas)
             {
-                GameObject canvasObj = new GameObject("Canvas", typeof(Canvas), typeof(CanvasScaler), typeof(GraphicRaycaster));
+                GameObject canvasObj = new GameObject(objectName, typeof(Canvas), typeof(CanvasScaler), typeof(GraphicRaycaster));
                 canvas = canvasObj.GetComponent<Canvas>();
                 canvas.renderMode = RenderMode.ScreenSpaceOverlay;
 
@@ -75,9 +80,14 @@ namespace GGemCo2DCoreEditor
         }
         public static GameObject CreateGameObjectByPrefab(string objectName, Transform parent = null, string prefabPath = "")
         {
+            objectName = GenerateObjectName(objectName);
             GameObject gameObject = GameObject.Find(objectName);
             if (gameObject)
             {
+                if (parent != null)
+                {
+                    gameObject.transform.SetParent(parent);
+                }
                 return gameObject;
             }
             
@@ -101,7 +111,7 @@ namespace GGemCo2DCoreEditor
             gameObject.name = objectName;
             if (parent != null)
             {
-                gameObject.transform.SetParent(parent, false);
+                gameObject.transform.SetParent(parent);
             }
 
             // 프리팹 해제
@@ -114,6 +124,7 @@ namespace GGemCo2DCoreEditor
         }
         public static Button CreateObjectButton(string objectName, string text)
         {
+            objectName = GenerateObjectName(objectName);
             // 버튼 찾기 
             GameObject obj = GameObject.Find(objectName);
             if (obj)
@@ -140,6 +151,7 @@ namespace GGemCo2DCoreEditor
         }
         public static TextMeshProUGUI CreateObjectText(string objectName, MetaDataTextMeshProGUI metaDataTextMeshProGUI = null)
         {
+            objectName = GenerateObjectName(objectName);
             // 버튼 찾기 
             GameObject obj = GameObject.Find(objectName);
             if (obj)
@@ -179,6 +191,11 @@ namespace GGemCo2DCoreEditor
             TextMeshProHelper.SetAlignment(textMeshProUGUI, metaDataTextMeshProGUI.HorizontalAlignment, metaDataTextMeshProGUI.VerticalAlignment);
 
             return textMeshProUGUI;
+        }
+
+        public static GameObject Find(string objectName)
+        {
+            return GameObject.Find(GenerateObjectName(objectName));
         }
     }
 }

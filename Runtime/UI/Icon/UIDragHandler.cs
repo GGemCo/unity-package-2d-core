@@ -6,34 +6,34 @@ namespace GGemCo2DCore
 {
     public class UIDragHandler : MonoBehaviour, IBeginDragHandler, IDragHandler, IEndDragHandler
     {
-        private UIIcon icon;
+        private UIIcon _icon;
         // 아이콘 이미지
-        private Image image;
+        private Image _image;
         // 드래그 하기전 위치
-        private Vector3 originalPosition;
+        private Vector3 _originalPosition;
         // 드래그 가능 여부
-        private bool isPossibleDrag = true;
+        private bool _isPossibleDrag = true;
 
         private void Awake()
         {
-            icon = GetComponent<UIIcon>();
-            image = GetComponent<Image>();
+            _icon = GetComponent<UIIcon>();
+            _image = GetComponent<Image>();
         }
 
-        public void SetIsPossibleDrag(bool set) => isPossibleDrag = set;
-        public bool GetIsPossibleDrag() => isPossibleDrag;
+        public void SetIsPossibleDrag(bool set) => _isPossibleDrag = set;
+        public bool GetIsPossibleDrag() => _isPossibleDrag;
         /// <summary>
         /// 드래그 시작
         /// </summary>
         /// <param name="eventData"></param>
         public void OnBeginDrag(PointerEventData eventData)
         {
-            if (!isPossibleDrag) return;
+            if (!_isPossibleDrag) return;
 
-            transform.SetParent(transform.root);
-            image.raycastTarget = false;
+            transform.SetParent(_icon.SceneGame.canvasUI.gameObject.transform);
+            _image.raycastTarget = false;
 
-            originalPosition = transform.position;
+            _originalPosition = transform.position;
         }
         /// <summary>
         /// 드래그 중일때 
@@ -41,7 +41,7 @@ namespace GGemCo2DCore
         /// <param name="eventData"></param>
         public void OnDrag(PointerEventData eventData)
         {
-            if (!isPossibleDrag) return;
+            if (!_isPossibleDrag) return;
             transform.position = Input.mousePosition;
         }
         /// <summary>
@@ -50,8 +50,8 @@ namespace GGemCo2DCore
         /// <param name="eventData"></param>
         public void OnEndDrag(PointerEventData eventData)
         {
-            if (!isPossibleDrag) return;
-            image.raycastTarget = true;
+            if (!_isPossibleDrag) return;
+            _image.raycastTarget = true;
 
             GameObject droppedIcon = eventData.pointerDrag;
             UIIcon droppedUiIcon = droppedIcon.GetComponent<UIIcon>();
@@ -62,7 +62,7 @@ namespace GGemCo2DCore
                 // 윈도우 밖에 드래그 앤 드랍했을때  
                 if (targetIcon == null)
                 {
-                    droppedUiIcon.window.OnEndDragOutWindow(eventData, droppedIcon, targetIcon, originalPosition);
+                    droppedUiIcon.window.OnEndDragOutWindow(eventData, droppedIcon, targetIcon, _originalPosition);
                     return;
                 }
                 UIIcon targetUiIcon = targetIcon.GetComponent<UIIcon>();
@@ -74,8 +74,8 @@ namespace GGemCo2DCore
             }
             GameObject targetSlot = droppedUiIcon.window.slots[droppedUiIcon.slotIndex];
             droppedIcon.transform.SetParent(targetSlot.transform);
-            droppedIcon.transform.position = originalPosition;
+            droppedIcon.transform.position = _originalPosition;
         }
-        public Vector3 GetOriginalPosition() => originalPosition;
+        public Vector3 GetOriginalPosition() => _originalPosition;
     }
 }

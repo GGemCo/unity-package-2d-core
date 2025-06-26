@@ -25,6 +25,10 @@ namespace GGemCo2DCoreEditor
             LoadAddressable,
         }
         private const string NameToolGGemCo = ConfigDefine.NameSDK+"Tool/";
+        
+        // 오브젝트 생성시 사용
+        public const string NamePrefixCore = ConfigDefine.NameSDK + "_" + ConfigDefine.NamePackageCore;
+        
         // 기본 셋팅하기
         private const string NameToolSettings = NameToolGGemCo + "설정하기/";
         public const string NameToolSettingDefault = NameToolSettings + "기본 셋팅하기";
@@ -60,5 +64,8 @@ namespace GGemCo2DCoreEditor
         public const string PathPrefabCanvasBlack = PathPrefab+"/UI/CanvasBlack.prefab";
         public const string PathPrefabSystemMessageManager = PathPrefab+"/UI/SystemMessageManager.prefab";
         public const string PathPrefabPopupManager = PathPrefab+"/UI/PopupManager.prefab";
+        
+        // 윈도우 경로
+        public const string PathUIWindow = "Assets/GGemCo/UI Windows";
     }
 }

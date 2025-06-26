@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.IO;
 using GGemCo2DCore;
 using UnityEditor;
@@ -10,42 +9,18 @@ namespace GGemCo2DCoreEditor
 {
     public class DefaultEditorWindow : EditorWindow
     {
-        public bool isLoading = true;
-        public TableLoaderManager TableLoaderManager;
+        protected TableLoaderManager TableLoaderManager;
 
         protected virtual void OnEnable()
         {
-            isLoading = true;
             TableLoaderManager = new TableLoaderManager();
         }
-
-        protected void ShowLoadTableException(string ptitle, Exception ex)
-        {
-            Debug.LogError($"{ptitle} LoadAsync 예외 발생: {ex.Message}");
-            EditorUtility.DisplayDialog(ptitle, "테이블 로딩 중 오류가 발생했습니다.", "OK");
-            isLoading = false;
-        }
-        
-        // GGemCo GameObject 만들기
-            // GGemCo 스크립트 AddComponent 하기
-            // 스크립트의 필수 항목을 만들어서 연결하기
-            
-        // GGemCo 매니저 만들기
-            
-        // 유니티 Empty GameObject 만들기
-        
-        // 유니티 UI 컴포넌트 만들기 
-            // Canvas
-                // Render Mode : World Space
-            // 버튼
-            // 텍스트 (TMP)
-            
         /// <summary>
         /// 모든 오브젝트는 GGemCo 오브젝트 하위에 생성한다.
         /// Core 패키지 이기때문에 Core 오브젝트 하위에 생성한다.
         /// UI 는 Canvas 에 생성한다.
         /// </summary>
-        protected GameObject GetOrCreateRootGameObject()
+        protected GameObject GetOrCreateCoreGameObject()
         {
             var obj = GameObject.Find(ConfigDefine.NameSDK);
             GameObject objPackage;
@@ -70,16 +45,17 @@ namespace GGemCo2DCoreEditor
             }
             return objPackage;
         }
-        protected GameObject GetOrCreateGameObject(string objectName)
+
+        private GameObject GetOrCreateGameObject(string objectName)
         {
-            if (!objectName.StartsWith($"{ConfigDefine.NameSDK}_{ConfigDefine.NamePackageCore}")) objectName = $"{ConfigDefine.NameSDK}_{ConfigDefine.NamePackageCore}_{objectName}";
-            var obj = GameObject.Find(objectName);
+            if (!objectName.StartsWith($"{ConfigEditor.NamePrefixCore}")) objectName = $"{ConfigEditor.NamePrefixCore}_{objectName}";
+            GameObject obj = GameObject.Find(objectName);
             if (obj == null)
             {
                 obj = new GameObject(objectName);
+                GameObject root = GetOrCreateCoreGameObject();
+                obj.transform.SetParent(root.transform);
             }
-            GameObject root = GetOrCreateRootGameObject();
-            obj.transform.SetParent(root.transform);
             return obj;
         }
         /// <summary>
@@ -93,10 +69,8 @@ namespace GGemCo2DCoreEditor
         /// <summary>
         /// Scene Build Profiles 에 등록하기 
         /// </summary>
-        public static void AddSceneToBuildSettings(string scenePath)
+        protected static void AddSceneToBuildSettings(string scenePath)
         {
-            // string scenePath = "Assets/Scenes/ExampleScene.unity";
-
             // 씬이 없으면 새로 생성
             if (!File.Exists(scenePath))
             {
@@ -127,6 +101,36 @@ namespace GGemCo2DCoreEditor
             {
                 Debug.Log($"이미 등록된 씬입니다: {scenePath}");
             }
+        }
+        /// <summary>
+        /// 지정한 폴더 하위에서 프리팹 이름으로 GameObject를 찾습니다.
+        /// </summary>
+        /// <param name="folderPath">예: "Assets/Resources/Prefabs"</param>
+        /// <param name="prefabName">찾고자 하는 프리팹 이름 (확장자 없이)</param>
+        /// <returns>찾은 프리팹 GameObject, 없으면 null</returns>
+        protected static GameObject FindPrefabByName(string folderPath, string prefabName)
+        {
+            if (!AssetDatabase.IsValidFolder(folderPath))
+            {
+                Debug.LogWarning($"유효하지 않은 폴더 경로: {folderPath}");
+                return null;
+            }
+
+            string[] guids = AssetDatabase.FindAssets($"{prefabName} t:prefab", new[] { folderPath });
+
+            foreach (string guid in guids)
+            {
+                string assetPath = AssetDatabase.GUIDToAssetPath(guid);
+                string fileName = Path.GetFileNameWithoutExtension(assetPath);
+            
+                if (fileName == prefabName) // 정확한 이름 일치 확인
+                {
+                    GameObject prefab = AssetDatabase.LoadAssetAtPath<GameObject>(assetPath);
+                    return prefab;
+                }
+            }
+
+            return null;
         }
     }
 }

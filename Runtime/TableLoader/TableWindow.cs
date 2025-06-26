@@ -13,6 +13,7 @@ namespace GGemCo2DCore
         public bool IsInteraction;
         public int[] OpenWindowUid;
         public int[] CloseWindowUid;
+        public string PrefabName;
     }
 
     /// <summary>
@@ -39,6 +40,7 @@ namespace GGemCo2DCore
                 IsInteraction = ConvertBoolean(data["IsInteraction"]),
                 OpenWindowUid = ConvertIntArray(data["OpenWindowUid"]),
                 CloseWindowUid = ConvertIntArray(data["CloseWindowUid"]),
+                PrefabName = data["PrefabName"],
             };
         }
     }
