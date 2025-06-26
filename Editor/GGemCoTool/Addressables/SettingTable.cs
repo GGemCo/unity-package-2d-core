@@ -12,11 +12,11 @@ namespace GGemCo2DCoreEditor
     public class SettingTable : DefaultAddressable
     {
         private const string Title = "테이블 추가하기";
-        private readonly EditorAddressable _editorAddressable;
+        private readonly AddressableEditor _addressableEditor;
 
-        public SettingTable(EditorAddressable editorWindow)
+        public SettingTable(AddressableEditor addressableEditorWindow)
         {
-            _editorAddressable = editorWindow;
+            _addressableEditor = addressableEditorWindow;
             TargetGroupName = ConfigAddressableGroupName.Table;
         }
         public void OnGUI()
@@ -88,7 +88,7 @@ namespace GGemCo2DCoreEditor
             settings.SetDirty(AddressableAssetSettings.ModificationEvent.EntryMoved, null, true);
             AssetDatabase.SaveAssets();
             // 테이블 다시 로드하기
-            _editorAddressable.LoadTables();
+            _addressableEditor.LoadTables();
             
             EditorUtility.DisplayDialog(Title, "Addressable 설정 완료", "OK");
         }

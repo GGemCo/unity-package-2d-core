@@ -14,7 +14,7 @@ namespace GGemCo2DCoreEditor
     public class SettingMap : DefaultAddressable
     {
         private const string Title = "맵 추가하기";
-        private readonly EditorAddressable _editorAddressable;
+        private readonly AddressableEditor _addressableEditor;
         private readonly TableMonster _tableMonster;
         private readonly TableNpc _tableNpc;
         private readonly TableAnimation _tableAnimation;
@@ -24,14 +24,14 @@ namespace GGemCo2DCoreEditor
             Monster
         }
 
-        public SettingMap(EditorAddressable editorWindow)
+        public SettingMap(AddressableEditor addressableEditorWindow)
         {
-            _editorAddressable = editorWindow;
+            _addressableEditor = addressableEditorWindow;
             TargetGroupName = ConfigAddressableGroupName.Map;
             
-            _tableMonster = _editorAddressable.TableMonster;
-            _tableNpc = _editorAddressable.TableNpc;
-            _tableAnimation = _editorAddressable.TableAnimation;
+            _tableMonster = _addressableEditor.TableMonster;
+            _tableNpc = _addressableEditor.TableNpc;
+            _tableAnimation = _addressableEditor.TableAnimation;
         }
         public void OnGUI()
         {
@@ -48,7 +48,7 @@ namespace GGemCo2DCoreEditor
         /// </summary>
         private void Setup()
         {
-            Dictionary<int, Dictionary<string, string>> dictionaryMap = _editorAddressable.TableMap.GetDatas();
+            Dictionary<int, Dictionary<string, string>> dictionaryMap = _addressableEditor.TableMap.GetDatas();
             
             // AddressableSettings 가져오기 (없으면 생성)
             AddressableAssetSettings settings = AddressableAssetSettingsDefaultObject.Settings;
@@ -73,7 +73,7 @@ namespace GGemCo2DCoreEditor
             // foreach 문을 사용하여 딕셔너리 내용을 출력
             foreach (KeyValuePair<int, Dictionary<string, string>> outerPair in dictionaryMap)
             {
-                var info = _editorAddressable.TableMap.GetDataByUid(outerPair.Key);
+                var info = _addressableEditor.TableMap.GetDataByUid(outerPair.Key);
                 if (info.Uid <= 0) continue;
 
                 string groupName = $"{TargetGroupName}_{info.FolderName}";

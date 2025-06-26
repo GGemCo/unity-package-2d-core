@@ -6,21 +6,22 @@ using UnityEngine;
 
 namespace GGemCo2DCoreEditor
 {
-    public class TestDropItemRate : EditorWindow
+    public class TestDropItemRate : DefaultEditorWindow
     {
         private const string Title = "아이템 드랍 확률";
-        private ItemManager.DropTestResult testResult;
-        private int selectedMonsterIndex;
-        private int testCount;
-        private ItemManager itemManager;
-        private TableMonster tableMonster;
-        private TableItem tableItem;
-        private List<string> monsterNames; // 몬스터 이름 목록
+        private ItemManager.DropTestResult _testResult;
+        private int _selectedMonsterIndex;
+        private int _testCount;
+        private ItemManager _itemManager;
+        private TableMonster _tableMonster;
+        private TableItem _tableItem;
+        private List<string> _monsterNames; // 몬스터 이름 목록
+        private Vector2 _scrollPos;
         
-        private Dictionary<ItemConstants.Category, List<StruckTableItem>> dictionaryByCategory;
-        private Dictionary<ItemConstants.SubCategory, List<StruckTableItem>> dictionaryBySubCategory;
-        private Dictionary<int, List<StruckTableItemDropGroup>> dropGroupDictionary = new Dictionary<int, List<StruckTableItemDropGroup>>();
-        private Dictionary<int, List<StruckTableMonsterDropRate>> monsterDropDictionary = new Dictionary<int, List<StruckTableMonsterDropRate>>();
+        private Dictionary<ItemConstants.Category, List<StruckTableItem>> _dictionaryByCategory;
+        private Dictionary<ItemConstants.SubCategory, List<StruckTableItem>> _dictionaryBySubCategory;
+        private Dictionary<int, List<StruckTableItemDropGroup>> _dropGroupDictionary = new Dictionary<int, List<StruckTableItemDropGroup>>();
+        private Dictionary<int, List<StruckTableMonsterDropRate>> _monsterDropDictionary = new Dictionary<int, List<StruckTableMonsterDropRate>>();
 
         [MenuItem(ConfigEditor.NameToolDropItemRate, false, (int)ConfigEditor.ToolOrdering.DropItemRate)]
         public static void ShowWindow()
@@ -28,23 +29,23 @@ namespace GGemCo2DCoreEditor
             GetWindow<TestDropItemRate>(Title);
         }
 
-        private void OnEnable()
+        protected override void OnEnable()
         {
-            selectedMonsterIndex = 0;
-            testCount = 10000;
+            base.OnEnable();
+            _selectedMonsterIndex = 0;
+            _testCount = 10000;
 
-            itemManager = new ItemManager();
-            TableLoaderManager tableLoaderManager = new TableLoaderManager();
-            // tableMonster = tableLoaderManager.LoadMonsterTable();
+            _itemManager = new ItemManager();
+            _tableMonster = TableLoaderManager.LoadMonsterTable();
             
-            // tableItem = tableLoaderManager.LoadItemTable();
-            // TableItemDropGroup tableItemDropGroup = tableLoaderManager.LoadItemDropGroupTable();
-            // TableMonsterDropRate tableMonsterDropRate = tableLoaderManager.LoadMonsterDropRateTable();
+            _tableItem = TableLoaderManager.LoadItemTable();
+            TableItemDropGroup tableItemDropGroup = TableLoaderManager.LoadItemDropGroupTable();
+            TableMonsterDropRate tableMonsterDropRate = TableLoaderManager.LoadMonsterDropRateTable();
             
-            dictionaryByCategory = tableItem.GetDictionaryByCategory();
-            dictionaryBySubCategory = tableItem.GetDictionaryBySubCategory();
-            // dropGroupDictionary = tableItemDropGroup.GetDropGroups();
-            // monsterDropDictionary = tableMonsterDropRate.GetMonsterDropDictionary();
+            _dictionaryByCategory = _tableItem.GetDictionaryByCategory();
+            _dictionaryBySubCategory = _tableItem.GetDictionaryBySubCategory();
+            _dropGroupDictionary = tableItemDropGroup.GetDropGroups();
+            _monsterDropDictionary = tableMonsterDropRate.GetMonsterDropDictionary();
 
             LoadMonsterInfoData();
         }
@@ -53,75 +54,88 @@ namespace GGemCo2DCoreEditor
         /// </summary>
         private void LoadMonsterInfoData()
         {
-            Dictionary<int, Dictionary<string, string>> monsterDictionary = tableMonster.GetDatas();
+            Dictionary<int, Dictionary<string, string>> monsterDictionary = _tableMonster.GetDatas();
 
-            monsterNames = new List<string>();
+            _monsterNames = new List<string>();
             // foreach 문을 사용하여 딕셔너리 내용을 출력
             foreach (KeyValuePair<int, Dictionary<string, string>> outerPair in monsterDictionary)
             {
-                var info = tableMonster.GetDataByUid(outerPair.Key);
+                var info = _tableMonster.GetDataByUid(outerPair.Key);
                 if (info.Uid <= 0) continue;
-                monsterNames.Add($"{info.Uid} - {info.Name}");
+                _monsterNames.Add($"{info.Uid} - {info.Name}");
             }
         }
 
 
         private void OnGUI()
         {
+            _scrollPos = EditorGUILayout.BeginScrollView(_scrollPos);
             // 몬스터 드롭다운
-            selectedMonsterIndex = EditorGUILayout.Popup("몬스터 선택", selectedMonsterIndex, monsterNames.ToArray());
+            _selectedMonsterIndex = EditorGUILayout.Popup("몬스터 선택", _selectedMonsterIndex, _monsterNames.ToArray());
             // 테스트 횟수
-            testCount = EditorGUILayout.IntField("테스트 횟수", testCount);
+            _testCount = EditorGUILayout.IntField("테스트 횟수", _testCount);
 
             // 테스트 실행 버튼
             if (GUILayout.Button("테스트 실행", GUILayout.Height(30)))
             {
-                if (itemManager != null)
+                if (_itemManager != null)
                 {
-                    var monsterDictionary = tableMonster.GetDatas();
+                    var monsterDictionary = _tableMonster.GetDatas();
                     int index = 0;
                     StruckTableMonster monsterData = new StruckTableMonster();
 
                     foreach (var outerPair in monsterDictionary)
                     {
-                        if (index == selectedMonsterIndex)
+                        if (index == _selectedMonsterIndex)
                         {
-                            monsterData = tableMonster.GetDataByUid(outerPair.Key);
+                            monsterData = _tableMonster.GetDataByUid(outerPair.Key);
                             break;
                         }
                         index++;
                     }
 
-                    if (monsterData.Uid <= 0)
+                    if (monsterData.Uid > 0)
+                    {
+                        ItemManager.DropTestResult dropTestResult = _itemManager.TestDropRates(monsterData.Uid,
+                            _testCount, _dictionaryByCategory, _dictionaryBySubCategory, _dropGroupDictionary,
+                            _monsterDropDictionary, _tableItem);
+
+                        if (dropTestResult != null)
+                        {
+                            EditorUtility.DisplayDialog(Title, $"테스트 완료: 몬스터 UID {monsterData.Uid}, {_testCount}회 실행됨.",
+                                "OK");
+                            _testResult = dropTestResult;
+                            Repaint(); // UI 갱신
+                        }
+                    }
+                    else
                     {
                         EditorUtility.DisplayDialog(Title, "몬스터 데이터가 없습니다.", "OK");
-                        return;
                     }
-                    ItemManager.DropTestResult dropTestResult = itemManager.TestDropRates(monsterData.Uid, testCount, dictionaryByCategory, dictionaryBySubCategory, dropGroupDictionary, monsterDropDictionary, tableItem);
-
-                    if (dropTestResult == null) return;
-                    EditorUtility.DisplayDialog(Title, $"테스트 완료: 몬스터 UID {monsterData.Uid}, {testCount}회 실행됨.", "OK");
-                    testResult = dropTestResult;
-                    Repaint(); // UI 갱신
                 }
             }
 
             EditorGUILayout.Space();
             Common.OnGUITitle("테스트 결과");
 
-            if (testResult == null)
+            if (_testResult != null)
+            {
+                EditorGUILayout.LabelField($"몬스터 UID: {_testResult.MonsterUid}", EditorStyles.boldLabel);
+                EditorGUILayout.LabelField($"테스트 횟수: {_testResult.Iterations}", EditorStyles.boldLabel);
+                EditorGUILayout.Space();
+
+                DrawTable("Monster Drop Rate", _testResult.DropRateCounts);
+                DrawTable("Item Category", _testResult.CategoryCounts);
+                DrawTable("Item SubCategory", _testResult.SubCategoryCounts);
+            
+                GUILayout.Space(20);
+            }
+            else
             {
                 EditorGUILayout.HelpBox("테스트 실행 후 결과가 여기에 표시됩니다.", MessageType.Info);
-                return;
             }
 
-            EditorGUILayout.LabelField($"몬스터 UID: {testResult.MonsterUid}", EditorStyles.boldLabel);
-            EditorGUILayout.LabelField($"테스트 횟수: {testResult.Iterations}", EditorStyles.boldLabel);
-            EditorGUILayout.Space();
-
-            DrawTable("Monster Drop Rate", testResult.DropRateCounts);
-            DrawTable("Item Category", testResult.CategoryCounts);
-            DrawTable("Item SubCategory", testResult.SubCategoryCounts);
+            EditorGUILayout.EndScrollView();
         }
 
         private void DrawTable<T>(string subTitle, Dictionary<T, int> data)
@@ -139,7 +153,7 @@ namespace GGemCo2DCoreEditor
 
             foreach (var entry in data)
             {
-                float percentage = (entry.Value / (float)testResult.Iterations) * 100;
+                float percentage = (entry.Value / (float)_testResult.Iterations) * 100;
                 EditorGUILayout.BeginHorizontal();
                 EditorGUILayout.LabelField(entry.Key.ToString(), GUILayout.Width(200));
                 EditorGUILayout.LabelField(entry.Value.ToString(), GUILayout.Width(80));

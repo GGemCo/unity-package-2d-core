@@ -13,11 +13,11 @@ namespace GGemCo2DCoreEditor
     public class SettingEffect : DefaultAddressable
     {
         private const string Title = "이펙트 추가하기";
-        private readonly EditorAddressable _editorAddressable;
+        private readonly AddressableEditor _addressableEditor;
 
-        public SettingEffect(EditorAddressable editorWindow)
+        public SettingEffect(AddressableEditor addressableEditorWindow)
         {
-            _editorAddressable = editorWindow;
+            _addressableEditor = addressableEditorWindow;
             TargetGroupName = $"{ConfigAddressableGroupName.Effect}";
         }
         public void OnGUI()
@@ -35,7 +35,7 @@ namespace GGemCo2DCoreEditor
         /// </summary>
         private void Setup()
         {
-            Dictionary<int, Dictionary<string, string>> dictionary = _editorAddressable.TableEffect.GetDatas();
+            Dictionary<int, Dictionary<string, string>> dictionary = _addressableEditor.TableEffect.GetDatas();
             
             // AddressableSettings 가져오기 (없으면 생성)
             AddressableAssetSettings settings = AddressableAssetSettingsDefaultObject.Settings;
@@ -53,7 +53,7 @@ namespace GGemCo2DCoreEditor
                 // foreach 문을 사용하여 딕셔너리 내용을 출력
                 foreach (KeyValuePair<int, Dictionary<string, string>> outerPair in dictionary)
                 {
-                    var info = _editorAddressable.TableEffect.GetDataByUid(outerPair.Key);
+                    var info = _addressableEditor.TableEffect.GetDataByUid(outerPair.Key);
                     if (info.Uid <= 0) continue;
                 
                     string key = $"{ConfigAddressableGroupName.Effect}_{info.Uid}";
@@ -68,7 +68,7 @@ namespace GGemCo2DCoreEditor
             settings.SetDirty(AddressableAssetSettings.ModificationEvent.EntryMoved, null, true);
             AssetDatabase.SaveAssets();
             // 테이블 다시 로드하기
-            _editorAddressable.LoadTables();
+            _addressableEditor.LoadTables();
             
             EditorUtility.DisplayDialog(Title, "Addressable 설정 완료", "OK");
         }

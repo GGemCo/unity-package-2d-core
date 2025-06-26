@@ -13,14 +13,14 @@ namespace GGemCo2DCoreEditor
     public class SettingCharacters : DefaultAddressable
     {
         private const string Title = "캐릭터 추가하기";
-        private readonly EditorAddressable _editorAddressable;
+        private readonly AddressableEditor _addressableEditor;
         private readonly string _targetGroupNameMonster;
         private readonly string _targetGroupNameNpc;
         private readonly string _targetGroupNamePlayer;
 
-        public SettingCharacters(EditorAddressable editorWindow)
+        public SettingCharacters(AddressableEditor addressableEditorWindow)
         {
-            _editorAddressable = editorWindow;
+            _addressableEditor = addressableEditorWindow;
             _targetGroupNameMonster = ConfigAddressableGroupName.Monster;
             _targetGroupNameNpc = ConfigAddressableGroupName.Npc;
             _targetGroupNamePlayer = ConfigAddressableGroupName.Player;
@@ -40,8 +40,8 @@ namespace GGemCo2DCoreEditor
         /// </summary>
         private void Setup()
         {
-            Dictionary<int, Dictionary<string, string>> dictionaryMonsters = _editorAddressable.TableMonster.GetDatas();
-            Dictionary<int, Dictionary<string, string>> dictionaryNpcs = _editorAddressable.TableNpc.GetDatas();
+            Dictionary<int, Dictionary<string, string>> dictionaryMonsters = _addressableEditor.TableMonster.GetDatas();
+            Dictionary<int, Dictionary<string, string>> dictionaryNpcs = _addressableEditor.TableNpc.GetDatas();
             
             // AddressableSettings 가져오기 (없으면 생성)
             AddressableAssetSettings settings = AddressableAssetSettingsDefaultObject.Settings;
@@ -59,9 +59,9 @@ namespace GGemCo2DCoreEditor
                 // foreach 문을 사용하여 딕셔너리 내용을 출력
                 foreach (KeyValuePair<int, Dictionary<string, string>> outerPair in dictionaryMonsters)
                 {
-                    var info = _editorAddressable.TableMonster.GetDataByUid(outerPair.Key);
+                    var info = _addressableEditor.TableMonster.GetDataByUid(outerPair.Key);
                     if (info.Uid <= 0) continue;
-                    var infoAnimation = _editorAddressable.TableAnimation.GetDataByUid(info.SpineUid);
+                    var infoAnimation = _addressableEditor.TableAnimation.GetDataByUid(info.SpineUid);
                     if (info.Uid <= 0) continue;
                 
                     string key = $"{ConfigAddressables.KeyPrefabMonster}_{infoAnimation.Uid}";
@@ -80,9 +80,9 @@ namespace GGemCo2DCoreEditor
                 // foreach 문을 사용하여 딕셔너리 내용을 출력
                 foreach (KeyValuePair<int, Dictionary<string, string>> outerPair in dictionaryNpcs)
                 {
-                    var info = _editorAddressable.TableNpc.GetDataByUid(outerPair.Key);
+                    var info = _addressableEditor.TableNpc.GetDataByUid(outerPair.Key);
                     if (info.Uid <= 0) continue;
-                    var infoAnimation = _editorAddressable.TableAnimation.GetDataByUid(info.SpineUid);
+                    var infoAnimation = _addressableEditor.TableAnimation.GetDataByUid(info.SpineUid);
                     if (info.Uid <= 0) continue;
                 
                     string key = $"{ConfigAddressables.KeyPrefabNpc}_{infoAnimation.Uid}";
@@ -114,7 +114,7 @@ namespace GGemCo2DCoreEditor
             settings.SetDirty(AddressableAssetSettings.ModificationEvent.EntryMoved, null, true);
             AssetDatabase.SaveAssets();
             // 테이블 다시 로드하기
-            _editorAddressable.LoadTables();
+            _addressableEditor.LoadTables();
             
             EditorUtility.DisplayDialog(Title, "Addressable 설정 완료", "OK");
         }

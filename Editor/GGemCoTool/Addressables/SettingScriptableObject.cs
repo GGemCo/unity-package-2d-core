@@ -12,11 +12,11 @@ namespace GGemCo2DCoreEditor
     public class SettingScriptableObject : DefaultAddressable
     {
         private const string Title = "설정 ScriptableObject 추가하기";
-        private readonly EditorAddressable _editorAddressable;
+        private readonly AddressableEditor _addressableEditor;
 
-        public SettingScriptableObject(EditorAddressable editorWindow)
+        public SettingScriptableObject(AddressableEditor addressableEditorWindow)
         {
-            _editorAddressable = editorWindow;
+            _addressableEditor = addressableEditorWindow;
             TargetGroupName = ConfigAddressableGroupName.Common;
         }
 

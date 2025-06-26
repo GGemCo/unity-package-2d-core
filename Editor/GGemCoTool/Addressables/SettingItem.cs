@@ -16,13 +16,13 @@ namespace GGemCo2DCoreEditor
     public class SettingItem : DefaultAddressable
     {
         private const string Title = "아이템 아이콘, 드랍 이미지 추가하기";
-        private readonly EditorAddressable _editorAddressable;
+        private readonly AddressableEditor _addressableEditor;
         private string _groupNameIconImage;
         private string _groupNameEquipImage;
 
-        public SettingItem(EditorAddressable editorWindow)
+        public SettingItem(AddressableEditor addressableEditorWindow)
         {
-            _editorAddressable = editorWindow;
+            _addressableEditor = addressableEditorWindow;
             TargetGroupName = ConfigAddressableGroupName.ItemDropImage;
             _groupNameIconImage = ConfigAddressableGroupName.ItemIconImage;
             _groupNameEquipImage = ConfigAddressableGroupName.ItemEquipImage;
@@ -42,7 +42,7 @@ namespace GGemCo2DCoreEditor
         /// </summary>
         private void Setup()
         {
-            Dictionary<int, Dictionary<string, string>> dictionary = _editorAddressable.TableItem.GetDatas();
+            Dictionary<int, Dictionary<string, string>> dictionary = _addressableEditor.TableItem.GetDatas();
             
             // AddressableSettings 가져오기 (없으면 생성)
             AddressableAssetSettings settings = AddressableAssetSettingsDefaultObject.Settings;
@@ -72,7 +72,7 @@ namespace GGemCo2DCoreEditor
             // foreach 문을 사용하여 딕셔너리 내용을 출력
             foreach (KeyValuePair<int, Dictionary<string, string>> outerPair in dictionary)
             {
-                var info = _editorAddressable.TableItem.GetDataByUid(outerPair.Key);
+                var info = _addressableEditor.TableItem.GetDataByUid(outerPair.Key);
                 if (info.Uid <= 0) continue;
 
                 // Drop 이미지
@@ -141,7 +141,7 @@ namespace GGemCo2DCoreEditor
             AssetDatabase.SaveAssets();
             
             // 테이블 다시 로드하기
-            _editorAddressable.LoadTables();
+            _addressableEditor.LoadTables();
             EditorUtility.DisplayDialog(Title, "Addressable 설정 완료", "OK");
         }
     }

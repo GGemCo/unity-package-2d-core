@@ -1,9 +1,10 @@
 ﻿using GGemCo2DCore;
 using UnityEditor;
+using UnityEngine;
 
 namespace GGemCo2DCoreEditor
 {
-    public class EditorAddressable : DefaultEditorWindow
+    public class AddressableEditor : DefaultEditorWindow
     {
         private const string Title = "Addressable 셋팅하기";
         
@@ -28,11 +29,12 @@ namespace GGemCo2DCoreEditor
         public TableQuest TableQuest;
         public TableCutscene TableCutscene;
         public TableSkill TableSkill;
+        private Vector2 _scrollPosition;
 
         [MenuItem(ConfigEditor.NameToolSettingAddressable, false, (int)ConfigEditor.ToolOrdering.SettingAddressable)]
         public static void ShowWindow()
         {
-            GetWindow<EditorAddressable>(Title);
+            GetWindow<AddressableEditor>(Title);
         }
         protected override void OnEnable()
         {
@@ -68,6 +70,7 @@ namespace GGemCo2DCoreEditor
 
         private void OnGUI()
         {
+            _scrollPosition = EditorGUILayout.BeginScrollView(_scrollPosition);
             EditorGUILayout.HelpBox("캐릭터 추가후 맵을 추가해야 Regen 정보가 반영됩니다.", MessageType.Info);
             
             EditorGUILayout.Space(10);
@@ -155,6 +158,8 @@ namespace GGemCo2DCoreEditor
                 EditorGUILayout.Space(10);
                 _settingCutscene.OnGUI();
             }
+            EditorGUILayout.Space(20);
+            EditorGUILayout.EndScrollView();
         }
     }
 }

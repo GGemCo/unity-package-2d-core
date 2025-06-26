@@ -10,11 +10,11 @@ namespace GGemCo2DCoreEditor
     public class SettingDialogue : DefaultAddressable
     {
         private const string Title = "대사 추가하기";
-        private readonly EditorAddressable _editorAddressable;
+        private readonly AddressableEditor _addressableEditor;
         
-        public SettingDialogue(EditorAddressable editorWindow)
+        public SettingDialogue(AddressableEditor addressableEditorWindow)
         {
-            _editorAddressable = editorWindow;
+            _addressableEditor = addressableEditorWindow;
             TargetGroupName = ConfigAddressableGroupName.Dialogue;
         }
         public void OnGUI()
@@ -31,7 +31,7 @@ namespace GGemCo2DCoreEditor
         /// </summary>
         private void Setup()
         {
-            Dictionary<int, Dictionary<string, string>> dictionary = _editorAddressable.TableDialogue.GetDatas();
+            Dictionary<int, Dictionary<string, string>> dictionary = _addressableEditor.TableDialogue.GetDatas();
             
             // AddressableSettings 가져오기 (없으면 생성)
             AddressableAssetSettings settings = AddressableAssetSettingsDefaultObject.Settings;
@@ -49,7 +49,7 @@ namespace GGemCo2DCoreEditor
                 // foreach 문을 사용하여 딕셔너리 내용을 출력
                 foreach (KeyValuePair<int, Dictionary<string, string>> outerPair in dictionary)
                 {
-                    var info = _editorAddressable.TableDialogue.GetDataByUid(outerPair.Key);
+                    var info = _addressableEditor.TableDialogue.GetDataByUid(outerPair.Key);
                     if (info.Uid <= 0) continue;
                 
                     string key = $"{ConfigAddressables.KeyDialogue}_{info.Uid}";

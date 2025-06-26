@@ -175,6 +175,7 @@ namespace GGemCo2DCoreEditor
                 _warpExporter.AddWarpToMap();
             }
             
+            GUILayout.Space(20);
             EditorGUILayout.EndScrollView();
         }
         private void ExportDataToJson()

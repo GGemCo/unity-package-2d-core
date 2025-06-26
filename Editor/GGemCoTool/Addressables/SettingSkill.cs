@@ -11,11 +11,11 @@ namespace GGemCo2DCoreEditor
     public class SettingSkill : DefaultAddressable
     {
         private const string Title = "스킬 아이콘 추가하기";
-        private readonly EditorAddressable _editorAddressable;
+        private readonly AddressableEditor _addressableEditor;
         
-        public SettingSkill(EditorAddressable editorWindow)
+        public SettingSkill(AddressableEditor addressableEditorWindow)
         {
-            _editorAddressable = editorWindow;
+            _addressableEditor = addressableEditorWindow;
             TargetGroupName = ConfigAddressableGroupName.SkillIconImage;
         }
         public void OnGUI()
@@ -32,7 +32,7 @@ namespace GGemCo2DCoreEditor
         /// </summary>
         private void Setup()
         {
-            Dictionary<int, StruckTableSkill> dictionary = _editorAddressable.TableSkill.GetSkills();
+            Dictionary<int, StruckTableSkill> dictionary = _addressableEditor.TableSkill.GetSkills();
             
             // AddressableSettings 가져오기 (없으면 생성)
             AddressableAssetSettings settings = AddressableAssetSettingsDefaultObject.Settings;
