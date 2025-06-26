@@ -46,5 +46,9 @@ namespace GGemCo2DCore
         // 스킬
         public const string KeyImageIconSkill = ConfigDefine.NameSDK+"_Skill_Icon";
         public const string PathImageIconSkill = Path + "/Images/Icon/Skill";
+        
+        // 이펙트
+        public const string PathEffect = Path + "/Effects";
+        public const string PathEffectSkill = PathEffect + "/Skills";
     }
 }

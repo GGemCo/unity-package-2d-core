@@ -12,7 +12,8 @@ namespace GGemCo2DCore
                 GcLogger.LogError("effect 테이블에 없는 이펙트 입니다. effect Uid: "+effectUid);
                 return null;
             }
-            string key = $"{ConfigAddressableGroupName.Effect}_{effectUid}";
+            // 이펙트는 같은 프리팹으로 베리에이션 해서 사용할 수 있기때문에 info.PrefabName 을 key 로 사용한다.
+            string key = $"{ConfigAddressableGroupName.Effect}_{info.PrefabName}";
             GameObject prefab = AddressableLoaderPrefabEffect.Instance.GetPrefabByName(key);
             if (prefab == null) return null;
             GameObject effect = Object.Instantiate(prefab);

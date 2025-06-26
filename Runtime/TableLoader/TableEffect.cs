@@ -1,4 +1,5 @@
-﻿using UnityEngine;
+﻿using System.Collections.Generic;
+using UnityEngine;
 
 namespace GGemCo2DCore
 {
@@ -9,7 +10,8 @@ namespace GGemCo2DCore
     {
         public int Uid;
         public string Name;
-        public string PrefabPath;
+        public EffectConstants.Type Type;
+        public string PrefabName;
         public int Width;
         public int Height;
         public Vector2 ColliderSize;
@@ -21,6 +23,15 @@ namespace GGemCo2DCore
     /// </summary>
     public class TableEffect : DefaultTable
     {
+        private static readonly Dictionary<string, EffectConstants.Type> MapType;
+        static TableEffect()
+        {
+            MapType = new Dictionary<string, EffectConstants.Type>
+            {
+                { "Skill", EffectConstants.Type.Skill },
+            };
+        }
+        private EffectConstants.Type ConvertType(string grade) => MapType.GetValueOrDefault(grade, EffectConstants.Type.None);
         public StruckTableEffect GetDataByUid(int uid)
         {
             if (uid <= 0)
@@ -34,7 +45,8 @@ namespace GGemCo2DCore
             {
                 Uid = int.Parse(data["Uid"]),
                 Name = data["Name"],
-                PrefabPath = data["PrefabPath"],
+                Type = ConvertType(data["Type"]),
+                PrefabName = data["PrefabName"],
                 Width = int.Parse(data["Width"]),
                 Height = int.Parse(data["Height"]),
                 ColliderSize = ConvertVector2(data["ColliderSize"]),

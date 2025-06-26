@@ -56,8 +56,8 @@ namespace GGemCo2DCoreEditor
                     var info = _addressableEditor.TableEffect.GetDataByUid(outerPair.Key);
                     if (info.Uid <= 0) continue;
                 
-                    string key = $"{ConfigAddressableGroupName.Effect}_{info.Uid}";
-                    string assetPath = $"{ConfigAddressables.Path}/{info.PrefabPath}.prefab";
+                    string key = $"{ConfigAddressableGroupName.Effect}_{info.PrefabName}";
+                    string assetPath = $"{ConfigAddressables.PathEffectSkill}/{info.PrefabName}.prefab";
                     string label = ConfigAddressableLabel.Effect;
                 
                     Add(settings, groupMonster, key, assetPath, label);
