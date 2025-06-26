@@ -63,7 +63,16 @@ namespace GGemCo2DCoreEditor
     
             var atlasDrop = GetOrCreateSpriteAtlas($"{atlasFolderPath}/ItemDropAtlas.spriteatlas");
             var atlasIcon = GetOrCreateSpriteAtlas($"{atlasFolderPath}/ItemIconAtlas.spriteatlas");
-            var atlasEquip = GetOrCreateSpriteAtlas($"{atlasFolderPath}/ItemEquipAtlas.spriteatlas");
+            SpriteAtlas atlasEquip = GetOrCreateSpriteAtlas($"{atlasFolderPath}/ItemEquipAtlas.spriteatlas");
+            // 장비 아틀라스는 spine 에서 사용하기위해 Read/Write 를 활성화 시킨다.
+            SpriteAtlasTextureSettings spriteAtlasTextureSettings = new SpriteAtlasTextureSettings
+            {
+                anisoLevel = 1,
+                readable = true,
+                sRGB = true,
+                filterMode = FilterMode.Bilinear
+            };
+            atlasEquip.SetTextureSettings(spriteAtlasTextureSettings);
             
             List<Object> assetsDrop = new();
             List<Object> assetsIcon = new();
@@ -132,7 +141,7 @@ namespace GGemCo2DCoreEditor
             Add(settings, groupDropImage, ConfigAddressableLabel.ImageItemDrop, AssetDatabase.GetAssetPath(atlasDrop), ConfigAddressableLabel.ImageItemDrop);
             Add(settings, groupIconImage, ConfigAddressableLabel.ImageItemIcon, AssetDatabase.GetAssetPath(atlasIcon), ConfigAddressableLabel.ImageItemIcon);
             Add(settings, groupEquipImage, ConfigAddressableLabel.ImageItemEquip, AssetDatabase.GetAssetPath(atlasEquip), ConfigAddressableLabel.ImageItemEquip);
-                
+            
             // 강제로 pack 시키기
             SpriteAtlasUtility.PackAtlases(new[] { atlasDrop, atlasIcon, atlasEquip }, EditorUserBuildSettings.activeBuildTarget, false);
 
