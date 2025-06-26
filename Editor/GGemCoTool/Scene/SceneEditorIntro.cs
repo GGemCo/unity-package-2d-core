@@ -56,6 +56,7 @@ namespace GGemCo2DCoreEditor
             fieldName = "buttonGameContinue";
             Button buttonGameContinue = CreateUIComponent.CreateObjectButton(fieldName, "Continue Game");
             scene.SetButtonGameContinue(buttonGameContinue);
+            buttonGameContinue.gameObject.transform.localPosition = new Vector2(0, 100);
             
             EditorUtility.SetDirty(scene);
             Debug.Log($"{fieldName} 버튼이 생성되어 {scene.name} 에 연결되었습니다.");

@@ -38,7 +38,7 @@ namespace GGemCo2DCoreEditor
     {
         private static string GenerateObjectName(string objectName)
         {
-            return $"{ConfigEditor.NamePrefixCore}_{objectName}";
+            return objectName.StartsWith($"{ConfigEditor.NamePrefixCore}_") ? objectName : $"{ConfigEditor.NamePrefixCore}_{objectName}";
         }
         public static Canvas CreateObjectCanvas()
         {
@@ -138,7 +138,7 @@ namespace GGemCo2DCoreEditor
             // 패키지 프리팹 로드
             string prefabPath = ConfigEditor.PathPrefabDefaultUIButton;
             obj = CreateGameObjectByPrefab(objectName, canvas.transform, prefabPath);
-            
+            obj.transform.localPosition = Vector3.zero;
             Button button = obj.GetComponent<Button>();
             if (!button)
             {
