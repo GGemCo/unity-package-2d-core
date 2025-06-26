@@ -377,7 +377,7 @@ MonoBehaviour:
   textMessage: {fileID: 7513818055415009959}
   prefabButtonChoice: {fileID: 153738558557376745, guid: 737dd7b9bf9711f499a233fa0009a14a, type: 3}
   containerButton: {fileID: 7891518666963124695}
-  messageQuestSelect: "\uC9C4\uD589\uD560 \uD018\uC2A4\uD2B8\uB97C \uC120\uD0DD\uD574\uC8FC\uC138\uC694."
+  messageQuestSelect: Please select the quest to proceed.
 --- !u!1 &5853184927756522788
 GameObject:
   m_ObjectHideFlags: 0
