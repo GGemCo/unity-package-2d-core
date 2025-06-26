@@ -4,4 +4,4 @@
 200003	패스트무브	Effects/Skills/Fastmove	780	447	780,447	N	FFF766
 200004	파이어볼	Effects/Skills/Fireball	343	197	188,96	Y	FFFFFF
 200005	디크리즈 어텍	Effects/Skills/DecreaseMove	143	257	143,257	N	FFF766
-200006	아이스볼	Effects/Skills/Fireball	343	197	188,96	Y	60C5F1
+#200006	아이스볼	Effects/Skills/Iceball	343	197	188,96	Y	60C5F1

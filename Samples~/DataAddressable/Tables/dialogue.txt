@@ -2,4 +2,3 @@
 10001	대화1	DialogueData1
 10002	대화2	DialogueData2
 10003	대화3	DialogueData3
-10004	테스트1	TestDialogueData1

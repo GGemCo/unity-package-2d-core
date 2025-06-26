@@ -17,18 +17,18 @@
 	},
 	"samples": [
 		{
-			"displayName": "Data Resource",
-			"description": "기본 샘플 리소스 입니다.\nAssets/GGemCo/Data 폴더를 생성하고, 모든 파일을 이동 시킨 후 사용해주세요.",
+			"displayName": "Data",
+			"description": "기본 샘플 리소스 입니다.\nAssets/GGemCo 폴더에 모든 파일을 이동 시킨 후 사용해주세요.",
 			"path": "Samples~/Data"
 		},
 		{
-			"displayName": "Addressable Data Resource",
-			"description": "Addressable 에 사용되는 샘플 리소스 입니다.\n사용하기 전에 Data Resource 샘플 리소스를 먼저 Import 해주세요.\nAssets/GGemCo/DataAddressable 폴더를 생성하고, 모든 파일을 이동 시키면 바로 사용할 수 있습니다.\nSpine2D v4.2 패키지 설치가 필요합니다.\nhttps://esotericsoftware.com/spine-unity-download/",
+			"displayName": "DataAddressable",
+			"description": "Addressable 에 사용되는 샘플 리소스 입니다.\n사용하기 전에 Data Resource 샘플 리소스를 먼저 Import 해주세요.\nAssets/GGemCo 폴더에 모든 파일을 이동 시키면 바로 사용할 수 있습니다.\nSpine2D v4.2 패키지 설치가 필요합니다.\nhttps://esotericsoftware.com/spine-unity-download/",
 			"path": "Samples~/DataAddressable"
 		},
 		{
-			"displayName": "UI Windows",
-			"description": "UI 윈도우 프리팹 샘플 리소스 입니다.\n원하는 폴더를 생성하고, 모든 파일을 복사 후 바로 사용할 수 있습니다.\n복사 후 디자인을 변경해서 사용할 수 있습니다.",
+			"displayName": "UIWindows",
+			"description": "UI 윈도우 프리팹 샘플 리소스 입니다.\nAssets/GGemCo 폴더에 모든 파일을 이동 시킨 후 사용해주세요.\n디자인을 변경해서 사용할 수 있습니다.",
 			"path": "Samples~/UIWindows"
 		},
 		{

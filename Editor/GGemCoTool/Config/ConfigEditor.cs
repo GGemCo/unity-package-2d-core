@@ -66,6 +66,6 @@ namespace GGemCo2DCoreEditor
         public const string PathPrefabPopupManager = PathPrefab+"/UI/PopupManager.prefab";
         
         // 윈도우 경로
-        public const string PathUIWindow = "Assets/GGemCo/UI Windows";
+        public const string PathUIWindow = "Assets/GGemCo/UIWindows";
     }
 }
