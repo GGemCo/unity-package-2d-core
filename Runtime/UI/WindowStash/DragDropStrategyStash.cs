@@ -27,7 +27,7 @@ namespace GGemCo2DCore
                 return;
             }
             UIWindow targetWindow = targetUIIcon.window;
-            UIWindowManager.WindowUid targetWindowUid = targetUIIcon.windowUid;
+            // UIWindowManager.WindowUid targetWindowUid = targetUIIcon.windowUid;
             int targetIconSlotIndex = targetUIIcon.slotIndex;
             int targetIconUid = targetUIIcon.uid;
             int targetIconCount = targetUIIcon.GetCount();
@@ -37,7 +37,7 @@ namespace GGemCo2DCore
                 // 보관할 수 있는 아이템 인지 체크
                 if (droppedUIIcon.IsAntiFlag(ItemConstants.AntiFlag.Stash))
                 {
-                    SceneGame.Instance.systemMessageManager.ShowMessageWarning("해당 아이템은 보관할 수 없는 아이템 입니다.");
+                    SceneGame.Instance.systemMessageManager.ShowMessageWarning("This item cannot be stored.");//"해당 아이템은 보관할 수 없는 아이템 입니다."
                 }
                 else
                 {
@@ -59,7 +59,7 @@ namespace GGemCo2DCore
                 // 보관할 수 있는 아이템 인지 체크
                 if (droppedUIIcon.IsAntiFlag(ItemConstants.AntiFlag.Stash))
                 {
-                    SceneGame.Instance.systemMessageManager.ShowMessageWarning("해당 아이템은 보관할 수 없는 아이템 입니다.");
+                    SceneGame.Instance.systemMessageManager.ShowMessageWarning("This item cannot be stored.");//"해당 아이템은 보관할 수 없는 아이템 입니다."
                 }
                 else
                 {

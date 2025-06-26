@@ -31,7 +31,7 @@ namespace GGemCo2DCore
         {
             if (!_isPossibleDrag) return;
 
-            transform.SetParent(_icon.SceneGame.canvasUI.gameObject.transform);
+            transform.SetParent(_icon.sceneGame.canvasUI.gameObject.transform);
             _image.raycastTarget = false;
 
             _originalPosition = transform.position;

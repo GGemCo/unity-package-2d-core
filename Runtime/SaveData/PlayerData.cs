@@ -9,91 +9,91 @@ namespace GGemCo2DCore
     /// </summary>
     public class PlayerData : DefaultData, ISaveData
     {
-        private int maxPlayerLevel;
-        private TableLoaderManager tableLoaderManager;
-        private readonly CompositeDisposable disposables = new CompositeDisposable();
+        private int _maxPlayerLevel;
+        private TableLoaderManager _tableLoaderManager;
+        private readonly CompositeDisposable _disposables = new CompositeDisposable();
         
-        private readonly BehaviorSubject<int> currentMapUid = new(0);
-        private readonly BehaviorSubject<int> currentLevel = new(1);
-        private readonly BehaviorSubject<long> currentExp = new(0);
-        private readonly BehaviorSubject<long> currentNeedExp = new(0);
-        private readonly BehaviorSubject<long> currentGold = new(0);
-        private readonly BehaviorSubject<long> currentSilver = new(0);
+        private readonly BehaviorSubject<int> _currentMapUid = new(0);
+        private readonly BehaviorSubject<int> _currentLevel = new(1);
+        private readonly BehaviorSubject<long> _currentExp = new(0);
+        private readonly BehaviorSubject<long> _currentNeedExp = new(0);
+        private readonly BehaviorSubject<long> _currentGold = new(0);
+        private readonly BehaviorSubject<long> _currentSilver = new(0);
         
         public int CurrentMapUid
         {
-            get => currentMapUid.Value;
-            set => currentMapUid.OnNext(value);
+            get => _currentMapUid.Value;
+            set => _currentMapUid.OnNext(value);
         }
 
         public int CurrentLevel
         {
-            get => currentLevel.Value;
-            set => currentLevel.OnNext(value);
+            get => _currentLevel.Value;
+            set => _currentLevel.OnNext(value);
         }
 
         public long CurrentExp
         {
-            get => currentExp.Value;
-            set => currentExp.OnNext(value);
+            get => _currentExp.Value;
+            set => _currentExp.OnNext(value);
         }
         public long CurrentGold
         {
-            get => currentGold.Value;
-            set => currentGold.OnNext(value);
+            get => _currentGold.Value;
+            set => _currentGold.OnNext(value);
         }
         public long CurrentSilver
         {
-            get => currentSilver.Value;
-            set => currentSilver.OnNext(value);
+            get => _currentSilver.Value;
+            set => _currentSilver.OnNext(value);
         }
         // json 에 포함되지 않도록 함수화 
         public Observable<int> OnCurrentLevelChanged()
         {
-            return currentLevel.DistinctUntilChanged();
+            return _currentLevel.DistinctUntilChanged();
         }
 
         public Observable<int> OnCurrentChapterChanged()
         {
-            return currentMapUid.DistinctUntilChanged();
+            return _currentMapUid.DistinctUntilChanged();
         }
 
         public Observable<long> OnCurrentExpChanged()
         {
-            return currentExp.DistinctUntilChanged();
+            return _currentExp.DistinctUntilChanged();
         }
 
         public Observable<long> OnCurrentNeedExpChanged()
         {
-            return currentNeedExp.DistinctUntilChanged();
+            return _currentNeedExp.DistinctUntilChanged();
         }
         public Observable<long> OnCurrentGoldChanged()
         {
-            return currentGold.DistinctUntilChanged();
+            return _currentGold.DistinctUntilChanged();
         }
         public Observable<long> OnCurrentSilverChanged()
         {
-            return currentSilver.DistinctUntilChanged();
+            return _currentSilver.DistinctUntilChanged();
         }
 
-        private TableMonster tableMonster;
-        private TableExp tableExp;
+        private TableMonster _tableMonster;
+        private TableExp _tableExp;
 
         /// <summary>
         /// 초기화 (저장된 데이터를 불러오거나 새로운 데이터 생성)
         /// </summary>
         public void Initialize(TableLoaderManager loader, SaveDataContainer saveDataContainer = null)
         {
-            tableLoaderManager = loader;
-            maxPlayerLevel = AddressableLoaderSettings.Instance.playerSettings.maxLevel;
+            _tableLoaderManager = loader;
+            _maxPlayerLevel = AddressableLoaderSettings.Instance.playerSettings.maxLevel;
             // 최대 레벨이 없을때는 경험치 테이블에서 가져온다
-            if (maxPlayerLevel <= 0)
+            if (_maxPlayerLevel <= 0)
             {
-                maxPlayerLevel = loader.TableExp.GetLastLevel();
+                _maxPlayerLevel = loader.TableExp.GetLastLevel();
             }
 
-            tableMonster = tableLoaderManager.TableMonster;
-            tableExp = tableLoaderManager.TableExp;
+            _tableMonster = _tableLoaderManager.TableMonster;
+            _tableExp = _tableLoaderManager.TableExp;
 
             // 저장된 데이터가 있을 경우 불러오기
             LoadPlayerData(saveDataContainer);
@@ -107,10 +107,10 @@ namespace GGemCo2DCore
         /// </summary>
         private void InitializeSubscriptions()
         {
-            currentLevel.DistinctUntilChanged()
-                .CombineLatest(currentMapUid, currentExp, currentGold, currentSilver, (_, _, _, _, _) => Unit.Default)
+            _currentLevel.DistinctUntilChanged()
+                .CombineLatest(_currentMapUid, _currentExp, _currentGold, _currentSilver, (_, _, _, _, _) => Unit.Default)
                 .Subscribe(_ => SavePlayerData())
-                .AddTo(disposables);
+                .AddTo(_disposables);
         }
 
         /// <summary>
@@ -136,7 +136,7 @@ namespace GGemCo2DCore
             }
 
             // 필요 경험치 업데이트
-            UpdateRequiredExp(tableExp.GetNeedExp(CurrentLevel + 1));
+            UpdateRequiredExp(_tableExp.GetNeedExp(CurrentLevel + 1));
         }
         /// <summary>
         /// 몬스터 처치 시 경험치 추가
@@ -146,7 +146,7 @@ namespace GGemCo2DCore
         /// <param name="monsterObject"></param>
         public void AddExp(int monsterVid, int monsterUid, GameObject monsterObject)
         {
-            var monsterData = tableMonster.GetDataByUid(monsterUid);
+            var monsterData = _tableMonster.GetDataByUid(monsterUid);
             if (monsterData == null) return;
 
             AddExp(monsterData.RewardExp);
@@ -156,16 +156,16 @@ namespace GGemCo2DCore
         {
             long newExp = CurrentExp + exp;
             int nextLevel = CurrentLevel;
-            while (nextLevel < maxPlayerLevel && newExp >= tableExp.GetNeedExp(nextLevel + 1))
+            while (nextLevel < _maxPlayerLevel && newExp >= _tableExp.GetNeedExp(nextLevel + 1))
             {
-                newExp -= tableExp.GetNeedExp(nextLevel + 1);
+                newExp -= _tableExp.GetNeedExp(nextLevel + 1);
                 nextLevel++;
             }
 
             // 최종 값 업데이트
-            CurrentLevel = Mathf.Min(nextLevel, maxPlayerLevel);
-            CurrentExp = nextLevel < maxPlayerLevel ? newExp : 0;
-            UpdateRequiredExp(nextLevel < maxPlayerLevel ? tableExp.GetNeedExp(nextLevel + 1) : 0);
+            CurrentLevel = Mathf.Min(nextLevel, _maxPlayerLevel);
+            CurrentExp = nextLevel < _maxPlayerLevel ? newExp : 0;
+            UpdateRequiredExp(nextLevel < _maxPlayerLevel ? _tableExp.GetNeedExp(nextLevel + 1) : 0);
         }
 
         /// <summary>
@@ -173,11 +173,11 @@ namespace GGemCo2DCore
         /// </summary>
         private void UpdateRequiredExp(long value)
         {
-            currentNeedExp.OnNext(value);
+            _currentNeedExp.OnNext(value);
         }
         public long CurrentNeedExp()
         {
-            return currentNeedExp.Value;
+            return _currentNeedExp.Value;
         }
 
         protected override int GetMaxSlotCount()
@@ -260,14 +260,14 @@ namespace GGemCo2DCore
                 case CurrencyConstants.Type.Gold:
                     if (CurrentGold < value)
                     {
-                        return new ResultCommon(ResultCommon.Type.Fail, "골드가 부족합니다.");
+                        return new ResultCommon(ResultCommon.Type.Fail, "There is not enough Gold.");//"골드가 부족합니다."
                     }
                     CurrentGold -= value;
                     return new ResultCommon(ResultCommon.Type.Success);
                 case CurrencyConstants.Type.Silver:
                     if (CurrentSilver < value)
                     {
-                        return new ResultCommon(ResultCommon.Type.Fail, "실버가 부족합니다.");
+                        return new ResultCommon(ResultCommon.Type.Fail, "There is not enough Silver.");//"실버가 부족합니다."
                     }
                     CurrentSilver -= value;
                     return new ResultCommon(ResultCommon.Type.Success);

@@ -86,7 +86,7 @@ namespace GGemCo2DCore
                 ShowCancelButton = false,
                 PopupType = Type.Default,
                 MessageColor = Color.yellow,
-                Title = "시스템 안내"
+                Title = "System Info" //시스템 안내 
             });
         }
         /// <summary>
@@ -103,7 +103,7 @@ namespace GGemCo2DCore
                 ShowCancelButton = false,
                 PopupType = Type.Default,
                 MessageColor = Color.red,
-                Title = "시스템 안내"
+                Title = "System Info" //시스템 안내 
             });
         }
         /// <summary>

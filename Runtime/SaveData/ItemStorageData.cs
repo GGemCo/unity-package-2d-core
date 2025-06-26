@@ -37,7 +37,7 @@ namespace GGemCo2DCore
         {
             if (slotIndex < 0 || slotIndex >= MaxSlotCount)
             {
-                return new ResultCommon(ResultCommon.Type.Fail, "잘못된 슬롯 인덱스입니다.");
+                return new ResultCommon(ResultCommon.Type.Fail, "Invalid slot index.");
             }
             var info = TableLoaderManager.Instance.TableItem.GetDataByUid(itemUid);
             if (info == null || info.Uid <= 0)
@@ -56,7 +56,7 @@ namespace GGemCo2DCore
                 case < 0:
                     return new ResultCommon(ResultCommon.Type.Fail, $"슬롯에 있는 아이템 개수가 부족합니다. slotIndex: {slotIndex}");
                 case 0:
-                    controls.Add(new SaveDataIcon(slotIndex, 0, 0));
+                    controls.Add(new SaveDataIcon(slotIndex, 0));
                     break;
                 default:
                     controls.Add(new SaveDataIcon(slotIndex, itemUid, count));
@@ -126,7 +126,7 @@ namespace GGemCo2DCore
                     int emptyIndex = FindEmptySlot();
                     if (emptyIndex == -1)
                     {
-                        return new ResultCommon(ResultCommon.Type.Fail, "인벤토리에 공간이 부족합니다.");
+                        return new ResultCommon(ResultCommon.Type.Fail, "There is not enough space in the inventory.");//"인벤토리에 공간이 부족합니다."
                     }
 
                     int addedAmount = Math.Min(remainingValue, maxOverlayCount);
@@ -146,7 +146,7 @@ namespace GGemCo2DCore
         {
             if (slotIndex < 0 || slotIndex >= MaxSlotCount)
             {
-                return new ResultCommon(ResultCommon.Type.Fail, "잘못된 슬롯 인덱스입니다.");
+                return new ResultCommon(ResultCommon.Type.Fail, "Invalid slot index.");//"잘못된 슬롯 인덱스입니다."
             }
 
             var info = TableLoaderManager.Instance.TableItem.GetDataByUid(itemUid);
@@ -158,7 +158,7 @@ namespace GGemCo2DCore
             int emptyIndex = FindEmptySlot();
             if (emptyIndex == -1)
             {
-                return new ResultCommon(ResultCommon.Type.Fail, "인벤토리에 공간이 부족합니다.");
+                return new ResultCommon(ResultCommon.Type.Fail, "There is not enough space in the inventory.");//"인벤토리에 공간이 부족합니다."
             }
 
             int maxOverlayCount = info.MaxOverlayCount;
@@ -192,7 +192,7 @@ namespace GGemCo2DCore
                 emptyIndex = FindEmptySlot();
                 if (emptyIndex == -1)
                 {
-                    return new ResultCommon(ResultCommon.Type.Fail, "인벤토리에 공간이 부족합니다.");
+                    return new ResultCommon(ResultCommon.Type.Fail, "There is not enough space in the inventory.");//"인벤토리에 공간이 부족합니다."
                 }
 
                 int addedAmount = Math.Min(remainingValue, maxOverlayCount);
@@ -208,7 +208,7 @@ namespace GGemCo2DCore
         public void RemoveItemCount(int slotIndex)
         {
             if (!ItemCounts.ContainsKey(slotIndex)) return;
-            ItemCounts[slotIndex] = new SaveDataIcon(slotIndex, 0, 0);
+            ItemCounts[slotIndex] = new SaveDataIcon(slotIndex, 0);
             SaveDatas();
         }
         /// <summary>
@@ -258,7 +258,7 @@ namespace GGemCo2DCore
             // 이동할 슬롯과 대상 슬롯이 동일하면 무시
             if (fromIndex == toIndex)
             {
-                return new ResultCommon(ResultCommon.Type.Fail, "같은 슬롯으로 이동할 수 없습니다.");
+                return new ResultCommon(ResultCommon.Type.Fail, "You cannot move to the same slot.");//"같은 슬롯으로 이동할 수 없습니다."
             }
 
             // fromIndex 아이템 존재 확인
@@ -276,7 +276,7 @@ namespace GGemCo2DCore
             // 같은 아이템인지 확인
             if (fromItem.Uid != toItem.Uid)
             {
-                return new ResultCommon(ResultCommon.Type.Fail, "다른 종류의 아이템은 합칠 수 없습니다.");
+                return new ResultCommon(ResultCommon.Type.Fail, "You can't combine other kinds of items.");//"다른 종류의 아이템은 합칠 수 없습니다."
             }
 
             // 아이템 정보 가져오기 (최대 중첩 개수 확인)
@@ -292,7 +292,7 @@ namespace GGemCo2DCore
             // 합칠 공간이 없는 경우
             if (availableSpace <= 0)
             {
-                return new ResultCommon(ResultCommon.Type.Fail, "대상 슬롯에 합칠 공간이 없습니다.");
+                return new ResultCommon(ResultCommon.Type.Fail, "There is no space in the destination slot.");//"대상 슬롯에 합칠 공간이 없습니다."
             }
 
             // 이동 가능한 개수 계산

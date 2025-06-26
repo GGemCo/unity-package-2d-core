@@ -71,7 +71,7 @@ namespace GGemCo2DCore
 
             if (info.reward.items.Count <= 0) return;
             maxCountIcon = info.reward.items.Count;
-            iconPoolManager.Initialize();
+            IconPoolManager.Initialize();
             int index = 0;
             foreach (var rewardItem in info.reward.items)
             {

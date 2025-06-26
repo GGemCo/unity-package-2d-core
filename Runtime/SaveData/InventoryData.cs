@@ -116,20 +116,20 @@ namespace GGemCo2DCore
             int emptySlot = FindEmptySlot();
             if (emptySlot < 0)
             {
-                return new ResultCommon(ResultCommon.Type.Fail, "인벤토리에 빈 공간이 없습니다.");
+                return new ResultCommon(ResultCommon.Type.Fail, "There is no empty space in the inventory."); //"인벤토리에 빈 공간이 없습니다."
             }
             if (itemUid <= 0)
             {
-                return new ResultCommon(ResultCommon.Type.Fail, "나누려고 하는 아이템 정보가 없습니다.");
+                return new ResultCommon(ResultCommon.Type.Fail, "There is no item information you are trying to share.");//"나누려고 하는 아이템 정보가 없습니다."
             }
             if (splitItemCount <= 0)
             {
-                return new ResultCommon(ResultCommon.Type.Fail, "나누려고 하는 아이템 개수가 잘 못되었습니다.");
+                return new ResultCommon(ResultCommon.Type.Fail, "The number of items you are trying to share is incorrect.");//"나누려고 하는 아이템 개수가 잘 못되었습니다."
             }
             var info = TableLoaderManager.Instance.TableItem.GetDataByUid(itemUid);
             if (info == null || info.Uid <= 0)
             {
-                return new ResultCommon(ResultCommon.Type.Fail, "나누려고 하는 아이템 테이블 정보가 없습니다.");
+                return new ResultCommon(ResultCommon.Type.Fail, "There is no item table information you are trying to share.");//"나누려고 하는 아이템 테이블 정보가 없습니다."
             }
 
             List<SaveDataIcon> controls = new List<SaveDataIcon>();
@@ -159,7 +159,7 @@ namespace GGemCo2DCore
         public ResultCommon UpgradeItem(int iconSlotIndex, int resultItemUid)
         {
             SaveDataIcon saveDataIcon = ItemCounts[iconSlotIndex];
-            if (saveDataIcon == null) return new ResultCommon(ResultCommon.Type.Fail, "강화하려는 아이템 정보가 없습니다.");
+            if (saveDataIcon == null) return new ResultCommon(ResultCommon.Type.Fail, "There is no item information you want to upgrade.");//"강화하려는 아이템 정보가 없습니다."
             saveDataIcon.SetUid(resultItemUid);
             
             List<SaveDataIcon> controls = new List<SaveDataIcon>();

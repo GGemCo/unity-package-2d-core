@@ -123,7 +123,7 @@ namespace GGemCo2DCore
                 // PlayerPrefs 에서 가져온 값이 있는지 체크 
                 if (PlayerPrefsManager.LoadSaveDataSlotIndex() <= 0)
                 {
-                    popupManager.ShowPopupError("선택된 슬롯이 없습니다. 불러오기를 해주세요.");
+                    popupManager.ShowPopupError("There is no selected slot. Please load it.");//"선택된 슬롯이 없습니다. 불러오기를 해주세요."
                     return;
                 }
                 // GcLogger.Log("currentSaveDataSlotIndex: " + currentSaveDataSlotIndex);

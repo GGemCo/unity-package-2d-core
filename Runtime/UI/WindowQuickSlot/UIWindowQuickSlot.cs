@@ -16,7 +16,7 @@ namespace GGemCo2DCore
         public UIWindowSkill uiWindowSkill;
         public int Priority => 1;
 
-        private readonly Dictionary<KeyCode, int> indexByKeyCode = new Dictionary<KeyCode, int>
+        private readonly Dictionary<KeyCode, int> _indexByKeyCode = new Dictionary<KeyCode, int>
         {
             { KeyCode.Alpha1, 0 },
             { KeyCode.Alpha2, 1 },
@@ -136,7 +136,7 @@ namespace GGemCo2DCore
                 return ;
             }
             // GcLogger.Log("UIWindowQuickSlot Key pressed Alpha1");
-            UIIcon icon = GetIconByIndex(indexByKeyCode.GetValueOrDefault(keyCode));
+            UIIcon icon = GetIconByIndex(_indexByKeyCode.GetValueOrDefault(keyCode));
             if (icon == null || icon.uid <= 0) return;
             if (!icon.IsSkill()) return;
             var info = TableLoaderManager.Instance.TableSkill.GetDataByUidLevel(icon.uid, icon.GetLevel());
@@ -148,7 +148,7 @@ namespace GGemCo2DCore
 
             if (SceneGame.Instance.player.GetComponent<Player>().CheckNeedMp(info.NeedMp) == false)
             {
-                SceneGame.Instance.systemMessageManager.ShowMessageWarning("마력이 부족합니다.");
+                SceneGame.Instance.systemMessageManager.ShowMessageWarning("Not enough mana.");//"마력이 부족합니다."
                 return;
             }
 
@@ -167,7 +167,7 @@ namespace GGemCo2DCore
             float time = SceneGame.Instance.uIIconCoolTimeManager.GetCurrentCoolTime(uid, icon.uid);
             if (time > 0)
             {
-                SceneGame.Instance.systemMessageManager.ShowMessageWarning("쿨타임 중에는 사용할 수 없습니다.");
+                SceneGame.Instance.systemMessageManager.ShowMessageWarning("Cannot be used during cooldown.");//"쿨타임 중에는 사용할 수 없습니다."
                 return;
             }
             // 스킬 창이 열려있을때는 해제 하기

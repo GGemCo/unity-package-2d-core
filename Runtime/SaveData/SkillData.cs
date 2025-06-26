@@ -40,12 +40,12 @@ namespace GGemCo2DCore
         {
             if (skillUid <= 0)
             {
-                return new ResultCommon(ResultCommon.Type.Fail, $"스킬 정보가 없습니다.");
+                return new ResultCommon(ResultCommon.Type.Fail, $"No skill information");//$"스킬 정보가 없습니다."
             }
 
             if (!SkillDatas.ContainsKey(slotIndex))
             {
-                return new ResultCommon(ResultCommon.Type.Fail, $"아직 스킬을 배우지 않았습니다.");
+                return new ResultCommon(ResultCommon.Type.Fail, $"I haven't learned my skills yet.");//$"아직 스킬을 배우지 않았습니다."
             }
             List<SaveDataIcon> controls = new List<SaveDataIcon> { new (slotIndex, skillUid, skillCount, skillLevel, skillLearn) };
 
@@ -69,7 +69,7 @@ namespace GGemCo2DCore
         {
             if (skillUid <= 0)
             {
-                return new ResultCommon(ResultCommon.Type.Fail, $"스킬 정보가 없습니다.");
+                return new ResultCommon(ResultCommon.Type.Fail, "There is no skill information.");//$"스킬 정보가 없습니다."
             }
 
             List<SaveDataIcon> controls = new List<SaveDataIcon> { new (slotIndex, skillUid, skillCount, skillLevel, skillLearn) };

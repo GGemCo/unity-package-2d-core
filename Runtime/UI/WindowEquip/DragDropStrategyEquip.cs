@@ -14,10 +14,10 @@ namespace GGemCo2DCore
             UIIconItem uiIconItem = droppedUIIcon as UIIconItem;
             if (uiIconItem == null) return;
             UIWindow droppedWindow = droppedUIIcon.window;
-            UIWindowManager.WindowUid droppedWindowUid = droppedUIIcon.windowUid;
+            // UIWindowManager.WindowUid droppedWindowUid = droppedUIIcon.windowUid;
             int dropIconSlotIndex = droppedUIIcon.slotIndex;
             int dropIconUid = droppedUIIcon.uid;
-            int dropIconCount = droppedUIIcon.GetCount();
+            // int dropIconCount = droppedUIIcon.GetCount();
             if (dropIconUid <= 0)
             {
                 return;
@@ -29,10 +29,10 @@ namespace GGemCo2DCore
                 return;
             }
             UIWindow targetWindow = targetUIIcon.window;
-            UIWindowManager.WindowUid targetWindowUid = targetUIIcon.windowUid;
+            // UIWindowManager.WindowUid targetWindowUid = targetUIIcon.windowUid;
             int targetIconSlotIndex = targetUIIcon.slotIndex;
             int targetIconUid = targetUIIcon.uid;
-            int targetIconCount = targetUIIcon.GetCount();
+            // int targetIconCount = targetUIIcon.GetCount();
 
             if (targetIconSlotIndex < window.maxCountIcon)
             {
@@ -57,7 +57,7 @@ namespace GGemCo2DCore
                 }
                 else
                 {
-                    SceneGame.Instance.systemMessageManager.ShowMessageWarning("해당 슬롯에는 착용할 수 없는 아이템 입니다.");
+                    SceneGame.Instance.systemMessageManager.ShowMessageWarning("It is an item that cannot be worn in that slot.");//"해당 슬롯에는 착용할 수 없는 아이템 입니다."
                 }
             }
         }

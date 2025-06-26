@@ -34,7 +34,7 @@ namespace GGemCo2DCore
         private List<string> _messages;
         private Dictionary<string, DialogueNodeData> _dialogueNodeDatas;
         
-        private int _currentDialogueUid;
+        // private int _currentDialogueUid;
         private int _currentNpcUid;
         private DialogueNodeData _currentDialogue;
         
@@ -76,7 +76,7 @@ namespace GGemCo2DCore
         {
             _messages.Clear();
             _dialogueNodeDatas.Clear();
-            _currentDialogueUid = 0;
+            // _currentDialogueUid = 0;
             _currentDialogue = null;
             _indexMessage = 0;
             _currentNpcUid = 0;
@@ -169,7 +169,7 @@ namespace GGemCo2DCore
             {
                 if (_currentDialogue.options.Count > 0)
                 {
-                    _systemMessageManager.ShowMessageWarning("선택지를 선택해주세요.");
+                    _systemMessageManager.ShowMessageWarning("Please select your choice.");//"선택지를 선택해주세요."
                     return;
                 }
                 ProcessNextDialogue(_currentDialogue.nextNodeGuid);

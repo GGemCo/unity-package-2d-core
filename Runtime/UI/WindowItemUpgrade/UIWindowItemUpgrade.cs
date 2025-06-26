@@ -183,7 +183,7 @@ namespace GGemCo2DCore
 
             if (sourceInfo.Upgrade >= info.MaxUpgrade)
             {
-                SceneGame.systemMessageManager.ShowMessageWarning("더이상 강화 할 수 없습니다.");
+                SceneGame.systemMessageManager.ShowMessageWarning("This item can no longer be enhanced.");//"더이상 강화 할 수 없습니다."
                 return;
             }
             var resultInfo = _tableItem.GetDataByUid(info.ResultItemUid);
@@ -273,7 +273,7 @@ namespace GGemCo2DCore
         {
             if (_struckTableItemUpgrade == null)
             {
-                SceneGame.systemMessageManager.ShowMessageWarning("강화할 아이템을 선택해주세요.");
+                SceneGame.systemMessageManager.ShowMessageWarning("Please select an item to enhance.");//"강화할 아이템을 선택해주세요."
                 return;
             }
             // 재료 체크
@@ -282,7 +282,7 @@ namespace GGemCo2DCore
                 bool result = elementMaterial.CheckHaveCount();
                 if (!result)
                 {
-                    SceneGame.systemMessageManager.ShowMessageWarning("재료가 부족합니다.");
+                    SceneGame.systemMessageManager.ShowMessageWarning("Not enough materials.");//"재료가 부족합니다."
                     return;
                 }
             }

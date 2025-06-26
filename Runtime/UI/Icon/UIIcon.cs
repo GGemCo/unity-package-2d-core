@@ -58,7 +58,7 @@ namespace GGemCo2DCore
         private RectTransform _rectTransform;
         protected bool PossibleClick;
 
-        public SceneGame SceneGame;
+        public SceneGame sceneGame;
 
         protected virtual void Awake()
         {
@@ -90,7 +90,7 @@ namespace GGemCo2DCore
 
         protected virtual void Start()
         {
-            SceneGame = SceneGame.Instance;
+            sceneGame = SceneGame.Instance;
             // 선택되었을때 보여줄 이미지 크기를 slot size 로 변경
             if (imageSelected == null) return;
             imageSelected.rectTransform.sizeDelta = window.slotSize;
@@ -379,7 +379,7 @@ namespace GGemCo2DCore
             float time = SceneGame.Instance.uIIconCoolTimeManager.GetCurrentCoolTime(windowUid, uid);
             if (time > 0)
             {
-                SceneGame.Instance.systemMessageManager.ShowMessageWarning("쿨타임 중에는 사용할 수 없습니다.");
+                SceneGame.Instance.systemMessageManager.ShowMessageWarning("Cannot be used during cooldown.");//"쿨타임 중에는 사용할 수 없습니다."
                 return false;
             }
             

@@ -15,7 +15,7 @@ namespace GGemCo2DCore
 
         private GameState State { get; set; }
         private GameSubState SubState { get; set; }
-        private bool isStateDirty;
+        private bool _isStateDirty;
 
         [HideInInspector] public GameObject player;
         [Header("기본오브젝트")]
@@ -66,7 +66,7 @@ namespace GGemCo2DCore
         public QuestManager QuestManager;
         public AddressableLoaderPrefabCharacter AddressableLoaderPrefabCharacter;
         
-        private UIWindowInventory uiWindowInventory;
+        private UIWindowInventory _uiWindowInventory;
 
         private void Awake()
         {
@@ -89,7 +89,7 @@ namespace GGemCo2DCore
             
             InitializeManagers();
 
-            isStateDirty = false;
+            _isStateDirty = false;
             SetState(GameState.Begin);
         }
         /// <summary>
@@ -133,7 +133,7 @@ namespace GGemCo2DCore
         {
             if (TableLoaderManager.Instance == null) return;
             
-            uiWindowInventory = uIWindowManager?.GetUIWindowByUid<UIWindowInventory>(UIWindowManager.WindowUid
+            _uiWindowInventory = uIWindowManager?.GetUIWindowByUid<UIWindowInventory>(UIWindowManager.WindowUid
                 .Inventory);
             
             StartCoroutine(UpdateStateRoutine());
@@ -142,10 +142,10 @@ namespace GGemCo2DCore
         {
             while (true)
             {
-                if (isStateDirty)
+                if (_isStateDirty)
                 {
                     OnStateChanged();
-                    isStateDirty = false;
+                    _isStateDirty = false;
                 }
                 yield return new WaitForSeconds(0.1f);
             }
@@ -167,8 +167,8 @@ namespace GGemCo2DCore
                     PopupMetadata popupMetadata = new PopupMetadata
                     {
                         PopupType = PopupManager.Type.Default,
-                        Title = "게임 종료",
-                        Message = "플레이어가 사망하였습니다.\n마을로 이동합니다.",
+                        Title = "You Die", // 게임 종료
+                        Message = "Player has died.\nMove to the village.", //플레이어가 사망하였습니다.\n마을로 이동합니다.
                         MessageColor = Color.red,
                         ShowCancelButton = false,
                         OnConfirm = OnDeadPlayer,
@@ -189,13 +189,13 @@ namespace GGemCo2DCore
         public void SetState(GameState newState)
         {
             State = newState;
-            isStateDirty = true;
+            _isStateDirty = true;
         }
 
         public void SetSubState(GameSubState newSubState)
         {
             SubState = newSubState;
-            isStateDirty = true;
+            _isStateDirty = true;
         }
 
         public bool IsSubStateDialogueStart => SubState == GameSubState.DialogueStart;
@@ -244,9 +244,9 @@ namespace GGemCo2DCore
                 systemMessageManager.ShowMessageWarning(addItem.Message);
                 return;
             }
-            if (uiWindowInventory != null)
+            if (_uiWindowInventory != null)
             {
-                uiWindowInventory.SetIcons(addItem);
+                _uiWindowInventory.SetIcons(addItem);
             }
         }
 

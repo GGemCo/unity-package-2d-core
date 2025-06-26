@@ -55,20 +55,20 @@ namespace GGemCo2DCore
         public Color warningColor = Color.yellow;
         [Tooltip("에러 메시지")]
         public Color errorColor = Color.red;
-        private Dictionary<MessageType, Color> messageTypeColors = new Dictionary<MessageType, Color>();
+        private Dictionary<MessageType, Color> _messageTypeColors = new Dictionary<MessageType, Color>();
         
-        private TextMeshProUGUI textMessage;    // 메시지 텍스트 UI
-        private CanvasGroup canvasGroup; // Fade In/Out을 위한 CanvasGroup
-        private Coroutine messageCoroutine;
+        private TextMeshProUGUI _textMessage;    // 메시지 텍스트 UI
+        private CanvasGroup _canvasGroup; // Fade In/Out을 위한 CanvasGroup
+        private Coroutine _messageCoroutine;
 
         private void Awake()
         {
-            textMessage = objectText.GetComponent<TextMeshProUGUI>();
+            _textMessage = objectText.GetComponent<TextMeshProUGUI>();
             // text interaction 안되도록 처리
-            textMessage.raycastTarget = false;
-            canvasGroup = objectText.GetComponent<CanvasGroup>();
-            canvasGroup.alpha = 0; // 처음엔 안 보이게 설정
-            messageTypeColors = new Dictionary<MessageType, Color>
+            _textMessage.raycastTarget = false;
+            _canvasGroup = objectText.GetComponent<CanvasGroup>();
+            _canvasGroup.alpha = 0; // 처음엔 안 보이게 설정
+            _messageTypeColors = new Dictionary<MessageType, Color>
             {
                 { MessageType.Normal, textColor },
                 { MessageType.Warning, warningColor},
@@ -91,7 +91,7 @@ namespace GGemCo2DCore
         {
             SystemMessage systemMessage = GetDefaultSystemMessage();
             systemMessage.Type = MessageType.Warning;
-            systemMessage.TextColor = messageTypeColors[systemMessage.Type];
+            systemMessage.TextColor = _messageTypeColors[systemMessage.Type];
             ShowMessage(message, systemMessage);
         }
         /// <summary>
@@ -99,19 +99,19 @@ namespace GGemCo2DCore
         /// </summary>
         private void ShowMessage(string message, SystemMessage systemMessage)
         {
-            if (messageCoroutine != null)
+            if (_messageCoroutine != null)
             {
-                StopCoroutine(messageCoroutine);
+                StopCoroutine(_messageCoroutine);
             }
-            messageCoroutine = StartCoroutine(DisplayMessage(message, systemMessage));
+            _messageCoroutine = StartCoroutine(DisplayMessage(message, systemMessage));
         }
 
         private IEnumerator DisplayMessage(string message, SystemMessage systemMessage)
         {
             // 메시지 설정
-            textMessage.text = message;
-            textMessage.color = systemMessage.TextColor;
-            textMessage.fontSize = systemMessage.FontSize;
+            _textMessage.text = message;
+            _textMessage.color = systemMessage.TextColor;
+            _textMessage.fontSize = systemMessage.FontSize;
 
             // Fade In
             yield return StartCoroutine(FadeCanvasGroup(0, 1, systemMessage.FadeInTime));
@@ -132,10 +132,10 @@ namespace GGemCo2DCore
             while (time < fadeDuration)
             {
                 time += Time.deltaTime;
-                canvasGroup.alpha = Mathf.Lerp(startAlpha, endAlpha, time / fadeDuration);
+                _canvasGroup.alpha = Mathf.Lerp(startAlpha, endAlpha, time / fadeDuration);
                 yield return null;
             }
-            canvasGroup.alpha = endAlpha;
+            _canvasGroup.alpha = endAlpha;
         }
         /// <summary>
         /// 재화 부족할때 보여주는 메시지
@@ -145,16 +145,12 @@ namespace GGemCo2DCore
         {
             if (currencyType == CurrencyConstants.Type.Gold)
             {
-                ShowMessageWarning("골드가 부족합니다.");
+                ShowMessageWarning("Not enough gold.");//"골드가 부족합니다."
             }
             else if (currencyType == CurrencyConstants.Type.Silver)
             {
-                ShowMessageWarning("실버가 부족합니다.");
+                ShowMessageWarning("Not enough silver.");//"실버가 부족합니다."
             }
-        }
-        private void OnDestroy()
-        {
-            
         }
     }
 }

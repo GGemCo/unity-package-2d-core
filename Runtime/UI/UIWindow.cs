@@ -35,16 +35,16 @@ namespace GGemCo2DCore
         [Tooltip("icon 이 들어갈 panel")]
         public GridLayoutGroup containerIcon;
         
-        private UIIcon selectedIcon;
+        private UIIcon _selectedIcon;
         
-        private UIWindowFade uiWindowFade;
-        private StruckTableWindow struckTableWindow;
-        private InteractionManager interactionManager;
+        private UIWindowFade _uiWindowFade;
+        private StruckTableWindow _struckTableWindow;
+        private InteractionManager _interactionManager;
         protected SceneGame SceneGame;
         
         // 서브 매니저
         // 아이콘 생성 관리
-        protected IconPoolManager iconPoolManager;
+        protected IconPoolManager IconPoolManager;
         // 아이콘 드래그 관리
         protected IconDragDropHandler DragDropHandler;
 
@@ -56,7 +56,7 @@ namespace GGemCo2DCore
             gameObject.AddComponent<CanvasGroup>();
             if (useFade)
             {
-                uiWindowFade = gameObject.AddComponent<UIWindowFade>();
+                _uiWindowFade = gameObject.AddComponent<UIWindowFade>();
             }
 
             if (containerIcon != null && containerIcon.cellSize == Vector2.zero && slotSize != Vector2.zero)
@@ -71,13 +71,13 @@ namespace GGemCo2DCore
             }
 
             // 기능 위임 객체 생성
-            iconPoolManager = new IconPoolManager(this);
+            IconPoolManager = new IconPoolManager(this);
             // 커스텀 전략 설정 지점
             var strategy = GetSlotIconBuildStrategy();
             if (strategy != null)
-                iconPoolManager.SetBuildStrategy(strategy);
+                IconPoolManager.SetBuildStrategy(strategy);
 
-            iconPoolManager.Initialize();
+            IconPoolManager.Initialize();
             
             DragDropHandler = new IconDragDropHandler(this);
         }
@@ -101,17 +101,17 @@ namespace GGemCo2DCore
 
         protected void SetSetIconHandler(ISetIconHandler handler)
         {
-            if (iconPoolManager != null)
-                iconPoolManager.SetSetIconHandler(handler);
+            if (IconPoolManager != null)
+                IconPoolManager.SetSetIconHandler(handler);
         }
         protected virtual void Start()
         {
-            if (struckTableWindow is { DefaultActive: false })
+            if (_struckTableWindow is { DefaultActive: false })
             {
                 gameObject.SetActive(false);
             }
             SceneGame = SceneGame.Instance;
-            interactionManager = SceneGame.InteractionManager;
+            _interactionManager = SceneGame.InteractionManager;
         }
         /// <summary>
         /// 아이콘 지우기 
@@ -119,12 +119,12 @@ namespace GGemCo2DCore
         /// <param name="slotIndex"></param>
         public void DetachIcon(int slotIndex)
         {
-            iconPoolManager.DetachIcon(slotIndex);
+            IconPoolManager.DetachIcon(slotIndex);
         }
-        public UIIcon GetIconByIndex(int index) => iconPoolManager.GetIcon(index);
-        public UISlot GetSlotByIndex(int index) => iconPoolManager.GetSlot(index);
-        public UIIcon GetIconByUid(int windowUid) => iconPoolManager.GetIconByUid(windowUid);
-        public UIIcon SetIconCount(int slotIndex, int windowUid, int count, int level = 0, bool learn = false) => iconPoolManager.SetIcon(slotIndex, windowUid, count, level, learn);
+        public UIIcon GetIconByIndex(int index) => IconPoolManager.GetIcon(index);
+        public UISlot GetSlotByIndex(int index) => IconPoolManager.GetSlot(index);
+        public UIIcon GetIconByUid(int windowUid) => IconPoolManager.GetIconByUid(windowUid);
+        public UIIcon SetIconCount(int slotIndex, int windowUid, int count, int level = 0, bool learn = false) => IconPoolManager.SetIcon(slotIndex, windowUid, count, level, learn);
 
         /// <summary>
         /// 빈 슬롯 찾기
@@ -147,7 +147,7 @@ namespace GGemCo2DCore
             int emptySlot = FindEmptySlot();
             if (emptySlot == -1)
             {
-                SceneGame.popupManager.ShowPopupError("윈도우에 빈 공간이 없습니다.");
+                SceneGame.popupManager.ShowPopupError("There is no empty space in the window.");//"윈도우에 빈 공간이 없습니다."
                 return;
             }
             SetIconCount(emptySlot, iconUid, iconCount);
@@ -163,7 +163,7 @@ namespace GGemCo2DCore
             int emptySlot = FindEmptySlot();
             if (emptySlot == -1)
             {
-                SceneGame.popupManager.ShowPopupError("윈도우에 빈 공간이 없습니다.");
+                SceneGame.popupManager.ShowPopupError("There is no empty space in the window.");//"윈도우에 빈 공간이 없습니다."
                 return null;
             }
             return SetIconCount(emptySlot, iconUid, iconCount);
@@ -223,7 +223,7 @@ namespace GGemCo2DCore
                 UIWindow uiWindow = SceneGame.uIWindowManager.GetUIWindowByUid<UIWindow>(windowUid);
                 if (uiWindow == null) continue;
                     
-                if (uiWindow.uiWindowFade == null)
+                if (uiWindow._uiWindowFade == null)
                 {
                     if (uiWindow.gameObject == null) continue;
                     uiWindow.gameObject.SetActive(show);
@@ -233,11 +233,11 @@ namespace GGemCo2DCore
 
                 if (show)
                 {
-                    uiWindow.uiWindowFade.ShowPanel();
+                    uiWindow._uiWindowFade.ShowPanel();
                 }
                 else
                 {
-                    uiWindow.uiWindowFade.HidePanel();
+                    uiWindow._uiWindowFade.HidePanel();
                 }
             }
         }
@@ -247,7 +247,7 @@ namespace GGemCo2DCore
         /// <param name="show"></param>
         public virtual bool Show(bool show)
         {
-            if (uiWindowFade == null)
+            if (_uiWindowFade == null)
             {
                 if (gameObject == null) return false;
                 gameObject.SetActive(show);
@@ -256,13 +256,13 @@ namespace GGemCo2DCore
             }
             if (show)
             {
-                uiWindowFade.ShowPanel();
-                ShowByTable(struckTableWindow.OpenWindowUid, true);
+                _uiWindowFade.ShowPanel();
+                ShowByTable(_struckTableWindow.OpenWindowUid, true);
             }
             else
             {
-                uiWindowFade.HidePanel();
-                ShowByTable(struckTableWindow.CloseWindowUid, false);
+                _uiWindowFade.HidePanel();
+                ShowByTable(_struckTableWindow.CloseWindowUid, false);
             }
 
             return true;
@@ -277,10 +277,10 @@ namespace GGemCo2DCore
 
         public void OnClickClose()
         {
-            if (uiWindowFade == null) return;
-            if (struckTableWindow.IsInteraction && interactionManager != null && interactionManager.IsInteractioning())
+            if (_uiWindowFade == null) return;
+            if (_struckTableWindow.IsInteraction && _interactionManager != null && _interactionManager.IsInteractioning())
             {
-                interactionManager.EndInteraction();
+                _interactionManager.EndInteraction();
             }
             else
             {
@@ -293,20 +293,20 @@ namespace GGemCo2DCore
         /// <param name="pstruckTableWindow"></param>
         public void SetTableWindow(StruckTableWindow pstruckTableWindow)
         {
-            struckTableWindow = pstruckTableWindow;
+            _struckTableWindow = pstruckTableWindow;
         }
 
         public virtual void SetSelectedIcon(int index)
         {
-            if (selectedIcon != null)
+            if (_selectedIcon != null)
             {
-                selectedIcon.SetSelected(false);
+                _selectedIcon.SetSelected(false);
             }
             if (icons.Length <= 0) return;
             var icon = icons[index];
             if (icon == null) return;
-            selectedIcon = icon.GetComponent<UIIcon>();
-            selectedIcon.SetSelected(true);
+            _selectedIcon = icon.GetComponent<UIIcon>();
+            _selectedIcon.SetSelected(true);
         }
         public virtual void OnRightClick(UIIcon icon)
         {
@@ -314,7 +314,7 @@ namespace GGemCo2DCore
         }
         public bool GetDefaultActive()
         {
-            return struckTableWindow.DefaultActive;
+            return _struckTableWindow.DefaultActive;
         }
 
         public bool IsOpen()
@@ -332,8 +332,8 @@ namespace GGemCo2DCore
         /// <param name="toWindowUid"></param>
         protected void UnRegisterAllIcons(UIWindowManager.WindowUid fromWindowUid, UIWindowManager.WindowUid toWindowUid = UIWindowManager.WindowUid.Inventory)
         {
-            if (iconPoolManager == null) return;
-            iconPoolManager.UnRegisterAllIcons(fromWindowUid, toWindowUid);
+            if (IconPoolManager == null) return;
+            IconPoolManager.UnRegisterAllIcons(fromWindowUid, toWindowUid);
         }
         /// <summary>
         /// 해당 윈도우에 있던 아이콘은 Detach 하고, Register 되었던 인벤토리 아이템은 지운다.

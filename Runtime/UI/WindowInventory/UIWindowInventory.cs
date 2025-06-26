@@ -132,7 +132,7 @@ namespace GGemCo2DCore
             {
                 if (icon.IsAntiFlag(ItemConstants.AntiFlag.ShopSale))
                 {
-                    SceneGame.systemMessageManager.ShowMessageWarning("판매할 수 없는 아이템 입니다.");
+                    SceneGame.systemMessageManager.ShowMessageWarning("It is an item that cannot be sold.");//"판매할 수 없는 아이템 입니다."
                     return;
                 }
 
@@ -144,7 +144,7 @@ namespace GGemCo2DCore
             {
                 if (icon.IsAntiFlag(ItemConstants.AntiFlag.Stash))
                 {
-                    SceneGame.systemMessageManager.ShowMessageWarning("보관할 수 없는 아이템 입니다.");
+                    SceneGame.systemMessageManager.ShowMessageWarning("It is an item that cannot be stored.");//"보관할 수 없는 아이템 입니다."
                     return;
                 }
                 SceneGame.uIWindowManager.MoveIcon(uid, icon.slotIndex, UIWindowManager.WindowUid.Stash, icon.GetCount());
@@ -154,7 +154,7 @@ namespace GGemCo2DCore
             {
                 if (icon.IsAntiFlag(ItemConstants.AntiFlag.Upgrade))
                 {
-                    SceneGame.systemMessageManager.ShowMessageWarning("강화할 수 없는 아이템 입니다.");
+                    SceneGame.systemMessageManager.ShowMessageWarning("It's an item that can't be strengthened.");//"강화할 수 없는 아이템 입니다."
                     return;
                 }
                 // 기존 register 된 아이콘이 있으면 un register 해주기
@@ -172,13 +172,13 @@ namespace GGemCo2DCore
             {
                 if (icon.IsAntiFlag(ItemConstants.AntiFlag.Salvage))
                 {
-                    SceneGame.systemMessageManager.ShowMessageWarning("분해할 수 없는 아이템 입니다.");
+                    SceneGame.systemMessageManager.ShowMessageWarning("It's an inseparable item.");//"분해할 수 없는 아이템 입니다."
                     return;
                 }
                 // 분해 할 수 있는 개수가 넘어가지 않았는지 체크
                 if (_uiWindowItemSalvage.CheckSalvagePossibleCount() == false)
                 {
-                    SceneGame.systemMessageManager.ShowMessageWarning("더 이상 아이템을 등록할 수 없습니다.");
+                    SceneGame.systemMessageManager.ShowMessageWarning("The item can no longer be registered.");//"더 이상 아이템을 등록할 수 없습니다."
                     return;
                 }
                 SceneGame.uIWindowManager.RegisterIcon(uid, icon.slotIndex, UIWindowManager.WindowUid.ItemSalvage,
@@ -206,7 +206,7 @@ namespace GGemCo2DCore
                     {
                         if (icon.uid <= 0 || icon.GetCount() <= 0)
                         {
-                            _popupManager.ShowPopupError("사용할 수 있는 아이템 개수가 없습니다.");
+                            _popupManager.ShowPopupError("There are no items available.");//"사용할 수 있는 아이템 개수가 없습니다."
                             return;
                         }
 
@@ -215,7 +215,7 @@ namespace GGemCo2DCore
                         {
                             if (SceneGame.player.GetComponent<Player>().IsMaxMp())
                             {
-                                SceneGame.systemMessageManager.ShowMessageWarning("현재 마력이 가득하여 사용할 수 없습니다.");
+                                SceneGame.systemMessageManager.ShowMessageWarning("Cannot use it because your mana is already full.");//"현재 마력이 가득하여 사용할 수 없습니다."
                                 return;
                             }
                         }
@@ -223,7 +223,7 @@ namespace GGemCo2DCore
                         {
                             if (SceneGame.player.GetComponent<Player>().IsMaxHp())
                             {
-                                SceneGame.systemMessageManager.ShowMessageWarning("현재 생명력이 가득하여 사용할 수 없습니다.");
+                                SceneGame.systemMessageManager.ShowMessageWarning("Cannot use it because your health is already full.");//"현재 생명력이 가득하여 사용할 수 없습니다."
                                 return;
                             }
                         }
@@ -268,7 +268,7 @@ namespace GGemCo2DCore
                 UIIcon icon = GetIconByIndex(index);
                 if (icon == null || icon.uid <= 0)
                 {
-                    _popupManager.ShowPopupError("나누기를 할 아이템을 선택해주세요.");
+                    _popupManager.ShowPopupError("Please select an item to split.");//"나누기를 할 아이템을 선택해주세요."
                     return;
                 }
 

@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Threading.Tasks;
 using Newtonsoft.Json;
 using UnityEngine;
@@ -93,7 +92,7 @@ namespace GGemCo2DCore
 
             if (_questData.IsStatusNone(questUid) != true)
             {
-                _sceneGame.systemMessageManager.ShowMessageWarning("진행중인 퀘스트 입니다.");
+                _sceneGame.systemMessageManager.ShowMessageWarning("This is a quest in progress.");//"진행중인 퀘스트 입니다."
                 return false;
             }
 

@@ -89,7 +89,7 @@ namespace GGemCo2DCore
         /// <param name="icon"></param>
         public override void OnRightClick(UIIcon icon)
         {
-            if (icon == null) return;
+            // if (icon == null) return;
         }
         /// <summary>
         /// 아이템 정보 보기
@@ -205,7 +205,7 @@ namespace GGemCo2DCore
             }
             if (_struckTableItemCraft == null)
             {
-                SceneGame.systemMessageManager.ShowMessageWarning("제작할 아이템을 선택해주세요.");
+                SceneGame.systemMessageManager.ShowMessageWarning("Please select an item to craft.");//"제작할 아이템을 선택해주세요."
                 return;
             }
             // 재료 체크
@@ -214,7 +214,7 @@ namespace GGemCo2DCore
                 bool result = elementMaterial.CheckHaveCount();
                 if (!result)
                 {
-                    SceneGame.systemMessageManager.ShowMessageWarning("재료가 부족합니다.");
+                    SceneGame.systemMessageManager.ShowMessageWarning("Not enough materials.");//"재료가 부족합니다."
                     return;
                 }
             }

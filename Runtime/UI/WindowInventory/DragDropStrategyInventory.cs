@@ -74,7 +74,7 @@ namespace GGemCo2DCore
                         else
                         {
                             // 교체가 불가능하면 원래 자리로 되돌리기
-                            SceneGame.Instance.systemMessageManager.ShowMessageWarning("해당 부위에 장착할 수 없는 아이템입니다.");
+                            SceneGame.Instance.systemMessageManager.ShowMessageWarning("It is an item that cannot be fitted to the area.");//"해당 부위에 장착할 수 없는 아이템입니다."
                         }
                         break;
                     case UIWindowManager.WindowUid.None:

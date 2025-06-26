@@ -13,7 +13,7 @@ namespace GGemCo2DCore
 
         public TableSkill TableSkill;
         public readonly Dictionary<int, UIElementSkill> UIElementSkills = new Dictionary<int, UIElementSkill>();
-        private SkillData _skillData;
+        // private SkillData _skillData;
         private QuickSlotData _quickSlotData;
         
         private UIWindowQuickSlot _uiWindowQuickSlot;
@@ -34,7 +34,7 @@ namespace GGemCo2DCore
         protected override void Start()
         {
             base.Start();
-            _skillData = SceneGame.saveDataManager.Skill;
+            // _skillData = SceneGame.saveDataManager.Skill;
             _quickSlotData = SceneGame.saveDataManager.QuickSlot;
             _uIWindowSkillInfo =
                 SceneGame.uIWindowManager.GetUIWindowByUid<UIWindowSkillInfo>(UIWindowManager.WindowUid
@@ -116,12 +116,12 @@ namespace GGemCo2DCore
             float time = SceneGame.uIIconCoolTimeManager.GetCurrentCoolTime(uid, icon.uid);
             if (time > 0)
             {
-                SceneGame.systemMessageManager.ShowMessageWarning("쿨타임 중에는 바꿀 수 없습니다.");
+                SceneGame.systemMessageManager.ShowMessageWarning("Cannot be changed during cooldown.");//"쿨타임 중에는 바꿀 수 없습니다."
                 return;
             }
             if (!icon.IsLearn())
             {
-                SceneGame.systemMessageManager.ShowMessageWarning("배운 후 사용할 수 있습니다.");
+                SceneGame.systemMessageManager.ShowMessageWarning("You can use this after learning it.");//"배운 후 사용할 수 있습니다."
                 return;
             }
             if (!icon.CheckRequireLevel()) return;
