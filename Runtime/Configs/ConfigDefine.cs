@@ -15,6 +15,9 @@
         public const string SceneNameGame = NameSDK+"_Game";
         
         // 스파인 2d 사용 y/n
-        public const string SpineDefineSymbol = NameSDKUpperCase+"_USE_SPINE";
+        public const string DefineSymbolSpine = NameSDKUpperCase+"_USE_SPINE";
+        
+        public const string DefineSymbolInputSystemOld = NameSDKUpperCase+"_USE_OLD_INPUT";
+        public const string DefineSymbolInputSystemNew = NameSDKUpperCase+"_USE_NEW_INPUT";
     }
 }

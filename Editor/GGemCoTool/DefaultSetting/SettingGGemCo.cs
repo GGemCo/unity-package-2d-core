@@ -92,16 +92,16 @@ namespace GGemCo2DCoreEditor
 #endif
             if (enable)
             {
-                if (!symbols.Contains(ConfigDefine.SpineDefineSymbol))
+                if (!symbols.Contains(ConfigDefine.DefineSymbolSpine))
                 {
-                    symbols += $";{ConfigDefine.SpineDefineSymbol}";
+                    symbols += $";{ConfigDefine.DefineSymbolSpine}";
                 }
             }
             else
             {
-                if (symbols.Contains(ConfigDefine.SpineDefineSymbol))
+                if (symbols.Contains(ConfigDefine.DefineSymbolSpine))
                 {
-                    symbols = symbols.Replace(ConfigDefine.SpineDefineSymbol, "").Replace(";;", ";").Trim(';');
+                    symbols = symbols.Replace(ConfigDefine.DefineSymbolSpine, "").Replace(";;", ";").Trim(';');
                 }
             }
 

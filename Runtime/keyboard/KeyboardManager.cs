@@ -1,6 +1,8 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
-using UnityEngine;
+#if GGEMCO_USE_NEW_INPUT
+using UnityEngine.InputSystem;
+#endif
 
 namespace GGemCo2DCore
 {
@@ -54,6 +56,8 @@ namespace GGemCo2DCore
         /// </summary>
         private void HandleInputCommon()
         {
+            
+#if GGEMCO_USE_OLD_INPUT
             if (Input.GetKeyDown(KeyCode.Escape))
             {
                 OnTriggerEscapeKeyDown();
@@ -61,6 +65,15 @@ namespace GGemCo2DCore
             else if (Input.GetKeyDown(KeyCode.F))
             {
             }
+#elif GGEMCO_USE_NEW_INPUT
+            if (Keyboard.current.escapeKey.wasPressedThisFrame)
+            {
+                OnTriggerEscapeKeyDown();
+            }
+            else if (Keyboard.current.fKey.wasPressedThisFrame)
+            {
+            }
+#endif
         }
 
         private void OnTriggerEscapeKeyDown()

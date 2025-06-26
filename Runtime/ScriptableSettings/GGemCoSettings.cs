@@ -2,12 +2,20 @@ using UnityEngine;
 
 namespace GGemCo2DCore
 {
+    public enum InputSystemType
+    {
+        OldInputManager,
+        NewInputSystem,
+        Both
+    }
     [CreateAssetMenu(fileName = ConfigScriptableObject.Main.FileName, menuName = ConfigScriptableObject.Main.MenuName, order = ConfigScriptableObject.Main.Ordering)]
     public class GGemCoSettings : ScriptableObject
     {
         [Header("기본 설정")] 
         [Header("스파인2D 사용 여부. 사용할 경우 #define GGEMCO_USE_SPINE 이 추가됩니다. 스파인2D 패키지를 추가해주세요.")]
         public bool useSpine2d;
+        [Header("입력 시스템 설정")]
+        public InputSystemType inputSystemType;
 
         [Header("디폴트 몬스터 리젠 시간(초)")] public float defaultMonsterRegenTimeSec;
         [Header("공격시 최대 피해 몬스터 개수")] public int maxEnemyValue;

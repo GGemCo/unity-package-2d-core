@@ -1,6 +1,9 @@
 ﻿using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
+#if GGEMCO_USE_NEW_INPUT
+using UnityEngine.InputSystem;
+#endif
 
 namespace GGemCo2DCore
 {
@@ -74,6 +77,8 @@ namespace GGemCo2DCore
 
         public bool HandleInput()
         {
+            
+#if GGEMCO_USE_OLD_INPUT
             if (Input.GetKeyDown(KeyCode.Alpha1))
             {
                 OnKeyDownSkill(KeyCode.Alpha1);
@@ -94,6 +99,28 @@ namespace GGemCo2DCore
                 OnKeyDownSkill(KeyCode.Alpha4);
                 return true;
             }
+#elif GGEMCO_USE_NEW_INPUT
+            if (Keyboard.current.digit1Key.wasPressedThisFrame)
+            {
+                OnKeyDownSkill(KeyCode.Alpha1);
+                return true;
+            }
+            if (Keyboard.current.digit2Key.wasPressedThisFrame)
+            {
+                OnKeyDownSkill(KeyCode.Alpha2);
+                return true;
+            }
+            if (Keyboard.current.digit3Key.wasPressedThisFrame)
+            {
+                OnKeyDownSkill(KeyCode.Alpha3);
+                return true;
+            }
+            if (Keyboard.current.digit4Key.wasPressedThisFrame)
+            {
+                OnKeyDownSkill(KeyCode.Alpha4);
+                return true;
+            }
+#endif
 
             return false;
         }
