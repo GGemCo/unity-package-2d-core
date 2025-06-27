@@ -1,5 +1,6 @@
 ﻿using System.Diagnostics;
 using System.IO;
+using GGemCo2DCore;
 using UnityEditor;
 using UnityEngine;
 
@@ -14,10 +15,6 @@ namespace GGemCo2DCoreEditor
         public static void ShowWindow()
         {
             GetWindow<SaveDataEditor>(ConfigEditor.NameToolOpenSaveDataFolder);
-        }
-
-        private void OnEnable()
-        {
         }
 
         private void OnGUI()
@@ -43,6 +40,7 @@ namespace GGemCo2DCoreEditor
             {
                 Directory.Delete(path, true);
             }
+            PlayerPrefsManager.DeleteSaveDataSlotIndex();
         }
 
         private static void OpenGameDataFolder()

@@ -156,7 +156,7 @@ namespace GGemCo2DCore
             
             // 현재 선턱된 슬롯 index 와 PlayerPrefs 에 저장되어있는 값을 0 으로 초기화 시킨다.
             _currentCheckSlotIndex = 0;
-            PlayerPrefsManager.SaveSaveDataSlotIndex(0);
+            PlayerPrefsManager.DeleteSaveDataSlotIndex();
             // 인트로 씬의 새로운 게임 버튼을 활성화 시킨다.
             OnUpdateSlotData?.Invoke();
         }

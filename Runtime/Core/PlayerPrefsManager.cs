@@ -6,6 +6,11 @@ namespace GGemCo2DCore
     {
         public const string KeySaveDataSlotIndex = "GGEMCO_KEY_SAVE_DATA_SLOT_INDEX";
 
+        private static void PlayerPrefsDelete(string key)
+        {
+            PlayerPrefs.DeleteKey(key);
+            PlayerPrefs.Save();
+        }
         private static void PlayerPrefsSave(string key, string value)
         {
             PlayerPrefs.SetString(key, value);
@@ -35,6 +40,10 @@ namespace GGemCo2DCore
         public static int LoadSaveDataSlotIndex()
         {
             return PlayerPrefsLoadInt(KeySaveDataSlotIndex);
+        }
+        public static void DeleteSaveDataSlotIndex()
+        {
+            PlayerPrefsDelete(KeySaveDataSlotIndex);
         }
     }
 }
