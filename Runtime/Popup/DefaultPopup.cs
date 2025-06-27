@@ -53,22 +53,22 @@ namespace GGemCo2DCore
         [Tooltip("팝업창이 보여질때 Fade in/out 시간(초)")]
         public float fadeDuration;
         // 페이드 인/아웃을 위한 CanvasGroup
-        private CanvasGroup canvasGroup;
+        private CanvasGroup _canvasGroup;
         // 마우스 클릭했을때도 닫히게 할 것인지 
-        private bool isClosableByClick;
+        private bool _isClosableByClick;
 
         private void Awake()
         {
-            canvasGroup = GetComponent<CanvasGroup>();
+            _canvasGroup = GetComponent<CanvasGroup>();
         }
         /// <summary>
         /// 초기화
         /// </summary>
         /// <param name="popupMetadata"></param>
-        public virtual void Initialize(PopupMetadata popupMetadata)
+        public void Initialize(PopupMetadata popupMetadata)
         {
             PopupType = popupMetadata.PopupType;
-            isClosableByClick = popupMetadata.IsClosableByClick;
+            _isClosableByClick = popupMetadata.IsClosableByClick;
             
             SetupTitle(popupMetadata.Title);
             SetupMessage(popupMetadata.Message, popupMetadata.MessageColor);
@@ -140,12 +140,10 @@ namespace GGemCo2DCore
 
             button.gameObject.SetActive(isActive);
 
-            if (isActive)
-            {
-                button.onClick.RemoveAllListeners();
-                button.onClick.AddListener(callback.Invoke);
-                button.onClick.AddListener(ClosePopup);
-            }
+            if (!isActive) return;
+            button.onClick.RemoveAllListeners();
+            button.onClick.AddListener(callback.Invoke);
+            button.onClick.AddListener(ClosePopup);
         }
         /// <summary>
         /// 팝업창 띄우기
@@ -157,14 +155,14 @@ namespace GGemCo2DCore
         /// <summary>
         /// 팝업창 닫기
         /// </summary>
-        public virtual void ClosePopup()
+        public void ClosePopup()
         {
             StartCoroutine(FadeCoroutine(1f, 0f, OnFadeOutDestroyStart, OnFadeOutDestroyEnd));
         }
         private IEnumerator FadeCoroutine(float startAlpha, float endAlpha, System.Action onStart, System.Action onEnd)
         {
             float elapsedTime = 0f;
-            canvasGroup.alpha = startAlpha;
+            _canvasGroup.alpha = startAlpha;
 
             onStart?.Invoke();
 
@@ -172,17 +170,19 @@ namespace GGemCo2DCore
             {
                 elapsedTime += Time.deltaTime;
                 float t = Mathf.Clamp01(elapsedTime / fadeDuration);
-                canvasGroup.alpha = Mathf.Lerp(startAlpha, endAlpha, Easing.EaseOutQuintic(t));
+                _canvasGroup.alpha = Mathf.Lerp(startAlpha, endAlpha, Easing.EaseOutQuintic(t));
                 yield return null;
             }
 
             onEnd?.Invoke();
         }
-        protected virtual void OnFadeInStart() { }
-        protected virtual void OnFadeInEnd() => canvasGroup.alpha = 1.0f;
 
-        protected virtual void OnFadeOutDestroyStart() { }
-        protected virtual void OnFadeOutDestroyEnd()
+        private void OnFadeInStart() { }
+        private void OnFadeInEnd() => _canvasGroup.alpha = 1.0f;
+
+        private void OnFadeOutDestroyStart() { }
+
+        private void OnFadeOutDestroyEnd()
         {
             Destroy(gameObject);
         }
@@ -190,9 +190,9 @@ namespace GGemCo2DCore
         /// 마우스 클릭했을때 처리 
         /// </summary>
         /// <param name="eventData"></param>
-        public virtual void OnPointerClick(PointerEventData eventData)
+        public void OnPointerClick(PointerEventData eventData)
         {
-            if (isClosableByClick)
+            if (_isClosableByClick)
             {
                 ClosePopup();
             }

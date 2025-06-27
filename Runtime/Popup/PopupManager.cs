@@ -129,17 +129,6 @@ namespace GGemCo2DCore
 
             _currentDefaultPopup = _popupQueue.Dequeue();
             _currentDefaultPopup.ShowPopup();
-
-            if (_currentDefaultPopup.buttonConfirm != null)
-            {
-                _currentDefaultPopup.buttonConfirm.onClick.RemoveAllListeners();
-                _currentDefaultPopup.buttonConfirm.onClick.AddListener(OnPopupClosed);
-            }
-            if (_currentDefaultPopup.buttonCancel != null)
-            {
-                _currentDefaultPopup.buttonCancel.onClick.RemoveAllListeners();
-                _currentDefaultPopup.buttonCancel.onClick.AddListener(OnPopupClosed);
-            }
         }
         /// <summary>
         /// 팝업이 닫힐 때 호출
