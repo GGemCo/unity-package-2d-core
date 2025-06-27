@@ -181,7 +181,7 @@ namespace GGemCo2DCore
             foreach (var hit in _collider2Ds)
             {
 #endif
-                if (!hit.CompareTag(ConfigTags.GetValue(ConfigTags.Keys.Player))) continue;
+                if (!hit || !hit.CompareTag(ConfigTags.GetValue(ConfigTags.Keys.Player))) continue;
                 Player player = hit.GetComponent<Player>();
                 if (player == null) continue;
                 player.TakeDamage(totalDamage, gameObject);
