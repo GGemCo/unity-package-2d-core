@@ -11,15 +11,18 @@ namespace GGemCo2DCore
     public class Player : CharacterBase
     {
         // 공격할 몬스터 
-        private GameObject targetMonster;
-        private GGemCoSettings gGemCoSettings; 
-        private EquipController equipController;
-        private ControllerPlayer controllerPlayer;
-        private UIWindowHud uiWindowHud;
-        private UIWindowPlayerInfo uiWindowPlayerInfo;
-        private UIWindowPlayerBuffInfo uiWindowPlayerBuffInfo;
-        private PlayerData playerData;
-        private SceneGame sceneGame;
+        private GameObject _targetMonster;
+        private GGemCoSettings _gGemCoSettings; 
+        private EquipController _equipController;
+        private ControllerPlayer _controllerPlayer;
+        private UIWindowHud _uiWindowHud;
+        private UIWindowPlayerInfo _uiWindowPlayerInfo;
+        private UIWindowPlayerBuffInfo _uiWindowPlayerBuffInfo;
+        private PlayerData _playerData;
+        private SceneGame _sceneGame;
+        // 충돌 체크할 몬스터 수  
+        private const int CountCollider = 10;
+        private Collider2D[] _collider2Ds;
             
         [Serializable]
         private struct StatUIBinding
@@ -28,26 +31,27 @@ namespace GGemCo2DCore
             public Func<Player, BehaviorSubject<long>> GetStat;
             public string label;
         }
-        private readonly List<StatUIBinding> statBindings = new();
+        private readonly List<StatUIBinding> _statBindings = new();
         protected override void Awake()
         {
             // 먼저 선언한다.
             IsUseSkill = true;
             base.Awake();
+            _collider2Ds = new Collider2D[CountCollider];
         }
         protected override void Start()
         {
             base.Start();
-            sceneGame = SceneGame.Instance;
-            playerData = sceneGame.saveDataManager.Player;
-            uiWindowHud = sceneGame.uIWindowManager?.GetUIWindowByUid<UIWindowHud>(UIWindowManager.WindowUid.Hud);
-            uiWindowPlayerInfo =
-                sceneGame.uIWindowManager?.GetUIWindowByUid<UIWindowPlayerInfo>(UIWindowManager.WindowUid.PlayerInfo);
-            uiWindowPlayerBuffInfo =
-                sceneGame.uIWindowManager?.GetUIWindowByUid<UIWindowPlayerBuffInfo>(UIWindowManager.WindowUid
+            _sceneGame = SceneGame.Instance;
+            _playerData = _sceneGame.saveDataManager.Player;
+            _uiWindowHud = _sceneGame.uIWindowManager?.GetUIWindowByUid<UIWindowHud>(UIWindowManager.WindowUid.Hud);
+            _uiWindowPlayerInfo =
+                _sceneGame.uIWindowManager?.GetUIWindowByUid<UIWindowPlayerInfo>(UIWindowManager.WindowUid.PlayerInfo);
+            _uiWindowPlayerBuffInfo =
+                _sceneGame.uIWindowManager?.GetUIWindowByUid<UIWindowPlayerBuffInfo>(UIWindowManager.WindowUid
                     .PlayerBuffInfo);
             // 연출중 체크를 위해 추가
-            controllerPlayer.Initialize(sceneGame.CutsceneManager);
+            _controllerPlayer.Initialize(_sceneGame.CutsceneManager);
             
             // TotalHp, Mp 가 바뀌어도 현재 값이 바뀌면 안된다.
             TotalHp
@@ -81,8 +85,8 @@ namespace GGemCo2DCore
         {
             // AddComponent 순서 중요
             base.InitComponents();
-            controllerPlayer = gameObject.AddComponent<ControllerPlayer>();
-            equipController = gameObject.AddComponent<EquipController>();
+            _controllerPlayer = gameObject.AddComponent<ControllerPlayer>();
+            _equipController = gameObject.AddComponent<EquipController>();
             ComponentController.AddRigidbody2D(gameObject);
             
             GameObject attackRange = new GameObject("AttackRange");
@@ -134,7 +138,7 @@ namespace GGemCo2DCore
         private void LoadEquipItems()
         {
             Dictionary<int, SaveDataIcon> dictionary =
-                sceneGame.saveDataManager.Equip.GetAllItemCounts();
+                _sceneGame.saveDataManager.Equip.GetAllItemCounts();
             foreach (var info in dictionary)
             {
                 if (info.Value == null) continue;
@@ -150,12 +154,12 @@ namespace GGemCo2DCore
             if (collision.gameObject.CompareTag(ConfigTags.GetValue(ConfigTags.Keys.MapObjectWarp)))
             {
                 ObjectWarp objectWarp = collision.gameObject.GetComponent<ObjectWarp>();
-                sceneGame.mapManager.LoadMapByWarp(objectWarp);
+                _sceneGame.mapManager.LoadMapByWarp(objectWarp);
             }
             // 드랍 아이템 일때
             else if (collision.gameObject.CompareTag(ConfigTags.GetValue(ConfigTags.Keys.DropItem)))
             {
-                sceneGame.ItemManager.PlayerTaken(collision.gameObject);
+                _sceneGame.ItemManager.PlayerTaken(collision.gameObject);
             }
         }
         /// <summary>
@@ -166,7 +170,7 @@ namespace GGemCo2DCore
         /// <param name="itemCount"></param>
         public void EquipItem(int partIndex, int itemUid, int itemCount)
         {
-            bool result = equipController.EquipItem(partIndex, itemUid);
+            bool result = _equipController.EquipItem(partIndex, itemUid);
             if (!result) return;
             if (itemUid <= 0)
             {
@@ -198,7 +202,7 @@ namespace GGemCo2DCore
         /// <param name="partIndex"></param>
         public void UnEquipItem(int partIndex)
         {
-            bool result = equipController.UnEquipItem(partIndex);
+            bool result = _equipController.UnEquipItem(partIndex);
             if (!result) return;
             
             ItemConstants.PartsType partsType = (ItemConstants.PartsType)partIndex;
@@ -224,80 +228,83 @@ namespace GGemCo2DCore
         {
             if (IsStatusDead()) return;
             // GcLogger.Log(@event);
-            long totalDamage = sceneGame.calculateManager.GetPlayerTotalAtk();
+            long totalDamage = _sceneGame.calculateManager.GetPlayerTotalAtk();
         
             // 캡슐 콜라이더 2D와 충돌 중인 모든 콜라이더를 검색
             Vector2 size = new Vector2(colliderCheckCharacter.size.x * Mathf.Abs(transform.localScale.x), colliderCheckCharacter.size.y * transform.localScale.y);
             Vector2 point = (Vector2)transform.position + colliderCheckCharacter.offset * transform.localScale;
-            Collider2D[] hitsCollider2D = Physics2D.OverlapCapsuleAll(point, size, colliderCheckCharacter.direction, 0f);
-
+            
             int countDamageMonster = 0;
-            int maxDamageMonster = 10;
-            foreach (var hit in hitsCollider2D)
+#if UNITY_6000_0_OR_NEWER
+            int hitCount = Physics2D.OverlapCapsule(point, size, colliderCheckCharacter.direction, 0f,
+                new ContactFilter2D().NoFilter(), _collider2Ds);
+            for (int i = 0; i < hitCount; i++)
             {
-                if (hit.CompareTag(ConfigTags.GetValue(ConfigTags.Keys.Monster)))
+                Collider2D hit = _collider2Ds[i];
+#else
+            Physics2D.OverlapCapsuleNonAlloc(point, size, colliderCheckCharacter.direction, 0f, _collider2Ds);
+            foreach (var hit in _collider2Ds)
+            {
+#endif
+                if (!hit || !hit.CompareTag(ConfigTags.GetValue(ConfigTags.Keys.Monster))) continue;
+                CharacterAttackRange characterAttackRange = hit.GetComponent<CharacterAttackRange>();
+                if (characterAttackRange == null) continue;
+                // GcLogger.Log("Player attacked the monster after animation!");
+                CharacterBase monster = characterAttackRange.target;
+                // 몬스터와 마주보고 있으면 공격 
+                if (AreFacingEachOther(monster.transform))
                 {
-                    CharacterAttackRange characterAttackRange = hit.GetComponent<CharacterAttackRange>();
-                    if (characterAttackRange != null)
+                    monster.TakeDamage(totalDamage, gameObject);
+                    ++countDamageMonster;
+                }
+                // 몬스터와 같은 곳을 바라보고 있으면,
+                else if (IsFlipped() == monster.IsFlipped())
+                {
+                    // flip 일때는 
+                    // monster.x >= player.x
+                    if (IsFlipped() && monster.transform.position.x >= transform.position.x)
                     {
-                        // GcLogger.Log("Player attacked the monster after animation!");
-                        CharacterBase monster = characterAttackRange.target;
-                        // 몬스터와 마주보고 있으면 공격 
-                        if (AreFacingEachOther(monster.transform))
-                        {
-                            monster.TakeDamage(totalDamage, gameObject);
-                            ++countDamageMonster;
-                        }
-                        // 몬스터와 같은 곳을 바라보고 있으면,
-                        else if (IsFlipped() == monster.IsFlipped())
-                        {
-                            // flip 일때는 
-                            // monster.x >= player.x
-                            if (IsFlipped() && monster.transform.position.x >= transform.position.x)
-                            {
-                                monster.TakeDamage(totalDamage, gameObject);
-                                ++countDamageMonster;
-                            }
-                            // flip 이 아닐때는
-                            // monster.x <= player.x
-                            else if (IsFlipped() != true && monster.transform.position.x <= transform.position.x)
-                            {
-                                monster.TakeDamage(totalDamage, gameObject);
-                                ++countDamageMonster; 
-                            }
-                        }
-                        
-                        // maxDamageMonster 마리 한테만 데미지 준다 
-                        if (countDamageMonster > maxDamageMonster)
-                        {
-                            break;
-                        }
+                        monster.TakeDamage(totalDamage, gameObject);
+                        ++countDamageMonster;
                     }
+                    // flip 이 아닐때는
+                    // monster.x <= player.x
+                    else if (IsFlipped() != true && monster.transform.position.x <= transform.position.x)
+                    {
+                        monster.TakeDamage(totalDamage, gameObject);
+                        ++countDamageMonster; 
+                    }
+                }
+                        
+                // CountCollider 마리 한테만 데미지 준다 
+                if (countDamageMonster > CountCollider)
+                {
+                    break;
                 }
             }
         }
         private void SetWindowHudSliderHp(long value)
         {
-            if (uiWindowHud == null)
+            if (_uiWindowHud == null)
             {
                 return;
             }
-            uiWindowHud.SetSliderHp(value, TotalHp.Value);
+            _uiWindowHud.SetSliderHp(value, TotalHp.Value);
         }
         private void SetWindowHudSliderMp(long value)
         {
-            if (uiWindowHud == null) 
+            if (_uiWindowHud == null) 
             {
                 return;
             }
-            uiWindowHud.SetSliderMp(value, TotalMp.Value);
+            _uiWindowHud.SetSliderMp(value, TotalMp.Value);
         }
         /// <summary>
         /// Player의 스탯과 UI를 매핑하여 리스트에 저장
         /// </summary>
         private void InitializeStatBindings()
         {
-            statBindings.AddRange(new[]
+            _statBindings.AddRange(new[]
             {
                 new StatUIBinding { textUI = UIWindowPlayerInfo.IndexPlayerInfo.Atk, GetStat = p => p.TotalAtk, label = "ATK" },
                 new StatUIBinding { textUI = UIWindowPlayerInfo.IndexPlayerInfo.Def, GetStat = p => p.TotalDef, label = "DEF" },
@@ -311,7 +318,7 @@ namespace GGemCo2DCore
                 new StatUIBinding { textUI = UIWindowPlayerInfo.IndexPlayerInfo.RegistCold, GetStat = p => p.TotalRegistCold, label = "Regist Cold" },
                 new StatUIBinding { textUI = UIWindowPlayerInfo.IndexPlayerInfo.RegistLightning, GetStat = p => p.TotalRegistLightning, label = "Regist Lighting" },
             });
-            foreach (var binding in statBindings)
+            foreach (var binding in _statBindings)
             {
                 binding.GetStat(this).DistinctUntilChanged()
                     .Subscribe(value => UpdatePlayerInfoText(binding.textUI, binding.label, value))
@@ -326,8 +333,8 @@ namespace GGemCo2DCore
         /// <param name="value"></param>
         private void UpdatePlayerInfoText(UIWindowPlayerInfo.IndexPlayerInfo textUI, string label, long value)
         {
-            if (uiWindowPlayerInfo == null) return;
-            uiWindowPlayerInfo.UpdateText(textUI, label, value);
+            if (_uiWindowPlayerInfo == null) return;
+            _uiWindowPlayerInfo.UpdateText(textUI, label, value);
         }
         /// <summary>
         /// 현재 생명력이 최대치인지
@@ -372,7 +379,7 @@ namespace GGemCo2DCore
         protected override void OnDead()
         {
             base.OnDead();
-            sceneGame.SetState(SceneGame.GameState.End);
+            _sceneGame.SetState(SceneGame.GameState.End);
         }
         
         /// <summary>
@@ -387,10 +394,10 @@ namespace GGemCo2DCore
 
         public bool IsRequireLevel(int compareLevel)
         {
-            bool result = playerData?.CurrentLevel >= compareLevel;
+            bool result = _playerData?.CurrentLevel >= compareLevel;
             if (!result)
             {
-                sceneGame.systemMessageManager.ShowMessageWarning($"플레이어 레벨이 부족합니다. 필요 레벨 : {compareLevel}");
+                _sceneGame.systemMessageManager.ShowMessageWarning($"플레이어 레벨이 부족합니다. 필요 레벨 : {compareLevel}");
             }
             return result;
         }
@@ -400,8 +407,8 @@ namespace GGemCo2DCore
         /// <param name="affectUid"></param>
         protected override void OnAffect(int affectUid)
         {
-            if (uiWindowPlayerBuffInfo == null) return;
-            uiWindowPlayerBuffInfo.AddAffectIcon(affectUid);
+            if (_uiWindowPlayerBuffInfo == null) return;
+            _uiWindowPlayerBuffInfo.AddAffectIcon(affectUid);
         }
         /// <summary>
         /// localScale 이 적용된 캐릭터 크기 가져오기
@@ -414,7 +421,7 @@ namespace GGemCo2DCore
 
         public void SetMapSize(Vector2 mapSize)
         {
-            controllerPlayer?.ChangeMapSize(mapSize);
+            _controllerPlayer?.ChangeMapSize(mapSize);
         }
     }
 }

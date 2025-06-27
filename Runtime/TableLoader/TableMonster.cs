@@ -12,6 +12,7 @@ namespace GGemCo2DCore
         public string Name { get; set; }
         public int SpineUid;
         public string DefaultSkin;
+        public CharacterConstants.AttackType AttackType;
         public float Scale;
         public CharacterConstants.Grade Grade;
         public int Level;
@@ -32,6 +33,7 @@ namespace GGemCo2DCore
     public class TableMonster : DefaultTable
     {
         private static readonly Dictionary<string, CharacterConstants.Grade> MapGrade;
+        private static readonly Dictionary<string, CharacterConstants.AttackType> MapAttackType;
 
         static TableMonster()
         {
@@ -40,9 +42,15 @@ namespace GGemCo2DCore
                 { "Common", CharacterConstants.Grade.Common },
                 { "Boss", CharacterConstants.Grade.Boss },
             };
+            MapAttackType = new Dictionary<string, CharacterConstants.AttackType>
+            {
+                { "PassiveDefense", CharacterConstants.AttackType.PassiveDefense },
+                { "AggroFirst", CharacterConstants.AttackType.AggroFirst },
+            };
         }
 
         private CharacterConstants.Grade ConvertGrade(string grade) => MapGrade.GetValueOrDefault(grade, CharacterConstants.Grade.None);
+        private CharacterConstants.AttackType ConvertAttackType(string grade) => MapAttackType.GetValueOrDefault(grade, CharacterConstants.AttackType.None);
 
         public StruckTableMonster GetDataByUid(int uid)
         {
@@ -59,6 +67,7 @@ namespace GGemCo2DCore
                 Name = data["Name"],
                 SpineUid = int.Parse(data["SpineUid"]),
                 DefaultSkin = data["DefaultSkin"],
+                AttackType = ConvertAttackType(data["Type"]),
                 Scale = float.Parse(data["Scale"]),
                 Grade = ConvertGrade(data["Grade"]),
                 Level = int.Parse(data["Level"]),

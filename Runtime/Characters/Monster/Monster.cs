@@ -10,22 +10,26 @@ namespace GGemCo2DCore
     public class Monster : CharacterBase
     {
         // 선공/후공
-        private CharacterConstants.AttackType attackType;
+        private CharacterConstants.AttackType _attackType;
         public delegate void DelegateMonsterDead(int monsterVid, int monsterUid, GameObject monsterObject);
         public event DelegateMonsterDead OnMonsterDead;
         
         // 몬스터 행동 처리
-        private ControllerMonster controllerMonster;
+        private ControllerMonster _controllerMonster;
         // 생명력 slier
         [HideInInspector] public GameObject sliderHpBar;
-        private GameObject prefabSliderHpBar;
-        private Transform containerMonsterHpBar;
+        private GameObject _prefabSliderHpBar;
+        private Transform _containerMonsterHpBar;
+
+        // 충돌 체크할 플레이어 수  
+        private const int CountCollider = 10;
+        private Collider2D[] _collider2Ds;
         
-        // Start is called before the first frame update
         protected override void Awake()
         {
             base.Awake();
-            attackType = CharacterConstants.AttackType.PassiveDefense;
+            _collider2Ds = new Collider2D[CountCollider];
+            _attackType = CharacterConstants.AttackType.PassiveDefense;
             
             OnMonsterDead += SceneGame.Instance.ItemManager.OnMonsterDead;
             OnMonsterDead += SceneGame.Instance.saveDataManager.Player.AddExp;
@@ -69,7 +73,7 @@ namespace GGemCo2DCore
             colliderCheckHitArea = ComponentController.AddCapsuleCollider2D(hitArea, true, offset, size, 0, 0, CapsuleDirection2D.Vertical);
             
             // 순서 중요. ControllerMonster 에서 콜라이더를 사용
-            controllerMonster = gameObject.AddComponent<ControllerMonster>();
+            _controllerMonster = gameObject.AddComponent<ControllerMonster>();
         }
         /// <summary>
         /// regen_data 의 정보 셋팅
@@ -101,6 +105,7 @@ namespace GGemCo2DCore
                 info.RegistFire, info.RegistCold, info.RegistLightning);
             CurrentHp.OnNext(info.StatHp);
             SetScale(info.Scale);
+            _attackType = info.AttackType;
         }
         public void CreateHpBar()
         {
@@ -109,10 +114,10 @@ namespace GGemCo2DCore
                 GcLogger.LogError("SceneGame 에 containerMonsterHpBar 가 설정되지 않았습니다.");
                 return;
             }
-            prefabSliderHpBar = ConfigResources.SliderMonsterHp.Load();
-            if (prefabSliderHpBar == null) return;
-            containerMonsterHpBar = SceneGame.Instance.containerMonsterHpBar.transform;
-            sliderHpBar = Instantiate(prefabSliderHpBar, containerMonsterHpBar);
+            _prefabSliderHpBar = ConfigResources.SliderMonsterHp.Load();
+            if (_prefabSliderHpBar == null) return;
+            _containerMonsterHpBar = SceneGame.Instance.containerMonsterHpBar.transform;
+            sliderHpBar = Instantiate(_prefabSliderHpBar, _containerMonsterHpBar);
             MonsterHpBar monsterHpBar = sliderHpBar.GetComponent<MonsterHpBar>();
             monsterHpBar.Initialize(this);
         }
@@ -139,7 +144,7 @@ namespace GGemCo2DCore
             {
                 Destroy(sliderHpBar);
             }
-            controllerMonster.StopAttackCoroutine();
+            _controllerMonster.StopAttackCoroutine();
             GameEventManager.MonsterKilled(CharacterRegenData.MapUid, uid);
             OnMonsterDead?.Invoke(vid, uid, gameObject);
         }
@@ -165,21 +170,24 @@ namespace GGemCo2DCore
             // 캡슐 콜라이더 2D와 충돌 중인 모든 콜라이더를 검색
             Vector2 size = new Vector2(colliderCheckCharacter.size.x * Mathf.Abs(transform.localScale.x), colliderCheckCharacter.size.y * transform.localScale.y);
             Vector2 point = (Vector2)transform.position + colliderCheckCharacter.offset * transform.localScale;
-            Collider2D[] collider2Ds = Physics2D.OverlapCapsuleAll(point, size, colliderCheckCharacter.direction, 0f);
-
-            foreach (var hit in collider2Ds)
+#if UNITY_6000_0_OR_NEWER
+            int hitCount = Physics2D.OverlapCapsule(point, size, colliderCheckCharacter.direction, 0f,
+                new ContactFilter2D().NoFilter(), _collider2Ds);
+            for (int i = 0; i < hitCount; i++)
             {
-                if (hit.CompareTag(ConfigTags.GetValue(ConfigTags.Keys.Player)))
-                {
-                    Player player = hit.GetComponent<Player>();
-                    if (player != null)
-                    {
-                        // GcLogger.Log("Player attacked the monster after animation!");
-                        player.TakeDamage(totalDamage, gameObject);
-                        break;
-                    }
-                }
+                Collider2D hit = _collider2Ds[i];
+#else
+            Physics2D.OverlapCapsuleNonAlloc(point, size, colliderCheckCharacter.direction, 0f, _collider2Ds);
+            foreach (var hit in _collider2Ds)
+            {
+#endif
+                if (!hit.CompareTag(ConfigTags.GetValue(ConfigTags.Keys.Player))) continue;
+                Player player = hit.GetComponent<Player>();
+                if (player == null) continue;
+                player.TakeDamage(totalDamage, gameObject);
+                break;
             }
+
         }
 
         public float GetHeight()
