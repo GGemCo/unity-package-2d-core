@@ -4,6 +4,7 @@ namespace GGemCo2DCore
 {
     public enum InputSystemType
     {
+        None,
         OldInputManager,
         NewInputSystem,
         Both
