@@ -1,6 +1,8 @@
 ﻿using UnityEngine;
 using UnityEngine.EventSystems;
+#if GGEMCO_USE_NEW_INPUT
 using UnityEngine.InputSystem;
+#endif
 using UnityEngine.UI;
 
 namespace GGemCo2DCore

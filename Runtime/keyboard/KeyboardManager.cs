@@ -1,5 +1,8 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
+#if GGEMCO_USE_OLD_INPUT
+using UnityEngine;
+#endif
 #if GGEMCO_USE_NEW_INPUT
 using UnityEngine.InputSystem;
 #endif
