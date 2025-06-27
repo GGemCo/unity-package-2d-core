@@ -1,6 +1,6 @@
 {
 	"name": "com.ggemco.2d.core",
-	"version": "0.0.2",
+	"version": "2.0.0",
 	"displayName": "GGemCo 2D Core",
 	"description": "타일맵 시스템, 캐릭터 시스템, 개발툴 등 공통 기능 패키지\nTextMeshPro 를 설치해주세요.",
 	"documentationUrl": "https://sturdy-coat-0d2.notion.site/2D-RPG-Unity-2D-RPG-Tutorial-1ccbf593397e802ba3edcda8b2e3a8c3?source=copy_link",
