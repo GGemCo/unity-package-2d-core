@@ -397,7 +397,7 @@ namespace GGemCo2DCore
             bool result = _playerData?.CurrentLevel >= compareLevel;
             if (!result)
             {
-                _sceneGame.systemMessageManager.ShowMessageWarning($"플레이어 레벨이 부족합니다. 필요 레벨 : {compareLevel}");
+                _sceneGame.systemMessageManager.ShowMessageWarning($"Insufficient player level. Need Level: {compareLevel}"); //$"플레이어 레벨이 부족합니다. 필요 레벨 : {compareLevel}");
             }
             return result;
         }

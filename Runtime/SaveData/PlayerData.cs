@@ -226,7 +226,8 @@ namespace GGemCo2DCore
             {
                 return new ResultCommon(ResultCommon.Type.Success);
             }
-            return new ResultCommon(ResultCommon.Type.Fail, $"{currency} 가 부족합니다.");
+
+            return new ResultCommon(ResultCommon.Type.Fail, $"Not enough {currency}."); // $"{currency} 가 부족합니다.");
         }
         /// <summary>
         /// 모든 재화를 채크해야하는 경우
@@ -241,7 +242,7 @@ namespace GGemCo2DCore
                 if (resultCommon.Code == ResultCommon.Type.Fail)
                 {
                     return new ResultCommon(ResultCommon.Type.Fail,
-                        $"{CurrencyConstants.GetNameByCurrencyType(info.Key)} 가 부족합니다.");
+                        $"Not enough {CurrencyConstants.GetNameByCurrencyType(info.Key)}."); //$"{CurrencyConstants.GetNameByCurrencyType(info.Key)} 가 부족합니다.");
                 }
             }
 
