@@ -5,4 +5,5 @@
 104	분해	Please upload the items that you want to disassemble.	ItemSalvage	0	None	0	None	0
 105	강화,분해	Please post items to strengthen.	ItemUpgrade	0	ItemSalvage	0	None	0
 106	창고	Please post the items you will leave with.	Stash	0	None	0	None	0
-107	제작	What items will you make?	ItemCraft	0	None	0	None	0
+107	제작	What items will you make?	ItemCraft	10001	None	0	None	0
+108	포션제작	What items will you make?	ItemCraft	10002	None	0	None	0

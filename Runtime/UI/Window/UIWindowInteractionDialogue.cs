@@ -228,8 +228,8 @@ namespace GGemCo2DCore
             if (interactionType == InteractionConstants.Type.None) return;
             if (interactionType == InteractionConstants.Type.Shop)
             {
-                _uiWindowShop.Show(true);
-                _uiWindowShop.SetInfoByShopUid(value);
+                _uiWindowShop?.Show(true);
+                _uiWindowShop?.SetInfoByShopUid(value);
             }
             else if (interactionType == InteractionConstants.Type.Stash)
             {
@@ -250,6 +250,7 @@ namespace GGemCo2DCore
             else if (interactionType == InteractionConstants.Type.ItemCraft)
             {
                 _uiWindowItemCraft?.Show(true);
+                _uiWindowItemCraft?.SetInfoByItemCraftUid(value);
             }
 
             Show(false);

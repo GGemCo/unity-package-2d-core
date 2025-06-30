@@ -1,10 +1,9 @@
-﻿
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 
 namespace GGemCo2DCore
 {
     /// <summary>
-    /// Window 테이블 Structure
+    /// 아이템 제작 테이블 Structure
     /// </summary>
     public class StruckTableItemCraft
     {
@@ -25,23 +24,21 @@ namespace GGemCo2DCore
     }
 
     /// <summary>
-    /// Window 테이블
+    /// 아이템 제작 테이블
     /// </summary>
     public class TableItemCraft : DefaultTable
     {
-        private readonly Dictionary<int, StruckTableItemCraft> dictionaryByItemUid = new Dictionary<int, StruckTableItemCraft>();
-
-        public StruckTableItemCraft GetDataByUid(int uid)
+        private readonly Dictionary<int, List<StruckTableItemCraft>> _craftItems = new Dictionary<int, List<StruckTableItemCraft>>();
+        protected override void OnLoadedData(Dictionary<string, string> data)
         {
-            if (uid <= 0)
+            int uid = int.Parse(data["Uid"]);
+
+            if (!_craftItems.ContainsKey(uid))
             {
-                GcLogger.LogError("uid is 0.");
-                return null;
+                _craftItems.TryAdd(uid, new List<StruckTableItemCraft>());
             }
 
-            var data = GetData(uid);
-            if (data == null) return null;
-            return new StruckTableItemCraft
+            StruckTableItemCraft struckTableItemCraft = new StruckTableItemCraft
             {
                 Uid = int.Parse(data["Uid"]),
                 Memo = data["Memo"],
@@ -58,6 +55,17 @@ namespace GGemCo2DCore
                 NeedItemUid4 = int.Parse(data["NeedItemUid4"]),
                 NeedItemCount4 = int.Parse(data["NeedItemCount4"]),
             };
+            _craftItems[uid].Add(struckTableItemCraft);
+        }
+        public List<StruckTableItemCraft> GetDataByUid(int uid)
+        {
+            if (uid <= 0)
+            {
+                GcLogger.LogError("uid is 0.");
+                return null;
+            }
+
+            return _craftItems.GetValueOrDefault(uid);
         }
     }
 }

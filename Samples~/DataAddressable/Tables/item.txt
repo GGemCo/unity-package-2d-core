@@ -21,8 +21,10 @@
 # 물약																																			
 201011001	Small HP Potion	Consumable	Potion	RecoverHp	None	Normal	HpPotion1	0	999	1	Gold	160	None	None	NONE	NONE	100	NONE	NONE	0	NONE	NONE	0	NONE	NONE	0	NONE	NONE	0	NONE	NONE	0	NONE	NONE	0
 201011002	Big HP Potion	Consumable	Potion	RecoverHp	None	Normal	HpPotion2	0	999	1	Gold	170	None	None	NONE	NONE	50	NONE	NONE	0	NONE	NONE	0	NONE	NONE	0	NONE	NONE	0	NONE	NONE	0	NONE	NONE	0
+201011003	Crafted HP Potion	Consumable	Potion	RecoverHp	None	Normal	CraftHpPotion1	0	999	1	Gold	170	None	None	NONE	NONE	200	NONE	NONE	0	NONE	NONE	0	NONE	NONE	0	NONE	NONE	0	NONE	NONE	0	NONE	NONE	0
 201021001	Small MP Potion	Consumable	Potion	RecoverMp	None	Normal	MpPotion1	0	999	1	Gold	180	None	None	NONE	NONE	100	NONE	NONE	0	NONE	NONE	0	NONE	NONE	0	NONE	NONE	0	NONE	NONE	0	NONE	NONE	0
 201021002	Big MP Potion	Consumable	Potion	RecoverMp	None	Normal	MpPotion2	0	999	1	Gold	190	None	None	NONE	NONE	50	NONE	NONE	0	NONE	NONE	0	NONE	NONE	0	NONE	NONE	0	NONE	NONE	0	NONE	NONE	0
+201021003	Crafed MP Potion	Consumable	Potion	RecoverMp	None	Normal	CraftMpPotion1	0	999	1	Gold	190	None	None	NONE	NONE	220	NONE	NONE	0	NONE	NONE	0	NONE	NONE	0	NONE	NONE	0	NONE	NONE	0	NONE	NONE	0
 201031001	ATK Speed Potion	Consumable	Potion	IncreaseAttackSpeed	None	Normal	AttackSpeedPotion1	0	999	3	Gold	200	None	None	AFFECT_UID	NONE	110002	NONE	NONE	0	NONE	NONE	0	NONE	NONE	0	NONE	NONE	0	NONE	NONE	0	NONE	NONE	0
 201041002	Move Speed Potion	Consumable	Potion	IncreaseMoveSpeed	None	Normal	MoveSpeedPotion1	0	999	3	Gold	210	None	None	AFFECT_UID	NONE	110001	NONE	NONE	0	NONE	NONE	0	NONE	NONE	0	NONE	NONE	0	NONE	NONE	0	NONE	NONE	0
 # 재료																																			
