@@ -70,12 +70,13 @@ namespace GGemCo2DCore
 
         private void Awake()
         {
+            // 테이블이 로드 되지 않았다면, Intro 씬으로 이동 하기.
             if (TableLoaderManager.Instance == null)
             {
                 UnityEngine.SceneManagement.SceneManager.LoadScene(ConfigDefine.SceneNameIntro);
                 return;
             }
-
+            // 게임 신 싱글톤으로 사용하기.
             if (Instance == null)
             {
                 Instance = this;
@@ -86,6 +87,11 @@ namespace GGemCo2DCore
                 Destroy(gameObject);
                 return;
             }
+            // 로딩 중 보여주는 이미지 활성호 시키기.
+            if (bgBlackForMapLoading)
+            {
+                bgBlackForMapLoading.SetActive(true);
+            }
             
             InitializeManagers();
 
@@ -93,7 +99,7 @@ namespace GGemCo2DCore
             SetState(GameState.Begin);
         }
         /// <summary>
-        /// 매니저 스크립트 오브젝트 생성하기
+        /// <para>매니저 초기화 하기</para>
         /// </summary>
         private void InitializeManagers()
         {
