@@ -1,11 +1,9 @@
 ﻿using System.Collections.Generic;
-using System.IO;
-using UnityEngine;
 
 namespace GGemCo2DCore
 {
     /// <summary>
-    /// Window 테이블 Structure
+    /// 퀘스트 테이블 Structure
     /// </summary>
     public class StruckTableQuest : IUidName
     {
@@ -18,7 +16,7 @@ namespace GGemCo2DCore
     }
 
     /// <summary>
-    /// Window 테이블
+    /// 퀘스트 테이블
     /// </summary>
     public class TableQuest : DefaultTable
     {

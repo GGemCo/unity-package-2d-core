@@ -3,7 +3,7 @@
 namespace GGemCo2DCore
 {
     /// <summary>
-    /// 맵 테이블 Structure
+    /// 어펙트 테이블 Structure
     /// </summary>
     public class StruckTableAffect
     {
@@ -21,7 +21,7 @@ namespace GGemCo2DCore
         public float EffectScale;
     }
     /// <summary>
-    /// 맵 테이블
+    /// 어펙트 테이블
     /// </summary>
     public class TableAffect : DefaultTable
     {

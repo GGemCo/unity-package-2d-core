@@ -1,5 +1,4 @@
-﻿
-namespace GGemCo2DCore
+﻿namespace GGemCo2DCore
 {
     /// <summary>
     /// Window 테이블 Structure

@@ -4,7 +4,7 @@ using UnityEngine;
 namespace GGemCo2DCore
 {
     /// <summary>
-    /// 맵 테이블 Structure
+    /// 이펙트 테이블 Structure
     /// </summary>
     public class StruckTableEffect
     {
@@ -19,7 +19,7 @@ namespace GGemCo2DCore
         public string Color;
     }
     /// <summary>
-    /// 맵 테이블
+    /// 이펙트 테이블
     /// </summary>
     public class TableEffect : DefaultTable
     {

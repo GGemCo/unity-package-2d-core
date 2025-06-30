@@ -1,10 +1,9 @@
-﻿
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 
 namespace GGemCo2DCore
 {
     /// <summary>
-    /// Window 테이블 Structure
+    /// 아이템 강화 테이블 Structure
     /// </summary>
     public class StruckTableItemUpgrade
     {
@@ -28,7 +27,7 @@ namespace GGemCo2DCore
     }
 
     /// <summary>
-    /// Window 테이블
+    /// 아이템 강화 테이블
     /// </summary>
     public class TableItemUpgrade : DefaultTable
     {

@@ -3,7 +3,7 @@
 namespace GGemCo2DCore
 {
     /// <summary>
-    /// 맵 테이블 Structure
+    /// 스킬 테이블 Structure
     /// </summary>
     public class StruckTableSkill
     {
@@ -32,7 +32,7 @@ namespace GGemCo2DCore
         public int AffectRate;
     }
     /// <summary>
-    /// 맵 테이블
+    /// 스킬 테이블
     /// </summary>
     public class TableSkill : DefaultTable
     {

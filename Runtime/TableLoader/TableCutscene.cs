@@ -2,7 +2,7 @@
 namespace GGemCo2DCore
 {
     /// <summary>
-    /// 맵 테이블 Structure
+    /// 연출 테이블 Structure
     /// </summary>
     public class StruckTableCutscene
     {
@@ -11,7 +11,7 @@ namespace GGemCo2DCore
         public string FileName;
     }
     /// <summary>
-    /// 맵 테이블
+    /// 연출 테이블
     /// </summary>
     public class TableCutscene : DefaultTable
     {

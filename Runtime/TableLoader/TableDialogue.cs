@@ -1,7 +1,7 @@
 ﻿namespace GGemCo2DCore
 {
     /// <summary>
-    /// 맵 테이블 Structure
+    /// 대사 테이블 Structure
     /// </summary>
     public class StruckTableDialogue : IUidName
     {
@@ -11,7 +11,7 @@
         public string FileName;
     }
     /// <summary>
-    /// 맵 테이블
+    /// 대사 테이블
     /// </summary>
     public class TableDialogue : DefaultTable
     {
