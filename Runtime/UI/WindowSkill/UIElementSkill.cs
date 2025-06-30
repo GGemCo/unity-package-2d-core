@@ -168,6 +168,7 @@ namespace GGemCo2DCore
         /// <returns></returns>
         private bool CheckLevelCurrency(int needPlayerLevel, CurrencyConstants.Type needCurrencyType, int needCurrencyValue)
         {
+            if (!SceneGame.Instance || !SceneGame.Instance.player) return false;
             // 레벨 체크
             bool result = SceneGame.Instance.player.GetComponent<Player>().IsRequireLevel(needPlayerLevel);
             if (!result) return false;
