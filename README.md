@@ -28,3 +28,6 @@
 - NeGet (https://github.com/GlitchEnzo/NuGetForUnity/releases/tag/v4.3.0)
   - R3
 
+## 라이센스
+이 코드를 사용하여 게임을 개발 및 판매하는 것은 허용됩니다.<br>
+하지만 본 C# 코드를 직접적으로 판매하거나, 별도의 상업적 제품으로 재배포하는 행위는 금지됩니다.
