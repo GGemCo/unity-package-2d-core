@@ -18,7 +18,7 @@ namespace GGemCo2DCore
         public int Value3;
     }
     /// <summary>
-    /// Npc 테이블
+    /// Interaction 테이블
     /// </summary>
     public class TableInteraction : DefaultTable
     {

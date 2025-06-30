@@ -3,7 +3,7 @@
 namespace GGemCo2DCore
 {
     /// <summary>
-    /// Shop 테이블 Structure
+    /// 상점 판매 테이블 Structure
     /// </summary>
     public class StruckTableShop
     {
@@ -15,19 +15,18 @@ namespace GGemCo2DCore
         public int MaxBuyCount;
     }
     /// <summary>
-    /// Npc 테이블
+    /// 상점 판매 테이블
     /// </summary>
     public class TableShop : DefaultTable
     {
-        // 레벨 1인 것만 모아놓은 dictionary
-        private readonly Dictionary<int, List<StruckTableShop>> shopItems = new Dictionary<int, List<StruckTableShop>>();
+        private readonly Dictionary<int, List<StruckTableShop>> _shopItems = new Dictionary<int, List<StruckTableShop>>();
         protected override void OnLoadedData(Dictionary<string, string> data)
         {
             int uid = int.Parse(data["Uid"]);
 
-            if (!shopItems.ContainsKey(uid))
+            if (!_shopItems.ContainsKey(uid))
             {
-                shopItems.TryAdd(uid, new List<StruckTableShop>());
+                _shopItems.TryAdd(uid, new List<StruckTableShop>());
             }
 
             StruckTableShop struckTableShop = new StruckTableShop
@@ -39,7 +38,7 @@ namespace GGemCo2DCore
                 CurrencyValue = int.Parse(data["CurrencyValue"]),
                 MaxBuyCount = int.Parse(data["MaxBuyCount"]),
             };
-            shopItems[uid].Add(struckTableShop);
+            _shopItems[uid].Add(struckTableShop);
         }
         
         public List<StruckTableShop> GetDataByUid(int uid)
@@ -50,7 +49,7 @@ namespace GGemCo2DCore
                 return null;
             }
 
-            return shopItems.GetValueOrDefault(uid);
+            return _shopItems.GetValueOrDefault(uid);
         }
     }
 }
