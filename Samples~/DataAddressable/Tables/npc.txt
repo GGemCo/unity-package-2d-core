@@ -1,4 +1,4 @@
-Uid	Name	SpineUid	DefaultSkin	Scale	Grade	StatMoveSpeed	ImageThumbnailPath	InteractionUid
+Uid	Name	SpineUid	DefaultSkin	Scale	Grade	StatMoveSpeed	ImageThumbnailFileName	InteractionUid
 #1장								
 110001	Cat1	1001	default	0.3	Common	0	Npc1	0
 110002	Cat2	1002	default	0.3	Common	0	Npc2	102

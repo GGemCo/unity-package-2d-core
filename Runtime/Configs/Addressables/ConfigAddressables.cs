@@ -38,6 +38,7 @@ namespace GGemCo2DCore
 
         public const string PathCharacterThumbnail = Path + "/Images/Thumbnail";
         public const string PathCharacterThumbnailNpc = PathCharacterThumbnail + "/Npc";
+        public const string PathCharacterThumbnailMonster = PathCharacterThumbnail + "/Monster";
 
         // 연출
         public const string KeyCutscene = ConfigDefine.NameSDK+"_Cutscene";

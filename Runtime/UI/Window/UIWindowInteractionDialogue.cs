@@ -101,7 +101,7 @@ namespace GGemCo2DCore
         /// <param name="npcQuestDatas"></param>
         public async Task SetInfos(StruckTableNpc npcData, StruckTableInteraction interactionData, List<NpcQuestData> npcQuestDatas)
         {
-            string key = $"{ConfigAddressables.KeyCharacterThumbnailNpc}_{npcData.ImageThumbnailPath}";
+            string key = $"{ConfigAddressables.KeyCharacterThumbnailNpc}_{npcData.ImageThumbnailFileName}";
             Sprite sprite = await AddressableLoaderController.LoadByKeyAsync<Sprite>(key);
             if (sprite != null)
             {

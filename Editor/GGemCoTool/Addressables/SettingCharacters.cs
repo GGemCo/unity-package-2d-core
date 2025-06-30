@@ -67,8 +67,16 @@ namespace GGemCo2DCoreEditor
                     string key = $"{ConfigAddressables.KeyPrefabMonster}_{infoAnimation.Uid}";
                     string assetPath = $"{ConfigAddressables.Path}/{infoAnimation.PrefabPath}.prefab";
                     string label = "";
-                
+                    
                     Add(settings, groupMonster, key, assetPath, label);
+                
+                    // 썸네일 있으면 추가
+                    if (!string.IsNullOrEmpty(info.ImageThumbnailFileName))
+                    {
+                        key = $"{ConfigAddressables.KeyCharacterThumbnailMonster}_{info.ImageThumbnailFileName}";
+                        assetPath = $"{ConfigAddressables.PathCharacterThumbnailMonster}/{info.ImageThumbnailFileName}.png";
+                        Add(settings, groupMonster, key, assetPath);
+                    }
                 }
             }
             
@@ -91,10 +99,10 @@ namespace GGemCo2DCoreEditor
                     Add(settings, groupNpc, key, assetPath);
                     
                     // 썸네일 있으면 추가
-                    if (!string.IsNullOrEmpty(info.ImageThumbnailPath))
+                    if (!string.IsNullOrEmpty(info.ImageThumbnailFileName))
                     {
-                        key = $"{ConfigAddressables.KeyCharacterThumbnailNpc}_{info.ImageThumbnailPath}";
-                        assetPath = $"{ConfigAddressables.PathCharacterThumbnailNpc}/{info.ImageThumbnailPath}.png";
+                        key = $"{ConfigAddressables.KeyCharacterThumbnailNpc}_{info.ImageThumbnailFileName}";
+                        assetPath = $"{ConfigAddressables.PathCharacterThumbnailNpc}/{info.ImageThumbnailFileName}.png";
                         Add(settings, groupNpc, key, assetPath);
                     }
                 }
