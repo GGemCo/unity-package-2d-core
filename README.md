@@ -1,5 +1,5 @@
-# Unity SDK RPG
-유니티에서 2D RPG 게임을 만들기 위한 라이브러리 입니다.
+# Unity GGemCoSDK
+유니티에서 2D 게임을 만들기 위한 라이브러리 입니다.
 
 ## 기능
 - 플레이어 이동
@@ -28,6 +28,3 @@
 - NeGet (https://github.com/GlitchEnzo/NuGetForUnity/releases/tag/v4.3.0)
   - R3
 
-## 관련 링크
-- 설명 동영상 : https://www.youtube.com/@ggemco
-- 설명 문서 : https://sturdy-coat-0d2.notion.site/2D-RPG-Unity-2D-RPG-Tutorial-1ccbf593397e802ba3edcda8b2e3a8c3?pvs=4
