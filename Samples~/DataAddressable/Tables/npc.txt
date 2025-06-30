@@ -5,3 +5,4 @@ Uid	Name	SpineUid	DefaultSkin	Scale	Grade	StatMoveSpeed	ImageThumbnailFileName	I
 110003	Cat3	1002	default	0.3	Common	0	Npc2	106
 110004	Cat4	1002	default	0.3	Common	0	Npc2	104
 110005	Cat5	1002	default	0.3	Common	0	Npc2	107
+110006	Cat6	1002	default	0.3	Common	0	Npc2	108

@@ -1,7 +1,6 @@
 ﻿using TMPro;
 using UnityEngine;
 using UnityEngine.EventSystems;
-using UnityEngine.UI;
 
 namespace GGemCo2DCore
 {
@@ -16,11 +15,9 @@ namespace GGemCo2DCore
         [Tooltip("아이템 이름")]
         public TextMeshProUGUI textName;
         
-        private UIWindowItemCraft uiWindowItemCraft;
-        private UIWindowItemInfo uiWindowItemInfo;
-        private StruckTableItemCraft struckTableItemCraft;
-        private TableItemCraft tableItemCraft;
-        private int slotIndex;
+        private UIWindowItemCraft _uiWindowItemCraft;
+        private UIWindowItemInfo _uiWindowItemInfo;
+        private StruckTableItemCraft _struckTableItemCraft;
         
         /// <summary>
         /// 초기화
@@ -30,14 +27,12 @@ namespace GGemCo2DCore
         /// <param name="pstruckTableItemCraft"></param>
         public void Initialize(UIWindowItemCraft puiWindowItemCraft, int pslotIndex, StruckTableItemCraft pstruckTableItemCraft)
         {
-            slotIndex = pslotIndex;
-            struckTableItemCraft = pstruckTableItemCraft;
+            _struckTableItemCraft = pstruckTableItemCraft;
 
-            uiWindowItemCraft = puiWindowItemCraft;
-            uiWindowItemInfo =
+            _uiWindowItemCraft = puiWindowItemCraft;
+            _uiWindowItemInfo =
                 SceneGame.Instance.uIWindowManager.GetUIWindowByUid<UIWindowItemInfo>(
                     UIWindowConstants.WindowUid.ItemInfo);
-            tableItemCraft = TableLoaderManager.Instance.TableItemCraft;
             
             UpdateInfos(pstruckTableItemCraft);
         }
@@ -48,39 +43,39 @@ namespace GGemCo2DCore
         /// </summary>
         public void UpdateInfos(StruckTableItemCraft pstruckTableItemCraft)
         {
-            struckTableItemCraft = pstruckTableItemCraft;
-            if (struckTableItemCraft == null)
+            _struckTableItemCraft = pstruckTableItemCraft;
+            if (_struckTableItemCraft == null)
             {
                 GcLogger.LogError($"제작 테이블에 없는 아이템 입니다. struckTableItemCraft is null");
                 return;
             }
 
-            var info = TableLoaderManager.Instance.TableItem.GetDataByUid(struckTableItemCraft.ResultItemUid);
+            var info = TableLoaderManager.Instance.TableItem.GetDataByUid(_struckTableItemCraft.ResultItemUid);
             if (info == null)
             {
-                GcLogger.LogError("item 테이블에 정보가 없습니다. item Uid:" + struckTableItemCraft.ResultItemUid);
+                GcLogger.LogError("item 테이블에 정보가 없습니다. item Uid:" + _struckTableItemCraft.ResultItemUid);
                 return;
             }
             if (textName != null) textName.text = info.Name;
         }
         public void OnPointerEnter(PointerEventData eventData)
         {
-            uiWindowItemInfo.SetItemUid(struckTableItemCraft.ResultItemUid, gameObject,
-                UIWindowItemInfo.PositionType.None, uiWindowItemCraft.containerIcon.cellSize, new Vector2(0, 1f),
+            _uiWindowItemInfo.SetItemUid(_struckTableItemCraft.ResultItemUid, gameObject,
+                UIWindowItemInfo.PositionType.None, _uiWindowItemCraft.containerIcon.cellSize, new Vector2(0, 1f),
                 new Vector2(
-                    transform.position.x + uiWindowItemCraft.containerIcon.cellSize.x / 2f,
-                    transform.position.y + uiWindowItemCraft.containerIcon.cellSize.y / 2f));
+                    transform.position.x + _uiWindowItemCraft.containerIcon.cellSize.x / 2f,
+                    transform.position.y + _uiWindowItemCraft.containerIcon.cellSize.y / 2f));
         }
 
         public void OnPointerExit(PointerEventData eventData)
         {
-            uiWindowItemInfo.Show(false);
+            _uiWindowItemInfo.Show(false);
         }
 
         public void OnPointerClick(PointerEventData eventData)
         {
-            uiWindowItemCraft.textCraftResult.gameObject.SetActive(false);
-            uiWindowItemCraft.SetInfo(struckTableItemCraft.Uid);
+            _uiWindowItemCraft.textCraftResult.gameObject.SetActive(false);
+            _uiWindowItemCraft.SetInfo(_struckTableItemCraft);
         }
         
         public Vector3 GetIconPosition() => iconPosition;
