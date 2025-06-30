@@ -20,7 +20,7 @@ namespace GGemCo2DCoreEditor
         private void OnGUI()
         {
             GUILayout.Space(20);
-            if (GUILayout.Button("게임 데이터 관리저장 폴더 열기"))
+            if (GUILayout.Button("게임 데이터 저장 폴더 열기"))
             {
                 OpenGameDataFolder();
             }
