@@ -31,10 +31,9 @@ namespace GGemCo2DCore
         public string thumbnailImage;
         public Vector2 cachedSize = Vector2.zero;
         
-        [Header("퀘스트")]
-        [Tooltip("현재 대화가 끝났을때 시작되는 퀘스트 고유번호")]
+        [Header("현재 대화가 끝났을때 시작되는 퀘스트 고유번호")]
         public int startQuestUid;
-        [Tooltip("현재 대화가 끝났을때 startQuestUid 퀘스트 step")]
+        [Header("현재 대화가 끝났을때 startQuestUid 퀘스트 step")]
         public int startQuestStep;
         
         [Header("선택지")]
