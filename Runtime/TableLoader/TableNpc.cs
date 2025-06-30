@@ -15,7 +15,7 @@ namespace GGemCo2DCore
         public CharacterConstants.Grade Grade;
         public int StatMoveSpeed;
         public int InteractionUid;
-        public string ImageThumbnailPath;
+        public string ImageThumbnailFileName;
     }
     /// <summary>
     /// Npc 테이블
@@ -54,7 +54,7 @@ namespace GGemCo2DCore
                 Grade = ConvertGrade(data["Grade"]),
                 StatMoveSpeed = int.Parse(data["StatMoveSpeed"]),
                 InteractionUid = int.Parse(data["InteractionUid"]),
-                ImageThumbnailPath = data["ImageThumbnailPath"],
+                ImageThumbnailFileName = data["ImageThumbnailFileName"],
             };
         }
         public override bool TryGetDataByUid(int uid, out object info)

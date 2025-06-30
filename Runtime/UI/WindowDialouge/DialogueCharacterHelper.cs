@@ -40,7 +40,16 @@ namespace GGemCo2DCore
                 var data = TableLoaderManager.Instance.TableNpc.GetDataByUid(dialogue.characterUid);
                 if (data != null)
                 {
-                    string key = $"{ConfigAddressables.KeyCharacterThumbnailNpc}_{data.ImageThumbnailPath}";
+                    string key = $"{ConfigAddressables.KeyCharacterThumbnailNpc}_{data.ImageThumbnailFileName}";
+                    return await AddressableLoaderController.LoadByKeyAsync<Sprite>(key);
+                }
+            }
+            else if (dialogue.characterType == CharacterConstants.Type.Monster)
+            {
+                var data = TableLoaderManager.Instance.TableMonster.GetDataByUid(dialogue.characterUid);
+                if (data != null)
+                {
+                    string key = $"{ConfigAddressables.KeyCharacterThumbnailMonster}_{data.ImageThumbnailFileName}";
                     return await AddressableLoaderController.LoadByKeyAsync<Sprite>(key);
                 }
             }
