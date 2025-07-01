@@ -1,4 +1,5 @@
-﻿using UnityEngine;
+﻿using System.Collections.Generic;
+using UnityEngine;
 
 namespace GGemCo2DCore
 {
@@ -9,7 +10,8 @@ namespace GGemCo2DCore
     {
         public int Uid;
         public string Name;
-        public string PrefabPath;
+        public CharacterConstants.Type Type;
+        public string PrefabName;
         public float MoveStep;
         public float Width;
         public float Height;
@@ -22,6 +24,17 @@ namespace GGemCo2DCore
     /// </summary>
     public class TableAnimation : DefaultTable
     {
+        private static readonly Dictionary<string, CharacterConstants.Type> MapType;
+        static TableAnimation()
+        {
+            MapType = new Dictionary<string, CharacterConstants.Type>
+            {
+                { "Monster", CharacterConstants.Type.Monster },
+                { "Npc", CharacterConstants.Type.Npc },
+                { "Player", CharacterConstants.Type.Player },
+            };
+        }
+        private CharacterConstants.Type ConvertType(string grade) => MapType.GetValueOrDefault(grade, CharacterConstants.Type.None);
         public string GetPrefabPath(int uid) => GetDataColumn(uid, "PrefabPath");
         
         public StruckTableAnimation GetDataByUid(int uid)
@@ -37,7 +50,8 @@ namespace GGemCo2DCore
             {
                 Uid = int.Parse(data["Uid"]),
                 Name = data["Name"],
-                PrefabPath = data["PrefabPath"],
+                Type = ConvertType(data["Type"]),
+                PrefabName = data["PrefabName"],
                 MoveStep = float.Parse(data["MoveStep"]),
                 AttackRange = int.Parse(data["AttackRange"]),
                 Width = float.Parse(data["Width"]),

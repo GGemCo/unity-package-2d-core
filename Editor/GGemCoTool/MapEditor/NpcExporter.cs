@@ -69,7 +69,7 @@ namespace GGemCo2DCoreEditor
             var infoAnimation = _tableAnimation.GetDataByUid(npcData.SpineUid);
             if (infoAnimation == null) return;
             
-            string npcPath = ConfigAddressableMap.GetPathCharacter(infoAnimation.PrefabPath);
+            string npcPath = ConfigAddressableMap.GetPathCharacter(infoAnimation);
             GameObject npcPrefab = AssetDatabaseLoaderManager.LoadAsset<GameObject>(npcPath);
             CharacterRegenData characterRegenData =
                 new CharacterRegenData(npcData.Uid, Vector3.zero, false, _defaultMap.GetChapterNumber(), true);
@@ -163,7 +163,7 @@ namespace GGemCo2DCoreEditor
                 var infoAnimation = _tableAnimation.GetDataByUid(info.SpineUid);
                 if (infoAnimation == null) continue;
                 
-                string npcPath = ConfigAddressableMap.GetPathCharacter(infoAnimation.PrefabPath);
+                string npcPath = ConfigAddressableMap.GetPathCharacter(infoAnimation);
                 GameObject npcPrefab = AssetDatabaseLoaderManager.LoadAsset<GameObject>(npcPath);
                 GameObject npc = _characterManager.CreateNpc(uid, npcData, npcPrefab);
                 if (!npc) continue;
