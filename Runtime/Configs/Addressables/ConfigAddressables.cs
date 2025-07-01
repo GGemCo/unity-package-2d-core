@@ -23,6 +23,11 @@ namespace GGemCo2DCore
         public const string KeyPrefabNpc = KeyCharacter + "_Npc";
         public const string KeyPrefabPlayer = KeyCharacter + "_Player";
         
+        public const string PathCharacter = Path + "/Characters";
+        public const string PathPrefabMonster = PathCharacter + "/Monster";
+        public const string PathPrefabNpc = PathCharacter + "/Npc";
+        public const string PathPrefabPlayer = PathCharacter + "/Player";
+        
         // 대사
         public const string KeyDialogue = ConfigDefine.NameSDK+"_Dialogue";
         public const string PathJsonDialogue = Path + "/Dialogue";

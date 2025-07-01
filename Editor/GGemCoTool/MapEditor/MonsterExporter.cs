@@ -68,7 +68,7 @@ namespace GGemCo2DCoreEditor
             }
             var infoAnimation = _tableAnimation.GetDataByUid(monsterData.SpineUid);
             if (infoAnimation == null) return;
-            string monsterPath = ConfigAddressableMap.GetPathCharacter(infoAnimation.PrefabPath);
+            string monsterPath = ConfigAddressableMap.GetPathCharacter(infoAnimation);
             GameObject npcPrefab = AssetDatabaseLoaderManager.LoadAsset<GameObject>(monsterPath);
             
             CharacterRegenData characterRegenData =
@@ -158,7 +158,7 @@ namespace GGemCo2DCoreEditor
                 var infoAnimation = _tableAnimation.GetDataByUid(info.SpineUid);
                 if (infoAnimation == null) continue;
                 
-                string monsterPath = ConfigAddressableMap.GetPathCharacter(infoAnimation.PrefabPath);
+                string monsterPath = ConfigAddressableMap.GetPathCharacter(infoAnimation);
                 GameObject monsterPrefab = AssetDatabaseLoaderManager.LoadAsset<GameObject>(monsterPath);
                 GameObject monster = _characterManager.CreateMonster(uid, monsterData, monsterPrefab);
                 if (!monster) continue;

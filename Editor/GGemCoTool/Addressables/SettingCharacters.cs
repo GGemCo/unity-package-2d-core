@@ -65,7 +65,7 @@ namespace GGemCo2DCoreEditor
                     if (info.Uid <= 0) continue;
                 
                     string key = $"{ConfigAddressables.KeyPrefabMonster}_{infoAnimation.Uid}";
-                    string assetPath = $"{ConfigAddressables.Path}/{infoAnimation.PrefabPath}.prefab";
+                    string assetPath = $"{ConfigAddressables.PathPrefabMonster}/{infoAnimation.PrefabName}.prefab";
                     string label = "";
                     
                     Add(settings, groupMonster, key, assetPath, label);
@@ -94,7 +94,7 @@ namespace GGemCo2DCoreEditor
                     if (info.Uid <= 0) continue;
                 
                     string key = $"{ConfigAddressables.KeyPrefabNpc}_{infoAnimation.Uid}";
-                    string assetPath = $"{ConfigAddressables.Path}/{infoAnimation.PrefabPath}.prefab";
+                    string assetPath = $"{ConfigAddressables.PathPrefabNpc}/{infoAnimation.PrefabName}.prefab";
                 
                     Add(settings, groupNpc, key, assetPath);
                     
@@ -112,7 +112,7 @@ namespace GGemCo2DCoreEditor
             if (groupPlayer)
             {
                 string key = ConfigAddressables.KeyPrefabPlayer;
-                string assetPath = $"{ConfigAddressables.Path}/Characters/Player/Player.prefab";
+                string assetPath = $"{ConfigAddressables.PathPrefabPlayer}/Player.prefab";
                 
                 Add(settings, groupPlayer, key, assetPath);
             }

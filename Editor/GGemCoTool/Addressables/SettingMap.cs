@@ -89,26 +89,26 @@ namespace GGemCo2DCoreEditor
                 // 타일맵 프리팹
                 string key = ConfigAddressableMap.GetKeyTileMap(info.FolderName);
                 string assetPath = ConfigAddressableMap.GetAssetPathTileMap(info.FolderName);
-                Add(settings, group, key, assetPath, key);
+                Add(settings, group, key, assetPath);
                 
                 // monster 리젠 파일
                 key = ConfigAddressableMap.GetKeyJsonRegenMonster(info.FolderName);
                 assetPath = ConfigAddressableMap.GetAssetPathRegenMonster(info.FolderName);
-                Add(settings, group, key, assetPath, key);
+                Add(settings, group, key, assetPath);
 
                 SetCharacterLabel(assetPath, info, settings, Type.Monster);
                 
                 // npc 리젠 파일
                 key = ConfigAddressableMap.GetKeyJsonRegenNpc(info.FolderName);
                 assetPath = ConfigAddressableMap.GetAssetPathRegenNpc(info.FolderName);
-                Add(settings, group, key, assetPath, key);
+                Add(settings, group, key, assetPath);
                 
                 SetCharacterLabel(assetPath, info, settings, Type.Npc);
                 
                 // 워프 리젠 파일
                 key = ConfigAddressableMap.GetKeyJsonWarp(info.FolderName);
                 assetPath = ConfigAddressableMap.GetAssetPathWarp(info.FolderName);
-                Add(settings, group, key, assetPath, key);
+                Add(settings, group, key, assetPath);
             }
             
             // 설정 저장
@@ -149,7 +149,7 @@ namespace GGemCo2DCoreEditor
 
                 var infoAnimation = _tableAnimation.GetDataByUid(spineUid);
                 if (infoAnimation == null) continue;
-                string assetPath = ConfigAddressableMap.GetPathCharacter(infoAnimation.PrefabPath) + ".prefab";
+                string assetPath = ConfigAddressableMap.GetPathCharacter(infoAnimation) + ".prefab";
                 // 기존 Addressable 항목 확인
                 AddressableAssetEntry entry = settings.FindAssetEntry(AssetDatabase.AssetPathToGUID(assetPath));
                 entry?.SetLabel(labelName, true, true);
