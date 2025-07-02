@@ -17,6 +17,7 @@ namespace GGemCo2DCore
         [Tooltip("불러오기 버튼")] [SerializeField] private Button buttonLoad;
         [Tooltip("삭제하기 버튼")] [SerializeField] private Button buttonDelete;
         [Tooltip("팝업 매니저")] [SerializeField] private PopupManager popupManager;
+        public void SetPopupManager(PopupManager value) => popupManager = value;
 
         // 현재 선택된 slot index
         private int _currentCheckSlotIndex;
@@ -121,8 +122,8 @@ namespace GGemCo2DCore
             {
                 PopupType = PopupManager.Type.Default,
                 MessageColor = Color.red,
-                Title = "슬롯 삭제",
-                Message = "삭제한 데이터는 복구할 수 없습니다.\n정말로 삭제하시겠습니까?",
+                Title = "Delete Slot", //슬롯 삭제
+                Message = "Deleted data cannot be recovered.\nAre you sure you want to delete it?", //삭제한 데이터는 복구할 수 없습니다.\n정말로 삭제하시겠습니까?
                 OnConfirm = DeleteElement,
                 ShowCancelButton = true
             };
