@@ -10,25 +10,28 @@ namespace GGemCo2DCore
     {
         [HideInInspector] public AddressableLoaderSettings addressableLoaderSettings;
         
-        [Header("필수 항목")]
-        [Tooltip("새로운 게임 버튼")]
+        [Header("[필수 항목]")]
+        [Header("새 게임 버튼")]
         [SerializeField] private Button buttonNewGame;
         public void SetButtonNewGame(Button value) => buttonNewGame = value;
-        [Tooltip("계속하기 버튼")]
+        [Header("계속하기 버튼")]
         [SerializeField] private Button buttonGameContinue;
         public void SetButtonGameContinue(Button value) => buttonGameContinue = value;
         
-        [Header("선택 항목")]
-        [Tooltip("불러오기 버튼")]
+        [Header("[선택 항목]")]
+        [Header("불러오기 버튼")]
         [SerializeField] private Button buttonOpenSaveDataWindow;
-        [Tooltip("옵션 버튼")]
+        public void SetButtonOpenSaveDataWindow(Button value) => buttonOpenSaveDataWindow = value;
+        [Header("옵션 버튼")]
         [SerializeField] private Button buttonOption;
-        [Tooltip("게임종료 버튼")]
+        [Header("게임종료 버튼")]
         [SerializeField] private Button buttonGameExit;
-        [Tooltip("불러오기 window")]
+        [Header("불러오기 window")]
         [SerializeField] private UIWindowLoadSaveData uIWindowLoadSaveData;
-        [Tooltip("팝업 매니저")]
+        public void SetUIWindowLoadSaveData(UIWindowLoadSaveData value) => uIWindowLoadSaveData = value;
+        [Header("팝업 매니저")]
         [SerializeField] private PopupManager popupManager;
+        public void SetPopupManager(PopupManager value) => popupManager = value;
 
         private SlotMetaDatController _slotMetaDatController;
         private GGemCoSaveSettings _saveDataSettings;

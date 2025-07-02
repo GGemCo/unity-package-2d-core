@@ -11,6 +11,7 @@ namespace GGemCo2DCoreEditor
     public class SceneEditorIntro : DefaultSceneEditor
     {
         private const string Title = "인트로 씬 셋팅하기";
+        private GameObject _objGGemCoCore;
         
         [MenuItem(ConfigEditor.NameToolSettingSceneIntro, false, (int)ConfigEditor.ToolOrdering.SettingSceneIntro)]
         public static void ShowWindow()
@@ -44,6 +45,7 @@ namespace GGemCo2DCoreEditor
         /// </summary>
         private void SetupRequiredObjects()
         {
+            _objGGemCoCore = GetOrCreateCoreGameObject();
             // GGemCo2DCore.SceneIntro GameObject 만들기
             GGemCo2DCore.SceneIntro scene = CreateOrAddComponent<GGemCo2DCore.SceneIntro>("SceneIntro");
             
@@ -66,7 +68,7 @@ namespace GGemCo2DCoreEditor
         /// </summary>
         private void DrawOptionalSection()
         {
-            Common.OnGUITitle("옵션 항목");
+            Common.OnGUITitle("선택 항목");
             EditorGUILayout.HelpBox("불러오기 UI 관련 오브젝트를 셋팅합니다.", MessageType.Info);
 
             if (GUILayout.Button("불러오기 UI 셋팅하기"))
@@ -75,16 +77,89 @@ namespace GGemCo2DCoreEditor
             }
         }
         /// <summary>
-        /// 불러오기 UI 셋팅하기
+        /// 불러오기 셋팅하기
         /// </summary>
         private void SetupLoadUIObjects()
         {
+            SetupRequiredObjects();
+            
+            SceneIntro scene = CreateOrAddComponent<SceneIntro>("SceneIntro");
+            if (scene == null) return;
+            
             // 불러오기 UI 에서 팝업을 사용하기때문에, PopupManager 셋팅
-            CreateGameObjectPopupManager();
+            SetupPopupManager(scene);
+            // UIWindowLoadSaveData
+            SetupUIWindowLoadSaveData(scene);
         }
-        private void CreateGameObjectPopupManager()
+        /// <summary>
+        /// 팝업 매니저 셋팅
+        /// </summary>
+        /// <param name="scene"></param>
+        private void SetupPopupManager(SceneIntro scene)
         {
-            GGemCo2DCore.PopupManager popupManager = CreateOrAddComponent<GGemCo2DCore.PopupManager>("PopupManager");
+            GameObject obj = CreateUIComponent.CreateGameObjectByPrefab("PopupManager", _objGGemCoCore.transform, ConfigEditor.PathPrefabPopupManager);
+            if (!obj) return;
+            PopupManager popupManager = obj.GetComponent<PopupManager>();
+            
+            Transform transform = CreateUIComponent.Find("Canvas").transform;
+            
+            popupManager.SetCanvasPopup(transform);
+            GameObject[] prefabs = new[] { null, ConfigResources.PopupDefault.Load() };
+            popupManager.SetPopupTypePrefabs(prefabs);
+            
+            scene.SetPopupManager(popupManager);
+        }
+        /// <summary>
+        /// 불러오기 UI 윈도우 셋팅
+        /// </summary>
+        /// <param name="scene"></param>
+        private void SetupUIWindowLoadSaveData(SceneIntro scene)
+        {
+            GameObject canvas = CreateUIComponent.Find("Canvas");
+            if (canvas == null)
+            {
+                Debug.LogError("GGemCo_Core_Canvas 가 없습니다.");
+                return;
+            }
+
+            string objectName = "UIWindowLoadSaveData";
+            GameObject prefab = FindPrefabByName(ConfigEditor.PathUIWindow, objectName);
+            if (!prefab) return;
+            
+            GameObject gameObject = GameObject.Find(objectName);
+            PopupManager popupManager = CreateUIComponent.Find("PopupManager")?.GetComponent<PopupManager>();
+            if (!gameObject)
+            {
+                // 프리팹 인스턴스화
+                gameObject = PrefabUtility.InstantiatePrefab(prefab, canvas.transform) as GameObject;
+                if (!gameObject)
+                {
+                    Debug.LogError("프리팹 인스턴스 생성 실패");
+                    return;
+                }
+                gameObject.name = objectName;
+                // 프리팹 해제
+                PrefabUtility.UnpackPrefabInstance(
+                    gameObject,
+                    PrefabUnpackMode.Completely,
+                    InteractionMode.UserAction
+                );
+            }
+            UIWindowLoadSaveData uiWindowLoadSaveData = gameObject.GetComponent<UIWindowLoadSaveData>();
+            
+            if (uiWindowLoadSaveData && popupManager)
+            {
+                uiWindowLoadSaveData.SetPopupManager(popupManager);
+            }
+            
+            // 불러오기 버튼 생성
+            string fieldName = "buttonOpenSaveDataWindow";
+            Button createdButton = CreateUIComponent.CreateObjectButton(fieldName, "Load Game");
+            scene.SetButtonOpenSaveDataWindow(createdButton);
+            createdButton.gameObject.transform.localPosition = new Vector2(0, -100);
+            EditorUtility.SetDirty(scene);
+            
+            scene.SetUIWindowLoadSaveData(uiWindowLoadSaveData);
         }
     }
 }
