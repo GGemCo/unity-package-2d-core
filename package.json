@@ -13,7 +13,8 @@
 	"dependencies": {
 		"com.unity.addressables": "2.2.2",
 		"com.unity.nuget.newtonsoft-json": "3.2.1",
-		"com.unity.timeline": "1.8.7"
+		"com.unity.timeline": "1.8.7",
+		"com.unity.localization": "1.5.5"
 	},
 	"samples": [
 		{
@@ -30,6 +31,11 @@
 			"displayName": "UIWindows",
 			"description": "UI 윈도우 프리팹 샘플 리소스 입니다.\nAssets/GGemCo 폴더에 모든 파일을 이동 시킨 후 사용해주세요.\n디자인을 변경해서 사용할 수 있습니다.",
 			"path": "Samples~/UIWindows"
+		},
+		{
+			"displayName": "Localization",
+			"description": "유니티 Localization 에 사용되는 csv 샘플 파일입니다.",
+			"path": "Samples~/Localization"
 		},
 		{
 			"displayName": "Fonts",
