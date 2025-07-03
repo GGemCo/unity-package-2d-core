@@ -54,7 +54,7 @@ namespace GGemCo2DCoreEditor
 
             // 테이블 형식으로 PlayerPrefs 데이터 표시
             GUILayout.BeginHorizontal(EditorStyles.helpBox);
-            GUILayout.Label("Key", EditorStyles.boldLabel, GUILayout.Width(250));
+            GUILayout.Label("Key", EditorStyles.boldLabel, GUILayout.Width(300));
             GUILayout.Label("Value", EditorStyles.boldLabel, GUILayout.ExpandWidth(true), GUILayout.MinWidth(200));
             GUILayout.Label("Type", EditorStyles.boldLabel, GUILayout.Width(100));
             GUILayout.Label("Actions", EditorStyles.boldLabel, GUILayout.Width(80));
@@ -65,7 +65,7 @@ namespace GGemCo2DCoreEditor
             foreach (var kvp in playerPrefsData)
             {
                 GUILayout.BeginHorizontal(EditorStyles.helpBox);
-                GUILayout.Label(kvp.Key, GUILayout.Width(250));
+                GUILayout.Label(kvp.Key, GUILayout.Width(300));
     
                 // JSON을 포함한 긴 문자열이 잘리거나 한 줄로 나오지 않도록 TextArea 사용
                 GUILayout.TextArea(kvp.Value, GUILayout.ExpandWidth(true), GUILayout.MinWidth(200), GUILayout.MaxHeight(50));
@@ -133,7 +133,10 @@ namespace GGemCo2DCoreEditor
             }
 
             // 여기에 미리 알고 있는 키 추가 가능 (예제)
-            keys.Add(PlayerPrefsManager.KeySaveDataSlotIndex);
+            foreach (var data in PlayerPrefsManager.Keys)
+            {
+                keys.Add(data.Value);
+            }
 
             return keys.Distinct().ToArray();
         }

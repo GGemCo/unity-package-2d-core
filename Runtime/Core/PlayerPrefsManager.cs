@@ -1,49 +1,83 @@
-﻿using UnityEngine;
+﻿using System.Collections.Generic;
+using UnityEngine;
 
 namespace GGemCo2DCore
 {
     public static class PlayerPrefsManager
     {
-        public const string KeySaveDataSlotIndex = "GGEMCO_KEY_SAVE_DATA_SLOT_INDEX";
+        public enum KeyIndex
+        {
+            None,
+            KeyIndexSaveDataSlot,
+            KeyIndexLocalizationLocale,
+        }
 
-        private static void PlayerPrefsDelete(string key)
+        public static readonly Dictionary<KeyIndex, string> Keys = new Dictionary<KeyIndex, string>()
         {
-            PlayerPrefs.DeleteKey(key);
+            { KeyIndex.None, "" },
+            { KeyIndex.KeyIndexSaveDataSlot, "GGEMCO_KEY_SAVE_DATA_SLOT_INDEX" },
+            { KeyIndex.KeyIndexLocalizationLocale, "GGEMCO_KEY_INDEX_LOCALIZATION_LOCALE" },
+        };
+
+        private static void PlayerPrefsDelete(KeyIndex key)
+        {
+            string keyName = Keys.GetValueOrDefault(key);
+            PlayerPrefs.DeleteKey(keyName);
             PlayerPrefs.Save();
         }
-        private static void PlayerPrefsSave(string key, string value)
+        private static void PlayerPrefsSave(KeyIndex key, string value)
         {
-            PlayerPrefs.SetString(key, value);
+            string keyName = Keys.GetValueOrDefault(key);
+            PlayerPrefs.SetString(keyName, value);
             PlayerPrefs.Save();
         }
-        private static int PlayerPrefsLoadInt(string key, string defaultValue = "0")
+        private static int PlayerPrefsLoadInt(KeyIndex key, string defaultValue = "0")
         {
-            return int.Parse(PlayerPrefs.GetString(key, defaultValue));
+            string keyName = Keys.GetValueOrDefault(key);
+            return int.Parse(PlayerPrefs.GetString(keyName, defaultValue));
         }
-        private static float PlayerPrefsLoadFloat(string key, string defaultValue = "0")
+        private static float PlayerPrefsLoadFloat(KeyIndex key, string defaultValue = "0")
         {
-            return float.Parse(PlayerPrefs.GetString(key, defaultValue));
+            string keyName = Keys.GetValueOrDefault(key);
+            return float.Parse(PlayerPrefs.GetString(keyName, defaultValue));
         }
-        private static long PlayerPrefsLoadLong(string key, string defaultValue = "0")
+        private static long PlayerPrefsLoadLong(KeyIndex key, string defaultValue = "0")
         {
-            return long.Parse(PlayerPrefs.GetString(key, defaultValue));
+            string keyName = Keys.GetValueOrDefault(key);
+            return long.Parse(PlayerPrefs.GetString(keyName, defaultValue));
         }
-        private static string PlayerPrefsLoad(string key)
+        private static string PlayerPrefsLoad(KeyIndex key)
         {
-            return PlayerPrefs.GetString(key);
+            string keyName = Keys.GetValueOrDefault(key);
+            return PlayerPrefs.GetString(keyName);
         }
-        
+        /// <summary>
+        /// 게임 세이브 데이터 
+        /// </summary>
+        /// <param name="gameLoadSlotIndex"></param>
         public static void SaveSaveDataSlotIndex(int gameLoadSlotIndex)
         {
-            PlayerPrefsSave(KeySaveDataSlotIndex, gameLoadSlotIndex.ToString());
+            PlayerPrefsSave(KeyIndex.KeyIndexSaveDataSlot, gameLoadSlotIndex.ToString());
         }
         public static int LoadSaveDataSlotIndex()
         {
-            return PlayerPrefsLoadInt(KeySaveDataSlotIndex);
+            return PlayerPrefsLoadInt(KeyIndex.KeyIndexSaveDataSlot);
         }
         public static void DeleteSaveDataSlotIndex()
         {
-            PlayerPrefsDelete(KeySaveDataSlotIndex);
+            PlayerPrefsDelete(KeyIndex.KeyIndexSaveDataSlot);
+        }
+        /// <summary>
+        /// 언어 선택 
+        /// </summary>
+        /// <param name="localeIndex"></param>
+        public static void SaveIndexLocalizationLocale(int localeIndex)
+        {
+            PlayerPrefsSave(KeyIndex.KeyIndexLocalizationLocale, localeIndex.ToString());
+        }
+        public static int LoadIndexLocalizationLocale()
+        {
+            return PlayerPrefsLoadInt(KeyIndex.KeyIndexLocalizationLocale, ((int)LocalizationConstants.DefaultLanguageIndex).ToString());
         }
     }
 }
