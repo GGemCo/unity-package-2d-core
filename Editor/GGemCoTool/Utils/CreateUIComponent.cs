@@ -2,7 +2,9 @@
 using TMPro;
 using UnityEditor;
 using UnityEngine;
+using UnityEngine.Events;
 using UnityEngine.EventSystems;
+using UnityEngine.Localization.Components;
 #if ENABLE_INPUT_SYSTEM
 using UnityEngine.InputSystem.UI;
 #endif
@@ -10,16 +12,31 @@ using UnityEngine.UI;
 
 namespace GGemCo2DCoreEditor
 {
+    public class MetaDataButton
+    {
+        public readonly string FiledName;
+        public readonly string Text;
+        public readonly string LocalizationTable;
+        public readonly string LocalizationKey;
+
+        public MetaDataButton(string filedName, string text = "", string localizationTable = "", string localizationKey = "")
+        {
+            FiledName = filedName;
+            Text = text;
+            LocalizationTable = localizationTable;
+            LocalizationKey = localizationKey;
+        }
+    }
     public class MetaDataTextMeshProGUI
     {
-        public Vector2 Pivot;
-        public Vector2 Position;
-        public AnchorPresets AnchorPresets;
-        public float Width;
-        public float Height;
-        public float FontSize;
-        public TextMeshProHelper.HorizontalAlignment HorizontalAlignment;
-        public TextMeshProHelper.VerticalAlignment VerticalAlignment;
+        public readonly Vector2 Pivot;
+        public readonly Vector2 Position;
+        public readonly AnchorPresets AnchorPresets;
+        public readonly float Width;
+        public readonly float Height;
+        public readonly float FontSize;
+        public readonly TextMeshProHelper.HorizontalAlignment HorizontalAlignment;
+        public readonly TextMeshProHelper.VerticalAlignment VerticalAlignment;
 
         public MetaDataTextMeshProGUI(Vector2 pivot, Vector2 position, AnchorPresets anchorPresets, float width = 0,
             float height = 0, float fontSize = 0,
@@ -124,8 +141,13 @@ namespace GGemCo2DCoreEditor
             );
             return gameObject;
         }
-        public static Button CreateObjectButton(string objectName, string text)
+        public static Button CreateObjectButton(MetaDataButton metaDataButton)
         {
+            string objectName = GenerateObjectName(metaDataButton.FiledName);
+            string text = metaDataButton.Text;
+            string localizationTable = metaDataButton.LocalizationTable;
+            string localizationKey = metaDataButton.LocalizationKey;
+            
             objectName = GenerateObjectName(objectName);
             // 버튼 찾기 
             GameObject obj = GameObject.Find(objectName);
@@ -147,8 +169,46 @@ namespace GGemCo2DCoreEditor
                 Debug.LogError("Button 컴포넌트를 찾을 수 없습니다.");
                 return null;
             }
+            TextMeshProUGUI buttonText = button.GetComponentInChildren<TextMeshProUGUI>();
+            if (buttonText)
+            {
+                if (!string.IsNullOrEmpty(localizationTable) && !string.IsNullOrEmpty(localizationKey))
+                {
+                    var localizeEvent = buttonText.gameObject.GetComponent<LocalizeStringEvent>();
+                    if (localizeEvent == null)
+                    {
+                        localizeEvent = buttonText.gameObject.AddComponent<LocalizeStringEvent>();
+                    }
 
-            button.GetComponentInChildren<TextMeshProUGUI>().text = text;
+                    // 테이블 및 키 설정
+                    localizeEvent.SetTable(localizationTable);
+                    localizeEvent.SetEntry(localizationKey);
+
+#if UNITY_6000_0_OR_NEWER
+                    // Update String 에 추가하기
+                    UnityEditor.Events.UnityEventTools.AddPersistentListener(localizeEvent.OnUpdateString, buttonText.SetText);
+#else
+                    var proxy = buttonText.GetComponent<LocalizedTextProxy>();
+                    if (proxy == null)
+                    {
+                        proxy = buttonText.gameObject.AddComponent<LocalizedTextProxy>();
+                        proxy.Target = buttonText;
+                    }
+                    // Update String 에 추가하기
+                    UnityEditor.Events.UnityEventTools.AddPersistentListener(localizeEvent.OnUpdateString, proxy.SetText);
+#endif
+                    // EditorAndRuntime 모드로 작동되도록 설정
+                    for (var i = 0; i < localizeEvent.OnUpdateString.GetPersistentEventCount(); i++)
+                    {
+                        localizeEvent.OnUpdateString.SetPersistentListenerState(i, UnityEventCallState.EditorAndRuntime);
+                    }
+                    
+                    localizeEvent.RefreshString();
+                }
+
+                buttonText.text = text;
+            }
+
             return button;
         }
         public static TextMeshProUGUI CreateObjectText(string objectName, MetaDataTextMeshProGUI metaDataTextMeshProGUI = null)
