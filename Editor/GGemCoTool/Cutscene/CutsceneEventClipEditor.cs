@@ -25,7 +25,7 @@ namespace GGemCo2DCoreEditor
             EditorGUILayout.PropertyField(_eventsProp, true);
 
             EditorGUILayout.HelpBox(
-                $"{CutsceneEditorWindowWindow.TempImportFolder} 폴더에 생성된 타임라인 파일을 Hierarchy 탭에 임시로 오브젝트를 생성해야 Json 으로 저장할 수 있습니다.",
+                $"{CutsceneEditorWindow.TempImportFolder} 폴더에 생성된 타임라인 파일을 Hierarchy 탭에 임시로 오브젝트를 생성해야 Json 으로 저장할 수 있습니다.",
                 MessageType.Info);
             if (GUILayout.Button("이 클립이 포함된 타임라인을 JSON으로 저장"))
             {

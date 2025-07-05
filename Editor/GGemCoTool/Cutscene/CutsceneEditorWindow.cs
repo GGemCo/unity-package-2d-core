@@ -9,7 +9,7 @@ using UnityEngine.Timeline;
 
 namespace GGemCo2DCoreEditor
 {
-    public class CutsceneEditorWindowWindow : DefaultEditorWindow
+    public class CutsceneEditorWindow : DefaultEditorWindow
     {
         private const string Title = "연출툴";
         private CutsceneData _data;
@@ -26,7 +26,7 @@ namespace GGemCo2DCoreEditor
         private readonly Dictionary<int, StruckTableCutscene> _cutsceneInfos = new Dictionary<int, StruckTableCutscene>(); 
         
         [MenuItem(ConfigEditor.NameToolCutscene, false, (int)ConfigEditor.ToolOrdering.Cutscene)]
-        static void Open() => GetWindow<CutsceneEditorWindowWindow>(Title);
+        static void Open() => GetWindow<CutsceneEditorWindow>(Title);
 
         protected override void OnEnable()
         {
