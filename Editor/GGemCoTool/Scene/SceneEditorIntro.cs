@@ -51,13 +51,13 @@ namespace GGemCo2DCoreEditor
             
             // 새 게임 버튼 만들고 연결하기
             MetaDataButton metaDataButton = new MetaDataButton(scene.GetFieldNameButtonNewGame(), "New Game",
-                LocalizationConstants.Tables.Scene, LocalizationConstants.Keys.Intro.ButtonNewGame);
+                LocalizationConstants.Tables.Scene, LocalizationConstants.Keys.Intro.ButtonNewGame());
             Button createdButton = CreateUIComponent.CreateObjectButton(metaDataButton);
             scene.SetButtonNewGame(createdButton);
             
             // 계속 하기 버튼 만들고 연결하기
             metaDataButton = new MetaDataButton(scene.GetFieldNameButtonGameContinue(), "Continue Game",
-                LocalizationConstants.Tables.Scene, LocalizationConstants.Keys.Intro.ButtonContinue);
+                LocalizationConstants.Tables.Scene, LocalizationConstants.Keys.Intro.ButtonContinue());
             Button buttonGameContinue = CreateUIComponent.CreateObjectButton(metaDataButton);
             scene.SetButtonGameContinue(buttonGameContinue);
             buttonGameContinue.gameObject.transform.localPosition = new Vector2(0, 100);
@@ -155,7 +155,7 @@ namespace GGemCo2DCoreEditor
             
             // 불러오기 버튼 생성
             MetaDataButton metaDataButton = new MetaDataButton(scene.GetFieldNameButtonOpenSaveDataWindow(), "Load Game",
-                LocalizationConstants.Tables.Scene, LocalizationConstants.Keys.Intro.ButtonLoad);
+                LocalizationConstants.Tables.Scene, LocalizationConstants.Keys.Intro.ButtonLoad());
             Button createdButton = CreateUIComponent.CreateObjectButton(metaDataButton);
             scene.SetButtonOpenSaveDataWindow(createdButton);
             createdButton.gameObject.transform.localPosition = new Vector2(0, -100);

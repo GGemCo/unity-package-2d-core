@@ -24,7 +24,8 @@ namespace GGemCo2DCore
 
         private LocalizedStringDatabase _stringDatabase;
         private LocalizedAssetDatabase _assetDatabase;
-
+        
+        private readonly Dictionary<string, bool> _userTableExistsMap = new();
         private void Awake()
         {
             if (Instance == null)
@@ -77,6 +78,7 @@ namespace GGemCo2DCore
                 _isChanging = false;
                 yield break;
             }
+            yield return CheckUserTablesExist();
 
             LocalizationSettings.SelectedLocale = locales[index];
             PlayerPrefsManager.SaveIndexLocalizationLocale(index);
@@ -84,6 +86,20 @@ namespace GGemCo2DCore
 
             _isChanging = false;
             onChangeLocale?.Invoke();
+        }
+        private IEnumerator CheckUserTablesExist()
+        {
+            foreach (string baseTable in LocalizationConstants.Tables.All)
+            {
+                string userTableName = $"{baseTable}_User";
+                var handle = _stringDatabase.GetTableAsync(userTableName, LocalizationSettings.SelectedLocale);
+                yield return handle;
+
+                bool exists = handle.Status == AsyncOperationStatus.Succeeded && handle.Result != null;
+                _userTableExistsMap[baseTable] = exists;
+
+                GcLogger.Log($"[LocalizationManager] table: {userTableName} / exist: {exists}");
+            }
         }
 
         /// <summary>
@@ -118,12 +134,35 @@ namespace GGemCo2DCore
         /// <summary>
         /// 지정한 테이블과 키로 로컬라이즈된 문자열을 가져옵니다.
         /// </summary>
-        private string GetString(string table, string key)
+        public string GetString(string table, string key)
         {
-            if (string.IsNullOrWhiteSpace(key)) return "[MISSING_KEY]";
+            if (string.IsNullOrWhiteSpace(key))
+            {
+                GcLogger.LogWarning($"key is null or whitespace: {key}");
+                return "";
+            }
+
+            // 유저 테이블 존재 시 우선 조회
+            if (_userTableExistsMap.TryGetValue(table, out bool hasUserTable) && hasUserTable)
+            {
+                string userTable = $"{table}_User";
+                var userLocalized = _stringDatabase.GetLocalizedString(userTable, key, LocalizationSettings.SelectedLocale);
+                if (!string.IsNullOrWhiteSpace(userLocalized))
+                {
+                    return userLocalized;
+                }
+            }
 
             var localized = _stringDatabase.GetLocalizedString(table, key, LocalizationSettings.SelectedLocale);
-            return string.IsNullOrWhiteSpace(localized) ? $"[MISSING:{key}]" : localized;
+            if (string.IsNullOrWhiteSpace(localized))
+            {
+                GcLogger.LogWarning($"[MISSING:{key}]");
+                return "";
+            }
+            else
+            {
+                return localized;
+            }
         }
 
         /// <summary>

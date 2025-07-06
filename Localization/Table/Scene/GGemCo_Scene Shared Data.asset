@@ -18,41 +18,54 @@ MonoBehaviour:
   - m_Id: 3288944152576
     m_Key: Intro_Button_NewGame
     m_Metadata:
-      m_Items: []
+      m_Items:
+      - rid: 9086697339683078227
   - m_Id: 3288944152577
     m_Key: Intro_Button_Continue
     m_Metadata:
-      m_Items: []
+      m_Items:
+      - rid: 9086697339683078228
   - m_Id: 3288944152578
     m_Key: Intro_Button_Load
     m_Metadata:
-      m_Items: []
+      m_Items:
+      - rid: 9086697339683078229
   - m_Id: 3288944152579
-    m_Key: LOADING_TABLES
+    m_Key: Loading_Text_Tables
     m_Metadata:
-      m_Items: []
+      m_Items:
+      - rid: 9086697339683078230
   - m_Id: 3288944152580
-    m_Key: LOADING_RESOURCES
+    m_Key: Loading_Text_Resources
     m_Metadata:
-      m_Items: []
+      m_Items:
+      - rid: 9086697339683078231
   - m_Id: 3288944152581
-    m_Key: LOADING_EFFECT
+    m_Key: Loading_Text_Effect
     m_Metadata:
-      m_Items: []
+      m_Items:
+      - rid: 9086697339683078232
   - m_Id: 3288944152582
-    m_Key: LOADING_ITEM
+    m_Key: Loading_Text_Item
     m_Metadata:
-      m_Items: []
+      m_Items:
+      - rid: 9086697339683078233
   - m_Id: 3288944152583
-    m_Key: LOADING_SKILL
+    m_Key: Loading_Text_Skill
     m_Metadata:
-      m_Items: []
+      m_Items:
+      - rid: 9086697339683078234
   - m_Id: 3288944152584
-    m_Key: LOADING_SAVEDATA
+    m_Key: Loading_Text_SaveData
+    m_Metadata:
+      m_Items:
+      - rid: 9086697339683078235
+  - m_Id: 3288944152585
+    m_Key: Loading_Text_LoadingPercent
     m_Metadata:
       m_Items: []
-  - m_Id: 3288944152585
-    m_Key: LOADING_TEMPLATE
+  - m_Id: 157988398108672
+    m_Key: sdsdsdsd
     m_Metadata:
       m_Items: []
   m_Metadata:
@@ -66,3 +79,39 @@ MonoBehaviour:
       type: {class: DistributedUIDGenerator, ns: UnityEngine.Localization.Tables, asm: Unity.Localization}
       data:
         m_CustomEpoch: 1751585686395
+    - rid: 9086697339683078227
+      type: {class: Comment, ns: UnityEngine.Localization.Metadata, asm: Unity.Localization}
+      data:
+        m_CommentText: New Game
+    - rid: 9086697339683078228
+      type: {class: Comment, ns: UnityEngine.Localization.Metadata, asm: Unity.Localization}
+      data:
+        m_CommentText: Continue Game
+    - rid: 9086697339683078229
+      type: {class: Comment, ns: UnityEngine.Localization.Metadata, asm: Unity.Localization}
+      data:
+        m_CommentText: Load Game
+    - rid: 9086697339683078230
+      type: {class: Comment, ns: UnityEngine.Localization.Metadata, asm: Unity.Localization}
+      data:
+        m_CommentText: Tables
+    - rid: 9086697339683078231
+      type: {class: Comment, ns: UnityEngine.Localization.Metadata, asm: Unity.Localization}
+      data:
+        m_CommentText: Resources
+    - rid: 9086697339683078232
+      type: {class: Comment, ns: UnityEngine.Localization.Metadata, asm: Unity.Localization}
+      data:
+        m_CommentText: Effect Resources
+    - rid: 9086697339683078233
+      type: {class: Comment, ns: UnityEngine.Localization.Metadata, asm: Unity.Localization}
+      data:
+        m_CommentText: Item Data
+    - rid: 9086697339683078234
+      type: {class: Comment, ns: UnityEngine.Localization.Metadata, asm: Unity.Localization}
+      data:
+        m_CommentText: Skill Data
+    - rid: 9086697339683078235
+      type: {class: Comment, ns: UnityEngine.Localization.Metadata, asm: Unity.Localization}
+      data:
+        m_CommentText: Save Data

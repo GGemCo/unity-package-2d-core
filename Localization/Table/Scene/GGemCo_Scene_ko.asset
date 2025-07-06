@@ -51,11 +51,15 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 3288944152585
-    m_Localized: "{0} \uB85C\uB529\uC911... {1}%"
+    m_Localized: "{0} \uB85C\uB529\uC911... {1}%1111"
     m_Metadata:
       m_Items: []
   - m_Id: 3288944152576
     m_Localized: "\uC0C8 \uAC8C\uC784"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 157988398108672
+    m_Localized: 423423
     m_Metadata:
       m_Items: []
   references:

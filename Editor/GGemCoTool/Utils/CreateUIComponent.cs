@@ -188,11 +188,11 @@ namespace GGemCo2DCoreEditor
                     // Update String 에 추가하기
                     UnityEditor.Events.UnityEventTools.AddPersistentListener(localizeEvent.OnUpdateString, buttonText.SetText);
 #else
-                    var proxy = buttonText.GetComponent<LocalizedTextProxy>();
+                    var proxy = buttonText.GetComponent<LocalizationTextProxy>();
                     if (proxy == null)
                     {
-                        proxy = buttonText.gameObject.AddComponent<LocalizedTextProxy>();
-                        proxy.Target = buttonText;
+                        proxy = buttonText.gameObject.AddComponent<LocalizationTextProxy>();
+                        proxy.target = buttonText;
                     }
                     // Update String 에 추가하기
                     UnityEditor.Events.UnityEventTools.AddPersistentListener(localizeEvent.OnUpdateString, proxy.SetText);

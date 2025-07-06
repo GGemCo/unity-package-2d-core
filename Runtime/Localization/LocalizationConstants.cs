@@ -29,6 +29,18 @@
 
             // public const string Inventory = "GGemCo_Inventory";
             // public const string Dialogue = "GGemCo_Dialogue";
+            
+            /// <summary>
+            /// 모든 테이블 이름을 배열로 제공합니다.
+            /// </summary>
+            public static readonly string[] All = new[]
+            {
+                Common,
+                System,
+                Scene,
+                // Inventory,
+                // Dialogue
+            };
         }
 
         /// <summary>
@@ -36,11 +48,25 @@
         /// </summary>
         public static class Keys
         {
+            private const string NameButton = "Button";
+            private const string NameText = "Text";
             public static class Intro
             {
-                public const string ButtonNewGame = "Intro_Button_NewGame";
-                public const string ButtonContinue = "Intro_Button_Continue";
-                public const string ButtonLoad = "Intro_Button_Load";
+                private const string NameIntro = nameof(Intro);
+                public static string ButtonNewGame() => $"{NameIntro}_{NameButton}_NewGame";
+                public static string ButtonContinue() => $"{NameIntro}_{NameButton}_Continue";
+                public static string ButtonLoad() => $"{NameIntro}_{NameButton}_Load";
+            }
+            public static class Loading
+            {
+                private const string NameLoading = nameof(Loading);
+                public static string TextTypeTables() => $"{NameLoading}_{NameText}_Tables";
+                public static string TextTypePrefab() => $"{NameLoading}_{NameText}_Resources";
+                public static string TextTypeSaveData() => $"{NameLoading}_{NameText}_SaveData";
+                public static string TextTypeEffect() => $"{NameLoading}_{NameText}_Effect";
+                public static string TextTypeItem() => $"{NameLoading}_{NameText}_Item";
+                public static string TextTypeSkill() => $"{NameLoading}_{NameText}_Skill";
+                public static string TextLoadingPercent() => $"{NameLoading}_{NameText}_LoadingPercent";
             }
 
             // 기타 UI, 시스템 메시지, 팝업 등 계속 확장 가능

@@ -17,6 +17,8 @@ namespace GGemCo2DCoreEditor
             CreateItem,
             Cutscene,
             Quest,
+            LocalizationUpdate,
+            LocalizationFind,
             Test = 200,
             DropItemRate,
             Etc = 900,
@@ -44,6 +46,8 @@ namespace GGemCo2DCoreEditor
         public const string NameToolCreateItem = NameToolDevelopment + "아이템 생성툴";
         public const string NameToolCutscene = NameToolDevelopment + "연출툴";
         public const string NameToolQuest = NameToolDevelopment + "퀘스트 생성툴";
+        public const string NameToolLocalizationUpdate = NameToolDevelopment + "Localize 업데이트툴";
+        public const string NameToolLocalizationFind = NameToolDevelopment + "Localize 검색기";
         
         // 테스트
         private const string NameToolTest = NameToolGGemCo + "태스트툴/";
