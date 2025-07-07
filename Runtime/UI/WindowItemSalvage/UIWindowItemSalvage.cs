@@ -11,9 +11,10 @@ namespace GGemCo2DCore
     /// </summary>
     public class UIWindowItemSalvage : UIWindow
     {
-        [Header("기본 속성")] [Tooltip("분해 아이콘 개수. Max Count Icon 개수에서 이 개수를 뺀 나머지가 결과 아이콘 개수")]
+        [Header("기본 속성")] 
+        [Tooltip("분해 아이콘 개수. Max Count Icon 개수에서 이 개수를 뺀 나머지가 결과 아이콘 개수")]
         public int salvageIconCount;
-        [Tooltip("분해 결과 아이콘 conatiner")] public GameObject containerResult;
+        [Tooltip("분해 결과 아이콘 container")] public GameObject containerResult;
         [Tooltip("분해에 필요한 총 골드 량")] public TextMeshProUGUI textTotalGold;
         [Tooltip("분해에 필요한 총 실버 량")] public TextMeshProUGUI textTotalSilver;
         [Tooltip("분해하기 버튼")] public Button buttonSalvage;
@@ -128,20 +129,21 @@ namespace GGemCo2DCore
                 // 분해 비용 계산하기
                 if (info.NeedCurrencyType == CurrencyConstants.Type.Gold)
                 {
-                    totalGold += info.NeedCurrencyValue;
+                    totalGold += info.NeedCurrencyValue * uiIcon.GetCount();
                 }
                 else if (info.NeedCurrencyType == CurrencyConstants.Type.Silver)
                 {
-                    totalSilver += info.NeedCurrencyValue;
+                    totalSilver += info.NeedCurrencyValue * uiIcon.GetCount();
                 }
+                int resultItemCount = info.ResultItemCount * uiIcon.GetCount();
                 // 분해 결과 아이템 저장
                 if (!resultItems.ContainsKey(info.ResultItemUid))
                 {
-                    resultItems.TryAdd(info.ResultItemUid, info.ResultItemCount);
+                    resultItems.TryAdd(info.ResultItemUid, resultItemCount);
                 }
                 else
                 {
-                    resultItems[info.ResultItemUid] += info.ResultItemCount;
+                    resultItems[info.ResultItemUid] += resultItemCount;
                 }
             }
             // 분해 결과 icon 정보 업데이트 하기
