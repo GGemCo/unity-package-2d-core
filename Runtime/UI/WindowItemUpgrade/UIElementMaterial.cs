@@ -56,7 +56,7 @@ namespace GGemCo2DCore
 
             uIIcon.ChangeInfoByUid(currentItemUid, 1);
             uIIcon.window = uiWindowParent;
-            uIIcon.windowUid = UIWindowManager.WindowUid.ItemUpgrade;
+            uIIcon.windowUid = UIWindowConstants.WindowUid.ItemUpgrade;
             uIIcon.SetDrag(false);
             uIIcon.SetClick(false);
 

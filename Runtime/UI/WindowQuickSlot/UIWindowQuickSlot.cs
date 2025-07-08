@@ -12,8 +12,10 @@ namespace GGemCo2DCore
     /// </summary>
     public class UIWindowQuickSlot : UIWindow, IInputHandler
     {
+        [Header(UIWindowConstants.TitleHeaderIndividual)]
+        [Tooltip("단축키에 사용할 숫자 UI Image")]
         public Image[] iconHotKey;
-        public UIWindowSkill uiWindowSkill;
+        private UIWindowSkill uiWindowSkill;
         public int Priority => 1;
 
         private readonly Dictionary<KeyCode, int> _indexByKeyCode = new Dictionary<KeyCode, int>
@@ -27,7 +29,7 @@ namespace GGemCo2DCore
         protected override void Awake()
         {
             // uid 를 먼저 지정해야 한다.
-            uid = UIWindowManager.WindowUid.QuickSlot;
+            uid = UIWindowConstants.WindowUid.QuickSlot;
             base.Awake();
             SetSetIconHandler(new SetIconHandlerQuickSlot());
             DragDropHandler.SetStrategy(new DragDropStrategyQuickSlot());
@@ -37,6 +39,8 @@ namespace GGemCo2DCore
         {
             base.Start();
             SceneGame.Instance.KeyboardManager.RegisterInputHandler(this);
+            uiWindowSkill =
+                SceneGame.Instance.uIWindowManager.GetUIWindowByUid<UIWindowSkill>(UIWindowConstants.WindowUid.Skill);
             LoadIcons();
         }
         /// <summary>
@@ -171,7 +175,7 @@ namespace GGemCo2DCore
                 return;
             }
             // 스킬 창이 열려있을때는 해제 하기
-            if (!uiWindowSkill.IsOpen()) return;
+            if (!uiWindowSkill || !uiWindowSkill.IsOpen()) return;
             DetachIcon(icon.slotIndex);
         }
     }

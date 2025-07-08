@@ -8,7 +8,7 @@ namespace GGemCo2DCore
     public class UISlot : MonoBehaviour
     {
         private UIWindow window;
-        private UIWindowManager.WindowUid windowUid;
+        private UIWindowConstants.WindowUid windowUid;
         private int index;
 
         private RectTransform rectTransform;
@@ -20,7 +20,7 @@ namespace GGemCo2DCore
         /// <param name="pwindowUid"></param>
         /// <param name="pindex"></param>
         /// <param name="slotSize"></param>
-        public void Initialize(UIWindow pwindow, UIWindowManager.WindowUid pwindowUid, int pindex, Vector2 slotSize)
+        public void Initialize(UIWindow pwindow, UIWindowConstants.WindowUid pwindowUid, int pindex, Vector2 slotSize)
         {
             window = pwindow;
             windowUid = pwindowUid;

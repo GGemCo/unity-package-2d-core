@@ -12,8 +12,8 @@ namespace GGemCo2DCore
         // 공개(public) → 보호(protected) → 내부(internal) → 비공개(private) 
         // 상수(const), 정적(static) 필드 → 인스턴스 필드 → 속성(Properties) → 생성자(Constructors) → 메서드(Methods)
         // 윈도우 고유번호
-        [HideInInspector] public UIWindowManager.WindowUid uid;
-        [Header("기본속성")] 
+        [HideInInspector] public UIWindowConstants.WindowUid uid;
+        [Header(UIWindowConstants.TitleHeaderCommon)] 
         [Tooltip("윈도우 닫기 버튼")] 
         public Button buttonClose;
         [Tooltip("아이콘 타입")] 
@@ -29,7 +29,6 @@ namespace GGemCo2DCore
         [Tooltip("icon 사이즈")]
         public Vector2 iconSize;
         
-        [Header("오브젝트")]
         [Tooltip("미리 만들어놓은 slot 이 있을 경우")]
         public GameObject[] preLoadSlots;
         [Tooltip("icon 이 들어갈 panel")]
@@ -51,8 +50,14 @@ namespace GGemCo2DCore
         protected virtual void Awake()
         {
             // 사용하지 않는 index 가 있을 수 있으므로 미리 만들어 두어야 건너 띄어도 문제가 없다.
+            // maxCountIcon 이 0 일때, 예외처리
+            if (maxCountIcon == 0 && preLoadSlots.Length > 0)
+            {
+                maxCountIcon = preLoadSlots.Length;
+            }
             slots = new GameObject[maxCountIcon];
             icons = new GameObject[maxCountIcon];
+            
             gameObject.AddComponent<CanvasGroup>();
             if (useFade)
             {
@@ -86,15 +91,16 @@ namespace GGemCo2DCore
         /// </summary>
         private ISlotIconBuildStrategy GetSlotIconBuildStrategy()
         {
+            // Pre Load Slots 를 사용하면 예외처리 
             if (preLoadSlots.Length > 0)
                 return new SlotIconBuildStrategyPreLoad();
             
             return uid switch
             {
-                UIWindowManager.WindowUid.Skill => new SlotIconBuildStrategySkill(),
-                UIWindowManager.WindowUid.ItemSalvage => new SlotIconBuildStrategyItemSalvage(),
-                UIWindowManager.WindowUid.ItemCraft => new SlotIconBuildStrategyItemCraft(),
-                // UIWindowManager.WindowUid.QuestReward => new SlotIconBuildStrategyQuestReward(),
+                UIWindowConstants.WindowUid.Skill => new SlotIconBuildStrategySkill(),
+                UIWindowConstants.WindowUid.ItemSalvage => new SlotIconBuildStrategyItemSalvage(),
+                UIWindowConstants.WindowUid.ItemCraft => new SlotIconBuildStrategyItemCraft(),
+                // UIWindowConstants.WindowUid.QuestReward => new SlotIconBuildStrategyQuestReward(),
                 _ => null,
             };
         }
@@ -123,7 +129,7 @@ namespace GGemCo2DCore
         }
         public UIIcon GetIconByIndex(int index) => IconPoolManager.GetIcon(index);
         public UISlot GetSlotByIndex(int index) => IconPoolManager.GetSlot(index);
-        public UIIcon GetIconByUid(int windowUid) => IconPoolManager.GetIconByUid(windowUid);
+        public UIIcon GetIconByUid(int iconUid) => IconPoolManager.GetIconByUid(iconUid);
         public UIIcon SetIconCount(int slotIndex, int windowUid, int count, int level = 0, bool learn = false) => IconPoolManager.SetIcon(slotIndex, windowUid, count, level, learn);
 
         /// <summary>
@@ -219,7 +225,7 @@ namespace GGemCo2DCore
         {
             foreach (var openWindowUid in windowUids)
             {
-                UIWindowManager.WindowUid windowUid = (UIWindowManager.WindowUid)openWindowUid;
+                UIWindowConstants.WindowUid windowUid = (UIWindowConstants.WindowUid)openWindowUid;
                 UIWindow uiWindow = SceneGame.uIWindowManager.GetUIWindowByUid<UIWindow>(windowUid);
                 if (uiWindow == null) continue;
                     
@@ -330,7 +336,7 @@ namespace GGemCo2DCore
         /// </summary>
         /// <param name="fromWindowUid"></param>
         /// <param name="toWindowUid"></param>
-        protected void UnRegisterAllIcons(UIWindowManager.WindowUid fromWindowUid, UIWindowManager.WindowUid toWindowUid = UIWindowManager.WindowUid.Inventory)
+        protected void UnRegisterAllIcons(UIWindowConstants.WindowUid fromWindowUid, UIWindowConstants.WindowUid toWindowUid = UIWindowConstants.WindowUid.Inventory)
         {
             if (IconPoolManager == null) return;
             IconPoolManager.UnRegisterAllIcons(fromWindowUid, toWindowUid);
@@ -348,7 +354,7 @@ namespace GGemCo2DCore
                 // 등록 되었던것을 빼준다.
                 DetachIcon(uiIconItem.slotIndex);
                 // 인벤토리에서 지워준다.
-                if (parentInfo.Item1 != UIWindowManager.WindowUid.None)
+                if (parentInfo.Item1 != UIWindowConstants.WindowUid.None)
                 {
                     SceneGame.uIWindowManager.RemoveIcon(parentInfo.Item1, parentInfo.Item2);
                 }

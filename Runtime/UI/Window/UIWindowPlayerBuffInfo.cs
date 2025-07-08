@@ -9,13 +9,15 @@ namespace GGemCo2DCore
     /// </summary>
     public class UIWindowPlayerBuffInfo : UIWindow
     {
+        [Header(UIWindowConstants.TitleHeaderIndividual)]
+        [Tooltip("버프 슬롯 프리팹")]
         public GameObject prefabSlotBuff;
         private Dictionary<int, GameObject> slotBuffs = new Dictionary<int, GameObject>();
         
         protected override void Awake()
         {
             // uid 를 먼저 지정해야 한다.
-            uid = UIWindowManager.WindowUid.PlayerBuffInfo;
+            uid = UIWindowConstants.WindowUid.PlayerBuffInfo;
             base.Awake();
             slotBuffs.Clear();
         }

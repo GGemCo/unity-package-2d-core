@@ -44,11 +44,11 @@ namespace GGemCo2DCore
             base.Start();
             _sceneGame = SceneGame.Instance;
             _playerData = _sceneGame.saveDataManager.Player;
-            _uiWindowHud = _sceneGame.uIWindowManager?.GetUIWindowByUid<UIWindowHud>(UIWindowManager.WindowUid.Hud);
+            _uiWindowHud = _sceneGame.uIWindowManager?.GetUIWindowByUid<UIWindowHud>(UIWindowConstants.WindowUid.Hud);
             _uiWindowPlayerInfo =
-                _sceneGame.uIWindowManager?.GetUIWindowByUid<UIWindowPlayerInfo>(UIWindowManager.WindowUid.PlayerInfo);
+                _sceneGame.uIWindowManager?.GetUIWindowByUid<UIWindowPlayerInfo>(UIWindowConstants.WindowUid.PlayerInfo);
             _uiWindowPlayerBuffInfo =
-                _sceneGame.uIWindowManager?.GetUIWindowByUid<UIWindowPlayerBuffInfo>(UIWindowManager.WindowUid
+                _sceneGame.uIWindowManager?.GetUIWindowByUid<UIWindowPlayerBuffInfo>(UIWindowConstants.WindowUid
                     .PlayerBuffInfo);
             // 연출중 체크를 위해 추가
             _controllerPlayer.Initialize(_sceneGame.CutsceneManager);

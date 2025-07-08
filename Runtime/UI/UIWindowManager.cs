@@ -10,32 +10,6 @@ namespace GGemCo2DCore
     /// </summary>
     public class UIWindowManager : MonoBehaviour
     {
-        // 윈도우 고유번호 
-        public enum WindowUid 
-        {
-            None,
-            Hud,
-            Inventory,
-            ItemInfo,
-            Equip,
-            PlayerInfo,
-            ItemSplit,
-            PlayerBuffInfo,
-            QuickSlot,
-            Skill,
-            SkillInfo,
-            InteractionDialogue,
-            Shop,
-            ItemBuy,
-            Stash,
-            ShopSale,
-            ItemUpgrade,
-            ItemSalvage,
-            ItemCraft,
-            Dialogue,
-            HudQuest,
-            QuestReward
-        }
         [Header("기본속성")]
         [Tooltip("윈도우 리스트")]
         [SerializeField] private UIWindow[] uiWindows;
@@ -76,7 +50,7 @@ namespace GGemCo2DCore
         /// </summary>
         /// <param name="uid"></param>
         /// <param name="show"></param>
-        public void ShowWindow(WindowUid uid, bool show)
+        public void ShowWindow(UIWindowConstants.WindowUid uid, bool show)
         {
             UIWindow uiWindow = GetUIWindowByUid<UIWindow>(uid);
             if (uiWindow == null) {
@@ -92,7 +66,7 @@ namespace GGemCo2DCore
         /// <param name="srcWindowUid"></param>
         /// <param name="srcIndex"></param>
         /// <returns></returns>
-        private UIIcon GetIconByWindowUid(WindowUid srcWindowUid, int srcIndex)
+        private UIIcon GetIconByWindowUid(UIWindowConstants.WindowUid srcWindowUid, int srcIndex)
         {
             UIWindow uiWindow = GetUIWindowByUid<UIWindow>(srcWindowUid);
             if (uiWindow == null)
@@ -107,7 +81,7 @@ namespace GGemCo2DCore
         /// </summary>
         /// <param name="windowUid"></param>
         /// <returns></returns>
-        public T GetUIWindowByUid<T>(WindowUid windowUid) where T : UIWindow
+        public T GetUIWindowByUid<T>(UIWindowConstants.WindowUid windowUid) where T : UIWindow
         {
             if (uiWindows.Length <= (int)windowUid) return null;
             UIWindow uiWindow = uiWindows[(int)windowUid];
@@ -124,7 +98,7 @@ namespace GGemCo2DCore
         /// </summary>
         /// <param name="windowUid"></param>
         /// <param name="slotIndex"></param>
-        public void RemoveIcon(WindowUid windowUid, int slotIndex)
+        public void RemoveIcon(UIWindowConstants.WindowUid windowUid, int slotIndex)
         {
             UIWindow uiWindow = GetUIWindowByUid<UIWindow>(windowUid);
             if (uiWindow == null)
@@ -139,14 +113,14 @@ namespace GGemCo2DCore
         /// </summary>
         /// <param name="windowUid"></param>
         /// <returns></returns>
-        public bool IsShowByWindowUid(WindowUid windowUid)
+        public bool IsShowByWindowUid(UIWindowConstants.WindowUid windowUid)
         {
             UIWindow uiWindow = GetUIWindowByUid<UIWindow>(windowUid);
             if (uiWindow == null) return false;
             return uiWindow.gameObject.activeSelf;
         }
 
-        public void MoveIcon(WindowUid fromWindowUid, int fromIndex, WindowUid toWindowUid, int toCount, int toIndex = -1)
+        public void MoveIcon(UIWindowConstants.WindowUid fromWindowUid, int fromIndex, UIWindowConstants.WindowUid toWindowUid, int toCount, int toIndex = -1)
         {
             UIWindow fromWindow = GetUIWindowByUid<UIWindow>(fromWindowUid);
             UIWindow toWindow = GetUIWindowByUid<UIWindow>(toWindowUid);
@@ -184,7 +158,7 @@ namespace GGemCo2DCore
         /// <param name="fromWindowUid"></param>
         /// <param name="fromIndex"></param>
         /// <param name="toWindowUid"></param>
-        public void UnRegisterIcon(WindowUid fromWindowUid, int fromIndex, WindowUid toWindowUid = WindowUid.Inventory)
+        public void UnRegisterIcon(UIWindowConstants.WindowUid fromWindowUid, int fromIndex, UIWindowConstants.WindowUid toWindowUid = UIWindowConstants.WindowUid.Inventory)
         {
             UIWindow fromWindow = GetUIWindowByUid<UIWindow>(fromWindowUid);
             UIWindow toWindow = GetUIWindowByUid<UIWindow>(toWindowUid);
@@ -200,8 +174,8 @@ namespace GGemCo2DCore
                 return;
             }
             var info = fromIcon.GetParentInfo();
-            WindowUid parentWindowUid = info.Item1;
-            if (parentWindowUid == WindowUid.None) return;
+            UIWindowConstants.WindowUid parentWindowUid = info.Item1;
+            if (parentWindowUid == UIWindowConstants.WindowUid.None) return;
             int parentIconIndex = info.Item2;
             UIWindow parent = GetUIWindowByUid<UIWindow>(parentWindowUid);
             var parentIcon = parent.GetIconByIndex(parentIconIndex);
@@ -221,7 +195,7 @@ namespace GGemCo2DCore
         /// <param name="toWindowUid"></param>
         /// <param name="toCount"></param>
         /// <param name="toIndex"></param>
-        public void RegisterIcon(WindowUid fromWindowUid, int fromIndex, WindowUid toWindowUid, int toCount, int toIndex = -1)
+        public void RegisterIcon(UIWindowConstants.WindowUid fromWindowUid, int fromIndex, UIWindowConstants.WindowUid toWindowUid, int toCount, int toIndex = -1)
         {
             UIWindow fromWindow = GetUIWindowByUid<UIWindow>(fromWindowUid);
             UIWindow toWindow = GetUIWindowByUid<UIWindow>(toWindowUid);
@@ -267,7 +241,7 @@ namespace GGemCo2DCore
         /// 모든 윈도우 닫기
         /// </summary>
         /// <param name="exceptWindowUids">제외할 윈도우 uid</param>
-        public void CloseAll(List<WindowUid> exceptWindowUids = null)
+        public void CloseAll(List<UIWindowConstants.WindowUid> exceptWindowUids = null)
         {
             foreach (var window in uiWindows)
             {

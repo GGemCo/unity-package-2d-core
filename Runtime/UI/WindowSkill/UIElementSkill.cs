@@ -53,7 +53,7 @@ namespace GGemCo2DCore
             _uiWindowSkill = puiWindowSkill;
             _uiWindowSkillInfo =
                 SceneGame.Instance.uIWindowManager.GetUIWindowByUid<UIWindowSkillInfo>(
-                    UIWindowManager.WindowUid.SkillInfo);
+                    UIWindowConstants.WindowUid.SkillInfo);
             _tableSkill = TableLoaderManager.Instance.TableSkill;
             
             if (textName != null) textName.text = _struckTableSkill.Name;

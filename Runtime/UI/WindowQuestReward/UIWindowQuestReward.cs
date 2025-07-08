@@ -6,14 +6,14 @@ namespace GGemCo2DCore
 {
     public class UIWindowQuestReward : UIWindow
     {
-        [Header("필수속성")]
-        [Tooltip("타이틀")]
+        [Header(UIWindowConstants.TitleHeaderIndividual)]
+        [Tooltip("퀘스트 타이틀")]
         public TextMeshProUGUI textTitle;
-        [Tooltip("경험치 보상")]
+        [Tooltip("보상 경험치")]
         public TextMeshProUGUI textExp;
-        [Tooltip("골드 보상")]
+        [Tooltip("보상 골드")]
         public TextMeshProUGUI textGold;
-        [Tooltip("실버 보상")]
+        [Tooltip("보상 실버")]
         public TextMeshProUGUI textSilver;
         [Tooltip("확인 버튼")] 
         public Button buttonConfirm;
@@ -22,7 +22,7 @@ namespace GGemCo2DCore
         private UIWindowItemInfo _uiWindowItemInfo;
         protected override void Awake()
         {
-            uid = UIWindowManager.WindowUid.QuestReward;
+            uid = UIWindowConstants.WindowUid.QuestReward;
             base.Awake();
             buttonConfirm?.onClick.AddListener(OnClickConfirm);
         }
@@ -32,7 +32,7 @@ namespace GGemCo2DCore
             base.Start();
             _uiWindowItemInfo =
                 SceneGame.Instance.uIWindowManager.GetUIWindowByUid<UIWindowItemInfo>(
-                    UIWindowManager.WindowUid.ItemInfo);
+                    UIWindowConstants.WindowUid.ItemInfo);
         }
         protected void OnEnable()
         {

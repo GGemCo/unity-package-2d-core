@@ -12,7 +12,7 @@ namespace GGemCo2DCore
             UIWindowItemSalvage uiWindowItemSalvage = window as UIWindowItemSalvage;
             if (uiWindowItemSalvage == null) return;
             // UIWindow droppedWindow = droppedUIIcon.window;
-            UIWindowManager.WindowUid droppedWindowUid = droppedUIIcon.windowUid;
+            UIWindowConstants.WindowUid droppedWindowUid = droppedUIIcon.windowUid;
             int dropIconSlotIndex = droppedUIIcon.slotIndex;
             int dropIconUid = droppedUIIcon.uid;
             int dropIconCount = droppedUIIcon.GetCount();
@@ -27,7 +27,7 @@ namespace GGemCo2DCore
                 return;
             }
             // UIWindow targetWindow = targetUIIcon.window;
-            // UIWindowManager.WindowUid targetWindowUid = targetUIIcon.windowUid;
+            // UIWindowConstants.WindowUid targetWindowUid = targetUIIcon.windowUid;
             int targetIconSlotIndex = targetUIIcon.slotIndex;
             // int targetIconUid = targetUIIcon.uid;
             // int targetIconCount = targetUIIcon.GetCount();
@@ -39,7 +39,7 @@ namespace GGemCo2DCore
             }
             
             // 인벤토리에서 상점으로 드래그 앤 드랍 했을 때만 처리한다 
-            if (droppedWindowUid == UIWindowManager.WindowUid.Inventory && targetIconSlotIndex < uiWindowItemSalvage.maxCountIcon)
+            if (droppedWindowUid == UIWindowConstants.WindowUid.Inventory && targetIconSlotIndex < uiWindowItemSalvage.maxCountIcon)
             {
                 // 분해할 수 있는 아이템 인지 체크
                 if (droppedUIIcon.IsAntiFlag(ItemConstants.AntiFlag.Salvage))
@@ -54,7 +54,7 @@ namespace GGemCo2DCore
                     return;
                 }
                 SceneGame.Instance.uIWindowManager.RegisterIcon(droppedWindowUid, dropIconSlotIndex,
-                    UIWindowManager.WindowUid.ItemSalvage, dropIconCount);
+                    UIWindowConstants.WindowUid.ItemSalvage, dropIconCount);
             }
         }
 

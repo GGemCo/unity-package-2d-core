@@ -35,7 +35,7 @@ namespace GGemCo2DCore
             }
             uiWindowHudQuest =
                 SceneGame.Instance.uIWindowManager?.GetUIWindowByUid<UIWindowHudQuest>(
-                    UIWindowManager.WindowUid.HudQuest);
+                    UIWindowConstants.WindowUid.HudQuest);
         }
 
         private QuestConstants.Status GetStatus(int questUid)

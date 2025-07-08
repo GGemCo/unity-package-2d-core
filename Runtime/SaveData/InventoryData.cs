@@ -26,7 +26,7 @@ namespace GGemCo2DCore
         protected override int GetMaxSlotCount()
         {
             return SceneGame.Instance.uIWindowManager?
-                .GetUIWindowByUid<UIWindowInventory>(UIWindowManager.WindowUid.Inventory)?.maxCountIcon ?? 0;
+                .GetUIWindowByUid<UIWindowInventory>(UIWindowConstants.WindowUid.Inventory)?.maxCountIcon ?? 0;
         }
         /// <summary>
         /// 인벤토리에 있는 같은 아이템을 작은 인덱스부터 최대 중첩 개수까지 합친다.

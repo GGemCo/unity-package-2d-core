@@ -112,7 +112,7 @@ namespace GGemCo2DCoreEditor
         {
             SceneGame.Instance.saveDataManager.Inventory.RemoveAllItems();
 
-            var inventory = SceneGame.Instance.uIWindowManager.GetUIWindowByUid<UIWindowInventory>(UIWindowManager.WindowUid.Inventory);
+            var inventory = SceneGame.Instance.uIWindowManager.GetUIWindowByUid<UIWindowInventory>(UIWindowConstants.WindowUid.Inventory);
             if (!inventory) return;
             inventory.LoadIcons();
         }
@@ -140,7 +140,7 @@ namespace GGemCo2DCoreEditor
 
             var result = SceneGame.Instance.saveDataManager.Inventory.AddItem(itemUid, _makeItemCount);
 
-            var inventory = SceneGame.Instance.uIWindowManager.GetUIWindowByUid<UIWindowInventory>(UIWindowManager.WindowUid.Inventory);
+            var inventory = SceneGame.Instance.uIWindowManager.GetUIWindowByUid<UIWindowInventory>(UIWindowConstants.WindowUid.Inventory);
             if (!inventory) return;
             inventory.SetIcons(result);
         }

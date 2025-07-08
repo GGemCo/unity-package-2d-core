@@ -24,7 +24,7 @@ namespace GGemCo2DCore
         // 윈도우 
         [HideInInspector] public UIWindow window;
         // 윈도우 고유번호
-        [HideInInspector] public UIWindowManager.WindowUid windowUid;
+        [HideInInspector] public UIWindowConstants.WindowUid windowUid;
         // 번호
         [HideInInspector] public int index;
         // 슬롯 번호
@@ -33,7 +33,7 @@ namespace GGemCo2DCore
         [HideInInspector] public int uid;
         
         // 부모 윈도우 uid
-        private UIWindowManager.WindowUid _parentWindowUid;
+        private UIWindowConstants.WindowUid _parentWindowUid;
         // 부모 아이콘 슬롯 index
         private int _parentSlotIndex;
 
@@ -72,7 +72,7 @@ namespace GGemCo2DCore
             _parentSlotIndex = 0;
             _isLearn = false;
             window = null;
-            windowUid = UIWindowManager.WindowUid.None;
+            windowUid = UIWindowConstants.WindowUid.None;
             _iconStatus = IconConstants.Status.Normal;
             IconType = IconConstants.Type.None;
             
@@ -96,7 +96,7 @@ namespace GGemCo2DCore
             imageSelected.rectTransform.sizeDelta = window.slotSize;
         }
 
-        public void Initialize(UIWindow pwindow, UIWindowManager.WindowUid pwindowUid, int pindex, int pslotIndex, 
+        public void Initialize(UIWindow pwindow, UIWindowConstants.WindowUid pwindowUid, int pindex, int pslotIndex, 
             Vector2 iconSize, Vector2 slotSize)
         {
             window = pwindow;
@@ -404,12 +404,12 @@ namespace GGemCo2DCore
         /// </summary>
         /// <param name="fromWindowUid"></param>
         /// <param name="fromIndex"></param>
-        public void SetParentInfo(UIWindowManager.WindowUid fromWindowUid, int fromIndex)
+        public void SetParentInfo(UIWindowConstants.WindowUid fromWindowUid, int fromIndex)
         {
             _parentWindowUid = fromWindowUid;
             _parentSlotIndex = fromIndex;
         }
-        public (UIWindowManager.WindowUid, int) GetParentInfo()
+        public (UIWindowConstants.WindowUid, int) GetParentInfo()
         {
             return (_parentWindowUid, _parentSlotIndex);
         }

@@ -13,7 +13,7 @@ namespace GGemCo2DCore
             UIWindowQuickSlot uiWindowQuickSlot = window as UIWindowQuickSlot;
             if (uiWindowQuickSlot == null) return;
             UIWindow droppedWindow = droppedUIIcon.window;
-            UIWindowManager.WindowUid droppedWindowUid = droppedUIIcon.windowUid;
+            UIWindowConstants.WindowUid droppedWindowUid = droppedUIIcon.windowUid;
             int dropIconSlotIndex = droppedUIIcon.slotIndex;
             int dropIconUid = droppedUIIcon.uid;
             int dropIconCount = droppedUIIcon.GetCount();
@@ -30,7 +30,7 @@ namespace GGemCo2DCore
                 return;
             }
             UIWindow targetWindow = targetUIIcon.window;
-            UIWindowManager.WindowUid targetWindowUid = targetUIIcon.windowUid;
+            UIWindowConstants.WindowUid targetWindowUid = targetUIIcon.windowUid;
             int targetIconSlotIndex = targetUIIcon.slotIndex;
             int targetIconUid = targetUIIcon.uid;
             int targetIconCount = targetUIIcon.GetCount();
@@ -40,7 +40,7 @@ namespace GGemCo2DCore
             {
                 switch (droppedWindowUid)
                 {
-                    case UIWindowManager.WindowUid.Skill:
+                    case UIWindowConstants.WindowUid.Skill:
                         UIWindowSkill uiWindowSkill = droppedWindow as UIWindowSkill;
                         if (uiWindowSkill == null) return;
                         uiWindowSkill.AddToQuickSlot(droppedUIIcon);
@@ -50,16 +50,16 @@ namespace GGemCo2DCore
                         // }
 
                         break;
-                    case UIWindowManager.WindowUid.None:
-                    case UIWindowManager.WindowUid.Hud:
-                    case UIWindowManager.WindowUid.Inventory:
-                    case UIWindowManager.WindowUid.ItemInfo:
-                    case UIWindowManager.WindowUid.Equip:
-                    case UIWindowManager.WindowUid.PlayerInfo:
-                    case UIWindowManager.WindowUid.ItemSplit:
-                    case UIWindowManager.WindowUid.PlayerBuffInfo:
-                    case UIWindowManager.WindowUid.QuickSlot:
-                    case UIWindowManager.WindowUid.SkillInfo:
+                    case UIWindowConstants.WindowUid.None:
+                    case UIWindowConstants.WindowUid.Hud:
+                    case UIWindowConstants.WindowUid.Inventory:
+                    case UIWindowConstants.WindowUid.ItemInfo:
+                    case UIWindowConstants.WindowUid.Equip:
+                    case UIWindowConstants.WindowUid.PlayerInfo:
+                    case UIWindowConstants.WindowUid.ItemSplit:
+                    case UIWindowConstants.WindowUid.PlayerBuffInfo:
+                    case UIWindowConstants.WindowUid.QuickSlot:
+                    case UIWindowConstants.WindowUid.SkillInfo:
                         break;
                     default:
                         throw new ArgumentOutOfRangeException();

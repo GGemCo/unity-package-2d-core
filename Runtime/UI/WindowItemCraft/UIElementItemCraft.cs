@@ -36,7 +36,7 @@ namespace GGemCo2DCore
             uiWindowItemCraft = puiWindowItemCraft;
             uiWindowItemInfo =
                 SceneGame.Instance.uIWindowManager.GetUIWindowByUid<UIWindowItemInfo>(
-                    UIWindowManager.WindowUid.ItemInfo);
+                    UIWindowConstants.WindowUid.ItemInfo);
             tableItemCraft = TableLoaderManager.Instance.TableItemCraft;
             
             UpdateInfos(pstruckTableItemCraft);

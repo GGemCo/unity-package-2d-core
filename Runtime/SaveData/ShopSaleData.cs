@@ -14,7 +14,7 @@ namespace GGemCo2DCore
         protected override int GetMaxSlotCount()
         {
             return SceneGame.Instance.uIWindowManager
-                .GetUIWindowByUid<UIWindowShopSale>(UIWindowManager.WindowUid.ShopSale)?.maxCountIcon ?? 0;
+                .GetUIWindowByUid<UIWindowShopSale>(UIWindowConstants.WindowUid.ShopSale)?.maxCountIcon ?? 0;
         }
     }
 }

@@ -26,7 +26,7 @@ namespace GGemCo2DCore
         protected override int GetMaxSlotCount()
         {
             return SceneGame.Instance.uIWindowManager
-                .GetUIWindowByUid<UIWindowSkill>(UIWindowManager.WindowUid.Skill)?.maxCountIcon ?? 0;
+                .GetUIWindowByUid<UIWindowSkill>(UIWindowConstants.WindowUid.Skill)?.maxCountIcon ?? 0;
         }
         /// <summary>
         /// 스킬 레벨업

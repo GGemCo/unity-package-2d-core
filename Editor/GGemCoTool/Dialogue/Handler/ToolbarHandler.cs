@@ -83,7 +83,7 @@ namespace GGemCo2DCoreEditor
                 }
                 var info = _dialogueInfos.GetValueOrDefault(_selectedDialogueIndex);
                 UIWindowDialogue uiWindowDialogue =
-                    SceneGame.Instance.uIWindowManager.GetUIWindowByUid<UIWindowDialogue>(UIWindowManager.WindowUid
+                    SceneGame.Instance.uIWindowManager.GetUIWindowByUid<UIWindowDialogue>(UIWindowConstants.WindowUid
                         .Dialogue);
                 uiWindowDialogue?.LoadDialogue(info.Uid);
             }

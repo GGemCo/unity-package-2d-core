@@ -7,12 +7,12 @@ namespace GGemCo2DCore
 {
     public class UIWindowItemCraft : UIWindow
     {
-        [Header("기본속성")]
+        [Header(UIWindowConstants.TitleHeaderIndividual)]
         [Tooltip("제작 리스트 Element 프리팹")]
         public GameObject prefabUIElementCraft;
         [Tooltip("재료 재료 Element 프리팹")]
         public GameObject prefabElementMaterial;
-        [Tooltip("재료 아이템 element 를 담을 panel")]
+        [Tooltip("재료 아이템 Element 를 담을 panel")]
         public GameObject containerMaterial;
         [Tooltip("제작 확률")]
         public TextMeshProUGUI textRate;
@@ -40,7 +40,7 @@ namespace GGemCo2DCore
         protected override void Awake()
         {
             _struckTableItemCraft = null;
-            uid = UIWindowManager.WindowUid.ItemCraft;
+            uid = UIWindowConstants.WindowUid.ItemCraft;
             if (TableLoaderManager.Instance != null)
             {
                 TableItemCraft = TableLoaderManager.Instance.TableItemCraft;
@@ -76,10 +76,10 @@ namespace GGemCo2DCore
         {
             base.Start();
             _uiWindowItemInfo =
-                SceneGame?.uIWindowManager?.GetUIWindowByUid<UIWindowItemInfo>(UIWindowManager.WindowUid
+                SceneGame?.uIWindowManager?.GetUIWindowByUid<UIWindowItemInfo>(UIWindowConstants.WindowUid
                     .ItemInfo);
             _uiWindowInventory =
-                SceneGame?.uIWindowManager?.GetUIWindowByUid<UIWindowInventory>(UIWindowManager.WindowUid
+                SceneGame?.uIWindowManager?.GetUIWindowByUid<UIWindowInventory>(UIWindowConstants.WindowUid
                     .Inventory);
             _inventoryData = SceneGame?.saveDataManager?.Inventory;
         }

@@ -14,7 +14,7 @@ namespace GGemCo2DCore
         protected override void Awake()
         {
             // uid 를 먼저 지정해야 한다.
-            uid = UIWindowManager.WindowUid.Equip;
+            uid = UIWindowConstants.WindowUid.Equip;
             if (TableLoaderManager.Instance == null) return;
             tableItem = TableLoaderManager.Instance.TableItem;
             base.Awake();
@@ -31,7 +31,7 @@ namespace GGemCo2DCore
                 InventoryData = SceneGame.saveDataManager.Inventory;
             }
             uIWindowItemInfo =
-                SceneGame.uIWindowManager.GetUIWindowByUid<UIWindowItemInfo>(UIWindowManager.WindowUid
+                SceneGame.uIWindowManager.GetUIWindowByUid<UIWindowItemInfo>(UIWindowConstants.WindowUid
                     .ItemInfo);
         }
         public override void OnShow(bool show)
@@ -78,7 +78,7 @@ namespace GGemCo2DCore
         public override void OnRightClick(UIIcon icon)
         {
             if (icon == null) return;
-            SceneGame.Instance.uIWindowManager.MoveIcon(uid, icon.index, UIWindowManager.WindowUid.Inventory, 1);
+            SceneGame.Instance.uIWindowManager.MoveIcon(uid, icon.index, UIWindowConstants.WindowUid.Inventory, 1);
         }
         /// <summary>
         /// 아이템 정보 보기

@@ -16,8 +16,8 @@ namespace GGemCo2DCore
             _tableNpc = TableLoaderManager.Instance.TableNpc;
             _tableInteraction = TableLoaderManager.Instance.TableInteraction;
             _uiWindowInteractionDialogue =
-                _sceneGame.uIWindowManager?.GetUIWindowByUid<UIWindowInteractionDialogue>(UIWindowManager.WindowUid.InteractionDialogue);
-                _sceneGame.uIWindowManager?.GetUIWindowByUid<UIWindowShopSale>(UIWindowManager.WindowUid.ShopSale);
+                _sceneGame.uIWindowManager?.GetUIWindowByUid<UIWindowInteractionDialogue>(UIWindowConstants.WindowUid.InteractionDialogue);
+                _sceneGame.uIWindowManager?.GetUIWindowByUid<UIWindowShopSale>(UIWindowConstants.WindowUid.ShopSale);
         }
         /// <summary>
         /// Npc 의 interaction 정보 가져오기
@@ -54,8 +54,8 @@ namespace GGemCo2DCore
                 infoInteraction = _tableInteraction.GetDataByUid(infoNpc.InteractionUid);
             }
             // 다른 윈도우가 열려있으면 닫아주기
-            _sceneGame.uIWindowManager?.CloseAll(new List<UIWindowManager.WindowUid>
-                { UIWindowManager.WindowUid.InteractionDialogue });
+            _sceneGame.uIWindowManager?.CloseAll(new List<UIWindowConstants.WindowUid>
+                { UIWindowConstants.WindowUid.InteractionDialogue });
             // 인터렉션 대화창 보여주기
             ShowDialogue(infoNpc, infoInteraction, npcQuestDatas);
         }
@@ -78,8 +78,8 @@ namespace GGemCo2DCore
             // npc 가 interaction 범위면 다시 열기
             if (_currentNpc != null)
             {
-                _sceneGame?.uIWindowManager?.CloseAll(new List<UIWindowManager.WindowUid>
-                    { UIWindowManager.WindowUid.InteractionDialogue });
+                _sceneGame?.uIWindowManager?.CloseAll(new List<UIWindowConstants.WindowUid>
+                    { UIWindowConstants.WindowUid.InteractionDialogue });
                 SetInfo(_currentNpc);
                 return;
             }

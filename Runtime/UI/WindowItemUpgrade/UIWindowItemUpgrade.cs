@@ -14,6 +14,7 @@ namespace GGemCo2DCore
     /// </summary>
     public class UIWindowItemUpgrade : UIWindow
     {
+        [Header(UIWindowConstants.TitleHeaderIndividual)]
         [Header("강화 정보")]
         [Tooltip("강화하는 아이템 이름")]
         public TextMeshProUGUI textItemName;
@@ -33,10 +34,12 @@ namespace GGemCo2DCore
         public GameObject prefabElementMaterial;
         [Tooltip("재료 아이템 element 를 담을 panel")]
         public GameObject containerMaterial;
-        [Header("강화하기 버튼")]
+        
+        [Header("")]
+        [Tooltip("강화하기 버튼")]
         public Button buttonUpgrade;
 #if GGEMCO_USE_SPINE
-        [Header("강화 이펙트 오브젝트")] public Spine2dUIController effectItemUpgrade;
+        [Tooltip("강화 이펙트 오브젝트")] public Spine2dUIController effectItemUpgrade;
 #endif
         private TableItem _tableItem;
         private TableStatus _tableStatus;
@@ -60,7 +63,7 @@ namespace GGemCo2DCore
         {
             _updateResult = false;
             _elementMaterials.Clear();
-            uid = UIWindowManager.WindowUid.ItemUpgrade;
+            uid = UIWindowConstants.WindowUid.ItemUpgrade;
             if (TableLoaderManager.Instance == null) return;
             _tableItem = TableLoaderManager.Instance.TableItem;
             _tableItemUpgrade = TableLoaderManager.Instance.TableItemUpgrade;
@@ -94,10 +97,10 @@ namespace GGemCo2DCore
         {
             base.Start();
             _uiWindowItemInfo =
-                SceneGame.uIWindowManager.GetUIWindowByUid<UIWindowItemInfo>(UIWindowManager.WindowUid
+                SceneGame.uIWindowManager.GetUIWindowByUid<UIWindowItemInfo>(UIWindowConstants.WindowUid
                     .ItemInfo);
             _uiWindowInventory =
-                SceneGame.uIWindowManager.GetUIWindowByUid<UIWindowInventory>(UIWindowManager.WindowUid
+                SceneGame.uIWindowManager.GetUIWindowByUid<UIWindowInventory>(UIWindowConstants.WindowUid
                     .Inventory);
             _inventoryData = SceneGame.saveDataManager.Inventory;
         }
@@ -313,7 +316,7 @@ namespace GGemCo2DCore
             // 인벤토리에 아이템 체크
             UIIcon icon = GetIconByIndex(SourceIconSlotIndex);
             var parent = icon.GetParentInfo();
-            if (parent.Item1 == UIWindowManager.WindowUid.None || parent.Item2 < 0)
+            if (parent.Item1 == UIWindowConstants.WindowUid.None || parent.Item2 < 0)
             {
                 GcLogger.LogError("인벤토리에 있는 아이템 정보가 잘 못 되었습니다.");
                 return;
@@ -380,7 +383,7 @@ namespace GGemCo2DCore
                 _uiWindowInventory.SetIcons(resultUpgrade);
             
                 // 기존 정보에서 업그레이드 된 아이콘으로 다시 셋팅하기
-                SceneGame.uIWindowManager.UnRegisterIcon(UIWindowManager.WindowUid.ItemUpgrade, SourceIconSlotIndex);
+                SceneGame.uIWindowManager.UnRegisterIcon(UIWindowConstants.WindowUid.ItemUpgrade, SourceIconSlotIndex);
             
                 var inventoryIcon = _uiWindowInventory.GetIconByIndex(parent.Item2) as UIIconItem;
                 if (inventoryIcon == null) return;
@@ -390,12 +393,12 @@ namespace GGemCo2DCore
                     InitializeInfo();
                     return;
                 }
-                SceneGame.uIWindowManager.RegisterIcon(UIWindowManager.WindowUid.Inventory, parent.Item2, uid, 1);
+                SceneGame.uIWindowManager.RegisterIcon(UIWindowConstants.WindowUid.Inventory, parent.Item2, uid, 1);
             }
             else
             {
-                SceneGame.uIWindowManager.UnRegisterIcon(UIWindowManager.WindowUid.ItemUpgrade, SourceIconSlotIndex);
-                SceneGame.uIWindowManager.RegisterIcon(UIWindowManager.WindowUid.Inventory, parent.Item2, uid, 1);
+                SceneGame.uIWindowManager.UnRegisterIcon(UIWindowConstants.WindowUid.ItemUpgrade, SourceIconSlotIndex);
+                SceneGame.uIWindowManager.RegisterIcon(UIWindowConstants.WindowUid.Inventory, parent.Item2, uid, 1);
             }
         }
 

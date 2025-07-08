@@ -18,6 +18,7 @@ namespace GGemCo2DCore
             Right,
         }
         private TableItem tableItem;
+        [Header(UIWindowConstants.TitleHeaderIndividual)]
         [Header("기본정보")]
         [Tooltip("아이템 이름")]
         public TextMeshProUGUI textName;
@@ -43,7 +44,7 @@ namespace GGemCo2DCore
         
         [Header("서브옵션")]
         public TextMeshProUGUI[] textOptions;
-        public float[] valueOptions;
+        [HideInInspector] public float[] valueOptions;
         
         private Dictionary<ItemConstants.Category, Action> categoryUIHandlers;
         
@@ -52,7 +53,7 @@ namespace GGemCo2DCore
         
         protected override void Awake()
         {
-            uid = UIWindowManager.WindowUid.ItemInfo;
+            uid = UIWindowConstants.WindowUid.ItemInfo;
             if (TableLoaderManager.Instance == null) return;
             tableItem = TableLoaderManager.Instance.TableItem;
             tableStatus = TableLoaderManager.Instance.TableStatus;

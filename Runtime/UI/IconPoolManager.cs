@@ -129,7 +129,7 @@ namespace GGemCo2DCore
         /// </summary>
         /// <param name="fromWindowUid"></param>
         /// <param name="toWindowUid"></param>
-        public void UnRegisterAllIcons(UIWindowManager.WindowUid fromWindowUid, UIWindowManager.WindowUid toWindowUid = UIWindowManager.WindowUid.Inventory)
+        public void UnRegisterAllIcons(UIWindowConstants.WindowUid fromWindowUid, UIWindowConstants.WindowUid toWindowUid = UIWindowConstants.WindowUid.Inventory)
         {
             foreach (var icon in window.icons)
             {

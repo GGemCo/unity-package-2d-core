@@ -14,7 +14,7 @@ namespace GGemCo2DCore
             UIIconItem uiIconItem = droppedUIIcon as UIIconItem;
             if (uiIconItem == null) return;
             UIWindow droppedWindow = droppedUIIcon.window;
-            // UIWindowManager.WindowUid droppedWindowUid = droppedUIIcon.windowUid;
+            // UIWindowConstants.WindowUid droppedWindowUid = droppedUIIcon.windowUid;
             int dropIconSlotIndex = droppedUIIcon.slotIndex;
             int dropIconUid = droppedUIIcon.uid;
             // int dropIconCount = droppedUIIcon.GetCount();
@@ -29,7 +29,7 @@ namespace GGemCo2DCore
                 return;
             }
             UIWindow targetWindow = targetUIIcon.window;
-            // UIWindowManager.WindowUid targetWindowUid = targetUIIcon.windowUid;
+            // UIWindowConstants.WindowUid targetWindowUid = targetUIIcon.windowUid;
             int targetIconSlotIndex = targetUIIcon.slotIndex;
             int targetIconUid = targetUIIcon.uid;
             // int targetIconCount = targetUIIcon.GetCount();

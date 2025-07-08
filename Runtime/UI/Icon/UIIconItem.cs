@@ -31,7 +31,7 @@ namespace GGemCo2DCore
             base.Start();
             uiWindowItemInfo =
                 SceneGame.Instance.uIWindowManager.GetUIWindowByUid<UIWindowItemInfo>(
-                    UIWindowManager.WindowUid.ItemInfo);
+                    UIWindowConstants.WindowUid.ItemInfo);
         }
         /// <summary>
         /// 다른 uid 로 변경하기

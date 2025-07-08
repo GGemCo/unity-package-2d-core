@@ -24,7 +24,7 @@
         private void OnDialogStart(int npcUid)
         {
             UIWindowDialogue uiWindowDialogue =
-                SceneGame.Instance.uIWindowManager.GetUIWindowByUid<UIWindowDialogue>(UIWindowManager.WindowUid
+                SceneGame.Instance.uIWindowManager.GetUIWindowByUid<UIWindowDialogue>(UIWindowConstants.WindowUid
                     .Dialogue);
             uiWindowDialogue?.LoadDialogue(currentStep.dialogueUid, npcUid);
             GameEventManager.OnDialogStart -= OnDialogStart;

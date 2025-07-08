@@ -8,7 +8,8 @@ namespace GGemCo2DCore
     /// </summary>
     public class UIWindowSkill : UIWindow
     {
-        [Tooltip("스킬 element 프리팹")]
+        [Header(UIWindowConstants.TitleHeaderIndividual)]
+        [Tooltip("스킬 Element 프리팹")]
         public GameObject prefabUIElementSkill;
 
         public TableSkill TableSkill;
@@ -22,7 +23,7 @@ namespace GGemCo2DCore
         protected override void Awake()
         {
             UIElementSkills.Clear();
-            uid = UIWindowManager.WindowUid.Skill;
+            uid = UIWindowConstants.WindowUid.Skill;
             if (TableLoaderManager.Instance == null) return;
             TableSkill = TableLoaderManager.Instance.TableSkill;
             maxCountIcon = TableSkill.GetSkills().Count;
@@ -37,10 +38,10 @@ namespace GGemCo2DCore
             // _skillData = SceneGame.saveDataManager.Skill;
             _quickSlotData = SceneGame.saveDataManager.QuickSlot;
             _uIWindowSkillInfo =
-                SceneGame.uIWindowManager.GetUIWindowByUid<UIWindowSkillInfo>(UIWindowManager.WindowUid
+                SceneGame.uIWindowManager.GetUIWindowByUid<UIWindowSkillInfo>(UIWindowConstants.WindowUid
                     .SkillInfo);
             _uiWindowQuickSlot =
-                SceneGame.uIWindowManager.GetUIWindowByUid<UIWindowQuickSlot>(UIWindowManager.WindowUid
+                SceneGame.uIWindowManager.GetUIWindowByUid<UIWindowQuickSlot>(UIWindowConstants.WindowUid
                     .QuickSlot);
         }
         /// <summary>

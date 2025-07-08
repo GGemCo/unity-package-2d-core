@@ -11,7 +11,7 @@ namespace GGemCo2DCore
     /// </summary>
     public class UIWindowItemSalvage : UIWindow
     {
-        [Header("기본 속성")] 
+        [Header(UIWindowConstants.TitleHeaderIndividual)]
         [Tooltip("분해 아이콘 개수. Max Count Icon 개수에서 이 개수를 뺀 나머지가 결과 아이콘 개수")]
         public int salvageIconCount;
         [Tooltip("분해 결과 아이콘 container")] public GameObject containerResult;
@@ -29,7 +29,7 @@ namespace GGemCo2DCore
         protected override void Awake()
         {
             resultItems.Clear();
-            uid = UIWindowManager.WindowUid.ItemSalvage;
+            uid = UIWindowConstants.WindowUid.ItemSalvage;
             base.Awake();
 
             totalPriceGold.DistinctUntilChanged()
@@ -50,10 +50,10 @@ namespace GGemCo2DCore
             base.Start();
             tableItemSalvage = TableLoaderManager.Instance.TableItemSalvage;
             uiWindowItemInfo = 
-                SceneGame.uIWindowManager.GetUIWindowByUid<UIWindowItemInfo>(UIWindowManager.WindowUid
+                SceneGame.uIWindowManager.GetUIWindowByUid<UIWindowItemInfo>(UIWindowConstants.WindowUid
                     .ItemInfo);
             uiWindowInventory = 
-                SceneGame.uIWindowManager.GetUIWindowByUid<UIWindowInventory>(UIWindowManager.WindowUid
+                SceneGame.uIWindowManager.GetUIWindowByUid<UIWindowInventory>(UIWindowConstants.WindowUid
                     .Inventory);
         }
 

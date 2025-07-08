@@ -41,11 +41,11 @@ namespace GGemCo2DCore
             _tableQuest = TableLoaderManager.Instance.TableQuest;
             
             _uiWindowHudQuest =
-                _sceneGame.uIWindowManager?.GetUIWindowByUid<UIWindowHudQuest>(UIWindowManager.WindowUid.HudQuest);
+                _sceneGame.uIWindowManager?.GetUIWindowByUid<UIWindowHudQuest>(UIWindowConstants.WindowUid.HudQuest);
             _uiWindowQuestReward =
-                _sceneGame.uIWindowManager?.GetUIWindowByUid<UIWindowQuestReward>(UIWindowManager.WindowUid.QuestReward);
+                _sceneGame.uIWindowManager?.GetUIWindowByUid<UIWindowQuestReward>(UIWindowConstants.WindowUid.QuestReward);
             _uiWindowInventory =
-                _sceneGame.uIWindowManager?.GetUIWindowByUid<UIWindowInventory>(UIWindowManager.WindowUid.Inventory);
+                _sceneGame.uIWindowManager?.GetUIWindowByUid<UIWindowInventory>(UIWindowConstants.WindowUid.Inventory);
             
             _ = LoadAllQuestJson();
         }

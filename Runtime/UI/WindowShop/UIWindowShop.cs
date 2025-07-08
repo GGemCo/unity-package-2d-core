@@ -8,7 +8,8 @@ namespace GGemCo2DCore
     /// </summary>
     public class UIWindowShop : UIWindow
     {
-        [Tooltip("샵 element 프리팹")]
+        [Header(UIWindowConstants.TitleHeaderIndividual)]
+        [Tooltip("상점 Element 프리팹")]
         public GameObject prefabUIElementShop;
         
         private TableShop tableShop;
@@ -18,7 +19,7 @@ namespace GGemCo2DCore
         protected override void Awake()
         {
             uiElementShops.Clear();
-            uid = UIWindowManager.WindowUid.Shop;
+            uid = UIWindowConstants.WindowUid.Shop;
             if (TableLoaderManager.Instance == null) return;
             tableShop = TableLoaderManager.Instance.TableShop;
             base.Awake();

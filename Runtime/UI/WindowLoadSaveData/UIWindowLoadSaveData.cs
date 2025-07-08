@@ -10,7 +10,7 @@ namespace GGemCo2DCore
     /// </summary>
     public class UIWindowLoadSaveData : MonoBehaviour
     {
-        [Header("기본오브젝트")]
+        [Header(UIWindowConstants.TitleHeaderIndividual)]
         [Tooltip("세이브 데이터를 보여줄 슬롯 Prefab")] [SerializeField] private GameObject elementSaveDataSlot;
         [Tooltip("슬롯 프리팹이 들어갈 Panel")] [SerializeField] private GameObject containerElementSaveDataSlot;
         [Tooltip("닫기 버튼")] [SerializeField] private Button buttonClose;

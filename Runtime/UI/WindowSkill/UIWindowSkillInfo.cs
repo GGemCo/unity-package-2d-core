@@ -9,6 +9,7 @@ namespace GGemCo2DCore
     /// </summary>
     public class UIWindowSkillInfo : UIWindow
     {
+        [Header(UIWindowConstants.TitleHeaderIndividual)]
         [Header("기본정보")] 
         [Tooltip("스킬 이름")]
         public TextMeshProUGUI textName;
@@ -42,7 +43,7 @@ namespace GGemCo2DCore
         
         protected override void Awake()
         {
-            uid = UIWindowManager.WindowUid.SkillInfo;
+            uid = UIWindowConstants.WindowUid.SkillInfo;
             if (TableLoaderManager.Instance == null) return;
             tableSkill = TableLoaderManager.Instance.TableSkill;
             tableStatus = TableLoaderManager.Instance.TableStatus;

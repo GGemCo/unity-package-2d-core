@@ -28,15 +28,24 @@ namespace GGemCo2DCore
             RegistLightning,
         }
         
-        [Header("Text 오브젝트")]
+        [Header(UIWindowConstants.TitleHeaderIndividual)]
+        [Tooltip("공격력")]
         public TextMeshProUGUI textTotalAtk;
+        [Tooltip("방어력")]
         public TextMeshProUGUI textTotalDef;
+        [Tooltip("생명력")]
         public TextMeshProUGUI textTotalHp;
+        [Tooltip("마력")]
         public TextMeshProUGUI textTotalMp;
+        [Tooltip("이동속도")]
         public TextMeshProUGUI textTotalMoveSpeed;
+        [Tooltip("공격속도")]
         public TextMeshProUGUI textTotalAttackSpeed;
+        [Tooltip("불 저항력")]
         public TextMeshProUGUI textTotalRegistFire;
+        [Tooltip("얼음 저항력")]
         public TextMeshProUGUI textTotalRegistCold;
+        [Tooltip("전기 저항력")]
         public TextMeshProUGUI textTotalRegistLightning;
         [HideInInspector] public TextMeshProUGUI textTotalCriticalDamage;
         [HideInInspector] public TextMeshProUGUI textTotalCriticalProbability;
@@ -46,7 +55,7 @@ namespace GGemCo2DCore
         protected override void Awake()
         {
             // uid 를 먼저 지정해야 한다.
-            uid = UIWindowManager.WindowUid.PlayerInfo;
+            uid = UIWindowConstants.WindowUid.PlayerInfo;
             if (TableLoaderManager.Instance == null) return;
             base.Awake();
             

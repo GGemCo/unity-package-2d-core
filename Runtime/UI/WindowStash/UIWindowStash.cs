@@ -15,7 +15,7 @@ namespace GGemCo2DCore
         
         protected override void Awake()
         {
-            uid = UIWindowManager.WindowUid.Stash;
+            uid = UIWindowConstants.WindowUid.Stash;
             base.Awake();
             SetSetIconHandler(new SetIconHandlerStash());
             DragDropHandler.SetStrategy(new DragDropStrategyStash());
@@ -31,7 +31,7 @@ namespace GGemCo2DCore
 
             TableItem = TableLoaderManager.Instance.TableItem;
             uiWindowItemInfo = 
-                SceneGame.uIWindowManager.GetUIWindowByUid<UIWindowItemInfo>(UIWindowManager.WindowUid
+                SceneGame.uIWindowManager.GetUIWindowByUid<UIWindowItemInfo>(UIWindowConstants.WindowUid
                     .ItemInfo);
         }
 
@@ -79,7 +79,7 @@ namespace GGemCo2DCore
         public override void OnRightClick(UIIcon icon)
         {
             if (icon == null) return;
-            SceneGame.Instance.uIWindowManager.MoveIcon(UIWindowManager.WindowUid.Stash, icon.index, UIWindowManager.WindowUid.Inventory, icon.GetCount());
+            SceneGame.Instance.uIWindowManager.MoveIcon(UIWindowConstants.WindowUid.Stash, icon.index, UIWindowConstants.WindowUid.Inventory, icon.GetCount());
         }
         /// <summary>
         /// 아이템 정보 보기

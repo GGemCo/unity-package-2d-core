@@ -133,7 +133,7 @@ namespace GGemCo2DCore
         {
             if (TableLoaderManager.Instance == null) return;
             
-            _uiWindowInventory = uIWindowManager?.GetUIWindowByUid<UIWindowInventory>(UIWindowManager.WindowUid
+            _uiWindowInventory = uIWindowManager?.GetUIWindowByUid<UIWindowInventory>(UIWindowConstants.WindowUid
                 .Inventory);
             
             StartCoroutine(UpdateStateRoutine());

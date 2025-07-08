@@ -9,7 +9,7 @@ namespace GGemCo2DCore
     /// </summary>
     public class UIWindowItemSplit : UIWindow
     {
-        [Header("기본오브젝트")]
+        [Header(UIWindowConstants.TitleHeaderIndividual)]
         [Tooltip("아이템 이름")]
         public TextMeshProUGUI textItemName;
         [Tooltip("아이템 개수")]
@@ -31,7 +31,7 @@ namespace GGemCo2DCore
         private UIWindowInventory uiWindowInventory;
         protected override void Awake()
         {
-            uid = UIWindowManager.WindowUid.ItemSplit;
+            uid = UIWindowConstants.WindowUid.ItemSplit;
             base.Awake();
             buttonConfirm.onClick.RemoveAllListeners();
             buttonCancel.onClick.RemoveAllListeners();
@@ -46,7 +46,7 @@ namespace GGemCo2DCore
             base.Start();
             
             uiWindowInventory =
-                SceneGame.Instance.uIWindowManager.GetUIWindowByUid<UIWindowInventory>(UIWindowManager.WindowUid
+                SceneGame.Instance.uIWindowManager.GetUIWindowByUid<UIWindowInventory>(UIWindowConstants.WindowUid
                     .Inventory);
         }
         /// <summary>
@@ -87,7 +87,7 @@ namespace GGemCo2DCore
             var icon = GetIconByIndex(0);
             if (icon == null) return;
             var infoParent = icon.GetParentInfo();
-            if (infoParent.Item1 == UIWindowManager.WindowUid.None)
+            if (infoParent.Item1 == UIWindowConstants.WindowUid.None)
             {
                 GcLogger.LogError("부모 아이콘 정보가 없습니다.");
                 return;

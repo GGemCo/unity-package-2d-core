@@ -12,7 +12,7 @@ namespace GGemCo2DCore
             UIWindowShopSale uiwindowShopSale = window as UIWindowShopSale;
             if (uiwindowShopSale == null) return;
             // UIWindow droppedWindow = droppedUIIcon.window;
-            UIWindowManager.WindowUid droppedWindowUid = droppedUIIcon.windowUid;
+            UIWindowConstants.WindowUid droppedWindowUid = droppedUIIcon.windowUid;
             int dropIconSlotIndex = droppedUIIcon.slotIndex;
             int dropIconUid = droppedUIIcon.uid;
             int dropIconCount = droppedUIIcon.GetCount();
@@ -27,13 +27,13 @@ namespace GGemCo2DCore
                 return;
             }
             // UIWindow targetWindow = targetUIIcon.window;
-            // UIWindowManager.WindowUid targetWindowUid = targetUIIcon.windowUid;
+            // UIWindowConstants.WindowUid targetWindowUid = targetUIIcon.windowUid;
             int targetIconSlotIndex = targetUIIcon.slotIndex;
             // int targetIconUid = targetUIIcon.uid;
             // int targetIconCount = targetUIIcon.GetCount();
 
             // 인벤토리에서 상점으로 드래그 앤 드랍 했을 때만 처리한다 
-            if (droppedWindowUid == UIWindowManager.WindowUid.Inventory && targetIconSlotIndex < uiwindowShopSale.maxCountIcon)
+            if (droppedWindowUid == UIWindowConstants.WindowUid.Inventory && targetIconSlotIndex < uiwindowShopSale.maxCountIcon)
             {
                 // 판매할 수 있는 아이템 인지 체크
                 if (droppedUIIcon.IsAntiFlag(ItemConstants.AntiFlag.ShopSale))
@@ -43,7 +43,7 @@ namespace GGemCo2DCore
                 else
                 {
                     SceneGame.Instance.uIWindowManager.RegisterIcon(droppedWindowUid, dropIconSlotIndex,
-                        UIWindowManager.WindowUid.ShopSale, dropIconCount);
+                        UIWindowConstants.WindowUid.ShopSale, dropIconCount);
                 }
             }
         }

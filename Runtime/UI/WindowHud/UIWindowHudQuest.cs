@@ -5,7 +5,7 @@ namespace GGemCo2DCore
 {
     public class UIWindowHudQuest : UIWindow
     {
-        [Header("윈도우 필수속성")]
+        [Header(UIWindowConstants.TitleHeaderIndividual)]
         [Tooltip("퀘스트 UI Element 프리팹")]
         public GameObject prefabElement;
         [Tooltip("퀘스트 UI Element가 들어갈 오브젝트")]
@@ -17,7 +17,7 @@ namespace GGemCo2DCore
         protected override void Awake()
         {
             // uid 를 먼저 지정해야 한다.
-            uid = UIWindowManager.WindowUid.HudQuest;
+            uid = UIWindowConstants.WindowUid.HudQuest;
             base.Awake();
         }
         /// <summary>

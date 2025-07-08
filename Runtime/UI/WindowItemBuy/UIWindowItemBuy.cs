@@ -9,7 +9,7 @@ namespace GGemCo2DCore
     /// </summary>
     public class UIWindowItemBuy : UIWindow
     {
-        [Header("기본오브젝트")]
+        [Header(UIWindowConstants.TitleHeaderIndividual)]
         [Tooltip("아이템 이름")]
         public TextMeshProUGUI textItemName;
         [Tooltip("아이템 개수")]
@@ -36,7 +36,7 @@ namespace GGemCo2DCore
         
         protected override void Awake()
         {
-            uid = UIWindowManager.WindowUid.ItemBuy;
+            uid = UIWindowConstants.WindowUid.ItemBuy;
             base.Awake();
             buttonConfirm.onClick.RemoveAllListeners();
             buttonCancel.onClick.RemoveAllListeners();

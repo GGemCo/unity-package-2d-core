@@ -14,7 +14,7 @@ namespace GGemCo2DCore
             UIIconItem uiIconItem = droppedUIIcon as UIIconItem;
             if (uiIconItem == null) return;
             // UIWindow droppedWindow = droppedUIIcon.window;
-            UIWindowManager.WindowUid droppedWindowUid = droppedUIIcon.windowUid;
+            UIWindowConstants.WindowUid droppedWindowUid = droppedUIIcon.windowUid;
             int dropIconSlotIndex = droppedUIIcon.slotIndex;
             int dropIconUid = droppedUIIcon.uid;
             // int dropIconCount = droppedUIIcon.GetCount();
@@ -29,7 +29,7 @@ namespace GGemCo2DCore
                 return;
             }
             // UIWindow targetWindow = targetUIIcon.window;
-            // UIWindowManager.WindowUid targetWindowUid = targetUIIcon.windowUid;
+            // UIWindowConstants.WindowUid targetWindowUid = targetUIIcon.windowUid;
             int targetIconSlotIndex = targetUIIcon.slotIndex;
             // int targetIconUid = targetUIIcon.uid;
             // int targetIconCount = targetUIIcon.GetCount();
@@ -40,7 +40,7 @@ namespace GGemCo2DCore
                 return;
             }
             // 인벤토리에서 상점으로 드래그 앤 드랍 했을 때만 처리한다 
-            if (droppedWindowUid == UIWindowManager.WindowUid.Inventory && targetIconSlotIndex < uiWindowItemUpgrade.maxCountIcon)
+            if (droppedWindowUid == UIWindowConstants.WindowUid.Inventory && targetIconSlotIndex < uiWindowItemUpgrade.maxCountIcon)
             {
                 // 분해할 수 있는 아이템 인지 체크
                 if (droppedUIIcon.IsAntiFlag(ItemConstants.AntiFlag.Upgrade))
@@ -52,9 +52,9 @@ namespace GGemCo2DCore
                 var registerIcon = uiWindowItemUpgrade.GetIconByIndex(uiWindowItemUpgrade.GetSourceIconSlotIndex());
                 if (registerIcon != null && registerIcon.uid > 0)
                 {
-                    SceneGame.Instance.uIWindowManager.UnRegisterIcon(UIWindowManager.WindowUid.ItemUpgrade, 0);
+                    SceneGame.Instance.uIWindowManager.UnRegisterIcon(UIWindowConstants.WindowUid.ItemUpgrade, 0);
                 }
-                SceneGame.Instance.uIWindowManager.RegisterIcon(UIWindowManager.WindowUid.Inventory, dropIconSlotIndex, UIWindowManager.WindowUid.ItemUpgrade, 1);
+                SceneGame.Instance.uIWindowManager.RegisterIcon(UIWindowConstants.WindowUid.Inventory, dropIconSlotIndex, UIWindowConstants.WindowUid.ItemUpgrade, 1);
             }
         }
 

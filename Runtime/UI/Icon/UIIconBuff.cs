@@ -10,7 +10,7 @@
         protected override void Awake()
         {
             base.Awake();
-            windowUid = UIWindowManager.WindowUid.PlayerBuffInfo;
+            windowUid = UIWindowConstants.WindowUid.PlayerBuffInfo;
             IconType = IconConstants.Type.Buff;
         }
         public void Initialize(int affectUid)

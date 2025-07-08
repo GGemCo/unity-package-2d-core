@@ -10,6 +10,7 @@ namespace GGemCo2DCore
     /// </summary>
     public class UIWindowShopSale : UIWindow
     {
+        [Header(UIWindowConstants.TitleHeaderIndividual)]
         [Tooltip("판매하기 버튼")] public Button buttonSale;
         [Tooltip("판매 총 금액 골드")] public TextMeshProUGUI textTotalPriceGold;
         [Tooltip("판매 총 금액 실버")] public TextMeshProUGUI textTotalPriceSilver;
@@ -25,7 +26,7 @@ namespace GGemCo2DCore
         
         protected override void Awake()
         {
-            uid = UIWindowManager.WindowUid.ShopSale;
+            uid = UIWindowConstants.WindowUid.ShopSale;
             if (TableLoaderManager.Instance == null) return;
             base.Awake();
             buttonSale?.onClick.RemoveAllListeners();
@@ -50,7 +51,7 @@ namespace GGemCo2DCore
                 ShopSaleData = SceneGame.saveDataManager.ShopSale;
             }
             uiWindowItemInfo = 
-                SceneGame.uIWindowManager.GetUIWindowByUid<UIWindowItemInfo>(UIWindowManager.WindowUid
+                SceneGame.uIWindowManager.GetUIWindowByUid<UIWindowItemInfo>(UIWindowConstants.WindowUid
                     .ItemInfo);
         }
         public override bool Show(bool show)

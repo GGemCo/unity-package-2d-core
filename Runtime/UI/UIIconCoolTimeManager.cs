@@ -9,9 +9,9 @@ namespace GGemCo2DCore
     /// </summary>
     public class UIIconCoolTimeManager : MonoBehaviour
     {
-        private readonly Dictionary<UIWindowManager.WindowUid, Dictionary<int, UICoolTimeHandler>> dictionaryCoolTime = new Dictionary<UIWindowManager.WindowUid, Dictionary<int, UICoolTimeHandler>>();
+        private readonly Dictionary<UIWindowConstants.WindowUid, Dictionary<int, UICoolTimeHandler>> dictionaryCoolTime = new Dictionary<UIWindowConstants.WindowUid, Dictionary<int, UICoolTimeHandler>>();
 
-        private void AddCoolTime(UIWindowManager.WindowUid windowUid, UIIcon icon, float coolTime)
+        private void AddCoolTime(UIWindowConstants.WindowUid windowUid, UIIcon icon, float coolTime)
         {
             dictionaryCoolTime.TryAdd(windowUid, new Dictionary<int, UICoolTimeHandler>());
             var handler = new UICoolTimeHandler();
@@ -32,7 +32,7 @@ namespace GGemCo2DCore
                 }
             }
         }
-        private UICoolTimeHandler GetCoolTimeHandler(UIWindowManager.WindowUid windowUid, int iconUid)
+        private UICoolTimeHandler GetCoolTimeHandler(UIWindowConstants.WindowUid windowUid, int iconUid)
         {
             return dictionaryCoolTime.TryGetValue(windowUid, out Dictionary<int, UICoolTimeHandler> handlers) ? handlers.GetValueOrDefault(iconUid) : null;
         }
@@ -42,7 +42,7 @@ namespace GGemCo2DCore
         /// <param name="windowUid"></param>
         /// <param name="iconUid"></param>
         /// <param name="remainTime"></param>
-        public void SetRemainCoolTime(UIWindowManager.WindowUid windowUid, int iconUid, float remainTime)
+        public void SetRemainCoolTime(UIWindowConstants.WindowUid windowUid, int iconUid, float remainTime)
         {
             if (remainTime <= 0) return;
             var handler = GetCoolTimeHandler(windowUid, iconUid);
@@ -58,7 +58,7 @@ namespace GGemCo2DCore
         /// </summary>
         /// <param name="windowUid"></param>
         /// <param name="iconUid"></param>
-        public void ResetCoolTime(UIWindowManager.WindowUid windowUid, int iconUid)
+        public void ResetCoolTime(UIWindowConstants.WindowUid windowUid, int iconUid)
         {
             var handler = GetCoolTimeHandler(windowUid, iconUid);
             if (handler == null)
@@ -74,7 +74,7 @@ namespace GGemCo2DCore
         /// <param name="windowUid"></param>
         /// <param name="iconUid"></param>
         /// <returns></returns>
-        public float GetCurrentCoolTime(UIWindowManager.WindowUid windowUid, int iconUid)
+        public float GetCurrentCoolTime(UIWindowConstants.WindowUid windowUid, int iconUid)
         {
             var handler = GetCoolTimeHandler(windowUid, iconUid);
             if (handler == null)
@@ -91,7 +91,7 @@ namespace GGemCo2DCore
         /// <param name="icon"></param>
         /// <param name="coolTime"></param>
         /// <returns></returns>
-        public bool StartHandler(UIWindowManager.WindowUid windowUid, UIIcon icon, float coolTime)
+        public bool StartHandler(UIWindowConstants.WindowUid windowUid, UIIcon icon, float coolTime)
         {
             var handler = GetCoolTimeHandler(windowUid, icon.uid);
             // 기존 handle 가 있으면 cool time 만 업데이트 

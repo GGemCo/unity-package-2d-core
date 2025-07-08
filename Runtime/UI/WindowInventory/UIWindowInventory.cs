@@ -11,11 +11,12 @@ namespace GGemCo2DCore
     /// </summary>
     public class UIWindowInventory : UIWindow
     {
-        [Header("모든 아이템 합치기 버튼")]
+        [Header(UIWindowConstants.TitleHeaderIndividual)]
+        [Tooltip("모든 아이템 합치기 버튼")]
         public Button buttonMergeAllItems;
-        public TableItem TableItem;
-        public InventoryData InventoryData;
-        public EquipData EquipData;
+        [HideInInspector] public TableItem TableItem;
+        [HideInInspector] public InventoryData InventoryData;
+        [HideInInspector] public EquipData EquipData;
         
         private GameObject _iconItem;
         private PopupManager _popupManager;
@@ -29,7 +30,7 @@ namespace GGemCo2DCore
 
         protected override void Awake()
         {
-            uid = UIWindowManager.WindowUid.Inventory;
+            uid = UIWindowConstants.WindowUid.Inventory;
             if (TableLoaderManager.Instance == null) return;
             TableItem = TableLoaderManager.Instance.TableItem;
             buttonMergeAllItems?.onClick.RemoveAllListeners();
@@ -50,22 +51,22 @@ namespace GGemCo2DCore
                 EquipData = SceneGame.saveDataManager.Equip;
             }
             _uiWindowItemInfo = 
-                SceneGame.uIWindowManager.GetUIWindowByUid<UIWindowItemInfo>(UIWindowManager.WindowUid
+                SceneGame.uIWindowManager.GetUIWindowByUid<UIWindowItemInfo>(UIWindowConstants.WindowUid
                     .ItemInfo);
             _uiWindowItemSplit =
-                SceneGame.uIWindowManager.GetUIWindowByUid<UIWindowItemSplit>(UIWindowManager.WindowUid
+                SceneGame.uIWindowManager.GetUIWindowByUid<UIWindowItemSplit>(UIWindowConstants.WindowUid
                     .ItemSplit);
             _uiWindowStash =
-                SceneGame.uIWindowManager.GetUIWindowByUid<UIWindowStash>(UIWindowManager.WindowUid
+                SceneGame.uIWindowManager.GetUIWindowByUid<UIWindowStash>(UIWindowConstants.WindowUid
                     .Stash);
             _uiWindowShopSale =
-                SceneGame.uIWindowManager.GetUIWindowByUid<UIWindowShopSale>(UIWindowManager.WindowUid
+                SceneGame.uIWindowManager.GetUIWindowByUid<UIWindowShopSale>(UIWindowConstants.WindowUid
                     .ShopSale);
             _uiWindowItemUpgrade =
-                SceneGame.uIWindowManager.GetUIWindowByUid<UIWindowItemUpgrade>(UIWindowManager.WindowUid
+                SceneGame.uIWindowManager.GetUIWindowByUid<UIWindowItemUpgrade>(UIWindowConstants.WindowUid
                     .ItemUpgrade);
             _uiWindowItemSalvage =
-                SceneGame.uIWindowManager.GetUIWindowByUid<UIWindowItemSalvage>(UIWindowManager.WindowUid
+                SceneGame.uIWindowManager.GetUIWindowByUid<UIWindowItemSalvage>(UIWindowConstants.WindowUid
                     .ItemSalvage);
         }
         public override void OnShow(bool show)
@@ -136,7 +137,7 @@ namespace GGemCo2DCore
                     return;
                 }
 
-                SceneGame.uIWindowManager.RegisterIcon(uid, icon.slotIndex, UIWindowManager.WindowUid.ShopSale,
+                SceneGame.uIWindowManager.RegisterIcon(uid, icon.slotIndex, UIWindowConstants.WindowUid.ShopSale,
                     icon.GetCount());
             }
             // 창고가 열려 있으면 창고로 이동
@@ -147,7 +148,7 @@ namespace GGemCo2DCore
                     SceneGame.systemMessageManager.ShowMessageWarning("It is an item that cannot be stored.");//"보관할 수 없는 아이템 입니다."
                     return;
                 }
-                SceneGame.uIWindowManager.MoveIcon(uid, icon.slotIndex, UIWindowManager.WindowUid.Stash, icon.GetCount());
+                SceneGame.uIWindowManager.MoveIcon(uid, icon.slotIndex, UIWindowConstants.WindowUid.Stash, icon.GetCount());
             }
             // 아이템 강화
             else if (_uiWindowItemUpgrade != null && _uiWindowItemUpgrade.IsOpen())
@@ -161,11 +162,11 @@ namespace GGemCo2DCore
                 var registerIcon = _uiWindowItemUpgrade.GetIconByIndex(_uiWindowItemUpgrade.GetSourceIconSlotIndex());
                 if (registerIcon != null && registerIcon.uid > 0)
                 {
-                    SceneGame.uIWindowManager.UnRegisterIcon(UIWindowManager.WindowUid.ItemUpgrade, 0);
+                    SceneGame.uIWindowManager.UnRegisterIcon(UIWindowConstants.WindowUid.ItemUpgrade, 0);
                 }
 
                 _uiWindowItemUpgrade.ShowTextResult(false);
-                SceneGame.uIWindowManager.RegisterIcon(uid, icon.slotIndex, UIWindowManager.WindowUid.ItemUpgrade, 1);
+                SceneGame.uIWindowManager.RegisterIcon(uid, icon.slotIndex, UIWindowConstants.WindowUid.ItemUpgrade, 1);
             }
             // 아이템 분해
             else if (_uiWindowItemSalvage != null && _uiWindowItemSalvage.IsOpen())
@@ -181,7 +182,7 @@ namespace GGemCo2DCore
                     SceneGame.systemMessageManager.ShowMessageWarning("The item can no longer be registered.");//"더 이상 아이템을 등록할 수 없습니다."
                     return;
                 }
-                SceneGame.uIWindowManager.RegisterIcon(uid, icon.slotIndex, UIWindowManager.WindowUid.ItemSalvage,
+                SceneGame.uIWindowManager.RegisterIcon(uid, icon.slotIndex, UIWindowConstants.WindowUid.ItemSalvage,
                     icon.GetCount());
             }
             else
@@ -190,7 +191,7 @@ namespace GGemCo2DCore
                 if (icon.IsEquipType())
                 {
                     var partSlotIndex = (int)icon.GetPartsType();
-                    SceneGame.uIWindowManager.MoveIcon(uid, icon.index, UIWindowManager.WindowUid.Equip, 1, partSlotIndex);
+                    SceneGame.uIWindowManager.MoveIcon(uid, icon.index, UIWindowConstants.WindowUid.Equip, 1, partSlotIndex);
                 }
                 // 물약 일때
                 else if (icon.IsPotionType())
@@ -279,7 +280,7 @@ namespace GGemCo2DCore
                 }
                 // 팝업창 띄우기
                 if (_uiWindowItemSplit == null) return;
-                SceneGame.Instance.uIWindowManager.RegisterIcon(uid, icon.slotIndex, UIWindowManager.WindowUid.ItemSplit, icon.GetCount());
+                SceneGame.Instance.uIWindowManager.RegisterIcon(uid, icon.slotIndex, UIWindowConstants.WindowUid.ItemSplit, icon.GetCount());
             }
         }
         /// <summary>

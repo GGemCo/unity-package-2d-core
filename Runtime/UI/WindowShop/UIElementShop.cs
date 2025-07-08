@@ -34,10 +34,10 @@ namespace GGemCo2DCore
         {
             sceneGame = SceneGame.Instance;
             uIWindowItemBuy  = 
-                sceneGame.uIWindowManager.GetUIWindowByUid<UIWindowItemBuy>(UIWindowManager.WindowUid
+                sceneGame.uIWindowManager.GetUIWindowByUid<UIWindowItemBuy>(UIWindowConstants.WindowUid
                     .ItemBuy);
             uIWindowItemInfo  = 
-                sceneGame.uIWindowManager.GetUIWindowByUid<UIWindowItemInfo>(UIWindowManager.WindowUid
+                sceneGame.uIWindowManager.GetUIWindowByUid<UIWindowItemInfo>(UIWindowConstants.WindowUid
                     .ItemInfo);
         }
 
@@ -113,7 +113,7 @@ namespace GGemCo2DCore
                 }
                 
                 uIWindowItemBuy?.SetPriceInfo(struckTableShop);
-                SceneGame.Instance.uIWindowManager.RegisterIcon(uiWindowShop.uid, slotIndex, UIWindowManager.WindowUid.ItemBuy, count);
+                SceneGame.Instance.uIWindowManager.RegisterIcon(uiWindowShop.uid, slotIndex, UIWindowConstants.WindowUid.ItemBuy, count);
             }
             // 한번에 하나만 살 수 있는지
             // 골드가 충분하지 체크

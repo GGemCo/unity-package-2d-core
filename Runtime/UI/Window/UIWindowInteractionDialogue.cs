@@ -9,7 +9,7 @@ namespace GGemCo2DCore
 {
     public class UIWindowInteractionDialogue : UIWindow
     {
-        [Header("필수속성")]
+        [Header(UIWindowConstants.TitleHeaderIndividual)]
         [Tooltip("캐릭터 썸네일")]
         public Image imageThumbnail;
         [Tooltip("캐릭터 이름")]
@@ -41,7 +41,7 @@ namespace GGemCo2DCore
         protected override void Awake()
         {
             _currentCharacterUid = 0;
-            uid = UIWindowManager.WindowUid.InteractionDialogue;
+            uid = UIWindowConstants.WindowUid.InteractionDialogue;
             base.Awake();
             InitializeButtonChoice();
         }
@@ -50,17 +50,17 @@ namespace GGemCo2DCore
         {
             base.Start();
             _uiWindowShop =
-                SceneGame.uIWindowManager?.GetUIWindowByUid<UIWindowShop>(UIWindowManager.WindowUid.Shop);
+                SceneGame.uIWindowManager?.GetUIWindowByUid<UIWindowShop>(UIWindowConstants.WindowUid.Shop);
             _uiWindowStash =
-                SceneGame.uIWindowManager?.GetUIWindowByUid<UIWindowStash>(UIWindowManager.WindowUid.Stash);
+                SceneGame.uIWindowManager?.GetUIWindowByUid<UIWindowStash>(UIWindowConstants.WindowUid.Stash);
             _uiWindowShopSale =
-                SceneGame.uIWindowManager?.GetUIWindowByUid<UIWindowShopSale>(UIWindowManager.WindowUid.ShopSale);
+                SceneGame.uIWindowManager?.GetUIWindowByUid<UIWindowShopSale>(UIWindowConstants.WindowUid.ShopSale);
             _uiWindowItemUpgrade =
-                SceneGame.uIWindowManager?.GetUIWindowByUid<UIWindowItemUpgrade>(UIWindowManager.WindowUid.ItemUpgrade);
+                SceneGame.uIWindowManager?.GetUIWindowByUid<UIWindowItemUpgrade>(UIWindowConstants.WindowUid.ItemUpgrade);
             _uiWindowItemSalvage =
-                SceneGame.uIWindowManager?.GetUIWindowByUid<UIWindowItemSalvage>(UIWindowManager.WindowUid.ItemSalvage);
+                SceneGame.uIWindowManager?.GetUIWindowByUid<UIWindowItemSalvage>(UIWindowConstants.WindowUid.ItemSalvage);
             _uiWindowItemCraft =
-                SceneGame.uIWindowManager?.GetUIWindowByUid<UIWindowItemCraft>(UIWindowManager.WindowUid.ItemCraft);
+                SceneGame.uIWindowManager?.GetUIWindowByUid<UIWindowItemCraft>(UIWindowConstants.WindowUid.ItemCraft);
             _tableQuest = TableLoaderManager.Instance.TableQuest;
             _questManager = SceneGame.Instance.QuestManager;
         }

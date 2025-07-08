@@ -14,7 +14,7 @@ namespace GGemCo2DCore
             UIWindowInventory uiWindowInventory = window as UIWindowInventory;
             if (uiWindowInventory == null) return;
             UIWindow droppedWindow = droppedUIIcon.window;
-            UIWindowManager.WindowUid droppedWindowUid = droppedUIIcon.windowUid;
+            UIWindowConstants.WindowUid droppedWindowUid = droppedUIIcon.windowUid;
             int dropIconSlotIndex = droppedUIIcon.slotIndex;
             int dropIconUid = droppedUIIcon.uid;
             int dropIconCount = droppedUIIcon.GetCount();
@@ -29,7 +29,7 @@ namespace GGemCo2DCore
                 return;
             }
             UIWindow targetWindow = targetUIIcon.window;
-            UIWindowManager.WindowUid targetWindowUid = targetUIIcon.windowUid;
+            UIWindowConstants.WindowUid targetWindowUid = targetUIIcon.windowUid;
             int targetIconSlotIndex = targetUIIcon.slotIndex;
             int targetIconUid = targetUIIcon.uid;
             int targetIconCount = targetUIIcon.GetCount();
@@ -39,10 +39,10 @@ namespace GGemCo2DCore
             {
                 switch (droppedWindowUid)
                 {
-                    case UIWindowManager.WindowUid.Stash:
-                        SceneGame.Instance.uIWindowManager.MoveIcon(UIWindowManager.WindowUid.Stash, dropIconSlotIndex, UIWindowManager.WindowUid.Inventory, dropIconCount);
+                    case UIWindowConstants.WindowUid.Stash:
+                        SceneGame.Instance.uIWindowManager.MoveIcon(UIWindowConstants.WindowUid.Stash, dropIconSlotIndex, UIWindowConstants.WindowUid.Inventory, dropIconCount);
                         break;
-                    case UIWindowManager.WindowUid.Equip:
+                    case UIWindowConstants.WindowUid.Equip:
                         // 같은 uid 아이템인지 확인
                         if (droppedUIIcon.uid == targetUIIcon.uid || targetUIIcon.uid <= 0)
                         {
@@ -77,11 +77,11 @@ namespace GGemCo2DCore
                             SceneGame.Instance.systemMessageManager.ShowMessageWarning("It is an item that cannot be fitted to the area.");//"해당 부위에 장착할 수 없는 아이템입니다."
                         }
                         break;
-                    case UIWindowManager.WindowUid.None:
-                    case UIWindowManager.WindowUid.Hud:
-                    case UIWindowManager.WindowUid.Inventory:
-                    case UIWindowManager.WindowUid.ItemInfo:
-                    case UIWindowManager.WindowUid.PlayerInfo:
+                    case UIWindowConstants.WindowUid.None:
+                    case UIWindowConstants.WindowUid.Hud:
+                    case UIWindowConstants.WindowUid.Inventory:
+                    case UIWindowConstants.WindowUid.ItemInfo:
+                    case UIWindowConstants.WindowUid.PlayerInfo:
                         break;
                     default:
                         throw new ArgumentOutOfRangeException();

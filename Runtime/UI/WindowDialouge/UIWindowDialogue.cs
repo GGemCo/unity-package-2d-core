@@ -9,25 +9,25 @@ namespace GGemCo2DCore
 {
     public class UIWindowDialogue : UIWindow
     {
-        [Header("대사속성")]
+        [Header(UIWindowConstants.TitleHeaderIndividual)]
         [Tooltip("말하는 캐릭터 썸네일")]
         public Image imageThumbnail;
         [Tooltip("말하는 캐릭터 이름")]
         public TextMeshProUGUI textName;
         [Tooltip("대사")]
         public TextMeshProUGUI textMessage;
+        [Tooltip("한번에 보여줄 대사 라인 수")]
+        public int maxLineCount = 3;
+
+        [Header("")]
         [Tooltip("선택지 버튼 프리팹")]
         public GameObject prefabButtonAnswer;
         [Tooltip("선택지 버튼이 들어가는 Panel")]
         public Transform containerAnswer;
-        [Tooltip("한번에 보여줄 대사 라인 수")]
-        public int maxLineCount = 3;
-
-        [Header("버튼")]
-        [Tooltip("다음 대사 보기")]
-        public Button buttonNextMessage;
-        [Tooltip("선택지 왼쪽, 오른쪽 여백 사이즈ㅂ")]
+        [Tooltip("선택지 버튼 왼쪽, 오른쪽 여백 사이즈")]
         public int paddingWidth = 20;
+        [Tooltip("다음 대사 보기 버튼")]
+        public Button buttonNextMessage;
 
         private float _originalFontSize;
         private int _indexMessage;
@@ -44,7 +44,7 @@ namespace GGemCo2DCore
         
         protected override void Awake()
         {
-            uid = UIWindowManager.WindowUid.Dialogue;
+            uid = UIWindowConstants.WindowUid.Dialogue;
             base.Awake();
             Initialize();
         }

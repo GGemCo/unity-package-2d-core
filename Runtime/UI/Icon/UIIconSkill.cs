@@ -25,7 +25,7 @@ namespace GGemCo2DCore
             base.Start();
             uiWindowSkillInfo =
                 SceneGame.Instance.uIWindowManager.GetUIWindowByUid<UIWindowSkillInfo>(
-                    UIWindowManager.WindowUid.SkillInfo);
+                    UIWindowConstants.WindowUid.SkillInfo);
             skillData = SceneGame.Instance.saveDataManager.Skill;
         }
         /// <summary>
