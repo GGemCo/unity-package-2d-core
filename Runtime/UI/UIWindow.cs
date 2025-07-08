@@ -99,7 +99,6 @@ namespace GGemCo2DCore
             {
                 UIWindowConstants.WindowUid.Skill => new SlotIconBuildStrategySkill(),
                 UIWindowConstants.WindowUid.ItemSalvage => new SlotIconBuildStrategyItemSalvage(),
-                UIWindowConstants.WindowUid.ItemCraft => new SlotIconBuildStrategyItemCraft(),
                 // UIWindowConstants.WindowUid.QuestReward => new SlotIconBuildStrategyQuestReward(),
                 _ => null,
             };
