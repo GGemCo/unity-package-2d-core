@@ -47,21 +47,22 @@ namespace GGemCo2DCoreEditor
         {
             _objGGemCoCore = GetOrCreateCoreGameObject();
             // GGemCo2DCore.SceneIntro GameObject 만들기
-            GGemCo2DCore.SceneIntro scene = CreateOrAddComponent<GGemCo2DCore.SceneIntro>("SceneIntro");
+            GGemCo2DCore.SceneIntro scene = CreateOrAddComponent<GGemCo2DCore.SceneIntro>(nameof(SceneIntro));
             
             // 새 게임 버튼 만들고 연결하기
-            string fieldName = "buttonNewGame";
-            Button createdButton = CreateUIComponent.CreateObjectButton(fieldName, "New Game");
+            MetaDataButton metaDataButton = new MetaDataButton(scene.GetFieldNameButtonNewGame(), "New Game",
+                LocalizationConstants.Tables.Scene, LocalizationConstants.Keys.Intro.ButtonNewGame());
+            Button createdButton = CreateUIComponent.CreateObjectButton(metaDataButton);
             scene.SetButtonNewGame(createdButton);
             
             // 계속 하기 버튼 만들고 연결하기
-            fieldName = "buttonGameContinue";
-            Button buttonGameContinue = CreateUIComponent.CreateObjectButton(fieldName, "Continue Game");
+            metaDataButton = new MetaDataButton(scene.GetFieldNameButtonGameContinue(), "Continue Game",
+                LocalizationConstants.Tables.Scene, LocalizationConstants.Keys.Intro.ButtonContinue());
+            Button buttonGameContinue = CreateUIComponent.CreateObjectButton(metaDataButton);
             scene.SetButtonGameContinue(buttonGameContinue);
             buttonGameContinue.gameObject.transform.localPosition = new Vector2(0, 100);
             
             EditorUtility.SetDirty(scene);
-            Debug.Log($"{fieldName} 버튼이 생성되어 {scene.name} 에 연결되었습니다.");
         }
         /// <summary>
         /// 옵션 항목 셋팅 하기
@@ -97,7 +98,7 @@ namespace GGemCo2DCoreEditor
         /// <param name="scene"></param>
         private void SetupPopupManager(SceneIntro scene)
         {
-            GameObject obj = CreateUIComponent.CreateGameObjectByPrefab("PopupManager", _objGGemCoCore.transform, ConfigEditor.PathPrefabPopupManager);
+            GameObject obj = CreateUIComponent.CreateGameObjectByPrefab(scene.GetFieldNamePopupManager(), _objGGemCoCore.transform, ConfigEditor.PathPrefabPopupManager);
             if (!obj) return;
             PopupManager popupManager = obj.GetComponent<PopupManager>();
             
@@ -122,12 +123,12 @@ namespace GGemCo2DCoreEditor
                 return;
             }
 
-            string objectName = "UIWindowLoadSaveData";
+            string objectName = scene.GetNameUIWindowLoadSaveData();
             GameObject prefab = FindPrefabByName(ConfigEditor.PathUIWindow, objectName);
             if (!prefab) return;
             
             GameObject gameObject = GameObject.Find(objectName);
-            PopupManager popupManager = CreateUIComponent.Find("PopupManager")?.GetComponent<PopupManager>();
+            PopupManager popupManager = CreateUIComponent.Find(scene.GetFieldNamePopupManager())?.GetComponent<PopupManager>();
             if (!gameObject)
             {
                 // 프리팹 인스턴스화
@@ -153,8 +154,9 @@ namespace GGemCo2DCoreEditor
             }
             
             // 불러오기 버튼 생성
-            string fieldName = "buttonOpenSaveDataWindow";
-            Button createdButton = CreateUIComponent.CreateObjectButton(fieldName, "Load Game");
+            MetaDataButton metaDataButton = new MetaDataButton(scene.GetFieldNameButtonOpenSaveDataWindow(), "Load Game",
+                LocalizationConstants.Tables.Scene, LocalizationConstants.Keys.Intro.ButtonLoad());
+            Button createdButton = CreateUIComponent.CreateObjectButton(metaDataButton);
             scene.SetButtonOpenSaveDataWindow(createdButton);
             createdButton.gameObject.transform.localPosition = new Vector2(0, -100);
             EditorUtility.SetDirty(scene);

@@ -173,30 +173,32 @@ namespace GGemCo2DCore
         {
             _progressTotal = _loadProgressTable + _loadProgressPrefabCommon + _loadProgressPrefabEffect +
                              _loadProgressItem + _loadProgressSkill + _loadProgressSaveData;
-            string subTitle = "Tables";
-            if (type == Type.GamePrefab)
+            string subKey = LocalizationConstants.Keys.Loading.TextTypeTables();
+            switch (type)
             {
-                subTitle = "Resources";
+                case Type.GamePrefab:
+                    subKey = LocalizationConstants.Keys.Loading.TextTypePrefab();
+                    break;
+                case Type.SaveData:
+                    subKey = LocalizationConstants.Keys.Loading.TextTypeSaveData();
+                    break;
+                case Type.GamePrefabEffect:
+                    subKey = LocalizationConstants.Keys.Loading.TextTypeEffect();
+                    break;
+                case Type.Item:
+                    subKey = LocalizationConstants.Keys.Loading.TextTypeItem();
+                    break;
+                case Type.Skill:
+                    subKey = LocalizationConstants.Keys.Loading.TextTypeSkill();
+                    break;
             }
-            else if (type == Type.SaveData)
-            {
-                subTitle = "Save Data";
-            }
-            else if (type == Type.GamePrefabEffect)
-            {
-                subTitle = "Effect Resources";
-            }
-            else if (type == Type.Item)
-            {
-                subTitle = "Item Data";
-            }
-            else if (type == Type.Skill)
-            {
-                subTitle = "Skill Data";
-            }
+
+            string subTitle = LocalizationManager.Instance.GetSceneByKey(subKey);
+            string template = LocalizationManager.Instance.GetSceneByKey(LocalizationConstants.Keys.Loading.TextLoadingPercent());
+
             if (textLoadingPercent != null)
             {
-                textLoadingPercent.text = $"{subTitle} Loading... {Mathf.Floor(_progressTotal)}%";
+                textLoadingPercent.text = string.Format(template, subTitle, Mathf.FloorToInt(_progressTotal));
             }
         }
     }

@@ -1,4 +1,5 @@
-﻿using UnityEngine;
+﻿using System;
+using UnityEngine;
 using UnityEngine.UI;
 
 namespace GGemCo2DCore
@@ -8,20 +9,24 @@ namespace GGemCo2DCore
     /// </summary>
     public class SceneIntro : MonoBehaviour
     {
+        public string GetFieldNameSceneIntro() => nameof(SceneIntro);
         [HideInInspector] public AddressableLoaderSettings addressableLoaderSettings;
         
         [Header("[필수 항목]")]
         [Header("새 게임 버튼")]
         [SerializeField] private Button buttonNewGame;
         public void SetButtonNewGame(Button value) => buttonNewGame = value;
+        public string GetFieldNameButtonNewGame() => nameof(buttonNewGame);
         [Header("계속하기 버튼")]
         [SerializeField] private Button buttonGameContinue;
         public void SetButtonGameContinue(Button value) => buttonGameContinue = value;
+        public string GetFieldNameButtonGameContinue() => nameof(buttonGameContinue);
         
         [Header("[선택 항목]")]
         [Header("불러오기 버튼")]
         [SerializeField] private Button buttonOpenSaveDataWindow;
         public void SetButtonOpenSaveDataWindow(Button value) => buttonOpenSaveDataWindow = value;
+        public string GetFieldNameButtonOpenSaveDataWindow() => nameof(buttonOpenSaveDataWindow);
         [Header("옵션 버튼")]
         [SerializeField] private Button buttonOption;
         [Header("게임종료 버튼")]
@@ -29,9 +34,11 @@ namespace GGemCo2DCore
         [Header("불러오기 window")]
         [SerializeField] private UIWindowLoadSaveData uIWindowLoadSaveData;
         public void SetUIWindowLoadSaveData(UIWindowLoadSaveData value) => uIWindowLoadSaveData = value;
+        public string GetNameUIWindowLoadSaveData() => nameof(UIWindowLoadSaveData);
         [Header("팝업 매니저")]
         [SerializeField] private PopupManager popupManager;
         public void SetPopupManager(PopupManager value) => popupManager = value;
+        public string GetFieldNamePopupManager() => nameof(PopupManager);
 
         private SlotMetaDatController _slotMetaDatController;
         private GGemCoSaveSettings _saveDataSettings;
@@ -39,12 +46,20 @@ namespace GGemCo2DCore
         {
             InitButtons();
             InitializeAddressableSettingLoader();
+            InitializeLocalization();
 
             if (uIWindowLoadSaveData)
             {
                 uIWindowLoadSaveData.OnUpdateSlotData += UpdateButtons;
             }
         }
+
+        private void InitializeLocalization()
+        {
+            GameObject gameObjectLocalizationManager = new GameObject("LocalizationManager");
+            gameObjectLocalizationManager.AddComponent<LocalizationManager>();
+        }
+
         /// <summary>
         /// GGemCo Settings 파일 읽어오기
         /// </summary>
@@ -98,6 +113,16 @@ namespace GGemCo2DCore
                 buttonOpenSaveDataWindow?.gameObject.SetActive(false);
             }
         }
+
+        private void Start()
+        {
+            if (LocalizationManager.Instance)
+            {
+                int index = PlayerPrefsManager.LoadIndexLocalizationLocale();
+                LocalizationManager.Instance.StartChangeLocale(index);
+            }
+        }
+
         private void UpdateButtons()
         {
             // 남은 슬롯 index 채크해서 없으면 buttonNewGame 버튼 disable 처리 
@@ -126,12 +151,12 @@ namespace GGemCo2DCore
                 // PlayerPrefs 에서 가져온 값이 있는지 체크 
                 if (PlayerPrefsManager.LoadSaveDataSlotIndex() <= 0)
                 {
-                    popupManager.ShowPopupError("There is no selected slot. Please load it.");//"선택된 슬롯이 없습니다. 불러오기를 해주세요."
+                    popupManager.ShowPopupError("There is no selected slot.\nPlease load it.");//"선택된 슬롯이 없습니다.\n불러오기를 해주세요."
                     return;
                 }
                 // GcLogger.Log("currentSaveDataSlotIndex: " + currentSaveDataSlotIndex);
             }
-
+            
             SceneManager.ChangeScene(ConfigDefine.SceneNameLoading);
         }
         /// <summary>
@@ -145,7 +170,8 @@ namespace GGemCo2DCore
                 int slotIndex = _slotMetaDatController.GetEmptySlotIndex();
                 if (slotIndex <= 0)
                 {
-                    GcLogger.LogError("남은 저장 슬롯이 없습니다. 저장되어있는 데이터를 지워주세요.");
+                    popupManager.ShowPopupError("There is no selected slot. Please load it.");//"남은 저장 슬롯이 없습니다.\n저장되어있는 데이터를 지워주세요."
+                    // GcLogger.LogError("남은 저장 슬롯이 없습니다. 저장되어있는 데이터를 지워주세요.");
                     return;
                 }
                 // GcLogger.Log("slotindex : " + slotIndex);
