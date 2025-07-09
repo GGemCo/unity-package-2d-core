@@ -1,4 +1,6 @@
-﻿namespace GGemCo2DCore
+﻿using System.Collections.Generic;
+
+namespace GGemCo2DCore
 {
     public static class LocalizationConstants
     {
@@ -17,6 +19,12 @@
         /// 기본 언어
         /// </summary>
         public static readonly LanguageIndex DefaultLanguageIndex = LanguageIndex.En;
+
+        public static readonly Dictionary<LanguageIndex, string> LanguageNames = new Dictionary<LanguageIndex, string>()
+        {
+            { LanguageIndex.En, "English" },
+            { LanguageIndex.Ko, "한국어" },
+        };
 
         /// <summary>
         /// Localization Table 이름 정의
@@ -56,6 +64,8 @@
                 public static string ButtonNewGame() => $"{NameIntro}_{NameButton}_NewGame";
                 public static string ButtonContinue() => $"{NameIntro}_{NameButton}_Continue";
                 public static string ButtonLoad() => $"{NameIntro}_{NameButton}_Load";
+
+                public static string ButtonOption() => $"{NameIntro}_{NameButton}_Option";
             }
             public static class Loading
             {

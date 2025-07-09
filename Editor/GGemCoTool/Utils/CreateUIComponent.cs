@@ -37,11 +37,14 @@ namespace GGemCo2DCoreEditor
         public readonly float FontSize;
         public readonly TextMeshProHelper.HorizontalAlignment HorizontalAlignment;
         public readonly TextMeshProHelper.VerticalAlignment VerticalAlignment;
+        public readonly string LocalizationTable;
+        public readonly string LocalizationKey;
 
         public MetaDataTextMeshProGUI(Vector2 pivot, Vector2 position, AnchorPresets anchorPresets, float width = 0,
             float height = 0, float fontSize = 0,
             TextMeshProHelper.HorizontalAlignment horizontalAlignment = TextMeshProHelper.HorizontalAlignment.Center,
-            TextMeshProHelper.VerticalAlignment verticalAlignment = TextMeshProHelper.VerticalAlignment.Middle)
+            TextMeshProHelper.VerticalAlignment verticalAlignment = TextMeshProHelper.VerticalAlignment.Middle,
+            string localizationTable = "", string localizationKey = "")
         {
             Pivot = pivot;
             Position = position;
@@ -51,6 +54,8 @@ namespace GGemCo2DCoreEditor
             FontSize = fontSize;
             HorizontalAlignment = horizontalAlignment;
             VerticalAlignment = verticalAlignment;
+            LocalizationTable = localizationTable;
+            LocalizationKey = localizationKey;
         }
     }
     public abstract class CreateUIComponent
@@ -170,23 +175,33 @@ namespace GGemCo2DCoreEditor
                 return null;
             }
             TextMeshProUGUI buttonText = button.GetComponentInChildren<TextMeshProUGUI>();
+            AddLocalizeStringEvent(buttonText, localizationTable, localizationKey);
             if (buttonText)
             {
-                if (!string.IsNullOrEmpty(localizationTable) && !string.IsNullOrEmpty(localizationKey))
-                {
-                    var localizeEvent = buttonText.gameObject.GetComponent<LocalizeStringEvent>();
-                    if (localizeEvent == null)
-                    {
-                        localizeEvent = buttonText.gameObject.AddComponent<LocalizeStringEvent>();
-                    }
+                buttonText.text = text;
+            }
 
-                    // 테이블 및 키 설정
-                    localizeEvent.SetTable(localizationTable);
-                    localizeEvent.SetEntry(localizationKey);
+            return button;
+        }
+
+        private static void AddLocalizeStringEvent(TextMeshProUGUI objectText, string localizationTable, string localizationKey)
+        {
+            if (objectText == null) return;
+            if (string.IsNullOrEmpty(localizationTable) || string.IsNullOrEmpty(localizationKey)) return;
+            
+            var localizeEvent = objectText.gameObject.GetComponent<LocalizeStringEvent>();
+            if (localizeEvent == null)
+            {
+                localizeEvent = objectText.gameObject.AddComponent<LocalizeStringEvent>();
+            }
+
+            // 테이블 및 키 설정
+            localizeEvent.SetTable(localizationTable);
+            localizeEvent.SetEntry(localizationKey);
 
 #if UNITY_6000_0_OR_NEWER
-                    // Update String 에 추가하기
-                    UnityEditor.Events.UnityEventTools.AddPersistentListener(localizeEvent.OnUpdateString, buttonText.SetText);
+            // Update String 에 추가하기
+            UnityEditor.Events.UnityEventTools.AddPersistentListener(localizeEvent.OnUpdateString, objectText.SetText);
 #else
                     var proxy = buttonText.GetComponent<LocalizationTextProxy>();
                     if (proxy == null)
@@ -197,19 +212,13 @@ namespace GGemCo2DCoreEditor
                     // Update String 에 추가하기
                     UnityEditor.Events.UnityEventTools.AddPersistentListener(localizeEvent.OnUpdateString, proxy.SetText);
 #endif
-                    // EditorAndRuntime 모드로 작동되도록 설정
-                    for (var i = 0; i < localizeEvent.OnUpdateString.GetPersistentEventCount(); i++)
-                    {
-                        localizeEvent.OnUpdateString.SetPersistentListenerState(i, UnityEventCallState.EditorAndRuntime);
-                    }
-                    
-                    localizeEvent.RefreshString();
-                }
-
-                buttonText.text = text;
+            // EditorAndRuntime 모드로 작동되도록 설정
+            for (var i = 0; i < localizeEvent.OnUpdateString.GetPersistentEventCount(); i++)
+            {
+                localizeEvent.OnUpdateString.SetPersistentListenerState(i, UnityEventCallState.EditorAndRuntime);
             }
-
-            return button;
+                    
+            localizeEvent.RefreshString();
         }
         public static TextMeshProUGUI CreateObjectText(string objectName, MetaDataTextMeshProGUI metaDataTextMeshProGUI = null)
         {
@@ -231,11 +240,15 @@ namespace GGemCo2DCoreEditor
             TextMeshProUGUI textMeshProUGUI = obj.GetComponent<TextMeshProUGUI>();
             if (!textMeshProUGUI)
             {
-                Debug.LogError("Button 컴포넌트를 찾을 수 없습니다.");
+                Debug.LogError("TextMeshProUGUI 컴포넌트를 찾을 수 없습니다.");
                 return null;
             }
-
+                
             if (metaDataTextMeshProGUI == null) return textMeshProUGUI;
+            
+            string localizationTable = metaDataTextMeshProGUI.LocalizationTable;
+            string localizationKey = metaDataTextMeshProGUI.LocalizationKey;
+            AddLocalizeStringEvent(textMeshProUGUI, localizationTable, localizationKey);
             
             textMeshProUGUI.rectTransform.SetAnchor(metaDataTextMeshProGUI.AnchorPresets);
             textMeshProUGUI.rectTransform.anchoredPosition = metaDataTextMeshProGUI.Position;

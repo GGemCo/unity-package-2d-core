@@ -33,8 +33,7 @@ namespace GGemCo2DCoreEditor
         private void DrawRequiredSection()
         {
             Common.OnGUITitle("필수 항목");
-            EditorGUILayout.HelpBox($"* 인트로 씬 오브젝트\n* 게임 시작 버튼\n* 계속 하기 버튼", MessageType.Info);
-
+            EditorGUILayout.HelpBox($"* 인트로 씬 오브젝트\n* 게임 시작 버튼\n* 계속 하기 버튼\n* 옵션 버튼\n* 옵션 윈도우", MessageType.Info);
             if (GUILayout.Button("필수 항목 셋팅하기"))
             {
                 SetupRequiredObjects();
@@ -61,6 +60,40 @@ namespace GGemCo2DCoreEditor
             Button buttonGameContinue = CreateUIComponent.CreateObjectButton(metaDataButton);
             scene.SetButtonGameContinue(buttonGameContinue);
             buttonGameContinue.gameObject.transform.localPosition = new Vector2(0, 100);
+            
+            // 옵션 버튼 만들고 연결하기
+            metaDataButton = new MetaDataButton(scene.GetFieldNameButtonOption(), "Option",
+                LocalizationConstants.Tables.Scene, LocalizationConstants.Keys.Intro.ButtonOption());
+            Button buttonOption = CreateUIComponent.CreateObjectButton(metaDataButton);
+            scene.SetButtonOption(buttonOption);
+            buttonOption.gameObject.transform.localPosition = new Vector2(0, -100);
+            
+            // 옵션 윈도우 추가
+            GameObject canvas = CreateUIComponent.Find("Canvas");
+            string objectName = scene.GetNameUIWindowOption();
+            GameObject prefab = FindPrefabByName(ConfigEditor.PathUIWindow, objectName);
+            if (!prefab) return;
+            
+            GameObject gameObject = GameObject.Find(objectName);
+            if (!gameObject)
+            {
+                // 프리팹 인스턴스화
+                gameObject = PrefabUtility.InstantiatePrefab(prefab, canvas.transform) as GameObject;
+                if (!gameObject)
+                {
+                    Debug.LogError("프리팹 인스턴스 생성 실패");
+                    return;
+                }
+                gameObject.name = objectName;
+                // 프리팹 해제
+                PrefabUtility.UnpackPrefabInstance(
+                    gameObject,
+                    PrefabUnpackMode.Completely,
+                    InteractionMode.UserAction
+                );
+            }
+            UIWindowOption uiWindowOption = gameObject.GetComponent<UIWindowOption>();
+            scene.SetUIWindowOption(uiWindowOption);
             
             EditorUtility.SetDirty(scene);
         }
@@ -128,8 +161,10 @@ namespace GGemCo2DCoreEditor
                 LocalizationConstants.Tables.Scene, LocalizationConstants.Keys.Intro.ButtonLoad());
             Button createdButton = CreateUIComponent.CreateObjectButton(metaDataButton);
             scene.SetButtonOpenSaveDataWindow(createdButton);
-            createdButton.gameObject.transform.localPosition = new Vector2(0, -100);
+            createdButton.gameObject.transform.SetSiblingIndex(0);
+            createdButton.gameObject.transform.localPosition = new Vector2(0, -200);
 
+            // 불러오기 UI 생성
             string objectName = scene.GetNameUIWindowLoadSaveData();
             GameObject prefab = FindPrefabByName(ConfigEditor.PathUIWindow, objectName);
             if (!prefab) return;
@@ -160,9 +195,8 @@ namespace GGemCo2DCoreEditor
                 uiWindowLoadSaveData.SetPopupManager(popupManager);
             }
             
-            EditorUtility.SetDirty(scene);
-            
             scene.SetUIWindowLoadSaveData(uiWindowLoadSaveData);
+            EditorUtility.SetDirty(scene);
         }
     }
 }

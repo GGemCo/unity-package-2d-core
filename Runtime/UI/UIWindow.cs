@@ -115,8 +115,12 @@ namespace GGemCo2DCore
             {
                 gameObject.SetActive(false);
             }
-            SceneGame = SceneGame.Instance;
-            _interactionManager = SceneGame.InteractionManager;
+
+            if (SceneGame.Instance)
+            {
+                SceneGame = SceneGame.Instance;
+                _interactionManager = SceneGame.InteractionManager;
+            }
         }
         /// <summary>
         /// 아이콘 지우기 

@@ -38,10 +38,18 @@ namespace GGemCo2DCore
                 Destroy(gameObject);
                 return;
             }
-
-            InitializeLanguageCodes();
             _stringDatabase = LocalizationSettings.StringDatabase;
             _assetDatabase = LocalizationSettings.AssetDatabase;
+
+            InitializeLanguageCodes();
+            InitializeCurrentLocale();
+            StartCoroutine(CheckUserTablesExist());
+        }
+
+        private void InitializeCurrentLocale()
+        {
+            int index = PlayerPrefsManager.LoadIndexLocalizationLocale();
+            StartChangeLocale(index);
         }
 
         /// <summary>
@@ -74,17 +82,18 @@ namespace GGemCo2DCore
             var locales = LocalizationSettings.AvailableLocales.Locales;
             if (index < 0 || index >= locales.Count)
             {
-                Debug.LogWarning($"[LocalizationManager] Invalid locale index: {index}");
+                GcLogger.LogWarning($"[LocalizationManager] Invalid locale index: {index}");
                 _isChanging = false;
                 yield break;
             }
-            yield return CheckUserTablesExist();
 
             LocalizationSettings.SelectedLocale = locales[index];
             PlayerPrefsManager.SaveIndexLocalizationLocale(index);
             CurrentLanguageCode = _languageCodes[index];
 
             _isChanging = false;
+            // GcLogger.Log($"[LocalizationManager] change success. locale index: {index}");
+            PlayerPrefsManager.SaveIndexLocalizationLocale(index);
             onChangeLocale?.Invoke();
         }
         private IEnumerator CheckUserTablesExist()

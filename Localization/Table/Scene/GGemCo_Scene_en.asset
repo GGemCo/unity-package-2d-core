@@ -58,8 +58,8 @@ MonoBehaviour:
     m_Localized: New Game
     m_Metadata:
       m_Items: []
-  - m_Id: 157988398108672
-    m_Localized: 1
+  - m_Id: 1884606145564672
+    m_Localized: Option
     m_Metadata:
       m_Items: []
   references:

@@ -28,7 +28,9 @@ namespace GGemCo2DCore
         public void SetButtonOpenSaveDataWindow(Button value) => buttonOpenSaveDataWindow = value;
         public string GetFieldNameButtonOpenSaveDataWindow() => nameof(buttonOpenSaveDataWindow);
         [Header("옵션 버튼")]
-        [SerializeField] private Button buttonOption;
+        [SerializeField] private Button buttonOpenOption;
+        public void SetButtonOption(Button value) => buttonOpenOption = value;
+        public string GetFieldNameButtonOption() => nameof(buttonOpenOption);
         [Header("게임종료 버튼")]
         [SerializeField] private Button buttonGameExit;
         [Header("불러오기 window")]
@@ -39,6 +41,10 @@ namespace GGemCo2DCore
         [SerializeField] private PopupManager popupManager;
         public void SetPopupManager(PopupManager value) => popupManager = value;
         public string GetFieldNamePopupManager() => nameof(PopupManager);
+        [Header("옵션 window")]
+        [SerializeField] private UIWindowOption uiWindowOption;
+        public void SetUIWindowOption(UIWindowOption value) => uiWindowOption = value;
+        public string GetNameUIWindowOption() => nameof(UIWindowOption);
 
         private SlotMetaDatController _slotMetaDatController;
         private GGemCoSaveSettings _saveDataSettings;
@@ -53,7 +59,9 @@ namespace GGemCo2DCore
                 uIWindowLoadSaveData.OnUpdateSlotData += UpdateButtons;
             }
         }
-
+        /// <summary>
+        /// LocalizationManager 초기화
+        /// </summary>
         private void InitializeLocalization()
         {
             GameObject gameObjectLocalizationManager = new GameObject("LocalizationManager");
@@ -76,7 +84,7 @@ namespace GGemCo2DCore
             addressableLoaderSettings.OnLoadSettings -= InitializeSlotMetaDataManager;
             buttonGameContinue?.onClick.RemoveAllListeners();
             buttonNewGame?.onClick.RemoveAllListeners();
-            buttonOption?.onClick.RemoveAllListeners();
+            buttonOpenOption?.onClick.RemoveAllListeners();
             buttonOpenSaveDataWindow?.onClick.RemoveAllListeners();
             buttonGameExit?.onClick.RemoveAllListeners();
         }
@@ -104,7 +112,7 @@ namespace GGemCo2DCore
             buttonGameContinue?.onClick.AddListener(OnClickGameContinue);
             buttonNewGame?.onClick.AddListener(OnClickNewGame);
             buttonOpenSaveDataWindow?.onClick.AddListener(() => uIWindowLoadSaveData?.Show(true));
-            buttonOption?.onClick.AddListener(OnClickOption);
+            buttonOpenOption?.onClick.AddListener(() => uiWindowOption?.Show(true));
             buttonGameExit?.onClick.AddListener(Application.Quit);
             // 진행중인 게임이 없을때 
             if (PlayerPrefsManager.LoadSaveDataSlotIndex() <= 0)
@@ -113,16 +121,6 @@ namespace GGemCo2DCore
                 buttonOpenSaveDataWindow?.gameObject.SetActive(false);
             }
         }
-
-        private void Start()
-        {
-            if (LocalizationManager.Instance)
-            {
-                int index = PlayerPrefsManager.LoadIndexLocalizationLocale();
-                LocalizationManager.Instance.StartChangeLocale(index);
-            }
-        }
-
         private void UpdateButtons()
         {
             // 남은 슬롯 index 채크해서 없으면 buttonNewGame 버튼 disable 처리 
@@ -181,12 +179,6 @@ namespace GGemCo2DCore
             }
 
             SceneManager.ChangeScene(ConfigDefine.SceneNameLoading);
-        }
-        /// <summary>
-        /// 옵션
-        /// </summary>
-        private void OnClickOption()
-        {
         }
     }
 }

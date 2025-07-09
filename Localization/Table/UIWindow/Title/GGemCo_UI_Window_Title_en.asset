@@ -22,6 +22,10 @@ MonoBehaviour:
     m_Localized: Load Save Data
     m_Metadata:
       m_Items: []
+  - m_Id: 44135278514176
+    m_Localized: Option
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []
