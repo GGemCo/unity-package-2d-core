@@ -54,7 +54,9 @@ namespace GGemCo2DCoreEditor
             string fieldName = "textLoadingPercent";
             MetaDataTextMeshProGUI metaDataTextMeshProGUI =
                 new MetaDataTextMeshProGUI(new Vector2(1, 0), new Vector2(-100, 100), AnchorPresets.BottomRight, 1000,
-                    50, 0, TextMeshProHelper.HorizontalAlignment.Right);
+                    50, 0, TextMeshProHelper.HorizontalAlignment.Right, TextMeshProHelper.VerticalAlignment.Middle,
+                    LocalizationConstants.Tables.Scene,
+                    LocalizationConstants.Keys.Loading.TextLoadingPercent());
             TextMeshProUGUI textMeshProUGUI = CreateUIComponent.CreateObjectText(fieldName, metaDataTextMeshProGUI);
             gameLoaderManager.SetTextLoadingPercent(textMeshProUGUI);
             

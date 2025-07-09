@@ -143,7 +143,7 @@ namespace GGemCo2DCore
         /// <summary>
         /// 지정한 테이블과 키로 로컬라이즈된 문자열을 가져옵니다.
         /// </summary>
-        public string GetString(string table, string key)
+        private string GetString(string table, string key)
         {
             if (string.IsNullOrWhiteSpace(key))
             {
@@ -155,10 +155,10 @@ namespace GGemCo2DCore
             if (_userTableExistsMap.TryGetValue(table, out bool hasUserTable) && hasUserTable)
             {
                 string userTable = $"{table}_User";
-                var userLocalized = _stringDatabase.GetLocalizedString(userTable, key, LocalizationSettings.SelectedLocale);
-                if (!string.IsNullOrWhiteSpace(userLocalized))
+                var userLocalized = _stringDatabase.GetTableEntry(userTable, key, LocalizationSettings.SelectedLocale);
+                if (userLocalized.Entry != null)
                 {
-                    return userLocalized;
+                    return userLocalized.Entry.Value;
                 }
             }
 
