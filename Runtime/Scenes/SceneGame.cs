@@ -231,25 +231,13 @@ namespace GGemCo2DCore
             int totalPrice = price * itemCount;
             // 가지고 있는 재화가 충분하지 체크
             var checkNeedCurrency = saveDataManager.Player.CheckNeedCurrency(currencyType, totalPrice);
-            if (checkNeedCurrency.Code == ResultCommon.Type.Fail)
-            {
-                systemMessageManager.ShowMessageWarning(checkNeedCurrency.Message);
-                return;
-            }
+            if (checkNeedCurrency.Result == ResultCommon.ResultType.Fail) return;
             // 재화 빼주기
             var minusCurrency = saveDataManager.Player.MinusCurrency(currencyType, totalPrice);
-            if (minusCurrency.Code == ResultCommon.Type.Fail)
-            {
-                systemMessageManager.ShowMessageWarning(minusCurrency.Message);
-                return;
-            }
+            if (minusCurrency.Result == ResultCommon.ResultType.Fail) return;
             // 인벤토리에 아이템 넣을 수 있는지 체크
             var addItem = saveDataManager.Inventory.AddItem(itemUid, itemCount);
-            if (addItem.Code == ResultCommon.Type.Fail)
-            {
-                systemMessageManager.ShowMessageWarning(addItem.Message);
-                return;
-            }
+            if (addItem.Result == ResultCommon.ResultType.Fail) return;
             if (_uiWindowInventory != null)
             {
                 _uiWindowInventory.SetIcons(addItem);

@@ -153,7 +153,7 @@ namespace GGemCo2DCore
             var result2 =
                 SceneGame.Instance.saveDataManager.Skill.SetSkillLevelUp(_slotIndex, _struckTableSkill.Uid, 1, nextLevel,
                     true);
-            if (result2.Code == ResultCommon.Type.Success)
+            if (result2.Result == ResultCommon.ResultType.Success)
             {
                 MinusNeedCurrency(infoNextLevel.NeedCurrencyType, infoNextLevel.NeedCurrencyValue);
             }
@@ -176,11 +176,7 @@ namespace GGemCo2DCore
             if (needCurrencyType != CurrencyConstants.Type.None)
             {
                 var checkNeedCurrency = SceneGame.Instance.saveDataManager.Player.CheckNeedCurrency(needCurrencyType, needCurrencyValue);
-                if (checkNeedCurrency.Code == ResultCommon.Type.Fail)
-                {
-                    SceneGame.Instance.systemMessageManager.ShowMessageWarning(checkNeedCurrency.Message);
-                    return false;
-                }
+                if (checkNeedCurrency.Result == ResultCommon.ResultType.Fail) return false;
             }
             return true;
         }
@@ -195,11 +191,7 @@ namespace GGemCo2DCore
             if (needCurrencyType == CurrencyConstants.Type.None) return true;
             // 재화 빼주기
             var minusCurrency = SceneGame.Instance.saveDataManager.Player.MinusCurrency(needCurrencyType, needCurrencyValue);
-            if (minusCurrency.Code == ResultCommon.Type.Fail)
-            {
-                SceneGame.Instance.systemMessageManager.ShowMessageWarning(minusCurrency.Message);
-                return false;
-            }
+            if (minusCurrency.Result == ResultCommon.ResultType.Fail) return false;
             return true;
         }
         /// <summary>
@@ -213,7 +205,7 @@ namespace GGemCo2DCore
             if (!result) return;
 
             var result2 = SceneGame.Instance.saveDataManager.Skill.SetSkillLearn(_slotIndex, _struckTableSkill.Uid, 1, _struckTableSkill.Level, true);
-            if (result2.Code == ResultCommon.Type.Success)
+            if (result2.Result == ResultCommon.ResultType.Success)
             {
                 MinusNeedCurrency(_struckTableSkill.NeedCurrencyType, _struckTableSkill.NeedCurrencyValue);
             }

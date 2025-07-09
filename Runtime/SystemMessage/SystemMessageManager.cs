@@ -7,22 +7,45 @@ namespace GGemCo2DCore
 {
     public class ResultCommon
     {
-        public enum Type
+        public enum ResultType
         {
             Fail = 0,
             Success = 1,
         }
-        public Type Code;
-        public string Message;
-        public List<SaveDataIcon> ResultIcons;
 
-        public ResultCommon(Type type, string message = "", List<SaveDataIcon> resultIcons = null)
+        public ResultType Result { get; private set; }
+        public string Message { get; private set; }
+        public string DebugMessage { get; private set; }
+        public List<SaveDataIcon> ResultIcons { get; private set; }
+
+        private ResultCommon(ResultType result, List<SaveDataIcon> resultIcons = null)
         {
-            Code = type;
-            Message = message;
-            ResultIcons = resultIcons;
+            Result = result;
+            ResultIcons = resultIcons ?? new List<SaveDataIcon>();
         }
-        public bool IsSuccess() => Code == Type.Success;
+
+        public static ResultCommon Success(string message = "", List<SaveDataIcon> icons = null)
+        {
+            SceneGame.Instance?.systemMessageManager?.ShowMessageWarning(message);
+            return new ResultCommon(ResultType.Success, icons);
+        }
+        // 아이콘만 설정된 성공 결과
+        public static ResultCommon SuccessWithIcons(List<SaveDataIcon> resultIcons)
+        {
+            return new ResultCommon(ResultType.Success, resultIcons);
+        }
+
+        public static ResultCommon Fail(string message = "", string debugMessage = "", List<SaveDataIcon> icons = null)
+        {
+            if (!string.IsNullOrEmpty(debugMessage))
+            {
+                GcLogger.LogError(debugMessage);
+            }
+
+            SceneGame.Instance?.systemMessageManager?.ShowMessageWarning(message);
+            return new ResultCommon(ResultType.Fail, icons);
+        }
+        public bool IsSuccess() => Result == ResultType.Success;
     }
     public class SystemMessageManager : MonoBehaviour
     {
@@ -89,6 +112,7 @@ namespace GGemCo2DCore
         /// <param name="message"></param>
         public void ShowMessageWarning(string message)
         {
+            if (string.IsNullOrEmpty(message)) return;
             SystemMessage systemMessage = GetDefaultSystemMessage();
             systemMessage.Type = MessageType.Warning;
             systemMessage.TextColor = _messageTypeColors[systemMessage.Type];
@@ -99,15 +123,21 @@ namespace GGemCo2DCore
         /// </summary>
         private void ShowMessage(string message, SystemMessage systemMessage)
         {
+            if (string.IsNullOrEmpty(message)) return;
+            string messageLanguage = LocalizationManager.Instance.GetSystemByKey(message);
+            if (string.IsNullOrEmpty(messageLanguage))
+                messageLanguage = message;
+            
             if (_messageCoroutine != null)
             {
                 StopCoroutine(_messageCoroutine);
             }
-            _messageCoroutine = StartCoroutine(DisplayMessage(message, systemMessage));
+            _messageCoroutine = StartCoroutine(DisplayMessage(messageLanguage, systemMessage));
         }
 
         private IEnumerator DisplayMessage(string message, SystemMessage systemMessage)
         {
+            if (string.IsNullOrEmpty(message)) yield break;
             // 메시지 설정
             _textMessage.text = message;
             _textMessage.color = systemMessage.TextColor;

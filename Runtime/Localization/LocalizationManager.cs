@@ -161,17 +161,13 @@ namespace GGemCo2DCore
                     return userLocalized.Entry.Value;
                 }
             }
-
-            var localized = _stringDatabase.GetLocalizedString(table, key, LocalizationSettings.SelectedLocale);
-            if (string.IsNullOrWhiteSpace(localized))
-            {
-                GcLogger.LogWarning($"[MISSING:{key}]");
-                return "";
-            }
-            else
-            {
-                return localized;
-            }
+            // 유저 테이블에 없으면 기존 테이블 조회
+            var tableEntryResult = _stringDatabase.GetTableEntry(table, key, LocalizationSettings.SelectedLocale);
+            if (tableEntryResult.Entry != null)
+                return tableEntryResult.Entry.Value;
+            
+            GcLogger.LogWarning($"[MISSING:{key}]");
+            return "";
         }
 
         /// <summary>

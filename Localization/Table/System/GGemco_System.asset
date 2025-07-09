@@ -16,8 +16,43 @@ MonoBehaviour:
   m_Tables:
   - {fileID: 11400000, guid: 39c9cc39e8df16c449e60548b882ae91, type: 2}
   - {fileID: 11400000, guid: 4ee90c149d025d345b9d3ab293c812ea, type: 2}
-  m_Extensions: []
+  m_Extensions:
+  - rid: 9086697449404498045
   m_Group: String Table
   references:
     version: 2
-    RefIds: []
+    RefIds:
+    - rid: 9086697449404498045
+      type: {class: CsvExtension, ns: UnityEditor.Localization.Plugins.CSV, asm: Unity.Localization.Editor}
+      data:
+        m_Collection: {fileID: 11400000}
+        m_ColumnsList:
+        - rid: 9086697449404498046
+        - rid: 9086697449404498047
+        - rid: 9086697449404498048
+        m_ConnectedFile: com.ggemco.2d.core/Samples~/Localization/Csv/Localization
+          - GGemCo_System.csv
+    - rid: 9086697449404498046
+      type: {class: KeyIdColumns, ns: UnityEditor.Localization.Plugins.CSV.Columns, asm: Unity.Localization.Editor}
+      data:
+        m_IncludeId: 0
+        m_IncludeSharedComments: 1
+        m_KeyFieldName: Key
+        m_IdFieldName: Id
+        m_CommentFieldName: Shared Comments
+    - rid: 9086697449404498047
+      type: {class: LocaleColumns, ns: UnityEditor.Localization.Plugins.CSV.Columns, asm: Unity.Localization.Editor}
+      data:
+        m_LocaleIdentifier:
+          m_Code: en
+        m_FieldName: English(en)
+        m_CommentFieldName: English(en) Comments
+        m_IncludeComments: 0
+    - rid: 9086697449404498048
+      type: {class: LocaleColumns, ns: UnityEditor.Localization.Plugins.CSV.Columns, asm: Unity.Localization.Editor}
+      data:
+        m_LocaleIdentifier:
+          m_Code: ko
+        m_FieldName: Korean(ko)
+        m_CommentFieldName: Korean(ko) Comments
+        m_IncludeComments: 0

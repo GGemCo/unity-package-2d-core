@@ -10,16 +10,16 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: e9620f8c34305754d8cc9a7e49e852d9, type: 3}
-  m_Name: GGemCo_UI_Window_23_ko
+  m_Name: GGemCo_UIWindowOption_en
   m_EditorClassIdentifier: 
   m_LocaleId:
-    m_Code: ko
+    m_Code: en
   m_SharedData: {fileID: 11400000, guid: 740461471a7c8bb4aad6549ff40edab8, type: 2}
   m_Metadata:
     m_Items: []
   m_TableData:
   - m_Id: 81023012864
-    m_Localized: "\uC5B8\uC5B4:"
+    m_Localized: 'Language:'
     m_Metadata:
       m_Items: []
   references:

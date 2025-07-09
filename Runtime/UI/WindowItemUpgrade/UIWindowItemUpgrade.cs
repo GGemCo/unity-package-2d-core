@@ -180,7 +180,6 @@ namespace GGemCo2DCore
             var sourceInfo = _tableItem.GetDataByUid(info.SourceItemUid);
             if (sourceInfo == null)
             {
-                GcLogger.LogError("강화하는 아이템 정보가 없습니다. item uid:"+info.SourceItemUid);
                 return;
             }
 
@@ -292,11 +291,7 @@ namespace GGemCo2DCore
             // 재화 체크
             var resultCommon = SceneGame.saveDataManager.Player.CheckNeedCurrency(_struckTableItemUpgrade.NeedCurrencyType,
                 _struckTableItemUpgrade.NeedCurrencyValue);
-            if (resultCommon.Code == ResultCommon.Type.Fail)
-            {
-                SceneGame.systemMessageManager.ShowMessageWarning(resultCommon.Message);
-                return;
-            }
+            if (resultCommon.Result == ResultCommon.ResultType.Fail) return;
             // 재료 개수 빼주기
             foreach (var elementMaterial in _elementMaterials)
             {

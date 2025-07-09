@@ -40,17 +40,17 @@ namespace GGemCo2DCore
         {
             if (skillUid <= 0)
             {
-                return new ResultCommon(ResultCommon.Type.Fail, $"No skill information");//$"스킬 정보가 없습니다."
+                return ResultCommon.Fail($"QuickSlot_NoSkillInfo");//$"스킬 정보가 없습니다."
             }
 
             if (!SkillDatas.ContainsKey(slotIndex))
             {
-                return new ResultCommon(ResultCommon.Type.Fail, $"I haven't learned my skills yet.");//$"아직 스킬을 배우지 않았습니다."
+                return ResultCommon.Fail($"QuickSlot_SkillNotLearned");//$"아직 스킬을 배우지 않았습니다."
             }
             List<SaveDataIcon> controls = new List<SaveDataIcon> { new (slotIndex, skillUid, skillCount, skillLevel, skillLearn) };
 
             SaveDatas();
-            return new ResultCommon(ResultCommon.Type.Success, "", controls);
+            return ResultCommon.SuccessWithIcons(controls);
         }
         /// <summary>
         /// 스킬 설정
@@ -69,12 +69,12 @@ namespace GGemCo2DCore
         {
             if (skillUid <= 0)
             {
-                return new ResultCommon(ResultCommon.Type.Fail, "There is no skill information.");//$"스킬 정보가 없습니다."
+                return ResultCommon.Fail("QuickSlot_NoSkillInfo");//$"스킬 정보가 없습니다."
             }
 
             List<SaveDataIcon> controls = new List<SaveDataIcon> { new (slotIndex, skillUid, skillCount, skillLevel, skillLearn) };
             SaveDatas();
-            return new ResultCommon(ResultCommon.Type.Success, "", controls);
+            return ResultCommon.SuccessWithIcons(controls);
         }
         /// <summary>
         /// 모든 스킬 목록 가져오기

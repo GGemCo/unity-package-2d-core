@@ -46,7 +46,7 @@ namespace GGemCo2DCore
         public void RemoveSkill(int slotIndex)
         {
             if (!QuickSlotDatas.ContainsKey(slotIndex)) return;
-            QuickSlotDatas[slotIndex] = new SaveDataIcon(slotIndex, 0, 0);
+            QuickSlotDatas[slotIndex] = new SaveDataIcon(slotIndex, 0);
             SaveDatas();
         }
         /// <summary>
@@ -57,25 +57,25 @@ namespace GGemCo2DCore
             var info = TableLoaderManager.Instance.TableSkill.GetDataByUidLevel(skillUid, skillLevel);
             if (info == null || info.Uid <= 0)
             {
-                return new ResultCommon(ResultCommon.Type.Fail, $"스킬 정보가 없습니다.");
+                return ResultCommon.Fail($"QuickSlot_NoSkillInfo");//스킬 정보가 없습니다.
             }
 
             bool exist = QuickSlotDatas.Any(data => data.Value.Uid == skillUid);
             if (exist)
             {
-                return new ResultCommon(ResultCommon.Type.Fail, $"이미 등록된 스킬입니다.");
+                return ResultCommon.Fail($"QuickSlot_SkillAlreadyAssigned");//이미 등록된 스킬입니다.
             }
             List<SaveDataIcon> controls = new List<SaveDataIcon>();
             int emptyIndex = FindEmptySlot();
             if (emptyIndex == -1)
             {
-                return new ResultCommon(ResultCommon.Type.Fail, "퀵슬롯에 공간이 부족합니다.");
+                return ResultCommon.Fail("QuickSlot_NotEnoughSpace");//퀵슬롯에 공간이 부족합니다.
             }
 
             controls.Add(new SaveDataIcon(emptyIndex, skillUid, skillCount, skillLevel, isLearn));
 
             SaveDatas();
-            return new ResultCommon(ResultCommon.Type.Success, "", controls);
+            return ResultCommon.SuccessWithIcons(controls);
         }
         /// <summary>
         /// 빈 슬롯 찾기

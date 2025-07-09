@@ -1,0 +1,12 @@
+Key,Id,Shared Comments,English(en),English(en) Comments,Korean(ko),Korean(ko) Comments
+"Intro_Button_NewGame",3288944152576,"New Game","New Game","","새 게임",""
+"Intro_Button_Continue",3288944152577,"Continue Game","Continue Game","","계속하기",""
+"Intro_Button_Load",3288944152578,"Load Game","Load Game","","불러오기",""
+"Loading_Text_Tables",3288944152579,"Tables","Tables","","테이블",""
+"Loading_Text_Resources",3288944152580,"Resources","Resources","","리소스",""
+"Loading_Text_Effect",3288944152581,"Effect Resources","Effect Resources","","이펙트 리소스",""
+"Loading_Text_Item",3288944152582,"Item Data","Item Data","","아이템 데이터",""
+"Loading_Text_Skill",3288944152583,"Skill Data","Skill Data","","스킬 데이터",""
+"Loading_Text_SaveData",3288944152584,"Save Data","Save Data","","저장 데이터",""
+"Loading_Text_LoadingPercent",3288944152585,"","{0} Loading... {1}%","","{0} 로딩중... {1}%",""
+"Intro_Button_Option",1884606145564672,"","Option","","옵션",""

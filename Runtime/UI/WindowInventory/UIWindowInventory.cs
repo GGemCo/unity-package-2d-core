@@ -230,7 +230,7 @@ namespace GGemCo2DCore
                         }
                         var result = InventoryData.MinusItem(icon.slotIndex, icon.uid, 1);
                         SetIcons(result);
-                        if (result is { Code: ResultCommon.Type.Success })
+                        if (result is { Result: ResultCommon.ResultType.Success })
                         {
                             if (icon.IsMpPotionType())
                                 SceneGame.player.GetComponent<Player>().AddMp(icon.GetStatusValue1());

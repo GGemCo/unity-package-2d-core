@@ -1,6 +1,7 @@
 ﻿using System.Collections.Generic;
 using R3;
 using UnityEngine;
+using UnityEngine.Localization;
 
 namespace GGemCo2DCore
 {
@@ -196,15 +197,15 @@ namespace GGemCo2DCore
             {
                 case CurrencyConstants.Type.Gold:
                     CurrentGold += value;
-                    return new ResultCommon(ResultCommon.Type.Success);
+                    return ResultCommon.Success();
                 case CurrencyConstants.Type.Silver:
                     CurrentSilver += value;
-                    return new ResultCommon(ResultCommon.Type.Success);
+                    return ResultCommon.Success();
                 case CurrencyConstants.Type.None:
                 default:
                     break;
             }
-            return new ResultCommon(ResultCommon.Type.Fail, $"재화 타입 정보가 없습니다. currencyType: {currencyType}");
+            return ResultCommon.Fail("Currency_NoTypeInfo", $"currencyType: {currencyType}");//재화 타입 정보가 없습니다.
         }
         /// <summary>
         /// 가지고 있는 재화가 충분하지 체크하기
@@ -216,18 +217,19 @@ namespace GGemCo2DCore
         public ResultCommon CheckNeedCurrency(CurrencyConstants.Type currencyType, int currencyValue, int count = 1)
         {
             if (currencyType == CurrencyConstants.Type.None)
-                return new ResultCommon(ResultCommon.Type.Fail, $"재화 정보가 없습니다. currencyType: {currencyType}");
+                return ResultCommon.Fail($"Currency_NoTypeInfo", $"currencyType: {currencyType}"); //재화 타입 정보가 없습니다.
             string currency = CurrencyConstants.GetNameByCurrencyType(currencyType);
             if (currencyType == CurrencyConstants.Type.Gold && CurrentGold >= currencyValue * count)
             {
-                return new ResultCommon(ResultCommon.Type.Success);
+                return ResultCommon.Success();
             }
             if (currencyType == CurrencyConstants.Type.Silver && CurrentSilver >= currencyValue * count)
             {
-                return new ResultCommon(ResultCommon.Type.Success);
+                return ResultCommon.Success();
             }
 
-            return new ResultCommon(ResultCommon.Type.Fail, $"Not enough {currency}."); // $"{currency} 가 부족합니다.");
+            string message = string.Format(LocalizationManager.Instance.GetSystemByKey("Currency_NotEnough"), currency);
+            return ResultCommon.Fail(message); // $"{currency} 가 부족합니다."
         }
         /// <summary>
         /// 모든 재화를 채크해야하는 경우
@@ -239,14 +241,13 @@ namespace GGemCo2DCore
             foreach (var info in needCurrency)
             {
                 ResultCommon resultCommon = CheckNeedCurrency(info.Key, info.Value);
-                if (resultCommon.Code == ResultCommon.Type.Fail)
+                if (resultCommon.Result == ResultCommon.ResultType.Fail)
                 {
-                    return new ResultCommon(ResultCommon.Type.Fail,
-                        $"Not enough {CurrencyConstants.GetNameByCurrencyType(info.Key)}."); //$"{CurrencyConstants.GetNameByCurrencyType(info.Key)} 가 부족합니다.");
+                    return ResultCommon.Fail();
                 }
             }
 
-            return new ResultCommon(ResultCommon.Type.Success);
+            return ResultCommon.Success();
         }
         /// <summary>
         /// 재화 빼기
@@ -261,22 +262,22 @@ namespace GGemCo2DCore
                 case CurrencyConstants.Type.Gold:
                     if (CurrentGold < value)
                     {
-                        return new ResultCommon(ResultCommon.Type.Fail, "There is not enough Gold.");//"골드가 부족합니다."
+                        return ResultCommon.Fail("Currency_NotEnoughGold");//"골드가 부족합니다."
                     }
                     CurrentGold -= value;
-                    return new ResultCommon(ResultCommon.Type.Success);
+                    return ResultCommon.Success();
                 case CurrencyConstants.Type.Silver:
                     if (CurrentSilver < value)
                     {
-                        return new ResultCommon(ResultCommon.Type.Fail, "There is not enough Silver.");//"실버가 부족합니다."
+                        return ResultCommon.Fail("Currency_NotEnoughSilver");//"실버가 부족합니다."
                     }
                     CurrentSilver -= value;
-                    return new ResultCommon(ResultCommon.Type.Success);
+                    return ResultCommon.Success();
                 case CurrencyConstants.Type.None:
                 default:
                     break;
             }
-            return new ResultCommon(ResultCommon.Type.Fail, $"재화 타입 정보가 없습니다. currencyType: {currencyType}");
+            return ResultCommon.Fail($"Currency_NoTypeInfo", $"currencyType: {currencyType}");//재화 타입 정보가 없습니다.
         }
         /// <summary>
         /// 가지고 있는 재화로 몇개 까지 구매할 수 있는지 

@@ -32,14 +32,18 @@ namespace GGemCo2DCore
         /// </summary>
         public void OnClickShowInventory()
         {
-            SceneGame.Instance.uIWindowManager.ShowWindow(UIWindowConstants.WindowUid.Inventory, true);
+            SceneGame.Instance.uIWindowManager?.ShowWindow(UIWindowConstants.WindowUid.Inventory, true);
         }
         /// <summary>
         /// 스킬 열기 
         /// </summary>
         public void OnClickShowSkill()
         {
-            SceneGame.Instance.uIWindowManager.ShowWindow(UIWindowConstants.WindowUid.Skill, true);
+            SceneGame.Instance.uIWindowManager?.ShowWindow(UIWindowConstants.WindowUid.Skill, true);
+        }
+        public void OnClickShowOption()
+        {
+            SceneGame.Instance.uIWindowManager?.ShowWindow(UIWindowConstants.WindowUid.Option, true);
         }
         public void SetSliderHp(long currentValue, long totalHp)
         {

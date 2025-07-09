@@ -1,0 +1,60 @@
+Key,Shared Comments,English(en),Korean(ko)
+Player_LevelTooLow,Player.cs,Your level is too low. Required level: {compareLevel},플레이어 레벨이 부족합니다. 필요 레벨 : {compareLevel}
+Quest_InProgress,QuestManager,The quest is already in progress.,진행중인 퀘스트 입니다.
+Skill_NoTarget,DefaultSkill,No target.,타겟이 없습니다.
+Currency_NotEnoughGold,SystemMessageManager,Not enough gold.,골드가 부족합니다.
+Currency_NotEnoughSilver,SystemMessageManager,Not enough silver.,실버가 부족합니다.
+Action_CannotUseDuringCooldown,UIIcon,Cannot be used during cooldown.,쿨타임 중에는 사용할 수 없습니다.
+Dialogue_SelectChoice,UIWindowDialogue,Please select a dialogue choice.,선택지를 선택해주세요.
+Equip_InvalidSlot,DragDropStrategyEquip,Cannot equip item in this slot.,해당 슬롯에는 착용할 수 없는 아이템 입니다.
+Equip_InvalidBodyPart,DragDropStrategyInventory,Cannot equip item in this body part.,해당 부위에 장착할 수 없는 아이템입니다.
+Item_CannotSell,UIWindowInventory,This item cannot be sold.,판매할 수 없는 아이템 입니다.
+Item_CannotStore,UIWindowInventory,This item cannot be stored.,보관할 수 없는 아이템 입니다.
+Item_CannotUpgrade,UIWindowInventory,This item cannot be upgraded.,강화할 수 없는 아이템 입니다.
+Item_CannotSalvage,UIWindowInventory,This item cannot be salvaged.,분해할 수 없는 아이템 입니다.
+Item_CannotRegisterMore,UIWindowInventory,Cannot register more items.,더 이상 아이템을 등록할 수 없습니다.
+Item_NoUsableCount,UIWindowInventory,No usable items left.,사용할 수 있는 아이템 개수가 없습니다.
+Item_ManaFull,UIWindowInventory,Mana is full.,현재 마력이 가득하여 사용할 수 없습니다.
+Item_HealthFull,UIWindowInventory,Health is full.,현재 생명력이 가득하여 사용할 수 없습니다.
+Craft_SelectItem,UIWindowCraft,Please select an item to craft.,제작할 아이템을 선택해주세요.
+Craft_NotEnoughMaterials,UIWindowCraft,Not enough materials.,재료가 부족합니다.
+Upgrade_CannotUpgradeItem,DragDropStrategyItemUpgrade,This item cannot be upgraded.,강화 할 수 없는 아이템 입니다.
+Upgrade_CannotUpgradeMore,UIWindowItemUpgrade,Cannot upgrade further.,더이상 강화 할 수 없습니다.
+Upgrade_SelectItem,UIWindowItemUpgrade,Please select an item to upgrade.,강화할 아이템을 선택해주세요.
+Upgrade_MaxLevelReached,UIWindowItemUpgrade,Item is at maximum upgrade level.\nCannot upgrade further.,강화수치가 최대치 입니다.\n더이상 강화 할 수 없습니다.
+QuickSlot_NotEnoughMana,UIWindowQuickSlot,Not enough mana.,마력이 부족합니다.
+Shop_CannotSellItem,DragDropStrategyShopSale,Cannot sell this item.,해당 아이템은 판매할 수 없는 아이템 입니다.
+Skill_MaxLevel,UIElementSkill,Max level reached.,최대 레벨입니다.
+Skill_CannotChangeDuringCooldown,UIWindowSkill,Cannot change skill during cooldown.,쿨타임 중에는 바꿀 수 없습니다.
+Skill_NotLearned,UIWindowSkill,Skill not learned yet.,배운 후 사용할 수 있습니다.
+Stash_CannotStoreItem,DragDropStrategyStash,Cannot store this item.,해당 아이템은 보관할 수 없는 아이템 입니다.
+Inventory_NoSpace,InventoryData,Not enough space in inventory.,인벤토리에 빈 공간이 없습니다.
+Inventory_Split_NoInfo,InventoryData,No item info for splitting.,나누려고 하는 아이템 정보가 없습니다.
+Inventory_Split_InvalidCount,InventoryData,Invalid split count.,나누려고 하는 아이템 개수가 잘 못되었습니다.
+Inventory_Split_NoTableInfo,InventoryData,No table info for split item.,나누려고 하는 아이템 테이블 정보가 없습니다.
+Inventory_Upgrade_NoItemInfo,InventoryData,No item info for upgrade.,강화하려는 아이템 정보가 없습니다.
+Slot_InvalidSlot,ItemStorageData,Invalid slot info.,슬롯 정보가 잘 못 되었습니다.
+Slot_ItemNotFound,ItemStorageData,Item not found.,아이템 정보가 없습니다.
+Slot_NotEnoughItemCount,ItemStorageData,Not enough items in slot.,슬롯에 있는 아이템 개수가 부족합니다.
+Slot_MaxStackZero,ItemStorageData,Max stack is 0.,최대 중첩 개수가 0 입니다.
+Slot_InvalidIndex,ItemStorageData,Invalid slot index.,잘못된 슬롯 인덱스입니다.
+Slot_CannotMoveToSame,ItemStorageData,Cannot move to the same slot.,같은 슬롯으로 이동할 수 없습니다.
+Slot_ItemNotAvailable,ItemStorageData,No item to move.,이동할 아이템이 없습니다.
+Slot_TargetSlotEmpty,ItemStorageData,Target slot is empty.,대상 슬롯에 아이템이 없습니다.
+Slot_MergeDifferentTypes,ItemStorageData,Cannot merge different item types.,다른 종류의 아이템은 합칠 수 없습니다.
+Slot_MergeNoSpace,ItemStorageData,Not enough space in target slot.,대상 슬롯에 합칠 공간이 없습니다.
+Slot_MoveSuccess,ItemStorageData,Moved {moveAmount} items from {fromIndex} to {toIndex}.,{moveAmount}개 아이템이 {fromIndex} → {toIndex}로 이동되었습니다.
+Currency_NoTypeInfo,PlayerData,No currency type info.,재화 타입 정보가 없습니다.
+Currency_NotEnough,PlayerData,Not enough {currency}.,{currency} 가 부족합니다.
+QuickSlot_NoSkillInfo,QuickSlotData,No skill info.,스킬 정보가 없습니다.
+QuickSlot_SkillAlreadyAssigned,QuickSlotData,Skill is already assigned.,이미 등록된 스킬입니다.
+QuickSlot_NotEnoughSpace,QuickSlotData,Not enough quick slot space.,퀵슬롯에 공간이 부족합니다.
+QuickSlot_SkillNotLearned,QuickSlotData,Skill not learned yet.,아직 스킬을 배우지 않았습니다.
+SaveSlot_NotSelected,SceneIntro,No save slot selected.\nPlease load first.,선택된 슬롯이 없습니다.\n불러오기를 해주세요.
+SaveSlot_NoEmptySlot,SceneIntro,No empty save slot left.\nPlease delete existing data.,남은 저장 슬롯이 없습니다.\n저장되어있는 데이터를 지워주세요.
+SaveSlot_ConfirmDeleteWarning,SceneIntro,Deleted data cannot be recovered.\nAre you sure you want to delete it?,삭제한 데이터는 복구할 수 없습니다.\n정말로 삭제하시겠습니까?
+Inventory_SelectItemToSplit,UIWindowInventory,Please select an item to split.,나누기를 할 아이템을 선택해주세요.
+Inventory_Split_MinimumTwo,UIWindowInventory,You can only split items with at least 2 count.,아이템 개수가 2개 이상일때만 나눌 수 있습니다.
+LoadSave_NoSlotSelected,UIWindowLoadSaveData,No save slot selected.,선택된 슬롯이 없습니다.
+Window_NoEmptySpace,UIWindow,No empty space in window.,윈도우에 빈 공간이 없습니다.
+System_PlayerDied_MoveToTown,SceneGame,Player has died.\nReturning to town.,플레이어가 사망하였습니다.\n마을로 이동합니다.

@@ -183,11 +183,6 @@ namespace GGemCo2DCore
         /// <param name="result"></param>
         public void SetIcons(ResultCommon result)
         {
-            if (!result.IsSuccess())
-            {
-                GcLogger.LogError(result.Message);
-                SceneGame.systemMessageManager.ShowMessageWarning(result.Message);
-            }
             if (result.ResultIcons == null || result.ResultIcons.Count <= 0) return;
             foreach (var icon in result.ResultIcons)
             {
@@ -266,12 +261,18 @@ namespace GGemCo2DCore
             if (show)
             {
                 _uiWindowFade.ShowPanel();
-                ShowByTable(_struckTableWindow.OpenWindowUid, true);
+                if (_struckTableWindow != null)
+                {
+                    ShowByTable(_struckTableWindow.OpenWindowUid, true);
+                }
             }
             else
             {
                 _uiWindowFade.HidePanel();
-                ShowByTable(_struckTableWindow.CloseWindowUid, false);
+                if (_struckTableWindow != null)
+                {
+                    ShowByTable(_struckTableWindow.CloseWindowUid, false);
+                }
             }
 
             return true;
@@ -287,7 +288,7 @@ namespace GGemCo2DCore
         public void OnClickClose()
         {
             if (_uiWindowFade == null) return;
-            if (_struckTableWindow.IsInteraction && _interactionManager != null && _interactionManager.IsInteractioning())
+            if (_struckTableWindow != null && _struckTableWindow.IsInteraction && _interactionManager != null && _interactionManager.IsInteractioning())
             {
                 _interactionManager.EndInteraction();
             }

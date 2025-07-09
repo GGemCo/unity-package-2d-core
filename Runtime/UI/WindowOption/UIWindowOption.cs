@@ -6,21 +6,24 @@ using UnityEngine.UI;
 
 namespace GGemCo2DCore
 {
-    public class UIWindowOption : MonoBehaviour
+    /// <summary>
+    /// 옵션(설정) 윈도우
+    /// </summary>
+    public class UIWindowOption : UIWindow
     {
         [Header(UIWindowConstants.TitleHeaderIndividual)]
         public TMP_Dropdown dropdownLanguage;
         public Button buttonConfirm;
-        public Button buttonCancel;
 
-        private void Awake()
+        protected override void Awake()
         {
+            base.Awake();
             buttonConfirm?.onClick.AddListener(OnClickConfirm);
-            buttonCancel?.onClick.AddListener(OnClickClose);
             dropdownLanguage?.onValueChanged.AddListener(OnChangeDropdownLanguage);
         }
-        private void Start()
+        protected override void Start()
         {
+            base.Start();
             gameObject.SetActive(false);
             if (dropdownLanguage != null)
             {
@@ -34,12 +37,9 @@ namespace GGemCo2DCore
             }
         }
 
-        public void Show(bool show)
-        {
-            gameObject.SetActive(show);
-        }
         private void OnEnable()
         {
+            // 현재 설정된 언어로 dropdownLanguage 셋팅하기
             int index = PlayerPrefsManager.LoadIndexLocalizationLocale();
             if (index != -1)
             {
@@ -49,18 +49,15 @@ namespace GGemCo2DCore
 
         private void OnChangeDropdownLanguage(int value)
         {
-            // Debug.Log($"select: {value}");
+            // GcLogger.Log($"select: {value}");
         }
-
+        /// <summary>
+        /// 옵션 설정 저장하기
+        /// </summary>
         private void OnClickConfirm()
         {
-            // Debug.Log($"dropdownLanguage.value: {dropdownLanguage.value}");
+            // GcLogger.Log($"dropdownLanguage.value: {dropdownLanguage.value}");
             LocalizationManager.Instance?.StartChangeLocale(dropdownLanguage.value);
         }
-        private void OnClickClose()
-        {
-            Show(false);
-        }
-
     }
 }

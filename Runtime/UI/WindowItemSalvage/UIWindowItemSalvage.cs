@@ -188,11 +188,7 @@ namespace GGemCo2DCore
                 { CurrencyConstants.Type.Silver, totalPriceSilver.Value }
             };
             ResultCommon resultCommon = SceneGame.saveDataManager.Player.CheckNeedCurrency(needCurrency);
-            if (resultCommon.Code == ResultCommon.Type.Fail)
-            {
-                SceneGame.systemMessageManager.ShowMessageWarning(resultCommon.Message);
-                return;
-            }
+            if (resultCommon.Result == ResultCommon.ResultType.Fail) return;
             // 재화 사용처리 하기
             SceneGame.saveDataManager.Player.MinusCurrency(CurrencyConstants.Type.Gold, totalPriceGold.Value);
             SceneGame.saveDataManager.Player.MinusCurrency(CurrencyConstants.Type.Silver, totalPriceSilver.Value);

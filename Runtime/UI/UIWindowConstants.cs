@@ -26,7 +26,9 @@
             ItemCraft,
             Dialogue,
             HudQuest,
-            QuestReward
+            QuestReward,
+            SaveData,
+            Option
         }
 
         public const string TitleHeaderCommon = "[공통속성]";

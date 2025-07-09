@@ -37,16 +37,16 @@ namespace GGemCo2DCore
         {
             if (slotIndex < 0 || slotIndex >= MaxSlotCount)
             {
-                return new ResultCommon(ResultCommon.Type.Fail, "Invalid slot index.");
+                return ResultCommon.Fail("Slot_InvalidSlot", $"slotIndex: {slotIndex}."); // 슬롯 정보가 잘 못 되었습니다.
             }
             var info = TableLoaderManager.Instance.TableItem.GetDataByUid(itemUid);
             if (info == null || info.Uid <= 0)
             {
-                return new ResultCommon(ResultCommon.Type.Fail, $"아이템 정보가 없습니다. itemUid: {itemUid}");
+                return ResultCommon.Fail();
             }
             
             if (!ItemCounts.TryGetValue(slotIndex, out var item))
-                return new ResultCommon(ResultCommon.Type.Fail, $"아이템 정보가 없습니다. slotIndex: {slotIndex}");
+                return ResultCommon.Fail($"Slot_ItemNotFound", $"slotIndex: {slotIndex}");//아이템 정보가 없습니다.
             
             List<SaveDataIcon> controls = new List<SaveDataIcon>();
             
@@ -54,7 +54,7 @@ namespace GGemCo2DCore
             switch (count)
             {
                 case < 0:
-                    return new ResultCommon(ResultCommon.Type.Fail, $"슬롯에 있는 아이템 개수가 부족합니다. slotIndex: {slotIndex}");
+                    return ResultCommon.Fail($"Slot_NotEnoughItemCount", $"slotIndex: {slotIndex}");//슬롯에 있는 아이템 개수가 부족합니다.
                 case 0:
                     controls.Add(new SaveDataIcon(slotIndex, 0));
                     break;
@@ -63,7 +63,7 @@ namespace GGemCo2DCore
                     break;
             }
 
-            return new ResultCommon(ResultCommon.Type.Success, $"", controls);
+            return ResultCommon.SuccessWithIcons(controls);
         }
         /// <summary>
         /// 아이템 추가.
@@ -73,7 +73,7 @@ namespace GGemCo2DCore
             var info = TableLoaderManager.Instance.TableItem.GetDataByUid(itemUid);
             if (info == null || info.Uid <= 0)
             {
-                return new ResultCommon(ResultCommon.Type.Fail, $"아이템 정보가 없습니다. itemUid: {itemUid}");
+                return ResultCommon.Fail();
             }
 
             // 재화 별도 처리 
@@ -95,7 +95,7 @@ namespace GGemCo2DCore
                 int maxOverlayCount = info.MaxOverlayCount;
                 if (maxOverlayCount <= 0)
                 {
-                    return new ResultCommon(ResultCommon.Type.Fail, "최대 중첩 개수가 0 입니다. itemUid: {itemUid}");
+                    return ResultCommon.Fail("Slot_MaxStackZero", $"itemUid: {itemUid}");//최대 중첩 개수가 0 입니다.
                 }
                 int remainingValue = itemCount;
 
@@ -126,7 +126,7 @@ namespace GGemCo2DCore
                     int emptyIndex = FindEmptySlot();
                     if (emptyIndex == -1)
                     {
-                        return new ResultCommon(ResultCommon.Type.Fail, "There is not enough space in the inventory.");//"인벤토리에 공간이 부족합니다."
+                        return ResultCommon.Fail("Inventory_NoSpace");//"인벤토리에 빈 공간이 없습니다."
                     }
 
                     int addedAmount = Math.Min(remainingValue, maxOverlayCount);
@@ -136,7 +136,7 @@ namespace GGemCo2DCore
                 }
 
                 SaveDatas();
-                return new ResultCommon(ResultCommon.Type.Success, "", controls);
+                return ResultCommon.SuccessWithIcons(controls);
             }
         }
         /// <summary>
@@ -146,19 +146,19 @@ namespace GGemCo2DCore
         {
             if (slotIndex < 0 || slotIndex >= MaxSlotCount)
             {
-                return new ResultCommon(ResultCommon.Type.Fail, "Invalid slot index.");//"잘못된 슬롯 인덱스입니다."
+                return ResultCommon.Fail("Slot_InvalidIndex");//"잘못된 슬롯 인덱스입니다."
             }
 
             var info = TableLoaderManager.Instance.TableItem.GetDataByUid(itemUid);
             if (info == null || info.Uid <= 0)
             {
-                return new ResultCommon(ResultCommon.Type.Fail, $"아이템 정보가 없습니다. itemUid: {itemUid}");
+                return ResultCommon.Fail();
             }
             // 여유 있게 1개의 공간이 남아있는지 체크 
             int emptyIndex = FindEmptySlot();
             if (emptyIndex == -1)
             {
-                return new ResultCommon(ResultCommon.Type.Fail, "There is not enough space in the inventory.");//"인벤토리에 공간이 부족합니다."
+                return ResultCommon.Fail("Inventory_NoSpace");//"인벤토리에 공간이 부족합니다."
             }
 
             int maxOverlayCount = info.MaxOverlayCount;
@@ -192,7 +192,7 @@ namespace GGemCo2DCore
                 emptyIndex = FindEmptySlot();
                 if (emptyIndex == -1)
                 {
-                    return new ResultCommon(ResultCommon.Type.Fail, "There is not enough space in the inventory.");//"인벤토리에 공간이 부족합니다."
+                    return ResultCommon.Fail("Inventory_NoSpace");//"인벤토리에 공간이 부족합니다."
                 }
 
                 int addedAmount = Math.Min(remainingValue, maxOverlayCount);
@@ -200,7 +200,7 @@ namespace GGemCo2DCore
                 TempItemCounts.TryAdd(emptyIndex, new SaveDataIcon(emptyIndex, itemUid, addedAmount));
                 remainingValue -= addedAmount;
             }
-            return new ResultCommon(ResultCommon.Type.Success, "", controls);
+            return ResultCommon.SuccessWithIcons(controls);
         }
         /// <summary>
         /// 특정 슬롯 제거
@@ -258,32 +258,32 @@ namespace GGemCo2DCore
             // 이동할 슬롯과 대상 슬롯이 동일하면 무시
             if (fromIndex == toIndex)
             {
-                return new ResultCommon(ResultCommon.Type.Fail, "You cannot move to the same slot.");//"같은 슬롯으로 이동할 수 없습니다."
+                return ResultCommon.Fail("Slot_CannotMoveToSame");//"같은 슬롯으로 이동할 수 없습니다."
             }
 
             // fromIndex 아이템 존재 확인
             if (!ItemCounts.TryGetValue(fromIndex, out var fromItem) || fromItem.Count <= 0)
             {
-                return new ResultCommon(ResultCommon.Type.Fail, $"이동할 아이템이 없습니다. 슬롯: {fromIndex}");
+                return ResultCommon.Fail($"Slot_ItemNotAvailable", $"fromIndex: {fromIndex}");//이동할 아이템이 없습니다.
             }
 
             // toIndex 아이템 존재 확인
             if (!ItemCounts.TryGetValue(toIndex, out var toItem) || toItem.Count <= 0)
             {
-                return new ResultCommon(ResultCommon.Type.Fail, $"대상 슬롯에 아이템이 없습니다. 슬롯: {toIndex}");
+                return ResultCommon.Fail($"Slot_TargetSlotEmpty", $"toIndex: {toIndex}");//대상 슬롯에 아이템이 없습니다.
             }
 
             // 같은 아이템인지 확인
             if (fromItem.Uid != toItem.Uid)
             {
-                return new ResultCommon(ResultCommon.Type.Fail, "You can't combine other kinds of items.");//"다른 종류의 아이템은 합칠 수 없습니다."
+                return ResultCommon.Fail("Slot_MergeDifferentTypes");//"다른 종류의 아이템은 합칠 수 없습니다."
             }
 
             // 아이템 정보 가져오기 (최대 중첩 개수 확인)
             var info = TableLoaderManager.Instance.TableItem.GetDataByUid(fromItem.Uid);
             if (info == null || info.Uid <= 0)
             {
-                return new ResultCommon(ResultCommon.Type.Fail, $"아이템 정보가 없습니다. itemUid: {fromItem.Uid}");
+                return ResultCommon.Fail();
             }
 
             int maxOverlayCount = info.MaxOverlayCount; // 최대 중첩 개수
@@ -292,7 +292,7 @@ namespace GGemCo2DCore
             // 합칠 공간이 없는 경우
             if (availableSpace <= 0)
             {
-                return new ResultCommon(ResultCommon.Type.Fail, "There is no space in the destination slot.");//"대상 슬롯에 합칠 공간이 없습니다."
+                return ResultCommon.Fail("Slot_MergeNoSpace");//"대상 슬롯에 합칠 공간이 없습니다."
             }
 
             // 이동 가능한 개수 계산
@@ -310,7 +310,8 @@ namespace GGemCo2DCore
                 ? new SaveDataIcon(fromIndex, 0)
                 : new SaveDataIcon(fromIndex, fromItem.Uid, fromItemCount));
 
-            return new ResultCommon(ResultCommon.Type.Success, $"{moveAmount}개 아이템이 {fromIndex} → {toIndex}로 이동되었습니다.", controls);
+            string message = string.Format(LocalizationManager.Instance.GetSystemByKey("Slot_MoveSuccess"), moveAmount, fromIndex, toIndex);
+            return ResultCommon.Success(message, controls);
         }
         /// <summary>
         /// 아이템 uid 로 찾아서 개수 빼기 
@@ -323,7 +324,7 @@ namespace GGemCo2DCore
             var info = TableLoaderManager.Instance.TableItem.GetDataByUid(itemUid);
             if (info == null || info.Uid <= 0)
             {
-                return new ResultCommon(ResultCommon.Type.Fail, $"아이템 정보가 없습니다. itemUid: {itemUid}");
+                return ResultCommon.Fail();
             }
 
             int remainCount = itemCount;
@@ -356,7 +357,7 @@ namespace GGemCo2DCore
                 }
             }
 
-            return new ResultCommon(ResultCommon.Type.Success, $"", controls);
+            return ResultCommon.SuccessWithIcons(controls);
         }
     }
 }

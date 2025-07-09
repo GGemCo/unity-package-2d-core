@@ -312,11 +312,7 @@ namespace GGemCo2DCore
             // 재화 체크
             var resultCommon = SceneGame.saveDataManager.Player.CheckNeedCurrency(_selectedCtruckTableItemCraft.NeedCurrencyType,
                 _selectedCtruckTableItemCraft.NeedCurrencyValue);
-            if (resultCommon.Code == ResultCommon.Type.Fail)
-            {
-                SceneGame.systemMessageManager.ShowMessageWarning(resultCommon.Message);
-                return;
-            }
+            if (resultCommon.Result == ResultCommon.ResultType.Fail) return;
             // 재료 개수 빼주기
             foreach (var elementMaterial in _elementMaterials)
             {
