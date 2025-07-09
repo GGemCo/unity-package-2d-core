@@ -13,16 +13,28 @@ MonoBehaviour:
   m_Name: GGemCo_UI_Window_22 Shared Data
   m_EditorClassIdentifier: 
   m_TableCollectionName: GGemCo_UI_Window_22
-  m_TableCollectionNameGuidString: 4a4e53eecebe84f4bbb9321f131ae3b0
-  m_Entries: []
+  m_TableCollectionNameGuidString: 8806804a5d51f314786cfdfdac37c53e
+  m_Entries:
+  - m_Id: 262372134912
+    m_Key: Button_Close
+    m_Metadata:
+      m_Items: []
+  - m_Id: 952150593536
+    m_Key: Button_Load
+    m_Metadata:
+      m_Items: []
+  - m_Id: 989802860544
+    m_Key: Button_Delete
+    m_Metadata:
+      m_Items: []
   m_Metadata:
     m_Items: []
   m_KeyGenerator:
-    rid: 9086697319111589889
+    rid: 9086697449047457794
   references:
     version: 2
     RefIds:
-    - rid: 9086697319111589889
+    - rid: 9086697449047457794
       type: {class: DistributedUIDGenerator, ns: UnityEngine.Localization.Tables, asm: Unity.Localization}
       data:
-        m_CustomEpoch: 1751530205548
+        m_CustomEpoch: 1752024148066

@@ -122,6 +122,13 @@ namespace GGemCo2DCoreEditor
                 Debug.LogError("GGemCo_Core_Canvas 가 없습니다.");
                 return;
             }
+            
+            // 불러오기 버튼 생성
+            MetaDataButton metaDataButton = new MetaDataButton(scene.GetFieldNameButtonOpenSaveDataWindow(), "Load Game",
+                LocalizationConstants.Tables.Scene, LocalizationConstants.Keys.Intro.ButtonLoad());
+            Button createdButton = CreateUIComponent.CreateObjectButton(metaDataButton);
+            scene.SetButtonOpenSaveDataWindow(createdButton);
+            createdButton.gameObject.transform.localPosition = new Vector2(0, -100);
 
             string objectName = scene.GetNameUIWindowLoadSaveData();
             GameObject prefab = FindPrefabByName(ConfigEditor.PathUIWindow, objectName);
@@ -153,12 +160,6 @@ namespace GGemCo2DCoreEditor
                 uiWindowLoadSaveData.SetPopupManager(popupManager);
             }
             
-            // 불러오기 버튼 생성
-            MetaDataButton metaDataButton = new MetaDataButton(scene.GetFieldNameButtonOpenSaveDataWindow(), "Load Game",
-                LocalizationConstants.Tables.Scene, LocalizationConstants.Keys.Intro.ButtonLoad());
-            Button createdButton = CreateUIComponent.CreateObjectButton(metaDataButton);
-            scene.SetButtonOpenSaveDataWindow(createdButton);
-            createdButton.gameObject.transform.localPosition = new Vector2(0, -100);
             EditorUtility.SetDirty(scene);
             
             scene.SetUIWindowLoadSaveData(uiWindowLoadSaveData);

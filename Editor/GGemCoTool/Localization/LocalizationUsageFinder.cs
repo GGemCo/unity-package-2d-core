@@ -51,7 +51,11 @@ namespace GGemCo2DCoreEditor
         {
             int total = 0;
 
+#if UNITY_6000_0_OR_NEWER
+            foreach (var evt in GameObject.FindObjectsByType<LocalizeStringEvent>(FindObjectsSortMode.None))
+#else
             foreach (var evt in GameObject.FindObjectsOfType<LocalizeStringEvent>(true))
+#endif
             {
                 if (IsMatching(evt))
                 {

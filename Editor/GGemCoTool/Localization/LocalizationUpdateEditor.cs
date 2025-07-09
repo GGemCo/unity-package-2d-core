@@ -8,12 +8,11 @@ using UnityEngine;
 using UnityEngine.Localization;
 using UnityEngine.Localization.Components;
 using UnityEngine.Localization.Settings;
-using UnityEngine.Localization.Tables;
 using UnityEngine.SceneManagement;
 
 namespace GGemCo2DCoreEditor
 {
-    public class LocalizeStringEventUpdaterWindow : EditorWindow
+    public class LocalizationUpdateEditor : EditorWindow
     {
         private const string Title = "LocalizeStringEvent 일괄 업데이트 툴";
         private bool _includeScenes = true;
@@ -24,7 +23,7 @@ namespace GGemCo2DCoreEditor
         [MenuItem(ConfigEditor.NameToolLocalizationUpdate, false, (int)ConfigEditor.ToolOrdering.LocalizationUpdate)]
         public static void ShowWindow()
         {
-            GetWindow<LocalizeStringEventUpdaterWindow>(Title);
+            GetWindow<LocalizationUpdateEditor>(Title);
         }
 
         private void OnGUI()
@@ -250,15 +249,6 @@ namespace GGemCo2DCoreEditor
             }
 
             return false;
-            // else
-            // {
-            //     localizeStringEvent.StringReference = new LocalizedString
-            //     {
-            //         TableReference = currentTable,
-            //         TableEntryReference = currentKey
-            //     };
-            // }
-
         }
     }
 }

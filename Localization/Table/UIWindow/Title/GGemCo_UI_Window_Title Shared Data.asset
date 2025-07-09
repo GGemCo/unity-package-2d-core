@@ -10,23 +10,23 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 5b11a58205ec3474ca216360e9fa74a8, type: 3}
-  m_Name: GGemCo_System Shared Data
+  m_Name: GGemCo_UI_Window_Title Shared Data
   m_EditorClassIdentifier: 
-  m_TableCollectionName: GGemCo_System
-  m_TableCollectionNameGuidString: ca5ce54a32bd99244b43869cf500287d
+  m_TableCollectionName: GGemCo_UI_Window_Title
+  m_TableCollectionNameGuidString: 1c5f047110e3da8448d951feb3935762
   m_Entries:
-  - m_Id: 966058905600
-    m_Key: 1
+  - m_Id: 135624462336
+    m_Key: 22
     m_Metadata:
       m_Items: []
   m_Metadata:
     m_Items: []
   m_KeyGenerator:
-    rid: 9086697449047457793
+    rid: 9086697449404497920
   references:
     version: 2
     RefIds:
-    - rid: 9086697449047457793
+    - rid: 9086697449404497920
       type: {class: DistributedUIDGenerator, ns: UnityEngine.Localization.Tables, asm: Unity.Localization}
       data:
-        m_CustomEpoch: 1752024111330
+        m_CustomEpoch: 1752025293586

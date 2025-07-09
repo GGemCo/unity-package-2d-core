@@ -10,17 +10,16 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: e9620f8c34305754d8cc9a7e49e852d9, type: 3}
-  m_Name: GGemco_System_ko
+  m_Name: GGemCo_System_ko
   m_EditorClassIdentifier: 
   m_LocaleId:
     m_Code: ko
-  m_SharedData: {fileID: 11400000, guid: 6797ff1e441fa6649a806739fadde114, type: 2}
+  m_SharedData: {fileID: 11400000, guid: ca5ce54a32bd99244b43869cf500287d, type: 2}
   m_Metadata:
     m_Items: []
   m_TableData:
-  - m_Id: 258161053696
-    m_Localized: "\uB0A8\uC740 \uC800\uC7A5 \uC2AC\uB86F\uC774 \uC5C6\uC2B5\uB2C8\uB2E4.\n\uC800\uC7A5\uB418\uC5B4\uC788\uB294
-      \uB370\uC774\uD130\uB97C \uC9C0\uC6CC\uC8FC\uC138\uC694."
+  - m_Id: 966058905600
+    m_Localized: 3
     m_Metadata:
       m_Items: []
   references:
