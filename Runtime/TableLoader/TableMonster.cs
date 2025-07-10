@@ -53,6 +53,14 @@ namespace GGemCo2DCore
         private CharacterConstants.Grade ConvertGrade(string grade) => MapGrade.GetValueOrDefault(grade, CharacterConstants.Grade.None);
         private CharacterConstants.AttackType ConvertAttackType(string grade) => MapAttackType.GetValueOrDefault(grade, CharacterConstants.AttackType.None);
 
+        protected override void OnLoadedData(Dictionary<string, string> data)
+        {
+            int uid = int.Parse(data["Uid"]);
+            if (LocalizationManager.Instance != null)
+            {
+                data["Name"] = LocalizationManager.Instance.GetMonsterNameByKey(uid.ToString());   
+            }
+        }
         public StruckTableMonster GetDataByUid(int uid)
         {
             if (uid <= 0)

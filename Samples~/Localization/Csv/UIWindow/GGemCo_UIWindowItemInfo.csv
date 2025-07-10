@@ -1,0 +1,8 @@
+Key,Shared Comments,English(en),English(en) Comments,Korean(ko),Korean(ko) Comments
+"Text_Name","","Name: {0}","","이름: {0}",""
+"Text_Type","","Type: {0}","","타입: {0}",""
+"Text_Category","","Category: {0}","","카테고리: {0}",""
+"Text_SubCategory","","SubCategory: {0}","","서브카테고리: {0}",""
+"Text_Recovery","","Recovery: {0}","","회복량: {0}",""
+"Text_SellPrice","","Sell Price: {0}","","판매가: {0}",""
+"Text_AntiFlag","","Restricted: {0}","","불가: {0}",""

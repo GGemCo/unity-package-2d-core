@@ -39,6 +39,10 @@ MonoBehaviour:
     m_Key: Text_SellPrice
     m_Metadata:
       m_Items: []
+  - m_Id: 120833139347456
+    m_Key: Text_AntiFlag
+    m_Metadata:
+      m_Items: []
   m_Metadata:
     m_Items: []
   m_KeyGenerator:

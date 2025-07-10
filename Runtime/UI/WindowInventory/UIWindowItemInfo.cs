@@ -103,8 +103,6 @@ namespace GGemCo2DCore
         private void SetSalePrice()
         {
             if (currentStruckTableItem == null) return;
-            // textSalePrice.text =
-                // $"Sell Price: {CurrencyConstants.GetNameByCurrencyType(currentStruckTableItem.SaleCurrencyType)} {currentStruckTableItem.SaleCurrencyValue}";
             textSalePrice.text = string.Format(localizationManager.GetUIWindowItemInfoByKey("Text_SellPrice"), $"{CurrencyConstants.GetNameByCurrencyType(currentStruckTableItem.SaleCurrencyType)} {currentStruckTableItem.SaleCurrencyValue}");
         }
 
@@ -113,28 +111,21 @@ namespace GGemCo2DCore
             if (currentStruckTableItem == null) return;
             textDescription.text = $"{currentStruckTableItem.Description}";
         }
-
+        /// <summary>
+        /// Anti Flag
+        /// TableItem 에서 미리 파싱 처리한다.
+        /// </summary>
         private void SetAntiFlag()
         {
             if (currentStruckTableItem == null) return;
-            string antiFlag = "";
-            foreach (var t in currentStruckTableItem.AntiFlag)
-            {
-                if (antiFlag != "")
-                {
-                    antiFlag += ",";
-                }
-                antiFlag += ItemConstants.GetAntiFlagName(t);
-            }
-
-            if (antiFlag == "")
+            if (string.IsNullOrEmpty(currentStruckTableItem.AntiFlagText))
             {
                 textAntiFlag.gameObject.SetActive(false);
                 return;
             }
 
             textAntiFlag.gameObject.SetActive(true);
-            textAntiFlag.text = $"{antiFlag}";
+            textAntiFlag.text = string.Format(localizationManager.GetUIWindowItemInfoByKey("Text_AntiFlag"), currentStruckTableItem.AntiFlagText);
         }
 
         /// <summary>
@@ -143,7 +134,8 @@ namespace GGemCo2DCore
         private void SetName()
         {
             if (currentStruckTableItem == null) return;
-            textName.text = string.Format(localizationManager.GetUIWindowItemInfoByKey("Text_Name"), currentStruckTableItem.Name);
+            textName.text = string.Format(localizationManager.GetUIWindowItemInfoByKey("Text_Name"),
+                localizationManager.GetItemNameByKey(currentStruckTableItem.Uid.ToString()));
         }
         /// <summary>
         /// 타입 설정하기

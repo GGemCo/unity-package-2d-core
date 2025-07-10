@@ -34,7 +34,7 @@ MonoBehaviour:
     - rid: 9086697449404498122
       type: {class: KeyIdColumns, ns: UnityEditor.Localization.Plugins.CSV.Columns, asm: Unity.Localization.Editor}
       data:
-        m_IncludeId: 1
+        m_IncludeId: 0
         m_IncludeSharedComments: 1
         m_KeyFieldName: Key
         m_IdFieldName: Id

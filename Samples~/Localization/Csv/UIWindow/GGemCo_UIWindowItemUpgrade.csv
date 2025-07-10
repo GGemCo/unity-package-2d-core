@@ -1,0 +1,5 @@
+Key,Shared Comments,English(en),English(en) Comments,Korean(ko),Korean(ko) Comments
+"Button_Confirm","","Confirm","","강화하기",""
+"Text_Rate","","Rate: {0}%","","강화확률: {0}%",""
+"Text_Success","","Success","","강화에 성공했습니다.",""
+"Text_Fail","","Fail","","강화에 실패했습니다.",""

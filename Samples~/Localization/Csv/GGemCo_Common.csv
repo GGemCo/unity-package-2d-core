@@ -1,3 +1,4 @@
-Key,Shared Comments,English(en),Korean(ko)
-"confirm","","Confirm","확인"
-"cancel","","Cancel","취소"
+Key,Shared Comments,English(en),English(en) Comments,Korean(ko),Korean(ko) Comments
+"Confirm","","Confirm","","확인",""
+"Cancel","","Cancel","","취소",""
+"Close","","Close","","닫기",""

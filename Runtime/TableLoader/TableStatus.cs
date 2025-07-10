@@ -22,6 +22,10 @@ namespace GGemCo2DCore
         {
             int uid = int.Parse(data["Uid"]);
             string id = data["ID"];
+            if (LocalizationManager.Instance != null)
+            {
+                data["Name"] = LocalizationManager.Instance.GetStatusNameByKey(id);   
+            }
             
             StruckTableStatus struckTableStatus = GetDataByUid(uid);
             dictionaryByID.TryAdd(id, struckTableStatus);

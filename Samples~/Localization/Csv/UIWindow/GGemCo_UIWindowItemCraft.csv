@@ -1,0 +1,5 @@
+Key,Shared Comments,English(en),English(en) Comments,Korean(ko),Korean(ko) Comments
+"Button_Craft","","Craft","","제작하기",""
+"Text_Rate","","Rate: {0}%","","제작확률: {0}%",""
+"Text_Success","","Success","","제작에 성공하였습니다.",""
+"Text_Fail","","Fail","","제작에 실패하였습니다.",""

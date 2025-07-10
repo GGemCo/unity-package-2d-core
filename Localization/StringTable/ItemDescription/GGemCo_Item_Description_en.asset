@@ -1,0 +1,183 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e9620f8c34305754d8cc9a7e49e852d9, type: 3}
+  m_Name: GGemCo_Item_Description_en
+  m_EditorClassIdentifier: 
+  m_LocaleId:
+    m_Code: en
+  m_SharedData: {fileID: 11400000, guid: f06fa3f8ee7274743b311dee674bcc6b, type: 2}
+  m_Metadata:
+    m_Items: []
+  m_TableData:
+  - m_Id: 2196634144768
+    m_Localized: This is a dull sword.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2196701253632
+    m_Localized: This is a sharp sword.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 4888081272832
+    m_Localized: None
+    m_Metadata:
+      m_Items: []
+  - m_Id: 4888085467136
+    m_Localized: None
+    m_Metadata:
+      m_Items: []
+  - m_Id: 4888085467137
+    m_Localized: This is a dull sword.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 4888085467138
+    m_Localized: This is a dull sword.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 4888085467139
+    m_Localized: This is a dull sword.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 4888085467140
+    m_Localized: This is a dull sword.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 4888085467141
+    m_Localized: This is a dull sword.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 4888085467142
+    m_Localized: This is a crafted sword 1.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 4888085467143
+    m_Localized: This is a crafted sword 2.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 4888085467144
+    m_Localized: This is a basic top.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 4888085467145
+    m_Localized: This top has slightly higher defense.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 4888085467146
+    m_Localized: These are basic shoes.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 4888085467147
+    m_Localized: These shoes slightly increase movement speed.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 4888085467148
+    m_Localized: Restores {StatusValue1} health.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 4888085467149
+    m_Localized: Restores {StatusValue1} health.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 4888085467150
+    m_Localized: Restores {StatusValue1} health.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 4888085467151
+    m_Localized: Restores {StatusValue1} mana.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 4888085467152
+    m_Localized: Restores {StatusValue1} mana.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 4888085467153
+    m_Localized: Restores {StatusValue1} mana.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 4888085467154
+    m_Localized: None
+    m_Metadata:
+      m_Items: []
+  - m_Id: 4888085467155
+    m_Localized: None
+    m_Metadata:
+      m_Items: []
+  - m_Id: 4888085467156
+    m_Localized: Used for crafting items.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 4888085467157
+    m_Localized: Used for crafting items.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 4888085467158
+    m_Localized: Used for crafting items.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 4888085467159
+    m_Localized: Used for crafting items.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 4888085467160
+    m_Localized: Used for crafting items.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 4888085467161
+    m_Localized: Used for item enhancement.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 4888085467162
+    m_Localized: Used for item enhancement.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 4888085467163
+    m_Localized: Used for item enhancement.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 4888085467164
+    m_Localized: Used for item enhancement.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 4888085467165
+    m_Localized: Used for item enhancement.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 4888085467166
+    m_Localized: Used for item enhancement.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 4888085467167
+    m_Localized: Used for item enhancement.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 4888085467168
+    m_Localized: Used for item enhancement.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 4888085467169
+    m_Localized: Used for item enhancement.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 4888085467170
+    m_Localized: Used for item enhancement.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 4888085467171
+    m_Localized: Used for item enhancement.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 4888085467172
+    m_Localized: Used for item enhancement.
+    m_Metadata:
+      m_Items: []
+  references:
+    version: 2
+    RefIds: []

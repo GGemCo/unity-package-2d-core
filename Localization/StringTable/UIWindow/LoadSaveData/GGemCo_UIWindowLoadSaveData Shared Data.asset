@@ -15,6 +15,10 @@ MonoBehaviour:
   m_TableCollectionName: GGemCo_UIWindowLoadSaveData
   m_TableCollectionNameGuidString: 8806804a5d51f314786cfdfdac37c53e
   m_Entries:
+  - m_Id: 474414493274112
+    m_Key: Button_Close
+    m_Metadata:
+      m_Items: []
   - m_Id: 952150593536
     m_Key: Button_Load
     m_Metadata:

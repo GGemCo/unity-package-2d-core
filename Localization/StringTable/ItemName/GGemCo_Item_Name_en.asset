@@ -1,0 +1,183 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e9620f8c34305754d8cc9a7e49e852d9, type: 3}
+  m_Name: GGemCo_Item_Name_en
+  m_EditorClassIdentifier: 
+  m_LocaleId:
+    m_Code: en
+  m_SharedData: {fileID: 11400000, guid: 8797a5fb0e5cacb4e9d7053d57da290a, type: 2}
+  m_Metadata:
+    m_Items: []
+  m_TableData:
+  - m_Id: 2548267814912
+    m_Localized: Sword
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2548326535168
+    m_Localized: Super Sword
+    m_Metadata:
+      m_Items: []
+  - m_Id: 3835512295424
+    m_Localized: Gold
+    m_Metadata:
+      m_Items: []
+  - m_Id: 3835575209984
+    m_Localized: Silver
+    m_Metadata:
+      m_Items: []
+  - m_Id: 3835575209985
+    m_Localized: Sword
+    m_Metadata:
+      m_Items: []
+  - m_Id: 3835575209986
+    m_Localized: Sword
+    m_Metadata:
+      m_Items: []
+  - m_Id: 3835575209987
+    m_Localized: Sword
+    m_Metadata:
+      m_Items: []
+  - m_Id: 3835575209988
+    m_Localized: Sword
+    m_Metadata:
+      m_Items: []
+  - m_Id: 3835575209989
+    m_Localized: Sword
+    m_Metadata:
+      m_Items: []
+  - m_Id: 3835575209990
+    m_Localized: Crafed Sword1
+    m_Metadata:
+      m_Items: []
+  - m_Id: 3835575209991
+    m_Localized: Crafed Sword2
+    m_Metadata:
+      m_Items: []
+  - m_Id: 3835575209992
+    m_Localized: Chest1
+    m_Metadata:
+      m_Items: []
+  - m_Id: 3835575209993
+    m_Localized: Chest2
+    m_Metadata:
+      m_Items: []
+  - m_Id: 3835575209994
+    m_Localized: Boots1
+    m_Metadata:
+      m_Items: []
+  - m_Id: 3835575209995
+    m_Localized: Boots1
+    m_Metadata:
+      m_Items: []
+  - m_Id: 3835575209996
+    m_Localized: Small HP Potion
+    m_Metadata:
+      m_Items: []
+  - m_Id: 3835575209997
+    m_Localized: Big HP Potion
+    m_Metadata:
+      m_Items: []
+  - m_Id: 3835575209998
+    m_Localized: Crafted HP Potion
+    m_Metadata:
+      m_Items: []
+  - m_Id: 3835575209999
+    m_Localized: Small MP Potion
+    m_Metadata:
+      m_Items: []
+  - m_Id: 3835575210000
+    m_Localized: Big MP Potion
+    m_Metadata:
+      m_Items: []
+  - m_Id: 3835575210001
+    m_Localized: Crafed MP Potion
+    m_Metadata:
+      m_Items: []
+  - m_Id: 3835575210002
+    m_Localized: ATK Speed Potion
+    m_Metadata:
+      m_Items: []
+  - m_Id: 3835575210003
+    m_Localized: Move Speed Potion
+    m_Metadata:
+      m_Items: []
+  - m_Id: 3835575210004
+    m_Localized: Arandula
+    m_Metadata:
+      m_Items: []
+  - m_Id: 3835575210005
+    m_Localized: Kekik
+    m_Metadata:
+      m_Items: []
+  - m_Id: 3835575210006
+    m_Localized: Kokuda
+    m_Metadata:
+      m_Items: []
+  - m_Id: 3835575210007
+    m_Localized: Mandragora
+    m_Metadata:
+      m_Items: []
+  - m_Id: 3835575210008
+    m_Localized: Sclaria
+    m_Metadata:
+      m_Items: []
+  - m_Id: 3835575210009
+    m_Localized: Rock1
+    m_Metadata:
+      m_Items: []
+  - m_Id: 3835575210010
+    m_Localized: Rock2
+    m_Metadata:
+      m_Items: []
+  - m_Id: 3835575210011
+    m_Localized: Rock3
+    m_Metadata:
+      m_Items: []
+  - m_Id: 3835575210012
+    m_Localized: GoldBar1
+    m_Metadata:
+      m_Items: []
+  - m_Id: 3835575210013
+    m_Localized: GoldBar2
+    m_Metadata:
+      m_Items: []
+  - m_Id: 3835575210014
+    m_Localized: GoldBar3
+    m_Metadata:
+      m_Items: []
+  - m_Id: 3835579404288
+    m_Localized: SilverBar1
+    m_Metadata:
+      m_Items: []
+  - m_Id: 3835579404289
+    m_Localized: SilverBar2
+    m_Metadata:
+      m_Items: []
+  - m_Id: 3835579404290
+    m_Localized: SilverBar3
+    m_Metadata:
+      m_Items: []
+  - m_Id: 3835579404291
+    m_Localized: BronzeBar1
+    m_Metadata:
+      m_Items: []
+  - m_Id: 3835579404292
+    m_Localized: BronzeBar2
+    m_Metadata:
+      m_Items: []
+  - m_Id: 3835579404293
+    m_Localized: BronzeBar3
+    m_Metadata:
+      m_Items: []
+  references:
+    version: 2
+    RefIds: []

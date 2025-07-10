@@ -1,0 +1,91 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e9620f8c34305754d8cc9a7e49e852d9, type: 3}
+  m_Name: GGemCo_Affect_Name_en
+  m_EditorClassIdentifier: 
+  m_LocaleId:
+    m_Code: en
+  m_SharedData: {fileID: 11400000, guid: 73a15d126c407b144b9c189c1ca70ec3, type: 2}
+  m_Metadata:
+    m_Items: []
+  m_TableData:
+  - m_Id: 711334629376
+    m_Localized: 'Movement Speed Up  '
+    m_Metadata:
+      m_Items: []
+  - m_Id: 711397543936
+    m_Localized: 'Attack Speed Up  '
+    m_Metadata:
+      m_Items: []
+  - m_Id: 711397543937
+    m_Localized: 'HP Recovery  '
+    m_Metadata:
+      m_Items: []
+  - m_Id: 711397543938
+    m_Localized: 'MP Recovery  '
+    m_Metadata:
+      m_Items: []
+  - m_Id: 711401738240
+    m_Localized: 'Firewall DoT Damage  '
+    m_Metadata:
+      m_Items: []
+  - m_Id: 711401738241
+    m_Localized: 'Fast Movement  '
+    m_Metadata:
+      m_Items: []
+  - m_Id: 711401738242
+    m_Localized: 'Fast Movement  '
+    m_Metadata:
+      m_Items: []
+  - m_Id: 711401738243
+    m_Localized: 'Fast Movement  '
+    m_Metadata:
+      m_Items: []
+  - m_Id: 711401738244
+    m_Localized: 'Slow Movement  '
+    m_Metadata:
+      m_Items: []
+  - m_Id: 711401738245
+    m_Localized: 'Slow Movement  '
+    m_Metadata:
+      m_Items: []
+  - m_Id: 711401738246
+    m_Localized: 'Slow Movement  '
+    m_Metadata:
+      m_Items: []
+  - m_Id: 711401738247
+    m_Localized: 'Movement Range Down  '
+    m_Metadata:
+      m_Items: []
+  - m_Id: 711401738248
+    m_Localized: 'Movement Range Down  '
+    m_Metadata:
+      m_Items: []
+  - m_Id: 711401738249
+    m_Localized: 'Movement Range Down  '
+    m_Metadata:
+      m_Items: []
+  - m_Id: 711401738250
+    m_Localized: 'Attack Range Down  '
+    m_Metadata:
+      m_Items: []
+  - m_Id: 711401738251
+    m_Localized: 'Attack Range Down  '
+    m_Metadata:
+      m_Items: []
+  - m_Id: 711401738252
+    m_Localized: 'Attack Range Down  '
+    m_Metadata:
+      m_Items: []
+  references:
+    version: 2
+    RefIds: []

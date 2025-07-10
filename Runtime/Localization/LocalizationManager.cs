@@ -218,7 +218,7 @@ namespace GGemCo2DCore
         /// <param name="key"></param>
         /// <returns></returns>
         public string GetCommonGameByKey(string key) => GetString(LocalizationConstants.Tables.CommonGame, key);
-        public string GetTableStatusByKey(string key) => GetString(LocalizationConstants.Tables.TableStatus, key);
+        public string GetStatusNameByKey(string key) => GetString(LocalizationConstants.Tables.StatusName, key);
         public string GetUIWindowSkillInfoByKey(string key) => GetString(LocalizationConstants.Tables.UIWindowSkillInfo, key);
 
         public string GetUIWindowSkillByKey(string key) => GetString(LocalizationConstants.Tables.UIWindowSkill, key);
@@ -228,5 +228,15 @@ namespace GGemCo2DCore
         public string GetUIWindowItemCraftByKey(string key) => GetString(LocalizationConstants.Tables.UIWindowItemCraft, key);
 
         public string GetUIWindowQuestRewardByKey(string key) => GetString(LocalizationConstants.Tables.UIWindowQuestReward, key);
+        public string GetItemNameByKey(string key) => GetString(LocalizationConstants.Tables.ItemName, key);
+        public string GetItemDescriptionByKey(string key) => GetString(LocalizationConstants.Tables.ItemDescription, key);
+        public string GetMapNameByKey(string key) => GetString(LocalizationConstants.Tables.MapName, key);
+        public string GetSkillNameByKey(string key) => GetString(LocalizationConstants.Tables.SkillName, key);
+        public string GetNpcNameByKey(string key) => GetString(LocalizationConstants.Tables.NpcName, key);
+        public string GetMonsterNameByKey(string key) => GetString(LocalizationConstants.Tables.MonsterName, key);
+
+        public string GetUIWindowTitleByKey(string key) => GetString(LocalizationConstants.Tables.UIWindowTitle, key);
+
+        public string GetAffectNameByKey(string key) => GetString(LocalizationConstants.Tables.AffectName, key);
     }
 }

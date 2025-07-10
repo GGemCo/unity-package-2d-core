@@ -1,0 +1,12 @@
+Key,Shared Comments,English(en),English(en) Comments,Korean(ko),Korean(ko) Comments
+"Text_Name","","Name: {0}","","이름: {0}",""
+"Text_Level","","Level: {0}","","레벨: {0}",""
+"Text_NeedLevel","","Need Level: {0}","","필요한 레벨: {0}",""
+"Text_Target","","Target: {0}","","대상: {0}",""
+"Text_DamageType","","Damage type: {0}","","데미지 타입: {0}",""
+"Text_Distance","","Distance: {0}","","사정거리: {0}",""
+"Text_NeedMp","","Need Mp: {0}","","소모MP: {0}",""
+"Text_Duration","","Duration: {0}","","지속시간: {0}",""
+"Text_CoolTime","","Cool Time: {0}","","쿨타임: {0}",""
+"Text_Affect","","{0}% chance to trigger {1} {2} for {3} seconds.","","{0}% 확률로 {1} {2} 가 {3} 초 동안 발동합니다.",""
+"Text_DamageRange","","Damage Range: {0}","","공격범위: {0}",""

@@ -35,6 +35,15 @@ namespace GGemCo2DCore
 
         private CharacterConstants.Grade ConvertGrade(string grade) => MapGrade.GetValueOrDefault(grade, CharacterConstants.Grade.None);
 
+        protected override void OnLoadedData(Dictionary<string, string> data)
+        {
+            int uid = int.Parse(data["Uid"]);
+            if (LocalizationManager.Instance != null)
+            {
+                data["Name"] = LocalizationManager.Instance.GetNpcNameByKey(uid.ToString());   
+            }
+        }
+
         public StruckTableNpc GetDataByUid(int uid)
         {
             if (uid <= 0)

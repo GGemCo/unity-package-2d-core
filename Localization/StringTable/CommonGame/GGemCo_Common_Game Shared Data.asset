@@ -14,7 +14,23 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   m_TableCollectionName: GGemCo_Common_Game
   m_TableCollectionNameGuidString: c922662afc9d7d843ad70deb7add2f20
-  m_Entries: []
+  m_Entries:
+  - m_Id: 111497574944768
+    m_Key: Item_AntiFlag_Shop
+    m_Metadata:
+      m_Items: []
+  - m_Id: 111659366027264
+    m_Key: Item_AntiFlag_Stash
+    m_Metadata:
+      m_Items: []
+  - m_Id: 111743419879424
+    m_Key: Item_AntiFlag_Salvage
+    m_Metadata:
+      m_Items: []
+  - m_Id: 111821404573696
+    m_Key: Item_AntiFlag_Upgrade
+    m_Metadata:
+      m_Items: []
   m_Metadata:
     m_Items: []
   m_KeyGenerator:

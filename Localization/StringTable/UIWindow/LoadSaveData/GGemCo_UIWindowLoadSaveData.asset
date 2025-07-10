@@ -30,7 +30,7 @@ MonoBehaviour:
         - rid: 9086697449404498134
         - rid: 9086697449404498135
         - rid: 9086697449404498136
-        m_ConnectedFile: com.ggemco.2d.core/Samples~/Localization/Csv/GGemCo_UIWindowLoadSaveData.csv
+        m_ConnectedFile: com.ggemco.2d.core/Samples~/Localization/Csv/UIWindow/GGemCo_UIWindowLoadSaveData.csv
     - rid: 9086697449404498134
       type: {class: KeyIdColumns, ns: UnityEditor.Localization.Plugins.CSV.Columns, asm: Unity.Localization.Editor}
       data:
@@ -46,7 +46,7 @@ MonoBehaviour:
           m_Code: en
         m_FieldName: English(en)
         m_CommentFieldName: English(en) Comments
-        m_IncludeComments: 0
+        m_IncludeComments: 1
     - rid: 9086697449404498136
       type: {class: LocaleColumns, ns: UnityEditor.Localization.Plugins.CSV.Columns, asm: Unity.Localization.Editor}
       data:
@@ -54,4 +54,4 @@ MonoBehaviour:
           m_Code: ko
         m_FieldName: Korean(ko)
         m_CommentFieldName: Korean(ko) Comments
-        m_IncludeComments: 0
+        m_IncludeComments: 1

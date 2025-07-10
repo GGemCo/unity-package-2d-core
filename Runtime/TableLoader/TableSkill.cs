@@ -77,6 +77,11 @@ namespace GGemCo2DCore
             int uid = int.Parse(data["Uid"]);
             int level = int.Parse(data["Level"]);
 
+            if (LocalizationManager.Instance != null)
+            {
+                data["Name"] = LocalizationManager.Instance.GetSkillNameByKey(uid.ToString());   
+            }
+            
             if (!skillsByLevel.ContainsKey(uid))
             {
                 skillsByLevel.TryAdd(uid, new Dictionary<int, StruckTableSkill>());

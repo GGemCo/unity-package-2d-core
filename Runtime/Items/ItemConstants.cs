@@ -102,18 +102,5 @@ namespace GGemCo2DCore
             { ConfigCommon.SuffixType.Increase, "+{0}%" },
             { ConfigCommon.SuffixType.Decrease, "-{0}%" }
         };
-        private static readonly Dictionary<AntiFlag, string> AntiFlagName = new Dictionary<AntiFlag, string>
-        {
-            { AntiFlag.None, "" },
-            { AntiFlag.ShopSale, "Unsellable" }, //상점 판매 불가
-            { AntiFlag.Stash, "Unstorable" },//창고 보관 불가
-            { AntiFlag.Salvage, "Undismantlable" },//분해 불가
-            { AntiFlag.Upgrade, "Unenhanceable" }//강화 불가
-        };
-
-        public static string GetAntiFlagName(AntiFlag antiFlag)
-        {
-            return AntiFlagName[antiFlag];
-        }
     }
 }

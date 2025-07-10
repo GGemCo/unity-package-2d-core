@@ -308,17 +308,17 @@ namespace GGemCo2DCore
         {
             _statBindings.AddRange(new[]
             {
-                new StatUIBinding { textUI = UIWindowPlayerInfo.IndexPlayerInfo.Atk, GetStat = p => p.TotalAtk, label = _localizationManager.GetTableStatusByKey("STAT_ATK") },
-                new StatUIBinding { textUI = UIWindowPlayerInfo.IndexPlayerInfo.Def, GetStat = p => p.TotalDef, label = _localizationManager.GetTableStatusByKey("STAT_DEF") },
-                new StatUIBinding { textUI = UIWindowPlayerInfo.IndexPlayerInfo.Hp, GetStat = p => p.TotalHp, label = _localizationManager.GetTableStatusByKey("STAT_HP") },
-                new StatUIBinding { textUI = UIWindowPlayerInfo.IndexPlayerInfo.Mp, GetStat = p => p.TotalMp, label = _localizationManager.GetTableStatusByKey("STAT_MP") },
-                new StatUIBinding { textUI = UIWindowPlayerInfo.IndexPlayerInfo.MoveSpeed, GetStat = p => p.TotalMoveSpeed, label = _localizationManager.GetTableStatusByKey("STAT_MOVE_SPEED") },
-                new StatUIBinding { textUI = UIWindowPlayerInfo.IndexPlayerInfo.AttackSpeed, GetStat = p => p.TotalAttackSpeed, label = _localizationManager.GetTableStatusByKey("STAT_ATTACK_SPEED") },
-                new StatUIBinding { textUI = UIWindowPlayerInfo.IndexPlayerInfo.CriticalDamage, GetStat = p => p.TotalCriticalDamage, label = _localizationManager.GetTableStatusByKey("STAT_CRITICAL_DAMAGE") },
-                new StatUIBinding { textUI = UIWindowPlayerInfo.IndexPlayerInfo.CriticalProbability, GetStat = p => p.TotalCriticalProbability, label = _localizationManager.GetTableStatusByKey("STAT_CRITICAL_PROBABILITY") },
-                new StatUIBinding { textUI = UIWindowPlayerInfo.IndexPlayerInfo.RegistFire, GetStat = p => p.TotalRegistFire, label = _localizationManager.GetTableStatusByKey("STAT_REGISTANCE_FIRE") },
-                new StatUIBinding { textUI = UIWindowPlayerInfo.IndexPlayerInfo.RegistCold, GetStat = p => p.TotalRegistCold, label = _localizationManager.GetTableStatusByKey("STAT_REGISTANCE_COLD") },
-                new StatUIBinding { textUI = UIWindowPlayerInfo.IndexPlayerInfo.RegistLightning, GetStat = p => p.TotalRegistLightning, label = _localizationManager.GetTableStatusByKey("STAT_REGISTANCE_LIGHTNING") }
+                new StatUIBinding { textUI = UIWindowPlayerInfo.IndexPlayerInfo.Atk, GetStat = p => p.TotalAtk, label = _localizationManager.GetStatusNameByKey("STAT_ATK") },
+                new StatUIBinding { textUI = UIWindowPlayerInfo.IndexPlayerInfo.Def, GetStat = p => p.TotalDef, label = _localizationManager.GetStatusNameByKey("STAT_DEF") },
+                new StatUIBinding { textUI = UIWindowPlayerInfo.IndexPlayerInfo.Hp, GetStat = p => p.TotalHp, label = _localizationManager.GetStatusNameByKey("STAT_HP") },
+                new StatUIBinding { textUI = UIWindowPlayerInfo.IndexPlayerInfo.Mp, GetStat = p => p.TotalMp, label = _localizationManager.GetStatusNameByKey("STAT_MP") },
+                new StatUIBinding { textUI = UIWindowPlayerInfo.IndexPlayerInfo.MoveSpeed, GetStat = p => p.TotalMoveSpeed, label = _localizationManager.GetStatusNameByKey("STAT_MOVE_SPEED") },
+                new StatUIBinding { textUI = UIWindowPlayerInfo.IndexPlayerInfo.AttackSpeed, GetStat = p => p.TotalAttackSpeed, label = _localizationManager.GetStatusNameByKey("STAT_ATTACK_SPEED") },
+                new StatUIBinding { textUI = UIWindowPlayerInfo.IndexPlayerInfo.CriticalDamage, GetStat = p => p.TotalCriticalDamage, label = _localizationManager.GetStatusNameByKey("STAT_CRITICAL_DAMAGE") },
+                new StatUIBinding { textUI = UIWindowPlayerInfo.IndexPlayerInfo.CriticalProbability, GetStat = p => p.TotalCriticalProbability, label = _localizationManager.GetStatusNameByKey("STAT_CRITICAL_PROBABILITY") },
+                new StatUIBinding { textUI = UIWindowPlayerInfo.IndexPlayerInfo.RegistFire, GetStat = p => p.TotalRegistFire, label = _localizationManager.GetStatusNameByKey("STAT_REGISTANCE_FIRE") },
+                new StatUIBinding { textUI = UIWindowPlayerInfo.IndexPlayerInfo.RegistCold, GetStat = p => p.TotalRegistCold, label = _localizationManager.GetStatusNameByKey("STAT_REGISTANCE_COLD") },
+                new StatUIBinding { textUI = UIWindowPlayerInfo.IndexPlayerInfo.RegistLightning, GetStat = p => p.TotalRegistLightning, label = _localizationManager.GetStatusNameByKey("STAT_REGISTANCE_LIGHTNING") }
             });
             foreach (var binding in _statBindings)
             {

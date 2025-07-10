@@ -25,6 +25,7 @@ namespace GGemCo2DCore
         public CurrencyConstants.Type SaleCurrencyType;
         public int SaleCurrencyValue;
         public ItemConstants.AntiFlag[] AntiFlag;
+        public string AntiFlagText;
         public string Description;
         
         public string StatusID1;
@@ -169,18 +170,40 @@ namespace GGemCo2DCore
         }
         private readonly Dictionary<ItemConstants.Category, List<StruckTableItem>> dictionaryByCategory = new Dictionary<ItemConstants.Category, List<StruckTableItem>>();
         private readonly Dictionary<ItemConstants.SubCategory, List<StruckTableItem>> dictionaryBySubCategory = new Dictionary<ItemConstants.SubCategory, List<StruckTableItem>>();
+
+        private static string GetAntiFlagName(ItemConstants.AntiFlag antiFlag)
+        {
+            return antiFlag switch
+            {
+                ItemConstants.AntiFlag.ShopSale => LocalizationManager.Instance.GetCommonGameByKey("Item_AntiFlag_Shop"),
+                ItemConstants.AntiFlag.Stash => LocalizationManager.Instance.GetCommonGameByKey("Item_AntiFlag_Stash"),
+                ItemConstants.AntiFlag.Salvage => LocalizationManager.Instance.GetCommonGameByKey("Item_AntiFlag_Salvage"),
+                ItemConstants.AntiFlag.Upgrade => LocalizationManager.Instance.GetCommonGameByKey("Item_AntiFlag_Upgrade"),
+                _ => ""
+            };
+        }
         protected override void OnLoadedData(Dictionary<string, string> data)
         {
             int uid = int.Parse(data["Uid"]);
             int upgrade = int.Parse(data["Upgrade"]);
+            string name = data["Name"];
+            if (LocalizationManager.Instance != null)
+            {
+                name = LocalizationManager.Instance.GetItemNameByKey(uid.ToString());   
+            }
             if (upgrade > 0)
             {
-                data["Name"] = $"{data["Name"]} +{data["Upgrade"]}"; 
+                data["Name"] = $"{name} +{data["Upgrade"]}"; 
             }
 
             ItemConstants.Category category = ConvertCategory(data["Category"]);
             ItemConstants.SubCategory subCategory = ConvertSubCategory(data["SubCategory"]);
-            data["Description"] = ParsePlaceholders(data["Description"], data);
+            string desc = data["Description"];
+            if (LocalizationManager.Instance != null)
+            {
+                desc = LocalizationManager.Instance.GetItemDescriptionByKey(uid.ToString());   
+            }
+            data["Description"] = ParsePlaceholders(desc, data);
             data["PartsImagePath"] = $"Images/Parts/{data["PartsID"]}/{data["ImagePath"]}";
             if (data["PartsID"] == "")
             {
@@ -192,6 +215,19 @@ namespace GGemCo2DCore
             data["ImagePath"] = ConvertImagePath(data, category, subCategory);
             // 드랍 아이템 이미지 경로
             data["ImageItemPath"] = data["ImagePath"].Replace("/Icon/Item/", "/Item/");
+
+            // Anti Flag를 item info 에서 보여줄 문구로 변환
+            ItemConstants.AntiFlag[] antiFlags = ConvertAntiFlag(data["AntiFlag"]);
+            string antiFlag = "";
+            foreach (var t in antiFlags)
+            {
+                if (antiFlag != "")
+                {
+                    antiFlag += ",";
+                }
+                antiFlag += GetAntiFlagName(t);
+            }
+            data["AntiFlagText"] = antiFlag;
             
             StruckTableItem struckTableItemDropGroup = GetDataByUid(uid);
             {
@@ -244,6 +280,7 @@ namespace GGemCo2DCore
                 ImagePath = data["ImagePath"],
                 Upgrade = int.Parse(data["Upgrade"]),
                 AntiFlag = ConvertAntiFlag(data["AntiFlag"]),
+                AntiFlagText = data["AntiFlagText"],
                 MaxOverlayCount = int.Parse(data["MaxOverlayCount"]),
                 CoolTime = float.Parse(data["CoolTime"]),
                 Description = data["Description"],

@@ -37,6 +37,14 @@ namespace GGemCo2DCore
         }
         private static AffectConstants.Type ConvertType(string type) => MapType.GetValueOrDefault(type, AffectConstants.Type.None);
         
+        protected override void OnLoadedData(Dictionary<string, string> data)
+        {
+            int uid = int.Parse(data["Uid"]);
+            if (LocalizationManager.Instance != null)
+            {
+                data["Name"] = LocalizationManager.Instance.GetAffectNameByKey(uid.ToString());   
+            }
+        }
         public StruckTableAffect GetDataByUid(int uid)
         {
             if (uid <= 0)

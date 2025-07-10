@@ -10,9 +10,9 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 5b11a58205ec3474ca216360e9fa74a8, type: 3}
-  m_Name: GGemCo_Table_Status Shared Data
+  m_Name: GGemCo_Status_Name Shared Data
   m_EditorClassIdentifier: 
-  m_TableCollectionName: GGemCo_Table_Status
+  m_TableCollectionName: GGemCo_Status_Name
   m_TableCollectionNameGuidString: f57d827913a653e459e16ff17edb9c4b
   m_Entries:
   - m_Id: 4819571511296
