@@ -1,0 +1,120 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5b11a58205ec3474ca216360e9fa74a8, type: 3}
+  m_Name: GGemCo_UI_Window_Title Shared Data
+  m_EditorClassIdentifier: 
+  m_TableCollectionName: GGemCo_UI_Window_Title
+  m_TableCollectionNameGuidString: 1c5f047110e3da8448d951feb3935762
+  m_Entries:
+  - m_Id: 332993408864256
+    m_Key: UIWindowHud
+    m_Metadata:
+      m_Items: []
+  - m_Id: 332993413058560
+    m_Key: UIWindowInventory
+    m_Metadata:
+      m_Items: []
+  - m_Id: 332993413058561
+    m_Key: UIWindowItemInfo
+    m_Metadata:
+      m_Items: []
+  - m_Id: 332993413058562
+    m_Key: UIWindowEquip
+    m_Metadata:
+      m_Items: []
+  - m_Id: 332993417252864
+    m_Key: UIWindowPlayerStatInfo
+    m_Metadata:
+      m_Items: []
+  - m_Id: 332993417252865
+    m_Key: UIWindowItemSplit
+    m_Metadata:
+      m_Items: []
+  - m_Id: 332993417252866
+    m_Key: UIWindowPlayerBuffInfo
+    m_Metadata:
+      m_Items: []
+  - m_Id: 332993417252867
+    m_Key: UIWindowQuickSlot
+    m_Metadata:
+      m_Items: []
+  - m_Id: 332993417252868
+    m_Key: UIWindowSkill
+    m_Metadata:
+      m_Items: []
+  - m_Id: 332993417252869
+    m_Key: UIWindowSkillInfo
+    m_Metadata:
+      m_Items: []
+  - m_Id: 332993417252870
+    m_Key: UIWindowInteractionDialogue
+    m_Metadata:
+      m_Items: []
+  - m_Id: 332993417252871
+    m_Key: UIWindowShop
+    m_Metadata:
+      m_Items: []
+  - m_Id: 332993417252872
+    m_Key: UIWindowItemBuy
+    m_Metadata:
+      m_Items: []
+  - m_Id: 332993417252873
+    m_Key: UIWindowStash
+    m_Metadata:
+      m_Items: []
+  - m_Id: 332993417252874
+    m_Key: UIWindowShopSale
+    m_Metadata:
+      m_Items: []
+  - m_Id: 332993417252875
+    m_Key: UIWindowItemUpgrade
+    m_Metadata:
+      m_Items: []
+  - m_Id: 332993417252876
+    m_Key: UIWindowItemSalvage
+    m_Metadata:
+      m_Items: []
+  - m_Id: 332993417252877
+    m_Key: UIWindowItemCraft
+    m_Metadata:
+      m_Items: []
+  - m_Id: 332993417252878
+    m_Key: UIWindowDialogue
+    m_Metadata:
+      m_Items: []
+  - m_Id: 332993417252879
+    m_Key: UIWindowHudQuest
+    m_Metadata:
+      m_Items: []
+  - m_Id: 332993417252880
+    m_Key: UIWindowQuestReward
+    m_Metadata:
+      m_Items: []
+  - m_Id: 135624462336
+    m_Key: UIWindowLoadSaveData
+    m_Metadata:
+      m_Items: []
+  - m_Id: 44135278514176
+    m_Key: UIWindowOption
+    m_Metadata:
+      m_Items: []
+  m_Metadata:
+    m_Items: []
+  m_KeyGenerator:
+    rid: 9086697449404497920
+  references:
+    version: 2
+    RefIds:
+    - rid: 9086697449404497920
+      type: {class: DistributedUIDGenerator, ns: UnityEngine.Localization.Tables, asm: Unity.Localization}
+      data:
+        m_CustomEpoch: 1752025293586

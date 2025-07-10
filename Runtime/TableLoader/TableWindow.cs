@@ -7,6 +7,7 @@
     {
         public int Uid;
         public string Name;
+        public bool UseInGame;
         public bool DefaultActive;
         public int Ordering;
         public bool IsInteraction;
@@ -34,6 +35,7 @@
             {
                 Uid = int.Parse(data["Uid"]),
                 Name = data["Name"],
+                UseInGame = ConvertBoolean(data["UseInGame"]),
                 DefaultActive = ConvertBoolean(data["DefaultActive"]),
                 Ordering = int.Parse(data["Ordering"]),
                 IsInteraction = ConvertBoolean(data["IsInteraction"]),

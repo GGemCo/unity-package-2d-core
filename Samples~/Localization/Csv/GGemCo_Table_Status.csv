@@ -1,0 +1,19 @@
+Key,Shared Comments,English(en),English(en) Comments,Korean(ko),Korean(ko) Comments
+STAT_ATK,,ATK,Increases damage dealt by physical and skill attacks.,공격력,물리 및 스킬 공격의 피해량을 증가시킵니다.
+STAT_DEF,,DEF,Reduces damage taken from enemy attacks.,방어력,적의 공격으로부터 받는 피해를 감소시킵니다.
+STAT_HP,,HP,"Maximum health points. When it reaches 0, the character dies.",생명력,캐릭터의 최대 체력입니다. 0이 되면 사망합니다.
+STAT_MP,,MP,Maximum mana points. Used when casting skills or spells.,마력,스킬이나 마법 사용 시 소모되는 최대 마력입니다.
+STAT_MOVE_SPEED,,Move SPD,Affects how fast the character moves.,이동속도,캐릭터의 이동 속도에 영향을 줍니다.
+STAT_ATTACK_SPEED,,ATK SPD,Determines how quickly the character can attack.,공격속도,공격을 얼마나 빠르게 할 수 있는지를 결정합니다.
+STAT_CRITICAL_DAMAGE,,Crit DMG,Bonus damage dealt when landing a critical hit.,크리티컬 데미지,치명타 발생 시 추가로 입히는 피해량입니다.
+STAT_CRITICAL_PROBABILITY,,Crit Rate,Chance to land a critical hit.,크리티컬 확률,공격 시 치명타가 발생할 확률입니다.
+STAT_REGISTANCE_FIRE,,Fire RES,Reduces damage taken from fire-based attacks.,불 속성 저항,불 속성 공격으로부터 받는 피해를 감소시킵니다.
+STAT_REGISTANCE_COLD,,Ice RES,Reduces damage taken from ice-based attacks.,얼음 속성 저항,얼음 속성 공격으로부터 받는 피해를 감소시킵니다.
+STAT_REGISTANCE_LIGHTNING,,Lightning RES,Reduces damage taken from lightning-based attacks.,전기 속성 저항,전기 속성 공격으로부터 받는 피해를 감소시킵니다.
+DAMAGE_PHYSIC,,Physical DMG,Amount of physical damage dealt to enemies.,물리 데미지,적에게 입히는 물리 속성 피해량입니다.
+DAMAGE_FIRE,,Fire DMG,Damage dealt by fire-based skills or attacks.,불 데미지,불 속성 스킬이나 공격으로 입히는 피해입니다.
+DAMAGE_COLD,,Ice DMG,Damage dealt by ice-based skills or attacks.,얼음 데미지,얼음 속성 스킬이나 공격으로 입히는 피해입니다.
+DAMAGE_LIGHTING,,Lightning DMG,Damage dealt by lightning-based skills or attacks.,전기 데미지,전기 속성 스킬이나 공격으로 입히는 피해입니다.
+HEAL_HP,,HP Regen,Amount of HP restored over time.,생명력 회복,시간이 지남에 따라 회복되는 체력의 양입니다.
+HEAL_MP,,MP Regen,Amount of MP restored over time.,마력 회복,시간이 지남에 따라 회복되는 마력의 양입니다.
+AFFECT_UID,,Effect,Used to reference visual or sound effects associated with status.,어펙트,상태에 연결된 이펙트(시각/음향 효과)를 참조합니다.

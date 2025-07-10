@@ -50,6 +50,7 @@ namespace GGemCo2DCore
         private UIWindowInventory _uiWindowInventory;
 
         private InventoryData _inventoryData;
+        private LocalizationManager _localizationManager;
         
         // 재료 최대 개수. item_upgrade 테이블에 있는 컬럼수와 맞아야 한다
         private const int MaxElementCount = 4;
@@ -65,6 +66,7 @@ namespace GGemCo2DCore
             _elementMaterials.Clear();
             uid = UIWindowConstants.WindowUid.ItemUpgrade;
             if (TableLoaderManager.Instance == null) return;
+            _localizationManager = LocalizationManager.Instance;
             _tableItem = TableLoaderManager.Instance.TableItem;
             _tableItemUpgrade = TableLoaderManager.Instance.TableItemUpgrade;
             _tableStatus = TableLoaderManager.Instance.TableStatus;
@@ -210,7 +212,7 @@ namespace GGemCo2DCore
             if (textRate != null)
             {
                 textRate.gameObject.SetActive(true);
-                textRate.text = $"Rate: {info.Rate}%"; // 강화 확률
+                textRate.text = string.Format(_localizationManager.GetUIWindowItemUpgradeByKey("Text_Rate"), info.Rate); // 강화 확률
             }
             if (textNeedCurrency != null)
             {
@@ -359,12 +361,12 @@ namespace GGemCo2DCore
             ShowTextResult(true);
             if (_updateResult)
             {
-                textResult.text = "Success"; // "강화에 성공하였습니다.";
+                textResult.text = _localizationManager.GetUIWindowItemUpgradeByKey("Text_Success");  // "강화에 성공하였습니다.";
                 textResult.color = Color.blue;
             }
             else
             {
-                textResult.text = "Fail"; //"강화에 실패하였습니다.";
+                textResult.text = _localizationManager.GetUIWindowItemUpgradeByKey("Text_Fail"); //"강화에 실패하였습니다.";
                 textResult.color = Color.red;
             }
             // 인벤토리에 아이템 체크

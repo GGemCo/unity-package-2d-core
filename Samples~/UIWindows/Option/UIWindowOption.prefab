@@ -657,9 +657,19 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a0b104cbed4643598e840f690a10b084, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  uid: 0
+  buttonClose: {fileID: 2859623167209120724}
+  iconType: 0
+  maxCountIcon: 0
+  useFade: 1
+  slots: []
+  icons: []
+  slotSize: {x: 0, y: 0}
+  iconSize: {x: 0, y: 0}
+  preLoadSlots: []
+  containerIcon: {fileID: 0}
   dropdownLanguage: {fileID: 3781392312127588087}
   buttonConfirm: {fileID: 405579154415751986}
-  buttonCancel: {fileID: 2859623167209120724}
 --- !u!1 &1792905396672187005
 GameObject:
   m_ObjectHideFlags: 0
@@ -1306,9 +1316,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   m_StringReference:
     m_TableReference:
-      m_TableCollectionName: GUID:8806804a5d51f314786cfdfdac37c53e
+      m_TableCollectionName: GUID:551417deade283e4086d2a6ca196cf6c
     m_TableEntryReference:
-      m_KeyId: 262372134912
+      m_KeyId: 2739001221517312
       m_Key: 
     m_FallbackState: 0
     m_WaitForCompletion: 0

@@ -1,0 +1,44 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5b11a58205ec3474ca216360e9fa74a8, type: 3}
+  m_Name: GGemCo_UIWindowItemCraft Shared Data
+  m_EditorClassIdentifier: 
+  m_TableCollectionName: GGemCo_UIWindowItemCraft
+  m_TableCollectionNameGuidString: e66c208dbfbd5494593b61f4a39be6ad
+  m_Entries:
+  - m_Id: 37898830811136
+    m_Key: Button_Craft
+    m_Metadata:
+      m_Items: []
+  - m_Id: 38078644817920
+    m_Key: Text_Rate
+    m_Metadata:
+      m_Items: []
+  - m_Id: 38894793461760
+    m_Key: Text_Success
+    m_Metadata:
+      m_Items: []
+  - m_Id: 38926884081664
+    m_Key: Text_Fail
+    m_Metadata:
+      m_Items: []
+  m_Metadata:
+    m_Items: []
+  m_KeyGenerator:
+    rid: 9086697469354180724
+  references:
+    version: 2
+    RefIds:
+    - rid: 9086697469354180724
+      type: {class: DistributedUIDGenerator, ns: UnityEngine.Localization.Tables, asm: Unity.Localization}
+      data:
+        m_CustomEpoch: 1752104256403

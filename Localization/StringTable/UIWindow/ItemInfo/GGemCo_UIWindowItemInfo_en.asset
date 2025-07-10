@@ -1,0 +1,47 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e9620f8c34305754d8cc9a7e49e852d9, type: 3}
+  m_Name: GGemCo_UIWindowItemInfo_en
+  m_EditorClassIdentifier: 
+  m_LocaleId:
+    m_Code: en
+  m_SharedData: {fileID: 11400000, guid: ab72c2dde7056c440bc044403c08f981, type: 2}
+  m_Metadata:
+    m_Items: []
+  m_TableData:
+  - m_Id: 4280599252992
+    m_Localized: 'Name: {0}'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 4370973921280
+    m_Localized: 'Type: {0}'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 4430117801984
+    m_Localized: 'Category: {0}'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 6243596439552
+    m_Localized: 'SubCategory: {0}'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 6333534900224
+    m_Localized: 'Recovery: {0}'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 6710753824768
+    m_Localized: 'Sell Price: {0}'
+    m_Metadata:
+      m_Items: []
+  references:
+    version: 2
+    RefIds: []

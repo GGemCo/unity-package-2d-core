@@ -208,6 +208,11 @@ namespace GGemCo2DCoreEditor
             {
                 var info = _tableWindow.GetDataByUid(outerPair.Key);
                 if (info.Uid <= 0) continue;
+                if (!info.UseInGame)
+                {
+                    uiWindows.Add(null);
+                    continue;
+                }
                 string objectName = info.PrefabName;
                 
                 GameObject prefab = FindPrefabByName(ConfigEditor.PathUIWindow, objectName);

@@ -24,8 +24,9 @@ namespace GGemCo2DCore
 
         private LocalizedStringDatabase _stringDatabase;
         private LocalizedAssetDatabase _assetDatabase;
-        
+
         private readonly Dictionary<string, bool> _userTableExistsMap = new();
+
         private void Awake()
         {
             if (Instance == null)
@@ -38,6 +39,7 @@ namespace GGemCo2DCore
                 Destroy(gameObject);
                 return;
             }
+
             _stringDatabase = LocalizationSettings.StringDatabase;
             _assetDatabase = LocalizationSettings.AssetDatabase;
 
@@ -58,7 +60,8 @@ namespace GGemCo2DCore
         private void InitializeLanguageCodes()
         {
             _languageCodes = new List<string>();
-            foreach (LocalizationConstants.LanguageIndex lang in Enum.GetValues(typeof(LocalizationConstants.LanguageIndex)))
+            foreach (LocalizationConstants.LanguageIndex lang in Enum.GetValues(
+                         typeof(LocalizationConstants.LanguageIndex)))
             {
                 _languageCodes.Add(lang.ToString());
             }
@@ -96,6 +99,7 @@ namespace GGemCo2DCore
             PlayerPrefsManager.SaveIndexLocalizationLocale(index);
             onChangeLocale?.Invoke();
         }
+
         private IEnumerator CheckUserTablesExist()
         {
             foreach (string baseTable in LocalizationConstants.Tables.All)
@@ -121,26 +125,6 @@ namespace GGemCo2DCore
         }
 
         /// <summary>
-        /// 공용 테이블에서 문자열을 가져옵니다.
-        /// </summary>
-        public string GetCommonByKey(string key) => GetString(LocalizationConstants.Tables.Common, key);
-
-        /// <summary>
-        /// 시스템 테이블에서 문자열을 가져옵니다.
-        /// </summary>
-        public string GetSystemByKey(string key) => GetString(LocalizationConstants.Tables.System, key);
-
-        /// <summary>
-        /// 시스템 테이블에서 int 키로 문자열을 가져옵니다.
-        /// </summary>
-        public string GetSystemByKey(int key) => key > 0 ? GetSystemByKey($"{key}") : string.Empty;
-
-        /// <summary>
-        /// 씬 테이블에서 문자열을 가져옵니다.
-        /// </summary>
-        public string GetSceneByKey(string key) => GetString(LocalizationConstants.Tables.Scene, key);
-
-        /// <summary>
         /// 지정한 테이블과 키로 로컬라이즈된 문자열을 가져옵니다.
         /// </summary>
         private string GetString(string table, string key)
@@ -161,11 +145,12 @@ namespace GGemCo2DCore
                     return userLocalized.Entry.Value;
                 }
             }
+
             // 유저 테이블에 없으면 기존 테이블 조회
             var tableEntryResult = _stringDatabase.GetTableEntry(table, key, LocalizationSettings.SelectedLocale);
             if (tableEntryResult.Entry != null)
                 return tableEntryResult.Entry.Value;
-            
+
             GcLogger.LogWarning($"[MISSING:{key}]");
             return "";
         }
@@ -175,7 +160,8 @@ namespace GGemCo2DCore
         /// </summary>
         public T GetLocalizedAsset<T>(string table, string key) where T : UnityEngine.Object
         {
-            AsyncOperationHandle<T> handle = _assetDatabase.GetLocalizedAssetAsync<T>(table, key, LocalizationSettings.SelectedLocale);
+            AsyncOperationHandle<T> handle =
+                _assetDatabase.GetLocalizedAssetAsync<T>(table, key, LocalizationSettings.SelectedLocale);
             return handle.WaitForCompletion();
         }
 
@@ -183,5 +169,42 @@ namespace GGemCo2DCore
         /// 현재 언어 코드 (예: "En", "Ko") 반환
         /// </summary>
         public string GetCurrentLanguageCode() => CurrentLanguageCode;
+
+        /// <summary>
+        /// UI 에서 사용하는 공용 단어
+        /// </summary>
+        public string GetCommonUIByKey(string key) => GetString(LocalizationConstants.Tables.CommonUI, key);
+
+        /// <summary>
+        /// 시스템 메시지
+        /// </summary>
+        public string GetSystemByKey(string key) => GetString(LocalizationConstants.Tables.System, key);
+
+        /// <summary>
+        /// Scene (인트로, 로딩, 게임)
+        /// </summary>
+        public string GetSceneByKey(string key) => GetString(LocalizationConstants.Tables.Scene, key);
+        /// <summary>
+        /// 아이템 정보 윈도우
+        /// </summary>
+        /// <param name="key"></param>
+        /// <returns></returns>
+        public string GetUIWindowItemInfoByKey(string key) => GetString(LocalizationConstants.Tables.UIWindowItemInfo, key);
+        /// <summary>
+        /// 인게임에서 사용하는 공용 단어
+        /// </summary>
+        /// <param name="key"></param>
+        /// <returns></returns>
+        public string GetCommonGameByKey(string key) => GetString(LocalizationConstants.Tables.CommonGame, key);
+        public string GetTableStatusByKey(string key) => GetString(LocalizationConstants.Tables.TableStatus, key);
+        public string GetUIWindowSkillInfoByKey(string key) => GetString(LocalizationConstants.Tables.UIWindowSkillInfo, key);
+
+        public string GetUIWindowSkillByKey(string key) => GetString(LocalizationConstants.Tables.UIWindowSkill, key);
+
+        public string GetUIWindowItemUpgradeByKey(string key) => GetString(LocalizationConstants.Tables.UIWindowItemUpgrade, key);
+
+        public string GetUIWindowItemCraftByKey(string key) => GetString(LocalizationConstants.Tables.UIWindowItemCraft, key);
+
+        public string GetUIWindowQuestRewardByKey(string key) => GetString(LocalizationConstants.Tables.UIWindowQuestReward, key);
     }
 }

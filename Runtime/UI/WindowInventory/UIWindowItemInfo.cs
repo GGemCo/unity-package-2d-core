@@ -50,6 +50,7 @@ namespace GGemCo2DCore
         
         private StruckTableItem currentStruckTableItem;
         private TableStatus tableStatus;
+        private LocalizationManager localizationManager;
         
         protected override void Awake()
         {
@@ -68,6 +69,12 @@ namespace GGemCo2DCore
                 { ItemConstants.Category.Armor, SetArmorUI },
                 { ItemConstants.Category.Potion, SetPotionUI },
             };
+        }
+
+        protected override void Start()
+        {
+            base.Start();
+            localizationManager = LocalizationManager.Instance;
         }
 
         public void SetItemUid(int itemUid, GameObject icon, PositionType type, Vector2 iconSlotSize, Vector2? pivot = null, Vector3? position = null)
@@ -96,8 +103,9 @@ namespace GGemCo2DCore
         private void SetSalePrice()
         {
             if (currentStruckTableItem == null) return;
-            textSalePrice.text =
-                $"Sell Price: {CurrencyConstants.GetNameByCurrencyType(currentStruckTableItem.SaleCurrencyType)} {currentStruckTableItem.SaleCurrencyValue}";
+            // textSalePrice.text =
+                // $"Sell Price: {CurrencyConstants.GetNameByCurrencyType(currentStruckTableItem.SaleCurrencyType)} {currentStruckTableItem.SaleCurrencyValue}";
+            textSalePrice.text = string.Format(localizationManager.GetUIWindowItemInfoByKey("Text_SellPrice"), $"{CurrencyConstants.GetNameByCurrencyType(currentStruckTableItem.SaleCurrencyType)} {currentStruckTableItem.SaleCurrencyValue}");
         }
 
         private void SetDescription()
@@ -135,7 +143,7 @@ namespace GGemCo2DCore
         private void SetName()
         {
             if (currentStruckTableItem == null) return;
-            textName.text = $"Name: {currentStruckTableItem.Name}";
+            textName.text = string.Format(localizationManager.GetUIWindowItemInfoByKey("Text_Name"), currentStruckTableItem.Name);
         }
         /// <summary>
         /// 타입 설정하기
@@ -143,7 +151,7 @@ namespace GGemCo2DCore
         private void SetType()
         {
             if (currentStruckTableItem == null) return;
-            textType.text = $"Type: {currentStruckTableItem.Type}";
+            textType.text = string.Format(localizationManager.GetUIWindowItemInfoByKey("Text_Type"), currentStruckTableItem.Type);
         }
         
         private void SetCategoryUI()
@@ -164,8 +172,8 @@ namespace GGemCo2DCore
         private void SetCategory()
         {
             if (currentStruckTableItem == null) return;
-            textCategory.text = $"Category: {currentStruckTableItem.Category}";
-            textSubCategory.text = $"SubCategory: {currentStruckTableItem.SubCategory}";
+            textCategory.text = string.Format(localizationManager.GetUIWindowItemInfoByKey("Text_Category"), currentStruckTableItem.Category);
+            textSubCategory.text = string.Format(localizationManager.GetUIWindowItemInfoByKey("Text_SubCategory"), currentStruckTableItem.SubCategory);
         }
         private void SetStatusOptions()
         {
@@ -273,7 +281,8 @@ namespace GGemCo2DCore
             if (currentStruckTableItem.StatusID1 == ConfigCommon.StatusAffectId) return;
             
             textStatus1.gameObject.SetActive(true);
-            textStatus1.text = $"Recovery: {currentStruckTableItem.StatusValue1}"; // 회복량
+            // textStatus1.text = $"Recovery: {currentStruckTableItem.StatusValue1}"; // 회복량
+            textStatus1.text = string.Format(localizationManager.GetUIWindowItemInfoByKey("Text_Recovery"), currentStruckTableItem.StatusValue1);
         }
 
         private void SetDefaultUI()

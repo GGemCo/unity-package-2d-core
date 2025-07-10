@@ -38,9 +38,14 @@ namespace GGemCo2DCore
                 int uid = table.Key;
                 if (uid == 0) continue;
                 StruckTableWindow info = tableWindow.GetDataByUid(uid);
-                if (info == null || info.Uid <= 0) continue;
+                if (info == null || info.Uid <= 0 || !info.UseInGame) continue;
+                if (uid >= uiWindows.Length || !uiWindows[uid]) continue;
                 UIWindow window = uiWindows[uid].gameObject.GetComponent<UIWindow>();
-                if (window == null) continue;
+                if (window == null)
+                {
+                    GcLogger.Log("UIWindow 스크립트가 없습니다.");
+                    continue;
+                }
                 window.SetTableWindow(info);
                 window.transform.SetSiblingIndex(info.Ordering);
             }

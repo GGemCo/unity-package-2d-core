@@ -1,0 +1,67 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e9620f8c34305754d8cc9a7e49e852d9, type: 3}
+  m_Name: GGemCo_UIWindowSkillInfo_en
+  m_EditorClassIdentifier: 
+  m_LocaleId:
+    m_Code: en
+  m_SharedData: {fileID: 11400000, guid: 760a60ce9aca62a41a857072ead4c01a, type: 2}
+  m_Metadata:
+    m_Items: []
+  m_TableData:
+  - m_Id: 24338956357632
+    m_Localized: 'Name: {0}'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 24417096241152
+    m_Localized: 'Level: {0}'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 24471462809600
+    m_Localized: 'Need Level: {0}'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 24555608936448
+    m_Localized: 'Target: {0}'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 24604493549568
+    m_Localized: 'Damage type: {0}'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 24701927231488
+    m_Localized: 'Distance: {0}'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 24802682802176
+    m_Localized: 'Need Mp: {0}'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 24867115700224
+    m_Localized: 'Duration: {0}'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 24972526948352
+    m_Localized: 'Cool Time: {0}'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 29321504296960
+    m_Localized: '{0}% chance to trigger {1} {2} for {3} seconds.'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 31550269362176
+    m_Localized: 'Damage Range: {0}'
+    m_Metadata:
+      m_Items: []
+  references:
+    version: 2
+    RefIds: []

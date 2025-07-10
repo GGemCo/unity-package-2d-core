@@ -203,14 +203,14 @@ namespace GGemCo2DCoreEditor
             // Update String 에 추가하기
             UnityEditor.Events.UnityEventTools.AddPersistentListener(localizeEvent.OnUpdateString, objectText.SetText);
 #else
-                    var proxy = buttonText.GetComponent<LocalizationTextProxy>();
-                    if (proxy == null)
-                    {
-                        proxy = buttonText.gameObject.AddComponent<LocalizationTextProxy>();
-                        proxy.target = buttonText;
-                    }
-                    // Update String 에 추가하기
-                    UnityEditor.Events.UnityEventTools.AddPersistentListener(localizeEvent.OnUpdateString, proxy.SetText);
+            var proxy = objectText.gameObject.GetComponent<LocalizationTextProxy>();
+            if (proxy == null)
+            {
+                proxy = objectText.gameObject.AddComponent<LocalizationTextProxy>();
+                proxy.target = objectText;
+            }
+            // Update String 에 추가하기
+            UnityEditor.Events.UnityEventTools.AddPersistentListener(localizeEvent.OnUpdateString, proxy.SetText);
 #endif
             // EditorAndRuntime 모드로 작동되도록 설정
             for (var i = 0; i < localizeEvent.OnUpdateString.GetPersistentEventCount(); i++)

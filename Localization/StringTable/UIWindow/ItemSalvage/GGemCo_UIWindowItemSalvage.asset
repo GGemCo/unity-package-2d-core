@@ -1,0 +1,23 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5be51871efa6c3e4eae1703925c8f5ac, type: 3}
+  m_Name: GGemCo_UIWindowItemSalvage
+  m_EditorClassIdentifier: 
+  m_SharedTableData: {fileID: 11400000, guid: fbc20940f8baa054b86182e91e3502bf, type: 2}
+  m_Tables:
+  - {fileID: 11400000, guid: e467f8e140626f1468268a3c2e75417d, type: 2}
+  - {fileID: 11400000, guid: 7b070010da783634ab5b43a1228d8799, type: 2}
+  m_Extensions: []
+  m_Group: String Table
+  references:
+    version: 2
+    RefIds: []

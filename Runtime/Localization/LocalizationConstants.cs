@@ -31,24 +31,37 @@ namespace GGemCo2DCore
         /// </summary>
         public static class Tables
         {
-            public const string Common = "GGemCo_Common";
+            public const string CommonUI = "GGemCo_Common_UI";
+            public const string CommonGame = "GGemCo_Common_Game";
             public const string System = "GGemCo_System";
             public const string Scene = "GGemCo_Scene";
-
-            // public const string Inventory = "GGemCo_Inventory";
-            // public const string Dialogue = "GGemCo_Dialogue";
             
+            public const string UIWindowItemInfo = "GGemCo_UIWindowItemInfo";
+            public const string UIWindowSkill = "GGemCo_UIWindowSkill";
+            public const string UIWindowSkillInfo = "GGemCo_UIWindowSkillInfo";
+            public const string UIWindowItemUpgrade = "GGemCo_UIWindowItemUpgrade";
+            public const string UIWindowItemCraft = "GGemCo_UIWindowItemCraft";
+            public const string UIWindowQuestReward = "GGemCo_UIWindowQuestReward";
+            
+            public const string TableStatus = "GGemCo_Table_Status";
+
             /// <summary>
             /// 모든 테이블 이름을 배열로 제공합니다.
             /// </summary>
             public static readonly string[] All = new[]
             {
-                Common,
+                CommonUI,
+                CommonGame,
                 System,
                 Scene,
-                // Inventory,
-                // Dialogue
+                UIWindowItemInfo,
+                UIWindowSkill,
+                UIWindowSkillInfo,
+                UIWindowItemUpgrade,
+                UIWindowItemCraft,
+                TableStatus,
             };
+
         }
 
         /// <summary>

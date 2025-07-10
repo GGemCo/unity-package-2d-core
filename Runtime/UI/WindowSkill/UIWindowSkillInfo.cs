@@ -36,25 +36,27 @@ namespace GGemCo2DCore
         [Tooltip("어펙트 설명")]
         public TextMeshProUGUI textAffect;
         
-        private StruckTableSkill struckTableSkill;
-        private TableStatus tableStatus;
-        private TableSkill tableSkill;
-        private TableAffect tableAffect;
+        private StruckTableSkill _struckTableSkill;
+        private TableStatus _tableStatus;
+        private TableSkill _tableSkill;
+        private TableAffect _tableAffect;
+        private LocalizationManager _localizationManager;
         
         protected override void Awake()
         {
             uid = UIWindowConstants.WindowUid.SkillInfo;
             if (TableLoaderManager.Instance == null) return;
-            tableSkill = TableLoaderManager.Instance.TableSkill;
-            tableStatus = TableLoaderManager.Instance.TableStatus;
-            tableAffect = TableLoaderManager.Instance.TableAffect;
+            _tableSkill = TableLoaderManager.Instance.TableSkill;
+            _tableStatus = TableLoaderManager.Instance.TableStatus;
+            _tableAffect = TableLoaderManager.Instance.TableAffect;
+            _localizationManager = LocalizationManager.Instance;
             base.Awake();
         }
         public void SetSkillUid(int skillUid, int skillLevel, Vector2 pivot, Vector2 position)
         {
             if (skillUid <= 0) return;
-            struckTableSkill = tableSkill.GetDataByUidLevel(skillUid, skillLevel);
-            if (struckTableSkill is not { Uid: > 0 }) return;
+            _struckTableSkill = _tableSkill.GetDataByUidLevel(skillUid, skillLevel);
+            if (_struckTableSkill is not { Uid: > 0 }) return;
             
             SetBasicInfo();
             SetAffectInfo();
@@ -67,25 +69,27 @@ namespace GGemCo2DCore
         /// </summary>
         private void SetBasicInfo()
         {
-            if (struckTableSkill == null) return;
-            textName.text = $"Name: {struckTableSkill.Name}";
-            textLevel.text = $"Level: {struckTableSkill.Level}";
-            textNeedLevel.text = $"NeedLevel: {struckTableSkill.NeedPlayerLevel}";
-            textTarget.text = $"Target: {struckTableSkill.Target}";
-            textDamageType.text = $"{SkillConstants.NameByDamageType[struckTableSkill.DamageType]} : {struckTableSkill.DamageValue}";
-            textDamageType.gameObject.SetActive(struckTableSkill.DamageValue > 0);
+            if (_struckTableSkill == null) return;
+            textName.text = string.Format(_localizationManager.GetUIWindowSkillInfoByKey("Text_Name"), _struckTableSkill.Name);
+            textLevel.text = string.Format(_localizationManager.GetUIWindowSkillInfoByKey("Text_Level"), _struckTableSkill.Level);
+            textNeedLevel.text = string.Format(_localizationManager.GetUIWindowSkillInfoByKey("Text_NeedLevel"), _struckTableSkill.NeedPlayerLevel);
+            textTarget.text = string.Format(_localizationManager.GetUIWindowSkillInfoByKey("Text_Target"), _struckTableSkill.Target);
+            
+            textDamageType.text = $"{SkillConstants.NameByDamageType[_struckTableSkill.DamageType]} : {_struckTableSkill.DamageValue}";
 
-            textNeedMp.text = $"Mp: {struckTableSkill.NeedMp}";
-            textCoolTime.text = $"CoolTime: {struckTableSkill.CoolTime}";
-            textCoolTime.gameObject.SetActive(struckTableSkill.CoolTime > 0);
+            textDamageType.gameObject.SetActive(_struckTableSkill.DamageValue > 0);
+
+            textNeedMp.text = string.Format(_localizationManager.GetUIWindowSkillInfoByKey("Text_NeedMp"), _struckTableSkill.NeedMp);
+            textCoolTime.text = string.Format(_localizationManager.GetUIWindowSkillInfoByKey("Text_CoolTime"), _struckTableSkill.CoolTime);
+            textCoolTime.gameObject.SetActive(_struckTableSkill.CoolTime > 0);
             
-            textDamageRange.text = $"Damage: {struckTableSkill.DamageRange}";
-            textDamageRange.gameObject.SetActive(struckTableSkill.DamageRange > 0);
+            textDamageRange.text = string.Format(_localizationManager.GetUIWindowSkillInfoByKey("Text_DamageRange"), _struckTableSkill.DamageRange);
+            textDamageRange.gameObject.SetActive(_struckTableSkill.DamageRange > 0);
             
-            textDistance.text = $"Distance: {struckTableSkill.Distance}";
-            textDistance.gameObject.SetActive(struckTableSkill.Distance > 0);
-            textDuration.text = $"Duration: {struckTableSkill.Duration}";
-            textDuration.gameObject.SetActive(struckTableSkill.Duration > 0);
+            textDistance.text = string.Format(_localizationManager.GetUIWindowSkillInfoByKey("Text_Distance"), _struckTableSkill.Distance);
+            textDistance.gameObject.SetActive(_struckTableSkill.Distance > 0);
+            textDuration.text = string.Format(_localizationManager.GetUIWindowSkillInfoByKey("Text_Duration"), _struckTableSkill.Duration);
+            textDuration.gameObject.SetActive(_struckTableSkill.Duration > 0);
         }
 
         private string GetValueText(ConfigCommon.SuffixType suffixType, float value)
@@ -107,24 +111,22 @@ namespace GGemCo2DCore
         {
             if (string.IsNullOrEmpty(statusId)) return "";
             // string cleanedId = ItemConstants.StatusSuffixFormats.Aggregate(statusId, (current, suffix) => current.Replace(suffix.Key, ""));
-            var info = tableStatus.GetDataById(statusId);
+            var info = _tableStatus.GetDataById(statusId);
             return info?.Name ?? "";
         }
 
         private void SetAffectInfo()
         {
-            if (struckTableSkill.AffectUid <= 0)
+            if (_struckTableSkill.AffectUid <= 0)
             {
                 textAffect.gameObject.SetActive(false);
                 return;
             }
-            var info = tableAffect.GetDataByUid(struckTableSkill.AffectUid);
+            var info = _tableAffect.GetDataByUid(_struckTableSkill.AffectUid);
             if (info == null) return;
             textAffect.gameObject.SetActive(true);
-            string option =
-                // $"{struckTableSkill.AffectRate}% 확률로 {GetStatusName(info.StatusID)} {GetValueText(info.StatusSuffix, info.Value)} 가 {info.Duration} 초 동안 발동합니다.";
-                $"{struckTableSkill.AffectRate}% chance to trigger {GetStatusName(info.StatusID)} {GetValueText(info.StatusSuffix, info.Value)} for {info.Duration} seconds.";
-            textAffect.text = option;
+            // textAffect.text = $"{struckTableSkill.AffectRate}% 확률로 {GetStatusName(info.StatusID)} {GetValueText(info.StatusSuffix, info.Value)} 가 {info.Duration} 초 동안 발동합니다.";
+            textAffect.text = string.Format(_localizationManager.GetUIWindowSkillInfoByKey("Text_Affect"), _struckTableSkill.AffectRate, GetStatusName(info.StatusID), GetValueText(info.StatusSuffix, info.Value), info.Duration);
         }
         /// <summary>
         /// 위치 보정하기

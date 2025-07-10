@@ -1,0 +1,100 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5b11a58205ec3474ca216360e9fa74a8, type: 3}
+  m_Name: GGemCo_Table_Status Shared Data
+  m_EditorClassIdentifier: 
+  m_TableCollectionName: GGemCo_Table_Status
+  m_TableCollectionNameGuidString: f57d827913a653e459e16ff17edb9c4b
+  m_Entries:
+  - m_Id: 4819571511296
+    m_Key: STAT_ATK
+    m_Metadata:
+      m_Items: []
+  - m_Id: 4819579899904
+    m_Key: STAT_DEF
+    m_Metadata:
+      m_Items: []
+  - m_Id: 4819579899905
+    m_Key: STAT_HP
+    m_Metadata:
+      m_Items: []
+  - m_Id: 4819579899906
+    m_Key: STAT_MP
+    m_Metadata:
+      m_Items: []
+  - m_Id: 4819579899907
+    m_Key: STAT_MOVE_SPEED
+    m_Metadata:
+      m_Items: []
+  - m_Id: 4819579899908
+    m_Key: STAT_ATTACK_SPEED
+    m_Metadata:
+      m_Items: []
+  - m_Id: 4819584094208
+    m_Key: STAT_CRITICAL_DAMAGE
+    m_Metadata:
+      m_Items: []
+  - m_Id: 4819584094209
+    m_Key: STAT_CRITICAL_PROBABILITY
+    m_Metadata:
+      m_Items: []
+  - m_Id: 4819584094210
+    m_Key: STAT_REGISTANCE_FIRE
+    m_Metadata:
+      m_Items: []
+  - m_Id: 4819584094211
+    m_Key: STAT_REGISTANCE_COLD
+    m_Metadata:
+      m_Items: []
+  - m_Id: 4819584094212
+    m_Key: STAT_REGISTANCE_LIGHTNING
+    m_Metadata:
+      m_Items: []
+  - m_Id: 4819584094213
+    m_Key: DAMAGE_PHYSIC
+    m_Metadata:
+      m_Items: []
+  - m_Id: 4819584094214
+    m_Key: DAMAGE_FIRE
+    m_Metadata:
+      m_Items: []
+  - m_Id: 4819584094215
+    m_Key: DAMAGE_COLD
+    m_Metadata:
+      m_Items: []
+  - m_Id: 4819584094216
+    m_Key: DAMAGE_LIGHTING
+    m_Metadata:
+      m_Items: []
+  - m_Id: 4819584094217
+    m_Key: HEAL_HP
+    m_Metadata:
+      m_Items: []
+  - m_Id: 4819584094218
+    m_Key: HEAL_MP
+    m_Metadata:
+      m_Items: []
+  - m_Id: 4819584094219
+    m_Key: AFFECT_UID
+    m_Metadata:
+      m_Items: []
+  m_Metadata:
+    m_Items: []
+  m_KeyGenerator:
+    rid: 9086697469354180760
+  references:
+    version: 2
+    RefIds:
+    - rid: 9086697469354180760
+      type: {class: DistributedUIDGenerator, ns: UnityEngine.Localization.Tables, asm: Unity.Localization}
+      data:
+        m_CustomEpoch: 1752108102869

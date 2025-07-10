@@ -1,0 +1,186 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e9620f8c34305754d8cc9a7e49e852d9, type: 3}
+  m_Name: GGemCo_Table_Status_en
+  m_EditorClassIdentifier: 
+  m_LocaleId:
+    m_Code: en
+  m_SharedData: {fileID: 11400000, guid: f57d827913a653e459e16ff17edb9c4b, type: 2}
+  m_Metadata:
+    m_Items: []
+  m_TableData:
+  - m_Id: 4819571511296
+    m_Localized: ATK
+    m_Metadata:
+      m_Items:
+      - rid: 9086697469354180809
+  - m_Id: 4819579899904
+    m_Localized: DEF
+    m_Metadata:
+      m_Items:
+      - rid: 9086697469354180810
+  - m_Id: 4819579899905
+    m_Localized: HP
+    m_Metadata:
+      m_Items:
+      - rid: 9086697469354180811
+  - m_Id: 4819579899906
+    m_Localized: MP
+    m_Metadata:
+      m_Items:
+      - rid: 9086697469354180812
+  - m_Id: 4819579899907
+    m_Localized: Move SPD
+    m_Metadata:
+      m_Items:
+      - rid: 9086697469354180813
+  - m_Id: 4819579899908
+    m_Localized: ATK SPD
+    m_Metadata:
+      m_Items:
+      - rid: 9086697469354180814
+  - m_Id: 4819584094208
+    m_Localized: Crit DMG
+    m_Metadata:
+      m_Items:
+      - rid: 9086697469354180815
+  - m_Id: 4819584094209
+    m_Localized: Crit Rate
+    m_Metadata:
+      m_Items:
+      - rid: 9086697469354180816
+  - m_Id: 4819584094210
+    m_Localized: Fire RES
+    m_Metadata:
+      m_Items:
+      - rid: 9086697469354180817
+  - m_Id: 4819584094211
+    m_Localized: Ice RES
+    m_Metadata:
+      m_Items:
+      - rid: 9086697469354180818
+  - m_Id: 4819584094212
+    m_Localized: Lightning RES
+    m_Metadata:
+      m_Items:
+      - rid: 9086697469354180819
+  - m_Id: 4819584094213
+    m_Localized: Physical DMG
+    m_Metadata:
+      m_Items:
+      - rid: 9086697469354180820
+  - m_Id: 4819584094214
+    m_Localized: Fire DMG
+    m_Metadata:
+      m_Items:
+      - rid: 9086697469354180821
+  - m_Id: 4819584094215
+    m_Localized: Ice DMG
+    m_Metadata:
+      m_Items:
+      - rid: 9086697469354180822
+  - m_Id: 4819584094216
+    m_Localized: Lightning DMG
+    m_Metadata:
+      m_Items:
+      - rid: 9086697469354180823
+  - m_Id: 4819584094217
+    m_Localized: HP Regen
+    m_Metadata:
+      m_Items:
+      - rid: 9086697469354180824
+  - m_Id: 4819584094218
+    m_Localized: MP Regen
+    m_Metadata:
+      m_Items:
+      - rid: 9086697469354180825
+  - m_Id: 4819584094219
+    m_Localized: Effect
+    m_Metadata:
+      m_Items:
+      - rid: 9086697469354180826
+  references:
+    version: 2
+    RefIds:
+    - rid: 9086697469354180809
+      type: {class: Comment, ns: UnityEngine.Localization.Metadata, asm: Unity.Localization}
+      data:
+        m_CommentText: Increases damage dealt by physical and skill attacks.
+    - rid: 9086697469354180810
+      type: {class: Comment, ns: UnityEngine.Localization.Metadata, asm: Unity.Localization}
+      data:
+        m_CommentText: Reduces damage taken from enemy attacks.
+    - rid: 9086697469354180811
+      type: {class: Comment, ns: UnityEngine.Localization.Metadata, asm: Unity.Localization}
+      data:
+        m_CommentText: Maximum health points. When it reaches 0, the character dies.
+    - rid: 9086697469354180812
+      type: {class: Comment, ns: UnityEngine.Localization.Metadata, asm: Unity.Localization}
+      data:
+        m_CommentText: Maximum mana points. Used when casting skills or spells.
+    - rid: 9086697469354180813
+      type: {class: Comment, ns: UnityEngine.Localization.Metadata, asm: Unity.Localization}
+      data:
+        m_CommentText: Affects how fast the character moves.
+    - rid: 9086697469354180814
+      type: {class: Comment, ns: UnityEngine.Localization.Metadata, asm: Unity.Localization}
+      data:
+        m_CommentText: Determines how quickly the character can attack.
+    - rid: 9086697469354180815
+      type: {class: Comment, ns: UnityEngine.Localization.Metadata, asm: Unity.Localization}
+      data:
+        m_CommentText: Bonus damage dealt when landing a critical hit.
+    - rid: 9086697469354180816
+      type: {class: Comment, ns: UnityEngine.Localization.Metadata, asm: Unity.Localization}
+      data:
+        m_CommentText: Chance to land a critical hit.
+    - rid: 9086697469354180817
+      type: {class: Comment, ns: UnityEngine.Localization.Metadata, asm: Unity.Localization}
+      data:
+        m_CommentText: Reduces damage taken from fire-based attacks.
+    - rid: 9086697469354180818
+      type: {class: Comment, ns: UnityEngine.Localization.Metadata, asm: Unity.Localization}
+      data:
+        m_CommentText: Reduces damage taken from ice-based attacks.
+    - rid: 9086697469354180819
+      type: {class: Comment, ns: UnityEngine.Localization.Metadata, asm: Unity.Localization}
+      data:
+        m_CommentText: Reduces damage taken from lightning-based attacks.
+    - rid: 9086697469354180820
+      type: {class: Comment, ns: UnityEngine.Localization.Metadata, asm: Unity.Localization}
+      data:
+        m_CommentText: Amount of physical damage dealt to enemies.
+    - rid: 9086697469354180821
+      type: {class: Comment, ns: UnityEngine.Localization.Metadata, asm: Unity.Localization}
+      data:
+        m_CommentText: Damage dealt by fire-based skills or attacks.
+    - rid: 9086697469354180822
+      type: {class: Comment, ns: UnityEngine.Localization.Metadata, asm: Unity.Localization}
+      data:
+        m_CommentText: Damage dealt by ice-based skills or attacks.
+    - rid: 9086697469354180823
+      type: {class: Comment, ns: UnityEngine.Localization.Metadata, asm: Unity.Localization}
+      data:
+        m_CommentText: Damage dealt by lightning-based skills or attacks.
+    - rid: 9086697469354180824
+      type: {class: Comment, ns: UnityEngine.Localization.Metadata, asm: Unity.Localization}
+      data:
+        m_CommentText: Amount of HP restored over time.
+    - rid: 9086697469354180825
+      type: {class: Comment, ns: UnityEngine.Localization.Metadata, asm: Unity.Localization}
+      data:
+        m_CommentText: Amount of MP restored over time.
+    - rid: 9086697469354180826
+      type: {class: Comment, ns: UnityEngine.Localization.Metadata, asm: Unity.Localization}
+      data:
+        m_CommentText: Used to reference visual or sound effects associated with
+          status.

@@ -76,7 +76,10 @@ namespace GGemCo2DCore
 
             int level = _saveDataIcon?.Level ?? 1;
             if (textLevel != null) textLevel.text = $"Lv.{level}";
-            if (textNeedLevel != null) textNeedLevel.text = $"NeedLevel : {_struckTableSkill.NeedPlayerLevel}";
+            if (textNeedLevel != null)
+            {
+                textNeedLevel.text = string.Format(LocalizationManager.Instance.GetUIWindowSkillInfoByKey("Text_NeedLevel"), _struckTableSkill.NeedPlayerLevel);
+            }
 
             // 필요 재화
             if (textNeedCurrency != null)
@@ -92,14 +95,16 @@ namespace GGemCo2DCore
             if (_saveDataIcon != null && _struckTableSkill != null && _saveDataIcon.Level >= _struckTableSkill.Maxlevel)
             {
                 buttonLearn.gameObject.SetActive(false);
-                buttonLevelUp.GetComponentInChildren<TextMeshProUGUI>().text = "MaxLevel";
+                textNeedLevel.gameObject.SetActive(false);
                 buttonLevelUp.gameObject.SetActive(true);
+                buttonLevelUp.GetComponentInChildren<TextMeshProUGUI>().text = LocalizationManager.Instance.GetUIWindowSkillByKey("Element_Text_MaxLevel");
                 buttonLevelUp.interactable = false;
             }
             // 레벨업 할때는 다음 레벨 정보로 셋팅
             else if (_saveDataIcon is { IsLearned: true })
             {
                 buttonLearn.gameObject.SetActive(false);
+                textNeedLevel.gameObject.SetActive(true);
                 buttonLevelUp.gameObject.SetActive(true);
                 int nextLevel = level + 1;
                 var infoNextLevel = _tableSkill.GetDataByUidLevel(_struckTableSkill.Uid, nextLevel);
@@ -108,7 +113,11 @@ namespace GGemCo2DCore
                     GcLogger.LogError("skill 테이블에 정보가 없습니다. skill uid: " + _struckTableSkill.Uid + " / Level: " + nextLevel);
                     return;
                 }
-                if (textNeedLevel != null) textNeedLevel.text = $"NeedLevel : {infoNextLevel.NeedPlayerLevel}";
+
+                if (textNeedLevel != null)
+                {
+                    textNeedLevel.text = string.Format(LocalizationManager.Instance.GetUIWindowSkillInfoByKey("Text_NeedLevel"), infoNextLevel.NeedPlayerLevel);
+                }
                 
                 // 필요 재화
                 if (textNeedCurrency != null)
@@ -122,6 +131,7 @@ namespace GGemCo2DCore
             }
             else
             {
+                textNeedLevel.gameObject.SetActive(true);
                 buttonLearn.gameObject.SetActive(true);
                 buttonLevelUp.gameObject.SetActive(false); 
             }

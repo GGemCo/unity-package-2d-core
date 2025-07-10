@@ -59,6 +59,7 @@ namespace GGemCo2DCore
             if (textExp != null)
             {
                 textExp.text = $"EXP: {info.reward.experience}";
+                textExp.text = string.Format(LocalizationManager.Instance.GetUIWindowQuestRewardByKey("Text_Exp"), info.reward.experience);
             }
             if (textGold != null)
             {

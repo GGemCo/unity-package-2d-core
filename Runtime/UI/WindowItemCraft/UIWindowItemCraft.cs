@@ -33,11 +33,12 @@ namespace GGemCo2DCore
         private InventoryData _inventoryData;
         private StruckTableItemCraft _selectedCtruckTableItemCraft;
         
-        // 재료 최대 개수. item_upgrade 테이블에 있는 컬럼수와 맞아야 한다
+        // 재료 최대 개수. item_craft 테이블에 있는 컬럼수와 맞아야 한다
         private const int MaxElementCount = 4;
         private readonly List<UIElementMaterial> _elementMaterials = new List<UIElementMaterial>();
 
         private int _currentItemCraftUid;
+        private LocalizationManager _localizationManager;
         
         protected override void Awake()
         {
@@ -50,6 +51,7 @@ namespace GGemCo2DCore
                 _tableItem = TableLoaderManager.Instance.TableItem;
             }
             _elementMaterials.Clear();
+            _localizationManager = LocalizationManager.Instance;
             base.Awake();
 
             SetSetIconHandler(new SetIconHandlerItemCraft());
@@ -226,7 +228,7 @@ namespace GGemCo2DCore
             if (textRate != null)
             {
                 textRate.gameObject.SetActive(true);
-                textRate.text = $"Rate: {info.Rate}%"; // 강화 확률:
+                textRate.text = string.Format(_localizationManager.GetUIWindowItemCraftByKey("Text_Rate"), info.Rate); // 제작 확률
             }
             if (textNeedCurrency != null)
             {
@@ -326,7 +328,7 @@ namespace GGemCo2DCore
             // 확률 체크
             if (_selectedCtruckTableItemCraft.Rate <= 0)
             {
-                GcLogger.LogError("item_upgrade 테이블에 확률값이 잘 못되었습니다. rate: "+_selectedCtruckTableItemCraft.Rate);
+                GcLogger.LogError("item_craft 테이블에 확률값이 잘 못되었습니다. rate: "+_selectedCtruckTableItemCraft.Rate);
                 return;
             }
             bool updateResult = false;
@@ -340,20 +342,20 @@ namespace GGemCo2DCore
             if (updateResult)
             {
                 // 제작 처리, inventoryData 에 item uid 추가하기
-                var resultUpgrade = _inventoryData.AddItem(_selectedCtruckTableItemCraft.ResultItemUid, 1);
-                _uiWindowInventory.SetIcons(resultUpgrade);
+                var resultCraft = _inventoryData.AddItem(_selectedCtruckTableItemCraft.ResultItemUid, 1);
+                _uiWindowInventory.SetIcons(resultCraft);
             }
             if (textCraftResult != null)
             {
                 textCraftResult.gameObject.SetActive(true);
                 if (updateResult)
                 {
-                    textCraftResult.text = "Success"; //"제작에 성공하였습니다.";
+                    textCraftResult.text = _localizationManager.GetUIWindowItemCraftByKey("Text_Success");  //"제작에 성공하였습니다.";
                     textCraftResult.color = Color.blue;
                 }
                 else
                 {
-                    textCraftResult.text = "Fail"; //""제작에 실패하였습니다.";
+                    textCraftResult.text = _localizationManager.GetUIWindowItemCraftByKey("Text_Fail"); //""제작에 실패하였습니다.";
                     textCraftResult.color = Color.red;
                 }
             }
