@@ -2,6 +2,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.AddressableAssets;
 using UnityEngine.Events;
 using UnityEngine.Localization.Settings;
 using UnityEngine.ResourceManagement.AsyncOperations;
@@ -45,7 +46,6 @@ namespace GGemCo2DCore
 
             InitializeLanguageCodes();
             InitializeCurrentLocale();
-            StartCoroutine(CheckUserTablesExist());
         }
 
         private void InitializeCurrentLocale()
@@ -98,6 +98,8 @@ namespace GGemCo2DCore
             // GcLogger.Log($"[LocalizationManager] change success. locale index: {index}");
             PlayerPrefsManager.SaveIndexLocalizationLocale(index);
             onChangeLocale?.Invoke();
+            
+            StartCoroutine(CheckUserTablesExist());
         }
 
         private IEnumerator CheckUserTablesExist()
@@ -108,10 +110,30 @@ namespace GGemCo2DCore
                 var handle = _stringDatabase.GetTableAsync(userTableName, LocalizationSettings.SelectedLocale);
                 yield return handle;
 
-                bool exists = handle.Status == AsyncOperationStatus.Succeeded && handle.Result != null;
+                bool exists = false;
+
+                if (handle.IsValid())
+                {
+                    if (handle.Status == AsyncOperationStatus.Succeeded && handle.Result != null)
+                    {
+                        exists = true;
+                        GcLogger.Log($"table: {userTableName} / exist: true");
+                    }
+                    else
+                    {
+                        GcLogger.Log($"table: {userTableName} / exist: false");
+                    }
+                }
+                else
+                {
+                    GcLogger.LogWarning($"Invalid handle for table: {userTableName}");
+                }
+
                 _userTableExistsMap[baseTable] = exists;
 
-                GcLogger.Log($"[LocalizationManager] table: {userTableName} / exist: {exists}");
+                // handle이 Release 가능한 경우라면 아래 코드도 추가
+                if (handle.IsValid())
+                    Addressables.Release(handle);
             }
         }
 
