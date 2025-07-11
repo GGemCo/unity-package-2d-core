@@ -6,6 +6,10 @@ using UnityEngine.AddressableAssets;
 using UnityEngine.Events;
 using UnityEngine.Localization.Settings;
 using UnityEngine.ResourceManagement.AsyncOperations;
+#if UNITY_EDITOR
+using UnityEditor;
+using UnityEditor.SceneManagement;
+#endif
 
 namespace GGemCo2DCore
 {
@@ -14,7 +18,41 @@ namespace GGemCo2DCore
     /// </summary>
     public class LocalizationManager : MonoBehaviour
     {
-        public static LocalizationManager Instance { get; private set; }
+        private static LocalizationManager _instance;
+        public static LocalizationManager Instance
+        {
+            get
+            {
+                if (_instance == null)
+                {
+#if UNITY_6000_0_OR_NEWER
+                    _instance = FindFirstObjectByType<LocalizationManager>();
+#else
+                    _instance = FindObjectOfType<LocalizationManager>();
+#endif                    
+
+#if UNITY_EDITOR
+                    // 에디트 모드에서 자동 생성 (Play 모드가 아닐 때만)
+                    if (_instance == null && !Application.isPlaying)
+                    {
+                        var go = GameObject.Find("LocalizationManager (Editor)");
+                        if (go == null)
+                        {
+                            go = new GameObject("LocalizationManager (Editor)");
+                            go.hideFlags = HideFlags.HideAndDontSave;
+                            _instance = go.AddComponent<LocalizationManager>();
+                        }
+                        else
+                        {
+                            _instance = go.GetComponent<LocalizationManager>();
+                        }
+                    }
+#endif
+                }
+
+                return _instance;
+            }
+        }
 
         public UnityEvent onChangeLocale;
 
@@ -30,15 +68,13 @@ namespace GGemCo2DCore
 
         private void Awake()
         {
-            if (Instance == null)
+            if (_instance == null)
             {
-                Instance = this;
-                DontDestroyOnLoad(gameObject);
+                _instance = this;
             }
-            else
+            else if (_instance != this)
             {
                 Destroy(gameObject);
-                return;
             }
 
             _stringDatabase = LocalizationSettings.StringDatabase;
@@ -117,11 +153,11 @@ namespace GGemCo2DCore
                     if (handle.Status == AsyncOperationStatus.Succeeded && handle.Result != null)
                     {
                         exists = true;
-                        GcLogger.Log($"table: {userTableName} / exist: true");
+                        // GcLogger.Log($"table: {userTableName} / exist: true");
                     }
                     else
                     {
-                        GcLogger.Log($"table: {userTableName} / exist: false");
+                        // GcLogger.Log($"table: {userTableName} / exist: false");
                     }
                 }
                 else
