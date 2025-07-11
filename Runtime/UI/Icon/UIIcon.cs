@@ -379,7 +379,7 @@ namespace GGemCo2DCore
             float time = SceneGame.Instance.uIIconCoolTimeManager.GetCurrentCoolTime(windowUid, uid);
             if (time > 0)
             {
-                SceneGame.Instance.systemMessageManager.ShowMessageWarning("Cannot be used during cooldown.");//"쿨타임 중에는 사용할 수 없습니다."
+                SceneGame.Instance.systemMessageManager.ShowMessageWarning("Action_CannotUseDuringCooldown");//"쿨타임 중에는 사용할 수 없습니다."
                 return false;
             }
             

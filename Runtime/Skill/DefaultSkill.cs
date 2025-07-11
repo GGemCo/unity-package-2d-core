@@ -74,7 +74,7 @@ namespace GGemCo2DCore
 
             if (_target == null)
             {
-                SceneGame.Instance.systemMessageManager.ShowMessageWarning("There is no target.");//"타겟이 없습니다."
+                SceneGame.Instance.systemMessageManager.ShowMessageWarning("Skill_NoTarget");//"타겟이 없습니다."
                 DestroySkill();
                 return false;
             }

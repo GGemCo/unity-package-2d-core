@@ -169,7 +169,7 @@ namespace GGemCo2DCore
             {
                 if (_currentDialogue.options.Count > 0)
                 {
-                    _systemMessageManager.ShowMessageWarning("Please select your choice.");//"선택지를 선택해주세요."
+                    _systemMessageManager.ShowMessageWarning("Dialogue_SelectChoice");//"선택지를 선택해주세요."
                     return;
                 }
                 ProcessNextDialogue(_currentDialogue.nextNodeGuid);

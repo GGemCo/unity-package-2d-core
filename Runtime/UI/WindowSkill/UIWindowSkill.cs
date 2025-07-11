@@ -117,12 +117,12 @@ namespace GGemCo2DCore
             float time = SceneGame.uIIconCoolTimeManager.GetCurrentCoolTime(uid, icon.uid);
             if (time > 0)
             {
-                SceneGame.systemMessageManager.ShowMessageWarning("Cannot be changed during cooldown.");//"쿨타임 중에는 바꿀 수 없습니다."
+                SceneGame.systemMessageManager.ShowMessageWarning("Skill_CannotChangeDuringCooldown");//"쿨타임 중에는 바꿀 수 없습니다."
                 return;
             }
             if (!icon.IsLearn())
             {
-                SceneGame.systemMessageManager.ShowMessageWarning("You can use this after learning it.");//"배운 후 사용할 수 있습니다."
+                SceneGame.systemMessageManager.ShowMessageWarning("Skill_NotLearned");//"배운 후 사용할 수 있습니다."
                 return;
             }
             if (!icon.CheckRequireLevel()) return;

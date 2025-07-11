@@ -187,7 +187,7 @@ namespace GGemCo2DCore
 
             if (sourceInfo.Upgrade >= info.MaxUpgrade)
             {
-                SceneGame.systemMessageManager.ShowMessageWarning("This item can no longer be enhanced.");//"더이상 강화 할 수 없습니다."
+                SceneGame.systemMessageManager.ShowMessageWarning("Upgrade_CannotUpgradeMore");//"더이상 강화 할 수 없습니다."
                 return;
             }
             var resultInfo = _tableItem.GetDataByUid(info.ResultItemUid);
@@ -277,7 +277,7 @@ namespace GGemCo2DCore
         {
             if (_struckTableItemUpgrade == null)
             {
-                SceneGame.systemMessageManager.ShowMessageWarning("Please select an item to enhance.");//"강화할 아이템을 선택해주세요."
+                SceneGame.systemMessageManager.ShowMessageWarning("Upgrade_SelectItem");//"강화할 아이템을 선택해주세요."
                 return;
             }
             // 재료 체크
@@ -286,7 +286,7 @@ namespace GGemCo2DCore
                 bool result = elementMaterial.CheckHaveCount();
                 if (!result)
                 {
-                    SceneGame.systemMessageManager.ShowMessageWarning("Not enough materials.");//"재료가 부족합니다."
+                    SceneGame.systemMessageManager.ShowMessageWarning("Craft_NotEnoughMaterials");//"재료가 부족합니다."
                     return;
                 }
             }
@@ -386,7 +386,7 @@ namespace GGemCo2DCore
                 if (inventoryIcon == null) return;
                 if (inventoryIcon.GetUpgrade() >= _struckTableItemUpgrade.MaxUpgrade)
                 {
-                    SceneGame.systemMessageManager.ShowMessageWarning("강화수치가 최대치 입니다.\n더이상 강화 할 수 없습니다.");
+                    SceneGame.systemMessageManager.ShowMessageWarning("Upgrade_MaxLevelReached");
                     InitializeInfo();
                     return;
                 }

@@ -147,7 +147,7 @@ namespace GGemCo2DCore
             int nextLevel = _struckTableSkill.Level + 1;
             if (nextLevel > _struckTableSkill.Maxlevel)
             {
-                SceneGame.Instance.systemMessageManager.ShowMessageWarning("This is the maximum level.");
+                SceneGame.Instance.systemMessageManager.ShowMessageWarning("Skill_MaxLevel");
                 return;
             }
             var infoNextLevel = _tableSkill.GetDataByUidLevel(_struckTableSkill.Uid, nextLevel);

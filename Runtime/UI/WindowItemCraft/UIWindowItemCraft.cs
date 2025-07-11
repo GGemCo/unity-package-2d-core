@@ -298,7 +298,7 @@ namespace GGemCo2DCore
             }
             if (_selectedCtruckTableItemCraft == null)
             {
-                SceneGame.systemMessageManager.ShowMessageWarning("Please select an item to craft.");//"제작할 아이템을 선택해주세요."
+                SceneGame.systemMessageManager.ShowMessageWarning("Craft_SelectItem");//"제작할 아이템을 선택해주세요."
                 return;
             }
             // 재료 체크
@@ -307,7 +307,7 @@ namespace GGemCo2DCore
                 bool result = elementMaterial.CheckHaveCount();
                 if (!result)
                 {
-                    SceneGame.systemMessageManager.ShowMessageWarning("Not enough materials.");//"재료가 부족합니다."
+                    SceneGame.systemMessageManager.ShowMessageWarning("Craft_NotEnoughMaterials");//"재료가 부족합니다."
                     return;
                 }
             }

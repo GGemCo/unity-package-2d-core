@@ -38,7 +38,7 @@ namespace GGemCo2DCore
                 // 판매할 수 있는 아이템 인지 체크
                 if (droppedUIIcon.IsAntiFlag(ItemConstants.AntiFlag.ShopSale))
                 {
-                    SceneGame.Instance.systemMessageManager.ShowMessageWarning("This item cannot be sold.");//"해당 아이템은 판매할 수 없는 아이템 입니다."
+                    SceneGame.Instance.systemMessageManager.ShowMessageWarning("Shop_CannotSellItem");//"해당 아이템은 판매할 수 없는 아이템 입니다."
                 }
                 else
                 {

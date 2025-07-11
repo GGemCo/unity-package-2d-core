@@ -57,7 +57,7 @@ namespace GGemCo2DCore
                 }
                 else
                 {
-                    SceneGame.Instance.systemMessageManager.ShowMessageWarning("It is an item that cannot be worn in that slot.");//"해당 슬롯에는 착용할 수 없는 아이템 입니다."
+                    SceneGame.Instance.systemMessageManager.ShowMessageWarning("Equip_InvalidSlot");//"해당 슬롯에는 착용할 수 없는 아이템 입니다."
                 }
             }
         }

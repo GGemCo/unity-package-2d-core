@@ -175,11 +175,11 @@ namespace GGemCo2DCore
         {
             if (currencyType == CurrencyConstants.Type.Gold)
             {
-                ShowMessageWarning("Not enough gold.");//"골드가 부족합니다."
+                ShowMessageWarning("Currency_NotEnoughGold");//"골드가 부족합니다."
             }
             else if (currencyType == CurrencyConstants.Type.Silver)
             {
-                ShowMessageWarning("Not enough silver.");//"실버가 부족합니다."
+                ShowMessageWarning("Currency_NotEnoughSilver");//"실버가 부족합니다."
             }
         }
     }

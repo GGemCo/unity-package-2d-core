@@ -44,13 +44,13 @@ namespace GGemCo2DCore
                 // 분해할 수 있는 아이템 인지 체크
                 if (droppedUIIcon.IsAntiFlag(ItemConstants.AntiFlag.Salvage))
                 {
-                    SceneGame.Instance.systemMessageManager.ShowMessageWarning("This item cannot be dismantled.");//"분해할 수 없는 아이템 입니다."
+                    SceneGame.Instance.systemMessageManager.ShowMessageWarning("his item cannot be dismantled");//"분해할 수 없는 아이템 입니다."
                     return;
                 }
                 // 분해 할 수 있는 개수가 넘어가지 않았는지 체크
                 if (uiWindowItemSalvage.CheckSalvagePossibleCount() == false)
                 {
-                    SceneGame.Instance.systemMessageManager.ShowMessageWarning("You cannot register any more items.");//"더 이상 아이템을 등록할 수 없습니다."
+                    SceneGame.Instance.systemMessageManager.ShowMessageWarning("Item_CannotRegisterMore");//"더 이상 아이템을 등록할 수 없습니다."
                     return;
                 }
                 SceneGame.Instance.uIWindowManager.RegisterIcon(droppedWindowUid, dropIconSlotIndex,

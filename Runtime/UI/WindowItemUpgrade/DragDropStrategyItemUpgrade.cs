@@ -45,7 +45,7 @@ namespace GGemCo2DCore
                 // 분해할 수 있는 아이템 인지 체크
                 if (droppedUIIcon.IsAntiFlag(ItemConstants.AntiFlag.Upgrade))
                 {
-                    SceneGame.Instance.systemMessageManager.ShowMessageWarning("This item cannot be enhanced.");//"강화 할 수 없는 아이템 입니다."
+                    SceneGame.Instance.systemMessageManager.ShowMessageWarning("Upgrade_CannotUpgradeItem");//"강화 할 수 없는 아이템 입니다."
                     return;
                 }
                 // 기존 register 된 아이콘이 있으면 un register 해주기
