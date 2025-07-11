@@ -13,547 +13,547 @@ MonoBehaviour:
   m_Name: GGemCo_System Shared Data
   m_EditorClassIdentifier: 
   m_TableCollectionName: GGemCo_System
-  m_TableCollectionNameGuidString: ca5ce54a32bd99244b43869cf500287d
+  m_TableCollectionNameGuidString: c42aaa69ca7ec054e8979e53971a10d5
   m_Entries:
-  - m_Id: 94929809903616
+  - m_Id: 402956816384
     m_Key: Player_LevelTooLow
     m_Metadata:
       m_Items:
-      - rid: 9086697449404498053
-  - m_Id: 94929897984000
+      - rid: 9086697494700097563
+  - m_Id: 403007148032
     m_Key: Quest_InProgress
     m_Metadata:
       m_Items:
-      - rid: 9086697449404498054
-  - m_Id: 94929897984001
+      - rid: 9086697494700097564
+  - m_Id: 403007148033
     m_Key: Skill_NoTarget
     m_Metadata:
       m_Items:
-      - rid: 9086697449404498055
-  - m_Id: 94929897984002
+      - rid: 9086697494700097565
+  - m_Id: 403007148034
     m_Key: Currency_NotEnoughGold
     m_Metadata:
       m_Items:
-      - rid: 9086697449404498056
-  - m_Id: 94929902178304
+      - rid: 9086697494700097566
+  - m_Id: 403007148035
     m_Key: Currency_NotEnoughSilver
     m_Metadata:
       m_Items:
-      - rid: 9086697449404498057
-  - m_Id: 94929902178305
+      - rid: 9086697494700097567
+  - m_Id: 403007148036
     m_Key: Action_CannotUseDuringCooldown
     m_Metadata:
       m_Items:
-      - rid: 9086697449404498058
-  - m_Id: 94929902178306
+      - rid: 9086697494700097568
+  - m_Id: 403007148037
     m_Key: Dialogue_SelectChoice
     m_Metadata:
       m_Items:
-      - rid: 9086697449404498059
-  - m_Id: 94929902178307
+      - rid: 9086697494700097569
+  - m_Id: 403007148038
     m_Key: Equip_InvalidSlot
     m_Metadata:
       m_Items:
-      - rid: 9086697449404498060
-  - m_Id: 94929902178308
+      - rid: 9086697494700097570
+  - m_Id: 403007148039
     m_Key: Equip_InvalidBodyPart
     m_Metadata:
       m_Items:
-      - rid: 9086697449404498061
-  - m_Id: 94929902178309
+      - rid: 9086697494700097571
+  - m_Id: 403007148040
     m_Key: Item_CannotSell
     m_Metadata:
       m_Items:
-      - rid: 9086697449404498062
-  - m_Id: 94929902178310
+      - rid: 9086697494700097572
+  - m_Id: 403007148041
     m_Key: Item_CannotStore
     m_Metadata:
       m_Items:
-      - rid: 9086697449404498063
-  - m_Id: 94929902178311
+      - rid: 9086697494700097573
+  - m_Id: 403007148042
     m_Key: Item_CannotUpgrade
     m_Metadata:
       m_Items:
-      - rid: 9086697449404498064
-  - m_Id: 94929902178312
+      - rid: 9086697494700097574
+  - m_Id: 403007148043
     m_Key: Item_CannotSalvage
     m_Metadata:
       m_Items:
-      - rid: 9086697449404498065
-  - m_Id: 94929902178313
+      - rid: 9086697494700097575
+  - m_Id: 403007148044
     m_Key: Item_CannotRegisterMore
     m_Metadata:
       m_Items:
-      - rid: 9086697449404498066
-  - m_Id: 94929902178314
+      - rid: 9086697494700097576
+  - m_Id: 403007148045
     m_Key: Item_NoUsableCount
     m_Metadata:
       m_Items:
-      - rid: 9086697449404498067
-  - m_Id: 94929902178315
+      - rid: 9086697494700097577
+  - m_Id: 403007148046
     m_Key: Item_ManaFull
     m_Metadata:
       m_Items:
-      - rid: 9086697449404498068
-  - m_Id: 94929902178316
+      - rid: 9086697494700097578
+  - m_Id: 403007148047
     m_Key: Item_HealthFull
     m_Metadata:
       m_Items:
-      - rid: 9086697449404498069
-  - m_Id: 94929902178317
+      - rid: 9086697494700097579
+  - m_Id: 403007148048
     m_Key: Craft_SelectItem
     m_Metadata:
       m_Items:
-      - rid: 9086697449404498070
-  - m_Id: 94929902178318
+      - rid: 9086697494700097580
+  - m_Id: 403007148049
     m_Key: Craft_NotEnoughMaterials
     m_Metadata:
       m_Items:
-      - rid: 9086697449404498071
-  - m_Id: 94929902178319
+      - rid: 9086697494700097581
+  - m_Id: 403007148050
     m_Key: Upgrade_CannotUpgradeItem
     m_Metadata:
       m_Items:
-      - rid: 9086697449404498072
-  - m_Id: 94929902178320
+      - rid: 9086697494700097582
+  - m_Id: 403007148051
     m_Key: Upgrade_CannotUpgradeMore
     m_Metadata:
       m_Items:
-      - rid: 9086697449404498073
-  - m_Id: 94929902178321
+      - rid: 9086697494700097583
+  - m_Id: 403007148052
     m_Key: Upgrade_SelectItem
     m_Metadata:
       m_Items:
-      - rid: 9086697449404498074
-  - m_Id: 94929902178322
+      - rid: 9086697494700097584
+  - m_Id: 403007148053
     m_Key: Upgrade_MaxLevelReached
     m_Metadata:
       m_Items:
-      - rid: 9086697449404498075
-  - m_Id: 94929902178323
+      - rid: 9086697494700097585
+  - m_Id: 403007148054
     m_Key: QuickSlot_NotEnoughMana
     m_Metadata:
       m_Items:
-      - rid: 9086697449404498076
-  - m_Id: 94929902178324
+      - rid: 9086697494700097586
+  - m_Id: 403011342336
     m_Key: Shop_CannotSellItem
     m_Metadata:
       m_Items:
-      - rid: 9086697449404498077
-  - m_Id: 94929902178325
+      - rid: 9086697494700097587
+  - m_Id: 403011342337
     m_Key: Skill_MaxLevel
     m_Metadata:
       m_Items:
-      - rid: 9086697449404498078
-  - m_Id: 94929902178326
+      - rid: 9086697494700097588
+  - m_Id: 403011342338
     m_Key: Skill_CannotChangeDuringCooldown
     m_Metadata:
       m_Items:
-      - rid: 9086697449404498079
-  - m_Id: 94929902178327
+      - rid: 9086697494700097589
+  - m_Id: 403011342339
     m_Key: Skill_NotLearned
     m_Metadata:
       m_Items:
-      - rid: 9086697449404498080
-  - m_Id: 94929902178328
+      - rid: 9086697494700097590
+  - m_Id: 403011342340
     m_Key: Stash_CannotStoreItem
     m_Metadata:
       m_Items:
-      - rid: 9086697449404498081
-  - m_Id: 94929902178329
+      - rid: 9086697494700097591
+  - m_Id: 403011342341
     m_Key: Inventory_NoSpace
     m_Metadata:
       m_Items:
-      - rid: 9086697449404498082
-  - m_Id: 94929902178330
+      - rid: 9086697494700097592
+  - m_Id: 403011342342
     m_Key: Inventory_Split_NoInfo
     m_Metadata:
       m_Items:
-      - rid: 9086697449404498083
-  - m_Id: 94929902178331
+      - rid: 9086697494700097593
+  - m_Id: 403011342343
     m_Key: Inventory_Split_InvalidCount
     m_Metadata:
       m_Items:
-      - rid: 9086697449404498084
-  - m_Id: 94929902178332
+      - rid: 9086697494700097594
+  - m_Id: 403011342344
     m_Key: Inventory_Split_NoTableInfo
     m_Metadata:
       m_Items:
-      - rid: 9086697449404498085
-  - m_Id: 94929902178333
+      - rid: 9086697494700097595
+  - m_Id: 403011342345
     m_Key: Inventory_Upgrade_NoItemInfo
     m_Metadata:
       m_Items:
-      - rid: 9086697449404498086
-  - m_Id: 94929902178334
+      - rid: 9086697494700097596
+  - m_Id: 403011342346
     m_Key: Slot_InvalidSlot
     m_Metadata:
       m_Items:
-      - rid: 9086697449404498087
-  - m_Id: 94929902178335
+      - rid: 9086697494700097597
+  - m_Id: 403011342347
     m_Key: Slot_ItemNotFound
     m_Metadata:
       m_Items:
-      - rid: 9086697449404498088
-  - m_Id: 94929902178336
+      - rid: 9086697494700097598
+  - m_Id: 403011342348
     m_Key: Slot_NotEnoughItemCount
     m_Metadata:
       m_Items:
-      - rid: 9086697449404498089
-  - m_Id: 94929902178337
+      - rid: 9086697494700097599
+  - m_Id: 403011342349
     m_Key: Slot_MaxStackZero
     m_Metadata:
       m_Items:
-      - rid: 9086697449404498090
-  - m_Id: 94929902178338
+      - rid: 9086697494700097600
+  - m_Id: 403011342350
     m_Key: Slot_InvalidIndex
     m_Metadata:
       m_Items:
-      - rid: 9086697449404498091
-  - m_Id: 94929902178339
+      - rid: 9086697494700097601
+  - m_Id: 403011342351
     m_Key: Slot_CannotMoveToSame
     m_Metadata:
       m_Items:
-      - rid: 9086697449404498092
-  - m_Id: 94929902178340
+      - rid: 9086697494700097602
+  - m_Id: 403011342352
     m_Key: Slot_ItemNotAvailable
     m_Metadata:
       m_Items:
-      - rid: 9086697449404498093
-  - m_Id: 94929902178341
+      - rid: 9086697494700097603
+  - m_Id: 403011342353
     m_Key: Slot_TargetSlotEmpty
     m_Metadata:
       m_Items:
-      - rid: 9086697449404498094
-  - m_Id: 94929902178342
+      - rid: 9086697494700097604
+  - m_Id: 403011342354
     m_Key: Slot_MergeDifferentTypes
     m_Metadata:
       m_Items:
-      - rid: 9086697449404498095
-  - m_Id: 94929902178343
+      - rid: 9086697494700097605
+  - m_Id: 403011342355
     m_Key: Slot_MergeNoSpace
     m_Metadata:
       m_Items:
-      - rid: 9086697449404498096
-  - m_Id: 94929902178344
+      - rid: 9086697494700097606
+  - m_Id: 403011342356
     m_Key: Slot_MoveSuccess
     m_Metadata:
       m_Items:
-      - rid: 9086697449404498097
-  - m_Id: 94929902178345
+      - rid: 9086697494700097607
+  - m_Id: 403011342357
     m_Key: Currency_NoTypeInfo
     m_Metadata:
       m_Items:
-      - rid: 9086697449404498098
-  - m_Id: 94929902178346
+      - rid: 9086697494700097608
+  - m_Id: 403011342358
     m_Key: Currency_NotEnough
     m_Metadata:
       m_Items:
-      - rid: 9086697449404498099
-  - m_Id: 94929902178347
+      - rid: 9086697494700097609
+  - m_Id: 403011342359
     m_Key: QuickSlot_NoSkillInfo
     m_Metadata:
       m_Items:
-      - rid: 9086697449404498100
-  - m_Id: 94929902178348
+      - rid: 9086697494700097610
+  - m_Id: 403011342360
     m_Key: QuickSlot_SkillAlreadyAssigned
     m_Metadata:
       m_Items:
-      - rid: 9086697449404498101
-  - m_Id: 94929902178349
+      - rid: 9086697494700097611
+  - m_Id: 403011342361
     m_Key: QuickSlot_NotEnoughSpace
     m_Metadata:
       m_Items:
-      - rid: 9086697449404498102
-  - m_Id: 95000353902592
+      - rid: 9086697494700097612
+  - m_Id: 403011342362
     m_Key: QuickSlot_SkillNotLearned
     m_Metadata:
       m_Items:
-      - rid: 9086697449404498112
-  - m_Id: 95000353902593
+      - rid: 9086697494700097613
+  - m_Id: 403011342363
     m_Key: SaveSlot_NotSelected
     m_Metadata:
       m_Items:
-      - rid: 9086697449404498113
-  - m_Id: 95000353902594
+      - rid: 9086697494700097614
+  - m_Id: 403011342364
     m_Key: SaveSlot_NoEmptySlot
     m_Metadata:
       m_Items:
-      - rid: 9086697449404498114
-  - m_Id: 95000353902595
+      - rid: 9086697494700097615
+  - m_Id: 403011342365
     m_Key: SaveSlot_ConfirmDeleteWarning
     m_Metadata:
       m_Items:
-      - rid: 9086697449404498115
-  - m_Id: 95000353902596
+      - rid: 9086697494700097616
+  - m_Id: 403011342366
     m_Key: Inventory_SelectItemToSplit
     m_Metadata:
       m_Items:
-      - rid: 9086697449404498116
-  - m_Id: 95000353902597
+      - rid: 9086697494700097617
+  - m_Id: 403011342367
     m_Key: Inventory_Split_MinimumTwo
     m_Metadata:
       m_Items:
-      - rid: 9086697449404498117
-  - m_Id: 95000353902598
+      - rid: 9086697494700097618
+  - m_Id: 403011342368
     m_Key: LoadSave_NoSlotSelected
     m_Metadata:
       m_Items:
-      - rid: 9086697449404498118
-  - m_Id: 95000353902599
+      - rid: 9086697494700097619
+  - m_Id: 403011342369
     m_Key: Window_NoEmptySpace
     m_Metadata:
       m_Items:
-      - rid: 9086697449404498119
-  - m_Id: 95000353902600
+      - rid: 9086697494700097620
+  - m_Id: 403011342370
     m_Key: System_PlayerDied_MoveToTown
     m_Metadata:
       m_Items:
-      - rid: 9086697449404498120
+      - rid: 9086697494700097621
   m_Metadata:
     m_Items: []
   m_KeyGenerator:
-    rid: 9086697449047457793
+    rid: 9086697494700097538
   references:
     version: 2
     RefIds:
-    - rid: 9086697449047457793
+    - rid: 9086697494700097538
       type: {class: DistributedUIDGenerator, ns: UnityEngine.Localization.Tables, asm: Unity.Localization}
       data:
-        m_CustomEpoch: 1752024111330
-    - rid: 9086697449404498053
+        m_CustomEpoch: 1752198149817
+    - rid: 9086697494700097563
       type: {class: Comment, ns: UnityEngine.Localization.Metadata, asm: Unity.Localization}
       data:
         m_CommentText: Player.cs
-    - rid: 9086697449404498054
+    - rid: 9086697494700097564
       type: {class: Comment, ns: UnityEngine.Localization.Metadata, asm: Unity.Localization}
       data:
         m_CommentText: QuestManager
-    - rid: 9086697449404498055
+    - rid: 9086697494700097565
       type: {class: Comment, ns: UnityEngine.Localization.Metadata, asm: Unity.Localization}
       data:
         m_CommentText: DefaultSkill
-    - rid: 9086697449404498056
+    - rid: 9086697494700097566
       type: {class: Comment, ns: UnityEngine.Localization.Metadata, asm: Unity.Localization}
       data:
         m_CommentText: SystemMessageManager
-    - rid: 9086697449404498057
+    - rid: 9086697494700097567
       type: {class: Comment, ns: UnityEngine.Localization.Metadata, asm: Unity.Localization}
       data:
         m_CommentText: SystemMessageManager
-    - rid: 9086697449404498058
+    - rid: 9086697494700097568
       type: {class: Comment, ns: UnityEngine.Localization.Metadata, asm: Unity.Localization}
       data:
         m_CommentText: UIIcon
-    - rid: 9086697449404498059
+    - rid: 9086697494700097569
       type: {class: Comment, ns: UnityEngine.Localization.Metadata, asm: Unity.Localization}
       data:
         m_CommentText: UIWindowDialogue
-    - rid: 9086697449404498060
+    - rid: 9086697494700097570
       type: {class: Comment, ns: UnityEngine.Localization.Metadata, asm: Unity.Localization}
       data:
         m_CommentText: DragDropStrategyEquip
-    - rid: 9086697449404498061
+    - rid: 9086697494700097571
       type: {class: Comment, ns: UnityEngine.Localization.Metadata, asm: Unity.Localization}
       data:
         m_CommentText: DragDropStrategyInventory
-    - rid: 9086697449404498062
+    - rid: 9086697494700097572
       type: {class: Comment, ns: UnityEngine.Localization.Metadata, asm: Unity.Localization}
       data:
         m_CommentText: UIWindowInventory
-    - rid: 9086697449404498063
+    - rid: 9086697494700097573
       type: {class: Comment, ns: UnityEngine.Localization.Metadata, asm: Unity.Localization}
       data:
         m_CommentText: UIWindowInventory
-    - rid: 9086697449404498064
+    - rid: 9086697494700097574
       type: {class: Comment, ns: UnityEngine.Localization.Metadata, asm: Unity.Localization}
       data:
         m_CommentText: UIWindowInventory
-    - rid: 9086697449404498065
+    - rid: 9086697494700097575
       type: {class: Comment, ns: UnityEngine.Localization.Metadata, asm: Unity.Localization}
       data:
         m_CommentText: UIWindowInventory
-    - rid: 9086697449404498066
+    - rid: 9086697494700097576
       type: {class: Comment, ns: UnityEngine.Localization.Metadata, asm: Unity.Localization}
       data:
         m_CommentText: UIWindowInventory
-    - rid: 9086697449404498067
+    - rid: 9086697494700097577
       type: {class: Comment, ns: UnityEngine.Localization.Metadata, asm: Unity.Localization}
       data:
         m_CommentText: UIWindowInventory
-    - rid: 9086697449404498068
+    - rid: 9086697494700097578
       type: {class: Comment, ns: UnityEngine.Localization.Metadata, asm: Unity.Localization}
       data:
         m_CommentText: UIWindowInventory
-    - rid: 9086697449404498069
+    - rid: 9086697494700097579
       type: {class: Comment, ns: UnityEngine.Localization.Metadata, asm: Unity.Localization}
       data:
         m_CommentText: UIWindowInventory
-    - rid: 9086697449404498070
+    - rid: 9086697494700097580
       type: {class: Comment, ns: UnityEngine.Localization.Metadata, asm: Unity.Localization}
       data:
         m_CommentText: UIWindowCraft
-    - rid: 9086697449404498071
+    - rid: 9086697494700097581
       type: {class: Comment, ns: UnityEngine.Localization.Metadata, asm: Unity.Localization}
       data:
         m_CommentText: UIWindowCraft
-    - rid: 9086697449404498072
+    - rid: 9086697494700097582
       type: {class: Comment, ns: UnityEngine.Localization.Metadata, asm: Unity.Localization}
       data:
         m_CommentText: DragDropStrategyItemUpgrade
-    - rid: 9086697449404498073
+    - rid: 9086697494700097583
       type: {class: Comment, ns: UnityEngine.Localization.Metadata, asm: Unity.Localization}
       data:
         m_CommentText: UIWindowItemUpgrade
-    - rid: 9086697449404498074
+    - rid: 9086697494700097584
       type: {class: Comment, ns: UnityEngine.Localization.Metadata, asm: Unity.Localization}
       data:
         m_CommentText: UIWindowItemUpgrade
-    - rid: 9086697449404498075
+    - rid: 9086697494700097585
       type: {class: Comment, ns: UnityEngine.Localization.Metadata, asm: Unity.Localization}
       data:
         m_CommentText: UIWindowItemUpgrade
-    - rid: 9086697449404498076
+    - rid: 9086697494700097586
       type: {class: Comment, ns: UnityEngine.Localization.Metadata, asm: Unity.Localization}
       data:
         m_CommentText: UIWindowQuickSlot
-    - rid: 9086697449404498077
+    - rid: 9086697494700097587
       type: {class: Comment, ns: UnityEngine.Localization.Metadata, asm: Unity.Localization}
       data:
         m_CommentText: DragDropStrategyShopSale
-    - rid: 9086697449404498078
+    - rid: 9086697494700097588
       type: {class: Comment, ns: UnityEngine.Localization.Metadata, asm: Unity.Localization}
       data:
         m_CommentText: UIElementSkill
-    - rid: 9086697449404498079
+    - rid: 9086697494700097589
       type: {class: Comment, ns: UnityEngine.Localization.Metadata, asm: Unity.Localization}
       data:
         m_CommentText: UIWindowSkill
-    - rid: 9086697449404498080
+    - rid: 9086697494700097590
       type: {class: Comment, ns: UnityEngine.Localization.Metadata, asm: Unity.Localization}
       data:
         m_CommentText: UIWindowSkill
-    - rid: 9086697449404498081
+    - rid: 9086697494700097591
       type: {class: Comment, ns: UnityEngine.Localization.Metadata, asm: Unity.Localization}
       data:
         m_CommentText: DragDropStrategyStash
-    - rid: 9086697449404498082
+    - rid: 9086697494700097592
       type: {class: Comment, ns: UnityEngine.Localization.Metadata, asm: Unity.Localization}
       data:
         m_CommentText: InventoryData
-    - rid: 9086697449404498083
+    - rid: 9086697494700097593
       type: {class: Comment, ns: UnityEngine.Localization.Metadata, asm: Unity.Localization}
       data:
         m_CommentText: InventoryData
-    - rid: 9086697449404498084
+    - rid: 9086697494700097594
       type: {class: Comment, ns: UnityEngine.Localization.Metadata, asm: Unity.Localization}
       data:
         m_CommentText: InventoryData
-    - rid: 9086697449404498085
+    - rid: 9086697494700097595
       type: {class: Comment, ns: UnityEngine.Localization.Metadata, asm: Unity.Localization}
       data:
         m_CommentText: InventoryData
-    - rid: 9086697449404498086
+    - rid: 9086697494700097596
       type: {class: Comment, ns: UnityEngine.Localization.Metadata, asm: Unity.Localization}
       data:
         m_CommentText: InventoryData
-    - rid: 9086697449404498087
+    - rid: 9086697494700097597
       type: {class: Comment, ns: UnityEngine.Localization.Metadata, asm: Unity.Localization}
       data:
         m_CommentText: ItemStorageData
-    - rid: 9086697449404498088
+    - rid: 9086697494700097598
       type: {class: Comment, ns: UnityEngine.Localization.Metadata, asm: Unity.Localization}
       data:
         m_CommentText: ItemStorageData
-    - rid: 9086697449404498089
+    - rid: 9086697494700097599
       type: {class: Comment, ns: UnityEngine.Localization.Metadata, asm: Unity.Localization}
       data:
         m_CommentText: ItemStorageData
-    - rid: 9086697449404498090
+    - rid: 9086697494700097600
       type: {class: Comment, ns: UnityEngine.Localization.Metadata, asm: Unity.Localization}
       data:
         m_CommentText: ItemStorageData
-    - rid: 9086697449404498091
+    - rid: 9086697494700097601
       type: {class: Comment, ns: UnityEngine.Localization.Metadata, asm: Unity.Localization}
       data:
         m_CommentText: ItemStorageData
-    - rid: 9086697449404498092
+    - rid: 9086697494700097602
       type: {class: Comment, ns: UnityEngine.Localization.Metadata, asm: Unity.Localization}
       data:
         m_CommentText: ItemStorageData
-    - rid: 9086697449404498093
+    - rid: 9086697494700097603
       type: {class: Comment, ns: UnityEngine.Localization.Metadata, asm: Unity.Localization}
       data:
         m_CommentText: ItemStorageData
-    - rid: 9086697449404498094
+    - rid: 9086697494700097604
       type: {class: Comment, ns: UnityEngine.Localization.Metadata, asm: Unity.Localization}
       data:
         m_CommentText: ItemStorageData
-    - rid: 9086697449404498095
+    - rid: 9086697494700097605
       type: {class: Comment, ns: UnityEngine.Localization.Metadata, asm: Unity.Localization}
       data:
         m_CommentText: ItemStorageData
-    - rid: 9086697449404498096
+    - rid: 9086697494700097606
       type: {class: Comment, ns: UnityEngine.Localization.Metadata, asm: Unity.Localization}
       data:
         m_CommentText: ItemStorageData
-    - rid: 9086697449404498097
+    - rid: 9086697494700097607
       type: {class: Comment, ns: UnityEngine.Localization.Metadata, asm: Unity.Localization}
       data:
         m_CommentText: ItemStorageData
-    - rid: 9086697449404498098
+    - rid: 9086697494700097608
       type: {class: Comment, ns: UnityEngine.Localization.Metadata, asm: Unity.Localization}
       data:
         m_CommentText: PlayerData
-    - rid: 9086697449404498099
+    - rid: 9086697494700097609
       type: {class: Comment, ns: UnityEngine.Localization.Metadata, asm: Unity.Localization}
       data:
         m_CommentText: PlayerData
-    - rid: 9086697449404498100
+    - rid: 9086697494700097610
       type: {class: Comment, ns: UnityEngine.Localization.Metadata, asm: Unity.Localization}
       data:
         m_CommentText: QuickSlotData
-    - rid: 9086697449404498101
+    - rid: 9086697494700097611
       type: {class: Comment, ns: UnityEngine.Localization.Metadata, asm: Unity.Localization}
       data:
         m_CommentText: QuickSlotData
-    - rid: 9086697449404498102
+    - rid: 9086697494700097612
       type: {class: Comment, ns: UnityEngine.Localization.Metadata, asm: Unity.Localization}
       data:
         m_CommentText: QuickSlotData
-    - rid: 9086697449404498112
+    - rid: 9086697494700097613
       type: {class: Comment, ns: UnityEngine.Localization.Metadata, asm: Unity.Localization}
       data:
         m_CommentText: QuickSlotData
-    - rid: 9086697449404498113
+    - rid: 9086697494700097614
       type: {class: Comment, ns: UnityEngine.Localization.Metadata, asm: Unity.Localization}
       data:
         m_CommentText: SceneIntro
-    - rid: 9086697449404498114
+    - rid: 9086697494700097615
       type: {class: Comment, ns: UnityEngine.Localization.Metadata, asm: Unity.Localization}
       data:
         m_CommentText: SceneIntro
-    - rid: 9086697449404498115
+    - rid: 9086697494700097616
       type: {class: Comment, ns: UnityEngine.Localization.Metadata, asm: Unity.Localization}
       data:
         m_CommentText: SceneIntro
-    - rid: 9086697449404498116
+    - rid: 9086697494700097617
       type: {class: Comment, ns: UnityEngine.Localization.Metadata, asm: Unity.Localization}
       data:
         m_CommentText: UIWindowInventory
-    - rid: 9086697449404498117
+    - rid: 9086697494700097618
       type: {class: Comment, ns: UnityEngine.Localization.Metadata, asm: Unity.Localization}
       data:
         m_CommentText: UIWindowInventory
-    - rid: 9086697449404498118
+    - rid: 9086697494700097619
       type: {class: Comment, ns: UnityEngine.Localization.Metadata, asm: Unity.Localization}
       data:
         m_CommentText: UIWindowLoadSaveData
-    - rid: 9086697449404498119
+    - rid: 9086697494700097620
       type: {class: Comment, ns: UnityEngine.Localization.Metadata, asm: Unity.Localization}
       data:
         m_CommentText: UIWindow
-    - rid: 9086697449404498120
+    - rid: 9086697494700097621
       type: {class: Comment, ns: UnityEngine.Localization.Metadata, asm: Unity.Localization}
       data:
         m_CommentText: SceneGame

@@ -588,9 +588,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   m_StringReference:
     m_TableReference:
-      m_TableCollectionName: GUID:551417deade283e4086d2a6ca196cf6c
+      m_TableCollectionName: GUID:eda1827c95b64f048a342f30bd62c999
     m_TableEntryReference:
-      m_KeyId: 2739001221517312
+      m_KeyId: 648944357377
       m_Key: 
     m_FallbackState: 0
     m_WaitForCompletion: 0
@@ -1395,7 +1395,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: Craft
+  m_text: "\uC81C\uC791\uD558\uAE30"
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
   m_sharedMaterial: {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}

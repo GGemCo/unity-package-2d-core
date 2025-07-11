@@ -14,19 +14,19 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   m_LocaleId:
     m_Code: en
-  m_SharedData: {fileID: 11400000, guid: 551417deade283e4086d2a6ca196cf6c, type: 2}
+  m_SharedData: {fileID: 11400000, guid: eda1827c95b64f048a342f30bd62c999, type: 2}
   m_Metadata:
     m_Items: []
   m_TableData:
-  - m_Id: 5842415456256
+  - m_Id: 648894025728
     m_Localized: Confirm
     m_Metadata:
       m_Items: []
-  - m_Id: 310853053779968
+  - m_Id: 648944357376
     m_Localized: Cancel
     m_Metadata:
       m_Items: []
-  - m_Id: 2739001221517312
+  - m_Id: 648944357377
     m_Localized: Close
     m_Metadata:
       m_Items: []

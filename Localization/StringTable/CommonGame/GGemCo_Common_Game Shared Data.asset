@@ -13,32 +13,32 @@ MonoBehaviour:
   m_Name: GGemCo_Common_Game Shared Data
   m_EditorClassIdentifier: 
   m_TableCollectionName: GGemCo_Common_Game
-  m_TableCollectionNameGuidString: c922662afc9d7d843ad70deb7add2f20
+  m_TableCollectionNameGuidString: 04ab190dd21fc7b4888306c421ff2626
   m_Entries:
-  - m_Id: 111497574944768
+  - m_Id: 239194411008
     m_Key: Item_AntiFlag_Shop
     m_Metadata:
       m_Items: []
-  - m_Id: 111659366027264
+  - m_Id: 239265714176
     m_Key: Item_AntiFlag_Stash
     m_Metadata:
       m_Items: []
-  - m_Id: 111743419879424
+  - m_Id: 239265714177
     m_Key: Item_AntiFlag_Salvage
     m_Metadata:
       m_Items: []
-  - m_Id: 111821404573696
+  - m_Id: 239265714178
     m_Key: Item_AntiFlag_Upgrade
     m_Metadata:
       m_Items: []
   m_Metadata:
     m_Items: []
   m_KeyGenerator:
-    rid: 9086697469354180753
+    rid: 9086697494700097537
   references:
     version: 2
     RefIds:
-    - rid: 9086697469354180753
+    - rid: 9086697494700097537
       type: {class: DistributedUIDGenerator, ns: UnityEngine.Localization.Tables, asm: Unity.Localization}
       data:
-        m_CustomEpoch: 1752106414956
+        m_CustomEpoch: 1752198129087

@@ -13,28 +13,28 @@ MonoBehaviour:
   m_Name: GGemCo_Common_UI Shared Data
   m_EditorClassIdentifier: 
   m_TableCollectionName: GGemCo_Common_UI
-  m_TableCollectionNameGuidString: 551417deade283e4086d2a6ca196cf6c
+  m_TableCollectionNameGuidString: eda1827c95b64f048a342f30bd62c999
   m_Entries:
-  - m_Id: 5842415456256
+  - m_Id: 648894025728
     m_Key: Confirm
     m_Metadata:
       m_Items: []
-  - m_Id: 310853053779968
+  - m_Id: 648944357376
     m_Key: Cancel
     m_Metadata:
       m_Items: []
-  - m_Id: 2739001221517312
+  - m_Id: 648944357377
     m_Key: Close
     m_Metadata:
       m_Items: []
   m_Metadata:
     m_Items: []
   m_KeyGenerator:
-    rid: 9086697296450552026
+    rid: 9086697494700097536
   references:
     version: 2
     RefIds:
-    - rid: 9086697296450552026
+    - rid: 9086697494700097536
       type: {class: DistributedUIDGenerator, ns: UnityEngine.Localization.Tables, asm: Unity.Localization}
       data:
-        m_CustomEpoch: 1751449137124
+        m_CustomEpoch: 1752198082016

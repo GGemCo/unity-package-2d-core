@@ -14,23 +14,23 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   m_LocaleId:
     m_Code: ko
-  m_SharedData: {fileID: 11400000, guid: c922662afc9d7d843ad70deb7add2f20, type: 2}
+  m_SharedData: {fileID: 11400000, guid: 04ab190dd21fc7b4888306c421ff2626, type: 2}
   m_Metadata:
     m_Items: []
   m_TableData:
-  - m_Id: 111497574944768
+  - m_Id: 239194411008
     m_Localized: "\uC0C1\uC810\uD310\uB9E4"
     m_Metadata:
       m_Items: []
-  - m_Id: 111659366027264
+  - m_Id: 239265714176
     m_Localized: "\uCC3D\uACE0\uBCF4\uAD00"
     m_Metadata:
       m_Items: []
-  - m_Id: 111743419879424
+  - m_Id: 239265714177
     m_Localized: "\uBD84\uD574"
     m_Metadata:
       m_Items: []
-  - m_Id: 111821404573696
+  - m_Id: 239265714178
     m_Localized: "\uAC15\uD654"
     m_Metadata:
       m_Items: []

@@ -14,245 +14,245 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   m_LocaleId:
     m_Code: en
-  m_SharedData: {fileID: 11400000, guid: ca5ce54a32bd99244b43869cf500287d, type: 2}
+  m_SharedData: {fileID: 11400000, guid: c42aaa69ca7ec054e8979e53971a10d5, type: 2}
   m_Metadata:
     m_Items: []
   m_TableData:
-  - m_Id: 94929809903616
+  - m_Id: 402956816384
     m_Localized: 'Your level is too low. Required level: {compareLevel}'
     m_Metadata:
       m_Items: []
-  - m_Id: 94929897984000
+  - m_Id: 403007148032
     m_Localized: The quest is already in progress.
     m_Metadata:
       m_Items: []
-  - m_Id: 94929897984001
+  - m_Id: 403007148033
     m_Localized: No target.
     m_Metadata:
       m_Items: []
-  - m_Id: 94929897984002
+  - m_Id: 403007148034
     m_Localized: Not enough gold.
     m_Metadata:
       m_Items: []
-  - m_Id: 94929902178304
+  - m_Id: 403007148035
     m_Localized: Not enough silver.
     m_Metadata:
       m_Items: []
-  - m_Id: 94929902178305
+  - m_Id: 403007148036
     m_Localized: Cannot be used during cooldown.
     m_Metadata:
       m_Items: []
-  - m_Id: 94929902178306
+  - m_Id: 403007148037
     m_Localized: Please select a dialogue choice.
     m_Metadata:
       m_Items: []
-  - m_Id: 94929902178307
+  - m_Id: 403007148038
     m_Localized: Cannot equip item in this slot.
     m_Metadata:
       m_Items: []
-  - m_Id: 94929902178308
+  - m_Id: 403007148039
     m_Localized: Cannot equip item in this body part.
     m_Metadata:
       m_Items: []
-  - m_Id: 94929902178309
+  - m_Id: 403007148040
     m_Localized: This item cannot be sold.
     m_Metadata:
       m_Items: []
-  - m_Id: 94929902178310
+  - m_Id: 403007148041
     m_Localized: This item cannot be stored.
     m_Metadata:
       m_Items: []
-  - m_Id: 94929902178311
+  - m_Id: 403007148042
     m_Localized: This item cannot be upgraded.
     m_Metadata:
       m_Items: []
-  - m_Id: 94929902178312
+  - m_Id: 403007148043
     m_Localized: This item cannot be salvaged.
     m_Metadata:
       m_Items: []
-  - m_Id: 94929902178313
+  - m_Id: 403007148044
     m_Localized: Cannot register more items.
     m_Metadata:
       m_Items: []
-  - m_Id: 94929902178314
+  - m_Id: 403007148045
     m_Localized: No usable items left.
     m_Metadata:
       m_Items: []
-  - m_Id: 94929902178315
+  - m_Id: 403007148046
     m_Localized: Mana is full.
     m_Metadata:
       m_Items: []
-  - m_Id: 94929902178316
+  - m_Id: 403007148047
     m_Localized: Health is full.
     m_Metadata:
       m_Items: []
-  - m_Id: 94929902178317
+  - m_Id: 403007148048
     m_Localized: Please select an item to craft.
     m_Metadata:
       m_Items: []
-  - m_Id: 94929902178318
+  - m_Id: 403007148049
     m_Localized: Not enough materials.
     m_Metadata:
       m_Items: []
-  - m_Id: 94929902178319
+  - m_Id: 403007148050
     m_Localized: This item cannot be upgraded.
     m_Metadata:
       m_Items: []
-  - m_Id: 94929902178320
+  - m_Id: 403007148051
     m_Localized: Cannot upgrade further.
     m_Metadata:
       m_Items: []
-  - m_Id: 94929902178321
+  - m_Id: 403007148052
     m_Localized: Please select an item to upgrade.
     m_Metadata:
       m_Items: []
-  - m_Id: 94929902178322
+  - m_Id: 403007148053
     m_Localized: Item is at maximum upgrade level.\nCannot upgrade further.
     m_Metadata:
       m_Items: []
-  - m_Id: 94929902178323
+  - m_Id: 403007148054
     m_Localized: Not enough mana.
     m_Metadata:
       m_Items: []
-  - m_Id: 94929902178324
+  - m_Id: 403011342336
     m_Localized: Cannot sell this item.
     m_Metadata:
       m_Items: []
-  - m_Id: 94929902178325
+  - m_Id: 403011342337
     m_Localized: Max level reached.
     m_Metadata:
       m_Items: []
-  - m_Id: 94929902178326
+  - m_Id: 403011342338
     m_Localized: Cannot change skill during cooldown.
     m_Metadata:
       m_Items: []
-  - m_Id: 94929902178327
+  - m_Id: 403011342339
     m_Localized: Skill not learned yet.
     m_Metadata:
       m_Items: []
-  - m_Id: 94929902178328
+  - m_Id: 403011342340
     m_Localized: Cannot store this item.
     m_Metadata:
       m_Items: []
-  - m_Id: 94929902178329
+  - m_Id: 403011342341
     m_Localized: Not enough space in inventory.
     m_Metadata:
       m_Items: []
-  - m_Id: 94929902178330
+  - m_Id: 403011342342
     m_Localized: No item info for splitting.
     m_Metadata:
       m_Items: []
-  - m_Id: 94929902178331
+  - m_Id: 403011342343
     m_Localized: Invalid split count.
     m_Metadata:
       m_Items: []
-  - m_Id: 94929902178332
+  - m_Id: 403011342344
     m_Localized: No table info for split item.
     m_Metadata:
       m_Items: []
-  - m_Id: 94929902178333
+  - m_Id: 403011342345
     m_Localized: No item info for upgrade.
     m_Metadata:
       m_Items: []
-  - m_Id: 94929902178334
+  - m_Id: 403011342346
     m_Localized: Invalid slot info.
     m_Metadata:
       m_Items: []
-  - m_Id: 94929902178335
+  - m_Id: 403011342347
     m_Localized: Item not found.
     m_Metadata:
       m_Items: []
-  - m_Id: 94929902178336
+  - m_Id: 403011342348
     m_Localized: Not enough items in slot.
     m_Metadata:
       m_Items: []
-  - m_Id: 94929902178337
+  - m_Id: 403011342349
     m_Localized: Max stack is 0.
     m_Metadata:
       m_Items: []
-  - m_Id: 94929902178338
+  - m_Id: 403011342350
     m_Localized: Invalid slot index.
     m_Metadata:
       m_Items: []
-  - m_Id: 94929902178339
+  - m_Id: 403011342351
     m_Localized: Cannot move to the same slot.
     m_Metadata:
       m_Items: []
-  - m_Id: 94929902178340
+  - m_Id: 403011342352
     m_Localized: No item to move.
     m_Metadata:
       m_Items: []
-  - m_Id: 94929902178341
+  - m_Id: 403011342353
     m_Localized: Target slot is empty.
     m_Metadata:
       m_Items: []
-  - m_Id: 94929902178342
+  - m_Id: 403011342354
     m_Localized: Cannot merge different item types.
     m_Metadata:
       m_Items: []
-  - m_Id: 94929902178343
+  - m_Id: 403011342355
     m_Localized: Not enough space in target slot.
     m_Metadata:
       m_Items: []
-  - m_Id: 94929902178344
+  - m_Id: 403011342356
     m_Localized: Moved {0} items from {1} to {2}.
     m_Metadata:
       m_Items: []
-  - m_Id: 94929902178345
+  - m_Id: 403011342357
     m_Localized: No currency type info.
     m_Metadata:
       m_Items: []
-  - m_Id: 94929902178346
+  - m_Id: 403011342358
     m_Localized: Not enough {currency}.
     m_Metadata:
       m_Items: []
-  - m_Id: 94929902178347
+  - m_Id: 403011342359
     m_Localized: No skill info.
     m_Metadata:
       m_Items: []
-  - m_Id: 94929902178348
+  - m_Id: 403011342360
     m_Localized: Skill is already assigned.
     m_Metadata:
       m_Items: []
-  - m_Id: 94929902178349
+  - m_Id: 403011342361
     m_Localized: Not enough quick slot space.
     m_Metadata:
       m_Items: []
-  - m_Id: 95000353902600
-    m_Localized: Player has died.\nReturning to town.
+  - m_Id: 403011342362
+    m_Localized: Skill not learned yet.
     m_Metadata:
       m_Items: []
-  - m_Id: 95000353902599
-    m_Localized: No empty space in window.
+  - m_Id: 403011342363
+    m_Localized: No save slot selected.\nPlease load first.
     m_Metadata:
       m_Items: []
-  - m_Id: 95000353902598
-    m_Localized: No save slot selected.
+  - m_Id: 403011342364
+    m_Localized: No empty save slot left.\nPlease delete existing data.
     m_Metadata:
       m_Items: []
-  - m_Id: 95000353902597
-    m_Localized: You can only split items with at least 2 count.
-    m_Metadata:
-      m_Items: []
-  - m_Id: 95000353902596
-    m_Localized: Please select an item to split.
-    m_Metadata:
-      m_Items: []
-  - m_Id: 95000353902595
+  - m_Id: 403011342365
     m_Localized: Deleted data cannot be recovered.\nAre you sure you want to delete
       it?
     m_Metadata:
       m_Items: []
-  - m_Id: 95000353902594
-    m_Localized: No empty save slot left.\nPlease delete existing data.
+  - m_Id: 403011342366
+    m_Localized: Please select an item to split.
     m_Metadata:
       m_Items: []
-  - m_Id: 95000353902593
-    m_Localized: No save slot selected.\nPlease load first.
+  - m_Id: 403011342367
+    m_Localized: You can only split items with at least 2 count.
     m_Metadata:
       m_Items: []
-  - m_Id: 95000353902592
-    m_Localized: Skill not learned yet.
+  - m_Id: 403011342368
+    m_Localized: No save slot selected.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 403011342369
+    m_Localized: No empty space in window.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 403011342370
+    m_Localized: Player has died.\nReturning to town.
     m_Metadata:
       m_Items: []
   references:
