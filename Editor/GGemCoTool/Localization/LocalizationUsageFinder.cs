@@ -3,6 +3,7 @@ using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
 using UnityEngine.Localization.Components;
+using UnityEngine.Localization.Settings;
 using UnityEngine.SceneManagement;
 
 namespace GGemCo2DCoreEditor
@@ -42,9 +43,15 @@ namespace GGemCo2DCoreEditor
 
         private bool IsMatching(LocalizeStringEvent evt)
         {
-            return evt != null &&
-                   evt.StringReference.TableReference == _tableName &&
-                   evt.StringReference.TableEntryReference == _keyName;
+            if (evt == null) return false;
+
+            string tableName = evt.StringReference.TableReference.TableCollectionName;
+            if (string.IsNullOrEmpty(tableName)) return false;
+            
+            var tableEntryResult = LocalizationSettings.StringDatabase.GetTableEntry(tableName,
+                evt.StringReference.TableEntryReference);
+            if (tableEntryResult.Entry == null) return false;
+            return tableName == _tableName && tableEntryResult.Entry.Key == _keyName;
         }
 
         private void FindInOpenScenes()
