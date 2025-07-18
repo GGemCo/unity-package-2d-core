@@ -79,10 +79,42 @@ namespace GGemCo2DCore
         /// <summary>
         /// 특정 슬롯에 이미지를 변경하기
         /// </summary>
-        /// <param name="changeSlotImages"></param>
-        public void ChangeCharacterImageInSlot(List<StruckChangeSlotImage> changeSlotImages)
+        /// <param name="partIndex"></param>
+        /// <param name="itemUid"></param>
+        public void ChangeCharacterImageInSlot(int partIndex, int itemUid = 0)
         {
-            ChangeImageInSlot(changeSlotImages);
+            List<string> slotNames = new List<string>();
+            string folderName = "";
+            string imagePath = "";
+            if (itemUid > 0)
+            {
+                StruckTableItem info = TableLoaderManager.Instance.TableItem.GetDataByUid(itemUid);
+                if (info == null) return;
+
+                ItemConstants.PartsType partsType = (ItemConstants.PartsType)partIndex;
+                slotNames = ItemConstants.SlotNameByPartsType[partsType];
+                folderName = ItemConstants.FolderNameByPartsType[partsType];
+                imagePath = info.ImagePath;
+            }
+
+            List<StruckChangeSlotImage> changeImages = new List<StruckChangeSlotImage>();
+            foreach (var slotName in slotNames)
+            {
+                string attachmentName = ItemConstants.AttachmentNameBySlotName[slotName];
+                
+                string changeSpritePath = $"Images/Parts/{folderName}/{attachmentName}";
+                if (imagePath != "")
+                {
+                    changeSpritePath = $"Images/Parts/{folderName}/{imagePath}_{slotName}";
+                }
+
+                var sprite = Resources.Load<Sprite>(changeSpritePath);
+
+                StruckChangeSlotImage struckChangeSlotImage = new StruckChangeSlotImage(slotName, attachmentName, sprite);
+                changeImages.Add(struckChangeSlotImage);
+            }
+
+            ChangeImageInSlot(changeImages);
         }
         /// <summary>
         /// 특정 슬롯에 이미지를 지우기
@@ -95,7 +127,7 @@ namespace GGemCo2DCore
         /// <summary>
         /// 공격 애니메이션 처리
         /// </summary>
-        public void PlayAttackAnimation()
+        public void PlayAttackAnimation(string animName = "")
         {
             PlayAnimation(ICharacterAnimationController.AttackAnim, false, characterBase.GetCurrentAttackSpeed());
         }

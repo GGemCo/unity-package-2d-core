@@ -21,6 +21,8 @@ namespace GGemCo2DCore
         [Header("불 속성 저항(100->1)")] public int statRegistFire;
         [Header("얼음 속성 저항(100->1)")] public int statRegistCold;
         [Header("전기 속성 저항(100->1)")] public int statRegistLightning;
+        [Header("사정거리")] public Vector2 rangeAttack;
+        [Header("충돌거리")] public Vector2 rangeCollider;
         
         /// <summary>
         /// 처음 생성 시 한 번만 실행됨

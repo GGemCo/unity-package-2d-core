@@ -1,4 +1,6 @@
-﻿namespace GGemCo2DCore
+﻿using System.Collections.Generic;
+
+namespace GGemCo2DCore
 {
     public static class ConfigCommon
     {
@@ -39,5 +41,18 @@
                 Value = value;
             }
         }
+        public enum DirectionType
+        {
+            Left,
+            Right,
+        }
+        private static readonly Dictionary<string, DirectionType> MapDirectionType =
+            new Dictionary<string, DirectionType>
+            {
+                {"Left", DirectionType.Left},
+                {"Right", DirectionType.Right},
+            };
+        public static DirectionType GetDirectionType(string type) =>
+            MapDirectionType.GetValueOrDefault(type, DirectionType.Left);
     }
 }

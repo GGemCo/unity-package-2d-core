@@ -29,7 +29,7 @@ namespace GGemCo2DCore
         // 좌우 flip 여부
         public bool isFlip;
         // 기본 방향
-        public CharacterConstants.CharacterFacing characterFacing = CharacterConstants.CharacterFacing.Left;
+        public CharacterConstants.CharacterFacing defaultFacing = CharacterConstants.CharacterFacing.Left;
         // 방향
         public Vector3 direction;
         // 좌우 방향 체크에 사용
@@ -91,7 +91,7 @@ namespace GGemCo2DCore
                 SkillController = new SkillController();
                 SkillController.Initialize(this);
             }
-            characterFacing = AddressableLoaderSettings.Instance.playerSettings.characterFacing;
+            defaultFacing = AddressableLoaderSettings.Instance.playerSettings.characterFacing;
         }
         /// <summary>
         /// tag, sorting layer, layer 셋팅하기
@@ -174,17 +174,14 @@ namespace GGemCo2DCore
                 colliderCheckHitArea.size = struckTableAnimation.HitAreaSize;
             }
             height = struckTableAnimation.Height;
-            characterFacing = struckTableAnimation.DefaultFacing;
+            defaultFacing = struckTableAnimation.DefaultFacing;
         }
         /// <summary>
         /// 캐릭터가 flip 되었는지 체크
-        /// <para>
-        /// 디폴트는 왼쪽을 바라봄
-        /// </para>
         /// </summary>
         /// <returns></returns>
         public bool IsFlipped() {
-            return Mathf.Approximately(transform.localScale.x, (originalScaleX * -1f));
+            return Mathf.Approximately(transform.localScale.x, originalScaleX * -1f);
         }
         public void SetIsPossibleFlip(bool set) => isPossibleFlip = set;
 
@@ -336,12 +333,15 @@ namespace GGemCo2DCore
         /// <returns></returns>
         protected bool AreFacingEachOther(Transform monster)
         {
-            float playerDir = Mathf.Sign(transform.localScale.x);  // 플레이어 방향 (오른쪽: -1, 왼쪽: 1)
-            float monsterDir = Mathf.Sign(monster.localScale.x); // 몬스터 방향 (오른쪽: -1, 왼쪽: 1)
+            CharacterBase player = GetComponent<CharacterBase>();
+            CharacterBase monsterChar = monster.GetComponent<CharacterBase>();
+
+            float playerDir = player.GetFacingDirection();
+            float monsterDir = monsterChar.GetFacingDirection();
 
             float directionToMonster = Mathf.Sign(monster.position.x - transform.position.x);
 
-            return Mathf.Approximately(playerDir, -directionToMonster) && Mathf.Approximately(monsterDir, directionToMonster);
+            return Mathf.Approximately(playerDir, directionToMonster) && Mathf.Approximately(monsterDir, -directionToMonster);
         }
         /// <summary>
         /// 캐릭터가 죽었을때 처리 
@@ -557,7 +557,7 @@ namespace GGemCo2DCore
         public float GetFacingDirection()
         {
             float sign = Mathf.Sign(transform.localScale.x);
-            return characterFacing == CharacterConstants.CharacterFacing.Right ? sign : -sign;
+            return defaultFacing == CharacterConstants.CharacterFacing.Right ? sign : -sign;
         }
 
         public void Stop()

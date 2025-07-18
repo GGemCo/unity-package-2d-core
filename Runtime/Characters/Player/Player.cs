@@ -12,7 +12,6 @@ namespace GGemCo2DCore
     {
         // 공격할 몬스터 
         private GameObject _targetMonster;
-        private GGemCoSettings _gGemCoSettings; 
         private EquipController _equipController;
         private ControllerPlayer _controllerPlayer;
         private UIWindowHud _uiWindowHud;
@@ -100,6 +99,10 @@ namespace GGemCo2DCore
             // exclude layer : 타일맵 wall
             Vector2 offset = Vector2.zero;
             Vector2 size = new Vector2(500, 250);
+            if (AddressableLoaderSettings.Instance.playerSettings.rangeAttack != Vector2.zero)
+            {
+                size = AddressableLoaderSettings.Instance.playerSettings.rangeAttack;
+            }
             colliderCheckCharacter = ComponentController.AddCapsuleCollider2D(attackRange, true, offset, size);
             
             // hit area
@@ -113,6 +116,10 @@ namespace GGemCo2DCore
             // exclude layer : 타일맵 wall 제외하고 모두 포함
             offset = Vector2.zero;
             size = new Vector2(264,132);
+            if (AddressableLoaderSettings.Instance.playerSettings.rangeCollider != Vector2.zero)
+            {
+                size = AddressableLoaderSettings.Instance.playerSettings.rangeCollider;
+            }
             ComponentController.AddCapsuleCollider2D(gameObject, false, offset, size,
                 LayerMask.GetMask(ConfigLayer.GetValue(ConfigLayer.Keys.TileMapWall)),
                 ~ (1 << LayerMask.NameToLayer(ConfigLayer.GetValue(ConfigLayer.Keys.TileMapWall))));
@@ -179,24 +186,7 @@ namespace GGemCo2DCore
                 UnEquipItem(partIndex);
                 return;
             }
-            var info = TableLoaderManager.Instance.TableItem.GetDataByUid(itemUid);
-            if (info == null) return;
-            
-            ItemConstants.PartsType partsType = (ItemConstants.PartsType)partIndex;
-            List<string> slotNames = ItemConstants.SlotNameByPartsType[partsType];
-
-            List<StruckChangeSlotImage> changeImages = new List<StruckChangeSlotImage>();
-            foreach (var slotName in slotNames)
-            {
-                string attachmentName = ItemConstants.AttachmentNameBySlotName[slotName];
-                
-                string changeSpritePath = $"{info.FileName}_{slotName}";
-                var sprite = AddressableLoaderItem.Instance.GetImageEquipByName(changeSpritePath);
-                
-                StruckChangeSlotImage struckChangeSlotImage = new StruckChangeSlotImage(slotName, attachmentName, sprite);
-                changeImages.Add(struckChangeSlotImage);
-            }
-            CharacterAnimationController.ChangeCharacterImageInSlot(changeImages);
+            CharacterAnimationController.ChangeCharacterImageInSlot(partIndex, itemUid);
         }
         /// <summary>
         /// 장비 해제 하기
@@ -207,21 +197,7 @@ namespace GGemCo2DCore
             bool result = _equipController.UnEquipItem(partIndex);
             if (!result) return;
             
-            ItemConstants.PartsType partsType = (ItemConstants.PartsType)partIndex;
-            List<string> slotNames = ItemConstants.SlotNameByPartsType[partsType];
-
-            List<StruckChangeSlotImage> changeImages = new List<StruckChangeSlotImage>();
-            foreach (var slotName in slotNames)
-            {
-                string attachmentName = ItemConstants.AttachmentNameBySlotName[slotName];
-                
-                string changeSpritePath = attachmentName;
-                var sprite = AddressableLoaderItem.Instance.GetImageEquipByName(changeSpritePath);
-
-                StruckChangeSlotImage struckChangeSlotImage = new StruckChangeSlotImage(slotName, attachmentName, sprite);
-                changeImages.Add(struckChangeSlotImage);
-            }
-            CharacterAnimationController.ChangeCharacterImageInSlot(changeImages);
+            CharacterAnimationController.ChangeCharacterImageInSlot(partIndex);
         }
         /// <summary>
         /// attack 이벤트 처리 
@@ -262,19 +238,28 @@ namespace GGemCo2DCore
                 // 몬스터와 같은 곳을 바라보고 있으면,
                 else if (IsFlipped() == monster.IsFlipped())
                 {
-                    // flip 일때는 
-                    // monster.x >= player.x
-                    if (IsFlipped() && monster.transform.position.x >= transform.position.x)
+                    switch (defaultFacing)
                     {
-                        monster.TakeDamage(totalDamage, gameObject);
-                        ++countDamageMonster;
-                    }
-                    // flip 이 아닐때는
-                    // monster.x <= player.x
-                    else if (IsFlipped() != true && monster.transform.position.x <= transform.position.x)
-                    {
-                        monster.TakeDamage(totalDamage, gameObject);
-                        ++countDamageMonster; 
+                        case CharacterConstants.CharacterFacing.Right:
+                        {
+                            if ((!IsFlipped() && monster.transform.position.x >= transform.position.x) ||
+                                (IsFlipped() && monster.transform.position.x <= transform.position.x))
+                            {
+                                monster.TakeDamage(totalDamage, gameObject);
+                                ++countDamageMonster;
+                            }
+                            break;
+                        }
+                        case CharacterConstants.CharacterFacing.Left:
+                        {
+                            if ((!IsFlipped() && monster.transform.position.x <= transform.position.x) ||
+                                (IsFlipped() && monster.transform.position.x >= transform.position.x))
+                            {
+                                monster.TakeDamage(totalDamage, gameObject);
+                                ++countDamageMonster;
+                            }
+                            break;
+                        }
                     }
                 }
                         

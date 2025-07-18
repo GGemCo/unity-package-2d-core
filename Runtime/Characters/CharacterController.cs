@@ -49,7 +49,7 @@ namespace GGemCo2DCore
         protected void UpdateDirection(float targetDirection = 0)
         {
             float scaleX = TargetCharacter.directionPrev.x >= 0 ? -1 : 1;
-            if (TargetCharacter.characterFacing == CharacterConstants.CharacterFacing.Right) {
+            if (TargetCharacter.defaultFacing == CharacterConstants.CharacterFacing.Right) {
                 scaleX = TargetCharacter.directionPrev.x >= 0 ? 1 : -1;
             }
             

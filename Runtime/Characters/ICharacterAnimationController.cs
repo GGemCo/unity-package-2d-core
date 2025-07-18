@@ -18,7 +18,7 @@ namespace GGemCo2DCore
         
         void PlayWaitAnimation();
         void PlayRunAnimation();
-        void PlayAttackAnimation();
+        void PlayAttackAnimation(string animName = "");
         void PlayDeadAnimation();
         void PlayCharacterAnimation(string animationName, bool loop = false, float timeScale = 1f);
 
@@ -32,7 +32,7 @@ namespace GGemCo2DCore
 
         Vector2 GetCharacterSize();
 
-        void ChangeCharacterImageInSlot(List<StruckChangeSlotImage> changeSlotImages);
+        void ChangeCharacterImageInSlot(int partIndex, int itemUid = 0);
         void RemoveCharacterImageInSlot(List<StruckChangeSlotImage> changeSlotImages);
         IEnumerator FadeEffect(float duration, bool fadeIn);
         void UpdateTimeScaleByTrackIndex(float value, int index = 0);

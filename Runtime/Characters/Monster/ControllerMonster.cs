@@ -97,7 +97,7 @@ namespace GGemCo2DCore
         /// </summary>
         private int GetScaleByDirection(Vector2 direction)
         {
-            if (TargetCharacter.characterFacing == CharacterConstants.CharacterFacing.Left)
+            if (TargetCharacter.defaultFacing == CharacterConstants.CharacterFacing.Left)
                 return direction.x >= 0 ? -1 : 1;
             else
                 return direction.x >= 0 ? 1 : -1;

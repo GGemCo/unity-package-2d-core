@@ -149,7 +149,7 @@ namespace GGemCo2DCore
             if (Mathf.Abs(direction.x) > Mathf.Abs(direction.y))
             {
                 bool movingRight = direction.x > 0f;
-                bool defaultIsRight = targetCharacter?.characterFacing == CharacterConstants.CharacterFacing.Right;
+                bool defaultIsRight = targetCharacter?.defaultFacing == CharacterConstants.CharacterFacing.Right;
 
                 bool shouldFlip = (movingRight != defaultIsRight);
                 targetCharacter?.SetFlip(shouldFlip);
