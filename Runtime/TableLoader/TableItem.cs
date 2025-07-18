@@ -173,14 +173,28 @@ namespace GGemCo2DCore
 
         private static string GetAntiFlagName(ItemConstants.AntiFlag antiFlag)
         {
-            return antiFlag switch
+            if (LocalizationManager.Instance)
             {
-                ItemConstants.AntiFlag.ShopSale => LocalizationManager.Instance.GetCommonGameByKey("Item_AntiFlag_Shop"),
-                ItemConstants.AntiFlag.Stash => LocalizationManager.Instance.GetCommonGameByKey("Item_AntiFlag_Stash"),
-                ItemConstants.AntiFlag.Salvage => LocalizationManager.Instance.GetCommonGameByKey("Item_AntiFlag_Salvage"),
-                ItemConstants.AntiFlag.Upgrade => LocalizationManager.Instance.GetCommonGameByKey("Item_AntiFlag_Upgrade"),
-                _ => ""
-            };
+                return antiFlag switch
+                {
+                    ItemConstants.AntiFlag.ShopSale => LocalizationManager.Instance.GetCommonGameByKey("Item_AntiFlag_Shop"),
+                    ItemConstants.AntiFlag.Stash => LocalizationManager.Instance.GetCommonGameByKey("Item_AntiFlag_Stash"),
+                    ItemConstants.AntiFlag.Salvage => LocalizationManager.Instance.GetCommonGameByKey("Item_AntiFlag_Salvage"),
+                    ItemConstants.AntiFlag.Upgrade => LocalizationManager.Instance.GetCommonGameByKey("Item_AntiFlag_Upgrade"),
+                    _ => ""
+                };
+            }
+            else
+            {
+                return antiFlag switch
+                {
+                    ItemConstants.AntiFlag.ShopSale => "AntiFlag_Shop",
+                    ItemConstants.AntiFlag.Stash => "AntiFlag_Stash",
+                    ItemConstants.AntiFlag.Salvage => "AntiFlag_Salvage",
+                    ItemConstants.AntiFlag.Upgrade => "AntiFlag_Upgrade",
+                    _ => ""
+                }; 
+            }
         }
         protected override void OnLoadedData(Dictionary<string, string> data)
         {
