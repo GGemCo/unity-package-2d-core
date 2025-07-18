@@ -75,8 +75,7 @@ namespace GGemCo2DCore
             }
             else if (_instance != this)
             {
-                Destroy(gameObject);
-                return;
+                Destroy(gameObject);                
             }
 
             _stringDatabase = LocalizationSettings.StringDatabase;
