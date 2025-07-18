@@ -18,42 +18,7 @@ namespace GGemCo2DCore
     /// </summary>
     public class LocalizationManager : MonoBehaviour
     {
-        private static LocalizationManager _instance;
-        public static LocalizationManager Instance
-        {
-            get
-            {
-                if (_instance == null)
-                {
-#if UNITY_6000_0_OR_NEWER
-                    _instance = FindFirstObjectByType<LocalizationManager>();
-#else
-                    _instance = FindObjectOfType<LocalizationManager>();
-#endif                    
-
-#if UNITY_EDITOR
-                    // 에디트 모드에서 자동 생성 (Play 모드가 아닐 때만)
-                    if (_instance == null && !Application.isPlaying)
-                    {
-                        var go = GameObject.Find("LocalizationManager (Editor)");
-                        if (go == null)
-                        {
-                            go = new GameObject("LocalizationManager (Editor)");
-                            go.hideFlags = HideFlags.HideAndDontSave;
-                            _instance = go.AddComponent<LocalizationManager>();
-                        }
-                        else
-                        {
-                            _instance = go.GetComponent<LocalizationManager>();
-                        }
-                    }
-#endif
-                }
-
-                return _instance;
-            }
-        }
-
+        public static LocalizationManager Instance;
         public UnityEvent onChangeLocale;
 
         private List<string> _languageCodes;
@@ -68,14 +33,14 @@ namespace GGemCo2DCore
 
         private void Awake()
         {
-            if (_instance == null)
+            if (!Instance)
             {
-                _instance = this;
+                Instance = this;
                 DontDestroyOnLoad(gameObject);
             }
-            else if (_instance != this)
+            else
             {
-                Destroy(gameObject);                
+                Destroy(gameObject);
             }
 
             _stringDatabase = LocalizationSettings.StringDatabase;
