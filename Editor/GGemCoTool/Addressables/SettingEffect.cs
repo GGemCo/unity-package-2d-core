@@ -57,7 +57,7 @@ namespace GGemCo2DCoreEditor
                     if (info.Uid <= 0) continue;
                 
                     string key = $"{ConfigAddressableGroupName.Effect}_{info.PrefabName}";
-                    string assetPath = $"{ConfigAddressables.PathEffectSkill}/{info.PrefabName}.prefab";
+                    string assetPath = $"{ConfigAddressables.GetPathEffect(info.Category)}/{info.PrefabName}.prefab";
                     string label = ConfigAddressableLabel.Effect;
                 
                     Add(settings, groupMonster, key, assetPath, label);

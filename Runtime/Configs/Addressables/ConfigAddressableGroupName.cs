@@ -34,5 +34,7 @@
         public const string Cutscene = ConfigDefine.NameSDK+"_Cutscene";
         // 스킬
         public const string SkillIconImage = ConfigDefine.NameSDK+"_Skill_IconImage";
+        // 어펙트
+        public const string AffectIconImage = ConfigDefine.NameSDK+"_Affect_IconImage";
     }
 }

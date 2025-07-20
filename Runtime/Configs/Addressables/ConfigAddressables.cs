@@ -56,5 +56,21 @@ namespace GGemCo2DCore
         // 이펙트
         public const string PathEffect = Path + "/Effects";
         public const string PathEffectSkill = PathEffect + "/Skills";
+        public const string PathEffectPlayer = PathEffect + "/Player";
+        public const string PathEffectMonster = PathEffect + "/Monster";
+
+        public static string GetPathEffect(EffectConstants.Category category)
+        {
+            return category switch
+            {
+                EffectConstants.Category.Player => PathEffectPlayer,
+                EffectConstants.Category.Monster => PathEffectMonster,
+                _ => PathEffectSkill
+            };
+        }
+        
+        // 어펙트
+        public const string KeyImageIconAffect = ConfigDefine.NameSDK+"_Affect_Icon";
+        public const string PathImageIconAffect = Path + "/Images/Icon/Affect";
     }
 }

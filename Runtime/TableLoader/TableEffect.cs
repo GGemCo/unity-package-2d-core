@@ -10,28 +10,31 @@ namespace GGemCo2DCore
     {
         public int Uid;
         public string Name;
-        public EffectConstants.Type Type;
+        public EffectConstants.Category Category;
         public string PrefabName;
         public int Width;
         public int Height;
         public Vector2 ColliderSize;
         public bool NeedRotation;
         public string Color;
+        public ConfigCommon.DirectionType DefaultDirection;
     }
     /// <summary>
     /// 이펙트 테이블
     /// </summary>
     public class TableEffect : DefaultTable
     {
-        private static readonly Dictionary<string, EffectConstants.Type> MapType;
+        private static readonly Dictionary<string, EffectConstants.Category> MapCategory;
         static TableEffect()
         {
-            MapType = new Dictionary<string, EffectConstants.Type>
+            MapCategory = new Dictionary<string, EffectConstants.Category>
             {
-                { "Skill", EffectConstants.Type.Skill },
+                { "Skill", EffectConstants.Category.Skill },
+                { "Player", EffectConstants.Category.Player },
+                { "Monster", EffectConstants.Category.Monster },
             };
         }
-        private EffectConstants.Type ConvertType(string grade) => MapType.GetValueOrDefault(grade, EffectConstants.Type.None);
+        private EffectConstants.Category ConvertType(string grade) => MapCategory.GetValueOrDefault(grade, EffectConstants.Category.None);
         public StruckTableEffect GetDataByUid(int uid)
         {
             if (uid <= 0)
@@ -45,13 +48,14 @@ namespace GGemCo2DCore
             {
                 Uid = int.Parse(data["Uid"]),
                 Name = data["Name"],
-                Type = ConvertType(data["Type"]),
+                Category = ConvertType(data["Category"]),
                 PrefabName = data["PrefabName"],
                 Width = int.Parse(data["Width"]),
                 Height = int.Parse(data["Height"]),
                 ColliderSize = ConvertVector2(data["ColliderSize"]),
                 NeedRotation = ConvertBoolean(data["NeedRotation"]),
                 Color = data["Color"],
+                DefaultDirection = ConfigCommon.GetDirectionType(data["DefaultDirection"]),
             };
         }
     }

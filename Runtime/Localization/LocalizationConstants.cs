@@ -92,7 +92,6 @@ namespace GGemCo2DCore
                 public static string ButtonNewGame() => $"{NameIntro}_{NameButton}_NewGame";
                 public static string ButtonContinue() => $"{NameIntro}_{NameButton}_Continue";
                 public static string ButtonLoad() => $"{NameIntro}_{NameButton}_Load";
-
                 public static string ButtonOption() => $"{NameIntro}_{NameButton}_Option";
             }
             public static class Loading
@@ -104,6 +103,7 @@ namespace GGemCo2DCore
                 public static string TextTypeEffect() => $"{NameLoading}_{NameText}_Effect";
                 public static string TextTypeItem() => $"{NameLoading}_{NameText}_Item";
                 public static string TextTypeSkill() => $"{NameLoading}_{NameText}_Skill";
+                public static string TextTypeAffect() => $"{NameLoading}_{NameText}_Affect";
                 public static string TextLoadingPercent() => $"{NameLoading}_{NameText}_LoadingPercent";
             }
 

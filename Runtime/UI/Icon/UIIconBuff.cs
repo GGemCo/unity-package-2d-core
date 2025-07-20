@@ -47,8 +47,7 @@
         /// <returns></returns>
         protected override string GetIconImagePath()
         {
-            if (struckTableAffect == null) return null;
-            return $"Images/Icon/Affect/Buff/{struckTableAffect.IconFileName}";
+            return struckTableAffect?.IconFileName;
         }
         /// <summary>
         /// 같은 affect uid 일 경우 duration 만 업데이트 한다
@@ -63,6 +62,21 @@
         public void RemoveCoolTime()
         {
             SceneGame.Instance.uIIconCoolTimeManager.ResetCoolTime(windowUid, uid);
+        }
+        /// <summary>
+        /// 아이콘 이미지 업데이트 하기
+        /// </summary>
+        protected override void UpdateIconImage()
+        {
+            if (ImageIcon == null) return;
+            string path = GetIconImagePath();
+            if (string.IsNullOrEmpty(path))
+            {
+                ImageIcon.sprite = null;
+                return;
+            }
+
+            ImageIcon.sprite = AddressableLoaderAffect.Instance.GetImageIconByName(path);
         }
     }
 }

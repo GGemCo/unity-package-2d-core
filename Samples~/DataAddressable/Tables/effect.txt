@@ -1,7 +1,14 @@
-﻿Uid	Name	Type	PrefabName	Width	Height	ColliderSize	NeedRotation	Color
-200001	파이어월	Skill	Firewall	139	291	200,150	N	FFFFFF
-200002	디크리즈무브	Skill	DecreaseMove	143	257	143,257	N	7A297B
-200003	패스트무브	Skill	Fastmove	780	447	780,447	N	FFF766
-200004	파이어볼	Skill	Fireball	343	197	188,96	Y	FFFFFF
-200005	디크리즈 어텍	Skill	DecreaseMove	143	257	143,257	N	FFF766
-#200006	아이스볼	Skill	Iceball	343	197	188,96	Y	60C5F1
+﻿Uid	Name	Category	PrefabName	AnimationController	Width	Height	ColliderSize	NeedRotation	Color	DefaultDirection
+200001	파이어월	Skill	Firewall	Spine	139	291	200,150	N	FFFFFF	Left
+200002	디크리즈무브	Skill	DecreaseMove	Spine	143	257	143,257	N	7A297B	Left
+200003	패스트무브	Skill	Fastmove	Spine	780	447	780,447	N	FFF766	Left
+200004	파이어볼	Skill	Fireball	Spine	343	197	188,96	Y	FFFFFF	Left
+200005	디크리즈 어텍	Skill	DecreaseMove	Spine	143	257	143,257	N	FFF766	Left
+#200006	아이스볼	Skill	Iceball	Spine	343	197	188,96	Y	60C5F1	Left
+#atlas										
+100001	플레이어 피격	Player	PlayerHit	Sprite	139	291	0,0	N	FFFFFF	Left
+100002	플레이어 파이어볼	Player	SmallFireBall_Triggered	Sprite	139	291	0,0	N	FFFFFF	Right
+100003	패스트무브	Skill	FastMoveLoop	Spine	780	447	780,447	N	FFF766	Left
+# 파이터 고블린										
+300001	파이터 고블린 피격	Monster	FighterGoblinHit	Sprite	139	291	0,0	N	FFFFFF	Left
+300002	파이터 고블린 사망	Monster	FighterGoblinDie	Sprite	139	291	0,0	N	FFFFFF	Left

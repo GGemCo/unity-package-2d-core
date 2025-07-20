@@ -91,6 +91,10 @@ namespace GGemCo2DCoreEditor
         {
             return LoadTable<TableWindow>(ConfigAddressableTable.TableWindow.Path);
         }
+        public TableAffect LoadAffectTable()
+        {
+            return LoadTable<TableAffect>(ConfigAddressableTable.TableAffect.Path);
+        }
 
         /// <summary>
         /// 툴에서 드롭다운 메뉴를 만들기 위해 사용중

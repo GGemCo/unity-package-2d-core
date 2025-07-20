@@ -15,7 +15,8 @@ namespace GGemCo2DCore
             SaveData,
             GamePrefabEffect,
             Item,
-            Skill
+            Skill,
+            Affect
         }
 
         public TextMeshProUGUI textLoadingPercent; // 진행률 표시
@@ -26,12 +27,14 @@ namespace GGemCo2DCore
         private AddressableLoaderPrefabEffect _addressableLoaderPrefabEffect;
         private AddressableLoaderItem _addressableLoaderItem;
         private AddressableLoaderSkill _addressableLoaderSkill;
+        private AddressableLoaderAffect _addressableLoaderAffect;
 
         private float _loadProgressTable;
         private float _loadProgressPrefabCommon;
         private float _loadProgressPrefabEffect;
         private float _loadProgressItem;
         private float _loadProgressSkill;
+        private float _loadProgressAffect;
         private float _loadProgressSaveData;
         private float _progressTotal;
         private float _progressBase;
@@ -47,6 +50,7 @@ namespace GGemCo2DCore
             _loadProgressPrefabEffect = 0f;
             _loadProgressItem = 0f;
             _loadProgressSkill = 0f;
+            _loadProgressAffect = 0f;
             _loadProgressSaveData = 0f;
             _progressTotal = 0f;
             // 6 가지 경우를 로드 하고 있다
@@ -72,6 +76,9 @@ namespace GGemCo2DCore
             GameObject gameObjectAddressableLoaderSkill = new GameObject("AddressableLoaderSkill");
             _addressableLoaderSkill = gameObjectAddressableLoaderSkill.AddComponent<AddressableLoaderSkill>();
             
+            GameObject gameObjectAddressableLoaderAffect = new GameObject("AddressableLoaderAffect");
+            _addressableLoaderAffect = gameObjectAddressableLoaderAffect.AddComponent<AddressableLoaderAffect>();
+            
             GameObject gameObjectSaveDataLoader = new GameObject("SaveDataLoader");
             _saveDataLoader = gameObjectSaveDataLoader.AddComponent<SaveDataLoader>();
         }
@@ -88,6 +95,7 @@ namespace GGemCo2DCore
             yield return LoadAddressablePrefabEffect();
             yield return LoadAddressableItem();
             yield return LoadAddressableSkill();
+            yield return LoadAddressableAffect();
             yield return LoadSaveData();
             UnityEngine.SceneManagement.SceneManager.LoadScene(ConfigDefine.SceneNameGame);
         }
@@ -150,7 +158,18 @@ namespace GGemCo2DCore
             while (!prefabLoadTask.IsCompleted)
             {
                 _loadProgressSkill = _addressableLoaderSkill.GetPrefabLoadProgress() * _progressBase;
-                UpdateLoadingProgress(Type.Item);
+                UpdateLoadingProgress(Type.Skill);
+                yield return null;
+            }
+        }
+        private IEnumerator LoadAddressableAffect()
+        {
+            Task prefabLoadTask = _addressableLoaderAffect.LoadPrefabsAsync();
+
+            while (!prefabLoadTask.IsCompleted)
+            {
+                _loadProgressAffect = _addressableLoaderAffect.GetPrefabLoadProgress() * _progressBase;
+                UpdateLoadingProgress(Type.Affect);
                 yield return null;
             }
         }
@@ -190,6 +209,9 @@ namespace GGemCo2DCore
                     break;
                 case Type.Skill:
                     subKey = LocalizationConstants.Keys.Loading.TextTypeSkill();
+                    break;
+                case Type.Affect:
+                    subKey = LocalizationConstants.Keys.Loading.TextTypeAffect();
                     break;
             }
 

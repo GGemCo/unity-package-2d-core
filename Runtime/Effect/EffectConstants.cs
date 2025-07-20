@@ -2,10 +2,12 @@
 {
     public static class EffectConstants
     {
-        public enum Type
+        public enum Category
         {
             None,
-            Skill
+            Skill,
+            Player,
+            Monster
         }
     }
 }

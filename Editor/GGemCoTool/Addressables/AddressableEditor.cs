@@ -18,6 +18,7 @@ namespace GGemCo2DCoreEditor
         private SettingQuest _settingQuest;
         private SettingCutscene _settingCutscene;
         private SettingSkill _settingSkill;
+        private SettingAffect _settingAffect;
 
         public TableMap TableMap;
         public TableNpc TableNpc;
@@ -29,6 +30,7 @@ namespace GGemCo2DCoreEditor
         public TableQuest TableQuest;
         public TableCutscene TableCutscene;
         public TableSkill TableSkill;
+        public TableAffect TableAffect;
         private Vector2 _scrollPosition;
 
         [MenuItem(ConfigEditor.NameToolSettingAddressable, false, (int)ConfigEditor.ToolOrdering.SettingAddressable)]
@@ -52,6 +54,7 @@ namespace GGemCo2DCoreEditor
             _settingQuest = new SettingQuest(this);
             _settingCutscene = new SettingCutscene(this);
             _settingSkill = new SettingSkill(this);
+            _settingAffect = new SettingAffect(this);
         }
 
         public void LoadTables()
@@ -66,6 +69,7 @@ namespace GGemCo2DCoreEditor
             TableQuest = TableLoaderManager.LoadQuestTable();
             TableCutscene = TableLoaderManager.LoadCutsceneTable();
             TableSkill = TableLoaderManager.LoadSkillTable();
+            TableAffect = TableLoaderManager.LoadAffectTable();
         }
 
         private void OnGUI()
@@ -157,6 +161,16 @@ namespace GGemCo2DCoreEditor
             {
                 EditorGUILayout.Space(10);
                 _settingCutscene.OnGUI();
+            }
+            if (TableAffect == null)
+            {
+                EditorGUILayout.Space(10);
+                EditorGUILayout.HelpBox($"{ConfigAddressableTable.Affect} 테이블이 없습니다.", MessageType.Info);
+            }
+            else
+            {
+                EditorGUILayout.Space(10);
+                _settingAffect.OnGUI();
             }
             EditorGUILayout.Space(20);
             EditorGUILayout.EndScrollView();
