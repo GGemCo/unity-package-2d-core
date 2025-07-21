@@ -221,7 +221,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 403011342358
-    m_Localized: "{currency} \uAC00 \uBD80\uC871\uD569\uB2C8\uB2E4."
+    m_Localized: "{0} \uAC00 \uBD80\uC871\uD569\uB2C8\uB2E4."
     m_Metadata:
       m_Items: []
   - m_Id: 403011342359

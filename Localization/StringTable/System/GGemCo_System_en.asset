@@ -203,7 +203,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 403011342358
-    m_Localized: Not enough {currency}.
+    m_Localized: Not enough {0}.
     m_Metadata:
       m_Items: []
   - m_Id: 403011342359
