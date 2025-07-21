@@ -128,11 +128,13 @@ namespace GGemCo2DCore
         /// <param name="attacker"></param>
         protected override void OnDamage(GameObject attacker)
         {
+            base.OnDamage(attacker);
             if (IsAggro() == false)
             {
                 SetAggro(true);
             }
             SetAttackerTarget(attacker.transform);
+            _controllerMonster?.StopAttackCoroutine();
         }
         /// <summary>
         /// 몬스터가 죽었을때 처리 
@@ -144,7 +146,7 @@ namespace GGemCo2DCore
             {
                 Destroy(sliderHpBar);
             }
-            _controllerMonster.StopAttackCoroutine();
+            _controllerMonster?.StopAllCoroutines();
             GameEventManager.MonsterKilled(CharacterRegenData.MapUid, uid);
             OnMonsterDead?.Invoke(vid, uid, gameObject);
         }

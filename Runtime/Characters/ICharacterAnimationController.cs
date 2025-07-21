@@ -15,11 +15,13 @@ namespace GGemCo2DCore
         public const string WaitBackwardAnim = "wait";
         public const string AttackAnim = "attack";
         public const string DeadAnim = "die";
+        public const string DamageAnim = "damage";
         
         void PlayWaitAnimation();
         void PlayRunAnimation();
         void PlayAttackAnimation(string animName = "");
         void PlayDeadAnimation();
+        void PlayDamageAnimation();
         void PlayCharacterAnimation(string animationName, bool loop = false, float timeScale = 1f);
 
         float GetCharacterHeight();

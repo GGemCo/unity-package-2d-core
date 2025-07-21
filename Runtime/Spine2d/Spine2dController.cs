@@ -112,6 +112,14 @@ namespace GGemCo2DCore
         protected virtual void Start()
         {
         }
+
+        protected Spine.Animation FindAnimation(string animationName)
+        {
+            var findAnimation = SkeletonAnimation.Skeleton.Data.FindAnimation(animationName);
+            if (findAnimation != null) return findAnimation;
+            GcLogger.LogWarning($"애니메이션 클립을 찾을 수 없습니다. AnimationName: {animationName}");
+            return null;
+        }
         /// <summary>
         /// 애니메이션 재생
         /// </summary>
@@ -122,13 +130,18 @@ namespace GGemCo2DCore
         protected void PlayAnimation(string animationName, bool loop = false, float timeScale = 1.0f, List<StruckAddAnimation> addAnimations = null)
         {
             if (SkeletonAnimation == null) return;
-            // GcLogger.Log("PlayAnimation gameobject: " + this.gameObject.name + " / animationName: " + animationName + " / " + loop);
+            var findAnimation = FindAnimation(animationName);
+            if (findAnimation == null) return;
+            // GcLogger.Log("PlayAnimation GameObject: " + this.gameObject.name + " / animationName: " + animationName + " / " + loop);
             TrackEntry trackEntry = SkeletonAnimation.AnimationState.SetAnimation(0, animationName, loop);
             trackEntry.TimeScale = timeScale;
             if (addAnimations == null) return;
             foreach (StruckAddAnimation info in addAnimations)
             {
                 if (info == null) continue;
+                findAnimation = FindAnimation(info.AnimationName);
+                if (findAnimation == null) continue;
+                
                 TrackEntry entry = SkeletonAnimation.AnimationState.AddAnimation(0, info.AnimationName, info.Loop, info.Delay);
                 if (info.TimeScale > 0)
                 {
@@ -272,13 +285,8 @@ namespace GGemCo2DCore
         /// <returns></returns>
         protected float GetAnimationDuration(string animationName, bool isMilliseconds = true)
         {
-            var findAnimation = SkeletonAnimation.Skeleton.Data.FindAnimation(animationName);
-
-            if (findAnimation == null)
-            {
-                GcLogger.LogWarning($"애니메이션 클립을 찾을 수 없습니다. AnimationName: {animationName}");
-                return 0;
-            }
+            var findAnimation = FindAnimation(animationName);
+            if (findAnimation == null) return 0;
 
             float duration = findAnimation.Duration;
             return isMilliseconds ? duration * 1000 : duration;

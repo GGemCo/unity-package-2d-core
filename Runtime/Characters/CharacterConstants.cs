@@ -48,7 +48,8 @@
             /// </summary>
             CastingSkill,
             UseSkill,
-            MoveForce
+            MoveForce,
+            Damage
         }
 
         /// <summary>

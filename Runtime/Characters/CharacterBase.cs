@@ -247,6 +247,7 @@ namespace GGemCo2DCore
         public bool IsStatusIdle() => currentStatus == CharacterConstants.CharacterStatus.Idle;
         public bool IsStatusNone() => currentStatus == CharacterConstants.CharacterStatus.None;
         public bool IsStatusMoveForce() => currentStatus == CharacterConstants.CharacterStatus.MoveForce;
+        public bool IsStatusDamage() => currentStatus == CharacterConstants.CharacterStatus.Damage;
         public CharacterConstants.CharacterStatus GetCurrentStatus() => currentStatus;
         
         private void SetStatus(CharacterConstants.CharacterStatus value) => currentStatus = value;
@@ -256,6 +257,7 @@ namespace GGemCo2DCore
         public void SetStatusAttack() => SetStatus(CharacterConstants.CharacterStatus.Attack);
         public void SetStatusDontMove() => SetStatus(CharacterConstants.CharacterStatus.DontMove);
         public void SetStatusMoveForce() => SetStatus(CharacterConstants.CharacterStatus.MoveForce);
+        public void SetStatusDamage() => SetStatus(CharacterConstants.CharacterStatus.Damage);
 
         public void SetScale(float scale)
         {
@@ -445,7 +447,8 @@ namespace GGemCo2DCore
 
         protected virtual void OnDamage(GameObject attacker)
         {
-            
+            SetStatusDamage();
+            CharacterAnimationController?.PlayDamageAnimation();
         }
         /// <summary>
         /// 공격한 오브젝트 설정하기 
@@ -562,6 +565,8 @@ namespace GGemCo2DCore
 
         public void Stop()
         {
+            if (IsStatusDead()) return;
+            
             SetStatusIdle();
             CharacterAnimationController?.PlayWaitAnimation();
         }

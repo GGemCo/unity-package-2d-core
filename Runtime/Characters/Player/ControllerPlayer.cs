@@ -65,6 +65,8 @@ namespace GGemCo2DCore
                 return;
             }
             if (TargetCharacter.IsStatusMoveForce()) return;
+            if (TargetCharacter.IsStatusDead()) return;
+            if (TargetCharacter.IsStatusDamage()) return;
             
             HandleInput();
             HandleAttack();

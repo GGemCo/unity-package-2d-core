@@ -52,6 +52,17 @@ namespace GGemCo2DCore
             if (GetCurrentAnimation() == moveAnim) return;
             PlayAnimation(moveAnim, true, characterBase.GetCurrentMoveSpeed());
         }
+        public void PlayDamageAnimation()
+        {
+            if (characterBase.IsStatusDead()) return;
+            // damage 애니메이션이 없을 경우, Status 처리를 위해 바로 Stop 처리 
+            if (FindAnimation(ICharacterAnimationController.DamageAnim) == null)
+            {
+                characterBase.Stop();
+                return;
+            }
+            PlayAnimation(ICharacterAnimationController.DamageAnim);
+        }
         /// <summary>
         /// 스파인의 height 값을 구해서 가져오기
         /// </summary>

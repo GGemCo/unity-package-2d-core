@@ -108,16 +108,18 @@ namespace GGemCo2DCore
             if (skeletonGraphic == null) return;
             skeletonGraphic.AnimationState.Complete -= OnAnimationComplete;
         }
+        protected Spine.Animation FindAnimation(string animationName)
+        {
+            var findAnimation = skeletonGraphic.Skeleton.Data.FindAnimation(animationName);
+            if (findAnimation != null) return findAnimation;
+            GcLogger.LogWarning($"애니메이션 클립을 찾을 수 없습니다. AnimationName: {animationName}");
+            return null;
+        }
         public float GetAnimationDuration(string animationName, bool isMilliseconds = true)
         {
             if (skeletonGraphic == null) return 0;
-            var findAnimation = skeletonGraphic.Skeleton.Data.FindAnimation(animationName);
-
-            if (findAnimation == null)
-            {
-                GcLogger.LogWarning($"애니메이션 클립을 찾을 수 없습니다. AnimationName: {animationName}");
-                return 0;
-            }
+            var findAnimation = FindAnimation(animationName);
+            if (findAnimation == null) return 0;
 
             float duration = findAnimation.Duration;
             return isMilliseconds ? duration * 1000 : duration;

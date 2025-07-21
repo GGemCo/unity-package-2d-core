@@ -24,6 +24,7 @@ namespace GGemCo2DCore
         {
             if (TargetCharacter.IsStatusMoveForce()) return;
             if (TargetCharacter.IsStatusDead()) return;
+            if (TargetCharacter.IsStatusDamage()) return;
             
             if (TargetCharacter.IsAggro())
             {
