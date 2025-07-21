@@ -14,10 +14,18 @@ namespace GGemCo2DCore
     public class CharacterAnimationControllerSpine : Spine2dController, ICharacterAnimationController
     {
         private CharacterBase characterBase;
+        private List<StruckChangeSlotImage> changeImages = new List<StruckChangeSlotImage>();
         protected override void Awake()
         {
             base.Awake();
+            changeImages.Clear();
             characterBase = GetComponent<CharacterBase>();
+            if (characterBase == null)
+            {
+                GcLogger.LogError("CharacterBase is missing! This component will not function.");
+                enabled = false; // 컴포넌트를 비활성화하여 다른 함수들이 실행되지 않도록 합니다.
+                return;
+            }
             // 초기에는 빈값으로 넣어줘야 PlayAnimation 함수가 호출된다.
             SkeletonAnimation.AnimationState.SetEmptyAnimation(0, 0);
         }
@@ -94,32 +102,28 @@ namespace GGemCo2DCore
         /// <param name="itemUid"></param>
         public void ChangeCharacterImageInSlot(int partIndex, int itemUid = 0)
         {
-            List<string> slotNames = new List<string>();
-            string folderName = "";
+            ItemConstants.PartsType partsType = (ItemConstants.PartsType)partIndex;
+            List<string> slotNames = ItemConstants.SlotNameByPartsType[partsType];
             string imagePath = "";
             if (itemUid > 0)
             {
                 StruckTableItem info = TableLoaderManager.Instance.TableItem.GetDataByUid(itemUid);
                 if (info == null) return;
-
-                ItemConstants.PartsType partsType = (ItemConstants.PartsType)partIndex;
-                slotNames = ItemConstants.SlotNameByPartsType[partsType];
-                folderName = ItemConstants.FolderNameByPartsType[partsType];
-                imagePath = info.ImagePath;
+                imagePath = info.FileName;
             }
 
-            List<StruckChangeSlotImage> changeImages = new List<StruckChangeSlotImage>();
+            changeImages.Clear();
             foreach (var slotName in slotNames)
             {
                 string attachmentName = ItemConstants.AttachmentNameBySlotName[slotName];
                 
-                string changeSpritePath = $"Images/Parts/{folderName}/{attachmentName}";
+                string changeSpritePath = attachmentName;
                 if (imagePath != "")
                 {
-                    changeSpritePath = $"Images/Parts/{folderName}/{imagePath}_{slotName}";
+                    changeSpritePath = $"{imagePath}_{slotName}";
                 }
 
-                var sprite = Resources.Load<Sprite>(changeSpritePath);
+                var sprite = AddressableLoaderItem.Instance.GetImageEquipByName(changeSpritePath);
 
                 StruckChangeSlotImage struckChangeSlotImage = new StruckChangeSlotImage(slotName, attachmentName, sprite);
                 changeImages.Add(struckChangeSlotImage);
@@ -179,6 +183,11 @@ namespace GGemCo2DCore
 
         protected override void OnSpineEventSound(Event eEvent) 
         {
+        }
+        protected override void OnSpineEventProjectile(Event eEvent) 
+        {
+            int projectileUid = eEvent.Data.Int;
+            characterBase.LaunchProjectile(projectileUid);
         }
 
         public IEnumerator FadeEffect(float duration, bool fadeIn)
