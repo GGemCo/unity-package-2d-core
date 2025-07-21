@@ -42,6 +42,8 @@ namespace GGemCo2DCore
 
             if (_struckTableSkill.Duration > 0)
                 StartCoroutine(RemoveEffectDuration(_struckTableSkill.Duration));
+            else if (_struckTableSkill.CoolTime > 0)
+                StartCoroutine(RemoveEffectDuration(_struckTableSkill.CoolTime));
 
             ComponentController.AddRigidbody2D(gameObject);
         }
