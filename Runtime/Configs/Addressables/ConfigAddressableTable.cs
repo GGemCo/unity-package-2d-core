@@ -25,6 +25,7 @@ namespace GGemCo2DCore
         public const string Cutscene = "cutscene";
         public const string Dialogue = "dialogue";
         public const string Quest = "quest";
+        public const string Projectile = "projectile";
 
         public static string TablePath() => $"{ConfigAddressables.Path}/Tables";
 
@@ -155,6 +156,12 @@ namespace GGemCo2DCore
             ConfigAddressableLabel.Table,
             Quest
         );
+        public static readonly AddressableAssetInfo TableProjectile = new(
+            $"{ConfigAddressableLabel.Table}_{Projectile}",
+            $"{TablePath()}/{Projectile}.txt",
+            ConfigAddressableLabel.Table,
+            Projectile
+        );
 
         public static readonly List<AddressableAssetInfo> All = new()
         {
@@ -178,7 +185,8 @@ namespace GGemCo2DCore
             TableCutscene,
             TableDialogue,
             TableQuest,
-            TableSkill
+            TableSkill,
+            TableProjectile
         };
     }
 }

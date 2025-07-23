@@ -35,6 +35,7 @@ namespace GGemCo2DCore
         public TableCutscene TableCutscene { get; private set; } = new TableCutscene();
         public TableDialogue TableDialogue { get; private set; } = new TableDialogue();
         public TableQuest TableQuest { get; private set; } = new TableQuest();
+        public TableProjectile TableProjectile { get; private set; } = new TableProjectile();
 
         protected void Awake()
         {
@@ -150,6 +151,9 @@ namespace GGemCo2DCore
                                 break;
                             case ConfigAddressableTable.Quest:
                                 TableQuest.LoadData(content);
+                                break;
+                            case ConfigAddressableTable.Projectile:
+                                TableProjectile.LoadData(content);
                                 break;
                         }
                     }
