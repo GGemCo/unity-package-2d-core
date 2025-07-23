@@ -90,14 +90,14 @@ namespace GGemCo2DCore
             }
         }
 
-        public Sprite GetImageIconByName(string prefabName)
+        public Sprite GetImageIconByName(string iconFileName)
         {
-            if (_dicImageIconAffect.TryGetValue(ConfigAddressableLabel.ImageAffectIcon, out var prefab))
+            if (_dicImageIconAffect.TryGetValue(ConfigAddressableLabel.ImageAffectIcon, out var spriteAtlas))
             {
-                return prefab.GetSprite(prefabName);
+                return spriteAtlas.GetSprite(iconFileName);
             }
 
-            GcLogger.LogError($"Addressables에서 {prefabName} 프리팹을 찾을 수 없습니다.");
+            GcLogger.LogError($"Addressables에서 {iconFileName} 아이콘 이미지를 찾을 수 없습니다.");
             return null;
         }
         public float GetPrefabLoadProgress() => _prefabLoadProgress;

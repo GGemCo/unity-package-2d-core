@@ -107,10 +107,7 @@ namespace GGemCo2DCore
             GameObject npc = CreateCharacter(CharacterConstants.Type.Npc, prefab, regenData);
             if (!npc) return null;
             
-            var info = _tableNpc?.GetDataByUid(uid);
-            if (info == null) return null;
-            
-            npc.GetComponent<Npc>()?.SetScale(info.Scale);
+            npc.GetComponent<Npc>()?.SetScale(infoNpc.Scale);
             
             return npc;
         }
@@ -128,10 +125,7 @@ namespace GGemCo2DCore
             GameObject monster = CreateCharacter(CharacterConstants.Type.Monster, prefab, regenData);
             if (!monster) return null;
             
-            var info = _tableMonster?.GetDataByUid(uid);
-            if (info == null) return null;
-            
-            monster.GetComponent<Monster>()?.SetScale(info.Scale);
+            monster.GetComponent<Monster>()?.SetScale(infoMonster.Scale);
             
             return monster;
         }
