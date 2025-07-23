@@ -1,6 +1,8 @@
 using System;
+using System.Collections;
 using UnityEngine;
 using R3;
+using Random = UnityEngine.Random;
 
 namespace GGemCo2DCore
 {
@@ -211,6 +213,36 @@ namespace GGemCo2DCore
         {
             if (sliderHpBar == null) return;
             sliderHpBar.GetComponent<MonsterHpBar>().StartFadeOut();
+        }
+        protected override IEnumerator CreateProjectile(StruckTableProjectile info)
+        {
+            if (!attackerTransform || info == null) yield break;
+            
+            for (int i = 0; i < info.Count; i++)
+            {
+                DefaultProjectile projectile = ProjectileManager.CreateProjectile(info.Uid);
+                projectile?.SetFromCharacter(this);
+                float positionX =
+                    Random.Range(attackerTransform.position.x - info.TargetPositionRangeX,
+                        attackerTransform.position.x + info.TargetPositionRangeX);
+                float positionY = attackerTransform.gameObject.GetComponent<Player>().GetRandomPositionYInHitArea();
+                if (info.TargetType == ProjectileConstants.TargetType.Fixed)
+                {
+                    projectile?.Launch(attackerTransform.gameObject.GetComponent<CharacterBase>());
+                }
+                else
+                {
+                    // 직선형일때는 타겟 x 좌표를 범위로 하지 않는다. 
+                    if (info.ArcHeightMin == 0 && info.ArcHeightMax == 0)
+                    {
+                        positionX = attackerTransform.position.x;
+                    }
+
+                    // positionY = mapSettings.projectilePositionY;
+                    projectile?.Launch(new Vector2(positionX, positionY));
+                }
+                yield return new WaitForSeconds(info.SecDelayByOne);
+            }
         }
     }
 }

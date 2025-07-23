@@ -18,6 +18,12 @@ namespace GGemCo2DCore
         {
             base.Awake();
             characterBase = GetComponent<CharacterBase>();
+            if (characterBase == null)
+            {
+                GcLogger.LogError("CharacterBase is missing! This component will not function.");
+                enabled = false; // 컴포넌트를 비활성화하여 다른 함수들이 실행되지 않도록 합니다.
+                return;
+            }
             spriteRenderer = GetComponent<SpriteRenderer>();
         }
         
@@ -266,6 +272,10 @@ namespace GGemCo2DCore
             // 캐릭터 하위에 붙이기
             effect.transform.SetParent(characterBase.transform);
             effect.transform.localPosition = Vector3.zero;
+        }
+        public override void OnAnimationEventProjectile(int projectileUid)
+        {
+            characterBase?.LaunchProjectile(projectileUid);
         }
 
     }

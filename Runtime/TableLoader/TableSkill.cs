@@ -23,7 +23,7 @@ namespace GGemCo2DCore
         public int Distance;
         public int EffectUid;
         public float EffectScale;
-        public float EffectMoveSpeed;
+        public int ProjectileUid;
         public int NeedMp;
         public float TickTime;
         public float Duration;
@@ -91,6 +91,11 @@ namespace GGemCo2DCore
                 skillsByLevel[uid].TryAdd(level, new StruckTableSkill());
             }
 
+            if (float.Parse(data["Duration"]) > float.Parse(data["CoolTime"]))
+            {
+                GcLogger.LogWarning($"Uid: {uid}, Level: {level}, Nmae: {data["Name"]}. Duration: {data["Duration"]} > CoolTime: {data["CoolTime"]}. ");
+            }
+
             StruckTableSkill struckTableItemDropGroup = new StruckTableSkill
             {
                 Uid = int.Parse(data["Uid"]),
@@ -109,7 +114,7 @@ namespace GGemCo2DCore
                 Distance = int.Parse(data["Distance"]),
                 EffectUid = int.Parse(data["EffectUid"]),
                 EffectScale = float.Parse(data["EffectScale"]),
-                EffectMoveSpeed = float.Parse(data["EffectMoveSpeed"]),
+                ProjectileUid = int.Parse(data["ProjectileUid"]),
                 NeedMp = int.Parse(data["NeedMp"]),
                 TickTime = float.Parse(data["TickTime"]),
                 Duration = float.Parse(data["Duration"]),

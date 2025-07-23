@@ -67,6 +67,11 @@ namespace GGemCo2DCore
                 {
                     defaultEffect.SetScale(info.EffectScale);
                 }
+
+                if (duration > 0)
+                {
+                    defaultEffect.SetDuration(duration);
+                }
                 // 캐릭터 하위에 붙이기
                 defaultEffect.transform.SetParent(character.transform);
                 // 캐릭터 height 만큼 위치 조정
@@ -99,7 +104,8 @@ namespace GGemCo2DCore
                 if (defaultEffects.Remove(affectUid, out var effect))
                 {
                     if (effect == null) return;
-                    Object.Destroy(effect.gameObject);
+                    effect.SetEnd();
+                    // Object.Destroy(effect.gameObject);
                 }
             }
         }
@@ -122,7 +128,7 @@ namespace GGemCo2DCore
             // 생성된 이펙트 지우기
             foreach (var info in defaultEffects)
             {
-                info.Value.DestroyForce();
+                info.Value?.DestroyForce();
             }
             activeBuffs.Clear();
             defaultEffects.Clear();

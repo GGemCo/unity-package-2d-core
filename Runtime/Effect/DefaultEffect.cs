@@ -13,6 +13,8 @@ namespace GGemCo2DCore
         
         // 유지 시간
         private float _duration;
+        // 반복 여부
+        private bool _loop;
         // 발사한 캐릭터
         private CharacterBase _character;
         // 타겟 캐릭터
@@ -35,6 +37,7 @@ namespace GGemCo2DCore
         
         protected void Awake()
         {
+            _loop = false;
             _originalScaleX = transform.localScale.x;
             if (_characterRenderer == null)
             {
@@ -44,9 +47,7 @@ namespace GGemCo2DCore
 
         protected void Start()
         {
-            List<StruckAddAnimation> addAnimations = new List<StruckAddAnimation>
-                { new (IEffectAnimationController.KeyClipNamePlay, true, 0, 1f) };
-            EffectAnimationController.PlayEffectAnimation(IEffectAnimationController.KeyClipNameStart, false, 1, addAnimations);
+            EffectAnimationController.PlayEffectAnimation(IEffectAnimationController.KeyClipNameStart, _duration);
 
             if (_struckTableEffect.Color != "")
             {
@@ -55,6 +56,11 @@ namespace GGemCo2DCore
             Vector2 size = SceneGame.Instance.mapManager.GetCurrentMapSize();
             _mapSizeHeight = size.y;
             UpdateSortingOrder();
+            
+            if (_duration > 0)
+            {
+                StartCoroutine(RemoveEffectDuration(_duration));
+            }
         }
 
         public void Initialize(StruckTableEffect pstruckTableEffect)
@@ -64,7 +70,7 @@ namespace GGemCo2DCore
         private IEnumerator RemoveEffectDuration(float f)
         {
             yield return new WaitForSeconds(f);
-            EffectAnimationController.PlayEffectAnimation(IEffectAnimationController.KeyClipNameEnd);
+            SetEnd();
         }
         /// <summary>
         /// 캐릭터 순서. sorting order 처리 
@@ -82,10 +88,6 @@ namespace GGemCo2DCore
         public void SetDuration(float f)
         {
             _duration = f;
-            if (_duration > 0)
-            {
-                StartCoroutine(RemoveEffectDuration(_duration));
-            }
         }
         /// <summary>
         /// 방향 처리
@@ -119,14 +121,10 @@ namespace GGemCo2DCore
         /// </summary>
         public void SetEnd()
         {
-            EffectAnimationController.PlayEffectAnimation(IEffectAnimationController.KeyClipNameEnd);
-        }
-
-        public void Destroy()
-        {
-            StopAllCoroutines();
-            Destroy(gameObject);
-            OnEffectDestroy?.Invoke();
+            bool result = EffectAnimationController.PlayEndAnimation();
+            // end 애니메이션이 있으면 end 애니메이션을 플레이하고 종료, 없으면 강제 종료
+            if (!result)
+                OnEndAnimationComplete();
         }
         public void DestroyForce()
         {
@@ -138,6 +136,23 @@ namespace GGemCo2DCore
         {
             transform.localScale = new Vector2(scale, scale);
             _originalScaleX = transform.localScale.x;
+        }
+        public void SetFlip(bool shouldFlip)
+        {
+            float dirX = shouldFlip ? -1 : 1;
+            SetDirection(dirX);
+        }
+
+        private void OnDestroy()
+        {
+            // GcLogger.Log("default Effect OnDestroy");
+        }
+
+        public void OnEndAnimationComplete()
+        {
+            StopAllCoroutines();
+            Destroy(gameObject);
+            OnEffectDestroy?.Invoke();
         }
     }
 }

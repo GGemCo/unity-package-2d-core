@@ -10,10 +10,11 @@ namespace GGemCo2DCore
         public const string KeyClipNamePlay = "play";
         // 없어지는 애니 클립 이름
         public const string KeyClipNameEnd = "end";
-
-        void PlayEffectAnimation(string animationName, bool loop = false, float timeScale = 1.0f,
-            List<StruckAddAnimation> addAnimations = null);
-
         void SetEffectColor(string colorHex);
+        
+        bool PlayEffectAnimation(string animationName, bool loop = false, float timeScale = 1.0f,
+            List<StruckAddAnimation> addAnimations = null);
+        bool PlayEffectAnimation(string animationName, float duration);
+        bool PlayEndAnimation();
     }
 }

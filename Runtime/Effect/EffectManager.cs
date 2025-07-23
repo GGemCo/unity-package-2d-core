@@ -25,7 +25,6 @@ namespace GGemCo2DCore
             EffectAnimationControllerSprite effectAnimationController = effect.AddComponent<EffectAnimationControllerSprite>();
             defaultEffect.EffectAnimationController = effectAnimationController;
 #endif
-            effectAnimationController.Initialize(defaultEffect);
             defaultEffect.Initialize(info);
             // defaultEffect.Initialize();
             return defaultEffect;

@@ -195,6 +195,18 @@ namespace GGemCo2DCore
 
             return null;
         }
+
+        public AnimationClip GetCurrentAnimationClip(int layerIndex)
+        {
+            return Animator.GetCurrentAnimatorClipInfo(layerIndex)[0].clip;
+        }
+        public void SetAnimationLoop(bool shouldLoop, int layerIndex = 0)
+        {
+            AnimationClip currentClip = GetCurrentAnimationClip(layerIndex);
+            if (currentClip == null) return;
+            // 애니메이션 클립의 루프 설정 변경
+            currentClip.wrapMode = shouldLoop ? WrapMode.Loop : WrapMode.Once;
+        }
     }
 #endif
 }

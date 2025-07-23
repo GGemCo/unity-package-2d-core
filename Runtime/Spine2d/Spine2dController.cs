@@ -1,4 +1,5 @@
 #if GGEMCO_USE_SPINE
+using System;
 using System.Collections.Generic;
 using Spine;
 using Spine.Unity;
@@ -27,13 +28,17 @@ namespace GGemCo2DCore
         public readonly bool Loop;
         public readonly float Delay;
         public readonly float TimeScale;
+        public readonly float StartTime;
+        public readonly float EndTime;
 
-        public StruckAddAnimation(string animationName, bool loop, float delay, float timeScale)
+        public StruckAddAnimation(string animationName, bool loop = false, float delay = 0, float timeScale = 1, float startTime = 0, float endTime = 0)
         {
             AnimationName = animationName;
             Loop = loop;
             Delay = delay;
             TimeScale = timeScale;
+            StartTime = startTime;
+            EndTime = endTime;
         }
     }
     /// <summary>
@@ -50,6 +55,12 @@ namespace GGemCo2DCore
         protected virtual void Awake() {
             // Spine 오브젝트의 SkeletonAnimation 컴포넌트 가져오기
             SkeletonAnimation = GetComponent<SkeletonAnimation>();
+            if (SkeletonAnimation == null)
+            {
+                GcLogger.LogError("SkeletonAnimation is missing! This component will not function.");
+                enabled = false; // 컴포넌트를 비활성화하여 다른 함수들이 실행되지 않도록 합니다.
+                return;
+            }
             sourceMaterial = GetComponent<MeshRenderer>().material;
 
             if (SkeletonAnimation == null)
@@ -109,16 +120,117 @@ namespace GGemCo2DCore
         protected virtual void OnSpineEventSound(Event eEvent) 
         {
         }
+        protected virtual void OnSpineEventProjectile(Event eEvent) 
+        {
+        }
         protected virtual void Start()
         {
         }
 
-        protected Spine.Animation FindAnimation(string animationName)
+        protected Spine.Animation FindAnimation(string animationName, bool showLog = true)
         {
+            if (SkeletonAnimation == null) return null;
             var findAnimation = SkeletonAnimation.Skeleton.Data.FindAnimation(animationName);
             if (findAnimation != null) return findAnimation;
-            GcLogger.LogWarning($"애니메이션 클립을 찾을 수 없습니다. AnimationName: {animationName}");
+            if (showLog)
+            {
+                GcLogger.LogWarning($"애니메이션 클립을 찾을 수 없습니다. AnimationName: {animationName}");
+            }
             return null;
+        }
+        /// <summary>
+        /// 이벤트 시간.
+        /// </summary>
+        /// <param name="aniName"></param>
+        /// <param name="eventName"></param>
+        /// <param name="exceptEventName"></param>
+        /// <returns>단위: 초</returns>
+        public float GetEventTime(string aniName, string eventName, List<string> exceptEventName = null) 
+        {
+            if (!SkeletonAnimation) return -1;
+            var findAnimation = SkeletonAnimation.Skeleton.Data.FindAnimation(aniName);
+            if(findAnimation == null) return -1;
+            ExposedList<Timeline> timelines = findAnimation.Timelines;
+            float eventTime = 0;
+            foreach (var timeline in timelines)
+            {
+                var eventTimeline = timeline as EventTimeline;
+                if (eventTimeline == null) continue;
+                for (int i = 0; i < eventTimeline.FrameCount; ++i)
+                {
+                    Event spineEvent = eventTimeline.Events[i];
+                    if (spineEvent == null || spineEvent.Data.Name != eventName) continue;
+                    eventTime = spineEvent.Time;
+                }
+            }
+
+            return eventTime;
+        }
+        /// <summary>
+        /// Loop start, End 이벤트가 있을때
+        ///             loop_start        loop_end
+        /// /---------------/---------------/---------------/
+        /// </summary>
+        /// <param name="animationName"></param>
+        /// <param name="duration"></param>
+        /// 
+        protected void PlayAnimationWidthLoopEvent(string animationName, float duration)
+        {
+            float eventTimeLoopStart = GetEventTime(animationName, "loop_start");
+            if(eventTimeLoopStart < 0) {
+                GcLogger.LogWarning($"check loop_start event {animationName}");
+                return;
+            }
+            float eventTimeLoopEnd = GetEventTime(animationName, "loop_end");
+            if(eventTimeLoopEnd < 0) {
+                GcLogger.LogWarning($"check loop_end event {animationName}");
+                return;
+            }
+            float aniDurationTime = GetAnimationDuration(animationName, false);
+            if(aniDurationTime == 0) {
+                GcLogger.LogWarning($"check animation duration {animationName}");
+                return;
+            }
+            //  startDuration    loopDuration     endDuration
+            //---------------/---------------/---------------/
+
+            float startDuration = eventTimeLoopEnd;
+            float loopDuration = eventTimeLoopEnd - eventTimeLoopStart;
+            float endDuration = aniDurationTime - eventTimeLoopEnd;
+
+            // duration이 없는경우 그냥 한번 재생
+            if(duration <= 0){
+                PlayAnimation(animationName);
+            }
+            else if(startDuration + endDuration < duration){
+                //loopAni
+                var realLoopDuration = duration - startDuration - endDuration;
+                var loopCnt = realLoopDuration/loopDuration;
+                var loopCntCeil = Math.Ceiling(realLoopDuration/loopDuration);
+                float newTimeScale = (float)loopCntCeil/loopCnt;
+                List<StruckAddAnimation> newAddAnimations = new List<StruckAddAnimation>();
+                
+                for(var i = 0; i< loopCntCeil; i++){
+                    // this.drawObject.state.addAnimation(0, animationName, false, 0, eventTimeLoopEnd, eventTimeLoopStart, timeScale);
+                    StruckAddAnimation struckAddAnimation = new StruckAddAnimation(animationName, false, 0, newTimeScale, eventTimeLoopStart, eventTimeLoopEnd);
+                    newAddAnimations.Add(struckAddAnimation);
+                }
+
+                //endAni
+                if (!Mathf.Approximately(aniDurationTime, eventTimeLoopStart))
+                {
+                    // this.drawObject.state.addAnimation(0, animationName, false, 0, eventTimeLoopStart, aniDurationTime, 1);
+                    StruckAddAnimation struckAddAnimation = new StruckAddAnimation(animationName, false, 0, 1, eventTimeLoopEnd, aniDurationTime);
+                    newAddAnimations.Add(struckAddAnimation);
+                }
+
+                //startAni
+                PlayAnimation(animationName, false, 1, newAddAnimations, 0, eventTimeLoopEnd);
+            }
+            // duration이 너무 작기때문에 전체 애니메이션을 스케일해서 한번 실행
+            else{
+                PlayAnimation(animationName, false, aniDurationTime/duration);
+            }
         }
         /// <summary>
         /// 애니메이션 재생
@@ -127,14 +239,31 @@ namespace GGemCo2DCore
         /// <param name="loop"></param>
         /// <param name="timeScale"></param>
         /// <param name="addAnimations"></param>
-        protected void PlayAnimation(string animationName, bool loop = false, float timeScale = 1.0f, List<StruckAddAnimation> addAnimations = null)
+        /// <param name="startTime"></param>
+        /// <param name="endTime"></param>
+        protected void PlayAnimation(string animationName, bool loop = false, float timeScale = 1.0f, List<StruckAddAnimation> addAnimations = null, float startTime = 0, float endTime = 0)
         {
             if (SkeletonAnimation == null) return;
             var findAnimation = FindAnimation(animationName);
             if (findAnimation == null) return;
             // GcLogger.Log("PlayAnimation GameObject: " + this.gameObject.name + " / animationName: " + animationName + " / " + loop);
             TrackEntry trackEntry = SkeletonAnimation.AnimationState.SetAnimation(0, animationName, loop);
+            if (trackEntry == null)
+            {
+                GcLogger.LogError($"Can't SetAnimation. name: {animationName}");
+                return;
+            }
             trackEntry.TimeScale = timeScale;
+            if (startTime > 0)
+            {
+                trackEntry.AnimationStart = startTime;
+            }
+
+            if (endTime > 0)
+            {
+                trackEntry.AnimationEnd = endTime;    
+            }
+            
             if (addAnimations == null) return;
             foreach (StruckAddAnimation info in addAnimations)
             {
@@ -143,9 +272,23 @@ namespace GGemCo2DCore
                 if (findAnimation == null) continue;
                 
                 TrackEntry entry = SkeletonAnimation.AnimationState.AddAnimation(0, info.AnimationName, info.Loop, info.Delay);
+                if (entry == null)
+                {
+                    GcLogger.LogError($"Can't AddAnimation. name: {info.AnimationName}");
+                    continue;
+                }
                 if (info.TimeScale > 0)
                 {
                     entry.TimeScale = info.TimeScale;
+                }
+                if (info.StartTime > 0)
+                {
+                    entry.AnimationStart = info.StartTime;
+                }
+
+                if (info.EndTime > 0)
+                {
+                    entry.AnimationEnd = info.EndTime;    
                 }
             }
         }
@@ -247,14 +390,12 @@ namespace GGemCo2DCore
             foreach (var info in changeImages)
             {
                 string equipSkinName = info.SlotName;
-                Skin equipSkin = skeletonData.FindSkin(equipSkinName);
-                if (equipSkin == null)
-                {
-                    equipSkin = new Skin(equipSkinName);
-                }
+                Skin equipSkin = skeletonData.FindSkin(equipSkinName) ?? new Skin(equipSkinName);
                 ChangeImageInSlot(info.SlotName, info.AttachmentName, info.Sprite, baseSkin, equipSkin);
+                // AddSkin 할때 Slot 별로 들어가기 때문에, 계속 쌓이지는 않는다.
                 customSkin.AddSkin(equipSkin);
             }
+            changeImages.Clear();
             skeleton.SetSkin(customSkin);
             skeleton.SetSlotsToSetupPose();
             SkeletonAnimation.Update(0);
@@ -273,6 +414,7 @@ namespace GGemCo2DCore
                 int slotIndex = slotData.Index;
                 equipSkin.RemoveAttachment(slotIndex, equipSkinName);
             }
+            changeImages.Clear();
             skeleton.SetSkin(customSkin);
             skeleton.SetSlotsToSetupPose();
             SkeletonAnimation.Update(0);
@@ -326,6 +468,7 @@ namespace GGemCo2DCore
         /// <param name="colorHex"></param>
         protected void SetColor(string colorHex)
         {
+            if (!SkeletonAnimation) return;
             SetColor(ColorHelper.HexToColor(colorHex));
         }
     }

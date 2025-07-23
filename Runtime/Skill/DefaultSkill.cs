@@ -29,7 +29,8 @@ namespace GGemCo2DCore
         private PolygonCollider2D _polyCollider2D;
         private CapsuleCollider2D _capsuleCollider2D;
         private Vector3 _direction;
-        private DefaultEffect _arrowDefaultEffect;
+        // ggemco_test
+        // private DefaultEffect _arrowDefaultEffect;
 
         private StruckTableSkill _struckTableSkill;
         private TableEffect _tableEffect;
@@ -44,7 +45,7 @@ namespace GGemCo2DCore
                 StartCoroutine(RemoveEffectDuration(_struckTableSkill.Duration));
             else if (_struckTableSkill.CoolTime > 0)
                 StartCoroutine(RemoveEffectDuration(_struckTableSkill.CoolTime));
-
+            
             ComponentController.AddRigidbody2D(gameObject);
         }
 
@@ -53,12 +54,53 @@ namespace GGemCo2DCore
             if (!TryInitializeTarget()) return;
 
             ApplyVisualEffect();
+            ApplyProjectile();
             ApplyInitialAffect();
             ApplySkillCost();
 
             if (_struckTableSkill.TargetType == SkillConstants.TargetType.Range)
                 StartCoroutine(AffectByTickTimeOnce());
         }
+
+        private void ApplyProjectile()
+        {
+            if (_struckTableSkill.ProjectileUid <= 0) return;
+            var info = TableLoaderManager.Instance.TableProjectile.GetDataByUid(_struckTableSkill.ProjectileUid);
+            if (info == null) return;
+            StartCoroutine(CreateProjectile(info));
+        }
+        protected virtual IEnumerator CreateProjectile(StruckTableProjectile info)
+        {
+            if (!_target || info == null) yield break;
+            
+            for (int i = 0; i < info.Count; i++)
+            {
+                DefaultProjectile projectile = ProjectileManager.CreateProjectile(info.Uid);
+                projectile?.SetFromCharacter(_attacker);
+                projectile?.SetDamage(_struckTableSkill.DamageValue);
+                float positionX =
+                    Random.Range(_target.transform.position.x - info.TargetPositionRangeX,
+                        _target.transform.position.x + info.TargetPositionRangeX);
+                float positionY = _target.GetRandomPositionYInHitArea();
+                if (info.TargetType == ProjectileConstants.TargetType.Fixed)
+                {
+                    projectile?.Launch(_target);
+                }
+                else
+                {
+                    // 직선형일때는 타겟 x 좌표를 범위로 하지 않는다. 
+                    if (info.ArcHeightMin == 0 && info.ArcHeightMax == 0)
+                    {
+                        positionX = _target.transform.position.x;
+                    }
+
+                    // positionY = mapSettings.projectilePositionY;
+                    projectile?.Launch(new Vector2(positionX, positionY));
+                }
+                yield return new WaitForSeconds(info.SecDelayByOne);
+            }
+        }
+
         /// <summary>
         /// 타겟 지정하기
         /// </summary>
@@ -77,6 +119,11 @@ namespace GGemCo2DCore
             if (_target == null)
             {
                 SceneGame.Instance.systemMessageManager.ShowMessageWarning("Skill_NoTarget");//"타겟이 없습니다."
+                DestroySkill();
+                return false;
+            }
+            if (_target.IsStatusDead())
+            {
                 DestroySkill();
                 return false;
             }
@@ -103,9 +150,23 @@ namespace GGemCo2DCore
             }
             else
             {
-                Vector3 from = _attacker.transform.position + Vector3.up * _attacker.GetHeightByScale() / 2f;
-                Vector3 to = _target.transform.position + Vector3.up * _target.GetHeightByScale() / 2f;
-                SpawnProjectileEffect(from, to);
+                var effect = EffectManager.CreateEffect(_struckTableSkill.EffectUid);
+                if (effect == null) return;
+                var effectInfo = _tableEffect.GetDataByUid(_struckTableSkill.EffectUid);
+                if (effectInfo == null) return;
+                float effectScale = _struckTableSkill.EffectScale > 0 ? _struckTableSkill.EffectScale : 1;
+                effect.SetScale(effectScale);
+                if (_struckTableSkill.Duration > 0)
+                {
+                    if (_struckTableSkill.Duration > _struckTableSkill.CoolTime)
+                    {
+                        GcLogger.LogWarning($"Uid: {_struckTableSkill.Uid}, Level: {_struckTableSkill.Level}, Name: {_struckTableSkill.Name}. Duration: {_struckTableSkill.Duration} > CoolTime: {_struckTableSkill.CoolTime}. ");
+                    }
+                    effect.SetDuration(_struckTableSkill.Duration);
+                }
+
+                effect.transform.position = _target.transform.position;
+                transform.position = _target.transform.position;
             }
         }
         /// <summary>
@@ -115,6 +176,7 @@ namespace GGemCo2DCore
         private void SpawnRangeEffect(Vector3 targetPos)
         {
             var effectInfo = _tableEffect.GetDataByUid(_struckTableSkill.EffectUid);
+            if (effectInfo == null) return;
 
             float effectScale = _struckTableSkill.EffectScale > 0 ? _struckTableSkill.EffectScale : 1;
             float effectSize = effectInfo.Width * effectScale;
@@ -162,6 +224,8 @@ namespace GGemCo2DCore
         /// <param name="to"></param>
         private void SpawnProjectileEffect(Vector3 from, Vector3 to)
         {
+            
+            /*
             _arrowDefaultEffect = EffectManager.CreateEffect(_struckTableSkill.EffectUid);
             if (_arrowDefaultEffect == null) return;
             // SetParent 보다 먼저 scale 을 바꿔야 한다.
@@ -183,6 +247,7 @@ namespace GGemCo2DCore
             Vector2 size = new Vector2(effectInfo.ColliderSize.x * _arrowDefaultEffect.transform.localScale.x,
                 effectInfo.ColliderSize.y * _arrowDefaultEffect.transform.localScale.y);
             _capsuleCollider2D = ComponentController.AddCapsuleCollider2D(gameObject, true, Vector2.zero, size);
+            */
         }
         /// <summary>
         /// 어펙트 효과 적용하기
@@ -277,6 +342,7 @@ namespace GGemCo2DCore
         /// </summary>
         private void Update()
         {
+            /*
             if (_target == null || _struckTableSkill.EffectMoveSpeed <= 0) return;
 
             if (_struckTableSkill.Target == SkillConstants.Target.Player &&
@@ -288,6 +354,7 @@ namespace GGemCo2DCore
             {
                 transform.position += _direction * (_struckTableSkill.EffectMoveSpeed * Time.deltaTime);
             }
+            */
         }
         /// <summary>
         /// 프로젝타일이 타겟과 충돌했는지 체크 
@@ -306,23 +373,25 @@ namespace GGemCo2DCore
             if (_struckTableSkill.Duration <= 0)
             {
                 _target = null;
-                _arrowDefaultEffect?.SetEnd();
+                // ggemco_test
+                // _arrowDefaultEffect?.SetEnd();
             }
         }
-        /// <summary>
-        /// 발사체 이펙트가 타겟과 충돌 후 end 애니메이션을 하고 destroy 처리 
-        /// </summary>
-        private void OnArrowEffectDestroy() => DestroySkill();
+        // ggemco_test
+        // /// <summary>
+        // /// 발사체 이펙트가 타겟과 충돌 후 end 애니메이션을 하고 destroy 처리 
+        // /// </summary>
+        // private void OnArrowEffectDestroy() => DestroySkill();
         /// <summary>
         /// 스킬 destroy 처리
         /// </summary>
         private void DestroySkill()
         {
             StopAllCoroutines();
-            if (_arrowDefaultEffect != null)
-            {
-                _arrowDefaultEffect.OnEffectDestroy -= OnArrowEffectDestroy;
-            }
+            // if (_arrowDefaultEffect != null)
+            // {
+            //     _arrowDefaultEffect.OnEffectDestroy -= OnArrowEffectDestroy;
+            // }
             Destroy(gameObject);
         }
     }

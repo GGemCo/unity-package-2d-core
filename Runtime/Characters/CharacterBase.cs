@@ -2,6 +2,7 @@
 using System.Collections;
 using R3;
 using UnityEngine;
+using Random = UnityEngine.Random;
 
 namespace GGemCo2DCore
 {
@@ -569,6 +570,38 @@ namespace GGemCo2DCore
             
             SetStatusIdle();
             CharacterAnimationController?.PlayWaitAnimation();
+        }
+        public float GetRandomPositionYInHitArea()
+        {
+            if (!colliderCheckHitArea)
+            {
+                return transform.position.y;
+            }
+            // 캡슐의 로컬 공간 기준 Y 범위 계산
+            float halfHeight = colliderCheckHitArea.size.y / 2f;
+            float minLocalY = colliderCheckHitArea.offset.y - halfHeight;
+            float maxLocalY = colliderCheckHitArea.offset.y + halfHeight;
+
+            // 로컬 Y 기준 무작위 값
+            float randomLocalY = Random.Range(minLocalY, maxLocalY);
+
+            // 로컬 좌표 → 월드 좌표 변환
+            Vector2 localPoint = new Vector2(0f, randomLocalY);
+            Vector2 worldPoint = transform.TransformPoint(localPoint);
+            return worldPoint.y;
+        }
+        public virtual void LaunchProjectile(int projectileUid)
+        {
+            var info = TableLoaderManager.Instance.TableProjectile.GetDataByUid(projectileUid);
+            if (info == null) return;
+            StartCoroutine(CreateProjectile(info));
+        }
+        protected virtual IEnumerator CreateProjectile(StruckTableProjectile info)
+        {
+            for (int i = 0; i < info.Count; i++)
+            {
+                yield return new WaitForSeconds(info.SecDelayByOne);
+            }
         }
     }
 }
