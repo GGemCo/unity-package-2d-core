@@ -171,7 +171,7 @@ namespace GGemCo2DCore
             if (!SceneGame.Instance.mainCamera) return false;
             // 현재 카메라의 뷰포트 내에 있는지 확인
             Vector3 screenPoint = SceneGame.Instance.mainCamera.WorldToViewportPoint(transform.position);
-            return screenPoint.x >= 0 && screenPoint.x <= 1 && screenPoint.y >= 0 && screenPoint.y <= 1;
+            return screenPoint.x is >= 0 and <= 1 && screenPoint.y is >= 0 and <= 1;
         }
 
         private void OnTriggerEnter2D(Collider2D collision)
@@ -203,7 +203,6 @@ namespace GGemCo2DCore
         private void OnHitTarget(CharacterHitArea area)
         {
             // GcLogger.Log("Projectile hit target!");
-            // TODO: 데미지, 이펙트 등
             ShowHitEffect();
             if (area)
             {
@@ -226,7 +225,7 @@ namespace GGemCo2DCore
             // Hit 이펙트가 따로 없으면, Effect 오브젝트의 End 애니메이션을 실행한다.
             else
             {
-                effectProjectile.OnEndAnimationComplete();
+                effectProjectile.PlayEndAnimation();
             }
         }
 

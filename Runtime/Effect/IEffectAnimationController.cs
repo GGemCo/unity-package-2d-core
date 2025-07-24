@@ -1,5 +1,4 @@
-﻿using System.Collections.Generic;
-
+﻿
 namespace GGemCo2DCore
 {
     public interface IEffectAnimationController
@@ -13,5 +12,6 @@ namespace GGemCo2DCore
         void SetEffectColor(string colorHex);
         
         bool Play(float duration);
+        void PlayEnd();
     }
 }

@@ -14,7 +14,7 @@ namespace GGemCo2DCore
     public class CharacterAnimationControllerSpine : Spine2dController, ICharacterAnimationController
     {
         private CharacterBase characterBase;
-        private List<StruckChangeSlotImage> changeImages = new List<StruckChangeSlotImage>();
+        private readonly List<StruckChangeSlotImage> changeImages = new List<StruckChangeSlotImage>();
         protected override void Awake()
         {
             base.Awake();
@@ -169,6 +169,17 @@ namespace GGemCo2DCore
                 PlayWaitAnimation();
             }
         }
+        protected override void OnSpineEventEffect(Event eEvent)
+        {
+            string json = eEvent.String;
+            StruckAnimationEventEffect struckAnimationEventEffect = JsonUtility.FromJson<StruckAnimationEventEffect>(json);
+            var effect = EffectManager.CreateEffect(struckAnimationEventEffect);
+            if (effect == null) return;
+            // 캐릭터 하위에 붙이기
+            // effect.transform.SetParent(characterBase.transform);
+            effect.transform.position = characterBase.transform.position;
+        }
+
         protected override void OnSpineEventShake(Event eEvent) 
         {
         

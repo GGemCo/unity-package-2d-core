@@ -29,8 +29,6 @@ namespace GGemCo2DCore
         private PolygonCollider2D _polyCollider2D;
         private CapsuleCollider2D _capsuleCollider2D;
         private Vector3 _direction;
-        // ggemco_test
-        // private DefaultEffect _arrowDefaultEffect;
 
         private StruckTableSkill _struckTableSkill;
         private TableEffect _tableEffect;
@@ -69,7 +67,8 @@ namespace GGemCo2DCore
             if (info == null) return;
             StartCoroutine(CreateProjectile(info));
         }
-        protected virtual IEnumerator CreateProjectile(StruckTableProjectile info)
+
+        private IEnumerator CreateProjectile(StruckTableProjectile info)
         {
             if (!_target || info == null) yield break;
             
@@ -218,38 +217,6 @@ namespace GGemCo2DCore
             transform.position = targetPos;
         }
         /// <summary>
-        /// 프로젝타일 생성
-        /// </summary>
-        /// <param name="from"></param>
-        /// <param name="to"></param>
-        private void SpawnProjectileEffect(Vector3 from, Vector3 to)
-        {
-            
-            /*
-            _arrowDefaultEffect = EffectManager.CreateEffect(_struckTableSkill.EffectUid);
-            if (_arrowDefaultEffect == null) return;
-            // SetParent 보다 먼저 scale 을 바꿔야 한다.
-            if (_struckTableSkill.EffectScale > 0)
-            {
-                _arrowDefaultEffect.SetScale(_struckTableSkill.EffectScale);
-            }
-            _arrowDefaultEffect.transform.SetParent(transform);
-
-            _direction = (to - from).normalized;
-            transform.position = _struckTableSkill.EffectMoveSpeed > 0 ? from : to;
-
-            float dirX = _direction.x >= 0 ? -1 : 1;
-            _arrowDefaultEffect.SetDirection(dirX);
-            _arrowDefaultEffect.SetRotation(to - from, _direction);
-            _arrowDefaultEffect.OnEffectDestroy += OnArrowEffectDestroy;
-
-            var effectInfo = _tableEffect.GetDataByUid(_struckTableSkill.EffectUid);
-            Vector2 size = new Vector2(effectInfo.ColliderSize.x * _arrowDefaultEffect.transform.localScale.x,
-                effectInfo.ColliderSize.y * _arrowDefaultEffect.transform.localScale.y);
-            _capsuleCollider2D = ComponentController.AddCapsuleCollider2D(gameObject, true, Vector2.zero, size);
-            */
-        }
-        /// <summary>
         /// 어펙트 효과 적용하기
         /// </summary>
         private void ApplyInitialAffect()
@@ -338,25 +305,6 @@ namespace GGemCo2DCore
             DestroySkill();
         }
         /// <summary>
-        /// 타겟에 따른 skill 포지션 처리
-        /// </summary>
-        private void Update()
-        {
-            /*
-            if (_target == null || _struckTableSkill.EffectMoveSpeed <= 0) return;
-
-            if (_struckTableSkill.Target == SkillConstants.Target.Player &&
-                _struckTableSkill.TargetType == SkillConstants.TargetType.Fixed)
-            {
-                transform.position = _attacker.transform.position;
-            }
-            else
-            {
-                transform.position += _direction * (_struckTableSkill.EffectMoveSpeed * Time.deltaTime);
-            }
-            */
-        }
-        /// <summary>
         /// 프로젝타일이 타겟과 충돌했는지 체크 
         /// </summary>
         /// <param name="collision"></param>
@@ -373,25 +321,14 @@ namespace GGemCo2DCore
             if (_struckTableSkill.Duration <= 0)
             {
                 _target = null;
-                // ggemco_test
-                // _arrowDefaultEffect?.SetEnd();
             }
         }
-        // ggemco_test
-        // /// <summary>
-        // /// 발사체 이펙트가 타겟과 충돌 후 end 애니메이션을 하고 destroy 처리 
-        // /// </summary>
-        // private void OnArrowEffectDestroy() => DestroySkill();
         /// <summary>
         /// 스킬 destroy 처리
         /// </summary>
         private void DestroySkill()
         {
             StopAllCoroutines();
-            // if (_arrowDefaultEffect != null)
-            // {
-            //     _arrowDefaultEffect.OnEffectDestroy -= OnArrowEffectDestroy;
-            // }
             Destroy(gameObject);
         }
     }

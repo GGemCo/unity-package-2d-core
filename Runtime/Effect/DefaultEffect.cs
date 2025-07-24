@@ -1,5 +1,4 @@
 ﻿using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 
 namespace GGemCo2DCore
@@ -13,8 +12,8 @@ namespace GGemCo2DCore
         
         // 유지 시간
         private float _duration;
-        // 반복 여부
-        private bool _loop;
+
+        private string _color;
         // 발사한 캐릭터
         private CharacterBase _character;
         // 타겟 캐릭터
@@ -37,7 +36,7 @@ namespace GGemCo2DCore
         
         protected void Awake()
         {
-            _loop = false;
+            _color = "";
             _originalScaleX = transform.localScale.x;
             if (_characterRenderer == null)
             {
@@ -47,10 +46,15 @@ namespace GGemCo2DCore
 
         protected void Start()
         {
-            if (_struckTableEffect.Color != "")
+            if (!string.IsNullOrEmpty(_color))
+            {
+                EffectAnimationController.SetEffectColor($"#{_color}");
+            }
+            else if (!string.IsNullOrEmpty(_struckTableEffect.Color))
             {
                 EffectAnimationController.SetEffectColor($"#{_struckTableEffect.Color}");
             }
+            
             Vector2 size = SceneGame.Instance.mapManager.GetCurrentMapSize();
             _mapSizeHeight = size.y;
             UpdateSortingOrder();
@@ -93,7 +97,7 @@ namespace GGemCo2DCore
         /// 방향 처리
         /// </summary>
         /// <param name="dirX"></param>
-        public void SetDirection(float dirX)
+        private void SetDirection(float dirX)
         {
             transform.localScale = new Vector3(_originalScaleX * dirX, transform.localScale.y, transform.localScale.z);
         }
@@ -142,17 +146,21 @@ namespace GGemCo2DCore
             float dirX = shouldFlip ? -1 : 1;
             SetDirection(dirX);
         }
-
-        private void OnDestroy()
-        {
-            // GcLogger.Log("default Effect OnDestroy");
-        }
-
         public void OnEndAnimationComplete()
         {
             StopAllCoroutines();
             Destroy(gameObject);
             OnEffectDestroy?.Invoke();
+        }
+
+        public void PlayEndAnimation()
+        {
+            EffectAnimationController.PlayEnd();
+        }
+
+        public void SetColor(string color)
+        {
+            _color = color;
         }
     }
 }

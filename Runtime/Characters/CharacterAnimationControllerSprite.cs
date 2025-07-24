@@ -154,7 +154,7 @@ namespace GGemCo2DCore
         /// <summary>
         /// 애니메이션이 중단되면 호출되는 콜백 함수
         /// </summary>
-        public override void OnAnimationComplete()
+        public override void GGemCoOnAnimationComplete()
         {
             AnimatorStateInfo state = Animator.GetCurrentAnimatorStateInfo(0);
             // GcLogger.Log($"OnAnimationComplete: {animator.GetCurrentAnimatorClipInfo(0)?.}");
@@ -172,19 +172,19 @@ namespace GGemCo2DCore
             }
         }
 
-        public override void OnAnimationEventCameraShake(float intensity) 
+        public override void GGemCoOnAnimationEventCameraShake(float intensity) 
         {
         
         }
         /// <summary>
         /// 공격 모션에서 몬스터에 직접적인 공격이 가해지는 타이밍에 발생하는 이벤트
         /// </summary>
-        public override void OnAnimationEventAttack()
+        public override void GGemCoOnAnimationEventAttack()
         {
             characterBase.OnEventAttack();
         }
 
-        public override void OnAnimationEventSound(string soundName) 
+        public override void GGemCoOnAnimationEventSound(string soundName) 
         {
         }
         public IEnumerator FadeEffect(float duration, bool fadeIn)
@@ -263,16 +263,17 @@ namespace GGemCo2DCore
             return GetAnimationDuration(animationName, isMilliseconds);
         }
         
-        public override void OnAnimationEventPlayEffect(int effectUid)
+        public override void GGemCoOnAnimationEventPlayEffect(string json)
         {
-            // GcLogger.Log($"OnAnimationEventPlayEffect effectUid: {effectUid}");
-            var effect = EffectManager.CreateEffect(effectUid);
+            GcLogger.Log($"OnAnimationEventPlayEffect json: {json}");
+            StruckAnimationEventEffect struckAnimationEventEffect = JsonUtility.FromJson<StruckAnimationEventEffect>(json);
+            var effect = EffectManager.CreateEffect(struckAnimationEventEffect);
             if (effect == null) return;
-            // 캐릭터 하위에 붙이기
-            effect.transform.SetParent(characterBase.transform);
-            effect.transform.localPosition = Vector3.zero;
+
+            effect.transform.position = characterBase.transform.position;
         }
-        public override void OnAnimationEventProjectile(int projectileUid)
+
+        public override void GGemCoOnAnimationEventProjectile(int projectileUid)
         {
             characterBase?.LaunchProjectile(projectileUid);
         }

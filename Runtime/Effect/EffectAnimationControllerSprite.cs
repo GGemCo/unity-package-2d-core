@@ -20,9 +20,9 @@ namespace GGemCo2DCore
             _effectRenderer = GetComponent<Renderer>();
             _effectRenderer.sortingLayerName = ConfigSortingLayer.GetValue(ConfigSortingLayer.Keys.CharacterTop);
             
-            durationStart = GetAnimationDuration(IEffectAnimationController.KeyClipNameStart);
-            durationPlay = GetAnimationDuration(IEffectAnimationController.KeyClipNamePlay);
-            durationEnd = GetAnimationDuration(IEffectAnimationController.KeyClipNameEnd);
+            durationStart = GetAnimationDuration(IEffectAnimationController.KeyClipNameStart, false);
+            durationPlay = GetAnimationDuration(IEffectAnimationController.KeyClipNamePlay, false);
+            durationEnd = GetAnimationDuration(IEffectAnimationController.KeyClipNameEnd, false);
             durationTotal = durationStart + durationPlay + durationEnd; 
         }
 
@@ -34,7 +34,7 @@ namespace GGemCo2DCore
         /// <summary>
         /// 애니메이션 클립이 플레이가 완료되면 호출되는 콜백 함수
         /// </summary>
-        public override void OnAnimationComplete()
+        public override void GGemCoOnAnimationComplete()
         {
             if (!GetClipByName(IEffectAnimationController.KeyClipNameEnd))
             {
@@ -58,8 +58,18 @@ namespace GGemCo2DCore
             var findAnimation = GetClipByName(IEffectAnimationController.KeyClipNameStart);
             if (findAnimation == null) return false;
 
+            // 무제한 플레이
+            if (duration < 0)
+            {
+                float timeScale = 1f;
+                List<StruckAddAnimation> newAddAnimations = new List<StruckAddAnimation>
+                {
+                    new(IEffectAnimationController.KeyClipNamePlay, true, 0, timeScale),
+                };
+                PlayAnimation(IEffectAnimationController.KeyClipNameStart, false, timeScale, newAddAnimations);
+            }
             // 한번만 재생
-            if (duration <= 0)
+            else if (duration <= 0)
             {
                 float timeScale = 1f;
                 List<StruckAddAnimation> newAddAnimations = new List<StruckAddAnimation>
@@ -109,6 +119,20 @@ namespace GGemCo2DCore
             }
 
             return true;
+        }
+        public void PlayEnd()
+        {
+            PlayAnimation(IEffectAnimationController.KeyClipNameEnd);
+        }
+
+        public override void GGemCoOnAnimationEventPlayEffect(string json)
+        {
+            GcLogger.Log($"OnAnimationEventPlayEffect json: {json}");
+            StruckAnimationEventEffect struckAnimationEventEffect = JsonUtility.FromJson<StruckAnimationEventEffect>(json);
+            var effect = EffectManager.CreateEffect(struckAnimationEventEffect);
+            if (effect == null) return;
+
+            effect.transform.position = _defaultEffect.transform.position;
         }
     }
 }

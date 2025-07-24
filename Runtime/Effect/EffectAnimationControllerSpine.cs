@@ -53,8 +53,18 @@ namespace GGemCo2DCore
             var findAnimation = FindAnimation(IEffectAnimationController.KeyClipNameStart);
             if (findAnimation == null) return false;
 
+            // 무제한 플레이
+            if (duration < 0)
+            {
+                float timeScale = 1f;
+                List<StruckAddAnimation> newAddAnimations = new List<StruckAddAnimation>
+                {
+                    new(IEffectAnimationController.KeyClipNamePlay, true, 0, timeScale),
+                };
+                PlayAnimation(IEffectAnimationController.KeyClipNameStart, false, timeScale, newAddAnimations);
+            }
             // 한번만 재생
-            if (duration <= 0)
+            else if (duration <= 0)
             {
                 float timeScale = 1f;
                 List<StruckAddAnimation> newAddAnimations = new List<StruckAddAnimation>
@@ -104,6 +114,11 @@ namespace GGemCo2DCore
             }
 
             return true;
+        }
+
+        public void PlayEnd()
+        {
+            PlayAnimation(IEffectAnimationController.KeyClipNameEnd);
         }
     }
 }

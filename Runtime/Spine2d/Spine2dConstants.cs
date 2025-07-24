@@ -5,6 +5,6 @@
         public const string EventNameAttack = "attack";
         public const string EventNameSound = "sound";
         public const string EventNameShake = "camera_shake";
-
+        public const string EventNameEffect = "effect";
     }
 }

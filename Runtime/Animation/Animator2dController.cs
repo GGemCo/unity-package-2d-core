@@ -5,6 +5,21 @@ using UnityEngine;
 
 namespace GGemCo2DCore
 {
+    public class StruckAnimationEventEffect
+    {
+        public int Uid;
+        public float Scale;
+        public float Duration;
+        public string Color;
+
+        public StruckAnimationEventEffect(int uid, float scale = 1.0f, float duration = 0, string color = "")
+        {
+            Uid = uid;
+            Scale = scale;
+            Duration = duration;
+            Color = color;
+        }
+    }
     /// <summary>
     /// Animator 기반 2D 캐릭터 컨트롤러
     /// </summary>
@@ -61,7 +76,33 @@ namespace GGemCo2DCore
             Animator.Update(0); // 즉시 반영 (옵션)
 
             // Loop 설정은 Animator Controller의 상태 설정에서 해야 합니다
-            // addAnimations는 코루틴 또는 상태머신 동기화를 통해 처리 가능
+            // addAnimations 처리
+            if (addAnimations is { Count: > 0 })
+            {
+                StartCoroutine(PlayAddAnimations(addAnimations));
+            }
+        }
+        private IEnumerator<WaitForSeconds> PlayAddAnimations(List<StruckAddAnimation> addAnimations)
+        {
+            foreach (var add in addAnimations)
+            {
+                if (!GetClipByName(add.AnimationName))
+                {
+                    GcLogger.LogWarning($"AddAnimation: 애니메이션 없음: {add.AnimationName}");
+                    continue;
+                }
+
+                if (add.Delay > 0)
+                    yield return new WaitForSeconds(add.Delay);
+
+                float clipLength = GetAnimationDuration(add.AnimationName, false);
+
+                Animator.speed = add.TimeScale > 0 ? add.TimeScale : 1.0f;
+                Animator.Play(add.AnimationName, 0);
+                Animator.Update(0); // 즉시 반영
+
+                yield return new WaitForSeconds(clipLength / Animator.speed);
+            }
         }
 
         protected void StopAnimation()
@@ -102,7 +143,7 @@ namespace GGemCo2DCore
         {
         }
 
-        public float GetAnimationDuration(string animationName, bool isMilliseconds = true)
+        protected float GetAnimationDuration(string animationName, bool isMilliseconds = true)
         {
             // Animator에서 직접 길이를 구하는 방법은 제한적임. AnimationClip 참조 필요
             AnimationClip[] clips = Animator.runtimeAnimatorController.animationClips;
@@ -135,27 +176,27 @@ namespace GGemCo2DCore
         }
 
         // 이벤트 콜백은 애니메이션 이벤트(Inspector에서 이벤트 등록)에서 호출해야 함
-        public virtual void OnAnimationComplete()
+        public virtual void GGemCoOnAnimationComplete()
         {
         }
-        public virtual void OnAnimationEventPlayEffect(int effectUid)
+        public virtual void GGemCoOnAnimationEventPlayEffect(string json)
         {
         }
-        public virtual void OnAnimationEventAttack()
+        public virtual void GGemCoOnAnimationEventAttack()
         {
         }
-        public virtual void OnAnimationEventProjectile(int projectileUid)
+        public virtual void GGemCoOnAnimationEventProjectile(int projectileUid)
         {
         }
-        public virtual void OnAnimationEventCameraShake(float intensity)
-        {
-        }
-
-        public virtual void OnAnimationEventSound(string soundName)
+        public virtual void GGemCoOnAnimationEventCameraShake(float intensity)
         {
         }
 
-        public AnimationClip GetClipByName(string animationName)
+        public virtual void GGemCoOnAnimationEventSound(string soundName)
+        {
+        }
+
+        protected AnimationClip GetClipByName(string animationName)
         {
             if (animationClips == null) return null;
             foreach (var clip in animationClips)
@@ -169,11 +210,12 @@ namespace GGemCo2DCore
             return null;
         }
 
-        public AnimationClip GetCurrentAnimationClip(int layerIndex)
+        private AnimationClip GetCurrentAnimationClip(int layerIndex)
         {
             return Animator.GetCurrentAnimatorClipInfo(layerIndex)[0].clip;
         }
-        public void SetAnimationLoop(bool shouldLoop, int layerIndex = 0)
+
+        protected void SetAnimationLoop(bool shouldLoop, int layerIndex = 0)
         {
             AnimationClip currentClip = GetCurrentAnimationClip(layerIndex);
             if (currentClip == null) return;
@@ -187,7 +229,7 @@ namespace GGemCo2DCore
         /// <param name="eventName"></param>
         /// <param name="exceptEventName"></param>
         /// <returns>단위: 초</returns>
-        public float GetEventTime(string aniName, string eventName, List<string> exceptEventName = null) 
+        private float GetEventTime(string aniName, string eventName, List<string> exceptEventName = null) 
         {
             if (!Animator) return -1;
             var findAnimation = GetClipByName(aniName);

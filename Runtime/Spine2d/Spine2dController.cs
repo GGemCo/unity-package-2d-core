@@ -73,6 +73,14 @@ namespace GGemCo2DCore
                 if (e.Float <= 0) return;
                 OnSpineEventShake(e);
             }
+            else if (e.Data.Name == Spine2dConstants.EventNameEffect)
+            {
+                OnSpineEventEffect(e);
+            }
+        }
+
+        protected virtual void OnSpineEventEffect(Event eEvent)
+        {
         }
 
         protected virtual void OnSpineEventShake(Event eEvent) 
@@ -113,7 +121,7 @@ namespace GGemCo2DCore
         /// <param name="eventName"></param>
         /// <param name="exceptEventName"></param>
         /// <returns>단위: 초</returns>
-        public float GetEventTime(string aniName, string eventName, List<string> exceptEventName = null) 
+        private float GetEventTime(string aniName, string eventName, List<string> exceptEventName = null) 
         {
             if (!SkeletonAnimation) return -1;
             var findAnimation = SkeletonAnimation.Skeleton.Data.FindAnimation(aniName);
@@ -377,9 +385,6 @@ namespace GGemCo2DCore
         }
         protected void RemoveImageInSlot(List<StruckChangeSlotImage> changeImages)
         {
-            string baseSkinName = "default";
-            Skin baseSkin = skeletonData.FindSkin(baseSkinName);
-
             foreach (var info in changeImages)
             {
                 string equipSkinName = info.SlotName;

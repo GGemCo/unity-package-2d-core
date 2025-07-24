@@ -42,5 +42,31 @@ namespace GGemCo2DCore
             // defaultEffect.Initialize();
             return defaultEffect;
         }
+        
+        public static DefaultEffect CreateEffect(StruckAnimationEventEffect struckAnimationEventEffect)
+        {
+            if (struckAnimationEventEffect == null) return null;
+            int effectUid = struckAnimationEventEffect.Uid;
+            float duration = struckAnimationEventEffect.Duration;
+            float scale = struckAnimationEventEffect.Scale;
+            string color = struckAnimationEventEffect.Color;
+            var effect = CreateEffect(effectUid);
+            if (effect == null) return null;
+            
+            if (duration > 0)
+            {
+                effect.SetDuration(duration);
+            }
+            if (scale > 0)
+            {
+                effect.SetScale(scale);
+            }
+            if (!string.IsNullOrEmpty(color))
+            {
+                effect.SetColor(color);
+            }
+
+            return effect;
+        }
     }
 }
