@@ -1,37 +1,10 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
+using UnityEditor;
 using UnityEngine;
 
 namespace GGemCo2DCore
 {
-#if GGEMCO_USE_SPINE != true
-    public class StruckChangeSlotImage
-    {
-        public readonly string RendererName;
-        public readonly Sprite Sprite;
-
-        public StruckChangeSlotImage(string rendererName, Sprite sprite)
-        {
-            RendererName = rendererName;
-            Sprite = sprite;
-        }
-    }
-
-    public class StruckAddAnimation
-    {
-        public readonly string AnimationName;
-        public readonly bool Loop;
-        public readonly float Delay;
-        public readonly float TimeScale;
-
-        public StruckAddAnimation(string animationName, bool loop, float delay, float timeScale)
-        {
-            AnimationName = animationName;
-            Loop = loop;
-            Delay = delay;
-            TimeScale = timeScale;
-        }
-    }
-
     /// <summary>
     /// Animator 기반 2D 캐릭터 컨트롤러
     /// </summary>
@@ -63,7 +36,7 @@ namespace GGemCo2DCore
         }
 
         protected void PlayAnimation(string animationName, bool loop = false, float timeScale = 1.0f,
-            List<StruckAddAnimation> addAnimations = null)
+            List<StruckAddAnimation> addAnimations = null, float startTime = 0, float endTime = 0)
         {
             if (!Animator) return;
             if (!GetClipByName(animationName))
@@ -207,6 +180,97 @@ namespace GGemCo2DCore
             // 애니메이션 클립의 루프 설정 변경
             currentClip.wrapMode = shouldLoop ? WrapMode.Loop : WrapMode.Once;
         }
+        /// <summary>
+        /// 이벤트 시간.
+        /// </summary>
+        /// <param name="aniName"></param>
+        /// <param name="eventName"></param>
+        /// <param name="exceptEventName"></param>
+        /// <returns>단위: 초</returns>
+        public float GetEventTime(string aniName, string eventName, List<string> exceptEventName = null) 
+        {
+            if (!Animator) return -1;
+            var findAnimation = GetClipByName(aniName);
+            if(findAnimation == null) return -1;
+            float eventTime = 0;
+            
+            if (findAnimation == null || string.IsNullOrEmpty(eventName))
+                return -1f;
+
+            AnimationEvent[] events = AnimationUtility.GetAnimationEvents(findAnimation);
+            foreach (var evt in events)
+            {
+                if (evt.functionName == eventName)
+                    return evt.time;
+            }
+            return eventTime;
+        }
+        
+        /// <summary>
+        /// Loop start, End 이벤트가 있을때
+        ///             loop_start        loop_end
+        /// /---------------/---------------/---------------/
+        /// </summary>
+        /// <param name="animationName"></param>
+        /// <param name="duration"></param>
+        /// 
+        protected void PlayAnimationWidthLoopEvent(string animationName, float duration)
+        {
+            float eventTimeLoopStart = GetEventTime(animationName, "loop_start");
+            if(eventTimeLoopStart < 0) {
+                GcLogger.LogWarning($"check loop_start event {animationName}");
+                return;
+            }
+            float eventTimeLoopEnd = GetEventTime(animationName, "loop_end");
+            if(eventTimeLoopEnd < 0) {
+                GcLogger.LogWarning($"check loop_end event {animationName}");
+                return;
+            }
+            float aniDurationTime = GetAnimationDuration(animationName, false);
+            if(aniDurationTime == 0) {
+                GcLogger.LogWarning($"check animation duration {animationName}");
+                return;
+            }
+            //  startDuration    loopDuration     endDuration
+            //---------------/---------------/---------------/
+
+            float startDuration = eventTimeLoopEnd;
+            float loopDuration = eventTimeLoopEnd - eventTimeLoopStart;
+            float endDuration = aniDurationTime - eventTimeLoopEnd;
+
+            // duration이 없는경우 그냥 한번 재생
+            if(duration <= 0){
+                PlayAnimation(animationName);
+            }
+            else if(startDuration + endDuration < duration){
+                //loopAni
+                var realLoopDuration = duration - startDuration - endDuration;
+                var loopCnt = realLoopDuration/loopDuration;
+                var loopCntCeil = Math.Ceiling(realLoopDuration/loopDuration);
+                float newTimeScale = (float)loopCntCeil/loopCnt;
+                List<StruckAddAnimation> newAddAnimations = new List<StruckAddAnimation>();
+                
+                for(var i = 0; i< loopCntCeil; i++){
+                    // this.drawObject.state.addAnimation(0, animationName, false, 0, eventTimeLoopEnd, eventTimeLoopStart, timeScale);
+                    StruckAddAnimation struckAddAnimation = new StruckAddAnimation(animationName, false, 0, newTimeScale, eventTimeLoopStart, eventTimeLoopEnd);
+                    newAddAnimations.Add(struckAddAnimation);
+                }
+
+                //endAni
+                if (!Mathf.Approximately(aniDurationTime, eventTimeLoopStart))
+                {
+                    // this.drawObject.state.addAnimation(0, animationName, false, 0, eventTimeLoopStart, aniDurationTime, 1);
+                    StruckAddAnimation struckAddAnimation = new StruckAddAnimation(animationName, false, 0, 1, eventTimeLoopEnd, aniDurationTime);
+                    newAddAnimations.Add(struckAddAnimation);
+                }
+
+                //startAni
+                PlayAnimation(animationName, false, 1, newAddAnimations, 0, eventTimeLoopEnd);
+            }
+            // duration이 너무 작기때문에 전체 애니메이션을 스케일해서 한번 실행
+            else{
+                PlayAnimation(animationName, false, aniDurationTime/duration);
+            }
+        }
     }
-#endif
 }

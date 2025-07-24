@@ -9,7 +9,7 @@ namespace GGemCo2DCore
     {
         public int Uid { get; set; }
         public string Name { get; set; }
-        public int SpineUid;
+        public int AnimationUid;
         public string DefaultSkin;
         public float Scale;
         public CharacterConstants.Grade Grade;
@@ -57,7 +57,7 @@ namespace GGemCo2DCore
             {
                 Uid = int.Parse(data["Uid"]),
                 Name = data["Name"],
-                SpineUid = int.Parse(data["SpineUid"]),
+                AnimationUid = int.Parse(data["AnimationUid"]),
                 DefaultSkin = data["DefaultSkin"],
                 Scale = float.Parse(data["Scale"]),
                 Grade = ConvertGrade(data["Grade"]),

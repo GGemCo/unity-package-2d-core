@@ -153,13 +153,13 @@ namespace GGemCo2DCore
             {
                 var info = TableLoaderManager.Instance.TableNpc.GetDataByUid(uid);
                 if (info == null) return;
-                animationUid = info.SpineUid;
+                animationUid = info.AnimationUid;
             }
             else if (type == CharacterConstants.Type.Monster)
             {
                 var info = TableLoaderManager.Instance.TableMonster.GetDataByUid(uid);
                 if (info == null) return;
-                animationUid = info.SpineUid;
+                animationUid = info.AnimationUid;
             }
             if (animationUid <= 0) return;
             StruckTableAnimation struckTableAnimation = TableLoaderManager.Instance.TableAnimation.GetDataByUid(animationUid);

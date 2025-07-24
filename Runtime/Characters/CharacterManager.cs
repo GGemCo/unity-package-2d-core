@@ -29,10 +29,13 @@ namespace GGemCo2DCore
         /// 캐릭터 만들기
         /// </summary>
         /// <param name="characterType"></param>
+        /// <param name="animationController"></param>
         /// <param name="prefab"></param>
         /// <param name="regenData"></param>
         /// <returns></returns>
-        private GameObject CreateCharacter(CharacterConstants.Type characterType, GameObject prefab, CharacterRegenData regenData = null)
+        private GameObject CreateCharacter(CharacterConstants.Type characterType,
+            ConfigCommon.AnimationController animationController, GameObject prefab,
+            CharacterRegenData regenData = null)
         {
             GameObject characterObj = Object.Instantiate(prefab);
             switch (characterType)
@@ -45,30 +48,44 @@ namespace GGemCo2DCore
                     Monster monster = characterObj.AddComponent<Monster>();
                     monster.type = CharacterConstants.Type.Monster;
                     monster.CharacterRegenData = regenData;
-                    
+
                     break;
                 case CharacterConstants.Type.Npc:
                     Npc npc = characterObj.AddComponent<Npc>();
                     npc.type = CharacterConstants.Type.Npc;
                     break;
             }
+
+            ICharacterAnimationController iCharacterAnimationController = null;
 #if GGEMCO_USE_SPINE
-            CharacterAnimationControllerSpine characterAnimationControllerSpine =
-                characterObj.AddComponent<CharacterAnimationControllerSpine>();
-            ICharacterAnimationController iCharacterAnimationController =
-                characterAnimationControllerSpine.GetComponent<ICharacterAnimationController>();
-#else
-            CharacterAnimationControllerSprite characterAnimationControllerSprite =
-             characterObj.AddComponent<CharacterAnimationControllerSprite>();
-            ICharacterAnimationController iCharacterAnimationController =
-             characterAnimationControllerSprite.GetComponent<ICharacterAnimationController>();
+            if (animationController == ConfigCommon.AnimationController.Spine)
+            {
+                CharacterAnimationControllerSpine characterAnimationControllerSpine =
+                    characterObj.AddComponent<CharacterAnimationControllerSpine>();
+                iCharacterAnimationController =
+                    characterAnimationControllerSpine.GetComponent<ICharacterAnimationController>();
+            }
 #endif
+            if (animationController == ConfigCommon.AnimationController.Sprite)
+            {
+                CharacterAnimationControllerSprite characterAnimationControllerSprite =
+                    characterObj.AddComponent<CharacterAnimationControllerSprite>();
+                iCharacterAnimationController =
+                    characterAnimationControllerSprite.GetComponent<ICharacterAnimationController>();
+            }
+
+            if (iCharacterAnimationController == null)
+            {
+                GcLogger.LogError($"wrong animation controller. animationController: {animationController}");
+                return null;
+            }
+
             CharacterBase characterBase = characterObj.GetComponent<CharacterBase>();
             if (regenData != null)
             {
                 characterBase.uid = regenData.Uid;
                 characterBase.gameObject.transform.position =
-                        new Vector3(regenData.x, regenData.y, characterObj.transform.position.z);
+                    new Vector3(regenData.x, regenData.y, characterObj.transform.position.z);
             }
 
             characterBase.CharacterAnimationController = iCharacterAnimationController;
@@ -82,7 +99,11 @@ namespace GGemCo2DCore
             {
                 string key = $"{ConfigAddressables.KeyPrefabPlayer}";
                 GameObject prefab = await AddressableLoaderController.LoadByKeyAsync<GameObject>(key);
-                if (prefab) return CreateCharacter(CharacterConstants.Type.Player, prefab);
+
+                if (prefab)
+                    return CreateCharacter(CharacterConstants.Type.Player,
+                        AddressableLoaderSettings.Instance.playerSettings.animationController, prefab);
+                
                 GcLogger.LogError("플레이어 프리팹이 없습니다. path:"+ConfigCommon.PathPlayerPrefab);
                 return null;
             }
@@ -98,13 +119,15 @@ namespace GGemCo2DCore
             if (uid <= 0) return null;
             var infoNpc = _tableNpc?.GetDataByUid(uid);
             if (infoNpc == null) return null;
+            var animationInfo = _tableAnimation?.GetDataByUid(infoNpc.AnimationUid);
+            if (animationInfo == null) return null;
             if (!prefab)
             {
-                prefab = _addressableLoaderPrefabCharacter?.GetCharacterNpc(infoNpc.SpineUid);
+                prefab = _addressableLoaderPrefabCharacter?.GetCharacterNpc(infoNpc.AnimationUid);
                 if (!prefab) return null;
             }
 
-            GameObject npc = CreateCharacter(CharacterConstants.Type.Npc, prefab, regenData);
+            GameObject npc = CreateCharacter(CharacterConstants.Type.Npc, animationInfo.Controller, prefab, regenData);
             if (!npc) return null;
             
             npc.GetComponent<Npc>()?.SetScale(infoNpc.Scale);
@@ -116,13 +139,15 @@ namespace GGemCo2DCore
             if (uid <= 0) return null;
             var infoMonster = _tableMonster?.GetDataByUid(uid);
             if (infoMonster == null) return null;
+            var animationInfo = _tableAnimation?.GetDataByUid(infoMonster.AnimationUid);
+            if (animationInfo == null) return null;
             if (!prefab)
             {
-                prefab = _addressableLoaderPrefabCharacter?.GetCharacterMonster(infoMonster.SpineUid);
+                prefab = _addressableLoaderPrefabCharacter?.GetCharacterMonster(infoMonster.AnimationUid);
                 if (!prefab) return null;
             }
             
-            GameObject monster = CreateCharacter(CharacterConstants.Type.Monster, prefab, regenData);
+            GameObject monster = CreateCharacter(CharacterConstants.Type.Monster, animationInfo.Controller, prefab, regenData);
             if (!monster) return null;
             
             monster.GetComponent<Monster>()?.SetScale(infoMonster.Scale);

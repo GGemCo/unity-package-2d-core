@@ -12,6 +12,7 @@ namespace GGemCo2DCore
         public string Name;
         public EffectConstants.Category Category;
         public string PrefabName;
+        public ConfigCommon.AnimationController AnimationController;
         public int Width;
         public int Height;
         public Vector2 ColliderSize;
@@ -50,6 +51,7 @@ namespace GGemCo2DCore
                 Name = data["Name"],
                 Category = ConvertType(data["Category"]),
                 PrefabName = data["PrefabName"],
+                AnimationController = ConvertAnimationController(data["AnimationController"]),
                 Width = int.Parse(data["Width"]),
                 Height = int.Parse(data["Height"]),
                 ColliderSize = ConvertVector2(data["ColliderSize"]),

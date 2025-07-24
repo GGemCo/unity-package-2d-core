@@ -104,7 +104,7 @@ namespace GGemCo2DCore
                 int uid = monsterData.Uid;
                 if (uid <= 0) continue;
                 var info = tableMonster.GetDataByUid(uid);
-                if (info.Uid <= 0 || info.SpineUid <= 0) continue;
+                if (info.Uid <= 0 || info.AnimationUid <= 0) continue;
                 SpawnMonster(uid, monsterData, mapTileCommon);
             }
         }

@@ -11,6 +11,7 @@ namespace GGemCo2DCore
         public int Uid;
         public string Name;
         public CharacterConstants.Type Type;
+        public ConfigCommon.AnimationController Controller;
         public string PrefabName;
         public float MoveStep;
         public float Width;
@@ -34,7 +35,7 @@ namespace GGemCo2DCore
                 { "Player", CharacterConstants.Type.Player },
             };
         }
-        private CharacterConstants.Type ConvertType(string grade) => MapType.GetValueOrDefault(grade, CharacterConstants.Type.None);
+        private CharacterConstants.Type ConvertType(string value) => MapType.GetValueOrDefault(value, CharacterConstants.Type.None);
         public string GetPrefabPath(int uid) => GetDataColumn(uid, "PrefabPath");
         
         public StruckTableAnimation GetDataByUid(int uid)
@@ -51,6 +52,7 @@ namespace GGemCo2DCore
                 Uid = int.Parse(data["Uid"]),
                 Name = data["Name"],
                 Type = ConvertType(data["Type"]),
+                Controller = ConvertAnimationController(data["Controller"]),
                 PrefabName = data["PrefabName"],
                 MoveStep = float.Parse(data["MoveStep"]),
                 AttackRange = int.Parse(data["AttackRange"]),

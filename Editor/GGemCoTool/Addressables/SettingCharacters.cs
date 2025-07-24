@@ -61,7 +61,7 @@ namespace GGemCo2DCoreEditor
                 {
                     var info = _addressableEditor.TableMonster.GetDataByUid(outerPair.Key);
                     if (info.Uid <= 0) continue;
-                    var infoAnimation = _addressableEditor.TableAnimation.GetDataByUid(info.SpineUid);
+                    var infoAnimation = _addressableEditor.TableAnimation.GetDataByUid(info.AnimationUid);
                     if (info.Uid <= 0) continue;
                 
                     string key = $"{ConfigAddressables.KeyPrefabMonster}_{infoAnimation.Uid}";
@@ -90,7 +90,7 @@ namespace GGemCo2DCoreEditor
                 {
                     var info = _addressableEditor.TableNpc.GetDataByUid(outerPair.Key);
                     if (info.Uid <= 0) continue;
-                    var infoAnimation = _addressableEditor.TableAnimation.GetDataByUid(info.SpineUid);
+                    var infoAnimation = _addressableEditor.TableAnimation.GetDataByUid(info.AnimationUid);
                     if (info.Uid <= 0) continue;
                 
                     string key = $"{ConfigAddressables.KeyPrefabNpc}_{infoAnimation.Uid}";

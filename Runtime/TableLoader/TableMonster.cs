@@ -11,7 +11,7 @@ namespace GGemCo2DCore
         public int Uid { get; set; }
         public string Name { get; set; }
         public string ImageThumbnailFileName;
-        public int SpineUid;
+        public int AnimationUid;
         public string DefaultSkin;
         public CharacterConstants.AttackType AttackType;
         public float Scale;
@@ -75,7 +75,7 @@ namespace GGemCo2DCore
                 Uid = int.Parse(data["Uid"]),
                 Name = data["Name"],
                 ImageThumbnailFileName = data["ImageThumbnailFileName"],
-                SpineUid = int.Parse(data["SpineUid"]),
+                AnimationUid = int.Parse(data["AnimationUid"]),
                 DefaultSkin = data["DefaultSkin"],
                 AttackType = ConvertAttackType(data["Type"]),
                 Scale = float.Parse(data["Scale"]),

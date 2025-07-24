@@ -66,7 +66,7 @@ namespace GGemCo2DCoreEditor
                 }
                 index++;
             }
-            var infoAnimation = _tableAnimation.GetDataByUid(monsterData.SpineUid);
+            var infoAnimation = _tableAnimation.GetDataByUid(monsterData.AnimationUid);
             if (infoAnimation == null) return;
             string monsterPath = ConfigAddressableMap.GetPathCharacter(infoAnimation);
             GameObject npcPrefab = AssetDatabaseLoaderManager.LoadAsset<GameObject>(monsterPath);
@@ -155,7 +155,7 @@ namespace GGemCo2DCoreEditor
                 int uid = monsterData.Uid;
                 var info = _tableMonster.GetDataByUid(uid);
                 if (info == null) continue;
-                var infoAnimation = _tableAnimation.GetDataByUid(info.SpineUid);
+                var infoAnimation = _tableAnimation.GetDataByUid(info.AnimationUid);
                 if (infoAnimation == null) continue;
                 
                 string monsterPath = ConfigAddressableMap.GetPathCharacter(infoAnimation);

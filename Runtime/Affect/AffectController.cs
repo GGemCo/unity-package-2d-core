@@ -104,7 +104,7 @@ namespace GGemCo2DCore
                 if (defaultEffects.Remove(affectUid, out var effect))
                 {
                     if (effect == null) return;
-                    effect.SetEnd();
+                    effect.OnEndAnimationComplete();
                     // Object.Destroy(effect.gameObject);
                 }
             }

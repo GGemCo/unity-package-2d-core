@@ -15,6 +15,11 @@ namespace GGemCo2DCore
             Increase,
             Decrease,
         }
+        public enum AnimationController
+        {
+            Sprite,
+            Spine,
+        }
         
         public const string StatusStatAtk = "STAT_ATK";
         public const string StatusStatDef = "STAT_DEF";

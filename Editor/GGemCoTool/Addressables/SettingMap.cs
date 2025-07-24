@@ -137,13 +137,13 @@ namespace GGemCo2DCoreEditor
                 {
                     var info = _tableMonster.GetDataByUid(uid);
                     if (info == null) continue;
-                    spineUid = info.SpineUid;
+                    spineUid = info.AnimationUid;
                 }
                 else if (type == Type.Npc)
                 {
                     var info = _tableNpc.GetDataByUid(uid);
                     if (info == null) continue;
-                    spineUid = info.SpineUid;
+                    spineUid = info.AnimationUid;
                 }
                 if (spineUid <= 0) continue;
 

@@ -160,7 +160,7 @@ namespace GGemCo2DCore
                 {
                     if (_struckTableSkill.Duration > _struckTableSkill.CoolTime)
                     {
-                        GcLogger.LogWarning($"Uid: {_struckTableSkill.Uid}, Level: {_struckTableSkill.Level}, Name: {_struckTableSkill.Name}. Duration: {_struckTableSkill.Duration} > CoolTime: {_struckTableSkill.CoolTime}. ");
+                        GcLogger.LogWarning($"Skill Uid: {_struckTableSkill.Uid}, Level: {_struckTableSkill.Level}, Name: {_struckTableSkill.Name}. Duration: {_struckTableSkill.Duration} > CoolTime: {_struckTableSkill.CoolTime}. ");
                     }
                     effect.SetDuration(_struckTableSkill.Duration);
                 }

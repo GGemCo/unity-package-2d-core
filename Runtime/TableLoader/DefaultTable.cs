@@ -19,6 +19,7 @@ namespace GGemCo2DCore
         private static readonly Dictionary<string, ConfigCommon.SuffixType> MapSuffix;
         private static readonly Dictionary<string, CurrencyConstants.Type> MapCurrencyType;
         private static readonly Dictionary<string, CharacterConstants.CharacterFacing> MapCharacterFacing;
+        private static readonly Dictionary<string, ConfigCommon.AnimationController> MapAnimationController;
 
         public virtual bool TryGetDataByUid(int uid, out object info)
         {
@@ -44,16 +45,23 @@ namespace GGemCo2DCore
                 { "Left", CharacterConstants.CharacterFacing.Left },
                 { "Right", CharacterConstants.CharacterFacing.Right },
             };
+            MapAnimationController = new Dictionary<string, ConfigCommon.AnimationController>
+            {
+                { "Sprite", ConfigCommon.AnimationController.Sprite },
+                { "Spine", ConfigCommon.AnimationController.Spine },
+            };
         }
 
-        protected static ConfigCommon.SuffixType ConvertSuffixType(string type) =>
-            MapSuffix.GetValueOrDefault(type, ConfigCommon.SuffixType.None);
+        protected static ConfigCommon.SuffixType ConvertSuffixType(string value) =>
+            MapSuffix.GetValueOrDefault(value, ConfigCommon.SuffixType.None);
 
-        protected static CurrencyConstants.Type ConvertCurrencyType(string type) =>
-            MapCurrencyType.GetValueOrDefault(type, CurrencyConstants.Type.None);
+        protected static CurrencyConstants.Type ConvertCurrencyType(string value) =>
+            MapCurrencyType.GetValueOrDefault(value, CurrencyConstants.Type.None);
 
-        protected static CharacterConstants.CharacterFacing ConvertFacing(string type) =>
-            MapCharacterFacing.GetValueOrDefault(type, CharacterConstants.CharacterFacing.Left);
+        protected static CharacterConstants.CharacterFacing ConvertFacing(string value) =>
+            MapCharacterFacing.GetValueOrDefault(value, CharacterConstants.CharacterFacing.Left);
+        protected static ConfigCommon.AnimationController ConvertAnimationController(string value) =>
+            MapAnimationController.GetValueOrDefault(value, ConfigCommon.AnimationController.Sprite);
         public virtual void LoadData(string content)
         {
             PreLoad();

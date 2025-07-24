@@ -47,8 +47,6 @@ namespace GGemCo2DCore
 
         protected void Start()
         {
-            EffectAnimationController.PlayEffectAnimation(IEffectAnimationController.KeyClipNameStart, _duration);
-
             if (_struckTableEffect.Color != "")
             {
                 EffectAnimationController.SetEffectColor($"#{_struckTableEffect.Color}");
@@ -61,16 +59,18 @@ namespace GGemCo2DCore
             {
                 StartCoroutine(RemoveEffectDuration(_duration));
             }
+            // 셋팅 후 플레이
+            EffectAnimationController.Play(_duration);
         }
 
-        public void Initialize(StruckTableEffect pstruckTableEffect)
+        public void Initialize(StruckTableEffect struckTableEffect)
         {
-            _struckTableEffect = pstruckTableEffect;
+            _struckTableEffect = struckTableEffect;
         }
         private IEnumerator RemoveEffectDuration(float f)
         {
             yield return new WaitForSeconds(f);
-            SetEnd();
+            OnEndAnimationComplete();
         }
         /// <summary>
         /// 캐릭터 순서. sorting order 처리 
@@ -116,16 +116,16 @@ namespace GGemCo2DCore
             // Transform의 Z축 회전 적용
             transform.rotation = Quaternion.Euler(0, 0, angle);
         }
-        /// <summary>
-        /// 이펙트 end 애니메이션 처리
-        /// </summary>
-        public void SetEnd()
-        {
-            bool result = EffectAnimationController.PlayEndAnimation();
-            // end 애니메이션이 있으면 end 애니메이션을 플레이하고 종료, 없으면 강제 종료
-            if (!result)
-                OnEndAnimationComplete();
-        }
+        // /// <summary>
+        // /// 이펙트 end 애니메이션 처리
+        // /// </summary>
+        // public void SetEnd()
+        // {
+        //     bool result = EffectAnimationController.PlayEndAnimation();
+        //     // end 애니메이션이 있으면 end 애니메이션을 플레이하고 종료, 없으면 강제 종료
+        //     if (!result)
+        //         OnEndAnimationComplete();
+        // }
         public void DestroyForce()
         {
             StopAllCoroutines();

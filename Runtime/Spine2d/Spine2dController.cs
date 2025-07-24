@@ -9,38 +9,6 @@ using Event = Spine.Event;
 
 namespace GGemCo2DCore
 {
-    public class StruckChangeSlotImage
-    {
-        public string SlotName;
-        public string AttachmentName;
-        public Sprite Sprite;
-
-        public StruckChangeSlotImage(string slotName, string attachmentName, Sprite sprite)
-        {
-            SlotName = slotName;
-            AttachmentName = attachmentName;
-            Sprite = sprite;
-        }
-    }
-    public class StruckAddAnimation
-    {
-        public readonly string AnimationName;
-        public readonly bool Loop;
-        public readonly float Delay;
-        public readonly float TimeScale;
-        public readonly float StartTime;
-        public readonly float EndTime;
-
-        public StruckAddAnimation(string animationName, bool loop = false, float delay = 0, float timeScale = 1, float startTime = 0, float endTime = 0)
-        {
-            AnimationName = animationName;
-            Loop = loop;
-            Delay = delay;
-            TimeScale = timeScale;
-            StartTime = startTime;
-            EndTime = endTime;
-        }
-    }
     /// <summary>
     /// 스파인 컨트롤러
     /// </summary>
@@ -232,6 +200,7 @@ namespace GGemCo2DCore
                 PlayAnimation(animationName, false, aniDurationTime/duration);
             }
         }
+
         /// <summary>
         /// 애니메이션 재생
         /// </summary>
@@ -241,7 +210,8 @@ namespace GGemCo2DCore
         /// <param name="addAnimations"></param>
         /// <param name="startTime"></param>
         /// <param name="endTime"></param>
-        protected void PlayAnimation(string animationName, bool loop = false, float timeScale = 1.0f, List<StruckAddAnimation> addAnimations = null, float startTime = 0, float endTime = 0)
+        protected void PlayAnimation(string animationName, bool loop = false, float timeScale = 1.0f,
+            List<StruckAddAnimation> addAnimations = null, float startTime = 0, float endTime = 0)
         {
             if (SkeletonAnimation == null) return;
             var findAnimation = FindAnimation(animationName);
@@ -253,6 +223,7 @@ namespace GGemCo2DCore
                 GcLogger.LogError($"Can't SetAnimation. name: {animationName}");
                 return;
             }
+
             trackEntry.TimeScale = timeScale;
             if (startTime > 0)
             {
@@ -261,26 +232,29 @@ namespace GGemCo2DCore
 
             if (endTime > 0)
             {
-                trackEntry.AnimationEnd = endTime;    
+                trackEntry.AnimationEnd = endTime;
             }
-            
+
             if (addAnimations == null) return;
             foreach (StruckAddAnimation info in addAnimations)
             {
                 if (info == null) continue;
                 findAnimation = FindAnimation(info.AnimationName);
                 if (findAnimation == null) continue;
-                
-                TrackEntry entry = SkeletonAnimation.AnimationState.AddAnimation(0, info.AnimationName, info.Loop, info.Delay);
+
+                TrackEntry entry =
+                    SkeletonAnimation.AnimationState.AddAnimation(0, info.AnimationName, info.Loop, info.Delay);
                 if (entry == null)
                 {
                     GcLogger.LogError($"Can't AddAnimation. name: {info.AnimationName}");
                     continue;
                 }
+
                 if (info.TimeScale > 0)
                 {
                     entry.TimeScale = info.TimeScale;
                 }
+
                 if (info.StartTime > 0)
                 {
                     entry.AnimationStart = info.StartTime;
@@ -288,10 +262,11 @@ namespace GGemCo2DCore
 
                 if (info.EndTime > 0)
                 {
-                    entry.AnimationEnd = info.EndTime;    
+                    entry.AnimationEnd = info.EndTime;
                 }
             }
         }
+
         /// <summary>
         /// 현재 재생 중인 애니메이션 이름 가져오기
         /// </summary>

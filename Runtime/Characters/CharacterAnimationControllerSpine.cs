@@ -131,6 +131,7 @@ namespace GGemCo2DCore
 
             ChangeImageInSlot(changeImages);
         }
+
         /// <summary>
         /// 특정 슬롯에 이미지를 지우기
         /// </summary>

@@ -4,6 +4,38 @@ using UnityEngine;
 
 namespace GGemCo2DCore
 {
+    public class StruckChangeSlotImage
+    {
+        public string SlotName;
+        public string AttachmentName;
+        public Sprite Sprite;
+
+        public StruckChangeSlotImage(string slotName, string attachmentName, Sprite sprite)
+        {
+            SlotName = slotName;
+            AttachmentName = attachmentName;
+            Sprite = sprite;
+        }
+    }
+    public class StruckAddAnimation
+    {
+        public readonly string AnimationName;
+        public readonly bool Loop;
+        public readonly float Delay;
+        public readonly float TimeScale;
+        public readonly float StartTime;
+        public readonly float EndTime;
+
+        public StruckAddAnimation(string animationName, bool loop = false, float delay = 0, float timeScale = 1, float startTime = 0, float endTime = 0)
+        {
+            AnimationName = animationName;
+            Loop = loop;
+            Delay = delay;
+            TimeScale = timeScale;
+            StartTime = startTime;
+            EndTime = endTime;
+        }
+    }
     /// <summary>
     /// 애니메이션 관리
     /// </summary>

@@ -66,7 +66,7 @@ namespace GGemCo2DCoreEditor
                 }
                 index++;
             }
-            var infoAnimation = _tableAnimation.GetDataByUid(npcData.SpineUid);
+            var infoAnimation = _tableAnimation.GetDataByUid(npcData.AnimationUid);
             if (infoAnimation == null) return;
             
             string npcPath = ConfigAddressableMap.GetPathCharacter(infoAnimation);
@@ -160,7 +160,7 @@ namespace GGemCo2DCoreEditor
                 int uid = npcData.Uid;
                 var info = _tableNpc.GetDataByUid(uid);
                 if (info == null) continue;
-                var infoAnimation = _tableAnimation.GetDataByUid(info.SpineUid);
+                var infoAnimation = _tableAnimation.GetDataByUid(info.AnimationUid);
                 if (infoAnimation == null) continue;
                 
                 string npcPath = ConfigAddressableMap.GetPathCharacter(infoAnimation);

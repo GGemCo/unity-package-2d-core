@@ -2,14 +2,16 @@
 using System;
 using System.Collections.Generic;
 using Spine;
-using UnityEngine;
-using Animation = Spine.Animation;
 
 namespace GGemCo2DCore
 {
     public class EffectAnimationControllerSpine : Spine2dController, IEffectAnimationController
     {
         private DefaultEffect _defaultEffect;
+        private float durationStart;
+        private float durationPlay;
+        private float durationEnd;
+        private float durationTotal;
         
         protected override void Awake()
         {
@@ -17,69 +19,90 @@ namespace GGemCo2DCore
             _defaultEffect = GetComponent<DefaultEffect>();
             if (_defaultEffect == null)
             {
-                GcLogger.LogError("DefaultEffect is missing! This component will not function.");
-                enabled = false; // 컴포넌트를 비활성화하여 다른 함수들이 실행되지 않도록 합니다.
+                enabled = false;
+                GcLogger.LogError("DefaultEffect not found");
                 return;
             }
+            durationStart = GetAnimationDuration(IEffectAnimationController.KeyClipNameStart, false);
+            durationPlay = GetAnimationDuration(IEffectAnimationController.KeyClipNamePlay, false);
+            durationEnd = GetAnimationDuration(IEffectAnimationController.KeyClipNameEnd, false);
+            durationTotal = durationStart + durationPlay + durationEnd; 
         }
+
         public void SetEffectColor(string colorHex)
         {
             SetColor(colorHex);
         }
-
+        /// <summary>
+        /// 애니메이션 클립이 플레이가 완료되면 호출되는 콜백 함수
+        /// </summary>
+        /// <param name="entry"></param>
         protected override void OnAnimationComplete(TrackEntry entry)
         {
-            if (entry == null) return;
-            if (entry.Animation.Name == IEffectAnimationController.KeyClipNameEnd)
+            if (FindAnimation(IEffectAnimationController.KeyClipNameEnd) == null)
             {
-                _defaultEffect.OnEndAnimationComplete();
+                _defaultEffect.DestroyForce();
+                return;
             }
+
+            if (entry.Animation.Name != IEffectAnimationController.KeyClipNameEnd) return;
+            _defaultEffect.OnEndAnimationComplete();
         }
-        public float GetAnimationEventTime(string aniName, string eventName, List<string> exceptEventName = null)
+        public bool Play(float duration) 
         {
-            return GetEventTime(aniName, eventName, exceptEventName);
-        }
-        public bool PlayEffectAnimation(string animationName, bool loop = false, float timeScale = 1, List<StruckAddAnimation> addAnimations = null)
-        {
-            var findAnimation = FindAnimation(animationName);
+            var findAnimation = FindAnimation(IEffectAnimationController.KeyClipNameStart);
             if (findAnimation == null) return false;
-            PlayAnimation(animationName, loop, timeScale, addAnimations);
-            return true;
-        }
-        public bool PlayEffectAnimation(string animationName, float duration)
-        {
-            var findAnimation = FindAnimation(animationName);
-            if (findAnimation == null) return false;
-            
-            float eventTimeLoopStart = GetEventTime(animationName, "loop_start");
-            float eventTimeLoopEnd = GetEventTime(animationName, "loop_end");
-            if (eventTimeLoopStart > 0 && eventTimeLoopEnd > 0)
+
+            // 한번만 재생
+            if (duration <= 0)
             {
-                PlayAnimationWidthLoopEvent(animationName, duration);
+                float timeScale = 1f;
+                List<StruckAddAnimation> newAddAnimations = new List<StruckAddAnimation>
+                {
+                    new(IEffectAnimationController.KeyClipNamePlay, false, 0, timeScale),
+                    new(IEffectAnimationController.KeyClipNameEnd, false, 0, timeScale)
+                };
+                PlayAnimation(IEffectAnimationController.KeyClipNameStart, false, timeScale, newAddAnimations);
             }
+            // play 클립 loop 하기
+            else if (durationTotal < duration)
+            {
+                //loopAni
+                var realLoopDuration = duration - durationStart - durationEnd;
+                var loopCnt = realLoopDuration/durationPlay;
+                var loopCntCeil = Math.Ceiling(realLoopDuration/durationPlay);
+                float newTimeScale = (float)loopCntCeil/loopCnt;
+                List<StruckAddAnimation> newAddAnimations = new List<StruckAddAnimation>();
+                
+                for(var i = 0; i< loopCntCeil; i++)
+                {
+                    StruckAddAnimation struckAddAnimation =
+                        new StruckAddAnimation(IEffectAnimationController.KeyClipNamePlay, false, 0, newTimeScale);
+                    newAddAnimations.Add(struckAddAnimation);
+                }
+
+                //endAni
+                {
+                    StruckAddAnimation struckAddAnimation =
+                        new StruckAddAnimation(IEffectAnimationController.KeyClipNameEnd);
+                    newAddAnimations.Add(struckAddAnimation);
+                }
+
+                //startAni
+                PlayAnimation(IEffectAnimationController.KeyClipNameStart, false, 1, newAddAnimations);
+            }
+            // 전체 클립 timescale 빠르게 
             else
             {
-                List<StruckAddAnimation> addAnimations = new List<StruckAddAnimation>();
-                if (duration <= 0)
+                float timeScale = durationTotal / duration;
+                List<StruckAddAnimation> newAddAnimations = new List<StruckAddAnimation>
                 {
-                    addAnimations.Add(new(IEffectAnimationController.KeyClipNamePlay));
-                    addAnimations.Add(new (IEffectAnimationController.KeyClipNameEnd));
-                }
-                else
-                {
-                    addAnimations.Add(new(IEffectAnimationController.KeyClipNamePlay, true, 0, 1f));
-                }
-                PlayEffectAnimation(IEffectAnimationController.KeyClipNameStart, false, 1, addAnimations);
+                    new(IEffectAnimationController.KeyClipNamePlay, false, 0, timeScale),
+                    new(IEffectAnimationController.KeyClipNameEnd, false, 0, timeScale)
+                };
+                PlayAnimation(IEffectAnimationController.KeyClipNameStart, false, timeScale, newAddAnimations);
             }
 
-            return true;
-        }
-
-        public bool PlayEndAnimation()
-        {
-            var findAnimation = FindAnimation(IEffectAnimationController.KeyClipNameEnd, false);
-            if (findAnimation == null) return false;
-            PlayAnimation(IEffectAnimationController.KeyClipNameEnd);
             return true;
         }
     }

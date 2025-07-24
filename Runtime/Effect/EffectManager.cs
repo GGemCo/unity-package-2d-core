@@ -18,13 +18,26 @@ namespace GGemCo2DCore
             if (prefab == null) return null;
             GameObject effect = Object.Instantiate(prefab);
             DefaultEffect defaultEffect = effect.AddComponent<DefaultEffect>();
+            IEffectAnimationController effectAnimationController = null;
 #if GGEMCO_USE_SPINE
-            EffectAnimationControllerSpine effectAnimationController = effect.AddComponent<EffectAnimationControllerSpine>();
-            defaultEffect.EffectAnimationController = effectAnimationController;
-#else
-            EffectAnimationControllerSprite effectAnimationController = effect.AddComponent<EffectAnimationControllerSprite>();
-            defaultEffect.EffectAnimationController = effectAnimationController;
+            if (info.AnimationController == ConfigCommon.AnimationController.Spine)
+            {
+                effectAnimationController = effect.AddComponent<EffectAnimationControllerSpine>();
+                defaultEffect.EffectAnimationController = effectAnimationController;
+            }
 #endif
+            if (info.AnimationController == ConfigCommon.AnimationController.Sprite)
+            {
+                effectAnimationController = effect.AddComponent<EffectAnimationControllerSprite>();
+                defaultEffect.EffectAnimationController = effectAnimationController;
+            }
+
+            if (effectAnimationController == null)
+            {
+                GcLogger.LogError($"wrong animation controller. animationController: {info.AnimationController}");
+                return null;
+            }
+
             defaultEffect.Initialize(info);
             // defaultEffect.Initialize();
             return defaultEffect;

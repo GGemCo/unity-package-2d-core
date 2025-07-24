@@ -168,7 +168,7 @@ namespace GGemCo2DCore
         {
             var info = TableNpc.GetDataByUid(npcUid);
             if (info == null) return 0;
-            var info2 = TableLoaderManager.Instance.TableAnimation.GetDataByUid(info.SpineUid);
+            var info2 = TableLoaderManager.Instance.TableAnimation.GetDataByUid(info.AnimationUid);
             if (info2 is { MoveStep: > 0 })
             {
                 return info2.MoveStep;
@@ -180,7 +180,7 @@ namespace GGemCo2DCore
         {
             var info = TableMonster.GetDataByUid(monsterUid);
             if (info == null) return 0;
-            var info2 = TableLoaderManager.Instance.TableAnimation.GetDataByUid(info.SpineUid);
+            var info2 = TableLoaderManager.Instance.TableAnimation.GetDataByUid(info.AnimationUid);
             if (info2 is { MoveStep: > 0 })
             {
                 return info2.MoveStep;

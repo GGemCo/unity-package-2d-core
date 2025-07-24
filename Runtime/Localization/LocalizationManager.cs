@@ -19,16 +19,19 @@ namespace GGemCo2DCore
     public class LocalizationManager : MonoBehaviour
     {
         public static LocalizationManager Instance;
+        // 언어 변경시 발생하는 이벤트
         public UnityEvent onChangeLocale;
-
+        // 사용중인 언어 코드 리스트
         private List<string> _languageCodes;
+        // 언어 변경 중인지
         private bool _isChanging;
-
+        // 현재 언어 코드
         private static string CurrentLanguageCode { get; set; }
-
+        // string table
         private LocalizedStringDatabase _stringDatabase;
+        // asset table
         private LocalizedAssetDatabase _assetDatabase;
-
+        // 사용자 언어 테이블 존재 여부
         private readonly Dictionary<string, bool> _userTableExistsMap = new();
 
         private void Awake()
@@ -49,13 +52,14 @@ namespace GGemCo2DCore
             InitializeLanguageCodes();
             InitializeCurrentLocale();
         }
-
+        /// <summary>
+        /// PlayerPrefs 저장된 값으로 현재 사용중인 언어 셋팅
+        /// </summary>
         private void InitializeCurrentLocale()
         {
             int index = PlayerPrefsManager.LoadIndexLocalizationLocale();
             StartChangeLocale(index);
         }
-
         /// <summary>
         /// LanguageIndex enum을 기반으로 코드 리스트를 초기화합니다.
         /// </summary>
@@ -68,7 +72,6 @@ namespace GGemCo2DCore
                 _languageCodes.Add(lang.ToString());
             }
         }
-
         /// <summary>
         /// 언어 인덱스를 받아 로케일을 변경합니다.
         /// </summary>
@@ -77,7 +80,11 @@ namespace GGemCo2DCore
             if (_isChanging) return;
             StartCoroutine(ChangeLocaleRoutine(index));
         }
-
+        /// <summary>
+        /// 언어 바꾸기
+        /// </summary>
+        /// <param name="index"></param>
+        /// <returns></returns>
         private IEnumerator ChangeLocaleRoutine(int index)
         {
             _isChanging = true;
@@ -103,7 +110,10 @@ namespace GGemCo2DCore
             
             StartCoroutine(CheckUserTablesExist());
         }
-
+        /// <summary>
+        /// 사용자 언어 테이블 존재 체크
+        /// </summary>
+        /// <returns></returns>
         private IEnumerator CheckUserTablesExist()
         {
             foreach (string baseTable in LocalizationConstants.Tables.All)
@@ -220,15 +230,17 @@ namespace GGemCo2DCore
         /// <param name="key"></param>
         /// <returns></returns>
         public string GetCommonGameByKey(string key) => GetString(LocalizationConstants.Tables.CommonGame, key);
+        
+        /// <summary>
+        /// 데이터 테이블별 단어 가져오기
+        /// </summary>
+        /// <param name="key"></param>
+        /// <returns></returns>
         public string GetStatusNameByKey(string key) => GetString(LocalizationConstants.Tables.StatusName, key);
         public string GetUIWindowSkillInfoByKey(string key) => GetString(LocalizationConstants.Tables.UIWindowSkillInfo, key);
-
         public string GetUIWindowSkillByKey(string key) => GetString(LocalizationConstants.Tables.UIWindowSkill, key);
-
         public string GetUIWindowItemUpgradeByKey(string key) => GetString(LocalizationConstants.Tables.UIWindowItemUpgrade, key);
-
         public string GetUIWindowItemCraftByKey(string key) => GetString(LocalizationConstants.Tables.UIWindowItemCraft, key);
-
         public string GetUIWindowQuestRewardByKey(string key) => GetString(LocalizationConstants.Tables.UIWindowQuestReward, key);
         public string GetItemNameByKey(string key) => GetString(LocalizationConstants.Tables.ItemName, key);
         public string GetItemDescriptionByKey(string key) => GetString(LocalizationConstants.Tables.ItemDescription, key);
@@ -236,9 +248,7 @@ namespace GGemCo2DCore
         public string GetSkillNameByKey(string key) => GetString(LocalizationConstants.Tables.SkillName, key);
         public string GetNpcNameByKey(string key) => GetString(LocalizationConstants.Tables.NpcName, key);
         public string GetMonsterNameByKey(string key) => GetString(LocalizationConstants.Tables.MonsterName, key);
-
         public string GetUIWindowTitleByKey(string key) => GetString(LocalizationConstants.Tables.UIWindowTitle, key);
-
         public string GetAffectNameByKey(string key) => GetString(LocalizationConstants.Tables.AffectName, key);
     }
 }

@@ -4,7 +4,6 @@ using UnityEngine;
 
 namespace GGemCo2DCore
 {
-#if GGEMCO_USE_SPINE != true
     /// <summary>
     /// 캐릭터 유니티 애니메이션 처리
     /// </summary>
@@ -123,7 +122,7 @@ namespace GGemCo2DCore
 
                 var sprite = Resources.Load<Sprite>(changeSpritePath);
 
-                StruckChangeSlotImage struckChangeSlotImage = new StruckChangeSlotImage(attachmentName, sprite);
+                StruckChangeSlotImage struckChangeSlotImage = new StruckChangeSlotImage(slotName, attachmentName, sprite);
                 changeImages.Add(struckChangeSlotImage);
             }
 
@@ -279,5 +278,4 @@ namespace GGemCo2DCore
         }
 
     }
-#endif
 }
