@@ -30,7 +30,7 @@
 
 ## 관련 링크
 - 설명 동영상 : https://www.youtube.com/@ggemco
-- 설명 문서 : https://ggemco.notion.site/2D-RPG-Unity-2D-RPG-Tutorial-1ccbf593397e802ba3edcda8b2e3a8c3?pvs=4
+- 설명 문서 : https://ggemco.notion.site/GGemCo-Package-216bf593397e800a8f66e70c96aefbc2
 
 ## 라이센스
 이 코드를 사용하여 게임을 개발 및 판매하는 것은 허용됩니다.<br>
