@@ -29,6 +29,8 @@ namespace GGemCo2DCore
         
         protected override void Awake()
         {
+            // 먼저 선언한다.
+            IsUseSkill = true;
             base.Awake();
             _collider2Ds = new Collider2D[CountCollider];
             _attackType = CharacterConstants.AttackType.PassiveDefense;
@@ -191,11 +193,6 @@ namespace GGemCo2DCore
                 break;
             }
 
-        }
-
-        public float GetHeight()
-        {
-            return height * Math.Abs(transform.localScale.x);
         }
 
         private void SetSliderHp(long value)

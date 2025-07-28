@@ -31,7 +31,8 @@ namespace GGemCo2DCore
                 CapsuleDirection2D = TargetCharacter.colliderCheckCharacter.direction;
             }
         }
-        protected void UpdateCheckMaxBounds()
+
+        private void UpdateCheckMaxBounds()
         {
             if (ICharacterAnimationController == null)
             {
@@ -39,11 +40,12 @@ namespace GGemCo2DCore
                 return;
             }
             if (TargetCharacter.IsStatusDead()) return;
-            var characterSize = ICharacterAnimationController.GetCharacterSize();
-            characterSize.x *= Math.Abs(TargetCharacter.transform.localScale.x);
-            characterSize.y *= TargetCharacter.transform.localScale.y;
-            minBounds.x = characterSize.x / 2;
-            maxBounds = new Vector2(mapSize.x - (characterSize.x/2), mapSize.y - characterSize.y);   // 우측 상단 경계
+            var characterWidth = TargetCharacter.GetWidth();
+            var characterHeight = TargetCharacter.GetHeight();
+            characterWidth *= Math.Abs(TargetCharacter.transform.localScale.x);
+            characterHeight *= TargetCharacter.transform.localScale.y;
+            minBounds.x = characterWidth / 2;
+            maxBounds = new Vector2(mapSize.x - (characterWidth/2), mapSize.y - characterHeight);   // 우측 상단 경계
         }
 
         protected virtual bool Wait()
@@ -53,7 +55,8 @@ namespace GGemCo2DCore
             ICharacterAnimationController?.PlayWaitAnimation();
             return true;
         }
-        public CharacterConstants.FacingDirection8 ToFacingDirection8(Vector2 dir)
+
+        protected CharacterConstants.FacingDirection8 ToFacingDirection8(Vector2 dir)
         {
             if (dir == Vector2.zero) return CharacterConstants.FacingDirection8.None;
 

@@ -1,4 +1,5 @@
-﻿using System.Collections;
+﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -26,12 +27,6 @@ namespace GGemCo2DCore
             spriteRenderer = GetComponent<SpriteRenderer>();
         }
         
-        protected override void Start()
-        {
-            base.Start();
-            // 스파인 height 값 구하고 character 에 넘겨주기
-            characterBase.SetHeight(GetHeight());
-        }
         /// <summary>
         /// wait 애니메이션 처리 
         /// </summary>
@@ -152,7 +147,7 @@ namespace GGemCo2DCore
         /// <summary>
         /// 애니메이션이 중단되면 호출되는 콜백 함수
         /// </summary>
-        public override void GGemCoOnAnimationComplete()
+        public override void GGemCoAniEventComplete()
         {
             AnimatorStateInfo state = Animator.GetCurrentAnimatorStateInfo(0);
             // GcLogger.Log($"OnAnimationComplete: {animator.GetCurrentAnimatorClipInfo(0)?.}");
@@ -170,21 +165,6 @@ namespace GGemCo2DCore
             }
         }
 
-        public override void GGemCoOnAnimationEventCameraShake(float intensity) 
-        {
-        
-        }
-        /// <summary>
-        /// 공격 모션에서 몬스터에 직접적인 공격이 가해지는 타이밍에 발생하는 이벤트
-        /// </summary>
-        public override void GGemCoOnAnimationEventAttack()
-        {
-            characterBase.OnEventAttack();
-        }
-
-        public override void GGemCoOnAnimationEventSound(string soundName) 
-        {
-        }
         public IEnumerator FadeEffect(float duration, bool fadeIn)
         {
             float elapsedTime = 0f;
@@ -260,21 +240,5 @@ namespace GGemCo2DCore
         {
             return GetAnimationDuration(animationName, isMilliseconds);
         }
-        
-        public override void GGemCoOnAnimationEventPlayEffect(string json)
-        {
-            GcLogger.Log($"OnAnimationEventPlayEffect json: {json}");
-            StruckAnimationEventEffect struckAnimationEventEffect = JsonUtility.FromJson<StruckAnimationEventEffect>(json);
-            var effect = EffectManager.CreateEffect(struckAnimationEventEffect);
-            if (effect == null) return;
-
-            effect.transform.position = characterBase.transform.position;
-        }
-
-        public override void GGemCoOnAnimationEventProjectile(int projectileUid)
-        {
-            characterBase?.LaunchProjectile(projectileUid);
-        }
-
     }
 }

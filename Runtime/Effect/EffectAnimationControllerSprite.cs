@@ -34,7 +34,7 @@ namespace GGemCo2DCore
         /// <summary>
         /// 애니메이션 클립이 플레이가 완료되면 호출되는 콜백 함수
         /// </summary>
-        public override void GGemCoOnAnimationComplete()
+        public override void GGemCoAniEventComplete()
         {
             if (!GetClipByName(IEffectAnimationController.KeyClipNameEnd))
             {
@@ -62,21 +62,26 @@ namespace GGemCo2DCore
             if (duration < 0)
             {
                 float timeScale = 1f;
-                List<StruckAddAnimation> newAddAnimations = new List<StruckAddAnimation>
+                List<StruckAddAnimation> newAddAnimations = new List<StruckAddAnimation>();
+                if (durationPlay > 0)
                 {
-                    new(IEffectAnimationController.KeyClipNamePlay, true, 0, timeScale),
-                };
+                    newAddAnimations.Add(new(IEffectAnimationController.KeyClipNamePlay, true, 0, timeScale));
+                }
                 PlayAnimation(IEffectAnimationController.KeyClipNameStart, false, timeScale, newAddAnimations);
             }
             // 한번만 재생
             else if (duration <= 0)
             {
                 float timeScale = 1f;
-                List<StruckAddAnimation> newAddAnimations = new List<StruckAddAnimation>
+                List<StruckAddAnimation> newAddAnimations = new List<StruckAddAnimation>();
+                if (durationPlay > 0)
                 {
-                    new(IEffectAnimationController.KeyClipNamePlay, false, 0, timeScale),
-                    new(IEffectAnimationController.KeyClipNameEnd, false, 0, timeScale)
-                };
+                    newAddAnimations.Add(new(IEffectAnimationController.KeyClipNamePlay, false, 0, timeScale));
+                }
+                if (durationEnd > 0)
+                {
+                    newAddAnimations.Add(new(IEffectAnimationController.KeyClipNameEnd, false, 0, timeScale));
+                }
                 PlayAnimation(IEffectAnimationController.KeyClipNameStart, false, timeScale, newAddAnimations);
             }
             // play 클립 loop 하기
@@ -88,15 +93,19 @@ namespace GGemCo2DCore
                 var loopCntCeil = Math.Ceiling(realLoopDuration/durationPlay);
                 float newTimeScale = (float)loopCntCeil/loopCnt;
                 List<StruckAddAnimation> newAddAnimations = new List<StruckAddAnimation>();
-                
-                for(var i = 0; i< loopCntCeil; i++)
+
+                if (durationPlay > 0)
                 {
-                    StruckAddAnimation struckAddAnimation =
-                        new StruckAddAnimation(IEffectAnimationController.KeyClipNamePlay, false, 0, newTimeScale);
-                    newAddAnimations.Add(struckAddAnimation);
+                    for (var i = 0; i < loopCntCeil; i++)
+                    {
+                        StruckAddAnimation struckAddAnimation =
+                            new StruckAddAnimation(IEffectAnimationController.KeyClipNamePlay, false, 0, newTimeScale);
+                        newAddAnimations.Add(struckAddAnimation);
+                    }
                 }
 
                 //endAni
+                if (durationEnd > 0)
                 {
                     StruckAddAnimation struckAddAnimation =
                         new StruckAddAnimation(IEffectAnimationController.KeyClipNameEnd);
@@ -110,11 +119,15 @@ namespace GGemCo2DCore
             else
             {
                 float timeScale = durationTotal / duration;
-                List<StruckAddAnimation> newAddAnimations = new List<StruckAddAnimation>
+                List<StruckAddAnimation> newAddAnimations = new List<StruckAddAnimation>();
+                if (durationPlay > 0)
                 {
-                    new(IEffectAnimationController.KeyClipNamePlay, false, 0, timeScale),
-                    new(IEffectAnimationController.KeyClipNameEnd, false, 0, timeScale)
-                };
+                    newAddAnimations.Add(new(IEffectAnimationController.KeyClipNamePlay, false, 0, timeScale));
+                }
+                if (durationEnd > 0)
+                {
+                    newAddAnimations.Add(new(IEffectAnimationController.KeyClipNameEnd, false, 0, timeScale));
+                }
                 PlayAnimation(IEffectAnimationController.KeyClipNameStart, false, timeScale, newAddAnimations);
             }
 
@@ -123,16 +136,6 @@ namespace GGemCo2DCore
         public void PlayEnd()
         {
             PlayAnimation(IEffectAnimationController.KeyClipNameEnd);
-        }
-
-        public override void GGemCoOnAnimationEventPlayEffect(string json)
-        {
-            GcLogger.Log($"OnAnimationEventPlayEffect json: {json}");
-            StruckAnimationEventEffect struckAnimationEventEffect = JsonUtility.FromJson<StruckAnimationEventEffect>(json);
-            var effect = EffectManager.CreateEffect(struckAnimationEventEffect);
-            if (effect == null) return;
-
-            effect.transform.position = _defaultEffect.transform.position;
         }
     }
 }

@@ -24,16 +24,16 @@ namespace GGemCo2DCore
         private void HandleEvent(TrackEntry trackEntry, Event e)
         {
             // Logger.Log("effect spine event: "+e.Data.Name);
-            if (e.Data.Name == Spine2dConstants.EventNameAttack)
+            if (e.Data.Name == AnimationConstants.EventNameAttack)
             {
                 // GcLogger.Log("hit event " + this.gameObject.name + " | json: " + e.String);
                 OnSpineEventHit(e);
             }
-            else if (e.Data.Name == Spine2dConstants.EventNameSound)
+            else if (e.Data.Name == AnimationConstants.EventNameSound)
             {
                 OnSpineEventSound(e);
             }
-            else if (e.Data.Name == Spine2dConstants.EventNameShake)
+            else if (e.Data.Name == AnimationConstants.EventNameCameraShake)
             {
                 if (e.Float <= 0) return;
                 SceneGame.Instance.cameraManager.StartShake(e.Float, 0.1f);

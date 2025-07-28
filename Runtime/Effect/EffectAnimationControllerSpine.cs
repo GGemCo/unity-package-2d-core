@@ -12,7 +12,7 @@ namespace GGemCo2DCore
         private float durationPlay;
         private float durationEnd;
         private float durationTotal;
-        
+
         protected override void Awake()
         {
             base.Awake();
@@ -120,6 +120,7 @@ namespace GGemCo2DCore
         {
             PlayAnimation(IEffectAnimationController.KeyClipNameEnd);
         }
+
     }
 }
 #endif

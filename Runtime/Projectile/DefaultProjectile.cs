@@ -177,7 +177,8 @@ namespace GGemCo2DCore
         private void OnTriggerEnter2D(Collider2D collision)
         {
             // GcLogger.Log(collision.name);
-            if (collision.CompareTag(ConfigTags.GetValue(ConfigTags.Keys.Player)))
+            if (fromCharacter.CompareTag(ConfigTags.GetValue(ConfigTags.Keys.Monster)) && 
+                collision.CompareTag(ConfigTags.GetValue(ConfigTags.Keys.Player)))
             {
                 CharacterHitArea area = collision.GetComponent<CharacterHitArea>();
                 if (area)
@@ -185,7 +186,8 @@ namespace GGemCo2DCore
                     OnHitTarget(area);
                 }
             }
-            else if (collision.CompareTag(ConfigTags.GetValue(ConfigTags.Keys.Monster)))
+            else if (fromCharacter.CompareTag(ConfigTags.GetValue(ConfigTags.Keys.Player)) && 
+                     collision.CompareTag(ConfigTags.GetValue(ConfigTags.Keys.Monster)))
             {
                 CharacterHitArea area = collision.GetComponent<CharacterHitArea>();
                 if (area)

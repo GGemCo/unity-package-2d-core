@@ -10,19 +10,19 @@ namespace GGemCo2DCore
     /// </summary>
     public class AffectController
     {
-        private readonly CharacterBase character;
-        private readonly Dictionary<int, List<ConfigCommon.StruckStatus>> activeBuffs = new();
-        private readonly TableAffect tableAffect;
-        private readonly TableEffect tableEffect;
-        private readonly Dictionary<int, DefaultEffect> defaultEffects = new();
-        private Coroutine removeCoroutine;
-            
+        private readonly CharacterBase _character;
+        private readonly Dictionary<int, List<ConfigCommon.StruckStatus>> _activeBuffs = new();
+        private readonly TableAffect _tableAffect;
+        private readonly TableEffect _tableEffect;
+        private readonly Dictionary<int, DefaultEffect> _defaultEffects = new();
+        private Coroutine _removeCoroutine;
+
         public AffectController(CharacterBase characterBase)
         {
             if (TableLoaderManager.Instance == null) return;
-            character = characterBase;
-            tableAffect = TableLoaderManager.Instance.TableAffect;
-            tableEffect = TableLoaderManager.Instance.TableEffect;
+            _character = characterBase;
+            _tableAffect = TableLoaderManager.Instance.TableAffect;
+            _tableEffect = TableLoaderManager.Instance.TableEffect;
         }
         /// <summary>
         /// 어펙트 적용하기
@@ -30,7 +30,7 @@ namespace GGemCo2DCore
         /// <param name="affectUid"></param>
         public void ApplyAffect(int affectUid)
         {
-            var info = tableAffect.GetDataByUid(affectUid);
+            var info = _tableAffect.GetDataByUid(affectUid);
             if (info == null)
             {
                 GcLogger.LogError("affect 테이블에 없는 어펙트 입니다. affect Uid: "+affectUid);
@@ -44,20 +44,20 @@ namespace GGemCo2DCore
                 { new (statusId, suffixType, value) };
             
             // 적용되어 있는 버프면, duration 초기화 하기
-            if (activeBuffs.ContainsKey(info.Uid))
+            if (_activeBuffs.ContainsKey(info.Uid))
             {
                 RemoveAffect(affectUid);
-                if (removeCoroutine != null)
+                if (_removeCoroutine != null)
                 {
-                    character.StopCoroutine(removeCoroutine);
+                    _character.StopCoroutine(_removeCoroutine);
                 }
             }
             
             // GcLogger.Log($"ApplyBuff {buff.Uid}/{buff.Name}/{buff.Duration}");
-            activeBuffs.TryAdd(info.Uid, buffs);
-            character.ApplyStatModifiers(buffs);
-            character.RecalculateStats();
-            removeCoroutine = character.StartCoroutine(RemoveBuffAfterDuration(info.Uid, duration));
+            _activeBuffs.TryAdd(info.Uid, buffs);
+            _character.ApplyStatModifiers(buffs);
+            _character.RecalculateStats();
+            _removeCoroutine = _character.StartCoroutine(RemoveBuffAfterDuration(info.Uid, duration));
             if (info.EffectUid > 0)
             {
                 DefaultEffect defaultEffect = EffectManager.CreateEffect(info.EffectUid);
@@ -73,11 +73,11 @@ namespace GGemCo2DCore
                     defaultEffect.SetDuration(duration);
                 }
                 // 캐릭터 하위에 붙이기
-                defaultEffect.transform.SetParent(character.transform);
+                defaultEffect.transform.SetParent(_character.transform);
                 // 캐릭터 height 만큼 위치 조정
-                defaultEffect.transform.localPosition = new Vector3(0, character.height, 0);
+                defaultEffect.transform.localPosition = new Vector3(0, _character.GetHeightByScale(), 0);
 
-                defaultEffects.TryAdd(info.Uid, defaultEffect);
+                _defaultEffects.TryAdd(info.Uid, defaultEffect);
             }
         }
 
@@ -90,48 +90,45 @@ namespace GGemCo2DCore
 
         private void RemoveAffect(int affectUid)
         {
-            if (activeBuffs.Count > 0)
+            if (_activeBuffs.Count > 0)
             {
                 // 캐릭터에 적용되어 있던 어펙트를 먼저 지워준다.
-                character.RemoveStatModifiers(activeBuffs[affectUid]);
-                character.RecalculateStats();
-                activeBuffs[affectUid].Clear();
-                activeBuffs.Remove(affectUid);
+                _character.RemoveStatModifiers(_activeBuffs[affectUid]);
+                _character.RecalculateStats();
+                _activeBuffs[affectUid].Clear();
+                _activeBuffs.Remove(affectUid);
             }
 
-            if (defaultEffects.Count > 0)
-            {
-                if (defaultEffects.Remove(affectUid, out var effect))
-                {
-                    if (effect == null) return;
-                    effect.OnEndAnimationComplete();
-                    // Object.Destroy(effect.gameObject);
-                }
-            }
+            if (_defaultEffects.Count <= 0) return;
+            if (!_defaultEffects.Remove(affectUid, out var effect)) return;
+            if (effect == null) return;
+            effect.OnEndAnimationComplete();
+            // Object.Destroy(effect.gameObject);
         }
         /// <summary>
         /// 캐릭터가 죽으면 모든 어펙트 지워주기
         /// </summary>
         public void RemoveAllAffects()
         {
-            if (removeCoroutine != null)
+            if (_removeCoroutine != null)
             {
-                character?.StopCoroutine(removeCoroutine);
+                _character?.StopCoroutine(_removeCoroutine);
             }
             // 모든 버프, 디버프 지우고 stat 갱신
-            foreach (var info in activeBuffs)
+            foreach (var info in _activeBuffs)
             {
-                character?.RemoveStatModifiers(activeBuffs[info.Key]);
+                _character?.RemoveStatModifiers(_activeBuffs[info.Key]);
             }
-            character?.RecalculateStats();
+            _character?.RecalculateStats();
 
             // 생성된 이펙트 지우기
-            foreach (var info in defaultEffects)
+            foreach (var info in _defaultEffects)
             {
-                info.Value?.DestroyForce();
+                if (info.Value == null) continue;
+                info.Value.DestroyForce();
             }
-            activeBuffs.Clear();
-            defaultEffects.Clear();
+            _activeBuffs.Clear();
+            _defaultEffects.Clear();
         }
     }
 }

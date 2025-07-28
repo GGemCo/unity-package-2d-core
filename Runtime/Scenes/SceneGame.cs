@@ -118,6 +118,10 @@ namespace GGemCo2DCore
             CharacterManager = new CharacterManager();
             CharacterManager.Initialize(TableLoaderManager.Instance.TableNpc, TableLoaderManager.Instance.TableMonster,
                 TableLoaderManager.Instance.TableAnimation, AddressableLoaderPrefabCharacter);
+            AnimationEventMediator animationEventMediator = new AnimationEventMediator();
+            animationEventMediator.Initialize(this);
+            CharacterManager.SetAnimationEventMediator(animationEventMediator);
+            
             KeyboardManager = new KeyboardManager();
             KeyboardManager.Initialize(this);
             InteractionManager = new InteractionManager();

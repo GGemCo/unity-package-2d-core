@@ -23,7 +23,6 @@ namespace GGemCo2DCore
         // 어그로
         private CharacterConstants.AttackType attackType;
         private bool isAggro;
-        public float height;
         public string characterName;
         
         [Header("캐릭터 방향 관련")]
@@ -56,10 +55,10 @@ namespace GGemCo2DCore
 
         [Header("스킬")] 
         protected bool IsUseSkill = false;
-        protected SkillController SkillController;
+        private SkillController _skillController;
         
         [Header("스폰 데이터")] 
-        [HideInInspector] public CharacterRegenData CharacterRegenData;
+        public CharacterRegenData CharacterRegenData;
         
         // 현재 상태
         private CharacterConstants.CharacterStatus currentStatus;
@@ -68,6 +67,7 @@ namespace GGemCo2DCore
         // fade in, out 효과 시작 여부. 맵에서 컬링 될때 사용
         private bool isStartFade;
         private float characterHeight;
+        private float characterWidth;
         // 공격한 GameObject 의 Transform
         public Transform attackerTransform;
         // 캐릭터 간의 충돌 체크용
@@ -85,7 +85,6 @@ namespace GGemCo2DCore
             AffectController = new AffectController(this);
             SetAttackType(CharacterConstants.AttackType.None);
             SetAggro(false);
-            height = 0;
             SetStatusIdle();
             // 태그 먼저 처리
             InitTagSortingLayer();
@@ -93,8 +92,8 @@ namespace GGemCo2DCore
             delayDestroyMonster = AddressableLoaderSettings.Instance.settings.delayDestroyMonster;
             if (IsUseSkill)
             {
-                SkillController = new SkillController();
-                SkillController.Initialize(this);
+                _skillController = new SkillController();
+                _skillController.Initialize(this);
             }
             defaultFacingDirection8 = AddressableLoaderSettings.Instance.playerSettings.facingDirection8;
         }
@@ -178,7 +177,8 @@ namespace GGemCo2DCore
                 colliderCheckHitArea.offset = new Vector2(0, struckTableAnimation.Height/2f);
                 colliderCheckHitArea.size = struckTableAnimation.HitAreaSize;
             }
-            height = struckTableAnimation.Height;
+
+            SetHeight(struckTableAnimation.Height);
             defaultFacingDirection8 = struckTableAnimation.DefaultFacingDirection8;
         }
         /// <summary>
@@ -246,7 +246,7 @@ namespace GGemCo2DCore
         /// 실제 보는 방향: 디폴트 방향이 오른쪽이면 localScale.x가 양수면 오른쪽, 음수면 왼쪽
         /// </summary>
         /// <returns></returns>
-        public float GetFacingDirection()
+        private float GetFacingDirection()
         {
             float sign = Mathf.Sign(transform.localScale.x);
             return defaultFacingDirection8 == CharacterConstants.FacingDirection8.Right ? sign : -sign;
@@ -317,7 +317,7 @@ namespace GGemCo2DCore
         public void SetStatusAttack() => SetStatus(CharacterConstants.CharacterStatus.Attack);
         public void SetStatusDontMove() => SetStatus(CharacterConstants.CharacterStatus.DontMove);
         public void SetStatusMoveForce() => SetStatus(CharacterConstants.CharacterStatus.MoveForce);
-        public void SetStatusDamage() => SetStatus(CharacterConstants.CharacterStatus.Damage);
+        private void SetStatusDamage() => SetStatus(CharacterConstants.CharacterStatus.Damage);
 
         public void SetScale(float scale)
         {
@@ -370,13 +370,31 @@ namespace GGemCo2DCore
             isStartFade = value;
         }
 
-        protected virtual float GetCharacterHeight()
+        public float GetHeight()
         {
             return characterHeight;
         }
-        public virtual void SetHeight(float value)
+
+        protected void SetHeight(float value)
         {
             characterHeight = value;
+        }
+        /// <summary>
+        /// localScale 이 적용된 캐릭터 크기 가져오기
+        /// </summary>
+        /// <returns></returns>
+        public virtual float GetHeightByScale()
+        {
+            return characterHeight * Math.Abs(transform.localScale.x);
+        }
+        public float GetWidth()
+        {
+            return characterWidth;
+        }
+
+        protected void SetWidth(float value)
+        {
+            characterWidth = value;
         }
         public virtual float GetCurrentMoveStep()
         {
@@ -418,7 +436,7 @@ namespace GGemCo2DCore
             
             // 데미지 텍스트 색상 설정
             Color damageTextColor = Color.white;
-            Vector3 damageTextPosition = transform.position + new Vector3(0, GetCharacterHeight() * Mathf.Abs(originalScaleX), 0);
+            Vector3 damageTextPosition = transform.position + new Vector3(0, GetHeight() * Mathf.Abs(originalScaleX), 0);
             // 속성 데미지일때, 저항값 처리
             if (damageType != SkillConstants.DamageType.None)
             {
@@ -547,14 +565,6 @@ namespace GGemCo2DCore
             
         }
         /// <summary>
-        /// localScale 이 적용된 캐릭터 크기 가져오기
-        /// </summary>
-        /// <returns></returns>
-        public virtual float GetHeightByScale()
-        {
-            return height * Math.Abs(transform.localScale.x);
-        }
-        /// <summary>
         /// total move speed 가 변경되었을때 wait 애니메이션의 time scale 도 변경해주기 위해서
         /// track index = 0 의 time scale 을 변경해준다.
         /// </summary>
@@ -635,6 +645,11 @@ namespace GGemCo2DCore
             {
                 yield return new WaitForSeconds(info.SecDelayByOne);
             }
+        }
+
+        public virtual void UseSkill(int skillUid, int skillLevel)
+        {
+            _skillController?.MakeSkill(skillUid, skillLevel);
         }
     }
 }

@@ -24,6 +24,9 @@ namespace GGemCo2DCore
         [Header("전기 속성 저항(100->1)")] public int statRegistLightning;
         [Header("사정거리")] public Vector2 rangeAttack;
         [Header("충돌거리")] public Vector2 rangeCollider;
+        [Header("HitArea Offset")] public Vector2 rangeHitAreaOffset;
+        [Header("HitArea Size")] public Vector2 rangeHitAreaSize;
+        [Header("디폴트 캐릭터 크기")] public Vector2 size;
         
         /// <summary>
         /// 처음 생성 시 한 번만 실행됨

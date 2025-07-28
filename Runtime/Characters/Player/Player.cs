@@ -109,7 +109,17 @@ namespace GGemCo2DCore
             GameObject hitArea = new GameObject("HitArea");
             CharacterHitArea characterHitArea = hitArea.AddComponent<CharacterHitArea>();
             characterHitArea.Initialize(this);
-            
+            offset = Vector2.zero;
+            if (AddressableLoaderSettings.Instance.playerSettings.rangeHitAreaOffset != Vector2.zero)
+            {
+                offset = AddressableLoaderSettings.Instance.playerSettings.rangeHitAreaOffset;
+            }
+            size = new Vector2(250, 500);
+            if (AddressableLoaderSettings.Instance.playerSettings.rangeHitAreaSize != Vector2.zero)
+            {
+                size = AddressableLoaderSettings.Instance.playerSettings.rangeHitAreaSize;
+            }
+            colliderCheckHitArea = ComponentController.AddCapsuleCollider2D(hitArea, true, offset, size, 0, 0, CapsuleDirection2D.Vertical);
             
             // 맵 object 충돌 체크용
             // include layer : 타일맵 wall
@@ -140,7 +150,10 @@ namespace GGemCo2DCore
             currentMoveStep = playerSettings.statMoveStep;
             originalScaleX = transform.localScale.x;
             SetScale(playerSettings.startScale);
+            SetWidth(playerSettings.size.x);
+            SetHeight(playerSettings.size.y);
         }
+
         /// <summary>
         /// 세이브 데이터에 있는 장착 아이템 정보 가져와서 장착 시키기
         /// </summary>
@@ -367,16 +380,6 @@ namespace GGemCo2DCore
             _sceneGame.SetState(SceneGame.GameState.End);
         }
         
-        /// <summary>
-        /// 스킬 사용하기
-        /// </summary>
-        /// <param name="skillUid"></param>
-        /// <param name="skillLevel"></param>
-        public void UseSkill(int skillUid, int skillLevel)
-        {
-            SkillController.MakeSkill(skillUid, skillLevel);
-        }
-
         public bool IsRequireLevel(int compareLevel)
         {
             bool result = _playerData?.CurrentLevel >= compareLevel;
@@ -401,7 +404,7 @@ namespace GGemCo2DCore
         /// <returns></returns>
         public override float GetHeightByScale()
         {
-            return CharacterAnimationController.GetCharacterHeight() * Math.Abs(transform.localScale.x);
+            return GetHeight() * Math.Abs(transform.localScale.x);
         }
 
         public void SetMapSize(Vector2 mapSize)

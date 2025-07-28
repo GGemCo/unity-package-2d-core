@@ -14,6 +14,7 @@ namespace GGemCo2DCore
     /// </summary>
     public class Spine2dController : MonoBehaviour
     {
+        public IAnimationEventListener EventListener { get; set; }
         protected SkeletonAnimation SkeletonAnimation;
         private Skeleton skeleton;
         private SkeletonData skeletonData;
@@ -59,50 +60,28 @@ namespace GGemCo2DCore
         private void HandleEvent(TrackEntry trackEntry, Event e)
         {
             // Logger.Log("effect spine event: "+e.Data.Name);
-            if (e.Data.Name == Spine2dConstants.EventNameAttack)
+            switch (e.Data.Name)
             {
-                // GcLogger.Log("hit event " + this.gameObject.name + " | json: " + e.String);
-                OnSpineEventAttack(e);
+                case AnimationConstants.EventNameAttack:
+                    EventListener?.OnAnimationEventAttack(gameObject);
+                    break;
+                case AnimationConstants.EventNameSound:
+                    EventListener?.OnAnimationEventSound(e.Int);
+                    break;
+                case AnimationConstants.EventNameCameraShake:
+                    EventListener?.OnAnimationEventCameraShake(e.String);
+                    break;
+                case AnimationConstants.EventNameEffect:
+                    EventListener?.OnAnimationEventEffect(e.String, gameObject);
+                    break;
+                case AnimationConstants.EventNameProjectile:
+                    EventListener?.OnAnimationEventProjectile(e.Int, gameObject);
+                    break;
+                case AnimationConstants.EventNameSkill:
+                    EventListener?.OnAnimationEventSkill(e.String, gameObject);
+                    break;
             }
-            else if (e.Data.Name == Spine2dConstants.EventNameSound)
-            {
-                OnSpineEventSound(e);
-            }
-            else if (e.Data.Name == Spine2dConstants.EventNameShake)
-            {
-                if (e.Float <= 0) return;
-                OnSpineEventShake(e);
-            }
-            else if (e.Data.Name == Spine2dConstants.EventNameEffect)
-            {
-                OnSpineEventEffect(e);
-            }
         }
-
-        protected virtual void OnSpineEventEffect(Event eEvent)
-        {
-        }
-
-        protected virtual void OnSpineEventShake(Event eEvent) 
-        {
-        
-        }
-
-        protected virtual void OnSpineEventAttack(Event eEvent) 
-        {
-            
-        }
-
-        protected virtual void OnSpineEventSound(Event eEvent) 
-        {
-        }
-        protected virtual void OnSpineEventProjectile(Event eEvent) 
-        {
-        }
-        protected virtual void Start()
-        {
-        }
-
         protected Spine.Animation FindAnimation(string animationName, bool showLog = true)
         {
             if (SkeletonAnimation == null) return null;
@@ -317,7 +296,7 @@ namespace GGemCo2DCore
         /// 캐릭터 height 값 구하기
         /// </summary>
         /// <returns></returns>
-        protected float GetHeight()
+        private float GetHeight()
         {
             // Skeleton에서 바운딩 박스 계산
             float[] vertexBuffer = new float[8];

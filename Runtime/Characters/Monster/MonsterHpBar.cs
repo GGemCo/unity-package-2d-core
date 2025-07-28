@@ -11,60 +11,63 @@ namespace GGemCo2DCore
         public float diffY;
         public TextMeshProUGUI textMonsterName;
         
-        private Monster monster;
-        private Slider hpSlider;
-        private bool isStartFade;
-        private CanvasGroup canvasGroup;
+        private Monster _monster;
+        private Slider _hpSlider;
+        private bool _isStartFade;
+        private CanvasGroup _canvasGroup;
+        private float _monsterHeight;
 
         private void Awake()
         {
-            hpSlider = GetComponent<Slider>();
-            canvasGroup = GetComponent<CanvasGroup>();
-            hpSlider.value = 1f;
-            isStartFade = false;
+            _hpSlider = GetComponent<Slider>();
+            _canvasGroup = GetComponent<CanvasGroup>();
+            _hpSlider.value = 1f;
+            _isStartFade = false;
         }
-        public void Initialize(Monster pmonster)
+        public void Initialize(Monster monster)
         {
-            monster = pmonster;
-            if (monster == null)
+            _monster = monster;
+            if (_monster == null)
             {
                 GcLogger.LogError("몬스터 오브젝트가 없습니다.");
                 return;
             }
-            var info = TableLoaderManager.Instance.TableMonster.GetDataByUid(monster.uid);
+            var info = TableLoaderManager.Instance.TableMonster.GetDataByUid(_monster.uid);
             if (info == null)
             {
-                GcLogger.LogError("몬스터 테이블에 정보가 없습니다. uid:"+monster.uid);
+                GcLogger.LogError("몬스터 테이블에 정보가 없습니다. uid:"+_monster.uid);
                 return;
             }
             if (textMonsterName == null) return;
             textMonsterName.text = info.Name;
         }
 
+        private void Start()
+        {
+            _monsterHeight = _monster.GetHeightByScale();
+        }
+
         private void Update()
         {
-            if (monster == null) return;
-            gameObject.transform.position = monster.transform.position + new Vector3(0, monster.GetHeight() + diffY, 0);
+            if (_monster == null) return;
+            gameObject.transform.position = _monster.transform.position + new Vector3(0, _monsterHeight + diffY, 0);
         }
 
         public void SetValue(long value)
         {
-            if (hpSlider == null) return;
-            hpSlider.value = (float)value / monster.TotalHp.Value;
+            if (_hpSlider == null) return;
+            _hpSlider.value = (float)value / _monster.TotalHp.Value;
 
             if (textMonsterName == null) return;
-            if (hpSlider.value < hpSlider.maxValue * 0.5f)
-                textMonsterName.color = Color.black;
-            else
-                textMonsterName.color = Color.white;
+            textMonsterName.color = _hpSlider.value < _hpSlider.maxValue * 0.5f ? Color.black : Color.white;
         }
         /// <summary>
         /// fade in 효과 시작. 맵 컬링시 사용
         /// </summary>
         public void StartFadeIn()
         {
-            if (isStartFade) return;
-            isStartFade = true;
+            if (_isStartFade) return;
+            _isStartFade = true;
             gameObject.SetActive(true);
             StartCoroutine(FadeIn(ConfigCommon.CharacterFadeSec));
         }
@@ -74,8 +77,8 @@ namespace GGemCo2DCore
         /// </summary>
         public void StartFadeOut()
         {
-            if (isStartFade) return;
-            isStartFade = true;
+            if (_isStartFade) return;
+            _isStartFade = true;
             StartCoroutine(FadeOut(ConfigCommon.CharacterFadeSec));
         }
         private IEnumerator FadeIn(float duration)
@@ -98,7 +101,7 @@ namespace GGemCo2DCore
             while (elapsedTime < duration)
             {
                 elapsedTime += Time.deltaTime;
-                canvasGroup.alpha = Mathf.Lerp(startAlpha, endAlpha, elapsedTime / duration);
+                _canvasGroup.alpha = Mathf.Lerp(startAlpha, endAlpha, elapsedTime / duration);
                 yield return null;
             }
 
@@ -106,7 +109,7 @@ namespace GGemCo2DCore
         }
         private void SetIsStartFade(bool value)
         {
-            isStartFade = value;
+            _isStartFade = value;
         }
     }
 }

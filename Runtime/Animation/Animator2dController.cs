@@ -5,27 +5,13 @@ using UnityEngine;
 
 namespace GGemCo2DCore
 {
-    public class StruckAnimationEventEffect
-    {
-        public int Uid;
-        public float Scale;
-        public float Duration;
-        public string Color;
-
-        public StruckAnimationEventEffect(int uid, float scale = 1.0f, float duration = 0, string color = "")
-        {
-            Uid = uid;
-            Scale = scale;
-            Duration = duration;
-            Color = color;
-        }
-    }
     /// <summary>
     /// Animator 기반 2D 캐릭터 컨트롤러
     /// </summary>
     [RequireComponent(typeof(Animator))]
     public class Animator2dController : MonoBehaviour
     {
+        public IAnimationEventListener EventListener { get; set; }
         protected Animator Animator;
         private AnimationClip[] animationClips;
 
@@ -44,10 +30,6 @@ namespace GGemCo2DCore
                 return;
             }
             animationClips = Animator.runtimeAnimatorController.animationClips;
-        }
-
-        protected virtual void Start()
-        {
         }
 
         protected void PlayAnimation(string animationName, bool loop = false, float timeScale = 1.0f,
@@ -118,7 +100,7 @@ namespace GGemCo2DCore
             return state.length > 0;
         }
 
-        protected float GetHeight()
+        private float GetHeight()
         {
             Bounds bounds = GetComponent<Renderer>().bounds;
             return bounds.size.y;
@@ -176,24 +158,33 @@ namespace GGemCo2DCore
         }
 
         // 이벤트 콜백은 애니메이션 이벤트(Inspector에서 이벤트 등록)에서 호출해야 함
-        public virtual void GGemCoOnAnimationComplete()
+        public virtual void GGemCoAniEventComplete()
         {
         }
-        public virtual void GGemCoOnAnimationEventPlayEffect(string json)
+        public void GGemCoAniEventEffect(string json)
         {
+            EventListener?.OnAnimationEventEffect(json, gameObject);
         }
-        public virtual void GGemCoOnAnimationEventAttack()
+        public void GGemCoAniEventAttack()
         {
+            EventListener?.OnAnimationEventAttack(gameObject);
         }
-        public virtual void GGemCoOnAnimationEventProjectile(int projectileUid)
+        public void GGemCoAniEventProjectile(int projectileUid)
         {
+            EventListener?.OnAnimationEventProjectile(projectileUid, gameObject);
         }
-        public virtual void GGemCoOnAnimationEventCameraShake(float intensity)
+        public void GGemCoAniEventCameraShake(string json)
         {
+            EventListener?.OnAnimationEventCameraShake(json);
         }
 
-        public virtual void GGemCoOnAnimationEventSound(string soundName)
+        public void GGemCoAniEventSound(int soundUid)
         {
+            EventListener?.OnAnimationEventSound(soundUid);
+        }
+        public void GGemCoAniEventSkill(string json)
+        {
+            EventListener?.OnAnimationEventSkill(json, gameObject);
         }
 
         protected AnimationClip GetClipByName(string animationName)

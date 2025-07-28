@@ -16,6 +16,7 @@ namespace GGemCo2DCore
     {
         private CharacterBase characterBase;
         private readonly List<StruckChangeSlotImage> changeImages = new List<StruckChangeSlotImage>();
+
         protected override void Awake()
         {
             base.Awake();
@@ -31,12 +32,6 @@ namespace GGemCo2DCore
             SkeletonAnimation.AnimationState.SetEmptyAnimation(0, 0);
         }
 
-        protected override void Start()
-        {
-            base.Start();
-            // 스파인 height 값 구하고 character 에 넘겨주기
-            characterBase.SetHeight(GetHeight());
-        }
         /// <summary>
         /// wait 애니메이션 처리 
         /// </summary>
@@ -69,14 +64,6 @@ namespace GGemCo2DCore
                 return;
             }
             PlayAnimation(ICharacterAnimationController.DamageAnim);
-        }
-        /// <summary>
-        /// 스파인의 height 값을 구해서 가져오기
-        /// </summary>
-        /// <returns></returns>
-        public float GetCharacterHeight()
-        {
-            return GetHeight();
         }
         /// <summary>
         /// 스파인의 width 값을 구해서 가져오기
@@ -161,52 +148,30 @@ namespace GGemCo2DCore
         {
             // GcLogger.Log("OnAnimationInterrupt gameobject: " + this.gameObject.name + " / animationName: " + entry.Animation.Name);
             if (SkeletonAnimation == null) return;
-            if (entry.Animation.Name == ICharacterAnimationController.AttackAnim)
+            if (entry.Loop != true) 
             {
                 if (characterBase.IsStatusDead()) return;
                 characterBase.SetStatusIdle(); // 공격 상태 해제
                 PlayWaitAnimation();
             }
         }
-        protected override void OnSpineEventEffect(Event eEvent)
-        {
-            try
-            {
-                string json = eEvent.String;
-                StruckAnimationEventEffect struckAnimationEventEffect = JsonUtility.FromJson<StruckAnimationEventEffect>(json);
-                var effect = EffectManager.CreateEffect(struckAnimationEventEffect);
-                if (effect == null) return;
-                // 캐릭터 하위에 붙이기
-                // effect.transform.SetParent(characterBase.transform);
-                effect.transform.position = characterBase.transform.position;
-            }
-            catch (Exception e)
-            {
-                GcLogger.LogError($"spine effect event json parsing error: {e.Message}");
-            }
-        }
-
-        protected override void OnSpineEventShake(Event eEvent) 
-        {
-        
-        }
-        /// <summary>
-        /// 공격 모션에서 몬스터에 직접적인 공격이 가해지는 타이밍에 발생하는 이벤트
-        /// </summary>
-        /// <param name="eEvent"></param>
-        protected override void OnSpineEventAttack(Event eEvent)
-        {
-            characterBase.OnEventAttack();
-        }
-
-        protected override void OnSpineEventSound(Event eEvent) 
-        {
-        }
-        protected override void OnSpineEventProjectile(Event eEvent) 
-        {
-            int projectileUid = eEvent.Data.Int;
-            characterBase.LaunchProjectile(projectileUid);
-        }
+        // /// <summary>
+        // /// 공격 모션에서 몬스터에 직접적인 공격이 가해지는 타이밍에 발생하는 이벤트
+        // /// </summary>
+        // /// <param name="eEvent"></param>
+        // protected override void OnSpineEventAttack(Event eEvent)
+        // {
+        //     characterBase.OnEventAttack();
+        // }
+        //
+        // protected override void OnSpineEventSound(Event eEvent) 
+        // {
+        // }
+        // protected override void OnSpineEventProjectile(Event eEvent) 
+        // {
+        //     int projectileUid = eEvent.Int;
+        //     characterBase.LaunchProjectile(projectileUid);
+        // }
 
         public IEnumerator FadeEffect(float duration, bool fadeIn)
         {

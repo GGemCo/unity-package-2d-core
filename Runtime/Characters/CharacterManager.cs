@@ -16,7 +16,8 @@ namespace GGemCo2DCore
         private TableMonster _tableMonster;
         private TableAnimation _tableAnimation;
         private AddressableLoaderPrefabCharacter _addressableLoaderPrefabCharacter;
-
+        private AnimationEventMediator _animationEventMediator;
+        
         public void Initialize(TableNpc pTableNpc, TableMonster pTableMonster, TableAnimation pTableAnimation, AddressableLoaderPrefabCharacter addressableLoaderPrefabCharacter)
         {
             _tableNpc = pTableNpc;
@@ -64,6 +65,13 @@ namespace GGemCo2DCore
                     characterObj.AddComponent<CharacterAnimationControllerSpine>();
                 iCharacterAnimationController =
                     characterAnimationControllerSpine.GetComponent<ICharacterAnimationController>();
+                
+                // Spine2dController 에 EventListener 설정
+                var spineController = characterObj.GetComponent<Spine2dController>();
+                if (spineController != null && _animationEventMediator != null)
+                {
+                    spineController.EventListener = _animationEventMediator;
+                }
             }
 #endif
             if (animationController == ConfigCommon.AnimationController.Sprite)
@@ -72,6 +80,13 @@ namespace GGemCo2DCore
                     characterObj.AddComponent<CharacterAnimationControllerSprite>();
                 iCharacterAnimationController =
                     characterAnimationControllerSprite.GetComponent<ICharacterAnimationController>();
+                
+                // Animator2dController 에 EventListener 설정
+                var animatorController = characterObj.GetComponent<Animator2dController>();
+                if (animatorController != null && _animationEventMediator != null)
+                {
+                    animatorController.EventListener = _animationEventMediator;
+                }
             }
 
             if (iCharacterAnimationController == null)
@@ -177,6 +192,10 @@ namespace GGemCo2DCore
 
         public void OnDestroy()
         {
+        }
+        public void SetAnimationEventMediator(AnimationEventMediator mediator)
+        {
+            _animationEventMediator = mediator;
         }
     }
 }

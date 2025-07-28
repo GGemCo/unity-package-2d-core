@@ -6,9 +6,9 @@ namespace GGemCo2DCore
 {
     public class StruckChangeSlotImage
     {
-        public string SlotName;
-        public string AttachmentName;
-        public Sprite Sprite;
+        public readonly string SlotName;
+        public readonly string AttachmentName;
+        public readonly Sprite Sprite;
 
         public StruckChangeSlotImage(string slotName, string attachmentName, Sprite sprite)
         {
@@ -55,16 +55,6 @@ namespace GGemCo2DCore
         void PlayDeadAnimation();
         void PlayDamageAnimation();
         void PlayCharacterAnimation(string animationName, bool loop = false, float timeScale = 1f);
-
-        float GetCharacterHeight();
-
-        /// <summary>
-        /// 캐릭터 width 값 구하기
-        /// </summary>
-        /// <returns></returns>
-        float GetCharacterWidth();
-
-        Vector2 GetCharacterSize();
 
         void ChangeCharacterImageInSlot(int partIndex, int itemUid = 0);
         void RemoveCharacterImageInSlot(List<StruckChangeSlotImage> changeSlotImages);
