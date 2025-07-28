@@ -18,7 +18,7 @@ namespace GGemCo2DCore
         private readonly Dictionary<int, Dictionary<string, string>> table = new Dictionary<int, Dictionary<string, string>>();
         private static readonly Dictionary<string, ConfigCommon.SuffixType> MapSuffix;
         private static readonly Dictionary<string, CurrencyConstants.Type> MapCurrencyType;
-        private static readonly Dictionary<string, CharacterConstants.CharacterFacing> MapCharacterFacing;
+        private static readonly Dictionary<string, CharacterConstants.FacingDirection8> MapCharacterFacing;
         private static readonly Dictionary<string, ConfigCommon.AnimationController> MapAnimationController;
 
         public virtual bool TryGetDataByUid(int uid, out object info)
@@ -40,10 +40,10 @@ namespace GGemCo2DCore
                 { "Gold", CurrencyConstants.Type.Gold },
                 { "Silver", CurrencyConstants.Type.Silver },
             };
-            MapCharacterFacing = new Dictionary<string, CharacterConstants.CharacterFacing>
+            MapCharacterFacing = new Dictionary<string, CharacterConstants.FacingDirection8>
             {
-                { "Left", CharacterConstants.CharacterFacing.Left },
-                { "Right", CharacterConstants.CharacterFacing.Right },
+                { "Left", CharacterConstants.FacingDirection8.Left },
+                { "Right", CharacterConstants.FacingDirection8.Right },
             };
             MapAnimationController = new Dictionary<string, ConfigCommon.AnimationController>
             {
@@ -58,8 +58,8 @@ namespace GGemCo2DCore
         protected static CurrencyConstants.Type ConvertCurrencyType(string value) =>
             MapCurrencyType.GetValueOrDefault(value, CurrencyConstants.Type.None);
 
-        protected static CharacterConstants.CharacterFacing ConvertFacing(string value) =>
-            MapCharacterFacing.GetValueOrDefault(value, CharacterConstants.CharacterFacing.Left);
+        protected static CharacterConstants.FacingDirection8 ConvertFacing(string value) =>
+            MapCharacterFacing.GetValueOrDefault(value, CharacterConstants.FacingDirection8.Left);
         protected static ConfigCommon.AnimationController ConvertAnimationController(string value) =>
             MapAnimationController.GetValueOrDefault(value, ConfigCommon.AnimationController.Sprite);
         public virtual void LoadData(string content)

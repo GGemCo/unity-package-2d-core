@@ -1,4 +1,5 @@
 ﻿#if GGEMCO_USE_SPINE
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using Spine;
@@ -42,9 +43,7 @@ namespace GGemCo2DCore
         public void PlayWaitAnimation()
         {
             if (characterBase.IsStatusDead()) return;
-            string idleAnim = characterBase.directionPrev.y != 0 
-                ? (characterBase.directionPrev.y > 0 ? ICharacterAnimationController.WaitBackwardAnim : ICharacterAnimationController.WaitForwardAnim) 
-                : ICharacterAnimationController.WaitForwardAnim;
+            string idleAnim = ICharacterAnimationController.WaitForwardAnim;
             if (GetCurrentAnimation() == idleAnim) return;
             PlayAnimation(idleAnim,true, characterBase.GetCurrentMoveSpeed());
         }
@@ -54,8 +53,8 @@ namespace GGemCo2DCore
         public void PlayRunAnimation()
         {
             if (characterBase.IsStatusDead()) return;
-            string moveAnim = characterBase.direction.y != 0 
-                ? (characterBase.direction.y > 0 ? ICharacterAnimationController.WalkBackwardAnim : ICharacterAnimationController.WalkForwardAnim) 
+            string moveAnim = characterBase.directionNormalize.y != 0 
+                ? (characterBase.directionNormalize.y > 0 ? ICharacterAnimationController.WalkBackwardAnim : ICharacterAnimationController.WalkForwardAnim) 
                 : ICharacterAnimationController.WalkForwardAnim;
             if (GetCurrentAnimation() == moveAnim) return;
             PlayAnimation(moveAnim, true, characterBase.GetCurrentMoveSpeed());
@@ -171,13 +170,20 @@ namespace GGemCo2DCore
         }
         protected override void OnSpineEventEffect(Event eEvent)
         {
-            string json = eEvent.String;
-            StruckAnimationEventEffect struckAnimationEventEffect = JsonUtility.FromJson<StruckAnimationEventEffect>(json);
-            var effect = EffectManager.CreateEffect(struckAnimationEventEffect);
-            if (effect == null) return;
-            // 캐릭터 하위에 붙이기
-            // effect.transform.SetParent(characterBase.transform);
-            effect.transform.position = characterBase.transform.position;
+            try
+            {
+                string json = eEvent.String;
+                StruckAnimationEventEffect struckAnimationEventEffect = JsonUtility.FromJson<StruckAnimationEventEffect>(json);
+                var effect = EffectManager.CreateEffect(struckAnimationEventEffect);
+                if (effect == null) return;
+                // 캐릭터 하위에 붙이기
+                // effect.transform.SetParent(characterBase.transform);
+                effect.transform.position = characterBase.transform.position;
+            }
+            catch (Exception e)
+            {
+                GcLogger.LogError($"spine effect event json parsing error: {e.Message}");
+            }
         }
 
         protected override void OnSpineEventShake(Event eEvent) 

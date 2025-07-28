@@ -23,21 +23,21 @@ namespace GGemCo2DCore
         {
             if (TargetCharacter.IsStatusAttack()) return;
             if (TargetCharacter.IsStatusDead()) return;
-            TargetCharacter.direction = Vector3.zero;
+            TargetCharacter.directionNormalize = Vector3.zero;
             
 #if GGEMCO_USE_OLD_INPUT
-            if (Input.GetKey(KeyCode.W) || Input.GetKey(KeyCode.UpArrow)) TargetCharacter.direction += Vector3.up;
-            if (Input.GetKey(KeyCode.S) || Input.GetKey(KeyCode.DownArrow)) TargetCharacter.direction += Vector3.down;
-            if (Input.GetKey(KeyCode.A) || Input.GetKey(KeyCode.LeftArrow)) TargetCharacter.direction += Vector3.left;
-            if (Input.GetKey(KeyCode.D) || Input.GetKey(KeyCode.RightArrow)) TargetCharacter.direction += Vector3.right;
+            if (Input.GetKey(KeyCode.W) || Input.GetKey(KeyCode.UpArrow)) TargetCharacter.directionNormalize += Vector3.up;
+            if (Input.GetKey(KeyCode.S) || Input.GetKey(KeyCode.DownArrow)) TargetCharacter.directionNormalize += Vector3.down;
+            if (Input.GetKey(KeyCode.A) || Input.GetKey(KeyCode.LeftArrow)) TargetCharacter.directionNormalize += Vector3.left;
+            if (Input.GetKey(KeyCode.D) || Input.GetKey(KeyCode.RightArrow)) TargetCharacter.directionNormalize += Vector3.right;
 #elif GGEMCO_USE_NEW_INPUT
-            if (Keyboard.current.wKey.isPressed || Keyboard.current.upArrowKey.isPressed) TargetCharacter.direction += Vector3.up; 
-            if (Keyboard.current.sKey.isPressed || Keyboard.current.downArrowKey.isPressed) TargetCharacter.direction += Vector3.down; 
-            if (Keyboard.current.aKey.isPressed || Keyboard.current.leftArrowKey.isPressed) TargetCharacter.direction += Vector3.left; 
-            if (Keyboard.current.dKey.isPressed || Keyboard.current.rightArrowKey.isPressed) TargetCharacter.direction += Vector3.right; 
+            if (Keyboard.current.wKey.isPressed || Keyboard.current.upArrowKey.isPressed) TargetCharacter.directionNormalize += Vector3.up; 
+            if (Keyboard.current.sKey.isPressed || Keyboard.current.downArrowKey.isPressed) TargetCharacter.directionNormalize += Vector3.down; 
+            if (Keyboard.current.aKey.isPressed || Keyboard.current.leftArrowKey.isPressed) TargetCharacter.directionNormalize += Vector3.left; 
+            if (Keyboard.current.dKey.isPressed || Keyboard.current.rightArrowKey.isPressed) TargetCharacter.directionNormalize += Vector3.right; 
 #endif
 
-            TargetCharacter.direction.Normalize();
+            TargetCharacter.directionNormalize.Normalize();
         }
         /// <summary>
         /// 키보드 공격 처리
@@ -53,7 +53,7 @@ namespace GGemCo2DCore
 #endif
             {
                 TargetCharacter.SetStatusAttack(); // 공격 중 상태 설정
-                TargetCharacter.direction = Vector3.zero; // 움직임 멈춤
+                TargetCharacter.directionNormalize = Vector3.zero; // 움직임 멈춤
                 ICharacterAnimationController?.PlayAttackAnimation();
             }
         }
@@ -72,7 +72,7 @@ namespace GGemCo2DCore
             HandleAttack();
             
             // 이동 상태 처리
-            if (TargetCharacter.direction != Vector3.zero)
+            if (TargetCharacter.directionNormalize != Vector3.zero)
             {
                 Run();
             }

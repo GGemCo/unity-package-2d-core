@@ -18,7 +18,7 @@ namespace GGemCo2DCore
         private void HandleInput()
         {
             if (!TargetCharacter.IsAggro() || TargetCharacter.attackerTransform == null || TargetCharacter.IsStatusDead()) return;
-            TargetCharacter.direction = (TargetCharacter.attackerTransform.position - TargetCharacter.transform.position).normalized;
+            TargetCharacter.directionNormalize = (TargetCharacter.attackerTransform.position - TargetCharacter.transform.position).normalized;
         }
         private void Update()
         {
@@ -94,16 +94,6 @@ namespace GGemCo2DCore
             }
         }
         /// <summary>
-        /// 방향에 따른 X 축 스케일 반환
-        /// </summary>
-        private int GetScaleByDirection(Vector2 direction)
-        {
-            if (TargetCharacter.defaultFacing == CharacterConstants.CharacterFacing.Left)
-                return direction.x >= 0 ? -1 : 1;
-            else
-                return direction.x >= 0 ? 1 : -1;
-        }
-        /// <summary>
         /// 공격 실행
         /// </summary>
         protected override void Attack()
@@ -119,8 +109,8 @@ namespace GGemCo2DCore
 
             // 공격자 방향 찾기
             HandleInput();
-            // 공격자 방향으로 flip 처리 하기
-            UpdateDirection(GetScaleByDirection(TargetCharacter.direction));
+            CharacterConstants.FacingDirection8 facing = ToFacingDirection8(TargetCharacter.directionNormalize);
+            TargetCharacter.SetFacing(facing);
             
             TargetCharacter.SetStatusAttack();
             ICharacterAnimationController?.PlayAttackAnimation();

@@ -38,9 +38,7 @@ namespace GGemCo2DCore
         public void PlayWaitAnimation()
         {
             if (!characterBase || characterBase.IsStatusDead()) return;
-            string idleAnim = characterBase.directionPrev.y != 0 
-                ? (characterBase.directionPrev.y > 0 ? ICharacterAnimationController.WaitBackwardAnim : ICharacterAnimationController.WaitForwardAnim) 
-                : ICharacterAnimationController.WaitForwardAnim;
+            string idleAnim = ICharacterAnimationController.WaitForwardAnim;
             AnimatorStateInfo state = Animator.GetCurrentAnimatorStateInfo(0);
             if (state.IsName(idleAnim)) return;
             PlayAnimation(idleAnim,true, characterBase.GetCurrentMoveSpeed());
@@ -51,8 +49,8 @@ namespace GGemCo2DCore
         public void PlayRunAnimation()
         {
             if (characterBase.IsStatusDead()) return;
-            string moveAnim = characterBase.direction.y != 0 
-                ? (characterBase.direction.y > 0 ? ICharacterAnimationController.WalkBackwardAnim : ICharacterAnimationController.WalkForwardAnim) 
+            string moveAnim = characterBase.directionNormalize.y != 0 
+                ? (characterBase.directionNormalize.y > 0 ? ICharacterAnimationController.WalkBackwardAnim : ICharacterAnimationController.WalkForwardAnim) 
                 : ICharacterAnimationController.WalkForwardAnim;
             
             AnimatorStateInfo state = Animator.GetCurrentAnimatorStateInfo(0);

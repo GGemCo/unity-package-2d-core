@@ -46,20 +46,6 @@ namespace GGemCo2DCore
             maxBounds = new Vector2(mapSize.x - (characterSize.x/2), mapSize.y - characterSize.y);   // 우측 상단 경계
         }
 
-        protected void UpdateDirection(float targetDirection = 0)
-        {
-            float scaleX = TargetCharacter.directionPrev.x >= 0 ? -1 : 1;
-            if (TargetCharacter.defaultFacing == CharacterConstants.CharacterFacing.Right) {
-                scaleX = TargetCharacter.directionPrev.x >= 0 ? 1 : -1;
-            }
-            
-            if (targetDirection != 0)
-            {
-                scaleX = targetDirection;
-            }
-            TargetCharacter.transform.localScale = new Vector3(TargetCharacter.originalScaleX * scaleX,
-                TargetCharacter.transform.localScale.y, TargetCharacter.transform.localScale.z);
-        }
         protected virtual bool Wait()
         {
             if (TargetCharacter.IsStatusAttack()) return false;
@@ -67,6 +53,17 @@ namespace GGemCo2DCore
             ICharacterAnimationController?.PlayWaitAnimation();
             return true;
         }
+        public CharacterConstants.FacingDirection8 ToFacingDirection8(Vector2 dir)
+        {
+            if (dir == Vector2.zero) return CharacterConstants.FacingDirection8.None;
+
+            if (dir is { x: > 0f }) return CharacterConstants.FacingDirection8.Right;
+            if (dir is { x: < 0f }) return CharacterConstants.FacingDirection8.Left;
+            if (dir is { x: 0f, y: > 0}) return CharacterConstants.FacingDirection8.None;
+            if (dir is { x: 0f, y: < 0}) return CharacterConstants.FacingDirection8.None;
+            return CharacterConstants.FacingDirection8.DownRight;
+        }
+
         /// <summary>
         /// run 애니메이션 하기
         /// </summary>
@@ -76,14 +73,14 @@ namespace GGemCo2DCore
             if (TargetCharacter.IsStatusAttack()) return false;
             if (TargetCharacter.IsStatusDead()) return false;
             
-            UpdateDirection();
-            TargetCharacter.directionPrev = TargetCharacter.direction;
+            CharacterConstants.FacingDirection8 facing = ToFacingDirection8(TargetCharacter.directionNormalize);
+            TargetCharacter.SetFacing(facing);
             
             ICharacterAnimationController?.PlayRunAnimation();
             
             UpdateCheckMaxBounds();
             // 이동 처리
-            Vector3 nextPosition = TargetCharacter.transform.position + TargetCharacter.direction * (TargetCharacter.currentMoveStep * TargetCharacter.GetCurrentMoveSpeed() * Time.deltaTime);
+            Vector3 nextPosition = TargetCharacter.transform.position + TargetCharacter.directionNormalize * (TargetCharacter.currentMoveStep * TargetCharacter.GetCurrentMoveSpeed() * Time.deltaTime);
 
             // 경계 체크 (타일맵 범위를 벗어나지 않도록 제한)
             nextPosition.x = Mathf.Clamp(nextPosition.x, minBounds.x, maxBounds.x);
@@ -99,7 +96,9 @@ namespace GGemCo2DCore
         {
             if (TargetCharacter.IsStatusAttack() || TargetCharacter.IsStatusDead()) return;
 
-            UpdateDirection();
+            CharacterConstants.FacingDirection8 facing = ToFacingDirection8(TargetCharacter.directionNormalize);
+            TargetCharacter.SetFacing(facing);
+            
             TargetCharacter.SetStatusAttack();
             ICharacterAnimationController?.PlayAttackAnimation();
         }

@@ -27,19 +27,23 @@ namespace GGemCo2DCore
         public string characterName;
         
         [Header("캐릭터 방향 관련")]
-        // 좌우 flip 여부
+        // 원본 방향
+        public CharacterConstants.FacingDirection8 defaultFacingDirection8 = CharacterConstants.FacingDirection8.Left;
+        // 현재 방향
+        private CharacterConstants.FacingDirection8 currentFacing = CharacterConstants.FacingDirection8.Right;
+        public CharacterConstants.FacingDirection8 CurrentFacing => currentFacing;
+        // 좌우 flip 여부. 맵에 배치할 때, 연출 캐릭터 배치할 때 사용
+        // 방향은 CurrentFacing 으로 판단한다. 
         public bool isFlip;
-        // 기본 방향
-        public CharacterConstants.CharacterFacing defaultFacing = CharacterConstants.CharacterFacing.Left;
         // 방향
-        public Vector3 direction;
-        // 좌우 방향 체크에 사용
-        public Vector3 directionPrev;
+        public Vector3 directionNormalize;
         // 좌우 flip 가능 여부
         private bool isPossibleFlip = true;
         // 초기 scale x 값
         public float originalScaleX;
         
+
+
         [Header("애니메이션 및 렌더링 관련")]
         // 애니메이션 컨트롤러
         public ICharacterAnimationController CharacterAnimationController;
@@ -92,7 +96,7 @@ namespace GGemCo2DCore
                 SkillController = new SkillController();
                 SkillController.Initialize(this);
             }
-            defaultFacing = AddressableLoaderSettings.Instance.playerSettings.characterFacing;
+            defaultFacingDirection8 = AddressableLoaderSettings.Instance.playerSettings.facingDirection8;
         }
         /// <summary>
         /// tag, sorting layer, layer 셋팅하기
@@ -175,15 +179,15 @@ namespace GGemCo2DCore
                 colliderCheckHitArea.size = struckTableAnimation.HitAreaSize;
             }
             height = struckTableAnimation.Height;
-            defaultFacing = struckTableAnimation.DefaultFacing;
+            defaultFacingDirection8 = struckTableAnimation.DefaultFacingDirection8;
         }
         /// <summary>
         /// 캐릭터가 flip 되었는지 체크
         /// </summary>
         /// <returns></returns>
-        public bool IsFlipped() {
-            return Mathf.Approximately(transform.localScale.x, originalScaleX * -1f);
-        }
+        // public bool IsFlipped() {
+        //     return Mathf.Approximately(transform.localScale.x, originalScaleX * -1f);
+        // }
         public void SetIsPossibleFlip(bool set) => isPossibleFlip = set;
 
         private bool IsPossibleFlip() => isPossibleFlip;
@@ -194,12 +198,41 @@ namespace GGemCo2DCore
         public void SetFlip(bool value)
         {
             if (IsPossibleFlip() != true) return;
+            switch (defaultFacingDirection8)
+            {
+                case CharacterConstants.FacingDirection8.Left:
+                    SetFacing(value ? CharacterConstants.FacingDirection8.Right : CharacterConstants.FacingDirection8.Left);
+                    break;
+                case CharacterConstants.FacingDirection8.Right:
+                    SetFacing(value ? CharacterConstants.FacingDirection8.Left : CharacterConstants.FacingDirection8.Right);
+                    break;
+                case CharacterConstants.FacingDirection8.None:
+                case CharacterConstants.FacingDirection8.UpRight:
+                case CharacterConstants.FacingDirection8.Up:
+                case CharacterConstants.FacingDirection8.UpLeft:
+                case CharacterConstants.FacingDirection8.DownLeft:
+                case CharacterConstants.FacingDirection8.Down:
+                case CharacterConstants.FacingDirection8.DownRight:
+                    break;
+                default:
+                    throw new ArgumentOutOfRangeException();
+            }
+        }
+        public void SetFacing(CharacterConstants.FacingDirection8 dir)
+        {
+            if (IsPossibleFlip() != true || dir == CharacterConstants.FacingDirection8.None) return;
+            currentFacing = dir;
 
-            transform.localScale =
-                value
-                    ? new Vector3(originalScaleX * -1f, transform.localScale.y, transform.localScale.z)
-                    : new Vector3(originalScaleX, transform.localScale.y, transform.localScale.z);
-            isFlip = value;
+            float sign = 1;
+            if ((defaultFacingDirection8 == CharacterConstants.FacingDirection8.Right &&
+                dir == CharacterConstants.FacingDirection8.Left) || 
+                (defaultFacingDirection8 == CharacterConstants.FacingDirection8.Left && 
+                dir == CharacterConstants.FacingDirection8.Right))
+            {
+                sign = -1;
+            }
+
+            transform.localScale = new Vector3(originalScaleX * sign, transform.localScale.y, transform.localScale.z);
         }
         /// <summary>
         /// 타겟 오브젝트가 있을경우 방향 셋팅하기
@@ -208,6 +241,32 @@ namespace GGemCo2DCore
         protected void SetFlipToTarget(Transform targetTransform)
         {
             SetFlip(transform.position.x <= targetTransform.position.x);
+        }
+        /// <summary>
+        /// 실제 보는 방향: 디폴트 방향이 오른쪽이면 localScale.x가 양수면 오른쪽, 음수면 왼쪽
+        /// </summary>
+        /// <returns></returns>
+        public float GetFacingDirection()
+        {
+            float sign = Mathf.Sign(transform.localScale.x);
+            return defaultFacingDirection8 == CharacterConstants.FacingDirection8.Right ? sign : -sign;
+        }
+        /// <summary>
+        /// 플레이어와 몬스터가 마주보고 있는지 체크 
+        /// </summary>
+        /// <param name="monster"></param>
+        /// <returns></returns>
+        protected bool AreFacingEachOther(Transform monster)
+        {
+            CharacterBase player = GetComponent<CharacterBase>();
+            CharacterBase monsterChar = monster.GetComponent<CharacterBase>();
+
+            float playerDir = player.GetFacingDirection();
+            float monsterDir = monsterChar.GetFacingDirection();
+
+            float directionToMonster = Mathf.Sign(monster.position.x - transform.position.x);
+
+            return Mathf.Approximately(playerDir, directionToMonster) && Mathf.Approximately(monsterDir, -directionToMonster);
         }
         /// <summary>
         /// 캐릭터 순서. sorting order 처리 
@@ -328,23 +387,6 @@ namespace GGemCo2DCore
         /// </summary>
         public virtual void OnEventAttack()
         {
-        }
-        /// <summary>
-        /// 플레이어와 몬스터가 마주보고 있는지 체크 
-        /// </summary>
-        /// <param name="monster"></param>
-        /// <returns></returns>
-        protected bool AreFacingEachOther(Transform monster)
-        {
-            CharacterBase player = GetComponent<CharacterBase>();
-            CharacterBase monsterChar = monster.GetComponent<CharacterBase>();
-
-            float playerDir = player.GetFacingDirection();
-            float monsterDir = monsterChar.GetFacingDirection();
-
-            float directionToMonster = Mathf.Sign(monster.position.x - transform.position.x);
-
-            return Mathf.Approximately(playerDir, directionToMonster) && Mathf.Approximately(monsterDir, -directionToMonster);
         }
         /// <summary>
         /// 캐릭터가 죽었을때 처리 
@@ -553,15 +595,6 @@ namespace GGemCo2DCore
         private void OnDisable()
         {
             AffectController?.RemoveAllAffects();
-        }
-        /// <summary>
-        /// 실제 보는 방향: 디폴트 방향이 오른쪽이면 localScale.x가 양수면 오른쪽, 음수면 왼쪽
-        /// </summary>
-        /// <returns></returns>
-        public float GetFacingDirection()
-        {
-            float sign = Mathf.Sign(transform.localScale.x);
-            return defaultFacing == CharacterConstants.CharacterFacing.Right ? sign : -sign;
         }
 
         public void Stop()

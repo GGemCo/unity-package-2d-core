@@ -236,24 +236,22 @@ namespace GGemCo2DCore
                     ++countDamageMonster;
                 }
                 // 몬스터와 같은 곳을 바라보고 있으면,
-                else if (IsFlipped() == monster.IsFlipped())
+                else if (CurrentFacing == monster.CurrentFacing)
                 {
-                    switch (defaultFacing)
+                    switch (CurrentFacing)
                     {
-                        case CharacterConstants.CharacterFacing.Right:
+                        case CharacterConstants.FacingDirection8.Right:
                         {
-                            if ((!IsFlipped() && monster.transform.position.x >= transform.position.x) ||
-                                (IsFlipped() && monster.transform.position.x <= transform.position.x))
+                            if (monster.transform.position.x >= transform.position.x)
                             {
                                 monster.TakeDamage(totalDamage, gameObject);
                                 ++countDamageMonster;
                             }
                             break;
                         }
-                        case CharacterConstants.CharacterFacing.Left:
+                        case CharacterConstants.FacingDirection8.Left:
                         {
-                            if ((!IsFlipped() && monster.transform.position.x <= transform.position.x) ||
-                                (IsFlipped() && monster.transform.position.x >= transform.position.x))
+                            if (monster.transform.position.x <= transform.position.x)
                             {
                                 monster.TakeDamage(totalDamage, gameObject);
                                 ++countDamageMonster;

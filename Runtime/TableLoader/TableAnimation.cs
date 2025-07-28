@@ -18,7 +18,7 @@ namespace GGemCo2DCore
         public float Height;
         public int AttackRange;
         public Vector2 HitAreaSize;
-        public CharacterConstants.CharacterFacing DefaultFacing;
+        public CharacterConstants.FacingDirection8 DefaultFacingDirection8;
     }
     /// <summary>
     /// 애니메이션 테이블
@@ -59,7 +59,7 @@ namespace GGemCo2DCore
                 Width = float.Parse(data["Width"]),
                 Height = float.Parse(data["Height"]),
                 HitAreaSize = ConvertVector2(data["HitAreaSize"]),
-                DefaultFacing = ConvertFacing(data["DefaultFacing"]),
+                DefaultFacingDirection8 = ConvertFacing(data["DefaultFacing"]),
             };
         }
     }

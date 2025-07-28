@@ -110,8 +110,7 @@ namespace GGemCo2DCore
             // 맵 배치툴로 저장한 정보가 있을 경우 
             if (CharacterRegenData == null) return;
             // UpdateDirection() 에서 초기 방향 처리를 위해 추가
-            direction = new Vector3(CharacterRegenData.IsFlip?1:-1, 0, 0);
-            directionPrev = new Vector3(CharacterRegenData.IsFlip?1:-1, 0, 0);
+            directionNormalize = new Vector3(CharacterRegenData.IsFlip?1:-1, 0, 0);
             SetFlip(CharacterRegenData.IsFlip);
         }
         
