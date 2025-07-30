@@ -1,0 +1,121 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5b11a58205ec3474ca216360e9fa74a8, type: 3}
+  m_Name: GGemCo_Scene Shared Data
+  m_EditorClassIdentifier: 
+  m_TableCollectionName: GGemCo_Scene
+  m_TableCollectionNameGuidString: 998882778959da44daa0c1bcb6cf14b5
+  m_Entries:
+  - m_Id: 3288944152576
+    m_Key: Intro_Button_NewGame
+    m_Metadata:
+      m_Items:
+      - rid: 9086697339683078227
+  - m_Id: 3288944152577
+    m_Key: Intro_Button_Continue
+    m_Metadata:
+      m_Items:
+      - rid: 9086697339683078228
+  - m_Id: 3288944152578
+    m_Key: Intro_Button_Load
+    m_Metadata:
+      m_Items:
+      - rid: 9086697339683078229
+  - m_Id: 3288944152579
+    m_Key: Loading_Text_Tables
+    m_Metadata:
+      m_Items:
+      - rid: 9086697339683078230
+  - m_Id: 3288944152580
+    m_Key: Loading_Text_Resources
+    m_Metadata:
+      m_Items:
+      - rid: 9086697339683078231
+  - m_Id: 3288944152581
+    m_Key: Loading_Text_Effect
+    m_Metadata:
+      m_Items:
+      - rid: 9086697339683078232
+  - m_Id: 3288944152582
+    m_Key: Loading_Text_Item
+    m_Metadata:
+      m_Items:
+      - rid: 9086697339683078233
+  - m_Id: 3288944152583
+    m_Key: Loading_Text_Skill
+    m_Metadata:
+      m_Items:
+      - rid: 9086697339683078234
+  - m_Id: 3288944152584
+    m_Key: Loading_Text_SaveData
+    m_Metadata:
+      m_Items:
+      - rid: 9086697339683078235
+  - m_Id: 3288944152585
+    m_Key: Loading_Text_LoadingPercent
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1884606145564672
+    m_Key: Intro_Button_Option
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5215056859566080
+    m_Key: Loading_Text_Affect
+    m_Metadata:
+      m_Items: []
+  m_Metadata:
+    m_Items: []
+  m_KeyGenerator:
+    rid: 9086697334164160512
+  references:
+    version: 2
+    RefIds:
+    - rid: 9086697334164160512
+      type: {class: DistributedUIDGenerator, ns: UnityEngine.Localization.Tables, asm: Unity.Localization}
+      data:
+        m_CustomEpoch: 1751585686395
+    - rid: 9086697339683078227
+      type: {class: Comment, ns: UnityEngine.Localization.Metadata, asm: Unity.Localization}
+      data:
+        m_CommentText: New Game
+    - rid: 9086697339683078228
+      type: {class: Comment, ns: UnityEngine.Localization.Metadata, asm: Unity.Localization}
+      data:
+        m_CommentText: Continue Game
+    - rid: 9086697339683078229
+      type: {class: Comment, ns: UnityEngine.Localization.Metadata, asm: Unity.Localization}
+      data:
+        m_CommentText: Load Game
+    - rid: 9086697339683078230
+      type: {class: Comment, ns: UnityEngine.Localization.Metadata, asm: Unity.Localization}
+      data:
+        m_CommentText: Tables
+    - rid: 9086697339683078231
+      type: {class: Comment, ns: UnityEngine.Localization.Metadata, asm: Unity.Localization}
+      data:
+        m_CommentText: Resources
+    - rid: 9086697339683078232
+      type: {class: Comment, ns: UnityEngine.Localization.Metadata, asm: Unity.Localization}
+      data:
+        m_CommentText: Effect Resources
+    - rid: 9086697339683078233
+      type: {class: Comment, ns: UnityEngine.Localization.Metadata, asm: Unity.Localization}
+      data:
+        m_CommentText: Item Data
+    - rid: 9086697339683078234
+      type: {class: Comment, ns: UnityEngine.Localization.Metadata, asm: Unity.Localization}
+      data:
+        m_CommentText: Skill Data
+    - rid: 9086697339683078235
+      type: {class: Comment, ns: UnityEngine.Localization.Metadata, asm: Unity.Localization}
+      data:
+        m_CommentText: Save Data
