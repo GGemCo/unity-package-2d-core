@@ -92,7 +92,7 @@ namespace GGemCo2DCore
             }
             
             // 최대 레벨
-            if (_saveDataIcon != null && _struckTableSkill != null && _saveDataIcon.Level >= _struckTableSkill.Maxlevel)
+            if (_saveDataIcon != null && _struckTableSkill != null && _saveDataIcon.Level >= _struckTableSkill.MaxLevel)
             {
                 buttonLearn.gameObject.SetActive(false);
                 textNeedLevel.gameObject.SetActive(false);
@@ -145,7 +145,7 @@ namespace GGemCo2DCore
             if (!result) return;
             // 다음 레벨 있는지 체크, 아니면 최대 레벨
             int nextLevel = _struckTableSkill.Level + 1;
-            if (nextLevel > _struckTableSkill.Maxlevel)
+            if (nextLevel > _struckTableSkill.MaxLevel)
             {
                 SceneGame.Instance.systemMessageManager.ShowMessageWarning("Skill_MaxLevel");
                 return;

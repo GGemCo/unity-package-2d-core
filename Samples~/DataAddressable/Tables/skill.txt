@@ -1,4 +1,4 @@
-﻿Uid	Name	IconFileName	Level	Maxlevel	NeedPlayerLevel	NeedCurrencyType	NeedCurrencyValue	Target	TargetType	DamageType	DamageValue	DamageRange	Distance	EffectUid	EffectScale	ProjectileUid	NeedMp	TickTime	Duration	CoolTime	AffectUid	AffectRate
+﻿Uid	Name	IconFileName	Level	MaxLevel	NeedPlayerLevel	NeedCurrencyType	NeedCurrencyValue	Target	TargetType	DamageType	DamageValue	DamageRange	Distance	EffectUid	EffectScale	ProjectileUid	NeedMp	TickTime	Duration	CoolTime	AffectUid	AffectRate
 # 파이어볼																						
 1	Fireball	Fireball	1	3	1	Gold	100	Monster	Fixed	Fire	80	0	1000	0	0	10002	10	0	0	1	0	0
 1	Fireball	Fireball	2	3	2	Silver	100	Monster	Fixed	Fire	100	0	1000	0	0	10002	20	0	0	1	0	0

@@ -11,7 +11,7 @@ namespace GGemCo2DCore
         public string Name;
         public string IconFileName;
         public int Level;
-        public int Maxlevel;
+        public int MaxLevel;
         public int NeedPlayerLevel;
         public CurrencyConstants.Type NeedCurrencyType;
         public int NeedCurrencyValue;
@@ -102,7 +102,7 @@ namespace GGemCo2DCore
                 Name = data["Name"],
                 IconFileName = data["IconFileName"],
                 Level = int.Parse(data["Level"]),
-                Maxlevel = int.Parse(data["Maxlevel"]),
+                MaxLevel = int.Parse(data["MaxLevel"]),
                 NeedPlayerLevel = int.Parse(data["NeedPlayerLevel"]),
                 NeedCurrencyType = ConvertCurrencyType(data["NeedCurrencyType"]),
                 NeedCurrencyValue = int.Parse(data["NeedCurrencyValue"]),
