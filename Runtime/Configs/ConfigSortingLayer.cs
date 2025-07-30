@@ -20,5 +20,19 @@
             // UI 
             UI,
         }
+
+        public static Keys ConvertKeys(string value)
+        {
+            return value switch
+            {
+                "MapTerrain" => Keys.MapTerrain,
+                "MapObject" => Keys.MapObject,
+                "CharacterBottom" => Keys.CharacterBottom,
+                "Character" => Keys.Character,
+                "CharacterTop" => Keys.CharacterTop,
+                "UI" => Keys.UI,
+                _ => Keys.Character
+            };
+        }
     }
 }

@@ -59,5 +59,11 @@ namespace GGemCo2DCore
             };
         public static DirectionType GetDirectionType(string type) =>
             MapDirectionType.GetValueOrDefault(type, DirectionType.Left);
+
+        public enum PositionYType
+        {
+            None,
+            CharacterHeight
+        }
     }
 }

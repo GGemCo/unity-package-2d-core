@@ -1,10 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Runtime.InteropServices.WindowsRuntime;
-using System.Threading.Tasks;
 using UnityEngine;
-using UnityEngine.AddressableAssets;
-using UnityEngine.ResourceManagement.AsyncOperations;
 
 namespace GGemCo2DCore
 {
@@ -20,6 +16,7 @@ namespace GGemCo2DCore
         private static readonly Dictionary<string, CurrencyConstants.Type> MapCurrencyType;
         private static readonly Dictionary<string, CharacterConstants.FacingDirection8> MapCharacterFacing;
         private static readonly Dictionary<string, ConfigCommon.AnimationController> MapAnimationController;
+        private static readonly Dictionary<string, ConfigCommon.PositionYType> MapPositionYType;
 
         public virtual bool TryGetDataByUid(int uid, out object info)
         {
@@ -50,8 +47,11 @@ namespace GGemCo2DCore
                 { "Sprite", ConfigCommon.AnimationController.Sprite },
                 { "Spine", ConfigCommon.AnimationController.Spine },
             };
+            MapPositionYType = new Dictionary<string, ConfigCommon.PositionYType>
+            {
+                { "CharacterHeight", ConfigCommon.PositionYType.CharacterHeight },
+            };
         }
-
         protected static ConfigCommon.SuffixType ConvertSuffixType(string value) =>
             MapSuffix.GetValueOrDefault(value, ConfigCommon.SuffixType.None);
 
@@ -62,6 +62,8 @@ namespace GGemCo2DCore
             MapCharacterFacing.GetValueOrDefault(value, CharacterConstants.FacingDirection8.Left);
         protected static ConfigCommon.AnimationController ConvertAnimationController(string value) =>
             MapAnimationController.GetValueOrDefault(value, ConfigCommon.AnimationController.Sprite);
+        protected static ConfigCommon.PositionYType ConvertPositionYType(string value) =>
+            MapPositionYType.GetValueOrDefault(value, ConfigCommon.PositionYType.None);
         public virtual void LoadData(string content)
         {
             PreLoad();
@@ -151,45 +153,6 @@ namespace GGemCo2DCore
             }
             return position;
         }
-        // protected GameObject LoadPrefab(string prefabPath) {
-        //     if (prefabPath == "") {
-        //         GcLogger.LogError("prefab 경로가 없습니다. prefabPath: "+prefabPath+"");
-        //         return null;
-        //     }
-        //
-        //     var loadPrefab = LoadPrefabAsync(prefabPath);
-        //     GameObject prefab = loadPrefab.Result;
-        //     
-        //     if (prefab == null) {
-        //         GcLogger.LogError("prefab 오브젝트가 없습니다. prefabPath: "+prefabPath);
-        //         return null;
-        //     }
-        //     return prefab;
-        // }
-        //
-        // private async Task<GameObject> LoadPrefabAsync(string addressKey)
-        // {
-        //     try
-        //     {
-        //         var handle = Addressables.LoadAssetAsync<GameObject>(addressKey);
-        //         await handle.Task;
-        //
-        //         if (handle.Status != AsyncOperationStatus.Succeeded || !handle.Result)
-        //         {
-        //             Debug.LogError("맵 프리팹 로드 실패. addressKey: " + addressKey);
-        //             return null;
-        //         }
-        //
-        //         GameObject prefab = handle.Result;
-        //         return prefab;
-        //     }
-        //     catch (Exception ex)
-        //     {
-        //         Debug.LogError($"설정 로딩 중 오류 발생: {ex.Message}");
-        //         return null;
-        //     }
-        // }
-
         protected bool ConvertBoolean(string value)
         {
             return value == "Y";

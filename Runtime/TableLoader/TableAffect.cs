@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using UnityEngine;
 
 namespace GGemCo2DCore
 {
@@ -19,6 +20,9 @@ namespace GGemCo2DCore
         public float Duration;
         public int EffectUid;
         public float EffectScale;
+        public ConfigSortingLayer.Keys EffectSortingLayer;
+        public ConfigCommon.PositionYType EffectPositionYType;
+        public int EffectPositionY;
     }
     /// <summary>
     /// 어펙트 테이블
@@ -68,7 +72,23 @@ namespace GGemCo2DCore
                 Duration = float.Parse(data["Duration"]),
                 EffectUid = int.Parse(data["EffectUid"]),
                 EffectScale = float.Parse(data["EffectScale"]),
+                EffectSortingLayer = ConfigSortingLayer.ConvertKeys(data["EffectSortingLayer"]),
+                EffectPositionYType = ConvertPositionYType(data["EffectPositionYType"]),
+                EffectPositionY = int.Parse(data["EffectPositionY"]),
             };
+        }
+
+        private Vector2 ConvertEffectPosition(string value)
+        {
+            var positions = value.Split(',');
+            foreach (var position in positions)
+            {
+                if (position.Contains("CharacterHeight"))
+                {
+                    
+                }
+            }
+            return new Vector2(float.Parse(positions[0]), float.Parse(positions[1]));
         }
     }
 }

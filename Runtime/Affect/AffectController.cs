@@ -74,8 +74,13 @@ namespace GGemCo2DCore
                 }
                 // 캐릭터 하위에 붙이기
                 defaultEffect.transform.SetParent(_character.transform);
+                float y = info.EffectPositionY;
                 // 캐릭터 height 만큼 위치 조정
-                defaultEffect.transform.localPosition = new Vector3(0, _character.GetHeightByScale(), 0);
+                if (info.EffectPositionYType == ConfigCommon.PositionYType.CharacterHeight)
+                {
+                    y += _character.GetHeightByScale();
+                }
+                defaultEffect.transform.localPosition = new Vector3(0, y, 0);
 
                 _defaultEffects.TryAdd(info.Uid, defaultEffect);
             }
