@@ -80,6 +80,7 @@ namespace GGemCo2DCore
                 {
                     y += _character.GetHeightByScale();
                 }
+                defaultEffect.SetSortingLayer(info.EffectSortingLayer);
                 defaultEffect.transform.localPosition = new Vector3(0, y, 0);
 
                 _defaultEffects.TryAdd(info.Uid, defaultEffect);

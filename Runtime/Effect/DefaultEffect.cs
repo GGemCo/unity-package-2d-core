@@ -162,5 +162,10 @@ namespace GGemCo2DCore
         {
             _color = color;
         }
+
+        public void SetSortingLayer(ConfigSortingLayer.Keys sortingLayer)
+        {
+            _characterRenderer.sortingLayerName = ConfigSortingLayer.GetValue(sortingLayer);
+        }
     }
 }
