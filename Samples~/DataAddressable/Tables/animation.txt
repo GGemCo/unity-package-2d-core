@@ -5,4 +5,3 @@ Uid	Type	Name	Controller	PrefabName	DefaultFacing	Width	Height	MoveStep	AttackRa
 # 몬스터										
 2001	Monster	좀비	Spine	Zombie1	Left	312	318	128	340	109,216
 2002	Monster	스켈레톤	Spine	Skeleton1	Left	293	343	128	1400	109,256
-2010	Monster	FighterGoblin	Sprite	FighterGoblin	Right	50	50	160	60	20,40

@@ -1,22 +1,24 @@
-﻿Uid	Name	DefaultActive	Ordering	IsInteraction	OpenWindowUid	CloseWindowUid	PrefabName
-1	Hud	Y	1	N	0	0	UIWindowHud
-2	인벤토리	N	50	Y	4,5	3,4,5,6,12,13,14,15	UIWindowInventory
-3	아이템 정보창	N	60	N	0	0	UIWindowItemInfo
-4	장비창	N	51	N	0	0	UIWindowEquip
-5	플레이어 정보창	N	52	N	0	0	UIWindowPlayerStatInfo
-6	아이템 나누기	N	13	N	0	0	UIWindowItemSplit
-7	플레이어 버프정보창	Y	4	N	0	0	UIWindowPlayerBuffInfo
-8	퀵슬롯	Y	3	N	0	0	UIWindowQuickSlot
-9	스킬	N	5	N	0	10	UIWindowSkill
-10	스킬 정보창	N	12	N	0	0	UIWindowSkillInfo
-11	인터렉션 대화창	N	10	N	0	0	UIWindowInteractionDialogue
-12	상점	N	6	Y	2,4,5	2,3,4,5	UIWindowShop
-13	아이템 구매	N	13	Y	0	0	UIWindowItemBuy
-14	창고	N	8	Y	2,4,5	2,3,4,5	UIWindowStash
-15	상점 판매	N	7	Y	2,4,5	2,3,4,5	UIWindowShopSale
-16	아이템 강화	N	9	Y	2,4,5	2,3,4,5	UIWindowItemUpgrade
-17	아티메 분해	N	11	Y	2,4,5	2,3,4,5	UIWindowItemSalvage
-18	아이템 제작	N	14	Y	2,4,5	2,3,4,5	UIWindowItemCraft
-19	퀘스트 대사	N	20	N	0	0	UIWindowDialogue
-20	Hud 퀘스트 목록	Y	2	N	0	0	UIWindowHudQuest
-21	퀘스트 보상 목록	N	15	N	0	0	UIWindowQuestReward
+﻿Uid	Name	UseInGame	DefaultActive	Ordering	IsInteraction	OpenWindowUid	CloseWindowUid	PrefabName
+1	Hud	Y	Y	1	N	0	0	UIWindowHud
+2	인벤토리	Y	N	50	Y	4,5	3,4,5,6,12,13,14,15	UIWindowInventory
+3	아이템 정보창	Y	N	60	N	0	0	UIWindowItemInfo
+4	장비창	Y	N	51	N	0	0	UIWindowEquip
+5	플레이어 정보창	Y	N	52	N	0	0	UIWindowPlayerStatInfo
+6	아이템 나누기	Y	N	13	N	0	0	UIWindowItemSplit
+7	플레이어 버프정보창	Y	Y	4	N	0	0	UIWindowPlayerBuffInfo
+8	퀵슬롯	Y	Y	3	N	0	0	UIWindowQuickSlot
+9	스킬	Y	N	5	N	0	10	UIWindowSkill
+10	스킬 정보창	Y	N	12	N	0	0	UIWindowSkillInfo
+11	인터렉션 대화창	Y	N	10	N	0	0	UIWindowInteractionDialogue
+12	상점	Y	N	6	Y	2,4,5	2,3,4,5	UIWindowShop
+13	아이템 구매	Y	N	16	Y	0	0	UIWindowItemBuy
+14	창고	Y	N	8	Y	2,4,5	2,3,4,5	UIWindowStash
+15	상점 판매	Y	N	7	Y	2,4,5	2,3,4,5	UIWindowShopSale
+16	아이템 강화	Y	N	9	Y	2,4,5	2,3,4,5	UIWindowItemUpgrade
+17	아티메 분해	Y	N	11	Y	2,4,5	2,3,4,5	UIWindowItemSalvage
+18	아이템 제작	Y	N	14	Y	2,4,5	2,3,4,5	UIWindowItemCraft
+19	퀘스트 대사	Y	N	20	N	0	0	UIWindowDialogue
+20	Hud 퀘스트 목록	Y	Y	2	N	0	0	UIWindowHudQuest
+21	퀘스트 보상 목록	Y	N	15	N	0	0	UIWindowQuestReward
+22	세이브 데이터 불러오기	N	N	100	N	0	0	UIWindowLoadSaveData
+23	옵션	Y	N	101	N	0	0	UIWindowOption

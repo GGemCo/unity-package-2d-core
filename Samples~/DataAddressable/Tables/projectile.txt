@@ -1,0 +1,3 @@
+﻿Uid	Name	EffectUid	EffectScale	MoveSpeed	ArcHeightMin	ArcHeightMax	StartPosition	ColliderSize	HitEffectUid	TargetType	TargetPositionRangeX	Count	SecDelayByOne
+#플레이어													
+10002	파이어볼spine	200004	0.2	300	0	0	-15,15	15,15	0	Area	50	5	0.1
