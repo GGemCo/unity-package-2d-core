@@ -47,6 +47,13 @@ namespace GGemCo2DCoreEditor
             _objGGemCoCore = GetOrCreateCoreGameObject();
             // GGemCo2DCore.SceneIntro GameObject 만들기
             GGemCo2DCore.SceneIntro scene = CreateOrAddComponent<GGemCo2DCore.SceneIntro>(nameof(SceneIntro));
+
+            CreateUIComponent.CreateObjectCanvas();
+                
+            // 인트로 씬에서 사운드를 사용하기때문에, SoundManager 셋팅
+            SetupSoundManager(scene);
+            // 옵션 UI에서 팝업을 사용하기때문에, PopupManager 셋팅
+            SetupPopupManager(scene);
             
             // 새 게임 버튼 만들고 연결하기
             MetaDataButton metaDataButton = new MetaDataButton(scene.GetFieldNameButtonNewGame(), "New Game",
@@ -94,6 +101,16 @@ namespace GGemCo2DCoreEditor
             }
             UIWindowOption uiWindowOption = gameObject.GetComponent<UIWindowOption>();
             scene.SetUIWindowOption(uiWindowOption);
+            PopupManager popupManager = CreateUIComponent.Find(scene.GetFieldNamePopupManager())?.GetComponent<PopupManager>();
+            if (uiWindowOption && popupManager)
+            {
+                uiWindowOption.SetPopupManager(popupManager);
+            }
+            SoundManager soundManager = CreateUIComponent.Find(scene.GetFieldNameSoundManager())?.GetComponent<SoundManager>();
+            if (uiWindowOption && soundManager)
+            {
+                uiWindowOption.SetSoundManager(soundManager);
+            }
             
             EditorUtility.SetDirty(scene);
         }
@@ -120,8 +137,6 @@ namespace GGemCo2DCoreEditor
             SceneIntro scene = CreateOrAddComponent<SceneIntro>("SceneIntro");
             if (scene == null) return;
             
-            // 불러오기 UI 에서 팝업을 사용하기때문에, PopupManager 셋팅
-            SetupPopupManager(scene);
             // UIWindowLoadSaveData
             SetupUIWindowLoadSaveData(scene);
         }
@@ -134,6 +149,10 @@ namespace GGemCo2DCoreEditor
             GameObject obj = CreateUIComponent.CreateGameObjectByPrefab(scene.GetFieldNamePopupManager(), _objGGemCoCore.transform, ConfigEditor.PathPrefabPopupManager);
             if (!obj) return;
             PopupManager popupManager = obj.GetComponent<PopupManager>();
+            if (popupManager == null)
+            {
+                obj.AddComponent<PopupManager>();
+            }
             
             Transform transform = CreateUIComponent.Find("Canvas").transform;
             
@@ -142,6 +161,21 @@ namespace GGemCo2DCoreEditor
             popupManager.SetPopupTypePrefabs(prefabs);
             
             scene.SetPopupManager(popupManager);
+        }
+        /// <summary>
+        /// 사운드 매니저 셋팅
+        /// </summary>
+        /// <param name="scene"></param>
+        private void SetupSoundManager(SceneIntro scene)
+        {
+            GameObject obj = CreateUIComponent.CreateGameObjectByPrefab(scene.GetFieldNameSoundManager(), _objGGemCoCore.transform);
+            if (!obj) return;
+            SoundManager soundManager = obj.GetComponent<SoundManager>();
+            if (soundManager == null)
+            {
+                soundManager = obj.AddComponent<SoundManager>();
+            }
+            scene.SetSoundManager(soundManager);
         }
         /// <summary>
         /// 불러오기 UI 윈도우 셋팅
@@ -170,7 +204,6 @@ namespace GGemCo2DCoreEditor
             if (!prefab) return;
             
             GameObject gameObject = GameObject.Find(objectName);
-            PopupManager popupManager = CreateUIComponent.Find(scene.GetFieldNamePopupManager())?.GetComponent<PopupManager>();
             if (!gameObject)
             {
                 // 프리팹 인스턴스화
@@ -189,7 +222,7 @@ namespace GGemCo2DCoreEditor
                 );
             }
             UIWindowLoadSaveData uiWindowLoadSaveData = gameObject.GetComponent<UIWindowLoadSaveData>();
-            
+            PopupManager popupManager = CreateUIComponent.Find(scene.GetFieldNamePopupManager())?.GetComponent<PopupManager>();
             if (uiWindowLoadSaveData && popupManager)
             {
                 uiWindowLoadSaveData.SetPopupManager(popupManager);

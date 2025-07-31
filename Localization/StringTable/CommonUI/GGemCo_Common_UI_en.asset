@@ -30,6 +30,14 @@ MonoBehaviour:
     m_Localized: Close
     m_Metadata:
       m_Items: []
+  - m_Id: 7270220974067712
+    m_Localized: Default
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7279477882687488
+    m_Localized: Accept
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []

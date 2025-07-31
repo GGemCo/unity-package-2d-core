@@ -32,6 +32,8 @@ namespace GGemCo2DCore
 
         private StruckTableSkill _struckTableSkill;
         private TableEffect _tableEffect;
+        private EffectManager _effectManager;
+        private ProjectileManager _projectileManager;
 
         public void Initialize(CharacterBase character, int skillUid, int skillLevel)
         {
@@ -50,6 +52,8 @@ namespace GGemCo2DCore
         private void Start()
         {
             if (!TryInitializeTarget()) return;
+            _effectManager = SceneGame.Instance.EffectManager;
+            _projectileManager = SceneGame.Instance.ProjectileManager;
 
             ApplyVisualEffect();
             ApplyProjectile();
@@ -74,7 +78,7 @@ namespace GGemCo2DCore
             
             for (int i = 0; i < info.Count; i++)
             {
-                DefaultProjectile projectile = ProjectileManager.CreateProjectile(info.Uid);
+                DefaultProjectile projectile = _projectileManager.CreateProjectile(info.Uid);
                 projectile?.SetFromCharacter(_attacker);
                 projectile?.SetDamage(_struckTableSkill.DamageValue);
                 float positionX =
@@ -149,7 +153,7 @@ namespace GGemCo2DCore
             }
             else
             {
-                var effect = EffectManager.CreateEffect(_struckTableSkill.EffectUid);
+                var effect = _effectManager.CreateEffect(_struckTableSkill.EffectUid);
                 if (effect == null) return;
                 var effectInfo = _tableEffect.GetDataByUid(_struckTableSkill.EffectUid);
                 if (effectInfo == null) return;
@@ -199,7 +203,7 @@ namespace GGemCo2DCore
 
                     Vector3 spawnPosition = targetPos + new Vector3(posX, posY, 0);
 
-                    var effect = EffectManager.CreateEffect(_struckTableSkill.EffectUid);
+                    var effect = _effectManager.CreateEffect(_struckTableSkill.EffectUid);
                     effect.SetScale(effectScale);
                     effect.SetDuration(_struckTableSkill.Duration);
                     effect.transform.position = spawnPosition;

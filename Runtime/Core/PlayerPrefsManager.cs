@@ -10,8 +10,8 @@ namespace GGemCo2DCore
             None,
             KeyIndexSaveDataSlot,
             KeyIndexLocalizationLocale,
-            KeyIndexSoundVolumeBGM,
-            KeyIndexSoundVolumeSfx,
+            KeySoundVolumeBGM,
+            KeySoundVolumeSfx,
         }
 
         public static readonly Dictionary<KeyIndex, string> Keys = new Dictionary<KeyIndex, string>()
@@ -19,8 +19,8 @@ namespace GGemCo2DCore
             { KeyIndex.None, "" },
             { KeyIndex.KeyIndexSaveDataSlot, "GGEMCO_KEY_SAVE_DATA_SLOT_INDEX" },
             { KeyIndex.KeyIndexLocalizationLocale, "GGEMCO_KEY_INDEX_LOCALIZATION_LOCALE" },
-            { KeyIndex.KeyIndexSoundVolumeBGM, "GGEMCO_KEY_INDEX_SOUND_VOLUME_BGM" },
-            { KeyIndex.KeyIndexSoundVolumeSfx, "GGEMCO_KEY_INDEX_SOUND_VOLUME_SFX" },
+            { KeyIndex.KeySoundVolumeBGM, "GGEMCO_KEY_INDEX_SOUND_VOLUME_BGM" },
+            { KeyIndex.KeySoundVolumeSfx, "GGEMCO_KEY_INDEX_SOUND_VOLUME_SFX" },
         };
 
         private static void PlayerPrefsDelete(KeyIndex key)
@@ -87,25 +87,25 @@ namespace GGemCo2DCore
         /// BGM 볼륨  
         /// </summary>
         /// <param name="value"></param>
-        public static void SaveIndexSoundVolumeBGM(float value)
+        public static void SaveSoundVolumeBGM(float value)
         {
-            PlayerPrefsSave(KeyIndex.KeyIndexSoundVolumeBGM, $"{value}");
+            PlayerPrefsSave(KeyIndex.KeySoundVolumeBGM, $"{value}");
         }
-        public static float LoadIndexSoundVolumeBGM()
+        public static float LoadSoundVolumeBGM()
         {
-            return PlayerPrefsLoadFloat(KeyIndex.KeyIndexSoundVolumeBGM, "0.5");
+            return PlayerPrefsLoadFloat(KeyIndex.KeySoundVolumeBGM, "0.5");
         }
         /// <summary>
         /// SFX 볼륨  
         /// </summary>
         /// <param name="value"></param>
-        public static void SaveIndexSoundVolumeSfx(float value)
+        public static void SaveSoundVolumeSfx(float value)
         {
-            PlayerPrefsSave(KeyIndex.KeyIndexSoundVolumeSfx, $"{value}");
+            PlayerPrefsSave(KeyIndex.KeySoundVolumeSfx, $"{value}");
         }
-        public static float LoadIndexSoundVolumeSfx()
+        public static float LoadSoundVolumeSfx()
         {
-            return PlayerPrefsLoadFloat(KeyIndex.KeyIndexSoundVolumeSfx, "0.5");
+            return PlayerPrefsLoadFloat(KeyIndex.KeySoundVolumeSfx, "0.5");
         }
     }
 }

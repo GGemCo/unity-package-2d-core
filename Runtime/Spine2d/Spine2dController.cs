@@ -66,7 +66,7 @@ namespace GGemCo2DCore
                     EventListener?.OnAnimationEventAttack(gameObject);
                     break;
                 case AnimationConstants.EventNameSound:
-                    EventListener?.OnAnimationEventSound(e.Int);
+                    EventListener?.OnAnimationEventSound(e.String);
                     break;
                 case AnimationConstants.EventNameCameraShake:
                     EventListener?.OnAnimationEventCameraShake(e.String);

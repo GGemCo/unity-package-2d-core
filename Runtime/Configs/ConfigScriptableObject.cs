@@ -14,7 +14,8 @@
             MainSettings,
             PlayerSettings,
             MapSettings,
-            SaveSettings
+            SaveSettings,
+            OptionSettings,
         }
 
         private const string BasePath = ConfigDefine.NameSDK + "/Settings/";
@@ -46,6 +47,13 @@
             public const string FileName = BaseName + "SaveSettings";
             public const string MenuName = BasePath + FileName;
             public const int Ordering = (int)MenuOrdering.SaveSettings;
+        }
+
+        public static class Option
+        {
+            public const string FileName = BaseName + "OptionSettings";
+            public const string MenuName = BasePath + FileName;
+            public const int Ordering = (int)MenuOrdering.OptionSettings;
         }
     }
 }

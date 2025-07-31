@@ -82,7 +82,7 @@ namespace GGemCo2DCore
                     characterAnimationControllerSprite.GetComponent<ICharacterAnimationController>();
                 
                 // Animator2dController 에 EventListener 설정
-                var animatorController = characterObj.GetComponent<Animator2dController>();
+                var animatorController = characterObj.GetComponent<Animation2dController>();
                 if (animatorController != null && _animationEventMediator != null)
                 {
                     animatorController.EventListener = _animationEventMediator;

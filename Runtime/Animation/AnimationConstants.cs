@@ -17,6 +17,10 @@
         public int Uid { get; set; }
         public int Level { get; set; }
     }
+    public class StruckAnimationEventSound
+    {
+        public int Uid { get; set; }
+    }
     public static class AnimationConstants
     {
         private const string Prefix = "GGemCoAniEvent";

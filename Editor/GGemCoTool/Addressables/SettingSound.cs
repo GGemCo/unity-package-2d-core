@@ -54,7 +54,7 @@ namespace GGemCo2DCoreEditor
                     if (info.Uid <= 0) continue;
                 
                     string key = $"{ConfigAddressableGroupName.Sound}_{info.FileName}";
-                    string assetPath = $"{ConfigAddressables.GetPathSound(info)}/{info.FileName}.mp3";
+                    string assetPath = $"{ConfigAddressables.GetPathSound(info)}/{info.FileName}";
                     string label = ConfigAddressableLabel.Sound;
                 
                     Add(settings, groupMonster, key, assetPath, label);

@@ -11,10 +11,13 @@ namespace GGemCo2DCore
     {
         private CameraManager _cameraManager;
         private SoundManager _soundManager;
+        private EffectManager _effectManager;
 
         public void Initialize(SceneGame sceneGame)
         {
             _cameraManager = sceneGame.cameraManager;
+            _soundManager = sceneGame.soundManager;
+            _effectManager = sceneGame.EffectManager;
         }
 
         public void OnAnimationEventEffect(string json, GameObject fromObject)
@@ -22,7 +25,7 @@ namespace GGemCo2DCore
             try
             {
                 var data = JsonConvert.DeserializeObject<StruckAnimationEventEffect>(json);
-                var effect = EffectManager.CreateEffect(data);
+                var effect = _effectManager.CreateEffect(data);
                 if (effect == null) return;
                 effect.transform.position = fromObject.transform.position;
             }
@@ -32,8 +35,17 @@ namespace GGemCo2DCore
             }
         }
 
-        public void OnAnimationEventSound(int soundUid)
+        public void OnAnimationEventSound(string json)
         {
+            try
+            {
+                var data = JsonConvert.DeserializeObject<StruckAnimationEventSound>(json);
+                _soundManager.PlayByUid(data.Uid);
+            }
+            catch (Exception e)
+            {
+                GcLogger.LogError($"animation sound event, json parsing error: {e.Message}");
+            }
         }
 
         public void OnAnimationEventCameraShake(string json)

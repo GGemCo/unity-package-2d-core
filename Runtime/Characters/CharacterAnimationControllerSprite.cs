@@ -8,7 +8,7 @@ namespace GGemCo2DCore
     /// <summary>
     /// 캐릭터 유니티 애니메이션 처리
     /// </summary>
-    public class CharacterAnimationControllerSprite : Animator2dController, ICharacterAnimationController
+    public class CharacterAnimationControllerSprite : Animation2dController, ICharacterAnimationController
     {
         private CharacterBase characterBase;
         private string currentAnimationNameAttack;

@@ -4,7 +4,7 @@ using UnityEngine;
 
 namespace GGemCo2DCore
 {
-    public class EffectAnimationControllerSprite : Animator2dController, IEffectAnimationController
+    public class EffectAnimationControllerSprite : Animation2dController, IEffectAnimationController
     {
         private DefaultEffect _defaultEffect;
         private Renderer _effectRenderer;

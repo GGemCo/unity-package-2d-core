@@ -114,21 +114,30 @@ namespace GGemCo2DCoreEditor
                 }
                 return gameObject;
             }
-            
-            GameObject prefab = AssetDatabase.LoadAssetAtPath<GameObject>(prefabPath);
 
-            if (prefab == null)
+            bool isUsePrefab = false;
+            if (string.IsNullOrEmpty(prefabPath))
             {
-                Debug.LogError($"프리팹을 찾을 수 없습니다: {prefabPath}");
-                return null;
+                gameObject = new GameObject(objectName);
             }
-
-            // 프리팹 인스턴스화
-            gameObject = PrefabUtility.InstantiatePrefab(prefab) as GameObject;
-            if (!gameObject)
+            else
             {
-                Debug.LogError("프리팹 인스턴스 생성 실패");
-                return null;
+                var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(prefabPath);
+
+                if (prefab == null)
+                {
+                    Debug.LogError($"프리팹을 찾을 수 없습니다: {prefabPath}");
+                    return null;
+                }
+                // 프리팹 인스턴스화
+                gameObject = PrefabUtility.InstantiatePrefab(prefab) as GameObject;
+                if (!gameObject)
+                {
+                    Debug.LogError("프리팹 인스턴스 생성 실패");
+                    return null;
+                }
+
+                isUsePrefab = true;
             }
 
             Undo.RegisterCreatedObjectUndo(gameObject, "Create Default Button");
@@ -139,11 +148,15 @@ namespace GGemCo2DCoreEditor
             }
 
             // 프리팹 해제
-            PrefabUtility.UnpackPrefabInstance(
-                gameObject,
-                PrefabUnpackMode.Completely,
-                InteractionMode.UserAction
-            );
+            if (isUsePrefab)
+            {
+                PrefabUtility.UnpackPrefabInstance(
+                    gameObject,
+                    PrefabUnpackMode.Completely,
+                    InteractionMode.UserAction
+                );
+            }
+
             return gameObject;
         }
         public static Button CreateObjectButton(MetaDataButton metaDataButton)

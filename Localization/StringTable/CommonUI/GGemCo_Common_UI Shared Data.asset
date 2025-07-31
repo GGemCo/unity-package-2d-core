@@ -27,6 +27,14 @@ MonoBehaviour:
     m_Key: Close
     m_Metadata:
       m_Items: []
+  - m_Id: 7270220974067712
+    m_Key: Reset
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7279477882687488
+    m_Key: Accept
+    m_Metadata:
+      m_Items: []
   m_Metadata:
     m_Items: []
   m_KeyGenerator:

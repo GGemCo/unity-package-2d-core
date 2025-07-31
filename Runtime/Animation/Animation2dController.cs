@@ -9,7 +9,7 @@ namespace GGemCo2DCore
     /// Animator 기반 2D 캐릭터 컨트롤러
     /// </summary>
     [RequireComponent(typeof(Animator))]
-    public class Animator2dController : MonoBehaviour
+    public class Animation2dController : MonoBehaviour
     {
         public IAnimationEventListener EventListener { get; set; }
         protected Animator Animator;
@@ -178,9 +178,9 @@ namespace GGemCo2DCore
             EventListener?.OnAnimationEventCameraShake(json);
         }
 
-        public void GGemCoAniEventSound(int soundUid)
+        public void GGemCoAniEventSound(string json)
         {
-            EventListener?.OnAnimationEventSound(soundUid);
+            EventListener?.OnAnimationEventSound(json);
         }
         public void GGemCoAniEventSkill(string json)
         {

@@ -27,6 +27,8 @@ namespace GGemCo2DCore
         private const int CountCollider = 10;
         private Collider2D[] _collider2Ds;
         
+        private ProjectileManager _projectileManager;
+        
         protected override void Awake()
         {
             // 먼저 선언한다.
@@ -44,6 +46,11 @@ namespace GGemCo2DCore
                 .AddTo(this);
         }
 
+        protected override void Start()
+        {
+            base.Start();
+            _projectileManager = SceneGame.Instance.ProjectileManager;
+        }
         /// <summary>
         /// tag, sorting layer, layer 셋팅하기
         /// </summary>
@@ -216,7 +223,7 @@ namespace GGemCo2DCore
             
             for (int i = 0; i < info.Count; i++)
             {
-                DefaultProjectile projectile = ProjectileManager.CreateProjectile(info.Uid);
+                DefaultProjectile projectile = _projectileManager.CreateProjectile(info.Uid);
                 projectile?.SetFromCharacter(this);
                 float positionX =
                     Random.Range(attackerTransform.position.x - info.TargetPositionRangeX,

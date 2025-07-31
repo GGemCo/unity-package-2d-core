@@ -3,9 +3,17 @@ using Object = UnityEngine.Object;
 
 namespace GGemCo2DCore
 {
-    public abstract class EffectManager
+    public class EffectManager
     {
-        public static DefaultEffect CreateEffect(int effectUid)
+        private SceneGame _sceneGame;
+        private AnimationEventMediator _animationEventMediator;
+        
+        public void Initialize(SceneGame sceneGame)
+        {
+            _sceneGame = sceneGame;
+        }
+        
+        public DefaultEffect CreateEffect(int effectUid)
         {
             var info = TableLoaderManager.Instance.TableEffect.GetDataByUid(effectUid);
             if (info == null)
@@ -25,12 +33,26 @@ namespace GGemCo2DCore
             {
                 effectAnimationController = effect.AddComponent<EffectAnimationControllerSpine>();
                 defaultEffect.EffectAnimationController = effectAnimationController;
+                
+                // Spine2dController 에 EventListener 설정
+                var spineController = effect.GetComponent<Spine2dController>();
+                if (spineController != null && _animationEventMediator != null)
+                {
+                    spineController.EventListener = _animationEventMediator;
+                }
             }
 #endif
             if (info.AnimationController == ConfigCommon.AnimationController.Sprite)
             {
                 effectAnimationController = effect.AddComponent<EffectAnimationControllerSprite>();
                 defaultEffect.EffectAnimationController = effectAnimationController;
+                
+                // Animator2dController 에 EventListener 설정
+                var animatorController = effect.GetComponent<Animation2dController>();
+                if (animatorController != null && _animationEventMediator != null)
+                {
+                    animatorController.EventListener = _animationEventMediator;
+                }
             }
 
             if (effectAnimationController == null)
@@ -44,7 +66,7 @@ namespace GGemCo2DCore
             return defaultEffect;
         }
         
-        public static DefaultEffect CreateEffect(StruckAnimationEventEffect struckAnimationEventEffect)
+        public DefaultEffect CreateEffect(StruckAnimationEventEffect struckAnimationEventEffect)
         {
             if (struckAnimationEventEffect == null) return null;
             int effectUid = struckAnimationEventEffect.Uid;
@@ -68,6 +90,10 @@ namespace GGemCo2DCore
             }
 
             return effect;
+        }
+        public void SetAnimationEventMediator(AnimationEventMediator mediator)
+        {
+            _animationEventMediator = mediator;
         }
     }
 }

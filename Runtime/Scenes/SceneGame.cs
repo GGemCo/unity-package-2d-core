@@ -58,12 +58,17 @@ namespace GGemCo2DCore
         [HideInInspector] public MapManager mapManager;
         [HideInInspector] public DamageTextManager damageTextManager;
         [HideInInspector] public UIIconCoolTimeManager uIIconCoolTimeManager;
+        [HideInInspector] public SoundManager soundManager;
+        public void SetSoundManager(SoundManager value) => soundManager = value;
+        
         public ItemManager ItemManager;
         public CharacterManager CharacterManager;
         public KeyboardManager KeyboardManager;
         public InteractionManager InteractionManager;
         public CutsceneManager CutsceneManager;
         public QuestManager QuestManager;
+        public EffectManager EffectManager;
+        public ProjectileManager ProjectileManager;
         public AddressableLoaderPrefabCharacter AddressableLoaderPrefabCharacter;
         
         private UIWindowInventory _uiWindowInventory;
@@ -110,6 +115,7 @@ namespace GGemCo2DCore
             saveDataManager = CreateManager<SaveDataManager>(managerContainer);
             damageTextManager = CreateManager<DamageTextManager>(managerContainer);
             uIIconCoolTimeManager = CreateManager<UIIconCoolTimeManager>(managerContainer);
+            soundManager = CreateManager<SoundManager>(managerContainer);
             
             AddressableLoaderPrefabCharacter = new AddressableLoaderPrefabCharacter();
             AddressableLoaderPrefabCharacter.Initialize(this);
@@ -130,6 +136,11 @@ namespace GGemCo2DCore
             CutsceneManager.Initialize(this);
             QuestManager = new QuestManager();
             QuestManager.Initialize(this);
+            EffectManager = new EffectManager();
+            EffectManager.Initialize(this);
+            EffectManager.SetAnimationEventMediator(animationEventMediator);
+            ProjectileManager = new ProjectileManager();
+            ProjectileManager.Initialize(this);
         }
 
         private T CreateManager<T>(GameObject parent) where T : Component

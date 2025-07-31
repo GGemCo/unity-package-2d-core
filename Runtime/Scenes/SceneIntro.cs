@@ -44,6 +44,12 @@ namespace GGemCo2DCore
         [SerializeField] private UIWindowOption uiWindowOption;
         public void SetUIWindowOption(UIWindowOption value) => uiWindowOption = value;
         public string GetNameUIWindowOption() => nameof(UIWindowOption);
+        [Header("사운드 매니저")]
+        [SerializeField] private SoundManager soundManager;
+        public void SetSoundManager(SoundManager value) => soundManager = value;
+        public string GetFieldNameSoundManager() => nameof(SoundManager);
+        [Header("인트로 사운드 BGM")]
+        public AudioClip audioClipBgm;
 
         private SlotMetaDatController _slotMetaDatController;
         private GGemCoSaveSettings _saveDataSettings;
@@ -56,6 +62,11 @@ namespace GGemCo2DCore
             if (uIWindowLoadSaveData)
             {
                 uIWindowLoadSaveData.OnUpdateSlotData += UpdateButtons;
+            }
+
+            if (audioClipBgm != null)
+            {
+                soundManager.ChangeBackgroundMusic(audioClipBgm);
             }
         }
         /// <summary>
@@ -91,12 +102,17 @@ namespace GGemCo2DCore
         /// 세이븓 데이터 슬롯 정보를 읽어서 버튼 처리 
         /// </summary>
         private void InitializeSlotMetaDataManager(GGemCoSettings settings, GGemCoPlayerSettings playerSettings,
-            GGemCoMapSettings mapSettings, GGemCoSaveSettings saveSettings)
+            GGemCoMapSettings mapSettings, GGemCoSaveSettings saveSettings, GGemCoOptionSettings optionSettings)
         {
             _slotMetaDatController = new SlotMetaDatController(saveSettings.SaveDataFolderName, saveSettings.saveDataMaxSlotCount);
             if (uIWindowLoadSaveData)
             {
                 uIWindowLoadSaveData.InitializeSaveDataSlots(saveSettings, _slotMetaDatController);
+            }
+
+            if (uiWindowOption)
+            {
+                uiWindowOption.Initialize(optionSettings);
             }
 
             _saveDataSettings = saveSettings;

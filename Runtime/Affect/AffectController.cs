@@ -16,6 +16,7 @@ namespace GGemCo2DCore
         private readonly TableEffect _tableEffect;
         private readonly Dictionary<int, DefaultEffect> _defaultEffects = new();
         private Coroutine _removeCoroutine;
+        private EffectManager _effectManager;
 
         public AffectController(CharacterBase characterBase)
         {
@@ -23,6 +24,7 @@ namespace GGemCo2DCore
             _character = characterBase;
             _tableAffect = TableLoaderManager.Instance.TableAffect;
             _tableEffect = TableLoaderManager.Instance.TableEffect;
+            _effectManager = SceneGame.Instance.EffectManager;
         }
         /// <summary>
         /// 어펙트 적용하기
@@ -60,7 +62,7 @@ namespace GGemCo2DCore
             _removeCoroutine = _character.StartCoroutine(RemoveBuffAfterDuration(info.Uid, duration));
             if (info.EffectUid > 0)
             {
-                DefaultEffect defaultEffect = EffectManager.CreateEffect(info.EffectUid);
+                DefaultEffect defaultEffect = _effectManager.CreateEffect(info.EffectUid);
                 if (defaultEffect == null) return;
                 // SetParent 보다 먼저 scale 을 바꿔야 한다.
                 if (info.EffectScale > 0)

@@ -90,14 +90,14 @@ namespace GGemCo2DCore
             }
         }
 
-        public AudioClip GetAudioClip(string value)
+        public AudioClip GetAudioClip(string keyName)
         {
-            if (_dicSound.TryGetValue(ConfigAddressableLabel.Sound, out var audioClip))
+            if (_dicSound.TryGetValue(keyName, out var audioClip))
             {
                 return audioClip;
             }
 
-            GcLogger.LogError($"Addressables에서 {value} 사운드를 찾을 수 없습니다.");
+            GcLogger.LogError($"Addressables에서 {keyName} 사운드를 찾을 수 없습니다.");
             return null;
         }
         public float GetLoadProgress() => _prefabLoadProgress;

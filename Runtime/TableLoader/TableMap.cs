@@ -57,7 +57,7 @@ namespace GGemCo2DCore
                 FolderName = data["FolderName"],
                 PlayerSpawnPosition = ConvertPlayerSpawnPosition(data["PlayerSpawnPosition"]),
                 PlayerDeadSpawnUid = int.Parse(data["PlayerDeadSpawnUid"]),
-                BgmUid = 0,
+                BgmUid = int.Parse(data["BgmUid"]),
             };
         }
 

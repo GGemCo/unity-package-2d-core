@@ -17,9 +17,10 @@ namespace GGemCo2DCore
         [HideInInspector] public GGemCoPlayerSettings playerSettings;
         [HideInInspector] public GGemCoMapSettings mapSettings;
         [HideInInspector] public GGemCoSaveSettings saveSettings;
+        [HideInInspector] public GGemCoOptionSettings optionSettings;
 
         public delegate void DelegateLoadSettings(GGemCoSettings settings, GGemCoPlayerSettings playerSettings,
-            GGemCoMapSettings mapSettings, GGemCoSaveSettings saveSettings);
+            GGemCoMapSettings mapSettings, GGemCoSaveSettings saveSettings, GGemCoOptionSettings optionSettings);
         public event DelegateLoadSettings OnLoadSettings;
 
         private void Awake()
@@ -55,15 +56,17 @@ namespace GGemCo2DCore
                 var playerSettingsTask = LoadSettingsAsync<GGemCoPlayerSettings>(ConfigAddressableSetting.PlayerSettings.Key);
                 var mapSettingsTask = LoadSettingsAsync<GGemCoMapSettings>(ConfigAddressableSetting.MapSettings.Key);
                 var saveSettingsTask = LoadSettingsAsync<GGemCoSaveSettings>(ConfigAddressableSetting.SaveSettings.Key);
+                var optionSettingsTask = LoadSettingsAsync<GGemCoOptionSettings>(ConfigAddressableSetting.OptionSettings.Key);
 
                 // 모든 작업이 완료될 때까지 대기
-                await Task.WhenAll(settingsTask, playerSettingsTask, mapSettingsTask, saveSettingsTask);
+                await Task.WhenAll(settingsTask, playerSettingsTask, mapSettingsTask, saveSettingsTask, optionSettingsTask);
 
                 // 결과 저장
                 settings = settingsTask.Result;
                 playerSettings = playerSettingsTask.Result;
                 mapSettings = mapSettingsTask.Result;
                 saveSettings = saveSettingsTask.Result;
+                optionSettings = optionSettingsTask.Result;
 
                 // 로그 출력
                 // if (settings != null)
@@ -76,7 +79,7 @@ namespace GGemCo2DCore
                 //     GcLogger.Log("최대 저장 슬롯 개수 : " + saveSettings.saveDataMaxSlotCount);
 
                 // 이벤트 호출
-                OnLoadSettings?.Invoke(settings, playerSettings, mapSettings, saveSettings);
+                OnLoadSettings?.Invoke(settings, playerSettings, mapSettings, saveSettings, optionSettings);
             }
             catch (Exception ex)
             {

@@ -1,4 +1,5 @@
-﻿using UnityEngine;
+﻿using System;
+using UnityEngine;
 using Random = UnityEngine.Random;
 
 namespace GGemCo2DCore
@@ -28,7 +29,13 @@ namespace GGemCo2DCore
         
         // 데미지 처리
         private long _damage;
-        
+        private EffectManager _effectManager;
+
+        private void Start()
+        {
+            _effectManager = SceneGame.Instance.EffectManager;
+        }
+
         public void Initialize(MetadataProjectile metadataProjectile)
         {
             if (metadataProjectile == null) return;
@@ -218,7 +225,7 @@ namespace GGemCo2DCore
             if (struckTableProjectile.HitEffectUid > 0) 
             {
                 Destroy(gameObject);
-                var effect = EffectManager.CreateEffect(struckTableProjectile.HitEffectUid);
+                var effect = _effectManager.CreateEffect(struckTableProjectile.HitEffectUid);
                 if (!effect) return;
                 effect.transform.position = transform.position;
                 // 발사체가 flip 되면 hit 이펙트도 flip 처리

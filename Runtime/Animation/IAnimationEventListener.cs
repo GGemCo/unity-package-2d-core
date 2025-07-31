@@ -6,7 +6,7 @@ namespace GGemCo2DCore
     public interface IAnimationEventListener
     {
         void OnAnimationEventEffect(string json, GameObject fromObject);
-        void OnAnimationEventSound(int soundUid);
+        void OnAnimationEventSound(string json);
         void OnAnimationEventCameraShake(string json);
         void OnAnimationEventAttack(GameObject fromObject);
         void OnAnimationEventProjectile(int uid, GameObject fromObject);
