@@ -16,7 +16,8 @@ namespace GGemCo2DCore
             GamePrefabEffect,
             Item,
             Skill,
-            Affect
+            Affect,
+            Sound
         }
 
         public TextMeshProUGUI textLoadingPercent; // 진행률 표시
@@ -28,6 +29,7 @@ namespace GGemCo2DCore
         private AddressableLoaderItem _addressableLoaderItem;
         private AddressableLoaderSkill _addressableLoaderSkill;
         private AddressableLoaderAffect _addressableLoaderAffect;
+        private AddressableLoaderSound _addressableLoaderSound;
 
         private float _loadProgressTable;
         private float _loadProgressPrefabCommon;
@@ -35,6 +37,7 @@ namespace GGemCo2DCore
         private float _loadProgressItem;
         private float _loadProgressSkill;
         private float _loadProgressAffect;
+        private float _loadProgressSound;
         private float _loadProgressSaveData;
         private float _progressTotal;
         private float _progressBase;
@@ -51,6 +54,7 @@ namespace GGemCo2DCore
             _loadProgressItem = 0f;
             _loadProgressSkill = 0f;
             _loadProgressAffect = 0f;
+            _loadProgressSound = 0f;
             _loadProgressSaveData = 0f;
             _progressTotal = 0f;
             // 6 가지 경우를 로드 하고 있다
@@ -79,6 +83,9 @@ namespace GGemCo2DCore
             GameObject gameObjectAddressableLoaderAffect = new GameObject("AddressableLoaderAffect");
             _addressableLoaderAffect = gameObjectAddressableLoaderAffect.AddComponent<AddressableLoaderAffect>();
             
+            GameObject gameObjectAddressableLoaderSound = new GameObject("AddressableLoaderSound");
+            _addressableLoaderSound = gameObjectAddressableLoaderSound.AddComponent<AddressableLoaderSound>();
+            
             GameObject gameObjectSaveDataLoader = new GameObject("SaveDataLoader");
             _saveDataLoader = gameObjectSaveDataLoader.AddComponent<SaveDataLoader>();
         }
@@ -96,6 +103,7 @@ namespace GGemCo2DCore
             yield return LoadAddressableItem();
             yield return LoadAddressableSkill();
             yield return LoadAddressableAffect();
+            yield return LoadAddressableSound();
             yield return LoadSaveData();
             UnityEngine.SceneManagement.SceneManager.LoadScene(ConfigDefine.SceneNameGame);
         }
@@ -173,6 +181,17 @@ namespace GGemCo2DCore
                 yield return null;
             }
         }
+        private IEnumerator LoadAddressableSound()
+        {
+            Task prefabLoadTask = _addressableLoaderSound.LoadPrefabsAsync();
+
+            while (!prefabLoadTask.IsCompleted)
+            {
+                _loadProgressSound = _addressableLoaderSound.GetLoadProgress() * _progressBase;
+                UpdateLoadingProgress(Type.Sound);
+                yield return null;
+            }
+        }
 
         /// <summary>
         /// 세이브 데이터를 로드하고 진행률을 업데이트합니다.
@@ -191,7 +210,8 @@ namespace GGemCo2DCore
         private void UpdateLoadingProgress(Type type)
         {
             _progressTotal = _loadProgressTable + _loadProgressPrefabCommon + _loadProgressPrefabEffect +
-                             _loadProgressItem + _loadProgressSkill + _loadProgressSaveData;
+                             _loadProgressItem + _loadProgressSkill + _loadProgressAffect + _loadProgressSound + 
+                             _loadProgressSaveData;
             string subKey = LocalizationConstants.Keys.Loading.TextTypeTables();
             switch (type)
             {
@@ -212,6 +232,9 @@ namespace GGemCo2DCore
                     break;
                 case Type.Affect:
                     subKey = LocalizationConstants.Keys.Loading.TextTypeAffect();
+                    break;
+                case Type.Sound:
+                    subKey = LocalizationConstants.Keys.Loading.TextTypeSound();
                     break;
             }
 

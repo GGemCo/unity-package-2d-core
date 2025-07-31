@@ -36,5 +36,7 @@
         public const string SkillIconImage = ConfigDefine.NameSDK+"_Skill_IconImage";
         // 어펙트
         public const string AffectIconImage = ConfigDefine.NameSDK+"_Affect_IconImage";
+        // 사운드
+        public const string Sound = ConfigDefine.NameSDK+"_Sound";
     }
 }

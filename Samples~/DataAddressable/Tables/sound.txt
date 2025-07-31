@@ -1,0 +1,6 @@
+Uid	Type	SubType	Memo	Path	MaxPlayCount	Volume
+1	Bgm	None	인트로	Sounds/Bgm/title_screen	1	1
+2	Bgm	None	플레이노멀	Sounds/Bgm/play_normal	1	1
+5	Sfx	UI	ui 클릭	Sounds/Sfx/UI/click1	1	1
+6	Sfx	Player	걷기1	Sounds/Sfx/Player/pc_footstep1	10	1
+7	Sfx	Player	걷기2	Sounds/Sfx/Player/pc_footstep2	10	1

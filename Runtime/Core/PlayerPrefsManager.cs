@@ -10,6 +10,8 @@ namespace GGemCo2DCore
             None,
             KeyIndexSaveDataSlot,
             KeyIndexLocalizationLocale,
+            KeyIndexSoundVolumeBGM,
+            KeyIndexSoundVolumeSfx,
         }
 
         public static readonly Dictionary<KeyIndex, string> Keys = new Dictionary<KeyIndex, string>()
@@ -17,6 +19,8 @@ namespace GGemCo2DCore
             { KeyIndex.None, "" },
             { KeyIndex.KeyIndexSaveDataSlot, "GGEMCO_KEY_SAVE_DATA_SLOT_INDEX" },
             { KeyIndex.KeyIndexLocalizationLocale, "GGEMCO_KEY_INDEX_LOCALIZATION_LOCALE" },
+            { KeyIndex.KeyIndexSoundVolumeBGM, "GGEMCO_KEY_INDEX_SOUND_VOLUME_BGM" },
+            { KeyIndex.KeyIndexSoundVolumeSfx, "GGEMCO_KEY_INDEX_SOUND_VOLUME_SFX" },
         };
 
         private static void PlayerPrefsDelete(KeyIndex key)
@@ -78,6 +82,30 @@ namespace GGemCo2DCore
         public static int LoadIndexLocalizationLocale()
         {
             return PlayerPrefsLoadInt(KeyIndex.KeyIndexLocalizationLocale, ((int)LocalizationConstants.DefaultLanguageIndex).ToString());
+        }
+        /// <summary>
+        /// BGM 볼륨  
+        /// </summary>
+        /// <param name="value"></param>
+        public static void SaveIndexSoundVolumeBGM(float value)
+        {
+            PlayerPrefsSave(KeyIndex.KeyIndexSoundVolumeBGM, $"{value}");
+        }
+        public static float LoadIndexSoundVolumeBGM()
+        {
+            return PlayerPrefsLoadFloat(KeyIndex.KeyIndexSoundVolumeBGM, "0.5");
+        }
+        /// <summary>
+        /// SFX 볼륨  
+        /// </summary>
+        /// <param name="value"></param>
+        public static void SaveIndexSoundVolumeSfx(float value)
+        {
+            PlayerPrefsSave(KeyIndex.KeyIndexSoundVolumeSfx, $"{value}");
+        }
+        public static float LoadIndexSoundVolumeSfx()
+        {
+            return PlayerPrefsLoadFloat(KeyIndex.KeyIndexSoundVolumeSfx, "0.5");
         }
     }
 }

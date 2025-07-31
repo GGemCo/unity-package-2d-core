@@ -72,6 +72,10 @@ MonoBehaviour:
     m_Key: Loading_Text_Affect
     m_Metadata:
       m_Items: []
+  - m_Id: 9833325532876800
+    m_Key: Loading_Text_Sound
+    m_Metadata:
+      m_Items: []
   m_Metadata:
     m_Items: []
   m_KeyGenerator:

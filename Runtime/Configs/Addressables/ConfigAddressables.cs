@@ -72,5 +72,22 @@ namespace GGemCo2DCore
         // 어펙트
         public const string KeyImageIconAffect = ConfigDefine.NameSDK+"_Affect_Icon";
         public const string PathImageIconAffect = Path + "/Images/Icon/Affect";
+
+        // 사운드
+        public const string KeySound = ConfigDefine.NameSDK+"_Sound";
+        public const string PathSound = Path + "/Sounds";
+        public static string GetPathSound(StruckTableSound info)
+        {
+            if (info.Type != SoundConstants.Type.None && info.SubType != SoundConstants.SubType.None)
+            {
+                return $"{PathSound}/{info.Type}/{info.SubType}";
+            }
+            if (info.Type != SoundConstants.Type.None)
+            {
+                return $"{PathSound}/{info.Type}";
+            }
+
+            return "";
+        }
     }
 }

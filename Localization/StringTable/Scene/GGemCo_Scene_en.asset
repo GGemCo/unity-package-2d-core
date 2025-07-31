@@ -66,6 +66,10 @@ MonoBehaviour:
     m_Localized: Affect Data
     m_Metadata:
       m_Items: []
+  - m_Id: 9833325532876800
+    m_Localized: Sound Data
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []
