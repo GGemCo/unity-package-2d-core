@@ -9,7 +9,7 @@ using UnityEngine.U2D;
 namespace GGemCo2DCore
 {
     /// <summary>
-    /// 이펙트 프리팹 로드
+    /// 아이템 이미지 로드
     /// </summary>
     public class AddressableLoaderItem : MonoBehaviour
     {

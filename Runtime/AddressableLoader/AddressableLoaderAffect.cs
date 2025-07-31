@@ -9,7 +9,7 @@ using UnityEngine.U2D;
 namespace GGemCo2DCore
 {
     /// <summary>
-    /// 스킬 아이콘 이미지 로드
+    /// 어펙트 아이콘 이미지 로드
     /// </summary>
     public class AddressableLoaderAffect : MonoBehaviour
     {
