@@ -65,5 +65,7 @@ namespace GGemCo2DCore
             None,
             CharacterHeight
         }
+        public const string TitleHeaderRequired = "[필수 항목]";
+        public const string TitleHeaderOption = "[선택 항목]";
     }
 }

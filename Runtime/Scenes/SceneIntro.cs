@@ -11,44 +11,44 @@ namespace GGemCo2DCore
         public string GetFieldNameSceneIntro() => nameof(SceneIntro);
         [HideInInspector] public AddressableLoaderSettings addressableLoaderSettings;
         
-        [Header("[필수 항목]")]
-        [Header("새 게임 버튼")]
+        [Header(ConfigCommon.TitleHeaderRequired)]
+        [Tooltip("새 게임 버튼")]
         [SerializeField] private Button buttonNewGame;
         public void SetButtonNewGame(Button value) => buttonNewGame = value;
         public string GetFieldNameButtonNewGame() => nameof(buttonNewGame);
-        [Header("계속하기 버튼")]
+        [Tooltip("계속하기 버튼")]
         [SerializeField] private Button buttonGameContinue;
         public void SetButtonGameContinue(Button value) => buttonGameContinue = value;
         public string GetFieldNameButtonGameContinue() => nameof(buttonGameContinue);
-        
-        [Header("[선택 항목]")]
-        [Header("불러오기 버튼")]
-        [SerializeField] private Button buttonOpenSaveDataWindow;
-        public void SetButtonOpenSaveDataWindow(Button value) => buttonOpenSaveDataWindow = value;
-        public string GetFieldNameButtonOpenSaveDataWindow() => nameof(buttonOpenSaveDataWindow);
-        [Header("옵션 버튼")]
+        [Tooltip("옵션 버튼")]
         [SerializeField] private Button buttonOpenOption;
         public void SetButtonOption(Button value) => buttonOpenOption = value;
         public string GetFieldNameButtonOption() => nameof(buttonOpenOption);
-        [Header("게임종료 버튼")]
-        [SerializeField] private Button buttonGameExit;
-        [Header("불러오기 window")]
-        [SerializeField] private UIWindowLoadSaveData uIWindowLoadSaveData;
-        public void SetUIWindowLoadSaveData(UIWindowLoadSaveData value) => uIWindowLoadSaveData = value;
-        public string GetNameUIWindowLoadSaveData() => nameof(UIWindowLoadSaveData);
-        [Header("팝업 매니저")]
+        [Tooltip("팝업 매니저")]
         [SerializeField] private PopupManager popupManager;
         public void SetPopupManager(PopupManager value) => popupManager = value;
         public string GetFieldNamePopupManager() => nameof(PopupManager);
-        [Header("옵션 window")]
+        [Tooltip("옵션 window")]
         [SerializeField] private UIWindowOption uiWindowOption;
         public void SetUIWindowOption(UIWindowOption value) => uiWindowOption = value;
         public string GetNameUIWindowOption() => nameof(UIWindowOption);
-        [Header("사운드 매니저")]
+        [Tooltip("사운드 매니저")]
         [SerializeField] private SoundManager soundManager;
         public void SetSoundManager(SoundManager value) => soundManager = value;
         public string GetFieldNameSoundManager() => nameof(SoundManager);
-        [Header("인트로 사운드 BGM")]
+        
+        [Header(ConfigCommon.TitleHeaderOption)]
+        [Tooltip("불러오기 버튼")]
+        [SerializeField] private Button buttonOpenSaveDataWindow;
+        public void SetButtonOpenSaveDataWindow(Button value) => buttonOpenSaveDataWindow = value;
+        public string GetFieldNameButtonOpenSaveDataWindow() => nameof(buttonOpenSaveDataWindow);
+        [Tooltip("게임종료 버튼")]
+        [SerializeField] private Button buttonGameExit;
+        [Tooltip("불러오기 window")]
+        [SerializeField] private UIWindowLoadSaveData uIWindowLoadSaveData;
+        public void SetUIWindowLoadSaveData(UIWindowLoadSaveData value) => uIWindowLoadSaveData = value;
+        public string GetNameUIWindowLoadSaveData() => nameof(UIWindowLoadSaveData);
+        [Tooltip("인트로 사운드 BGM")]
         public AudioClip audioClipBgm;
 
         private SlotMetaDatController _slotMetaDatController;
