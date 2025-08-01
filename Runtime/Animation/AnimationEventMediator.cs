@@ -31,7 +31,7 @@ namespace GGemCo2DCore
             }
             catch (Exception e)
             {
-                GcLogger.LogError($"animation effect event, json parsing error: {e.Message}");
+                GcLogger.LogError($"animation effect event, json parsing error: {e.Message} / json: {json}");
             }
         }
 
@@ -44,7 +44,7 @@ namespace GGemCo2DCore
             }
             catch (Exception e)
             {
-                GcLogger.LogError($"animation sound event, json parsing error: {e.Message}");
+                GcLogger.LogError($"animation sound event, json parsing error: {e.Message} / json: {json}");
             }
         }
 
@@ -57,7 +57,7 @@ namespace GGemCo2DCore
             }
             catch (Exception e)
             {
-                GcLogger.LogError($"animation camera shake event, json parsing error: {e.Message}");
+                GcLogger.LogError($"animation camera shake event, json parsing error: {e.Message} / json: {json}");
             }
         }
 
@@ -80,7 +80,7 @@ namespace GGemCo2DCore
             }
             catch (Exception e)
             {
-                GcLogger.LogError($"animation skill event, json parsing error: {e.Message}");
+                GcLogger.LogError($"animation skill event, json parsing error: {e.Message} / json: {json}");
             }
         }
     }

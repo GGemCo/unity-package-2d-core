@@ -368,11 +368,11 @@ namespace GGemCo2DCore
                 // bgm 플레이
                 if (_currentMapTableData.BgmUid > 0)
                 {
-                    _sceneGame.soundManager.PlayByUid(_currentMapTableData.BgmUid);
+                    _sceneGame.soundManager?.PlayByUid(_currentMapTableData.BgmUid);
                 }
                 else
                 {
-                    _sceneGame.soundManager.StopBgm();
+                    _sceneGame.soundManager?.StopBgm();
                 }
 
                 GameObject currentMap = Instantiate(prefab, _gridTileMap.transform);

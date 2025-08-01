@@ -26,6 +26,12 @@ namespace GGemCo2DCore
 
         private void Awake()
         {
+            if (mainAudioMixer == null)
+            {
+                GcLogger.LogError("mainAudioMixer is null");
+                enabled = false;
+                return;
+            }
             if (TableLoaderManager.Instance)
             {
                 _tableLoaderManager = TableLoaderManager.Instance;
