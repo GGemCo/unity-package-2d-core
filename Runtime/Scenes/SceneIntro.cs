@@ -63,7 +63,11 @@ namespace GGemCo2DCore
             {
                 uIWindowLoadSaveData.OnUpdateSlotData += UpdateButtons;
             }
+        }
 
+        private void Start()
+        {
+            // SoundManager Awake 에서 bgm controller 가 생성된다.
             if (audioClipBgm != null)
             {
                 soundManager.ChangeBackgroundMusic(audioClipBgm);
