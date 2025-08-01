@@ -69,6 +69,7 @@ namespace GGemCo2DCoreEditor
             SetupCanvasFromWorld(scene);
             SetupCanvasBlack(scene);
             SetupSystemMessageManager(scene);
+            SetupSoundManager(scene);
             SetupPopupManager(scene);
             
             EditorUtility.SetDirty(scene);
@@ -140,22 +141,24 @@ namespace GGemCo2DCoreEditor
             scene.SetSystemMessageManager(obj.GetComponent<SystemMessageManager>());
         }
         /// <summary>
-        /// 팝업 매니저
+        /// 팝업 매니저 셋팅
         /// </summary>
         /// <param name="scene"></param>
         private void SetupPopupManager(SceneGame scene)
         {
-            GameObject obj = CreateUIComponent.CreateGameObjectByPrefab("PopupManager", _objGGemCoCore.transform, ConfigEditor.PathPrefabPopupManager);
-            if (!obj) return;
-            PopupManager popupManager = obj.GetComponent<PopupManager>();
-            
-            Transform transform = CreateUIComponent.Find("Canvas").transform;
-            
-            popupManager.SetCanvasPopup(transform);
-            GameObject[] prefabs = new[] { null, ConfigResources.PopupDefault.Load() };
-            popupManager.SetPopupTypePrefabs(prefabs);
-            
+            PopupManager popupManager = CreatePopupManager(_objGGemCoCore.transform);
+            if (!popupManager) return;
             scene.SetPopupManager(popupManager);
+        }
+        /// <summary>
+        /// 사운드 매니저 셋팅
+        /// </summary>
+        /// <param name="scene"></param>
+        private void SetupSoundManager(SceneGame scene)
+        {
+            SoundManager soundManager = CreateSoundManager(_objGGemCoCore.transform);
+            if (!soundManager) return;
+            scene.SetSoundManager(soundManager);
         }
 
         /// <summary>

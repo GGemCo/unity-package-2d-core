@@ -1,4 +1,5 @@
 ﻿using GGemCo2DCore;
+using UnityEngine;
 using UnityEngine.SceneManagement;
 using SceneManager = UnityEngine.SceneManagement.SceneManager;
 
@@ -29,6 +30,40 @@ namespace GGemCo2DCoreEditor
                 AssetDatabaseLoaderManager.LoadScriptableObject(ConfigAddressableSetting.Settings.Path) as
                     GGemCoSettings;
             return scriptable == null ? null : scriptable;
+        }
+        /// <summary>
+        /// 사운드 매니저 셋팅
+        /// </summary>
+        protected SoundManager CreateSoundManager(Transform parent = null)
+        {
+            GameObject obj = CreateUIComponent.CreateGameObjectByPrefab("SoundManager", parent);
+            if (!obj) return null;
+            SoundManager soundManager = obj.GetComponent<SoundManager>();
+            if (soundManager == null)
+            {
+                soundManager = obj.AddComponent<SoundManager>();
+            }
+            return soundManager;
+        }
+        /// <summary>
+        /// 팝업 매니저 셋팅
+        /// </summary>
+        protected PopupManager CreatePopupManager(Transform parent = null)
+        {
+            GameObject obj = CreateUIComponent.CreateGameObjectByPrefab("PopupManager", parent, ConfigEditor.PathPrefabPopupManager);
+            if (!obj) return null;
+            PopupManager popupManager = obj.GetComponent<PopupManager>();
+            if (popupManager == null)
+            {
+                obj.AddComponent<PopupManager>();
+            }
+            
+            Transform transform = CreateUIComponent.Find("Canvas").transform;
+            
+            popupManager.SetCanvasPopup(transform);
+            GameObject[] prefabs = new[] { null, ConfigResources.PopupDefault.Load() };
+            popupManager.SetPopupTypePrefabs(prefabs);
+            return popupManager;
         }
     }
 }
