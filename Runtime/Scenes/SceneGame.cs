@@ -18,7 +18,8 @@ namespace GGemCo2DCore
         private bool _isStateDirty;
 
         [HideInInspector] public GameObject player;
-        [Header("기본오브젝트")]
+        
+        [Header(ConfigCommon.TitleHeaderRequired)]
         [Tooltip("메인으로 사용되는 Camera")]
         public Camera mainCamera;
         public void SetMainCamera(Camera value) => mainCamera = value;
@@ -58,7 +59,7 @@ namespace GGemCo2DCore
         [HideInInspector] public MapManager mapManager;
         [HideInInspector] public DamageTextManager damageTextManager;
         [HideInInspector] public UIIconCoolTimeManager uIIconCoolTimeManager;
-        [HideInInspector] public SoundManager soundManager;
+        public SoundManager soundManager;
         public void SetSoundManager(SoundManager value) => soundManager = value;
         
         public ItemManager ItemManager;
@@ -115,7 +116,6 @@ namespace GGemCo2DCore
             saveDataManager = CreateManager<SaveDataManager>(managerContainer);
             damageTextManager = CreateManager<DamageTextManager>(managerContainer);
             uIIconCoolTimeManager = CreateManager<UIIconCoolTimeManager>(managerContainer);
-            soundManager = CreateManager<SoundManager>(managerContainer);
             
             AddressableLoaderPrefabCharacter = new AddressableLoaderPrefabCharacter();
             AddressableLoaderPrefabCharacter.Initialize(this);
@@ -125,7 +125,6 @@ namespace GGemCo2DCore
             CharacterManager.Initialize(TableLoaderManager.Instance.TableNpc, TableLoaderManager.Instance.TableMonster,
                 TableLoaderManager.Instance.TableAnimation, AddressableLoaderPrefabCharacter);
             AnimationEventMediator animationEventMediator = new AnimationEventMediator();
-            animationEventMediator.Initialize(this);
             CharacterManager.SetAnimationEventMediator(animationEventMediator);
             
             KeyboardManager = new KeyboardManager();
@@ -141,6 +140,10 @@ namespace GGemCo2DCore
             EffectManager.SetAnimationEventMediator(animationEventMediator);
             ProjectileManager = new ProjectileManager();
             ProjectileManager.Initialize(this);
+            
+            // AnimationEventMediator 클래스에서 다른 매니저를 사용하고 있기때문에,
+            // 매니저가 생성된 후 Initialize를 해야 한다.
+            animationEventMediator.Initialize(this);
         }
 
         private T CreateManager<T>(GameObject parent) where T : Component
