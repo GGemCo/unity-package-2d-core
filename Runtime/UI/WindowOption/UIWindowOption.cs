@@ -133,9 +133,9 @@ namespace GGemCo2DCore
             // GcLogger.Log($"dropdownLanguage.value: {dropdownLanguage.value}");
             
             LocalizationManager.Instance?.StartChangeLocale(dropdownLanguage.value);
-            soundManager.ChangeSoundVolumeMaster(sliderVolumeMaster.value);
-            soundManager.ChangeSoundVolumeBgm(sliderVolumeBgm.value);
-            soundManager.ChangeSoundVolumeSfx(sliderVolumeSfx.value);
+            soundManager.SetMasterVolume(sliderVolumeMaster.value);
+            soundManager.SetBgmVolume(sliderVolumeBgm.value);
+            soundManager.SetSfxVolume(sliderVolumeSfx.value);
             
             // 변경된 항목을 저장하고, _isChanged는 false로 
             SetIsChange(false);
@@ -176,7 +176,7 @@ namespace GGemCo2DCore
             // GcLogger.Log($"bgm volume: {value}");
             if (soundManager)
             {
-                soundManager.ChangeSoundVolumeMaster(value, false);
+                soundManager.SetMasterVolume(value, false);
             }
 
             SetIsChange(true);
@@ -190,7 +190,7 @@ namespace GGemCo2DCore
             // GcLogger.Log($"bgm volume: {value}");
             if (soundManager)
             {
-                soundManager.ChangeSoundVolumeBgm(value, false);
+                soundManager.SetBgmVolume(value, false);
             }
 
             SetIsChange(true);
@@ -202,6 +202,10 @@ namespace GGemCo2DCore
         private void OnChangeSliderSfx(float value)
         {
             // GcLogger.Log($"sfx volume: {value}");
+            if (soundManager)
+            {
+                soundManager.SetSfxVolume(value, false);
+            }
             SetIsChange(true);
         }
         /// <summary>
