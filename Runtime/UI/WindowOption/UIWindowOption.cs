@@ -17,8 +17,9 @@ namespace GGemCo2DCore
         public Button buttonReset;
         public Button buttonCancel;
         
-        public Slider sliderBgm;
-        public Slider sliderSfx;
+        public Slider sliderVolumeMaster;
+        public Slider sliderVolumeBgm;
+        public Slider sliderVolumeSfx;
         // 변경한 값이 있는지 체크
         private bool _isChanged;
         [Tooltip("팝업 매니저")] [SerializeField] private PopupManager popupManager;
@@ -37,8 +38,9 @@ namespace GGemCo2DCore
             buttonReset?.onClick.AddListener(OnClickReset);
 
             dropdownLanguage?.onValueChanged.AddListener(OnChangeDropdownLanguage);
-            sliderBgm?.onValueChanged.AddListener(OnChangeSliderBgm);
-            sliderSfx?.onValueChanged.AddListener(OnChangeSliderSfx);
+            sliderVolumeMaster?.onValueChanged.AddListener(OnChangeSliderMaster);
+            sliderVolumeBgm?.onValueChanged.AddListener(OnChangeSliderBgm);
+            sliderVolumeSfx?.onValueChanged.AddListener(OnChangeSliderSfx);
 
             SetButtonInteractable(false);
         }
@@ -95,15 +97,20 @@ namespace GGemCo2DCore
             {
                 dropdownLanguage.value = index;
             }
-            float value = PlayerPrefsManager.LoadSoundVolumeBGM();
-            if (sliderBgm != null)
+            float value = PlayerPrefsManager.LoadSoundVolumeMaster();
+            if (sliderVolumeMaster != null)
             {
-                sliderBgm.value = value;
+                sliderVolumeMaster.value = value;
+            }
+            value = PlayerPrefsManager.LoadSoundVolumeBGM();
+            if (sliderVolumeBgm != null)
+            {
+                sliderVolumeBgm.value = value;
             }
             value = PlayerPrefsManager.LoadSoundVolumeSfx();
-            if (sliderSfx != null)
+            if (sliderVolumeSfx != null)
             {
-                sliderSfx.value = value;
+                sliderVolumeSfx.value = value;
             }
         }
         private void OnEnable()
@@ -126,10 +133,12 @@ namespace GGemCo2DCore
             // GcLogger.Log($"dropdownLanguage.value: {dropdownLanguage.value}");
             
             LocalizationManager.Instance?.StartChangeLocale(dropdownLanguage.value);
-            soundManager.ChangeSoundVolumeBgm(sliderBgm.value);
-            soundManager.ChangeSoundVolumeSfx(sliderSfx.value);
+            soundManager.ChangeSoundVolumeMaster(sliderVolumeMaster.value);
+            soundManager.ChangeSoundVolumeBgm(sliderVolumeBgm.value);
+            soundManager.ChangeSoundVolumeSfx(sliderVolumeSfx.value);
             
-            SetButtonInteractable(false);
+            // 변경된 항목을 저장하고, _isChanged는 false로 
+            SetIsChange(false);
         }
         /// <summary>
         /// 수정한것이 있으면 되돌리기
@@ -155,6 +164,22 @@ namespace GGemCo2DCore
         {
             LoadCurrentOptions();
             SetButtonInteractable(false);
+            // LoadCurrentOptions에서 최신으로 불러오기 때문에, 마지막에 _isChanged를 변경한다.
+            SetIsChange(false);
+        }
+        /// <summary>
+        /// 메인 볼륨 조절
+        /// </summary>
+        /// <param name="value"></param>
+        private void OnChangeSliderMaster(float value)
+        {
+            // GcLogger.Log($"bgm volume: {value}");
+            if (soundManager)
+            {
+                soundManager.ChangeSoundVolumeMaster(value, false);
+            }
+
+            SetIsChange(true);
         }
         /// <summary>
         /// BGM 볼륨 조절
@@ -222,12 +247,34 @@ namespace GGemCo2DCore
 
         private void OnConfirmResetByPopup()
         {
-            GcLogger.Log($"OnConfirmResetByPopup");
+            // GcLogger.Log($"OnConfirmResetByPopup");
             dropdownLanguage.value = (int)LocalizationConstants.DefaultLanguageIndex;
-            sliderBgm.value = _optionSettings.volumeBGM;
-            sliderSfx.value = _optionSettings.volumeSfx;
+            sliderVolumeMaster.value = _optionSettings.volumeMaster;
+            sliderVolumeBgm.value = _optionSettings.volumeBGM;
+            sliderVolumeSfx.value = _optionSettings.volumeSfx;
             
             OnClickConfirm();
+        }
+        /// <summary>
+        /// 저장하지 않고 닫을 수 있기 때문에 옵션 창이 닫힐때 현재 설정값 다시 로드
+        /// </summary>
+        public override bool Show(bool show)
+        {
+            if (!show && _isChanged)
+            {
+                PopupMetadata popupMetadata = new PopupMetadata
+                {
+                    PopupType = PopupManager.Type.Default,
+                    MessageColor = Color.red,
+                    Title = "취소하기", //슬롯 삭제
+                    Message = "변경한 내용을 저장하지 않았습니다.\n취소하시겠습니까?",
+                    OnConfirm = OnConfirmByPopup,
+                    ShowCancelButton = true
+                };
+                popupManager.ShowPopup(popupMetadata);
+                return false;
+            }
+            return base.Show(show);
         }
     }
 }

@@ -15,5 +15,9 @@
             UI,
             Skill
         }
+
+        public const string NameExposedParameterMaster = "GGemCoVolumeMaster";
+        public const string NameExposedParameterBGM = "GGemCoVolumeBGM";
+        public const string NameExposedParameterSfx = "GGemCoVolumeSfx";
     }
 }

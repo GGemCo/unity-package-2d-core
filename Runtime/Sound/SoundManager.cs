@@ -1,109 +1,144 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
-using System.Linq;
 using UnityEngine;
+using UnityEngine.Audio;
 
 namespace GGemCo2DCore
 {
+    /// <summary>
+    /// 사운드 매니저
+    /// </summary>
     public class SoundManager : MonoBehaviour
     {
-        public float bgmFadeDuration = 0.7f;
-        
+        [Header(ConfigCommon.TitleHeaderRequired)]
+        public AudioMixer mainAudioMixer; // 메인 Audio Mixer
+        public AudioMixerGroup bgmMixerGroup; // BGM 그룹
+        public AudioMixerGroup sfxMixerGroup; // SFX 그룹
+
+        public float bgmFadeDuration = 0.7f; // BGM 페이드 시간
+
         private AudioSource audioSourceDefaultGameBgm;
         private AudioSource audioSourceBgm2;
 
         private AudioSource currentBgmAudioSource;
         private AudioSource nextBgmAudioSource;
 
-        private AudioClip[] bgms;
+        private readonly Dictionary<int, int> soundPlayCount = new(); // 현재 재생 중인 사운드 개수
+        private readonly Dictionary<int, int> maxConcurrentPlays = new(); // 최대 동시 재생 개수
+        private readonly Dictionary<int, Queue<GameObject>> soundSfxPoolDictionary = new(); // SFX 풀
 
-        private readonly Dictionary<int, int> soundPlayCount = new Dictionary<int, int>(); // Uid별 현재 재생 중인 사운드의 개수
-        private readonly Dictionary<int, int> maxConcurrentPlays = new Dictionary<int, int>(); // Uid별 최대 동시 재생 개수
-
-        private readonly Dictionary<int, Queue<GameObject>> soundSfxPoolDictionary = new Dictionary<int, Queue<GameObject>>();
         private TableLoaderManager _tableLoaderManager;
         private AddressableLoaderSound _addressableLoaderSound;
-        
-        protected void Awake()
+
+        // 볼륨을 dB로 변환 (0.0001 이상만 허용)
+        private const float CalculateDecibelMinVolume = 0.0001f;
+        private const float CalculateDecibelParam1 = 20f;
+
+        // 초기화
+        private void Awake()
         {
             _tableLoaderManager = TableLoaderManager.Instance;
             _addressableLoaderSound = AddressableLoaderSound.Instance;
-            // AudioSource 컴포넌트를 동적으로 추가
+
+            // AudioSource 생성 및 Mixer Group 설정
             audioSourceDefaultGameBgm = gameObject.AddComponent<AudioSource>();
+            audioSourceDefaultGameBgm.outputAudioMixerGroup = bgmMixerGroup;
+
             audioSourceBgm2 = gameObject.AddComponent<AudioSource>();
+            audioSourceBgm2.outputAudioMixerGroup = bgmMixerGroup;
+
             InitializationBgm();
             InitializeSoundPools();
             InitializeSoundData();
         }
-        /// <summary>
-        /// 초기 배경음악 재생
-        /// </summary>
-        private void InitializationBgm() {
-            // if (tableLoaderManager == null || UidSoundBgmDefault <= 0) return;
-            // var info = tableLoaderManager.TableSound.GetSoundData(UidSoundBgmDefault);
-            // if (info.AudioClip == null) return;
-            // AudioSourceDefaultGameBgm.clip = info.AudioClip;
-            // AudioSourceDefaultGameBgm.playOnAwake = true; // 게임 시작 시 자동 재생 비활성화
-            // AudioSourceDefaultGameBgm.loop = true; // 반복 재생
-            
-            currentBgmAudioSource = audioSourceDefaultGameBgm;
-            nextBgmAudioSource = audioSourceBgm2;
-            
-            // CurrentBgmAudioSource.Play();
-            // CurrentBgmAudioSource.volume = SoundSettings.GetBGMVolume();
+
+        private void Start()
+        {
+            // audioMixer 가 초기화 되고 호출되도록 Start 에서 호출
+            ApplySavedVolumes();
         }
         /// <summary>
-        /// Sfx 사운드 pool 만들기 
+        /// 저장된 볼륨 적용
+        /// </summary>
+        private void ApplySavedVolumes()
+        {
+            ChangeSoundVolumeBgm(PlayerPrefsManager.LoadSoundVolumeBGM(), false);
+            ChangeSoundVolumeSfx(PlayerPrefsManager.LoadSoundVolumeSfx(), false);
+            ChangeSoundVolumeMaster(PlayerPrefsManager.LoadSoundVolumeMaster(), false);
+        }
+
+        /// <summary>
+        /// BGM 초기 설정
+        /// </summary>
+        private void InitializationBgm()
+        {
+            currentBgmAudioSource = audioSourceDefaultGameBgm;
+            nextBgmAudioSource = audioSourceBgm2;
+        }
+
+        /// <summary>
+        /// SFX 풀 초기화
         /// </summary>
         private void InitializeSoundPools()
         {
             if (_tableLoaderManager == null) return;
-            // soundPlayCount 초기화
-            Dictionary<int, Dictionary<string, string>> sounds = _tableLoaderManager.TableSound.GetDatas();
 
+            var sounds = _tableLoaderManager.TableSound.GetDatas();
             TableSound tableSound = _tableLoaderManager.TableSound;
-            foreach (KeyValuePair<int, Dictionary<string, string>> outerPair in sounds)
+
+            foreach (var pair in sounds)
             {
-                StruckTableSound info = tableSound.GetDataByUid(outerPair.Key);
+                var info = tableSound.GetDataByUid(pair.Key);
                 if (info.Type != SoundConstants.Type.Sfx) continue;
-                Queue<GameObject> pool = new Queue<GameObject>();
+
+                Queue<GameObject> pool = new();
                 for (int i = 0; i < info.MaxPlayCount; i++)
                 {
                     GameObject soundObject = CreateNewAudioSource(info);
-                    soundObject .SetActive(false); // 비활성화 상태로 유지
+                    soundObject.SetActive(false);
                     pool.Enqueue(soundObject);
                 }
-                soundSfxPoolDictionary.TryAdd(outerPair.Key, pool);
+                soundSfxPoolDictionary.TryAdd(pair.Key, pool);
             }
         }
+
         /// <summary>
-        /// Sfx 사운드 pool 용 GameObject 만들기 
+        /// AudioSource 오브젝트 생성
         /// </summary>
+        /// <param name="info"></param>
+        /// <returns></returns>
         private GameObject CreateNewAudioSource(StruckTableSound info)
         {
             GameObject soundObject = new GameObject($"{info.Uid}");
-            soundObject.transform.SetParent(this.transform);
+            soundObject.transform.SetParent(transform);
+
             AudioSource audioSource = soundObject.AddComponent<AudioSource>();
+            audioSource.outputAudioMixerGroup = sfxMixerGroup;
+            audioSource.volume = info.Volume;
+
             string key = $"{ConfigAddressableGroupName.Sound}_{info.FileName}";
             audioSource.clip = _addressableLoaderSound.GetAudioClip(key);
-            audioSource.volume = info.Volume;
             return soundObject;
         }
+
+        /// <summary>
+        /// 사운드 데이터 초기화
+        /// </summary>
         private void InitializeSoundData()
         {
             if (_tableLoaderManager == null) return;
-            // soundPlayCount 초기화
-            Dictionary<int, Dictionary<string, string>> sounds = _tableLoaderManager.TableSound.GetDatas();
-            
-            foreach (KeyValuePair<int, Dictionary<string, string>> outerPair in sounds)
+            var sounds = _tableLoaderManager.TableSound.GetDatas();
+
+            foreach (var pair in sounds)
             {
-                Dictionary<string, string> innerDictionary = outerPair.Value;
-                soundPlayCount.TryAdd(outerPair.Key, 0);
-                maxConcurrentPlays.TryAdd(outerPair.Key, int.Parse(innerDictionary["MaxPlayCount"]));
+                var inner = pair.Value;
+                soundPlayCount.TryAdd(pair.Key, 0);
+                maxConcurrentPlays.TryAdd(pair.Key, int.Parse(inner["MaxPlayCount"]));
             }
         }
+
         /// <summary>
-        /// 배경음악 교체하기
+        /// BGM 교체
         /// </summary>
         /// <param name="newClip"></param>
         public void ChangeBackgroundMusic(AudioClip newClip)
@@ -115,96 +150,114 @@ namespace GGemCo2DCore
             }
             StartCoroutine(BgmFadeOutAndIn(newClip));
         }
+
         /// <summary>
-        /// 배경음악 교체시 fade in out
+        /// BGM 페이드 아웃 후 페이드 인
         /// </summary>
         /// <param name="newClip"></param>
         /// <returns></returns>
         private IEnumerator BgmFadeOutAndIn(AudioClip newClip)
         {
-            // Fade out current audio
-            float startVolume = PlayerPrefsManager.LoadSoundVolumeBGM();
-            while (startVolume > 0 && currentBgmAudioSource.volume > 0)
+            float savedVolume = PlayerPrefsManager.LoadSoundVolumeBGM();
+            float dbTarget = Mathf.Log10(Mathf.Max(savedVolume, CalculateDecibelMinVolume)) * CalculateDecibelParam1;
+
+            mainAudioMixer.GetFloat(SoundConstants.NameExposedParameterBGM, out float currentDb);
+            float currentVolume = Mathf.Pow(10f, currentDb / CalculateDecibelParam1);
+
+            float t = 0f;
+            while (t < bgmFadeDuration)
             {
-                currentBgmAudioSource.volume -= startVolume * Time.deltaTime / bgmFadeDuration;
+                t += Time.deltaTime;
+                float v = Mathf.Lerp(currentVolume, 0f, t / bgmFadeDuration);
+                mainAudioMixer.SetFloat(SoundConstants.NameExposedParameterBGM, Mathf.Log10(Mathf.Max(v, CalculateDecibelMinVolume)) * CalculateDecibelParam1);
                 yield return null;
             }
 
             currentBgmAudioSource.Stop();
-            currentBgmAudioSource.volume = startVolume;
-
-            // Swap audio sources
             (currentBgmAudioSource, nextBgmAudioSource) = (nextBgmAudioSource, currentBgmAudioSource);
 
-            // Set new clip and fade in
             currentBgmAudioSource.clip = newClip;
-            currentBgmAudioSource.Play();
             currentBgmAudioSource.loop = true;
+            currentBgmAudioSource.Play();
 
-            currentBgmAudioSource.volume = 0;
-            while (currentBgmAudioSource.volume < startVolume)
+            t = 0f;
+            while (t < bgmFadeDuration)
             {
-                currentBgmAudioSource.volume += startVolume * Time.deltaTime / bgmFadeDuration;
+                t += Time.deltaTime;
+                float v = Mathf.Lerp(0f, savedVolume, t / bgmFadeDuration);
+                mainAudioMixer.SetFloat(SoundConstants.NameExposedParameterBGM, Mathf.Log10(Mathf.Max(v, CalculateDecibelMinVolume)) * CalculateDecibelParam1);
                 yield return null;
             }
 
-            currentBgmAudioSource.volume = startVolume;
+            mainAudioMixer.SetFloat(SoundConstants.NameExposedParameterBGM, dbTarget);
         }
+
         /// <summary>
-        /// 효과음 재생하기 
+        /// SFX 재생
         /// </summary>
         /// <param name="uid"></param>
         private void PlaySfxByUid(int uid)
         {
-            if (soundSfxPoolDictionary.ContainsKey(uid))
+            if (!soundSfxPoolDictionary.ContainsKey(uid)) return;
+
+            // 최대 동시 재생 수 초과 시 무시
+            if (soundPlayCount.TryGetValue(uid, out var currentCount) &&
+                maxConcurrentPlays.TryGetValue(uid, out var maxCount) &&
+                currentCount >= maxCount)
             {
-                GameObject soundObject = GetAvailableAudioSource(uid);
-                if (soundObject != null)
-                {
-                    AudioSource audioSource = soundObject.GetComponent<AudioSource>();
-                    soundObject.SetActive(true); // 활성화
-                    audioSource.Play();
-                    audioSource.volume = PlayerPrefsManager.LoadSoundVolumeSfx();
-                    StartCoroutine(DeactivateAfterPlay(soundObject, audioSource.clip.length));
-                }
-                else
-                {
-                    GcLogger.LogWarning("No available audio source in the pool for Uid: " + uid);
-                }
+                // 제한 초과: 무시 또는 로그
+                GcLogger.LogWarning($"SFX UID:{uid} 최대 동시 재생 {maxCount}개 초과");
+                return;
             }
-            else
+
+            GameObject soundObject = GetAvailableAudioSource(uid);
+            if (soundObject == null)
             {
-                GcLogger.LogWarning("Uid not found in the sound pool: " + uid);
+                GcLogger.LogWarning($"No available audio source in the pool for Uid: {uid}");
+                return;
             }
+
+            // 재생 카운트 증가
+            soundPlayCount[uid]++;
+
+            AudioSource audioSource = soundObject.GetComponent<AudioSource>();
+            soundObject.SetActive(true);
+            audioSource.Play();
+
+            StartCoroutine(DeactivateAfterPlay(soundObject, audioSource.clip.length, uid));
         }
+
         /// <summary>
-        /// 재생이 끝난 sfx GameObject 를 비활성화 시켜준다 
+        /// SFX 재생 후 비활성화
         /// </summary>
         /// <param name="soundObject"></param>
         /// <param name="delay"></param>
+        /// <param name="uid"></param>
         /// <returns></returns>
-        private IEnumerator DeactivateAfterPlay(GameObject soundObject, float delay)
+        private IEnumerator DeactivateAfterPlay(GameObject soundObject, float delay, int uid)
         {
             yield return new WaitForSeconds(delay);
-            soundObject.SetActive(false); // 사운드 재생 후 비활성화
-            soundSfxPoolDictionary[int.Parse(soundObject.name)].Enqueue(soundObject); // 다시 풀에 추가
+            soundObject.SetActive(false);
+            soundSfxPoolDictionary[uid].Enqueue(soundObject);
+
+            // 재생 종료 → 카운트 감소
+            if (soundPlayCount.ContainsKey(uid))
+                soundPlayCount[uid] = Mathf.Max(0, soundPlayCount[uid] - 1);
         }
+        
         /// <summary>
-        /// soundPoolDictionary 에서 재생 가능한 오디오 가져오기 
+        /// 사용 가능한 AudioSource 반환
         /// </summary>
         /// <param name="uid"></param>
         /// <returns></returns>
         private GameObject GetAvailableAudioSource(int uid)
         {
             Queue<GameObject> pool = soundSfxPoolDictionary[uid];
-            if (pool.Count > 0)
-            {
-                return pool.Dequeue();
-            }
-            return null; // 풀에 재생 가능한 오디오 소스가 없는 경우
+            return pool.Count > 0 ? pool.Dequeue() : null;
         }
+
         /// <summary>
-        /// 모든 사운드 on / off
+        /// 전체 사운드 일시정지
         /// </summary>
         /// <param name="set"></param>
         public void MuteAllSound(bool set)
@@ -212,64 +265,63 @@ namespace GGemCo2DCore
             AudioListener.pause = set;
         }
 
-        public void ChangeSoundVolumeBgm(float value, bool save = true)
+        public void ChangeSoundVolumeMaster(float value, bool save = true)
         {
-            if (currentBgmAudioSource == null) return;
-            currentBgmAudioSource.volume = value;
-            if (save)
-            {
-                PlayerPrefsManager.SaveSoundVolumeBGM(value);
-            }
-        }
-        public void ChangeSoundVolumeSfx(float value, bool save = true)
-        {
-            foreach (var uid in soundSfxPoolDictionary.Keys)
-            {
-                SetSfxVolume(uid, value);
-            }
+            float db = Mathf.Log10(Mathf.Max(value, CalculateDecibelMinVolume)) * CalculateDecibelParam1;
+            mainAudioMixer.SetFloat(SoundConstants.NameExposedParameterMaster, db);
 
             if (save)
-            {
-                PlayerPrefsManager.SaveSoundVolumeSfx(value);
-            }
+                PlayerPrefsManager.SaveSoundVolumeMaster(value);
         }
         /// <summary>
-        /// sfx 볼륨 조절하기
+        /// BGM 볼륨 변경
         /// </summary>
-        /// <param name="uid"></param>
-        /// <param name="volume"></param>
-        private void SetSfxVolume(int uid, float volume)
+        /// <param name="value"></param>
+        /// <param name="save"></param>
+        public void ChangeSoundVolumeBgm(float value, bool save = true)
         {
-            if (soundSfxPoolDictionary.TryGetValue(uid, out var value))
-            {
-                foreach (var audioSource in value.Select(soundObject => soundObject.GetComponent<AudioSource>()).Where(audioSource => audioSource != null))
-                {
-                    audioSource.volume = volume;
-                }
-            }
-            else
-            {
-                GcLogger.LogWarning("Uid not found in the sound pool: " + uid);
-            }
+            float db = Mathf.Log10(Mathf.Max(value, CalculateDecibelMinVolume)) * CalculateDecibelParam1;
+            mainAudioMixer.SetFloat(SoundConstants.NameExposedParameterBGM, db);
+
+            if (save)
+                PlayerPrefsManager.SaveSoundVolumeBGM(value);
         }
 
+        /// <summary>
+        /// SFX 볼륨 변경
+        /// </summary>
+        /// <param name="value"></param>
+        /// <param name="save"></param>
+        public void ChangeSoundVolumeSfx(float value, bool save = true)
+        {
+            float db = Mathf.Log10(Mathf.Max(value, CalculateDecibelMinVolume)) * CalculateDecibelParam1;
+            mainAudioMixer.SetFloat(SoundConstants.NameExposedParameterSfx, db);
+
+            if (save)
+                PlayerPrefsManager.SaveSoundVolumeSfx(value);
+        }
+
+        /// <summary>
+        /// 사운드 UID 기반으로 재생
+        /// </summary>
+        /// <param name="uid"></param>
         public void PlayByUid(int uid)
         {
             if (uid <= 0) return;
             var info = _tableLoaderManager.TableSound.GetDataByUid(uid);
             if (info.Uid <= 0) return;
 
+            string key = $"{ConfigAddressables.KeySound}_{info.FileName}";
+
             if (info.Type == SoundConstants.Type.Bgm)
-            {
-                string key = $"{ConfigAddressables.KeySound}_{info.FileName}";
                 ChangeBackgroundMusic(_addressableLoaderSound.GetAudioClip(key));
-            }
             else if (info.Type == SoundConstants.Type.Sfx)
-            {
                 PlaySfxByUid(uid);
-            }
         }
 
+        /// <summary>
+        /// BGM 정지
+        /// </summary>
         public void StopBgm()
         {
             currentBgmAudioSource.Stop();
