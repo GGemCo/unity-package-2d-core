@@ -41,6 +41,11 @@
 			"displayName": "Fonts",
 			"description": "네이버 나눔고딕 폰트 입니다.\nhttps://hangeul.naver.com/font",
 			"path": "Samples~/Fonts"
+		},
+		{
+			"displayName": "Audio",
+			"description": "Audio Mixer 샘플 리소스 입니다.",
+			"path": "Samples~/Audio"
 		}
 	],
 	"keywords": [
