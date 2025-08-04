@@ -24,7 +24,6 @@ namespace GGemCo2DCore
         {
             uid = UIWindowConstants.WindowUid.QuestReward;
             base.Awake();
-            buttonConfirm?.onClick.RemoveListener(OnClickConfirm);
             buttonConfirm?.onClick.AddListener(OnClickConfirm);
         }
 
@@ -73,7 +72,7 @@ namespace GGemCo2DCore
 
             if (info.reward.items.Count <= 0) return;
             maxCountIcon = info.reward.items.Count;
-            IconPoolManager.Initialize();
+            IconPoolManager.ResetMaxCountIcon(maxCountIcon);
             int index = 0;
             foreach (var rewardItem in info.reward.items)
             {

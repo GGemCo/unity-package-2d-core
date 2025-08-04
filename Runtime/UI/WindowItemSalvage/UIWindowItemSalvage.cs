@@ -36,12 +36,11 @@ namespace GGemCo2DCore
                 .CombineLatest(totalPriceSilver, (_, _) => Unit.Default)
                 .Subscribe(_ => SetTotalPriceText())
                 .AddTo(this);
-            SetSetIconHandler(new SetIconHandlerItemSalvage());
+            IconPoolManager.SetSetIconHandler(new SetIconHandlerItemSalvage());
             DragDropHandler.SetStrategy(new DragDropStrategyItemSalvage());
             InitializeInfo();
             if (buttonSalvage != null)
             {
-                buttonSalvage.onClick.RemoveListener(OnClickSalvage);
                 buttonSalvage.onClick.AddListener(OnClickSalvage);
             }
         }

@@ -40,9 +40,6 @@ namespace GGemCo2DCore
 
         private void InitButtons()
         {
-            buttonClose?.onClick.RemoveListener(OnClickClose);
-            buttonLoad?.onClick.RemoveListener(OnClickLoad);
-            buttonDelete?.onClick.RemoveListener(OnClickDelete);
             buttonClose?.onClick.AddListener(OnClickClose);
             buttonLoad?.onClick.AddListener(OnClickLoad);
             buttonDelete?.onClick.AddListener(OnClickDelete);

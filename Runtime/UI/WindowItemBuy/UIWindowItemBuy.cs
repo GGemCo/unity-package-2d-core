@@ -38,14 +38,11 @@ namespace GGemCo2DCore
         {
             uid = UIWindowConstants.WindowUid.ItemBuy;
             base.Awake();
-            buttonConfirm.onClick.RemoveListener(OnClickConfirm);
-            buttonCancel.onClick.RemoveListener(OnClickCancel);
-            sliderSplit.onValueChanged.RemoveListener(OnValueChanged);
             buttonConfirm.onClick.AddListener(OnClickConfirm);
             buttonCancel.onClick.AddListener(OnClickCancel);
             sliderSplit.onValueChanged.AddListener(OnValueChanged);
             
-            SetSetIconHandler(new SetIconHandlerItemBuy());
+            IconPoolManager.SetSetIconHandler(new SetIconHandlerItemBuy());
         }
         public void UpdateInfo(int iconUid, int iconCount)
         {

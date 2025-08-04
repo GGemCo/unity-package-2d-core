@@ -19,6 +19,8 @@ namespace GGemCo2DCore
 
         public Action<int> OnChoiceSelected;
 
+        private readonly Dictionary<int, DialogueOption> optionData = new();
+
         public ChoiceButtonHandler(Transform container, int padding, GameObject prefabButtonAnswer)
         {
             this.container = container;
@@ -43,16 +45,22 @@ namespace GGemCo2DCore
                 return;
             }
             buttons.Clear();
+            optionData.Clear();
 
             for (int i = 0; i < ButtonCount; i++)
             {
                 GameObject buttonObj = Object.Instantiate(prefabButtonAnswer, container);
                 Button button = buttonObj.GetComponent<Button>();
                 if (button == null) continue;
+
+                int capturedIndex = i; // 캡처된 인덱스를 고정된 리스너로 등록
+                button.onClick.AddListener(() => OnButtonClicked(capturedIndex));
+
                 buttons.TryAdd(i, button);
                 button.gameObject.SetActive(false); // 초기 상태 비활성화
             }
         }
+
         /// <summary>
         /// 선택지 버튼 정보 업데이트
         /// </summary>
@@ -61,10 +69,11 @@ namespace GGemCo2DCore
         {
             if (options == null || options.Count == 0)
             {
-                container.gameObject.SetActive(false);
+                HideButtons();
                 return;
             }
 
+            optionData.Clear();
             float maxWidth = 0;
             container.gameObject.SetActive(true);
 
@@ -77,9 +86,8 @@ namespace GGemCo2DCore
                     float width = answerComponent.SetButtonTitle(options[i].optionText);
                     maxWidth = Mathf.Max(maxWidth, width);
 
-                    int index = i;
-                    button.onClick.RemoveListener(() => OnChoiceSelected?.Invoke(index));
-                    button.onClick.AddListener(() => OnChoiceSelected?.Invoke(index));
+                    // 인덱스에 대한 데이터를 Dictionary에 저장
+                    optionData[i] = options[i];
                     button.gameObject.SetActive(true);
                 }
                 else
@@ -97,6 +105,19 @@ namespace GGemCo2DCore
                 }
             }
         }
+
+        /// <summary>
+        /// 버튼 클릭 시 처리 (인덱스 기반으로 호출)
+        /// </summary>
+        /// <param name="index"></param>
+        private void OnButtonClicked(int index)
+        {
+            if (optionData.TryGetValue(index, out var option))
+            {
+                OnChoiceSelected?.Invoke(index);
+            }
+        }
+
         /// <summary>
         /// 선택지 버튼 안보이게 처리
         /// </summary>

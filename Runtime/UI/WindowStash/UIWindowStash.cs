@@ -17,7 +17,7 @@ namespace GGemCo2DCore
         {
             uid = UIWindowConstants.WindowUid.Stash;
             base.Awake();
-            SetSetIconHandler(new SetIconHandlerStash());
+            IconPoolManager.SetSetIconHandler(new SetIconHandlerStash());
             DragDropHandler.SetStrategy(new DragDropStrategyStash());
         }
         protected override void Start()

@@ -53,8 +53,6 @@ namespace GGemCo2DCore
             _elementMaterials.Clear();
             _localizationManager = LocalizationManager.Instance;
             base.Awake();
-
-            SetSetIconHandler(new SetIconHandlerItemCraft());
             
             // 재료 element 초기 생성하기
             if (prefabElementMaterial != null)
@@ -68,7 +66,6 @@ namespace GGemCo2DCore
             }
             if (buttonCraft != null)
             {
-                buttonCraft.onClick.RemoveListener(OnClickCraft);
                 buttonCraft.onClick.AddListener(OnClickCraft);
             }
             if (textCraftResult != null)
@@ -174,6 +171,8 @@ namespace GGemCo2DCore
                 SceneGame?.uIWindowManager?.GetUIWindowByUid<UIWindowInventory>(UIWindowConstants.WindowUid
                     .Inventory);
             _inventoryData = SceneGame?.saveDataManager?.Inventory;
+
+            IconPoolManager.SetSetIconHandler(new SetIconHandlerItemCraft());
         }
         /// <summary>
         /// 아이콘 우클릭했을때 처리 

@@ -19,7 +19,7 @@ namespace GGemCo2DCore
             tableItem = TableLoaderManager.Instance.TableItem;
             base.Awake();
             
-            SetSetIconHandler(new SetIconHandlerEquip());
+            IconPoolManager.SetSetIconHandler(new SetIconHandlerEquip());
             DragDropHandler.SetStrategy(new DragDropStrategyEquip());
         }
         protected override void Start()

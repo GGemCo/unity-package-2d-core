@@ -71,7 +71,7 @@ namespace GGemCo2DCore
             _tableItemUpgrade = TableLoaderManager.Instance.TableItemUpgrade;
             _tableStatus = TableLoaderManager.Instance.TableStatus;
             base.Awake();
-            SetSetIconHandler(new SetIconHandlerItemUpgrade());
+            IconPoolManager.SetSetIconHandler(new SetIconHandlerItemUpgrade());
             DragDropHandler.SetStrategy(new DragDropStrategyItemUpgrade());
 
             // 재료 element 초기 생성하기
@@ -87,7 +87,6 @@ namespace GGemCo2DCore
 
             if (buttonUpgrade != null)
             {
-                buttonUpgrade.onClick.RemoveListener(OnClickUpgrade);
                 buttonUpgrade.onClick.AddListener(OnClickUpgrade);
             }
             

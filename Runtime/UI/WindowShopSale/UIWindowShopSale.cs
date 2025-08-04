@@ -29,7 +29,6 @@ namespace GGemCo2DCore
             uid = UIWindowConstants.WindowUid.ShopSale;
             if (TableLoaderManager.Instance == null) return;
             base.Awake();
-            buttonSale?.onClick.RemoveListener(OnClickSale);
             buttonSale?.onClick.AddListener(OnClickSale);
             
             totalPriceGold.DistinctUntilChanged()
@@ -37,7 +36,7 @@ namespace GGemCo2DCore
                 .Subscribe(_ => SetTotalPriceText())
                 .AddTo(this);
             
-            SetSetIconHandler(new SetIconHandlerShopSale());
+            IconPoolManager.SetSetIconHandler(new SetIconHandlerShopSale());
             DragDropHandler.SetStrategy(new DragDropStrategyShopSale());
         }
         protected override void Start()

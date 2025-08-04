@@ -28,7 +28,7 @@ namespace GGemCo2DCore
             TableSkill = TableLoaderManager.Instance.TableSkill;
             maxCountIcon = TableSkill.GetSkills().Count;
             base.Awake();
-            SetSetIconHandler(new SetIconHandlerSkill());
+            IconPoolManager.SetSetIconHandler(new SetIconHandlerSkill());
             DragDropHandler.SetStrategy(new DragDropStrategySkill());
         }
 

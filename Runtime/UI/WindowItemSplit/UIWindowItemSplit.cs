@@ -33,13 +33,10 @@ namespace GGemCo2DCore
         {
             uid = UIWindowConstants.WindowUid.ItemSplit;
             base.Awake();
-            buttonConfirm.onClick.RemoveListener(OnClickConfirm);
-            buttonCancel.onClick.RemoveListener(OnClickCancel);
-            sliderSplit.onValueChanged.RemoveListener(OnValueChanged);
             buttonConfirm.onClick.AddListener(OnClickConfirm);
             buttonCancel.onClick.AddListener(OnClickCancel);
             sliderSplit.onValueChanged.AddListener(OnValueChanged);
-            SetSetIconHandler(new SetIconHandlerItemSplit());
+            IconPoolManager.SetSetIconHandler(new SetIconHandlerItemSplit());
         }
         protected override void Start()
         {

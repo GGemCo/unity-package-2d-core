@@ -31,7 +31,7 @@ namespace GGemCo2DCore
             // uid 를 먼저 지정해야 한다.
             uid = UIWindowConstants.WindowUid.QuickSlot;
             base.Awake();
-            SetSetIconHandler(new SetIconHandlerQuickSlot());
+            IconPoolManager.SetSetIconHandler(new SetIconHandlerQuickSlot());
             DragDropHandler.SetStrategy(new DragDropStrategyQuickSlot());
         }
 

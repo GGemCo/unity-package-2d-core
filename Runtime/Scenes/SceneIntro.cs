@@ -129,12 +129,6 @@ namespace GGemCo2DCore
         /// </summary>
         private void InitButtons()
         {
-            buttonGameContinue?.onClick.RemoveListener(OnClickGameContinue);
-            buttonNewGame?.onClick.RemoveListener(OnClickNewGame);
-            buttonOpenSaveDataWindow?.onClick.RemoveListener(() => uIWindowLoadSaveData?.Show(true));
-            buttonOpenOption?.onClick.RemoveListener(() => uiWindowOption?.Show(true));
-            buttonGameExit?.onClick.RemoveListener(Application.Quit);
-                
             buttonGameContinue?.onClick.AddListener(OnClickGameContinue);
             buttonNewGame?.onClick.AddListener(OnClickNewGame);
             buttonOpenSaveDataWindow?.onClick.AddListener(() => uIWindowLoadSaveData?.Show(true));

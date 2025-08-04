@@ -34,15 +34,6 @@ namespace GGemCo2DCore
             base.Awake();
             _isChanged = false;
             
-            buttonConfirm?.onClick.RemoveListener(OnClickConfirm);
-            buttonCancel?.onClick.RemoveListener(OnClickCancel);
-            buttonReset?.onClick.RemoveListener(OnClickReset);
-
-            dropdownLanguage?.onValueChanged.RemoveListener(OnChangeDropdownLanguage);
-            sliderVolumeMaster?.onValueChanged.RemoveListener(OnChangeSliderMaster);
-            sliderVolumeBgm?.onValueChanged.RemoveListener(OnChangeSliderBgm);
-            sliderVolumeSfx?.onValueChanged.RemoveListener(OnChangeSliderSfx);
-            
             buttonConfirm?.onClick.AddListener(OnClickConfirm);
             buttonCancel?.onClick.AddListener(OnClickCancel);
             buttonReset?.onClick.AddListener(OnClickReset);

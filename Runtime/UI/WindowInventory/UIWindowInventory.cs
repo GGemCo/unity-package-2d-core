@@ -33,11 +33,10 @@ namespace GGemCo2DCore
             uid = UIWindowConstants.WindowUid.Inventory;
             if (TableLoaderManager.Instance == null) return;
             TableItem = TableLoaderManager.Instance.TableItem;
-            buttonMergeAllItems?.onClick.RemoveListener(OnClickMergeAllItems);
             buttonMergeAllItems?.onClick.AddListener(OnClickMergeAllItems);
             base.Awake();
             
-            SetSetIconHandler(new SetIconHandlerInventory());
+            IconPoolManager.SetSetIconHandler(new SetIconHandlerInventory());
             DragDropHandler.SetStrategy(new DragDropStrategyInventory());
         }
 

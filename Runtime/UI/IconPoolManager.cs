@@ -8,23 +8,44 @@ namespace GGemCo2DCore
     /// </summary>
     public class IconPoolManager
     {
-        private readonly UIWindow window;
-        private ISlotIconBuildStrategy buildStrategy;
-        private ISetIconHandler setIconHandler;
+        private UIWindow _window;
+        private ISlotIconBuildStrategy _buildStrategy;
+        private ISetIconHandler _setIconHandler;
 
-        public IconPoolManager(UIWindow window)
+        /// <summary>
+        /// Awake 호출
+        /// </summary>
+        /// <param name="window"></param>
+        public void Initialize(UIWindow window)
         {
-            this.window = window;
+            _window = window;
             // 기본 전략
-            buildStrategy = new DefaultSlotIconBuildStrategy();
+            _buildStrategy = new DefaultSlotIconBuildStrategy();
+            
+            // 커스텀 전략 설정 지점
+            var strategy = GetSlotIconBuildStrategy();
+            if (strategy != null)
+                SetBuildStrategy(strategy);
+
+            // 사용하지 않는 index 가 있을 수 있으므로 미리 만들어 두어야 건너 띄어도 문제가 없다.
+            // maxCountIcon 이 0 일때, 예외처리
+            if (_window.maxCountIcon == 0 && _window.preLoadSlots.Length > 0)
+            {
+                _window.maxCountIcon = _window.preLoadSlots.Length;
+            }
+            _window.slots = new GameObject[_window.maxCountIcon];
+            _window.icons = new GameObject[_window.maxCountIcon];
+
+            _buildStrategy?.BuildSlotsAndIcons(_window, _window.containerIcon, _window.maxCountIcon,
+                _window.iconType, _window.slotSize, _window.iconSize, _window.slots, _window.icons);
         }
         /// <summary>
         /// 별도 아이콘 생성 전략 설정
         /// </summary>
         /// <param name="strategy"></param>
-        public void SetBuildStrategy(ISlotIconBuildStrategy strategy)
+        private void SetBuildStrategy(ISlotIconBuildStrategy strategy)
         {
-            buildStrategy = strategy;
+            _buildStrategy = strategy;
         }
         /// <summary>
         /// 아이콘 세팅 핸들러 설정
@@ -32,23 +53,32 @@ namespace GGemCo2DCore
         /// <param name="handler"></param>
         public void SetSetIconHandler(ISetIconHandler handler)
         {
-            setIconHandler = handler;
+            _setIconHandler = handler;
         }
-        public void Initialize()
+        /// <summary>
+        /// 커스텀 빌드 전략을 반환. 기본은 null → Default 사용
+        /// </summary>
+        private ISlotIconBuildStrategy GetSlotIconBuildStrategy()
         {
-            window.slots = new GameObject[window.maxCountIcon];
-            window.icons = new GameObject[window.maxCountIcon];
-
-            buildStrategy?.BuildSlotsAndIcons(window, window.containerIcon, window.maxCountIcon,
-                window.iconType, window.slotSize, window.iconSize, window.slots, window.icons);
+            // Pre Load Slots 를 사용하면 예외처리 
+            if (_window.preLoadSlots.Length > 0)
+                return new SlotIconBuildStrategyPreLoad();
+            
+            return _window.uid switch
+            {
+                UIWindowConstants.WindowUid.Skill => new SlotIconBuildStrategySkill(),
+                UIWindowConstants.WindowUid.ItemSalvage => new SlotIconBuildStrategyItemSalvage(),
+                // UIWindowConstants.WindowUid.QuestReward => new SlotIconBuildStrategyQuestReward(),
+                _ => null,
+            };
         }
         /// <summary>
         /// slot index 로 아이콘 가져오기
         /// </summary>
         /// <param name="index"></param>
         /// <returns></returns>
-        public UIIcon GetIcon(int index) => window.icons[index]?.GetComponent<UIIcon>();
-        public UISlot GetSlot(int index) => window.slots[index]?.GetComponent<UISlot>();
+        public UIIcon GetIcon(int index) => _window.icons[index]?.GetComponent<UIIcon>();
+        public UISlot GetSlot(int index) => _window.slots[index]?.GetComponent<UISlot>();
         /// <summary>
         /// icon uid 로 아이콘 가져오기
         /// </summary>
@@ -56,12 +86,12 @@ namespace GGemCo2DCore
         /// <returns></returns>
         public UIIcon GetIconByUid(int uid)
         {
-            if (window.icons.Length == 0)
+            if (_window.icons.Length == 0)
             {
                 GcLogger.LogError("아이콘이 없습니다.");
                 return null;
             }
-            foreach (var icon in window.icons)
+            foreach (var icon in _window.icons)
             {
                 var uiIcon = icon?.GetComponent<UIIcon>();
                 if (uiIcon?.uid == uid)
@@ -75,8 +105,8 @@ namespace GGemCo2DCore
         /// <param name="slotIndex"></param>
         public void DetachIcon(int slotIndex)
         {
-            if (window.icons.Length <= 0) return;
-            var icon = window.icons[slotIndex];
+            if (_window.icons.Length <= 0) return;
+            var icon = _window.icons[slotIndex];
             var uiIcon = icon?.GetComponent<UIIcon>();
             if (uiIcon != null)
             {
@@ -84,7 +114,7 @@ namespace GGemCo2DCore
             }
             
             // 아이콘 정보 세팅 후, 전략으로 후처리
-            setIconHandler?.OnDetachIcon(window, slotIndex);
+            _setIconHandler?.OnDetachIcon(_window, slotIndex);
         }
         /// <summary>
         /// 아이콘 셋팅하기
@@ -97,7 +127,7 @@ namespace GGemCo2DCore
         /// <returns></returns>
         public UIIcon SetIcon(int slotIndex, int uid, int count, int level = 0, bool learn = false)
         {
-            GameObject icon = window.icons[slotIndex];
+            GameObject icon = _window.icons[slotIndex];
             if (icon == null)
             {
                 GcLogger.LogError("슬롯에 아이콘이 없습니다. slot index: " +slotIndex);
@@ -116,12 +146,12 @@ namespace GGemCo2DCore
                 DetachIcon(slotIndex);
                 return null;
             }
-            uiIcon.window = window;
-            uiIcon.windowUid = window.uid;
+            uiIcon.window = _window;
+            uiIcon.windowUid = _window.uid;
             uiIcon.ChangeInfoByUid(uid, count, level, learn);
             
             // 아이콘 정보 세팅 후, 전략으로 후처리
-            setIconHandler?.OnSetIcon(window, slotIndex, uid, count, level, learn);
+            _setIconHandler?.OnSetIcon(_window, slotIndex, uid, count, level, learn);
             return uiIcon;
         }
         /// <summary>
@@ -131,11 +161,111 @@ namespace GGemCo2DCore
         /// <param name="toWindowUid"></param>
         public void UnRegisterAllIcons(UIWindowConstants.WindowUid fromWindowUid, UIWindowConstants.WindowUid toWindowUid = UIWindowConstants.WindowUid.Inventory)
         {
-            foreach (var icon in window.icons)
+            foreach (var icon in _window.icons)
             {
                 UIIcon uiIcon = icon.GetComponent<UIIcon>();
                 if (uiIcon == null || uiIcon.uid <= 0 || uiIcon.GetCount() <= 0) continue;
                 SceneGame.Instance.uIWindowManager.UnRegisterIcon(fromWindowUid, uiIcon.slotIndex, toWindowUid);
+            }
+        }
+        /// <summary>
+        /// 빈 슬롯 찾기
+        /// </summary>
+        private int FindEmptySlot()
+        {
+            for (int i = 0; i < _window.maxCountIcon; i++)
+            {
+                var icon = _window.icons[i];
+                if (icon == null) continue;
+                UIIcon uiIcon = icon.GetComponent<UIIcon>();
+                if (uiIcon == null) continue;
+                if (uiIcon.uid <= 0 || uiIcon.GetCount() <= 0)
+                    return i;
+            }
+            return -1;
+        }
+        
+        public void SetIconCount(int iconUid, int iconCount)
+        {
+            int emptySlot = FindEmptySlot();
+            if (emptySlot == -1)
+            {
+                SceneGame.Instance.popupManager.ShowPopupError("There is no empty space in the window.");//"윈도우에 빈 공간이 없습니다."
+                return;
+            }
+            SetIcon(emptySlot, iconUid, iconCount);
+        }
+
+        public UIIcon SetIconCountReturnIcon(int iconUid, int iconCount)
+        {
+            int emptySlot = FindEmptySlot();
+            if (emptySlot == -1)
+            {
+                SceneGame.Instance.popupManager.ShowPopupError("There is no empty space in the window.");//"윈도우에 빈 공간이 없습니다."
+                return null;
+            }
+            return SetIcon(emptySlot, iconUid, iconCount);
+        }
+
+        public void ResetMaxCountIcon(int maxCountIcon)
+        {
+            if (_window.slots.Length > 0)
+            {
+                foreach (var slot in _window.slots)
+                {
+                    Object.Destroy(slot.gameObject);
+                }
+                _window.slots = null;
+            }
+            if (_window.icons.Length > 0)
+            {
+                foreach (var icon in _window.icons)
+                {
+                    Object.Destroy(icon.gameObject);
+                }
+                _window.icons = null;
+            }
+            _window.slots = new GameObject[maxCountIcon];
+            _window.icons = new GameObject[maxCountIcon];
+            
+            _buildStrategy?.BuildSlotsAndIcons(_window, _window.containerIcon, maxCountIcon,
+                _window.iconType, _window.slotSize, _window.iconSize, _window.slots, _window.icons);
+        }
+
+        public void SetIcons(ResultCommon result)
+        {
+            if (result.ResultIcons == null || result.ResultIcons.Count <= 0) return;
+            foreach (var icon in result.ResultIcons)
+            {
+                SetIcon(icon.SlotIndex, icon.Uid, icon.Count, icon.Level, icon.IsLearned);
+            }
+        }
+
+        public void RemoveAndDetachIcon()
+        {
+            var uIWindowManager = SceneGame.Instance.uIWindowManager;
+            foreach (var icon in _window.icons)
+            {
+                UIIconItem uiIconItem = icon.GetComponent<UIIconItem>();
+                if (uiIconItem == null || uiIconItem.uid <= 0 || uiIconItem.GetCount() <= 0) continue;
+                var parentInfo = uiIconItem.GetParentInfo();
+                // 등록 되었던것을 빼준다.
+                DetachIcon(uiIconItem.slotIndex);
+                // 인벤토리에서 지워준다.
+                if (parentInfo.Item1 != UIWindowConstants.WindowUid.None)
+                {
+                    uIWindowManager.RemoveIcon(parentInfo.Item1, parentInfo.Item2);
+                }
+            }
+        }
+
+        public void DetachAllIcons()
+        {
+            foreach (var icon in _window.icons)
+            {
+                UIIconItem uiIconItem = icon.GetComponent<UIIconItem>();
+                if (!uiIconItem) continue;
+                DetachIcon(uiIconItem.slotIndex);
             }
         }
     }
