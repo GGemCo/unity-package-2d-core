@@ -24,6 +24,7 @@ namespace GGemCo2DCore
         {
             uid = UIWindowConstants.WindowUid.QuestReward;
             base.Awake();
+            buttonConfirm?.onClick.RemoveListener(OnClickConfirm);
             buttonConfirm?.onClick.AddListener(OnClickConfirm);
         }
 

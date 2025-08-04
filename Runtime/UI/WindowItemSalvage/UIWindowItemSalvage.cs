@@ -41,7 +41,7 @@ namespace GGemCo2DCore
             InitializeInfo();
             if (buttonSalvage != null)
             {
-                buttonSalvage.onClick.RemoveAllListeners();
+                buttonSalvage.onClick.RemoveListener(OnClickSalvage);
                 buttonSalvage.onClick.AddListener(OnClickSalvage);
             }
         }

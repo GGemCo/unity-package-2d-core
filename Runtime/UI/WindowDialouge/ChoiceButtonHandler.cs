@@ -78,7 +78,7 @@ namespace GGemCo2DCore
                     maxWidth = Mathf.Max(maxWidth, width);
 
                     int index = i;
-                    button.onClick.RemoveAllListeners();
+                    button.onClick.RemoveListener(() => OnChoiceSelected?.Invoke(index));
                     button.onClick.AddListener(() => OnChoiceSelected?.Invoke(index));
                     button.gameObject.SetActive(true);
                 }

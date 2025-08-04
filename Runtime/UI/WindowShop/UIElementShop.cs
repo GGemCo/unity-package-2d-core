@@ -54,7 +54,7 @@ namespace GGemCo2DCore
             slotIndex = pslotIndex;
             if (buttonBuy != null)
             {
-                buttonBuy.onClick.RemoveAllListeners();
+                buttonBuy.onClick.RemoveListener(OnClickBuy);
                 buttonBuy.onClick.AddListener(OnClickBuy);
             }
 

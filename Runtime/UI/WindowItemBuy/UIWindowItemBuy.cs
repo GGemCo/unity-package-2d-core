@@ -38,9 +38,9 @@ namespace GGemCo2DCore
         {
             uid = UIWindowConstants.WindowUid.ItemBuy;
             base.Awake();
-            buttonConfirm.onClick.RemoveAllListeners();
-            buttonCancel.onClick.RemoveAllListeners();
-            sliderSplit.onValueChanged.RemoveAllListeners();
+            buttonConfirm.onClick.RemoveListener(OnClickConfirm);
+            buttonCancel.onClick.RemoveListener(OnClickCancel);
+            sliderSplit.onValueChanged.RemoveListener(OnValueChanged);
             buttonConfirm.onClick.AddListener(OnClickConfirm);
             buttonCancel.onClick.AddListener(OnClickCancel);
             sliderSplit.onValueChanged.AddListener(OnValueChanged);

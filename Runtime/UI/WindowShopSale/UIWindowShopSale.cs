@@ -29,7 +29,7 @@ namespace GGemCo2DCore
             uid = UIWindowConstants.WindowUid.ShopSale;
             if (TableLoaderManager.Instance == null) return;
             base.Awake();
-            buttonSale?.onClick.RemoveAllListeners();
+            buttonSale?.onClick.RemoveListener(OnClickSale);
             buttonSale?.onClick.AddListener(OnClickSale);
             
             totalPriceGold.DistinctUntilChanged()

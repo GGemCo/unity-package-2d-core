@@ -23,7 +23,7 @@ namespace GGemCo2DCore
         private void Awake()
         {
             button = GetComponent<Button>();
-            button.onClick.RemoveAllListeners();
+            button.onClick.RemoveListener(SetElement);
             button.onClick.AddListener(SetElement);
         }
         public void Initialize(SlotMetaInfo slotMetaInfo, bool isCheck, UIWindowLoadSaveData puiWindowLoadSaveData)

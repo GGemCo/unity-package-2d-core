@@ -40,13 +40,13 @@ namespace GGemCo2DCore
             if (buttonLearn != null)
             {
                 buttonLearn.gameObject.SetActive(true);
-                buttonLearn.onClick.RemoveAllListeners();
+                buttonLearn.onClick.RemoveListener(OnClickLearn);
                 buttonLearn.onClick.AddListener(OnClickLearn);
             }
             if (buttonLevelUp != null)
             {
                 buttonLevelUp.gameObject.SetActive(false);
-                buttonLevelUp.onClick.RemoveAllListeners();
+                buttonLevelUp.onClick.RemoveListener(OnClickLevelUp);
                 buttonLevelUp.onClick.AddListener(OnClickLevelUp);
             }
 

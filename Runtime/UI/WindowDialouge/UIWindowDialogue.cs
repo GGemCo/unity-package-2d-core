@@ -54,7 +54,7 @@ namespace GGemCo2DCore
             {
                 _originalFontSize = textMessage.fontSize;
             }
-            buttonNextMessage?.onClick.RemoveAllListeners();
+            buttonNextMessage?.onClick.RemoveListener(OnClickNext);
             buttonNextMessage?.onClick.AddListener(OnClickNext);
             _messages = new List<string>();
             _dialogueNodeDatas = new Dictionary<string, DialogueNodeData>();

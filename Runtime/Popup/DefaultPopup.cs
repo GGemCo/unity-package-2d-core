@@ -141,7 +141,8 @@ namespace GGemCo2DCore
             button.gameObject.SetActive(isActive);
 
             if (!isActive) return;
-            button.onClick.RemoveAllListeners();
+            button.onClick.RemoveListener(callback.Invoke);
+            button.onClick.RemoveListener(ClosePopup);
             button.onClick.AddListener(callback.Invoke);
             button.onClick.AddListener(ClosePopup);
         }

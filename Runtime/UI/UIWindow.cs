@@ -71,7 +71,7 @@ namespace GGemCo2DCore
 
             if (buttonClose != null)
             {
-                buttonClose.onClick.RemoveAllListeners();
+                buttonClose.onClick.RemoveListener(OnClickClose);
                 buttonClose.onClick.AddListener(OnClickClose);
             }
 

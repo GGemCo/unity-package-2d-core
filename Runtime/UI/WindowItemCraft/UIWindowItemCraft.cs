@@ -68,7 +68,7 @@ namespace GGemCo2DCore
             }
             if (buttonCraft != null)
             {
-                buttonCraft.onClick.RemoveAllListeners();
+                buttonCraft.onClick.RemoveListener(OnClickCraft);
                 buttonCraft.onClick.AddListener(OnClickCraft);
             }
             if (textCraftResult != null)

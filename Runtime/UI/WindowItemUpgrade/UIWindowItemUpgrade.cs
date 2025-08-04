@@ -87,7 +87,7 @@ namespace GGemCo2DCore
 
             if (buttonUpgrade != null)
             {
-                buttonUpgrade.onClick.RemoveAllListeners();
+                buttonUpgrade.onClick.RemoveListener(OnClickUpgrade);
                 buttonUpgrade.onClick.AddListener(OnClickUpgrade);
             }
             

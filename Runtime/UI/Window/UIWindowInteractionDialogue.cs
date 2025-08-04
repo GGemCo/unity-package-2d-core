@@ -158,7 +158,7 @@ namespace GGemCo2DCore
             button.gameObject.SetActive(true);
             
             // 중복 호출을 막기 위해 기존에 연결된 리스너를 모두 지워준다.
-            button.onClick.RemoveAllListeners();
+            button.onClick.RemoveListener(() => OnClickChoiceQuest(npcQuestData));
             button.onClick.AddListener(() => OnClickChoiceQuest(npcQuestData));
             TextMeshProUGUI textComponent = button.GetComponentInChildren<TextMeshProUGUI>();
             if (textComponent != null)
@@ -209,7 +209,7 @@ namespace GGemCo2DCore
 
             if (!isActive) return;
             // 중복 호출을 막기 위해 기존에 연결된 리스너를 모두 지워준다.
-            button.onClick.RemoveAllListeners();
+            button.onClick.RemoveListener(() => OnClickChoice(interactionType, value));
             button.onClick.AddListener(() => OnClickChoice(interactionType, value));
             
             TextMeshProUGUI textComponent = button.GetComponentInChildren<TextMeshProUGUI>();

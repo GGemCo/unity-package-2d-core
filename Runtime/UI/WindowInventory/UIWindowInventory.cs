@@ -33,7 +33,7 @@ namespace GGemCo2DCore
             uid = UIWindowConstants.WindowUid.Inventory;
             if (TableLoaderManager.Instance == null) return;
             TableItem = TableLoaderManager.Instance.TableItem;
-            buttonMergeAllItems?.onClick.RemoveAllListeners();
+            buttonMergeAllItems?.onClick.RemoveListener(OnClickMergeAllItems);
             buttonMergeAllItems?.onClick.AddListener(OnClickMergeAllItems);
             base.Awake();
             
