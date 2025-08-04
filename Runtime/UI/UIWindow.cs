@@ -49,14 +49,7 @@ namespace GGemCo2DCore
 
         protected virtual void Awake()
         {
-            // 사용하지 않는 index 가 있을 수 있으므로 미리 만들어 두어야 건너 띄어도 문제가 없다.
-            // maxCountIcon 이 0 일때, 예외처리
-            if (maxCountIcon == 0 && preLoadSlots.Length > 0)
-            {
-                maxCountIcon = preLoadSlots.Length;
-            }
-            slots = new GameObject[maxCountIcon];
-            icons = new GameObject[maxCountIcon];
+            InitializeIconCount();
             
             gameObject.AddComponent<CanvasGroup>();
             if (useFade)
@@ -69,13 +62,30 @@ namespace GGemCo2DCore
                 containerIcon.cellSize = new Vector2(slotSize.x, slotSize.y);
             }
 
-            if (buttonClose != null)
-            {
-                buttonClose.onClick.RemoveListener(OnClickClose);
-                buttonClose.onClick.AddListener(OnClickClose);
-            }
+            InitializeButtonClose();
 
             // 기능 위임 객체 생성
+            InitializeIconPoolManager();
+            
+            DragDropHandler = new IconDragDropHandler(this);
+        }
+
+        private void InitializeIconCount()
+        {
+            // 사용하지 않는 index 가 있을 수 있으므로 미리 만들어 두어야 건너 띄어도 문제가 없다.
+            // maxCountIcon 이 0 일때, 예외처리
+            if (maxCountIcon == 0 && preLoadSlots.Length > 0)
+            {
+                maxCountIcon = preLoadSlots.Length;
+            }
+            slots = new GameObject[maxCountIcon];
+            icons = new GameObject[maxCountIcon];
+        }
+        /// <summary>
+        /// 아이콘 pool 초기화
+        /// </summary>
+        private void InitializeIconPoolManager()
+        {
             IconPoolManager = new IconPoolManager(this);
             // 커스텀 전략 설정 지점
             var strategy = GetSlotIconBuildStrategy();
@@ -83,9 +93,23 @@ namespace GGemCo2DCore
                 IconPoolManager.SetBuildStrategy(strategy);
 
             IconPoolManager.Initialize();
-            
-            DragDropHandler = new IconDragDropHandler(this);
         }
+        /// <summary>
+        /// 닫기 버튼 초기화
+        /// </summary>
+        private void InitializeButtonClose()
+        {
+            if (buttonClose == null) return;
+            buttonClose.onClick.RemoveListener(OnClickClose);
+            buttonClose.onClick.AddListener(OnClickClose);
+            // 사운드 설정
+            ClickSoundEventBroadcaster clickSoundEventBroadcaster = buttonClose.gameObject.AddComponent<ClickSoundEventBroadcaster>();
+            if (clickSoundEventBroadcaster)
+            {
+                clickSoundEventBroadcaster.type = SoundConstants.UIButtonType.CloseWindow;
+            }
+        }
+
         /// <summary>
         /// 커스텀 빌드 전략을 반환. 기본은 null → Default 사용
         /// </summary>

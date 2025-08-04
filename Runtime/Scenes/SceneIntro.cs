@@ -106,7 +106,8 @@ namespace GGemCo2DCore
         /// 세이븓 데이터 슬롯 정보를 읽어서 버튼 처리 
         /// </summary>
         private void InitializeSlotMetaDataManager(GGemCoSettings settings, GGemCoPlayerSettings playerSettings,
-            GGemCoMapSettings mapSettings, GGemCoSaveSettings saveSettings, GGemCoOptionSettings optionSettings)
+            GGemCoMapSettings mapSettings, GGemCoSaveSettings saveSettings, GGemCoOptionSettings optionSettings,
+            GGemCoSoundSettings soundSettings)
         {
             _slotMetaDatController = new SlotMetaDatController(saveSettings.SaveDataFolderName, saveSettings.saveDataMaxSlotCount);
             if (uIWindowLoadSaveData)

@@ -18,9 +18,11 @@ namespace GGemCo2DCore
         [HideInInspector] public GGemCoMapSettings mapSettings;
         [HideInInspector] public GGemCoSaveSettings saveSettings;
         [HideInInspector] public GGemCoOptionSettings optionSettings;
+        [HideInInspector] public GGemCoSoundSettings soundSettings;
 
         public delegate void DelegateLoadSettings(GGemCoSettings settings, GGemCoPlayerSettings playerSettings,
-            GGemCoMapSettings mapSettings, GGemCoSaveSettings saveSettings, GGemCoOptionSettings optionSettings);
+            GGemCoMapSettings mapSettings, GGemCoSaveSettings saveSettings, GGemCoOptionSettings optionSettings,
+            GGemCoSoundSettings soundSettings);
         public event DelegateLoadSettings OnLoadSettings;
 
         private void Awake()
@@ -57,9 +59,11 @@ namespace GGemCo2DCore
                 var mapSettingsTask = LoadSettingsAsync<GGemCoMapSettings>(ConfigAddressableSetting.MapSettings.Key);
                 var saveSettingsTask = LoadSettingsAsync<GGemCoSaveSettings>(ConfigAddressableSetting.SaveSettings.Key);
                 var optionSettingsTask = LoadSettingsAsync<GGemCoOptionSettings>(ConfigAddressableSetting.OptionSettings.Key);
+                var soundSettingsTask = LoadSettingsAsync<GGemCoSoundSettings>(ConfigAddressableSetting.SoundSettings.Key);
 
                 // 모든 작업이 완료될 때까지 대기
-                await Task.WhenAll(settingsTask, playerSettingsTask, mapSettingsTask, saveSettingsTask, optionSettingsTask);
+                await Task.WhenAll(settingsTask, playerSettingsTask, mapSettingsTask, saveSettingsTask,
+                    optionSettingsTask, soundSettingsTask);
 
                 // 결과 저장
                 settings = settingsTask.Result;
@@ -67,6 +71,7 @@ namespace GGemCo2DCore
                 mapSettings = mapSettingsTask.Result;
                 saveSettings = saveSettingsTask.Result;
                 optionSettings = optionSettingsTask.Result;
+                soundSettings = soundSettingsTask.Result;
 
                 // 로그 출력
                 // if (settings != null)
@@ -79,7 +84,7 @@ namespace GGemCo2DCore
                 //     GcLogger.Log("최대 저장 슬롯 개수 : " + saveSettings.saveDataMaxSlotCount);
 
                 // 이벤트 호출
-                OnLoadSettings?.Invoke(settings, playerSettings, mapSettings, saveSettings, optionSettings);
+                OnLoadSettings?.Invoke(settings, playerSettings, mapSettings, saveSettings, optionSettings, soundSettings);
             }
             catch (Exception ex)
             {

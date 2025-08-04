@@ -8,7 +8,7 @@ namespace GGemCo2DCore
     /// <summary>
     /// 효과음 컨트롤러 (풀 자동 확장 + 무제한 UID 지원)
     /// </summary>
-    public class SfxSoundController
+    public class SoundControllerSfx
     {
         private readonly Transform _owner;
         private readonly AudioMixer _mixer;
@@ -24,7 +24,7 @@ namespace GGemCo2DCore
         private const int MaxAutoExpandCount = 10; // 자동 확장 허용 개수 제한 (0이면 무제한)
         private readonly Dictionary<int, int> _autoExpandedCount = new();
 
-        public SfxSoundController(Transform owner, AudioMixer mixer, AudioMixerGroup group, string volumeParam, AddressableLoaderSound loader)
+        public SoundControllerSfx(Transform owner, AudioMixer mixer, AudioMixerGroup group, string volumeParam, AddressableLoaderSound loader)
         {
             _owner = owner;
             _mixer = mixer;
@@ -32,7 +32,6 @@ namespace GGemCo2DCore
             _volumeParam = volumeParam;
             _loader = loader;
         }
-
         /// <summary>
         /// 효과음 pool 초기화
         /// </summary>
@@ -139,6 +138,9 @@ namespace GGemCo2DCore
             {
                 PlayerPrefsManager.SaveSoundVolumeSfx(volume);
             }
+        }
+        public void OnDestroy()
+        {
         }
     }
 }

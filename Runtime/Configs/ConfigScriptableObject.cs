@@ -8,7 +8,7 @@
         /// <summary>
         /// 메뉴 순서 정의
         /// </summary>
-        public enum MenuOrdering
+        private enum MenuOrdering
         {
             None,
             MainSettings,
@@ -16,6 +16,7 @@
             MapSettings,
             SaveSettings,
             OptionSettings,
+            SoundSettings
         }
 
         private const string BasePath = ConfigDefine.NameSDK + "/Settings/";
@@ -54,6 +55,13 @@
             public const string FileName = BaseName + "OptionSettings";
             public const string MenuName = BasePath + FileName;
             public const int Ordering = (int)MenuOrdering.OptionSettings;
+        }
+
+        public static class Sound
+        {
+            public const string FileName = BaseName + "SoundSettings";
+            public const string MenuName = BasePath + FileName;
+            public const int Ordering = (int)MenuOrdering.SoundSettings;
         }
     }
 }

@@ -7,7 +7,7 @@ namespace GGemCo2DCore
     /// <summary>
     /// BGM 컨트롤러
     /// </summary>
-    public class BgmSoundController
+    public class SoundControllerBgm
     {
         private readonly AudioMixer _mixer;
         private readonly string _volumeParam;
@@ -18,7 +18,7 @@ namespace GGemCo2DCore
         private AudioSource _current;
         private AudioSource _next;
 
-        public BgmSoundController(GameObject owner, AudioMixer mixer, AudioMixerGroup group, string volumeParam, float fadeDuration)
+        public SoundControllerBgm(GameObject owner, AudioMixer mixer, AudioMixerGroup group, string volumeParam, float fadeDuration)
         {
             _mixer = mixer;
             _volumeParam = volumeParam;
@@ -88,6 +88,10 @@ namespace GGemCo2DCore
             {
                 PlayerPrefsManager.SaveSoundVolumeBGM(volume);
             }
+        }
+
+        public void OnDestroy()
+        {
         }
     }
 }

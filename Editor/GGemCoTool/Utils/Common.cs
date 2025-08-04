@@ -10,27 +10,25 @@ namespace GGemCo2DCoreEditor
         {
             GUILayout.Label($"[ {title} ]", EditorStyles.whiteLargeLabel);
         }
+
         public static void OnGUITitleBold(string title)
         {
             GUILayout.Label($"{title}", EditorStyles.boldLabel);
         }
-        public static void GUILine( int lineHeight = 1, string hexCode = "" ) {
-            EditorGUILayout.Space();
-            Rect rect = EditorGUILayout.GetControlRect(false, lineHeight );
-            rect.height = lineHeight;
-            if (hexCode != "")
-            {
-                EditorGUI.DrawRect(rect, ColorHelper.HexToColor(hexCode));
-            }
-            else
-            {
-                EditorGUI.DrawRect(rect, new Color(0.5f, 0.5f, 0.5f, 1));
-            }
 
+        public static void GUILine(int lineHeight = 1, string hexCode = "")
+        {
+            EditorGUILayout.Space();
+            Rect rect = EditorGUILayout.GetControlRect(false, lineHeight);
+            rect.height = lineHeight;
+            if (!string.IsNullOrEmpty(hexCode))
+                EditorGUI.DrawRect(rect, ColorHelper.HexToColor(hexCode));
+            else
+                EditorGUI.DrawRect(rect, new Color(0.5f, 0.5f, 0.5f, 1));
             EditorGUILayout.Space();
         }
 
-        public static void GUILineBlue(int height)
+        public static void GUILineBlue(int height = 1)
         {
             GUILayout.Space(10);
             GUILine(height, "94D8F6");

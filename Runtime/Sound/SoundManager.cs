@@ -18,8 +18,8 @@ namespace GGemCo2DCore
         // BGM 페이드 시간
         [SerializeField] private float bgmFadeDuration = 0.7f;
 
-        private BgmSoundController _bgm;
-        private SfxSoundController _sfx;
+        private SoundControllerBgm _soundControllerBgm;
+        private SoundControllerSfx _soundControllerSfx;
 
         private TableLoaderManager _tableLoaderManager;
         private AddressableLoaderSound _addressableLoaderSound;
@@ -41,9 +41,20 @@ namespace GGemCo2DCore
                 _addressableLoaderSound = AddressableLoaderSound.Instance;
             }
 
-            _bgm = new BgmSoundController(gameObject, mainAudioMixer, bgmMixerGroup, SoundConstants.NameExposedParameterBGM, bgmFadeDuration);
-            _sfx = new SfxSoundController(transform, mainAudioMixer, sfxMixerGroup, SoundConstants.NameExposedParameterSfx, _addressableLoaderSound);
-            _sfx?.Initialize(_tableLoaderManager?.TableSound);
+            _soundControllerBgm = new SoundControllerBgm(gameObject, mainAudioMixer, bgmMixerGroup, SoundConstants.NameExposedParameterBGM, bgmFadeDuration);
+            _soundControllerSfx = new SoundControllerSfx(transform, mainAudioMixer, sfxMixerGroup, SoundConstants.NameExposedParameterSfx, _addressableLoaderSound);
+            _soundControllerSfx?.Initialize(_tableLoaderManager?.TableSound);
+            
+            ClickSoundEventDispatcher.OnClickDispatched += OnButtonClicked;
+        }
+
+        private void OnDestroy()
+        {
+            _soundControllerBgm?.OnDestroy();
+            _soundControllerSfx?.OnDestroy();
+            // FadeAndSwitch 중지 처리
+            StopAllCoroutines();
+            ClickSoundEventDispatcher.OnClickDispatched -= OnButtonClicked;
         }
 
         /// <summary>
@@ -52,8 +63,8 @@ namespace GGemCo2DCore
         private void Start()
         {
             SetMasterVolume(PlayerPrefsManager.LoadSoundVolumeMaster());
-            _bgm?.SetVolume(PlayerPrefsManager.LoadSoundVolumeBGM());
-            _sfx?.SetVolume(PlayerPrefsManager.LoadSoundVolumeSfx());
+            _soundControllerBgm?.SetVolume(PlayerPrefsManager.LoadSoundVolumeBGM());
+            _soundControllerSfx?.SetVolume(PlayerPrefsManager.LoadSoundVolumeSfx());
         }
 
         /// <summary>
@@ -65,29 +76,29 @@ namespace GGemCo2DCore
             if (!_tableLoaderManager) return;
             var info = _tableLoaderManager.TableSound.GetDataByUid(uid);
             if (info.Type == SoundConstants.Type.Bgm)
-                _bgm.Play(_addressableLoaderSound.GetAudioClip($"{ConfigAddressables.KeySound}_{info.FileName}"), this);
+                _soundControllerBgm.Play(_addressableLoaderSound.GetAudioClip($"{ConfigAddressableGroupName.Sound}_{info.FileName}"), this);
             else if (info.Type == SoundConstants.Type.Sfx)
-                _sfx.Play(uid, this);
+                _soundControllerSfx.Play(uid, this);
         }
 
         /// <summary>
         /// BGM 정지
         /// </summary>
-        public void StopBgm() => _bgm?.Stop();
+        public void StopBgm() => _soundControllerBgm?.Stop();
 
         /// <summary>
         /// BGM 볼륨 변경
         /// </summary>
         /// <param name="value"></param>
         /// <param name="save"></param>
-        public void SetBgmVolume(float value, bool save = true) => _bgm?.SetVolume(value, save);
+        public void SetBgmVolume(float value, bool save = true) => _soundControllerBgm?.SetVolume(value, save);
         
         /// <summary>
         /// SFX 볼륨 변경
         /// </summary>
         /// <param name="value"></param>
         /// <param name="save"></param>
-        public void SetSfxVolume(float value, bool save = true) => _sfx?.SetVolume(value, save);
+        public void SetSfxVolume(float value, bool save = true) => _soundControllerSfx?.SetVolume(value, save);
 
         /// <summary>
         /// 메인 볼륨 변경
@@ -109,7 +120,29 @@ namespace GGemCo2DCore
         /// <param name="clip"></param>
         public void ChangeBackgroundMusic(AudioClip clip)
         {
-            _bgm?.Play(clip, this);
+            _soundControllerBgm?.Play(clip, this);
+        }
+
+        private void OnButtonClicked(IClickSoundEventTrigger source)
+        {
+            if (source is not ClickSoundEventBroadcaster broadcaster) return;
+            // 1. 고유 ID 기반 사운드 재생 시도
+            int uid = broadcaster.GetSoundId();
+            if (uid > 0)
+            {
+                PlayByUid(uid);
+            }
+            // 2. 고유 ID가 없거나 찾지 못했을 경우 Enum 기준 조회
+            else {
+                SoundConstants.UIButtonType buttonType = broadcaster.GetSoundType();
+                uid = AddressableLoaderSettings.Instance.soundSettings.GetSoundButtonClickUid(buttonType);
+                if (uid <= 0)
+                {
+                    // 디폴트 버튼 사운드 다시 찾기
+                    uid = AddressableLoaderSettings.Instance.soundSettings.GetDefaultButtonClick();
+                }
+                PlayByUid(uid);
+            }
         }
     }
 }

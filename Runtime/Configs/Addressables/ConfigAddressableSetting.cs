@@ -10,6 +10,7 @@ namespace GGemCo2DCore
         private const string KeyMapSettings = ConfigDefine.NameSDK+"_MapSettings";
         private const string KeySaveSettings = ConfigDefine.NameSDK+"_SaveSettings";
         private const string KeyOptionSettings = ConfigDefine.NameSDK+"_OptionSettings";
+        private const string KeySoundSettings = ConfigDefine.NameSDK+"_SoundSettings";
 
         public static readonly AddressableAssetInfo Settings = new(
             KeySettings,
@@ -34,6 +35,10 @@ namespace GGemCo2DCore
             KeyOptionSettings,
             $"Assets/{ConfigDefine.NameSDK}/Settings/{ConfigDefine.NameSDK}OptionSettings.asset"
         );
+        public static readonly AddressableAssetInfo SoundSettings = new(
+            KeySoundSettings,
+            $"Assets/{ConfigDefine.NameSDK}/Settings/{ConfigDefine.NameSDK}SoundSettings.asset"
+        );
 
         /// <summary>
         /// 로딩 씬에서 로드 해야 되는 리스트
@@ -44,7 +49,8 @@ namespace GGemCo2DCore
             PlayerSettings,
             MapSettings,
             SaveSettings,
-            OptionSettings
+            OptionSettings,
+            SoundSettings
         };
     }
 }
