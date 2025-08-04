@@ -5,7 +5,7 @@ namespace GGemCo2DCore
     /// <summary>
     /// Npc 움직임 처리
     /// </summary>
-    public class ControllerNpc : CharacterController
+    public class ControllerNpc : CharacterBaseController
     {
         private Npc npc;
         private ICharacterAnimationController iCharacterAnimationController;

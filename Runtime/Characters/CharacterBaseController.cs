@@ -3,7 +3,7 @@ using UnityEngine;
 
 namespace GGemCo2DCore
 {
-    public class CharacterController : MonoBehaviour
+    public class CharacterBaseController : MonoBehaviour
     {
         protected CharacterBase TargetCharacter;
         private Vector2 minBounds; // 타일맵의 최소/최대 경계

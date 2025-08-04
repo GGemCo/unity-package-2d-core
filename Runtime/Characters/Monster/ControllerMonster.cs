@@ -7,7 +7,7 @@ namespace GGemCo2DCore
     /// <summary>
     /// 몬스터 선공, 후공 처리 
     /// </summary>
-    public class ControllerMonster : CharacterController
+    public class ControllerMonster : CharacterBaseController
     {
         private Coroutine coroutineAttack;
         private const float DelayTimeAttack = 0f;

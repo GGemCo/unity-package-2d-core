@@ -8,7 +8,7 @@ namespace GGemCo2DCore
     /// <summary>
     /// 플레이어 움직임 처리
     /// </summary>
-    public class ControllerPlayer : CharacterController
+    public class ControllerPlayer : CharacterBaseController
     {
         private CutsceneManager _cutsceneManager;
         
