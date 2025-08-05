@@ -57,7 +57,8 @@ namespace GGemCo2DCoreEditor
                     string assetPath = $"{ConfigAddressables.GetPathSound(info)}/{info.FileName}";
                     string label = ConfigAddressableLabel.Sound;
                 
-                    Add(settings, groupMonster, key, assetPath, label);
+                    AddressableAssetEntry entry = Add(settings, groupMonster, key, assetPath, label);
+                    entry?.SetLabel(ConfigAddressableLabel.SoundIntro, info.UseIntroScene, true);
                 }
             }
 
