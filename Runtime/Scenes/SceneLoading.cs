@@ -9,6 +9,7 @@ namespace GGemCo2DCore
     {
         private GameLoaderManager _gameLoaderManager;
         public TextMeshProUGUI textLoadingPercent;
+        public void SetTextLoadingPercent(TextMeshProUGUI value) => textLoadingPercent = value;
         
         private void Awake()
         {

@@ -7,10 +7,11 @@ namespace GGemCo2DCoreEditor
         public enum ToolOrdering
         {
             DefaultSetting = 1,
-            SettingAddressable = 2,
-            SettingSceneIntro = 3,
-            SettingSceneLoading = 4,
-            SettingSceneGame = 5,
+            SettingAddressable,
+            SettingScenePreIntro,
+            SettingSceneIntro,
+            SettingSceneLoading,
+            SettingSceneGame,
             Development = 100,
             CreateDialogue,
             MapExporter,
@@ -35,6 +36,7 @@ namespace GGemCo2DCoreEditor
         private const string NameToolSettings = NameToolGGemCo + "설정하기/";
         public const string NameToolSettingDefault = NameToolSettings + "기본 셋팅하기";
         public const string NameToolSettingAddressable = NameToolSettings + "Addressable 셋팅하기";
+        public const string NameToolSettingScenePreIntro = NameToolSettings + "Pre 인트로 씬 셋팅하기";
         public const string NameToolSettingSceneIntro = NameToolSettings + "인트로 씬 셋팅하기";
         public const string NameToolSettingSceneLoading = NameToolSettings + "로딩 씬 셋팅하기";
         public const string NameToolSettingSceneGame = NameToolSettings + "게임 씬 셋팅하기";

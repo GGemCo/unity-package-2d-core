@@ -14,6 +14,7 @@ namespace GGemCo2DCore
         
         [Header(ConfigCommon.TitleHeaderRequired)]
         public TextMeshProUGUI textLoadingPercent;
+        public void SetTextLoadingPercent(TextMeshProUGUI value) => textLoadingPercent = value;
 
         private GameLoaderManager _gameLoaderManager;
         private void Awake()

@@ -1,4 +1,5 @@
 ﻿using GGemCo2DCore;
+using TMPro;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using SceneManager = UnityEngine.SceneManagement.SceneManager;
@@ -64,6 +65,18 @@ namespace GGemCo2DCoreEditor
             GameObject[] prefabs = new[] { null, ConfigResources.PopupDefault.Load() };
             popupManager.SetPopupTypePrefabs(prefabs);
             return popupManager;
+        }
+
+        protected TextMeshProUGUI CreateLoadingText()
+        {
+            string fieldName = "textLoadingPercent";
+            MetaDataTextMeshProGUI metaDataTextMeshProGUI =
+                new MetaDataTextMeshProGUI(new Vector2(1, 0), new Vector2(-100, 100), AnchorPresets.BottomRight, 1000,
+                    50, 0, TextMeshProHelper.HorizontalAlignment.Right, TextMeshProHelper.VerticalAlignment.Middle,
+                    LocalizationConstants.Tables.Scene,
+                    LocalizationConstants.Keys.Loading.TextLoadingPercent());
+            TextMeshProUGUI textMeshProUGUI = CreateUIComponent.CreateObjectText(fieldName, metaDataTextMeshProGUI);
+            return textMeshProUGUI;
         }
     }
 }

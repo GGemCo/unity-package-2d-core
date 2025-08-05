@@ -48,20 +48,11 @@ namespace GGemCo2DCoreEditor
             // GGemCo2DCore.SceneLoading GameObject 만들기
             GGemCo2DCore.SceneLoading scene = CreateOrAddComponent<GGemCo2DCore.SceneLoading>("SceneLoading");
             
-            GGemCo2DCore.GameLoaderManager gameLoaderManager = CreateOrAddComponent<GGemCo2DCore.GameLoaderManager>("GameLoaderManager");
-            
             // 진행률 텍스트 만들고 연결하기
-            string fieldName = "textLoadingPercent";
-            MetaDataTextMeshProGUI metaDataTextMeshProGUI =
-                new MetaDataTextMeshProGUI(new Vector2(1, 0), new Vector2(-100, 100), AnchorPresets.BottomRight, 1000,
-                    50, 0, TextMeshProHelper.HorizontalAlignment.Right, TextMeshProHelper.VerticalAlignment.Middle,
-                    LocalizationConstants.Tables.Scene,
-                    LocalizationConstants.Keys.Loading.TextLoadingPercent());
-            TextMeshProUGUI textMeshProUGUI = CreateUIComponent.CreateObjectText(fieldName, metaDataTextMeshProGUI);
-            gameLoaderManager.SetTextLoadingPercent(textMeshProUGUI);
+            TextMeshProUGUI textMeshProUGUI = CreateLoadingText();
+            scene.SetTextLoadingPercent(textMeshProUGUI);
             
-            EditorUtility.SetDirty(gameLoaderManager);
-            Debug.Log($"{fieldName} 이 생성되어 {gameLoaderManager.name} 에 연결되었습니다.");
+            EditorUtility.SetDirty(scene);
         }
         /// <summary>
         /// 옵션 항목 셋팅 하기
