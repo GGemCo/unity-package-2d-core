@@ -1,4 +1,5 @@
-﻿namespace GGemCo2DCore
+﻿
+namespace GGemCo2DCore
 {
     public static class ConfigAddressableLabel
     {
@@ -14,5 +15,6 @@
         public const string ImageSkillIcon = ConfigDefine.NameSDK+"_Skill_Icon";
         public const string ImageAffectIcon = ConfigDefine.NameSDK+"_Affect_Icon";
         public const string Sound = ConfigDefine.NameSDK+"_Sound";
+        public const string SoundIntro = ConfigDefine.NameSDK+"_SoundIntro";
     }
 }

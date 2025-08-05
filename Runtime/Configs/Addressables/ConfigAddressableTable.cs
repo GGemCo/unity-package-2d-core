@@ -196,5 +196,11 @@ namespace GGemCo2DCore
             TableProjectile,
             TableSound
         };
+        public static AddressableAssetInfo GetByKey(string key)
+        {
+            return All.Find(assetInfo => assetInfo.Key == key);
+        }
+
+        public static string KeySoundTable() => $"{ConfigAddressableLabel.Table}_{Sound}";
     }
 }

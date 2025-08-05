@@ -5,37 +5,38 @@ using UnityEngine;
 
 namespace GGemCo2DCore
 {
-    public class SceneLoading : DefaultScene
+    /// <summary>
+    /// 인트로 씬
+    /// </summary>
+    public class ScenePreIntro : MonoBehaviour
     {
-        private GameLoaderManager _gameLoaderManager;
-        public TextMeshProUGUI textLoadingPercent;
+        public string GetFieldNameSceneIntro() => nameof(ScenePreIntro);
         
+        [Header(ConfigCommon.TitleHeaderRequired)]
+        public TextMeshProUGUI textLoadingPercent;
+
+        private GameLoaderManager _gameLoaderManager;
         private void Awake()
         {
-            if (!AddressableLoaderSettings.Instance)
-            {
-                UnityEngine.SceneManagement.SceneManager.LoadScene(ConfigDefine.SceneNameIntro);
-                return;
-            }
-            
+            InitializeGameLoaderManager();
+        }
+
+        private void InitializeGameLoaderManager()
+        {
             _gameLoaderManager = new GameObject("GameLoaderManager").AddComponent<GameLoaderManager>();
             _gameLoaderManager.SetTextLoadingPercent(textLoadingPercent);
 
             var soundTable = ConfigAddressableTable.GetByKey(ConfigAddressableTable.KeySoundTable());
-            _gameLoaderManager.SetLoadTargetTables(ConfigAddressableTable.All);
+            _gameLoaderManager.SetLoadTargetTables(new List<AddressableAssetInfo> { soundTable });
 
             // 순서 중요
             // Localization 을 먼저 해야 로드 진행률 텍스트에 적용된다.
             var loadSequence = new List<GameLoaderManager.LoadType>
             {
+                GameLoaderManager.LoadType.Localization,
+                GameLoaderManager.LoadType.Settings,
                 GameLoaderManager.LoadType.Table,
-                GameLoaderManager.LoadType.GamePrefab,
-                GameLoaderManager.LoadType.SaveData,
-                GameLoaderManager.LoadType.GamePrefabEffect,
-                GameLoaderManager.LoadType.Item,
-                GameLoaderManager.LoadType.Skill,
-                GameLoaderManager.LoadType.Affect,
-                GameLoaderManager.LoadType.Sound,
+                GameLoaderManager.LoadType.SoundIntro,
             };
 
             _gameLoaderManager.StartLoading(loadSequence);
@@ -55,10 +56,13 @@ namespace GGemCo2DCore
 
             OnIntroLoadComplete();
         }
-
         private void OnIntroLoadComplete()
         {
-            SceneManager.ChangeScene(ConfigDefine.SceneNameGame);
+            SceneManager.ChangeScene(ConfigDefine.SceneNameIntro);
+        }
+
+        private void OnDestroy()
+        {
         }
     }
 }

@@ -9,7 +9,6 @@ namespace GGemCo2DCore
     public class SceneIntro : MonoBehaviour
     {
         public string GetFieldNameSceneIntro() => nameof(SceneIntro);
-        [HideInInspector] public AddressableLoaderSettings addressableLoaderSettings;
         
         [Header(ConfigCommon.TitleHeaderRequired)]
         [Tooltip("새 게임 버튼")]
@@ -48,16 +47,22 @@ namespace GGemCo2DCore
         [SerializeField] private UIWindowLoadSaveData uIWindowLoadSaveData;
         public void SetUIWindowLoadSaveData(UIWindowLoadSaveData value) => uIWindowLoadSaveData = value;
         public string GetNameUIWindowLoadSaveData() => nameof(UIWindowLoadSaveData);
-        [Tooltip("인트로 사운드 BGM")]
-        public AudioClip audioClipBgm;
 
         private SlotMetaDatController _slotMetaDatController;
         private GGemCoSaveSettings _saveDataSettings;
+        private GameLoaderManager _gameLoaderManager;
         private void Awake()
         {
+            if (AddressableLoaderSettings.Instance == null)
+            {
+                SceneManager.ChangeScene(ConfigDefine.SceneNamePreIntro);
+                return;
+            }
+            var saveSettings = AddressableLoaderSettings.Instance.saveSettings;
+            _slotMetaDatController = new SlotMetaDatController(saveSettings.SaveDataFolderName, saveSettings.saveDataMaxSlotCount);
+            _saveDataSettings = saveSettings;
+            
             InitButtons();
-            InitializeAddressableSettingLoader();
-            InitializeLocalization();
 
             if (uIWindowLoadSaveData)
             {
@@ -67,62 +72,22 @@ namespace GGemCo2DCore
 
         private void Start()
         {
+            // UI 버튼 활성화
+            UpdateButtons();
+
+            // BGM 재생
             // SoundManager Awake 에서 bgm controller 가 생성된다.
-            if (audioClipBgm != null)
-            {
-                soundManager.ChangeBackgroundMusic(audioClipBgm);
-            }
+            soundManager.PlayBgmIntro();
+            // 인트로 SFX Pool 초기화
+            soundManager.InitializeSoundSfxPoolForIntro();
         }
-        /// <summary>
-        /// LocalizationManager 초기화
-        /// </summary>
-        private void InitializeLocalization()
-        {
-            GameObject gameObjectLocalizationManager = new GameObject("LocalizationManager");
-            gameObjectLocalizationManager.AddComponent<LocalizationManager>();
-        }
-
-        /// <summary>
-        /// GGemCo Settings 파일 읽어오기
-        /// </summary>
-        private void InitializeAddressableSettingLoader()
-        {
-            GameObject gameObjectAddressableSettingsLoader = new GameObject("AddressableSettingsLoader");
-            addressableLoaderSettings = gameObjectAddressableSettingsLoader.AddComponent<AddressableLoaderSettings>();
-            _ = addressableLoaderSettings.InitializeAsync();
-            addressableLoaderSettings.OnLoadSettings += InitializeSlotMetaDataManager;
-        }
-
         private void OnDestroy()
         {
-            addressableLoaderSettings.OnLoadSettings -= InitializeSlotMetaDataManager;
             buttonGameContinue?.onClick.RemoveAllListeners();
             buttonNewGame?.onClick.RemoveAllListeners();
             buttonOpenOption?.onClick.RemoveAllListeners();
             buttonOpenSaveDataWindow?.onClick.RemoveAllListeners();
             buttonGameExit?.onClick.RemoveAllListeners();
-        }
-        /// <summary>
-        /// 세이븓 데이터 슬롯 정보를 읽어서 버튼 처리 
-        /// </summary>
-        private void InitializeSlotMetaDataManager(GGemCoSettings settings, GGemCoPlayerSettings playerSettings,
-            GGemCoMapSettings mapSettings, GGemCoSaveSettings saveSettings, GGemCoOptionSettings optionSettings,
-            GGemCoSoundSettings soundSettings)
-        {
-            _slotMetaDatController = new SlotMetaDatController(saveSettings.SaveDataFolderName, saveSettings.saveDataMaxSlotCount);
-            if (uIWindowLoadSaveData)
-            {
-                uIWindowLoadSaveData.InitializeSaveDataSlots(saveSettings, _slotMetaDatController);
-            }
-
-            if (uiWindowOption)
-            {
-                uiWindowOption.Initialize(optionSettings);
-            }
-
-            _saveDataSettings = saveSettings;
-
-            UpdateButtons();
         }
         /// <summary>
         /// 버튼 초기화. 진행중인 게임이 없을때는 계속하기, 불러오기 버튼은 안보이도록 처리 
@@ -134,7 +99,7 @@ namespace GGemCo2DCore
             buttonOpenSaveDataWindow?.onClick.AddListener(() => uIWindowLoadSaveData?.Show(true));
             buttonOpenOption?.onClick.AddListener(() => uiWindowOption?.Show(true));
             buttonGameExit?.onClick.AddListener(Application.Quit);
-            
+
             // 진행중인 게임이 없을때 
             if (PlayerPrefsManager.LoadSaveDataSlotIndex() <= 0)
             {
@@ -144,6 +109,9 @@ namespace GGemCo2DCore
         }
         private void UpdateButtons()
         {
+            buttonOpenOption?.gameObject.SetActive(true);
+            buttonGameExit?.gameObject.SetActive(true);
+            
             // 남은 슬롯 index 채크해서 없으면 buttonNewGame 버튼 disable 처리 
             int slotIndex = _slotMetaDatController.GetEmptySlotIndex();
             if (_saveDataSettings.UseSaveData)

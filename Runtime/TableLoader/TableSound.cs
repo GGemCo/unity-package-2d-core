@@ -11,6 +11,7 @@ namespace GGemCo2DCore
         public string FileName;
         public int MaxPlayCount;
         public float Volume;
+        public bool UseIntroScene;
     }
     public class TableSound : DefaultTable
     {
@@ -51,7 +52,20 @@ namespace GGemCo2DCore
                 FileName = data["FileName"],
                 MaxPlayCount = int.Parse(data["MaxPlayCount"]),
                 Volume = float.Parse(data["Volume"]),
+                UseIntroScene = ConvertBoolean(data["UseIntroScene"]),
             };
+        }
+
+        public int GetBgmIntro()
+        {
+            var datas = GetDatas();
+            foreach (var data in datas)
+            {
+                var info = GetDataByUid(data.Key);
+                if (info.UseIntroScene && info.Type == SoundConstants.Type.Bgm) return info.Uid;
+            }
+
+            return 0;
         }
     }
 }

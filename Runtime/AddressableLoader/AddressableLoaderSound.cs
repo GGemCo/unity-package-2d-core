@@ -44,18 +44,22 @@ namespace GGemCo2DCore
         {
             AddressableLoaderController.ReleaseByHandles(_activeHandles);
         }
-        public async Task LoadPrefabsAsync()
+
+        public async Task LoadSoundAsync(string key)
         {
             try
             {
+                if (string.IsNullOrEmpty(key)) return;
+                
                 // 아이콘 이미지
                 _dicSound.Clear();
-                var locationHandle = Addressables.LoadResourceLocationsAsync(ConfigAddressableLabel.Sound);
+                
+                var locationHandle = Addressables.LoadResourceLocationsAsync(key);
                 await locationHandle.Task;
 
                 if (!locationHandle.IsValid() || locationHandle.Status != AsyncOperationStatus.Succeeded)
                 {
-                    GcLogger.LogError($"{ConfigAddressableLabel.Sound} 레이블을 가진 리소스를 찾을 수 없습니다.");
+                    GcLogger.LogError($"{key} 레이블을 가진 리소스를 찾을 수 없습니다.");
                     return;
                 }
 

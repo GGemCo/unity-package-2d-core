@@ -70,6 +70,14 @@ MonoBehaviour:
     m_Localized: Sound Data
     m_Metadata:
       m_Items: []
+  - m_Id: 11649323084877824
+    m_Localized: Setting Data
+    m_Metadata:
+      m_Items: []
+  - m_Id: 11649389958860800
+    m_Localized: Localization Data
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []

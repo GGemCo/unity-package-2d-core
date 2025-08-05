@@ -76,6 +76,14 @@ MonoBehaviour:
     m_Key: Loading_Text_Sound
     m_Metadata:
       m_Items: []
+  - m_Id: 11649323084877824
+    m_Key: Loading_Text_Settings
+    m_Metadata:
+      m_Items: []
+  - m_Id: 11649389958860800
+    m_Key: Loading_Text_Localization
+    m_Metadata:
+      m_Items: []
   m_Metadata:
     m_Items: []
   m_KeyGenerator:

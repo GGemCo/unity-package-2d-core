@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using UnityEngine;
 using UnityEngine.AddressableAssets;
@@ -24,9 +25,13 @@ namespace GGemCo2DCore
             GGemCoMapSettings mapSettings, GGemCoSaveSettings saveSettings, GGemCoOptionSettings optionSettings,
             GGemCoSoundSettings soundSettings);
         public event DelegateLoadSettings OnLoadSettings;
+        
+        private readonly HashSet<AsyncOperationHandle> _activeHandles = new HashSet<AsyncOperationHandle>();
+        private float _loadProgress;
 
         private void Awake()
         {
+            _loadProgress = 0f;
             if (!Instance)
             {
                 Instance = this;
@@ -38,18 +43,22 @@ namespace GGemCo2DCore
             }
         }
 
-        /// <summary>
-        /// Addressable Settings를 비동기적으로 로드하는 함수
-        /// </summary>
-        public async Task InitializeAsync()
+        private void OnDestroy()
         {
-            await LoadAllSettingsAsync();
+            ReleaseAll();
         }
 
         /// <summary>
+        /// 모든 로드된 리소스를 해제합니다.
+        /// </summary>
+        private void ReleaseAll()
+        {
+            AddressableLoaderController.ReleaseByHandles(_activeHandles);
+        }
+        /// <summary>
         /// 모든 설정 파일을 Addressables에서 로드
         /// </summary>
-        private async Task LoadAllSettingsAsync()
+        public async Task LoadAllSettingsAsync()
         {
             try
             {
@@ -116,5 +125,6 @@ namespace GGemCo2DCore
             Addressables.Release(locationsHandle);
             return asset;
         }
+        public float GetLoadProgress() => _loadProgress;
     }
 }

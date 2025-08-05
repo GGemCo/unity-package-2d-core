@@ -44,11 +44,13 @@ namespace GGemCo2DCore
             sliderVolumeSfx?.onValueChanged.AddListener(OnChangeSliderSfx);
 
             SetButtonInteractable(false);
+            Initialize();
         }
 
-        public void Initialize(GGemCoOptionSettings optionSettings)
+        private void Initialize()
         {
-            _optionSettings = optionSettings;
+            if (!AddressableLoaderSettings.Instance) return;
+            _optionSettings = AddressableLoaderSettings.Instance.optionSettings;
         }
         protected override void Start()
         {

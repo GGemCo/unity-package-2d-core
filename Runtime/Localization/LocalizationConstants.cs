@@ -106,6 +106,8 @@ namespace GGemCo2DCore
                 public static string TextTypeAffect() => $"{NameLoading}_{NameText}_Affect";
                 public static string TextTypeSound() => $"{NameLoading}_{NameText}_Sound";
                 public static string TextLoadingPercent() => $"{NameLoading}_{NameText}_LoadingPercent";
+                public static string TextTypeSettings() => $"{NameLoading}_{NameText}_Settings";
+                public static string TextTypeLocalization() => $"{NameLoading}_{NameText}_Localization";
             }
 
             // 기타 UI, 시스템 메시지, 팝업 등 계속 확장 가능

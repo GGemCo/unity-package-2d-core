@@ -1,4 +1,5 @@
-﻿using UnityEngine;
+﻿using System.Collections.Generic;
+using UnityEngine;
 using UnityEngine.Audio;
 
 namespace GGemCo2DCore
@@ -43,7 +44,6 @@ namespace GGemCo2DCore
 
             _soundControllerBgm = new SoundControllerBgm(gameObject, mainAudioMixer, bgmMixerGroup, SoundConstants.NameExposedParameterBGM, bgmFadeDuration);
             _soundControllerSfx = new SoundControllerSfx(transform, mainAudioMixer, sfxMixerGroup, SoundConstants.NameExposedParameterSfx, _addressableLoaderSound);
-            _soundControllerSfx?.Initialize(_tableLoaderManager?.TableSound);
             
             ClickSoundEventDispatcher.OnClickDispatched += OnButtonClicked;
         }
@@ -143,6 +143,38 @@ namespace GGemCo2DCore
                 }
                 PlayByUid(uid);
             }
+        }
+        /// <summary>
+        /// 인트로 씬에서 필요한 리소스 pool 만들기
+        /// </summary>
+        public void InitializeSoundSfxPoolForIntro()
+        {
+            List<int> introSfxUids = new List<int>();
+            var datas = _tableLoaderManager.TableSound.GetDatas();
+            foreach (var data in datas)
+            {
+                int uid = data.Key;
+                var info = _tableLoaderManager.TableSound.GetDataByUid(uid);
+                if (info is not { UseIntroScene: true }) continue;
+                introSfxUids.Add(info.Uid);
+            }
+            _soundControllerSfx?.InitializeSelective(_tableLoaderManager?.TableSound, introSfxUids);
+        }
+        /// <summary>
+        /// Intro 씬 BGM 재생하기
+        /// </summary>
+        public void PlayBgmIntro()
+        {
+            int uid = _tableLoaderManager.TableSound.GetBgmIntro();
+            if (uid <= 0) return;
+            PlayByUid(uid);
+        }
+        /// <summary>
+        /// 게임 씬에서 사용하는 효과음 pool 초기화
+        /// </summary>
+        public void InitializeSoundSfxPool()
+        {
+            _soundControllerSfx?.Initialize(_tableLoaderManager?.TableSound);
         }
     }
 }

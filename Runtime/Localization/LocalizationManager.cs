@@ -33,9 +33,11 @@ namespace GGemCo2DCore
         private LocalizedAssetDatabase _assetDatabase;
         // 사용자 언어 테이블 존재 여부
         private readonly Dictionary<string, bool> _userTableExistsMap = new();
+        private float _loadProgress;
 
         private void Awake()
         {
+            _loadProgress = 0f;
             if (!Instance)
             {
                 Instance = this;
@@ -50,15 +52,6 @@ namespace GGemCo2DCore
             _assetDatabase = LocalizationSettings.AssetDatabase;
 
             InitializeLanguageCodes();
-            InitializeCurrentLocale();
-        }
-        /// <summary>
-        /// PlayerPrefs 저장된 값으로 현재 사용중인 언어 셋팅
-        /// </summary>
-        private void InitializeCurrentLocale()
-        {
-            int index = PlayerPrefsManager.LoadIndexLocalizationLocale();
-            StartChangeLocale(index);
         }
         /// <summary>
         /// LanguageIndex enum을 기반으로 코드 리스트를 초기화합니다.
@@ -85,7 +78,7 @@ namespace GGemCo2DCore
         /// </summary>
         /// <param name="index"></param>
         /// <returns></returns>
-        private IEnumerator ChangeLocaleRoutine(int index)
+        public IEnumerator ChangeLocaleRoutine(int index)
         {
             _isChanging = true;
 
@@ -198,6 +191,7 @@ namespace GGemCo2DCore
                 _assetDatabase.GetLocalizedAssetAsync<T>(table, key, LocalizationSettings.SelectedLocale);
             return handle.WaitForCompletion();
         }
+        public float GetLoadProgress() => _loadProgress;
 
         /// <summary>
         /// 현재 언어 코드 (예: "En", "Ko") 반환

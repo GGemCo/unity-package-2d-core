@@ -63,7 +63,11 @@ namespace GGemCo2DCore
         /// </summary>
         public void Play(int uid, MonoBehaviour coroutineHost)
         {
-            if (!_pool.ContainsKey(uid)) return;
+            if (!_pool.ContainsKey(uid))
+            {
+                GcLogger.LogError($"sfx sound pool is null. Uid: {uid}");
+                return;
+            }
 
             bool isUnlimited = !_maxCount.ContainsKey(uid) || _maxCount[uid] == 0;
             bool canPlay = isUnlimited || _playCount[uid] < _maxCount[uid];
@@ -141,6 +145,29 @@ namespace GGemCo2DCore
         }
         public void OnDestroy()
         {
+        }
+
+        public void InitializeSelective(TableSound table, List<int> targetUids)
+        {
+            if (table == null || targetUids == null || targetUids.Count == 0) return;
+
+            foreach (var uid in targetUids)
+            {
+                var info = table.GetDataByUid(uid);
+                if (info == null || info.Type != SoundConstants.Type.Sfx) continue;
+
+                _infoCache[uid] = info;
+                _playCount[uid] = 0;
+                _maxCount[uid] = info.MaxPlayCount;
+
+                Queue<GameObject> pool = new();
+                for (int i = 0; i < info.MaxPlayCount; i++)
+                {
+                    pool.Enqueue(CreateAudioSourceObject(uid, info));
+                }
+                _pool[uid] = pool;
+                _autoExpandedCount[uid] = 0;
+            }
         }
     }
 }

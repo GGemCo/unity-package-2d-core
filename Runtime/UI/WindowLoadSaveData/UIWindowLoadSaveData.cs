@@ -36,6 +36,7 @@ namespace GGemCo2DCore
             _uiElementSaveDataSlots = new List<UIElementSaveDataSlot>();
             _currentCheckSlotIndex = 0;
             InitButtons();
+            InitializeSaveDataSlots();
         }
 
         private void InitButtons()
@@ -51,11 +52,14 @@ namespace GGemCo2DCore
         /// <summary>
         /// Settings 에서 최대 슬롯 개수를 가져와 UIElementSaveDataSlot 을 만든다.
         /// </summary>
-        public void InitializeSaveDataSlots(GGemCoSaveSettings saveSettings, SlotMetaDatController pslotMetaDatController)
+        private void InitializeSaveDataSlots()
         {
+            if (!AddressableLoaderSettings.Instance) return;
+            var saveSettings = AddressableLoaderSettings.Instance.saveSettings;
+            _slotMetaDatController = new SlotMetaDatController(saveSettings.SaveDataFolderName, saveSettings.saveDataMaxSlotCount);
+            
             if (elementSaveDataSlot == null || containerElementSaveDataSlot == null) return;
             int maxSlotCount = saveSettings.saveDataMaxSlotCount;
-            _slotMetaDatController = pslotMetaDatController;   
             List<SlotMetaInfo> slotMetaInfos = _slotMetaDatController.GetMetaDataSlots();
             
             for (int i = 0; i < maxSlotCount; i++)

@@ -10,6 +10,7 @@
         
         // 씬
         public const string PathScene = "Assets/"+NameSDK+"/Scenes";
+        public const string SceneNamePreIntro = NameSDK+"_PreIntro";
         public const string SceneNameIntro = NameSDK+"_Intro";
         public const string SceneNameLoading = NameSDK+"_Loading";
         public const string SceneNameGame = NameSDK+"_Game";
