@@ -47,6 +47,7 @@ namespace GGemCo2DCore
             maxEnemyValue = 10;
             delayDestroyMonster = 2f;
             dropItemDestroyTimeSec = 10;
+            inputSystemType = InputSystemType.None;
         }
     }
 }
