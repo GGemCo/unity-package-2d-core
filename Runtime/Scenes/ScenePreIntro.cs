@@ -31,11 +31,11 @@ namespace GGemCo2DCore
             _gameLoaderManager.SetLoadTargetTables(new List<AddressableAssetInfo> { soundTable });
 
             // 순서 중요
-            // Localization 을 먼저 해야 로드 진행률 텍스트에 적용된다.
+            // Settings 을 먼저해야 OptionSettings의 디폴트 언어 값을 사용할 수 있다.
             var loadSequence = new List<GameLoaderManager.LoadType>
             {
-                GameLoaderManager.LoadType.Localization,
                 GameLoaderManager.LoadType.Settings,
+                GameLoaderManager.LoadType.Localization,
                 GameLoaderManager.LoadType.Table,
                 GameLoaderManager.LoadType.SoundIntro,
             };

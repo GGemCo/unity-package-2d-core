@@ -94,6 +94,7 @@ namespace GGemCo2DCore
         /// </summary>
         private void LoadCurrentOptions()
         {
+            if (!AddressableLoaderSettings.Instance) return;
             // 현재 설정된 언어로 dropdownLanguage 셋팅하기
             int index = PlayerPrefsManager.LoadIndexLocalizationLocale();
             if (index != -1)

@@ -83,6 +83,12 @@ namespace GGemCo2DCore
         }
         public static int LoadIndexLocalizationLocale()
         {
+            // 첫 시작 인지 
+            string value = PlayerPrefsLoad(KeyIndex.KeyIndexLocalizationLocale);
+            if (string.IsNullOrEmpty(value))
+            {
+                return (int)AddressableLoaderSettings.Instance.optionSettings.defaultLanguage;
+            }
             return PlayerPrefsLoadInt(KeyIndex.KeyIndexLocalizationLocale, ((int)LocalizationConstants.DefaultLanguageIndex).ToString());
         }
         /// <summary>
@@ -95,7 +101,8 @@ namespace GGemCo2DCore
         }
         public static float LoadSoundVolumeBGM()
         {
-            return PlayerPrefsLoadFloat(KeyIndex.KeySoundVolumeBGM, "0.5");
+            return PlayerPrefsLoadFloat(KeyIndex.KeySoundVolumeBGM,
+                $"{AddressableLoaderSettings.Instance.optionSettings.volumeBGM}");
         }
         /// <summary>
         /// SFX 볼륨  
@@ -107,7 +114,8 @@ namespace GGemCo2DCore
         }
         public static float LoadSoundVolumeSfx()
         {
-            return PlayerPrefsLoadFloat(KeyIndex.KeySoundVolumeSfx, "0.5");
+            return PlayerPrefsLoadFloat(KeyIndex.KeySoundVolumeSfx,
+                $"{AddressableLoaderSettings.Instance.optionSettings.volumeSfx}");
         }
         /// <summary>
         /// 메인 볼륨
@@ -119,7 +127,8 @@ namespace GGemCo2DCore
         }
         public static float LoadSoundVolumeMaster()
         {
-            return PlayerPrefsLoadFloat(KeyIndex.KeySoundVolumeMaster, "0.5");
+            return PlayerPrefsLoadFloat(KeyIndex.KeySoundVolumeMaster,
+                $"{AddressableLoaderSettings.Instance.optionSettings.volumeMaster}");
         }
     }
 }
