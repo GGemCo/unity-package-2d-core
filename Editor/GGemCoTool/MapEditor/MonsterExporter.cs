@@ -4,6 +4,9 @@ using System.IO;
 using GGemCo2DCore;
 using Newtonsoft.Json;
 using TMPro;
+using UnityEditor;
+using UnityEditor.AddressableAssets;
+using UnityEditor.AddressableAssets.Settings;
 using UnityEngine;
 
 namespace GGemCo2DCoreEditor
@@ -69,6 +72,10 @@ namespace GGemCo2DCoreEditor
             var infoAnimation = _tableAnimation.GetDataByUid(monsterData.AnimationUid);
             if (infoAnimation == null) return;
             string monsterPath = ConfigAddressableMap.GetPathCharacter(infoAnimation);
+            
+            // Addressable 에 등록되어있는지 체크 
+            if (!Common.ExistAddressableByPath(ConfigAddressableMap.GetPathCharacter(infoAnimation, true))) return;
+            
             GameObject npcPrefab = AssetDatabaseLoaderManager.LoadAsset<GameObject>(monsterPath);
             
             CharacterRegenData characterRegenData =
@@ -101,7 +108,8 @@ namespace GGemCo2DCoreEditor
         /// <param name="filePath"></param>
         /// <param name="fileName"></param>
         /// <param name="mapUid"></param>
-        public void ExportMonsterDataToJson(string filePath, string fileName, int mapUid)
+        /// <param name="struckTableMap"></param>
+        public void ExportMonsterDataToJson(string filePath, string fileName, int mapUid, StruckTableMap struckTableMap)
         {
             GameObject mapObject = GameObject.FindGameObjectWithTag(ConfigTags.GetValue(ConfigTags.Keys.Map));
             CharacterRegenDataList saveMonsterList = new CharacterRegenDataList();
@@ -112,6 +120,22 @@ namespace GGemCo2DCoreEditor
                 var monster = child.gameObject.GetComponent<Monster>();
                 if (!monster) continue;
                 saveMonsterList.CharacterRegenDatas.Add(new CharacterRegenData(monster.uid, child.position, monster.isFlip, mapUid, true));
+                
+                // map 라벨 붙여주기 
+                // AddressableSettings 가져오기
+                AddressableAssetSettings settings = AddressableAssetSettingsDefaultObject.Settings;
+                if (settings)
+                {
+                    var info = _tableMonster.GetDataByUid(monster.uid);
+                    if (info == null) continue;
+                    var infoAnimation = _tableAnimation.GetDataByUid(info.AnimationUid);
+                    if (infoAnimation == null) continue;
+                    string assetPath = ConfigAddressableMap.GetPathCharacter(infoAnimation) + ".prefab";
+                    // 기존 Addressable 항목 확인
+                    AddressableAssetEntry entry = settings.FindAssetEntry(AssetDatabase.AssetPathToGUID(assetPath));
+                    string labelName = ConfigAddressableMap.GetLabel(struckTableMap.FolderName);
+                    entry?.SetLabel(labelName, true, true);
+                }
             }
 
             string json = JsonConvert.SerializeObject(saveMonsterList);

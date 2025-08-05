@@ -1,6 +1,8 @@
 ﻿using System.Collections.Generic;
 using GGemCo2DCore;
 using UnityEditor;
+using UnityEditor.AddressableAssets;
+using UnityEditor.AddressableAssets.Settings;
 using UnityEngine;
 
 namespace GGemCo2DCoreEditor
@@ -190,13 +192,79 @@ namespace GGemCo2DCoreEditor
                 Debug.LogWarning("No GameObject with the tag 'Map' found in the scene.");
                 return;
             }
-            string currentJsonFolderPath = ConfigAddressableMap.GetPathJson(_tableMap.GetDataByUid(_loadMapUid).FolderName);
+
+            StruckTableMap info = _tableMap.GetDataByUid(_loadMapUid);
+            string folderName = info.FolderName;
+            string currentJsonFolderPath = ConfigAddressableMap.GetPathJson(folderName);
             
-            _npcExporter.ExportNpcDataToJson(currentJsonFolderPath, ConfigAddressableMap.FileNameRegenNpc, _loadMapUid);
-            _monsterExporter.ExportMonsterDataToJson(currentJsonFolderPath, ConfigAddressableMap.FileNameRegenMonster, _loadMapUid);
+            // monster, npc 의 label 업데이트 해주기
+            // AddressableEditor 창을 찾거나, 없으면 새로 열기
+            string labelName = ConfigAddressableMap.GetLabel(folderName);
+            // 기존에 설정된 map 라벨은 삭제
+            RemoveCharacterMapLabel(labelName);
+
+            
+            _npcExporter.ExportNpcDataToJson(currentJsonFolderPath, ConfigAddressableMap.FileNameRegenNpc, _loadMapUid, info);
+            _monsterExporter.ExportMonsterDataToJson(currentJsonFolderPath, ConfigAddressableMap.FileNameRegenMonster, _loadMapUid, info);
             _warpExporter.ExportWarpDataToJson(currentJsonFolderPath, ConfigAddressableMap.FileNameWarp, _loadMapUid);
             AssetDatabase.Refresh();
+            
             EditorUtility.DisplayDialog(Title, "Json 저장하기 완료", "OK");
+        }
+        
+        private void RemoveCharacterMapLabel(string labelName)
+        {
+            // AddressableSettings 가져오기 (없으면 생성)
+            AddressableAssetSettings settings = AddressableAssetSettingsDefaultObject.Settings;
+            if (!settings)
+            {
+                Debug.LogWarning("Addressable 설정을 찾을 수 없습니다. 새로 생성합니다.");
+                return;
+            }
+            
+            Dictionary<int, Dictionary<string, string>> datas = _tableMonster.GetDatas();
+            foreach (KeyValuePair<int, Dictionary<string, string>> outerPair in datas)
+            {
+                var info = _tableMonster.GetDataByUid(outerPair.Key);
+                if (info == null) continue;
+                var infoAnimation = _tableAnimation.GetDataByUid(info.AnimationUid);
+                if (infoAnimation == null) continue;
+                string assetPath = ConfigAddressableMap.GetPathCharacter(infoAnimation, true);
+                // 기존 Addressable 항목 확인
+                AddressableAssetEntry entry = settings.FindAssetEntry(AssetDatabase.AssetPathToGUID(assetPath));
+                entry?.SetLabel(labelName, false, true);
+            }
+       
+            datas = _tableNpc.GetDatas();
+            foreach (KeyValuePair<int, Dictionary<string, string>> outerPair in datas)
+            {
+                var info = _tableNpc.GetDataByUid(outerPair.Key);
+                if (info == null) continue;
+                var infoAnimation = _tableAnimation.GetDataByUid(info.AnimationUid);
+                if (infoAnimation == null) continue;
+                string assetPath = ConfigAddressableMap.GetPathCharacter(infoAnimation, true);
+                // 기존 Addressable 항목 확인
+                AddressableAssetEntry entry = settings.FindAssetEntry(AssetDatabase.AssetPathToGUID(assetPath));
+                entry?.SetLabel(labelName, false, true);
+            }
+        }
+        /// <summary>
+        /// AddressableEditor로 SettingMap Setup 호출
+        /// </summary>
+        /// <param name="addressableEditor"></param>
+        private void SetupAddressable(AddressableEditor addressableEditor)
+        {
+            if (addressableEditor == null)
+            {
+                Debug.LogError("AddressableEditor 창을 찾을 수 없습니다.");
+                return;
+            }
+
+            // SettingMap 생성 및 Setup 호출
+            SettingMap settingMap = new SettingMap(addressableEditor);
+            settingMap.Setup();
+
+            Debug.Log("Addressable 설정 완료 (SettingMap.Setup 호출됨)");
         }
 
         private bool LoadJsonData()

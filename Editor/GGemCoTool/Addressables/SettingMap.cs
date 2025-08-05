@@ -46,7 +46,7 @@ namespace GGemCo2DCoreEditor
         /// <summary>
         /// Addressable 설정하기
         /// </summary>
-        private void Setup()
+        public void Setup()
         {
             Dictionary<int, Dictionary<string, string>> dictionaryMap = _addressableEditor.TableMap.GetDatas();
             
@@ -95,15 +95,15 @@ namespace GGemCo2DCoreEditor
                 key = ConfigAddressableMap.GetKeyJsonRegenMonster(info.FolderName);
                 assetPath = ConfigAddressableMap.GetAssetPathRegenMonster(info.FolderName);
                 Add(settings, group, key, assetPath);
-
-                SetCharacterLabel(assetPath, info, settings, Type.Monster);
+                
+                // SetCharacterLabel(assetPath, info, settings, Type.Monster);
                 
                 // npc 리젠 파일
                 key = ConfigAddressableMap.GetKeyJsonRegenNpc(info.FolderName);
                 assetPath = ConfigAddressableMap.GetAssetPathRegenNpc(info.FolderName);
                 Add(settings, group, key, assetPath);
                 
-                SetCharacterLabel(assetPath, info, settings, Type.Npc);
+                // SetCharacterLabel(assetPath, info, settings, Type.Npc);
                 
                 // 워프 리젠 파일
                 key = ConfigAddressableMap.GetKeyJsonWarp(info.FolderName);
@@ -124,6 +124,9 @@ namespace GGemCo2DCoreEditor
             if (_tableMonster == null || _tableNpc == null || _tableAnimation == null) return;
             string labelName = ConfigAddressableMap.GetLabel(struckTableMap.FolderName);
             if (string.IsNullOrEmpty(labelName)) return;
+
+            // 기존에 설정된 map 라벨은 삭제
+            RemoveCharacterMapLabel(settings, type, labelName);
             
             string content = AssetDatabaseLoaderManager.LoadFileJson(regenFileName);
             if (string.IsNullOrEmpty(content)) return;
@@ -153,6 +156,40 @@ namespace GGemCo2DCoreEditor
                 // 기존 Addressable 항목 확인
                 AddressableAssetEntry entry = settings.FindAssetEntry(AssetDatabase.AssetPathToGUID(assetPath));
                 entry?.SetLabel(labelName, true, true);
+            }
+        }
+
+        private void RemoveCharacterMapLabel(AddressableAssetSettings settings, Type type, string labelName)
+        {
+            if (type == Type.Monster)
+            {
+                Dictionary<int, Dictionary<string, string>> datas = _addressableEditor.TableMonster.GetDatas();
+                foreach (KeyValuePair<int, Dictionary<string, string>> outerPair in datas)
+                {
+                    var info = _addressableEditor.TableMonster.GetDataByUid(outerPair.Key);
+                    if (info == null) continue;
+                    var infoAnimation = _addressableEditor.TableAnimation.GetDataByUid(info.AnimationUid);
+                    if (infoAnimation == null) continue;
+                    string assetPath = ConfigAddressableMap.GetPathCharacter(infoAnimation, true);
+                    // 기존 Addressable 항목 확인
+                    AddressableAssetEntry entry = settings.FindAssetEntry(AssetDatabase.AssetPathToGUID(assetPath));
+                    entry?.SetLabel(labelName, false, true);
+                }
+            }
+            else if (type == Type.Npc)
+            {
+                Dictionary<int, Dictionary<string, string>> datas = _addressableEditor.TableNpc.GetDatas();
+                foreach (KeyValuePair<int, Dictionary<string, string>> outerPair in datas)
+                {
+                    var info = _addressableEditor.TableNpc.GetDataByUid(outerPair.Key);
+                    if (info == null) continue;
+                    var infoAnimation = _addressableEditor.TableAnimation.GetDataByUid(info.AnimationUid);
+                    if (infoAnimation == null) continue;
+                    string assetPath = ConfigAddressableMap.GetPathCharacter(infoAnimation, true);
+                    // 기존 Addressable 항목 확인
+                    AddressableAssetEntry entry = settings.FindAssetEntry(AssetDatabase.AssetPathToGUID(assetPath));
+                    entry?.SetLabel(labelName, false, true);
+                }
             }
         }
     }

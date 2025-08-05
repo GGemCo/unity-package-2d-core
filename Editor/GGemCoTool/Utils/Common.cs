@@ -1,5 +1,7 @@
 ﻿using GGemCo2DCore;
 using UnityEditor;
+using UnityEditor.AddressableAssets;
+using UnityEditor.AddressableAssets.Settings;
 using UnityEngine;
 
 namespace GGemCo2DCoreEditor
@@ -33,6 +35,28 @@ namespace GGemCo2DCoreEditor
             GUILayout.Space(10);
             GUILine(height, "94D8F6");
             GUILayout.Space(10);
+        }
+
+        public static bool ExistAddressableByPath(string path)
+        {
+            // Addressable 에 등록되어있는지 체크 
+            AddressableAssetSettings settings = AddressableAssetSettingsDefaultObject.Settings;
+            if (settings)
+            {
+                AddressableAssetEntry entry = settings.FindAssetEntry(AssetDatabase.AssetPathToGUID(path));
+                if (entry == null)
+                {
+                    Debug.LogWarning($"Addressable 에 등록되지 않았습니다. (경로: {path})");
+                    return false;
+                }
+            }
+            else
+            {
+                Debug.LogWarning($"Addressable 설정이 되어있지 않습니다.");
+                return false;
+            }
+
+            return true;
         }
     }
 }

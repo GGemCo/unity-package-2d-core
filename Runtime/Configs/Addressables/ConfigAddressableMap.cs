@@ -53,15 +53,22 @@ namespace GGemCo2DCore
             return $"{ConfigAddressables.Path}/Maps/{folderName}";
         }
 
-        public static string GetPathCharacter(StruckTableAnimation infoAnimation)
+        public static string GetPathCharacter(StruckTableAnimation infoAnimation, bool useExt = false)
         {
-            return infoAnimation.Type switch
+            string path = infoAnimation.Type switch
             {
                 CharacterConstants.Type.Monster => $"{ConfigAddressables.PathPrefabMonster}/{infoAnimation.PrefabName}",
                 CharacterConstants.Type.Npc => $"{ConfigAddressables.PathPrefabNpc}/{infoAnimation.PrefabName}",
                 CharacterConstants.Type.Player => $"{ConfigAddressables.PathPrefabPlayer}/{infoAnimation.PrefabName}",
                 _ => ""
             };
+
+            if (useExt && !string.IsNullOrEmpty(path))
+            {
+                path += ".prefab";
+            }
+
+            return path;
         }
     }
 }

@@ -60,12 +60,12 @@ namespace GGemCo2DCoreEditor
                 foreach (KeyValuePair<int, Dictionary<string, string>> outerPair in dictionaryMonsters)
                 {
                     var info = _addressableEditor.TableMonster.GetDataByUid(outerPair.Key);
-                    if (info.Uid <= 0) continue;
+                    if (info == null) continue;
                     var infoAnimation = _addressableEditor.TableAnimation.GetDataByUid(info.AnimationUid);
-                    if (info.Uid <= 0) continue;
+                    if (infoAnimation == null) continue;
                 
                     string key = $"{ConfigAddressables.KeyPrefabMonster}_{infoAnimation.Uid}";
-                    string assetPath = $"{ConfigAddressables.PathPrefabMonster}/{infoAnimation.PrefabName}.prefab";
+                    string assetPath = ConfigAddressableMap.GetPathCharacter(infoAnimation, true);
                     string label = "";
                     
                     Add(settings, groupMonster, key, assetPath, label);
@@ -89,12 +89,12 @@ namespace GGemCo2DCoreEditor
                 foreach (KeyValuePair<int, Dictionary<string, string>> outerPair in dictionaryNpcs)
                 {
                     var info = _addressableEditor.TableNpc.GetDataByUid(outerPair.Key);
-                    if (info.Uid <= 0) continue;
+                    if (info == null) continue;
                     var infoAnimation = _addressableEditor.TableAnimation.GetDataByUid(info.AnimationUid);
-                    if (info.Uid <= 0) continue;
+                    if (infoAnimation == null) continue;
                 
                     string key = $"{ConfigAddressables.KeyPrefabNpc}_{infoAnimation.Uid}";
-                    string assetPath = $"{ConfigAddressables.PathPrefabNpc}/{infoAnimation.PrefabName}.prefab";
+                    string assetPath = ConfigAddressableMap.GetPathCharacter(infoAnimation, true);
                 
                     Add(settings, groupNpc, key, assetPath);
                     

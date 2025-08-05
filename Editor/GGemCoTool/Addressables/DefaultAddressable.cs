@@ -70,14 +70,14 @@ namespace GGemCo2DCoreEditor
             return newGroup;
         }
         
-        protected void Add(AddressableAssetSettings settings, AddressableAssetGroup group, string keyName, string assetPath, string labelName = "")
+        protected AddressableAssetEntry Add(AddressableAssetSettings settings, AddressableAssetGroup group, string keyName, string assetPath, string labelName = "")
         {
             // 대상 파일 가져오기
             var asset = AssetDatabase.LoadMainAssetAtPath(assetPath);
             if (!asset)
             {
                 Debug.LogError($"파일을 찾을 수 없습니다: {assetPath}");
-                return;
+                return null;
             }
 
             // 기존 Addressable 항목 확인
@@ -102,6 +102,7 @@ namespace GGemCo2DCoreEditor
                 entry.SetLabel(labelName, true, true);
             }
 
+            return entry;
             // Debug.Log($"Addressable 키 값 설정: {keyName}");
         }
         protected SpriteAtlas GetOrCreateSpriteAtlas(string path)

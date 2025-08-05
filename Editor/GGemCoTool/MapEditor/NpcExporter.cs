@@ -4,6 +4,9 @@ using System.IO;
 using GGemCo2DCore;
 using Newtonsoft.Json;
 using TMPro;
+using UnityEditor;
+using UnityEditor.AddressableAssets;
+using UnityEditor.AddressableAssets.Settings;
 using UnityEngine;
 
 namespace GGemCo2DCoreEditor
@@ -70,7 +73,12 @@ namespace GGemCo2DCoreEditor
             if (infoAnimation == null) return;
             
             string npcPath = ConfigAddressableMap.GetPathCharacter(infoAnimation);
+            
+            // Addressable 에 등록되어있는지 체크 
+            if (!Common.ExistAddressableByPath(ConfigAddressableMap.GetPathCharacter(infoAnimation, true))) return;
+
             GameObject npcPrefab = AssetDatabaseLoaderManager.LoadAsset<GameObject>(npcPath);
+            
             CharacterRegenData characterRegenData =
                 new CharacterRegenData(npcData.Uid, Vector3.zero, false, _defaultMap.GetChapterNumber(), true);
             GameObject npc = _characterManager.CreateNpc(npcData.Uid, characterRegenData, npcPrefab);
@@ -101,7 +109,8 @@ namespace GGemCo2DCoreEditor
         /// <param name="filePath"></param>
         /// <param name="fileName"></param>
         /// <param name="mapUid"></param>
-        public void ExportNpcDataToJson(string filePath, string fileName, int mapUid)
+        /// <param name="struckTableMap"></param>
+        public void ExportNpcDataToJson(string filePath, string fileName, int mapUid, StruckTableMap struckTableMap)
         {
             GameObject mapObject = GameObject.FindGameObjectWithTag(ConfigTags.GetValue(ConfigTags.Keys.Map));
             CharacterRegenDataList saveNpcList = new CharacterRegenDataList();
@@ -114,9 +123,21 @@ namespace GGemCo2DCoreEditor
                 saveNpcList.CharacterRegenDatas.Add(new CharacterRegenData(npc.uid, child.position, npc.isFlip,
                     mapUid, true));
                 
-                // addressables 에 등록됬는지 확인
-                
-                // addressables label 등록하기
+                // map 라벨 붙여주기 
+                // AddressableSettings 가져오기
+                AddressableAssetSettings settings = AddressableAssetSettingsDefaultObject.Settings;
+                if (settings)
+                {
+                    var info = _tableNpc.GetDataByUid(npc.uid);
+                    if (info == null) continue;
+                    var infoAnimation = _tableAnimation.GetDataByUid(info.AnimationUid);
+                    if (infoAnimation == null) continue;
+                    string assetPath = ConfigAddressableMap.GetPathCharacter(infoAnimation) + ".prefab";
+                    // 기존 Addressable 항목 확인
+                    AddressableAssetEntry entry = settings.FindAssetEntry(AssetDatabase.AssetPathToGUID(assetPath));
+                    string labelName = ConfigAddressableMap.GetLabel(struckTableMap.FolderName);
+                    entry?.SetLabel(labelName, true, true);
+                }
             }
 
             string json = JsonConvert.SerializeObject(saveNpcList);
