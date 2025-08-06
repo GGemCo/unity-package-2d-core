@@ -64,37 +64,42 @@ namespace GGemCo2DCoreEditor
             if (_cutsceneMemos.Count == 0)
             {
                 EditorGUILayout.LabelField("등록된 연출이 없습니다.");
-                return;
             }
-
-            if (_selectedCutsceneIndex >= _cutsceneMemos.Count)
+            else
             {
-                _selectedCutsceneIndex = 0;
-            }
-            _selectedCutsceneIndex = EditorGUILayout.Popup("연출 선택", _selectedCutsceneIndex, _cutsceneMemos.ToArray());
-            if (GUILayout.Button("연출 플레이"))
-            {
-                if (!SceneGame.Instance)
+                if (_selectedCutsceneIndex >= _cutsceneMemos.Count)
                 {
-                    EditorUtility.DisplayDialog(Title, "게임을 실행해주세요.", "OK");
-                    return;
+                    _selectedCutsceneIndex = 0;
                 }
-                var info = _cutsceneInfos.GetValueOrDefault(_selectedCutsceneIndex);
-                _ = SceneGame.Instance.CutsceneManager.PlayCutscene(info.Uid);
-            }
+                _selectedCutsceneIndex = EditorGUILayout.Popup("연출 선택", _selectedCutsceneIndex, _cutsceneMemos.ToArray());
             
-            GUILayout.Space(20);
-            GUILayout.Label("JSON -> Timeline 생성", EditorStyles.boldLabel);
-            _selectedJson = (TextAsset)EditorGUILayout.ObjectField("JSON 파일", _selectedJson, typeof(TextAsset), false);
+                if (GUILayout.Button("연출 플레이"))
+                {
+                    if (!SceneGame.Instance)
+                    {
+                        EditorUtility.DisplayDialog(Title, "게임을 실행해주세요.", "OK");
+                    }
+                    else
+                    {
+                        var info = _cutsceneInfos.GetValueOrDefault(_selectedCutsceneIndex);
+                        _ = SceneGame.Instance.CutsceneManager.PlayCutscene(info.Uid);
+                    }
+                }
+            
+                GUILayout.Space(20);
+                GUILayout.Label("JSON -> Timeline 생성", EditorStyles.boldLabel);
+                _selectedJson = (TextAsset)EditorGUILayout.ObjectField("JSON 파일", _selectedJson, typeof(TextAsset), false);
 
-            if (GUILayout.Button("JSON으로부터 타임라인 생성"))
-            {
-                if (_selectedJson)
-                    ImportJsonToTimeline(_selectedJson);
-                else
-                    Debug.LogWarning("JSON 파일을 선택해주세요.");
+                if (GUILayout.Button("JSON으로부터 타임라인 생성"))
+                {
+                    if (_selectedJson)
+                        ImportJsonToTimeline(_selectedJson);
+                    else
+                        Debug.LogWarning("JSON 파일을 선택해주세요.");
+                }
             }
         }
+        
         private void ImportJsonToTimeline(TextAsset jsonAsset)
         {
             CutsceneData cutsceneData = JsonConvert.DeserializeObject<CutsceneData>(jsonAsset.text);
