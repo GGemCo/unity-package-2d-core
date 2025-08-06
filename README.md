@@ -9,6 +9,8 @@
 - 게임 데이터 저장
 - 퀘스트 시스템
 - 연출 시스템
+- 사운드 시스템
+- 다국어 시스템
 - 기능 Npc
   - 상점
   - 창고
@@ -27,6 +29,7 @@
 - Spine2d (https://ko.esotericsoftware.com/spine-unity-download/)
 - NeGet (https://github.com/GlitchEnzo/NuGetForUnity/releases/tag/v4.3.0)
   - R3
+- Localization (https://docs.unity3d.com/Packages/com.unity.localization@1.5/manual/index.html)
 
 ## 관련 링크
 - 설명 동영상 : https://www.youtube.com/@ggemco
