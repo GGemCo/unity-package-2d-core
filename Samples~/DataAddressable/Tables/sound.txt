@@ -1,6 +1,14 @@
-Uid	Type	SubType	Memo	Path	MaxPlayCount	Volume
-1	Bgm	None	인트로	Sounds/Bgm/title_screen	1	1
-2	Bgm	None	플레이노멀	Sounds/Bgm/play_normal	1	1
-5	Sfx	UI	ui 클릭	Sounds/Sfx/UI/click1	1	1
-6	Sfx	Player	걷기1	Sounds/Sfx/Player/pc_footstep1	10	1
-7	Sfx	Player	걷기2	Sounds/Sfx/Player/pc_footstep2	10	1
+Uid	Type	SubType	Memo	FileName	MaxPlayCount	Volume	UseIntroScene
+# BGM							
+1001	Bgm	None	인트로	Intro.wav	1	1	N
+1002	Bgm	None	마을	Town1.wav	1	1	N
+1003	Bgm	None	사냥터1	BattleZone1.mp3	1	1	Y
+# SFX							
+2101	Sfx	UI	디폴트 버튼 클릭	DefaultButtonClick1.mp3	1	1	Y
+2102	Sfx	UI	confirm 버튼 클릭	Confirm.wav	1	1	Y
+2103	Sfx	UI	cancel 버튼 클릭	Cancel.wav	1	1	Y
+2104	Sfx	UI	윈도우 닫기 버튼 클릭	WindowClose.wav	1	1	Y
+# SFX > SKill							
+2201	Sfx	Skill	파이어볼	FireBall.wav	0	0.5	N
+# SFX > Player							
+2301	Sfx	Player	걷기	FootStep.wav	10	1	N
