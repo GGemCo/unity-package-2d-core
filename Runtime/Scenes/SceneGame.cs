@@ -141,8 +141,6 @@ namespace GGemCo2DCore
             ProjectileManager = new ProjectileManager();
             ProjectileManager.Initialize(this);
             
-            soundManager.InitializeSoundSfxPool();
-            
             // AnimationEventMediator 클래스에서 다른 매니저를 사용하고 있기때문에,
             // 매니저가 생성된 후 Initialize를 해야 한다.
             animationEventMediator.Initialize(this);
@@ -161,6 +159,9 @@ namespace GGemCo2DCore
             
             _uiWindowInventory = uIWindowManager?.GetUIWindowByUid<UIWindowInventory>(UIWindowConstants.WindowUid
                 .Inventory);
+            
+            // Awake에서 TableLoaderManager를 셋팅한다.
+            soundManager.InitializeSoundSfxPool();
             
             StartCoroutine(UpdateStateRoutine());
         }
