@@ -19,6 +19,26 @@ MonoBehaviour:
     m_Key: Text_Language
     m_Metadata:
       m_Items: []
+  - m_Id: 7946976362041344
+    m_Key: Text_Bgm_Volume
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7947261549547520
+    m_Key: Text_Sfx_Volume
+    m_Metadata:
+      m_Items: []
+  - m_Id: 8283485657174016
+    m_Key: Text_Master_Volume
+    m_Metadata:
+      m_Items: []
+  - m_Id: 8368184790421504
+    m_Key: Text_Cancel
+    m_Metadata:
+      m_Items: []
+  - m_Id: 8368232945225728
+    m_Key: Unsaved_Alert
+    m_Metadata:
+      m_Items: []
   m_Metadata:
     m_Items: []
   m_KeyGenerator:

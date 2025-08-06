@@ -22,6 +22,28 @@ MonoBehaviour:
     m_Localized: 'Language:'
     m_Metadata:
       m_Items: []
+  - m_Id: 7946976362041344
+    m_Localized: Bgm Volume
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7947261549547520
+    m_Localized: Sfx Volume
+    m_Metadata:
+      m_Items: []
+  - m_Id: 8283485657174016
+    m_Localized: Main Volume
+    m_Metadata:
+      m_Items: []
+  - m_Id: 8368184790421504
+    m_Localized: Cancel
+    m_Metadata:
+      m_Items: []
+  - m_Id: 8368232945225728
+    m_Localized: 'You have unsaved changes.\nAre you sure you want to cancel?
+
+'
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []
