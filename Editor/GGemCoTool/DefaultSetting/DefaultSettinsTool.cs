@@ -51,6 +51,8 @@ namespace GGemCo2DCoreEditor
                     AddSceneToBuildSettings(path);
                     path = $"{ConfigDefine.PathScene}/{ConfigDefine.SceneNameGame}.unity";
                     AddSceneToBuildSettings(path);
+                    path = $"{ConfigDefine.PathScene}/{ConfigDefine.SceneNamePreIntro}.unity";
+                    AddSceneToBuildSettings(path);
                 }
             }
         }
