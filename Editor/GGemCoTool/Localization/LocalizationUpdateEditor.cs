@@ -40,11 +40,12 @@ namespace GGemCo2DCoreEditor
                 if (!_includeScenes && !_includePrefabs)
                 {
                     EditorUtility.DisplayDialog("실행 불가", "최소 하나의 대상(씬 또는 프리팹)을 선택해야 합니다.", "확인");
-                    return;
                 }
-
-                _logOutput = "";
-                RunUpdateProcess();
+                else
+                {
+                    _logOutput = "";
+                    RunUpdateProcess();
+                }
             }
 
             EditorGUILayout.Space();

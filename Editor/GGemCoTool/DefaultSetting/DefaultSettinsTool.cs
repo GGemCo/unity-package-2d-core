@@ -38,18 +38,20 @@ namespace GGemCo2DCoreEditor
                 string path = $"{ConfigDefine.PathScene}/{ConfigDefine.SceneNameIntro}.unity";
                 // 폴더가 없으면 생성
                 string directory = Path.GetDirectoryName(path);
-                if (directory == null) return;
-                if (!Directory.Exists(directory))
+                if (directory != null)
                 {
-                    Directory.CreateDirectory(directory);
-                    AssetDatabase.Refresh();
-                }
+                    if (!Directory.Exists(directory))
+                    {
+                        Directory.CreateDirectory(directory);
+                        AssetDatabase.Refresh();
+                    }
 
-                AddSceneToBuildSettings(path);
-                path = $"{ConfigDefine.PathScene}/{ConfigDefine.SceneNameLoading}.unity";
-                AddSceneToBuildSettings(path);
-                path = $"{ConfigDefine.PathScene}/{ConfigDefine.SceneNameGame}.unity";
-                AddSceneToBuildSettings(path);
+                    AddSceneToBuildSettings(path);
+                    path = $"{ConfigDefine.PathScene}/{ConfigDefine.SceneNameLoading}.unity";
+                    AddSceneToBuildSettings(path);
+                    path = $"{ConfigDefine.PathScene}/{ConfigDefine.SceneNameGame}.unity";
+                    AddSceneToBuildSettings(path);
+                }
             }
         }
     }

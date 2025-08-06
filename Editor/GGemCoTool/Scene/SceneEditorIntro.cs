@@ -24,11 +24,13 @@ namespace GGemCo2DCoreEditor
             if (!CheckCurrentLoadedScene(ConfigDefine.SceneNameIntro))
             {
                 EditorGUILayout.HelpBox($"인트로 씬을 불러와 주세요.", MessageType.Error);
-                return;
             }
-            DrawRequiredSection();
-            Common.GUILine();
-            DrawOptionalSection();
+            else
+            {
+                DrawRequiredSection();
+                Common.GUILine();
+                DrawOptionalSection();
+            }
         }
         private void DrawRequiredSection()
         {
