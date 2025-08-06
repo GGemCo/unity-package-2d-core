@@ -89,6 +89,7 @@ GameObject:
   - component: {fileID: 5936177468923945158}
   - component: {fileID: 2749249413760608394}
   - component: {fileID: 5536891053161873887}
+  - component: {fileID: -9068050722708426665}
   m_Layer: 5
   m_Name: ButtonConfirm
   m_TagString: Untagged
@@ -198,6 +199,20 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls: []
+--- !u!114 &-9068050722708426665
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1525494312644711923}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e5f467ead7604433b8ddbd8b2b2ff493, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  soundUid: 0
+  type: 1
 --- !u!1 &2532593756874623692
 GameObject:
   m_ObjectHideFlags: 0
@@ -265,7 +280,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: "\uD655\uC778"
+  m_text: Confirm
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
   m_sharedMaterial: {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
@@ -905,7 +920,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: "\uC544\uC774\uD15C \uAD6C\uB9E4"
+  m_text: ItemBuy
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
   m_sharedMaterial: {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
@@ -1041,6 +1056,7 @@ GameObject:
   - component: {fileID: 7969617888792119613}
   - component: {fileID: 2174783181672789543}
   - component: {fileID: 6884082773151715938}
+  - component: {fileID: -4897712736023351091}
   m_Layer: 5
   m_Name: ButtonCancel
   m_TagString: Untagged
@@ -1150,6 +1166,20 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls: []
+--- !u!114 &-4897712736023351091
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7028681225876374082}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e5f467ead7604433b8ddbd8b2b2ff493, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  soundUid: 0
+  type: 2
 --- !u!1 &7270792089067931096
 GameObject:
   m_ObjectHideFlags: 0
@@ -1307,7 +1337,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: "\uCDE8\uC18C"
+  m_text: Cancel
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
   m_sharedMaterial: {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
@@ -1740,9 +1770,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   uid: 0
   buttonClose: {fileID: 0}
+  useFade: 1
   iconType: 0
   maxCountIcon: 1
-  useFade: 1
   slots: []
   icons: []
   slotSize: {x: 64, y: 64}

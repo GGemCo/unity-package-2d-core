@@ -428,9 +428,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   uid: 1
   buttonClose: {fileID: 0}
+  useFade: 1
   iconType: 0
   maxCountIcon: 0
-  useFade: 1
   slots: []
   icons: []
   slotSize: {x: 0, y: 0}
@@ -793,6 +793,7 @@ GameObject:
   - component: {fileID: 3613794156571401735}
   - component: {fileID: 9168899475706955318}
   - component: {fileID: 166804242200502264}
+  - component: {fileID: -1016262319068399330}
   m_Layer: 5
   m_Name: ButtonOpenOption
   m_TagString: Untagged
@@ -914,6 +915,20 @@ MonoBehaviour:
           m_StringArgument: 
           m_BoolArgument: 0
         m_CallState: 2
+--- !u!114 &-1016262319068399330
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2763357281273266665}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e5f467ead7604433b8ddbd8b2b2ff493, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  soundUid: 0
+  type: 0
 --- !u!1 &3225903230040929523
 GameObject:
   m_ObjectHideFlags: 0
@@ -1265,6 +1280,7 @@ GameObject:
   - component: {fileID: 1163617394920136328}
   - component: {fileID: 7578545319037001518}
   - component: {fileID: 2919090392071577848}
+  - component: {fileID: -7896623609700895500}
   m_Layer: 5
   m_Name: ButtonOpenSkill
   m_TagString: Untagged
@@ -1386,6 +1402,20 @@ MonoBehaviour:
           m_StringArgument: 
           m_BoolArgument: 0
         m_CallState: 2
+--- !u!114 &-7896623609700895500
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4857125186436871721}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e5f467ead7604433b8ddbd8b2b2ff493, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  soundUid: 0
+  type: 0
 --- !u!1 &4983505930547768865
 GameObject:
   m_ObjectHideFlags: 0
@@ -2467,6 +2497,7 @@ GameObject:
   - component: {fileID: 1155643769310569060}
   - component: {fileID: 3901852098419557962}
   - component: {fileID: 6477015873604290436}
+  - component: {fileID: 4697226933007036404}
   m_Layer: 5
   m_Name: ButtonInventory
   m_TagString: Untagged
@@ -2588,6 +2619,20 @@ MonoBehaviour:
           m_StringArgument: 
           m_BoolArgument: 0
         m_CallState: 2
+--- !u!114 &4697226933007036404
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8365340950429268167}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e5f467ead7604433b8ddbd8b2b2ff493, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  soundUid: 0
+  type: 0
 --- !u!1 &8510557046984607726
 GameObject:
   m_ObjectHideFlags: 0

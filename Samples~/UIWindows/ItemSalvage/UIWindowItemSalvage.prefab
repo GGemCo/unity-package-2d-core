@@ -282,9 +282,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   uid: 0
   buttonClose: {fileID: 7316603657629796151}
+  useFade: 1
   iconType: 1
   maxCountIcon: 6
-  useFade: 1
   slots: []
   icons: []
   slotSize: {x: 64, y: 64}
@@ -1493,6 +1493,7 @@ GameObject:
   - component: {fileID: 7183370271152704833}
   - component: {fileID: 8888587161661618210}
   - component: {fileID: 7316603657629796151}
+  - component: {fileID: 4302527964092076964}
   m_Layer: 5
   m_Name: ButtonClose
   m_TagString: Untagged
@@ -1614,6 +1615,20 @@ MonoBehaviour:
           m_StringArgument: 
           m_BoolArgument: 0
         m_CallState: 2
+--- !u!114 &4302527964092076964
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6355188427212136781}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e5f467ead7604433b8ddbd8b2b2ff493, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  soundUid: 0
+  type: 3
 --- !u!1 &6375829167355620573
 GameObject:
   m_ObjectHideFlags: 0
@@ -1953,6 +1968,7 @@ GameObject:
   - component: {fileID: 2888078054446862404}
   - component: {fileID: 5014829931812426944}
   - component: {fileID: 6532476373948450183}
+  - component: {fileID: 4796520494565557266}
   m_Layer: 5
   m_Name: ButtonSalvage
   m_TagString: Untagged
@@ -2062,3 +2078,17 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls: []
+--- !u!114 &4796520494565557266
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7949442783463412850}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e5f467ead7604433b8ddbd8b2b2ff493, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  soundUid: 0
+  type: 0

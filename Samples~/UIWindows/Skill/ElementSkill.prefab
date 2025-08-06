@@ -12,6 +12,7 @@ GameObject:
   - component: {fileID: 8209148874476811374}
   - component: {fileID: 8765403545650713222}
   - component: {fileID: 8936752450882698603}
+  - component: {fileID: -1604625319080103050}
   m_Layer: 5
   m_Name: ButtonLearn
   m_TagString: Untagged
@@ -121,6 +122,20 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls: []
+--- !u!114 &-1604625319080103050
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 62379223006040378}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e5f467ead7604433b8ddbd8b2b2ff493, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  soundUid: 0
+  type: 0
 --- !u!1 &384000589085285926
 GameObject:
   m_ObjectHideFlags: 0
@@ -998,6 +1013,7 @@ GameObject:
   - component: {fileID: 2386129170461823341}
   - component: {fileID: 1583368616062396326}
   - component: {fileID: 5507321146304137214}
+  - component: {fileID: -2901104298830140459}
   m_Layer: 5
   m_Name: ButtonLevelUp
   m_TagString: Untagged
@@ -1107,6 +1123,20 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls: []
+--- !u!114 &-2901104298830140459
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4520024211673450512}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e5f467ead7604433b8ddbd8b2b2ff493, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  soundUid: 0
+  type: 0
 --- !u!1 &6210265649726484892
 GameObject:
   m_ObjectHideFlags: 0

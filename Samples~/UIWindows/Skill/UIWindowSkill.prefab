@@ -1058,6 +1058,7 @@ GameObject:
   - component: {fileID: 6430518846302335747}
   - component: {fileID: 2430924919528491684}
   - component: {fileID: 574258604280697087}
+  - component: {fileID: 7261401376052777257}
   m_Layer: 5
   m_Name: ButtonClose
   m_TagString: Untagged
@@ -1179,6 +1180,20 @@ MonoBehaviour:
           m_StringArgument: 
           m_BoolArgument: 0
         m_CallState: 2
+--- !u!114 &7261401376052777257
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5777943215557620525}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e5f467ead7604433b8ddbd8b2b2ff493, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  soundUid: 0
+  type: 3
 --- !u!1 &7085648707009330776
 GameObject:
   m_ObjectHideFlags: 0
@@ -1463,9 +1478,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   uid: 0
   buttonClose: {fileID: 574258604280697087}
+  useFade: 1
   iconType: 0
   maxCountIcon: 0
-  useFade: 1
   slots: []
   icons: []
   slotSize: {x: 90, y: 90}

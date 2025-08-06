@@ -985,6 +985,7 @@ GameObject:
   - component: {fileID: 760468443034068908}
   - component: {fileID: 1462520551703047170}
   - component: {fileID: 1138617457940112665}
+  - component: {fileID: 1862080789561147140}
   m_Layer: 5
   m_Name: ButtonUpgrade
   m_TagString: Untagged
@@ -1094,6 +1095,20 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls: []
+--- !u!114 &1862080789561147140
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3610659041005693570}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e5f467ead7604433b8ddbd8b2b2ff493, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  soundUid: 0
+  type: 0
 --- !u!1 &4019820347717959670
 GameObject:
   m_ObjectHideFlags: 0
@@ -2268,9 +2283,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   uid: 0
   buttonClose: {fileID: 2814113726941080744}
+  useFade: 1
   iconType: 1
   maxCountIcon: 2
-  useFade: 1
   slots: []
   icons: []
   slotSize: {x: 90, y: 90}
@@ -2573,6 +2588,7 @@ GameObject:
   - component: {fileID: 6346093622566656884}
   - component: {fileID: 412319963288607961}
   - component: {fileID: 2814113726941080744}
+  - component: {fileID: -3540197298605694601}
   m_Layer: 5
   m_Name: ButtonClose
   m_TagString: Untagged
@@ -2694,3 +2710,17 @@ MonoBehaviour:
           m_StringArgument: 
           m_BoolArgument: 0
         m_CallState: 2
+--- !u!114 &-3540197298605694601
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8766819246026695234}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e5f467ead7604433b8ddbd8b2b2ff493, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  soundUid: 0
+  type: 3
