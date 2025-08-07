@@ -96,14 +96,14 @@ namespace GGemCo2DCoreEditor
                 assetPath = ConfigAddressableMap.GetAssetPathRegenMonster(info.FolderName);
                 Add(settings, group, key, assetPath);
                 
-                // SetCharacterLabel(assetPath, info, settings, Type.Monster);
+                SetCharacterLabel(assetPath, info, settings, Type.Monster);
                 
                 // npc 리젠 파일
                 key = ConfigAddressableMap.GetKeyJsonRegenNpc(info.FolderName);
                 assetPath = ConfigAddressableMap.GetAssetPathRegenNpc(info.FolderName);
                 Add(settings, group, key, assetPath);
                 
-                // SetCharacterLabel(assetPath, info, settings, Type.Npc);
+                SetCharacterLabel(assetPath, info, settings, Type.Npc);
                 
                 // 워프 리젠 파일
                 key = ConfigAddressableMap.GetKeyJsonWarp(info.FolderName);
