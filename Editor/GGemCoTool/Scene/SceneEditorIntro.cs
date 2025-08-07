@@ -61,12 +61,14 @@ namespace GGemCo2DCoreEditor
             MetaDataButton metaDataButton = new MetaDataButton(scene.GetFieldNameButtonNewGame(), "New Game",
                 LocalizationConstants.Tables.Scene, LocalizationConstants.Keys.Intro.ButtonNewGame());
             Button createdButton = CreateUIComponent.CreateObjectButton(metaDataButton);
+            createdButton.gameObject.AddComponent<ClickSoundEventBroadcaster>();
             scene.SetButtonNewGame(createdButton);
             
             // 계속 하기 버튼 만들고 연결하기
             metaDataButton = new MetaDataButton(scene.GetFieldNameButtonGameContinue(), "Continue Game",
                 LocalizationConstants.Tables.Scene, LocalizationConstants.Keys.Intro.ButtonContinue());
             Button buttonGameContinue = CreateUIComponent.CreateObjectButton(metaDataButton);
+            buttonGameContinue.gameObject.AddComponent<ClickSoundEventBroadcaster>();
             scene.SetButtonGameContinue(buttonGameContinue);
             buttonGameContinue.gameObject.transform.localPosition = new Vector2(0, 100);
             
@@ -74,6 +76,7 @@ namespace GGemCo2DCoreEditor
             metaDataButton = new MetaDataButton(scene.GetFieldNameButtonOption(), "Option",
                 LocalizationConstants.Tables.Scene, LocalizationConstants.Keys.Intro.ButtonOption());
             Button buttonOption = CreateUIComponent.CreateObjectButton(metaDataButton);
+            buttonOption.gameObject.AddComponent<ClickSoundEventBroadcaster>();
             scene.SetButtonOption(buttonOption);
             buttonOption.gameObject.transform.localPosition = new Vector2(0, -100);
             
@@ -179,6 +182,7 @@ namespace GGemCo2DCoreEditor
             MetaDataButton metaDataButton = new MetaDataButton(scene.GetFieldNameButtonOpenSaveDataWindow(), "Load Game",
                 LocalizationConstants.Tables.Scene, LocalizationConstants.Keys.Intro.ButtonLoad());
             Button createdButton = CreateUIComponent.CreateObjectButton(metaDataButton);
+            createdButton.gameObject.AddComponent<ClickSoundEventBroadcaster>();
             scene.SetButtonOpenSaveDataWindow(createdButton);
             createdButton.gameObject.transform.SetSiblingIndex(0);
             createdButton.gameObject.transform.localPosition = new Vector2(0, -200);
