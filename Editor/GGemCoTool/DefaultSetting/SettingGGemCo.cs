@@ -13,14 +13,6 @@ namespace GGemCo2DCoreEditor
         private const string Title = "설정 ScriptableObject 추가하기";
         private const string SettingsFolder = "Assets/"+ConfigDefine.NameSDK+"/Settings/";
 
-        private readonly Dictionary<string, Type> _settingsTypes = new()
-        {
-            { $"{ConfigDefine.NameSDK}Settings", typeof(GGemCoSettings) },
-            { $"{ConfigDefine.NameSDK}MapSettings", typeof(GGemCoMapSettings) },
-            { $"{ConfigDefine.NameSDK}PlayerSettings", typeof(GGemCoPlayerSettings) },
-            { $"{ConfigDefine.NameSDK}SaveSettings", typeof(GGemCoSaveSettings) }
-        };
-
         public void OnGUI()
         {
             Common.OnGUITitle(Title);
@@ -40,7 +32,7 @@ namespace GGemCo2DCoreEditor
 
         private void CreateSettings()
         {
-            foreach (var kvp in _settingsTypes)
+            foreach (var kvp in ConfigScriptableObject.SettingsTypes)
             {
                 CreateOrSelectSettings(kvp.Key, kvp.Value);
             }

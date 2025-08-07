@@ -1,4 +1,7 @@
-﻿namespace GGemCo2DCore
+﻿using System;
+using System.Collections.Generic;
+
+namespace GGemCo2DCore
 {
     /// <summary>
     /// ScriptableObject 관련 설정 정의
@@ -63,5 +66,15 @@
             public const string MenuName = BasePath + FileName;
             public const int Ordering = (int)MenuOrdering.SoundSettings;
         }
+
+        public static readonly Dictionary<string, Type> SettingsTypes = new()
+        {
+            { Main.FileName, typeof(GGemCoSettings) },
+            { Map.FileName, typeof(GGemCoMapSettings) },
+            { Player.FileName, typeof(GGemCoPlayerSettings) },
+            { Save.FileName, typeof(GGemCoSaveSettings) },
+            { Option.FileName, typeof(GGemCoOptionSettings) },
+            { Sound.FileName, typeof(GGemCoSoundSettings) },
+        };
     }
 }
