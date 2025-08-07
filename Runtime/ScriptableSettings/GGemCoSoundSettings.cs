@@ -64,6 +64,38 @@ namespace GGemCo2DCore
             // defaultSoundButtonClickWindowClose = 0;
         }
 
+        /// <summary>
+        /// 처음 생성 시 한 번만 실행됨
+        /// </summary>
+        private void Reset()
+        {
+            buttonClickSounds ??= new List<MappingButtonClickSound>();
+            MappingButtonClickSound mappingButtonClickSound = new MappingButtonClickSound
+            {
+                type = SoundConstants.UIButtonType.Default,
+                soundUid = 0
+            };
+            buttonClickSounds.Add(mappingButtonClickSound);
+            mappingButtonClickSound = new MappingButtonClickSound
+            {
+                type = SoundConstants.UIButtonType.Confirm,
+                soundUid = 0
+            };
+            buttonClickSounds.Add(mappingButtonClickSound);
+            mappingButtonClickSound = new MappingButtonClickSound
+            {
+                type = SoundConstants.UIButtonType.Cancel,
+                soundUid = 0
+            };
+            buttonClickSounds.Add(mappingButtonClickSound);
+            mappingButtonClickSound = new MappingButtonClickSound
+            {
+                type = SoundConstants.UIButtonType.CloseWindow,
+                soundUid = 0
+            };
+            buttonClickSounds.Add(mappingButtonClickSound);
+        }
+
         public int GetSoundButtonClickUid(SoundConstants.UIButtonType buttonType)
         {
             var info = buttonClickSounds.Find(x => x.type == buttonType);
