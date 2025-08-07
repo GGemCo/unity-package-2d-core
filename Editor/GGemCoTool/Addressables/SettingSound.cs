@@ -19,11 +19,18 @@ namespace GGemCo2DCoreEditor
         }
         public void OnGUI()
         {
-            Common.OnGUITitle(Title);
+            // Common.OnGUITitle(Title);
 
-            if (GUILayout.Button(Title))
+            if (_addressableEditor.TableSound == null)
             {
-                Setup();
+                EditorGUILayout.HelpBox($"{ConfigAddressableTable.Sound} 테이블이 없습니다.", MessageType.Info);
+            }
+            else
+            {
+                if (GUILayout.Button(Title, GUILayout.Width(_addressableEditor.buttonWidth), GUILayout.Height(_addressableEditor.buttonHeight)))
+                {
+                    Setup();
+                }
             }
         }
         

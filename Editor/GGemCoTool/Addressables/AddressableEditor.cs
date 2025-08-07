@@ -33,6 +33,10 @@ namespace GGemCo2DCoreEditor
         public TableSkill TableSkill;
         public TableAffect TableAffect;
         public TableSound TableSound;
+        
+        public float buttonWidth;
+        public float buttonHeight;
+        
         private Vector2 _scrollPosition;
 
         [MenuItem(ConfigEditor.NameToolSettingAddressable, false, (int)ConfigEditor.ToolOrdering.SettingAddressable)]
@@ -45,6 +49,8 @@ namespace GGemCo2DCoreEditor
             base.OnEnable();
             // _settingMap 에서 테이블을 사용하기 때문에 테이블 먼저 로드해야 함
             LoadTables();
+            
+            buttonHeight = 40f;
             
             _settingScriptableObject = new SettingScriptableObject(this);
             _settingTable = new SettingTable(this);
@@ -78,114 +84,41 @@ namespace GGemCo2DCoreEditor
 
         private void OnGUI()
         {
+            buttonWidth = position.width / 2f - 10f;
             _scrollPosition = EditorGUILayout.BeginScrollView(_scrollPosition);
+            
             EditorGUILayout.HelpBox("캐릭터 추가 후 맵을 추가해야 맵별 배치되어있는 캐릭터 정보가 반영됩니다.", MessageType.Error);
             
-            EditorGUILayout.Space(10);
+            EditorGUILayout.BeginHorizontal();
             _settingScriptableObject.OnGUI();
-            EditorGUILayout.Space(10);
             _settingTable.OnGUI();
+            EditorGUILayout.EndHorizontal();
             
-            if (TableMonster == null)
-            {
-                EditorGUILayout.Space(10);
-                EditorGUILayout.HelpBox($"{ConfigAddressableTable.Monster} 테이블이 없습니다.", MessageType.Info);
-            }
-            else {
-                EditorGUILayout.Space(10);
-                _settingCharacters.OnGUI();
-            }
+            EditorGUILayout.BeginHorizontal();
+            _settingCharacters.OnGUI();
+            _settingMap.OnGUI();
+            EditorGUILayout.EndHorizontal();
             
-            if (TableMap == null)
-            {
-                EditorGUILayout.Space(10);
-                EditorGUILayout.HelpBox($"{ConfigAddressableTable.Map} 테이블이 없습니다.", MessageType.Info);
-            }
-            else
-            {
-                EditorGUILayout.Space(10);
-                _settingMap.OnGUI();
-            }
-            if (TableEffect == null)
-            {
-                EditorGUILayout.Space(10);
-                EditorGUILayout.HelpBox($"{ConfigAddressableTable.Effect} 테이블이 없습니다.", MessageType.Info);
-            }
-            else
-            {
-                EditorGUILayout.Space(10);
-                _settingEffect.OnGUI();
-            }
-            if (TableItem == null)
-            {
-                EditorGUILayout.Space(10);
-                EditorGUILayout.HelpBox($"{ConfigAddressableTable.Item} 테이블이 없습니다.", MessageType.Info);
-            }
-            else
-            {
-                EditorGUILayout.Space(10);
-                _settingItem.OnGUI();
-            }
-            if (TableSkill == null)
-            {
-                EditorGUILayout.Space(10);
-                EditorGUILayout.HelpBox($"{ConfigAddressableTable.Skill} 테이블이 없습니다.", MessageType.Info);
-            }
-            else
-            {
-                EditorGUILayout.Space(10);
-                _settingSkill.OnGUI();
-            }
-            if (TableDialogue == null)
-            {
-                EditorGUILayout.Space(10);
-                EditorGUILayout.HelpBox($"{ConfigAddressableTable.Dialogue} 테이블이 없습니다.", MessageType.Info);
-            }
-            else
-            {
-                EditorGUILayout.Space(10);
-                _settingDialogue.OnGUI();
-            }
-            if (TableQuest == null)
-            {
-                EditorGUILayout.Space(10);
-                EditorGUILayout.HelpBox($"{ConfigAddressableTable.Quest} 테이블이 없습니다.", MessageType.Info);
-            }
-            else
-            {
-                EditorGUILayout.Space(10);
-                _settingQuest.OnGUI();
-            }
-            if (TableCutscene == null)
-            {
-                EditorGUILayout.Space(10);
-                EditorGUILayout.HelpBox($"{ConfigAddressableTable.Cutscene} 테이블이 없습니다.", MessageType.Info);
-            }
-            else
-            {
-                EditorGUILayout.Space(10);
-                _settingCutscene.OnGUI();
-            }
-            if (TableAffect == null)
-            {
-                EditorGUILayout.Space(10);
-                EditorGUILayout.HelpBox($"{ConfigAddressableTable.Affect} 테이블이 없습니다.", MessageType.Info);
-            }
-            else
-            {
-                EditorGUILayout.Space(10);
-                _settingAffect.OnGUI();
-            }
-            if (TableSound == null)
-            {
-                EditorGUILayout.Space(10);
-                EditorGUILayout.HelpBox($"{ConfigAddressableTable.Sound} 테이블이 없습니다.", MessageType.Info);
-            }
-            else
-            {
-                EditorGUILayout.Space(10);
-                _settingSound.OnGUI();
-            }
+            EditorGUILayout.BeginHorizontal();
+            _settingEffect.OnGUI();
+            _settingItem.OnGUI();
+            EditorGUILayout.EndHorizontal();
+            
+            EditorGUILayout.BeginHorizontal();
+            _settingSkill.OnGUI();
+            _settingDialogue.OnGUI();
+            EditorGUILayout.EndHorizontal();
+            
+            EditorGUILayout.BeginHorizontal();
+            _settingQuest.OnGUI();
+            _settingCutscene.OnGUI();
+            EditorGUILayout.EndHorizontal();
+            
+            EditorGUILayout.BeginHorizontal();
+            _settingAffect.OnGUI();
+            _settingSound.OnGUI();
+            EditorGUILayout.EndHorizontal();
+            
             EditorGUILayout.Space(20);
             EditorGUILayout.EndScrollView();
         }

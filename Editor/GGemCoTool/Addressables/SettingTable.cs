@@ -21,9 +21,9 @@ namespace GGemCo2DCoreEditor
         }
         public void OnGUI()
         {
-            Common.OnGUITitle(Title);
+            // Common.OnGUITitle(Title);
 
-            if (GUILayout.Button(Title))
+            if (GUILayout.Button(Title, GUILayout.Width(_addressableEditor.buttonWidth), GUILayout.Height(_addressableEditor.buttonHeight)))
             {
                 Setup();
             }
