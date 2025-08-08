@@ -227,6 +227,7 @@ namespace GGemCo2DCore
                 Destroy(gameObject);
                 var effect = _effectManager.CreateEffect(struckTableProjectile.HitEffectUid);
                 if (!effect) return;
+                effect.SetCreateCharacter(fromCharacter.GetComponent<CharacterBase>());
                 effect.transform.position = transform.position;
                 // 발사체가 flip 되면 hit 이펙트도 flip 처리
                 effect.SetFlip(shouldFlip);

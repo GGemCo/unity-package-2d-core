@@ -27,6 +27,7 @@ namespace GGemCo2DCore
                 var data = JsonConvert.DeserializeObject<StruckAnimationEventEffect>(json);
                 var effect = _effectManager.CreateEffect(data);
                 if (effect == null) return;
+                effect.SetCreateCharacter(fromObject.GetComponent<CharacterBase>());
                 effect.transform.position = fromObject.transform.position;
             }
             catch (Exception e)

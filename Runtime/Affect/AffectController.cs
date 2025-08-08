@@ -65,25 +65,14 @@ namespace GGemCo2DCore
                 DefaultEffect defaultEffect = _effectManager.CreateEffect(info.EffectUid);
                 if (defaultEffect == null) return;
                 // SetParent 보다 먼저 scale 을 바꿔야 한다.
-                if (info.EffectScale > 0)
-                {
-                    defaultEffect.SetScale(info.EffectScale);
-                }
-
-                if (duration > 0)
-                {
-                    defaultEffect.SetDuration(duration);
-                }
-                // 캐릭터 하위에 붙이기
-                defaultEffect.transform.SetParent(_character.transform);
-                float y = info.EffectPositionY;
-                // 캐릭터 height 만큼 위치 조정
-                if (info.EffectPositionYType == ConfigCommon.PositionYType.CharacterHeight)
-                {
-                    y += _character.GetHeightByScale();
-                }
+                defaultEffect.SetCreateCharacter(_character);
+                defaultEffect.SetScale(info.EffectScale);
+                defaultEffect.SetDuration(duration);
+                defaultEffect.SetFollowCharacter(_character);
+                defaultEffect.SetPositionY(info.EffectPositionY);
+                defaultEffect.SetPositionYType(info.EffectPositionYType);
                 defaultEffect.SetSortingLayer(info.EffectSortingLayer);
-                defaultEffect.transform.localPosition = new Vector3(0, y, 0);
+                defaultEffect.transform.localPosition = Vector3.zero;
 
                 _defaultEffects.TryAdd(info.Uid, defaultEffect);
             }
@@ -101,7 +90,10 @@ namespace GGemCo2DCore
             if (_activeBuffs.Count > 0)
             {
                 // 캐릭터에 적용되어 있던 어펙트를 먼저 지워준다.
-                _character.RemoveStatModifiers(_activeBuffs[affectUid]);
+                if (_activeBuffs.TryGetValue(affectUid, out var buff))
+                {
+                    _character.RemoveStatModifiers(buff);
+                }
                 _character.RecalculateStats();
                 _activeBuffs[affectUid].Clear();
                 _activeBuffs.Remove(affectUid);

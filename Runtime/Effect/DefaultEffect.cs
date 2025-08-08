@@ -14,7 +14,7 @@ namespace GGemCo2DCore
         private float _duration;
 
         private string _color;
-        // 발사한 캐릭터
+        // 생성한 캐릭터
         private CharacterBase _character;
         // 타겟 캐릭터
         private CharacterBase _targetCharacter;
@@ -24,6 +24,9 @@ namespace GGemCo2DCore
         private float _originalScaleX;
         // 맵 height 값. sorting order 계산에 사용
         private float _mapSizeHeight;
+        private CharacterBase _followCharacter;
+        private float _positionY;
+        private ConfigCommon.PositionYType _positionYType;
         
         private Renderer _characterRenderer;
         private Animator _animator;
@@ -138,6 +141,7 @@ namespace GGemCo2DCore
 
         public void SetScale(float scale)
         {
+            if (scale <= 0) return;
             transform.localScale = new Vector2(scale, scale);
             _originalScaleX = transform.localScale.x;
         }
@@ -166,6 +170,41 @@ namespace GGemCo2DCore
         public void SetSortingLayer(ConfigSortingLayer.Keys sortingLayer)
         {
             _characterRenderer.sortingLayerName = ConfigSortingLayer.GetValue(sortingLayer);
+        }
+
+        public void SetFollowCharacter(CharacterBase character)
+        {
+            _followCharacter = character;
+        }
+
+        public void SetPositionY(int y)
+        {
+            _positionY = y;
+        }
+
+        public void SetPositionYType(ConfigCommon.PositionYType type)
+        {
+            _positionYType = type;
+        }
+
+        public void SetCreateCharacter(CharacterBase character)
+        {
+            _character = character;
+        }
+
+        private void Update()
+        {
+            if (_followCharacter == null) return;
+            transform.position = _followCharacter.transform.position;
+            if (_positionY > 0)
+            {
+                transform.position += new Vector3(0, _positionY, 0);
+            }
+
+            if (_positionYType == ConfigCommon.PositionYType.CharacterHeight)
+            {
+                transform.position += new Vector3(0, _character.GetHeightByScale(), 0);
+            }
         }
     }
 }

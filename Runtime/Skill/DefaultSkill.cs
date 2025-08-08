@@ -59,9 +59,6 @@ namespace GGemCo2DCore
             ApplyProjectile();
             ApplyInitialAffect();
             ApplySkillCost();
-
-            if (_struckTableSkill.TargetType == SkillConstants.TargetType.Range)
-                StartCoroutine(AffectByTickTimeOnce());
         }
 
         private void ApplyProjectile()
@@ -158,6 +155,7 @@ namespace GGemCo2DCore
                 var effectInfo = _tableEffect.GetDataByUid(_struckTableSkill.EffectUid);
                 if (effectInfo == null) return;
                 float effectScale = _struckTableSkill.EffectScale > 0 ? _struckTableSkill.EffectScale : 1;
+                effect.SetCreateCharacter(_attacker);
                 effect.SetScale(effectScale);
                 if (_struckTableSkill.Duration > 0)
                 {
@@ -204,6 +202,7 @@ namespace GGemCo2DCore
                     Vector3 spawnPosition = targetPos + new Vector3(posX, posY, 0);
 
                     var effect = _effectManager.CreateEffect(_struckTableSkill.EffectUid);
+                    effect.SetCreateCharacter(_attacker);
                     effect.SetScale(effectScale);
                     effect.SetDuration(_struckTableSkill.Duration);
                     effect.transform.position = spawnPosition;
@@ -225,9 +224,35 @@ namespace GGemCo2DCore
         /// </summary>
         private void ApplyInitialAffect()
         {
-            if (_struckTableSkill.TargetType == SkillConstants.TargetType.Fixed && _struckTableSkill.AffectUid > 0)
+            if (_struckTableSkill.AffectUid <= 0) return;
+            int affectRate = _struckTableSkill.AffectRate;
+            int random = Random.Range(0, 100);
+            if (random >= affectRate)
+            {
+                // GcLogger.Log($"use skill. ApplyInitialAffect. random: {random} / affectRate: {affectRate} ");
+                return;
+            }
+            
+            if (_struckTableSkill.TargetType == SkillConstants.TargetType.Fixed)
             {
                 _target.AddAffect(_struckTableSkill.AffectUid);
+            }
+            else if (_struckTableSkill.TargetType == SkillConstants.TargetType.Range)
+            {
+                StartCoroutine(AffectByTickTimeOnce());
+            }
+        }
+        /// <summary>
+        /// tick time 후 어펙트 적용하기
+        /// </summary>
+        /// <returns></returns>
+        private IEnumerator AffectByTickTimeOnce()
+        {
+            yield return null;
+            foreach (var character in GetMonsterInCollider())
+            {
+                if (_struckTableSkill.AffectUid > 0)
+                    character.AddAffect(_struckTableSkill.AffectUid);
             }
         }
         /// <summary>
@@ -253,19 +278,22 @@ namespace GGemCo2DCore
         /// <returns></returns>
         private List<CharacterBase> GetMonsterInCollider()
         {
-            List<CharacterBase> list = new List<CharacterBase>();
-            if (_polyCollider2D == null) return list;
+            // 필요시 ConfigTags 사용: ConfigTags.GetValue(ConfigTags.Keys.Monster)
+            string monsterTag = ConfigTags.GetValue(ConfigTags.Keys.Monster);
 
-            ContactFilter2D filter = new ContactFilter2D { useTriggers = true };
-            Collider2D[] results = new Collider2D[100];
-            int count = Physics2D.OverlapCollider(_polyCollider2D, filter, results);
+            // 탐지할 레이어(여러 레이어면 | 연산으로 결합)
+            LayerMask mask = Physics2D.DefaultRaycastLayers; // 모든 기본 레이어 허용
 
-            for (int i = 0; i < count; i++)
-            {
-                CharacterHitArea area = results[i].GetComponent<CharacterHitArea>();
-                if (area && results[i].CompareTag(ConfigTags.GetValue(ConfigTags.Keys.Monster)))
-                    list.Add(area.target);
-            }
+            var list = Physics2DUtil.GetMonstersInArea(
+                _polyCollider2D,
+                mask,
+                includeTriggers: true,
+                syncTransforms: true,   // Transform을 코드로 막 바꿨다면 true
+                monsterTag: monsterTag,
+                extraPredicate: null     // 예: hp>0 등 추가조건이 필요하면 전달
+            );
+
+            GcLogger.Log($"default skill. GetMonsterInCollider. found: {list.Count}");
 
             return list;
         }
@@ -283,19 +311,6 @@ namespace GGemCo2DCore
                     character.TakeDamage(_struckTableSkill.DamageValue, _attacker.gameObject, _struckTableSkill.DamageType);
                 }
                 yield return new WaitForSeconds(_struckTableSkill.TickTime);
-            }
-        }
-        /// <summary>
-        /// tick time 후 어펙트 적용하기
-        /// </summary>
-        /// <returns></returns>
-        private IEnumerator AffectByTickTimeOnce()
-        {
-            yield return null;
-            foreach (var character in GetMonsterInCollider())
-            {
-                if (_struckTableSkill.AffectUid > 0)
-                    character.AddAffect(_struckTableSkill.AffectUid);
             }
         }
         /// <summary>
