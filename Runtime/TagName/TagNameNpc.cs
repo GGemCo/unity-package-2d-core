@@ -11,11 +11,11 @@ namespace GGemCo2DCore
         {
             if (itemObject == null || TableLoaderManager.Instance == null) return;
             npc = itemObject.GetComponent<Npc>();
-            struckTableNpc = TableLoaderManager.Instance.TableNpc.GetDataByUid(npc.uid);
+            struckTableNpc = TableLoaderManager.Instance.GetNpcData(npc.uid);
             string nameFunction = "";
             if (struckTableNpc.InteractionUid > 0)
             {
-                var info = TableLoaderManager.Instance.TableInteraction.GetDataByUid(struckTableNpc.InteractionUid);
+                var info = TableLoaderManager.Instance.GetInteractionData(struckTableNpc.InteractionUid);
                 if (info != null && info.Type1 != InteractionConstants.Type.None)
                 {
                     nameFunction = $" - {InteractionConstants.GetTypeName(info.Type1)}";

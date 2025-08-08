@@ -15,7 +15,7 @@ namespace GGemCo2DCore
         
         public DefaultEffect CreateEffect(int effectUid)
         {
-            var info = TableLoaderManager.Instance.TableEffect.GetDataByUid(effectUid);
+            var info = TableLoaderManager.Instance.GetEffectData(effectUid);
             if (info == null)
             {
                 GcLogger.LogError("effect 테이블에 없는 이펙트 입니다. effect Uid: "+effectUid);

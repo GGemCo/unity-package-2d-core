@@ -53,7 +53,7 @@ namespace GGemCo2DCore
         /// <param name="iconCount"></param>
         public void UpdateInfo(int iconUid, int iconCount)
         {
-            var info = TableLoaderManager.Instance.TableItem.GetDataByUid(iconUid);
+            var info = TableLoaderManager.Instance.GetItemData(iconUid);
             if (info == null) return;
             itemUid = iconUid;
             textItemName.text = info.Name;

@@ -107,7 +107,7 @@ namespace GGemCo2DCore
             if (uid <= 0) return;
             TableLoaderManager tableLoaderManager = TableLoaderManager.Instance;
             // monster 테이블 정보 셋팅
-            var info = tableLoaderManager.TableMonster.GetDataByUid(uid);
+            var info = tableLoaderManager.GetMonsterData(uid);
             // GcLogger.Log("InitializationStat uid: "+uid+" / info.uid: "+info.uid+" / StatMoveSpeed: "+info.statMoveSpeed);
             if (info.Uid <= 0) return;
             characterName = info.Name;

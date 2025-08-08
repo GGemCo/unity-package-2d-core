@@ -212,7 +212,7 @@ namespace GGemCo2DCore
             if (string.IsNullOrEmpty(statusId)) return;
             if (statusId == ConfigCommon.StatusAffectId)
             {
-                var info = TableLoaderManager.Instance.TableAffect.GetDataByUid((int)value);
+                var info = TableLoaderManager.Instance.GetAffectData((int)value);
                 if (info == null)
                 {
                     GcLogger.LogError("어펙트 테이블에 없는 어펙트 입니다. affect Uid: "+value);

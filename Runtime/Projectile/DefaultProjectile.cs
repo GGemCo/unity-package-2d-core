@@ -57,7 +57,7 @@ namespace GGemCo2DCore
             {
                 effectProjectile.SetScale(info.EffectScale);
             }
-            struckTableEffect = TableLoaderManager.Instance.TableEffect.GetDataByUid(info.EffectUid);
+            struckTableEffect = TableLoaderManager.Instance.GetEffectData(info.EffectUid);
             
             Rigidbody2D rigidbody2d = ComponentController.AddRigidbody2D(gameObject);
             rigidbody2d.bodyType = RigidbodyType2D.Kinematic;

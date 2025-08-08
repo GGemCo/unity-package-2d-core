@@ -17,7 +17,7 @@ namespace GGemCo2DCore
         {
             if (dialogue.characterType == CharacterConstants.Type.Npc)
             {
-                var data = TableLoaderManager.Instance.TableNpc.GetDataByUid(dialogue.characterUid);
+                var data = TableLoaderManager.Instance.GetNpcData(dialogue.characterUid);
                 return data?.Name ?? "???";
             }
             return string.Empty;
@@ -37,7 +37,7 @@ namespace GGemCo2DCore
             }
             if (dialogue.characterType == CharacterConstants.Type.Npc)
             {
-                var data = TableLoaderManager.Instance.TableNpc.GetDataByUid(dialogue.characterUid);
+                var data = TableLoaderManager.Instance.GetNpcData(dialogue.characterUid);
                 if (data != null)
                 {
                     string key = $"{ConfigAddressables.KeyCharacterThumbnailNpc}_{data.ImageThumbnailFileName}";
@@ -46,7 +46,7 @@ namespace GGemCo2DCore
             }
             else if (dialogue.characterType == CharacterConstants.Type.Monster)
             {
-                var data = TableLoaderManager.Instance.TableMonster.GetDataByUid(dialogue.characterUid);
+                var data = TableLoaderManager.Instance.GetMonsterData(dialogue.characterUid);
                 if (data != null)
                 {
                     string key = $"{ConfigAddressables.KeyCharacterThumbnailMonster}_{data.ImageThumbnailFileName}";

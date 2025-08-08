@@ -32,7 +32,7 @@ namespace GGemCo2DCore
                 GcLogger.LogError("몬스터 오브젝트가 없습니다.");
                 return;
             }
-            var info = TableLoaderManager.Instance.TableMonster.GetDataByUid(_monster.uid);
+            var info = TableLoaderManager.Instance.GetMonsterData(_monster.uid);
             if (info == null)
             {
                 GcLogger.LogError("몬스터 테이블에 정보가 없습니다. uid:"+_monster.uid);

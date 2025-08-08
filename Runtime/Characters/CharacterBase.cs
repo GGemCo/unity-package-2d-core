@@ -154,18 +154,18 @@ namespace GGemCo2DCore
             int animationUid = 0;
             if (type == CharacterConstants.Type.Npc)
             {
-                var info = TableLoaderManager.Instance.TableNpc.GetDataByUid(uid);
+                var info = TableLoaderManager.Instance.GetNpcData(uid);
                 if (info == null) return;
                 animationUid = info.AnimationUid;
             }
             else if (type == CharacterConstants.Type.Monster)
             {
-                var info = TableLoaderManager.Instance.TableMonster.GetDataByUid(uid);
+                var info = TableLoaderManager.Instance.GetMonsterData(uid);
                 if (info == null) return;
                 animationUid = info.AnimationUid;
             }
             if (animationUid <= 0) return;
-            StruckTableAnimation struckTableAnimation = TableLoaderManager.Instance.TableAnimation.GetDataByUid(animationUid);
+            StruckTableAnimation struckTableAnimation = TableLoaderManager.Instance.GetAnimationData(animationUid);
             if (struckTableAnimation is not { Uid: > 0 }) return;
             currentMoveStep = struckTableAnimation.MoveStep;
             if (colliderCheckCharacter != null)
@@ -549,7 +549,7 @@ namespace GGemCo2DCore
         /// <param name="affectUid"></param>
         public void AddAffect(int affectUid)
         {
-            var info = TableLoaderManager.Instance.TableAffect.GetDataByUid(affectUid);
+            var info = TableLoaderManager.Instance.GetAffectData(affectUid);
             if (info == null)
             {
                 GcLogger.LogError("affect 테이블에 없는 어펙트 입니다. affect Uid: "+affectUid);
@@ -635,7 +635,7 @@ namespace GGemCo2DCore
         }
         public virtual void LaunchProjectile(int projectileUid)
         {
-            var info = TableLoaderManager.Instance.TableProjectile.GetDataByUid(projectileUid);
+            var info = TableLoaderManager.Instance.GetProjectileData(projectileUid);
             if (info == null) return;
             StartCoroutine(CreateProjectile(info));
         }

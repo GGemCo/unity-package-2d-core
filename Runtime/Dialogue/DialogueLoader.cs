@@ -13,7 +13,7 @@ namespace GGemCo2DCore
         /// <returns></returns>
         public static async Task<DialogueData> LoadDialogueData(int dialogueUid)
         {
-            var info = TableLoaderManager.Instance.TableDialogue.GetDataByUid(dialogueUid);
+            var info = TableLoaderManager.Instance.GetDialogueData(dialogueUid);
             if (info == null) return null;
 
             string key = $"{ConfigAddressables.KeyDialogue}_{info.Uid}";

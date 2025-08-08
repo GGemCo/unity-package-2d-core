@@ -27,7 +27,7 @@ namespace GGemCo2DCore
         /// <param name="affectUid"></param>
         public void AddAffectIcon(int affectUid)
         {
-            var info = TableLoaderManager.Instance.TableAffect.GetDataByUid(affectUid);
+            var info = TableLoaderManager.Instance.GetAffectData(affectUid);
             if (info == null)
             {
                 GcLogger.LogError("affect 테이블에 없는 어펙트 입니다. affect Uid: "+affectUid);

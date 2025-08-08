@@ -44,7 +44,7 @@ namespace GGemCo2DCore
                 return;
             }
 
-            var infoQuest = TableLoaderManager.Instance.TableQuest.GetDataByUid(_currentQuestUid);
+            var infoQuest = TableLoaderManager.Instance.GetQuestData(_currentQuestUid);
             if (infoQuest == null)
             {
                 GcLogger.LogError("quest 테이블에 정보가 없습니다. quest Uid: " + _currentQuestUid);

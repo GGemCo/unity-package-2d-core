@@ -75,7 +75,7 @@ namespace GGemCo2DCore
         private void OnEnable()
         {
             if (itemUid <= 0) return;
-            var info = TableLoaderManager.Instance.TableItem.GetDataByUid(itemUid);
+            var info = TableLoaderManager.Instance.GetItemData(itemUid);
             if (info == null || info.Uid <= 0) return;
             
             itemRenderer.sortingLayerName = ConfigSortingLayer.GetValue(ConfigSortingLayer.Keys.CharacterTop);

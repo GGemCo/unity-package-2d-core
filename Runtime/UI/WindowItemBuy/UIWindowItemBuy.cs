@@ -46,7 +46,7 @@ namespace GGemCo2DCore
         }
         public void UpdateInfo(int iconUid, int iconCount)
         {
-            var info = TableLoaderManager.Instance.TableItem.GetDataByUid(iconUid);
+            var info = TableLoaderManager.Instance.GetItemData(iconUid);
             if (info == null) return;
             var icon = GetIconByUid(iconUid);
             if (icon)

@@ -40,7 +40,7 @@ namespace GGemCo2DCore
 
         public GameObject GetCharacterNpc(int spineUid)
         {
-            var info = TableLoaderManager.Instance.TableAnimation.GetDataByUid(spineUid);
+            var info = TableLoaderManager.Instance.GetAnimationData(spineUid);
             if (info == null) return null;
             string key = $"{ConfigAddressables.KeyCharacter}_Npc_{info.Uid}";
             return _prefabCharacters.GetValueOrDefault(key);
@@ -48,7 +48,7 @@ namespace GGemCo2DCore
 
         public GameObject GetCharacterMonster(int spineUid)
         {
-            var info = TableLoaderManager.Instance.TableAnimation.GetDataByUid(spineUid);
+            var info = TableLoaderManager.Instance.GetAnimationData(spineUid);
             if (info == null) return null;
             string key = $"{ConfigAddressables.KeyCharacter}_Monster_{info.Uid}";
             return _prefabCharacters.GetValueOrDefault(key);

@@ -102,7 +102,7 @@ namespace GGemCo2DCore
                     return 0;
                 }
 
-                var info = TableLoaderManager.Instance.TableMap.GetDataByUid(startMapUid);
+                var info = TableLoaderManager.Instance.GetMapData(startMapUid);
                 if (info == null)
                 {
                     GcLogger.LogError($"맵 테이블에 없는 고유번호 입니다. {ConfigDefine.NameSDK}MapSettins 에 startMapUid 를 확인해주세요.");
@@ -352,7 +352,7 @@ namespace GGemCo2DCore
                     SetLoadFailed("맵 테이블에 내용이 없습니다.");
                     return;
                 }
-                _currentMapTableData = _tableLoaderManager.TableMap.GetDataByUid(_currentMapUid);
+                _currentMapTableData = _tableLoaderManager.GetMapData(_currentMapUid);
                 if (_currentMapTableData == null)
                 {
                     SetLoadFailed($"맵 테이블에서 찾을 수 없습니다. Uid: {_currentMapUid}");
@@ -486,7 +486,7 @@ namespace GGemCo2DCore
         /// </summary>
         public void LoadMapByPlayerDead()
         {
-            var info = _tableLoaderManager.TableMap.GetDataByUid(_currentMapUid);
+            var info = _tableLoaderManager.GetMapData(_currentMapUid);
             if (info == null) return;
             LoadMap(info.PlayerDeadSpawnUid);
         }

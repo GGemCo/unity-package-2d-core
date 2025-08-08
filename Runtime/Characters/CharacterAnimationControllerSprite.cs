@@ -93,7 +93,7 @@ namespace GGemCo2DCore
             string imagePath = "";
             if (itemUid > 0)
             {
-                StruckTableItem info = TableLoaderManager.Instance.TableItem.GetDataByUid(itemUid);
+                StruckTableItem info = TableLoaderManager.Instance.GetItemData(itemUid);
                 if (info == null) return;
 
                 ItemConstants.PartsType partsType = (ItemConstants.PartsType)partIndex;

@@ -39,7 +39,7 @@ namespace GGemCo2DCore
             {
                 return ResultCommon.Fail("Slot_InvalidSlot", $"slotIndex: {slotIndex}."); // 슬롯 정보가 잘 못 되었습니다.
             }
-            var info = TableLoaderManager.Instance.TableItem.GetDataByUid(itemUid);
+            var info = TableLoaderManager.Instance.GetItemData(itemUid);
             if (info == null || info.Uid <= 0)
             {
                 return ResultCommon.Fail();
@@ -70,7 +70,7 @@ namespace GGemCo2DCore
         /// </summary>
         public ResultCommon AddItem(int itemUid, int itemCount)
         {
-            var info = TableLoaderManager.Instance.TableItem.GetDataByUid(itemUid);
+            var info = TableLoaderManager.Instance.GetItemData(itemUid);
             if (info == null || info.Uid <= 0)
             {
                 return ResultCommon.Fail();
@@ -149,7 +149,7 @@ namespace GGemCo2DCore
                 return ResultCommon.Fail("Slot_InvalidIndex");//"잘못된 슬롯 인덱스입니다."
             }
 
-            var info = TableLoaderManager.Instance.TableItem.GetDataByUid(itemUid);
+            var info = TableLoaderManager.Instance.GetItemData(itemUid);
             if (info == null || info.Uid <= 0)
             {
                 return ResultCommon.Fail();
@@ -280,7 +280,7 @@ namespace GGemCo2DCore
             }
 
             // 아이템 정보 가져오기 (최대 중첩 개수 확인)
-            var info = TableLoaderManager.Instance.TableItem.GetDataByUid(fromItem.Uid);
+            var info = TableLoaderManager.Instance.GetItemData(fromItem.Uid);
             if (info == null || info.Uid <= 0)
             {
                 return ResultCommon.Fail();
@@ -321,7 +321,7 @@ namespace GGemCo2DCore
         /// <returns></returns>
         public ResultCommon MinusItem(int itemUid, int itemCount)
         {
-            var info = TableLoaderManager.Instance.TableItem.GetDataByUid(itemUid);
+            var info = TableLoaderManager.Instance.GetItemData(itemUid);
             if (info == null || info.Uid <= 0)
             {
                 return ResultCommon.Fail();

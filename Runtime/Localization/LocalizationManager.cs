@@ -178,7 +178,7 @@ namespace GGemCo2DCore
             if (tableEntryResult.Entry != null)
                 return tableEntryResult.Entry.Value;
 
-            GcLogger.LogWarning($"[MISSING:{key}]");
+            GcLogger.LogWarning($"MISSING:{key} / table:{table}");
             return "";
         }
 

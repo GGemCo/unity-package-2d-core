@@ -50,7 +50,7 @@ namespace GGemCo2DCore
                 return;
             }
 
-            var info = TableLoaderManager.Instance.TableItem.GetDataByUid(_struckTableItemCraft.ResultItemUid);
+            var info = TableLoaderManager.Instance.GetItemData(_struckTableItemCraft.ResultItemUid);
             if (info == null)
             {
                 GcLogger.LogError("item 테이블에 정보가 없습니다. item Uid:" + _struckTableItemCraft.ResultItemUid);

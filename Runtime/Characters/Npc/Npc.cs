@@ -82,7 +82,7 @@ namespace GGemCo2DCore
             if (TableLoaderManager.Instance == null) return;
             if (uid <= 0) return;
             TableLoaderManager tableLoaderManager = TableLoaderManager.Instance;
-            var info = tableLoaderManager.TableNpc.GetDataByUid(uid);
+            var info = tableLoaderManager.GetNpcData(uid);
             // GcLogger.Log("InitializationStat uid: "+uid+" / info.uid: "+info.uid+" / StatMoveSpeed: "+info.statMoveSpeed);
             if (info.Uid > 0)
             {

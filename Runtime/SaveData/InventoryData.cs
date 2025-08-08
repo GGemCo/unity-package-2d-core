@@ -44,7 +44,7 @@ namespace GGemCo2DCore
                 .Where(p => p.Value.Uid > 0) // 빈 슬롯 제외
                 .Select(p =>
                 {
-                    var info = TableLoaderManager.Instance.TableItem.GetDataByUid(p.Value.Uid);
+                    var info = TableLoaderManager.Instance.GetItemData(p.Value.Uid);
                     return new
                     {
                         SlotIndex = p.Key,
@@ -82,7 +82,7 @@ namespace GGemCo2DCore
                 if (slots.Count < 1) continue;
 
                 // 아이템 정보 가져오기
-                var info = TableLoaderManager.Instance.TableItem.GetDataByUid(itemUid);
+                var info = TableLoaderManager.Instance.GetItemData(itemUid);
                 if (info == null || info.Uid <= 0) continue;
 
                 int maxOverlayCount = info.MaxOverlayCount; // 최대 중첩 개수
@@ -126,7 +126,7 @@ namespace GGemCo2DCore
             {
                 return ResultCommon.Fail("Inventory_Split_InvalidCount");//"나누려고 하는 아이템 개수가 잘 못되었습니다."
             }
-            var info = TableLoaderManager.Instance.TableItem.GetDataByUid(itemUid);
+            var info = TableLoaderManager.Instance.GetItemData(itemUid);
             if (info == null || info.Uid <= 0)
             {
                 return ResultCommon.Fail();

@@ -72,7 +72,7 @@ namespace GGemCo2DCore
         {
             try
             {
-                var info = TableLoaderManager.Instance.TableCutscene.GetDataByUid(uid);
+                var info = TableLoaderManager.Instance.GetCutsceneData(uid);
                 if (info == null)
                 {
                     return;

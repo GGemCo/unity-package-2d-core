@@ -143,7 +143,7 @@ namespace GGemCo2DCore
                 UIIconItem uiIcon = icon.GetComponent<UIIconItem>();
                 if (uiIcon == null) continue;
                 
-                var info = TableLoaderManager.Instance.TableItem.GetDataByUid(datas[index].ItemUid);
+                var info = TableLoaderManager.Instance.GetItemData(datas[index].ItemUid);
                 if (info == null) continue;
                 uiIcon.ChangeInfoByUid(info.Uid, 1);
                 UIElementShop uiElementShop = uiElementShops[index];

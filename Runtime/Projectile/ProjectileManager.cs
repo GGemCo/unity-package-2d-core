@@ -25,7 +25,7 @@
         }
         public DefaultProjectile CreateProjectile(int projectileUid)
         {
-            var info = TableLoaderManager.Instance.TableProjectile.GetDataByUid(projectileUid);
+            var info = TableLoaderManager.Instance.GetProjectileData(projectileUid);
             if (info == null)
             {
                 GcLogger.LogError("projectile 테이블에 없는 이펙트 입니다. projectile Uid: "+projectileUid);

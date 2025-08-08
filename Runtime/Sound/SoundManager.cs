@@ -74,7 +74,7 @@ namespace GGemCo2DCore
         public void PlayByUid(int uid)
         {
             if (!_tableLoaderManager) return;
-            var info = _tableLoaderManager.TableSound.GetDataByUid(uid);
+            var info = _tableLoaderManager.GetSoundData(uid);
             if (info.Type == SoundConstants.Type.Bgm)
                 _soundControllerBgm.Play(_addressableLoaderSound.GetAudioClip($"{ConfigAddressableGroupName.Sound}_{info.FileName}"), this);
             else if (info.Type == SoundConstants.Type.Sfx)
@@ -154,7 +154,7 @@ namespace GGemCo2DCore
             foreach (var data in datas)
             {
                 int uid = data.Key;
-                var info = _tableLoaderManager.TableSound.GetDataByUid(uid);
+                var info = _tableLoaderManager.GetSoundData(uid);
                 if (info is not { UseIntroScene: true }) continue;
                 introSfxUids.Add(info.Uid);
             }

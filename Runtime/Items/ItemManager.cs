@@ -221,7 +221,7 @@ namespace GGemCo2DCore
         /// <param name="monsterObject"></param>
         private void MakeDropGold(int monsterUid, GameObject monsterObject)
         {
-            var info = TableLoaderManager.Instance.TableMonster.GetDataByUid(monsterUid);
+            var info = TableLoaderManager.Instance.GetMonsterData(monsterUid);
             if (info != null && info.RewardGold > 0)
             {
                 MakeDropItem(monsterObject.transform.position, CurrencyConstants.ItemUidGold, info.RewardGold);

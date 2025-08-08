@@ -64,7 +64,7 @@ namespace GGemCo2DCore
         private void ApplyProjectile()
         {
             if (_struckTableSkill.ProjectileUid <= 0) return;
-            var info = TableLoaderManager.Instance.TableProjectile.GetDataByUid(_struckTableSkill.ProjectileUid);
+            var info = TableLoaderManager.Instance.GetProjectileData(_struckTableSkill.ProjectileUid);
             if (info == null) return;
             StartCoroutine(CreateProjectile(info));
         }
