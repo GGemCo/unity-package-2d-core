@@ -16,6 +16,7 @@ namespace GGemCo2DCoreEditor
         private string _tableName = "GGemCo_Scene";
         private string _keyName = "Intro_Button_NewGame";
         private string _searchText = "";
+        private bool _toggleUserTable = true;
 
         private Dictionary<string, string> _matchedKeys = new();
 
@@ -30,6 +31,7 @@ namespace GGemCo2DCoreEditor
             Common.OnGUITitle("Table, Key 이름으로 검색");
             _tableName = EditorGUILayout.TextField("Table Name", _tableName);
             _keyName = EditorGUILayout.TextField("Key Name", _keyName);
+            _toggleUserTable = EditorGUILayout.ToggleLeft("유저 언어 테이블도 같이 검색", _toggleUserTable);
 
             if (GUILayout.Button("현재 씬에서 Key로 찾기"))
                 FindInOpenScenes(_tableName, _keyName);
@@ -42,6 +44,7 @@ namespace GGemCo2DCoreEditor
 
             Common.GUILine();
             Common.OnGUITitle("문자열로 Key 찾기");
+            EditorGUILayout.HelpBox("대소문자를 구분합니다.", MessageType.Info);
             _searchText = EditorGUILayout.TextField("검색할 문자열", _searchText);
 
             if (GUILayout.Button("Key 검색"))
@@ -81,18 +84,15 @@ namespace GGemCo2DCoreEditor
                 {
                     foreach (var entry in table.Values)
                     {
-                        if (entry.LocalizedValue.Contains(searchText))
-                        {
-                            result[collection.TableCollectionName] = entry.Key;
-                            Debug.Log($"✅ 일치 항목: {collection.TableCollectionName} / {entry.Key} / {entry.LocalizedValue}");
-                        }
+                        if (!entry.LocalizedValue.Contains(searchText)) continue;
+                        result[collection.TableCollectionName] = entry.Key;
+                        Debug.Log($"✅ 일치 항목: {collection.TableCollectionName} / {entry.Key} / {entry.LocalizedValue}");
                     }
                 }
             }
 
             return result;
         }
-
 
         private bool IsMatching(LocalizeStringEvent evt, string tableName, string keyName)
         {
@@ -104,7 +104,9 @@ namespace GGemCo2DCoreEditor
             var tableEntryResult = LocalizationSettings.StringDatabase.GetTableEntry(currentTableName,
                 evt.StringReference.TableEntryReference);
             if (tableEntryResult.Entry == null) return false;
-            return currentTableName == tableName && tableEntryResult.Entry.Key == keyName;
+
+            return (currentTableName == tableName || (_toggleUserTable && currentTableName == $"{tableName}_User")) &&
+                   tableEntryResult.Entry.Key == keyName;
         }
 
         private void FindInOpenScenes(string tableName, string keyName)
@@ -118,11 +120,9 @@ namespace GGemCo2DCoreEditor
 #endif
             foreach (var evt in events)
             {
-                if (IsMatching(evt, tableName, keyName))
-                {
-                    Debug.Log($"[현재 씬] {evt.gameObject.name} (Scene: {evt.gameObject.scene.name})", evt.gameObject);
-                    total++;
-                }
+                if (!IsMatching(evt, tableName, keyName)) continue;
+                Debug.Log($"[현재 씬] {evt.gameObject.name} (Scene: {evt.gameObject.scene.name})", evt.gameObject);
+                total++;
             }
 
             Debug.Log($"✅ 현재 씬에서 찾은 오브젝트 수: {total}");
@@ -142,11 +142,9 @@ namespace GGemCo2DCoreEditor
                 var events = prefab.GetComponentsInChildren<LocalizeStringEvent>(true);
                 foreach (var evt in events)
                 {
-                    if (IsMatching(evt, tableName, keyName))
-                    {
-                        Debug.Log($"[프리팹] {prefab.name} at {path}", prefab);
-                        total++;
-                    }
+                    if (!IsMatching(evt, tableName, keyName)) continue;
+                    Debug.Log($"[프리팹] {prefab.name} at {path}", prefab);
+                    total++;
                 }
             }
 
@@ -159,9 +157,9 @@ namespace GGemCo2DCoreEditor
             string currentScene = SceneManager.GetActiveScene().path;
             var scenes = EditorBuildSettings.scenes.Where(s => s.enabled).ToList();
 
-            for (int i = 0; i < scenes.Count; i++)
+            foreach (var t in scenes)
             {
-                string path = scenes[i].path;
+                string path = t.path;
                 Scene scene = EditorSceneManager.OpenScene(path, OpenSceneMode.Single);
 
                 foreach (var root in scene.GetRootGameObjects())
@@ -169,11 +167,9 @@ namespace GGemCo2DCoreEditor
                     var events = root.GetComponentsInChildren<LocalizeStringEvent>(true);
                     foreach (var evt in events)
                     {
-                        if (IsMatching(evt, tableName, keyName))
-                        {
-                            Debug.Log($"[씬] {evt.gameObject.name} in Scene: {path}", evt.gameObject);
-                            total++;
-                        }
+                        if (!IsMatching(evt, tableName, keyName)) continue;
+                        Debug.Log($"[씬] {evt.gameObject.name} in Scene: {path}", evt.gameObject);
+                        total++;
                     }
                 }
             }
