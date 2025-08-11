@@ -12,9 +12,9 @@
 210006	디크리즈 무브	DecreaseMove	DeBuff	DecreaseMove	0	STAT_MOVE_SPEED	DECREASE	50	10	200002	0.5	CharacterTop	None	0
 210007	디크리즈 무브	DecreaseMove	DeBuff	DecreaseMove	0	STAT_MOVE_SPEED	DECREASE	50	10	200002	0.5	CharacterTop	None	0
 210008	디크리즈 무브	DecreaseMove	DeBuff	DecreaseMove	0	STAT_MOVE_SPEED	DECREASE	50	10	200002	0.5	CharacterTop	None	0
-210010	디크리즈 무브 범위	DecreaseMoveRange	DeBuff	DecreaseMoveRange	0	STAT_MOVE_SPEED	DECREASE	90	10	200002	0.5	CharacterTop	CharacterHeight	150
-210011	디크리즈 무브 범위	DecreaseMoveRange	DeBuff	DecreaseMoveRange	0	STAT_MOVE_SPEED	DECREASE	90	10	200002	0.5	CharacterTop	CharacterHeight	150
-210012	디크리즈 무브 범위	DecreaseMoveRange	DeBuff	DecreaseMoveRange	0	STAT_MOVE_SPEED	DECREASE	90	10	200002	0.5	CharacterTop	CharacterHeight	150
-210013	디크리즈 어텍 범위	DecreaseAttackRange	DeBuff	DecreaseAttackRange	0	STAT_ATTACK_SPEED	DECREASE	90	10	200005	0.5	CharacterTop	CharacterHeight	150
-210014	디크리즈 어텍 범위	DecreaseAttackRange	DeBuff	DecreaseAttackRange	0	STAT_ATTACK_SPEED	DECREASE	90	10	200005	0.5	CharacterTop	CharacterHeight	150
-210015	디크리즈 어텍 범위	DecreaseAttackRange	DeBuff	DecreaseAttackRange	0	STAT_ATTACK_SPEED	DECREASE	90	10	200005	0.5	CharacterTop	CharacterHeight	150
+210010	디크리즈 무브 범위	DecreaseMoveRange	DeBuff	DecreaseMoveRange	0	STAT_MOVE_SPEED	DECREASE	90	10	200002	0.5	CharacterTop	CharacterHeight	0
+210011	디크리즈 무브 범위	DecreaseMoveRange	DeBuff	DecreaseMoveRange	0	STAT_MOVE_SPEED	DECREASE	90	10	200002	0.5	CharacterTop	CharacterHeight	0
+210012	디크리즈 무브 범위	DecreaseMoveRange	DeBuff	DecreaseMoveRange	0	STAT_MOVE_SPEED	DECREASE	90	10	200002	0.5	CharacterTop	CharacterHeight	0
+210013	디크리즈 어텍 범위	DecreaseAttackRange	DeBuff	DecreaseAttackRange	0	STAT_ATTACK_SPEED	DECREASE	90	10	200005	0.5	CharacterTop	CharacterHeight	0
+210014	디크리즈 어텍 범위	DecreaseAttackRange	DeBuff	DecreaseAttackRange	0	STAT_ATTACK_SPEED	DECREASE	90	10	200005	0.5	CharacterTop	CharacterHeight	0
+210015	디크리즈 어텍 범위	DecreaseAttackRange	DeBuff	DecreaseAttackRange	0	STAT_ATTACK_SPEED	DECREASE	90	10	200005	0.5	CharacterTop	CharacterHeight	0
