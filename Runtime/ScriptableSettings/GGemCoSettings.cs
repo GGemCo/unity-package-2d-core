@@ -2,6 +2,9 @@ using UnityEngine;
 
 namespace GGemCo2DCore
 {
+    /// <summary>
+    /// 기본 설정하기
+    /// </summary>
     public enum InputSystemType
     {
         None,
@@ -14,6 +17,7 @@ namespace GGemCo2DCore
     {
         [Header("기본 설정")] 
         [Header("스파인2D 사용 여부. 사용할 경우 #define GGEMCO_USE_SPINE 이 추가됩니다. 스파인2D 패키지를 추가해주세요.")]
+        // Unity 6 에서는 Build Profile 을 신규로 생성했을 경우, Build Profiles 메뉴에서 확인해야 한다.
         public bool useSpine2d;
         [Header("입력 시스템 설정")]
         public InputSystemType inputSystemType;
