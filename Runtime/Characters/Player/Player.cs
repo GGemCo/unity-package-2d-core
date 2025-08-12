@@ -53,6 +53,7 @@ namespace GGemCo2DCore
                     .PlayerBuffInfo);
             // 연출중 체크를 위해 추가
             _controllerPlayer.Initialize(_sceneGame.CutsceneManager);
+            _sceneGame.mapManager.onLoadStartMap.AddListener(OnLoadStartMap);
             
             // TotalHp, Mp 가 바뀌어도 현재 값이 바뀌면 안된다.
             TotalHp
@@ -411,5 +412,13 @@ namespace GGemCo2DCore
         {
             _controllerPlayer?.ChangeMapSize(mapSize);
         }
+        /// <summary>
+        /// 맵 이동 시작시 stop 처리 
+        /// </summary>
+        private void OnLoadStartMap()
+        {
+            Stop();
+        }
+
     }
 }

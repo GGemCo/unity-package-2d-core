@@ -6,12 +6,13 @@ namespace GGemCo2DCore
     public class CharacterBaseController : MonoBehaviour
     {
         protected CharacterBase TargetCharacter;
-        private Vector2 minBounds; // 타일맵의 최소/최대 경계
-        private Vector2 maxBounds; // 타일맵의 최소/최대 경계
-        private Vector2 mapSize;
         protected ICharacterAnimationController ICharacterAnimationController;
         protected Vector2 CapsuleColliderSize;
         protected CapsuleDirection2D CapsuleDirection2D;
+        private Vector2 minBounds; // 타일맵의 최소/최대 경계
+        private Vector2 maxBounds; // 타일맵의 최소/최대 경계
+        private Vector2 mapSize;
+        private MapManager _mapManager;
 
         protected virtual void Awake()
         {
@@ -21,7 +22,9 @@ namespace GGemCo2DCore
         {
             // 타일맵의 경계를 가져오는 코드 (직접 설정 가능)
             minBounds = new Vector2(0f, 0f); // 좌측 하단 경계
-            mapSize = SceneGame.Instance.mapManager.GetCurrentMapSize();
+            _mapManager = SceneGame.Instance.mapManager;
+            
+            mapSize = _mapManager.GetCurrentMapSize();
             ICharacterAnimationController = TargetCharacter.CharacterAnimationController;
             // Awake 에서 캡슐 콜라이더를 추가하기 때문에 Start 에서 처리한다.
             CapsuleColliderSize = Vector2.zero;
@@ -120,6 +123,19 @@ namespace GGemCo2DCore
         {
             mapSize.x = newMapSize.x;
             mapSize.y = newMapSize.y;
+        }
+        /// <summary>
+        /// 조작 가능한지 체크하기
+        /// </summary>
+        /// <returns></returns>
+        protected bool CheckPossibleControl()
+        {
+            if (!_mapManager.IsStateComplete()) return false;
+            if (TargetCharacter.IsStatusMoveForce()) return false;
+            if (TargetCharacter.IsStatusDead()) return false;
+            if (TargetCharacter.IsStatusDamage()) return false;
+            
+            return true;
         }
     }
 }

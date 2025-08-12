@@ -22,9 +22,7 @@ namespace GGemCo2DCore
         }
         private void Update()
         {
-            if (TargetCharacter.IsStatusMoveForce()) return;
-            if (TargetCharacter.IsStatusDead()) return;
-            if (TargetCharacter.IsStatusDamage()) return;
+            if (!CheckPossibleControl()) return;
             
             if (TargetCharacter.IsAggro())
             {

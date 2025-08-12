@@ -10,6 +10,7 @@ namespace GGemCo2DCore
     /// </summary>
     public class SoundControllerSfx
     {
+        private float _preVolume;
         private readonly Transform _owner;
         private readonly AudioMixer _mixer;
         private readonly AudioMixerGroup _group;
@@ -26,6 +27,7 @@ namespace GGemCo2DCore
 
         public SoundControllerSfx(Transform owner, AudioMixer mixer, AudioMixerGroup group, string volumeParam, AddressableLoaderSound loader)
         {
+            _preVolume = 0;
             _owner = owner;
             _mixer = mixer;
             _group = group;
@@ -167,6 +169,23 @@ namespace GGemCo2DCore
                 }
                 _pool[uid] = pool;
                 _autoExpandedCount[uid] = 0;
+            }
+        }
+        /// <summary>
+        /// 음소거 처리
+        /// </summary>
+        /// <param name="set"></param>
+        public void Mute(bool set)
+        {
+            if (set)
+            {
+                _preVolume = PlayerPrefsManager.LoadSoundVolumeSfx();
+                SetVolume(0);
+            }
+            else
+            {
+                SetVolume(_preVolume);
+                _preVolume = 0;
             }
         }
     }

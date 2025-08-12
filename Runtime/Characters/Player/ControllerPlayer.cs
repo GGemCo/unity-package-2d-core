@@ -59,14 +59,12 @@ namespace GGemCo2DCore
         }
         private void Update()
         {
+            if (!CheckPossibleControl()) return;
             // 연출 중이면 
             if (_cutsceneManager.IsPlaying())
             {
                 return;
             }
-            if (TargetCharacter.IsStatusMoveForce()) return;
-            if (TargetCharacter.IsStatusDead()) return;
-            if (TargetCharacter.IsStatusDamage()) return;
             
             HandleInput();
             HandleAttack();

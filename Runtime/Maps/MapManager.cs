@@ -31,8 +31,10 @@ namespace GGemCo2DCore
         // 현재 맵에서 플레이어가 스폰될 위치
         private Vector3 _playSpawnPosition;
 
+        // 맵 로드 시작되었을때 발생되는 이벤트
+        public UnityEvent onLoadStartMap;
         // 맵 로드 완료되었을때 발생되는 이벤트
-        private UnityEvent _onLoadCompleteMap;
+        public UnityEvent onLoadCompleteMap;
         
         // 현재 맵 테이블 데이터
         private StruckTableMap _currentMapTableData;
@@ -51,6 +53,9 @@ namespace GGemCo2DCore
             
             _mapLoadCharacters = new MapLoadCharacters();
             _mapLoadCharacters.Initialize(this);
+            
+            onLoadStartMap = new UnityEvent();
+            onLoadCompleteMap = new UnityEvent();
             
             CreateGrid();
         }
@@ -139,6 +144,8 @@ namespace GGemCo2DCore
             Reset();
             _currentState = MapConstants.State.FadeIn;
             _currentMapUid = mapUid;
+            
+            onLoadStartMap?.Invoke();
             
             StartCoroutine(UpdateState());
         }
@@ -426,7 +433,7 @@ namespace GGemCo2DCore
             _sceneGame.saveDataManager.Player.CurrentMapUid = _currentMapUid;
             _playSpawnPosition = Vector3.zero;
             
-            _onLoadCompleteMap?.Invoke();
+            onLoadCompleteMap?.Invoke();
             // Logger.Log("맵 로드 완료");
         }
         private bool IsPossibleLoad()
@@ -525,5 +532,9 @@ namespace GGemCo2DCore
         }
         public int GetCurrentMapUid() => _currentMapUid;
 
+        public bool IsStateComplete()
+        {
+            return _currentState == MapConstants.State.Complete;
+        }
     }
 }

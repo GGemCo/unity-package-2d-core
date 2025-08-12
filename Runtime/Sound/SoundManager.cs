@@ -56,7 +56,6 @@ namespace GGemCo2DCore
             StopAllCoroutines();
             ClickSoundEventDispatcher.OnClickDispatched -= OnButtonClicked;
         }
-
         /// <summary>
         /// 저장된 볼륨 적용
         /// </summary>
@@ -66,7 +65,6 @@ namespace GGemCo2DCore
             _soundControllerBgm?.SetVolume(PlayerPrefsManager.LoadSoundVolumeBGM());
             _soundControllerSfx?.SetVolume(PlayerPrefsManager.LoadSoundVolumeSfx());
         }
-
         /// <summary>
         /// 사운드 UID 기반으로 재생
         /// </summary>
@@ -175,6 +173,13 @@ namespace GGemCo2DCore
         public void InitializeSoundSfxPool()
         {
             _soundControllerSfx?.Initialize(_tableLoaderManager?.TableSound);
+        }
+        /// <summary>
+        /// 효과음 음소거 
+        /// </summary>
+        private void SetMuteSfx(bool set)
+        {
+            _soundControllerSfx?.Mute(set);
         }
     }
 }
