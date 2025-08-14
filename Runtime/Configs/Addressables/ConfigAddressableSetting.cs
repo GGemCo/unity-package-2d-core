@@ -4,44 +4,23 @@ namespace GGemCo2DCore
 {
     public static class ConfigAddressableSetting
     {
-        // 기본 설정 Scriptable Object
-        private const string KeySettings = ConfigDefine.NameSDK+"_Settings";
-        private const string KeyPlayerSettings = ConfigDefine.NameSDK+"_PlayerSettings";
-        private const string KeyMapSettings = ConfigDefine.NameSDK+"_MapSettings";
-        private const string KeySaveSettings = ConfigDefine.NameSDK+"_SaveSettings";
-        private const string KeyOptionSettings = ConfigDefine.NameSDK+"_OptionSettings";
-        private const string KeySoundSettings = ConfigDefine.NameSDK+"_SoundSettings";
+        private static AddressableAssetInfo Make(string key)
+        {
+            return new AddressableAssetInfo(
+                $"{ConfigDefine.NameSDK}_{key}",
+                $"Assets/{ConfigDefine.NameSDK}/Settings/{ConfigDefine.NameSDK}{key}.asset"
+                );
+        }
 
-        public static readonly AddressableAssetInfo Settings = new(
-            KeySettings,
-            $"Assets/{ConfigDefine.NameSDK}/Settings/{ConfigDefine.NameSDK}Settings.asset"
-        );
-
-        public static readonly AddressableAssetInfo PlayerSettings = new(
-            KeyPlayerSettings,
-            $"Assets/{ConfigDefine.NameSDK}/Settings/{ConfigDefine.NameSDK}PlayerSettings.asset"
-        );
-
-        public static readonly AddressableAssetInfo MapSettings = new(
-            KeyMapSettings,
-            $"Assets/{ConfigDefine.NameSDK}/Settings/{ConfigDefine.NameSDK}MapSettings.asset"
-        );
-
-        public static readonly AddressableAssetInfo SaveSettings = new(
-            KeySaveSettings,
-            $"Assets/{ConfigDefine.NameSDK}/Settings/{ConfigDefine.NameSDK}SaveSettings.asset"
-        );
-        public static readonly AddressableAssetInfo OptionSettings = new(
-            KeyOptionSettings,
-            $"Assets/{ConfigDefine.NameSDK}/Settings/{ConfigDefine.NameSDK}OptionSettings.asset"
-        );
-        public static readonly AddressableAssetInfo SoundSettings = new(
-            KeySoundSettings,
-            $"Assets/{ConfigDefine.NameSDK}/Settings/{ConfigDefine.NameSDK}SoundSettings.asset"
-        );
+        public static readonly AddressableAssetInfo Settings       = Make(nameof(Settings));
+        public static readonly AddressableAssetInfo PlayerSettings = Make(nameof(PlayerSettings));
+        public static readonly AddressableAssetInfo MapSettings    = Make(nameof(MapSettings));
+        public static readonly AddressableAssetInfo SaveSettings   = Make(nameof(SaveSettings));
+        public static readonly AddressableAssetInfo OptionSettings = Make(nameof(OptionSettings));
+        public static readonly AddressableAssetInfo SoundSettings  = Make(nameof(SoundSettings));
 
         /// <summary>
-        /// 로딩 씬에서 로드 해야 되는 리스트
+        /// 로딩 씬에서 로드해야 하는 리스트
         /// </summary>
         public static readonly List<AddressableAssetInfo> NeedLoadInLoadingScene = new()
         {
