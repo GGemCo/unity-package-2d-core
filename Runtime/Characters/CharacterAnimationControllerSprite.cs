@@ -155,13 +155,15 @@ namespace GGemCo2DCore
             if (Animator == null) return;
             if (state.IsName(currentAnimationNameAttack))
             {
-                if (characterBase.IsStatusDead()) return;
-                characterBase.SetStatusIdle(); // 공격 상태 해제
-                PlayWaitAnimation();
+                characterBase.OnAnimationCompleteAttack();
+            }
+            else if (state.IsName($"{currentAnimationNameAttack}_end"))
+            {
+                characterBase.OnAnimationCompleteAttackEnd();
             }
             else
             {
-                characterBase?.Stop();
+                characterBase.Stop();
             }
         }
 

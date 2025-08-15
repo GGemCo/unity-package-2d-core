@@ -42,6 +42,7 @@
             /// 공격 중
             /// </summary>
             Attack,
+            AttackComboWait,
             /// <summary>
             /// 죽음
             /// </summary>

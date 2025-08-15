@@ -88,8 +88,9 @@ namespace GGemCo2DCore
             // AddComponent 순서 중요
             base.InitComponents();
             _controllerPlayer = gameObject.AddComponent<ControllerPlayer>();
+            
             _equipController = gameObject.AddComponent<EquipController>();
-            ComponentController.AddRigidbody2D(gameObject);
+            Rigidbody2D = ComponentController.AddRigidbody2D(gameObject);
             
             GameObject attackRange = new GameObject("AttackRange");
             CharacterAttackRange characterAttackRange = attackRange.AddComponent<CharacterAttackRange>();

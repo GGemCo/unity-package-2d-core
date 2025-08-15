@@ -73,7 +73,7 @@ namespace GGemCo2DCore
         /// <summary>
         /// run 애니메이션 하기
         /// </summary>
-        protected virtual bool Run()
+        public virtual bool Run()
         {
             if (TargetCharacter.IsStatusDontMove()) return false;
             if (TargetCharacter.IsStatusAttack()) return false;

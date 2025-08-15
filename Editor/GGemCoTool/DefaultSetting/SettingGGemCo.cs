@@ -21,13 +21,6 @@ namespace GGemCo2DCoreEditor
             {
                 CreateSettings();
             }
-            // foreach (var kvp in settingsTypes)
-            // {
-            //     if (GUILayout.Button($"{kvp.Key} 생성"))
-            //     {
-            //         CreateOrSelectSettings(kvp.Key, kvp.Value);
-            //     }
-            // }
         }
 
         private void CreateSettings()

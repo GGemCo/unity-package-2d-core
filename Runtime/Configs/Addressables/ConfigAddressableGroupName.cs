@@ -38,5 +38,7 @@
         public const string AffectIconImage = ConfigDefine.NameSDK+"_Affect_IconImage";
         // 사운드
         public const string Sound = ConfigDefine.NameSDK+"_Sound";
+        // Input Action
+        public const string InputAction = ConfigDefine.NameSDK+"_InputAction";
     }
 }

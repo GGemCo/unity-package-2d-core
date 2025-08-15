@@ -21,6 +21,8 @@ namespace GGemCo2DCore
         /// </summary>
         private void HandleInput()
         {
+#if GGEMCO_2D_CONTROL
+#else
             if (TargetCharacter.IsStatusAttack()) return;
             if (TargetCharacter.IsStatusDead()) return;
             TargetCharacter.directionNormalize = Vector3.zero;
@@ -38,12 +40,15 @@ namespace GGemCo2DCore
 #endif
 
             TargetCharacter.directionNormalize.Normalize();
+#endif
         }
         /// <summary>
         /// 키보드 공격 처리
         /// </summary>
         private void HandleAttack()
         {
+#if GGEMCO_2D_CONTROL
+#else
             if (TargetCharacter.IsStatusAttack()) return;
             if (TargetCharacter.IsStatusDead()) return;
 #if GGEMCO_USE_OLD_INPUT
@@ -56,9 +61,12 @@ namespace GGemCo2DCore
                 TargetCharacter.directionNormalize = Vector3.zero; // 움직임 멈춤
                 ICharacterAnimationController?.PlayAttackAnimation();
             }
+#endif
         }
         private void Update()
         {
+#if GGEMCO_2D_CONTROL
+#else
             if (!CheckPossibleControl()) return;
             // 연출 중이면 
             if (_cutsceneManager.IsPlaying())
@@ -79,6 +87,7 @@ namespace GGemCo2DCore
             {
                 Wait();
             }
+#endif
         }
     }
 }

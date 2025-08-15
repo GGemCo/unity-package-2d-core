@@ -6,11 +6,28 @@ using Object = UnityEngine.Object;
 
 namespace GGemCo2DCore
 {
+    public sealed class EventArgsAnimationAttack : EventArgs
+    {
+        public bool Handled { get; set; } // 외부에서 처리했으면 true
+    }
+
+    public delegate void EventHandlerAnimationCompleteAttack(CharacterBase sender, EventArgsAnimationAttack e);
+    public sealed class EventArgsAnimationAttackEnd : EventArgs
+    {
+        public bool Handled { get; set; } // 외부에서 처리했으면 true
+    }
+
+    public delegate void EventHandlerAnimationCompleteAttackEnd(CharacterBase sender, EventArgsAnimationAttackEnd e);
+    
     /// <summary>
     /// 캐릭터 관리 매니저
     /// </summary>
     public class CharacterManager
     {
+        // (신규) 외부 확장용 스폰/파괴 이벤트 — Core는 누가 구독하는지 모릅니다.
+        public static event Action<CharacterBase> OnCharacterSpawned;   // 생성 직후 1회
+        public static event Action<CharacterBase> OnCharacterDestroyed; // Destroy 직전 1회
+        
         private readonly List<GameObject> _characters = new List<GameObject>();
         private TableNpc _tableNpc;
         private TableMonster _tableMonster;
@@ -105,6 +122,10 @@ namespace GGemCo2DCore
 
             characterBase.CharacterAnimationController = iCharacterAnimationController;
             _characters.Add(characterObj);
+            
+            // (신규) 스폰 이벤트: 모든 초기화가 끝난 직후 알림
+            OnCharacterSpawned?.Invoke(characterBase);
+            
             return characterObj;
         }
 
@@ -186,6 +207,12 @@ namespace GGemCo2DCore
         public void RemoveCharacter(GameObject character)
         {
             if (!_characters.Contains(character)) return;
+
+            // (신규) 파괴 이벤트: 리스트 제거/Destroy 직전에 알림
+            var ch = character != null ? character.GetComponent<CharacterBase>() : null;
+            if (ch != null)
+                OnCharacterDestroyed?.Invoke(ch);
+
             _characters.Remove(character);
             Object.Destroy(character.gameObject);
         }

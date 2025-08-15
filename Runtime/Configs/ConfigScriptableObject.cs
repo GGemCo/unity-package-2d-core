@@ -11,7 +11,7 @@ namespace GGemCo2DCore
         /// <summary>
         /// 메뉴 순서 정의
         /// </summary>
-        private enum MenuOrdering
+        public enum MenuOrdering
         {
             None,
             MainSettings,
@@ -19,11 +19,12 @@ namespace GGemCo2DCore
             MapSettings,
             SaveSettings,
             OptionSettings,
-            SoundSettings
+            SoundSettings,
+            AttackComboSettings
         }
 
-        private const string BasePath = ConfigDefine.NameSDK + "/Settings/";
-        private const string BaseName = ConfigDefine.NameSDK;
+        public const string BasePath = ConfigDefine.NameSDK + "/Settings/";
+        public const string BaseName = ConfigDefine.NameSDK;
 
         public static class Main
         {

@@ -54,7 +54,7 @@ namespace GGemCo2DCore
         /// <summary>
         /// run 
         /// </summary>
-        protected override bool Run()
+        public override bool Run()
         {
             if (!base.Run()) return false;
             StopAttackCoroutine();

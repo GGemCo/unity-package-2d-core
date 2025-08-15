@@ -18,6 +18,12 @@
     "precompiledReferences": [],
     "autoReferenced": true,
     "defineConstraints": [],
-    "versionDefines": [],
+    "versionDefines": [
+        {
+            "name": "com.ggemco.2d.control",
+            "expression": "0",
+            "define": "GGEMCO_2D_CONTROL"
+        }
+    ],
     "noEngineReferences": false
 }

@@ -41,8 +41,6 @@ namespace GGemCo2DCore
         // 초기 scale x 값
         public float originalScaleX;
         
-
-
         [Header("애니메이션 및 렌더링 관련")]
         // 애니메이션 컨트롤러
         public ICharacterAnimationController CharacterAnimationController;
@@ -76,6 +74,12 @@ namespace GGemCo2DCore
         public CapsuleCollider2D colliderCheckHitArea;
         // 맵 height 값, sorting order 계산에 사용
         private float mapSizeHeight;
+        protected Rigidbody2D Rigidbody2D;
+        
+        // 공격 애니메이션 종료 후 
+        public event EventHandlerAnimationCompleteAttack AnimationCompleteAttack;
+        // 공격 end 애니메이션 종료 후 
+        public event EventHandlerAnimationCompleteAttackEnd AnimationCompleteAttackEnd;
         
         protected override void Awake()
         {
@@ -185,9 +189,17 @@ namespace GGemCo2DCore
         /// 캐릭터가 flip 되었는지 체크
         /// </summary>
         /// <returns></returns>
-        // public bool IsFlipped() {
-        //     return Mathf.Approximately(transform.localScale.x, originalScaleX * -1f);
-        // }
+        public bool IsFlipped() {
+            switch (defaultFacingDirection8)
+            {
+                case CharacterConstants.FacingDirection8.Left:
+                    return currentFacing == CharacterConstants.FacingDirection8.Right;
+                case CharacterConstants.FacingDirection8.Right:
+                    return currentFacing == CharacterConstants.FacingDirection8.Left;
+                default:
+                    return false;
+            }
+        }
         public void SetIsPossibleFlip(bool set) => isPossibleFlip = set;
 
         private bool IsPossibleFlip() => isPossibleFlip;
@@ -258,7 +270,7 @@ namespace GGemCo2DCore
         /// <returns></returns>
         protected bool AreFacingEachOther(Transform monster)
         {
-            CharacterBase player = GetComponent<CharacterBase>();
+            CharacterBase player = SceneGame.Instance.player.GetComponent<CharacterBase>();
             CharacterBase monsterChar = monster.GetComponent<CharacterBase>();
 
             float playerDir = player.GetFacingDirection();
@@ -302,6 +314,7 @@ namespace GGemCo2DCore
         }
         public bool IsStatusDead() => currentStatus == CharacterConstants.CharacterStatus.Dead;
         public bool IsStatusAttack() => currentStatus == CharacterConstants.CharacterStatus.Attack;
+        public bool IsStatusAttackComboWait() => currentStatus == CharacterConstants.CharacterStatus.AttackComboWait;
         public bool IsStatusDontMove() => currentStatus == CharacterConstants.CharacterStatus.DontMove;
         public bool IsStatusRun() => currentStatus == CharacterConstants.CharacterStatus.Run;
         public bool IsStatusIdle() => currentStatus == CharacterConstants.CharacterStatus.Idle;
@@ -315,6 +328,7 @@ namespace GGemCo2DCore
         public void SetStatusIdle() => SetStatus(CharacterConstants.CharacterStatus.Idle);
         public void SetStatusRun() => SetStatus(CharacterConstants.CharacterStatus.Run);
         public void SetStatusAttack() => SetStatus(CharacterConstants.CharacterStatus.Attack);
+        public void SetStatusAttackComboWait() => SetStatus(CharacterConstants.CharacterStatus.AttackComboWait);
         public void SetStatusDontMove() => SetStatus(CharacterConstants.CharacterStatus.DontMove);
         public void SetStatusMoveForce() => SetStatus(CharacterConstants.CharacterStatus.MoveForce);
         private void SetStatusDamage() => SetStatus(CharacterConstants.CharacterStatus.Damage);
@@ -650,6 +664,107 @@ namespace GGemCo2DCore
         public virtual void UseSkill(int skillUid, int skillLevel)
         {
             _skillController?.MakeSkill(skillUid, skillLevel);
+        }
+
+        public bool IsPlayer()
+        {
+            return type == CharacterConstants.Type.Player;
+        }
+
+        public bool IsMonster()
+        {
+            return type == CharacterConstants.Type.Monster;
+        }
+        /// <summary>
+        /// 공격 애니메이션 종료 후 처리 
+        /// </summary>
+        public void OnAnimationCompleteAttack()
+        {
+            RequestAnimationCompleteAttackWithFallback(LegacyAnimationCompleteAttack);
+        }
+        private void LegacyAnimationCompleteAttack()
+        {
+            Stop();
+        }
+
+        /// <summary>
+        /// 공격 애니메이션 종료 알림. 외부가 처리하지 않으면 레거시 폴백을 수행.
+        /// </summary>
+        private void RequestAnimationCompleteAttackWithFallback(Action legacyFallback)
+        {
+            var e = new EventArgsAnimationAttack { Handled = false };
+
+            // 모든 구독자에게 알림
+            AnimationCompleteAttack?.Invoke(this, e);
+
+            // 아무도 처리하지 않았으면 레거시 실행
+            if (!e.Handled)
+                legacyFallback?.Invoke();
+        }
+
+        public void OnAnimationCompleteAttackEnd()
+        {
+            RequestAnimationCompleteAttackEndWithFallback(LegacyAnimationCompleteAttackEnd);
+        }
+        /// <summary>
+        /// 공격 End 애니메이션 종료 알림. 외부가 처리하지 않으면 레거시 폴백을 수행.
+        /// </summary>
+        private void RequestAnimationCompleteAttackEndWithFallback(Action legacyFallback)
+        {
+            var e = new EventArgsAnimationAttackEnd { Handled = false };
+
+            // 모든 구독자에게 알림
+            AnimationCompleteAttackEnd?.Invoke(this, e);
+
+            // 아무도 처리하지 않았으면 레거시 실행
+            if (!e.Handled)
+                legacyFallback?.Invoke();
+        }
+        private void LegacyAnimationCompleteAttackEnd()
+        {
+        }
+
+        /// <summary>
+        /// 현재 위치에서 추가로 강제 이동 시키기
+        /// </summary>
+        /// <param name="x"></param>
+        /// <param name="y"></param>
+        /// <param name="duration"></param>
+        public void AddMoveForce(float x = 0, float y = 0, float duration = 0)
+        {
+            if (x == 0 && y == 0) return;
+            if (duration > 0)
+            {
+                Vector3 newPosition = transform.position + new Vector3(x, y, 0);
+                StartCoroutine(MoveForceRoutine(newPosition, duration));
+            }
+            else
+            {
+                transform.position += new Vector3(x, y, 0);
+            }
+        }
+
+        private IEnumerator MoveForceRoutine(Vector3 position, float duration = 0)
+        {
+            if (!Rigidbody2D) yield break;
+            if (duration == 0) yield break;
+            
+            Vector2 startPosition = transform.position;
+            Vector2 targetPosition = position;
+
+            float elapsed = 0f;
+
+            while (elapsed < duration)
+            {
+                float t = elapsed / duration;
+                float easedT = Easing.EaseOutQuad(t); // easing 적용
+                Vector2 newPosition = Vector2.Lerp(startPosition, targetPosition, easedT);
+                Rigidbody2D.MovePosition(newPosition);
+
+                elapsed += Time.deltaTime;
+                yield return null;
+            }
+            Rigidbody2D.MovePosition(targetPosition); // 마지막 위치 보정
         }
     }
 }

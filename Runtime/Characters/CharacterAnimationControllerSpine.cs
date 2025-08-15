@@ -224,6 +224,15 @@ namespace GGemCo2DCore
         {
             PlayAnimation(animationName, loop, timeScale);
         }
+
+        public void PlayAttackEndAnimation()
+        {
+            
+        }
+        public float GetCharacterAnimationDuration(string animationName, bool isMilliseconds = true)
+        {
+            return GetAnimationDuration(animationName, isMilliseconds);
+        }
     }
 }
 #endif
