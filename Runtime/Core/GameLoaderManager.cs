@@ -1,335 +1,281 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
-using System.Threading.Tasks;
+using System.Linq;
 using TMPro;
 using UnityEngine;
 
 namespace GGemCo2DCore
 {
+    /// <summary>
+    /// 모듈식 로더 매니저.
+    /// - 각 패키지는 IGameLoadStep 구현체를 GameLoaderManager.Register로 주입
+    /// - StartLoading 호출 시 Order 순서로 실행
+    /// </summary>
     public class GameLoaderManager : MonoBehaviour
     {
-        public enum LoadType
-        {
-            None,
-            Table,
-            GamePrefab,
-            SaveData,
-            GamePrefabEffect,
-            Item,
-            Skill,
-            Affect,
-            Sound,
-            Settings,
-            Localization,
-            SoundIntro
-        }
-
-        [Header("UI")]
-        public TextMeshProUGUI textLoadingPercent;
+        private TextMeshProUGUI textLoadingPercent;
         public void SetTextLoadingPercent(TextMeshProUGUI value) => textLoadingPercent = value;
 
-        private TableLoaderManager _tableLoader;
-        private SaveDataLoader _saveDataLoader;
-        private AddressableLoaderPrefabCommon _addressableLoaderPrefabCommon;
-        private AddressableLoaderPrefabEffect _addressableLoaderPrefabEffect;
-        private AddressableLoaderItem _addressableLoaderItem;
-        private AddressableLoaderSkill _addressableLoaderSkill;
-        private AddressableLoaderAffect _addressableLoaderAffect;
-        private AddressableLoaderSound _addressableLoaderSound;
-        private AddressableLoaderSettings _addressableLoaderSettings;
-        private LocalizationManager _localizationManager;
+        // 등록된 스텝
+        private readonly List<IGameLoadStep> _steps = new();
 
-        private readonly Dictionary<LoadType, float> _progressDict = new();
-        private List<LoadType> _loadSequence;
-        private List<AddressableAssetInfo> _loadTargetTables;
-
-        private float _progressBase;
+        // 진행률 집계
+        private readonly Dictionary<string, float> _stepProgress = new(); // step.Id -> 0~100
+        private float _progressBasePerStep;
         private float _progressTotal;
-        private bool _isLoadComplete = false;
+        private bool _isLoadComplete;
+        private bool _isStarted;
+
+        public static GameLoaderManager Instance { get; private set; }
 
         private void Awake()
         {
-            InitializeLoaderComponents();
-        }
-
-        private void InitializeLoaderComponents()
-        {
-            InitializeSingleton<TableLoaderManager>(ref _tableLoader, "TableLoaderManager");
-            InitializeSingleton<AddressableLoaderPrefabCommon>(ref _addressableLoaderPrefabCommon, "AddressableLoaderPrefabCommon");
-            InitializeSingleton<AddressableLoaderPrefabEffect>(ref _addressableLoaderPrefabEffect, "AddressableLoaderPrefabEffect");
-            InitializeSingleton<AddressableLoaderItem>(ref _addressableLoaderItem, "AddressableLoaderItem");
-            InitializeSingleton<AddressableLoaderSkill>(ref _addressableLoaderSkill, "AddressableLoaderSkill");
-            InitializeSingleton<AddressableLoaderAffect>(ref _addressableLoaderAffect, "AddressableLoaderAffect");
-            InitializeSingleton<AddressableLoaderSound>(ref _addressableLoaderSound, "AddressableLoaderSound");
-            InitializeSingleton<SaveDataLoader>(ref _saveDataLoader, "SaveDataLoader");
-            InitializeSingleton<AddressableLoaderSettings>(ref _addressableLoaderSettings, "AddressableLoaderSettings");
-            InitializeSingleton<LocalizationManager>(ref _localizationManager, "LocalizationManager");
-        }
-        private void InitializeSingleton<T>(ref T instance, string objectName) where T : Component
-        {
-            if (instance != null) return;
-            
-#if UNITY_6000_0_OR_NEWER
-            instance = GameObject.FindFirstObjectByType<T>();
-#else
-            instance = GameObject.FindObjectOfType<T>();
-#endif
-            if (instance == null)
+            if (Instance == null)
             {
-                GameObject obj = new GameObject(objectName);
-                instance = obj.AddComponent<T>();
+                Instance = this;
+                DontDestroyOnLoad(gameObject);
             }
-        }
-        public void SetLoadTargetTables(List<AddressableAssetInfo> tables)
-        {
-            _loadTargetTables = tables;
-        }
-
-        public void StartLoading(List<LoadType> loadSequence)
-        {
-            _loadSequence = loadSequence;
-            InitializeProgress();
-            StartCoroutine(LoadSequenceCoroutine());
-        }
-
-        private void InitializeProgress()
-        {
-            _progressDict.Clear();
-            foreach (var type in _loadSequence)
+            else
             {
-                _progressDict[type] = 0f;
+                Destroy(gameObject);
+            }
+            _progressBasePerStep = 0f;
+            _progressTotal = 0f;
+            _isLoadComplete = false;
+            _isStarted = false;
+        }
+
+        /// <summary>
+        /// 외부 패키지(예: Control)가 자신 스텝을 등록
+        /// </summary>
+        public void Register(IGameLoadStep step)
+        {
+            if (step == null) return;
+            if (_isStarted)
+            {
+                GcLogger.LogWarning($"[GameLoaderManager] 이미 로딩이 시작된 후 스텝 등록 시도: {step.Id}");
+                return;
+            }
+            if (_steps.Any(s => s.Id == step.Id))
+            {
+                GcLogger.LogWarning($"[GameLoaderManager] 중복 스텝 Id: {step.Id}");
+                return;
+            }
+            _steps.Add(step);
+        }
+
+        /// <summary>
+        /// 선택적으로 특정 스텝만 실행하고 싶다면 allowedIds 전달(Null이면 전체)
+        /// </summary>
+        private void StartLoading(IEnumerable<string> allowedIds = null)
+        {
+            if (_isStarted) return;
+            _isStarted = true;
+            _isLoadComplete = false;
+
+            // 필터 + 정렬
+            var targetSteps = (allowedIds == null)
+                ? _steps.OrderBy(s => s.Order).ToList()
+                : _steps.Where(s => allowedIds.Contains(s.Id)).OrderBy(s => s.Order).ToList();
+
+            if (targetSteps.Count == 0)
+            {
+                GcLogger.LogWarning("[GameLoaderManager] 실행할 스텝이 없습니다.");
+                OnLoadComplete();
+                return;
             }
 
-            _progressBase = 100f / _loadSequence.Count;
+            InitializeProgress(targetSteps);
+            StartCoroutine(LoadSequenceCoroutine(targetSteps));
+        }
+
+        private void InitializeProgress(List<IGameLoadStep> steps)
+        {
+            _stepProgress.Clear();
+            foreach (var s in steps)
+                _stepProgress[s.Id] = 0f;
+
+            _progressBasePerStep = 100f / steps.Count;
             _progressTotal = 0f;
 
-            if (textLoadingPercent)
-                textLoadingPercent.text = "0%";
+            if (textLoadingPercent) textLoadingPercent.text = "0%";
         }
 
-        private IEnumerator LoadSequenceCoroutine()
+        private IEnumerator LoadSequenceCoroutine(List<IGameLoadStep> steps)
         {
-            foreach (var type in _loadSequence)
+            foreach (var step in steps)
             {
-                switch (type)
+                // 스텝 코루틴 실행
+                var run = step.Run();
+                while (run.MoveNext())
                 {
-                    case LoadType.Table:
-                        yield return LoadTableData();
-                        break;
-                    case LoadType.GamePrefab:
-                        yield return LoadAddressablePrefabCommon();
-                        break;
-                    case LoadType.GamePrefabEffect:
-                        yield return LoadAddressablePrefabEffect();
-                        break;
-                    case LoadType.Item:
-                        yield return LoadAddressableItem();
-                        break;
-                    case LoadType.Skill:
-                        yield return LoadAddressableSkill();
-                        break;
-                    case LoadType.Affect:
-                        yield return LoadAddressableAffect();
-                        break;
-                    case LoadType.Sound:
-                        yield return LoadAddressableSound();
-                        break;
-                    case LoadType.SoundIntro:
-                        yield return LoadAddressableSoundIntro();
-                        break;
-                    case LoadType.SaveData:
-                        yield return LoadSaveData();
-                        break;
-                    case LoadType.Settings:
-                        yield return LoadAddressableSettings();
-                        break;
-                    case LoadType.Localization:
-                        yield return LoadLocalization();
-                        break;
+                    UpdateLoadingProgress(step);
+                    yield return run.Current;
                 }
+                // 마지막 갱신 보정
+                UpdateLoadingProgress(step, forceComplete: true);
             }
 
             OnLoadComplete();
         }
 
-        private IEnumerator LoadLocalization()
+        private void UpdateLoadingProgress(IGameLoadStep step, bool forceComplete = false)
         {
-            int localeIndex = PlayerPrefsManager.LoadIndexLocalizationLocale();
+            var ratio = Mathf.Clamp01(step.GetProgress());
+            if (forceComplete) ratio = 1f;
 
-            yield return StartCoroutine(_localizationManager.ChangeLocaleRoutine(localeIndex));
+            _stepProgress[step.Id] = ratio * _progressBasePerStep;
 
-            // LocalizationManager 내부에서 진행률 100% 설정 필요 (필요시)
-            _progressDict[LoadType.Localization] = _progressBase;
-            UpdateLoadingProgress(LoadType.Localization);
-        }
+            float sum = 0f;
+            foreach (var kv in _stepProgress)
+                sum += kv.Value;
+            _progressTotal = sum;
 
-        private IEnumerator LoadAddressableSettings()
-        {
-            Task loadTask = _addressableLoaderSettings.LoadAllSettingsAsync();
-
-            while (!loadTask.IsCompleted)
+            // UI
+            if (textLoadingPercent != null && LocalizationManager.Instance != null)
             {
-                _progressDict[LoadType.Settings] = _addressableLoaderSettings.GetLoadProgress() * _progressBase;
-                UpdateLoadingProgress(LoadType.Settings);
-                yield return null;
-            }
-        }
-
-        private IEnumerator LoadTableData()
-        {
-            if (_loadTargetTables == null || _loadTargetTables.Count == 0)
-            {
-                Debug.LogWarning("No Tables to Load.");
-                yield break;
-            }
-
-            int fileCount = _loadTargetTables.Count;
-            for (int i = 0; i < fileCount; i++)
-            {
-                var addressableAssetInfo = _loadTargetTables[i];
-                yield return _tableLoader.LoadDataFile(addressableAssetInfo);
-
-                _progressDict[LoadType.Table] = (float)(i + 1) / fileCount * _progressBase;
-                UpdateLoadingProgress(LoadType.Table);
-            }
-        }
-
-        private IEnumerator LoadAddressablePrefabCommon()
-        {
-            Task loadTask = _addressableLoaderPrefabCommon.LoadAllPreLoadGamePrefabsAsync();
-
-            while (!loadTask.IsCompleted)
-            {
-                _progressDict[LoadType.GamePrefab] = _addressableLoaderPrefabCommon.GetPrefabLoadProgress() * _progressBase;
-                UpdateLoadingProgress(LoadType.GamePrefab);
-                yield return null;
-            }
-        }
-
-        private IEnumerator LoadAddressablePrefabEffect()
-        {
-            Task loadTask = _addressableLoaderPrefabEffect.LoadPrefabsAsync();
-
-            while (!loadTask.IsCompleted)
-            {
-                _progressDict[LoadType.GamePrefabEffect] = _addressableLoaderPrefabEffect.GetPrefabLoadProgress() * _progressBase;
-                UpdateLoadingProgress(LoadType.GamePrefabEffect);
-                yield return null;
-            }
-        }
-
-        private IEnumerator LoadAddressableItem()
-        {
-            Task loadTask = _addressableLoaderItem.LoadPrefabsAsync();
-
-            while (!loadTask.IsCompleted)
-            {
-                _progressDict[LoadType.Item] = _addressableLoaderItem.GetPrefabLoadProgress() * _progressBase;
-                UpdateLoadingProgress(LoadType.Item);
-                yield return null;
-            }
-        }
-
-        private IEnumerator LoadAddressableSkill()
-        {
-            Task loadTask = _addressableLoaderSkill.LoadPrefabsAsync();
-
-            while (!loadTask.IsCompleted)
-            {
-                _progressDict[LoadType.Skill] = _addressableLoaderSkill.GetPrefabLoadProgress() * _progressBase;
-                UpdateLoadingProgress(LoadType.Skill);
-                yield return null;
-            }
-        }
-
-        private IEnumerator LoadAddressableAffect()
-        {
-            Task loadTask = _addressableLoaderAffect.LoadPrefabsAsync();
-
-            while (!loadTask.IsCompleted)
-            {
-                _progressDict[LoadType.Affect] = _addressableLoaderAffect.GetPrefabLoadProgress() * _progressBase;
-                UpdateLoadingProgress(LoadType.Affect);
-                yield return null;
-            }
-        }
-
-        private IEnumerator LoadAddressableSound()
-        {
-            Task loadTask = _addressableLoaderSound.LoadSoundAsync(ConfigAddressableLabel.Sound);
-
-            while (!loadTask.IsCompleted)
-            {
-                _progressDict[LoadType.Sound] = _addressableLoaderSound.GetLoadProgress() * _progressBase;
-                UpdateLoadingProgress(LoadType.Sound);
-                yield return null;
-            }
-        }
-        private IEnumerator LoadAddressableSoundIntro()
-        {
-            Task loadTask = _addressableLoaderSound.LoadSoundAsync(ConfigAddressableLabel.SoundIntro);
-
-            while (!loadTask.IsCompleted)
-            {
-                _progressDict[LoadType.SoundIntro] = _addressableLoaderSound.GetLoadProgress() * _progressBase;
-                UpdateLoadingProgress(LoadType.SoundIntro);
-                yield return null;
-            }
-        }
-
-        private IEnumerator LoadSaveData()
-        {
-            yield return _saveDataLoader.LoadData(progress =>
-            {
-                _progressDict[LoadType.SaveData] = progress * _progressBase;
-                UpdateLoadingProgress(LoadType.SaveData);
-            });
-        }
-
-        private void UpdateLoadingProgress(LoadType type)
-        {
-            float sumProgress = 0f;
-            foreach (var kvp in _progressDict)
-            {
-                sumProgress += kvp.Value;
-            }
-            _progressTotal = sumProgress;
-
-            string subTitle = GetLocalizedSubTitle(type);
-            string template = LocalizationManager.Instance.GetSceneByKey(LocalizationConstants.Keys.Loading.TextLoadingPercent());
-            if (textLoadingPercent != null)
-            {
+                string subTitle = LocalizationManager.Instance.GetSceneByKey(step.LocalizedKey);
+                string template = LocalizationManager.Instance.GetSceneByKey(LocalizationConstants.Keys.Loading.TextLoadingPercent());
                 textLoadingPercent.text = string.Format(template, subTitle, Mathf.FloorToInt(_progressTotal));
             }
-        }
-
-        private string GetLocalizedSubTitle(LoadType type)
-        {
-            string subKey = type switch
-            {
-                LoadType.Table => LocalizationConstants.Keys.Loading.TextTypeTables(),
-                LoadType.GamePrefab => LocalizationConstants.Keys.Loading.TextTypePrefab(),
-                LoadType.GamePrefabEffect => LocalizationConstants.Keys.Loading.TextTypeEffect(),
-                LoadType.Item => LocalizationConstants.Keys.Loading.TextTypeItem(),
-                LoadType.Skill => LocalizationConstants.Keys.Loading.TextTypeSkill(),
-                LoadType.Affect => LocalizationConstants.Keys.Loading.TextTypeAffect(),
-                LoadType.Sound => LocalizationConstants.Keys.Loading.TextTypeSound(),
-                LoadType.SoundIntro => LocalizationConstants.Keys.Loading.TextTypeSound(),
-                LoadType.SaveData => LocalizationConstants.Keys.Loading.TextTypeSaveData(),
-                LoadType.Settings => LocalizationConstants.Keys.Loading.TextTypeSettings(),
-                LoadType.Localization => LocalizationConstants.Keys.Loading.TextTypeLocalization(),
-                _ => ""
-            };
-
-            return LocalizationManager.Instance.GetSceneByKey(subKey);
         }
 
         private void OnLoadComplete()
         {
             _isLoadComplete = true;
-            // Debug.Log("All selected resources loaded.");
+            _isStarted = false;
+            _steps.Clear();
+            _stepProgress.Clear();
+            _progressBasePerStep = 0f;
+            _progressTotal = 0f;
+            // GcLogger.Log("[GameLoaderManager] All registered steps completed.");
         }
 
         public bool IsCompleted() => _isLoadComplete;
+
+        public void StartLoadingInSceneLoading()
+        { 
+            // 필요한 로더/매니저 찾기(또는 생성)
+            var tableLoader = Object.FindFirstObjectByType<TableLoaderManager>() ?? new GameObject("TableLoaderManager").AddComponent<TableLoaderManager>();
+            var addrPrefabCommon = Object.FindFirstObjectByType<AddressableLoaderPrefabCommon>() ?? new GameObject("AddressableLoaderPrefabCommon").AddComponent<AddressableLoaderPrefabCommon>();
+            var addrPrefabEffect = Object.FindFirstObjectByType<AddressableLoaderPrefabEffect>() ?? new GameObject("AddressableLoaderPrefabEffect").AddComponent<AddressableLoaderPrefabEffect>();
+            var addrItem = Object.FindFirstObjectByType<AddressableLoaderItem>() ?? new GameObject("AddressableLoaderItem").AddComponent<AddressableLoaderItem>();
+            var addrSkill = Object.FindFirstObjectByType<AddressableLoaderSkill>() ?? new GameObject("AddressableLoaderSkill").AddComponent<AddressableLoaderSkill>();
+            var addrAffect = Object.FindFirstObjectByType<AddressableLoaderAffect>() ?? new GameObject("AddressableLoaderAffect").AddComponent<AddressableLoaderAffect>();
+            var addrSound = Object.FindFirstObjectByType<AddressableLoaderSound>() ?? new GameObject("AddressableLoaderSound").AddComponent<AddressableLoaderSound>();
+            var saveData = Object.FindFirstObjectByType<SaveDataLoader>() ?? new GameObject("SaveDataLoader").AddComponent<SaveDataLoader>();
+            var loc = Object.FindFirstObjectByType<LocalizationManager>() ?? new GameObject("LocalizationManager").AddComponent<LocalizationManager>();
+            // 테이블 대상 목록은 프로젝트/씬에 따라 별도 주입(예: ScriptableObject나 Config에서)
+            var targetTables = ConfigAddressableTable.All; // 사용 중인 곳에서 구현(예시)
+
+            Register(new LocalizationLoadStep(
+                order: 220,
+                localizedKey: LocalizationConstants.Keys.Loading.TextTypeLocalization(),
+                localizationManager: loc,
+                localeIndex: PlayerPrefsManager.LoadIndexLocalizationLocale()
+            ));
+
+            Register(new TableLoadStep(
+                order: 240,
+                localizedKey: LocalizationConstants.Keys.Loading.TextTypeTables(),
+                tableLoader: tableLoader,
+                tables: targetTables
+            ));
+
+            Register(new AddressableTaskStep(
+                id: "core.prefab.common",
+                order: 300,
+                localizedKey: LocalizationConstants.Keys.Loading.TextTypePrefab(),
+                startTask: () => addrPrefabCommon.LoadAllPreLoadGamePrefabsAsync(),
+                getProgress: () => addrPrefabCommon.GetPrefabLoadProgress()
+            ));
+
+            Register(new AddressableTaskStep(
+                id: "core.prefab.effect",
+                order: 310,
+                localizedKey: LocalizationConstants.Keys.Loading.TextTypeEffect(),
+                startTask: () => addrPrefabEffect.LoadPrefabsAsync(),
+                getProgress: () => addrPrefabEffect.GetPrefabLoadProgress()
+            ));
+
+            Register(new AddressableTaskStep(
+                id: "core.item",
+                order: 320,
+                localizedKey: LocalizationConstants.Keys.Loading.TextTypeItem(),
+                startTask: () => addrItem.LoadPrefabsAsync(),
+                getProgress: () => addrItem.GetPrefabLoadProgress()
+            ));
+
+            Register(new AddressableTaskStep(
+                id: "core.skill",
+                order: 330,
+                localizedKey: LocalizationConstants.Keys.Loading.TextTypeSkill(),
+                startTask: () => addrSkill.LoadPrefabsAsync(),
+                getProgress: () => addrSkill.GetPrefabLoadProgress()
+            ));
+
+            Register(new AddressableTaskStep(
+                id: "core.affect",
+                order: 340,
+                localizedKey: LocalizationConstants.Keys.Loading.TextTypeAffect(),
+                startTask: () => addrAffect.LoadPrefabsAsync(),
+                getProgress: () => addrAffect.GetPrefabLoadProgress()
+            ));
+
+            Register(new AddressableTaskStep(
+                id: "core.sound",
+                order: 350,
+                localizedKey: LocalizationConstants.Keys.Loading.TextTypeSound(),
+                startTask: () => addrSound.LoadSoundAsync(ConfigAddressableLabel.Sound),
+                getProgress: () => addrSound.GetLoadProgress()
+            ));
+
+            Register(new SaveDataLoadStep(
+                order: 380,
+                localizedKey: LocalizationConstants.Keys.Loading.TextTypeSaveData(),
+                saveDataLoader: saveData
+            ));
+            StartLoading();
+        }
+
+        public void StartLoadingInScenePreIntro()
+        {
+            var tableLoader = Object.FindFirstObjectByType<TableLoaderManager>() ?? new GameObject("TableLoaderManager").AddComponent<TableLoaderManager>();
+            var addrSound = Object.FindFirstObjectByType<AddressableLoaderSound>() ?? new GameObject("AddressableLoaderSound").AddComponent<AddressableLoaderSound>();
+            var addrSettings = Object.FindFirstObjectByType<AddressableLoaderSettings>() ?? new GameObject("AddressableLoaderSettings").AddComponent<AddressableLoaderSettings>();
+            var loc = Object.FindFirstObjectByType<LocalizationManager>() ?? new GameObject("LocalizationManager").AddComponent<LocalizationManager>();
+
+            var soundTable = ConfigAddressableTable.GetByKey(ConfigAddressableTable.KeySoundTable());
+            var targetTables = new List<AddressableAssetInfo> { soundTable };
+            
+            Register(new AddressableTaskStep(
+                id: "core.settings",
+                order: 200,
+                localizedKey: LocalizationConstants.Keys.Loading.TextTypeSettings(),
+                startTask: () => addrSettings.LoadAllSettingsAsync(),
+                getProgress: () => addrSettings.GetLoadProgress()
+            ));
+            Register(new LocalizationLoadStep(
+                order: 220,
+                localizedKey: LocalizationConstants.Keys.Loading.TextTypeLocalization(),
+                localizationManager: loc,
+                localeIndex: PlayerPrefsManager.LoadIndexLocalizationLocale()
+            ));
+            
+            Register(new TableLoadStep(
+                order: 240,
+                localizedKey: LocalizationConstants.Keys.Loading.TextTypeTables(),
+                tableLoader: tableLoader,
+                tables: targetTables
+            ));
+            Register(new AddressableTaskStep(
+                id: "core.sound.intro",
+                order: 355,
+                localizedKey: LocalizationConstants.Keys.Loading.TextTypeSound(),
+                startTask: () => addrSound.LoadSoundAsync(ConfigAddressableLabel.SoundIntro),
+                getProgress: () => addrSound.GetLoadProgress()
+            ));
+            StartLoading();
+        }
     }
 }

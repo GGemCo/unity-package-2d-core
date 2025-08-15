@@ -78,6 +78,10 @@ MonoBehaviour:
     m_Localized: Localization Data
     m_Metadata:
       m_Items: []
+  - m_Id: 14603949463638016
+    m_Localized: Input Action Data
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []

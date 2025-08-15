@@ -4,7 +4,7 @@ namespace GGemCo2DCore
 {
     public static class ConfigAddressableSetting
     {
-        private static AddressableAssetInfo Make(string key)
+        public static AddressableAssetInfo Make(string key)
         {
             return new AddressableAssetInfo(
                 $"{ConfigDefine.NameSDK}_{key}",

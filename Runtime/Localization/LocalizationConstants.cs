@@ -108,6 +108,7 @@ namespace GGemCo2DCore
                 public static string TextLoadingPercent() => $"{NameLoading}_{NameText}_LoadingPercent";
                 public static string TextTypeSettings() => $"{NameLoading}_{NameText}_Settings";
                 public static string TextTypeLocalization() => $"{NameLoading}_{NameText}_Localization";
+                public static string TextTypeInputAction() => $"{NameLoading}_{NameText}_InputAction";
             }
 
             // 기타 UI, 시스템 메시지, 팝업 등 계속 확장 가능
