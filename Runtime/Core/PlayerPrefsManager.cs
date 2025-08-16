@@ -87,7 +87,7 @@ namespace GGemCo2DCore
             string value = PlayerPrefsLoad(KeyIndex.KeyIndexLocalizationLocale);
             if (string.IsNullOrEmpty(value))
             {
-                return (int)AddressableLoaderSettings.Instance.optionSettings.defaultLanguage;
+                return (int)LocalizationConstants.DefaultLanguageIndex;
             }
             return PlayerPrefsLoadInt(KeyIndex.KeyIndexLocalizationLocale, ((int)LocalizationConstants.DefaultLanguageIndex).ToString());
         }
