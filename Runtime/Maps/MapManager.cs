@@ -3,6 +3,7 @@ using System.Collections;
 using System.Threading.Tasks;
 using UnityEngine;
 using UnityEngine.Events;
+using UnityEngine.Tilemaps;
 using UnityEngine.UI;
 
 namespace GGemCo2DCore
@@ -385,7 +386,7 @@ namespace GGemCo2DCore
                 GameObject currentMap = Instantiate(prefab, _gridTileMap.transform);
                 _mapTileCommon = currentMap.GetComponent<MapTileCommon>();
                 _mapTileCommon.Initialize(_currentMapTableData.Uid, _currentMapTableData.Name, _currentMapTableData.Type, _currentMapTableData.Subtype);
-                var result = _mapTileCommon.GetMapSize();
+                var result = GetMapSize();
 
                 // 로드된 맵에 맞게 맵 영역 사이즈 갱신하기 
                 SceneGame.Instance.cameraManager?.ChangeMapSize(result.x, result.y);
@@ -466,7 +467,7 @@ namespace GGemCo2DCore
         /// <returns></returns>
         public Vector2 GetCurrentMapSize()
         {
-            return !_mapTileCommon ? Vector2.zero : _mapTileCommon.GetMapSize();
+            return GetMapSize();
         }
         /// <summary>
         /// 워프로 맵 이동하기
@@ -535,6 +536,53 @@ namespace GGemCo2DCore
         public bool IsStateComplete()
         {
             return _currentState == MapConstants.State.Complete;
+        }
+        /// <summary>
+        /// 맵 사이즈 구하기
+        /// </summary>
+        /// <returns></returns>
+        public Vector2 GetMapSize()
+        {
+            // 이 스크립트가 붙은 객체가 Grid여야 함
+            Tilemap[] tilemaps = _gridTileMap.GetComponentsInChildren<Tilemap>();
+
+            if (tilemaps.Length == 0)
+                return Vector2.zero;
+
+            Vector3 minWorld = new Vector3(float.MaxValue, float.MaxValue, float.MaxValue);
+            Vector3 maxWorld = new Vector3(float.MinValue, float.MinValue, float.MinValue);
+
+            foreach (var tm in tilemaps)
+            {
+                if (tm == null)
+                    continue;
+
+                Vector3Int minCell = new Vector3Int(int.MaxValue, int.MaxValue, int.MaxValue);
+                Vector3Int maxCell = new Vector3Int(int.MinValue, int.MinValue, int.MinValue);
+
+                foreach (Vector3Int pos in tm.cellBounds.allPositionsWithin)
+                {
+                    if (tm.HasTile(pos))
+                    {
+                        minCell = Vector3Int.Min(minCell, pos);
+                        maxCell = Vector3Int.Max(maxCell, pos);
+                    }
+                }
+
+                // 타일이 없는 타일맵은 스킵
+                if (minCell.x == int.MaxValue)
+                    continue;
+
+                // 셀 좌표를 월드 좌표로 변환
+                Vector3 minWorldPos = tm.CellToWorld(minCell);
+                Vector3 maxWorldPos = tm.CellToWorld(maxCell + Vector3Int.one);
+
+                minWorld = Vector3.Min(minWorld, minWorldPos);
+                maxWorld = Vector3.Max(maxWorld, maxWorldPos);
+            }
+
+            Vector3 totalSize = maxWorld - minWorld;
+            return new Vector2(totalSize.x, totalSize.y);
         }
     }
 }

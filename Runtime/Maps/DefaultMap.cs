@@ -63,42 +63,6 @@ namespace GGemCo2DCore
             return chapterNumber;
         }
         /// <summary>
-        /// 맵 사이즈 구하기
-        /// </summary>
-        /// <returns></returns>
-        public Vector2 GetMapSize()
-        {
-            if (tilemap == null)
-            {
-                tilemap = GetComponent<Tilemap>();
-            }
-            // 실제 타일이 배치된 경계를 추적하기 위한 변수들
-            Vector3Int min = new Vector3Int(int.MaxValue, int.MaxValue, int.MaxValue);
-            Vector3Int max = new Vector3Int(int.MinValue, int.MinValue, int.MinValue);
-
-            // 타일맵의 모든 셀을 순회하며 타일이 있는 위치를 확인
-            foreach (Vector3Int pos in tilemap.cellBounds.allPositionsWithin)
-            {
-                if (tilemap.HasTile(pos))
-                {
-                    min = Vector3Int.Min(min, pos);
-                    max = Vector3Int.Max(max, pos);
-                }
-            }
-
-            // 타일이 있는 범위의 크기를 계산
-            Vector3Int size = max - min + Vector3Int.one;
-
-            // 셀 크기를 고려하여 실제 월드 공간에서의 크기 계산
-            Vector3 cellSize = tilemap.cellSize;
-            float totalWidth = size.x * cellSize.x;
-            float totalHeight = size.y * cellSize.y;
-
-            // Logger.Log("Total Tilemap Width: " + totalWidth + ", Total Tilemap Height: " + totalHeight);
-
-            return new Vector2(totalWidth, totalHeight);
-        }
-        /// <summary>
         /// vid 값으로 몬스터 찾기  
         /// </summary>
         /// <param name="vid"></param>

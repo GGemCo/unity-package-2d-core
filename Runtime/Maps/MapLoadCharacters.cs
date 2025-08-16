@@ -57,7 +57,7 @@ namespace GGemCo2DCore
                     spawnPosition = playSpawnPosition;
                 }
                 SceneGame.Instance.player?.GetComponent<Player>().MoveTeleport(spawnPosition.x, spawnPosition.y);
-                SceneGame.Instance.player?.GetComponent<Player>().SetMapSize(mapTileCommon.GetMapSize());
+                SceneGame.Instance.player?.GetComponent<Player>().SetMapSize(mapManager.GetMapSize());
                 SceneGame.Instance.cameraManager?.SetFollowTarget(SceneGame.Instance.player?.transform);
             }
             catch (Exception e)
