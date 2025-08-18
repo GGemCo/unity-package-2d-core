@@ -27,6 +27,8 @@ namespace GGemCo2DCore
         {
             float elapsedTime = 0.0f;
             canvasGroup.alpha = 0.0f;
+            canvasGroup.interactable = true;
+            canvasGroup.blocksRaycasts = true;
             
             // 미리 처리해야 깔끔하게 보인다.
             uiWindow?.OnShow(true);
@@ -45,6 +47,8 @@ namespace GGemCo2DCore
         {
             float elapsedTime = 0.0f;
             canvasGroup.alpha = 1.0f;
+            canvasGroup.interactable = false;
+            canvasGroup.blocksRaycasts = false;
 
             while (elapsedTime < FadeDuration)
             {

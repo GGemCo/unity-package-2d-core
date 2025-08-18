@@ -40,12 +40,13 @@ namespace GGemCo2DCore
             if (buttonClose == null) return;
             buttonClose.onClick.AddListener(OnClickClose);
             // 사운드 설정
-            ClickSoundEventBroadcaster clickSoundEventBroadcaster = buttonClose.gameObject.AddComponent<ClickSoundEventBroadcaster>();
-            if (clickSoundEventBroadcaster)
+            ClickSoundEventBroadcaster clickSoundEventBroadcaster =
+                buttonClose.gameObject.GetComponent<ClickSoundEventBroadcaster>();
+            if (!clickSoundEventBroadcaster)
             {
-                clickSoundEventBroadcaster.type = SoundConstants.UIButtonType.CloseWindow;
+                clickSoundEventBroadcaster = buttonClose.gameObject.AddComponent<ClickSoundEventBroadcaster>();
             }
-        }
+            clickSoundEventBroadcaster.type = SoundConstants.UIButtonType.CloseWindow; }
         protected virtual void Start()
         {
             if (_struckTableWindow is { DefaultActive: false })
