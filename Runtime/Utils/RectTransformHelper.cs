@@ -93,5 +93,51 @@ namespace GGemCo2DCore
                 GcLogger.LogWarning($"[RectTransformHelper] Invalid AnchorPreset: {preset}");
             }
         }
+        
+        /// <summary>
+        /// 앵커를 강제로 (Stretch, Stretch)로 맞춥니다.
+        /// </summary>
+        public static void EnsureStretch(this RectTransform rt)
+        {
+            rt.anchorMin = Vector2.zero;   // (0,0)
+            rt.anchorMax = Vector2.one;    // (1,1)
+            // pivot은 보통 0.5,0.5 유지
+        }
+
+        /// <summary>Left 값을 px로 설정</summary>
+        public static void SetLeft(this RectTransform rt, float left)
+            => rt.offsetMin = new Vector2(left, rt.offsetMin.y);
+
+        /// <summary>Right 값을 px로 설정</summary>
+        public static void SetRight(this RectTransform rt, float right)
+            => rt.offsetMax = new Vector2(-right, rt.offsetMax.y);
+
+        /// <summary>Bottom 값을 px로 설정</summary>
+        public static void SetBottom(this RectTransform rt, float bottom)
+            => rt.offsetMin = new Vector2(rt.offsetMin.x, bottom);
+
+        /// <summary>Top 값을 px로 설정</summary>
+        public static void SetTop(this RectTransform rt, float top)
+            => rt.offsetMax = new Vector2(rt.offsetMax.x, -top);
+
+        /// <summary>한 번에 여백 설정 (좌, 우, 하, 상)</summary>
+        public static void SetMargins(this RectTransform rt, float left, float right, float bottom, float top)
+        {
+            rt.offsetMin = new Vector2(left, bottom);
+            rt.offsetMax = new Vector2(-right, -top);
+        }
+
+        // 읽기용
+        public static float GetLeft(this RectTransform rt)   => rt.offsetMin.x;
+        public static float GetBottom(this RectTransform rt) => rt.offsetMin.y;
+        public static float GetRight(this RectTransform rt)  => -rt.offsetMax.x;
+        public static float GetTop(this RectTransform rt)    => -rt.offsetMax.y;
+
+        public static void SetMarginZero(GameObject gameObject)
+        {
+            var rt = gameObject.GetComponent<RectTransform>();
+            if (!rt) return;
+            SetMargins(rt, 0, 0, 0, 0);
+        }
     }
 }

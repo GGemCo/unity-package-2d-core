@@ -11,23 +11,53 @@ namespace GGemCo2DCore
     /// </summary>
     public class UIWindowOption : UIWindow
     {
+        public enum IndexTapButton
+        {
+            Default,
+            Control
+        }
+
         [Header(UIWindowConstants.TitleHeaderIndividual)]
-        public TMP_Dropdown dropdownLanguage;
-        public Button buttonConfirm;
-        public Button buttonReset;
-        public Button buttonCancel;
+        [Tooltip("탭 토글을 넣을 panel")]
+        [SerializeField] private RectTransform panelTabToggle;   // 버튼을 담을 부모(레이아웃 그룹 권장)
+        [Tooltip("탭 토글 그룹")]
+        [SerializeField] private GameObject toggleGroup;
+        [Tooltip("탭 토글 프리팹")]
+        [SerializeField] private Toggle prefabTabToggle;
+        [Tooltip("디폴트 레이어")]
+        [SerializeField] private GameObject panelDefaultLayer;
         
-        public Slider sliderVolumeMaster;
-        public Slider sliderVolumeBgm;
-        public Slider sliderVolumeSfx;
+        [Header("기본 옵션 설정")]
+        [Tooltip("언어 선택 드롭 다운 메뉴")]
+        [SerializeField] private TMP_Dropdown dropdownLanguage;
+        [Tooltip("변경한 내용 적용 버튼")]
+        [SerializeField] private Button buttonConfirm;
+        [Tooltip("디폴트 값으로 초기화 버튼")]
+        [SerializeField] private Button buttonReset;
+        [Tooltip("변경한 내용 취소 버튼")]
+        [SerializeField] private Button buttonCancel;
+        
+        [Header("사운드 옵션 설정")]
+        [Tooltip("메인 볼륨 조절 슬라이더")]
+        [SerializeField] private Slider sliderVolumeMaster;
+        [Tooltip("BGM 볼륨 조절 슬라이더")]
+        [SerializeField] private Slider sliderVolumeBgm;
+        [Tooltip("효과음 볼륨 조절 슬라이더")]
+        [SerializeField] private Slider sliderVolumeSfx;
+
+        private IndexTapButton _currentIndexTabButton;
         // 변경한 값이 있는지 체크
         private bool _isChanged;
+        [Header("매니저")]
+        // 인트로 씬에서는 수동으로 넣어주고 있다.
         [Tooltip("팝업 매니저")] [SerializeField] private PopupManager popupManager;
         public void SetPopupManager(PopupManager value) => popupManager = value;
         [Tooltip("사운드 매니저")] [SerializeField] private SoundManager soundManager;
         public void SetSoundManager(SoundManager value) => soundManager = value;
         
         private GGemCoOptionSettings _optionSettings;
+        private readonly List<Toggle> _spawned = new();
+        private readonly Dictionary<IndexTapButton, GameObject> _dictionaryLayer = new();
 
         protected override void Awake()
         {
@@ -44,9 +74,61 @@ namespace GGemCo2DCore
             sliderVolumeSfx?.onValueChanged.AddListener(OnChangeSliderSfx);
 
             SetButtonInteractable(false);
+            InitializeTabButton();
             Initialize();
         }
 
+        private void InitializeTabButton()
+        {
+            if (!panelTabToggle) return;
+            if (!toggleGroup) return;
+
+            if (panelDefaultLayer)
+            {
+                _dictionaryLayer.Add(IndexTapButton.Default, panelDefaultLayer);
+            }
+            
+            // 기존 자식 정리(필요 시)
+            for (int i = panelTabToggle.childCount - 1; i >= 0; i--)
+                Destroy(panelTabToggle.GetChild(i).gameObject);
+
+            // 열거형 값 배열
+            var values = (IndexTapButton[])Enum.GetValues(typeof(IndexTapButton));
+            _spawned.Capacity = values.Length;
+
+            foreach (var val in values)
+            {
+                var go = UIComponentHelper.CreateToggle(prefabTabToggle, val.ToString());
+                go.name = $"Btn_{val}";
+                go.transform.SetParent(panelTabToggle);
+                Toggle toggle = go.GetComponent<Toggle>();
+                if (!toggle) continue;
+                toggle.group = toggleGroup.GetComponent<ToggleGroup>();
+                int captured = (int)val;
+                toggle.isOn = false;
+                toggle.onValueChanged.AddListener(isOn =>
+                {
+                    if (isOn)
+                        OnClickTapButton(values[captured]);
+                });
+                _spawned.Add(toggle);
+            }
+
+            // 기본 선택 탭의 시각 상태를 즉시 반영
+            foreach (var t in toggleGroup.GetComponentsInChildren<Toggle>())
+                t.OnPointerExit(null); // 상태 갱신 트리거 (필요 시)
+        }
+
+        private void OnDestroy()
+        {
+            if (_spawned == null) return;
+            // 메모리 누수 방지: 이벤트 해제 및 객체 정리
+            foreach (var b in _spawned)
+            {
+                if (b) b.onValueChanged.RemoveAllListeners();
+            }
+            _spawned.Clear();
+        }
         private void Initialize()
         {
             if (!AddressableLoaderSettings.Instance) return;
@@ -75,6 +157,12 @@ namespace GGemCo2DCore
             {
                 soundManager = SceneGame.Instance.soundManager;
             }
+            
+            // BootstrapperOptionsControls 의 Awake에서 Regist 하고 있다.
+            UIWindowOptionsExtensionRegistry uiWindowOptionsExtensionRegistry =
+                gameObject.GetComponent<UIWindowOptionsExtensionRegistry>();
+            uiWindowOptionsExtensionRegistry?.BuildAll();
+            SetIndexTabButton(IndexTapButton.Default);
         }
 
         private void SetButtonInteractable(bool isInteractable)
@@ -284,5 +372,40 @@ namespace GGemCo2DCore
             }
             return base.Show(show);
         }
+
+        private void OnClickTapButton(IndexTapButton tab)
+        {
+            SetIndexTabButton(tab);
+            switch (tab)
+            {
+                case IndexTapButton.Default:
+                    Debug.Log("Default 탭 클릭");
+                    break;
+                case IndexTapButton.Control:
+                    Debug.Log("Control 탭 클릭");
+                    break;
+                default:
+                    Debug.Log($"Unhandled: {tab}");
+                    break;
+            }
+        }
+
+        public void AddLayer(IndexTapButton index, GameObject layer)
+        {
+            _dictionaryLayer.TryAdd(index, layer);
+        }
+        private void SetIndexTabButton(IndexTapButton index)
+        {
+            _currentIndexTabButton = index;
+            foreach (var data in _dictionaryLayer)
+            {
+                data.Value.SetActive(false);
+            }
+
+            var selected = _dictionaryLayer.GetValueOrDefault(index);
+            if (selected == null) return;
+            selected.SetActive(true);
+        }
+
     }
 }
