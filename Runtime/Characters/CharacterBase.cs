@@ -74,7 +74,7 @@ namespace GGemCo2DCore
         public CapsuleCollider2D colliderCheckHitArea;
         // 맵 height 값, sorting order 계산에 사용
         private float mapSizeHeight;
-        protected Rigidbody2D Rigidbody2D;
+        public Rigidbody2D characterRigidbody2D;
         
         // 공격 애니메이션 종료 후 
         public event EventHandlerAnimationCompleteAttack AnimationCompleteAttack;
@@ -321,6 +321,7 @@ namespace GGemCo2DCore
         public bool IsStatusNone() => currentStatus == CharacterConstants.CharacterStatus.None;
         public bool IsStatusMoveForce() => currentStatus == CharacterConstants.CharacterStatus.MoveForce;
         public bool IsStatusDamage() => currentStatus == CharacterConstants.CharacterStatus.Damage;
+        public bool IsStatusJump() => currentStatus == CharacterConstants.CharacterStatus.Jump;
         public CharacterConstants.CharacterStatus GetCurrentStatus() => currentStatus;
         
         private void SetStatus(CharacterConstants.CharacterStatus value) => currentStatus = value;
@@ -332,6 +333,7 @@ namespace GGemCo2DCore
         public void SetStatusDontMove() => SetStatus(CharacterConstants.CharacterStatus.DontMove);
         public void SetStatusMoveForce() => SetStatus(CharacterConstants.CharacterStatus.MoveForce);
         private void SetStatusDamage() => SetStatus(CharacterConstants.CharacterStatus.Damage);
+        public void SetStatusJump() => SetStatus(CharacterConstants.CharacterStatus.Jump);
 
         public void SetScale(float scale)
         {
@@ -746,7 +748,7 @@ namespace GGemCo2DCore
 
         private IEnumerator MoveForceRoutine(Vector3 position, float duration = 0)
         {
-            if (!Rigidbody2D) yield break;
+            if (!characterRigidbody2D) yield break;
             if (duration == 0) yield break;
             
             Vector2 startPosition = transform.position;
@@ -759,12 +761,12 @@ namespace GGemCo2DCore
                 float t = elapsed / duration;
                 float easedT = Easing.EaseOutQuad(t); // easing 적용
                 Vector2 newPosition = Vector2.Lerp(startPosition, targetPosition, easedT);
-                Rigidbody2D.MovePosition(newPosition);
+                characterRigidbody2D.MovePosition(newPosition);
 
                 elapsed += Time.deltaTime;
                 yield return null;
             }
-            Rigidbody2D.MovePosition(targetPosition); // 마지막 위치 보정
+            characterRigidbody2D.MovePosition(targetPosition); // 마지막 위치 보정
         }
     }
 }

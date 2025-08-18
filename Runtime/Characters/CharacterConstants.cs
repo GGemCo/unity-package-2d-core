@@ -57,7 +57,8 @@
             CastingSkill,
             UseSkill,
             MoveForce,
-            Damage
+            Damage,
+            Jump
         }
 
         /// <summary>

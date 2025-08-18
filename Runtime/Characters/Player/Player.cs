@@ -90,7 +90,7 @@ namespace GGemCo2DCore
             _controllerPlayer = gameObject.AddComponent<ControllerPlayer>();
             
             _equipController = gameObject.AddComponent<EquipController>();
-            Rigidbody2D = ComponentController.AddRigidbody2D(gameObject);
+            characterRigidbody2D = ComponentController.AddRigidbody2D(gameObject);
             
             GameObject attackRange = new GameObject("AttackRange");
             CharacterAttackRange characterAttackRange = attackRange.AddComponent<CharacterAttackRange>();
@@ -132,9 +132,21 @@ namespace GGemCo2DCore
             {
                 size = AddressableLoaderSettings.Instance.playerSettings.rangeCollider;
             }
+            if (AddressableLoaderSettings.Instance.playerSettings.rangeColliderOffset != Vector2.zero)
+            {
+                offset = AddressableLoaderSettings.Instance.playerSettings.rangeColliderOffset;
+            }
+            
             ComponentController.AddCapsuleCollider2D(gameObject, false, offset, size,
-                LayerMask.GetMask(ConfigLayer.GetValue(ConfigLayer.Keys.TileMapWall)),
-                ~ (1 << LayerMask.NameToLayer(ConfigLayer.GetValue(ConfigLayer.Keys.TileMapWall))));
+                LayerMask.GetMask(
+                    ConfigLayer.GetValue(ConfigLayer.Keys.TileMapWall),
+                    ConfigLayer.GetValue(ConfigLayer.Keys.TileMapGround)
+                    ),
+                ~ (
+                    1 << LayerMask.NameToLayer(ConfigLayer.GetValue(ConfigLayer.Keys.TileMapWall)) | 
+                    1 << LayerMask.NameToLayer(ConfigLayer.GetValue(ConfigLayer.Keys.TileMapGround))
+                    )
+                );
         }
 
         /// <summary>

@@ -23,10 +23,13 @@ namespace GGemCo2DCore
         [Header("얼음 속성 저항(100->1)")] public int statRegistCold;
         [Header("전기 속성 저항(100->1)")] public int statRegistLightning;
         [Header("사정거리")] public Vector2 rangeAttack;
-        [Header("충돌거리")] public Vector2 rangeCollider;
+        [Header("충돌 박스 OffSet")] public Vector2 rangeColliderOffset;
+        [Header("충돌 박스 Size")] public Vector2 rangeCollider;
         [Header("HitArea Offset")] public Vector2 rangeHitAreaOffset;
         [Header("HitArea Size")] public Vector2 rangeHitAreaSize;
         [Header("디폴트 캐릭터 크기")] public Vector2 size;
+        [Header("Jump 최고 높이")] public float jumpHeight;
+        [Header("Jump 속도. 지면→정점까지 걸리는 시간(초)")] public float jumpSpeed;
         
         /// <summary>
         /// 처음 생성 시 한 번만 실행됨
@@ -46,6 +49,8 @@ namespace GGemCo2DCore
             statRegistFire = 0;
             statRegistCold = 0;
             statRegistLightning = 0;
+            jumpHeight = 10;
+            jumpSpeed = 1;
         }
     }
 }
