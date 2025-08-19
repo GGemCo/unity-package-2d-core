@@ -131,7 +131,8 @@ namespace GGemCo2DCore
                 PlayByUid(uid);
             }
             // 2. 고유 ID가 없거나 찾지 못했을 경우 Enum 기준 조회
-            else {
+            else if (AddressableLoaderSettings.Instance != null) 
+            {
                 SoundConstants.UIButtonType buttonType = broadcaster.GetSoundType();
                 uid = AddressableLoaderSettings.Instance.soundSettings.GetSoundButtonClickUid(buttonType);
                 if (uid <= 0)
@@ -147,6 +148,7 @@ namespace GGemCo2DCore
         /// </summary>
         public void InitializeSoundSfxPoolForIntro()
         {
+            if (!_tableLoaderManager) return;
             List<int> introSfxUids = new List<int>();
             var datas = _tableLoaderManager.TableSound.GetDatas();
             foreach (var data in datas)
@@ -156,13 +158,14 @@ namespace GGemCo2DCore
                 if (info is not { UseIntroScene: true }) continue;
                 introSfxUids.Add(info.Uid);
             }
-            _soundControllerSfx?.InitializeSelective(_tableLoaderManager?.TableSound, introSfxUids);
+            _soundControllerSfx?.InitializeSelective(_tableLoaderManager.TableSound, introSfxUids);
         }
         /// <summary>
         /// Intro 씬 BGM 재생하기
         /// </summary>
         public void PlayBgmIntro()
         {
+            if (!_tableLoaderManager) return;
             int uid = _tableLoaderManager.TableSound.GetBgmIntro();
             if (uid <= 0) return;
             PlayByUid(uid);
