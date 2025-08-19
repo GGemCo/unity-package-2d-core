@@ -12,7 +12,8 @@ namespace GGemCo2DCore
             KeyIndexLocalizationLocale,
             KeySoundVolumeBGM,
             KeySoundVolumeSfx,
-            KeySoundVolumeMaster
+            KeySoundVolumeMaster,
+            KeyControlKeyBinding
         }
 
         public static readonly Dictionary<KeyIndex, string> Keys = new Dictionary<KeyIndex, string>()
@@ -23,6 +24,7 @@ namespace GGemCo2DCore
             { KeyIndex.KeySoundVolumeMaster, "GGEMCO_KEY_SOUND_VOLUME_MASTER" },
             { KeyIndex.KeySoundVolumeBGM, "GGEMCO_KEY_SOUND_VOLUME_BGM" },
             { KeyIndex.KeySoundVolumeSfx, "GGEMCO_KEY_SOUND_VOLUME_SFX" },
+            { KeyIndex.KeyControlKeyBinding, "GGEMCO_KEY_CONTROL_KEY_BINDING" },
         };
 
         private static void PlayerPrefsDelete(KeyIndex key)
@@ -129,6 +131,18 @@ namespace GGemCo2DCore
         {
             return PlayerPrefsLoadFloat(KeyIndex.KeySoundVolumeMaster,
                 $"{AddressableLoaderSettings.Instance.optionSettings.volumeMaster}");
+        }
+        /// <summary>
+        /// 컨트로 키 맵핑
+        /// </summary>
+        /// <param name="json"></param>
+        public static void SaveKeyBinding(string json)
+        {
+            PlayerPrefsSave(KeyIndex.KeyControlKeyBinding, json);
+        }
+        public static string LoadKeyBinding()
+        {
+            return PlayerPrefsLoad(KeyIndex.KeyControlKeyBinding);
         }
     }
 }

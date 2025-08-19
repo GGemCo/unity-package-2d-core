@@ -171,5 +171,11 @@ namespace GGemCo2DCore
             }
             return popupTypePrefabs[(int)popupType];
         }
+
+        public void Cancel()
+        {
+            if (!_currentDefaultPopup) return;
+            _currentDefaultPopup.ClosePopup();
+        }
     }
 }

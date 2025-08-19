@@ -7,9 +7,9 @@ namespace GGemCo2DCore
     public sealed class UIWindowOptionsExtensionRegistry : MonoBehaviour
     {
         [SerializeField] private Transform parentPanel;
-        private readonly List<IOptionsSectionProvider> _providers = new();
+        private readonly List<IOptionsMenuProvider> _providers = new();
 
-        public void Register(IOptionsSectionProvider p) => _providers.Add(p);
+        public void Register(IOptionsMenuProvider p) => _providers.Add(p);
         public void BuildAll()
         {
             UIWindowOption uiWindowOption = GetComponent<UIWindowOption>();

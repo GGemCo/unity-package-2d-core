@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
@@ -21,102 +22,46 @@ namespace GGemCo2DCore
         [Tooltip("탭 토글을 넣을 panel")]
         [SerializeField] private RectTransform panelTabToggle;   // 버튼을 담을 부모(레이아웃 그룹 권장)
         [Tooltip("탭 토글 그룹")]
-        [SerializeField] private GameObject toggleGroup;
+        [SerializeField] private ToggleGroup toggleGroupTab;
         [Tooltip("탭 토글 프리팹")]
-        [SerializeField] private Toggle prefabTabToggle;
-        [Tooltip("디폴트 레이어")]
-        [SerializeField] private GameObject panelDefaultLayer;
+        [SerializeField] private UIToggleConfirmable uiToggleTab;
         
-        [Header("기본 옵션 설정")]
-        [Tooltip("언어 선택 드롭 다운 메뉴")]
-        [SerializeField] private TMP_Dropdown dropdownLanguage;
-        [Tooltip("변경한 내용 적용 버튼")]
-        [SerializeField] private Button buttonConfirm;
-        [Tooltip("디폴트 값으로 초기화 버튼")]
-        [SerializeField] private Button buttonReset;
-        [Tooltip("변경한 내용 취소 버튼")]
-        [SerializeField] private Button buttonCancel;
-        
-        [Header("사운드 옵션 설정")]
-        [Tooltip("메인 볼륨 조절 슬라이더")]
-        [SerializeField] private Slider sliderVolumeMaster;
-        [Tooltip("BGM 볼륨 조절 슬라이더")]
-        [SerializeField] private Slider sliderVolumeBgm;
-        [Tooltip("효과음 볼륨 조절 슬라이더")]
-        [SerializeField] private Slider sliderVolumeSfx;
+        [Header("레이어")]
+        [Tooltip("기본 옵션 레이어")]
+        [SerializeField] private UIPanelOptionBase uiPanelOptionDefault;
 
         private IndexTapButton _currentIndexTabButton;
-        // 변경한 값이 있는지 체크
-        private bool _isChanged;
         [Header("매니저")]
         // 인트로 씬에서는 수동으로 넣어주고 있다.
-        [Tooltip("팝업 매니저")] [SerializeField] private PopupManager popupManager;
+        [Tooltip("팝업 매니저")] [SerializeField]
+        public PopupManager popupManager;
         public void SetPopupManager(PopupManager value) => popupManager = value;
-        [Tooltip("사운드 매니저")] [SerializeField] private SoundManager soundManager;
+        [Tooltip("사운드 매니저")] [SerializeField] public SoundManager soundManager;
         public void SetSoundManager(SoundManager value) => soundManager = value;
-        
-        private GGemCoOptionSettings _optionSettings;
-        private readonly List<Toggle> _spawned = new();
-        private readonly Dictionary<IndexTapButton, GameObject> _dictionaryLayer = new();
 
+        private readonly List<Toggle> _spawned = new();
+        private readonly Dictionary<IndexTapButton, UIPanelOptionBase> _dictionaryLayer = new();
+        
         protected override void Awake()
         {
+            if (!AddressableLoaderSettings.Instance) return;
             base.Awake();
-            _isChanged = false;
-            
-            buttonConfirm?.onClick.AddListener(OnClickConfirm);
-            buttonCancel?.onClick.AddListener(OnClickCancel);
-            buttonReset?.onClick.AddListener(OnClickReset);
 
-            dropdownLanguage?.onValueChanged.AddListener(OnChangeDropdownLanguage);
-            sliderVolumeMaster?.onValueChanged.AddListener(OnChangeSliderMaster);
-            sliderVolumeBgm?.onValueChanged.AddListener(OnChangeSliderBgm);
-            sliderVolumeSfx?.onValueChanged.AddListener(OnChangeSliderSfx);
-
-            SetButtonInteractable(false);
-            InitializeTabButton();
-            Initialize();
         }
-
-        private void InitializeTabButton()
+        /// <summary>
+        /// 탭 버튼을 클리했을때, 변경사항이 있는지 체크하기
+        /// </summary>
+        /// <param name="target"></param>
+        private void HandleConfirmRequested(UIToggleConfirmable target)
         {
-            if (!panelTabToggle) return;
-            if (!toggleGroup) return;
-
-            if (panelDefaultLayer)
+            foreach (var data in _dictionaryLayer)
             {
-                _dictionaryLayer.Add(IndexTapButton.Default, panelDefaultLayer);
+                if (!data.Value.Show(false)) return;
             }
             
-            // 기존 자식 정리(필요 시)
-            for (int i = panelTabToggle.childCount - 1; i >= 0; i--)
-                Destroy(panelTabToggle.GetChild(i).gameObject);
-
-            // 열거형 값 배열
-            var values = (IndexTapButton[])Enum.GetValues(typeof(IndexTapButton));
-            _spawned.Capacity = values.Length;
-
-            foreach (var val in values)
-            {
-                var go = UIComponentHelper.CreateToggle(prefabTabToggle, val.ToString());
-                go.name = $"Btn_{val}";
-                go.transform.SetParent(panelTabToggle);
-                Toggle toggle = go.GetComponent<Toggle>();
-                if (!toggle) continue;
-                toggle.group = toggleGroup.GetComponent<ToggleGroup>();
-                int captured = (int)val;
-                toggle.isOn = false;
-                toggle.onValueChanged.AddListener(isOn =>
-                {
-                    if (isOn)
-                        OnClickTapButton(values[captured]);
-                });
-                _spawned.Add(toggle);
-            }
-
-            // 기본 선택 탭의 시각 상태를 즉시 반영
-            foreach (var t in toggleGroup.GetComponentsInChildren<Toggle>())
-                t.OnPointerExit(null); // 상태 갱신 트리거 (필요 시)
+            target.SuppressConfirm = true;
+            target.isOn = true;          // ToggleGroup 규칙에 따라 이전은 자동 Off
+            target.SuppressConfirm = false;
         }
 
         private void OnDestroy()
@@ -129,26 +74,11 @@ namespace GGemCo2DCore
             }
             _spawned.Clear();
         }
-        private void Initialize()
-        {
-            if (!AddressableLoaderSettings.Instance) return;
-            _optionSettings = AddressableLoaderSettings.Instance.optionSettings;
-        }
         protected override void Start()
         {
             base.Start();
             gameObject.SetActive(false);
-            if (dropdownLanguage != null)
-            {
-                dropdownLanguage.ClearOptions();
-                List<TMP_Dropdown.OptionData> options = new List<TMP_Dropdown.OptionData>();
-                foreach (LocalizationConstants.LanguageIndex lang in Enum.GetValues(typeof(LocalizationConstants.LanguageIndex)))
-                {
-                    options.Add(new TMP_Dropdown.OptionData(LocalizationConstants.LanguageNames.GetValueOrDefault(lang)));
-                }
-                dropdownLanguage.AddOptions(options);
-            }
-
+            
             if (popupManager == null)
             {
                 popupManager = SceneGame.Instance.popupManager;
@@ -158,239 +88,89 @@ namespace GGemCo2DCore
                 soundManager = SceneGame.Instance.soundManager;
             }
             
+            // uiPanelOptionDefault에서 popupManager, soundManager를 사용한다
+            uiPanelOptionDefault?.SetUIWindowOption(this);
+            
             // BootstrapperOptionsControls 의 Awake에서 Regist 하고 있다.
             UIWindowOptionsExtensionRegistry uiWindowOptionsExtensionRegistry =
                 gameObject.GetComponent<UIWindowOptionsExtensionRegistry>();
             uiWindowOptionsExtensionRegistry?.BuildAll();
+            
+            InitializeTabButton();
+            
             SetIndexTabButton(IndexTapButton.Default);
         }
 
-        private void SetButtonInteractable(bool isInteractable)
+        private void InitializeTabButton()
         {
-            if (buttonConfirm)
+            if (!panelTabToggle) return;
+            if (!toggleGroupTab) return;
+
+            if (uiPanelOptionDefault)
             {
-                buttonConfirm.interactable = isInteractable;
+                _dictionaryLayer.Add(IndexTapButton.Default, uiPanelOptionDefault);
             }
 
-            if (buttonCancel)
-            {
-                buttonCancel.interactable = isInteractable;
-            }
-        }
-        /// <summary>
-        /// 현재 저장된 정보 불러오기
-        /// </summary>
-        private void LoadCurrentOptions()
-        {
-            if (!AddressableLoaderSettings.Instance) return;
-            // 현재 설정된 언어로 dropdownLanguage 셋팅하기
-            int index = PlayerPrefsManager.LoadIndexLocalizationLocale();
-            if (index != -1)
-            {
-                dropdownLanguage.value = index;
-            }
-            float value = PlayerPrefsManager.LoadSoundVolumeMaster();
-            if (sliderVolumeMaster != null)
-            {
-                sliderVolumeMaster.value = value;
-            }
-            value = PlayerPrefsManager.LoadSoundVolumeBGM();
-            if (sliderVolumeBgm != null)
-            {
-                sliderVolumeBgm.value = value;
-            }
-            value = PlayerPrefsManager.LoadSoundVolumeSfx();
-            if (sliderVolumeSfx != null)
-            {
-                sliderVolumeSfx.value = value;
-            }
-        }
-        private void OnEnable()
-        {
-            LoadCurrentOptions();
-            
-            SetIsChange(false);
-        }
+            // 기존 자식 정리(필요 시)
+            for (int i = panelTabToggle.childCount - 1; i >= 0; i--)
+                Destroy(panelTabToggle.GetChild(i).gameObject);
 
-        private void OnChangeDropdownLanguage(int value)
-        {
-            // GcLogger.Log($"select: {value}");
-            SetIsChange(true);
-        }
-        /// <summary>
-        /// 옵션 설정 저장하기
-        /// </summary>
-        private void OnClickConfirm()
-        {
-            // GcLogger.Log($"dropdownLanguage.value: {dropdownLanguage.value}");
+            // 열거형 값 배열
+            var values = (IndexTapButton[])Enum.GetValues(typeof(IndexTapButton));
             
-            LocalizationManager.Instance?.StartChangeLocale(dropdownLanguage.value);
-            soundManager.SetMasterVolume(sliderVolumeMaster.value);
-            soundManager.SetBgmVolume(sliderVolumeBgm.value);
-            soundManager.SetSfxVolume(sliderVolumeSfx.value);
+            _spawned.Capacity = values.Length;
             
-            // 변경된 항목을 저장하고, _isChanged는 false로 
-            SetIsChange(false);
-        }
-        /// <summary>
-        /// 수정한것이 있으면 되돌리기
-        /// </summary>
-        private void OnClickCancel()
-        {
-            if (_isChanged)
+            var ordered = _dictionaryLayer
+                .OrderBy(pair => pair.Key) // enum 값의 int 순서 기준
+                .ToList();                 // 필요 시 List<KeyValuePair<...>>
+
+            foreach (var data in ordered)
             {
-                PopupMetadata popupMetadata = new PopupMetadata
+                IndexTapButton indexTapButton = data.Key;
+                var toggle = UIComponentHelper.CreateToggle(uiToggleTab, indexTapButton.ToString());
+                if (!toggle) continue;
+                toggle.name = $"Btn_{indexTapButton}";
+                toggle.transform.SetParent(panelTabToggle);
+                toggle.group = toggleGroupTab;
+                int captured = (int)indexTapButton;
+                toggle.SetIsOnWithoutNotify(false);
+                toggle.onValueChanged.AddListener(isOn =>
                 {
-                    PopupType = PopupManager.Type.Default,
-                    MessageColor = Color.red,
-                    Title = "취소하기", //슬롯 삭제
-                    Message = "변경한 내용을 저장하지 않았습니다.\n취소하시겠습니까?",
-                    OnConfirm = OnConfirmByPopup,
-                    ShowCancelButton = true
-                };
-                popupManager.ShowPopup(popupMetadata);
-            }
-        }
-
-        private void OnConfirmByPopup()
-        {
-            LoadCurrentOptions();
-            SetButtonInteractable(false);
-            // LoadCurrentOptions에서 최신으로 불러오기 때문에, 마지막에 _isChanged를 변경한다.
-            SetIsChange(false);
-        }
-        /// <summary>
-        /// 메인 볼륨 조절
-        /// </summary>
-        /// <param name="value"></param>
-        private void OnChangeSliderMaster(float value)
-        {
-            // GcLogger.Log($"bgm volume: {value}");
-            if (soundManager)
-            {
-                soundManager.SetMasterVolume(value, false);
-            }
-
-            SetIsChange(true);
-        }
-        /// <summary>
-        /// BGM 볼륨 조절
-        /// </summary>
-        /// <param name="value"></param>
-        private void OnChangeSliderBgm(float value)
-        {
-            // GcLogger.Log($"bgm volume: {value}");
-            if (soundManager)
-            {
-                soundManager.SetBgmVolume(value, false);
-            }
-
-            SetIsChange(true);
-        }
-        /// <summary>
-        /// 효과음 볼륨 조절
-        /// </summary>
-        /// <param name="value"></param>
-        private void OnChangeSliderSfx(float value)
-        {
-            // GcLogger.Log($"sfx volume: {value}");
-            if (soundManager)
-            {
-                soundManager.SetSfxVolume(value, false);
-            }
-            SetIsChange(true);
-        }
-        /// <summary>
-        /// 변경한 값이 있을 경우 
-        /// </summary>
-        /// <param name="value"></param>
-        private void SetIsChange(bool value)
-        {
-            _isChanged = value;
-            if (value)
-            {
-                if (buttonConfirm != null)
+                    if (isOn)
+                        OnClickTapButton(values[captured]);
+                });
+                UIToggleConfirmable uiToggleConfirmable = toggle.GetComponent<UIToggleConfirmable>();
+                if (uiToggleConfirmable)
                 {
-                    buttonConfirm.interactable = true;
+                    uiToggleConfirmable.RequireConfirm = true;
+                    uiToggleConfirmable.OnConfirmRequested += HandleConfirmRequested;
                 }
-                if (buttonCancel != null)
-                {
-                    buttonCancel.interactable = true;
-                }
-            }
-            else
-            {
-                SetButtonInteractable(false);
-            }
-        }
 
-        /// <summary>
-        /// 옵션 디폴트 값으로 되돌리기
-        /// </summary>
-        private void OnClickReset()
-        {
-            PopupMetadata popupMetadata = new PopupMetadata
-            {
-                PopupType = PopupManager.Type.Default,
-                MessageColor = Color.red,
-                Title = "되돌리기", //슬롯 삭제
-                Message = "디폴트 값으로 변경하시겠습니까?",
-                OnConfirm = OnConfirmResetByPopup,
-                ShowCancelButton = true
-            };
-            popupManager.ShowPopup(popupMetadata);
-        }
-
-        private void OnConfirmResetByPopup()
-        {
-            // GcLogger.Log($"OnConfirmResetByPopup");
-            dropdownLanguage.value = (int)LocalizationConstants.DefaultLanguageIndex;
-            sliderVolumeMaster.value = _optionSettings.volumeMaster;
-            sliderVolumeBgm.value = _optionSettings.volumeBGM;
-            sliderVolumeSfx.value = _optionSettings.volumeSfx;
-            
-            OnClickConfirm();
-        }
-        /// <summary>
-        /// 저장하지 않고 닫을 수 있기 때문에 옵션 창이 닫힐때 현재 설정값 다시 로드
-        /// </summary>
-        public override bool Show(bool show)
-        {
-            if (!show && _isChanged)
-            {
-                PopupMetadata popupMetadata = new PopupMetadata
-                {
-                    PopupType = PopupManager.Type.Default,
-                    MessageColor = Color.red,
-                    Title = "취소하기", //슬롯 삭제
-                    Message = "변경한 내용을 저장하지 않았습니다.\n취소하시겠습니까?",
-                    OnConfirm = OnConfirmByPopup,
-                    ShowCancelButton = true
-                };
-                popupManager.ShowPopup(popupMetadata);
-                return false;
+                _spawned.Add(toggle);
             }
-            return base.Show(show);
-        }
 
+            // 기본 선택 탭의 시각 상태를 즉시 반영
+            foreach (var t in toggleGroupTab.gameObject.GetComponentsInChildren<Toggle>())
+                t.OnPointerExit(null); // 상태 갱신 트리거 (필요 시)
+        }
         private void OnClickTapButton(IndexTapButton tab)
         {
             SetIndexTabButton(tab);
-            switch (tab)
-            {
-                case IndexTapButton.Default:
-                    Debug.Log("Default 탭 클릭");
-                    break;
-                case IndexTapButton.Control:
-                    Debug.Log("Control 탭 클릭");
-                    break;
-                default:
-                    Debug.Log($"Unhandled: {tab}");
-                    break;
-            }
+            // switch (tab)
+            // {
+            //     case IndexTapButton.Default:
+            //         Debug.Log("Default 탭 클릭");
+            //         break;
+            //     case IndexTapButton.Control:
+            //         Debug.Log("Control 탭 클릭");
+            //         break;
+            //     default:
+            //         Debug.Log($"Unhandled: {tab}");
+            //         break;
+            // }
         }
 
-        public void AddLayer(IndexTapButton index, GameObject layer)
+        public void AddLayer(IndexTapButton index, UIPanelOptionBase layer)
         {
             _dictionaryLayer.TryAdd(index, layer);
         }
@@ -399,13 +179,31 @@ namespace GGemCo2DCore
             _currentIndexTabButton = index;
             foreach (var data in _dictionaryLayer)
             {
-                data.Value.SetActive(false);
+                data.Value.Show(false);
             }
 
             var selected = _dictionaryLayer.GetValueOrDefault(index);
             if (selected == null) return;
-            selected.SetActive(true);
+            selected.Show(true);
         }
 
+        public override bool Show(bool show)
+        {
+            if (!show)
+            {
+                // 변경한 내역이 있는지 체크한 후 닫기
+                foreach (var data in _dictionaryLayer)
+                {
+                    if (!data.Value.Show(false)) return false;
+                }
+            }
+            else
+            {
+                // 현재 선택된 탭 열기
+                SetIndexTabButton(_currentIndexTabButton);
+            }
+
+            return base.Show(show);
+        }
     }
 }
