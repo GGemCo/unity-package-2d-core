@@ -13,9 +13,18 @@ namespace GGemCo2DCore
         [SerializeField] protected Button buttonCancel;
         [Tooltip("디폴트 값으로 초기화 버튼")]
         [SerializeField] protected Button buttonReset;
+        [Tooltip("타이틀로 사용할 Localization Key. GGemCoUIWindowOption String Table에 등록해주세요.")]
+        [SerializeField] private string title;
+
+        public string Title
+        {
+            get => title;
+            set => title = value;
+        }
+        
         // 변경한 값이 있는지 체크
         protected bool isChanged;
-        public UIWindowOption uiWindowOption;
+        protected UIWindowOption uiWindowOption;
         protected SoundManager soundManager;
         protected PopupManager popupManager;
 

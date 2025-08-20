@@ -12,25 +12,16 @@ namespace GGemCo2DCore
     /// </summary>
     public class UIWindowOption : UIWindow
     {
-        public enum IndexTapButton
-        {
-            Default,
-            Control
-        }
-
         [Header(UIWindowConstants.TitleHeaderIndividual)]
         [Tooltip("탭 토글을 넣을 panel")]
-        [SerializeField] private RectTransform panelTabToggle;   // 버튼을 담을 부모(레이아웃 그룹 권장)
+        [SerializeField] private RectTransform tabTogglePanel;   // 버튼을 담을 부모(레이아웃 그룹 권장)
         [Tooltip("탭 토글 그룹")]
-        [SerializeField] private ToggleGroup toggleGroupTab;
+        [SerializeField] private ToggleGroup tabToggleGroup;
         [Tooltip("탭 토글 프리팹")]
-        [SerializeField] private UIToggleConfirmable uiToggleTab;
+        [SerializeField] private UIToggleConfirmable tabTogglePrefab;
+        [Tooltip("하위 패널을 넣을 공간")]
+        [SerializeField] private Transform parentPanel;
         
-        [Header("레이어")]
-        [Tooltip("기본 옵션 레이어")]
-        [SerializeField] private UIPanelOptionBase uiPanelOptionDefault;
-
-        private IndexTapButton _currentIndexTabButton;
         [Header("매니저")]
         // 인트로 씬에서는 수동으로 넣어주고 있다.
         [Tooltip("팝업 매니저")] [SerializeField]
@@ -38,32 +29,14 @@ namespace GGemCo2DCore
         public void SetPopupManager(PopupManager value) => popupManager = value;
         [Tooltip("사운드 매니저")] [SerializeField] public SoundManager soundManager;
         public void SetSoundManager(SoundManager value) => soundManager = value;
-
-        private readonly List<Toggle> _spawned = new();
-        private readonly Dictionary<IndexTapButton, UIPanelOptionBase> _dictionaryLayer = new();
         
-        protected override void Awake()
-        {
-            if (!AddressableLoaderSettings.Instance) return;
-            base.Awake();
+        [Header("하위 패널 프리팹")]
+        [SerializeField] private List<GameObject> listPrefabPanel;
+        private List<UIPanelOptionBase> listPanelOptionBase;
 
-        }
-        /// <summary>
-        /// 탭 버튼을 클리했을때, 변경사항이 있는지 체크하기
-        /// </summary>
-        /// <param name="target"></param>
-        private void HandleConfirmRequested(UIToggleConfirmable target)
-        {
-            foreach (var data in _dictionaryLayer)
-            {
-                if (!data.Value.Show(false)) return;
-            }
-            
-            target.SuppressConfirm = true;
-            target.isOn = true;          // ToggleGroup 규칙에 따라 이전은 자동 Off
-            target.SuppressConfirm = false;
-        }
-
+        private int _currentIndexTabButton;
+        private readonly List<Toggle> _spawned = new();
+        
         private void OnDestroy()
         {
             if (_spawned == null) return;
@@ -77,6 +50,7 @@ namespace GGemCo2DCore
         protected override void Start()
         {
             base.Start();
+            // 인트로 씬에서는 window 데이터가 없어서, 여기서 SetActive 처리 한다.
             gameObject.SetActive(false);
             
             if (popupManager == null)
@@ -88,56 +62,59 @@ namespace GGemCo2DCore
                 soundManager = SceneGame.Instance.soundManager;
             }
             
-            // uiPanelOptionDefault에서 popupManager, soundManager를 사용한다
-            uiPanelOptionDefault?.SetUIWindowOption(this);
-            
-            // BootstrapperOptionsControls 의 Awake에서 Regist 하고 있다.
-            UIWindowOptionsExtensionRegistry uiWindowOptionsExtensionRegistry =
-                gameObject.GetComponent<UIWindowOptionsExtensionRegistry>();
-            uiWindowOptionsExtensionRegistry?.BuildAll();
-            
+            InitializePanelBase();
             InitializeTabButton();
-            
-            SetIndexTabButton(IndexTapButton.Default);
+            SetIndexTabButton(0);
+        }
+
+        private void InitializePanelBase()
+        {
+            if (listPrefabPanel.Count <= 0)
+            {
+                GcLogger.LogError($"UIPanel 프리팹을 등록해주세요.");
+                return;
+            }
+            listPanelOptionBase = new List<UIPanelOptionBase>();
+            foreach (var prefab in listPrefabPanel)
+            {
+                var objectPanel = Instantiate(prefab, parentPanel);
+                UIPanelOptionBase uiPanelOptionBase = objectPanel.GetComponent<UIPanelOptionBase>();
+                if (uiPanelOptionBase == null)
+                {
+                    GcLogger.LogError($"프리팹에 UIPanelOptionBase 클래스가 없습니다.");
+                    continue;
+                }
+                uiPanelOptionBase.SetUIWindowOption(this);
+                listPanelOptionBase.Add(uiPanelOptionBase);
+            }
         }
 
         private void InitializeTabButton()
         {
-            if (!panelTabToggle) return;
-            if (!toggleGroupTab) return;
-
-            if (uiPanelOptionDefault)
-            {
-                _dictionaryLayer.Add(IndexTapButton.Default, uiPanelOptionDefault);
-            }
+            if (!tabTogglePanel) return;
+            if (!tabToggleGroup) return;
 
             // 기존 자식 정리(필요 시)
-            for (int i = panelTabToggle.childCount - 1; i >= 0; i--)
-                Destroy(panelTabToggle.GetChild(i).gameObject);
-
-            // 열거형 값 배열
-            var values = (IndexTapButton[])Enum.GetValues(typeof(IndexTapButton));
+            for (int i = tabTogglePanel.childCount - 1; i >= 0; i--)
+                Destroy(tabTogglePanel.GetChild(i).gameObject);
             
-            _spawned.Capacity = values.Length;
-            
-            var ordered = _dictionaryLayer
-                .OrderBy(pair => pair.Key) // enum 값의 int 순서 기준
-                .ToList();                 // 필요 시 List<KeyValuePair<...>>
-
-            foreach (var data in ordered)
+            for (int i = 0; i < listPrefabPanel.Count; i++)
             {
-                IndexTapButton indexTapButton = data.Key;
-                var toggle = UIComponentHelper.CreateToggle(uiToggleTab, indexTapButton.ToString());
+                var uiPanelOptionBase = listPanelOptionBase[i];
+                if (uiPanelOptionBase == null) continue;
+                MetaDataToggle metaDataToggle = new MetaDataToggle(tabTogglePrefab.gameObject, uiPanelOptionBase.Title,
+                    LocalizationConstants.Tables.UIWindowOption, uiPanelOptionBase.Title);
+                var toggle = UIComponentHelper.CreateToggle(metaDataToggle);
                 if (!toggle) continue;
-                toggle.name = $"Btn_{indexTapButton}";
-                toggle.transform.SetParent(panelTabToggle);
-                toggle.group = toggleGroupTab;
-                int captured = (int)indexTapButton;
+                toggle.name = $"Btn_{i}";
+                toggle.transform.SetParent(tabTogglePanel);
+                toggle.group = tabToggleGroup;
+                int captured = i;
                 toggle.SetIsOnWithoutNotify(false);
                 toggle.onValueChanged.AddListener(isOn =>
                 {
                     if (isOn)
-                        OnClickTapButton(values[captured]);
+                        OnClickTapButton(captured);
                 });
                 UIToggleConfirmable uiToggleConfirmable = toggle.GetComponent<UIToggleConfirmable>();
                 if (uiToggleConfirmable)
@@ -150,39 +127,40 @@ namespace GGemCo2DCore
             }
 
             // 기본 선택 탭의 시각 상태를 즉시 반영
-            foreach (var t in toggleGroupTab.gameObject.GetComponentsInChildren<Toggle>())
+            foreach (var t in tabToggleGroup.gameObject.GetComponentsInChildren<Toggle>())
                 t.OnPointerExit(null); // 상태 갱신 트리거 (필요 시)
         }
-        private void OnClickTapButton(IndexTapButton tab)
+        /// <summary>
+        /// 탭 버튼을 클리했을때, 변경사항이 있는지 체크하기
+        /// </summary>
+        /// <param name="target"></param>
+        private void HandleConfirmRequested(UIToggleConfirmable target)
+        {
+            if (listPanelOptionBase.Count <= 0) return;
+            foreach (var uiPanelOptionBase in listPanelOptionBase)
+            {
+                if (!uiPanelOptionBase.Show(false)) return;
+            }
+            
+            target.SuppressConfirm = true;
+            target.isOn = true;          // ToggleGroup 규칙에 따라 이전은 자동 Off
+            target.SuppressConfirm = false;
+        }
+        private void OnClickTapButton(int tab)
         {
             SetIndexTabButton(tab);
-            // switch (tab)
-            // {
-            //     case IndexTapButton.Default:
-            //         Debug.Log("Default 탭 클릭");
-            //         break;
-            //     case IndexTapButton.Control:
-            //         Debug.Log("Control 탭 클릭");
-            //         break;
-            //     default:
-            //         Debug.Log($"Unhandled: {tab}");
-            //         break;
-            // }
         }
 
-        public void AddLayer(IndexTapButton index, UIPanelOptionBase layer)
+        private void SetIndexTabButton(int index)
         {
-            _dictionaryLayer.TryAdd(index, layer);
-        }
-        private void SetIndexTabButton(IndexTapButton index)
-        {
+            if (listPanelOptionBase.Count <= 0) return;
             _currentIndexTabButton = index;
-            foreach (var data in _dictionaryLayer)
+            foreach (var uiPanelOptionBase in listPanelOptionBase)
             {
-                data.Value.Show(false);
+                uiPanelOptionBase.Show(false);
             }
 
-            var selected = _dictionaryLayer.GetValueOrDefault(index);
+            var selected = listPanelOptionBase[index];
             if (selected == null) return;
             selected.Show(true);
         }
@@ -191,10 +169,11 @@ namespace GGemCo2DCore
         {
             if (!show)
             {
+                if (listPanelOptionBase.Count <= 0) return false;
                 // 변경한 내역이 있는지 체크한 후 닫기
-                foreach (var data in _dictionaryLayer)
+                foreach (var uiPanelOptionBase in listPanelOptionBase)
                 {
-                    if (!data.Value.Show(false)) return false;
+                    if (!uiPanelOptionBase.Show(false)) return false;
                 }
             }
             else

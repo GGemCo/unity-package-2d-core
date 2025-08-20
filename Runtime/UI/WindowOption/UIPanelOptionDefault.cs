@@ -11,8 +11,6 @@ namespace GGemCo2DCore
     /// </summary>
     public class UIPanelOptionDefault : UIPanelOptionBase
     {
-        private UIWindowOption _windowOption;
-        
         [Header(UIWindowConstants.TitleHeaderIndividual)]
         [Tooltip("언어 선택 드롭 다운 메뉴")]
         [SerializeField] private TMP_Dropdown dropdownLanguage;
@@ -23,7 +21,7 @@ namespace GGemCo2DCore
         [Tooltip("효과음 볼륨 조절 슬라이더")]
         [SerializeField] private Slider sliderVolumeSfx;
         
-        [HideInInspector] public GGemCoOptionSettings optionSettings;
+        private GGemCoOptionSettings optionSettings;
 
         protected override void Awake()
         {
@@ -106,7 +104,7 @@ namespace GGemCo2DCore
             dropdownLanguage.AddOptions(options);
         }
 
-        private void LoadCurrentOptions()
+        private void LoadCurrentOptions(bool isInit)
         {
             if (!dropdownLanguage) return;
             
@@ -114,22 +112,51 @@ namespace GGemCo2DCore
             int index = PlayerPrefsManager.LoadIndexLocalizationLocale();
             if (index != -1)
             {
-                dropdownLanguage.SetValueWithoutNotify(index);
+                if (isInit)
+                {
+                    dropdownLanguage.SetValueWithoutNotify(index);
+                }
+                else
+                {
+                    dropdownLanguage.value = index;
+                }
             }
             float value = PlayerPrefsManager.LoadSoundVolumeMaster();
             if (sliderVolumeMaster != null)
             {
-                sliderVolumeMaster.SetValueWithoutNotify(value);
+                if (isInit)
+                {
+                    sliderVolumeMaster.SetValueWithoutNotify(value);
+                }
+                else
+                {
+                    sliderVolumeMaster.value = value;
+                }
             }
             value = PlayerPrefsManager.LoadSoundVolumeBGM();
             if (sliderVolumeBgm != null)
             {
-                sliderVolumeBgm.SetValueWithoutNotify(value);
+                if (isInit)
+                {
+                    sliderVolumeBgm.SetValueWithoutNotify(value);
+                }
+                else
+                {
+                    sliderVolumeBgm.value = value;
+                }
+
             }
             value = PlayerPrefsManager.LoadSoundVolumeSfx();
             if (sliderVolumeSfx != null)
             {
-                sliderVolumeSfx.SetValueWithoutNotify(value);
+                if (isInit)
+                {
+                    sliderVolumeSfx.SetValueWithoutNotify(value);
+                }
+                else
+                {
+                    sliderVolumeSfx.value = value;
+                }
             }
         }
 
@@ -167,7 +194,7 @@ namespace GGemCo2DCore
 
         private void OnConfirmByPopup()
         {
-            LoadCurrentOptions();
+            LoadCurrentOptions(false);
             SetButtonInteractable(false);
             // LoadCurrentOptions에서 최신으로 불러오기 때문에, 마지막에 _isChanged를 변경한다.
             SetIsChange(false);
@@ -212,7 +239,7 @@ namespace GGemCo2DCore
             if (show)
             {
                 base.Show(true);
-                LoadCurrentOptions();
+                LoadCurrentOptions(true);
                 return true;
             }
             
