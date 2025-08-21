@@ -41,6 +41,9 @@ namespace GGemCo2DCoreEditor
                 Directory.Delete(path, true);
             }
             PlayerPrefsManager.DeleteSaveDataSlotIndex();
+            
+            PlayerPrefs.DeleteAll();
+            PlayerPrefs.Save();
         }
 
         private static void OpenGameDataFolder()

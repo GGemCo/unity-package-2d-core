@@ -6,7 +6,6 @@ namespace GGemCo2DCore
         menuName = ConfigScriptableObject.Option.MenuName, order = ConfigScriptableObject.Option.Ordering)]
     public class GGemCoOptionSettings : ScriptableObject
     {
-        [Header("디폴트 언어")] public LocalizationConstants.LanguageIndex defaultLanguage;
         [Header("메인 볼륨")] public float volumeMaster;
         [Header("BGM 볼륨")] public float volumeBGM;
         [Header("효과음 볼륨")] public float volumeSfx;
@@ -16,10 +15,9 @@ namespace GGemCo2DCore
         /// </summary>
         private void Reset()
         {
-            defaultLanguage = LocalizationConstants.LanguageIndex.En;
             volumeMaster = 0.5f;
-            volumeBGM = 0.5f;
-            volumeSfx = 0.5f;
+            volumeBGM = 1.0f;
+            volumeSfx = 1.0f;
         }
     }
 }

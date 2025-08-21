@@ -1,11 +1,13 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 using UnityEngine.AddressableAssets;
-using UnityEngine.Events;
+using UnityEngine.Localization;
 using UnityEngine.Localization.Settings;
 using UnityEngine.ResourceManagement.AsyncOperations;
+using Object = UnityEngine.Object;
 #if UNITY_EDITOR
 using UnityEditor;
 using UnityEditor.SceneManagement;
@@ -20,9 +22,7 @@ namespace GGemCo2DCore
     {
         public static LocalizationManager Instance;
         // 언어 변경시 발생하는 이벤트
-        public UnityEvent onChangeLocale;
-        // 사용중인 언어 코드 리스트
-        private List<string> _languageCodes;
+        public event Action<string, int> OnChangeLocale;
         // 언어 변경 중인지
         private bool _isChanging;
         // 현재 언어 코드
@@ -33,6 +33,9 @@ namespace GGemCo2DCore
         private LocalizedAssetDatabase _assetDatabase;
         // 사용자 언어 테이블 존재 여부
         private readonly Dictionary<string, bool> _userTableExistsMap = new();
+        // 현재 사용하는 언어 Locale
+        private static readonly Dictionary<string, Locale> Locales = new Dictionary<string, Locale>();
+        // 로드 진행율
         private float _loadProgress;
 
         private void Awake()
@@ -51,55 +54,75 @@ namespace GGemCo2DCore
             _stringDatabase = LocalizationSettings.StringDatabase;
             _assetDatabase = LocalizationSettings.AssetDatabase;
 
-            InitializeLanguageCodes();
+            InitializeAvailableLocale();
         }
         /// <summary>
-        /// LanguageIndex enum을 기반으로 코드 리스트를 초기화합니다.
+        /// 현재 사용하고 있는 Locale 설정
         /// </summary>
-        private void InitializeLanguageCodes()
+        private void InitializeAvailableLocale()
         {
-            _languageCodes = new List<string>();
-            foreach (LocalizationConstants.LanguageIndex lang in Enum.GetValues(
-                         typeof(LocalizationConstants.LanguageIndex)))
+            var locales = LocalizationSettings.AvailableLocales.Locales;
+            if (locales.Count == 0)
             {
-                _languageCodes.Add(lang.ToString());
+                Debug.LogWarning("Localization Settings에 등록된 Locale이 없습니다.");
+            }
+            foreach (var locale in locales)
+            {
+                Locales.TryAdd(locale.Identifier.Code, locale);
             }
         }
+
+        public Dictionary<string, Locale> GetAvailableLocales()
+        {
+            return Locales;
+        }
         /// <summary>
-        /// 언어 인덱스를 받아 로케일을 변경합니다.
+        /// Locale을 받아 언어를 변경합니다.
         /// </summary>
-        public void StartChangeLocale(int index)
+        public void StartChangeLocale(Locale locale, bool isSave = true)
         {
             if (_isChanging) return;
-            StartCoroutine(ChangeLocaleRoutine(index));
+            StartCoroutine(ChangeLocaleRoutine(locale, isSave));
+        }
+        /// <summary>
+        /// Index를 받아 언어를 변경합니다.
+        /// </summary>
+        public void StartChangeLocale(int index, bool isSave = true)
+        {
+            Locale locale = GetLocaleByIndex(index);
+            if (_isChanging || locale == null) return;
+            StartCoroutine(ChangeLocaleRoutine(locale, isSave));
+        }
+        /// <summary>
+        /// Code를 받아 언어를 변경합니다.
+        /// </summary>
+        public IEnumerator ChangeLocaleRoutine(string code, bool isSave = true)
+        {
+            Locale locale = GetLocaleByCode(code);
+            yield return StartCoroutine(ChangeLocaleRoutine(locale, isSave));
         }
         /// <summary>
         /// 언어 바꾸기
         /// </summary>
-        /// <param name="index"></param>
+        /// <param name="locale"></param>
+        /// <param name="isSave"></param>
         /// <returns></returns>
-        public IEnumerator ChangeLocaleRoutine(int index)
+        private IEnumerator ChangeLocaleRoutine(Locale locale, bool isSave = true)
         {
             _isChanging = true;
 
             yield return LocalizationSettings.InitializationOperation;
 
-            var locales = LocalizationSettings.AvailableLocales.Locales;
-            if (index < 0 || index >= locales.Count)
-            {
-                GcLogger.LogWarning($"[LocalizationManager] Invalid locale index: {index}");
-                _isChanging = false;
-                yield break;
-            }
-
-            LocalizationSettings.SelectedLocale = locales[index];
-            PlayerPrefsManager.SaveIndexLocalizationLocale(index);
-            CurrentLanguageCode = _languageCodes[index];
-
+            LocalizationSettings.SelectedLocale = locale;
+            CurrentLanguageCode = locale.Identifier.Code;
             _isChanging = false;
             // GcLogger.Log($"[LocalizationManager] change success. locale index: {index}");
-            PlayerPrefsManager.SaveIndexLocalizationLocale(index);
-            onChangeLocale?.Invoke();
+            if (isSave)
+            {
+                PlayerPrefsManager.SaveLocalizationLocaleCode(locale.Identifier.Code);
+            }
+
+            OnChangeLocale?.Invoke(CurrentLanguageCode, GetLocaleIndexByCode(CurrentLanguageCode));
             
             StartCoroutine(CheckUserTablesExist());
         }
@@ -143,15 +166,6 @@ namespace GGemCo2DCore
         }
 
         /// <summary>
-        /// 현재 선택된 언어 인덱스를 반환합니다.
-        /// </summary>
-        public LocalizationConstants.LanguageIndex GetCurrentLanguageIndex()
-        {
-            int savedIndex = PlayerPrefsManager.LoadIndexLocalizationLocale();
-            return (LocalizationConstants.LanguageIndex)Mathf.Clamp(savedIndex, 0, _languageCodes.Count - 1);
-        }
-
-        /// <summary>
         /// 지정한 테이블과 키로 로컬라이즈된 문자열을 가져옵니다.
         /// </summary>
         private string GetString(string table, string key)
@@ -185,7 +199,7 @@ namespace GGemCo2DCore
         /// <summary>
         /// 에셋 테이블에서 로컬라이즈된 에셋을 반환합니다.
         /// </summary>
-        public T GetLocalizedAsset<T>(string table, string key) where T : UnityEngine.Object
+        public T GetLocalizedAsset<T>(string table, string key) where T : Object
         {
             AsyncOperationHandle<T> handle =
                 _assetDatabase.GetLocalizedAssetAsync<T>(table, key, LocalizationSettings.SelectedLocale);
@@ -197,7 +211,65 @@ namespace GGemCo2DCore
         /// 현재 언어 코드 (예: "En", "Ko") 반환
         /// </summary>
         public string GetCurrentLanguageCode() => CurrentLanguageCode;
+        /// <summary>
+        /// Code로 Locale 찾기
+        /// </summary>
+        /// <param name="code"></param>
+        /// <returns></returns>
+        public int GetLocaleIndexByCode(string code)
+        {
+            Locale locale = GetLocaleByCode(code);
+            if (locale == null) return -1;
+            return GetIndexOfLocale(locale);
+        }
+        /// <summary>
+        /// Locale로 Index 찾기
+        /// </summary>
+        /// <param name="locale"></param>
+        /// <returns></returns>
+        private int GetIndexOfLocale(Locale locale)
+        {
+            if (Locales == null || locale == null) return -1;
+            // 코드 기준 매칭(ko, ko-KR 등)
+            var code = locale.Identifier.Code;
+            int index = 0;
+            foreach (var data in Locales)
+            {
+                if (data.Key == code) return index;
+                index++;
+            }
+            return -1;
+        }
+        /// <summary>
+        /// Code로 Locale 찾기
+        /// </summary>
+        /// <param name="code"></param>
+        /// <returns></returns>
+        private Locale GetLocaleByCode(string code)
+        {
+            if (string.IsNullOrEmpty(code) || Locales == null) return null;
+            // 완전일치 우선, 없으면 접두 일치(예: "ko"로 저장되어 있고 프로젝트에는 "ko-KR"만 있는 경우)
+            var exact = Locales.FirstOrDefault(l => l.Key == code);
+            if (exact.Value != null) return exact.Value;
 
+            return Locales.FirstOrDefault().Value;
+        }
+        /// <summary>
+        /// Index로 Locale 찾기
+        /// </summary>
+        /// <param name="index"></param>
+        /// <returns></returns>
+        private Locale GetLocaleByIndex(int index)
+        {
+            int i = 0;
+            foreach (var data in Locales)
+            {
+                if (i == index) return data.Value;
+                i++;
+            }
+
+            return null;
+        }
         /// <summary>
         /// UI 에서 사용하는 공용 단어
         /// </summary>

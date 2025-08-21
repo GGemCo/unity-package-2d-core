@@ -4,7 +4,7 @@ using UnityEngine.UI;
 
 namespace GGemCo2DCore
 {
-    public class UIPanelOptionBase : MonoBehaviour
+    public abstract class UIPanelOptionBase : MonoBehaviour
     {
         [Header(UIWindowConstants.TitleHeaderCommon)]
         [Tooltip("변경한 내용 적용 버튼")]
@@ -15,27 +15,29 @@ namespace GGemCo2DCore
         [SerializeField] protected Button buttonReset;
         [Tooltip("타이틀로 사용할 Localization Key. GGemCoUIWindowOption String Table에 등록해주세요.")]
         [SerializeField] private string title;
-
         public string Title
         {
             get => title;
             set => title = value;
         }
-        
+
+        public int PanelIndex { get; set; }
+
         // 변경한 값이 있는지 체크
-        protected bool isChanged;
+        public bool IsDirty { get; protected set; }
+        
         protected UIWindowOption uiWindowOption;
         protected SoundManager soundManager;
         protected PopupManager popupManager;
 
         protected virtual void Awake()
         {
-            isChanged = false;
+            IsDirty = false;
             buttonConfirm?.onClick.AddListener(OnClickConfirm);
             buttonCancel?.onClick.AddListener(OnClickCancel);
             buttonReset?.onClick.AddListener(OnClickReset);
             
-            SetButtonInteractable(false);
+            SetButtonsInteractable(false);
         }
         protected virtual void OnDestroy()
         {
@@ -44,70 +46,58 @@ namespace GGemCo2DCore
             buttonReset?.onClick.RemoveAllListeners();
         }
 
-        protected virtual void OnClickReset()
+        private void OnClickConfirm()
         {
+            if (TryApply()) MarkDirty(false);
+        }
+        private void OnClickCancel()
+        {
+            Revert();
+            MarkDirty(false);
         }
 
-        protected virtual void OnClickCancel()
+        private void OnClickReset()
         {
+            ResetToDefault();
+            MarkDirty(true);
         }
 
-        protected virtual void OnClickConfirm()
+        private void SetButtonsInteractable(bool enable)
         {
-        }
-
-        protected void SetButtonInteractable(bool isInteractable)
-        {
-            if (buttonConfirm)
-            {
-                buttonConfirm.interactable = isInteractable;
-            }
-
-            if (buttonCancel)
-            {
-                buttonCancel.interactable = isInteractable;
-            }
+            if (buttonConfirm) buttonConfirm.interactable = enable;
+            if (buttonCancel)  buttonCancel.interactable  = enable;
         }
         /// <summary>
         /// 변경한 값이 있을 경우 
         /// </summary>
         /// <param name="value"></param>
-        public void SetIsChange(bool value)
+        public void MarkDirty(bool value)
         {
-            isChanged = value;
-            if (value)
-            {
-                if (buttonConfirm != null)
-                {
-                    buttonConfirm.interactable = true;
-                }
-                if (buttonCancel != null)
-                {
-                    buttonCancel.interactable = true;
-                }
-            }
-            else
-            {
-                SetButtonInteractable(false);
-            }
+            IsDirty = value;
+            SetButtonsInteractable(value);
         }
 
         public virtual bool Show(bool show)
         {
             gameObject.SetActive(show);
+            if (show)
+            {
+                RefreshFromModel();
+                MarkDirty(false);
+            }
             return true;
         }
 
-        public bool IsChange()
-        {
-            return isChanged;
-        }
-
-        public void SetUIWindowOption(UIWindowOption puiWindowOption)
+        public virtual void SetWindowOption(UIWindowOption puiWindowOption)
         {
             uiWindowOption = puiWindowOption;
             popupManager = uiWindowOption.popupManager;
             soundManager = uiWindowOption.soundManager;
         }
+
+        public abstract bool TryApply();
+        public abstract void Revert();
+        protected abstract void ResetToDefault();
+        protected abstract void RefreshFromModel();
     }
 }

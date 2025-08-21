@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -35,17 +34,24 @@ namespace GGemCo2DCore
         private List<UIPanelOptionBase> listPanelOptionBase;
 
         private int _currentIndexTabButton;
-        private readonly List<Toggle> _spawned = new();
+        private readonly Dictionary<int, Toggle> _tabToggles = new();
         
         private void OnDestroy()
         {
-            if (_spawned == null) return;
+            if (_tabToggles == null) return;
             // 메모리 누수 방지: 이벤트 해제 및 객체 정리
-            foreach (var b in _spawned)
+            foreach (var data in _tabToggles)
             {
-                if (b) b.onValueChanged.RemoveAllListeners();
+                if (data.Value) data.Value.onValueChanged.RemoveAllListeners();
             }
-            _spawned.Clear();
+            _tabToggles.Clear();
+        }
+
+        protected override void Awake()
+        {
+            base.Awake();
+            CreatePanelBase();
+            CreateTabButton();
         }
         protected override void Start()
         {
@@ -61,13 +67,67 @@ namespace GGemCo2DCore
             {
                 soundManager = SceneGame.Instance.soundManager;
             }
-            
-            InitializePanelBase();
-            InitializeTabButton();
-            SetIndexTabButton(0);
-        }
 
-        private void InitializePanelBase()
+            foreach (var uiPanelOptionBase in listPanelOptionBase)
+            {
+                uiPanelOptionBase.SetWindowOption(this);
+            }
+            
+            SelectFirstTab();
+        }
+        private void SelectFirstTab()
+        {
+            var first = listPanelOptionBase.FirstOrDefault();
+            if (first== null) return;
+            _tabToggles[first.PanelIndex].SetIsOnWithoutNotify(true);
+            TrySwitchTo(first.PanelIndex, skipGuard:true);
+        }
+        private bool TrySwitchTo(int panelIndex, bool skipGuard = false)
+        {
+            if (!skipGuard && !GuardCloseOrSwitch(() => DoSwitch(panelIndex)))
+            {
+                // 가드에서 취소됨 → 기존 토글 복구
+                if (_currentIndexTabButton != -1 && _tabToggles.TryGetValue(_currentIndexTabButton, out var t))
+                    t.SetIsOnWithoutNotify(true);
+                return false;
+            }
+            DoSwitch(panelIndex);
+            return true;
+        }
+        private void DoSwitch(int panelIndex)
+        {
+            foreach (var uiPanelOptionBase in listPanelOptionBase) uiPanelOptionBase.Show(false);
+            var target = listPanelOptionBase.First(x => x.PanelIndex == panelIndex);
+            target.Show(true);
+            _currentIndexTabButton = panelIndex;
+        }
+        private bool GuardCloseOrSwitch(Action proceed)
+        {
+            foreach (var uiPanelOptionBase in listPanelOptionBase)
+            {
+                if (uiPanelOptionBase.IsDirty)
+                {
+                    PopupMetadata popupMetadata = new PopupMetadata
+                    {
+                        PopupType = PopupManager.Type.Default,
+                        MessageColor = Color.red,
+                        Title = "취소하기", //슬롯 삭제
+                        Message = "변경한 내용을 저장하지 않았습니다.\n취소하시겠습니까?",
+                        OnConfirm = () => {
+                            GcLogger.Log($"GuardCloseOrSwitch popup confirm.");
+                            // uiPanelOptionBase.Revert(); // 되돌리고 진행 (또는 TryApply로 저장 후 진행)
+                            // proceed();
+                        },
+                        ShowCancelButton = true
+                    };
+                    popupManager.ShowPopup(popupMetadata);
+                    return false;
+                }
+            }
+            proceed();
+            return true;
+        }
+        private void CreatePanelBase()
         {
             if (listPrefabPanel.Count <= 0)
             {
@@ -75,6 +135,7 @@ namespace GGemCo2DCore
                 return;
             }
             listPanelOptionBase = new List<UIPanelOptionBase>();
+            int index = 0;
             foreach (var prefab in listPrefabPanel)
             {
                 var objectPanel = Instantiate(prefab, parentPanel);
@@ -84,12 +145,16 @@ namespace GGemCo2DCore
                     GcLogger.LogError($"프리팹에 UIPanelOptionBase 클래스가 없습니다.");
                     continue;
                 }
-                uiPanelOptionBase.SetUIWindowOption(this);
+
+                uiPanelOptionBase.PanelIndex = index;
                 listPanelOptionBase.Add(uiPanelOptionBase);
+                index++;
             }
         }
-
-        private void InitializeTabButton()
+        /// <summary>
+        /// 탭 버튼 만들기
+        /// </summary>
+        private void CreateTabButton()
         {
             if (!tabTogglePanel) return;
             if (!tabToggleGroup) return;
@@ -116,6 +181,7 @@ namespace GGemCo2DCore
                     if (isOn)
                         OnClickTapButton(captured);
                 });
+                // 옵션이 변경된 것이 있을때 체크하기위해 추가
                 UIToggleConfirmable uiToggleConfirmable = toggle.GetComponent<UIToggleConfirmable>();
                 if (uiToggleConfirmable)
                 {
@@ -123,7 +189,7 @@ namespace GGemCo2DCore
                     uiToggleConfirmable.OnConfirmRequested += HandleConfirmRequested;
                 }
 
-                _spawned.Add(toggle);
+                _tabToggles.TryAdd(i, toggle);
             }
 
             // 기본 선택 탭의 시각 상태를 즉시 반영
@@ -131,27 +197,53 @@ namespace GGemCo2DCore
                 t.OnPointerExit(null); // 상태 갱신 트리거 (필요 시)
         }
         /// <summary>
-        /// 탭 버튼을 클리했을때, 변경사항이 있는지 체크하기
+        /// 탭 버튼을 클릭했을때, 변경사항이 있는지 체크하기
         /// </summary>
         /// <param name="target"></param>
         private void HandleConfirmRequested(UIToggleConfirmable target)
         {
             if (listPanelOptionBase.Count <= 0) return;
+            
             foreach (var uiPanelOptionBase in listPanelOptionBase)
             {
-                if (!uiPanelOptionBase.Show(false)) return;
+                if (uiPanelOptionBase.IsDirty)
+                {
+                    PopupMetadata popupMetadata = new PopupMetadata
+                    {
+                        PopupType = PopupManager.Type.Default,
+                        MessageColor = Color.red,
+                        Title = "저장하기", //슬롯 삭제
+                        Message = "변경한 내용을 저장하지 않았습니다.\n저장하시겠습니까?",
+                        OnConfirm = () => {
+                            GcLogger.Log($"GuardCloseOrSwitch popup confirm.");
+                            uiPanelOptionBase.TryApply(); // 되돌리고 진행 (또는 TryApply로 저장 후 진행)
+                            // proceed();
+                            uiPanelOptionBase.MarkDirty(false);
+                        },
+                        ShowCancelButton = true
+                    };
+                    popupManager.ShowPopup(popupMetadata);
+                    return;
+                }
             }
             
             target.SuppressConfirm = true;
             target.isOn = true;          // ToggleGroup 규칙에 따라 이전은 자동 Off
             target.SuppressConfirm = false;
         }
+        /// <summary>
+        /// 탭 버튼 클릭했을때, 패널 보임/안보임 처리
+        /// </summary>
+        /// <param name="tab"></param>
         private void OnClickTapButton(int tab)
         {
-            SetIndexTabButton(tab);
+            ShowPanelByIndex(tab);
         }
-
-        private void SetIndexTabButton(int index)
+        /// <summary>
+        /// 탭 버튼 클릭했을때, 패널 보임/안보임 처리
+        /// </summary>
+        /// <param name="index"></param>
+        private void ShowPanelByIndex(int index)
         {
             if (listPanelOptionBase.Count <= 0) return;
             _currentIndexTabButton = index;
@@ -173,13 +265,36 @@ namespace GGemCo2DCore
                 // 변경한 내역이 있는지 체크한 후 닫기
                 foreach (var uiPanelOptionBase in listPanelOptionBase)
                 {
-                    if (!uiPanelOptionBase.Show(false)) return false;
+                    if (uiPanelOptionBase.IsDirty)
+                    {
+                        PopupMetadata popupMetadata = new PopupMetadata
+                        {
+                            PopupType = PopupManager.Type.Default,
+                            MessageColor = Color.red,
+                            Title = "저장하기", //슬롯 삭제
+                            Message = "변경한 내용을 저장하지 않았습니다.\n저장하시겠습니까?",
+                            OnConfirm = () => {
+                                uiPanelOptionBase.TryApply();
+                                uiPanelOptionBase.MarkDirty(false);
+                                Show(false);
+                            },
+                            OnCancel = () =>
+                            {
+                                uiPanelOptionBase.Revert();
+                                uiPanelOptionBase.MarkDirty(false);
+                                Show(false);
+                            },
+                            ShowCancelButton = true
+                        };
+                        popupManager.ShowPopup(popupMetadata);
+                        return false;
+                    }
                 }
             }
             else
             {
                 // 현재 선택된 탭 열기
-                SetIndexTabButton(_currentIndexTabButton);
+                ShowPanelByIndex(_currentIndexTabButton);
             }
 
             return base.Show(show);

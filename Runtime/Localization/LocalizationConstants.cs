@@ -1,30 +1,40 @@
 ﻿using System.Collections.Generic;
+using UnityEngine.Localization;
+using UnityEngine.Localization.Settings;
 
 namespace GGemCo2DCore
 {
     public static class LocalizationConstants
     {
-        /// <summary>
-        /// 지원 언어 목록 (확장 가능)
-        /// </summary>
-        public enum LanguageIndex
+        private static readonly Dictionary<string, string> LanguageNames = new Dictionary<string, string>()
         {
-            En, // English
-            Ko, // Korean
-            // Ja, // Japanese
-            // Zh, // Chinese
+            { "en", "English" },
+            { "en-US", "English" },
+            { "ko", "한국어" },
+            { "ko-KR", "한국어" }
+        };
+
+        public static string GetName(Locale locale)
+        {
+            if (locale == null) return "Unknown";
+            var code = locale.Identifier.Code;
+
+            // 매핑 테이블 우선
+            if (LanguageNames.TryGetValue(code, out var display))
+                return display;
+
+            // 매핑 없으면 LocaleName 사용
+            return locale.LocaleName;
         }
 
-        /// <summary>
-        /// 기본 언어
-        /// </summary>
-        public static readonly LanguageIndex DefaultLanguageIndex = LanguageIndex.En;
-
-        public static readonly Dictionary<LanguageIndex, string> LanguageNames = new Dictionary<LanguageIndex, string>()
+        public static Locale GetDefaultLocale()
         {
-            { LanguageIndex.En, "English" },
-            { LanguageIndex.Ko, "한국어" },
-        };
+            return LocalizationSettings.ProjectLocale;
+        }
+        public static string GetDefaultCode()
+        {
+            return LocalizationSettings.ProjectLocale.Identifier.Code;
+        }
 
         /// <summary>
         /// Localization Table 이름 정의

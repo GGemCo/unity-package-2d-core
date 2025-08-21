@@ -78,20 +78,20 @@ namespace GGemCo2DCore
         /// <summary>
         /// 언어 선택 
         /// </summary>
-        /// <param name="localeIndex"></param>
-        public static void SaveIndexLocalizationLocale(int localeIndex)
+        /// <param name="code"></param>
+        public static void SaveLocalizationLocaleCode(string code)
         {
-            PlayerPrefsSave(KeyIndex.KeyIndexLocalizationLocale, localeIndex.ToString());
+            PlayerPrefsSave(KeyIndex.KeyIndexLocalizationLocale, code);
         }
-        public static int LoadIndexLocalizationLocale()
+        public static string LoadLocalizationLocaleCode()
         {
-            // 첫 시작 인지 
-            string value = PlayerPrefsLoad(KeyIndex.KeyIndexLocalizationLocale);
-            if (string.IsNullOrEmpty(value))
+            var locale = PlayerPrefsLoad(KeyIndex.KeyIndexLocalizationLocale);
+            if (string.IsNullOrEmpty(locale))
             {
-                return (int)LocalizationConstants.DefaultLanguageIndex;
+                locale = LocalizationConstants.GetDefaultCode();
             }
-            return PlayerPrefsLoadInt(KeyIndex.KeyIndexLocalizationLocale, ((int)LocalizationConstants.DefaultLanguageIndex).ToString());
+
+            return locale;
         }
         /// <summary>
         /// BGM 볼륨  
@@ -103,6 +103,7 @@ namespace GGemCo2DCore
         }
         public static float LoadSoundVolumeBGM()
         {
+            if (!AddressableLoaderSettings.Instance) return 1;
             return PlayerPrefsLoadFloat(KeyIndex.KeySoundVolumeBGM,
                 $"{AddressableLoaderSettings.Instance.optionSettings.volumeBGM}");
         }
@@ -116,6 +117,7 @@ namespace GGemCo2DCore
         }
         public static float LoadSoundVolumeSfx()
         {
+            if (!AddressableLoaderSettings.Instance) return 1;
             return PlayerPrefsLoadFloat(KeyIndex.KeySoundVolumeSfx,
                 $"{AddressableLoaderSettings.Instance.optionSettings.volumeSfx}");
         }
@@ -129,6 +131,7 @@ namespace GGemCo2DCore
         }
         public static float LoadSoundVolumeMaster()
         {
+            if (!AddressableLoaderSettings.Instance) return 1;
             return PlayerPrefsLoadFloat(KeyIndex.KeySoundVolumeMaster,
                 $"{AddressableLoaderSettings.Instance.optionSettings.volumeMaster}");
         }
