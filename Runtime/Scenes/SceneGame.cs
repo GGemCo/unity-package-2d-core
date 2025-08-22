@@ -79,7 +79,7 @@ namespace GGemCo2DCore
             // 테이블이 로드 되지 않았다면, Intro 씬으로 이동 하기.
             if (TableLoaderManager.Instance == null)
             {
-                UnityEngine.SceneManagement.SceneManager.LoadScene(ConfigDefine.SceneNameIntro);
+                UnityEngine.SceneManagement.SceneManager.LoadScene(ConfigDefine.SceneNamePreIntro);
                 return;
             }
             // 게임 신 싱글톤으로 사용하기.

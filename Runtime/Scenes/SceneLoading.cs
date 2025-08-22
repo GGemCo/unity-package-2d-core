@@ -13,7 +13,7 @@ namespace GGemCo2DCore
         {
             if (!AddressableLoaderSettings.Instance)
             {
-                UnityEngine.SceneManagement.SceneManager.LoadScene(ConfigDefine.SceneNameIntro);
+                UnityEngine.SceneManagement.SceneManager.LoadScene(ConfigDefine.SceneNamePreIntro);
                 return;
             }
             _gameLoaderManager = GameLoaderManager.Instance;

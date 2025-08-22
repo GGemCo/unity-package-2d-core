@@ -1,8 +1,10 @@
-﻿using System.Collections;
+﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using TMPro;
 using UnityEngine;
+using Object = UnityEngine.Object;
 
 namespace GGemCo2DCore
 {
@@ -13,6 +15,16 @@ namespace GGemCo2DCore
     /// </summary>
     public class GameLoaderManager : MonoBehaviour
     {
+        public static GameLoaderManager Instance { get; private set; }
+        
+        public sealed class EventArgsBeforeLoadStart : EventArgs
+        {
+            public bool Handled { get; set; } // 외부에서 처리했으면 true
+        }
+
+        public delegate void EventHandlerBeforeLoadStart(GameLoaderManager sender, EventArgsBeforeLoadStart e);
+        public static event EventHandlerBeforeLoadStart BeforeLoadStart;
+        
         private TextMeshProUGUI textLoadingPercent;
         public void SetTextLoadingPercent(TextMeshProUGUI value) => textLoadingPercent = value;
 
@@ -25,8 +37,6 @@ namespace GGemCo2DCore
         private float _progressTotal;
         private bool _isLoadComplete;
         private bool _isStarted;
-
-        public static GameLoaderManager Instance { get; private set; }
 
         private void Awake()
         {
@@ -70,9 +80,21 @@ namespace GGemCo2DCore
         private void StartLoading(IEnumerable<string> allowedIds = null)
         {
             if (_isStarted) return;
+            
+            var e = new EventArgsBeforeLoadStart { Handled = false };
+
+            // 모든 구독자에게 알림
+            BeforeLoadStart?.Invoke(this, e);
+
+            // 아무도 처리하지 않았을때
+            if (!e.Handled)
+            {
+                
+            }
+            
             _isStarted = true;
             _isLoadComplete = false;
-
+            
             // 필터 + 정렬
             var targetSteps = (allowedIds == null)
                 ? _steps.OrderBy(s => s.Order).ToList()

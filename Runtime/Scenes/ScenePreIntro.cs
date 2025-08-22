@@ -5,7 +5,7 @@ using UnityEngine;
 namespace GGemCo2DCore
 {
     /// <summary>
-    /// 인트로 씬
+    /// Pre 인트로 씬
     /// </summary>
     public class ScenePreIntro : MonoBehaviour
     {
@@ -19,6 +19,10 @@ namespace GGemCo2DCore
         private void Awake()
         {
             _gameLoaderManager = GameLoaderManager.Instance;
+            if (_gameLoaderManager == null) 
+            {
+                _gameLoaderManager = new GameObject("GameLoaderManager").AddComponent<GameLoaderManager>();
+            }
             _gameLoaderManager.SetTextLoadingPercent(textLoadingPercent);
         }
         private void Start()
