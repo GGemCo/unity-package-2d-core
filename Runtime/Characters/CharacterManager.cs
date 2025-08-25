@@ -6,19 +6,6 @@ using Object = UnityEngine.Object;
 
 namespace GGemCo2DCore
 {
-    public sealed class EventArgsAnimationAttack : EventArgs
-    {
-        public bool Handled { get; set; } // 외부에서 처리했으면 true
-    }
-
-    public delegate void EventHandlerAnimationCompleteAttack(CharacterBase sender, EventArgsAnimationAttack e);
-    public sealed class EventArgsAnimationAttackEnd : EventArgs
-    {
-        public bool Handled { get; set; } // 외부에서 처리했으면 true
-    }
-
-    public delegate void EventHandlerAnimationCompleteAttackEnd(CharacterBase sender, EventArgsAnimationAttackEnd e);
-    
     /// <summary>
     /// 캐릭터 관리 매니저
     /// </summary>

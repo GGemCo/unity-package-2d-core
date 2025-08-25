@@ -22,17 +22,32 @@ namespace GGemCo2DCore
     public class DamageTextManager : MonoBehaviour
     {
         private Transform canvasTransform;
-        [SerializeField] private int poolSize = 20;
-        [SerializeField] private float moveUpTime = 0.3f;
-        [SerializeField] private float fadeOutTime = 0.1f;
-        [SerializeField] private float moveUpDistance = 50.0f; // 추가된 이동 거리 설정
-        [SerializeField] private float randomXRange = 10.0f; // X 좌표 랜덤 범위 추가
-
+        private const int PoolSize = 20;
+        private Easing.EaseType easeType;
+        private float moveUpTime = 0.3f;
+        private float moveUpDistance = 50.0f; // 추가된 이동 거리 설정
+        private float fadeOutTime = 0.1f;
+        private float randomXRange = 10.0f; // X 좌표 랜덤 범위 추가
+        private GGemCoSettings _settings;
+        
         private readonly Queue<TextMeshProUGUI> textPool = new Queue<TextMeshProUGUI>();
         private void Awake()
         {
             CreateTextDamageCanvas();
             InitializePool();
+            InitializeInfos();
+            _settings = AddressableLoaderSettings.Instance.settings;
+        }
+
+        private void InitializeInfos()
+        {
+            if (!AddressableLoaderSettings.Instance) return;
+            var settings = AddressableLoaderSettings.Instance.settings;
+            easeType = settings.damageTextEasingType;
+            moveUpTime = settings.damageTextMoveUpTime;
+            moveUpDistance = settings.damageTextMoveUpDistance;
+            fadeOutTime = settings.damageTextFadeOutTime;
+            randomXRange = settings.damageTextRandomXRange;
         }
         /// <summary>
         /// 데미지 텍스트가 들어갈 canvas 만들기
@@ -57,10 +72,9 @@ namespace GGemCo2DCore
         {
             if (AddressableLoaderSettings.Instance == null) return;
             textPool.Clear();
-            if (poolSize <= 0) return;
             GameObject textFloatingDamage = ConfigResources.TextDamage.Load();
             if (textFloatingDamage == null) return;
-            for (int i = 0; i < poolSize; i++)
+            for (int i = 0; i < PoolSize; i++)
             {
                 GameObject gameObjectText = Instantiate(textFloatingDamage, canvasTransform);
                 TextMeshProUGUI text = gameObjectText.GetComponent<TextMeshProUGUI>();
@@ -84,7 +98,7 @@ namespace GGemCo2DCore
                 text.text = metadataDamageText.SpecialDamageText;
             }
             text.color = metadataDamageText.Color;
-            text.fontSize = 24;
+            text.fontSize = _settings.damageTextFontSize > 0 ? _settings.damageTextFontSize : 24f;
             if (metadataDamageText.FontSize > 0)
             {
                 text.fontSize = metadataDamageText.FontSize;
@@ -116,7 +130,10 @@ namespace GGemCo2DCore
             // Move Up
             while (elapsedTime < moveUpTime)
             {
-                text.transform.position = Vector3.Lerp(startPos, endPos, elapsedTime / moveUpTime);
+                float t = Mathf.Clamp01(elapsedTime / moveUpTime);
+                float easedT = Easing.Apply(t, easeType);
+                
+                text.transform.position = Vector3.Lerp(startPos, endPos, easedT);
                 elapsedTime += Time.deltaTime;
                 yield return null;
             }

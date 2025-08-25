@@ -11,15 +11,30 @@ namespace GGemCo2DCore
     {
         private Coroutine coroutineAttack;
         private const float DelayTimeAttack = 0f;
+        private Monster _monster;
+        private Collider2D[] _collider2Ds;
 
+        protected override void Awake()
+        {
+            base.Awake();
+            _monster = TargetCharacter as Monster;
+        }
+
+        public void Initialize(Collider2D[] collider2Ds)
+        {
+            _collider2Ds = collider2Ds;
+        }
         /// <summary>
         /// 입력 처리 - 공격자 방향 계산
         /// </summary>
         private void HandleInput()
         {
-            if (!TargetCharacter.IsAggro() || TargetCharacter.attackerTransform == null || TargetCharacter.IsStatusDead()) return;
-            TargetCharacter.directionNormalize = (TargetCharacter.attackerTransform.position - TargetCharacter.transform.position).normalized;
+            if (!TargetCharacter.IsAggro() || TargetCharacter.attackerTransform == null ||
+                TargetCharacter.IsStatusDead()) return;
+            var raw = (TargetCharacter.attackerTransform.position - TargetCharacter.transform.position);
+            TargetCharacter.directionNormalize = GetFilteredDirection(raw);
         }
+
         private void Update()
         {
             if (!CheckPossibleControl()) return;
@@ -51,12 +66,61 @@ namespace GGemCo2DCore
             StopAttackCoroutine();
             return true;
         }
+        // 축 플래그에 따라 방향을 정제
+        private Vector2 GetFilteredDirection(Vector2 dir)
+        {
+            if (!_monster.canMoveX) dir.x = 0f;
+            if (!_monster.canMoveY) dir.y = 0f;
+            return dir.sqrMagnitude > 0f ? dir.normalized : Vector2.zero;
+        }
         /// <summary>
         /// run 
         /// </summary>
         public override bool Run()
         {
-            if (!base.Run()) return false;
+            if (TargetCharacter.IsStatusDontMove()) return false;
+            if (TargetCharacter.IsStatusAttack()) return false;
+            if (TargetCharacter.IsStatusDead()) return false;
+            
+            // 1) 방향 (이미 HandleInput에서 정제되지만, 안전하게 한 번 더 보정)
+            var dir = GetFilteredDirection(TargetCharacter.directionNormalize);
+            
+            // 2) 정지 처리: 이동 축이 모두 막혔거나 입력이 0이면 대기
+            if (dir == Vector2.zero)
+            {
+                return Wait();
+            }
+            // 3) 바라보는 방향(플랫포머: X 기준)
+            if (Mathf.Abs(dir.x) > 0.0001f)
+            {
+                var facing = dir.x >= 0f ? CharacterConstants.FacingDirection8.Right
+                    : CharacterConstants.FacingDirection8.Left;
+                TargetCharacter.SetFacing(facing);
+            }
+            
+            ICharacterAnimationController?.PlayRunAnimation();
+            
+            // 4) 경계 업데이트
+            UpdateCheckMaxBounds();
+            
+            // 5) 이동 벡터 계산
+            float speed = TargetCharacter.currentMoveStep * TargetCharacter.GetCurrentMoveSpeed();
+            Vector3 delta = (Vector3)(dir * (speed * Time.deltaTime));
+            
+            // 6) 다음 위치
+            Vector3 cur  = TargetCharacter.transform.position;
+            Vector3 next = cur + delta;
+
+            // 7) 경계 클램프
+            next.x = Mathf.Clamp(next.x, minBounds.x, maxBounds.x);
+            next.y = Mathf.Clamp(next.y, minBounds.y, maxBounds.y);
+            
+            // 8) Y 이동 금지 옵션일 때, 위치의 Y는 고정(중력 없이 이동하는 현재 구조에 적합)
+            if (!_monster.canMoveY) next.y = cur.y;
+
+            // 9) 실제 반영
+            TargetCharacter.transform.position = next;
+            
             StopAttackCoroutine();
             return true;
         }
@@ -68,10 +132,20 @@ namespace GGemCo2DCore
             if (TargetCharacter.attackerTransform == null) return false;
             if (TargetCharacter.IsStatusAttack() || TargetCharacter.IsStatusDead()) return false;
             Vector2 size = new Vector2(CapsuleColliderSize.x * Mathf.Abs(transform.localScale.x), CapsuleColliderSize.y * transform.localScale.y);
-            Collider2D[] collider2Ds = Physics2D.OverlapCapsuleAll(transform.position, size, CapsuleDirection2D, 0f);
-
-            foreach (var hit in collider2Ds)
+            // 캡슐 콜라이더 2D와 충돌 중인 모든 콜라이더를 검색
+            Vector2 point = (Vector2)transform.position + CapsuleColliderOffset * transform.localScale;
+            
+#if UNITY_6000_0_OR_NEWER
+            int hitCount = Physics2D.OverlapCapsule(point, size, CapsuleDirection2D, 0f,
+                new ContactFilter2D().NoFilter(), _collider2Ds);
+            for (int i = 0; i < hitCount; i++)
             {
+                Collider2D hit = _collider2Ds[i];
+#else
+            Physics2D.OverlapCapsuleNonAlloc(point, size, colliderCheckCharacter.direction, 0f, _collider2Ds);
+            foreach (var hit in _collider2Ds)
+            {
+#endif
                 if (hit.CompareTag(TargetCharacter.attackerTransform.tag) && hit.GetComponent<Player>() != null && hit.GetComponent<Player>().IsStatusDead() == false)
                 {
                     return true;
@@ -165,9 +239,9 @@ namespace GGemCo2DCore
                 StopAttackCoroutine();
             }
         }
-        protected void OnSpineEventShake(Event @event) 
+
+        protected void OnSpineEventShake(Event @event)
         {
-        
         }
     }
 }

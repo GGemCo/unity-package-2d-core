@@ -240,5 +240,20 @@ namespace GGemCo2DCore
             BaseMoveSpeed = value;
             RecalculateStats();
         }
+
+        public void AddStatus(string statusId, ConfigCommon.SuffixType suffixType, float value)
+        {
+            List<ConfigCommon.StruckStatus> modifiers = new List<ConfigCommon.StruckStatus>
+                { new(statusId, suffixType, value) };
+            ApplyStatModifiers(modifiers);
+            RecalculateStats();
+        }
+        public void RemoveStatus(string statusId, ConfigCommon.SuffixType suffixType, float value)
+        {
+            List<ConfigCommon.StruckStatus> modifiers = new List<ConfigCommon.StruckStatus>
+                { new(statusId, suffixType, value) };
+            RemoveStatModifiers(modifiers);
+            RecalculateStats();
+        }
     }
 }

@@ -119,7 +119,7 @@ namespace GGemCo2DCoreEditor
                 if (!child.CompareTag(ConfigTags.GetValue(ConfigTags.Keys.Monster))) continue;
                 var monster = child.gameObject.GetComponent<Monster>();
                 if (!monster) continue;
-                saveMonsterList.CharacterRegenDatas.Add(new CharacterRegenData(monster.uid, child.position, monster.isFlip, mapUid, true));
+                saveMonsterList.CharacterRegenDatas.Add(new CharacterRegenData(monster.uid, child.position, monster.isFlip, mapUid, true, 0, 0, monster.canMoveX, monster.canMoveY));
                 
                 // map 라벨 붙여주기 
                 // AddressableSettings 가져오기
@@ -196,7 +196,10 @@ namespace GGemCo2DCoreEditor
                     myMonsterScript.uid = monsterData.Uid;
                     myMonsterScript.CharacterRegenData = monsterData;
                     // SetScale 다음에 처리해야 함
+                    myMonsterScript.defaultFacingDirection8 = infoAnimation.DefaultFacingDirection8;
                     myMonsterScript.SetFlip(monsterData.IsFlip);
+                    myMonsterScript.canMoveX = monsterData.CanMoveX;
+                    myMonsterScript.canMoveY = monsterData.CanMoveY;
                     myMonsterScript.InitTagSortingLayer();
                 }
                 // npc 정보 보여줄 canvas 추가

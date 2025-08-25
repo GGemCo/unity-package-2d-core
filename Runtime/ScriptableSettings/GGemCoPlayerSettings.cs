@@ -28,6 +28,7 @@ namespace GGemCo2DCore
         [Header("HitArea Offset")] public Vector2 rangeHitAreaOffset;
         [Header("HitArea Size")] public Vector2 rangeHitAreaSize;
         [Header("디폴트 캐릭터 크기")] public Vector2 size;
+        [Header("디폴트 중력")] public float gravityScale;
         [Header("Jump 최고 높이")] public float jumpHeight;
         [Header("Jump 속도. 지면→정점까지 걸리는 시간(초)")] public float jumpSpeed;
         
@@ -49,6 +50,7 @@ namespace GGemCo2DCore
             statRegistFire = 0;
             statRegistCold = 0;
             statRegistLightning = 0;
+            gravityScale = 0;
             jumpHeight = 10;
             jumpSpeed = 1;
         }

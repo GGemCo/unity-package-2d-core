@@ -23,6 +23,7 @@ namespace GGemCo2DCore
         private const int CountCollider = 10;
         private Collider2D[] _collider2Ds;
         private LocalizationManager _localizationManager;
+        private GGemCoPlayerSettings _playerSettings;
             
         [Serializable]
         private struct StatUIBinding
@@ -36,8 +37,9 @@ namespace GGemCo2DCore
         {
             // 먼저 선언한다.
             IsUseSkill = true;
-            base.Awake();
+            _playerSettings = AddressableLoaderSettings.Instance.playerSettings;
             _collider2Ds = new Collider2D[CountCollider];
+            base.Awake();
         }
         protected override void Start()
         {
@@ -91,6 +93,10 @@ namespace GGemCo2DCore
             
             _equipController = gameObject.AddComponent<EquipController>();
             characterRigidbody2D = ComponentController.AddRigidbody2D(gameObject);
+            if (_playerSettings.gravityScale > 0)
+            {
+                characterRigidbody2D.gravityScale = _playerSettings.gravityScale;
+            }
             
             GameObject attackRange = new GameObject("AttackRange");
             CharacterAttackRange characterAttackRange = attackRange.AddComponent<CharacterAttackRange>();
@@ -101,9 +107,9 @@ namespace GGemCo2DCore
             // exclude layer : 타일맵 wall
             Vector2 offset = Vector2.zero;
             Vector2 size = new Vector2(500, 250);
-            if (AddressableLoaderSettings.Instance.playerSettings.rangeAttack != Vector2.zero)
+            if (_playerSettings.rangeAttack != Vector2.zero)
             {
-                size = AddressableLoaderSettings.Instance.playerSettings.rangeAttack;
+                size = _playerSettings.rangeAttack;
             }
             colliderCheckCharacter = ComponentController.AddCapsuleCollider2D(attackRange, true, offset, size);
             
@@ -112,14 +118,14 @@ namespace GGemCo2DCore
             CharacterHitArea characterHitArea = hitArea.AddComponent<CharacterHitArea>();
             characterHitArea.Initialize(this);
             offset = Vector2.zero;
-            if (AddressableLoaderSettings.Instance.playerSettings.rangeHitAreaOffset != Vector2.zero)
+            if (_playerSettings.rangeHitAreaOffset != Vector2.zero)
             {
-                offset = AddressableLoaderSettings.Instance.playerSettings.rangeHitAreaOffset;
+                offset = _playerSettings.rangeHitAreaOffset;
             }
             size = new Vector2(250, 500);
-            if (AddressableLoaderSettings.Instance.playerSettings.rangeHitAreaSize != Vector2.zero)
+            if (_playerSettings.rangeHitAreaSize != Vector2.zero)
             {
-                size = AddressableLoaderSettings.Instance.playerSettings.rangeHitAreaSize;
+                size = _playerSettings.rangeHitAreaSize;
             }
             colliderCheckHitArea = ComponentController.AddCapsuleCollider2D(hitArea, true, offset, size, 0, 0, CapsuleDirection2D.Vertical);
             
@@ -128,13 +134,13 @@ namespace GGemCo2DCore
             // exclude layer : 타일맵 wall 제외하고 모두 포함
             offset = Vector2.zero;
             size = new Vector2(264,132);
-            if (AddressableLoaderSettings.Instance.playerSettings.rangeCollider != Vector2.zero)
+            if (_playerSettings.rangeCollider != Vector2.zero)
             {
-                size = AddressableLoaderSettings.Instance.playerSettings.rangeCollider;
+                size = _playerSettings.rangeCollider;
             }
-            if (AddressableLoaderSettings.Instance.playerSettings.rangeColliderOffset != Vector2.zero)
+            if (_playerSettings.rangeColliderOffset != Vector2.zero)
             {
-                offset = AddressableLoaderSettings.Instance.playerSettings.rangeColliderOffset;
+                offset = _playerSettings.rangeColliderOffset;
             }
             
             ComponentController.AddCapsuleCollider2D(gameObject, false, offset, size,
@@ -155,17 +161,16 @@ namespace GGemCo2DCore
         protected override void InitializeByTable()
         {
             if (AddressableLoaderSettings.Instance == null) return;
-            GGemCoPlayerSettings playerSettings = AddressableLoaderSettings.Instance.playerSettings;
-            SetBaseInfos(playerSettings.statAtk, playerSettings.statDef, playerSettings.statHp, playerSettings.statMp,
-                playerSettings.statMoveSpeed, playerSettings.statAttackSpeed, playerSettings.statRegistFire,
-                playerSettings.statRegistCold, playerSettings.statRegistLightning);
+            SetBaseInfos(_playerSettings.statAtk, _playerSettings.statDef, _playerSettings.statHp, _playerSettings.statMp,
+                _playerSettings.statMoveSpeed, _playerSettings.statAttackSpeed, _playerSettings.statRegistFire,
+                _playerSettings.statRegistCold, _playerSettings.statRegistLightning);
             CurrentHp.OnNext(TotalHp.Value);
             CurrentMp.OnNext(TotalMp.Value);
-            currentMoveStep = playerSettings.statMoveStep;
+            currentMoveStep = _playerSettings.statMoveStep;
             originalScaleX = transform.localScale.x;
-            SetScale(playerSettings.startScale);
-            SetWidth(playerSettings.size.x);
-            SetHeight(playerSettings.size.y);
+            SetScale(_playerSettings.startScale);
+            SetWidth(_playerSettings.size.x);
+            SetHeight(_playerSettings.size.y);
         }
 
         /// <summary>
@@ -233,7 +238,7 @@ namespace GGemCo2DCore
         {
             if (IsStatusDead()) return;
             // GcLogger.Log(@event);
-            long totalDamage = _sceneGame.calculateManager.GetPlayerTotalAtk();
+            long totalDamage = TotalAtk.Value;
         
             // 캡슐 콜라이더 2D와 충돌 중인 모든 콜라이더를 검색
             Vector2 size = new Vector2(colliderCheckCharacter.size.x * Mathf.Abs(transform.localScale.x), colliderCheckCharacter.size.y * transform.localScale.y);
@@ -412,14 +417,6 @@ namespace GGemCo2DCore
             if (_uiWindowPlayerBuffInfo == null) return;
             _uiWindowPlayerBuffInfo.AddAffectIcon(affectUid);
         }
-        /// <summary>
-        /// localScale 이 적용된 캐릭터 크기 가져오기
-        /// </summary>
-        /// <returns></returns>
-        public override float GetHeightByScale()
-        {
-            return GetHeight() * Math.Abs(transform.localScale.x);
-        }
 
         public void SetMapSize(Vector2 mapSize)
         {
@@ -432,6 +429,5 @@ namespace GGemCo2DCore
         {
             Stop();
         }
-
     }
 }

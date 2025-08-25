@@ -12,8 +12,10 @@ namespace GGemCo2DCore
         public bool DefaultVisible;
         public int MoveStep;
         public int MoveSpeed;
+        public bool CanMoveX;
+        public bool CanMoveY;
 
-        public CharacterRegenData(int uid, Vector3 position, bool flip, int mapUid, bool defaultVisible, int moveStep = 0, int moveSpeed = 0)
+        public CharacterRegenData(int uid, Vector3 position, bool flip, int mapUid, bool defaultVisible, int moveStep = 0, int moveSpeed = 0, bool canMoveX = true, bool canMoveY = true)
         {
             Uid = uid;
             MapUid = mapUid;
@@ -24,6 +26,8 @@ namespace GGemCo2DCore
             DefaultVisible = defaultVisible;
             MoveStep = moveStep;
             MoveSpeed = moveSpeed;
+            CanMoveX = canMoveX;
+            CanMoveY = canMoveY;
         }
     }
     

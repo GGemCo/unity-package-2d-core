@@ -7,10 +7,11 @@ namespace GGemCo2DCore
     {
         protected CharacterBase TargetCharacter;
         protected ICharacterAnimationController ICharacterAnimationController;
+        protected Vector2 CapsuleColliderOffset;
         protected Vector2 CapsuleColliderSize;
         protected CapsuleDirection2D CapsuleDirection2D;
-        private Vector2 minBounds; // 타일맵의 최소/최대 경계
-        private Vector2 maxBounds; // 타일맵의 최소/최대 경계
+        protected Vector2 minBounds; // 타일맵의 최소/최대 경계
+        protected Vector2 maxBounds; // 타일맵의 최소/최대 경계
         private Vector2 mapSize;
         private MapManager _mapManager;
 
@@ -30,12 +31,13 @@ namespace GGemCo2DCore
             CapsuleColliderSize = Vector2.zero;
             if (TargetCharacter != null && TargetCharacter.colliderCheckCharacter != null)
             {
+                CapsuleColliderOffset = TargetCharacter.colliderCheckCharacter.offset;
                 CapsuleColliderSize = TargetCharacter.colliderCheckCharacter.size;
                 CapsuleDirection2D = TargetCharacter.colliderCheckCharacter.direction;
             }
         }
 
-        private void UpdateCheckMaxBounds()
+        protected void UpdateCheckMaxBounds()
         {
             if (ICharacterAnimationController == null)
             {

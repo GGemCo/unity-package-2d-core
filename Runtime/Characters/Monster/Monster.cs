@@ -15,6 +15,10 @@ namespace GGemCo2DCore
         private CharacterConstants.AttackType _attackType;
         public delegate void DelegateMonsterDead(int monsterVid, int monsterUid, GameObject monsterObject);
         public event DelegateMonsterDead OnMonsterDead;
+        [Tooltip("X좌표 움직임 여부")]
+        public bool canMoveX = true;
+        [Tooltip("Y좌표 움직임 여부")]
+        public bool canMoveY = true;
         
         // 몬스터 행동 처리
         private ControllerMonster _controllerMonster;
@@ -33,8 +37,8 @@ namespace GGemCo2DCore
         {
             // 먼저 선언한다.
             IsUseSkill = true;
-            base.Awake();
             _collider2Ds = new Collider2D[CountCollider];
+            base.Awake();
             _attackType = CharacterConstants.AttackType.PassiveDefense;
             
             OnMonsterDead += SceneGame.Instance.ItemManager.OnMonsterDead;
@@ -66,14 +70,15 @@ namespace GGemCo2DCore
         {
             // AddComponent 순서 중요
             base.InitComponents();
-            
+
+            Vector2 offset = Vector2.zero;
+            Vector2 size = new Vector2(0,0);
+
             // attack range
             GameObject attackRange = new GameObject("AttackRange");
             CharacterAttackRange characterAttackRange = attackRange.AddComponent<CharacterAttackRange>();
             characterAttackRange.Initialize(this);
             
-            Vector2 offset = Vector2.zero;
-            Vector2 size = new Vector2(0,0);
             colliderCheckCharacter = ComponentController.AddCapsuleCollider2D(attackRange, true, offset, size);
 
             // hit area
@@ -85,6 +90,7 @@ namespace GGemCo2DCore
             
             // 순서 중요. ControllerMonster 에서 콜라이더를 사용
             _controllerMonster = gameObject.AddComponent<ControllerMonster>();
+            _controllerMonster.Initialize(_collider2Ds);
         }
         /// <summary>
         /// regen_data 의 정보 셋팅
@@ -96,6 +102,8 @@ namespace GGemCo2DCore
             // UpdateDirection() 에서 초기 방향 처리를 위해 추가
             directionNormalize = new Vector3(CharacterRegenData.IsFlip?1:-1, 0, 0);
             SetFlip(CharacterRegenData.IsFlip);
+            canMoveX = CharacterRegenData.CanMoveX;
+            canMoveY = CharacterRegenData.CanMoveY;
         }
         /// <summary>
         /// 테이블에서 가져온 몬스터 정보 셋팅
@@ -116,6 +124,30 @@ namespace GGemCo2DCore
             CurrentHp.OnNext(info.StatHp);
             SetScale(info.Scale);
             _attackType = info.AttackType;
+        }
+
+        protected override bool InitializeByAnimationTable()
+        {
+            if (!base.InitializeByAnimationTable()) return false;
+            
+            int animationUid = 0;
+            if (type == CharacterConstants.Type.Npc)
+            {
+                var info = TableLoaderManager.Instance.GetNpcData(uid);
+                if (info == null) return false;
+                animationUid = info.AnimationUid;
+            }
+            else if (type == CharacterConstants.Type.Monster)
+            {
+                var info = TableLoaderManager.Instance.GetMonsterData(uid);
+                if (info == null) return false;
+                animationUid = info.AnimationUid;
+            }
+            if (animationUid <= 0) return false;
+            StruckTableAnimation struckTableAnimation = TableLoaderManager.Instance.GetAnimationData(animationUid);
+            if (struckTableAnimation is not { Uid: > 0 }) return false;
+            
+            return true;
         }
         public void CreateHpBar()
         {
@@ -177,7 +209,7 @@ namespace GGemCo2DCore
         {
             if (IsStatusDead()) return;
             // GcLogger.Log(@event);
-            long totalDamage = SceneGame.Instance.calculateManager.GetMonsterTotalAtk(uid);
+            long totalDamage = TotalAtk.Value;
         
             // 캡슐 콜라이더 2D와 충돌 중인 모든 콜라이더를 검색
             Vector2 size = new Vector2(colliderCheckCharacter.size.x * Mathf.Abs(transform.localScale.x), colliderCheckCharacter.size.y * transform.localScale.y);

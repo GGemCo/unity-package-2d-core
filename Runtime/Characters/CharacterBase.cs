@@ -13,33 +13,35 @@ namespace GGemCo2DCore
     {
         [Header("캐릭터 정보")]
         // 캐릭터 타입
-        public CharacterConstants.Type type;
+        [HideInInspector] public CharacterConstants.Type type;
         // 캐릭터 테이블 Uid
-        public int uid;
+        [HideInInspector] public int uid;
         // 스폰될때 부여되는 가상번호 vid
-        public int vid;
+        [HideInInspector] public int vid;
         // 현재 이동 스텝
-        public float currentMoveStep;
+        [HideInInspector] public float currentMoveStep;
         // 어그로
         private CharacterConstants.AttackType attackType;
         private bool isAggro;
-        public string characterName;
+        [HideInInspector] public string characterName;
         
         [Header("캐릭터 방향 관련")]
         // 원본 방향
-        public CharacterConstants.FacingDirection8 defaultFacingDirection8 = CharacterConstants.FacingDirection8.Left;
+        [HideInInspector] public CharacterConstants.FacingDirection8 defaultFacingDirection8 = CharacterConstants.FacingDirection8.Left;
         // 현재 방향
         private CharacterConstants.FacingDirection8 currentFacing = CharacterConstants.FacingDirection8.Right;
         public CharacterConstants.FacingDirection8 CurrentFacing => currentFacing;
         // 좌우 flip 여부. 맵에 배치할 때, 연출 캐릭터 배치할 때 사용
         // 방향은 CurrentFacing 으로 판단한다. 
+        [Header("리젠 정보 설정")]
+        [Tooltip("좌우 플립 여부")]
         public bool isFlip;
         // 방향
-        public Vector3 directionNormalize;
+        [HideInInspector] public Vector3 directionNormalize;
         // 좌우 flip 가능 여부
         private bool isPossibleFlip = true;
         // 초기 scale x 값
-        public float originalScaleX;
+        [HideInInspector] public float originalScaleX;
         
         [Header("애니메이션 및 렌더링 관련")]
         // 애니메이션 컨트롤러
@@ -67,19 +69,20 @@ namespace GGemCo2DCore
         private float characterHeight;
         private float characterWidth;
         // 공격한 GameObject 의 Transform
-        public Transform attackerTransform;
+        [HideInInspector] public Transform attackerTransform;
         // 캐릭터 간의 충돌 체크용
-        public CapsuleCollider2D colliderCheckCharacter;
+        [HideInInspector] public CapsuleCollider2D colliderCheckCharacter;
         // 캐릭터 hit area 체크용
-        public CapsuleCollider2D colliderCheckHitArea;
+        [HideInInspector] public CapsuleCollider2D colliderCheckHitArea;
         // 맵 height 값, sorting order 계산에 사용
         private float mapSizeHeight;
-        public Rigidbody2D characterRigidbody2D;
+        [HideInInspector] public Rigidbody2D characterRigidbody2D;
         
         // 공격 애니메이션 종료 후 
         public event EventHandlerAnimationCompleteAttack AnimationCompleteAttack;
         // 공격 end 애니메이션 종료 후 
         public event EventHandlerAnimationCompleteAttackEnd AnimationCompleteAttackEnd;
+        public event EventHandlerOnStop OnStop;
         
         protected override void Awake()
         {
@@ -89,7 +92,6 @@ namespace GGemCo2DCore
             AffectController = new AffectController(this);
             SetAttackType(CharacterConstants.AttackType.None);
             SetAggro(false);
-            SetStatusIdle();
             // 태그 먼저 처리
             InitTagSortingLayer();
             InitComponents();
@@ -152,25 +154,25 @@ namespace GGemCo2DCore
         /// <summary>
         /// animation 테이블 정보 셋팅
         /// </summary>
-        private void InitializeByAnimationTable()
+        protected virtual bool InitializeByAnimationTable()
         {
-            if (uid <= 0) return;
+            if (uid <= 0) return false;
             int animationUid = 0;
             if (type == CharacterConstants.Type.Npc)
             {
                 var info = TableLoaderManager.Instance.GetNpcData(uid);
-                if (info == null) return;
+                if (info == null) return false;
                 animationUid = info.AnimationUid;
             }
             else if (type == CharacterConstants.Type.Monster)
             {
                 var info = TableLoaderManager.Instance.GetMonsterData(uid);
-                if (info == null) return;
+                if (info == null) return false;
                 animationUid = info.AnimationUid;
             }
-            if (animationUid <= 0) return;
+            if (animationUid <= 0) return false;
             StruckTableAnimation struckTableAnimation = TableLoaderManager.Instance.GetAnimationData(animationUid);
-            if (struckTableAnimation is not { Uid: > 0 }) return;
+            if (struckTableAnimation is not { Uid: > 0 }) return false;
             currentMoveStep = struckTableAnimation.MoveStep;
             if (colliderCheckCharacter != null)
             {
@@ -184,6 +186,7 @@ namespace GGemCo2DCore
 
             SetHeight(struckTableAnimation.Height);
             defaultFacingDirection8 = struckTableAnimation.DefaultFacingDirection8;
+            return true;
         }
         /// <summary>
         /// 캐릭터가 flip 되었는지 체크
@@ -210,6 +213,7 @@ namespace GGemCo2DCore
         public void SetFlip(bool value)
         {
             if (IsPossibleFlip() != true) return;
+            isFlip = value;
             switch (defaultFacingDirection8)
             {
                 case CharacterConstants.FacingDirection8.Left:
@@ -399,9 +403,9 @@ namespace GGemCo2DCore
         /// localScale 이 적용된 캐릭터 크기 가져오기
         /// </summary>
         /// <returns></returns>
-        public virtual float GetHeightByScale()
+        public float GetHeightByScale()
         {
-            return characterHeight * Math.Abs(transform.localScale.x);
+            return GetHeight() * Math.Abs(transform.localScale.x);
         }
         public float GetWidth()
         {
@@ -626,9 +630,20 @@ namespace GGemCo2DCore
         public void Stop()
         {
             if (IsStatusDead()) return;
-            
+            if (IsStatusIdle()) return;
             SetStatusIdle();
             CharacterAnimationController?.PlayWaitAnimation();
+            
+            var e = new EventArgsOnStop { Handled = false };
+
+            // 모든 구독자에게 알림
+            OnStop?.Invoke(this, e);
+
+            // 아무도 처리하지 않았으면 레거시 실행
+            if (!e.Handled)
+            {
+                
+            }
         }
         public float GetRandomPositionYInHitArea()
         {

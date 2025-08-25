@@ -19,6 +19,8 @@ namespace GGemCo2DCore
         public int AttackRange;
         public Vector2 HitAreaSize;
         public CharacterConstants.FacingDirection8 DefaultFacingDirection8;
+        public Vector2 ColliderOffset;
+        public Vector2 ColliderSize;
     }
     /// <summary>
     /// 애니메이션 테이블
@@ -54,12 +56,14 @@ namespace GGemCo2DCore
                 Type = ConvertType(data["Type"]),
                 Controller = ConvertAnimationController(data["Controller"]),
                 PrefabName = data["PrefabName"],
-                MoveStep = float.Parse(data["MoveStep"]),
-                AttackRange = int.Parse(data["AttackRange"]),
+                DefaultFacingDirection8 = ConvertFacing(data["DefaultFacing"]),
                 Width = float.Parse(data["Width"]),
                 Height = float.Parse(data["Height"]),
+                MoveStep = float.Parse(data["MoveStep"]),
+                AttackRange = int.Parse(data["AttackRange"]),
                 HitAreaSize = ConvertVector2(data["HitAreaSize"]),
-                DefaultFacingDirection8 = ConvertFacing(data["DefaultFacing"]),
+                ColliderOffset = ConvertVector2(data["ColliderOffset"]),
+                ColliderSize = ConvertVector2(data["ColliderSize"]),
             };
         }
     }
