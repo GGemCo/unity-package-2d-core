@@ -437,6 +437,23 @@ namespace GGemCo2DCore
             if (!SkeletonAnimation) return;
             SetColor(ColorHelper.HexToColor(colorHex));
         }
+        
+        public Dictionary<string, float> GetAnimationAllLength()
+        {
+            Dictionary<string, float> animationDurations = new();
+
+            if (skeletonData == null) return animationDurations;
+
+            foreach (var ani in skeletonData.Animations)
+            {
+                if (!animationDurations.ContainsKey(ani.Name))
+                {
+                    animationDurations.Add(ani.Name, Mathf.Max(0f, ani.Duration));
+                }
+            }
+
+            return animationDurations;
+        }
     }
 }
 #endif

@@ -128,8 +128,7 @@ namespace GGemCo2DCore
         protected float GetAnimationDuration(string animationName, bool isMilliseconds = true)
         {
             // Animator에서 직접 길이를 구하는 방법은 제한적임. AnimationClip 참조 필요
-            AnimationClip[] clips = Animator.runtimeAnimatorController.animationClips;
-            foreach (var clip in clips)
+            foreach (var clip in animationClips)
             {
                 if (clip.name == animationName)
                 {
@@ -326,6 +325,19 @@ namespace GGemCo2DCore
             else{
                 PlayAnimation(animationName, false, aniDurationTime/duration);
             }
+        }
+
+        public Dictionary<string, float> GetAnimationAllLength()
+        {
+            Dictionary<string, float> clipLength = new Dictionary<string, float>();
+            if (!Animator || !Animator.runtimeAnimatorController) return clipLength;
+            foreach (var clip in animationClips)
+            {
+                if (!clipLength.ContainsKey(clip.name))
+                    clipLength.Add(clip.name, Mathf.Max(0f, clip.length));
+            }
+
+            return clipLength;
         }
     }
 }

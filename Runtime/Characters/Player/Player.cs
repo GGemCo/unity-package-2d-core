@@ -143,7 +143,7 @@ namespace GGemCo2DCore
                 offset = _playerSettings.rangeColliderOffset;
             }
             
-            ComponentController.AddCapsuleCollider2D(gameObject, false, offset, size,
+            colliderCheckMapObject = ComponentController.AddCapsuleCollider2D(gameObject, false, offset, size,
                 LayerMask.GetMask(
                     ConfigLayer.GetValue(ConfigLayer.Keys.TileMapWall),
                     ConfigLayer.GetValue(ConfigLayer.Keys.TileMapGround)

@@ -228,9 +228,9 @@ namespace GGemCo2DCore
             SetColor(color);
         }
 
-        public AnimationClip GetCurrentClip(string animName)
+        private AnimationClip GetCurrentClip(string animName)
         {
-            return Animator.GetCurrentAnimatorClipInfo(0)[0].clip;
+            return Animator.GetCurrentAnimatorClipInfo(0).Length <= 0 ? null : Animator.GetCurrentAnimatorClipInfo(0)[0].clip;
         }
 
         public AnimatorStateInfo GetCurrentAnimatorStateInfo(int layerIndex)
@@ -241,6 +241,10 @@ namespace GGemCo2DCore
         public float GetCharacterAnimationDuration(string animationName, bool isMilliseconds = true)
         {
             return GetAnimationDuration(animationName, isMilliseconds);
+        }
+        public bool HasAnimation(string animationName)
+        {
+            return GetClipByName(animationName) != null;
         }
     }
 }

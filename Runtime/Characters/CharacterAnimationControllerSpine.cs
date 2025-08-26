@@ -233,6 +233,12 @@ namespace GGemCo2DCore
         {
             return GetAnimationDuration(animationName, isMilliseconds);
         }
+
+        public bool HasAnimation(string animationName)
+        {
+            return FindAnimation(animationName) != null;
+        }
+
     }
 }
 #endif

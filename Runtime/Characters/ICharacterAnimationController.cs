@@ -64,5 +64,7 @@ namespace GGemCo2DCore
         void SetCharacterColor(Color red);
         void UpdateTimeScaleMove(float value);
         float GetCharacterAnimationDuration(string animationName, bool isMilliseconds = true);
+        bool HasAnimation(string stateName);
+        Dictionary<string, float> GetAnimationAllLength();
     }
 }

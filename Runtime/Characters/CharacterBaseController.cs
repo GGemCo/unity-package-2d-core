@@ -80,12 +80,15 @@ namespace GGemCo2DCore
             if (TargetCharacter.IsStatusDontMove()) return false;
             if (TargetCharacter.IsStatusAttack()) return false;
             if (TargetCharacter.IsStatusDead()) return false;
-            
+
             CharacterConstants.FacingDirection8 facing = ToFacingDirection8(TargetCharacter.directionNormalize);
             TargetCharacter.SetFacing(facing);
-            
-            ICharacterAnimationController?.PlayRunAnimation();
-            
+
+            if (!TargetCharacter.IsStatusJump())
+            {
+                ICharacterAnimationController?.PlayRunAnimation();
+            }
+
             UpdateCheckMaxBounds();
             // 이동 처리
             Vector3 nextPosition = TargetCharacter.transform.position + TargetCharacter.directionNormalize * (TargetCharacter.currentMoveStep * TargetCharacter.GetCurrentMoveSpeed() * Time.deltaTime);

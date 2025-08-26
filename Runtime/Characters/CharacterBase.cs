@@ -77,6 +77,8 @@ namespace GGemCo2DCore
         // 맵 height 값, sorting order 계산에 사용
         private float mapSizeHeight;
         [HideInInspector] public Rigidbody2D characterRigidbody2D;
+        // 맵 object, ground 체크
+        [HideInInspector] public CapsuleCollider2D colliderCheckMapObject;
         
         // 공격 애니메이션 종료 후 
         public event EventHandlerAnimationCompleteAttack AnimationCompleteAttack;
