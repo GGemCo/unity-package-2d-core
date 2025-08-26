@@ -186,7 +186,29 @@ namespace GGemCo2DCore
         {
             EventListener?.OnAnimationEventSkill(json, gameObject);
         }
-
+#if GGEMCO_2D_CONTROL
+        /// <summary>
+        /// 점프 시작 애니메이션 마지막 프레임에서 호출
+        /// </summary>
+        public void GGemCoAniEventJumpUp()
+        {
+            EventListener?.OnAnimationEventJump(gameObject, AnimationConstants.EventNameJumpUp);
+        }
+        /// <summary>
+        /// 점프 정점에서 떨어지는 애니메이션 마지막 프레임에서 호출
+        /// </summary>
+        public void GGemCoAniEventJumpFall()
+        {
+            EventListener?.OnAnimationEventJump(gameObject, AnimationConstants.EventNameJumpFall);
+        }
+        /// <summary>
+        /// 점프 착지 후 end 애니메이션 마지막 프레임에서 호출
+        /// </summary>
+        public void GGemCoAniEventJumpEnd()
+        {
+            EventListener?.OnAnimationEventJump(gameObject, AnimationConstants.EventNameJumpEnd);
+        }
+#endif
         protected AnimationClip GetClipByName(string animationName)
         {
             if (animationClips == null) return null;

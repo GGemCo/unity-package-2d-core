@@ -25,12 +25,18 @@ namespace GGemCo2DCore
         /// 버프 적용하기
         /// </summary>
         /// <param name="affectUid"></param>
-        public void AddAffectIcon(int affectUid)
+        /// <param name="duration"></param>
+        public void AddAffectIcon(int affectUid, float duration = 0)
         {
             var info = TableLoaderManager.Instance.GetAffectData(affectUid);
             if (info == null)
             {
                 GcLogger.LogError("affect 테이블에 없는 어펙트 입니다. affect Uid: "+affectUid);
+                return;
+            }
+
+            if (string.IsNullOrEmpty(info.IconFileName))
+            {
                 return;
             }
             GameObject slotBuff;
@@ -45,7 +51,7 @@ namespace GGemCo2DCore
             {
                 // GcLogger.Log("RemoveBuffAfterDuration " + struckBuff.Uid + "/"+struckBuff.Name+"/"+struckBuff.Duration);
                 slotBuff = Instantiate(prefabSlotBuff, containerIcon.transform);
-                slotBuff.GetComponentInChildren<UIIconBuff>()?.Initialize(affectUid);
+                slotBuff.GetComponentInChildren<UIIconBuff>()?.Initialize(affectUid, duration);
                 slotBuffs.Add(affectUid, slotBuff);
             }
             StartCoroutine(RemoveBuffAfterDuration(affectUid, info.Duration, slotBuff));

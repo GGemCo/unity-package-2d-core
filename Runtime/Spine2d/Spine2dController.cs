@@ -80,6 +80,13 @@ namespace GGemCo2DCore
                 case AnimationConstants.EventNameSkill:
                     EventListener?.OnAnimationEventSkill(e.String, gameObject);
                     break;
+#if GGEMCO_2D_CONTROL
+                case AnimationConstants.EventNameJumpUp:
+                case AnimationConstants.EventNameJumpFall:
+                case AnimationConstants.EventNameJumpEnd:
+                    EventListener?.OnAnimationEventJump(gameObject, e.Data.Name);
+                    break;
+#endif
             }
         }
         protected Spine.Animation FindAnimation(string animationName, bool showLog = true)

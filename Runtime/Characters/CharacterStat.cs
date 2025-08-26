@@ -116,7 +116,13 @@ namespace GGemCo2DCore
         /// 버프 적용하기
         /// </summary>
         /// <param name="affectUid"></param>
-        protected void ApplyAffect(int affectUid) => AffectController.ApplyAffect(affectUid);
+        /// <param name="duration"></param>
+        protected void ApplyAffect(int affectUid, float duration) => AffectController.ApplyAffect(affectUid, duration);
+        /// <summary>
+        /// 버프 해제하기
+        /// </summary>
+        /// <param name="affectUid"></param>
+        public void RemoveAffect(int affectUid) => AffectController.RemoveAffect(affectUid);
         /// <summary>
         /// 스탯 변경값 적용하기
         /// </summary>
@@ -240,20 +246,40 @@ namespace GGemCo2DCore
             BaseMoveSpeed = value;
             RecalculateStats();
         }
+        /// <summary>
+        /// 최종 공격력 계산
+        /// </summary>
+        /// <returns>계산된 최종 공격력</returns>
+        protected long CalculateFinalAttack()
+        {
+            long baseAttack = TotalAtk.Value;
+            if (baseAttack <= 0) return 0;
 
-        public void AddStatus(string statusId, ConfigCommon.SuffixType suffixType, float value)
-        {
-            List<ConfigCommon.StruckStatus> modifiers = new List<ConfigCommon.StruckStatus>
-                { new(statusId, suffixType, value) };
-            ApplyStatModifiers(modifiers);
-            RecalculateStats();
+            float finalDamage = baseAttack;
+            float criticalChance = Mathf.Clamp01(TotalCriticalProbability.Value / 100f);
+            
+            if (!(Random.value < criticalChance)) return Mathf.RoundToInt(finalDamage);
+            
+            float critMultiplier = Mathf.Max(1f, TotalCriticalDamage.Value / 100f);
+            finalDamage *= critMultiplier;
+
+            return Mathf.RoundToInt(finalDamage);
         }
-        public void RemoveStatus(string statusId, ConfigCommon.SuffixType suffixType, float value)
+
+        /// <summary>
+        /// 예상 평균 공격력 (크리티컬 기대값 포함)
+        /// </summary>
+        public float CalculateExpectedAttack()
         {
-            List<ConfigCommon.StruckStatus> modifiers = new List<ConfigCommon.StruckStatus>
-                { new(statusId, suffixType, value) };
-            RemoveStatModifiers(modifiers);
-            RecalculateStats();
+            long baseAttack = TotalAtk.Value;
+            if (baseAttack <= 0) return 0;
+
+            float criticalChance = Mathf.Clamp01(TotalCriticalProbability.Value / 100f);
+            float critMultiplier = Mathf.Max(1f, TotalCriticalDamage.Value / 100f);
+
+            // 기대값 = 일반 공격 * (1 - 크리확) + 크리티컬 공격 * (크리확)
+            float expectedDamage = baseAttack * (1 - criticalChance) + (baseAttack * critMultiplier * criticalChance);
+            return expectedDamage;
         }
     }
 }

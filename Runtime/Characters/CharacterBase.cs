@@ -83,6 +83,7 @@ namespace GGemCo2DCore
         // 공격 end 애니메이션 종료 후 
         public event EventHandlerAnimationCompleteAttackEnd AnimationCompleteAttackEnd;
         public event EventHandlerOnStop OnStop;
+        public event EventHandlerOnAnimationEventJump OnAnimationEventJump;
         
         protected override void Awake()
         {
@@ -567,7 +568,8 @@ namespace GGemCo2DCore
         /// 어펙트 추가하기
         /// </summary>
         /// <param name="affectUid"></param>
-        public void AddAffect(int affectUid)
+        /// <param name="duration"></param>
+        public void AddAffect(int affectUid, float duration = 0)
         {
             var info = TableLoaderManager.Instance.GetAffectData(affectUid);
             if (info == null)
@@ -575,12 +577,12 @@ namespace GGemCo2DCore
                 GcLogger.LogError("affect 테이블에 없는 어펙트 입니다. affect Uid: "+affectUid);
                 return;
             }
-            ApplyAffect(affectUid);
+            ApplyAffect(affectUid, duration);
 
-            OnAffect(affectUid);
+            OnAffect(affectUid, duration);
         }
 
-        protected virtual void OnAffect(int affectUid)
+        protected virtual void OnAffect(int affectUid, float duration = 0)
         {
             
         }
@@ -782,6 +784,23 @@ namespace GGemCo2DCore
                 yield return null;
             }
             characterRigidbody2D.MovePosition(targetPosition); // 마지막 위치 보정
+        }
+        /// <summary>
+        /// 점프 애니메이션 관련 event 발생시 처리
+        /// </summary>
+        /// <param name="eventNameJump"></param>
+        public void AnimationEventJump(string eventNameJump)
+        {
+            var e = new EventArgsOnAnimationEventJump { Handled = false, EventName = eventNameJump };
+
+            // 모든 구독자에게 알림
+            OnAnimationEventJump?.Invoke(this, e);
+
+            // 아무도 처리하지 않았으면 레거시 실행
+            if (!e.Handled)
+            {
+                
+            }
         }
     }
 }

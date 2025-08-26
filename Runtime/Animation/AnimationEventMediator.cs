@@ -84,5 +84,10 @@ namespace GGemCo2DCore
                 GcLogger.LogError($"animation skill event, json parsing error: {e.Message} / json: {json}");
             }
         }
+        
+        public void OnAnimationEventJump(GameObject fromObject, string eventName)
+        {
+            fromObject.GetComponent<CharacterBase>()?.AnimationEventJump(eventName);
+        }
     }
 }

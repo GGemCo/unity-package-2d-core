@@ -238,7 +238,7 @@ namespace GGemCo2DCore
         {
             if (IsStatusDead()) return;
             // GcLogger.Log(@event);
-            long totalDamage = TotalAtk.Value;
+            long totalDamage = CalculateFinalAttack();
         
             // 캡슐 콜라이더 2D와 충돌 중인 모든 콜라이더를 검색
             Vector2 size = new Vector2(colliderCheckCharacter.size.x * Mathf.Abs(transform.localScale.x), colliderCheckCharacter.size.y * transform.localScale.y);
@@ -412,10 +412,11 @@ namespace GGemCo2DCore
         /// 어펙트 발동시 UIWindowPlayerBuffInfo 에 추가하기
         /// </summary>
         /// <param name="affectUid"></param>
-        protected override void OnAffect(int affectUid)
+        /// <param name="duration"></param>
+        protected override void OnAffect(int affectUid, float duration = 0)
         {
             if (_uiWindowPlayerBuffInfo == null) return;
-            _uiWindowPlayerBuffInfo.AddAffectIcon(affectUid);
+            _uiWindowPlayerBuffInfo.AddAffectIcon(affectUid, duration);
         }
 
         public void SetMapSize(Vector2 mapSize)
