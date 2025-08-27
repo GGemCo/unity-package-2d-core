@@ -6,6 +6,15 @@ namespace GGemCo2DCore
 {
     public class CameraManager : MonoBehaviour
     {
+        [Tooltip("왼쪽 경계 제한 여부")] 
+        public bool useLimitLeft = true;
+        [Tooltip("오른쪽 경계 제한 여부")] 
+        public bool useLimitRight = true;
+        [Tooltip("위쪽 경계 제한 여부")] 
+        public bool useLimitTop = true;
+        [Tooltip("아래쪽 경계 제한 여부")] 
+        public bool useLimitBottom = true;
+        
         private float originalOrthographicSize;
         private Vector3 originCameraPosition;
         private Camera currentCamera;
@@ -56,22 +65,35 @@ namespace GGemCo2DCore
         private void LimitCameraArea()
         {
             if (followTarget == null || mapSize.x == 0) return;
+
             // 플레이어를 따라가는 카메라 위치 계산
             Vector3 targetPos = followTarget.position + cameraPosition;
             targetPos = Vector3.Lerp(transform.position, targetPos, Time.deltaTime * cameraMoveSpeed);
-    
-            // 맵의 좌측 상단을 기준으로 경계 내로 제한
-            float clampX = Mathf.Clamp(targetPos.x, width, mapSize.x - width); // 좌측 상단 기준 X 좌표 제한
-            float clampY = Mathf.Clamp(targetPos.y, height, mapSize.y - height); // 좌측 상단 기준 Y 좌표 제한
 
-            // 맵의 가운데 기준으로 경계 내로 제한
-            // float lx = mapSize.x - width;
-            // float clampX = Mathf.Clamp(targetPos.x, -lx + center.x, lx + center.x);
-            //
-            // float ly = mapSize.y - height;
-            // float clampY = Mathf.Clamp(targetPos.y, -ly + center.y, ly + center.y);
-            
-            // 흔들림이 적용된 최종 위치 설정
+            float clampX = targetPos.x;
+            float clampY = targetPos.y;
+
+            // --- 좌우 제한 ---
+            if (useLimitLeft && clampX < width)
+            {
+                clampX = width;
+            }
+            if (useLimitRight && clampX > mapSize.x - width)
+            {
+                clampX = mapSize.x - width;
+            }
+
+            // --- 상하 제한 ---
+            if (useLimitBottom && clampY < height)
+            {
+                clampY = height;
+            }
+            if (useLimitTop && clampY > mapSize.y - height)
+            {
+                clampY = mapSize.y - height;
+            }
+
+            // 최종 위치 적용
             if (isShaking)
             {
                 transform.position = new Vector3(clampX, clampY, -10f) + (Vector3)Random.insideUnitCircle * 0.1f;
@@ -82,6 +104,7 @@ namespace GGemCo2DCore
                 originalPos = transform.position;
             }
 
+            // 줌 처리
             if (isZooming)
             {
                 zoomTimer += Time.deltaTime;
@@ -89,15 +112,13 @@ namespace GGemCo2DCore
                 float easedT = Easing.Apply(t, zoomEasing);
                 float zoom = Mathf.Lerp(zoomStartSize, zoomEndSize, easedT);
                 currentCamera.orthographicSize = zoom;
-                
+
                 height = zoom;
                 width = height * Screen.width / Screen.height;
-                if (t >= 1f)
-                {
-                    isZooming = false;
-                }
+                if (t >= 1f) isZooming = false;
             }
         }
+
         private IEnumerator Shake(float duration, float magnitude)
         {
             isShaking = true;
