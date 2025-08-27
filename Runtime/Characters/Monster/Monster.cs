@@ -91,6 +91,10 @@ namespace GGemCo2DCore
             // 순서 중요. ControllerMonster 에서 콜라이더를 사용
             _controllerMonster = gameObject.AddComponent<ControllerMonster>();
             _controllerMonster.Initialize(_collider2Ds);
+
+            // 필요할시 프리팹에 수동으로 Component 추가할 것. 
+            characterRigidbody2D = gameObject.GetComponent<Rigidbody2D>();
+            colliderCheckMapObject = gameObject.GetComponent<CapsuleCollider2D>();
         }
         /// <summary>
         /// regen_data 의 정보 셋팅
