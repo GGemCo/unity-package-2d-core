@@ -33,8 +33,9 @@ namespace GGemCo2DCore
     }
 
     public delegate void EventHandlerOnStop(CharacterBase sender, EventArgsOnStop e);
+    
     /// <summary>
-    /// Jump 관련 애니메이션 이벤트 처리 후 
+    /// Jump 관련 애니메이션 이벤트 발생시 
     /// </summary>
     public sealed class EventArgsOnAnimationEventJump : EventArgs
     {

@@ -1,9 +1,11 @@
 ﻿using UnityEngine;
-using UnityEngine.EventSystems;
 using UnityEngine.UI;
 
 namespace GGemCo2DCore
 {
+    /// <summary>
+    /// 옵션 패널 Base 
+    /// </summary>
     public abstract class UIPanelOptionBase : MonoBehaviour
     {
         [Header(UIWindowConstants.TitleHeaderCommon)]

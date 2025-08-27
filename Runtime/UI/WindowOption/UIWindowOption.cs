@@ -167,8 +167,12 @@ namespace GGemCo2DCore
             {
                 var uiPanelOptionBase = listPanelOptionBase[i];
                 if (uiPanelOptionBase == null) continue;
-                MetaDataToggle metaDataToggle = new MetaDataToggle(tabTogglePrefab.gameObject, uiPanelOptionBase.Title,
-                    LocalizationConstants.Tables.UIWindowOption, uiPanelOptionBase.Title);
+                MetaDataToggle metaDataToggle = new MetaDataToggle(
+                    tabTogglePrefab.gameObject, 
+                    uiPanelOptionBase.Title, 
+                    LocalizationConstants.Tables.UIWindowOption, 
+                    uiPanelOptionBase.Title
+                    );
                 var toggle = UIComponentHelper.CreateToggle(metaDataToggle);
                 if (!toggle) continue;
                 toggle.name = $"Btn_{i}";
