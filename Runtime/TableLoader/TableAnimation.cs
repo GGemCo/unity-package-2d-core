@@ -16,7 +16,7 @@ namespace GGemCo2DCore
         public float MoveStep;
         public float Width;
         public float Height;
-        public int AttackRange;
+        public float AttackRange;
         public Vector2 HitAreaSize;
         public CharacterConstants.FacingDirection8 DefaultFacingDirection8;
         public Vector2 ColliderOffset;
@@ -60,7 +60,7 @@ namespace GGemCo2DCore
                 Width = float.Parse(data["Width"]),
                 Height = float.Parse(data["Height"]),
                 MoveStep = float.Parse(data["MoveStep"]),
-                AttackRange = int.Parse(data["AttackRange"]),
+                AttackRange = float.Parse(data["AttackRange"]),
                 HitAreaSize = ConvertVector2(data["HitAreaSize"]),
                 ColliderOffset = ConvertVector2(data["ColliderOffset"]),
                 ColliderSize = ConvertVector2(data["ColliderSize"]),
