@@ -168,7 +168,7 @@ namespace GGemCo2DCore
         /// 데미지 받으면 어그로 on. 공격자 등록하기
         /// </summary>
         /// <param name="attacker"></param>
-        protected override void OnDamage(GameObject attacker)
+        public override void OnDamage(GameObject attacker)
         {
             base.OnDamage(attacker);
             if (IsAggro() == false)
@@ -181,7 +181,7 @@ namespace GGemCo2DCore
         /// <summary>
         /// 몬스터가 죽었을때 처리 
         /// </summary>
-        protected override void OnDead()
+        public override void OnDead()
         {
             base.OnDead();
             if (sliderHpBar != null)
@@ -205,9 +205,10 @@ namespace GGemCo2DCore
         /// <summary>
         /// attack 이벤트 처리 
         /// </summary>
-        public override void OnEventAttack()
+        public override void OnEventAttack(StruckAnimationEventAttack struckAnimationEventAttack)
         {
             if (IsStatusDead()) return;
+            
             // GcLogger.Log(@event);
             long totalDamage = TotalAtk.Value;
         
@@ -228,7 +229,15 @@ namespace GGemCo2DCore
                 if (!hit || !hit.CompareTag(ConfigTags.GetValue(ConfigTags.Keys.Player))) continue;
                 Player player = hit.GetComponent<Player>();
                 if (player == null) continue;
-                player.TakeDamage(totalDamage, gameObject);
+                
+                MetadataDamage metadataDamage = new MetadataDamage
+                {
+                    damage = totalDamage,
+                    attacker = gameObject,
+                    damageType = SkillConstants.DamageType.Physic,
+                    affectUid = struckAnimationEventAttack.TargetAffectUid
+                };
+                player.TakeDamage(metadataDamage);
                 break;
             }
 

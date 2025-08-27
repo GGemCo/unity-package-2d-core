@@ -177,7 +177,7 @@ namespace GGemCo2DCore
                 Stop();
                 return;
             }
-            if (TargetCharacter.IsStatusAttack() || TargetCharacter.IsStatusDead()) return;
+            if (TargetCharacter.IsStatusAttack() || TargetCharacter.IsStatusDead() || TargetCharacter.IsStatusKnockback()) return;
 
             // 공격자 방향 찾기
             HandleInput();
@@ -192,7 +192,9 @@ namespace GGemCo2DCore
         /// </summary>
         private void StartAttackCoroutine()
         {
-            if (coroutineAttack != null || TargetCharacter.IsStatusAttack() || TargetCharacter.IsStatusDead()) return;
+            if (coroutineAttack != null || TargetCharacter.IsStatusAttack() || TargetCharacter.IsStatusDead()
+                || TargetCharacter.IsStatusKnockback()
+                ) return;
 
             coroutineAttack = StartCoroutine(DownAttackByTime());
         }

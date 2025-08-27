@@ -13,7 +13,7 @@ namespace GGemCo2DCore
         // 기본 스탯
         private int BaseAtk { get; set; }
         private int BaseDef { get; set; }
-        protected int BaseHp { get; set; }
+        public int BaseHp { get; set; }
         private int BaseMp { get; set; }
         private int BaseMoveSpeed { get; set; }
         private int BaseAttackSpeed { get; set; }
@@ -54,6 +54,7 @@ namespace GGemCo2DCore
 
         protected virtual void Awake()
         {
+            AffectController = new AffectController();
         }
         protected virtual void Start()
         {

@@ -33,6 +33,7 @@ namespace GGemCo2DCore
         public const string StatusStatResistanceCold = "STAT_REGISTANCE_COLD";
         public const string StatusStatResistanceLightning = "STAT_REGISTANCE_LIGHTNING";
         public const string StatusAffectId = "AFFECT_UID";
+        public const string StatusKnockBack = "KNOCK_BACK";
         public class StruckStatus
         {
             public string ID;

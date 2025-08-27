@@ -130,7 +130,7 @@ namespace GGemCo2DCore
             mapSize.y = newMapSize.y;
         }
         /// <summary>
-        /// 조작 가능한지 체크하기
+        /// 플레이어, 몬스터 조작 가능한지 체크하기
         /// </summary>
         /// <returns></returns>
         protected bool CheckPossibleControl()
@@ -139,6 +139,7 @@ namespace GGemCo2DCore
             if (TargetCharacter.IsStatusMoveForce()) return false;
             if (TargetCharacter.IsStatusDead()) return false;
             if (TargetCharacter.IsStatusDamage()) return false;
+            if (TargetCharacter.IsStatusKnockback()) return false;
             
             return true;
         }

@@ -164,9 +164,9 @@ namespace GGemCo2DCore
         {
             EventListener?.OnAnimationEventEffect(json, gameObject);
         }
-        public void GGemCoAniEventAttack()
+        public void GGemCoAniEventAttack(string json)
         {
-            EventListener?.OnAnimationEventAttack(gameObject);
+            EventListener?.OnAnimationEventAttack(json, gameObject);
         }
         public void GGemCoAniEventProjectile(int projectileUid)
         {

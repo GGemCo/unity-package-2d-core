@@ -234,9 +234,10 @@ namespace GGemCo2DCore
         /// <summary>
         /// attack 이벤트 처리 
         /// </summary>
-        public override void OnEventAttack()
+        public override void OnEventAttack(StruckAnimationEventAttack struckAnimationEventAttack)
         {
             if (IsStatusDead()) return;
+            
             // GcLogger.Log(@event);
             long totalDamage = CalculateFinalAttack();
         
@@ -261,10 +262,19 @@ namespace GGemCo2DCore
                 if (characterAttackRange == null) continue;
                 // GcLogger.Log("Player attacked the monster after animation!");
                 CharacterBase monster = characterAttackRange.target;
+                
+                MetadataDamage metadataDamage = new MetadataDamage
+                {
+                    damage = totalDamage,
+                    attacker = gameObject,
+                    damageType = SkillConstants.DamageType.Physic,
+                    affectUid = struckAnimationEventAttack.TargetAffectUid
+                };
+
                 // 몬스터와 마주보고 있으면 공격 
                 if (AreFacingEachOther(monster.transform))
                 {
-                    monster.TakeDamage(totalDamage, gameObject);
+                    monster.TakeDamage(metadataDamage);
                     ++countDamageMonster;
                 }
                 // 몬스터와 같은 곳을 바라보고 있으면,
@@ -276,7 +286,7 @@ namespace GGemCo2DCore
                         {
                             if (monster.transform.position.x >= transform.position.x)
                             {
-                                monster.TakeDamage(totalDamage, gameObject);
+                                monster.TakeDamage(metadataDamage);
                                 ++countDamageMonster;
                             }
                             break;
@@ -285,7 +295,7 @@ namespace GGemCo2DCore
                         {
                             if (monster.transform.position.x <= transform.position.x)
                             {
-                                monster.TakeDamage(totalDamage, gameObject);
+                                monster.TakeDamage(metadataDamage);
                                 ++countDamageMonster;
                             }
                             break;
@@ -393,7 +403,7 @@ namespace GGemCo2DCore
         /// <summary>
         /// 플레이어 죽었을때 end 상태로 변경
         /// </summary>
-        protected override void OnDead()
+        public override void OnDead()
         {
             base.OnDead();
             _sceneGame.SetState(SceneGame.GameState.End);

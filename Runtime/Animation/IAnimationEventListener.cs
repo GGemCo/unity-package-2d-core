@@ -8,7 +8,7 @@ namespace GGemCo2DCore
         void OnAnimationEventEffect(string json, GameObject fromObject);
         void OnAnimationEventSound(string json);
         void OnAnimationEventCameraShake(string json);
-        void OnAnimationEventAttack(GameObject fromObject);
+        void OnAnimationEventAttack(string json, GameObject fromObject);
         void OnAnimationEventProjectile(int uid, GameObject fromObject);
         void OnAnimationEventSkill(string json, GameObject fromObject);
         void OnAnimationEventJump(GameObject fromObject, string eventName);

@@ -200,7 +200,8 @@ namespace GGemCo2DCore
         /// <param name="value"></param>
         public void UpdateTimeScaleMove(float value)
         {
-            
+            Animator.speed = value;
+            Animator.Update(0); // 즉시 반영 (옵션)
         }
         /// <summary>
         /// 색상 변경 하기

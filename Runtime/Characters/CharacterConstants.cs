@@ -58,7 +58,8 @@
             UseSkill,
             MoveForce,
             Damage,
-            Jump
+            Jump,
+            Knockback,
         }
 
         /// <summary>

@@ -1,206 +1,159 @@
-﻿using System.Collections;
+﻿using System;
 using System.Collections.Generic;
 using UnityEngine;
 
 namespace GGemCo2DCore
 {
     /// <summary>
-    /// 캐릭터에서 사용하는 어펙트 컨트롤러
-    /// CharacterBase.cs 에서 생성된다.
+    /// 어펙트 컨트롤러: 인덱스/생명주기/그룹 규칙만 관리
+    /// CharacterBase.cs에서 생성/초기화
     /// </summary>
     public class AffectController
     {
-        private readonly CharacterBase _character;
-        private readonly TableAffect _tableAffect;
-        private readonly TableEffect _tableEffect;
-        private readonly EffectManager _effectManager;
+        private CharacterBase _character;
+        private TableAffect _tableAffect;
+        private EffectManager _effectManager;
 
-        // uid -> active affect
-        private readonly Dictionary<int, ActiveAffect> _actives = new();
+        // uid -> Affect
+        private readonly Dictionary<int, AffectBase> _actives = new();
 
         // group -> uid (동일 Group은 1개만 허용)
-        private readonly Dictionary<string, int> _groupIndex = new(System.StringComparer.Ordinal);
-
-        // WaitForSeconds 캐시(동일 duration 재사용)
-        private static readonly Dictionary<float, WaitForSeconds> _waitCache = new();
-
-        private static WaitForSeconds GetWait(float seconds)
-        {
-            if (seconds <= 0f) seconds = 0f;
-            if (_waitCache.TryGetValue(seconds, out var w)) return w;
-            w = new WaitForSeconds(seconds);
-            _waitCache[seconds] = w;
-            return w;
-        }
+        private readonly Dictionary<string, int> _groupIndex = new(StringComparer.Ordinal);
 
         private static bool IsNoneGroup(string group)
         {
             return string.IsNullOrWhiteSpace(group) ||
-                   group.Equals("None", System.StringComparison.OrdinalIgnoreCase);
+                   group.Equals("None", StringComparison.OrdinalIgnoreCase);
         }
 
-        private sealed class ActiveAffect
+        public void Initialize(CharacterBase characterBase)
         {
-            public int Uid;
-            public string Group; // 빈 값/None 일 수 있음
-            public List<ConfigCommon.StruckStatus> Buffs;
-            public DefaultEffect Effect;
-            public Coroutine Timer;
-            public float Duration;
-        }
-
-        public AffectController(CharacterBase characterBase)
-        {
-            if (TableLoaderManager.Instance == null) return;
             _character = characterBase;
-            _tableAffect = TableLoaderManager.Instance.TableAffect;
-            _tableEffect  = TableLoaderManager.Instance.TableEffect;
+            if (TableLoaderManager.Instance == null) return;
+            _tableAffect   = TableLoaderManager.Instance.TableAffect;
             _effectManager = SceneGame.Instance.EffectManager;
         }
 
         /// <summary>
-        /// 어펙트 적용하기
+        /// 어펙트 적용(필요 시 그룹 선점 해제/재적용 갱신)
         /// </summary>
-        public void ApplyAffect(int affectUid, float duration = 0)
+        public void ApplyAffect(int affectUid, float durationOverride = 0f)
         {
-            var info = _tableAffect.GetDataByUid(affectUid);
+            var info = _tableAffect?.GetDataByUid(affectUid); // StruckTableAffect 반환 가정
             if (info == null)
             {
-                GcLogger.LogError("affect 테이블에 없는 어펙트 입니다. affect Uid: " + affectUid);
+                GcLogger.LogError("affect 테이블에 없는 어펙트입니다. affect Uid: " + affectUid);
                 return;
             }
-            
-            if (duration <= 0)
-            {
-                duration  = info.Duration;    
-            }
-            var statusId  = info.StatusID;
-            var suffix    = info.StatusSuffix;
-            var value     = info.Value;
-            var group     = info.Group;
-            var buffs = new List<ConfigCommon.StruckStatus> { new(statusId, suffix, value) };
 
-            // 1) 그룹 규칙: Group이 None/빈 값이 아니라면 동일 Group 선제 제거
-            if (!IsNoneGroup(group) && _groupIndex.TryGetValue(group, out var uidInGroup))
+            float duration = durationOverride > 0f ? durationOverride : Mathf.Max(0f, info.Duration);
+            string group   = info.Group;
+
+            // 1) 그룹 단일성 보장
+            if (!IsNoneGroup(group) && _groupIndex.TryGetValue(group, out var existingUidInGroup))
             {
-                // 기존 동일 그룹 어펙트 제거
-                RemoveAffect(uidInGroup);
+                RemoveAffect(existingUidInGroup);
             }
 
-            // 2) 동일 UID 재적용 시 정리(지속시간 초기화 의미 포함)
-            if (_actives.ContainsKey(info.Uid))
+            // 2) 동일 UID 존재 시 -> Refresh
+            if (_actives.TryGetValue(info.Uid, out var existing))
             {
-                RemoveAffect(info.Uid);
+                existing.Refresh(duration);
+                return;
             }
 
-            // 3) 신규 적용
-            _character.ApplyStatModifiers(buffs);
-            _character.RecalculateStats();
-
-            DefaultEffect createdEffect = null;
-            if (info.EffectUid > 0 && _effectManager != null)
+            // 3) 신규 인스턴스 구성
+            var buffs = new List<ConfigCommon.StruckStatus>
             {
-                createdEffect = _effectManager.CreateEffect(info.EffectUid);
-                if (createdEffect != null)
-                {
-                    createdEffect.SetCreateCharacter(_character); // scale 이전
-                    createdEffect.SetScale(info.EffectScale);
-                    createdEffect.SetDuration(duration);
-                    createdEffect.SetFollowCharacter(_character);
-                    createdEffect.SetPositionY(info.EffectPositionY);
-                    createdEffect.SetPositionYType(info.EffectPositionYType);
-                    createdEffect.SetSortingLayer(info.EffectSortingLayer);
-                    createdEffect.transform.localPosition = Vector3.zero;
-                }
-            }
-
-            var timer = _character.StartCoroutine(RemoveAfterDuration(info.Uid, duration));
-
-            var active = new ActiveAffect
-            {
-                Uid = info.Uid,
-                Group = group,
-                Buffs = buffs,
-                Effect = createdEffect,
-                Timer = timer,
-                Duration = duration
+                new(info.StatusID, info.StatusSuffix, info.Value)
             };
-            _actives[info.Uid] = active;
 
+            var affect = CreateAffectInstance(info, duration, buffs);
+
+            // 4) 적용 및 인덱싱
+            affect.Apply(info);
+            _actives[info.Uid] = affect;
             if (!IsNoneGroup(group))
-            {
                 _groupIndex[group] = info.Uid;
-            }
-        }
-
-        private IEnumerator RemoveAfterDuration(int affectUid, float duration)
-        {
-            yield return GetWait(duration);
-            RemoveAffect(affectUid);
         }
 
         /// <summary>
-        /// 단일 어펙트 제거(버프/디버프 및 이펙트/코루틴 포함)
+        /// 단일 어펙트 제거(수동)
         /// </summary>
         public void RemoveAffect(int affectUid)
         {
-            if (!_actives.TryGetValue(affectUid, out var active))
+            if (!_actives.TryGetValue(affectUid, out var affect))
                 return;
 
-            // 1) 코루틴 정지
-            if (active.Timer != null && _character != null)
+            // 인덱스 해제
+            if (!IsNoneGroup(affect.Group)
+                && _groupIndex.TryGetValue(affect.Group, out var mapped)
+                && mapped == affectUid)
             {
-                _character.StopCoroutine(active.Timer);
+                _groupIndex.Remove(affect.Group);
             }
 
-            // 2) 스탯 되돌리기
-            if (active.Buffs is { Count: > 0 })
-            {
-                _character?.RemoveStatModifiers(active.Buffs);
-                _character?.RecalculateStats();
-            }
-
-            // 3) 시각 이펙트 종료
-            if (active.Effect != null)
-            {
-                // 애니메이션 종료 루틴 호출(프로젝트 정책에 맞게 DestroyForce로 바꿔도 무방)
-                active.Effect.OnEndAnimationComplete();
-            }
-
-            // 4) 인덱스/캐시 정리
-            if (!IsNoneGroup(active.Group))
-            {
-                // group→uid가 나 자신인 경우만 삭제
-                if (_groupIndex.TryGetValue(active.Group, out var mapped) && mapped == affectUid)
-                    _groupIndex.Remove(active.Group);
-            }
-
+            // 정리
+            affect.Stop();
             _actives.Remove(affectUid);
         }
 
-        /// <summary>
-        /// 캐릭터가 죽으면 모든 어펙트 지우기
-        /// </summary>
+        /// <summary>전체 제거(캐릭터 사망·씬 전환 등)</summary>
         public void RemoveAllAffects()
         {
-            // 코루틴/버프/이펙트 전부 정리
             foreach (var kv in _actives)
-            {
-                var a = kv.Value;
-                if (a.Timer != null && _character != null)
-                    _character.StopCoroutine(a.Timer);
-
-                if (a.Buffs is { Count: > 0 })
-                    _character?.RemoveStatModifiers(a.Buffs);
-
-                if (a.Effect != null)
-                    a.Effect.DestroyForce();
-            }
-
-            _character?.RecalculateStats();
+                kv.Value.Stop();
 
             _actives.Clear();
             _groupIndex.Clear();
+        }
+
+        /// <summary>만료 콜백(코루틴 완료 시 호출)</summary>
+        private void OnAffectCompleted(int affectUid)
+        {
+            // Affect 내부에서 스탯/이펙트는 아직 해제되지 않았으므로 Stop을 통해 정리
+            RemoveAffect(affectUid);
+        }
+
+        // 선택적 유틸
+        public bool HasAffect(int affectUid) => _actives.ContainsKey(affectUid);
+        public bool HasGroup(string group) =>
+            !IsNoneGroup(group) && _groupIndex.ContainsKey(group);
+
+        // -------------------------
+        // Factory
+        // -------------------------
+        private AffectBase CreateAffectInstance(
+            StruckTableAffect info,
+            float duration,
+            List<ConfigCommon.StruckStatus> buffs)
+        {
+            bool isKnockBack = !string.IsNullOrEmpty(info.StatusID)
+                               && info.StatusID.Equals(ConfigCommon.StatusKnockBack, StringComparison.OrdinalIgnoreCase);
+
+            if (isKnockBack)
+            {
+                return new AffectKnockBack(
+                    character:     _character,
+                    effectManager: _effectManager,
+                    uid:           info.Uid,
+                    group:         info.Group,
+                    buffs:         buffs,
+                    duration:      duration,
+                    onCompleted:   OnAffectCompleted
+                );
+            }
+
+            // 기본 Affect
+            return new AffectBase(
+                _character,
+                _effectManager,
+                info.Uid,
+                info.Group,
+                buffs,
+                duration,
+                OnAffectCompleted
+            );
         }
     }
 }

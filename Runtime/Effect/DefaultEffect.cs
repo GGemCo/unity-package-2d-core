@@ -10,14 +10,14 @@ namespace GGemCo2DCore
     {
         public IEffectAnimationController EffectAnimationController;
         
-        // 유지 시간
-        private float _duration;
-
-        private string _color;
         // 생성한 캐릭터
         private CharacterBase _character;
         // 타겟 캐릭터
         private CharacterBase _targetCharacter;
+        // 유지 시간
+        private float _duration;
+        // 색상
+        private string _color;
         // 방향
         private Vector3 _direction;
         // 원래 크기
@@ -97,14 +97,6 @@ namespace GGemCo2DCore
             _duration = f;
         }
         /// <summary>
-        /// 방향 처리
-        /// </summary>
-        /// <param name="dirX"></param>
-        private void SetDirection(float dirX)
-        {
-            transform.localScale = new Vector3(_originalScaleX * dirX, transform.localScale.y, transform.localScale.z);
-        }
-        /// <summary>
         /// 회전 처리
         /// </summary>
         /// <param name="directionByTarget"></param>
@@ -144,6 +136,14 @@ namespace GGemCo2DCore
             if (scale <= 0) return;
             transform.localScale = new Vector2(scale, scale);
             _originalScaleX = transform.localScale.x;
+        }
+        /// <summary>
+        /// 방향 처리
+        /// </summary>
+        /// <param name="dirX"></param>
+        private void SetDirection(float dirX)
+        {
+            transform.localScale = new Vector3(_originalScaleX * dirX, transform.localScale.y, transform.localScale.z);
         }
         public void SetFlip(bool shouldFlip)
         {
@@ -187,9 +187,15 @@ namespace GGemCo2DCore
             _positionYType = type;
         }
 
+        public void SetCreateCharacter(GameObject character)
+        {
+            SetCreateCharacter(character.GetComponent<CharacterBase>());
+        }
         public void SetCreateCharacter(CharacterBase character)
         {
             _character = character;
+            transform.position = character.transform.position;
+            SetFlip(_character.IsFlipped());
         }
 
         private void Update()

@@ -308,7 +308,13 @@ namespace GGemCo2DCore
             {
                 foreach (var character in GetMonsterInCollider())
                 {
-                    character.TakeDamage(_struckTableSkill.DamageValue, _attacker.gameObject, _struckTableSkill.DamageType);
+                    MetadataDamage metadataDamage = new MetadataDamage
+                    {
+                        damage = _struckTableSkill.DamageValue,
+                        attacker = _attacker.gameObject,
+                        damageType = _struckTableSkill.DamageType,
+                    };
+                    character.TakeDamage(metadataDamage);
                 }
                 yield return new WaitForSeconds(_struckTableSkill.TickTime);
             }
@@ -335,7 +341,13 @@ namespace GGemCo2DCore
             CharacterHitArea area = collision.GetComponent<CharacterHitArea>();
             if (area == null || area.target != _target) return;
 
-            area.target.TakeDamage(_struckTableSkill.DamageValue, _attacker.gameObject, _struckTableSkill.DamageType);
+            MetadataDamage metadataDamage = new MetadataDamage
+            {
+                damage = _struckTableSkill.DamageValue,
+                attacker = _attacker.gameObject,
+                damageType = _struckTableSkill.DamageType,
+            };
+            area.target.TakeDamage(metadataDamage);
 
             if (_struckTableSkill.Duration <= 0)
             {

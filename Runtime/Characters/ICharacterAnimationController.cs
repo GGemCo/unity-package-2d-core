@@ -60,7 +60,6 @@ namespace GGemCo2DCore
         void ChangeCharacterImageInSlot(int partIndex, int itemUid = 0);
         void RemoveCharacterImageInSlot(List<StruckChangeSlotImage> changeSlotImages);
         IEnumerator FadeEffect(float duration, bool fadeIn);
-        void UpdateTimeScaleByTrackIndex(float value, int index = 0);
         void SetCharacterColor(Color red);
         void UpdateTimeScaleMove(float value);
         float GetCharacterAnimationDuration(string animationName, bool isMilliseconds = true);

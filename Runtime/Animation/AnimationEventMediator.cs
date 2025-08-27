@@ -27,8 +27,7 @@ namespace GGemCo2DCore
                 var data = JsonConvert.DeserializeObject<StruckAnimationEventEffect>(json);
                 var effect = _effectManager.CreateEffect(data);
                 if (effect == null) return;
-                effect.SetCreateCharacter(fromObject.GetComponent<CharacterBase>());
-                effect.transform.position = fromObject.transform.position;
+                effect.SetCreateCharacter(fromObject);
             }
             catch (Exception e)
             {
@@ -62,9 +61,24 @@ namespace GGemCo2DCore
             }
         }
 
-        public void OnAnimationEventAttack(GameObject fromObject)
+        public void OnAnimationEventAttack(string json, GameObject fromObject)
         {
-            fromObject.GetComponent<CharacterBase>()?.OnEventAttack();
+            // 기존에 json 파라미터를 사용안했기 때문에, 거기에 맞춰서 대응 하는 코드 추가
+            if (string.IsNullOrEmpty(json))
+            {
+                fromObject.GetComponent<CharacterBase>()?.OnEventAttack(new StruckAnimationEventAttack());
+                return;
+            }
+            
+            try
+            {
+                var data = JsonConvert.DeserializeObject<StruckAnimationEventAttack>(json);
+                fromObject.GetComponent<CharacterBase>()?.OnEventAttack(data);
+            }
+            catch (Exception e)
+            {
+                GcLogger.LogError($"animation attack event, json parsing error: {e.Message} / json: {json}");
+            }
         }
         
         public void OnAnimationEventProjectile(int projectileUid, GameObject fromObject)

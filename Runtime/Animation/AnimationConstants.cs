@@ -21,6 +21,11 @@
     {
         public int Uid { get; set; }
     }
+    public class StruckAnimationEventAttack
+    {
+        // 공격 받는 대상에게 affect 걸기
+        public int TargetAffectUid { get; set; } = 0;
+    }
     public static class AnimationConstants
     {
         private const string Prefix = "GGemCoAniEvent";

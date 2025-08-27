@@ -31,11 +31,11 @@ namespace GGemCo2DCore
         // 현재 방향
         private CharacterConstants.FacingDirection8 currentFacing = CharacterConstants.FacingDirection8.Right;
         public CharacterConstants.FacingDirection8 CurrentFacing => currentFacing;
-        // 좌우 flip 여부. 맵에 배치할 때, 연출 캐릭터 배치할 때 사용
+        
         // 방향은 CurrentFacing 으로 판단한다. 
         [Header("리젠 정보 설정")]
         [Tooltip("좌우 플립 여부")]
-        public bool isFlip;
+        public bool isFlip; // 좌우 flip 여부. 맵에 배치할 때, 연출 캐릭터 배치할 때 사용. 스크립트는 IsFlipped() 사용
         // 방향
         [HideInInspector] public Vector3 directionNormalize;
         // 좌우 flip 가능 여부
@@ -49,8 +49,7 @@ namespace GGemCo2DCore
         private Renderer characterRenderer;
         private CharacterConstants.CharacterSortingOrder sortingOrder;
         
-        [Header("상태 및 스탯")]
-        protected readonly BehaviorSubject<long> CurrentHp = new(0);
+        [Header("상태 및 스탯")] public readonly BehaviorSubject<long> CurrentHp = new(0);
         protected readonly BehaviorSubject<long> CurrentMp = new(0);
 
         [Header("스킬")] 
@@ -62,8 +61,6 @@ namespace GGemCo2DCore
         
         // 현재 상태
         private CharacterConstants.CharacterStatus currentStatus;
-        // 몬스터 죽은 후 맵에서 지우기까지에 시간
-        private float delayDestroyMonster;
         // fade in, out 효과 시작 여부. 맵에서 컬링 될때 사용
         private bool isStartFade;
         private float characterHeight;
@@ -79,6 +76,7 @@ namespace GGemCo2DCore
         [HideInInspector] public Rigidbody2D characterRigidbody2D;
         // 맵 object, ground 체크
         [HideInInspector] public CapsuleCollider2D colliderCheckMapObject;
+        private CharacterDamageController _characterDamageController;
         
         // 공격 애니메이션 종료 후 
         public event EventHandlerAnimationCompleteAttack AnimationCompleteAttack;
@@ -91,20 +89,23 @@ namespace GGemCo2DCore
         {
             if (AddressableLoaderSettings.Instance == null) return;
             base.Awake();
+            AffectController.Initialize(this);
             CharacterRegenData = null;
-            AffectController = new AffectController(this);
             SetAttackType(CharacterConstants.AttackType.None);
             SetAggro(false);
             // 태그 먼저 처리
             InitTagSortingLayer();
             InitComponents();
-            delayDestroyMonster = AddressableLoaderSettings.Instance.settings.delayDestroyMonster;
             if (IsUseSkill)
             {
                 _skillController = new SkillController();
                 _skillController.Initialize(this);
             }
             defaultFacingDirection8 = AddressableLoaderSettings.Instance.playerSettings.facingDirection8;
+            
+            // 데미지 컨트롤러 초기화
+            _characterDamageController = new CharacterDamageController();
+            _characterDamageController.Initialize(this);
         }
         /// <summary>
         /// tag, sorting layer, layer 셋팅하기
@@ -329,6 +330,7 @@ namespace GGemCo2DCore
         public bool IsStatusMoveForce() => currentStatus == CharacterConstants.CharacterStatus.MoveForce;
         public bool IsStatusDamage() => currentStatus == CharacterConstants.CharacterStatus.Damage;
         public bool IsStatusJump() => currentStatus == CharacterConstants.CharacterStatus.Jump;
+        public bool IsStatusKnockback() => currentStatus == CharacterConstants.CharacterStatus.Knockback;
         public CharacterConstants.CharacterStatus GetCurrentStatus() => currentStatus;
         
         private void SetStatus(CharacterConstants.CharacterStatus value) => currentStatus = value;
@@ -339,8 +341,9 @@ namespace GGemCo2DCore
         public void SetStatusAttackComboWait() => SetStatus(CharacterConstants.CharacterStatus.AttackComboWait);
         public void SetStatusDontMove() => SetStatus(CharacterConstants.CharacterStatus.DontMove);
         public void SetStatusMoveForce() => SetStatus(CharacterConstants.CharacterStatus.MoveForce);
-        private void SetStatusDamage() => SetStatus(CharacterConstants.CharacterStatus.Damage);
+        public void SetStatusDamage() => SetStatus(CharacterConstants.CharacterStatus.Damage);
         public void SetStatusJump() => SetStatus(CharacterConstants.CharacterStatus.Jump);
+        public void SetStatusKnockback() => SetStatus(CharacterConstants.CharacterStatus.Knockback);
 
         public void SetScale(float scale)
         {
@@ -426,13 +429,13 @@ namespace GGemCo2DCore
         /// <summary>
         /// attack 이벤트 처리 
         /// </summary>
-        public virtual void OnEventAttack()
+        public virtual void OnEventAttack(StruckAnimationEventAttack struckAnimationEventAttack)
         {
         }
         /// <summary>
         /// 캐릭터가 죽었을때 처리 
         /// </summary>
-        protected virtual void OnDead()
+        public virtual void OnDead()
         {
             CharacterAnimationController.PlayDeadAnimation();
             // 어펙트 모두 지우기
@@ -444,96 +447,15 @@ namespace GGemCo2DCore
         /// <summary>
         /// 내가 데미지 받았을때 처리 
         /// </summary>
-        /// <param name="damage">받은 데미지</param>
-        /// <param name="attacker">누가 때렸는지</param>
-        /// <param name="damageType">속성 데미지 타입</param>
-        public bool TakeDamage(long damage, GameObject attacker, SkillConstants.DamageType damageType = SkillConstants.DamageType.None)
+        /// <param name="metadataDamage">속성 데미지 타입</param>
+        public void TakeDamage(MetadataDamage metadataDamage)
         {
-            if (SceneGame.Instance.CutsceneManager.IsPlaying()) return false;
-            if (IsStatusDead())
-            {
-                // GcLogger.Log("monster dead");
-                return false;
-            }
-            if (damage <= 0) return false;
-            
-            // 데미지 텍스트 색상 설정
-            Color damageTextColor = Color.white;
-            Vector3 damageTextPosition = transform.position + new Vector3(0, GetHeight() * Mathf.Abs(originalScaleX), 0);
-            // 속성 데미지일때, 저항값 처리
-            if (damageType != SkillConstants.DamageType.None)
-            {
-                if (damageType == SkillConstants.DamageType.Fire)
-                {
-                    damage = (long)(damage * ((100f - TotalRegistFire.Value) / 100f));
-                    damageTextColor = Color.red;
-                }
-                else if (damageType == SkillConstants.DamageType.Cold)
-                {
-                    damage = (long)(damage * ((100f - TotalRegistCold.Value) / 100f));
-                    damageTextColor = Color.blue;
-                }
-                else if (damageType == SkillConstants.DamageType.Lightning)
-                {
-                    damage = (long)(damage * ((100f - TotalRegistLightning.Value) / 100f));
-                    damageTextColor = Color.yellow;
-                }
-
-                if (damage <= 0)
-                {
-                    MetadataDamageText metadataDamageText = new MetadataDamageText
-                    {
-                        Damage = damage,
-                        Color = Color.yellow,
-                        SpecialDamageText = "immune",
-                        WorldPosition = damageTextPosition,
-                        FontSize = 20
-                    };
-                    SceneGame.Instance.damageTextManager.ShowDamageText(metadataDamageText);
-                }
-            }
-            if (damage <= 0) return false;
-
-            long remainHp = CurrentHp.Value - damage;
-            // -1 이면 죽지 않는다
-            if (BaseHp < 0)
-            {
-                remainHp = 1;
-            }
-
-            if (CompareTag(ConfigTags.GetValue(ConfigTags.Keys.Player)))
-            {
-                damageTextColor = Color.red;
-            }
-            MetadataDamageText metadataDamageText2 = new MetadataDamageText
-            {
-                Damage = damage,
-                Color = damageTextColor,
-                WorldPosition = damageTextPosition
-            };
-            SceneGame.Instance.damageTextManager.ShowDamageText(metadataDamageText2);
-            
-            if (remainHp <= 0)
-            {
-                currentStatus = CharacterConstants.CharacterStatus.Dead;
-                Destroy(gameObject, delayDestroyMonster);
-
-                OnDead();
-            }
-            else
-            {
-                OnDamage(attacker);
-            }
-            CurrentHp.OnNext(remainHp);
-
-            return true;
+            _characterDamageController.TakeDamage(metadataDamage);
+        }
+        public virtual void OnDamage(GameObject attacker)
+        {
         }
 
-        protected virtual void OnDamage(GameObject attacker)
-        {
-            SetStatusDamage();
-            CharacterAnimationController?.PlayDamageAnimation();
-        }
         /// <summary>
         /// 공격한 오브젝트 설정하기 
         /// </summary>
@@ -635,6 +557,7 @@ namespace GGemCo2DCore
         {
             if (IsStatusDead()) return;
             if (IsStatusIdle()) return;
+            
             SetStatusIdle();
             CharacterAnimationController?.PlayWaitAnimation();
             

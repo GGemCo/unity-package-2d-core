@@ -63,7 +63,7 @@ namespace GGemCo2DCore
             switch (e.Data.Name)
             {
                 case AnimationConstants.EventNameAttack:
-                    EventListener?.OnAnimationEventAttack(gameObject);
+                    EventListener?.OnAnimationEventAttack(e.String, gameObject);
                     break;
                 case AnimationConstants.EventNameSound:
                     EventListener?.OnAnimationEventSound(e.String);

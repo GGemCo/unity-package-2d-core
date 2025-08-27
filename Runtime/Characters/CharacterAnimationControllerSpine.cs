@@ -192,24 +192,14 @@ namespace GGemCo2DCore
             characterBase.SetIsStartFade(false);
         }
         /// <summary>
-        /// track index 의 time scale 변경해주기
-        /// </summary>
-        /// <param name="value"></param>
-        /// <param name="index"></param>
-        public void UpdateTimeScaleByTrackIndex(float value, int index = 0)
-        {
-            TrackEntry trackEntry = SkeletonAnimation.AnimationState.GetCurrent(index);
-            if (trackEntry == null) return;
-            trackEntry.TimeScale = value;
-        }
-        /// <summary>
-        /// walk, run 애니메이션 time scale 변경하기
+        /// 애니메이션 time scale 변경하기
         /// </summary>
         /// <param name="value"></param>
         public void UpdateTimeScaleMove(float value)
         {
-            if (GetCurrentAnimation() != ICharacterAnimationController.WalkForwardAnim) return;
-            UpdateTimeScaleByTrackIndex(value);
+            TrackEntry trackEntry = SkeletonAnimation.AnimationState.GetCurrent(0);
+            if (trackEntry == null) return;
+            trackEntry.TimeScale = value;
         }
         /// <summary>
         /// 색상 변경 하기
