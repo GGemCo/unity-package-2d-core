@@ -108,6 +108,10 @@ MonoBehaviour:
     m_Metadata:
       m_Items:
       - rid: 9086697469354180826
+  - m_Id: 17005554444079104
+    m_Localized: Knock Back
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds:

@@ -1,2 +1,15 @@
 Key,Shared Comments,English(en),English(en) Comments,Korean(ko),Korean(ko) Comments
 "Text_Language","","Language:","","언어:",""
+"Text_Bgm_Volume","","Bgm Volume","","BGM 볼륨",""
+"Text_Sfx_Volume","","Sfx Volume","","효과음 볼륨",""
+"Text_Master_Volume","","Main Volume","","메인 볼륨",""
+"Text_Cancel","","Cancel","","취소하기",""
+"Unsaved_Alert","","You have unsaved changes.\nAre you sure you want to cancel?
+","","변경한 내용을 저장하지 않았습니다.\n취소하시겠습니까?",""
+"Title_UIPanelDefault","","Default","","기본설정",""
+"Title_UIPanelControl","","Control","","조작설정",""
+"Button_Keyboard","","Keyboard","","키보드",""
+"Button_Gamepad","","Gamepad","","게임패드",""
+"Button_Key_Rebind","","Rebind","","바꾸기",""
+"Button_Key_Clear","","Clear","","지우기",""
+"Button_Key_Reset","","Reset","","되돌리기",""

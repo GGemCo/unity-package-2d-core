@@ -87,6 +87,10 @@ MonoBehaviour:
     m_Key: AFFECT_UID
     m_Metadata:
       m_Items: []
+  - m_Id: 17005554444079104
+    m_Key: KNOCK_BACK
+    m_Metadata:
+      m_Items: []
   m_Metadata:
     m_Items: []
   m_KeyGenerator:

@@ -39,6 +39,34 @@ MonoBehaviour:
     m_Key: Unsaved_Alert
     m_Metadata:
       m_Items: []
+  - m_Id: 15139494497423360
+    m_Key: Title_UIPanelDefault
+    m_Metadata:
+      m_Items: []
+  - m_Id: 15139620615950336
+    m_Key: Title_UIPanelControl
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17697645465767936
+    m_Key: Button_Keyboard
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17699404724637696
+    m_Key: Button_Gamepad
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17699499285221376
+    m_Key: Button_Key_Rebind
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17699562325610496
+    m_Key: Button_Key_Clear
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17699615459053568
+    m_Key: Button_Key_Reset
+    m_Metadata:
+      m_Items: []
   m_Metadata:
     m_Items: []
   m_KeyGenerator:

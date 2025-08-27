@@ -44,6 +44,34 @@ MonoBehaviour:
 '
     m_Metadata:
       m_Items: []
+  - m_Id: 15139494497423360
+    m_Localized: Default
+    m_Metadata:
+      m_Items: []
+  - m_Id: 15139620615950336
+    m_Localized: Control
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17697645465767936
+    m_Localized: Keyboard
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17699404724637696
+    m_Localized: Gamepad
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17699499285221376
+    m_Localized: Rebind
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17699562325610496
+    m_Localized: Clear
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17699615459053568
+    m_Localized: Reset
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []

@@ -17,3 +17,4 @@ Key,Shared Comments,English(en),English(en) Comments,Korean(ko),Korean(ko) Comme
 "HEAL_HP","","HP Regen","Amount of HP restored over time.","생명력 회복","시간이 지남에 따라 회복되는 체력의 양입니다."
 "HEAL_MP","","MP Regen","Amount of MP restored over time.","마력 회복","시간이 지남에 따라 회복되는 마력의 양입니다."
 "AFFECT_UID","","Effect","Used to reference visual or sound effects associated with status.","어펙트","상태에 연결된 이펙트(시각/음향 효과)를 참조합니다."
+"KNOCK_BACK","","Knock Back","","넉백",""

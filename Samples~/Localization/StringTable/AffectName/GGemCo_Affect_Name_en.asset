@@ -86,6 +86,22 @@ MonoBehaviour:
     m_Localized: 'Attack Range Down  '
     m_Metadata:
       m_Items: []
+  - m_Id: 16886310830149632
+    m_Localized: Knock Back
+    m_Metadata:
+      m_Items: []
+  - m_Id: 16914870986936320
+    m_Localized: Combo Add ATK1
+    m_Metadata:
+      m_Items: []
+  - m_Id: 16914873750982656
+    m_Localized: Combo Add ATK2
+    m_Metadata:
+      m_Items: []
+  - m_Id: 16914875789414400
+    m_Localized: Combo Add ATK3
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []
