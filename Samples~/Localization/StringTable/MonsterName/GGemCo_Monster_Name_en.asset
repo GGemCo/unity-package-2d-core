@@ -34,10 +34,6 @@ MonoBehaviour:
     m_Localized: Angry Skeleton1
     m_Metadata:
       m_Items: []
-  - m_Id: 4990444783603712
-    m_Localized: FighterGoblin
-    m_Metadata:
-      m_Items: []
   references:
     version: 2
     RefIds: []
