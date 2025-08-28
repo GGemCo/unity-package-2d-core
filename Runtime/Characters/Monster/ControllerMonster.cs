@@ -10,14 +10,25 @@ namespace GGemCo2DCore
     public class ControllerMonster : CharacterBaseController
     {
         private Coroutine coroutineAttack;
-        private const float DelayTimeAttack = 0f;
+        private float delayTimeAttack;
         private Monster _monster;
         private Collider2D[] _collider2Ds;
 
         protected override void Awake()
         {
             base.Awake();
-            _monster = TargetCharacter as Monster;
+            _monster = targetCharacter as Monster;
+        }
+
+        protected override void Start()
+        {
+            base.Start();
+            if (delayTimeAttack <= 0)
+            {
+                delayTimeAttack =
+                    iCharacterAnimationController.GetCharacterAnimationDuration(
+                        ICharacterAnimationController.AttackAnim, false);
+            }
         }
 
         public void Initialize(Collider2D[] collider2Ds)
@@ -29,17 +40,17 @@ namespace GGemCo2DCore
         /// </summary>
         private void HandleInput()
         {
-            if (!TargetCharacter.IsAggro() || TargetCharacter.attackerTransform == null ||
-                TargetCharacter.IsStatusDead()) return;
-            var raw = (TargetCharacter.attackerTransform.position - TargetCharacter.transform.position);
-            TargetCharacter.directionNormalize = GetFilteredDirection(raw);
+            if (!targetCharacter.IsAggro() || targetCharacter.attackerTransform == null ||
+                targetCharacter.IsStatusDead()) return;
+            var raw = (targetCharacter.attackerTransform.position - targetCharacter.transform.position);
+            targetCharacter.directionNormalize = GetFilteredDirection(raw);
         }
 
         private void Update()
         {
             if (!CheckPossibleControl()) return;
             
-            if (TargetCharacter.IsAggro())
+            if (targetCharacter.IsAggro())
             {
                 if (SearchAttackerTarget())
                 {
@@ -78,12 +89,12 @@ namespace GGemCo2DCore
         /// </summary>
         public override bool Run()
         {
-            if (TargetCharacter.IsStatusDontMove()) return false;
-            if (TargetCharacter.IsStatusAttack()) return false;
-            if (TargetCharacter.IsStatusDead()) return false;
+            if (targetCharacter.IsStatusDontMove()) return false;
+            if (targetCharacter.IsStatusAttack()) return false;
+            if (targetCharacter.IsStatusDead()) return false;
             
             // 1) 방향 (이미 HandleInput에서 정제되지만, 안전하게 한 번 더 보정)
-            var dir = GetFilteredDirection(TargetCharacter.directionNormalize);
+            var dir = GetFilteredDirection(targetCharacter.directionNormalize);
             
             // 2) 정지 처리: 이동 축이 모두 막혔거나 입력이 0이면 대기
             if (dir == Vector2.zero)
@@ -95,20 +106,20 @@ namespace GGemCo2DCore
             {
                 var facing = dir.x >= 0f ? CharacterConstants.FacingDirection8.Right
                     : CharacterConstants.FacingDirection8.Left;
-                TargetCharacter.SetFacing(facing);
+                targetCharacter.SetFacing(facing);
             }
             
-            ICharacterAnimationController?.PlayRunAnimation();
+            iCharacterAnimationController?.PlayRunAnimation();
             
             // 4) 경계 업데이트
             UpdateCheckMaxBounds();
             
             // 5) 이동 벡터 계산
-            float speed = TargetCharacter.currentMoveStep * TargetCharacter.GetCurrentMoveSpeed();
+            float speed = targetCharacter.currentMoveStep * targetCharacter.GetCurrentMoveSpeed();
             Vector3 delta = (Vector3)(dir * (speed * Time.deltaTime));
             
             // 6) 다음 위치
-            Vector3 cur  = TargetCharacter.transform.position;
+            Vector3 cur  = targetCharacter.transform.position;
             Vector3 next = cur + delta;
 
             // 7) 경계 클램프
@@ -116,10 +127,11 @@ namespace GGemCo2DCore
             next.y = Mathf.Clamp(next.y, minBounds.y, maxBounds.y);
             
             // 8) Y 이동 금지 옵션일 때, 위치의 Y는 고정(중력 없이 이동하는 현재 구조에 적합)
+            if (!_monster.canMoveX) next.x = cur.x;
             if (!_monster.canMoveY) next.y = cur.y;
 
             // 9) 실제 반영
-            TargetCharacter.transform.position = next;
+            targetCharacter.transform.position = next;
             
             StopAttackCoroutine();
             return true;
@@ -129,14 +141,14 @@ namespace GGemCo2DCore
         /// </summary>
         private bool SearchAttackerTarget()
         {
-            if (TargetCharacter.attackerTransform == null) return false;
-            if (TargetCharacter.IsStatusAttack() || TargetCharacter.IsStatusDead()) return false;
-            Vector2 size = new Vector2(CapsuleColliderSize.x * Mathf.Abs(transform.localScale.x), CapsuleColliderSize.y * transform.localScale.y);
+            if (targetCharacter.attackerTransform == null) return false;
+            if (targetCharacter.IsStatusAttack() || targetCharacter.IsStatusDead()) return false;
+            Vector2 size = new Vector2(capsuleColliderSize.x * Mathf.Abs(transform.localScale.x), capsuleColliderSize.y * transform.localScale.y);
             // 캡슐 콜라이더 2D와 충돌 중인 모든 콜라이더를 검색
-            Vector2 point = (Vector2)transform.position + CapsuleColliderOffset * transform.localScale;
+            Vector2 point = (Vector2)transform.position + capsuleColliderOffset * transform.localScale;
             
 #if UNITY_6000_0_OR_NEWER
-            int hitCount = Physics2D.OverlapCapsule(point, size, CapsuleDirection2D, 0f,
+            int hitCount = Physics2D.OverlapCapsule(point, size, capsuleDirection2D, 0f,
                 new ContactFilter2D().NoFilter(), _collider2Ds);
             for (int i = 0; i < hitCount; i++)
             {
@@ -146,7 +158,7 @@ namespace GGemCo2DCore
             foreach (var hit in _collider2Ds)
             {
 #endif
-                if (hit.CompareTag(TargetCharacter.attackerTransform.tag) && hit.GetComponent<Player>() != null && hit.GetComponent<Player>().IsStatusDead() == false)
+                if (hit.CompareTag(targetCharacter.attackerTransform.tag) && hit.GetComponent<Player>() != null && hit.GetComponent<Player>().IsStatusDead() == false)
                 {
                     return true;
                 }
@@ -162,7 +174,7 @@ namespace GGemCo2DCore
             while (true)
             {
                 Attack();
-                yield return new WaitForSeconds(DelayTimeAttack);
+                yield return new WaitForSeconds(delayTimeAttack);
             }
         }
         /// <summary>
@@ -171,29 +183,29 @@ namespace GGemCo2DCore
         protected override void Attack()
         {
             // 공격자가 죽었을 때
-            if (TargetCharacter.IsAttackerStatusDead())
+            if (targetCharacter.IsAttackerStatusDead())
             {
-                TargetCharacter.SetAttackerTarget(null);
+                targetCharacter.SetAttackerTarget(null);
                 Stop();
                 return;
             }
-            if (TargetCharacter.IsStatusAttack() || TargetCharacter.IsStatusDead() || TargetCharacter.IsStatusKnockback()) return;
+            if (targetCharacter.IsStatusAttack() || targetCharacter.IsStatusDead() || targetCharacter.IsStatusKnockback()) return;
 
             // 공격자 방향 찾기
             HandleInput();
-            CharacterConstants.FacingDirection8 facing = ToFacingDirection8(TargetCharacter.directionNormalize);
-            TargetCharacter.SetFacing(facing);
+            CharacterConstants.FacingDirection8 facing = ToFacingDirection8(targetCharacter.directionNormalize);
+            targetCharacter.SetFacing(facing);
             
-            TargetCharacter.SetStatusAttack();
-            ICharacterAnimationController?.PlayAttackAnimation();
+            targetCharacter.SetStatusAttack();
+            iCharacterAnimationController?.PlayAttackAnimation();
         }
         /// <summary>
         /// 공격하기 코루틴 시작
         /// </summary>
         private void StartAttackCoroutine()
         {
-            if (coroutineAttack != null || TargetCharacter.IsStatusAttack() || TargetCharacter.IsStatusDead()
-                || TargetCharacter.IsStatusKnockback()
+            if (coroutineAttack != null || targetCharacter.IsStatusAttack() || targetCharacter.IsStatusDead()
+                || targetCharacter.IsStatusKnockback()
                 ) return;
 
             coroutineAttack = StartCoroutine(DownAttackByTime());
@@ -216,17 +228,17 @@ namespace GGemCo2DCore
         {
             if (collision.CompareTag(ConfigTags.GetValue(ConfigTags.Keys.Player)))
             {
-                if (TargetCharacter.IsStatusDead()) return;
+                if (targetCharacter.IsStatusDead()) return;
                 
-                if (TargetCharacter.IsAggro() && TargetCharacter.attackerTransform != null)
+                if (targetCharacter.IsAggro() && targetCharacter.attackerTransform != null)
                 {
                     Attack();
                 }
                 // 선공
-                else if (TargetCharacter.GetAttackType() == CharacterConstants.AttackType.AggroFirst && TargetCharacter.IsAggro() == false)
+                else if (targetCharacter.GetAttackType() == CharacterConstants.AttackType.AggroFirst && targetCharacter.IsAggro() == false)
                 {
-                    TargetCharacter.SetAggro(true);
-                    TargetCharacter.SetAttackerTarget(collision.gameObject.transform);
+                    targetCharacter.SetAggro(true);
+                    targetCharacter.SetAttackerTarget(collision.gameObject.transform);
                 }
             }
         }

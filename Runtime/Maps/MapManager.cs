@@ -539,6 +539,7 @@ namespace GGemCo2DCore
         }
         /// <summary>
         /// 맵 사이즈 구하기
+        /// 타일 텍스쳐만 계산한다.
         /// </summary>
         /// <returns></returns>
         public Vector2 GetMapSize()

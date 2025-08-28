@@ -3,7 +3,7 @@ using UnityEngine;
 namespace GGemCo2DCore
 {
     /// <summary>
-    /// 기본 설정하기
+    /// GGemCo 메인 설정
     /// </summary>
     public enum InputSystemType
     {
@@ -12,33 +12,48 @@ namespace GGemCo2DCore
         NewInputSystem,
         Both
     }
+
     [CreateAssetMenu(fileName = ConfigScriptableObject.Main.FileName, menuName = ConfigScriptableObject.Main.MenuName, order = ConfigScriptableObject.Main.Ordering)]
     public class GGemCoSettings : ScriptableObject
     {
-        [Header("[기본 설정]")] 
-        [Header("스파인2D 사용 여부. 사용할 경우 #define GGEMCO_USE_SPINE 이 추가됩니다. 스파인2D 패키지를 추가해주세요.")]
-        // Unity 6 에서는 Build Profile 을 신규로 생성했을 경우, Build Profiles 메뉴에서 확인해야 한다.
+        [Header("기본 설정")]
+        [Tooltip("스파인2D 사용 여부.\n체크 시 #define GGEMCO_USE_SPINE 이 추가되며, Spine2D 패키지가 필요합니다.\n(Unity 6에서는 Build Profile에서 확인 가능)")]
         public bool useSpine2d;
-        [Header("입력 시스템 설정")]
+
+        [Tooltip("입력 시스템 타입 선택 (Old Input Manager, New Input System, Both)")]
         public InputSystemType inputSystemType;
 
-        [Header("디폴트 몬스터 리젠 시간(초)")] public float defaultMonsterRegenTimeSec;
-        [Header("공격시 최대 피해 몬스터 개수")] public int maxEnemyValue;
-        [Header("몬스터 죽었을때 없어지기까지 시간(초)")] public float delayDestroyMonster;
-        [Header("드랍된 아이템 사라지는 시간(초)")] public int dropItemDestroyTimeSec;
-        
-        [Header("[데미지 텍스트]")]
-        [Header("데미지 텍스트 폰트 크기")] public float damageTextFontSize;
-        [Header("데미지 텍스트 애니메이션 Easing")] public Easing.EaseType damageTextEasingType;
-        [Header("데미지 텍스트 애니메이션 시간(초)")] public float damageTextMoveUpTime;
-        [Header("데미지 텍스트 애니메이션 거리")] public float damageTextMoveUpDistance;
-        [Header("데미지 텍스트 Fade out 효과 시간(초)")] public float damageTextFadeOutTime;
-        [Header("데미지 텍스트 출력시 랜덤 X 좌표 범위")] public float damageTextRandomXRange;
+        [Tooltip("몬스터의 기본 리젠 시간 (초 단위)")]
+        public float defaultMonsterRegenTimeSec;
 
-        // [Tooltip("이 값은 0~100 범위에서 설정할 수 있습니다.")]
-        // [Range(0, 100)]
-        // public int advancedLevel = 50;
-        
+        [Tooltip("공격 시 동시에 피해를 줄 수 있는 최대 몬스터 수")]
+        public int maxEnemyValue;
+
+        [Tooltip("몬스터가 죽은 뒤, 삭제되기까지의 지연 시간 (초 단위)")]
+        public float delayDestroyMonster;
+
+        [Tooltip("드랍된 아이템이 사라지는 시간 (초 단위)")]
+        public int dropItemDestroyTimeSec;
+
+        [Header("데미지 텍스트 설정")]
+        [Tooltip("데미지 텍스트의 기본 폰트 크기")]
+        public float damageTextFontSize;
+
+        [Tooltip("데미지 텍스트 애니메이션 이징 타입")]
+        public Easing.EaseType damageTextEasingType;
+
+        [Tooltip("데미지 텍스트가 위로 이동하는 애니메이션 시간 (초 단위)")]
+        public float damageTextMoveUpTime;
+
+        [Tooltip("데미지 텍스트가 위로 이동하는 거리")]
+        public float damageTextMoveUpDistance;
+
+        [Tooltip("데미지 텍스트가 Fade Out 되는 시간 (초 단위)")]
+        public float damageTextFadeOutTime;
+
+        [Tooltip("데미지 텍스트 출력 시, X축 랜덤 좌표 범위")]
+        public float damageTextRandomXRange;
+
         /// <summary>
         /// 기존 값이 비어있을 때만 기본값을 설정
         /// </summary>
@@ -50,27 +65,29 @@ namespace GGemCo2DCore
             if (dropItemDestroyTimeSec <= 0f) dropItemDestroyTimeSec = 10;
             if (damageTextMoveUpTime <= 0f) damageTextMoveUpTime = 0.3f;
             if (damageTextFadeOutTime <= 0f) damageTextFadeOutTime = 0.1f;
-            if (damageTextMoveUpDistance <= 0f) damageTextMoveUpDistance = 50.0f; // 추가된 이동 거리 설정
-            if (damageTextRandomXRange <= 0f) damageTextRandomXRange = 10.0f; // X 좌표 랜덤 범위 추가
+            if (damageTextMoveUpDistance <= 0f) damageTextMoveUpDistance = 50.0f;
+            if (damageTextRandomXRange <= 0f) damageTextRandomXRange = 10.0f;
         }
+
         /// <summary>
         /// 처음 생성 시 한 번만 실행됨
         /// </summary>
         private void Reset()
         {
             useSpine2d = false;
+            inputSystemType = InputSystemType.None;
+
             defaultMonsterRegenTimeSec = 7.0f;
             maxEnemyValue = 10;
             delayDestroyMonster = 2f;
             dropItemDestroyTimeSec = 10;
-            inputSystemType = InputSystemType.None;
-            
+
             damageTextFontSize = 20f;
             damageTextEasingType = Easing.EaseType.Linear;
             damageTextMoveUpTime = 0.3f;
-            damageTextMoveUpDistance = 50.0f; // 추가된 이동 거리 설정
+            damageTextMoveUpDistance = 50.0f;
             damageTextFadeOutTime = 0.1f;
-            damageTextRandomXRange = 10.0f; // X 좌표 랜덤 범위 추가
+            damageTextRandomXRange = 10.0f;
         }
     }
 }
