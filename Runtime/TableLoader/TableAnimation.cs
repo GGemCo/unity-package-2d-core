@@ -19,8 +19,6 @@ namespace GGemCo2DCore
         public float AttackRange;
         public Vector2 HitAreaSize;
         public CharacterConstants.FacingDirection8 DefaultFacingDirection8;
-        public Vector2 ColliderOffset;
-        public Vector2 ColliderSize;
     }
     /// <summary>
     /// 애니메이션 테이블
@@ -62,8 +60,6 @@ namespace GGemCo2DCore
                 MoveStep = float.Parse(data["MoveStep"]),
                 AttackRange = float.Parse(data["AttackRange"]),
                 HitAreaSize = ConvertVector2(data["HitAreaSize"]),
-                ColliderOffset = ConvertVector2(data["ColliderOffset"]),
-                ColliderSize = ConvertVector2(data["ColliderSize"]),
             };
         }
     }
