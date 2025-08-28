@@ -8,9 +8,6 @@ namespace GGemCo2DCore
     public class ControllerNpc : CharacterBaseController
     {
         private Npc npc;
-        private ICharacterAnimationController iCharacterAnimationController;
-        private Vector2 minBounds, maxBounds; // 타일맵의 최소/최대 경계
-        private Vector2 mapSize;
         
         protected override void Awake()
         {
@@ -24,9 +21,6 @@ namespace GGemCo2DCore
         {
             base.Start();
             iCharacterAnimationController = npc.CharacterAnimationController;
-            Vector2 size = SceneGame.Instance.mapManager.GetCurrentMapSize();
-            mapSize.x = size.x;
-            mapSize.y = size.y;
             iCharacterAnimationController?.PlayWaitAnimation();
         }
     }
