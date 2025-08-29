@@ -14,31 +14,31 @@ namespace GGemCo2DCoreEditor
 {
     public class MetaDataButton
     {
-        public readonly string FiledName;
-        public readonly string Text;
-        public readonly string LocalizationTable;
-        public readonly string LocalizationKey;
+        public readonly string filedName;
+        public readonly string text;
+        public readonly string localizationTable;
+        public readonly string localizationKey;
 
         public MetaDataButton(string filedName, string text = "", string localizationTable = "", string localizationKey = "")
         {
-            FiledName = filedName;
-            Text = text;
-            LocalizationTable = localizationTable;
-            LocalizationKey = localizationKey;
+            this.filedName = filedName;
+            this.text = text;
+            this.localizationTable = localizationTable;
+            this.localizationKey = localizationKey;
         }
     }
     public class MetaDataTextMeshProGUI
     {
-        public readonly Vector2 Pivot;
-        public readonly Vector2 Position;
-        public readonly AnchorPresets AnchorPresets;
-        public readonly float Width;
-        public readonly float Height;
-        public readonly float FontSize;
-        public readonly TextMeshProHelper.HorizontalAlignment HorizontalAlignment;
-        public readonly TextMeshProHelper.VerticalAlignment VerticalAlignment;
-        public readonly string LocalizationTable;
-        public readonly string LocalizationKey;
+        public readonly Vector2 pivot;
+        public readonly Vector2 position;
+        public readonly AnchorPresets anchorPresets;
+        public readonly float width;
+        public readonly float height;
+        public readonly float fontSize;
+        public readonly TextMeshProHelper.HorizontalAlignment horizontalAlignment;
+        public readonly TextMeshProHelper.VerticalAlignment verticalAlignment;
+        public readonly string localizationTable;
+        public readonly string localizationKey;
 
         public MetaDataTextMeshProGUI(Vector2 pivot, Vector2 position, AnchorPresets anchorPresets, float width = 0,
             float height = 0, float fontSize = 0,
@@ -46,27 +46,28 @@ namespace GGemCo2DCoreEditor
             TextMeshProHelper.VerticalAlignment verticalAlignment = TextMeshProHelper.VerticalAlignment.Middle,
             string localizationTable = "", string localizationKey = "")
         {
-            Pivot = pivot;
-            Position = position;
-            AnchorPresets = anchorPresets;
-            Width = width;
-            Height = height;
-            FontSize = fontSize;
-            HorizontalAlignment = horizontalAlignment;
-            VerticalAlignment = verticalAlignment;
-            LocalizationTable = localizationTable;
-            LocalizationKey = localizationKey;
+            this.pivot = pivot;
+            this.position = position;
+            this.anchorPresets = anchorPresets;
+            this.width = width;
+            this.height = height;
+            this.fontSize = fontSize;
+            this.horizontalAlignment = horizontalAlignment;
+            this.verticalAlignment = verticalAlignment;
+            this.localizationTable = localizationTable;
+            this.localizationKey = localizationKey;
         }
     }
     public abstract class CreateUIComponent
     {
-        private static string GenerateObjectName(string objectName)
+        public static string GenerateObjectName(string objectName, ConfigPackageInfo.PackageType packageType)
         {
-            return objectName.StartsWith($"{ConfigEditor.NamePrefixCore}_") ? objectName : $"{ConfigEditor.NamePrefixCore}_{objectName}";
+            string prefix = ConfigPackageInfo.GetPackagePrefix(packageType);
+            return objectName.StartsWith($"{prefix}_") ? objectName : $"{prefix}_{objectName}";
         }
-        public static Canvas CreateObjectCanvas()
+        public static Canvas CreateObjectCanvas(ConfigPackageInfo.PackageType packageType)
         {
-            string objectName = GenerateObjectName("Canvas");
+            string objectName = GenerateObjectName("Canvas", packageType);
             Canvas canvas = GameObject.Find(objectName)?.GetComponent<Canvas>();
             
             if (!canvas)
@@ -102,9 +103,9 @@ namespace GGemCo2DCoreEditor
 #endif
             }
         }
-        public static GameObject CreateGameObjectByPrefab(string objectName, Transform parent = null, string prefabPath = "")
+        public static GameObject CreateGameObjectByPrefab(string objectName, ConfigPackageInfo.PackageType packageType, Transform parent = null, string prefabPath = "")
         {
-            objectName = GenerateObjectName(objectName);
+            objectName = GenerateObjectName(objectName, packageType);
             GameObject gameObject = GameObject.Find(objectName);
             if (gameObject)
             {
@@ -159,14 +160,14 @@ namespace GGemCo2DCoreEditor
 
             return gameObject;
         }
-        public static Button CreateObjectButton(MetaDataButton metaDataButton)
+        public static Button CreateObjectButton(MetaDataButton metaDataButton, ConfigPackageInfo.PackageType packageType)
         {
-            string objectName = GenerateObjectName(metaDataButton.FiledName);
-            string text = metaDataButton.Text;
-            string localizationTable = metaDataButton.LocalizationTable;
-            string localizationKey = metaDataButton.LocalizationKey;
+            string objectName = GenerateObjectName(metaDataButton.filedName, packageType);
+            string text = metaDataButton.text;
+            string localizationTable = metaDataButton.localizationTable;
+            string localizationKey = metaDataButton.localizationKey;
             
-            objectName = GenerateObjectName(objectName);
+            objectName = GenerateObjectName(objectName, packageType);
             // 버튼 찾기 
             GameObject obj = GameObject.Find(objectName);
             if (obj)
@@ -175,11 +176,11 @@ namespace GGemCo2DCoreEditor
             }
             
             // 캔버스 찾기 또는 생성
-            Canvas canvas = CreateObjectCanvas();
+            Canvas canvas = CreateObjectCanvas(packageType);
 
             // 패키지 프리팹 로드
             string prefabPath = ConfigEditor.PathPrefabDefaultUIButton;
-            obj = CreateGameObjectByPrefab(objectName, canvas.transform, prefabPath);
+            obj = CreateGameObjectByPrefab(objectName, packageType, canvas.transform, prefabPath);
             obj.transform.localPosition = Vector3.zero;
             Button button = obj.GetComponent<Button>();
             if (!button)
@@ -233,9 +234,9 @@ namespace GGemCo2DCoreEditor
                     
             localizeEvent.RefreshString();
         }
-        public static TextMeshProUGUI CreateObjectText(string objectName, MetaDataTextMeshProGUI metaDataTextMeshProGUI = null)
+        public static TextMeshProUGUI CreateObjectText(string objectName, ConfigPackageInfo.PackageType packageType, MetaDataTextMeshProGUI metaDataTextMeshProGUI = null)
         {
-            objectName = GenerateObjectName(objectName);
+            objectName = GenerateObjectName(objectName, packageType);
             // 버튼 찾기 
             GameObject obj = GameObject.Find(objectName);
             if (obj)
@@ -244,11 +245,11 @@ namespace GGemCo2DCoreEditor
             }
             
             // 캔버스 찾기 또는 생성
-            Canvas canvas = CreateObjectCanvas();
+            Canvas canvas = CreateObjectCanvas(packageType);
 
             // 패키지 프리팹 로드
             string prefabPath = ConfigEditor.PathPrefabDefaultUITextMeshProGUI;
-            obj = CreateGameObjectByPrefab(objectName, canvas.transform, prefabPath);
+            obj = CreateGameObjectByPrefab(objectName, packageType, canvas.transform, prefabPath);
             
             TextMeshProUGUI textMeshProUGUI = obj.GetComponent<TextMeshProUGUI>();
             if (!textMeshProUGUI)
@@ -259,31 +260,31 @@ namespace GGemCo2DCoreEditor
                 
             if (metaDataTextMeshProGUI == null) return textMeshProUGUI;
             
-            string localizationTable = metaDataTextMeshProGUI.LocalizationTable;
-            string localizationKey = metaDataTextMeshProGUI.LocalizationKey;
+            string localizationTable = metaDataTextMeshProGUI.localizationTable;
+            string localizationKey = metaDataTextMeshProGUI.localizationKey;
             AddLocalizeStringEvent(textMeshProUGUI, localizationTable, localizationKey);
             
-            textMeshProUGUI.rectTransform.SetAnchor(metaDataTextMeshProGUI.AnchorPresets);
-            textMeshProUGUI.rectTransform.anchoredPosition = metaDataTextMeshProGUI.Position;
-            if (metaDataTextMeshProGUI.Width > 0 && metaDataTextMeshProGUI.Height > 0)
+            textMeshProUGUI.rectTransform.SetAnchor(metaDataTextMeshProGUI.anchorPresets);
+            textMeshProUGUI.rectTransform.anchoredPosition = metaDataTextMeshProGUI.position;
+            if (metaDataTextMeshProGUI.width > 0 && metaDataTextMeshProGUI.height > 0)
             {
                 textMeshProUGUI.rectTransform.sizeDelta =
-                    new Vector2(metaDataTextMeshProGUI.Width, metaDataTextMeshProGUI.Height);
+                    new Vector2(metaDataTextMeshProGUI.width, metaDataTextMeshProGUI.height);
             }
 
-            if (metaDataTextMeshProGUI.FontSize > 0)
+            if (metaDataTextMeshProGUI.fontSize > 0)
             {
-                textMeshProUGUI.fontSize = metaDataTextMeshProGUI.FontSize;
+                textMeshProUGUI.fontSize = metaDataTextMeshProGUI.fontSize;
             }
 
-            TextMeshProHelper.SetAlignment(textMeshProUGUI, metaDataTextMeshProGUI.HorizontalAlignment, metaDataTextMeshProGUI.VerticalAlignment);
+            TextMeshProHelper.SetAlignment(textMeshProUGUI, metaDataTextMeshProGUI.horizontalAlignment, metaDataTextMeshProGUI.verticalAlignment);
 
             return textMeshProUGUI;
         }
 
-        public static GameObject Find(string objectName)
+        public static GameObject Find(string objectName, ConfigPackageInfo.PackageType packageType)
         {
-            return GameObject.Find(GenerateObjectName(objectName));
+            return GameObject.Find(GenerateObjectName(objectName, packageType));
         }
     }
 }

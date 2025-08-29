@@ -9,11 +9,11 @@ namespace GGemCo2DCoreEditor
     public class DefaultSceneEditor : DefaultEditorWindow
     {
         // 현재 불러온 씬 이름을 체크하기 위해 추가
-        protected GGemCoSettings GGemCoSettings;
+        protected GGemCoSettings gGemCoSettings;
         protected override void OnEnable()
         {
             base.OnEnable();
-            GGemCoSettings = GetScriptableSetting();
+            gGemCoSettings = GetScriptableSetting();
         }
         private Scene GetActiveSceneInEditor()
         {
@@ -37,7 +37,7 @@ namespace GGemCo2DCoreEditor
         /// </summary>
         protected SoundManager CreateSoundManager(Transform parent = null)
         {
-            GameObject obj = CreateUIComponent.CreateGameObjectByPrefab("SoundManager", parent);
+            GameObject obj = CreateUIComponent.CreateGameObjectByPrefab("SoundManager", packageType, parent);
             if (!obj) return null;
             SoundManager soundManager = obj.GetComponent<SoundManager>();
             if (soundManager == null)
@@ -51,7 +51,7 @@ namespace GGemCo2DCoreEditor
         /// </summary>
         protected PopupManager CreatePopupManager(Transform parent = null)
         {
-            GameObject obj = CreateUIComponent.CreateGameObjectByPrefab("PopupManager", parent, ConfigEditor.PathPrefabPopupManager);
+            GameObject obj = CreateUIComponent.CreateGameObjectByPrefab("PopupManager", packageType, parent, ConfigEditor.PathPrefabPopupManager);
             if (!obj) return null;
             PopupManager popupManager = obj.GetComponent<PopupManager>();
             if (popupManager == null)
@@ -59,7 +59,7 @@ namespace GGemCo2DCoreEditor
                 obj.AddComponent<PopupManager>();
             }
             
-            Transform transform = CreateUIComponent.Find("Canvas").transform;
+            Transform transform = CreateUIComponent.Find("Canvas", packageType).transform;
             
             popupManager.SetCanvasPopup(transform);
             GameObject[] prefabs = new[] { null, ConfigResources.PopupDefault.Load() };
@@ -75,7 +75,7 @@ namespace GGemCo2DCoreEditor
                     50, 0, TextMeshProHelper.HorizontalAlignment.Right, TextMeshProHelper.VerticalAlignment.Middle,
                     LocalizationConstants.Tables.Scene,
                     LocalizationConstants.Keys.Loading.TextLoadingPercent());
-            TextMeshProUGUI textMeshProUGUI = CreateUIComponent.CreateObjectText(fieldName, metaDataTextMeshProGUI);
+            TextMeshProUGUI textMeshProUGUI = CreateUIComponent.CreateObjectText(fieldName, packageType, metaDataTextMeshProGUI);
             return textMeshProUGUI;
         }
     }

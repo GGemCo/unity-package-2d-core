@@ -1,5 +1,4 @@
 ﻿using System.Collections.Generic;
-using System.Linq;
 using GGemCo2DCore;
 using UnityEditor;
 using UnityEngine;
@@ -58,8 +57,8 @@ namespace GGemCo2DCoreEditor
         /// </summary>
         private void SetupRequiredObjects()
         {
-            _objGGemCoCore = GetOrCreateCoreGameObject();
-            SceneGame scene = CreateOrAddComponent<SceneGame>("SceneGame");
+            _objGGemCoCore = GetOrCreateRootPackageGameObject();
+            GGemCo2DCore.SceneGame scene = CreateOrAddComponent<GGemCo2DCore.SceneGame>(nameof(SceneGame));
             if (scene == null) return;
             
             // SceneGame 은 싱글톤으로 활용하고 있어 root 로 이동
@@ -103,7 +102,7 @@ namespace GGemCo2DCoreEditor
         /// <param name="scene"></param>
         private void SetupCanvasUI(SceneGame scene)
         {
-            Canvas canvas = CreateUIComponent.CreateObjectCanvas();
+            Canvas canvas = CreateUIComponent.CreateObjectCanvas(packageType);
             scene.SetCanvasUI(canvas);
             canvas.gameObject.transform.SetParent(_objGGemCoCore.transform);
         }
@@ -113,7 +112,7 @@ namespace GGemCo2DCoreEditor
         /// <param name="scene"></param>
         private void SetupCanvasFromWorld(SceneGame scene)
         {
-            GameObject canvasFromWorld = CreateUIComponent.CreateGameObjectByPrefab("CanvasFromWorld", _objGGemCoCore.transform, ConfigEditor.PathPrefabCanvasFromWorld);
+            GameObject canvasFromWorld = CreateUIComponent.CreateGameObjectByPrefab("CanvasFromWorld", packageType, _objGGemCoCore.transform, ConfigEditor.PathPrefabCanvasFromWorld);
             if (!canvasFromWorld) return;
 
             scene.SetContainerDropItemName(canvasFromWorld.transform.Find("ContainerDropItemName")?.gameObject);
@@ -126,7 +125,7 @@ namespace GGemCo2DCoreEditor
         /// <param name="scene"></param>
         private void SetupCanvasBlack(SceneGame scene)
         {
-            GameObject canvasBlack = CreateUIComponent.CreateGameObjectByPrefab("CanvasBlack", _objGGemCoCore.transform, ConfigEditor.PathPrefabCanvasBlack);
+            GameObject canvasBlack = CreateUIComponent.CreateGameObjectByPrefab("CanvasBlack", packageType, _objGGemCoCore.transform, ConfigEditor.PathPrefabCanvasBlack);
             if (!canvasBlack) return;
             scene.SetBgBlackForMapLoading(canvasBlack.transform.GetChild(0).gameObject);
         }
@@ -136,7 +135,7 @@ namespace GGemCo2DCoreEditor
         /// <param name="scene"></param>
         private void SetupSystemMessageManager(SceneGame scene)
         {
-            GameObject obj = CreateUIComponent.CreateGameObjectByPrefab("SystemMessageManager", _objGGemCoCore.transform, ConfigEditor.PathPrefabSystemMessageManager);
+            GameObject obj = CreateUIComponent.CreateGameObjectByPrefab("SystemMessageManager", packageType, _objGGemCoCore.transform, ConfigEditor.PathPrefabSystemMessageManager);
             if (!obj) return;
             scene.SetSystemMessageManager(obj.GetComponent<SystemMessageManager>());
         }
@@ -196,15 +195,14 @@ namespace GGemCo2DCoreEditor
             UIWindowManager uiWindowManager = SetupWindowManager();
             if (!uiWindowManager) return;
             
-            GameObject canvas = CreateUIComponent.Find("Canvas");
+            GameObject canvas = CreateUIComponent.Find("Canvas", packageType);
             if (canvas == null)
             {
                 Debug.LogError("GGemCo_Core_Canvas 가 없습니다.");
                 return;
             }
 
-            List<UIWindow> uiWindows =  new List<UIWindow>();
-            uiWindows.Add(null);
+            List<UIWindow> uiWindows =  new List<UIWindow> { null };
             Dictionary<int, Dictionary<string, string>> dictionary = _tableWindow.GetDatas();
             
             foreach (KeyValuePair<int, Dictionary<string, string>> outerPair in dictionary)

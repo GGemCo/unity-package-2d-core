@@ -2,7 +2,6 @@
 using TMPro;
 using UnityEditor;
 using UnityEngine;
-using UnityEngine.UI;
 
 namespace GGemCo2DCoreEditor
 {
@@ -12,7 +11,6 @@ namespace GGemCo2DCoreEditor
     public class SceneEditorPreIntro : DefaultSceneEditor
     {
         private const string Title = "Pre 인트로 씬 셋팅하기";
-        private GameObject _objGGemCoCore;
         
         [MenuItem(ConfigEditor.NameToolSettingScenePreIntro, false, (int)ConfigEditor.ToolOrdering.SettingScenePreIntro)]
         public static void ShowWindow()
@@ -45,11 +43,9 @@ namespace GGemCo2DCoreEditor
         /// </summary>
         private void SetupRequiredObjects()
         {
-            _objGGemCoCore = GetOrCreateCoreGameObject();
-            // GGemCo2DCore.ScenePreIntro GameObject 만들기
-            GGemCo2DCore.ScenePreIntro scene = CreateOrAddComponent<GGemCo2DCore.ScenePreIntro>(nameof(ScenePreIntro));
+            GGemCo2DCore.ScenePreIntro scene = CreateOrAddComponent<ScenePreIntro>(nameof(ScenePreIntro));
 
-            CreateUIComponent.CreateObjectCanvas();
+            CreateUIComponent.CreateObjectCanvas(packageType);
 
             // 진행률 텍스트 만들고 연결하기
             TextMeshProUGUI textMeshProUGUI = CreateLoadingText();

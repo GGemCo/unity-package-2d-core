@@ -10,32 +10,31 @@ namespace GGemCo2DCoreEditor
     public class DefaultEditorWindow : EditorWindow
     {
         protected TableLoaderManager TableLoaderManager;
+        protected ConfigPackageInfo.PackageType packageType;
 
         protected virtual void OnEnable()
         {
             TableLoaderManager = new TableLoaderManager();
+            packageType = ConfigPackageInfo.PackageType.Core;
         }
-        /// <summary>
-        /// 모든 오브젝트는 GGemCo 오브젝트 하위에 생성한다.
-        /// Core 패키지 이기때문에 Core 오브젝트 하위에 생성한다.
-        /// UI 는 Canvas 에 생성한다.
-        /// </summary>
-        protected GameObject GetOrCreateCoreGameObject()
+
+        protected GameObject GetOrCreateRootPackageGameObject()
         {
             var obj = GameObject.Find(ConfigDefine.NameSDK);
             GameObject objPackage;
+            string packageName = ConfigPackageInfo.GetPackageName(packageType);
             if (obj == null)
             {
                 obj = new  GameObject(ConfigDefine.NameSDK);
-                objPackage = new GameObject(ConfigDefine.NamePackageCore);
+                objPackage = new GameObject(packageName);
                 objPackage.transform.SetParent(obj.transform);
             }
             else
             {
-                var transformPackage = obj.transform.Find(ConfigDefine.NamePackageCore);
+                var transformPackage = obj.transform.Find(packageName);
                 if (transformPackage == null)
                 {
-                    objPackage = new GameObject(ConfigDefine.NamePackageCore);
+                    objPackage = new GameObject(packageName);
                     objPackage.transform.SetParent(obj.transform);
                 }
                 else
@@ -45,15 +44,14 @@ namespace GGemCo2DCoreEditor
             }
             return objPackage;
         }
-
         private GameObject GetOrCreateGameObject(string objectName)
         {
-            if (!objectName.StartsWith($"{ConfigEditor.NamePrefixCore}")) objectName = $"{ConfigEditor.NamePrefixCore}_{objectName}";
+            objectName = CreateUIComponent.GenerateObjectName(objectName, packageType);
             GameObject obj = GameObject.Find(objectName);
             if (obj == null)
             {
                 obj = new GameObject(objectName);
-                GameObject root = GetOrCreateCoreGameObject();
+                GameObject root = GetOrCreateRootPackageGameObject();
                 obj.transform.SetParent(root.transform);
             }
             return obj;

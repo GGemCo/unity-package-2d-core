@@ -1,13 +1,12 @@
-﻿namespace GGemCo2DCore
+﻿using System.Collections.Generic;
+
+namespace GGemCo2DCore
 {
-    public class ConfigDefine
+    public static class ConfigDefine
     {
         public const string NameSDK = "GGemCo";
         public const string NameSDKUpperCase = "GGEMCO";
-        
-        public const string NamePackageCore = "Core";
-        public const string NamePackagePlatformer = "Platformer";
-        
+
         // 씬
         public const string PathScene = "Assets/"+NameSDK+"/Scenes";
         public const string SceneNamePreIntro = NameSDK+"_PreIntro";

@@ -46,11 +46,11 @@ namespace GGemCo2DCoreEditor
         /// </summary>
         private void SetupRequiredObjects()
         {
-            _objGGemCoCore = GetOrCreateCoreGameObject();
+            _objGGemCoCore = GetOrCreateRootPackageGameObject();
             // GGemCo2DCore.SceneIntro GameObject 만들기
             GGemCo2DCore.SceneIntro scene = CreateOrAddComponent<GGemCo2DCore.SceneIntro>(nameof(SceneIntro));
 
-            CreateUIComponent.CreateObjectCanvas();
+            CreateUIComponent.CreateObjectCanvas(packageType);
                 
             // 인트로 씬에서 사운드를 사용하기때문에, SoundManager 셋팅
             SetupSoundManager(scene);
@@ -60,14 +60,14 @@ namespace GGemCo2DCoreEditor
             // 새 게임 버튼 만들고 연결하기
             MetaDataButton metaDataButton = new MetaDataButton(scene.GetFieldNameButtonNewGame(), "New Game",
                 LocalizationConstants.Tables.Scene, LocalizationConstants.Keys.Intro.ButtonNewGame());
-            Button createdButton = CreateUIComponent.CreateObjectButton(metaDataButton);
+            Button createdButton = CreateUIComponent.CreateObjectButton(metaDataButton, packageType);
             createdButton.gameObject.AddComponent<ClickSoundEventBroadcaster>();
             scene.SetButtonNewGame(createdButton);
             
             // 계속 하기 버튼 만들고 연결하기
             metaDataButton = new MetaDataButton(scene.GetFieldNameButtonGameContinue(), "Continue Game",
                 LocalizationConstants.Tables.Scene, LocalizationConstants.Keys.Intro.ButtonContinue());
-            Button buttonGameContinue = CreateUIComponent.CreateObjectButton(metaDataButton);
+            Button buttonGameContinue = CreateUIComponent.CreateObjectButton(metaDataButton, packageType);
             buttonGameContinue.gameObject.AddComponent<ClickSoundEventBroadcaster>();
             scene.SetButtonGameContinue(buttonGameContinue);
             buttonGameContinue.gameObject.transform.localPosition = new Vector2(0, 100);
@@ -75,13 +75,13 @@ namespace GGemCo2DCoreEditor
             // 옵션 버튼 만들고 연결하기
             metaDataButton = new MetaDataButton(scene.GetFieldNameButtonOption(), "Option",
                 LocalizationConstants.Tables.Scene, LocalizationConstants.Keys.Intro.ButtonOption());
-            Button buttonOption = CreateUIComponent.CreateObjectButton(metaDataButton);
+            Button buttonOption = CreateUIComponent.CreateObjectButton(metaDataButton, packageType);
             buttonOption.gameObject.AddComponent<ClickSoundEventBroadcaster>();
             scene.SetButtonOption(buttonOption);
             buttonOption.gameObject.transform.localPosition = new Vector2(0, -100);
             
             // 옵션 윈도우 추가
-            GameObject canvas = CreateUIComponent.Find("Canvas");
+            GameObject canvas = CreateUIComponent.Find("Canvas", packageType);
             string objectName = scene.GetNameUIWindowOption();
             GameObject prefab = FindPrefabByName(ConfigEditor.PathUIWindow, objectName);
             if (!prefab) return;
@@ -106,12 +106,12 @@ namespace GGemCo2DCoreEditor
             }
             UIWindowOption uiWindowOption = gameObject.GetComponent<UIWindowOption>();
             scene.SetUIWindowOption(uiWindowOption);
-            PopupManager popupManager = CreateUIComponent.Find(scene.GetFieldNamePopupManager())?.GetComponent<PopupManager>();
+            PopupManager popupManager = CreateUIComponent.Find(scene.GetFieldNamePopupManager(), packageType)?.GetComponent<PopupManager>();
             if (uiWindowOption && popupManager)
             {
                 uiWindowOption.SetPopupManager(popupManager);
             }
-            SoundManager soundManager = CreateUIComponent.Find(scene.GetFieldNameSoundManager())?.GetComponent<SoundManager>();
+            SoundManager soundManager = CreateUIComponent.Find(scene.GetFieldNameSoundManager(), packageType)?.GetComponent<SoundManager>();
             if (uiWindowOption && soundManager)
             {
                 uiWindowOption.SetSoundManager(soundManager);
@@ -171,7 +171,7 @@ namespace GGemCo2DCoreEditor
         /// <param name="scene"></param>
         private void SetupUIWindowLoadSaveData(SceneIntro scene)
         {
-            GameObject canvas = CreateUIComponent.Find("Canvas");
+            GameObject canvas = CreateUIComponent.Find("Canvas", packageType);
             if (canvas == null)
             {
                 Debug.LogError("GGemCo_Core_Canvas 가 없습니다.");
@@ -181,7 +181,7 @@ namespace GGemCo2DCoreEditor
             // 불러오기 버튼 생성
             MetaDataButton metaDataButton = new MetaDataButton(scene.GetFieldNameButtonOpenSaveDataWindow(), "Load Game",
                 LocalizationConstants.Tables.Scene, LocalizationConstants.Keys.Intro.ButtonLoad());
-            Button createdButton = CreateUIComponent.CreateObjectButton(metaDataButton);
+            Button createdButton = CreateUIComponent.CreateObjectButton(metaDataButton, packageType);
             createdButton.gameObject.AddComponent<ClickSoundEventBroadcaster>();
             scene.SetButtonOpenSaveDataWindow(createdButton);
             createdButton.gameObject.transform.SetSiblingIndex(0);
@@ -211,7 +211,7 @@ namespace GGemCo2DCoreEditor
                 );
             }
             UIWindowLoadSaveData uiWindowLoadSaveData = gameObject.GetComponent<UIWindowLoadSaveData>();
-            PopupManager popupManager = CreateUIComponent.Find(scene.GetFieldNamePopupManager())?.GetComponent<PopupManager>();
+            PopupManager popupManager = CreateUIComponent.Find(scene.GetFieldNamePopupManager(), packageType)?.GetComponent<PopupManager>();
             if (uiWindowLoadSaveData && popupManager)
             {
                 uiWindowLoadSaveData.SetPopupManager(popupManager);

@@ -31,9 +31,6 @@ namespace GGemCo2DCoreEditor
         }
         private const string NameToolGGemCo = ConfigDefine.NameSDK+"Tool/";
         
-        // 오브젝트 생성시 사용
-        public const string NamePrefixCore = ConfigDefine.NameSDK + "_" + ConfigDefine.NamePackageCore;
-        
         // 기본 셋팅하기
         private const string NameToolSettings = NameToolGGemCo + "설정하기/";
         public const string NameToolSettingDefault = NameToolSettings + "기본 셋팅하기";
