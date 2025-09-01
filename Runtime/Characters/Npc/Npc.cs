@@ -68,7 +68,7 @@ namespace GGemCo2DCore
             
             Vector2 offset = Vector2.zero;
             Vector2 size = new Vector2(0,0);
-            colliderCheckCharacter = ComponentController.AddCapsuleCollider2D(attackRange, true, offset, size);
+            colliderAttackRange = ComponentController.AddCapsuleCollider2D(attackRange, true, offset, size);
             
             gameObject.AddComponent<ControllerNpc>();
             

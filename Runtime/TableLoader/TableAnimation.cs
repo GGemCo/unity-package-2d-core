@@ -13,12 +13,10 @@ namespace GGemCo2DCore
         public CharacterConstants.Type Type;
         public ConfigCommon.AnimationController Controller;
         public string PrefabName;
+        public CharacterConstants.FacingDirection8 DefaultFacingDirection8;
         public float MoveStep;
         public float Width;
         public float Height;
-        public float AttackRange;
-        public Vector2 HitAreaSize;
-        public CharacterConstants.FacingDirection8 DefaultFacingDirection8;
     }
     /// <summary>
     /// 애니메이션 테이블
@@ -58,8 +56,6 @@ namespace GGemCo2DCore
                 Width = float.Parse(data["Width"]),
                 Height = float.Parse(data["Height"]),
                 MoveStep = float.Parse(data["MoveStep"]),
-                AttackRange = float.Parse(data["AttackRange"]),
-                HitAreaSize = ConvertVector2(data["HitAreaSize"]),
             };
         }
     }

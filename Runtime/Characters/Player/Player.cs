@@ -90,69 +90,7 @@ namespace GGemCo2DCore
             // AddComponent 순서 중요
             base.InitComponents();
             _controllerPlayer = gameObject.AddComponent<ControllerPlayer>();
-            
             _equipController = gameObject.AddComponent<EquipController>();
-            characterRigidbody2D = ComponentController.AddRigidbody2D(gameObject);
-            if (_playerSettings.gravityScale > 0)
-            {
-                characterRigidbody2D.gravityScale = _playerSettings.gravityScale;
-            }
-            
-            GameObject attackRange = new GameObject("AttackRange");
-            CharacterAttackRange characterAttackRange = attackRange.AddComponent<CharacterAttackRange>();
-            characterAttackRange.Initialize(this);
-            
-            // 공격 범위 안에 몬스터 찾는 용도
-            // include layer : 타일맵 wall 제외하고 모두 포함
-            // exclude layer : 타일맵 wall
-            Vector2 offset = Vector2.zero;
-            Vector2 size = new Vector2(500, 250);
-            if (_playerSettings.rangeAttack != Vector2.zero)
-            {
-                size = _playerSettings.rangeAttack;
-            }
-            colliderCheckCharacter = ComponentController.AddCapsuleCollider2D(attackRange, true, offset, size);
-            
-            // hit area
-            GameObject hitArea = new GameObject("HitArea");
-            CharacterHitArea characterHitArea = hitArea.AddComponent<CharacterHitArea>();
-            characterHitArea.Initialize(this);
-            offset = Vector2.zero;
-            if (_playerSettings.rangeHitAreaOffset != Vector2.zero)
-            {
-                offset = _playerSettings.rangeHitAreaOffset;
-            }
-            size = new Vector2(250, 500);
-            if (_playerSettings.rangeHitAreaSize != Vector2.zero)
-            {
-                size = _playerSettings.rangeHitAreaSize;
-            }
-            colliderCheckHitArea = ComponentController.AddCapsuleCollider2D(hitArea, true, offset, size, 0, 0, CapsuleDirection2D.Vertical);
-            
-            // 맵 object 충돌 체크용
-            // include layer : 타일맵 wall
-            // exclude layer : 타일맵 wall 제외하고 모두 포함
-            offset = Vector2.zero;
-            size = new Vector2(264,132);
-            if (_playerSettings.rangeCollider != Vector2.zero)
-            {
-                size = _playerSettings.rangeCollider;
-            }
-            if (_playerSettings.rangeColliderOffset != Vector2.zero)
-            {
-                offset = _playerSettings.rangeColliderOffset;
-            }
-            
-            colliderCheckMapObject = ComponentController.AddCapsuleCollider2D(gameObject, false, offset, size,
-                LayerMask.GetMask(
-                    ConfigLayer.GetValue(ConfigLayer.Keys.TileMapWall),
-                    ConfigLayer.GetValue(ConfigLayer.Keys.TileMapGround)
-                    ),
-                ~ (
-                    1 << LayerMask.NameToLayer(ConfigLayer.GetValue(ConfigLayer.Keys.TileMapWall)) | 
-                    1 << LayerMask.NameToLayer(ConfigLayer.GetValue(ConfigLayer.Keys.TileMapGround))
-                    )
-                );
         }
 
         /// <summary>
@@ -242,12 +180,12 @@ namespace GGemCo2DCore
             long totalDamage = CalculateFinalAttack();
         
             // 캡슐 콜라이더 2D와 충돌 중인 모든 콜라이더를 검색
-            Vector2 size = new Vector2(colliderCheckCharacter.size.x * Mathf.Abs(transform.localScale.x), colliderCheckCharacter.size.y * transform.localScale.y);
-            Vector2 point = (Vector2)transform.position + colliderCheckCharacter.offset * transform.localScale;
+            Vector2 size = new Vector2(colliderAttackRange.size.x * Mathf.Abs(transform.localScale.x), colliderAttackRange.size.y * transform.localScale.y);
+            Vector2 point = (Vector2)transform.position + colliderAttackRange.offset * transform.localScale;
             
             int countDamageMonster = 0;
 #if UNITY_6000_0_OR_NEWER
-            int hitCount = Physics2D.OverlapCapsule(point, size, colliderCheckCharacter.direction, 0f,
+            int hitCount = Physics2D.OverlapCapsule(point, size, colliderAttackRange.direction, 0f,
                 new ContactFilter2D().NoFilter(), _collider2Ds);
             for (int i = 0; i < hitCount; i++)
             {
@@ -258,10 +196,11 @@ namespace GGemCo2DCore
             {
 #endif
                 if (!hit || !hit.CompareTag(ConfigTags.GetValue(ConfigTags.Keys.Monster))) continue;
-                CharacterAttackRange characterAttackRange = hit.GetComponent<CharacterAttackRange>();
-                if (characterAttackRange == null) continue;
+                CharacterHitArea characterHitArea = hit.GetComponent<CharacterHitArea>();
+                if (characterHitArea == null) continue;
+                
                 // GcLogger.Log("Player attacked the monster after animation!");
-                CharacterBase monster = characterAttackRange.target;
+                CharacterBase monster = characterHitArea.target;
                 
                 MetadataDamage metadataDamage = new MetadataDamage
                 {

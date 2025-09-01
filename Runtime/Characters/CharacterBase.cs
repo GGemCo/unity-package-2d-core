@@ -68,14 +68,14 @@ namespace GGemCo2DCore
         // 공격한 GameObject 의 Transform
         [HideInInspector] public Transform attackerTransform;
         // 캐릭터 간의 충돌 체크용
-        [HideInInspector] public CapsuleCollider2D colliderCheckCharacter;
+        [HideInInspector] public CapsuleCollider2D colliderAttackRange;
         // 캐릭터 hit area 체크용
-        [HideInInspector] public CapsuleCollider2D colliderCheckHitArea;
+        [HideInInspector] public CapsuleCollider2D colliderHitArea;
         // 맵 height 값, sorting order 계산에 사용
         private float mapSizeHeight;
         [HideInInspector] public Rigidbody2D characterRigidbody2D;
         // 맵 object, ground 체크
-        [HideInInspector] public CapsuleCollider2D colliderCheckMapObject;
+        [HideInInspector] public CapsuleCollider2D colliderMapObject;
         private CharacterDamageController _characterDamageController;
         
         // 공격 애니메이션 종료 후 
@@ -123,7 +123,23 @@ namespace GGemCo2DCore
         /// </summary>
         protected virtual void InitComponents()
         {
-            
+            characterRigidbody2D = gameObject.GetComponent<Rigidbody2D>();
+            // 맵 object 충돌 체크용
+            colliderMapObject = gameObject.GetComponentInChildren<CapsuleCollider2D>();
+            // attack range
+            CharacterAttackRange characterAttackRange = gameObject.GetComponentInChildren<CharacterAttackRange>();
+            if (characterAttackRange)
+            {
+                characterAttackRange.Initialize(this);
+                colliderAttackRange = characterAttackRange.gameObject.GetComponent<CapsuleCollider2D>();
+            }
+            // hit area
+            CharacterHitArea characterHitArea = gameObject.GetComponentInChildren<CharacterHitArea>();
+            if (characterHitArea)
+            {
+                characterHitArea.Initialize(this);
+                colliderHitArea = characterAttackRange.gameObject.GetComponent<CapsuleCollider2D>();
+            }
         }
         protected override void Start()
         {
@@ -178,15 +194,6 @@ namespace GGemCo2DCore
             StruckTableAnimation struckTableAnimation = TableLoaderManager.Instance.GetAnimationData(animationUid);
             if (struckTableAnimation is not { Uid: > 0 }) return false;
             currentMoveStep = struckTableAnimation.MoveStep;
-            if (colliderCheckCharacter != null)
-            {
-                colliderCheckCharacter.size = new Vector2(struckTableAnimation.AttackRange, struckTableAnimation.AttackRange/2f);
-            }
-            if (colliderCheckHitArea != null)
-            {
-                colliderCheckHitArea.offset = new Vector2(0, struckTableAnimation.Height/2f);
-                colliderCheckHitArea.size = struckTableAnimation.HitAreaSize;
-            }
 
             SetHeight(struckTableAnimation.Height);
             defaultFacingDirection8 = struckTableAnimation.DefaultFacingDirection8;
@@ -575,14 +582,14 @@ namespace GGemCo2DCore
         }
         public float GetRandomPositionYInHitArea()
         {
-            if (!colliderCheckHitArea)
+            if (!colliderHitArea)
             {
                 return transform.position.y;
             }
             // 캡슐의 로컬 공간 기준 Y 범위 계산
-            float halfHeight = colliderCheckHitArea.size.y / 2f;
-            float minLocalY = colliderCheckHitArea.offset.y - halfHeight;
-            float maxLocalY = colliderCheckHitArea.offset.y + halfHeight;
+            float halfHeight = colliderHitArea.size.y / 2f;
+            float minLocalY = colliderHitArea.offset.y - halfHeight;
+            float maxLocalY = colliderHitArea.offset.y + halfHeight;
 
             // 로컬 Y 기준 무작위 값
             float randomLocalY = Random.Range(minLocalY, maxLocalY);

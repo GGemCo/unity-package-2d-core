@@ -49,11 +49,11 @@ namespace GGemCo2DCore
 
             // Awake에서 콜라이더가 붙으므로 Start에서 참조
             capsuleColliderSize = Vector2.zero;
-            if (targetCharacter != null && targetCharacter.colliderCheckCharacter != null)
+            if (targetCharacter != null && targetCharacter.colliderAttackRange != null)
             {
-                capsuleColliderOffset   = targetCharacter.colliderCheckCharacter.offset;
-                capsuleColliderSize     = targetCharacter.colliderCheckCharacter.size;
-                capsuleDirection2D      = targetCharacter.colliderCheckCharacter.direction;
+                capsuleColliderOffset   = targetCharacter.colliderAttackRange.offset;
+                capsuleColliderSize     = targetCharacter.colliderAttackRange.size;
+                capsuleDirection2D      = targetCharacter.colliderAttackRange.direction;
             }
 
             // 최초 1회 계산

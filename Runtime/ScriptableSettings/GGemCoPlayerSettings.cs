@@ -8,16 +8,14 @@ namespace GGemCo2DCore
     {
         [FormerlySerializedAs("defaultFacing")]
         [Header("플레이어 디폴트 값 설정")]
-
         [Tooltip("플레이어의 초기 바라보는 방향 (좌/우/기타)")]
         public CharacterConstants.FacingDirection8 facingDirection8;
-
         [Tooltip("애니메이션 컨트롤러 타입 (Sprite/Spine 등)")]
         public ConfigCommon.AnimationController animationController;
-
         [Tooltip("플레이어의 최대 도달 가능 레벨")]
         public int maxLevel;
-
+        [Tooltip("디폴트 캐릭터 크기 (폭, 높이)")]
+        public Vector2 size;
         [Tooltip("플레이어의 시작 스케일 값 (1 = 100%)")]
         public float startScale;
 
@@ -43,23 +41,7 @@ namespace GGemCo2DCore
         [Tooltip("전기 속성 저항 (100 → 1배 = 면역)")]
         public int statRegistLightning;
 
-        [Header("범위 및 충돌 설정")]
-        [Tooltip("공격 사정거리 (가로/세로)")]
-        public Vector2 rangeAttack;
-        [Tooltip("충돌 박스의 위치 오프셋")]
-        public Vector2 rangeColliderOffset;
-        [Tooltip("충돌 박스의 크기")]
-        public Vector2 rangeCollider;
-        [Tooltip("피격 판정 영역 오프셋")]
-        public Vector2 rangeHitAreaOffset;
-        [Tooltip("피격 판정 영역 크기")]
-        public Vector2 rangeHitAreaSize;
-
-        [Header("캐릭터 물리 설정")]
-        [Tooltip("디폴트 캐릭터 크기 (폭, 높이)")]
-        public Vector2 size;
-        [Tooltip("기본 중력 계수 (Rigidbody2D.gravityScale)")]
-        public float gravityScale;
+        [Header("점프 설정")]
         [Tooltip("점프 최고 높이 (유닛 단위)")]
         public float jumpHeight;
         [Tooltip("점프 속도. 지면 → 정점까지 걸리는 시간 (초)")]
@@ -68,13 +50,10 @@ namespace GGemCo2DCore
         [Header("맵 경계 제한 옵션")]
         [Tooltip("왼쪽 경계를 벗어날 수 없도록 제한합니다.")]
         public bool limitBoundaryLeft = true;
-
         [Tooltip("오른쪽 경계를 벗어날 수 없도록 제한합니다.")]
         public bool limitBoundaryRight = true;
-
         [Tooltip("아래쪽(바닥) 경계를 벗어날 수 없도록 제한합니다.")]
         public bool limitBoundaryBottom = true;
-
         [Tooltip("위쪽(천장) 경계를 벗어날 수 없도록 제한합니다.")]
         public bool limitBoundaryTop = true;
         /// <summary>
@@ -95,7 +74,6 @@ namespace GGemCo2DCore
             statRegistFire = 0;
             statRegistCold = 0;
             statRegistLightning = 0;
-            gravityScale = 0;
             jumpHeight = 10;
             jumpSpeed = 1;
         }

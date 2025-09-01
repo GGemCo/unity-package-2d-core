@@ -70,31 +70,10 @@ namespace GGemCo2DCore
         {
             // AddComponent 순서 중요
             base.InitComponents();
-
-            Vector2 offset = Vector2.zero;
-            Vector2 size = new Vector2(0,0);
-
-            // attack range
-            GameObject attackRange = new GameObject("AttackRange");
-            CharacterAttackRange characterAttackRange = attackRange.AddComponent<CharacterAttackRange>();
-            characterAttackRange.Initialize(this);
-            
-            colliderCheckCharacter = ComponentController.AddCapsuleCollider2D(attackRange, true, offset, size);
-
-            // hit area
-            GameObject hitArea = new GameObject("HitArea");
-            CharacterHitArea characterHitArea = hitArea.AddComponent<CharacterHitArea>();
-            characterHitArea.Initialize(this);
-            
-            colliderCheckHitArea = ComponentController.AddCapsuleCollider2D(hitArea, true, offset, size, 0, 0, CapsuleDirection2D.Vertical);
             
             // 순서 중요. ControllerMonster 에서 콜라이더를 사용
             _controllerMonster = gameObject.AddComponent<ControllerMonster>();
             _controllerMonster.Initialize(_collider2Ds);
-
-            // 필요할시 프리팹에 수동으로 Component 추가할 것. 
-            characterRigidbody2D = gameObject.GetComponent<Rigidbody2D>();
-            colliderCheckMapObject = gameObject.GetComponent<CapsuleCollider2D>();
         }
         /// <summary>
         /// regen_data 의 정보 셋팅
@@ -217,10 +196,10 @@ namespace GGemCo2DCore
             long totalDamage = TotalAtk.Value;
         
             // 캡슐 콜라이더 2D와 충돌 중인 모든 콜라이더를 검색
-            Vector2 size = new Vector2(colliderCheckCharacter.size.x * Mathf.Abs(transform.localScale.x), colliderCheckCharacter.size.y * transform.localScale.y);
-            Vector2 point = (Vector2)transform.position + colliderCheckCharacter.offset * transform.localScale;
+            Vector2 size = new Vector2(colliderAttackRange.size.x * Mathf.Abs(transform.localScale.x), colliderAttackRange.size.y * transform.localScale.y);
+            Vector2 point = (Vector2)transform.position + colliderAttackRange.offset * transform.localScale;
 #if UNITY_6000_0_OR_NEWER
-            int hitCount = Physics2D.OverlapCapsule(point, size, colliderCheckCharacter.direction, 0f,
+            int hitCount = Physics2D.OverlapCapsule(point, size, colliderAttackRange.direction, 0f,
                 new ContactFilter2D().NoFilter(), _collider2Ds);
             for (int i = 0; i < hitCount; i++)
             {
@@ -231,8 +210,10 @@ namespace GGemCo2DCore
             {
 #endif
                 if (!hit || !hit.CompareTag(ConfigTags.GetValue(ConfigTags.Keys.Player))) continue;
-                Player player = hit.GetComponent<Player>();
-                if (player == null) continue;
+                CharacterHitArea characterHitArea = hit.GetComponent<CharacterHitArea>();
+                if (characterHitArea == null) continue;
+                
+                CharacterBase player = characterHitArea.target;
                 
                 MetadataDamage metadataDamage = new MetadataDamage
                 {
