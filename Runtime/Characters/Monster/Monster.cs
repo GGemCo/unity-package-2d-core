@@ -273,7 +273,7 @@ namespace GGemCo2DCore
                 float positionX =
                     Random.Range(attackerTransform.position.x - info.TargetPositionRangeX,
                         attackerTransform.position.x + info.TargetPositionRangeX);
-                float positionY = attackerTransform.gameObject.GetComponent<Player>().GetRandomPositionYInHitArea();
+                float positionY = attackerTransform.gameObject.GetComponent<CharacterBase>().GetRandomPositionYInHitArea();
                 if (info.TargetType == ProjectileConstants.TargetType.Fixed)
                 {
                     projectile?.Launch(attackerTransform.gameObject.GetComponent<CharacterBase>());
