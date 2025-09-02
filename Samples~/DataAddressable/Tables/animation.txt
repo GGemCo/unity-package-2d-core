@@ -1,7 +1,7 @@
-Uid	Type	Name	Controller	PrefabName	DefaultFacing	Width	Height	MoveStep	AttackRange	HitAreaSize
-#일반 npc										
-1001	Npc	npc1	Spine	Npc1	Left	233	334	128	340	0,0
-1002	Npc	npc2	Spine	Npc2	Left	233	334	128	340	0,0
-# 몬스터										
-2001	Monster	좀비	Spine	Zombie1	Left	312	318	128	340	109,216
-2002	Monster	스켈레톤	Spine	Skeleton1	Left	293	343	128	1400	109,256
+Uid	Type	Name	Controller	PrefabName	DefaultFacing	Width	Height	MoveStep
+#일반 npc								
+1001	Npc	npc1	Spine	Npc1	Left	233	334	128
+1002	Npc	npc2	Spine	Npc2	Left	233	334	128
+# 몬스터								
+2001	Monster	좀비	Spine	Zombie1	Left	312	318	128
+2002	Monster	스켈레톤	Spine	Skeleton1	Left	293	343	128
