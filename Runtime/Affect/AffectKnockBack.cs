@@ -56,7 +56,7 @@ namespace GGemCo2DCore
         protected override void OnBeforeStop()
         {
             // 이동 봉인 해제(원래 제약 복구, 속도는 0 유지)
-            character.Stop();
+            character.Stop(true);
             if (_rb2d)
             {
                 _rb2d.constraints = _originalConstraints;

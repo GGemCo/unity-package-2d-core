@@ -139,6 +139,7 @@ namespace GGemCo2DCore
                 character.StopCoroutine(_timer);
                 _timer = null;
             }
+            // GcLogger.Log($"[AffectBase] start Duration: {Duration:F1}초");
             _timer = character.StartCoroutine(CoDuration());
         }
 
@@ -155,8 +156,25 @@ namespace GGemCo2DCore
 
         private IEnumerator CoDuration()
         {
-            yield return GetWait(Duration); // 스케일드 시간 기준 대기. 필요 시 Realtime 변형 가능
-            // 만료: 컨트롤러에 종료 통보(컨트롤러가 Stop 호출 및 인덱스 정리)
+            float elapsed = 0f;
+
+            while (elapsed + 1f <= Duration)
+            {
+                // Debug.Log($"[AffectBase] Uid:{Uid}, 경과 시간: {elapsed:F1}초");
+                yield return GetWait(1f);
+                elapsed += 1f;
+            }
+
+            // 남은 시간 처리 (예: Duration이 2.5초일 경우 마지막 0.5초)
+            float remain = Duration - elapsed;
+            if (remain > 0f)
+            {
+                yield return GetWait(remain);
+                elapsed = Duration;
+            }
+
+            // Debug.Log($"[AffectBase] Uid:{Uid}, 만료 시간 도달: {elapsed:F1}초");
+
             _onCompleted?.Invoke(Uid);
         }
     }

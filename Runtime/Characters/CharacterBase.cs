@@ -561,10 +561,14 @@ namespace GGemCo2DCore
         //     AffectController?.RemoveAllAffects();
         // }
 
-        public void Stop()
+        public void Stop(bool isForce = false)
         {
             if (IsStatusDead()) return;
             if (IsStatusIdle()) return;
+            if (!isForce && IsStatusKnockback())
+            {
+                return;
+            }
             
             SetStatusIdle();
             CharacterAnimationController?.PlayWaitAnimation();

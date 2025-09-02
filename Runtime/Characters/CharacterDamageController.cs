@@ -109,9 +109,15 @@ namespace GGemCo2DCore
             }
             else
             {
-                // 순서 중요.
-                _characterBase.SetStatusDamage();
-                _characterBase.CharacterAnimationController.PlayDamageAnimation();
+                if (_characterBase.IsStatusKnockback())
+                {
+                }
+                else
+                {
+                    // 순서 중요.
+                    _characterBase.SetStatusDamage();
+                    _characterBase.CharacterAnimationController.PlayDamageAnimation();
+                }
                 _characterBase.OnDamage(attacker);
                 
                 if (affectUid > 0)
