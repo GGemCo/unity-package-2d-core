@@ -255,6 +255,23 @@ MonoBehaviour:
     m_Localized: Player has died.\nReturning to town.
     m_Metadata:
       m_Items: []
+  - m_Id: 19261665947750400
+    m_Localized: Change Key
+    m_Metadata:
+      m_Items: []
+  - m_Id: 19261815868952576
+    m_Localized: Please press the key you want to change.\nIf you want to cancel,
+      press ESC.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 19262635423371264
+    m_Localized: Save
+    m_Metadata:
+      m_Items: []
+  - m_Id: 19262684270235648
+    m_Localized: You have not saved your changes.\nDo you want to save them?
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []

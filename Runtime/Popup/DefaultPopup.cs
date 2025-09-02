@@ -83,7 +83,12 @@ namespace GGemCo2DCore
         /// <param name="title"></param>
         private void SetupTitle(string title)
         {
-            if (!string.IsNullOrEmpty(title) && textTitle != null)
+            string localeTitle = LocalizationManager.Instance.GetSystemByKey(title);
+            if (!string.IsNullOrEmpty(localeTitle))
+            {
+                textTitle.text = localeTitle;
+            }
+            else if (!string.IsNullOrEmpty(title) && textTitle != null)
             {
                 textTitle.text = title;
             }
@@ -97,7 +102,14 @@ namespace GGemCo2DCore
         {
             if (textMessage == null) return;
 
-            if (!string.IsNullOrEmpty(message))
+            string localeMessage = LocalizationManager.Instance.GetSystemByKey(message);
+            if (!string.IsNullOrEmpty(localeMessage))
+            {
+                textMessage.gameObject.SetActive(true);
+                textMessage.text = localeMessage;
+                textMessage.color = color;
+            }
+            else if (!string.IsNullOrEmpty(message))
             {
                 textMessage.gameObject.SetActive(true);
                 textMessage.text = message;

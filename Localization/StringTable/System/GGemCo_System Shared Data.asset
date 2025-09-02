@@ -310,6 +310,22 @@ MonoBehaviour:
     m_Metadata:
       m_Items:
       - rid: 9086697494700097621
+  - m_Id: 19261665947750400
+    m_Key: Popup_Title_Change_Key
+    m_Metadata:
+      m_Items: []
+  - m_Id: 19261815868952576
+    m_Key: Popup_Message_Change_Key
+    m_Metadata:
+      m_Items: []
+  - m_Id: 19262635423371264
+    m_Key: Popup_Title_Save
+    m_Metadata:
+      m_Items: []
+  - m_Id: 19262684270235648
+    m_Key: Popup_Message_Save
+    m_Metadata:
+      m_Items: []
   m_Metadata:
     m_Items: []
   m_KeyGenerator:

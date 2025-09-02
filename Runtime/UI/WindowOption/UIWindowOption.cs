@@ -216,8 +216,8 @@ namespace GGemCo2DCore
                     {
                         PopupType = PopupManager.Type.Default,
                         MessageColor = Color.red,
-                        Title = "저장하기", //슬롯 삭제
-                        Message = "변경한 내용을 저장하지 않았습니다.\n저장하시겠습니까?",
+                        Title = "Popup_Title_Save", //슬롯 삭제
+                        Message = "Popup_Message_Save",
                         OnConfirm = () => {
                             GcLogger.Log($"GuardCloseOrSwitch popup confirm.");
                             uiPanelOptionBase.TryApply(); // 되돌리고 진행 (또는 TryApply로 저장 후 진행)
@@ -275,8 +275,8 @@ namespace GGemCo2DCore
                         {
                             PopupType = PopupManager.Type.Default,
                             MessageColor = Color.red,
-                            Title = "저장하기", //슬롯 삭제
-                            Message = "변경한 내용을 저장하지 않았습니다.\n저장하시겠습니까?",
+                            Title = "Popup_Title_Save", //슬롯 삭제
+                            Message = "Popup_Message_Save",
                             OnConfirm = () => {
                                 uiPanelOptionBase.TryApply();
                                 uiPanelOptionBase.MarkDirty(false);
