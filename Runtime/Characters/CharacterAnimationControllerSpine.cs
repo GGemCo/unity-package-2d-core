@@ -1,11 +1,9 @@
 ﻿#if GGEMCO_USE_SPINE
-using System;
 using System.Collections;
 using System.Collections.Generic;
 using Spine;
 using Spine.Unity;
 using UnityEngine;
-using Event = Spine.Event;
 
 namespace GGemCo2DCore
 {
@@ -14,6 +12,7 @@ namespace GGemCo2DCore
     /// </summary>
     public class CharacterAnimationControllerSpine : Spine2dController, ICharacterAnimationController
     {
+        public string CurrentAnimationNameAttack { get; set; }
         private CharacterBase characterBase;
         private readonly List<StruckChangeSlotImage> changeImages = new List<StruckChangeSlotImage>();
 
@@ -131,7 +130,21 @@ namespace GGemCo2DCore
         /// </summary>
         public void PlayAttackAnimation(string animName = "")
         {
-            PlayAnimation(ICharacterAnimationController.AttackAnim, false, characterBase.GetCurrentAttackSpeed());
+            CurrentAnimationNameAttack = animName != "" ? animName : ICharacterAnimationController.AttackAnim;
+            PlayAnimation(CurrentAnimationNameAttack, false, characterBase.GetCurrentAttackSpeed());
+        }
+        public void PlayAttackWaitAnimation()
+        {
+            if (characterBase.IsStatusDead()) return;
+            string aniName = $"{CurrentAnimationNameAttack}{ICharacterAnimationController.SuffixWait}";
+            PlayAnimation(aniName, true, characterBase.GetCurrentAttackSpeed());
+        }
+
+        public void PlayAttackEndAnimation()
+        {
+            if (characterBase.IsStatusDead()) return;
+            string aniName = $"{CurrentAnimationNameAttack}{ICharacterAnimationController.SuffixEnd}";
+            PlayAnimation(aniName, false, characterBase.GetCurrentAttackSpeed());
         }
         /// <summary>
         /// 죽음 애니메이션 처리
@@ -213,11 +226,6 @@ namespace GGemCo2DCore
         public void PlayCharacterAnimation(string animationName, bool loop = false, float timeScale = 1f)
         {
             PlayAnimation(animationName, loop, timeScale);
-        }
-
-        public void PlayAttackEndAnimation()
-        {
-            
         }
         public float GetCharacterAnimationDuration(string animationName, bool isMilliseconds = true)
         {

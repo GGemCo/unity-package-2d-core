@@ -48,6 +48,9 @@ namespace GGemCo2DCore
         public const string AttackAnim = "attack";
         public const string DeadAnim = "die";
         public const string DamageAnim = "damage";
+        public const string SuffixWait = "_wait";
+        public const string SuffixEnd = "_end";
+        public string CurrentAnimationNameAttack { get; set; }
         
         void PlayWaitAnimation();
         void PlayRunAnimation();
@@ -56,6 +59,7 @@ namespace GGemCo2DCore
         void PlayDamageAnimation();
         void PlayCharacterAnimation(string animationName, bool loop = false, float timeScale = 1f);
         void PlayAttackEndAnimation();
+        void PlayAttackWaitAnimation();
         
         void ChangeCharacterImageInSlot(int partIndex, int itemUid = 0);
         void RemoveCharacterImageInSlot(List<StruckChangeSlotImage> changeSlotImages);

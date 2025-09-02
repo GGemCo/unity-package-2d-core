@@ -10,10 +10,10 @@ namespace GGemCo2DCore
     /// </summary>
     public class CharacterAnimationControllerSprite : Animation2dController, ICharacterAnimationController
     {
+        public string CurrentAnimationNameAttack { get; set; }
         private CharacterBase characterBase;
-        private string currentAnimationNameAttack;
         private SpriteRenderer spriteRenderer;
-        
+
         protected override void Awake()
         {
             base.Awake();
@@ -24,9 +24,10 @@ namespace GGemCo2DCore
                 enabled = false; // 컴포넌트를 비활성화하여 다른 함수들이 실행되지 않도록 합니다.
                 return;
             }
+
             spriteRenderer = GetComponent<SpriteRenderer>();
         }
-        
+
         /// <summary>
         /// wait 애니메이션 처리 
         /// </summary>
@@ -36,27 +37,32 @@ namespace GGemCo2DCore
             string idleAnim = ICharacterAnimationController.WaitForwardAnim;
             AnimatorStateInfo state = Animator.GetCurrentAnimatorStateInfo(0);
             if (state.IsName(idleAnim)) return;
-            PlayAnimation(idleAnim,true, characterBase.GetCurrentMoveSpeed());
+            PlayAnimation(idleAnim, true, characterBase.GetCurrentMoveSpeed());
         }
+
         /// <summary>
         /// run 애니메이션 처리
         /// </summary>
         public void PlayRunAnimation()
         {
             if (characterBase.IsStatusDead()) return;
-            string moveAnim = characterBase.directionNormalize.y != 0 
-                ? (characterBase.directionNormalize.y > 0 ? ICharacterAnimationController.WalkBackwardAnim : ICharacterAnimationController.WalkForwardAnim) 
+            string moveAnim = characterBase.directionNormalize.y != 0
+                ? (characterBase.directionNormalize.y > 0
+                    ? ICharacterAnimationController.WalkBackwardAnim
+                    : ICharacterAnimationController.WalkForwardAnim)
                 : ICharacterAnimationController.WalkForwardAnim;
-            
+
             AnimatorStateInfo state = Animator.GetCurrentAnimatorStateInfo(0);
             if (state.IsName(moveAnim)) return;
             PlayAnimation(moveAnim, true, characterBase.GetCurrentMoveSpeed());
         }
+
         public void PlayDamageAnimation()
         {
             if (characterBase.IsStatusDead()) return;
             PlayAnimation(ICharacterAnimationController.DamageAnim);
         }
+
         /// <summary>
         /// 스파인의 height 값을 구해서 가져오기
         /// </summary>
@@ -65,6 +71,7 @@ namespace GGemCo2DCore
         {
             return 0f;
         }
+
         /// <summary>
         /// 스파인의 width 값을 구해서 가져오기
         /// </summary>
@@ -73,6 +80,7 @@ namespace GGemCo2DCore
         {
             return 0f;
         }
+
         /// <summary>
         /// 스파인의 width, height 값을 구해서 가져오기
         /// </summary>
@@ -81,6 +89,7 @@ namespace GGemCo2DCore
         {
             return Vector2.zero;
         }
+
         /// <summary>
         /// 특정 슬롯에 이미지를 변경하기
         /// </summary>
@@ -106,7 +115,7 @@ namespace GGemCo2DCore
             foreach (var slotName in slotNames)
             {
                 string attachmentName = ItemConstants.AttachmentNameBySlotName[slotName];
-                
+
                 string changeSpritePath = $"Images/Parts/{folderName}/{attachmentName}";
                 if (imagePath != "")
                 {
@@ -115,27 +124,44 @@ namespace GGemCo2DCore
 
                 var sprite = Resources.Load<Sprite>(changeSpritePath);
 
-                StruckChangeSlotImage struckChangeSlotImage = new StruckChangeSlotImage(slotName, attachmentName, sprite);
+                StruckChangeSlotImage struckChangeSlotImage =
+                    new StruckChangeSlotImage(slotName, attachmentName, sprite);
                 changeImages.Add(struckChangeSlotImage);
             }
 
             ChangeImageInSlot(changeImages);
         }
+
         /// <summary>
         /// 특정 슬롯에 이미지를 지우기
         /// </summary>
         /// <param name="changeSlotImages"></param>
         public void RemoveCharacterImageInSlot(List<StruckChangeSlotImage> changeSlotImages)
         {
-            
+
         }
+
         /// <summary>
         /// 공격 애니메이션 처리
         /// </summary>
         public void PlayAttackAnimation(string animName = "")
         {
-            currentAnimationNameAttack = animName != "" ? animName : ICharacterAnimationController.AttackAnim;
-            PlayAnimation(currentAnimationNameAttack, false, characterBase.GetCurrentAttackSpeed());
+            CurrentAnimationNameAttack = animName != "" ? animName : ICharacterAnimationController.AttackAnim;
+            PlayAnimation(CurrentAnimationNameAttack, false, characterBase.GetCurrentAttackSpeed());
+        }
+
+        public void PlayAttackWaitAnimation()
+        {
+            if (characterBase.IsStatusDead()) return;
+            string aniName = $"{CurrentAnimationNameAttack}{ICharacterAnimationController.SuffixWait}";
+            PlayAnimation(aniName, true, characterBase.GetCurrentAttackSpeed());
+        }
+
+        public void PlayAttackEndAnimation()
+        {
+            if (characterBase.IsStatusDead()) return;
+            string aniName = $"{CurrentAnimationNameAttack}{ICharacterAnimationController.SuffixEnd}";
+            PlayAnimation(aniName, false, characterBase.GetCurrentAttackSpeed());
         }
         /// <summary>
         /// 죽음 애니메이션 처리
@@ -153,11 +179,11 @@ namespace GGemCo2DCore
             // GcLogger.Log($"OnAnimationComplete: {animator.GetCurrentAnimatorClipInfo(0)?.}");
             // GcLogger.Log("OnAnimationInterrupt gameobject: " + this.gameObject.name + " / animationName: " + entry.Animation.Name);
             if (Animator == null) return;
-            if (state.IsName(currentAnimationNameAttack))
+            if (state.IsName(CurrentAnimationNameAttack))
             {
                 characterBase.OnAnimationCompleteAttack();
             }
-            else if (state.IsName($"{currentAnimationNameAttack}_end"))
+            else if (state.IsName($"{CurrentAnimationNameAttack}_end"))
             {
                 characterBase.OnAnimationCompleteAttackEnd();
             }
@@ -215,13 +241,6 @@ namespace GGemCo2DCore
         public void PlayCharacterAnimation(string animationName, bool loop = false, float timeScale = 1)
         {
             PlayAnimation(animationName, loop, timeScale);
-        }
-
-        public void PlayAttackEndAnimation()
-        {
-            if (characterBase.IsStatusDead()) return;
-            string aniName = $"{currentAnimationNameAttack}_end";
-            PlayAnimation(aniName, false, characterBase.GetCurrentAttackSpeed());
         }
 
         public void SetCharacterFillColor(Color color)
