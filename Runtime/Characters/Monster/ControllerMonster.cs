@@ -45,8 +45,11 @@ namespace GGemCo2DCore
             var raw = (targetCharacter.attackerTransform.position - targetCharacter.transform.position);
             targetCharacter.directionNormalize = GetFilteredDirection(raw);
         }
-
+#if GGEMCO_2D_CONTROL
+        private void FixedUpdate()
+#else
         private void Update()
+#endif
         {
             if (!CheckPossibleControl()) return;
             
