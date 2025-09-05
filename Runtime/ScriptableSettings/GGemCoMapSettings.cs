@@ -5,12 +5,12 @@ namespace GGemCo2DCore
     [CreateAssetMenu(fileName = ConfigScriptableObject.Map.FileName, menuName = ConfigScriptableObject.Map.MenuName, order = ConfigScriptableObject.Map.Ordering)]
     public class GGemCoMapSettings : ScriptableObject
     {
-        [Header("맵 설정")] 
-        
-        [Header("타일맵에 사용되는 Grid 오브젝트의 Cell Size")]
+        [Header("타일맵 설정")]
+        [Tooltip("타일맵에 사용되는 Grid 오브젝트의 Cell 크기 (X, Y 단위)")]
         public Vector2 tilemapGridCellSize;
 
-        [Header("첫 게임 실행시 시작 맵의 고유번호")]
+        [Header("게임 시작 설정")]
+        [Tooltip("첫 게임 실행 시 로딩되는 맵의 고유번호 (테이블 참조)")]
         public int startMapUid;
 
         /// <summary>

@@ -6,17 +6,29 @@ namespace GGemCo2DCore
     [CreateAssetMenu(fileName = ConfigScriptableObject.Save.FileName, menuName = ConfigScriptableObject.Save.MenuName, order = ConfigScriptableObject.Save.Ordering)]
     public class GGemCoSaveSettings: ScriptableObject
     {
-        [Header("세이브 데이터 설정")] 
-        [Header("세이브 데이터 사용여부")] [SerializeField] private bool useSaveData;
-        [Header("세이브 데이터 자장할 폴더 이름 입니다.")] [SerializeField] private string saveDataFolderName;
-        [Header("저장 슬롯 최대 개수. UI 를 고려하여 개수를 정해주세요.")] public int saveDataMaxSlotCount;
-        [Header("세이브 데이터 썸네일을 자장할 폴더 이름 입니다.")] [SerializeField] private string saveDataThumbnailFolderName;
-        [Header("썸네일의 width 크기(pixel). 0 이면 생성하지 않습니다.")] public int saveDataThumbnailWidth;
+        [Header("세이브 데이터 기본 설정")]
+        [Tooltip("세이브 데이터를 사용할지 여부를 설정합니다.")]
+        [SerializeField] private bool useSaveData;
 
-        [Header("저장 대기 시간")]
-        [Tooltip("saveDataDelay 시간 후 저장 처리. 저장 처리되기전에 재요청이 오면 기존 요청은 취소되고 saveDataDelay 시간 동안 기다린다.(초)")]
+        [Tooltip("세이브 데이터를 저장할 폴더 이름입니다.")]
+        [SerializeField] private string saveDataFolderName;
+
+        [Tooltip("저장 슬롯의 최대 개수입니다. UI 디자인을 고려하여 적절히 설정하세요.")]
+        public int saveDataMaxSlotCount;
+
+        [Tooltip("세이브 데이터 썸네일을 저장할 폴더 이름입니다.")]
+        [SerializeField] private string saveDataThumbnailFolderName;
+
+        [Tooltip("저장될 썸네일의 가로 크기(px)입니다. 0으로 설정하면 썸네일을 생성하지 않습니다.")]
+        public int saveDataThumbnailWidth;
+
+        [Header("세이브 타이밍 설정")]
+        [Tooltip("자동 저장 요청 시 대기 시간(초). " +
+                 "대기 중 새로운 요청이 들어오면 기존 요청은 취소되고 다시 대기합니다.")]
         public float saveDataDelay;
-        [Header("강제로 저장할 시간(초)")] public float saveDataForceSaveInterval;
+
+        [Tooltip("강제 저장이 수행되는 최소 간격(초)입니다.")]
+        public float saveDataForceSaveInterval;
         
         /// <summary>
         /// 처음 생성 시 한 번만 실행됨
