@@ -8,11 +8,12 @@ namespace GGemCo2DCore
         public int ToMapUid; // 이동할 map uid
         public float x, y, z;
         public float RotationX, RotationY, RotationZ;
+        public float ScaleX, ScaleY, ScaleZ;
         public float ToX, ToY, ToZ; // 이동했을때 플레이어 스폰되는 위치
         public float BoxColliderSizeX, BoxColliderSizeY;
         public float BoxColliderOffsetX, BoxColliderOffsetY;
 
-        public WarpData(int mapUid, Vector3 position, int toMapUid, Vector3 toSpawnPosition, Vector3 rotation, Vector2 boxColliderSize, Vector2 boxColliderOffset)
+        public WarpData(int mapUid, Vector3 position, int toMapUid, Vector3 toSpawnPosition, Vector3 rotation, Vector2 boxColliderSize, Vector2 boxColliderOffset, Vector3 scale)
         {
             MapUid = mapUid;
             ToMapUid = toMapUid;
@@ -29,6 +30,9 @@ namespace GGemCo2DCore
             BoxColliderSizeY = boxColliderSize.y;
             BoxColliderOffsetX = boxColliderOffset.x;
             BoxColliderOffsetY = boxColliderOffset.y;
+            ScaleX = scale.x;
+            ScaleY = scale.y;
+            ScaleZ = scale.z;
         }
     }
 }

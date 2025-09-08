@@ -39,6 +39,10 @@ namespace GGemCo2DCore
             transform.eulerAngles = new Vector3(WarpData.RotationX, WarpData.RotationY, WarpData.RotationZ);
             boxCollider2D.size = new Vector2(WarpData.BoxColliderSizeX, WarpData.BoxColliderSizeY);
             boxCollider2D.offset = new Vector2(WarpData.BoxColliderOffsetX, WarpData.BoxColliderOffsetY);
+            if (WarpData.ScaleX == 0 && WarpData.ScaleY == 0 && WarpData.ScaleZ == 0)
+                transform.localScale = Vector3.one;
+            else
+                transform.localScale = new Vector3(WarpData.ScaleX, WarpData.ScaleY, WarpData.ScaleZ);
         }
     }
 }

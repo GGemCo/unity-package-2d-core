@@ -65,7 +65,9 @@ namespace GGemCo2DCoreEditor
                     objectWarp.toMapPlayerSpawnPosition,
                     child.transform.eulerAngles,
                     child.GetComponent<BoxCollider2D>().size,
-                    child.GetComponent<BoxCollider2D>().offset);
+                    child.GetComponent<BoxCollider2D>().offset,
+                    objectWarp.transform.localScale
+                    );
                 warpDataList.warpDataList.Add(warpData);
             }
 
