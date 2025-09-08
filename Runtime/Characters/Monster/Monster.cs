@@ -273,5 +273,19 @@ namespace GGemCo2DCore
                 yield return new WaitForSeconds(info.SecDelayByOne);
             }
         }
+        /// <summary>
+        /// 맵 바닥으로 떨어졌을 경우 처리
+        /// </summary>
+        protected override void OnCheckEndGround()
+        {
+            base.OnCheckEndGround();
+            if (sliderHpBar != null)
+            {
+                Destroy(sliderHpBar);
+            }
+            _controllerMonster?.StopAllCoroutines();
+            SceneGame.Instance.mapManager.OnDeadMonster(vid, uid, gameObject);
+            Destroy(gameObject);
+        }
     }
 }

@@ -210,11 +210,13 @@ namespace GGemCo2DCore
         /// </summary>
         private void OnDeadPlayer()
         {
+            SetState(GameState.Begin);
             mapManager.LoadMapByPlayerDead();
         }
 
         public void SetState(GameState newState)
         {
+            if (State == newState) return;
             State = newState;
             _isStateDirty = true;
         }

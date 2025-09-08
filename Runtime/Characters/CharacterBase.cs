@@ -316,8 +316,31 @@ namespace GGemCo2DCore
         protected virtual void Update()
         {
             if (IsStatusDead()) return;
+            if (CheckEndGround()) return;
+            
             UpdatePosition();
         }
+        /// <summary>
+        /// 땅 바닥 체크
+        /// </summary>
+        /// <returns></returns>
+        private bool CheckEndGround()
+        {
+            if (transform.position.y > 0) return false;
+            OnCheckEndGround();
+            return true;
+        }
+
+        protected virtual void OnCheckEndGround()
+        {
+            SetStatusDead();
+            // 어펙트 모두 지우기
+            if (AffectController != null)
+            {
+                AffectController.RemoveAllAffects();
+            }
+        }
+
         /// <summary>
         /// 강제로 이동시키기
         /// </summary>
@@ -341,6 +364,7 @@ namespace GGemCo2DCore
         public CharacterConstants.CharacterStatus GetCurrentStatus() => currentStatus;
         
         private void SetStatus(CharacterConstants.CharacterStatus value) => currentStatus = value;
+        public void SetStatusNone() => SetStatus(CharacterConstants.CharacterStatus.None);
         public void SetStatusDead() => SetStatus(CharacterConstants.CharacterStatus.Dead);
         public void SetStatusIdle() => SetStatus(CharacterConstants.CharacterStatus.Idle);
         public void SetStatusRun() => SetStatus(CharacterConstants.CharacterStatus.Run);

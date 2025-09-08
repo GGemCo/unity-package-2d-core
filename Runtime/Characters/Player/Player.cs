@@ -379,5 +379,11 @@ namespace GGemCo2DCore
         {
             Stop();
         }
+        protected override void OnCheckEndGround()
+        {
+            base.OnCheckEndGround();
+            _sceneGame.SetState(SceneGame.GameState.End);
+            gameObject.SetActive(false);
+        }
     }
 }
