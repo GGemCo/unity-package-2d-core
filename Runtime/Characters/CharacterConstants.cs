@@ -60,6 +60,7 @@
             Damage,
             Jump,
             Knockback,
+            Dash
         }
 
         /// <summary>

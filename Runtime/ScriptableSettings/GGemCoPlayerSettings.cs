@@ -46,6 +46,24 @@ namespace GGemCo2DCore
         public float jumpHeight;
         [Tooltip("점프 속도. 지면 → 정점까지 걸리는 시간 (초)")]
         public float jumpSpeed;
+        [Tooltip("점프 중 공격 가능 여부")]
+        public bool canAttackPlayJumping;
+        
+        [Header("대시 설정")]
+        [Tooltip("대시 거리 (유닛 단위)")]
+        public float dashDistance;
+        [Tooltip("대시 속도. (초)")]
+        public float dashDuration;
+        [Tooltip("대시 Easing")]
+        public Easing.EaseType dashEasing;
+        [Tooltip("대시 중 공격 가능 여부")]
+        public bool canAttackPlayDashing;
+        [Tooltip("대시 중 이동 가능 여부")]
+        public bool canMovePlayDashing;
+        [Tooltip("대시 중 점프 가능 여부")]
+        public bool canJumpPlayDashing;
+        [Tooltip("점프 중 대시 가능 여부")]
+        public bool canDashPlayJumping;
 
         [Header("맵 경계 제한 옵션")]
         [Tooltip("왼쪽 경계를 벗어날 수 없도록 제한합니다.")]
@@ -56,6 +74,7 @@ namespace GGemCo2DCore
         public bool limitBoundaryBottom = true;
         [Tooltip("위쪽(천장) 경계를 벗어날 수 없도록 제한합니다.")]
         public bool limitBoundaryTop = true;
+
         /// <summary>
         /// 처음 생성 시 한 번만 실행됨
         /// </summary>

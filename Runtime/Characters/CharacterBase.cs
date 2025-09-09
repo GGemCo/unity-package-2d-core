@@ -84,6 +84,7 @@ namespace GGemCo2DCore
         public event EventHandlerAnimationCompleteAttackEnd AnimationCompleteAttackEnd;
         public event EventHandlerOnStop OnStop;
         public event EventHandlerOnAnimationEventJump OnAnimationEventJump;
+        public event EventHandlerOnAnimationEventDash OnAnimationEventDash;
         
         protected override void Awake()
         {
@@ -358,6 +359,7 @@ namespace GGemCo2DCore
         public bool IsStatusDamage() => currentStatus == CharacterConstants.CharacterStatus.Damage;
         public bool IsStatusJump() => currentStatus == CharacterConstants.CharacterStatus.Jump;
         public bool IsStatusKnockback() => currentStatus == CharacterConstants.CharacterStatus.Knockback;
+        public bool IsStatusDash() => currentStatus == CharacterConstants.CharacterStatus.Dash;
         public CharacterConstants.CharacterStatus GetCurrentStatus() => currentStatus;
         
         private void SetStatus(CharacterConstants.CharacterStatus value) => currentStatus = value;
@@ -372,6 +374,7 @@ namespace GGemCo2DCore
         public void SetStatusDamage() => SetStatus(CharacterConstants.CharacterStatus.Damage);
         public void SetStatusJump() => SetStatus(CharacterConstants.CharacterStatus.Jump);
         public void SetStatusKnockback() => SetStatus(CharacterConstants.CharacterStatus.Knockback);
+        public void SetStatusDash() => SetStatus(CharacterConstants.CharacterStatus.Dash);
 
         public void SetScale(float scale)
         {
@@ -746,13 +749,30 @@ namespace GGemCo2DCore
         /// <summary>
         /// 점프 애니메이션 관련 event 발생시 처리
         /// </summary>
-        /// <param name="eventNameJump"></param>
-        public void AnimationEventJump(string eventNameJump)
+        /// <param name="eventName"></param>
+        public void AnimationEventJump(string eventName)
         {
-            var e = new EventArgsOnAnimationEventJump { Handled = false, EventName = eventNameJump };
+            var e = new EventArgsOnAnimationEventJump { Handled = false, EventName = eventName };
 
             // 모든 구독자에게 알림
             OnAnimationEventJump?.Invoke(this, e);
+
+            // 아무도 처리하지 않았으면 레거시 실행
+            if (!e.Handled)
+            {
+                
+            }
+        }
+        /// <summary>
+        /// 대시 애니메이션 관련 event 발생시 처리
+        /// </summary>
+        /// <param name="eventName"></param>
+        public void AnimationEventDash(string eventName)
+        {
+            var e = new EventArgsOnAnimationEventDash { Handled = false, EventName = eventName };
+
+            // 모든 구독자에게 알림
+            OnAnimationEventDash?.Invoke(this, e);
 
             // 아무도 처리하지 않았으면 레거시 실행
             if (!e.Handled)

@@ -12,5 +12,6 @@ namespace GGemCo2DCore
         void OnAnimationEventProjectile(int uid, GameObject fromObject);
         void OnAnimationEventSkill(string json, GameObject fromObject);
         void OnAnimationEventJump(GameObject fromObject, string eventName);
+        void OnAnimationEventDash(GameObject fromObject, string eventName);
     }
 }

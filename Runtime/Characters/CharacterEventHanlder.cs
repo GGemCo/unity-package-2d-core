@@ -44,4 +44,14 @@ namespace GGemCo2DCore
     }
 
     public delegate void EventHandlerOnAnimationEventJump(CharacterBase sender, EventArgsOnAnimationEventJump e);
+    /// <summary>
+    /// 대시 관련 애니메이션 이벤트 발생시 
+    /// </summary>
+    public sealed class EventArgsOnAnimationEventDash : EventArgs
+    {
+        public bool Handled { get; set; }
+        public string EventName { get; set; }
+    }
+
+    public delegate void EventHandlerOnAnimationEventDash(CharacterBase sender, EventArgsOnAnimationEventDash e);
 }

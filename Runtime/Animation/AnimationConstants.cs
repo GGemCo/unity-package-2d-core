@@ -35,8 +35,12 @@
         public const string EventNameEffect = Prefix+"Effect";
         public const string EventNameProjectile = Prefix+"Projectile";
         public const string EventNameSkill = Prefix+"Skill";
+        
         public const string EventNameJumpUp = Prefix+"JumpUp";
         public const string EventNameJumpFall = Prefix+"JumpFall";
         public const string EventNameJumpEnd = Prefix+"JumpEnd";
+        
+        public const string EventNameDashPlay = Prefix+"DashPlay";
+        public const string EventNameDashEnd = Prefix+"DashEnd";
     }
 }

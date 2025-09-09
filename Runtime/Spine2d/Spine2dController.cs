@@ -86,6 +86,10 @@ namespace GGemCo2DCore
                 case AnimationConstants.EventNameJumpEnd:
                     EventListener?.OnAnimationEventJump(gameObject, e.Data.Name);
                     break;
+                case AnimationConstants.EventNameDashPlay:
+                case AnimationConstants.EventNameDashEnd:
+                    EventListener?.OnAnimationEventDash(gameObject, e.Data.Name);
+                    break;
 #endif
             }
         }

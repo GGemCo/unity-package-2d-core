@@ -207,6 +207,20 @@ namespace GGemCo2DCore
         {
             EventListener?.OnAnimationEventJump(gameObject, AnimationConstants.EventNameJumpEnd);
         }
+        /// <summary>
+        /// 대시 중 애니메이션 마지막 프레임에서 호출
+        /// </summary>
+        public void GGemCoAniEventDashPlay()
+        {
+            EventListener?.OnAnimationEventDash(gameObject, AnimationConstants.EventNameDashPlay);
+        }
+        /// <summary>
+        /// 대시 종료 후 end 애니메이션 마지막 프레임에서 호출
+        /// </summary>
+        public void GGemCoAniEventDashEnd()
+        {
+            EventListener?.OnAnimationEventDash(gameObject, AnimationConstants.EventNameDashEnd);
+        }
 #endif
         protected AnimationClip GetClipByName(string animationName)
         {

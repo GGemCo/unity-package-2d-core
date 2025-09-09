@@ -103,5 +103,9 @@ namespace GGemCo2DCore
         {
             fromObject.GetComponent<CharacterBase>()?.AnimationEventJump(eventName);
         }
+        public void OnAnimationEventDash(GameObject fromObject, string eventName)
+        {
+            fromObject.GetComponent<CharacterBase>()?.AnimationEventDash(eventName);
+        }
     }
 }
