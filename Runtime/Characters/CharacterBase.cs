@@ -321,7 +321,7 @@ namespace GGemCo2DCore
             UpdatePosition();
         }
         /// <summary>
-        /// 땅 바닥 체크
+        /// 땅 바닥 체크. y 좌표가 0 보다 작으면 사망 처리
         /// </summary>
         /// <returns></returns>
         private bool CheckEndGround()
@@ -335,10 +335,7 @@ namespace GGemCo2DCore
         {
             SetStatusDead();
             // 어펙트 모두 지우기
-            if (AffectController != null)
-            {
-                AffectController.RemoveAllAffects();
-            }
+            AffectController?.RemoveAllAffects();
         }
 
         /// <summary>
