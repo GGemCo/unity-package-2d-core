@@ -24,6 +24,11 @@ namespace GGemCo2DCoreEditor
             SoundUIButton,
             Test = 200,
             DropItemRate,
+            Debug = 300,
+            DebugTilemapDrawCall,
+            DebugFps,
+            DebugPhysics2D,
+            DebugMemory,
             Etc = 900,
             PlayerPrefs,
             OpenSaveDataFolder,
@@ -54,6 +59,13 @@ namespace GGemCo2DCoreEditor
         // 테스트
         private const string NameToolTest = NameToolGGemCo + "태스트툴/";
         public const string NameToolDropItemRate = NameToolTest + "아이템 드랍 확률";
+        
+        // 디버그
+        private const string NameToolDebug = NameToolGGemCo + "디버그툴/";
+        public const string NameToolTilemapDrawCall = NameToolDebug + "타일맵 드로우콜 HUD";
+        public const string NameToolFps = NameToolDebug + "FPS HUD";
+        public const string NameToolPhysics2D = NameToolDebug + "Physics2D HUD";
+        public const string NameToolMemory = NameToolDebug + "메모리 HUD";
         
         // etc
         private const string NameToolEtc = NameToolGGemCo + "기타/";
