@@ -1,7 +1,5 @@
-using System;
 using System.Collections.Generic;
 using UnityEngine;
-using R3;
 
 namespace GGemCo2DCore
 {
@@ -14,25 +12,15 @@ namespace GGemCo2DCore
         private GameObject _targetMonster;
         private EquipController _equipController;
         private ControllerPlayer _controllerPlayer;
-        private UIWindowHud _uiWindowHud;
-        private UIWindowPlayerInfo _uiWindowPlayerInfo;
-        private UIWindowPlayerBuffInfo _uiWindowPlayerBuffInfo;
         private PlayerData _playerData;
         private SceneGame _sceneGame;
         // 충돌 체크할 몬스터 수  
         private const int CountCollider = 10;
         private Collider2D[] _collider2Ds;
-        private LocalizationManager _localizationManager;
         private GGemCoPlayerSettings _playerSettings;
+
+        private PlayerUIController _playerUIController;
             
-        [Serializable]
-        private struct StatUIBinding
-        {
-            public UIWindowPlayerInfo.IndexPlayerInfo textUI;
-            public Func<Player, BehaviorSubject<long>> GetStat;
-            public string label;
-        }
-        private readonly List<StatUIBinding> _statBindings = new();
         protected override void Awake()
         {
             // 먼저 선언한다.
@@ -40,39 +28,21 @@ namespace GGemCo2DCore
             _playerSettings = AddressableLoaderSettings.Instance.playerSettings;
             _collider2Ds = new Collider2D[CountCollider];
             base.Awake();
+            _playerUIController = new PlayerUIController();
+            _playerUIController.Initialize(this);
         }
         protected override void Start()
         {
             base.Start();
-            _localizationManager = LocalizationManager.Instance;
             _sceneGame = SceneGame.Instance;
             _playerData = _sceneGame.saveDataManager.Player;
-            _uiWindowHud = _sceneGame.uIWindowManager?.GetUIWindowByUid<UIWindowHud>(UIWindowConstants.WindowUid.Hud);
-            _uiWindowPlayerInfo =
-                _sceneGame.uIWindowManager?.GetUIWindowByUid<UIWindowPlayerInfo>(UIWindowConstants.WindowUid.PlayerInfo);
-            _uiWindowPlayerBuffInfo =
-                _sceneGame.uIWindowManager?.GetUIWindowByUid<UIWindowPlayerBuffInfo>(UIWindowConstants.WindowUid
-                    .PlayerBuffInfo);
             // 연출중 체크를 위해 추가
             _controllerPlayer.Initialize(_sceneGame.CutsceneManager);
             _sceneGame.mapManager.onLoadStartMap.AddListener(OnLoadStartMap);
-            
-            // TotalHp, Mp 가 바뀌어도 현재 값이 바뀌면 안된다.
-            TotalHp
-                .Subscribe(_ => SetWindowHudSliderHp(CurrentHp.Value))
-                .AddTo(this);
-            CurrentHp
-                .Subscribe(_ => SetWindowHudSliderHp(CurrentHp.Value))
-                .AddTo(this);
-            TotalMp
-                .Subscribe(_ => SetWindowHudSliderMp(CurrentMp.Value))
-                .AddTo(this);
-            CurrentMp
-                .Subscribe(_ => SetWindowHudSliderMp(CurrentMp.Value))
-                .AddTo(this);
+
+            _playerUIController.InitSubscribe();
 
             LoadEquipItems();
-            InitializeStatBindings();
         }
         /// <summary>
         /// tag, sorting layer, layer 셋팅하기
@@ -249,59 +219,6 @@ namespace GGemCo2DCore
                 }
             }
         }
-        private void SetWindowHudSliderHp(long value)
-        {
-            if (_uiWindowHud == null)
-            {
-                return;
-            }
-            _uiWindowHud.SetSliderHp(value, TotalHp.Value);
-        }
-        private void SetWindowHudSliderMp(long value)
-        {
-            if (_uiWindowHud == null) 
-            {
-                return;
-            }
-            _uiWindowHud.SetSliderMp(value, TotalMp.Value);
-        }
-        /// <summary>
-        /// Player의 스탯과 UI를 매핑하여 리스트에 저장
-        /// </summary>
-        private void InitializeStatBindings()
-        {
-            _statBindings.AddRange(new[]
-            {
-                new StatUIBinding { textUI = UIWindowPlayerInfo.IndexPlayerInfo.Atk, GetStat = p => p.TotalAtk, label = _localizationManager.GetStatusNameByKey("STAT_ATK") },
-                new StatUIBinding { textUI = UIWindowPlayerInfo.IndexPlayerInfo.Def, GetStat = p => p.TotalDef, label = _localizationManager.GetStatusNameByKey("STAT_DEF") },
-                new StatUIBinding { textUI = UIWindowPlayerInfo.IndexPlayerInfo.Hp, GetStat = p => p.TotalHp, label = _localizationManager.GetStatusNameByKey("STAT_HP") },
-                new StatUIBinding { textUI = UIWindowPlayerInfo.IndexPlayerInfo.Mp, GetStat = p => p.TotalMp, label = _localizationManager.GetStatusNameByKey("STAT_MP") },
-                new StatUIBinding { textUI = UIWindowPlayerInfo.IndexPlayerInfo.MoveSpeed, GetStat = p => p.TotalMoveSpeed, label = _localizationManager.GetStatusNameByKey("STAT_MOVE_SPEED") },
-                new StatUIBinding { textUI = UIWindowPlayerInfo.IndexPlayerInfo.AttackSpeed, GetStat = p => p.TotalAttackSpeed, label = _localizationManager.GetStatusNameByKey("STAT_ATTACK_SPEED") },
-                new StatUIBinding { textUI = UIWindowPlayerInfo.IndexPlayerInfo.CriticalDamage, GetStat = p => p.TotalCriticalDamage, label = _localizationManager.GetStatusNameByKey("STAT_CRITICAL_DAMAGE") },
-                new StatUIBinding { textUI = UIWindowPlayerInfo.IndexPlayerInfo.CriticalProbability, GetStat = p => p.TotalCriticalProbability, label = _localizationManager.GetStatusNameByKey("STAT_CRITICAL_PROBABILITY") },
-                new StatUIBinding { textUI = UIWindowPlayerInfo.IndexPlayerInfo.RegistFire, GetStat = p => p.TotalRegistFire, label = _localizationManager.GetStatusNameByKey("STAT_REGISTANCE_FIRE") },
-                new StatUIBinding { textUI = UIWindowPlayerInfo.IndexPlayerInfo.RegistCold, GetStat = p => p.TotalRegistCold, label = _localizationManager.GetStatusNameByKey("STAT_REGISTANCE_COLD") },
-                new StatUIBinding { textUI = UIWindowPlayerInfo.IndexPlayerInfo.RegistLightning, GetStat = p => p.TotalRegistLightning, label = _localizationManager.GetStatusNameByKey("STAT_REGISTANCE_LIGHTNING") }
-            });
-            foreach (var binding in _statBindings)
-            {
-                binding.GetStat(this).DistinctUntilChanged()
-                    .Subscribe(value => UpdatePlayerInfoText(binding.textUI, binding.label, value))
-                    .AddTo(this);
-            }
-        }
-        /// <summary>
-        /// UIWindowPlayerInfo 에 text 업데이트 하기
-        /// </summary>
-        /// <param name="textUI"></param>
-        /// <param name="label"></param>
-        /// <param name="value"></param>
-        private void UpdatePlayerInfoText(UIWindowPlayerInfo.IndexPlayerInfo textUI, string label, long value)
-        {
-            if (_uiWindowPlayerInfo == null) return;
-            _uiWindowPlayerInfo.UpdateText(textUI, label, value);
-        }
         /// <summary>
         /// 현재 생명력이 최대치인지
         /// </summary>
@@ -364,8 +281,7 @@ namespace GGemCo2DCore
         /// <param name="duration"></param>
         protected override void OnAffect(int affectUid, float duration = 0)
         {
-            if (_uiWindowPlayerBuffInfo == null) return;
-            _uiWindowPlayerBuffInfo.AddAffectIcon(affectUid, duration);
+            _playerUIController?.AddAffectIcon(affectUid, duration);
         }
 
         public void SetMapSize(Vector2 mapSize)

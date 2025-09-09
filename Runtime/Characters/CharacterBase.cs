@@ -50,7 +50,7 @@ namespace GGemCo2DCore
         private CharacterConstants.CharacterSortingOrder sortingOrder;
         
         [Header("상태 및 스탯")] public readonly BehaviorSubject<long> CurrentHp = new(0);
-        protected readonly BehaviorSubject<long> CurrentMp = new(0);
+        public readonly BehaviorSubject<long> CurrentMp = new(0);
 
         [Header("스킬")] 
         protected bool IsUseSkill = false;
