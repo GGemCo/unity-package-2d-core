@@ -139,7 +139,7 @@ namespace GGemCo2DCore
             if (characterHitArea)
             {
                 characterHitArea.Initialize(this);
-                colliderHitArea = characterAttackRange.gameObject.GetComponent<CapsuleCollider2D>();
+                colliderHitArea = characterHitArea.gameObject.GetComponent<CapsuleCollider2D>();
             }
         }
         protected override void Start()
@@ -246,6 +246,12 @@ namespace GGemCo2DCore
                     throw new ArgumentOutOfRangeException();
             }
         }
+
+        public void SetFacing(Vector2 dir)
+        {
+            SetFacing(CharacterConstants.ToFacingDirection8(dir));
+        }
+
         public void SetFacing(CharacterConstants.FacingDirection8 dir)
         {
             if (IsPossibleFlip() != true || dir == CharacterConstants.FacingDirection8.None) return;
@@ -360,6 +366,8 @@ namespace GGemCo2DCore
         public bool IsStatusJump() => currentStatus == CharacterConstants.CharacterStatus.Jump;
         public bool IsStatusKnockback() => currentStatus == CharacterConstants.CharacterStatus.Knockback;
         public bool IsStatusDash() => currentStatus == CharacterConstants.CharacterStatus.Dash;
+        public bool IsStatusClimb() => currentStatus == CharacterConstants.CharacterStatus.Climb;
+        public bool IsStatusPush() => currentStatus == CharacterConstants.CharacterStatus.Push;
         public CharacterConstants.CharacterStatus GetCurrentStatus() => currentStatus;
         
         private void SetStatus(CharacterConstants.CharacterStatus value) => currentStatus = value;
@@ -375,6 +383,8 @@ namespace GGemCo2DCore
         public void SetStatusJump() => SetStatus(CharacterConstants.CharacterStatus.Jump);
         public void SetStatusKnockback() => SetStatus(CharacterConstants.CharacterStatus.Knockback);
         public void SetStatusDash() => SetStatus(CharacterConstants.CharacterStatus.Dash);
+        public void SetStatusClimb() => SetStatus(CharacterConstants.CharacterStatus.Climb);
+        public void SetStatusPush() => SetStatus(CharacterConstants.CharacterStatus.Push);
 
         public void SetScale(float scale)
         {

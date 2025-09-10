@@ -95,16 +95,16 @@ namespace GGemCo2DCore
             return true;
         }
 
-        protected CharacterConstants.FacingDirection8 ToFacingDirection8(Vector2 dir)
-        {
-            if (dir == Vector2.zero) return CharacterConstants.FacingDirection8.None;
-
-            if (dir.x > 0f) return CharacterConstants.FacingDirection8.Right;
-            if (dir.x < 0f) return CharacterConstants.FacingDirection8.Left;
-            if (Mathf.Approximately(dir.x, 0f) && dir.y > 0f) return CharacterConstants.FacingDirection8.None;
-            if (Mathf.Approximately(dir.x, 0f) && dir.y < 0f) return CharacterConstants.FacingDirection8.None;
-            return CharacterConstants.FacingDirection8.DownRight;
-        }
+        // protected CharacterConstants.FacingDirection8 ToFacingDirection8(Vector2 dir)
+        // {
+        //     if (dir == Vector2.zero) return CharacterConstants.FacingDirection8.None;
+        //
+        //     if (dir.x > 0f) return CharacterConstants.FacingDirection8.Right;
+        //     if (dir.x < 0f) return CharacterConstants.FacingDirection8.Left;
+        //     if (Mathf.Approximately(dir.x, 0f) && dir.y > 0f) return CharacterConstants.FacingDirection8.None;
+        //     if (Mathf.Approximately(dir.x, 0f) && dir.y < 0f) return CharacterConstants.FacingDirection8.None;
+        //     return CharacterConstants.FacingDirection8.DownRight;
+        // }
 
         /// <summary>
         /// run 애니메이션 및 이동(경계 체크 포함)
@@ -115,7 +115,7 @@ namespace GGemCo2DCore
             if (targetCharacter.IsStatusAttack())   return false;
             if (targetCharacter.IsStatusDead())     return false;
 
-            CharacterConstants.FacingDirection8 facing = ToFacingDirection8(targetCharacter.directionNormalize);
+            CharacterConstants.FacingDirection8 facing = CharacterConstants.ToFacingDirection8(targetCharacter.directionNormalize);
             targetCharacter.SetFacing(facing);
 
             if (!targetCharacter.IsStatusJump())
@@ -178,7 +178,7 @@ namespace GGemCo2DCore
         {
             if (targetCharacter.IsStatusAttack() || targetCharacter.IsStatusDead()) return;
 
-            CharacterConstants.FacingDirection8 facing = ToFacingDirection8(targetCharacter.directionNormalize);
+            CharacterConstants.FacingDirection8 facing = CharacterConstants.ToFacingDirection8(targetCharacter.directionNormalize);
             targetCharacter.SetFacing(facing);
 
             targetCharacter.SetStatusAttack();

@@ -1,6 +1,8 @@
-﻿namespace GGemCo2DCore
+﻿using UnityEngine;
+
+namespace GGemCo2DCore
 {
-    public class CharacterConstants
+    public static class CharacterConstants
     {
         public enum Type
         {
@@ -60,7 +62,9 @@
             Damage,
             Jump,
             Knockback,
-            Dash
+            Dash,
+            Climb,
+            Push
         }
 
         /// <summary>
@@ -89,5 +93,15 @@
             AggroFirst // 선공
         }
 
+        public static FacingDirection8 ToFacingDirection8(Vector2 dir)
+        {
+            if (dir == Vector2.zero) return FacingDirection8.None;
+
+            if (dir.x > 0f) return FacingDirection8.Right;
+            if (dir.x < 0f) return FacingDirection8.Left;
+            if (Mathf.Approximately(dir.x, 0f) && dir.y > 0f) return FacingDirection8.None;
+            if (Mathf.Approximately(dir.x, 0f) && dir.y < 0f) return FacingDirection8.None;
+            return FacingDirection8.DownRight;
+        }
     }
 }

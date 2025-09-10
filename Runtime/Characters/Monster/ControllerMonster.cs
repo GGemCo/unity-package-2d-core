@@ -119,7 +119,7 @@ namespace GGemCo2DCore
             
             // 5) 이동 벡터 계산
             float speed = targetCharacter.currentMoveStep * targetCharacter.GetCurrentMoveSpeed();
-            Vector3 delta = (Vector3)(dir * (speed * Time.deltaTime));
+            Vector3 delta = dir * (speed * Time.deltaTime);
             
             // 6) 다음 위치
             Vector3 cur  = targetCharacter.transform.position;
@@ -195,7 +195,7 @@ namespace GGemCo2DCore
 
             // 공격자 방향 찾기
             HandleInput();
-            CharacterConstants.FacingDirection8 facing = ToFacingDirection8(targetCharacter.directionNormalize);
+            CharacterConstants.FacingDirection8 facing = CharacterConstants.ToFacingDirection8(targetCharacter.directionNormalize);
             targetCharacter.SetFacing(facing);
             
             targetCharacter.SetStatusAttack();
