@@ -109,7 +109,7 @@ public static class GGemCoDebugMenu
 
         // 없으면 새로 생성
         var root = new GameObject(RootName);
-        // var comp = root.AddComponent<GGemCoDebugHudRoot>();
+        root.AddComponent<GGemCoDebugHudRoot>();
 
         // 플레이 중이면 즉시 DDOL 전환(씬 로드시 파괴 방지)
         if (Application.isPlaying)
