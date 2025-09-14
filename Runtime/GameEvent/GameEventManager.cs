@@ -3,6 +3,9 @@ using UnityEngine;
 
 namespace GGemCo2DCore
 {
+    /// <summary>
+    /// 인게임에서 사용되는 이벤트 관리
+    /// </summary>
     public static class GameEventManager
     {
         // 메타데이터 기반 이벤트

@@ -2,7 +2,9 @@
 
 namespace GGemCo2DCore
 {
-    // 몬스터 사망 이벤트 페이로드
+    /// <summary>
+    /// 몬스터 사망 이벤트 페이로드
+    /// </summary>
     public readonly struct MonsterKilledEventData
     {
         public readonly int MapUid;

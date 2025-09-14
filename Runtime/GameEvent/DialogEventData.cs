@@ -2,7 +2,9 @@
 
 namespace GGemCo2DCore
 {
-    // 대화 이벤트 페이로드
+    /// <summary>
+    /// 대화 이벤트 페이로드
+    /// </summary>
     public readonly struct DialogEventData
     {
         public readonly int NpcUid;

@@ -2,7 +2,9 @@
 
 namespace GGemCo2DCore
 {
-    // 아이템 획득 이벤트 페이로드
+    /// <summary>
+    /// 아이템 획득 이벤트 페이로드
+    /// </summary>
     public readonly struct ItemCollectedEventData
     {
         public readonly int ItemUid;

@@ -2,6 +2,9 @@
 
 namespace GGemCo2DCore
 {
+    /// <summary>
+    /// Npc와의 상호작용 처리 매니저
+    /// </summary>
     public class InteractionManager
     {
         private SceneGame _sceneGame;
