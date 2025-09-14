@@ -85,6 +85,7 @@ namespace GGemCo2DCore
         public event EventHandlerOnStop OnStop;
         public event EventHandlerOnAnimationEventJump OnAnimationEventJump;
         public event EventHandlerOnAnimationEventDash OnAnimationEventDash;
+        private float _delayDestroyMonster;
         
         protected override void Awake()
         {
@@ -107,6 +108,7 @@ namespace GGemCo2DCore
             // 데미지 컨트롤러 초기화
             _characterDamageController = new CharacterDamageController();
             _characterDamageController.Initialize(this);
+            _delayDestroyMonster = AddressableLoaderSettings.Instance.settings.delayDestroyMonster;
         }
         /// <summary>
         /// tag, sorting layer, layer 셋팅하기
@@ -334,15 +336,8 @@ namespace GGemCo2DCore
         private bool CheckEndGround()
         {
             if (transform.position.y > 0) return false;
-            OnCheckEndGround();
+            Dead();
             return true;
-        }
-
-        protected virtual void OnCheckEndGround()
-        {
-            SetStatusDead();
-            // 어펙트 모두 지우기
-            AffectController?.RemoveAllAffects();
         }
 
         /// <summary>
@@ -473,17 +468,27 @@ namespace GGemCo2DCore
         public virtual void OnEventAttack(StruckAnimationEventAttack struckAnimationEventAttack)
         {
         }
-        /// <summary>
-        /// 캐릭터가 죽었을때 처리 
-        /// </summary>
-        public virtual void OnDead()
+
+        public void Dead(GameObject attacker = null)
         {
+            SetStatusDead();
+            Destroy(gameObject, _delayDestroyMonster);
+
             CharacterAnimationController.PlayDeadAnimation();
             // 어펙트 모두 지우기
             if (AffectController != null)
             {
                 AffectController.RemoveAllAffects();
             }
+
+            OnDead(attacker);
+        }
+
+        /// <summary>
+        /// 캐릭터가 죽었을때 처리 
+        /// </summary>
+        protected virtual void OnDead(GameObject attacker)
+        {
         }
         /// <summary>
         /// 내가 데미지 받았을때 처리 
@@ -597,8 +602,8 @@ namespace GGemCo2DCore
 
         public void Stop(bool isForce = false)
         {
-            if (IsStatusDead()) return;
-            if (IsStatusIdle()) return;
+            if (!isForce && IsStatusDead()) return;
+            if (!isForce && IsStatusIdle()) return;
             if (!isForce && IsStatusKnockback())
             {
                 return;

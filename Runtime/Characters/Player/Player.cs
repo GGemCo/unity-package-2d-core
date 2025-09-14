@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Events;
 
 namespace GGemCo2DCore
 {
@@ -8,6 +9,8 @@ namespace GGemCo2DCore
     /// </summary>
     public class Player : CharacterBase
     {
+        public UnityEvent onEventDeadByEndGround;
+        
         // 공격할 몬스터 
         private GameObject _targetMonster;
         private EquipController _equipController;
@@ -23,6 +26,7 @@ namespace GGemCo2DCore
             
         protected override void Awake()
         {
+            onEventDeadByEndGround = new UnityEvent();
             // 먼저 선언한다.
             IsUseSkill = true;
             _playerSettings = AddressableLoaderSettings.Instance.playerSettings;
@@ -259,9 +263,9 @@ namespace GGemCo2DCore
         /// <summary>
         /// 플레이어 죽었을때 end 상태로 변경
         /// </summary>
-        public override void OnDead()
+        protected override void OnDead(GameObject attacker)
         {
-            base.OnDead();
+            base.OnDead(attacker);
             _sceneGame.SetState(SceneGame.GameState.End);
         }
         
@@ -294,12 +298,6 @@ namespace GGemCo2DCore
         private void OnLoadStartMap()
         {
             Stop();
-        }
-        protected override void OnCheckEndGround()
-        {
-            base.OnCheckEndGround();
-            _sceneGame.SetState(SceneGame.GameState.End);
-            gameObject.SetActive(false);
         }
     }
 }

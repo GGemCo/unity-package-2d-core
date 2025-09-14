@@ -16,7 +16,6 @@ namespace GGemCo2DCore
     public class CharacterDamageController
     {
         private CharacterBase _characterBase;
-        private float _delayDestroyMonster;
         public void Initialize(CharacterBase characterBase)
         {
             _characterBase = characterBase;
@@ -25,7 +24,6 @@ namespace GGemCo2DCore
                 GcLogger.LogError($"CharacterBase가 없습니다.");
                 return;
             }
-            _delayDestroyMonster = AddressableLoaderSettings.Instance.settings.delayDestroyMonster;
         }
 
         public void TakeDamage(MetadataDamage metadataDamage)
@@ -102,10 +100,7 @@ namespace GGemCo2DCore
             
             if (remainHp <= 0)
             {
-                _characterBase.SetStatusDead();
-                Object.Destroy(_characterBase.gameObject, _delayDestroyMonster);
-
-                _characterBase.OnDead();
+                _characterBase.Dead(attacker);
             }
             else
             {
