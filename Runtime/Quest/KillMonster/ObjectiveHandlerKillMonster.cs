@@ -1,4 +1,5 @@
-﻿namespace GGemCo2DCore
+﻿
+namespace GGemCo2DCore
 {
     public class ObjectiveHandlerKillMonster : ObjectiveHandlerBase
     {
@@ -16,7 +17,7 @@
             _currentCount = _questData.GetCount(_currentQuestUid);
             if (!_isRegisteredMonsterKilled)
             {
-                GameEventManager.OnMonsterKilled += OnMonsterKilled;
+                GameEventManager.MonsterKilledEvent += EventMonsterKilled;
                 _isRegisteredMonsterKilled = true;
             }
         }
@@ -24,8 +25,11 @@
         {
             return _currentCount >= step.count;
         }
-        private void OnMonsterKilled(int mapUid, int monsterUid)
+        private void EventMonsterKilled(MonsterKilledEventData eventData)
         {
+            int mapUid = eventData.MapUid;
+            int monsterUid = eventData.MonsterUid;
+            
             if (mapUid != _currentStep.mapUid) return;
             if (monsterUid != _currentStep.targetUid) return;
             _currentCount++;
@@ -34,13 +38,13 @@
             if (_currentCount >= _currentStep.count)
             {
                 SceneGame.Instance.QuestManager.NextStep(_currentQuestUid);
-                GameEventManager.OnMonsterKilled -= OnMonsterKilled;
+                GameEventManager.MonsterKilledEvent -= EventMonsterKilled;
             }
         }
 
         public override void OnDispose()
         {
-            GameEventManager.OnMonsterKilled -= OnMonsterKilled;
+            GameEventManager.MonsterKilledEvent -= EventMonsterKilled;
         }
     }
 }

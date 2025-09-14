@@ -110,7 +110,10 @@ namespace GGemCo2DCore
             // 첫 단계가 talk to npc 이면 바로 시작
             if (questStep.objectiveType == QuestConstants.ObjectiveType.TalkToNpc)
             {
-                GameEventManager.DialogStart(npcUid);
+                var data = new DialogEventData(
+                    npcUid: npcUid
+                );
+                GameEventManager.DialogStart(data);
             }
             return true;
         }

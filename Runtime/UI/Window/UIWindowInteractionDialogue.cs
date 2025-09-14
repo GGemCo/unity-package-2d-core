@@ -232,7 +232,10 @@ namespace GGemCo2DCore
                 }
                 else if (npcQuestData.Status == QuestConstants.Status.InProgress)
                 {
-                    GameEventManager.DialogStart(_currentCharacterUid);
+                    var data = new DialogEventData(
+                        npcUid: _currentCharacterUid
+                    );
+                    GameEventManager.DialogStart(data);
                 }
             }
             catch (Exception e)

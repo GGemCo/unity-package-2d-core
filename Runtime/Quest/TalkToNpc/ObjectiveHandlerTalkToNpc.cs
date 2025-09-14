@@ -22,13 +22,14 @@
 
             if (!_isRegisteredDialogStart)
             {
-                GameEventManager.OnDialogStart += OnDialogStart;
+                GameEventManager.DialogStartEvent += OnDialogStart;
                 _isRegisteredDialogStart = true;
             }
         }
 
-        private void OnDialogStart(int npcUid)
+        private void OnDialogStart(DialogEventData eventData)
         {
+            int npcUid = eventData.NpcUid;
             UIWindowDialogue uiWindowDialogue =
                 SceneGame.Instance.uIWindowManager.GetUIWindowByUid<UIWindowDialogue>(UIWindowConstants.WindowUid
                     .Dialogue);
@@ -36,17 +37,18 @@
             
             if (!_isRegisteredDialogEnd)
             {
-                GameEventManager.OnDialogEnd += OnDialogEnd;
+                GameEventManager.DialogEndEvent += OnDialogEnd;
                 _isRegisteredDialogEnd = true;
             }
         }
 
-        private void OnDialogEnd(int npcUid)
+        private void OnDialogEnd(DialogEventData eventData)
         {
+            int npcUid = eventData.NpcUid;
             if (_currentStep.targetUid != npcUid) return;
             // 순서 중요
-            GameEventManager.OnDialogStart -= OnDialogStart;
-            GameEventManager.OnDialogEnd -= OnDialogEnd;
+            GameEventManager.DialogStartEvent -= OnDialogStart;
+            GameEventManager.DialogEndEvent -= OnDialogEnd;
             SceneGame.Instance.QuestManager.NextStep(_currentQuestUid);
             
             // 종료하는 npc 업데이트
@@ -60,8 +62,8 @@
         }
         public override void OnDispose()
         {
-            GameEventManager.OnDialogStart -= OnDialogStart;
-            GameEventManager.OnDialogEnd -= OnDialogEnd;
+            GameEventManager.DialogStartEvent -= OnDialogStart;
+            GameEventManager.DialogEndEvent -= OnDialogEnd;
         }
     }
 }

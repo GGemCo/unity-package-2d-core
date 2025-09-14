@@ -267,14 +267,41 @@ namespace GGemCo2DCore
             }
         }
 
-        private void OnDestroy()
+        private void OnEnable()
         {
+            GameEventManager.MonsterKilledEvent += OnMonsterKilled;
+        }
+
+        private void OnDisable()
+        {
+            GameEventManager.MonsterKilledEvent -= OnMonsterKilled;
+            
             ItemManager?.OnDestroy();
             CharacterManager?.OnDestroy();
             KeyboardManager?.OnDestroy();
             InteractionManager?.OnDestroy();
             CutsceneManager?.OnDestroy();
-            GameEventManager.OnDestroy();
+        }
+        private void OnMonsterKilled(MonsterKilledEventData e)
+        {
+            // 플레이어에게 사망했을 때 처리
+            if (e.IsPlayerKiller)
+            {
+                saveDataManager.Player.AddExpByMonster(e.MonsterUid);
+                ItemManager.OnMonsterDead(e.MonsterUid, e.Monster);
+            }
+
+            mapManager.OnDeadMonster(e.MonsterVid);
+        }
+
+        private void OnItemCollected(ItemCollectedEventData e)
+        {
+        }
+        private void OnDialogStart(DialogEventData e)
+        {
+        }
+        private void OnDialogEnd(DialogEventData e)
+        {
         }
     }
 }

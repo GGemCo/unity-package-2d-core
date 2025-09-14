@@ -454,9 +454,7 @@ namespace GGemCo2DCore
         /// 몬스터 죽었을때 리젠 처리 
         /// </summary>
         /// <param name="monsterVid"></param>
-        /// <param name="monsterUid"></param>
-        /// <param name="monsterObject"></param>
-        public void OnDeadMonster(int monsterVid, int monsterUid, GameObject monsterObject)
+        public void OnDeadMonster(int monsterVid)
         {
             if (monsterVid <= 0) return;
             StartCoroutine(_mapLoadCharacters.RegenMonster(monsterVid, _currentMapUid, _mapTileCommon));

@@ -142,10 +142,8 @@ namespace GGemCo2DCore
         /// <summary>
         /// 몬스터 처치 시 경험치 추가
         /// </summary>
-        /// <param name="monsterVid"></param>
         /// <param name="monsterUid"></param>
-        /// <param name="monsterObject"></param>
-        public void AddExp(int monsterVid, int monsterUid, GameObject monsterObject)
+        public void AddExpByMonster(int monsterUid)
         {
             var monsterData = _tableMonster.GetDataByUid(monsterUid);
             if (monsterData == null) return;

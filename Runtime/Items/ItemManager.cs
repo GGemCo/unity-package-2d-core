@@ -204,10 +204,9 @@ namespace GGemCo2DCore
         /// <summary>
         /// 몬스터 죽은 후 드랍 아이템 가져오기
         /// </summary>
-        /// <param name="monsterVid"></param>
         /// <param name="monsterUid"></param>
         /// <param name="monsterObject"></param>
-        public void OnMonsterDead(int monsterVid, int monsterUid, GameObject monsterObject)
+        public void OnMonsterDead(int monsterUid, GameObject monsterObject)
         {
             int itemUid = GetDropItem(monsterUid);
             if (itemUid <= 0) return;
@@ -264,7 +263,11 @@ namespace GGemCo2DCore
             if (uiWindowInventory != null)
             {
                 uiWindowInventory.SetIcons(result);
-                GameEventManager.ItemCollected(item.itemUid, item.itemCount);
+                var data = new ItemCollectedEventData(
+                    itemUid: item.itemUid,
+                    count: item.itemCount
+                );
+                GameEventManager.ItemCollected(data);
             }
             
             item.Reset();

@@ -13,8 +13,7 @@ namespace GGemCo2DCore
     {
         // 선공/후공
         private CharacterConstants.AttackType _attackType;
-        public delegate void DelegateMonsterDead(int monsterVid, int monsterUid, GameObject monsterObject);
-        public event DelegateMonsterDead OnMonsterDead;
+        
         [Tooltip("X좌표 움직임 여부")]
         public bool canMoveX = true;
         [Tooltip("Y좌표 움직임 여부")]
@@ -40,10 +39,6 @@ namespace GGemCo2DCore
             _collider2Ds = new Collider2D[CountCollider];
             base.Awake();
             _attackType = CharacterConstants.AttackType.PassiveDefense;
-            
-            OnMonsterDead += SceneGame.Instance.ItemManager.OnMonsterDead;
-            OnMonsterDead += SceneGame.Instance.saveDataManager.Player.AddExp;
-            OnMonsterDead += SceneGame.Instance.mapManager.OnDeadMonster;
             
             CurrentHp
                 .Subscribe(SetSliderHp)
@@ -164,22 +159,29 @@ namespace GGemCo2DCore
         /// <summary>
         /// 몬스터가 죽었을때 처리 
         /// </summary>
-        public override void OnDead()
+        protected override void OnDead(GameObject attacker)
         {
-            base.OnDead();
+            base.OnDead(attacker);
             if (sliderHpBar != null)
             {
                 Destroy(sliderHpBar);
             }
             _controllerMonster?.StopAllCoroutines();
-            GameEventManager.MonsterKilled(CharacterRegenData.MapUid, uid);
-            OnMonsterDead?.Invoke(vid, uid, gameObject);
+            
+            var isPlayer = attacker && attacker.CompareTag(ConfigTags.GetValue(ConfigTags.Keys.Player));
+            var data = new MonsterKilledEventData(
+                mapUid: CharacterRegenData.MapUid,
+                monsterUid: uid,
+                monsterVid: vid,
+                monster: gameObject,
+                attacker: attacker,
+                isPlayerKiller: isPlayer,
+                killerUid: null 
+            );
+            GameEventManager.MonsterKilled(data);
         }
         protected void OnDestroy()
         {
-            OnMonsterDead -= SceneGame.Instance.ItemManager.OnMonsterDead;
-            OnMonsterDead -= SceneGame.Instance.saveDataManager.Player.AddExp;
-            OnMonsterDead -= SceneGame.Instance.mapManager.OnDeadMonster;
             if (sliderHpBar != null)
             {
                 Destroy(sliderHpBar);
@@ -272,20 +274,6 @@ namespace GGemCo2DCore
                 }
                 yield return new WaitForSeconds(info.SecDelayByOne);
             }
-        }
-        /// <summary>
-        /// 맵 바닥으로 떨어졌을 경우 처리
-        /// </summary>
-        protected override void OnCheckEndGround()
-        {
-            base.OnCheckEndGround();
-            if (sliderHpBar != null)
-            {
-                Destroy(sliderHpBar);
-            }
-            _controllerMonster?.StopAllCoroutines();
-            SceneGame.Instance.mapManager.OnDeadMonster(vid, uid, gameObject);
-            Destroy(gameObject);
         }
     }
 }

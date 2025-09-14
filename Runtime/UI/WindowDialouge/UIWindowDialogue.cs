@@ -216,7 +216,10 @@ namespace GGemCo2DCore
         /// </summary>
         private void EndDialogue()
         {
-            GameEventManager.DialogEnd(_currentNpcUid);
+            var data = new DialogEventData(
+                npcUid: _currentNpcUid
+            );
+            GameEventManager.DialogEnd(data);
             ResetDialogue();
             gameObject.SetActive(false);
         }

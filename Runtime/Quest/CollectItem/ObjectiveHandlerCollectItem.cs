@@ -16,7 +16,7 @@
             _currentCount = _questData.GetCount(_currentQuestUid);
             if (!_isRegisteredItemCollected)
             {
-                GameEventManager.OnItemCollected += OnItemCollected;
+                GameEventManager.ItemCollectedEvent += OnItemCollected;
                 _isRegisteredItemCollected = true;
             }
         }
@@ -25,8 +25,10 @@
         {
             return _currentCount >= step.count;
         }
-        private void OnItemCollected(int itemUid, int count)
+        private void OnItemCollected(ItemCollectedEventData e)
         {
+            int itemUid = e.ItemUid;
+            int count = e.Count;
             if (itemUid == _currentStep.targetUid)
             {
                 _currentCount += count;
@@ -35,14 +37,14 @@
                 if (_currentCount >= _currentStep.count)
                 {
                     SceneGame.Instance.QuestManager.NextStep(_currentQuestUid);
-                    GameEventManager.OnItemCollected -= OnItemCollected;
+                    GameEventManager.ItemCollectedEvent -= OnItemCollected;
                 }
             }
         }
 
         public override void OnDispose()
         {
-            GameEventManager.OnItemCollected -= OnItemCollected;
+            GameEventManager.ItemCollectedEvent -= OnItemCollected;
         }
     }
 }
