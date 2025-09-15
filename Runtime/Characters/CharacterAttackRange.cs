@@ -18,5 +18,15 @@ namespace GGemCo2DCore
             transform.localScale = Vector3.one;
             transform.localPosition = Vector3.zero;
         }
+        protected void OnTriggerEnter2D(Collider2D collision)
+        {
+            if (!target) return;
+            target.OnTriggerEnterByAttackRange(collision);
+        }
+        protected void OnTriggerExit2D(Collider2D collision)
+        {
+            if (!target) return;
+            target.OnTriggerExitByAttackRange(collision);
+        }
     }
 }

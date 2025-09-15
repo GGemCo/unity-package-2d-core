@@ -59,19 +59,7 @@ namespace GGemCo2DCore
         protected override void InitComponents()
         {
             base.InitComponents();
-            ComponentController.AddRigidbody2D(gameObject);
-            
-            // attack range
-            GameObject attackRange = new GameObject("AttackRange");
-            CharacterAttackRange characterAttackRange = attackRange.AddComponent<CharacterAttackRange>();
-            characterAttackRange.Initialize(this);
-            
-            Vector2 offset = Vector2.zero;
-            Vector2 size = new Vector2(0,0);
-            colliderAttackRange = ComponentController.AddCapsuleCollider2D(attackRange, true, offset, size);
-            
             gameObject.AddComponent<ControllerNpc>();
-            
         }
         /// <summary>
         /// 테이블에서 가져온 npc 정보 셋팅
@@ -114,26 +102,25 @@ namespace GGemCo2DCore
             SetFlip(CharacterRegenData.IsFlip);
         }
         
-        protected void OnTriggerEnter2D(Collider2D collision)
+        public override void OnTriggerEnterByAttackRange(Collider2D collision)
         {
-            if (collision.gameObject.CompareTag(ConfigTags.GetValue(ConfigTags.Keys.Player)))
-            {
-                SceneGame.Instance.InteractionManager.SetInfo(this);
-            }
+            base.OnTriggerEnterByAttackRange(collision);
+            if (!collision.gameObject.CompareTag(ConfigTags.GetValue(ConfigTags.Keys.Player))) return;
+            var hitArea = collision.gameObject.GetComponent<CharacterHitArea>();
+            if (!hitArea) return;
+            SceneGame.Instance.InteractionManager.SetInfo(this);
         }
-        protected void OnTriggerExit2D(Collider2D collision)
+
+        public override bool OnTriggerExitByAttackRange(Collider2D collision)
         {
-            // 에디터에서 플레이 종료시 OnTriggerExit2D 함수를 호출하지 않도록 처리 
-#if UNITY_EDITOR
-            if (UnityEditorHelper.GetIsExitingPlayMode())
-                return;
-#endif
-            
-            if (collision.gameObject.CompareTag(ConfigTags.GetValue(ConfigTags.Keys.Player)))
-            {
-                SceneGame.Instance.InteractionManager.RemoveCurrentNpc();
-                SceneGame.Instance.InteractionManager.EndInteraction();
-            }
+            if (!base.OnTriggerExitByAttackRange(collision)) return false;
+
+            if (!collision.gameObject.CompareTag(ConfigTags.GetValue(ConfigTags.Keys.Player))) return false;
+            var hitArea = collision.gameObject.GetComponent<CharacterHitArea>();
+            if (!hitArea) return false;
+            SceneGame.Instance.InteractionManager.RemoveCurrentNpc();
+            SceneGame.Instance.InteractionManager.EndInteraction();
+            return true;
         }
         /// <summary>
         /// Destroy 되었을때 태그 지워주기
