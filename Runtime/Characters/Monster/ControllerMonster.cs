@@ -25,6 +25,7 @@ namespace GGemCo2DCore
             base.Start();
             if (delayTimeAttack <= 0)
             {
+                if (iCharacterAnimationController == null) return;
                 delayTimeAttack =
                     iCharacterAnimationController.GetCharacterAnimationDuration(
                         ICharacterAnimationController.AttackAnim, false);
