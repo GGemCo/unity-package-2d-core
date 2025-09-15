@@ -472,6 +472,8 @@ namespace GGemCo2DCore
         public void Dead(GameObject attacker = null)
         {
             SetStatusDead();
+            if (attacker == null)
+                _delayDestroyMonster = 0;
             Destroy(gameObject, _delayDestroyMonster);
 
             CharacterAnimationController.PlayDeadAnimation();
