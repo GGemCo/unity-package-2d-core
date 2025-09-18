@@ -14,9 +14,11 @@ namespace GGemCo2DCore
         [Tooltip("윈도우 리스트")]
         [SerializeField] private UIWindow[] uiWindows;
         public void SetUIWindow(UIWindow[] prefabs) => uiWindows = prefabs;
+        private readonly Dictionary<int, StruckTableWindow> _struckTableWindows = new Dictionary<int, StruckTableWindow>();
 
         private void Awake()
         {
+            _struckTableWindows.Clear();
             InitializationTableInfo();
         }
         /// <summary>
@@ -48,6 +50,7 @@ namespace GGemCo2DCore
                 }
                 window.SetTableWindow(info);
                 window.transform.SetSiblingIndex(info.Ordering);
+                _struckTableWindows.TryAdd(info.Uid, info);
             }
         }
         /// <summary>
@@ -88,8 +91,12 @@ namespace GGemCo2DCore
         /// <returns></returns>
         public T GetUIWindowByUid<T>(UIWindowConstants.WindowUid windowUid) where T : UIWindow
         {
-            if (uiWindows.Length <= (int)windowUid) return null;
-            UIWindow uiWindow = uiWindows[(int)windowUid];
+            int uid = (int)windowUid;
+            if (uiWindows.Length <= uid) return null;
+            StruckTableWindow info = _struckTableWindows.GetValueOrDefault(uid);
+            if (info == null) return null;
+            if (!info.UseInGame) return null;
+            UIWindow uiWindow = uiWindows[uid];
             if (uiWindow == null)
             {
                 GcLogger.LogError("UIWindow 컴포넌트가 없습니다. uid:"+windowUid);
