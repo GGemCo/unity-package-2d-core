@@ -260,14 +260,6 @@ namespace GGemCo2DCore
         {
             return CurrentMp.Value >= needMp;
         }
-        /// <summary>
-        /// 플레이어 죽었을때 end 상태로 변경
-        /// </summary>
-        protected override void OnDead(GameObject attacker)
-        {
-            base.OnDead(attacker);
-            _sceneGame.SetState(SceneGame.GameState.End);
-        }
         
         public bool IsRequireLevel(int compareLevel)
         {
@@ -298,6 +290,19 @@ namespace GGemCo2DCore
         private void OnLoadStartMap()
         {
             Stop();
+        }
+        public override void OnAnimationCompleteDead()
+        {
+            base.OnAnimationCompleteDead();
+            _sceneGame.SetState(SceneGame.GameState.End);
+            Destroy(gameObject, 0.5f);
+        }
+        /// <summary>
+        /// 사망 했다가 부활할 때, stat 리셋 해주기
+        /// </summary>
+        public void ResetStatsByDead()
+        {
+            InitializeByTable();
         }
     }
 }

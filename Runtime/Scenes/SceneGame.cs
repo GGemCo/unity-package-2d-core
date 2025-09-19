@@ -285,13 +285,13 @@ namespace GGemCo2DCore
         private void OnMonsterKilled(MonsterKilledEventData e)
         {
             // 플레이어에게 사망했을 때 처리
-            if (e.IsPlayerKiller)
+            if (e.dieReasonType == CharacterConstants.DieReasonType.Battle)
             {
-                saveDataManager.Player.AddExpByMonster(e.MonsterUid);
-                ItemManager.OnMonsterDead(e.MonsterUid, e.Monster);
+                saveDataManager.Player.AddExpByMonster(e.monsterUid);
+                ItemManager.OnMonsterDead(e.monsterUid, e.monster);
             }
 
-            mapManager.OnDeadMonster(e.MonsterVid);
+            mapManager.OnDeadMonster(e.monsterVid);
         }
 
         private void OnItemCollected(ItemCollectedEventData e)

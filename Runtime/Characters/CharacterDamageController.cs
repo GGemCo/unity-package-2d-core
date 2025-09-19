@@ -100,7 +100,10 @@ namespace GGemCo2DCore
             
             if (remainHp <= 0)
             {
-                _characterBase.Dead(attacker);
+                // 사망했을 때, UI 표현을 위해 0으로 처리
+                remainHp = 0;
+                _characterBase.CurrentMp.OnNext(0);
+                _characterBase.Dead(CharacterConstants.DieReasonType.Battle, attacker);
             }
             else
             {

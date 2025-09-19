@@ -1,8 +1,5 @@
-using System;
-using System.Collections;
 using UnityEngine;
 using R3;
-using Random = UnityEngine.Random;
 
 namespace GGemCo2DCore
 {
@@ -21,6 +18,7 @@ namespace GGemCo2DCore
         
         // 몬스터 행동 처리
         private ControllerMonster _controllerMonster;
+        private float _delayDestroyMonster;
         // 생명력 slier
         [HideInInspector] public GameObject sliderHpBar;
         private GameObject _prefabSliderHpBar;
@@ -43,6 +41,7 @@ namespace GGemCo2DCore
             CurrentHp
                 .Subscribe(SetSliderHp)
                 .AddTo(this);
+            _delayDestroyMonster = AddressableLoaderSettings.Instance.settings.delayDestroyMonster;
         }
 
         protected override void Start()
@@ -159,24 +158,26 @@ namespace GGemCo2DCore
         /// <summary>
         /// 몬스터가 죽었을때 처리 
         /// </summary>
-        protected override void OnDead(GameObject attacker)
+        protected override void OnDead(CharacterConstants.DieReasonType dieReasonType = CharacterConstants.DieReasonType.None, GameObject attacker = null)
         {
-            base.OnDead(attacker);
+            base.OnDead(dieReasonType, attacker);
             if (sliderHpBar != null)
             {
                 Destroy(sliderHpBar);
             }
+
             _controllerMonster?.StopAllCoroutines();
             
             var isPlayer = attacker && attacker.CompareTag(ConfigTags.GetValue(ConfigTags.Keys.Player));
             var data = new MonsterKilledEventData(
+                dieReasonType,
                 mapUid: CharacterRegenData.MapUid,
                 monsterUid: uid,
                 monsterVid: vid,
                 monster: gameObject,
                 attacker: attacker,
                 isPlayerKiller: isPlayer,
-                killerUid: null 
+                killerUid: null
             );
             GameEventManager.MonsterKilled(data);
         }
@@ -244,6 +245,11 @@ namespace GGemCo2DCore
         {
             if (sliderHpBar == null) return;
             sliderHpBar.GetComponent<MonsterHpBar>().StartFadeOut();
+        }
+        public override void OnAnimationCompleteDead()
+        {
+            base.OnAnimationCompleteDead();
+            Destroy(gameObject, _delayDestroyMonster);
         }
     }
 }

@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections;
+﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -186,6 +185,10 @@ namespace GGemCo2DCore
             else if (state.IsName($"{CurrentAnimationNameAttack}_end"))
             {
                 characterBase.OnAnimationCompleteAttackEnd();
+            }
+            else if (state.IsName($"{ICharacterAnimationController.DeadAnim}"))
+            {
+                characterBase.OnAnimationCompleteDead();
             }
             else
             {

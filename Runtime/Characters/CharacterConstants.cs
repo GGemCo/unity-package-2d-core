@@ -103,5 +103,14 @@ namespace GGemCo2DCore
             if (Mathf.Approximately(dir.x, 0f) && dir.y < 0f) return FacingDirection8.None;
             return FacingDirection8.DownRight;
         }
+        /// <summary>
+        /// 사망 이유
+        /// </summary>
+        public enum DieReasonType
+        {
+            None,
+            Battle, // 전투 
+            EndTilemapY // 맵 Y좌표를 벗어 났을 때
+        }
     }
 }

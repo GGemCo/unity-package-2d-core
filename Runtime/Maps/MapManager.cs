@@ -494,6 +494,10 @@ namespace GGemCo2DCore
         {
             var info = _tableLoaderManager.GetMapData(_currentMapUid);
             if (info == null) return;
+            if (_sceneGame.player)
+            {
+                _sceneGame.player.gameObject.GetComponent<Player>().ResetStatsByDead();
+            }
             LoadMap(info.PlayerDeadSpawnUid);
         }
         /// <summary>

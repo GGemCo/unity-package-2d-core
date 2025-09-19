@@ -86,7 +86,6 @@ namespace GGemCo2DCore
         public event EventHandlerOnStop OnStop;
         public event EventHandlerOnAnimationEventJump OnAnimationEventJump;
         public event EventHandlerOnAnimationEventDash OnAnimationEventDash;
-        private float _delayDestroyMonster;
         
         protected override void Awake()
         {
@@ -111,7 +110,6 @@ namespace GGemCo2DCore
             // 데미지 컨트롤러 초기화
             _characterDamageController = new CharacterDamageController();
             _characterDamageController.Initialize(this);
-            _delayDestroyMonster = AddressableLoaderSettings.Instance.settings.delayDestroyMonster;
         }
         /// <summary>
         /// tag, sorting layer, layer 셋팅하기
@@ -339,7 +337,9 @@ namespace GGemCo2DCore
         private bool CheckEndGround()
         {
             if (transform.position.y > 0) return false;
-            Dead();
+            
+            Dead(CharacterConstants.DieReasonType.EndTilemapY);
+            
             return true;
         }
 
@@ -471,29 +471,35 @@ namespace GGemCo2DCore
         public virtual void OnEventAttack(StruckAnimationEventAttack struckAnimationEventAttack)
         {
         }
-
-        public void Dead(GameObject attacker = null)
+        /// <summary>
+        /// 캐릭터 사망 처리
+        /// </summary>
+        /// <param name="dieReasonType"></param>
+        /// <param name="attacker"></param>
+        public void Dead(CharacterConstants.DieReasonType dieReasonType = CharacterConstants.DieReasonType.None, GameObject attacker = null)
         {
             SetStatusDead();
-            if (attacker == null)
-                _delayDestroyMonster = 0;
-            Destroy(gameObject, _delayDestroyMonster);
-
-            CharacterAnimationController.PlayDeadAnimation();
+            if (dieReasonType != CharacterConstants.DieReasonType.EndTilemapY)
+                CharacterAnimationController.PlayDeadAnimation();
+            
             // 어펙트 모두 지우기
             if (AffectController != null)
             {
                 AffectController.RemoveAllAffects();
             }
 
-            OnDead(attacker);
+            OnDead(dieReasonType, attacker);
         }
 
         /// <summary>
         /// 캐릭터가 죽었을때 처리 
         /// </summary>
-        protected virtual void OnDead(GameObject attacker)
+        protected virtual void OnDead(CharacterConstants.DieReasonType dieReasonType = CharacterConstants.DieReasonType.None, GameObject attacker = null)
         {
+            if (dieReasonType == CharacterConstants.DieReasonType.EndTilemapY)
+            {
+                Destroy(gameObject);
+            }
         }
         /// <summary>
         /// 내가 데미지 받았을때 처리 
@@ -804,6 +810,10 @@ namespace GGemCo2DCore
                 return false;
 #endif
             return true;
+        }
+
+        public virtual void OnAnimationCompleteDead()
+        {
         }
     }
 }

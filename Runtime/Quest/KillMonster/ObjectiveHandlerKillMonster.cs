@@ -27,8 +27,8 @@ namespace GGemCo2DCore
         }
         private void EventMonsterKilled(MonsterKilledEventData eventData)
         {
-            int mapUid = eventData.MapUid;
-            int monsterUid = eventData.MonsterUid;
+            int mapUid = eventData.mapUid;
+            int monsterUid = eventData.monsterUid;
             
             if (mapUid != _currentStep.mapUid) return;
             if (monsterUid != _currentStep.targetUid) return;
