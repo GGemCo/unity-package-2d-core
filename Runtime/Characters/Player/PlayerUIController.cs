@@ -34,6 +34,14 @@ namespace GGemCo2DCore
 
         public void InitSubscribe()
         {
+            // 순서 중요. 윈도우 먼저 초기화 해야 한다.
+            _uiWindowHud = _sceneGame.uIWindowManager?.GetUIWindowByUid<UIWindowHud>(UIWindowConstants.WindowUid.Hud);
+            _uiWindowPlayerInfo =
+                _sceneGame.uIWindowManager?.GetUIWindowByUid<UIWindowPlayerInfo>(UIWindowConstants.WindowUid.PlayerInfo);
+            _uiWindowPlayerBuffInfo =
+                _sceneGame.uIWindowManager?.GetUIWindowByUid<UIWindowPlayerBuffInfo>(UIWindowConstants.WindowUid
+                    .PlayerBuffInfo);
+
             // TotalHp, Mp 가 바뀌어도 현재 값이 바뀌면 안된다.
             _player.TotalHp
                 .Subscribe(_ => SetWindowHudSliderHp(_player.CurrentHp.Value))
@@ -47,13 +55,6 @@ namespace GGemCo2DCore
             _player.CurrentMp
                 .Subscribe(_ => SetWindowHudSliderMp(_player.CurrentMp.Value))
                 .AddTo(_player);
-            
-            _uiWindowHud = _sceneGame.uIWindowManager?.GetUIWindowByUid<UIWindowHud>(UIWindowConstants.WindowUid.Hud);
-            _uiWindowPlayerInfo =
-                _sceneGame.uIWindowManager?.GetUIWindowByUid<UIWindowPlayerInfo>(UIWindowConstants.WindowUid.PlayerInfo);
-            _uiWindowPlayerBuffInfo =
-                _sceneGame.uIWindowManager?.GetUIWindowByUid<UIWindowPlayerBuffInfo>(UIWindowConstants.WindowUid
-                    .PlayerBuffInfo);
             
             InitializeStatBindings();
         }
