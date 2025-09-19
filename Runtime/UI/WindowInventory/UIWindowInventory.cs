@@ -268,13 +268,13 @@ namespace GGemCo2DCore
                 UIIcon icon = GetIconByIndex(index);
                 if (icon == null || icon.uid <= 0)
                 {
-                    _popupManager.ShowPopupError("Please select an item to split.");//"나누기를 할 아이템을 선택해주세요."
+                    _popupManager.ShowPopupError("Inventory_SelectItemToSplit");//"나누기를 할 아이템을 선택해주세요."
                     return;
                 }
 
                 if (icon.GetCount() <= 1)
                 {
-                    _popupManager.ShowPopupError("아이템 개수가 2개 이상일때만 나눌 수 있습니다.");
+                    _popupManager.ShowPopupError("Inventory_Split_MinimumTwo");
                     return;
                 }
                 // 팝업창 띄우기

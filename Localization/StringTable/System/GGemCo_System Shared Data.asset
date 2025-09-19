@@ -326,6 +326,18 @@ MonoBehaviour:
     m_Key: Popup_Message_Save
     m_Metadata:
       m_Items: []
+  - m_Id: 25465816939565056
+    m_Key: System_PlayerDied_MoveToTown_Title
+    m_Metadata:
+      m_Items: []
+  - m_Id: 25467059493736448
+    m_Key: System_Info_Title
+    m_Metadata:
+      m_Items: []
+  - m_Id: 25467481805623296
+    m_Key: SaveSlot_ConfirmDeleteWarning_Title
+    m_Metadata:
+      m_Items: []
   m_Metadata:
     m_Items: []
   m_KeyGenerator:

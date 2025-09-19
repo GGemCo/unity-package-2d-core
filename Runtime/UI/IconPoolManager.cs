@@ -190,7 +190,7 @@ namespace GGemCo2DCore
             int emptySlot = FindEmptySlot();
             if (emptySlot == -1)
             {
-                SceneGame.Instance.popupManager.ShowPopupError("There is no empty space in the window.");//"윈도우에 빈 공간이 없습니다."
+                SceneGame.Instance.popupManager.ShowPopupError("Window_NoEmptySpace");//"윈도우에 빈 공간이 없습니다."
                 return;
             }
             SetIcon(emptySlot, iconUid, iconCount);
@@ -201,7 +201,7 @@ namespace GGemCo2DCore
             int emptySlot = FindEmptySlot();
             if (emptySlot == -1)
             {
-                SceneGame.Instance.popupManager.ShowPopupError("There is no empty space in the window.");//"윈도우에 빈 공간이 없습니다."
+                SceneGame.Instance.popupManager.ShowPopupError("Window_NoEmptySpace");//"윈도우에 빈 공간이 없습니다."
                 return null;
             }
             return SetIcon(emptySlot, iconUid, iconCount);

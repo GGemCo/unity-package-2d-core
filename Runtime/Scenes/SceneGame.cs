@@ -194,8 +194,8 @@ namespace GGemCo2DCore
                     PopupMetadata popupMetadata = new PopupMetadata
                     {
                         PopupType = PopupManager.Type.Default,
-                        Title = "You Die", // 게임 종료
-                        Message = "Player has died.\nMove to the village.", //플레이어가 사망하였습니다.\n마을로 이동합니다.
+                        Title = "System_PlayerDied_MoveToTown_Title", // 게임 종료
+                        Message = "System_PlayerDied_MoveToTown", //플레이어가 사망하였습니다.\n마을로 이동합니다.
                         MessageColor = Color.red,
                         ShowCancelButton = false,
                         OnConfirm = OnDeadPlayer,

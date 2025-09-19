@@ -272,6 +272,18 @@ MonoBehaviour:
     m_Localized: You have not saved your changes.\nDo you want to save them?
     m_Metadata:
       m_Items: []
+  - m_Id: 25465816939565056
+    m_Localized: You Die
+    m_Metadata:
+      m_Items: []
+  - m_Id: 25467059493736448
+    m_Localized: System Info
+    m_Metadata:
+      m_Items: []
+  - m_Id: 25467481805623296
+    m_Localized: Delete Slot
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []
