@@ -80,19 +80,7 @@ namespace GGemCo2DCore
             var first = listPanelOptionBase.FirstOrDefault();
             if (first== null) return;
             _tabToggles[first.PanelIndex].SetIsOnWithoutNotify(true);
-            TrySwitchTo(first.PanelIndex, skipGuard:true);
-        }
-        private bool TrySwitchTo(int panelIndex, bool skipGuard = false)
-        {
-            if (!skipGuard && !GuardCloseOrSwitch(() => DoSwitch(panelIndex)))
-            {
-                // 가드에서 취소됨 → 기존 토글 복구
-                if (_currentIndexTabButton != -1 && _tabToggles.TryGetValue(_currentIndexTabButton, out var t))
-                    t.SetIsOnWithoutNotify(true);
-                return false;
-            }
-            DoSwitch(panelIndex);
-            return true;
+            DoSwitch(first.PanelIndex);
         }
         private void DoSwitch(int panelIndex)
         {
@@ -100,32 +88,6 @@ namespace GGemCo2DCore
             var target = listPanelOptionBase.First(x => x.PanelIndex == panelIndex);
             target.Show(true);
             _currentIndexTabButton = panelIndex;
-        }
-        private bool GuardCloseOrSwitch(Action proceed)
-        {
-            foreach (var uiPanelOptionBase in listPanelOptionBase)
-            {
-                if (uiPanelOptionBase.IsDirty)
-                {
-                    PopupMetadata popupMetadata = new PopupMetadata
-                    {
-                        PopupType = PopupManager.Type.Default,
-                        MessageColor = Color.red,
-                        Title = "취소하기", //슬롯 삭제
-                        Message = "변경한 내용을 저장하지 않았습니다.\n취소하시겠습니까?",
-                        OnConfirm = () => {
-                            GcLogger.Log($"GuardCloseOrSwitch popup confirm.");
-                            // uiPanelOptionBase.Revert(); // 되돌리고 진행 (또는 TryApply로 저장 후 진행)
-                            // proceed();
-                        },
-                        ShowCancelButton = true
-                    };
-                    popupManager.ShowPopup(popupMetadata);
-                    return false;
-                }
-            }
-            proceed();
-            return true;
         }
         private void CreatePanelBase()
         {
@@ -152,7 +114,7 @@ namespace GGemCo2DCore
             }
         }
         /// <summary>
-        /// 탭 버튼 만들기
+        /// 좌측 탭 버튼 만들기
         /// </summary>
         private void CreateTabButton()
         {
@@ -219,9 +181,8 @@ namespace GGemCo2DCore
                         Title = "Popup_Title_Save", //슬롯 삭제
                         Message = "Popup_Message_Save",
                         OnConfirm = () => {
-                            GcLogger.Log($"GuardCloseOrSwitch popup confirm.");
+                            // GcLogger.Log($"GuardCloseOrSwitch popup confirm.");
                             uiPanelOptionBase.TryApply(); // 되돌리고 진행 (또는 TryApply로 저장 후 진행)
-                            // proceed();
                             uiPanelOptionBase.MarkDirty(false);
                         },
                         ShowCancelButton = true
