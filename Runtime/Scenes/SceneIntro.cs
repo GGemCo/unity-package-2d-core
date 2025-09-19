@@ -66,6 +66,7 @@ namespace GGemCo2DCore
 
             if (uIWindowLoadSaveData)
             {
+                uIWindowLoadSaveData.slotMetaDatController = _slotMetaDatController;
                 uIWindowLoadSaveData.OnUpdateSlotData += UpdateButtons;
             }
         }
@@ -138,7 +139,7 @@ namespace GGemCo2DCore
                 // PlayerPrefs 에서 가져온 값이 있는지 체크 
                 if (PlayerPrefsManager.LoadSaveDataSlotIndex() <= 0)
                 {
-                    popupManager.ShowPopupError("There is no selected slot.\nPlease load it.");//"선택된 슬롯이 없습니다.\n불러오기를 해주세요."
+                    popupManager.ShowPopupError("SaveSlot_NotSelected");//"선택된 슬롯이 없습니다.\n불러오기를 해주세요."
                     return;
                 }
                 // GcLogger.Log("currentSaveDataSlotIndex: " + currentSaveDataSlotIndex);
@@ -157,7 +158,7 @@ namespace GGemCo2DCore
                 int slotIndex = _slotMetaDatController.GetEmptySlotIndex();
                 if (slotIndex <= 0)
                 {
-                    popupManager.ShowPopupError("There is no selected slot. Please load it.");//"남은 저장 슬롯이 없습니다.\n저장되어있는 데이터를 지워주세요."
+                    popupManager.ShowPopupError("SaveSlot_NoEmptySlot");//"남은 저장 슬롯이 없습니다.\n저장되어있는 데이터를 지워주세요."
                     // GcLogger.LogError("남은 저장 슬롯이 없습니다. 저장되어있는 데이터를 지워주세요.");
                     return;
                 }

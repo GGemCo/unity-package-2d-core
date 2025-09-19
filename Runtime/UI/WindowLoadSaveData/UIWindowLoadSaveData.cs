@@ -18,13 +18,13 @@ namespace GGemCo2DCore
         [Tooltip("삭제하기 버튼")] [SerializeField] private Button buttonDelete;
         [Tooltip("팝업 매니저")] [SerializeField] private PopupManager popupManager;
         public void SetPopupManager(PopupManager value) => popupManager = value;
+        public SlotMetaDatController slotMetaDatController;
 
         // 현재 선택된 slot index
         private int _currentCheckSlotIndex;
         // UIElementSaveDataSlot 배열
         private List<UIElementSaveDataSlot> _uiElementSaveDataSlots;
         private AddressableLoaderSettings _addressableLoaderSettings;
-        private SlotMetaDatController _slotMetaDatController;
         
         // 델리게이트 선언
         public delegate void DelegateOnUpdateSlotData();
@@ -56,11 +56,10 @@ namespace GGemCo2DCore
         {
             if (!AddressableLoaderSettings.Instance) return;
             var saveSettings = AddressableLoaderSettings.Instance.saveSettings;
-            _slotMetaDatController = new SlotMetaDatController(saveSettings.SaveDataFolderName, saveSettings.saveDataMaxSlotCount);
             
-            if (elementSaveDataSlot == null || containerElementSaveDataSlot == null) return;
+            if (slotMetaDatController == null || elementSaveDataSlot == null || containerElementSaveDataSlot == null) return;
             int maxSlotCount = saveSettings.saveDataMaxSlotCount;
-            List<SlotMetaInfo> slotMetaInfos = _slotMetaDatController.GetMetaDataSlots();
+            List<SlotMetaInfo> slotMetaInfos = slotMetaDatController.GetMetaDataSlots();
             
             for (int i = 0; i < maxSlotCount; i++)
             {
@@ -72,10 +71,10 @@ namespace GGemCo2DCore
                 SlotMetaInfo slotMetaInfo = slotMetaInfos[i];
                 if (slotMetaInfo != null)
                 {
-                    bool isCheck = slotMetaInfo.SlotIndex == PlayerPrefsManager.LoadSaveDataSlotIndex();
+                    bool isCheck = slotMetaInfo.slotIndex == PlayerPrefsManager.LoadSaveDataSlotIndex();
                     if (isCheck)
                     {
-                        _currentCheckSlotIndex = slotMetaInfo.SlotIndex;
+                        _currentCheckSlotIndex = slotMetaInfo.slotIndex;
                     }
                     uiElementSaveDataSlot.Initialize(slotMetaInfo, isCheck, this);
                 }
@@ -97,8 +96,8 @@ namespace GGemCo2DCore
         {
             if (_currentCheckSlotIndex <= 0)
             {
-                GcLogger.LogError("선택된 슬롯이 없습니다.");
-                popupManager.ShowPopupError("No slots selected.");//"선택된 슬롯이 없습니다."
+                // GcLogger.LogError("선택된 슬롯이 없습니다.");
+                popupManager.ShowPopupError("LoadSave_NoSlotSelected");//"선택된 슬롯이 없습니다."
                 return;
             }
             // PlayerPrefs 에 선택한 슬롯 index 를 저장
@@ -114,8 +113,8 @@ namespace GGemCo2DCore
         {
             if (_currentCheckSlotIndex <= 0)
             {
-                GcLogger.LogError("선택된 슬롯이 없습니다.");
-                popupManager.ShowPopupError("No slots selected.");//"선택된 슬롯이 없습니다."
+                // GcLogger.LogError("선택된 슬롯이 없습니다.");
+                popupManager.ShowPopupError("LoadSave_NoSlotSelected");//"선택된 슬롯이 없습니다."
                 return;
             }
 
@@ -123,8 +122,8 @@ namespace GGemCo2DCore
             {
                 PopupType = PopupManager.Type.Default,
                 MessageColor = Color.red,
-                Title = "Delete Slot", //슬롯 삭제
-                Message = "Deleted data cannot be recovered.\nAre you sure you want to delete it?", //삭제한 데이터는 복구할 수 없습니다.\n정말로 삭제하시겠습니까?
+                Title = "SaveSlot_ConfirmDeleteWarning_Title", //슬롯 삭제
+                Message = "SaveSlot_ConfirmDeleteWarning", //삭제한 데이터는 복구할 수 없습니다.\n정말로 삭제하시겠습니까?
                 OnConfirm = DeleteElement,
                 ShowCancelButton = true
             };
@@ -137,20 +136,20 @@ namespace GGemCo2DCore
         {
             if (_currentCheckSlotIndex <= 0)
             {
-                GcLogger.LogError("선택된 슬롯이 없습니다.");
+                // GcLogger.LogError("선택된 슬롯이 없습니다.");
                 popupManager.ShowPopupError("No slots selected.");//"선택된 슬롯이 없습니다."
                 return;
             }
 
-            string filePath = _slotMetaDatController.GetFilePath(_currentCheckSlotIndex);
-            string thumbnailPath = _slotMetaDatController.GetThumbnailFilePath(_currentCheckSlotIndex);
+            string filePath = slotMetaDatController.GetFilePath(_currentCheckSlotIndex);
+            string thumbnailPath = slotMetaDatController.GetThumbnailFilePath(_currentCheckSlotIndex);
             
             // 삭제 후 json 파일과 썸네일 파일을 삭제한다.
             if (File.Exists(filePath)) File.Delete(filePath);
             if (File.Exists(thumbnailPath)) File.Delete(thumbnailPath);
             
             // 삭제한 element 는 비활성화 처리를 한다.
-            _slotMetaDatController.DeleteSlot(_currentCheckSlotIndex);
+            slotMetaDatController.DeleteSlot(_currentCheckSlotIndex);
             UIElementSaveDataSlot uiElementSaveDataSlot = GetCurrentUIElementSaveDataSlot();
             if (uiElementSaveDataSlot == null) return;
             uiElementSaveDataSlot.ClearInfo();

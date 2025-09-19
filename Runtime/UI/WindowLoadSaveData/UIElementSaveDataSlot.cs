@@ -28,11 +28,11 @@ namespace GGemCo2DCore
         public void Initialize(SlotMetaInfo slotMetaInfo, bool isCheck, UIWindowLoadSaveData puiWindowLoadSaveData)
         {
             uiWindowLoadSaveData = puiWindowLoadSaveData;
-            slotIndex = slotMetaInfo.SlotIndex;
+            slotIndex = slotMetaInfo.slotIndex;
             iconCheck?.gameObject.SetActive(isCheck);
             if (imageThumbnail != null)
             {
-                string thumbnailPath = slotMetaInfo.ThumbnailFilePath;
+                string thumbnailPath = slotMetaInfo.thumbnailFilePath;
                 if (File.Exists(thumbnailPath))
                 {
                     byte[] fileData = File.ReadAllBytes(thumbnailPath);
@@ -41,10 +41,10 @@ namespace GGemCo2DCore
                     imageThumbnail.sprite = Sprite.Create(tex, new Rect(0, 0, tex.width, tex.height), new Vector2(0.5f, 0.5f));
                 }
             }
-            if (textLevel != null) textLevel.text = $"Lv.{slotMetaInfo.Level}";
-            if (textSaveDate != null) textSaveDate.text = slotMetaInfo.SaveTime;
+            if (textLevel != null) textLevel.text = $"Lv.{slotMetaInfo.level}";
+            if (textSaveDate != null) textSaveDate.text = slotMetaInfo.saveTime;
             
-            gameObject.SetActive(slotMetaInfo.Exists);
+            gameObject.SetActive(slotMetaInfo.exists);
         }
         /// <summary>
         /// 현재 element 를 선택하기

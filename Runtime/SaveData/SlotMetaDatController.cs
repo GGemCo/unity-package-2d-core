@@ -3,31 +3,32 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using Newtonsoft.Json;
+using UnityEngine;
 
 namespace GGemCo2DCore
 {
     public class SlotMetaInfo
     {
-        public int SlotIndex;
-        public int Level;
-        public string SaveTime;
-        public string FilePath;
-        public string ThumbnailFilePath;
-        public bool Exists;
+        public int slotIndex;
+        public int level;
+        public string saveTime;
+        public string filePath;
+        public string thumbnailFilePath;
+        public bool exists;
     }
     /// <summary>
     /// 슬롯 메타데이터 구조
     /// </summary>
     public class SaveMetaData
     {
-        public readonly List<SlotMetaInfo> Slots;
+        public readonly List<SlotMetaInfo> slots;
 
         public SaveMetaData(int maxSlots)
         {
-            Slots = new List<SlotMetaInfo>();
+            slots = new List<SlotMetaInfo>();
             for (int i = 1; i <= maxSlots; i++)
             {
-                Slots.Add(new SlotMetaInfo { SlotIndex = i, Level = 0, SaveTime = "", FilePath = "", ThumbnailFilePath = "", Exists = false });
+                slots.Add(new SlotMetaInfo { slotIndex = i, level = 0, saveTime = "", filePath = "", thumbnailFilePath = "", exists = false });
             }
         }
     }
@@ -36,23 +37,33 @@ namespace GGemCo2DCore
     /// </summary>
     public class SlotMetaDatController
     {
-        private readonly string metaFilePath;
+        private readonly string _baseDir;
+        private readonly string _metaFilePath;
+        private readonly object _ioLock = new();
+
         private SaveMetaData MetaData { get; set; }
 
         public SlotMetaDatController(string saveDirectory, int maxSlots)
         {
-            metaFilePath = Path.Combine(saveDirectory, "SaveMeta.json");
+            var baseDir =
+                // 절대 경로로 정규화
+                Path.IsPathRooted(saveDirectory)
+                ? saveDirectory
+                : Path.Combine(Application.persistentDataPath, saveDirectory);
+            
+            _metaFilePath = Path.Combine(baseDir, "SaveMeta.json");
 
+            Directory.CreateDirectory(baseDir);
+            
             // 메타파일이 없으면 기본 데이터 생성
-            if (!File.Exists(metaFilePath))
+            if (!File.Exists(_metaFilePath))
             {
-                Directory.CreateDirectory(saveDirectory);
                 MetaData = new SaveMetaData(maxSlots);
                 SaveMetaToFile();
             }
             else
             {
-                MetaData = LoadMetaData();
+                MetaData = LoadMetaData() ?? new SaveMetaData(maxSlots);
             }
         }
         /// <summary>
@@ -65,17 +76,23 @@ namespace GGemCo2DCore
         /// <param name="filePath">슬롯 데이터 json 파일 경로</param>
         public void UpdateSlot(int slotIndex, string thumbnailFilePath, bool exists, int level, string filePath)
         {
-            string saveTime = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
-            var slotInfo = MetaData.Slots.Find(s => s.SlotIndex == slotIndex);
-            if (slotInfo != null)
+            var slotInfo = MetaData.slots.Find(s => s.slotIndex == slotIndex);
+            if (slotInfo == null)
             {
-                slotInfo.SaveTime = saveTime;
-                slotInfo.ThumbnailFilePath = thumbnailFilePath;
-                slotInfo.FilePath = filePath;
-                slotInfo.Exists = exists;
-                slotInfo.Level = level;
-                SaveMetaToFile();
+                GcLogger.LogError($"UpdateSlot: invalid slotIndex={slotIndex}");
+                return;
             }
+
+            slotInfo.saveTime = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
+            slotInfo.thumbnailFilePath = thumbnailFilePath ?? "";
+            slotInfo.filePath = filePath ?? "";
+            slotInfo.exists = exists;
+            slotInfo.level = level;
+
+            // 수정한 슬롯 기준으로 로그
+            // GcLogger.Log($"[UpdateSlot] Slot={slotIndex}, Exists={slotInfo.exists}, File='{slotInfo.filePath}'");
+
+            SaveMetaToFile();
         }
 
         /// <summary>
@@ -91,8 +108,11 @@ namespace GGemCo2DCore
         /// </summary>
         private void SaveMetaToFile()
         {
-            string json = JsonConvert.SerializeObject(MetaData);
-            File.WriteAllText(metaFilePath, json);
+            lock (_ioLock)
+            {
+                var json = JsonConvert.SerializeObject(MetaData, Formatting.Indented);
+                File.WriteAllText(_metaFilePath, json);
+            }
         }
 
         /// <summary>
@@ -100,8 +120,26 @@ namespace GGemCo2DCore
         /// </summary>
         private SaveMetaData LoadMetaData()
         {
-            string json = File.ReadAllText(metaFilePath);
-            return JsonConvert.DeserializeObject<SaveMetaData>(json);
+            try
+            {
+                lock (_ioLock)
+                {
+                    var json = File.ReadAllText(_metaFilePath);
+                    return JsonConvert.DeserializeObject<SaveMetaData>(json);
+                }
+            }
+            catch (Exception e)
+            {
+                GcLogger.LogError($"[SlotMetaDatController] LoadMetaData failed: {e}");
+                return null;
+            }
+        }
+        
+        // 필요 시 외부에서 최신 디스크 상태를 강제로 다시 읽기
+        public void ReloadFromDisk()
+        {
+            var reloaded = LoadMetaData();
+            if (reloaded != null) MetaData = reloaded;
         }
         /// <summary>
         /// 비어 있는 슬롯 index 가져오기 
@@ -109,49 +147,44 @@ namespace GGemCo2DCore
         /// <returns></returns>
         public int GetEmptySlotIndex()
         {
-            return (from slotMetaInfo in MetaData.Slots where slotMetaInfo.Exists == false select slotMetaInfo.SlotIndex).FirstOrDefault();
+            // 선택: 외부에서 메타파일을 변경했을 수 있으니 재로드
+            // ReloadFromDisk();
+            
+            foreach (var s in MetaData.slots)
+            {
+                // 필요시 전체 슬롯 상태를 보고 싶다면 아래 라인을 유지
+                // GcLogger.Log($"Slot {s.SlotIndex} Exists={s.Exists}");
+                if (!s.exists)
+                {
+                    // GcLogger.Log($"Empty slot found: {s.slotIndex}");
+                    return s.slotIndex;
+                }
+            }
+            // GcLogger.Log("No empty slot.");
+            return 0;
         }
         /// <summary>
         /// 저장되어있는 메타 데이터 리스트 가져오기
         /// </summary>
         /// <returns></returns>
-        public List<SlotMetaInfo> GetMetaDataSlots()
-        {
-            return MetaData.Slots;
-        }
+        
+        public List<SlotMetaInfo> GetMetaDataSlots() => MetaData.slots;
         /// <summary>
         /// json 파일 경로 가져오기
         /// </summary>
         /// <param name="slotIndex"></param>
         /// <returns></returns>
-        public string GetFilePath(int slotIndex)
-        {
-            return (from slotMetaInfo in MetaData.Slots where slotMetaInfo.SlotIndex == slotIndex select slotMetaInfo.FilePath).FirstOrDefault();
-        }
+        public string GetFilePath(int slotIndex) => MetaData.slots.FirstOrDefault(s => s.slotIndex == slotIndex)?.filePath ?? "";
         /// <summary>
         /// 썸네일 이미지 경로 가져오기
         /// </summary>
         /// <param name="slotIndex"></param>
         /// <returns></returns>
-        public string GetThumbnailFilePath(int slotIndex)
-        {
-            return (from slotMetaInfo in MetaData.Slots where slotMetaInfo.SlotIndex == slotIndex select slotMetaInfo.ThumbnailFilePath).FirstOrDefault();
-        }
+        public string GetThumbnailFilePath(int slotIndex) => MetaData.slots.FirstOrDefault(s => s.slotIndex == slotIndex)?.thumbnailFilePath ?? "";
         /// <summary>
         /// 데이터가 있는 슬롯 개수 가져오기
         /// </summary>
         /// <returns></returns>
-        public int GetExistSlotCounts()
-        {
-            int count = 0;
-            foreach (SlotMetaInfo slotMetaInfo in MetaData.Slots)
-            {
-                if (slotMetaInfo.Exists)
-                {
-                    count++;
-                }
-            }
-            return count;
-        }
+        public int GetExistSlotCounts() => MetaData.slots.Count(s => s.exists);
     }
 }
