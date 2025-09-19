@@ -81,11 +81,6 @@ namespace GGemCo2DCore
             }
         }
         
-        public void OnAnimationEventProjectile(int projectileUid, GameObject fromObject)
-        {
-            fromObject.GetComponent<CharacterBase>()?.LaunchProjectile(projectileUid);
-        }
-
         public void OnAnimationEventSkill(string json, GameObject fromObject)
         {
             try

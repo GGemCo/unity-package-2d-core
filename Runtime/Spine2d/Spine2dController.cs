@@ -74,9 +74,6 @@ namespace GGemCo2DCore
                 case AnimationConstants.EventNameEffect:
                     EventListener?.OnAnimationEventEffect(e.String, gameObject);
                     break;
-                case AnimationConstants.EventNameProjectile:
-                    EventListener?.OnAnimationEventProjectile(e.Int, gameObject);
-                    break;
                 case AnimationConstants.EventNameSkill:
                     EventListener?.OnAnimationEventSkill(e.String, gameObject);
                     break;

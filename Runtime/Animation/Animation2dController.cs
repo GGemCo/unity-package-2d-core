@@ -168,10 +168,6 @@ namespace GGemCo2DCore
         {
             EventListener?.OnAnimationEventAttack(json, gameObject);
         }
-        public void GGemCoAniEventProjectile(int projectileUid)
-        {
-            EventListener?.OnAnimationEventProjectile(projectileUid, gameObject);
-        }
         public void GGemCoAniEventCameraShake(string json)
         {
             EventListener?.OnAnimationEventCameraShake(json);

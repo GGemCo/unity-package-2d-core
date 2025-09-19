@@ -33,7 +33,6 @@
         public const string EventNameSound = Prefix+"Sound";
         public const string EventNameCameraShake = Prefix+"CameraShake";
         public const string EventNameEffect = Prefix+"Effect";
-        public const string EventNameProjectile = Prefix+"Projectile";
         public const string EventNameSkill = Prefix+"Skill";
         
         public const string EventNameJumpUp = Prefix+"JumpUp";
