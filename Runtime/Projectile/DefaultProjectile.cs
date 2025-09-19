@@ -1,5 +1,4 @@
-﻿using System;
-using UnityEngine;
+﻿using UnityEngine;
 using Random = UnityEngine.Random;
 
 namespace GGemCo2DCore
@@ -9,91 +8,92 @@ namespace GGemCo2DCore
     /// </summary>
     public class DefaultProjectile : MonoBehaviour
     {
-        private float speed;
-        private int arcHeight;
+        private float _speed;
+        private int _arcHeight;
         private const float PositionThreshold = 0.1f; // 좌표 타겟일 때 도달 판정
 
-        private Vector2 startPoint;
-        private Vector2 targetPoint;
-        private CharacterBase targetObject = null;
-        private float journeyLength;
-        private float startTime;
-        private bool initialized = false;
-        private StruckTableProjectile struckTableProjectile;
-        private DefaultEffect effectProjectile;
-        private CharacterBase fromCharacter;
-        private StruckTableEffect struckTableEffect;
-        private bool shouldFlip;
-        private Vector3 direction;
-        private Vector2 previousPosition;
+        private Vector2 _startPoint;
+        private Vector2 _targetPoint;
+        private CharacterBase _targetObject = null;
+        private float _journeyLength;
+        private float _startTime;
+        private bool _initialized = false;
+        private StruckTableProjectile _struckTableProjectile;
+        private DefaultEffect _effectProjectile;
+        private CharacterBase _fromCharacter;
+        private StruckTableEffect _struckTableEffect;
+        private bool _shouldFlip;
+        private Vector3 _direction;
+        private Vector2 _previousPosition;
         
         // 데미지 처리
         private long _damage;
         private EffectManager _effectManager;
 
-        private void Start()
+        public void Initialize(StruckTableProjectile info)
         {
-            _effectManager = SceneGame.Instance.EffectManager;
-        }
-
-        public void Initialize(MetadataProjectile metadataProjectile)
-        {
-            if (metadataProjectile == null) return;
-            DefaultEffect effect = metadataProjectile.Effect;
-            StruckTableProjectile info = metadataProjectile.Info;
-            effectProjectile = effect;
-            // 충돌 후 처리해야 되기 때문에 무한 loop 로 설정
-            effectProjectile.SetDuration(-1);
+            if (info == null) return;
             
-            struckTableProjectile = info;
-            speed = info.MoveSpeed;
-            arcHeight = info.ArcHeightMin;
+            _struckTableProjectile = info;
+            _speed = info.MoveSpeed;
+            _arcHeight = info.ArcHeightMin;
             if (info.ArcHeightMin != info.ArcHeightMax)
             {
-                arcHeight = Random.Range(info.ArcHeightMin, info.ArcHeightMax);
+                _arcHeight = Random.Range(info.ArcHeightMin, info.ArcHeightMax);
             }
-
-            if (info.EffectScale > 0)
-            {
-                effectProjectile.SetScale(info.EffectScale);
-            }
-            struckTableEffect = TableLoaderManager.Instance.GetEffectData(info.EffectUid);
             
             Rigidbody2D rigidbody2d = ComponentController.AddRigidbody2D(gameObject);
             rigidbody2d.bodyType = RigidbodyType2D.Kinematic;
             
             Vector2 offset = Vector2.zero;
             Vector2 size = Vector2.zero;
-            if (struckTableProjectile != null && struckTableProjectile.ColliderSize != Vector2.zero)
+            if (_struckTableProjectile != null && _struckTableProjectile.ColliderSize != Vector2.zero)
             {
-                size = struckTableProjectile.ColliderSize;
+                size = _struckTableProjectile.ColliderSize;
             }
             ComponentController.AddCapsuleCollider2D(gameObject, true, offset, size);
         }
+        private void Start()
+        {
+            _effectManager = SceneGame.Instance.EffectManager;
+            DefaultEffect effect = _effectManager.CreateEffect(_struckTableProjectile.EffectUid);
+            if (!effect) return;
+            effect.gameObject.transform.SetParent(gameObject.transform);
+            _effectProjectile = effect;
+            // 충돌 후 처리해야 되기 때문에 무한 loop 로 설정
+            _effectProjectile.SetDuration(-1);
+            if (_struckTableProjectile.EffectScale > 0)
+            {
+                _effectProjectile.SetScale(_struckTableProjectile.EffectScale);
+            }
+            _struckTableEffect = TableLoaderManager.Instance.GetEffectData(_struckTableProjectile.EffectUid);
+            UpdateEffectFlip();
+            _effectProjectile.SetRotation(_targetPoint - _startPoint, _direction);
+            _effectProjectile.transform.localPosition = Vector3.zero;
+        }
+
         private void SetStartPoint()
         {
-            startPoint = transform.position;
-            if (fromCharacter)
+            _startPoint = transform.position;
+            if (_fromCharacter)
             {
-                startPoint = fromCharacter.gameObject.transform.position;
+                _startPoint = _fromCharacter.gameObject.transform.position;
             }
-            if (struckTableProjectile.StartPosition != Vector2.zero)
+            if (_struckTableProjectile.StartPosition != Vector2.zero)
             {
-                startPoint += struckTableProjectile.StartPosition;
+                _startPoint += _struckTableProjectile.StartPosition;
             }
         }
         public void Launch(Vector2 targetPos)
         {
-            targetObject = null;
+            _targetObject = null;
             SetStartPoint();
-            targetPoint = targetPos;
-            journeyLength = Vector2.Distance(startPoint, targetPoint);
-            startTime = Time.time;
-            direction = (targetPoint - startPoint).normalized;
-            UpdateEffectFlip();
-            effectProjectile.SetRotation(targetPoint - startPoint, direction);
-            transform.position = startPoint;
-            initialized = true;
+            _targetPoint = targetPos;
+            _journeyLength = Vector2.Distance(_startPoint, _targetPoint);
+            _startTime = Time.time;
+            _direction = (_targetPoint - _startPoint).normalized;
+            transform.position = _startPoint;
+            _initialized = true;
         }
         public void Launch(CharacterBase targetObj)
         {
@@ -104,58 +104,58 @@ namespace GGemCo2DCore
                 return;
             }
 
-            targetObject = targetObj;
+            _targetObject = targetObj;
             Launch(new Vector2(targetObj.transform.position.x, targetObj.GetRandomPositionYInHitArea()));
         }
 
         private void UpdateEffectFlip()
         {
-            shouldFlip = false;
+            _shouldFlip = false;
             
-            if (struckTableEffect.DefaultDirection == ConfigCommon.DirectionType.Right && targetPoint.x < startPoint.x)
-                shouldFlip = true;
-            else if (struckTableEffect.DefaultDirection == ConfigCommon.DirectionType.Left && targetPoint.x > startPoint.x)
-                shouldFlip = true;
+            if (_struckTableEffect.DefaultDirection == ConfigCommon.DirectionType.Right && _targetPoint.x < _startPoint.x)
+                _shouldFlip = true;
+            else if (_struckTableEffect.DefaultDirection == ConfigCommon.DirectionType.Left && _targetPoint.x > _startPoint.x)
+                _shouldFlip = true;
             
-            effectProjectile.SetFlip(shouldFlip);
+            _effectProjectile.SetFlip(_shouldFlip);
         }
         private void Update()
         {
-            if (!initialized) return;
+            if (!_initialized) return;
 
             // todo 거리가 달라도 일정한 속도로 날아가게 
-            float distCovered = (Time.time - startTime) * speed;
-            float fraction = distCovered / journeyLength;
+            float distCovered = (Time.time - _startTime) * _speed;
+            float fraction = distCovered / _journeyLength;
             if (fraction > 1f)
             {
                 Destroy(gameObject);
                 return;
             }
-            Vector2 newPos = Vector2.Lerp(startPoint, targetPoint, fraction);
+            Vector2 newPos = Vector2.Lerp(_startPoint, _targetPoint, fraction);
 
-            if (arcHeight > 0f)
+            if (_arcHeight > 0f)
             {
-                float height = arcHeight * 4 * (fraction - fraction * fraction);
+                float height = _arcHeight * 4 * (fraction - fraction * fraction);
                 newPos.y += height;
             }
             // 이동 처리
             transform.position = newPos;
             
             // 방향 계산 → 회전 적용
-            Vector2 moveDir = newPos - previousPosition;
-            direction = (newPos - startPoint).normalized;
+            Vector2 moveDir = newPos - _previousPosition;
+            _direction = (newPos - _startPoint).normalized;
             if (moveDir.sqrMagnitude > 0.0001f) // 0 방지
             {
                 float angle = Mathf.Atan2(moveDir.y, moveDir.x) * Mathf.Rad2Deg;
                 // 기본 방향이 "왼쪽(-X 방향)"일 경우, 90도 보정
-                if (direction.x < 0)
+                if (_direction.x < 0)
                 {
                     angle += 180;
                 }
                 transform.rotation = Quaternion.Euler(0, 0, angle);
             }
 
-            previousPosition = newPos;
+            _previousPosition = newPos;
             
             // 좌표 타겟일 경우 도달 감지
             // if (targetObject == null && Vector2.Distance(transform.position, targetPoint) <= PositionThreshold)
@@ -184,7 +184,7 @@ namespace GGemCo2DCore
         private void OnTriggerEnter2D(Collider2D collision)
         {
             // GcLogger.Log(collision.name);
-            if (fromCharacter.CompareTag(ConfigTags.GetValue(ConfigTags.Keys.Monster)) && 
+            if (_fromCharacter.CompareTag(ConfigTags.GetValue(ConfigTags.Keys.Monster)) && 
                 collision.CompareTag(ConfigTags.GetValue(ConfigTags.Keys.Player)))
             {
                 CharacterHitArea area = collision.GetComponent<CharacterHitArea>();
@@ -193,7 +193,7 @@ namespace GGemCo2DCore
                     OnHitTarget(area);
                 }
             }
-            else if (fromCharacter.CompareTag(ConfigTags.GetValue(ConfigTags.Keys.Player)) && 
+            else if (_fromCharacter.CompareTag(ConfigTags.GetValue(ConfigTags.Keys.Player)) && 
                      collision.CompareTag(ConfigTags.GetValue(ConfigTags.Keys.Monster)))
             {
                 CharacterHitArea area = collision.GetComponent<CharacterHitArea>();
@@ -202,7 +202,7 @@ namespace GGemCo2DCore
                     OnHitTarget(area);
                 }
             }
-            else if (initialized && collision.CompareTag(ConfigTags.GetValue(ConfigTags.Keys.MapGround)))
+            else if (_initialized && collision.CompareTag(ConfigTags.GetValue(ConfigTags.Keys.MapGround)))
             {
                 GcLogger.Log("Projectile Destroy by MapGround");
                 Destroy(gameObject);
@@ -218,7 +218,7 @@ namespace GGemCo2DCore
                 MetadataDamage metadataDamage = new MetadataDamage
                 {
                     damage = _damage,
-                    attacker = fromCharacter.gameObject,
+                    attacker = _fromCharacter.gameObject,
                     damageType = SkillConstants.DamageType.Physic,
                 };
                 area.target?.TakeDamage(metadataDamage);
@@ -228,26 +228,26 @@ namespace GGemCo2DCore
         private void ShowHitEffect()
         {
             // Hit 이펙트가 따로 있으면 Projectile 은 바로 Destroy 한다.
-            if (struckTableProjectile.HitEffectUid > 0) 
+            if (_struckTableProjectile.HitEffectUid > 0) 
             {
                 Destroy(gameObject);
-                var effect = _effectManager.CreateEffect(struckTableProjectile.HitEffectUid);
+                var effect = _effectManager.CreateEffect(_struckTableProjectile.HitEffectUid);
                 if (!effect) return;
-                effect.SetCreateCharacter(fromCharacter);
+                effect.SetCreateCharacter(_fromCharacter);
                 effect.transform.position = transform.position;
                 // 발사체가 flip 되면 hit 이펙트도 flip 처리
-                effect.SetFlip(shouldFlip);
+                effect.SetFlip(_shouldFlip);
             }
             // Hit 이펙트가 따로 없으면, Effect 오브젝트의 End 애니메이션을 실행한다.
             else
             {
-                effectProjectile.PlayEndAnimation();
+                _effectProjectile.PlayEndAnimation();
             }
         }
 
         public void SetFromCharacter(CharacterBase characterBase)
         {
-            fromCharacter = characterBase;
+            _fromCharacter = characterBase;
         }
 
         public void SetDamage(long damage)

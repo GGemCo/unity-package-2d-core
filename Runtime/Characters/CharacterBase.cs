@@ -21,16 +21,16 @@ namespace GGemCo2DCore
         // 현재 이동 스텝
         [HideInInspector] public float currentMoveStep;
         // 어그로
-        private CharacterConstants.AttackType attackType;
-        private bool isAggro;
+        private CharacterConstants.AttackType _attackType;
+        private bool _isAggro;
         [HideInInspector] public string characterName;
         
         [Header("캐릭터 방향 관련")]
         // 원본 방향
         [HideInInspector] public CharacterConstants.FacingDirection8 defaultFacingDirection8 = CharacterConstants.FacingDirection8.Left;
         // 현재 방향
-        private CharacterConstants.FacingDirection8 currentFacing = CharacterConstants.FacingDirection8.Right;
-        public CharacterConstants.FacingDirection8 CurrentFacing => currentFacing;
+        private CharacterConstants.FacingDirection8 _currentFacing = CharacterConstants.FacingDirection8.Right;
+        public CharacterConstants.FacingDirection8 CurrentFacing => _currentFacing;
         
         // 방향은 CurrentFacing 으로 판단한다. 
         [Header("리젠 정보 설정")]
@@ -39,15 +39,15 @@ namespace GGemCo2DCore
         // 방향
         [HideInInspector] public Vector3 directionNormalize;
         // 좌우 flip 가능 여부
-        private bool isPossibleFlip = true;
+        private bool _isPossibleFlip = true;
         // 초기 scale x 값
         [HideInInspector] public float originalScaleX;
         
         [Header("애니메이션 및 렌더링 관련")]
         // 애니메이션 컨트롤러
         public ICharacterAnimationController CharacterAnimationController;
-        private Renderer characterRenderer;
-        private CharacterConstants.CharacterSortingOrder sortingOrder;
+        private Renderer _characterRenderer;
+        private CharacterConstants.CharacterSortingOrder _sortingOrder;
         
         [Header("상태 및 스탯")] public readonly BehaviorSubject<long> CurrentHp = new(0);
         public readonly BehaviorSubject<long> CurrentMp = new(0);
@@ -55,16 +55,17 @@ namespace GGemCo2DCore
         [Header("스킬")] 
         protected bool IsUseSkill = false;
         private SkillController _skillController;
+        private ProjectileController _projectileController;
         
         [Header("스폰 데이터")] 
         public CharacterRegenData CharacterRegenData;
         
         // 현재 상태
-        private CharacterConstants.CharacterStatus currentStatus;
+        private CharacterConstants.CharacterStatus _currentStatus;
         // fade in, out 효과 시작 여부. 맵에서 컬링 될때 사용
-        private bool isStartFade;
-        private float characterHeight;
-        private float characterWidth;
+        private bool _isStartFade;
+        private float _characterHeight;
+        private float _characterWidth;
         // 공격한 GameObject 의 Transform
         [HideInInspector] public Transform attackerTransform;
         // 캐릭터 간의 충돌 체크용
@@ -72,7 +73,7 @@ namespace GGemCo2DCore
         // 캐릭터 hit area 체크용
         [HideInInspector] public CapsuleCollider2D colliderHitArea;
         // 맵 height 값, sorting order 계산에 사용
-        private float mapSizeHeight;
+        private float _mapSizeHeight;
         [HideInInspector] public Rigidbody2D characterRigidbody2D;
         // 맵 object, ground 체크
         [HideInInspector] public CapsuleCollider2D colliderMapObject;
@@ -103,6 +104,8 @@ namespace GGemCo2DCore
                 _skillController = new SkillController();
                 _skillController.Initialize(this);
             }
+            _projectileController = new ProjectileController();
+            _projectileController.Initialize(this);
             defaultFacingDirection8 = AddressableLoaderSettings.Instance.playerSettings.facingDirection8;
             
             // 데미지 컨트롤러 초기화
@@ -115,11 +118,11 @@ namespace GGemCo2DCore
         /// </summary>
         public virtual void InitTagSortingLayer()
         {
-            if (characterRenderer == null)
+            if (_characterRenderer == null)
             {
-                characterRenderer = GetComponent<Renderer>();
+                _characterRenderer = GetComponent<Renderer>();
             }
-            characterRenderer.sortingLayerName = ConfigSortingLayer.GetValue(ConfigSortingLayer.Keys.Character);
+            _characterRenderer.sortingLayerName = ConfigSortingLayer.GetValue(ConfigSortingLayer.Keys.Character);
         }
         /// <summary>
         /// 캐릭터에 필요한 컴포넌트 추가하기
@@ -158,7 +161,7 @@ namespace GGemCo2DCore
                 .AddTo(this);
 
             Vector2 size = SceneGame.Instance.mapManager.GetCurrentMapSize();
-            mapSizeHeight = size.y;
+            _mapSizeHeight = size.y;
             Stop();
         }
         /// <summary>
@@ -210,16 +213,16 @@ namespace GGemCo2DCore
             switch (defaultFacingDirection8)
             {
                 case CharacterConstants.FacingDirection8.Left:
-                    return currentFacing == CharacterConstants.FacingDirection8.Right;
+                    return _currentFacing == CharacterConstants.FacingDirection8.Right;
                 case CharacterConstants.FacingDirection8.Right:
-                    return currentFacing == CharacterConstants.FacingDirection8.Left;
+                    return _currentFacing == CharacterConstants.FacingDirection8.Left;
                 default:
                     return false;
             }
         }
-        public void SetIsPossibleFlip(bool set) => isPossibleFlip = set;
+        public void SetIsPossibleFlip(bool set) => _isPossibleFlip = set;
 
-        private bool IsPossibleFlip() => isPossibleFlip;
+        private bool IsPossibleFlip() => _isPossibleFlip;
         /// <summary>
         /// 캐릭터 방향 셋팅하기
         /// </summary>
@@ -257,7 +260,7 @@ namespace GGemCo2DCore
         public void SetFacing(CharacterConstants.FacingDirection8 dir)
         {
             if (IsPossibleFlip() != true || dir == CharacterConstants.FacingDirection8.None) return;
-            currentFacing = dir;
+            _currentFacing = dir;
 
             float sign = 1;
             if ((defaultFacingDirection8 == CharacterConstants.FacingDirection8.Right &&
@@ -309,18 +312,18 @@ namespace GGemCo2DCore
         /// </summary>
         private void UpdatePosition()
         {
-            if (sortingOrder == CharacterConstants.CharacterSortingOrder.Fixed) return;
+            if (_sortingOrder == CharacterConstants.CharacterSortingOrder.Fixed) return;
 
-            int baseSortingOrder = MathHelper.GetSortingOrder(mapSizeHeight, transform.position.y);
+            int baseSortingOrder = MathHelper.GetSortingOrder(_mapSizeHeight, transform.position.y);
             
-            baseSortingOrder = sortingOrder switch
+            baseSortingOrder = _sortingOrder switch
             {
                 CharacterConstants.CharacterSortingOrder.AlwaysOnTop => CharacterConstants.SortingOrderTop,
                 CharacterConstants.CharacterSortingOrder.AlwaysOnBottom => CharacterConstants.SortingOrderBottom,
                 _ => baseSortingOrder
             };
 
-            characterRenderer.sortingOrder = baseSortingOrder;
+            _characterRenderer.sortingOrder = baseSortingOrder;
         }
         protected virtual void Update()
         {
@@ -349,23 +352,23 @@ namespace GGemCo2DCore
         {
             transform.position = new Vector3(x, y, transform.position.z);
         }
-        public bool IsStatusDead() => currentStatus == CharacterConstants.CharacterStatus.Dead;
-        public bool IsStatusAttack() => currentStatus == CharacterConstants.CharacterStatus.Attack;
-        public bool IsStatusAttackComboWait() => currentStatus == CharacterConstants.CharacterStatus.AttackComboWait;
-        public bool IsStatusDontMove() => currentStatus == CharacterConstants.CharacterStatus.DontMove;
-        public bool IsStatusRun() => currentStatus == CharacterConstants.CharacterStatus.Run;
-        public bool IsStatusIdle() => currentStatus == CharacterConstants.CharacterStatus.Idle;
-        public bool IsStatusNone() => currentStatus == CharacterConstants.CharacterStatus.None;
-        public bool IsStatusMoveForce() => currentStatus == CharacterConstants.CharacterStatus.MoveForce;
-        public bool IsStatusDamage() => currentStatus == CharacterConstants.CharacterStatus.Damage;
-        public bool IsStatusJump() => currentStatus == CharacterConstants.CharacterStatus.Jump;
-        public bool IsStatusKnockback() => currentStatus == CharacterConstants.CharacterStatus.Knockback;
-        public bool IsStatusDash() => currentStatus == CharacterConstants.CharacterStatus.Dash;
-        public bool IsStatusClimb() => currentStatus == CharacterConstants.CharacterStatus.Climb;
-        public bool IsStatusPush() => currentStatus == CharacterConstants.CharacterStatus.Push;
-        public CharacterConstants.CharacterStatus GetCurrentStatus() => currentStatus;
+        public bool IsStatusDead() => _currentStatus == CharacterConstants.CharacterStatus.Dead;
+        public bool IsStatusAttack() => _currentStatus == CharacterConstants.CharacterStatus.Attack;
+        public bool IsStatusAttackComboWait() => _currentStatus == CharacterConstants.CharacterStatus.AttackComboWait;
+        public bool IsStatusDontMove() => _currentStatus == CharacterConstants.CharacterStatus.DontMove;
+        public bool IsStatusRun() => _currentStatus == CharacterConstants.CharacterStatus.Run;
+        public bool IsStatusIdle() => _currentStatus == CharacterConstants.CharacterStatus.Idle;
+        public bool IsStatusNone() => _currentStatus == CharacterConstants.CharacterStatus.None;
+        public bool IsStatusMoveForce() => _currentStatus == CharacterConstants.CharacterStatus.MoveForce;
+        public bool IsStatusDamage() => _currentStatus == CharacterConstants.CharacterStatus.Damage;
+        public bool IsStatusJump() => _currentStatus == CharacterConstants.CharacterStatus.Jump;
+        public bool IsStatusKnockback() => _currentStatus == CharacterConstants.CharacterStatus.Knockback;
+        public bool IsStatusDash() => _currentStatus == CharacterConstants.CharacterStatus.Dash;
+        public bool IsStatusClimb() => _currentStatus == CharacterConstants.CharacterStatus.Climb;
+        public bool IsStatusPush() => _currentStatus == CharacterConstants.CharacterStatus.Push;
+        public CharacterConstants.CharacterStatus GetCurrentStatus() => _currentStatus;
         
-        private void SetStatus(CharacterConstants.CharacterStatus value) => currentStatus = value;
+        private void SetStatus(CharacterConstants.CharacterStatus value) => _currentStatus = value;
         public void SetStatusNone() => SetStatus(CharacterConstants.CharacterStatus.None);
         public void SetStatusDead() => SetStatus(CharacterConstants.CharacterStatus.Dead);
         public void SetStatusIdle() => SetStatus(CharacterConstants.CharacterStatus.Idle);
@@ -391,8 +394,8 @@ namespace GGemCo2DCore
         /// </summary>
         public void StartFadeIn()
         {
-            if (isStartFade) return;
-            isStartFade = true;
+            if (_isStartFade) return;
+            _isStartFade = true;
             gameObject.SetActive(true);
             StartCoroutine(FadeIn(ConfigCommon.CharacterFadeSec));
             OnStartFadeIn();
@@ -407,8 +410,8 @@ namespace GGemCo2DCore
         /// </summary>
         public void StartFadeOut()
         {
-            if (isStartFade) return;
-            isStartFade = true;
+            if (_isStartFade) return;
+            _isStartFade = true;
             StartCoroutine(FadeOut(ConfigCommon.CharacterFadeSec));
             OnStartFadeOut();
         }
@@ -429,17 +432,17 @@ namespace GGemCo2DCore
         }
         public void SetIsStartFade(bool value)
         {
-            isStartFade = value;
+            _isStartFade = value;
         }
 
         public float GetHeight()
         {
-            return characterHeight;
+            return _characterHeight;
         }
 
         protected void SetHeight(float value)
         {
-            characterHeight = value;
+            _characterHeight = value;
         }
         /// <summary>
         /// localScale 이 적용된 캐릭터 크기 가져오기
@@ -451,12 +454,12 @@ namespace GGemCo2DCore
         }
         public float GetWidth()
         {
-            return characterWidth;
+            return _characterWidth;
         }
 
         protected void SetWidth(float value)
         {
-            characterWidth = value;
+            _characterWidth = value;
         }
         public virtual float GetCurrentMoveStep()
         {
@@ -521,20 +524,20 @@ namespace GGemCo2DCore
 
         public void SetAggro(bool set)
         {
-            isAggro = set;
+            _isAggro = set;
         }
         public bool IsAggro()
         {
-            return isAggro;
+            return _isAggro;
         }
         public CharacterConstants.AttackType GetAttackType()
         {
-            return attackType;
+            return _attackType;
         }
 
         private void SetAttackType(CharacterConstants.AttackType pattackType)
         {
-            attackType = pattackType;
+            _attackType = pattackType;
         }
         /// <summary>
         /// 어펙트 추가하기
@@ -644,20 +647,11 @@ namespace GGemCo2DCore
             Vector2 worldPoint = transform.TransformPoint(localPoint);
             return worldPoint.y;
         }
-        public virtual void LaunchProjectile(int projectileUid)
+        public void LaunchProjectile(MetadataProjectile metadataProjectile)
         {
-            var info = TableLoaderManager.Instance.GetProjectileData(projectileUid);
-            if (info == null) return;
-            StartCoroutine(CreateProjectile(info));
+            if (_projectileController == null) return;
+            _projectileController.Launch(metadataProjectile);
         }
-        protected virtual IEnumerator CreateProjectile(StruckTableProjectile info)
-        {
-            for (int i = 0; i < info.Count; i++)
-            {
-                yield return new WaitForSeconds(info.SecDelayByOne);
-            }
-        }
-
         public virtual void UseSkill(int skillUid, int skillLevel)
         {
             _skillController?.MakeSkill(skillUid, skillLevel);

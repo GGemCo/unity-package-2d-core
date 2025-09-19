@@ -64,41 +64,13 @@ namespace GGemCo2DCore
         private void ApplyProjectile()
         {
             if (_struckTableSkill.ProjectileUid <= 0) return;
-            var info = TableLoaderManager.Instance.GetProjectileData(_struckTableSkill.ProjectileUid);
-            if (info == null) return;
-            StartCoroutine(CreateProjectile(info));
-        }
-
-        private IEnumerator CreateProjectile(StruckTableProjectile info)
-        {
-            if (!_target || info == null) yield break;
-            
-            for (int i = 0; i < info.Count; i++)
-            {
-                DefaultProjectile projectile = _projectileManager.CreateProjectile(info.Uid);
-                projectile?.SetFromCharacter(_attacker);
-                projectile?.SetDamage(_struckTableSkill.DamageValue);
-                float positionX =
-                    Random.Range(_target.transform.position.x - info.TargetPositionRangeX,
-                        _target.transform.position.x + info.TargetPositionRangeX);
-                float positionY = _target.GetRandomPositionYInHitArea();
-                if (info.TargetType == ProjectileConstants.TargetType.Fixed)
-                {
-                    projectile?.Launch(_target);
-                }
-                else
-                {
-                    // 직선형일때는 타겟 x 좌표를 범위로 하지 않는다. 
-                    if (info.ArcHeightMin == 0 && info.ArcHeightMax == 0)
-                    {
-                        positionX = _target.transform.position.x;
-                    }
-
-                    // positionY = mapSettings.projectilePositionY;
-                    projectile?.Launch(new Vector2(positionX, positionY));
-                }
-                yield return new WaitForSeconds(info.SecDelayByOne);
-            }
+            MetadataProjectile metadataProjectile = new MetadataProjectile(
+                _struckTableSkill.ProjectileUid,
+                _struckTableSkill.DamageType, 
+                _struckTableSkill.DamageValue,
+                _target
+                );
+            _attacker.LaunchProjectile(metadataProjectile);
         }
 
         /// <summary>
