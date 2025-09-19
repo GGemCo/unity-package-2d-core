@@ -245,7 +245,7 @@ namespace GGemCo2DCore
         /// </summary>
         /// <param name="code"></param>
         /// <returns></returns>
-        private Locale GetLocaleByCode(string code)
+        public Locale GetLocaleByCode(string code)
         {
             if (string.IsNullOrEmpty(code) || Locales == null) return null;
             // 완전일치 우선, 없으면 접두 일치(예: "ko"로 저장되어 있고 프로젝트에는 "ko-KR"만 있는 경우)

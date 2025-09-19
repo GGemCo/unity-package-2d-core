@@ -1,6 +1,9 @@
 ﻿using System.Collections;
 using TMPro;
 using UnityEngine;
+using UnityEngine.Localization;
+using UnityEngine.Localization.Settings;
+using UnityEngine.Localization.Tables;
 #if ENABLE_LEGACY_INPUT_MANAGER
 using TouchPhase = UnityEngine.TouchPhase;
 #endif
@@ -34,7 +37,13 @@ namespace GGemCo2DCore
         [Tooltip("전역 설정(GGemCoSettings)이 있으면 전역 값을 사용하고,\n없으면 이 값을 적용")]
         [SerializeField] private InputSystemType inputModeOverride = InputSystemType.Both;
 
+        [Header("Localization (정식 테이블)")] 
+        private const string TableName = "GGemCo_PreIntro";
+        private const string KeyPressAnyKey = "Text_PressAnyKey";
+        private const string KeyLoading = "Text_Loading";
+        
         private GameLoaderManager _gameLoaderManager;
+        private LocalizationManager _localizationManager;
         private bool _waitingForInput;
         private InputSystemType _resolvedMode = InputSystemType.Both;
 
@@ -46,19 +55,25 @@ namespace GGemCo2DCore
             {
                 _gameLoaderManager = new GameObject("GameLoaderManager").AddComponent<GameLoaderManager>();
             }
+            _localizationManager = new GameObject("LocalizationManager").AddComponent<LocalizationManager>();
 
             if (textLoadingPercent != null) {
                 _gameLoaderManager.SetTextLoadingPercent(textLoadingPercent);
                 textLoadingPercent.gameObject.SetActive(false);
             }
 
-            if (textPressAnyKey != null)
-                textPressAnyKey.gameObject.SetActive(true);
             _resolvedMode = ResolveInputMode();
 
             if (autoStart)
             {
                 ChangeSceneToIntro();
+            }
+            else
+            {
+                if (textPressAnyKey != null)
+                    textPressAnyKey.gameObject.SetActive(false);
+                // 1) Localization 초기화가 끝나면 "정식 문자열"로 교체
+                StartCoroutine(SwapToLocalizedWhenReady());
             }
         }
         /// <summary>
@@ -226,6 +241,43 @@ namespace GGemCo2DCore
 #else
             return false;
 #endif
+        }
+        /// <summary>
+        /// 프리 인트로 씬에서 사용하는 텍스트용 GGemCo_PreIntro String Table 불러오기
+        /// </summary>
+        /// <returns></returns>
+        private IEnumerator SwapToLocalizedWhenReady()
+        {
+            // 1) 초기화 대기
+            yield return LocalizationSettings.InitializationOperation; // 안전 시점 확보
+
+            // (선택) 2) 필요한 테이블만 프리로드
+            var refs = new System.Collections.Generic.List<TableReference> { (TableReference)TableName };
+            
+            string code = PlayerPrefsManager.LoadLocalizationLocaleCode();
+            Locale locale = _localizationManager.GetLocaleByCode(code);
+            LocalizationSettings.SelectedLocale = locale;
+            var preload = LocalizationSettings.StringDatabase.PreloadTables(refs, locale);
+            yield return preload; // AssetTable이라면 연관 에셋도 동시에 로드
+
+            // 3) 실제 텍스트 치환 (1회)
+            if (textPressAnyKey != null)
+            {
+                var s = LocalizationSettings.StringDatabase.GetLocalizedStringAsync(TableName, KeyPressAnyKey);
+                yield return s;
+                if (s.Status == UnityEngine.ResourceManagement.AsyncOperations.AsyncOperationStatus.Succeeded)
+                {
+                    textPressAnyKey.text = s.Result;
+                    textPressAnyKey.gameObject.SetActive(true);
+                }
+            }
+            if (textLoadingPercent != null)
+            {
+                var s = LocalizationSettings.StringDatabase.GetLocalizedStringAsync(TableName, KeyLoading);
+                yield return s;
+                if (s.Status == UnityEngine.ResourceManagement.AsyncOperations.AsyncOperationStatus.Succeeded)
+                    textLoadingPercent.text = s.Result;
+            }
         }
     }
 }
