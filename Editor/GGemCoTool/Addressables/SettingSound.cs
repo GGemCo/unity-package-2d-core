@@ -64,7 +64,7 @@ namespace GGemCo2DCoreEditor
                     if (info.Uid <= 0) continue;
                 
                     string key = $"{ConfigAddressableGroupName.Sound}_{info.FileName}";
-                    string assetPath = $"{ConfigAddressables.GetPathSound(info)}/{info.FileName}";
+                    string assetPath = $"{ConfigAddressablePath.BuildSoundPath(info.Type, info.SubType)}/{info.FileName}";
                     string label = ConfigAddressableLabel.Sound;
                 
                     AddressableAssetEntry entry = Add(settings, group, key, assetPath, label);

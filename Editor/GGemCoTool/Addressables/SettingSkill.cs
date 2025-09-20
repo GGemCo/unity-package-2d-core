@@ -16,7 +16,7 @@ namespace GGemCo2DCoreEditor
         public SettingSkill(AddressableEditor addressableEditorWindow)
         {
             _addressableEditor = addressableEditorWindow;
-            targetGroupName = ConfigAddressableGroupName.SkillIconImage;
+            targetGroupName = ConfigAddressableGroupName.SkillIcon;
         }
         public void OnGUI()
         {
@@ -56,7 +56,7 @@ namespace GGemCo2DCoreEditor
             
             ClearGroupEntries(settings, group);
             
-            string atlasFolderPath = ConfigAddressables.PathSpriteAtlas;
+            string atlasFolderPath = ConfigAddressablePath.SpriteAtlas;
             Directory.CreateDirectory(atlasFolderPath);
     
             var atlas = GetOrCreateSpriteAtlas($"{atlasFolderPath}/SkillIconAtlas.spriteatlas");
@@ -70,8 +70,8 @@ namespace GGemCo2DCoreEditor
                     var info = data.Value;
                     if (info.Uid <= 0) continue;
                 
-                    string key = $"{ConfigAddressables.KeyImageIconSkill}_{info.Uid}";
-                    string assetPath = $"{ConfigAddressables.PathImageIconSkill}/{info.IconFileName}.png";
+                    string key = $"{ConfigAddressableKey.SkillIcon}_{info.Uid}";
+                    string assetPath = $"{ConfigAddressablePath.Images.Icon.Skill}/{info.IconFileName}.png";
                 
                     Add(settings, group, key, assetPath);
                     AddToListIfExists(assets, assetPath);
@@ -80,7 +80,7 @@ namespace GGemCo2DCoreEditor
             ClearAndAddToAtlas(atlas, assets);
             
             if (assets.Count > 0)
-                Add(settings, group, ConfigAddressables.KeyImageIconSkill, AssetDatabase.GetAssetPath(atlas), ConfigAddressableLabel.ImageSkillIcon);
+                Add(settings, group, ConfigAddressableKey.SkillIcon, AssetDatabase.GetAssetPath(atlas), ConfigAddressableLabel.ImageSkillIcon);
             
             // 설정 저장
             settings.SetDirty(AddressableAssetSettings.ModificationEvent.EntryMoved, null, true);

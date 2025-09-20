@@ -32,7 +32,7 @@ namespace GGemCo2DCore
             if (dialogue == null) return null;
             if (dialogue.thumbnailImage != "")
             {
-                string key = $"{ConfigAddressables.KeyCharacterThumbnail}_{dialogue.thumbnailImage}";
+                string key = $"{ConfigAddressableKey.CharacterThumbnail}_{dialogue.thumbnailImage}";
                 return await AddressableLoaderController.LoadByKeyAsync<Sprite>(key);
             }
             if (dialogue.characterType == CharacterConstants.Type.Npc)
@@ -40,7 +40,7 @@ namespace GGemCo2DCore
                 var data = TableLoaderManager.Instance.GetNpcData(dialogue.characterUid);
                 if (data != null)
                 {
-                    string key = $"{ConfigAddressables.KeyCharacterThumbnailNpc}_{data.ImageThumbnailFileName}";
+                    string key = $"{ConfigAddressableKey.CharacterThumbnailNpc}_{data.ImageThumbnailFileName}";
                     return await AddressableLoaderController.LoadByKeyAsync<Sprite>(key);
                 }
             }
@@ -49,7 +49,7 @@ namespace GGemCo2DCore
                 var data = TableLoaderManager.Instance.GetMonsterData(dialogue.characterUid);
                 if (data != null)
                 {
-                    string key = $"{ConfigAddressables.KeyCharacterThumbnailMonster}_{data.ImageThumbnailFileName}";
+                    string key = $"{ConfigAddressableKey.CharacterThumbnailMonster}_{data.ImageThumbnailFileName}";
                     return await AddressableLoaderController.LoadByKeyAsync<Sprite>(key);
                 }
             }

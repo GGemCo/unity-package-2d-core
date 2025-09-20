@@ -195,7 +195,7 @@ namespace GGemCo2DCoreEditor
 
             StruckTableMap info = _tableMap.GetDataByUid(_loadMapUid);
             string folderName = info.FolderName;
-            string currentJsonFolderPath = ConfigAddressableMap.GetPathJson(folderName);
+            string currentJsonFolderPath = ConfigAddressablePath.Maps.Folder(folderName);
             
             // monster, npc 의 label 업데이트 해주기
             // AddressableEditor 창을 찾거나, 없으면 새로 열기
@@ -204,9 +204,9 @@ namespace GGemCo2DCoreEditor
             RemoveCharacterMapLabel(labelName);
 
             
-            _npcExporter.ExportNpcDataToJson(currentJsonFolderPath, ConfigAddressableMap.FileNameRegenNpc, _loadMapUid, info);
-            _monsterExporter.ExportMonsterDataToJson(currentJsonFolderPath, ConfigAddressableMap.FileNameRegenMonster, _loadMapUid, info);
-            _warpExporter.ExportWarpDataToJson(currentJsonFolderPath, ConfigAddressableMap.FileNameWarp, _loadMapUid);
+            _npcExporter.ExportNpcDataToJson(currentJsonFolderPath, ConfigAddressableMap.GetFileName(MapAssetType.RegenNpcJson), _loadMapUid, info);
+            _monsterExporter.ExportMonsterDataToJson(currentJsonFolderPath, ConfigAddressableMap.GetFileName(MapAssetType.RegenMonsterJson), _loadMapUid, info);
+            _warpExporter.ExportWarpDataToJson(currentJsonFolderPath, ConfigAddressableMap.GetFileName(MapAssetType.WarpJson), _loadMapUid);
             AssetDatabase.Refresh();
             
             EditorUtility.DisplayDialog(Title, "Json 저장하기 완료", "OK");

@@ -1,44 +1,45 @@
 ﻿namespace GGemCo2DCore
 {
+    /// <summary>
+    /// Addressables Group 네이밍 규칙(빌드/패키징 단위).
+    /// </summary>
     public static class ConfigAddressableGroupName
     {
         // Common
-        public const string Common = ConfigDefine.NameSDK+"_Common";
-        
-        // 캐릭터
-        public const string Monster = ConfigAddressables.KeyPrefabMonster;
-        public const string Npc = ConfigAddressables.KeyPrefabNpc;
-        public const string Player = ConfigAddressables.KeyPrefabPlayer;
+        public const string Common = ConfigDefine.NameSDK + "_Common";
 
-        // 이펙트
-        public const string Effect = ConfigDefine.NameSDK+"_Effect";
-        
-        // 아이템
-        public const string Item = ConfigDefine.NameSDK+"_Item";
-        public const string ItemDropImage = Item +"_DropImage";
-        public const string ItemIconImage = Item +"_IconImage";
-        public const string ItemEquipImage = Item +"_EquipImage";
-     
-        // 맵
-        public const string Map = ConfigDefine.NameSDK+"_Map";
-        
-        // 테이블
-        public const string Table = ConfigDefine.NameSDK+"_Table";
-        
-        // 대사 
-        public const string Dialogue = ConfigDefine.NameSDK+"_Dialogue";
-        
-        // 퀘스트
-        public const string Quest = ConfigDefine.NameSDK+"_Quest";
-        // 연출
-        public const string Cutscene = ConfigDefine.NameSDK+"_Cutscene";
-        // 스킬
-        public const string SkillIconImage = ConfigDefine.NameSDK+"_Skill_IconImage";
-        // 어펙트
-        public const string AffectIconImage = ConfigDefine.NameSDK+"_Affect_IconImage";
-        // 사운드
-        public const string Sound = ConfigDefine.NameSDK+"_Sound";
-        // Input Action
-        public const string InputAction = ConfigDefine.NameSDK+"_InputAction";
+        // Characters
+        public const string Monster = ConfigDefine.NameSDK + "_Character_Monster";
+        public const string Npc     = ConfigDefine.NameSDK + "_Character_Npc";
+        public const string Player  = ConfigDefine.NameSDK + "_Character_Player";
+
+        // Effects
+        public const string Effect = ConfigDefine.NameSDK + "_Effect";
+
+        // Items (하위 그룹 형태로 구조화)
+        public const string Item = ConfigDefine.NameSDK + "_Item";
+        public static class ItemGroup
+        {
+            public const string DropImage  = Item + "_DropImage";
+            public const string IconImage  = Item + "_IconImage";
+            public const string EquipImage = Item + "_EquipImage";
+        }
+
+        // Map / Table / Narrative
+        public const string Map      = ConfigDefine.NameSDK + "_Map";
+        public const string Table    = ConfigDefine.NameSDK + "_Table";
+        public const string Dialogue = ConfigDefine.NameSDK + "_Dialogue";
+        public const string Quest    = ConfigDefine.NameSDK + "_Quest";
+        public const string Cutscene = ConfigDefine.NameSDK + "_Cutscene";
+
+        // Icons
+        public const string SkillIcon  = ConfigDefine.NameSDK + "_Skill_IconImage";
+        public const string AffectIcon = ConfigDefine.NameSDK + "_Affect_IconImage";
+
+        // Sound
+        public const string Sound = ConfigDefine.NameSDK + "_Sound";
+
+        // Input
+        public const string InputAction = ConfigDefine.NameSDK + "_InputAction";
     }
 }

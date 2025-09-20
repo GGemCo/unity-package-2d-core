@@ -251,7 +251,7 @@ namespace GGemCo2DCoreEditor
             if (!result) return;
             var info = _struckTableQuests.GetValueOrDefault(_selectedQuestIndex);
             if (info == null) return;
-            string path = $"{ConfigAddressables.PathJsonQuest}/{info.FileName}.json";
+            string path = $"{ConfigAddressablePath.Narrative.Quests}/{info.FileName}.json";
             // 저장 전에 Unity가 리스트를 최신 상태로 반영하게 강제한다.
             EditorUtility.SetDirty(this);
             string json = JsonConvert.SerializeObject(_quest, Formatting.Indented);
@@ -269,7 +269,7 @@ namespace GGemCo2DCoreEditor
             
             var info = _struckTableQuests.GetValueOrDefault(_selectedQuestIndex);
             if (info == null) return false;
-            string path = $"{ConfigAddressables.PathJsonQuest}/{info.FileName}.json";
+            string path = $"{ConfigAddressablePath.Narrative.Quests}/{info.FileName}.json";
             
             try
             {

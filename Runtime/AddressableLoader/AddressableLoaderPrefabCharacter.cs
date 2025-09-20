@@ -42,7 +42,7 @@ namespace GGemCo2DCore
         {
             var info = TableLoaderManager.Instance.GetAnimationData(spineUid);
             if (info == null) return null;
-            string key = $"{ConfigAddressables.KeyCharacter}_Npc_{info.Uid}";
+            string key = $"{ConfigAddressableKey.Character}_Npc_{info.Uid}";
             return _prefabCharacters.GetValueOrDefault(key);
         }
 
@@ -50,7 +50,7 @@ namespace GGemCo2DCore
         {
             var info = TableLoaderManager.Instance.GetAnimationData(spineUid);
             if (info == null) return null;
-            string key = $"{ConfigAddressables.KeyCharacter}_Monster_{info.Uid}";
+            string key = $"{ConfigAddressableKey.Character}_Monster_{info.Uid}";
             return _prefabCharacters.GetValueOrDefault(key);
         }
 

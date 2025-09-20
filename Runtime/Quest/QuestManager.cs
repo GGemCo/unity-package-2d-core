@@ -131,7 +131,7 @@ namespace GGemCo2DCore
             
             var info = _tableQuest.GetDataByUid(questUid);
             if (info == null) return null;
-            string key = $"{ConfigAddressables.KeyQuest}_{info.Uid}";
+            string key = $"{ConfigAddressableKey.Quest}_{info.Uid}";
             try
             {
                 TextAsset textFile = await AddressableLoaderController.LoadByKeyAsync<TextAsset>(key);

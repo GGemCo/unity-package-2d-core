@@ -23,9 +23,9 @@ namespace GGemCo2DCoreEditor
         public SettingItem(AddressableEditor addressableEditorWindow)
         {
             _addressableEditor = addressableEditorWindow;
-            targetGroupName = ConfigAddressableGroupName.ItemDropImage;
-            _groupNameIconImage = ConfigAddressableGroupName.ItemIconImage;
-            _groupNameEquipImage = ConfigAddressableGroupName.ItemEquipImage;
+            targetGroupName = ConfigAddressableGroupName.ItemGroup.DropImage;
+            _groupNameIconImage = ConfigAddressableGroupName.ItemGroup.IconImage;
+            _groupNameEquipImage = ConfigAddressableGroupName.ItemGroup.EquipImage;
         }
         public void OnGUI()
         {
@@ -72,7 +72,7 @@ namespace GGemCo2DCoreEditor
             ClearGroupEntries(settings, groupIconImage);
             
             // SpriteAtlas 생성
-            string atlasFolderPath = ConfigAddressables.PathSpriteAtlas;
+            string atlasFolderPath = ConfigAddressablePath.SpriteAtlas;
             Directory.CreateDirectory(atlasFolderPath);
     
             var atlasDrop = GetOrCreateSpriteAtlas($"{atlasFolderPath}/ItemDropAtlas.spriteatlas");
@@ -99,12 +99,12 @@ namespace GGemCo2DCoreEditor
                 if (info.Uid <= 0) continue;
 
                 // Drop 이미지
-                string dropPath = $"{ConfigAddressables.Path}/{info.ImageItemPath}.png";
+                string dropPath = $"{ConfigAddressablePath.Root}/{info.ImageItemPath}.png";
                 Add(settings, groupDropImage, $"{ConfigAddressableLabel.ImageItemDrop}_{info.Uid}", dropPath);
                 AddToListIfExists(assetsDrop, dropPath);
 
                 // Icon 이미지
-                string iconPath = $"{ConfigAddressables.Path}/{info.ImagePath}.png";
+                string iconPath = $"{ConfigAddressablePath.Root}/{info.ImagePath}.png";
                 Add(settings, groupIconImage, $"{ConfigAddressableLabel.ImageItemIcon}_{info.Uid}", iconPath);
                 AddToListIfExists(assetsIcon, iconPath);
 
@@ -118,7 +118,7 @@ namespace GGemCo2DCoreEditor
                     foreach (string slotName in slotNames)
                     {
                         if (string.IsNullOrEmpty(slotName)) continue;
-                        string equipPath = $"{ConfigAddressables.Path}/{info.PartsImagePath}_{slotName}.png";
+                        string equipPath = $"{ConfigAddressablePath.Root}/{info.PartsImagePath}_{slotName}.png";
                         Add(settings, groupEquipImage, baseKey, equipPath);
                         AddToListIfExists(assetsEquip, equipPath);
                     }
@@ -136,14 +136,14 @@ namespace GGemCo2DCoreEditor
                 {
                     if (string.IsNullOrEmpty(slotName)) continue;
                     string baseKey = $"{ConfigAddressableLabel.ImageItemEquip}_{folderName}_{slotName}";
-                    string equipPath = $"{ConfigAddressables.PathItemParts}/{folderName}/{slotName}.png";
+                    string equipPath = $"{ConfigAddressablePath.Images.Parts}/{folderName}/{slotName}.png";
                     Add(settings, groupEquipImage, baseKey, equipPath);
                     AddToListIfExists(assetsEquip, equipPath);
                 }
             }
             // blank 이미지
             string key = $"{ConfigAddressableLabel.ImageItemIcon}_blank";
-            string path = $"{ConfigAddressables.Path}/Images/Icon/blank.png";
+            string path = $"{ConfigAddressablePath.Root}/Images/Icon/blank.png";
             Add(settings, groupIconImage, key, path);
             AddToListIfExists(assetsIcon, path);
             

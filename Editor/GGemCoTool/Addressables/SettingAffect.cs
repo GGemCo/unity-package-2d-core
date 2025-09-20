@@ -19,7 +19,7 @@ namespace GGemCo2DCoreEditor
         public SettingAffect(AddressableEditor addressableEditorWindow)
         {
             _addressableEditor = addressableEditorWindow;
-            targetGroupName = ConfigAddressableGroupName.AffectIconImage;
+            targetGroupName = ConfigAddressableGroupName.AffectIcon;
         }
 
         public void OnGUI()
@@ -67,7 +67,7 @@ namespace GGemCo2DCoreEditor
             ClearGroupEntries(settings, group);
 
             // 스프라이트 아틀라스 준비
-            string atlasFolderPath = ConfigAddressables.PathSpriteAtlas;
+            string atlasFolderPath = ConfigAddressablePath.SpriteAtlas;
             Directory.CreateDirectory(atlasFolderPath);
             var atlas = GetOrCreateSpriteAtlas($"{atlasFolderPath}/AffectIconAtlas.spriteatlas");
 
@@ -78,8 +78,8 @@ namespace GGemCo2DCoreEditor
                 var info = _addressableEditor.TableAffect.GetDataByUid(outerPair.Key);
                 if (info.Uid <= 0) continue;
 
-                string key = $"{ConfigAddressables.KeyImageIconAffect}_{info.Uid}";
-                string assetPath = $"{ConfigAddressables.PathImageIconAffect}";
+                string key = $"{ConfigAddressableKey.AffectIcon}_{info.Uid}";
+                string assetPath = $"{ConfigAddressablePath.Images.Icon.Affect}";
                 assetPath = info.Type == AffectConstants.Type.Buff
                     ? $"{assetPath}/Buff"
                     : $"{assetPath}/DeBuff";
@@ -95,7 +95,7 @@ namespace GGemCo2DCoreEditor
             // 아틀라스 자체도 Addressable 로 등록(공용 키/라벨)
             if (assets.Count > 0)
             {
-                Add(settings, group, ConfigAddressables.KeyImageIconAffect, AssetDatabase.GetAssetPath(atlas),
+                Add(settings, group, ConfigAddressableKey.AffectIcon, AssetDatabase.GetAssetPath(atlas),
                     ConfigAddressableLabel.ImageAffectIcon);
             }
 

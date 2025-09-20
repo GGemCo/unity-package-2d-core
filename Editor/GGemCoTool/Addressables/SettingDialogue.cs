@@ -64,8 +64,8 @@ namespace GGemCo2DCoreEditor
                     var info = _addressableEditor.TableDialogue.GetDataByUid(outerPair.Key);
                     if (info.Uid <= 0) continue;
                 
-                    string key = $"{ConfigAddressables.KeyDialogue}_{info.Uid}";
-                    string assetPath = $"{ConfigAddressables.PathJsonDialogue}/{info.FileName}.json";
+                    string key = $"{ConfigAddressableKey.Dialogue}_{info.Uid}";
+                    string assetPath = $"{ConfigAddressablePath.Narrative.Dialogue}/{info.FileName}.json";
                     string label = ConfigAddressableLabel.Dialogue;
                 
                     Add(settings, group, key, assetPath, label);

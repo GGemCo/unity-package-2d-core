@@ -16,7 +16,7 @@ namespace GGemCo2DCore
             var info = TableLoaderManager.Instance.GetDialogueData(dialogueUid);
             if (info == null) return null;
 
-            string key = $"{ConfigAddressables.KeyDialogue}_{info.Uid}";
+            string key = $"{ConfigAddressableKey.Dialogue}_{info.Uid}";
             TextAsset textFile = await AddressableLoaderController.LoadByKeyAsync<TextAsset>(key);
 
             if (textFile == null)

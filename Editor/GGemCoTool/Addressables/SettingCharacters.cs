@@ -76,7 +76,7 @@ namespace GGemCo2DCoreEditor
                     var infoAnimation = _addressableEditor.TableAnimation.GetDataByUid(info.AnimationUid);
                     if (infoAnimation == null) continue;
                 
-                    string key = $"{ConfigAddressables.KeyPrefabMonster}_{infoAnimation.Uid}";
+                    string key = $"{ConfigAddressableKey.PrefabMonster}_{infoAnimation.Uid}";
                     string assetPath = ConfigAddressableMap.GetPathCharacter(infoAnimation, true);
                     string label = "";
                     
@@ -85,8 +85,8 @@ namespace GGemCo2DCoreEditor
                     // 썸네일 있으면 추가
                     if (!string.IsNullOrEmpty(info.ImageThumbnailFileName))
                     {
-                        key = $"{ConfigAddressables.KeyCharacterThumbnailMonster}_{info.ImageThumbnailFileName}";
-                        assetPath = $"{ConfigAddressables.PathCharacterThumbnailMonster}/{info.ImageThumbnailFileName}.png";
+                        key = $"{ConfigAddressableKey.CharacterThumbnailMonster}_{info.ImageThumbnailFileName}";
+                        assetPath = $"{ConfigAddressablePath.Characters.Thumbnails.Monster}/{info.ImageThumbnailFileName}.png";
                         Add(settings, group, key, assetPath);
                     }
                 }
@@ -106,7 +106,7 @@ namespace GGemCo2DCoreEditor
                     var infoAnimation = _addressableEditor.TableAnimation.GetDataByUid(info.AnimationUid);
                     if (infoAnimation == null) continue;
                 
-                    string key = $"{ConfigAddressables.KeyPrefabNpc}_{infoAnimation.Uid}";
+                    string key = $"{ConfigAddressableKey.PrefabNpc}_{infoAnimation.Uid}";
                     string assetPath = ConfigAddressableMap.GetPathCharacter(infoAnimation, true);
                 
                     Add(settings, groupNpc, key, assetPath);
@@ -114,8 +114,8 @@ namespace GGemCo2DCoreEditor
                     // 썸네일 있으면 추가
                     if (!string.IsNullOrEmpty(info.ImageThumbnailFileName))
                     {
-                        key = $"{ConfigAddressables.KeyCharacterThumbnailNpc}_{info.ImageThumbnailFileName}";
-                        assetPath = $"{ConfigAddressables.PathCharacterThumbnailNpc}/{info.ImageThumbnailFileName}.png";
+                        key = $"{ConfigAddressableKey.CharacterThumbnailNpc}_{info.ImageThumbnailFileName}";
+                        assetPath = $"{ConfigAddressablePath.Characters.Thumbnails.Npc}/{info.ImageThumbnailFileName}.png";
                         Add(settings, groupNpc, key, assetPath);
                     }
                 }
@@ -125,8 +125,8 @@ namespace GGemCo2DCoreEditor
             ClearGroupEntries(settings, groupPlayer);
             if (groupPlayer)
             {
-                string key = ConfigAddressables.KeyPrefabPlayer;
-                string assetPath = $"{ConfigAddressables.PathPrefabPlayer}/Player.prefab";
+                string key = ConfigAddressableKey.PrefabPlayer;
+                string assetPath = $"{ConfigAddressablePath.Characters.Player}/Player.prefab";
                 
                 Add(settings, groupPlayer, key, assetPath);
             }

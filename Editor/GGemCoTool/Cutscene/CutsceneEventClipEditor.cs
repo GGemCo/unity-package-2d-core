@@ -164,7 +164,7 @@ namespace GGemCo2DCoreEditor
                     NullValueHandling = NullValueHandling.Ignore
                 });
 
-            string path = $"{GGemCo2DCore.ConfigAddressables.PathJsonCutscene}/{timeline.name}.json";
+            string path = $"{GGemCo2DCore.ConfigAddressablePath.Narrative.Cutscene}/{timeline.name}.json";
                 
             File.WriteAllText(path, json);
             Debug.Log($"Saved cutscene to: {path}");

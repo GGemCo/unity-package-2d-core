@@ -49,7 +49,7 @@ namespace GGemCo2DCoreEditor
             var info = dialogueInfos.GetValueOrDefault(selectedQuestIndex);
             if (info == null) return;
             string fileName = info.FileName;
-            string path = $"{ConfigAddressables.PathJsonDialogue}/{fileName}.json";
+            string path = $"{ConfigAddressablePath.Narrative.Dialogue}/{fileName}.json";
             string json = JsonConvert.SerializeObject(data, Formatting.Indented);
             File.WriteAllText(path, json);
             AssetDatabase.Refresh();
@@ -58,7 +58,7 @@ namespace GGemCo2DCoreEditor
 
         public void LoadFromJson(string fileName)
         {
-            string jsonFilePath = $"{ConfigAddressables.PathJsonDialogue}/{fileName}.json";
+            string jsonFilePath = $"{ConfigAddressablePath.Narrative.Dialogue}/{fileName}.json";
             try
             {
                 string content = AssetDatabaseLoaderManager.LoadFileJson(jsonFilePath);

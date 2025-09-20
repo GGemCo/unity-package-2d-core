@@ -2,6 +2,11 @@
 
 namespace GGemCo2DCore
 {
+    /// <summary>
+    /// ScriptableObject 기반 설정(Addressables) 레지스트리.
+    /// - 파일명 규칙: Assets/{SDK}/Settings/{SDK}{ShortKey}Settings.asset
+    /// - Key 규칙:    {SDK}_{Key}
+    /// </summary>
     public static class ConfigAddressableSetting
     {
         public static AddressableAssetInfo Make(string key)

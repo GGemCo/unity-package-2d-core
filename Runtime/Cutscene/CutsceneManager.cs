@@ -80,7 +80,7 @@ namespace GGemCo2DCore
                 Reset();
                 currentState = State.Loading;
 
-                string key = $"{ConfigAddressables.KeyCutscene}_{info.Uid}";
+                string key = $"{ConfigAddressableKey.Cutscene}_{info.Uid}";
                 TextAsset asset = await AddressableLoaderController.LoadByKeyAsync<TextAsset>(key);
             
                 if (asset == null)

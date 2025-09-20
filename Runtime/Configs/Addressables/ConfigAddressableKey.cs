@@ -1,1 +1,33 @@
-﻿
+﻿namespace GGemCo2DCore
+{
+    /// <summary>
+    /// Addressables Key 네이밍 규칙(개별 에셋 식별자).
+    /// </summary>
+    public static class ConfigAddressableKey
+    {
+        // Character
+        public const string Character       = ConfigDefine.NameSDK + "_Character";
+        public const string PrefabMonster   = Character + "_Monster";
+        public const string PrefabNpc       = Character + "_Npc";
+        public const string PrefabPlayer    = Character + "_Player";
+
+        // Character Thumbnails
+        public const string CharacterThumbnail       = ConfigDefine.NameSDK + "_CharacterThumbnail";
+        public const string CharacterThumbnailNpc    = CharacterThumbnail + "_Npc";
+        public const string CharacterThumbnailMonster= CharacterThumbnail + "_Monster";
+
+        // Dialogue / Quest / Cutscene
+        public const string Dialogue = ConfigDefine.NameSDK + "_Dialogue";
+        public const string Quest    = ConfigDefine.NameSDK + "_Quest";
+        public const string Cutscene = ConfigDefine.NameSDK + "_Cutscene";
+
+        // Icons
+        public const string SkillIcon  = ConfigDefine.NameSDK + "_Skill_Icon";
+        public const string AffectIcon = ConfigDefine.NameSDK + "_Affect_Icon";
+
+        // Sound
+        public const string Sound = ConfigDefine.NameSDK + "_Sound";
+        
+        public const string Table = ConfigDefine.NameSDK + "_Table";
+    }
+}

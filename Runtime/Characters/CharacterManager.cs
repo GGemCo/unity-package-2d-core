@@ -120,7 +120,7 @@ namespace GGemCo2DCore
         {
             try
             {
-                string key = $"{ConfigAddressables.KeyPrefabPlayer}";
+                string key = $"{ConfigAddressableKey.PrefabPlayer}";
                 GameObject prefab = await AddressableLoaderController.LoadByKeyAsync<GameObject>(key);
 
                 if (prefab)

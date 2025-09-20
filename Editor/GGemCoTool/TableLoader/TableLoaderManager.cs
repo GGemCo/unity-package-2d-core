@@ -122,7 +122,7 @@ namespace GGemCo2DCoreEditor
         {
             nameList = new List<string>();
             structTable = new Dictionary<int, TStruct>();
-            string path = $"{ConfigAddressableTable.TablePath()}/{tableFileName}.txt";
+            string path = $"{ConfigAddressablePath.Tables}/{tableFileName}.txt";
             table = _loadedTables.GetValueOrDefault(tableFileName) as TTable ?? LoadTable<TTable>(path);
 
             if (table == null)

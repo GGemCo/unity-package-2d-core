@@ -62,8 +62,8 @@ namespace GGemCo2DCoreEditor
                     var info = _addressableEditor.TableQuest.GetDataByUid(outerPair.Key);
                     if (info.Uid <= 0) continue;
                 
-                    string key = $"{ConfigAddressables.KeyQuest}_{info.Uid}";
-                    string assetPath = $"{ConfigAddressables.PathJsonQuest}/{info.FileName}.json";
+                    string key = $"{ConfigAddressableKey.Quest}_{info.Uid}";
+                    string assetPath = $"{ConfigAddressablePath.Narrative.Quests}/{info.FileName}.json";
                     string label = ConfigAddressableLabel.Quest;
                 
                     Add(settings, group, key, assetPath, label);

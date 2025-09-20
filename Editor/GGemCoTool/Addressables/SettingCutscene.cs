@@ -64,8 +64,8 @@ namespace GGemCo2DCoreEditor
                     var info = _addressableEditor.TableCutscene.GetDataByUid(outerPair.Key);
                     if (info.Uid <= 0) continue;
                 
-                    string key = $"{ConfigAddressables.KeyCutscene}_{info.Uid}";
-                    string assetPath = $"{ConfigAddressables.PathJsonCutscene}/{info.FileName}.json";
+                    string key = $"{ConfigAddressableKey.Cutscene}_{info.Uid}";
+                    string assetPath = $"{ConfigAddressablePath.Narrative.Cutscene}/{info.FileName}.json";
                     string label = ConfigAddressableLabel.Cutscene;
                 
                     Add(settings, group, key, assetPath, label);

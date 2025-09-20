@@ -4,203 +4,82 @@ namespace GGemCo2DCore
 {
     public static class ConfigAddressableTable
     {
-        public const string Map = "map";
-        public const string Monster = "monster";
-        public const string Npc = "npc";
-        public const string Animation = "animation";
-        public const string Item = "item";
-        public const string MonsterDropRate = "monster_drop_rate";
-        public const string ItemDropGroup = "item_drop_group";
-        public const string Exp = "exp";
-        public const string Window = "window";
-        public const string Status = "status";
-        public const string Skill = "skill";
-        public const string Affect = "affect";
-        public const string Effect = "effect";
-        public const string Interaction = "interaction";
-        public const string Shop = "shop";
-        public const string ItemUpgrade = "item_upgrade";
-        public const string ItemSalvage = "item_salvage";
-        public const string ItemCraft = "item_craft";
-        public const string Cutscene = "cutscene";
-        public const string Dialogue = "dialogue";
-        public const string Quest = "quest";
-        public const string Projectile = "projectile";
-        public const string Sound = "sound";
+        // 파일 확장자(.txt → .csv/.tsv/.json 전환 용이)
+        private const string FileExt = ".txt";
+        private static string TablePath => ConfigAddressablePath.Tables;
 
-        public static string TablePath() => $"{ConfigAddressables.Path}/Tables";
+        private static AddressableAssetInfo Make(string tableName)
+        {
+            var key  = $"{ConfigAddressableKey.Table}_{tableName}";
+            var path = $"{TablePath}/{tableName}{FileExt}";
+            return new AddressableAssetInfo(key, path, ConfigAddressableLabel.Table, tableName);
+        }
 
-        public static readonly AddressableAssetInfo TableMap = new(
-            $"{ConfigAddressableLabel.Table}_{Map}",
-            $"{TablePath()}/{Map}.txt",
-            ConfigAddressableLabel.Table,
-            Map
-        );
+        // 테이블 이름들 (필요 시 enum으로 승격 가능)
+        public const string Map              = "map";
+        public const string Monster          = "monster";
+        public const string Npc              = "npc";
+        public const string Animation        = "animation";
+        public const string Item             = "item";
+        public const string MonsterDropRate  = "monster_drop_rate";
+        public const string ItemDropGroup    = "item_drop_group";
+        public const string Exp              = "exp";
+        public const string Window           = "window";
+        public const string Status           = "status";
+        public const string Skill            = "skill";
+        public const string Affect           = "affect";
+        public const string Effect           = "effect";
+        public const string Interaction      = "interaction";
+        public const string Shop             = "shop";
+        public const string ItemUpgrade      = "item_upgrade";
+        public const string ItemSalvage      = "item_salvage";
+        public const string ItemCraft        = "item_craft";
+        public const string Cutscene         = "cutscene";
+        public const string Dialogue         = "dialogue";
+        public const string Quest            = "quest";
+        public const string Projectile       = "projectile";
+        public const string Sound            = "sound";
 
-        public static readonly AddressableAssetInfo TableMonster = new(
-            $"{ConfigAddressableLabel.Table}_{Monster}",
-            $"{TablePath()}/{Monster}.txt",
-            ConfigAddressableLabel.Table,
-            Monster
-        );
-        public static readonly AddressableAssetInfo TableNpc = new(
-            $"{ConfigAddressableLabel.Table}_{Npc}",
-            $"{TablePath()}/{Npc}.txt",
-            ConfigAddressableLabel.Table,
-            Npc
-        );
-        public static readonly AddressableAssetInfo TableAnimation = new(
-            $"{ConfigAddressableLabel.Table}_{Animation}",
-            $"{TablePath()}/{Animation}.txt",
-            ConfigAddressableLabel.Table,
-            Animation
-        );
-        public static readonly AddressableAssetInfo TableItem = new(
-            $"{ConfigAddressableLabel.Table}_{Item}",
-            $"{TablePath()}/{Item}.txt",
-            ConfigAddressableLabel.Table,
-            Item
-        );
-        public static readonly AddressableAssetInfo TableMonsterDropRate = new(
-            $"{ConfigAddressableLabel.Table}_{MonsterDropRate}",
-            $"{TablePath()}/{MonsterDropRate}.txt",
-            ConfigAddressableLabel.Table,
-            MonsterDropRate
-        );
-        public static readonly AddressableAssetInfo TableItemDropGroup = new(
-            $"{ConfigAddressableLabel.Table}_{ItemDropGroup}",
-            $"{TablePath()}/{ItemDropGroup}.txt",
-            ConfigAddressableLabel.Table,
-            ItemDropGroup
-        );
-        public static readonly AddressableAssetInfo TableExp = new(
-            $"{ConfigAddressableLabel.Table}_{Exp}",
-            $"{TablePath()}/{Exp}.txt",
-            ConfigAddressableLabel.Table,
-            Exp
-        );
-        public static readonly AddressableAssetInfo TableWindow = new(
-            $"{ConfigAddressableLabel.Table}_{Window}",
-            $"{TablePath()}/{Window}.txt",
-            ConfigAddressableLabel.Table,
-            Window
-        );
-        public static readonly AddressableAssetInfo TableStatus = new(
-            $"{ConfigAddressableLabel.Table}_{Status}",
-            $"{TablePath()}/{Status}.txt",
-            ConfigAddressableLabel.Table,
-            Status
-        );
-        public static readonly AddressableAssetInfo TableSkill = new(
-            $"{ConfigAddressableLabel.Table}_{Skill}",
-            $"{TablePath()}/{Skill}.txt",
-            ConfigAddressableLabel.Table,
-            Skill
-        );
-        public static readonly AddressableAssetInfo TableAffect = new(
-            $"{ConfigAddressableLabel.Table}_{Affect}",
-            $"{TablePath()}/{Affect}.txt",
-            ConfigAddressableLabel.Table,
-            Affect
-        );
-        public static readonly AddressableAssetInfo TableEffect = new(
-            $"{ConfigAddressableLabel.Table}_{Effect}",
-            $"{TablePath()}/{Effect}.txt",
-            ConfigAddressableLabel.Table,
-            Effect
-        );
-        public static readonly AddressableAssetInfo TableInteraction = new(
-            $"{ConfigAddressableLabel.Table}_{Interaction}",
-            $"{TablePath()}/{Interaction}.txt",
-            ConfigAddressableLabel.Table,
-            Interaction
-        );
-        public static readonly AddressableAssetInfo TableShop = new(
-            $"{ConfigAddressableLabel.Table}_{Shop}",
-            $"{TablePath()}/{Shop}.txt",
-            ConfigAddressableLabel.Table,
-            Shop
-        );
-        public static readonly AddressableAssetInfo TableItemUpgrade = new(
-            $"{ConfigAddressableLabel.Table}_{ItemUpgrade}",
-            $"{TablePath()}/{ItemUpgrade}.txt",
-            ConfigAddressableLabel.Table,
-            ItemUpgrade
-        );
-        public static readonly AddressableAssetInfo TableItemSalvage = new(
-            $"{ConfigAddressableLabel.Table}_{ItemSalvage}",
-            $"{TablePath()}/{ItemSalvage}.txt",
-            ConfigAddressableLabel.Table,
-            ItemSalvage
-        );
-        public static readonly AddressableAssetInfo TableItemCraft = new(
-            $"{ConfigAddressableLabel.Table}_{ItemCraft}",
-            $"{TablePath()}/{ItemCraft}.txt",
-            ConfigAddressableLabel.Table,
-            ItemCraft
-        );
-        public static readonly AddressableAssetInfo TableCutscene = new(
-            $"{ConfigAddressableLabel.Table}_{Cutscene}",
-            $"{TablePath()}/{Cutscene}.txt",
-            ConfigAddressableLabel.Table,
-            Cutscene
-        );
-        public static readonly AddressableAssetInfo TableDialogue = new(
-            $"{ConfigAddressableLabel.Table}_{Dialogue}",
-            $"{TablePath()}/{Dialogue}.txt",
-            ConfigAddressableLabel.Table,
-            Dialogue
-        );
-        public static readonly AddressableAssetInfo TableQuest = new(
-            $"{ConfigAddressableLabel.Table}_{Quest}",
-            $"{TablePath()}/{Quest}.txt",
-            ConfigAddressableLabel.Table,
-            Quest
-        );
-        public static readonly AddressableAssetInfo TableProjectile = new(
-            $"{ConfigAddressableLabel.Table}_{Projectile}",
-            $"{TablePath()}/{Projectile}.txt",
-            ConfigAddressableLabel.Table,
-            Projectile
-        );
-        public static readonly AddressableAssetInfo TableSound = new(
-            $"{ConfigAddressableLabel.Table}_{Sound}",
-            $"{TablePath()}/{Sound}.txt",
-            ConfigAddressableLabel.Table,
-            Sound
-        );
+        // 개별 항목
+        public static readonly AddressableAssetInfo TableMap             = Make(Map);
+        public static readonly AddressableAssetInfo TableMonster         = Make(Monster);
+        public static readonly AddressableAssetInfo TableNpc             = Make(Npc);
+        public static readonly AddressableAssetInfo TableAnimation       = Make(Animation);
+        public static readonly AddressableAssetInfo TableItem            = Make(Item);
+        public static readonly AddressableAssetInfo TableMonsterDropRate = Make(MonsterDropRate);
+        public static readonly AddressableAssetInfo TableItemDropGroup   = Make(ItemDropGroup);
+        public static readonly AddressableAssetInfo TableExp             = Make(Exp);
+        public static readonly AddressableAssetInfo TableWindow          = Make(Window);
+        public static readonly AddressableAssetInfo TableStatus          = Make(Status);
+        public static readonly AddressableAssetInfo TableSkill           = Make(Skill);
+        public static readonly AddressableAssetInfo TableAffect          = Make(Affect);
+        public static readonly AddressableAssetInfo TableEffect          = Make(Effect);
+        public static readonly AddressableAssetInfo TableInteraction     = Make(Interaction);
+        public static readonly AddressableAssetInfo TableShop            = Make(Shop);
+        public static readonly AddressableAssetInfo TableItemUpgrade     = Make(ItemUpgrade);
+        public static readonly AddressableAssetInfo TableItemSalvage     = Make(ItemSalvage);
+        public static readonly AddressableAssetInfo TableItemCraft       = Make(ItemCraft);
+        public static readonly AddressableAssetInfo TableCutscene        = Make(Cutscene);
+        public static readonly AddressableAssetInfo TableDialogue        = Make(Dialogue);
+        public static readonly AddressableAssetInfo TableQuest           = Make(Quest);
+        public static readonly AddressableAssetInfo TableProjectile      = Make(Projectile);
+        public static readonly AddressableAssetInfo TableSound           = Make(Sound);
 
+        // 전체 목록 + 읽기 전용 뷰
         public static readonly List<AddressableAssetInfo> All = new()
         {
-            TableMap,
-            TableMonster,
-            TableNpc,
-            TableAnimation,
-            TableItem,
-            TableMonsterDropRate,
-            TableItemDropGroup,
-            TableExp,
-            TableWindow,
-            TableStatus,
-            TableAffect,
-            TableEffect,
-            TableInteraction,
-            TableShop,
-            TableItemUpgrade,
-            TableItemSalvage,
-            TableItemCraft,
-            TableCutscene,
-            TableDialogue,
-            TableQuest,
-            TableSkill,
-            TableProjectile,
-            TableSound
+            TableMap, TableMonster, TableNpc, TableAnimation, TableItem,
+            TableMonsterDropRate, TableItemDropGroup, TableExp, TableWindow,
+            TableStatus, TableSkill, TableAffect, TableEffect, TableInteraction,
+            TableShop, TableItemUpgrade, TableItemSalvage, TableItemCraft,
+            TableCutscene, TableDialogue, TableQuest, TableProjectile, TableSound
         };
         public static AddressableAssetInfo GetByKey(string key)
         {
             return All.Find(assetInfo => assetInfo.Key == key);
         }
 
+        // 편의 API
         public static string KeySoundTable() => $"{ConfigAddressableLabel.Table}_{Sound}";
     }
 }
