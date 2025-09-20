@@ -15,7 +15,7 @@ namespace GGemCo2DCoreEditor
         public SettingSound(AddressableEditor addressableEditorWindow)
         {
             _addressableEditor = addressableEditorWindow;
-            TargetGroupName = $"{ConfigAddressableGroupName.Sound}";
+            targetGroupName = $"{ConfigAddressableGroupName.Sound}";
         }
         public void OnGUI()
         {
@@ -39,6 +39,8 @@ namespace GGemCo2DCoreEditor
         /// </summary>
         private void Setup()
         {
+            bool result = EditorUtility.DisplayDialog(TextDisplayDialogTitle, TextDisplayDialogMessage, "네", "아니요");
+            if (!result) return;
             Dictionary<int, Dictionary<string, string>> dictionary = _addressableEditor.TableSound.GetDatas();
             
             // AddressableSettings 가져오기 (없으면 생성)
@@ -50,9 +52,10 @@ namespace GGemCo2DCoreEditor
             }
 
             // GGemCo_Tables 그룹 가져오기 또는 생성
-            AddressableAssetGroup groupMonster = GetOrCreateGroup(settings, TargetGroupName);
+            AddressableAssetGroup group = GetOrCreateGroup(settings, targetGroupName);
 
-            if (groupMonster)
+            ClearGroupEntries(settings, group);
+            if (group)
             {
                 // foreach 문을 사용하여 딕셔너리 내용을 출력
                 foreach (KeyValuePair<int, Dictionary<string, string>> outerPair in dictionary)
@@ -64,7 +67,7 @@ namespace GGemCo2DCoreEditor
                     string assetPath = $"{ConfigAddressables.GetPathSound(info)}/{info.FileName}";
                     string label = ConfigAddressableLabel.Sound;
                 
-                    AddressableAssetEntry entry = Add(settings, groupMonster, key, assetPath, label);
+                    AddressableAssetEntry entry = Add(settings, group, key, assetPath, label);
                     entry?.SetLabel(ConfigAddressableLabel.SoundIntro, info.UseIntroScene, true);
                 }
             }

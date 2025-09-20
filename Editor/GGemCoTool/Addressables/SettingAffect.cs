@@ -19,12 +19,11 @@ namespace GGemCo2DCoreEditor
         public SettingAffect(AddressableEditor addressableEditorWindow)
         {
             _addressableEditor = addressableEditorWindow;
-            TargetGroupName = ConfigAddressableGroupName.AffectIconImage;
+            targetGroupName = ConfigAddressableGroupName.AffectIconImage;
         }
+
         public void OnGUI()
         {
-            // Common.OnGUITitle(Title);
-
             if (_addressableEditor.TableAffect == null)
             {
                 EditorGUILayout.HelpBox($"{ConfigAddressableTable.Affect} 테이블이 없습니다.", MessageType.Info);
@@ -37,14 +36,17 @@ namespace GGemCo2DCoreEditor
                 }
             }
         }
-        
+
         /// <summary>
         /// Addressable 설정하기
         /// </summary>
         private void Setup()
         {
-            Dictionary<int, Dictionary<string, string>> dictionary = _addressableEditor.TableAffect.GetDatas();
+            bool result = EditorUtility.DisplayDialog(TextDisplayDialogTitle, TextDisplayDialogMessage, "네", "아니요");
+            if (!result) return;
             
+            Dictionary<int, Dictionary<string, string>> dictionary = _addressableEditor.TableAffect.GetDatas();
+
             // AddressableSettings 가져오기 (없으면 생성)
             AddressableAssetSettings settings = AddressableAssetSettingsDefaultObject.Settings;
             if (!settings)
@@ -53,47 +55,54 @@ namespace GGemCo2DCoreEditor
                 settings = CreateAddressableSettings();
             }
 
-            // GGemCo_Tables 그룹 가져오기 또는 생성
-            AddressableAssetGroup group = GetOrCreateGroup(settings, TargetGroupName);
-            
+            // 타겟 그룹 가져오기/생성
+            AddressableAssetGroup group = GetOrCreateGroup(settings, targetGroupName);
+            if (!group)
+            {
+                EditorUtility.DisplayDialog(Title, "그룹을 생성/가져오지 못했습니다.", "OK");
+                return;
+            }
+
+            // 1) 그룹 엔트리 전체 초기화 (스키마/설정은 유지)
+            ClearGroupEntries(settings, group);
+
+            // 스프라이트 아틀라스 준비
             string atlasFolderPath = ConfigAddressables.PathSpriteAtlas;
             Directory.CreateDirectory(atlasFolderPath);
-    
             var atlas = GetOrCreateSpriteAtlas($"{atlasFolderPath}/AffectIconAtlas.spriteatlas");
-            
+
+            // 2) 테이블 기반으로 엔트리 재구성
             List<Object> assets = new();
-            if (group)
+            foreach (KeyValuePair<int, Dictionary<string, string>> outerPair in dictionary)
             {
-                // foreach 문을 사용하여 딕셔너리 내용을 출력
-                foreach (KeyValuePair<int, Dictionary<string, string>> outerPair in dictionary)
-                {
-                    var info = _addressableEditor.TableAffect.GetDataByUid(outerPair.Key);
-                    if (info.Uid <= 0) continue;
-                
-                    string key = $"{ConfigAddressables.KeyImageIconAffect}_{info.Uid}";
-                    string assetPath = $"{ConfigAddressables.PathImageIconAffect}";
-                    if (info.Type == AffectConstants.Type.Buff)
-                    {
-                        assetPath = $"{assetPath}/Buff";
-                    }
-                    else
-                    {
-                        assetPath = $"{assetPath}/DeBuff";
-                    }
-                    assetPath = $"{assetPath}/{info.IconFileName}.png";
-                
-                    Add(settings, group, key, assetPath);
-                    AddToListIfExists(assets, assetPath);
-                }
+                var info = _addressableEditor.TableAffect.GetDataByUid(outerPair.Key);
+                if (info.Uid <= 0) continue;
+
+                string key = $"{ConfigAddressables.KeyImageIconAffect}_{info.Uid}";
+                string assetPath = $"{ConfigAddressables.PathImageIconAffect}";
+                assetPath = info.Type == AffectConstants.Type.Buff
+                    ? $"{assetPath}/Buff"
+                    : $"{assetPath}/DeBuff";
+                assetPath = $"{assetPath}/{info.IconFileName}.png";
+
+                Add(settings, group, key, assetPath);
+                AddToListIfExists(assets, assetPath);
             }
+
+            // 아틀라스 재구성
             ClearAndAddToAtlas(atlas, assets);
-            
-            Add(settings, group, ConfigAddressables.KeyImageIconAffect, AssetDatabase.GetAssetPath(atlas), ConfigAddressableLabel.ImageAffectIcon);
-            
-            // 설정 저장
+
+            // 아틀라스 자체도 Addressable 로 등록(공용 키/라벨)
+            if (assets.Count > 0)
+            {
+                Add(settings, group, ConfigAddressables.KeyImageIconAffect, AssetDatabase.GetAssetPath(atlas),
+                    ConfigAddressableLabel.ImageAffectIcon);
+            }
+
+            // 적용/저장
             settings.SetDirty(AddressableAssetSettings.ModificationEvent.EntryMoved, null, true);
             AssetDatabase.SaveAssets();
-            EditorUtility.DisplayDialog(Title, "Addressable 설정 완료", "OK");
+            EditorUtility.DisplayDialog(Title, "Addressable 설정 완료 (그룹 엔트리 초기화 후 재구성)", "OK");
         }
     }
 }

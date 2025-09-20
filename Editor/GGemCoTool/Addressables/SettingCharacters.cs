@@ -46,6 +46,9 @@ namespace GGemCo2DCoreEditor
         /// </summary>
         private void Setup()
         {
+            bool result = EditorUtility.DisplayDialog(TextDisplayDialogTitle, TextDisplayDialogMessage, "네", "아니요");
+            if (!result) return;
+            
             Dictionary<int, Dictionary<string, string>> dictionaryMonsters = _addressableEditor.TableMonster.GetDatas();
             Dictionary<int, Dictionary<string, string>> dictionaryNpcs = _addressableEditor.TableNpc.GetDatas();
             
@@ -58,9 +61,12 @@ namespace GGemCo2DCoreEditor
             }
 
             // GGemCo_Tables 그룹 가져오기 또는 생성
-            AddressableAssetGroup groupMonster = GetOrCreateGroup(settings, _targetGroupNameMonster);
+            AddressableAssetGroup group = GetOrCreateGroup(settings, _targetGroupNameMonster);
 
-            if (groupMonster)
+            // 그룹 엔트리 전체 초기화 (스키마/설정은 유지)
+            ClearGroupEntries(settings, group);
+            
+            if (group)
             {
                 // foreach 문을 사용하여 딕셔너리 내용을 출력
                 foreach (KeyValuePair<int, Dictionary<string, string>> outerPair in dictionaryMonsters)
@@ -74,14 +80,14 @@ namespace GGemCo2DCoreEditor
                     string assetPath = ConfigAddressableMap.GetPathCharacter(infoAnimation, true);
                     string label = "";
                     
-                    Add(settings, groupMonster, key, assetPath, label);
+                    Add(settings, group, key, assetPath, label);
                 
                     // 썸네일 있으면 추가
                     if (!string.IsNullOrEmpty(info.ImageThumbnailFileName))
                     {
                         key = $"{ConfigAddressables.KeyCharacterThumbnailMonster}_{info.ImageThumbnailFileName}";
                         assetPath = $"{ConfigAddressables.PathCharacterThumbnailMonster}/{info.ImageThumbnailFileName}.png";
-                        Add(settings, groupMonster, key, assetPath);
+                        Add(settings, group, key, assetPath);
                     }
                 }
             }
@@ -89,6 +95,7 @@ namespace GGemCo2DCoreEditor
             // GGemCo_Tables 그룹 가져오기 또는 생성
             AddressableAssetGroup groupNpc = GetOrCreateGroup(settings, _targetGroupNameNpc);
 
+            ClearGroupEntries(settings, groupNpc);
             if (groupNpc)
             {
                 // foreach 문을 사용하여 딕셔너리 내용을 출력
@@ -115,6 +122,7 @@ namespace GGemCo2DCoreEditor
             }
             
             AddressableAssetGroup groupPlayer = GetOrCreateGroup(settings, _targetGroupNamePlayer);
+            ClearGroupEntries(settings, groupPlayer);
             if (groupPlayer)
             {
                 string key = ConfigAddressables.KeyPrefabPlayer;
@@ -122,7 +130,6 @@ namespace GGemCo2DCoreEditor
                 
                 Add(settings, groupPlayer, key, assetPath);
             }
-
 
             // 설정 저장
             settings.SetDirty(AddressableAssetSettings.ModificationEvent.EntryMoved, null, true);

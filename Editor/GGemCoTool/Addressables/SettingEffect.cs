@@ -18,7 +18,7 @@ namespace GGemCo2DCoreEditor
         public SettingEffect(AddressableEditor addressableEditorWindow)
         {
             _addressableEditor = addressableEditorWindow;
-            TargetGroupName = $"{ConfigAddressableGroupName.Effect}";
+            targetGroupName = $"{ConfigAddressableGroupName.Effect}";
         }
         public void OnGUI()
         {
@@ -42,6 +42,9 @@ namespace GGemCo2DCoreEditor
         /// </summary>
         private void Setup()
         {
+            bool result = EditorUtility.DisplayDialog(TextDisplayDialogTitle, TextDisplayDialogMessage, "네", "아니요");
+            if (!result) return;
+            
             Dictionary<int, Dictionary<string, string>> dictionary = _addressableEditor.TableEffect.GetDatas();
             
             // AddressableSettings 가져오기 (없으면 생성)
@@ -53,9 +56,12 @@ namespace GGemCo2DCoreEditor
             }
 
             // GGemCo_Tables 그룹 가져오기 또는 생성
-            AddressableAssetGroup groupMonster = GetOrCreateGroup(settings, TargetGroupName);
+            AddressableAssetGroup group = GetOrCreateGroup(settings, targetGroupName);
+            
+            // 그룹 엔트리 전체 초기화 (스키마/설정은 유지)
+            ClearGroupEntries(settings, group);
 
-            if (groupMonster)
+            if (group)
             {
                 // foreach 문을 사용하여 딕셔너리 내용을 출력
                 foreach (KeyValuePair<int, Dictionary<string, string>> outerPair in dictionary)
@@ -67,7 +73,7 @@ namespace GGemCo2DCoreEditor
                     string assetPath = $"{ConfigAddressables.GetPathEffect(info.Category)}/{info.PrefabName}.prefab";
                     string label = ConfigAddressableLabel.Effect;
                 
-                    Add(settings, groupMonster, key, assetPath, label);
+                    Add(settings, group, key, assetPath, label);
                 }
             }
 
@@ -79,6 +85,5 @@ namespace GGemCo2DCoreEditor
             
             EditorUtility.DisplayDialog(Title, "Addressable 설정 완료", "OK");
         }
-
     }
 }

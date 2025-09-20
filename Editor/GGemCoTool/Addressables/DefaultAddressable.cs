@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Linq;
 using UnityEditor;
 using UnityEditor.AddressableAssets;
 using UnityEditor.AddressableAssets.Settings;
@@ -10,7 +11,9 @@ namespace GGemCo2DCoreEditor
 {
     public class DefaultAddressable
     {
-        protected string TargetGroupName = ""; // 그룹 이름
+        protected string targetGroupName = ""; // 그룹 이름
+        protected const string TextDisplayDialogTitle = "추가하기";
+        protected const string TextDisplayDialogMessage = "기존에 등록된 내용은 삭제됩니다.\n진행하시겠습니까?";
 
         /// <summary>
         /// Addressable 설정이 없을 경우 새로 생성
@@ -36,7 +39,7 @@ namespace GGemCo2DCoreEditor
         private AddressableAssetGroup CreateDefaultGroup(AddressableAssetSettings settings)
         {
             var defaultGroup = settings.CreateGroup(
-                TargetGroupName, 
+                targetGroupName, 
                 false, 
                 false, 
                 true, 
@@ -133,7 +136,24 @@ namespace GGemCo2DCoreEditor
         protected void ClearAndAddToAtlas(SpriteAtlas atlas, List<Object> assets)
         {
             atlas.Remove(atlas.GetPackables()); // 기존 등록된 에셋 제거
+            if (assets.Count <= 0) return;
             atlas.Add(assets.ToArray());        // 새로 추가
+        }
+
+        /// <summary>
+        /// 타겟 그룹의 모든 엔트리를 제거합니다. (그룹/스키마는 유지)
+        /// </summary>
+        protected static void ClearGroupEntries(AddressableAssetSettings settings, AddressableAssetGroup group)
+        {
+            if (settings == null || group == null) return;
+            // Undo 지원
+            Undo.RecordObject(group, "[SettingAffect] ClearGroupEntries");
+            // entries 컬렉션은 수정 중 열거 금지 → 사본 생성
+            var entries = group.entries.ToList();
+            int removed = entries.Select(entry => settings.RemoveAssetEntry(entry.guid)).Count();
+
+            Debug.Log($"[SettingAffect] 그룹 '{group.Name}' 엔트리 제거: {removed}개");
+            EditorUtility.SetDirty(group);
         }
     }
 }

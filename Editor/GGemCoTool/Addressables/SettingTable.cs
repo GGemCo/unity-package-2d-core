@@ -17,7 +17,7 @@ namespace GGemCo2DCoreEditor
         public SettingTable(AddressableEditor addressableEditorWindow)
         {
             _addressableEditor = addressableEditorWindow;
-            TargetGroupName = ConfigAddressableGroupName.Table;
+            targetGroupName = ConfigAddressableGroupName.Table;
         }
         public void OnGUI()
         {
@@ -43,11 +43,11 @@ namespace GGemCo2DCoreEditor
             }
 
             // GGemCo_Tables 그룹 가져오기 또는 생성
-            AddressableAssetGroup group = GetOrCreateGroup(settings, TargetGroupName);
+            AddressableAssetGroup group = GetOrCreateGroup(settings, targetGroupName);
 
             if (!group)
             {
-                Debug.LogError($"'{TargetGroupName}' 그룹을 설정할 수 없습니다.");
+                Debug.LogError($"'{targetGroupName}' 그룹을 설정할 수 없습니다.");
                 return;
             }
 

@@ -27,7 +27,7 @@ namespace GGemCo2DCoreEditor
         public SettingMap(AddressableEditor addressableEditorWindow)
         {
             _addressableEditor = addressableEditorWindow;
-            TargetGroupName = ConfigAddressableGroupName.Map;
+            targetGroupName = ConfigAddressableGroupName.Map;
             
             _tableMonster = _addressableEditor.TableMonster;
             _tableNpc = _addressableEditor.TableNpc;
@@ -83,13 +83,13 @@ namespace GGemCo2DCoreEditor
                 var info = _addressableEditor.TableMap.GetDataByUid(outerPair.Key);
                 if (info.Uid <= 0) continue;
 
-                string groupName = $"{TargetGroupName}_{info.FolderName}";
+                string groupName = $"{targetGroupName}_{info.FolderName}";
                 // GGemCo_Tables 그룹 가져오기 또는 생성
                 group = GetOrCreateGroup(settings, groupName);
 
                 if (!group)
                 {
-                    Debug.LogError($"'{TargetGroupName}' 그룹을 설정할 수 없습니다.");
+                    Debug.LogError($"'{targetGroupName}' 그룹을 설정할 수 없습니다.");
                     return;
                 }
                 
@@ -121,7 +121,7 @@ namespace GGemCo2DCoreEditor
             // 설정 저장
             settings.SetDirty(AddressableAssetSettings.ModificationEvent.EntryMoved, null, true);
             AssetDatabase.SaveAssets();
-            EditorUtility.DisplayDialog(Title, "Addressable 설정 완료", "OK");
+            EditorUtility.DisplayDialog(Title, "Addressable 설정 완료\n사용안하는 맵 Group은 삭제해주세요.", "OK");
         }
         /// <summary>
         /// regen_monster, regen_npc 정보로 캐릭터 label 설정하기

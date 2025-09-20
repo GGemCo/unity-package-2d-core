@@ -16,7 +16,7 @@ namespace GGemCo2DCoreEditor
         public SettingSkill(AddressableEditor addressableEditorWindow)
         {
             _addressableEditor = addressableEditorWindow;
-            TargetGroupName = ConfigAddressableGroupName.SkillIconImage;
+            targetGroupName = ConfigAddressableGroupName.SkillIconImage;
         }
         public void OnGUI()
         {
@@ -39,6 +39,8 @@ namespace GGemCo2DCoreEditor
         /// </summary>
         private void Setup()
         {
+            bool result = EditorUtility.DisplayDialog(TextDisplayDialogTitle, TextDisplayDialogMessage, "네", "아니요");
+            if (!result) return;
             Dictionary<int, StruckTableSkill> dictionary = _addressableEditor.TableSkill.GetSkills();
             
             // AddressableSettings 가져오기 (없으면 생성)
@@ -50,7 +52,9 @@ namespace GGemCo2DCoreEditor
             }
 
             // GGemCo_Tables 그룹 가져오기 또는 생성
-            AddressableAssetGroup group = GetOrCreateGroup(settings, TargetGroupName);
+            AddressableAssetGroup group = GetOrCreateGroup(settings, targetGroupName);
+            
+            ClearGroupEntries(settings, group);
             
             string atlasFolderPath = ConfigAddressables.PathSpriteAtlas;
             Directory.CreateDirectory(atlasFolderPath);
@@ -75,7 +79,8 @@ namespace GGemCo2DCoreEditor
             }
             ClearAndAddToAtlas(atlas, assets);
             
-            Add(settings, group, ConfigAddressables.KeyImageIconSkill, AssetDatabase.GetAssetPath(atlas), ConfigAddressableLabel.ImageSkillIcon);
+            if (assets.Count > 0)
+                Add(settings, group, ConfigAddressables.KeyImageIconSkill, AssetDatabase.GetAssetPath(atlas), ConfigAddressableLabel.ImageSkillIcon);
             
             // 설정 저장
             settings.SetDirty(AddressableAssetSettings.ModificationEvent.EntryMoved, null, true);

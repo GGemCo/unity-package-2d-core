@@ -17,13 +17,13 @@ namespace GGemCo2DCoreEditor
     {
         private const string Title = "아이템 아이콘, 드랍 이미지 추가하기";
         private readonly AddressableEditor _addressableEditor;
-        private string _groupNameIconImage;
-        private string _groupNameEquipImage;
+        private readonly string _groupNameIconImage;
+        private readonly string _groupNameEquipImage;
 
         public SettingItem(AddressableEditor addressableEditorWindow)
         {
             _addressableEditor = addressableEditorWindow;
-            TargetGroupName = ConfigAddressableGroupName.ItemDropImage;
+            targetGroupName = ConfigAddressableGroupName.ItemDropImage;
             _groupNameIconImage = ConfigAddressableGroupName.ItemIconImage;
             _groupNameEquipImage = ConfigAddressableGroupName.ItemEquipImage;
         }
@@ -49,6 +49,9 @@ namespace GGemCo2DCoreEditor
         /// </summary>
         private void Setup()
         {
+            bool result = EditorUtility.DisplayDialog(TextDisplayDialogTitle, TextDisplayDialogMessage, "네", "아니요");
+            if (!result) return;
+            
             Dictionary<int, Dictionary<string, string>> dictionary = _addressableEditor.TableItem.GetDatas();
             
             // AddressableSettings 가져오기 (없으면 생성)
@@ -60,10 +63,14 @@ namespace GGemCo2DCoreEditor
             }
 
             // GGemCo_Tables 그룹 가져오기 또는 생성
-            AddressableAssetGroup groupDropImage = GetOrCreateGroup(settings, TargetGroupName);
+            AddressableAssetGroup groupDropImage = GetOrCreateGroup(settings, targetGroupName);
             AddressableAssetGroup groupEquipImage = GetOrCreateGroup(settings, _groupNameEquipImage);
             AddressableAssetGroup groupIconImage = GetOrCreateGroup(settings, _groupNameIconImage);
-
+            
+            ClearGroupEntries(settings, groupDropImage);
+            ClearGroupEntries(settings, groupEquipImage);
+            ClearGroupEntries(settings, groupIconImage);
+            
             // SpriteAtlas 생성
             string atlasFolderPath = ConfigAddressables.PathSpriteAtlas;
             Directory.CreateDirectory(atlasFolderPath);
@@ -145,12 +152,18 @@ namespace GGemCo2DCoreEditor
             ClearAndAddToAtlas(atlasEquip, assetsEquip);
 
             // Atlas 를 Addressables 에 등록
-            Add(settings, groupDropImage, ConfigAddressableLabel.ImageItemDrop, AssetDatabase.GetAssetPath(atlasDrop), ConfigAddressableLabel.ImageItemDrop);
-            Add(settings, groupIconImage, ConfigAddressableLabel.ImageItemIcon, AssetDatabase.GetAssetPath(atlasIcon), ConfigAddressableLabel.ImageItemIcon);
-            Add(settings, groupEquipImage, ConfigAddressableLabel.ImageItemEquip, AssetDatabase.GetAssetPath(atlasEquip), ConfigAddressableLabel.ImageItemEquip);
+            if (assetsDrop.Count > 0)
+                Add(settings, groupDropImage, ConfigAddressableLabel.ImageItemDrop, AssetDatabase.GetAssetPath(atlasDrop), ConfigAddressableLabel.ImageItemDrop);
+            
+            if (assetsIcon.Count > 0)
+                Add(settings, groupIconImage, ConfigAddressableLabel.ImageItemIcon, AssetDatabase.GetAssetPath(atlasIcon), ConfigAddressableLabel.ImageItemIcon);
+            
+            if (assetsEquip.Count > 0)
+                Add(settings, groupEquipImage, ConfigAddressableLabel.ImageItemEquip, AssetDatabase.GetAssetPath(atlasEquip), ConfigAddressableLabel.ImageItemEquip);
             
             // 강제로 pack 시키기
-            SpriteAtlasUtility.PackAtlases(new[] { atlasDrop, atlasIcon, atlasEquip }, EditorUserBuildSettings.activeBuildTarget, false);
+            if (assetsDrop.Count > 0 || assetsIcon.Count > 0 || assetsEquip.Count > 0)
+                SpriteAtlasUtility.PackAtlases(new[] { atlasDrop, atlasIcon, atlasEquip }, EditorUserBuildSettings.activeBuildTarget, false);
 
             // 설정 저장
             settings.SetDirty(AddressableAssetSettings.ModificationEvent.EntryMoved, null, true);
