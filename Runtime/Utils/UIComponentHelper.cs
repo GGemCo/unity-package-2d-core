@@ -1,5 +1,4 @@
-﻿using System;
-using TMPro;
+﻿using TMPro;
 using UnityEngine;
 using UnityEngine.Events;
 using UnityEngine.Localization.Components;
@@ -55,55 +54,33 @@ namespace GGemCo2DCore
                 return;
             }
 
-            // TextMesh Pro (패키지 사용 시)
-            // 패키지 의존성을 안전하게 처리하려면 try-catch + Reflection 혹은
-            // Scripting Define Symbols(TMP_PRESENT 등)을 사용하는 방법을 추천합니다.
-            TextMeshProUGUI objectText = go.GetComponentInChildren<TextMeshProUGUI>();
-            if (objectText == null) return;
+            // TMP
+            var tmp = go.GetComponentInChildren<TextMeshProUGUI>(true);
+            if (tmp == null) return;
+
+            // Localization 세팅이 있으면 LocalizeStringEvent로 바인딩
             if (!string.IsNullOrEmpty(localizationTable) && !string.IsNullOrEmpty(localizationKey))
             {
-                LocalizeStringEvent localizeEvent = objectText.gameObject.GetComponent<LocalizeStringEvent>();
+                var localizeEvent = tmp.gameObject.GetComponent<LocalizeStringEvent>();
                 if (localizeEvent == null)
-                {
-                    localizeEvent = objectText.gameObject.AddComponent<LocalizeStringEvent>();
-                }
+                    localizeEvent = tmp.gameObject.AddComponent<LocalizeStringEvent>();
 
-                if (localizeEvent != null)
-                {
-                    // 테이블 및 키 설정
-                    localizeEvent.SetTable(localizationTable);
-                    localizeEvent.SetEntry(localizationKey);
-                }
-                
-#if UNITY_6000_0_OR_NEWER
-                // Update String 에 추가하기
-                UnityEditor.Events.UnityEventTools.AddPersistentListener(localizeEvent.OnUpdateString,
-                    objectText.SetText);
-#else
-            var proxy = objectText.gameObject.GetComponent<LocalizationTextProxy>();
-            if (proxy == null)
-            {
-                proxy = objectText.gameObject.AddComponent<LocalizationTextProxy>();
-                proxy.target = objectText;
-            }
-            // Update String 에 추가하기
-            UnityEditor.Events.UnityEventTools.AddPersistentListener(localizeEvent.OnUpdateString, proxy.SetText);
-#endif
-                // EditorAndRuntime 모드로 작동되도록 설정
-                for (var i = 0; i < localizeEvent.OnUpdateString.GetPersistentEventCount(); i++)
-                {
-                    localizeEvent.OnUpdateString.SetPersistentListenerState(i, UnityEventCallState.EditorAndRuntime);
-                }
-                    
+                // 테이블/키 지정
+                localizeEvent.StringReference.TableReference = localizationTable;
+                localizeEvent.StringReference.TableEntryReference = localizationKey;
+
+                // 중복 리스너 방지 후 런타임 리스너로 바인딩 (Editor API 불필요)
+                // 필요 시 RemoveAllListeners 대신 특정 메서드만 제거할 수도 있음.
+                localizeEvent.OnUpdateString.RemoveAllListeners();
+                localizeEvent.OnUpdateString.AddListener(tmp.SetText);
+
+                // 즉시 갱신
                 localizeEvent.RefreshString();
+                return;
             }
 
-            objectText.SetText(text);
-            // var textProp = tmpType.GetProperty("text");
-            // textProp?.SetValue(tmp, text);
-            //
-            // var forceMethod = tmpType.GetMethod("ForceMeshUpdate", Type.EmptyTypes);
-            // forceMethod?.Invoke(tmp, null); // 즉시 반영
+            // 로컬라이즈 미사용 시 기본 텍스트 설정
+            tmp.SetText(text);
         }
     }
 }
