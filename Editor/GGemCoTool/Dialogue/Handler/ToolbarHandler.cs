@@ -35,7 +35,7 @@ namespace GGemCo2DCoreEditor
             // 방어 코드 추가
             if (_dialogueMemos.Count == 0)
             {
-                EditorGUILayout.LabelField("등록된 아이템이 없습니다.");
+                EditorGUILayout.LabelField("등록된 대화가 없습니다. dialogue 테이블에 생성할 대화 내용을 입력하고 다시 실행해 주세요.");
                 return;
             }
             GUILayout.BeginVertical(EditorStyles.toolbar, GUILayout.Width(250));
@@ -76,16 +76,7 @@ namespace GGemCo2DCoreEditor
             
             if (GUILayout.Button("미리보기"))
             {
-                if (SceneGame.Instance == null)
-                {
-                    EditorUtility.DisplayDialog("대사 생성툴", "게임을 실행해주세요.", "OK");
-                    return;
-                }
-                var info = _dialogueInfos.GetValueOrDefault(_selectedDialogueIndex);
-                UIWindowDialogue uiWindowDialogue =
-                    SceneGame.Instance.uIWindowManager.GetUIWindowByUid<UIWindowDialogue>(UIWindowConstants.WindowUid
-                        .Dialogue);
-                uiWindowDialogue?.LoadDialogue(info.Uid);
+                PlayPreView();
             }
             GUILayout.EndHorizontal();
             
@@ -122,6 +113,20 @@ namespace GGemCo2DCoreEditor
             // }
 
             GUILayout.EndVertical();
+        }
+
+        private void PlayPreView()
+        {
+            if (SceneGame.Instance == null)
+            {
+                EditorUtility.DisplayDialog("대사 생성툴", "게임을 실행해주세요.", "OK");
+                return;
+            }
+            var info = _dialogueInfos.GetValueOrDefault(_selectedDialogueIndex);
+            UIWindowDialogue uiWindowDialogue =
+                SceneGame.Instance.uIWindowManager.GetUIWindowByUid<UIWindowDialogue>(UIWindowConstants.WindowUid
+                    .Dialogue);
+            uiWindowDialogue?.LoadDialogue(info.Uid);
         }
 
         private bool LoadDialogue()
