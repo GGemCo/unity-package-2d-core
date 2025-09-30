@@ -5,7 +5,7 @@ namespace GGemCo2DCore
 {
     public class DefaultMapObject : MonoBehaviour
     {
-        public Vector2 directionNormalize;
+        [HideInInspector] public Vector2 directionNormalize;
 
         protected virtual void Awake()
         {
