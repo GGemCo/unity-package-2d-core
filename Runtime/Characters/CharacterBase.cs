@@ -541,7 +541,7 @@ namespace GGemCo2DCore
             return _attackType;
         }
 
-        private void SetAttackType(CharacterConstants.AttackType pattackType)
+        protected void SetAttackType(CharacterConstants.AttackType pattackType)
         {
             _attackType = pattackType;
         }
