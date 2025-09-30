@@ -38,7 +38,8 @@ namespace GGemCo2DCore
             CurrentHp
                 .Subscribe(SetSliderHp)
                 .AddTo(this);
-            _delayDestroyMonster = AddressableLoaderSettings.Instance.settings.delayDestroyMonster;
+            if (AddressableLoaderSettings.Instance)
+                _delayDestroyMonster = AddressableLoaderSettings.Instance.settings.delayDestroyMonster;
         }
 
         protected override void Start()
