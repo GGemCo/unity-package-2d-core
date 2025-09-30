@@ -189,7 +189,7 @@ namespace GGemCo2DCore
             SetColor(color);
         }
         
-        public void PlayCharacterAnimation(string animationName, bool loop = false, float timeScale = 1)
+        public void PlayMapObjectAnimation(string animationName, bool loop = false, float timeScale = 1)
         {
             PlayAnimation(animationName, loop, timeScale);
         }

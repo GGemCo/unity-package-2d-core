@@ -1,0 +1,103 @@
+﻿using System;
+using UnityEngine;
+
+namespace GGemCo2DCore
+{
+    /// <summary>
+    /// 무한(지속) 공격 전용 함정
+    /// - 트리거 내부에 있는 플레이어에게 일정 간격(timeTick)으로 지속 피해를 부여합니다.
+    /// - Animator/Spine 애니메이션 연계 없이, 간결한 지속 타격 로직에만 집중합니다.
+    /// </summary>
+    public sealed class ObjectTrapInfinity : DefaultObjectTrap
+    {
+        // ------------- 직렬화 설정 -------------
+
+        [Header("지속 타격 간격")]
+        [Tooltip("트리거 내부에 머무는 동안, 몇 초마다 피해를 줄지 (쿨다운, 최소 0.01)")]
+        [Min(0.01f)] [SerializeField] private float timeTick = 0.5f;
+        
+        // ------------- 내부 상태 -------------
+
+        // 다음 피해 적용 가능 시각 (쿨다운)
+        private float _nextTickTime;
+
+        // 현재 트리거 내부의 대상(플레이어) 캐시
+        private CharacterBase _playerInRange;
+
+        // ------------- 라이프사이클 -------------
+
+        protected override void Awake()
+        {
+            base.Awake();
+            
+            SetAttackRangeEnabled(true);
+
+            // 초기 쿨다운(진입 즉시 1틱이 들어가지 않도록 설정)
+            _nextTickTime = 0f;
+        }
+
+        private void Start()
+        {
+            PlayAnimSafe(AnimAttack, true);
+        }
+
+        private void OnEnable()
+        {
+            _playerInRange = null;
+            _nextTickTime = 0f;
+        }
+
+#if UNITY_EDITOR
+        private void OnValidate()
+        {
+            if (timeTick < 0.01f) timeTick = 0.01f;
+            if (totalDamage <= 0) totalDamage = 0;
+            if (targetAffectUid <= 0) targetAffectUid = 0;
+
+            if (attackRange) attackRange.isTrigger = true;
+        }
+#endif
+
+        // ------------- 트리거 로직 -------------
+
+        private void OnTriggerEnter2D(Collider2D other)
+        {
+            if (!IsPlayerHitArea(other, out var player)) return;
+
+            _playerInRange = player;
+
+            // 수면 방지: 트리거 내부 정지 시에도 Stay가 안정 호출되도록
+            _playerInRange.SetRigidBody2DSleepMode(RigidbodySleepMode2D.NeverSleep);
+
+            // 진입 직후 한 텀 쉬고 틱을 주고 싶다면 다음과 같이 지연:
+            _nextTickTime = Time.time + timeTick;
+            
+            ApplyDamage(player);
+        }
+
+        private void OnTriggerExit2D(Collider2D other)
+        {
+            if (!IsPlayerHitArea(other, out var player)) return;
+
+            if (_playerInRange == player)
+            {
+                // 슬립 모드 원복
+                _playerInRange.SetRigidBody2DSleepMode(RigidbodySleepMode2D.StartAwake);
+                _playerInRange = null;
+            }
+        }
+
+        private void OnTriggerStay2D(Collider2D other)
+        {
+            // 플레이어 감지 + 동일 객체인지 확인
+            if (!IsPlayerHitArea(other, out var player)) return;
+            if (_playerInRange != null && _playerInRange != player) _playerInRange = player;
+
+            // 쿨다운 체크
+            if (Time.time < _nextTickTime) return;
+
+            ApplyDamage(player);
+            _nextTickTime = Time.time + timeTick;
+        }
+    }
+}

@@ -1,303 +1,232 @@
 ﻿using System.Collections;
-using System.Collections.Generic;
-using Spine.Unity;
-using Unity.Properties;
 using UnityEngine;
 
 namespace GGemCo2DCore
 {
-    public class ObjectTrapFixed : DefaultMapObject
+    /// <summary>
+    /// 고정형 함정 오브젝트 (시작→공격→종료 1회성)
+    /// - Animator 또는 Spine 중 하나로 "start/attack/end" 클립(또는 트랙)을 사용합니다.
+    /// - 공격 판정은 Trigger Collider2D(attackRange)로 수행합니다.
+    /// </summary>
+    public sealed class ObjectTrapFixed : DefaultObjectTrap
     {
-        [Header("설정")]
-        [Tooltip("전조증상 표시 후 대기 시간(초)")]
-        [SerializeField] private float timeEndStart;
-        [Tooltip("공격 후 대기 시간(초)")]
-        [SerializeField] private float timeEndAttack;
-        [Tooltip("반복 공격 시간(초)")]
-        [SerializeField] private float timeRepeat;
-        [SerializeField] private long totalDamage;
-        [SerializeField] private int targetAffectUid;
-        [SerializeField] private SkillConstants.DamageType damageType;
-        [Tooltip("무한 공격")]
-        [SerializeField] private bool infinityAttack;
-        [Tooltip("무한 공격일 때, 몇 초마다 공격 판정 할 것인지")]
-        [SerializeField] private float timeInfinityAttack;
-        private float _timeInfinityAttack;
-        
-        private IMapObjectAnimationController _mapObjectAnimationController;
-        private AnimationEventMediator _animationEventMediator;
-        private Collider2D _colliderAttackRange;
+        // ----------------------------
+        // Serialized Settings (Designer)
+        // ----------------------------
+        [Header("타이밍 설정")] [Tooltip("start 애니메이션 이후 다음 단계로 넘어가기 전 추가 대기(초)")] 
+        [Min(0f)] [SerializeField] private float timeEndStart;
+        [Tooltip("attack 애니메이션 이후 다음 단계로 넘어가기 전 추가 대기(초)")]
+        [Min(0f)] [SerializeField] private float timeEndAttack;
+        [Tooltip("전체 사이클(시작→공격→종료) 완료 후 재시작까지 대기(초). 0이면 반복 안 함")]
+        [Min(0f)] [SerializeField] private float timeRepeat;
 
-        // --- Phase ---
-        private enum TrapPhase { None, StartOneShot, Attack, EndOneShot }
-        private TrapPhase _phase = TrapPhase.None;
-        // --- 워치독 ---
-        private TrapPhase _awaitingEventFor = TrapPhase.None;
+        // 애니 이벤트 누락 대비 워치독
+        private TrapPhase _awaitingPhase = TrapPhase.None;
         private float _awaitingDeadline;
         private const float DefaultOneShotTimeout = 0.2f;
-        // 애니메이션 길이 캐시
-        private Dictionary<string, float> _clipLength = new();
-        // --- 보유 여부 ---
-        private bool _hasStart, _hasAttack, _hasEnd;
-        // --- 애니메이션 이름 ---
-        private const string AnimStart = "start";
-        private const string AnimAttack  = "attack";
-        private const string AnimEnd   = "end";
-        
-        protected override void Awake()
+
+        // 반복 코루틴 핸들
+        private Coroutine _repeatCo;
+
+        // ----------------------------
+        // Lifecycle
+        // ----------------------------
+
+        private void OnEnable()
         {
-            base.Awake();
-            _mapObjectAnimationController = null;
-#if GGEMCO_USE_SPINE
-            var spine = GetComponent<SkeletonAnimation>();
-            if (spine)
-            {
-                CharacterAnimationControllerSpine characterAnimationControllerSpine =
-                    GetComponent<CharacterAnimationControllerSpine>();
-                if (!characterAnimationControllerSpine) 
-                    characterAnimationControllerSpine = gameObject.AddComponent<CharacterAnimationControllerSpine>();
-                _mapObjectAnimationController = characterAnimationControllerSpine.GetComponent<IMapObjectAnimationController>();
-                
-                // Spine2dController 에 EventListener 설정
-                var spineController = GetComponent<Spine2dController>();
-                if (!spineController) 
-                    spineController = gameObject.AddComponent<Spine2dController>();
-                _animationEventMediator = new AnimationEventMediator();
-                spineController.EventListener = _animationEventMediator;
-            }
-#endif
-            if (_mapObjectAnimationController != null) return;
-            var animator = GetComponent<Animator>();
-            if (!animator)
-            {
-                GcLogger.LogError($"Animator 또는 Spine2d 컨트롤러가 없습니다.");
-                return;
-            }
+            // 상태 초기화
+            phase = TrapPhase.None;
+            _awaitingPhase = TrapPhase.None;
+            _awaitingDeadline = 0f;
 
-            MapObjectAnimationControllerSprite characterAnimationControllerSprite =
-                GetComponent<MapObjectAnimationControllerSprite>();
-            if (!characterAnimationControllerSprite)
-                characterAnimationControllerSprite = gameObject.AddComponent<MapObjectAnimationControllerSprite>();
-            _mapObjectAnimationController = characterAnimationControllerSprite.GetComponent<IMapObjectAnimationController>();
-
-            var animatorController = GetComponent<Animation2dController>();
-            if (!animatorController)
-                animatorController = gameObject.AddComponent<Animation2dController>();
-            _animationEventMediator = new AnimationEventMediator();
-            animatorController.EventListener = _animationEventMediator;
-            
-            
-            
-            _clipLength = _mapObjectAnimationController.GetAnimationAllLength();
-            
-            _hasStart = HasAnimation(AnimStart);
-            _hasAttack  = HasAnimation(AnimAttack);
-            _hasEnd   = HasAnimation(AnimEnd);
-
-            _colliderAttackRange = GetComponentInChildren<Collider2D>();
-            SetColliderEnable(false);
+            // 데모/테스트: 2초 후 시작 (필요 없으면 제거해도 됨)
+            Invoke(nameof(BeginCycleOnce), 2f);
         }
-        private bool HasAnimation(string stateName)
+
+        private void OnDisable()
         {
-            if (_mapObjectAnimationController is { } ctrl) return ctrl.HasAnimation(stateName);
-            return false;
-        }
-        private void PlayAnimSafe(string stateName)
-        {
-            _mapObjectAnimationController?.PlayCharacterAnimation(stateName);
+            if (_repeatCo != null)
+            {
+                StopCoroutine(_repeatCo);
+                _repeatCo = null;
+            }
+            CancelInvoke(nameof(BeginCycleOnce));
+            SetAttackRangeEnabled(false);
         }
 
         private void OnDestroy()
         {
-            StopAllCoroutines();
+            // 코루틴 안전 종료
+            if (_repeatCo != null)
+            {
+                StopCoroutine(_repeatCo);
+                _repeatCo = null;
+            }
+            CancelInvoke();
         }
 
-        private void Start()
-        {
-            Invoke(nameof(StartTest), 2f);
-        }
+        // ----------------------------
+        // Public/Editor Helpers
+        // ----------------------------
 
-        private void StartTest()
+        /// <summary>에디터/런타임에서 1회 사이클을 시작합니다.</summary>
+        [ContextMenu("Begin Cycle Once")]
+        public void BeginCycleOnce()
         {
-            SetColliderEnable(false);
+            SetAttackRangeEnabled(false);
             EnterPhase(TrapPhase.StartOneShot);
         }
 
-        private float GetClipDurationWithFallback(string clipName)
+#if UNITY_EDITOR
+        private void OnValidate()
         {
-            if (_clipLength.TryGetValue(clipName, out var len) && len > 0f) return len + 0.02f;
-            return DefaultOneShotTimeout;
-        }
-        private void StartAwaiting(TrapPhase phase, string clipName, float duration)
-        {
-            _awaitingEventFor = phase;
-            _awaitingDeadline = Time.time + GetClipDurationWithFallback(clipName) + duration;
-        }
-        private void ClearAwaiting()
-        {
-            _awaitingEventFor = TrapPhase.None;
-            _awaitingDeadline = 0f;
-        }
-        
-        public void Update()
-        {
-            if (_phase == TrapPhase.None) return;
+            // 에디터에서 음수 방지 클램프
+            if (timeEndStart < 0f) timeEndStart = 0f;
+            if (timeEndAttack < 0f) timeEndAttack = 0f;
+            if (timeRepeat < 0f) timeRepeat = 0f;
+            if (totalDamage <= 0) totalDamage = 0;
+            if (targetAffectUid <= 0) targetAffectUid = 0;
 
-            // 워치독
-            if (_awaitingEventFor != TrapPhase.None && Time.time >= _awaitingDeadline)
-            {
-                if (_awaitingEventFor == TrapPhase.StartOneShot) HandleStart();
-                else if (_awaitingEventFor == TrapPhase.Attack) HandleAttack();
-                else if (_awaitingEventFor == TrapPhase.EndOneShot) HandleEnd();
-            }
-
-            if (_phase == TrapPhase.Attack)
-            {
-            }
+            if (attackRange) attackRange.isTrigger = true;
         }
+#endif
+
+        // ----------------------------
+        // Phase State Machine
+        // ----------------------------
 
         private void EnterPhase(TrapPhase next)
         {
-            _phase = next;
+            phase = next;
             ClearAwaiting();
 
             switch (next)
             {
                 case TrapPhase.StartOneShot:
-                    // ApplyNoGravityDuringDash();                     // ← 대시 시작 시 중력 제거
-                    if (_hasStart)
+                    if (hasStart)
                     {
                         PlayAnimSafe(AnimStart);
                         StartAwaiting(next, AnimStart, timeEndStart);
                     }
                     else
                     {
-                        HandleStart();
+                        // 폴백: 애니 없음 → 즉시 다음 단계
+                        HandleStartFinished();
                     }
                     break;
 
                 case TrapPhase.Attack:
-                    // ApplyNoGravityDuringDash();                     // ← StartOneShot을 건너뛰는 폴백 대비
-                    if (_hasAttack)
+                    if (hasAttack)
                     {
                         PlayAnimSafe(AnimAttack);
                         StartAwaiting(next, AnimAttack, timeEndAttack);
                     }
                     else
                     {
-                        HandleAttack();
+                        HandleAttackFinished();
                     }
+                    // 공격 판정 활성
+                    SetAttackRangeEnabled(true);
                     break;
 
                 case TrapPhase.EndOneShot:
-                    if (_hasEnd)
+                    if (hasEnd)
                     {
                         PlayAnimSafe(AnimEnd);
-                        StartAwaiting(next, AnimEnd, 0);
+                        StartAwaiting(next, AnimEnd, 0f);
                     }
                     else
                     {
-                        HandleEnd();
+                        HandleEndFinished();
                     }
+                    // 공격 판정 비활성
+                    SetAttackRangeEnabled(false);
                     break;
             }
         }
 
-        private void SetColliderEnable(bool set)
+        private void Update()
         {
-            if (_colliderAttackRange == null) return;
-            _colliderAttackRange.enabled = set;
-            _colliderAttackRange.isTrigger = set;
-        }
-        private void HandleStart()
-        {
-            if (_phase != TrapPhase.StartOneShot) return;
-            ClearAwaiting();
-
-            EnterPhase(TrapPhase.Attack);
-            SetColliderEnable(true);
-        }
-        private void HandleAttack()
-        {
-            if (_phase != TrapPhase.Attack) return;
-            ClearAwaiting();
-
-            // 무한 공격이면, end 로 가지 않기
-            if (infinityAttack) return;
-            
-            EnterPhase(TrapPhase.EndOneShot);
-            SetColliderEnable(false);
-        }
-        private void HandleEnd()
-        {
-            if (_phase != TrapPhase.EndOneShot) return;
-            ClearAwaiting();
-
-            _phase  = TrapPhase.None;
-
-            if (timeRepeat > 0)
+            // 워치독: 애니 이벤트 누락/길이 미보고 시 타임아웃으로 다음 처리
+            if (_awaitingPhase != TrapPhase.None && Time.time >= _awaitingDeadline)
             {
-                StartCoroutine(StartAttack());
+                switch (_awaitingPhase)
+                {
+                    case TrapPhase.StartOneShot: HandleStartFinished(); break;
+                    case TrapPhase.Attack:       HandleAttackFinished(); break;
+                    case TrapPhase.EndOneShot:   HandleEndFinished(); break;
+                }
             }
         }
 
-        private IEnumerator StartAttack()
+        private void HandleStartFinished()
+        {
+            if (phase != TrapPhase.StartOneShot) return;
+            ClearAwaiting();
+            EnterPhase(TrapPhase.Attack);
+        }
+
+        private void HandleAttackFinished()
+        {
+            if (phase != TrapPhase.Attack) return;
+            ClearAwaiting();
+
+            EnterPhase(TrapPhase.EndOneShot);
+        }
+
+        private void HandleEndFinished()
+        {
+            if (phase != TrapPhase.EndOneShot) return;
+            ClearAwaiting();
+            phase = TrapPhase.None;
+
+            // 반복 스케줄
+            if (timeRepeat > 0f && gameObject.activeInHierarchy)
+            {
+                if (_repeatCo != null) StopCoroutine(_repeatCo);
+                _repeatCo = StartCoroutine(CoRepeat());
+            }
+        }
+
+        private IEnumerator CoRepeat()
         {
             yield return new WaitForSeconds(timeRepeat);
-            StartTest();
+            BeginCycleOnce();
+            _repeatCo = null;
         }
+
+        private void StartAwaiting(TrapPhase phase, string clipName, float extraDelay)
+        {
+            _awaitingPhase = phase;
+            _awaitingDeadline = Time.time + GetClipDuration(clipName) + extraDelay;
+        }
+
+        private void ClearAwaiting()
+        {
+            _awaitingPhase = TrapPhase.None;
+            _awaitingDeadline = 0f;
+        }
+
+        private float GetClipDuration(string clipName)
+        {
+            if (clipLength.TryGetValue(clipName, out var len) && len > 0f)
+                return len + 0.02f; // 아주 작은 여유 버퍼
+            return DefaultOneShotTimeout;
+        }
+
+        // ----------------------------
+        // Trigger Damage Logic
+        // ----------------------------
 
         private void OnTriggerEnter2D(Collider2D other)
         {
-            if (!other || !other.CompareTag(ConfigTags.GetValue(ConfigTags.Keys.Player))) return;
-            CharacterHitArea characterHitArea = other.GetComponent<CharacterHitArea>();
-            if (characterHitArea == null) return;
-            
-            CharacterBase player = characterHitArea.target;
-            
-            MetadataDamage metadataDamage = new MetadataDamage
-            {
-                damage = totalDamage,
-                attacker = gameObject,
-                damageType = damageType,
-                affectUid = targetAffectUid
-            };
-            player.TakeDamage(metadataDamage);
-            player.SetRigidBody2DSleepMode(RigidbodySleepMode2D.NeverSleep);
-            _timeInfinityAttack = Time.time + timeInfinityAttack;
-        }
+            if (!IsPlayerHitArea(other, out var player)) return;
 
-        private void OnTriggerExit2D(Collider2D other)
-        {
-            if (!other || !other.CompareTag(ConfigTags.GetValue(ConfigTags.Keys.Player))) return;
-            CharacterHitArea characterHitArea = other.GetComponent<CharacterHitArea>();
-            if (characterHitArea == null) return;
-            CharacterBase player = characterHitArea.target;
-            player.SetRigidBody2DSleepMode(RigidbodySleepMode2D.StartAwake);
-        }
-        private void OnTriggerStay2D(Collider2D other)
-        {
-            // 무한 공격이 아닌 경우, 지속 타격 로직 비활성
-            if (!infinityAttack) return;
-            
-            if (!other || !other.CompareTag(ConfigTags.GetValue(ConfigTags.Keys.Player))) return;
-            CharacterHitArea characterHitArea = other.GetComponent<CharacterHitArea>();
-            if (characterHitArea == null) return;
-            
-            // 올바른 조건 (쿨다운 중이면 리턴)
-            if (Time.time < _timeInfinityAttack) return;
-            
-            CharacterBase player = characterHitArea.target;
-            
-            MetadataDamage metadataDamage = new MetadataDamage
+            // 1회성 공격(즉시 일격) 모델이 필요하면 여기서 적용
+            if (phase == TrapPhase.Attack)
             {
-                damage = 1,
-                attacker = gameObject,
-                damageType = damageType,
-                affectUid = targetAffectUid
-            };
-            player.TakeDamage(metadataDamage);
-            _timeInfinityAttack = Time.time + timeInfinityAttack;
+                ApplyDamage(player);
+            }
         }
     }
 }
