@@ -8,7 +8,7 @@ namespace GGemCo2DCore
     /// - start 대기 후 attack(공격), end(정리)를 거쳐 재사용(reuse)/파괴 흐름을 수행합니다.
     /// - 애니 이벤트 누락을 대비해 워치독(타임아웃)으로 안전하게 다음 단계로 넘어갑니다.
     /// </summary>
-    public sealed class ObjectTrapTimer : DefaultObjectTrap
+    public sealed class ObjectTrapTimer : DefaultObjectTrap, ITrapAttackRangeHandlerEnter
     {
         // ----------------------------
         // Serialized Settings (Designer)
@@ -255,9 +255,9 @@ namespace GGemCo2DCore
         /// Unity 물리 트리거: 공격 단계에서 HitArea 진입 시 즉시 피해 1회 적용
         /// - 지속/틱 대미지가 아니라, “접촉 시 즉시 일격” 모델일 때 사용
         /// </summary>
-        private void OnTriggerEnter2D(Collider2D other)
+        public void OnEnter(CharacterBase player)
         {
-            if (!IsPlayerHitArea(other, out var player)) return;
+            if (!player) return;
 
             // 공격 단계일 때만 즉시 일격 허용
             if (phase == TrapPhase.Attack)

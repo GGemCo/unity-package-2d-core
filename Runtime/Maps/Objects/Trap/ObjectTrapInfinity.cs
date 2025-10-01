@@ -7,7 +7,7 @@ namespace GGemCo2DCore
     /// - 트리거 내부에 있는 플레이어에게 일정 간격(timeTick)으로 지속 피해를 부여합니다.
     /// - Animator/Spine 애니메이션 연계 없이, 간결한 지속 타격 로직에만 집중합니다.
     /// </summary>
-    public sealed class ObjectTrapInfinity : DefaultObjectTrap
+    public sealed class ObjectTrapInfinity : DefaultObjectTrap, ITrapAttackRangeHandlerEnter, ITrapAttackRangeHandlerStay, ITrapAttackRangeHandlerExit
     {
         // ------------- 직렬화 설정 -------------
 
@@ -53,9 +53,9 @@ namespace GGemCo2DCore
 
         // ------------- 트리거 로직 -------------
 
-        private void OnTriggerEnter2D(Collider2D other)
+        public void OnEnter(CharacterBase player)
         {
-            if (!IsPlayerHitArea(other, out var player)) return;
+            if (!player) return;
 
             SetPlayerInRange(player);
 
@@ -68,20 +68,18 @@ namespace GGemCo2DCore
             ApplyDamage(player);
         }
 
-        private void OnTriggerExit2D(Collider2D other)
+        public void OnExit(CharacterBase player)
         {
-            if (!IsPlayerHitArea(other, out var player)) return;
-
+            if (!player) return;
             if (playerInRange != player) return;
             // 슬립 모드 원복
             playerInRange.SetRigidBody2DSleepMode(RigidbodySleepMode2D.StartAwake);
             playerInRange = null;
         }
 
-        private void OnTriggerStay2D(Collider2D other)
+        public void OnStay(CharacterBase player)
         {
-            // 플레이어 감지 + 동일 객체인지 확인
-            if (!IsPlayerHitArea(other, out var player)) return;
+            if (!player) return;
             if (playerInRange != null && playerInRange != player) playerInRange = player;
 
             // 쿨다운 체크

@@ -8,7 +8,7 @@ namespace GGemCo2DCore
     /// - Animator 또는 Spine 중 하나로 "start/attack/end" 클립(또는 트랙)을 사용합니다.
     /// - 공격 판정은 Trigger Collider2D(attackRange)로 수행합니다.
     /// </summary>
-    public sealed class ObjectTrapFixed : DefaultObjectTrap
+    public sealed class ObjectTrapFixed : DefaultObjectTrap, ITrapAttackRangeHandlerEnter
     {
         // ----------------------------
         // Serialized Settings (Designer)
@@ -204,20 +204,18 @@ namespace GGemCo2DCore
             _awaitingPhase = TrapPhase.None;
             _awaitingDeadline = 0f;
         }
-
-        // ----------------------------
-        // Trigger Damage Logic
-        // ----------------------------
-
-        private void OnTriggerEnter2D(Collider2D other)
+        public void OnEnter(CharacterBase player)
         {
-            if (!IsPlayerHitArea(other, out var player)) return;
-
+            if (!player) return;
+            
             // 1회성 공격(즉시 일격) 모델이 필요하면 여기서 적용
             if (phase == TrapPhase.Attack)
             {
                 ApplyDamage(player);
             }
+        }
+        public void OnStay(CharacterBase player)
+        {
         }
     }
 }

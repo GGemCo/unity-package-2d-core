@@ -16,6 +16,12 @@ namespace GGemCo2DCore
         [Tooltip("애니메이션 timescale")]
         [SerializeField] protected float animationTimeScale = 1;
         
+        [Header("레퍼런스")]
+        [Tooltip("공격 판정용 트리거 Collider.")]
+        [SerializeField] protected ObjectTrapAttackRange objectTrapAttackRange;
+        [Tooltip("공격 시작 트리거 Collider.")]
+        [SerializeField] protected TrapTriggerDetector trapTriggerDetector;
+        
         // ----------------------------
         // Internal State / Cache
         // ----------------------------
@@ -36,12 +42,6 @@ namespace GGemCo2DCore
         
         // 현재 트리거 내부의 대상(플레이어) 캐시
         protected CharacterBase playerInRange;
-
-        [Header("레퍼런스")]
-        [Tooltip("공격 판정용 트리거 Collider. 자동 탐색")]
-        private Collider2D _attackRange;
-        [Tooltip("공격 시작 트리거 Collider.")]
-        [SerializeField] protected TrapTriggerDetector trapTriggerDetector;
         
         private IMapObjectAnimationController _animationController;
         private AnimationEventMediator _eventMediator;
@@ -69,28 +69,25 @@ namespace GGemCo2DCore
                 return;
             }
 
-            // 공격 트리거 콜라이더 결합
-            if (!_attackRange)
+            if (!objectTrapAttackRange)
             {
-                _attackRange = GetComponentInChildren<Collider2D>();
-            }
-            if (!_attackRange)
-            {
-                GcLogger.LogError("[ObjectTrapFixed] 공격용 Trigger Collider2D(attackRange)가 없습니다.");
+                GcLogger.LogError("[ObjectTrapFixed] 공격 범위 Trigger Collider2D(attackRange)가 없습니다.");
                 enabled = false;
                 return;
             }
 
+            SetBusy(false);
+            
+            // 공격 범위 체크 Collider
+            if (objectTrapAttackRange != null)
+            {
+                objectTrapAttackRange.GetComponent<ObjectTrapAttackRange>()?.SetTargetTrap(this);
+            }
+            // 트랩 시작/종료 체크 Collider
             if (trapTriggerDetector != null)
             {
                 trapTriggerDetector.GetComponent<TrapTriggerDetector>()?.SetTargetTrap(this);
             }
-
-            SetBusy(false);
-            
-            // 트리거 강제
-            SetAttackRangeEnabled(false);
-            SetTriggerRangeEnabled(false);
 
             // 애니 길이/보유 여부 캐시
             CacheAnimations();
@@ -154,7 +151,7 @@ namespace GGemCo2DCore
         }
 
         /// <summary>피해 적용(공용 메서드)</summary>
-        protected void ApplyDamage(CharacterBase player)
+        public void ApplyDamage(CharacterBase player)
         {
             if (!player || totalDamage <= 0) return;
 
@@ -186,13 +183,19 @@ namespace GGemCo2DCore
             player = hitArea.target;
             return player != null;
         }
+        /// <summary>
+        /// 공격 범위 trigger on/off
+        /// </summary>
+        /// <param name="set"></param>
         protected void SetAttackRangeEnabled(bool set)
         {
-            if (!_attackRange) return;
-            _attackRange.enabled = set;
-            _attackRange.isTrigger = set;
+            if (!objectTrapAttackRange) return;
+            objectTrapAttackRange.SetTriggerEnabled(set);
         }
-
+        /// <summary>
+        /// 트랩 동작 trigger on/off
+        /// </summary>
+        /// <param name="set"></param>
         protected void SetTriggerRangeEnabled(bool set)
         {
             if (!trapTriggerDetector) return;
@@ -236,5 +239,14 @@ namespace GGemCo2DCore
         public virtual void OnTrigger(Collider2D other)
         {
         }
+
+        public void OnStay(bool set, CharacterBase player)
+        {
+            SetPlayerInRange(player);
+
+            // 수면 방지: 트리거 내부 정지 시에도 Stay가 안정 호출되도록
+            playerInRange.SetRigidBody2DSleepMode(set?RigidbodySleepMode2D.NeverSleep:RigidbodySleepMode2D.StartAwake);
+        }
+
     }
 }
