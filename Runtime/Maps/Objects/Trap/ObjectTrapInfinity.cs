@@ -1,5 +1,4 @@
-﻿using System;
-using UnityEngine;
+﻿using UnityEngine;
 
 namespace GGemCo2DCore
 {
@@ -21,9 +20,6 @@ namespace GGemCo2DCore
         // 다음 피해 적용 가능 시각 (쿨다운)
         private float _nextTickTime;
 
-        // 현재 트리거 내부의 대상(플레이어) 캐시
-        private CharacterBase _playerInRange;
-
         // ------------- 라이프사이클 -------------
 
         protected override void Awake()
@@ -35,26 +31,23 @@ namespace GGemCo2DCore
             // 초기 쿨다운(진입 즉시 1틱이 들어가지 않도록 설정)
             _nextTickTime = 0f;
         }
+        
+        private void OnEnable()
+        {
+            SetPlayerInRange(null);
+            _nextTickTime = 0f;
+        }
 
         private void Start()
         {
             PlayAnimSafe(AnimAttack, true);
         }
 
-        private void OnEnable()
-        {
-            _playerInRange = null;
-            _nextTickTime = 0f;
-        }
-
 #if UNITY_EDITOR
-        private void OnValidate()
+        protected override void OnValidate()
         {
+            base.OnValidate();
             if (timeTick < 0.01f) timeTick = 0.01f;
-            if (totalDamage <= 0) totalDamage = 0;
-            if (targetAffectUid <= 0) targetAffectUid = 0;
-
-            if (attackRange) attackRange.isTrigger = true;
         }
 #endif
 
@@ -64,10 +57,10 @@ namespace GGemCo2DCore
         {
             if (!IsPlayerHitArea(other, out var player)) return;
 
-            _playerInRange = player;
+            SetPlayerInRange(player);
 
             // 수면 방지: 트리거 내부 정지 시에도 Stay가 안정 호출되도록
-            _playerInRange.SetRigidBody2DSleepMode(RigidbodySleepMode2D.NeverSleep);
+            playerInRange.SetRigidBody2DSleepMode(RigidbodySleepMode2D.NeverSleep);
 
             // 진입 직후 한 텀 쉬고 틱을 주고 싶다면 다음과 같이 지연:
             _nextTickTime = Time.time + timeTick;
@@ -79,19 +72,17 @@ namespace GGemCo2DCore
         {
             if (!IsPlayerHitArea(other, out var player)) return;
 
-            if (_playerInRange == player)
-            {
-                // 슬립 모드 원복
-                _playerInRange.SetRigidBody2DSleepMode(RigidbodySleepMode2D.StartAwake);
-                _playerInRange = null;
-            }
+            if (playerInRange != player) return;
+            // 슬립 모드 원복
+            playerInRange.SetRigidBody2DSleepMode(RigidbodySleepMode2D.StartAwake);
+            playerInRange = null;
         }
 
         private void OnTriggerStay2D(Collider2D other)
         {
             // 플레이어 감지 + 동일 객체인지 확인
             if (!IsPlayerHitArea(other, out var player)) return;
-            if (_playerInRange != null && _playerInRange != player) _playerInRange = player;
+            if (playerInRange != null && playerInRange != player) playerInRange = player;
 
             // 쿨다운 체크
             if (Time.time < _nextTickTime) return;

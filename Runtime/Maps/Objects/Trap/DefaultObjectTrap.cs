@@ -32,13 +32,23 @@ namespace GGemCo2DCore
         protected const string AnimStart = "start";
         protected const string AnimAttack = "attack";
         protected const string AnimEnd = "end";
+        protected const string AnimWait = "wait";
+        
+        // 현재 트리거 내부의 대상(플레이어) 캐시
+        protected CharacterBase playerInRange;
 
         [Header("레퍼런스")]
-        [Tooltip("공격 판정용 트리거 Collider. 비워두면 자식에서 자동 탐색(최초 1회)")]
-        protected Collider2D attackRange;
+        [Tooltip("공격 판정용 트리거 Collider. 자동 탐색")]
+        private Collider2D _attackRange;
+        [Tooltip("공격 시작 트리거 Collider.")]
+        [SerializeField] protected TrapTriggerDetector trapTriggerDetector;
         
         private IMapObjectAnimationController _animationController;
         private AnimationEventMediator _eventMediator;
+        private const float DefaultOneShotTimeout = 0.2f;
+        
+        // 트랩 작동 여부
+        private bool _isBusy;
 
         protected override void Awake()
         {
@@ -60,19 +70,27 @@ namespace GGemCo2DCore
             }
 
             // 공격 트리거 콜라이더 결합
-            if (!attackRange)
+            if (!_attackRange)
             {
-                attackRange = GetComponentInChildren<Collider2D>();
+                _attackRange = GetComponentInChildren<Collider2D>();
             }
-            if (!attackRange)
+            if (!_attackRange)
             {
                 GcLogger.LogError("[ObjectTrapFixed] 공격용 Trigger Collider2D(attackRange)가 없습니다.");
                 enabled = false;
                 return;
             }
 
+            if (trapTriggerDetector != null)
+            {
+                trapTriggerDetector.GetComponent<TrapTriggerDetector>()?.SetTargetTrap(this);
+            }
+
+            SetBusy(false);
+            
             // 트리거 강제
             SetAttackRangeEnabled(false);
+            SetTriggerRangeEnabled(false);
 
             // 애니 길이/보유 여부 캐시
             CacheAnimations();
@@ -154,7 +172,7 @@ namespace GGemCo2DCore
         // ----------------------------
 
         /// <summary>Player의 HitArea 콜라이더인지 검사하고 CharacterBase를 반환합니다.</summary>
-        protected static bool IsPlayerHitArea(Collider2D other, out CharacterBase player)
+        protected bool IsPlayerHitArea(Collider2D other, out CharacterBase player)
         {
             player = null;
             if (!other) return false;
@@ -170,14 +188,53 @@ namespace GGemCo2DCore
         }
         protected void SetAttackRangeEnabled(bool set)
         {
-            if (!attackRange) return;
-            attackRange.enabled = set;
-            attackRange.isTrigger = set;
+            if (!_attackRange) return;
+            _attackRange.enabled = set;
+            _attackRange.isTrigger = set;
+        }
+
+        protected void SetTriggerRangeEnabled(bool set)
+        {
+            if (!trapTriggerDetector) return;
+            trapTriggerDetector.SetTriggerEnabled(set);
         }
 
         protected void PlayAnimSafe(string stateName, bool loop = false)
         {
             _animationController?.PlayMapObjectAnimation(stateName, loop, animationTimeScale);
+        }
+#if UNITY_EDITOR
+        protected virtual void OnValidate()
+        {
+            // 에디터에서 음수 방지 클램프
+            if (totalDamage <= 0) totalDamage = 0;
+            if (targetAffectUid <= 0) targetAffectUid = 0;
+        }
+#endif
+        protected float GetClipDuration(string clipName)
+        {
+            if (clipLength.TryGetValue(clipName, out var len) && len > 0f)
+                return len + 0.02f; // 아주 작은 여유 버퍼
+            return DefaultOneShotTimeout;
+        }
+
+        protected bool IsBusy()
+        {
+            return _isBusy;
+        }
+
+        protected void SetBusy(bool set)
+        {
+            _isBusy = set;
+        }
+
+        protected void SetPlayerInRange(CharacterBase player)
+        {
+            playerInRange = player;
+        }
+
+        public virtual void OnTrigger(Collider2D other)
+        {
         }
     }
 }

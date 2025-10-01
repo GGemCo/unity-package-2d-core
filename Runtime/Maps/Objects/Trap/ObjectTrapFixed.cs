@@ -13,9 +13,10 @@ namespace GGemCo2DCore
         // ----------------------------
         // Serialized Settings (Designer)
         // ----------------------------
-        [Header("타이밍 설정")] [Tooltip("start 애니메이션 이후 다음 단계로 넘어가기 전 추가 대기(초)")] 
+        [Header("타이밍 설정")] 
+        [Tooltip("start 애니메이션 이후 다음 단계로 넘어가기 전 대기(초)")] 
         [Min(0f)] [SerializeField] private float timeEndStart;
-        [Tooltip("attack 애니메이션 이후 다음 단계로 넘어가기 전 추가 대기(초)")]
+        [Tooltip("attack 애니메이션 이후 다음 단계로 넘어가기 전 대기(초)")]
         [Min(0f)] [SerializeField] private float timeEndAttack;
         [Tooltip("전체 사이클(시작→공격→종료) 완료 후 재시작까지 대기(초). 0이면 반복 안 함")]
         [Min(0f)] [SerializeField] private float timeRepeat;
@@ -23,7 +24,6 @@ namespace GGemCo2DCore
         // 애니 이벤트 누락 대비 워치독
         private TrapPhase _awaitingPhase = TrapPhase.None;
         private float _awaitingDeadline;
-        private const float DefaultOneShotTimeout = 0.2f;
 
         // 반복 코루틴 핸들
         private Coroutine _repeatCo;
@@ -38,9 +38,11 @@ namespace GGemCo2DCore
             phase = TrapPhase.None;
             _awaitingPhase = TrapPhase.None;
             _awaitingDeadline = 0f;
+        }
 
-            // 데모/테스트: 2초 후 시작 (필요 없으면 제거해도 됨)
-            Invoke(nameof(BeginCycleOnce), 2f);
+        private void Start()
+        {
+            BeginCycleOnce();
         }
 
         private void OnDisable()
@@ -78,23 +80,19 @@ namespace GGemCo2DCore
         }
 
 #if UNITY_EDITOR
-        private void OnValidate()
+        protected override void OnValidate()
         {
+            base.OnValidate();
             // 에디터에서 음수 방지 클램프
             if (timeEndStart < 0f) timeEndStart = 0f;
             if (timeEndAttack < 0f) timeEndAttack = 0f;
             if (timeRepeat < 0f) timeRepeat = 0f;
-            if (totalDamage <= 0) totalDamage = 0;
-            if (targetAffectUid <= 0) targetAffectUid = 0;
-
-            if (attackRange) attackRange.isTrigger = true;
         }
 #endif
 
         // ----------------------------
         // Phase State Machine
         // ----------------------------
-
         private void EnterPhase(TrapPhase next)
         {
             phase = next;
@@ -205,13 +203,6 @@ namespace GGemCo2DCore
         {
             _awaitingPhase = TrapPhase.None;
             _awaitingDeadline = 0f;
-        }
-
-        private float GetClipDuration(string clipName)
-        {
-            if (clipLength.TryGetValue(clipName, out var len) && len > 0f)
-                return len + 0.02f; // 아주 작은 여유 버퍼
-            return DefaultOneShotTimeout;
         }
 
         // ----------------------------
