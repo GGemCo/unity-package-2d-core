@@ -8,7 +8,7 @@ namespace GGemCo2DCore
     /// </summary>
     public class DefaultEffect : MonoBehaviour
     {
-        public IEffectAnimationController EffectAnimationController;
+        public IEffectAnimationController effectAnimationController;
         
         // 생성한 캐릭터
         private CharacterBase _character;
@@ -51,11 +51,11 @@ namespace GGemCo2DCore
         {
             if (!string.IsNullOrEmpty(_color))
             {
-                EffectAnimationController.SetEffectColor($"#{_color}");
+                effectAnimationController.SetEffectColor($"#{_color}");
             }
             else if (!string.IsNullOrEmpty(_struckTableEffect.Color))
             {
-                EffectAnimationController.SetEffectColor($"#{_struckTableEffect.Color}");
+                effectAnimationController.SetEffectColor($"#{_struckTableEffect.Color}");
             }
             
             Vector2 size = SceneGame.Instance.mapManager.GetCurrentMapSize();
@@ -67,7 +67,7 @@ namespace GGemCo2DCore
                 StartCoroutine(RemoveEffectDuration(_duration));
             }
             // 셋팅 후 플레이
-            EffectAnimationController.Play(_duration);
+            effectAnimationController.Play(_duration);
         }
 
         public void Initialize(StruckTableEffect struckTableEffect)
@@ -159,7 +159,7 @@ namespace GGemCo2DCore
 
         public void PlayEndAnimation()
         {
-            EffectAnimationController.PlayEnd();
+            effectAnimationController.PlayEnd();
         }
 
         public void SetColor(string color)
@@ -198,18 +198,20 @@ namespace GGemCo2DCore
             SetFlip(_character.IsFlipped());
         }
 
-        private void Update()
+        protected virtual void Update()
         {
-            if (_followCharacter == null) return;
-            transform.position = _followCharacter.transform.position;
-            if (_positionY > 0)
+            if (_followCharacter != null)
             {
-                transform.position += new Vector3(0, _positionY, 0);
-            }
+                transform.position = _followCharacter.transform.position;
+                if (_positionY > 0)
+                {
+                    transform.position += new Vector3(0, _positionY, 0);
+                }
 
-            if (_positionYType == ConfigCommon.PositionYType.CharacterHeight)
-            {
-                transform.position += new Vector3(0, _character.GetHeightByScale(), 0);
+                if (_positionYType == ConfigCommon.PositionYType.CharacterHeight)
+                {
+                    transform.position += new Vector3(0, _character.GetHeightByScale(), 0);
+                }
             }
         }
     }

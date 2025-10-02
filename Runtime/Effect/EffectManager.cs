@@ -26,13 +26,21 @@ namespace GGemCo2DCore
             GameObject prefab = AddressableLoaderPrefabEffect.Instance.GetPrefabByName(key);
             if (prefab == null) return null;
             GameObject effect = Object.Instantiate(prefab);
-            DefaultEffect defaultEffect = effect.AddComponent<DefaultEffect>();
+            
+            // 레이저 여부를 테이블/프리팹 이름/메타데이터로 판별
+            bool isLaser = info.Type == EffectConstants.Type.Laser;
+
+            // 레이저면 EffectLaser, 아니면 DefaultEffect
+            DefaultEffect defaultEffect = isLaser 
+                ? effect.AddComponent<EffectLaser>()
+                : effect.AddComponent<DefaultEffect>();
+            
             IEffectAnimationController effectAnimationController = null;
 #if GGEMCO_USE_SPINE
             if (info.AnimationController == ConfigCommon.AnimationController.Spine)
             {
                 effectAnimationController = effect.AddComponent<EffectAnimationControllerSpine>();
-                defaultEffect.EffectAnimationController = effectAnimationController;
+                defaultEffect.effectAnimationController = effectAnimationController;
                 
                 // Spine2dController 에 EventListener 설정
                 var spineController = effect.GetComponent<Spine2dController>();
@@ -45,7 +53,7 @@ namespace GGemCo2DCore
             if (info.AnimationController == ConfigCommon.AnimationController.Sprite)
             {
                 effectAnimationController = effect.AddComponent<EffectAnimationControllerSprite>();
-                defaultEffect.EffectAnimationController = effectAnimationController;
+                defaultEffect.effectAnimationController = effectAnimationController;
                 
                 // Animator2dController 에 EventListener 설정
                 var animatorController = effect.GetComponent<Animation2dController>();
