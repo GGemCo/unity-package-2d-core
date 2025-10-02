@@ -15,7 +15,6 @@ namespace GGemCo2DCoreEditor
             Development = 100,
             CreateDialogue,
             MapExporter,
-            CreateItem,
             Cutscene,
             Quest,
             LocalizationUpdate,
@@ -23,7 +22,11 @@ namespace GGemCo2DCoreEditor
             Sound,
             SoundUIButton,
             Test = 200,
+            CreateItem,
             DropItemRate,
+            MoveMap,
+            UseEffect,
+            UseProjectile,
             Debug = 300,
             DebugTilemapDrawCall,
             DebugFps,
@@ -49,7 +52,6 @@ namespace GGemCo2DCoreEditor
         private const string NameToolDevelopment = NameToolGGemCo + "개발툴/";
         public const string NameToolCreateDialogue = NameToolDevelopment + "대사 생성툴";
         public const string NameToolMapExporter = NameToolDevelopment + "맵배치툴";
-        public const string NameToolCreateItem = NameToolDevelopment + "아이템 생성툴";
         public const string NameToolCutscene = NameToolDevelopment + "연출툴";
         public const string NameToolQuest = NameToolDevelopment + "퀘스트 생성툴";
         public const string NameToolLocalizationUpdate = NameToolDevelopment + "Localize 업데이트툴";
@@ -59,6 +61,10 @@ namespace GGemCo2DCoreEditor
         // 테스트
         private const string NameToolTest = NameToolGGemCo + "태스트툴/";
         public const string NameToolDropItemRate = NameToolTest + "아이템 드랍 확률";
+        public const string NameToolCreateItem = NameToolTest + "아이템 생성툴";
+        public const string NameToolMoveMap = NameToolTest + "맵 이동";
+        public const string NameToolUseEffect = NameToolTest + "이펙트 사용툴";
+        public const string NameToolUseProjectile = NameToolTest + "프로젝타일 사용툴";
         
         // 디버그
         private const string NameToolDebug = NameToolGGemCo + "디버그툴/";
