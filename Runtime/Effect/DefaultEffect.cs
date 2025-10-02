@@ -28,7 +28,7 @@ namespace GGemCo2DCore
         private float _positionY;
         private ConfigCommon.PositionYType _positionYType;
         
-        private Renderer _characterRenderer;
+        private Renderer _effectRenderer;
         private Animator _animator;
         private StruckTableSkill _struckTableSkill;
         private Coroutine _coroutineTickTimeDamage;
@@ -41,9 +41,9 @@ namespace GGemCo2DCore
         {
             _color = "";
             _originalScaleX = transform.localScale.x;
-            if (_characterRenderer == null)
+            if (_effectRenderer == null)
             {
-                _characterRenderer = GetComponent<Renderer>();
+                _effectRenderer = GetComponent<Renderer>();
             }
         }
 
@@ -86,7 +86,7 @@ namespace GGemCo2DCore
         {
             int baseSortingOrder = MathHelper.GetSortingOrder(_mapSizeHeight, transform.position.y);
         
-            _characterRenderer.sortingOrder = baseSortingOrder;
+            _effectRenderer.sortingOrder = baseSortingOrder;
         }
         /// <summary>
         /// 지속 시간 설정
@@ -149,7 +149,13 @@ namespace GGemCo2DCore
         {
             float dirX = shouldFlip ? -1 : 1;
             SetDirection(dirX);
+            OnSetFlip(dirX);
         }
+
+        protected virtual void OnSetFlip(float dirX)
+        {
+        }
+
         public void OnEndAnimationComplete()
         {
             StopAllCoroutines();
@@ -169,7 +175,7 @@ namespace GGemCo2DCore
 
         public void SetSortingLayer(ConfigSortingLayer.Keys sortingLayer)
         {
-            _characterRenderer.sortingLayerName = ConfigSortingLayer.GetValue(sortingLayer);
+            _effectRenderer.sortingLayerName = ConfigSortingLayer.GetValue(sortingLayer);
         }
 
         public void SetFollowCharacter(CharacterBase character)
