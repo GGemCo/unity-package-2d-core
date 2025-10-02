@@ -66,5 +66,33 @@ namespace GGemCo2DCore
             comp.Initialize(info);
             return comp;
         }
+#if UNITY_EDITOR
+        public ProjectileBase CreateProjectile(StruckTableProjectile info)
+        {
+            int projectileUid = info.Uid;
+            var go = new GameObject($"Projectile_{projectileUid}");
+            ProjectileBase comp;
+
+            bool isArc = (info.ArcHeightMin > 0) || (info.ArcHeightMax > 0);
+            if (info.Type == ProjectileConstants.Type.Laser)
+            {
+                comp = go.AddComponent<ProjectileLaser>();
+            }
+            else if (isArc)
+                comp = go.AddComponent<ProjectileArc>();
+            else
+                comp = go.AddComponent<ProjectileLinear>();
+
+            if (!comp)
+            {
+                GcLogger.LogError("[ProjectileManager] Component add failed.");
+                Object.Destroy(go);
+                return null;
+            }
+
+            comp.Initialize(info);
+            return comp;
+        }
+#endif
     }
 }
