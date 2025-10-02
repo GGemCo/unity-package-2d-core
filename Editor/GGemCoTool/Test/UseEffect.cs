@@ -63,7 +63,11 @@ namespace GGemCo2DCoreEditor
                 Scale = _scale,
                 Duration = _duration
             };
-            SceneGame.Instance.EffectManager.CreateEffect(struckAnimationEventEffect);
+            DefaultEffect defaultEffect = SceneGame.Instance.EffectManager.CreateEffect(struckAnimationEventEffect);
+            if (!defaultEffect) return;
+            defaultEffect.gameObject.transform.position = SceneGame.Instance.cameraManager.GetPositionCenter();
+            // 임시로 제일 위로 나오게 처리
+            defaultEffect.SetSortingLayer(ConfigSortingLayer.Keys.UI);
         }
 
         private void LoadTableInfoData()
