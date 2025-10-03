@@ -24,7 +24,12 @@ namespace GGemCo2DCore
 
         private void OnEnable()
         { phase = TrapPhase.None; ClearAwaiting(); }
-        private void Start() { BeginCycleOnce(); }
+
+        private void Start()
+        {
+            if (!trapTriggerDetector)
+                BeginCycleOnce();
+        }
         private void OnDisable()
         {
             if (_repeatCo != null) { StopCoroutine(_repeatCo); _repeatCo = null; }
@@ -96,6 +101,17 @@ namespace GGemCo2DCore
         private IEnumerator CoRepeat() { yield return new WaitForSeconds(timeRepeat); BeginCycleOnce(); _repeatCo = null; }
 
         public void OnEnter(CharacterBase player)
-        { if (player && phase == TrapPhase.Attack) ApplyDamage(player); }
+        {
+            if (player && phase == TrapPhase.Attack) 
+                ApplyDamage(player);
+        }
+        public override void OnTrigger(Collider2D other)
+        {
+            if (!IsPlayerHitArea(other, out var player)) return;
+            if (IsBusy()) return; 
+            SetBusy(true); 
+            SetPlayerInRange(player);
+            BeginCycleOnce();
+        }
     }
 }

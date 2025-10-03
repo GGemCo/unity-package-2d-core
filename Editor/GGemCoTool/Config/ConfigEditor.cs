@@ -19,8 +19,8 @@ namespace GGemCo2DCoreEditor
             Quest,
             LocalizationUpdate,
             LocalizationFind,
-            Sound,
             SoundUIButton,
+            CreateHubWindow,
             Test = 200,
             CreateItem,
             DropItemRate,
@@ -57,12 +57,13 @@ namespace GGemCo2DCoreEditor
         public const string NameToolLocalizationUpdate = NameToolDevelopment + "Localize 업데이트툴";
         public const string NameToolLocalizationFind = NameToolDevelopment + "Localize 검색기";
         public const string NameToolSoundUIButton = NameToolDevelopment + "UI 버튼 사운드 적용툴";
+        public const string NameToolCreateHubWindow = NameToolDevelopment + "오브젝트 생성툴";
         
         // 테스트
         private const string NameToolTest = NameToolGGemCo + "태스트툴/";
         public const string NameToolDropItemRate = NameToolTest + "아이템 드랍 확률";
         public const string NameToolCreateItem = NameToolTest + "아이템 생성툴";
-        public const string NameToolMoveMap = NameToolTest + "맵 이동";
+        public const string NameToolMoveMap = NameToolTest + "맵 이동툴";
         public const string NameToolUseEffect = NameToolTest + "이펙트 사용툴";
         public const string NameToolUseProjectile = NameToolTest + "프로젝타일 사용툴";
         

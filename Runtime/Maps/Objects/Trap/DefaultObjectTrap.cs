@@ -32,9 +32,11 @@ namespace GGemCo2DCore
         [Header("레퍼런스")]
         [Tooltip("공격 판정용 Trigger Collider (ObjectTrapAttackRange)")]
         [SerializeField] protected ObjectTrapAttackRange objectTrapAttackRange;
+        public void SetObjectTrapAttackRange(ObjectTrapAttackRange value) => objectTrapAttackRange = value;
 
         [Tooltip("트랩 시작/종료를 위한 Trigger Detector (TrapTriggerDetector)")]
         [SerializeField] protected TrapTriggerDetector trapTriggerDetector;
+        public void SetTrapTriggerDetector(TrapTriggerDetector value) => trapTriggerDetector = value;
         #endregion
 
         #region Internal State / Cache
