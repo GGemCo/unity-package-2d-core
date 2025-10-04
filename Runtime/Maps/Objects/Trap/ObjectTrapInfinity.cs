@@ -14,9 +14,13 @@ namespace GGemCo2DCore
         private float _nextTickTime;
 
         protected override void Awake()
-        { base.Awake(); SetAttackRangeEnabled(true); _nextTickTime = 0f; }
+        { base.Awake(); _nextTickTime = 0f; }
         private void OnEnable() { SetPlayerInRange(null); _nextTickTime = 0f; }
-        private void Start() { PlayAnimSafe(AnimAttack, true); }
+        private void Start()
+        {
+            SetAttackRangeEnabled(true);
+            PlayAnimSafe(AnimAttack, true);
+        }
 #if UNITY_EDITOR
         protected override void OnValidate() { base.OnValidate(); if (timeTick < 0.01f) timeTick = 0.01f; }
 #endif
