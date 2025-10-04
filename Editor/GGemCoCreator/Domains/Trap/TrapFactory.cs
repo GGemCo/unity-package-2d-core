@@ -89,6 +89,10 @@ namespace GGemCo2DCoreEditor
             var trap = ObjectFactoryBase.Add<ObjectTrapInfinity>(inst);
             var attackRange = inst.GetComponentInChildren<ObjectTrapAttackRange>();
             trap.SetObjectTrapAttackRange(attackRange);
+            
+            var triggerDetector = inst.GetComponentInChildren<TrapTriggerDetector>();
+            if (triggerDetector)
+                Object.DestroyImmediate(triggerDetector.gameObject);
 
             return inst;
         }
