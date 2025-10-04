@@ -128,7 +128,7 @@ namespace GGemCo2DCore
         /// 맵 불러오기
         /// </summary>
         /// <param name="mapUid"></param>
-        private void LoadMap(int mapUid = 0)
+        public void LoadMap(int mapUid = 0)
         {
             if (IsPossibleLoad() != true)
             {

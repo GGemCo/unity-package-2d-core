@@ -3,9 +3,10 @@ using UnityEngine.Tilemaps;
 
 namespace GGemCo2DCore
 {
-    [ExecuteInEditMode]  // 에디터 모드에서도 생명주기 함수 실행
     public class DefaultMapObject : MonoBehaviour
     {
+        [HideInInspector] public Vector2 directionNormalize;
+
         protected virtual void Awake()
         {
             InitComponents();
@@ -23,6 +24,41 @@ namespace GGemCo2DCore
             {
                 GetComponent<TilemapRenderer>().sortingLayerName = ConfigSortingLayer.GetValue(ConfigSortingLayer.Keys.MapObject);
             }
+        }
+
+        public bool IsStatusDead()
+        {
+            return false;
+        }
+
+        public float GetCurrentMoveSpeed()
+        {
+            return 1.0f;
+        }
+
+        public float GetCurrentAttackSpeed()
+        {
+            return 1.0f;
+        }
+
+        public void OnAnimationCompleteAttack()
+        {
+        }
+
+        public void OnAnimationCompleteAttackEnd()
+        {
+        }
+
+        public void OnAnimationCompleteDead()
+        {
+        }
+
+        public void Stop()
+        {
+        }
+
+        public void SetIsStartFade(bool b)
+        {
         }
     }
 }

@@ -119,6 +119,7 @@ namespace GGemCo2DCoreEditor
                 {
                     // MapManager.cs:164 도 수정
                     objectWarp.WarpData = warpData;
+                    objectWarp.InitializeByMapEditor();
                 }
             }
 

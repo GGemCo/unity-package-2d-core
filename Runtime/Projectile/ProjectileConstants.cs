@@ -8,5 +8,12 @@
             Fixed,
             Area,
         }
+
+        public enum Type
+        {
+            None,
+            Default,
+            Laser
+        }
     }
 }

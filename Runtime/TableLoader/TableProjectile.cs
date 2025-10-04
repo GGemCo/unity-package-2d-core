@@ -9,6 +9,7 @@ namespace GGemCo2DCore
     public class StruckTableProjectile
     {
         public int Uid;
+        public ProjectileConstants.Type Type;
         public string Name;
         public int EffectUid;
         public float EffectScale;
@@ -28,16 +29,23 @@ namespace GGemCo2DCore
     /// </summary>
     public class TableProjectile : DefaultTable
     {
+        private static readonly Dictionary<string, ProjectileConstants.Type> MapType;
         private static readonly Dictionary<string, ProjectileConstants.TargetType> MapTargetType;
 
         static TableProjectile()
         {
+            MapType = new Dictionary<string, ProjectileConstants.Type>
+            {
+                { "Default", ProjectileConstants.Type.Default },
+                { "Laser", ProjectileConstants.Type.Laser },
+            };
             MapTargetType = new Dictionary<string, ProjectileConstants.TargetType>
             {
                 { "Fixed", ProjectileConstants.TargetType.Fixed },
                 { "Area", ProjectileConstants.TargetType.Area },
             };
         }
+        private ProjectileConstants.Type ConvertType(string grade) => MapType.GetValueOrDefault(grade, ProjectileConstants.Type.None);
         private ProjectileConstants.TargetType ConvertTargetType(string grade) => MapTargetType.GetValueOrDefault(grade, ProjectileConstants.TargetType.None);
 
         public StruckTableProjectile GetDataByUid(int uid)
@@ -52,6 +60,7 @@ namespace GGemCo2DCore
             return new StruckTableProjectile
             {
                 Uid = int.Parse(data["Uid"]),
+                Type = ProjectileConstants.Type.Default,
                 Name = data["Name"],
                 EffectUid = int.Parse(data["EffectUid"]),
                 EffectScale = float.Parse(data["EffectScale"]),

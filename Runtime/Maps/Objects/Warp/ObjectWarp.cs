@@ -44,5 +44,12 @@ namespace GGemCo2DCore
             else
                 transform.localScale = new Vector3(WarpData.ScaleX, WarpData.ScaleY, WarpData.ScaleZ);
         }
+
+        public void InitializeByMapEditor()
+        {
+            InitTagSortingLayer();
+            InitComponents();
+            InitializeByWarpData();
+        }
     }
 }

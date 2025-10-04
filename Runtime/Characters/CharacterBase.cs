@@ -541,7 +541,7 @@ namespace GGemCo2DCore
             return _attackType;
         }
 
-        private void SetAttackType(CharacterConstants.AttackType pattackType)
+        protected void SetAttackType(CharacterConstants.AttackType pattackType)
         {
             _attackType = pattackType;
         }
@@ -814,6 +814,19 @@ namespace GGemCo2DCore
 
         public virtual void OnAnimationCompleteDead()
         {
+        }
+        /// <summary>
+        /// RigidBody2D의 Sleep 모드 설정
+        /// </summary>
+        /// <param name="mode"></param>
+        public void SetRigidBody2DSleepMode(RigidbodySleepMode2D mode)
+        {
+            if (!characterRigidbody2D)
+            {
+                GcLogger.LogError($"RigidBody2D 컴포넌트가 없습니다.");
+                return;
+            }
+            characterRigidbody2D.sleepMode = mode;
         }
     }
 }

@@ -8,7 +8,7 @@ namespace GGemCo2DCore
     /// </summary>
     public class DefaultEffect : MonoBehaviour
     {
-        public IEffectAnimationController EffectAnimationController;
+        public IEffectAnimationController effectAnimationController;
         
         // 생성한 캐릭터
         private CharacterBase _character;
@@ -28,7 +28,7 @@ namespace GGemCo2DCore
         private float _positionY;
         private ConfigCommon.PositionYType _positionYType;
         
-        private Renderer _characterRenderer;
+        private Renderer _effectRenderer;
         private Animator _animator;
         private StruckTableSkill _struckTableSkill;
         private Coroutine _coroutineTickTimeDamage;
@@ -41,9 +41,9 @@ namespace GGemCo2DCore
         {
             _color = "";
             _originalScaleX = transform.localScale.x;
-            if (_characterRenderer == null)
+            if (_effectRenderer == null)
             {
-                _characterRenderer = GetComponent<Renderer>();
+                _effectRenderer = GetComponent<Renderer>();
             }
         }
 
@@ -51,11 +51,11 @@ namespace GGemCo2DCore
         {
             if (!string.IsNullOrEmpty(_color))
             {
-                EffectAnimationController.SetEffectColor($"#{_color}");
+                effectAnimationController.SetEffectColor($"#{_color}");
             }
             else if (!string.IsNullOrEmpty(_struckTableEffect.Color))
             {
-                EffectAnimationController.SetEffectColor($"#{_struckTableEffect.Color}");
+                effectAnimationController.SetEffectColor($"#{_struckTableEffect.Color}");
             }
             
             Vector2 size = SceneGame.Instance.mapManager.GetCurrentMapSize();
@@ -67,7 +67,7 @@ namespace GGemCo2DCore
                 StartCoroutine(RemoveEffectDuration(_duration));
             }
             // 셋팅 후 플레이
-            EffectAnimationController.Play(_duration);
+            effectAnimationController.Play(_duration);
         }
 
         public void Initialize(StruckTableEffect struckTableEffect)
@@ -86,7 +86,7 @@ namespace GGemCo2DCore
         {
             int baseSortingOrder = MathHelper.GetSortingOrder(_mapSizeHeight, transform.position.y);
         
-            _characterRenderer.sortingOrder = baseSortingOrder;
+            _effectRenderer.sortingOrder = baseSortingOrder;
         }
         /// <summary>
         /// 지속 시간 설정
@@ -149,7 +149,13 @@ namespace GGemCo2DCore
         {
             float dirX = shouldFlip ? -1 : 1;
             SetDirection(dirX);
+            OnSetFlip(dirX);
         }
+
+        protected virtual void OnSetFlip(float dirX)
+        {
+        }
+
         public void OnEndAnimationComplete()
         {
             StopAllCoroutines();
@@ -159,7 +165,7 @@ namespace GGemCo2DCore
 
         public void PlayEndAnimation()
         {
-            EffectAnimationController.PlayEnd();
+            effectAnimationController.PlayEnd();
         }
 
         public void SetColor(string color)
@@ -169,7 +175,7 @@ namespace GGemCo2DCore
 
         public void SetSortingLayer(ConfigSortingLayer.Keys sortingLayer)
         {
-            _characterRenderer.sortingLayerName = ConfigSortingLayer.GetValue(sortingLayer);
+            _effectRenderer.sortingLayerName = ConfigSortingLayer.GetValue(sortingLayer);
         }
 
         public void SetFollowCharacter(CharacterBase character)
@@ -198,18 +204,20 @@ namespace GGemCo2DCore
             SetFlip(_character.IsFlipped());
         }
 
-        private void Update()
+        protected virtual void Update()
         {
-            if (_followCharacter == null) return;
-            transform.position = _followCharacter.transform.position;
-            if (_positionY > 0)
+            if (_followCharacter != null)
             {
-                transform.position += new Vector3(0, _positionY, 0);
-            }
+                transform.position = _followCharacter.transform.position;
+                if (_positionY > 0)
+                {
+                    transform.position += new Vector3(0, _positionY, 0);
+                }
 
-            if (_positionYType == ConfigCommon.PositionYType.CharacterHeight)
-            {
-                transform.position += new Vector3(0, _character.GetHeightByScale(), 0);
+                if (_positionYType == ConfigCommon.PositionYType.CharacterHeight)
+                {
+                    transform.position += new Vector3(0, _character.GetHeightByScale(), 0);
+                }
             }
         }
     }

@@ -8,9 +8,6 @@ namespace GGemCo2DCore
     /// </summary>
     public class Monster : CharacterBase
     {
-        // 선공/후공
-        private CharacterConstants.AttackType _attackType;
-        
         [Tooltip("X좌표 움직임 여부")]
         public bool canMoveX = true;
         [Tooltip("Y좌표 움직임 여부")]
@@ -36,12 +33,13 @@ namespace GGemCo2DCore
             IsUseSkill = true;
             _collider2Ds = new Collider2D[CountCollider];
             base.Awake();
-            _attackType = CharacterConstants.AttackType.PassiveDefense;
+            SetAttackType(CharacterConstants.AttackType.PassiveDefense);
             
             CurrentHp
                 .Subscribe(SetSliderHp)
                 .AddTo(this);
-            _delayDestroyMonster = AddressableLoaderSettings.Instance.settings.delayDestroyMonster;
+            if (AddressableLoaderSettings.Instance)
+                _delayDestroyMonster = AddressableLoaderSettings.Instance.settings.delayDestroyMonster;
         }
 
         protected override void Start()
@@ -100,7 +98,7 @@ namespace GGemCo2DCore
                 info.RegistFire, info.RegistCold, info.RegistLightning);
             CurrentHp.OnNext(info.StatHp);
             SetScale(info.Scale);
-            _attackType = info.AttackType;
+            SetAttackType(info.AttackType);
         }
 
         protected override bool InitializeByAnimationTable()

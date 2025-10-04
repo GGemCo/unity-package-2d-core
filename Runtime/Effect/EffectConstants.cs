@@ -7,7 +7,15 @@
             None,
             Skill,
             Player,
-            Monster
+            Monster,
+            Etc
+        }
+
+        public enum Type
+        {
+            None,
+            Default,
+            Laser
         }
     }
 }

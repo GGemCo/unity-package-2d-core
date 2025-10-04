@@ -113,13 +113,15 @@ namespace GGemCo2DCore
                 targetCharacter.SetFacing(facing);
             }
             
+            // 4) 이동 벡터 계산
+            float speed = targetCharacter.currentMoveStep * targetCharacter.GetCurrentMoveSpeed();
+            if (speed <= 0) return false;
+            
             iCharacterAnimationController?.PlayRunAnimation();
             
-            // 4) 경계 업데이트
+            // 5) 경계 업데이트
             UpdateCheckMaxBounds();
-            
-            // 5) 이동 벡터 계산
-            float speed = targetCharacter.currentMoveStep * targetCharacter.GetCurrentMoveSpeed();
+
             Vector3 delta = dir * (speed * Time.deltaTime);
             
             // 6) 다음 위치

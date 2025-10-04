@@ -261,5 +261,14 @@ namespace GGemCo2DCore
         {
             cameraMoveSpeed = speed;
         }
+        /// <summary>
+        /// 카메라 위치 가져오기
+        /// Z 값은 제외
+        /// </summary>
+        /// <returns></returns>
+        public Vector2 GetPositionCenter()
+        {
+            return transform.position;
+        }
     }
 }

@@ -20,37 +20,79 @@ namespace GGemCo2DCore
     {
         private SceneGame _sceneGame;
         private EffectManager _effectManager;
-        private TableLoaderManager _tableLoaderManager;
+        private TableLoaderManager _table;
 
         public void Initialize(SceneGame sceneGame)
         {
             _sceneGame = sceneGame;
             _effectManager = sceneGame.EffectManager;
-            _tableLoaderManager = TableLoaderManager.Instance;
+            _table = TableLoaderManager.Instance;
         }
-        public DefaultProjectile CreateProjectile(int projectileUid)
+
+        /// <summary>
+        /// 테이블 정보를 바탕으로 적절한 발사체 클래스를 생성/부착합니다.
+        /// - arcHeight가 0보다 크면 ArcProjectile
+        /// - 아니면 LinearProjectile
+        /// </summary>
+        public ProjectileBase CreateProjectile(int projectileUid)
         {
-            var info = _tableLoaderManager.GetProjectileData(projectileUid);
+            var info = _table.GetProjectileData(projectileUid);
             if (info == null)
             {
-                GcLogger.LogError("projectile 테이블에 없는 이펙트 입니다. projectile Uid: "+projectileUid);
-                return null;
-            }
-            GameObject projectile = new GameObject();
-            DefaultProjectile defaultProjectile = projectile.AddComponent<DefaultProjectile>();
-            
-            // DefaultEffect defaultEffect = _effectManager.CreateEffect(info.EffectUid);
-            // if (!defaultEffect) return null;
-            // DefaultProjectile defaultProjectile = defaultEffect.gameObject.AddComponent<DefaultProjectile>();
-            if (!defaultProjectile)
-            {
-                GcLogger.LogError("DefaultProjectile 스크립트가 없습니다.");
+                GcLogger.LogError($"[ProjectileManager] Unknown projectile uid={projectileUid}");
                 return null;
             }
 
-            // MetadataProjectile metadataProjectile = new MetadataProjectile(info, defaultEffect);
-            defaultProjectile.Initialize(info);
-            return defaultProjectile;
+            var go = new GameObject($"Projectile_{projectileUid}");
+            ProjectileBase comp;
+
+            bool isArc = (info.ArcHeightMin > 0) || (info.ArcHeightMax > 0);
+            if (info.Type == ProjectileConstants.Type.Laser)
+            {
+                comp = go.AddComponent<ProjectileLaser>();
+            }
+            else if (isArc)
+                comp = go.AddComponent<ProjectileArc>();
+            else
+                comp = go.AddComponent<ProjectileLinear>();
+
+            if (!comp)
+            {
+                GcLogger.LogError("[ProjectileManager] Component add failed.");
+                Object.Destroy(go);
+                return null;
+            }
+
+            comp.Initialize(info);
+            return comp;
         }
+#if UNITY_EDITOR
+        public ProjectileBase CreateProjectile(StruckTableProjectile info)
+        {
+            int projectileUid = info.Uid;
+            var go = new GameObject($"Projectile_{projectileUid}");
+            ProjectileBase comp;
+
+            bool isArc = (info.ArcHeightMin > 0) || (info.ArcHeightMax > 0);
+            if (info.Type == ProjectileConstants.Type.Laser)
+            {
+                comp = go.AddComponent<ProjectileLaser>();
+            }
+            else if (isArc)
+                comp = go.AddComponent<ProjectileArc>();
+            else
+                comp = go.AddComponent<ProjectileLinear>();
+
+            if (!comp)
+            {
+                GcLogger.LogError("[ProjectileManager] Component add failed.");
+                Object.Destroy(go);
+                return null;
+            }
+
+            comp.Initialize(info);
+            return comp;
+        }
+#endif
     }
 }
