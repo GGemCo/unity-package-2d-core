@@ -59,7 +59,7 @@ namespace GGemCo2DCore
                 Uid = int.Parse(data["Uid"]),
                 Name = data["Name"],
                 Category = ConvertCategory(data["Category"]),
-                Type = ConvertType(data["Type"]),
+                Type = EffectConstants.Type.Default,
                 PrefabName = data["PrefabName"],
                 AnimationController = ConvertAnimationController(data["AnimationController"]),
                 Width = int.Parse(data["Width"]),

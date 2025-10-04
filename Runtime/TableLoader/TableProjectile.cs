@@ -60,7 +60,7 @@ namespace GGemCo2DCore
             return new StruckTableProjectile
             {
                 Uid = int.Parse(data["Uid"]),
-                Type = ConvertType(data["Type"]),
+                Type = ProjectileConstants.Type.Default,
                 Name = data["Name"],
                 EffectUid = int.Parse(data["EffectUid"]),
                 EffectScale = float.Parse(data["EffectScale"]),
