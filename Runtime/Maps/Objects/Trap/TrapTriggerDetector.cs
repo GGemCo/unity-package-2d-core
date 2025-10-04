@@ -62,11 +62,7 @@ namespace GGemCo2DCore
             SetTriggerEnabled(true);
         }
         private void OnEnable() => SetTriggerEnabled(true);
-        private void Start()
-        {
-            if (!_targetTrap)
-                GcLogger.LogWarning("[TrapTriggerDetector] targetTrap 미할당. 이벤트가 전달되지 않습니다.");
-        }
+       
         private void OnDisable() => SetTriggerEnabled(false);
 #if UNITY_EDITOR
         private void OnValidate() { if (_triggerRange) _triggerRange.isTrigger = true; }
@@ -102,14 +98,15 @@ namespace GGemCo2DCore
         {
             if (!_targetTrap)
             {
-                GcLogger.LogWarning("[TrapTriggerDetector] targetTrap 미할당. 호출이 무시되었습니다.");
                 return;
             }
             var external = _targetTrap as ITrapTriggerController;
             switch (actionType)
             {
                 case TriggerActionType.Start:
-                    _targetTrap.OnTrigger(other); break;
+                    if (external != null) external.RequestStart(other);
+                    else GcLogger.LogWarning("[TrapTriggerDetector] Start 제어 미지원(ITrapTriggerController).");
+                    break;
                 case TriggerActionType.End:
                     if (external != null) external.RequestEnd();
                     else GcLogger.LogWarning("[TrapTriggerDetector] End 제어 미지원(ITrapTriggerController).");
@@ -122,7 +119,6 @@ namespace GGemCo2DCore
                     else
                     {
                         GcLogger.LogWarning("[TrapTriggerDetector] Toggle 제어 미지원(ITrapTriggerController). Start로 폴백.");
-                        _targetTrap.OnTrigger(other);
                     }
                     break;
             }

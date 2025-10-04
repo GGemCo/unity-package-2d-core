@@ -8,8 +8,10 @@ namespace GGemCo2DCore
     /// - Animator/Spine 클립: start/attack/end
     /// - 워치독(애니 이벤트 누락 대비) 공통 유틸 사용
     /// </summary>
-    public sealed class ObjectTrapFixed : DefaultObjectTrap, ITrapAttackRangeHandlerEnter
+    public sealed class ObjectTrapFixed : DefaultObjectTrap, ITrapTriggerController, ITrapAttackRangeHandlerEnter
     {
+        public bool IsActive => IsBusy();
+        
         [Header("타이밍 설정")]
         [Tooltip("start 애니메이션 종료 후 Attack 단계로 넘어가기 전까지의 추가 대기 시간 (초)")]
         [Min(0f)] [SerializeField] private float timeEndStart;
@@ -73,45 +75,85 @@ namespace GGemCo2DCore
             switch (next)
             {
                 case TrapPhase.StartOneShot:
-                    if (hasStart) { PlayAnimSafe(AnimStart); StartAwaiting(next, AnimStart, timeEndStart); }
+                    if (hasStart)
+                    {
+                        PlayAnimSafe(AnimStart);
+                        StartAwaiting(next, AnimStart, timeEndStart);
+                    }
                     else HandleStartFinished();
                     break;
                 case TrapPhase.Attack:
-                    if (hasAttack) { PlayAnimSafe(AnimAttack); StartAwaiting(next, AnimAttack, timeEndAttack); }
+                    if (hasAttack)
+                    {
+                        PlayAnimSafe(AnimAttack);
+                        StartAwaiting(next, AnimAttack, timeEndAttack);
+                    }
                     else HandleAttackFinished();
                     SetAttackRangeEnabled(true);
                     break;
                 case TrapPhase.EndOneShot:
-                    if (hasEnd) { PlayAnimSafe(AnimEnd); StartAwaiting(next, AnimEnd, 0f); }
+                    if (hasEnd)
+                    {
+                        PlayAnimSafe(AnimEnd);
+                        StartAwaiting(next, AnimEnd, 0f);
+                    }
                     else HandleEndFinished();
                     SetAttackRangeEnabled(false);
                     break;
             }
         }
+
         private void HandleStartFinished()
-        { if (phase != TrapPhase.StartOneShot) return; EnterPhase(TrapPhase.Attack); }
+        {
+            if (phase != TrapPhase.StartOneShot) return;
+            EnterPhase(TrapPhase.Attack);
+        }
+
         private void HandleAttackFinished()
-        { if (phase != TrapPhase.Attack) return; EnterPhase(TrapPhase.EndOneShot); }
+        {
+            if (phase != TrapPhase.Attack) return;
+            EnterPhase(TrapPhase.EndOneShot);
+        }
+
         private void HandleEndFinished()
         {
-            if (phase != TrapPhase.EndOneShot) return; phase = TrapPhase.None;
+            if (phase != TrapPhase.EndOneShot) return;
+            phase = TrapPhase.None;
             if (timeRepeat > 0f && gameObject.activeInHierarchy)
-            { if (_repeatCo != null) StopCoroutine(_repeatCo); _repeatCo = StartCoroutine(CoRepeat()); }
+            {
+                if (_repeatCo != null) StopCoroutine(_repeatCo);
+                _repeatCo = StartCoroutine(CoRepeat());
+            }
         }
-        private IEnumerator CoRepeat() { yield return new WaitForSeconds(timeRepeat); BeginCycleOnce(); _repeatCo = null; }
+
+        private IEnumerator CoRepeat()
+        {
+            yield return new WaitForSeconds(timeRepeat);
+            BeginCycleOnce();
+            _repeatCo = null;
+        }
 
         public void OnEnter(CharacterBase player)
         {
             if (player && phase == TrapPhase.Attack) 
                 ApplyDamage(player);
         }
-        public override void OnTrigger(Collider2D other)
+        public void RequestStart(Collider2D triggerSource)
         {
-            if (!IsPlayerHitArea(other, out var player)) return;
+            if (!IsPlayerHitArea(triggerSource, out var player)) return;
             if (IsBusy()) return; 
             SetBusy(true); 
             SetPlayerInRange(player);
             BeginCycleOnce();
+        }
+
+        public void RequestEnd()
+        {
+            phase = TrapPhase.None;
+            ClearAwaiting();
+            SetBusy(false);
+            PlayAnimSafe(AnimEnd);
+            OnDisable();
         }
     }
 }

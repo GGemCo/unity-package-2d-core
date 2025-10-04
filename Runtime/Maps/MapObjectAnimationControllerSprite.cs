@@ -217,5 +217,10 @@ namespace GGemCo2DCore
         {
             return GetClipByName(animationName) != null;
         }
+
+        public void StopMapObjectAnimation()
+        {
+            StopAnimation();
+        }
     }
 }

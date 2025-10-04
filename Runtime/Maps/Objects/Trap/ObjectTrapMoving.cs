@@ -7,7 +7,6 @@ namespace GGemCo2DCore
     /// <summary>
     /// 웨이포인트 이동형 트랩.
     /// - 모드: Loop / PingPong / Once
-    /// - 시작: Auto / OnExternalTrigger
     /// - 충돌 시 1회성 또는 주기적 피해(hitCooldown)
     /// </summary>
     public sealed class ObjectTrapMoving : DefaultObjectTrap, ITrapTriggerController, ITrapAttackRangeHandlerEnter, ITrapAttackRangeHandlerStay
@@ -17,9 +16,6 @@ namespace GGemCo2DCore
         [Header("경로(웨이포인트)")]
         [Tooltip("트랩이 순회할 웨이포인트 배열 (2개 이상 필요). WorldStatic이면 월드 좌표를 캐시해 따라갑니다.")]
         [SerializeField] private Transform[] waypoints;
-
-        [Tooltip("웨이포인트 좌표계.\n- WorldStatic: 에디터/초기값 기준의 월드 좌표를 캐시하여 부모 이동과 무관하게 이동\n- RelativeToSelf: 현재 Transform 기준 상대 좌표(자식의 현재 위치 사용)")]
-        [SerializeField] private WaypointSpace waypointSpace = WaypointSpace.WorldStatic;
 
         [Tooltip("웨이포인트에 도달했다고 판단할 거리(유닛). 너무 작으면 떨림/정지 지연 발생 가능")]
         [Min(0.001f)] [SerializeField] private float arriveThreshold = 0.05f;
@@ -33,9 +29,6 @@ namespace GGemCo2DCore
 
         [Tooltip("이동 모드.\n- Loop: 마지막 → 처음으로 순환\n- PingPong: 왕복\n- Once: 마지막 도착 시 정지")]
         [SerializeField] private MoveMode moveMode = MoveMode.Loop;
-
-        [Tooltip("시작 모드.\n- Auto: 활성화 시 자동 시작\n- OnExternalTrigger: 외부 트리거(TrapTriggerDetector) 신호 시 시작")]
-        [SerializeField] private StartMode startMode = StartMode.Auto;
 
         [Tooltip("이동 방향을 바라보도록 Z 회전을 적용할지 여부")]
         [SerializeField] private bool orientAlongPath = true;
@@ -57,8 +50,6 @@ namespace GGemCo2DCore
         [SerializeField, HideInInspector] private Vector3[] cachedWorldPoints;
 
         private enum MoveMode { Loop, PingPong, Once }
-        private enum StartMode { Auto, OnExternalTrigger }
-        private enum WaypointSpace { WorldStatic, RelativeToSelf }
 
         private Coroutine _moveCo; private int _currentIndex; private int _dir = 1;
         private bool _everStarted; // 최초 시작 여부
@@ -66,12 +57,22 @@ namespace GGemCo2DCore
 
         private void OnEnable()
         {
-            SetAttackRangeEnabled(true); SetTriggerRangeEnabled(false);
-            if (!ValidatePath()) { enabled = false; return; }
-            if (waypointSpace == WaypointSpace.WorldStatic) CacheWaypointWorldPositions();
-            if (startMode == StartMode.Auto) BeginMove();
+            SetAttackRangeEnabled(false);
+            SetTriggerRangeEnabled(false);
+            if (!ValidatePath())
+            {
+                enabled = false;
+                return;
+            }
+
+            CacheWaypointWorldPositions();
         }
-        private void OnDisable() { StopMove(); SetAttackRangeEnabled(false); }
+
+        private void OnDisable()
+        {
+            StopMove();
+            SetAttackRangeEnabled(false);
+        }
 #if UNITY_EDITOR
         protected override void OnValidate()
         {
@@ -79,19 +80,26 @@ namespace GGemCo2DCore
             if (moveSpeed < 0.01f) moveSpeed = 0.01f;
             if (arriveThreshold < 0.001f) arriveThreshold = 0.001f;
             if (hitCooldown < 0f) hitCooldown = 0f;
+            if (playMoveAnimation)
+            {
+                PlayAnimSafe(animMove, true);
+            }
+            else
+            {
+                StopAnimSafe();
+            }
             if (UnityEditor.EditorApplication.isPlaying) return;
-            if (waypointSpace == WaypointSpace.WorldStatic) CacheWaypointWorldPositions();
+            CacheWaypointWorldPositions();
         }
 #endif
-        public override void OnTrigger(Collider2D other)
+        private void Start()
         {
-            if (startMode != StartMode.OnExternalTrigger) return;
-            if (!IsPlayerHitArea(other, out _)) return;
-            if (_moveCo != null) return;
-            if (!ValidatePath()) return;
-            BeginMove();
+            if (!trapTriggerDetector)
+            {
+                BeginMove();
+                SetAttackRangeEnabled(true);
+            }
         }
-
         private bool ValidatePath()
         {
             if (waypoints == null || waypoints.Length < 2)
@@ -136,7 +144,7 @@ namespace GGemCo2DCore
         }
         private Vector3 GetWaypointPosition(int index)
         {
-            if (waypointSpace == WaypointSpace.WorldStatic && cachedWorldPoints != null && index >= 0 && index < cachedWorldPoints.Length) return cachedWorldPoints[index];
+            if (cachedWorldPoints != null && index >= 0 && index < cachedWorldPoints.Length) return cachedWorldPoints[index];
             return waypoints[index].position;
         }
         private void CacheWaypointWorldPositions()
@@ -159,27 +167,75 @@ namespace GGemCo2DCore
         public void OnStay(CharacterBase player)  { if (CanHit(player)) ApplyDamage(player); }
 
         // --- 외부 제어 ---
-        public void RequestStart(Collider2D _) { if (IsActive) return; if (!ValidatePath()) return; if (!_everStarted) { StartFresh(); _everStarted = true; } else { Resume(); } }
+        public void RequestStart(Collider2D other)
+        {
+            if (IsActive) return;
+            if (!IsPlayerHitArea(other, out _)) return;
+            if (_moveCo != null) return;
+            if (!ValidatePath()) return;
+            if (!_everStarted)
+            {
+                StartFresh();
+                _everStarted = true;
+            }
+            else
+            {
+                Resume();
+            }
+        }
+
         public void RequestEnd()
         {
-            if (!IsActive) return; Pause(); SetAttackRangeEnabled(false); PlayAnimSafe(AnimWait, true);
+            if (!IsActive) return;
+            Pause();
+            SetAttackRangeEnabled(false);
+            PlayAnimSafe(AnimWait, true);
             // 필요 시 상태 초기화 옵션 추가 가능
         }
-        private void StartFresh() { _currentIndex = 0; _dir = 1; SetAttackRangeEnabled(true); if (playMoveAnimation) PlayAnimSafe(animMove, true); StopMove(); _moveCo = StartCoroutine(CoMovePath()); }
-        private void Resume()     { SetAttackRangeEnabled(true); if (playMoveAnimation) PlayAnimSafe(animMove, true); StopMove(); _moveCo = StartCoroutine(CoMovePath()); }
-        private void Pause()      { StopMove(); }
+
+        private void StartFresh()
+        {
+            _currentIndex = 0;
+            _dir = 1;
+            SetAttackRangeEnabled(true);
+            if (playMoveAnimation) PlayAnimSafe(animMove, true);
+            StopMove();
+            _moveCo = StartCoroutine(CoMovePath());
+        }
+
+        private void Resume()
+        {
+            SetAttackRangeEnabled(true);
+            if (playMoveAnimation) PlayAnimSafe(animMove, true);
+            StopMove();
+            _moveCo = StartCoroutine(CoMovePath());
+        }
+
+        private void Pause()
+        {
+            StopMove();
+        }
 
 #if UNITY_EDITOR
         private void OnDrawGizmosSelected()
         {
             if (waypoints == null || waypoints.Length < 2) return;
-            if (!UnityEditor.EditorApplication.isPlaying && waypointSpace == WaypointSpace.WorldStatic) CacheWaypointWorldPositions();
-            var pts = (waypointSpace == WaypointSpace.WorldStatic && cachedWorldPoints != null && cachedWorldPoints.Length == waypoints.Length) ? cachedWorldPoints : GetCurrentWorldPointsFallback();
+            if (!UnityEditor.EditorApplication.isPlaying)
+                CacheWaypointWorldPositions();
+            var pts = (cachedWorldPoints != null && cachedWorldPoints.Length == waypoints.Length)
+                ? cachedWorldPoints
+                : GetCurrentWorldPointsFallback();
             if (pts == null || pts.Length < 2) return;
             Gizmos.color = new Color(1f, 0.5f, 0f, 0.9f);
-            for (int i = 0; i < pts.Length; i++) { Gizmos.DrawWireSphere(pts[i], 0.1f); if (i + 1 < pts.Length) Gizmos.DrawLine(pts[i], pts[i + 1]); }
+            for (int i = 0; i < pts.Length; i++)
+            {
+                Gizmos.DrawWireSphere(pts[i], 0.1f);
+                if (i + 1 < pts.Length) Gizmos.DrawLine(pts[i], pts[i + 1]);
+            }
+
             if (moveMode == MoveMode.Loop) Gizmos.DrawLine(pts[^1], pts[0]);
         }
+
         private Vector3[] GetCurrentWorldPointsFallback()
         {
             var list = new List<Vector3>(); foreach (var t in waypoints) { if (!t) return null; list.Add(t.position); } return list.ToArray();

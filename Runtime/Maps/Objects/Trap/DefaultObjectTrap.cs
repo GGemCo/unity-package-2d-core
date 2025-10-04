@@ -1,5 +1,7 @@
 ﻿using System.Collections.Generic;
+#if GGEMCO_USE_SPINE
 using Spine.Unity;
+#endif
 using UnityEngine;
 
 namespace GGemCo2DCore
@@ -137,6 +139,7 @@ namespace GGemCo2DCore
         private void CacheAnimations()
         {
             clipLength.Clear();
+            if (_animationController == null) return;
             var all = _animationController.GetAnimationAllLength();
             if (all != null)
             {
@@ -182,19 +185,36 @@ namespace GGemCo2DCore
         #endregion
 
         #region Triggers / Utilities
+
         protected void SetAttackRangeEnabled(bool set)
-        { objectTrapAttackRange?.SetTriggerEnabled(set); }
+        {
+            objectTrapAttackRange?.SetTriggerEnabled(set);
+        }
+
         protected void SetTriggerRangeEnabled(bool set)
-        { trapTriggerDetector?.SetTriggerEnabled(set); }
+        {
+            trapTriggerDetector?.SetTriggerEnabled(set);
+        }
 
         protected void PlayAnimSafe(string stateName, bool loop = false)
-        { _animationController?.PlayMapObjectAnimation(stateName, loop, animationTimeScale); }
+        {
+            _animationController?.PlayMapObjectAnimation(stateName, loop, animationTimeScale);
+        }
+
+        protected void StopAnimSafe()
+        {
+            _animationController?.StopMapObjectAnimation();
+        }
 
 #if UNITY_EDITOR
         protected virtual void OnValidate()
         {
             if (totalDamage <= 0) totalDamage = 0;
             if (targetAffectUid <= 0) targetAffectUid = 0;
+            if (animationTimeScale > 0)
+            {
+                CacheAnimations();
+            }
         }
 #endif
         protected float GetClipDuration(string clipName)
@@ -206,11 +226,6 @@ namespace GGemCo2DCore
         protected bool IsBusy() => _isBusy;
         protected void SetBusy(bool set) => _isBusy = set;
         protected void SetPlayerInRange(CharacterBase player) => playerInRange = player;
-
-        /// <summary>
-        /// 외부 트리거(Detector)에서 진입 시 호출하는 엔트리 포인트(파생에서 override).
-        /// </summary>
-        public virtual void OnTrigger(Collider2D other) { }
 
         /// <summary>
         /// Stay 체크를 위해 Rigidbody2D의 슬립 모드를 변경하여 트리거 이벤트가 중단되지 않도록 합니다.

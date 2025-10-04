@@ -8,6 +8,7 @@ namespace GGemCo2DCore
     public interface IMapObjectAnimationController
     {
         void PlayMapObjectAnimation(string animationName, bool loop = false, float timeScale = 1f);
+        void StopMapObjectAnimation();
         bool HasAnimation(string stateName);
         Dictionary<string, float> GetAnimationAllLength();
     }

@@ -7,8 +7,10 @@ namespace GGemCo2DCore
     /// - reuse=true: end 후 일정 시간 뒤 재활성화
     /// - reuse=false: end 후 Destroy
     /// </summary>
-    public sealed class ObjectTrapTimer : DefaultObjectTrap, ITrapAttackRangeHandlerEnter
+    public sealed class ObjectTrapTimer : DefaultObjectTrap, ITrapTriggerController, ITrapAttackRangeHandlerEnter
     {
+        public bool IsActive => IsBusy();
+        
         [Header("타이밍 설정")]
         [Tooltip("start 애니메이션 종료 후 attack 단계로 진입하기 전까지 추가 대기 시간 (초)")]
         [Min(0f)] [SerializeField] private float timeEndStart;
@@ -73,12 +75,17 @@ namespace GGemCo2DCore
         }
         private void Restart() { OnEnable(); }
 
-        public override void OnTrigger(Collider2D other)
+        public void RequestStart(Collider2D other)
         {
             if (!IsPlayerHitArea(other, out var player)) return;
             if (IsBusy()) return; SetBusy(true); SetPlayerInRange(player);
             EnterPhase(TrapPhase.StartOneShot);
         }
+
+        public void RequestEnd()
+        {
+        }
+
         public void OnEnter(CharacterBase player)
         {
             if (!player) return;

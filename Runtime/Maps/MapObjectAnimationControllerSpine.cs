@@ -236,7 +236,10 @@ namespace GGemCo2DCore
         {
             return FindAnimation(animationName) != null;
         }
-
+        public void StopMapObjectAnimation()
+        {
+            StopAnimation();
+        }
     }
 }
 #endif
