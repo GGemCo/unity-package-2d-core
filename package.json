@@ -4,7 +4,8 @@
 	"displayName": "GGemCo 2D Core",
 	"description": "타일맵 시스템, 캐릭터 시스템, 개발툴 등 공통 기능 패키지\nTextMeshPro 를 설치해주세요.",
 	"documentationUrl": "https://ggemco.notion.site/216bf593397e800a8f66e70c96aefbc2?v=270bf593397e8007b746000c5b2fca89",
-	"unity": "2022.3",
+    "changelogUrl": "https://github.com/GGemCo/unity-package-2d-core.git/CHANGELOG.md",
+    "unity": "2022.3",
 	"author": {
 		"name": "GGemCo",
 		"url": "https://github.com/GGemCo/unity-package-2d-core.git",
