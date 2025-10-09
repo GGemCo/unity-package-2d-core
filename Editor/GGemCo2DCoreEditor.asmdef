@@ -8,10 +8,11 @@
         "Unity.ResourceManager",
         "Unity.Timeline",
         "Unity.Timeline.Editor",
-        "GGemCoScripts",
         "Unity.InputSystem",
         "Unity.Localization.Editor",
-        "Unity.Localization"
+        "Unity.Localization",
+        "Unity.2D.Sprite.Editor",
+        "GGemCoScripts"
     ],
     "includePlatforms": [
         "Editor"
