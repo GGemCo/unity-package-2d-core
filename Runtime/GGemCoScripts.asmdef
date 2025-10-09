@@ -9,7 +9,8 @@
         "spine-csharp",
         "Unity.Timeline",
         "Unity.InputSystem",
-        "Unity.Localization"
+        "Unity.Localization",
+        "Unity.2D.Tilemap.Extras"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],
@@ -21,7 +22,7 @@
     "versionDefines": [
         {
             "name": "com.ggemco.2d.control",
-            "expression": "0",
+            "expression": "111",
             "define": "GGEMCO_2D_CONTROL"
         }
     ],

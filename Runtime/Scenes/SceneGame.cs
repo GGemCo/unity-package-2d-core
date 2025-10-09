@@ -59,6 +59,7 @@ namespace GGemCo2DCore
         [HideInInspector] public MapManager mapManager;
         [HideInInspector] public DamageTextManager damageTextManager;
         [HideInInspector] public UIIconCoolTimeManager uIIconCoolTimeManager;
+        [HideInInspector] public GameTimeManager gameTimeManager;
         public SoundManager soundManager;
         public void SetSoundManager(SoundManager value) => soundManager = value;
         
@@ -116,6 +117,7 @@ namespace GGemCo2DCore
             saveDataManager = CreateManager<SaveDataManager>(managerContainer);
             damageTextManager = CreateManager<DamageTextManager>(managerContainer);
             uIIconCoolTimeManager = CreateManager<UIIconCoolTimeManager>(managerContainer);
+            gameTimeManager = CreateManager<GameTimeManager>(managerContainer);
             
             AddressableLoaderPrefabCharacter = new AddressableLoaderPrefabCharacter();
             AddressableLoaderPrefabCharacter.Initialize(this);

@@ -46,7 +46,7 @@ namespace GGemCo2DCore
         // 캐릭터, 워프 스폰 매니저
         private MapLoadCharacters _mapLoadCharacters;
         private AddressableLoaderPrefabCharacter _addressableLoaderPrefabCharacter;
-        
+        private GridInformation _gridInformation;
         protected void Awake()
         {
             if (!TableLoaderManager.Instance) return;
@@ -69,6 +69,9 @@ namespace GGemCo2DCore
             {
                 tag = ConfigTags.GetValue(ConfigTags.Keys.GridTileMap)
             };
+            
+            _gridInformation = _gridTileMap.AddComponent<GridInformation>();
+            
             Grid grid = _gridTileMap.gameObject.AddComponent<Grid>();
             Vector2 tilemapGridSize = AddressableLoaderSettings.Instance.mapSettings.tilemapGridCellSize;
             if (tilemapGridSize == Vector2.zero)
@@ -586,6 +589,11 @@ namespace GGemCo2DCore
 
             Vector3 totalSize = maxWorld - minWorld;
             return new Vector2(totalSize.x, totalSize.y);
+        }
+
+        public GridInformation GetGridInformation()
+        {
+            return _gridInformation;
         }
     }
 }
