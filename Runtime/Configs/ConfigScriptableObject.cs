@@ -21,7 +21,8 @@ namespace GGemCo2DCore
             OptionSettings,
             SoundSettings,
             AttackComboSettings,
-            PlayerActionSettings
+            PlayerActionSettings,
+            SimulationSettings
         }
 
         public const string BasePath = ConfigDefine.NameSDK + "/Settings/";
