@@ -34,8 +34,7 @@ namespace GGemCo2DCore
 
         // 맵 로드 시작되었을때 발생되는 이벤트
         public UnityEvent onLoadStartMap;
-        // 맵 로드 완료되었을때 발생되는 이벤트
-        public UnityEvent onLoadCompleteMap;
+        public static event Action<MapTileCommon, GameObject> OnLoadCompleteMap;   // 생성 직후 1회
         
         // 현재 맵 테이블 데이터
         private StruckTableMap _currentMapTableData;
@@ -56,7 +55,6 @@ namespace GGemCo2DCore
             _mapLoadCharacters.Initialize(this);
             
             onLoadStartMap = new UnityEvent();
-            onLoadCompleteMap = new UnityEvent();
             
             CreateGrid();
         }
@@ -65,6 +63,7 @@ namespace GGemCo2DCore
         /// </summary>
         private void CreateGrid()
         {
+            /*
             _gridTileMap = new GameObject(ConfigTags.GetValue(ConfigTags.Keys.GridTileMap))
             {
                 tag = ConfigTags.GetValue(ConfigTags.Keys.GridTileMap)
@@ -73,6 +72,9 @@ namespace GGemCo2DCore
             _gridInformation = _gridTileMap.AddComponent<GridInformation>();
             
             Grid grid = _gridTileMap.gameObject.AddComponent<Grid>();
+            */
+            _gridTileMap = GameObject.FindWithTag(ConfigTags.GetValue(ConfigTags.Keys.GridTileMap));
+            Grid grid = _gridTileMap.GetComponent<Grid>();
             Vector2 tilemapGridSize = AddressableLoaderSettings.Instance.mapSettings.tilemapGridCellSize;
             if (tilemapGridSize == Vector2.zero)
             {
@@ -437,7 +439,7 @@ namespace GGemCo2DCore
             _sceneGame.saveDataManager.Player.CurrentMapUid = _currentMapUid;
             _playSpawnPosition = Vector3.zero;
             
-            onLoadCompleteMap?.Invoke();
+            OnLoadCompleteMap?.Invoke(_mapTileCommon, _gridTileMap);
             // Logger.Log("맵 로드 완료");
         }
         private bool IsPossibleLoad()
