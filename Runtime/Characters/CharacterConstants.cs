@@ -99,6 +99,8 @@ namespace GGemCo2DCore
 
             if (dir.x > 0f) return FacingDirection8.Right;
             if (dir.x < 0f) return FacingDirection8.Left;
+            if (Mathf.Approximately(dir.y, Vector2.up.y)) return FacingDirection8.Up;
+            if (Mathf.Approximately(dir.y, Vector2.down.y)) return FacingDirection8.Down;
             if (Mathf.Approximately(dir.x, 0f) && dir.y > 0f) return FacingDirection8.None;
             if (Mathf.Approximately(dir.x, 0f) && dir.y < 0f) return FacingDirection8.None;
             return FacingDirection8.DownRight;

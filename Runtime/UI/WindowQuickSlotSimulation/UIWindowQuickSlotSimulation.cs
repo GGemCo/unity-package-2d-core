@@ -8,15 +8,19 @@ using UnityEngine.InputSystem;
 namespace GGemCo2DCore
 {
     /// <summary>
-    /// 퀵슬롯 윈도우
+    /// 시뮬레이션용 퀵슬롯 윈도우
     /// </summary>
-    public class UIWindowQuickSlot : UIWindow, IInputHandler
+    public class UIWindowQuickSlotSimulation : UIWindow, IInputHandler
     {
+        public int Priority => 1;
+        
         [Header(UIWindowConstants.TitleHeaderIndividual)]
         [Tooltip("단축키에 사용할 숫자 UI Image")]
         public Image[] iconHotKey;
-        private UIWindowSkill uiWindowSkill;
-        public int Priority => 1;
+        
+        private UIWindowSkill _uiWindowSkill;
+        private UIWindowInventory _uiWindowInventory;
+        private Player _player;
 
         private readonly Dictionary<KeyCode, int> _indexByKeyCode = new Dictionary<KeyCode, int>
         {
@@ -24,23 +28,32 @@ namespace GGemCo2DCore
             { KeyCode.Alpha2, 1 },
             { KeyCode.Alpha3, 2 },
             { KeyCode.Alpha4, 3 },
+            { KeyCode.Alpha5, 4 },
+            { KeyCode.Alpha6, 5 },
+            { KeyCode.Alpha7, 6 },
+            { KeyCode.Alpha8, 7 },
+            { KeyCode.Alpha9, 8 },
         };
         
         protected override void Awake()
         {
             // uid 를 먼저 지정해야 한다.
-            uid = UIWindowConstants.WindowUid.QuickSlot;
+            uid = UIWindowConstants.WindowUid.QuickSlotSimulation;
+            if (TableLoaderManager.Instance == null) return;
             base.Awake();
-            IconPoolManager.SetSetIconHandler(new SetIconHandlerQuickSlot());
-            DragDropHandler.SetStrategy(new DragDropStrategyQuickSlot());
+            IconPoolManager.SetSetIconHandler(new SetIconHandlerQuickSlotSimulation());
+            DragDropHandler.SetStrategy(new DragDropStrategyQuickSlotSimulation());
         }
 
         protected override void Start()
         {
             base.Start();
-            SceneGame.Instance.KeyboardManager.RegisterInputHandler(this);
-            uiWindowSkill =
-                SceneGame.Instance.uIWindowManager.GetUIWindowByUid<UIWindowSkill>(UIWindowConstants.WindowUid.Skill);
+            SceneGame.KeyboardManager.RegisterInputHandler(this);
+            _uiWindowSkill =
+                SceneGame.uIWindowManager.GetUIWindowByUid<UIWindowSkill>(UIWindowConstants.WindowUid.Skill);
+            _uiWindowInventory =
+                SceneGame.uIWindowManager.GetUIWindowByUid<UIWindowInventory>(UIWindowConstants.WindowUid.Inventory);
+            
             LoadIcons();
         }
         /// <summary>
@@ -50,13 +63,13 @@ namespace GGemCo2DCore
         private void LoadIcons()
         {
             if (!gameObject.activeSelf) return;
-            var datas = SceneGame.Instance.saveDataManager.QuickSlot.GetAllDatas();
+            var datas = SceneGame.Instance.saveDataManager.QuickSlotSimulation.GetAllDatas();
             if (datas == null) return;
             for (int index = 0; index < maxCountIcon; index++)
             {
                 if (index >= icons.Length) continue;
                 // 단축키 이미지 위치 설정
-                if (iconHotKey[index])
+                if (index < iconHotKey.Length && iconHotKey[index])
                 {
                     iconHotKey[index].transform.SetParent(slots[index].transform);
                     iconHotKey[index].transform.localPosition = new Vector3(-slotSize.x / 2f, slotSize.y / 2f, 0);
@@ -64,15 +77,16 @@ namespace GGemCo2DCore
 
                 var icon = icons[index];
                 if (icon == null) continue;
-                UIIconSkill uiIcon = icon.GetComponent<UIIconSkill>();
+
+                UIIcon uiIcon = icon.GetComponent<UIIcon>();
                 if (uiIcon == null) continue;
-                SaveDataIcon structSkillIcon = datas.GetValueOrDefault(index);
-                if (structSkillIcon == null) continue;
-                
-                int skillUid = structSkillIcon.Uid;
-                int skillCount = structSkillIcon.Count;
-                int skillLevel = structSkillIcon.Level;
-                uiIcon.ChangeInfoByUid(skillUid, skillCount, skillLevel);
+                SaveDataIcon dataIcon = datas.GetValueOrDefault(index);
+                if (dataIcon == null) continue;
+                    
+                int uid = dataIcon.Uid;
+                int count = dataIcon.Count;
+                int level = dataIcon.Level;
+                uiIcon.ChangeInfoByUid(uid, count, level);
             }
         }
         protected void OnDisable()
@@ -108,22 +122,22 @@ namespace GGemCo2DCore
 #elif GGEMCO_USE_NEW_INPUT
             if (Keyboard.current.digit1Key.wasPressedThisFrame)
             {
-                OnKeyDownSkill(KeyCode.Alpha1);
+                OnKeyDown(KeyCode.Alpha1);
                 return true;
             }
             if (Keyboard.current.digit2Key.wasPressedThisFrame)
             {
-                OnKeyDownSkill(KeyCode.Alpha2);
+                OnKeyDown(KeyCode.Alpha2);
                 return true;
             }
             if (Keyboard.current.digit3Key.wasPressedThisFrame)
             {
-                OnKeyDownSkill(KeyCode.Alpha3);
+                OnKeyDown(KeyCode.Alpha3);
                 return true;
             }
             if (Keyboard.current.digit4Key.wasPressedThisFrame)
             {
-                OnKeyDownSkill(KeyCode.Alpha4);
+                OnKeyDown(KeyCode.Alpha4);
                 return true;
             }
 #endif
@@ -134,6 +148,22 @@ namespace GGemCo2DCore
         /// 키보드로 스킬 사용하기
         /// </summary>
         /// <param name="keyCode"></param>
+        private void OnKeyDown(KeyCode keyCode)
+        {
+            if (iconType == IconConstants.Type.Skill)
+            {
+                OnKeyDownSkill(keyCode);
+            }
+            else if (iconType == IconConstants.Type.Item)
+            {
+                OnKeyDownItem(keyCode);
+            }
+        }
+
+        private void OnKeyDownItem(KeyCode keyCode)
+        {
+        }
+
         private void OnKeyDownSkill(KeyCode keyCode)
         {
             if (SceneGame.Instance.player == null)
@@ -162,6 +192,7 @@ namespace GGemCo2DCore
             
             SceneGame.Instance.player.GetComponent<Player>().UseSkill(icon.uid, icon.GetLevel());
         }
+
         /// <summary>
         /// 아이콘 우클릭했을때 처리 
         /// </summary>
@@ -169,7 +200,27 @@ namespace GGemCo2DCore
         public override void OnRightClick(UIIcon icon)
         {
             if (icon == null) return;
+
+            if (iconType == IconConstants.Type.Skill)
+            {
+                OnRightClickSkill(icon);
+            }
+            else if (iconType == IconConstants.Type.Item)
+            {
+                OnRightClickItem(icon);
+            }
             
+        }
+
+        private void OnRightClickItem(UIIcon icon)
+        {
+            // 인벤토리 창이 열려있을때는 해제 하기
+            if (!_uiWindowInventory || !_uiWindowInventory.IsOpen()) return;
+            DetachIcon(icon.slotIndex);
+        }
+
+        private void OnRightClickSkill(UIIcon icon)
+        {
             float time = SceneGame.Instance.uIIconCoolTimeManager.GetCurrentCoolTime(uid, icon.uid);
             if (time > 0)
             {
@@ -177,8 +228,30 @@ namespace GGemCo2DCore
                 return;
             }
             // 스킬 창이 열려있을때는 해제 하기
-            if (!uiWindowSkill || !uiWindowSkill.IsOpen()) return;
+            if (!_uiWindowSkill || !_uiWindowSkill.IsOpen()) return;
             DetachIcon(icon.slotIndex);
         }
+
+        protected override void OnSelectedIcon(UIIcon selectedIcon)
+        {
+            if (!_player)
+            {
+                _player = SceneGame.player.GetComponent<Player>();
+                return;
+            }
+            if (!_player) return;
+            if (!selectedIcon || selectedIcon.uid <= 0) return;
+            // const int partIndex = (int)ItemConstants.PartsType.Weapon;
+            // _player.EquipItem(partIndex, selectedIcon.uid, selectedIcon.GetCount());
+            
+            // 장착이 불가능한 경우, 머리위에 들기
+            // 장착 가능한 경우 인벤토리에 있는 아이템을 장착
+            
+            var partSlotIndex = selectedIcon.GetPartsSlotIndex();
+            if (partSlotIndex < 0) return;
+            SceneGame.uIWindowManager.MoveIcon(uid, selectedIcon.index, UIWindowConstants.WindowUid.Equip,
+                selectedIcon.GetCount(), partSlotIndex);
+        }
+
     }
 }

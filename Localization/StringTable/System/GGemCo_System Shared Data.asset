@@ -338,6 +338,10 @@ MonoBehaviour:
     m_Key: SaveSlot_ConfirmDeleteWarning_Title
     m_Metadata:
       m_Items: []
+  - m_Id: 32967064144617472
+    m_Key: QuickSlot_ItemAlreadyAssigned
+    m_Metadata:
+      m_Items: []
   m_Metadata:
     m_Items: []
   m_KeyGenerator:

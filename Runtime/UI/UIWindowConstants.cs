@@ -28,7 +28,8 @@
             HudQuest,
             QuestReward,
             SaveData,
-            Option
+            Option,
+            QuickSlotSimulation
         }
 
         public const string TitleHeaderCommon = "[공통속성]";

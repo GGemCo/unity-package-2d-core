@@ -284,6 +284,10 @@ MonoBehaviour:
     m_Localized: Delete Slot
     m_Metadata:
       m_Items: []
+  - m_Id: 32967064144617472
+    m_Localized: Item is already assigned.
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []

@@ -17,6 +17,7 @@ namespace GGemCo2DCore
         [HideInInspector] public TableItem TableItem;
         [HideInInspector] public InventoryData InventoryData;
         [HideInInspector] public EquipData EquipData;
+        private QuickSlotSimulationData _quickSlotSimulationData;
         
         private GameObject _iconItem;
         private PopupManager _popupManager;
@@ -27,6 +28,7 @@ namespace GGemCo2DCore
         private UIWindowShopSale _uiWindowShopSale;
         private UIWindowItemUpgrade _uiWindowItemUpgrade;
         private UIWindowItemSalvage _uiWindowItemSalvage;
+        private UIWindowQuickSlotSimulation _uiWindowQuickSlotSimulation;
 
         protected override void Awake()
         {
@@ -48,6 +50,7 @@ namespace GGemCo2DCore
             {
                 InventoryData = SceneGame.saveDataManager.Inventory;
                 EquipData = SceneGame.saveDataManager.Equip;
+                _quickSlotSimulationData = SceneGame.saveDataManager.QuickSlotSimulation;
             }
             _uiWindowItemInfo = 
                 SceneGame.uIWindowManager.GetUIWindowByUid<UIWindowItemInfo>(UIWindowConstants.WindowUid
@@ -67,6 +70,9 @@ namespace GGemCo2DCore
             _uiWindowItemSalvage =
                 SceneGame.uIWindowManager.GetUIWindowByUid<UIWindowItemSalvage>(UIWindowConstants.WindowUid
                     .ItemSalvage);
+            _uiWindowQuickSlotSimulation =
+                SceneGame.uIWindowManager.GetUIWindowByUid<UIWindowQuickSlotSimulation>(UIWindowConstants.WindowUid
+                    .QuickSlotSimulation);
         }
         public override void OnShow(bool show)
         {
@@ -189,7 +195,8 @@ namespace GGemCo2DCore
                 // 장비일때
                 if (icon.IsEquipType())
                 {
-                    var partSlotIndex = (int)icon.GetPartsType();
+                    int partSlotIndex = icon.GetPartsSlotIndex();
+                    if (partSlotIndex < 0) return;
                     SceneGame.uIWindowManager.MoveIcon(uid, icon.index, UIWindowConstants.WindowUid.Equip, 1, partSlotIndex);
                 }
                 // 물약 일때
@@ -200,16 +207,15 @@ namespace GGemCo2DCore
                     {
                         if (!icon.PlayCoolTime(coolTime)) return;
                     }
+                    if (icon.uid <= 0 || icon.GetCount() <= 0)
+                    {
+                        _popupManager.ShowPopupError("Item_NoUsableCount");//"사용할 수 있는 아이템 개수가 없습니다."
+                        return;
+                    }
 
                     // hp 물약일 때 
                     if (icon.IsHpPotionType() || icon.IsMpPotionType())
                     {
-                        if (icon.uid <= 0 || icon.GetCount() <= 0)
-                        {
-                            _popupManager.ShowPopupError("Item_NoUsableCount");//"사용할 수 있는 아이템 개수가 없습니다."
-                            return;
-                        }
-
                         // mp 물약일 때 
                         if (icon.IsMpPotionType())
                         {
@@ -227,19 +233,25 @@ namespace GGemCo2DCore
                                 return;
                             }
                         }
-                        var result = InventoryData.MinusItem(icon.slotIndex, icon.uid, 1);
-                        SetIcons(result);
-                        if (result is { Result: ResultCommon.ResultType.Success })
-                        {
-                            if (icon.IsMpPotionType())
-                                SceneGame.player.GetComponent<Player>().AddMp(icon.GetStatusValue1());
-                            else
-                                SceneGame.player.GetComponent<Player>().AddHp(icon.GetStatusValue1());
-                            
-                        }
                     }
+                    var result = InventoryData.MinusItem(icon.slotIndex, icon.uid, 1);
+                    SetIcons(result);
+                    if (result is not { Result: ResultCommon.ResultType.Success }) return;
+                    
+                    if (icon.IsMpPotionType())
+                        SceneGame.player.GetComponent<Player>().AddMp(icon.GetStatusValue1());
+                    else if (icon.IsHpPotionType())
+                        SceneGame.player.GetComponent<Player>().AddHp(icon.GetStatusValue1());
+                            
                     // affect 가 있을 때 
                     icon.CheckStatusAffect();
+                    
+                    var linkInfo = icon.GetLinkInfo();
+                    if (linkInfo.Item1 == UIWindowConstants.WindowUid.QuickSlotSimulation)
+                    {
+                        int linkInfoItem2 = linkInfo.Item2;
+                        _uiWindowQuickSlotSimulation.SetIconCount(linkInfoItem2, icon.uid, icon.GetCount());
+                    }
                 }
             }
         }
@@ -289,6 +301,20 @@ namespace GGemCo2DCore
         public override void ShowItemInfo(UIIcon icon)
         {
             _uiWindowItemInfo.SetItemUid(icon.uid, icon.gameObject, UIWindowItemInfo.PositionType.Right, slotSize);
+        }
+
+        public void AddToQuickSlotSimulation(UIIcon icon)
+        {
+            float time = SceneGame.uIIconCoolTimeManager.GetCurrentCoolTime(uid, icon.uid);
+            if (time > 0)
+            {
+                SceneGame.systemMessageManager.ShowMessageWarning("Skill_CannotChangeDuringCooldown");//"쿨타임 중에는 바꿀 수 없습니다."
+                return;
+            }
+            if (_uiWindowQuickSlotSimulation == null) return;
+            // 퀵슬롯에 하나 넣기
+            var result = _quickSlotSimulationData.AddItem(icon.uid, icon.GetCount(), icon.GetLevel());
+            _uiWindowQuickSlotSimulation.SetIcons(result);
         }
     }
 }

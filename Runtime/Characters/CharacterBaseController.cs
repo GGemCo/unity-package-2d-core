@@ -20,21 +20,19 @@ namespace GGemCo2DCore
 
         // ---- 경계 체크 on/off (방향별) ----
         [Header("Boundary Limit Switches")]
-        [Tooltip("왼쪽 경계 제한 활성화")] private bool limitLeft = true;
-        [Tooltip("오른쪽 경계 제한 활성화")] private bool limitRight = true;
-        [Tooltip("아래(바닥) 경계 제한 활성화")] private bool limitBottom = true;
-        [Tooltip("위(천장) 경계 제한 활성화")] private bool limitTop = true;
+        [Tooltip("왼쪽 경계 제한 활성화")] private bool _limitLeft = true;
+        [Tooltip("오른쪽 경계 제한 활성화")] private bool _limitRight = true;
+        [Tooltip("아래(바닥) 경계 제한 활성화")] private bool _limitBottom = true;
+        [Tooltip("위(천장) 경계 제한 활성화")] private bool _limitTop = true;
 
         protected virtual void Awake()
         {
             targetCharacter = GetComponent<CharacterBase>();
-            if (AddressableLoaderSettings.Instance?.playerSettings)
-            {
-                limitLeft = AddressableLoaderSettings.Instance.playerSettings.limitBoundaryLeft;
-                limitRight = AddressableLoaderSettings.Instance.playerSettings.limitBoundaryRight;
-                limitBottom = AddressableLoaderSettings.Instance.playerSettings.limitBoundaryBottom;
-                limitTop = AddressableLoaderSettings.Instance.playerSettings.limitBoundaryTop;
-            }
+            if (!AddressableLoaderSettings.Instance?.playerSettings) return;
+            _limitLeft = AddressableLoaderSettings.Instance.playerSettings.limitBoundaryLeft;
+            _limitRight = AddressableLoaderSettings.Instance.playerSettings.limitBoundaryRight;
+            _limitBottom = AddressableLoaderSettings.Instance.playerSettings.limitBoundaryBottom;
+            _limitTop = AddressableLoaderSettings.Instance.playerSettings.limitBoundaryTop;
         }
 
         protected virtual void Start()
@@ -91,20 +89,10 @@ namespace GGemCo2DCore
         {
             if (targetCharacter.IsStatusAttack()) return false;
             if (targetCharacter.IsStatusDead()) return false;
+            
             iCharacterAnimationController?.PlayWaitAnimation();
             return true;
         }
-
-        // protected CharacterConstants.FacingDirection8 ToFacingDirection8(Vector2 dir)
-        // {
-        //     if (dir == Vector2.zero) return CharacterConstants.FacingDirection8.None;
-        //
-        //     if (dir.x > 0f) return CharacterConstants.FacingDirection8.Right;
-        //     if (dir.x < 0f) return CharacterConstants.FacingDirection8.Left;
-        //     if (Mathf.Approximately(dir.x, 0f) && dir.y > 0f) return CharacterConstants.FacingDirection8.None;
-        //     if (Mathf.Approximately(dir.x, 0f) && dir.y < 0f) return CharacterConstants.FacingDirection8.None;
-        //     return CharacterConstants.FacingDirection8.DownRight;
-        // }
 
         /// <summary>
         /// run 애니메이션 및 이동(경계 체크 포함)
@@ -133,17 +121,17 @@ namespace GGemCo2DCore
             // ---- 방향 개별 on/off를 반영한 경계 Clamp ----
             next.x = ClampAxisWithSides(
                 value: next.x,
-                minEnabled: limitLeft,
+                minEnabled: _limitLeft,
                 minValue:   minBounds.x,
-                maxEnabled: limitRight,
+                maxEnabled: _limitRight,
                 maxValue:   maxBounds.x
             );
 
             next.y = ClampAxisWithSides(
                 value: next.y,
-                minEnabled: limitBottom,
+                minEnabled: _limitBottom,
                 minValue:   minBounds.y,
-                maxEnabled: limitTop,
+                maxEnabled: _limitTop,
                 maxValue:   maxBounds.y
             );
 

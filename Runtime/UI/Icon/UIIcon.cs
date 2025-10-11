@@ -36,6 +36,11 @@ namespace GGemCo2DCore
         private UIWindowConstants.WindowUid _parentWindowUid;
         // 부모 아이콘 슬롯 index
         private int _parentSlotIndex;
+        
+        // 링크 윈도우 uid
+        private UIWindowConstants.WindowUid _linkWindowUid;
+        // 링크 아이콘 슬롯 index
+        private int _linkSlotIndex;
 
         protected IconConstants.Type IconType;
         private IconConstants.Status _iconStatus;
@@ -70,6 +75,8 @@ namespace GGemCo2DCore
             slotIndex = 0;
             _parentWindowUid = 0;
             _parentSlotIndex = 0;
+            _linkWindowUid = 0;
+            _linkSlotIndex = 0;
             _isLearn = false;
             window = null;
             windowUid = UIWindowConstants.WindowUid.None;
@@ -401,6 +408,7 @@ namespace GGemCo2DCore
         }
         /// <summary>
         /// Regist 되었을때 부모 윈도우와 slot index 정보 셋팅하기
+        /// Link와 차이점은 Regist는 한쪽 방향으로 영향을 준다.
         /// </summary>
         /// <param name="fromWindowUid"></param>
         /// <param name="fromIndex"></param>
@@ -412,6 +420,21 @@ namespace GGemCo2DCore
         public (UIWindowConstants.WindowUid, int) GetParentInfo()
         {
             return (_parentWindowUid, _parentSlotIndex);
+        }
+        /// <summary>
+        /// Link 되었을때 부모 윈도우와 slot index 정보 셋팅하기
+        /// Parent와 차이점은, Link는 양방향으로 서로 영향을 준다.
+        /// </summary>
+        /// <param name="fromWindowUid"></param>
+        /// <param name="fromIndex"></param>
+        public void SetLinkInfo(UIWindowConstants.WindowUid fromWindowUid, int fromIndex)
+        {
+            _linkWindowUid = fromWindowUid;
+            _linkSlotIndex = fromIndex;
+        }
+        public (UIWindowConstants.WindowUid, int) GetLinkInfo()
+        {
+            return (_linkWindowUid, _linkSlotIndex);
         }
 
         public virtual float GetCoolTime()
@@ -429,6 +452,11 @@ namespace GGemCo2DCore
         public void SetClick(bool set)
         {
             PossibleClick = set;
+        }
+
+        public virtual int GetPartsSlotIndex()
+        {
+            return -1;
         }
     }
 }

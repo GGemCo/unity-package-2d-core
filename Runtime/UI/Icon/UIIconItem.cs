@@ -136,6 +136,7 @@ namespace GGemCo2DCore
         /// <returns></returns>
         public override ItemConstants.PartsType GetPartsType()
         {
+            if (struckTableItem == null) return ItemConstants.PartsType.None; 
             return struckTableItem.PartsID;
         }
         
@@ -233,6 +234,12 @@ namespace GGemCo2DCore
         public int GetUpgrade()
         {
             return struckTableItem.Upgrade;
+        }
+        public override int GetPartsSlotIndex()
+        {
+            if (struckTableItem == null) return -1;
+            if (struckTableItem.PartsID == ItemConstants.PartsType.None) return -1;
+            return (int)struckTableItem.PartsID;
         }
     }
 }

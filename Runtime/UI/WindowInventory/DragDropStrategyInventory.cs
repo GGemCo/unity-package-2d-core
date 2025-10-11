@@ -40,7 +40,10 @@ namespace GGemCo2DCore
                 switch (droppedWindowUid)
                 {
                     case UIWindowConstants.WindowUid.Stash:
-                        SceneGame.Instance.uIWindowManager.MoveIcon(UIWindowConstants.WindowUid.Stash, dropIconSlotIndex, UIWindowConstants.WindowUid.Inventory, dropIconCount);
+                        SceneGame.Instance.uIWindowManager.MoveIcon(droppedWindowUid, dropIconSlotIndex, UIWindowConstants.WindowUid.Inventory, dropIconCount);
+                        break;
+                    case UIWindowConstants.WindowUid.QuickSlotSimulation:
+                        SceneGame.Instance.uIWindowManager.UnRegisterIcon(droppedWindowUid, dropIconSlotIndex);
                         break;
                     case UIWindowConstants.WindowUid.Equip:
                         // 같은 uid 아이템인지 확인

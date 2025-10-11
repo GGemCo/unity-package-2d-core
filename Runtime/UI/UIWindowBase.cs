@@ -21,7 +21,7 @@ namespace GGemCo2DCore
         private UIWindowFade _uiWindowFade;
         private StruckTableWindow _struckTableWindow;
         private InteractionManager _interactionManager;
-        protected SceneGame SceneGame;
+        public SceneGame SceneGame;
 
         protected virtual void Awake()
         {
@@ -54,7 +54,13 @@ namespace GGemCo2DCore
                 gameObject.SetActive(false);
             }
 
-            if (!SceneGame.Instance) return;
+            if (!SceneGame.Instance)
+            {
+                var scene = UnityEngine.SceneManagement.SceneManager.GetActiveScene();
+                if (scene.name == ConfigDefine.SceneNameGame) 
+                    GcLogger.LogError($"SceneGame 싱글톤이 없습니다.");
+                return;
+            }
             SceneGame = SceneGame.Instance;
             _interactionManager = SceneGame.InteractionManager;
         }
@@ -155,7 +161,7 @@ namespace GGemCo2DCore
         }
         public bool GetDefaultActive()
         {
-            return _struckTableWindow.DefaultActive;
+            return _struckTableWindow is { DefaultActive: true };
         }
 
         public bool IsOpen()

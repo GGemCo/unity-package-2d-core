@@ -59,7 +59,18 @@ namespace GGemCo2DCore
             {
                 targetCharacter.SetStatusAttack(); // 공격 중 상태 설정
                 targetCharacter.directionNormalize = Vector3.zero; // 움직임 멈춤
-                iCharacterAnimationController?.PlayAttackAnimation();
+
+                var attackAniName = ICharacterAnimationController.HoeAnim;
+                if (targetCharacter.CurrentFacing == CharacterConstants.FacingDirection8.Up)
+                {
+                    attackAniName = ICharacterAnimationController.HoeUpAnim;
+                }
+                else if (targetCharacter.CurrentFacing == CharacterConstants.FacingDirection8.Down)
+                {
+                    attackAniName = ICharacterAnimationController.HoeDownAnim;
+                }
+                
+                iCharacterAnimationController?.PlayAttackAnimation(attackAniName);
             }
 #endif
         }

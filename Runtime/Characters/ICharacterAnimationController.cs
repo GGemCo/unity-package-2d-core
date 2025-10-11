@@ -43,15 +43,28 @@ namespace GGemCo2DCore
     {
         public const string WalkForwardAnim = "run";
         public const string WalkBackwardAnim = "run";
+        public const string WalkUpAnim = "run_up";
+        public const string WalkDownAnim = "run_down";
+        
         public const string WaitForwardAnim = "wait";
         public const string WaitBackwardAnim = "wait";
+        public const string WaitUpAnim = "wait_up";
+        public const string WaitDownAnim = "wait_down";
+        
         public const string AttackAnim = "attack";
+        
+        public const string HoeAnim = "hoe";
+        public const string HoeDownAnim = "hoe_down";
+        public const string HoeUpAnim = "hoe_up";
+        
         public const string DeadAnim = "die";
         public const string DamageAnim = "damage";
+        
         public const string SuffixWait = "_wait";
         public const string SuffixEnd = "_end";
         public string CurrentAnimationNameAttack { get; set; }
-        
+
+
         void PlayWaitAnimation();
         void PlayRunAnimation();
         void PlayAttackAnimation(string animName = "");

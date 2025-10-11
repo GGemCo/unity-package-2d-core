@@ -15,6 +15,7 @@ namespace GGemCo2DCore
         public QuestData QuestData;
         public SkillData SkillData;
         public QuickSlotData QuickSlotData;
+        public QuickSlotSimulationData QuickSlotSimulationData;
         public StashData StashData;
     }
     /// <summary>
@@ -28,6 +29,7 @@ namespace GGemCo2DCore
         public QuestData Quest { get; private set; }
         public SkillData Skill { get; private set; }
         public QuickSlotData QuickSlot { get; private set; }
+        public QuickSlotSimulationData QuickSlotSimulation { get; private set; }
         public StashData Stash { get; private set; }
         public ShopSaleData ShopSale { get; private set; }
 
@@ -95,6 +97,7 @@ namespace GGemCo2DCore
             Quest = new QuestData();
             Skill = new SkillData();
             QuickSlot = new QuickSlotData();
+            QuickSlotSimulation = new QuickSlotSimulationData();
             Stash = new StashData();
             ShopSale = new ShopSaleData();
 
@@ -110,6 +113,7 @@ namespace GGemCo2DCore
             Quest.Initialize(_tableLoaderManager, saveDataContainer);
             Skill.Initialize(_tableLoaderManager, saveDataContainer);
             QuickSlot.Initialize(_tableLoaderManager, saveDataContainer);
+            QuickSlotSimulation.Initialize(_tableLoaderManager, saveDataContainer);
             Stash.Initialize(_tableLoaderManager, saveDataContainer);
             ShopSale.Initialize(_tableLoaderManager, saveDataContainer);
         }
@@ -178,6 +182,7 @@ namespace GGemCo2DCore
                 QuestData = Quest,
                 SkillData = Skill,
                 QuickSlotData = QuickSlot,
+                QuickSlotSimulationData = QuickSlotSimulation,
                 StashData = Stash,
             };
 

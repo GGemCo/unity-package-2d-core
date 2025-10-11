@@ -5,30 +5,27 @@ namespace GGemCo2DCore
 {
     public class IconDragDropHandler
     {
-        private readonly UIWindow window;
-        private readonly Camera mainCamera;
-        private IDragDropStrategy dragDropStrategy;
+        private readonly UIWindow _window;
+        private IDragDropStrategy _dragDropStrategy;
 
         public IconDragDropHandler(UIWindow window)
         {
-            this.window = window;
-            if (SceneGame.Instance == null) return;
-            mainCamera = SceneGame.Instance.mainCamera;
+            _window = window;
         }
 
         public void SetStrategy(IDragDropStrategy strategy)
         {
-            dragDropStrategy = strategy;
+            _dragDropStrategy = strategy;
         }
 
         public void HandleDragOut(PointerEventData eventData, GameObject droppedIcon, GameObject targetIcon, Vector3 originalPosition)
         {
             if (droppedIcon == null) return;
 
-            Vector3 worldPosition = mainCamera.ScreenToWorldPoint(
-                new Vector3(eventData.position.x, eventData.position.y, mainCamera.nearClipPlane));
+            Vector3 worldPosition = _window.SceneGame.mainCamera.ScreenToWorldPoint(
+                new Vector3(eventData.position.x, eventData.position.y, _window.SceneGame.mainCamera.nearClipPlane));
 
-            dragDropStrategy.HandleDragOut(window, worldPosition, droppedIcon, targetIcon, originalPosition);
+            _dragDropStrategy.HandleDragOut(_window, worldPosition, droppedIcon, targetIcon, originalPosition);
             GoBackToSlot(droppedIcon);
         }
 
@@ -38,13 +35,13 @@ namespace GGemCo2DCore
 
             var dropped = droppedIcon.GetComponent<UIIcon>();
             var target = targetIcon.GetComponent<UIIcon>();
-            if (dropped == null || target == null || dragDropStrategy == null)
+            if (dropped == null || target == null || _dragDropStrategy == null)
             {
                 GoBackToSlot(droppedIcon);
                 return;
             }
 
-            dragDropStrategy.HandleDragInIcon(window, dropped, target);
+            _dragDropStrategy.HandleDragInIcon(_window, dropped, target);
             GoBackToSlot(droppedIcon);
         }
 

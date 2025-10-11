@@ -34,8 +34,20 @@ namespace GGemCo2DCore
         {
             if (!characterBase || characterBase.IsStatusDead()) return;
             string idleAnim = ICharacterAnimationController.WaitForwardAnim;
+            
+            if (characterBase.CurrentFacing == CharacterConstants.FacingDirection8.Up)
+            {
+                idleAnim = ICharacterAnimationController.WaitUpAnim;
+            }
+            else if (characterBase.CurrentFacing == CharacterConstants.FacingDirection8.Down)
+            {
+                idleAnim = ICharacterAnimationController.WaitDownAnim;
+            }
+            
             AnimatorStateInfo state = Animator.GetCurrentAnimatorStateInfo(0);
+            
             if (state.IsName(idleAnim)) return;
+            
             PlayAnimation(idleAnim, true, characterBase.GetCurrentMoveSpeed());
         }
 
@@ -45,11 +57,26 @@ namespace GGemCo2DCore
         public void PlayRunAnimation()
         {
             if (characterBase.IsStatusDead()) return;
-            string moveAnim = characterBase.directionNormalize.y != 0
-                ? (characterBase.directionNormalize.y > 0
-                    ? ICharacterAnimationController.WalkBackwardAnim
-                    : ICharacterAnimationController.WalkForwardAnim)
-                : ICharacterAnimationController.WalkForwardAnim;
+            string moveAnim = ICharacterAnimationController.WalkForwardAnim;
+            if (Mathf.Approximately(characterBase.directionNormalize.y, Vector2.up.y))
+            {
+                moveAnim = ICharacterAnimationController.WalkUpAnim;
+            }
+            else if (Mathf.Approximately(characterBase.directionNormalize.y, Vector2.down.y))
+            {
+                moveAnim = ICharacterAnimationController.WalkDownAnim;
+            }
+            else if (!Mathf.Approximately(characterBase.directionNormalize.y, Vector2.zero.y))
+            {
+                if (characterBase.directionNormalize.y > Vector2.zero.y)
+                {
+                    moveAnim = ICharacterAnimationController.WalkBackwardAnim;
+                }
+                else
+                {
+                    moveAnim = ICharacterAnimationController.WalkForwardAnim;
+                }
+            }
 
             AnimatorStateInfo state = Animator.GetCurrentAnimatorStateInfo(0);
             if (state.IsName(moveAnim)) return;

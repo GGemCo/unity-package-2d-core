@@ -68,8 +68,13 @@ namespace GGemCo2DCore
             if (icon == null) return;
             _selectedIcon = icon.GetComponent<UIIcon>();
             _selectedIcon.SetSelected(true);
+            OnSelectedIcon(_selectedIcon);
         }
-        
+
+        protected virtual void OnSelectedIcon(UIIcon selectedIcon)
+        {
+        }
+
         public void OnDrop(PointerEventData eventData)
         {
         }
@@ -99,7 +104,7 @@ namespace GGemCo2DCore
         public UIIcon GetIconByIndex(int index) => IconPoolManager.GetIcon(index);
         public UISlot GetSlotByIndex(int index) => IconPoolManager.GetSlot(index);
         protected UIIcon GetIconByUid(int iconUid) => IconPoolManager.GetIconByUid(iconUid);
-        public UIIcon SetIconCount(int slotIndex, int windowUid, int count, int level = 0, bool learn = false) => IconPoolManager.SetIcon(slotIndex, windowUid, count, level, learn);
+        public UIIcon SetIconCount(int slotIndex, int itemUid, int count, int level = 0, bool learn = false) => IconPoolManager.SetIcon(slotIndex, itemUid, count, level, learn);
         public virtual void SetIconCount(int iconUid, int iconCount) => IconPoolManager.SetIconCount(iconUid, iconCount);
         public UIIcon SetIconCountReturnIcon(int slotIndex, int iconUid, int iconCount, int iconLevel = 0,
             bool iconLearn = false) => IconPoolManager.SetIcon(slotIndex, iconUid, iconCount, iconLevel, iconLearn);

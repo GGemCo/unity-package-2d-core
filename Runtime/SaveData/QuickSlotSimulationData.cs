@@ -4,12 +4,12 @@ using System.Linq;
 namespace GGemCo2DCore
 {
     /// <summary>
-    /// 퀵슬롯에 들어간 스킬 정보 관리
+    /// 시뮬레이션용 퀵슬롯에 들어간 스킬 정보 관리
     /// </summary>
-    public class QuickSlotData : DefaultData, ISaveData
+    public class QuickSlotSimulationData : DefaultData, ISaveData
     {
         // public 으로 해야 json 으로 저장된다. 
-        public Dictionary<int, SaveDataIcon> QuickSlotDatas = new();
+        public Dictionary<int, SaveDataIcon> quickSlotSimulationDatas = new();
         
         /// <summary>
         /// 초기화. Awake 단계에서 실행
@@ -18,16 +18,16 @@ namespace GGemCo2DCore
         /// <param name="saveDataContainer"></param>
         public void Initialize(TableLoaderManager loader, SaveDataContainer saveDataContainer = null)
         {
-            QuickSlotDatas.Clear();
-            if (saveDataContainer?.QuickSlotData != null)
+            quickSlotSimulationDatas.Clear();
+            if (saveDataContainer?.QuickSlotSimulationData != null)
             {
-                QuickSlotDatas = new Dictionary<int, SaveDataIcon>(saveDataContainer.QuickSlotData.QuickSlotDatas);
+                quickSlotSimulationDatas = new Dictionary<int, SaveDataIcon>(saveDataContainer.QuickSlotSimulationData.quickSlotSimulationDatas);
             }
         }
         protected override int GetMaxSlotCount()
         {
             return SceneGame.Instance.uIWindowManager
-                .GetUIWindowByUid<UIWindowQuickSlot>(UIWindowConstants.WindowUid.QuickSlot)?.maxCountIcon ?? 0;
+                .GetUIWindowByUid<UIWindowQuickSlotSimulation>(UIWindowConstants.WindowUid.QuickSlotSimulation)?.maxCountIcon ?? 0;
         }
         
         /// <summary>
@@ -37,7 +37,7 @@ namespace GGemCo2DCore
         {
             if (skillUid <= 0) return;
 
-            QuickSlotDatas[slotIndex] = new SaveDataIcon(slotIndex, skillUid, skillCount, level, skillLearn);
+            quickSlotSimulationDatas[slotIndex] = new SaveDataIcon(slotIndex, skillUid, skillCount, level, skillLearn);
             SaveDatas();
         }
         /// <summary>
@@ -45,8 +45,8 @@ namespace GGemCo2DCore
         /// </summary>
         public void RemoveSkill(int slotIndex)
         {
-            if (!QuickSlotDatas.ContainsKey(slotIndex)) return;
-            QuickSlotDatas[slotIndex] = new SaveDataIcon(slotIndex, 0);
+            if (!quickSlotSimulationDatas.ContainsKey(slotIndex)) return;
+            quickSlotSimulationDatas[slotIndex] = new SaveDataIcon(slotIndex, 0);
             SaveDatas();
         }
         /// <summary>
@@ -60,7 +60,7 @@ namespace GGemCo2DCore
                 return ResultCommon.Fail($"QuickSlot_NoSkillInfo");//스킬 정보가 없습니다.
             }
 
-            bool exist = QuickSlotDatas.Any(data => data.Value.Uid == skillUid);
+            bool exist = quickSlotSimulationDatas.Any(data => data.Value.Uid == skillUid);
             if (exist)
             {
                 return ResultCommon.Fail($"QuickSlot_SkillAlreadyAssigned");//이미 등록된 스킬입니다.
@@ -77,6 +77,32 @@ namespace GGemCo2DCore
             SaveDatas();
             return ResultCommon.SuccessWithIcons(controls);
         }
+
+        public ResultCommon AddItem(int itemUid, int itemCount, int itemLevel)
+        {
+            var info = TableLoaderManager.Instance.TableItem.GetDataByUid(itemUid);
+            if (info == null || info.Uid <= 0)
+            {
+                return ResultCommon.Fail($"Slot_ItemNotFound");//아이템 정보가 없습니다.
+            }
+
+            bool exist = quickSlotSimulationDatas.Any(data => data.Value.Uid == itemUid);
+            if (exist)
+            {
+                return ResultCommon.Fail($"QuickSlot_ItemAlreadyAssigned");//이미 등록된 아이템입니다.
+            }
+            List<SaveDataIcon> controls = new List<SaveDataIcon>();
+            int emptyIndex = FindEmptySlot();
+            if (emptyIndex == -1)
+            {
+                return ResultCommon.Fail("QuickSlot_NotEnoughSpace");//퀵슬롯에 공간이 부족합니다.
+            }
+
+            controls.Add(new SaveDataIcon(emptyIndex, itemUid, itemCount, itemLevel));
+
+            SaveDatas();
+            return ResultCommon.SuccessWithIcons(controls);
+        }
         /// <summary>
         /// 빈 슬롯 찾기
         /// </summary>
@@ -84,7 +110,7 @@ namespace GGemCo2DCore
         {
             for (int i = 0; i < MaxSlotCount; i++)
             {
-                if (!QuickSlotDatas.ContainsKey(i) || QuickSlotDatas[i].Uid <= 0 || QuickSlotDatas[i].Count <= 0)
+                if (!quickSlotSimulationDatas.ContainsKey(i) || quickSlotSimulationDatas[i].Uid <= 0 || quickSlotSimulationDatas[i].Count <= 0)
                 {
                     return i;
                 }
@@ -94,7 +120,7 @@ namespace GGemCo2DCore
 
         public Dictionary<int, SaveDataIcon> GetAllDatas()
         {
-            return QuickSlotDatas;
+            return quickSlotSimulationDatas;
         }
     }
 }
