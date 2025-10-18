@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using UnityEngine;
 
 namespace GGemCo2DCore
@@ -8,24 +9,28 @@ namespace GGemCo2DCore
     /// </summary>
     public class EquipController : MonoBehaviour
     {
-        private Player player;
+        private Player _player;
         // 현재 장착 중인 아이템
-        private readonly Dictionary<int, StruckTableItem> equippedItems = new Dictionary<int, StruckTableItem>();
+        private readonly Dictionary<int, StruckTableItem> _equippedItems = new Dictionary<int, StruckTableItem>();
         
-        private delegate void DelegateOnPlayerEquiped(Dictionary<int, StruckTableItem> equippedItems);
-        private event DelegateOnPlayerEquiped OnPlayerEquiped;
-        private delegate void DelegateOnPlayerUnEquiped(Dictionary<int, StruckTableItem> equippedItems);
-        private event DelegateOnPlayerUnEquiped OnPlayerUnEquiped;
-        
-        TableItem tableItem;
+        public static event Action<CharacterBase, Dictionary<int, StruckTableItem>> OnPlayerEquiped;
+        public static event Action<CharacterBase, Dictionary<int, StruckTableItem>> OnPlayerUnEquiped;
+
+        private TableItem _tableItem;
 
         private void Awake()
         {
-            equippedItems.Clear();
-            tableItem = TableLoaderManager.Instance.TableItem;
-            player = GetComponent<Player>();
-            OnPlayerEquiped += player.UpdateStatCache;
-            OnPlayerUnEquiped += player.UpdateStatCache;
+            _equippedItems.Clear();
+            _tableItem = TableLoaderManager.Instance.TableItem;
+            _player = GetComponent<Player>();
+            OnPlayerEquiped += _player.UpdateStatCache;
+            OnPlayerUnEquiped += _player.UpdateStatCache;
+        }
+
+        private void OnDestroy()
+        {
+            OnPlayerEquiped -= _player.UpdateStatCache;
+            OnPlayerUnEquiped -= _player.UpdateStatCache;
         }
 
         /// <summary>
@@ -35,18 +40,18 @@ namespace GGemCo2DCore
         /// <param name="itemUid"></param>
         public bool EquipItem(int partIndex, int itemUid)
         {
-            if (player == null) return false;
+            if (_player == null) return false;
             if (itemUid <= 0)
             {
                 UnEquipItem(partIndex);
                 return true;
             }
-            StruckTableItem item = tableItem.GetDataByUid(itemUid);
-            if (!equippedItems.TryAdd(partIndex, item))
+            StruckTableItem item = _tableItem.GetDataByUid(itemUid);
+            if (!_equippedItems.TryAdd(partIndex, item))
             {
-                equippedItems[partIndex] = item;
+                _equippedItems[partIndex] = item;
             }
-            OnPlayerEquiped?.Invoke(equippedItems);
+            OnPlayerEquiped?.Invoke(_player, _equippedItems);
             return true;
         }
         /// <summary>
@@ -55,9 +60,9 @@ namespace GGemCo2DCore
         /// <param name="partIndex"></param>
         public bool UnEquipItem(int partIndex)
         {
-            if (player == null) return false;
-            equippedItems.Remove(partIndex);
-            OnPlayerUnEquiped?.Invoke(equippedItems);
+            if (_player == null) return false;
+            _equippedItems.Remove(partIndex);
+            OnPlayerUnEquiped?.Invoke(_player, _equippedItems);
             return true;
         }
         /// <summary>
@@ -66,7 +71,7 @@ namespace GGemCo2DCore
         /// <returns></returns>
         public Dictionary<int, StruckTableItem> GetEquippedItems()
         {
-            return equippedItems;
+            return _equippedItems;
         }
     }
 }

@@ -112,7 +112,7 @@ namespace GGemCo2DCoreEditor
 
                 // Equip 이미지
                 string baseKey = $"{ConfigAddressableLabel.ImageItemEquip}_{info.Uid}";
-                List<string> slotNames = ItemConstants.SlotNameByPartsType[info.PartsID];
+                List<string> slotNames = ItemConstants.SlotNameByPartsType.GetValueOrDefault(info.PartsID);
                 if (slotNames != null)
                 {
                     foreach (string slotName in slotNames)
@@ -132,6 +132,7 @@ namespace GGemCo2DCoreEditor
                 string folderName = data.Value;
                 if (string.IsNullOrEmpty(folderName)) continue;
                 List<string> slotNames = ItemConstants.SlotNameByPartsType.GetValueOrDefault(partType);
+                if (slotNames == null) continue;
                 foreach (var slotName in slotNames)
                 {
                     if (string.IsNullOrEmpty(slotName)) continue;

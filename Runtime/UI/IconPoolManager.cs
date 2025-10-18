@@ -100,7 +100,7 @@ namespace GGemCo2DCore
             return null;
         }
         /// <summary>
-        /// 아이콘 지우기
+        /// 아이콘 정보 지울때만 호출. Move는 둘다 바로 Set하기 때문에 DetachIcon 호출되지 않음
         /// </summary>
         /// <param name="slotIndex"></param>
         public void DetachIcon(int slotIndex)

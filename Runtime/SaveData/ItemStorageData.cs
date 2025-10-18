@@ -310,7 +310,8 @@ namespace GGemCo2DCore
                 ? new SaveDataIcon(fromIndex, 0)
                 : new SaveDataIcon(fromIndex, fromItem.Uid, fromItemCount));
 
-            string message = string.Format(LocalizationManager.Instance.GetSystemByKey("Slot_MoveSuccess"), moveAmount, fromIndex, toIndex);
+            // string message = string.Format(LocalizationManager.Instance.GetSystemByKey("Slot_MoveSuccess"), moveAmount, fromIndex, toIndex);
+            string message = "";
             return ResultCommon.Success(message, controls);
         }
         /// <summary>
