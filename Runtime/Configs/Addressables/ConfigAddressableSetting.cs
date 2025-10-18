@@ -23,6 +23,7 @@ namespace GGemCo2DCore
         public static readonly AddressableAssetInfo SaveSettings   = Make(nameof(SaveSettings));
         public static readonly AddressableAssetInfo OptionSettings = Make(nameof(OptionSettings));
         public static readonly AddressableAssetInfo SoundSettings  = Make(nameof(SoundSettings));
+        public static readonly AddressableAssetInfo GameTimeSettings  = Make(nameof(GameTimeSettings));
 
         /// <summary>
         /// 로딩 씬에서 로드해야 하는 리스트
@@ -34,7 +35,10 @@ namespace GGemCo2DCore
             MapSettings,
             SaveSettings,
             OptionSettings,
-            SoundSettings
+            SoundSettings,
+#if GGEMCO_USE_INGAME_TIME
+            GameTimeSettings,
+#endif            
         };
     }
 }

@@ -1,5 +1,7 @@
+using System.Collections.Generic;
 using System.IO;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using UnityEngine;
 
 namespace GGemCo2DCore
@@ -17,6 +19,9 @@ namespace GGemCo2DCore
         public QuickSlotData QuickSlotData;
         public QuickSlotSimulationData QuickSlotSimulationData;
         public StashData StashData;
+        public GameTimeData GameTimeData;
+        
+        public Dictionary<string, JToken> Extensions;
     }
     /// <summary>
     /// 세이브 데이터 메인 매니저
@@ -32,6 +37,7 @@ namespace GGemCo2DCore
         public QuickSlotSimulationData QuickSlotSimulation { get; private set; }
         public StashData Stash { get; private set; }
         public ShopSaleData ShopSale { get; private set; }
+        public GameTimeData GameTime { get; private set; }
 
         private TableLoaderManager _tableLoaderManager;
         private SlotMetaDatController _slotMetaDatController;
@@ -56,6 +62,7 @@ namespace GGemCo2DCore
         // 현재 진행중인 slot index
         private int _currentSaveSlot;
         private bool _useSaveData;
+        private bool _useGameTime;
 
         private void Awake()
         {
@@ -76,6 +83,8 @@ namespace GGemCo2DCore
             _forceSaveInterval = saveSettings.saveDataForceSaveInterval;
             _thumbnailWidth = saveSettings.saveDataThumbnailWidth;
             _maxSaveSlotCount = saveSettings.saveDataMaxSlotCount;
+
+            _useGameTime = AddressableLoaderSettings.Instance.settings.useInGameTime;
 
             _saveDirectory = saveSettings.SaveDataFolderName;
             _thumbnailDirectory = saveSettings.SaveDataThumnailFolderName;
@@ -100,6 +109,7 @@ namespace GGemCo2DCore
             QuickSlotSimulation = new QuickSlotSimulationData();
             Stash = new StashData();
             ShopSale = new ShopSaleData();
+            GameTime = new GameTimeData();
 
             _currentSaveSlot = PlayerPrefsManager.LoadSaveDataSlotIndex();
             
@@ -116,6 +126,18 @@ namespace GGemCo2DCore
             QuickSlotSimulation.Initialize(_tableLoaderManager, saveDataContainer);
             Stash.Initialize(_tableLoaderManager, saveDataContainer);
             ShopSale.Initialize(_tableLoaderManager, saveDataContainer);
+            GameTime.Initialize(_tableLoaderManager, saveDataContainer);
+            
+            // 외부 섹션 복원
+            if (saveDataContainer?.Extensions != null)
+            {
+                var env = new SaveEnvelope();
+                foreach (var kv in saveDataContainer.Extensions)
+                    env.Sections[kv.Key] = kv.Value;
+
+                // 순서와 무관하게 복원 보장
+                SaveRegistry.ApplyRestore(env);
+            }
         }
         private void Start()
         {
@@ -173,6 +195,18 @@ namespace GGemCo2DCore
 
             Inventory.ClearEmptyInfo();
             Stash.ClearEmptyInfo();
+
+            if (!_useGameTime)
+            {
+                GameTime = null;
+            }
+            else
+            {
+                GameTime.CurrentGameTime = SceneGame.Instance.gameTimeManager.NowSeconds();
+            }
+            
+            // 외부 기여자에게 현재 상태 캡처 요청
+            var env = BuildEnvelopeForSave();
             
             SaveDataContainer saveData = new SaveDataContainer
             {
@@ -184,6 +218,9 @@ namespace GGemCo2DCore
                 QuickSlotData = QuickSlot,
                 QuickSlotSimulationData = QuickSlotSimulation,
                 StashData = Stash,
+                GameTimeData = GameTime,
+                // 확장 섹션 함께 저장
+                Extensions = env?.Sections,
             };
 
             string json = JsonConvert.SerializeObject(saveData);
@@ -216,6 +253,13 @@ namespace GGemCo2DCore
         private void OnDestroy()
         {
             
+        }
+        private SaveEnvelope BuildEnvelopeForSave()
+        {
+            var env = new SaveEnvelope();
+            var list = SaveRegistry.All;
+            for (int i = 0; i < list.Count; i++) list[i].Capture(env);
+            return env;
         }
     }
 }

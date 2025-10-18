@@ -38,6 +38,98 @@ MonoBehaviour:
     m_Localized: Accept
     m_Metadata:
       m_Items: []
+  - m_Id: 35607645568147461
+    m_Localized: Aut
+    m_Metadata:
+      m_Items: []
+  - m_Id: 35607645568147462
+    m_Localized: Win
+    m_Metadata:
+      m_Items: []
+  - m_Id: 36299026200567808
+    m_Localized: Day {0}
+    m_Metadata:
+      m_Items: []
+  - m_Id: 36299457454710784
+    m_Localized: Sunday
+    m_Metadata:
+      m_Items: []
+  - m_Id: 36299457454710785
+    m_Localized: Monday
+    m_Metadata:
+      m_Items: []
+  - m_Id: 36299457458905088
+    m_Localized: Tuesday
+    m_Metadata:
+      m_Items: []
+  - m_Id: 36299457458905089
+    m_Localized: Wednesday
+    m_Metadata:
+      m_Items: []
+  - m_Id: 36299457458905090
+    m_Localized: Thursday
+    m_Metadata:
+      m_Items: []
+  - m_Id: 36299457458905091
+    m_Localized: Friday
+    m_Metadata:
+      m_Items: []
+  - m_Id: 36299457458905092
+    m_Localized: Saturday
+    m_Metadata:
+      m_Items: []
+  - m_Id: 36299457458905093
+    m_Localized: Sun
+    m_Metadata:
+      m_Items: []
+  - m_Id: 36299457458905094
+    m_Localized: Mon
+    m_Metadata:
+      m_Items: []
+  - m_Id: 36299457458905095
+    m_Localized: Tue
+    m_Metadata:
+      m_Items: []
+  - m_Id: 36299457458905096
+    m_Localized: Wed
+    m_Metadata:
+      m_Items: []
+  - m_Id: 36299457458905097
+    m_Localized: Thu
+    m_Metadata:
+      m_Items: []
+  - m_Id: 36299457458905098
+    m_Localized: Fri
+    m_Metadata:
+      m_Items: []
+  - m_Id: 36299457458905099
+    m_Localized: Sat
+    m_Metadata:
+      m_Items: []
+  - m_Id: 36299457458905100
+    m_Localized: Spring
+    m_Metadata:
+      m_Items: []
+  - m_Id: 36299457458905101
+    m_Localized: Summer
+    m_Metadata:
+      m_Items: []
+  - m_Id: 36299457458905102
+    m_Localized: Autumn
+    m_Metadata:
+      m_Items: []
+  - m_Id: 36299457458905103
+    m_Localized: Winter
+    m_Metadata:
+      m_Items: []
+  - m_Id: 36299457458905104
+    m_Localized: Spr
+    m_Metadata:
+      m_Items: []
+  - m_Id: 36299457458905105
+    m_Localized: Sum
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []

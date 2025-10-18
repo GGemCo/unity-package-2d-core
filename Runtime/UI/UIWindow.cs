@@ -28,7 +28,7 @@ namespace GGemCo2DCore
         [Tooltip("icon 이 들어갈 panel")]
         public GridLayoutGroup containerIcon;
         
-        private UIIcon _selectedIcon;
+        protected UIIcon selectedIcon;
         
         // 서브 매니저
         // 아이콘 생성 관리
@@ -59,19 +59,30 @@ namespace GGemCo2DCore
 
         public virtual void SetSelectedIcon(int index)
         {
-            if (_selectedIcon != null)
+            if (selectedIcon != null)
             {
-                _selectedIcon.SetSelected(false);
+                selectedIcon.SetSelected(false);
             }
-            if (icons.Length <= 0) return;
+            if (icons.Length <= 0 || index >= icons.Length) return;
             var icon = icons[index];
             if (icon == null) return;
-            _selectedIcon = icon.GetComponent<UIIcon>();
-            _selectedIcon.SetSelected(true);
-            OnSelectedIcon(_selectedIcon);
+            selectedIcon = icon.GetComponent<UIIcon>();
+            selectedIcon.SetSelected(true);
+            OnSelectedIcon(selectedIcon);
         }
 
-        protected virtual void OnSelectedIcon(UIIcon selectedIcon)
+        public void RemoveSelectedIcon()
+        {
+            if (selectedIcon == null) return;
+            selectedIcon.SetSelected(false);
+        }
+        public UIIcon GetSelectedIcon() => selectedIcon;
+
+        /// <summary>
+        /// todo 정리 필요
+        /// </summary>
+        /// <param name="icon"></param>
+        protected virtual void OnSelectedIcon(UIIcon icon)
         {
         }
 
@@ -134,5 +145,6 @@ namespace GGemCo2DCore
         /// 모든 아이콘 detach 하기
         /// </summary>
         protected void DetachAllIcons() => IconPoolManager.DetachAllIcons();
+
     }
 }

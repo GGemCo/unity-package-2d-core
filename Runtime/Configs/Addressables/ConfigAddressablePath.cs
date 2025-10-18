@@ -183,6 +183,21 @@ namespace GGemCo2DCore
             }
         }
 
+        public static class Simulation
+        {
+            /// <summary>Assets/{SDK}/DataAddressable/Simulation</summary>
+            private static string RootSimulation => Combine(Root, "Simulation");
+
+            /// <summary>Assets/{SDK}/DataAddressable/Simulation/ToolDefinition</summary>
+            public static string ToolDefinition => Combine(RootSimulation, "ToolDefinition");
+            
+            /// <summary>Assets/{SDK}/DataAddressable/Simulation/ToolTargeting</summary>
+            public static string ToolTargeting => Combine(RootSimulation, "ToolTargeting");
+            
+            /// <summary>Assets/{SDK}/DataAddressable/Simulation/Growth</summary>
+            public static string Growth => Combine(RootSimulation, "Growth");
+        }
+
         // -------------------------
         // Utility
         // -------------------------

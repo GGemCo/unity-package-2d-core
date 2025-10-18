@@ -14,6 +14,7 @@ namespace GGemCo2DCore
         // 공격할 몬스터 
         private GameObject _targetMonster;
         private EquipController _equipController;
+        private ToolController _toolController;
         private ControllerPlayer _controllerPlayer;
         private PlayerData _playerData;
         private SceneGame _sceneGame;
@@ -23,7 +24,7 @@ namespace GGemCo2DCore
         private GGemCoPlayerSettings _playerSettings;
 
         private PlayerUIController _playerUIController;
-            
+
         protected override void Awake()
         {
             onEventDeadByEndGround = new UnityEvent();
@@ -65,6 +66,7 @@ namespace GGemCo2DCore
             base.InitComponents();
             _controllerPlayer = gameObject.AddComponent<ControllerPlayer>();
             _equipController = gameObject.AddComponent<EquipController>();
+            _toolController = gameObject.AddComponent<ToolController>();
         }
 
         /// <summary>
@@ -152,6 +154,12 @@ namespace GGemCo2DCore
             
             // GcLogger.Log(@event);
             long totalDamage = CalculateFinalAttack();
+
+            if (!colliderAttackRange)
+            {
+                GcLogger.LogError($"공격 범위 Collider가 없습니다.");
+                return;
+            }
         
             // 캡슐 콜라이더 2D와 충돌 중인 모든 콜라이더를 검색
             Vector2 size = new Vector2(colliderAttackRange.size.x * Mathf.Abs(transform.localScale.x), colliderAttackRange.size.y * transform.localScale.y);
@@ -303,6 +311,66 @@ namespace GGemCo2DCore
         public void ResetStatsByDead()
         {
             InitializeByTable();
+        }
+        
+        public override bool IsEquipSimulationTool()
+        {
+            return _toolController && _toolController.IsEquipSimulationTool();
+        }
+        public override bool IsEquipAxe()
+        {
+            return _toolController && _toolController.IsEquipAxe();
+        }
+        public override bool IsEquipHoe()
+        {
+            return _toolController && _toolController.IsEquipHoe();
+        }
+        public override bool IsEquipWatering()
+        {
+            return _toolController && _toolController.IsEquipWatering();
+        }
+        public override bool IsEquipSeed()
+        {
+            return _toolController && _toolController.IsEquipSeed();
+        }
+
+        public void EquipTool(int itemUid)
+        {
+            if (_toolController == null)
+            {
+                GcLogger.LogError($"{nameof(ToolController)} 가 없습니다.");
+                return;
+            }
+
+            _toolController.Equip(itemUid);
+        }
+        public void UnEquipTool()
+        {
+            if (_toolController == null)
+            {
+                GcLogger.LogError($"{nameof(ToolController)} 가 없습니다.");
+                return;
+            }
+
+            _toolController.UnEquip();
+        }
+
+        public StruckTableItem GetCurrentEquipTool()
+        {
+            return _toolController.GetCurrentTool();
+        }
+        public override void ChangePickUpSprite()
+        {
+            if (!characterPickUpPosition) return;
+            var item = _toolController.GetCurrentTool();
+                
+            var key = "blank";
+            if (item != null)
+            {
+                key = item.FileName;
+            }
+            var sprite = AddressableLoaderItem.Instance.GetImageIconItemByName(key);
+            characterPickUpPosition.ChangePickUpSprite(sprite);
         }
     }
 }

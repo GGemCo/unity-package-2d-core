@@ -22,7 +22,8 @@ namespace GGemCo2DCore
             SoundSettings,
             AttackComboSettings,
             PlayerActionSettings,
-            SimulationSettings
+            SimulationSettings,
+            GameTimeSettings
         }
 
         public const string BasePath = ConfigDefine.NameSDK + "/Settings/";
@@ -69,6 +70,12 @@ namespace GGemCo2DCore
             public const string MenuName = BasePath + FileName;
             public const int Ordering = (int)MenuOrdering.SoundSettings;
         }
+        public static class GameTime
+        {
+            public const string FileName = BaseName + "GameTimeSettings";
+            public const string MenuName = BasePath + FileName;
+            public const int Ordering = (int)MenuOrdering.GameTimeSettings;
+        }
 
         public static readonly Dictionary<string, Type> SettingsTypes = new()
         {
@@ -78,6 +85,7 @@ namespace GGemCo2DCore
             { Save.FileName, typeof(GGemCoSaveSettings) },
             { Option.FileName, typeof(GGemCoOptionSettings) },
             { Sound.FileName, typeof(GGemCoSoundSettings) },
+            { GameTime.FileName, typeof(GGemCoGameTimeSettings) },
         };
     }
 }

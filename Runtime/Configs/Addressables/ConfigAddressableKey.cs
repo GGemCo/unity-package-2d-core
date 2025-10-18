@@ -22,6 +22,7 @@
         public const string Cutscene = ConfigDefine.NameSDK + "_Cutscene";
 
         // Icons
+        public const string ItemIcon  = ConfigDefine.NameSDK + "_Item_Icon";
         public const string SkillIcon  = ConfigDefine.NameSDK + "_Skill_Icon";
         public const string AffectIcon = ConfigDefine.NameSDK + "_Affect_Icon";
 
@@ -29,5 +30,10 @@
         public const string Sound = ConfigDefine.NameSDK + "_Sound";
         
         public const string Table = ConfigDefine.NameSDK + "_Table";
+        
+        public const string SimulationTool = ConfigDefine.NameSDK + "_SimulationTool";
+        public const string SimulationGrowth = ConfigDefine.NameSDK + "_SimulationGrowth";
+        // 씨앗 심는 도구에 사용
+        public const string SimulationSeed = ConfigDefine.NameSDK + "_SimulationSeed";
     }
 }

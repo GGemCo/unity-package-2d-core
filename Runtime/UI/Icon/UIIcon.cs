@@ -14,8 +14,6 @@ namespace GGemCo2DCore
         public TextMeshProUGUI textCount;
         [Tooltip("쿨타임 게이지")]
         public Image imageCoolTimeGauge;
-        [Tooltip("선택되었을때 보여줄 이미지")]
-        [HideInInspector] public Image imageSelected;
         [Tooltip("잠금 표시 이미지")]
         public Image imageLock;
 
@@ -37,11 +35,6 @@ namespace GGemCo2DCore
         // 부모 아이콘 슬롯 index
         private int _parentSlotIndex;
         
-        // 링크 윈도우 uid
-        private UIWindowConstants.WindowUid _linkWindowUid;
-        // 링크 아이콘 슬롯 index
-        private int _linkSlotIndex;
-
         protected IconConstants.Type IconType;
         private IconConstants.Status _iconStatus;
 
@@ -64,6 +57,9 @@ namespace GGemCo2DCore
         protected bool PossibleClick;
 
         public SceneGame sceneGame;
+        private UIWindowManager _uiWindowManager;
+        
+        private Vector2 _slotSize;
 
         protected virtual void Awake()
         {
@@ -75,8 +71,6 @@ namespace GGemCo2DCore
             slotIndex = 0;
             _parentWindowUid = 0;
             _parentSlotIndex = 0;
-            _linkWindowUid = 0;
-            _linkSlotIndex = 0;
             _isLearn = false;
             window = null;
             windowUid = UIWindowConstants.WindowUid.None;
@@ -98,9 +92,7 @@ namespace GGemCo2DCore
         protected virtual void Start()
         {
             sceneGame = SceneGame.Instance;
-            // 선택되었을때 보여줄 이미지 크기를 slot size 로 변경
-            if (imageSelected == null) return;
-            imageSelected.rectTransform.sizeDelta = window.slotSize;
+            _uiWindowManager = sceneGame.uIWindowManager;
         }
 
         public void Initialize(UIWindow pwindow, UIWindowConstants.WindowUid pwindowUid, int pindex, int pslotIndex, 
@@ -110,6 +102,7 @@ namespace GGemCo2DCore
             windowUid = pwindowUid;
             index = pindex;
             slotIndex = pslotIndex;
+            _slotSize = slotSize;
             SetCount(0);
             ChangeIconImageSize(iconSize, slotSize);
         }
@@ -147,6 +140,22 @@ namespace GGemCo2DCore
         /// </summary>
         /// <returns></returns>
         public virtual bool IsMpPotionType()
+        {
+            return false;
+        }
+        /// <summary>
+        /// 씨앗인지
+        /// </summary>
+        /// <returns></returns>
+        public virtual bool IsSeedType()
+        {
+            return false;
+        }
+        /// <summary>
+        /// 도구 인지
+        /// </summary>
+        /// <returns></returns>
+        public virtual bool IsToolType()
         {
             return false;
         }
@@ -257,6 +266,7 @@ namespace GGemCo2DCore
             SetIconLock(false);
             SetCount(0);
         }
+
         /// <summary>
         /// 아이콘 이미지 경로 가져오기 
         /// </summary>
@@ -300,19 +310,25 @@ namespace GGemCo2DCore
         {
             return _dragHandler.GetOriginalPosition();
         }
+        /// <summary>
+        /// UIWindow 통해서 호출해야 한다. 그래야 이전에 선택된 아이콘이 해제된다.
+        /// </summary>
+        /// <param name="selected"></param>
         public void SetSelected(bool selected)
         {
-            if (imageSelected == null) return;
             _isSelected = selected;
             ShowSelected(selected);
+            if (!_uiWindowManager) return;
+            _uiWindowManager.ShowSelectIconImage(selected, gameObject.transform.position, _slotSize);
         }
+        public bool IsSelected() => _isSelected;
 
         protected void ShowSelected(bool selected)
         {
-            if (imageSelected == null) return;
             // 선택된 아이콘이면 끄지 않는다.
             if (_isSelected && !selected) return;
-            imageSelected.gameObject.SetActive(selected);
+            if (!_uiWindowManager) return;
+            _uiWindowManager.ShowOverIconImage(selected, gameObject.transform.position, _slotSize);
         }
         public virtual ItemConstants.PartsType GetPartsType()
         {
@@ -408,7 +424,6 @@ namespace GGemCo2DCore
         }
         /// <summary>
         /// Regist 되었을때 부모 윈도우와 slot index 정보 셋팅하기
-        /// Link와 차이점은 Regist는 한쪽 방향으로 영향을 준다.
         /// </summary>
         /// <param name="fromWindowUid"></param>
         /// <param name="fromIndex"></param>
@@ -421,22 +436,6 @@ namespace GGemCo2DCore
         {
             return (_parentWindowUid, _parentSlotIndex);
         }
-        /// <summary>
-        /// Link 되었을때 부모 윈도우와 slot index 정보 셋팅하기
-        /// Parent와 차이점은, Link는 양방향으로 서로 영향을 준다.
-        /// </summary>
-        /// <param name="fromWindowUid"></param>
-        /// <param name="fromIndex"></param>
-        public void SetLinkInfo(UIWindowConstants.WindowUid fromWindowUid, int fromIndex)
-        {
-            _linkWindowUid = fromWindowUid;
-            _linkSlotIndex = fromIndex;
-        }
-        public (UIWindowConstants.WindowUid, int) GetLinkInfo()
-        {
-            return (_linkWindowUid, _linkSlotIndex);
-        }
-
         public virtual float GetCoolTime()
         {
             return 0;

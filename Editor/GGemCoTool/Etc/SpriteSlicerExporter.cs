@@ -8,7 +8,7 @@ using UnityEngine;
 namespace GGemCo2DCoreEditor
 {
     /// <summary>
-    /// PNG 스프라이트 슬라이서 & 내보내기 툴
+    /// 이미지 자르기 툴
     /// - Source PNG(Texture2D) 하나를 선택
     /// - Cell 폭/높이 기준으로 격자 자르기
     /// - (옵션) 여백/패딩, 부분 조각 포함 여부
@@ -22,7 +22,7 @@ namespace GGemCo2DCoreEditor
     /// </summary>
     internal class SpriteSlicerExporter : EditorWindow
     {
-        private const string Title = "PNG 슬라이서 & 내보내기";
+        private const string Title = "이미지 자르기";
         private const string PrefKey = "GGemCo_SpriteSlicerExporter_";
 
         [Header("입력")]

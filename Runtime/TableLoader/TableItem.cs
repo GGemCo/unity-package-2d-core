@@ -50,6 +50,33 @@ namespace GGemCo2DCore
         public string OptionType5;
         public ConfigCommon.SuffixType OptionSuffix5;
         public int OptionValue5;
+        
+        public bool IsTool()
+        {
+            return Type == ItemConstants.Type.Equip && Category == ItemConstants.Category.Tool;
+        }
+
+        public bool IsSubCategoryAxe()
+        {
+            return IsTool() && SubCategory == ItemConstants.SubCategory.Axe;
+        }
+        public bool IsSubCategoryHoe()
+        {
+            return IsTool() && SubCategory == ItemConstants.SubCategory.Hoe;
+        }
+        public bool IsSubCategoryWatering()
+        {
+            return IsTool() && SubCategory == ItemConstants.SubCategory.Watering;
+        }
+        public bool IsSubCategorySeeder()
+        {
+            return IsTool() && SubCategory == ItemConstants.SubCategory.Seeder;
+        }
+
+        public bool IsSeed()
+        {
+            return Category == ItemConstants.Category.Seed;
+        }
     }
     /// <summary>
     /// 아이템 테이블
@@ -67,52 +94,81 @@ namespace GGemCo2DCore
         {
             MapType = new Dictionary<string, ItemConstants.Type>
             {
-                { "Equip", ItemConstants.Type.Equip },
-                { "Consumable", ItemConstants.Type.Consumable },
-                { "Currency", ItemConstants.Type.Currency },
-                { "Misc", ItemConstants.Type.Misc },
+                { nameof(ItemConstants.Type.Equip), ItemConstants.Type.Equip },
+                { nameof(ItemConstants.Type.Consumable), ItemConstants.Type.Consumable },
+                { nameof(ItemConstants.Type.Currency), ItemConstants.Type.Currency },
+                { nameof(ItemConstants.Type.Misc), ItemConstants.Type.Misc },
             };
             MapCategory = new Dictionary<string, ItemConstants.Category>
             {
-                { "Weapon", ItemConstants.Category.Weapon },
-                { "Armor", ItemConstants.Category.Armor },
-                { "Potion", ItemConstants.Category.Potion },
-                { "Gold", ItemConstants.Category.Gold },
-                { "Silver", ItemConstants.Category.Silver },
-                { "Material", ItemConstants.Category.Material },
+                { nameof(ItemConstants.Category.Weapon), ItemConstants.Category.Weapon },
+                { nameof(ItemConstants.Category.Armor), ItemConstants.Category.Armor },
+                { nameof(ItemConstants.Category.Potion), ItemConstants.Category.Potion },
+                { nameof(ItemConstants.Category.Gold), ItemConstants.Category.Gold },
+                { nameof(ItemConstants.Category.Silver), ItemConstants.Category.Silver },
+                { nameof(ItemConstants.Category.Material), ItemConstants.Category.Material },
+                { nameof(ItemConstants.Category.Tool), ItemConstants.Category.Tool },
+                { nameof(ItemConstants.Category.Seed), ItemConstants.Category.Seed },
+                { nameof(ItemConstants.Category.Fruit), ItemConstants.Category.Fruit },
             };
             MapSubCategory = new Dictionary<string, ItemConstants.SubCategory>
             {
-                { "Sword", ItemConstants.SubCategory.Sword },
-                { "Chest", ItemConstants.SubCategory.Chest },
-                { "Boots", ItemConstants.SubCategory.Boots },
-                { "RecoverHp", ItemConstants.SubCategory.RecoverHp },
-                { "RecoverMp", ItemConstants.SubCategory.RecoverMp },
-                { "IncreaseAttackSpeed", ItemConstants.SubCategory.IncreaseAttackSpeed },
-                { "IncreaseMoveSpeed", ItemConstants.SubCategory.IncreaseMoveSpeed },
+                { nameof(ItemConstants.SubCategory.Sword), ItemConstants.SubCategory.Sword },
+                { nameof(ItemConstants.SubCategory.Chest), ItemConstants.SubCategory.Chest },
+                { nameof(ItemConstants.SubCategory.Boots), ItemConstants.SubCategory.Boots },
+                { nameof(ItemConstants.SubCategory.RecoverHp), ItemConstants.SubCategory.RecoverHp },
+                { nameof(ItemConstants.SubCategory.RecoverMp), ItemConstants.SubCategory.RecoverMp },
+                { nameof(ItemConstants.SubCategory.IncreaseAttackSpeed), ItemConstants.SubCategory.IncreaseAttackSpeed },
+                { nameof(ItemConstants.SubCategory.IncreaseMoveSpeed), ItemConstants.SubCategory.IncreaseMoveSpeed },
+                { nameof(ItemConstants.SubCategory.Axe), ItemConstants.SubCategory.Axe },
+                { nameof(ItemConstants.SubCategory.Hoe), ItemConstants.SubCategory.Hoe },
+                { nameof(ItemConstants.SubCategory.Shovel), ItemConstants.SubCategory.Shovel },
+                { nameof(ItemConstants.SubCategory.Sickle), ItemConstants.SubCategory.Sickle },
+                { nameof(ItemConstants.SubCategory.Watering), ItemConstants.SubCategory.Watering },
+                { nameof(ItemConstants.SubCategory.Seeder), ItemConstants.SubCategory.Seeder },
             };
             MapClass = new Dictionary<string, ItemConstants.Class>
             {
-                { "Normal", ItemConstants.Class.Normal },
+                { nameof(ItemConstants.Class.Normal), ItemConstants.Class.Normal },
             };
             MapPartsID = new Dictionary<string, ItemConstants.PartsType>
             {
-                { "Helmet", ItemConstants.PartsType.Helmet },
-                { "Chest", ItemConstants.PartsType.Chest },
-                { "Boots", ItemConstants.PartsType.Boots },
-                { "Weapon", ItemConstants.PartsType.Weapon },
+                { nameof(ItemConstants.PartsType.Helmet), ItemConstants.PartsType.Helmet },
+                { nameof(ItemConstants.PartsType.Chest), ItemConstants.PartsType.Chest },
+                { nameof(ItemConstants.PartsType.Shoulder), ItemConstants.PartsType.Shoulder },
+                { nameof(ItemConstants.PartsType.Forearm), ItemConstants.PartsType.Forearm },
+                { nameof(ItemConstants.PartsType.Gloves), ItemConstants.PartsType.Gloves },
+                { nameof(ItemConstants.PartsType.Belt), ItemConstants.PartsType.Belt },
+                { nameof(ItemConstants.PartsType.Pants), ItemConstants.PartsType.Pants },
+                { nameof(ItemConstants.PartsType.Boots), ItemConstants.PartsType.Boots },
+                { nameof(ItemConstants.PartsType.Weapon), ItemConstants.PartsType.Weapon },
+                { nameof(ItemConstants.PartsType.Necklace), ItemConstants.PartsType.Necklace },
+                { nameof(ItemConstants.PartsType.Ring), ItemConstants.PartsType.Ring },
+                { nameof(ItemConstants.PartsType.Shield), ItemConstants.PartsType.Shield },
             };
             MapAntiFlag = new Dictionary<string, ItemConstants.AntiFlag>
             {
                 { "Shop", ItemConstants.AntiFlag.ShopSale },
-                { "Stash", ItemConstants.AntiFlag.Stash },
-                { "Salvage", ItemConstants.AntiFlag.Salvage },
-                { "Upgrade", ItemConstants.AntiFlag.Upgrade },
+                { nameof(ItemConstants.AntiFlag.Stash), ItemConstants.AntiFlag.Stash },
+                { nameof(ItemConstants.AntiFlag.Salvage), ItemConstants.AntiFlag.Salvage },
+                { nameof(ItemConstants.AntiFlag.Upgrade), ItemConstants.AntiFlag.Upgrade },
             };
         }
         private static ItemConstants.Type ConvertType(string type) => MapType.GetValueOrDefault(type, ItemConstants.Type.None);
         private static ItemConstants.Category ConvertCategory(string type) => MapCategory.GetValueOrDefault(type, ItemConstants.Category.None);
-        private static ItemConstants.SubCategory ConvertSubCategory(string type) => MapSubCategory.GetValueOrDefault(type, ItemConstants.SubCategory.None);
+
+        private static ItemConstants.SubCategory ConvertSubCategory(Dictionary<string, string> data)
+        {
+            var category = MapCategory.GetValueOrDefault(data["Category"], ItemConstants.Category.None);
+            var subCategory = MapSubCategory.GetValueOrDefault(data["SubCategory"], ItemConstants.SubCategory.None);
+            if (subCategory == ItemConstants.SubCategory.None) return ItemConstants.SubCategory.None;
+            
+            var result = ItemConstants.IsValidSubCategory(category, subCategory);
+            if (result) return subCategory;
+            
+            GcLogger.LogError($"Category와 SubCategory 매칭이 잘 못 되었습니다. Uid:{data["Uid"]}, Category: {category}, SubCategory: {subCategory}");
+            return ItemConstants.SubCategory.None;
+        } 
         private static ItemConstants.Class ConvertClass(string type) => MapClass.GetValueOrDefault(type, ItemConstants.Class.None);
         private static ItemConstants.PartsType ConvertPartsID(string type) => MapPartsID.GetValueOrDefault(type, ItemConstants.PartsType.None);
         private static ItemConstants.AntiFlag[] ConvertAntiFlag(string type)
@@ -168,8 +224,8 @@ namespace GGemCo2DCore
             }
             return newImagePath;
         }
-        private readonly Dictionary<ItemConstants.Category, List<StruckTableItem>> dictionaryByCategory = new Dictionary<ItemConstants.Category, List<StruckTableItem>>();
-        private readonly Dictionary<ItemConstants.SubCategory, List<StruckTableItem>> dictionaryBySubCategory = new Dictionary<ItemConstants.SubCategory, List<StruckTableItem>>();
+        private readonly Dictionary<ItemConstants.Category, List<StruckTableItem>> _dictionaryByCategory = new Dictionary<ItemConstants.Category, List<StruckTableItem>>();
+        private readonly Dictionary<ItemConstants.SubCategory, List<StruckTableItem>> _dictionaryBySubCategory = new Dictionary<ItemConstants.SubCategory, List<StruckTableItem>>();
 
         private static string GetAntiFlagName(ItemConstants.AntiFlag antiFlag)
         {
@@ -211,7 +267,7 @@ namespace GGemCo2DCore
             }
 
             ItemConstants.Category category = ConvertCategory(data["Category"]);
-            ItemConstants.SubCategory subCategory = ConvertSubCategory(data["SubCategory"]);
+            ItemConstants.SubCategory subCategory = ConvertSubCategory(data);
             string desc = data["Description"];
             if (LocalizationManager.Instance != null)
             {
@@ -245,30 +301,30 @@ namespace GGemCo2DCore
             
             StruckTableItem struckTableItemDropGroup = GetDataByUid(uid);
             {
-                if (!dictionaryByCategory.ContainsKey(category))
+                if (!_dictionaryByCategory.ContainsKey(category))
                 {
-                    dictionaryByCategory[category] = new List<StruckTableItem>();
+                    _dictionaryByCategory[category] = new List<StruckTableItem>();
                 }
 
-                dictionaryByCategory[category].Add(struckTableItemDropGroup);
+                _dictionaryByCategory[category].Add(struckTableItemDropGroup);
             }
             {
-                if (!dictionaryBySubCategory.ContainsKey(subCategory))
+                if (!_dictionaryBySubCategory.ContainsKey(subCategory))
                 {
-                    dictionaryBySubCategory[subCategory] = new List<StruckTableItem>();
+                    _dictionaryBySubCategory[subCategory] = new List<StruckTableItem>();
                 }
 
-                dictionaryBySubCategory[subCategory].Add(struckTableItemDropGroup);
+                _dictionaryBySubCategory[subCategory].Add(struckTableItemDropGroup);
             }
         }
 
         public Dictionary<ItemConstants.Category, List<StruckTableItem>> GetDictionaryByCategory()
         {
-            return dictionaryByCategory;
+            return _dictionaryByCategory;
         }
         public Dictionary<ItemConstants.SubCategory, List<StruckTableItem>> GetDictionaryBySubCategory()
         {
-            return dictionaryBySubCategory;
+            return _dictionaryBySubCategory;
         }
         
         public StruckTableItem GetDataByUid(int uid)
@@ -286,10 +342,10 @@ namespace GGemCo2DCore
                 Name = data["Name"],
                 Type = ConvertType(data["Type"]),
                 Category = ConvertCategory(data["Category"]),
+                SubCategory = ConvertSubCategory(data),
                 PartsID = ConvertPartsID(data["PartsID"]),
                 PartsImagePath = data["PartsImagePath"],
                 ImageItemPath = data["ImageItemPath"],
-                SubCategory = ConvertSubCategory(data["SubCategory"]),
                 Class = ConvertClass(data["Class"]),
                 ImagePath = data["ImagePath"],
                 Upgrade = int.Parse(data["Upgrade"]),

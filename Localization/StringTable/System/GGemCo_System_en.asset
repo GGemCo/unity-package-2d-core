@@ -288,6 +288,10 @@ MonoBehaviour:
     m_Localized: Item is already assigned.
     m_Metadata:
       m_Items: []
+  - m_Id: 35976763102240768
+    m_Localized: You cannot use tools or seeds here.
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []

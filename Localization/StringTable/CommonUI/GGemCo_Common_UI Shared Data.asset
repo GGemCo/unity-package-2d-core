@@ -35,6 +35,98 @@ MonoBehaviour:
     m_Key: Accept
     m_Metadata:
       m_Items: []
+  - m_Id: 36299457454710784
+    m_Key: ui_date_weekday_sunday
+    m_Metadata:
+      m_Items: []
+  - m_Id: 36299457454710785
+    m_Key: ui_date_weekday_monday
+    m_Metadata:
+      m_Items: []
+  - m_Id: 36299457458905088
+    m_Key: ui_date_weekday_tuesday
+    m_Metadata:
+      m_Items: []
+  - m_Id: 36299457458905089
+    m_Key: ui_date_weekday_wednesday
+    m_Metadata:
+      m_Items: []
+  - m_Id: 36299457458905090
+    m_Key: ui_date_weekday_thursday
+    m_Metadata:
+      m_Items: []
+  - m_Id: 36299457458905091
+    m_Key: ui_date_weekday_friday
+    m_Metadata:
+      m_Items: []
+  - m_Id: 36299457458905092
+    m_Key: ui_date_weekday_saturday
+    m_Metadata:
+      m_Items: []
+  - m_Id: 36299457458905093
+    m_Key: ui_date_weekday_sunday_short
+    m_Metadata:
+      m_Items: []
+  - m_Id: 36299457458905094
+    m_Key: ui_date_weekday_monday_short
+    m_Metadata:
+      m_Items: []
+  - m_Id: 36299457458905095
+    m_Key: ui_date_weekday_tuesday_short
+    m_Metadata:
+      m_Items: []
+  - m_Id: 36299457458905096
+    m_Key: ui_date_weekday_wednesday_short
+    m_Metadata:
+      m_Items: []
+  - m_Id: 36299457458905097
+    m_Key: ui_date_weekday_thursday_short
+    m_Metadata:
+      m_Items: []
+  - m_Id: 36299457458905098
+    m_Key: ui_date_weekday_friday_short
+    m_Metadata:
+      m_Items: []
+  - m_Id: 36299457458905099
+    m_Key: ui_date_weekday_saturday_short
+    m_Metadata:
+      m_Items: []
+  - m_Id: 36299457458905100
+    m_Key: ui_date_climate_spring
+    m_Metadata:
+      m_Items: []
+  - m_Id: 36299457458905101
+    m_Key: ui_date_climate_summer
+    m_Metadata:
+      m_Items: []
+  - m_Id: 36299457458905102
+    m_Key: ui_date_climate_autumn
+    m_Metadata:
+      m_Items: []
+  - m_Id: 36299457458905103
+    m_Key: ui_date_climate_winter
+    m_Metadata:
+      m_Items: []
+  - m_Id: 36299457458905104
+    m_Key: ui_date_climate_spring_short
+    m_Metadata:
+      m_Items: []
+  - m_Id: 36299457458905105
+    m_Key: ui_date_climate_summer_short
+    m_Metadata:
+      m_Items: []
+  - m_Id: 35607645568147461
+    m_Key: ui_date_climate_autumn_short
+    m_Metadata:
+      m_Items: []
+  - m_Id: 35607645568147462
+    m_Key: ui_date_climate_winter_short
+    m_Metadata:
+      m_Items: []
+  - m_Id: 36299026200567808
+    m_Key: ui_date_daynumber
+    m_Metadata:
+      m_Items: []
   m_Metadata:
     m_Items: []
   m_KeyGenerator:

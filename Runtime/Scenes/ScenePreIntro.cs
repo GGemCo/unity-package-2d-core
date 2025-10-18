@@ -63,7 +63,13 @@ namespace GGemCo2DCore
             }
 
             _resolvedMode = ResolveInputMode();
-
+        }
+        /// <summary>
+        /// GameLoaderManagerControl.OnEnable 함수에서 BeforeLoadStart 이벤트 등록.
+        /// StartLoading 함수는 Start에서 호출하도록 수정 
+        /// </summary>
+        private void Start()
+        {
             if (autoStart)
             {
                 ChangeSceneToIntro();
@@ -76,6 +82,7 @@ namespace GGemCo2DCore
                 StartCoroutine(SwapToLocalizedWhenReady());
             }
         }
+
         /// <summary>
         /// GameLoaderManager의 진행률 100% 도달을 기다림
         /// </summary>

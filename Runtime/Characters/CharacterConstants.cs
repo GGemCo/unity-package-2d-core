@@ -64,7 +64,16 @@ namespace GGemCo2DCore
             Knockback,
             Dash,
             Climb,
-            Push
+            Push,
+            SimulationTool
+        }
+        
+        [System.Flags]
+        public enum CharacterSubStatus
+        {
+            None        = 0,
+            PickUp      = 1 << 0,   // 들고 있는 상태
+            NoGravity   = 1 << 1,
         }
 
         /// <summary>
@@ -95,16 +104,44 @@ namespace GGemCo2DCore
 
         public static FacingDirection8 ToFacingDirection8(Vector2 dir)
         {
-            if (dir == Vector2.zero) return FacingDirection8.None;
+            var facingDirection8 = FacingDirection8.None;
+            if (dir == Vector2.zero)
+                return facingDirection8;
 
-            if (dir.x > 0f) return FacingDirection8.Right;
-            if (dir.x < 0f) return FacingDirection8.Left;
-            if (Mathf.Approximately(dir.y, Vector2.up.y)) return FacingDirection8.Up;
-            if (Mathf.Approximately(dir.y, Vector2.down.y)) return FacingDirection8.Down;
-            if (Mathf.Approximately(dir.x, 0f) && dir.y > 0f) return FacingDirection8.None;
-            if (Mathf.Approximately(dir.x, 0f) && dir.y < 0f) return FacingDirection8.None;
-            return FacingDirection8.DownRight;
+            // 벡터를 정규화 (길이에 영향받지 않게)
+            dir.Normalize();
+
+            // 기준(오른쪽, 즉 0도)을 기준으로 각도 계산 (-180 ~ 180)
+            float angle = Vector2.SignedAngle(Vector2.right, dir);
+
+            // 각도를 0~360도로 변환
+            if (angle < 0) angle += 360f;
+
+            // 8방향 (45도 단위)
+            // 22.5도씩 구간 나눔
+            if (angle >= 337.5f || angle < 22.5f)
+                facingDirection8 = FacingDirection8.Right;
+            else if (angle >= 22.5f && angle < 67.5f)
+                facingDirection8 = FacingDirection8.UpRight;
+            else if (angle >= 67.5f && angle < 112.5f)
+                facingDirection8 = FacingDirection8.Up;
+            else if (angle >= 112.5f && angle < 157.5f)
+                facingDirection8 = FacingDirection8.UpLeft;
+            else if (angle >= 157.5f && angle < 202.5f)
+                facingDirection8 = FacingDirection8.Left;
+            else if (angle >= 202.5f && angle < 247.5f)
+                facingDirection8 = FacingDirection8.DownLeft;
+            else if (angle >= 247.5f && angle < 292.5f)
+                facingDirection8 = FacingDirection8.Down;
+            else if (angle >= 292.5f && angle < 337.5f)
+                facingDirection8 = FacingDirection8.DownRight;
+            else
+                facingDirection8 = FacingDirection8.None;
+
+            // GcLogger.Log($"direction: {facingDirection8}");
+            return facingDirection8;
         }
+
         /// <summary>
         /// 사망 이유
         /// </summary>

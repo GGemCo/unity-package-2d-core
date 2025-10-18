@@ -22,6 +22,9 @@ namespace GGemCo2DCore
             Gold,
             Silver,
             Material,
+            Tool,
+            Fruit,
+            Seed
         }
 
         public enum SubCategory
@@ -34,6 +37,12 @@ namespace GGemCo2DCore
             RecoverMp, // mp 물약
             IncreaseAttackSpeed, // 공격속도 증가
             IncreaseMoveSpeed, // 이동속도 증가
+            Axe, // 도끼
+            Hoe, // 호미
+            Shovel, // 삽
+            Sickle, // 낫
+            Watering, // 물뿌리개
+            Seeder // 씨앗 뿌리기
         }
 
         public enum Class
@@ -70,9 +79,18 @@ namespace GGemCo2DCore
         /// </summary>
         public static readonly Dictionary<PartsType, string> FolderNameByPartsType = new Dictionary<PartsType, string>
         {
+            { PartsType.Helmet, "Helmet" },
             { PartsType.Chest, "Chest" },
+            { PartsType.Shoulder, "Shoulder" },
+            { PartsType.Forearm, "Forearm" },
+            { PartsType.Gloves, "Gloves" },
+            { PartsType.Belt, "Belt" },
+            { PartsType.Pants, "Pants" },
             { PartsType.Boots, "Boots" },
             { PartsType.Weapon, "Weapon" },
+            { PartsType.Necklace, "Necklace" },
+            { PartsType.Ring, "Ring" },
+            { PartsType.Shield, "Shield" },
         };
         /// <summary>
         /// 부위별 스파인 슬롯 이름
@@ -102,5 +120,69 @@ namespace GGemCo2DCore
             { ConfigCommon.SuffixType.Increase, "+{0}%" },
             { ConfigCommon.SuffixType.Decrease, "-{0}%" }
         };
+        // -------------------------------------------------------------
+        // Category별 선택 가능한 SubCategory 매핑
+        // -------------------------------------------------------------
+        public static readonly Dictionary<Category, List<SubCategory>> SubCategoriesByCategory = new()
+        {
+            {
+                Category.Weapon, new List<SubCategory>
+                {
+                    SubCategory.Sword,
+                }
+            },
+            {
+                Category.Armor, new List<SubCategory>
+                {
+                    SubCategory.Chest,
+                    SubCategory.Boots
+                }
+            },
+            {
+                Category.Potion, new List<SubCategory>
+                {
+                    SubCategory.RecoverHp,
+                    SubCategory.RecoverMp,
+                    SubCategory.IncreaseAttackSpeed,
+                    SubCategory.IncreaseMoveSpeed
+                }
+            },
+            {
+                Category.Tool, new List<SubCategory>
+                {
+                    SubCategory.Axe,
+                    SubCategory.Hoe,
+                    SubCategory.Shovel,
+                    SubCategory.Sickle,
+                    SubCategory.Watering
+                }
+            }
+        };
+        /// <summary>
+        /// 주어진 Category에 SubCategory가 유효한 조합인지 검사합니다.
+        /// </summary>
+        public static bool IsValidSubCategory(Category category, SubCategory subCategory)
+        {
+            // None은 항상 무효 처리
+            if (category == Category.None || subCategory == SubCategory.None)
+                return false;
+
+            // Category가 등록되어 있는지 확인
+            if (!SubCategoriesByCategory.TryGetValue(category, out var list))
+                return false;
+
+            // SubCategory가 목록에 포함되어 있는지 확인
+            return list.Contains(subCategory);
+        }
+
+        /// <summary>
+        /// Category에 포함된 모든 SubCategory를 반환합니다. (없을 경우 빈 리스트)
+        /// </summary>
+        public static IReadOnlyList<SubCategory> GetSubCategories(Category category)
+        {
+            return SubCategoriesByCategory.TryGetValue(category, out var list)
+                ? list
+                : System.Array.Empty<SubCategory>();
+        }
     }
 }

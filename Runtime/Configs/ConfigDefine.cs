@@ -19,5 +19,6 @@ namespace GGemCo2DCore
         
         public const string DefineSymbolInputSystemOld = NameSDKUpperCase+"_USE_OLD_INPUT";
         public const string DefineSymbolInputSystemNew = NameSDKUpperCase+"_USE_NEW_INPUT";
+        public const string DefineSymbolUseInGameTime = NameSDKUpperCase+"_USE_INGAME_TIME";
     }
 }

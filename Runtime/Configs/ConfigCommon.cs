@@ -68,5 +68,7 @@ namespace GGemCo2DCore
         }
         public const string TitleHeaderRequired = "[필수 항목]";
         public const string TitleHeaderOption = "[선택 항목]";
+        
+        public enum ClimateId { Spring = 0, Summer = 1, Autumn = 2, Winter = 3 }
     }
 }

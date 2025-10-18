@@ -16,5 +16,7 @@ namespace GGemCo2DCore
         public const string ImageAffectIcon = ConfigDefine.NameSDK+"_Affect_Icon";
         public const string Sound = ConfigDefine.NameSDK+"_Sound";
         public const string SoundIntro = ConfigDefine.NameSDK+"_SoundIntro";
+        public const string SimulationToolDefinition = ConfigDefine.NameSDK+"_SimulationToolDefinition";
+        public const string SimulationGrowth = ConfigDefine.NameSDK+"_SimulationGrowth";
     }
 }

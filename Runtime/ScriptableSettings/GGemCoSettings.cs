@@ -54,6 +54,10 @@ namespace GGemCo2DCore
         [Tooltip("데미지 텍스트 출력 시, X축 랜덤 좌표 범위")]
         public float damageTextRandomXRange;
 
+        [Header("인 게임 시간")] 
+        [Tooltip("사용/미사용")]
+        public bool useInGameTime;
+        
         /// <summary>
         /// 기존 값이 비어있을 때만 기본값을 설정
         /// </summary>
@@ -88,6 +92,8 @@ namespace GGemCo2DCore
             damageTextMoveUpDistance = 50.0f;
             damageTextFadeOutTime = 0.1f;
             damageTextRandomXRange = 10.0f;
+
+            useInGameTime = false;
         }
     }
 }

@@ -62,6 +62,7 @@ namespace GGemCo2DCore
         
         // 현재 상태
         private CharacterConstants.CharacterStatus _currentStatus;
+        private CharacterConstants.CharacterSubStatus _currentSubStatus;
         // fade in, out 효과 시작 여부. 맵에서 컬링 될때 사용
         private bool _isStartFade;
         private float _characterHeight;
@@ -77,7 +78,10 @@ namespace GGemCo2DCore
         [HideInInspector] public Rigidbody2D characterRigidbody2D;
         // 맵 object, ground 체크
         [HideInInspector] public CapsuleCollider2D colliderMapObject;
+        // 데미지 처리 컨트롤러
         private CharacterDamageController _characterDamageController;
+        // pick up 액션시 위치, 스프라이트 처리
+        protected CharacterPickUpPosition characterPickUpPosition;
         
         // 공격 애니메이션 종료 후 
         public event EventHandlerAnimationCompleteAttack AnimationCompleteAttack;
@@ -87,6 +91,9 @@ namespace GGemCo2DCore
         public event EventHandlerOnAnimationEventJump OnAnimationEventJump;
         public event EventHandlerOnAnimationEventDash OnAnimationEventDash;
         
+        public static event Action<CharacterBase> OnCharacterUseTool; // Destroy 직전 1회
+        public static event Action<CharacterBase> OnCharacterUseSeed; // Destroy 직전 1회
+        
         protected override void Awake()
         {
             if (AddressableLoaderSettings.Instance == null) return;
@@ -95,6 +102,7 @@ namespace GGemCo2DCore
             CharacterRegenData = null;
             SetAttackType(CharacterConstants.AttackType.None);
             SetAggro(false);
+            SetSubStatus(CharacterConstants.CharacterSubStatus.None);
             // 태그 먼저 처리
             InitTagSortingLayer();
             InitComponents();
@@ -110,7 +118,10 @@ namespace GGemCo2DCore
             // 데미지 컨트롤러 초기화
             _characterDamageController = new CharacterDamageController();
             _characterDamageController.Initialize(this);
+            
+            characterPickUpPosition = GetComponentInChildren<CharacterPickUpPosition>();
         }
+
         /// <summary>
         /// tag, sorting layer, layer 셋팅하기
         /// </summary>
@@ -258,13 +269,16 @@ namespace GGemCo2DCore
         public void SetFacing(CharacterConstants.FacingDirection8 dir)
         {
             if (IsPossibleFlip() != true || dir == CharacterConstants.FacingDirection8.None) return;
+            // GcLogger.Log($"set facing: {dir}");
             _currentFacing = dir;
 
             float sign = 1;
             if ((defaultFacingDirection8 == CharacterConstants.FacingDirection8.Right &&
-                dir == CharacterConstants.FacingDirection8.Left) || 
-                (defaultFacingDirection8 == CharacterConstants.FacingDirection8.Left && 
-                dir == CharacterConstants.FacingDirection8.Right))
+                 dir is CharacterConstants.FacingDirection8.Left or CharacterConstants.FacingDirection8.DownLeft
+                     or CharacterConstants.FacingDirection8.UpLeft) ||
+                (defaultFacingDirection8 == CharacterConstants.FacingDirection8.Left &&
+                 dir is CharacterConstants.FacingDirection8.Right or CharacterConstants.FacingDirection8.DownRight
+                     or CharacterConstants.FacingDirection8.UpRight))
             {
                 sign = -1;
             }
@@ -366,6 +380,7 @@ namespace GGemCo2DCore
         public bool IsStatusDash() => _currentStatus == CharacterConstants.CharacterStatus.Dash;
         public bool IsStatusClimb() => _currentStatus == CharacterConstants.CharacterStatus.Climb;
         public bool IsStatusPush() => _currentStatus == CharacterConstants.CharacterStatus.Push;
+        public bool IsStatusSimulationTool() => _currentStatus == CharacterConstants.CharacterStatus.SimulationTool;
         public CharacterConstants.CharacterStatus GetCurrentStatus() => _currentStatus;
         
         private void SetStatus(CharacterConstants.CharacterStatus value) => _currentStatus = value;
@@ -383,6 +398,7 @@ namespace GGemCo2DCore
         public void SetStatusDash() => SetStatus(CharacterConstants.CharacterStatus.Dash);
         public void SetStatusClimb() => SetStatus(CharacterConstants.CharacterStatus.Climb);
         public void SetStatusPush() => SetStatus(CharacterConstants.CharacterStatus.Push);
+        public void SetStatusSimulationTool() => SetStatus(CharacterConstants.CharacterStatus.SimulationTool);
 
         public void SetScale(float scale)
         {
@@ -827,6 +843,61 @@ namespace GGemCo2DCore
                 return;
             }
             characterRigidbody2D.sleepMode = mode;
+        }
+
+        public void UseTool()
+        {
+            OnCharacterUseTool?.Invoke(this);
+        }
+        public void UseSeed()
+        {
+            OnCharacterUseSeed?.Invoke(this);
+        }
+
+        public virtual bool IsEquipSimulationTool()
+        {
+            return false;
+        }
+
+        public virtual bool IsEquipAxe()
+        {
+            return false;
+        }
+
+        public virtual bool IsEquipHoe()
+        {
+            return false;
+        }
+
+        public virtual bool IsEquipWatering()
+        {
+            return false;
+        }
+        public virtual bool IsEquipSeed()
+        {
+            return false;
+        }
+
+        public void SetSubStatus(CharacterConstants.CharacterSubStatus value)
+        {
+            _currentSubStatus = _currentSubStatus.ClearFlags();
+            _currentSubStatus = value;
+        }
+        public void AddSubStatus(CharacterConstants.CharacterSubStatus value)
+        {
+            _currentSubStatus = _currentSubStatus.AddFlag(value);
+        }
+        public void RemoveSubStatus(CharacterConstants.CharacterSubStatus value)
+        {
+            _currentSubStatus = _currentSubStatus.RemoveFlag(value);
+        }
+        public void ClearSubStatus()
+        {
+            _currentSubStatus = _currentSubStatus.ClearFlags();
+        }
+
+        public virtual void ChangePickUpSprite()
+        {
         }
     }
 }

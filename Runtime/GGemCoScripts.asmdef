@@ -22,7 +22,7 @@
     "versionDefines": [
         {
             "name": "com.ggemco.2d.control",
-            "expression": "111",
+            "expression": "0",
             "define": "GGEMCO_2D_CONTROL"
         }
     ],

@@ -26,6 +26,10 @@
         // 공격 받는 대상에게 affect 걸기
         public int TargetAffectUid { get; set; } = 0;
     }
+    public class StruckAnimationEventUseTool
+    {
+        public int Uid { get; set; }
+    }
     public static class AnimationConstants
     {
         private const string Prefix = "GGemCoAniEvent";
@@ -41,5 +45,7 @@
         
         public const string EventNameDashPlay = Prefix+"DashPlay";
         public const string EventNameDashEnd = Prefix+"DashEnd";
+        
+        public const string EventNameUseTool = Prefix+"UseTool";
     }
 }

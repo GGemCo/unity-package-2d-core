@@ -1,41 +1,50 @@
 Key,Shared Comments,English(en),English(en) Comments,Korean(ko),Korean(ko) Comments
-301011001,,None,,None,
-301021001,,None,,None,
-101011001,,This is a dull sword.,,무딘 칼 입니다.,
-101011002,,This is a dull sword.,,무딘 칼 입니다.,
-101011003,,This is a dull sword.,,무딘 칼 입니다.,
-101011004,,This is a dull sword.,,무딘 칼 입니다.,
-101011005,,This is a dull sword.,,무딘 칼 입니다.,
-101011006,,This is a dull sword.,,무딘 칼 입니다.,
-101011007,,This is a crafted sword 1.,,제작한 칼1 입니다.,
-101011008,,This is a crafted sword 2.,,제작한 칼2 입니다.,
-101011021,,This is a sharp sword.,,날카로운 칼 입니다.,
-102011001,,This is a basic top.,,기본 상의 입니다.,
-102011002,,This top has slightly higher defense.,,방어력이 조금 높은 상의 입니다.,
-102021001,,These are basic shoes.,,기본 신발입니다.,
-102021002,,These shoes slightly increase movement speed.,,이동속도가 조금 빠른 신발입니다.,
-201011001,,Restores {StatusValue1} health.,,생명력을 {StatusValue1} 만큼 회복합니다.,
-201011002,,Restores {StatusValue1} health.,,생명력을 {StatusValue1} 만큼 회복합니다.,
-201011003,,Restores {StatusValue1} health.,,생명력을 {StatusValue1} 만큼 회복합니다.,
-201021001,,Restores {StatusValue1} mana.,,마력을 {StatusValue1} 만큼 회복합니다.,
-201021002,,Restores {StatusValue1} mana.,,마력을 {StatusValue1} 만큼 회복합니다.,
-201021003,,Restores {StatusValue1} mana.,,마력을 {StatusValue1} 만큼 회복합니다.,
-201031001,,None,,None,
-201041002,,None,,None,
-401011001,,Used for crafting items.,,아이템 제작에 사용됩니다.,
-401011002,,Used for crafting items.,,아이템 제작에 사용됩니다.,
-401011003,,Used for crafting items.,,아이템 제작에 사용됩니다.,
-401011004,,Used for crafting items.,,아이템 제작에 사용됩니다.,
-401011005,,Used for crafting items.,,아이템 제작에 사용됩니다.,
-401011006,,Used for item enhancement.,,아이템 강화에 사용됩니다.,
-401011007,,Used for item enhancement.,,아이템 강화에 사용됩니다.,
-401011008,,Used for item enhancement.,,아이템 강화에 사용됩니다.,
-401011009,,Used for item enhancement.,,아이템 강화에 사용됩니다.,
-401011010,,Used for item enhancement.,,아이템 강화에 사용됩니다.,
-401011011,,Used for item enhancement.,,아이템 강화에 사용됩니다.,
-401011012,,Used for item enhancement.,,아이템 강화에 사용됩니다.,
-401011013,,Used for item enhancement.,,아이템 강화에 사용됩니다.,
-401011014,,Used for item enhancement.,,아이템 강화에 사용됩니다.,
-401011015,,Used for item enhancement.,,아이템 강화에 사용됩니다.,
-401011016,,Used for item enhancement.,,아이템 강화에 사용됩니다.,
-401011017,,Used for item enhancement.,,아이템 강화에 사용됩니다.,
+"301011001","","None","","None",""
+"301021001","","None","","None",""
+"101011001","","This is a dull sword.","","무딘 칼 입니다.",""
+"101011002","","This is a dull sword.","","무딘 칼 입니다.",""
+"101011003","","This is a dull sword.","","무딘 칼 입니다.",""
+"101011004","","This is a dull sword.","","무딘 칼 입니다.",""
+"101011005","","This is a dull sword.","","무딘 칼 입니다.",""
+"101011006","","This is a dull sword.","","무딘 칼 입니다.",""
+"101011007","","This is a crafted sword 1.","","제작한 칼1 입니다.",""
+"101011008","","This is a crafted sword 2.","","제작한 칼2 입니다.",""
+"101011021","","This is a sharp sword.","","날카로운 칼 입니다.",""
+"102011001","","This is a basic top.","","기본 상의 입니다.",""
+"102011002","","This top has slightly higher defense.","","방어력이 조금 높은 상의 입니다.",""
+"102021001","","These are basic shoes.","","기본 신발입니다.",""
+"102021002","","These shoes slightly increase movement speed.","","이동속도가 조금 빠른 신발입니다.",""
+"201011001","","Restores {StatusValue1} health.","","생명력을 {StatusValue1} 만큼 회복합니다.",""
+"201011002","","Restores {StatusValue1} health.","","생명력을 {StatusValue1} 만큼 회복합니다.",""
+"201011003","","Restores {StatusValue1} health.","","생명력을 {StatusValue1} 만큼 회복합니다.",""
+"201021001","","Restores {StatusValue1} mana.","","마력을 {StatusValue1} 만큼 회복합니다.",""
+"201021002","","Restores {StatusValue1} mana.","","마력을 {StatusValue1} 만큼 회복합니다.",""
+"201021003","","Restores {StatusValue1} mana.","","마력을 {StatusValue1} 만큼 회복합니다.",""
+"201031001","","None","","None",""
+"201041002","","None","","None",""
+"401011001","","Used for crafting items.","","아이템 제작에 사용됩니다.",""
+"401011002","","Used for crafting items.","","아이템 제작에 사용됩니다.",""
+"401011003","","Used for crafting items.","","아이템 제작에 사용됩니다.",""
+"401011004","","Used for crafting items.","","아이템 제작에 사용됩니다.",""
+"401011005","","Used for crafting items.","","아이템 제작에 사용됩니다.",""
+"401011006","","Used for item enhancement.","","아이템 강화에 사용됩니다.",""
+"401011007","","Used for item enhancement.","","아이템 강화에 사용됩니다.",""
+"401011008","","Used for item enhancement.","","아이템 강화에 사용됩니다.",""
+"401011009","","Used for item enhancement.","","아이템 강화에 사용됩니다.",""
+"401011010","","Used for item enhancement.","","아이템 강화에 사용됩니다.",""
+"401011011","","Used for item enhancement.","","아이템 강화에 사용됩니다.",""
+"401011012","","Used for item enhancement.","","아이템 강화에 사용됩니다.",""
+"401011013","","Used for item enhancement.","","아이템 강화에 사용됩니다.",""
+"401011014","","Used for item enhancement.","","아이템 강화에 사용됩니다.",""
+"401011015","","Used for item enhancement.","","아이템 강화에 사용됩니다.",""
+"401011016","","Used for item enhancement.","","아이템 강화에 사용됩니다.",""
+"401011017","","Used for item enhancement.","","아이템 강화에 사용됩니다.",""
+"108091001","","Axe1","","도끼1",""
+"108101001","","Hoe1","","괭이1",""
+"108111001","","Shovel1","","삽1",""
+"108121001","","Sickle1","","낫1",""
+"108131001","","Watering Can1","","물뿌리개1",""
+"209141001","","Carrot Seed1","","당근 씨앗1",""
+"209141002","","Union Seed1","","양파 씨앗",""
+"210141001","","Carrot1","","당근1",""
+"210141002","","Union1","","양파1",""

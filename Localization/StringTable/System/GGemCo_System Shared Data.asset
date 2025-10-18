@@ -342,6 +342,10 @@ MonoBehaviour:
     m_Key: QuickSlot_ItemAlreadyAssigned
     m_Metadata:
       m_Items: []
+  - m_Id: 35976763102240768
+    m_Key: Simulation_Tool_CannotUseHere
+    m_Metadata:
+      m_Items: []
   m_Metadata:
     m_Items: []
   m_KeyGenerator:

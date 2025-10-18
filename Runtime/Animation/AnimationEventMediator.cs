@@ -102,5 +102,23 @@ namespace GGemCo2DCore
         {
             fromObject.GetComponent<CharacterBase>()?.AnimationEventDash(eventName);
         }
+        /// <summary>
+        /// 시뮬레이션 패키지, 도구 사용
+        /// </summary>
+        /// <param name="json"></param>
+        /// <param name="fromObject"></param>
+        public void OnAnimationEventUseTool(string json, GameObject fromObject)
+        {
+            fromObject.GetComponent<CharacterBase>()?.UseTool();
+        }
+        /// <summary>
+        /// 시뮬레이션 패키지, 씨앗 사용
+        /// </summary>
+        /// <param name="json"></param>
+        /// <param name="fromObject"></param>
+        public void OnAnimationEventUseSeed(string json, GameObject fromObject)
+        {
+            fromObject.GetComponent<CharacterBase>()?.UseSeed();
+        }
     }
 }

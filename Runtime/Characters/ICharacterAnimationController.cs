@@ -46,16 +46,40 @@ namespace GGemCo2DCore
         public const string WalkUpAnim = "run_up";
         public const string WalkDownAnim = "run_down";
         
+        public const string WalkPickUpAnim = "run_pickup";
+        public const string WalkPickUpUpAnim = "run_pickup_up";
+        public const string WalkPickUpDownAnim = "run_pickup_down";
+        
         public const string WaitForwardAnim = "wait";
         public const string WaitBackwardAnim = "wait";
         public const string WaitUpAnim = "wait_up";
         public const string WaitDownAnim = "wait_down";
+        
+        public const string WaitPickUpAnim = "wait_pickup";
+        public const string WaitPickUpUpAnim = "wait_pickup_up";
+        public const string WaitPickUpDownAnim = "wait_pickup_down";
         
         public const string AttackAnim = "attack";
         
         public const string HoeAnim = "hoe";
         public const string HoeDownAnim = "hoe_down";
         public const string HoeUpAnim = "hoe_up";
+        
+        public const string AxeAnim = "axe";
+        public const string AxeDownAnim = "axe_down";
+        public const string AxeUpAnim = "axe_up";
+        
+        public const string WateringAnim = "watering";
+        public const string WateringDownAnim = "watering_down";
+        public const string WateringUpAnim = "watering_up";
+        
+        public const string PickUpAnim = "pickup";
+        public const string PickUpDownAnim = "pickup_down";
+        public const string PickUpUpAnim = "pickup_up";
+        
+        public const string SeedAnim = "seed";
+        public const string SeedDownAnim = "seed_down";
+        public const string SeedUpAnim = "seed_up";
         
         public const string DeadAnim = "die";
         public const string DamageAnim = "damage";
@@ -64,7 +88,6 @@ namespace GGemCo2DCore
         public const string SuffixEnd = "_end";
         public string CurrentAnimationNameAttack { get; set; }
 
-
         void PlayWaitAnimation();
         void PlayRunAnimation();
         void PlayAttackAnimation(string animName = "");
@@ -72,7 +95,7 @@ namespace GGemCo2DCore
         void PlayDamageAnimation();
         void PlayCharacterAnimation(string animationName, bool loop = false, float timeScale = 1f);
         void PlayAttackEndAnimation();
-        void PlayAttackWaitAnimation();
+        bool PlayAttackWaitAnimation();
         
         void ChangeCharacterImageInSlot(int partIndex, int itemUid = 0);
         void RemoveCharacterImageInSlot(List<StruckChangeSlotImage> changeSlotImages);

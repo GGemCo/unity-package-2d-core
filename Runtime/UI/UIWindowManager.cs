@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
+using UnityEngine.UI;
 
 namespace GGemCo2DCore
 {
@@ -10,17 +11,48 @@ namespace GGemCo2DCore
     /// </summary>
     public class UIWindowManager : MonoBehaviour
     {
-        [Header("기본속성")]
+        [Header("기본속성")] 
+        [Tooltip("아이콘 선택 이미지")]
+        public GameObject prefabIconOver;
+        private Image _imageIconOver;
+        public GameObject prefabIconSelected;
+        private Image _imageIconSelected;
+        
         [Tooltip("윈도우 리스트")]
         [SerializeField] private UIWindow[] uiWindows;
         public void SetUIWindow(UIWindow[] prefabs) => uiWindows = prefabs;
+        
         private readonly Dictionary<int, StruckTableWindow> _struckTableWindows = new Dictionary<int, StruckTableWindow>();
 
         private void Awake()
         {
             _struckTableWindows.Clear();
+            
             InitializationTableInfo();
         }
+
+        private void Start()
+        {
+            MakeIconOver();
+            MakeIconSelected();
+        }
+
+        private void MakeIconOver()
+        {
+            if (prefabIconOver == null) return;
+            _imageIconOver = Instantiate(prefabIconOver, SceneGame.Instance.canvasUI.transform)?.GetComponent<Image>();
+            if (_imageIconOver == null) return;
+            _imageIconOver.gameObject.SetActive(false);
+        }
+
+        private void MakeIconSelected()
+        {
+            if (prefabIconSelected == null) return;
+            _imageIconSelected = Instantiate(prefabIconSelected, SceneGame.Instance.canvasUI.transform)?.GetComponent<Image>();
+            if (_imageIconSelected == null) return;
+            _imageIconSelected.gameObject.SetActive(false);
+        }
+
         /// <summary>
         /// 각 윈도우에 table 정보 연결하기
         /// </summary>
@@ -304,55 +336,33 @@ namespace GGemCo2DCore
         {
             
         }
-        /// <summary>
-        /// 아이콘 링크하기
-        /// RegisterIcon과 차이점: 인벤토리에서도 사용가능 함
-        /// </summary>
-        /// <param name="fromWindowUid"></param>
-        /// <param name="fromIndex"></param>
-        /// <param name="toWindowUid"></param>
-        /// <param name="toCount"></param>
-        /// <param name="toIndex"></param>
-        public void LinkIcon(UIWindowConstants.WindowUid fromWindowUid, int fromIndex, UIWindowConstants.WindowUid toWindowUid, int toCount, int toIndex = -1)
-        {
-            UIWindow fromWindow = GetUIWindowByUid<UIWindow>(fromWindowUid);
-            UIWindow toWindow = GetUIWindowByUid<UIWindow>(toWindowUid);
-            if (fromWindow == null || toWindow == null)
-            {
-                GcLogger.LogError("from window 또는 to window 값이 잘 못 되었습니다. from window:"+fromWindowUid+"/to window:"+toWindowUid);
-                return;
-            }
-            UIIcon fromIcon = fromWindow.GetIconByIndex(fromIndex);
-            if (fromIcon == null)
-            {
-                GcLogger.LogError("from Icon 또는 to Icon 값이 잘 못 되었습니다. from Index:"+fromIndex);
-                return;
-            }
-            fromIcon.SetLinkInfo(toWindowUid, toIndex);
 
-            int itemUid = fromIcon.uid;
-            
-            if (toIndex >= 0)
+        public void ShowOverIconImage(bool show, Vector2 position, Vector2 slotSize)
+        {
+            if (_imageIconOver == null)
             {
-                // 그 위치에 아이콘이 있으면 되돌려준다
-                var icon = toWindow.GetIconByIndex(toIndex);
-                if (icon != null && icon.uid > 0 && icon.GetCount() > 0)
-                {
-                    fromWindow.SetIconCount(icon.uid, icon.GetCount());
-                }
-                UIIcon uiIcon = toWindow.SetIconCountReturnIcon(toIndex, itemUid, toCount);
-                if (uiIcon != null)
-                {
-                    uiIcon.SetLinkInfo(fromWindowUid, fromIndex);
-                }
+                // GcLogger.LogError($"{nameof(prefabIconOver)}가 등록되지 않았습니다.");
+                return;
             }
-            else
+            _imageIconOver.gameObject.SetActive(show);
+            if (show)
             {
-                UIIcon uiIcon = toWindow.SetIconCountReturnIcon(itemUid, toCount);
-                if (uiIcon != null)
-                {
-                    uiIcon.SetLinkInfo(fromWindowUid, fromIndex);
-                }
+                _imageIconOver.gameObject.transform.position = position;
+                _imageIconOver.rectTransform.sizeDelta = slotSize;
+            }
+        }
+        public void ShowSelectIconImage(bool show, Vector2 position, Vector2 slotSize)
+        {
+            if (_imageIconSelected == null)
+            {
+                // GcLogger.LogError($"{nameof(prefabIconSelected)}가 등록되지 않았습니다.");
+                return;
+            }
+            _imageIconSelected.gameObject.SetActive(show);
+            if (show)
+            {
+                _imageIconSelected.gameObject.transform.position = position;
+                _imageIconSelected.rectTransform.sizeDelta = slotSize;
             }
         }
     }

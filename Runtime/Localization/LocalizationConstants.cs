@@ -124,6 +124,13 @@ namespace GGemCo2DCore
             }
 
             // 기타 UI, 시스템 메시지, 팝업 등 계속 확장 가능
+            public static class Date
+            {
+                public static string Week() => $"ui_date_weekday";
+                public static string Climate() => $"ui_date_climate";
+
+                public static string Day() => $"ui_date_daynumber";
+            }
         }
     }
 }

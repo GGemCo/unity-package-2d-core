@@ -18,6 +18,7 @@ namespace GGemCo2DCoreEditor
             // 기존 use_spine 값 저장
             bool oldUseSpine = settings.useSpine2d;
             InputSystemType oldInputSystemType = settings.inputSystemType;
+            bool oldUseInGameTime = settings.useInGameTime;
 
             // 기본 Inspector 표시
             DrawDefaultInspector();
@@ -32,6 +33,12 @@ namespace GGemCo2DCoreEditor
             if (oldInputSystemType != settings.inputSystemType)
             {
                 SyncInputDefineSymbols(settings.inputSystemType);
+            }
+            
+            // 값이 변경되었을 경우 define 업데이트
+            if (oldUseInGameTime != settings.useInGameTime)
+            {
+                SyncDefineSymbolUseInGameTime(settings.useInGameTime);
             }
 
             serializedObject.ApplyModifiedProperties();
@@ -104,6 +111,36 @@ namespace GGemCo2DCoreEditor
             PlayerSettings.SetScriptingDefineSymbolsForGroup(BuildTargetGroup.Standalone, symbols);
 #endif
             Debug.Log($"[GGemCoSettingsEditor] Define Symbols 설정 완료: {symbols}");
+        }
+        
+        private void SyncDefineSymbolUseInGameTime(bool enable)
+        {
+#if UNITY_6000_0_OR_NEWER
+            string symbols = PlayerSettings.GetScriptingDefineSymbols(NamedBuildTarget.Standalone);
+#else
+            string symbols = PlayerSettings.GetScriptingDefineSymbolsForGroup(BuildTargetGroup.Standalone);
+#endif
+            if (enable)
+            {
+                if (!symbols.Contains(ConfigDefine.DefineSymbolUseInGameTime))
+                {
+                    symbols += $";{ConfigDefine.DefineSymbolUseInGameTime}";
+                }
+            }
+            else
+            {
+                if (symbols.Contains(ConfigDefine.DefineSymbolUseInGameTime))
+                {
+                    symbols = symbols.Replace(ConfigDefine.DefineSymbolUseInGameTime, "").Replace(";;", ";").Trim(';');
+                }
+            }
+            
+#if UNITY_6000_0_OR_NEWER
+            PlayerSettings.SetScriptingDefineSymbols(NamedBuildTarget.Standalone, symbols);
+#else
+            PlayerSettings.SetScriptingDefineSymbolsForGroup(BuildTargetGroup.Standalone, symbols);
+#endif
+            Debug.Log($"Scripting Define Symbols updated: {symbols}");
         }
     }
 }

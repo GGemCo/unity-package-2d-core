@@ -33,8 +33,9 @@ namespace GGemCo2DCore
         public void PlayWaitAnimation()
         {
             if (!characterBase || characterBase.IsStatusDead()) return;
-            string idleAnim = ICharacterAnimationController.WaitForwardAnim;
             
+            // todo 정리 필요
+            string idleAnim = ICharacterAnimationController.WaitForwardAnim;
             if (characterBase.CurrentFacing == CharacterConstants.FacingDirection8.Up)
             {
                 idleAnim = ICharacterAnimationController.WaitUpAnim;
@@ -42,6 +43,19 @@ namespace GGemCo2DCore
             else if (characterBase.CurrentFacing == CharacterConstants.FacingDirection8.Down)
             {
                 idleAnim = ICharacterAnimationController.WaitDownAnim;
+            }
+
+            if (characterBase.IsEquipSeed())
+            {
+                idleAnim = ICharacterAnimationController.WaitPickUpAnim;
+                if (characterBase.CurrentFacing == CharacterConstants.FacingDirection8.Up)
+                {
+                    idleAnim = ICharacterAnimationController.WaitPickUpUpAnim;
+                }
+                else if (characterBase.CurrentFacing == CharacterConstants.FacingDirection8.Down)
+                {
+                    idleAnim = ICharacterAnimationController.WaitPickUpDownAnim;
+                }
             }
             
             AnimatorStateInfo state = Animator.GetCurrentAnimatorStateInfo(0);
@@ -57,24 +71,38 @@ namespace GGemCo2DCore
         public void PlayRunAnimation()
         {
             if (characterBase.IsStatusDead()) return;
+            
+            
             string moveAnim = ICharacterAnimationController.WalkForwardAnim;
-            if (Mathf.Approximately(characterBase.directionNormalize.y, Vector2.up.y))
+            if (characterBase.CurrentFacing == CharacterConstants.FacingDirection8.Up)
             {
                 moveAnim = ICharacterAnimationController.WalkUpAnim;
             }
-            else if (Mathf.Approximately(characterBase.directionNormalize.y, Vector2.down.y))
+            else if (characterBase.CurrentFacing == CharacterConstants.FacingDirection8.Down)
             {
                 moveAnim = ICharacterAnimationController.WalkDownAnim;
             }
-            else if (!Mathf.Approximately(characterBase.directionNormalize.y, Vector2.zero.y))
+            else if (characterBase.CurrentFacing == CharacterConstants.FacingDirection8.UpLeft ||
+                     characterBase.CurrentFacing == CharacterConstants.FacingDirection8.UpRight)
             {
-                if (characterBase.directionNormalize.y > Vector2.zero.y)
+                moveAnim = ICharacterAnimationController.WalkBackwardAnim;
+            }
+            else if (characterBase.CurrentFacing == CharacterConstants.FacingDirection8.DownLeft ||
+                     characterBase.CurrentFacing == CharacterConstants.FacingDirection8.DownRight)
+            {
+                moveAnim = ICharacterAnimationController.WalkForwardAnim;
+            }
+            
+            if (characterBase.IsEquipSeed())
+            {
+                moveAnim = ICharacterAnimationController.WalkPickUpAnim;
+                if (characterBase.CurrentFacing == CharacterConstants.FacingDirection8.Up)
                 {
-                    moveAnim = ICharacterAnimationController.WalkBackwardAnim;
+                    moveAnim = ICharacterAnimationController.WalkPickUpUpAnim;
                 }
-                else
+                else if (characterBase.CurrentFacing == CharacterConstants.FacingDirection8.Down)
                 {
-                    moveAnim = ICharacterAnimationController.WalkForwardAnim;
+                    moveAnim = ICharacterAnimationController.WalkPickUpDownAnim;
                 }
             }
 
@@ -132,10 +160,12 @@ namespace GGemCo2DCore
                 if (info == null) return;
 
                 ItemConstants.PartsType partsType = (ItemConstants.PartsType)partIndex;
-                slotNames = ItemConstants.SlotNameByPartsType[partsType];
-                folderName = ItemConstants.FolderNameByPartsType[partsType];
+                slotNames = ItemConstants.SlotNameByPartsType.GetValueOrDefault(partsType);
+                folderName = ItemConstants.FolderNameByPartsType.GetValueOrDefault(partsType);
                 imagePath = info.ImagePath;
             }
+
+            if (slotNames == null || folderName == null) return;
 
             List<StruckChangeSlotImage> changeImages = new List<StruckChangeSlotImage>();
             foreach (var slotName in slotNames)
@@ -176,11 +206,13 @@ namespace GGemCo2DCore
             PlayAnimation(CurrentAnimationNameAttack, false, characterBase.GetCurrentAttackSpeed());
         }
 
-        public void PlayAttackWaitAnimation()
+        public bool PlayAttackWaitAnimation()
         {
-            if (characterBase.IsStatusDead()) return;
+            if (characterBase.IsStatusDead()) return false;
             string aniName = $"{CurrentAnimationNameAttack}{ICharacterAnimationController.SuffixWait}";
+            if (!HasAnimation(aniName)) return false;
             PlayAnimation(aniName, true, characterBase.GetCurrentAttackSpeed());
+            return true;
         }
 
         public void PlayAttackEndAnimation()

@@ -133,6 +133,17 @@ namespace GGemCo2DCore
         public override void OnRightClick(UIIcon icon)
         {
             if (icon == null) return;
+            // Simulation 퀵슬롯이 있으면
+            if (_uiWindowQuickSlotSimulation != null && _uiWindowQuickSlotSimulation.IsOpen())
+            {
+                if (icon.IsToolType() || icon.IsSeedType())
+                {
+                    SceneGame.uIWindowManager.MoveIcon(uid, icon.slotIndex,
+                        UIWindowConstants.WindowUid.QuickSlotSimulation, icon.GetCount());
+                    return;
+                }
+            }
+            
             // 상점 판매창이 열려있으면
             if (_uiWindowShopSale != null && _uiWindowShopSale.IsOpen())
             {
@@ -245,13 +256,6 @@ namespace GGemCo2DCore
                             
                     // affect 가 있을 때 
                     icon.CheckStatusAffect();
-                    
-                    var linkInfo = icon.GetLinkInfo();
-                    if (linkInfo.Item1 == UIWindowConstants.WindowUid.QuickSlotSimulation)
-                    {
-                        int linkInfoItem2 = linkInfo.Item2;
-                        _uiWindowQuickSlotSimulation.SetIconCount(linkInfoItem2, icon.uid, icon.GetCount());
-                    }
                 }
             }
         }

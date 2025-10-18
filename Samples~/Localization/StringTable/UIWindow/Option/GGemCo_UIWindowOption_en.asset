@@ -72,6 +72,18 @@ MonoBehaviour:
     m_Localized: Reset
     m_Metadata:
       m_Items: []
+  - m_Id: 34736530364866560
+    m_Localized: 'Always Show Hit Location:'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 34737184135225344
+    m_Localized: 'Hide When Moving:'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 34737614198185984
+    m_Localized: Simulation
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []

@@ -34,7 +34,8 @@ namespace GGemCo2DCore
 
         // 맵 로드 시작되었을때 발생되는 이벤트
         public UnityEvent onLoadStartMap;
-        public static event Action<MapTileCommon, GameObject> OnLoadCompleteMap;   // 생성 직후 1회
+        public static event Action<MapTileCommon, GameObject> OnLoadCompleteMap;
+        public static event Action<MapTileCommon, GameObject> OnLoadTilemapCompleteMap;
         
         // 현재 맵 테이블 데이터
         private StruckTableMap _currentMapTableData;
@@ -45,7 +46,6 @@ namespace GGemCo2DCore
         // 캐릭터, 워프 스폰 매니저
         private MapLoadCharacters _mapLoadCharacters;
         private AddressableLoaderPrefabCharacter _addressableLoaderPrefabCharacter;
-        private GridInformation _gridInformation;
         protected void Awake()
         {
             if (!TableLoaderManager.Instance) return;
@@ -63,18 +63,11 @@ namespace GGemCo2DCore
         /// </summary>
         private void CreateGrid()
         {
-            /*
             _gridTileMap = new GameObject(ConfigTags.GetValue(ConfigTags.Keys.GridTileMap))
             {
                 tag = ConfigTags.GetValue(ConfigTags.Keys.GridTileMap)
             };
-            
-            _gridInformation = _gridTileMap.AddComponent<GridInformation>();
-            
             Grid grid = _gridTileMap.gameObject.AddComponent<Grid>();
-            */
-            _gridTileMap = GameObject.FindWithTag(ConfigTags.GetValue(ConfigTags.Keys.GridTileMap));
-            Grid grid = _gridTileMap.GetComponent<Grid>();
             Vector2 tilemapGridSize = AddressableLoaderSettings.Instance.mapSettings.tilemapGridCellSize;
             if (tilemapGridSize == Vector2.zero)
             {
@@ -397,6 +390,8 @@ namespace GGemCo2DCore
                 SceneGame.Instance.cameraManager?.ChangeMapSize(result.x, result.y);
             
                 _onLoadTileMap?.Invoke();
+                
+                OnLoadTilemapCompleteMap?.Invoke(_mapTileCommon, _gridTileMap);
                 // Logger.Log("타일맵 프리팹 로드 완료");
             }
             catch (Exception e)
@@ -595,7 +590,11 @@ namespace GGemCo2DCore
 
         public GridInformation GetGridInformation()
         {
-            return _gridInformation;
+            return _gridTileMap.GetComponent<GridInformation>();
+        }
+        public Grid GetGrid()
+        {
+            return _gridTileMap.GetComponent<Grid>();
         }
     }
 }

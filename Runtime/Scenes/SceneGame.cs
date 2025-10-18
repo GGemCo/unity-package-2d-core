@@ -101,6 +101,16 @@ namespace GGemCo2DCore
             }
             
             InitializeManagers();
+            
+            // GameTimeManager가 있을 때만 어댑터 등록
+            if (gameTimeManager != null)
+            {
+                if (AddressableLoaderSettings.Instance && AddressableLoaderSettings.Instance.settings.useInGameTime)
+                {
+                    var timeProvider = new GameTimeProviderAdapter(gameTimeManager);
+                    ServiceLocator.Register<IGameTimeProvider>(timeProvider);
+                }
+            }
 
             _isStateDirty = false;
             SetState(GameState.Begin);
@@ -117,7 +127,8 @@ namespace GGemCo2DCore
             saveDataManager = CreateManager<SaveDataManager>(managerContainer);
             damageTextManager = CreateManager<DamageTextManager>(managerContainer);
             uIIconCoolTimeManager = CreateManager<UIIconCoolTimeManager>(managerContainer);
-            gameTimeManager = CreateManager<GameTimeManager>(managerContainer);
+            if (AddressableLoaderSettings.Instance && AddressableLoaderSettings.Instance.settings.useInGameTime)
+                gameTimeManager = CreateManager<GameTimeManager>(managerContainer);
             
             AddressableLoaderPrefabCharacter = new AddressableLoaderPrefabCharacter();
             AddressableLoaderPrefabCharacter.Initialize(this);
@@ -283,6 +294,8 @@ namespace GGemCo2DCore
             KeyboardManager?.OnDestroy();
             InteractionManager?.OnDestroy();
             CutsceneManager?.OnDestroy();
+            
+            ServiceLocator.UnregisterAll();
         }
         private void OnMonsterKilled(MonsterKilledEventData e)
         {

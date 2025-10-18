@@ -13,9 +13,20 @@ using UnityEngine;
 
 namespace GGemCo2DCoreEditor
 {
+    /// <summary>
+    /// 슬라이스된 스프라이트들의 이름을 일괄 변환하는 EditorWindow.
+    /// <para>
+    /// <see cref="ISpriteEditorDataProvider"/> 를 통해 SpriteRect 메타데이터를 직접 수정하며,
+    /// "BaseName_row_col_frame" 규칙으로 재명명합니다.
+    /// </para>
+    /// <remarks>
+    /// - 텍스처 좌표계는 좌하(0,0) 기준이며, 상→하 스캔을 위해 TL기준 보정 로직을 사용합니다.<br/>
+    /// - Unity 공식 문서: Sprite Editor Data Provider API를 참고하세요.
+    /// </remarks>
+    /// </summary>
     internal class SpriteSliceRenamer : EditorWindow
     {
-        private const string Title = "Sprite Slice Renamer (Minimal, DataProvider)";
+        private const string Title = "스프라이트 이름정리기";
         private const string Prefs = "GGemCo_SliceRenamer_Min_DP_";
 
         // ---- Targets ----
@@ -48,6 +59,9 @@ namespace GGemCo2DCoreEditor
         private string _log = "";
         private Vector2 _scrollTextAreaPos;
 
+        /// <summary>
+        /// 툴 메인 메뉴에서 창을 엽니다.
+        /// </summary>
         [MenuItem(ConfigEditor.NameToolSpriteSliceRenamer, false, (int)ConfigEditor.ToolOrdering.SpriteSliceRenamer)]
         public static void Open()
         {
@@ -58,9 +72,14 @@ namespace GGemCo2DCoreEditor
             win.Show();
         }
 
-        [MenuItem("Assets/GGemCo/Rename Sliced Sprites", true)]
+        /// <summary>
+        /// Assets 컨텍스트 메뉴 유효성 검사. 선택 항목 중 <see cref="Texture2D"/> 가 있어야 활성화됩니다.
+        /// </summary>
         private static bool ValidateContext() => Selection.objects.OfType<Texture2D>().Any();
 
+        /// <summary>
+        /// Assets 컨텍스트 메뉴에서 실행 시, 선택한 Texture2D들을 대상으로 창을 엽니다.
+        /// </summary>
         [MenuItem("Assets/GGemCo/Rename Sliced Sprites")]
         private static void Context()
         {
@@ -71,6 +90,9 @@ namespace GGemCo2DCoreEditor
             win.Show();
         }
 
+        /// <summary>
+        /// 에디터 윈도우 GUI 렌더링 루프.
+        /// </summary>
         private void OnGUI()
         {
             using var scroll = new EditorGUILayout.ScrollViewScope(_scroll);
@@ -88,8 +110,12 @@ namespace GGemCo2DCoreEditor
             // DrawMisc();
             DrawActions();
             DrawLog();
+            EditorGUILayout.Space(20);
         }
 
+        /// <summary>
+        /// 대상 텍스처 목록과 BaseName 입력 UI를 그립니다.
+        /// </summary>
         private void DrawTargets()
         {
             EditorGUILayout.Space(6);
@@ -118,6 +144,9 @@ namespace GGemCo2DCoreEditor
             baseNameOverride = EditorGUILayout.TextField(new GUIContent("Base Name Override", "비우면 파일명 사용"), baseNameOverride);
         }
 
+        /// <summary>
+        /// 프레임/셀 관련 필수 입력 파라미터 UI를 그립니다.
+        /// </summary>
         private void DrawInputs()
         {
             EditorGUILayout.Space(8);
@@ -137,6 +166,9 @@ namespace GGemCo2DCoreEditor
             // _frameStartIndex = EditorGUILayout.IntField(new GUIContent("Frame Start Index (raw)"), _frameStartIndex);
         }
 
+        /// <summary>
+        /// 기타(Strict 모드 등) 설정 UI를 그립니다. (현재 비활성화)
+        /// </summary>
         private void DrawMisc()
         {
             EditorGUILayout.Space(6);
@@ -144,6 +176,9 @@ namespace GGemCo2DCoreEditor
             _strict = EditorGUILayout.Toggle(new GUIContent("Strict Mode", "Dry Run 실패가 있으면 Apply에서 오류 처리"), _strict);
         }
 
+        /// <summary>
+        /// Dry Run / Apply 실행 버튼 UI를 그립니다.
+        /// </summary>
         private void DrawActions()
         {
             EditorGUILayout.Space(10);
@@ -153,6 +188,9 @@ namespace GGemCo2DCoreEditor
             EditorGUILayout.EndHorizontal();
         }
 
+        /// <summary>
+        /// 결과 미리보기 및 로그 텍스트 영역을 렌더링합니다.
+        /// </summary>
         private void DrawLog()
         {
             EditorGUILayout.Space(10);
@@ -163,12 +201,18 @@ namespace GGemCo2DCoreEditor
             EditorGUILayout.EndScrollView();
         }
 
+        /// <summary>
+        /// 창 최초 열림 시 현재 선택된 <see cref="Texture2D"/> 들로 타겟을 초기화합니다.
+        /// </summary>
         private void TryInitFromSelection()
         {
             if (textures.Count > 0) return;
             textures = Selection.objects.OfType<Texture2D>().Distinct().ToList();
         }
 
+        /// <summary>
+        /// 현재 설정값을 <see cref="EditorPrefs"/> 에 저장합니다.
+        /// </summary>
         private void SavePrefs()
         {
             EditorPrefs.SetString(Prefs + "baseNameOverride", baseNameOverride);
@@ -179,6 +223,9 @@ namespace GGemCo2DCoreEditor
             EditorPrefs.SetInt(Prefs + "framesAcross", framesAcross);
         }
 
+        /// <summary>
+        /// <see cref="EditorPrefs"/> 에 저장된 설정값을 불러옵니다.
+        /// </summary>
         private void LoadPrefs()
         {
             baseNameOverride = EditorPrefs.GetString(Prefs + "baseNameOverride", "");
@@ -193,6 +240,9 @@ namespace GGemCo2DCoreEditor
         // Core (DataProvider 기반)
         // =====================================================================
 
+        /// <summary>
+        /// 실제 변경 없이 인덱싱/이름 매핑 결과를 로그로 미리 확인합니다.
+        /// </summary>
         private void DoDryRun()
         {
             _log = "";
@@ -220,11 +270,13 @@ namespace GGemCo2DCoreEditor
 
                 foreach (var sr in rects)
                 {
+                    string oldName = sr.name;
+                    
                     if (TryIndex(sr.rect, atlas, frameW, frameH, out int fx, out int fy, out int row, out int col))
                     {
                         int raw = fy * framesAcross + fx; // 좌→우, 상→하
                         uniqueRaw.Add(raw);
-                        preview.Add($"    … {baseNameOverride} → raw({raw}) r{row} c{col}");
+                        preview.Add($"    … {oldName} -> {baseNameOverride}_{row}_{col}_{raw}");
                         ok++;
                     }
                     else
@@ -249,6 +301,12 @@ namespace GGemCo2DCoreEditor
             }
         }
 
+        /// <summary>
+        /// 실제로 SpriteRect 이름을 갱신하고, Import를 강제하여 변경 사항을 저장합니다.
+        /// <remarks>
+        /// Strict 모드에서 실패 항목이 있으면 해당 파일은 갱신을 중단합니다.
+        /// </remarks>
+        /// </summary>
         private void DoApply()
         {
             _log = "";
@@ -328,6 +386,12 @@ namespace GGemCo2DCoreEditor
 
         // ---------- DataProvider 도우미 ----------
 
+        /// <summary>
+        /// 주어진 Texture2D에서 <see cref="ISpriteEditorDataProvider"/> 를 초기화합니다.
+        /// </summary>
+        /// <param name="tex">대상 텍스처</param>
+        /// <param name="provider">초기화된 데이터 프로바이더 (성공 시)</param>
+        /// <returns>성공 여부</returns>
         private static bool TryGetProvider(Texture2D tex, out ISpriteEditorDataProvider provider)
         {
             var factories = new SpriteDataProviderFactories();
@@ -338,7 +402,11 @@ namespace GGemCo2DCoreEditor
             return true;
         }
 
-        // 슬라이스 rectangles의 bounding box (텍스처 좌하 기준)
+        /// <summary>
+        /// SpriteRect들의 경계 박스(bounding box)를 계산합니다.
+        /// </summary>
+        /// <param name="rects">슬라이스된 스프라이트 사각형 목록</param>
+        /// <returns>텍스처 좌하 기준의 경계 영역</returns>
         private static BoundsInt ComputeAtlasBounds(IReadOnlyList<SpriteRect> rects)
         {
             int minX = int.MaxValue, minY = int.MaxValue;
@@ -361,9 +429,18 @@ namespace GGemCo2DCoreEditor
             return new BoundsInt(minX, minY, 0, maxX - minX, maxY - minY, 1);
         }
 
-        // Rect → (fx, fy, row, col)
-        // - 좌표계: 텍스처 좌하(0,0). 아틀라스는 bounding box로 보정.
-        // - 상→하 스캔을 위해 top-left 기준의 fy를 사용
+        /// <summary>
+        /// 단일 <see cref="Rect"/> 가 어느 프레임(fx, fy)과 프레임 내부 셀(row, col)에 속하는지 계산합니다.
+        /// </summary>
+        /// <param name="r">대상 사각형(SpriteRect.rect)</param>
+        /// <param name="atlas">사각형 전체의 경계 박스</param>
+        /// <param name="frameW">프레임 가로 픽셀(= frameCols * cellWidth)</param>
+        /// <param name="frameH">프레임 세로 픽셀(= frameRows * cellHeight)</param>
+        /// <param name="fx">프레임 X 인덱스(좌→우)</param>
+        /// <param name="fy">프레임 Y 인덱스(상→하)</param>
+        /// <param name="row">프레임 내부 셀의 행 인덱스(Top-Left 기준)</param>
+        /// <param name="col">프레임 내부 셀의 열 인덱스(Left 기준)</param>
+        /// <returns>인덱싱 성공 여부</returns>
         private bool TryIndex(Rect r, BoundsInt atlas, int frameW, int frameH,
                               out int fx, out int fy, out int row, out int col)
         {
@@ -381,11 +458,11 @@ namespace GGemCo2DCoreEditor
 
             // 프레임 내부 로컬 → 셀 인덱스
             float localX = rx - fx * frameW;
-            float localY_BL = ry - (atlas.size.y - ((fy + 1) * frameH));  // BL 기준
-            float localY_TL = frameH - (localY_BL + r.height);            // TL 기준 row
+            float localYbl = ry - (atlas.size.y - ((fy + 1) * frameH));  // BL 기준
+            float localYtl = frameH - (localYbl + r.height);            // TL 기준 row
 
             col = Mathf.FloorToInt((localX + 0.0001f) / cellWidth);
-            row = Mathf.FloorToInt((localY_TL + 0.0001f) / cellHeight);
+            row = Mathf.FloorToInt((localYtl + 0.0001f) / cellHeight);
 
             if (col < 0 || row < 0 || col >= frameCols || row >= frameRows)
             { fx = fy = row = col = -1; return false; }
@@ -393,7 +470,15 @@ namespace GGemCo2DCoreEditor
             return true;
         }
 
-        // 고유 raw 프레임 집합을, frameStartIndex부터 0,1,2..로 원형 재매핑
+        /// <summary>
+        /// 고유 raw 프레임 집합(좌→우, 상→하 인덱스)을 기준으로,
+        /// <paramref name="startRaw"/> 부터 0,1,2… 로 원형 재매핑 테이블을 생성합니다.
+        /// </summary>
+        /// <param name="uniqueRawFrames">정렬된 고유 raw 프레임 집합</param>
+        /// <param name="startRaw">시작 raw 인덱스</param>
+        /// <param name="count">사용된 고유 프레임 수</param>
+        /// <param name="warn">경고 메시지(필요 시)</param>
+        /// <returns>raw → 재라벨(new frame index) 매핑</returns>
         private static Dictionary<int, int> BuildFrameRemap(SortedSet<int> uniqueRawFrames, int startRaw,
                                                             out int count, out string warn)
         {
@@ -419,7 +504,17 @@ namespace GGemCo2DCoreEditor
             return map;
         }
 
+        /// <summary>
+        /// 내부 로그 버퍼에 한 줄을 추가합니다.
+        /// </summary>
+        /// <param name="line">추가할 문자열</param>
         private void Append(string line) => _log += (line + "\n");
+
+        /// <summary>
+        /// <see cref="Rect"/> 정보를 간단한 문자열로 변환합니다.
+        /// </summary>
+        /// <param name="r">대상 사각형</param>
+        /// <returns>좌표/크기 문자열</returns>
         private static string RectStr(Rect r) => $"({r.x},{r.y},{r.width},{r.height})";
     }
 }

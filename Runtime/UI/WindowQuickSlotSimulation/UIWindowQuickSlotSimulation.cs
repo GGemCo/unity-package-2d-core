@@ -3,6 +3,7 @@ using UnityEngine;
 using UnityEngine.UI;
 #if GGEMCO_USE_NEW_INPUT
 using UnityEngine.InputSystem;
+using UnityEngine.InputSystem.Controls;
 #endif
 
 namespace GGemCo2DCore
@@ -15,6 +16,8 @@ namespace GGemCo2DCore
         public int Priority => 1;
         
         [Header(UIWindowConstants.TitleHeaderIndividual)]
+        [HideInInspector] public TableItem tableItem;
+        [HideInInspector] public QuickSlotSimulationData quickSlotSimulationData;
         [Tooltip("단축키에 사용할 숫자 UI Image")]
         public Image[] iconHotKey;
         
@@ -22,18 +25,33 @@ namespace GGemCo2DCore
         private UIWindowInventory _uiWindowInventory;
         private Player _player;
 
-        private readonly Dictionary<KeyCode, int> _indexByKeyCode = new Dictionary<KeyCode, int>
+        // ─────────────────────────────────────────────────────────────
+        //  Hotkey 맵 (최대 9개) — maxCountIcon에 따라 동적 사용
+        // ─────────────────────────────────────────────────────────────
+        private const int MaxDigits = 9;
+
+#if GGEMCO_USE_OLD_INPUT
+        private static readonly KeyCode[] _alphaKeys =
         {
-            { KeyCode.Alpha1, 0 },
-            { KeyCode.Alpha2, 1 },
-            { KeyCode.Alpha3, 2 },
-            { KeyCode.Alpha4, 3 },
-            { KeyCode.Alpha5, 4 },
-            { KeyCode.Alpha6, 5 },
-            { KeyCode.Alpha7, 6 },
-            { KeyCode.Alpha8, 7 },
-            { KeyCode.Alpha9, 8 },
+            KeyCode.Alpha1, KeyCode.Alpha2, KeyCode.Alpha3,
+            KeyCode.Alpha4, KeyCode.Alpha5, KeyCode.Alpha6,
+            KeyCode.Alpha7, KeyCode.Alpha8, KeyCode.Alpha9
         };
+#endif
+
+#if GGEMCO_USE_NEW_INPUT
+        private KeyControl[] _digitKeys; // Keyboard.current.digit1Key ~ digit9Key 캐싱
+        private static readonly KeyCode[] AlphaKeysForNew =
+        {
+            KeyCode.Alpha1, KeyCode.Alpha2, KeyCode.Alpha3,
+            KeyCode.Alpha4, KeyCode.Alpha5, KeyCode.Alpha6,
+            KeyCode.Alpha7, KeyCode.Alpha8, KeyCode.Alpha9
+        };
+#endif
+
+        // 선택적으로, UI 뱃지/툴팁에 사용할 키-인덱스 매핑이 필요하면 유지
+        private readonly Dictionary<KeyCode, int> _indexByKeyCode = new Dictionary<KeyCode, int>(MaxDigits);
+
         
         protected override void Awake()
         {
@@ -41,13 +59,21 @@ namespace GGemCo2DCore
             uid = UIWindowConstants.WindowUid.QuickSlotSimulation;
             if (TableLoaderManager.Instance == null) return;
             base.Awake();
+            tableItem = TableLoaderManager.Instance.TableItem;
             IconPoolManager.SetSetIconHandler(new SetIconHandlerQuickSlotSimulation());
             DragDropHandler.SetStrategy(new DragDropStrategyQuickSlotSimulation());
+            
+            BuildHotkeyBindings();      // 단축키 맵 구성
+            SetupHotkeyUIAnchors();     // 숫자 UI 위치/활성 정리
         }
 
         protected override void Start()
         {
             base.Start();
+            if (SceneGame != null && SceneGame.saveDataManager != null)
+            {
+                quickSlotSimulationData = SceneGame.saveDataManager.QuickSlotSimulation;
+            }
             SceneGame.KeyboardManager.RegisterInputHandler(this);
             _uiWindowSkill =
                 SceneGame.uIWindowManager.GetUIWindowByUid<UIWindowSkill>(UIWindowConstants.WindowUid.Skill);
@@ -57,14 +83,17 @@ namespace GGemCo2DCore
             LoadIcons();
         }
         /// <summary>
-        /// 저장되어있는 스킬 정보로 아이콘 셋팅하기
-        /// 스킬창이 열려있지 않으면 업데이트 하지 않음
+        /// 저장되어있는 아이템 정보로 아이콘 셋팅하기
         /// </summary>
         private void LoadIcons()
         {
             if (!gameObject.activeSelf) return;
-            var datas = SceneGame.Instance.saveDataManager.QuickSlotSimulation.GetAllDatas();
+            var datas = SceneGame.Instance.saveDataManager.QuickSlotSimulation.GetAllItemCounts();
             if (datas == null) return;
+            
+            // 숫자 UI(아이콘 위 표시)도 maxCountIcon에 맞춰 위치/활성
+            SetupHotkeyUIAnchors();
+            
             for (int index = 0; index < maxCountIcon; index++)
             {
                 if (index >= icons.Length) continue;
@@ -83,10 +112,10 @@ namespace GGemCo2DCore
                 SaveDataIcon dataIcon = datas.GetValueOrDefault(index);
                 if (dataIcon == null) continue;
                     
-                int uid = dataIcon.Uid;
+                int iconUid = dataIcon.Uid;
                 int count = dataIcon.Count;
                 int level = dataIcon.Level;
-                uiIcon.ChangeInfoByUid(uid, count, level);
+                uiIcon.ChangeInfoByUid(iconUid, count, level);
             }
         }
         protected void OnDisable()
@@ -97,51 +126,36 @@ namespace GGemCo2DCore
 
         public bool HandleInput()
         {
-            
+            int usable = Mathf.Min(maxCountIcon, MaxDigits);
+            if (usable <= 0) return false;
+
 #if GGEMCO_USE_OLD_INPUT
-            if (Input.GetKeyDown(KeyCode.Alpha1))
+            for (int i = 0; i < usable; i++)
             {
-                OnKeyDownSkill(KeyCode.Alpha1);
-                return true;
-            }
-            if (Input.GetKeyDown(KeyCode.Alpha2))
-            {
-                OnKeyDownSkill(KeyCode.Alpha2);
-                return true;
-            }
-            if (Input.GetKeyDown(KeyCode.Alpha3))
-            {
-                OnKeyDownSkill(KeyCode.Alpha3);
-                return true;
-            }
-            if (Input.GetKeyDown(KeyCode.Alpha4))
-            {
-                OnKeyDownSkill(KeyCode.Alpha4);
-                return true;
+                var key = _alphaKeys[i];
+                if (Input.GetKeyDown(key))
+                {
+                    OnKeyDown(key); // 내부에서 index 계산
+                    return true;
+                }
             }
 #elif GGEMCO_USE_NEW_INPUT
-            if (Keyboard.current.digit1Key.wasPressedThisFrame)
+            var kb = Keyboard.current;
+            if (kb == null) return false;
+
+            // 최초 1회 캐싱 실패 시 재시도(도메인 리로드 등)
+            if (_digitKeys is not { Length: MaxDigits } || _digitKeys[0] == null)
+                BuildHotkeyBindings();
+
+            for (int i = 0; i < usable; i++)
             {
-                OnKeyDown(KeyCode.Alpha1);
-                return true;
-            }
-            if (Keyboard.current.digit2Key.wasPressedThisFrame)
-            {
-                OnKeyDown(KeyCode.Alpha2);
-                return true;
-            }
-            if (Keyboard.current.digit3Key.wasPressedThisFrame)
-            {
-                OnKeyDown(KeyCode.Alpha3);
-                return true;
-            }
-            if (Keyboard.current.digit4Key.wasPressedThisFrame)
-            {
-                OnKeyDown(KeyCode.Alpha4);
+                var keyCtrl = _digitKeys?[i];
+                if (keyCtrl is not { wasPressedThisFrame: true }) continue;
+                // New Input은 KeyControl만 있는데, 내부 로직은 KeyCode 기반이므로 매핑 KeyCode 전달
+                OnKeyDown(AlphaKeysForNew[i]);
                 return true;
             }
 #endif
-
             return false;
         }
         /// <summary>
@@ -150,49 +164,14 @@ namespace GGemCo2DCore
         /// <param name="keyCode"></param>
         private void OnKeyDown(KeyCode keyCode)
         {
-            if (iconType == IconConstants.Type.Skill)
-            {
-                OnKeyDownSkill(keyCode);
-            }
-            else if (iconType == IconConstants.Type.Item)
-            {
-                OnKeyDownItem(keyCode);
-            }
-        }
-
-        private void OnKeyDownItem(KeyCode keyCode)
-        {
-        }
-
-        private void OnKeyDownSkill(KeyCode keyCode)
-        {
-            if (SceneGame.Instance.player == null)
-            {
-                GcLogger.LogError("플레이어가 없습니다.");
-                return ;
-            }
-            // GcLogger.Log("UIWindowQuickSlot Key pressed Alpha1");
-            UIIcon icon = GetIconByIndex(_indexByKeyCode.GetValueOrDefault(keyCode));
-            if (icon == null || icon.uid <= 0) return;
-            if (!icon.IsSkill()) return;
-            var info = TableLoaderManager.Instance.TableSkill.GetDataByUidLevel(icon.uid, icon.GetLevel());
-            if (info == null)
-            {
-                GcLogger.LogError("스킬 테이블에 없는 스킬입니다. uid: " + icon.uid);
+            if (!_indexByKeyCode.TryGetValue(keyCode, out var index))
                 return;
-            }
 
-            if (SceneGame.Instance.player.GetComponent<Player>().CheckNeedMp(info.NeedMp) == false)
-            {
-                SceneGame.Instance.systemMessageManager.ShowMessageWarning("QuickSlot_NotEnoughMana");//"마력이 부족합니다."
+            if (index < 0 || index >= maxCountIcon)
                 return;
-            }
 
-            if (!icon.PlayCoolTime(info.CoolTime)) return;
-            
-            SceneGame.Instance.player.GetComponent<Player>().UseSkill(icon.uid, icon.GetLevel());
+            SetSelectedIcon(index);
         }
-
         /// <summary>
         /// 아이콘 우클릭했을때 처리 
         /// </summary>
@@ -201,57 +180,91 @@ namespace GGemCo2DCore
         {
             if (icon == null) return;
 
-            if (iconType == IconConstants.Type.Skill)
+            // 인벤토리가 열려 있으면
+            if (_uiWindowInventory != null && _uiWindowInventory.IsOpen())
             {
-                OnRightClickSkill(icon);
+                SceneGame.uIWindowManager.MoveIcon(uid, icon.slotIndex,
+                        UIWindowConstants.WindowUid.Inventory, icon.GetCount());
             }
-            else if (iconType == IconConstants.Type.Item)
-            {
-                OnRightClickItem(icon);
-            }
-            
         }
 
-        private void OnRightClickItem(UIIcon icon)
-        {
-            // 인벤토리 창이 열려있을때는 해제 하기
-            if (!_uiWindowInventory || !_uiWindowInventory.IsOpen()) return;
-            DetachIcon(icon.slotIndex);
-        }
-
-        private void OnRightClickSkill(UIIcon icon)
-        {
-            float time = SceneGame.Instance.uIIconCoolTimeManager.GetCurrentCoolTime(uid, icon.uid);
-            if (time > 0)
-            {
-                SceneGame.Instance.systemMessageManager.ShowMessageWarning("Action_CannotUseDuringCooldown");//"쿨타임 중에는 사용할 수 없습니다."
-                return;
-            }
-            // 스킬 창이 열려있을때는 해제 하기
-            if (!_uiWindowSkill || !_uiWindowSkill.IsOpen()) return;
-            DetachIcon(icon.slotIndex);
-        }
-
-        protected override void OnSelectedIcon(UIIcon selectedIcon)
+        /// <summary>
+        /// 아이템 선택시, 플레이어의 ToolController에 등록한다.
+        /// </summary>
+        /// <param name="icon"></param>
+        protected override void OnSelectedIcon(UIIcon icon)
         {
             if (!_player)
             {
                 _player = SceneGame.player.GetComponent<Player>();
-                return;
             }
             if (!_player) return;
-            if (!selectedIcon || selectedIcon.uid <= 0) return;
-            // const int partIndex = (int)ItemConstants.PartsType.Weapon;
-            // _player.EquipItem(partIndex, selectedIcon.uid, selectedIcon.GetCount());
-            
-            // 장착이 불가능한 경우, 머리위에 들기
-            // 장착 가능한 경우 인벤토리에 있는 아이템을 장착
-            
-            var partSlotIndex = selectedIcon.GetPartsSlotIndex();
-            if (partSlotIndex < 0) return;
-            SceneGame.uIWindowManager.MoveIcon(uid, selectedIcon.index, UIWindowConstants.WindowUid.Equip,
-                selectedIcon.GetCount(), partSlotIndex);
+            if (!icon || icon.uid <= 0) return;
+
+            if (icon.IsToolType() || icon.IsSeedType())
+            {
+                _player.EquipTool(icon.uid);
+            }
+        }
+        // ─────────────────────────────────────────────────────────────
+        // 유틸: 단축키 맵 구성/캐싱
+        // ─────────────────────────────────────────────────────────────
+        private void BuildHotkeyBindings()
+        {
+            _indexByKeyCode.Clear();
+
+            // KeyCode → 인덱스
+            // (1→0, 2→1, ... 9→8)
+            _indexByKeyCode[KeyCode.Alpha1] = 0;
+            _indexByKeyCode[KeyCode.Alpha2] = 1;
+            _indexByKeyCode[KeyCode.Alpha3] = 2;
+            _indexByKeyCode[KeyCode.Alpha4] = 3;
+            _indexByKeyCode[KeyCode.Alpha5] = 4;
+            _indexByKeyCode[KeyCode.Alpha6] = 5;
+            _indexByKeyCode[KeyCode.Alpha7] = 6;
+            _indexByKeyCode[KeyCode.Alpha8] = 7;
+            _indexByKeyCode[KeyCode.Alpha9] = 8;
+
+#if GGEMCO_USE_NEW_INPUT
+            // Keyboard.current.digit1Key ~ digit9Key 캐싱(최초 1회)
+            var kb = Keyboard.current;
+            if (kb != null)
+            {
+                _digitKeys = new []
+                {
+                    kb.digit1Key, kb.digit2Key, kb.digit3Key,
+                    kb.digit4Key, kb.digit5Key, kb.digit6Key,
+                    kb.digit7Key, kb.digit8Key, kb.digit9Key
+                };
+            }
+#endif
         }
 
+        // ─────────────────────────────────────────────────────────────
+        // 유틸: 숫자 UI(anchor) 정리
+        //    - maxCountIcon 이하만 활성화/부모 재지정/위치 조정
+        // ─────────────────────────────────────────────────────────────
+        private void SetupHotkeyUIAnchors()
+        {
+            if (slots == null || iconHotKey == null) return;
+
+            int usable = Mathf.Min(maxCountIcon, MaxDigits);
+
+            for (int i = 0; i < iconHotKey.Length; i++)
+            {
+                var img = iconHotKey[i];
+                if (!img) continue;
+
+                bool enable = i < usable && i < slots.Length && slots[i];
+                img.gameObject.SetActive(enable);
+
+                if (enable)
+                {
+                    // 슬롯 좌상단에 붙이기(기존 로직 유지)
+                    img.transform.SetParent(slots[i].transform, worldPositionStays: false);
+                    img.rectTransform.anchoredPosition = new Vector2(-slotSize.x / 2f, slotSize.y / 2f);
+                }
+            }
+        }
     }
 }

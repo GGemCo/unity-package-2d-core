@@ -15,14 +15,6 @@ MonoBehaviour:
   m_TableCollectionName: GGemCo_Item_Description
   m_TableCollectionNameGuidString: f06fa3f8ee7274743b311dee674bcc6b
   m_Entries:
-  - m_Id: 4888081272832
-    m_Key: 301011001
-    m_Metadata:
-      m_Items: []
-  - m_Id: 4888085467136
-    m_Key: 301021001
-    m_Metadata:
-      m_Items: []
   - m_Id: 2196634144768
     m_Key: 101011001
     m_Metadata:
@@ -75,6 +67,26 @@ MonoBehaviour:
     m_Key: 102021002
     m_Metadata:
       m_Items: []
+  - m_Id: 33784954729046016
+    m_Key: 108091001
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33785306333356032
+    m_Key: 108101001
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33785306333356033
+    m_Key: 108111001
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33785306333356034
+    m_Key: 108121001
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33785306333356035
+    m_Key: 108131001
+    m_Metadata:
+      m_Items: []
   - m_Id: 4888085467148
     m_Key: 201011001
     m_Metadata:
@@ -105,6 +117,34 @@ MonoBehaviour:
       m_Items: []
   - m_Id: 4888085467155
     m_Key: 201041002
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33785306333356036
+    m_Key: 209141001
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33785306333356037
+    m_Key: 209141002
+    m_Metadata:
+      m_Items: []
+  - m_Id: 35182076850380800
+    m_Key: 209141003
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33785306333356038
+    m_Key: 210141001
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33785306333356039
+    m_Key: 210141002
+    m_Metadata:
+      m_Items: []
+  - m_Id: 4888081272832
+    m_Key: 301011001
+    m_Metadata:
+      m_Items: []
+  - m_Id: 4888085467136
+    m_Key: 301021001
     m_Metadata:
       m_Items: []
   - m_Id: 4888085467156
@@ -173,6 +213,10 @@ MonoBehaviour:
       m_Items: []
   - m_Id: 4888085467172
     m_Key: 401011017
+    m_Metadata:
+      m_Items: []
+  - m_Id: 35182213999927296
+    m_Key: 210141003
     m_Metadata:
       m_Items: []
   m_Metadata:

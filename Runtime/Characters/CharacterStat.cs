@@ -90,8 +90,9 @@ namespace GGemCo2DCore
         /// <summary>
         /// 값 업데이트
         /// </summary>
+        /// <param name="characterBase"></param>
         /// <param name="equippedItems"></param>
-        public void UpdateStatCache(Dictionary<int, StruckTableItem> equippedItems)
+        public void UpdateStatCache(CharacterBase characterBase, Dictionary<int, StruckTableItem> equippedItems)
         {
             flatModifiers.Clear();
             percentModifiers.Clear();

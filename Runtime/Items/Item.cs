@@ -5,6 +5,9 @@ using Random = UnityEngine.Random;
 
 namespace GGemCo2DCore
 {
+    /// <summary>
+    /// 드랍 아이템
+    /// </summary>
     public class Item : MonoBehaviour
     {
         public int itemUid;
@@ -228,6 +231,7 @@ namespace GGemCo2DCore
             itemRenderer.sortingLayerName = ConfigSortingLayer.GetValue(ConfigSortingLayer.Keys.Character);
             itemRenderer.sortingOrder = MathHelper.GetSortingOrder(mapSizeHeight, transform.position.y);
             circleCollider2D.enabled = true;
+            circleCollider2D.isTrigger = true;
 
             coroutineDropItemDestroy = StartCoroutine(CheckDestroyTime());
         }

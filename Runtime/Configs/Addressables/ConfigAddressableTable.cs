@@ -39,6 +39,8 @@ namespace GGemCo2DCore
         public const string Quest            = "quest";
         public const string Projectile       = "projectile";
         public const string Sound            = "sound";
+        public const string SimulationTool   = "simulation_tool";
+        public const string SimulationGrowth = "simulation_growth";
 
         // 개별 항목
         public static readonly AddressableAssetInfo TableMap             = Make(Map);
@@ -64,6 +66,8 @@ namespace GGemCo2DCore
         public static readonly AddressableAssetInfo TableQuest           = Make(Quest);
         public static readonly AddressableAssetInfo TableProjectile      = Make(Projectile);
         public static readonly AddressableAssetInfo TableSound           = Make(Sound);
+        public static readonly AddressableAssetInfo TableSimulationTool  = Make(SimulationTool);
+        public static readonly AddressableAssetInfo TableSimulationGrowth  = Make(SimulationGrowth);
 
         // 전체 목록 + 읽기 전용 뷰
         public static readonly List<AddressableAssetInfo> All = new()
@@ -72,7 +76,8 @@ namespace GGemCo2DCore
             TableMonsterDropRate, TableItemDropGroup, TableExp, TableWindow,
             TableStatus, TableSkill, TableAffect, TableEffect, TableInteraction,
             TableShop, TableItemUpgrade, TableItemSalvage, TableItemCraft,
-            TableCutscene, TableDialogue, TableQuest, TableProjectile, TableSound
+            TableCutscene, TableDialogue, TableQuest, TableProjectile, TableSound, TableSimulationTool,
+            TableSimulationGrowth
         };
         public static AddressableAssetInfo GetByKey(string key)
         {

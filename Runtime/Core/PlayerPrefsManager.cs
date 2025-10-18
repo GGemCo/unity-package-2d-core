@@ -13,7 +13,9 @@ namespace GGemCo2DCore
             KeySoundVolumeBGM,
             KeySoundVolumeSfx,
             KeySoundVolumeMaster,
-            KeyControlKeyBinding
+            KeyControlKeyBinding,
+            KeyToolPreviewAlwaysShow,
+            KeyToolPreviewHideWhenMoving
         }
 
         public static readonly Dictionary<KeyIndex, string> Keys = new Dictionary<KeyIndex, string>()
@@ -25,6 +27,8 @@ namespace GGemCo2DCore
             { KeyIndex.KeySoundVolumeBGM, "GGEMCO_KEY_SOUND_VOLUME_BGM" },
             { KeyIndex.KeySoundVolumeSfx, "GGEMCO_KEY_SOUND_VOLUME_SFX" },
             { KeyIndex.KeyControlKeyBinding, "GGEMCO_KEY_CONTROL_KEY_BINDING" },
+            { KeyIndex.KeyToolPreviewAlwaysShow, "GGEMCO_KEY_TOOL_PREVIEW_ALWAYS_SHOW" },
+            { KeyIndex.KeyToolPreviewHideWhenMoving, "GGEMCO_KEY_TOOL_PREVIEW_HIDE_WHEN_MOVING" },
         };
 
         private static void PlayerPrefsDelete(KeyIndex key)
@@ -53,6 +57,11 @@ namespace GGemCo2DCore
         {
             string keyName = Keys.GetValueOrDefault(key);
             return long.Parse(PlayerPrefs.GetString(keyName, defaultValue));
+        }
+        private static bool PlayerPrefsLoadBool(KeyIndex key, bool defaultValue = false)
+        {
+            string keyName = Keys.GetValueOrDefault(key);
+            return bool.Parse(PlayerPrefs.GetString(keyName, defaultValue.ToString()));
         }
         private static string PlayerPrefsLoad(KeyIndex key)
         {
@@ -146,6 +155,31 @@ namespace GGemCo2DCore
         public static string LoadKeyBinding()
         {
             return PlayerPrefsLoad(KeyIndex.KeyControlKeyBinding);
+        }
+
+        /// <summary>
+        /// 시뮬레이션 툴 미리 보기 on/off
+        /// </summary>
+        /// <param name="isOn"></param>
+        public static void SaveToolPreviewAlwaysShow(bool isOn)
+        {
+            PlayerPrefsSave(KeyIndex.KeyToolPreviewAlwaysShow, isOn.ToString());
+        }
+        public static bool LoadToolPreviewAlwaysShow()
+        {
+            return PlayerPrefsLoadBool(KeyIndex.KeyToolPreviewAlwaysShow, true);
+        }
+        /// <summary>
+        /// 시뮬레이션 툴 미리보기, 캐릭터 이동중 보기 on/off
+        /// </summary>
+        /// <param name="isOn"></param>
+        public static void SaveToolPreviewHideWhenMoving(bool isOn)
+        {
+            PlayerPrefsSave(KeyIndex.KeyToolPreviewHideWhenMoving, isOn.ToString());
+        }
+        public static bool LoadToolPreviewHideWhenMoving()
+        {
+            return PlayerPrefsLoadBool(KeyIndex.KeyToolPreviewHideWhenMoving, true);
         }
     }
 }

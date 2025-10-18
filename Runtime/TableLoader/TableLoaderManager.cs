@@ -37,6 +37,8 @@ namespace GGemCo2DCore
         public TableQuest TableQuest { get; private set; } = new TableQuest();
         public TableProjectile TableProjectile { get; private set; } = new TableProjectile();
         public TableSound TableSound { get; private set; } = new TableSound();
+        public TableSimulationTool TableSimulationTool { get; private set; } = new TableSimulationTool();
+        public TableSimulationGrowth TableSimulationGrowth { get; private set; } = new TableSimulationGrowth();
 
         protected void Awake()
         {
@@ -158,6 +160,12 @@ namespace GGemCo2DCore
                                 break;
                             case ConfigAddressableTable.Sound:
                                 TableSound.LoadData(content);
+                                break;
+                            case ConfigAddressableTable.SimulationTool:
+                                TableSimulationTool.LoadData(content);
+                                break;
+                            case ConfigAddressableTable.SimulationGrowth:
+                                TableSimulationGrowth.LoadData(content);
                                 break;
                         }
                     }
