@@ -13,13 +13,13 @@ namespace GGemCo2DCoreEditor
             SettingSceneLoading,
             SettingSceneGame,
             Development = 100,
+            MapExporter = 101,
+            Quest = 110,
             CreateDialogue,
-            MapExporter,
-            Cutscene,
-            Quest,
-            LocalizationUpdate,
+            Cutscene = 120,
+            LocalizationUpdate =  130,
             LocalizationFind,
-            SoundUIButton,
+            SoundUIButton = 140,
             CreateHubWindow,
             Test = 200,
             CreateItem,
@@ -36,6 +36,9 @@ namespace GGemCo2DCoreEditor
             PlayerPrefs,
             OpenSaveDataFolder,
             LoadAddressable,
+            SpriteSlicerExporter,
+            SpriteSliceRenamer,
+            AnimatedTileBatchCreator
         }
         private const string NameToolGGemCo = ConfigDefine.NameSDK+"Tool/";
         
@@ -50,12 +53,16 @@ namespace GGemCo2DCoreEditor
         
         // 개발툴
         private const string NameToolDevelopment = NameToolGGemCo + "개발툴/";
-        public const string NameToolCreateDialogue = NameToolDevelopment + "대사 생성툴";
         public const string NameToolMapExporter = NameToolDevelopment + "맵배치툴";
-        public const string NameToolCutscene = NameToolDevelopment + "연출툴";
+        
         public const string NameToolQuest = NameToolDevelopment + "퀘스트 생성툴";
+        public const string NameToolCreateDialogue = NameToolDevelopment + "대사 생성툴";
+        
+        public const string NameToolCutscene = NameToolDevelopment + "연출툴";
+        
         public const string NameToolLocalizationUpdate = NameToolDevelopment + "Localize 업데이트툴";
         public const string NameToolLocalizationFind = NameToolDevelopment + "Localize 검색기";
+        
         public const string NameToolSoundUIButton = NameToolDevelopment + "UI 버튼 사운드 적용툴";
         public const string NameToolCreateHubWindow = NameToolDevelopment + "오브젝트 생성툴";
         
@@ -79,10 +86,13 @@ namespace GGemCo2DCoreEditor
         public const string NameToolPlayerPrefs = NameToolEtc + "PlayerPrefs 데이터 관리";
         public const string NameToolOpenSaveDataFolder = NameToolEtc + "게임 데이터 관리";
         public const string NameToolLoadAddressable = NameToolEtc + "Addressable 로더 툴";
+        public const string NameToolSpriteSlicerExporter = NameToolEtc + "PNG 슬라이서 & 내보내기";
+        public const string NameToolSpriteSliceRenamer = NameToolEtc + "타일/Sprite Slice Renamer";
+        public const string NameToolAnimatedTileBatchCreator = NameToolEtc + "타일/Animated Tile Batch Creator";
 
         // 에디터에서 사용되는 프리팹 경로
-        public const string PathResource = "Packages/com.ggemco.2d.core/EditorResource";
-        public const string PathPrefab = PathResource+"/Prefabs";
+        private const string PathResource = "Packages/com.ggemco.2d.core/EditorResource";
+        private const string PathPrefab = PathResource+"/Prefabs";
         public const string PathPrefabDefaultUIButton = PathPrefab+"/UI/DefaultButton.prefab";
         public const string PathPrefabDefaultUITextMeshProGUI = PathPrefab+"/UI/DefaultText.prefab";
         public const string PathPrefabCanvasFromWorld = PathPrefab+"/UI/CanvasFromWorld.prefab";

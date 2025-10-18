@@ -11,7 +11,7 @@ using UnityEditor;
 using UnityEditor.U2D.Sprites;
 using UnityEngine;
 
-namespace GGemCo2DTools
+namespace GGemCo2DCoreEditor
 {
     internal class SpriteSliceRenamer : EditorWindow
     {
@@ -48,7 +48,7 @@ namespace GGemCo2DTools
         private string _log = "";
         private Vector2 _scrollTextAreaPos;
 
-        [MenuItem("Tools/GGemCo/Sprite Slice Renamer")]
+        [MenuItem(ConfigEditor.NameToolSpriteSliceRenamer, false, (int)ConfigEditor.ToolOrdering.SpriteSliceRenamer)]
         public static void Open()
         {
             var win = GetWindow<SpriteSliceRenamer>(Title);

@@ -111,7 +111,7 @@ namespace GGemCo2DCoreEditor
         }
 
         // -------- Menu --------
-        [MenuItem("Tools/GGemCo/Animated Tile Batch Creator")]
+        [MenuItem(ConfigEditor.NameToolAnimatedTileBatchCreator, false, (int)ConfigEditor.ToolOrdering.AnimatedTileBatchCreator)]
         public static void ShowWindow()
         {
             var win = GetWindow<AnimatedTileBatchCreator>(utility: false, title: WindowTitle);
