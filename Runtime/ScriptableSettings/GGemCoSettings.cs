@@ -53,7 +53,11 @@ namespace GGemCo2DCore
 
         [Tooltip("데미지 텍스트 출력 시, X축 랜덤 좌표 범위")]
         public float damageTextRandomXRange;
-
+        
+        [Header("캐릭터 방향")] 
+        [Tooltip("캐릭터의 방향 타입")]
+        public ConfigCommon.FacingDirectionType facingDirectionType;
+        
         [Header("인 게임 시간")] 
         [Tooltip("사용/미사용")]
         public bool useInGameTime;
@@ -92,7 +96,9 @@ namespace GGemCo2DCore
             damageTextMoveUpDistance = 50.0f;
             damageTextFadeOutTime = 0.1f;
             damageTextRandomXRange = 10.0f;
-
+            
+            facingDirectionType = ConfigCommon.FacingDirectionType.TwoWay;
+            
             useInGameTime = false;
         }
     }

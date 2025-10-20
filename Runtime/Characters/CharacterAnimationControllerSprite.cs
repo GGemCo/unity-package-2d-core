@@ -10,21 +10,27 @@ namespace GGemCo2DCore
     public class CharacterAnimationControllerSprite : Animation2dController, ICharacterAnimationController
     {
         public string CurrentAnimationNameAttack { get; set; }
-        private CharacterBase characterBase;
-        private SpriteRenderer spriteRenderer;
+        private CharacterBase _characterBase;
+        private SpriteRenderer _spriteRenderer;
+        private ConfigCommon.FacingDirectionType _facingDirection;
 
         protected override void Awake()
         {
             base.Awake();
-            characterBase = GetComponent<CharacterBase>();
-            if (characterBase == null)
+            _characterBase = GetComponent<CharacterBase>();
+            if (_characterBase == null)
             {
                 GcLogger.LogError("CharacterBase is missing! This component will not function.");
                 enabled = false; // 컴포넌트를 비활성화하여 다른 함수들이 실행되지 않도록 합니다.
                 return;
             }
 
-            spriteRenderer = GetComponent<SpriteRenderer>();
+            _spriteRenderer = GetComponent<SpriteRenderer>();
+            _facingDirection = ConfigCommon.FacingDirectionType.TwoWay;
+            if (AddressableLoaderSettings.Instance && AddressableLoaderSettings.Instance.settings)
+            {
+                _facingDirection = AddressableLoaderSettings.Instance.settings.facingDirectionType;
+            }
         }
 
         /// <summary>
@@ -32,29 +38,38 @@ namespace GGemCo2DCore
         /// </summary>
         public void PlayWaitAnimation()
         {
-            if (!characterBase || characterBase.IsStatusDead()) return;
+            if (!_characterBase || _characterBase.IsStatusDead()) return;
             
             // todo 정리 필요
             string idleAnim = ICharacterAnimationController.WaitForwardAnim;
-            if (characterBase.CurrentFacing == CharacterConstants.FacingDirection8.Up)
+            if (_facingDirection == ConfigCommon.FacingDirectionType.FourWay ||
+                _facingDirection == ConfigCommon.FacingDirectionType.EightWay)
             {
-                idleAnim = ICharacterAnimationController.WaitUpAnim;
-            }
-            else if (characterBase.CurrentFacing == CharacterConstants.FacingDirection8.Down)
-            {
-                idleAnim = ICharacterAnimationController.WaitDownAnim;
+                if (_characterBase.CurrentFacing == CharacterConstants.FacingDirection8.Up)
+                {
+                    idleAnim = ICharacterAnimationController.WaitUpAnim;
+                }
+                else if (_characterBase.CurrentFacing == CharacterConstants.FacingDirection8.Down)
+                {
+                    idleAnim = ICharacterAnimationController.WaitDownAnim;
+                }
             }
 
-            if (characterBase.IsEquipSeed())
+            if (_characterBase.IsEquipSeed())
             {
                 idleAnim = ICharacterAnimationController.WaitPickUpAnim;
-                if (characterBase.CurrentFacing == CharacterConstants.FacingDirection8.Up)
+
+                if (_facingDirection == ConfigCommon.FacingDirectionType.FourWay ||
+                    _facingDirection == ConfigCommon.FacingDirectionType.EightWay)
                 {
-                    idleAnim = ICharacterAnimationController.WaitPickUpUpAnim;
-                }
-                else if (characterBase.CurrentFacing == CharacterConstants.FacingDirection8.Down)
-                {
-                    idleAnim = ICharacterAnimationController.WaitPickUpDownAnim;
+                    if (_characterBase.CurrentFacing == CharacterConstants.FacingDirection8.Up)
+                    {
+                        idleAnim = ICharacterAnimationController.WaitPickUpUpAnim;
+                    }
+                    else if (_characterBase.CurrentFacing == CharacterConstants.FacingDirection8.Down)
+                    {
+                        idleAnim = ICharacterAnimationController.WaitPickUpDownAnim;
+                    }
                 }
             }
             
@@ -62,7 +77,7 @@ namespace GGemCo2DCore
             
             if (state.IsName(idleAnim)) return;
             
-            PlayAnimation(idleAnim, true, characterBase.GetCurrentMoveSpeed());
+            PlayAnimation(idleAnim, true, _characterBase.GetCurrentMoveSpeed());
         }
 
         /// <summary>
@@ -70,50 +85,63 @@ namespace GGemCo2DCore
         /// </summary>
         public void PlayRunAnimation()
         {
-            if (characterBase.IsStatusDead()) return;
+            if (_characterBase.IsStatusDead()) return;
             
             
             string moveAnim = ICharacterAnimationController.WalkForwardAnim;
-            if (characterBase.CurrentFacing == CharacterConstants.FacingDirection8.Up)
+
+            if (_facingDirection == ConfigCommon.FacingDirectionType.FourWay || _facingDirection == ConfigCommon.FacingDirectionType.EightWay)
             {
-                moveAnim = ICharacterAnimationController.WalkUpAnim;
+                if (_characterBase.CurrentFacing == CharacterConstants.FacingDirection8.Up)
+                {
+                    moveAnim = ICharacterAnimationController.WalkUpAnim;
+                }
+                else if (_characterBase.CurrentFacing == CharacterConstants.FacingDirection8.Down)
+                {
+                    moveAnim = ICharacterAnimationController.WalkDownAnim;
+                }
             }
-            else if (characterBase.CurrentFacing == CharacterConstants.FacingDirection8.Down)
+
+            if (_facingDirection == ConfigCommon.FacingDirectionType.EightWay)
             {
-                moveAnim = ICharacterAnimationController.WalkDownAnim;
+                if (_characterBase.CurrentFacing == CharacterConstants.FacingDirection8.UpLeft ||
+                    _characterBase.CurrentFacing == CharacterConstants.FacingDirection8.UpRight)
+                {
+                    moveAnim = ICharacterAnimationController.WalkBackwardAnim;
+                }
+                else if (_characterBase.CurrentFacing == CharacterConstants.FacingDirection8.DownLeft ||
+                         _characterBase.CurrentFacing == CharacterConstants.FacingDirection8.DownRight)
+                {
+                    moveAnim = ICharacterAnimationController.WalkForwardAnim;
+                }
             }
-            else if (characterBase.CurrentFacing == CharacterConstants.FacingDirection8.UpLeft ||
-                     characterBase.CurrentFacing == CharacterConstants.FacingDirection8.UpRight)
-            {
-                moveAnim = ICharacterAnimationController.WalkBackwardAnim;
-            }
-            else if (characterBase.CurrentFacing == CharacterConstants.FacingDirection8.DownLeft ||
-                     characterBase.CurrentFacing == CharacterConstants.FacingDirection8.DownRight)
-            {
-                moveAnim = ICharacterAnimationController.WalkForwardAnim;
-            }
-            
-            if (characterBase.IsEquipSeed())
+
+
+            if (_characterBase.IsEquipSeed())
             {
                 moveAnim = ICharacterAnimationController.WalkPickUpAnim;
-                if (characterBase.CurrentFacing == CharacterConstants.FacingDirection8.Up)
+                if (_facingDirection == ConfigCommon.FacingDirectionType.FourWay ||
+                    _facingDirection == ConfigCommon.FacingDirectionType.EightWay)
                 {
-                    moveAnim = ICharacterAnimationController.WalkPickUpUpAnim;
-                }
-                else if (characterBase.CurrentFacing == CharacterConstants.FacingDirection8.Down)
-                {
-                    moveAnim = ICharacterAnimationController.WalkPickUpDownAnim;
+                    if (_characterBase.CurrentFacing == CharacterConstants.FacingDirection8.Up)
+                    {
+                        moveAnim = ICharacterAnimationController.WalkPickUpUpAnim;
+                    }
+                    else if (_characterBase.CurrentFacing == CharacterConstants.FacingDirection8.Down)
+                    {
+                        moveAnim = ICharacterAnimationController.WalkPickUpDownAnim;
+                    }
                 }
             }
 
             AnimatorStateInfo state = Animator.GetCurrentAnimatorStateInfo(0);
             if (state.IsName(moveAnim)) return;
-            PlayAnimation(moveAnim, true, characterBase.GetCurrentMoveSpeed());
+            PlayAnimation(moveAnim, true, _characterBase.GetCurrentMoveSpeed());
         }
 
         public void PlayDamageAnimation()
         {
-            if (characterBase.IsStatusDead()) return;
+            if (_characterBase.IsStatusDead()) return;
             PlayAnimation(ICharacterAnimationController.DamageAnim);
         }
 
@@ -203,23 +231,23 @@ namespace GGemCo2DCore
         public void PlayAttackAnimation(string animName = "")
         {
             CurrentAnimationNameAttack = animName != "" ? animName : ICharacterAnimationController.AttackAnim;
-            PlayAnimation(CurrentAnimationNameAttack, false, characterBase.GetCurrentAttackSpeed());
+            PlayAnimation(CurrentAnimationNameAttack, false, _characterBase.GetCurrentAttackSpeed());
         }
 
         public bool PlayAttackWaitAnimation()
         {
-            if (characterBase.IsStatusDead()) return false;
+            if (_characterBase.IsStatusDead()) return false;
             string aniName = $"{CurrentAnimationNameAttack}{ICharacterAnimationController.SuffixWait}";
             if (!HasAnimation(aniName)) return false;
-            PlayAnimation(aniName, true, characterBase.GetCurrentAttackSpeed());
+            PlayAnimation(aniName, true, _characterBase.GetCurrentAttackSpeed());
             return true;
         }
 
         public void PlayAttackEndAnimation()
         {
-            if (characterBase.IsStatusDead()) return;
+            if (_characterBase.IsStatusDead()) return;
             string aniName = $"{CurrentAnimationNameAttack}{ICharacterAnimationController.SuffixEnd}";
-            PlayAnimation(aniName, false, characterBase.GetCurrentAttackSpeed());
+            PlayAnimation(aniName, false, _characterBase.GetCurrentAttackSpeed());
         }
         /// <summary>
         /// 죽음 애니메이션 처리
@@ -239,19 +267,19 @@ namespace GGemCo2DCore
             if (Animator == null) return;
             if (state.IsName(CurrentAnimationNameAttack))
             {
-                characterBase.OnAnimationCompleteAttack();
+                _characterBase.OnAnimationCompleteAttack();
             }
             else if (state.IsName($"{CurrentAnimationNameAttack}_end"))
             {
-                characterBase.OnAnimationCompleteAttackEnd();
+                _characterBase.OnAnimationCompleteAttackEnd();
             }
             else if (state.IsName($"{ICharacterAnimationController.DeadAnim}"))
             {
-                characterBase.OnAnimationCompleteDead();
+                _characterBase.OnAnimationCompleteDead();
             }
             else
             {
-                characterBase.Stop();
+                _characterBase.Stop();
             }
         }
 
@@ -261,17 +289,17 @@ namespace GGemCo2DCore
             float startAlpha = fadeIn ? 0 : 1;
             float endAlpha = fadeIn ? 1 : 0;
 
-            Color color = spriteRenderer.color;
+            Color color = _spriteRenderer.color;
 
             while (elapsedTime < duration)
             {
                 elapsedTime += Time.deltaTime;
                 color.a = Mathf.Lerp(startAlpha, endAlpha, elapsedTime / duration);
-                spriteRenderer.color = color;
+                _spriteRenderer.color = color;
                 yield return null;
             }
 
-            characterBase.SetIsStartFade(false);
+            _characterBase.SetIsStartFade(false);
         }
         /// <summary>
         /// track index 의 time scale 변경해주기

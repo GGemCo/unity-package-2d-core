@@ -70,5 +70,18 @@ namespace GGemCo2DCore
         public const string TitleHeaderOption = "[선택 항목]";
         
         public enum ClimateId { Spring = 0, Summer = 1, Autumn = 2, Winter = 3 }
+        
+        /// <summary>
+        /// 캐릭터의 방향 타입
+        /// - 2방향: 좌/우
+        /// - 4방향: 상/하/좌/우
+        /// - 8방향: 대각 포함
+        /// </summary>
+        public enum FacingDirectionType
+        {
+            TwoWay   = 2,  // 좌우
+            FourWay  = 4,  // 상하좌우
+            EightWay = 8   // 상하좌우 + 대각
+        }
     }
 }
