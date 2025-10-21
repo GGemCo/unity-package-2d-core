@@ -83,5 +83,13 @@ namespace GGemCo2DCore
             FourWay  = 4,  // 상하좌우
             EightWay = 8   // 상하좌우 + 대각
         }
+        /// <summary>
+        /// 패키지 메인 클래스 실행 순서
+        /// </summary>
+        public enum ExecutionOrdering
+        {
+            Control,
+            Simulation
+        }
     }
 }
