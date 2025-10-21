@@ -13,7 +13,7 @@ namespace GGemCo2DCore
         /// </summary>
         public enum MenuOrdering
         {
-            None,
+            None = -10000,
             MainSettings,
             PlayerSettings,
             MapSettings,
