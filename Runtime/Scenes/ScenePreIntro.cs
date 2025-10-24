@@ -72,7 +72,6 @@ namespace GGemCo2DCore
         {
             if (autoStart)
             {
-                ChangeSceneToIntro();
             }
             else
             {
@@ -284,6 +283,11 @@ namespace GGemCo2DCore
                 yield return s;
                 if (s.Status == UnityEngine.ResourceManagement.AsyncOperations.AsyncOperationStatus.Succeeded)
                     textLoadingPercent.text = s.Result;
+            }
+            // 자동 시작일때, 텍스트 locale이 셋팅 된 후 시작하기 
+            if (autoStart)
+            {
+                ChangeSceneToIntro();
             }
         }
     }
