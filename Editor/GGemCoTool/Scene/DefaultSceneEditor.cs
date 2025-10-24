@@ -8,13 +8,6 @@ namespace GGemCo2DCoreEditor
 {
     public class DefaultSceneEditor : DefaultEditorWindow
     {
-        // 현재 불러온 씬 이름을 체크하기 위해 추가
-        protected GGemCoSettings gGemCoSettings;
-        protected override void OnEnable()
-        {
-            base.OnEnable();
-            gGemCoSettings = GetScriptableSetting();
-        }
         private Scene GetActiveSceneInEditor()
         {
             // 현재 에디터에서 활성화된 씬을 가져옴
@@ -24,13 +17,6 @@ namespace GGemCo2DCoreEditor
         {
             Scene scene = GetActiveSceneInEditor();
             return scene.name == sceneName;
-        }
-        private GGemCoSettings GetScriptableSetting()
-        {
-            GGemCoSettings scriptable =
-                AssetDatabaseLoaderManager.LoadScriptableObject(ConfigAddressableSetting.Settings.Path) as
-                    GGemCoSettings;
-            return scriptable == null ? null : scriptable;
         }
         /// <summary>
         /// 사운드 매니저 셋팅

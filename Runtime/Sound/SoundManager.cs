@@ -29,7 +29,6 @@ namespace GGemCo2DCore
         {
             if (mainAudioMixer == null)
             {
-                GcLogger.LogError("mainAudioMixer is null");
                 enabled = false;
                 return;
             }
