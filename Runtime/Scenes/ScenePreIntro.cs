@@ -70,16 +70,10 @@ namespace GGemCo2DCore
         /// </summary>
         private void Start()
         {
-            if (autoStart)
-            {
-            }
-            else
-            {
-                if (textPressAnyKey != null)
-                    textPressAnyKey.gameObject.SetActive(false);
-                // 1) Localization 초기화가 끝나면 "정식 문자열"로 교체
-                StartCoroutine(SwapToLocalizedWhenReady());
-            }
+            if (textPressAnyKey != null)
+                textPressAnyKey.gameObject.SetActive(false);
+            // 1) Localization 초기화가 끝나면 "정식 문자열"로 교체
+            StartCoroutine(SwapToLocalizedWhenReady());
         }
 
         /// <summary>
