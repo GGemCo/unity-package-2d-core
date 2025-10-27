@@ -31,6 +31,7 @@ namespace GGemCo2DCore
         // 현재 방향
         private CharacterConstants.FacingDirection8 _currentFacing = CharacterConstants.FacingDirection8.Right;
         public CharacterConstants.FacingDirection8 CurrentFacing => _currentFacing;
+        private bool _limitBoundaryBottom;
         
         // 방향은 CurrentFacing 으로 판단한다. 
         [Header("리젠 정보 설정")]
@@ -114,6 +115,7 @@ namespace GGemCo2DCore
             _projectileController = new ProjectileController();
             _projectileController.Initialize(this);
             defaultFacingDirection8 = AddressableLoaderSettings.Instance.playerSettings.facingDirection8;
+            _limitBoundaryBottom  = AddressableLoaderSettings.Instance.playerSettings.limitBoundaryBottom;
             
             // 데미지 컨트롤러 초기화
             _characterDamageController = new CharacterDamageController();
@@ -351,6 +353,7 @@ namespace GGemCo2DCore
         private bool CheckEndGround()
         {
             if (transform.position.y > 0) return false;
+            if (_limitBoundaryBottom) return false;
             
             Dead(CharacterConstants.DieReasonType.EndTilemapY);
             
@@ -683,6 +686,10 @@ namespace GGemCo2DCore
         {
             return type == CharacterConstants.Type.Player;
         }
+        public bool IsNPC()
+        {
+            return type == CharacterConstants.Type.Npc;
+        }
 
         public bool IsMonster()
         {
@@ -860,6 +867,16 @@ namespace GGemCo2DCore
         }
 
         public virtual bool IsEquipAxe()
+        {
+            return false;
+        }
+
+        public virtual bool IsEquipPickAxe()
+        {
+            return false;
+        }
+
+        public virtual bool IsEquipSickle()
         {
             return false;
         }

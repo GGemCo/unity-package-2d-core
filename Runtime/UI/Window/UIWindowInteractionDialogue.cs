@@ -105,11 +105,14 @@ namespace GGemCo2DCore
         /// <param name="npcQuestDatas"></param>
         public async Task SetInfos(StruckTableNpc npcData, StruckTableInteraction interactionData, List<NpcQuestData> npcQuestDatas)
         {
-            string key = $"{ConfigAddressableKey.CharacterThumbnailNpc}_{npcData.ImageThumbnailFileName}";
-            Sprite sprite = await AddressableLoaderController.LoadByKeyAsync<Sprite>(key);
-            if (sprite != null)
+            if (!string.IsNullOrEmpty(npcData.ImageThumbnailFileName))
             {
-                imageThumbnail.sprite = sprite;
+                string key = $"{ConfigAddressableKey.CharacterThumbnailNpc}_{npcData.ImageThumbnailFileName}";
+                Sprite sprite = await AddressableLoaderController.LoadByKeyAsync<Sprite>(key);
+                if (sprite != null)
+                {
+                    imageThumbnail.sprite = sprite;
+                }
             }
 
             textName.text = npcData.Name;
@@ -275,16 +278,30 @@ namespace GGemCo2DCore
                     _uiWindowItemCraft?.Show(true);
                     _uiWindowItemCraft?.SetInfoByItemCraftUid(value);
                     break;
+                case InteractionConstants.Type.SaveGameBySleep:
+                    SaveGameBySleep();
+                    break;
             }
 
             Show(false);
         }
+
         /// <summary>
         /// 플레이어가 npc 에서 멀어져서 interaction 이 끝났을때 처리 
         /// </summary>
         public void OnEndInteraction()
         {
             Show(false);
+        }
+
+        private void SaveGameBySleep()
+        {
+            SceneGame.saveDataManager.SaveData();
+            SceneGame.systemMessageManager.ShowMessageInfo("System_Save_Game_By_Sleep");
+            // 맵 새로고침. 페이드 인 아웃을 잠자는 연출로 사용
+            int startMapUid = SceneGame.saveDataManager.Player.CurrentMapUid;
+            SceneGame.mapManager.LoadMap(startMapUid);
+            SceneGame.gameTimeManager.SetNextDay();
         }
     }
 }

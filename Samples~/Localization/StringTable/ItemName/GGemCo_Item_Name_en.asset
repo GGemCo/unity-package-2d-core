@@ -187,7 +187,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 33784012466069504
-    m_Localized: Shovel1
+    m_Localized: PickAxe1
     m_Metadata:
       m_Items: []
   - m_Id: 33784133673066496
@@ -220,6 +220,14 @@ MonoBehaviour:
       m_Items: []
   - m_Id: 35181956482244608
     m_Localized: Cabbage1
+    m_Metadata:
+      m_Items: []
+  - m_Id: 39547437095886848
+    m_Localized: Wood1
+    m_Metadata:
+      m_Items: []
+  - m_Id: 39547490531319808
+    m_Localized: Gold Ingot1
     m_Metadata:
       m_Items: []
   references:

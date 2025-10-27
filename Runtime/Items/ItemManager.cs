@@ -13,21 +13,21 @@ namespace GGemCo2DCore
     public class ItemManager
     {
         // 드랍되는 아이템 pool size
-        private int poolSize;
+        private int _poolSize;
         // 드랍되는 아이템 pool queue
-        private readonly Queue<Item> poolDropItem = new Queue<Item>();
+        private readonly Queue<Item> _poolDropItem = new Queue<Item>();
         // 드랍되는 아이템을 보기 쉽게 하기위한 container 
-        private GameObject containerPoolDropItem;
+        private GameObject _containerPoolDropItem;
         // 드랍되는 아이템 prefab
-        private GameObject prefabDropItem;
+        private GameObject _prefabDropItem;
         // 드랍되는 아이템 pool size 값을 원래 값으로 초기화 하는 coroutine
-        private Coroutine reducePoolCoroutine;
+        private Coroutine _reducePoolCoroutine;
         // 드랍되는 아이템 pool size 값을 원래 값으로 초기화 시간
-        private readonly float poolReduceTime = 10f;
-        private SceneGame sceneGame;
-        private UIWindowInventory uiWindowInventory;
+        private readonly float _poolReduceTime = 10f;
+        private SceneGame _sceneGame;
+        private UIWindowInventory _uiWindowInventory;
         
-        public enum MonsterDropRateType
+        public enum DropRateType
         {
             None,
             ItemDropGroupUid,
@@ -45,28 +45,30 @@ namespace GGemCo2DCore
             Nothing,
         }
 
-        private TableItem tableItem;
-        private Dictionary<ItemConstants.Category, List<StruckTableItem>> dictionaryByCategory;
-        private Dictionary<ItemConstants.SubCategory, List<StruckTableItem>> dictionaryBySubCategory;
-        private Dictionary<int, List<StruckTableItemDropGroup>> dropGroupDictionary = new Dictionary<int, List<StruckTableItemDropGroup>>();
-        private Dictionary<int, List<StruckTableMonsterDropRate>> monsterDropDictionary = new Dictionary<int, List<StruckTableMonsterDropRate>>();
+        private TableItem _tableItem;
+        private Dictionary<ItemConstants.Category, List<StruckTableItem>> _dictionaryByCategory;
+        private Dictionary<ItemConstants.SubCategory, List<StruckTableItem>> _dictionaryBySubCategory;
+        private Dictionary<int, List<StruckTableItemDropGroup>> _dropGroupDictionary = new Dictionary<int, List<StruckTableItemDropGroup>>();
+        private Dictionary<int, List<StruckTableMonsterDropRate>> _monsterDropDictionary = new Dictionary<int, List<StruckTableMonsterDropRate>>();
+        private Dictionary<int, List<StruckTableNpcDropRate>> _npcDropDictionary = new Dictionary<int, List<StruckTableNpcDropRate>>();
 
         /// <summary>
         /// 초기화. Awake 단계에서 호출됩니다.
         /// </summary>
-        public void Initialize(SceneGame psceneGame)
+        public void Initialize(SceneGame sceneGame)
         {
-            poolSize = 1;
-            poolDropItem.Clear();
+            _poolSize = 1;
+            _poolDropItem.Clear();
             InitializePool();
-            tableItem = TableLoaderManager.Instance.TableItem;
-            dictionaryByCategory = tableItem.GetDictionaryByCategory();
-            dictionaryBySubCategory = tableItem.GetDictionaryBySubCategory();
-            dropGroupDictionary = TableLoaderManager.Instance.TableItemDropGroup.GetDropGroups();
-            monsterDropDictionary = TableLoaderManager.Instance.TableMonsterDropRate.GetMonsterDropDictionary();
-            sceneGame = psceneGame;
-            uiWindowInventory =
-                sceneGame.uIWindowManager?.GetUIWindowByUid<UIWindowInventory>(UIWindowConstants.WindowUid.Inventory);
+            _tableItem = TableLoaderManager.Instance.TableItem;
+            _dictionaryByCategory = _tableItem.GetDictionaryByCategory();
+            _dictionaryBySubCategory = _tableItem.GetDictionaryBySubCategory();
+            _dropGroupDictionary = TableLoaderManager.Instance.TableItemDropGroup.GetDropGroups();
+            _monsterDropDictionary = TableLoaderManager.Instance.TableMonsterDropRate.GetMonsterDropDictionary();
+            _npcDropDictionary = TableLoaderManager.Instance.TableNpcDropRate.GetNpcDropDictionary();
+            _sceneGame = sceneGame;
+            _uiWindowInventory =
+                _sceneGame.uIWindowManager?.GetUIWindowByUid<UIWindowInventory>(UIWindowConstants.WindowUid.Inventory);
         }
         /// <summary>
         /// Addressable 에 등록된 damageText 를 불러와서 pool 을 만든다 
@@ -74,21 +76,21 @@ namespace GGemCo2DCore
         private void InitializePool()
         {
             if (AddressableLoaderSettings.Instance == null) return;
-            prefabDropItem = ConfigResources.DropItem.Load();
-            if (prefabDropItem == null) return;
-            containerPoolDropItem = new GameObject("ContainerPoolDropItem");
-            ExpandPool(poolSize); // 초기 풀 생성
+            _prefabDropItem = ConfigResources.DropItem.Load();
+            if (_prefabDropItem == null) return;
+            _containerPoolDropItem = new GameObject("ContainerPoolDropItem");
+            ExpandPool(_poolSize); // 초기 풀 생성
         }
         /// <summary>
         /// 풀에서 아이템을 가져오고, 부족하면 새로운 아이템을 생성한다.
         /// </summary>
         private Item GetOrCreateItem()
         {
-            if (poolDropItem.Count == 0)
+            if (_poolDropItem.Count == 0)
             {
-                ExpandPool(poolSize); // 풀 사이즈만큼 추가 생성
+                ExpandPool(_poolSize); // 풀 사이즈만큼 추가 생성
             }
-            return poolDropItem.Dequeue();
+            return _poolDropItem.Dequeue();
         }
 
         /// <summary>
@@ -96,13 +98,13 @@ namespace GGemCo2DCore
         /// </summary>
         private void ExpandPool(int amount)
         {
-            if (prefabDropItem == null || containerPoolDropItem == null) return;
+            if (_prefabDropItem == null || _containerPoolDropItem == null) return;
             for (int i = 0; i < amount; i++)
             {
-                GameObject gameObjectText = Object.Instantiate(prefabDropItem, containerPoolDropItem.transform);
+                GameObject gameObjectText = Object.Instantiate(_prefabDropItem, _containerPoolDropItem.transform);
                 Item item = gameObjectText.GetComponent<Item>();
                 item.gameObject.SetActive(false);
-                poolDropItem.Enqueue(item);
+                _poolDropItem.Enqueue(item);
             }
             // GcLogger.Log($"풀 확장: {amount}개 아이템 추가 (총 {poolDropItem.Count}개)");
         }
@@ -114,7 +116,7 @@ namespace GGemCo2DCore
         /// <param name="itemCount"></param>
         public void MakeDropItem(Vector3 worldPosition, int itemUid, int itemCount)
         {
-            var info = tableItem.GetDataByUid(itemUid);
+            var info = _tableItem.GetDataByUid(itemUid);
             if (info == null) return;
             Item item = GetOrCreateItem();
             item.itemUid = itemUid;
@@ -123,24 +125,24 @@ namespace GGemCo2DCore
             item.StartDrop();
             
             // 풀을 일정 시간이 지나면 정리하도록 코루틴 시작
-            reducePoolCoroutine ??= sceneGame.StartCoroutine(ReducePoolSize());
+            _reducePoolCoroutine ??= _sceneGame.StartCoroutine(ReducePoolSize());
         }
         /// <summary>
         /// 일정 시간이 지나면 풀 크기를 다시 poolSize 값으로 줄인다.
         /// </summary>
         private IEnumerator ReducePoolSize()
         {
-            yield return new WaitForSeconds(poolReduceTime);
+            yield return new WaitForSeconds(_poolReduceTime);
 
-            while (poolDropItem.Count > poolSize)
+            while (_poolDropItem.Count > _poolSize)
             {
-                Item itemToDestroy = poolDropItem.Dequeue();
+                Item itemToDestroy = _poolDropItem.Dequeue();
                 if (itemToDestroy.itemUid > 0) continue;
                 Object.Destroy(itemToDestroy.gameObject);
             }
 
             // GcLogger.Log($"풀 크기 정리 완료: {poolSize}개 유지");
-            reducePoolCoroutine = null;
+            _reducePoolCoroutine = null;
         }
         /// <summary>
         /// 드랍되는 아이템 확률 계산하기 
@@ -149,12 +151,12 @@ namespace GGemCo2DCore
         /// <returns></returns>
         private int GetDropItem(int monsterUid)
         {
-            if (!monsterDropDictionary.ContainsKey(monsterUid)) return 0;
+            if (!_monsterDropDictionary.ContainsKey(monsterUid)) return 0;
 
-            Dictionary<MonsterDropRateType, int> dropRates = new Dictionary<MonsterDropRateType, int>();
+            Dictionary<DropRateType, int> dropRates = new Dictionary<DropRateType, int>();
 
             // 드롭 확률을 미리 정리
-            foreach (StruckTableMonsterDropRate dropEntry in monsterDropDictionary[monsterUid])
+            foreach (StruckTableMonsterDropRate dropEntry in _monsterDropDictionary[monsterUid])
             {
                 dropRates[dropEntry.Type] = dropEntry.Rate;
             }
@@ -164,9 +166,9 @@ namespace GGemCo2DCore
             // ItemDropGroupUid 체크
             float cumulativePercent = 0f;
             int groupUid = 0;
-            if (dropRates.ContainsKey(MonsterDropRateType.ItemDropGroupUid))
+            if (dropRates.ContainsKey(DropRateType.ItemDropGroupUid))
             {
-                foreach (StruckTableMonsterDropRate dropEntry in monsterDropDictionary[monsterUid])
+                foreach (StruckTableMonsterDropRate dropEntry in _monsterDropDictionary[monsterUid])
                 {
                     cumulativePercent += dropEntry.Rate;
                     if (roll < cumulativePercent)
@@ -181,12 +183,12 @@ namespace GGemCo2DCore
             {
                 return 0;
             }
-            if (!dropGroupDictionary.ContainsKey(groupUid))
+            if (!_dropGroupDictionary.ContainsKey(groupUid))
                 return 0;
             
             roll = Random.Range(0, 100);
             cumulativePercent = 0f;
-            foreach (StruckTableItemDropGroup group in dropGroupDictionary[groupUid])
+            foreach (StruckTableItemDropGroup group in _dropGroupDictionary[groupUid])
             {
                 cumulativePercent += group.Rate;
                 if (roll < cumulativePercent) 
@@ -221,7 +223,7 @@ namespace GGemCo2DCore
         private void MakeDropGold(int monsterUid, GameObject monsterObject)
         {
             var info = TableLoaderManager.Instance.GetMonsterData(monsterUid);
-            if (info != null && info.RewardGold > 0)
+            if (info is { RewardGold: > 0 })
             {
                 MakeDropItem(monsterObject.transform.position, CurrencyConstants.ItemUidGold, info.RewardGold);
             }
@@ -236,14 +238,14 @@ namespace GGemCo2DCore
             switch (group.Type)
             {
                 case ItemDropGroup.ItemUid when int.TryParse(group.Value, out var itemUid):
-                    return tableItem.GetDataByUid(itemUid);
+                    return _tableItem.GetDataByUid(itemUid);
                 case ItemDropGroup.ItemCategory:
                     ItemConstants.Category category = (ItemConstants.Category)Enum.Parse(typeof(ItemConstants.Category), group.Value);
-                    return dictionaryByCategory[category][Random.Range(0, dictionaryByCategory[category].Count)];
+                    return _dictionaryByCategory[category][Random.Range(0, _dictionaryByCategory[category].Count)];
                 case ItemDropGroup.ItemSubCategory:
                 {
                     ItemConstants.SubCategory subCategory = (ItemConstants.SubCategory)Enum.Parse(typeof(ItemConstants.SubCategory), group.Value);
-                    return dictionaryBySubCategory[subCategory][Random.Range(0, dictionaryBySubCategory[subCategory].Count)];
+                    return _dictionaryBySubCategory[subCategory][Random.Range(0, _dictionaryBySubCategory[subCategory].Count)];
                 }
                 case ItemDropGroup.Nothing:
                 case ItemDropGroup.ExcludeItemUid:
@@ -259,10 +261,10 @@ namespace GGemCo2DCore
         {
             Item item = dropItem.GetComponent<Item>();
             if (item ==null || item.itemUid <= 0) return;
-            var result = sceneGame.saveDataManager.Inventory.AddItem(item.itemUid, item.itemCount);
-            if (uiWindowInventory != null)
+            var result = _sceneGame.saveDataManager.Inventory.AddItem(item.itemUid, item.itemCount);
+            if (_uiWindowInventory != null)
             {
-                uiWindowInventory.SetIcons(result);
+                _uiWindowInventory.SetIcons(result);
                 var data = new ItemCollectedEventData(
                     itemUid: item.itemUid,
                     count: item.itemCount
@@ -275,7 +277,73 @@ namespace GGemCo2DCore
 
         public void AddPoolDropItem(Item item)
         {
-            poolDropItem.Enqueue(item);
+            _poolDropItem.Enqueue(item);
+        }
+
+        /// <summary>
+        /// 드랍되는 아이템 확률 계산하기 
+        /// </summary>
+        /// <param name="npcUid"></param>
+        /// <returns></returns>
+        private (int, int) GetDropItemByNpc(int npcUid)
+        {
+            if (!_npcDropDictionary.ContainsKey(npcUid)) return (0, 0);
+
+            Dictionary<DropRateType, int> dropRates = new Dictionary<DropRateType, int>();
+
+            // 드롭 확률을 미리 정리
+            foreach (StruckTableNpcDropRate dropEntry in _npcDropDictionary[npcUid])
+            {
+                dropRates[dropEntry.Type] = dropEntry.Rate;
+            }
+
+            int roll = Random.Range(0, 100);
+
+            // ItemDropGroupUid 체크
+            float cumulativePercent = 0f;
+            int groupUid = 0;
+            if (dropRates.ContainsKey(DropRateType.ItemDropGroupUid))
+            {
+                foreach (StruckTableNpcDropRate dropEntry in _npcDropDictionary[npcUid])
+                {
+                    cumulativePercent += dropEntry.Rate;
+                    if (roll < cumulativePercent)
+                    {
+                        groupUid = dropEntry.Value;
+                        break;
+                    }
+                }
+            }
+
+            if (groupUid <= 0 || !_dropGroupDictionary.ContainsKey(groupUid))
+            {
+                return (0, 0);
+            }
+
+            roll = Random.Range(0, 100);
+            cumulativePercent = 0f;
+            foreach (StruckTableItemDropGroup group in _dropGroupDictionary[groupUid])
+            {
+                cumulativePercent += group.Rate;
+                if (roll < cumulativePercent) 
+                {
+                    StruckTableItem item = FindItemByGroup(group);
+                    if (item is { Uid: > 0 })
+                    {
+                        // GcLogger.Log($"item drop. uid: {item.Uid} / Name: {item.Name}");
+                        return (item.Uid, 1);
+                    }
+                }
+            }
+            return (0, 0);
+        }
+        public void OnNpcDead(int uid, GameObject npc)
+        {
+            var data = GetDropItemByNpc(uid);
+            int itemUid = data.Item1;
+            int count = data.Item2;
+            if (itemUid <= 0) return;
+            MakeDropItem(npc.transform.position, itemUid, count);
         }
 #if UNITY_EDITOR
         /// <summary>
@@ -284,43 +352,43 @@ namespace GGemCo2DCore
         /// </summary>
         public class DropTestResult
         {
-            public int MonsterUid;
-            public int Iterations;
-            public Dictionary<MonsterDropRateType, int> DropRateCounts;
-            public Dictionary<ItemConstants.Category, int> CategoryCounts;
-            public Dictionary<ItemConstants.SubCategory, int> SubCategoryCounts;
-            public int TotalDrops;
+            public int monsterUid;
+            public int iterations;
+            public Dictionary<DropRateType, int> dropRateCounts;
+            public Dictionary<ItemConstants.Category, int> categoryCounts;
+            public Dictionary<ItemConstants.SubCategory, int> subCategoryCounts;
+            public int totalDrops;
         }
-        private DropTestResult lastTestResult;
-        public DropTestResult TestDropRates(int monsterUid, int iterations, Dictionary<ItemConstants.Category,List<StruckTableItem>> pdictionaryByCategory, Dictionary<ItemConstants.SubCategory,List<StruckTableItem>> pdictionaryBySubCategory, Dictionary<int,List<StruckTableItemDropGroup>> pdropGroupDictionary, Dictionary<int,List<StruckTableMonsterDropRate>> pmonsterDropDictionary, TableItem ptableItem)
+        private DropTestResult _lastTestResult;
+        public DropTestResult TestDropRates(int monsterUid, int iterations, Dictionary<ItemConstants.Category,List<StruckTableItem>> dictionaryByCategory, Dictionary<ItemConstants.SubCategory,List<StruckTableItem>> dictionaryBySubCategory, Dictionary<int,List<StruckTableItemDropGroup>> dropGroupDictionary, Dictionary<int,List<StruckTableMonsterDropRate>> monsterDropDictionary, TableItem ptableItem)
         {
-            lastTestResult = new DropTestResult
+            _lastTestResult = new DropTestResult
             {
-                MonsterUid = monsterUid,
-                Iterations = iterations,
-                DropRateCounts = new Dictionary<MonsterDropRateType, int>(),
-                CategoryCounts = new Dictionary<ItemConstants.Category, int>(),
-                SubCategoryCounts = new Dictionary<ItemConstants.SubCategory, int>(),
-                TotalDrops = 0
+                monsterUid = monsterUid,
+                iterations = iterations,
+                dropRateCounts = new Dictionary<DropRateType, int>(),
+                categoryCounts = new Dictionary<ItemConstants.Category, int>(),
+                subCategoryCounts = new Dictionary<ItemConstants.SubCategory, int>(),
+                totalDrops = 0
             };
             
-            dictionaryByCategory = pdictionaryByCategory;
-            dictionaryBySubCategory = pdictionaryBySubCategory;
-            dropGroupDictionary = pdropGroupDictionary;
-            monsterDropDictionary = pmonsterDropDictionary;
-            tableItem = ptableItem;
+            _dictionaryByCategory = dictionaryByCategory;
+            _dictionaryBySubCategory = dictionaryBySubCategory;
+            _dropGroupDictionary = dropGroupDictionary;
+            _monsterDropDictionary = monsterDropDictionary;
+            _tableItem = ptableItem;
             
-            foreach (MonsterDropRateType type in Enum.GetValues(typeof(MonsterDropRateType)))
+            foreach (DropRateType type in Enum.GetValues(typeof(DropRateType)))
             {
-                lastTestResult.DropRateCounts[type] = 0;
+                _lastTestResult.dropRateCounts[type] = 0;
             }
             foreach (ItemConstants.Category category in Enum.GetValues(typeof(ItemConstants.Category)))
             {
-                lastTestResult.CategoryCounts[category] = 0;
+                _lastTestResult.categoryCounts[category] = 0;
             }
             foreach (ItemConstants.SubCategory subCategory in Enum.GetValues(typeof(ItemConstants.SubCategory)))
             {
-                lastTestResult.SubCategoryCounts[subCategory] = 0;
+                _lastTestResult.subCategoryCounts[subCategory] = 0;
             }
 
             for (int i = 0; i < iterations; i++)
@@ -329,30 +397,30 @@ namespace GGemCo2DCore
 
                 if (itemUid <= 0)
                 {
-                    lastTestResult.DropRateCounts[MonsterDropRateType.Nothing]++;
+                    _lastTestResult.dropRateCounts[DropRateType.Nothing]++;
                 }
                 else
                 {
-                    lastTestResult.DropRateCounts[MonsterDropRateType.ItemDropGroupUid]++;
-                    var info = tableItem.GetDataByUid(itemUid);
+                    _lastTestResult.dropRateCounts[DropRateType.ItemDropGroupUid]++;
+                    var info = _tableItem.GetDataByUid(itemUid);
                     if (info == null) continue;
 
                     if (Enum.IsDefined(typeof(ItemConstants.Category), info.Category))
                     {
-                        lastTestResult.CategoryCounts[info.Category]++;
+                        _lastTestResult.categoryCounts[info.Category]++;
                     }
 
                     if (Enum.IsDefined(typeof(ItemConstants.SubCategory), info.SubCategory))
                     {
-                        lastTestResult.SubCategoryCounts[info.SubCategory]++;
+                        _lastTestResult.subCategoryCounts[info.SubCategory]++;
                     }
 
-                    lastTestResult.TotalDrops++;
+                    _lastTestResult.totalDrops++;
                 }
             }
 
             // GcLogger.Log($"테스트 완료: 몬스터 UID {monsterUid}, {iterations}회 실행됨.");
-            return lastTestResult;
+            return _lastTestResult;
         }
 #endif
         public void OnDestroy()

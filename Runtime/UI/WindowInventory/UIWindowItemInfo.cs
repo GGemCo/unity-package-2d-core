@@ -103,6 +103,7 @@ namespace GGemCo2DCore
         private void SetSalePrice()
         {
             if (currentStruckTableItem == null) return;
+            if (currentStruckTableItem.SaleCurrencyValue <= 0) return;
             textSalePrice.text = string.Format(localizationManager.GetUIWindowItemInfoByKey("Text_SellPrice"), $"{CurrencyConstants.GetNameByCurrencyType(currentStruckTableItem.SaleCurrencyType)} {currentStruckTableItem.SaleCurrencyValue}");
         }
 

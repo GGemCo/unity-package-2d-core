@@ -13,6 +13,7 @@ namespace GGemCo2DCore
             ItemSalvage,
             Stash,
             ItemCraft,
+            SaveGameBySleep
         }
 
         public static string GetTypeName(Type type)
@@ -25,6 +26,7 @@ namespace GGemCo2DCore
                 Type.ItemSalvage => LocalizationManager.Instance.GetUIWindowTitleByKey("UIWindowItemSalvage"),//아이템 분해
                 Type.Stash => LocalizationManager.Instance.GetUIWindowTitleByKey("UIWindowStash"), //창고
                 Type.ItemCraft => LocalizationManager.Instance.GetUIWindowTitleByKey("UIWindowItemCraft"),//아이템 제작
+                Type.SaveGameBySleep => LocalizationManager.Instance.GetUIWindowOptionByKey("Button_Text_Save"),
                 _ => ""
             };
         }

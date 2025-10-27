@@ -23,8 +23,11 @@ namespace GGemCo2DCore
             Silver,
             Material,
             Tool,
-            Fruit,
-            Seed
+            Seed,
+            Vegetable,
+            Grain,
+            Wood,
+            Ore
         }
 
         public enum SubCategory
@@ -39,10 +42,11 @@ namespace GGemCo2DCore
             IncreaseMoveSpeed, // 이동속도 증가
             Axe, // 도끼
             Hoe, // 호미
-            Shovel, // 삽
+            PickAxe, // 곡괭이
             Sickle, // 낫
             Watering, // 물뿌리개
-            Seeder // 씨앗 뿌리기
+            HandHarvestable, // 손으로 수확
+            ScytheHarvestable // 낫으로 수확
         }
 
         public enum Class
@@ -152,9 +156,16 @@ namespace GGemCo2DCore
                 {
                     SubCategory.Axe,
                     SubCategory.Hoe,
-                    SubCategory.Shovel,
+                    SubCategory.PickAxe,
                     SubCategory.Sickle,
-                    SubCategory.Watering
+                    SubCategory.Watering,
+                }
+            },
+            {
+                Category.Seed, new List<SubCategory>
+                {
+                    SubCategory.HandHarvestable,
+                    SubCategory.ScytheHarvestable,
                 }
             }
         };

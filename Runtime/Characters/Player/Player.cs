@@ -321,6 +321,14 @@ namespace GGemCo2DCore
         {
             return _toolController && _toolController.IsEquipAxe();
         }
+        public override bool IsEquipPickAxe()
+        {
+            return _toolController && _toolController.IsEquipPickAxe();
+        }
+        public override bool IsEquipSickle()
+        {
+            return _toolController && _toolController.IsEquipSickle();
+        }
         public override bool IsEquipHoe()
         {
             return _toolController && _toolController.IsEquipHoe();

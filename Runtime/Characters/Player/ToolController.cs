@@ -73,6 +73,16 @@ namespace GGemCo2DCore
             if (_currentTool == null) return false;
             return _currentTool.IsSubCategoryAxe();
         }
+        public bool IsEquipPickAxe()
+        {
+            if (_currentTool == null) return false;
+            return _currentTool.IsSubCategoryPickAxe();
+        }
+        public bool IsEquipSickle()
+        {
+            if (_currentTool == null) return false;
+            return _currentTool.IsSubCategorySickle();
+        }
 
         public bool IsEquipHoe()
         {

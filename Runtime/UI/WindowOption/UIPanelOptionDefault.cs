@@ -21,6 +21,14 @@ namespace GGemCo2DCore
         [Tooltip("효과음 볼륨 조절 슬라이더")]
         [SerializeField] private Slider sliderVolumeSfx;
         
+        [Header("버튼")]
+        [Tooltip("저장하기")]
+        [SerializeField] private Button buttonSave;
+        [Tooltip("인트로 씬으로 가기")]
+        [SerializeField] private Button buttonGoIntro;
+        [Tooltip("종료하기")]
+        [SerializeField] private Button buttonExit;
+        
         private GGemCoOptionSettings _optionSettings;
         private LocalizationManager _localizationManager;
         // 현재 사용하고 있는 언어 locale
@@ -46,7 +54,12 @@ namespace GGemCo2DCore
             sliderVolumeMaster?.onValueChanged.AddListener(OnMasterVolumeChanged);
             sliderVolumeBgm?.onValueChanged.AddListener(OnBgmVolumeChanged);
             sliderVolumeSfx?.onValueChanged.AddListener(OnSfxVolumeChanged);
+            
+            buttonSave?.onClick.AddListener(OnGameSave);
+            buttonGoIntro?.onClick.AddListener(OnGoIntroScene);
+            buttonExit?.onClick.AddListener(OnExit);
         }
+
         /// <summary>
         /// 각 항목 연결되어있는지 체크
         /// </summary>
@@ -69,6 +82,9 @@ namespace GGemCo2DCore
             {
                 _localizationManager.OnChangeLocale -= OnChangeLocale;
             }
+            buttonSave?.onClick.RemoveAllListeners();
+            buttonGoIntro?.onClick.RemoveAllListeners();
+            buttonExit?.onClick.RemoveAllListeners();
         }
         /// <summary>
         /// 언어 선택 DropDown 만들기
@@ -178,6 +194,64 @@ namespace GGemCo2DCore
         {
             if (!dropdownLanguage) return;
             dropdownLanguage.value = index;
+        }
+        /// <summary>
+        /// 저장하기
+        /// </summary>
+        private void OnGameSave()
+        {
+            if (!SceneGame.Instance) return;
+            SceneGame.Instance.saveDataManager.SaveData();
+        }
+        /// <summary>
+        /// 인트로 씬으로 가기
+        /// </summary>
+        private void OnGoIntroScene()
+        {
+            if (!SceneGame.Instance) return;
+            
+            PopupMetadata popupMetadata = new PopupMetadata
+            {
+                PopupType = PopupManager.Type.Default,
+                Title = "System_Game_Exit_Title", // 게임 종료
+                Message = "System_Game_Exit", //종료하시겠습니까?\n저장되지 않은 진행 상황을 잃게 됩니다.
+                MessageColor = Color.red,
+                ShowCancelButton = true,
+                OnConfirm = GoToIntroScene,
+                IsClosableByClick = false
+            };
+            popupManager.ShowPopup(popupMetadata);
+        }
+        private void GoToIntroScene()
+        {
+            Destroy(SceneGame.Instance.gameObject);
+            UnityEngine.SceneManagement.SceneManager.LoadScene(ConfigDefine.SceneNameIntro);
+        }
+        /// <summary>
+        /// 종료하기
+        /// </summary>
+        private void OnExit()
+        {
+            PopupMetadata popupMetadata = new PopupMetadata
+            {
+                PopupType = PopupManager.Type.Default,
+                Title = "System_Game_Exit_Title", // 게임 종료
+                Message = "System_Game_Exit", //종료하시겠습니까?\n저장되지 않은 진행 상황을 잃게 됩니다.
+                MessageColor = Color.red,
+                ShowCancelButton = true,
+                OnConfirm = ExitGame,
+                IsClosableByClick = false
+            };
+            popupManager.ShowPopup(popupMetadata);
+        }
+
+        private void ExitGame()
+        {
+#if UNITY_EDITOR
+            UnityEditor.EditorApplication.isPlaying = false;
+#else
+            Application.Quit();
+#endif
         }
     }
 }

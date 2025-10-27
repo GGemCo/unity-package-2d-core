@@ -1,48 +1,66 @@
 ﻿using System.Collections;
+using TMPro;
 using UnityEngine;
+using UnityEngine.UI;
 
 namespace GGemCo2DCore
 {
-    public class TagNameNpc : DefaultTagName
+    public class NpcHpBar : MonoBehaviour
     {
+        [Tooltip("몬스터 머리 위 기준에서 Y축 높이 값")]
+        public float diffY;
+        public TextMeshProUGUI textNpcName;
+        
         private Npc _npc;
-        private StruckTableNpc _struckTableNpc;
+        private Slider _hpSlider;
         private bool _isStartFade;
         private CanvasGroup _canvasGroup;
+        private float _npcHeight;
 
         private void Awake()
         {
-            _isStartFade = false;
+            _hpSlider = GetComponent<Slider>();
             _canvasGroup = GetComponent<CanvasGroup>();
+            _hpSlider.value = 1f;
+            _isStartFade = false;
         }
-
-        public void Initialize(GameObject itemObject)
+        public void Initialize(Npc npc)
         {
-            if (itemObject == null || TableLoaderManager.Instance == null) return;
-            _npc = itemObject.GetComponent<Npc>();
-            _struckTableNpc = TableLoaderManager.Instance.GetNpcData(_npc.uid);
-            string nameFunction = "";
-            if (_struckTableNpc.InteractionUid > 0)
+            _npc = npc;
+            if (_npc == null)
             {
-                var info = TableLoaderManager.Instance.GetInteractionData(_struckTableNpc.InteractionUid);
-                if (info != null && info.Type1 != InteractionConstants.Type.None)
-                {
-                    nameFunction = $" - {InteractionConstants.GetTypeName(info.Type1)}";
-                }
+                GcLogger.LogError("몬스터 오브젝트가 없습니다.");
+                return;
             }
-
-            textName.text = $"[ {_struckTableNpc.Name}{nameFunction} ]";
-            ApplyTextEffect();
+            var info = TableLoaderManager.Instance.GetNpcData(_npc.uid);
+            if (info == null)
+            {
+                GcLogger.LogError("몬스터 테이블에 정보가 없습니다. uid:"+_npc.uid);
+                return;
+            }
+            if (textNpcName == null) return;
+            textNpcName.text = info.Name;
         }
 
-        private void LateUpdate()
+        private void Start()
         {
-            if (_npc == null || _npc.gameObject == null) return;
-            // 아이템 위 월드 좌표 설정
-            Vector3 npcNameWorldPosition = _npc.gameObject.transform.position + new Vector3(0, _npc.GetHeightByScale(), 0) + diffTextPosition;
-            gameObject.transform.position = npcNameWorldPosition;
+            _npcHeight = _npc.GetHeightByScale();
         }
-        
+
+        private void Update()
+        {
+            if (_npc == null) return;
+            gameObject.transform.position = _npc.transform.position + new Vector3(0, _npcHeight + diffY, 0);
+        }
+
+        public void SetValue(long value)
+        {
+            if (_hpSlider == null) return;
+            _hpSlider.value = (float)value / _npc.TotalHp.Value;
+
+            if (textNpcName == null) return;
+            textNpcName.color = _hpSlider.value < _hpSlider.maxValue * 0.5f ? Color.black : Color.white;
+        }
         /// <summary>
         /// fade in 효과 시작. 맵 컬링시 사용
         /// </summary>

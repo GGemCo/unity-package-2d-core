@@ -77,6 +77,14 @@ namespace GGemCo2DCore
         public const string PickUpDownAnim = "pickup_down";
         public const string PickUpUpAnim = "pickup_up";
         
+        public const string PickAxeAnim = "pickaxe";
+        public const string PickAxeDownAnim = "pickaxe_down";
+        public const string PickAxeUpAnim = "pickaxe_up";
+        
+        public const string SickleAnim = "sickle";
+        public const string SickleDownAnim = "sickle_down";
+        public const string SickleUpAnim = "sickle_up";
+        
         public const string SeedAnim = "seed";
         public const string SeedDownAnim = "seed_down";
         public const string SeedUpAnim = "seed_up";

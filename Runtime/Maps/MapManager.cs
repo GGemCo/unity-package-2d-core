@@ -42,7 +42,6 @@ namespace GGemCo2DCore
         // 현재 타이맬 스크립트
         private MapTileCommon _mapTileCommon;
         // 타일맵이 로드 완료되었을때 발생하는 이벤트
-        private UnityEvent _onLoadTileMap;
         // 캐릭터, 워프 스폰 매니저
         private MapLoadCharacters _mapLoadCharacters;
         private AddressableLoaderPrefabCharacter _addressableLoaderPrefabCharacter;
@@ -63,6 +62,11 @@ namespace GGemCo2DCore
         /// </summary>
         private void CreateGrid()
         {
+            GameObject exitsGrid = GameObject.FindWithTag(ConfigTags.GetValue(ConfigTags.Keys.GridTileMap));
+            if (exitsGrid != null)
+            {
+                Destroy(exitsGrid.gameObject);
+            }
             _gridTileMap = new GameObject(ConfigTags.GetValue(ConfigTags.Keys.GridTileMap))
             {
                 tag = ConfigTags.GetValue(ConfigTags.Keys.GridTileMap)
@@ -389,9 +393,9 @@ namespace GGemCo2DCore
                 // 로드된 맵에 맞게 맵 영역 사이즈 갱신하기 
                 SceneGame.Instance.cameraManager?.ChangeMapSize(result.x, result.y);
             
-                _onLoadTileMap?.Invoke();
-                
                 OnLoadTilemapCompleteMap?.Invoke(_mapTileCommon, _gridTileMap);
+                
+                
                 // Logger.Log("타일맵 프리팹 로드 완료");
             }
             catch (Exception e)

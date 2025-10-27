@@ -5,11 +5,11 @@ namespace GGemCo2DCore
     /// <summary>
     /// 아이템 드랍 확률 테이블 Structure
     /// </summary>
-    public class StruckTableMonsterDropRate
+    public class StruckTableNpcDropRate
     {
         public int Uid;
         public string Memo;
-        public int MonsterUid;
+        public int NpcUid;
         public ItemManager.DropRateType Type;
         public int Value;
         public int Rate;
@@ -17,11 +17,11 @@ namespace GGemCo2DCore
     /// <summary>
     /// 아이템 드랍 확률 테이블
     /// </summary>
-    public class TableMonsterDropRate : DefaultTable
+    public class TableNpcDropRate : DefaultTable
     {
         private static readonly Dictionary<string, ItemManager.DropRateType> MapType;
 
-        static TableMonsterDropRate()
+        static TableNpcDropRate()
         {
             MapType = new Dictionary<string, ItemManager.DropRateType>
             {
@@ -32,29 +32,29 @@ namespace GGemCo2DCore
         private static ItemManager.DropRateType ConvertType(string type) =>
             MapType.GetValueOrDefault(type, ItemManager.DropRateType.None);
 
-        private readonly Dictionary<int, List<StruckTableMonsterDropRate>> monsterDropDictionary =
-            new Dictionary<int, List<StruckTableMonsterDropRate>>();
+        private readonly Dictionary<int, List<StruckTableNpcDropRate>> npcDropDictionary =
+            new Dictionary<int, List<StruckTableNpcDropRate>>();
 
         protected override void OnLoadedData(Dictionary<string, string> data)
         {
             int uid = int.Parse(data["Uid"]);
-            int monsterUid = int.Parse(data["MonsterUid"]);
+            int npcUid = int.Parse(data["NpcUid"]);
 
-            if (!monsterDropDictionary.ContainsKey(monsterUid))
+            if (!npcDropDictionary.ContainsKey(npcUid))
             {
-                monsterDropDictionary[monsterUid] = new List<StruckTableMonsterDropRate>();
+                npcDropDictionary[npcUid] = new List<StruckTableNpcDropRate>();
             }
 
-            StruckTableMonsterDropRate struckTableMonsterDropRate = GetDataByUid(uid);
-            monsterDropDictionary[monsterUid].Add(struckTableMonsterDropRate);
+            StruckTableNpcDropRate struckTableNpcDropRate = GetDataByUid(uid);
+            npcDropDictionary[npcUid].Add(struckTableNpcDropRate);
         }
 
-        public Dictionary<int, List<StruckTableMonsterDropRate>> GetMonsterDropDictionary()
+        public Dictionary<int, List<StruckTableNpcDropRate>> GetNpcDropDictionary()
         {
-            return monsterDropDictionary;
+            return npcDropDictionary;
         }
 
-        private StruckTableMonsterDropRate GetDataByUid(int uid)
+        private StruckTableNpcDropRate GetDataByUid(int uid)
         {
             if (uid <= 0)
             {
@@ -63,11 +63,11 @@ namespace GGemCo2DCore
             }
             var data = GetData(uid);
             if (data == null) return null;
-            return new StruckTableMonsterDropRate
+            return new StruckTableNpcDropRate
             {
                 Uid = int.Parse(data["Uid"]),
                 Memo = data["Memo"],
-                MonsterUid = int.Parse(data["MonsterUid"]),
+                NpcUid = int.Parse(data["NpcUid"]),
                 Type = ConvertType(data["Type"]),
                 Value = int.Parse(data["Value"]),
                 Rate = int.Parse(data["Rate"]),

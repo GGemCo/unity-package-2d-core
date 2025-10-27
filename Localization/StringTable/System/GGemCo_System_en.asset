@@ -292,6 +292,18 @@ MonoBehaviour:
     m_Localized: You cannot use tools or seeds here.
     m_Metadata:
       m_Items: []
+  - m_Id: 39555414443991040
+    m_Localized: Game Exit
+    m_Metadata:
+      m_Items: []
+  - m_Id: 39555474732916736
+    m_Localized: Are you sure you want to quit?\nAny unsaved progress will be lost.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 39607148784689152
+    m_Localized: Saved as you went to sleep.
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []

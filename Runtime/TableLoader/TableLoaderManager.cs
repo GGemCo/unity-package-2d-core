@@ -20,6 +20,7 @@ namespace GGemCo2DCore
         public TableAnimation TableAnimation { get; private set; } = new TableAnimation();
         public TableItem TableItem { get; private set; } = new TableItem();
         public TableMonsterDropRate TableMonsterDropRate { get; private set; } = new TableMonsterDropRate();
+        public TableNpcDropRate TableNpcDropRate { get; private set; } = new TableNpcDropRate();
         public TableItemDropGroup TableItemDropGroup { get; private set; } = new TableItemDropGroup();
         public TableExp TableExp { get; private set; } = new TableExp();
         public TableWindow TableWindow { get; private set; } = new TableWindow();
@@ -109,6 +110,9 @@ namespace GGemCo2DCore
                                 break;
                             case ConfigAddressableTable.MonsterDropRate:
                                 TableMonsterDropRate.LoadData(content);
+                                break;
+                            case ConfigAddressableTable.NpcDropRate:
+                                TableNpcDropRate.LoadData(content);
                                 break;
                             case ConfigAddressableTable.ItemDropGroup:
                                 TableItemDropGroup.LoadData(content);

@@ -84,6 +84,18 @@ MonoBehaviour:
     m_Localized: Simulation
     m_Metadata:
       m_Items: []
+  - m_Id: 40237675652882432
+    m_Localized: Save Game
+    m_Metadata:
+      m_Items: []
+  - m_Id: 40237865306726400
+    m_Localized: Quit To Main Menu
+    m_Metadata:
+      m_Items: []
+  - m_Id: 40238015051767808
+    m_Localized: Exit
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []

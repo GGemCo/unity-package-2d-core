@@ -120,13 +120,13 @@ namespace GGemCo2DCoreEditor
 
             if (_testResult != null)
             {
-                EditorGUILayout.LabelField($"몬스터 UID: {_testResult.MonsterUid}", EditorStyles.boldLabel);
-                EditorGUILayout.LabelField($"테스트 횟수: {_testResult.Iterations}", EditorStyles.boldLabel);
+                EditorGUILayout.LabelField($"몬스터 UID: {_testResult.monsterUid}", EditorStyles.boldLabel);
+                EditorGUILayout.LabelField($"테스트 횟수: {_testResult.iterations}", EditorStyles.boldLabel);
                 EditorGUILayout.Space();
 
-                DrawTable("Monster Drop Rate", _testResult.DropRateCounts);
-                DrawTable("Item Category", _testResult.CategoryCounts);
-                DrawTable("Item SubCategory", _testResult.SubCategoryCounts);
+                DrawTable("Monster Drop Rate", _testResult.dropRateCounts);
+                DrawTable("Item Category", _testResult.categoryCounts);
+                DrawTable("Item SubCategory", _testResult.subCategoryCounts);
             
                 GUILayout.Space(20);
             }
@@ -153,7 +153,7 @@ namespace GGemCo2DCoreEditor
 
             foreach (var entry in data)
             {
-                float percentage = (entry.Value / (float)_testResult.Iterations) * 100;
+                float percentage = (entry.Value / (float)_testResult.iterations) * 100;
                 EditorGUILayout.BeginHorizontal();
                 EditorGUILayout.LabelField(entry.Key.ToString(), GUILayout.Width(200));
                 EditorGUILayout.LabelField(entry.Value.ToString(), GUILayout.Width(80));
