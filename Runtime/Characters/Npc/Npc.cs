@@ -135,8 +135,14 @@ namespace GGemCo2DCore
         /// </summary>
         private void OnDestroy()
         {
-            if (_tagNameNpc == null) return;
-            Destroy(_tagNameNpc.gameObject);
+            if (_tagNameNpc != null)
+            {
+                Destroy(_tagNameNpc.gameObject);    
+            }
+            if (_sliderHpBar != null)
+            {
+                Destroy(_sliderHpBar.gameObject);    
+            }
         }
 
         public void UpdateQuestInfo()
