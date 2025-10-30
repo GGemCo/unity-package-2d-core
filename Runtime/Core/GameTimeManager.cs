@@ -275,6 +275,11 @@ namespace GGemCo2DCore
                 AdvanceSeconds(deltaSeconds); // 이벤트/경계 처리 일괄 적용
             }
         }
+
+        public string GetNowDateString()
+        {
+            return Now.ToString("yyyy-MM-dd");
+        }
         #endregion
 
         #region 내부: 이벤트 스로틀/경계
