@@ -33,7 +33,7 @@ namespace GGemCo2DCore
         private Vector3 _playSpawnPosition;
 
         // 맵 로드 시작되었을때 발생되는 이벤트
-        public UnityEvent onLoadStartMap;
+        public event Action OnLoadStartMap;
         public static event Action<MapTileCommon, GameObject> OnLoadCompleteMap;
         public static event Action<MapTileCommon, GameObject> OnLoadTilemapCompleteMap;
         
@@ -52,8 +52,6 @@ namespace GGemCo2DCore
             
             _mapLoadCharacters = new MapLoadCharacters();
             _mapLoadCharacters.Initialize(this);
-            
-            onLoadStartMap = new UnityEvent();
             
             CreateGrid();
         }
@@ -148,7 +146,7 @@ namespace GGemCo2DCore
             _currentState = MapConstants.State.FadeIn;
             _currentMapUid = mapUid;
             
-            onLoadStartMap?.Invoke();
+            OnLoadStartMap?.Invoke();
             
             StartCoroutine(UpdateState());
         }
@@ -437,6 +435,8 @@ namespace GGemCo2DCore
 
             _sceneGame.saveDataManager.Player.CurrentMapUid = _currentMapUid;
             _playSpawnPosition = Vector3.zero;
+            // 맵 이동 후 한번 저장
+            _saveDataManager.SaveData();
             
             OnLoadCompleteMap?.Invoke(_mapTileCommon, _grid);
             // Logger.Log("맵 로드 완료");
@@ -488,6 +488,8 @@ namespace GGemCo2DCore
                 GcLogger.LogError("이동할 워프 정보가 없습니다.");
                 return;
             }
+            // 맵 이동 전 저장
+            _saveDataManager.SaveData();
             SetPlaySpawnPosition(objectWarp.toMapPlayerSpawnPosition);
             LoadMap(objectWarp.toMapUid);
         }

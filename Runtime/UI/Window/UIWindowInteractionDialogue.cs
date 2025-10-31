@@ -32,6 +32,7 @@ namespace GGemCo2DCore
 
         private TableQuest _tableQuest;
         private QuestManager _questManager;
+        private LocalizationManager _localizationManager;
 
         private enum ChoiceType { Interaction, Quest }
 
@@ -63,6 +64,7 @@ namespace GGemCo2DCore
 
             _tableQuest = TableLoaderManager.Instance.TableQuest;
             _questManager = SceneGame.Instance.QuestManager;
+            _localizationManager = LocalizationManager.Instance;
         }
 
         /// <summary>
@@ -120,7 +122,7 @@ namespace GGemCo2DCore
 
             if (interactionData != null)
             {
-                textMessage.text = interactionData.Message;
+                textMessage.text = _localizationManager.GetInteractionByKey(interactionData.Message);
             }
             else if (npcQuestDatas.Count > 0)
             {

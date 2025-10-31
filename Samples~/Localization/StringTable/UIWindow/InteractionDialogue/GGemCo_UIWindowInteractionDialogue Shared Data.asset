@@ -14,7 +14,43 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   m_TableCollectionName: GGemCo_UIWindowInteractionDialogue
   m_TableCollectionNameGuidString: ad1a521f9ff3af7429c0b0d58d5297b6
-  m_Entries: []
+  m_Entries:
+  - m_Id: 41097234915303424
+    m_Key: GGemCo_NPC_Message_101
+    m_Metadata:
+      m_Items: []
+  - m_Id: 41097360312410112
+    m_Key: GGemCo_NPC_Message_102
+    m_Metadata:
+      m_Items: []
+  - m_Id: 41097360312410113
+    m_Key: GGemCo_NPC_Message_103
+    m_Metadata:
+      m_Items: []
+  - m_Id: 41097360312410114
+    m_Key: GGemCo_NPC_Message_104
+    m_Metadata:
+      m_Items: []
+  - m_Id: 41097360316604416
+    m_Key: GGemCo_NPC_Message_105
+    m_Metadata:
+      m_Items: []
+  - m_Id: 41097360316604417
+    m_Key: GGemCo_NPC_Message_106
+    m_Metadata:
+      m_Items: []
+  - m_Id: 41097360316604418
+    m_Key: GGemCo_NPC_Message_107
+    m_Metadata:
+      m_Items: []
+  - m_Id: 41097360316604419
+    m_Key: GGemCo_NPC_Message_108
+    m_Metadata:
+      m_Items: []
+  - m_Id: 41097360316604420
+    m_Key: GGemCo_NPC_Message_109
+    m_Metadata:
+      m_Items: []
   m_Metadata:
     m_Items: []
   m_KeyGenerator:

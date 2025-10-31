@@ -54,6 +54,7 @@ namespace GGemCo2DCore
             public const string UIWindowItemCraft = "GGemCo_UIWindowItemCraft";
             public const string UIWindowQuestReward = "GGemCo_UIWindowQuestReward";
             public const string UIWindowOption = "GGemCo_UIWindowOption";
+            public const string UIWindowInteractionDialogue = "GGemCo_UIWindowInteractionDialogue";
             
             public const string StatusName = "GGemCo_Status_Name";
             public const string ItemName = "GGemCo_Item_Name";
@@ -80,6 +81,7 @@ namespace GGemCo2DCore
                 UIWindowItemUpgrade,
                 UIWindowItemCraft,
                 UIWindowOption,
+                UIWindowInteractionDialogue,
                 StatusName,
                 ItemName,
                 ItemDescription,

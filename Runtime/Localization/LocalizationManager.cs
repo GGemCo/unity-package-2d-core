@@ -317,5 +317,7 @@ namespace GGemCo2DCore
         public string GetUIWindowTitleByKey(string key) => GetString(LocalizationConstants.Tables.UIWindowTitle, key);
         public string GetAffectNameByKey(string key) => GetString(LocalizationConstants.Tables.AffectName, key);
         public string GetUIWindowOptionByKey(string key) => GetString(LocalizationConstants.Tables.UIWindowOption, key);
+
+        public string GetInteractionByKey(string key) => GetString(LocalizationConstants.Tables.UIWindowInteractionDialogue, key);
     }
 }
