@@ -1,8 +1,6 @@
-#if UNITY_EDITOR
-using UnityEditor;
-#endif
 using System.Collections.Generic;
 using UnityEngine;
+using R3;
 
 namespace GGemCo2DCore
 {
@@ -11,38 +9,48 @@ namespace GGemCo2DCore
     /// </summary>
     public class Npc : CharacterBase
     {
-        private GameObject containerNpcName;
-        private TagNameNpc tagNameNpc;
-        private NpcQuestController npcQuestController;
+        private GameObject _containerNpcName;
+        private TagNameNpc _tagNameNpc;
+        private NpcQuestController _npcQuestController;
+        private GameObject _sliderHpBar;
+        private GameObject _prefabSliderHpBar;
+        private Transform _containerNpcHpBar;
+        private StruckTableNpc _struckTableNpc;
 
         protected override void Awake()
         {
             base.Awake();
             // 퀘스트 관리
-            npcQuestController = gameObject.AddComponent<NpcQuestController>();
+            _npcQuestController = gameObject.AddComponent<NpcQuestController>();
         }
         protected override void Start()
         {
             base.Start();
             
             CreateTagName();
+            CreateHpBar();
+            
+            CurrentHp
+                .Subscribe(SetSliderHp)
+                .AddTo(this);
         }
         /// <summary>
         /// 아이템 이름 tag 만들기
         /// </summary>
         private void CreateTagName()
         {
+            if (!_struckTableNpc.ShowNameTag) return;
             GameObject prefabTagNameNpc = ConfigResources.TextNpcNameTag.Load();
             if (prefabTagNameNpc == null) return;
-            if (containerNpcName == null)
+            if (_containerNpcName == null)
             {
-                containerNpcName = SceneGame.Instance.containerDropItemName;
+                _containerNpcName = SceneGame.Instance.containerDropItemName;
             }
-            GameObject objectTagNameItem = Instantiate(prefabTagNameNpc, containerNpcName.transform);
+            GameObject objectTagNameItem = Instantiate(prefabTagNameNpc, _containerNpcName.transform);
             if (objectTagNameItem == null) return;
-            tagNameNpc = objectTagNameItem.GetComponent<TagNameNpc>();
-            if (tagNameNpc == null) return;
-            tagNameNpc.Initialize(gameObject);
+            _tagNameNpc = objectTagNameItem.GetComponent<TagNameNpc>();
+            if (_tagNameNpc == null) return;
+            _tagNameNpc.Initialize(gameObject);
         }
 
         /// <summary>
@@ -70,23 +78,23 @@ namespace GGemCo2DCore
             if (TableLoaderManager.Instance == null) return;
             if (uid <= 0) return;
             TableLoaderManager tableLoaderManager = TableLoaderManager.Instance;
-            var info = tableLoaderManager.GetNpcData(uid);
+            _struckTableNpc = tableLoaderManager.GetNpcData(uid);
             // GcLogger.Log("InitializationStat uid: "+uid+" / info.uid: "+info.uid+" / StatMoveSpeed: "+info.statMoveSpeed);
-            if (info.Uid > 0)
+            if (_struckTableNpc.Uid > 0)
             {
                 const int statAtk = 0;
                 const int statDef = 0;
-                const int statHp = 0;
                 const int statMp = 0;
-                const int statMoveSpeed = 100;
+                const int statMoveSpeed = 0;
                 const int statAttackSpeed = 0;
                 const int statRegistFire = 0;
                 const int statRegistCold = 0;
                 const int statRegistLightning = 0;
-                SetBaseInfos(statAtk, statDef, statHp, statMp, statMoveSpeed, statAttackSpeed, statRegistFire,
+                SetBaseInfos(statAtk, statDef, _struckTableNpc.StatHp, statMp, statMoveSpeed, statAttackSpeed, statRegistFire,
                     statRegistCold, statRegistLightning);
-                float scale = info.Scale;
+                float scale = _struckTableNpc.Scale;
                 SetScale(scale);
+                CurrentHp.OnNext(_struckTableNpc.StatHp);
             }
         }
 
@@ -127,19 +135,95 @@ namespace GGemCo2DCore
         /// </summary>
         private void OnDestroy()
         {
-            if (tagNameNpc == null) return;
-            Destroy(tagNameNpc.gameObject);
+            if (_tagNameNpc != null)
+            {
+                Destroy(_tagNameNpc.gameObject);    
+            }
+            if (_sliderHpBar != null)
+            {
+                Destroy(_sliderHpBar.gameObject);    
+            }
         }
 
         public void UpdateQuestInfo()
         {
-            npcQuestController?.LoadQuest();
+            _npcQuestController?.LoadQuest();
         }
 
         public List<NpcQuestData> GetQuestInfos()
         {
-            if (npcQuestController == null) return null;
-            return npcQuestController.GetQuestInfos();
+            if (_npcQuestController == null) return null;
+            return _npcQuestController.GetQuestInfos();
+        }
+        /// <summary>
+        /// 몬스터가 죽었을때 처리 
+        /// </summary>
+        protected override void OnDead(CharacterConstants.DieReasonType dieReasonType = CharacterConstants.DieReasonType.None, GameObject attacker = null)
+        {
+            base.OnDead(dieReasonType, attacker);
+            
+            var isPlayer = attacker && attacker.CompareTag(ConfigTags.GetValue(ConfigTags.Keys.Player));
+            OnStartFadeOut();
+            SceneGame.Instance.ItemManager.OnNpcDead(uid, gameObject);
+        }
+        protected override void OnStartFadeIn()
+        {
+            if (_tagNameNpc != null)
+            {
+                _tagNameNpc.GetComponent<TagNameNpc>().StartFadeIn();
+            }
+            if (_sliderHpBar != null)
+            {
+                _sliderHpBar.GetComponent<NpcHpBar>().StartFadeIn();
+            }
+        }
+        protected override void OnStartFadeOut()
+        {
+            if (_tagNameNpc != null)
+            {
+                _tagNameNpc.GetComponent<TagNameNpc>().StartFadeOut();
+            }
+            if (_sliderHpBar != null)
+            {
+                _sliderHpBar.GetComponent<NpcHpBar>().StartFadeOut();
+            }
+        }
+
+        private void CreateHpBar()
+        {
+            if (SceneGame.Instance.containerMonsterHpBar == null)
+            {
+                GcLogger.LogError("SceneGame 에 containerNpcHpBar 가 설정되지 않았습니다.");
+                return;
+            }
+
+            if (!_struckTableNpc.ShowHpBar) return;
+            _prefabSliderHpBar = ConfigResources.SliderNpcHp.Load();
+            if (_prefabSliderHpBar == null) return;
+            _containerNpcHpBar = SceneGame.Instance.containerMonsterHpBar.transform;
+            _sliderHpBar = Instantiate(_prefabSliderHpBar, _containerNpcHpBar);
+            NpcHpBar monsterHpBar = _sliderHpBar.GetComponent<NpcHpBar>();
+            monsterHpBar.Initialize(this);
+        }
+        private void SetSliderHp(long value)
+        {
+            if (_sliderHpBar == null) return;
+            _sliderHpBar.GetComponent<NpcHpBar>().SetValue(value);
+        }
+        public override void OnAnimationCompleteDead()
+        {
+            base.OnAnimationCompleteDead();
+            Destroy(gameObject);
+        }
+
+        public bool IsSubCategoryTree()
+        {
+            return _struckTableNpc.SubCategory == CharacterConstantsNpc.NpcSubCategory.Tree;
+        }
+
+        public bool IsSubCategoryOre()
+        {
+            return _struckTableNpc.SubCategory == CharacterConstantsNpc.NpcSubCategory.Ore;
         }
     }
 }

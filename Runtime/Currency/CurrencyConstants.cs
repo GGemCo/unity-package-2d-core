@@ -23,7 +23,7 @@ namespace GGemCo2DCore
 
         public static string GetNameByCurrencyType(Type type)
         {
-            return DictionaryNames[type];
+            return type == Type.None ? "" : DictionaryNames[type];
         }
         /// <summary>
         /// 골드 재화 이름 가져오기

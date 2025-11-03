@@ -79,6 +79,18 @@ MonoBehaviour:
     m_Key: Title_UIPanelSimulation
     m_Metadata:
       m_Items: []
+  - m_Id: 40237675652882432
+    m_Key: Button_Text_Save
+    m_Metadata:
+      m_Items: []
+  - m_Id: 40237865306726400
+    m_Key: Button_Text_GoToIntro
+    m_Metadata:
+      m_Items: []
+  - m_Id: 40238015051767808
+    m_Key: Button_Text_Quit
+    m_Metadata:
+      m_Items: []
   m_Metadata:
     m_Items: []
   m_KeyGenerator:

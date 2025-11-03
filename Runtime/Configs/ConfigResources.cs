@@ -37,6 +37,7 @@ namespace GGemCo2DCore
         public static readonly ResourcesAssetInfo TextDamage = new($"{ConfigDefine.NameSDK}/UI/Common/TextDamage");
         public static readonly ResourcesAssetInfo TextNpcNameTag = new($"{ConfigDefine.NameSDK}/UI/Common/TextNpcNameTag");
         public static readonly ResourcesAssetInfo DialogueBalloon = new($"{ConfigDefine.NameSDK}/UI/Common/UIDialogueBalloon");
+        public static readonly ResourcesAssetInfo SliderNpcHp = new($"{ConfigDefine.NameSDK}/UI/Common/SliderNpcHp");
 
         public static readonly ResourcesAssetInfo IconItem = new($"{ConfigDefine.NameSDK}/UI/Icon/IconItem");
         public static readonly ResourcesAssetInfo IconQuestInProgress = new($"{ConfigDefine.NameSDK}/UI/Icon/IconQuestInProgress");
@@ -64,6 +65,7 @@ namespace GGemCo2DCore
             IconSkill,
             Slot,
             SlotBuff,
+            SliderNpcHp,
         };
     }
 }

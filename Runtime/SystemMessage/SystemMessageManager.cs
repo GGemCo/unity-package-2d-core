@@ -182,5 +182,17 @@ namespace GGemCo2DCore
                 ShowMessageWarning("Currency_NotEnoughSilver");//"실버가 부족합니다."
             }
         }
+        /// <summary>
+        /// 일반 알림 메시지
+        /// </summary>
+        /// <param name="message"></param>
+        public void ShowMessageInfo(string message)
+        {
+            if (string.IsNullOrEmpty(message)) return;
+            SystemMessage systemMessage = GetDefaultSystemMessage();
+            systemMessage.Type = MessageType.Warning;
+            systemMessage.TextColor = _messageTypeColors[systemMessage.Type];
+            ShowMessage(message, systemMessage);
+        }
     }
 }

@@ -42,6 +42,14 @@ MonoBehaviour:
     m_Localized: Cat6
     m_Metadata:
       m_Items: []
+  - m_Id: 39548003146571776
+    m_Localized: Tree1
+    m_Metadata:
+      m_Items: []
+  - m_Id: 39548078493048832
+    m_Localized: Gold Ore1
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []

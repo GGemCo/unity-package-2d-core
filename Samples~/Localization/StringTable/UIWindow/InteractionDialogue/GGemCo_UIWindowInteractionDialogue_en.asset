@@ -17,7 +17,43 @@ MonoBehaviour:
   m_SharedData: {fileID: 11400000, guid: ad1a521f9ff3af7429c0b0d58d5297b6, type: 2}
   m_Metadata:
     m_Items: []
-  m_TableData: []
+  m_TableData:
+  - m_Id: 41097234915303424
+    m_Localized: This is store one. How can I help you?
+    m_Metadata:
+      m_Items: []
+  - m_Id: 41097360312410112
+    m_Localized: Please post items to strengthen.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 41097360312410113
+    m_Localized: This is store 2. How can I help you?
+    m_Metadata:
+      m_Items: []
+  - m_Id: 41097360312410114
+    m_Localized: Please upload the items that you want to disassemble.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 41097360316604416
+    m_Localized: Please post items to strengthen.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 41097360316604417
+    m_Localized: Please post the items you will leave with.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 41097360316604418
+    m_Localized: What items will you make?
+    m_Metadata:
+      m_Items: []
+  - m_Id: 41097360316604419
+    m_Localized: What items will you make?
+    m_Metadata:
+      m_Items: []
+  - m_Id: 41097360316604420
+    m_Localized: Go to Sleep for the night?
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []

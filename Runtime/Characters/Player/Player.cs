@@ -43,7 +43,7 @@ namespace GGemCo2DCore
             _playerData = _sceneGame.saveDataManager.Player;
             // 연출중 체크를 위해 추가
             _controllerPlayer.Initialize(_sceneGame.CutsceneManager);
-            _sceneGame.mapManager.onLoadStartMap.AddListener(OnLoadStartMap);
+            _sceneGame.mapManager.OnLoadStartMap += OnLoadStartMap;
 
             _playerUIController.InitSubscribe();
 
@@ -321,6 +321,14 @@ namespace GGemCo2DCore
         {
             return _toolController && _toolController.IsEquipAxe();
         }
+        public override bool IsEquipPickAxe()
+        {
+            return _toolController && _toolController.IsEquipPickAxe();
+        }
+        public override bool IsEquipSickle()
+        {
+            return _toolController && _toolController.IsEquipSickle();
+        }
         public override bool IsEquipHoe()
         {
             return _toolController && _toolController.IsEquipHoe();
@@ -371,6 +379,11 @@ namespace GGemCo2DCore
             }
             var sprite = AddressableLoaderItem.Instance.GetImageIconItemByName(key);
             characterPickUpPosition.ChangePickUpSprite(sprite);
+        }
+
+        private void OnDestroy()
+        {
+            _sceneGame.mapManager.OnLoadStartMap -= OnLoadStartMap;
         }
     }
 }

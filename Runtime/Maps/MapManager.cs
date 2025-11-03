@@ -14,7 +14,7 @@ namespace GGemCo2DCore
     public class MapManager : MonoBehaviour
     {
         // 타일맵이 들갈 grid 오브젝트
-        private GameObject _gridTileMap;
+        private GameObject _grid;
         // 페이드 인에 사용할 검정색 스프라이트 오브젝트
         private GameObject _bgBlackForMapLoading;
         // 페이드 인 지속 시간
@@ -33,7 +33,7 @@ namespace GGemCo2DCore
         private Vector3 _playSpawnPosition;
 
         // 맵 로드 시작되었을때 발생되는 이벤트
-        public UnityEvent onLoadStartMap;
+        public event Action OnLoadStartMap;
         public static event Action<MapTileCommon, GameObject> OnLoadCompleteMap;
         public static event Action<MapTileCommon, GameObject> OnLoadTilemapCompleteMap;
         
@@ -42,7 +42,6 @@ namespace GGemCo2DCore
         // 현재 타이맬 스크립트
         private MapTileCommon _mapTileCommon;
         // 타일맵이 로드 완료되었을때 발생하는 이벤트
-        private UnityEvent _onLoadTileMap;
         // 캐릭터, 워프 스폰 매니저
         private MapLoadCharacters _mapLoadCharacters;
         private AddressableLoaderPrefabCharacter _addressableLoaderPrefabCharacter;
@@ -54,8 +53,6 @@ namespace GGemCo2DCore
             _mapLoadCharacters = new MapLoadCharacters();
             _mapLoadCharacters.Initialize(this);
             
-            onLoadStartMap = new UnityEvent();
-            
             CreateGrid();
         }
         /// <summary>
@@ -63,11 +60,16 @@ namespace GGemCo2DCore
         /// </summary>
         private void CreateGrid()
         {
-            _gridTileMap = new GameObject(ConfigTags.GetValue(ConfigTags.Keys.GridTileMap))
+            GameObject exitsGrid = GameObject.FindWithTag(ConfigTags.GetValue(ConfigTags.Keys.GridTileMap));
+            if (exitsGrid != null)
+            {
+                Destroy(exitsGrid.gameObject);
+            }
+            _grid = new GameObject(ConfigTags.GetValue(ConfigTags.Keys.GridTileMap))
             {
                 tag = ConfigTags.GetValue(ConfigTags.Keys.GridTileMap)
             };
-            Grid grid = _gridTileMap.gameObject.AddComponent<Grid>();
+            Grid grid = _grid.gameObject.AddComponent<Grid>();
             Vector2 tilemapGridSize = AddressableLoaderSettings.Instance.mapSettings.tilemapGridCellSize;
             if (tilemapGridSize == Vector2.zero)
             {
@@ -144,7 +146,7 @@ namespace GGemCo2DCore
             _currentState = MapConstants.State.FadeIn;
             _currentMapUid = mapUid;
             
-            onLoadStartMap?.Invoke();
+            OnLoadStartMap?.Invoke();
             
             StartCoroutine(UpdateState());
         }
@@ -343,7 +345,7 @@ namespace GGemCo2DCore
         {
             try
             {
-                if (!_gridTileMap)
+                if (!_grid)
                 {
                     SetLoadFailed($"Grid 오브젝트가 없습니다.");
                     return;
@@ -381,7 +383,7 @@ namespace GGemCo2DCore
                     _sceneGame.soundManager?.StopBgm();
                 }
 
-                GameObject currentMap = Instantiate(prefab, _gridTileMap.transform);
+                GameObject currentMap = Instantiate(prefab, _grid.transform);
                 _mapTileCommon = currentMap.GetComponent<MapTileCommon>();
                 _mapTileCommon.Initialize(_currentMapTableData.Uid, _currentMapTableData.Name, _currentMapTableData.Type, _currentMapTableData.Subtype);
                 var result = GetMapSize();
@@ -389,9 +391,9 @@ namespace GGemCo2DCore
                 // 로드된 맵에 맞게 맵 영역 사이즈 갱신하기 
                 SceneGame.Instance.cameraManager?.ChangeMapSize(result.x, result.y);
             
-                _onLoadTileMap?.Invoke();
+                OnLoadTilemapCompleteMap?.Invoke(_mapTileCommon, _grid);
                 
-                OnLoadTilemapCompleteMap?.Invoke(_mapTileCommon, _gridTileMap);
+                
                 // Logger.Log("타일맵 프리팹 로드 완료");
             }
             catch (Exception e)
@@ -433,8 +435,10 @@ namespace GGemCo2DCore
 
             _sceneGame.saveDataManager.Player.CurrentMapUid = _currentMapUid;
             _playSpawnPosition = Vector3.zero;
+            // 맵 이동 후 한번 저장
+            _saveDataManager.SaveData();
             
-            OnLoadCompleteMap?.Invoke(_mapTileCommon, _gridTileMap);
+            OnLoadCompleteMap?.Invoke(_mapTileCommon, _grid);
             // Logger.Log("맵 로드 완료");
         }
         private bool IsPossibleLoad()
@@ -484,6 +488,8 @@ namespace GGemCo2DCore
                 GcLogger.LogError("이동할 워프 정보가 없습니다.");
                 return;
             }
+            // 맵 이동 전 저장
+            _saveDataManager.SaveData();
             SetPlaySpawnPosition(objectWarp.toMapPlayerSpawnPosition);
             LoadMap(objectWarp.toMapUid);
         }
@@ -547,7 +553,7 @@ namespace GGemCo2DCore
         public Vector2 GetMapSize()
         {
             // 이 스크립트가 붙은 객체가 Grid여야 함
-            Tilemap[] tilemaps = _gridTileMap.GetComponentsInChildren<Tilemap>();
+            Tilemap[] tilemaps = _mapTileCommon.gameObject.GetComponentsInChildren<Tilemap>();
 
             if (tilemaps.Length == 0)
                 return Vector2.zero;
@@ -567,6 +573,7 @@ namespace GGemCo2DCore
                 {
                     if (tm.HasTile(pos))
                     {
+                        // GcLogger.Log($"pos: {pos}");
                         minCell = Vector3Int.Min(minCell, pos);
                         maxCell = Vector3Int.Max(maxCell, pos);
                     }
@@ -590,11 +597,11 @@ namespace GGemCo2DCore
 
         public GridInformation GetGridInformation()
         {
-            return _gridTileMap.GetComponent<GridInformation>();
+            return _grid.GetComponent<GridInformation>();
         }
         public Grid GetGrid()
         {
-            return _gridTileMap.GetComponent<Grid>();
+            return _grid.GetComponent<Grid>();
         }
     }
 }

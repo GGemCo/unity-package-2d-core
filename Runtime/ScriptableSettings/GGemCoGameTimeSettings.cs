@@ -18,6 +18,8 @@ namespace GGemCo2DCore
 
         [Tooltip("게임 시작 시점(달력 기준). 저장/불러오기 전에 초기값으로 사용. YYYY-MM-DD")]
         public string startGameDate;
+        [Tooltip("잠자기 한 후 시작 시간")]
+        public string timeByMorning;
 
         [Header("업데이트 옵션")]
         [Tooltip("true면 Time.unscaledDeltaTime 사용(글로벌 일시정지 등과 무관하게 흐름). false면 Time.deltaTime 사용.")]

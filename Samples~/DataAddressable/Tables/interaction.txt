@@ -1,9 +1,10 @@
 ﻿Uid	Memo	Message	Type1	Value1	Type2	Value2	Type3	Value3
-101	상점1	This is store one. How can I help you?	Shop	10001	ShopSale	0	None	0
-102	강화1	Please post items to strengthen.	ItemUpgrade	0	None	0	None	0
-103	상점2	This is store 2. How can I help you?	Shop	10002	ShopSale	0	None	0
-104	분해	Please upload the items that you want to disassemble.	ItemSalvage	0	None	0	None	0
-105	강화,분해	Please post items to strengthen.	ItemUpgrade	0	ItemSalvage	0	None	0
-106	창고	Please post the items you will leave with.	Stash	0	None	0	None	0
-107	제작	What items will you make?	ItemCraft	10001	None	0	None	0
-108	포션제작	What items will you make?	ItemCraft	10002	None	0	None	0
+101	상점1	GGemCo_NPC_Message_101	Shop	10001	ShopSale	0	None	0
+102	강화1	GGemCo_NPC_Message_102	ItemUpgrade	0	None	0	None	0
+103	상점2	GGemCo_NPC_Message_103	Shop	10002	ShopSale	0	None	0
+104	분해	GGemCo_NPC_Message_104	ItemSalvage	0	None	0	None	0
+105	강화,분해	GGemCo_NPC_Message_105	ItemUpgrade	0	ItemSalvage	0	None	0
+106	창고	GGemCo_NPC_Message_106	Stash	0	None	0	None	0
+107	제작	GGemCo_NPC_Message_107	ItemCraft	10001	None	0	None	0
+108	포션제작	GGemCo_NPC_Message_108	ItemCraft	10002	None	0	None	0
+109	침대(저장)	GGemCo_NPC_Message_109	SaveGame	0	None	0	None	0

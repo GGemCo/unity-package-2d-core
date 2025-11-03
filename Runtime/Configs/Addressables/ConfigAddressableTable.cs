@@ -22,6 +22,7 @@ namespace GGemCo2DCore
         public const string Animation        = "animation";
         public const string Item             = "item";
         public const string MonsterDropRate  = "monster_drop_rate";
+        public const string NpcDropRate      = "npc_drop_rate";
         public const string ItemDropGroup    = "item_drop_group";
         public const string Exp              = "exp";
         public const string Window           = "window";
@@ -49,6 +50,7 @@ namespace GGemCo2DCore
         public static readonly AddressableAssetInfo TableAnimation       = Make(Animation);
         public static readonly AddressableAssetInfo TableItem            = Make(Item);
         public static readonly AddressableAssetInfo TableMonsterDropRate = Make(MonsterDropRate);
+        public static readonly AddressableAssetInfo TableNpcDropRate     = Make(NpcDropRate);
         public static readonly AddressableAssetInfo TableItemDropGroup   = Make(ItemDropGroup);
         public static readonly AddressableAssetInfo TableExp             = Make(Exp);
         public static readonly AddressableAssetInfo TableWindow          = Make(Window);
@@ -73,7 +75,7 @@ namespace GGemCo2DCore
         public static readonly List<AddressableAssetInfo> All = new()
         {
             TableMap, TableMonster, TableNpc, TableAnimation, TableItem,
-            TableMonsterDropRate, TableItemDropGroup, TableExp, TableWindow,
+            TableMonsterDropRate, TableNpcDropRate, TableItemDropGroup, TableExp, TableWindow,
             TableStatus, TableSkill, TableAffect, TableEffect, TableInteraction,
             TableShop, TableItemUpgrade, TableItemSalvage, TableItemCraft,
             TableCutscene, TableDialogue, TableQuest, TableProjectile, TableSound, TableSimulationTool,

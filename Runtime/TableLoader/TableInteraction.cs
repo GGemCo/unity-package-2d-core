@@ -34,6 +34,7 @@ namespace GGemCo2DCore
                 { "ItemSalvage", InteractionConstants.Type.ItemSalvage },
                 { "Stash", InteractionConstants.Type.Stash },
                 { "ItemCraft", InteractionConstants.Type.ItemCraft },
+                { "SaveGame", InteractionConstants.Type.SaveGameBySleep },
             };
         }
 

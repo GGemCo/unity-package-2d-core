@@ -1,4 +1,5 @@
-﻿using System.Collections;
+﻿using System;
+using System.Collections;
 using UnityEngine;
 
 namespace GGemCo2DCore
@@ -74,6 +75,7 @@ namespace GGemCo2DCore
         public AddressableLoaderPrefabCharacter AddressableLoaderPrefabCharacter;
         
         private UIWindowInventory _uiWindowInventory;
+        public event Action OnSceneGameDestroyed;
 
         private void Awake()
         {
@@ -296,6 +298,8 @@ namespace GGemCo2DCore
             CutsceneManager?.OnDestroy();
             
             ServiceLocator.UnregisterAll();
+            
+            OnSceneGameDestroyed?.Invoke();
         }
         private void OnMonsterKilled(MonsterKilledEventData e)
         {

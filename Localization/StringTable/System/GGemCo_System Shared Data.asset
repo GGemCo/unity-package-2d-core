@@ -346,6 +346,18 @@ MonoBehaviour:
     m_Key: Simulation_Tool_CannotUseHere
     m_Metadata:
       m_Items: []
+  - m_Id: 39555414443991040
+    m_Key: System_Game_Exit_Title
+    m_Metadata:
+      m_Items: []
+  - m_Id: 39555474732916736
+    m_Key: System_Game_Exit
+    m_Metadata:
+      m_Items: []
+  - m_Id: 39607148784689152
+    m_Key: System_Save_Game_By_Sleep
+    m_Metadata:
+      m_Items: []
   m_Metadata:
     m_Items: []
   m_KeyGenerator:

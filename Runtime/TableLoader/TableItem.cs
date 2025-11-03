@@ -60,6 +60,14 @@ namespace GGemCo2DCore
         {
             return IsTool() && SubCategory == ItemConstants.SubCategory.Axe;
         }
+        public bool IsSubCategoryPickAxe()
+        {
+            return IsTool() && SubCategory == ItemConstants.SubCategory.PickAxe;
+        }
+        public bool IsSubCategorySickle()
+        {
+            return IsTool() && SubCategory == ItemConstants.SubCategory.Sickle;
+        }
         public bool IsSubCategoryHoe()
         {
             return IsTool() && SubCategory == ItemConstants.SubCategory.Hoe;
@@ -68,14 +76,20 @@ namespace GGemCo2DCore
         {
             return IsTool() && SubCategory == ItemConstants.SubCategory.Watering;
         }
-        public bool IsSubCategorySeeder()
-        {
-            return IsTool() && SubCategory == ItemConstants.SubCategory.Seeder;
-        }
 
         public bool IsSeed()
         {
             return Category == ItemConstants.Category.Seed;
+        }
+
+        public bool IsSubCategoryHandHarvestable()
+        {
+            return SubCategory == ItemConstants.SubCategory.HandHarvestable;
+        }
+
+        public bool IsSubCategoryScytheHarvestable()
+        {
+            return SubCategory == ItemConstants.SubCategory.ScytheHarvestable;
         }
     }
     /// <summary>
@@ -109,7 +123,10 @@ namespace GGemCo2DCore
                 { nameof(ItemConstants.Category.Material), ItemConstants.Category.Material },
                 { nameof(ItemConstants.Category.Tool), ItemConstants.Category.Tool },
                 { nameof(ItemConstants.Category.Seed), ItemConstants.Category.Seed },
-                { nameof(ItemConstants.Category.Fruit), ItemConstants.Category.Fruit },
+                { nameof(ItemConstants.Category.Vegetable), ItemConstants.Category.Vegetable },
+                { nameof(ItemConstants.Category.Grain), ItemConstants.Category.Grain },
+                { nameof(ItemConstants.Category.Wood), ItemConstants.Category.Wood },
+                { nameof(ItemConstants.Category.Ore), ItemConstants.Category.Ore },
             };
             MapSubCategory = new Dictionary<string, ItemConstants.SubCategory>
             {
@@ -122,10 +139,11 @@ namespace GGemCo2DCore
                 { nameof(ItemConstants.SubCategory.IncreaseMoveSpeed), ItemConstants.SubCategory.IncreaseMoveSpeed },
                 { nameof(ItemConstants.SubCategory.Axe), ItemConstants.SubCategory.Axe },
                 { nameof(ItemConstants.SubCategory.Hoe), ItemConstants.SubCategory.Hoe },
-                { nameof(ItemConstants.SubCategory.Shovel), ItemConstants.SubCategory.Shovel },
+                { nameof(ItemConstants.SubCategory.PickAxe), ItemConstants.SubCategory.PickAxe },
                 { nameof(ItemConstants.SubCategory.Sickle), ItemConstants.SubCategory.Sickle },
                 { nameof(ItemConstants.SubCategory.Watering), ItemConstants.SubCategory.Watering },
-                { nameof(ItemConstants.SubCategory.Seeder), ItemConstants.SubCategory.Seeder },
+                { nameof(ItemConstants.SubCategory.HandHarvestable), ItemConstants.SubCategory.HandHarvestable },
+                { nameof(ItemConstants.SubCategory.ScytheHarvestable), ItemConstants.SubCategory.ScytheHarvestable },
             };
             MapClass = new Dictionary<string, ItemConstants.Class>
             {

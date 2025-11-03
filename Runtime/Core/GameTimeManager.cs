@@ -19,6 +19,7 @@ namespace GGemCo2DCore
     public class GameTimeManager : MonoBehaviour, ISimulationTimeProvider
     {
         private float _gameSecondsPerRealSecond = 60f;
+        private DateTime _timeByMorning;
         private bool _isPaused;
 
         // 내부 누적
@@ -79,6 +80,10 @@ namespace GGemCo2DCore
             if (_settings)
             {
                 _gameSecondsPerRealSecond = _settings.gameSecondsPerRealSecond;
+                if (!string.IsNullOrEmpty(_settings.timeByMorning))
+                {
+                    _timeByMorning = DateTime.Parse(_settings.timeByMorning);
+                }
             }
             InitializeFromSettings();
         }
@@ -250,6 +255,30 @@ namespace GGemCo2DCore
         {
             // 0초~<86400초: Day 1, 86400초~<172800초: Day 2 ...
             return (int)(_accumGameSeconds / SecondsPerDay) + 1;
+        }
+        /// <summary>
+        /// 다음 날 아침 시작 시간으로 변경하기. 예) 잠자기
+        /// </summary>
+        public void SetNextDay()
+        {
+            // 설정이 없다면 기본 06:00:00 사용(안전장치)
+            var morningTod = (_timeByMorning != default)
+                ? _timeByMorning.TimeOfDay
+                : new TimeSpan(6, 0, 0);
+
+            // 다음날 날짜 + 아침 시각
+            DateTime target = Now.Date.AddDays(1).Add(morningTod);
+
+            double deltaSeconds = (target - Now).TotalSeconds;
+            if (deltaSeconds > 0d)
+            {
+                AdvanceSeconds(deltaSeconds); // 이벤트/경계 처리 일괄 적용
+            }
+        }
+
+        public string GetNowDateString()
+        {
+            return Now.ToString("yyyy-MM-dd");
         }
         #endregion
 

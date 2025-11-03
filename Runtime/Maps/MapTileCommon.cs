@@ -82,7 +82,7 @@ namespace GGemCo2DCore
 
                 // NPC의 Z 축도 고려하여 활성화 상태 확인
                 Vector3 position = obj.transform.position;
-                bool isActive = bounds.Contains(new Vector3(position.x, position.y, mainCameraZ));
+                bool isActive = bounds.Contains(new Vector3(position.x, position.y, bounds.center.z));
 
                 // 활성화 상태 설정
                 if (obj.activeSelf != isActive)

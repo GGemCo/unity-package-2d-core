@@ -79,7 +79,7 @@ namespace GGemCo2DCore
         public UIIcon GetSelectedIcon() => selectedIcon;
 
         /// <summary>
-        /// todo 정리 필요
+        /// 아이콘 선택시 후 처리
         /// </summary>
         /// <param name="icon"></param>
         protected virtual void OnSelectedIcon(UIIcon icon)

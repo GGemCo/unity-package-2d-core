@@ -11,11 +11,17 @@ namespace GGemCo2DCore
         public string Name { get; set; }
         public int AnimationUid;
         public string DefaultSkin;
+        public CharacterConstantsNpc.NpcType Type;
+        public CharacterConstantsNpc.NpcCategory Category;
+        public CharacterConstantsNpc.NpcSubCategory SubCategory;
         public float Scale;
         public CharacterConstants.Grade Grade;
         public int StatMoveSpeed;
         public int InteractionUid;
         public string ImageThumbnailFileName;
+        public int StatHp;
+        public bool ShowHpBar;
+        public bool ShowNameTag;
     }
     /// <summary>
     /// Npc 테이블
@@ -53,17 +59,30 @@ namespace GGemCo2DCore
             }
             var data = GetData(uid);
             if (data == null) return null;
+            var result = CharacterConstantsNpc.TryParseAndValidate(data["Type"], data["Category"], data["SubCategory"],
+                out var npcType, out var npcCategory, out var npcSub);
+            if (!result)
+            {
+                return null;
+            }
+
             return new StruckTableNpc
             {
                 Uid = int.Parse(data["Uid"]),
                 Name = data["Name"],
                 AnimationUid = int.Parse(data["AnimationUid"]),
                 DefaultSkin = data["DefaultSkin"],
+                Type = npcType,
+                Category = npcCategory,
+                SubCategory = npcSub,
                 Scale = float.Parse(data["Scale"]),
                 Grade = ConvertGrade(data["Grade"]),
                 StatMoveSpeed = int.Parse(data["StatMoveSpeed"]),
                 InteractionUid = int.Parse(data["InteractionUid"]),
                 ImageThumbnailFileName = data["ImageThumbnailFileName"],
+                StatHp = int.Parse(data["StatHp"]),
+                ShowHpBar = ConvertBoolean(data["ShowHpBar"]),
+                ShowNameTag = ConvertBoolean(data["ShowNameTag"]),
             };
         }
         public override bool TryGetDataByUid(int uid, out object info)
