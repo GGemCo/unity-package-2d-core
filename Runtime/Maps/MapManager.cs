@@ -488,6 +488,8 @@ namespace GGemCo2DCore
                 GcLogger.LogError("이동할 워프 정보가 없습니다.");
                 return;
             }
+            var info = _tableLoaderManager.TableMap.GetDataByUid(objectWarp.toMapUid);
+            if (info == null) return;
             // 맵 이동 전 저장
             _saveDataManager.SaveData();
             SetPlaySpawnPosition(objectWarp.toMapPlayerSpawnPosition);
