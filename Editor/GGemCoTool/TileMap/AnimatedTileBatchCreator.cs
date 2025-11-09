@@ -1,4 +1,4 @@
-﻿#if UNITY_EDITOR
+#if UNITY_EDITOR
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -26,23 +26,23 @@ namespace GGemCo2DCoreEditor
 
         // 출력 설정
         [Header("AnimatedTile Output")]
-        private DefaultAsset outputFolder;
-        private string animatedTileBaseNameOverride = "";
-        private bool overwriteIfExists;
+        private DefaultAsset _outputFolder;
+        private string _animatedTileBaseNameOverride = "";
+        private bool _overwriteIfExists;
 
         // 레이아웃/검증
         [Header("Layout / Validation")]
-        private int framesAcross;            // 한 줄에 배치된 프레임 수
-        private List<int> frameStartIndex = new(); // 각 row마다 몇 번째 스프라이트부터 애니메이션으로 볼지
-        private int expectedCols = 3;            // AnimatedTile 1개를 만들 때 모을 컬럼 수
-        private int expectedRows = 4;            // 전체 Texture를 몇 행까지 읽을지
-        private bool strictLayoutCheck = true;
+        private int _framesAcross;            // 한 줄에 배치된 프레임 수
+        private List<int> _frameStartIndex = new(); // 각 row마다 몇 번째 스프라이트부터 애니메이션으로 볼지
+        private int _expectedCols = 3;            // AnimatedTile 1개를 만들 때 모을 컬럼 수
+        private int _expectedRows = 4;            // 전체 Texture를 몇 행까지 읽을지
+        private bool _strictLayoutCheck = true;
 
         // 애니메이션 옵션
         [Header("Animation")]
-        private float minSpeed = 1f;
-        private float maxSpeed = 1f;
-        private Tile.ColliderType colliderType = Tile.ColliderType.None;
+        private float _minSpeed = 1f;
+        private float _maxSpeed = 1f;
+        private Tile.ColliderType _colliderType = Tile.ColliderType.None;
 
         // 로그 출력
         private Vector2 _scroll;
@@ -111,49 +111,49 @@ namespace GGemCo2DCoreEditor
             EditorGUILayout.LabelField("2. AnimatedTile 생성 설정", EditorStyles.boldLabel);
 
             // 출력 경로
-            outputFolder = (DefaultAsset)EditorGUILayout.ObjectField(
-                new GUIContent("Output Folder"), outputFolder, typeof(DefaultAsset), false);
+            _outputFolder = (DefaultAsset)EditorGUILayout.ObjectField(
+                new GUIContent("Output Folder"), _outputFolder, typeof(DefaultAsset), false);
 
-            animatedTileBaseNameOverride = EditorGUILayout.TextField(
+            _animatedTileBaseNameOverride = EditorGUILayout.TextField(
                 new GUIContent("AnimatedTile BaseName Override", "비우면 스프라이트 이름의 name을 그대로 사용"),
-                animatedTileBaseNameOverride);
+                _animatedTileBaseNameOverride);
 
-            overwriteIfExists = EditorGUILayout.Toggle(
-                new GUIContent("Overwrite If Exists"), overwriteIfExists);
+            _overwriteIfExists = EditorGUILayout.Toggle(
+                new GUIContent("Overwrite If Exists"), _overwriteIfExists);
 
             // 레이아웃
             EditorGUILayout.Space(4);
             EditorGUILayout.LabelField("Layout / Validation", EditorStyles.miniBoldLabel);
 
-            expectedCols = EditorGUILayout.IntField(new GUIContent("Expected Cols", "AnimatedTile을 만들 때 한 묶음의 컬럼 수"), expectedCols);
+            _expectedCols = EditorGUILayout.IntField(new GUIContent("Expected Cols", "AnimatedTile을 만들 때 한 묶음의 컬럼 수"), _expectedCols);
 
             // expectedRows가 바뀌면 frameStartIndex 길이를 다시 맞춰준다.
             EditorGUI.BeginChangeCheck();
-            int newRows = EditorGUILayout.IntField(new GUIContent("Expected Rows", "읽을 행(Row) 수"), expectedRows);
+            int newRows = EditorGUILayout.IntField(new GUIContent("Expected Rows", "읽을 행(Row) 수"), _expectedRows);
             if (EditorGUI.EndChangeCheck())
             {
                 OnChangedExpectedRows(newRows);
             }
-            expectedRows = newRows;
+            _expectedRows = newRows;
 
-            strictLayoutCheck = EditorGUILayout.Toggle(new GUIContent("Strict Layout Check"), strictLayoutCheck);
+            _strictLayoutCheck = EditorGUILayout.Toggle(new GUIContent("Strict Layout Check"), _strictLayoutCheck);
 
-            framesAcross = EditorGUILayout.IntField(new GUIContent("Frames Across (per row)", "한 줄에 배치된 실제 프레임 수"), framesAcross);
+            _framesAcross = EditorGUILayout.IntField(new GUIContent("Frames Across (per row)", "한 줄에 배치된 실제 프레임 수"), _framesAcross);
 
             // 행별 시작 인덱스 입력
-            for (int i = 0; i < expectedRows; i++)
+            for (int i = 0; i < _expectedRows; i++)
             {
                 // 리스트 길이가 부족할 수 있으므로 방어
-                if (i >= frameStartIndex.Count) break;
-                frameStartIndex[i] = EditorGUILayout.IntField(new GUIContent($"Start X Index (row {i})"), frameStartIndex[i]);
+                if (i >= _frameStartIndex.Count) break;
+                _frameStartIndex[i] = EditorGUILayout.IntField(new GUIContent($"Start X Index (row {i})"), _frameStartIndex[i]);
             }
 
             // 애니메이션 설정
             EditorGUILayout.Space(4);
             EditorGUILayout.LabelField("Animation", EditorStyles.miniBoldLabel);
-            minSpeed = EditorGUILayout.FloatField(new GUIContent("Min Speed"), minSpeed);
-            maxSpeed = EditorGUILayout.FloatField(new GUIContent("Max Speed"), maxSpeed);
-            colliderType = (Tile.ColliderType)EditorGUILayout.EnumPopup(new GUIContent("Collider Type"), colliderType);
+            _minSpeed = EditorGUILayout.FloatField(new GUIContent("Min Speed"), _minSpeed);
+            _maxSpeed = EditorGUILayout.FloatField(new GUIContent("Max Speed"), _maxSpeed);
+            _colliderType = (Tile.ColliderType)EditorGUILayout.EnumPopup(new GUIContent("Collider Type"), _colliderType);
         }
 
         /// <summary>
@@ -203,7 +203,7 @@ namespace GGemCo2DCoreEditor
             if (newValue < 0) newValue = 0;
 
             // 부족하면 0으로 채우고, 많으면 뒤를 자른다.
-            EnsureListSize(frameStartIndex, newValue);
+            EnsureListSize(_frameStartIndex, newValue);
         }
 
         /// <summary>
@@ -266,26 +266,26 @@ namespace GGemCo2DCoreEditor
                 return false;
             }
 
-            if (outputFolder == null)
+            if (_outputFolder == null)
             {
                 Append("[ERROR] Output Folder를 지정하세요.");
                 return false;
             }
 
-            outputPath = AssetDatabase.GetAssetPath(outputFolder);
+            outputPath = AssetDatabase.GetAssetPath(_outputFolder);
             if (!AssetDatabase.IsValidFolder(outputPath))
             {
                 Append("[ERROR] Output Folder 경로가 유효하지 않습니다.");
                 return false;
             }
 
-            if (expectedRows <= 0 || expectedCols <= 0)
+            if (_expectedRows <= 0 || _expectedCols <= 0)
             {
                 Append("[ERROR] expectedRows, expectedCols는 1 이상이어야 합니다.");
                 return false;
             }
 
-            if (framesAcross <= 0)
+            if (_framesAcross <= 0)
             {
                 Append("[ERROR] Frames Across 값이 0 이하입니다. 실제 시트의 가로 프레임 수를 입력하세요.");
                 return false;
@@ -331,20 +331,20 @@ namespace GGemCo2DCoreEditor
             foreach (var sprite in sprites)
             {
                 // 행이 초과되면 중단
-                if (row >= expectedRows)
+                if (row >= _expectedRows)
                     break;
 
                 // 이 행에서 설정한 시작 인덱스 이전이면 건너뛴다.
-                if (index < frameStartIndex[row])
+                if (index < _frameStartIndex[row])
                 {
                     index++;
                     continue;
                 }
 
                 // base 이름 결정
-                string finalBase = string.IsNullOrEmpty(animatedTileBaseNameOverride)
+                string finalBase = string.IsNullOrEmpty(_animatedTileBaseNameOverride)
                     ? sprite.name
-                    : animatedTileBaseNameOverride;
+                    : _animatedTileBaseNameOverride;
 
                 var key = (finalBase, row, col);
                 if (!grouped.TryGetValue(key, out var list))
@@ -358,14 +358,14 @@ namespace GGemCo2DCoreEditor
 
                 // 다음 컬럼
                 col++;
-                if (col >= expectedCols)
+                if (col >= _expectedCols)
                 {
                     col = 0;
                     frameX++;
                 }
 
                 // 한 행에서 framesAcross 만큼 읽었으면 다음 행으로
-                if (frameX >= framesAcross)
+                if (frameX >= _framesAcross)
                 {
                     frameX = 0;
                     row++;
@@ -399,7 +399,7 @@ namespace GGemCo2DCoreEditor
                 string assetPath = Path.Combine(outPath, assetName).Replace("\\", "/");
 
                 var existing = AssetDatabase.LoadAssetAtPath<UnityEngine.Object>(assetPath);
-                if (existing != null && !overwriteIfExists)
+                if (existing != null && !_overwriteIfExists)
                 {
                     skipped++;
                     continue;
@@ -408,7 +408,7 @@ namespace GGemCo2DCoreEditor
                 // 폴더 보장
                 EnsureFolder(outPath);
 
-                if (existing != null && overwriteIfExists)
+                if (existing != null && _overwriteIfExists)
                 {
                     AssetDatabase.DeleteAsset(assetPath);
                     overwritten++;
@@ -430,9 +430,9 @@ namespace GGemCo2DCoreEditor
                 }
 
                 fSprites.SetValue(tile, frames.Select(f => f.sprite).ToArray());
-                fMin.SetValue(tile, minSpeed);
-                fMax.SetValue(tile, Mathf.Max(minSpeed, maxSpeed));
-                fCol.SetValue(tile, colliderType);
+                fMin.SetValue(tile, _minSpeed);
+                fMax.SetValue(tile, Mathf.Max(_minSpeed, _maxSpeed));
+                fCol.SetValue(tile, _colliderType);
 
                 AssetDatabase.CreateAsset(tile, assetPath);
                 created++;
@@ -463,17 +463,18 @@ namespace GGemCo2DCoreEditor
         /// </summary>
         private void SavePrefs()
         {
-            EditorPrefs.SetString(Prefs + "animatedTileBaseNameOverride", animatedTileBaseNameOverride);
-            EditorPrefs.SetBool(Prefs + "overwriteIfExists", overwriteIfExists);
-            EditorPrefs.SetInt(Prefs + "expectedCols", expectedCols);
-            EditorPrefs.SetInt(Prefs + "expectedRows", expectedRows);
-            EditorPrefs.SetBool(Prefs + "strictLayoutCheck", strictLayoutCheck);
-            EditorPrefs.SetFloat(Prefs + "minSpeed", minSpeed);
-            EditorPrefs.SetFloat(Prefs + "maxSpeed", maxSpeed);
-            EditorPrefs.SetInt(Prefs + "colliderType", (int)colliderType);
+            EditorPrefs.SetString(Prefs + "animatedTileBaseNameOverride", _animatedTileBaseNameOverride);
+            EditorPrefs.SetBool(Prefs + "overwriteIfExists", _overwriteIfExists);
+            EditorPrefs.SetInt(Prefs + "expectedCols", _expectedCols);
+            EditorPrefs.SetInt(Prefs + "expectedRows", _expectedRows);
+            EditorPrefs.SetInt(Prefs + "framesAcross", _framesAcross);
+            EditorPrefs.SetBool(Prefs + "strictLayoutCheck", _strictLayoutCheck);
+            EditorPrefs.SetFloat(Prefs + "minSpeed", _minSpeed);
+            EditorPrefs.SetFloat(Prefs + "maxSpeed", _maxSpeed);
+            EditorPrefs.SetInt(Prefs + "colliderType", (int)_colliderType);
             
             // frameStartIndex 저장 (예: "0|3|5|0")
-            string joined = string.Join("|", frameStartIndex);
+            string joined = string.Join("|", _frameStartIndex);
             EditorPrefs.SetString(PrefsFrameStartIndex, joined);
         }
 
@@ -482,29 +483,30 @@ namespace GGemCo2DCoreEditor
         /// </summary>
         private void LoadPrefs()
         {
-            animatedTileBaseNameOverride = EditorPrefs.GetString(Prefs + "animatedTileBaseNameOverride", "");
-            overwriteIfExists = EditorPrefs.GetBool(Prefs + "overwriteIfExists", false);
-            expectedCols = EditorPrefs.GetInt(Prefs + "expectedCols", 3);
-            expectedRows = EditorPrefs.GetInt(Prefs + "expectedRows", 4);
-            strictLayoutCheck = EditorPrefs.GetBool(Prefs + "strictLayoutCheck", true);
-            minSpeed = EditorPrefs.GetFloat(Prefs + "minSpeed", 1f);
-            maxSpeed = EditorPrefs.GetFloat(Prefs + "maxSpeed", 1f);
-            colliderType = (Tile.ColliderType)EditorPrefs.GetInt(Prefs + "colliderType", (int)Tile.ColliderType.None);
+            _animatedTileBaseNameOverride = EditorPrefs.GetString(Prefs + "animatedTileBaseNameOverride", "");
+            _overwriteIfExists = EditorPrefs.GetBool(Prefs + "overwriteIfExists", false);
+            _expectedCols = EditorPrefs.GetInt(Prefs + "expectedCols", 3);
+            _expectedRows = EditorPrefs.GetInt(Prefs + "expectedRows", 4);
+            _framesAcross = EditorPrefs.GetInt(Prefs + "framesAcross", 8);
+            _strictLayoutCheck = EditorPrefs.GetBool(Prefs + "strictLayoutCheck", true);
+            _minSpeed = EditorPrefs.GetFloat(Prefs + "minSpeed", 1f);
+            _maxSpeed = EditorPrefs.GetFloat(Prefs + "maxSpeed", 1f);
+            _colliderType = (Tile.ColliderType)EditorPrefs.GetInt(Prefs + "colliderType", (int)Tile.ColliderType.None);
 
             // frameStartIndex 복원
-            frameStartIndex.Clear();
+            _frameStartIndex.Clear();
             string saved = EditorPrefs.GetString(PrefsFrameStartIndex, string.Empty);
             if (!string.IsNullOrEmpty(saved))
             {
                 var parts = saved.Split('|');
                 foreach (var p in parts)
                 {
-                    frameStartIndex.Add(int.TryParse(p, out int v) ? v : 0);
+                    _frameStartIndex.Add(int.TryParse(p, out int v) ? v : 0);
                 }
             }
 
             // 불러온 리스트 길이를 expectedRows에 맞춰 보정
-            EnsureListSize(frameStartIndex, expectedRows);
+            EnsureListSize(_frameStartIndex, _expectedRows);
         }
 
         /// <summary>
