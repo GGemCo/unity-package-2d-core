@@ -59,7 +59,7 @@ namespace GGemCo2DCore
                 return;
             }
             if (shopUid <= 0) return;
-            var datas = tableShop.GetDataByUid(shopUid);
+            var datas = tableShop.GetItemByUid(shopUid);
             if (datas == null)
             {
                 GcLogger.LogError("shop 테이블에 정보가 없습니다. shop Uid: " + shopUid);
@@ -133,7 +133,7 @@ namespace GGemCo2DCore
         private void LoadIcons()
         {
             if (!gameObject.activeSelf) return;
-            var datas = tableShop.GetDataByUid(currentShopUid);
+            var datas = tableShop.GetItemByUid(currentShopUid);
             if (datas == null) return;
             for (int index = 0; index < maxCountIcon; index++)
             {

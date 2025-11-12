@@ -13,7 +13,7 @@ namespace GGemCo2DCoreEditor
         
         private readonly List<string> _names = new List<string>();
         private readonly List<int> _uids = new List<int>();
-        private Dictionary<int, Dictionary<string, string>> _tableDictionary;
+        private Dictionary<int, StruckTableMap> _tableDictionary;
         
         [MenuItem(ConfigEditor.NameToolMoveMap, false, (int)ConfigEditor.ToolOrdering.MoveMap)]
         public static void ShowWindow()
@@ -61,7 +61,7 @@ namespace GGemCo2DCoreEditor
 
             foreach (var kvp in _tableDictionary)
             {
-                var info = _tableMap.GetDataByUid(kvp.Key);
+                var info = kvp.Value;
                 if (info.Uid <= 0) continue;
 
                 _names.Add($"{info.Uid} - {info.Name}");

@@ -106,14 +106,14 @@ namespace GGemCo2DCoreEditor
 
         private void LoadQuestInfoData()
         {
-            Dictionary<int, Dictionary<string, string>> dictionary = _tableQuest.GetDatas();
+            Dictionary<int, StruckTableQuest> dictionary = _tableQuest.GetDatas();
              
             int index = 0;
             _nameQuest.Add("0");
             _struckTableQuest.TryAdd(index++, new StruckTableQuest());
-            foreach (KeyValuePair<int, Dictionary<string, string>> outerPair in dictionary)
+            foreach (KeyValuePair<int, StruckTableQuest> outerPair in dictionary)
             {
-                var info = _tableQuest.GetDataByUid(outerPair.Key);
+                var info = outerPair.Value;
                 if (info.Uid <= 0) continue;
                 _nameQuest.Add($"{info.Uid} - {info.Name}");
                 _struckTableQuest.TryAdd(index, info);
@@ -123,12 +123,12 @@ namespace GGemCo2DCoreEditor
 
         private void LoadMonsterInfoData()
         {
-            Dictionary<int, Dictionary<string, string>> monsterDictionary = _tableMonster.GetDatas();
+            Dictionary<int, StruckTableMonster> monsterDictionary = _tableMonster.GetDatas();
              
             int index = 0;
-            foreach (KeyValuePair<int, Dictionary<string, string>> outerPair in monsterDictionary)
+            foreach (KeyValuePair<int, StruckTableMonster> outerPair in monsterDictionary)
             {
-                var info = _tableMonster.GetDataByUid(outerPair.Key);
+                var info = outerPair.Value;
                 if (info.Uid <= 0) continue;
                 _nameMonster.Add($"{info.Uid} - {info.Name}");
                 _struckTableMonsters.TryAdd(index, info);
@@ -138,12 +138,12 @@ namespace GGemCo2DCoreEditor
         
         private void LoadNpcInfoData()
         {
-            Dictionary<int, Dictionary<string, string>> npcDictionary = _tableNpc.GetDatas();
+            Dictionary<int, StruckTableNpc> npcDictionary = _tableNpc.GetDatas();
              
             int index = 0;
-            foreach (KeyValuePair<int, Dictionary<string, string>> outerPair in npcDictionary)
+            foreach (KeyValuePair<int, StruckTableNpc> outerPair in npcDictionary)
             {
-                var info = _tableNpc.GetDataByUid(outerPair.Key);
+                var info = outerPair.Value;
                 if (info.Uid <= 0) continue;
                 _nameNpc.Add($"{info.Uid} - {info.Name}");
                 _struckTableNpcs.TryAdd(index, info);

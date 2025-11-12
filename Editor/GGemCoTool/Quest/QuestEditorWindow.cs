@@ -90,7 +90,7 @@ namespace GGemCo2DCoreEditor
         private void OnEnable()
         {
             _tableLoaderManager = new TableLoaderManager();
-            _tableLoaderManager.LoadTableData<TableQuest, StruckTableQuest>(
+            _tableLoaderManager.LoadTableData(
                 ConfigAddressableTable.Quest,
                 out _tableQuest,
                 out _nameQuest,

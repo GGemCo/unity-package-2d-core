@@ -203,11 +203,11 @@ namespace GGemCo2DCoreEditor
             }
 
             List<UIWindow> uiWindows =  new List<UIWindow> { null };
-            Dictionary<int, Dictionary<string, string>> dictionary = _tableWindow.GetDatas();
+            Dictionary<int, StruckTableWindow> dictionary = _tableWindow.GetDatas();
             
-            foreach (KeyValuePair<int, Dictionary<string, string>> outerPair in dictionary)
+            foreach (KeyValuePair<int, StruckTableWindow> outerPair in dictionary)
             {
-                var info = _tableWindow.GetDataByUid(outerPair.Key);
+                var info = outerPair.Value;
                 if (info.Uid <= 0) continue;
                 if (!info.UseInGame)
                 {

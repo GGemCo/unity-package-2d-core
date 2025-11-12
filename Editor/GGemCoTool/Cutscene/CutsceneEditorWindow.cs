@@ -41,15 +41,15 @@ namespace GGemCo2DCoreEditor
         /// </summary>
         private void LoadCutsceneInfoData()
         {
-            Dictionary<int, Dictionary<string, string>> npcDictionary = _tableCutscene.GetDatas();
+            Dictionary<int, StruckTableCutscene> npcDictionary = _tableCutscene.GetDatas();
              
             _cutsceneMemos.Clear();
             _cutsceneInfos.Clear();
             int index = 0;
             // foreach 문을 사용하여 딕셔너리 내용을 출력
-            foreach (KeyValuePair<int, Dictionary<string, string>> outerPair in npcDictionary)
+            foreach (KeyValuePair<int, StruckTableCutscene> outerPair in npcDictionary)
             {
-                var info = _tableCutscene.GetDataByUid(outerPair.Key);
+                var info = outerPair.Value;
                 if (info.Uid <= 0) continue;
                 _cutsceneMemos.Add($"{info.Uid} - {info.Memo}");
                 _cutsceneInfos.TryAdd(index, info);

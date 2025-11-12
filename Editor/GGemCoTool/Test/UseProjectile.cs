@@ -78,7 +78,7 @@ namespace GGemCo2DCoreEditor
         private int _selectedIndexHitEffect;
         private readonly List<string> _namesEffect = new List<string>();
         private readonly List<int> _uidsEffect = new List<int>();
-        private Dictionary<int, Dictionary<string, string>> _tableDictionaryEffect;
+        private Dictionary<int, StruckTableEffect> _tableDictionaryEffect;
         
         private TableProjectile _tableProjectile;
         private TableEffect _tableEffect;
@@ -326,7 +326,7 @@ namespace GGemCo2DCoreEditor
             _uidsEffect.Add(0);
             foreach (var kvp in _tableDictionaryEffect)
             {
-                var info = _tableEffect.GetDataByUid(kvp.Key);
+                var info = kvp.Value;
                 if (info.Uid <= 0) continue;
 
                 _namesEffect.Add($"{info.Uid} - {info.Name}");

@@ -52,7 +52,7 @@ namespace GGemCo2DCoreEditor
             bool result = EditorUtility.DisplayDialog(TextDisplayDialogTitle, TextDisplayDialogMessage, "네", "아니요");
             if (!result) return;
             
-            Dictionary<int, Dictionary<string, string>> dictionary = _addressableEditor.TableItem.GetDatas();
+            Dictionary<int, StruckTableItem> dictionary = _addressableEditor.TableItem.GetDatas();
             
             // AddressableSettings 가져오기 (없으면 생성)
             AddressableAssetSettings settings = AddressableAssetSettingsDefaultObject.Settings;
@@ -93,9 +93,9 @@ namespace GGemCo2DCoreEditor
             List<Object> assetsEquip = new();
             
             // foreach 문을 사용하여 딕셔너리 내용을 출력
-            foreach (KeyValuePair<int, Dictionary<string, string>> outerPair in dictionary)
+            foreach (KeyValuePair<int, StruckTableItem> outerPair in dictionary)
             {
-                var info = _addressableEditor.TableItem.GetDataByUid(outerPair.Key);
+                var info = outerPair.Value;
                 if (info.Uid <= 0) continue;
 
                 // Drop 이미지

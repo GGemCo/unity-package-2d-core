@@ -1,5 +1,4 @@
 using System;
-using System.Linq;
 using System.Threading.Tasks;
 using UnityEngine;
 using UnityEngine.AddressableAssets;
@@ -10,7 +9,7 @@ namespace GGemCo2DCore
     /// <summary>
     /// 데이터 테이블 Loader
     /// </summary>
-    public class TableLoaderManager : MonoBehaviour
+    public class TableLoaderManager : TableLoaderBase
     {
         public static TableLoaderManager Instance;
 
@@ -40,144 +39,45 @@ namespace GGemCo2DCore
         public TableSound TableSound { get; private set; } = new TableSound();
         public TableSimulationTool TableSimulationTool { get; private set; } = new TableSimulationTool();
         public TableSimulationGrowth TableSimulationGrowth { get; private set; } = new TableSimulationGrowth();
-
+        
         protected void Awake()
         {
             if (!Instance)
             {
                 Instance = this;
                 DontDestroyOnLoad(gameObject);
+
+                registry = new TableRegistry();
+                registry.Register(TableAnimation);
+                registry.Register(TableMonster);
+                registry.Register(TableNpc);
+                registry.Register(TableMap);
+                registry.Register(TableItem);
+                registry.Register(TableMonsterDropRate);
+                registry.Register(TableNpcDropRate);
+                registry.Register(TableItemDropGroup);
+                registry.Register(TableExp);
+                registry.Register(TableWindow);
+                registry.Register(TableStatus);
+                registry.Register(TableSkill);
+                registry.Register(TableAffect);
+                registry.Register(TableEffect);
+                registry.Register(TableInteraction);
+                registry.Register(TableShop);
+                registry.Register(TableItemUpgrade);
+                registry.Register(TableItemSalvage);
+                registry.Register(TableItemCraft);
+                registry.Register(TableCutscene);
+                registry.Register(TableDialogue);
+                registry.Register(TableQuest);
+                registry.Register(TableProjectile);
+                registry.Register(TableSound);
+                registry.Register(TableSimulationTool);
+                registry.Register(TableSimulationGrowth);
             }
             else
             {
                 Destroy(gameObject);
-            }
-        }
-        /// <summary>
-        /// 제네릭을 사용하여 Addressables에서 설정을 로드하는 함수
-        /// </summary>
-        private async Task<T> LoadTextAsync<T>(string key) where T : TextAsset
-        {
-            // 키가 Addressables에 등록되어 있는지 확인
-            var locationsHandle = Addressables.LoadResourceLocationsAsync(key);
-            await locationsHandle.Task;
-
-            if (!locationsHandle.Status.Equals(AsyncOperationStatus.Succeeded) || locationsHandle.Result.Count == 0)
-            {
-                GcLogger.LogError($"[AddressableSettingsLoader] '{key}' 가 Addressables에 등록되지 않았습니다. '{key}' 를 생성한 후 {ConfigDefine.NameSDK}Tool > 기본 셋팅하기 메뉴를 열고 Addressable 추가하기 버튼을 클릭해주세요.");
-                Addressables.Release(locationsHandle);
-                return null;
-            }
-
-            // 설정 로드
-            AsyncOperationHandle<T> handle = Addressables.LoadAssetAsync<T>(key);
-            T asset = await handle.Task;
-
-            // 핸들 해제
-            Addressables.Release(locationsHandle);
-            return asset;
-        }
-        public async Task LoadDataFile(AddressableAssetInfo addressableAssetInfo)
-        {
-            
-            try
-            {
-                var settingsTask = LoadTextAsync<TextAsset>(addressableAssetInfo.Key);
-                await Task.WhenAll(settingsTask);
-                TextAsset textFile = settingsTask.Result;
-                
-                if (textFile)
-                {
-                    string content = textFile.text;
-                    if (!string.IsNullOrEmpty(content))
-                    {
-                        switch (addressableAssetInfo.Etc1)
-                        {
-                            case ConfigAddressableTable.Animation:
-                                TableAnimation.LoadData(content);
-                                break;
-                            case ConfigAddressableTable.Monster:
-                                TableMonster.LoadData(content);
-                                break;
-                            case ConfigAddressableTable.Npc:
-                                TableNpc.LoadData(content);
-                                break;
-                            case ConfigAddressableTable.Map:
-                                TableMap.LoadData(content);
-                                break;
-                            case ConfigAddressableTable.Item:
-                                TableItem.LoadData(content);
-                                break;
-                            case ConfigAddressableTable.MonsterDropRate:
-                                TableMonsterDropRate.LoadData(content);
-                                break;
-                            case ConfigAddressableTable.NpcDropRate:
-                                TableNpcDropRate.LoadData(content);
-                                break;
-                            case ConfigAddressableTable.ItemDropGroup:
-                                TableItemDropGroup.LoadData(content);
-                                break;
-                            case ConfigAddressableTable.Exp:
-                                TableExp.LoadData(content);
-                                break;
-                            case ConfigAddressableTable.Window:
-                                TableWindow.LoadData(content);
-                                break;
-                            case ConfigAddressableTable.Status:
-                                TableStatus.LoadData(content);
-                                break;
-                            case ConfigAddressableTable.Skill:
-                                TableSkill.LoadData(content);
-                                break;
-                            case ConfigAddressableTable.Affect:
-                                TableAffect.LoadData(content);
-                                break;
-                            case ConfigAddressableTable.Effect:
-                                TableEffect.LoadData(content);
-                                break;
-                            case ConfigAddressableTable.Interaction:
-                                TableInteraction.LoadData(content);
-                                break;
-                            case ConfigAddressableTable.Shop:
-                                TableShop.LoadData(content);
-                                break;
-                            case ConfigAddressableTable.ItemUpgrade:
-                                TableItemUpgrade.LoadData(content);
-                                break;
-                            case ConfigAddressableTable.ItemSalvage:
-                                TableItemSalvage.LoadData(content);
-                                break;
-                            case ConfigAddressableTable.ItemCraft:
-                                TableItemCraft.LoadData(content);
-                                break;
-                            case ConfigAddressableTable.Cutscene:
-                                TableCutscene.LoadData(content);
-                                break;
-                            case ConfigAddressableTable.Dialogue:
-                                TableDialogue.LoadData(content);
-                                break;
-                            case ConfigAddressableTable.Quest:
-                                TableQuest.LoadData(content);
-                                break;
-                            case ConfigAddressableTable.Projectile:
-                                TableProjectile.LoadData(content);
-                                break;
-                            case ConfigAddressableTable.Sound:
-                                TableSound.LoadData(content);
-                                break;
-                            case ConfigAddressableTable.SimulationTool:
-                                TableSimulationTool.LoadData(content);
-                                break;
-                            case ConfigAddressableTable.SimulationGrowth:
-                                TableSimulationGrowth.LoadData(content);
-                                break;
-                        }
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                GcLogger.LogError($"테이블 파싱중 오류. file {addressableAssetInfo.Key}: {ex.Message}");
             }
         }
         private float GetNpcMoveStep(int npcUid)
@@ -216,42 +116,6 @@ namespace GGemCo2DCore
             }
 
             return 0;
-        }
-        // ===============================
-        // Generic Helper (공통 로깅/널 처리)
-        // ===============================
-        private TRow GetData<TTable, TRow>(
-            TTable table,
-            int uid,
-            string label,
-            Func<TTable, int, TRow> getFunc,
-            bool logIfMissing = true)
-            where TRow : class
-        {
-            if (table == null)
-            {
-                if (logIfMissing)
-                    GcLogger.LogWarning($"[Table] {label} table is null.");
-                return null;
-            }
-
-            var row = getFunc(table, uid);
-            if (row == null && logIfMissing)
-                GcLogger.LogWarning($"[Table] {label} not found. uid={uid}");
-            return row;
-        }
-
-        private bool TryGetData<TTable, TRow>(
-            TTable table,
-            int uid,
-            out TRow row,
-            string label,
-            Func<TTable, int, TRow> getFunc,
-            bool logIfMissing = false)
-            where TRow : class
-        {
-            row = GetData(table, uid, label, getFunc, logIfMissing);
-            return row != null;
         }
 
         // =======================================

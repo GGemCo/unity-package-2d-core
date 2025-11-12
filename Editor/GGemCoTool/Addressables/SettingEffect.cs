@@ -45,7 +45,7 @@ namespace GGemCo2DCoreEditor
             bool result = EditorUtility.DisplayDialog(TextDisplayDialogTitle, TextDisplayDialogMessage, "네", "아니요");
             if (!result) return;
             
-            Dictionary<int, Dictionary<string, string>> dictionary = _addressableEditor.TableEffect.GetDatas();
+            Dictionary<int, StruckTableEffect> dictionary = _addressableEditor.TableEffect.GetDatas();
             
             // AddressableSettings 가져오기 (없으면 생성)
             AddressableAssetSettings settings = AddressableAssetSettingsDefaultObject.Settings;
@@ -64,9 +64,9 @@ namespace GGemCo2DCoreEditor
             if (group)
             {
                 // foreach 문을 사용하여 딕셔너리 내용을 출력
-                foreach (KeyValuePair<int, Dictionary<string, string>> outerPair in dictionary)
+                foreach (KeyValuePair<int, StruckTableEffect> outerPair in dictionary)
                 {
-                    var info = _addressableEditor.TableEffect.GetDataByUid(outerPair.Key);
+                    var info = outerPair.Value;
                     if (info.Uid <= 0) continue;
                 
                     string key = $"{ConfigAddressableGroupName.Effect}_{info.PrefabName}";

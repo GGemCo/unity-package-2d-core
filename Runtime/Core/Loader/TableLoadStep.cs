@@ -1,19 +1,19 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
-using UnityEngine;
 
 namespace GGemCo2DCore
 {
     public sealed class TableLoadStep : GameLoadStepBase
     {
-        private readonly TableLoaderManager _tableLoader;
+        private readonly TableLoaderBase _tableLoader;
         private readonly List<AddressableAssetInfo> _tables;
 
         public TableLoadStep(int order,
+            string id,
             string localizedKey,
-            TableLoaderManager tableLoader,
+            TableLoaderBase tableLoader,
             List<AddressableAssetInfo> tables)
-            : base("core.table", order, localizedKey)
+            : base(id, order, localizedKey)
         {
             _tableLoader = tableLoader;
             _tables = tables ?? new List<AddressableAssetInfo>();

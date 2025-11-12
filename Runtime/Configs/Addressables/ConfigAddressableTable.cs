@@ -8,7 +8,7 @@ namespace GGemCo2DCore
         private const string FileExt = ".txt";
         private static string TablePath => ConfigAddressablePath.Tables;
 
-        private static AddressableAssetInfo Make(string tableName)
+        public static AddressableAssetInfo Make(string tableName)
         {
             var key  = $"{ConfigAddressableKey.Table}_{tableName}";
             var path = $"{TablePath}/{tableName}{FileExt}";
@@ -16,6 +16,7 @@ namespace GGemCo2DCore
         }
 
         // 테이블 이름들 (필요 시 enum으로 승격 가능)
+        public const string None             = "None";
         public const string Map              = "map";
         public const string Monster          = "monster";
         public const string Npc              = "npc";

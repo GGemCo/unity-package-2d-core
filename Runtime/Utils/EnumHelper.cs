@@ -73,5 +73,44 @@ namespace GGemCo2DCore
         {
             return (T)Enum.ToObject(typeof(T), 0);
         }
+        /// <summary>
+        /// 문자열을 enum 값으로 변환합니다.
+        /// - 대소문자 무시 (case-insensitive)
+        /// - 앞뒤 공백 제거
+        /// - "None" / "NONE" 처리
+        /// 변환 실패 시 기본값(default(TEnum))을 반환합니다.
+        /// </summary>
+        public static TEnum ConvertEnum<TEnum>(string value) where TEnum : struct, Enum
+        {
+            // 1) Null / 공백 처리
+            if (string.IsNullOrWhiteSpace(value))
+            {
+                // Enum 내부에 None 이 있으면 반환
+                if (Enum.TryParse("None", true, out TEnum resultNone))
+                    return resultNone;
+
+                GcLogger.LogError($"[EnumConverter] Empty value for enum {typeof(TEnum).Name}");
+                return default;
+            }
+
+            // 2) 전처리: 공백 제거 + 대문자 정규화
+            value = value.Trim();
+
+            // 3) Enum.TryParse (대소문자 무시)
+            if (Enum.TryParse(value, true, out TEnum result))
+                return result;
+
+            // 4) Enum 이름 전체를 소문자로 비교 (예: "atk_fire" → "Atk_Fire")
+            foreach (var name in Enum.GetNames(typeof(TEnum)))
+            {
+                if (string.Equals(name, value, StringComparison.OrdinalIgnoreCase))
+                    return (TEnum)Enum.Parse(typeof(TEnum), name);
+            }
+
+            // 5) 실패 시 로그
+            GcLogger.LogError($"[EnumConverter] Unknown value '{value}' for enum {typeof(TEnum).Name}");
+            return default;
+        }
+
     }
 }

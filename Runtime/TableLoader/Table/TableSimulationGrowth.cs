@@ -1,4 +1,6 @@
-﻿namespace GGemCo2DCore
+﻿using System.Collections.Generic;
+
+namespace GGemCo2DCore
 {
     /// <summary>
     /// 상점 판매 테이블 Structure
@@ -10,21 +12,16 @@
         public string Memo;
         public string GrowthFileName;
     }
-    public class TableSimulationGrowth : DefaultTable
+    public class TableSimulationGrowth : DefaultTable<StruckTableSimulationGrowth>
     {
-        public StruckTableSimulationGrowth GetDataByUid(int uid)
+        public override string Key => ConfigAddressableTable.SimulationGrowth;
+        protected override StruckTableSimulationGrowth BuildRow(Dictionary<string, string> data)
         {
-            if (uid <= 0)
-            {
-                GcLogger.LogError("uid is 0.");
-                return null;
-            }
-            var data = GetData(uid);
             if (data == null) return null;
             return new StruckTableSimulationGrowth
             {
-                Uid = int.Parse(data["Uid"]),
-                ItemUid = int.Parse(data["ItemUid"]),
+                Uid = MathHelper.ParseInt(data["Uid"]),
+                ItemUid = MathHelper.ParseInt(data["ItemUid"]),
                 GrowthFileName = data["GrowthFileName"],
             };
         }

@@ -280,7 +280,7 @@ namespace GGemCo2DCore
                     _uiWindowItemCraft?.Show(true);
                     _uiWindowItemCraft?.SetInfoByItemCraftUid(value);
                     break;
-                case InteractionConstants.Type.SaveGameBySleep:
+                case InteractionConstants.Type.SaveGame:
                     SaveGameBySleep();
                     break;
             }

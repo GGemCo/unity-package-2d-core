@@ -108,7 +108,7 @@ namespace GGemCo2DCore
                 return;
             }
             if (itemCraftUid <= 0) return;
-            var datas = _tableItemCraft.GetDataByUid(itemCraftUid);
+            var datas = _tableItemCraft.GetItemsByUid(itemCraftUid);
             if (datas == null)
             {
                 GcLogger.LogError("item_craft 테이블에 정보가 없습니다. item_craft Uid: " + itemCraftUid);

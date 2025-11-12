@@ -64,7 +64,7 @@ namespace GGemCo2DCore
             if (tables == null) return;
             // datas를 Ordering 컬럼 기준으로 정렬된 새로운 Dictionary 만들기
             var orderedDatas = tables
-                .OrderBy(kv => int.Parse(kv.Value["Ordering"])) // Ordering 값 기준으로 정렬
+                .OrderBy(kv => kv.Value.Ordering) // Ordering 값 기준으로 정렬
                 .ToDictionary(kv => kv.Key, kv => kv.Value);
 
             foreach (var table in orderedDatas)

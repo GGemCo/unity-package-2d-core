@@ -54,13 +54,13 @@ namespace GGemCo2DCoreEditor
         /// </summary>
         private void LoadMonsterInfoData()
         {
-            Dictionary<int, Dictionary<string, string>> monsterDictionary = _tableMonster.GetDatas();
+            Dictionary<int, StruckTableMonster> monsterDictionary = _tableMonster.GetDatas();
 
             _monsterNames = new List<string>();
             // foreach 문을 사용하여 딕셔너리 내용을 출력
-            foreach (KeyValuePair<int, Dictionary<string, string>> outerPair in monsterDictionary)
+            foreach (KeyValuePair<int, StruckTableMonster> outerPair in monsterDictionary)
             {
-                var info = _tableMonster.GetDataByUid(outerPair.Key);
+                var info = outerPair.Value;
                 if (info.Uid <= 0) continue;
                 _monsterNames.Add($"{info.Uid} - {info.Name}");
             }

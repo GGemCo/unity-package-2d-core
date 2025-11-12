@@ -7,37 +7,63 @@ namespace GGemCo2DCoreEditor
 {
     public class TableLoaderManager
     {
-        private readonly Dictionary<string, DefaultTable> _loadedTables = new Dictionary<string, DefaultTable>();
-        
-        // 공통적인 로드 메서드로, 제네릭 타입과 파일명을 받아 로드
-        private T LoadTable<T>(string filePath) where T : DefaultTable, new()
+        // 경로 → 테이블 인스턴스 (행 타입 불문)
+        private readonly Dictionary<string, ITableParser> _loadedTables =
+            new Dictionary<string, ITableParser>(StringComparer.Ordinal);
+
+        private bool TryGetLoaded<T>(string filePath, out T table) where T : class, ITableParser
         {
+            if (_loadedTables.TryGetValue(filePath, out var t) && t is T cast)
+            {
+                table = cast; return true;
+            }
+            table = null; return false;
+        }
+
+        private T LoadTable<T>(string filePath, bool forceReload = false)
+            where T : class, ITableParser, new()
+        {
+            if (!forceReload && TryGetLoaded<T>(filePath, out var cached))
+                return cached;
+
             T tableData = null;
             try
             {
-                string content = AssetDatabaseLoaderManager.LoadFileText(filePath);
-                if (!string.IsNullOrEmpty(content))
+                var content = AssetDatabaseLoaderManager.LoadFileText(filePath);
+                if (string.IsNullOrEmpty(content))
                 {
-                    tableData = new T();
-                    tableData.LoadData(content);
+                    Debug.LogError($"[TableLoader] 테이블 내용이 없습니다. path={filePath}");
+                    return null;
                 }
-                else
-                {
-                    Debug.LogError($"테이블 내용이 없습니다. {filePath}");
-                }
+
+                tableData = new T();
+                tableData.LoadData(content);
+
+                // 경로 키로 캐시에 저장(있으면 교체)
+                _loadedTables[filePath] = tableData;
             }
             catch (Exception ex)
             {
-                Debug.LogError($"테이블 파일을 읽는중 오류 발생. {filePath}: {ex.Message}");
+                Debug.LogError($"[TableLoader] 테이블 파일 읽기/파싱 중 오류. path={filePath}, ex={ex.Message}");
+                return null;
             }
-            _loadedTables.TryAdd(filePath, tableData);
+
             return tableData;
         }
 
-        public TableMap LoadMapTable()
-        {
-            return LoadTable<TableMap>(ConfigAddressableTable.TableMap.Path);
-        }
+        /// <summary>
+        /// 필요 시 특정 경로의 캐시를 제거(재로드 대비)
+        /// </summary>
+        public bool Unload(string filePath) => _loadedTables.Remove(filePath);
+
+        /// <summary>
+        /// 모든 테이블 캐시 제거(프로젝트 리임포트/일괄 재로드 용)
+        /// </summary>
+        public void UnloadAll() => _loadedTables.Clear();
+
+        public TableMap LoadMapTable(bool forceReload = false)
+            => LoadTable<TableMap>(ConfigAddressableTable.TableMap.Path, forceReload);
+        
         public TableNpc LoadNpcTable()
         {
             return LoadTable<TableNpc>(ConfigAddressableTable.TableNpc.Path);
@@ -125,35 +151,36 @@ namespace GGemCo2DCoreEditor
         /// <param name="nameList"></param>
         /// <param name="structTable"></param>
         /// <param name="displayNameFunc"></param>
+        /// <param name="forceReload"></param>
         /// <typeparam name="TTable"></typeparam>
-        /// <typeparam name="TStruct"></typeparam>
-        public void LoadTableData<TTable, TStruct>(string tableFileName, 
+        /// <typeparam name="TRow"></typeparam>
+        public void LoadTableData<TTable, TRow>(
+            string tableFileName,
             out TTable table,
-            out List<string> nameList, 
-            out Dictionary<int, TStruct> structTable,
-            Func<TStruct, string> displayNameFunc) 
-            where TTable : DefaultTable, new()
-            where TStruct : class 
+            out List<string> nameList,
+            out Dictionary<int, TRow> structTable,
+            Func<TRow, string> displayNameFunc,
+            bool forceReload = false)
+            where TTable : DefaultTable<TRow>, new()
+            where TRow : class
         {
             nameList = new List<string>();
-            structTable = new Dictionary<int, TStruct>();
-            string path = $"{ConfigAddressablePath.Tables}/{tableFileName}.txt";
-            table = _loadedTables.GetValueOrDefault(tableFileName) as TTable ?? LoadTable<TTable>(path);
+            structTable = new Dictionary<int, TRow>();
 
+            string path = $"{ConfigAddressablePath.Tables}/{tableFileName}.txt";
+            table = LoadTable<TTable>(path, forceReload); // 제약 TTable : ITableData도 만족
             if (table == null)
             {
                 Debug.LogError($"{tableFileName} 테이블을 불러오지 못 했습니다.");
                 return;
             }
- 
-            Dictionary<int, Dictionary<string, string>> monsterDictionary = table.GetDatas();
+
             int index = 0;
-            foreach (KeyValuePair<int, Dictionary<string, string>> outerPair in monsterDictionary)
+            foreach (var kv in table.GetDatas()) // Dictionary<int, TRow>
             {
-                if (!table.TryGetDataByUid(outerPair.Key, out var rawInfo)) continue;
-                if (rawInfo is not TStruct casted) continue;
-                nameList.Add(displayNameFunc(casted));
-                structTable.TryAdd(index++, casted);
+                var row = kv.Value;
+                nameList.Add(displayNameFunc(row));
+                structTable.TryAdd(index++, row);
             }
         }
     }

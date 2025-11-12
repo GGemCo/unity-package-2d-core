@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Globalization;
 using UnityEngine;
 
 namespace GGemCo2DCore
@@ -133,5 +134,14 @@ namespace GGemCo2DCore
 
             rectTransform.position = pos;
         }
+        
+        public static float ParseFloat(string v, float @default = 0)
+            => float.TryParse(v, NumberStyles.Float, CultureInfo.InvariantCulture, out var f) ? f : @default;
+
+        public static int ParseInt(string v, int @default = 0)
+            => int.TryParse(v, NumberStyles.Integer, CultureInfo.InvariantCulture, out var i) ? i : @default;
+        
+        public static long ParseLong(string v, long def = 0L)
+            => long.TryParse(v, NumberStyles.Integer, CultureInfo.InvariantCulture, out var x) ? x : def;
     }
 }

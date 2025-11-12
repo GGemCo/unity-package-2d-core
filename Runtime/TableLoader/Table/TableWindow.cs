@@ -1,4 +1,6 @@
-﻿namespace GGemCo2DCore
+﻿using System.Collections.Generic;
+
+namespace GGemCo2DCore
 {
     /// <summary>
     /// Window 테이블 Structure
@@ -19,25 +21,18 @@
     /// <summary>
     /// Window 테이블
     /// </summary>
-    public class TableWindow : DefaultTable
+    public class TableWindow : DefaultTable<StruckTableWindow>
     {
-        public StruckTableWindow GetDataByUid(int uid)
+        public override string Key => ConfigAddressableTable.Window;
+        protected override StruckTableWindow BuildRow(Dictionary<string, string> data)
         {
-            if (uid <= 0)
-            {
-                GcLogger.LogError("uid is 0.");
-                return null;
-            }
-
-            var data = GetData(uid);
-            if (data == null) return null;
             return new StruckTableWindow
             {
-                Uid = int.Parse(data["Uid"]),
+                Uid = MathHelper.ParseInt(data["Uid"]),
                 Name = data["Name"],
                 UseInGame = ConvertBoolean(data["UseInGame"]),
                 DefaultActive = ConvertBoolean(data["DefaultActive"]),
-                Ordering = int.Parse(data["Ordering"]),
+                Ordering = MathHelper.ParseInt(data["Ordering"]),
                 IsInteraction = ConvertBoolean(data["IsInteraction"]),
                 OpenWindowUid = ConvertIntArray(data["OpenWindowUid"]),
                 CloseWindowUid = ConvertIntArray(data["CloseWindowUid"]),

@@ -197,19 +197,17 @@ namespace GGemCo2DCore
             int animationUid = 0;
             if (type == CharacterConstants.Type.Npc)
             {
-                var info = TableLoaderManager.Instance.GetNpcData(uid);
-                if (info == null) return false;
+                if (!TableLoaderManager.Instance.TryGetNpcData(uid, out var info)) return false;
                 animationUid = info.AnimationUid;
             }
             else if (type == CharacterConstants.Type.Monster)
             {
-                var info = TableLoaderManager.Instance.GetMonsterData(uid);
-                if (info == null) return false;
+                if (!TableLoaderManager.Instance.TryGetMonsterData(uid, out var info)) return false;
                 animationUid = info.AnimationUid;
             }
             if (animationUid <= 0) return false;
-            StruckTableAnimation struckTableAnimation = TableLoaderManager.Instance.GetAnimationData(animationUid);
-            if (struckTableAnimation is not { Uid: > 0 }) return false;
+            
+            if (!TableLoaderManager.Instance.TryGetAnimationData(animationUid, out var struckTableAnimation)) return false;
             currentMoveStep = struckTableAnimation.MoveStep;
 
             SetHeight(struckTableAnimation.Height);

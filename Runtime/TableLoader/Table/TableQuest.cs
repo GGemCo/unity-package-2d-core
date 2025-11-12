@@ -18,30 +18,20 @@ namespace GGemCo2DCore
     /// <summary>
     /// 퀘스트 테이블
     /// </summary>
-    public class TableQuest : DefaultTable
+    public class TableQuest : DefaultTable<StruckTableQuest>
     {
-        private static readonly Dictionary<string, QuestConstants.Type> MapType;
+        public override string Key => ConfigAddressableTable.Quest;
         private static readonly Dictionary<int, Dictionary<int, List<int>>> QuestUids = new Dictionary<int, Dictionary<int, List<int>>>();
-
-        static TableQuest()
-        {
-            MapType = new Dictionary<string, QuestConstants.Type>
-            {
-                { "Main", QuestConstants.Type.Main },
-                { "Sub", QuestConstants.Type.Sub },
-            };
-        }
-        private QuestConstants.Type ConvertType(string grade) => MapType.GetValueOrDefault(grade, QuestConstants.Type.None);
 
         protected override void PreLoad()
         {
             QuestUids.Clear();
         }
-        protected override void OnLoadedData(Dictionary<string, string> data)
+        protected override void OnLoadedData(StruckTableQuest data)
         {
-            int mapUid = int.Parse(data["MapUid"]);
-            int npcUid = int.Parse(data["NpcUid"]);
-            int questUid = int.Parse(data["Uid"]);
+            int mapUid = data.MapUid;
+            int npcUid = data.NpcUid;
+            int questUid = data.Uid;
             if (QuestUids.ContainsKey(mapUid) != true)
             {
                 Dictionary<int, List<int>> newData = new Dictionary<int, List<int>>();
@@ -64,24 +54,16 @@ namespace GGemCo2DCore
                 }
             }
         }
-        public StruckTableQuest GetDataByUid(int uid)
+        protected override StruckTableQuest BuildRow(Dictionary<string, string> data)
         {
-            if (uid <= 0)
-            {
-                GcLogger.LogError("uid is 0.");
-                return null;
-            }
-
-            var data = GetData(uid);
-            if (data == null) return null;
             return new StruckTableQuest
             {
-                Uid = int.Parse(data["Uid"]),
-                Type = ConvertType(data["Type"]),
+                Uid = MathHelper.ParseInt(data["Uid"]),
+                Type = EnumHelper.ConvertEnum<QuestConstants.Type>(data["Type"]),
                 Name = data["Name"],
                 FileName = data["FileName"],
-                MapUid = int.Parse(data["MapUid"]),
-                NpcUid = int.Parse(data["NpcUid"]),
+                MapUid = MathHelper.ParseInt(data["MapUid"]),
+                NpcUid = MathHelper.ParseInt(data["NpcUid"]),
             };
         }
         public List<int> GetQuestsByNpcUnum(int mapUid, int npcUid)
@@ -90,11 +72,6 @@ namespace GGemCo2DCore
             if (QuestUids.TryGetValue(mapUid, out var npcUids) != true || npcUids.ContainsKey(npcUid) != true)
                 return empty;
             return QuestUids[mapUid][npcUid];
-        }
-        public override bool TryGetDataByUid(int uid, out object info)
-        {
-            info = GetDataByUid(uid);
-            return info != null && ((StruckTableQuest)info).Uid > 0;
         }
     }
 }

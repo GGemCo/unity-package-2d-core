@@ -22,11 +22,11 @@ namespace GGemCo2DCore
             public bool Handled { get; set; } // 외부에서 처리했으면 true
         }
 
-        public delegate void EventHandlerBeforeLoadStart(GameLoaderManager sender, EventArgsBeforeLoadStart e);
-        public static event EventHandlerBeforeLoadStart BeforeLoadStart;
+        public static Action<GameLoaderManager, EventArgsBeforeLoadStart> BeforeLoadStart;
+        public static Action<GameLoaderManager, EventArgsBeforeLoadStart> BeforeLoadStartInLoadingScene;
         
-        private TextMeshProUGUI textLoadingPercent;
-        public void SetTextLoadingPercent(TextMeshProUGUI value) => textLoadingPercent = value;
+        private TextMeshProUGUI _textLoadingPercent;
+        public void SetTextLoadingPercent(TextMeshProUGUI value) => _textLoadingPercent = value;
 
         // 등록된 스텝
         private readonly List<IGameLoadStep> _steps = new();
@@ -120,7 +120,7 @@ namespace GGemCo2DCore
             _progressBasePerStep = 100f / steps.Count;
             _progressTotal = 0f;
 
-            if (textLoadingPercent) textLoadingPercent.text = "0%";
+            if (_textLoadingPercent) _textLoadingPercent.text = "0%";
         }
 
         private IEnumerator LoadSequenceCoroutine(List<IGameLoadStep> steps)
@@ -154,11 +154,11 @@ namespace GGemCo2DCore
             _progressTotal = sum;
 
             // UI
-            if (textLoadingPercent != null && LocalizationManager.Instance != null)
+            if (_textLoadingPercent != null && LocalizationManager.Instance != null)
             {
                 string subTitle = LocalizationManager.Instance.GetSceneByKey(step.LocalizedKey);
                 string template = LocalizationManager.Instance.GetSceneByKey(LocalizationConstants.Keys.Loading.TextLoadingPercent());
-                textLoadingPercent.text = string.Format(template, subTitle, Mathf.FloorToInt(_progressTotal));
+                _textLoadingPercent.text = string.Format(template, subTitle, Mathf.FloorToInt(_progressTotal));
             }
         }
 
@@ -174,6 +174,12 @@ namespace GGemCo2DCore
         }
 
         public bool IsCompleted() => _isLoadComplete;
+
+        public bool RegistryTable()
+        {
+            
+            return true;
+        }
 
         public void StartLoadingInSceneLoading()
         { 
@@ -198,6 +204,7 @@ namespace GGemCo2DCore
             ));
 
             Register(new TableLoadStep(
+                id: "core.table",
                 order: 240,
                 localizedKey: LocalizationConstants.Keys.Loading.TextTypeTables(),
                 tableLoader: tableLoader,
@@ -257,6 +264,10 @@ namespace GGemCo2DCore
                 localizedKey: LocalizationConstants.Keys.Loading.TextTypeSaveData(),
                 saveDataLoader: saveData
             ));
+            
+            var e = new EventArgsBeforeLoadStart { Handled = false };
+            BeforeLoadStartInLoadingScene?.Invoke(this, e);
+            
             StartLoading();
         }
 
@@ -285,6 +296,7 @@ namespace GGemCo2DCore
             ));
             
             Register(new TableLoadStep(
+                id: "core.table",
                 order: 240,
                 localizedKey: LocalizationConstants.Keys.Loading.TextTypeTables(),
                 tableLoader: tableLoader,

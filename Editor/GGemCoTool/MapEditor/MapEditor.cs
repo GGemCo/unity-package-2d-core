@@ -222,10 +222,10 @@ namespace GGemCo2DCoreEditor
                 return;
             }
             
-            Dictionary<int, Dictionary<string, string>> datas = _tableMonster.GetDatas();
-            foreach (KeyValuePair<int, Dictionary<string, string>> outerPair in datas)
+            Dictionary<int, StruckTableMonster> datas = _tableMonster.GetDatas();
+            foreach (KeyValuePair<int, StruckTableMonster> outerPair in datas)
             {
-                var info = _tableMonster.GetDataByUid(outerPair.Key);
+                var info = outerPair.Value;
                 if (info == null) continue;
                 var infoAnimation = _tableAnimation.GetDataByUid(info.AnimationUid);
                 if (infoAnimation == null) continue;
@@ -235,10 +235,10 @@ namespace GGemCo2DCoreEditor
                 entry?.SetLabel(labelName, false, true);
             }
        
-            datas = _tableNpc.GetDatas();
-            foreach (KeyValuePair<int, Dictionary<string, string>> outerPair in datas)
+            Dictionary<int, StruckTableNpc> dataNpc = _tableNpc.GetDatas();
+            foreach (KeyValuePair<int, StruckTableNpc> outerPair in dataNpc)
             {
-                var info = _tableNpc.GetDataByUid(outerPair.Key);
+                var info = outerPair.Value;
                 if (info == null) continue;
                 var infoAnimation = _tableAnimation.GetDataByUid(info.AnimationUid);
                 if (infoAnimation == null) continue;
@@ -323,12 +323,12 @@ namespace GGemCo2DCoreEditor
         /// </summary>
         private void LoadInfoDataNpc()
         {
-            Dictionary<int, Dictionary<string, string>> npcDictionary = _tableNpc.GetDatas();
+            Dictionary<int, StruckTableNpc> npcDictionary = _tableNpc.GetDatas();
              
             _nameNpc = new List<string>();
-            foreach (KeyValuePair<int, Dictionary<string, string>> outerPair in npcDictionary)
+            foreach (KeyValuePair<int, StruckTableNpc> outerPair in npcDictionary)
             {
-                var info = _tableNpc.GetDataByUid(outerPair.Key);
+                var info = outerPair.Value;
                 if (info.Uid <= 0) continue;
                 _nameNpc.Add($"{info.Uid} - {info.Name}");
             }
@@ -338,12 +338,12 @@ namespace GGemCo2DCoreEditor
         /// </summary>
         private void LoadInfoDataMonster()
         {
-            Dictionary<int, Dictionary<string, string>> monsterDictionary = _tableMonster.GetDatas();
+            Dictionary<int, StruckTableMonster> monsterDictionary = _tableMonster.GetDatas();
              
             _nameMonster = new List<string>();
-            foreach (KeyValuePair<int, Dictionary<string, string>> outerPair in monsterDictionary)
+            foreach (KeyValuePair<int, StruckTableMonster> outerPair in monsterDictionary)
             {
-                var info = _tableMonster.GetDataByUid(outerPair.Key);
+                var info = outerPair.Value;
                 if (info.Uid <= 0) continue;
                 _nameMonster.Add($"{info.Uid} - {info.Name}");
             }
@@ -351,13 +351,13 @@ namespace GGemCo2DCoreEditor
 
         private void LoadInfoDataMap()
         {
-            Dictionary<int, Dictionary<string, string>> monsterDictionary = _tableMap.GetDatas();
+            Dictionary<int, StruckTableMap> monsterDictionary = _tableMap.GetDatas();
              
             _nameMap = new List<string>();
             int index = 0;
-            foreach (KeyValuePair<int, Dictionary<string, string>> outerPair in monsterDictionary)
+            foreach (KeyValuePair<int, StruckTableMap> outerPair in monsterDictionary)
             {
-                var info = _tableMap.GetDataByUid(outerPair.Key);
+                var info = outerPair.Value;
                 if (info.Uid <= 0) continue;
                 _nameMap.Add($"{info.Uid} - {info.Name}");
                 StruckTableMaps.TryAdd(index++, info);

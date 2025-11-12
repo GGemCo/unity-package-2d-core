@@ -11,7 +11,7 @@ namespace GGemCo2DCore
         {
             if (itemObject == null || TableLoaderManager.Instance == null) return;
             item = itemObject.GetComponent<Item>();
-            struckTableItem = TableLoaderManager.Instance.GetItemData(item.itemUid);
+            struckTableItem = TableLoaderManager.Instance.GetItemData(item.GetItemUid());
             textName.text = $"{struckTableItem.Name} ({itemCount})";
             ApplyTextEffect();
         }

@@ -55,7 +55,7 @@ namespace GGemCo2DCoreEditor
         /// </summary>
         public void Setup()
         {
-            Dictionary<int, Dictionary<string, string>> dictionaryMap = _addressableEditor.TableMap.GetDatas();
+            Dictionary<int, StruckTableMap> dictionaryMap = _addressableEditor.TableMap.GetDatas();
             
             // AddressableSettings 가져오기 (없으면 생성)
             AddressableAssetSettings settings = AddressableAssetSettingsDefaultObject.Settings;
@@ -78,9 +78,9 @@ namespace GGemCo2DCoreEditor
             }
             
             // foreach 문을 사용하여 딕셔너리 내용을 출력
-            foreach (KeyValuePair<int, Dictionary<string, string>> outerPair in dictionaryMap)
+            foreach (KeyValuePair<int, StruckTableMap> outerPair in dictionaryMap)
             {
-                var info = _addressableEditor.TableMap.GetDataByUid(outerPair.Key);
+                var info = outerPair.Value;
                 if (info.Uid <= 0) continue;
 
                 string groupName = $"{targetGroupName}_{info.FolderName}";
@@ -170,10 +170,10 @@ namespace GGemCo2DCoreEditor
         {
             if (type == Type.Monster)
             {
-                Dictionary<int, Dictionary<string, string>> datas = _addressableEditor.TableMonster.GetDatas();
-                foreach (KeyValuePair<int, Dictionary<string, string>> outerPair in datas)
+                Dictionary<int, StruckTableMonster> datas = _addressableEditor.TableMonster.GetDatas();
+                foreach (KeyValuePair<int, StruckTableMonster> outerPair in datas)
                 {
-                    var info = _addressableEditor.TableMonster.GetDataByUid(outerPair.Key);
+                    var info = outerPair.Value;
                     if (info == null) continue;
                     var infoAnimation = _addressableEditor.TableAnimation.GetDataByUid(info.AnimationUid);
                     if (infoAnimation == null) continue;
@@ -185,10 +185,10 @@ namespace GGemCo2DCoreEditor
             }
             else if (type == Type.Npc)
             {
-                Dictionary<int, Dictionary<string, string>> datas = _addressableEditor.TableNpc.GetDatas();
-                foreach (KeyValuePair<int, Dictionary<string, string>> outerPair in datas)
+                Dictionary<int, StruckTableNpc> datas = _addressableEditor.TableNpc.GetDatas();
+                foreach (KeyValuePair<int, StruckTableNpc> outerPair in datas)
                 {
-                    var info = _addressableEditor.TableNpc.GetDataByUid(outerPair.Key);
+                    var info = outerPair.Value;
                     if (info == null) continue;
                     var infoAnimation = _addressableEditor.TableAnimation.GetDataByUid(info.AnimationUid);
                     if (infoAnimation == null) continue;

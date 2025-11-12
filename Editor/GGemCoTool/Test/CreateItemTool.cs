@@ -15,7 +15,7 @@ namespace GGemCo2DCoreEditor
         private int _makeSilverCount;
         private readonly List<string> _itemNames = new List<string>();
         private readonly List<int> _itemUids = new List<int>();
-        private Dictionary<int, Dictionary<string, string>> _itemDictionary;
+        private Dictionary<int, StruckTableItem> _itemDictionary;
 
         [MenuItem(ConfigEditor.NameToolCreateItem, false, (int)ConfigEditor.ToolOrdering.CreateItem)]
         public static void ShowWindow()
@@ -152,7 +152,7 @@ namespace GGemCo2DCoreEditor
 
             foreach (var kvp in _itemDictionary)
             {
-                var info = _tableItem.GetDataByUid(kvp.Key);
+                var info = kvp.Value;
                 if (info.Uid <= 0) continue;
 
                 _itemNames.Add($"{info.Uid} - {info.Name}");

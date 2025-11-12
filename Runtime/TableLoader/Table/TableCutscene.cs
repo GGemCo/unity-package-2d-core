@@ -1,4 +1,5 @@
-﻿
+﻿using System.Collections.Generic;
+
 namespace GGemCo2DCore
 {
     /// <summary>
@@ -13,20 +14,14 @@ namespace GGemCo2DCore
     /// <summary>
     /// 연출 테이블
     /// </summary>
-    public class TableCutscene : DefaultTable
+    public class TableCutscene : DefaultTable<StruckTableCutscene>
     {
-        public StruckTableCutscene GetDataByUid(int uid)
+        public override string Key => ConfigAddressableTable.Cutscene;
+        protected override StruckTableCutscene BuildRow(Dictionary<string, string> data)
         {
-            if (uid <= 0)
-            {
-                GcLogger.LogError("uid is 0.");
-                return null;
-            }
-            var data = GetData(uid);
-            if (data == null) return null;
             return new StruckTableCutscene
             {
-                Uid = int.Parse(data["Uid"]),
+                Uid = MathHelper.ParseInt(data["Uid"]),
                 Memo = data["Memo"],
                 FileName = data["FileName"],
             };
