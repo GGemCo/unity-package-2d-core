@@ -23,7 +23,8 @@ namespace GGemCo2DCore
             AttackComboSettings,
             PlayerActionSettings,
             SimulationSettings,
-            GameTimeSettings
+            GameTimeSettings,
+            TcgSettings
         }
 
         public const string BasePath = ConfigDefine.NameSDK + "/Settings/";

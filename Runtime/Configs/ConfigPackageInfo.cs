@@ -9,7 +9,8 @@ namespace GGemCo2DCore
             None,
             Core,
             Control,
-            Simulation
+            Simulation,
+            Tcg
         }
         
         private class MetadataPackageInfo
@@ -29,11 +30,13 @@ namespace GGemCo2DCore
         public const string NamePackageCore = "Core";
         private const string NamePackageControl = "Control";
         private const string NamePackageSimulation = "Simulation";
+        private const string NamePackageTcg = "Tcg";
         
         // 오브젝트 생성시 사용
         private const string NamePrefixCore = ConfigDefine.NameSDK + "_" + ConfigPackageInfo.NamePackageCore;
         private const string NamePrefixControl = ConfigDefine.NameSDK + "_" + ConfigPackageInfo.NamePackageControl;
         private const string NamePrefixSimulation = ConfigDefine.NameSDK + "_" + ConfigPackageInfo.NamePackageSimulation;
+        private const string NamePrefixTcg = ConfigDefine.NameSDK + "_" + ConfigPackageInfo.NamePackageTcg;
 
         private static readonly MetadataPackageInfo Core = new (
             PackageType.Core,
@@ -51,6 +54,11 @@ namespace GGemCo2DCore
             NamePackageSimulation,
             NamePrefixSimulation
         );
+        private static readonly MetadataPackageInfo Tcg = new (
+            PackageType.Tcg,
+            NamePackageTcg,
+            NamePrefixTcg
+        );
 
         private static readonly Dictionary<PackageType, MetadataPackageInfo> PackageInfos =
             new Dictionary<PackageType, MetadataPackageInfo>()
@@ -58,6 +66,7 @@ namespace GGemCo2DCore
                 {PackageType.Core, Core},
                 {PackageType.Control, Control},
                 {PackageType.Simulation, Simulation},
+                {PackageType.Tcg, Tcg},
             };
 
         public static string GetPackageName(PackageType packageType)
