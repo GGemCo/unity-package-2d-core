@@ -133,11 +133,12 @@ namespace GGemCo2DCore
             CurrentAnimationNameAttack = animName != "" ? animName : ICharacterAnimationController.AttackAnim;
             PlayAnimation(CurrentAnimationNameAttack, false, characterBase.GetCurrentAttackSpeed());
         }
-        public void PlayAttackWaitAnimation()
+        public bool PlayAttackWaitAnimation()
         {
-            if (characterBase.IsStatusDead()) return;
+            if (characterBase.IsStatusDead()) return false;
             string aniName = $"{CurrentAnimationNameAttack}{ICharacterAnimationController.SuffixWait}";
             PlayAnimation(aniName, true, characterBase.GetCurrentAttackSpeed());
+            return true;
         }
 
         public void PlayAttackEndAnimation()
