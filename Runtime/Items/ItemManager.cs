@@ -119,9 +119,7 @@ namespace GGemCo2DCore
             var info = _tableItem.GetDataByUid(itemUid);
             if (info == null) return;
             Item item = GetOrCreateItem();
-            item.itemUid = itemUid;
-            item.itemCount = itemCount;
-            item.startPos= worldPosition;
+            item.Initialize(itemUid, itemCount,worldPosition);
             item.StartDrop();
             
             // 풀을 일정 시간이 지나면 정리하도록 코루틴 시작
@@ -137,7 +135,7 @@ namespace GGemCo2DCore
             while (_poolDropItem.Count > _poolSize)
             {
                 Item itemToDestroy = _poolDropItem.Dequeue();
-                if (itemToDestroy.itemUid > 0) continue;
+                if (itemToDestroy.GetItemUid() > 0) continue;
                 Object.Destroy(itemToDestroy.gameObject);
             }
 
@@ -260,14 +258,14 @@ namespace GGemCo2DCore
         public void PlayerTaken(GameObject dropItem)
         {
             Item item = dropItem.GetComponent<Item>();
-            if (item ==null || item.itemUid <= 0) return;
-            var result = _sceneGame.saveDataManager.Inventory.AddItem(item.itemUid, item.itemCount);
+            if (item ==null || item.GetItemUid() <= 0) return;
+            var result = _sceneGame.saveDataManager.Inventory.AddItem(item.GetItemUid(), item.GetItemCount());
             if (_uiWindowInventory != null)
             {
                 _uiWindowInventory.SetIcons(result);
                 var data = new ItemCollectedEventData(
-                    itemUid: item.itemUid,
-                    count: item.itemCount
+                    itemUid: item.GetItemUid(),
+                    count: item.GetItemCount()
                 );
                 GameEventManager.ItemCollected(data);
             }

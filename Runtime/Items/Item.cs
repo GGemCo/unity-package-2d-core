@@ -10,62 +10,78 @@ namespace GGemCo2DCore
     /// </summary>
     public class Item : MonoBehaviour
     {
-        public int itemUid;
-        public int itemCount;
-        private GameObject containerItemName;
-        private GameObject objectTagNameItem;
-        
-        [Header("드랍 애니메이션 속성")]
-        public float minDistance = 40f; // 최소 드랍 거리 (픽셀)
-        public float maxDistance = 80f; // 최대 드랍 거리 (픽셀)
-        public float flightTime = 0.3f; // 비행 시간 (짧을수록 빠르게 떨어짐)
-        public float gravity = 25f; // 중력 값
-        public float scaleMultiplier = 1.2f; // 최고점에서 크기 증가
-        public float minSpacing = 20f; // 아이템 간 최소 간격 (픽셀)
-        public float bounceHeight = 5f; // 바운스 효과 크기
-        public float rotationSpeed = 180f; // 회전 속도 (도/초)
+        [Header("드랍 애니메이션 설정")]
+        [Tooltip("최소 드랍 거리 (픽셀 단위). 너무 작으면 아이템들이 겹칠 수 있습니다.")]
+        public float minDistance = 40f;
+
+        [Tooltip("최대 드랍 거리 (픽셀 단위). 아이템이 퍼지는 최대 반경입니다.")]
+        public float maxDistance = 80f;
+
+        [Tooltip("비행 시간 (초 단위). 짧을수록 빠르게 떨어집니다.")]
+        public float flightTime = 0.3f;
+
+        [Tooltip("중력 가속도 값. 클수록 빠르게 떨어집니다.")]
+        public float gravity = 25f;
+
+        [Tooltip("최고점에서의 크기 증가 배율. 예: 1.2f = 20% 커짐.")]
+        public float scaleMultiplier = 1.2f;
+
+        [Tooltip("드랍된 아이템 간의 최소 간격 (픽셀 단위).")]
+        public float minSpacing = 20f;
+
+        [Tooltip("착지 시 살짝 튀는 바운스 높이.")]
+        public float bounceHeight = 5f;
+
+        [Tooltip("회전 속도 (도/초 단위). 떨어질 때의 회전 효과.")]
+        public float rotationSpeed = 180f;
 
         private static readonly List<Vector2> DroppedItemPositions = new List<Vector2>(); // 드랍된 아이템 위치 저장
-        public Vector2 startPos;
-        private Vector2 targetPos;
-        private float timeElapsed;
-        private Vector2 velocity;
-        private Vector3 originalScale;
-        private float peakTime;
-        private bool isBouncing; // 바운스 여부 체크
-        private float bounceTime; // 바운스 지속 시간
-        private float rotationDirection; // 랜덤 회전 방향
-        private float mapSizeHeight;
+        
+        private int _itemUid;
+        private int _itemCount;
+        private GameObject _containerItemName;
+        private GameObject _objectTagNameItem;
+        private Vector2 _startPos;
+        private Vector2 _targetPos;
+        private float _timeElapsed;
+        private Vector2 _velocity;
+        private Vector3 _originalScale;
+        private float _peakTime;
+        private bool _isBouncing; // 바운스 여부 체크
+        private float _bounceTime; // 바운스 지속 시간
+        private float _rotationDirection; // 랜덤 회전 방향
+        private float _mapSizeHeight;
 
-        [Tooltip("드랍 후 dropItemDestroyTimeSec 시간 후 destroy")]
-        private Coroutine coroutineDropItemDestroy;
-        private int dropItemDestroyTimeSec; // 드랍된 후 사라지는 시간(초)
+        // 드랍 후 dropItemDestroyTimeSec 초가 지나면 파괴되는 코루틴.
+        private Coroutine _coroutineDropItemDestroy;
+        //드랍된 후 자동 파괴되기까지의 시간 (초 단위). AddressableLoaderSettings에서 가져옴.
+        private int _dropItemDestroyTimeSec;
 
-        private Renderer itemRenderer;
-        private SpriteRenderer spriteRenderer;
-        private CircleCollider2D circleCollider2D;
+        private Renderer _itemRenderer;
+        private SpriteRenderer _spriteRenderer;
+        private CircleCollider2D _circleCollider2D;
 
-        private bool isStart;
-        private ItemManager itemManager;
+        private bool _isStart;
+        private ItemManager _itemManager;
         
         private void Awake()
         {
-            timeElapsed = 0f;
-            isBouncing = false;
-            bounceTime = 0.1f;
-            originalScale = transform.localScale; // 원래 크기 저장
+            _timeElapsed = 0f;
+            _isBouncing = false;
+            _bounceTime = 0.1f;
+            _originalScale = transform.localScale; // 원래 크기 저장
 
-            itemRenderer = GetComponent<Renderer>();
-            spriteRenderer = GetComponent<SpriteRenderer>();
-            circleCollider2D = GetComponent<CircleCollider2D>();
-            circleCollider2D.enabled = false;
+            _itemRenderer = GetComponent<Renderer>();
+            _spriteRenderer = GetComponent<SpriteRenderer>();
+            _circleCollider2D = GetComponent<CircleCollider2D>();
+            _circleCollider2D.enabled = false;
             
-            dropItemDestroyTimeSec = AddressableLoaderSettings.Instance.settings.dropItemDestroyTimeSec;
+            _dropItemDestroyTimeSec = AddressableLoaderSettings.Instance.settings.dropItemDestroyTimeSec;
         }
 
         private void Start()
         {
-            itemManager = SceneGame.Instance.ItemManager;
+            _itemManager = SceneGame.Instance.ItemManager;
         }
         /// <summary>
         /// 맵에 드랍하기 시작 
@@ -77,17 +93,17 @@ namespace GGemCo2DCore
 
         private void OnEnable()
         {
-            if (itemUid <= 0) return;
-            var info = TableLoaderManager.Instance.GetItemData(itemUid);
+            if (_itemUid <= 0) return;
+            var info = TableLoaderManager.Instance.GetItemData(_itemUid);
             if (info == null || info.Uid <= 0) return;
             
-            itemRenderer.sortingLayerName = ConfigSortingLayer.GetValue(ConfigSortingLayer.Keys.CharacterTop);
-            itemRenderer.sortingOrder = 1;
-            timeElapsed = 0f;
-            isBouncing = false;
+            _itemRenderer.sortingLayerName = ConfigSortingLayer.GetValue(ConfigSortingLayer.Keys.CharacterTop);
+            _itemRenderer.sortingOrder = 1;
+            _timeElapsed = 0f;
+            _isBouncing = false;
             transform.localScale = Vector3.one;
 
-            spriteRenderer.sprite = AddressableLoaderItem.Instance.GetImageDropByName(info.FileName);
+            _spriteRenderer.sprite = AddressableLoaderItem.Instance.GetImageDropByName(info.FileName);
 
             // 특정 반경 내에서 랜덤한 위치 선택 (X, Y 축 모두 분산)
             int maxAttempts = 10; // 겹치지 않도록 최대 시도 횟수
@@ -97,7 +113,7 @@ namespace GGemCo2DCore
             {
                 // 랜덤한 원형 반경 내에서 위치 선택
                 Vector2 randomOffset = Random.insideUnitCircle * Random.Range(minDistance, maxDistance);
-                Vector2 potentialTargetPos = startPos + randomOffset;
+                Vector2 potentialTargetPos = _startPos + randomOffset;
 
                 // 아이템 간 거리 검사 (겹치지 않도록)
                 bool tooClose = false;
@@ -112,7 +128,7 @@ namespace GGemCo2DCore
 
                 if (!tooClose)
                 {
-                    targetPos = potentialTargetPos;
+                    _targetPos = potentialTargetPos;
                     positionValid = true;
                     break;
                 }
@@ -120,24 +136,24 @@ namespace GGemCo2DCore
 
             if (!positionValid)
             {
-                targetPos = startPos + new Vector2(Random.Range(minDistance, maxDistance), 0f); // 겹칠 경우 대략적인 위치 설정
+                _targetPos = _startPos + new Vector2(Random.Range(minDistance, maxDistance), 0f); // 겹칠 경우 대략적인 위치 설정
             }
 
-            DroppedItemPositions.Add(targetPos); // 새로운 아이템 위치 저장
+            DroppedItemPositions.Add(_targetPos); // 새로운 아이템 위치 저장
 
             // 속도 계산 (목표 지점까지 flightTime 내에 도달하도록)
-            velocity.x = (targetPos.x - startPos.x) / flightTime;
-            velocity.y = (targetPos.y - startPos.y) / flightTime + (0.5f * gravity * flightTime); // 최고점 고려
+            _velocity.x = (_targetPos.x - _startPos.x) / flightTime;
+            _velocity.y = (_targetPos.y - _startPos.y) / flightTime + (0.5f * gravity * flightTime); // 최고점 고려
 
-            peakTime = flightTime / 2; // 최고점 도달 시간
+            _peakTime = flightTime / 2; // 최고점 도달 시간
 
             // 랜덤한 회전 방향 설정
-            rotationDirection = Random.Range(-1f, 1f);
+            _rotationDirection = Random.Range(-1f, 1f);
 
             Vector2 size = SceneGame.Instance.mapManager.GetCurrentMapSize();
-            mapSizeHeight = size.y;
+            _mapSizeHeight = size.y;
             
-            isStart = true;
+            _isStart = true;
 
             CreateTagName();
         }
@@ -148,42 +164,42 @@ namespace GGemCo2DCore
         {
             GameObject prefabTagNameItem = ConfigResources.TextDropItemNameTag.Load();
             if (prefabTagNameItem == null) return;
-            if (containerItemName == null)
+            if (_containerItemName == null)
             {
-                containerItemName = SceneGame.Instance.containerDropItemName;
+                _containerItemName = SceneGame.Instance.containerDropItemName;
             }
-            objectTagNameItem = Instantiate(prefabTagNameItem, containerItemName.transform);
-            if (objectTagNameItem == null) return;
-            TagNameItem tagNameItem = objectTagNameItem.GetComponent<TagNameItem>();
+            _objectTagNameItem = Instantiate(prefabTagNameItem, _containerItemName.transform);
+            if (_objectTagNameItem == null) return;
+            TagNameItem tagNameItem = _objectTagNameItem.GetComponent<TagNameItem>();
             if (tagNameItem == null) return;
-            tagNameItem.Initialize(gameObject, itemCount);
+            tagNameItem.Initialize(gameObject, _itemCount);
         }
         /// <summary>
         /// 드랍 애니메이션 처리  
         /// </summary>
         private void Update()
         {
-            if (!isStart) return;
+            if (!_isStart) return;
             
-            timeElapsed += Time.deltaTime;
+            _timeElapsed += Time.deltaTime;
 
-            if (!isBouncing)
+            if (!_isBouncing)
             {
                 // 포물선 이동 계산
-                float x = startPos.x + velocity.x * timeElapsed;
-                float y = startPos.y + (velocity.y * timeElapsed) - (0.5f * gravity * timeElapsed * timeElapsed);
+                float x = _startPos.x + _velocity.x * _timeElapsed;
+                float y = _startPos.y + (_velocity.y * _timeElapsed) - (0.5f * gravity * _timeElapsed * _timeElapsed);
                 transform.position = new Vector2(x, y);
 
                 // 최고점 도달 시 크기 증가
-                float scaleLerp = Mathf.Lerp(1f, scaleMultiplier, Mathf.Sin((timeElapsed / peakTime) * Mathf.PI));
-                transform.localScale = originalScale * scaleLerp;
+                float scaleLerp = Mathf.Lerp(1f, scaleMultiplier, Mathf.Sin((_timeElapsed / _peakTime) * Mathf.PI));
+                transform.localScale = _originalScale * scaleLerp;
 
                 // 회전 효과 추가 (자연스러운 낙하)
-                transform.Rotate(0, 0, rotationDirection * rotationSpeed * Time.deltaTime);
+                transform.Rotate(0, 0, _rotationDirection * rotationSpeed * Time.deltaTime);
             }
 
             // 착지하면 바운스 효과 적용
-            if (timeElapsed >= flightTime && !isBouncing)
+            if (_timeElapsed >= flightTime && !_isBouncing)
             {
                 StartCoroutine(BounceEffect());
             }
@@ -194,25 +210,25 @@ namespace GGemCo2DCore
         /// <returns></returns>
         private IEnumerator BounceEffect()
         {
-            isBouncing = true;
+            _isBouncing = true;
             Vector2 groundPos = transform.position;
             Vector2 bouncePos = groundPos + new Vector2(0, bounceHeight);
 
             // 위로 살짝 튀기기
             float elapsed = 0f;
-            while (elapsed < bounceTime)
+            while (elapsed < _bounceTime)
             {
                 elapsed += Time.deltaTime;
-                transform.position = Vector2.Lerp(groundPos, bouncePos, Mathf.Sin((elapsed / bounceTime) * Mathf.PI));
+                transform.position = Vector2.Lerp(groundPos, bouncePos, Mathf.Sin((elapsed / _bounceTime) * Mathf.PI));
                 yield return null;
             }
 
             // 원래 위치로 복귀
             elapsed = 0f;
-            while (elapsed < bounceTime)
+            while (elapsed < _bounceTime)
             {
                 elapsed += Time.deltaTime;
-                transform.position = Vector2.Lerp(bouncePos, groundPos, elapsed / bounceTime);
+                transform.position = Vector2.Lerp(bouncePos, groundPos, elapsed / _bounceTime);
                 yield return null;
             }
 
@@ -224,16 +240,16 @@ namespace GGemCo2DCore
         /// </summary>
         private void OnEnd()
         {
-            isStart = false;
-            transform.localScale = originalScale;
-            isBouncing = false;
+            _isStart = false;
+            transform.localScale = _originalScale;
+            _isBouncing = false;
             // 드랍된 후에는 캐릭터 layer 로 적용한다.
-            itemRenderer.sortingLayerName = ConfigSortingLayer.GetValue(ConfigSortingLayer.Keys.Character);
-            itemRenderer.sortingOrder = MathHelper.GetSortingOrder(mapSizeHeight, transform.position.y);
-            circleCollider2D.enabled = true;
-            circleCollider2D.isTrigger = true;
+            _itemRenderer.sortingLayerName = ConfigSortingLayer.GetValue(ConfigSortingLayer.Keys.Character);
+            _itemRenderer.sortingOrder = MathHelper.GetSortingOrder(_mapSizeHeight, transform.position.y);
+            _circleCollider2D.enabled = true;
+            _circleCollider2D.isTrigger = true;
 
-            coroutineDropItemDestroy = StartCoroutine(CheckDestroyTime());
+            _coroutineDropItemDestroy = StartCoroutine(CheckDestroyTime());
         }
         /// <summary>
         /// 플레이어가 아이템을 먹거나 맵에서 없어졌을때 
@@ -241,10 +257,10 @@ namespace GGemCo2DCore
         private void OnDisable()
         {
             StopCoroutineDropItemDestroy();
-            circleCollider2D.enabled = false;
-            if (objectTagNameItem != null)
+            _circleCollider2D.enabled = false;
+            if (_objectTagNameItem != null)
             {
-                objectTagNameItem.SetActive(false);
+                _objectTagNameItem.SetActive(false);
             }
         }
         /// <summary>
@@ -252,14 +268,14 @@ namespace GGemCo2DCore
         /// </summary>
         public void Reset()
         {
-            itemUid = 0;
+            _itemUid = 0;
             gameObject.SetActive(false);
-            itemManager.AddPoolDropItem(this);
+            _itemManager.AddPoolDropItem(this);
         }
 
         IEnumerator CheckDestroyTime()
         {
-            yield return new WaitForSeconds(dropItemDestroyTimeSec);
+            yield return new WaitForSeconds(_dropItemDestroyTimeSec);
             Reset();
         }
         /// <summary>
@@ -267,8 +283,24 @@ namespace GGemCo2DCore
         /// </summary>
         private void StopCoroutineDropItemDestroy()
         {
-            if (coroutineDropItemDestroy == null) return;
-            StopCoroutine(coroutineDropItemDestroy);
+            if (_coroutineDropItemDestroy == null) return;
+            StopCoroutine(_coroutineDropItemDestroy);
+        }
+        public void Initialize(int itemUid, int itemCount, Vector2 startPos)
+        {
+            _itemUid = itemUid;
+            _itemCount = itemCount;
+            _startPos = startPos;
+        }
+
+        public int GetItemUid()
+        {
+            return _itemUid;
+        }
+
+        public int GetItemCount()
+        {
+            return _itemCount;
         }
     }
 }
