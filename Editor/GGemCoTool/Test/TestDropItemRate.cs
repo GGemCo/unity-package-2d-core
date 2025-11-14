@@ -36,11 +36,11 @@ namespace GGemCo2DCoreEditor
             _testCount = 10000;
 
             _itemManager = new ItemManager();
-            _tableMonster = TableLoaderManager.LoadMonsterTable();
+            _tableMonster = tableLoaderManager.LoadMonsterTable();
             
-            _tableItem = TableLoaderManager.LoadItemTable();
-            TableItemDropGroup tableItemDropGroup = TableLoaderManager.LoadItemDropGroupTable();
-            TableMonsterDropRate tableMonsterDropRate = TableLoaderManager.LoadMonsterDropRateTable();
+            _tableItem = tableLoaderManager.LoadItemTable();
+            TableItemDropGroup tableItemDropGroup = tableLoaderManager.LoadItemDropGroupTable();
+            TableMonsterDropRate tableMonsterDropRate = tableLoaderManager.LoadMonsterDropRateTable();
             
             _dictionaryByCategory = _tableItem.GetDictionaryByCategory();
             _dictionaryBySubCategory = _tableItem.GetDictionaryBySubCategory();

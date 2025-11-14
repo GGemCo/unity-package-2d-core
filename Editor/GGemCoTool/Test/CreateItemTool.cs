@@ -27,7 +27,7 @@ namespace GGemCo2DCoreEditor
         {
             base.OnEnable();
             _selectedItemIndex = 0;
-            _tableItem = TableLoaderManager.LoadItemTable();
+            _tableItem = tableLoaderManager.LoadItemTable();
             _itemDictionary = _tableItem.GetDatas();
             LoadItemInfoData();
         }

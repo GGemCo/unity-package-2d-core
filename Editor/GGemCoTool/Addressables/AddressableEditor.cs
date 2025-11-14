@@ -68,18 +68,18 @@ namespace GGemCo2DCoreEditor
 
         public void LoadTables()
         {
-            TableMap = TableLoaderManager.LoadMapTable();
-            TableNpc = TableLoaderManager.LoadNpcTable();
-            TableMonster = TableLoaderManager.LoadMonsterTable();
-            TableAnimation = TableLoaderManager.LoadSpineTable();
-            TableEffect = TableLoaderManager.LoadEffectTable();
-            TableItem = TableLoaderManager.LoadItemTable();
-            TableDialogue = TableLoaderManager.LoadDialogueTable();
-            TableQuest = TableLoaderManager.LoadQuestTable();
-            TableCutscene = TableLoaderManager.LoadCutsceneTable();
-            TableSkill = TableLoaderManager.LoadSkillTable();
-            TableAffect = TableLoaderManager.LoadAffectTable();
-            TableSound = TableLoaderManager.LoadSoundTable();
+            TableMap = tableLoaderManager.LoadMapTable();
+            TableNpc = tableLoaderManager.LoadNpcTable();
+            TableMonster = tableLoaderManager.LoadMonsterTable();
+            TableAnimation = tableLoaderManager.LoadSpineTable();
+            TableEffect = tableLoaderManager.LoadEffectTable();
+            TableItem = tableLoaderManager.LoadItemTable();
+            TableDialogue = tableLoaderManager.LoadDialogueTable();
+            TableQuest = tableLoaderManager.LoadQuestTable();
+            TableCutscene = tableLoaderManager.LoadCutsceneTable();
+            TableSkill = tableLoaderManager.LoadSkillTable();
+            TableAffect = tableLoaderManager.LoadAffectTable();
+            TableSound = tableLoaderManager.LoadSoundTable();
         }
 
         private void OnGUI()

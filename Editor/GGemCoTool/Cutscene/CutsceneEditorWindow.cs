@@ -33,7 +33,7 @@ namespace GGemCo2DCoreEditor
             base.OnEnable();
             _selectedCutsceneIndex = 0;
             
-            _tableCutscene = TableLoaderManager.LoadCutsceneTable();
+            _tableCutscene = tableLoaderManager.LoadCutsceneTable();
             LoadCutsceneInfoData();
         }
         /// <summary>

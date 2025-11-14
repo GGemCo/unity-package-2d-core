@@ -27,7 +27,7 @@ namespace GGemCo2DCoreEditor
         {
             base.OnEnable();
             _selectedIndex = 0;
-            _tableEffect = TableLoaderManager.LoadEffectTable();
+            _tableEffect = tableLoaderManager.LoadEffectTable();
             _tableDictionary = _tableEffect.GetDatas();
             LoadTableInfoData();
         }

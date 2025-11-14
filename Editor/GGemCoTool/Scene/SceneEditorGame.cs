@@ -24,7 +24,7 @@ namespace GGemCo2DCoreEditor
         protected override void OnEnable()
         {
             base.OnEnable();
-            _tableWindow = TableLoaderManager.LoadWindowTable();
+            _tableWindow = tableLoaderManager.LoadWindowTable();
         }
 
         private void OnGUI()

@@ -56,10 +56,10 @@ namespace GGemCo2DCoreEditor
             _selectedIndexNpc = 0;
             _selectedIndexMonster = 0;
             _selectedIndexMap = 0;
-            _tableMap = TableLoaderManager.LoadMapTable();
-            _tableNpc = TableLoaderManager.LoadNpcTable();
-            _tableMonster = TableLoaderManager.LoadMonsterTable();
-            _tableAnimation = TableLoaderManager.LoadSpineTable();
+            _tableMap = tableLoaderManager.LoadMapTable();
+            _tableNpc = tableLoaderManager.LoadNpcTable();
+            _tableMonster = tableLoaderManager.LoadMonsterTable();
+            _tableAnimation = tableLoaderManager.LoadSpineTable();
 
             _addressableLoaderPrefabCharacter = new AddressableLoaderPrefabCharacter();
             

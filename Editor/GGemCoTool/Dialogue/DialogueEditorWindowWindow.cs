@@ -54,7 +54,7 @@ namespace GGemCo2DCoreEditor
         {
             base.OnEnable();
             
-            _tableDialogue = TableLoaderManager.LoadDialogueTable();
+            _tableDialogue = tableLoaderManager.LoadDialogueTable();
             LoadCutsceneInfoData();
             
             ZoomPanHandler = new ZoomPanHandler(this);

@@ -9,12 +9,12 @@ namespace GGemCo2DCoreEditor
 {
     public class DefaultEditorWindow : EditorWindow
     {
-        protected TableLoaderManager TableLoaderManager;
+        protected TableLoaderManager tableLoaderManager;
         protected ConfigPackageInfo.PackageType packageType;
 
         protected virtual void OnEnable()
         {
-            TableLoaderManager = new TableLoaderManager();
+            tableLoaderManager = new TableLoaderManager();
             packageType = ConfigPackageInfo.PackageType.Core;
         }
 
