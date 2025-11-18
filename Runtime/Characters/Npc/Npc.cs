@@ -85,12 +85,11 @@ namespace GGemCo2DCore
                 const int statAtk = 0;
                 const int statDef = 0;
                 const int statMp = 0;
-                const int statMoveSpeed = 0;
                 const int statAttackSpeed = 0;
                 const int statRegistFire = 0;
                 const int statRegistCold = 0;
                 const int statRegistLightning = 0;
-                SetBaseInfos(statAtk, statDef, _struckTableNpc.StatHp, statMp, statMoveSpeed, statAttackSpeed, statRegistFire,
+                SetBaseInfos(statAtk, statDef, _struckTableNpc.StatHp, statMp, _struckTableNpc.StatMoveSpeed, statAttackSpeed, statRegistFire,
                     statRegistCold, statRegistLightning);
                 float scale = _struckTableNpc.Scale;
                 SetScale(scale);

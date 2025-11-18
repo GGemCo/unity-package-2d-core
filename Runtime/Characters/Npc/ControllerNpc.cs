@@ -16,12 +16,5 @@ namespace GGemCo2DCore
             // 타일맵의 경계를 가져오는 코드 (직접 설정 가능)
             minBounds = new Vector2(0f, 0f); // 좌측 하단 경계
         }
-
-        protected override void Start()
-        {
-            base.Start();
-            iCharacterAnimationController = npc.CharacterAnimationController;
-            iCharacterAnimationController?.PlayWaitAnimation();
-        }
     }
 }

@@ -31,6 +31,7 @@ namespace GGemCo2DCore
         /// </summary>
         public enum NpcSubCategory
         {
+            None,
             // Normal
             Villager, Traveler, StoryNpc,
             // Functional
@@ -64,6 +65,7 @@ namespace GGemCo2DCore
                 NpcCategory.Functional,
                 new HashSet<NpcSubCategory>
                 {
+                    NpcSubCategory.None,
                     NpcSubCategory.Shopkeeper,
                     NpcSubCategory.Enchanter,
                     NpcSubCategory.Disassembler,
@@ -127,6 +129,10 @@ namespace GGemCo2DCore
         /// </summary>
         public static NpcType ParseType(string typeStr)
         {
+            if (string.IsNullOrEmpty(typeStr))
+            {
+                typeStr = "None";
+            }
             if (Enum.TryParse(typeStr, true, out NpcType result))
                 return result;
 
@@ -139,6 +145,10 @@ namespace GGemCo2DCore
         /// </summary>
         public static NpcCategory ParseCategory(string categoryStr)
         {
+            if (string.IsNullOrEmpty(categoryStr))
+            {
+                categoryStr = "None";
+            }
             if (Enum.TryParse(categoryStr, true, out NpcCategory result))
                 return result;
 
@@ -151,6 +161,10 @@ namespace GGemCo2DCore
         /// </summary>
         public static NpcSubCategory ParseSubCategory(string subStr)
         {
+            if (string.IsNullOrEmpty(subStr))
+            {
+                subStr = "None";
+            }
             if (Enum.TryParse(subStr, true, out NpcSubCategory result))
                 return result;
 
