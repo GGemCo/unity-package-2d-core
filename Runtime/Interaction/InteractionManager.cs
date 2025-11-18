@@ -18,9 +18,6 @@ namespace GGemCo2DCore
             _sceneGame = scene;
             _tableNpc = TableLoaderManager.Instance.TableNpc;
             _tableInteraction = TableLoaderManager.Instance.TableInteraction;
-            _uiWindowInteractionDialogue =
-                _sceneGame.uIWindowManager?.GetUIWindowByUid<UIWindowInteractionDialogue>(UIWindowConstants.WindowUid.InteractionDialogue);
-                _sceneGame.uIWindowManager?.GetUIWindowByUid<UIWindowShopSale>(UIWindowConstants.WindowUid.ShopSale);
         }
         /// <summary>
         /// Npc 의 interaction 정보 가져오기
@@ -65,6 +62,12 @@ namespace GGemCo2DCore
 
         private void ShowDialogue(StruckTableNpc struckTableNpc, StruckTableInteraction struckTableInteraction, List<NpcQuestData> questInfos)
         {
+            if (_uiWindowInteractionDialogue == null)
+            {
+                _uiWindowInteractionDialogue =
+                    _sceneGame.uIWindowManager?.GetUIWindowByUid<UIWindowInteractionDialogue>(UIWindowConstants
+                        .WindowUid.InteractionDialogue);
+            }
             _uiWindowInteractionDialogue?.SetInfos(struckTableNpc, struckTableInteraction, questInfos);
             _uiWindowInteractionDialogue?.Show(true);
         }
