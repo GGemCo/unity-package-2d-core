@@ -8,10 +8,10 @@ namespace GGemCo2DCore
     {
         [Header("세이브 데이터 기본 설정")]
         [Tooltip("세이브 데이터를 사용할지 여부를 설정합니다.")]
-        [SerializeField] private bool useSaveData;
+        public bool useSaveData;
 
         [Tooltip("세이브 데이터를 저장할 폴더 이름입니다.")]
-        [SerializeField] private string saveDataFolderName;
+        public string saveDataFolderName;
 
         [Tooltip("저장 슬롯의 최대 개수입니다. UI 디자인을 고려하여 적절히 설정하세요.")]
         public int saveDataMaxSlotCount;

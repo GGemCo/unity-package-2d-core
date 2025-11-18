@@ -28,13 +28,13 @@ namespace GGemCo2DCoreEditor
             else
             {
                 DrawRequiredSection();
-                Common.GUILine();
+                HelperEditorUI.GUILine();
                 DrawOptionalSection();
             }
         }
         private void DrawRequiredSection()
         {
-            Common.OnGUITitle("필수 항목");
+            HelperEditorUI.OnGUITitle("필수 항목");
             EditorGUILayout.HelpBox($"* 인트로 씬 오브젝트\n* 게임 시작 버튼\n* 계속 하기 버튼\n* 옵션 버튼\n* 옵션 윈도우", MessageType.Info);
             if (GUILayout.Button("필수 항목 셋팅하기"))
             {
@@ -44,7 +44,7 @@ namespace GGemCo2DCoreEditor
         /// <summary>
         /// 필수 항목 셋팅
         /// </summary>
-        private void SetupRequiredObjects()
+        public void SetupRequiredObjects()
         {
             _objGGemCoCore = GetOrCreateRootPackageGameObject();
             // GGemCo2DCore.SceneIntro GameObject 만들기
@@ -70,7 +70,7 @@ namespace GGemCo2DCoreEditor
             Button buttonGameContinue = CreateUIComponent.CreateObjectButton(metaDataButton, packageType);
             buttonGameContinue.gameObject.AddComponent<ClickSoundEventBroadcaster>();
             scene.SetButtonGameContinue(buttonGameContinue);
-            buttonGameContinue.gameObject.transform.localPosition = new Vector2(0, 100);
+            buttonGameContinue.gameObject.GetComponent<RectTransform>().anchoredPosition = new Vector2(0, 100);
             
             // 옵션 버튼 만들고 연결하기
             metaDataButton = new MetaDataButton(scene.GetFieldNameButtonOption(), "Option",
@@ -78,7 +78,7 @@ namespace GGemCo2DCoreEditor
             Button buttonOption = CreateUIComponent.CreateObjectButton(metaDataButton, packageType);
             buttonOption.gameObject.AddComponent<ClickSoundEventBroadcaster>();
             scene.SetButtonOption(buttonOption);
-            buttonOption.gameObject.transform.localPosition = new Vector2(0, -100);
+            buttonOption.gameObject.GetComponent<RectTransform>().anchoredPosition = new Vector2(0, -100);
             
             // 옵션 윈도우 추가
             GameObject canvas = CreateUIComponent.Find("Canvas", packageType);
@@ -116,6 +116,8 @@ namespace GGemCo2DCoreEditor
             {
                 uiWindowOption.SetSoundManager(soundManager);
             }
+            //  UIPanelOptionBase 프리팹을 자동으로 listPrefabPanel 에 등록
+            AutoFillPanelPrefabs(uiWindowOption);
             
             EditorUtility.SetDirty(scene);
         }
@@ -124,7 +126,7 @@ namespace GGemCo2DCoreEditor
         /// </summary>
         private void DrawOptionalSection()
         {
-            Common.OnGUITitle("선택 항목");
+            HelperEditorUI.OnGUITitle("선택 항목");
             EditorGUILayout.HelpBox("불러오기 UI 관련 오브젝트를 셋팅합니다.", MessageType.Info);
 
             if (GUILayout.Button("불러오기 UI 셋팅하기"))

@@ -1,0 +1,1 @@
+﻿Uid	Name	IconFileName	Type	Group	TickTime	StatusID	StatusSuffix	Value	Duration	EffectUid	EffectScale	EffectSortingLayer	EffectPositionYType	EffectPositionY

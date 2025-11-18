@@ -45,7 +45,15 @@ namespace GGemCo2DCoreEditor
             {
                 if (GUILayout.Button(Title, GUILayout.Width(_addressableEditor.buttonWidth), GUILayout.Height(_addressableEditor.buttonHeight)))
                 {
-                    Setup();
+                    try
+                    {
+                        Setup();
+                    }
+                    catch (System.Exception e)
+                    {
+                        Debug.LogException(e);
+                        EditorUtility.DisplayDialog(Title, "맵 Addressable 설정 중 오류가 발생했습니다.\n자세한 내용은 콘솔 로그를 확인해주세요.", "OK");
+                    }
                 }
             }
         }
@@ -53,7 +61,7 @@ namespace GGemCo2DCoreEditor
         /// <summary>
         /// Addressable 설정하기
         /// </summary>
-        public void Setup()
+        public void Setup(EditorSetupContext ctx = null)
         {
             Dictionary<int, StruckTableMap> dictionaryMap = _addressableEditor.TableMap.GetDatas();
             
@@ -61,20 +69,22 @@ namespace GGemCo2DCoreEditor
             AddressableAssetSettings settings = AddressableAssetSettingsDefaultObject.Settings;
             if (!settings)
             {
-                Debug.LogWarning("Addressable 설정을 찾을 수 없습니다. 새로 생성합니다.");
+                HelperLog.Warn("Addressable 설정을 찾을 수 없습니다. 새로 생성합니다.", ctx);
                 settings = CreateAddressableSettings();
             }
             
             // object 셋팅하기
             // 현재는 warp object 처리 중
             AddressableAssetGroup group = GetOrCreateGroup(settings, ConfigAddressableGroupName.Common);
-
-            if (group)
+            if (!group)
             {
-                foreach (var addressableAssetInfo in ConfigAddressableMap.NeedLoadInLoadingScene)
-                {
-                    Add(settings, group, addressableAssetInfo.Key, addressableAssetInfo.Path, addressableAssetInfo.Label);
-                }
+                HelperLog.Error($"'{targetGroupName}' 그룹을 설정할 수 없습니다.", ctx);
+                return;
+            }
+
+            foreach (var addressableAssetInfo in ConfigAddressableMap.NeedLoadInLoadingScene)
+            {
+                Add(settings, group, addressableAssetInfo.Key, addressableAssetInfo.Path, addressableAssetInfo.Label);
             }
             
             // foreach 문을 사용하여 딕셔너리 내용을 출력
@@ -89,7 +99,7 @@ namespace GGemCo2DCoreEditor
 
                 if (!group)
                 {
-                    Debug.LogError($"'{targetGroupName}' 그룹을 설정할 수 없습니다.");
+                    HelperLog.Warn($"'{targetGroupName}' 그룹을 설정할 수 없습니다.", ctx);
                     return;
                 }
                 
@@ -121,7 +131,14 @@ namespace GGemCo2DCoreEditor
             // 설정 저장
             settings.SetDirty(AddressableAssetSettings.ModificationEvent.EntryMoved, null, true);
             AssetDatabase.SaveAssets();
-            EditorUtility.DisplayDialog(Title, "Addressable 설정 완료\n사용안하는 맵 Group은 삭제해주세요.", "OK");
+            if (ctx != null)
+            {
+                HelperLog.Info("[Addressable] 맵 설정 완료. 사용안하는 맵 Group은 삭제해주세요.", ctx);
+            }
+            else
+            {
+                EditorUtility.DisplayDialog(Title, "[Addressable] 맵 설정 완료\n사용안하는 맵 Group은 삭제해주세요.", "OK");
+            }
         }
         /// <summary>
         /// regen_monster, regen_npc 정보로 캐릭터 label 설정하기

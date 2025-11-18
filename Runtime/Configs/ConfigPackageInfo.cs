@@ -15,11 +15,11 @@ namespace GGemCo2DCore
         
         private class MetadataPackageInfo
         {
-            public ConfigPackageInfo.PackageType PackageType { get; }
+            public PackageType PackageType { get; }
             public string Name { get; }
             public string Prefix { get; }
         
-            public MetadataPackageInfo(ConfigPackageInfo.PackageType packageType, string name, string prefix)
+            public MetadataPackageInfo(PackageType packageType, string name, string prefix)
             {
                 PackageType = packageType;
                 Name = name;
@@ -27,10 +27,10 @@ namespace GGemCo2DCore
             }
         }
 
-        public const string NamePackageCore = "Core";
+        private const string NamePackageCore = "Core";
         private const string NamePackageControl = "Control";
         private const string NamePackageSimulation = "Simulation";
-        private const string NamePackageTcg = "Tcg";
+        public const string NamePackageTcg = "Tcg";
         
         // 오브젝트 생성시 사용
         private const string NamePrefixCore = ConfigDefine.NameSDK + "_" + ConfigPackageInfo.NamePackageCore;

@@ -1,4 +1,5 @@
-﻿using GGemCo2DCore;
+﻿using System.Linq;
+using GGemCo2DCore;
 using UnityEditor;
 using UnityEngine;
 
@@ -7,12 +8,11 @@ namespace GGemCo2DCoreEditor
     public class SettingLayers
     {
         private const string Title = "Layer 추가하기";
-
-        // 추가할 Layer 목록
+        private const string TagManagerPath = "ProjectSettings/TagManager.asset";
 
         public void OnGUI()
         {
-            Common.OnGUITitle(Title);
+            HelperEditorUI.OnGUITitle(Title);
 
             if (GUILayout.Button(Title))
             {
@@ -20,73 +20,53 @@ namespace GGemCo2DCoreEditor
             }
         }
 
-        private void AddLayers()
+        public void AddLayers(EditorSetupContext ctx = null)
         {
-            SerializedObject tagManager = new SerializedObject(AssetDatabase.LoadAllAssetsAtPath("ProjectSettings/TagManager.asset")[0]);
-            SerializedProperty layersProp = tagManager.FindProperty("layers");
-
-            bool addedAnyLayer = false;
-
-            foreach (var layerNames in ConfigLayer.GetValues())
+            var so = new SerializedObject(AssetDatabase.LoadAllAssetsAtPath(TagManagerPath)[0]);
+            var layersProp = so.FindProperty("layers");
+            if (layersProp == null)
             {
-                string layerName = layerNames.Value;
-                if (!LayerExists(layersProp, layerName))
-                {
-                    int emptySlot = FindEmptyLayerSlot(layersProp);
-                    if (emptySlot != -1)
-                    {
-                        layersProp.GetArrayElementAtIndex(emptySlot).stringValue = layerName;
-                        addedAnyLayer = true;
-                    }
-                    else
-                    {
-                        Debug.LogWarning($"Layer '{layerName}'를 추가할 빈 슬롯이 없습니다.");
-                    }
-                }
-                else
-                {
-                    Debug.Log($"Layer '{layerName}'는 이미 존재합니다.");
-                }
+                HelperLog.Error("TagManager의 'layers' 속성을 찾지 못했습니다.", ctx);
+                return;
             }
 
-            if (addedAnyLayer)
+            int added = 0, skipped = 0, noSlot = 0;
+
+            foreach (var kv in ConfigLayer.GetValues())
             {
-                // 변경 사항 저장
-                tagManager.ApplyModifiedProperties();
-                AssetDatabase.SaveAssets();
-                EditorUtility.SetDirty(tagManager.targetObject);
-                AssetDatabase.Refresh();
-                EditorUtility.DisplayDialog(Title, "Layer 추가 완료", "OK");
+                var name = kv.Value;
+                if (string.IsNullOrWhiteSpace(name)) continue;
+
+                bool exists = Enumerable.Range(0, layersProp.arraySize)
+                    .Any(i => layersProp.GetArrayElementAtIndex(i).stringValue == name);
+                if (exists) { skipped++; continue; }
+
+                // 사용자 슬롯(8~31)에서 빈 슬롯 찾기
+                int idx = Enumerable.Range(8, 24)
+                    .FirstOrDefault(i => string.IsNullOrEmpty(layersProp.GetArrayElementAtIndex(i).stringValue));
+
+                if (idx == 0) { noSlot++; continue; } // 빈 슬롯 없음
+
+                layersProp.GetArrayElementAtIndex(idx).stringValue = name;
+                added++;
+            }
+
+            so.ApplyModifiedProperties();
+            AssetDatabase.SaveAssets();
+            EditorUtility.SetDirty(so.targetObject);
+            AssetDatabase.Refresh();
+            
+            if (noSlot > 0)
+                HelperLog.Warn($"[Layers] 빈 슬롯 부족으로 {noSlot}개를 추가하지 못했습니다. (사용자 슬롯 8~31 범위)", ctx);
+
+            if (ctx != null)
+            {
+                HelperLog.Info($"[Layers] 추가: {added}, 스킵: {skipped}", ctx);
             }
             else
             {
-                EditorUtility.DisplayDialog(Title, "추가된 Layer가 없습니다.", "OK");
+                EditorUtility.DisplayDialog(Title, "Layer 추가 완료", "OK");
             }
-        }
-
-        private bool LayerExists(SerializedProperty layersProp, string layerName)
-        {
-            for (int i = 0; i < layersProp.arraySize; i++)
-            {
-                if (layersProp.GetArrayElementAtIndex(i).stringValue == layerName)
-                {
-                    return true;
-                }
-            }
-            return false;
-        }
-
-        private int FindEmptyLayerSlot(SerializedProperty layersProp)
-        {
-            for (int i = 8; i < 32; i++) // User Layers (8~31)
-            {
-                SerializedProperty layerProperty = layersProp.GetArrayElementAtIndex(i);
-                if (string.IsNullOrEmpty(layerProperty.stringValue)) // 빈 슬롯 찾기
-                {
-                    return i;
-                }
-            }
-            return -1; // 빈 슬롯 없음
         }
     }
 }

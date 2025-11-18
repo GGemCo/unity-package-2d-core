@@ -74,7 +74,7 @@ namespace GGemCo2DCoreEditor
             string monsterPath = ConfigAddressableMap.GetPathCharacter(infoAnimation);
             
             // Addressable 에 등록되어있는지 체크 
-            if (!Common.ExistAddressableByPath(ConfigAddressableMap.GetPathCharacter(infoAnimation, true))) return;
+            if (!HelperEditorUI.ExistAddressableByPath(ConfigAddressableMap.GetPathCharacter(infoAnimation, true))) return;
             
             GameObject npcPrefab = AssetDatabaseLoaderManager.LoadAsset<GameObject>(monsterPath);
             

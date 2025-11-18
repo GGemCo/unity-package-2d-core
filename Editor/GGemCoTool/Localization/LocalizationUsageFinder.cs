@@ -28,7 +28,7 @@ namespace GGemCo2DCoreEditor
 
         private void OnGUI()
         {
-            Common.OnGUITitle("Table, Key 이름으로 검색");
+            HelperEditorUI.OnGUITitle("Table, Key 이름으로 검색");
             _tableName = EditorGUILayout.TextField("Table Name", _tableName);
             _keyName = EditorGUILayout.TextField("Key Name", _keyName);
             _toggleUserTable = EditorGUILayout.ToggleLeft("유저 언어 테이블도 같이 검색", _toggleUserTable);
@@ -42,8 +42,8 @@ namespace GGemCo2DCoreEditor
             if (GUILayout.Button("모든 Scene에서 Key로 찾기 (느릴 수 있음)"))
                 FindInAllScenes(_tableName, _keyName);
 
-            Common.GUILine();
-            Common.OnGUITitle("문자열로 Key 찾기");
+            HelperEditorUI.GUILine();
+            HelperEditorUI.OnGUITitle("문자열로 Key 찾기");
             EditorGUILayout.HelpBox("대소문자를 구분합니다.", MessageType.Info);
             _searchText = EditorGUILayout.TextField("검색할 문자열", _searchText);
 

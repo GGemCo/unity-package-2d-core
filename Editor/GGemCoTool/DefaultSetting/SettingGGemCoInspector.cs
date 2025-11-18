@@ -44,7 +44,7 @@ namespace GGemCo2DCoreEditor
             serializedObject.ApplyModifiedProperties();
         }
 
-        private void UpdateScriptingDefineSymbols(bool enable)
+        public void UpdateScriptingDefineSymbols(bool enable)
         {
 #if UNITY_6000_0_OR_NEWER
             string symbols = PlayerSettings.GetScriptingDefineSymbols(NamedBuildTarget.Standalone);
@@ -73,7 +73,7 @@ namespace GGemCo2DCoreEditor
 #endif
             Debug.Log($"Scripting Define Symbols updated: {symbols}");
         }
-        private void SyncInputDefineSymbols(GGemCo2DCore.InputSystemType inputType)
+        public void SyncInputDefineSymbols(GGemCo2DCore.InputSystemType inputType)
         {
 #if UNITY_6000_0_OR_NEWER
             string symbols = PlayerSettings.GetScriptingDefineSymbols(NamedBuildTarget.Standalone);

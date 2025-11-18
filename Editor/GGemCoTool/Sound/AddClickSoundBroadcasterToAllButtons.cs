@@ -25,21 +25,21 @@ namespace GGemCo2DCoreEditor
         {
             _scrollPos = EditorGUILayout.BeginScrollView(_scrollPos);
             
-            Common.OnGUITitle("버튼 타입 선택");
+            HelperEditorUI.OnGUITitle("버튼 타입 선택");
             selectedButtonType = (SoundConstants.UIButtonType)EditorGUILayout.EnumPopup("UIButtonType", selectedButtonType);
-            Common.OnGUITitle("조건 필터링 (비워두면 전체)");
+            HelperEditorUI.OnGUITitle("조건 필터링 (비워두면 전체)");
             tagFilter = EditorGUILayout.TagField("Tag", tagFilter);
             nameContains = EditorGUILayout.TextField("이름 포함 문자열", nameContains);
             // parentNameContains = EditorGUILayout.TextField("부모 이름 포함 문자열", parentNameContains);
             
-            Common.GUILineBlue();
-            Common.OnGUITitle("현재 로드된 씬 추가하기");
+            HelperEditorUI.GUILineBlue();
+            HelperEditorUI.OnGUITitle("현재 로드된 씬 추가하기");
 
             if (GUILayout.Button("적용하기"))
                 AddToSceneButtons();
             
-            Common.GUILineBlue();
-            Common.OnGUITitle("폴더 지정 후 추가하기");
+            HelperEditorUI.GUILineBlue();
+            HelperEditorUI.OnGUITitle("폴더 지정 후 추가하기");
             EditorGUILayout.HelpBox("스크립트를 추가하고 싶은 프리팹이 있는 폴더를 선택하고 적용하기 버튼을 클릭해주세요.", MessageType.Info);
             prefabFolderPath = EditorGUILayout.TextField("프리팹 폴더 경로", prefabFolderPath);
             if (GUILayout.Button("폴더 선택"))
@@ -57,8 +57,8 @@ namespace GGemCo2DCoreEditor
             if (GUILayout.Button("적용하기"))
                 AddToPrefabButtonsInFolder();
 
-            Common.GUILineBlue();
-            Common.OnGUITitle("선택 후 추가하기");
+            HelperEditorUI.GUILineBlue();
+            HelperEditorUI.OnGUITitle("선택 후 추가하기");
             EditorGUILayout.HelpBox("스크립트를 추가하고 싶은 프리팹을 선택하고 적용하기 버튼을 클릭해주세요.\n여러개의 프리팹을 선택할 수 있습니다.", MessageType.Info);
             if (GUILayout.Button("적용하기"))
                 AddToSelectedPrefabs();

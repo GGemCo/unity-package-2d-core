@@ -1,0 +1,1 @@
+﻿Uid	Memo	Message	Type1	Value1	Type2	Value2	Type3	Value3

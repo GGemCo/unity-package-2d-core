@@ -1,0 +1,1 @@
+﻿Uid	Memo	SourceItemUid	ResultItemUid	Upgrade	MaxUpgrade	Rate	NeedCurrencyType	NeedCurrencyValue	NeedItemUid1	NeedItemCount1	NeedItemUid2	NeedItemCount2	NeedItemUid3	NeedItemCount3	NeedItemUid4	NeedItemCount4

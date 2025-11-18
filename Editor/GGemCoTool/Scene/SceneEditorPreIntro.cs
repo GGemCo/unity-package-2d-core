@@ -31,7 +31,7 @@ namespace GGemCo2DCoreEditor
         }
         private void DrawRequiredSection()
         {
-            Common.OnGUITitle("필수 항목");
+            HelperEditorUI.OnGUITitle("필수 항목");
             EditorGUILayout.HelpBox($"* Pre 인트로 씬 오브젝트\n* 로딩 진행률을 보여주는 텍스트", MessageType.Info);
             if (GUILayout.Button("필수 항목 셋팅하기"))
             {
@@ -41,7 +41,7 @@ namespace GGemCo2DCoreEditor
         /// <summary>
         /// 필수 항목 셋팅
         /// </summary>
-        private void SetupRequiredObjects()
+        public void SetupRequiredObjects()
         {
             GGemCo2DCore.ScenePreIntro scene = CreateOrAddComponent<ScenePreIntro>(nameof(ScenePreIntro));
 

@@ -1,0 +1,1 @@
+﻿Uid	Name	Category	PrefabName	AnimationController	Width	Height	ColliderSize	NeedRotation	Color	DefaultDirection

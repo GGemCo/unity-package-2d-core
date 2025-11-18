@@ -36,7 +36,7 @@ namespace GGemCo2DCoreEditor
         private void DrawLeftPanel()
         {
             EditorGUILayout.BeginVertical(GUILayout.Width(200));
-            Common.OnGUITitle("수정해야 될 목록");
+            HelperEditorUI.OnGUITitle("수정해야 될 목록");
             leftScroll = EditorGUILayout.BeginScrollView(leftScroll);
             foreach (var result in validationResults)
             {

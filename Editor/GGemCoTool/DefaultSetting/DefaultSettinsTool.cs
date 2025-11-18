@@ -12,6 +12,7 @@ namespace GGemCo2DCoreEditor
         private readonly SettingSortingLayers _settingSortingLayers = new SettingSortingLayers();
         private readonly SettingLayers _settingLayers = new SettingLayers();
         private readonly SettingResource _settingResource = new SettingResource();
+        private readonly SettingDefaultScene _settingDefaultScene = new SettingDefaultScene();
 
         [MenuItem(ConfigEditor.NameToolSettingDefault, false, (int)ConfigEditor.ToolOrdering.DefaultSetting)]
         public static void ShowWindow()
@@ -30,31 +31,10 @@ namespace GGemCo2DCoreEditor
             _settingLayers.OnGUI();
             EditorGUILayout.Space(10);
             _settingResource.OnGUI();
-            
             EditorGUILayout.Space(10);
-            Common.OnGUITitle("Scene 추가하기");
-            if (GUILayout.Button("Scene 추가하기"))
-            {
-                string path = $"{ConfigDefine.PathScene}/{ConfigDefine.SceneNameIntro}.unity";
-                // 폴더가 없으면 생성
-                string directory = Path.GetDirectoryName(path);
-                if (directory != null)
-                {
-                    if (!Directory.Exists(directory))
-                    {
-                        Directory.CreateDirectory(directory);
-                        AssetDatabase.Refresh();
-                    }
-
-                    AddSceneToBuildSettings(path);
-                    path = $"{ConfigDefine.PathScene}/{ConfigDefine.SceneNameLoading}.unity";
-                    AddSceneToBuildSettings(path);
-                    path = $"{ConfigDefine.PathScene}/{ConfigDefine.SceneNameGame}.unity";
-                    AddSceneToBuildSettings(path);
-                    path = $"{ConfigDefine.PathScene}/{ConfigDefine.SceneNamePreIntro}.unity";
-                    AddSceneToBuildSettings(path);
-                }
-            }
+            _settingDefaultScene.OnGUI();
+            
+            EditorGUILayout.Space(20);
         }
     }
 }

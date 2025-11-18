@@ -55,16 +55,18 @@ namespace GGemCo2DCoreEditor
                 GUILayout.Label("로드 중입니다...", EditorStyles.helpBox);
             }
 
-            if (_loadedByLabel.Count <= 0) return;
-            GUILayout.Label($"로드된 개수: {_loadedByLabel.Count}", EditorStyles.miniLabel);
-            foreach (var obj in _loadedByLabel)
+            if (_loadedByLabel.Count > 0)
             {
-                EditorGUILayout.ObjectField(obj.Value.name, obj.Value, typeof(Object), false);
-            }
+                GUILayout.Label($"로드된 개수: {_loadedByLabel.Count}", EditorStyles.miniLabel);
+                foreach (var obj in _loadedByLabel)
+                {
+                    EditorGUILayout.ObjectField(obj.Value.name, obj.Value, typeof(Object), false);
+                }
 
-            if (GUILayout.Button("모든 Label 리소스 해제"))
-            {
-                ReleaseAllLabelResources();
+                if (GUILayout.Button("모든 Label 리소스 해제"))
+                {
+                    ReleaseAllLabelResources();
+                }
             }
         }
 

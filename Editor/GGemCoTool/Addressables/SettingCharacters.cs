@@ -36,7 +36,15 @@ namespace GGemCo2DCoreEditor
             else {
                 if (GUILayout.Button(Title, GUILayout.Width(_addressableEditor.buttonWidth), GUILayout.Height(_addressableEditor.buttonHeight)))
                 {
-                    Setup();
+                    try
+                    {
+                        Setup();
+                    }
+                    catch (System.Exception e)
+                    {
+                        Debug.LogException(e);
+                        EditorUtility.DisplayDialog(Title, "캐릭터 Addressable 설정 중 오류가 발생했습니다.\n자세한 내용은 콘솔 로그를 확인해주세요.", "OK");
+                    }
                 }
             }
         }
@@ -44,11 +52,14 @@ namespace GGemCo2DCoreEditor
         /// <summary>
         /// Addressable 설정하기
         /// </summary>
-        private void Setup()
+        public void Setup(EditorSetupContext ctx = null)
         {
-            bool result = EditorUtility.DisplayDialog(TextDisplayDialogTitle, TextDisplayDialogMessage, "네", "아니요");
-            if (!result) return;
-            
+            if (ctx == null)
+            {
+                bool result = EditorUtility.DisplayDialog(TextDisplayDialogTitle, TextDisplayDialogMessage, "네", "아니요");
+                if (!result) return;
+            }
+
             Dictionary<int, StruckTableMonster> dictionaryMonsters = _addressableEditor.TableMonster.GetDatas();
             Dictionary<int, StruckTableNpc> dictionaryNpcs = _addressableEditor.TableNpc.GetDatas();
             
@@ -56,7 +67,7 @@ namespace GGemCo2DCoreEditor
             AddressableAssetSettings settings = AddressableAssetSettingsDefaultObject.Settings;
             if (!settings)
             {
-                Debug.LogWarning("Addressable 설정을 찾을 수 없습니다. 새로 생성합니다.");
+                HelperLog.Warn("[Addressable] Addressable 설정을 찾을 수 없습니다. 새로 생성합니다.", ctx);
                 settings = CreateAddressableSettings();
             }
 
@@ -137,7 +148,14 @@ namespace GGemCo2DCoreEditor
             // 테이블 다시 로드하기
             _addressableEditor.LoadTables();
             
-            EditorUtility.DisplayDialog(Title, "Addressable 설정 완료", "OK");
+            if (ctx != null)
+            {
+                HelperLog.Info("[Addressable] 캐릭터 설정 완료", ctx);
+            }
+            else
+            {
+                EditorUtility.DisplayDialog(Title, "[Addressable] 캐릭터 설정 완료", "OK");
+            }
         }
 
     }

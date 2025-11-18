@@ -32,7 +32,15 @@ namespace GGemCo2DCoreEditor
             {
                 if (GUILayout.Button(Title, GUILayout.Width(_addressableEditor.buttonWidth), GUILayout.Height(_addressableEditor.buttonHeight)))
                 {
-                    Setup();
+                    try
+                    {
+                        Setup();
+                    }
+                    catch (System.Exception e)
+                    {
+                        Debug.LogException(e);
+                        EditorUtility.DisplayDialog(Title, "이펙트 Addressable 설정 중 오류가 발생했습니다.\n자세한 내용은 콘솔 로그를 확인해주세요.", "OK");
+                    }
                 }
             }
         }
@@ -40,10 +48,13 @@ namespace GGemCo2DCoreEditor
         /// <summary>
         /// Addressable 설정하기
         /// </summary>
-        private void Setup()
+        public void Setup(EditorSetupContext ctx = null)
         {
-            bool result = EditorUtility.DisplayDialog(TextDisplayDialogTitle, TextDisplayDialogMessage, "네", "아니요");
-            if (!result) return;
+            if (ctx == null)
+            {
+                bool result = EditorUtility.DisplayDialog(TextDisplayDialogTitle, TextDisplayDialogMessage, "네", "아니요");
+                if (!result) return;
+            }
             
             Dictionary<int, StruckTableEffect> dictionary = _addressableEditor.TableEffect.GetDatas();
             
@@ -51,12 +62,17 @@ namespace GGemCo2DCoreEditor
             AddressableAssetSettings settings = AddressableAssetSettingsDefaultObject.Settings;
             if (!settings)
             {
-                Debug.LogWarning("Addressable 설정을 찾을 수 없습니다. 새로 생성합니다.");
+                HelperLog.Warn("Addressable 설정을 찾을 수 없습니다. 새로 생성합니다.", ctx);
                 settings = CreateAddressableSettings();
             }
 
             // GGemCo_Tables 그룹 가져오기 또는 생성
             AddressableAssetGroup group = GetOrCreateGroup(settings, targetGroupName);
+            if (!group)
+            {
+                HelperLog.Error($"'{targetGroupName}' 그룹을 설정할 수 없습니다.", ctx);
+                return;
+            }
             
             // 그룹 엔트리 전체 초기화 (스키마/설정은 유지)
             ClearGroupEntries(settings, group);
@@ -83,7 +99,14 @@ namespace GGemCo2DCoreEditor
             // 테이블 다시 로드하기
             _addressableEditor.LoadTables();
             
-            EditorUtility.DisplayDialog(Title, "Addressable 설정 완료", "OK");
+            if (ctx != null)
+            {
+                HelperLog.Info("[Addressable] 이펙트 설정 완료", ctx);
+            }
+            else
+            {
+                EditorUtility.DisplayDialog(Title, "[Addressable] 이펙트 설정 완료", "OK");
+            }
         }
     }
 }

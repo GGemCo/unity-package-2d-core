@@ -6,6 +6,7 @@ namespace GGemCo2DCore
     {
         public const string NameSDK = "GGemCo";
         public const string NameSDKUpperCase = "GGEMCO";
+        public const string PathGGemCo = "Assets/"+NameSDK;
 
         // 씬
         public const string PathScene = "Assets/"+NameSDK+"/Scenes";
@@ -13,6 +14,14 @@ namespace GGemCo2DCore
         public const string SceneNameIntro = NameSDK+"_Intro";
         public const string SceneNameLoading = NameSDK+"_Loading";
         public const string SceneNameGame = NameSDK+"_Game";
+        
+        public static readonly Dictionary<string, string> PathSceneAsset = new Dictionary<string, string>
+        {
+            {SceneNamePreIntro, $"{PathScene}/{SceneNamePreIntro}.unity"},
+            {SceneNameIntro, $"{PathScene}/{SceneNameIntro}.unity"},
+            {SceneNameLoading, $"{PathScene}/{SceneNameLoading}.unity"},
+            {SceneNameGame, $"{PathScene}/{SceneNameGame}.unity"}
+        };
         
         // 스파인 2d 사용 y/n
         public const string DefineSymbolSpine = NameSDKUpperCase+"_USE_SPINE";

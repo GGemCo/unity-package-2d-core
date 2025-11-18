@@ -166,7 +166,7 @@ namespace GGemCo2DCoreEditor
             EditorGUIUtility.labelWidth = LabelWidth; // 라벨 너비 축소
             _scrollPos = EditorGUILayout.BeginScrollView(_scrollPos);
 
-            Common.OnGUITitle("저장/불러오기");
+            HelperEditorUI.OnGUITitle("저장/불러오기");
             _selectedQuestIndex = EditorGUILayout.Popup("연출 선택", _selectedQuestIndex, _nameQuest.ToArray());
             if (previousIndex != _selectedQuestIndex)
             {
@@ -187,17 +187,17 @@ namespace GGemCo2DCoreEditor
             if (GUILayout.Button("JSON 불러오기")) LoadQuestFromJson();
             GUILayout.EndHorizontal();
             
-            Common.GUILineBlue(2);
+            HelperEditorUI.GUILineBlue(2);
             // 퀘스트 정보 초기화
-            Common.OnGUITitle("퀘스트 진행 상황 초기화");
+            HelperEditorUI.OnGUITitle("퀘스트 진행 상황 초기화");
             if (GUILayout.Button("초기화 하기"))
             {
                 RemoveQuestSaveData();
             }
 
-            Common.GUILineBlue(2);
+            HelperEditorUI.GUILineBlue(2);
             // 기본정보
-            Common.OnGUITitle("퀘스트 기본 정보");
+            HelperEditorUI.OnGUITitle("퀘스트 기본 정보");
             // nextNodeGuid 읽기 전용 처리
             GUI.enabled = false;
             var info = _struckTableQuests.GetValueOrDefault(_selectedQuestIndex);
@@ -206,11 +206,11 @@ namespace GGemCo2DCoreEditor
             GUI.enabled = true;
            
             // 단계별 정보
-            Common.GUILineBlue(2);
+            HelperEditorUI.GUILineBlue(2);
             _questStepListDrawer.List.DoLayoutList();
 
             // 보상
-            Common.GUILineBlue(2);
+            HelperEditorUI.GUILineBlue(2);
             _rewardItemListDrawer.DoLayout();
 
             GUILayout.Space(30);

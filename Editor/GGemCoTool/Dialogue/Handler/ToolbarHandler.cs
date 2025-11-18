@@ -81,7 +81,7 @@ namespace GGemCo2DCoreEditor
             GUILayout.EndHorizontal();
             
             EditorGUILayout.Space();
-            Common.GUILine(2);
+            HelperEditorUI.GUILine(2);
             EditorGUILayout.Space();
             if (GUILayout.Button("노드 추가"))
             {
@@ -95,7 +95,7 @@ namespace GGemCo2DCoreEditor
                 _editorWindowWindow.panOffset = Vector2.zero; // 위치도 초기화
             }
             EditorGUILayout.Space();
-            Common.GUILine(2);
+            HelperEditorUI.GUILine(2);
             EditorGUILayout.Space();
             if (GUILayout.Button("모두 지우기"))
             {

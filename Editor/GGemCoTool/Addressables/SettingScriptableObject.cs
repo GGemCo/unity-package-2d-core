@@ -26,51 +26,65 @@ namespace GGemCo2DCoreEditor
 
             if (GUILayout.Button(Title, GUILayout.Width(_addressableEditor.buttonWidth), GUILayout.Height(_addressableEditor.buttonHeight)))
             {
-                Setup();
+                try
+                {
+                    Setup();
+                }
+                catch (System.Exception e)
+                {
+                    Debug.LogException(e);
+                    EditorUtility.DisplayDialog(Title, "설정 스크립터블 오브젝트 Addressable 설정 중 오류가 발생했습니다.\n자세한 내용은 콘솔 로그를 확인해주세요.", "OK");
+                }
             }
         }
         /// <summary>
         /// Addressable 설정하기
         /// </summary>
-        private void Setup()
+        public void Setup(EditorSetupContext ctx = null)
         {
             // AddressableSettings 가져오기 (없으면 생성)
             AddressableAssetSettings settings = AddressableAssetSettingsDefaultObject.Settings;
             if (!settings)
             {
-                Debug.LogWarning("Addressable 설정을 찾을 수 없습니다. 새로 생성합니다.");
+                HelperLog.Warn("Addressable 설정을 찾을 수 없습니다. 새로 생성합니다.", ctx);
                 settings = CreateAddressableSettings();
             }
 
             // 그룹 가져오기 또는 생성
             AddressableAssetGroup group = GetOrCreateGroup(settings, targetGroupName);
-
             if (!group)
             {
-                Debug.LogError($"'{targetGroupName}' 그룹을 설정할 수 없습니다.");
+                HelperLog.Error($"'{targetGroupName}' 그룹을 설정할 수 없습니다.", ctx);
                 return;
             }
 
             // 설정 scriptable object
             foreach (var addressableAssetInfo in ConfigAddressableSetting.NeedLoadInLoadingScene)
             {
-                Add(settings, group, addressableAssetInfo);
+                Add(settings, group, addressableAssetInfo, ctx);
             }
 
             // 설정 저장
             settings.SetDirty(AddressableAssetSettings.ModificationEvent.EntryMoved, null, true);
             AssetDatabase.SaveAssets();
-            EditorUtility.DisplayDialog(Title, "Addressable 설정 완료", "OK");
+            if (ctx != null)
+            {
+                HelperLog.Info("[Addressable] Setting 스크립터블 오브젝트 설정 완료", ctx);
+            }
+            else
+            {
+                EditorUtility.DisplayDialog(Title, "[Addressable] Setting 스크립터블 오브젝트 설정 완료", "OK");
+            }
         }
 
-        private void Add(AddressableAssetSettings settings, AddressableAssetGroup group, AddressableAssetInfo addressableAssetInfo)
+        private void Add(AddressableAssetSettings settings, AddressableAssetGroup group, AddressableAssetInfo addressableAssetInfo, EditorSetupContext ctx = null)
         {
             string assetPath = addressableAssetInfo.Path;
             // 대상 파일 가져오기
             var asset = AssetDatabase.LoadMainAssetAtPath(assetPath);
             if (!asset)
             {
-                Debug.LogError($"파일을 찾을 수 없습니다: {assetPath}");
+                HelperLog.Error($"파일을 찾을 수 없습니다: {assetPath}", ctx);
                 return;
             }
 
@@ -81,11 +95,11 @@ namespace GGemCo2DCoreEditor
             {
                 // 신규 Addressable 항목 추가
                 entry = settings.CreateOrMoveEntry(AssetDatabase.AssetPathToGUID(assetPath), group);
-                Debug.Log($"Addressable 항목을 추가했습니다: {assetPath}");
+                HelperLog.Info($"Addressable 항목을 추가했습니다: {assetPath}", ctx);
             }
             else
             {
-                Debug.Log($"이미 Addressable에 등록된 항목입니다: {assetPath}");
+                HelperLog.Info($"이미 Addressable에 등록된 항목입니다: {assetPath}", ctx);
             }
 
             // 키 값 설정

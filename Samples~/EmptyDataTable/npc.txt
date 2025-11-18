@@ -1,0 +1,1 @@
+Uid	Name	AnimationUid	DefaultSkin	Scale	Grade	StatMoveSpeed	ImageThumbnailFileName	InteractionUid

@@ -14,7 +14,7 @@ namespace GGemCo2DCoreEditor
         private const string Title = "테이블 추가하기";
         private readonly AddressableEditor _addressableEditor;
 
-        public SettingTable(AddressableEditor addressableEditorWindow)
+        public SettingTable(AddressableEditor addressableEditorWindow = null)
         {
             _addressableEditor = addressableEditorWindow;
             targetGroupName = ConfigAddressableGroupName.Table;
@@ -25,20 +25,28 @@ namespace GGemCo2DCoreEditor
 
             if (GUILayout.Button(Title, GUILayout.Width(_addressableEditor.buttonWidth), GUILayout.Height(_addressableEditor.buttonHeight)))
             {
-                Setup();
+                try
+                {
+                    Setup();
+                }
+                catch (System.Exception e)
+                {
+                    Debug.LogException(e);
+                    EditorUtility.DisplayDialog(Title, "데이터 테이블 Addressable 설정 중 오류가 발생했습니다.\n자세한 내용은 콘솔 로그를 확인해주세요.", "OK");
+                }
             }
         }
         
         /// <summary>
         /// Addressable 설정하기
         /// </summary>
-        private void Setup()
+        public void Setup(EditorSetupContext ctx = null)
         {
             // AddressableSettings 가져오기 (없으면 생성)
             AddressableAssetSettings settings = AddressableAssetSettingsDefaultObject.Settings;
             if (!settings)
             {
-                Debug.LogWarning("Addressable 설정을 찾을 수 없습니다. 새로 생성합니다.");
+                HelperLog.Warn("Addressable 설정을 찾을 수 없습니다. 새로 생성합니다.", ctx);
                 settings = CreateAddressableSettings();
             }
 
@@ -47,7 +55,7 @@ namespace GGemCo2DCoreEditor
 
             if (!group)
             {
-                Debug.LogError($"'{targetGroupName}' 그룹을 설정할 수 없습니다.");
+                HelperLog.Error($"'{targetGroupName}' 그룹을 설정할 수 없습니다.", ctx);
                 return;
             }
 
@@ -58,7 +66,7 @@ namespace GGemCo2DCoreEditor
                 var asset = AssetDatabase.LoadMainAssetAtPath(assetPath);
                 if (!asset)
                 {
-                    Debug.LogError($"파일을 찾을 수 없습니다: {assetPath}");
+                    HelperLog.Error($"파일을 찾을 수 없습니다: {assetPath}", ctx);
                     continue;
                 }
 
@@ -69,11 +77,12 @@ namespace GGemCo2DCoreEditor
                 {
                     // 신규 Addressable 항목 추가
                     entry = settings.CreateOrMoveEntry(AssetDatabase.AssetPathToGUID(assetPath), group);
-                    Debug.Log($"Addressable 항목을 추가했습니다: {assetPath}");
+                    HelperLog.Info($"Addressable 항목을 추가했습니다: {assetPath}", ctx);
                 }
                 else
                 {
-                    Debug.Log($"이미 Addressable에 등록된 항목입니다: {assetPath}");
+                    HelperLog.Info($"이미 Addressable에 등록된 항목입니다: {assetPath}", ctx);
+                    continue;
                 }
 
                 // 키 값 설정
@@ -89,9 +98,37 @@ namespace GGemCo2DCoreEditor
             AssetDatabase.SaveAssets();
             // 테이블 다시 로드하기
             _addressableEditor.LoadTables();
-            
-            EditorUtility.DisplayDialog(Title, "Addressable 설정 완료", "OK");
+
+            if (ctx != null)
+            {
+                HelperLog.Info($"Addressable 설정 완료", ctx);
+            }
+            else
+            {
+                EditorUtility.DisplayDialog(Title, "Addressable 설정 완료", "OK");    
+            }
         }
 
+        public void ClearGroup(EditorSetupContext ctx)
+        {
+            // AddressableSettings 가져오기 (없으면 생성)
+            AddressableAssetSettings settings = AddressableAssetSettingsDefaultObject.Settings;
+            if (!settings)
+            {
+                HelperLog.Warn("Addressable 설정을 찾을 수 없습니다. 새로 생성합니다.", ctx);
+                settings = CreateAddressableSettings();
+            }
+
+            // GGemCo_Tables 그룹 가져오기 또는 생성
+            AddressableAssetGroup group = GetOrCreateGroup(settings, targetGroupName);
+
+            if (!group)
+            {
+                HelperLog.Error($"'{targetGroupName}' 그룹을 설정할 수 없습니다.", ctx);
+                return;
+            }
+            // 그룹 엔트리 전체 초기화 (스키마/설정은 유지)
+            ClearGroupEntries(settings, group);
+        }
     }
 }

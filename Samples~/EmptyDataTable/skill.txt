@@ -1,0 +1,1 @@
+﻿Uid	Name	IconFileName	Level	MaxLevel	NeedPlayerLevel	NeedCurrencyType	NeedCurrencyValue	Target	TargetType	DamageType	DamageValue	DamageRange	Distance	EffectUid	EffectScale	ProjectileUid	NeedMp	TickTime	Duration	CoolTime	AffectUid	AffectRate

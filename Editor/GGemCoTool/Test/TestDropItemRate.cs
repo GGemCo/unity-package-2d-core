@@ -116,7 +116,7 @@ namespace GGemCo2DCoreEditor
             }
 
             EditorGUILayout.Space();
-            Common.OnGUITitle("테스트 결과");
+            HelperEditorUI.OnGUITitle("테스트 결과");
 
             if (_testResult != null)
             {

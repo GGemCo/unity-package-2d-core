@@ -28,13 +28,13 @@ namespace GGemCo2DCoreEditor
             else
             {
                 DrawRequiredSection();
-                Common.GUILine();
+                HelperEditorUI.GUILine();
                 DrawOptionalSection();
             }
         }
         private void DrawRequiredSection()
         {
-            Common.OnGUITitle("필수 항목");
+            HelperEditorUI.OnGUITitle("필수 항목");
             EditorGUILayout.HelpBox($"* 로딩 씬 오브젝트\n* 로딩 진행률을 보여주는 텍스트", MessageType.Info);
 
             if (GUILayout.Button("필수 항목 셋팅하기"))
@@ -45,7 +45,7 @@ namespace GGemCo2DCoreEditor
         /// <summary>
         /// 필수 항목 셋팅
         /// </summary>
-        private void SetupRequiredObjects()
+        public void SetupRequiredObjects()
         {
             // GGemCo2DCore.SceneLoading GameObject 만들기
             GGemCo2DCore.SceneLoading scene = CreateOrAddComponent<GGemCo2DCore.SceneLoading>("SceneLoading");

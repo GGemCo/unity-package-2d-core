@@ -12,7 +12,6 @@ namespace GGemCo2DCoreEditor
     {
         private const string Title = "게임 씬 셋팅하기";
         private GameObject _objGGemCoCore;
-        private TableWindow _tableWindow;
         private Vector2 _scrollPosition;
         
         [MenuItem(ConfigEditor.NameToolSettingSceneGame, false, (int)ConfigEditor.ToolOrdering.SettingSceneGame)]
@@ -24,7 +23,6 @@ namespace GGemCo2DCoreEditor
         protected override void OnEnable()
         {
             base.OnEnable();
-            _tableWindow = tableLoaderManager.LoadWindowTable();
         }
 
         private void OnGUI()
@@ -33,7 +31,7 @@ namespace GGemCo2DCoreEditor
             if (CheckCurrentLoadedScene(ConfigDefine.SceneNameGame))
             {
                 DrawRequiredSection();
-                Common.GUILine();
+                HelperEditorUI.GUILine();
                 DrawOptionalSection();
             }
             else {
@@ -44,7 +42,7 @@ namespace GGemCo2DCoreEditor
         }
         private void DrawRequiredSection()
         {
-            Common.OnGUITitle("필수 항목");
+            HelperEditorUI.OnGUITitle("필수 항목");
             EditorGUILayout.HelpBox($"* 게임 씬 오브젝트\n* Camera Manager 연결", MessageType.Info);
 
             if (GUILayout.Button("필수 항목 셋팅하기"))
@@ -55,7 +53,7 @@ namespace GGemCo2DCoreEditor
         /// <summary>
         /// 필수 항목 셋팅
         /// </summary>
-        private void SetupRequiredObjects()
+        public void SetupRequiredObjects()
         {
             _objGGemCoCore = GetOrCreateRootPackageGameObject();
             GGemCo2DCore.SceneGame scene = CreateOrAddComponent<GGemCo2DCore.SceneGame>(nameof(SceneGame));
@@ -165,7 +163,7 @@ namespace GGemCo2DCoreEditor
         /// </summary>
         private void DrawOptionalSection()
         {
-            Common.OnGUITitle("선택 항목");
+            HelperEditorUI.OnGUITitle("선택 항목");
             if (GUILayout.Button("윈도우 매니저 셋팅하기"))
             {
                 SetupWindowManager();
@@ -175,7 +173,7 @@ namespace GGemCo2DCoreEditor
                 SetupAllTestWindow();
             }
         }
-        private UIWindowManager SetupWindowManager()
+        public UIWindowManager SetupWindowManager()
         {
             SetupRequiredObjects();
             
@@ -186,7 +184,7 @@ namespace GGemCo2DCoreEditor
             scene.SetUIWindowManager(uiWindowManager);
             return uiWindowManager;
         }
-        private void SetupAllTestWindow()
+        public void SetupAllTestWindow(EditorSetupContext ctx = null)
         {
             SetupRequiredObjects();
             
@@ -203,7 +201,7 @@ namespace GGemCo2DCoreEditor
             }
 
             List<UIWindow> uiWindows =  new List<UIWindow> { null };
-            Dictionary<int, StruckTableWindow> dictionary = _tableWindow.GetDatas();
+            Dictionary<int, StruckTableWindow> dictionary = tableLoaderManager.LoadWindowTable().GetDatas();
             
             foreach (KeyValuePair<int, StruckTableWindow> outerPair in dictionary)
             {
@@ -251,6 +249,12 @@ namespace GGemCo2DCoreEditor
                     PrefabUnpackMode.Completely,
                     InteractionMode.UserAction
                 );
+
+                if (info.Uid == (int)UIWindowConstants.WindowUid.Option)
+                {
+                    //  UIPanelOptionBase 프리팹을 자동으로 listPrefabPanel 에 등록
+                    AutoFillPanelPrefabs(window);
+                }
             }
 
             uiWindowManager.SetUIWindow(uiWindows.ToArray());

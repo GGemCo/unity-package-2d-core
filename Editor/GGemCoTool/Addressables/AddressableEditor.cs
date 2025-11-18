@@ -85,42 +85,51 @@ namespace GGemCo2DCoreEditor
         private void OnGUI()
         {
             buttonWidth = position.width / 2f - 10f;
-            _scrollPosition = EditorGUILayout.BeginScrollView(_scrollPosition);
             
-            EditorGUILayout.HelpBox("캐릭터 추가 후 맵을 추가해야 맵별 배치되어있는 캐릭터 정보가 반영됩니다.", MessageType.Error);
-            
-            EditorGUILayout.BeginHorizontal();
-            _settingScriptableObject.OnGUI();
-            _settingTable.OnGUI();
-            EditorGUILayout.EndHorizontal();
-            
-            EditorGUILayout.BeginHorizontal();
-            _settingCharacters.OnGUI();
-            _settingMap.OnGUI();
-            EditorGUILayout.EndHorizontal();
-            
-            EditorGUILayout.BeginHorizontal();
-            _settingEffect.OnGUI();
-            _settingItem.OnGUI();
-            EditorGUILayout.EndHorizontal();
-            
-            EditorGUILayout.BeginHorizontal();
-            _settingSkill.OnGUI();
-            _settingDialogue.OnGUI();
-            EditorGUILayout.EndHorizontal();
-            
-            EditorGUILayout.BeginHorizontal();
-            _settingQuest.OnGUI();
-            _settingCutscene.OnGUI();
-            EditorGUILayout.EndHorizontal();
-            
-            EditorGUILayout.BeginHorizontal();
-            _settingAffect.OnGUI();
-            _settingSound.OnGUI();
-            EditorGUILayout.EndHorizontal();
-            
-            EditorGUILayout.Space(20);
-            EditorGUILayout.EndScrollView();
+            using (var scroll = new EditorGUILayout.ScrollViewScope(_scrollPosition))
+            {
+                _scrollPosition = scroll.scrollPosition;
+
+                EditorGUILayout.HelpBox("캐릭터 추가 후 맵을 추가해야 맵별 배치되어있는 캐릭터 정보가 반영됩니다.", MessageType.Error);
+
+                using (new EditorGUILayout.HorizontalScope())
+                {
+                    _settingScriptableObject?.OnGUI();
+                    _settingTable?.OnGUI();
+                }
+
+                using (new EditorGUILayout.HorizontalScope())
+                {
+                    _settingCharacters?.OnGUI();
+                    _settingMap?.OnGUI();
+                }
+
+                using (new EditorGUILayout.HorizontalScope())
+                {
+                    _settingEffect?.OnGUI();
+                    _settingItem?.OnGUI();
+                }
+
+                using (new EditorGUILayout.HorizontalScope())
+                {
+                    _settingSkill?.OnGUI();
+                    _settingDialogue?.OnGUI();
+                }
+
+                using (new EditorGUILayout.HorizontalScope())
+                {
+                    _settingQuest?.OnGUI();
+                    _settingCutscene?.OnGUI();
+                }
+
+                using (new EditorGUILayout.HorizontalScope())
+                {
+                    _settingAffect?.OnGUI();
+                    _settingSound?.OnGUI();
+                }
+
+                EditorGUILayout.Space(20);
+            }
         }
     }
 }

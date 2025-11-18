@@ -6,7 +6,8 @@ namespace GGemCo2DCoreEditor
     {
         public enum ToolOrdering
         {
-            DefaultSetting = 1,
+            AutoSetting = 1,
+            DefaultSetting,
             SettingAddressable,
             SettingScenePreIntro,
             SettingSceneIntro,
@@ -43,6 +44,7 @@ namespace GGemCo2DCoreEditor
         
         // 기본 셋팅하기
         private const string NameToolSettings = NameToolGGemCo + "설정하기/";
+        public const string NameToolSettingAuto = NameToolSettings + "자동 셋팅하기";
         public const string NameToolSettingDefault = NameToolSettings + "기본 셋팅하기";
         public const string NameToolSettingAddressable = NameToolSettings + "Addressable 셋팅하기";
         public const string NameToolSettingScenePreIntro = NameToolSettings + "Pre 인트로 씬 셋팅하기";
@@ -89,8 +91,9 @@ namespace GGemCo2DCoreEditor
         public const string NameToolAnimatedTileBatchCreator = NameToolEtc + "애니메이션 타일 일괄생성기";
 
         // 에디터에서 사용되는 프리팹 경로
-        private const string PathResource = "Packages/com.ggemco.2d.core/EditorResource";
-        private const string PathPrefab = PathResource+"/Prefabs";
+        public const string PathPackageCore = "Packages/com.ggemco.2d.core";
+        private const string PathEditorResource = PathPackageCore+"/EditorResource";
+        private const string PathPrefab = PathEditorResource+"/Prefabs";
         public const string PathPrefabDefaultUIButton = PathPrefab+"/UI/DefaultButton.prefab";
         public const string PathPrefabDefaultUITextMeshProGUI = PathPrefab+"/UI/DefaultText.prefab";
         public const string PathPrefabCanvasFromWorld = PathPrefab+"/UI/CanvasFromWorld.prefab";

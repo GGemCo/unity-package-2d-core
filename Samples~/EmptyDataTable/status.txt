@@ -1,0 +1,25 @@
+﻿Uid	ID	Name
+# 스탯		
+1	STAT_ATK	ATK
+2	STAT_DEF	DEF
+3	STAT_HP	HP
+4	STAT_MP	MP
+5	STAT_MOVE_SPEED	Movement Speed
+6	STAT_ATTACK_SPEED	Attack Speed
+7	STAT_CRITICAL_DAMAGE	Critical Damage
+8	STAT_CRITICAL_PROBABILITY	Critical Chance
+9	STAT_REGISTANCE_FIRE	Fire Resistance
+10	STAT_REGISTANCE_COLD	Ice Resistance
+11	STAT_REGISTANCE_LIGHTNING	Lightning Resistance
+# 데미지		
+101	DAMAGE_PHYSIC	Physical Damage
+102	DAMAGE_FIRE	Fire Damage
+103	DAMAGE_COLD	Ice Damage
+104	DAMAGE_LIGHTING	Lightning Damage
+# 회복		
+201	HEAL_HP	Health Regeneration
+202	HEAL_MP	Mana Regeneration
+# 공용		
+301	KNOCK_BACK	Knock Back
+# 기타		
+901	AFFECT_UID	Affect

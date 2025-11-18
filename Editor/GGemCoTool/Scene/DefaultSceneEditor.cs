@@ -1,5 +1,6 @@
 ﻿using GGemCo2DCore;
 using TMPro;
+using UnityEditor;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using SceneManager = UnityEngine.SceneManagement.SceneManager;
@@ -63,6 +64,65 @@ namespace GGemCo2DCoreEditor
                     LocalizationConstants.Keys.Loading.TextLoadingPercent());
             TextMeshProUGUI textMeshProUGUI = CreateUIComponent.CreateObjectText(fieldName, packageType, metaDataTextMeshProGUI);
             return textMeshProUGUI;
+        }
+        /// <summary>
+        /// UIWindowOption 내부 listPrefabPanel 에 UIPanelOptionBase 프리팹 자동 등록
+        /// </summary>
+        protected void AutoFillPanelPrefabs(UIWindow uiWindowOption)
+        {
+            if (uiWindowOption == null)
+            {
+                Debug.LogError("UIWindowOption 이 null 입니다.");
+                return;
+            }
+
+            // 예: new[] { "Assets/GGemCo/UIWindows/Option" }
+            // null 이면 Project 전체 검색
+            string[] searchFolders = 
+            {
+                "Assets/GGemCo/UIWindows/Option",
+            };
+
+            // 1) 모든 Prefab 검색
+            // string[] guids = AssetDatabase.FindAssets("t:Prefab");
+            // 1) 모든 Prefab GUID 검색
+            string filter = "t:Prefab";
+            string[] guids = searchFolders.Length == 0
+                ? AssetDatabase.FindAssets(filter)
+                : AssetDatabase.FindAssets(filter, searchFolders);
+
+            var result = new System.Collections.Generic.List<GameObject>();
+
+            foreach (string guid in guids)
+            {
+                string path = AssetDatabase.GUIDToAssetPath(guid);
+                var go = AssetDatabase.LoadAssetAtPath<GameObject>(path);
+                if (go == null) continue;
+
+                // UIPanelOptionBase 붙어 있는 프리팹만 대상
+                if (go.GetComponent<UIPanelOptionBase>() != null)
+                    result.Add(go);
+            }
+
+            // 정렬 (원하는 기준으로 바꿀 수 있음)
+            result.Sort((a, b) => string.Compare(a.name, b.name, System.StringComparison.Ordinal));
+
+            // 2) SerializedObject 로 listPrefabPanel 채우기
+            SerializedObject so = new SerializedObject(uiWindowOption);
+            SerializedProperty listProp = so.FindProperty("listPrefabPanel");
+
+            listProp.ClearArray();
+
+            for (int i = 0; i < result.Count; i++)
+            {
+                listProp.InsertArrayElementAtIndex(i);
+                listProp.GetArrayElementAtIndex(i).objectReferenceValue = result[i];
+            }
+
+            so.ApplyModifiedProperties();
+            EditorUtility.SetDirty(uiWindowOption);
+
+            Debug.Log($"[SceneEditorIntro] UIPanelOptionBase 프리팹 자동 등록 완료 → {result.Count} 개");
         }
     }
 }

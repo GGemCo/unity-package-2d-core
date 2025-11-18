@@ -30,8 +30,8 @@ namespace GGemCo2DCore
         public void SetSoundManager(SoundManager value) => soundManager = value;
         
         [Header("하위 패널 프리팹")]
-        [SerializeField] private List<GameObject> listPrefabPanel;
-        private List<UIPanelOptionBase> listPanelOptionBase;
+        public List<GameObject> listPrefabPanel;
+        private List<UIPanelOptionBase> _listPanelOptionBase;
 
         private int _currentIndexTabButton;
         private readonly Dictionary<int, Toggle> _tabToggles = new();
@@ -68,7 +68,7 @@ namespace GGemCo2DCore
                 soundManager = SceneGame.Instance.soundManager;
             }
 
-            foreach (var uiPanelOptionBase in listPanelOptionBase)
+            foreach (var uiPanelOptionBase in _listPanelOptionBase)
             {
                 uiPanelOptionBase.SetWindowOption(this);
             }
@@ -77,15 +77,15 @@ namespace GGemCo2DCore
         }
         private void SelectFirstTab()
         {
-            var first = listPanelOptionBase.FirstOrDefault();
+            var first = _listPanelOptionBase.FirstOrDefault();
             if (first== null) return;
             _tabToggles[first.PanelIndex].SetIsOnWithoutNotify(true);
             DoSwitch(first.PanelIndex);
         }
         private void DoSwitch(int panelIndex)
         {
-            foreach (var uiPanelOptionBase in listPanelOptionBase) uiPanelOptionBase.Show(false);
-            var target = listPanelOptionBase.First(x => x.PanelIndex == panelIndex);
+            foreach (var uiPanelOptionBase in _listPanelOptionBase) uiPanelOptionBase.Show(false);
+            var target = _listPanelOptionBase.First(x => x.PanelIndex == panelIndex);
             target.Show(true);
             _currentIndexTabButton = panelIndex;
         }
@@ -96,7 +96,7 @@ namespace GGemCo2DCore
                 GcLogger.LogError($"UIPanel 프리팹을 등록해주세요.");
                 return;
             }
-            listPanelOptionBase = new List<UIPanelOptionBase>();
+            _listPanelOptionBase = new List<UIPanelOptionBase>();
             int index = 0;
             foreach (var prefab in listPrefabPanel)
             {
@@ -109,7 +109,7 @@ namespace GGemCo2DCore
                 }
 
                 uiPanelOptionBase.PanelIndex = index;
-                listPanelOptionBase.Add(uiPanelOptionBase);
+                _listPanelOptionBase.Add(uiPanelOptionBase);
                 index++;
             }
         }
@@ -127,7 +127,7 @@ namespace GGemCo2DCore
             
             for (int i = 0; i < listPrefabPanel.Count; i++)
             {
-                var uiPanelOptionBase = listPanelOptionBase[i];
+                var uiPanelOptionBase = _listPanelOptionBase[i];
                 if (uiPanelOptionBase == null) continue;
                 MetaDataToggle metaDataToggle = new MetaDataToggle(
                     tabTogglePrefab.gameObject, 
@@ -168,9 +168,9 @@ namespace GGemCo2DCore
         /// <param name="target"></param>
         private void HandleConfirmRequested(UIToggleConfirmable target)
         {
-            if (listPanelOptionBase.Count <= 0) return;
+            if (_listPanelOptionBase.Count <= 0) return;
             
-            foreach (var uiPanelOptionBase in listPanelOptionBase)
+            foreach (var uiPanelOptionBase in _listPanelOptionBase)
             {
                 if (uiPanelOptionBase.IsDirty)
                 {
@@ -210,14 +210,14 @@ namespace GGemCo2DCore
         /// <param name="index"></param>
         private void ShowPanelByIndex(int index)
         {
-            if (listPanelOptionBase.Count <= 0) return;
+            if (_listPanelOptionBase.Count <= 0) return;
             _currentIndexTabButton = index;
-            foreach (var uiPanelOptionBase in listPanelOptionBase)
+            foreach (var uiPanelOptionBase in _listPanelOptionBase)
             {
                 uiPanelOptionBase.Show(false);
             }
 
-            var selected = listPanelOptionBase[index];
+            var selected = _listPanelOptionBase[index];
             if (selected == null) return;
             selected.Show(true);
         }
@@ -226,9 +226,9 @@ namespace GGemCo2DCore
         {
             if (!show)
             {
-                if (listPanelOptionBase.Count <= 0) return false;
+                if (_listPanelOptionBase.Count <= 0) return false;
                 // 변경한 내역이 있는지 체크한 후 닫기
-                foreach (var uiPanelOptionBase in listPanelOptionBase)
+                foreach (var uiPanelOptionBase in _listPanelOptionBase)
                 {
                     if (uiPanelOptionBase.IsDirty)
                     {

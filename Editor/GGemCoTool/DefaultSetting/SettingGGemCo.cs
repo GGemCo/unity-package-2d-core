@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.IO;
 using GGemCo2DCore;
 using UnityEditor;
@@ -15,7 +14,7 @@ namespace GGemCo2DCoreEditor
 
         public void OnGUI()
         {
-            Common.OnGUITitle(Title);
+            HelperEditorUI.OnGUITitle(Title);
 
             if (GUILayout.Button("설정 ScriptableObject 생성하기"))
             {
@@ -23,15 +22,15 @@ namespace GGemCo2DCoreEditor
             }
         }
 
-        private void CreateSettings()
+        public void CreateSettings(EditorSetupContext ctx = null)
         {
             foreach (var kvp in ConfigScriptableObject.SettingsTypes)
             {
-                CreateOrSelectSettings(kvp.Key, kvp.Value);
+                CreateOrSelectSettings(kvp.Key, kvp.Value, ctx);
             }
         }
 
-        private void CreateOrSelectSettings(string fileName, Type type)
+        private void CreateOrSelectSettings(string fileName, Type type, EditorSetupContext ctx = null)
         {
             if (!Directory.Exists(SettingsFolder))
                 Directory.CreateDirectory(SettingsFolder);
@@ -43,7 +42,7 @@ namespace GGemCo2DCoreEditor
             {
                 Selection.activeObject = existing;
                 EditorUtility.FocusProjectWindow();
-                Debug.Log($"{fileName} 설정이 이미 존재합니다.");
+                HelperLog.Warn($"{fileName} 설정이 이미 존재합니다.", ctx);
             }
             else
             {
@@ -54,7 +53,8 @@ namespace GGemCo2DCoreEditor
 
                 Selection.activeObject = asset;
                 EditorUtility.FocusProjectWindow();
-                Debug.Log($"{fileName} ScriptableObject 가 생성되었습니다.");
+                
+                HelperLog.Info($"{fileName} ScriptableObject 가 생성되었습니다.", ctx);
             }
 
             // 특정 설정에 따라 define 심볼 업데이트
@@ -63,12 +63,14 @@ namespace GGemCo2DCoreEditor
                 var config = existing ?? AssetDatabase.LoadAssetAtPath<GGemCoSettings>(path);
                 if (config is GGemCoSettings settings)
                 {
-                    UpdateScriptingDefineSymbols(settings.useSpine2d);
+                    UpdateScriptingDefineSymbols(settings.useSpine2d, ctx);
                 }
             }
+
+            ctx?.Logger.Info($"[Add Setting Scriptable Object] ");
         }
 
-        private static void UpdateScriptingDefineSymbols(bool enable)
+        private static void UpdateScriptingDefineSymbols(bool enable, EditorSetupContext ctx = null)
         {
 #if UNITY_6000_0_OR_NEWER
             string symbols = PlayerSettings.GetScriptingDefineSymbols(NamedBuildTarget.Standalone);
@@ -95,7 +97,8 @@ namespace GGemCo2DCoreEditor
 #else
             PlayerSettings.SetScriptingDefineSymbolsForGroup(BuildTargetGroup.Standalone, symbols);
 #endif
-            Debug.Log($"Scripting Define Symbols updated: {symbols}");
+            
+            HelperLog.Info($"Scripting Define Symbols updated: {symbols}", ctx);
         }
     }
 }

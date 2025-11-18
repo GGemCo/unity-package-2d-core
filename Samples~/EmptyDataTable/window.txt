@@ -1,0 +1,25 @@
+﻿Uid	Name	UseInGame	DefaultActive	Ordering	IsInteraction	OpenWindowUid	CloseWindowUid	PrefabName
+1	Hud	N	N	0	N	0	0	UIWindowHud
+2	인벤토리	N	N	0	N	0	0	UIWindowInventory
+3	아이템 정보창	N	N	0	N	0	0	UIWindowItemInfo
+4	장비창	N	N	0	N	0	0	UIWindowEquip
+5	플레이어 정보창	N	N	0	N	0	0	UIWindowPlayerStatInfo
+6	아이템 나누기	N	N	0	N	0	0	UIWindowItemSplit
+7	플레이어 버프정보창	N	N	0	N	0	0	UIWindowPlayerBuffInfo
+8	퀵슬롯	N	N	0	N	0	0	UIWindowQuickSlot
+9	스킬	N	N	0	N	0	0	UIWindowSkill
+10	스킬 정보창	N	N	0	N	0	0	UIWindowSkillInfo
+11	인터렉션 대화창	N	N	0	N	0	0	UIWindowInteractionDialogue
+12	상점	N	N	0	N	0	0	UIWindowShop
+13	아이템 구매	N	N	0	N	0	0	UIWindowItemBuy
+14	창고	N	N	0	N	0	0	UIWindowStash
+15	상점 판매	N	N	0	N	0	0	UIWindowShopSale
+16	아이템 강화	N	N	0	N	0	0	UIWindowItemUpgrade
+17	아이템 분해	N	N	0	N	0	0	UIWindowItemSalvage
+18	아이템 제작	N	N	0	N	0	0	UIWindowItemCraft
+19	퀘스트 대사	N	N	0	N	0	0	UIWindowDialogue
+20	Hud 퀘스트 목록	N	N	0	N	0	0	UIWindowHudQuest
+21	퀘스트 보상 목록	N	N	0	N	0	0	UIWindowQuestReward
+22	세이브 데이터 불러오기	N	N	0	N	0	0	UIWindowLoadSaveData
+23	옵션	N	N	0	N	0	0	UIWindowOption
+24	시뮬레이션 퀵슬롯	N	N	0	N	0	0	UIWindowQuickSlotSimulation
