@@ -9,19 +9,24 @@ namespace GGemCo2DCore
 {
     public class UIDragHandler : MonoBehaviour, IBeginDragHandler, IDragHandler, IEndDragHandler
     {
-        private UIIcon _icon;
-        // 아이콘 이미지
+        // 드래그 대상 이미지
         private Image _image;
         // 드래그 하기전 위치
         private Vector3 _originalPosition;
         // 드래그 가능 여부
         private bool _isPossibleDrag = true;
+        private GameObject _canvas;
 
         private void Awake()
         {
-            _icon = GetComponent<UIIcon>();
             _image = GetComponent<Image>();
         }
+        protected virtual void Start()
+        {
+            if (SceneGame.Instance && SceneGame.Instance.canvasUI)
+                _canvas = SceneGame.Instance.canvasUI.gameObject;
+        }
+
 
         public void SetIsPossibleDrag(bool set) => _isPossibleDrag = set;
         public bool GetIsPossibleDrag() => _isPossibleDrag;
@@ -33,7 +38,7 @@ namespace GGemCo2DCore
         {
             if (!_isPossibleDrag) return;
 
-            transform.SetParent(_icon.sceneGame.canvasUI.gameObject.transform);
+            transform.SetParent(_canvas.transform);
             _image.raycastTarget = false;
 
             _originalPosition = transform.position;

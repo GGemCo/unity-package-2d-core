@@ -9,7 +9,7 @@ namespace GGemCo2DCore
     /// </summary>
     public class UIIcon : MonoBehaviour
     {
-        [Header("오브젝트")]
+        [Header(UIWindowConstants.TitleHeaderCommon)] 
         [Tooltip("개수를 표현할 텍스트")]
         public TextMeshProUGUI textCount;
         [Tooltip("쿨타임 게이지")]
@@ -41,7 +41,7 @@ namespace GGemCo2DCore
         // 아이콘 이미지
         protected Image ImageIcon;
         // 개수
-        private int _count;
+        protected int count;
         // 레벨
         private int _level;
         // 배웠는지
@@ -56,7 +56,6 @@ namespace GGemCo2DCore
         private RectTransform _rectTransform;
         protected bool PossibleClick;
 
-        public SceneGame sceneGame;
         private UIWindowManager _uiWindowManager;
         
         private Vector2 _slotSize;
@@ -65,7 +64,7 @@ namespace GGemCo2DCore
         {
             PossibleClick = true;
             uid = 0;
-            _count = 0;
+            count = 0;
             _level = 0;
             index = 0;
             slotIndex = 0;
@@ -91,8 +90,8 @@ namespace GGemCo2DCore
 
         protected virtual void Start()
         {
-            sceneGame = SceneGame.Instance;
-            _uiWindowManager = sceneGame.uIWindowManager;
+            if (SceneGame.Instance)
+                _uiWindowManager = SceneGame.Instance.uIWindowManager;
         }
 
         public void Initialize(UIWindow pwindow, UIWindowConstants.WindowUid pwindowUid, int pindex, int pslotIndex, 
@@ -208,17 +207,17 @@ namespace GGemCo2DCore
         /// 개수 추가하기
         /// </summary>
         /// <param name="value"></param>
-        public void AddCount(int value) => SetCount(_count + value);
+        public void AddCount(int value) => SetCount(count + value);
         /// <summary>
         /// 총 개수 가져오기
         /// </summary>
         /// <param name="value"></param>
-        public void SetCount(int value)
+        public virtual void SetCount(int value)
         {
-            _count = value;
+            count = value;
             if (textCount != null)
             {
-                textCount.text = _count <= 1 ? "" : _count.ToString();
+                textCount.text = count <= 1 ? "" : count.ToString();
             }
         }
         /// <summary>
@@ -379,7 +378,7 @@ namespace GGemCo2DCore
             _isLearn = value;
         }
         public int GetLevel() => _level;
-        public int GetCount() => _count;
+        public int GetCount() => count;
 
         public bool IsLearn() => _isLearn;
         public Sprite GetImageIconSprite() => ImageIcon.sprite;

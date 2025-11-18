@@ -113,4 +113,8 @@ namespace GGemCo2DCore
         }
 
     }
+    public static class EnumCache<T> where T : Enum
+    {
+        public static readonly T[] Values = (T[])Enum.GetValues(typeof(T));
+    }
 }

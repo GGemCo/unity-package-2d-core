@@ -86,7 +86,7 @@ namespace GGemCo2DCore
         public static class Images
         {
             /// <summary>Assets/{SDK}/DataAddressable/Images</summary>
-            internal static string RootImage => Combine(Root, "Images");
+            public static string RootImage => Combine(Root, "Images");
 
             /// <summary>Images/Parts (아이템 파츠)</summary>
             public static string Parts => Combine(RootImage, "Parts");
@@ -181,6 +181,14 @@ namespace GGemCo2DCore
                 var f = Normalize(folderName);
                 return Combine(RootMap, f);
             }
+        }
+        // -------------------------
+        // Prefab
+        // -------------------------
+        public static class Prefab
+        {
+            /// <summary>Assets/{SDK}/DataAddressable/Prefab</summary>
+            public static string RootPrefab => Combine(Root, "Prefab");
         }
 
         public static class Simulation

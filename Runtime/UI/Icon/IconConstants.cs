@@ -36,6 +36,8 @@ namespace GGemCo2DCore
             Item,
             Skill,
             Buff,
+            // todo 정리 필요
+            TcgCard
         }
         public enum Status
         {

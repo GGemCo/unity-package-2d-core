@@ -29,7 +29,10 @@
             QuestReward,
             SaveData,
             Option,
-            QuickSlotSimulation
+            QuickSlotSimulation,
+            TcgGameMenu,
+            TcgCardCollection,
+            TcgMyCardDeck
         }
 
         public const string TitleHeaderCommon = "[공통속성]";

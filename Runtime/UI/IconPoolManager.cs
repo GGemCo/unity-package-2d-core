@@ -55,21 +55,35 @@ namespace GGemCo2DCore
         {
             _setIconHandler = handler;
         }
+
         /// <summary>
-        /// 커스텀 빌드 전략을 반환. 기본은 null → Default 사용
+        /// 커스텀 빌드 전략을 반환.
+        /// 우선순위:
+        /// 1) PreLoad 전용 전략
+        /// 2) Registry 에 등록된 외부 전략 (다른 패키지 포함)
+        /// 3) Core 내부 기본 매핑 (Skill, ItemSalvage 등)
         /// </summary>
         private ISlotIconBuildStrategy GetSlotIconBuildStrategy()
         {
-            // Pre Load Slots 를 사용하면 예외처리 
-            if (_window.preLoadSlots.Length > 0)
+            if (_window == null)
+                return null;
+
+            // 1) PreLoadSlots 를 사용하는 경우는 예외적으로 고정 전략 사용
+            if (_window.preLoadSlots != null && _window.preLoadSlots.Length > 0)
                 return new SlotIconBuildStrategyPreLoad();
-            
+
+            // 2) 레지스트리에 등록된 외부/커스텀 전략 우선 사용
+            var registered = SlotIconBuildStrategyRegistry.Create(_window);
+            if (registered != null)
+                return registered;
+
+            // 3) Core 패키지에 하드코딩된 기본 전략 (기존 코드 유지)
             return _window.uid switch
             {
-                UIWindowConstants.WindowUid.Skill => new SlotIconBuildStrategySkill(),
+                UIWindowConstants.WindowUid.Skill       => new SlotIconBuildStrategySkill(),
                 UIWindowConstants.WindowUid.ItemSalvage => new SlotIconBuildStrategyItemSalvage(),
                 // UIWindowConstants.WindowUid.QuestReward => new SlotIconBuildStrategyQuestReward(),
-                _ => null,
+                _                                       => null,
             };
         }
         /// <summary>
