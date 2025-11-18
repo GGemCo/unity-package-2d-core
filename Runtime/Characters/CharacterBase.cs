@@ -173,7 +173,7 @@ namespace GGemCo2DCore
 
             Vector2 size = SceneGame.Instance.mapManager.GetCurrentMapSize();
             _mapSizeHeight = size.y;
-            Stop();
+            Stop(true);
         }
         /// <summary>
         /// 테이블에서 가져온 몬스터 정보 셋팅
