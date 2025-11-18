@@ -6,9 +6,3 @@
 210002	패스트 무브	FastMove	Buff	FastMove	0	STAT_MOVE_SPEED	INCREASE	50	10	200003	0.2	CharacterBottom	None	0
 210003	패스트 무브	FastMove	Buff	FastMove	0	STAT_MOVE_SPEED	INCREASE	60	10	200003	0.2	CharacterBottom	None	0
 210004	패스트 무브	FastMove	Buff	FastMove	0	STAT_MOVE_SPEED	INCREASE	70	10	200003	0.2	CharacterBottom	None	0
-# 일반														
-310001	넉백	KnockBack	DeBuff	KnockBack	0	KNOCK_BACK	NONE	0	2	0	0	None	None	0
-# 콤보 공격														
-410001	콤보 추가 공격력1	None	Buff	ComboAddAtk	0	STAT_ATK	INCREASE	0	0.6	0	0	0	0	0
-410002	콤보 추가 공격력2	None	Buff	ComboAddAtk	0	STAT_ATK	INCREASE	50	0.3	0	0	0	0	0
-410003	콤보 추가 공격력3	None	Buff	ComboAddAtk	0	STAT_ATK	INCREASE	100	0.6	0	0	0	0	0
