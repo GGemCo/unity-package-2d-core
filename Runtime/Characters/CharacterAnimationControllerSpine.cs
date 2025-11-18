@@ -162,11 +162,23 @@ namespace GGemCo2DCore
         {
             // GcLogger.Log("OnAnimationInterrupt gameobject: " + this.gameObject.name + " / animationName: " + entry.Animation.Name);
             if (SkeletonAnimation == null) return;
-            if (entry.Loop != true) 
+            
+            var animationName = entry.Animation.Name;
+            if (animationName == CurrentAnimationNameAttack)
             {
-                if (characterBase.IsStatusDead()) return;
-                characterBase.SetStatusIdle(); // 공격 상태 해제
-                PlayWaitAnimation();
+                characterBase.OnAnimationCompleteAttack();
+            }
+            else if (animationName == $"{CurrentAnimationNameAttack}_end")
+            {
+                characterBase.OnAnimationCompleteAttackEnd();
+            }
+            else if (animationName == ICharacterAnimationController.DeadAnim)
+            {
+                characterBase.OnAnimationCompleteDead();
+            }
+            else
+            {
+                characterBase.Stop();
             }
         }
         // /// <summary>
