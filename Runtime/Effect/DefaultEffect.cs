@@ -106,10 +106,13 @@ namespace GGemCo2DCore
             if (!_struckTableEffect.NeedRotation) return;
             
             float angle = Mathf.Atan2(directionByTarget.y, directionByTarget.x) * Mathf.Rad2Deg;
-            // 기본 방향이 "왼쪽(-X 방향)"일 경우, 90도 보정
-            if (vector2.x < 0)
+            // 기본 방향이 "왼쪽(-X 방향)"일 경우, 180도 보정
+            if (_struckTableEffect.DefaultDirection == ConfigCommon.DirectionType.Left)
             {
-                angle += 180;
+                if (vector2.x < 0)
+                {
+                    angle += 180;
+                }
             }
 
             // Transform의 Z축 회전 적용

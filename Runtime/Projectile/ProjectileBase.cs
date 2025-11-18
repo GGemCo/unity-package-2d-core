@@ -114,7 +114,6 @@ namespace GGemCo2DCore
 
             transform.position = StartPoint;
             UpdateFlipByDefaultDirection();
-            ApplyEffectRotationOnLaunch();
 
             Initialized = true;
         }
@@ -191,21 +190,18 @@ namespace GGemCo2DCore
             ProjectileEffect.SetFlip(ShouldFlip);
         }
 
-        protected void ApplyEffectRotationOnLaunch()
-        {
-            if (!ProjectileEffect) return;
-            ProjectileEffect.SetRotation(TargetPoint - StartPoint, Direction);
-        }
-
         protected void ApplyRotationByDelta(Vector2 delta)
         {
             // 이동 벡터 기준 Z-회전. Flip은 스프라이트 반전만 담당.
             if (delta.sqrMagnitude <= 0.0001f) return;
             float angle = Mathf.Atan2(delta.y, delta.x) * Mathf.Rad2Deg;
-            // 기본 방향이 "왼쪽(-X 방향)"일 경우, 90도 보정
+            // 기본 방향이 "왼쪽(-X 방향)"일 경우, 180도 보정
             if (StruckEffect.DefaultDirection == ConfigCommon.DirectionType.Left)
             {
-                angle += 180;
+                if (Direction.x < 0)
+                {
+                    angle += 180;
+                }
             }
             transform.rotation = Quaternion.Euler(0f, 0f, angle);
         }
