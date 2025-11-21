@@ -1,0 +1,5 @@
+﻿Uid	Memo	NpcUid	Type	Value	Rate
+# 나무					
+10001	Tree1	211001	ItemDropGroupUid	10001	100
+# 광물					
+10002	Gold1	212001	ItemDropGroupUid	10002	100
