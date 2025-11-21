@@ -125,7 +125,20 @@ namespace GGemCo2DCore
             GameObject managerContainer = new GameObject("Managers");
 
             calculateManager = CreateManager<CalculateManager>(managerContainer);
-            mapManager = CreateManager<MapManager>(managerContainer);
+            
+            var useMap = AddressableLoaderSettings.Instance.mapSettings.useMap;
+            if (useMap)
+            {
+                mapManager = CreateManager<MapManager>(managerContainer);
+            }
+            else
+            {
+                if (bgBlackForMapLoading)
+                {
+                    bgBlackForMapLoading.SetActive(false);
+                }
+            }
+            
             saveDataManager = CreateManager<SaveDataManager>(managerContainer);
             damageTextManager = CreateManager<DamageTextManager>(managerContainer);
             uIIconCoolTimeManager = CreateManager<UIIconCoolTimeManager>(managerContainer);
