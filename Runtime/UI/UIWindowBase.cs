@@ -21,7 +21,7 @@ namespace GGemCo2DCore
         private UIWindowFade _uiWindowFade;
         private StruckTableWindow _struckTableWindow;
         private InteractionManager _interactionManager;
-        public SceneGame SceneGame;
+        [HideInInspector] public SceneGame SceneGame;
 
         protected virtual void Awake()
         {

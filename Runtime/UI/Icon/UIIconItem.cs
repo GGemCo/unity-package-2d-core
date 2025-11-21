@@ -83,7 +83,7 @@ namespace GGemCo2DCore
         public void OnPointerExit(PointerEventData eventData)
         {
             // GcLogger.Log("OnPointerExit "+eventData);
-            _uiWindowItemInfo.Show(false);
+            _uiWindowItemInfo?.Show(false);
             ShowSelected(false);
         }
 

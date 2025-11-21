@@ -100,7 +100,7 @@ namespace GGemCo2DCore
         {
             UIWindow uiWindow = GetUIWindowByUid<UIWindow>(uid);
             if (uiWindow == null) {
-                GcLogger.LogError("UIWindow 컴포넌트가 없습니다. uid:"+uid);
+                GcLogger.LogError($"{nameof(UIWindow)} 컴포넌트가 없습니다. uid:"+uid);
                 return;
             }
 
@@ -117,7 +117,7 @@ namespace GGemCo2DCore
             UIWindow uiWindow = GetUIWindowByUid<UIWindow>(srcWindowUid);
             if (uiWindow == null)
             {
-                GcLogger.LogError("UIWindow 컴포넌트가 없습니다. uid:"+srcWindowUid);
+                GcLogger.LogError($"{nameof(UIWindow)} 컴포넌트가 없습니다. uid:"+srcWindowUid);
                 return null;
             }
             return uiWindow.GetIconByIndex(srcIndex);
@@ -137,7 +137,7 @@ namespace GGemCo2DCore
             UIWindow uiWindow = uiWindows[uid];
             if (uiWindow == null)
             {
-                GcLogger.LogError("UIWindow 컴포넌트가 없습니다. uid:"+windowUid);
+                GcLogger.LogError($"{nameof(UIWindow)} 컴포넌트가 없습니다. uid:"+windowUid);
                 return null;
             }
 
@@ -153,7 +153,7 @@ namespace GGemCo2DCore
             UIWindow uiWindow = GetUIWindowByUid<UIWindow>(windowUid);
             if (uiWindow == null)
             {
-                GcLogger.LogError("UIWindow 컴포넌트가 없습니다. uid:"+windowUid);
+                GcLogger.LogError($"{nameof(UIWindow)} 컴포넌트가 없습니다. uid:"+windowUid);
                 return;
             }
             uiWindow.DetachIcon(slotIndex);
