@@ -45,6 +45,21 @@ namespace GGemCo2DCore
             GoBackToSlot(droppedIcon);
         }
 
+        public void HandleDragInWindow(GameObject droppedIcon)
+        {
+            if (droppedIcon == null) return;
+
+            var dropped = droppedIcon.GetComponent<UIIcon>();
+            if (dropped == null || _dragDropStrategy == null)
+            {
+                GoBackToSlot(droppedIcon);
+                return;
+            }
+
+            _dragDropStrategy.HandleDragInWindow(_window, dropped);
+            GoBackToSlot(droppedIcon);
+        }
+
         private void GoBackToSlot(GameObject droppedIcon)
         {
             if (droppedIcon == null) return;

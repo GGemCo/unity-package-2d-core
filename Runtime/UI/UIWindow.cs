@@ -5,7 +5,7 @@ using UnityEngine.UI;
 namespace GGemCo2DCore
 {
     /// <summary>
-    /// 윈도우 
+    /// 윈도우, 아이콘 기능 포함
     /// </summary>
     public class UIWindow : UIWindowBase, IDropHandler
     {
@@ -96,6 +96,9 @@ namespace GGemCo2DCore
         /// <param name="targetIcon">드랍되는 곳에 있는 아이콘</param>
         public void OnEndDragInIcon(GameObject droppedIcon, GameObject targetIcon) =>
             DragDropHandler?.HandleDragInIcon(droppedIcon, targetIcon);
+        
+        public void OnEndDragInWindow(GameObject droppedIcon) =>
+            DragDropHandler?.HandleDragInWindow(droppedIcon);
 
         /// <summary>
         ///  window 밖에다 드래그앤 드랍 했을때 처리 

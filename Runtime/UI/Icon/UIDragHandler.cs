@@ -84,6 +84,13 @@ namespace GGemCo2DCore
                     targetUiIcon.window.OnEndDragInIcon(droppedIcon, targetIcon);
                     return;
                 }
+                // 아이콘이 아니고, 윈도우에 드랍했을때 처리
+                var targetWindow = targetIcon.GetComponent<UIWindow>();
+                if (targetWindow != null)
+                {
+                    targetWindow.OnEndDragInWindow(droppedIcon);
+                    return;
+                }
             }
             GameObject targetSlot = droppedUiIcon.window.slots[droppedUiIcon.slotIndex];
             droppedIcon.transform.SetParent(targetSlot.transform);
