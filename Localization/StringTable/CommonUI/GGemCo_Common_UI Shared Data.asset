@@ -35,6 +35,10 @@ MonoBehaviour:
     m_Key: Accept
     m_Metadata:
       m_Items: []
+  - m_Id: 49394783103262720
+    m_Key: Delete
+    m_Metadata:
+      m_Items: []
   - m_Id: 36299457454710784
     m_Key: ui_date_weekday_sunday
     m_Metadata:

@@ -76,15 +76,15 @@ namespace GGemCo2DCore
         public void OnPointerEnter(PointerEventData eventData)
         {
             // GcLogger.Log("OnPointerEnter "+eventData);
-            window.ShowItemInfo(this);
-            ShowSelected(true);
+            window.ShowItemInfo(true, this);
+            ShowOverImage(true);
         }
 
         public void OnPointerExit(PointerEventData eventData)
         {
             // GcLogger.Log("OnPointerExit "+eventData);
-            _uiWindowItemInfo?.Show(false);
-            ShowSelected(false);
+            window.ShowItemInfo(false);
+            ShowOverImage(false);
         }
 
         public void OnPointerClick(PointerEventData eventData)

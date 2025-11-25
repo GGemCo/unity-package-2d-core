@@ -30,9 +30,12 @@
             SaveData,
             Option,
             QuickSlotSimulation,
+            InputField,
             TcgGameMenu,
             TcgCardCollection,
-            TcgMyCardDeck
+            TcgMyDeck,
+            TcgMyDeckCard,
+            TcgCardInfo
         }
 
         public const string TitleHeaderCommon = "[공통속성]";

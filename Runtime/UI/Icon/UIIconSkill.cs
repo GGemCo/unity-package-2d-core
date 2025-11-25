@@ -82,12 +82,14 @@ namespace GGemCo2DCore
         {
             // GcLogger.Log("OnPointerEnter "+eventData);
             // uiWindowSkillInfo.SetSkillUid(uid);
+            ShowOverImage(true);
         }
 
         public void OnPointerExit(PointerEventData eventData)
         {
             // GcLogger.Log("OnPointerExit "+eventData);
             // uiWindowSkillInfo.Show(false);
+            ShowOverImage(false);
         }
 
         public void OnPointerClick(PointerEventData eventData)

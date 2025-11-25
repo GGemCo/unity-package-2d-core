@@ -343,21 +343,25 @@ namespace GGemCo2DCore
             
         }
 
-        public void ShowOverIconImage(bool show, Vector2 position, Vector2 slotSize)
+        public void ShowOverIconImage(bool show, Vector2? position = null, Vector2? slotSize = null)
         {
             if (_imageIconOver == null)
-            {
-                // GcLogger.LogError($"{nameof(prefabIconOver)}가 등록되지 않았습니다.");
                 return;
-            }
+
             _imageIconOver.gameObject.SetActive(show);
-            if (show)
-            {
-                _imageIconOver.gameObject.transform.position = position;
-                _imageIconOver.rectTransform.sizeDelta = slotSize;
-            }
+
+            if (!show) return;
+
+            // position이 null이면 기존 위치 유지
+            if (position.HasValue)
+                _imageIconOver.rectTransform.position = position.Value;
+
+            // size가 null이면 기존 사이즈 유지
+            if (slotSize.HasValue)
+                _imageIconOver.rectTransform.sizeDelta = slotSize.Value;
         }
-        public void ShowSelectIconImage(bool show, Vector2 position, Vector2 slotSize)
+
+        public void ShowSelectIconImage(bool show, Vector2? position = null, Vector2? slotSize = null)
         {
             if (_imageIconSelected == null)
             {
@@ -367,8 +371,13 @@ namespace GGemCo2DCore
             _imageIconSelected.gameObject.SetActive(show);
             if (show)
             {
-                _imageIconSelected.gameObject.transform.position = position;
-                _imageIconSelected.rectTransform.sizeDelta = slotSize;
+                // position이 null이면 기존 위치 유지
+                if (position.HasValue)
+                    _imageIconSelected.rectTransform.position = position.Value;
+
+                // size가 null이면 기존 사이즈 유지
+                if (slotSize.HasValue)
+                    _imageIconSelected.rectTransform.sizeDelta = slotSize.Value;
             }
         }
     }

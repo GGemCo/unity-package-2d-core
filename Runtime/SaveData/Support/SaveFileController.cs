@@ -68,12 +68,18 @@ namespace GGemCo2DCore
 
         public string GetSaveFilePath(int slot, string fileName = "")
         {
-            var newFileName = $"SaveSlot{slot}.json";
+            var saveDirectory = Path.Combine(_saveDirectory, $"{slot}");
+            if (!Directory.Exists(saveDirectory))
+            {
+                Directory.CreateDirectory(saveDirectory);
+            }
+            
+            var newFileName = $"SaveSlot.json";
             if (!string.IsNullOrEmpty(fileName))
             {
                 newFileName = $"{fileName}.json";
             }
-            return Path.Combine(_saveDirectory, newFileName);
+            return Path.Combine(saveDirectory, newFileName);
         }
     }
 }

@@ -33,8 +33,8 @@ namespace GGemCo2DCore
         {
             if (droppedIcon == null || targetIcon == null) return;
 
-            var dropped = droppedIcon.GetComponent<UIIcon>();
-            var target = targetIcon.GetComponent<UIIcon>();
+            var dropped = droppedIcon.GetComponentInParent<UIIcon>();
+            var target = targetIcon.GetComponentInParent<UIIcon>();
             if (dropped == null || target == null || _dragDropStrategy == null)
             {
                 GoBackToSlot(droppedIcon);

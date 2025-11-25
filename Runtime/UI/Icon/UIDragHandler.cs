@@ -1,4 +1,5 @@
-﻿using UnityEngine;
+﻿using System.Collections.Generic;
+using UnityEngine;
 using UnityEngine.EventSystems;
 #if GGEMCO_USE_NEW_INPUT
 using UnityEngine.InputSystem;
@@ -9,17 +10,18 @@ namespace GGemCo2DCore
 {
     public class UIDragHandler : MonoBehaviour, IBeginDragHandler, IDragHandler, IEndDragHandler
     {
-        // 드래그 대상 이미지
-        private Image _image;
         // 드래그 하기전 위치
         private Vector3 _originalPosition;
         // 드래그 가능 여부
         private bool _isPossibleDrag = true;
         private GameObject _canvas;
+        
+        private List<Graphic> _graphics = new List<Graphic>();
 
         private void Awake()
         {
-            _image = GetComponent<Image>();
+            // 하위 오브젝트 Graphic 컴포넌트 모두 수집
+            GetComponentsInChildren(true, _graphics);
         }
         protected virtual void Start()
         {
@@ -39,7 +41,7 @@ namespace GGemCo2DCore
             if (!_isPossibleDrag) return;
 
             transform.SetParent(_canvas.transform);
-            _image.raycastTarget = false;
+            SetRaycastTargets(false);
 
             _originalPosition = transform.position;
         }
@@ -64,7 +66,7 @@ namespace GGemCo2DCore
         public void OnEndDrag(PointerEventData eventData)
         {
             if (!_isPossibleDrag) return;
-            _image.raycastTarget = true;
+            SetRaycastTargets(true);
 
             GameObject droppedIcon = eventData.pointerDrag;
             UIIcon droppedUiIcon = droppedIcon.GetComponent<UIIcon>();
@@ -78,14 +80,14 @@ namespace GGemCo2DCore
                     droppedUiIcon.window.OnEndDragOutWindow(eventData, droppedIcon, targetIcon, _originalPosition);
                     return;
                 }
-                UIIcon targetUiIcon = targetIcon.GetComponent<UIIcon>();
+                UIIcon targetUiIcon = targetIcon.GetComponentInParent<UIIcon>();
                 if (targetUiIcon != null && targetUiIcon.window != null)
                 {
                     targetUiIcon.window.OnEndDragInIcon(droppedIcon, targetIcon);
                     return;
                 }
                 // 아이콘이 아니고, 윈도우에 드랍했을때 처리
-                var targetWindow = targetIcon.GetComponent<UIWindow>();
+                var targetWindow = targetIcon.GetComponentInParent<UIWindow>();
                 if (targetWindow != null)
                 {
                     targetWindow.OnEndDragInWindow(droppedIcon);
@@ -97,5 +99,16 @@ namespace GGemCo2DCore
             droppedIcon.transform.position = _originalPosition;
         }
         public Vector3 GetOriginalPosition() => _originalPosition;
+
+        private void SetRaycastTargets(bool enable)
+        {
+            var image = GetComponent<Image>();
+            if (image != null) image.raycastTarget = enable;
+            
+            foreach (var g in _graphics)
+            {
+                g.raycastTarget = enable;
+            }
+        }
     }
 }

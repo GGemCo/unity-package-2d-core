@@ -16,8 +16,6 @@ namespace GGemCo2DCore
         public Image imageCoolTimeGauge;
         [Tooltip("잠금 표시 이미지")]
         public Image imageLock;
-
-        private bool _isSelected;
         
         // 윈도우 
         [HideInInspector] public UIWindow window;
@@ -30,16 +28,20 @@ namespace GGemCo2DCore
         // 고유번호 (아이템일때는 아이템 고유번호)
         [HideInInspector] public int uid;
         
+        protected bool PossibleClick;
+        protected IconConstants.Type IconType;
+        // 아이콘 이미지
+        protected Image ImageIcon;
+        
+        private bool _showSelectedImage;
+        private bool _showOverImage;
+        
         // 부모 윈도우 uid
         private UIWindowConstants.WindowUid _parentWindowUid;
         // 부모 아이콘 슬롯 index
         private int _parentSlotIndex;
-        
-        protected IconConstants.Type IconType;
         private IconConstants.Status _iconStatus;
-
-        // 아이콘 이미지
-        protected Image ImageIcon;
+        private bool _isSelected;
         // 개수
         protected int count;
         // 레벨
@@ -54,8 +56,6 @@ namespace GGemCo2DCore
         // 드래그 핸들러
         private UIDragHandler _dragHandler;
         private RectTransform _rectTransform;
-        protected bool PossibleClick;
-
         private UIWindowManager _uiWindowManager;
         
         private Vector2 _slotSize;
@@ -104,6 +104,8 @@ namespace GGemCo2DCore
             _slotSize = slotSize;
             SetCount(0);
             ChangeIconImageSize(iconSize, slotSize);
+            _showSelectedImage = window.showSelectedIconImage;
+            _showOverImage = window.showOverIconImage;
         }
 
         public bool IsItem() => IconType == IconConstants.Type.Item;
@@ -247,7 +249,7 @@ namespace GGemCo2DCore
         /// <summary>
         /// 아이템 정보 지우기
         /// </summary>
-        public void ClearIconInfos()
+        public virtual void ClearIconInfos()
         {
             SceneGame.Instance.uIIconCoolTimeManager.ResetCoolTime(windowUid, uid);
             
@@ -316,18 +318,15 @@ namespace GGemCo2DCore
         public void SetSelected(bool selected)
         {
             _isSelected = selected;
-            ShowSelected(selected);
-            if (!_uiWindowManager) return;
+            if (!_showSelectedImage || !_uiWindowManager) return;
             _uiWindowManager.ShowSelectIconImage(selected, gameObject.transform.position, _slotSize);
         }
         public bool IsSelected() => _isSelected;
 
-        protected void ShowSelected(bool selected)
+        protected void ShowOverImage(bool show)
         {
-            // 선택된 아이콘이면 끄지 않는다.
-            if (_isSelected && !selected) return;
-            if (!_uiWindowManager) return;
-            _uiWindowManager.ShowOverIconImage(selected, gameObject.transform.position, _slotSize);
+            if (!_showOverImage || !_uiWindowManager) return;
+            _uiWindowManager.ShowOverIconImage(show, gameObject.transform.position, _slotSize);
         }
         public virtual ItemConstants.PartsType GetPartsType()
         {

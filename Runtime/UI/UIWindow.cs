@@ -15,6 +15,10 @@ namespace GGemCo2DCore
         public IconConstants.Type iconType;
         [Tooltip("사용할 최대 아이콘 개수")]
         public int maxCountIcon;
+        [Tooltip("슬롯 프리팹")]
+        public GameObject slotPrefab;
+        [Tooltip("아이콘 프리팹")]
+        public GameObject iconPrefab;
         [Tooltip("윈도우 On/Off 시 fade in/Out 효과 사용 여부")]
         [HideInInspector] public GameObject[] slots;
         [HideInInspector] public GameObject[] icons;
@@ -27,6 +31,11 @@ namespace GGemCo2DCore
         public GameObject[] preLoadSlots;
         [Tooltip("icon 이 들어갈 panel")]
         public GridLayoutGroup containerIcon;
+        
+        [Tooltip("아이콘 선택 시 이미지 표시 여부")]
+        public bool showSelectedIconImage = true;
+        [Tooltip("아이콘 마우스 오버 이미지 표시 여부")]
+        public bool showOverIconImage = true;
         
         protected UIIcon selectedIcon;
         

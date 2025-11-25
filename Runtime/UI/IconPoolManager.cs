@@ -127,6 +127,8 @@ namespace GGemCo2DCore
                 uiIcon.ClearIconInfos();
             }
             
+            // 선택 표시 지워주기
+            _window.RemoveSelectedIcon();
             // 아이콘 정보 세팅 후, 전략으로 후처리
             _setIconHandler?.OnDetachIcon(_window, slotIndex);
         }

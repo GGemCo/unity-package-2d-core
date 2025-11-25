@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using UnityEngine;
 
 namespace GGemCo2DCore
 {
@@ -36,8 +37,9 @@ namespace GGemCo2DCore
             Item,
             Skill,
             Buff,
-            // todo 정리 필요
-            TcgCard
+            TcgCard,
+            TcgMyDeck,
+            TcgMyDeckCard,
         }
         public enum Status
         {
@@ -45,6 +47,13 @@ namespace GGemCo2DCore
             Normal,
             Lock,
             Disable
+        }
+
+        public static GameObject LoadByIconType(Type iconType)
+        { 
+            return iconType == Type.Skill
+            ? ConfigResources.IconSkill.Load()
+            : ConfigResources.IconItem.Load();
         }
     }
 }

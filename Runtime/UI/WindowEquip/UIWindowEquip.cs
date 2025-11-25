@@ -83,10 +83,19 @@ namespace GGemCo2DCore
         /// <summary>
         /// 아이템 정보 보기
         /// </summary>
+        /// <param name="show"></param>
         /// <param name="icon"></param>
-        public override void ShowItemInfo(UIIcon icon)
+        public override void ShowItemInfo(bool show, UIIcon icon = null)
         {
-            uIWindowItemInfo.SetItemUid(icon.uid, icon.gameObject, UIWindowItemInfo.PositionType.Right, slotSize);
+            if (show)
+            {
+                if (icon == null) return;
+                uIWindowItemInfo.SetItemUid(icon.uid, icon.gameObject, UIWindowItemInfo.PositionType.Right, slotSize);
+            }
+            else
+            {
+                uIWindowItemInfo.Show(false);
+            }
         }
     }
 }

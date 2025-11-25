@@ -1,7 +1,4 @@
-﻿using System.Collections;
-using System.IO;
-using Newtonsoft.Json;
-using UnityEngine;
+﻿using Newtonsoft.Json;
 
 namespace GGemCo2DCore
 {

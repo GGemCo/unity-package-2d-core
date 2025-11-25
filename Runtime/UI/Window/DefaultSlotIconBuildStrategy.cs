@@ -16,10 +16,8 @@ namespace GGemCo2DCore
                 return;
             }
             if (AddressableLoaderPrefabCommon.Instance == null) return;
-            GameObject iconPrefab = iconType == IconConstants.Type.Skill
-                ? ConfigResources.IconSkill.Load()
-                : ConfigResources.IconItem.Load();
-            GameObject slotPrefab = ConfigResources.Slot.Load();
+            GameObject iconPrefab = window.iconPrefab != null ? window.iconPrefab : IconConstants.LoadByIconType(iconType);
+            GameObject slotPrefab = window.slotPrefab != null ? window.slotPrefab : ConfigResources.Slot.Load();
 
             for (int i = 0; i < maxCount; i++)
             {

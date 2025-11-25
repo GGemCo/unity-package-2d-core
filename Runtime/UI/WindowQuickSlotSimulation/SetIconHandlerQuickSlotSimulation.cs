@@ -24,8 +24,6 @@ namespace GGemCo2DCore
             
             if (!icon.IsSelected()) return;
             // 선택되어있던 툴일 경우
-            // 선택 표시 지워주기
-            window.RemoveSelectedIcon();
             // 툴 장착 해제하기
             var player = SceneGame.Instance.player?.GetComponent<Player>();
             if (player == null) return;

@@ -169,7 +169,7 @@ namespace GGemCo2DCore
             return gameObject.activeSelf;
         }
 
-        public virtual void ShowItemInfo(UIIcon icon)
+        public virtual void ShowItemInfo(bool show, UIIcon icon = null)
         {
         }
     }

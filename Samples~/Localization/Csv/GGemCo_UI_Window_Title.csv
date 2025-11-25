@@ -1,24 +1,28 @@
 Key,Shared Comments,English(en),Korean(ko)
-UIWindowHud,,Hud,Hud
-UIWindowInventory,,Inventory,인벤토리
-UIWindowItemInfo,,ItemInfo,아이템 정보창
-UIWindowEquip,,Equip,장비창
-UIWindowPlayerStatInfo,,PlayerStatInfo,플레이어 정보창
-UIWindowItemSplit,,ItemSplit,아이템 나누기
-UIWindowPlayerBuffInfo,,PlayerBuffInfo,플레이어 버프정보창
-UIWindowQuickSlot,,QuickSlot,퀵슬롯
-UIWindowSkill,,Skill,스킬
-UIWindowSkillInfo,,SkillInfo,스킬 정보창
-UIWindowInteractionDialogue,,InteractionDialogue,인터렉션 대화창
-UIWindowShop,,Shop,상점
-UIWindowItemBuy,,ItemBuy,아이템 구매
-UIWindowStash,,Stash,창고
-UIWindowShopSale,,ShopSale,상점 판매
-UIWindowItemUpgrade,,ItemUpgrade,아이템 강화
-UIWindowItemSalvage,,ItemSalvage,아티메 분해
-UIWindowItemCraft,,ItemCraft,아이템 제작
-UIWindowDialogue,,Dialogue,퀘스트 대사
-UIWindowHudQuest,,HudQuest,Hud 퀘스트 목록
-UIWindowQuestReward,,QuestReward,퀘스트 보상 목록
-UIWindowLoadSaveData,,LoadSaveData,세이브 데이터 불러오기
-UIWindowOption,,Option,옵션
+"UIWindowHud","","Hud","Hud"
+"UIWindowInventory","","Inventory","인벤토리"
+"UIWindowItemInfo","","ItemInfo","아이템 정보창"
+"UIWindowEquip","","Equip","장비창"
+"UIWindowPlayerStatInfo","","PlayerStatInfo","플레이어 정보창"
+"UIWindowItemSplit","","ItemSplit","아이템 나누기"
+"UIWindowPlayerBuffInfo","","PlayerBuffInfo","플레이어 버프정보창"
+"UIWindowQuickSlot","","QuickSlot","퀵슬롯"
+"UIWindowSkill","","Skill","스킬"
+"UIWindowSkillInfo","","SkillInfo","스킬 정보창"
+"UIWindowInteractionDialogue","","InteractionDialogue","인터렉션 대화창"
+"UIWindowShop","","Shop","상점"
+"UIWindowItemBuy","","ItemBuy","아이템 구매"
+"UIWindowStash","","Stash","창고"
+"UIWindowShopSale","","ShopSale","상점 판매"
+"UIWindowItemUpgrade","","ItemUpgrade","아이템 강화"
+"UIWindowItemSalvage","","ItemSalvage","아이템 분해"
+"UIWindowItemCraft","","ItemCraft","아이템 제작"
+"UIWindowDialogue","","Dialogue","퀘스트 대사"
+"UIWindowHudQuest","","HudQuest","Hud 퀘스트 목록"
+"UIWindowQuestReward","","QuestReward","퀘스트 보상 목록"
+"UIWindowLoadSaveData","","LoadSaveData","세이브 데이터 불러오기"
+"UIWindowOption","","Option","옵션"
+"UIWindowTcgGameMenu","","Game Menu","게임 메뉴"
+"UIWindowCardCollection","","Card Collection List","카드 콜렉션"
+"UIWindowMyDeck","","My Deck List","나의 덱"
+"UIWindowCardInfo","","Card Info","카드 정보창"

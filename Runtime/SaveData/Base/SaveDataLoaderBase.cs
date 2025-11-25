@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections;
 using System.IO;
-using Newtonsoft.Json;
 using UnityEngine;
 
 namespace GGemCo2DCore
@@ -31,7 +30,7 @@ namespace GGemCo2DCore
         /// <summary>
         /// JSON 파일을 읽어오면서 진행률을 업데이트
         /// </summary>
-        public IEnumerator LoadData(System.Action<float> onProgressUpdate)
+        public IEnumerator LoadData(Action<float> onProgressUpdate)
         {
             int slotIndex = PlayerPrefsManager.LoadSaveDataSlotIndex();
 
