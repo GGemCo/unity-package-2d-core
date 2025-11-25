@@ -8,13 +8,13 @@ namespace GGemCo2DCore
     /// </summary>
     public class SaveFileController
     {
-        private readonly string saveDirectory;
-        private readonly int maxSaveSlotCount;
+        private readonly string _saveDirectory;
+        private readonly int _maxSaveSlotCount;
 
         public SaveFileController(string saveDirectory, int maxSaveSlotCount)
         {
-            this.saveDirectory = saveDirectory;
-            this.maxSaveSlotCount = maxSaveSlotCount;
+            _saveDirectory = saveDirectory;
+            _maxSaveSlotCount = maxSaveSlotCount;
             Directory.CreateDirectory(saveDirectory);
         }
         /// <summary>
@@ -64,7 +64,16 @@ namespace GGemCo2DCore
             GcLogger.Log($"데이터 삭제 완료: 슬롯 {slot}");
         }
 
-        private bool IsValidSlot(int slot) => slot >= 1 && slot <= maxSaveSlotCount;
-        public string GetSaveFilePath(int slot) => Path.Combine(saveDirectory, $"SaveSlot{slot}.json");
+        private bool IsValidSlot(int slot) => slot >= 1 && slot <= _maxSaveSlotCount;
+
+        public string GetSaveFilePath(int slot, string fileName = "")
+        {
+            var newFileName = $"SaveSlot{slot}.json";
+            if (!string.IsNullOrEmpty(fileName))
+            {
+                newFileName = $"{fileName}.json";
+            }
+            return Path.Combine(_saveDirectory, newFileName);
+        }
     }
 }

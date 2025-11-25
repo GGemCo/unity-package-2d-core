@@ -4,19 +4,19 @@ namespace GGemCo2DCore
 {
     public sealed class SaveDataLoadStep : GameLoadStepBase
     {
-        private readonly SaveDataLoader _saveDataLoader;
+        private readonly SaveDataLoaderBase _saveDataLoaderBase;
 
-        public SaveDataLoadStep(int order,
+        public SaveDataLoadStep(string id, int order,
             string localizedKey,
-            SaveDataLoader saveDataLoader)
-            : base("core.savedata", order, localizedKey)
+            SaveDataLoaderBase saveDataLoader)
+            : base(id, order, localizedKey)
         {
-            _saveDataLoader = saveDataLoader;
+            _saveDataLoaderBase = saveDataLoader;
         }
 
         public override IEnumerator Run()
         {
-            yield return _saveDataLoader.LoadData(p =>
+            yield return _saveDataLoaderBase.LoadData(p =>
             {
                 // p: 0~1
                 progress = p;

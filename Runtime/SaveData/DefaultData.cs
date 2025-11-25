@@ -37,20 +37,21 @@ namespace GGemCo2DCore
     /// </summary>
     public abstract class DefaultData
     {
-        private int maxSlotCount = 0;
+        private int _maxSlotCount;
 
         protected int MaxSlotCount
         {
             get
             {
-                if (maxSlotCount <= 0)
-                    maxSlotCount = GetMaxSlotCount();
-                return maxSlotCount;
+                if (_maxSlotCount <= 0)
+                    _maxSlotCount = GetMaxSlotCount();
+                return _maxSlotCount;
             }
         }
+
         protected abstract int GetMaxSlotCount();
 
-        protected void SaveDatas()
+        protected virtual void SaveDatas()
         {
             SceneGame.Instance.saveDataManager.StartSaveData();
         }

@@ -197,6 +197,7 @@ namespace GGemCo2DCore
             var targetTables = ConfigAddressableTable.All; // 사용 중인 곳에서 구현(예시)
 
             Register(new LocalizationLoadStep(
+                "core.localization",
                 order: 220,
                 localizedKey: LocalizationConstants.Keys.Loading.TextTypeLocalization(),
                 localizationManager: loc,
@@ -260,6 +261,7 @@ namespace GGemCo2DCore
             ));
 
             Register(new SaveDataLoadStep(
+                "core.savedata",
                 order: 380,
                 localizedKey: LocalizationConstants.Keys.Loading.TextTypeSaveData(),
                 saveDataLoader: saveData
@@ -289,6 +291,7 @@ namespace GGemCo2DCore
                 getProgress: () => addrSettings.GetLoadProgress()
             ));
             Register(new LocalizationLoadStep(
+                "core.localization",
                 order: 220,
                 localizedKey: LocalizationConstants.Keys.Loading.TextTypeLocalization(),
                 localizationManager: loc,

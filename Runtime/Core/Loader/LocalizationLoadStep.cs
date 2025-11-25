@@ -1,18 +1,17 @@
 ﻿using System.Collections;
-using UnityEngine.Localization;
 
 namespace GGemCo2DCore
 {
     public sealed class LocalizationLoadStep : GameLoadStepBase
     {
-        private readonly LocalizationManager _loc;
+        private readonly LocalizationManagerBase _loc;
         private readonly string _localeCode;
 
-        public LocalizationLoadStep(int order,
+        public LocalizationLoadStep(string id, int order,
             string localizedKey,
-            LocalizationManager localizationManager,
+            LocalizationManagerBase localizationManager,
             string localeCode)
-            : base("core.localization", order, localizedKey)
+            : base(id, order, localizedKey)
         {
             _loc = localizationManager;
             _localeCode = localeCode;

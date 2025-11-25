@@ -26,7 +26,7 @@ namespace GGemCo2DCore
     /// <summary>
     /// 세이브 데이터 메인 매니저
     /// </summary>
-    public class SaveDataManager : MonoBehaviour
+    public class SaveDataManager : SaveDataManagerBase
     {
         public PlayerData Player { get; private set; }
         public InventoryData Inventory { get; private set; }
@@ -39,66 +39,13 @@ namespace GGemCo2DCore
         public ShopSaleData ShopSale { get; private set; }
         public GameTimeData GameTime { get; private set; }
 
-        private TableLoaderManager _tableLoaderManager;
-        private SlotMetaDatController _slotMetaDatController;
-        private SaveFileController _saveFileController;
-        private ThumbnailController _thumbnailController;
-        
-        // 최대 저장 슬롯 개수
-        private int _maxSaveSlotCount;
-        // 썸네일 width 
-        private int _thumbnailWidth;
-        // 게임 데이터 저장 경로
-        private string _saveDirectory;
-        // 썸네일 저장 경로
-        private string _thumbnailDirectory;
-
-        // 이 시간안에 저장 요청이 오면 기존 요청은 취소된다.
-        private float _saveDelay;
-        // 강제로 저장할 시간
-        private float _forceSaveInterval;
-        // 마지막 저장된 시간
-        private float _lastSaveTime;
-        // 현재 진행중인 slot index
-        private int _currentSaveSlot;
-        private bool _useSaveData;
-        private bool _useGameTime;
-
-        private void Awake()
-        {
-            _tableLoaderManager = TableLoaderManager.Instance;
-            if (_tableLoaderManager == null) return;
-
-            InitializeSaveDirectory();
-            InitializeControllerAndData();
-        }
-        /// <summary>
-        /// 기본 정보를 GGemCo Settings 에서 불러온다.
-        /// </summary>
-        private void InitializeSaveDirectory()
-        {
-            GGemCoSaveSettings saveSettings = AddressableLoaderSettings.Instance.saveSettings;
-            _useSaveData = saveSettings.UseSaveData;
-            _saveDelay = saveSettings.saveDataDelay;
-            _forceSaveInterval = saveSettings.saveDataForceSaveInterval;
-            _thumbnailWidth = saveSettings.saveDataThumbnailWidth;
-            _maxSaveSlotCount = saveSettings.saveDataMaxSlotCount;
-
-            _useGameTime = AddressableLoaderSettings.Instance.settings.useInGameTime;
-
-            _saveDirectory = saveSettings.SaveDataFolderName;
-            _thumbnailDirectory = saveSettings.SaveDataThumnailFolderName;
-            Directory.CreateDirectory(_saveDirectory);
-            Directory.CreateDirectory(_thumbnailDirectory);
-        }
         /// <summary>
         /// 슬롯 관리, 파일 관리, 썸네일 관리 매니저 초기화
         /// </summary>
-        private void InitializeControllerAndData()
+        protected override void InitializeData()
         {
-            _slotMetaDatController = new SlotMetaDatController(_saveDirectory, _maxSaveSlotCount);
-            _saveFileController = new SaveFileController(_saveDirectory, _maxSaveSlotCount);
-            _thumbnailController = new ThumbnailController(_thumbnailDirectory, _thumbnailWidth);
+            // 로드한 세이브 데이터 가져오기 
+            SaveDataContainer saveDataContainer = SaveDataLoader.Instance.GetSaveDataContainer();
             // 각 데이터 클래스 초기화
             Player = new PlayerData();
             Inventory = new InventoryData();
@@ -111,22 +58,17 @@ namespace GGemCo2DCore
             ShopSale = new ShopSaleData();
             GameTime = new GameTimeData();
 
-            _currentSaveSlot = PlayerPrefsManager.LoadSaveDataSlotIndex();
-            
-            // 로드한 세이브 데이터 가져오기 
-            SaveDataContainer saveDataContainer = SaveDataLoader.Instance.GetSaveDataContainer();
-
             // 초기화 실행
-            Player.Initialize(_tableLoaderManager, saveDataContainer);
-            Inventory.Initialize(_tableLoaderManager, saveDataContainer);
-            Equip.Initialize(_tableLoaderManager, saveDataContainer);
-            Quest.Initialize(_tableLoaderManager, saveDataContainer);
-            Skill.Initialize(_tableLoaderManager, saveDataContainer);
-            QuickSlot.Initialize(_tableLoaderManager, saveDataContainer);
-            QuickSlotSimulation.Initialize(_tableLoaderManager, saveDataContainer);
-            Stash.Initialize(_tableLoaderManager, saveDataContainer);
-            ShopSale.Initialize(_tableLoaderManager, saveDataContainer);
-            GameTime.Initialize(_tableLoaderManager, saveDataContainer);
+            Player.Initialize(tableLoaderManager, saveDataContainer);
+            Inventory.Initialize(tableLoaderManager, saveDataContainer);
+            Equip.Initialize(tableLoaderManager, saveDataContainer);
+            Quest.Initialize(tableLoaderManager, saveDataContainer);
+            Skill.Initialize(tableLoaderManager, saveDataContainer);
+            QuickSlot.Initialize(tableLoaderManager, saveDataContainer);
+            QuickSlotSimulation.Initialize(tableLoaderManager, saveDataContainer);
+            Stash.Initialize(tableLoaderManager, saveDataContainer);
+            ShopSale.Initialize(tableLoaderManager, saveDataContainer);
+            GameTime.Initialize(tableLoaderManager, saveDataContainer);
             
             // 외부 섹션 복원
             if (saveDataContainer?.Extensions != null)
@@ -139,72 +81,20 @@ namespace GGemCo2DCore
                 SaveRegistry.ApplyRestore(env);
             }
         }
-        private void Start()
-        {
-            _lastSaveTime = Time.time;
-            // 강제 저장 시작 
-            InvokeRepeating(nameof(ForceSave), _forceSaveInterval, _forceSaveInterval);
-        }
-        /// <summary>
-        /// 저장하기 시작
-        /// </summary>
-        public void StartSaveData()
-        {
-            // 데이터가 없으면 강제로 한번 저장하기 
-            SaveDataContainer saveDataContainer = SaveDataLoader.Instance.GetSaveDataContainer();
-            if (saveDataContainer == null)
-            {
-                SaveData();
-            }
-            else
-            {
-                CancelInvoke(nameof(SaveData));
-                Invoke(nameof(SaveData), _saveDelay);
-            }
-        }
-        /// <summary>
-        /// 강제 저장하기
-        /// </summary>
-        private void ForceSave()
-        {
-            if (Time.time - _lastSaveTime >= _forceSaveInterval)
-            {
-                // GcLogger.Log("강제 저장");
-                SaveData();
-            }
-        }
-
+        
         /// <summary>
         /// 현재 데이터를 선택한 슬롯에 저장 + 메타파일 업데이트
         /// </summary>
-        public void SaveData()
+        public override bool SaveData()
         {
-            if (!_useSaveData)
-            {
-                GcLogger.LogWarning($"저장 하기가 비활성화 상태 입니다. {ConfigDefine.NameSDK}SaveSettings 에서 활성화 시켜주세요.");
-                return;
-            }
-            if (_currentSaveSlot < 1 || _currentSaveSlot > _maxSaveSlotCount)
-            {
-                GcLogger.LogError("잘못된 슬롯 번호입니다.");
-                return;
-            }
-
-            string filePath = _saveFileController.GetSaveFilePath(_currentSaveSlot);
-            string thumbnailPath = _thumbnailController.GetThumbnailPath(_currentSaveSlot);
+            if (!base.SaveData()) return false;
+            
+            string filePath = saveFileController.GetSaveFilePath(currentSaveSlot);
+            string thumbnailPath = thumbnailController.GetThumbnailPath(currentSaveSlot);
 
             Inventory.ClearEmptyInfo();
             Stash.ClearEmptyInfo();
 
-            if (!_useGameTime)
-            {
-                GameTime = null;
-            }
-            else
-            {
-                GameTime.CurrentGameTime = SceneGame.Instance.gameTimeManager.NowSeconds();
-            }
-            
             // 외부 기여자에게 현재 상태 캡처 요청
             var env = BuildEnvelopeForSave();
             
@@ -228,38 +118,14 @@ namespace GGemCo2DCore
             // GcLogger.Log($"데이터가 저장되었습니다. 슬롯 {currentSaveSlot}");
             
             // 썸네일 캡처 후 저장
-            if (_thumbnailWidth > 0)
+            if (thumbnailWidth > 0)
             {
-                StartCoroutine(_thumbnailController.CaptureThumbnail(_currentSaveSlot));
+                StartCoroutine(thumbnailController.CaptureThumbnail(currentSaveSlot));
             }
             
             // 메타파일 업데이트
-            _slotMetaDatController.UpdateSlot(_currentSaveSlot, thumbnailPath, true, Player.CurrentLevel, filePath);
-        }
-        /// <summary>
-        /// 슬롯 삭제 + 메타파일 업데이트
-        /// </summary>
-        public void DeleteData(int slot)
-        {
-            string filePath = _saveFileController.GetSaveFilePath(slot);
-            string thumbnailPath = _thumbnailController.GetThumbnailPath(slot);
-
-            if (File.Exists(filePath)) File.Delete(filePath);
-            if (File.Exists(thumbnailPath)) File.Delete(thumbnailPath);
-            
-            _slotMetaDatController.DeleteSlot(slot);
-        }
-
-        private void OnDestroy()
-        {
-            
-        }
-        private SaveEnvelope BuildEnvelopeForSave()
-        {
-            var env = new SaveEnvelope();
-            var list = SaveRegistry.All;
-            for (int i = 0; i < list.Count; i++) list[i].Capture(env);
-            return env;
+            slotMetaDatController.UpdateSlot(currentSaveSlot, thumbnailPath, true, Player.CurrentLevel, filePath);
+            return true;
         }
     }
 }
