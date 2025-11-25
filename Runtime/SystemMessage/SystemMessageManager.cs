@@ -110,23 +110,32 @@ namespace GGemCo2DCore
         /// warning 메시지 보여주기
         /// </summary>
         /// <param name="message"></param>
-        public void ShowMessageWarning(string message)
+        /// <param name="args"></param>
+        public void ShowMessageWarning(string message, params object[] args)
         {
             if (string.IsNullOrEmpty(message)) return;
             SystemMessage systemMessage = GetDefaultSystemMessage();
             systemMessage.Type = MessageType.Warning;
             systemMessage.TextColor = _messageTypeColors[systemMessage.Type];
-            ShowMessage(message, systemMessage);
+            ShowMessage(message, systemMessage, args);
         }
         /// <summary>
         /// 시스템 메시지를 표시하는 함수
         /// </summary>
-        private void ShowMessage(string message, SystemMessage systemMessage)
+        private void ShowMessage(string message, SystemMessage systemMessage, params object[] args)
         {
             if (string.IsNullOrEmpty(message)) return;
+            
+            // 1) 로컬라이즈된 문자열 가져오기
             string messageLanguage = LocalizationManager.Instance.GetSystemByKey(message);
             if (string.IsNullOrEmpty(messageLanguage))
                 messageLanguage = message;
+
+            // 2) string.Format 적용 (파라미터가 있을 때만)
+            if (args != null && args.Length > 0)
+            {
+                messageLanguage = string.Format(messageLanguage, args);
+            }
             
             if (_messageCoroutine != null)
             {

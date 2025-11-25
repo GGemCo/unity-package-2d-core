@@ -304,6 +304,26 @@ MonoBehaviour:
     m_Localized: Saved as you went to sleep.
     m_Metadata:
       m_Items: []
+  - m_Id: 49655994172612608
+    m_Localized: You can create up to {0} decks.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 49655994172612609
+    m_Localized: Each deck can contain up to {0} cards.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 49655994172612610
+    m_Localized: You can add up to {0} copies of this card.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 49659232208855040
+    m_Localized: Delete Deck
+    m_Metadata:
+      m_Items: []
+  - m_Id: 49659232254992384
+    m_Localized: Are you sure you want to delete this deck?
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []

@@ -358,6 +358,26 @@ MonoBehaviour:
     m_Key: System_Save_Game_By_Sleep
     m_Metadata:
       m_Items: []
+  - m_Id: 49655994172612608
+    m_Key: Tcg_System_MaxDeckCount
+    m_Metadata:
+      m_Items: []
+  - m_Id: 49655994172612609
+    m_Key: Tcg_System_MaxCardCountInDeck
+    m_Metadata:
+      m_Items: []
+  - m_Id: 49655994172612610
+    m_Key: Tcg_System_MaxCardCopies
+    m_Metadata:
+      m_Items: []
+  - m_Id: 49659232208855040
+    m_Key: Tcg_Popup_DeleteDeck
+    m_Metadata:
+      m_Items: []
+  - m_Id: 49659232254992384
+    m_Key: Tcg_Popup_ConfirmDeleteDeckWarning
+    m_Metadata:
+      m_Items: []
   m_Metadata:
     m_Items: []
   m_KeyGenerator:
