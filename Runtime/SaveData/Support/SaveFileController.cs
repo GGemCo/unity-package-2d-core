@@ -74,10 +74,10 @@ namespace GGemCo2DCore
                 Directory.CreateDirectory(saveDirectory);
             }
             
-            var newFileName = $"SaveSlot.json";
+            var newFileName = $"{SaveDataConstants.DefaultFileName}";
             if (!string.IsNullOrEmpty(fileName))
             {
-                newFileName = $"{fileName}.json";
+                newFileName = $"{fileName}{SaveDataConstants.SaveDataFileExt}";
             }
             return Path.Combine(saveDirectory, newFileName);
         }
