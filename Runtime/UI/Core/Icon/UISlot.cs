@@ -7,6 +7,8 @@ namespace GGemCo2DCore
     /// </summary>
     public class UISlot : MonoBehaviour
     {
+        public bool isFiltering;
+        
         private UIWindow window;
         private UIWindowConstants.WindowUid windowUid;
         private int index;

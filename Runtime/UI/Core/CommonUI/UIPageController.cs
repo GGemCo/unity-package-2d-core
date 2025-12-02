@@ -1,4 +1,5 @@
-﻿using TMPro;
+﻿using System.Collections.Generic;
+using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -39,6 +40,12 @@ namespace GGemCo2DCore
         /// <summary>수집된 슬롯(GameObject) 리스트</summary>
         private GameObject[] _objects;
 
+        /// <summary>수집된 UISlot 컴포넌트 리스트</summary>
+        private UISlot[] _slots;
+
+        /// <summary>필터링 결과로 현재 보이는 슬롯들의 인덱스 버퍼</summary>
+        private readonly List<int> _visibleSlotIndices = new List<int>(128);
+
         /// <summary>현재 페이지 번호 (1부터 시작)</summary>
         private int _currentPage;
 
@@ -64,12 +71,19 @@ namespace GGemCo2DCore
             int len = uiSlots.Length;
 
             _objects = new GameObject[len];
+            _slots   = new UISlot[len];
 
-            // UISlot의 GameObject만 배열로 저장
+            // UISlot과 그 GameObject를 배열로 저장
             int idx = 0;
             for (int i = 0; i < uiSlots.Length; i++)
             {
-                _objects[idx++] = uiSlots[i].gameObject;
+                var slot = uiSlots[i];
+                _slots[idx]   = slot;
+                _objects[idx] = slot.gameObject;
+
+                // 필터 미적용 상태에서는 모두 보이도록 기본값 true
+                slot.isFiltering = true;
+                idx++;
             }
 
             // 최초 페이지 UI 구성
@@ -93,25 +107,64 @@ namespace GGemCo2DCore
                 return;
             }
 
-            int totalCount = _objects.Length;
-            int totalPage = Mathf.CeilToInt(totalCount / (float)countPerPage);
+            int totalSlotCount = _objects.Length;
+
+            // 현재 필터링 상태에서 보이는 슬롯 인덱스만 수집
+            _visibleSlotIndices.Clear();
+            for (int i = 0; i < totalSlotCount; i++)
+            {
+                var go   = _objects[i];
+                var slot = (_slots != null && i < _slots.Length) ? _slots[i] : null;
+
+                if (!go) continue;
+
+                // slot == null 이면 필터 없이 항상 보이는 것으로 처리
+                bool isVisibleByFilter = slot == null || slot.isFiltering;
+                if (isVisibleByFilter)
+                    _visibleSlotIndices.Add(i);
+            }
+
+            int filteredCount = _visibleSlotIndices.Count;
+
+            // 필터 결과가 없으면 모두 비활성 + "0/0"
+            if (filteredCount == 0)
+            {
+                for (int i = 0; i < totalSlotCount; i++)
+                {
+                    if (_objects[i])
+                        _objects[i].SetActive(false);
+                }
+
+                if (textPage != null)
+                    textPage.text = "0/0";
+
+                if (buttonPrev != null) buttonPrev.interactable = false;
+                if (buttonNext != null) buttonNext.interactable = false;
+                return;
+            }
+
+            int totalPage = Mathf.CeilToInt(filteredCount / (float)countPerPage);
 
             // 현재 페이지 범위 보정
             _currentPage = Mathf.Clamp(_currentPage, 1, totalPage);
 
             // 전체 슬롯 비활성화
-            for (int i = 0; i < totalCount; i++)
+            for (int i = 0; i < totalSlotCount; i++)
             {
-                _objects[i].SetActive(false);
+                if (_objects[i])
+                    _objects[i].SetActive(false);
             }
 
-            // 현재 페이지에 해당하는 슬롯만 활성화
-            int startIndex = (_currentPage - 1) * countPerPage;
-            int endIndex = Mathf.Min(startIndex + countPerPage, totalCount);
+            // 현재 페이지에 해당하는 "필터 통과 슬롯"만 활성화
+            int startIndexInFiltered = (_currentPage - 1) * countPerPage;
+            int endIndexInFiltered   = Mathf.Min(startIndexInFiltered + countPerPage, filteredCount);
 
-            for (int i = startIndex; i < endIndex; i++)
+            for (int i = startIndexInFiltered; i < endIndexInFiltered; i++)
             {
-                _objects[i].SetActive(true);
+                int slotIndex = _visibleSlotIndices[i];
+                var go = _objects[slotIndex];
+                if (go)
+                    go.SetActive(true);
             }
 
             // 페이지 텍스트 갱신
@@ -150,6 +203,12 @@ namespace GGemCo2DCore
         private void OnClickPrev()
         {
             _currentPage--;
+            UpdatePage();
+        }
+
+        public void ResetPage()
+        {
+            _currentPage = 1;
             UpdatePage();
         }
     }
