@@ -35,9 +35,12 @@
             TcgCardCollection,
             TcgMyDeck,
             TcgMyDeckCard,
-            TcgCardInfo
+            TcgCardInfo,
+            TcgField,
+            TcgEnemy,
+            TcgMyHand,
+            TcgBattleHud,
         }
-
         public const string TitleHeaderCommon = "[공통속성]";
         public const string TitleHeaderIndividual = "[개별속성]";
     }

@@ -30,6 +30,21 @@ namespace GGemCo2DCore
                 UIIcon uiIcon = iconObj.GetComponent<UIIcon>();
                 uiIcon.Initialize(window, window.uid, i, i, iconSize, slotSize);
                 icons[i] = iconObj;
+                
+                // container 의 Cell Size 와 슬롯의 Width/Height 를 비교하여 슬롯 스케일 조정
+                RectTransform slotRect = slotObj.GetComponent<RectTransform>();
+                Vector2 cellSize = container.cellSize;
+                Vector2 slotRectSize = slotRect.sizeDelta;
+
+                if (slotRectSize.x > 0f && slotRectSize.y > 0f)
+                {
+                    float scaleX = cellSize.x / slotRectSize.x;
+                    float scaleY = cellSize.y / slotRectSize.y;
+
+                    // 비율 왜곡을 막기 위해 가장 작은 값으로 균일 스케일 적용
+                    float uniformScale = Mathf.Min(scaleX, scaleY);
+                    slotObj.transform.localScale = new Vector3(uniformScale, uniformScale, 1f);
+                }
             }
         }
     }

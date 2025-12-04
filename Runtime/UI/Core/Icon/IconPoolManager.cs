@@ -279,9 +279,9 @@ namespace GGemCo2DCore
         {
             foreach (var icon in _window.icons)
             {
-                UIIconItem uiIconItem = icon.GetComponent<UIIconItem>();
-                if (!uiIconItem) continue;
-                DetachIcon(uiIconItem.slotIndex);
+                UIIcon uiIcon = icon.GetComponent<UIIcon>();
+                if (!uiIcon) continue;
+                DetachIcon(uiIcon.slotIndex);
             }
         }
     }
