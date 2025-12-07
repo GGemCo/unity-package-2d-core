@@ -203,5 +203,14 @@ namespace GGemCo2DCore
             systemMessage.TextColor = _messageTypeColors[systemMessage.Type];
             ShowMessage(message, systemMessage);
         }
+
+        public void ShowMessageError(string message)
+        {
+            if (string.IsNullOrEmpty(message)) return;
+            SystemMessage systemMessage = GetDefaultSystemMessage();
+            systemMessage.Type = MessageType.Error;
+            systemMessage.TextColor = _messageTypeColors[systemMessage.Type];
+            ShowMessage(message, systemMessage);
+        }
     }
 }
