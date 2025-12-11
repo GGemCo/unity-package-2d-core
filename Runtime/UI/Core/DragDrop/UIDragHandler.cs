@@ -23,7 +23,7 @@ namespace GGemCo2DCore
             // 하위 오브젝트 Graphic 컴포넌트 모두 수집
             GetComponentsInChildren(true, _graphics);
         }
-        protected virtual void Start()
+        protected void Start()
         {
             if (SceneGame.Instance && SceneGame.Instance.canvasUI)
                 _canvas = SceneGame.Instance.canvasUI.gameObject;
@@ -99,6 +99,11 @@ namespace GGemCo2DCore
             droppedIcon.transform.position = _originalPosition;
         }
         public Vector3 GetOriginalPosition() => _originalPosition;
+
+        public void SetOriginalPosition(Vector3 position)
+        {
+            _originalPosition = position;
+        }
 
         private void SetRaycastTargets(bool enable)
         {

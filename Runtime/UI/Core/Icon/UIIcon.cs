@@ -455,5 +455,10 @@ namespace GGemCo2DCore
         {
             return -1;
         }
+
+        public void SetOriginalPosition(Vector3 position)
+        {
+            _dragHandler.SetOriginalPosition(position);
+        }
     }
 }

@@ -111,6 +111,8 @@ namespace GGemCo2DCore
 
             // 기존 드래그(UIDragHandler)와 충돌 방지
             _uiIcon.SetDrag(false);
+            // 클릭 드래그 종료 후 위치 정리를 위해 추가. GoBackToSlot 함수에서 사용 됨 
+            _uiIcon.SetOriginalPosition(transform.position);
         }
 
         private void EndClickDrag()
