@@ -9,11 +9,15 @@ namespace GGemCo2DCore
             IconConstants.Type iconType, Vector2 slotSize, Vector2 iconSize, GameObject[] slots, GameObject[] icons)
         {
             if (AddressableLoaderSettings.Instance == null) return;
+            if (AddressableLoaderPrefabCommon.Instance == null) return;
             if (maxCount <= 0) return;
-            GameObject iconItem = ConfigResources.IconItem.Load();
-            if (iconItem == null) return;
+            
+            GameObject iconPrefab = window.iconPrefab != null ? window.iconPrefab : IconConstants.LoadByIconType(iconType);
+            
+            if (iconPrefab == null) return;
             for (int i = 0; i < maxCount; i++)
             {
+                if (i >= window.preLoadSlots.Length) continue;
                 GameObject slotObject = window.preLoadSlots[i];
                 if (slotObject == null) continue;
                 
@@ -22,11 +26,11 @@ namespace GGemCo2DCore
                 uiSlot.Initialize(window, window.uid, i, slotSize);
                 slots[i] = slotObject;
                 
-                GameObject icon = Object.Instantiate(iconItem, slotObject.transform);
-                UIIcon uiIcon = icon.GetComponent<UIIcon>();
+                GameObject iconObj = Object.Instantiate(iconPrefab, slotObject.transform);
+                UIIcon uiIcon = iconObj.GetComponent<UIIcon>();
                 if (uiIcon == null) continue;
                 uiIcon.Initialize(window, window.uid, i, i, iconSize, slotSize);
-                icons[i] = icon;
+                icons[i] = iconObj;
             }
         }
     }
