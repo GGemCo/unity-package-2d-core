@@ -76,9 +76,7 @@ namespace GGemCo2DCore
             _iconStatus = IconConstants.Status.Normal;
             IconType = IconConstants.Type.None;
             
-            ImageIcon = GetComponent<Image>();
-            _dragHandler = gameObject.AddComponent<UIDragHandler>();
-            _rectTransform = GetComponent<RectTransform>();
+            InitializeComponent();
 
             if (imageCoolTimeGauge != null)
             {
@@ -86,6 +84,16 @@ namespace GGemCo2DCore
             }
             SetSelected(false);
             SetIconLock(false);
+        }
+
+        private void InitializeComponent()
+        {
+            if (ImageIcon == null)
+                ImageIcon = GetComponent<Image>();
+            if (_dragHandler == null)
+                _dragHandler = gameObject.AddComponent<UIDragHandler>();
+            if (_rectTransform == null)
+                _rectTransform = GetComponent<RectTransform>();
         }
 
         protected virtual void Start()
@@ -97,6 +105,7 @@ namespace GGemCo2DCore
         public void Initialize(UIWindow pwindow, UIWindowConstants.WindowUid pwindowUid, int pindex, int pslotIndex, 
             Vector2 iconSize, Vector2 slotSize)
         {
+            InitializeComponent();
             window = pwindow;
             windowUid = pwindowUid;
             index = pindex;
@@ -185,21 +194,21 @@ namespace GGemCo2DCore
         /// <summary>
         /// 다른 uid 로 변경하기
         /// </summary>
-        /// <param name="iconUid"></param>
+        /// <param name="cardUid"></param>
         /// <param name="iconCount"></param>
         /// <param name="iconLevel"></param>
         /// <param name="iconIsLearn"></param>
         /// <param name="remainCoolTime"></param>
-        public virtual bool ChangeInfoByUid(int iconUid, int iconCount = 0, int iconLevel = 0, bool iconIsLearn = false, int remainCoolTime = 0)
+        public virtual bool ChangeInfoByUid(int cardUid, int iconCount = 0, int iconLevel = 0, bool iconIsLearn = false, int remainCoolTime = 0)
         {
-            SceneGame.Instance.uIIconCoolTimeManager.SetRemainCoolTime(windowUid, iconUid, remainCoolTime);
+            SceneGame.Instance.uIIconCoolTimeManager.SetRemainCoolTime(windowUid, cardUid, remainCoolTime);
             
-            if (iconUid == 0 && iconCount == 0)
+            if (cardUid == 0 && iconCount == 0)
             {
                 ClearIconInfos();
                 return false;
             }
-            uid = iconUid;
+            uid = cardUid;
             SetCount(iconCount);
             SetLevel(iconLevel);
             SetIsLearn(iconIsLearn);

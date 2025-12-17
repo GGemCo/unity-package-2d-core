@@ -33,10 +33,10 @@ namespace GGemCo2DCore
         private readonly Queue<TextMeshProUGUI> textPool = new Queue<TextMeshProUGUI>();
         private void Awake()
         {
+            _settings = AddressableLoaderSettings.Instance.settings;
             CreateTextDamageCanvas();
             InitializePool();
             InitializeInfos();
-            _settings = AddressableLoaderSettings.Instance.settings;
         }
 
         private void InitializeInfos()
@@ -61,8 +61,8 @@ namespace GGemCo2DCore
             
             canvas.sortingLayerName = ConfigSortingLayer.GetValue(ConfigSortingLayer.Keys.UI);
             canvas.sortingOrder = 999;
-            canvas.renderMode = RenderMode.WorldSpace;
-            
+            canvas.renderMode = _settings.damageTextCanvasRenderMode;
+
             canvasTransform = gameObjectCanvas.transform;
         }
         /// <summary>
@@ -93,6 +93,10 @@ namespace GGemCo2DCore
 
             TextMeshProUGUI text = textPool.Dequeue();
             text.text = $"{metadataDamageText.Damage}";
+            if (_settings.useDamageTextMinus)
+            {
+                text.text = $"-{metadataDamageText.Damage}";
+            }
             if (!string.IsNullOrEmpty(metadataDamageText.SpecialDamageText))
             {
                 text.text = metadataDamageText.SpecialDamageText;

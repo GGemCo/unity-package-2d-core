@@ -29,6 +29,8 @@ namespace GGemCo2DCore
         
         [Tooltip("미리 만들어놓은 slot 이 있을 경우")]
         public GameObject[] preLoadSlots;
+        [Tooltip("미리 만들어놓은 icon 이 있을 경우")]
+        public GameObject[] preLoadIcons;
         [Tooltip("icon 이 들어갈 panel")]
         public GridLayoutGroup containerIcon;
         
@@ -126,7 +128,7 @@ namespace GGemCo2DCore
         public void DetachIcon(int slotIndex) => IconPoolManager.DetachIcon(slotIndex);
         public UIIcon GetIconByIndex(int index) => IconPoolManager.GetIcon(index);
         public UISlot GetSlotByIndex(int index) => IconPoolManager.GetSlot(index);
-        protected UIIcon GetIconByUid(int iconUid) => IconPoolManager.GetIconByUid(iconUid);
+        public UIIcon GetIconByUid(int iconUid) => IconPoolManager.GetIconByUid(iconUid);
         public UIIcon SetIconCount(int slotIndex, int itemUid, int count, int level = 0, bool learn = false) => IconPoolManager.SetIcon(slotIndex, itemUid, count, level, learn);
         public virtual void SetIconCount(int iconUid, int iconCount) => IconPoolManager.SetIconCount(iconUid, iconCount);
         public UIIcon SetIconCountReturnIcon(int slotIndex, int iconUid, int iconCount, int iconLevel = 0,

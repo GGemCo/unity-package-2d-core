@@ -10,23 +10,34 @@ namespace GGemCo2DCore
     {
         public void BuildSlotsAndIcons(UIWindow window, GridLayoutGroup container, int maxCount, IconConstants.Type iconType, Vector2 slotSize, Vector2 iconSize, GameObject[] slots, GameObject[] icons)
         {
-            if (maxCount > 0 && container == null)
-            {
-                GcLogger.LogError("아이콘을 담을 Container Icon 항목을 설정해주세요.");
-                return;
-            }
             if (AddressableLoaderPrefabCommon.Instance == null) return;
             GameObject iconPrefab = window.iconPrefab != null ? window.iconPrefab : IconConstants.LoadByIconType(iconType);
             GameObject slotPrefab = window.slotPrefab != null ? window.slotPrefab : ConfigResources.Slot.Load();
 
             for (int i = 0; i < maxCount; i++)
             {
-                GameObject slotObj = Object.Instantiate(slotPrefab, container.transform);
+                // PreLoad Slots을 사용하지만 사용안하는 슬롯은 비워둘 수 있음
+                if (window.preLoadSlots.Length > i && window.preLoadSlots[i] == null) continue;
+                
+                GameObject slotObj = window.preLoadSlots.Length > i ? window.preLoadSlots[i] : null;
+                if (slotObj == null)
+                {
+                    if (container == null)
+                    {
+                        GcLogger.LogError("아이콘을 담을 Container Icon 항목을 설정해주세요.");
+                        return;
+                    }
+                    slotObj = Object.Instantiate(slotPrefab, container.transform);
+                }
                 UISlot uiSlot = slotObj.GetComponent<UISlot>();
                 uiSlot.Initialize(window, window.uid, i, slotSize);
                 slots[i] = slotObj;
 
-                GameObject iconObj = Object.Instantiate(iconPrefab, slotObj.transform);
+                GameObject iconObj = window.preLoadIcons.Length > i ? window.preLoadIcons[i] : null;
+                if (iconObj == null)
+                {
+                    iconObj = Object.Instantiate(iconPrefab, slotObj.transform);    
+                }
                 UIIcon uiIcon = iconObj.GetComponent<UIIcon>();
                 uiIcon.Initialize(window, window.uid, i, i, iconSize, slotSize);
                 icons[i] = iconObj;

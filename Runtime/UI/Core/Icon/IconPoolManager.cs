@@ -69,8 +69,8 @@ namespace GGemCo2DCore
                 return null;
 
             // 1) PreLoadSlots 를 사용하는 경우는 예외적으로 고정 전략 사용
-            if (_window.preLoadSlots != null && _window.preLoadSlots.Length > 0)
-                return new SlotIconBuildStrategyPreLoad();
+            // if (_window.preLoadSlots != null && _window.preLoadSlots.Length > 0)
+            //     return new SlotIconBuildStrategyPreLoad();
 
             // 2) 레지스트리에 등록된 외부/커스텀 전략 우선 사용
             var registered = SlotIconBuildStrategyRegistry.Create(_window);
