@@ -8,10 +8,13 @@ namespace GGemCo2DCore
     public class UISlot : MonoBehaviour
     {
         public bool isFiltering;
+        public bool useCanvasGroup;
         
         private UIWindow window;
         private UIWindowConstants.WindowUid windowUid;
         private int index;
+        private CanvasGroup _canvasGroup;
+        public CanvasGroup CanvasGroup => _canvasGroup;
 
         private RectTransform rectTransform;
 
@@ -29,6 +32,10 @@ namespace GGemCo2DCore
             index = pindex;
             
             rectTransform = GetComponent<RectTransform>();
+            if (useCanvasGroup)
+            {
+                _canvasGroup = gameObject.AddComponent<CanvasGroup>();
+            }
             ChangeSlotImageSize(slotSize);
         }
         /// <summary>
