@@ -40,9 +40,11 @@ namespace GGemCo2DCore
                 GoBackToSlot(droppedIcon);
                 return;
             }
-
-            _dragDropStrategy.HandleDragInIcon(_window, dropped, target);
+            
+            // 순서 중요. 먼저 되돌린다. 보임, 안보임 처리는 다음 함수에서 처리
             GoBackToSlot(droppedIcon);
+            // 아니면 HandleDragInIcon 여기서 return 받고 처리
+            _dragDropStrategy.HandleDragInIcon(_window, dropped, target);
         }
 
         public void HandleDragInWindow(GameObject droppedIcon)
@@ -56,8 +58,8 @@ namespace GGemCo2DCore
                 return;
             }
 
-            _dragDropStrategy.HandleDragInWindow(_window, dropped);
             GoBackToSlot(droppedIcon);
+            _dragDropStrategy.HandleDragInWindow(_window, dropped);
         }
 
         private void GoBackToSlot(GameObject droppedIcon)
