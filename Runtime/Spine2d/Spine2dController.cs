@@ -436,7 +436,7 @@ namespace GGemCo2DCore
         protected void SetColor(string colorHex)
         {
             if (!SkeletonAnimation) return;
-            SetColor(ColorHelper.HexToColor(colorHex));
+            SetColor(ColorHelper.HexToColor(colorHex, Color.white));
         }
         
         public Dictionary<string, float> GetAnimationAllLength()

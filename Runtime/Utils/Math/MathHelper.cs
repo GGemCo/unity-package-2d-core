@@ -143,5 +143,38 @@ namespace GGemCo2DCore
         
         public static long ParseLong(string v, long def = 0L)
             => long.TryParse(v, NumberStyles.Integer, CultureInfo.InvariantCulture, out var x) ? x : def;
+        
+        public static float Clamp01(float v) => Mathf.Clamp01(v);
+
+        public static int Clamp(int v, int min, int max) => Mathf.Clamp(v, min, max);
+
+        public static float Clamp(float v, float min, float max) => Mathf.Clamp(v, min, max);
+
+        public static float Lerp(float a, float b, float t) => Mathf.Lerp(a, b, t);
+
+        public static float InverseLerp(float a, float b, float v) => Mathf.InverseLerp(a, b, v);
+
+        public static bool Approximately(float a, float b, float eps = 1e-6f) => Mathf.Abs(a - b) <= eps;
+
+        private static bool TryParseFloatInvariant(string s, out float value)
+            => float.TryParse(s, NumberStyles.Float, CultureInfo.InvariantCulture, out value);
+
+        private static bool TryParseIntInvariant(string s, out int value)
+            => int.TryParse(s, NumberStyles.Integer, CultureInfo.InvariantCulture, out value);
+
+        public static Vector2 ParseVector2Invariant(string x, string y, Vector2 fallback = default)
+        {
+            if (!TryParseFloatInvariant(x, out var fx)) return fallback;
+            if (!TryParseFloatInvariant(y, out var fy)) return fallback;
+            return new Vector2(fx, fy);
+        }
+
+        public static Vector3 ParseVector3Invariant(string x, string y, string z, Vector3 fallback = default)
+        {
+            if (!TryParseFloatInvariant(x, out var fx)) return fallback;
+            if (!TryParseFloatInvariant(y, out var fy)) return fallback;
+            if (!TryParseFloatInvariant(z, out var fz)) return fallback;
+            return new Vector3(fx, fy, fz);
+        }
     }
 }

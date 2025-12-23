@@ -75,7 +75,7 @@ namespace GGemCo2DCoreEditor
             Color color = DefaultLineColor;
             if (!string.IsNullOrEmpty(hexCode))
             {
-                color = ColorHelper.HexToColor(hexCode);
+                color = ColorHelper.HexToColor(hexCode, Color.white);
             }
 
             EditorGUI.DrawRect(rect, color);

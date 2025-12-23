@@ -1,29 +1,25 @@
 ﻿#if UNITY_EDITOR
 using UnityEditor;
 
-
 namespace GGemCo2DCore
 {
     public static class UnityEditorHelper
     {
-        private static bool _isExitingPlayMode = false;
+        private static bool _isExitingPlayMode;
+
+        public static bool IsExitingPlayMode => _isExitingPlayMode;
 
         [InitializeOnLoadMethod]
-        static void Setup()
+        private static void Initialize()
         {
-            EditorApplication.playModeStateChanged += state =>
-            {
-                if (state == PlayModeStateChange.ExitingPlayMode)
-                {
-                    _isExitingPlayMode = true;
-                }
-                else if (state == PlayModeStateChange.EnteredEditMode)
-                {
-                    _isExitingPlayMode = false;
-                }
-            };
+            EditorApplication.playModeStateChanged -= OnPlayModeStateChanged;
+            EditorApplication.playModeStateChanged += OnPlayModeStateChanged;
         }
-        public static bool GetIsExitingPlayMode() => _isExitingPlayMode;
+
+        private static void OnPlayModeStateChanged(PlayModeStateChange state)
+        {
+            _isExitingPlayMode = state == PlayModeStateChange.ExitingPlayMode;
+        }
     }
 }
 #endif

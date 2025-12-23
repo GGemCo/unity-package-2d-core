@@ -827,7 +827,7 @@ namespace GGemCo2DCore
         {
             // 에디터에서 플레이 종료시 OnTriggerExit2D 함수를 호출하지 않도록 처리 
 #if UNITY_EDITOR
-            if (UnityEditorHelper.GetIsExitingPlayMode())
+            if (UnityEditorHelper.IsExitingPlayMode)
                 return false;
 #endif
             return true;

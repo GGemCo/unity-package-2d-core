@@ -112,7 +112,7 @@ namespace GGemCo2DCore
             }
             catch (Exception ex)
             {
-                GcLogger.LogError(ex);
+                GcLogger.LogException(ex);
                 if (characterObj) Object.Destroy(characterObj);
                 return null;
             }
@@ -180,7 +180,7 @@ namespace GGemCo2DCore
             }
             catch (Exception e)
             {
-                GcLogger.LogError(e);
+                GcLogger.LogException(e);
                 return null;
             }
         }
@@ -252,7 +252,7 @@ namespace GGemCo2DCore
             }
             catch (Exception ex)
             {
-                GcLogger.LogError(ex);
+                GcLogger.LogException(ex);
                 if (npcObj) Object.Destroy(npcObj);
                 return null;
             }

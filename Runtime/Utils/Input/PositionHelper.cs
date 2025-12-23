@@ -1,5 +1,7 @@
 ﻿using UnityEngine;
+#if ENABLE_INPUT_SYSTEM
 using UnityEngine.InputSystem;
+#endif
 
 namespace GGemCo2DCore
 {
