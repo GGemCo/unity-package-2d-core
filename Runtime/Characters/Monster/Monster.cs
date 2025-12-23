@@ -199,17 +199,15 @@ namespace GGemCo2DCore
             // 캡슐 콜라이더 2D와 충돌 중인 모든 콜라이더를 검색
             Vector2 size = new Vector2(colliderAttackRange.size.x * Mathf.Abs(transform.localScale.x), colliderAttackRange.size.y * transform.localScale.y);
             Vector2 point = (Vector2)transform.position + colliderAttackRange.offset * transform.localScale;
-#if UNITY_6000_0_OR_NEWER
-            int hitCount = Physics2D.OverlapCapsule(point, size, colliderAttackRange.direction, 0f,
-                new ContactFilter2D().NoFilter(), _collider2Ds);
+            
+            // ContactFilter2D.noFilter 사용 (필요하면 레이어/트리거 정책을 별도 생성해서 전달)
+            int hitCount = CompatPhysics2D.OverlapCapsuleNonAlloc(
+                point, size, colliderAttackRange.direction, 0f,
+                _collider2Ds);
+            
             for (int i = 0; i < hitCount; i++)
             {
                 Collider2D hit = _collider2Ds[i];
-#else
-            Physics2D.OverlapCapsuleNonAlloc(point, size, colliderCheckCharacter.direction, 0f, _collider2Ds);
-            foreach (var hit in _collider2Ds)
-            {
-#endif
                 if (!hit || !hit.CompareTag(ConfigTags.GetValue(ConfigTags.Keys.Player))) continue;
                 CharacterHitArea characterHitArea = hit.GetComponent<CharacterHitArea>();
                 if (characterHitArea == null) continue;

@@ -61,7 +61,7 @@ namespace GGemCo2DCore
             {
                 _rb2d.constraints = _originalConstraints;
                 // 보통 넉백 종료 후에는 속도를 0으로 유지하는 편이 안전함
-                _rb2d.linearVelocity = Vector2.zero;
+                _rb2d.SetLinearVelocity(Vector2.zero);
             }
 
             // 애니메이션 종료는 상태머신 설계에 따름
