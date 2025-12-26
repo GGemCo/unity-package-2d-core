@@ -46,10 +46,9 @@ namespace GGemCo2DCore
             public float? startAlpha;
             
             /// <summary>
-            /// 이징 함수 (입력/출력 범위: 0..1).
-            /// null일 경우 Linear 이징 사용.
+            /// 이징 타입.
             /// </summary>
-            [NonSerialized] public Func<float, float> easingFunc;
+            public Easing.EaseType easeType;
 
             /// <summary>
             /// 일반적인 UI Fade에 적합한 기본 옵션.
@@ -62,7 +61,7 @@ namespace GGemCo2DCore
                 updateInteractableOnComplete = false,
                 updateBlocksRaycastsOnComplete = false,
                 disableInputWhenInvisible = false,
-                easingFunc = null
+                easeType = Easing.EaseType.Linear
             };
         }
 
@@ -200,7 +199,10 @@ namespace GGemCo2DCore
             FadeOptions options,
             bool ensureCanvasGroup = false)
             => FadeTo(runner, target, 0f, duration, options, ensureCanvasGroup);
-        
+
+        public static Coroutine FadeOutImmediately(MonoBehaviour runner, GameObject target) => FadeTo(runner, target, 0f, 0f, FadeOptions.Default);
+
+        public static Coroutine FadeInImmediately(MonoBehaviour runner, GameObject target) => FadeTo(runner, target, 1f, 0f, FadeOptions.Default);
         /// <summary>
         /// 실제 Fade 로직을 수행하는 코루틴.
         /// </summary>
@@ -234,15 +236,13 @@ namespace GGemCo2DCore
                 yield break;
             }
 
-            var ease = options.easingFunc ?? Linear;
-
             float elapsed = 0f;
             while (elapsed < duration)
             {
                 elapsed += options.useUnscaledTime ? Time.unscaledDeltaTime : Time.deltaTime;
 
                 float nt = Mathf.Clamp01(elapsed / duration);
-                float et = Mathf.Clamp01(ease(nt));
+                float et = Mathf.Clamp01(Easing.Apply(nt, options.easeType));
 
                 cg.alpha = Mathf.LerpUnclamped(from, toAlpha, et);
                 yield return null;
@@ -270,10 +270,5 @@ namespace GGemCo2DCore
             if (options.updateInteractableOnComplete) cg.interactable = visible;
             if (options.updateBlocksRaycastsOnComplete) cg.blocksRaycasts = visible;
         }
-
-        /// <summary>
-        /// 기본 Linear 이징 함수.
-        /// </summary>
-        private static float Linear(float t) => t;
     }
 }

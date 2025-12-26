@@ -60,7 +60,7 @@ namespace GGemCo2DCore
                     updateInteractableOnComplete = false,
                     updateBlocksRaycastsOnComplete = false,
                     disableInputWhenInvisible = true,
-                    easingFunc = null
+                    easeType = Easing.EaseType.Linear
                 },
                 fadeOut = UiFadeUtility.FadeOptions.Default
             };
