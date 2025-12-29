@@ -199,8 +199,8 @@ namespace GGemCo2DCore
         {
             if (_uiIcon == null || _uiIcon.window == null) return;
 
-            GameObject targetSlot = _uiIcon.window.slots[_uiIcon.slotIndex];
-            transform.SetParent(targetSlot.transform);
+            UISlot targetSlot = _uiIcon.window.GetSlotByIndex(_uiIcon.slotIndex);
+            transform.SetParent(targetSlot.gameObject.transform);
             transform.position = _clickDragOriginalPosition;
         }
     }

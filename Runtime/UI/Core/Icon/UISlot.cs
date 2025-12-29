@@ -9,10 +9,10 @@ namespace GGemCo2DCore
     {
         public bool isFiltering;
         public bool useCanvasGroup;
-        
-        private UIWindow window;
-        private UIWindowConstants.WindowUid windowUid;
-        private int index;
+
+        public UIWindow window;
+        public UIWindowConstants.WindowUid windowUid;
+        public int index;
         private CanvasGroup _canvasGroup;
         public CanvasGroup CanvasGroup => _canvasGroup;
 
@@ -42,7 +42,7 @@ namespace GGemCo2DCore
         /// 슬롯 이미지 사이즈 변경하기
         /// </summary>
         /// <param name="size"></param>
-        public void ChangeSlotImageSize(Vector2 size)
+        private void ChangeSlotImageSize(Vector2 size)
         {
             rectTransform.sizeDelta = size;
         }

@@ -126,8 +126,8 @@ namespace GGemCo2DCore
         /// </summary>
         /// <param name="slotIndex"></param>
         public void DetachIcon(int slotIndex) => IconPoolManager.DetachIcon(slotIndex);
-        public UIIcon GetIconByIndex(int index) => IconPoolManager.GetIcon(index);
-        public UISlot GetSlotByIndex(int index) => IconPoolManager.GetSlot(index);
+        public virtual UIIcon GetIconByIndex(int index) => IconPoolManager.GetIcon(index);
+        public virtual UISlot GetSlotByIndex(int index) => IconPoolManager.GetSlot(index);
         public UIIcon GetIconByUid(int iconUid) => IconPoolManager.GetIconByUid(iconUid);
         public UIIcon SetIconCount(int slotIndex, int itemUid, int count, int level = 0, bool learn = false) => IconPoolManager.SetIcon(slotIndex, itemUid, count, level, learn);
         public virtual void SetIconCount(int iconUid, int iconCount) => IconPoolManager.SetIconCount(iconUid, iconCount);

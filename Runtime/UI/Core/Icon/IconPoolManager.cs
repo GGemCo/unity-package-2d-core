@@ -91,8 +91,26 @@ namespace GGemCo2DCore
         /// </summary>
         /// <param name="index"></param>
         /// <returns></returns>
-        public UIIcon GetIcon(int index) => _window.icons[index]?.GetComponent<UIIcon>();
-        public UISlot GetSlot(int index) => _window.slots[index]?.GetComponent<UISlot>();
+        public UIIcon GetIcon(int index)
+        {
+            foreach (var gameObjectIcon in _window.icons)
+            {
+                UIIcon uiIcon = gameObjectIcon?.GetComponent<UIIcon>();
+                if (uiIcon != null && uiIcon.index == index) return uiIcon;
+            }
+
+            return null;
+        }
+        public UISlot GetSlot(int index)
+        {
+            foreach (var gameObjectSlot in _window.slots)
+            {
+                UISlot uiSlot = gameObjectSlot?.GetComponent<UISlot>();
+                if (uiSlot != null && uiSlot.index == index) return uiSlot;
+            }
+
+            return null; 
+        }
         /// <summary>
         /// icon uid 로 아이콘 가져오기
         /// </summary>
@@ -120,8 +138,7 @@ namespace GGemCo2DCore
         public void DetachIcon(int slotIndex)
         {
             if (_window.icons.Length <= 0) return;
-            var icon = _window.icons[slotIndex];
-            var uiIcon = icon?.GetComponent<UIIcon>();
+            var uiIcon = GetIcon(slotIndex);
             if (uiIcon != null)
             {
                 uiIcon.ClearIconInfos();
@@ -143,19 +160,12 @@ namespace GGemCo2DCore
         /// <returns></returns>
         public UIIcon SetIcon(int slotIndex, int uid, int count, int level = 0, bool learn = false)
         {
-            GameObject icon = _window.icons[slotIndex];
-            if (icon == null)
+            UIIcon uiIcon = GetIcon(slotIndex);
+            
+            if (GcLogger.IsNull(uiIcon, "슬롯에 UIIcon 이 없습니다. slot index: " +slotIndex))
             {
-                GcLogger.LogError("슬롯에 아이콘이 없습니다. slot index: " +slotIndex);
                 return null;
             }
-            UIIcon uiIcon = icon.GetComponent<UIIcon>();
-            if (uiIcon == null)
-            {
-                GcLogger.LogError("슬롯에 UIIcon 이 없습니다. slot index: " +slotIndex);
-                return null;
-            }
-            if (uiIcon == null) return null;
 
             if (count <= 0)
             {
@@ -191,9 +201,7 @@ namespace GGemCo2DCore
         {
             for (int i = 0; i < _window.maxCountIcon; i++)
             {
-                var icon = _window.icons[i];
-                if (icon == null) continue;
-                UIIcon uiIcon = icon.GetComponent<UIIcon>();
+                UIIcon uiIcon = GetIcon(i);
                 if (uiIcon == null) continue;
                 if (uiIcon.uid <= 0 || uiIcon.GetCount() <= 0)
                     return i;

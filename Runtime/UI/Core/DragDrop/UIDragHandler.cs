@@ -94,8 +94,8 @@ namespace GGemCo2DCore
                     return;
                 }
             }
-            GameObject targetSlot = droppedUiIcon.window.slots[droppedUiIcon.slotIndex];
-            droppedIcon.transform.SetParent(targetSlot.transform);
+            UISlot targetSlot = droppedUiIcon.window.GetSlotByIndex(droppedUiIcon.slotIndex);
+            droppedIcon.transform.SetParent(targetSlot.gameObject.transform);
             droppedIcon.transform.position = _originalPosition;
         }
         public Vector3 GetOriginalPosition() => _originalPosition;
