@@ -51,5 +51,9 @@ namespace GGemCo2DCore
         {
             transform.localPosition = position;
         }
+        public void SetAlpha(float alpha)
+        {
+            if (useCanvasGroup) _canvasGroup.alpha = alpha;
+        }
     }
 }
