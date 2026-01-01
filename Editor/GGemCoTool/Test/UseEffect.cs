@@ -65,7 +65,17 @@ namespace GGemCo2DCoreEditor
             };
             DefaultEffect defaultEffect = SceneGame.Instance.EffectManager.CreateEffect(struckAnimationEventEffect);
             if (!defaultEffect) return;
-            defaultEffect.gameObject.transform.position = SceneGame.Instance.cameraManager.GetPositionCenter();
+            // 카테고리가 UI 일 경우는 Canvas 하위로 이동 한다.
+            var info = _tableDictionary.GetValueOrDefault(struckAnimationEventEffect.Uid);
+            if (info is { Category: EffectConstants.Category.UI })
+            {
+                defaultEffect.gameObject.transform.SetParent(SceneGame.Instance.canvasUI.transform);   
+                defaultEffect.gameObject.transform.localPosition = Vector3.zero;             
+            }
+            else
+            {
+                defaultEffect.gameObject.transform.position = SceneGame.Instance.cameraManager.GetPositionCenter();
+            }
             // 임시로 제일 위로 나오게 처리
             defaultEffect.SetSortingLayer(ConfigSortingLayer.Keys.UI);
         }

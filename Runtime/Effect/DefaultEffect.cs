@@ -57,9 +57,12 @@ namespace GGemCo2DCore
             {
                 effectAnimationController.SetEffectColor($"#{_struckTableEffect.Color}");
             }
-            
-            Vector2 size = SceneGame.Instance.mapManager.GetCurrentMapSize();
-            _mapSizeHeight = size.y;
+
+            if (SceneGame.Instance.mapManager)
+            {
+                Vector2 size = SceneGame.Instance.mapManager.GetCurrentMapSize();
+                _mapSizeHeight = size.y;   
+            }
             UpdateSortingOrder();
             
             if (_duration > 0)
@@ -86,7 +89,8 @@ namespace GGemCo2DCore
         {
             int baseSortingOrder = MathHelper.GetSortingOrder(_mapSizeHeight, transform.position.y);
         
-            _effectRenderer.sortingOrder = baseSortingOrder;
+            if (_effectRenderer)
+                _effectRenderer.sortingOrder = baseSortingOrder;
         }
         /// <summary>
         /// 지속 시간 설정
@@ -178,7 +182,13 @@ namespace GGemCo2DCore
 
         public void SetSortingLayer(ConfigSortingLayer.Keys sortingLayer)
         {
+            if (_effectRenderer == null) return;
             _effectRenderer.sortingLayerName = ConfigSortingLayer.GetValue(sortingLayer);
+        }
+        public void SetSortingOrder(int sortingOrder)
+        {
+            if (_effectRenderer == null) return;
+            _effectRenderer.sortingOrder = sortingOrder;
         }
 
         public void SetFollowCharacter(CharacterBase character)

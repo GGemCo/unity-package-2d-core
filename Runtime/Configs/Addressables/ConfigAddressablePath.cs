@@ -132,7 +132,7 @@ namespace GGemCo2DCore
 
             /// <summary>Effects/Monster</summary>
             public static string Monster => Combine(RootEffect, "Monster");
-
+            public static string UI => Combine(RootEffect, "UI");
             public static string Etc => Combine(RootEffect, "Etc");
         }
         public static string BuildEffectPath(EffectConstants.Category category)
@@ -142,6 +142,7 @@ namespace GGemCo2DCore
                 EffectConstants.Category.Player => Effects.Player,
                 EffectConstants.Category.Monster => Effects.Monster,
                 EffectConstants.Category.Etc => Effects.Etc,
+                EffectConstants.Category.UI => Effects.UI,
                 _ => Effects.Skills
             };
         }

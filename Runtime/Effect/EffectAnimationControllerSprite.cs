@@ -18,7 +18,8 @@ namespace GGemCo2DCore
             base.Awake();
             _defaultEffect = GetComponent<DefaultEffect>();
             _effectRenderer = GetComponent<Renderer>();
-            _effectRenderer.sortingLayerName = ConfigSortingLayer.GetValue(ConfigSortingLayer.Keys.CharacterTop);
+            if (_effectRenderer)
+                _effectRenderer.sortingLayerName = ConfigSortingLayer.GetValue(ConfigSortingLayer.Keys.CharacterTop);
             
             durationStart = GetAnimationDuration(IEffectAnimationController.KeyClipNameStart, false);
             durationPlay = GetAnimationDuration(IEffectAnimationController.KeyClipNamePlay, false);
