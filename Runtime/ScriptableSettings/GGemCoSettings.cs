@@ -38,8 +38,6 @@ namespace GGemCo2DCore
         [Header("데미지 텍스트 설정")]
         [Tooltip("데미지 텍스트 Canvas의 Render Mode")]
         public RenderMode damageTextCanvasRenderMode;
-        [Tooltip("데미지 텍스트 출력 시, - 표시 여부")]
-        public bool useDamageTextMinus;
         [Tooltip("데미지 텍스트의 기본 폰트 크기")]
         public float damageTextFontSize;
 
@@ -95,7 +93,6 @@ namespace GGemCo2DCore
             dropItemDestroyTimeSec = 10;
 
             damageTextCanvasRenderMode = RenderMode.WorldSpace;
-            useDamageTextMinus = false;
             damageTextFontSize = 20f;
             damageTextEasingType = Easing.EaseType.Linear;
             damageTextMoveUpTime = 0.3f;

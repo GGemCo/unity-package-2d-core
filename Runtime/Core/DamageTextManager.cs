@@ -93,10 +93,6 @@ namespace GGemCo2DCore
 
             TextMeshProUGUI text = textPool.Dequeue();
             text.text = $"{metadataDamageText.Damage}";
-            if (_settings.useDamageTextMinus)
-            {
-                text.text = $"-{metadataDamageText.Damage}";
-            }
             if (!string.IsNullOrEmpty(metadataDamageText.SpecialDamageText))
             {
                 text.text = metadataDamageText.SpecialDamageText;
