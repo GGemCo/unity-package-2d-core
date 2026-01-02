@@ -200,6 +200,7 @@ namespace GGemCo2DCore
             if (_uiIcon == null || _uiIcon.window == null) return;
 
             UISlot targetSlot = _uiIcon.window.GetSlotByIndex(_uiIcon.slotIndex);
+            if (targetSlot == null) return;
             transform.SetParent(targetSlot.gameObject.transform);
             transform.position = _clickDragOriginalPosition;
         }

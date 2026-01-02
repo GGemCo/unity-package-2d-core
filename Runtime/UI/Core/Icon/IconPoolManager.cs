@@ -98,7 +98,7 @@ namespace GGemCo2DCore
                 UIIcon uiIcon = gameObjectIcon?.GetComponent<UIIcon>();
                 if (uiIcon != null && uiIcon.index == index) return uiIcon;
             }
-
+            GcLogger.LogError($"{_window}에 {nameof(UIIcon)}이 없습니다. index: {index}");
             return null;
         }
         public UISlot GetSlot(int index)
@@ -108,7 +108,7 @@ namespace GGemCo2DCore
                 UISlot uiSlot = gameObjectSlot?.GetComponent<UISlot>();
                 if (uiSlot != null && uiSlot.index == index) return uiSlot;
             }
-
+            GcLogger.LogError($"{_window}에 {nameof(UISlot)}이 없습니다. index: {index}");
             return null; 
         }
         /// <summary>
@@ -120,7 +120,7 @@ namespace GGemCo2DCore
         {
             if (_window.icons.Length == 0)
             {
-                GcLogger.LogError("아이콘이 없습니다.");
+                GcLogger.LogError($"{nameof(_window.icons)} 개수가 0 입니다.");
                 return null;
             }
             foreach (var icon in _window.icons)
@@ -129,6 +129,7 @@ namespace GGemCo2DCore
                 if (uiIcon?.uid == uid)
                     return uiIcon;
             }
+            GcLogger.LogError($"{_window}에 {nameof(UIIcon)}이 없습니다. uid: {uid}");
             return null;
         }
         /// <summary>
@@ -162,10 +163,7 @@ namespace GGemCo2DCore
         {
             UIIcon uiIcon = GetIcon(slotIndex);
             
-            if (GcLogger.IsNull(uiIcon, "슬롯에 UIIcon 이 없습니다. slot index: " +slotIndex))
-            {
-                return null;
-            }
+            if (GcLogger.IsNull(uiIcon, "")) return null;
 
             if (count <= 0)
             {

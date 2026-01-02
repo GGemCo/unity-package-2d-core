@@ -70,6 +70,7 @@ namespace GGemCo2DCore
             if (icon == null || icon.window == null) return;
 
             UISlot targetSlot = icon.window.GetSlotByIndex(icon.slotIndex);
+            if (targetSlot == null) return;
             droppedIcon.transform.SetParent(targetSlot.gameObject.transform);
             droppedIcon.transform.position = icon.GetDragOriginalPosition();
             droppedIcon.transform.SetSiblingIndex(1);

@@ -16,6 +16,10 @@ namespace GGemCo2DCore
         public Image imageCoolTimeGauge;
         [Tooltip("잠금 표시 이미지")]
         public Image imageLock;
+        [Tooltip("Fade In/Out 처리를 위해 Canvas Group 사용 여부.")]
+        public bool useCanvasGroup;
+        [Tooltip("Canvas Group의 Interactable 설정")]
+        public bool isCanvasGroupInteractable = true;
         
         // 윈도우 
         [HideInInspector] public UIWindow window;
@@ -32,6 +36,8 @@ namespace GGemCo2DCore
         protected IconConstants.Type IconType;
         // 아이콘 이미지
         protected Image ImageIcon;
+        private CanvasGroup _canvasGroup;
+        public CanvasGroup CanvasGroup => _canvasGroup;
         
         private bool _showSelectedImage;
         private bool _showOverImage;
@@ -90,10 +96,21 @@ namespace GGemCo2DCore
         {
             if (ImageIcon == null)
                 ImageIcon = GetComponent<Image>();
+            
+            _dragHandler = GetComponent<UIDragHandler>();
             if (_dragHandler == null)
                 _dragHandler = gameObject.AddComponent<UIDragHandler>();
+            
             if (_rectTransform == null)
                 _rectTransform = GetComponent<RectTransform>();
+            
+            if (useCanvasGroup)
+            {
+                _canvasGroup = GetComponent<CanvasGroup>();
+                if (_canvasGroup == null)
+                    _canvasGroup = gameObject.AddComponent<CanvasGroup>();
+                _canvasGroup.interactable = isCanvasGroupInteractable;
+            }
         }
 
         protected virtual void Start()
@@ -468,6 +485,12 @@ namespace GGemCo2DCore
         public void SetOriginalPosition(Vector3 position)
         {
             _dragHandler.SetOriginalPosition(position);
+        }
+
+        protected void SetAlpha(float alpha)
+        {
+            if (!useCanvasGroup) return;
+            _canvasGroup.alpha = alpha;
         }
     }
 }

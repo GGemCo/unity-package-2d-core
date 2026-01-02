@@ -180,11 +180,7 @@ namespace GGemCo2DCore
                 return;
             }
             UIIcon fromIcon = fromWindow.GetIconByIndex(fromIndex);
-            if (fromIcon == null)
-            {
-                GcLogger.LogError("from Icon 또는 to Icon 값이 잘 못 되었습니다. from Index:"+fromIndex);
-                return;
-            }
+            if (fromIcon == null) return;
             int itemUid = fromIcon.uid;
             fromWindow.SetIconCount(fromIndex, fromIcon.uid, fromIcon.GetCount() - toCount);
             if (toIndex >= 0)
@@ -218,11 +214,7 @@ namespace GGemCo2DCore
                 return;
             }
             UIIcon fromIcon = fromWindow.GetIconByIndex(fromIndex);
-            if (fromIcon == null)
-            {
-                GcLogger.LogError("from Icon 또는 to Icon 값이 잘 못 되었습니다. from Index:"+fromIndex);
-                return;
-            }
+            if (fromIcon == null) return;
             var info = fromIcon.GetParentInfo();
             UIWindowConstants.WindowUid parentWindowUid = info.Item1;
             if (parentWindowUid == UIWindowConstants.WindowUid.None) return;
@@ -255,11 +247,7 @@ namespace GGemCo2DCore
                 return;
             }
             UIIcon fromIcon = fromWindow.GetIconByIndex(fromIndex);
-            if (fromIcon == null)
-            {
-                GcLogger.LogError("from Icon 또는 to Icon 값이 잘 못 되었습니다. from Index:"+fromIndex);
-                return;
-            }
+            if (fromIcon == null) return;
 
             fromIcon.SetIconLock(true);
             int itemUid = fromIcon.uid;
