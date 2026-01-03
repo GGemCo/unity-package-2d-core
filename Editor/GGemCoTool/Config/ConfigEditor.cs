@@ -18,6 +18,7 @@ namespace GGemCo2DCoreEditor
             Quest = 110,
             CreateDialogue,
             Cutscene = 120,
+            CreateEffectPrefab,
             LocalizationUpdate =  130,
             LocalizationFind,
             SoundUIButton = 140,
@@ -38,7 +39,7 @@ namespace GGemCo2DCoreEditor
             OpenSaveDataFolder,
             LoadAddressable,
             SpriteSlicerExporter,
-            AnimatedTileBatchCreator
+            AnimatedTileBatchCreator,
         }
         private const string NameToolGGemCo = ConfigDefine.NameSDK+"Tool/";
         
@@ -60,11 +61,13 @@ namespace GGemCo2DCoreEditor
         public const string NameToolCreateDialogue = NameToolDevelopment + "대사 생성툴";
         
         public const string NameToolCutscene = NameToolDevelopment + "연출툴";
+        public const string NameToolCreateEffectPrefab = NameToolDevelopment + "이팩트 프리팹 생성툴";
         
         public const string NameToolLocalizationUpdate = NameToolDevelopment + "Localize 업데이트툴";
         public const string NameToolLocalizationFind = NameToolDevelopment + "Localize 검색기";
         
         public const string NameToolSoundUIButton = NameToolDevelopment + "UI 버튼 사운드 적용툴";
+        
         public const string NameToolCreateHubWindow = NameToolDevelopment + "오브젝트 생성툴";
         
         // 테스트
