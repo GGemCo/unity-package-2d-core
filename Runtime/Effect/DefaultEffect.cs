@@ -29,6 +29,7 @@ namespace GGemCo2DCore
         private ConfigCommon.PositionYType _positionYType;
         
         private Renderer _effectRenderer;
+        private RectTransform _effectRectTransform;
         private Animator _animator;
         private StruckTableSkill _struckTableSkill;
         private Coroutine _coroutineTickTimeDamage;
@@ -45,6 +46,15 @@ namespace GGemCo2DCore
             {
                 _effectRenderer = GetComponent<Renderer>();
             }
+            if (_effectRectTransform == null)
+            {
+                _effectRectTransform = GetComponent<RectTransform>();
+            }
+        }
+
+        public void Initialize(StruckTableEffect struckTableEffect)
+        {
+            _struckTableEffect = struckTableEffect;
         }
 
         protected void Start()
@@ -57,6 +67,8 @@ namespace GGemCo2DCore
             {
                 effectAnimationController.SetEffectColor($"#{_struckTableEffect.Color}");
             }
+
+            SetSize(_struckTableEffect.Width, _struckTableEffect.Height);
 
             if (SceneGame.Instance.mapManager)
             {
@@ -73,9 +85,31 @@ namespace GGemCo2DCore
             effectAnimationController.Play(_duration);
         }
 
-        public void Initialize(StruckTableEffect struckTableEffect)
+        public void SetSize(float width, float height)
         {
-            _struckTableEffect = struckTableEffect;
+            if (width <= 0 || height <= 0) return;
+            
+            if (_effectRectTransform != null)
+            {
+                _effectRectTransform.sizeDelta = new Vector2(width, height);    
+            }
+            else if (_effectRenderer != null)
+            {
+                bool flipped = transform.localScale.x < 0;
+                float signX = flipped ? -1f : 1f;
+
+                Bounds b = _effectRenderer.bounds;
+                if (b.size.x <= 0 || b.size.y <= 0) return;
+
+                float scaleX = width  / b.size.x;
+                float scaleY = height / b.size.y;
+
+                transform.localScale = new Vector3(
+                    Mathf.Abs(transform.localScale.x * scaleX) * signX,
+                    Mathf.Abs(transform.localScale.y * scaleY),
+                    transform.localScale.z
+                );
+            }
         }
         private IEnumerator RemoveEffectDuration(float f)
         {
