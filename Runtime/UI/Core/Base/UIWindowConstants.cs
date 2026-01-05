@@ -36,10 +36,10 @@
             TcgMyDeck,
             TcgMyDeckCard,
             TcgCardInfo,
-            TcgFieldEnemy,
-            TcgFieldPlayer,
             TcgHandEnemy,
             TcgHandPlayer,
+            TcgFieldEnemy,
+            TcgFieldPlayer,
             TcgBattleHud,
         }
         public const string TitleHeaderCommon = "[공통속성]";
