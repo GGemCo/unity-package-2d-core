@@ -324,6 +324,90 @@ MonoBehaviour:
     m_Localized: Are you sure you want to delete this deck?
     m_Metadata:
       m_Items: []
+  - m_Id: 65339012644118528
+    m_Localized: Not enough mana.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 65341440017866752
+    m_Localized: Failed to create unit.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 65341440017866753
+    m_Localized: Invalid battle context.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 65341440017866754
+    m_Localized: No attack has been made this turn.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 65341440017866755
+    m_Localized: No attacker on the field.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 65341440017866756
+    m_Localized: No attacker or target found.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 65341440017866757
+    m_Localized: Battle session not found.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 65341440017866758
+    m_Localized: Card not found.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 65341440017866759
+    m_Localized: No card in hand.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 65341440017866760
+    m_Localized: Permanent card detail not found.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 65341440017866761
+    m_Localized: No valid target on the field.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 65341440017866762
+    m_Localized: No valid hero target.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 65341440017866763
+    m_Localized: Target is required.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 65343643952652288
+    m_Localized: Please create a deck first and add cards.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 65343643952652289
+    m_Localized: The battle has ended.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 65343643952652290
+    m_Localized: The winner is the player.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 65343643952652291
+    m_Localized: The winner is the AI.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 65343643952652292
+    m_Localized: Battle End
+    m_Metadata:
+      m_Items: []
+  - m_Id: 65343643952652297
+    m_Localized: Please add a hero card.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 65343643952652298
+    m_Localized: Save
+    m_Metadata:
+      m_Items: []
+  - m_Id: 65343643952652299
+    m_Localized: Saved successfully.
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []

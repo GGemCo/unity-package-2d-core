@@ -118,5 +118,7 @@ namespace GGemCo2DCore
         public string GetUIWindowOptionByKey(string key) => GetString(LocalizationConstants.Tables.UIWindowOption, key);
 
         public string GetInteractionByKey(string key) => GetString(LocalizationConstants.Tables.UIWindowInteractionDialogue, key);
+
+        public string GetUIWindowTcgBattleHudByKey(string key) => GetString(LocalizationConstants.Tables.UIWindowTcgBattleHud, key);
     }
 }

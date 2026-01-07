@@ -378,6 +378,90 @@ MonoBehaviour:
     m_Key: Tcg_Popup_ConfirmDeleteDeckWarning
     m_Metadata:
       m_Items: []
+  - m_Id: 65341440017866752
+    m_Key: Error_Tcg_CreateUnitFailed
+    m_Metadata:
+      m_Items: []
+  - m_Id: 65341440017866753
+    m_Key: Error_Tcg_InvalidContext
+    m_Metadata:
+      m_Items: []
+  - m_Id: 65341440017866754
+    m_Key: Error_Tcg_NoAttackedInThisTurn
+    m_Metadata:
+      m_Items: []
+  - m_Id: 65341440017866755
+    m_Key: Error_Tcg_NoAttackerOnField
+    m_Metadata:
+      m_Items: []
+  - m_Id: 65341440017866756
+    m_Key: Error_Tcg_NoAttackerOrTarget
+    m_Metadata:
+      m_Items: []
+  - m_Id: 65341440017866757
+    m_Key: Error_Tcg_NoBattleSession
+    m_Metadata:
+      m_Items: []
+  - m_Id: 65341440017866758
+    m_Key: Error_Tcg_NoCard
+    m_Metadata:
+      m_Items: []
+  - m_Id: 65341440017866759
+    m_Key: Error_Tcg_NoCardInHand
+    m_Metadata:
+      m_Items: []
+  - m_Id: 65341440017866760
+    m_Key: Error_Tcg_NoPermanentDetail
+    m_Metadata:
+      m_Items: []
+  - m_Id: 65341440017866761
+    m_Key: Error_Tcg_NoTargetOnField
+    m_Metadata:
+      m_Items: []
+  - m_Id: 65341440017866762
+    m_Key: Error_Tcg_NoTargetOnHero
+    m_Metadata:
+      m_Items: []
+  - m_Id: 65339012644118528
+    m_Key: Error_Tcg_NotEnoughMana
+    m_Metadata:
+      m_Items: []
+  - m_Id: 65341440017866763
+    m_Key: Error_Tcg_TargetRequired
+    m_Metadata:
+      m_Items: []
+  - m_Id: 65343643952652288
+    m_Key: System_Tcg_CreateDeckFirst
+    m_Metadata:
+      m_Items: []
+  - m_Id: 65343643952652289
+    m_Key: System_Tcg_BattleEnded
+    m_Metadata:
+      m_Items: []
+  - m_Id: 65343643952652290
+    m_Key: System_Tcg_WinnerPlayer
+    m_Metadata:
+      m_Items: []
+  - m_Id: 65343643952652291
+    m_Key: System_Tcg_WinnerAi
+    m_Metadata:
+      m_Items: []
+  - m_Id: 65343643952652292
+    m_Key: System_Tcg_BattleEndTitle
+    m_Metadata:
+      m_Items: []
+  - m_Id: 65343643952652297
+    m_Key: System_Tcg_AddHeroCard
+    m_Metadata:
+      m_Items: []
+  - m_Id: 65343643952652298
+    m_Key: System_Tcg_Save
+    m_Metadata:
+      m_Items: []
+  - m_Id: 65343643952652299
+    m_Key: System_Tcg_SaveCompleted
+    m_Metadata:
+      m_Items: []
   m_Metadata:
     m_Items: []
   m_KeyGenerator:
