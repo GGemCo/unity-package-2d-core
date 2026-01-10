@@ -107,6 +107,22 @@ MonoBehaviour:
     m_Key: UIWindowOption
     m_Metadata:
       m_Items: []
+  - m_Id: 50084569782722560
+    m_Key: UIWindowTcgGameMenu
+    m_Metadata:
+      m_Items: []
+  - m_Id: 50084708152811520
+    m_Key: UIWindowCardCollection
+    m_Metadata:
+      m_Items: []
+  - m_Id: 50084785726464000
+    m_Key: UIWindowMyDeck
+    m_Metadata:
+      m_Items: []
+  - m_Id: 50084839937843200
+    m_Key: UIWindowCardInfo
+    m_Metadata:
+      m_Items: []
   m_Metadata:
     m_Items: []
   m_KeyGenerator:

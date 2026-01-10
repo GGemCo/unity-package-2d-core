@@ -110,6 +110,22 @@ MonoBehaviour:
     m_Localized: QuestReward
     m_Metadata:
       m_Items: []
+  - m_Id: 50084569782722560
+    m_Localized: Game Menu
+    m_Metadata:
+      m_Items: []
+  - m_Id: 50084708152811520
+    m_Localized: Card Collection List
+    m_Metadata:
+      m_Items: []
+  - m_Id: 50084785726464000
+    m_Localized: My Deck List
+    m_Metadata:
+      m_Items: []
+  - m_Id: 50084839937843200
+    m_Localized: Card Info
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []
