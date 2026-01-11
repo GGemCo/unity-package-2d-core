@@ -1,11 +1,8 @@
-﻿using System.IO;
-using GGemCo2DCore;
-using UnityEditor;
-using UnityEngine;
+﻿using UnityEditor;
 
 namespace GGemCo2DCoreEditor
 {
-    public class DefaultSettinsTool : DefaultEditorWindow
+    public class DefaultSettingTool : DefaultEditorWindow
     {
         private readonly SettingGGemCo _settingGGemCo = new SettingGGemCo();
         private readonly SettingTags _settingTags = new SettingTags();
@@ -17,7 +14,7 @@ namespace GGemCo2DCoreEditor
         [MenuItem(ConfigEditor.NameToolSettingDefault, false, (int)ConfigEditor.ToolOrdering.DefaultSetting)]
         public static void ShowWindow()
         {
-            GetWindow<DefaultSettinsTool>("기본 셋팅하기");
+            GetWindow<DefaultSettingTool>("기본 셋팅하기");
         }
 
         private void OnGUI()
