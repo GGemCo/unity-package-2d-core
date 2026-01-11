@@ -10,30 +10,40 @@ using UnityEngine;
 namespace GGemCo2DCoreEditor
 {
     /// <summary>
-    /// GGemCo 프로젝트 기본 셋업을 수행하는 에디터 윈도우.
-    /// - 레이어/태그/정렬 레이어 셋업
-    /// - 기본 씬 및 설정용 ScriptableObject 생성
-    /// - 기본 데이터 테이블/로컬라이제이션/Addressables 셋업
-    /// - 옵션에 따라 한글 폰트, 샘플 UI, 샘플 데이터까지 셋업
+    /// GGemCo 프로젝트의 기본 초기 구성을 자동으로 수행하는 에디터 윈도우입니다.
+    /// 레이어/태그/정렬 레이어, 기본 씬/Settings 에셋, 데이터/로컬라이제이션/Addressables 등을 파이프라인(SetupStep)으로 실행합니다.
     /// </summary>
+    /// <remarks>
+    /// 실행 방식:
+    /// - 옵션(한글 폰트/샘플 RPG)에 따라 파이프라인 스텝 구성이 달라집니다.
+    /// - Validate 단계는 실패해도 경고만 남기고 계속 진행합니다(프로젝트 상태에 따라 일부 누락을 허용).
+    /// - Execute 단계는 개별 스텝 예외를 로그로 남기고 다음 스텝을 계속 수행합니다.
+    /// </remarks>
     public sealed class AutoProjectSetupWindow : EditorWindow
     {
         private const string Title = "GGemCo Project Setup";
 
-        [Tooltip("네이버 나눔고딕 한글 폰트를 프로젝트에 셋업합니다.")]
+        /// <summary>
+        /// 네이버 나눔고딕 한글 폰트를 프로젝트에 셋업할지 여부입니다.
+        /// </summary>
         private bool _setKoreanFont;
 
-        [Tooltip("예제 RPG 프로젝트에 맞는 샘플 데이터/리소스를 모두 셋업합니다.")]
+        /// <summary>
+        /// 샘플 RPG 프로젝트에 맞는 샘플 데이터/리소스를 모두 셋업할지 여부입니다.
+        /// </summary>
         private bool _setAllSampleData;
 
         /// <summary>
-        /// 실제로 실행될 SetupStep 들의 파이프라인.
-        /// 매 실행마다 빌드되며, EditorWindow 인스턴스와 분리된 순수 데이터 구조로 유지합니다.
+        /// 실행할 SetupStep 파이프라인입니다.
+        /// 매 실행 시 옵션 상태를 바탕으로 다시 구성되며, EditorWindow 인스턴스와 분리된 순수 데이터 목록으로 유지합니다.
         /// </summary>
         private readonly List<SetupStepBase> _setupSteps = new List<SetupStepBase>();
 
         #region Menu
 
+        /// <summary>
+        /// 프로젝트 셋업 윈도우를 엽니다.
+        /// </summary>
         [MenuItem(ConfigEditor.NameToolSettingAuto, false, (int)ConfigEditor.ToolOrdering.AutoSetting)]
         public static void Open()
         {
@@ -46,6 +56,9 @@ namespace GGemCo2DCoreEditor
 
         #region Unity Callbacks
 
+        /// <summary>
+        /// 에디터 윈도우 UI를 그립니다.
+        /// </summary>
         private void OnGUI()
         {
             DrawHeader();
@@ -61,11 +74,17 @@ namespace GGemCo2DCoreEditor
 
         #region GUI
 
+        /// <summary>
+        /// 상단 안내 문구를 표시합니다.
+        /// </summary>
         private void DrawHeader()
         {
             EditorGUILayout.LabelField("프로젝트에 필요한 필수 초기 구성을 자동으로 셋업합니다.");
         }
 
+        /// <summary>
+        /// 셋업 옵션(한글 폰트/샘플 RPG)을 표시하고 값을 갱신합니다.
+        /// </summary>
         private void DrawOptions()
         {
             using (new EditorGUILayout.VerticalScope(EditorStyles.helpBox))
@@ -88,6 +107,10 @@ namespace GGemCo2DCoreEditor
             }
         }
 
+        /// <summary>
+        /// 실행 버튼(유효성 검사/자동 셋팅/로그 폴더 열기)을 표시합니다.
+        /// 에디터 GUI 루프 안정성을 위해 delayCall로 실제 실행을 지연합니다.
+        /// </summary>
         private void DrawButtons()
         {
             using (new EditorGUILayout.HorizontalScope())
@@ -116,6 +139,7 @@ namespace GGemCo2DCoreEditor
                 }
             }
         }
+
         #endregion
 
         #region Pipeline Build
@@ -123,11 +147,17 @@ namespace GGemCo2DCoreEditor
         /// <summary>
         /// 현재 옵션 상태를 기반으로 SetupStep 파이프라인을 구성합니다.
         /// </summary>
+        /// <remarks>
+        /// 구성 규칙:
+        /// - 공통 필수 스텝은 항상 포함합니다.
+        /// - 한글 폰트 스텝은 (한글 폰트 옵션) 또는 (샘플 RPG 옵션)일 때만 1회 추가합니다.
+        /// - Addressables 등록 스텝은 가능한 마지막에 실행되도록 배치합니다.
+        /// </remarks>
         private void BuildStepPipeline()
         {
             _setupSteps.Clear();
 
-            // 1. 공통 필수 스텝
+            // 1) 공통 필수 스텝
             _setupSteps.Add(new StepAddLayers());
             _setupSteps.Add(new StepAddSortingLayers());
             _setupSteps.Add(new StepAddTags());
@@ -135,28 +165,37 @@ namespace GGemCo2DCoreEditor
             _setupSteps.Add(new StepCreateDefaultScenes());
             _setupSteps.Add(new StepCreateSettingScriptableObject());
 
+            // 순서 중요: StepSetSceneRequireObject 에서 Popup Default 프리팹을 사용한다.
+            _setupSteps.Add(new StepCopyPackageResources());
+
+            // 순서 중요: 필수 UI 윈도우 복사하기. 옵션 윈도우 프리팹을 Intro 씬에서 사용한다.
+            _setupSteps.Add(new StepCopyDefaultUIWindowPrefab());
+
             _setupSteps.Add(new StepSetSceneRequireObject());
             _setupSteps.Add(new StepCopyEmptyDataTable());
             _setupSteps.Add(new StepCopyDefaultLocalization());
 
-            // 2. 옵션: 폰트 셋업(단일 스텝으로만 추가 - 중복 방지)
+            // DataAddressable 폴더에서 디폴트로 복사해야하는 리소스
+            _setupSteps.Add(new StepCopyDefaultDataAddressable());
+
+            // 2) 옵션: 폰트 셋업(단일 스텝으로만 추가 - 중복 방지)
             bool needKoreanFontStep = _setKoreanFont || _setAllSampleData;
             if (needKoreanFontStep)
             {
                 _setupSteps.Add(new StepCopyKoreanFonts());
             }
 
-            // 3. 옵션: 샘플 RPG 리소스/데이터 셋업
+            // 3) 옵션: 샘플 RPG 리소스/데이터 셋업
             bool needSampleResources = _setAllSampleData;
             if (needSampleResources)
             {
-                _setupSteps.Add(new StepCopyPackageResources());
                 _setupSteps.Add(new StepCopyAllSampleData());
                 _setupSteps.Add(new StepInstantiateUIWindowsFromTable());
                 _setupSteps.Add(new StepSetSettingScriptableObject());
                 _setupSteps.Add(new StepSetCamera());
             }
-            // Addressables를 마지막에 등록
+
+            // Addressables는 마지막에 등록
             _setupSteps.Add(new StepSetDefaultAddressableData());
             if (needSampleResources)
             {
@@ -168,11 +207,16 @@ namespace GGemCo2DCoreEditor
 
         #region Run & Validate
 
+        /// <summary>
+        /// 구성된 파이프라인을 실행하거나(Execute), 유효성 검사만 수행합니다(Validate).
+        /// </summary>
+        /// <param name="validateOnly">true면 Validate 단계만 수행하고 종료합니다.</param>
         private void Run(bool validateOnly)
         {
             // 파이프라인 구성
             BuildStepPipeline();
 
+            // enabledStep이 true인 스텝만 대상으로 하며, order 오름차순으로 실행합니다.
             var steps = _setupSteps
                 .Where(s => s is { enabledStep: true })
                 .OrderBy(s => s.order)
@@ -250,6 +294,9 @@ namespace GGemCo2DCoreEditor
 
         #endregion
 
+        /// <summary>
+        /// 프로젝트 셋업 로그가 저장되는 폴더를 OS 파일 탐색기로 엽니다.
+        /// </summary>
         private void OpenGameDataFolder()
         {
             string path = ConfigProjectSetup.DirLog;
@@ -271,7 +318,6 @@ namespace GGemCo2DCoreEditor
                 UnityEngine.Debug.LogError($"폴더를 찾을 수 없습니다: {path}");
             }
         }
-
     }
 }
 #endif

@@ -1,53 +1,64 @@
 ﻿#if UNITY_EDITOR
 using GGemCo2DCore;
 using UnityEditor;
-using UnityEditor.SceneManagement;
 using UnityEngine;
 
 namespace GGemCo2DCoreEditor
 {
     /// <summary>
-    /// 현재 열린 씬에서 ISceneConfigurator를 실행한다.
-    /// - 1) 씬 내 MonoBehaviour + ISceneConfigurator (비활성 포함)
-    /// - 2) 프로젝트 내 ScriptableObject 에셋(직접 서브클래스) + ISceneConfigurator
-    /// - 3) 매개변수 없는 생성자가 있는 일반 클래스 + ISceneConfigurator (TypeCache 기반)
-    /// 실행/검증/로깅은 Runner 컨텍스트 정책(Profile.stopOnFirstError)에 따름.
+    /// 지정된 씬(SceneAsset)들을 순차적으로 열고, 각 씬에 대한 ISceneConfigurator 기반 구성을 에디터에서 적용한 뒤 저장합니다.
+    /// ConfigureAndSave를 통해 씬을 OpenSceneMode.Single로 교체 로드하고, 설정 적용 → 변경 표시 → 씬/에셋 저장을 수행합니다.
     /// </summary>
+    /// <remarks>
+    /// NOTE:
+    /// - 본 구현은 "현재 열린 씬"에 국한되지 않고, 컨텍스트에서 가져온 여러 씬을 차례로 열어 설정합니다.
+    /// - 각 Configurator는 ScriptableObject 인스턴스로 생성되어 ConfigureInEditor()를 호출합니다.
+    /// </remarks>
     public sealed class StepSetSceneRequireObject : SetupStepBase
     {
+        /// <summary>
+        /// 씬 구성 스텝 실행 전 사전 조건을 검증합니다.
+        /// 현재 구현은 별도의 선행 조건 없이 항상 통과합니다.
+        /// </summary>
+        /// <param name="ctx">에디터 설정 전체에서 공유되는 컨텍스트 객체</param>
+        /// <param name="message">검증 실패 시 사용자에게 표시할 메시지</param>
+        /// <returns>검증이 통과되면 true, 실패하면 false</returns>
         public override bool Validate(EditorSetupContext ctx, out string message)
         {
-            // 별도 선행 조건은 없음. (열린 씬이 없어도 MonoBehaviour 탐색은 빈 결과)
+            // 별도 선행 조건은 없음. (씬 참조를 못 가져오면 Execute 단계에서 오류가 날 수 있음)
             message = null;
             return true;
         }
 
+        /// <summary>
+        /// PreIntro/Intro/Loading/Game 씬을 차례대로 구성하고 저장합니다.
+        /// </summary>
+        /// <param name="ctx">에디터 설정 전체에서 공유되는 컨텍스트 객체</param>
         public override void Execute(EditorSetupContext ctx)
         {
-            ConfigureAndSave(ctx.GetShared<SceneAsset>(ConfigDefine.SceneNamePreIntro),
-                () => ScriptableObject.CreateInstance<ScenePreIntroConfigurator>().ConfigureInEditor(), ctx);
+            // PreIntro 씬 구성
+            ConfigureAndSave(
+                ctx.GetShared<SceneAsset>(ConfigDefine.SceneNamePreIntro),
+                () => ScriptableObject.CreateInstance<ScenePreIntroConfigurator>().ConfigureInEditor(),
+                ctx);
 
-            ConfigureAndSave(ctx.GetShared<SceneAsset>(ConfigDefine.SceneNameIntro),
-                () => ScriptableObject.CreateInstance<SceneIntroConfigurator>().ConfigureInEditor(), ctx);
+            // Intro 씬 구성
+            ConfigureAndSave(
+                ctx.GetShared<SceneAsset>(ConfigDefine.SceneNameIntro),
+                () => ScriptableObject.CreateInstance<SceneIntroConfigurator>().ConfigureInEditor(),
+                ctx);
 
-            ConfigureAndSave(ctx.GetShared<SceneAsset>(ConfigDefine.SceneNameLoading),
-                () => ScriptableObject.CreateInstance<SceneLoadingConfigurator>().ConfigureInEditor(), ctx);
+            // Loading 씬 구성
+            ConfigureAndSave(
+                ctx.GetShared<SceneAsset>(ConfigDefine.SceneNameLoading),
+                () => ScriptableObject.CreateInstance<SceneLoadingConfigurator>().ConfigureInEditor(),
+                ctx);
 
-            ConfigureAndSave(ctx.GetShared<SceneAsset>(ConfigDefine.SceneNameGame),
-                () => ScriptableObject.CreateInstance<SceneGameConfigurator>().ConfigureInEditor(), ctx);
-        }
-        private static void ConfigureAndSave(SceneAsset sceneAsset, System.Action configure, EditorSetupContext ctx)
-        {
-            var path = AssetDatabase.GetAssetPath(sceneAsset);
-            var scene = EditorSceneManager.OpenScene(path, OpenSceneMode.Single);
-
-            configure?.Invoke();
-
-            // 변경 표시 및 저장(안전하게 두 번: 씬/에셋)
-            EditorSceneManager.MarkSceneDirty(scene);
-            EditorSceneManager.SaveScene(scene);
-            AssetDatabase.SaveAssets();
-            ctx.Logger.Info($"씬 설정 완료. Name: {sceneAsset.name}");
+            // Game 씬 구성
+            ConfigureAndSave(
+                ctx.GetShared<SceneAsset>(ConfigDefine.SceneNameGame),
+                () => ScriptableObject.CreateInstance<SceneGameConfigurator>().ConfigureInEditor(),
+                ctx);
         }
     }
 }
