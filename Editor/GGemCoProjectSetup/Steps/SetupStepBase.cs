@@ -1,4 +1,4 @@
-﻿#if UNITY_EDITOR
+#if UNITY_EDITOR
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
@@ -7,7 +7,7 @@ namespace GGemCo2DCoreEditor
 {
     /// <summary>
     /// 에디터 초기 설정 과정에서 사용되는 모든 설정 스텝의 공통 베이스 클래스입니다.
-    /// 각 스텝은 실행 여부, 순서, 검증 및 실행 로직을 정의합니다.
+    /// 각 스텝은 실행 여부, 검증 및 실행 로직을 정의합니다.
     /// </summary>
     public abstract class SetupStepBase
     {
@@ -18,18 +18,21 @@ namespace GGemCo2DCoreEditor
         public readonly bool enabledStep = true;
 
         /// <summary>
-        /// 설정 스텝의 실행 순서를 나타냅니다.
-        /// 값이 낮을수록 먼저 실행됩니다.
+        /// 에디터 UI에서 표시할 스텝 이름입니다.
+        /// 기본값은 타입명입니다.
         /// </summary>
-        [Tooltip("작업 순서(낮을수록 먼저 실행)")]
-        public readonly int order = 0;
+        public virtual string DisplayName => GetType().Name;
 
         /// <summary>
-        /// 설정 스텝에 대한 설명 또는 메모를 저장합니다.
-        /// 에디터 UI에서 참고용으로 사용됩니다.
+        /// 에디터 UI에서 표시할 스텝 설명입니다.
         /// </summary>
         [TextArea, Tooltip("스텝 설명/메모")]
         public string description;
+
+        /// <summary>
+        /// 진행률 가중치입니다. (설치 진행바가 더 자연스럽게 움직이도록 하기 위한 값)
+        /// </summary>
+        public virtual int Weight => 1;
 
         /// <summary>
         /// 스텝 실행 전에 사전 조건을 검증합니다.
@@ -65,11 +68,7 @@ namespace GGemCo2DCoreEditor
 
             configure?.Invoke();
 
-            // 씬 변경 사항을 명시적으로 표시하고 저장
-            EditorSceneManager.MarkSceneDirty(scene);
             EditorSceneManager.SaveScene(scene);
-
-            // 연관된 에셋 변경 사항까지 함께 저장
             AssetDatabase.SaveAssets();
 
             ctx.Logger.Info($"씬 설정 완료. Name: {sceneAsset.name}");

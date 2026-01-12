@@ -299,7 +299,7 @@ namespace GGemCo2DCoreEditor
 
             uiWindowManager.SetUIWindow(uiWindows.ToArray());
             scene.SetUIWindowManager(uiWindowManager);
-            HelperLog.Error($"[{nameof(SceneEditorGame)}] 샘플 윈도우 셋업 완료.", ctx);
+            HelperLog.Info($"[{nameof(SceneEditorGame)}] 샘플 윈도우 셋업 완료.", ctx);
         }
 
     }

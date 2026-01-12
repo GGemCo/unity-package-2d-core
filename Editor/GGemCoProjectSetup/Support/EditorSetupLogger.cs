@@ -1,4 +1,4 @@
-﻿#if UNITY_EDITOR
+#if UNITY_EDITOR
 using System;
 using System.IO;
 using System.Text;
@@ -13,7 +13,13 @@ namespace GGemCo2DCoreEditor
         private readonly string _logPath;
         private bool _disposed;
 
+        /// <summary>로그 파일 경로</summary>
         public string LogPath => _logPath;
+
+        /// <summary>
+        /// 로그 라인이 추가될 때마다 호출되는 이벤트입니다. (실시간 UI 표시 용도)
+        /// </summary>
+        public event Action<string> OnLineAppended;
 
         public EditorSetupLogger(string fileNamePrefix = "GGemCo_ProjectSetup")
         {
@@ -23,19 +29,33 @@ namespace GGemCo2DCoreEditor
             Info($"[Start] {DateTime.Now:yyyy-MM-dd HH:mm:ss}");
         }
 
-        public void Info(string msg)  { Append("INFO",  msg); Debug.Log(msg); }
-        public void Warn(string msg)  { Append("WARN",  msg); Debug.LogWarning(msg); }
-        public void Error(string msg) { Append("ERROR", msg); Debug.LogError(msg); }
+        public void Info(string msg)  => Write("INFO", msg, Debug.Log);
+        public void Warn(string msg)  => Write("WARN", msg, Debug.LogWarning);
+        public void Error(string msg) => Write("ERROR", msg, Debug.LogError);
 
-        private void Append(string level, string msg)
+        private void Write(string level, string msg, Action<string> console)
         {
-            _sb.AppendLine($"{DateTime.Now:HH:mm:ss.fff} [{level}] {msg}");
+            string line = $"{DateTime.Now:HH:mm:ss.fff} [{level}] {msg}";
+            _sb.AppendLine(line);
+
+            try { console?.Invoke(msg); } catch { /* ignore */ }
+
+            try { OnLineAppended?.Invoke(line); } catch { /* ignore */ }
         }
 
         public void Dispose()
         {
             if (_disposed) return;
-            File.WriteAllText(_logPath, _sb.ToString(), Encoding.UTF8);
+
+            try
+            {
+                File.WriteAllText(_logPath, _sb.ToString(), Encoding.UTF8);
+            }
+            catch (Exception ex)
+            {
+                Debug.LogError($"SetupLogger Dispose 실패: {ex}");
+            }
+
             _disposed = true;
         }
     }
