@@ -16,6 +16,11 @@ namespace GGemCo2DCoreEditor
     /// </remarks>
     public sealed class StepSetSceneRequireObject : SetupStepBase
     {
+        private bool _needSampleResources;
+        public StepSetSceneRequireObject(bool needSampleResources)
+        {
+            _needSampleResources = needSampleResources;
+        }
         /// <summary>
         /// 씬 구성 스텝 실행 전 사전 조건을 검증합니다.
         /// 현재 구현은 별도의 선행 조건 없이 항상 통과합니다.
@@ -45,7 +50,7 @@ namespace GGemCo2DCoreEditor
             // Intro 씬 구성
             ConfigureAndSave(
                 ctx.GetShared<SceneAsset>(ConfigDefine.SceneNameIntro),
-                () => ScriptableObject.CreateInstance<SceneIntroConfigurator>().ConfigureInEditor(),
+                () => ScriptableObject.CreateInstance<SceneIntroConfigurator>().ConfigureInEditor(_needSampleResources),
                 ctx);
 
             // Loading 씬 구성

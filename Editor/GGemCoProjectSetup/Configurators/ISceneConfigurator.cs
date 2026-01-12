@@ -5,7 +5,7 @@ namespace GGemCo2DCoreEditor
     public interface ISceneConfigurator
     {
         /// <summary>씬 편집 상태에서 에디터 실행 시 호출</summary>
-        void ConfigureInEditor();
+        void ConfigureInEditor(bool needSampleResources = false);
         string GetConfiguratorName() => GetType().Name;
     }
 }

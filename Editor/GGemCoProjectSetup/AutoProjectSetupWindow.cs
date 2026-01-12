@@ -155,6 +155,8 @@ namespace GGemCo2DCoreEditor
         /// </remarks>
         private void BuildStepPipeline()
         {
+            bool needKoreanFontStep = _setKoreanFont || _setAllSampleData;
+            bool needSampleResources = _setAllSampleData;
             _setupSteps.Clear();
 
             // 1) 공통 필수 스텝
@@ -175,20 +177,18 @@ namespace GGemCo2DCoreEditor
             // 순서 중요: 필수 UI 윈도우 복사하기. 옵션 윈도우 프리팹을 Intro 씬에서 사용한다.
             _setupSteps.Add(new StepCopyDefaultUIWindowPrefab());
 
-            _setupSteps.Add(new StepSetSceneRequireObject());
+            _setupSteps.Add(new StepSetSceneRequireObject(needSampleResources));
 
             // DataAddressable 폴더에서 디폴트로 복사해야하는 리소스
             _setupSteps.Add(new StepCopyDefaultDataAddressable());
 
             // 2) 옵션: 폰트 셋업(단일 스텝으로만 추가 - 중복 방지)
-            bool needKoreanFontStep = _setKoreanFont || _setAllSampleData;
             if (needKoreanFontStep)
             {
                 _setupSteps.Add(new StepCopyKoreanFonts());
             }
 
             // 3) 옵션: 샘플 RPG 리소스/데이터 셋업
-            bool needSampleResources = _setAllSampleData;
             if (needSampleResources)
             {
                 _setupSteps.Add(new StepCopyAllSampleData());

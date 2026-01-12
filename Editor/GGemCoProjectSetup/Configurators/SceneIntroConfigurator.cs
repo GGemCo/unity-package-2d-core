@@ -6,10 +6,15 @@ namespace GGemCo2DCoreEditor
     /// <summary>Intro 씬 필수 구성: 기본 메뉴 버튼(+클릭 사운드), 옵션/팝업/사운드 매니저 연결</summary>
     public sealed class SceneIntroConfigurator : DefaultSceneEditor, ISceneConfigurator
     {
-        public void ConfigureInEditor()
+        public void ConfigureInEditor(bool needSampleResources)
         {
             var sceneEditorIntro = ScriptableObject.CreateInstance<SceneEditorIntro>();
             sceneEditorIntro.SetupRequiredObjects();
+
+            if (needSampleResources)
+            {
+                sceneEditorIntro.SetupLoadUIObjects();
+            }
         }
     }
 }

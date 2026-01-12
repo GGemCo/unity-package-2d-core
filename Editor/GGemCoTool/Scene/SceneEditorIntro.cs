@@ -137,7 +137,7 @@ namespace GGemCo2DCoreEditor
         /// <summary>
         /// 불러오기 셋팅하기
         /// </summary>
-        private void SetupLoadUIObjects()
+        public void SetupLoadUIObjects()
         {
             SetupRequiredObjects();
             
