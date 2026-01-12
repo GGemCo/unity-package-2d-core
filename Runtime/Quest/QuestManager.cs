@@ -33,20 +33,19 @@ namespace GGemCo2DCore
             _quests.Clear();
             _activeHandlers.Clear();
             _sceneGame = scene;
-            
+            _tableQuest = TableLoaderManager.Instance.TableQuest;
+        }
+        public void OnStartBySceneGame()
+        {
             _questData = _sceneGame.saveDataManager.Quest;
             _playerData = _sceneGame.saveDataManager.Player;
             _inventoryData = _sceneGame.saveDataManager.Inventory;
-            
-            _tableQuest = TableLoaderManager.Instance.TableQuest;
-            
             _uiWindowHudQuest =
                 _sceneGame.uIWindowManager?.GetUIWindowByUid<UIWindowHudQuest>(UIWindowConstants.WindowUid.HudQuest);
             _uiWindowQuestReward =
                 _sceneGame.uIWindowManager?.GetUIWindowByUid<UIWindowQuestReward>(UIWindowConstants.WindowUid.QuestReward);
             _uiWindowInventory =
                 _sceneGame.uIWindowManager?.GetUIWindowByUid<UIWindowInventory>(UIWindowConstants.WindowUid.Inventory);
-            
             _ = LoadAllQuestJson();
         }
         /// <summary>

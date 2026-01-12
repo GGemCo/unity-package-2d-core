@@ -185,6 +185,9 @@ namespace GGemCo2DCore
         {
             if (TableLoaderManager.Instance == null) return;
             
+            ItemManager?.OnStartBySceneGame();
+            QuestManager?.OnStartBySceneGame();
+            
             _uiWindowInventory = uIWindowManager?.GetUIWindowByUid<UIWindowInventory>(UIWindowConstants.WindowUid
                 .Inventory);
             

@@ -67,8 +67,6 @@ namespace GGemCo2DCore
             _monsterDropDictionary = TableLoaderManager.Instance.TableMonsterDropRate.GetMonsterDropDictionary();
             _npcDropDictionary = TableLoaderManager.Instance.TableNpcDropRate.GetNpcDropDictionary();
             _sceneGame = sceneGame;
-            _uiWindowInventory =
-                _sceneGame.uIWindowManager?.GetUIWindowByUid<UIWindowInventory>(UIWindowConstants.WindowUid.Inventory);
         }
         /// <summary>
         /// Addressable 에 등록된 damageText 를 불러와서 pool 을 만든다 
@@ -107,6 +105,12 @@ namespace GGemCo2DCore
                 _poolDropItem.Enqueue(item);
             }
             // GcLogger.Log($"풀 확장: {amount}개 아이템 추가 (총 {poolDropItem.Count}개)");
+        }
+
+        public void OnStartBySceneGame()
+        {
+            _uiWindowInventory =
+                _sceneGame.uIWindowManager?.GetUIWindowByUid<UIWindowInventory>(UIWindowConstants.WindowUid.Inventory);
         }
         /// <summary>
         /// 아이템 맵에 드랍하기 

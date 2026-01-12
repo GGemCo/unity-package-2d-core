@@ -33,9 +33,6 @@ namespace GGemCo2DCore
             {
                 QuestDatas = new Dictionary<int, QuestSaveData>(saveDataContainer.QuestData.QuestDatas);
             }
-            uiWindowHudQuest =
-                SceneGame.Instance.uIWindowManager?.GetUIWindowByUid<UIWindowHudQuest>(
-                    UIWindowConstants.WindowUid.HudQuest);
         }
 
         private QuestConstants.Status GetStatus(int questUid)
@@ -78,6 +75,10 @@ namespace GGemCo2DCore
         {
             if (!QuestDatas.TryGetValue(questUid, out var data)) return;
             data.Count = count;
+            
+            uiWindowHudQuest ??=
+                SceneGame.Instance.uIWindowManager?.GetUIWindowByUid<UIWindowHudQuest>(
+                    UIWindowConstants.WindowUid.HudQuest);
             uiWindowHudQuest?.SetCount(questUid, count);
             SaveDatas();
         }
