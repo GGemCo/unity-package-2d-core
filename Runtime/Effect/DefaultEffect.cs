@@ -103,12 +103,12 @@ namespace GGemCo2DCore
 
                 float scaleX = width  / b.size.x;
                 float scaleY = height / b.size.y;
-
-                transform.localScale = new Vector3(
-                    Mathf.Abs(transform.localScale.x * scaleX) * signX,
-                    Mathf.Abs(transform.localScale.y * scaleY),
-                    transform.localScale.z
-                );
+                // todo. 필요한 곳에서 Scale을 변경하고 있다. 좀 더 고민해보자. 
+                // transform.localScale = new Vector3(
+                //     Mathf.Abs(transform.localScale.x * scaleX) * signX,
+                //     Mathf.Abs(transform.localScale.y * scaleY),
+                //     transform.localScale.z
+                // );
             }
         }
         private IEnumerator RemoveEffectDuration(float f)
