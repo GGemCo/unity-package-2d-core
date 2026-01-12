@@ -165,6 +165,7 @@ namespace GGemCo2DCoreEditor
             _setupSteps.Add(new StepAddTags());
 
             _setupSteps.Add(new StepCreateDefaultScenes());
+            _setupSteps.Add(new StepSetDefaultUI());
             _setupSteps.Add(new StepCreateSettingScriptableObject());
             
             // 순서 중요: Localization은 옵션 윈도우 프리팹이 복사될 때 사용된다.
@@ -176,8 +177,6 @@ namespace GGemCo2DCoreEditor
 
             // 순서 중요: 필수 UI 윈도우 복사하기. 옵션 윈도우 프리팹을 Intro 씬에서 사용한다.
             _setupSteps.Add(new StepCopyDefaultUIWindowPrefab());
-
-            _setupSteps.Add(new StepSetSceneRequireObject(needSampleResources));
 
             // DataAddressable 폴더에서 디폴트로 복사해야하는 리소스
             _setupSteps.Add(new StepCopyDefaultDataAddressable());
@@ -196,6 +195,9 @@ namespace GGemCo2DCoreEditor
                 _setupSteps.Add(new StepSetSettingScriptableObject());
                 _setupSteps.Add(new StepSetCamera());
             }
+            
+            // 씬 셋업 하기
+            _setupSteps.Add(new StepSetSceneRequireObject(needSampleResources));
 
             // Addressables는 마지막에 등록
             _setupSteps.Add(new StepSetDefaultAddressableData());

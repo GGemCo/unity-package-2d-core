@@ -44,7 +44,11 @@ namespace GGemCo2DCoreEditor
             {
                 // 샘플 RPG 기본값 적용
                 ggemCoSettings.useSpine2d = true;
+#if UNITY_6000_0_OR_NEWER
+                ggemCoSettings.inputSystemType = InputSystemType.NewInputSystem;
+#else
                 ggemCoSettings.inputSystemType = InputSystemType.Both;
+#endif                
 
                 // 스크립팅 디파인 심볼을 설정 값과 동기화
                 var settingGGemCoInspector = ScriptableObject.CreateInstance<SettingGGemCoInspector>();
