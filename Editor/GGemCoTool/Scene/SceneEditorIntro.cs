@@ -44,7 +44,7 @@ namespace GGemCo2DCoreEditor
         /// <summary>
         /// 필수 항목 셋팅
         /// </summary>
-        public void SetupRequiredObjects()
+        public void SetupRequiredObjects(EditorSetupContext ctx = null)
         {
             _objGGemCoCore = GetOrCreateRootPackageGameObject();
             // GGemCo2DCore.SceneIntro GameObject 만들기
@@ -53,9 +53,9 @@ namespace GGemCo2DCoreEditor
             CreateUIComponent.CreateObjectCanvas(packageType);
                 
             // 인트로 씬에서 사운드를 사용하기때문에, SoundManager 셋팅
-            SetupSoundManager(scene);
+            SetupSoundManager(scene, ctx);
             // 옵션 UI에서 팝업을 사용하기때문에, PopupManager 셋팅
-            SetupPopupManager(scene);
+            SetupPopupManager(scene, ctx);
             
             // 새 게임 버튼 만들고 연결하기
             MetaDataButton metaDataButton = new MetaDataButton(scene.GetFieldNameButtonNewGame(), "New Game",
@@ -63,6 +63,7 @@ namespace GGemCo2DCoreEditor
             Button createdButton = CreateUIComponent.CreateObjectButton(metaDataButton, packageType);
             createdButton.gameObject.AddComponent<ClickSoundEventBroadcaster>();
             scene.SetButtonNewGame(createdButton);
+            HelperLog.Info($"[{nameof(SceneEditorIntro)}] 새 게임 버튼 셋업 완료", ctx);
             
             // 계속 하기 버튼 만들고 연결하기
             metaDataButton = new MetaDataButton(scene.GetFieldNameButtonGameContinue(), "Continue Game",
@@ -71,6 +72,7 @@ namespace GGemCo2DCoreEditor
             buttonGameContinue.gameObject.AddComponent<ClickSoundEventBroadcaster>();
             scene.SetButtonGameContinue(buttonGameContinue);
             buttonGameContinue.gameObject.GetComponent<RectTransform>().anchoredPosition = new Vector2(0, 100);
+            HelperLog.Info($"[{nameof(SceneEditorIntro)}] 계속 하기 버튼 셋업 완료", ctx);
             
             // 옵션 버튼 만들고 연결하기
             metaDataButton = new MetaDataButton(scene.GetFieldNameButtonOption(), "Option",
@@ -79,12 +81,17 @@ namespace GGemCo2DCoreEditor
             buttonOption.gameObject.AddComponent<ClickSoundEventBroadcaster>();
             scene.SetButtonOption(buttonOption);
             buttonOption.gameObject.GetComponent<RectTransform>().anchoredPosition = new Vector2(0, -100);
+            HelperLog.Info($"[{nameof(SceneEditorIntro)}] 옵션 버튼 셋업 완료", ctx);
             
             // 옵션 윈도우 추가
             GameObject canvas = CreateUIComponent.Find("Canvas", packageType);
             string objectName = scene.GetNameUIWindowOption();
             GameObject prefab = FindPrefabByName(ConfigEditor.PathUIWindow, objectName);
-            if (!prefab) return;
+            if (!prefab)
+            {
+                HelperLog.Error($"[{nameof(SceneEditorIntro)}] {nameof(objectName)} 프리팹이 없습니다.", ctx);
+                return;
+            }
             
             GameObject gameObject = GameObject.Find(objectName);
             if (!gameObject)
@@ -93,7 +100,7 @@ namespace GGemCo2DCoreEditor
                 gameObject = PrefabUtility.InstantiatePrefab(prefab, canvas.transform) as GameObject;
                 if (!gameObject)
                 {
-                    Debug.LogError("프리팹 인스턴스 생성 실패");
+                    HelperLog.Error($"[{nameof(SceneEditorIntro)}] {nameof(objectName)} 프리팹 생성 실패.", ctx);
                     return;
                 }
                 gameObject.name = objectName;
@@ -118,6 +125,8 @@ namespace GGemCo2DCoreEditor
             }
             //  UIPanelOptionBase 프리팹을 자동으로 listPrefabPanel 에 등록
             AutoFillPanelPrefabs(uiWindowOption);
+            
+            HelperLog.Info($"[{nameof(SceneEditorIntro)}] 인트로 씬 필수 셋팅 완료", ctx);
             
             EditorUtility.SetDirty(scene);
         }
@@ -151,21 +160,25 @@ namespace GGemCo2DCoreEditor
         /// 팝업 매니저 셋팅
         /// </summary>
         /// <param name="scene"></param>
-        private void SetupPopupManager(SceneIntro scene)
+        /// <param name="ctx"></param>
+        private void SetupPopupManager(SceneIntro scene, EditorSetupContext ctx = null)
         {
             PopupManager popupManager = CreatePopupManager(_objGGemCoCore.transform);
             if (!popupManager) return;
             scene.SetPopupManager(popupManager);
+            HelperLog.Info($"[{nameof(SceneEditorIntro)}] {nameof(PopupManager)} 셋업 완료", ctx);
         }
         /// <summary>
         /// 사운드 매니저 셋팅
         /// </summary>
         /// <param name="scene"></param>
-        private void SetupSoundManager(SceneIntro scene)
+        /// <param name="ctx"></param>
+        private void SetupSoundManager(SceneIntro scene, EditorSetupContext ctx = null)
         {
             SoundManager soundManager = CreateSoundManager(_objGGemCoCore.transform);
             if (!soundManager) return;
             scene.SetSoundManager(soundManager);
+            HelperLog.Info($"[{nameof(SceneEditorIntro)}] {nameof(soundManager)} 셋업 완료", ctx);
         }
         /// <summary>
         /// 불러오기 UI 윈도우 셋팅

@@ -2,6 +2,7 @@
 using GGemCo2DCore;
 using UnityEditor;
 using UnityEngine;
+using UnityEngine.UI;
 
 namespace GGemCo2DCoreEditor
 {
@@ -53,7 +54,7 @@ namespace GGemCo2DCoreEditor
         /// <summary>
         /// 필수 항목 셋팅
         /// </summary>
-        public void SetupRequiredObjects()
+        public void SetupRequiredObjects(EditorSetupContext ctx = null)
         {
             _objGGemCoCore = GetOrCreateRootPackageGameObject();
             GGemCo2DCore.SceneGame scene = CreateOrAddComponent<GGemCo2DCore.SceneGame>(nameof(SceneGame));
@@ -61,14 +62,15 @@ namespace GGemCo2DCoreEditor
             
             // SceneGame 은 싱글톤으로 활용하고 있어 root 로 이동
             scene.gameObject.transform.SetParent(null);
-            SetupCamera(scene);
-            SetupCanvasUI(scene);
-            SetupCanvasFromWorld(scene);
-            SetupCanvasBlack(scene);
-            SetupSystemMessageManager(scene);
-            SetupSoundManager(scene);
-            SetupPopupManager(scene);
+            SetupCamera(scene, ctx);
+            SetupCanvasUI(scene, ctx);
+            SetupCanvasFromWorld(scene, ctx);
+            SetupCanvasBlack(scene, ctx);
+            SetupSystemMessageManager(scene, ctx);
+            SetupSoundManager(scene, ctx);
+            SetupPopupManager(scene, ctx);
             
+            HelperLog.Info($"[{nameof(SceneEditorGame)}] 게임 씬 필수 셋팅 완료", ctx);
             EditorUtility.SetDirty(scene);
             
         }
@@ -76,7 +78,8 @@ namespace GGemCo2DCoreEditor
         /// 메인 카메라
         /// </summary>
         /// <param name="scene"></param>
-        private void SetupCamera(SceneGame scene)
+        /// <param name="ctx"></param>
+        private void SetupCamera(SceneGame scene, EditorSetupContext ctx = null)
         {
             GameObject mainCameraObj = GameObject.FindWithTag("MainCamera");
             if (!mainCameraObj)
@@ -93,22 +96,26 @@ namespace GGemCo2DCoreEditor
             }
             cameraManager.SetCameraMoveSpeed(10);
             scene.SetCameraManager(cameraManager);
+            HelperLog.Info($"[{nameof(SceneEditorGame)}] 메인 카메라 셋팅 완료", ctx);
         }
         /// <summary>
         /// 기본 canvas
         /// </summary>
         /// <param name="scene"></param>
-        private void SetupCanvasUI(SceneGame scene)
+        /// <param name="ctx"></param>
+        private void SetupCanvasUI(SceneGame scene, EditorSetupContext ctx = null)
         {
             Canvas canvas = CreateUIComponent.CreateObjectCanvas(packageType);
             scene.SetCanvasUI(canvas);
             canvas.gameObject.transform.SetParent(_objGGemCoCore.transform);
+            HelperLog.Info($"[{nameof(SceneEditorGame)}] 메인 캔버스 셋팅 완료", ctx);
         }
         /// <summary>
         /// 월드 좌표 사용하는 canvas
         /// </summary>
         /// <param name="scene"></param>
-        private void SetupCanvasFromWorld(SceneGame scene)
+        /// <param name="ctx"></param>
+        private void SetupCanvasFromWorld(SceneGame scene, EditorSetupContext ctx = null)
         {
             GameObject canvasFromWorld = CreateUIComponent.CreateGameObjectByPrefab("CanvasFromWorld", packageType, _objGGemCoCore.transform, ConfigEditor.PathPrefabCanvasFromWorld);
             if (!canvasFromWorld) return;
@@ -116,46 +123,67 @@ namespace GGemCo2DCoreEditor
             scene.SetContainerDropItemName(canvasFromWorld.transform.Find("ContainerDropItemName")?.gameObject);
             scene.SetContainerMonsterHpBar(canvasFromWorld.transform.Find("ContainerMonsterHpBar")?.gameObject);
             scene.SetContainerDialogueBalloon(canvasFromWorld.transform.Find("ContainerDialogueBalloon")?.gameObject);
+
+            HelperLog.Info($"[{nameof(SceneEditorGame)}] 월드 좌표를 사용하는 캔버스 셋팅 완료", ctx);
         }
         /// <summary>
         /// 로딩 화면
         /// </summary>
         /// <param name="scene"></param>
-        private void SetupCanvasBlack(SceneGame scene)
+        /// <param name="ctx"></param>
+        private void SetupCanvasBlack(SceneGame scene, EditorSetupContext ctx = null)
         {
             GameObject canvasBlack = CreateUIComponent.CreateGameObjectByPrefab("CanvasBlack", packageType, _objGGemCoCore.transform, ConfigEditor.PathPrefabCanvasBlack);
             if (!canvasBlack) return;
-            scene.SetBgBlackForMapLoading(canvasBlack.transform.GetChild(0).gameObject);
+            
+            var objectImage = canvasBlack.transform.GetChild(0).gameObject;
+            if (objectImage == null)
+            {
+                HelperLog.Info($"[{nameof(SceneEditorGame)}] CanvasBlack 오브젝트 하위에 Image 오브젝트가 없습니다.", ctx);
+                return;
+            }
+            scene.SetBgBlackForMapLoading(objectImage);
+            var imageComponent = objectImage.GetComponent<Image>();
+            if (imageComponent)
+                imageComponent.color = new Color(0, 0, 0, 1);
+            
+            HelperLog.Info($"[{nameof(SceneEditorGame)}] 로딩 중 인터렉션을 막는 캔버스 셋팅 완료", ctx);
         }
         /// <summary>
         /// 시스템 메시지 매니저 
         /// </summary>
         /// <param name="scene"></param>
-        private void SetupSystemMessageManager(SceneGame scene)
+        /// <param name="ctx"></param>
+        private void SetupSystemMessageManager(SceneGame scene, EditorSetupContext ctx = null)
         {
             GameObject obj = CreateUIComponent.CreateGameObjectByPrefab("SystemMessageManager", packageType, _objGGemCoCore.transform, ConfigEditor.PathPrefabSystemMessageManager);
             if (!obj) return;
             scene.SetSystemMessageManager(obj.GetComponent<SystemMessageManager>());
+            HelperLog.Info($"[{nameof(SceneEditorGame)}] {nameof(SystemMessageManager)} 오브젝트 셋팅 완료", ctx);
         }
         /// <summary>
         /// 팝업 매니저 셋팅
         /// </summary>
         /// <param name="scene"></param>
-        private void SetupPopupManager(SceneGame scene)
+        /// <param name="ctx"></param>
+        private void SetupPopupManager(SceneGame scene, EditorSetupContext ctx = null)
         {
             PopupManager popupManager = CreatePopupManager(_objGGemCoCore.transform);
             if (!popupManager) return;
             scene.SetPopupManager(popupManager);
+            HelperLog.Info($"[{nameof(SceneEditorGame)}] {nameof(PopupManager)} 오브젝트 셋팅 완료", ctx);
         }
         /// <summary>
         /// 사운드 매니저 셋팅
         /// </summary>
         /// <param name="scene"></param>
-        private void SetupSoundManager(SceneGame scene)
+        /// <param name="ctx"></param>
+        private void SetupSoundManager(SceneGame scene, EditorSetupContext ctx = null)
         {
             SoundManager soundManager = CreateSoundManager(_objGGemCoCore.transform);
             if (!soundManager) return;
             scene.SetSoundManager(soundManager);
+            HelperLog.Info($"[{nameof(SceneEditorGame)}] {nameof(SoundManager)} 오브젝트 셋팅 완료", ctx);
         }
 
         /// <summary>
@@ -189,14 +217,22 @@ namespace GGemCo2DCoreEditor
             SetupRequiredObjects();
             
             SceneGame scene = CreateOrAddComponent<SceneGame>("SceneGame");
-            if (scene == null) return;
+            if (scene == null)
+            {
+                HelperLog.Error($"[{nameof(SceneEditorGame)}] {nameof(SceneGame)} 생성/가져오기를 할 수 없습니다.", ctx);
+                return;
+            }
             UIWindowManager uiWindowManager = SetupWindowManager();
-            if (!uiWindowManager) return;
+            if (!uiWindowManager)
+            {
+                HelperLog.Error($"[{nameof(SceneEditorGame)}] {nameof(UIWindowManager)} 생성/가져오기를 할 수 없습니다.", ctx);
+                return;
+            }
             
             GameObject canvas = CreateUIComponent.Find("Canvas", packageType);
             if (canvas == null)
             {
-                Debug.LogError("GGemCo_Core_Canvas 가 없습니다.");
+                HelperLog.Error($"[{nameof(SceneEditorGame)}] GGemCo_Core_Canvas 가 없습니다.", ctx);
                 return;
             }
 
@@ -215,7 +251,11 @@ namespace GGemCo2DCoreEditor
                 string objectName = info.PrefabName;
                 
                 GameObject prefab = FindPrefabByName(ConfigEditor.PathUIWindow, objectName);
-                if (!prefab) continue;
+                if (!prefab)
+                {
+                    HelperLog.Error($"[{nameof(SceneEditorGame)}] {objectName} 프리팹을 찾을 수 없습니다.", ctx);
+                    continue;
+                }
                 
                 GameObject gameObject = GameObject.Find(objectName);
                 UIWindow window;
@@ -233,7 +273,7 @@ namespace GGemCo2DCoreEditor
                 gameObject = PrefabUtility.InstantiatePrefab(prefab, canvas.transform) as GameObject;
                 if (!gameObject)
                 {
-                    Debug.LogError("프리팹 인스턴스 생성 실패");
+                    HelperLog.Error($"[{nameof(SceneEditorGame)}] {objectName} 프리팹 인스턴스 생성 실패.", ctx);
                     continue;
                 }
 
@@ -259,6 +299,7 @@ namespace GGemCo2DCoreEditor
 
             uiWindowManager.SetUIWindow(uiWindows.ToArray());
             scene.SetUIWindowManager(uiWindowManager);
+            HelperLog.Error($"[{nameof(SceneEditorGame)}] 샘플 윈도우 셋업 완료.", ctx);
         }
 
     }

@@ -41,7 +41,7 @@ namespace GGemCo2DCoreEditor
         /// <summary>
         /// 필수 항목 셋팅
         /// </summary>
-        public void SetupRequiredObjects()
+        public void SetupRequiredObjects(EditorSetupContext ctx = null)
         {
             GGemCo2DCore.ScenePreIntro scene = CreateOrAddComponent<ScenePreIntro>(nameof(ScenePreIntro));
 
@@ -50,6 +50,8 @@ namespace GGemCo2DCoreEditor
             // 진행률 텍스트 만들고 연결하기
             TextMeshProUGUI textMeshProUGUI = CreateLoadingText();
             scene.SetTextLoadingPercent(textMeshProUGUI);
+            
+            HelperLog.Info($"[{nameof(SceneEditorPreIntro)}] 프리 인트로 씬 필수 셋업 완료", ctx);
             
             EditorUtility.SetDirty(scene);
         }

@@ -44,25 +44,25 @@ namespace GGemCo2DCoreEditor
             // PreIntro 씬 구성
             ConfigureAndSave(
                 ctx.GetShared<SceneAsset>(ConfigDefine.SceneNamePreIntro),
-                () => ScriptableObject.CreateInstance<ScenePreIntroConfigurator>().ConfigureInEditor(),
+                () => ScriptableObject.CreateInstance<ScenePreIntroConfigurator>().ConfigureInEditor(ctx),
                 ctx);
 
             // Intro 씬 구성
             ConfigureAndSave(
                 ctx.GetShared<SceneAsset>(ConfigDefine.SceneNameIntro),
-                () => ScriptableObject.CreateInstance<SceneIntroConfigurator>().ConfigureInEditor(_needSampleResources),
+                () => ScriptableObject.CreateInstance<SceneIntroConfigurator>().ConfigureInEditor(ctx, _needSampleResources),
                 ctx);
 
             // Loading 씬 구성
             ConfigureAndSave(
                 ctx.GetShared<SceneAsset>(ConfigDefine.SceneNameLoading),
-                () => ScriptableObject.CreateInstance<SceneLoadingConfigurator>().ConfigureInEditor(),
+                () => ScriptableObject.CreateInstance<SceneLoadingConfigurator>().ConfigureInEditor(ctx),
                 ctx);
 
             // Game 씬 구성
             ConfigureAndSave(
                 ctx.GetShared<SceneAsset>(ConfigDefine.SceneNameGame),
-                () => ScriptableObject.CreateInstance<SceneGameConfigurator>().ConfigureInEditor(),
+                () => ScriptableObject.CreateInstance<SceneGameConfigurator>().ConfigureInEditor(ctx),
                 ctx);
         }
     }

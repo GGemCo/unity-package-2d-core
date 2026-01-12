@@ -165,7 +165,6 @@ namespace GGemCo2DCoreEditor
             _setupSteps.Add(new StepAddTags());
 
             _setupSteps.Add(new StepCreateDefaultScenes());
-            _setupSteps.Add(new StepSetDefaultUI());
             _setupSteps.Add(new StepCreateSettingScriptableObject());
             
             // 순서 중요: Localization은 옵션 윈도우 프리팹이 복사될 때 사용된다.

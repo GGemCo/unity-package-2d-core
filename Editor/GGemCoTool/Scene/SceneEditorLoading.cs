@@ -45,7 +45,7 @@ namespace GGemCo2DCoreEditor
         /// <summary>
         /// 필수 항목 셋팅
         /// </summary>
-        public void SetupRequiredObjects()
+        public void SetupRequiredObjects(EditorSetupContext ctx = null)
         {
             // GGemCo2DCore.SceneLoading GameObject 만들기
             GGemCo2DCore.SceneLoading scene = CreateOrAddComponent<GGemCo2DCore.SceneLoading>("SceneLoading");
@@ -54,6 +54,7 @@ namespace GGemCo2DCoreEditor
             TextMeshProUGUI textMeshProUGUI = CreateLoadingText();
             scene.SetTextLoadingPercent(textMeshProUGUI);
             
+            HelperLog.Info($"[{nameof(SceneEditorGame)}] 로딩 씬 필수 셋팅 완료", ctx);
             EditorUtility.SetDirty(scene);
         }
         /// <summary>
