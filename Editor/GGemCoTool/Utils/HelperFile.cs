@@ -1,5 +1,7 @@
 ﻿using System;
 using System.IO;
+using UnityEditor;
+using UnityEngine;
 
 namespace GGemCo2DCoreEditor
 {
@@ -15,6 +17,7 @@ namespace GGemCo2DCoreEditor
         /// <param name="sourceDir">복사할 원본 디렉터리 경로</param>
         /// <param name="targetDir">복사 대상 디렉터리 경로</param>
         /// <param name="copyMetafile">true면 .meta 파일도 함께 복사합니다.</param>
+        /// <param name="forceUpdate">강제로 Directory를 동기화 할 것인지</param>
         /// <remarks>
         /// - 대상 디렉터리가 없으면 생성합니다.
         /// - sourceDir 하위의 파일/폴더 구조를 targetDir에 그대로 반영합니다.
@@ -23,14 +26,31 @@ namespace GGemCo2DCoreEditor
         /// <exception cref="DirectoryNotFoundException">sourceDir가 존재하지 않는 경우</exception>
         /// <exception cref="IOException">파일/디렉터리 접근 중 IO 오류가 발생한 경우</exception>
         /// <exception cref="UnauthorizedAccessException">권한 문제로 접근할 수 없는 경우</exception>
-        public static void CopyDirectory(string sourceDir, string targetDir, bool copyMetafile = true)
+        public static void CopyDirectory(string sourceDir, string targetDir, bool copyMetafile = true, bool forceUpdate = false)
         {
             // NOTE: Directory.GetFiles/GetDirectories는 sourceDir이 없으면 DirectoryNotFoundException을 던집니다.
             if (!Directory.Exists(targetDir))
             {
                 Directory.CreateDirectory(targetDir);
-            }
 
+                if (forceUpdate)
+                {
+                    if (TryGetAssetsPath(targetDir, out string assetsPath))
+                        AssetDatabase.ImportAsset(assetsPath,
+                        ImportAssetOptions.ForceUpdate | ImportAssetOptions.ForceSynchronousImport);
+                }
+            }
+            
+            // 파일 목록을 정렬: .meta는 항상 뒤로
+            var files = Directory.GetFiles(sourceDir);
+            Array.Sort(files, (a, b) =>
+            {
+                bool am = a.EndsWith(".meta", StringComparison.OrdinalIgnoreCase);
+                bool bm = b.EndsWith(".meta", StringComparison.OrdinalIgnoreCase);
+                if (am == bm) return string.Compare(a, b, StringComparison.OrdinalIgnoreCase);
+                return am ? 1 : -1; // meta는 뒤
+            });
+            
             foreach (string file in Directory.GetFiles(sourceDir))
             {
                 if (!copyMetafile && file.EndsWith(".meta", StringComparison.OrdinalIgnoreCase))
@@ -38,14 +58,14 @@ namespace GGemCo2DCoreEditor
 
                 string fileName = Path.GetFileName(file);
                 string destFile = Path.Combine(targetDir, fileName);
-                CopyFile(file, destFile);
+                CopyFile(file, destFile, forceUpdate);
             }
 
             foreach (string directory in Directory.GetDirectories(sourceDir))
             {
                 string dirName = Path.GetFileName(directory);
                 string targetSubDir = Path.Combine(targetDir, dirName);
-                CopyDirectory(directory, targetSubDir, copyMetafile);
+                CopyDirectory(directory, targetSubDir, copyMetafile, forceUpdate);
             }
         }
 
@@ -55,6 +75,7 @@ namespace GGemCo2DCoreEditor
         /// </summary>
         /// <param name="sourceFile">복사할 원본 파일 경로</param>
         /// <param name="targetFile">복사 대상 파일 경로</param>
+        /// <param name="forceUpdate">강제로 파일을 동기화 처리 할 것인지</param>
         /// <remarks>
         /// 동작:
         /// - sourceFile/targetFile을 절대 경로로 정규화한 뒤 동일 경로면 아무 것도 하지 않습니다.
@@ -66,7 +87,7 @@ namespace GGemCo2DCoreEditor
         /// <exception cref="FileNotFoundException">원본 파일이 존재하지 않는 경우</exception>
         /// <exception cref="IOException">복사/교체 중 IO 오류가 발생한 경우</exception>
         /// <exception cref="UnauthorizedAccessException">권한 문제로 접근할 수 없는 경우</exception>
-        public static void CopyFile(string sourceFile, string targetFile)
+        public static void CopyFile(string sourceFile, string targetFile, bool forceUpdate = false)
         {
             if (string.IsNullOrWhiteSpace(sourceFile))
                 throw new ArgumentException("sourceFile is null or empty.", nameof(sourceFile));
@@ -87,7 +108,15 @@ namespace GGemCo2DCoreEditor
             // 대상 폴더 생성
             string dstDir = Path.GetDirectoryName(dstPath);
             if (!string.IsNullOrEmpty(dstDir) && !Directory.Exists(dstDir))
+            {
                 Directory.CreateDirectory(dstDir);
+                if (forceUpdate)
+                {
+                    if (TryGetAssetsPath(dstDir, out string assetsPath))
+                        AssetDatabase.ImportAsset(assetsPath,
+                        ImportAssetOptions.ForceUpdate | ImportAssetOptions.ForceSynchronousImport);
+                }
+            }
 
             // 대상이 ReadOnly일 수 있으니 제거 시도(가능한 경우)
             if (File.Exists(dstPath))
@@ -115,6 +144,14 @@ namespace GGemCo2DCoreEditor
                 else
                 {
                     File.Move(tempPath, dstPath);
+                }
+                // meta는 복사만 하고 ImportAsset은 하지 않음
+                bool isMeta = dstPath.EndsWith(".meta", StringComparison.OrdinalIgnoreCase);
+                if (forceUpdate && !isMeta)
+                {
+                    if (TryGetAssetsPath(dstPath, out string assetsPath))
+                        AssetDatabase.ImportAsset(assetsPath,
+                        ImportAssetOptions.ForceUpdate | ImportAssetOptions.ForceSynchronousImport);
                 }
             }
             catch (Exception)
@@ -145,6 +182,40 @@ namespace GGemCo2DCoreEditor
                     // ignore
                 }
             }
+        }
+        /// <summary>
+        /// OS 절대 경로를 Unity AssetDatabase용 경로("Assets/..." 형태)로 변환합니다.
+        /// </summary>
+        /// <param name="fullPath">
+        /// Path.GetFullPath 로 얻은 절대 경로
+        /// </param>
+        /// <param name="assetPath">
+        /// 변환된 Asset 경로 ("Assets/xxx")
+        /// </param>
+        /// <returns>
+        /// Assets 폴더 내부일 경우 true, 아니면 false
+        /// </returns>
+        public static bool TryGetAssetsPath(string fullPath, out string assetPath)
+        {
+            assetPath = null;
+
+            if (string.IsNullOrEmpty(fullPath))
+                return false;
+
+            // OS 경로 정규화
+            fullPath = Path.GetFullPath(fullPath)
+                .Replace('\\', '/');
+
+            // Application.dataPath == "<Project>/Assets"
+            string assetsRoot = Path.GetFullPath(Application.dataPath)
+                .Replace('\\', '/');
+
+            if (!fullPath.StartsWith(assetsRoot, StringComparison.OrdinalIgnoreCase))
+                return false;
+
+            // "<Project>/Assets/xxx.png" → "Assets/xxx.png"
+            assetPath = "Assets" + fullPath.Substring(assetsRoot.Length);
+            return true;
         }
     }
 }

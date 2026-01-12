@@ -76,9 +76,12 @@ namespace GGemCo2DCoreEditor
             // 저장/리프레시 (원본도 Apply/Save/Refresh 수행) 
             // ref: SettingSortingLayers.cs
             tagManagerObj.ApplyModifiedProperties();
-            AssetDatabase.SaveAssets();
-            EditorUtility.SetDirty(tagManagerObj.targetObject);
-            AssetDatabase.Refresh();
+            if (ctx == null)
+            {
+                AssetDatabase.SaveAssets();
+                EditorUtility.SetDirty(tagManagerObj.targetObject);
+                AssetDatabase.Refresh();
+            }
 
             if (ctx != null)
             {

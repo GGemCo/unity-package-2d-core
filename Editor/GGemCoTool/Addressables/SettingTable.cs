@@ -97,7 +97,8 @@ namespace GGemCo2DCoreEditor
             settings.SetDirty(AddressableAssetSettings.ModificationEvent.EntryMoved, null, true);
             AssetDatabase.SaveAssets();
             // 테이블 다시 로드하기
-            _addressableEditor.LoadTables();
+            if (ctx == null)
+                _addressableEditor.LoadTables();
 
             if (ctx != null)
             {

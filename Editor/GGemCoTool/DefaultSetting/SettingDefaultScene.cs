@@ -42,7 +42,10 @@ namespace GGemCo2DCoreEditor
                 ctx.SetShared(ConfigDefine.SceneNameGame, game);
             }
 
-            AssetDatabase.SaveAssets();
+            if (ctx == null)
+            {
+                AssetDatabase.SaveAssets();
+            }
 
             // 3) 빌드세팅에 등록(중복은 스킵)
             AddToBuildSettings(preIntro, ctx);

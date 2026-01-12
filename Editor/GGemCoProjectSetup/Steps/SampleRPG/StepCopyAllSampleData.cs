@@ -2,6 +2,7 @@
 using System.IO;
 using GGemCo2DCore;
 using UnityEditor;
+using UnityEngine;
 
 namespace GGemCo2DCoreEditor
 {
@@ -38,7 +39,10 @@ namespace GGemCo2DCoreEditor
                 HelperFile.CopyDirectory(sourceFolder, targetFolder);
             }
             
-            AssetDatabase.Refresh();
+            HelperLog.Info($"[{nameof(StepCopyAllSampleData)}] {_folderName.ToArray()} 복사 완료.", ctx);
+            
+            // 데이터 테이블을 복사했으니 강제 새로 고침 해준다.
+            ctx.addressableEditor.LoadTables(true);
         }
     }
 }

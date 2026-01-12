@@ -48,8 +48,11 @@ namespace GGemCo2DCoreEditor
             {
                 ScriptableObject asset = ScriptableObject.CreateInstance(type);
                 AssetDatabase.CreateAsset(asset, path);
-                AssetDatabase.SaveAssets();
-                AssetDatabase.Refresh();
+                if (ctx == null)
+                {
+                    AssetDatabase.SaveAssets();
+                    AssetDatabase.Refresh();
+                }
 
                 Selection.activeObject = asset;
                 EditorUtility.FocusProjectWindow();
@@ -57,17 +60,15 @@ namespace GGemCo2DCoreEditor
                 HelperLog.Info($"{fileName} ScriptableObject 가 생성되었습니다.", ctx);
             }
 
-            // 특정 설정에 따라 define 심볼 업데이트
-            if (type == typeof(GGemCoSettings))
-            {
-                var config = existing ?? AssetDatabase.LoadAssetAtPath<GGemCoSettings>(path);
-                if (config is GGemCoSettings settings)
-                {
-                    UpdateScriptingDefineSymbols(settings.useSpine2d, ctx);
-                }
-            }
-
-            ctx?.Logger.Info($"[Add Setting Scriptable Object] ");
+            // // 특정 설정에 따라 define 심볼 업데이트
+            // if (type == typeof(GGemCoSettings))
+            // {
+            //     var config = existing ?? AssetDatabase.LoadAssetAtPath<GGemCoSettings>(path);
+            //     if (config is GGemCoSettings settings)
+            //     {
+            //         UpdateScriptingDefineSymbols(settings.useSpine2d, ctx);
+            //     }
+            // }
         }
 
         private static void UpdateScriptingDefineSymbols(bool enable, EditorSetupContext ctx = null)

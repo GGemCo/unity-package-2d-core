@@ -186,7 +186,8 @@ namespace GGemCo2DCoreEditor
 
             _logger = new EditorSetupLogger();
             _logger.OnLineAppended += HandleLogLine;
-            _ctx = new EditorSetupContext(_logger);
+            var addressableEditor = ScriptableObject.CreateInstance<AddressableEditor>();
+            _ctx = new EditorSetupContext(_logger, addressableEditor);
 
             _progressId = Progress.Start("GGemCo Project Setup", "Initializing...");
             Description = _validateOnly ? "Validate Only 모드로 실행합니다." : "Validate 후 Execute를 수행합니다.";

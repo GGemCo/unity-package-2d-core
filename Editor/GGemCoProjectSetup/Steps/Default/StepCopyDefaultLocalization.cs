@@ -44,8 +44,6 @@ namespace GGemCo2DCoreEditor
                 var dist = _pathDist[i];
                 HelperFile.CopyDirectory(src, dist);
             }
-            
-            AssetDatabase.Refresh();
         }
     }
 }

@@ -8,7 +8,7 @@ namespace GGemCo2DCoreEditor
         {
             if (ctx != null)
             {
-                ctx.Logger.Info(msg);    
+                ctx.logger.Info(msg);    
             }
             else
             {
@@ -19,7 +19,7 @@ namespace GGemCo2DCoreEditor
         {
             if (ctx != null)
             {
-                ctx.Logger.Warn(msg);    
+                ctx.logger.Warn(msg);    
             }
             else
             {
@@ -30,7 +30,7 @@ namespace GGemCo2DCoreEditor
         {
             if (ctx != null)
             {
-                ctx.Logger.Error(msg);    
+                ctx.logger.Error(msg);    
             }
             else
             {

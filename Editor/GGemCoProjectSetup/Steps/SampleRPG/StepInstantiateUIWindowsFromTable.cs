@@ -48,14 +48,16 @@ namespace GGemCo2DCoreEditor
             PrefabPropertyEditorUtil.SetPrefabPropertyValue<TagNameNpc, int>(
                 prefabName: "TextNpcNameTag",
                 propertyName: "fontSize",
-                value: 10
+                value: 10,
+                false
             );
             
             // 드랍 아이템 네임 태그 폰트 크기 조절
             PrefabPropertyEditorUtil.SetPrefabPropertyValue<TagNameItem, int>(
                 prefabName: "TextDropItemNameTag",
                 propertyName: "fontSize",
-                value: 10
+                value: 10,
+                false
             );
         }
     }

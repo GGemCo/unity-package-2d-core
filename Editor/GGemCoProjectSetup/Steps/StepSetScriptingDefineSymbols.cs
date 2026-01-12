@@ -38,7 +38,7 @@ namespace GGemCo2DCoreEditor
 
                 var joined = string.Join(";", list);
                 PlayerSettings.SetScriptingDefineSymbols(group, joined);
-                ctx.Logger.Info($"[Defines:{group}] {joined}");
+                ctx.logger.Info($"[Defines:{group}] {joined}");
             }
         }
     }

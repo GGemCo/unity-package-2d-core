@@ -92,7 +92,7 @@ namespace GGemCo2DCoreEditor
             base.OnEnable();
 
             // NOTE: SettingMap 등 일부 모듈이 테이블 데이터를 참조하므로 테이블을 먼저 로드해야 합니다.
-            LoadTables();
+            // LoadTables();
 
             buttonHeight = 40f;
 
@@ -117,20 +117,20 @@ namespace GGemCo2DCoreEditor
         /// <remarks>
         /// tableLoaderManager는 기본 에디터 윈도우(DefaultEditorWindow)에서 제공되는 로더로 가정합니다.
         /// </remarks>
-        public void LoadTables()
+        public void LoadTables(bool forceReload = false)
         {
-            TableMap = tableLoaderManager.LoadMapTable();
-            TableNpc = tableLoaderManager.LoadNpcTable();
-            TableMonster = tableLoaderManager.LoadMonsterTable();
-            TableAnimation = tableLoaderManager.LoadSpineTable();
-            TableEffect = tableLoaderManager.LoadEffectTable();
-            TableItem = tableLoaderManager.LoadItemTable();
-            TableDialogue = tableLoaderManager.LoadDialogueTable();
-            TableQuest = tableLoaderManager.LoadQuestTable();
-            TableCutscene = tableLoaderManager.LoadCutsceneTable();
-            TableSkill = tableLoaderManager.LoadSkillTable();
-            TableAffect = tableLoaderManager.LoadAffectTable();
-            TableSound = tableLoaderManager.LoadSoundTable();
+            TableMap = TableLoaderManager.LoadMapTable(forceReload);
+            TableNpc = TableLoaderManager.LoadNpcTable(forceReload);
+            TableMonster = TableLoaderManager.LoadMonsterTable(forceReload);
+            TableAnimation = TableLoaderManager.LoadSpineTable(forceReload);
+            TableEffect = TableLoaderManager.LoadEffectTable(forceReload);
+            TableItem = TableLoaderManager.LoadItemTable(forceReload);
+            TableDialogue = TableLoaderManager.LoadDialogueTable(forceReload);
+            TableQuest = TableLoaderManager.LoadQuestTable(forceReload);
+            TableCutscene = TableLoaderManager.LoadCutsceneTable(forceReload);
+            TableSkill = TableLoaderManager.LoadSkillTable(forceReload);
+            TableAffect = TableLoaderManager.LoadAffectTable(forceReload);
+            TableSound = TableLoaderManager.LoadSoundTable(forceReload);
         }
 
         /// <summary>

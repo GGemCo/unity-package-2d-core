@@ -13,25 +13,17 @@ namespace GGemCo2DCoreEditor
         /// <summary>
         /// 지정한 이름의 Prefab Asset을 찾아, 특정 컴포넌트의 프로퍼티 값을 변경한다.
         /// </summary>
-        /// <typeparam name="TComponent">
-        /// 수정 대상 컴포넌트 타입
-        /// </typeparam>
-        /// <typeparam name="TValue">
-        /// 프로퍼티 값 타입 (int, float, bool, string, Color, enum 등)
-        /// </typeparam>
-        /// <param name="prefabName">
-        /// Project 탭에 존재하는 Prefab 이름
-        /// </param>
-        /// <param name="propertyName">
-        /// SerializedProperty 이름
-        /// </param>
-        /// <param name="value">
-        /// 변경할 값
-        /// </param>
+        /// <typeparam name="TComponent"> 수정 대상 컴포넌트 타입 </typeparam>
+        /// <typeparam name="TValue"> 프로퍼티 값 타입 (int, float, bool, string, Color, enum 등) </typeparam>
+        /// <param name="prefabName"> Project 탭에 존재하는 Prefab 이름 </param>
+        /// <param name="propertyName"> SerializedProperty 이름 </param>
+        /// <param name="value"> 변경할 값 </param>
+        /// <param name="refresh"> AssetDatabase.SaveAssets, AssetDatabase.Refresh </param>
         public static void SetPrefabPropertyValue<TComponent, TValue>(
             string prefabName,
             string propertyName,
-            TValue value)
+            TValue value,
+            bool refresh = true)
             where TComponent : Component
         {
             if (string.IsNullOrEmpty(prefabName))
@@ -96,6 +88,7 @@ namespace GGemCo2DCoreEditor
                 }
             }
 
+            if (!refresh) return;
             AssetDatabase.SaveAssets();
             AssetDatabase.Refresh();
         }

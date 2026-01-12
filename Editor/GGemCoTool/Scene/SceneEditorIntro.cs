@@ -89,7 +89,7 @@ namespace GGemCo2DCoreEditor
             GameObject prefab = FindPrefabByName(ConfigEditor.PathUIWindow, objectName);
             if (!prefab)
             {
-                HelperLog.Error($"[{nameof(SceneEditorIntro)}] {nameof(objectName)} 프리팹이 없습니다.", ctx);
+                HelperLog.Error($"[{nameof(SceneEditorIntro)}] {objectName} 프리팹이 없습니다.", ctx);
                 return;
             }
             

@@ -28,7 +28,6 @@ namespace GGemCo2DCoreEditor
         {
             HelperFile.CopyDirectory(_srcTables, _dstTables);
             
-            AssetDatabase.Refresh();
             HelperLog.Info($"{_srcTables} -> {_dstTables} 경로로 복사 완료했습니다.", ctx);
         }
     }

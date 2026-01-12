@@ -15,12 +15,6 @@ namespace GGemCo2DCoreEditor
     public class DefaultEditorWindow : EditorWindow
     {
         /// <summary>
-        /// 테이블 로드에 사용되는 매니저입니다.
-        /// 파생 EditorWindow에서 테이블 접근이 필요할 때 사용합니다.
-        /// </summary>
-        protected TableLoaderManager tableLoaderManager;
-
-        /// <summary>
         /// 기본 패키지 타입입니다.
         /// GameObject 이름 생성/루트 패키지 오브젝트 구성에 사용됩니다.
         /// </summary>
@@ -31,7 +25,6 @@ namespace GGemCo2DCoreEditor
         /// </summary>
         protected virtual void OnEnable()
         {
-            tableLoaderManager = new TableLoaderManager();
             packageType = ConfigPackageInfo.PackageType.Core;
         }
 

@@ -71,7 +71,7 @@ namespace GGemCo2DCoreEditor
             EditorSceneManager.SaveScene(scene);
             AssetDatabase.SaveAssets();
 
-            ctx.Logger.Info($"씬 설정 완료. Name: {sceneAsset.name}");
+            ctx.logger.Info($"씬 설정 완료. Name: {sceneAsset.name}");
         }
 
         /// <summary>

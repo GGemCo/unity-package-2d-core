@@ -132,7 +132,6 @@ namespace GGemCo2DCoreEditor
         private void OnEnable()
         {
             _page = WizardPage.Options;
-            EnsureStyles();
             
             // 타이틀은 파생 클래스 재정의 값을 사용합니다.
             titleContent = new GUIContent(Title);
@@ -513,6 +512,7 @@ namespace GGemCo2DCoreEditor
             bool needSampleResources = _setAllSampleData;
 
             _setupSteps.Clear();
+            AssetDatabase.StartAssetEditing();
 
             // 1) 공통 필수 스텝
             _setupSteps.Add(new StepAddLayers());
@@ -525,7 +525,16 @@ namespace GGemCo2DCoreEditor
             // 순서 중요: Localization은 옵션 윈도우 프리팹이 복사될 때 사용된다.
             _setupSteps.Add(new StepCopyEmptyDataTable());
             _setupSteps.Add(new StepCopyDefaultLocalization());
+            
+            // 순서 중요: StepSetSceneRequireObject 에서 Popup Default 프리팹을 사용한다.
+            _setupSteps.Add(new StepCopyPackageResources());
 
+            // 순서 중요: 필수 UI 윈도우 복사하기. 옵션 윈도우 프리팹을 Intro 씬에서 사용한다.
+            _setupSteps.Add(new StepCopyDefaultUIWindowPrefab());
+
+            // DataAddressable 폴더에서 디폴트로 복사해야하는 리소스
+            _setupSteps.Add(new StepCopyDefaultDataAddressable());
+            
             // 한글 폰트는 옵션에 따라 추가
             if (needKoreanFontStep)
             {
@@ -540,6 +549,12 @@ namespace GGemCo2DCoreEditor
                 _setupSteps.Add(new StepSetSettingScriptableObject());
                 _setupSteps.Add(new StepSetCamera());
             }
+            
+            AssetDatabase.SaveAssets();
+            AssetDatabase.StopAssetEditing();
+            AssetDatabase.Refresh();
+            
+            _setupSteps.Add(new StepSetSceneRequireObject(needSampleResources));
 
             // Addressables는 마지막에 등록
             _setupSteps.Add(new StepSetDefaultAddressableData());

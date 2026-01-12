@@ -90,7 +90,7 @@ namespace GGemCo2DCoreEditor
             // 순서 중요. LoadPrefs에서 _selectedIndexEffect를 불러온다.
             _selectedIndexEffect = 0;
             _selectedIndexHitEffect = 0;
-            _tableEffect = tableLoaderManager.LoadEffectTable();
+            _tableEffect = TableLoaderManager.LoadEffectTable();
             _tableDictionaryEffect = _tableEffect.GetDatas();
             _projectileController ??= new ProjectileController();
             

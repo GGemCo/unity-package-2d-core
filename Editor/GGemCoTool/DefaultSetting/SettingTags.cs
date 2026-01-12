@@ -48,15 +48,18 @@ namespace GGemCo2DCoreEditor
 
             // 변경 사항 저장
             tagManager.ApplyModifiedProperties();
-            AssetDatabase.SaveAssets(); // 변경 사항 저장
+            if (ctx == null)
+            {
+                AssetDatabase.SaveAssets(); // 변경 사항 저장
             
-            // Inspector 갱신
-            EditorUtility.SetDirty(tagManager.targetObject); // TargetObject를 '더럽힘' 상태로 만들어 갱신 유도
-            AssetDatabase.Refresh(); // 에디터 갱신
+                // Inspector 갱신
+                EditorUtility.SetDirty(tagManager.targetObject); // TargetObject를 '더럽힘' 상태로 만들어 갱신 유도
+                AssetDatabase.Refresh(); // 에디터 갱신
+            }
             
             if (ctx != null)
             {
-                ctx.Logger.Info($"[Tags] 추가: {added}, 스킵: {skipped}");    
+                ctx.logger.Info($"[Tags] 추가: {added}, 스킵: {skipped}");    
             }
             else
             {

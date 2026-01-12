@@ -41,15 +41,13 @@ namespace GGemCo2DCoreEditor
             {
                 var src = _pathSrc[i];
                 var dist = _pathDist[i];
-                HelperFile.CopyFile(src, dist);
+                HelperFile.CopyFile(src, dist, true);
                 
                 // meta 파일
-                src = $"{_pathSrc[i]}.meta";
-                dist = $"{_pathDist[i]}.meta";
-                HelperFile.CopyFile(src, dist);
+                var srcMeta = $"{_pathSrc[i]}.meta";
+                var distMeta = $"{_pathDist[i]}.meta";
+                HelperFile.CopyFile(srcMeta, distMeta);
             }
-            
-            AssetDatabase.Refresh();
         }
     }
 }

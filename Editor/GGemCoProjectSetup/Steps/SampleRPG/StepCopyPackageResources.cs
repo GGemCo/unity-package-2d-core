@@ -31,7 +31,6 @@ namespace GGemCo2DCoreEditor
             // Samples~/EmptyDataTable 폴더를 DataAddressable로 복사
             HelperFile.CopyDirectory(_srcTables, _dstTables);
             
-            AssetDatabase.Refresh();
             HelperLog.Info($"{_srcTables} -> {_dstTables} 경로로 복사 완료했습니다.", ctx);
         }
     }

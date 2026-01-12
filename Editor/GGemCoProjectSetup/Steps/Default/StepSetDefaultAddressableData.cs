@@ -29,7 +29,7 @@ namespace GGemCo2DCoreEditor
         public override void Execute(EditorSetupContext ctx)
         {
             // Addressables 편집 작업을 위한 에디터 전용 인스턴스 생성
-            var addressableEditor = ScriptableObject.CreateInstance<AddressableEditor>();
+            var addressableEditor = ctx.addressableEditor;
 
             // settings 관련 ScriptableObject 구성/초기화
             var settingScriptableObject = new SettingScriptableObject(addressableEditor);
@@ -42,7 +42,7 @@ namespace GGemCo2DCoreEditor
 
             // 기본 리소스 등록: blank 아이콘(아이콘만) 추가
             var settingItem = new SettingItem(addressableEditor);
-            settingItem.AddBlankIconOnly(ctx);
+            settingItem.AddBlankIconOnly(ctx, false);
         }
     }
 }

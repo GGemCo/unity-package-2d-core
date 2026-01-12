@@ -7,85 +7,85 @@ namespace GGemCo2DCoreEditor
 {
     public class TableLoaderManager : TableLoaderManagerBase
     {
-        public TableMap LoadMapTable(bool forceReload = false)
+        public static TableMap LoadMapTable(bool forceReload = false)
             => LoadTable<TableMap>(ConfigAddressableTable.TableMap.Path, forceReload);
         
-        public TableNpc LoadNpcTable()
+        public static TableNpc LoadNpcTable(bool forceReload = false)
         {
-            return LoadTable<TableNpc>(ConfigAddressableTable.TableNpc.Path);
+            return LoadTable<TableNpc>(ConfigAddressableTable.TableNpc.Path, forceReload);
         }
-        public TableMonster LoadMonsterTable()
+        public static TableMonster LoadMonsterTable(bool forceReload = false)
         {
-            return LoadTable<TableMonster>(ConfigAddressableTable.TableMonster.Path);
+            return LoadTable<TableMonster>(ConfigAddressableTable.TableMonster.Path, forceReload);
         }
-        public TableAnimation LoadSpineTable()
+        public static TableAnimation LoadSpineTable(bool forceReload = false)
         {
-            return LoadTable<TableAnimation>(ConfigAddressableTable.TableAnimation.Path);
+            return LoadTable<TableAnimation>(ConfigAddressableTable.TableAnimation.Path, forceReload);
         }
-        public TableItem LoadItemTable()
+        public static TableItem LoadItemTable(bool forceReload = false)
         {
-            return LoadTable<TableItem>(ConfigAddressableTable.TableItem.Path);
+            return LoadTable<TableItem>(ConfigAddressableTable.TableItem.Path, forceReload);
         }
-        public TableItemDropGroup LoadItemDropGroupTable()
+        public static TableItemDropGroup LoadItemDropGroupTable(bool forceReload = false)
         {
-            return LoadTable<TableItemDropGroup>(ConfigAddressableTable.TableItemDropGroup.Path);
+            return LoadTable<TableItemDropGroup>(ConfigAddressableTable.TableItemDropGroup.Path, forceReload);
         }
-        public TableMonsterDropRate LoadMonsterDropRateTable()
+        public static TableMonsterDropRate LoadMonsterDropRateTable(bool forceReload = false)
         {
-            return LoadTable<TableMonsterDropRate>(ConfigAddressableTable.TableMonsterDropRate.Path);
-        }
-
-        public TableCutscene LoadCutsceneTable()
-        {
-            return LoadTable<TableCutscene>(ConfigAddressableTable.TableCutscene.Path);
+            return LoadTable<TableMonsterDropRate>(ConfigAddressableTable.TableMonsterDropRate.Path, forceReload);
         }
 
-        public TableDialogue LoadDialogueTable()
+        public static TableCutscene LoadCutsceneTable(bool forceReload = false)
         {
-            return LoadTable<TableDialogue>(ConfigAddressableTable.TableDialogue.Path);
-        }
-        public TableQuest LoadQuestTable()
-        {
-            return LoadTable<TableQuest>(ConfigAddressableTable.TableQuest.Path);
+            return LoadTable<TableCutscene>(ConfigAddressableTable.TableCutscene.Path, forceReload);
         }
 
-        public TableEffect LoadEffectTable()
+        public static TableDialogue LoadDialogueTable(bool forceReload = false)
         {
-            return LoadTable<TableEffect>(ConfigAddressableTable.TableEffect.Path);
+            return LoadTable<TableDialogue>(ConfigAddressableTable.TableDialogue.Path, forceReload);
+        }
+        public static TableQuest LoadQuestTable(bool forceReload = false)
+        {
+            return LoadTable<TableQuest>(ConfigAddressableTable.TableQuest.Path, forceReload);
         }
 
-        public TableSkill LoadSkillTable()
+        public static TableEffect LoadEffectTable(bool forceReload = false)
         {
-            return LoadTable<TableSkill>(ConfigAddressableTable.TableSkill.Path);
+            return LoadTable<TableEffect>(ConfigAddressableTable.TableEffect.Path, forceReload);
         }
 
-        public TableWindow LoadWindowTable()
+        public static TableSkill LoadSkillTable(bool forceReload = false)
         {
-            return LoadTable<TableWindow>(ConfigAddressableTable.TableWindow.Path);
-        }
-        public TableAffect LoadAffectTable()
-        {
-            return LoadTable<TableAffect>(ConfigAddressableTable.TableAffect.Path);
+            return LoadTable<TableSkill>(ConfigAddressableTable.TableSkill.Path, forceReload);
         }
 
-        public TableSound LoadSoundTable()
+        public static TableWindow LoadWindowTable(bool forceReload = false)
         {
-            return LoadTable<TableSound>(ConfigAddressableTable.TableSound.Path);
+            return LoadTable<TableWindow>(ConfigAddressableTable.TableWindow.Path, forceReload);
+        }
+        public static TableAffect LoadAffectTable(bool forceReload = false)
+        {
+            return LoadTable<TableAffect>(ConfigAddressableTable.TableAffect.Path, forceReload);
         }
 
-        public TableProjectile LoadProjectileTable()
+        public static TableSound LoadSoundTable(bool forceReload = false)
         {
-            return LoadTable<TableProjectile>(ConfigAddressableTable.TableProjectile.Path);
+            return LoadTable<TableSound>(ConfigAddressableTable.TableSound.Path, forceReload);
         }
 
-        public TableSimulationTool LoadSimulationToolTable()
+        public static TableProjectile LoadProjectileTable(bool forceReload = false)
         {
-            return LoadTable<TableSimulationTool>(ConfigAddressableTable.TableSimulationTool.Path);
+            return LoadTable<TableProjectile>(ConfigAddressableTable.TableProjectile.Path, forceReload);
         }
 
-        public TableSimulationGrowth LoadSimulationGrowthTable()
+        public static TableSimulationTool LoadSimulationToolTable(bool forceReload = false)
         {
-            return LoadTable<TableSimulationGrowth>(ConfigAddressableTable.TableSimulationGrowth.Path);
+            return LoadTable<TableSimulationTool>(ConfigAddressableTable.TableSimulationTool.Path, forceReload);
+        }
+
+        public static TableSimulationGrowth LoadSimulationGrowthTable(bool forceReload = false)
+        {
+            return LoadTable<TableSimulationGrowth>(ConfigAddressableTable.TableSimulationGrowth.Path, forceReload);
         }
 
         /// <summary>
@@ -100,7 +100,7 @@ namespace GGemCo2DCoreEditor
         /// <param name="forceReload"></param>
         /// <typeparam name="TTable"></typeparam>
         /// <typeparam name="TRow"></typeparam>
-        public void LoadTableData<TTable, TRow>(
+        public static void LoadTableData<TTable, TRow>(
             string tableFileName,
             out TTable table,
             out List<string> nameList,

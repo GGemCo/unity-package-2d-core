@@ -52,7 +52,6 @@ namespace GGemCo2DCoreEditor
         private ReorderableList _rewardItemList;
         private const float LabelWidth = 70f;
         
-        private TableLoaderManager _tableLoaderManager;
         private TableQuest _tableQuest;
         private TableNpc _tableNpc;
         private TableMonster _tableMonster;
@@ -89,8 +88,7 @@ namespace GGemCo2DCoreEditor
         }
         private void OnEnable()
         {
-            _tableLoaderManager = new TableLoaderManager();
-            _tableLoaderManager.LoadTableData(
+            TableLoaderManager.LoadTableData(
                 ConfigAddressableTable.Quest,
                 out _tableQuest,
                 out _nameQuest,
@@ -98,35 +96,35 @@ namespace GGemCo2DCoreEditor
                 info => $"{info.Uid} - {info.Name}"
             );
             
-            _tableLoaderManager.LoadTableData<TableNpc, StruckTableNpc>(
+            TableLoaderManager.LoadTableData<TableNpc, StruckTableNpc>(
                 ConfigAddressableTable.Npc,
                 out _tableNpc,
                 out _nameNpc,
                 out _struckTableNpcs,
                 info => $"{info.Uid} - {info.Name}"
             );
-            _tableLoaderManager.LoadTableData<TableMonster, StruckTableMonster>(
+            TableLoaderManager.LoadTableData<TableMonster, StruckTableMonster>(
                 ConfigAddressableTable.Monster,
                 out _tableMonster,
                 out _nameMonster,
                 out _struckTableMonsters,
                 info => $"{info.Uid} - {info.Name}"
             );
-            _tableLoaderManager.LoadTableData<TableMap, StruckTableMap>(
+            TableLoaderManager.LoadTableData<TableMap, StruckTableMap>(
                 ConfigAddressableTable.Map,
                 out _tableMap,
                 out _nameMap,
                 out _struckTableMaps,
                 info => $"{info.Uid} - {info.Name}"
             );
-            _tableLoaderManager.LoadTableData<TableDialogue, StruckTableDialogue>(
+            TableLoaderManager.LoadTableData<TableDialogue, StruckTableDialogue>(
                 ConfigAddressableTable.Dialogue,
                 out _tableDialogue,
                 out _nameDialogue,
                 out _struckTableDialogues,
                 info => $"{info.Uid} - {info.Memo}"
             );
-            _tableLoaderManager.LoadTableData<TableItem, StruckTableItem>(
+            TableLoaderManager.LoadTableData<TableItem, StruckTableItem>(
                 ConfigAddressableTable.Item,
                 out _tableItem,
                 out _nameItem,

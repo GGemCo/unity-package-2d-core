@@ -52,9 +52,12 @@ namespace GGemCo2DCoreEditor
             }
 
             so.ApplyModifiedProperties();
-            AssetDatabase.SaveAssets();
-            EditorUtility.SetDirty(so.targetObject);
-            AssetDatabase.Refresh();
+            if (ctx == null)
+            {
+                AssetDatabase.SaveAssets();
+                EditorUtility.SetDirty(so.targetObject);
+                AssetDatabase.Refresh();
+            }
             
             if (noSlot > 0)
                 HelperLog.Warn($"[Layers] 빈 슬롯 부족으로 {noSlot}개를 추가하지 못했습니다. (사용자 슬롯 8~31 범위)", ctx);

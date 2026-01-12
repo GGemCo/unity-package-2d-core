@@ -30,7 +30,7 @@ namespace GGemCo2DCoreEditor
             }
             if (nanum == null)
             {
-                HelperLog.Error($"{TargetFolder} 경로에서 NanumGothicBold SDF(Font Asset)을 찾지 못했습니다.", ctx);
+                HelperLog.Error($"[{nameof(StepCopyKoreanFonts)}] {TargetFolder} 경로에서 NanumGothicBold SDF(Font Asset)을 찾지 못했습니다.", ctx);
                 return;
             }
 
@@ -67,17 +67,13 @@ namespace GGemCo2DCoreEditor
             if (!list.Contains(nanum))
             {
                 list.Add(nanum);
-                EditorUtility.SetDirty(settings);
-                AssetDatabase.SaveAssets();
-                AssetDatabase.Refresh();
-                HelperLog.Info($"[GGemCo] Added global TMP fallback: {nanum.name}", ctx);
+                // EditorUtility.SetDirty(settings);
+                HelperLog.Info($"[{nameof(StepCopyKoreanFonts)}] Added global TMP fallback: {nanum.name}", ctx);
             }
             else
             {
-                HelperLog.Info($"[GGemCo] NanumGothicBold already in TMP global fallback list.");
+                HelperLog.Info($"[{nameof(StepCopyKoreanFonts)}] NanumGothicBold already in TMP global fallback list.");
             }
-            
-            AssetDatabase.Refresh();
         }
     }
 }

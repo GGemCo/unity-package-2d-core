@@ -6,8 +6,9 @@ namespace GGemCo2DCoreEditor
 {
     public sealed class EditorSetupContext
     {
-        public readonly EditorSetupLogger Logger;
-        public readonly DateTime StartedAt = DateTime.Now;
+        public readonly EditorSetupLogger logger;
+        public readonly DateTime startedAt = DateTime.Now;
+        public AddressableEditor addressableEditor;
 
         // 실행 중 공유 데이터 버스
         private readonly Dictionary<string, UnityEngine.Object> _shared = new();
@@ -16,9 +17,10 @@ namespace GGemCo2DCoreEditor
         public T GetShared<T>(string key) where T : UnityEngine.Object =>
             _shared.TryGetValue(key, out var o) ? o as T : null;
         
-        public EditorSetupContext(EditorSetupLogger logger)
+        public EditorSetupContext(EditorSetupLogger logger, AddressableEditor addressableEditor)
         {
-            Logger = logger;
+            this.logger = logger;
+            this.addressableEditor = addressableEditor;
         }
     }
 }

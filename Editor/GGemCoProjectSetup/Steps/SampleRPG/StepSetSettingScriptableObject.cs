@@ -105,9 +105,6 @@ namespace GGemCo2DCoreEditor
                 EditorUtility.SetDirty(mapSettings);
             }
 
-            // 변경된 에셋 저장
-            AssetDatabase.SaveAssets();
-
             HelperLog.Info($"[StepSetSettingScriptableObject] Settings ScriptableObjects have been configured for sample RPG.", ctx);
         }
     }
