@@ -87,6 +87,10 @@ namespace GGemCo2DCoreEditor
         {
             return LoadTable<TableSimulationGrowth>(ConfigAddressableTable.TableSimulationGrowth.Path, forceReload);
         }
+        public static TableAnimation LoadAnimationTable(bool forceReload = false)
+        {
+            return LoadTable<TableAnimation>(ConfigAddressableTable.TableAnimation.Path, forceReload);
+        }
 
         /// <summary>
         /// 툴에서 드롭다운 메뉴를 만들기 위해 사용중

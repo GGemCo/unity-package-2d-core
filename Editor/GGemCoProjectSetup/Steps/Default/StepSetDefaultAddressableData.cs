@@ -1,6 +1,4 @@
-﻿using UnityEngine;
-
-namespace GGemCo2DCoreEditor
+﻿namespace GGemCo2DCoreEditor
 {
     /// <summary>
     /// Addressables 기본 데이터(설정/테이블/필수 아이콘 등)를 초기 상태로 구성하는 설정 스텝입니다.
@@ -37,7 +35,6 @@ namespace GGemCo2DCoreEditor
 
             // 테이블(그룹/엔트리 등) 구성: 기존 그룹 정리 후 재설정
             var settingTable = new SettingTable(addressableEditor);
-            settingTable.ClearGroup(ctx);
             settingTable.Setup(ctx);
 
             // 기본 리소스 등록: blank 아이콘(아이콘만) 추가

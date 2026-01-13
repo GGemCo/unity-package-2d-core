@@ -13,8 +13,7 @@ namespace GGemCo2DCoreEditor
         
         public override void Execute(EditorSetupContext ctx)
         {
-            HelperFile.CopyDirectory(SourceFolder, TargetFolder);
-            AssetDatabase.Refresh();
+            HelperFile.CopyDirectory(SourceFolder, TargetFolder, true, true);
             
             // 1) NanumGothicBold SDF 로드 (Assets/Fonts 하위 검색)
             string[] guids = AssetDatabase.FindAssets(TargetFont);
@@ -47,7 +46,7 @@ namespace GGemCo2DCoreEditor
                     // 예비: 기본 Settings 생성 (Resources에 저장되어야 함)
                     settings = ScriptableObject.CreateInstance<TMP_Settings>();
                     AssetDatabase.CreateAsset(settings, "Assets/Resources/TMP Settings.asset");
-                    AssetDatabase.SaveAssets();
+                    // AssetDatabase.SaveAssets();
                 }
             }
 

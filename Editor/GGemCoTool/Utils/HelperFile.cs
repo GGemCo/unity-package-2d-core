@@ -150,8 +150,11 @@ namespace GGemCo2DCoreEditor
                 if (forceUpdate && !isMeta)
                 {
                     if (TryGetAssetsPath(dstPath, out string assetsPath))
+                    {
                         AssetDatabase.ImportAsset(assetsPath,
-                        ImportAssetOptions.ForceUpdate | ImportAssetOptions.ForceSynchronousImport);
+                            ImportAssetOptions.ForceUpdate | ImportAssetOptions.ForceSynchronousImport);
+                        // Debug.Log($"강제 새로 고침. path: {assetsPath}");
+                    }
                 }
             }
             catch (Exception)

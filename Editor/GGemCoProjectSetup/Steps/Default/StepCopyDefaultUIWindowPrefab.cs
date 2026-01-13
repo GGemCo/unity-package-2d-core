@@ -41,7 +41,7 @@ namespace GGemCo2DCoreEditor
             {
                 var src = _pathSrc[i];
                 var dist = _pathDist[i];
-                HelperFile.CopyDirectory(src, dist, true, true);
+                HelperFile.CopyDirectory(src, dist);
             }
         }
     }

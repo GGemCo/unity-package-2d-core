@@ -61,44 +61,12 @@ namespace GGemCo2DCoreEditor
 
             foreach (var addressableAssetInfo in ConfigAddressableTable.All)
             {
-                string assetPath = addressableAssetInfo.Path;
-                // 대상 파일 가져오기
-                var asset = AssetDatabase.LoadMainAssetAtPath(assetPath);
-                if (!asset)
-                {
-                    HelperLog.Error($"파일을 찾을 수 없습니다: {assetPath}", ctx);
-                    continue;
-                }
-
-                // 기존 Addressable 항목 확인
-                AddressableAssetEntry entry = settings.FindAssetEntry(AssetDatabase.AssetPathToGUID(assetPath));
-
-                if (entry == null)
-                {
-                    // 신규 Addressable 항목 추가
-                    entry = settings.CreateOrMoveEntry(AssetDatabase.AssetPathToGUID(assetPath), group);
-                    HelperLog.Info($"Addressable 항목을 추가했습니다: {assetPath}", ctx);
-                }
-                else
-                {
-                    HelperLog.Info($"이미 Addressable에 등록된 항목입니다: {assetPath}", ctx);
-                    continue;
-                }
-
-                // 키 값 설정
-                entry.address = addressableAssetInfo.Key;
-                // 라벨 값 설정
-                entry.SetLabel(ConfigAddressableLabel.Table, true, true);
-
+                Add(settings, group, addressableAssetInfo.Key, addressableAssetInfo.Path, ConfigAddressableLabel.Table);
                 // Debug.Log($"Addressable 키 값 설정: {keyName}");
             }
 
             // 설정 저장
             settings.SetDirty(AddressableAssetSettings.ModificationEvent.EntryMoved, null, true);
-            AssetDatabase.SaveAssets();
-            // 테이블 다시 로드하기
-            if (ctx == null)
-                _addressableEditor.LoadTables();
 
             if (ctx != null)
             {
@@ -106,6 +74,7 @@ namespace GGemCo2DCoreEditor
             }
             else
             {
+                AssetDatabase.SaveAssets();
                 EditorUtility.DisplayDialog(Title, "Addressable 설정 완료", "OK");    
             }
         }
@@ -130,6 +99,19 @@ namespace GGemCo2DCoreEditor
             }
             // 그룹 엔트리 전체 초기화 (스키마/설정은 유지)
             ClearGroupEntries(settings, group);
+        }
+        public void RemoveGroup(EditorSetupContext ctx)
+        {
+            // AddressableSettings 가져오기 (없으면 생성)
+            AddressableAssetSettings settings = AddressableAssetSettingsDefaultObject.Settings;
+            if (!settings)
+            {
+                HelperLog.Warn("Addressable 설정을 찾을 수 없습니다. 새로 생성합니다.", ctx);
+                settings = CreateAddressableSettings();
+            }
+
+            // 그룹 엔트리 전체 초기화 (스키마/설정은 유지)
+            DeleteGroup(settings, targetGroupName);
         }
     }
 }

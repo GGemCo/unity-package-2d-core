@@ -59,7 +59,7 @@ namespace GGemCo2DCoreEditor
         {
             // Common.OnGUITitle(Title);
 
-            if (_addressableEditor.TableItem == null)
+            if (TableLoaderManager.LoadItemTable() == null)
             {
                 EditorGUILayout.HelpBox($"{ConfigAddressableTable.Item} 테이블이 없습니다.", MessageType.Info);
             }
@@ -109,7 +109,7 @@ namespace GGemCo2DCoreEditor
             }
 
             // 아이템 테이블 데이터(UID 기반)를 읽어 Addressables 엔트리를 구성합니다.
-            Dictionary<int, StruckTableItem> dictionary = _addressableEditor.TableItem.GetDatas();
+            Dictionary<int, StruckTableItem> dictionary = TableLoaderManager.LoadItemTable().GetDatas();
 
             // AddressableSettings 가져오기 (없으면 생성)
             AddressableAssetSettings settings = AddressableAssetSettingsDefaultObject.Settings;
@@ -235,9 +235,6 @@ namespace GGemCo2DCoreEditor
             // 설정 저장
             settings.SetDirty(AddressableAssetSettings.ModificationEvent.EntryMoved, null, true);
             AssetDatabase.SaveAssets();
-
-            // 테이블 다시 로드(셋업 후 후속 모듈에서 최신 상태 사용)
-            _addressableEditor.LoadTables();
 
             if (ctx != null)
             {

@@ -29,15 +29,15 @@ namespace GGemCo2DCoreEditor
             _addressableEditor = addressableEditorWindow;
             targetGroupName = ConfigAddressableGroupName.Map;
             
-            _tableMonster = _addressableEditor.TableMonster;
-            _tableNpc = _addressableEditor.TableNpc;
-            _tableAnimation = _addressableEditor.TableAnimation;
+            _tableMonster = TableLoaderManager.LoadMonsterTable();
+            _tableNpc = TableLoaderManager.LoadNpcTable();
+            _tableAnimation = TableLoaderManager.LoadAnimationTable();
         }
         public void OnGUI()
         {
             // Common.OnGUITitle(Title);
 
-            if (_addressableEditor.TableMap == null)
+            if (TableLoaderManager.LoadMapTable() == null)
             {
                 EditorGUILayout.HelpBox($"{ConfigAddressableTable.Map} 테이블이 없습니다.", MessageType.Info);
             }
@@ -63,7 +63,7 @@ namespace GGemCo2DCoreEditor
         /// </summary>
         public void Setup(EditorSetupContext ctx = null)
         {
-            Dictionary<int, StruckTableMap> dictionaryMap = _addressableEditor.TableMap.GetDatas();
+            Dictionary<int, StruckTableMap> dictionaryMap = TableLoaderManager.LoadMapTable().GetDatas();
             
             // AddressableSettings 가져오기 (없으면 생성)
             AddressableAssetSettings settings = AddressableAssetSettingsDefaultObject.Settings;
@@ -187,12 +187,12 @@ namespace GGemCo2DCoreEditor
         {
             if (type == Type.Monster)
             {
-                Dictionary<int, StruckTableMonster> datas = _addressableEditor.TableMonster.GetDatas();
+                Dictionary<int, StruckTableMonster> datas = TableLoaderManager.LoadMonsterTable().GetDatas();
                 foreach (KeyValuePair<int, StruckTableMonster> outerPair in datas)
                 {
                     var info = outerPair.Value;
                     if (info == null) continue;
-                    var infoAnimation = _addressableEditor.TableAnimation.GetDataByUid(info.AnimationUid);
+                    var infoAnimation = TableLoaderManager.LoadAnimationTable().GetDataByUid(info.AnimationUid);
                     if (infoAnimation == null) continue;
                     string assetPath = ConfigAddressableMap.GetPathCharacter(infoAnimation, true);
                     // 기존 Addressable 항목 확인
@@ -202,12 +202,12 @@ namespace GGemCo2DCoreEditor
             }
             else if (type == Type.Npc)
             {
-                Dictionary<int, StruckTableNpc> datas = _addressableEditor.TableNpc.GetDatas();
+                Dictionary<int, StruckTableNpc> datas = TableLoaderManager.LoadNpcTable().GetDatas();
                 foreach (KeyValuePair<int, StruckTableNpc> outerPair in datas)
                 {
                     var info = outerPair.Value;
                     if (info == null) continue;
-                    var infoAnimation = _addressableEditor.TableAnimation.GetDataByUid(info.AnimationUid);
+                    var infoAnimation = TableLoaderManager.LoadAnimationTable().GetDataByUid(info.AnimationUid);
                     if (infoAnimation == null) continue;
                     string assetPath = ConfigAddressableMap.GetPathCharacter(infoAnimation, true);
                     // 기존 Addressable 항목 확인

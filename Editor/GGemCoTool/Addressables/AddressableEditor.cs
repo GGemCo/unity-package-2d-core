@@ -1,5 +1,4 @@
-﻿using GGemCo2DCore;
-using UnityEditor;
+﻿using UnityEditor;
 using UnityEngine;
 
 namespace GGemCo2DCoreEditor
@@ -30,42 +29,6 @@ namespace GGemCo2DCoreEditor
         private SettingAffect _settingAffect;
         private SettingSound _settingSound;
 
-        /// <summary>Addressables 구성에 필요한 맵 테이블 데이터입니다.</summary>
-        public TableMap TableMap;
-
-        /// <summary>Addressables 구성에 필요한 NPC 테이블 데이터입니다.</summary>
-        public TableNpc TableNpc;
-
-        /// <summary>Addressables 구성에 필요한 몬스터 테이블 데이터입니다.</summary>
-        public TableMonster TableMonster;
-
-        /// <summary>Addressables 구성에 필요한 애니메이션(Spine) 테이블 데이터입니다.</summary>
-        public TableAnimation TableAnimation;
-
-        /// <summary>Addressables 구성에 필요한 이펙트 테이블 데이터입니다.</summary>
-        public TableEffect TableEffect;
-
-        /// <summary>Addressables 구성에 필요한 아이템 테이블 데이터입니다.</summary>
-        public TableItem TableItem;
-
-        /// <summary>Addressables 구성에 필요한 대화 테이블 데이터입니다.</summary>
-        public TableDialogue TableDialogue;
-
-        /// <summary>Addressables 구성에 필요한 퀘스트 테이블 데이터입니다.</summary>
-        public TableQuest TableQuest;
-
-        /// <summary>Addressables 구성에 필요한 컷씬 테이블 데이터입니다.</summary>
-        public TableCutscene TableCutscene;
-
-        /// <summary>Addressables 구성에 필요한 스킬 테이블 데이터입니다.</summary>
-        public TableSkill TableSkill;
-
-        /// <summary>Addressables 구성에 필요한 어펙트(상태이상 등) 테이블 데이터입니다.</summary>
-        public TableAffect TableAffect;
-
-        /// <summary>Addressables 구성에 필요한 사운드 테이블 데이터입니다.</summary>
-        public TableSound TableSound;
-
         /// <summary>2열 레이아웃에서 각 모듈 버튼 영역의 폭입니다.</summary>
         public float buttonWidth;
 
@@ -91,9 +54,6 @@ namespace GGemCo2DCoreEditor
         {
             base.OnEnable();
 
-            // NOTE: SettingMap 등 일부 모듈이 테이블 데이터를 참조하므로 테이블을 먼저 로드해야 합니다.
-            // LoadTables();
-
             buttonHeight = 40f;
 
             // 각 Setting* 모듈은 AddressableEditor(본 윈도우)를 통해 공용 상태/테이블/유틸에 접근합니다.
@@ -112,28 +72,6 @@ namespace GGemCo2DCoreEditor
         }
 
         /// <summary>
-        /// Addressables 구성에 필요한 각종 데이터 테이블을 로드하여 public 필드에 캐시합니다.
-        /// </summary>
-        /// <remarks>
-        /// tableLoaderManager는 기본 에디터 윈도우(DefaultEditorWindow)에서 제공되는 로더로 가정합니다.
-        /// </remarks>
-        public void LoadTables(bool forceReload = false)
-        {
-            TableMap = TableLoaderManager.LoadMapTable(forceReload);
-            TableNpc = TableLoaderManager.LoadNpcTable(forceReload);
-            TableMonster = TableLoaderManager.LoadMonsterTable(forceReload);
-            TableAnimation = TableLoaderManager.LoadSpineTable(forceReload);
-            TableEffect = TableLoaderManager.LoadEffectTable(forceReload);
-            TableItem = TableLoaderManager.LoadItemTable(forceReload);
-            TableDialogue = TableLoaderManager.LoadDialogueTable(forceReload);
-            TableQuest = TableLoaderManager.LoadQuestTable(forceReload);
-            TableCutscene = TableLoaderManager.LoadCutsceneTable(forceReload);
-            TableSkill = TableLoaderManager.LoadSkillTable(forceReload);
-            TableAffect = TableLoaderManager.LoadAffectTable(forceReload);
-            TableSound = TableLoaderManager.LoadSoundTable(forceReload);
-        }
-
-        /// <summary>
         /// Addressables 설정 UI를 그립니다.
         /// 각 Setting* 모듈의 OnGUI를 2열 레이아웃으로 배치합니다.
         /// </summary>
@@ -147,7 +85,7 @@ namespace GGemCo2DCoreEditor
                 _scrollPosition = scroll.scrollPosition;
 
                 // 구성 순서 의존성을 사용자에게 안내
-                EditorGUILayout.HelpBox("캐릭터 추가 후 맵을 추가해야 맵별 배치되어있는 캐릭터 정보가 반영됩니다.", MessageType.Error);
+                EditorGUILayout.HelpBox("캐릭터 추가 후 맵을 추가해야 맵별 배치되어있는 캐릭터 정보가 반영됩니다.", MessageType.Info);
 
                 using (new EditorGUILayout.HorizontalScope())
                 {

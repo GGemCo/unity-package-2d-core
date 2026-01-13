@@ -208,7 +208,7 @@ namespace GGemCo2DCoreEditor
                     return prefab;
                 }
             }
-
+            Debug.LogError($"Guid를 찾지 못 했습니다. folderPath: {folderPath}, prefabName: {prefabName}");
             return null;
         }
     }

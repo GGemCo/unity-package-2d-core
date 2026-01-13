@@ -29,7 +29,7 @@ namespace GGemCo2DCoreEditor
         {
             // Common.OnGUITitle(Title);
 
-            if (_addressableEditor.TableMonster == null)
+            if (TableLoaderManager.LoadMonsterTable() == null)
             {
                 EditorGUILayout.HelpBox($"{ConfigAddressableTable.Monster} 테이블이 없습니다.", MessageType.Info);
             }
@@ -60,8 +60,8 @@ namespace GGemCo2DCoreEditor
                 if (!result) return;
             }
 
-            Dictionary<int, StruckTableMonster> dictionaryMonsters = _addressableEditor.TableMonster.GetDatas();
-            Dictionary<int, StruckTableNpc> dictionaryNpcs = _addressableEditor.TableNpc.GetDatas();
+            Dictionary<int, StruckTableMonster> dictionaryMonsters = TableLoaderManager.LoadMonsterTable().GetDatas();
+            Dictionary<int, StruckTableNpc> dictionaryNpcs = TableLoaderManager.LoadNpcTable().GetDatas();
             
             // AddressableSettings 가져오기 (없으면 생성)
             AddressableAssetSettings settings = AddressableAssetSettingsDefaultObject.Settings;
@@ -84,7 +84,7 @@ namespace GGemCo2DCoreEditor
                 {
                     var info = outerPair.Value;
                     if (info == null) continue;
-                    var infoAnimation = _addressableEditor.TableAnimation.GetDataByUid(info.AnimationUid);
+                    var infoAnimation = TableLoaderManager.LoadAnimationTable().GetDataByUid(info.AnimationUid);
                     if (infoAnimation == null) continue;
                 
                     string key = $"{ConfigAddressableKey.PrefabMonster}_{infoAnimation.Uid}";
@@ -114,7 +114,7 @@ namespace GGemCo2DCoreEditor
                 {
                     var info = outerPair.Value;
                     if (info == null) continue;
-                    var infoAnimation = _addressableEditor.TableAnimation.GetDataByUid(info.AnimationUid);
+                    var infoAnimation = TableLoaderManager.LoadAnimationTable().GetDataByUid(info.AnimationUid);
                     if (infoAnimation == null) continue;
                 
                     string key = $"{ConfigAddressableKey.PrefabNpc}_{infoAnimation.Uid}";
@@ -144,9 +144,6 @@ namespace GGemCo2DCoreEditor
 
             // 설정 저장
             settings.SetDirty(AddressableAssetSettings.ModificationEvent.EntryMoved, null, true);
-            AssetDatabase.SaveAssets();
-            // 테이블 다시 로드하기
-            _addressableEditor.LoadTables();
             
             if (ctx != null)
             {
@@ -154,6 +151,7 @@ namespace GGemCo2DCoreEditor
             }
             else
             {
+                AssetDatabase.SaveAssets();
                 EditorUtility.DisplayDialog(Title, "[Addressable] 캐릭터 설정 완료", "OK");
             }
         }

@@ -24,7 +24,7 @@ namespace GGemCo2DCoreEditor
         {
             // Common.OnGUITitle(Title);
 
-            if (_addressableEditor.TableEffect == null)
+            if (TableLoaderManager.LoadEffectTable() == null)
             {
                 EditorGUILayout.HelpBox($"{ConfigAddressableTable.Effect} 테이블이 없습니다.", MessageType.Info);
             }
@@ -56,7 +56,7 @@ namespace GGemCo2DCoreEditor
                 if (!result) return;
             }
             
-            Dictionary<int, StruckTableEffect> dictionary = _addressableEditor.TableEffect.GetDatas();
+            Dictionary<int, StruckTableEffect> dictionary = TableLoaderManager.LoadEffectTable().GetDatas();
             
             // AddressableSettings 가져오기 (없으면 생성)
             AddressableAssetSettings settings = AddressableAssetSettingsDefaultObject.Settings;
@@ -96,8 +96,6 @@ namespace GGemCo2DCoreEditor
             // 설정 저장
             settings.SetDirty(AddressableAssetSettings.ModificationEvent.EntryMoved, null, true);
             AssetDatabase.SaveAssets();
-            // 테이블 다시 로드하기
-            _addressableEditor.LoadTables();
             
             if (ctx != null)
             {

@@ -24,7 +24,7 @@ namespace GGemCo2DCoreEditor
 
         public void OnGUI()
         {
-            if (_addressableEditor.TableAffect == null)
+            if (TableLoaderManager.LoadAffectTable() == null)
             {
                 EditorGUILayout.HelpBox($"{ConfigAddressableTable.Affect} 테이블이 없습니다.", MessageType.Info);
             }
@@ -56,7 +56,7 @@ namespace GGemCo2DCoreEditor
                 if (!result) return;
             }
             
-            Dictionary<int, StruckTableAffect> dictionary = _addressableEditor.TableAffect.GetDatas();
+            Dictionary<int, StruckTableAffect> dictionary = TableLoaderManager.LoadAffectTable().GetDatas();
 
             // AddressableSettings 가져오기 (없으면 생성)
             AddressableAssetSettings settings = AddressableAssetSettingsDefaultObject.Settings;

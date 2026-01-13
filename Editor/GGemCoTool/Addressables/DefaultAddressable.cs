@@ -76,29 +76,39 @@ namespace GGemCo2DCoreEditor
         protected AddressableAssetEntry Add(AddressableAssetSettings settings, AddressableAssetGroup group, string keyName, string assetPath, string labelName = "")
         {
             // 대상 파일 가져오기
-            var asset = AssetDatabase.LoadMainAssetAtPath(assetPath);
-            if (!asset)
+            // var asset = AssetDatabaseLoaderManager.LoadScriptableObject(assetPath);
+            // if (!asset)
+            // {
+            //     Debug.LogError($"파일을 찾을 수 없습니다: {assetPath}");
+            //     return null;
+            // }
+
+            AssetDatabase.ImportAsset(assetPath,
+                ImportAssetOptions.ForceUpdate | ImportAssetOptions.ForceSynchronousImport);
+            
+            // 1) 경로 정규화
+            assetPath = assetPath?.Replace('\\', '/');
+            
+            // 2) 에셋 GUID 확인 (에셋 DB에 없으면 빈 값일 수 있음)
+            var guid = AssetDatabase.AssetPathToGUID(assetPath);
+            if (string.IsNullOrEmpty(guid))
             {
-                Debug.LogError($"파일을 찾을 수 없습니다: {assetPath}");
+                Debug.LogError($"[Addressables] AssetPathToGUID 실패. 에셋이 Import 되었는지 확인하세요. path={assetPath}");
                 return null;
             }
-
-            // 기존 Addressable 항목 확인
-            AddressableAssetEntry entry = settings.FindAssetEntry(AssetDatabase.AssetPathToGUID(assetPath));
-
+            
+            // 3) 엔트리 생성/이동 (Addressables 공식 API)
+            // CreateOrMoveEntry: 다른 그룹에 있으면 대상 그룹으로 이동시킴 :contentReference[oaicite:2]{index=2}
+            var entry = settings.FindAssetEntry(guid) ?? settings.CreateOrMoveEntry(guid, group);
             if (entry == null)
             {
-                // 신규 Addressable 항목 추가
-                entry = settings.CreateOrMoveEntry(AssetDatabase.AssetPathToGUID(assetPath), group);
-                Debug.Log($"Addressable 항목을 추가했습니다: {assetPath}");
-            }
-            else
-            {
-                Debug.Log($"이미 Addressable에 등록된 항목입니다: {assetPath}");
+                Debug.LogError($"[Addressables] CreateOrMoveEntry 실패. guid={guid}, path={assetPath}");
+                return null;
             }
 
             // 키 값 설정
             entry.address = keyName;
+            
             // 라벨 값 설정
             if (!string.IsNullOrEmpty(labelName))
             {
@@ -154,6 +164,82 @@ namespace GGemCo2DCoreEditor
 
             Debug.Log($"[SettingAffect] 그룹 '{group.Name}' 엔트리 제거: {removed}개");
             EditorUtility.SetDirty(group);
+        }
+
+        /// <summary>
+        /// 지정한 Addressables 그룹을 삭제합니다. (그룹 자체 제거)
+        /// </summary>
+        /// <param name="settings">Addressables 설정</param>
+        /// <param name="groupName">삭제할 그룹 이름</param>
+        /// <param name="showDialog">삭제 전 확인 다이얼로그 표시 여부</param>
+        /// <param name="removeEntriesFirst">
+        /// true면 그룹 엔트리를 먼저 제거하고 그룹을 삭제합니다.
+        /// (엔트리 정리 로그/안전성 목적)
+        /// </param>
+        /// <returns>삭제 성공 여부</returns>
+        protected bool DeleteGroup(
+            AddressableAssetSettings settings,
+            string groupName,
+            bool showDialog = true,
+            bool removeEntriesFirst = true)
+        {
+            if (settings == null)
+            {
+                Debug.LogError("[SettingAffect] Addressable settings가 null 입니다.");
+                return false;
+            }
+
+            if (string.IsNullOrWhiteSpace(groupName))
+            {
+                Debug.LogWarning("[SettingAffect] groupName이 비어있습니다.");
+                return false;
+            }
+
+            var group = settings.FindGroup(groupName);
+            if (group == null)
+            {
+                Debug.LogWarning($"[SettingAffect] 삭제할 그룹을 찾을 수 없습니다: {groupName}");
+                return false;
+            }
+
+            // DefaultGroup은 삭제 시 프로젝트에 영향을 줄 수 있으므로 방어
+            if (settings.DefaultGroup == group)
+            {
+                Debug.LogError(
+                    $"[SettingAffect] DefaultGroup('{groupName}')은 삭제할 수 없습니다. DefaultGroup을 다른 그룹으로 변경 후 시도하세요.");
+                return false;
+            }
+
+            if (showDialog)
+            {
+                bool ok = EditorUtility.DisplayDialog(
+                    TextDisplayDialogTitle,
+                    TextDisplayDialogMessage + $"\n\n대상 그룹: {groupName}",
+                    "진행",
+                    "취소"
+                );
+
+                if (!ok)
+                    return false;
+            }
+
+            Undo.RecordObject(settings, "[SettingAffect] DeleteGroup");
+
+            if (removeEntriesFirst)
+            {
+                // 그룹 엔트리(Entry)만 먼저 정리 (그룹/스키마는 유지) 후 그룹 삭제
+                ClearGroupEntries(settings, group);
+            }
+
+            // 그룹 삭제 (true: 그룹 폴더/에셋 파일도 함께 삭제 시도)
+            // 필요에 따라 false로 변경 가능
+            settings.RemoveGroup(group);
+
+            Debug.Log($"[SettingAffect] 그룹 삭제 완료: {groupName}");
+            EditorUtility.SetDirty(settings);
+            AssetDatabase.SaveAssets();
+            AssetDatabase.Refresh();
+            return false;
         }
     }
 }

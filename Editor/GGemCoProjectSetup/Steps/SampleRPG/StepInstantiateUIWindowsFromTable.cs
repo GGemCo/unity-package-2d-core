@@ -1,8 +1,5 @@
 ﻿#if UNITY_EDITOR
-using System;
-using System.Collections.Generic;
 using GGemCo2DCore;
-using UnityEditor;
 using UnityEngine;
 
 namespace GGemCo2DCoreEditor
@@ -16,23 +13,6 @@ namespace GGemCo2DCoreEditor
     /// </summary>
     public sealed class StepInstantiateUIWindowsFromTable : SetupStepBase
     {
-        [Header("Sources")]
-        [Tooltip("WindowTable 로더. 기본은 TableLoaderManager.LoadWindowTable()을 리플렉션으로 호출합니다.")]
-        private readonly bool _useDefaultTableLoader = true;
-
-        [Tooltip("직접 테이블 오브젝트를 넣고 싶다면 지정(테스트/커스텀용). 우선순위: directTable > default loader")]
-        private UnityEngine.Object _directTable;
-
-        [Header("Prefab Search")]
-        [Tooltip("UIWindow 프리팹 루트 경로(여러 경로 지원). 예) Assets/_GGemCo/UI/Windows, Packages/com.ggemco.2d.core/...")]
-        private readonly string[] _prefabSearchPaths = new[]
-        {
-            $"{ConfigEditor.PathUIWindow}",
-        };
-
-        // 캐시 용도
-        private readonly Dictionary<string, GameObject> _prefabByName = new(StringComparer.Ordinal);
-
         public override bool Validate(EditorSetupContext ctx, out string message)
         {
             message = null;

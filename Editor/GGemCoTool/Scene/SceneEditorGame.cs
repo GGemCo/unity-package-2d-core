@@ -201,15 +201,24 @@ namespace GGemCo2DCoreEditor
                 SetupAllTestWindow();
             }
         }
-        public UIWindowManager SetupWindowManager()
+        public UIWindowManager SetupWindowManager(EditorSetupContext ctx = null)
         {
             SetupRequiredObjects();
             
             SceneGame scene = CreateOrAddComponent<SceneGame>("SceneGame");
-            if (scene == null) return null;
+            if (scene == null)
+            {
+                HelperLog.Error($"[{nameof(SceneEditorGame)}] {nameof(UIWindowManager)} 오브젝트 셋팅 실패: {nameof(SceneGame)} 를 찾지 못 했습니다.", ctx);
+                return null;
+            }
             UIWindowManager uiWindowManager = CreateOrAddComponent<UIWindowManager>("UIWindowManager");
-            if (!uiWindowManager) return null;
+            if (!uiWindowManager)
+            {
+                HelperLog.Error($"[{nameof(SceneEditorGame)}] {nameof(UIWindowManager)} 오브젝트 셋팅 실패: {nameof(UIWindowManager)} 를 생성하지 못 했습니다.", ctx);
+                return null;
+            }
             scene.SetUIWindowManager(uiWindowManager);
+            HelperLog.Info($"[{nameof(SceneEditorGame)}] {nameof(UIWindowManager)} 오브젝트 셋팅 완료", ctx);
             return uiWindowManager;
         }
         public void SetupAllTestWindow(EditorSetupContext ctx = null)
@@ -222,7 +231,7 @@ namespace GGemCo2DCoreEditor
                 HelperLog.Error($"[{nameof(SceneEditorGame)}] {nameof(SceneGame)} 생성/가져오기를 할 수 없습니다.", ctx);
                 return;
             }
-            UIWindowManager uiWindowManager = SetupWindowManager();
+            UIWindowManager uiWindowManager = SetupWindowManager(ctx);
             if (!uiWindowManager)
             {
                 HelperLog.Error($"[{nameof(SceneEditorGame)}] {nameof(UIWindowManager)} 생성/가져오기를 할 수 없습니다.", ctx);
@@ -295,6 +304,7 @@ namespace GGemCo2DCoreEditor
                     //  UIPanelOptionBase 프리팹을 자동으로 listPrefabPanel 에 등록
                     AutoFillPanelPrefabs(window);
                 }
+                HelperLog.Info($"[{nameof(SceneEditorGame)}] {objectName} 윈도우 셋팅", ctx);
             }
 
             uiWindowManager.SetUIWindow(uiWindows.ToArray());

@@ -21,7 +21,7 @@ namespace GGemCo2DCoreEditor
         {
             // Common.OnGUITitle(Title);
 
-            if (_addressableEditor.TableSound == null)
+            if (TableLoaderManager.LoadSoundTable() == null)
             {
                 EditorGUILayout.HelpBox($"{ConfigAddressableTable.Sound} 테이블이 없습니다.", MessageType.Info);
             }
@@ -52,7 +52,7 @@ namespace GGemCo2DCoreEditor
                 bool result = EditorUtility.DisplayDialog(TextDisplayDialogTitle, TextDisplayDialogMessage, "네", "아니요");
                 if (!result) return;
             }
-            Dictionary<int, StruckTableSound> dictionary = _addressableEditor.TableSound.GetDatas();
+            Dictionary<int, StruckTableSound> dictionary = TableLoaderManager.LoadSoundTable().GetDatas();
             
             // AddressableSettings 가져오기 (없으면 생성)
             AddressableAssetSettings settings = AddressableAssetSettingsDefaultObject.Settings;
@@ -89,8 +89,6 @@ namespace GGemCo2DCoreEditor
             // 설정 저장
             settings.SetDirty(AddressableAssetSettings.ModificationEvent.EntryMoved, null, true);
             AssetDatabase.SaveAssets();
-            // 테이블 다시 로드하기
-            _addressableEditor.LoadTables();
             
             if (ctx != null)
             {

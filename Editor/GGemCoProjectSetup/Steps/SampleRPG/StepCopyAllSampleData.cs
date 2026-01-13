@@ -1,8 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.IO;
 using GGemCo2DCore;
-using UnityEditor;
-using UnityEngine;
 
 namespace GGemCo2DCoreEditor
 {
@@ -36,13 +34,11 @@ namespace GGemCo2DCoreEditor
             {
                 var sourceFolder = $"Packages/com.ggemco.2d.core/Samples~/{name}";
                 var targetFolder = $"{ConfigDefine.PathGGemCo}/{name}";
+                bool forceUpdate = name is "DataAddressable" or "UIWindows";
                 HelperFile.CopyDirectory(sourceFolder, targetFolder);
             }
             
             HelperLog.Info($"[{nameof(StepCopyAllSampleData)}] {_folderName.ToArray()} 복사 완료.", ctx);
-            
-            // 데이터 테이블을 복사했으니 강제 새로 고침 해준다.
-            ctx.addressableEditor.LoadTables(true);
         }
     }
 }

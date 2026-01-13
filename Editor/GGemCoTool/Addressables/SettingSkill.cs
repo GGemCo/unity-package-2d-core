@@ -22,7 +22,7 @@ namespace GGemCo2DCoreEditor
         {
             // Common.OnGUITitle(Title);
 
-            if (_addressableEditor.TableSkill == null)
+            if (TableLoaderManager.LoadSkillTable() == null)
             {
                 EditorGUILayout.HelpBox($"{ConfigAddressableTable.Skill} 테이블이 없습니다.", MessageType.Info);
             }
@@ -52,7 +52,7 @@ namespace GGemCo2DCoreEditor
                 bool result = EditorUtility.DisplayDialog(TextDisplayDialogTitle, TextDisplayDialogMessage, "네", "아니요");
                 if (!result) return;
             }
-            Dictionary<int, StruckTableSkill> dictionary = _addressableEditor.TableSkill.GetSkills();
+            Dictionary<int, StruckTableSkill> dictionary = TableLoaderManager.LoadSkillTable().GetSkills();
             
             // AddressableSettings 가져오기 (없으면 생성)
             AddressableAssetSettings settings = AddressableAssetSettingsDefaultObject.Settings;
