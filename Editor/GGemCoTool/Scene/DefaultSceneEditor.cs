@@ -1,4 +1,5 @@
-﻿using GGemCo2DCore;
+﻿using System.IO;
+using GGemCo2DCore;
 using TMPro;
 using UnityEditor;
 using UnityEngine;
@@ -82,6 +83,17 @@ namespace GGemCo2DCoreEditor
             {
                 "Assets/GGemCo/UIWindows/Option",
             };
+
+            foreach (var folder in searchFolders)
+            {
+                foreach (string file in Directory.GetFiles(folder))
+                {
+                    
+                    if (HelperFile.TryGetAssetsPath(file, out string assetsPath))
+                        AssetDatabase.ImportAsset(assetsPath,
+                            ImportAssetOptions.ForceUpdate | ImportAssetOptions.ForceSynchronousImport);
+                }
+            }
 
             // 1) 모든 Prefab 검색
             // string[] guids = AssetDatabase.FindAssets("t:Prefab");

@@ -135,17 +135,8 @@ namespace GGemCo2DCoreEditor
 
             var atlasDrop = GetOrCreateSpriteAtlas($"{atlasFolderPath}/ItemDropAtlas.spriteatlas");
             var atlasIcon = GetOrCreateSpriteAtlas($"{atlasFolderPath}/ItemIconAtlas.spriteatlas");
-            SpriteAtlas atlasEquip = GetOrCreateSpriteAtlas($"{atlasFolderPath}/ItemEquipAtlas.spriteatlas");
-
-            // 장비 아틀라스는 Spine 등에서 사용하기 위해 Read/Write를 활성화합니다.
-            SpriteAtlasTextureSettings spriteAtlasTextureSettings = new SpriteAtlasTextureSettings
-            {
-                anisoLevel = 1,
-                readable = true,
-                sRGB = true,
-                filterMode = FilterMode.Bilinear
-            };
-            atlasEquip.SetTextureSettings(spriteAtlasTextureSettings);
+            var pathEquipAtlas = $"{atlasFolderPath}/ItemEquipAtlas.spriteatlas";
+            SpriteAtlas atlasEquip = GetOrCreateSpriteAtlas(pathEquipAtlas);
 
             // Atlas에 포함시킬 원본 에셋 목록
             List<Object> assetsDrop = new();
@@ -231,6 +222,22 @@ namespace GGemCo2DCoreEditor
             // 강제로 pack 시키기(Atlas가 변경되었을 때 즉시 결과를 반영하기 위함)
             if (assetsDrop.Count > 0 || assetsIcon.Count > 0 || assetsEquip.Count > 0)
                 SpriteAtlasUtility.PackAtlases(new[] { atlasDrop, atlasIcon, atlasEquip }, EditorUserBuildSettings.activeBuildTarget, false);
+            
+            // 장비 아틀라스는 Spine 등에서 사용하기 위해 Read/Write를 활성화합니다.
+            AssetDatabase.ImportAsset(pathEquipAtlas,
+                ImportAssetOptions.ForceUpdate | ImportAssetOptions.ForceSynchronousImport);
+            var equipAtlas = AssetDatabase.LoadAssetAtPath<SpriteAtlas>(pathEquipAtlas);
+            if (equipAtlas)
+            {
+                SpriteAtlasTextureSettings spriteAtlasTextureSettings = new SpriteAtlasTextureSettings
+                {
+                    anisoLevel = 1,
+                    readable = true,
+                    sRGB = true,
+                    filterMode = FilterMode.Bilinear
+                };
+                equipAtlas.SetTextureSettings(spriteAtlasTextureSettings);
+            }
 
             // 설정 저장
             settings.SetDirty(AddressableAssetSettings.ModificationEvent.EntryMoved, null, true);
