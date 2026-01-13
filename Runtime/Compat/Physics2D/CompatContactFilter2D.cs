@@ -15,7 +15,7 @@ namespace GGemCo2DCore
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static ContactFilter2D CreateNoFilter()
         {
-#if UNITY_6000_0_OR_NEWER
+#if UNITY_6000_1_OR_NEWER
             return ContactFilter2D.noFilter;
 #else
             var filter = new ContactFilter2D();
