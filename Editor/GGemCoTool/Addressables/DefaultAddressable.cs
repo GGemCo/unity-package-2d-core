@@ -83,11 +83,10 @@ namespace GGemCo2DCoreEditor
             //     return null;
             // }
 
-            AssetDatabase.ImportAsset(assetPath,
-                ImportAssetOptions.ForceUpdate | ImportAssetOptions.ForceSynchronousImport);
-            
             // 1) 경로 정규화
             assetPath = assetPath?.Replace('\\', '/');
+            AssetDatabase.ImportAsset(assetPath,
+                ImportAssetOptions.ForceUpdate | ImportAssetOptions.ForceSynchronousImport);
             
             // 2) 에셋 GUID 확인 (에셋 DB에 없으면 빈 값일 수 있음)
             var guid = AssetDatabase.AssetPathToGUID(assetPath);

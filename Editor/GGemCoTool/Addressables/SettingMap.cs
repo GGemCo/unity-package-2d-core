@@ -15,9 +15,6 @@ namespace GGemCo2DCoreEditor
     {
         private const string Title = "맵 추가하기";
         private readonly AddressableEditor _addressableEditor;
-        private readonly TableMonster _tableMonster;
-        private readonly TableNpc _tableNpc;
-        private readonly TableAnimation _tableAnimation;
         private enum Type
         {
             Npc,
@@ -28,10 +25,6 @@ namespace GGemCo2DCoreEditor
         {
             _addressableEditor = addressableEditorWindow;
             targetGroupName = ConfigAddressableGroupName.Map;
-            
-            _tableMonster = TableLoaderManager.LoadMonsterTable();
-            _tableNpc = TableLoaderManager.LoadNpcTable();
-            _tableAnimation = TableLoaderManager.LoadAnimationTable();
         }
         public void OnGUI()
         {
@@ -145,7 +138,6 @@ namespace GGemCo2DCoreEditor
         /// </summary>
         private void SetCharacterLabel(string regenFileName, StruckTableMap struckTableMap, AddressableAssetSettings settings, Type type)
         {
-            if (_tableMonster == null || _tableNpc == null || _tableAnimation == null) return;
             string labelName = ConfigAddressableMap.GetLabel(struckTableMap.FolderName);
             if (string.IsNullOrEmpty(labelName)) return;
 
@@ -162,19 +154,19 @@ namespace GGemCo2DCoreEditor
                 int spineUid = 0;
                 if (type == Type.Monster)
                 {
-                    var info = _tableMonster.GetDataByUid(uid);
+                    var info = TableLoaderManager.LoadMonsterTable().GetDataByUid(uid);
                     if (info == null) continue;
                     spineUid = info.AnimationUid;
                 }
                 else if (type == Type.Npc)
                 {
-                    var info = _tableNpc.GetDataByUid(uid);
+                    var info = TableLoaderManager.LoadNpcTable().GetDataByUid(uid);
                     if (info == null) continue;
                     spineUid = info.AnimationUid;
                 }
                 if (spineUid <= 0) continue;
 
-                var infoAnimation = _tableAnimation.GetDataByUid(spineUid);
+                var infoAnimation = TableLoaderManager.LoadAnimationTable().GetDataByUid(spineUid);
                 if (infoAnimation == null) continue;
                 string assetPath = ConfigAddressableMap.GetPathCharacter(infoAnimation) + ".prefab";
                 // 기존 Addressable 항목 확인

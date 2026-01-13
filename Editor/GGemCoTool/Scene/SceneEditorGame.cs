@@ -259,7 +259,7 @@ namespace GGemCo2DCoreEditor
                 }
                 string objectName = info.PrefabName;
                 
-                GameObject prefab = FindPrefabByName(ConfigEditor.PathUIWindow, objectName);
+                GameObject prefab = FindPrefabUIWindowByName(objectName);
                 if (!prefab)
                 {
                     HelperLog.Error($"[{nameof(SceneEditorGame)}] {objectName} 프리팹을 찾을 수 없습니다.", ctx);

@@ -86,7 +86,7 @@ namespace GGemCo2DCoreEditor
             // 옵션 윈도우 추가
             GameObject canvas = CreateUIComponent.Find("Canvas", packageType);
             string objectName = scene.GetNameUIWindowOption();
-            GameObject prefab = FindPrefabByName(ConfigEditor.PathUIWindow, objectName);
+            GameObject prefab = FindPrefabUIWindowByName(objectName);
             if (!prefab)
             {
                 HelperLog.Error($"[{nameof(SceneEditorIntro)}] {objectName} 프리팹이 없습니다.", ctx);
@@ -204,7 +204,8 @@ namespace GGemCo2DCoreEditor
 
             // 불러오기 UI 생성
             string objectName = scene.GetNameUIWindowLoadSaveData();
-            GameObject prefab = FindPrefabByName(ConfigEditor.PathUIWindow, objectName);
+            // GameObject prefab = FindPrefabByName(ConfigEditor.PathUIWindow, objectName);
+            GameObject prefab = FindPrefabUIWindowByName(objectName);
             if (!prefab) return;
             
             GameObject gameObject = GameObject.Find(objectName);

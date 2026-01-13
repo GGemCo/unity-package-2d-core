@@ -177,39 +177,14 @@ namespace GGemCo2DCoreEditor
             }
         }
 
-        /// <summary>
-        /// 지정한 폴더 하위에서 프리팹 이름으로 GameObject(프리팹 에셋)를 찾습니다.
-        /// </summary>
-        /// <param name="folderPath">검색할 폴더 경로(예: "Assets/Resources/Prefabs")</param>
-        /// <param name="prefabName">찾고자 하는 프리팹 이름(확장자 없이)</param>
-        /// <returns>찾은 프리팹 GameObject 에셋, 없으면 null</returns>
-        /// <remarks>
-        /// - AssetDatabase.FindAssets로 후보를 찾은 뒤, 파일 이름을 통해 정확히 일치하는 프리팹만 반환합니다.
-        /// - folderPath가 유효하지 않으면 경고 로그를 남기고 null을 반환합니다.
-        /// </remarks>
-        protected static GameObject FindPrefabByName(string folderPath, string prefabName)
+        protected static GameObject FindPrefabUIWindowByName(string prefabName)
         {
-            if (!AssetDatabase.IsValidFolder(folderPath))
-            {
-                Debug.LogWarning($"유효하지 않은 폴더 경로: {folderPath}");
-                return null;
-            }
+            var folderName = prefabName.Replace("UIWindow", "");
+            var assetPath = $"{ConfigEditor.PathUIWindow}/{folderName}/{prefabName}.prefab";
+            AssetDatabase.ImportAsset(assetPath,
+                ImportAssetOptions.ForceUpdate | ImportAssetOptions.ForceSynchronousImport);
 
-            string[] guids = AssetDatabase.FindAssets($"{prefabName} t:prefab", new[] { folderPath });
-
-            foreach (string guid in guids)
-            {
-                string assetPath = AssetDatabase.GUIDToAssetPath(guid);
-                string fileName = Path.GetFileNameWithoutExtension(assetPath);
-
-                if (fileName == prefabName) // 정확한 이름 일치 확인
-                {
-                    GameObject prefab = AssetDatabase.LoadAssetAtPath<GameObject>(assetPath);
-                    return prefab;
-                }
-            }
-            Debug.LogError($"Guid를 찾지 못 했습니다. folderPath: {folderPath}, prefabName: {prefabName}");
-            return null;
+            return AssetDatabase.LoadAssetAtPath<GameObject>(assetPath);
         }
     }
 }
