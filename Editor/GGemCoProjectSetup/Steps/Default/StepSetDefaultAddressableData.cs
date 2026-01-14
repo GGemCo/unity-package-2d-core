@@ -35,6 +35,8 @@
 
             // 테이블(그룹/엔트리 등) 구성: 기존 그룹 정리 후 재설정
             var settingTable = new SettingTable(addressableEditor);
+            // StepCopyEmptyDataTable 에서 이미 복사된 테이블이 있을 수 있어, 지우고 다시 등록
+            settingTable.ClearGroup(ctx);
             settingTable.Setup(ctx);
 
             // 기본 리소스 등록: blank 아이콘(아이콘만) 추가
