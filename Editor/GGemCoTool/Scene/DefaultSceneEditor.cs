@@ -84,17 +84,8 @@ namespace GGemCo2DCoreEditor
                 "Assets/GGemCo/UIWindows/Option",
             };
 
-            foreach (var folder in searchFolders)
-            {
-                foreach (string file in Directory.GetFiles(folder))
-                {
-                    
-                    if (HelperFile.TryGetAssetsPath(file, out string assetsPath))
-                        AssetDatabase.ImportAsset(assetsPath,
-                            ImportAssetOptions.ForceUpdate | ImportAssetOptions.ForceSynchronousImport);
-                }
-            }
-
+            HelperFile.ImportAssetForDirectory(searchFolders);
+            
             // 1) 모든 Prefab 검색
             // string[] guids = AssetDatabase.FindAssets("t:Prefab");
             // 1) 모든 Prefab GUID 검색

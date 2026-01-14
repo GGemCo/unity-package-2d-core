@@ -26,7 +26,7 @@ namespace GGemCo2DCoreEditor
             var sortingLayersProp = tagManagerObj.FindProperty("m_SortingLayers");
             if (sortingLayersProp == null)
             {
-                HelperLog.Warn("m_SortingLayers 속성을 찾지 못했습니다. Unity 버전/프로젝트 상태를 확인하세요.", ctx);
+                HelperLog.Warn($"[{nameof(SettingSortingLayers)}] m_SortingLayers 속성을 찾지 못했습니다. Unity 버전/프로젝트 상태를 확인하세요.", ctx);
                 return;
             }
             
@@ -85,7 +85,7 @@ namespace GGemCo2DCoreEditor
 
             if (ctx != null)
             {
-                HelperLog.Info($"[SortingLayers] 추가: {added}, 스킵: {skipped}", ctx);
+                HelperLog.Info($"[{nameof(SettingSortingLayers)}] 추가: {added}, 스킵: {skipped}", ctx);
             }
             else
             {

@@ -59,7 +59,7 @@ namespace GGemCo2DCoreEditor
             
             if (ctx != null)
             {
-                ctx.logger.Info($"[Tags] 추가: {added}, 스킵: {skipped}");    
+                HelperLog.Info($"[Tags] 추가: {added}, 스킵: {skipped}", ctx);
             }
             else
             {

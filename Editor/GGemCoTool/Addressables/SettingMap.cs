@@ -123,13 +123,13 @@ namespace GGemCo2DCoreEditor
             
             // 설정 저장
             settings.SetDirty(AddressableAssetSettings.ModificationEvent.EntryMoved, null, true);
-            AssetDatabase.SaveAssets();
             if (ctx != null)
             {
                 HelperLog.Info("[Addressable] 맵 설정 완료. 사용안하는 맵 Group은 삭제해주세요.", ctx);
             }
             else
             {
+                AssetDatabase.SaveAssets();
                 EditorUtility.DisplayDialog(Title, "[Addressable] 맵 설정 완료\n사용안하는 맵 Group은 삭제해주세요.", "OK");
             }
         }

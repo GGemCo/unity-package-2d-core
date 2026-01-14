@@ -220,10 +220,6 @@ namespace GGemCo2DCoreEditor
                 setupSteps.Add(new StepCopyAllSampleData());
             }
             
-            // AssetDatabase.StopAssetEditing();
-            // AssetDatabase.SaveAssets();
-            // AssetDatabase.Refresh();
-            
             // 씬 셋업 하기
             setupSteps.Add(new StepSetSceneRequireObject(needSampleResources));
             
@@ -236,8 +232,6 @@ namespace GGemCo2DCoreEditor
                 setupSteps.Add(new StepInstantiateUIWindowsFromTable());
                 setupSteps.Add(new StepSetSettingScriptableObject());
             }
-            AssetDatabase.SaveAssets();
-            AssetDatabase.Refresh();
         }
 
         #endregion
@@ -316,6 +310,14 @@ namespace GGemCo2DCoreEditor
                 UnityEditor.SceneManagement.EditorSceneManager.SaveOpenScenes();
                 logger.Info("[Save] Open Scenes saved.");
 
+                EditorApplication.delayCall += () =>
+                {
+                    AssetDatabase.SaveAssets();
+                    AssetDatabase.Refresh(ImportAssetOptions.ForceUpdate | ImportAssetOptions.ForceSynchronousImport);
+                    EditorApplication.RepaintProjectWindow();
+                    UnityEditorInternal.InternalEditorUtility.RepaintAllViews();
+                };
+                
                 logger.Info($"[Done] Log: {logger.LogPath}");
                 EditorUtility.DisplayDialog(Title, $"완료\nLog: {logger.LogPath}", "OK");
             }

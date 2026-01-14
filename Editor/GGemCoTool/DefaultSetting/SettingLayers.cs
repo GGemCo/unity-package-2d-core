@@ -26,7 +26,7 @@ namespace GGemCo2DCoreEditor
             var layersProp = so.FindProperty("layers");
             if (layersProp == null)
             {
-                HelperLog.Error("TagManager의 'layers' 속성을 찾지 못했습니다.", ctx);
+                HelperLog.Error($"[{nameof(SettingLayers)}] TagManager의 'layers' 속성을 찾지 못했습니다.", ctx);
                 return;
             }
 
@@ -60,11 +60,11 @@ namespace GGemCo2DCoreEditor
             }
             
             if (noSlot > 0)
-                HelperLog.Warn($"[Layers] 빈 슬롯 부족으로 {noSlot}개를 추가하지 못했습니다. (사용자 슬롯 8~31 범위)", ctx);
+                HelperLog.Warn($"[{nameof(SettingLayers)}] 빈 슬롯 부족으로 {noSlot}개를 추가하지 못했습니다. (사용자 슬롯 8~31 범위)", ctx);
 
             if (ctx != null)
             {
-                HelperLog.Info($"[Layers] 추가: {added}, 스킵: {skipped}", ctx);
+                HelperLog.Info($"[{nameof(SettingLayers)}] 추가: {added}, 스킵: {skipped}", ctx);
             }
             else
             {

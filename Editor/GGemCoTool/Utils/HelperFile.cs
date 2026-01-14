@@ -153,7 +153,7 @@ namespace GGemCo2DCoreEditor
                     {
                         AssetDatabase.ImportAsset(assetsPath,
                             ImportAssetOptions.ForceUpdate | ImportAssetOptions.ForceSynchronousImport);
-                        // Debug.Log($"강제 새로 고침. path: {assetsPath}");
+                        Debug.Log($"강제 새로 고침. path: {assetsPath}");
                     }
                 }
             }
@@ -219,6 +219,43 @@ namespace GGemCo2DCoreEditor
             // "<Project>/Assets/xxx.png" → "Assets/xxx.png"
             assetPath = "Assets" + fullPath.Substring(assetsRoot.Length);
             return true;
+        }
+
+        /// <summary>
+        /// 지정한 디렉터리 목록에 포함된 모든 파일을 Unity AssetDatabase에 다시 Import 합니다.
+        /// </summary>
+        /// <param name="folders">
+        /// 파일을 탐색할 디렉터리 경로 배열입니다.
+        /// (예: Assets 하위의 실제 OS 디렉터리 경로)
+        /// </param>
+        /// <remarks>
+        /// - 각 디렉터리의 최상위 파일만 처리하며, 하위 디렉터리는 재귀적으로 탐색하지 않습니다.
+        /// - <c>.meta</c> 파일은 제외됩니다.
+        /// - OS 경로를 Unity의 <c>Assets/...</c> 형식 경로로 변환한 뒤 Import 합니다.
+        /// - ForceUpdate + ForceSynchronousImport 옵션을 사용하므로 에디터에서 즉시 반영됩니다.
+        /// </remarks>
+        public static void ImportAssetForDirectory(string[] folders)
+        {
+            foreach (var folder in folders)
+            {
+                // 디렉터리 내 파일 목록 순회 (하위 디렉터리는 포함하지 않음)
+                foreach (string file in Directory.GetFiles(folder))
+                {
+                    // Unity 메타 파일은 Import 대상에서 제외
+                    if (file.EndsWith(".meta"))
+                        continue;
+
+                    // OS 경로를 Unity Assets 경로로 변환 시도
+                    if (TryGetAssetsPath(file, out string assetsPath))
+                    {
+                        // 에셋 강제 재임포트 (동기 방식)
+                        AssetDatabase.ImportAsset(
+                            assetsPath,
+                            ImportAssetOptions.ForceUpdate | ImportAssetOptions.ForceSynchronousImport
+                        );
+                    }
+                }
+            }
         }
     }
 }

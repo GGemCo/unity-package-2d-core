@@ -95,7 +95,6 @@ namespace GGemCo2DCoreEditor
 
             // 설정 저장
             settings.SetDirty(AddressableAssetSettings.ModificationEvent.EntryMoved, null, true);
-            AssetDatabase.SaveAssets();
             
             if (ctx != null)
             {
@@ -103,6 +102,7 @@ namespace GGemCo2DCoreEditor
             }
             else
             {
+                AssetDatabase.SaveAssets();
                 EditorUtility.DisplayDialog(Title, "[Addressable] 이펙트 설정 완료", "OK");
             }
         }

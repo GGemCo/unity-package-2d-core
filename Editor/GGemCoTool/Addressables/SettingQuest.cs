@@ -87,13 +87,13 @@ namespace GGemCo2DCoreEditor
             
             // 설정 저장
             settings.SetDirty(AddressableAssetSettings.ModificationEvent.EntryMoved, null, true);
-            AssetDatabase.SaveAssets();
             if (ctx != null)
             {
                 HelperLog.Info("[Addressable] 퀘스트 설정 완료", ctx);
             }
             else
             {
+                AssetDatabase.SaveAssets();
                 EditorUtility.DisplayDialog(Title, "[Addressable] 퀘스트 설정 완료", "OK");
             }
         }

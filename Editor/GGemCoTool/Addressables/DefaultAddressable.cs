@@ -302,9 +302,7 @@ namespace GGemCo2DCoreEditor
             AssetDatabase.SaveAssets();
             AssetDatabase.Refresh();
 
-            // NOTE: 현재 구현은 성공 시에도 false를 반환하고 있습니다(원본 코드 유지).
-            //       호출 측이 반환값을 신뢰한다면 true 반환으로 수정이 필요합니다.
-            return false;
+            return true;
         }
 
         /// <summary>

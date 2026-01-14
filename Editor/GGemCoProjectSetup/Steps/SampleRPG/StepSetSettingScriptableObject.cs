@@ -38,7 +38,7 @@ namespace GGemCo2DCoreEditor
             var ggemCoSettings = FindSettingsAsset<GGemCoSettings>();
             if (ggemCoSettings == null)
             {
-                HelperLog.Warn($"[StepSetSettingScriptableObject] GGemCoSettings asset not found.", ctx);
+                HelperLog.Warn($"[{nameof(StepSetSceneRequireObject)}] GGemCoSettings asset not found.", ctx);
             }
             else
             {
@@ -63,7 +63,7 @@ namespace GGemCo2DCoreEditor
             var playerSettings = FindSettingsAsset<GGemCoPlayerSettings>();
             if (playerSettings == null)
             {
-                HelperLog.Warn($"[StepSetSettingScriptableObject] GGemCoPlayerSettings asset not found.", ctx);
+                HelperLog.Warn($"[{nameof(StepSetSceneRequireObject)}] GGemCoPlayerSettings asset not found.", ctx);
             }
             else
             {
@@ -82,7 +82,7 @@ namespace GGemCo2DCoreEditor
             var saveSettings = FindSettingsAsset<GGemCoSaveSettings>();
             if (saveSettings == null)
             {
-                HelperLog.Warn($"[StepSetSettingScriptableObject] GGemCoSaveSettings asset not found.", ctx);
+                HelperLog.Warn($"[{nameof(StepSetSceneRequireObject)}] GGemCoSaveSettings asset not found.", ctx);
             }
             else
             {
@@ -95,7 +95,7 @@ namespace GGemCo2DCoreEditor
             var mapSettings = FindSettingsAsset<GGemCoMapSettings>();
             if (mapSettings == null)
             {
-                HelperLog.Warn($"[StepSetSettingScriptableObject] GGemCoMapSettings asset not found.", ctx);
+                HelperLog.Warn($"[{nameof(StepSetSceneRequireObject)}] GGemCoMapSettings asset not found.", ctx);
             }
             else
             {
@@ -105,7 +105,7 @@ namespace GGemCo2DCoreEditor
                 EditorUtility.SetDirty(mapSettings);
             }
 
-            HelperLog.Info($"[StepSetSettingScriptableObject] Settings ScriptableObjects have been configured for sample RPG.", ctx);
+            HelperLog.Info($"[{nameof(StepSetSceneRequireObject)}] Settings ScriptableObjects have been configured for sample RPG.", ctx);
         }
     }
 }

@@ -42,6 +42,7 @@ namespace GGemCo2DCoreEditor
                 var src = _pathSrc[i];
                 var dist = _pathDist[i];
                 HelperFile.CopyDirectory(src, dist);
+                HelperLog.Info($"{src} -> {dist} 경로로 복사 완료했습니다.", ctx);
             }
         }
     }
