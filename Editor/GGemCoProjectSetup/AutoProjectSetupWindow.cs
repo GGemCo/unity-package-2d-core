@@ -208,12 +208,6 @@ namespace GGemCo2DCoreEditor
             // DataAddressable 폴더에서 디폴트로 복사해야하는 리소스
             setupSteps.Add(new StepCopyDefaultDataAddressable());
 
-            // 2) 옵션: 폰트 셋업(단일 스텝으로만 추가 - 중복 방지)
-            if (needKoreanFontStep)
-            {
-                setupSteps.Add(new StepCopyKoreanFonts());
-            }
-
             // 3) 옵션: 샘플 RPG 리소스/데이터 셋업
             if (needSampleResources)
             {
@@ -230,6 +224,15 @@ namespace GGemCo2DCoreEditor
                 setupSteps.Add(new StepSetAddressableData());
                 setupSteps.Add(new StepSetCamera());
                 setupSteps.Add(new StepInstantiateUIWindowsFromTable());
+            }
+            // 2) 옵션: 폰트 셋업(단일 스텝으로만 추가 - 중복 방지)
+            if (needKoreanFontStep)
+            {
+                setupSteps.Add(new StepCopyKoreanFonts());
+            }
+
+            if (needSampleResources)
+            {
                 setupSteps.Add(new StepSetSettingScriptableObject());
             }
         }

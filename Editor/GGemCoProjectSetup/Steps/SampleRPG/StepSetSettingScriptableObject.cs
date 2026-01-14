@@ -47,8 +47,8 @@ namespace GGemCo2DCoreEditor
 #if UNITY_6000_0_OR_NEWER
                 ggemCoSettings.inputSystemType = InputSystemType.NewInputSystem;
 #else
-                ggemCoSettings.inputSystemType = InputSystemType.Both;
-#endif                
+                ggemCoSettings.inputSystemType = InputSystemType.OldInputManager;
+#endif
 
                 // 스크립팅 디파인 심볼을 설정 값과 동기화
                 var settingGGemCoInspector = ScriptableObject.CreateInstance<SettingGGemCoInspector>();
