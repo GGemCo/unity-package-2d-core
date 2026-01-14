@@ -78,40 +78,5 @@ namespace GGemCo2DCoreEditor
                 EditorUtility.DisplayDialog(Title, "Addressable 설정 완료", "OK");    
             }
         }
-
-        public void ClearGroup(EditorSetupContext ctx)
-        {
-            // AddressableSettings 가져오기 (없으면 생성)
-            AddressableAssetSettings settings = AddressableAssetSettingsDefaultObject.Settings;
-            if (!settings)
-            {
-                HelperLog.Warn("Addressable 설정을 찾을 수 없습니다. 새로 생성합니다.", ctx);
-                settings = CreateAddressableSettings();
-            }
-
-            // GGemCo_Tables 그룹 가져오기 또는 생성
-            AddressableAssetGroup group = GetOrCreateGroup(settings, targetGroupName);
-
-            if (!group)
-            {
-                HelperLog.Error($"'{targetGroupName}' 그룹을 설정할 수 없습니다.", ctx);
-                return;
-            }
-            // 그룹 엔트리 전체 초기화 (스키마/설정은 유지)
-            ClearGroupEntries(settings, group);
-        }
-        public void RemoveGroup(EditorSetupContext ctx)
-        {
-            // AddressableSettings 가져오기 (없으면 생성)
-            AddressableAssetSettings settings = AddressableAssetSettingsDefaultObject.Settings;
-            if (!settings)
-            {
-                HelperLog.Warn("Addressable 설정을 찾을 수 없습니다. 새로 생성합니다.", ctx);
-                settings = CreateAddressableSettings();
-            }
-
-            // 그룹 엔트리 전체 초기화 (스키마/설정은 유지)
-            DeleteGroup(settings, targetGroupName);
-        }
     }
 }
