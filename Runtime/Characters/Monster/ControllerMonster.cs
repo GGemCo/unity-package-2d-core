@@ -7,12 +7,78 @@ namespace GGemCo2DCore
     /// <summary>
     /// 몬스터 선공, 후공 처리 
     /// </summary>
-    public class ControllerMonster : CharacterBaseController
+    public class ControllerMonster : CharacterBaseController, IMonsterCombatDriver
     {
         private Coroutine coroutineAttack;
         private float delayTimeAttack;
         private Monster _monster;
         private Collider2D[] _collider2Ds;
+
+        #region IMonsterCombatDriver
+
+        /// <inheritdoc />
+        public bool IsAggro => targetCharacter != null && targetCharacter.IsAggro();
+
+        /// <inheritdoc />
+        public bool IsDead => targetCharacter != null && targetCharacter.IsStatusDead();
+
+        /// <inheritdoc />
+        public float HpPercent
+        {
+            get
+            {
+                if (targetCharacter == null) return 0f;
+                float max = Mathf.Max(1f, targetCharacter.BaseHp);
+                return Mathf.Clamp01(targetCharacter.CurrentHp.Value / max);
+            }
+        }
+
+        /// <inheritdoc />
+        public bool TryGetTarget(out Transform target)
+        {
+            target = targetCharacter != null ? targetCharacter.attackerTransform : null;
+            return target != null;
+        }
+
+        /// <inheritdoc />
+        public bool IsTargetInAttackRange() => SearchAttackerTarget();
+
+        /// <inheritdoc />
+        public void RequestWait() => Wait();
+
+        /// <inheritdoc />
+        public void RequestMove(Vector2 direction)
+        {
+            if (targetCharacter == null) return;
+            targetCharacter.directionNormalize = GetFilteredDirection(direction);
+            Run();
+        }
+
+        /// <inheritdoc />
+        public void RequestFaceToTarget()
+        {
+            if (targetCharacter == null || targetCharacter.attackerTransform == null) return;
+            var raw = (targetCharacter.attackerTransform.position - targetCharacter.transform.position);
+            var dir = GetFilteredDirection(raw);
+            if (dir == Vector2.zero) return;
+
+            // 플랫포머: X 기준
+            if (Mathf.Abs(dir.x) > 0.0001f)
+            {
+                var facing = dir.x >= 0f ? CharacterConstants.FacingDirection8.Right : CharacterConstants.FacingDirection8.Left;
+                targetCharacter.SetFacing(facing);
+            }
+            else
+            {
+                CharacterConstants.FacingDirection8 facing = CharacterConstants.ToFacingDirection8(dir);
+                targetCharacter.SetFacing(facing);
+            }
+        }
+
+        /// <inheritdoc />
+        public void RequestAttackOnce() => Attack();
+
+        #endregion
 
         protected override void Awake()
         {
@@ -52,6 +118,7 @@ namespace GGemCo2DCore
         private void Update()
 #endif
         {
+            return;
             if (!CheckPossibleControl()) return;
             
             if (targetCharacter.IsAggro())

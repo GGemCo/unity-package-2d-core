@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
+using GGemCo2DAffect;
 using R3;
 using UnityEngine;
 
@@ -50,12 +51,7 @@ namespace GGemCo2DCore
         public readonly BehaviorSubject<long> TotalRegistCold = new(100);
         public readonly BehaviorSubject<long> TotalRegistLightning = new(100);
 
-        protected AffectController AffectController;
-
-        protected virtual void Awake()
-        {
-            AffectController = new AffectController();
-        }
+        protected virtual void Awake() { }
         protected virtual void Start()
         {
         }
@@ -119,12 +115,25 @@ namespace GGemCo2DCore
         /// </summary>
         /// <param name="affectUid"></param>
         /// <param name="duration"></param>
-        protected void ApplyAffect(int affectUid, float duration) => AffectController.ApplyAffect(affectUid, duration);
+        /// <remarks>
+        /// A안(분리 패키지)에서는 com.ggemco.2d.affect(AffectComponent)로 위임된다.
+        /// </remarks>
+        protected void ApplyAffect(int affectUid, float duration)
+        {
+            var comp = GetComponent<AffectComponent>();
+            if (comp == null) comp = gameObject.AddComponent<AffectComponent>();
+            comp.ApplyAffect(affectUid, new AffectApplyContext { DurationOverride = duration });
+        }
         /// <summary>
         /// 버프 해제하기
         /// </summary>
         /// <param name="affectUid"></param>
-        public void RemoveAffect(int affectUid) => AffectController.RemoveAffect(affectUid);
+        public void RemoveAffect(int affectUid)
+        {
+            var comp = GetComponent<AffectComponent>();
+            if (comp == null) return;
+            comp.RemoveAffect(affectUid);
+        }
         /// <summary>
         /// 스탯 변경값 적용하기
         /// </summary>

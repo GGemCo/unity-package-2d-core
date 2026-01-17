@@ -27,9 +27,15 @@ namespace GGemCo2DCore
         public const string ItemDropGroup    = "item_drop_group";
         public const string Exp              = "exp";
         public const string Window           = "window";
+        // Legacy(Deprecated): Status 단일 테이블
         public const string Status           = "status";
+        // New: Status 3분리
+        public const string Stat             = "stat";
+        public const string DamageType       = "damage_type";
+        public const string State            = "state";
         public const string Skill            = "skill";
         public const string Affect           = "affect";
+        public const string AffectModifier   = "affect_modifier";
         public const string Effect           = "effect";
         public const string Interaction      = "interaction";
         public const string Shop             = "shop";
@@ -55,9 +61,15 @@ namespace GGemCo2DCore
         public static readonly AddressableAssetInfo TableItemDropGroup   = Make(ItemDropGroup);
         public static readonly AddressableAssetInfo TableExp             = Make(Exp);
         public static readonly AddressableAssetInfo TableWindow          = Make(Window);
+        // Legacy(Deprecated)
         public static readonly AddressableAssetInfo TableStatus          = Make(Status);
+        // New
+        public static readonly AddressableAssetInfo TableStat            = Make(Stat);
+        public static readonly AddressableAssetInfo TableDamageType      = Make(DamageType);
+        public static readonly AddressableAssetInfo TableState           = Make(State);
         public static readonly AddressableAssetInfo TableSkill           = Make(Skill);
         public static readonly AddressableAssetInfo TableAffect          = Make(Affect);
+        public static readonly AddressableAssetInfo TableAffectModifier  = Make(AffectModifier);
         public static readonly AddressableAssetInfo TableEffect          = Make(Effect);
         public static readonly AddressableAssetInfo TableInteraction     = Make(Interaction);
         public static readonly AddressableAssetInfo TableShop            = Make(Shop);
@@ -77,7 +89,12 @@ namespace GGemCo2DCore
         {
             TableMap, TableMonster, TableNpc, TableAnimation, TableItem,
             TableMonsterDropRate, TableNpcDropRate, TableItemDropGroup, TableExp, TableWindow,
-            TableStatus, TableSkill, TableAffect, TableEffect, TableInteraction,
+            // Status 3분리 테이블
+            TableStat, TableDamageType, TableState,
+            // Skill/Affect
+            TableSkill, TableAffect, TableAffectModifier,
+            // Others
+            TableEffect, TableInteraction,
             TableShop, TableItemUpgrade, TableItemSalvage, TableItemCraft,
             TableCutscene, TableDialogue, TableQuest, TableProjectile, TableSound, TableSimulationTool,
             TableSimulationGrowth

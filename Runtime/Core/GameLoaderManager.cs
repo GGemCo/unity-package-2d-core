@@ -212,6 +212,13 @@ namespace GGemCo2DCore
                 tables: targetTables
             ));
 
+            // com.ggemco.2d.affect 런타임 저장소 초기화(테이블 → Repository)
+            Register(new AffectRuntimeBootstrapStep(
+                id: "core.affect.bootstrap",
+                order: 245,
+                localizedKey: LocalizationConstants.Keys.Loading.TextTypeTables()
+            ));
+
             Register(new AddressableTaskStep(
                 id: "core.prefab.common",
                 order: 300,

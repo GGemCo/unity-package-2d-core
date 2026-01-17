@@ -23,9 +23,15 @@ namespace GGemCo2DCore
         public TableItemDropGroup TableItemDropGroup { get; private set; } = new TableItemDropGroup();
         public TableExp TableExp { get; private set; } = new TableExp();
         public TableWindow TableWindow { get; private set; } = new TableWindow();
+        // Legacy(Deprecated): Status 단일 테이블
         public TableStatus TableStatus { get; private set; } = new TableStatus();
+        // New: Status 3분리
+        public TableStat TableStat { get; private set; } = new TableStat();
+        public TableDamageType TableDamageType { get; private set; } = new TableDamageType();
+        public TableState TableState { get; private set; } = new TableState();
         public TableSkill TableSkill { get; private set; } = new TableSkill();
         public TableAffect TableAffect { get; private set; } = new TableAffect();
+        public TableAffectModifier TableAffectModifier { get; private set; } = new TableAffectModifier();
         public TableEffect TableEffect { get; private set; } = new TableEffect();
         public TableInteraction TableInteraction { get; private set; } = new TableInteraction();
         public TableShop TableShop { get; private set; } = new TableShop();
@@ -58,9 +64,15 @@ namespace GGemCo2DCore
                 registry.Register(TableItemDropGroup);
                 registry.Register(TableExp);
                 registry.Register(TableWindow);
-                registry.Register(TableStatus);
+                // Legacy는 로드하지 않는다(프로젝트가 정말로 필요하면 외부에서 RegistryTable로 등록)
+                // registry.Register(TableStatus);
+
+                registry.Register(TableStat);
+                registry.Register(TableDamageType);
+                registry.Register(TableState);
                 registry.Register(TableSkill);
                 registry.Register(TableAffect);
+                registry.Register(TableAffectModifier);
                 registry.Register(TableEffect);
                 registry.Register(TableInteraction);
                 registry.Register(TableShop);

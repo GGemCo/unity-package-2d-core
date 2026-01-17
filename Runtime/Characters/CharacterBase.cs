@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections;
+using GGemCo2DAffect;
 using R3;
 using UnityEngine;
 using Random = UnityEngine.Random;
@@ -99,7 +100,7 @@ namespace GGemCo2DCore
         {
             if (AddressableLoaderSettings.Instance == null) return;
             base.Awake();
-            AffectController.Initialize(this);
+            EnsureAffectSystem();
             CharacterRegenData = null;
             SetAttackType(CharacterConstants.AttackType.None);
             SetAggro(false);
@@ -500,10 +501,8 @@ namespace GGemCo2DCore
                 CharacterAnimationController.PlayDeadAnimation();
             
             // 어펙트 모두 지우기
-            if (AffectController != null)
-            {
-                AffectController.RemoveAllAffects();
-            }
+            var affect = GetComponent<AffectComponent>();
+            affect?.RemoveAll();
 
             OnDead(dieReasonType, attacker);
         }
@@ -569,10 +568,11 @@ namespace GGemCo2DCore
         /// <param name="duration"></param>
         public void AddAffect(int affectUid, float duration = 0)
         {
-            var info = TableLoaderManager.Instance.GetAffectData(affectUid);
-            if (info == null)
+            // 신규 시스템: AffectRuntime 저장소 기준으로 유효성 확인
+            if (AffectRuntime.AffectRepository == null ||
+                !AffectRuntime.AffectRepository.TryGetAffect(affectUid, out _))
             {
-                GcLogger.LogError("affect 테이블에 없는 어펙트 입니다. affect Uid: "+affectUid);
+                GcLogger.LogError($"[Affect] Unknown affectUid={affectUid}. (AffectRuntime repository not initialized?)");
                 return;
             }
             ApplyAffect(affectUid, duration);
@@ -913,6 +913,21 @@ namespace GGemCo2DCore
 
         public virtual void ChangePickUpSprite()
         {
+        }
+
+        /// <summary>
+        /// A안: 어펙트 시스템을 별도 패키지(com.ggemco.2d.affect)로 분리한 흐름에 맞춰,
+        /// 런타임에 필요한 컴포넌트를 자동으로 준비한다.
+        /// </summary>
+        private void EnsureAffectSystem()
+        {
+            // AffectTarget Adapter
+            if (GetComponent<CoreAffectTargetAdapter>() == null)
+                gameObject.AddComponent<CoreAffectTargetAdapter>();
+
+            // AffectComponent
+            if (GetComponent<AffectComponent>() == null)
+                gameObject.AddComponent<AffectComponent>();
         }
     }
 }
