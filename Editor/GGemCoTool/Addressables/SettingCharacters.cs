@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.IO;
 using GGemCo2DCore;
 using UnityEditor;
 using UnityEditor.AddressableAssets;
@@ -29,7 +30,7 @@ namespace GGemCo2DCoreEditor
         {
             // Common.OnGUITitle(Title);
 
-            if (TableLoaderManager.LoadMonsterTable() == null)
+            if (!File.Exists($"{ConfigAddressableTable.TableMonster.Path}"))
             {
                 EditorGUILayout.HelpBox($"{ConfigAddressableTable.Monster} 테이블이 없습니다.", MessageType.Info);
             }

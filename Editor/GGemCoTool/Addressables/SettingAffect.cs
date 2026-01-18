@@ -24,7 +24,7 @@ namespace GGemCo2DCoreEditor
 
         public void OnGUI()
         {
-            if (TableLoaderManager.LoadAffectTable() == null)
+            if (!File.Exists($"{ConfigAddressableTable.TableAffect.Path}"))
             {
                 EditorGUILayout.HelpBox($"{ConfigAddressableTable.Affect} 테이블이 없습니다.", MessageType.Info);
             }

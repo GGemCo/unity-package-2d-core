@@ -20,9 +20,7 @@ namespace GGemCo2DCoreEditor
         }
         public void OnGUI()
         {
-            // Common.OnGUITitle(Title);
-
-            if (TableLoaderManager.LoadSkillTable() == null)
+            if (!File.Exists($"{ConfigAddressableTable.TableSkill.Path}"))
             {
                 EditorGUILayout.HelpBox($"{ConfigAddressableTable.Skill} 테이블이 없습니다.", MessageType.Info);
             }

@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.IO;
 using GGemCo2DCore;
 using UnityEditor;
 using UnityEditor.AddressableAssets;
@@ -22,9 +23,7 @@ namespace GGemCo2DCoreEditor
         }
         public void OnGUI()
         {
-            // Common.OnGUITitle(Title);
-
-            if (TableLoaderManager.LoadEffectTable() == null)
+            if (!File.Exists($"{ConfigAddressableTable.TableEffect.Path}"))
             {
                 EditorGUILayout.HelpBox($"{ConfigAddressableTable.Effect} 테이블이 없습니다.", MessageType.Info);
             }
