@@ -29,9 +29,9 @@ namespace GGemCo2DCore
         public const string StatusStatAttackSpeed = "STAT_ATTACK_SPEED";
         public const string StatusStatCriticalDamage = "STAT_CRITICAL_DAMAGE";
         public const string StatusStatCriticalProbability = "STAT_CRITICAL_PROBABILITY";
-        public const string StatusStatResistanceFire = "STAT_REGISTANCE_FIRE";
-        public const string StatusStatResistanceCold = "STAT_REGISTANCE_COLD";
-        public const string StatusStatResistanceLightning = "STAT_REGISTANCE_LIGHTNING";
+        public const string StatusStatResistanceFire = "STAT_RESISTANCE_FIRE";
+        public const string StatusStatResistanceCold = "STAT_RESISTANCE_COLD";
+        public const string StatusStatResistanceLightning = "STAT_RESISTANCE_LIGHTNING";
         public const string StatusAffectId = "AFFECT_UID";
         public const string StatusKnockBack = "KNOCK_BACK";
         public class StruckStatus

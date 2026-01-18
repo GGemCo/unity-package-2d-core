@@ -42,7 +42,6 @@ namespace GGemCo2DCore
         [Tooltip("강화 이펙트 오브젝트")] public Spine2dUIController effectItemUpgrade;
 #endif
         private TableItem _tableItem;
-        private TableStatus _tableStatus;
         private TableItemUpgrade _tableItemUpgrade;
         private StruckTableItemUpgrade _struckTableItemUpgrade;
         
@@ -69,7 +68,6 @@ namespace GGemCo2DCore
             _localizationManager = LocalizationManager.Instance;
             _tableItem = TableLoaderManager.Instance.TableItem;
             _tableItemUpgrade = TableLoaderManager.Instance.TableItemUpgrade;
-            _tableStatus = TableLoaderManager.Instance.TableStatus;
             base.Awake();
             IconPoolManager.SetSetIconHandler(new SetIconHandlerItemUpgrade());
             DragDropHandler.SetStrategy(new DragDropStrategyItemUpgrade());
@@ -248,8 +246,8 @@ namespace GGemCo2DCore
         private string GetStatusName(string statusId)
         {
             if (string.IsNullOrEmpty(statusId)) return "";
-            var info = _tableStatus.GetDataById(statusId);
-            return info?.Name ?? "";
+            // todo. 정리 필요
+            return "";
         }
         private void SetMaterialInfo(int index, int itemUid, int itemCount)
         {

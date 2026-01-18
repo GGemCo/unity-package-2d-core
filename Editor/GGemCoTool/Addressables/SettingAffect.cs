@@ -90,12 +90,9 @@ namespace GGemCo2DCoreEditor
                 if (info.Uid <= 0) continue;
 
                 string key = $"{ConfigAddressableKey.AffectIcon}_{info.Uid}";
-                string assetPath = $"{ConfigAddressablePath.Images.Icon.Affect}";
-                assetPath = info.Type == AffectConstants.Type.Buff
-                    ? $"{assetPath}/Buff"
-                    : $"{assetPath}/DeBuff";
-                assetPath = $"{assetPath}/{info.IconFileName}.png";
-
+                string assetPath = $"{ConfigAddressablePath.Images.RootImage}";
+                assetPath = $"{assetPath}/{info.IconKey}.png";
+                
                 Add(settings, group, key, assetPath);
                 AddToListIfExists(assets, assetPath);
             }

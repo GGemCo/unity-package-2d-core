@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using GGemCo2DAffect;
 using R3;
 
 namespace GGemCo2DCore
@@ -16,6 +17,8 @@ namespace GGemCo2DCore
         private UIWindowHud _uiWindowHud;
         private UIWindowPlayerInfo _uiWindowPlayerInfo;
         private UIWindowPlayerBuffInfo _uiWindowPlayerBuffInfo;
+
+        private PlayerAffectUiPresenter _affectUiPresenter;
         
         [Serializable]
         private struct StatUIBinding
@@ -41,6 +44,18 @@ namespace GGemCo2DCore
             _uiWindowPlayerBuffInfo =
                 _sceneGame.uIWindowManager?.GetUIWindowByUid<UIWindowPlayerBuffInfo>(UIWindowConstants.WindowUid
                     .PlayerBuffInfo);
+
+            // Affect UI 바인딩(단일 진실 소스: AffectComponent)
+            if (_player != null && _uiWindowPlayerBuffInfo != null)
+            {
+                _affectUiPresenter = _player.GetComponent<PlayerAffectUiPresenter>();
+                if (_affectUiPresenter == null)
+                    _affectUiPresenter = _player.gameObject.AddComponent<PlayerAffectUiPresenter>();
+
+                var affectComp = _player.GetComponent<AffectComponent>();
+                if (affectComp != null)
+                    _affectUiPresenter.Bind(affectComp, _uiWindowPlayerBuffInfo);
+            }
 
             // TotalHp, Mp 가 바뀌어도 현재 값이 바뀌면 안된다.
             _player.TotalHp
@@ -81,17 +96,17 @@ namespace GGemCo2DCore
         {
             _statBindings.AddRange(new[]
             {
-                new StatUIBinding { textUI = UIWindowPlayerInfo.IndexPlayerInfo.Atk, getStat = p => p.TotalAtk, label = _localizationManager.GetStatusNameByKey("STAT_ATK") },
-                new StatUIBinding { textUI = UIWindowPlayerInfo.IndexPlayerInfo.Def, getStat = p => p.TotalDef, label = _localizationManager.GetStatusNameByKey("STAT_DEF") },
-                new StatUIBinding { textUI = UIWindowPlayerInfo.IndexPlayerInfo.Hp, getStat = p => p.TotalHp, label = _localizationManager.GetStatusNameByKey("STAT_HP") },
-                new StatUIBinding { textUI = UIWindowPlayerInfo.IndexPlayerInfo.Mp, getStat = p => p.TotalMp, label = _localizationManager.GetStatusNameByKey("STAT_MP") },
-                new StatUIBinding { textUI = UIWindowPlayerInfo.IndexPlayerInfo.MoveSpeed, getStat = p => p.TotalMoveSpeed, label = _localizationManager.GetStatusNameByKey("STAT_MOVE_SPEED") },
-                new StatUIBinding { textUI = UIWindowPlayerInfo.IndexPlayerInfo.AttackSpeed, getStat = p => p.TotalAttackSpeed, label = _localizationManager.GetStatusNameByKey("STAT_ATTACK_SPEED") },
-                new StatUIBinding { textUI = UIWindowPlayerInfo.IndexPlayerInfo.CriticalDamage, getStat = p => p.TotalCriticalDamage, label = _localizationManager.GetStatusNameByKey("STAT_CRITICAL_DAMAGE") },
-                new StatUIBinding { textUI = UIWindowPlayerInfo.IndexPlayerInfo.CriticalProbability, getStat = p => p.TotalCriticalProbability, label = _localizationManager.GetStatusNameByKey("STAT_CRITICAL_PROBABILITY") },
-                new StatUIBinding { textUI = UIWindowPlayerInfo.IndexPlayerInfo.RegistFire, getStat = p => p.TotalRegistFire, label = _localizationManager.GetStatusNameByKey("STAT_REGISTANCE_FIRE") },
-                new StatUIBinding { textUI = UIWindowPlayerInfo.IndexPlayerInfo.RegistCold, getStat = p => p.TotalRegistCold, label = _localizationManager.GetStatusNameByKey("STAT_REGISTANCE_COLD") },
-                new StatUIBinding { textUI = UIWindowPlayerInfo.IndexPlayerInfo.RegistLightning, getStat = p => p.TotalRegistLightning, label = _localizationManager.GetStatusNameByKey("STAT_REGISTANCE_LIGHTNING") }
+                new StatUIBinding { textUI = UIWindowPlayerInfo.IndexPlayerInfo.Atk, getStat = p => p.TotalAtk, label = _localizationManager.GetStatusNameByKey(ConfigCommon.StatusStatAtk) },
+                new StatUIBinding { textUI = UIWindowPlayerInfo.IndexPlayerInfo.Def, getStat = p => p.TotalDef, label = _localizationManager.GetStatusNameByKey(ConfigCommon.StatusStatDef) },
+                new StatUIBinding { textUI = UIWindowPlayerInfo.IndexPlayerInfo.Hp, getStat = p => p.TotalHp, label = _localizationManager.GetStatusNameByKey(ConfigCommon.StatusStatHp) },
+                new StatUIBinding { textUI = UIWindowPlayerInfo.IndexPlayerInfo.Mp, getStat = p => p.TotalMp, label = _localizationManager.GetStatusNameByKey(ConfigCommon.StatusStatMp) },
+                new StatUIBinding { textUI = UIWindowPlayerInfo.IndexPlayerInfo.MoveSpeed, getStat = p => p.TotalMoveSpeed, label = _localizationManager.GetStatusNameByKey(ConfigCommon.StatusStatMoveSpeed) },
+                new StatUIBinding { textUI = UIWindowPlayerInfo.IndexPlayerInfo.AttackSpeed, getStat = p => p.TotalAttackSpeed, label = _localizationManager.GetStatusNameByKey(ConfigCommon.StatusStatAttackSpeed) },
+                new StatUIBinding { textUI = UIWindowPlayerInfo.IndexPlayerInfo.CriticalDamage, getStat = p => p.TotalCriticalDamage, label = _localizationManager.GetStatusNameByKey(ConfigCommon.StatusStatCriticalDamage) },
+                new StatUIBinding { textUI = UIWindowPlayerInfo.IndexPlayerInfo.CriticalProbability, getStat = p => p.TotalCriticalProbability, label = _localizationManager.GetStatusNameByKey(ConfigCommon.StatusStatCriticalProbability) },
+                new StatUIBinding { textUI = UIWindowPlayerInfo.IndexPlayerInfo.RegistFire, getStat = p => p.TotalRegistFire, label = _localizationManager.GetStatusNameByKey(ConfigCommon.StatusStatResistanceFire) },
+                new StatUIBinding { textUI = UIWindowPlayerInfo.IndexPlayerInfo.RegistCold, getStat = p => p.TotalRegistCold, label = _localizationManager.GetStatusNameByKey(ConfigCommon.StatusStatResistanceCold) },
+                new StatUIBinding { textUI = UIWindowPlayerInfo.IndexPlayerInfo.RegistLightning, getStat = p => p.TotalRegistLightning, label = _localizationManager.GetStatusNameByKey(ConfigCommon.StatusStatResistanceLightning) }
             });
             foreach (var binding in _statBindings)
             {
@@ -110,12 +125,6 @@ namespace GGemCo2DCore
         {
             if (_uiWindowPlayerInfo == null) return;
             _uiWindowPlayerInfo.UpdateText(textUI, label, value);
-        }
-
-        public void AddAffectIcon(int affectUid, float duration)
-        {
-            if (_uiWindowPlayerBuffInfo == null) return;
-            _uiWindowPlayerBuffInfo.AddAffectIcon(affectUid, duration);
         }
     }
 }

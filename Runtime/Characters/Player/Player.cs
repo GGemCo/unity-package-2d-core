@@ -276,15 +276,6 @@ namespace GGemCo2DCore
             }
             return result;
         }
-        /// <summary>
-        /// 어펙트 발동시 UIWindowPlayerBuffInfo 에 추가하기
-        /// </summary>
-        /// <param name="affectUid"></param>
-        /// <param name="duration"></param>
-        protected override void OnAffect(int affectUid, float duration = 0)
-        {
-            _playerUIController?.AddAffectIcon(affectUid, duration);
-        }
 
         public void SetMapSize(Vector2 mapSize)
         {

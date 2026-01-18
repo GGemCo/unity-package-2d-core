@@ -70,25 +70,25 @@ namespace GGemCo2DCore
         {
             var mod = new AffectModifierDefinition
             {
-                ModifierId = MathHelper.ParseInt(row.GetValueOrDefault("ModifierId")),
-                Phase = EnumHelper.ConvertEnum<AffectPhase>(row.GetValueOrDefault("Phase")),
-                Kind = EnumHelper.ConvertEnum<ModifierKind>(row.GetValueOrDefault("Kind")),
+                modifierId = MathHelper.ParseInt(row.GetValueOrDefault("ModifierId")),
+                phase = EnumHelper.ConvertEnum<AffectPhase>(row.GetValueOrDefault("Phase")),
+                kind = EnumHelper.ConvertEnum<ModifierKind>(row.GetValueOrDefault("Kind")),
 
-                StatId = row.GetValueOrDefault("StatId"),
-                StatValue = MathHelper.ParseFloat(row.GetValueOrDefault("StatValue")),
-                StatValueType = EnumHelper.ConvertEnum<ValueType>(row.GetValueOrDefault("StatValueType")),
-                StatOperation = EnumHelper.ConvertEnum<StatOperation>(row.GetValueOrDefault("StatOperation")),
+                statId = row.GetValueOrDefault("StatId"),
+                statValue = MathHelper.ParseFloat(row.GetValueOrDefault("StatValue")),
+                statValueType = EnumHelper.ConvertEnum<StatValueType>(row.GetValueOrDefault("StatValueType")),
+                statOperation = EnumHelper.ConvertEnum<StatOperation>(row.GetValueOrDefault("StatOperation")),
 
-                DamageTypeId = row.GetValueOrDefault("DamageTypeId"),
-                DamageBaseValue = MathHelper.ParseFloat(row.GetValueOrDefault("DamageBaseValue")),
-                ScalingStatId = row.GetValueOrDefault("ScalingStatId"),
-                ScalingCoefficient = MathHelper.ParseFloat(row.GetValueOrDefault("ScalingCoefficient")),
-                CanCrit = MathHelper.ParseInt(row.GetValueOrDefault("CanCrit")) != 0,
-                IsDot = MathHelper.ParseInt(row.GetValueOrDefault("IsDot")) != 0,
+                damageTypeId = row.GetValueOrDefault("DamageTypeId"),
+                damageBaseValue = MathHelper.ParseFloat(row.GetValueOrDefault("DamageBaseValue")),
+                scalingStatId = row.GetValueOrDefault("ScalingStatId"),
+                scalingCoefficient = MathHelper.ParseFloat(row.GetValueOrDefault("ScalingCoefficient")),
+                canCrit = MathHelper.ParseInt(row.GetValueOrDefault("CanCrit")) != 0,
+                isDot = MathHelper.ParseInt(row.GetValueOrDefault("IsDot")) != 0,
 
-                StateId = row.GetValueOrDefault("StateId"),
-                StateChance = MathHelper.ParseFloat(row.GetValueOrDefault("StateChance")),
-                StateDurationOverride = MathHelper.ParseFloat(row.GetValueOrDefault("StateDurationOverride")),
+                stateId = row.GetValueOrDefault("StateId"),
+                stateChance = MathHelper.ParseFloat(row.GetValueOrDefault("StateChance")),
+                stateDurationOverride = MathHelper.ParseFloat(row.GetValueOrDefault("StateDurationOverride")),
             };
 
             return mod;

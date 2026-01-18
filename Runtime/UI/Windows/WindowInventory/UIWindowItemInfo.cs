@@ -38,32 +38,30 @@ namespace GGemCo2DCore
         [Header("메인옵션")]
         [Tooltip("옵션 이름")]
         public TextMeshProUGUI textStatus1;
-        private float valueStatus1;
+        private float _valueStatus1;
         public TextMeshProUGUI textStatus2;
-        private float valueStatus2;
+        private float _valueStatus2;
         
         [Header("서브옵션")]
         public TextMeshProUGUI[] textOptions;
         [HideInInspector] public float[] valueOptions;
         
-        private Dictionary<ItemConstants.Category, Action> categoryUIHandlers;
+        private Dictionary<ItemConstants.Category, Action> _categoryUIHandlers;
         
-        private StruckTableItem currentStruckTableItem;
-        private TableStatus tableStatus;
-        private LocalizationManager localizationManager;
+        private StruckTableItem _currentStruckTableItem;
+        private LocalizationManager _localizationManager;
         
         protected override void Awake()
         {
             uid = UIWindowConstants.WindowUid.ItemInfo;
             if (TableLoaderManager.Instance == null) return;
             tableItem = TableLoaderManager.Instance.TableItem;
-            tableStatus = TableLoaderManager.Instance.TableStatus;
             base.Awake();
             InitializeCategoryUIHandlers();
         }
         private void InitializeCategoryUIHandlers()
         {
-            categoryUIHandlers = new Dictionary<ItemConstants.Category, Action>
+            _categoryUIHandlers = new Dictionary<ItemConstants.Category, Action>
             {
                 { ItemConstants.Category.Weapon, SetWeaponUI },
                 { ItemConstants.Category.Armor, SetArmorUI },
@@ -74,14 +72,14 @@ namespace GGemCo2DCore
         protected override void Start()
         {
             base.Start();
-            localizationManager = LocalizationManager.Instance;
+            _localizationManager = LocalizationManager.Instance;
         }
 
         public void SetItemUid(int itemUid, GameObject icon, PositionType type, Vector2 iconSlotSize, Vector2? pivot = null, Vector3? position = null)
         {
             if (icon == null || itemUid <= 0) return;
-            currentStruckTableItem = tableItem.GetDataByUid(itemUid);
-            if (currentStruckTableItem is not { Uid: > 0 }) return;
+            _currentStruckTableItem = tableItem.GetDataByUid(itemUid);
+            if (_currentStruckTableItem is not { Uid: > 0 }) return;
             
             SetName();
             SetType();
@@ -102,15 +100,15 @@ namespace GGemCo2DCore
 
         private void SetSalePrice()
         {
-            if (currentStruckTableItem == null) return;
-            if (currentStruckTableItem.SaleCurrencyValue <= 0) return;
-            textSalePrice.text = string.Format(localizationManager.GetUIWindowItemInfoByKey("Text_SellPrice"), $"{CurrencyConstants.GetNameByCurrencyType(currentStruckTableItem.SaleCurrencyType)} {currentStruckTableItem.SaleCurrencyValue}");
+            if (_currentStruckTableItem == null) return;
+            if (_currentStruckTableItem.SaleCurrencyValue <= 0) return;
+            textSalePrice.text = string.Format(_localizationManager.GetUIWindowItemInfoByKey("Text_SellPrice"), $"{CurrencyConstants.GetNameByCurrencyType(_currentStruckTableItem.SaleCurrencyType)} {_currentStruckTableItem.SaleCurrencyValue}");
         }
 
         private void SetDescription()
         {
-            if (currentStruckTableItem == null) return;
-            textDescription.text = $"{currentStruckTableItem.Description}";
+            if (_currentStruckTableItem == null) return;
+            textDescription.text = $"{_currentStruckTableItem.Description}";
         }
         /// <summary>
         /// Anti Flag
@@ -118,15 +116,15 @@ namespace GGemCo2DCore
         /// </summary>
         private void SetAntiFlag()
         {
-            if (currentStruckTableItem == null) return;
-            if (string.IsNullOrEmpty(currentStruckTableItem.AntiFlagText))
+            if (_currentStruckTableItem == null) return;
+            if (string.IsNullOrEmpty(_currentStruckTableItem.AntiFlagText))
             {
                 textAntiFlag.gameObject.SetActive(false);
                 return;
             }
 
             textAntiFlag.gameObject.SetActive(true);
-            textAntiFlag.text = string.Format(localizationManager.GetUIWindowItemInfoByKey("Text_AntiFlag"), currentStruckTableItem.AntiFlagText);
+            textAntiFlag.text = string.Format(_localizationManager.GetUIWindowItemInfoByKey("Text_AntiFlag"), _currentStruckTableItem.AntiFlagText);
         }
 
         /// <summary>
@@ -134,22 +132,22 @@ namespace GGemCo2DCore
         /// </summary>
         private void SetName()
         {
-            if (currentStruckTableItem == null) return;
-            textName.text = string.Format(localizationManager.GetUIWindowItemInfoByKey("Text_Name"),
-                localizationManager.GetItemNameByKey(currentStruckTableItem.Uid.ToString()));
+            if (_currentStruckTableItem == null) return;
+            textName.text = string.Format(_localizationManager.GetUIWindowItemInfoByKey("Text_Name"),
+                _localizationManager.GetItemNameByKey(_currentStruckTableItem.Uid.ToString()));
         }
         /// <summary>
         /// 타입 설정하기
         /// </summary>
         private void SetType()
         {
-            if (currentStruckTableItem == null) return;
-            textType.text = string.Format(localizationManager.GetUIWindowItemInfoByKey("Text_Type"), currentStruckTableItem.Type);
+            if (_currentStruckTableItem == null) return;
+            textType.text = string.Format(_localizationManager.GetUIWindowItemInfoByKey("Text_Type"), _currentStruckTableItem.Type);
         }
         
         private void SetCategoryUI()
         {
-            if (categoryUIHandlers.TryGetValue(currentStruckTableItem.Category, out var handler))
+            if (_categoryUIHandlers.TryGetValue(_currentStruckTableItem.Category, out var handler))
             {
                 handler?.Invoke();
             }
@@ -164,40 +162,40 @@ namespace GGemCo2DCore
         /// </summary>
         private void SetCategory()
         {
-            if (currentStruckTableItem == null) return;
-            textCategory.text = string.Format(localizationManager.GetUIWindowItemInfoByKey("Text_Category"), currentStruckTableItem.Category);
-            textSubCategory.text = string.Format(localizationManager.GetUIWindowItemInfoByKey("Text_SubCategory"), currentStruckTableItem.SubCategory);
+            if (_currentStruckTableItem == null) return;
+            textCategory.text = string.Format(_localizationManager.GetUIWindowItemInfoByKey("Text_Category"), _currentStruckTableItem.Category);
+            textSubCategory.text = string.Format(_localizationManager.GetUIWindowItemInfoByKey("Text_SubCategory"), _currentStruckTableItem.SubCategory);
         }
         private void SetStatusOptions()
         {
-            SetTextMeshPro(textStatus1, currentStruckTableItem.StatusID1, currentStruckTableItem.StatusSuffix1, currentStruckTableItem.StatusValue1);
-            SetTextMeshPro(textStatus2, currentStruckTableItem.StatusID2, currentStruckTableItem.StatusSuffix2, currentStruckTableItem.StatusValue2);
+            SetTextMeshPro(textStatus1, _currentStruckTableItem.StatusID1, _currentStruckTableItem.StatusSuffix1, _currentStruckTableItem.StatusValue1);
+            SetTextMeshPro(textStatus2, _currentStruckTableItem.StatusID2, _currentStruckTableItem.StatusSuffix2, _currentStruckTableItem.StatusValue2);
 
             string[] optionTypes = 
             {
-                currentStruckTableItem.OptionType1, 
-                currentStruckTableItem.OptionType2, 
-                currentStruckTableItem.OptionType3, 
-                currentStruckTableItem.OptionType4, 
-                currentStruckTableItem.OptionType5
+                _currentStruckTableItem.OptionType1, 
+                _currentStruckTableItem.OptionType2, 
+                _currentStruckTableItem.OptionType3, 
+                _currentStruckTableItem.OptionType4, 
+                _currentStruckTableItem.OptionType5
             };
             
             ConfigCommon.SuffixType[] optionSuffixes = 
             {
-                currentStruckTableItem.OptionSuffix1, 
-                currentStruckTableItem.OptionSuffix2, 
-                currentStruckTableItem.OptionSuffix3, 
-                currentStruckTableItem.OptionSuffix4, 
-                currentStruckTableItem.OptionSuffix5
+                _currentStruckTableItem.OptionSuffix1, 
+                _currentStruckTableItem.OptionSuffix2, 
+                _currentStruckTableItem.OptionSuffix3, 
+                _currentStruckTableItem.OptionSuffix4, 
+                _currentStruckTableItem.OptionSuffix5
             };
 
             float[] optionValues = 
             {
-                currentStruckTableItem.OptionValue1, 
-                currentStruckTableItem.OptionValue2, 
-                currentStruckTableItem.OptionValue3, 
-                currentStruckTableItem.OptionValue4, 
-                currentStruckTableItem.OptionValue5
+                _currentStruckTableItem.OptionValue1, 
+                _currentStruckTableItem.OptionValue2, 
+                _currentStruckTableItem.OptionValue3, 
+                _currentStruckTableItem.OptionValue4, 
+                _currentStruckTableItem.OptionValue5
             };
 
             for (int i = 0; i < textOptions.Length; i++)
@@ -221,7 +219,8 @@ namespace GGemCo2DCore
                 }
                 textMesh.gameObject.SetActive(true);
                 // textMesh.text = $"{info.Duration} 초 동안 {GetStatusName(info.StatusID)} {GetValueText(info.StatusSuffix, info.Value)} 가 발동합니다.";
-                textMesh.text = $"{GetStatusName(info.StatusID)} {GetValueText(info.StatusSuffix, info.Value)} is activated for {info.Duration} seconds.";
+                // todo. 정리 필요
+                // textMesh.text = $"{GetStatusName(info.StatusID)} {GetValueText(info.StatusSuffix, info.Value)} is activated for {info.Duration} seconds.";
             }
             else
             {
@@ -256,8 +255,8 @@ namespace GGemCo2DCore
         {
             if (string.IsNullOrEmpty(statusId)) return "";
             // string cleanedId = ItemConstants.StatusSuffixFormats.Aggregate(statusId, (current, suffix) => current.Replace(suffix.Key, ""));
-            var info = tableStatus.GetDataById(statusId);
-            return info?.Name ?? "";
+            // todo 정리 필요
+            return "";
         }
         // 카테고리별 UI 설정 함수
         private void SetWeaponUI()
@@ -271,11 +270,11 @@ namespace GGemCo2DCore
         private void SetPotionUI()
         {
             // statusID1 에 affect_uid 일 경우는 예외처리
-            if (currentStruckTableItem.StatusID1 == ConfigCommon.StatusAffectId) return;
+            if (_currentStruckTableItem.StatusID1 == ConfigCommon.StatusAffectId) return;
             
             textStatus1.gameObject.SetActive(true);
             // textStatus1.text = $"Recovery: {currentStruckTableItem.StatusValue1}"; // 회복량
-            textStatus1.text = string.Format(localizationManager.GetUIWindowItemInfoByKey("Text_Recovery"), currentStruckTableItem.StatusValue1);
+            textStatus1.text = string.Format(_localizationManager.GetUIWindowItemInfoByKey("Text_Recovery"), _currentStruckTableItem.StatusValue1);
         }
 
         private void SetDefaultUI()

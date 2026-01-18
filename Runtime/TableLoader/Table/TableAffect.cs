@@ -5,7 +5,7 @@ using GGemCo2DAffect;
 namespace GGemCo2DCore
 {
     /// <summary>
-    /// 어펙트 테이블 Structure (A안/신규)
+    /// 어펙트 테이블 Structure 
     /// - 적용 로직은 com.ggemco.2d.affect(AffectComponent)가 담당한다.
     /// - Core는 테이블 로드 및 UI/툴링 표시에 필요한 정보만 유지한다.
     /// </summary>

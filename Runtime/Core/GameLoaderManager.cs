@@ -216,7 +216,7 @@ namespace GGemCo2DCore
             Register(new AffectRuntimeBootstrapStep(
                 id: "core.affect.bootstrap",
                 order: 245,
-                localizedKey: LocalizationConstants.Keys.Loading.TextTypeTables()
+                localizedKey: LocalizationConstants.Keys.Loading.TextTypeAffect()
             ));
 
             Register(new AddressableTaskStep(

@@ -23,9 +23,6 @@ namespace GGemCo2DCore
         public TableItemDropGroup TableItemDropGroup { get; private set; } = new TableItemDropGroup();
         public TableExp TableExp { get; private set; } = new TableExp();
         public TableWindow TableWindow { get; private set; } = new TableWindow();
-        // Legacy(Deprecated): Status 단일 테이블
-        public TableStatus TableStatus { get; private set; } = new TableStatus();
-        // New: Status 3분리
         public TableStat TableStat { get; private set; } = new TableStat();
         public TableDamageType TableDamageType { get; private set; } = new TableDamageType();
         public TableState TableState { get; private set; } = new TableState();
@@ -64,9 +61,6 @@ namespace GGemCo2DCore
                 registry.Register(TableItemDropGroup);
                 registry.Register(TableExp);
                 registry.Register(TableWindow);
-                // Legacy는 로드하지 않는다(프로젝트가 정말로 필요하면 외부에서 RegistryTable로 등록)
-                // registry.Register(TableStatus);
-
                 registry.Register(TableStat);
                 registry.Register(TableDamageType);
                 registry.Register(TableState);

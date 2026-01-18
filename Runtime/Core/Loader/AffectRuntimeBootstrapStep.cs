@@ -22,6 +22,7 @@ namespace GGemCo2DCore
             if (mgr == null)
             {
                 progress = 1f;
+                GcLogger.LogError($"{nameof(TableLoaderManager)} 싱글톤이 없습니다.");
                 yield break;
             }
 

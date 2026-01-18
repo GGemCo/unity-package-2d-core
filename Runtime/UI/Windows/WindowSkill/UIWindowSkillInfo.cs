@@ -37,7 +37,6 @@ namespace GGemCo2DCore
         public TextMeshProUGUI textAffect;
         
         private StruckTableSkill _struckTableSkill;
-        private TableStatus _tableStatus;
         private TableSkill _tableSkill;
         private TableAffect _tableAffect;
         private LocalizationManager _localizationManager;
@@ -47,7 +46,6 @@ namespace GGemCo2DCore
             uid = UIWindowConstants.WindowUid.SkillInfo;
             if (TableLoaderManager.Instance == null) return;
             _tableSkill = TableLoaderManager.Instance.TableSkill;
-            _tableStatus = TableLoaderManager.Instance.TableStatus;
             _tableAffect = TableLoaderManager.Instance.TableAffect;
             _localizationManager = LocalizationManager.Instance;
             base.Awake();
@@ -111,8 +109,8 @@ namespace GGemCo2DCore
         {
             if (string.IsNullOrEmpty(statusId)) return "";
             // string cleanedId = ItemConstants.StatusSuffixFormats.Aggregate(statusId, (current, suffix) => current.Replace(suffix.Key, ""));
-            var info = _tableStatus.GetDataById(statusId);
-            return info?.Name ?? "";
+            // todo. 정리 필요
+            return "";
         }
 
         private void SetAffectInfo()
@@ -126,7 +124,8 @@ namespace GGemCo2DCore
             if (info == null) return;
             textAffect.gameObject.SetActive(true);
             // textAffect.text = $"{struckTableSkill.AffectRate}% 확률로 {GetStatusName(info.StatusID)} {GetValueText(info.StatusSuffix, info.Value)} 가 {info.Duration} 초 동안 발동합니다.";
-            textAffect.text = string.Format(_localizationManager.GetUIWindowSkillInfoByKey("Text_Affect"), _struckTableSkill.AffectRate, GetStatusName(info.StatusID), GetValueText(info.StatusSuffix, info.Value), info.Duration);
+            // todo. 정리 필요
+            // textAffect.text = string.Format(_localizationManager.GetUIWindowSkillInfoByKey("Text_Affect"), _struckTableSkill.AffectRate, GetStatusName(info.StatusID), GetValueText(info.StatusSuffix, info.Value), info.Duration);
         }
         /// <summary>
         /// 위치 보정하기

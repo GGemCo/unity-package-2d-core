@@ -56,7 +56,7 @@ namespace GGemCo2DCore
 
             public CoreStatMutable(CharacterBase character) => _character = character;
 
-            public object ApplyModifier(string statId, float value, GGemCo2DAffect.ValueType valueType, StatOperation operation)
+            public object ApplyModifier(string statId, float value, StatValueType statValueType, StatOperation operation)
             {
                 if (string.IsNullOrWhiteSpace(statId)) return null;
 
@@ -69,7 +69,7 @@ namespace GGemCo2DCore
                 if (operation == StatOperation.Override)
                     operation = StatOperation.Add;
 
-                if (operation == StatOperation.Multiply || valueType == GGemCo2DAffect.ValueType.Percent)
+                if (operation == StatOperation.Multiply || statValueType == StatValueType.Percent)
                 {
                     // 퍼센트 적용
                     var suffix = value >= 0 ? ConfigCommon.SuffixType.Increase : ConfigCommon.SuffixType.Decrease;
@@ -111,9 +111,9 @@ namespace GGemCo2DCore
                 if (statId == ConfigCommon.StatusStatCriticalProbability) return _character.TotalCriticalProbability.Value;
 
                 // 저항(기존 Core 구현: Fire/Cold/Lightning)
-                if (statId == ConfigCommon.StatusRegistFire) return _character.TotalRegistFire.Value;
-                if (statId == ConfigCommon.StatusRegistCold) return _character.TotalRegistCold.Value;
-                if (statId == ConfigCommon.StatusRegistLightning) return _character.TotalRegistLightning.Value;
+                if (statId == ConfigCommon.StatusStatResistanceFire) return _character.TotalRegistFire.Value;
+                if (statId == ConfigCommon.StatusStatResistanceCold) return _character.TotalRegistCold.Value;
+                if (statId == ConfigCommon.StatusStatResistanceLightning) return _character.TotalRegistLightning.Value;
 
                 return 0f;
             }

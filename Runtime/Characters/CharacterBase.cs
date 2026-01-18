@@ -576,14 +576,8 @@ namespace GGemCo2DCore
                 return;
             }
             ApplyAffect(affectUid, duration);
-
-            OnAffect(affectUid, duration);
         }
 
-        protected virtual void OnAffect(int affectUid, float duration = 0)
-        {
-            
-        }
         /// <summary>
         /// total move speed 가 변경되었을때 wait 애니메이션의 time scale 도 변경해주기 위해서
         /// track index = 0 의 time scale 을 변경해준다.
@@ -916,7 +910,7 @@ namespace GGemCo2DCore
         }
 
         /// <summary>
-        /// A안: 어펙트 시스템을 별도 패키지(com.ggemco.2d.affect)로 분리한 흐름에 맞춰,
+        /// 어펙트 시스템을 별도 패키지(com.ggemco.2d.affect)로 분리한 흐름에 맞춰,
         /// 런타임에 필요한 컴포넌트를 자동으로 준비한다.
         /// </summary>
         private void EnsureAffectSystem()
