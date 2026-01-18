@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.IO;
 using GGemCo2DCore;
 using Newtonsoft.Json;
 using UnityEditor;
@@ -28,9 +29,7 @@ namespace GGemCo2DCoreEditor
         }
         public void OnGUI()
         {
-            // Common.OnGUITitle(Title);
-
-            if (TableLoaderManager.LoadMapTable() == null)
+            if (!File.Exists($"{ConfigAddressableTable.TableMap.Path}"))
             {
                 EditorGUILayout.HelpBox($"{ConfigAddressableTable.Map} 테이블이 없습니다.", MessageType.Info);
             }

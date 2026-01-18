@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.IO;
 using GGemCo2DCore;
 using UnityEditor;
 using UnityEditor.AddressableAssets;
@@ -19,9 +20,7 @@ namespace GGemCo2DCoreEditor
         }
         public void OnGUI()
         {
-            // Common.OnGUITitle(Title);
-
-            if (TableLoaderManager.LoadDialogueTable() == null)
+            if (!File.Exists($"{ConfigAddressableTable.TableDialogue.Path}"))
             {
                 EditorGUILayout.HelpBox($"{ConfigAddressableTable.Dialogue} 테이블이 없습니다.", MessageType.Info);
             }

@@ -59,7 +59,7 @@ namespace GGemCo2DCoreEditor
         {
             // Common.OnGUITitle(Title);
 
-            if (TableLoaderManager.LoadItemTable() == null)
+            if (!File.Exists($"{ConfigAddressableTable.TableItem.Path}"))
             {
                 EditorGUILayout.HelpBox($"{ConfigAddressableTable.Item} 테이블이 없습니다.", MessageType.Info);
             }
