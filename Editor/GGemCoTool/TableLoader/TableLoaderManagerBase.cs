@@ -41,7 +41,7 @@ namespace GGemCo2DCoreEditor
 
                 // 경로 키로 캐시에 저장(있으면 교체)
                 LoadedTables[filePath] = tableData;
-                Debug.Log($"[TableLoader] 테이블 내용 교체. path={filePath}");
+                // Debug.Log($"[TableLoader] 테이블 내용 교체. path={filePath}");
             }
             catch (Exception ex)
             {
