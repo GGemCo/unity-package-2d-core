@@ -30,6 +30,7 @@ namespace GGemCo2DCoreEditor
             UseEffect,
             UseProjectile,
             Debug = 300,
+            DebugAffectDescription,
             DebugTilemapDrawCall,
             DebugFps,
             DebugPhysics2D,
@@ -80,6 +81,7 @@ namespace GGemCo2DCoreEditor
         
         // 디버그
         private const string NameToolDebug = NameToolGGemCo + "디버그툴/";
+        public const string NameToolDebugAffectDescription = NameToolDebug + "Affect 설명 체크기";
         public const string NameToolTilemapDrawCall = NameToolDebug + "타일맵 드로우콜 HUD";
         public const string NameToolFps = NameToolDebug + "FPS HUD";
         public const string NameToolPhysics2D = NameToolDebug + "Physics2D HUD";

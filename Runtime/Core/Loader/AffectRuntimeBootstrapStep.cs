@@ -46,7 +46,6 @@ namespace GGemCo2DCore
                 var def = new AffectDefinition
                 {
                     Uid = row.Uid,
-                    NameKey = row.NameKey,
                     IconKey = row.IconKey,
                     GroupId = row.GroupId,
                     BaseDuration = row.BaseDuration,

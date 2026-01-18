@@ -28,6 +28,30 @@ namespace GGemCo2DCore
                 _byId[data.ID] = data;
         }
 
+        /// <summary>
+        /// 현재 선택된 Locale 기준으로 Name 필드를 다시 로컬라이즈합니다.
+        /// - 테이블은 로드 시점에 Name을 캐시하기 때문에, 런타임에서 Locale이 변경되면 재적용이 필요합니다.
+        /// </summary>
+        public void RefreshLocalizedNames(LocalizationManager loc = null)
+        {
+            loc ??= LocalizationManager.Instance;
+            if (loc == null) return;
+
+            foreach (var pair in GetDatas())
+            {
+                var row = pair.Value;
+                if (row == null) continue;
+
+                var id = row.ID;
+                if (string.IsNullOrWhiteSpace(id))
+                    continue;
+
+                var localized = loc.GetStatusNameByKey(id);
+                if (!string.IsNullOrWhiteSpace(localized))
+                    row.Name = localized;
+            }
+        }
+
         public StruckTableDamageType GetDataById(string id)
         {
             if (string.IsNullOrWhiteSpace(id)) return null;

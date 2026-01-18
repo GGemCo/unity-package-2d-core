@@ -65,6 +65,8 @@ namespace GGemCo2DCore
             public const string NpcName = "GGemCo_Npc_Name";
             public const string MonsterName = "GGemCo_Monster_Name";
             public const string AffectName = "GGemCo_Affect_Name";
+            public const string AffectDescription = "GGemCo_Affect_Description";
+            public const string AffectStackPolicy = "GGemCo_Affect_StackPolicy";
 
             /// <summary>
             /// 모든 테이블 이름을 배열로 제공합니다.
@@ -92,6 +94,7 @@ namespace GGemCo2DCore
                 NpcName,
                 MonsterName,
                 AffectName,
+                AffectDescription,
             };
         }
 

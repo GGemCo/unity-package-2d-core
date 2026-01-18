@@ -15,7 +15,7 @@ namespace GGemCo2DCore
 
         // Display
         public string Name;
-        public string NameKey;
+        public string Memo;
         public string IconKey;
 
         // Runtime
@@ -49,12 +49,11 @@ namespace GGemCo2DCore
             // 기존 방식과의 호환: 로컬라이징 키가 비어있으면 uid 문자열을 사용한다.
             if (LocalizationManager.Instance != null)
             {
-                string locKey = string.IsNullOrWhiteSpace(data.NameKey) ? data.Uid.ToString() : data.NameKey;
-                data.Name = LocalizationManager.Instance.GetAffectNameByKey(locKey);
+                data.Name = LocalizationManager.Instance.GetAffectNameByKey($"{data.Uid}");
             }
             else
             {
-                data.Name = data.NameKey;
+                data.Name = $"{data.Memo}";
             }
         }
 
@@ -63,8 +62,8 @@ namespace GGemCo2DCore
             return new StruckTableAffect
             {
                 Uid = MathHelper.ParseInt(data["Uid"]),
-                Name = data.GetValueOrDefault("NameKey"),
-                NameKey = data.GetValueOrDefault("NameKey"),
+                Name = data.GetValueOrDefault("Memo"),
+                Memo = data.GetValueOrDefault("Memo"),
                 IconKey = data.GetValueOrDefault("IconKey"),
                 DispelType = EnumHelper.ConvertEnum<DispelType>(data.GetValueOrDefault("DispelType")),
                 GroupId = data.GetValueOrDefault("GroupId"),

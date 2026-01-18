@@ -123,9 +123,30 @@ namespace GGemCo2DCore
             var info = _tableAffect.GetDataByUid(_struckTableSkill.AffectUid);
             if (info == null) return;
             textAffect.gameObject.SetActive(true);
-            // textAffect.text = $"{struckTableSkill.AffectRate}% 확률로 {GetStatusName(info.StatusID)} {GetValueText(info.StatusSuffix, info.Value)} 가 {info.Duration} 초 동안 발동합니다.";
-            // todo. 정리 필요
-            // textAffect.text = string.Format(_localizationManager.GetUIWindowSkillInfoByKey("Text_Affect"), _struckTableSkill.AffectRate, GetStatusName(info.StatusID), GetValueText(info.StatusSuffix, info.Value), info.Duration);
+
+            // 신규 Affect 시스템: 모디파이어 기반으로 설명을 자동 생성하고, Smart String으로 출력한다.
+            // - 스킬 자체에 '발동 확률'이 별도로 존재하므로, 접두 문구로 함께 표시한다.
+            var desc = AffectDescriptionService.Instance.GetDescriptionWithChancePrefix(
+                _struckTableSkill.AffectUid,
+                _struckTableSkill.AffectRate);
+
+            // UI 윈도우 전용 문장(필요 시)로 감싸고 싶다면, 아래 Smart String 키로 조절할 수 있다.
+            // ex) "{ChancePercentText}% 확률로\n{Description}" 형태
+            if (!string.IsNullOrWhiteSpace(desc))
+            {
+                // Text_Affect_Smart 키가 존재하면 그것을 우선한다.
+                var args = new SkillAffectTextArgs
+                {
+                    ChancePercentText = _struckTableSkill.AffectRate.ToString(),
+                    Description = desc
+                };
+                var wrapped = _localizationManager.GetUIWindowSkillInfoSmart("Text_Affect_Smart", args);
+                textAffect.text = string.IsNullOrWhiteSpace(wrapped) ? desc : wrapped;
+            }
+            else
+            {
+                textAffect.text = string.Empty;
+            }
         }
         /// <summary>
         /// 위치 보정하기
@@ -152,5 +173,14 @@ namespace GGemCo2DCore
             MathHelper.ClampToScreen(rectTransform);
         }
 
+    }
+
+    /// <summary>
+    /// UIWindowSkillInfo의 Smart String 포맷 Arguments.
+    /// </summary>
+    public sealed class SkillAffectTextArgs
+    {
+        public string ChancePercentText { get; set; }
+        public string Description { get; set; }
     }
 }

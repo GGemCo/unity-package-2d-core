@@ -1,5 +1,6 @@
 using System.Collections;
-using System.Collections.Generic;
+using GGemCo2DAffect;
+using UnityEngine;
 using UnityEngine.AddressableAssets;
 using UnityEngine.Localization.Settings;
 using UnityEngine.ResourceManagement.AsyncOperations;
@@ -12,8 +13,6 @@ namespace GGemCo2DCore
     public class LocalizationManager : LocalizationManagerBase
     {
         public static LocalizationManager Instance;
-        // 사용자 언어 테이블 존재 여부
-        private readonly Dictionary<string, bool> _userTableExistsMap = new();
 
         protected override void Awake()
         {
@@ -21,13 +20,36 @@ namespace GGemCo2DCore
             if (!Instance)
             {
                 Instance = this;
-                DontDestroyOnLoad(gameObject);
+                if (Application.isPlaying)
+                {
+                    DontDestroyOnLoad(gameObject);
+                }
+
+
+                // Locale 변경 바인딩은 중앙 LocalizationManager에서만 관리한다.
+                // - AffectDescriptionService는 이벤트를 구독하지 않고, 캐시만 Clear 한다.
+                // - 중복 구독 방지를 위해 -= 후 += 패턴을 사용한다.
+                OnChangeLocale -= HandleLocaleChanged;
+                OnChangeLocale += HandleLocaleChanged;
             }
             else
             {
                 Destroy(gameObject);
             }
 
+        }
+
+        private void HandleLocaleChanged(string _, int __)
+        {
+            // Affect 설명 캐시 무효화
+            AffectDescriptionService.ClearCache();
+
+            // StatusName을 참조하는 테이블(Name 캐시) 갱신
+            var tables = TableLoaderManager.Instance;
+            if (tables != null)
+            {
+                tables.RefreshStatusNames();
+            }
         }
 
         /// <summary>
@@ -61,6 +83,7 @@ namespace GGemCo2DCore
                     GcLogger.LogWarning($"Invalid handle for table: {userTableName}");
                 }
 
+                // LocalizationManagerBase.GetString/GetSmartString에서 사용한다.
                 _userTableExistsMap[baseTable] = exists;
 
                 // handle이 Release 가능한 경우라면 아래 코드도 추가
@@ -68,6 +91,27 @@ namespace GGemCo2DCore
                     Addressables.Release(handle);
             }
         }
+
+        /// <summary>
+        /// Smart String (동적 치환) 평가.
+        /// </summary>
+        public string GetSmartCommonUIByKey(string key, params object[] arguments) =>
+            GetSmartString(LocalizationConstants.Tables.CommonUI, key, arguments);
+
+        public string GetSmartSystemByKey(string key, params object[] arguments) =>
+            GetSmartString(LocalizationConstants.Tables.System, key, arguments);
+
+        public string GetSmartSceneByKey(string key, params object[] arguments) =>
+            GetSmartString(LocalizationConstants.Tables.Scene, key, arguments);
+
+        public string GetSmartUIWindowItemInfoByKey(string key, params object[] arguments) =>
+            GetSmartString(LocalizationConstants.Tables.UIWindowItemInfo, key, arguments);
+
+        public string GetSmartUIWindowSkillInfoByKey(string key, params object[] arguments) =>
+            GetSmartString(LocalizationConstants.Tables.UIWindowSkillInfo, key, arguments);
+
+        public string GetSmartAffectDescriptionByKey(string key, params object[] arguments) =>
+            GetSmartString(LocalizationConstants.Tables.AffectDescription, key, arguments);
 
         /// <summary>
         /// UI 에서 사용하는 공용 단어
@@ -120,5 +164,30 @@ namespace GGemCo2DCore
         public string GetInteractionByKey(string key) => GetString(LocalizationConstants.Tables.UIWindowInteractionDialogue, key);
 
         public string GetUIWindowTcgBattleHudByKey(string key) => GetString(LocalizationConstants.Tables.UIWindowTcgBattleHud, key);
+
+        // ----------------------------
+        // Smart String helpers
+        // ----------------------------
+        public string GetUIWindowSkillInfoSmart(string key, params object[] args) =>
+            GetSmartString(LocalizationConstants.Tables.UIWindowSkillInfo, key, args);
+
+        public string GetAffectDescriptionByKey(string key) =>
+            GetString(LocalizationConstants.Tables.AffectDescription, key);
+
+        public string GetAffectDescriptionSmart(string key, params object[] args) =>
+            GetSmartString(LocalizationConstants.Tables.AffectDescription, key, args);
+        
+        public bool HasAffectDescriptionLocalizationKey(string key)
+        {
+            return HasLocalizationKey(LocalizationConstants.Tables.AffectDescription, key);
+        }
+        public string GetStackPolicyName(StackPolicy policy)
+        {
+            if (policy == StackPolicy.None)
+                return string.Empty;
+
+            var key = policy.ToString();
+            return GetString(LocalizationConstants.Tables.AffectStackPolicy, key);
+        }
     }
 }

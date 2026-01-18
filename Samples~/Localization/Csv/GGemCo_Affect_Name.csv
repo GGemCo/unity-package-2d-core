@@ -1,22 +1,9 @@
-Key,Shared Comments,English(en),English(en) Comments,Korean(ko),Korean(ko) Comments
-"110001","","Movement Speed Up  ","","이동속도 증가",""
-"110002","","Attack Speed Up  ","","공격속도 증가",""
-"110003","","HP Recovery  ","","생명력 회복",""
-"110004","","MP Recovery  ","","마력 회복",""
-"210001","","Firewall DoT Damage  ","","파이어월 도트 데미지",""
-"210002","","Fast Movement  ","","패스트 무브",""
-"210003","","Fast Movement  ","","패스트 무브",""
-"210004","","Fast Movement  ","","패스트 무브",""
-"210006","","Slow Movement  ","","디크리즈 무브",""
-"210007","","Slow Movement  ","","디크리즈 무브",""
-"210008","","Slow Movement  ","","디크리즈 무브",""
-"210010","","Movement Range Down  ","","디크리즈 무브 범위",""
-"210011","","Movement Range Down  ","","디크리즈 무브 범위",""
-"210012","","Movement Range Down  ","","디크리즈 무브 범위",""
-"210013","","Attack Range Down  ","","디크리즈 어텍 범위",""
-"210014","","Attack Range Down  ","","디크리즈 어텍 범위",""
-"210015","","Attack Range Down  ","","디크리즈 어텍 범위",""
-"310001","","Knock Back","","넉백",""
-"410001","","Combo Add ATK1","","콤보 추가 공격력1",""
-"410002","","Combo Add ATK2","","콤보 추가 공격력2",""
-"410003","","Combo Add ATK3","","콤보 추가 공격력3",""
+Key,English(en),Korean(ko)
+1001,Burn,화상
+1002,Freeze,빙결
+1003,Haste,가속
+1004,Poison,중독
+1005,Thorns,가시
+1006,Attack Up,공격력 증가
+1007,Defense Up,방어력 증가
+1008,Move Speed Up,이동 속도 증가

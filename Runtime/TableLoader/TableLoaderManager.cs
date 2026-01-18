@@ -48,7 +48,10 @@ namespace GGemCo2DCore
             if (!Instance)
             {
                 Instance = this;
-                DontDestroyOnLoad(gameObject);
+                if (Application.isPlaying)
+                {
+                    DontDestroyOnLoad(gameObject);
+                }
 
                 registry = new TableRegistry();
                 registry.Register(TableAnimation);
@@ -108,6 +111,22 @@ namespace GGemCo2DCore
                 return info2.MoveStep;
             }
             return 0;
+        }
+
+        
+
+        /// <summary>
+        /// Locale 변경 등으로 인해, 로드 시점에 캐시된 표시용 Name 필드를 다시 로컬라이즈합니다.
+        /// - Stat/DamageType/State 테이블은 로드 시점에 Name을 덮어쓰므로, Locale 변경 시 재적용이 필요합니다.
+        /// </summary>
+        public void RefreshStatusNames()
+        {
+            var loc = LocalizationManager.Instance;
+            if (loc == null) return;
+
+            TableStat.RefreshLocalizedNames(loc);
+            TableDamageType.RefreshLocalizedNames(loc);
+            TableState.RefreshLocalizedNames(loc);
         }
 
         public float GetCharacterMoveStep(CharacterConstants.Type type, int characterUid)

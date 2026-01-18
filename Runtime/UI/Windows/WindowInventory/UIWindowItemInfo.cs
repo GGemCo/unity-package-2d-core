@@ -211,16 +211,16 @@ namespace GGemCo2DCore
             if (string.IsNullOrEmpty(statusId)) return;
             if (statusId == ConfigCommon.StatusAffectId)
             {
-                var info = TableLoaderManager.Instance.GetAffectData((int)value);
+                int affectUid = (int)value;
+                var info = TableLoaderManager.Instance.GetAffectData(affectUid);
                 if (info == null)
                 {
-                    GcLogger.LogError("어펙트 테이블에 없는 어펙트 입니다. affect Uid: "+value);
+                    GcLogger.LogError("어펙트 테이블에 없는 어펙트 입니다. affect Uid: " + value);
                     return;
                 }
+
                 textMesh.gameObject.SetActive(true);
-                // textMesh.text = $"{info.Duration} 초 동안 {GetStatusName(info.StatusID)} {GetValueText(info.StatusSuffix, info.Value)} 가 발동합니다.";
-                // todo. 정리 필요
-                // textMesh.text = $"{GetStatusName(info.StatusID)} {GetValueText(info.StatusSuffix, info.Value)} is activated for {info.Duration} seconds.";
+                textMesh.text = BuildAffectOptionText(affectUid);
             }
             else
             {
@@ -234,6 +234,47 @@ namespace GGemCo2DCore
                 textMesh.gameObject.SetActive(true);
                 textMesh.text = $"{statusName}: {valueText}";
             }
+        }
+
+        /// <summary>
+        /// Item 옵션으로 부여되는 Affect(부가효과) 문구를 Smart String 기반 규칙으로 생성합니다.
+        /// </summary>
+        private string BuildAffectOptionText(int affectUid)
+        {
+            // Affect 이름은 기존 테이블( GG..._Affect_Name )을 우선 사용
+            string affectName = _localizationManager != null
+                ? _localizationManager.GetAffectNameByKey(affectUid.ToString())
+                : string.Empty;
+
+            // 설명은 AffectDescriptionService(Smart String 평가)를 사용
+            string description = string.Empty;
+            if (AffectDescriptionService.Instance != null)
+            {
+                description = AffectDescriptionService.Instance.GetDescription(affectUid);
+            }
+
+            // UIWindowItemInfo 테이블에 래핑 SmartString 키가 있으면 그걸 사용
+            // (예: "{0}\n{1}" 또는 "{0}: {1}" 등 언어별 문장/줄바꿈 규칙을 테이블에서 제어)
+            if (_localizationManager != null)
+            {
+                var wrapped = _localizationManager.GetSmartString(
+                    LocalizationConstants.Tables.UIWindowItemInfo,
+                    "Text_Affect_Smart",
+                    string.IsNullOrEmpty(affectName) ? affectUid.ToString() : affectName,
+                    description);
+
+                if (!string.IsNullOrEmpty(wrapped))
+                    return wrapped;
+            }
+
+            // fallback
+            if (string.IsNullOrEmpty(affectName))
+                affectName = affectUid.ToString();
+
+            if (string.IsNullOrEmpty(description))
+                return affectName;
+
+            return $"{affectName}\n{description}";
         }
 
         private string GetValueText(ConfigCommon.SuffixType suffixType, float value)
@@ -254,9 +295,28 @@ namespace GGemCo2DCore
         private string GetStatusName(string statusId)
         {
             if (string.IsNullOrEmpty(statusId)) return "";
-            // string cleanedId = ItemConstants.StatusSuffixFormats.Aggregate(statusId, (current, suffix) => current.Replace(suffix.Key, ""));
-            // todo 정리 필요
-            return "";
+
+            // 테이블 로딩이 완료된 상태라면, Stat/DamageType/State 중 어디에 속하는지 우선 조회합니다.
+            var tlm = TableLoaderManager.Instance;
+            if (tlm != null)
+            {
+                var stat = tlm.TableStat?.GetDataById(statusId);
+                if (stat != null && !string.IsNullOrEmpty(stat.Name))
+                    return stat.Name;
+
+                var damage = tlm.TableDamageType?.GetDataById(statusId);
+                if (damage != null && !string.IsNullOrEmpty(damage.Name))
+                    return damage.Name;
+
+                var state = tlm.TableState?.GetDataById(statusId);
+                if (state != null && !string.IsNullOrEmpty(state.Name))
+                    return state.Name;
+            }
+
+            // 마지막 fallback: StatusName 테이블 직접 조회
+            return _localizationManager != null
+                ? _localizationManager.GetStatusNameByKey(statusId)
+                : statusId;
         }
         // 카테고리별 UI 설정 함수
         private void SetWeaponUI()

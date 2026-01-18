@@ -5,6 +5,7 @@ using System.Linq;
 using UnityEngine;
 using UnityEngine.Localization;
 using UnityEngine.Localization.Settings;
+using UnityEngine.Localization.Tables;
 using UnityEngine.ResourceManagement.AsyncOperations;
 using Object = UnityEngine.Object;
 
@@ -26,7 +27,8 @@ namespace GGemCo2DCore
         // asset table
         private LocalizedAssetDatabase _assetDatabase;
         // 사용자 언어 테이블 존재 여부
-        private readonly Dictionary<string, bool> _userTableExistsMap = new();
+        // - 파생 클래스(LocalizationManager)가 체크 결과를 채운다.
+        protected readonly Dictionary<string, bool> _userTableExistsMap = new();
         // 현재 사용하는 언어 Locale
         private static readonly Dictionary<string, Locale> Locales = new Dictionary<string, Locale>();
         // 로드 진행율
@@ -148,15 +150,111 @@ namespace GGemCo2DCore
         }
 
         /// <summary>
-        /// 에셋 테이블에서 로컬라이즈된 에셋을 반환합니다.
+        /// Smart String 또는 일반 String을 평가하여 반환합니다.
+        /// - UserTable(사용자 커스텀 테이블)이 있으면 우선 적용합니다.
+        /// - 없으면 기본 테이블에서 평가합니다.
         /// </summary>
-        public T GetLocalizedAsset<T>(string table, string key) where T : Object
+        public string GetSmartString(string tableName, string key, params object[] arguments)
         {
-            AsyncOperationHandle<T> handle =
-                _assetDatabase.GetLocalizedAssetAsync<T>(table, key, LocalizationSettings.SelectedLocale);
-            return handle.WaitForCompletion();
+            return GetSmartString(tableName, key, LocalizationSettings.SelectedLocale, arguments);
         }
-        public float GetLoadProgress() => _loadProgress;
+        /// <summary>
+        /// 지정 Locale로 Smart String 또는 일반 String을 평가하여 반환합니다.
+        /// </summary>
+        public string GetSmartString(string tableName, string key, Locale locale, params object[] arguments)
+        {
+            if (string.IsNullOrEmpty(tableName) || string.IsNullOrEmpty(key))
+                return string.Empty;
+
+            // Localization 초기화가 끝나기 전에 호출될 수 있다면 방어
+            if (LocalizationSettings.InitializationOperation.IsValid() &&
+                !LocalizationSettings.InitializationOperation.IsDone)
+            {
+                // 필요 시 WaitForCompletion 가능(단, WebGL은 제한) :contentReference[oaicite:2]{index=2}
+                LocalizationSettings.InitializationOperation.WaitForCompletion();
+            }
+
+            // 1) UserTable 우선
+            var userTableName = GetUserTableName(tableName);
+            if (TryGetUserTableExists(userTableName))
+            {
+                var userValue = GetLocalizedStringByTableAndKey(userTableName, key, locale, arguments);
+                if (!string.IsNullOrEmpty(userValue))
+                    return userValue;
+            }
+
+            // 2) 기본 테이블
+            var baseValue = GetLocalizedStringByTableAndKey(tableName, key, locale, arguments);
+            return baseValue ?? string.Empty;
+        }
+        /// <summary>
+        /// UserTable 이름 규칙(프로젝트 규칙에 맞게 유지)
+        /// </summary>
+        protected virtual string GetUserTableName(string baseTableName)
+        {
+            // 예: "GGemCo_UIWindowSkillInfo" -> "GGemCo_UIWindowSkillInfo_User"
+            // 프로젝트에서 쓰는 규칙이 있다면 그대로 사용하세요.
+            return $"{baseTableName}_User";
+        }
+
+        /// <summary>
+        /// UserTable 존재여부를 캐시에서 확인합니다. (캐시 미존재 시 false 반환)
+        /// - 프로젝트에 이미 "테이블 파일 존재 여부"를 갱신하는 단계가 있다면
+        ///   그 단계에서 _userTableExistsMap을 채우는 방식을 유지하는 것이 가장 안전합니다.
+        /// </summary>
+        protected bool TryGetUserTableExists(string userTableName)
+        {
+            if (string.IsNullOrEmpty(userTableName))
+                return false;
+
+            return _userTableExistsMap.TryGetValue(userTableName, out var exists) && exists;
+        }
+        /// <summary>
+        /// Unity Localization 정식 오버로드로 문자열을 가져오고(Smart 포함) 즉시 반환합니다.
+        /// </summary>
+        private static string GetLocalizedStringByTableAndKey(
+            string tableName,
+            string key,
+            Locale locale,
+            params object[] arguments)
+        {
+            try
+            {
+                // Ability 템플릿(키: uid)을 Smart String으로 평가하고, 인자(Trigger/Target/Value...)를 주입합니다.
+                var smartString = new LocalizedString(tableName, key)
+                {
+                    Arguments = arguments,
+                    LocaleOverride = locale
+                };
+                // 정식 시그니처:
+                // GetLocalizedStringAsync(TableReference, TableEntryReference, Locale, FallbackBehavior, params object[]) :contentReference[oaicite:3]{index=3}
+                AsyncOperationHandle<string> handle = smartString.GetLocalizedStringAsync();
+
+                if (!handle.IsDone)
+                    handle.WaitForCompletion(); // WebGL에서는 제한 가능 :contentReference[oaicite:4]{index=4}
+
+                return handle.Result;
+            }
+            catch (Exception e)
+            {
+                Debug.LogWarning($"[Localization] GetLocalizedString failed. table={tableName}, key={key}\n{e}");
+                return string.Empty;
+            }
+        }
+        private static string GetLocalizedStringByTableAndKeySync(
+            string tableName,
+            string key,
+            Locale locale,
+            params object[] arguments)
+        {
+            var smartString = new LocalizedString(tableName, key)
+            {
+                Arguments = arguments,
+                LocaleOverride = locale
+            };
+            // GetLocalizedString(...)은 내부적으로 WaitForCompletion을 사용합니다. :contentReference[oaicite:6]{index=6}
+            return smartString.GetLocalizedString();
+        }
 
         /// <summary>
         /// 현재 언어 코드 (예: "En", "Ko") 반환
@@ -220,6 +318,22 @@ namespace GGemCo2DCore
             }
 
             return null;
+        }
+
+        protected bool HasLocalizationKey(string tableName, string key)
+        {
+            if (string.IsNullOrEmpty(tableName) ||
+                string.IsNullOrEmpty(key))
+                return false;
+
+            // 이미 로드된 테이블만 사용 (동기)
+            StringTable table =
+                LocalizationSettings.StringDatabase.GetTable(tableName);
+
+            if (table == null)
+                return false;
+
+            return table.GetEntry(key) != null;
         }
     }
 }
