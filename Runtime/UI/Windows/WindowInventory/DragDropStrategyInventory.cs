@@ -106,14 +106,14 @@ namespace GGemCo2DCore
                         }
                         else
                         {
-                            droppedWindow.SetIconCount(dropIconSlotIndex, targetIconUid, targetIconCount);
-                            targetWindow.SetIconCount(targetIconSlotIndex, dropIconUid, dropIconCount);
+                            droppedWindow.SetIconCount(dropIconSlotIndex, targetIconUid, targetIconCount, instanceId: targetUIIcon.instanceId);
+                            targetWindow.SetIconCount(targetIconSlotIndex, dropIconUid, dropIconCount, instanceId: droppedUIIcon.instanceId);
                         }
                     }
                     else
                     {
-                        droppedWindow.SetIconCount(dropIconSlotIndex, targetIconUid, targetIconCount);
-                        targetWindow.SetIconCount(targetIconSlotIndex, dropIconUid, dropIconCount);
+                        droppedWindow.SetIconCount(dropIconSlotIndex, targetIconUid, targetIconCount, instanceId: targetUIIcon.instanceId);
+                        targetWindow.SetIconCount(targetIconSlotIndex, dropIconUid, dropIconCount, instanceId: droppedUIIcon.instanceId);
                     }
                 }
             }

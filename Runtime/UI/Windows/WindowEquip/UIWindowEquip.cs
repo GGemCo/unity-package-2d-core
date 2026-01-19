@@ -67,8 +67,7 @@ namespace GGemCo2DCore
                 }
                 var table = tableItem.GetDataByUid(itemUid);
                 if (table == null || table.Uid <= 0) continue;
-                uiIcon.ChangeInfoByUid(table.Uid);
-                uiIcon.SetCount(itemCount);
+                uiIcon.ChangeInfoByUid(table.Uid, itemCount, iconInstanceId: structInventoryIcon.InstanceId);
             }
         }
         /// <summary>

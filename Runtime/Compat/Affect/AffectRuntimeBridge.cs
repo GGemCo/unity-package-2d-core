@@ -138,6 +138,20 @@ namespace GGemCo2DCore
             method.Invoke(affectComp, new[] { (object)affectUid, ctx });
         }
 
+        /// <summary>
+        /// Optional hook: apply a state option.
+        /// - If stateId is an integer, it is treated as an Affect UID and forwarded.
+        /// - Otherwise, do nothing (your Affect runtime can implement a mapping externally).
+        /// </summary>
+        public static void ApplyState(GameObject go, string stateId, float durationOverrideSeconds)
+        {
+            if (string.IsNullOrWhiteSpace(stateId)) return;
+            if (int.TryParse(stateId, out var affectUid) && affectUid > 0)
+            {
+                ApplyAffect(go, affectUid, durationOverrideSeconds);
+            }
+        }
+
         public static Sprite TryLoadIconSprite(string iconKey)
         {
             if (string.IsNullOrWhiteSpace(iconKey)) return null;

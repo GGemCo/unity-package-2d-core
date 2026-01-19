@@ -149,6 +149,11 @@ namespace GGemCo2DCore
         public string GetUIWindowQuestRewardByKey(string key) => GetString(LocalizationConstants.Tables.UIWindowQuestReward, key);
         public string GetItemNameByKey(string key) => GetString(LocalizationConstants.Tables.ItemName, key);
         public string GetItemDescriptionByKey(string key) => GetString(LocalizationConstants.Tables.ItemDescription, key);
+        /// <summary>
+        /// ItemDescription 테이블의 Smart String(동적 치환) 평가.
+        /// </summary>
+        public string GetItemDescriptionSmartByKey(string key, params object[] arguments) =>
+            GetSmartString(LocalizationConstants.Tables.ItemDescription, key, arguments);
         public string GetMapNameByKey(string key) => GetString(LocalizationConstants.Tables.MapName, key);
         public string GetSkillNameByKey(string key) => GetString(LocalizationConstants.Tables.SkillName, key);
         public string GetNpcNameByKey(string key) => GetString(LocalizationConstants.Tables.NpcName, key);

@@ -36,9 +36,9 @@ namespace GGemCo2DCore
         /// <param name="iconLevel"></param>
         /// <param name="iconIsLearn"></param>
         /// <param name="remainCoolTime"></param>
-        public override bool ChangeInfoByUid(int iconUid, int iconCount = 0, int iconLevel = 0, bool iconIsLearn = false, int remainCoolTime = 0)
+        public override bool ChangeInfoByUid(int iconUid, int iconCount = 0, int iconLevel = 0, bool iconIsLearn = false, int remainCoolTime = 0, long iconInstanceId = 0)
         {
-            if (!base.ChangeInfoByUid(iconUid, iconCount, iconLevel, iconIsLearn, remainCoolTime)) return false;
+            if (!base.ChangeInfoByUid(iconUid, iconCount, iconLevel, iconIsLearn, remainCoolTime, iconInstanceId)) return false;
             var info = tableSkill.GetDataByUidLevel(iconUid, iconLevel);
             if (info == null)
             {

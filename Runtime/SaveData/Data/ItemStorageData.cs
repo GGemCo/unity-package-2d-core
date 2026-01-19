@@ -19,11 +19,11 @@ namespace GGemCo2DCore
         /// <summary>
         /// 아이템 개수 설정
         /// </summary>
-        public void SetItemCount(int slotIndex, int itemUid, int value)
+        public void SetItemCount(int slotIndex, int itemUid, int value, long instanceId = 0)
         {
             if (slotIndex < 0 || slotIndex >= MaxSlotCount) return;
 
-            ItemCounts[slotIndex] = new SaveDataIcon(slotIndex, itemUid, value);
+            ItemCounts[slotIndex] = new SaveDataIcon(slotIndex, itemUid, value, instanceId: instanceId);
             SaveDatas();
         }
         /// <summary>
@@ -138,6 +138,47 @@ namespace GGemCo2DCore
                 SaveDatas();
                 return ResultCommon.SuccessWithIcons(controls);
             }
+        }
+
+        /// <summary>
+        /// 인스턴스 아이템(랜덤 옵션 등)을 인벤토리에 추가한다.
+        /// </summary>
+        /// <remarks>
+        /// - InstanceId가 있는 아이템은 슬롯 중첩(Stack)을 하지 않는다.
+        /// - 보통 인스턴스 아이템은 Count=1을 권장한다.
+        /// </remarks>
+        public ResultCommon AddItemInstance(int itemUid, int itemCount, long instanceId)
+        {
+            if (instanceId <= 0)
+                return AddItem(itemUid, itemCount);
+
+            var info = TableLoaderManager.Instance.GetItemData(itemUid);
+            if (info == null || info.Uid <= 0)
+                return ResultCommon.Fail();
+
+            // 재화는 인스턴스로 저장하지 않는다.
+            if (info.Type == ItemConstants.Type.Currency)
+                return AddItem(itemUid, itemCount);
+
+            if (itemCount <= 0)
+                return ResultCommon.Fail("Slot_InvalidCount");
+
+            // 인스턴스 아이템은 기본적으로 중첩하지 않는다.
+            // Count>1이 들어오면 슬롯 분해 대신 기존 스택 방식으로 처리한다.
+            if (itemCount != 1)
+                return AddItem(itemUid, itemCount);
+
+            int emptyIndex = FindEmptySlot();
+            if (emptyIndex == -1)
+                return ResultCommon.Fail("Inventory_NoSpace");
+
+            var controls = new List<SaveDataIcon>
+            {
+                new SaveDataIcon(emptyIndex, itemUid, 1, instanceId: instanceId)
+            };
+
+            SaveDatas();
+            return ResultCommon.SuccessWithIcons(controls);
         }
         /// <summary>
         /// 특정 슬롯에 아이템 개수 추가

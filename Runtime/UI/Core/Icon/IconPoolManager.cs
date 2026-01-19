@@ -159,7 +159,7 @@ namespace GGemCo2DCore
         /// <param name="level">레벨</param>
         /// <param name="learn">배우기 여부 Y/N</param>
         /// <returns></returns>
-        public UIIcon SetIcon(int slotIndex, int uid, int count, int level = 0, bool learn = false)
+        public UIIcon SetIcon(int slotIndex, int uid, int count, int level = 0, bool learn = false, long instanceId = 0)
         {
             UIIcon uiIcon = GetIcon(slotIndex);
             
@@ -172,7 +172,7 @@ namespace GGemCo2DCore
             }
             uiIcon.window = _window;
             uiIcon.windowUid = _window.uid;
-            uiIcon.ChangeInfoByUid(uid, count, level, learn);
+            uiIcon.ChangeInfoByUid(uid, count, level, learn, 0, instanceId);
             
             // 아이콘 정보 세팅 후, 전략으로 후처리
             _setIconHandler?.OnSetIcon(_window, slotIndex, uid, count, level, learn);
@@ -207,7 +207,7 @@ namespace GGemCo2DCore
             return -1;
         }
         
-        public void SetIconCount(int iconUid, int iconCount)
+        public void SetIconCount(int iconUid, int iconCount, long instanceId = 0)
         {
             int emptySlot = FindEmptySlot();
             if (emptySlot == -1)
@@ -215,10 +215,10 @@ namespace GGemCo2DCore
                 SceneGame.Instance.popupManager.ShowPopupError("Window_NoEmptySpace");//"윈도우에 빈 공간이 없습니다."
                 return;
             }
-            SetIcon(emptySlot, iconUid, iconCount);
+            SetIcon(emptySlot, iconUid, iconCount, 0, false, instanceId);
         }
 
-        public UIIcon SetIconCountReturnIcon(int iconUid, int iconCount)
+        public UIIcon SetIconCountReturnIcon(int iconUid, int iconCount, long instanceId = 0)
         {
             int emptySlot = FindEmptySlot();
             if (emptySlot == -1)
@@ -226,7 +226,7 @@ namespace GGemCo2DCore
                 SceneGame.Instance.popupManager.ShowPopupError("Window_NoEmptySpace");//"윈도우에 빈 공간이 없습니다."
                 return null;
             }
-            return SetIcon(emptySlot, iconUid, iconCount);
+            return SetIcon(emptySlot, iconUid, iconCount, 0, false, instanceId);
         }
 
         public void ResetMaxCountIcon(int maxCountIcon)
@@ -259,7 +259,7 @@ namespace GGemCo2DCore
             if (result.ResultIcons == null || result.ResultIcons.Count <= 0) return;
             foreach (var icon in result.ResultIcons)
             {
-                SetIcon(icon.SlotIndex, icon.Uid, icon.Count, icon.Level, icon.IsLearned);
+                SetIcon(icon.SlotIndex, icon.Uid, icon.Count, icon.Level, icon.IsLearned, icon.InstanceId);
             }
         }
 

@@ -22,6 +22,10 @@ namespace GGemCo2DCore
         public const string Npc              = "npc";
         public const string Animation        = "animation";
         public const string Item             = "item";
+        public const string ItemBaseOption   = "item_base_option";
+        public const string ItemAffixDef     = "item_affix_def";
+        public const string ItemAffixPool    = "item_affix_pool";
+        public const string ItemRollRule     = "item_roll_rule";
         public const string MonsterDropRate  = "monster_drop_rate";
         public const string NpcDropRate      = "npc_drop_rate";
         public const string ItemDropGroup    = "item_drop_group";
@@ -51,6 +55,10 @@ namespace GGemCo2DCore
         public static readonly AddressableAssetInfo TableNpc             = Make(Npc);
         public static readonly AddressableAssetInfo TableAnimation       = Make(Animation);
         public static readonly AddressableAssetInfo TableItem            = Make(Item);
+        public static readonly AddressableAssetInfo TableItemBaseOption  = Make(ItemBaseOption);
+        public static readonly AddressableAssetInfo TableItemAffixDef    = Make(ItemAffixDef);
+        public static readonly AddressableAssetInfo TableItemAffixPool   = Make(ItemAffixPool);
+        public static readonly AddressableAssetInfo TableItemRollRule    = Make(ItemRollRule);
         public static readonly AddressableAssetInfo TableMonsterDropRate = Make(MonsterDropRate);
         public static readonly AddressableAssetInfo TableNpcDropRate     = Make(NpcDropRate);
         public static readonly AddressableAssetInfo TableItemDropGroup   = Make(ItemDropGroup);
@@ -79,6 +87,7 @@ namespace GGemCo2DCore
         public static readonly List<AddressableAssetInfo> All = new()
         {
             TableMap, TableMonster, TableNpc, TableAnimation, TableItem,
+            TableItemBaseOption, TableItemAffixDef, TableItemAffixPool, TableItemRollRule,
             TableMonsterDropRate, TableNpcDropRate, TableItemDropGroup, TableExp, TableWindow,
             // Status 3분리 테이블
             TableStat, TableDamageType, TableState,

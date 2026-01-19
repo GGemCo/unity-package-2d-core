@@ -103,6 +103,9 @@ namespace GGemCo2DCore
             }
             
             InitializeManagers();
+
+            // 인스턴스 아이템 저장소 보장
+            EnsureItemInstanceDatabase();
             
             // GameTimeManager가 있을 때만 어댑터 등록
             if (gameTimeManager != null)
@@ -116,6 +119,16 @@ namespace GGemCo2DCore
 
             _isStateDirty = false;
             SetState(GameState.Begin);
+        }
+
+        private static void EnsureItemInstanceDatabase()
+        {
+            if (UnityEngine.Object.FindAnyObjectByType<ItemInstanceDatabase>() != null)
+                return;
+
+            var go = new GameObject(nameof(ItemInstanceDatabase));
+            go.AddComponent<ItemInstanceDatabase>();
+            DontDestroyOnLoad(go);
         }
         /// <summary>
         /// <para>매니저 초기화 하기</para>

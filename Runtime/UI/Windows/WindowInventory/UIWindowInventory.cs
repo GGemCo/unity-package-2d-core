@@ -114,8 +114,7 @@ namespace GGemCo2DCore
                 }
                 var table = TableItem.GetDataByUid(itemUid);
                 if (table == null || table.Uid <= 0) continue;
-                uiIcon.ChangeInfoByUid(table.Uid);
-                uiIcon.SetCount(itemCount);
+                uiIcon.ChangeInfoByUid(table.Uid, itemCount, iconInstanceId: structInventoryIcon.InstanceId);
             }
         }
         /// <summary>
@@ -264,7 +263,7 @@ namespace GGemCo2DCore
         /// </summary>
         /// <param name="iconUid"></param>
         /// <param name="iconCount"></param>
-        public override void SetIconCount(int iconUid, int iconCount)
+        public override void SetIconCount(int iconUid, int iconCount, long instanceId = 0)
         {
             ResultCommon result = InventoryData.AddItem(iconUid, iconCount);
             SetIcons(result);

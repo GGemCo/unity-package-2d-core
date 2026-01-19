@@ -11,7 +11,7 @@
             UIIcon icon = window.GetIconByIndex(slotIndex);
             if (icon != null)
             {
-                inventoryData.SetItemCount(slotIndex, icon.uid, icon.GetCount());
+                inventoryData.SetItemCount(slotIndex, icon.uid, icon.GetCount(), icon.instanceId);
             }
         }
         public void OnDetachIcon(UIWindow window, int slotIndex)

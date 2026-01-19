@@ -32,7 +32,9 @@ namespace GGemCo2DCore
         // 고유번호 (아이템일때는 아이템 고유번호)
         [HideInInspector] public int uid;
         
-        protected bool PossibleClick;
+        // instance uid for rolled options
+        [HideInInspector] public long instanceId;
+                protected bool PossibleClick;
         protected IconConstants.Type IconType;
         // 아이콘 이미지
         protected Image ImageIcon;
@@ -70,6 +72,7 @@ namespace GGemCo2DCore
         {
             PossibleClick = true;
             uid = 0;
+            instanceId = 0;
             count = 0;
             _level = 0;
             index = 0;
@@ -216,7 +219,7 @@ namespace GGemCo2DCore
         /// <param name="iconLevel"></param>
         /// <param name="iconIsLearn"></param>
         /// <param name="remainCoolTime"></param>
-        public virtual bool ChangeInfoByUid(int cardUid, int iconCount = 0, int iconLevel = 0, bool iconIsLearn = false, int remainCoolTime = 0)
+        public virtual bool ChangeInfoByUid(int cardUid, int iconCount = 0, int iconLevel = 0, bool iconIsLearn = false, int remainCoolTime = 0, long iconInstanceId = 0)
         {
             SceneGame.Instance.uIIconCoolTimeManager.SetRemainCoolTime(windowUid, cardUid, remainCoolTime);
             
@@ -226,6 +229,7 @@ namespace GGemCo2DCore
                 return false;
             }
             uid = cardUid;
+            instanceId = iconInstanceId;
             SetCount(iconCount);
             SetLevel(iconLevel);
             SetIsLearn(iconIsLearn);
@@ -278,6 +282,7 @@ namespace GGemCo2DCore
         public virtual void ClearIconInfos()
         {
             SceneGame.Instance.uIIconCoolTimeManager.ResetCoolTime(windowUid, uid);
+            instanceId = 0;
             
             uid = 0;
             Sprite newSprite = AddressableLoaderItem.Instance.GetImageIconItemByName("blank");

@@ -108,7 +108,27 @@ namespace GGemCo2DCore
         private void SetDescription()
         {
             if (_currentStruckTableItem == null) return;
-            textDescription.text = $"{_currentStruckTableItem.Description}";
+            // ItemDescription는 Smart String으로도 출력될 수 있도록 한다.
+            // - 기본 문자열: item 테이블에서 파싱된 Description
+            // - 로컬라이제이션 테이블(ItemDescription) 내 Smart String이 존재하면 우선 사용
+            var loc = _localizationManager;
+            if (loc == null)
+            {
+                textDescription.text = _currentStruckTableItem.Description;
+                return;
+            }
+
+            // 레거시 옵션(StatusID*/OptionType*) 기반 옵션 텍스트 (향후 인스턴스 옵션으로 확장 가능)
+            string optionsText = ItemOptionTextBuilder.BuildLegacyOptions(_currentStruckTableItem, loc);
+            var args = new ItemDescriptionSmartArgs(_currentStruckTableItem, loc, optionsText);
+
+            string smart = loc.GetItemDescriptionSmartByKey(_currentStruckTableItem.Uid.ToString(), args);
+            if (string.IsNullOrWhiteSpace(smart))
+            {
+                textDescription.text = _currentStruckTableItem.Description;
+                return;
+            }
+            textDescription.text = smart;
         }
         /// <summary>
         /// Anti Flag

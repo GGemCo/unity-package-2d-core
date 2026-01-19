@@ -99,8 +99,9 @@ namespace GGemCo2DCore
                 if (info.Value == null) continue;
                 int itemUid = info.Value.Uid;
                 int itemCount = info.Value.Count;
+                long instanceId = info.Value.InstanceId;
                 if (itemUid <= 0) continue;
-                EquipItem(info.Key, itemUid, itemCount);
+                EquipItem(info.Key, itemUid, itemCount, instanceId);
             }
         }
         protected void OnTriggerEnter2D(Collider2D collision)
@@ -123,9 +124,9 @@ namespace GGemCo2DCore
         /// <param name="partIndex"></param>
         /// <param name="itemUid"></param>
         /// <param name="itemCount"></param>
-        public void EquipItem(int partIndex, int itemUid, int itemCount)
+        public void EquipItem(int partIndex, int itemUid, int itemCount, long instanceId = 0)
         {
-            bool result = _equipController.EquipItem(partIndex, itemUid);
+            bool result = _equipController.EquipItem(partIndex, itemUid, instanceId);
             if (!result) return;
             if (itemUid <= 0)
             {

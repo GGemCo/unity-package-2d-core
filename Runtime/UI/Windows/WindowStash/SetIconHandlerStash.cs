@@ -10,7 +10,7 @@
             UIIcon icon = window.GetIconByIndex(slotIndex);
             if (icon != null)
             {
-                SceneGame.Instance.saveDataManager.Stash.SetItemCount(slotIndex, iconUid, iconCount);
+                SceneGame.Instance.saveDataManager.Stash.SetItemCount(slotIndex, iconUid, iconCount, icon.instanceId);
             }
         }
         public void OnDetachIcon(UIWindow window, int slotIndex)

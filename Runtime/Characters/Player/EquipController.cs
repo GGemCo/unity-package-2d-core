@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -10,18 +10,18 @@ namespace GGemCo2DCore
     public class EquipController : MonoBehaviour
     {
         private Player _player;
-        // 현재 장착 중인 아이템
-        private readonly Dictionary<int, StruckTableItem> _equippedItems = new Dictionary<int, StruckTableItem>();
-        
-        public static event Action<CharacterBase, Dictionary<int, StruckTableItem>> OnPlayerEquiped;
-        public static event Action<CharacterBase, Dictionary<int, StruckTableItem>> OnPlayerUnEquiped;
-
         private TableItem _tableItem;
+
+        // 현재 장착 중인 아이템
+        private readonly Dictionary<int, EquippedItemRef> _equippedItems = new Dictionary<int, EquippedItemRef>();
+
+        public static event Action<CharacterBase, Dictionary<int, EquippedItemRef>> OnPlayerEquiped;
+        public static event Action<CharacterBase, Dictionary<int, EquippedItemRef>> OnPlayerUnEquiped;
 
         private void Awake()
         {
             _equippedItems.Clear();
-            _tableItem = TableLoaderManager.Instance.TableItem;
+            _tableItem = TableLoaderManager.Instance != null ? TableLoaderManager.Instance.TableItem : null;
             _player = GetComponent<Player>();
             OnPlayerEquiped += _player.UpdateStatCache;
             OnPlayerUnEquiped += _player.UpdateStatCache;
@@ -38,7 +38,7 @@ namespace GGemCo2DCore
         /// </summary>
         /// <param name="partIndex">착용 부위</param>
         /// <param name="itemUid"></param>
-        public bool EquipItem(int partIndex, int itemUid)
+        public bool EquipItem(int partIndex, int itemUid, long instanceId = 0)
         {
             if (_player == null) return false;
             if (itemUid <= 0)
@@ -46,11 +46,13 @@ namespace GGemCo2DCore
                 UnEquipItem(partIndex);
                 return true;
             }
-            StruckTableItem item = _tableItem.GetDataByUid(itemUid);
-            if (!_equippedItems.TryAdd(partIndex, item))
-            {
-                _equippedItems[partIndex] = item;
-            }
+
+            var def = _tableItem != null ? _tableItem.GetDataByUid(itemUid) : null;
+            var refItem = new EquippedItemRef(itemUid, instanceId, def);
+
+            if (!_equippedItems.TryAdd(partIndex, refItem))
+                _equippedItems[partIndex] = refItem;
+
             OnPlayerEquiped?.Invoke(_player, _equippedItems);
             return true;
         }
@@ -69,7 +71,7 @@ namespace GGemCo2DCore
         /// 장착된 모든 아이템 정보 가져오기
         /// </summary>
         /// <returns></returns>
-        public Dictionary<int, StruckTableItem> GetEquippedItems()
+        public Dictionary<int, EquippedItemRef> GetEquippedItems()
         {
             return _equippedItems;
         }

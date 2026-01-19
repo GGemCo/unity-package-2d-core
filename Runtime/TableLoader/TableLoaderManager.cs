@@ -18,6 +18,11 @@ namespace GGemCo2DCore
         public TableMonster TableMonster { get; private set; } = new TableMonster();
         public TableAnimation TableAnimation { get; private set; } = new TableAnimation();
         public TableItem TableItem { get; private set; } = new TableItem();
+        // Item option tables
+        public TableItemBaseOption TableItemBaseOption { get; private set; } = new TableItemBaseOption();
+        public TableItemAffixDef TableItemAffixDef { get; private set; } = new TableItemAffixDef();
+        public TableItemAffixPool TableItemAffixPool { get; private set; } = new TableItemAffixPool();
+        public TableItemRollRule TableItemRollRule { get; private set; } = new TableItemRollRule();
         public TableMonsterDropRate TableMonsterDropRate { get; private set; } = new TableMonsterDropRate();
         public TableNpcDropRate TableNpcDropRate { get; private set; } = new TableNpcDropRate();
         public TableItemDropGroup TableItemDropGroup { get; private set; } = new TableItemDropGroup();
@@ -57,6 +62,10 @@ namespace GGemCo2DCore
                 registry.Register(TableNpc);
                 registry.Register(TableMap);
                 registry.Register(TableItem);
+                registry.Register(TableItemBaseOption);
+                registry.Register(TableItemAffixDef);
+                registry.Register(TableItemAffixPool);
+                registry.Register(TableItemRollRule);
                 registry.Register(TableMonsterDropRate);
                 registry.Register(TableNpcDropRate);
                 registry.Register(TableItemDropGroup);

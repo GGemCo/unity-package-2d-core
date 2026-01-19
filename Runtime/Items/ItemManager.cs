@@ -26,6 +26,9 @@ namespace GGemCo2DCore
         private readonly float _poolReduceTime = 10f;
         private SceneGame _sceneGame;
         private UIWindowInventory _uiWindowInventory;
+
+        private ItemInstanceDatabase _itemInstanceDb;
+        private ItemOptionRoller _itemOptionRoller;
         
         public enum DropRateType
         {
@@ -67,6 +70,10 @@ namespace GGemCo2DCore
             _monsterDropDictionary = TableLoaderManager.Instance.TableMonsterDropRate.GetMonsterDropDictionary();
             _npcDropDictionary = TableLoaderManager.Instance.TableNpcDropRate.GetNpcDropDictionary();
             _sceneGame = sceneGame;
+
+            // 인스턴스 아이템 DB / 롤러 캐시
+            _itemInstanceDb = Object.FindObjectOfType<ItemInstanceDatabase>();
+            _itemOptionRoller = new ItemOptionRoller(TableLoaderManager.Instance);
         }
         /// <summary>
         /// Addressable 에 등록된 damageText 를 불러와서 pool 을 만든다 
@@ -118,12 +125,29 @@ namespace GGemCo2DCore
         /// <param name="worldPosition"></param>
         /// <param name="itemUid"></param>
         /// <param name="itemCount"></param>
-        public void MakeDropItem(Vector3 worldPosition, int itemUid, int itemCount)
+        public void MakeDropItem(Vector3 worldPosition, int itemUid, int itemCount,
+            ItemRarity rarity = ItemRarity.Normal, int dropLevel = 0)
         {
             var info = _tableItem.GetDataByUid(itemUid);
             if (info == null) return;
+
+            long instanceId = 0;
+
+            // 랜덤 옵션 인스턴스 생성(권장: Count=1일 때만 인스턴스로 취급)
+            if (_itemInstanceDb != null && _itemOptionRoller != null && itemCount == 1)
+            {
+                int seed = Random.Range(int.MinValue, int.MaxValue);
+                var instance = _itemOptionRoller.CreateInstance(itemUid, rarity, dropLevel, seed);
+
+                // Normal 등급이라도 룰에 의해 롤이 발생할 수 있으므로, 롤 결과가 있으면 인스턴스로 등록한다.
+                if (instance != null && (rarity != ItemRarity.Normal || (instance.RolledAffixes != null && instance.RolledAffixes.Count > 0)))
+                {
+                    instanceId = _itemInstanceDb.RegisterNew(instance);
+                }
+            }
+
             Item item = GetOrCreateItem();
-            item.Initialize(itemUid, itemCount,worldPosition);
+            item.Initialize(itemUid, itemCount, worldPosition, instanceId);
             item.StartDrop();
             
             // 풀을 일정 시간이 지나면 정리하도록 코루틴 시작
@@ -263,7 +287,15 @@ namespace GGemCo2DCore
         {
             Item item = dropItem.GetComponent<Item>();
             if (item ==null || item.GetItemUid() <= 0) return;
-            var result = _sceneGame.saveDataManager.Inventory.AddItem(item.GetItemUid(), item.GetItemCount());
+
+            // 인스턴스 아이템이면 InstanceId를 함께 저장
+            ResultCommon result;
+            long instanceId = item.GetInstanceId();
+            if (instanceId > 0)
+                result = _sceneGame.saveDataManager.Inventory.AddItemInstance(item.GetItemUid(), item.GetItemCount(), instanceId);
+            else
+                result = _sceneGame.saveDataManager.Inventory.AddItem(item.GetItemUid(), item.GetItemCount());
+
             if (_uiWindowInventory != null)
             {
                 _uiWindowInventory.SetIcons(result);
@@ -273,8 +305,9 @@ namespace GGemCo2DCore
                 );
                 GameEventManager.ItemCollected(data);
             }
-            
-            item.Reset();
+
+            // 획득 시에는 인스턴스를 유지해야 한다.
+            item.ResetInfos(removeInstanceFromDb: false);
         }
 
         public void AddPoolDropItem(Item item)

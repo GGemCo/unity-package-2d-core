@@ -39,6 +39,7 @@ namespace GGemCo2DCore
         
         private int _itemUid;
         private int _itemCount;
+        private long _instanceId;
         private GameObject _containerItemName;
         private GameObject _objectTagNameItem;
         private Vector2 _startPos;
@@ -266,9 +267,15 @@ namespace GGemCo2DCore
         /// <summary>
         /// 플레이어가 아이템을 먹 후, 사라지는 시간이 다 되었을때 처리
         /// </summary>
-        public void Reset()
+        public void ResetInfos(bool removeInstanceFromDb)
         {
+            if (removeInstanceFromDb && _instanceId > 0)
+            {
+                var db = FindAnyObjectByType<ItemInstanceDatabase>();
+                db?.Remove(_instanceId);
+            }
             _itemUid = 0;
+            _instanceId = 0;
             gameObject.SetActive(false);
             _itemManager.AddPoolDropItem(this);
         }
@@ -276,7 +283,8 @@ namespace GGemCo2DCore
         IEnumerator CheckDestroyTime()
         {
             yield return new WaitForSeconds(_dropItemDestroyTimeSec);
-            Reset();
+            // 바닥에서 사라질 때는 인스턴스도 함께 제거(미획득 처리)
+            ResetInfos(true);
         }
         /// <summary>
         /// 시간 되면 자동으로 파괴되는 코루틴 정지 
@@ -286,11 +294,12 @@ namespace GGemCo2DCore
             if (_coroutineDropItemDestroy == null) return;
             StopCoroutine(_coroutineDropItemDestroy);
         }
-        public void Initialize(int itemUid, int itemCount, Vector2 startPos)
+        public void Initialize(int itemUid, int itemCount, Vector2 startPos, long instanceId = 0)
         {
             _itemUid = itemUid;
             _itemCount = itemCount;
             _startPos = startPos;
+            _instanceId = instanceId;
         }
 
         public int GetItemUid()
@@ -301,6 +310,11 @@ namespace GGemCo2DCore
         public int GetItemCount()
         {
             return _itemCount;
+        }
+
+        public long GetInstanceId()
+        {
+            return _instanceId;
         }
     }
 }

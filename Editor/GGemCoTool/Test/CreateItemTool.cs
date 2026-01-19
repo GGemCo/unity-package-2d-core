@@ -138,11 +138,14 @@ namespace GGemCo2DCoreEditor
                 return;
             }
 
-            var result = SceneGame.Instance.saveDataManager.Inventory.AddItem(itemUid, _makeItemCount);
+            // todo. 정리 필요
+            var pos = SceneGame.Instance.player.transform.position + new Vector3(50, 0, 0);
+            SceneGame.Instance.ItemManager.MakeDropItem(pos, itemUid, 1);
+            // var result = SceneGame.Instance.saveDataManager.Inventory.AddItem(itemUid, _makeItemCount);
 
-            var inventory = SceneGame.Instance.uIWindowManager.GetUIWindowByUid<UIWindowInventory>(UIWindowConstants.WindowUid.Inventory);
-            if (!inventory) return;
-            inventory.SetIcons(result);
+            // var inventory = SceneGame.Instance.uIWindowManager.GetUIWindowByUid<UIWindowInventory>(UIWindowConstants.WindowUid.Inventory);
+            // if (!inventory) return;
+            // inventory.SetIcons(result);
         }
 
         private void LoadItemInfoData()

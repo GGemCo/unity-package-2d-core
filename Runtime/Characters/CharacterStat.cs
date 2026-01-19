@@ -50,13 +50,14 @@ namespace GGemCo2DCore
         public readonly BehaviorSubject<long> TotalRegistCold = new(100);
         public readonly BehaviorSubject<long> TotalRegistLightning = new(100);
 
+        // 장비에서 부여된 Affect(착용 지속) 추적
+        private readonly HashSet<int> _equipAppliedAffects = new();
+
         protected virtual void Awake() { }
-        protected virtual void Start()
-        {
-        }
+        protected virtual void Start() { }
 
         /// <summary>
-        /// 스크립터블 오브젝트에 설정된 base 값 셋팅 
+        /// 스크립터블 오브젝트에 설정된 base 값 셋팅
         /// </summary>
         /// <param name="statAtk"></param>
         /// <param name="statDef"></param>
@@ -84,43 +85,134 @@ namespace GGemCo2DCore
 
         /// <summary>
         /// 값 업데이트
+        /// - 장착 아이템(정의/인스턴스)을 기준으로 최종 옵션을 계산하여 Stat/Affect를 반영한다.
         /// </summary>
         /// <param name="characterBase"></param>
         /// <param name="equippedItems"></param>
-        public void UpdateStatCache(CharacterBase characterBase, Dictionary<int, StruckTableItem> equippedItems)
+        public void UpdateStatCache(CharacterBase characterBase, Dictionary<int, EquippedItemRef> equippedItems)
         {
             flatModifiers.Clear();
             percentModifiers.Clear();
 
-            List<ConfigCommon.StruckStatus> modifiers = new List<ConfigCommon.StruckStatus>();
-            // 아이템 효과 적용
-            foreach (var item in equippedItems.Select(items => items.Value))
+            var statModifiers = new List<ConfigCommon.StruckStatus>(32);
+            var desiredEquipAffects = new HashSet<int>();
+
+            // 옵션 리졸버(테이블 기반)
+            var tables = TableLoaderManager.Instance;
+            var resolver = new ItemOptionResolver(tables);
+
+            ItemInstanceDatabase instanceDb = null;
+            if (SceneGame.Instance != null)
+                instanceDb = SceneGame.Instance.GetComponentInChildren<ItemInstanceDatabase>();
+
+            foreach (var kv in equippedItems)
             {
+                var equipRef = kv.Value;
+                if (equipRef == null || equipRef.ItemUid <= 0) continue;
+
+                // 1) 인스턴스 기반이면 Base + Rolled 옵션을 사용
+                if (equipRef.InstanceId > 0 && instanceDb != null && instanceDb.TryGet(equipRef.InstanceId, out var inst) && inst != null)
+                {
+                    var options = resolver.ResolveFinalOptions(inst);
+                    ApplyOptionsFromEntries(options, statModifiers, desiredEquipAffects);
+                    continue;
+                }
+
+                // 2) 정의 기반(레거시) fallback: 기존 컬럼 사용
+                var item = equipRef.Definition;
                 if (item == null) continue;
-                modifiers.Add(new ConfigCommon.StruckStatus(item.StatusID1, item.StatusSuffix1, item.StatusValue1));
-                modifiers.Add(new ConfigCommon.StruckStatus(item.StatusID2, item.StatusSuffix2, item.StatusValue2));
-                modifiers.Add(new ConfigCommon.StruckStatus(item.OptionType1, ConfigCommon.SuffixType.None, item.OptionValue1));
-                modifiers.Add(new ConfigCommon.StruckStatus(item.OptionType2, ConfigCommon.SuffixType.None, item.OptionValue2));
-                modifiers.Add(new ConfigCommon.StruckStatus(item.OptionType3, ConfigCommon.SuffixType.None, item.OptionValue3));
-                modifiers.Add(new ConfigCommon.StruckStatus(item.OptionType4, ConfigCommon.SuffixType.None, item.OptionValue4));
-                modifiers.Add(new ConfigCommon.StruckStatus(item.OptionType5, ConfigCommon.SuffixType.None, item.OptionValue5));
+
+                statModifiers.Add(new ConfigCommon.StruckStatus(item.StatusID1, item.StatusSuffix1, item.StatusValue1));
+                statModifiers.Add(new ConfigCommon.StruckStatus(item.StatusID2, item.StatusSuffix2, item.StatusValue2));
+
+                statModifiers.Add(new ConfigCommon.StruckStatus(item.OptionType1, ConfigCommon.SuffixType.None, item.OptionValue1));
+                statModifiers.Add(new ConfigCommon.StruckStatus(item.OptionType2, ConfigCommon.SuffixType.None, item.OptionValue2));
+                statModifiers.Add(new ConfigCommon.StruckStatus(item.OptionType3, ConfigCommon.SuffixType.None, item.OptionValue3));
+                statModifiers.Add(new ConfigCommon.StruckStatus(item.OptionType4, ConfigCommon.SuffixType.None, item.OptionValue4));
+                statModifiers.Add(new ConfigCommon.StruckStatus(item.OptionType5, ConfigCommon.SuffixType.None, item.OptionValue5));
             }
 
-            ApplyStatModifiers(modifiers);
+            ApplyStatModifiers(statModifiers);
+            SyncEquipAffects(desiredEquipAffects);
             RecalculateStats();
         }
+
+        private void ApplyOptionsFromEntries(List<ItemOptionEntry> options, List<ConfigCommon.StruckStatus> outStatModifiers, HashSet<int> outEquipAffects)
+        {
+            if (options == null || options.Count <= 0) return;
+
+            for (int i = 0; i < options.Count; i++)
+            {
+                var op = options[i];
+                if (!op.IsValid) continue;
+
+                switch (op.Kind)
+                {
+                    case ItemOptionKind.Stat:
+                        // CharacterStat은 기존처럼 STAT_* key를 받아서 처리
+                        outStatModifiers.Add(new ConfigCommon.StruckStatus(op.TargetId, op.Op, op.Value));
+                        break;
+
+                    case ItemOptionKind.Affect:
+                    {
+                        if (TryParseIntId(op.TargetId, out var affectUid) && affectUid > 0)
+                        {
+                            // 착용 지속 효과는 장비 변경 시점에 apply/remove를 동기화한다.
+                            outEquipAffects.Add(affectUid);
+                        }
+                        break;
+                    }
+
+                    case ItemOptionKind.State:
+                        // State는 Affect 패키지 쪽 정책(STATE -> Affect 매핑)에 따라 처리될 수 있다.
+                        // Core에서는 브리지만 제공하고, 실제 매핑은 Affect 런타임에서 처리하도록 한다.
+                        AffectRuntimeBridge.ApplyState(gameObject, op.TargetId, op.Duration);
+                        break;
+
+                    case ItemOptionKind.DamageType:
+                        // DamageType 기반 옵션(예: 속성 추가/전환)은 전투 파이프라인에 맞춰 확장 필요.
+                        // Core 기본안에서는 저항/증가를 Stat으로 처리하는 것을 권장한다.
+                        break;
+                }
+            }
+        }
+
+        private void SyncEquipAffects(HashSet<int> desired)
+        {
+            // remove
+            var toRemove = _equipAppliedAffects.Where(x => !desired.Contains(x)).ToArray();
+            for (int i = 0; i < toRemove.Length; i++)
+            {
+                RemoveAffect(toRemove[i]);
+                _equipAppliedAffects.Remove(toRemove[i]);
+            }
+
+            // apply
+            foreach (var uid in desired)
+            {
+                if (_equipAppliedAffects.Contains(uid)) continue;
+                ApplyAffect(uid, 0);
+                _equipAppliedAffects.Add(uid);
+            }
+        }
+
+        private static bool TryParseIntId(string v, out int id)
+        {
+            id = 0;
+            if (string.IsNullOrEmpty(v)) return false;
+            return int.TryParse(v, out id);
+        }
+
         /// <summary>
         /// 버프 적용하기
         /// </summary>
         /// <param name="affectUid"></param>
         /// <param name="duration"></param>
-        /// <remarks>
-        /// A안(분리 패키지)에서는 com.ggemco.2d.affect(AffectComponent)로 위임된다.
-        /// </remarks>
         protected void ApplyAffect(int affectUid, float duration)
         {
             AffectRuntimeBridge.ApplyAffect(gameObject, affectUid, duration);
         }
+
         /// <summary>
         /// 버프 해제하기
         /// </summary>
@@ -129,6 +221,7 @@ namespace GGemCo2DCore
         {
             AffectRuntimeBridge.RemoveAffect(gameObject, affectUid);
         }
+
         /// <summary>
         /// 스탯 변경값 적용하기
         /// </summary>
@@ -188,6 +281,14 @@ namespace GGemCo2DCore
                     if (Mathf.Approximately(percentModifiers[baseStat], 0)) percentModifiers.Remove(baseStat);
                     break;
                 }
+                case ConfigCommon.SuffixType.None:
+                default:
+                {
+                    // legacy/간편 표기: None이면 Plus로 간주(기존 OptionType* 호환)
+                    flatModifiers[baseStat] = flatModifiers.GetValueOrDefault(baseStat, 0) + (isAdding ? (int)value : -(int)value);
+                    if (flatModifiers[baseStat] == 0) flatModifiers.Remove(baseStat);
+                    break;
+                }
             }
         }
         /// <summary>
@@ -223,13 +324,6 @@ namespace GGemCo2DCore
             totalRegistCold = CalculateFinalStat(ConfigCommon.StatusStatResistanceCold, BaseRegistCold);
             totalRegistLightning = CalculateFinalStat(ConfigCommon.StatusStatResistanceLightning, BaseRegistLightning);
 
-            ApplyStatChanges();
-        }
-        /// <summary>
-        /// 변경한 스탯 r3 에 적용하기
-        /// </summary>
-        private void ApplyStatChanges()
-        {
             TotalAtk.OnNext(totalAtk);
             TotalDef.OnNext(totalDef);
             TotalHp.OnNext(totalHp);

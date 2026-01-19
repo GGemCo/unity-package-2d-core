@@ -10,14 +10,21 @@ namespace GGemCo2DCore
         public int SlotIndex { get; private set; }
         public int Uid { get; private set; }
         public int Count { get; private set; }
+        /// <summary>
+        /// 아이템 인스턴스 ID.
+        /// - 0: 정의(ItemUid) 기반(기존 방식)
+        /// - >0: 인스턴스 기반(랜덤 옵션 등)
+        /// </summary>
+        public long InstanceId { get; private set; }
         public int Level { get; private set; }
         public bool IsLearned { get; private set; }
 
-        public SaveDataIcon(int slotIndex, int uid, int count = 0, int level = 0, bool isLearned = false)
+        public SaveDataIcon(int slotIndex, int uid, int count = 0, int level = 0, bool isLearned = false, long instanceId = 0)
         {
             SlotIndex = slotIndex;
             Uid = uid;
             Count = count;
+            InstanceId = instanceId;
             Level = level;
             IsLearned = isLearned;
         }
@@ -29,6 +36,11 @@ namespace GGemCo2DCore
         public void SetUid(int uid)
         {
             Uid = uid;
+        }
+
+        public void SetInstanceId(long instanceId)
+        {
+            InstanceId = instanceId;
         }
     }
 

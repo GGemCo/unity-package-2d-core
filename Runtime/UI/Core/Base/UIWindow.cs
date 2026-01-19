@@ -129,11 +129,10 @@ namespace GGemCo2DCore
         public virtual UIIcon GetIconByIndex(int index) => IconPoolManager.GetIcon(index);
         public virtual UISlot GetSlotByIndex(int index) => IconPoolManager.GetSlot(index);
         public UIIcon GetIconByUid(int iconUid) => IconPoolManager.GetIconByUid(iconUid);
-        public UIIcon SetIconCount(int slotIndex, int itemUid, int count, int level = 0, bool learn = false) => IconPoolManager.SetIcon(slotIndex, itemUid, count, level, learn);
-        public virtual void SetIconCount(int iconUid, int iconCount) => IconPoolManager.SetIconCount(iconUid, iconCount);
-        public UIIcon SetIconCountReturnIcon(int slotIndex, int iconUid, int iconCount, int iconLevel = 0,
-            bool iconLearn = false) => IconPoolManager.SetIcon(slotIndex, iconUid, iconCount, iconLevel, iconLearn);
-        public UIIcon SetIconCountReturnIcon(int iconUid, int iconCount) => IconPoolManager.SetIconCountReturnIcon(iconUid, iconCount);
+        public UIIcon SetIconCount(int slotIndex, int itemUid, int count, int level = 0, bool learn = false, long instanceId = 0) => IconPoolManager.SetIcon(slotIndex, itemUid, count, level, learn, instanceId);
+        public virtual void SetIconCount(int iconUid, int iconCount, long instanceId = 0) => IconPoolManager.SetIconCount(iconUid, iconCount, instanceId);
+        public UIIcon SetIconCountReturnIcon(int slotIndex, int iconUid, int iconCount, int iconLevel = 0, bool iconLearn = false, long instanceId = 0) => IconPoolManager.SetIcon(slotIndex, iconUid, iconCount, iconLevel, iconLearn, instanceId);
+        public UIIcon SetIconCountReturnIcon(int iconUid, int iconCount, long instanceId = 0) => IconPoolManager.SetIconCountReturnIcon(iconUid, iconCount, instanceId);
 
         /// <summary>
         /// 아이콘 이동 후 슬롯별 uid, count 처리  
