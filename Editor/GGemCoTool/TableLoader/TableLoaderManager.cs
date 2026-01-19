@@ -63,10 +63,6 @@ namespace GGemCo2DCoreEditor
         {
             return LoadTable<TableWindow>(ConfigAddressableTable.TableWindow.Path, forceReload);
         }
-        public static TableAffect LoadAffectTable(bool forceReload = true)
-        {
-            return LoadTable<TableAffect>(ConfigAddressableTable.TableAffect.Path, forceReload);
-        }
 
         public static TableSound LoadSoundTable(bool forceReload = true)
         {

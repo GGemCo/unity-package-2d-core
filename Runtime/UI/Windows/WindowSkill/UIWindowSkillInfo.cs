@@ -38,7 +38,6 @@ namespace GGemCo2DCore
         
         private StruckTableSkill _struckTableSkill;
         private TableSkill _tableSkill;
-        private TableAffect _tableAffect;
         private LocalizationManager _localizationManager;
         
         protected override void Awake()
@@ -46,7 +45,6 @@ namespace GGemCo2DCore
             uid = UIWindowConstants.WindowUid.SkillInfo;
             if (TableLoaderManager.Instance == null) return;
             _tableSkill = TableLoaderManager.Instance.TableSkill;
-            _tableAffect = TableLoaderManager.Instance.TableAffect;
             _localizationManager = LocalizationManager.Instance;
             base.Awake();
         }
@@ -115,38 +113,24 @@ namespace GGemCo2DCore
 
         private void SetAffectInfo()
         {
-            if (_struckTableSkill.AffectUid <= 0)
-            {
-                textAffect.gameObject.SetActive(false);
-                return;
-            }
-            var info = _tableAffect.GetDataByUid(_struckTableSkill.AffectUid);
-            if (info == null) return;
+            if (textAffect == null) return;
+
+            textAffect.gameObject.SetActive(false);
+
+            if (_struckTableSkill == null) return;
+            if (_struckTableSkill.AffectUid <= 0) return;
+
+            // Skill 테이블의 AffectRate는 퍼센트 정수로 보입니다. (예: 25 = 25%)
+            float chancePercent = _struckTableSkill.AffectRate;
+
+            string desc = chancePercent > 0
+                ? AffectBridge.DescriptionProvider.GetDescriptionWithChancePrefix(_struckTableSkill.AffectUid, chancePercent)
+                : AffectBridge.DescriptionProvider.GetDescription(_struckTableSkill.AffectUid);
+
+            if (string.IsNullOrWhiteSpace(desc)) return;
+
             textAffect.gameObject.SetActive(true);
-
-            // 신규 Affect 시스템: 모디파이어 기반으로 설명을 자동 생성하고, Smart String으로 출력한다.
-            // - 스킬 자체에 '발동 확률'이 별도로 존재하므로, 접두 문구로 함께 표시한다.
-            var desc = AffectDescriptionService.Instance.GetDescriptionWithChancePrefix(
-                _struckTableSkill.AffectUid,
-                _struckTableSkill.AffectRate);
-
-            // UI 윈도우 전용 문장(필요 시)로 감싸고 싶다면, 아래 Smart String 키로 조절할 수 있다.
-            // ex) "{ChancePercentText}% 확률로\n{Description}" 형태
-            if (!string.IsNullOrWhiteSpace(desc))
-            {
-                // Text_Affect_Smart 키가 존재하면 그것을 우선한다.
-                var args = new SkillAffectTextArgs
-                {
-                    ChancePercentText = _struckTableSkill.AffectRate.ToString(),
-                    Description = desc
-                };
-                var wrapped = _localizationManager.GetUIWindowSkillInfoSmart("Text_Affect_Smart", args);
-                textAffect.text = string.IsNullOrWhiteSpace(wrapped) ? desc : wrapped;
-            }
-            else
-            {
-                textAffect.text = string.Empty;
-            }
+            textAffect.text = desc; // 줄바꿈 유지
         }
         /// <summary>
         /// 위치 보정하기

@@ -39,9 +39,6 @@ namespace GGemCo2DCoreEditor
             var settingSkill = new SettingSkill(addressableEditor);
             settingSkill.Setup(ctx);
             
-            var settingAffect = new SettingAffect(addressableEditor);
-            settingAffect.Setup(ctx);
-            
             var settingSound = new SettingSound(addressableEditor);
             settingSound.Setup(ctx);
         }

@@ -10,7 +10,8 @@ namespace GGemCo2DCore
             Core,
             Control,
             Simulation,
-            Tcg
+            Tcg,
+            Affect
         }
         
         private class MetadataPackageInfo
@@ -31,12 +32,14 @@ namespace GGemCo2DCore
         private const string NamePackageControl = "Control";
         private const string NamePackageSimulation = "Simulation";
         public const string NamePackageTcg = "Tcg";
+        public const string NamePackageAffect = "Affect";
         
         // 오브젝트 생성시 사용
         private const string NamePrefixCore = ConfigDefine.NameSDK + "_" + ConfigPackageInfo.NamePackageCore;
         private const string NamePrefixControl = ConfigDefine.NameSDK + "_" + ConfigPackageInfo.NamePackageControl;
         private const string NamePrefixSimulation = ConfigDefine.NameSDK + "_" + ConfigPackageInfo.NamePackageSimulation;
         private const string NamePrefixTcg = ConfigDefine.NameSDK + "_" + ConfigPackageInfo.NamePackageTcg;
+        private const string NamePrefixAffect = ConfigDefine.NameSDK + "_" + ConfigPackageInfo.NamePackageAffect;
 
         private static readonly MetadataPackageInfo Core = new (
             PackageType.Core,
@@ -59,6 +62,11 @@ namespace GGemCo2DCore
             NamePackageTcg,
             NamePrefixTcg
         );
+        private static readonly MetadataPackageInfo Affect = new (
+            PackageType.Affect,
+            NamePackageAffect,
+            NamePrefixAffect
+        );
 
         private static readonly Dictionary<PackageType, MetadataPackageInfo> PackageInfos =
             new Dictionary<PackageType, MetadataPackageInfo>()
@@ -67,6 +75,7 @@ namespace GGemCo2DCore
                 {PackageType.Control, Control},
                 {PackageType.Simulation, Simulation},
                 {PackageType.Tcg, Tcg},
+                {PackageType.Affect, Affect},
             };
 
         public static string GetPackageName(PackageType packageType)

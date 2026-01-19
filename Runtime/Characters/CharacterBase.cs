@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections;
-using GGemCo2DAffect;
 using R3;
 using UnityEngine;
 using Random = UnityEngine.Random;
@@ -501,8 +500,7 @@ namespace GGemCo2DCore
                 CharacterAnimationController.PlayDeadAnimation();
             
             // 어펙트 모두 지우기
-            var affect = GetComponent<AffectComponent>();
-            affect?.RemoveAll();
+            AffectRuntimeBridge.RemoveAll(gameObject);
 
             OnDead(dieReasonType, attacker);
         }
@@ -568,14 +566,9 @@ namespace GGemCo2DCore
         /// <param name="duration"></param>
         public void AddAffect(int affectUid, float duration = 0)
         {
-            // 신규 시스템: AffectRuntime 저장소 기준으로 유효성 확인
-            if (AffectRuntime.AffectRepository == null ||
-                !AffectRuntime.AffectRepository.TryGetAffect(affectUid, out _))
-            {
-                GcLogger.LogError($"[Affect] Unknown affectUid={affectUid}. (AffectRuntime repository not initialized?)");
-                return;
-            }
-            ApplyAffect(affectUid, duration);
+            // Affect 패키지가 설치되어 있으면 실제 적용.
+            // 미설치 시에는 아무 일도 하지 않는다.
+            AffectRuntimeBridge.ApplyAffect(gameObject, affectUid, duration);
         }
 
         /// <summary>
@@ -915,13 +908,9 @@ namespace GGemCo2DCore
         /// </summary>
         private void EnsureAffectSystem()
         {
-            // AffectTarget Adapter
-            if (GetComponent<CoreAffectTargetAdapter>() == null)
-                gameObject.AddComponent<CoreAffectTargetAdapter>();
-
-            // AffectComponent
-            if (GetComponent<AffectComponent>() == null)
-                gameObject.AddComponent<AffectComponent>();
+            // Affect 패키지가 설치되어 있으면 필요한 컴포넌트를 자동 부착한다.
+            // (Core는 Affect를 직접 참조하지 않는다.)
+            AffectRuntimeBridge.EnsureAffectSystem(gameObject);
         }
     }
 }

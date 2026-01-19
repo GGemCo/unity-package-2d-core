@@ -89,7 +89,8 @@ namespace GGemCo2DCore
         public enum ExecutionOrdering
         {
             Control,
-            Simulation
+            Simulation,
+            Affect
         }
     }
 }

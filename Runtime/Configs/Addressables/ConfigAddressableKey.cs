@@ -24,7 +24,6 @@
         // Icons
         public const string ItemIcon  = ConfigDefine.NameSDK + "_Item_Icon";
         public const string SkillIcon  = ConfigDefine.NameSDK + "_Skill_Icon";
-        public const string AffectIcon = ConfigDefine.NameSDK + "_Affect_Icon";
 
         // Sound
         public const string Sound = ConfigDefine.NameSDK + "_Sound";

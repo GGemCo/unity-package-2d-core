@@ -189,7 +189,6 @@ namespace GGemCo2DCore
             var addrPrefabEffect = Object.FindFirstObjectByType<AddressableLoaderPrefabEffect>() ?? new GameObject("AddressableLoaderPrefabEffect").AddComponent<AddressableLoaderPrefabEffect>();
             var addrItem = Object.FindFirstObjectByType<AddressableLoaderItem>() ?? new GameObject("AddressableLoaderItem").AddComponent<AddressableLoaderItem>();
             var addrSkill = Object.FindFirstObjectByType<AddressableLoaderSkill>() ?? new GameObject("AddressableLoaderSkill").AddComponent<AddressableLoaderSkill>();
-            var addrAffect = Object.FindFirstObjectByType<AddressableLoaderAffect>() ?? new GameObject("AddressableLoaderAffect").AddComponent<AddressableLoaderAffect>();
             var addrSound = Object.FindFirstObjectByType<AddressableLoaderSound>() ?? new GameObject("AddressableLoaderSound").AddComponent<AddressableLoaderSound>();
             var saveData = Object.FindFirstObjectByType<SaveDataLoader>() ?? new GameObject("SaveDataLoader").AddComponent<SaveDataLoader>();
             var loc = Object.FindFirstObjectByType<LocalizationManager>() ?? new GameObject("LocalizationManager").AddComponent<LocalizationManager>();
@@ -210,13 +209,6 @@ namespace GGemCo2DCore
                 localizedKey: LocalizationConstants.Keys.Loading.TextTypeTables(),
                 tableLoader: tableLoader,
                 tables: targetTables
-            ));
-
-            // com.ggemco.2d.affect 런타임 저장소 초기화(테이블 → Repository)
-            Register(new AffectRuntimeBootstrapStep(
-                id: "core.affect.bootstrap",
-                order: 245,
-                localizedKey: LocalizationConstants.Keys.Loading.TextTypeAffect()
             ));
 
             Register(new AddressableTaskStep(
@@ -249,14 +241,6 @@ namespace GGemCo2DCore
                 localizedKey: LocalizationConstants.Keys.Loading.TextTypeSkill(),
                 startTask: () => addrSkill.LoadPrefabsAsync(),
                 getProgress: () => addrSkill.GetPrefabLoadProgress()
-            ));
-
-            Register(new AddressableTaskStep(
-                id: "core.affect",
-                order: 340,
-                localizedKey: LocalizationConstants.Keys.Loading.TextTypeAffect(),
-                startTask: () => addrAffect.LoadPrefabsAsync(),
-                getProgress: () => addrAffect.GetPrefabLoadProgress()
             ));
 
             Register(new AddressableTaskStep(

@@ -1,6 +1,5 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
-using GGemCo2DAffect;
 using R3;
 using UnityEngine;
 
@@ -120,9 +119,7 @@ namespace GGemCo2DCore
         /// </remarks>
         protected void ApplyAffect(int affectUid, float duration)
         {
-            var comp = GetComponent<AffectComponent>();
-            if (comp == null) comp = gameObject.AddComponent<AffectComponent>();
-            comp.ApplyAffect(affectUid, new AffectApplyContext { DurationOverride = duration });
+            AffectRuntimeBridge.ApplyAffect(gameObject, affectUid, duration);
         }
         /// <summary>
         /// 버프 해제하기
@@ -130,9 +127,7 @@ namespace GGemCo2DCore
         /// <param name="affectUid"></param>
         public void RemoveAffect(int affectUid)
         {
-            var comp = GetComponent<AffectComponent>();
-            if (comp == null) return;
-            comp.RemoveAffect(affectUid);
+            AffectRuntimeBridge.RemoveAffect(gameObject, affectUid);
         }
         /// <summary>
         /// 스탯 변경값 적용하기

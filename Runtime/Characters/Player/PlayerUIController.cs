@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using GGemCo2DAffect;
 using R3;
 
 namespace GGemCo2DCore
@@ -17,8 +16,6 @@ namespace GGemCo2DCore
         private UIWindowHud _uiWindowHud;
         private UIWindowPlayerInfo _uiWindowPlayerInfo;
         private UIWindowPlayerBuffInfo _uiWindowPlayerBuffInfo;
-
-        private PlayerAffectUiPresenter _affectUiPresenter;
         
         [Serializable]
         private struct StatUIBinding
@@ -48,13 +45,9 @@ namespace GGemCo2DCore
             // Affect UI 바인딩(단일 진실 소스: AffectComponent)
             if (_player != null && _uiWindowPlayerBuffInfo != null)
             {
-                _affectUiPresenter = _player.GetComponent<PlayerAffectUiPresenter>();
-                if (_affectUiPresenter == null)
-                    _affectUiPresenter = _player.gameObject.AddComponent<PlayerAffectUiPresenter>();
-
-                var affectComp = _player.GetComponent<AffectComponent>();
-                if (affectComp != null)
-                    _affectUiPresenter.Bind(affectComp, _uiWindowPlayerBuffInfo);
+                // Affect 패키지가 설치되어 있으면 Player 버프 UI를 자동 바인딩한다.
+                // (Core는 Affect를 직접 참조하지 않는다.)
+                AffectRuntimeBridge.TryBindPlayerBuffInfo(_player, _uiWindowPlayerBuffInfo);
             }
 
             // TotalHp, Mp 가 바뀌어도 현재 값이 바뀌면 안된다.

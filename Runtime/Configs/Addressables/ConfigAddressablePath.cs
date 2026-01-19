@@ -94,13 +94,10 @@ namespace GGemCo2DCore
             public static class Icon
             {
                 /// <summary>Images/Icon</summary>
-                private static string RootIcon => Combine(RootImage, "Icon");
+                public static string RootIcon => Combine(RootImage, "Icon");
 
                 /// <summary>Images/Icon/Skill</summary>
                 public static string Skill => Combine(RootIcon, "Skill");
-
-                /// <summary>Images/Icon/Affect</summary>
-                public static string Affect => Combine(RootIcon, "Affect");
 
                 /// <summary>Images/Icon/Item</summary>
                 public static string Item => Combine(RootIcon, "Item");

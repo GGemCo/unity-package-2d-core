@@ -1,5 +1,4 @@
 using System.Collections;
-using GGemCo2DAffect;
 using UnityEngine;
 using UnityEngine.AddressableAssets;
 using UnityEngine.Localization.Settings;
@@ -42,7 +41,7 @@ namespace GGemCo2DCore
         private void HandleLocaleChanged(string _, int __)
         {
             // Affect 설명 캐시 무효화
-            AffectDescriptionService.ClearCache();
+            // AffectDescriptionService.ClearCache();
 
             // StatusName을 참조하는 테이블(Name 캐시) 갱신
             var tables = TableLoaderManager.Instance;
@@ -110,9 +109,6 @@ namespace GGemCo2DCore
         public string GetSmartUIWindowSkillInfoByKey(string key, params object[] arguments) =>
             GetSmartString(LocalizationConstants.Tables.UIWindowSkillInfo, key, arguments);
 
-        public string GetSmartAffectDescriptionByKey(string key, params object[] arguments) =>
-            GetSmartString(LocalizationConstants.Tables.AffectDescription, key, arguments);
-
         /// <summary>
         /// UI 에서 사용하는 공용 단어
         /// </summary>
@@ -158,7 +154,6 @@ namespace GGemCo2DCore
         public string GetNpcNameByKey(string key) => GetString(LocalizationConstants.Tables.NpcName, key);
         public string GetMonsterNameByKey(string key) => GetString(LocalizationConstants.Tables.MonsterName, key);
         public string GetUIWindowTitleByKey(string key) => GetString(LocalizationConstants.Tables.UIWindowTitle, key);
-        public string GetAffectNameByKey(string key) => GetString(LocalizationConstants.Tables.AffectName, key);
         public string GetUIWindowOptionByKey(string key) => GetString(LocalizationConstants.Tables.UIWindowOption, key);
 
         public string GetInteractionByKey(string key) => GetString(LocalizationConstants.Tables.UIWindowInteractionDialogue, key);
@@ -171,23 +166,5 @@ namespace GGemCo2DCore
         public string GetUIWindowSkillInfoSmart(string key, params object[] args) =>
             GetSmartString(LocalizationConstants.Tables.UIWindowSkillInfo, key, args);
 
-        public string GetAffectDescriptionByKey(string key) =>
-            GetString(LocalizationConstants.Tables.AffectDescription, key);
-
-        public string GetAffectDescriptionSmart(string key, params object[] args) =>
-            GetSmartString(LocalizationConstants.Tables.AffectDescription, key, args);
-        
-        public bool HasAffectDescriptionLocalizationKey(string key)
-        {
-            return HasLocalizationKey(LocalizationConstants.Tables.AffectDescription, key);
-        }
-        public string GetStackPolicyName(StackPolicy policy)
-        {
-            if (policy == StackPolicy.None)
-                return string.Empty;
-
-            var key = policy.ToString();
-            return GetString(LocalizationConstants.Tables.AffectStackPolicy, key);
-        }
     }
 }

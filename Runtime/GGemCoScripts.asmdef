@@ -10,8 +10,7 @@
         "Unity.Timeline",
         "Unity.InputSystem",
         "Unity.Localization",
-        "Unity.2D.Tilemap.Extras",
-        "GGemCo2DAffect"
+        "Unity.2D.Tilemap.Extras"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

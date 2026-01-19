@@ -150,9 +150,8 @@ namespace GGemCo2DCore
                 return;
             }
 
-            ImageIcon.sprite = AddressableLoaderAffect.Instance != null
-                ? AddressableLoaderAffect.Instance.GetImageIconByName(key)
-                : null;
+            // Affect 패키지가 설치되어 있으면 아이콘을 로드한다. (Core는 Affect를 직접 참조하지 않는다.)
+            ImageIcon.sprite = AffectRuntimeBridge.TryLoadIconSprite(key);
         }
     }
 }
