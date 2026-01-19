@@ -60,7 +60,7 @@ namespace GGemCo2DCore
         }
         public void OnPointerEnter(PointerEventData eventData)
         {
-            _uiWindowItemInfo.SetItemUid(_struckTableItemCraft.ResultItemUid, gameObject,
+            _uiWindowItemInfo.SetItemUid(_struckTableItemCraft.ResultItemUid, 0, gameObject,
                 UIWindowItemInfo.PositionType.None, _uiWindowItemCraft.containerIcon.cellSize, new Vector2(0, 1f),
                 new Vector2(
                     transform.position.x + _uiWindowItemCraft.containerIcon.cellSize.x / 2f,

@@ -101,9 +101,7 @@ namespace GGemCo2DCore
             var tables = TableLoaderManager.Instance;
             var resolver = new ItemOptionResolver(tables);
 
-            ItemInstanceDatabase instanceDb = null;
-            if (SceneGame.Instance != null)
-                instanceDb = SceneGame.Instance.GetComponentInChildren<ItemInstanceDatabase>();
+            var instanceStore = SceneGame.Instance?.saveDataManager?.ItemInstances;
 
             foreach (var kv in equippedItems)
             {
@@ -111,7 +109,7 @@ namespace GGemCo2DCore
                 if (equipRef == null || equipRef.ItemUid <= 0) continue;
 
                 // 1) 인스턴스 기반이면 Base + Rolled 옵션을 사용
-                if (equipRef.InstanceId > 0 && instanceDb != null && instanceDb.TryGet(equipRef.InstanceId, out var inst) && inst != null)
+                if (equipRef.InstanceId > 0 && instanceStore != null && instanceStore.TryGet(equipRef.InstanceId, out var inst) && inst != null)
                 {
                     var options = resolver.ResolveFinalOptions(inst);
                     ApplyOptionsFromEntries(options, statModifiers, desiredEquipAffects);

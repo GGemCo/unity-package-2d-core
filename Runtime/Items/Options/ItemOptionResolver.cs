@@ -38,7 +38,7 @@ namespace GGemCo2DCore
         /// <summary>
         /// 인스턴스에 저장된 랜덤 옵션을 조회한다.
         /// </summary>
-        public List<ItemOptionEntry> ResolveRolledOptions(ItemInstanceData instance)
+        public List<ItemOptionEntry> ResolveRolledOptions(ItemInstanceInfo instance)
         {
             var result = new List<ItemOptionEntry>(8);
             if (_tables == null || instance == null) return result;
@@ -64,7 +64,7 @@ namespace GGemCo2DCore
         /// <summary>
         /// 최종 옵션(Base + Rolled) 리스트.
         /// </summary>
-        public List<ItemOptionEntry> ResolveFinalOptions(ItemInstanceData instance)
+        public List<ItemOptionEntry> ResolveFinalOptions(ItemInstanceInfo instance)
         {
             var result = ResolveBaseOptions(instance != null ? instance.ItemUid : 0);
             if (instance == null) return result;

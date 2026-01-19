@@ -16,11 +16,11 @@ namespace GGemCo2DCore
         }
 
         /// <summary>
-        /// 랜덤 옵션을 롤링하여 ItemInstanceData를 생성한다.
+        /// 랜덤 옵션을 롤링하여 ItemInstanceInfo를 생성한다.
         /// </summary>
-        public ItemInstanceData CreateInstance(int itemUid, ItemRarity rarity, int dropLevel, int seed)
+        public ItemInstanceInfo CreateInstance(int itemUid, ItemRarity rarity, int dropLevel, int seed)
         {
-            var instance = new ItemInstanceData
+            var instance = new ItemInstanceInfo
             {
                 InstanceId = 0,
                 ItemUid = itemUid,
@@ -34,7 +34,7 @@ namespace GGemCo2DCore
         /// <summary>
         /// 주어진 인스턴스에 랜덤 옵션을 부여한다.
         /// </summary>
-        public void RollAffixes(ItemInstanceData instance, int dropLevel, int seed)
+        public void RollAffixes(ItemInstanceInfo instance, int dropLevel, int seed)
         {
             if (_tables == null || instance == null || instance.ItemUid <= 0)
                 return;

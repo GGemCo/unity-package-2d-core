@@ -4,10 +4,24 @@ using System.Collections.Generic;
 namespace GGemCo2DCore
 {
     /// <summary>
-    /// 아이템 인스턴스(드랍/획득 후 고유하게 존재하는 아이템).
+    /// 아이템 인스턴스(랜덤 옵션 등) 저장 데이터.
+    /// </summary>
+    /// <remarks>
+    /// - Inventory/Equip/Storage의 <see cref="SaveDataIcon.InstanceId"/>가 이 데이터의 <see cref="ItemInstanceInfo.InstanceId"/>를 참조한다.
+    /// - SaveDataManager의 SaveDataContainer에 포함되어 저장/복원된다.
+    /// </remarks>
+    [Serializable]
+    public sealed class ItemInstanceStoreData
+    {
+        public long NextId = 1;
+        public List<ItemInstanceInfo> Items = new();
+    }
+
+    /// <summary>
+    /// 드랍/획득 후 고유하게 존재하는 아이템 인스턴스 정보.
     /// </summary>
     [Serializable]
-    public sealed class ItemInstanceData
+    public sealed class ItemInstanceInfo
     {
         public long InstanceId;
         public int ItemUid;
@@ -15,7 +29,6 @@ namespace GGemCo2DCore
 
         /// <summary>
         /// 드랍 시 확정된 랜덤 옵션 결과.
-        /// - AffixUid와 RolledValue를 저장한다.
         /// </summary>
         public List<ItemAffixRoll> RolledAffixes = new();
     }

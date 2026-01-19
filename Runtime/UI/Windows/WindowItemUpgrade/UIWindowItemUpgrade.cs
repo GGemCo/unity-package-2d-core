@@ -126,7 +126,7 @@ namespace GGemCo2DCore
             if (show)
             {
                 if (icon == null) return;
-                _uiWindowItemInfo.SetItemUid(icon.uid, icon.gameObject, UIWindowItemInfo.PositionType.Left, slotSize);
+                _uiWindowItemInfo.SetItemUid(icon.uid, icon.instanceId, icon.gameObject, UIWindowItemInfo.PositionType.Left, slotSize);
             }
             else
             {

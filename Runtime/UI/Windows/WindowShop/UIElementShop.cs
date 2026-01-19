@@ -125,7 +125,7 @@ namespace GGemCo2DCore
 
         public void OnPointerEnter(PointerEventData eventData)
         {
-            uIWindowItemInfo.SetItemUid(struckTableShop.ItemUid, gameObject, UIWindowItemInfo.PositionType.None, uiWindowShop.containerIcon.cellSize, new Vector2(0, 1f), new Vector2(
+            uIWindowItemInfo.SetItemUid(struckTableShop.ItemUid, 0, gameObject, UIWindowItemInfo.PositionType.None, uiWindowShop.containerIcon.cellSize, new Vector2(0, 1f), new Vector2(
                 transform.position.x + uiWindowShop.containerIcon.cellSize.x / 2f,
                 transform.position.y + uiWindowShop.containerIcon.cellSize.y / 2f));
         }

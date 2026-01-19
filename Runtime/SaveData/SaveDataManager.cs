@@ -19,6 +19,11 @@ namespace GGemCo2DCore
         public QuickSlotSimulationData QuickSlotSimulationData;
         public StashData StashData;
         public GameTimeData GameTimeData;
+
+        /// <summary>
+        /// 인스턴스 아이템(랜덤 옵션 등) 저장 데이터.
+        /// </summary>
+        public ItemInstanceStoreData ItemInstanceStoreData;
         
         public Dictionary<string, JToken> Extensions;
     }
@@ -39,6 +44,11 @@ namespace GGemCo2DCore
         public GameTimeData GameTime { get; private set; }
 
         /// <summary>
+        /// 인스턴스 아이템(랜덤 옵션 등) 저장소.
+        /// </summary>
+        public ItemInstanceStore ItemInstances { get; private set; }
+
+        /// <summary>
         /// 슬롯 관리, 파일 관리, 썸네일 관리 매니저 초기화
         /// </summary>
         protected override void InitializeData()
@@ -57,6 +67,9 @@ namespace GGemCo2DCore
             ShopSale = new ShopSaleData();
             GameTime = new GameTimeData();
 
+            // 인스턴스 아이템 저장소 초기화(테이블 로드 이후면 언제든 사용 가능)
+            ItemInstances = new ItemInstanceStore();
+
             // 초기화 실행
             Player.Initialize(tableLoaderManager, saveDataContainer);
             Inventory.Initialize(tableLoaderManager, saveDataContainer);
@@ -68,6 +81,9 @@ namespace GGemCo2DCore
             Stash.Initialize(tableLoaderManager, saveDataContainer);
             ShopSale.Initialize(tableLoaderManager, saveDataContainer);
             GameTime.Initialize(tableLoaderManager, saveDataContainer);
+
+            // 인스턴스 아이템 복원
+            ItemInstances.Restore(saveDataContainer?.ItemInstanceStoreData);
             
             // 외부 섹션 복원
             if (saveDataContainer?.Extensions != null)
@@ -108,6 +124,7 @@ namespace GGemCo2DCore
                 QuickSlotSimulationData = QuickSlotSimulation,
                 StashData = Stash,
                 GameTimeData = GameTime,
+                ItemInstanceStoreData = ItemInstances?.Capture(),
                 // 확장 섹션 함께 저장
                 Extensions = env?.Sections,
             };

@@ -271,8 +271,8 @@ namespace GGemCo2DCore
         {
             if (removeInstanceFromDb && _instanceId > 0)
             {
-                var db = FindAnyObjectByType<ItemInstanceDatabase>();
-                db?.Remove(_instanceId);
+                // 바닥에서 사라지는 등 미획득 처리 시 인스턴스 데이터도 함께 제거한다.
+                SceneGame.Instance?.saveDataManager?.ItemInstances?.Remove(_instanceId);
             }
             _itemUid = 0;
             _instanceId = 0;

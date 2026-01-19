@@ -238,5 +238,28 @@ namespace GGemCo2DCore
         /// <summary>문자열을 Y축 포지션 타입으로 변환합니다.</summary>
         protected static ConfigCommon.PositionYType ConvertPositionYType(string value)
             => EnumHelper.ConvertEnum<ConfigCommon.PositionYType>(value);
+        
+        /// <summary>
+        /// .NET의 string.GetHashCode()는 프로세스/런타임에 따라 값이 달라질 수 있으므로(랜덤 시드),
+        /// 테이블 토큰을 정수 ID로 변환할 때는 안정적인 해시를 사용한다.
+        /// </summary>
+        protected static int StableHash32(string s)
+        {
+            unchecked
+            {
+                // FNV-1a 32-bit
+                const uint offset = 2166136261u;
+                const uint prime = 16777619u;
+
+                uint hash = offset;
+                for (int i = 0; i < s.Length; i++)
+                {
+                    hash ^= s[i];
+                    hash *= prime;
+                }
+                // int로 캐스팅(부호 포함). HashSet에는 동일성만 중요하므로 문제 없음.
+                return (int)hash;
+            }
+        }
     }
 }

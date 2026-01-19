@@ -49,6 +49,7 @@ namespace GGemCo2DCore
         private Dictionary<ItemConstants.Category, Action> _categoryUIHandlers;
         
         private StruckTableItem _currentStruckTableItem;
+        private long _currentInstanceId;
         private LocalizationManager _localizationManager;
         
         protected override void Awake()
@@ -75,19 +76,22 @@ namespace GGemCo2DCore
             _localizationManager = LocalizationManager.Instance;
         }
 
-        public void SetItemUid(int itemUid, GameObject icon, PositionType type, Vector2 iconSlotSize, Vector2? pivot = null, Vector3? position = null)
+        public void SetItemUid(int itemUid, long instanceId, GameObject icon, PositionType type, Vector2 iconSlotSize,
+            Vector2? pivot = null, Vector3? position = null)
         {
             if (icon == null || itemUid <= 0) return;
             _currentStruckTableItem = tableItem.GetDataByUid(itemUid);
             if (_currentStruckTableItem is not { Uid: > 0 }) return;
+
+            _currentInstanceId = instanceId;
             
             SetName();
             SetType();
             SetAntiFlag();
             SetCategory();
             SetDescription();
-            SetSalePrice();
             SetStatusOptions();
+            SetSalePrice();
             SetCategoryUI();
             Show(true);
             // active 된 후 위치 조정한다.
@@ -118,8 +122,8 @@ namespace GGemCo2DCore
                 return;
             }
 
-            // 레거시 옵션(StatusID*/OptionType*) 기반 옵션 텍스트 (향후 인스턴스 옵션으로 확장 가능)
-            string optionsText = ItemOptionTextBuilder.BuildLegacyOptions(_currentStruckTableItem, loc);
+            // 신규 옵션 시스템(고정 옵션 + 인스턴스 랜덤 옵션) 기반 옵션 텍스트
+            string optionsText = ItemOptionTextBuilder.BuildOptions(_currentStruckTableItem.Uid, _currentInstanceId, loc);
             var args = new ItemDescriptionSmartArgs(_currentStruckTableItem, loc, optionsText);
 
             string smart = loc.GetItemDescriptionSmartByKey(_currentStruckTableItem.Uid.ToString(), args);

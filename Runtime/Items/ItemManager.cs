@@ -27,7 +27,6 @@ namespace GGemCo2DCore
         private SceneGame _sceneGame;
         private UIWindowInventory _uiWindowInventory;
 
-        private ItemInstanceDatabase _itemInstanceDb;
         private ItemOptionRoller _itemOptionRoller;
         
         public enum DropRateType
@@ -71,8 +70,7 @@ namespace GGemCo2DCore
             _npcDropDictionary = TableLoaderManager.Instance.TableNpcDropRate.GetNpcDropDictionary();
             _sceneGame = sceneGame;
 
-            // 인스턴스 아이템 DB / 롤러 캐시
-            _itemInstanceDb = Object.FindObjectOfType<ItemInstanceDatabase>();
+            // 인스턴스 아이템 롤러 캐시
             _itemOptionRoller = new ItemOptionRoller(TableLoaderManager.Instance);
         }
         /// <summary>
@@ -134,7 +132,8 @@ namespace GGemCo2DCore
             long instanceId = 0;
 
             // 랜덤 옵션 인스턴스 생성(권장: Count=1일 때만 인스턴스로 취급)
-            if (_itemInstanceDb != null && _itemOptionRoller != null && itemCount == 1)
+            var store = _sceneGame?.saveDataManager?.ItemInstances;
+            if (store != null && _itemOptionRoller != null && itemCount == 1)
             {
                 int seed = Random.Range(int.MinValue, int.MaxValue);
                 var instance = _itemOptionRoller.CreateInstance(itemUid, rarity, dropLevel, seed);
@@ -142,7 +141,7 @@ namespace GGemCo2DCore
                 // Normal 등급이라도 룰에 의해 롤이 발생할 수 있으므로, 롤 결과가 있으면 인스턴스로 등록한다.
                 if (instance != null && (rarity != ItemRarity.Normal || (instance.RolledAffixes != null && instance.RolledAffixes.Count > 0)))
                 {
-                    instanceId = _itemInstanceDb.RegisterNew(instance);
+                    instanceId = store.RegisterNew(instance);
                 }
             }
 
