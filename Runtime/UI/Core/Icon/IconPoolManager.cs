@@ -158,6 +158,7 @@ namespace GGemCo2DCore
         /// <param name="count">개수</param>
         /// <param name="level">레벨</param>
         /// <param name="learn">배우기 여부 Y/N</param>
+        /// <param name="instanceId">배우기 여부 Y/N</param>
         /// <returns></returns>
         public UIIcon SetIcon(int slotIndex, int uid, int count, int level = 0, bool learn = false, long instanceId = 0)
         {

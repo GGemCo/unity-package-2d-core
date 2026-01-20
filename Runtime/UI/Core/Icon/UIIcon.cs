@@ -34,7 +34,8 @@ namespace GGemCo2DCore
         
         // instance uid for rolled options
         [HideInInspector] public long instanceId;
-                protected bool PossibleClick;
+        
+        protected bool PossibleClick;
         protected IconConstants.Type IconType;
         // 아이콘 이미지
         protected Image ImageIcon;
@@ -219,6 +220,7 @@ namespace GGemCo2DCore
         /// <param name="iconLevel"></param>
         /// <param name="iconIsLearn"></param>
         /// <param name="remainCoolTime"></param>
+        /// <param name="iconInstanceId"></param>
         public virtual bool ChangeInfoByUid(int cardUid, int iconCount = 0, int iconLevel = 0, bool iconIsLearn = false, int remainCoolTime = 0, long iconInstanceId = 0)
         {
             SceneGame.Instance.uIIconCoolTimeManager.SetRemainCoolTime(windowUid, cardUid, remainCoolTime);
