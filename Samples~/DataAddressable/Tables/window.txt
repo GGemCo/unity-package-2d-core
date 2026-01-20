@@ -15,7 +15,7 @@
 14	창고	Y	N	8	Y	2,4,5	2,3,4,5	UIWindowStash
 15	상점 판매	Y	N	7	Y	2,4,5	2,3,4,5	UIWindowShopSale
 16	아이템 강화	Y	N	9	Y	2,4,5	2,3,4,5	UIWindowItemUpgrade
-17	아티메 분해	Y	N	11	Y	2,4,5	2,3,4,5	UIWindowItemSalvage
+17	아이템 분해	Y	N	11	Y	2,4,5	2,3,4,5	UIWindowItemSalvage
 18	아이템 제작	Y	N	14	Y	2,4,5	2,3,4,5	UIWindowItemCraft
 19	퀘스트 대사	Y	N	20	N	0	0	UIWindowDialogue
 20	Hud 퀘스트 목록	Y	Y	2	N	0	0	UIWindowHudQuest
