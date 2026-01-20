@@ -51,8 +51,10 @@ namespace GGemCo2DCore
 
         public enum Class
         {
-            None,
             Normal, // 일반
+            Magic,
+            Rare,
+            Unique,
         }
         public enum PartsType
         {

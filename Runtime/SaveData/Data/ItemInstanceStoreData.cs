@@ -25,7 +25,7 @@ namespace GGemCo2DCore
     {
         public long InstanceId;
         public int ItemUid;
-        public ItemRarity Rarity;
+        public ItemConstants.Class Rarity;
 
         /// <summary>
         /// 드랍 시 확정된 랜덤 옵션 결과.

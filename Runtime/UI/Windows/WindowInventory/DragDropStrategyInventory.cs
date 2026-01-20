@@ -17,6 +17,7 @@ namespace GGemCo2DCore
             UIWindowConstants.WindowUid droppedWindowUid = droppedUIIcon.windowUid;
             int dropIconSlotIndex = droppedUIIcon.slotIndex;
             int dropIconUid = droppedUIIcon.uid;
+            long dropIconInstanceId = droppedUIIcon.instanceId;
             int dropIconCount = droppedUIIcon.GetCount();
             if (dropIconUid <= 0)
             {
@@ -32,6 +33,7 @@ namespace GGemCo2DCore
             UIWindowConstants.WindowUid targetWindowUid = targetUIIcon.windowUid;
             int targetIconSlotIndex = targetUIIcon.slotIndex;
             int targetIconUid = targetUIIcon.uid;
+            long targetIconInstanceId = targetUIIcon.instanceId;
             int targetIconCount = targetUIIcon.GetCount();
 
             // 다른 윈도우에서 인벤토리로 드래그 앤 드랍 했을 때 
@@ -51,8 +53,8 @@ namespace GGemCo2DCore
                         {
                             var result = uiWindowInventory.EquipData.MinusItem(dropIconSlotIndex, dropIconUid, dropIconCount);
                             droppedWindow.SetIcons(result);
-                            
-                            result = uiWindowInventory.InventoryData.AddItem(targetIconSlotIndex, dropIconUid, dropIconCount);
+                                
+                            result = uiWindowInventory.InventoryData.AddItem(targetIconSlotIndex, new IconPayload(dropIconUid, dropIconCount, dropIconInstanceId));
                             targetWindow.SetIcons(result);
                         }
                         else if (droppedUIIcon.GetPartsType() == targetUIIcon.GetPartsType())
@@ -66,12 +68,12 @@ namespace GGemCo2DCore
                             // 장비창에 있던것도 빼서 0 을 만듬
                             result = uiWindowInventory.EquipData.MinusItem(dropIconSlotIndex, dropIconUid, 1);
                             droppedWindow.SetIcons(result);
-                            
+                                
                             // 장비창에 있던것은 인벤토리에 추가한다 
-                            result = uiWindowInventory.InventoryData.AddItem(targetIconSlotIndex, dropIconUid, 1);
+                            result = uiWindowInventory.InventoryData.AddItem(targetIconSlotIndex, new IconPayload(dropIconUid, 1, dropIconInstanceId));
                             targetWindow.SetIcons(result);
                             // 장비창에 하나 넣기
-                            result = uiWindowInventory.EquipData.AddItem(dropIconSlotIndex, targetIconUid, 1);
+                            result = uiWindowInventory.EquipData.AddItem(dropIconSlotIndex, new IconPayload(targetIconUid, 1, targetIconInstanceId));
                             droppedWindow.SetIcons(result);
                         }
                         else
@@ -106,14 +108,14 @@ namespace GGemCo2DCore
                         }
                         else
                         {
-                            droppedWindow.SetIconCount(dropIconSlotIndex, targetIconUid, targetIconCount, instanceId: targetUIIcon.instanceId);
-                            targetWindow.SetIconCount(targetIconSlotIndex, dropIconUid, dropIconCount, instanceId: droppedUIIcon.instanceId);
+                            droppedWindow.SetIconCount(dropIconSlotIndex, targetIconUid, targetIconCount, instanceId: targetIconInstanceId);
+                            targetWindow.SetIconCount(targetIconSlotIndex, dropIconUid, dropIconCount, instanceId: dropIconInstanceId);
                         }
                     }
                     else
                     {
-                        droppedWindow.SetIconCount(dropIconSlotIndex, targetIconUid, targetIconCount, instanceId: targetUIIcon.instanceId);
-                        targetWindow.SetIconCount(targetIconSlotIndex, dropIconUid, dropIconCount, instanceId: droppedUIIcon.instanceId);
+                        droppedWindow.SetIconCount(dropIconSlotIndex, targetIconUid, targetIconCount, instanceId: targetIconInstanceId);
+                        targetWindow.SetIconCount(targetIconSlotIndex, dropIconUid, dropIconCount, instanceId: dropIconInstanceId);
                     }
                 }
             }

@@ -28,6 +28,7 @@ namespace GGemCo2DCore
         private UIWindowInventory _uiWindowInventory;
 
         private ItemOptionRoller _itemOptionRoller;
+        private PlayerData _playerData;
         
         public enum DropRateType
         {
@@ -116,6 +117,7 @@ namespace GGemCo2DCore
         {
             _uiWindowInventory =
                 _sceneGame.uIWindowManager?.GetUIWindowByUid<UIWindowInventory>(UIWindowConstants.WindowUid.Inventory);
+            _playerData = _sceneGame.saveDataManager.Player;
         }
         /// <summary>
         /// 아이템 맵에 드랍하기 
@@ -124,7 +126,7 @@ namespace GGemCo2DCore
         /// <param name="itemUid"></param>
         /// <param name="itemCount"></param>
         public void MakeDropItem(Vector3 worldPosition, int itemUid, int itemCount,
-            ItemRarity rarity = ItemRarity.Normal, int dropLevel = 0)
+            ItemConstants.Class rarity = ItemConstants.Class.Normal, int dropLevel = 0)
         {
             var info = _tableItem.GetDataByUid(itemUid);
             if (info == null) return;
@@ -132,14 +134,14 @@ namespace GGemCo2DCore
             long instanceId = 0;
 
             // 랜덤 옵션 인스턴스 생성(권장: Count=1일 때만 인스턴스로 취급)
-            var store = _sceneGame?.saveDataManager?.ItemInstances;
+            var store = _sceneGame.saveDataManager.ItemInstances;
             if (store != null && _itemOptionRoller != null && itemCount == 1)
             {
                 int seed = Random.Range(int.MinValue, int.MaxValue);
                 var instance = _itemOptionRoller.CreateInstance(itemUid, rarity, dropLevel, seed);
 
                 // Normal 등급이라도 룰에 의해 롤이 발생할 수 있으므로, 롤 결과가 있으면 인스턴스로 등록한다.
-                if (instance != null && (rarity != ItemRarity.Normal || (instance.RolledAffixes != null && instance.RolledAffixes.Count > 0)))
+                if (instance != null && (rarity != ItemConstants.Class.Normal || (instance.RolledAffixes != null && instance.RolledAffixes.Count > 0)))
                 {
                     instanceId = store.RegisterNew(instance);
                 }
@@ -237,7 +239,8 @@ namespace GGemCo2DCore
         {
             int itemUid = GetDropItem(monsterUid);
             if (itemUid <= 0) return;
-            MakeDropItem(monsterObject.transform.position, itemUid, 1);
+            // todo. Class 확률 적용해야 함.
+            MakeDropItem(monsterObject.transform.position, itemUid, 1, ItemConstants.Class.Normal, _playerData.CurrentLevel);
             MakeDropGold(monsterUid, monsterObject);
         }
         /// <summary>
@@ -282,18 +285,14 @@ namespace GGemCo2DCore
         /// <summary>
         /// 플레이어가 드랍 아이템을 먹었을때 처리 
         /// </summary>
-        public void PlayerTaken(GameObject dropItem)
+        public void PlayerTaken(Item item)
         {
-            Item item = dropItem.GetComponent<Item>();
             if (item ==null || item.GetItemUid() <= 0) return;
 
             // 인스턴스 아이템이면 InstanceId를 함께 저장
             ResultCommon result;
             long instanceId = item.GetInstanceId();
-            if (instanceId > 0)
-                result = _sceneGame.saveDataManager.Inventory.AddItemInstance(item.GetItemUid(), item.GetItemCount(), instanceId);
-            else
-                result = _sceneGame.saveDataManager.Inventory.AddItem(item.GetItemUid(), item.GetItemCount());
+            result = _sceneGame.saveDataManager.Inventory.AddItem(new IconPayload(item.GetItemUid(), item.GetItemCount(), instanceId));
 
             if (_uiWindowInventory != null)
             {

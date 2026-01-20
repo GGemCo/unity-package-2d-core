@@ -17,6 +17,7 @@ namespace GGemCo2DCore
             // UIWindowConstants.WindowUid droppedWindowUid = droppedUIIcon.windowUid;
             int dropIconSlotIndex = droppedUIIcon.slotIndex;
             int dropIconUid = droppedUIIcon.uid;
+            long dropIconInstanceId = droppedUIIcon.instanceId;
             // int dropIconCount = droppedUIIcon.GetCount();
             if (dropIconUid <= 0)
             {
@@ -32,6 +33,7 @@ namespace GGemCo2DCore
             // UIWindowConstants.WindowUid targetWindowUid = targetUIIcon.windowUid;
             int targetIconSlotIndex = targetUIIcon.slotIndex;
             int targetIconUid = targetUIIcon.uid;
+            long targetIconInstanceId = targetUIIcon.instanceId;
             // int targetIconCount = targetUIIcon.GetCount();
 
             if (targetIconSlotIndex < window.maxCountIcon)
@@ -49,10 +51,10 @@ namespace GGemCo2DCore
                         result = uiWindowEquip.EquipData.MinusItem(targetIconSlotIndex, targetIconUid, 1);
                         targetWindow.SetIcons(result);
                         
-                        result = uiWindowEquip.InventoryData.AddItem(dropIconSlotIndex, targetIconUid, 1);
+                        result = uiWindowEquip.InventoryData.AddItem(dropIconSlotIndex, new IconPayload(targetIconUid, 1, targetIconInstanceId));
                         droppedWindow.SetIcons(result);
                     }
-                    result = uiWindowEquip.EquipData.AddItem(targetIconSlotIndex, dropIconUid, 1);
+                    result = uiWindowEquip.EquipData.AddItem(targetIconSlotIndex, new IconPayload(dropIconUid, 1, dropIconInstanceId));
                     targetWindow.SetIcons(result);
                 }
                 else

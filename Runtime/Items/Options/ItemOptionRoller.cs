@@ -18,7 +18,7 @@ namespace GGemCo2DCore
         /// <summary>
         /// 랜덤 옵션을 롤링하여 ItemInstanceInfo를 생성한다.
         /// </summary>
-        public ItemInstanceInfo CreateInstance(int itemUid, ItemRarity rarity, int dropLevel, int seed)
+        public ItemInstanceInfo CreateInstance(int itemUid, ItemConstants.Class rarity, int dropLevel, int seed)
         {
             var instance = new ItemInstanceInfo
             {

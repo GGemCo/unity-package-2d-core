@@ -2,16 +2,6 @@ using System.Collections.Generic;
 
 namespace GGemCo2DCore
 {
-    /// <summary>
-    /// 아이템 등급(희귀도) 정의.
-    /// </summary>
-    public enum ItemRarity
-    {
-        Normal = 0,
-        Magic = 1,
-        Rare = 2,
-        Unique = 3,
-    }
 
     /// <summary>
     /// 드랍 시 랜덤 옵션 Roll 규칙 테이블 구조.
@@ -19,7 +9,7 @@ namespace GGemCo2DCore
     public sealed class StruckTableItemRollRule
     {
         public int Uid;
-        public ItemRarity Rarity;
+        public ItemConstants.Class Rarity;
         public int MinAffixCount;
         public int MaxAffixCount;
         public int MaxPrefix;
@@ -34,7 +24,7 @@ namespace GGemCo2DCore
     {
         public override string Key => ConfigAddressableTable.ItemRollRule;
 
-        private readonly Dictionary<ItemRarity, StruckTableItemRollRule> _byRarity = new();
+        private readonly Dictionary<ItemConstants.Class, StruckTableItemRollRule> _byRarity = new();
 
         protected override void PreLoad() => _byRarity.Clear();
 
@@ -44,7 +34,7 @@ namespace GGemCo2DCore
             _byRarity[data.Rarity] = data;
         }
 
-        public StruckTableItemRollRule GetByRarity(ItemRarity rarity)
+        public StruckTableItemRollRule GetByRarity(ItemConstants.Class rarity)
         {
             return _byRarity.GetValueOrDefault(rarity);
         }
@@ -63,7 +53,7 @@ namespace GGemCo2DCore
             return new StruckTableItemRollRule
             {
                 Uid = MathHelper.ParseInt(data["Uid"]),
-                Rarity = EnumHelper.ConvertEnum<ItemRarity>(data.GetValueOrDefault("Rarity")),
+                Rarity = EnumHelper.ConvertEnum<ItemConstants.Class>(data.GetValueOrDefault("Rarity")),
                 MinAffixCount = MathHelper.ParseInt(data.GetValueOrDefault("MinAffixCount")),
                 MaxAffixCount = MathHelper.ParseInt(data.GetValueOrDefault("MaxAffixCount")),
                 MaxPrefix = MathHelper.ParseInt(data.GetValueOrDefault("MaxPrefix")),

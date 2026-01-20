@@ -115,7 +115,7 @@ namespace GGemCo2DCore
             // 드랍 아이템 일때
             else if (collision.gameObject.CompareTag(ConfigTags.GetValue(ConfigTags.Keys.DropItem)))
             {
-                _sceneGame.ItemManager.PlayerTaken(collision.gameObject);
+                _sceneGame.ItemManager.PlayerTaken(collision.gameObject.GetComponent<Item>());
             }
         }
         /// <summary>

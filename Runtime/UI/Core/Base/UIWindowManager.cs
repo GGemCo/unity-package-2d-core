@@ -170,6 +170,15 @@ namespace GGemCo2DCore
             return uiWindow.gameObject.activeSelf;
         }
 
+        /// <summary>
+        /// fromWindowUid 의 fromIndex 에 있는 아이템을 toWindowUid 로 toCount 개수 옮기기.
+        /// toIndex 있으면 해당 위치로 옮기기 
+        /// </summary>
+        /// <param name="fromWindowUid"></param>
+        /// <param name="fromIndex"></param>
+        /// <param name="toWindowUid"></param>
+        /// <param name="toCount"></param>
+        /// <param name="toIndex"></param>
         public void MoveIcon(UIWindowConstants.WindowUid fromWindowUid, int fromIndex, UIWindowConstants.WindowUid toWindowUid, int toCount, int toIndex = -1)
         {
             UIWindow fromWindow = GetUIWindowByUid<UIWindow>(fromWindowUid);
@@ -181,21 +190,25 @@ namespace GGemCo2DCore
             }
             UIIcon fromIcon = fromWindow.GetIconByIndex(fromIndex);
             if (fromIcon == null) return;
-            int itemUid = fromIcon.uid;
-            fromWindow.SetIconCount(fromIndex, fromIcon.uid, fromIcon.GetCount() - toCount);
+            int fromIconUid = fromIcon.uid;
+            long fromIconInstanceId = fromIcon.instanceId;
+            
+            fromWindow.SetIconCount(fromIndex, fromIcon.uid, fromIcon.GetCount() - toCount, instanceId:fromIconInstanceId);
+            // 특정 슬롯으로 이동
             if (toIndex >= 0)
             {
                 // 그 위치에 아이콘이 있으면 되돌려준다
-                var icon = toWindow.GetIconByIndex(toIndex);
-                if (icon != null && icon.uid > 0 && icon.GetCount() > 0)
+                var toIcon = toWindow.GetIconByIndex(toIndex);
+                if (toIcon != null && toIcon.uid > 0 && toIcon.GetCount() > 0)
                 {
-                    fromWindow.SetIconCount(icon.uid, icon.GetCount());
+                    fromWindow.SetIconCount(toIcon.uid, toIcon.GetCount(), instanceId:toIcon.instanceId);
                 }
-                toWindow.SetIconCount(toIndex, itemUid, toCount);
+                toWindow.SetIconCount(toIndex, fromIconUid, toCount, instanceId:fromIconInstanceId);
             }
+            // 비어있는 슬롯으로 이동
             else
             {
-                toWindow.SetIconCount(itemUid, toCount);    
+                toWindow.SetIconCount(fromIconUid, toCount, instanceId:fromIconInstanceId);
             }
         }
         /// <summary>
@@ -251,6 +264,7 @@ namespace GGemCo2DCore
 
             fromIcon.SetIconLock(true);
             int itemUid = fromIcon.uid;
+            long itemInstanceId = fromIcon.instanceId;
             
             if (toIndex >= 0)
             {
@@ -258,9 +272,9 @@ namespace GGemCo2DCore
                 var icon = toWindow.GetIconByIndex(toIndex);
                 if (icon != null && icon.uid > 0 && icon.GetCount() > 0)
                 {
-                    fromWindow.SetIconCount(icon.uid, icon.GetCount());
+                    fromWindow.SetIconCount(icon.uid, icon.GetCount(), instanceId: itemInstanceId);
                 }
-                UIIcon uiIcon = toWindow.SetIconCountReturnIcon(toIndex, itemUid, toCount);
+                UIIcon uiIcon = toWindow.SetIconCountReturnIcon(toIndex, itemUid, toCount, instanceId: itemInstanceId);
                 if (uiIcon != null)
                 {
                     uiIcon.SetParentInfo(fromWindowUid, fromIndex);
@@ -268,7 +282,7 @@ namespace GGemCo2DCore
             }
             else
             {
-                UIIcon uiIcon = toWindow.SetIconCountReturnIcon(itemUid, toCount);
+                UIIcon uiIcon = toWindow.SetIconCountReturnIcon(itemUid, toCount, instanceId: itemInstanceId);
                 if (uiIcon != null)
                 {
                     uiIcon.SetParentInfo(fromWindowUid, fromIndex);

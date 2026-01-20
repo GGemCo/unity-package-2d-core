@@ -350,6 +350,7 @@ namespace GGemCo2DCore
             if (updateResult)
             {
                 // 제작 처리, inventoryData 에 item uid 추가하기
+                // todo. 제작시 옵션 처리 필요
                 var resultCraft = _inventoryData.AddItem(_selectedCtruckTableItemCraft.ResultItemUid, 1);
                 _uiWindowInventory.SetIcons(resultCraft);
             }

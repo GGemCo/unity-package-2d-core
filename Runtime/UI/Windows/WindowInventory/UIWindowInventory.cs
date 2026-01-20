@@ -265,7 +265,7 @@ namespace GGemCo2DCore
         /// <param name="iconCount"></param>
         public override void SetIconCount(int iconUid, int iconCount, long instanceId = 0)
         {
-            ResultCommon result = InventoryData.AddItem(iconUid, iconCount);
+            ResultCommon result = InventoryData.AddItem(new IconPayload(iconUid, iconCount, instanceId));
             SetIcons(result);
         }
         /// <summary>

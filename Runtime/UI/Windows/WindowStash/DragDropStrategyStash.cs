@@ -15,6 +15,7 @@ namespace GGemCo2DCore
             UIWindowConstants.WindowUid droppedWindowUid = droppedUIIcon.windowUid;
             int dropIconSlotIndex = droppedUIIcon.slotIndex;
             int dropIconUid = droppedUIIcon.uid;
+            long dropIconInstanceId = droppedUIIcon.instanceId;
             int dropIconCount = droppedUIIcon.GetCount();
             if (dropIconUid <= 0)
             {
@@ -50,7 +51,7 @@ namespace GGemCo2DCore
                     var result = uiWindowStash.InventoryData.MinusItem(dropIconSlotIndex, dropIconUid, dropIconCount);
                     droppedWindow.SetIcons(result);
 
-                    result = uiWindowStash.StashData.AddItem(targetIconSlotIndex, dropIconUid, dropIconCount);
+                    result = uiWindowStash.StashData.AddItem(targetIconSlotIndex, new IconPayload(dropIconUid, dropIconCount, dropIconInstanceId));
                     targetWindow.SetIcons(result);
                 }
             }
