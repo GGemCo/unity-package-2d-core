@@ -29,29 +29,6 @@ namespace GGemCo2DCore
         public string AntiFlagText;
         public string Description;
 
-        public string StatusID1;
-        public ConfigCommon.SuffixType StatusSuffix1;
-        public int StatusValue1;
-        public string StatusID2;
-        public ConfigCommon.SuffixType StatusSuffix2;
-        public int StatusValue2;
-
-        public string OptionType1;
-        public ConfigCommon.SuffixType OptionSuffix1;
-        public int OptionValue1;
-        public string OptionType2;
-        public ConfigCommon.SuffixType OptionSuffix2;
-        public int OptionValue2;
-        public string OptionType3;
-        public ConfigCommon.SuffixType OptionSuffix3;
-        public int OptionValue3;
-        public string OptionType4;
-        public ConfigCommon.SuffixType OptionSuffix4;
-        public int OptionValue4;
-        public string OptionType5;
-        public ConfigCommon.SuffixType OptionSuffix5;
-        public int OptionValue5;
-
         // 편의 함수들 (동일)
         public bool IsTool() => Type == ItemConstants.Type.Equip && Category == ItemConstants.Category.Tool;
         public bool IsSubCategoryAxe() => IsTool() && SubCategory == ItemConstants.SubCategory.Axe;
@@ -155,29 +132,6 @@ namespace GGemCo2DCore
                 AntiFlag = antiFlags,
                 AntiFlagText = antiFlagText,
                 Description = desc,
-
-                StatusID1     = d.GetValueOrDefault("StatusID1"),
-                StatusSuffix1 = ConvertSuffixType(d.GetValueOrDefault("StatusSuffix1")),
-                StatusValue1  = MathHelper.ParseInt(d.GetValueOrDefault("StatusValue1")),
-                StatusID2     = d.GetValueOrDefault("StatusID2"),
-                StatusSuffix2 = ConvertSuffixType(d.GetValueOrDefault("StatusSuffix2")),
-                StatusValue2  = MathHelper.ParseInt(d.GetValueOrDefault("StatusValue2")),
-
-                OptionType1   = d.GetValueOrDefault("OptionType1"),
-                OptionSuffix1 = ConvertSuffixType(d.GetValueOrDefault("OptionSuffix1")),
-                OptionValue1  = MathHelper.ParseInt(d.GetValueOrDefault("OptionValue1")),
-                OptionType2   = d.GetValueOrDefault("OptionType2"),
-                OptionSuffix2 = ConvertSuffixType(d.GetValueOrDefault("OptionSuffix2")),
-                OptionValue2  = MathHelper.ParseInt(d.GetValueOrDefault("OptionValue2")),
-                OptionType3   = d.GetValueOrDefault("OptionType3"),
-                OptionSuffix3 = ConvertSuffixType(d.GetValueOrDefault("OptionSuffix3")),
-                OptionValue3  = MathHelper.ParseInt(d.GetValueOrDefault("OptionValue3")),
-                OptionType4   = d.GetValueOrDefault("OptionType4"),
-                OptionSuffix4 = ConvertSuffixType(d.GetValueOrDefault("OptionSuffix4")),
-                OptionValue4  = MathHelper.ParseInt(d.GetValueOrDefault("OptionValue4")),
-                OptionType5   = d.GetValueOrDefault("OptionType5"),
-                OptionSuffix5 = ConvertSuffixType(d.GetValueOrDefault("OptionSuffix5")),
-                OptionValue5  = MathHelper.ParseInt(d.GetValueOrDefault("OptionValue5")),
             };
 
             return row;

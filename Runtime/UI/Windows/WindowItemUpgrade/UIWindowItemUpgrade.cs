@@ -226,17 +226,18 @@ namespace GGemCo2DCore
                 textNeedCurrency.text = $"{CurrencyConstants.GetNameByCurrencyType(info.NeedCurrencyType)}: {info.NeedCurrencyValue}";
             }
 
-            if (textStatusID1 != null && (sourceInfo.StatusID1 != "" || resultInfo.StatusID1 != ""))
-            {
-                textStatusID1.gameObject.SetActive(true);
-                textStatusID1.text = $"{GetStatusName(sourceInfo.StatusID1)} : {sourceInfo.StatusValue1} -> {resultInfo.StatusValue1}";
-            }
-            if (textStatusID2 != null && (sourceInfo.StatusID2 != "" || resultInfo.StatusID2 != ""))
-            {
-                textStatusID2.gameObject.SetActive(true); 
-                textStatusID2.text =
-                    $"{GetStatusName(sourceInfo.StatusID2)} : {sourceInfo.StatusValue2} -> {resultInfo.StatusValue2}";
-            }
+            // todo. 정리 필요
+            // if (textStatusID1 != null && (sourceInfo.StatusID1 != "" || resultInfo.StatusID1 != ""))
+            // {
+            //     textStatusID1.gameObject.SetActive(true);
+            //     textStatusID1.text = $"{GetStatusName(sourceInfo.StatusID1)} : {sourceInfo.StatusValue1} -> {resultInfo.StatusValue1}";
+            // }
+            // if (textStatusID2 != null && (sourceInfo.StatusID2 != "" || resultInfo.StatusID2 != ""))
+            // {
+            //     textStatusID2.gameObject.SetActive(true); 
+            //     textStatusID2.text =
+            //         $"{GetStatusName(sourceInfo.StatusID2)} : {sourceInfo.StatusValue2} -> {resultInfo.StatusValue2}";
+            // }
 
             SetMaterialInfo(0, info.NeedItemUid1, info.NeedItemCount1);
             SetMaterialInfo(1, info.NeedItemUid2, info.NeedItemCount2);

@@ -13,10 +13,6 @@ namespace GGemCo2DCore
         private TableItem _tableItem;
         private Player _player;
 
-        private readonly string[] _optionTypes = new string[5];
-        private readonly ConfigCommon.SuffixType[] _optionSuffixes = new ConfigCommon.SuffixType[5];
-        private readonly float[] _optionValues = new float[5];
-        
         protected override void Awake()
         {
             base.Awake();
@@ -51,24 +47,6 @@ namespace GGemCo2DCore
                 return false;
             }
             _struckTableItem = info;
-
-            _optionTypes[0] = _struckTableItem.OptionType1; 
-            _optionTypes[1] = _struckTableItem.OptionType2; 
-            _optionTypes[2] = _struckTableItem.OptionType3; 
-            _optionTypes[3] = _struckTableItem.OptionType4; 
-            _optionTypes[4] = _struckTableItem.OptionType5;
-
-            _optionSuffixes[0] = _struckTableItem.OptionSuffix1;
-            _optionSuffixes[1] = _struckTableItem.OptionSuffix2;
-            _optionSuffixes[2] = _struckTableItem.OptionSuffix3; 
-            _optionSuffixes[3] = _struckTableItem.OptionSuffix4; 
-            _optionSuffixes[4] = _struckTableItem.OptionSuffix5;
-
-            _optionValues[0] = _struckTableItem.OptionValue1;
-            _optionValues[1] = _struckTableItem.OptionValue2;
-            _optionValues[2] = _struckTableItem.OptionValue3;
-            _optionValues[3] = _struckTableItem.OptionValue4;
-            _optionValues[4] = _struckTableItem.OptionValue5;
             
             UpdateInfo();
             return true;
@@ -167,53 +145,6 @@ namespace GGemCo2DCore
         {
             return _struckTableItem.IsSeed();
         }
-        /// <summary>
-        /// 어펙트 옵션이 있는지 
-        /// </summary>
-        /// <returns></returns>
-        public override bool IsAffectUid()
-        {
-            return _struckTableItem.StatusID1 == "AFFECT_UID";
-        }
-        public override int GetStatusValue1()
-        {
-            return _struckTableItem.StatusValue1;
-        }
-        public override string GetStatusId1()
-        {
-            return _struckTableItem.StatusID1;
-        }
-        public override ConfigCommon.SuffixType GetStatusSuffix1()
-        {
-            return _struckTableItem.StatusSuffix1;
-        }
-        /// <summary>
-        /// status, option 에 affect 가 있는지 체크 후 어펙트 실행
-        /// </summary>
-        public override void CheckStatusAffect()
-        {
-            if (_player == null)
-            {
-                _player = SceneGame.Instance.player.GetComponent<Player>();
-            }
-            if (_struckTableItem.StatusID1 == ConfigCommon.StatusAffectId)
-            {
-                _player.AddAffect(_struckTableItem.StatusValue1);
-            }
-            if (_struckTableItem.StatusID2 == ConfigCommon.StatusAffectId)
-            {
-                _player.AddAffect(_struckTableItem.StatusValue2);
-            }
-
-            for (var i = 0; i < _optionTypes.Length; i++)
-            {
-                var option = _optionTypes[i];
-                if (option != ConfigCommon.StatusAffectId) continue;
-                var optionValue = (int)_optionValues[i];
-                _player.AddAffect(optionValue);
-            }
-        }
-        
         public override bool IsAntiFlag(ItemConstants.AntiFlag antiFlag)
         {
             return _struckTableItem.AntiFlag.Any(flag => flag == antiFlag);

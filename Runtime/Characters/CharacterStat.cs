@@ -109,25 +109,11 @@ namespace GGemCo2DCore
                 if (equipRef == null || equipRef.ItemUid <= 0) continue;
 
                 // 1) 인스턴스 기반이면 Base + Rolled 옵션을 사용
-                if (equipRef.InstanceId > 0 && instanceStore != null && instanceStore.TryGet(equipRef.InstanceId, out var inst) && inst != null)
-                {
-                    var options = resolver.ResolveFinalOptions(inst);
-                    ApplyOptionsFromEntries(options, statModifiers, desiredEquipAffects);
-                    continue;
-                }
-
-                // 2) 정의 기반(레거시) fallback: 기존 컬럼 사용
-                var item = equipRef.Definition;
-                if (item == null) continue;
-
-                statModifiers.Add(new ConfigCommon.StruckStatus(item.StatusID1, item.StatusSuffix1, item.StatusValue1));
-                statModifiers.Add(new ConfigCommon.StruckStatus(item.StatusID2, item.StatusSuffix2, item.StatusValue2));
-
-                statModifiers.Add(new ConfigCommon.StruckStatus(item.OptionType1, ConfigCommon.SuffixType.None, item.OptionValue1));
-                statModifiers.Add(new ConfigCommon.StruckStatus(item.OptionType2, ConfigCommon.SuffixType.None, item.OptionValue2));
-                statModifiers.Add(new ConfigCommon.StruckStatus(item.OptionType3, ConfigCommon.SuffixType.None, item.OptionValue3));
-                statModifiers.Add(new ConfigCommon.StruckStatus(item.OptionType4, ConfigCommon.SuffixType.None, item.OptionValue4));
-                statModifiers.Add(new ConfigCommon.StruckStatus(item.OptionType5, ConfigCommon.SuffixType.None, item.OptionValue5));
+                if (equipRef.InstanceId <= 0 || instanceStore == null ||
+                    !instanceStore.TryGet(equipRef.InstanceId, out var inst) || inst == null) continue;
+                
+                var options = resolver.ResolveFinalOptions(inst);
+                ApplyOptionsFromEntries(options, statModifiers, desiredEquipAffects);
             }
 
             ApplyStatModifiers(statModifiers);
