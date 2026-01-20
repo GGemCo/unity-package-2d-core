@@ -29,6 +29,7 @@ namespace GGemCo2DCoreEditor
             MoveMap,
             UseEffect,
             UseProjectile,
+            OpenWindow,
             Debug = 300,
             DebugAffectDescription,
             DebugTilemapDrawCall,
@@ -78,6 +79,7 @@ namespace GGemCo2DCoreEditor
         public const string NameToolMoveMap = NameToolTest + "맵 이동툴";
         public const string NameToolUseEffect = NameToolTest + "이펙트 사용툴";
         public const string NameToolUseProjectile = NameToolTest + "프로젝타일 사용툴";
+        public const string NameToolOpenWindow = NameToolTest + "윈도우 열기";
         
         // 디버그
         private const string NameToolDebug = NameToolGGemCo + "디버그툴/";
