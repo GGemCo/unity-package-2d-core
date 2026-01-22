@@ -4,7 +4,7 @@ using UnityEngine;
 namespace GGemCo2DCore
 {
     /// <summary>
-    /// 맵 테이블 Structure
+    /// Projectile 테이블 Row 구조.
     /// </summary>
     public class StruckTableProjectile
     {
@@ -24,18 +24,25 @@ namespace GGemCo2DCore
         public int Count;
         public float SecDelayByOne;
     }
+
     /// <summary>
-    /// 맵 테이블
+    /// Projectile 테이블.
     /// </summary>
     public class TableProjectile : DefaultTable<StruckTableProjectile>
     {
         public override string Key => ConfigAddressableTable.Projectile;
+
         protected override StruckTableProjectile BuildRow(Dictionary<string, string> data)
         {
+            // Type 컬럼이 없던 레거시 데이터와의 호환을 위해 기본값은 Default로 둔다.
+            ProjectileConstants.Type type = ProjectileConstants.Type.Default;
+            if (data.TryGetValue("Type", out string typeRaw) && !string.IsNullOrEmpty(typeRaw))
+                type = EnumHelper.ConvertEnum<ProjectileConstants.Type>(typeRaw);
+
             return new StruckTableProjectile
             {
                 Uid = MathHelper.ParseInt(data["Uid"]),
-                Type = ProjectileConstants.Type.Default,
+                Type = type,
                 Name = data["Name"],
                 EffectUid = MathHelper.ParseInt(data["EffectUid"]),
                 EffectScale = MathHelper.ParseFloat(data["EffectScale"]),

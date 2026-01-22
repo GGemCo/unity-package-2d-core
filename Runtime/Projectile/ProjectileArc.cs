@@ -12,9 +12,9 @@ namespace GGemCo2DCore
     {
         private float _arcHeight;
 
-        public override void Initialize(StruckTableProjectile info)
+        public override void Initialize(StruckTableProjectile info, MetadataProjectile metadata)
         {
-            base.Initialize(info);
+            base.Initialize(info, metadata);
 
             _arcHeight = info.ArcHeightMin;
             if (info.ArcHeightMin != info.ArcHeightMax)

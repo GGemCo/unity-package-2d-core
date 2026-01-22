@@ -11,15 +11,13 @@ namespace GGemCo2DCore
     public class ProjectileController
     {
         private CharacterBase _character;
-        private TableEffect _tableEffect;
         private ProjectileManager _projectileManager;
 
         private CharacterBase _target;
 
         public void Initialize(CharacterBase characterBase)
         {
-            _character         = characterBase;
-            _tableEffect       = TableLoaderManager.Instance.TableEffect;
+            _character = characterBase;
             _projectileManager = SceneGame.Instance.ProjectileManager;
         }
 
@@ -30,17 +28,33 @@ namespace GGemCo2DCore
         /// </summary>
         public void Launch(MetadataProjectile metadataProjectile)
         {
-            int uid = metadataProjectile.uid;
-            long damage = metadataProjectile.damage;
-            _target = metadataProjectile.target;
+            if (metadataProjectile == null) return;
 
-            var info = TableLoaderManager.Instance.GetProjectileData(uid);
+            _target = metadataProjectile.Target;
+
+            var info = TableLoaderManager.Instance.GetProjectileData(metadataProjectile.Uid);
             if (info == null) return;
 
-            _character.StartCoroutine(CreateProjectileBurst(info, damage));
+            // owner가 비어 있으면 이 캐릭터를 owner로 사용(기본 정책)
+            var meta = metadataProjectile.Owner == null
+                ? new MetadataProjectile(
+                    uid: metadataProjectile.Uid,
+                    damageType: metadataProjectile.DamageType,
+                    damage: metadataProjectile.Damage,
+                    target: metadataProjectile.Target,
+                    owner: _character,
+                    speedMultiplier: metadataProjectile.SpeedMultiplier,
+                    scaleMultiplier: metadataProjectile.ScaleMultiplier,
+                    visualType: metadataProjectile.VisualType,
+                    visualSprite: metadataProjectile.VisualSprite,
+                    visualAnimatorController: metadataProjectile.VisualAnimatorController,
+                    visualEffectUidOverride: metadataProjectile.VisualEffectUidOverride)
+                : metadataProjectile;
+
+            _character.StartCoroutine(CreateProjectileBurst(info, meta));
         }
 
-        private IEnumerator CreateProjectileBurst(StruckTableProjectile info, long damage)
+        private IEnumerator CreateProjectileBurst(StruckTableProjectile info, MetadataProjectile meta)
         {
             // 목표가 필요한 타입인데 타겟이 없다면 중단
             if (info.TargetType == ProjectileConstants.TargetType.Fixed && !_target)
@@ -49,12 +63,9 @@ namespace GGemCo2DCore
             int count = Mathf.Max(1, info.Count);
             for (int i = 0; i < count; i++)
             {
-                var proj = _projectileManager.CreateProjectile(info.Uid);
+                var proj = _projectileManager.CreateProjectile(meta);
                 if (proj != null)
                 {
-                    proj.SetFromCharacter(_character);
-                    proj.SetDamage(damage);
-
                     // 좌표 산출
                     if (info.TargetType == ProjectileConstants.TargetType.Fixed)
                     {

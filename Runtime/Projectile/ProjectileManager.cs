@@ -2,37 +2,100 @@
 
 namespace GGemCo2DCore
 {
-    public class MetadataProjectile
+    /// <summary>
+    /// 발사체 발사 시점의 런타임 파라미터.
+    /// - Projectile 테이블: 정적인 정의(형태/기본 옵션)
+    /// - MetadataProjectile: 상황에 따라 변하는 값(데미지 타입/배율/속도/크기/표현 방식 등)
+    /// </summary>
+    public sealed class MetadataProjectile
     {
-        public readonly int uid;
-        public readonly ConfigCommon.DamageType damageType;
-        public readonly long damage;
-        public readonly CharacterBase target;
-        public MetadataProjectile(int uid, ConfigCommon.DamageType damageType, long damage, CharacterBase target = null)
+        // --- Static reference ---
+        public readonly int Uid;
+
+        // --- Context ---
+        public readonly CharacterBase Owner;
+        public readonly CharacterBase Target;
+
+        // --- Combat (dynamic) ---
+        public readonly ConfigCommon.DamageType DamageType;
+        public readonly long Damage;
+
+        // --- Movement/Scale (dynamic) ---
+        public readonly float SpeedMultiplier;
+        public readonly float ScaleMultiplier;
+
+        // --- Visual (dynamic) ---
+        public readonly ProjectileConstants.ProjectileVisualType VisualType;
+        public readonly Sprite VisualSprite;
+        public readonly RuntimeAnimatorController VisualAnimatorController;
+        public readonly int VisualEffectUidOverride;
+
+        public MetadataProjectile(
+            int uid,
+            ConfigCommon.DamageType damageType,
+            long damage,
+            CharacterBase target = null,
+            CharacterBase owner = null,
+            float speedMultiplier = 1f,
+            float scaleMultiplier = 1f,
+            ProjectileConstants.ProjectileVisualType visualType = ProjectileConstants.ProjectileVisualType.Default,
+            Sprite visualSprite = null,
+            RuntimeAnimatorController visualAnimatorController = null,
+            int visualEffectUidOverride = 0)
         {
-            this.uid = uid;
-            this.damageType = damageType;
-            this.damage = damage;
-            this.target = target;
+            Uid = uid;
+            DamageType = damageType;
+            Damage = damage;
+            Target = target;
+            Owner = owner;
+
+            SpeedMultiplier = Mathf.Max(0.01f, speedMultiplier);
+            ScaleMultiplier = Mathf.Max(0.01f, scaleMultiplier);
+
+            VisualType = visualType;
+            VisualSprite = visualSprite;
+            VisualAnimatorController = visualAnimatorController;
+            VisualEffectUidOverride = visualEffectUidOverride;
         }
     }
-    public class ProjectileManager
+
+    /// <summary>
+    /// 발사체 생성기(Factory).
+    /// 테이블 정보를 바탕으로 적절한 발사체 컴포넌트를 생성/부착하고, 런타임 파라미터를 초기화한다.
+    /// </summary>
+    public sealed class ProjectileManager
     {
-        private SceneGame _sceneGame;
-        private EffectManager _effectManager;
         private TableLoaderManager _table;
 
         public void Initialize(SceneGame sceneGame)
         {
-            _sceneGame = sceneGame;
-            _effectManager = sceneGame.EffectManager;
             _table = TableLoaderManager.Instance;
         }
 
         /// <summary>
-        /// 테이블 정보를 바탕으로 적절한 발사체 클래스를 생성/부착합니다.
-        /// - arcHeight가 0보다 크면 ArcProjectile
-        /// - 아니면 LinearProjectile
+        /// 발사체를 생성합니다(테이블 조회 + 런타임 파라미터 적용).
+        /// </summary>
+        public ProjectileBase CreateProjectile(MetadataProjectile metadata)
+        {
+            if (metadata == null)
+            {
+                GcLogger.LogError("[ProjectileManager] metadata is null.");
+                return null;
+            }
+
+            var info = _table.GetProjectileData(metadata.Uid);
+            if (info == null)
+            {
+                GcLogger.LogError($"[ProjectileManager] Unknown projectile uid={metadata.Uid}");
+                return null;
+            }
+
+            return CreateProjectileInternal(info, metadata);
+        }
+
+        /// <summary>
+        /// 레거시 호환용: uid만으로 발사체를 생성합니다.
+        /// - 런타임 파라미터가 필요하다면 CreateProjectile(MetadataProjectile)를 사용하세요.
         /// </summary>
         public ProjectileBase CreateProjectile(int projectileUid)
         {
@@ -43,34 +106,32 @@ namespace GGemCo2DCore
                 return null;
             }
 
-            var go = new GameObject($"Projectile_{projectileUid}");
-            ProjectileBase comp;
+            var meta = new MetadataProjectile(
+                uid: projectileUid,
+                damageType: ConfigCommon.DamageType.Physic,
+                damage: 0,
+                target: null,
+                owner: null);
 
-            bool isArc = (info.ArcHeightMin > 0) || (info.ArcHeightMax > 0);
-            if (info.Type == ProjectileConstants.Type.Laser)
-            {
-                comp = go.AddComponent<ProjectileLaser>();
-            }
-            else if (isArc)
-                comp = go.AddComponent<ProjectileArc>();
-            else
-                comp = go.AddComponent<ProjectileLinear>();
-
-            if (!comp)
-            {
-                GcLogger.LogError("[ProjectileManager] Component add failed.");
-                Object.Destroy(go);
-                return null;
-            }
-
-            comp.Initialize(info);
-            return comp;
+            return CreateProjectileInternal(info, meta);
         }
+
 #if UNITY_EDITOR
         public ProjectileBase CreateProjectile(StruckTableProjectile info)
         {
-            int projectileUid = info.Uid;
-            var go = new GameObject($"Projectile_{projectileUid}");
+            // Editor에서 단독 테스트 용도: 기본 메타데이터로 초기화
+            var meta = new MetadataProjectile(
+                uid: info?.Uid ?? 0,
+                damageType: ConfigCommon.DamageType.Physic,
+                damage: 0);
+
+            return CreateProjectileInternal(info, meta);
+        }
+#endif
+
+        private ProjectileBase CreateProjectileInternal(StruckTableProjectile info, MetadataProjectile meta)
+        {
+            var go = new GameObject($"Projectile_{info.Uid}");
             ProjectileBase comp;
 
             bool isArc = (info.ArcHeightMin > 0) || (info.ArcHeightMax > 0);
@@ -79,20 +140,23 @@ namespace GGemCo2DCore
                 comp = go.AddComponent<ProjectileLaser>();
             }
             else if (isArc)
+            {
                 comp = go.AddComponent<ProjectileArc>();
+            }
             else
+            {
                 comp = go.AddComponent<ProjectileLinear>();
+            }
 
-            if (!comp)
+            if (comp == null)
             {
                 GcLogger.LogError("[ProjectileManager] Component add failed.");
                 Object.Destroy(go);
                 return null;
             }
 
-            comp.Initialize(info);
+            comp.Initialize(info, meta);
             return comp;
         }
-#endif
     }
 }
