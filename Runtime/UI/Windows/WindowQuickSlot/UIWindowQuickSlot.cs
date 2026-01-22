@@ -15,7 +15,6 @@ namespace GGemCo2DCore
         [Header(UIWindowConstants.TitleHeaderIndividual)]
         [Tooltip("단축키에 사용할 숫자 UI Image")]
         public Image[] iconHotKey;
-        private UIWindowSkill uiWindowSkill;
         public int Priority => 1;
 
         private readonly Dictionary<KeyCode, int> _indexByKeyCode = new Dictionary<KeyCode, int>
@@ -39,8 +38,6 @@ namespace GGemCo2DCore
         {
             base.Start();
             SceneGame.Instance.KeyboardManager.RegisterInputHandler(this);
-            uiWindowSkill =
-                SceneGame.Instance.uIWindowManager.GetUIWindowByUid<UIWindowSkill>(UIWindowConstants.WindowUid.Skill);
             LoadIcons();
         }
         /// <summary>
@@ -64,15 +61,7 @@ namespace GGemCo2DCore
 
                 var icon = icons[index];
                 if (icon == null) continue;
-                UIIconSkill uiIcon = icon.GetComponent<UIIconSkill>();
-                if (uiIcon == null) continue;
-                SaveDataIcon structSkillIcon = datas.GetValueOrDefault(index);
-                if (structSkillIcon == null) continue;
-                
-                int skillUid = structSkillIcon.Uid;
-                int skillCount = structSkillIcon.Count;
-                int skillLevel = structSkillIcon.Level;
-                uiIcon.ChangeInfoByUid(skillUid, skillCount, skillLevel);
+                // todo. 정리 필요.
             }
         }
         protected void OnDisable()
@@ -136,31 +125,7 @@ namespace GGemCo2DCore
         /// <param name="keyCode"></param>
         private void OnKeyDownSkill(KeyCode keyCode)
         {
-            if (SceneGame.Instance.player == null)
-            {
-                GcLogger.LogError("플레이어가 없습니다.");
-                return ;
-            }
-            // GcLogger.Log("UIWindowQuickSlot Key pressed Alpha1");
-            UIIcon icon = GetIconByIndex(_indexByKeyCode.GetValueOrDefault(keyCode));
-            if (icon == null || icon.uid <= 0) return;
-            if (!icon.IsSkill()) return;
-            var info = TableLoaderManager.Instance.TableSkill.GetDataByUidLevel(icon.uid, icon.GetLevel());
-            if (info == null)
-            {
-                GcLogger.LogError("스킬 테이블에 없는 스킬입니다. uid: " + icon.uid);
-                return;
-            }
-
-            if (SceneGame.Instance.player.GetComponent<Player>().CheckNeedMp(info.NeedMp) == false)
-            {
-                SceneGame.Instance.systemMessageManager.ShowMessageWarning("QuickSlot_NotEnoughMana");//"마력이 부족합니다."
-                return;
-            }
-
-            if (!icon.PlayCoolTime(info.CoolTime)) return;
-            
-            SceneGame.Instance.player.GetComponent<Player>().UseSkill(icon.uid, icon.GetLevel());
+            // todo. 정리 필요
         }
         /// <summary>
         /// 아이콘 우클릭했을때 처리 
@@ -177,7 +142,8 @@ namespace GGemCo2DCore
                 return;
             }
             // 스킬 창이 열려있을때는 해제 하기
-            if (!uiWindowSkill || !uiWindowSkill.IsOpen()) return;
+            // todo. 정리 필요.
+            // if (!uiWindowSkill || !uiWindowSkill.IsOpen()) return;
             DetachIcon(icon.slotIndex);
         }
     }

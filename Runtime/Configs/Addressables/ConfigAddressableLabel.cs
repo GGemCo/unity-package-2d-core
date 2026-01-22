@@ -12,7 +12,6 @@ namespace GGemCo2DCore
         public const string Dialogue = ConfigDefine.NameSDK+"_Dialouge";
         public const string Quest = ConfigDefine.NameSDK+"_Quest";
         public const string Cutscene = ConfigDefine.NameSDK+"_Cutscene";
-        public const string ImageSkillIcon = ConfigDefine.NameSDK+"_Skill_Icon";
         public const string Sound = ConfigDefine.NameSDK+"_Sound";
         public const string SoundIntro = ConfigDefine.NameSDK+"_SoundIntro";
         public const string SimulationToolDefinition = ConfigDefine.NameSDK+"_SimulationToolDefinition";

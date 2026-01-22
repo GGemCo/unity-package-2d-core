@@ -11,7 +11,6 @@ namespace GGemCo2DCore
     public class ProjectileController
     {
         private CharacterBase _character;
-        private TableSkill _tableSkill;
         private TableEffect _tableEffect;
         private ProjectileManager _projectileManager;
 
@@ -20,7 +19,6 @@ namespace GGemCo2DCore
         public void Initialize(CharacterBase characterBase)
         {
             _character         = characterBase;
-            _tableSkill        = TableLoaderManager.Instance.TableSkill;
             _tableEffect       = TableLoaderManager.Instance.TableEffect;
             _projectileManager = SceneGame.Instance.ProjectileManager;
         }

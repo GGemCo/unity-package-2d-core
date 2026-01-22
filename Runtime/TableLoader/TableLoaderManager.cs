@@ -31,7 +31,6 @@ namespace GGemCo2DCore
         public TableStat TableStat { get; private set; } = new TableStat();
         public TableDamageType TableDamageType { get; private set; } = new TableDamageType();
         public TableState TableState { get; private set; } = new TableState();
-        public TableSkill TableSkill { get; private set; } = new TableSkill();
         public TableEffect TableEffect { get; private set; } = new TableEffect();
         public TableInteraction TableInteraction { get; private set; } = new TableInteraction();
         public TableShop TableShop { get; private set; } = new TableShop();
@@ -74,7 +73,6 @@ namespace GGemCo2DCore
                 registry.Register(TableStat);
                 registry.Register(TableDamageType);
                 registry.Register(TableState);
-                registry.Register(TableSkill);
                 registry.Register(TableEffect);
                 registry.Register(TableInteraction);
                 registry.Register(TableShop);
@@ -187,12 +185,6 @@ namespace GGemCo2DCore
             => GetData(TableWindow, uid, "Window", (t, i) => t.GetDataByUid(i), logIfMissing);
         public bool TryGetWindowData(int uid, out StruckTableWindow data, bool logIfMissing = false)
             => TryGetData(TableWindow, uid, out data, "Window", (t, i) => t.GetDataByUid(i), logIfMissing);
-
-        // Skill
-        public StruckTableSkill GetSkillData(int uid, bool logIfMissing = true)
-            => GetData(TableSkill, uid, "Skill", (t, i) => t.GetDataByUid(i), logIfMissing);
-        public bool TryGetSkillData(int uid, out StruckTableSkill data, bool logIfMissing = false)
-            => TryGetData(TableSkill, uid, out data, "Skill", (t, i) => t.GetDataByUid(i), logIfMissing);
 
         // Effect
         public StruckTableEffect GetEffectData(int uid, bool logIfMissing = true)

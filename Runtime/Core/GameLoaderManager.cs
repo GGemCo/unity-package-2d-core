@@ -188,7 +188,6 @@ namespace GGemCo2DCore
             var addrPrefabCommon = Object.FindFirstObjectByType<AddressableLoaderPrefabCommon>() ?? new GameObject("AddressableLoaderPrefabCommon").AddComponent<AddressableLoaderPrefabCommon>();
             var addrPrefabEffect = Object.FindFirstObjectByType<AddressableLoaderPrefabEffect>() ?? new GameObject("AddressableLoaderPrefabEffect").AddComponent<AddressableLoaderPrefabEffect>();
             var addrItem = Object.FindFirstObjectByType<AddressableLoaderItem>() ?? new GameObject("AddressableLoaderItem").AddComponent<AddressableLoaderItem>();
-            var addrSkill = Object.FindFirstObjectByType<AddressableLoaderSkill>() ?? new GameObject("AddressableLoaderSkill").AddComponent<AddressableLoaderSkill>();
             var addrSound = Object.FindFirstObjectByType<AddressableLoaderSound>() ?? new GameObject("AddressableLoaderSound").AddComponent<AddressableLoaderSound>();
             var saveData = Object.FindFirstObjectByType<SaveDataLoader>() ?? new GameObject("SaveDataLoader").AddComponent<SaveDataLoader>();
             var loc = Object.FindFirstObjectByType<LocalizationManager>() ?? new GameObject("LocalizationManager").AddComponent<LocalizationManager>();
@@ -233,14 +232,6 @@ namespace GGemCo2DCore
                 localizedKey: LocalizationConstants.Keys.Loading.TextTypeItem(),
                 startTask: () => addrItem.LoadPrefabsAsync(),
                 getProgress: () => addrItem.GetPrefabLoadProgress()
-            ));
-
-            Register(new AddressableTaskStep(
-                id: "core.skill",
-                order: 330,
-                localizedKey: LocalizationConstants.Keys.Loading.TextTypeSkill(),
-                startTask: () => addrSkill.LoadPrefabsAsync(),
-                getProgress: () => addrSkill.GetPrefabLoadProgress()
             ));
 
             Register(new AddressableTaskStep(

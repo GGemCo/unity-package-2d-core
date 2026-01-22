@@ -55,7 +55,6 @@ namespace GGemCo2DCore
 
         [Header("스킬")] 
         protected bool IsUseSkill = false;
-        private SkillController _skillController;
         private ProjectileController _projectileController;
         
         [Header("스폰 데이터")] 
@@ -107,10 +106,9 @@ namespace GGemCo2DCore
             // 태그 먼저 처리
             InitTagSortingLayer();
             InitComponents();
+            // todo. 정리 필요
             if (IsUseSkill)
             {
-                _skillController = new SkillController();
-                _skillController.Initialize(this);
             }
             _projectileController = new ProjectileController();
             _projectileController.Initialize(this);
@@ -662,9 +660,9 @@ namespace GGemCo2DCore
             if (_projectileController == null) return;
             _projectileController.Launch(metadataProjectile);
         }
+        // todo. 정리 필요
         public virtual void UseSkill(int skillUid, int skillLevel)
         {
-            _skillController?.MakeSkill(skillUid, skillLevel);
         }
 
         public bool IsPlayer()

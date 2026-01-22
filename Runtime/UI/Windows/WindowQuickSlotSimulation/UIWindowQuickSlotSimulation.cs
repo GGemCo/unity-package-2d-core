@@ -21,7 +21,6 @@ namespace GGemCo2DCore
         [Tooltip("단축키에 사용할 숫자 UI Image")]
         public Image[] iconHotKey;
         
-        private UIWindowSkill _uiWindowSkill;
         private UIWindowInventory _uiWindowInventory;
         private Player _player;
 
@@ -75,8 +74,6 @@ namespace GGemCo2DCore
                 quickSlotSimulationData = SceneGame.saveDataManager.QuickSlotSimulation;
             }
             SceneGame.KeyboardManager.RegisterInputHandler(this);
-            _uiWindowSkill =
-                SceneGame.uIWindowManager.GetUIWindowByUid<UIWindowSkill>(UIWindowConstants.WindowUid.Skill);
             _uiWindowInventory =
                 SceneGame.uIWindowManager.GetUIWindowByUid<UIWindowInventory>(UIWindowConstants.WindowUid.Inventory);
             

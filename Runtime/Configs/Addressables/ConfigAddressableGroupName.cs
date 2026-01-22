@@ -33,8 +33,6 @@
         public const string Cutscene = ConfigDefine.NameSDK + "_Cutscene";
 
         // Icons
-        public const string SkillIcon  = ConfigDefine.NameSDK + "_Skill_IconImage";
-
         // Sound
         public const string Sound = ConfigDefine.NameSDK + "_Sound";
 

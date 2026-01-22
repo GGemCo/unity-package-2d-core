@@ -31,7 +31,6 @@ namespace GGemCo2DCore
         private Renderer _effectRenderer;
         private RectTransform _effectRectTransform;
         private Animator _animator;
-        private StruckTableSkill _struckTableSkill;
         private Coroutine _coroutineTickTimeDamage;
         private StruckTableEffect _struckTableEffect;
         

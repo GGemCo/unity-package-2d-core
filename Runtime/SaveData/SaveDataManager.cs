@@ -14,7 +14,6 @@ namespace GGemCo2DCore
         public InventoryData InventoryData;
         public EquipData EquipData;
         public QuestData QuestData;
-        public SkillData SkillData;
         public QuickSlotData QuickSlotData;
         public QuickSlotSimulationData QuickSlotSimulationData;
         public StashData StashData;
@@ -36,7 +35,6 @@ namespace GGemCo2DCore
         public InventoryData Inventory { get; private set; }
         public EquipData Equip { get; private set; }
         public QuestData Quest { get; private set; }
-        public SkillData Skill { get; private set; }
         public QuickSlotData QuickSlot { get; private set; }
         public QuickSlotSimulationData QuickSlotSimulation { get; private set; }
         public StashData Stash { get; private set; }
@@ -60,7 +58,6 @@ namespace GGemCo2DCore
             Inventory = new InventoryData();
             Equip = new EquipData();
             Quest = new QuestData();
-            Skill = new SkillData();
             QuickSlot = new QuickSlotData();
             QuickSlotSimulation = new QuickSlotSimulationData();
             Stash = new StashData();
@@ -75,7 +72,6 @@ namespace GGemCo2DCore
             Inventory.Initialize(tableLoaderManager, saveDataContainer);
             Equip.Initialize(tableLoaderManager, saveDataContainer);
             Quest.Initialize(tableLoaderManager, saveDataContainer);
-            Skill.Initialize(tableLoaderManager, saveDataContainer);
             QuickSlot.Initialize(tableLoaderManager, saveDataContainer);
             QuickSlotSimulation.Initialize(tableLoaderManager, saveDataContainer);
             Stash.Initialize(tableLoaderManager, saveDataContainer);
@@ -119,7 +115,6 @@ namespace GGemCo2DCore
                 InventoryData = Inventory,
                 EquipData = Equip,
                 QuestData = Quest,
-                SkillData = Skill,
                 QuickSlotData = QuickSlot,
                 QuickSlotSimulationData = QuickSlotSimulation,
                 StashData = Stash,

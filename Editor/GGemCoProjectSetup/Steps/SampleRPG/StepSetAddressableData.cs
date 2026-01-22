@@ -36,9 +36,6 @@ namespace GGemCo2DCoreEditor
             var settingCutscene = new SettingCutscene(addressableEditor);
             settingCutscene.Setup(ctx);
             
-            var settingSkill = new SettingSkill(addressableEditor);
-            settingSkill.Setup(ctx);
-            
             var settingSound = new SettingSound(addressableEditor);
             settingSound.Setup(ctx);
         }

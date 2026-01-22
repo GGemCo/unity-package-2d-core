@@ -175,7 +175,7 @@ namespace GGemCo2DCore
             animationEventMediator.Initialize(this);
         }
 
-        private T CreateManager<T>(GameObject parent) where T : Component
+        public T CreateManager<T>(GameObject parent) where T : Component
         {
             GameObject obj = new GameObject(typeof(T).Name);
             obj.transform.SetParent(parent.transform);

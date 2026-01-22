@@ -41,13 +41,7 @@ namespace GGemCo2DCore
                 switch (droppedWindowUid)
                 {
                     case UIWindowConstants.WindowUid.Skill:
-                        UIWindowSkill uiWindowSkill = droppedWindow as UIWindowSkill;
-                        if (uiWindowSkill == null) return;
-                        uiWindowSkill.AddToQuickSlot(droppedUIIcon);
-                        // if (droppedUIIcon.CheckRequireLevel())
-                        // {
-                        //     targetWindow.SetIconCount(targetIconSlotIndex, dropIconUid, dropIconCount, dropIconLevel, dropIconIsLearn);
-                        // }
+                        // todo. 정리 필요.
 
                         break;
                     case UIWindowConstants.WindowUid.None:

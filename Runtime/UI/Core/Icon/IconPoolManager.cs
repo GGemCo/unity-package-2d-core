@@ -80,7 +80,6 @@ namespace GGemCo2DCore
             // 3) Core 패키지에 하드코딩된 기본 전략 (기존 코드 유지)
             return _window.uid switch
             {
-                UIWindowConstants.WindowUid.Skill       => new SlotIconBuildStrategySkill(),
                 UIWindowConstants.WindowUid.ItemSalvage => new SlotIconBuildStrategyItemSalvage(),
                 // UIWindowConstants.WindowUid.QuestReward => new SlotIconBuildStrategyQuestReward(),
                 _                                       => null,

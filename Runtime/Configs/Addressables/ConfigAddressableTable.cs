@@ -34,7 +34,6 @@ namespace GGemCo2DCore
         public const string Stat             = "stat";
         public const string DamageType       = "damage_type";
         public const string State            = "state";
-        public const string Skill            = "skill";
         public const string Effect           = "effect";
         public const string Interaction      = "interaction";
         public const string Shop             = "shop";
@@ -68,7 +67,6 @@ namespace GGemCo2DCore
         public static readonly AddressableAssetInfo TableStat            = Make(Stat);
         public static readonly AddressableAssetInfo TableDamageType      = Make(DamageType);
         public static readonly AddressableAssetInfo TableState           = Make(State);
-        public static readonly AddressableAssetInfo TableSkill           = Make(Skill);
         public static readonly AddressableAssetInfo TableEffect          = Make(Effect);
         public static readonly AddressableAssetInfo TableInteraction     = Make(Interaction);
         public static readonly AddressableAssetInfo TableShop            = Make(Shop);
@@ -91,8 +89,6 @@ namespace GGemCo2DCore
             TableMonsterDropRate, TableNpcDropRate, TableItemDropGroup, TableExp, TableWindow,
             // Status 3분리 테이블
             TableStat, TableDamageType, TableState,
-            // Skill/Affect
-            TableSkill,
             // Others
             TableEffect, TableInteraction,
             TableShop, TableItemUpgrade, TableItemSalvage, TableItemCraft,
