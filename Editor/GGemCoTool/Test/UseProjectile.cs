@@ -25,7 +25,7 @@ namespace GGemCo2DCoreEditor
         [Header("식별/분류")]
         [Tooltip("선택 사항. 기록용/디버깅용 Uid 값")]
         [SerializeField] private int uid;
-        [SerializeField] private SkillConstants.DamageType damageType = SkillConstants.DamageType.Physic;
+        [SerializeField] private ConfigCommon.DamageType damageType = ConfigCommon.DamageType.Physic;
         [SerializeField] private long damage = 10;
 
         [Tooltip("Projectile의 타입(직선/곡선/레이저 등)")]

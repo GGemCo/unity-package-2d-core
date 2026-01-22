@@ -187,7 +187,7 @@ namespace GGemCo2DCore
                 {
                     damage = totalDamage,
                     attacker = gameObject,
-                    damageType = SkillConstants.DamageType.Physic,
+                    damageType = ConfigCommon.DamageType.Physic,
                     affectUid = struckAnimationEventAttack.TargetAffectUid
                 };
 

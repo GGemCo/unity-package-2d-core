@@ -90,7 +90,27 @@ namespace GGemCo2DCore
         {
             Control,
             Simulation,
-            Affect
+            Affect,
+            Skill
         }
+        
+         // 원소 속성 타입
+         public enum DamageType
+         {
+             None,
+             Physic,
+             Fire,
+             Cold,
+             Lightning
+         }
+
+         public static readonly Dictionary<DamageType, string> NameByDamageType = new Dictionary<DamageType, string>
+         {
+             { DamageType.None, "None" },
+             { DamageType.Physic, "Physic DMG" },
+             { DamageType.Fire, "Fire DMG" },
+             { DamageType.Cold, "Cold DMG" },
+             { DamageType.Lightning, "Lighting DMG" },
+         };
     }
 }

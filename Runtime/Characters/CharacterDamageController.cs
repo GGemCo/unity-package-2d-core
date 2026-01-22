@@ -6,7 +6,7 @@ namespace GGemCo2DCore
     {
         public long damage;
         public GameObject attacker;
-        public SkillConstants.DamageType damageType;
+        public ConfigCommon.DamageType damageType;
         // 데미지 받는 대상에 적용되는 어펙트 uid 
         public int affectUid;
     }
@@ -37,7 +37,7 @@ namespace GGemCo2DCore
 
             long damage = metadataDamage.damage;
             if (damage <= 0) return;
-            SkillConstants.DamageType damageType = metadataDamage.damageType;
+            ConfigCommon.DamageType damageType = metadataDamage.damageType;
             GameObject attacker = metadataDamage.attacker;
             int affectUid = metadataDamage.affectUid;
             
@@ -46,19 +46,19 @@ namespace GGemCo2DCore
             Vector3 damageTextPosition = _characterBase.transform.position + new Vector3(0,
                 _characterBase.GetHeight() * Mathf.Abs(_characterBase.originalScaleX), 0);
             // 속성 데미지일때, 저항값 처리
-            if (damageType != SkillConstants.DamageType.None)
+            if (damageType != ConfigCommon.DamageType.None)
             {
-                if (damageType == SkillConstants.DamageType.Fire)
+                if (damageType == ConfigCommon.DamageType.Fire)
                 {
                     damage = (long)(damage * ((100f - _characterBase.TotalRegistFire.Value) / 100f));
                     damageTextColor = Color.red;
                 }
-                else if (damageType == SkillConstants.DamageType.Cold)
+                else if (damageType == ConfigCommon.DamageType.Cold)
                 {
                     damage = (long)(damage * ((100f - _characterBase.TotalRegistCold.Value) / 100f));
                     damageTextColor = Color.blue;
                 }
-                else if (damageType == SkillConstants.DamageType.Lightning)
+                else if (damageType == ConfigCommon.DamageType.Lightning)
                 {
                     damage = (long)(damage * ((100f - _characterBase.TotalRegistLightning.Value) / 100f));
                     damageTextColor = Color.yellow;

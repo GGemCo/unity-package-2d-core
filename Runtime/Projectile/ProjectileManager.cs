@@ -5,10 +5,10 @@ namespace GGemCo2DCore
     public class MetadataProjectile
     {
         public readonly int uid;
-        public readonly SkillConstants.DamageType damageType;
+        public readonly ConfigCommon.DamageType damageType;
         public readonly long damage;
         public readonly CharacterBase target;
-        public MetadataProjectile(int uid, SkillConstants.DamageType damageType, long damage, CharacterBase target = null)
+        public MetadataProjectile(int uid, ConfigCommon.DamageType damageType, long damage, CharacterBase target = null)
         {
             this.uid = uid;
             this.damageType = damageType;

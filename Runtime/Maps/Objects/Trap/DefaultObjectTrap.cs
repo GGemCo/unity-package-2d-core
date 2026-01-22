@@ -18,7 +18,7 @@ namespace GGemCo2DCore
         #region Serialized: Damage & Effect
         [Header("피해/효과 설정")]
         [Tooltip("피해 타입 (물리/마법 등)")]
-        [SerializeField] protected SkillConstants.DamageType damageType = SkillConstants.DamageType.Physic;
+        [SerializeField] protected ConfigCommon.DamageType damageType = ConfigCommon.DamageType.Physic;
 
         [Tooltip("공격 시 가하는 총 피해량(1회성 공격 시 사용)")]
         [Min(0)] [SerializeField] protected long totalDamage = 1;

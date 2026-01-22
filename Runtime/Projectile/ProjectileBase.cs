@@ -251,7 +251,7 @@ namespace GGemCo2DCore
             {
                 damage     = Damage,
                 attacker   = FromCharacter ? FromCharacter.gameObject : null,
-                damageType = SkillConstants.DamageType.Physic // TODO: 테이블 기반 타입 적용 시 확장
+                damageType = ConfigCommon.DamageType.Physic // TODO: 테이블 기반 타입 적용 시 확장
             };
             area.target?.TakeDamage(md);
         }
