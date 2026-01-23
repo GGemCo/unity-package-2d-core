@@ -305,7 +305,7 @@ namespace GGemCo2DCore
         /// </summary>
         /// <param name="monster"></param>
         /// <returns></returns>
-        protected bool AreFacingEachOther(Transform monster)
+        public bool AreFacingEachOther(Transform monster)
         {
             CharacterBase player = SceneGame.Instance.player.GetComponent<CharacterBase>();
             CharacterBase monsterChar = monster.GetComponent<CharacterBase>();
