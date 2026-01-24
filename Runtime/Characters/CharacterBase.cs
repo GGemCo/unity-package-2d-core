@@ -9,7 +9,7 @@ namespace GGemCo2DCore
     /// <summary>
     /// 캐릭터 공용 
     /// </summary>
-    public class CharacterBase : CharacterStat
+    public class CharacterBase : CharacterStat, ICharacterActionController
     {
         [Header("캐릭터 정보")]
         // 캐릭터 타입
@@ -391,6 +391,9 @@ namespace GGemCo2DCore
         public void SetStatusAttackComboWait() => SetStatus(CharacterConstants.CharacterStatus.AttackComboWait);
         public void SetStatusDontMove() => SetStatus(CharacterConstants.CharacterStatus.DontMove);
         public void SetStatusMoveForce() => SetStatus(CharacterConstants.CharacterStatus.MoveForce);
+        public void SetStatusCastingSkill() => SetStatus(CharacterConstants.CharacterStatus.CastingSkill);
+        public void SetStatusUseSkill() => SetStatus(CharacterConstants.CharacterStatus.UseSkill);
+
         public void SetStatusDamage() => SetStatus(CharacterConstants.CharacterStatus.Damage);
         public void SetStatusJump() => SetStatus(CharacterConstants.CharacterStatus.Jump);
         public void SetStatusKnockback() => SetStatus(CharacterConstants.CharacterStatus.Knockback);
@@ -910,5 +913,36 @@ namespace GGemCo2DCore
             // (Core는 Affect를 직접 참조하지 않는다.)
             AffectRuntimeBridge.EnsureAffectSystem(gameObject);
         }
+        /// <summary>
+        /// 외부 시스템(스킬, AI 등)에서 캐릭터의 상태 전환을 요청합니다.
+        /// Skill 패키지는 직접 <see cref="CharacterBase"/>를 조작하지 않고 이 API를 사용해야 합니다.
+        /// </summary>
+        public bool RequestAction(in CharacterActionRequest request)
+        {
+            // 사망 상태에서는 새로운 액션을 받지 않습니다.
+            if (_currentStatus == CharacterConstants.CharacterStatus.Dead)
+                return false;
+
+            if (request.StopMove)
+            {
+                // 이동 입력/방향을 즉시 중단합니다.
+                directionNormalize = Vector3.zero;
+            }
+
+            SetStatus(request.Status);
+            return true;
+        }
+
+        /// <summary>
+        /// 특정 상태를 종료합니다(현재 상태가 일치할 때만 해제).
+        /// </summary>
+        public void ClearAction(CharacterConstants.CharacterStatus status)
+        {
+            if (_currentStatus != status) return;
+
+            // 기본 복귀 정책: Idle. (필요 시 호출부/상태머신 정책에 맞춰 확장)
+            SetStatus(CharacterConstants.CharacterStatus.Idle);
+        }
+
     }
 }

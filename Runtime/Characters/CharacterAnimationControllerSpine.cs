@@ -1,4 +1,4 @@
-﻿#if GGEMCO_USE_SPINE
+#if GGEMCO_USE_SPINE
 using System.Collections;
 using System.Collections.Generic;
 using Spine;
@@ -250,6 +250,39 @@ namespace GGemCo2DCore
             return FindAnimation(animationName) != null;
         }
 
+
+        /// <summary>
+        /// 스킬 애니메이션을 재생합니다.
+        /// </summary>
+        public void PlaySkillAnimation(in SkillAnimationRequest request)
+        {
+            if (characterBase != null && characterBase.IsStatusDead()) return;
+
+            string animationName = !string.IsNullOrEmpty(request.OverrideAnimationName)
+                ? request.OverrideAnimationName
+                : SkillAnimationNaming.GetName(request.SkillUid, request.Phase);
+
+            if (string.IsNullOrEmpty(animationName)) return;
+            if (FindAnimation(animationName) == null) return;
+
+            PlayAnimation(animationName, request.Loop, request.TimeScale);
+        }
+
+        /// <summary>
+        /// 스킬 애니메이션 재생을 중단합니다.
+        /// </summary>
+        public void StopSkillAnimation()
+        {
+            if (SkeletonAnimation == null) return;
+
+            // 스킬 애니메이션이 강제로 끊길 때, 부드러운 전환을 위해 Empty로 보냅니다.
+            SkeletonAnimation.AnimationState.SetEmptyAnimation(0, 0.05f);
+            if (characterBase != null && !characterBase.IsStatusDead())
+            {
+                // 기본 정책: 즉시 대기 애니메이션으로 복귀
+                PlayWaitAnimation();
+            }
+        }
     }
 }
 #endif

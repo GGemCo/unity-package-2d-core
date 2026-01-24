@@ -1,4 +1,4 @@
-﻿using System.Collections;
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -355,6 +355,35 @@ namespace GGemCo2DCore
         public bool HasAnimation(string animationName)
         {
             return GetClipByName(animationName) != null;
+        }
+
+        /// <summary>
+        /// 스킬 애니메이션을 재생합니다.
+        /// </summary>
+        public void PlaySkillAnimation(in SkillAnimationRequest request)
+        {
+            if (_characterBase != null && _characterBase.IsStatusDead()) return;
+
+            string animationName = !string.IsNullOrEmpty(request.OverrideAnimationName)
+                ? request.OverrideAnimationName
+                : SkillAnimationNaming.GetName(request.SkillUid, request.Phase);
+
+            if (string.IsNullOrEmpty(animationName)) return;
+            if (!HasAnimation(animationName)) return;
+
+            PlayAnimation(animationName, request.Loop, request.TimeScale);
+        }
+
+        /// <summary>
+        /// 스킬 애니메이션 재생을 중단합니다.
+        /// </summary>
+        public void StopSkillAnimation()
+        {
+            if (Animator == null) return;
+            if (_characterBase != null && _characterBase.IsStatusDead()) return;
+
+            // 기본 정책: 대기 애니메이션으로 복귀
+            PlayWaitAnimation();
         }
     }
 }

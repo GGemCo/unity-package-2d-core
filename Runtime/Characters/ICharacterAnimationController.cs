@@ -1,4 +1,4 @@
-﻿using System.Collections;
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -113,5 +113,19 @@ namespace GGemCo2DCore
         float GetCharacterAnimationDuration(string animationName, bool isMilliseconds = true);
         bool HasAnimation(string stateName);
         Dictionary<string, float> GetAnimationAllLength();
+
+        // ----------------------
+        // Skill Animation (Core)
+        // ----------------------
+        /// <summary>
+        /// 스킬 애니메이션을 재생한다.
+        /// </summary>
+        void PlaySkillAnimation(in SkillAnimationRequest request);
+
+        /// <summary>
+        /// 스킬 애니메이션 재생을 중단한다.
+        /// (구현체 정책에 따라 빈 애니메이션/기본 대기 애니메이션으로 전환할 수 있다)
+        /// </summary>
+        void StopSkillAnimation();
     }
 }
