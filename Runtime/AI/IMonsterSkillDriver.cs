@@ -6,7 +6,7 @@ namespace GGemCo2DCore
     /// 몬스터 AI(예: BT)가 스킬 시스템을 간접 호출할 수 있도록 제공하는 최소 실행 인터페이스.
     /// </summary>
     /// <remarks>
-    /// Core는 Skill 패키지 타입에 의존하지 않기 위해, 스킬 식별자는 문자열(skillId)로만 전달한다.
+    /// Core는 Skill 패키지 타입에 의존하지 않기 위해, 스킬 식별자는 문자열(skillUid(int)로만 전달한다.
     /// </remarks>
     public interface IMonsterSkillDriver
     {
@@ -18,10 +18,10 @@ namespace GGemCo2DCore
         /// <summary>
         /// 스킬 사용을 시도한다.
         /// </summary>
-        /// <param name="skillId">사용할 스킬 식별자(예: SK_0001).</param>
+        /// <param name="skillUid">사용할 스킬 UID(테이블 Uid).</param>
         /// <param name="target">스킬 타겟/방향 정보.</param>
         /// <returns>시도 결과.</returns>
-        SkillUseResult TryUseSkill(string skillId, in MonsterSkillTarget target);
+        SkillUseResult TryUseSkill(int skillUid, in MonsterSkillTarget target);
     }
 
     public enum SkillUseResult

@@ -380,6 +380,8 @@ namespace GGemCo2DCore
         public bool IsStatusClimb() => _currentStatus == CharacterConstants.CharacterStatus.Climb;
         public bool IsStatusPush() => _currentStatus == CharacterConstants.CharacterStatus.Push;
         public bool IsStatusSimulationTool() => _currentStatus == CharacterConstants.CharacterStatus.SimulationTool;
+        public bool IsStatusCastingSkill() => _currentStatus == CharacterConstants.CharacterStatus.CastingSkill;
+        public bool IsStatusUseSkill() => _currentStatus == CharacterConstants.CharacterStatus.UseSkill;
         public CharacterConstants.CharacterStatus GetCurrentStatus() => _currentStatus;
         
         private void SetStatus(CharacterConstants.CharacterStatus value) => _currentStatus = value;
@@ -941,7 +943,8 @@ namespace GGemCo2DCore
             if (_currentStatus != status) return;
 
             // 기본 복귀 정책: Idle. (필요 시 호출부/상태머신 정책에 맞춰 확장)
-            SetStatus(CharacterConstants.CharacterStatus.Idle);
+            // todo. 정리 필요. casting, skill 사용 애니메이션 마지막 프레임에 GGemCoAniEventComplete 호출로 stop 처리를 하고 있다.
+            // SetStatus(CharacterConstants.CharacterStatus.Idle);
         }
 
     }

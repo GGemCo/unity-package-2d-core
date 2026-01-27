@@ -126,7 +126,65 @@ namespace GGemCo2DCore
         private void OnKeyDownSkill(KeyCode keyCode)
         {
             // todo. 정리 필요
+            if (SceneGame == null) return;
+            var playerGo = SceneGame.player;
+            if (playerGo == null) return;
+
+            // 1) 어떤 슬롯인지 결정
+            if (!_indexByKeyCode.TryGetValue(keyCode, out int slotIndex))
+                return;
+
+            // 2) 세이브 데이터에서 스킬 UID 조회
+/*
+            var quickSlot = SceneGame.Instance.saveDataManager?.QuickSlot;
+            if (quickSlot == null) return;
+
+            var all = quickSlot.GetAllDatas();
+            if (all == null || !all.TryGetValue(slotIndex, out var iconData) || iconData == null)
+                return;
+            int skillUid = iconData.Uid;
+            if (skillUid <= 0) return;
+*/
+            int skillUid = 10001;
+
+            // (선택) Count를 “남은 횟수/탄약”처럼 쓰는 정책이면 여기서 체크
+            // 무제한 스킬이면 Count를 0으로 저장할 수도 있으니,
+            // 프로젝트 정책에 맞춰 조건을 조정하세요.
+            // if (iconData.Count <= 0) return;
+
+            // 3) Core 추상화(드라이버)로 스킬 사용 요청
+            // Core가 Skill 패키지 타입을 몰라도 되게 GetComponent<Interface>로 찾습니다.
+            var driver = playerGo.GetComponent<IMonsterSkillDriver>();
+            if (driver == null) return;
+
+            if (driver.IsSkillBusy) return;
+
+            // 4) 최소 타겟 컨텍스트 구성 (현재 Core에는 “플레이어 락온/조준” 시스템이 명확히 없으므로,
+            //    우선은 forward + 자기 위치 기반으로 전달)
+            var forward = ResolveForward2D(playerGo);
+            var target = new MonsterSkillTarget(
+                lockedTarget: null,
+                groundPoint: playerGo.transform.position,
+                forward: forward
+            );
+
+            driver.TryUseSkill(skillUid, target);
         }
+        private static Vector2 ResolveForward2D(GameObject caster)
+        {
+            // CharacterBase가 있으면 CurrentFacing 기반으로 방향을 안정적으로 만들 수 있습니다.
+            var cb = caster.GetComponent<CharacterBase>();
+            if (cb != null)
+            {
+                return CharacterConstants.FacingToVector2(cb.CurrentFacing);
+            }
+
+            // fallback: transform.right(2D 프로젝트에서 오른쪽이 정방향인 경우)
+            var r = caster.transform.right;
+            var v = new Vector2(r.x, r.y);
+            return v.sqrMagnitude < 1e-6f ? Vector2.right : v.normalized;
+        }
+
         /// <summary>
         /// 아이콘 우클릭했을때 처리 
         /// </summary>

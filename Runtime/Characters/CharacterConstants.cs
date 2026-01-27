@@ -151,5 +151,21 @@ namespace GGemCo2DCore
             Battle, // 전투 
             EndTilemapY // 맵 Y좌표를 벗어 났을 때
         }
+
+        public static Vector2 FacingToVector2(FacingDirection8 facing)
+        {
+            return facing switch
+            {
+                FacingDirection8.Right => Vector2.right,
+                FacingDirection8.UpRight => new Vector2(1, 1).normalized,
+                FacingDirection8.Up => Vector2.up,
+                FacingDirection8.UpLeft => new Vector2(-1, 1).normalized,
+                FacingDirection8.Left => Vector2.left,
+                FacingDirection8.DownLeft => new Vector2(-1, -1).normalized,
+                FacingDirection8.Down => Vector2.down,
+                FacingDirection8.DownRight => new Vector2(1, -1).normalized,
+                _ => Vector2.right
+            };
+        }
     }
 }
