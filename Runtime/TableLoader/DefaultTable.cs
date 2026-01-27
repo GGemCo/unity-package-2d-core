@@ -186,7 +186,7 @@ namespace GGemCo2DCore
         /// </summary>
         protected static int[] ConvertIntArray(string value)
         {
-            if (value == "0") return Array.Empty<int>();
+            if (value == "0" || string.IsNullOrEmpty(CheckNone(value))) return Array.Empty<int>();
             string[] values = value.Split(',');
             int[] intArray = new int[values.Length];
             for (int i = 0; i < values.Length; i++)
@@ -205,7 +205,7 @@ namespace GGemCo2DCore
         /// </summary>
         protected static Vector2 ConvertVector2(string value)
         {
-            if (string.IsNullOrWhiteSpace(value)) return Vector2.zero;
+            if (string.IsNullOrWhiteSpace(CheckNone(value))) return Vector2.zero;
             var parts = value.Split(',');
             var x = MathHelper.ParseFloat(parts.Length > 0 ? parts[0] : "0");
             var y = MathHelper.ParseFloat(parts.Length > 1 ? parts[1] : "0");
