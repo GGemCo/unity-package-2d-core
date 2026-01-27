@@ -91,7 +91,8 @@ namespace GGemCo2DCore
             Control,
             Simulation,
             Affect,
-            Skill
+            Skill,
+            AiBt
         }
         
          // 원소 속성 타입
