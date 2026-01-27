@@ -26,7 +26,8 @@ namespace GGemCo2DCore
         public int RegistFire;
         public int RegistCold;
         public int RegistLightning;
-        public string SkillIds;
+        public string SkillUid;
+        public string BtFileName;
     }
     /// <summary>
     /// 몬스터 테이블
@@ -62,7 +63,8 @@ namespace GGemCo2DCore
                 RegistCold = MathHelper.ParseInt(data["RegistCold"]),
                 RegistLightning = MathHelper.ParseInt(data["RegistLightning"]),
                 RewardGold = MathHelper.ParseInt(data["RewardGold"]),
-                SkillIds = (data["SkillIds"]),
+                SkillUid = (data["SkillUid"]),
+                BtFileName = (data["BtFileName"]),
             };
         }
     }

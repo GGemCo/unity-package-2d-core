@@ -121,6 +121,8 @@ namespace GGemCo2DCore
         protected void Reset()
         {
             StopAllCoroutines();
+            // 맵 언로드 시점에 외부 패키지가 Addressables 핸들을 해제할 수 있도록 알림.
+            CharacterSpawnHooks.NotifyMapUnload();
             _mapLoadCharacters?.Reset();
             _addressableLoaderPrefabCharacter?.Release();
         }

@@ -86,7 +86,11 @@ namespace GGemCo2DCore
                     if (!string.IsNullOrEmpty(content))
                     {
                         CharacterRegenDataList characterRegenDataList = JsonConvert.DeserializeObject<CharacterRegenDataList>(content);
-                        SpawnMonsters(characterRegenDataList.CharacterRegenDatas, mapTileCommon);
+                        var spawned = SpawnMonsters(characterRegenDataList.CharacterRegenDatas, mapTileCommon);
+
+                        // 스폰 이후 후처리(Hook): 예) 몬스터 BT 에셋 Addressables 로드/적용.
+                        // - 실패해도 로그만 남기고 맵 로딩은 계속 진행한다.
+                        await CharacterSpawnHooks.InvokeAllAsync(spawned);
                     }
                 }
             }
@@ -100,16 +104,22 @@ namespace GGemCo2DCore
         /// </summary>
         /// <param name="monsterList"></param>
         /// <param name="mapTileCommon"></param>
-        private void SpawnMonsters(List<CharacterRegenData> monsterList, MapTileCommon mapTileCommon)
+        private List<CharacterBase> SpawnMonsters(List<CharacterRegenData> monsterList, MapTileCommon mapTileCommon)
         {
+            var spawned = new List<CharacterBase>(monsterList != null ? monsterList.Count : 0);
+            if (monsterList == null) return spawned;
+
             foreach (CharacterRegenData monsterData in monsterList)
             {
                 int uid = monsterData.Uid;
                 if (uid <= 0) continue;
                 var info = tableMonster.GetDataByUid(uid);
                 if (info.Uid <= 0 || info.AnimationUid <= 0) continue;
-                SpawnMonster(uid, monsterData, mapTileCommon);
+                var ch = SpawnMonster(uid, monsterData, mapTileCommon);
+                if (ch != null) spawned.Add(ch);
             }
+
+            return spawned;
         }
         /// <summary>
         /// 몬스터 스폰하기
@@ -117,10 +127,10 @@ namespace GGemCo2DCore
         /// <param name="monsterUid"></param>
         /// <param name="monsterData"></param>
         /// <param name="mapTileCommon"></param>
-        private void SpawnMonster(int monsterUid, CharacterRegenData monsterData, MapTileCommon mapTileCommon)
+        private CharacterBase SpawnMonster(int monsterUid, CharacterRegenData monsterData, MapTileCommon mapTileCommon)
         {
             GameObject monster = SceneGame.Instance.CharacterManager.CreateMonster(monsterUid, monsterData);
-            if (!monster) return;
+            if (!monster) return null;
             monster.transform.SetParent(mapTileCommon.gameObject.transform);
             
             Monster myMonsterScript = monster.GetComponent<Monster>();
@@ -128,6 +138,8 @@ namespace GGemCo2DCore
             myMonsterScript.CreateHpBar();
             mapTileCommon.AddMonster(characterVid, monster);
             characterVid++;
+
+            return monster.GetComponent<CharacterBase>();
         }
         
         /// <summary>
