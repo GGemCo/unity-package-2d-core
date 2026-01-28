@@ -4,7 +4,7 @@ namespace GGemCo2DCore
 {
     public class CharacterBaseController : MonoBehaviour
     {
-        protected CharacterBase targetCharacter;
+        public CharacterBase targetCharacter;
         protected ICharacterAnimationController iCharacterAnimationController;
 
         // Collider & Bounds
@@ -162,7 +162,7 @@ namespace GGemCo2DCore
         /// <summary>
         /// 공격 실행
         /// </summary>
-        protected virtual void Attack()
+        public virtual void Attack()
         {
             if (targetCharacter.IsStatusAttack() || targetCharacter.IsStatusDead()) return;
 

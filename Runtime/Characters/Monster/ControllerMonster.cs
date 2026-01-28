@@ -9,10 +9,11 @@ namespace GGemCo2DCore
     /// </summary>
     public class ControllerMonster : CharacterBaseController, IMonsterCombatDriver
     {
-        private Coroutine coroutineAttack;
-        private float delayTimeAttack;
+        private Coroutine _coroutineAttack;
+        private float _delayTimeAttack;
         private Monster _monster;
         private Collider2D[] _collider2Ds;
+        private IMonsterBrain _brain;
 
         #region IMonsterCombatDriver
 
@@ -84,18 +85,34 @@ namespace GGemCo2DCore
         {
             base.Awake();
             _monster = targetCharacter as Monster;
+
+            EnsureLegacyBrain();
         }
 
         protected override void Start()
         {
             base.Start();
-            if (delayTimeAttack <= 0)
+            if (_delayTimeAttack <= 0)
             {
                 if (iCharacterAnimationController == null) return;
-                delayTimeAttack =
+                _delayTimeAttack =
                     iCharacterAnimationController.GetCharacterAnimationDuration(
                         ICharacterAnimationController.AttackAnim, false);
             }
+        }
+
+        /// <summary>
+        /// 레거시 Brain이 존재하지 않고, 외부 Brain도 아직 붙지 않은 경우 기본 레거시 Brain을 보장한다.
+        /// </summary>
+        private void EnsureLegacyBrain()
+        {
+            // BT 러너는 런타임에 AddComponent 될 수 있으므로,
+            // 여기서는 "없으면 추가"만 수행하고, 실제 실행은 MonsterBrainSelector 우선순위로 결정한다.
+            if (GetComponent<IMonsterBrain>() == null)
+            {
+                gameObject.AddComponent<MonsterLegacyBrain>();
+            }
+            _brain = MonsterBrainSelector.GetBrain(gameObject);
         }
 
         public void Initialize(Collider2D[] collider2Ds)
@@ -112,15 +129,18 @@ namespace GGemCo2DCore
             var raw = (targetCharacter.attackerTransform.position - targetCharacter.transform.position);
             targetCharacter.directionNormalize = GetFilteredDirection(raw);
         }
-#if GGEMCO_2D_CONTROL
-        private void FixedUpdate()
-#else
-        private void Update()
-#endif
+
+        /// <summary>
+        /// 레거시(비-BT) 몬스터 AI 의사결정 틱.
+        /// </summary>
+        /// <remarks>
+        /// - Unity Update/FixedUpdate는 <see cref="MonsterLegacyBrain"/>이 담당한다.
+        /// - 외부 Brain(BT 등)이 붙으면 우선순위에 의해 본 틱은 호출되지 않는다.
+        /// </remarks>
+        internal void TickLegacy()
         {
-            return;
             if (!CheckPossibleControl()) return;
-            
+
             if (targetCharacter.IsAggro())
             {
                 if (SearchAttackerTarget())
@@ -189,6 +209,7 @@ namespace GGemCo2DCore
             // 5) 경계 업데이트
             UpdateCheckMaxBounds();
 
+            // GcLogger.Log($"dir: {dir}, step: {targetCharacter.currentMoveStep}, speed: {targetCharacter.GetCurrentMoveSpeed()}, total speed: {speed}");
             Vector3 delta = dir * (speed * Time.deltaTime);
             
             // 6) 다음 위치
@@ -244,13 +265,13 @@ namespace GGemCo2DCore
             while (true)
             {
                 Attack();
-                yield return new WaitForSeconds(delayTimeAttack);
+                yield return new WaitForSeconds(_delayTimeAttack);
             }
         }
         /// <summary>
         /// 공격 실행
         /// </summary>
-        protected override void Attack()
+        public override void Attack()
         {
             // 공격자가 죽었을 때
             if (targetCharacter.IsAttackerStatusDead())
@@ -274,21 +295,21 @@ namespace GGemCo2DCore
         /// </summary>
         private void StartAttackCoroutine()
         {
-            if (coroutineAttack != null || targetCharacter.IsStatusAttack() || targetCharacter.IsStatusDead()
+            if (_coroutineAttack != null || targetCharacter.IsStatusAttack() || targetCharacter.IsStatusDead()
                 || targetCharacter.IsStatusKnockback()
                 ) return;
 
-            coroutineAttack = StartCoroutine(DownAttackByTime());
+            _coroutineAttack = StartCoroutine(DownAttackByTime());
         }
         /// <summary>
         /// 공격하기 코루틴 정지
         /// </summary>
         public void StopAttackCoroutine()
         {
-            if (coroutineAttack == null) return;
+            if (_coroutineAttack == null) return;
 
-            StopCoroutine(coroutineAttack);
-            coroutineAttack = null;
+            StopCoroutine(_coroutineAttack);
+            _coroutineAttack = null;
         }
         /// <summary>
         /// 어그로 on 이고 공격자 transform 이 있을때 플레이어가 몬스터 가까이 가면 attack 상태 처리
@@ -296,21 +317,8 @@ namespace GGemCo2DCore
         /// <param name="collision"></param>
         private void OnTriggerEnter2D(Collider2D collision)
         {
-            if (collision.CompareTag(ConfigTags.GetValue(ConfigTags.Keys.Player)))
-            {
-                if (targetCharacter.IsStatusDead()) return;
-                
-                if (targetCharacter.IsAggro() && targetCharacter.attackerTransform != null)
-                {
-                    Attack();
-                }
-                // 선공
-                else if (targetCharacter.GetAttackType() == CharacterConstants.AttackType.AggroFirst && targetCharacter.IsAggro() == false)
-                {
-                    targetCharacter.SetAggro(true);
-                    targetCharacter.SetAttackerTarget(collision.gameObject.transform);
-                }
-            }
+            if (_brain == null) return;
+            _brain.OnCharacterTriggerEnter(collision);
         }
         /// <summary>
         /// 몬스터 공격 범위 밖으로 플레이어가 나가면 공격 상태 취소하기
@@ -318,10 +326,8 @@ namespace GGemCo2DCore
         /// <param name="collision"></param>
         private void OnTriggerExit2D(Collider2D collision)
         {
-            if (collision.CompareTag(ConfigTags.GetValue(ConfigTags.Keys.Player)))
-            {
-                StopAttackCoroutine();
-            }
+            if (_brain == null) return;
+            _brain.OnCharacterTriggerExit(collision);
         }
 
         protected void OnSpineEventShake(Event @event)
