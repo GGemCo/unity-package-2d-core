@@ -6,13 +6,14 @@ namespace GGemCo2DCore
     /// 기존(레거시) 몬스터 AI 의사결정을 수행하는 Brain.
     /// </summary>
     /// <remarks>
-    /// - 실제 이동/공격 실행은 <see cref="ControllerMonster"/>가 담당하며,
-    ///   본 클래스는 "무엇을 할지" 판단하고 ControllerMonster의 레거시 틱을 호출한다.
+    /// - 실행(이동/공격)은 <see cref="ControllerMonster"/>가 담당한다.
+    /// - 본 클래스는 "무엇을 할지" 판단하고 <see cref="ControllerMonster.TickLegacy"/>를 호출한다.
     /// - BT 등 외부 Brain이 붙으면 <see cref="IMonsterBrain.Priority"/> 우선순위에 의해 자동으로 억제된다.
+    /// - Brain 틱은 <see cref="MonsterBrainTicker"/>가 담당한다(본 클래스는 Update/FixedUpdate를 사용하지 않는다).
     /// </remarks>
     [DisallowMultipleComponent]
     [RequireComponent(typeof(ControllerMonster))]
-    public sealed class MonsterLegacyBrain : MonoBehaviour, IMonsterBrain
+    public sealed class MonsterLegacyBrain : MonoBehaviour, IMonsterBrainTickable
     {
         // BT보다 낮게 설정한다.
         public int Priority => 0;
@@ -26,17 +27,14 @@ namespace GGemCo2DCore
             _controller = GetComponent<ControllerMonster>();
         }
 
-#if GGEMCO_2D_CONTROL
-        private void FixedUpdate()
-#else
-        private void Update()
-#endif
+        public void Tick()
         {
             if (_controller == null) return;
             if (!MonsterBrainSelector.IsHighestPriority(this, gameObject)) return;
 
             _controller.TickLegacy();
         }
+
         public void OnCharacterTriggerEnter(Collider2D collision)
         {
             if (!IsActive) return;
@@ -44,13 +42,14 @@ namespace GGemCo2DCore
             if (collision.CompareTag(ConfigTags.GetValue(ConfigTags.Keys.Player)))
             {
                 if (_controller.targetCharacter.IsStatusDead()) return;
-                
+
                 if (_controller.targetCharacter.IsAggro() && _controller.targetCharacter.attackerTransform != null)
                 {
                     _controller.Attack();
                 }
                 // 선공
-                else if (_controller.targetCharacter.GetAttackType() == CharacterConstants.AttackType.AggroFirst && _controller.targetCharacter.IsAggro() == false)
+                else if (_controller.targetCharacter.GetAttackType() == CharacterConstants.AttackType.AggroFirst &&
+                         _controller.targetCharacter.IsAggro() == false)
                 {
                     _controller.targetCharacter.SetAggro(true);
                     _controller.targetCharacter.SetAttackerTarget(collision.gameObject.transform);
@@ -67,6 +66,5 @@ namespace GGemCo2DCore
                 _controller.StopAttackCoroutine();
             }
         }
-
     }
 }

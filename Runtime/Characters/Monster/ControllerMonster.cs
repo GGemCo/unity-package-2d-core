@@ -13,7 +13,6 @@ namespace GGemCo2DCore
         private float _delayTimeAttack;
         private Monster _monster;
         private Collider2D[] _collider2Ds;
-        private IMonsterBrain _brain;
 
         #region IMonsterCombatDriver
 
@@ -112,10 +111,14 @@ namespace GGemCo2DCore
             {
                 gameObject.AddComponent<MonsterLegacyBrain>();
             }
-            _brain = MonsterBrainSelector.GetBrain(gameObject);
-        }
 
-        public void Initialize(Collider2D[] collider2Ds)
+            // Brain 틱은 중앙 틱커가 담당한다.
+            if (GetComponent<MonsterBrainTicker>() == null)
+            {
+                gameObject.AddComponent<MonsterBrainTicker>();
+            }
+
+        }public void Initialize(Collider2D[] collider2Ds)
         {
             _collider2Ds = collider2Ds;
         }
@@ -317,8 +320,8 @@ namespace GGemCo2DCore
         /// <param name="collision"></param>
         private void OnTriggerEnter2D(Collider2D collision)
         {
-            if (_brain == null) return;
-            _brain.OnCharacterTriggerEnter(collision);
+            if (!MonsterBrainSelector.TryGetHighestActiveBrain(gameObject, out var brain)) return;
+            brain.OnCharacterTriggerEnter(collision);
         }
         /// <summary>
         /// 몬스터 공격 범위 밖으로 플레이어가 나가면 공격 상태 취소하기
@@ -326,8 +329,8 @@ namespace GGemCo2DCore
         /// <param name="collision"></param>
         private void OnTriggerExit2D(Collider2D collision)
         {
-            if (_brain == null) return;
-            _brain.OnCharacterTriggerExit(collision);
+            if (!MonsterBrainSelector.TryGetHighestActiveBrain(gameObject, out var brain)) return;
+            brain.OnCharacterTriggerExit(collision);
         }
 
         protected void OnSpineEventShake(Event @event)
