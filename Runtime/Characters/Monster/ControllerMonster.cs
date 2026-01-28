@@ -78,6 +78,11 @@ namespace GGemCo2DCore
         /// <inheritdoc />
         public void RequestAttackOnce() => Attack();
 
+        public void RequestClearAggro()
+        {
+            targetCharacter.SetAggro(false);
+        }
+
         #endregion
 
         protected override void Awake()

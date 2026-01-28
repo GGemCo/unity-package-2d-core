@@ -60,5 +60,7 @@ namespace GGemCo2DCore
         /// 기본 공격(또는 주 공격)을 1회 요청한다.
         /// </summary>
         void RequestAttackOnce();
+
+        void RequestClearAggro();
     }
 }
