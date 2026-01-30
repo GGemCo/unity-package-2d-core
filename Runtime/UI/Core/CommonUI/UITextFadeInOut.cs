@@ -34,7 +34,7 @@ namespace GGemCo2DCore
             }
         }
 
-        private void Start()
+        private void OnEnable()
         {
             if (_textMesh != null)
                 _textMesh.alpha = startAlpha;
