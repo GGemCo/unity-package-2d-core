@@ -63,6 +63,24 @@ namespace GGemCo2DCore
         [Header("인 게임 시간")] 
         [Tooltip("사용/미사용")]
         public bool useInGameTime;
+
+        [Header("자동 이동")] 
+        [Tooltip("플레이어 자동 이동 시스템 사용 여부")]
+        public bool enableAutoMove;
+
+        [Tooltip("자동 이동 중 입력 잠금이 활성화되어도, 이동 입력만 막고(수동 이동 불가)\n공격/점프/대시/상호작용 입력은 허용합니다.")]
+        public bool autoMoveLockMovementOnly;
+
+        [Tooltip("맵 로드 직후(플레이어 스폰 직후) 자동 이동을 시작할지 여부\n- 연출/튜토리얼용 예시 옵션입니다.")]
+        public bool autoMoveStartOnMapLoad;
+
+        [Tooltip("autoMoveStartOnMapLoad가 true일 때 사용할 방향(좌/우)")]
+        public AutoMoveDirection autoMoveStartDirection;
+
+        [Tooltip("autoMoveStartOnMapLoad가 true이고 무한 이동이 아닐 때, 유지 시간(초)")]
+        public float autoMoveStartDuration;
+        [Tooltip("자동 이동 취소 정책")]
+        public AutoMoveCancelPolicy autoMoveCancelPolicy;
         
         /// <summary>
         /// 기존 값이 비어있을 때만 기본값을 설정
@@ -103,6 +121,11 @@ namespace GGemCo2DCore
             facingDirectionType = ConfigCommon.FacingDirectionType.TwoWay;
             
             useInGameTime = false;
+
+            enableAutoMove = false;
+            autoMoveLockMovementOnly = false;
+            autoMoveStartOnMapLoad = false;
+            autoMoveStartDirection = AutoMoveDirection.Right;
         }
     }
 }

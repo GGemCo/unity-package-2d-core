@@ -67,6 +67,11 @@ namespace GGemCo2DCore
             _controllerPlayer = gameObject.AddComponent<ControllerPlayer>();
             _equipController = gameObject.AddComponent<EquipController>();
             _toolController = gameObject.AddComponent<ToolController>();
+            // 자동 이동(오토 워크)
+            // - Control 패키지 사용 시: InputManager가 IAutoMoveVectorProvider를 통해 이동 벡터를 오버라이드
+            // - Core 단독 사용 시: PlayerAutoMoveController가 직접 Run() 호출
+            // 순서 중요.
+            gameObject.AddComponent<PlayerAutoMoveController>();
         }
 
         /// <summary>

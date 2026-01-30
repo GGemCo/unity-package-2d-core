@@ -62,12 +62,38 @@ namespace GGemCo2DCore
                 scriptPlayer.SetMapSize(mapManager.GetMapSize());
                 scriptPlayer.Stop(true);
                 SceneGame.Instance.cameraManager?.SetFollowTarget(SceneGame.Instance.player?.transform);
+
+                // (예시 연결) 플레이어 스폰 직후 자동 이동 시작
+                // - GGemCoSettings에서 전역 활성/비활성 및 시작 옵션을 제어합니다.
+                TryStartAutoMoveOnMapLoad(scriptPlayer);
             }
             catch (Exception e)
             {
                 Console.WriteLine(e);
                 throw;
             }
+        }
+
+        private static void TryStartAutoMoveOnMapLoad(Player player)
+        {
+            if (player == null) return;
+
+            var settings = AddressableLoaderSettings.Instance ? AddressableLoaderSettings.Instance.settings : null;
+            if (settings == null) return;
+            if (!settings.enableAutoMove) return;
+            if (!settings.autoMoveStartOnMapLoad) return;
+
+            var autoMove = player.GetComponent<PlayerAutoMoveController>();
+            if (autoMove == null) return;
+
+            autoMove.StartAutoMove(new AutoMoveRequest
+            {
+                moveType = AutoMoveType.Direction,
+                direction = settings.autoMoveStartDirection,
+                infiniteMove = settings.autoMoveStartDuration <= 0,
+                duration = Mathf.Max(0.01f, settings.autoMoveStartDuration),
+                cancelPolicy = settings.autoMoveCancelPolicy
+            }, lockInput: true);
         }
         /// <summary>
         /// 몬스터 스폰하기
