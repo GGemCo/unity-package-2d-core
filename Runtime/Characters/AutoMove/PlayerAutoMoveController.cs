@@ -9,10 +9,12 @@ namespace GGemCo2DCore
     /// - Core 단독(Old/New Input) 사용 시: FixedUpdate에서 직접 이동 실행
     /// </summary>
     [DisallowMultipleComponent]
-    public sealed class PlayerAutoMoveController : MonoBehaviour, IAutoMoveVectorProvider
+    public sealed class PlayerAutoMoveController : MonoBehaviour, IAutoMoveVectorProvider, IAutoMoveSuspendService
     {
         public bool IsAutoMoveActive => _isActive;
         public bool IsInputLocked => _isActive && _lockInput;
+
+        public bool IsAutoMoveSuspended => _suspendCount > 0;
 
         private CharacterBase _character;
         private CharacterBaseController _controller;
@@ -23,6 +25,9 @@ namespace GGemCo2DCore
         private AutoMoveRequest _request;
         private bool _isActive;
         private bool _lockInput;
+        private int _nextSuspendId;
+        private int _suspendCount;
+        private AutoMoveSuspendToken[] _suspendTokens;
         private float _elapsed;
         private float _originalMoveStep;
 
@@ -34,6 +39,12 @@ namespace GGemCo2DCore
             _playerInput = GetComponent<UnityEngine.InputSystem.PlayerInput>();
 #endif
             _originalMoveStep = _character != null ? _character.currentMoveStep : 0f;
+
+            // Suspend 토큰은 런타임에만 사용되며, 일반적으로 동시에 1~2개(컷씬/벽액션) 수준이므로
+            // 작은 고정 배열로 관리합니다(추가 필요 시 자동 확장).
+            _nextSuspendId = 1;
+            _suspendCount = 0;
+            _suspendTokens = new AutoMoveSuspendToken[4];
         }
 
         private void FixedUpdate()
@@ -62,6 +73,17 @@ namespace GGemCo2DCore
             isDrivenByControl = _playerInput != null;
 #endif
 
+            // Suspend 중에는 이동/완료 판정을 진행하지 않는다(Pause).
+            if (IsAutoMoveSuspended)
+            {
+                if (!isDrivenByControl && _character != null)
+                {
+                    _character.directionNormalize = Vector2.zero;
+                    _character.Stop();
+                }
+                return;
+            }
+
             Vector2 moveVector = GetMoveVector();
 
             if (!isDrivenByControl)
@@ -78,6 +100,52 @@ namespace GGemCo2DCore
             }
 
             TickCompletion();
+        }
+
+        public AutoMoveSuspendToken AcquireSuspend(AutoMoveSuspendReason reason)
+        {
+            // AutoMove가 비활성이라도, 잠금은 누적해두었다가 활성화 시 즉시 반영되도록 한다.
+            // (Wall 액션 중 AutoMove 시작 요청이 들어오는 케이스 대비)
+            int id = _nextSuspendId++;
+            if (_nextSuspendId == int.MaxValue) _nextSuspendId = 1;
+
+            EnsureSuspendCapacity(_suspendCount + 1);
+            var token = new AutoMoveSuspendToken(id, reason);
+            _suspendTokens[_suspendCount++] = token;
+            return token;
+        }
+
+        public void ReleaseSuspend(AutoMoveSuspendToken token)
+        {
+            if (!token.IsValid || _suspendCount <= 0) return;
+
+            for (int i = 0; i < _suspendCount; i++)
+            {
+                if (_suspendTokens[i].id != token.id) continue;
+
+                // swap-remove
+                int last = _suspendCount - 1;
+                _suspendTokens[i] = _suspendTokens[last];
+                _suspendTokens[last] = default;
+                _suspendCount--;
+                return;
+            }
+        }
+
+        private void EnsureSuspendCapacity(int needed)
+        {
+            if (_suspendTokens == null)
+            {
+                _suspendTokens = new AutoMoveSuspendToken[Mathf.Max(4, needed)];
+                return;
+            }
+
+            if (_suspendTokens.Length >= needed) return;
+
+            int newSize = Mathf.Max(_suspendTokens.Length * 2, needed);
+            var next = new AutoMoveSuspendToken[newSize];
+            Array.Copy(_suspendTokens, next, _suspendTokens.Length);
+            _suspendTokens = next;
         }
 
         /// <summary>
@@ -178,6 +246,9 @@ namespace GGemCo2DCore
         {
             if (!_isActive || _request == null || _character == null) return Vector2.zero;
 
+            // Pause 상태에서는 이동 벡터를 제공하지 않는다.
+            if (IsAutoMoveSuspended) return Vector2.zero;
+
             switch (_request.moveType)
             {
                 case AutoMoveType.Direction:
@@ -217,6 +288,9 @@ namespace GGemCo2DCore
         private void TickCompletion()
         {
             if (_request == null || _character == null) return;
+
+            // Pause 상태에서는 완료 조건을 진행하지 않는다.
+            if (IsAutoMoveSuspended) return;
 
             if (_request.moveType == AutoMoveType.Direction)
             {
