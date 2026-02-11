@@ -225,8 +225,22 @@ namespace GGemCo2DCore
             Vector3 next = cur + delta;
 
             // 7) 경계 클램프
-            next.x = Mathf.Clamp(next.x, minBounds.x, maxBounds.x);
-            next.y = Mathf.Clamp(next.y, minBounds.y, maxBounds.y);
+            // ---- 방향 개별 on/off를 반영한 경계 Clamp ----
+            next.x = ClampAxisWithSides(
+                value: next.x,
+                minEnabled: LimitLeft,
+                minValue:   minBounds.x,
+                maxEnabled: LimitRight,
+                maxValue:   maxBounds.x
+            );
+
+            next.y = ClampAxisWithSides(
+                value: next.y,
+                minEnabled: LimitBottom,
+                minValue:   minBounds.y,
+                maxEnabled: LimitTop,
+                maxValue:   maxBounds.y
+            );
             
             // 8) Y 이동 금지 옵션일 때, 위치의 Y는 고정(중력 없이 이동하는 현재 구조에 적합)
             if (!_monster.canMoveX) next.x = cur.x;
@@ -238,6 +252,7 @@ namespace GGemCo2DCore
             StopAttackCoroutine();
             return true;
         }
+        
         /// <summary>
         /// 주위에서 공격자를 검색
         /// </summary>

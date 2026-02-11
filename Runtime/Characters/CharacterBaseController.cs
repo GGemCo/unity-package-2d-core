@@ -20,19 +20,19 @@ namespace GGemCo2DCore
 
         // ---- 경계 체크 on/off (방향별) ----
         [Header("Boundary Limit Switches")]
-        [Tooltip("왼쪽 경계 제한 활성화")] private bool _limitLeft = true;
-        [Tooltip("오른쪽 경계 제한 활성화")] private bool _limitRight = true;
-        [Tooltip("아래(바닥) 경계 제한 활성화")] private bool _limitBottom = true;
-        [Tooltip("위(천장) 경계 제한 활성화")] private bool _limitTop = true;
+        [Tooltip("왼쪽 경계 제한 활성화")] protected bool LimitLeft = true;
+        [Tooltip("오른쪽 경계 제한 활성화")] protected bool LimitRight = true;
+        [Tooltip("아래(바닥) 경계 제한 활성화")] protected bool LimitBottom = true;
+        [Tooltip("위(천장) 경계 제한 활성화")] protected bool LimitTop = true;
 
         protected virtual void Awake()
         {
             targetCharacter = GetComponent<CharacterBase>();
             if (!AddressableLoaderSettings.Instance?.playerSettings) return;
-            _limitLeft = AddressableLoaderSettings.Instance.playerSettings.limitBoundaryLeft;
-            _limitRight = AddressableLoaderSettings.Instance.playerSettings.limitBoundaryRight;
-            _limitBottom = AddressableLoaderSettings.Instance.playerSettings.limitBoundaryBottom;
-            _limitTop = AddressableLoaderSettings.Instance.playerSettings.limitBoundaryTop;
+            LimitLeft = AddressableLoaderSettings.Instance.playerSettings.limitBoundaryLeft;
+            LimitRight = AddressableLoaderSettings.Instance.playerSettings.limitBoundaryRight;
+            LimitBottom = AddressableLoaderSettings.Instance.playerSettings.limitBoundaryBottom;
+            LimitTop = AddressableLoaderSettings.Instance.playerSettings.limitBoundaryTop;
         }
 
         protected virtual void Start()
@@ -121,17 +121,17 @@ namespace GGemCo2DCore
             // ---- 방향 개별 on/off를 반영한 경계 Clamp ----
             next.x = ClampAxisWithSides(
                 value: next.x,
-                minEnabled: _limitLeft,
+                minEnabled: LimitLeft,
                 minValue:   minBounds.x,
-                maxEnabled: _limitRight,
+                maxEnabled: LimitRight,
                 maxValue:   maxBounds.x
             );
 
             next.y = ClampAxisWithSides(
                 value: next.y,
-                minEnabled: _limitBottom,
+                minEnabled: LimitBottom,
                 minValue:   minBounds.y,
-                maxEnabled: _limitTop,
+                maxEnabled: LimitTop,
                 maxValue:   maxBounds.y
             );
 
@@ -142,7 +142,7 @@ namespace GGemCo2DCore
         /// <summary>
         /// 경계(최소/최대)를 방향별 스위치에 따라 선택적으로 적용
         /// </summary>
-        private static float ClampAxisWithSides(float value, bool minEnabled, float minValue, bool maxEnabled, float maxValue)
+        protected static float ClampAxisWithSides(float value, bool minEnabled, float minValue, bool maxEnabled, float maxValue)
         {
             // min/max 모두 off → 제한 없음
             if (!minEnabled && !maxEnabled) return value;
