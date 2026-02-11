@@ -52,7 +52,12 @@ namespace GGemCo2DCore
         
         [Header("상태 및 스탯")] public readonly BehaviorSubject<long> CurrentHp = new(0);
         public readonly BehaviorSubject<long> CurrentMp = new(0);
+        public readonly BehaviorSubject<long> CurrentStamina = new(0);
 
+        
+        [Header("전투")] 
+        public readonly BehaviorSubject<CharacterConstants.BattleStatus> CurrentBattleStatus = new(CharacterConstants.BattleStatus.None);
+        
         [Header("스킬")] 
         protected bool IsUseSkill = false;
         private ProjectileController _projectileController;
@@ -63,6 +68,9 @@ namespace GGemCo2DCore
         // 현재 상태
         private CharacterConstants.CharacterStatus _currentStatus;
         private CharacterConstants.CharacterSubStatus _currentSubStatus;
+        // 전투 상태(동작 상태와 분리)
+        private CharacterConstants.BattleStatus _battleStatus = CharacterConstants.BattleStatus.None;
+
         // fade in, out 효과 시작 여부. 맵에서 컬링 될때 사용
         private bool _isStartFade;
         private float _characterHeight;
@@ -385,8 +393,23 @@ namespace GGemCo2DCore
         public bool IsStatusCastingSkill() => _currentStatus == CharacterConstants.CharacterStatus.CastingSkill;
         public bool IsStatusUseSkill() => _currentStatus == CharacterConstants.CharacterStatus.UseSkill;
         public CharacterConstants.CharacterStatus GetCurrentStatus() => _currentStatus;
+
+        public CharacterConstants.BattleStatus GetBattleStatus() => _battleStatus;
+        public bool IsInBattle() => _battleStatus == CharacterConstants.BattleStatus.InBattle;
+
         
         private void SetStatus(CharacterConstants.CharacterStatus value) => _currentStatus = value;
+
+        private void SetBattleStatus(CharacterConstants.BattleStatus value)
+        {
+            if (_battleStatus == value) return;
+            _battleStatus = value;
+            CurrentBattleStatus.OnNext(_battleStatus);
+        }
+
+        public void SetBattleStatusNone() => SetBattleStatus(CharacterConstants.BattleStatus.None);
+        public void SetBattleStatusInBattle() => SetBattleStatus(CharacterConstants.BattleStatus.InBattle);
+
         public void SetStatusNone() => SetStatus(CharacterConstants.CharacterStatus.None);
         public void SetStatusDead() => SetStatus(CharacterConstants.CharacterStatus.Dead);
         public void SetStatusIdle() => SetStatus(CharacterConstants.CharacterStatus.Idle);
@@ -550,6 +573,10 @@ namespace GGemCo2DCore
         public void SetAggro(bool set)
         {
             _isAggro = set;
+            // 어그로는 전투 진입/종료의 대표 신호로 사용한다.
+            // (동작 상태와 분리된 축에서 UI/BGM 등이 반응할 수 있도록 BattleStatus를 갱신)
+            if (set) SetBattleStatusInBattle();
+            else SetBattleStatusNone();
         }
         public bool IsAggro()
         {

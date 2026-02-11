@@ -68,7 +68,17 @@ namespace GGemCo2DCore
             SimulationTool
         }
         
-        [System.Flags]
+        /// <summary>
+        /// 전투 상태 (동작 상태(CharacterStatus)와 별도의 축)
+        /// - UI(전투 시작/종료), BGM, 이펙트, 카메라 등 '전투 여부'에 반응하는 시스템을 위해 사용합니다.
+        /// - 이동/공격/점프 같은 동작 상태와 결합하지 않기 위해 별도 enum으로 관리합니다.
+        /// </summary>
+        public enum BattleStatus
+        {
+            None = 0,
+            InBattle = 1,
+        }
+
         public enum CharacterSubStatus
         {
             None        = 0,

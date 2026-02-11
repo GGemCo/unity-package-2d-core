@@ -92,11 +92,12 @@ namespace GGemCo2DCore
         protected override void InitializeByTable()
         {
             if (AddressableLoaderSettings.Instance == null) return;
-            SetBaseInfos(_playerSettings.statAtk, _playerSettings.statDef, _playerSettings.statHp, _playerSettings.statMp,
+            SetBaseInfos(_playerSettings.statAtk, _playerSettings.statDef, _playerSettings.statHp, _playerSettings.statMp, _playerSettings.statStamina,
                 _playerSettings.statMoveSpeed, _playerSettings.statAttackSpeed, _playerSettings.statRegistFire,
                 _playerSettings.statRegistCold, _playerSettings.statRegistLightning);
             CurrentHp.OnNext(TotalHp.Value);
             CurrentMp.OnNext(TotalMp.Value);
+            CurrentStamina.OnNext(TotalStamina.Value);
             currentMoveStep = _playerSettings.statMoveStep;
             originalScaleX = transform.localScale.x;
             SetScale(_playerSettings.startScale);

@@ -94,7 +94,7 @@ namespace GGemCo2DCore
             // GcLogger.Log("InitializationStat uid: "+uid+" / info.uid: "+info.uid+" / StatMoveSpeed: "+info.statMoveSpeed);
             if (info.Uid <= 0) return;
             characterName = info.Name;
-            SetBaseInfos(info.StatAtk, info.StatDef, info.StatHp, 0, info.StatMoveSpeed, info.StatAttackSpeed,
+            SetBaseInfos(info.StatAtk, info.StatDef, info.StatHp, 0, 0, info.StatMoveSpeed, info.StatAttackSpeed,
                 info.RegistFire, info.RegistCold, info.RegistLightning);
             CurrentHp.OnNext(info.StatHp);
             SetScale(info.Scale);

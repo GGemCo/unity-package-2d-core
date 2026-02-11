@@ -28,6 +28,8 @@ namespace GGemCo2DCore
         public int statHp;
         [Tooltip("플레이어의 기본 마력")]
         public int statMp;
+        [Tooltip("플레이어의 기본 스테미나")]
+        public int statStamina;
         [Tooltip("애니메이션 1스텝당 이동 거리 (픽셀 단위)")]
         public int statMoveStep;
         [Tooltip("공격 속도 (100 → 1배속)")]
@@ -63,6 +65,7 @@ namespace GGemCo2DCore
             statDef = 100;
             statHp = 100;
             statMp = 100;
+            statStamina = 100;
             statAttackSpeed = 100;
             statMoveStep = 100;
             statMoveSpeed = 100;

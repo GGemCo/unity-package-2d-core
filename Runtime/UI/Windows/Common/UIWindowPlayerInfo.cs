@@ -19,6 +19,7 @@ namespace GGemCo2DCore
             Def,
             Hp,
             Mp,
+            Stamina,
             MoveSpeed,
             AttackSpeed,
             CriticalDamage,
@@ -37,6 +38,8 @@ namespace GGemCo2DCore
         public TextMeshProUGUI textTotalHp;
         [Tooltip("마력")]
         public TextMeshProUGUI textTotalMp;
+        [Tooltip("스테미나")]
+        public TextMeshProUGUI textTotalStamina;
         [Tooltip("이동속도")]
         public TextMeshProUGUI textTotalMoveSpeed;
         [Tooltip("공격속도")]
@@ -50,7 +53,7 @@ namespace GGemCo2DCore
         [HideInInspector] public TextMeshProUGUI textTotalCriticalDamage;
         [HideInInspector] public TextMeshProUGUI textTotalCriticalProbability;
 
-        private Dictionary<IndexPlayerInfo, TextMeshProUGUI> playerInfos = new();
+        private Dictionary<IndexPlayerInfo, TextMeshProUGUI> _playerInfos = new();
         
         protected override void Awake()
         {
@@ -59,12 +62,13 @@ namespace GGemCo2DCore
             if (TableLoaderManager.Instance == null) return;
             base.Awake();
             
-            playerInfos = new()
+            _playerInfos = new()
             {
                 { IndexPlayerInfo.Atk, textTotalAtk },
                 { IndexPlayerInfo.Def, textTotalDef },
                 { IndexPlayerInfo.Hp, textTotalHp },
                 { IndexPlayerInfo.Mp, textTotalMp },
+                { IndexPlayerInfo.Stamina, textTotalStamina },
                 { IndexPlayerInfo.MoveSpeed, textTotalMoveSpeed },
                 { IndexPlayerInfo.AttackSpeed, textTotalAttackSpeed },
                 { IndexPlayerInfo.CriticalDamage, textTotalCriticalDamage },
@@ -77,7 +81,7 @@ namespace GGemCo2DCore
         public void UpdateText(IndexPlayerInfo index, string label, long value)
         {
             if (index == IndexPlayerInfo.None) return;
-            if (playerInfos.TryGetValue(index, out var textUI) && textUI != null)
+            if (_playerInfos.TryGetValue(index, out var textUI) && textUI != null)
             {
                 textUI.text = $"{label}: {value}";
             }

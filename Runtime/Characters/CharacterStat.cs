@@ -15,6 +15,7 @@ namespace GGemCo2DCore
         private int BaseDef { get; set; }
         public int BaseHp { get; set; }
         private int BaseMp { get; set; }
+        private int BaseStamina { get; set; }
         private int BaseMoveSpeed { get; set; }
         private int BaseAttackSpeed { get; set; }
         private int BaseCriticalDamage { get; set; }
@@ -23,25 +24,27 @@ namespace GGemCo2DCore
         private int BaseRegistCold { get; set; }
         private int BaseRegistLightning { get; set; }
 
-        private readonly Dictionary<string, int> flatModifiers = new();
-        private readonly Dictionary<string, float> percentModifiers = new();
+        private readonly Dictionary<string, int> _flatModifiers = new();
+        private readonly Dictionary<string, float> _percentModifiers = new();
 
-        private long totalAtk,
-            totalDef,
-            totalHp,
-            totalMp,
-            totalMoveSpeed,
-            totalAttackSpeed,
-            totalCriticalDamage,
-            totalCriticalProbability,
-            totalRegistFire,
-            totalRegistCold,
-            totalRegistLightning;
+        private long _totalAtk,
+            _totalDef,
+            _totalHp,
+            _totalMp,
+            _totalStamina,
+            _totalMoveSpeed,
+            _totalAttackSpeed,
+            _totalCriticalDamage,
+            _totalCriticalProbability,
+            _totalRegistFire,
+            _totalRegistCold,
+            _totalRegistLightning;
         // 최종 적용된 스탯 (캐싱)
         public readonly BehaviorSubject<long> TotalAtk = new(1);
         public readonly BehaviorSubject<long> TotalDef = new(1);
         public readonly BehaviorSubject<long> TotalHp = new(100);
         public readonly BehaviorSubject<long> TotalMp = new(100);
+        public readonly BehaviorSubject<long> TotalStamina = new(100);
         public readonly BehaviorSubject<long> TotalMoveSpeed = new(100);
         public readonly BehaviorSubject<long> TotalAttackSpeed = new(100);
         public readonly BehaviorSubject<long> TotalCriticalDamage = new(100);
@@ -63,18 +66,20 @@ namespace GGemCo2DCore
         /// <param name="statDef"></param>
         /// <param name="statHp"></param>
         /// <param name="statMp"></param>
+        /// <param name="statStamina"></param>
         /// <param name="statMoveSpeed"></param>
         /// <param name="statAttackSpeed"></param>
         /// <param name="statRegistFire"></param>
         /// <param name="statRegistCold"></param>
         /// <param name="statRegistLightning"></param>
-        protected void SetBaseInfos(int statAtk, int statDef, int statHp, int statMp, int statMoveSpeed,
+        protected void SetBaseInfos(int statAtk, int statDef, int statHp, int statMp, int statStamina, int statMoveSpeed,
             int statAttackSpeed, int statRegistFire, int statRegistCold, int statRegistLightning)
         {
             BaseAtk = statAtk;
             BaseDef = statDef;
             BaseHp = statHp;
             BaseMp = statMp;
+            BaseStamina = statStamina;
             BaseMoveSpeed = statMoveSpeed;
             BaseAttackSpeed = statAttackSpeed;
             BaseRegistFire = statRegistFire;
@@ -91,8 +96,8 @@ namespace GGemCo2DCore
         /// <param name="equippedItems"></param>
         public void UpdateStatCache(CharacterBase characterBase, Dictionary<int, EquippedItemRef> equippedItems)
         {
-            flatModifiers.Clear();
-            percentModifiers.Clear();
+            _flatModifiers.Clear();
+            _percentModifiers.Clear();
 
             var statModifiers = new List<ConfigCommon.StruckStatus>(32);
             var desiredEquipAffects = new HashSet<int>();
@@ -243,34 +248,34 @@ namespace GGemCo2DCore
             {
                 case ConfigCommon.SuffixType.Plus:
                 {
-                    flatModifiers[baseStat] = flatModifiers.GetValueOrDefault(baseStat, 0) + (isAdding ? (int)value : -(int)value);
-                    if (flatModifiers[baseStat] == 0) flatModifiers.Remove(baseStat);
+                    _flatModifiers[baseStat] = _flatModifiers.GetValueOrDefault(baseStat, 0) + (isAdding ? (int)value : -(int)value);
+                    if (_flatModifiers[baseStat] == 0) _flatModifiers.Remove(baseStat);
                     break;
                 }
                 case ConfigCommon.SuffixType.Minus:
                 {
-                    flatModifiers[baseStat] = flatModifiers.GetValueOrDefault(baseStat, 0) - (isAdding ? (int)value : -(int)value);
-                    if (flatModifiers[baseStat] == 0) flatModifiers.Remove(baseStat);
+                    _flatModifiers[baseStat] = _flatModifiers.GetValueOrDefault(baseStat, 0) - (isAdding ? (int)value : -(int)value);
+                    if (_flatModifiers[baseStat] == 0) _flatModifiers.Remove(baseStat);
                     break;
                 }
                 case ConfigCommon.SuffixType.Increase:
                 {
-                    percentModifiers[baseStat] = percentModifiers.GetValueOrDefault(baseStat, 0) + (isAdding ? value : -value);
-                    if (Mathf.Approximately(percentModifiers[baseStat], 0)) percentModifiers.Remove(baseStat);
+                    _percentModifiers[baseStat] = _percentModifiers.GetValueOrDefault(baseStat, 0) + (isAdding ? value : -value);
+                    if (Mathf.Approximately(_percentModifiers[baseStat], 0)) _percentModifiers.Remove(baseStat);
                     break;
                 }
                 case ConfigCommon.SuffixType.Decrease:
                 {
-                    percentModifiers[baseStat] = percentModifiers.GetValueOrDefault(baseStat, 0) - (isAdding ? value : -value);
-                    if (Mathf.Approximately(percentModifiers[baseStat], 0)) percentModifiers.Remove(baseStat);
+                    _percentModifiers[baseStat] = _percentModifiers.GetValueOrDefault(baseStat, 0) - (isAdding ? value : -value);
+                    if (Mathf.Approximately(_percentModifiers[baseStat], 0)) _percentModifiers.Remove(baseStat);
                     break;
                 }
                 case ConfigCommon.SuffixType.None:
                 default:
                 {
                     // legacy/간편 표기: None이면 Plus로 간주(기존 OptionType* 호환)
-                    flatModifiers[baseStat] = flatModifiers.GetValueOrDefault(baseStat, 0) + (isAdding ? (int)value : -(int)value);
-                    if (flatModifiers[baseStat] == 0) flatModifiers.Remove(baseStat);
+                    _flatModifiers[baseStat] = _flatModifiers.GetValueOrDefault(baseStat, 0) + (isAdding ? (int)value : -(int)value);
+                    if (_flatModifiers[baseStat] == 0) _flatModifiers.Remove(baseStat);
                     break;
                 }
             }
@@ -283,8 +288,8 @@ namespace GGemCo2DCore
         /// <returns></returns>
         private long CalculateFinalStat(string statKey, int baseValue)
         {
-            int flatBonus = flatModifiers.GetValueOrDefault(statKey, 0);
-            float percentBonus = percentModifiers.GetValueOrDefault(statKey, 0);
+            int flatBonus = _flatModifiers.GetValueOrDefault(statKey, 0);
+            float percentBonus = _percentModifiers.GetValueOrDefault(statKey, 0);
 
             float finalMultiplier = 1 + (percentBonus / 100f);
             if (finalMultiplier < 0) finalMultiplier = 0; // 최소 0으로 제한
@@ -296,29 +301,31 @@ namespace GGemCo2DCore
         /// </summary>
         public void RecalculateStats()
         {
-            totalAtk = CalculateFinalStat(ConfigCommon.StatusStatAtk, BaseAtk);
-            totalDef = CalculateFinalStat(ConfigCommon.StatusStatDef, BaseDef);
-            totalHp = CalculateFinalStat(ConfigCommon.StatusStatHp, BaseHp);
-            totalMp = CalculateFinalStat(ConfigCommon.StatusStatMp, BaseMp);
-            totalMoveSpeed = CalculateFinalStat(ConfigCommon.StatusStatMoveSpeed, BaseMoveSpeed);
-            totalAttackSpeed = CalculateFinalStat(ConfigCommon.StatusStatAttackSpeed, BaseAttackSpeed);
-            totalCriticalDamage = CalculateFinalStat(ConfigCommon.StatusStatCriticalDamage, BaseCriticalDamage);
-            totalCriticalProbability = CalculateFinalStat(ConfigCommon.StatusStatCriticalProbability, BaseCriticalProbability);
-            totalRegistFire = CalculateFinalStat(ConfigCommon.StatusStatResistanceFire, BaseRegistFire);
-            totalRegistCold = CalculateFinalStat(ConfigCommon.StatusStatResistanceCold, BaseRegistCold);
-            totalRegistLightning = CalculateFinalStat(ConfigCommon.StatusStatResistanceLightning, BaseRegistLightning);
+            _totalAtk = CalculateFinalStat(ConfigCommon.StatusStatAtk, BaseAtk);
+            _totalDef = CalculateFinalStat(ConfigCommon.StatusStatDef, BaseDef);
+            _totalHp = CalculateFinalStat(ConfigCommon.StatusStatHp, BaseHp);
+            _totalMp = CalculateFinalStat(ConfigCommon.StatusStatMp, BaseMp);
+            _totalStamina = CalculateFinalStat(ConfigCommon.StatusStatStamina, BaseStamina);
+            _totalMoveSpeed = CalculateFinalStat(ConfigCommon.StatusStatMoveSpeed, BaseMoveSpeed);
+            _totalAttackSpeed = CalculateFinalStat(ConfigCommon.StatusStatAttackSpeed, BaseAttackSpeed);
+            _totalCriticalDamage = CalculateFinalStat(ConfigCommon.StatusStatCriticalDamage, BaseCriticalDamage);
+            _totalCriticalProbability = CalculateFinalStat(ConfigCommon.StatusStatCriticalProbability, BaseCriticalProbability);
+            _totalRegistFire = CalculateFinalStat(ConfigCommon.StatusStatResistanceFire, BaseRegistFire);
+            _totalRegistCold = CalculateFinalStat(ConfigCommon.StatusStatResistanceCold, BaseRegistCold);
+            _totalRegistLightning = CalculateFinalStat(ConfigCommon.StatusStatResistanceLightning, BaseRegistLightning);
 
-            TotalAtk.OnNext(totalAtk);
-            TotalDef.OnNext(totalDef);
-            TotalHp.OnNext(totalHp);
-            TotalMp.OnNext(totalMp);
-            TotalMoveSpeed.OnNext(totalMoveSpeed);
-            TotalAttackSpeed.OnNext(totalAttackSpeed);
-            TotalCriticalDamage.OnNext(totalCriticalDamage);
-            TotalCriticalProbability.OnNext(totalCriticalProbability);
-            TotalRegistFire.OnNext(totalRegistFire);
-            TotalRegistCold.OnNext(totalRegistCold);
-            TotalRegistLightning.OnNext(totalRegistLightning);
+            TotalAtk.OnNext(_totalAtk);
+            TotalDef.OnNext(_totalDef);
+            TotalHp.OnNext(_totalHp);
+            TotalMp.OnNext(_totalMp);
+            TotalStamina.OnNext(_totalStamina);
+            TotalMoveSpeed.OnNext(_totalMoveSpeed);
+            TotalAttackSpeed.OnNext(_totalAttackSpeed);
+            TotalCriticalDamage.OnNext(_totalCriticalDamage);
+            TotalCriticalProbability.OnNext(_totalCriticalProbability);
+            TotalRegistFire.OnNext(_totalRegistFire);
+            TotalRegistCold.OnNext(_totalRegistCold);
+            TotalRegistLightning.OnNext(_totalRegistLightning);
         }
 
         public float GetCurrentMoveSpeed(bool isPercent = true) => isPercent ? TotalMoveSpeed.Value / 100f : TotalMoveSpeed.Value;

@@ -63,6 +63,13 @@ namespace GGemCo2DCore
             _player.CurrentMp
                 .Subscribe(_ => SetWindowHudSliderMp(_player.CurrentMp.Value))
                 .AddTo(_player);
+            _player.CurrentStamina
+                .Subscribe(_ => SetWindowHudSliderStamina(_player.CurrentStamina.Value))
+                .AddTo(_player);
+
+            _player.CurrentBattleStatus
+                .Subscribe(_ => SetWindowHudBattle(_player.CurrentBattleStatus.Value))
+                .AddTo(_player);
             
             InitializeStatBindings();
         }
@@ -82,6 +89,24 @@ namespace GGemCo2DCore
             }
             _uiWindowHud.SetSliderMp(value, _player.TotalMp.Value);
         }
+        private void SetWindowHudSliderStamina(long value)
+        {
+            if (_uiWindowHud == null) 
+            {
+                return;
+            }
+            _uiWindowHud.SetSliderStamina(value, _player.TotalStamina.Value);
+        }
+
+        private void SetWindowHudBattle(CharacterConstants.BattleStatus value)
+        {
+            if (_uiWindowHud == null) 
+            {
+                return;
+            }
+            _uiWindowHud.SetBattleStatus(value);
+        }
+
         /// <summary>
         /// Player의 스탯과 UI를 매핑하여 리스트에 저장
         /// </summary>

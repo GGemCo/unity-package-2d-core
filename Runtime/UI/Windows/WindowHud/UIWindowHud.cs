@@ -15,10 +15,18 @@ namespace GGemCo2DCore
         public Slider sliderHp;
         [Tooltip("마력 Slider")]
         public Slider sliderMp;
+        [Tooltip("스테미나 Slider")]
+        public Slider sliderStamina;
         [Tooltip("현재 플레이어 생명력 수치")]
         public TextMeshProUGUI textHp;
         [Tooltip("현재 플레이어 마력 수치")]
         public TextMeshProUGUI textMp;
+        [Tooltip("현재 플레이어 스테미나 수치")]
+        public TextMeshProUGUI textStamina;
+        
+        // todo. 정리 필요
+        [Tooltip("전투 상태")]
+        public TMP_Text textBattleStatus;
         
         protected override void Awake()
         {
@@ -45,15 +53,26 @@ namespace GGemCo2DCore
         {
             SceneGame.Instance.uIWindowManager?.ShowWindow(UIWindowConstants.WindowUid.Option, true);
         }
-        public void SetSliderHp(long currentValue, long totalHp)
+        public void SetSliderHp(long currentValue, long total)
         {
-            sliderHp.value = (float)currentValue / totalHp;
-            textHp.text = $"{currentValue} / {totalHp}";
+            sliderHp.value = (float)currentValue / total;
+            textHp.text = $"{currentValue} / {total}";
         }
-        public void SetSliderMp(long currentValue, long totalMp)
+        public void SetSliderMp(long currentValue, long total)
         {
-            sliderMp.value = (float)currentValue / totalMp;
-            textMp.text = $"{currentValue} / {totalMp}";
+            sliderMp.value = (float)currentValue / total;
+            textMp.text = $"{currentValue} / {total}";
+        }
+        public void SetSliderStamina(long currentValue, long total)
+        {
+            sliderStamina.value = (float)currentValue / total;
+            textStamina.text = $"{currentValue} / {total}";
+        }
+
+        public void SetBattleStatus(CharacterConstants.BattleStatus value)
+        {
+            if (!textBattleStatus) return;
+            textBattleStatus.text = value.ToString();
         }
     }
 }
