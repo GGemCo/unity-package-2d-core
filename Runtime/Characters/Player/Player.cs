@@ -410,7 +410,7 @@ namespace GGemCo2DCore
             PlayerAttackAreaState state = GetComponent<PlayerAttackAreaState>();
             if (state == null) return;
 
-            state.Enter(gameObject);
+            state.Enter(hitArea.gameObject);
         }
         public override bool OnTriggerExitByAttackRange(Collider2D collision)
         {
@@ -423,7 +423,7 @@ namespace GGemCo2DCore
             PlayerAttackAreaState state = gameObject.GetComponent<PlayerAttackAreaState>();
             if (state == null) return false;
 
-            state.Exit(gameObject);
+            state.Exit(hitArea.gameObject);
             return true;
         }
     }
