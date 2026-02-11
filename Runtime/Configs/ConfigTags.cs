@@ -19,6 +19,7 @@
             MapObject,
             // 맵에 배치되는 워프
             MapObjectWarp,
+            MapObjectPatrol,
             // 맵 땅
             MapGround,
             // 타일 맵이 들어가는 부모 grid object

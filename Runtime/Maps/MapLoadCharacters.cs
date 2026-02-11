@@ -242,6 +242,9 @@ namespace GGemCo2DCore
             if (uid <= 0) yield break;
             SpawnMonster(uid, monsterData, mapTileCommon);
         }
+
+        #region 워프
+
         /// <summary>
         /// 워프 스폰하기
         /// </summary>
@@ -290,5 +293,51 @@ namespace GGemCo2DCore
                 objectWarp.WarpData = warpData;
             }
         }
+
+        #endregion
+
+        #region 패트롤
+
+        public async Task LoadPatrol(MapTileCommon mapTileCommon, StruckTableMap currentMapTableData)
+        {
+            string key = ConfigAddressableMap.GetKeyJsonPatrol(currentMapTableData.FolderName);
+            try
+            {
+                TextAsset textFile = await AddressableLoaderController.LoadByKeyAsync<TextAsset>(key);
+                
+                if (textFile)
+                {
+                    string content = textFile.text;
+                    if (!string.IsNullOrEmpty(content))
+                    {
+                        PatrolDataList patrolDataList = JsonConvert.DeserializeObject<PatrolDataList>(content);
+                        SpawnPatrol(patrolDataList.patrolDataList, mapTileCommon);
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                GcLogger.LogError($"워프 json 파싱중 오류. file {key}: {ex.Message}");
+            }
+        }
+        private void SpawnPatrol(List<PatrolData> patrolDatas, MapTileCommon mapTileCommon)
+        {
+            GameObject patrolPrefab =
+                AddressableLoaderPrefabCommon.Instance.GetPreLoadGamePrefabByName(ConfigAddressableMap.ObjectPatrol.Key);
+            if (!patrolPrefab) return;
+            
+            foreach (PatrolData patrolData in patrolDatas)
+            {
+                GameObject patrol = Object.Instantiate(patrolPrefab, new Vector3(patrolData.X, patrolData.Y, patrolData.Z), Quaternion.identity, mapTileCommon.gameObject.transform);
+            
+                // 워프의 이름과 기타 속성 설정
+                ObjectPatrol objectPatrol = patrol.GetComponent<ObjectPatrol>();
+                if (!objectPatrol) continue;
+                // patrolExporter.cs:128 도 수정
+                objectPatrol.PatrolData = patrolData;
+            }
+        }
+
+        #endregion
     }
 }

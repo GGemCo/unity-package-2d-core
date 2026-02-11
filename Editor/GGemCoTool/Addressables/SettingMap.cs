@@ -118,6 +118,11 @@ namespace GGemCo2DCoreEditor
                 key = ConfigAddressableMap.GetKeyJsonWarp(info.FolderName);
                 assetPath = ConfigAddressableMap.GetAssetPathWarp(info.FolderName);
                 Add(settings, group, key, assetPath);
+                
+                // 패트롤 파일
+                key = ConfigAddressableMap.GetKeyJsonPatrol(info.FolderName);
+                assetPath = ConfigAddressableMap.GetAssetPathPatrol(info.FolderName);
+                Add(settings, group, key, assetPath);
             }
             
             // 설정 저장

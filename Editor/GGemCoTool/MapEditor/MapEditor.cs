@@ -27,6 +27,7 @@ namespace GGemCo2DCoreEditor
         private readonly NpcExporter _npcExporter = new NpcExporter();
         private readonly MonsterExporter _monsterExporter = new MonsterExporter();
         private readonly WarpExporter _warpExporter = new WarpExporter();
+        private readonly PatrolExporter _patrolExporter = new PatrolExporter();
         
         // 이름 목록
         private static List<string> _nameNpc;
@@ -102,6 +103,7 @@ namespace GGemCo2DCoreEditor
             _npcExporter.Initialize(_tableNpc, _tableAnimation, defaultMap, _characterManager);
             _monsterExporter.Initialize(_tableMonster, _tableAnimation, defaultMap, _characterManager);
             _warpExporter.Initialize(defaultMap);
+            _patrolExporter.Initialize(defaultMap);
             LoadInfoDataNpc();
             LoadInfoDataMonster();
             LoadInfoDataMap();
@@ -178,6 +180,14 @@ namespace GGemCo2DCoreEditor
             }
             
             GUILayout.Space(20);
+            // 패트롤 영역 추가 섹션
+            GUILayout.Label("* 패트롤 영역 추가", EditorStyles.whiteLargeLabel);
+            if (GUILayout.Button("패트롤 영역 추가"))
+            {
+                _patrolExporter.AddPatrolToMap();
+            }
+            
+            GUILayout.Space(20);
             EditorGUILayout.EndScrollView();
         }
         private void ExportDataToJson()
@@ -207,6 +217,7 @@ namespace GGemCo2DCoreEditor
             _npcExporter.ExportNpcDataToJson(currentJsonFolderPath, ConfigAddressableMap.GetFileName(MapAssetType.RegenNpcJson), _loadMapUid, info);
             _monsterExporter.ExportMonsterDataToJson(currentJsonFolderPath, ConfigAddressableMap.GetFileName(MapAssetType.RegenMonsterJson), _loadMapUid, info);
             _warpExporter.ExportWarpDataToJson(currentJsonFolderPath, ConfigAddressableMap.GetFileName(MapAssetType.WarpJson), _loadMapUid);
+            _patrolExporter.ExportPatrolDataToJson(currentJsonFolderPath, ConfigAddressableMap.GetFileName(MapAssetType.PatrolJson), _loadMapUid);
             AssetDatabase.Refresh();
             
             EditorUtility.DisplayDialog(Title, "Json 저장하기 완료", "OK");
@@ -277,6 +288,7 @@ namespace GGemCo2DCoreEditor
             _npcExporter.LoadNpcData($"{ConfigAddressableMap.GetAssetPathRegenNpc(mapData.FolderName)}");
             _monsterExporter.LoadMonsterData($"{ConfigAddressableMap.GetAssetPathRegenMonster(mapData.FolderName)}");
             _warpExporter.LoadWarpData($"{ConfigAddressableMap.GetAssetPathWarp(mapData.FolderName)}");
+            _patrolExporter.LoadJsonData($"{ConfigAddressableMap.GetAssetPathPatrol(mapData.FolderName)}");
             return true;
         }
         /// <summary>
@@ -317,6 +329,7 @@ namespace GGemCo2DCoreEditor
             _npcExporter.SetDefaultMap(_defaultMap);
             _monsterExporter.SetDefaultMap(_defaultMap);
             _warpExporter.SetDefaultMap(_defaultMap);
+            _patrolExporter.SetDefaultMap(_defaultMap);
         }
         /// <summary>
         /// npc 정보 불러오기
@@ -351,8 +364,8 @@ namespace GGemCo2DCoreEditor
 
         private void LoadInfoDataMap()
         {
+            StruckTableMaps.Clear();
             Dictionary<int, StruckTableMap> monsterDictionary = _tableMap.GetDatas();
-             
             _nameMap = new List<string>();
             int index = 0;
             foreach (KeyValuePair<int, StruckTableMap> outerPair in monsterDictionary)

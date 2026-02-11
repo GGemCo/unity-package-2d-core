@@ -27,10 +27,11 @@
             CreateMonster,   // 맵에 배치되는 몬스터 생성 하기
             CreateNpc,       // 맵에 배치되는 npc 생성하기
             CreateWarp,      // 맵에 배치되는 warp 프리팹 불러오기
+            CreatePatrol, // 패트롤
             LoadPlayerPrefabs,    // 맵에 배치되는 플레이어 프리팹 불러오기
             FadeOut,              // 검정색 스프라이트 페이드 아웃
             Complete,             // 완료
-            Failed                // 실패
+            Failed,                // 실패
         }
         
         public const float FadeDuration = 0.7f;
