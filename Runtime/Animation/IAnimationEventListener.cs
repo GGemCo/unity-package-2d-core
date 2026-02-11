@@ -14,5 +14,6 @@ namespace GGemCo2DCore
         void OnAnimationEventDash(GameObject fromObject, string eventName);
         void OnAnimationEventUseTool(string json, GameObject fromObject);
         void OnAnimationEventUseSeed(string json, GameObject fromObject);
+        void OnAnimationEventGuardEnd(GameObject gameObject);
     }
 }

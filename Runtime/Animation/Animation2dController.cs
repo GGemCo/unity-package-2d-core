@@ -189,6 +189,11 @@ namespace GGemCo2DCore
         {
             EventListener?.OnAnimationEventUseSeed(json, gameObject);
         }
+
+        public void GGemCoAniEventGuardEnd()
+        {
+            EventListener?.OnAnimationEventGuardEnd(gameObject);
+        }
 #if GGEMCO_2D_CONTROL
         /// <summary>
         /// 점프 시작 애니메이션 마지막 프레임에서 호출

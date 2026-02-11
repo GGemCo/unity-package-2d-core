@@ -18,9 +18,9 @@ namespace GGemCo2DCore
 
         private CharacterBase _character;
         private CharacterBaseController _controller;
-#if ENABLE_INPUT_SYSTEM
-        private UnityEngine.InputSystem.PlayerInput _playerInput;
-#endif
+
+        // Control 등 외부 시스템이 "이동 실행"을 담당하는지 여부
+        private IAutoMoveMovementDriver _movementDriver;
 
         private AutoMoveRequest _request;
         private bool _isActive;
@@ -35,9 +35,6 @@ namespace GGemCo2DCore
         {
             _character = GetComponent<CharacterBase>();
             _controller = GetComponent<CharacterBaseController>();
-#if ENABLE_INPUT_SYSTEM
-            _playerInput = GetComponent<UnityEngine.InputSystem.PlayerInput>();
-#endif
             _originalMoveStep = _character != null ? _character.currentMoveStep : 0f;
 
             // Suspend 토큰은 런타임에만 사용되며, 일반적으로 동시에 1~2개(컷씬/벽액션) 수준이므로
@@ -45,6 +42,11 @@ namespace GGemCo2DCore
             _nextSuspendId = 1;
             _suspendCount = 0;
             _suspendTokens = new AutoMoveSuspendToken[4];
+        }
+
+        private void Start()
+        {
+            _movementDriver = GetComponent<IAutoMoveMovementDriver>();
         }
 
         private void FixedUpdate()
@@ -68,10 +70,7 @@ namespace GGemCo2DCore
             // Control 패키지 사용(= PlayerInput 존재) 시에는 InputManager가 Move를 실행하므로,
             // 여기서는 완료 조건(거리/시간)만 판단한다.
             // Core 단독 사용 시에는 직접 Run()까지 수행한다.
-            bool isDrivenByControl = false;
-#if ENABLE_INPUT_SYSTEM
-            isDrivenByControl = _playerInput != null;
-#endif
+            bool isDrivenByControl = _movementDriver is { DrivesAutoMoveMovement: true };
 
             // Suspend 중에는 이동/완료 판정을 진행하지 않는다(Pause).
             if (IsAutoMoveSuspended)

@@ -36,13 +36,14 @@ namespace GGemCo2DCore
     /// </summary>
     public enum AutoMoveInputType
     {
-        Move = 0,
-        Attack = 1,
-        Jump = 2,
-        Dash = 3,
-        Interaction = 4,
-        SimulationTool = 5,
-        Other = 99
+        Move,
+        Attack,
+        Guard,
+        Jump,
+        Dash,
+        Interaction,
+        SimulationTool,
+        Other = 99,
     }
 
     /// <summary>

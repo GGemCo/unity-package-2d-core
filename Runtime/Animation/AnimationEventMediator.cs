@@ -120,5 +120,10 @@ namespace GGemCo2DCore
         {
             fromObject.GetComponent<CharacterBase>()?.UseSeed();
         }
+
+        public void OnAnimationEventGuardEnd(GameObject fromObject)
+        {
+            fromObject.GetComponent<CharacterBase>()?.AnimationEventGuardEnd();
+        }
     }
 }

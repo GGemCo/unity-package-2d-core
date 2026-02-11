@@ -90,6 +90,8 @@ namespace GGemCo2DCore
         public event EventHandlerOnStop OnStop;
         public event EventHandlerOnAnimationEventJump OnAnimationEventJump;
         public event EventHandlerOnAnimationEventDash OnAnimationEventDash;
+        // 방어 end 애니메이션 종료 후
+        public event EventHandlerOnAnimationEventGuardEnd OnAnimationEventGuardEnd;
         
         public static event Action<CharacterBase> OnCharacterUseTool; // Destroy 직전 1회
         public static event Action<CharacterBase> OnCharacterUseSeed; // Destroy 직전 1회
@@ -947,5 +949,18 @@ namespace GGemCo2DCore
             // SetStatus(CharacterConstants.CharacterStatus.Idle);
         }
 
+        public void AnimationEventGuardEnd()
+        {
+            var e = new EventArgsOnAnimationEventGuardEnd { Handled = false };
+
+            // 모든 구독자에게 알림
+            OnAnimationEventGuardEnd?.Invoke(this, e);
+
+            // 아무도 처리하지 않았으면 레거시 실행
+            if (!e.Handled)
+            {
+                
+            }
+        }
     }
 }

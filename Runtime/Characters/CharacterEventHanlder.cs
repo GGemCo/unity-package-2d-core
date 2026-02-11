@@ -1,5 +1,4 @@
 ﻿using System;
-using UnityEngine;
 
 namespace GGemCo2DCore
 {
@@ -54,4 +53,15 @@ namespace GGemCo2DCore
     }
 
     public delegate void EventHandlerOnAnimationEventDash(CharacterBase sender, EventArgsOnAnimationEventDash e);
+    
+    /// <summary>
+    /// 방어 애니메이션이 끝났을 때
+    /// </summary>
+    public sealed class EventArgsOnAnimationEventGuardEnd : EventArgs
+    {
+        // 외부에서 처리했으면 true
+        public bool Handled { get; set; }
+    }
+    public delegate void EventHandlerOnAnimationEventGuardEnd(CharacterBase sender, EventArgsOnAnimationEventGuardEnd e);
+
 }

@@ -11,6 +11,7 @@ namespace GGemCo2DCore
         WallAction = 1,
         Cutscene = 2,
         UiModal = 3,
+        GuardAction
     }
 
     /// <summary>
