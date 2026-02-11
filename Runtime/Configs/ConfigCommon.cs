@@ -20,6 +20,11 @@ namespace GGemCo2DCore
             Sprite,
             Spine,
         }
+        public enum CalculateType
+        {
+            Flat = 0,
+            PercentOfMax = 1,
+        }
         
         public const string StatusStatAtk = "STAT_ATK";
         public const string StatusStatDef = "STAT_DEF";
