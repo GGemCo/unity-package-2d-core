@@ -989,5 +989,53 @@ namespace GGemCo2DCore
                 
             }
         }
+        
+        /// <summary>
+        /// 스테미나 소비 가능 여부를 반환합니다.
+        /// - amount가 0 이하이면 항상 가능으로 처리합니다.
+        /// </summary>
+        public bool CanSpendStamina(long amount)
+        {
+            if (amount <= 0) return true;
+            return CurrentStamina.Value >= amount;
+        }
+
+        /// <summary>
+        /// 스테미나를 즉시 차감합니다.
+        /// - 부족하면 차감하지 않고 false
+        /// - 성공 시 0~TotalStamina로 Clamp 합니다.
+        /// </summary>
+        public bool TrySpendStamina(long amount)
+        {
+            if (amount <= 0) return true;
+
+            long cur = CurrentStamina.Value;
+            if (cur < amount) return false;
+
+            SetCurrentStaminaInternal(cur - amount);
+            return true;
+        }
+
+        /// <summary>
+        /// 스테미나를 회복합니다.
+        /// - amount가 0 이하이면 아무 처리도 하지 않습니다.
+        /// </summary>
+        public void RestoreStamina(long amount)
+        {
+            if (amount <= 0) return;
+            SetCurrentStaminaInternal(CurrentStamina.Value + amount);
+        }
+
+        private void SetCurrentStaminaInternal(long value)
+        {
+            long max = TotalStamina.Value;
+            if (max < 0) max = 0;
+
+            if (value < 0) value = 0;
+            if (value > max) value = max;
+
+            CurrentStamina.OnNext(value);
+        }
+
     }
 }
