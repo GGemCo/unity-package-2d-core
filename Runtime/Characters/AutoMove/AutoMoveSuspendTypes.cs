@@ -7,11 +7,12 @@ namespace GGemCo2DCore
     /// </summary>
     public enum AutoMoveSuspendReason
     {
-        Unknown = 0,
-        WallAction = 1,
-        Cutscene = 2,
-        UiModal = 3,
-        GuardAction
+        Unknown,
+        WallAction,
+        Cutscene,
+        UiModal,
+        GuardAction,
+        PlayerAttackRange
     }
 
     /// <summary>

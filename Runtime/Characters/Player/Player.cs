@@ -68,6 +68,13 @@ namespace GGemCo2DCore
             _equipController = gameObject.AddComponent<EquipController>();
             _toolController = gameObject.AddComponent<ToolController>();
 
+            // 플레이어 공격 영역에 몬스터 진입 상태
+            // - Control 패키지에서 AutoMove Suspend 정책을 적용할 때 사용
+            if (gameObject.GetComponent<PlayerAttackAreaState>() == null)
+            {
+                gameObject.AddComponent<PlayerAttackAreaState>();
+            }
+
             if (AddressableLoaderSettings.Instance && AddressableLoaderSettings.Instance.settings &&
                 AddressableLoaderSettings.Instance.settings.enableAutoMove)
             {
@@ -384,6 +391,39 @@ namespace GGemCo2DCore
         private void OnDestroy()
         {
             _sceneGame.mapManager.OnLoadStartMap -= OnLoadStartMap;
+        }
+        
+        /// <summary>
+        /// 플레이어 공격 영역에 몬스터가 있을 때, 플레이어의 자동 이동을 멈추도록 InputManager에 요청한다
+        /// </summary>
+        /// <param name="collision"></param>
+        public override void OnTriggerEnterByAttackRange(Collider2D collision)
+        {
+            base.OnTriggerEnterByAttackRange(collision);
+            
+            if (!collision.gameObject.CompareTag(ConfigTags.GetValue(ConfigTags.Keys.Monster))) return;
+            var hitArea = collision.gameObject.GetComponentInChildren<CharacterHitArea>();
+            if (!hitArea) return;
+
+            // Player 루트 콜라이더 또는 하위 트리거 콜라이더 모두 대응
+            PlayerAttackAreaState state = GetComponent<PlayerAttackAreaState>();
+            if (state == null) return;
+
+            state.Enter(gameObject);
+        }
+        public override bool OnTriggerExitByAttackRange(Collider2D collision)
+        {
+            base.OnTriggerEnterByAttackRange(collision);
+            
+            if (!collision.gameObject.CompareTag(ConfigTags.GetValue(ConfigTags.Keys.Monster))) return false;
+            var hitArea = collision.gameObject.GetComponentInChildren<CharacterHitArea>();
+            if (!hitArea) return false;
+
+            PlayerAttackAreaState state = gameObject.GetComponent<PlayerAttackAreaState>();
+            if (state == null) return false;
+
+            state.Exit(gameObject);
+            return true;
         }
     }
 }
