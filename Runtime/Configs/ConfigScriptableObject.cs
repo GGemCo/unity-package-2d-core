@@ -16,6 +16,7 @@ namespace GGemCo2DCore
             None = -10000,
             MainSettings,
             PlayerSettings,
+            MonsterSettings,
             MapSettings,
             SaveSettings,
             OptionSettings,
@@ -42,6 +43,13 @@ namespace GGemCo2DCore
             public const string FileName = BaseName + "PlayerSettings";
             public const string MenuName = BasePath + FileName;
             public const int Ordering = (int)MenuOrdering.PlayerSettings;
+        }
+        
+        public static class Monster
+        {
+            public const string FileName = BaseName + "MonsterSettings";
+            public const string MenuName = BasePath + FileName;
+            public const int Ordering = (int)MenuOrdering.MonsterSettings;
         }
 
         public static class Map

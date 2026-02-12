@@ -21,7 +21,9 @@ namespace GGemCo2DCore
         private float _delayDestroyMonster;
         // 생명력 slier
         [HideInInspector] public GameObject sliderHpBar;
+        [HideInInspector] public GameObject monsterUISuperArmor;
         private GameObject _prefabSliderHpBar;
+        private GameObject _prefabPanelMonsterSuperArmor;
         private Transform _containerMonsterHpBar;
 
         // 충돌 체크할 플레이어 수  
@@ -38,9 +40,6 @@ namespace GGemCo2DCore
             base.Awake();
             SetAttackType(CharacterConstants.AttackType.PassiveDefense);
             
-            CurrentHp
-                .Subscribe(SetSliderHp)
-                .AddTo(this);
             if (AddressableLoaderSettings.Instance)
                 _delayDestroyMonster = AddressableLoaderSettings.Instance.settings.delayDestroyMonster;
         }
@@ -48,8 +47,20 @@ namespace GGemCo2DCore
         protected override void Start()
         {
             base.Start();
+            
+            CreateHpBar();
+            CurrentHp
+                .Subscribe(SetSliderHp)
+                .AddTo(this);
+            
+            CreateSuperArmor();
+            CurrentSuperArmor
+                .Subscribe(SetSuperArmor)
+                .AddTo(this);
+            
             _projectileManager = SceneGame.Instance.ProjectileManager;
         }
+
         /// <summary>
         /// tag, sorting layer, layer 셋팅하기
         /// </summary>
@@ -97,9 +108,10 @@ namespace GGemCo2DCore
             // GcLogger.Log("InitializationStat uid: "+uid+" / info.uid: "+info.uid+" / StatMoveSpeed: "+info.statMoveSpeed);
             if (info.Uid <= 0) return;
             characterName = info.Name;
-            SetBaseInfos(info.StatAtk, info.StatDef, info.StatHp, 0, 0, info.StatMoveSpeed, info.StatAttackSpeed,
+            SetBaseInfos(info.StatAtk, info.StatDef, info.StatHp, 0, 0, info.StatSuperArmor, info.StatMoveSpeed, info.StatAttackSpeed,
                 info.RegistFire, info.RegistCold, info.RegistLightning);
             CurrentHp.OnNext(info.StatHp);
+            CurrentSuperArmor.OnNext(info.StatSuperArmor);
             SetScale(info.Scale);
             SetAttackType(info.AttackType);
         }
@@ -167,6 +179,11 @@ namespace GGemCo2DCore
                 Destroy(sliderHpBar);
             }
 
+            if (monsterUISuperArmor != null)
+            {
+                Destroy(monsterUISuperArmor);
+            }
+
             _controllerMonster?.StopAllCoroutines();
             
             var isPlayer = attacker && attacker.CompareTag(ConfigTags.GetValue(ConfigTags.Keys.Player));
@@ -187,6 +204,16 @@ namespace GGemCo2DCore
             if (sliderHpBar != null)
             {
                 Destroy(sliderHpBar);
+            }
+
+            if (patrolObject != null)
+            {
+                Destroy(patrolObject);
+            }
+
+            if (monsterUISuperArmor != null)
+            {
+                Destroy(monsterUISuperArmor);
             }
         }
         /// <summary>
@@ -235,20 +262,58 @@ namespace GGemCo2DCore
             if (sliderHpBar == null) return;
             sliderHpBar.GetComponent<MonsterHpBar>().SetValue(value);
         }
+
         protected override void OnStartFadeIn()
         {
-            if (sliderHpBar == null) return;
-            sliderHpBar.GetComponent<MonsterHpBar>().StartFadeIn();
+            if (sliderHpBar != null)
+            {
+                sliderHpBar.GetComponent<MonsterHpBar>().StartFadeIn();
+            }
+
+            if (monsterUISuperArmor != null)
+            {
+                monsterUISuperArmor.GetComponent<MonsterUISuperArmor>().StartFadeIn();
+            }
         }
         protected override void OnStartFadeOut()
         {
-            if (sliderHpBar == null) return;
-            sliderHpBar.GetComponent<MonsterHpBar>().StartFadeOut();
+            if (sliderHpBar != null)
+            {
+                sliderHpBar.GetComponent<MonsterHpBar>().StartFadeOut();
+            }
+            if (monsterUISuperArmor != null)
+            {
+                monsterUISuperArmor.GetComponent<MonsterUISuperArmor>().StartFadeOut();
+            }
         }
         public override void OnAnimationCompleteDead()
         {
             base.OnAnimationCompleteDead();
             Destroy(gameObject, _delayDestroyMonster);
+        }
+        /// <summary>
+        /// 슈퍼 아머 UI 만들기
+        /// </summary>
+        private void CreateSuperArmor()
+        {
+            if (SceneGame.Instance.containerMonsterHpBar == null)
+            {
+                GcLogger.LogError("SceneGame 에 containerMonsterHpBar 가 설정되지 않았습니다.");
+                return;
+            }
+            _prefabPanelMonsterSuperArmor = ConfigResources.PanelMonsterSuperArmor.Load();
+            if (_prefabPanelMonsterSuperArmor == null) return;
+            _containerMonsterHpBar ??= SceneGame.Instance.containerMonsterHpBar.transform;
+            monsterUISuperArmor = Instantiate(_prefabPanelMonsterSuperArmor, _containerMonsterHpBar);
+            MonsterUISuperArmor monsterSuperArmor = monsterUISuperArmor.GetComponent<MonsterUISuperArmor>();
+            monsterSuperArmor.Initialize(this);
+        }
+
+        public void SetSuperArmor(int value)
+        {
+            // GcLogger.Log("SetSuperArmor: " + value);
+            if (!monsterUISuperArmor) return;
+            monsterUISuperArmor.GetComponent<MonsterUISuperArmor>().SetValue(value);
         }
     }
 }

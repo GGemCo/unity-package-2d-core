@@ -177,5 +177,31 @@ namespace GGemCo2DCore
                 _ => Vector2.right
             };
         }
+        
+        /// <summary>
+        /// 피격 리액션의 강도(종류)
+        /// - Flinch: 짧은 움찔(경직)
+        /// - Stagger: 비교적 큰 경직(행동 취소)
+        /// - Knockdown: 다운
+        /// </summary>
+        public enum HitReactionType : byte
+        {
+            None = 0,
+            Flinch = 1,
+            Stagger = 2,
+            Knockdown = 3,
+        }
+
+        /// <summary>
+        /// 스택이 0이 되어 리액션이 발생했을 때 스택을 어떻게 처리할지
+        /// </summary>
+        public enum StaggerBreakResetMode : byte
+        {
+            /// <summary>브레이크 후 0으로 유지(회복으로 다시 쌓임)</summary>
+            KeepZero = 0,
+
+            /// <summary>브레이크 후 Max로 리셋(보스/패턴 유지에 유리)</summary>
+            ResetToMax = 1,
+        }
     }
 }

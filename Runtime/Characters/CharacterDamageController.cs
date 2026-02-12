@@ -9,6 +9,27 @@ namespace GGemCo2DCore
         public ConfigCommon.DamageType damageType;
         // 데미지 받는 대상에 적용되는 어펙트 uid 
         public int affectUid;
+
+        // ---- Hit Reaction (optional) ----
+        /// <summary>
+        /// 특정 공격이 “경직 무시 스택”을 얼마나 줄이는지(0이면 줄이지 않음)
+        /// </summary>
+        public int StaggerStackDamage;
+
+        /// <summary>
+        /// 스택이 0이 되었을 때 발생시키고 싶은 리액션 타입
+        /// </summary>
+        public CharacterConstants.HitReactionType HitReactionType = CharacterConstants.HitReactionType.None;
+
+        /// <summary>
+        /// 스택과 무관하게 강제로 리액션을 발생시키는지(선택)
+        /// </summary>
+        public bool ForceHitReaction;
+
+        /// <summary>
+        /// 다단 히트(연타) 구분용 공격 ID(선택)
+        /// </summary>
+        public int AttackId;
     }
     /// <summary>
     /// 캐릭터 데미지 처리
@@ -16,6 +37,8 @@ namespace GGemCo2DCore
     public class CharacterDamageController
     {
         private CharacterBase _characterBase;
+        private ControllerMonsterSuperArmor _staggerResistance;
+        
         public void Initialize(CharacterBase characterBase)
         {
             _characterBase = characterBase;
@@ -24,6 +47,8 @@ namespace GGemCo2DCore
                 GcLogger.LogError($"CharacterBase가 없습니다.");
                 return;
             }
+            _staggerResistance = new ControllerMonsterSuperArmor();
+            _staggerResistance.Initialize(_characterBase);
         }
 
         public void TakeDamage(MetadataDamage metadataDamage)
@@ -40,7 +65,7 @@ namespace GGemCo2DCore
             ConfigCommon.DamageType damageType = metadataDamage.damageType;
             GameObject attacker = metadataDamage.attacker;
             int affectUid = metadataDamage.affectUid;
-            
+
             // 데미지 텍스트 색상 설정
             Color damageTextColor = Color.white;
             Vector3 damageTextPosition = _characterBase.transform.position + new Vector3(0,
@@ -107,10 +132,28 @@ namespace GGemCo2DCore
             }
             else
             {
-                if (_characterBase.IsStatusKnockback())
+                bool shouldPlayDamageReaction = true;
+                
+                // StaggerResistanceController가 있고, 이번 타격이 스태거 판정에 관여하는 경우에만
+                // “피격 모션/상태 전환”을 결정합니다.
+                if (_staggerResistance != null &&
+                    metadataDamage.HitReactionType != CharacterConstants.HitReactionType.None &&
+                    (metadataDamage.ForceHitReaction || metadataDamage.StaggerStackDamage > 0))
                 {
+                    var hit = new HitPayload(
+                        metadataDamage.StaggerStackDamage,
+                        metadataDamage.HitReactionType,
+                        metadataDamage.ForceHitReaction,
+                        metadataDamage.AttackId);
+
+                    // 외부 상태(무적/컷씬 등)로 리액션을 막고 싶으면 여기에서 true를 전달
+                    // (현재 흐름에서는 컷씬은 상단에서 리턴되므로 기본 false)
+                    var decision = _staggerResistance.ApplyHit(in hit, ignoreReactionByStatus: false);
+                    shouldPlayDamageReaction = decision.ShouldReact;
                 }
-                else
+
+                // 넉백 상태에서는 별도 시스템이 상태/연출을 담당하므로 여기서는 피격 모션을 막는다.
+                if (shouldPlayDamageReaction)
                 {
                     // 순서 중요.
                     _characterBase.SetStatusDamage();

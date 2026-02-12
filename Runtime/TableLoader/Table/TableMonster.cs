@@ -19,6 +19,7 @@ namespace GGemCo2DCore
         public int StatHp;
         public int StatAtk;
         public int StatDef;
+        public int StatSuperArmor;
         public int StatMoveSpeed;
         public int StatAttackSpeed;
         public long RewardExp;
@@ -56,6 +57,7 @@ namespace GGemCo2DCore
                 StatHp = MathHelper.ParseInt(data["StatHp"]),
                 StatAtk = MathHelper.ParseInt(data["StatAtk"]),
                 StatDef = MathHelper.ParseInt(data["StatDef"]),
+                StatSuperArmor = MathHelper.ParseInt(data["StatSuperArmor"]),
                 StatMoveSpeed = MathHelper.ParseInt(data["StatMoveSpeed"]),
                 StatAttackSpeed = MathHelper.ParseInt(data["StatAttackSpeed"]),
                 RewardExp = MathHelper.ParseLong(data["RewardExp"]),

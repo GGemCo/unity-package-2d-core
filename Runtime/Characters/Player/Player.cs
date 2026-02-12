@@ -92,12 +92,14 @@ namespace GGemCo2DCore
         protected override void InitializeByTable()
         {
             if (AddressableLoaderSettings.Instance == null) return;
-            SetBaseInfos(_playerSettings.statAtk, _playerSettings.statDef, _playerSettings.statHp, _playerSettings.statMp, _playerSettings.statStamina,
+            SetBaseInfos(_playerSettings.statAtk, _playerSettings.statDef, _playerSettings.statHp,
+                _playerSettings.statMp, _playerSettings.statStamina, 0,
                 _playerSettings.statMoveSpeed, _playerSettings.statAttackSpeed, _playerSettings.statRegistFire,
                 _playerSettings.statRegistCold, _playerSettings.statRegistLightning);
             CurrentHp.OnNext(TotalHp.Value);
             CurrentMp.OnNext(TotalMp.Value);
             CurrentStamina.OnNext(TotalStamina.Value);
+            CurrentSuperArmor.OnNext(0);
             currentMoveStep = _playerSettings.statMoveStep;
             originalScaleX = transform.localScale.x;
             SetScale(_playerSettings.startScale);
@@ -206,7 +208,9 @@ namespace GGemCo2DCore
                     damage = totalDamage,
                     attacker = gameObject,
                     damageType = ConfigCommon.DamageType.Physic,
-                    affectUid = struckAnimationEventAttack.TargetAffectUid
+                    affectUid = struckAnimationEventAttack.TargetAffectUid,
+                    StaggerStackDamage = 1,
+                    HitReactionType = CharacterConstants.HitReactionType.Flinch
                 };
 
                 // 몬스터와 마주보고 있으면 공격 
@@ -406,10 +410,9 @@ namespace GGemCo2DCore
             var hitArea = collision.gameObject.GetComponentInChildren<CharacterHitArea>();
             if (!hitArea) return;
 
-            // Player 루트 콜라이더 또는 하위 트리거 콜라이더 모두 대응
             PlayerAttackAreaState state = GetComponent<PlayerAttackAreaState>();
             if (state == null) return;
-
+            // 플레이어 자동 이동 정지 하기
             state.Enter(hitArea.gameObject);
         }
         public override bool OnTriggerExitByAttackRange(Collider2D collision)

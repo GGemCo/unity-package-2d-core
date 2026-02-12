@@ -31,6 +31,7 @@ namespace GGemCo2DCore
         public const string StatusStatHp = "STAT_HP";
         public const string StatusStatMp = "STAT_MP";
         public const string StatusStatStamina = "STAT_STAMINA";
+        public const string StatusStatSuperArmor = "STAT_SUPER_ARMOR";
         public const string StatusStatMoveSpeed = "STAT_MOVE_SPEED";
         public const string StatusStatAttackSpeed = "STAT_ATTACK_SPEED";
         public const string StatusStatCriticalDamage = "STAT_CRITICAL_DAMAGE";

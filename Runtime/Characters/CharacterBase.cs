@@ -53,6 +53,7 @@ namespace GGemCo2DCore
         [Header("상태 및 스탯")] public readonly BehaviorSubject<long> CurrentHp = new(0);
         public readonly BehaviorSubject<long> CurrentMp = new(0);
         public readonly BehaviorSubject<long> CurrentStamina = new(0);
+        public readonly BehaviorSubject<int> CurrentSuperArmor = new(0);
 
         
         [Header("전투")] 
@@ -996,7 +997,9 @@ namespace GGemCo2DCore
                 
             }
         }
-        
+
+        #region 스테미나
+
         /// <summary>
         /// 스테미나 소비 가능 여부를 반환합니다.
         /// - amount가 0 이하이면 항상 가능으로 처리합니다.
@@ -1043,6 +1046,54 @@ namespace GGemCo2DCore
 
             CurrentStamina.OnNext(value);
         }
+        
+        #endregion
 
+        #region 슈퍼아머
+        
+        public bool CanSpendSuperArmor(int amount)
+        {
+            if (amount <= 0) return true;
+            return CurrentSuperArmor.Value >= amount;
+        }
+
+        /// <summary>
+        /// 스테미나를 즉시 차감합니다.
+        /// - 부족하면 차감하지 않고 false
+        /// - 성공 시 0~TotalSuperArmor로 Clamp 합니다.
+        /// </summary>
+        public bool TrySpendSuperArmor(int amount)
+        {
+            if (amount <= 0) return true;
+
+            int cur = CurrentSuperArmor.Value;
+            if (cur < amount) return false;
+
+            SetCurrentSuperArmorInternal(cur - amount);
+            return true;
+        }
+
+        /// <summary>
+        /// 스테미나를 회복합니다.
+        /// - amount가 0 이하이면 아무 처리도 하지 않습니다.
+        /// </summary>
+        public void RestoreSuperArmor(int amount)
+        {
+            if (amount <= 0) return;
+            SetCurrentSuperArmorInternal(CurrentSuperArmor.Value + amount);
+        }
+
+        private void SetCurrentSuperArmorInternal(int value)
+        {
+            int max = TotalSuperArmor.Value;
+            if (max < 0) max = 0;
+
+            if (value < 0) value = 0;
+            if (value > max) value = max;
+
+            CurrentSuperArmor.OnNext(value);
+        }
+
+        #endregion
     }
 }

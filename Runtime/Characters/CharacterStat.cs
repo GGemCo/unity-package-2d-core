@@ -16,6 +16,7 @@ namespace GGemCo2DCore
         public int BaseHp { get; set; }
         private int BaseMp { get; set; }
         private int BaseStamina { get; set; }
+        private int BaseSuperArmor { get; set; }
         private int BaseMoveSpeed { get; set; }
         private int BaseAttackSpeed { get; set; }
         private int BaseCriticalDamage { get; set; }
@@ -39,12 +40,14 @@ namespace GGemCo2DCore
             _totalRegistFire,
             _totalRegistCold,
             _totalRegistLightning;
+        private int _totalSuperArmor;
         // 최종 적용된 스탯 (캐싱)
         public readonly BehaviorSubject<long> TotalAtk = new(1);
         public readonly BehaviorSubject<long> TotalDef = new(1);
         public readonly BehaviorSubject<long> TotalHp = new(100);
         public readonly BehaviorSubject<long> TotalMp = new(100);
         public readonly BehaviorSubject<long> TotalStamina = new(100);
+        public readonly BehaviorSubject<int> TotalSuperArmor = new(100);
         public readonly BehaviorSubject<long> TotalMoveSpeed = new(100);
         public readonly BehaviorSubject<long> TotalAttackSpeed = new(100);
         public readonly BehaviorSubject<long> TotalCriticalDamage = new(100);
@@ -67,12 +70,14 @@ namespace GGemCo2DCore
         /// <param name="statHp"></param>
         /// <param name="statMp"></param>
         /// <param name="statStamina"></param>
+        /// <param name="statSuperArmor"></param>
         /// <param name="statMoveSpeed"></param>
         /// <param name="statAttackSpeed"></param>
         /// <param name="statRegistFire"></param>
         /// <param name="statRegistCold"></param>
         /// <param name="statRegistLightning"></param>
-        protected void SetBaseInfos(int statAtk, int statDef, int statHp, int statMp, int statStamina, int statMoveSpeed,
+        protected void SetBaseInfos(int statAtk, int statDef, int statHp, int statMp, int statStamina,
+            int statSuperArmor, int statMoveSpeed,
             int statAttackSpeed, int statRegistFire, int statRegistCold, int statRegistLightning)
         {
             BaseAtk = statAtk;
@@ -80,6 +85,7 @@ namespace GGemCo2DCore
             BaseHp = statHp;
             BaseMp = statMp;
             BaseStamina = statStamina;
+            BaseSuperArmor = statSuperArmor;
             BaseMoveSpeed = statMoveSpeed;
             BaseAttackSpeed = statAttackSpeed;
             BaseRegistFire = statRegistFire;
@@ -306,6 +312,7 @@ namespace GGemCo2DCore
             _totalHp = CalculateFinalStat(ConfigCommon.StatusStatHp, BaseHp);
             _totalMp = CalculateFinalStat(ConfigCommon.StatusStatMp, BaseMp);
             _totalStamina = CalculateFinalStat(ConfigCommon.StatusStatStamina, BaseStamina);
+            _totalSuperArmor = (int)CalculateFinalStat(ConfigCommon.StatusStatSuperArmor, BaseSuperArmor);
             _totalMoveSpeed = CalculateFinalStat(ConfigCommon.StatusStatMoveSpeed, BaseMoveSpeed);
             _totalAttackSpeed = CalculateFinalStat(ConfigCommon.StatusStatAttackSpeed, BaseAttackSpeed);
             _totalCriticalDamage = CalculateFinalStat(ConfigCommon.StatusStatCriticalDamage, BaseCriticalDamage);
@@ -319,6 +326,7 @@ namespace GGemCo2DCore
             TotalHp.OnNext(_totalHp);
             TotalMp.OnNext(_totalMp);
             TotalStamina.OnNext(_totalStamina);
+            TotalSuperArmor.OnNext(_totalSuperArmor);
             TotalMoveSpeed.OnNext(_totalMoveSpeed);
             TotalAttackSpeed.OnNext(_totalAttackSpeed);
             TotalCriticalDamage.OnNext(_totalCriticalDamage);
