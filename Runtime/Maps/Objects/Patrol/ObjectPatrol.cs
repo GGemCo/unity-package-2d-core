@@ -5,11 +5,16 @@ namespace GGemCo2DCore
     public class ObjectPatrol : DefaultMapObject
     {
         public PatrolData PatrolData;
-        public GameObject parentMonster;
-        public void SetParentMonster(GameObject value) => parentMonster = value;
+        public GameObject parentMonsterObject;
         
         private BoxCollider2D _boxCollider2D;
+        private Monster _parentMonster;
 
+        public void SetParentMonster(GameObject value)
+        {
+            parentMonsterObject = value;  
+            _parentMonster = parentMonsterObject.GetComponent<Monster>();
+        } 
         protected override void InitTagSortingLayer()
         {
             base.InitTagSortingLayer();
@@ -51,6 +56,7 @@ namespace GGemCo2DCore
         public void OnTriggerEnter2D(Collider2D collision)
         {
             if (collision == null) return;
+            if (_parentMonster.IsStatusDead()) return;
 
             if (!collision.gameObject.CompareTag(ConfigTags.GetValue(ConfigTags.Keys.Player))) return;
             var hitArea = collision.gameObject.GetComponentInChildren<CharacterHitArea>();
@@ -62,18 +68,18 @@ namespace GGemCo2DCore
             player.SetBattleStatusInBattle();
             
             // 몬스터 전투 상태로
-            if (!parentMonster)
+            if (!parentMonsterObject)
             {
                 GcLogger.LogError($"연결된 몬스터가 없습니다. ");
                 return;
             }
-            var monster = parentMonster.GetComponent<Monster>();
             // 몬스터가 데미지를 입었을 때와 같은 처리를 한다.
-            monster.OnDamage(player.gameObject);
+            _parentMonster.OnDamage(player.gameObject);
         }
         public void OnTriggerExit2D(Collider2D collision)
         {
             if (collision == null) return;
+            if (_parentMonster.IsStatusDead()) return;
 
             if (!collision.gameObject.CompareTag(ConfigTags.GetValue(ConfigTags.Keys.Player))) return;
             var hitArea = collision.gameObject.GetComponentInChildren<CharacterHitArea>();
@@ -85,13 +91,12 @@ namespace GGemCo2DCore
             player.SetBattleStatusNone();
             
             // 몬스터 전투 종료 상태로
-            if (!parentMonster)
+            if (!parentMonsterObject)
             {
                 GcLogger.LogError($"연결된 몬스터가 없습니다. ");
                 return;
             }
-            var monster = parentMonster.GetComponent<Monster>();
-            monster.SetAggro(false);
+            _parentMonster.SetAggro(false);
         }
 #if UNITY_EDITOR
         private void OnDrawGizmos()
