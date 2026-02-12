@@ -48,7 +48,8 @@ namespace GGemCo2DCoreEditor
         /// 맵에 몬스터 추가하기
         /// </summary>
         /// <param name="selectedMonsterIndex"></param>
-        public void AddMonsterToMap(int selectedMonsterIndex)
+        /// <param name="usePatrolMonster"></param>
+        public void AddMonsterToMap(int selectedMonsterIndex, bool usePatrolMonster)
         {
             if (!_defaultMap)
             {
@@ -77,9 +78,11 @@ namespace GGemCo2DCoreEditor
             if (!HelperEditorUI.ExistAddressableByPath(ConfigAddressableMap.GetPathCharacter(infoAnimation, true))) return;
             
             GameObject npcPrefab = AssetDatabaseLoaderManager.LoadAsset<GameObject>(monsterPath);
-            
+
             CharacterRegenData characterRegenData =
-                new CharacterRegenData(monsterData.Uid, Vector3.zero, false, _defaultMap.GetChapterNumber(), true);
+                new CharacterRegenData(monsterData.Uid, Vector3.zero, false, _defaultMap.GetChapterNumber(), true,
+                    patrolData: new PatrolData(Vector3.zero, Vector3.zero, Vector2.one, Vector2.zero));
+            
             GameObject monster = _characterManager.CreateMonster(monsterData.Uid, characterRegenData, npcPrefab);
             if (!monster)
             {
@@ -100,6 +103,12 @@ namespace GGemCo2DCoreEditor
             TextMeshProUGUI text = CreateInfoCanvas(monsterScript);
             text.text = $"Uid: {monsterData.Uid}\nPos: (0, 0)\nScale: {Math.Abs(monster.transform.localScale.x):F2}";
 
+            if (usePatrolMonster)
+            {
+                var patrol = PatrolEditorFactory.CreateOrLinkPatrol(_defaultMap, monsterScript, characterRegenData.patrolData);
+                if (patrol) monsterScript.SetPatrolObject(patrol.gameObject);
+            }
+            
             Debug.Log($"{monsterData.Name} 몬스터가 맵에 추가되었습니다.");
         }
         /// <summary>
@@ -119,7 +128,17 @@ namespace GGemCo2DCoreEditor
                 if (!child.CompareTag(ConfigTags.GetValue(ConfigTags.Keys.Monster))) continue;
                 var monster = child.gameObject.GetComponent<Monster>();
                 if (!monster) continue;
-                saveMonsterList.CharacterRegenDatas.Add(new CharacterRegenData(monster.uid, child.position, monster.isFlip, mapUid, true, 0, 0, monster.canMoveX, monster.canMoveY));
+                // 패트롤이 있는 경우
+                PatrolData patrolData = null;
+                if (monster.patrolObject)
+                {
+                    patrolData = new PatrolData(monster.patrolObject.transform.position, 
+                        monster.patrolObject.transform.eulerAngles, monster.patrolObject.GetComponent<BoxCollider2D>().size,
+                        monster.patrolObject.GetComponent<BoxCollider2D>().offset);
+                }
+
+                saveMonsterList.CharacterRegenDatas.Add(new CharacterRegenData(monster.uid, child.position,
+                    monster.isFlip, mapUid, true, 0, 0, monster.canMoveX, monster.canMoveY, patrolData));
                 
                 // map 라벨 붙여주기 
                 // AddressableSettings 가져오기
@@ -205,6 +224,12 @@ namespace GGemCo2DCoreEditor
                 // npc 정보 보여줄 canvas 추가
                 TextMeshProUGUI text = CreateInfoCanvas(myMonsterScript);
                 text.text = $"Uid: {monsterData.Uid}\nPos: ({monsterData.x}, {monsterData.y})\nScale: {Math.Abs(monster.transform.localScale.x):F2}";
+
+                var patrol = PatrolEditorFactory.CreateOrLinkPatrol(_defaultMap, myMonsterScript, monsterData.patrolData);
+                if (patrol)
+                {
+                    myMonsterScript.SetPatrolObject(patrol.gameObject);
+                }
             }
 
             Debug.Log("monster spawned successfully.");

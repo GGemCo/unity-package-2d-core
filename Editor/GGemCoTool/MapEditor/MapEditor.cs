@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using GGemCo2DCore;
 using UnityEditor;
 using UnityEditor.AddressableAssets;
@@ -7,41 +8,47 @@ using UnityEngine;
 
 namespace GGemCo2DCoreEditor
 {
-    public class MapEditor : DefaultEditorWindow
+    public sealed class MapEditor : DefaultEditorWindow
     {
-        private List<CharacterRegenData> _npcList;
-        private List<CharacterRegenData> _monsterDatas;
-        private List<WarpData> _warpDatas;
-        private static MapTileCommon _defaultMap;
-        private static GameObject _gridTileMap;
-        private static GameObject _player;
-
-        private CharacterManager _characterManager;
-        private static TableMap _tableMap;
-        private static TableNpc _tableNpc;
-        private static TableMonster _tableMonster;
-        private static TableAnimation _tableAnimation;
-
         private const string Title = "Map 배치툴";
+
+        // ---- Runtime refs (Editor session) ----
+        private CharacterManager _characterManager;
+        private AddressableLoaderPrefabCharacter _addressableLoaderPrefabCharacter;
+
+        private TableMap _tableMap;
+        private TableNpc _tableNpc;
+        private TableMonster _tableMonster;
+        private TableAnimation _tableAnimation;
+
+        private GameObject _gridTileMap;
+        private MapTileCommon _defaultMap;
 
         private readonly NpcExporter _npcExporter = new NpcExporter();
         private readonly MonsterExporter _monsterExporter = new MonsterExporter();
         private readonly WarpExporter _warpExporter = new WarpExporter();
-        private readonly PatrolExporter _patrolExporter = new PatrolExporter();
+        // private readonly PatrolExporter _patrolExporter = new PatrolExporter();
+
+        // ---- UI State ----
+        private Vector2 _scrollPos;
+        private bool _foldMap = true;
+        private bool _foldNpc = true;
+        private bool _foldMonster = true;
+        private bool _foldWarp = true;
+
+        private int _selectedMapIndex;
+        private int _selectedNpcIndex;
+        private int _selectedMonsterIndex;
+        private bool _usePatrolMonster;
+
+        // ---- Cached names (for Popup) ----
+        private readonly List<int> _mapUids = new List<int>();
+        private readonly List<string> _mapNames = new List<string>();
+        private readonly List<string> _npcNames = new List<string>();
+        private readonly List<string> _monsterNames = new List<string>();
         
-        // 이름 목록
-        private static List<string> _nameNpc;
-        private static List<string> _nameMonster;
-        private static List<string> _nameMap;
-        private static readonly Dictionary<int, StruckTableMap> StruckTableMaps = new Dictionary<int, StruckTableMap>();
-        
-        private int _loadMapUid;
-        private int _previousIndexMap;
-        private int _selectedIndexNpc;
-        private int _selectedIndexMonster;
-        private int _selectedIndexMap;
-        private Vector2 _scrollPos = Vector2.zero;
-        private AddressableLoaderPrefabCharacter _addressableLoaderPrefabCharacter;
+        // MapEditor.cs 상단 필드 추가
+        private bool _suppressSceneOpsThisEnable;
 
         [MenuItem(ConfigEditor.NameToolMapExporter, false, (int)ConfigEditor.ToolOrdering.MapExporter)]
         public static void ShowWindow()
@@ -52,329 +59,604 @@ namespace GGemCo2DCoreEditor
         protected override void OnEnable()
         {
             base.OnEnable();
-            _loadMapUid = 0;
-            _previousIndexMap = 0;
-            _selectedIndexNpc = 0;
-            _selectedIndexMonster = 0;
-            _selectedIndexMap = 0;
+
+            _selectedMapIndex = 0;
+            _selectedNpcIndex = 0;
+            _selectedMonsterIndex = 0;
+            _usePatrolMonster = false;
+
+            // 컴파일/도메인리로드 직후에는 씬 변경 작업을 막습니다.
+            // (아래 2)에서 더 정교하게 처리)
+            _suppressSceneOpsThisEnable = true;
+
+            LoadTables();
+            SetupServices();
+            InitializeExporters();
+            RebuildPopupCaches();
+
+            // Grid 생성 등 씬 작업은 즉시 하지 않고 delayCall로 한 틱 뒤로 미룹니다.
+            EditorApplication.delayCall += () =>
+            {
+                if (this == null) return; // 윈도우가 이미 닫혔을 수 있음
+                _suppressSceneOpsThisEnable = false;
+
+                // 여기서 Grid를 보장하는 것은 OK (삭제는 X)
+                EnsureGridObject();
+            };
+        }
+
+        private void OnDisable()
+        {
+            // DestroyGridObjectIfExists();
+        }
+
+        private void LoadTables()
+        {
             _tableMap = TableLoaderManager.LoadMapTable();
             _tableNpc = TableLoaderManager.LoadNpcTable();
             _tableMonster = TableLoaderManager.LoadMonsterTable();
             _tableAnimation = TableLoaderManager.LoadSpineTable();
-
-            _addressableLoaderPrefabCharacter = new AddressableLoaderPrefabCharacter();
-            
-            CreateGirdObject();
         }
-        private void CreateGirdObject()
-        {
-            // 타일맵을 추가할 grid
-            _gridTileMap = GameObject.Find(ConfigTags.GetValue(ConfigTags.Keys.GridTileMap));
-            if (!_gridTileMap)
-            {
-                _gridTileMap = new GameObject(ConfigTags.GetValue(ConfigTags.Keys.GridTileMap))
-                {
-                    tag = ConfigTags.GetValue(ConfigTags.Keys.GridTileMap)
-                };
-                Grid grid = _gridTileMap.gameObject.AddComponent<Grid>();
 
-                GGemCoMapSettings mapSettings = AssetDatabaseLoaderManager.LoadAsset<GGemCoMapSettings>(ConfigAddressableSetting.MapSettings.Path);
-                    
-                Vector2 tilemapGridSize = mapSettings.tilemapGridCellSize;
-                if (tilemapGridSize == Vector2.zero)
-                {
-                    Debug.LogError(
-                        $"타일맵 Grid 사이즈가 정해지지 않았습니다. {ConfigDefine.NameSDK}MapSettings 에 Tilemap Grid Cell Size 를 입력해주세요.");
-                    return;
-                }
-                grid.cellSize = new Vector3(tilemapGridSize.x, tilemapGridSize.y, 0);
-                grid.cellLayout = GridLayout.CellLayout.Rectangle;
+        private void SetupServices()
+        {
+            _addressableLoaderPrefabCharacter = new AddressableLoaderPrefabCharacter();
+
+            _characterManager = new CharacterManager();
+            if (_tableNpc != null && _tableMonster != null && _tableAnimation != null)
+            {
+                _characterManager.Initialize(_tableNpc, _tableMonster, _tableAnimation, _addressableLoaderPrefabCharacter);
+            }
+        }
+
+        private void EnsureGridObject()
+        {
+            _gridTileMap = GameObject.Find(ConfigTags.GetValue(ConfigTags.Keys.GridTileMap));
+            if (_gridTileMap != null) return;
+
+            _gridTileMap = new GameObject(ConfigTags.GetValue(ConfigTags.Keys.GridTileMap))
+            {
+                tag = ConfigTags.GetValue(ConfigTags.Keys.GridTileMap)
+            };
+
+            var grid = _gridTileMap.AddComponent<Grid>();
+
+            GGemCoMapSettings mapSettings =
+                AssetDatabaseLoaderManager.LoadAsset<GGemCoMapSettings>(ConfigAddressableSetting.MapSettings.Path);
+
+            if (mapSettings == null)
+            {
+                Debug.LogError($"MapSettings 로드 실패: {ConfigAddressableSetting.MapSettings.Path}");
+                return;
             }
 
+            Vector2 cellSize = mapSettings.tilemapGridCellSize;
+            if (cellSize == Vector2.zero)
+            {
+                Debug.LogError($"타일맵 Grid 사이즈가 정해지지 않았습니다. {ConfigDefine.NameSDK}MapSettings 의 Tilemap Grid Cell Size 를 입력해주세요.");
+                return;
+            }
+
+            grid.cellSize = new Vector3(cellSize.x, cellSize.y, 0);
+            grid.cellLayout = GridLayout.CellLayout.Rectangle;
+        }
+
+        private void DestroyGridObjectIfExists()
+        {
+            var obj = GameObject.FindWithTag(ConfigTags.GetValue(ConfigTags.Keys.GridTileMap));
+            if (obj == null) return;
+
+            // Grid가 선택되어 있거나, Grid 하위가 선택되어 있으면 Selection 정리
+            ClearSelectionIfInSubtree(obj.transform);
+
+            SafeDestroyImmediate(obj);
+        }
+
+        private void InitializeExporters()
+        {
 #if UNITY_6000_0_OR_NEWER
             var defaultMap = FindFirstObjectByType<DefaultMap>();
 #else
             var defaultMap = FindObjectOfType<DefaultMap>();
 #endif
-            
-            _characterManager = new CharacterManager();
-            _characterManager.Initialize(_tableNpc, _tableMonster, _tableAnimation, _addressableLoaderPrefabCharacter);
-            
             _npcExporter.Initialize(_tableNpc, _tableAnimation, defaultMap, _characterManager);
             _monsterExporter.Initialize(_tableMonster, _tableAnimation, defaultMap, _characterManager);
             _warpExporter.Initialize(defaultMap);
-            _patrolExporter.Initialize(defaultMap);
-            LoadInfoDataNpc();
-            LoadInfoDataMonster();
-            LoadInfoDataMap();
+            // _patrolExporter.Initialize(defaultMap);
         }
 
-        private void OnDestroy()
+        private void RebuildPopupCaches()
         {
-            GameObject obj = GameObject.FindWithTag(ConfigTags.GetValue(ConfigTags.Keys.GridTileMap));
-            if (obj)
+            _mapUids.Clear();
+            _mapNames.Clear();
+            _npcNames.Clear();
+            _monsterNames.Clear();
+
+            if (_tableMap != null)
             {
-                DestroyImmediate(obj);
+                var mapDict = _tableMap.GetDatas();
+                foreach (var kv in mapDict)
+                {
+                    var info = kv.Value;
+                    if (info == null || info.Uid <= 0) continue;
+                    _mapUids.Add(info.Uid);
+                    _mapNames.Add($"{info.Uid} - {info.Name}");
+                }
             }
+
+            if (_tableNpc != null)
+            {
+                var npcDict = _tableNpc.GetDatas();
+                foreach (var kv in npcDict)
+                {
+                    var info = kv.Value;
+                    if (info == null || info.Uid <= 0) continue;
+                    _npcNames.Add($"{info.Uid} - {info.Name}");
+                }
+            }
+
+            if (_tableMonster != null)
+            {
+                var monsterDict = _tableMonster.GetDatas();
+                foreach (var kv in monsterDict)
+                {
+                    var info = kv.Value;
+                    if (info == null || info.Uid <= 0) continue;
+                    _monsterNames.Add($"{info.Uid} - {info.Name}");
+                }
+            }
+
+            _selectedMapIndex = Mathf.Clamp(_selectedMapIndex, 0, Math.Max(0, _mapNames.Count - 1));
+            _selectedNpcIndex = Mathf.Clamp(_selectedNpcIndex, 0, Math.Max(0, _npcNames.Count - 1));
+            _selectedMonsterIndex = Mathf.Clamp(_selectedMonsterIndex, 0, Math.Max(0, _monsterNames.Count - 1));
         }
 
         private void OnGUI()
         {
-            if (_nameNpc == null) return;
-            
-            _scrollPos = EditorGUILayout.BeginScrollView(_scrollPos);
-            
-            GUILayout.Label("* 맵 배치 불러오기", EditorStyles.whiteLargeLabel);
-            // 파일 경로 및 파일명 입력
-            _selectedIndexMap = EditorGUILayout.Popup("맵 선택", _selectedIndexMap, _nameMap.ToArray());
-            _loadMapUid = StruckTableMaps.GetValueOrDefault(_selectedIndexMap)?.Uid ?? 0;
-            if (_previousIndexMap != _selectedIndexMap)
+            DrawToolbar();
+
+            if (!IsDataReady())
             {
-                // 선택이 바뀌었을 때 실행할 코드
-                // Debug.Log($"선택이 변경되었습니다: {questTitle[selectedQuestIndex]}");
-                if (LoadJsonData())
-                {
-                    _previousIndexMap = _selectedIndexMap;
-                }
-                else
-                {
-                    _selectedIndexMap = _previousIndexMap;
-                }
-            }
-            
-            GUILayout.BeginHorizontal();
-            // 불러오기 버튼
-            if (GUILayout.Button("불러오기")) LoadJsonData();
-            if (GUILayout.Button("저장하기")) ExportDataToJson();
-            GUILayout.EndHorizontal();
-            
-            GUILayout.Space(20);
-            // NPC 추가 섹션
-            GUILayout.Label("* NPC 추가", EditorStyles.whiteLargeLabel);
-            // NPC 드롭다운
-            _selectedIndexNpc = EditorGUILayout.Popup("NPC 선택", _selectedIndexNpc, _nameNpc.ToArray());
-            // NPC 추가 버튼
-            if (GUILayout.Button("NPC 추가"))
-            {
-                _npcExporter.AddNpcToMap(_selectedIndexNpc);
-            }
-            
-            GUILayout.Space(20);
-            // 몬스터 추가 섹션
-            GUILayout.Label("* 몬스터 추가", EditorStyles.whiteLargeLabel);
-            // 몬스터 드롭다운
-            _selectedIndexMonster = EditorGUILayout.Popup("몬스터 선택", _selectedIndexMonster, _nameMonster.ToArray());
-            // 몬스터 추가 버튼
-            if (GUILayout.Button("몬스터 추가"))
-            {
-                _monsterExporter.AddMonsterToMap(_selectedIndexMonster);
-            }
-            
-            GUILayout.Space(20);
-            // 워프 추가 섹션
-            GUILayout.Label("* 워프 추가", EditorStyles.whiteLargeLabel);
-            // 워프 추가 버튼
-            if (GUILayout.Button("워프 추가"))
-            {
-                _warpExporter.AddWarpToMap();
-            }
-            
-            GUILayout.Space(20);
-            // 패트롤 영역 추가 섹션
-            GUILayout.Label("* 패트롤 영역 추가", EditorStyles.whiteLargeLabel);
-            if (GUILayout.Button("패트롤 영역 추가"))
-            {
-                _patrolExporter.AddPatrolToMap();
-            }
-            
-            GUILayout.Space(20);
-            EditorGUILayout.EndScrollView();
-        }
-        private void ExportDataToJson()
-        {
-            bool result = EditorUtility.DisplayDialog("저장하기", "현재 선택된 맵에 저장하시겠습니까?", "네", "아니요");
-            if (!result) return;
-            // 태그가 'Map'인 오브젝트를 찾습니다.
-            GameObject mapObject = GameObject.FindGameObjectWithTag(ConfigTags.GetValue(ConfigTags.Keys.Map));
-        
-            if (!mapObject)
-            {
-                Debug.LogWarning("No GameObject with the tag 'Map' found in the scene.");
+                DrawDataNotReady();
                 return;
             }
 
-            StruckTableMap info = _tableMap.GetDataByUid(_loadMapUid);
-            string folderName = info.FolderName;
-            string currentJsonFolderPath = ConfigAddressablePath.Maps.Folder(folderName);
-            
-            // monster, npc 의 label 업데이트 해주기
-            // AddressableEditor 창을 찾거나, 없으면 새로 열기
-            string labelName = ConfigAddressableMap.GetLabel(folderName);
-            // 기존에 설정된 map 라벨은 삭제
-            RemoveCharacterMapLabel(labelName);
+            _scrollPos = EditorGUILayout.BeginScrollView(_scrollPos); // :contentReference[oaicite:3]{index=3}
+            {
+                DrawMapSection();
+                GUILayout.Space(12);
+                DrawNpcSection();
+                GUILayout.Space(12);
+                DrawMonsterSection();
+                GUILayout.Space(12);
+                DrawWarpSection();
+            }
+            EditorGUILayout.EndScrollView();
+        }
 
-            
-            _npcExporter.ExportNpcDataToJson(currentJsonFolderPath, ConfigAddressableMap.GetFileName(MapAssetType.RegenNpcJson), _loadMapUid, info);
-            _monsterExporter.ExportMonsterDataToJson(currentJsonFolderPath, ConfigAddressableMap.GetFileName(MapAssetType.RegenMonsterJson), _loadMapUid, info);
-            _warpExporter.ExportWarpDataToJson(currentJsonFolderPath, ConfigAddressableMap.GetFileName(MapAssetType.WarpJson), _loadMapUid);
-            _patrolExporter.ExportPatrolDataToJson(currentJsonFolderPath, ConfigAddressableMap.GetFileName(MapAssetType.PatrolJson), _loadMapUid);
-            AssetDatabase.Refresh();
-            
+        private void DrawToolbar()
+        {
+            using (new EditorGUILayout.HorizontalScope(EditorStyles.toolbar))
+            {
+                GUILayout.Label(Title, EditorStyles.toolbarButton);
+
+                GUILayout.FlexibleSpace();
+
+                if (GUILayout.Button("데이터 새로고침", EditorStyles.toolbarButton))
+                {
+                    LoadTables();
+                    SetupServices();
+                    InitializeExporters();
+                    RebuildPopupCaches();
+                    Repaint();
+                }
+            }
+        }
+
+        private bool IsDataReady()
+        {
+            return _tableMap != null
+                   && _tableNpc != null
+                   && _tableMonster != null
+                   && _tableAnimation != null
+                   && _mapNames.Count > 0;
+        }
+
+        private void DrawDataNotReady()
+        {
+            EditorGUILayout.HelpBox(
+                "테이블 또는 목록 데이터가 준비되지 않았습니다.\n" +
+                "- Map/Npc/Monster/Animation 테이블 로드 여부\n" +
+                "- 테이블의 Uid > 0 데이터 존재 여부\n" +
+                "상단 '데이터 새로고침'으로 재시도 해주세요.",
+                MessageType.Warning); // :contentReference[oaicite:4]{index=4}
+        }
+
+        private int GetSelectedMapUid()
+        {
+            if (_selectedMapIndex < 0 || _selectedMapIndex >= _mapUids.Count) return 0;
+            return _mapUids[_selectedMapIndex];
+        }
+
+        private void DrawMapSection()
+        {
+            _foldMap = EditorGUILayout.Foldout(_foldMap, "1) 맵 불러오기 / 저장", true);
+            if (!_foldMap) return;
+
+            using (new EditorGUILayout.VerticalScope(EditorStyles.helpBox))
+            {
+                EditorGUILayout.HelpBox(
+                    "맵을 선택한 뒤 '불러오기'로 배치 데이터를 로드합니다.\n" +
+                    "NPC/몬스터/워프/패트롤 배치 후 '저장하기'로 Json을 갱신합니다.",
+                    MessageType.Info);
+                if (_suppressSceneOpsThisEnable)
+                {
+                    EditorGUILayout.HelpBox(
+                        "스크립트 리컴파일 직후에는 자동 로드를 수행하지 않습니다. '불러오기' 버튼으로 진행해주세요.",
+                        MessageType.Info);
+                }
+
+                EditorGUI.BeginChangeCheck();
+                _selectedMapIndex = EditorGUILayout.Popup("맵 선택", _selectedMapIndex, _mapNames.ToArray()); // :contentReference[oaicite:5]{index=5}
+                if (EditorGUI.EndChangeCheck())
+                {
+                    // 선택 변경 시 즉시 로드(기존 동작 유지)
+                    if (_suppressSceneOpsThisEnable)
+                    {
+                        // 컴파일 직후에는 자동 로드 금지 (사용자 명시 액션으로만)
+                        Repaint();
+                    }
+                    else
+                    {
+                        TryLoadSelectedMapWithConfirm();
+                    }
+                }
+
+                using (new EditorGUILayout.HorizontalScope())
+                {
+                    GUI.enabled = GetSelectedMapUid() > 0;
+
+                    if (GUILayout.Button("불러오기", GUILayout.Height(28)))
+                    {
+                        TryLoadSelectedMapWithConfirm(force: true);
+                    }
+
+                    if (GUILayout.Button("저장하기", GUILayout.Height(28)))
+                    {
+                        ExportDataToJsonWithConfirm();
+                    }
+
+                    GUI.enabled = true;
+                }
+            }
+        }
+
+        private void DrawNpcSection()
+        {
+            _foldNpc = EditorGUILayout.Foldout(_foldNpc, "2) NPC 추가", true);
+            if (!_foldNpc) return;
+
+            using (new EditorGUILayout.VerticalScope(EditorStyles.helpBox))
+            {
+                _selectedNpcIndex = EditorGUILayout.Popup("NPC 선택", _selectedNpcIndex, _npcNames.ToArray());
+
+                using (new EditorGUILayout.HorizontalScope())
+                {
+                    GUI.enabled = GetSelectedMapUid() > 0;
+
+                    if (GUILayout.Button("NPC 추가", GUILayout.Height(26)))
+                    {
+                        _npcExporter.AddNpcToMap(_selectedNpcIndex);
+                    }
+
+                    GUI.enabled = true;
+                }
+            }
+        }
+
+        private void DrawMonsterSection()
+        {
+            _foldMonster = EditorGUILayout.Foldout(_foldMonster, "3) 몬스터 추가", true);
+            if (!_foldMonster) return;
+
+            using (new EditorGUILayout.VerticalScope(EditorStyles.helpBox))
+            {
+                _selectedMonsterIndex = EditorGUILayout.Popup("몬스터 선택", _selectedMonsterIndex, _monsterNames.ToArray());
+
+                _usePatrolMonster = HelperEditorUI.ToggleLeft(
+                    "패트롤 영역 생성",
+                    _usePatrolMonster,
+                    "몬스터 추가와 함께 패트롤 영역 오브젝트를 생성합니다."
+                );
+
+                using (new EditorGUILayout.HorizontalScope())
+                {
+                    GUI.enabled = GetSelectedMapUid() > 0;
+
+                    if (GUILayout.Button("몬스터 추가", GUILayout.Height(26)))
+                    {
+                        _monsterExporter.AddMonsterToMap(_selectedMonsterIndex, _usePatrolMonster);
+                    }
+
+                    GUI.enabled = true;
+                }
+            }
+        }
+
+        private void DrawWarpSection()
+        {
+            _foldWarp = EditorGUILayout.Foldout(_foldWarp, "4) 워프 추가", true);
+            if (!_foldWarp) return;
+
+            using (new EditorGUILayout.VerticalScope(EditorStyles.helpBox))
+            {
+                using (new EditorGUILayout.HorizontalScope())
+                {
+                    GUI.enabled = GetSelectedMapUid() > 0;
+
+                    if (GUILayout.Button("워프 추가", GUILayout.Height(26)))
+                    {
+                        _warpExporter.AddWarpToMap();
+                    }
+
+                    GUI.enabled = true;
+                }
+            }
+        }
+
+        private bool TryLoadSelectedMapWithConfirm(bool force = false)
+        {
+            if (GetSelectedMapUid() <= 0) return false;
+
+            if (!force)
+            {
+                bool ok = EditorUtility.DisplayDialog("불러오기",
+                    "현재 불러온 내용이 초기화 됩니다.\n계속 진행할까요?",
+                    "네", "아니요");
+                if (!ok) return false;
+            }
+            else
+            {
+                bool ok = EditorUtility.DisplayDialog("불러오기",
+                    "현재 불러온 내용이 초기화 됩니다.\n계속 진행할까요?",
+                    "네", "아니요");
+                if (!ok) return false;
+            }
+
+            return LoadJsonDataInternal();
+        }
+
+        private void ExportDataToJsonWithConfirm()
+        {
+            if (GetSelectedMapUid() <= 0) return;
+
+            bool ok = EditorUtility.DisplayDialog("저장하기", "현재 선택된 맵에 저장하시겠습니까?", "네", "아니요");
+            if (!ok) return;
+
+            ExportDataToJsonInternal();
             EditorUtility.DisplayDialog(Title, "Json 저장하기 완료", "OK");
         }
-        
+
+        private bool LoadJsonDataInternal()
+        {
+            int mapUid = GetSelectedMapUid();
+            var mapData = _tableMap.GetDataByUid(mapUid);
+            if (mapData == null || mapData.Uid <= 0)
+            {
+                Debug.LogError("맵 데이터가 없거나 유효하지 않습니다.");
+                return false;
+            }
+
+            LoadTileData(mapData);
+
+            _npcExporter.LoadNpcData(ConfigAddressableMap.GetAssetPathRegenNpc(mapData.FolderName));
+            _monsterExporter.LoadMonsterData(ConfigAddressableMap.GetAssetPathRegenMonster(mapData.FolderName));
+            _warpExporter.LoadWarpData(ConfigAddressableMap.GetAssetPathWarp(mapData.FolderName));
+            // _patrolExporter.LoadJsonData(ConfigAddressableMap.GetAssetPathPatrol(mapData.FolderName));
+
+            return true;
+        }
+
+        private void ExportDataToJsonInternal()
+        {
+            int mapUid = GetSelectedMapUid();
+
+            GameObject mapObject = GameObject.FindGameObjectWithTag(ConfigTags.GetValue(ConfigTags.Keys.Map));
+            if (!mapObject)
+            {
+                Debug.LogWarning("Scene에서 Map 태그 오브젝트를 찾을 수 없습니다.");
+                return;
+            }
+
+            var mapInfo = _tableMap.GetDataByUid(mapUid);
+            if (mapInfo == null || mapInfo.Uid <= 0)
+            {
+                Debug.LogError("맵 데이터가 없거나 유효하지 않습니다.");
+                return;
+            }
+
+            string folderName = mapInfo.FolderName;
+            string jsonFolderPath = ConfigAddressablePath.Maps.Folder(folderName);
+
+            // monster, npc 의 label 업데이트 해주기
+            string labelName = ConfigAddressableMap.GetLabel(folderName);
+            RemoveCharacterMapLabel(labelName);
+
+            _npcExporter.ExportNpcDataToJson(jsonFolderPath, ConfigAddressableMap.GetFileName(MapAssetType.RegenNpcJson), mapUid, mapInfo);
+            _monsterExporter.ExportMonsterDataToJson(jsonFolderPath, ConfigAddressableMap.GetFileName(MapAssetType.RegenMonsterJson), mapUid, mapInfo);
+            _warpExporter.ExportWarpDataToJson(jsonFolderPath, ConfigAddressableMap.GetFileName(MapAssetType.WarpJson), mapUid);
+            // _patrolExporter.ExportPatrolDataToJson(jsonFolderPath, ConfigAddressableMap.GetFileName(MapAssetType.PatrolJson), mapUid);
+
+            AssetDatabase.Refresh();
+        }
+
         private void RemoveCharacterMapLabel(string labelName)
         {
-            // AddressableSettings 가져오기 (없으면 생성)
             AddressableAssetSettings settings = AddressableAssetSettingsDefaultObject.Settings;
             if (!settings)
             {
-                Debug.LogWarning("Addressable 설정을 찾을 수 없습니다. 새로 생성합니다.");
+                Debug.LogWarning("Addressable 설정을 찾을 수 없습니다.");
                 return;
             }
-            
-            Dictionary<int, StruckTableMonster> datas = _tableMonster.GetDatas();
-            foreach (KeyValuePair<int, StruckTableMonster> outerPair in datas)
+
+            // Monster labels
+            var monsters = _tableMonster.GetDatas();
+            foreach (var kv in monsters)
             {
-                var info = outerPair.Value;
+                var info = kv.Value;
                 if (info == null) continue;
-                var infoAnimation = _tableAnimation.GetDataByUid(info.AnimationUid);
-                if (infoAnimation == null) continue;
-                string assetPath = ConfigAddressableMap.GetPathCharacter(infoAnimation, true);
-                // 기존 Addressable 항목 확인
-                AddressableAssetEntry entry = settings.FindAssetEntry(AssetDatabase.AssetPathToGUID(assetPath));
+
+                var anim = _tableAnimation.GetDataByUid(info.AnimationUid);
+                if (anim == null) continue;
+
+                string assetPath = ConfigAddressableMap.GetPathCharacter(anim, true);
+                string guid = AssetDatabase.AssetPathToGUID(assetPath);
+                if (string.IsNullOrEmpty(guid)) continue;
+
+                var entry = settings.FindAssetEntry(guid);
+                // SetLabel: enable=false => remove (Addressables API) :contentReference[oaicite:6]{index=6}
                 entry?.SetLabel(labelName, false, true);
             }
-       
-            Dictionary<int, StruckTableNpc> dataNpc = _tableNpc.GetDatas();
-            foreach (KeyValuePair<int, StruckTableNpc> outerPair in dataNpc)
+
+            // NPC labels
+            var npcs = _tableNpc.GetDatas();
+            foreach (var kv in npcs)
             {
-                var info = outerPair.Value;
+                var info = kv.Value;
                 if (info == null) continue;
-                var infoAnimation = _tableAnimation.GetDataByUid(info.AnimationUid);
-                if (infoAnimation == null) continue;
-                string assetPath = ConfigAddressableMap.GetPathCharacter(infoAnimation, true);
-                // 기존 Addressable 항목 확인
-                AddressableAssetEntry entry = settings.FindAssetEntry(AssetDatabase.AssetPathToGUID(assetPath));
+
+                var anim = _tableAnimation.GetDataByUid(info.AnimationUid);
+                if (anim == null) continue;
+
+                string assetPath = ConfigAddressableMap.GetPathCharacter(anim, true);
+                string guid = AssetDatabase.AssetPathToGUID(assetPath);
+                if (string.IsNullOrEmpty(guid)) continue;
+
+                var entry = settings.FindAssetEntry(guid);
                 entry?.SetLabel(labelName, false, true);
             }
         }
-        /// <summary>
-        /// AddressableEditor로 SettingMap Setup 호출
-        /// </summary>
-        /// <param name="addressableEditor"></param>
-        private void SetupAddressable(AddressableEditor addressableEditor)
+
+        private void LoadTileData(StruckTableMap mapData)
         {
-            if (addressableEditor == null)
+            // 1) GridTileMap 확보
+            if (!_gridTileMap)
             {
-                Debug.LogError("AddressableEditor 창을 찾을 수 없습니다.");
-                return;
+                _gridTileMap = GameObject.Find(ConfigTags.GetValue(ConfigTags.Keys.GridTileMap));
+                if (!_gridTileMap)
+                {
+                    Debug.LogError("GridTileMap 오브젝트가 없습니다. 다시 생성 또는 씬 상태를 확인해주세요.");
+                    return;
+                }
             }
 
-            // SettingMap 생성 및 Setup 호출
-            SettingMap settingMap = new SettingMap(addressableEditor);
-            settingMap.Setup();
+            // 2) Selection 안전 처리 (Grid 하위에 선택된 것이 있으면 먼저 정리)
+            ClearSelectionIfInSubtree(_gridTileMap.transform);
 
-            Debug.Log("Addressable 설정 완료 (SettingMap.Setup 호출됨)");
-        }
-
-        private bool LoadJsonData()
-        {
-            bool result = EditorUtility.DisplayDialog("불러오기", "현재 불러온 내용이 초기화 됩니다.\n계속 진행할가요?", "네", "아니요");
-            if (!result) return false;
-            var mapData = _tableMap.GetDataByUid(_loadMapUid);
-            
-            LoadTileData();
-            _npcExporter.LoadNpcData($"{ConfigAddressableMap.GetAssetPathRegenNpc(mapData.FolderName)}");
-            _monsterExporter.LoadMonsterData($"{ConfigAddressableMap.GetAssetPathRegenMonster(mapData.FolderName)}");
-            _warpExporter.LoadWarpData($"{ConfigAddressableMap.GetAssetPathWarp(mapData.FolderName)}");
-            _patrolExporter.LoadJsonData($"{ConfigAddressableMap.GetAssetPathPatrol(mapData.FolderName)}");
-            return true;
-        }
-        /// <summary>
-        /// MapManager.cs:25
-        /// </summary>
-        private void LoadTileData()
-        {
-            var mapData = _tableMap.GetDataByUid(_loadMapUid);
-            if (mapData.Uid <= 0)
+            // 3) 기존에 툴이 로드했던 맵(=Grid 하위)만 제거
+            //    ※ 태그 기반 전체 삭제를 피합니다.
+            for (int i = _gridTileMap.transform.childCount - 1; i >= 0; i--)
             {
-                Debug.LogError("맵 데이터가 없거나 리젠 파일명이 없습니다.");
-                return;
-            }
-            
-            GameObject[] tilemap = GameObject.FindGameObjectsWithTag(ConfigTags.GetValue(ConfigTags.Keys.Map));
-            foreach (var map in tilemap)
-            {
-                DestroyImmediate(map);
+                var child = _gridTileMap.transform.GetChild(i);
+                if (child != null)
+                {
+                    SafeDestroyImmediate(child.gameObject);
+                }
             }
 
+            // 4) 프리팹 로드/생성
             string tilemapPath = ConfigAddressableMap.GetAssetPathTileMap(mapData.FolderName);
             GameObject prefab = AssetDatabaseLoaderManager.LoadAsset<GameObject>(tilemapPath);
             if (!prefab)
             {
-                Debug.LogError("맵 프리팹이 없습니다. mapUid : " + _loadMapUid + " / path : "+tilemapPath);
+                Debug.LogError($"맵 프리팹이 없습니다. mapUid:{mapData.Uid} / path:{tilemapPath}");
                 return;
             }
 
-            if (!_gridTileMap)
-            {
-                _gridTileMap = GameObject.Find(ConfigTags.GetValue(ConfigTags.Keys.GridTileMap));
-            }
             GameObject currentMap = Instantiate(prefab, _gridTileMap.transform);
+            Selection.activeGameObject = currentMap;
+            EditorGUIUtility.PingObject(currentMap);
+
             _defaultMap = currentMap.GetComponent<MapTileCommon>();
+            if (_defaultMap == null)
+            {
+                Debug.LogError("MapTileCommon 컴포넌트를 찾을 수 없습니다.");
+                return;
+            }
+
             _defaultMap.InitComponents();
             _defaultMap.InitTagSortingLayer();
             _defaultMap.Initialize(mapData.Uid, mapData.Name, mapData.Type, mapData.Subtype);
+
             _npcExporter.SetDefaultMap(_defaultMap);
             _monsterExporter.SetDefaultMap(_defaultMap);
             _warpExporter.SetDefaultMap(_defaultMap);
-            _patrolExporter.SetDefaultMap(_defaultMap);
-        }
-        /// <summary>
-        /// npc 정보 불러오기
-        /// </summary>
-        private void LoadInfoDataNpc()
-        {
-            Dictionary<int, StruckTableNpc> npcDictionary = _tableNpc.GetDatas();
-             
-            _nameNpc = new List<string>();
-            foreach (KeyValuePair<int, StruckTableNpc> outerPair in npcDictionary)
-            {
-                var info = outerPair.Value;
-                if (info.Uid <= 0) continue;
-                _nameNpc.Add($"{info.Uid} - {info.Name}");
-            }
-        }
-        /// <summary>
-        ///  몬스터 정보 불러오기
-        /// </summary>
-        private void LoadInfoDataMonster()
-        {
-            Dictionary<int, StruckTableMonster> monsterDictionary = _tableMonster.GetDatas();
-             
-            _nameMonster = new List<string>();
-            foreach (KeyValuePair<int, StruckTableMonster> outerPair in monsterDictionary)
-            {
-                var info = outerPair.Value;
-                if (info.Uid <= 0) continue;
-                _nameMonster.Add($"{info.Uid} - {info.Name}");
-            }
+            // _patrolExporter.SetDefaultMap(_defaultMap);
         }
 
-        private void LoadInfoDataMap()
+        private static bool IsSelectionInSubtree(Transform root)
         {
-            StruckTableMaps.Clear();
-            Dictionary<int, StruckTableMap> monsterDictionary = _tableMap.GetDatas();
-            _nameMap = new List<string>();
-            int index = 0;
-            foreach (KeyValuePair<int, StruckTableMap> outerPair in monsterDictionary)
+            if (root == null) return false;
+
+            // Selection.gameObjects는 내부적으로 null을 필터링해주지 않는 케이스가 있어
+            // 방어적으로 Object 배열로 확인합니다.
+            var selected = Selection.objects;
+            if (selected == null || selected.Length == 0) return false;
+
+            for (int i = 0; i < selected.Length; i++)
             {
-                var info = outerPair.Value;
-                if (info.Uid <= 0) continue;
-                _nameMap.Add($"{info.Uid} - {info.Name}");
-                StruckTableMaps.TryAdd(index++, info);
+                var obj = selected[i];
+                if (obj == null) continue; // 이미 파괴되어 null일 수 있음
+
+                // 게임오브젝트/컴포넌트 둘 다 대응
+                GameObject go = null;
+                if (obj is GameObject g) go = g;
+                else if (obj is Component c) go = c.gameObject;
+
+                if (go == null) continue;
+
+                if (go.transform == root || go.transform.IsChildOf(root))
+                    return true;
             }
+
+            return false;
+        }
+
+        private static void ClearSelectionIfInSubtree(Transform root)
+        {
+            if (!IsSelectionInSubtree(root)) return;
+
+            // 인스펙터가 null Selection을 잡고 SerializedObject 만들기 전에 Selection 정리
+            Selection.objects = Array.Empty<UnityEngine.Object>();
+
+            // 안전하게 인스펙터/하이라키 리페인트
+            EditorApplication.delayCall += () =>
+            {
+                EditorApplication.RepaintHierarchyWindow();
+                // InspectorWindow는 내부 타입이라 직접 접근이 까다롭지만,
+                // Selection 변경으로 대부분 갱신됩니다.
+            };
+        }
+
+        private static void SafeDestroyImmediate(GameObject go)
+        {
+            if (!go) return;
+
+            // 혹시 그 오브젝트 자체가 선택되어 있는 경우도 대비
+            var selected = Selection.objects;
+            if (selected != null)
+            {
+                for (int i = 0; i < selected.Length; i++)
+                {
+                    if (selected[i] == go)
+                    {
+                        Selection.objects = Array.Empty<UnityEngine.Object>();
+                        break;
+                    }
+                }
+            }
+
+            DestroyImmediate(go);
         }
     }
 }

@@ -24,7 +24,6 @@ namespace GGemCo2DCore
         private const string KeyNameRegenNpc   = "regen_npc";
         private const string KeyNameRegenMonster = "regen_monster";
         private const string KeyNameWarp       = "warp";
-        private const string KeyNamePatrol     = "patrol";
 
         private const string ExtPrefab = ".prefab";
         private const string ExtJson   = ".json";
@@ -53,13 +52,11 @@ namespace GGemCo2DCore
         // 기존 헬퍼 호환용 (선택)
         public static string GetKeyTileMap(string folderName)          => GetKey(folderName, MapAssetType.TilemapPrefab);
         public static string GetKeyJsonWarp(string folderName)         => GetKey(folderName, MapAssetType.WarpJson);
-        public static string GetKeyJsonPatrol(string folderName)         => GetKey(folderName, MapAssetType.PatrolJson);
         public static string GetKeyJsonRegenNpc(string folderName)     => GetKey(folderName, MapAssetType.RegenNpcJson);
         public static string GetKeyJsonRegenMonster(string folderName) => GetKey(folderName, MapAssetType.RegenMonsterJson);
         
         public static string GetAssetPathTileMap(string folderName)    => GetAssetPath(folderName, MapAssetType.TilemapPrefab);
         public static string GetAssetPathWarp(string folderName)       => GetAssetPath(folderName, MapAssetType.WarpJson);
-        public static string GetAssetPathPatrol(string folderName)     => GetAssetPath(folderName, MapAssetType.PatrolJson);
         public static string GetAssetPathRegenNpc(string folderName)   => GetAssetPath(folderName, MapAssetType.RegenNpcJson);
         public static string GetAssetPathRegenMonster(string folderName)=> GetAssetPath(folderName, MapAssetType.RegenMonsterJson);
 
@@ -69,7 +66,6 @@ namespace GGemCo2DCore
             MapAssetType.RegenNpcJson     => KeyNameRegenNpc,
             MapAssetType.RegenMonsterJson => KeyNameRegenMonster,
             MapAssetType.WarpJson         => KeyNameWarp,
-            MapAssetType.PatrolJson       => KeyNamePatrol,
             _ => throw new ArgumentOutOfRangeException(nameof(type), type, null)
         };
 
@@ -79,7 +75,6 @@ namespace GGemCo2DCore
             MapAssetType.RegenNpcJson     => KeyNameRegenNpc + ExtJson,
             MapAssetType.RegenMonsterJson => KeyNameRegenMonster + ExtJson,
             MapAssetType.WarpJson         => KeyNameWarp + ExtJson,
-            MapAssetType.PatrolJson       => KeyNamePatrol + ExtJson,
             _ => throw new ArgumentOutOfRangeException(nameof(type), type, null)
         };
 

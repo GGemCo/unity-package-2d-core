@@ -12,6 +12,9 @@ namespace GGemCo2DCore
         public bool canMoveX = true;
         [Tooltip("Y좌표 움직임 여부")]
         public bool canMoveY = true;
+        [Tooltip("패트롤 오브젝트")]
+        public GameObject patrolObject;
+        public void SetPatrolObject(GameObject value) => patrolObject = value;
         
         // 몬스터 행동 처리
         private ControllerMonster _controllerMonster;

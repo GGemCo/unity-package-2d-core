@@ -575,8 +575,15 @@ namespace GGemCo2DCore
             _isAggro = set;
             // 어그로는 전투 진입/종료의 대표 신호로 사용한다.
             // (동작 상태와 분리된 축에서 UI/BGM 등이 반응할 수 있도록 BattleStatus를 갱신)
-            if (set) SetBattleStatusInBattle();
-            else SetBattleStatusNone();
+            if (set)
+            {
+                SetBattleStatusInBattle();
+            }
+            else
+            {
+                SetBattleStatusNone();
+                SetAttackerTarget(null);
+            }
         }
         public bool IsAggro()
         {

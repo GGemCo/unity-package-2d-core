@@ -95,6 +95,9 @@ namespace GGemCo2DCore
                 cancelPolicy = settings.autoMoveCancelPolicy
             }, lockInput: true);
         }
+        
+        #region 몬스터
+        
         /// <summary>
         /// 몬스터 스폰하기
         /// </summary>
@@ -147,6 +150,9 @@ namespace GGemCo2DCore
 
             return spawned;
         }
+
+        #endregion
+
         /// <summary>
         /// 몬스터 스폰하기
         /// </summary>
@@ -168,10 +174,42 @@ namespace GGemCo2DCore
             // 스폰 이후 후처리(Hook): 예) 몬스터 BT 에셋 Addressables 로드/적용.
             // - 실패해도 로그만 남기고 맵 로딩은 계속 진행한다.
             _ = CharacterSpawnHooks.InvokeAsync(myMonsterScript);
+
+            // 패트롤 생성
+            if (monsterData.patrolData != null)
+            {
+                var patrolData = monsterData.patrolData;
+                GameObject prefabPatrol =
+                    AddressableLoaderPrefabCommon.Instance.GetPreLoadGamePrefabByName(ConfigAddressableMap.ObjectPatrol.Key);
+                if (prefabPatrol)
+                {
+                    GameObject warp = Object.Instantiate(prefabPatrol,
+                        new Vector3(patrolData.X, patrolData.Y, patrolData.Z), Quaternion.identity,
+                        mapTileCommon.gameObject.transform);
+        
+                    ObjectPatrol objectPatrol = warp.GetComponent<ObjectPatrol>();
+                    if (objectPatrol)
+                    {
+                        objectPatrol.PatrolData = patrolData;
+                        objectPatrol.SetParentMonster(monster);
+                        myMonsterScript.SetPatrolObject(objectPatrol.gameObject);
+                    }
+                    else
+                    {
+                        GcLogger.LogError($"{nameof(ObjectPatrol)}이 없습니다.");
+                    }
+                }
+                else
+                {
+                    GcLogger.LogError($"패트롤 프리팹이 없습니다. path: {ConfigAddressableMap.ObjectPatrol.Path}");
+                }
+            }
             
             return monster.GetComponent<CharacterBase>();
         }
         
+        #region NPC
+
         /// <summary>
         /// npc 스폰하기
         /// </summary>
@@ -242,6 +280,7 @@ namespace GGemCo2DCore
             if (uid <= 0) yield break;
             SpawnMonster(uid, monsterData, mapTileCommon);
         }
+        #endregion
 
         #region 워프
 
@@ -291,50 +330,6 @@ namespace GGemCo2DCore
                 if (!objectWarp) continue;
                 // warpExporter.cs:128 도 수정
                 objectWarp.WarpData = warpData;
-            }
-        }
-
-        #endregion
-
-        #region 패트롤
-
-        public async Task LoadPatrol(MapTileCommon mapTileCommon, StruckTableMap currentMapTableData)
-        {
-            string key = ConfigAddressableMap.GetKeyJsonPatrol(currentMapTableData.FolderName);
-            try
-            {
-                TextAsset textFile = await AddressableLoaderController.LoadByKeyAsync<TextAsset>(key);
-                
-                if (textFile)
-                {
-                    string content = textFile.text;
-                    if (!string.IsNullOrEmpty(content))
-                    {
-                        PatrolDataList patrolDataList = JsonConvert.DeserializeObject<PatrolDataList>(content);
-                        SpawnPatrol(patrolDataList.patrolDataList, mapTileCommon);
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                GcLogger.LogError($"워프 json 파싱중 오류. file {key}: {ex.Message}");
-            }
-        }
-        private void SpawnPatrol(List<PatrolData> patrolDatas, MapTileCommon mapTileCommon)
-        {
-            GameObject patrolPrefab =
-                AddressableLoaderPrefabCommon.Instance.GetPreLoadGamePrefabByName(ConfigAddressableMap.ObjectPatrol.Key);
-            if (!patrolPrefab) return;
-            
-            foreach (PatrolData patrolData in patrolDatas)
-            {
-                GameObject patrol = Object.Instantiate(patrolPrefab, new Vector3(patrolData.X, patrolData.Y, patrolData.Z), Quaternion.identity, mapTileCommon.gameObject.transform);
-            
-                // 워프의 이름과 기타 속성 설정
-                ObjectPatrol objectPatrol = patrol.GetComponent<ObjectPatrol>();
-                if (!objectPatrol) continue;
-                // patrolExporter.cs:128 도 수정
-                objectPatrol.PatrolData = patrolData;
             }
         }
 

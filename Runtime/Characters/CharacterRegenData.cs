@@ -14,8 +14,9 @@ namespace GGemCo2DCore
         public float MoveSpeed;
         public bool CanMoveX;
         public bool CanMoveY;
+        public PatrolData patrolData;
 
-        public CharacterRegenData(int uid, Vector3 position, bool flip, int mapUid, bool defaultVisible, float moveStep = 0, float moveSpeed = 0, bool canMoveX = true, bool canMoveY = true)
+        public CharacterRegenData(int uid, Vector3 position, bool flip, int mapUid, bool defaultVisible, float moveStep = 0, float moveSpeed = 0, bool canMoveX = true, bool canMoveY = true, PatrolData patrolData = null)
         {
             Uid = uid;
             MapUid = mapUid;
@@ -28,6 +29,7 @@ namespace GGemCo2DCore
             MoveSpeed = moveSpeed;
             CanMoveX = canMoveX;
             CanMoveY = canMoveY;
+            this.patrolData = patrolData;
         }
     }
     

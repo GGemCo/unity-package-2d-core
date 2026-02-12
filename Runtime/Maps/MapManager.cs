@@ -219,12 +219,6 @@ namespace GGemCo2DCore
                     case MapConstants.State.CreateWarp:
                         yield return StartCoroutineSafe(AwaitTask(_mapLoadCharacters.LoadWarps(_mapTileCommon, _currentMapTableData)));
                         if (_currentState == MapConstants.State.Failed) yield break;
-                        _currentState = MapConstants.State.CreatePatrol;
-                        break;
-
-                    case MapConstants.State.CreatePatrol:
-                        yield return StartCoroutineSafe(AwaitTask(_mapLoadCharacters.LoadPatrol(_mapTileCommon, _currentMapTableData)));
-                        if (_currentState == MapConstants.State.Failed) yield break;
                         _currentState = MapConstants.State.FadeOut;
                         break;
 
