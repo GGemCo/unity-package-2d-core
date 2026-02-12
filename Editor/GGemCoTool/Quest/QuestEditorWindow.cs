@@ -198,9 +198,13 @@ namespace GGemCo2DCoreEditor
             HelperEditorUI.OnGUITitle("퀘스트 기본 정보");
             // nextNodeGuid 읽기 전용 처리
             GUI.enabled = false;
-            var info = _struckTableQuests.GetValueOrDefault(_selectedQuestIndex);
-            _quest.uid = EditorGUILayout.IntField("Uid", info.Uid);
-            _quest.title = EditorGUILayout.TextField("제목", info.Name);
+            if (_selectedQuestIndex > 0)
+            {
+                var info = _struckTableQuests.GetValueOrDefault(_selectedQuestIndex);
+                _quest.uid = EditorGUILayout.IntField("Uid", info.Uid);
+                _quest.title = EditorGUILayout.TextField("제목", info.Name);
+            }
+
             GUI.enabled = true;
            
             // 단계별 정보
