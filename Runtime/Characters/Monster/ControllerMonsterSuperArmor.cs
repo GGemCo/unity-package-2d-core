@@ -38,6 +38,7 @@ namespace GGemCo2DCore
         private float _lastAttackConsumeTime;
 
         private bool _initialized;
+        private bool _isSuperArmorEnabled;
 
         public void Initialize(CharacterBase owner)
         {
@@ -102,6 +103,8 @@ namespace GGemCo2DCore
         /// </summary>
         public HitReactionDecision ApplyHit(in HitPayload hit, bool ignoreReactionByStatus = false)
         {
+            if (!_isSuperArmorEnabled) return HitReactionDecision.NoReaction(0);
+            
             EnsureInitialized();
             
             if (_owner == null)
@@ -198,6 +201,7 @@ namespace GGemCo2DCore
 
         private void Update()
         {
+            if (!_isSuperArmorEnabled) return;
             if (!_initialized) return;
             TickRegen(Time.time);
         }
@@ -229,6 +233,7 @@ namespace GGemCo2DCore
 
         private int GetMaxSuperArmor()
         {
+            if (!_isSuperArmorEnabled) return 0;
             if (_owner != null)
             {
                 int max = _owner.TotalSuperArmor.Value;
@@ -262,6 +267,7 @@ namespace GGemCo2DCore
         }
         private void EnsureInitialized()
         {
+            if (!_isSuperArmorEnabled) return;
             if (_initialized) return;
             if (!_owner)
             {
@@ -290,6 +296,15 @@ namespace GGemCo2DCore
         {
             if (before == after) return;
             FireStacksChanged();
+        }
+        public void EnableSuperArmor(bool enable)
+        {
+            _isSuperArmorEnabled = enable;
+        }
+
+        public bool IsEnableSuperArmor()
+        {
+            return _isSuperArmorEnabled;
         }
     }
 }

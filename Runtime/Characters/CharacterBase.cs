@@ -1096,6 +1096,11 @@ namespace GGemCo2DCore
             CurrentSuperArmor.OnNext(value);
         }
 
+        protected void EnableSuperArmor(bool enable)
+        {
+            _characterDamageController.EnableSuperArmor(enable);
+        }
+
         #endregion
     }
 }

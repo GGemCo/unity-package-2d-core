@@ -52,11 +52,16 @@ namespace GGemCo2DCore
             CurrentHp
                 .Subscribe(SetSliderHp)
                 .AddTo(this);
+
+            if (CurrentSuperArmor.Value > 0)
+            {
+                CreateSuperArmor();
+                CurrentSuperArmor
+                    .Subscribe(SetSuperArmor)
+                    .AddTo(this);
+            }
             
-            CreateSuperArmor();
-            CurrentSuperArmor
-                .Subscribe(SetSuperArmor)
-                .AddTo(this);
+            EnableSuperArmor(CurrentSuperArmor.Value > 0);
             
             _projectileManager = SceneGame.Instance.ProjectileManager;
         }

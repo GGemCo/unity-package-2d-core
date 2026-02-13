@@ -136,7 +136,7 @@ namespace GGemCo2DCore
                 
                 // StaggerResistanceController가 있고, 이번 타격이 스태거 판정에 관여하는 경우에만
                 // “피격 모션/상태 전환”을 결정합니다.
-                if (_staggerResistance != null &&
+                if (_staggerResistance != null && _staggerResistance.IsEnableSuperArmor() && 
                     metadataDamage.HitReactionType != CharacterConstants.HitReactionType.None &&
                     (metadataDamage.ForceHitReaction || metadataDamage.StaggerStackDamage > 0))
                 {
@@ -167,6 +167,10 @@ namespace GGemCo2DCore
                 }
             }
             _characterBase.CurrentHp.OnNext(remainHp);
+        }
+        public void EnableSuperArmor(bool enable)
+        {
+            _staggerResistance.EnableSuperArmor(enable);
         }
     }
 }
