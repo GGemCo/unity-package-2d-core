@@ -229,7 +229,7 @@ namespace GGemCo2DCore
             _followCharacter = character;
         }
 
-        public void SetPositionY(int y)
+        public void SetPositionY(float y)
         {
             _positionY = y;
         }
@@ -262,7 +262,11 @@ namespace GGemCo2DCore
 
                 if (_positionYType == ConfigCommon.PositionYType.CharacterHeight)
                 {
-                    transform.position += new Vector3(0, _character.GetHeightByScale(), 0);
+                    // Follow 대상이 있으면 그 캐릭터의 Height를 기준으로 한다.
+                    // (CreateCharacter는 flip/기본 위치 설정에 사용되지만, Follow 시점에는 follow가 우선된다.)
+                    var heightOwner = _followCharacter != null ? _followCharacter : _character;
+                    if (heightOwner != null)
+                        transform.position += new Vector3(0, heightOwner.GetHeightByScale(), 0);
                 }
             }
         }

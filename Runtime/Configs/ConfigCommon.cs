@@ -112,6 +112,14 @@ namespace GGemCo2DCore
              Lightning
          }
 
+         public static class DamageTypeString
+         {
+             public const string Physic = "Physic";
+             public const string Fire = "Fire";
+             public const string Cold = "Cold";
+             public const string Lightning = "Lightning";
+         }
+
          public static readonly Dictionary<DamageType, string> NameByDamageType = new Dictionary<DamageType, string>
          {
              { DamageType.None, "None" },
