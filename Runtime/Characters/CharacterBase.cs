@@ -380,6 +380,7 @@ namespace GGemCo2DCore
         public bool IsStatusAttack() => _currentStatus == CharacterConstants.CharacterStatus.Attack;
         public bool IsStatusAttackComboWait() => _currentStatus == CharacterConstants.CharacterStatus.AttackComboWait;
         public bool IsStatusDontMove() => _currentStatus == CharacterConstants.CharacterStatus.DontMove;
+        public bool IsStatusDontControl() => _currentStatus == CharacterConstants.CharacterStatus.DontControl;
         public bool IsStatusRun() => _currentStatus == CharacterConstants.CharacterStatus.Run;
         public bool IsStatusIdle() => _currentStatus == CharacterConstants.CharacterStatus.Idle;
         public bool IsStatusNone() => _currentStatus == CharacterConstants.CharacterStatus.None;
@@ -418,6 +419,7 @@ namespace GGemCo2DCore
         public void SetStatusAttack() => SetStatus(CharacterConstants.CharacterStatus.Attack);
         public void SetStatusAttackComboWait() => SetStatus(CharacterConstants.CharacterStatus.AttackComboWait);
         public void SetStatusDontMove() => SetStatus(CharacterConstants.CharacterStatus.DontMove);
+        public void SetStatusDontControl() => SetStatus(CharacterConstants.CharacterStatus.DontControl);
         public void SetStatusMoveForce() => SetStatus(CharacterConstants.CharacterStatus.MoveForce);
         public void SetStatusCastingSkill() => SetStatus(CharacterConstants.CharacterStatus.CastingSkill);
         public void SetStatusUseSkill() => SetStatus(CharacterConstants.CharacterStatus.UseSkill);

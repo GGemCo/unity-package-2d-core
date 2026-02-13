@@ -12,7 +12,8 @@ namespace GGemCo2DCore
         Cutscene,
         UiModal,
         GuardAction,
-        PlayerAttackRange
+        PlayerAttackRange,
+        ControlLocked
     }
 
     /// <summary>

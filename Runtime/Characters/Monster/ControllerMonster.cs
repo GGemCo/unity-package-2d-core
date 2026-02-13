@@ -7,7 +7,7 @@ namespace GGemCo2DCore
     /// <summary>
     /// 몬스터 선공, 후공 처리 
     /// </summary>
-    public class ControllerMonster : CharacterBaseController, IMonsterCombatDriver
+    public class ControllerMonster : CharacterBaseController, IMonsterCombatDriver, IMonsterBrainSuspendProvider
     {
         private Coroutine _coroutineAttack;
         private float _delayTimeAttack;
@@ -82,6 +82,14 @@ namespace GGemCo2DCore
         {
             targetCharacter.SetAggro(false);
         }
+
+        #endregion
+
+        #region IMonsterBrainSuspendProvider
+
+        /// <inheritdoc />
+        public bool ShouldSuspendBrain =>
+            targetCharacter != null && (targetCharacter.IsStatusDead() || targetCharacter.IsStatusDontControl());
 
         #endregion
 
