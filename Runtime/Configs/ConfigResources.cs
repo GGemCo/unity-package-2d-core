@@ -34,6 +34,7 @@ namespace GGemCo2DCore
         public static readonly ResourcesAssetInfo TextDropItemNameTag = new($"{ConfigDefine.NameSDK}/Item/TextDropItemNameTag");
         
         public static readonly ResourcesAssetInfo SliderMonsterHp = new($"{ConfigDefine.NameSDK}/UI/Common/SliderMonsterHp");
+        public static readonly ResourcesAssetInfo PanelMonsterSuperArmor = new($"{ConfigDefine.NameSDK}/UI/Common/PanelMonsterSuperArmor");
         public static readonly ResourcesAssetInfo TextDamage = new($"{ConfigDefine.NameSDK}/UI/Common/TextDamage");
         public static readonly ResourcesAssetInfo TextNpcNameTag = new($"{ConfigDefine.NameSDK}/UI/Common/TextNpcNameTag");
         public static readonly ResourcesAssetInfo DialogueBalloon = new($"{ConfigDefine.NameSDK}/UI/Common/UIDialogueBalloon");
@@ -56,6 +57,7 @@ namespace GGemCo2DCore
             DropItem,
             TextDropItemNameTag,
             SliderMonsterHp,
+            PanelMonsterSuperArmor,
             TextDamage,
             TextNpcNameTag,
             DialogueBalloon,

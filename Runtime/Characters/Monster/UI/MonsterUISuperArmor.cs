@@ -1,27 +1,25 @@
 ﻿using System.Collections;
-using TMPro;
+using System.Collections.Generic;
 using UnityEngine;
-using UnityEngine.UI;
 
 namespace GGemCo2DCore
 {
-    public class MonsterHpBar : MonoBehaviour
+    public class MonsterUISuperArmor : MonoBehaviour
     {
         [Tooltip("몬스터 머리 위 기준에서 Y축 높이 값")]
         public float diffY;
-        public TextMeshProUGUI textMonsterName;
+        [Tooltip("슈퍼 아머 아이콘 프리팹")]
+        public GameObject prefabShield;
         
         private Monster _monster;
-        private Slider _hpSlider;
-        private bool _isStartFade;
         private CanvasGroup _canvasGroup;
         private float _monsterHeight;
-
+        private bool _isStartFade;
+        private List<GameObject> _shieldIcons;
+        
         private void Awake()
         {
-            _hpSlider = GetComponent<Slider>();
             _canvasGroup = GetComponent<CanvasGroup>();
-            _hpSlider.value = 1f;
             _isStartFade = false;
         }
         public void Initialize(Monster monster)
@@ -38,13 +36,34 @@ namespace GGemCo2DCore
                 GcLogger.LogError("몬스터 테이블에 정보가 없습니다. uid:"+_monster.uid);
                 return;
             }
-            if (textMonsterName == null) return;
-            textMonsterName.text = info.Name;
         }
-
         private void Start()
         {
             _monsterHeight = _monster.GetHeightByScale();
+
+            InitializeSuperArmorIcon();
+        }
+
+        private void InitializeSuperArmorIcon()
+        {
+            if (!_monster)
+            {
+                GcLogger.LogError($"연결된 몬스터가 없습니다.");
+                return;
+            }
+            if (!prefabShield)
+            {
+                GcLogger.LogError($"{nameof(prefabShield)}가 없습니다.");
+                return;
+            }
+            int superArmor = _monster.CurrentSuperArmor.Value;
+            if (superArmor <= 0) return;
+            _shieldIcons = new List<GameObject>(superArmor);
+            for (int i = 0; i < superArmor; i++)
+            {
+                var shield = Instantiate(prefabShield, transform);
+                _shieldIcons.Add(shield);
+            }
         }
 
         private void Update()
@@ -52,14 +71,22 @@ namespace GGemCo2DCore
             if (_monster == null) return;
             gameObject.transform.position = _monster.transform.position + new Vector3(0, _monsterHeight + diffY, 0);
         }
-
-        public void SetValue(long value)
+        public void SetValue(int value)
         {
-            if (_hpSlider == null) return;
-            _hpSlider.value = (float)value / _monster.TotalHp.Value;
-
-            if (textMonsterName == null) return;
-            textMonsterName.color = _hpSlider.value < _hpSlider.maxValue * 0.5f ? Color.black : Color.white;
+            if (value <= 0)
+            {
+                foreach (var shieldIcon in _shieldIcons)
+                {
+                    shieldIcon.SetActive(false);
+                }
+                return;
+            }
+            int index = 0;
+            foreach (var shieldIcon in _shieldIcons)
+            {
+                shieldIcon.SetActive(index < value);
+                index++;
+            }
         }
         /// <summary>
         /// fade in 효과 시작. 맵 컬링시 사용
@@ -71,7 +98,6 @@ namespace GGemCo2DCore
             gameObject.SetActive(true);
             StartCoroutine(FadeIn(ConfigCommon.CharacterFadeSec));
         }
-
         /// <summary>
         /// fade out 효과 시작. 맵 컬링시 사용
         /// </summary>
@@ -91,7 +117,6 @@ namespace GGemCo2DCore
             yield return FadeEffect(duration, false);
             gameObject.SetActive(false);
         }
-
         private IEnumerator FadeEffect(float duration, bool fadeIn)
         {
             float elapsedTime = 0f;

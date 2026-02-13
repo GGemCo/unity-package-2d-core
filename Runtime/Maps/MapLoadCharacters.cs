@@ -167,7 +167,6 @@ namespace GGemCo2DCore
             
             Monster myMonsterScript = monster.GetComponent<Monster>();
             myMonsterScript.vid = characterVid;
-            myMonsterScript.CreateHpBar();
             mapTileCommon.AddMonster(characterVid, monster);
             characterVid++;
 
