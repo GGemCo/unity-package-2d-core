@@ -138,6 +138,56 @@ namespace GGemCo2DCore
             method.Invoke(affectComp, new[] { (object)affectUid, ctx });
         }
 
+        internal static void ApplyAffect(GameObject go, int affectUid, GameObject source, float durationOverrideSeconds)
+        {
+            if (affectUid <= 0) return;
+            if (go == null) return;
+
+            EnsureAffectSystem(go);
+
+            var affectComp = GetAffectComponent(go);
+            if (affectComp == null) return;
+
+            // ApplyAffect(int, AffectApplyContext)
+            var method = affectComp.GetType().GetMethod("ApplyAffect", BindingFlags.Instance | BindingFlags.Public);
+            if (method == null) return;
+
+            object ctx = null;
+
+            // Source 또는 DurationOverride 중 하나라도 있으면 컨텍스트를 생성한다.
+            if (source != null || durationOverrideSeconds > 0f)
+            {
+                var ctxType = ResolveType(TypeNameAffectApplyContext);
+                if (ctxType != null)
+                {
+                    ctx = Activator.CreateInstance(ctxType);
+
+                    // AffectApplyContext.Source (public field) 대응
+                    var srcField = ctxType.GetField("Source", BindingFlags.Instance | BindingFlags.Public);
+                    srcField?.SetValue(ctx, source);
+
+                    // AffectApplyContext.DurationOverride 프로퍼티/필드 모두 대응
+                    if (durationOverrideSeconds > 0f)
+                    {
+                        var prop = ctxType.GetProperty("DurationOverride", BindingFlags.Instance | BindingFlags.Public);
+                        if (prop != null && prop.CanWrite)
+                        {
+                            prop.SetValue(ctx, durationOverrideSeconds);
+                        }
+                        else
+                        {
+                            var field = ctxType.GetField("DurationOverride", BindingFlags.Instance | BindingFlags.Public);
+                            field?.SetValue(ctx, durationOverrideSeconds);
+                        }
+                    }
+                }
+            }
+
+            // context는 null 허용
+            method.Invoke(affectComp, new[] { (object)affectUid, ctx });
+        }
+
+
         /// <summary>
         /// Optional hook: apply a state option.
         /// - If stateId is an integer, it is treated as an Affect UID and forwarded.
