@@ -91,6 +91,7 @@ namespace GGemCo2DCore
         
         public const string DeadAnim = "die";
         public const string DamageAnim = "damage";
+        public const string AnimGroggy = "groggy";
         
         public const string SuffixWait = "_wait";
         public const string SuffixEnd = "_end";
@@ -101,6 +102,7 @@ namespace GGemCo2DCore
         void PlayAttackAnimation(string animName = "");
         void PlayDeadAnimation();
         void PlayDamageAnimation();
+        void PlayAnimationGroggy();
         void PlayCharacterAnimation(string animationName, bool loop = false, float timeScale = 1f);
         void PlayAttackEndAnimation();
         bool PlayAttackWaitAnimation();

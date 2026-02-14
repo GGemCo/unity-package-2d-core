@@ -648,14 +648,17 @@ namespace GGemCo2DCore
             }
             CurrentMp.OnNext(newVale);
         }
-        // /// <summary>
-        // /// disable 되었을때 어펙트 효과 모두 지워주기
-        // /// todo 지워야하는 어펙트가 있고 유지해야하는 어펙트가 있다
-        // /// </summary>
-        // private void OnDestroy()
-        // {
-        //     AffectController?.RemoveAllAffects();
-        // }
+        private void OnDestroy()
+        {
+            // todo 지워야하는 어펙트가 있고 유지해야하는 어펙트가 있다
+            // AffectController?.RemoveAllAffects();
+
+            if (_characterDamageController != null)
+            {
+                _characterDamageController.Dispose();
+                _characterDamageController = null;
+            }
+        }
 
         public void Stop(bool isForce = false)
         {

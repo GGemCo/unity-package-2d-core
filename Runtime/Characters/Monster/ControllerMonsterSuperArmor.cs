@@ -121,7 +121,7 @@ namespace GGemCo2DCore
             {
                 if (!ignoreReactionByStatus)
                 {
-                    BreakTriggered?.Invoke(hit.ReactionType);
+                    // BreakTriggered?.Invoke(hit.ReactionType);
                     return new HitReactionDecision(false, CurrentStacks, true, hit.ReactionType);
                 }
 
@@ -151,8 +151,8 @@ namespace GGemCo2DCore
             {
                 if (!ignoreReactionByStatus)
                 {
-                    BreakTriggered?.Invoke(hit.ReactionType);
-                    return new HitReactionDecision(false, 0, true, hit.ReactionType);
+                    // BreakTriggered?.Invoke(hit.ReactionType);
+                    return new HitReactionDecision(false, 0, true, CharacterConstants.HitReactionType.None);
                 }
 
                 return HitReactionDecision.NoReaction(0);
@@ -180,18 +180,18 @@ namespace GGemCo2DCore
             // 브레이크: 0 도달 시 “무조건” 리액션
             if (after <= 0)
             {
-                // if (!ignoreReactionByStatus)
-                // {
-                //     BreakTriggered?.Invoke(hit.ReactionType);
-                //
-                //     if (_breakResetMode == CharacterConstants.StaggerBreakResetMode.ResetToMax)
-                //     {
-                //         RestoreToMax();
-                //         FireStacksChanged();
-                //     }
-                //
-                //     return new HitReactionDecision(true, CurrentStacks, true, hit.ReactionType);
-                // }
+                if (!ignoreReactionByStatus)
+                {
+                    BreakTriggered?.Invoke(hit.ReactionType);
+                
+                    if (_breakResetMode == CharacterConstants.StaggerBreakResetMode.ResetToMax)
+                    {
+                        RestoreToMax();
+                        FireStacksChanged();
+                    }
+                
+                    return new HitReactionDecision(true, CurrentStacks, true, hit.ReactionType);
+                }
 
                 return new HitReactionDecision(true, 0, false, CharacterConstants.HitReactionType.None);
             }

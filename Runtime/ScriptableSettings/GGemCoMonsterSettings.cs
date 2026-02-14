@@ -5,8 +5,11 @@ namespace GGemCo2DCore
     [CreateAssetMenu(fileName = ConfigScriptableObject.Monster.FileName, menuName = ConfigScriptableObject.Monster.MenuName, order = ConfigScriptableObject.Monster.Ordering)]
     public class GGemCoMonsterSettings : ScriptableObject
     {
+        [Header("Groggy")]
+        [Tooltip("몬스터가 그로기 상태에 빠질때 적용할 어펙트 Uid")]
+        public int monsterGroggyAffectUid;
         [Tooltip("슈퍼 아머가 0이 되었을 때, 그로기 상태가 됨. 그로기 상태를 유지하는 시간")]
-        public float timeGroggy;
+        public float monsterGroggyAffectDuration;
         
         [Header("Stacks")]
         [HideInInspector]

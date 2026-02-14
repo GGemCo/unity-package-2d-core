@@ -38,6 +38,8 @@ namespace GGemCo2DCore
     {
         private CharacterBase _characterBase;
         private ControllerMonsterSuperArmor _staggerResistance;
+        private float _monsterGroggyAffectDuration;
+        private int _monsterGroggyAffectUid;
         
         public void Initialize(CharacterBase characterBase)
         {
@@ -49,6 +51,19 @@ namespace GGemCo2DCore
             }
             _staggerResistance = new ControllerMonsterSuperArmor();
             _staggerResistance.Initialize(_characterBase);
+            
+            _staggerResistance.BreakTriggered += OnSuperArmorBreak;
+
+            if (AddressableLoaderSettings.Instance.monsterSettings)
+            {
+                _monsterGroggyAffectDuration = AddressableLoaderSettings.Instance.monsterSettings.monsterGroggyAffectDuration;
+                _monsterGroggyAffectUid = AddressableLoaderSettings.Instance.monsterSettings.monsterGroggyAffectUid;
+            }
+        }
+
+        public void Dispose()
+        {
+            _staggerResistance.BreakTriggered -= OnSuperArmorBreak;
         }
 
         public void TakeDamage(MetadataDamage metadataDamage)
@@ -133,6 +148,7 @@ namespace GGemCo2DCore
             else
             {
                 bool shouldPlayDamageReaction = true;
+                CharacterConstants.HitReactionType hitReactionType = CharacterConstants.HitReactionType.None;
                 
                 // StaggerResistanceController가 있고, 이번 타격이 스태거 판정에 관여하는 경우에만
                 // “피격 모션/상태 전환”을 결정합니다.
@@ -150,14 +166,22 @@ namespace GGemCo2DCore
                     // (현재 흐름에서는 컷씬은 상단에서 리턴되므로 기본 false)
                     var decision = _staggerResistance.ApplyHit(in hit, ignoreReactionByStatus: false);
                     shouldPlayDamageReaction = decision.ShouldReact;
+                    hitReactionType = decision.ReactionType;
                 }
 
                 // 넉백 상태에서는 별도 시스템이 상태/연출을 담당하므로 여기서는 피격 모션을 막는다.
                 if (shouldPlayDamageReaction)
                 {
-                    // 순서 중요.
-                    _characterBase.SetStatusDamage();
-                    _characterBase.CharacterAnimationController.PlayDamageAnimation();
+                    if (hitReactionType == CharacterConstants.HitReactionType.Flinch)
+                    {
+                        _characterBase.CharacterAnimationController.PlayAnimationGroggy();
+                    }
+                    else
+                    {
+                        // 순서 중요.
+                        _characterBase.SetStatusDamage();
+                        _characterBase.CharacterAnimationController.PlayDamageAnimation();
+                    }
                 }
                 _characterBase.OnDamage(attacker);
                 
@@ -171,6 +195,20 @@ namespace GGemCo2DCore
         public void EnableSuperArmor(bool enable)
         {
             _staggerResistance.EnableSuperArmor(enable);
+        }
+        /// <summary>
+        /// 슈퍼 아머가 0이 되었을 때 한번 호출 
+        /// </summary>
+        /// <param name="hitReactionType"></param>
+        private void OnSuperArmorBreak(CharacterConstants.HitReactionType hitReactionType)
+        {
+            // GcLogger.LogError($"그로기 상태");
+            if (_monsterGroggyAffectUid <= 0)
+            {
+                GcLogger.LogError($"{nameof(GGemCoMonsterSettings)}에 monsterGroggyAffectUid, monsterGroggyAffectDuration 값을 설정해주세요.");
+                return;
+            }
+            _characterBase.AddAffect(_monsterGroggyAffectUid, _monsterGroggyAffectDuration);
         }
     }
 }

@@ -21,9 +21,10 @@ namespace GGemCo2DCore
         [HideInInspector] public GGemCoOptionSettings optionSettings;
         [HideInInspector] public GGemCoSoundSettings soundSettings;
         [HideInInspector] public GGemCoGameTimeSettings gameTimeSettings;
+        [HideInInspector] public GGemCoMonsterSettings monsterSettings;
         public delegate void DelegateLoadSettings(GGemCoSettings settings, GGemCoPlayerSettings playerSettings,
             GGemCoMapSettings mapSettings, GGemCoSaveSettings saveSettings, GGemCoOptionSettings optionSettings,
-            GGemCoSoundSettings soundSettings);
+            GGemCoSoundSettings soundSettings, GGemCoMonsterSettings monsterSettings);
         public event DelegateLoadSettings OnLoadSettings;
         
         private readonly HashSet<AsyncOperationHandle> _activeHandles = new HashSet<AsyncOperationHandle>();
@@ -69,6 +70,7 @@ namespace GGemCo2DCore
                 var saveSettingsTask = LoadSettingsAsync<GGemCoSaveSettings>(ConfigAddressableSetting.SaveSettings.Key);
                 var optionSettingsTask = LoadSettingsAsync<GGemCoOptionSettings>(ConfigAddressableSetting.OptionSettings.Key);
                 var soundSettingsTask = LoadSettingsAsync<GGemCoSoundSettings>(ConfigAddressableSetting.SoundSettings.Key);
+                var monsterSettingsTask = LoadSettingsAsync<GGemCoMonsterSettings>(ConfigAddressableSetting.MonsterSettings.Key);
 #if GGEMCO_USE_INGAME_TIME
                 var gameTimeSettingsTask = LoadSettingsAsync<GGemCoGameTimeSettings>(ConfigAddressableSetting.GameTimeSettings.Key);
 #endif
@@ -76,11 +78,11 @@ namespace GGemCo2DCore
 #if GGEMCO_USE_INGAME_TIME
                 // 모든 작업이 완료될 때까지 대기
                 await Task.WhenAll(settingsTask, playerSettingsTask, mapSettingsTask, saveSettingsTask,
-                    optionSettingsTask, soundSettingsTask, gameTimeSettingsTask);
+                    optionSettingsTask, soundSettingsTask, monsterSettingsTask, gameTimeSettingsTask);
 #else
                 // 모든 작업이 완료될 때까지 대기
                 await Task.WhenAll(settingsTask, playerSettingsTask, mapSettingsTask, saveSettingsTask,
-                    optionSettingsTask, soundSettingsTask);
+                    optionSettingsTask, soundSettingsTask, monsterSettingsTask);
 #endif
 
                 // 결과 저장
@@ -90,6 +92,7 @@ namespace GGemCo2DCore
                 saveSettings = saveSettingsTask.Result;
                 optionSettings = optionSettingsTask.Result;
                 soundSettings = soundSettingsTask.Result;
+                monsterSettings = monsterSettingsTask.Result;
 #if GGEMCO_USE_INGAME_TIME
                 gameTimeSettings = gameTimeSettingsTask.Result;
 #endif
@@ -105,7 +108,7 @@ namespace GGemCo2DCore
                 //     GcLogger.Log("최대 저장 슬롯 개수 : " + saveSettings.saveDataMaxSlotCount);
 
                 // 이벤트 호출
-                OnLoadSettings?.Invoke(settings, playerSettings, mapSettings, saveSettings, optionSettings, soundSettings);
+                OnLoadSettings?.Invoke(settings, playerSettings, mapSettings, saveSettings, optionSettings, soundSettings, monsterSettings);
             }
             catch (Exception ex)
             {

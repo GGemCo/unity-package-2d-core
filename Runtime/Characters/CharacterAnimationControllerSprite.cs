@@ -145,6 +145,12 @@ namespace GGemCo2DCore
             PlayAnimation(ICharacterAnimationController.DamageAnim);
         }
 
+        public void PlayAnimationGroggy()
+        {
+            if (_characterBase.IsStatusDead()) return;
+            PlayAnimation(ICharacterAnimationController.AnimGroggy, true);
+        }
+
         /// <summary>
         /// 스파인의 height 값을 구해서 가져오기
         /// </summary>
