@@ -80,6 +80,7 @@ namespace GGemCo2DCoreEditor
         private int _maxSlotCount;
         private string _saveDirectory;
         private SaveDataContainer _saveDataContainer;
+        private int _previousIndex;
         
         [MenuItem(ConfigEditor.NameToolQuest, false, (int)ConfigEditor.ToolOrdering.Quest)]
         public static void ShowWindow()
@@ -152,13 +153,19 @@ namespace GGemCo2DCoreEditor
             _ = _addressableSettingsLoader.InitializeAsync();
             _addressableSettingsLoader.OnLoadSettings += Initialize;
         }
+        private void OnDisable()
+        {
+            if (_addressableSettingsLoader != null)
+            {
+                _addressableSettingsLoader.OnLoadSettings -= Initialize;
+            }
+        }
         private void Initialize(GGemCoSettings settings, GGemCoPlayerSettings playerSettings,
             GGemCoMapSettings mapSettings, GGemCoSaveSettings saveSettings)
         {
             _maxSlotCount = saveSettings.saveDataMaxSlotCount;
             _saveDirectory = saveSettings.SaveDataFolderName;
         }
-        private int previousIndex;
         private void OnGUI()
         {
             EditorGUIUtility.labelWidth = LabelWidth; // 라벨 너비 축소
@@ -166,17 +173,17 @@ namespace GGemCo2DCoreEditor
 
             HelperEditorUI.OnGUITitle("저장/불러오기");
             _selectedQuestIndex = EditorGUILayout.Popup("연출 선택", _selectedQuestIndex, _nameQuest.ToArray());
-            if (previousIndex != _selectedQuestIndex)
+            if (_previousIndex != _selectedQuestIndex)
             {
                 // 선택이 바뀌었을 때 실행할 코드
                 // Debug.Log($"선택이 변경되었습니다: {questTitle[selectedQuestIndex]}");
                 if (LoadQuestFromJson())
                 {
-                    previousIndex = _selectedQuestIndex;
+                    _previousIndex = _selectedQuestIndex;
                 }
                 else
                 {
-                    _selectedQuestIndex = previousIndex;
+                    _selectedQuestIndex = _previousIndex;
                 }
             }
             
