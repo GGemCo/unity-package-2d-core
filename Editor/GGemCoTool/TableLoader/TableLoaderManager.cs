@@ -54,6 +54,13 @@ namespace GGemCo2DCoreEditor
             return LoadTable<TableEffect>(ConfigAddressableTable.TableEffect.Path, forceReload);
         }
 
+
+        public static TableCrowdControl LoadCrowdControlTable(bool forceReload = true)
+        {
+            return LoadTable<TableCrowdControl>(ConfigAddressableTable.TableCrowdControl.Path, forceReload);
+        }
+
+
         public static TableWindow LoadWindowTable(bool forceReload = true)
         {
             return LoadTable<TableWindow>(ConfigAddressableTable.TableWindow.Path, forceReload);
