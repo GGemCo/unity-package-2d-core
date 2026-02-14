@@ -25,6 +25,7 @@
     {
         // 공격 받는 대상에게 affect 걸기
         public int TargetAffectUid { get; set; } = 0;
+        public int TargetCrowdControlUid { get; set; } = 0;
     }
     public class StruckAnimationEventUseTool
     {

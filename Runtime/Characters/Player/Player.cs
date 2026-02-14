@@ -209,6 +209,7 @@ namespace GGemCo2DCore
                     attacker = gameObject,
                     damageType = ConfigCommon.DamageType.Physic,
                     affectUid = struckAnimationEventAttack.TargetAffectUid,
+                    crowdControlUid = struckAnimationEventAttack.TargetCrowdControlUid,
                     StaggerStackDamage = 1,
                     HitReactionType = CharacterConstants.HitReactionType.Flinch
                 };

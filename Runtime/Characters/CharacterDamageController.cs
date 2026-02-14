@@ -9,6 +9,8 @@ namespace GGemCo2DCore
         public ConfigCommon.DamageType damageType;
         // 데미지 받는 대상에 적용되는 어펙트 uid 
         public int affectUid;
+        // 데미지 받는 대상에 적용되는 CC uid
+        public int crowdControlUid;
 
         // ---- Hit Reaction (optional) ----
         /// <summary>
@@ -80,6 +82,7 @@ namespace GGemCo2DCore
             ConfigCommon.DamageType damageType = metadataDamage.damageType;
             GameObject attacker = metadataDamage.attacker;
             int affectUid = metadataDamage.affectUid;
+            int crowdControlUid = metadataDamage.crowdControlUid;
 
             // 데미지 텍스트 색상 설정
             Color damageTextColor = Color.white;
@@ -188,6 +191,10 @@ namespace GGemCo2DCore
                 if (affectUid > 0)
                 {
                     _characterBase.AddAffect(affectUid, metadataDamage.attacker);
+                }
+                if (crowdControlUid > 0)
+                {
+                    _characterBase.ApplyCrowdControl(crowdControlUid, metadataDamage.attacker);
                 }
             }
             _characterBase.CurrentHp.OnNext(remainHp);

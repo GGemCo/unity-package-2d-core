@@ -91,6 +91,7 @@ namespace GGemCo2DCore
         private CharacterDamageController _characterDamageController;
         // pick up 액션시 위치, 스프라이트 처리
         protected CharacterPickUpPosition characterPickUpPosition;
+        private CharacterCrowdControlController _crowdControlController;
         
         // 공격 애니메이션 종료 후 
         public event EventHandlerAnimationCompleteAttack AnimationCompleteAttack;
@@ -167,7 +168,7 @@ namespace GGemCo2DCore
                 colliderHitArea = characterHitArea.gameObject.GetComponent<CapsuleCollider2D>();
             }
 
-            gameObject.AddComponent<CharacterCrowdControlController>();
+            _crowdControlController = gameObject.AddComponent<CharacterCrowdControlController>();
         }
         protected override void Start()
         {
@@ -1117,5 +1118,11 @@ namespace GGemCo2DCore
         }
 
         #endregion
+
+        public void ApplyCrowdControl(int crowdControlUid, GameObject metadataDamageAttacker)
+        {
+            if (GcLogger.IsNull(_crowdControlController, nameof(CharacterCrowdControlController))) return;
+            _crowdControlController.ApplyCrowdControlByUid(crowdControlUid, metadataDamageAttacker);
+        }
     }
 }
