@@ -187,7 +187,7 @@ namespace GGemCo2DCore
                 
                 if (affectUid > 0)
                 {
-                    _characterBase.AddAffect(affectUid);
+                    _characterBase.AddAffect(affectUid, metadataDamage.attacker);
                 }
             }
             _characterBase.CurrentHp.OnNext(remainHp);

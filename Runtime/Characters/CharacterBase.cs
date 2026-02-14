@@ -166,6 +166,8 @@ namespace GGemCo2DCore
                 characterHitArea.Initialize(this);
                 colliderHitArea = characterHitArea.gameObject.GetComponent<CapsuleCollider2D>();
             }
+
+            gameObject.AddComponent<CharacterCrowdControlController>();
         }
         protected override void Start()
         {
@@ -613,7 +615,17 @@ namespace GGemCo2DCore
             AffectRuntimeBridge.ApplyAffect(gameObject, affectUid, duration);
         }
 
+        
+
         /// <summary>
+        /// 원인(Source)을 포함하여 Affect를 적용합니다.
+        /// CrowdControl 등 방향성 계산이 필요한 기능을 위해 사용합니다.
+        /// </summary>
+        public void AddAffect(int affectUid, GameObject source, float duration = 0)
+        {
+            AffectRuntimeBridge.ApplyAffect(gameObject, affectUid, source, duration);
+        }
+/// <summary>
         /// total move speed 가 변경되었을때 wait 애니메이션의 time scale 도 변경해주기 위해서
         /// track index = 0 의 time scale 을 변경해준다.
         /// </summary>

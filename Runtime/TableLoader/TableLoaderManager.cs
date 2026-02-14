@@ -31,6 +31,7 @@ namespace GGemCo2DCore
         public TableStat TableStat { get; private set; } = new TableStat();
         public TableDamageType TableDamageType { get; private set; } = new TableDamageType();
         public TableState TableState { get; private set; } = new TableState();
+        public TableCrowdControl TableCrowdControl { get; private set; } = new TableCrowdControl();
         public TableEffect TableEffect { get; private set; } = new TableEffect();
         public TableInteraction TableInteraction { get; private set; } = new TableInteraction();
         public TableShop TableShop { get; private set; } = new TableShop();
@@ -73,6 +74,7 @@ namespace GGemCo2DCore
                 registry.Register(TableStat);
                 registry.Register(TableDamageType);
                 registry.Register(TableState);
+                registry.Register(TableCrowdControl);
                 registry.Register(TableEffect);
                 registry.Register(TableInteraction);
                 registry.Register(TableShop);

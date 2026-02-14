@@ -47,6 +47,7 @@ namespace GGemCo2DCore
         public const string Sound            = "sound";
         public const string SimulationTool   = "simulation_tool";
         public const string SimulationGrowth = "simulation_growth";
+        public const string CrowdControl     = "crowd_control";
 
         // 개별 항목
         public static readonly AddressableAssetInfo TableMap             = Make(Map);
@@ -80,6 +81,7 @@ namespace GGemCo2DCore
         public static readonly AddressableAssetInfo TableSound           = Make(Sound);
         public static readonly AddressableAssetInfo TableSimulationTool  = Make(SimulationTool);
         public static readonly AddressableAssetInfo TableSimulationGrowth  = Make(SimulationGrowth);
+        public static readonly AddressableAssetInfo TableCrowdControl  = Make(CrowdControl);
 
         // 전체 목록 + 읽기 전용 뷰
         public static readonly List<AddressableAssetInfo> All = new()
@@ -93,7 +95,7 @@ namespace GGemCo2DCore
             TableEffect, TableInteraction,
             TableShop, TableItemUpgrade, TableItemSalvage, TableItemCraft,
             TableCutscene, TableDialogue, TableQuest, TableProjectile, TableSound, TableSimulationTool,
-            TableSimulationGrowth
+            TableSimulationGrowth, TableCrowdControl
         };
         public static AddressableAssetInfo GetByKey(string key)
         {

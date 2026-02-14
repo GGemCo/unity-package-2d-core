@@ -215,16 +215,16 @@ namespace GGemCo2DCoreEditor
 
                 EditorGUILayout.Space(6);
                 EditorGUILayout.LabelField("Flags", EditorStyles.miniBoldLabel);
-                _editingRow.IsLockControl = BoolToInt(EditorGUILayout.ToggleLeft("IsLockControl", _editingRow.IsLockControl != 0));
-                _editingRow.IsUseKnockbackStatus = BoolToInt(EditorGUILayout.ToggleLeft("IsUseKnockbackStatus", _editingRow.IsUseKnockbackStatus != 0));
-                _editingRow.IsUseDontControlStatus = BoolToInt(EditorGUILayout.ToggleLeft("IsUseDontControlStatus", _editingRow.IsUseDontControlStatus != 0));
+                _editingRow.IsLockControl = EditorGUILayout.ToggleLeft("IsLockControl", _editingRow.IsLockControl);
+                _editingRow.IsUseKnockbackStatus = EditorGUILayout.ToggleLeft("IsUseKnockbackStatus", _editingRow.IsUseKnockbackStatus);
+                _editingRow.IsUseDontControlStatus = EditorGUILayout.ToggleLeft("IsUseDontControlStatus", _editingRow.IsUseDontControlStatus);
 
                 _editingRow.StaggerAnimationType = (CrowdControlConstants.StaggerAnimationType)EditorGUILayout.EnumPopup(
                     new GUIContent("StaggerAnimationType"), _editingRow.StaggerAnimationType);
 
-                _editingRow.IsStopOnWall = BoolToInt(EditorGUILayout.ToggleLeft("IsStopOnWall", _editingRow.IsStopOnWall != 0));
-                _editingRow.IsGroundOnly = BoolToInt(EditorGUILayout.ToggleLeft("IsGroundOnly", _editingRow.IsGroundOnly != 0));
-                _editingRow.IsAirOnly = BoolToInt(EditorGUILayout.ToggleLeft("IsAirOnly", _editingRow.IsAirOnly != 0));
+                _editingRow.IsStopOnWall = EditorGUILayout.ToggleLeft("IsStopOnWall", _editingRow.IsStopOnWall);
+                _editingRow.IsGroundOnly = EditorGUILayout.ToggleLeft("IsGroundOnly", _editingRow.IsGroundOnly);
+                _editingRow.IsAirOnly = EditorGUILayout.ToggleLeft("IsAirOnly", _editingRow.IsAirOnly);
 
                 if (EditorGUI.EndChangeCheck())
                     _editingDirty = true;
