@@ -33,7 +33,15 @@ namespace GGemCo2DCore
         public bool IsUseKnockbackStatus;
         public bool IsUseDontControlStatus;
 
-        public CrowdControlConstants.StaggerAnimationType StaggerAnimationType;
+        public string StaggerAnimationName;
+
+        /// <summary>
+        /// CC 종료 시 재생할 종료 애니메이션의 접미사입니다.
+        /// - Animator에서 Start → Wait 전환을 구성하는 경우, Wait는 자동으로 전환됩니다.
+        /// - End는 본 컨트롤러가 명시적으로 재생합니다.
+        /// </summary>
+        public const string StaggerAnimationWaitSuffix = "_wait";
+        public const string StaggerAnimationEndSuffix = "_end";
 
         public bool IsStopOnWall;
         public bool IsGroundOnly;
@@ -46,26 +54,6 @@ namespace GGemCo2DCore
     public sealed class TableCrowdControl : DefaultTable<StruckTableCrowdControl>
     {
         public override string Key => ConfigAddressableTable.CrowdControl;
-
-        private readonly Dictionary<string, StruckTableCrowdControl> _byId = new();
-
-        protected override void PreLoad()
-        {
-            _byId.Clear();
-        }
-
-        protected override void OnLoadedData(StruckTableCrowdControl data)
-        {
-            if (data == null) return;
-            if (!string.IsNullOrWhiteSpace(data.Id))
-                _byId[data.Id] = data;
-        }
-
-        public StruckTableCrowdControl GetDataById(string id)
-        {
-            if (string.IsNullOrWhiteSpace(id)) return null;
-            return _byId.TryGetValue(id, out var row) ? row : null;
-        }
 
         protected override StruckTableCrowdControl BuildRow(Dictionary<string, string> data)
         {
@@ -90,7 +78,7 @@ namespace GGemCo2DCore
                 IsUseKnockbackStatus = ConvertBoolean(data.GetValueOrDefault("IsUseKnockbackStatus")),
                 IsUseDontControlStatus = ConvertBoolean(data.GetValueOrDefault("IsUseDontControlStatus")),
 
-                StaggerAnimationType = EnumHelper.ConvertEnum<CrowdControlConstants.StaggerAnimationType>(data.GetValueOrDefault("StaggerAnimationType")),
+                StaggerAnimationName = data.GetValueOrDefault("StaggerAnimationName"),
 
                 IsStopOnWall = ConvertBoolean(data.GetValueOrDefault("IsStopOnWall")),
                 IsGroundOnly = ConvertBoolean(data.GetValueOrDefault("IsGroundOnly")),

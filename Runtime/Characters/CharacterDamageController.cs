@@ -39,7 +39,7 @@ namespace GGemCo2DCore
     public class CharacterDamageController
     {
         private CharacterBase _characterBase;
-        private ControllerMonsterSuperArmor _staggerResistance;
+        private ControllerMonsterSuperArmor _controllerMonsterSuperArmor;
         private float _monsterGroggyAffectDuration;
         private int _monsterGroggyAffectUid;
         
@@ -51,10 +51,10 @@ namespace GGemCo2DCore
                 GcLogger.LogError($"CharacterBase가 없습니다.");
                 return;
             }
-            _staggerResistance = new ControllerMonsterSuperArmor();
-            _staggerResistance.Initialize(_characterBase);
+            _controllerMonsterSuperArmor = new ControllerMonsterSuperArmor();
+            _controllerMonsterSuperArmor.Initialize(_characterBase);
             
-            _staggerResistance.BreakTriggered += OnSuperArmorBreak;
+            _controllerMonsterSuperArmor.BreakTriggered += OnSuperArmorBreak;
 
             if (AddressableLoaderSettings.Instance.monsterSettings)
             {
@@ -65,7 +65,7 @@ namespace GGemCo2DCore
 
         public void Dispose()
         {
-            _staggerResistance.BreakTriggered -= OnSuperArmorBreak;
+            _controllerMonsterSuperArmor.BreakTriggered -= OnSuperArmorBreak;
         }
 
         public void TakeDamage(MetadataDamage metadataDamage)
@@ -155,7 +155,7 @@ namespace GGemCo2DCore
                 
                 // StaggerResistanceController가 있고, 이번 타격이 스태거 판정에 관여하는 경우에만
                 // “피격 모션/상태 전환”을 결정합니다.
-                if (_staggerResistance != null && _staggerResistance.IsEnableSuperArmor() && 
+                if (_controllerMonsterSuperArmor != null && _controllerMonsterSuperArmor.IsEnableSuperArmor() && 
                     metadataDamage.HitReactionType != CharacterConstants.HitReactionType.None &&
                     (metadataDamage.ForceHitReaction || metadataDamage.StaggerStackDamage > 0))
                 {
@@ -167,7 +167,7 @@ namespace GGemCo2DCore
 
                     // 외부 상태(무적/컷씬 등)로 리액션을 막고 싶으면 여기에서 true를 전달
                     // (현재 흐름에서는 컷씬은 상단에서 리턴되므로 기본 false)
-                    var decision = _staggerResistance.ApplyHit(in hit, ignoreReactionByStatus: false);
+                    var decision = _controllerMonsterSuperArmor.ApplyHit(in hit, ignoreReactionByStatus: false);
                     shouldPlayDamageReaction = decision.ShouldReact;
                     hitReactionType = decision.ReactionType;
                 }
@@ -178,6 +178,11 @@ namespace GGemCo2DCore
                     if (hitReactionType == CharacterConstants.HitReactionType.Flinch)
                     {
                         _characterBase.CharacterAnimationController.PlayAnimationGroggy();
+                    }
+                    // CC 처리가 있을 때 
+                    else if (crowdControlUid > 0)
+                    {
+                        _characterBase.ApplyCrowdControl(crowdControlUid, metadataDamage.attacker);
                     }
                     else
                     {
@@ -192,16 +197,12 @@ namespace GGemCo2DCore
                 {
                     _characterBase.AddAffect(affectUid, metadataDamage.attacker);
                 }
-                if (crowdControlUid > 0)
-                {
-                    _characterBase.ApplyCrowdControl(crowdControlUid, metadataDamage.attacker);
-                }
             }
             _characterBase.CurrentHp.OnNext(remainHp);
         }
         public void EnableSuperArmor(bool enable)
         {
-            _staggerResistance.EnableSuperArmor(enable);
+            _controllerMonsterSuperArmor.EnableSuperArmor(enable);
         }
         /// <summary>
         /// 슈퍼 아머가 0이 되었을 때 한번 호출 

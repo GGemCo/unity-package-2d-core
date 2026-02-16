@@ -219,8 +219,7 @@ namespace GGemCo2DCoreEditor
                 _editingRow.IsUseKnockbackStatus = EditorGUILayout.ToggleLeft("IsUseKnockbackStatus", _editingRow.IsUseKnockbackStatus);
                 _editingRow.IsUseDontControlStatus = EditorGUILayout.ToggleLeft("IsUseDontControlStatus", _editingRow.IsUseDontControlStatus);
 
-                _editingRow.StaggerAnimationType = (CrowdControlConstants.StaggerAnimationType)EditorGUILayout.EnumPopup(
-                    new GUIContent("StaggerAnimationType"), _editingRow.StaggerAnimationType);
+                _editingRow.StaggerAnimationName =EditorGUILayout.TextField(new GUIContent("StaggerAnimationName"), _editingRow.StaggerAnimationName ?? string.Empty);
 
                 _editingRow.IsStopOnWall = EditorGUILayout.ToggleLeft("IsStopOnWall", _editingRow.IsStopOnWall);
                 _editingRow.IsGroundOnly = EditorGUILayout.ToggleLeft("IsGroundOnly", _editingRow.IsGroundOnly);
@@ -383,7 +382,7 @@ namespace GGemCo2DCoreEditor
                 IsLockControl = row.IsLockControl,
                 IsUseKnockbackStatus = row.IsUseKnockbackStatus,
                 IsUseDontControlStatus = row.IsUseDontControlStatus,
-                StaggerAnimationType = row.StaggerAnimationType,
+                StaggerAnimationName = row.StaggerAnimationName,
                 IsStopOnWall = row.IsStopOnWall,
                 IsGroundOnly = row.IsGroundOnly,
                 IsAirOnly = row.IsAirOnly,
@@ -406,7 +405,7 @@ namespace GGemCo2DCoreEditor
             _cachedRow.IsLockControl = _editingRow.IsLockControl;
             _cachedRow.IsUseKnockbackStatus = _editingRow.IsUseKnockbackStatus;
             _cachedRow.IsUseDontControlStatus = _editingRow.IsUseDontControlStatus;
-            _cachedRow.StaggerAnimationType = _editingRow.StaggerAnimationType;
+            _cachedRow.StaggerAnimationName = _editingRow.StaggerAnimationName;
             _cachedRow.IsStopOnWall = _editingRow.IsStopOnWall;
             _cachedRow.IsGroundOnly = _editingRow.IsGroundOnly;
             _cachedRow.IsAirOnly = _editingRow.IsAirOnly;
@@ -461,7 +460,7 @@ namespace GGemCo2DCoreEditor
             info.IsLockControl = row.IsLockControl;
             info.IsUseKnockbackStatus = row.IsUseKnockbackStatus;
             info.IsUseDontControlStatus = row.IsUseDontControlStatus;
-            info.StaggerAnimationType = row.StaggerAnimationType;
+            info.StaggerAnimationName = row.StaggerAnimationName;
             info.IsStopOnWall = row.IsStopOnWall;
             info.IsGroundOnly = row.IsGroundOnly;
             info.IsAirOnly = row.IsAirOnly;
@@ -497,7 +496,7 @@ namespace GGemCo2DCoreEditor
                     "FixedDirectionX","FixedDirectionY",
                     "Distance","EaseType","Duration",
                     "IsLockControl","IsUseKnockbackStatus","IsUseDontControlStatus",
-                    "StaggerAnimationType",
+                    "StaggerAnimationName",
                     "IsStopOnWall","IsGroundOnly","IsAirOnly",
                 });
 
@@ -530,7 +529,7 @@ namespace GGemCo2DCoreEditor
                     sb.Append(r.IsUseKnockbackStatus).Append('\t');
                     sb.Append(r.IsUseDontControlStatus).Append('\t');
 
-                    sb.Append(r.StaggerAnimationType).Append('\t');
+                    sb.Append(r.StaggerAnimationName).Append('\t');
 
                     sb.Append(r.IsStopOnWall).Append('\t');
                     sb.Append(r.IsGroundOnly).Append('\t');

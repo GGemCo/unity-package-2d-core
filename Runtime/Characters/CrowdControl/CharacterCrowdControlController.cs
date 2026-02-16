@@ -22,6 +22,9 @@ namespace GGemCo2DCore
         private float _duration;
         private Easing.EaseType _easeType;
 
+        // 애니메이션 시퀀스(이름 기반)
+        private string _currentStaggerAnimationName;
+
         private void Awake()
         {
             _character = GetComponent<CharacterBase>();
@@ -69,6 +72,8 @@ namespace GGemCo2DCore
                 // 즉시 이동(옵션)
                 MoveTo(_endPos);
                 _isRunning = false;
+                // 즉시 종료 처리
+                PlayStaggerEndAnimation();
                 return;
             }
 
@@ -85,6 +90,9 @@ namespace GGemCo2DCore
             {
                 MoveTo(_endPos);
                 _isRunning = false;
+                // CC 종료 시 End 애니메이션 재생
+                _character.Stop();
+                PlayStaggerEndAnimation();
                 return;
             }
 
@@ -151,20 +159,29 @@ namespace GGemCo2DCore
         {
             if (_character?.CharacterAnimationController == null) return;
 
-            switch (crowdControl.StaggerAnimationType)
+            // 테이블이 비어있으면 아무 것도 재생하지 않습니다.
+            // Start → Wait 전환은 Animator의 Transition으로 구성하는 전제입니다.
+            _currentStaggerAnimationName = crowdControl?.StaggerAnimationName;
+            if (string.IsNullOrWhiteSpace(_currentStaggerAnimationName)) return;
+
+            if (_character.CharacterAnimationController.HasAnimation(_currentStaggerAnimationName))
             {
-                case CrowdControlConstants.StaggerAnimationType.Damage:
-                    _character.CharacterAnimationController.PlayDamageAnimation();
-                    break;
-
-                case CrowdControlConstants.StaggerAnimationType.Groggy:
-                    _character.CharacterAnimationController.PlayAnimationGroggy();
-                    break;
-
-                default:
-                    break;
+                _character.CharacterAnimationController.PlayCharacterAnimation(_currentStaggerAnimationName, loop: false);
             }
         }
+
+        private void PlayStaggerEndAnimation()
+        {
+            if (_character?.CharacterAnimationController == null) return;
+            if (string.IsNullOrWhiteSpace(_currentStaggerAnimationName)) return;
+
+            var endName = _currentStaggerAnimationName + StruckTableCrowdControl.StaggerAnimationEndSuffix;
+            if (_character.CharacterAnimationController.HasAnimation(endName))
+            {
+                _character.CharacterAnimationController.PlayCharacterAnimation(endName, loop: false);
+            }
+        }
+
 
         public void ApplyCrowdControlByUid(int crowdControlUid, GameObject source)
         {
