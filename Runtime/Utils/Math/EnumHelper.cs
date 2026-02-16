@@ -111,10 +111,34 @@ namespace GGemCo2DCore
             GcLogger.LogError($"[EnumConverter] Unknown value '{value}' for enum {typeof(TEnum).Name}");
             return default;
         }
+        public static class EnumCache<T> where T : Enum
+        {
+            public static readonly T[] Values = (T[])Enum.GetValues(typeof(T));
+        }
+        /// <summary>
+        /// enum 타입에 실제로 정의된 값인지 확인합니다.
+        /// </summary>
+        public static bool IsDefined<TEnum>(TEnum value) where TEnum : struct, Enum
+        {
+            return Enum.IsDefined(typeof(TEnum), value);
+        }
+        /// <summary>
+        /// Flags Enum 값이 유효한 조합인지 검사합니다.
+        /// (정의되지 않은 비트 포함 여부 체크)
+        /// </summary>
+        public static bool IsValidFlags<TEnum>(TEnum value) where TEnum : struct, Enum
+        {
+            long raw = Convert.ToInt64(value);
+            long all = 0;
 
-    }
-    public static class EnumCache<T> where T : Enum
-    {
-        public static readonly T[] Values = (T[])Enum.GetValues(typeof(T));
+            foreach (var v in EnumCache<TEnum>.Values)
+            {
+                long flag = Convert.ToInt64(v);
+                all |= flag;
+            }
+
+            // 정의되지 않은 비트가 있으면 false
+            return (raw & ~all) == 0;
+        }
     }
 }

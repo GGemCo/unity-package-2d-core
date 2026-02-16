@@ -1,4 +1,6 @@
+using System;
 using System.Collections.Generic;
+using R3;
 using UnityEngine;
 using UnityEngine.Events;
 
@@ -41,6 +43,7 @@ namespace GGemCo2DCore
             base.Start();
             _sceneGame = SceneGame.Instance;
             _playerData = _sceneGame.saveDataManager.Player;
+            InitializeStatPointSystem();
             // 연출중 체크를 위해 추가
             _controllerPlayer.Initialize(_sceneGame.CutsceneManager);
             _sceneGame.mapManager.OnLoadStartMap += OnLoadStartMap;
@@ -144,6 +147,7 @@ namespace GGemCo2DCore
         /// <param name="partIndex"></param>
         /// <param name="itemUid"></param>
         /// <param name="itemCount"></param>
+        /// <param name="instanceId"></param>
         public void EquipItem(int partIndex, int itemUid, int itemCount, long instanceId = 0)
         {
             bool result = _equipController.EquipItem(partIndex, itemUid, instanceId);
@@ -430,5 +434,169 @@ namespace GGemCo2DCore
             state.Exit(hitArea.gameObject);
             return true;
         }
+
+
+        #region (스탯 포인트)
+
+        public int UnspentStatPoints => _playerData?.UnspentStatPoints ?? 0;
+        public int InvestedStatPointAtk => _playerData?.InvestedStatPointAtk ?? 0;
+        public int InvestedStatPointDef => _playerData?.InvestedStatPointDef ?? 0;
+        public int InvestedStatPointHp => _playerData?.InvestedStatPointHp ?? 0;
+        public int InvestedStatPointMp => _playerData?.InvestedStatPointMp ?? 0;
+        public int InvestedStatPointStamina => _playerData?.InvestedStatPointStamina ?? 0;
+
+        public bool TryInvestStatPoint(CharacterConstants.IndexPlayerInfo statPointType, int amount = 1)
+        {
+            if (_playerData == null) return false;
+            return _playerData.TryInvestStatPoint(statPointType, amount);
+        }
+
+        public bool TryRefundStatPoint(CharacterConstants.IndexPlayerInfo statPointType, int amount = 1)
+        {
+            if (_playerData == null) return false;
+            return _playerData.TryRefundStatPoint(statPointType, amount);
+        }
+
+        /// <summary>
+        /// 스탯 포인트 투자 상태를 일괄 적용합니다.
+        /// - Apply 버튼 등 '원자적 커밋' 용도
+        /// </summary>
+        public bool TryApplyStatPointAllocation(
+            int unspent,
+            int investedAtk,
+            int investedDef,
+            int investedHp,
+            int investedMp,
+            int investedStamina)
+        {
+            if (_playerData == null) return false;
+            // Apply 버튼은 '일괄 커밋'이므로, 변경 직후 totals가 즉시 갱신되어야
+            // UIWindowPlayerInfo가 같은 프레임에 최신 값을 표시할 수 있습니다.
+            // (Reactive 구독 경로는 스케줄링 타이밍에 따라 한 프레임 뒤에 반영될 수 있음)
+            bool ok = _playerData.TryApplyStatPointAllocation(unspent, investedAtk, investedDef, investedHp, investedMp, investedStamina);
+            if (!ok) return false;
+
+            // 즉시 반영(HP/MP/Stamina 현재값은 보존)
+            ApplyStatPointModifiersPreserveResources();
+            return true;
+        }
+
+        /// <summary>
+        /// (부작용 없음) 특정 스탯 포인트 투자 상태를 가정했을 때의 총합 스탯을 계산합니다.
+        /// - UIWindowPlayerInfo 미리보기 용도
+        /// </summary>
+        public CharacterTotals CalculateProjectedTotalsForStatPoints(
+            int investedAtk,
+            int investedDef,
+            int investedHp,
+            int investedMp,
+            int investedStamina)
+        {
+            var settings = _playerSettings != null ? _playerSettings : AddressableLoaderSettings.Instance.playerSettings;
+            if (settings == null)
+            {
+                // settings가 없으면 현재 totals로 fallback
+                return new CharacterTotals(
+                    TotalAtk.Value, TotalDef.Value, TotalHp.Value, TotalMp.Value, TotalStamina.Value,
+                    TotalSuperArmor.Value,
+                    TotalMoveSpeed.Value, TotalAttackSpeed.Value,
+                    TotalCriticalDamage.Value, TotalCriticalProbability.Value,
+                    TotalRegistFire.Value, TotalRegistCold.Value, TotalRegistLightning.Value);
+            }
+
+            var flat = new Dictionary<string, int>(8);
+            var percent = new Dictionary<string, float>(8);
+
+            AddStatPointBonus(settings.statPointAtk, investedAtk, ConfigCommon.StatusStatAtk, flat, percent);
+            AddStatPointBonus(settings.statPointDef, investedDef, ConfigCommon.StatusStatDef, flat, percent);
+            AddStatPointBonus(settings.statPointHp, investedHp, ConfigCommon.StatusStatHp, flat, percent);
+            AddStatPointBonus(settings.statPointMp, investedMp, ConfigCommon.StatusStatMp, flat, percent);
+            AddStatPointBonus(settings.statPointStamina, investedStamina, ConfigCommon.StatusStatStamina, flat, percent);
+
+            return CalculateTotalsWithPersistentModifiers(flat, percent);
+        }
+
+        private void InitializeStatPointSystem()
+        {
+            if (_playerData == null) return;
+
+            // 최초 1회 반영(세이브 로드 이후)
+            ApplyStatPointModifiersPreserveResources();
+
+            // 이후 변경 이벤트 구독(투자/회수/레벨업 지급 등)
+            _playerData.OnStatPointsChanged()
+                .Subscribe(_ => ApplyStatPointModifiersPreserveResources())
+                .AddTo(this);
+        }
+
+        private void ApplyStatPointModifiersPreserveResources()
+        {
+            // 최대치 변경 시 현재값(HP/MP/Stamina)은 비율 유지
+            long oldHpMax = TotalHp.Value;
+            long oldMpMax = TotalMp.Value;
+            long oldStaminaMax = TotalStamina.Value;
+
+            long oldHpCur = CurrentHp.Value;
+            long oldMpCur = CurrentMp.Value;
+            long oldStaminaCur = CurrentStamina.Value;
+
+            var settings = _playerSettings != null ? _playerSettings : AddressableLoaderSettings.Instance.playerSettings;
+            if (settings == null) return;
+
+            var flat = new Dictionary<string, int>(8);
+            var percent = new Dictionary<string, float>(8);
+
+            AddStatPointBonus(settings.statPointAtk, _playerData.InvestedStatPointAtk, ConfigCommon.StatusStatAtk, flat, percent);
+            AddStatPointBonus(settings.statPointDef, _playerData.InvestedStatPointDef, ConfigCommon.StatusStatDef, flat, percent);
+            AddStatPointBonus(settings.statPointHp, _playerData.InvestedStatPointHp, ConfigCommon.StatusStatHp, flat, percent);
+            AddStatPointBonus(settings.statPointMp, _playerData.InvestedStatPointMp, ConfigCommon.StatusStatMp, flat, percent);
+            AddStatPointBonus(settings.statPointStamina, _playerData.InvestedStatPointStamina, ConfigCommon.StatusStatStamina, flat, percent);
+
+            SetStatPointModifiers(flat, percent);
+            RecalculateStats();
+
+            // 비율 유지(0/0 케이스는 무시)
+            if (oldHpMax > 0 && TotalHp.Value > 0)
+            {
+                CurrentHp.OnNext(PreserveRatio(oldHpCur, oldHpMax, TotalHp.Value));
+            }
+            if (oldMpMax > 0 && TotalMp.Value > 0)
+            {
+                CurrentMp.OnNext(PreserveRatio(oldMpCur, oldMpMax, TotalMp.Value));
+            }
+            if (oldStaminaMax > 0 && TotalStamina.Value > 0)
+            {
+                CurrentStamina.OnNext(PreserveRatio(oldStaminaCur, oldStaminaMax, TotalStamina.Value));
+            }
+        }
+
+        private static long PreserveRatio(long current, long oldMax, long newMax)
+        {
+            if (oldMax <= 0) return Math.Clamp(current, 0, newMax);
+            float ratio = Mathf.Clamp01((float)current / oldMax);
+            long v = Mathf.RoundToInt(ratio * newMax);
+            return Math.Clamp(v, 0, newMax);
+        }
+
+        private static void AddStatPointBonus(GGemCoPlayerSettings.StatPointBonus bonus, int investedPoints, string statKey,
+            Dictionary<string, int> flatOut, Dictionary<string, float> percentOut)
+        {
+            if (investedPoints <= 0) return;
+            if (string.IsNullOrEmpty(statKey)) return;
+
+            float total = investedPoints * bonus.valuePerPoint;
+            if (Mathf.Approximately(total, 0f)) return;
+
+            switch (bonus.mode)
+            {
+                case GGemCoPlayerSettings.StatPointBonusMode.Flat:
+                    flatOut[statKey] = flatOut.GetValueOrDefault(statKey, 0) + Mathf.RoundToInt(total);
+                    break;
+                case GGemCoPlayerSettings.StatPointBonusMode.Percent:
+                    percentOut[statKey] = percentOut.GetValueOrDefault(statKey, 0f) + total;
+                    break;
+            }
+        }
+        #endregion
     }
 }

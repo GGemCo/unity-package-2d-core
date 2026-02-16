@@ -53,6 +53,43 @@ namespace GGemCo2DCore
         [Tooltip("위쪽(천장) 경계를 벗어날 수 없도록 제한합니다.")]
         public bool limitBoundaryTop = true;
 
+
+
+        // =========================
+        // Stat Point (스탯 포인트)
+        // =========================
+        public enum StatPointBonusMode
+        {
+            Flat = 0,
+            Percent = 1,
+        }
+
+        [System.Serializable]
+        public struct StatPointBonus
+        {
+            [Tooltip("포인트 1당 증가 방식 (Flat: 고정값, Percent: % 증가)")]
+            public StatPointBonusMode mode;
+            [Tooltip("포인트 1당 증가량. Percent는 '퍼센트 값'을 입력합니다. 예) 1.5 = 1.5%")]
+            public float valuePerPoint;
+        }
+
+        [Header("스탯 포인트")]
+        [Tooltip("새 게임 시작 시 지급되는 스탯 포인트")]
+        public int statPointInitial;
+        [Tooltip("레벨업 1회당 지급되는 스탯 포인트")]
+        public int statPointPerLevel;
+
+        [Tooltip("공격력 포인트 1당 증가량")]
+        public StatPointBonus statPointAtk;
+        [Tooltip("방어력 포인트 1당 증가량")]
+        public StatPointBonus statPointDef;
+        [Tooltip("체력 포인트 1당 증가량")]
+        public StatPointBonus statPointHp;
+        [Tooltip("마력 포인트 1당 증가량")]
+        public StatPointBonus statPointMp;
+        [Tooltip("스테미나 포인트 1당 증가량")]
+        public StatPointBonus statPointStamina;
+
         /// <summary>
         /// 처음 생성 시 한 번만 실행됨
         /// </summary>
@@ -72,6 +109,16 @@ namespace GGemCo2DCore
             statRegistFire = 0;
             statRegistCold = 0;
             statRegistLightning = 0;
+
+            statPointInitial = 0;
+            statPointPerLevel = 0;
+
+            statPointAtk = new StatPointBonus { mode = StatPointBonusMode.Flat, valuePerPoint = 1f };
+            statPointDef = new StatPointBonus { mode = StatPointBonusMode.Flat, valuePerPoint = 1f };
+            statPointHp = new StatPointBonus { mode = StatPointBonusMode.Flat, valuePerPoint = 10f };
+            statPointMp = new StatPointBonus { mode = StatPointBonusMode.Flat, valuePerPoint = 5f };
+            statPointStamina = new StatPointBonus { mode = StatPointBonusMode.Flat, valuePerPoint = 5f };
+
         }
     }
 }

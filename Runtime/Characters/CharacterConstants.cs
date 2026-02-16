@@ -1,4 +1,5 @@
-﻿using UnityEngine;
+﻿using System.Collections.Generic;
+using UnityEngine;
 
 namespace GGemCo2DCore
 {
@@ -208,5 +209,42 @@ namespace GGemCo2DCore
             /// <summary>브레이크 후 Max로 리셋(보스/패턴 유지에 유리)</summary>
             ResetToMax = 1,
         }
+        /// <summary>
+        /// Player 클레스에서 subscribe 를 위해 사용중
+        /// </summary>
+        public enum IndexPlayerInfo
+        {
+            None,
+            Atk,
+            Def,
+            Hp,
+            Mp,
+            Stamina,
+            MoveSpeed,
+            AttackSpeed,
+            CriticalDamage,
+            CriticalProbability,
+            RegistFire,
+            RegistCold,
+            RegistLightning,
+        }
+        /// <summary>
+        /// 스탯 포인트 투자 대상 집합
+        /// - 1차 적용 범위: 공격력/방어력/체력/마력/스테미나
+        /// - UI/로직에서 "투자 가능한 항목"을 명시적으로 통제하기 위해 HashSet으로 관리합니다.
+        /// </summary>
+        public static readonly HashSet<IndexPlayerInfo> PlayerStatPointTargets = new HashSet<IndexPlayerInfo>
+        {
+            IndexPlayerInfo.Atk,
+            IndexPlayerInfo.Def,
+            IndexPlayerInfo.Hp,
+            IndexPlayerInfo.Mp,
+            IndexPlayerInfo.Stamina,
+        };
+
+        /// <summary>
+        /// 해당 PlayerInfo 라인이 스탯 포인트 투자 대상인지 여부
+        /// </summary>
+        public static bool IsStatPointTarget(IndexPlayerInfo idx) => PlayerStatPointTargets.Contains(idx);
     }
 }

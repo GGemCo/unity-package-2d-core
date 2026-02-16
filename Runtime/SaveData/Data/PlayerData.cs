@@ -1,7 +1,6 @@
 ﻿using System.Collections.Generic;
 using R3;
 using UnityEngine;
-using UnityEngine.Localization;
 
 namespace GGemCo2DCore
 {
@@ -21,6 +20,17 @@ namespace GGemCo2DCore
         private readonly BehaviorSubject<long> _currentGold = new(0);
         private readonly BehaviorSubject<long> _currentSilver = new(0);
         
+        // Stat Point (스탯 포인트)
+        private readonly BehaviorSubject<int> _unspentStatPoints = new(0);
+        private readonly BehaviorSubject<int> _investedStatPointAtk = new(0);
+        private readonly BehaviorSubject<int> _investedStatPointDef = new(0);
+        private readonly BehaviorSubject<int> _investedStatPointHp = new(0);
+        private readonly BehaviorSubject<int> _investedStatPointMp = new(0);
+        private readonly BehaviorSubject<int> _investedStatPointStamina = new(0);
+
+        // 일괄 업데이트 중(Apply 버튼 등) 자동 저장/이벤트 폭주를 줄이기 위한 플래그
+        private bool _isBatchUpdating;
+
         public int CurrentMapUid
         {
             get => _currentMapUid.Value;
@@ -47,6 +57,58 @@ namespace GGemCo2DCore
         {
             get => _currentSilver.Value;
             set => _currentSilver.OnNext(value);
+        }
+
+
+        // =========================
+        // Stat Point (스탯 포인트) - JSON 직렬화 대상(프로퍼티로 노출)
+        // =========================
+        public int UnspentStatPoints
+        {
+            get => _unspentStatPoints.Value;
+            set => _unspentStatPoints.OnNext(Mathf.Max(0, value));
+        }
+
+        public int InvestedStatPointAtk
+        {
+            get => _investedStatPointAtk.Value;
+            set => _investedStatPointAtk.OnNext(Mathf.Max(0, value));
+        }
+
+        public int InvestedStatPointDef
+        {
+            get => _investedStatPointDef.Value;
+            set => _investedStatPointDef.OnNext(Mathf.Max(0, value));
+        }
+
+        public int InvestedStatPointHp
+        {
+            get => _investedStatPointHp.Value;
+            set => _investedStatPointHp.OnNext(Mathf.Max(0, value));
+        }
+
+        public int InvestedStatPointMp
+        {
+            get => _investedStatPointMp.Value;
+            set => _investedStatPointMp.OnNext(Mathf.Max(0, value));
+        }
+
+        public int InvestedStatPointStamina
+        {
+            get => _investedStatPointStamina.Value;
+            set => _investedStatPointStamina.OnNext(Mathf.Max(0, value));
+        }
+
+        /// <summary>
+        /// 스탯 포인트(미사용/투자) 변경 이벤트
+        /// </summary>
+        public Observable<Unit> OnStatPointsChanged()
+        {
+            return _unspentStatPoints.DistinctUntilChanged()
+                .CombineLatest(_investedStatPointAtk, _investedStatPointDef, _investedStatPointHp, _investedStatPointMp,
+                    _investedStatPointStamina,
+                    (_, _, _, _, _, _) => Unit.Default)
+                .DistinctUntilChanged();
         }
         // json 에 포함되지 않도록 함수화 
         public Observable<int> OnCurrentLevelChanged()
@@ -108,9 +170,23 @@ namespace GGemCo2DCore
         /// </summary>
         private void InitializeSubscriptions()
         {
-            _currentLevel.DistinctUntilChanged()
-                .CombineLatest(_currentMapUid, _currentExp, _currentGold, _currentSilver, (_, _, _, _, _) => Unit.Default)
-                .Subscribe(_ => SavePlayerData())
+            Observable.Merge(
+                    _currentLevel.DistinctUntilChanged().Select(_ => Unit.Default),
+                    _currentMapUid.DistinctUntilChanged().Select(_ => Unit.Default),
+                    _currentExp.DistinctUntilChanged().Select(_ => Unit.Default),
+                    _currentGold.DistinctUntilChanged().Select(_ => Unit.Default),
+                    _currentSilver.DistinctUntilChanged().Select(_ => Unit.Default),
+                    _unspentStatPoints.DistinctUntilChanged().Select(_ => Unit.Default),
+                    _investedStatPointAtk.DistinctUntilChanged().Select(_ => Unit.Default),
+                    _investedStatPointDef.DistinctUntilChanged().Select(_ => Unit.Default),
+                    _investedStatPointHp.DistinctUntilChanged().Select(_ => Unit.Default),
+                    _investedStatPointMp.DistinctUntilChanged().Select(_ => Unit.Default),
+                    _investedStatPointStamina.DistinctUntilChanged().Select(_ => Unit.Default))
+                .Subscribe(_ =>
+                {
+                    if (_isBatchUpdating) return;
+                    SavePlayerData();
+                })
                 .AddTo(_disposables);
         }
 
@@ -119,6 +195,7 @@ namespace GGemCo2DCore
         /// </summary>
         private void SavePlayerData()
         {
+            if (_isBatchUpdating) return;
             SceneGame.Instance.saveDataManager.StartSaveData();
         }
 
@@ -134,6 +211,21 @@ namespace GGemCo2DCore
                 CurrentExp = saveDataContainer.PlayerData.CurrentExp;
                 CurrentGold = saveDataContainer.PlayerData.CurrentGold;
                 CurrentSilver = saveDataContainer.PlayerData.CurrentSilver;
+                UnspentStatPoints = saveDataContainer.PlayerData.UnspentStatPoints;
+                InvestedStatPointAtk = saveDataContainer.PlayerData.InvestedStatPointAtk;
+                InvestedStatPointDef = saveDataContainer.PlayerData.InvestedStatPointDef;
+                InvestedStatPointHp = saveDataContainer.PlayerData.InvestedStatPointHp;
+                InvestedStatPointMp = saveDataContainer.PlayerData.InvestedStatPointMp;
+                InvestedStatPointStamina = saveDataContainer.PlayerData.InvestedStatPointStamina;
+            }
+            else
+            {
+                // 새 게임(세이브 없음) 초기 포인트 지급
+                var settings = AddressableLoaderSettings.Instance.playerSettings;
+                if (settings != null && settings.statPointInitial > 0)
+                {
+                    UnspentStatPoints = settings.statPointInitial;
+                }
             }
 
             // 필요 경험치 업데이트
@@ -153,8 +245,9 @@ namespace GGemCo2DCore
 
         public void AddExp(long exp)
         {
+            int prevLevel = CurrentLevel;
             long newExp = CurrentExp + exp;
-            int nextLevel = CurrentLevel;
+            int nextLevel = prevLevel;
             while (nextLevel < _maxPlayerLevel && newExp >= _tableExp.GetNeedExp(nextLevel + 1))
             {
                 newExp -= _tableExp.GetNeedExp(nextLevel + 1);
@@ -165,7 +258,147 @@ namespace GGemCo2DCore
             CurrentLevel = Mathf.Min(nextLevel, _maxPlayerLevel);
             CurrentExp = nextLevel < _maxPlayerLevel ? newExp : 0;
             UpdateRequiredExp(nextLevel < _maxPlayerLevel ? _tableExp.GetNeedExp(nextLevel + 1) : 0);
+
+            // 레벨업 시 스탯 포인트 지급
+            int deltaLevel = CurrentLevel - prevLevel;
+            if (deltaLevel > 0)
+            {
+                var settings = AddressableLoaderSettings.Instance.playerSettings;
+                int perLevel = settings != null ? settings.statPointPerLevel : 0;
+                if (perLevel > 0)
+                {
+                    UnspentStatPoints += deltaLevel * perLevel;
+                }
+            }
         }
+#if UNITY_EDITOR
+        public void AddLevelUp()
+        {
+            if (_maxPlayerLevel <= 0)
+            {
+                GcLogger.LogError($"{nameof(GGemCoPlayerSettings)}에 max level 값을 설정해주세요.");
+                return;
+            }
+            var nextLevel = CurrentLevel + 1;
+            if (nextLevel > _maxPlayerLevel)
+            {
+                nextLevel = _maxPlayerLevel;
+            }
+            long exp = _tableLoaderManager.TableExp.GetNeedExp(nextLevel);
+            if (exp <= 0)
+            {
+                GcLogger.LogError($"경험치 테이블(exp)에 정보가 없습니다. level: {nextLevel}");
+                return;
+            }
+            AddExp(exp);
+        }
+#endif
+
+        /// <summary>
+        /// 스탯 포인트 투자
+        /// </summary>
+        public bool TryInvestStatPoint(CharacterConstants.IndexPlayerInfo type, int amount = 1)
+        {
+            if (type == CharacterConstants.IndexPlayerInfo.None) return false;
+            if (amount <= 0) return false;
+            if (UnspentStatPoints < amount) return false;
+
+            switch (type)
+            {
+                case CharacterConstants.IndexPlayerInfo.Atk: InvestedStatPointAtk += amount; break;
+                case CharacterConstants.IndexPlayerInfo.Def: InvestedStatPointDef += amount; break;
+                case CharacterConstants.IndexPlayerInfo.Hp: InvestedStatPointHp += amount; break;
+                case CharacterConstants.IndexPlayerInfo.Mp: InvestedStatPointMp += amount; break;
+                case CharacterConstants.IndexPlayerInfo.Stamina: InvestedStatPointStamina += amount; break;
+                default: return false;
+            }
+
+            UnspentStatPoints -= amount;
+            return true;
+        }
+
+        /// <summary>
+        /// 스탯 포인트 회수(되돌리기). 1차에서는 비용 없이 지원(정책은 추후 확장).
+        /// </summary>
+        public bool TryRefundStatPoint(CharacterConstants.IndexPlayerInfo type, int amount = 1)
+        {
+            if (type == CharacterConstants.IndexPlayerInfo.None) return false;
+            if (amount <= 0) return false;
+
+            switch (type)
+            {
+                case CharacterConstants.IndexPlayerInfo.Atk:
+                    if (InvestedStatPointAtk < amount) return false;
+                    InvestedStatPointAtk -= amount;
+                    break;
+                case CharacterConstants.IndexPlayerInfo.Def:
+                    if (InvestedStatPointDef < amount) return false;
+                    InvestedStatPointDef -= amount;
+                    break;
+                case CharacterConstants.IndexPlayerInfo.Hp:
+                    if (InvestedStatPointHp < amount) return false;
+                    InvestedStatPointHp -= amount;
+                    break;
+                case CharacterConstants.IndexPlayerInfo.Mp:
+                    if (InvestedStatPointMp < amount) return false;
+                    InvestedStatPointMp -= amount;
+                    break;
+                case CharacterConstants.IndexPlayerInfo.Stamina:
+                    if (InvestedStatPointStamina < amount) return false;
+                    InvestedStatPointStamina -= amount;
+                    break;
+                default:
+                    return false;
+            }
+
+            UnspentStatPoints += amount;
+            return true;
+        }
+
+        /// <summary>
+        /// 스탯 포인트(미사용/투자) 상태를 일괄 적용합니다.
+        /// - 총 포인트 보존(= 치트 방지)
+        /// - Apply 버튼 1회 클릭으로 저장도 1회로 합칩니다.
+        /// </summary>
+        public bool TryApplyStatPointAllocation(
+            int unspent,
+            int investedAtk,
+            int investedDef,
+            int investedHp,
+            int investedMp,
+            int investedStamina)
+        {
+            if (unspent < 0) return false;
+            if (investedAtk < 0 || investedDef < 0 || investedHp < 0 || investedMp < 0 || investedStamina < 0)
+                return false;
+
+            int currentTotal = UnspentStatPoints + InvestedStatPointAtk + InvestedStatPointDef + InvestedStatPointHp +
+                               InvestedStatPointMp + InvestedStatPointStamina;
+
+            int newTotal = unspent + investedAtk + investedDef + investedHp + investedMp + investedStamina;
+            if (newTotal != currentTotal) return false;
+
+            _isBatchUpdating = true;
+            try
+            {
+                // 투자/미사용 값은 프로퍼티로 세팅(= JSON 직렬화 대상)
+                UnspentStatPoints = unspent;
+                InvestedStatPointAtk = investedAtk;
+                InvestedStatPointDef = investedDef;
+                InvestedStatPointHp = investedHp;
+                InvestedStatPointMp = investedMp;
+                InvestedStatPointStamina = investedStamina;
+            }
+            finally
+            {
+                _isBatchUpdating = false;
+            }
+
+            // 배치 종료 후 저장 1회
+            SavePlayerData();
+            return true;
+        }
+
 
         /// <summary>
         /// 필요 경험치 업데이트

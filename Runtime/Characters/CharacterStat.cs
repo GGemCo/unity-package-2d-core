@@ -10,6 +10,48 @@ namespace GGemCo2DCore
     /// </summary>
     public class CharacterStat : MonoBehaviour
     {
+        /// <summary>
+        /// 캐릭터의 계산된 스탯 총합 스냅샷(읽기 전용)
+        /// - UI 미리보기/시뮬레이션 등에 사용합니다.
+        /// </summary>
+        public readonly struct CharacterTotals
+        {
+            public readonly long Atk;
+            public readonly long Def;
+            public readonly long Hp;
+            public readonly long Mp;
+            public readonly long Stamina;
+            public readonly int SuperArmor;
+            public readonly long MoveSpeed;
+            public readonly long AttackSpeed;
+            public readonly long CriticalDamage;
+            public readonly long CriticalProbability;
+            public readonly long RegistFire;
+            public readonly long RegistCold;
+            public readonly long RegistLightning;
+
+            public CharacterTotals(
+                long atk, long def, long hp, long mp, long stamina,
+                int superArmor,
+                long moveSpeed, long attackSpeed,
+                long criticalDamage, long criticalProbability,
+                long registFire, long registCold, long registLightning)
+            {
+                Atk = atk;
+                Def = def;
+                Hp = hp;
+                Mp = mp;
+                Stamina = stamina;
+                SuperArmor = superArmor;
+                MoveSpeed = moveSpeed;
+                AttackSpeed = attackSpeed;
+                CriticalDamage = criticalDamage;
+                CriticalProbability = criticalProbability;
+                RegistFire = registFire;
+                RegistCold = registCold;
+                RegistLightning = registLightning;
+            }
+        }
         // 기본 스탯
         private int BaseAtk { get; set; }
         private int BaseDef { get; set; }
@@ -25,8 +67,13 @@ namespace GGemCo2DCore
         private int BaseRegistCold { get; set; }
         private int BaseRegistLightning { get; set; }
 
-        private readonly Dictionary<string, int> _flatModifiers = new();
-        private readonly Dictionary<string, float> _percentModifiers = new();
+        // 장비/옵션 기반 Modifier (장비 갱신 시 재구성)
+        private readonly Dictionary<string, int> _flatEquipmentModifiers = new();
+        private readonly Dictionary<string, float> _percentEquipmentModifiers = new();
+
+        // 영구 Modifier (스탯 포인트 등). 장비 갱신으로 초기화되지 않는다.
+        private readonly Dictionary<string, int> _flatPersistentModifiers = new();
+        private readonly Dictionary<string, float> _percentPersistentModifiers = new();
 
         private long _totalAtk,
             _totalDef,
@@ -102,8 +149,8 @@ namespace GGemCo2DCore
         /// <param name="equippedItems"></param>
         public void UpdateStatCache(CharacterBase characterBase, Dictionary<int, EquippedItemRef> equippedItems)
         {
-            _flatModifiers.Clear();
-            _percentModifiers.Clear();
+            _flatEquipmentModifiers.Clear();
+            _percentEquipmentModifiers.Clear();
 
             var statModifiers = new List<ConfigCommon.StruckStatus>(32);
             var desiredEquipAffects = new HashSet<int>();
@@ -254,38 +301,68 @@ namespace GGemCo2DCore
             {
                 case ConfigCommon.SuffixType.Plus:
                 {
-                    _flatModifiers[baseStat] = _flatModifiers.GetValueOrDefault(baseStat, 0) + (isAdding ? (int)value : -(int)value);
-                    if (_flatModifiers[baseStat] == 0) _flatModifiers.Remove(baseStat);
+                    _flatEquipmentModifiers[baseStat] = _flatEquipmentModifiers.GetValueOrDefault(baseStat, 0) + (isAdding ? (int)value : -(int)value);
+                    if (_flatEquipmentModifiers[baseStat] == 0) _flatEquipmentModifiers.Remove(baseStat);
                     break;
                 }
                 case ConfigCommon.SuffixType.Minus:
                 {
-                    _flatModifiers[baseStat] = _flatModifiers.GetValueOrDefault(baseStat, 0) - (isAdding ? (int)value : -(int)value);
-                    if (_flatModifiers[baseStat] == 0) _flatModifiers.Remove(baseStat);
+                    _flatEquipmentModifiers[baseStat] = _flatEquipmentModifiers.GetValueOrDefault(baseStat, 0) - (isAdding ? (int)value : -(int)value);
+                    if (_flatEquipmentModifiers[baseStat] == 0) _flatEquipmentModifiers.Remove(baseStat);
                     break;
                 }
                 case ConfigCommon.SuffixType.Increase:
                 {
-                    _percentModifiers[baseStat] = _percentModifiers.GetValueOrDefault(baseStat, 0) + (isAdding ? value : -value);
-                    if (Mathf.Approximately(_percentModifiers[baseStat], 0)) _percentModifiers.Remove(baseStat);
+                    _percentEquipmentModifiers[baseStat] = _percentEquipmentModifiers.GetValueOrDefault(baseStat, 0) + (isAdding ? value : -value);
+                    if (Mathf.Approximately(_percentEquipmentModifiers[baseStat], 0)) _percentEquipmentModifiers.Remove(baseStat);
                     break;
                 }
                 case ConfigCommon.SuffixType.Decrease:
                 {
-                    _percentModifiers[baseStat] = _percentModifiers.GetValueOrDefault(baseStat, 0) - (isAdding ? value : -value);
-                    if (Mathf.Approximately(_percentModifiers[baseStat], 0)) _percentModifiers.Remove(baseStat);
+                    _percentEquipmentModifiers[baseStat] = _percentEquipmentModifiers.GetValueOrDefault(baseStat, 0) - (isAdding ? value : -value);
+                    if (Mathf.Approximately(_percentEquipmentModifiers[baseStat], 0)) _percentEquipmentModifiers.Remove(baseStat);
                     break;
                 }
                 case ConfigCommon.SuffixType.None:
                 default:
                 {
                     // legacy/간편 표기: None이면 Plus로 간주(기존 OptionType* 호환)
-                    _flatModifiers[baseStat] = _flatModifiers.GetValueOrDefault(baseStat, 0) + (isAdding ? (int)value : -(int)value);
-                    if (_flatModifiers[baseStat] == 0) _flatModifiers.Remove(baseStat);
+                    _flatEquipmentModifiers[baseStat] = _flatEquipmentModifiers.GetValueOrDefault(baseStat, 0) + (isAdding ? (int)value : -(int)value);
+                    if (_flatEquipmentModifiers[baseStat] == 0) _flatEquipmentModifiers.Remove(baseStat);
                     break;
                 }
             }
         }
+        /// <summary>
+        /// 스탯 포인트(영구 Modifier) 값을 갱신합니다.
+        /// - 장비 갱신(UpdateStatCache)과 무관하게 유지됩니다.
+        /// </summary>
+        public void SetStatPointModifiers(Dictionary<string, int> flatByStatKey, Dictionary<string, float> percentByStatKey)
+        {
+            _flatPersistentModifiers.Clear();
+            _percentPersistentModifiers.Clear();
+
+            if (flatByStatKey != null)
+            {
+                foreach (var kv in flatByStatKey)
+                {
+                    if (string.IsNullOrEmpty(kv.Key)) continue;
+                    if (kv.Value == 0) continue;
+                    _flatPersistentModifiers[kv.Key] = kv.Value;
+                }
+            }
+
+            if (percentByStatKey != null)
+            {
+                foreach (var kv in percentByStatKey)
+                {
+                    if (string.IsNullOrEmpty(kv.Key)) continue;
+                    if (Mathf.Approximately(kv.Value, 0f)) continue;
+                    _percentPersistentModifiers[kv.Key] = kv.Value;
+                }
+            }
+        }
+
         /// <summary>
         /// 스탯별 최종 계산하기
         /// </summary>
@@ -294,13 +371,61 @@ namespace GGemCo2DCore
         /// <returns></returns>
         private long CalculateFinalStat(string statKey, int baseValue)
         {
-            int flatBonus = _flatModifiers.GetValueOrDefault(statKey, 0);
-            float percentBonus = _percentModifiers.GetValueOrDefault(statKey, 0);
+            int flatBonus = _flatEquipmentModifiers.GetValueOrDefault(statKey, 0) + _flatPersistentModifiers.GetValueOrDefault(statKey, 0);
+            float percentBonus = _percentEquipmentModifiers.GetValueOrDefault(statKey, 0) + _percentPersistentModifiers.GetValueOrDefault(statKey, 0);
 
             float finalMultiplier = 1 + (percentBonus / 100f);
             if (finalMultiplier < 0) finalMultiplier = 0; // 최소 0으로 제한
 
             return (long)((baseValue + flatBonus) * finalMultiplier);
+        }
+
+        private long CalculateFinalStatProjected(
+            string statKey,
+            int baseValue,
+            Dictionary<string, int> flatPersistentProjected,
+            Dictionary<string, float> percentPersistentProjected)
+        {
+            int flatBonus = _flatEquipmentModifiers.GetValueOrDefault(statKey, 0)
+                            + (flatPersistentProjected?.GetValueOrDefault(statKey, 0) ?? 0);
+
+            float percentBonus = _percentEquipmentModifiers.GetValueOrDefault(statKey, 0)
+                                 + (percentPersistentProjected?.GetValueOrDefault(statKey, 0f) ?? 0f);
+
+            float finalMultiplier = 1 + (percentBonus / 100f);
+            if (finalMultiplier < 0) finalMultiplier = 0; // 최소 0
+
+            return (long)((baseValue + flatBonus) * finalMultiplier);
+        }
+
+        /// <summary>
+        /// (부작용 없음) 현재 장비/기타 modifier는 그대로 두고,
+        /// 영구 modifier(스탯 포인트 등)만 특정 값으로 가정했을 때의 총합을 계산합니다.
+        /// </summary>
+        public CharacterTotals CalculateTotalsWithPersistentModifiers(
+            Dictionary<string, int> flatPersistentProjected,
+            Dictionary<string, float> percentPersistentProjected)
+        {
+            long atk = CalculateFinalStatProjected(ConfigCommon.StatusStatAtk, BaseAtk, flatPersistentProjected, percentPersistentProjected);
+            long def = CalculateFinalStatProjected(ConfigCommon.StatusStatDef, BaseDef, flatPersistentProjected, percentPersistentProjected);
+            long hp = CalculateFinalStatProjected(ConfigCommon.StatusStatHp, BaseHp, flatPersistentProjected, percentPersistentProjected);
+            long mp = CalculateFinalStatProjected(ConfigCommon.StatusStatMp, BaseMp, flatPersistentProjected, percentPersistentProjected);
+            long stamina = CalculateFinalStatProjected(ConfigCommon.StatusStatStamina, BaseStamina, flatPersistentProjected, percentPersistentProjected);
+            int superArmor = (int)CalculateFinalStatProjected(ConfigCommon.StatusStatSuperArmor, BaseSuperArmor, flatPersistentProjected, percentPersistentProjected);
+            long moveSpeed = CalculateFinalStatProjected(ConfigCommon.StatusStatMoveSpeed, BaseMoveSpeed, flatPersistentProjected, percentPersistentProjected);
+            long attackSpeed = CalculateFinalStatProjected(ConfigCommon.StatusStatAttackSpeed, BaseAttackSpeed, flatPersistentProjected, percentPersistentProjected);
+            long criticalDamage = CalculateFinalStatProjected(ConfigCommon.StatusStatCriticalDamage, BaseCriticalDamage, flatPersistentProjected, percentPersistentProjected);
+            long criticalProbability = CalculateFinalStatProjected(ConfigCommon.StatusStatCriticalProbability, BaseCriticalProbability, flatPersistentProjected, percentPersistentProjected);
+            long registFire = CalculateFinalStatProjected(ConfigCommon.StatusStatResistanceFire, BaseRegistFire, flatPersistentProjected, percentPersistentProjected);
+            long registCold = CalculateFinalStatProjected(ConfigCommon.StatusStatResistanceCold, BaseRegistCold, flatPersistentProjected, percentPersistentProjected);
+            long registLightning = CalculateFinalStatProjected(ConfigCommon.StatusStatResistanceLightning, BaseRegistLightning, flatPersistentProjected, percentPersistentProjected);
+
+            return new CharacterTotals(
+                atk, def, hp, mp, stamina,
+                superArmor,
+                moveSpeed, attackSpeed,
+                criticalDamage, criticalProbability,
+                registFire, registCold, registLightning);
         }
         /// <summary>
         /// 최종 계산하기

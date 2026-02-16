@@ -11,7 +11,6 @@ namespace GGemCo2DCore
     {
         private Player _player;
         private SceneGame _sceneGame;
-        private LocalizationManager _localizationManager;
         
         private UIWindowHud _uiWindowHud;
         private UIWindowPlayerInfo _uiWindowPlayerInfo;
@@ -20,15 +19,13 @@ namespace GGemCo2DCore
         [Serializable]
         private struct StatUIBinding
         {
-            public UIWindowPlayerInfo.IndexPlayerInfo textUI;
+            public CharacterConstants.IndexPlayerInfo textUI;
             public Func<Player, BehaviorSubject<long>> getStat;
-            public string label;
         }
         private readonly List<StatUIBinding> _statBindings = new();
         public void Initialize(Player player)
         {
             _player = player;
-            _localizationManager = LocalizationManager.Instance;
             _sceneGame = SceneGame.Instance;
         }
 
@@ -72,6 +69,22 @@ namespace GGemCo2DCore
                 .AddTo(_player);
             
             InitializeStatBindings();
+
+            // StatPoint UI(PlayerInfo) 바인딩
+            if (_uiWindowPlayerInfo != null && _player != null)
+            {
+                // PlayerInfo 윈도우가 라벨(Localization)을 1회만 적용하고, 이후 값만 갱신하도록 바인딩
+                _uiWindowPlayerInfo.BindPlayer(_player);
+
+                // 포인트 변경 시 갱신
+                var playerData = _sceneGame.saveDataManager.Player;
+                if (playerData != null)
+                {
+                    playerData.OnStatPointsChanged()
+                        .Subscribe(_ => _uiWindowPlayerInfo.RefreshValues())
+                        .AddTo(_player);
+                }
+            }
         }
         private void SetWindowHudSliderHp(long value)
         {
@@ -114,22 +127,23 @@ namespace GGemCo2DCore
         {
             _statBindings.AddRange(new[]
             {
-                new StatUIBinding { textUI = UIWindowPlayerInfo.IndexPlayerInfo.Atk, getStat = p => p.TotalAtk, label = _localizationManager.GetStatusNameByKey(ConfigCommon.StatusStatAtk) },
-                new StatUIBinding { textUI = UIWindowPlayerInfo.IndexPlayerInfo.Def, getStat = p => p.TotalDef, label = _localizationManager.GetStatusNameByKey(ConfigCommon.StatusStatDef) },
-                new StatUIBinding { textUI = UIWindowPlayerInfo.IndexPlayerInfo.Hp, getStat = p => p.TotalHp, label = _localizationManager.GetStatusNameByKey(ConfigCommon.StatusStatHp) },
-                new StatUIBinding { textUI = UIWindowPlayerInfo.IndexPlayerInfo.Mp, getStat = p => p.TotalMp, label = _localizationManager.GetStatusNameByKey(ConfigCommon.StatusStatMp) },
-                new StatUIBinding { textUI = UIWindowPlayerInfo.IndexPlayerInfo.MoveSpeed, getStat = p => p.TotalMoveSpeed, label = _localizationManager.GetStatusNameByKey(ConfigCommon.StatusStatMoveSpeed) },
-                new StatUIBinding { textUI = UIWindowPlayerInfo.IndexPlayerInfo.AttackSpeed, getStat = p => p.TotalAttackSpeed, label = _localizationManager.GetStatusNameByKey(ConfigCommon.StatusStatAttackSpeed) },
-                new StatUIBinding { textUI = UIWindowPlayerInfo.IndexPlayerInfo.CriticalDamage, getStat = p => p.TotalCriticalDamage, label = _localizationManager.GetStatusNameByKey(ConfigCommon.StatusStatCriticalDamage) },
-                new StatUIBinding { textUI = UIWindowPlayerInfo.IndexPlayerInfo.CriticalProbability, getStat = p => p.TotalCriticalProbability, label = _localizationManager.GetStatusNameByKey(ConfigCommon.StatusStatCriticalProbability) },
-                new StatUIBinding { textUI = UIWindowPlayerInfo.IndexPlayerInfo.RegistFire, getStat = p => p.TotalRegistFire, label = _localizationManager.GetStatusNameByKey(ConfigCommon.StatusStatResistanceFire) },
-                new StatUIBinding { textUI = UIWindowPlayerInfo.IndexPlayerInfo.RegistCold, getStat = p => p.TotalRegistCold, label = _localizationManager.GetStatusNameByKey(ConfigCommon.StatusStatResistanceCold) },
-                new StatUIBinding { textUI = UIWindowPlayerInfo.IndexPlayerInfo.RegistLightning, getStat = p => p.TotalRegistLightning, label = _localizationManager.GetStatusNameByKey(ConfigCommon.StatusStatResistanceLightning) }
+                new StatUIBinding { textUI = CharacterConstants.IndexPlayerInfo.Atk, getStat = p => p.TotalAtk },
+                new StatUIBinding { textUI = CharacterConstants.IndexPlayerInfo.Def, getStat = p => p.TotalDef },
+                new StatUIBinding { textUI = CharacterConstants.IndexPlayerInfo.Hp, getStat = p => p.TotalHp },
+                new StatUIBinding { textUI = CharacterConstants.IndexPlayerInfo.Mp, getStat = p => p.TotalMp },
+                new StatUIBinding { textUI = CharacterConstants.IndexPlayerInfo.Stamina, getStat = p => p.TotalStamina },
+                new StatUIBinding { textUI = CharacterConstants.IndexPlayerInfo.MoveSpeed, getStat = p => p.TotalMoveSpeed },
+                new StatUIBinding { textUI = CharacterConstants.IndexPlayerInfo.AttackSpeed, getStat = p => p.TotalAttackSpeed },
+                new StatUIBinding { textUI = CharacterConstants.IndexPlayerInfo.CriticalDamage, getStat = p => p.TotalCriticalDamage },
+                new StatUIBinding { textUI = CharacterConstants.IndexPlayerInfo.CriticalProbability, getStat = p => p.TotalCriticalProbability },
+                new StatUIBinding { textUI = CharacterConstants.IndexPlayerInfo.RegistFire, getStat = p => p.TotalRegistFire },
+                new StatUIBinding { textUI = CharacterConstants.IndexPlayerInfo.RegistCold, getStat = p => p.TotalRegistCold },
+                new StatUIBinding { textUI = CharacterConstants.IndexPlayerInfo.RegistLightning, getStat = p => p.TotalRegistLightning }
             });
             foreach (var binding in _statBindings)
             {
                 binding.getStat(_player).DistinctUntilChanged()
-                    .Subscribe(value => UpdatePlayerInfoText(binding.textUI, binding.label, value))
+                    .Subscribe(value => UpdatePlayerInfoValue(binding.textUI, value))
                     .AddTo(_player);
             }
         }
@@ -139,10 +153,10 @@ namespace GGemCo2DCore
         /// <param name="textUI"></param>
         /// <param name="label"></param>
         /// <param name="value"></param>
-        private void UpdatePlayerInfoText(UIWindowPlayerInfo.IndexPlayerInfo textUI, string label, long value)
+        private void UpdatePlayerInfoValue(CharacterConstants.IndexPlayerInfo textUI, long value)
         {
             if (_uiWindowPlayerInfo == null) return;
-            _uiWindowPlayerInfo.UpdateText(textUI, label, value);
+            _uiWindowPlayerInfo.UpdateValue(textUI, value);
         }
     }
 }
