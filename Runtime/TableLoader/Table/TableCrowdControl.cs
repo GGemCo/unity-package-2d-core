@@ -29,7 +29,25 @@ namespace GGemCo2DCore
 
         public float Duration;
 
-        public bool IsLockControl;
+        /// <summary>
+        /// KnockUp 전용: 공중으로 띄우는 높이(유닛)입니다.
+        /// - 0이면 수직 이동 없이 수평 이동만 처리됩니다.
+        /// </summary>
+        public float Height;
+
+        /// <summary>
+        /// Knockdown 전용: 넘어짐/눕기 상태로 유지할 시간(초)입니다.
+        /// - 0이면 대기 없이 종료 구간으로 넘어갑니다.
+        /// </summary>
+        public float DownWaitTime;
+
+        /// <summary>
+        /// 선택: Recover(기상) 연출 시간을 데이터로 관리하고 싶을 때 사용합니다.
+        /// - 현재 Core 구현에서는 End 애니메이션 종료를 우선으로 하므로, 기본값(0)으로 두어도 됩니다.
+        /// </summary>
+        public float RecoverTime;
+
+public bool IsLockControl;
         public bool IsUseKnockbackStatus;
         public bool IsUseDontControlStatus;
 
@@ -73,6 +91,10 @@ namespace GGemCo2DCore
                 EaseType = EnumHelper.ConvertEnum<Easing.EaseType>(data.GetValueOrDefault("EaseType")),
 
                 Duration = MathHelper.ParseFloat(data.GetValueOrDefault("Duration")),
+
+                Height = MathHelper.ParseFloat(data.GetValueOrDefault("Height")),
+                DownWaitTime = MathHelper.ParseFloat(data.GetValueOrDefault("DownWaitTime")),
+                RecoverTime = MathHelper.ParseFloat(data.GetValueOrDefault("RecoverTime")),
 
                 IsLockControl = ConvertBoolean(data.GetValueOrDefault("IsLockControl")),
                 IsUseKnockbackStatus = ConvertBoolean(data.GetValueOrDefault("IsUseKnockbackStatus")),

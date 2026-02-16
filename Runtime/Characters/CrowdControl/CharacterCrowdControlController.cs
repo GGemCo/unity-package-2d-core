@@ -1,9 +1,10 @@
+using System.Collections;
 using UnityEngine;
 
 namespace GGemCo2DCore
 {
     /// <summary>
-    /// 캐릭터에게 CrowdControl(넉백/넉다운 등)을 적용하고,
+    /// 캐릭터에게 CrowdControl(넉백/넉다운/넉업 등)을 적용하고,
     /// 상태/애니메이션/물리 이동을 일관되게 처리하는 컨트롤러입니다.
     /// </summary>
     [DisallowMultipleComponent]
@@ -12,18 +13,12 @@ namespace GGemCo2DCore
         private CharacterBase _character;
         private Rigidbody2D _rigidbody2D;
 
-        private bool _isRunning;
-        private float _remainingTime;
-
-        // 이동 보간용(거리 기반)
-        private Vector2 _startPos;
-        private Vector2 _endPos;
-        private float _elapsed;
-        private float _duration;
-        private Easing.EaseType _easeType;
+        private ICrowdControlMotion _motion;
 
         // 애니메이션 시퀀스(이름 기반)
         private string _currentStaggerAnimationName;
+
+        private Coroutine _stopRoutine;
 
         private void Awake()
         {
@@ -39,9 +34,8 @@ namespace GGemCo2DCore
             if (crowdControl == null) return;
             if (_character == null) return;
 
-            // 적용 조건(선택)
-            // GroundOnly/AirOnly 판단은 프로젝트의 "지상/공중" 판정 시스템에 따라 달라질 수 있으므로
-            // 현재는 옵션으로 남겨두고, 필요 시 CharacterBase의 점프/중력/바닥 감지와 연계해 확장합니다.
+            // 기존 CC가 진행 중이면 중단(강제)
+            ForceStopInternal();
 
             // 방향 결정
             var direction = ResolveDirection(crowdControl, source);
@@ -56,50 +50,71 @@ namespace GGemCo2DCore
             // 애니메이션(경직)
             PlayStaggerAnimation(crowdControl);
 
-            // 이동 정책
-            // - Strength(힘/속도) 기반이 아니라, Duration 동안 "총 이동 거리"를 Easing으로 보간합니다.
-            _duration = Mathf.Max(0f, crowdControl.Duration);
-            _remainingTime = _duration;
-            _elapsed = 0f;
-            _easeType = crowdControl.EaseType;
-
+            // 시작/종료 위치 계산(기본: 수평 이동)
             var currentPos = _rigidbody2D != null ? _rigidbody2D.position : (Vector2)transform.position;
-            _startPos = currentPos;
-            _endPos = currentPos + (direction * crowdControl.Distance);
+            var startPos = currentPos;
+            var endPos = currentPos + (direction * crowdControl.Distance);
 
-            if (_duration <= 0f || Mathf.Abs(crowdControl.Distance) <= 0.0001f)
+            // 모션 전략 선택
+            _motion = CreateMotion(crowdControl, startPos, endPos);
+
+            // 즉시 종료 케이스(모션이 null이거나, Tick 없이 끝난 경우)
+            if (_motion == null)
             {
-                // 즉시 이동(옵션)
-                MoveTo(_endPos);
-                _isRunning = false;
-                // 즉시 종료 처리
-                PlayStaggerEndAnimation();
-                return;
+                // End 애니메이션이 없으면 즉시 상태 해제
+                PlayEndAndStop(crowdControl);
             }
-
-            _isRunning = true;
         }
 
         private void FixedUpdate()
         {
-            if (!_isRunning) return;
+            if (_motion == null) return;
 
-            _elapsed += Time.fixedDeltaTime;
-            _remainingTime = _duration - _elapsed;
-            if (_remainingTime <= 0f)
+            if (_motion.Tick(Time.fixedDeltaTime, out var nextPos))
             {
-                MoveTo(_endPos);
-                _isRunning = false;
-                // CC 종료 시 End 애니메이션 재생
-                _character.Stop();
-                PlayStaggerEndAnimation();
-                return;
+                MoveTo(nextPos);
             }
 
-            float t = Mathf.Clamp01(_elapsed / Mathf.Max(0.0001f, _duration));
-            float easedT = Mathf.Clamp01(Easing.Apply(t, _easeType));
-            var nextPos = Vector2.LerpUnclamped(_startPos, _endPos, easedT);
-            MoveTo(nextPos);
+            if (_motion.IsFinished)
+            {
+                _motion = null;
+                // 이동 완료 후 End 애니메이션 -> 종료(상태 해제)
+                PlayEndAndStop();
+            }
+        }
+
+        private ICrowdControlMotion CreateMotion(StruckTableCrowdControl row, Vector2 startPos, Vector2 endPos)
+        {
+            // Duration이 0이고, Knockdown의 DownWaitTime도 0이면 이동/대기 자체가 없으므로 null 처리
+            bool hasAnyTime =
+                Mathf.Abs(row.Duration) > 0.0001f ||
+                Mathf.Abs(row.DownWaitTime) > 0.0001f;
+
+            bool hasDistance = Mathf.Abs(row.Distance) > 0.0001f;
+
+            // 즉시 이동 + 종료만 원하는 경우(거리만 있고 duration 0)도 있을 수 있으므로,
+            // duration=0이면 EndPos로 스냅 후 종료 시퀀스로 간다.
+            if (!hasAnyTime)
+            {
+                if (hasDistance)
+                    MoveTo(endPos);
+                return null;
+            }
+
+            float duration = Mathf.Max(0f, row.Duration);
+
+            switch (row.Type)
+            {
+                case CrowdControlConstants.Type.KnockUp:
+                    return new KnockUpMotion(startPos, endPos, duration, row.EaseType, row.Height);
+
+                case CrowdControlConstants.Type.KnockDown:
+                    return new KnockDownMotion(startPos, endPos, duration, row.EaseType, row.DownWaitTime);
+
+                case CrowdControlConstants.Type.KnockBack:
+                default:
+                    return new KnockBackMotion(startPos, endPos, duration, row.EaseType);
+            }
         }
 
         private void MoveTo(Vector2 position)
@@ -170,18 +185,66 @@ namespace GGemCo2DCore
             }
         }
 
-        private void PlayStaggerEndAnimation()
+        private void PlayEndAndStop(StruckTableCrowdControl crowdControl = null)
         {
-            if (_character?.CharacterAnimationController == null) return;
-            if (string.IsNullOrWhiteSpace(_currentStaggerAnimationName)) return;
-
-            var endName = _currentStaggerAnimationName + StruckTableCrowdControl.StaggerAnimationEndSuffix;
-            if (_character.CharacterAnimationController.HasAnimation(endName))
+            if (_stopRoutine != null)
             {
-                _character.CharacterAnimationController.PlayCharacterAnimation(endName, loop: false);
+                StopCoroutine(_stopRoutine);
+                _stopRoutine = null;
             }
+
+            // End 애니메이션이 있으면, 클립 길이만큼 대기 후 Stop(true)로 상태를 강제 해제합니다.
+            // (CharacterBase.Stop은 Knockback 상태일 때 기본적으로 return 하므로, CC 종료에는 강제가 필요합니다.)
+            string endName = null;
+
+            if (_character?.CharacterAnimationController != null && !string.IsNullOrWhiteSpace(_currentStaggerAnimationName))
+            {
+                endName = _currentStaggerAnimationName + StruckTableCrowdControl.StaggerAnimationEndSuffix;
+                if (_character.CharacterAnimationController.HasAnimation(endName))
+                {
+                    _character.CharacterAnimationController.PlayCharacterAnimation(endName, loop: false);
+
+                    float durationSec = _character.CharacterAnimationController.GetCharacterAnimationDuration(endName, isMilliseconds: false);
+                    durationSec = Mathf.Max(0f, durationSec);
+
+                    // RecoverTime을 사용하는 경우(선택): 데이터 시간이 더 길면 그 시간을 우선
+                    if (crowdControl != null && crowdControl.RecoverTime > durationSec)
+                        durationSec = crowdControl.RecoverTime;
+
+                    _stopRoutine = StartCoroutine(StopAfter(durationSec));
+                    return;
+                }
+            }
+
+            // End 애니메이션이 없으면 즉시 정리
+            _character?.Stop(isForce: true);
+            _currentStaggerAnimationName = null;
         }
 
+        private IEnumerator StopAfter(float durationSec)
+        {
+            if (durationSec > 0f)
+                yield return new WaitForSeconds(durationSec);
+
+            _character?.Stop(isForce: true);
+            _currentStaggerAnimationName = null;
+            _stopRoutine = null;
+        }
+
+        private void ForceStopInternal()
+        {
+            _motion = null;
+
+            if (_stopRoutine != null)
+            {
+                StopCoroutine(_stopRoutine);
+                _stopRoutine = null;
+            }
+
+            // 진행 중인 CC를 강제 해제
+            _character?.Stop(isForce: true);
+            _currentStaggerAnimationName = null;
+        }
 
         public void ApplyCrowdControlByUid(int crowdControlUid, GameObject source)
         {

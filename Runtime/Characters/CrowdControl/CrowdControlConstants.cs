@@ -9,8 +9,9 @@ namespace GGemCo2DCore
         public enum Type
         {
             None = 0,
-            Knockback = 1,
-            Knockdown = 2,
+            KnockBack = 1,
+            KnockDown = 2,
+            KnockUp = 3,
         }
 
         /// <summary>
