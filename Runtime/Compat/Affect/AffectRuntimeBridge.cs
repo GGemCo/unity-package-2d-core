@@ -61,6 +61,16 @@ namespace GGemCo2DCore
         }
 
         /// <summary>
+        /// Affect 패키지 런타임이 설치되어 있는지 여부.
+        /// - Core는 Affect를 직접 참조하지 않으므로 Reflection으로 확인합니다.
+        /// </summary>
+        internal static bool HasAffectRuntime()
+        {
+            // 핵심 타입 중 하나라도 있으면 설치된 것으로 본다.
+            return ResolveType(TypeNameAffectComponent) != null;
+        }
+
+        /// <summary>
         /// Affect 런타임 시스템(타겟 어댑터 + AffectComponent)을 자동 부착한다.
         /// Affect가 설치되지 않았다면 아무 일도 하지 않는다.
         /// </summary>

@@ -408,6 +408,82 @@ MonoBehaviour:
     m_Localized: Saved successfully.
     m_Metadata:
       m_Items: []
+  - m_Id: 80087726461853697
+    m_Localized: You cannot use this item right now.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 80087726461853699
+    m_Localized: Skill system is not available.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 80087726461853700
+    m_Localized: Affect system is not available.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 80089861098348544
+    m_Localized: Player data not found.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 80089861098348545
+    m_Localized: Invalid value detected.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 80089861098348546
+    m_Localized: Player object not found.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 80089861098348547
+    m_Localized: Invalid item use context.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 80089861098348548
+    m_Localized: No valid target found.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 80089861098348549
+    m_Localized: You already have this skill.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 80089861098348550
+    m_Localized: Skill level up is not supported.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 80089861098348551
+    m_Localized: Invalid item use configuration.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 80089861098348552
+    m_Localized: Failed to grant skill.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 80089861098348553
+    m_Localized: Failed to level up skill.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 80089861098348554
+    m_Localized: Table loader is not initialized.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 80089861098348555
+    m_Localized: Required tables are missing.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 80089861098348556
+    m_Localized: This item cannot be used.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 80089861098348557
+    m_Localized: No actions defined for this item.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 80089861098348558
+    m_Localized: Item execution failed.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 80089861098348559
+    m_Localized: Failed to consume item.
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []

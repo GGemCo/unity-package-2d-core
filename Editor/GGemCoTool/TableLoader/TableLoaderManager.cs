@@ -26,7 +26,13 @@ namespace GGemCo2DCoreEditor
         {
             return LoadTable<TableItem>(ConfigAddressableTable.TableItem.Path, forceReload);
         }
-        public static TableItemDropGroup LoadItemDropGroupTable(bool forceReload = true)
+        
+        public static TableItemUse LoadItemUseTable(bool forceReload = true)
+            => LoadTable<TableItemUse>(ConfigAddressableTable.TableItemUse.Path, forceReload);
+
+        public static TableItemUseAction LoadItemUseActionTable(bool forceReload = true)
+            => LoadTable<TableItemUseAction>(ConfigAddressableTable.TableItemUseAction.Path, forceReload);
+public static TableItemDropGroup LoadItemDropGroupTable(bool forceReload = true)
         {
             return LoadTable<TableItemDropGroup>(ConfigAddressableTable.TableItemDropGroup.Path, forceReload);
         }

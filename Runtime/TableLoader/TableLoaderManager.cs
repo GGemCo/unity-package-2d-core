@@ -45,6 +45,8 @@ namespace GGemCo2DCore
         public TableSound TableSound { get; private set; } = new TableSound();
         public TableSimulationTool TableSimulationTool { get; private set; } = new TableSimulationTool();
         public TableSimulationGrowth TableSimulationGrowth { get; private set; } = new TableSimulationGrowth();
+        public TableItemUse TableItemUse { get; private set; } = new TableItemUse();
+        public TableItemUseAction TableItemUseAction { get; private set; } = new TableItemUseAction();
         
         protected void Awake()
         {
@@ -88,6 +90,8 @@ namespace GGemCo2DCore
                 registry.Register(TableSound);
                 registry.Register(TableSimulationTool);
                 registry.Register(TableSimulationGrowth);
+                registry.Register(TableItemUse);
+                registry.Register(TableItemUseAction);
             }
             else
             {

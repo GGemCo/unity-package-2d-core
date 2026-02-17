@@ -88,7 +88,7 @@ Key,Shared Comments,English(en),English(en) Comments,Korean(ko),Korean(ko) Comme
 "Error_Tcg_NoTargetOnHero","","No valid hero target.","","영웅 대상이 존재하지 않습니다.",""
 "Error_Tcg_NotEnoughMana","","Not enough mana.","","마나가 부족합니다.",""
 "Error_Tcg_TargetRequired","","Target is required.","","대상이 필요합니다.",""
-"System_Tcg_CreateDeckFirst","","Please create a deck first and add cards.","","먼저 덱을 생성하고"," 카드를 추가해주세요."
+"System_Tcg_CreateDeckFirst","","Please create a deck first and add cards.","","먼저 덱을 생성하고, 카드를 추가해주세요."," 카드를 추가해주세요."
 "System_Tcg_BattleEnded","","The battle has ended.","","전투가 종료되었습니다.",""
 "System_Tcg_WinnerPlayer","","The winner is the player.","","승자는 플레이어 입니다.",""
 "System_Tcg_WinnerAi","","The winner is the AI.","","승자는 AI 입니다.",""
@@ -96,3 +96,22 @@ Key,Shared Comments,English(en),English(en) Comments,Korean(ko),Korean(ko) Comme
 "System_Tcg_AddHeroCard","","Please add a hero card.","","영웅 카드를 추가해주세요.",""
 "System_Tcg_Save","","Save","","저장",""
 "System_Tcg_SaveCompleted","","Saved successfully.","","저장되었습니다.",""
+ItemUse_CannotExecute,ItemUseService,You cannot use this item right now.,,지금은 이 아이템을 사용할 수 없습니다.,
+ItemUse_NoSkillReceiver,ItemUseActionGrantSkill,Skill system is not available.,,스킬 시스템이 준비되지 않았습니다.,
+ItemUse_NoAffectPackage,ItemUseActionApplyAffect,Affect system is not available.,,어펙트 시스템이 준비되지 않았습니다.,
+ItemUse_NoPlayerData,ItemUseService,Player data not found.,,플레이어 데이터를 찾을 수 없습니다.,
+ItemUse_InvalidValue,ItemUseService,Invalid value detected.,,잘못된 값이 감지되었습니다.,
+ItemUse_NoPlayer,ItemUseService,Player object not found.,,플레이어 오브젝트를 찾을 수 없습니다.,
+ItemUse_InvalidContext,ItemUseService,Invalid item use context.,,아이템 사용 컨텍스트가 올바르지 않습니다.,
+ItemUse_NoTarget,ItemUseService,No valid target found.,,유효한 대상이 없습니다.,
+ItemUse_AlreadyHasSkill,ItemUseActionGrantSkill,You already have this skill.,,이미 보유한 스킬입니다.,
+ItemUse_SkillReceiverNoLevelUp,ItemUseActionGrantSkill,Skill level up is not supported.,,스킬 레벨업을 지원하지 않습니다.,
+ItemUse_InvalidConfig,ItemUseService,Invalid item use configuration.,,아이템 사용 설정이 올바르지 않습니다.,
+ItemUse_GrantSkill_Fail,ItemUseActionGrantSkill,Failed to grant skill.,,스킬 지급에 실패했습니다.,
+ItemUse_LevelUpSkill_Fail,ItemUseActionGrantSkill,Failed to level up skill.,,스킬 레벨업에 실패했습니다.,
+ItemUse_NoTableLoader,ItemUseService,Table loader is not initialized.,,테이블 로더가 초기화되지 않았습니다.,
+ItemUse_NoTables,ItemUseService,Required tables are missing.,,필수 테이블이 로드되지 않았습니다.,
+Item_NotUsable,ItemUseService,This item cannot be used.,,이 아이템은 사용할 수 없습니다.,
+ItemUse_NoActions,ItemUseService,No actions defined for this item.,,이 아이템에 정의된 효과가 없습니다.,
+ItemUse_Execute_Fail,ItemUseService,Item execution failed.,,아이템 실행에 실패했습니다.,
+ItemUse_Consume_Fail,ItemUseService,Failed to consume item.,,아이템 소모에 실패했습니다.,

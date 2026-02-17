@@ -104,11 +104,18 @@ namespace GGemCo2DCore
         /// </summary>
         public Observable<Unit> OnStatPointsChanged()
         {
+            // NOTE:
+            // CombineLatest 결과를 Unit.Default로 매핑한 뒤 DistinctUntilChanged()를 걸면,
+            // 이후 모든 이벤트가 동일(Unit.Default)로 간주되어 첫 1회만 통과하는 문제가 발생합니다.
+            // 각 값 스트림에서 변화를 필터링하고, 최종 Unit에는 Distinct를 적용하지 않습니다.
             return _unspentStatPoints.DistinctUntilChanged()
-                .CombineLatest(_investedStatPointAtk, _investedStatPointDef, _investedStatPointHp, _investedStatPointMp,
-                    _investedStatPointStamina,
-                    (_, _, _, _, _, _) => Unit.Default)
-                .DistinctUntilChanged();
+                .CombineLatest(
+                    _investedStatPointAtk.DistinctUntilChanged(),
+                    _investedStatPointDef.DistinctUntilChanged(),
+                    _investedStatPointHp.DistinctUntilChanged(),
+                    _investedStatPointMp.DistinctUntilChanged(),
+                    _investedStatPointStamina.DistinctUntilChanged(),
+                    (_, _, _, _, _, _) => Unit.Default);
         }
         // json 에 포함되지 않도록 함수화 
         public Observable<int> OnCurrentLevelChanged()

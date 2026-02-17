@@ -462,6 +462,101 @@ MonoBehaviour:
     m_Key: System_Tcg_SaveCompleted
     m_Metadata:
       m_Items: []
+  - m_Id: 80087726461853697
+    m_Key: ItemUse_CannotExecute
+    m_Metadata:
+      m_Items:
+      - rid: 8386690252867633243
+  - m_Id: 80087726461853699
+    m_Key: ItemUse_NoSkillReceiver
+    m_Metadata:
+      m_Items:
+      - rid: 8386690252867633245
+  - m_Id: 80087726461853700
+    m_Key: ItemUse_NoAffectPackage
+    m_Metadata:
+      m_Items:
+      - rid: 8386690252867633246
+  - m_Id: 80089861098348544
+    m_Key: ItemUse_NoPlayerData
+    m_Metadata:
+      m_Items:
+      - rid: 8386690252867633247
+  - m_Id: 80089861098348545
+    m_Key: ItemUse_InvalidValue
+    m_Metadata:
+      m_Items:
+      - rid: 8386690252867633248
+  - m_Id: 80089861098348546
+    m_Key: ItemUse_NoPlayer
+    m_Metadata:
+      m_Items:
+      - rid: 8386690252867633249
+  - m_Id: 80089861098348547
+    m_Key: ItemUse_InvalidContext
+    m_Metadata:
+      m_Items:
+      - rid: 8386690252867633250
+  - m_Id: 80089861098348548
+    m_Key: ItemUse_NoTarget
+    m_Metadata:
+      m_Items:
+      - rid: 8386690252867633251
+  - m_Id: 80089861098348549
+    m_Key: ItemUse_AlreadyHasSkill
+    m_Metadata:
+      m_Items:
+      - rid: 8386690252867633252
+  - m_Id: 80089861098348550
+    m_Key: ItemUse_SkillReceiverNoLevelUp
+    m_Metadata:
+      m_Items:
+      - rid: 8386690252867633253
+  - m_Id: 80089861098348551
+    m_Key: ItemUse_InvalidConfig
+    m_Metadata:
+      m_Items:
+      - rid: 8386690252867633254
+  - m_Id: 80089861098348552
+    m_Key: ItemUse_GrantSkill_Fail
+    m_Metadata:
+      m_Items:
+      - rid: 8386690252867633255
+  - m_Id: 80089861098348553
+    m_Key: ItemUse_LevelUpSkill_Fail
+    m_Metadata:
+      m_Items:
+      - rid: 8386690252867633256
+  - m_Id: 80089861098348554
+    m_Key: ItemUse_NoTableLoader
+    m_Metadata:
+      m_Items:
+      - rid: 8386690252867633257
+  - m_Id: 80089861098348555
+    m_Key: ItemUse_NoTables
+    m_Metadata:
+      m_Items:
+      - rid: 8386690252867633258
+  - m_Id: 80089861098348556
+    m_Key: Item_NotUsable
+    m_Metadata:
+      m_Items:
+      - rid: 8386690252867633259
+  - m_Id: 80089861098348557
+    m_Key: ItemUse_NoActions
+    m_Metadata:
+      m_Items:
+      - rid: 8386690252867633260
+  - m_Id: 80089861098348558
+    m_Key: ItemUse_Execute_Fail
+    m_Metadata:
+      m_Items:
+      - rid: 8386690252867633261
+  - m_Id: 80089861098348559
+    m_Key: ItemUse_Consume_Fail
+    m_Metadata:
+      m_Items:
+      - rid: 8386690252867633262
   m_Metadata:
     m_Items: []
   m_KeyGenerator:
@@ -469,6 +564,82 @@ MonoBehaviour:
   references:
     version: 2
     RefIds:
+    - rid: 8386690252867633243
+      type: {class: Comment, ns: UnityEngine.Localization.Metadata, asm: Unity.Localization}
+      data:
+        m_CommentText: ItemUseService
+    - rid: 8386690252867633245
+      type: {class: Comment, ns: UnityEngine.Localization.Metadata, asm: Unity.Localization}
+      data:
+        m_CommentText: ItemUseActionGrantSkill
+    - rid: 8386690252867633246
+      type: {class: Comment, ns: UnityEngine.Localization.Metadata, asm: Unity.Localization}
+      data:
+        m_CommentText: ItemUseActionApplyAffect
+    - rid: 8386690252867633247
+      type: {class: Comment, ns: UnityEngine.Localization.Metadata, asm: Unity.Localization}
+      data:
+        m_CommentText: ItemUseService
+    - rid: 8386690252867633248
+      type: {class: Comment, ns: UnityEngine.Localization.Metadata, asm: Unity.Localization}
+      data:
+        m_CommentText: ItemUseService
+    - rid: 8386690252867633249
+      type: {class: Comment, ns: UnityEngine.Localization.Metadata, asm: Unity.Localization}
+      data:
+        m_CommentText: ItemUseService
+    - rid: 8386690252867633250
+      type: {class: Comment, ns: UnityEngine.Localization.Metadata, asm: Unity.Localization}
+      data:
+        m_CommentText: ItemUseService
+    - rid: 8386690252867633251
+      type: {class: Comment, ns: UnityEngine.Localization.Metadata, asm: Unity.Localization}
+      data:
+        m_CommentText: ItemUseService
+    - rid: 8386690252867633252
+      type: {class: Comment, ns: UnityEngine.Localization.Metadata, asm: Unity.Localization}
+      data:
+        m_CommentText: ItemUseActionGrantSkill
+    - rid: 8386690252867633253
+      type: {class: Comment, ns: UnityEngine.Localization.Metadata, asm: Unity.Localization}
+      data:
+        m_CommentText: ItemUseActionGrantSkill
+    - rid: 8386690252867633254
+      type: {class: Comment, ns: UnityEngine.Localization.Metadata, asm: Unity.Localization}
+      data:
+        m_CommentText: ItemUseService
+    - rid: 8386690252867633255
+      type: {class: Comment, ns: UnityEngine.Localization.Metadata, asm: Unity.Localization}
+      data:
+        m_CommentText: ItemUseActionGrantSkill
+    - rid: 8386690252867633256
+      type: {class: Comment, ns: UnityEngine.Localization.Metadata, asm: Unity.Localization}
+      data:
+        m_CommentText: ItemUseActionGrantSkill
+    - rid: 8386690252867633257
+      type: {class: Comment, ns: UnityEngine.Localization.Metadata, asm: Unity.Localization}
+      data:
+        m_CommentText: ItemUseService
+    - rid: 8386690252867633258
+      type: {class: Comment, ns: UnityEngine.Localization.Metadata, asm: Unity.Localization}
+      data:
+        m_CommentText: ItemUseService
+    - rid: 8386690252867633259
+      type: {class: Comment, ns: UnityEngine.Localization.Metadata, asm: Unity.Localization}
+      data:
+        m_CommentText: ItemUseService
+    - rid: 8386690252867633260
+      type: {class: Comment, ns: UnityEngine.Localization.Metadata, asm: Unity.Localization}
+      data:
+        m_CommentText: ItemUseService
+    - rid: 8386690252867633261
+      type: {class: Comment, ns: UnityEngine.Localization.Metadata, asm: Unity.Localization}
+      data:
+        m_CommentText: ItemUseService
+    - rid: 8386690252867633262
+      type: {class: Comment, ns: UnityEngine.Localization.Metadata, asm: Unity.Localization}
+      data:
+        m_CommentText: ItemUseService
     - rid: 9086697494700097538
       type: {class: DistributedUIDGenerator, ns: UnityEngine.Localization.Tables, asm: Unity.Localization}
       data:

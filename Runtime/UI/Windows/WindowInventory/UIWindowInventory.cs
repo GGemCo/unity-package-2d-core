@@ -209,52 +209,28 @@ namespace GGemCo2DCore
                     if (partSlotIndex < 0) return;
                     SceneGame.uIWindowManager.MoveIcon(uid, icon.index, UIWindowConstants.WindowUid.Equip, 1, partSlotIndex);
                 }
-                // 물약 일때
-                else if (icon.IsPotionType())
+                // item_use 테이블에 정의된 "사용형 아이템" 처리
+                else if (TableLoaderManager.Instance != null && TableLoaderManager.Instance.TableItemUse != null
+                         && TableLoaderManager.Instance.TableItemUse.TryGetByItemUid(icon.uid, out _))
                 {
-                    float coolTime = icon.GetCoolTime();
-                    if (coolTime > 0)
+                    // 쿨타임 선 체크(사용 실패 시 쿨타임이 시작되면 안 되므로, StartHandler 호출 없이 현재 값만 확인)
+                    float currentCd = SceneGame.uIIconCoolTimeManager.GetCurrentCoolTime(uid, icon.uid);
+                    if (currentCd > 0)
                     {
-                        if (!icon.PlayCoolTime(coolTime)) return;
-                    }
-                    if (icon.uid <= 0 || icon.GetCount() <= 0)
-                    {
-                        _popupManager.ShowPopupError("Item_NoUsableCount");//"사용할 수 있는 아이템 개수가 없습니다."
+                        SceneGame.systemMessageManager.ShowMessageWarning("Action_CannotUseDuringCooldown");
                         return;
                     }
 
-                    // hp 물약일 때 
-                    if (icon.IsHpPotionType() || icon.IsMpPotionType())
+                    var useResult = ItemUseService.TryUseInventoryItem(SceneGame, InventoryData, icon.slotIndex,
+                        out var cooldown);
+                    SetIcons(useResult);
+                    if (useResult is not { Result: ResultCommon.ResultType.Success }) return;
+
+                    if (cooldown > 0)
                     {
-                        // mp 물약일 때 
-                        if (icon.IsMpPotionType())
-                        {
-                            if (SceneGame.player.GetComponent<Player>().IsMaxMp())
-                            {
-                                SceneGame.systemMessageManager.ShowMessageWarning("Item_ManaFull");//"현재 마력이 가득하여 사용할 수 없습니다."
-                                return;
-                            }
-                        }
-                        else
-                        {
-                            if (SceneGame.player.GetComponent<Player>().IsMaxHp())
-                            {
-                                SceneGame.systemMessageManager.ShowMessageWarning("Item_HealthFull");//"현재 생명력이 가득하여 사용할 수 없습니다."
-                                return;
-                            }
-                        }
+                        // 성공 시에만 쿨타임 시작
+                        icon.PlayCoolTime(cooldown);
                     }
-                    var result = InventoryData.MinusItem(icon.slotIndex, icon.uid, 1);
-                    SetIcons(result);
-                    if (result is not { Result: ResultCommon.ResultType.Success }) return;
-                    
-                    if (icon.IsMpPotionType())
-                        SceneGame.player.GetComponent<Player>().AddMp(icon.GetStatusValue1());
-                    else if (icon.IsHpPotionType())
-                        SceneGame.player.GetComponent<Player>().AddHp(icon.GetStatusValue1());
-                            
-                    // affect 가 있을 때 
-                    icon.CheckStatusAffect();
                 }
             }
         }

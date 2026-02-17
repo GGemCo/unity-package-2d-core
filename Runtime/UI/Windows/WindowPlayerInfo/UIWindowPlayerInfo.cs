@@ -86,15 +86,6 @@ namespace GGemCo2DCore
         }
 
         /// <summary>
-        /// Player를 바인딩하여 스탯포인트 UI를 갱신합니다.
-        /// PlayerUIController에서 호출됩니다.
-        /// </summary>
-        public void BindPlayerForStatPoint(Player player)
-        {
-            BindPlayer(player);
-        }
-
-        /// <summary>
         /// PlayerInfo 윈도우의 단일 바인딩 진입점
         /// - 라벨(Localization)은 1회만 적용
         /// - 값(스탯/포인트)은 필요 시마다 갱신
@@ -129,7 +120,7 @@ namespace GGemCo2DCore
         /// 라벨은 변경될 일이 거의 없으므로 1회만 적용합니다.
         /// (향후 런타임 언어 변경을 지원하면 _labelsApplied를 false로 되돌리고 재호출하면 됩니다.)
         /// </summary>
-        public void ApplyLabelsOnce()
+        private void ApplyLabelsOnce()
         {
             if (_labelsApplied) return;
 
@@ -162,7 +153,10 @@ namespace GGemCo2DCore
         {
             if (_boundPlayer == null) return;
 
-            if (_editSession == null || !_editSession.IsSamePlayer(_boundPlayer))
+            // PlayerData(레벨업 등)로 인해 스탯포인트가 변경될 수 있습니다.
+            // 드래프트가 없는 상태(IsDirty == false)에서는 최신 값으로 스냅샷을 재구성하여
+            // + / - 버튼 활성, 남은 포인트 표시가 즉시 반영되도록 합니다.
+            if (_editSession == null || !_editSession.IsSamePlayer(_boundPlayer) || (!_editSession.IsDirty && _editSession.IsStaleSnapshot()))
             {
                 _editSession = new StatPointEditSession(_boundPlayer);
             }
@@ -293,129 +287,6 @@ namespace GGemCo2DCore
                 _ => 0
             };
         }
-
-        private sealed class StatPointEditSession
-        {
-            private readonly Player _player;
-
-            private readonly int _originalUnspent;
-            private readonly int _originalAtk;
-            private readonly int _originalDef;
-            private readonly int _originalHp;
-            private readonly int _originalMp;
-            private readonly int _originalStamina;
-
-            public int DraftUnspent { get; private set; }
-            public int DraftAtk { get; private set; }
-            public int DraftDef { get; private set; }
-            public int DraftHp { get; private set; }
-            public int DraftMp { get; private set; }
-            public int DraftStamina { get; private set; }
-
-            public bool IsDirty =>
-                DraftUnspent != _originalUnspent ||
-                DraftAtk != _originalAtk ||
-                DraftDef != _originalDef ||
-                DraftHp != _originalHp ||
-                DraftMp != _originalMp ||
-                DraftStamina != _originalStamina;
-
-            public StatPointEditSession(Player player)
-            {
-                _player = player;
-                _originalUnspent = player != null ? player.UnspentStatPoints : 0;
-                _originalAtk = player != null ? player.InvestedStatPointAtk : 0;
-                _originalDef = player != null ? player.InvestedStatPointDef : 0;
-                _originalHp = player != null ? player.InvestedStatPointHp : 0;
-                _originalMp = player != null ? player.InvestedStatPointMp : 0;
-                _originalStamina = player != null ? player.InvestedStatPointStamina : 0;
-
-                ResetToOriginal();
-            }
-
-            public bool IsSamePlayer(Player player) => ReferenceEquals(_player, player);
-
-            public void ResetToOriginal()
-            {
-                DraftUnspent = _originalUnspent;
-                DraftAtk = _originalAtk;
-                DraftDef = _originalDef;
-                DraftHp = _originalHp;
-                DraftMp = _originalMp;
-                DraftStamina = _originalStamina;
-            }
-
-            public int GetDraftInvested(CharacterConstants.IndexPlayerInfo type)
-            {
-                return type switch
-                {
-                    CharacterConstants.IndexPlayerInfo.Atk => DraftAtk,
-                    CharacterConstants.IndexPlayerInfo.Def => DraftDef,
-                    CharacterConstants.IndexPlayerInfo.Hp => DraftHp,
-                    CharacterConstants.IndexPlayerInfo.Mp => DraftMp,
-                    CharacterConstants.IndexPlayerInfo.Stamina => DraftStamina,
-                    _ => 0
-                };
-            }
-
-            public bool TryChange(CharacterConstants.IndexPlayerInfo type, int delta)
-            {
-                if (delta == 0) return false;
-                if (!CharacterConstants.IsStatPointTarget(type)) return false;
-
-                // +
-                if (delta > 0)
-                {
-                    if (DraftUnspent < delta) return false;
-
-                    switch (type)
-                    {
-                        case CharacterConstants.IndexPlayerInfo.Atk: DraftAtk += delta; break;
-                        case CharacterConstants.IndexPlayerInfo.Def: DraftDef += delta; break;
-                        case CharacterConstants.IndexPlayerInfo.Hp: DraftHp += delta; break;
-                        case CharacterConstants.IndexPlayerInfo.Mp: DraftMp += delta; break;
-                        case CharacterConstants.IndexPlayerInfo.Stamina: DraftStamina += delta; break;
-                        default: return false;
-                    }
-
-                    DraftUnspent -= delta;
-                    return true;
-                }
-
-                // -
-                int amount = -delta;
-                switch (type)
-                {
-                    case CharacterConstants.IndexPlayerInfo.Atk:
-                        if (DraftAtk < amount) return false;
-                        DraftAtk -= amount;
-                        break;
-                    case CharacterConstants.IndexPlayerInfo.Def:
-                        if (DraftDef < amount) return false;
-                        DraftDef -= amount;
-                        break;
-                    case CharacterConstants.IndexPlayerInfo.Hp:
-                        if (DraftHp < amount) return false;
-                        DraftHp -= amount;
-                        break;
-                    case CharacterConstants.IndexPlayerInfo.Mp:
-                        if (DraftMp < amount) return false;
-                        DraftMp -= amount;
-                        break;
-                    case CharacterConstants.IndexPlayerInfo.Stamina:
-                        if (DraftStamina < amount) return false;
-                        DraftStamina -= amount;
-                        break;
-                    default:
-                        return false;
-                }
-
-                DraftUnspent += amount;
-                return true;
-            }
-        }
-
-        public void RefreshStatPointUI() => RefreshValues(); // legacy 호출 호환
 
         private static (long totalValue, int invested) GetStatPointLineData(CharacterConstants.IndexPlayerInfo idx, Player player)
         {
