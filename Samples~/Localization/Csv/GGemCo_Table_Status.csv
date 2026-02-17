@@ -27,3 +27,5 @@ Key,Shared Comments,English(en),English(en) Comments,Korean(ko),Korean(ko) Comme
 "STATE_BURN","","Burn","Deals fire damage over time.","화상","시간이 지남에 따라 불 속성 피해를 입힙니다."
 "STATE_FREEZE","","Freeze","Freezes the target, preventing movement.","빙결","대상을 얼려 이동을 불가능하게 만듭니다."
 "STATE_POISON","","Poison","Deals poison damage over time.","중독","시간이 지남에 따라 독 피해를 입힙니다."
+"STATE_POISON_RESIST","","Poison RES","","중독 저항",""
+"STATE_DONT_CONTROL","","Groggy","","그로기",""
