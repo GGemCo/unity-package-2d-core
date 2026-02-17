@@ -127,8 +127,7 @@ namespace GGemCo2DCore
             var loc = LocalizationManager.Instance;
 
             // 미사용 포인트 접두어
-            // todo. localization
-            _unspentPrefix = GetCommonUILabelOrFallback(loc, "PlayerInfo_Text_UnspentStatPoints", "남은포인트");
+            _unspentPrefix = loc.GetUIWindowPlayerInfoByKey("Text_UnspentStatPoints");
 
             _labelCache.Clear();
 
@@ -360,13 +359,6 @@ namespace GGemCo2DCore
 
             // Fallback
             return idx.ToString();
-        }
-
-        private static string GetCommonUILabelOrFallback(LocalizationManager loc, string key, string fallback)
-        {
-            if (loc == null) return fallback;
-            var localized = loc.GetCommonUIByKey(key);
-            return string.IsNullOrEmpty(localized) ? fallback : localized;
         }
 
         /// <summary>

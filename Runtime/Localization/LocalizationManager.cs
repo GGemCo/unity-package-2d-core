@@ -171,5 +171,7 @@ namespace GGemCo2DCore
         public string GetUIWindowSkillInfoSmart(string key, params object[] args) =>
             GetSmartString(LocalizationConstants.Tables.UIWindowSkillInfo, key, args);
 
+        public string GetUIWindowPlayerInfoByKey(string key) =>
+            GetString(LocalizationConstants.Tables.UIWindowPlayerStatInfo, key);
     }
 }
