@@ -69,7 +69,7 @@ namespace GGemCo2DCore
             // velocity 기반 구현을 사용하는 경우를 대비해 정지 정책 제공
             if (_stopAtEnd && rb != null && rb.bodyType == RigidbodyType2D.Dynamic)
             {
-                rb.SetLinearVelocity(new Vector2(0f, rb.linearVelocity.y));
+                rb.SetLinearVelocity(new Vector2(0f, rb.GetLinearVelocity().y));
             }
         }
 
@@ -111,7 +111,7 @@ namespace GGemCo2DCore
                 // Dynamic 또는 정책상 velocity 사용
                 // - Distance 기반이므로, 증분거리/시간으로 순간 속도를 산출한다.
                 float vx = dt > 1e-6f ? (delta.x / dt) : 0f;
-                rb.SetLinearVelocity(new Vector2(vx, rb.linearVelocity.y));
+                rb.SetLinearVelocity(new Vector2(vx, rb.GetLinearVelocity().y));
             }
 
             if (t >= 1f)
@@ -120,7 +120,7 @@ namespace GGemCo2DCore
 
                 if (_stopAtEnd && rb.bodyType == RigidbodyType2D.Dynamic)
                 {
-                    rb.SetLinearVelocity(new Vector2(0f, rb.linearVelocity.y));
+                    rb.SetLinearVelocity(new Vector2(0f, rb.GetLinearVelocity().y));
                 }
             }
         }
