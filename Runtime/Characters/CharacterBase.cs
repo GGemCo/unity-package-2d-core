@@ -167,8 +167,10 @@ namespace GGemCo2DCore
                 characterHitArea.Initialize(this);
                 colliderHitArea = characterHitArea.gameObject.GetComponent<CapsuleCollider2D>();
             }
-
+            // CC 처리
             _crowdControlController = gameObject.AddComponent<CharacterCrowdControlController>();
+            // 움직임 처리
+            gameObject.AddComponent<CharacterMotionController2D>();
         }
         protected override void Start()
         {
