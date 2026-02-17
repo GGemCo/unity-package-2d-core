@@ -60,7 +60,7 @@ namespace GGemCo2DCore
             foreach (string baseTable in LocalizationConstants.Tables.All)
             {
                 string userTableName = $"{baseTable}_User";
-                var handle = stringDatabase.GetTableAsync(userTableName, LocalizationSettings.SelectedLocale);
+                var handle = StringDatabase.GetTableAsync(userTableName, LocalizationSettings.SelectedLocale);
                 yield return handle;
 
                 bool exists = false;
@@ -83,7 +83,7 @@ namespace GGemCo2DCore
                 }
 
                 // LocalizationManagerBase.GetString/GetSmartString에서 사용한다.
-                _userTableExistsMap[baseTable] = exists;
+                UserTableExistsMap[baseTable] = exists;
 
                 // handle이 Release 가능한 경우라면 아래 코드도 추가
                 if (handle.IsValid())

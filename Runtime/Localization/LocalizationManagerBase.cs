@@ -23,12 +23,12 @@ namespace GGemCo2DCore
         // 현재 언어 코드
         private static string CurrentLanguageCode { get; set; }
         // string table
-        protected LocalizedStringDatabase stringDatabase;
+        protected LocalizedStringDatabase StringDatabase;
         // asset table
         private LocalizedAssetDatabase _assetDatabase;
         // 사용자 언어 테이블 존재 여부
         // - 파생 클래스(LocalizationManager)가 체크 결과를 채운다.
-        protected readonly Dictionary<string, bool> _userTableExistsMap = new();
+        protected readonly Dictionary<string, bool> UserTableExistsMap = new();
         // 현재 사용하는 언어 Locale
         private static readonly Dictionary<string, Locale> Locales = new Dictionary<string, Locale>();
         // 로드 진행율
@@ -37,7 +37,7 @@ namespace GGemCo2DCore
         protected virtual void Awake()
         {
             _loadProgress = 0f;
-            stringDatabase = LocalizationSettings.StringDatabase;
+            StringDatabase = LocalizationSettings.StringDatabase;
             _assetDatabase = LocalizationSettings.AssetDatabase;
 
             InitializeAvailableLocale();
@@ -110,7 +110,7 @@ namespace GGemCo2DCore
 
             OnChangeLocale?.Invoke(CurrentLanguageCode, GetLocaleIndexByCode(CurrentLanguageCode));
             
-            StartCoroutine(CheckUserTablesExist());
+            yield return StartCoroutine(CheckUserTablesExist());
         }
 
         protected virtual IEnumerator CheckUserTablesExist()
@@ -130,10 +130,10 @@ namespace GGemCo2DCore
             }
 
             // 유저 테이블 존재 시 우선 조회
-            if (_userTableExistsMap.TryGetValue(table, out bool hasUserTable) && hasUserTable)
+            if (UserTableExistsMap.TryGetValue(table, out bool hasUserTable) && hasUserTable)
             {
                 string userTable = $"{table}_User";
-                var userLocalized = stringDatabase.GetTableEntry(userTable, key, LocalizationSettings.SelectedLocale);
+                var userLocalized = StringDatabase.GetTableEntry(userTable, key, LocalizationSettings.SelectedLocale);
                 if (userLocalized.Entry != null)
                 {
                     return userLocalized.Entry.Value;
@@ -141,7 +141,7 @@ namespace GGemCo2DCore
             }
 
             // 유저 테이블에 없으면 기존 테이블 조회
-            var tableEntryResult = stringDatabase.GetTableEntry(table, key, LocalizationSettings.SelectedLocale);
+            var tableEntryResult = StringDatabase.GetTableEntry(table, key, LocalizationSettings.SelectedLocale);
             if (tableEntryResult.Entry != null)
                 return tableEntryResult.Entry.Value;
 
@@ -207,7 +207,7 @@ namespace GGemCo2DCore
             if (string.IsNullOrEmpty(userTableName))
                 return false;
 
-            return _userTableExistsMap.TryGetValue(userTableName, out var exists) && exists;
+            return UserTableExistsMap.TryGetValue(userTableName, out var exists) && exists;
         }
         /// <summary>
         /// Unity Localization 정식 오버로드로 문자열을 가져오고(Smart 포함) 즉시 반환합니다.
