@@ -8,6 +8,7 @@
         public enum Category
         {
             None,
+            Common,
             Skill,
             Player,
             Monster,

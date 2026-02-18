@@ -22,7 +22,7 @@ namespace GGemCo2DCore
                 return null;
             }
             // 이펙트는 같은 프리팹으로 베리에이션 해서 사용할 수 있기때문에 info.PrefabName 을 key 로 사용한다.
-            string key = $"{ConfigAddressableGroupName.Effect}_{info.PrefabName}";
+            string key = $"{ConfigAddressableGroupName.Effect}_{info.PrefabPath}";
             GameObject prefab = AddressableLoaderPrefabEffect.Instance.GetPrefabByName(key);
             if (prefab == null) return null;
             GameObject effect = Object.Instantiate(prefab);

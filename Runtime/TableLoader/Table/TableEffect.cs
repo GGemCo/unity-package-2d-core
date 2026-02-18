@@ -12,7 +12,7 @@ namespace GGemCo2DCore
         public string Name;
         public EffectConstants.Category Category;
         public EffectConstants.Type Type;
-        public string PrefabName;
+        public string PrefabPath;
         public ConfigCommon.AnimationController AnimationController;
         public int Width;
         public int Height;
@@ -35,7 +35,7 @@ namespace GGemCo2DCore
                 Name = data["Name"],
                 Category = EnumHelper.ConvertEnum<EffectConstants.Category>(data["Category"]),
                 Type = EffectConstants.Type.Default,
-                PrefabName = data["PrefabName"],
+                PrefabPath = data["PrefabPath"],
                 AnimationController = ConvertAnimationController(data["AnimationController"]),
                 Width = MathHelper.ParseInt(data["Width"]),
                 Height = MathHelper.ParseInt(data["Height"]),

@@ -84,8 +84,9 @@ namespace GGemCo2DCoreEditor
                     var info = outerPair.Value;
                     if (info.Uid <= 0) continue;
                 
-                    string key = $"{ConfigAddressableGroupName.Effect}_{info.PrefabName}";
-                    string assetPath = $"{ConfigAddressablePath.BuildEffectPath(info.Category)}/{info.PrefabName}.prefab";
+                    // 이펙트는 같은 프리팹으로 베리에이션 해서 사용할 수 있기때문에 info.PrefabPath 을 key 로 사용한다.
+                    string key = $"{ConfigAddressableGroupName.Effect}_{info.PrefabPath}";
+                    string assetPath = $"{ConfigAddressablePath.Effects.RootEffect}/{info.PrefabPath}.prefab";
                     string label = ConfigAddressableLabel.Effect;
                 
                     Add(settings, group, key, assetPath, label);

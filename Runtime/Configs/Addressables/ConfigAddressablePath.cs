@@ -116,29 +116,7 @@ namespace GGemCo2DCore
         public static class Effects
         {
             /// <summary>Assets/{SDK}/DataAddressable/Effects</summary>
-            private static string RootEffect => Combine(Root, "Effects");
-
-            /// <summary>Effects/Skills</summary>
-            public static string Skills => Combine(RootEffect, "Skills");
-
-            /// <summary>Effects/Player</summary>
-            public static string Player => Combine(RootEffect, "Player");
-
-            /// <summary>Effects/Monster</summary>
-            public static string Monster => Combine(RootEffect, "Monster");
-            public static string UI => Combine(RootEffect, "UI");
-            public static string Etc => Combine(RootEffect, "Etc");
-        }
-        public static string BuildEffectPath(EffectConstants.Category category)
-        {
-            return category switch
-            {
-                EffectConstants.Category.Player => Effects.Player,
-                EffectConstants.Category.Monster => Effects.Monster,
-                EffectConstants.Category.Etc => Effects.Etc,
-                EffectConstants.Category.UI => Effects.UI,
-                _ => Effects.Skills
-            };
+            public static string RootEffect => Combine(Root, "Effects");
         }
 
         // -------------------------
