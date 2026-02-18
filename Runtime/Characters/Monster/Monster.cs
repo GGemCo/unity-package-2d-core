@@ -114,7 +114,7 @@ namespace GGemCo2DCore
             if (info.Uid <= 0) return;
             characterName = info.Name;
             SetBaseInfos(info.StatAtk, info.StatDef, info.StatHp, 0, 0, info.StatSuperArmor, info.StatMoveSpeed, info.StatAttackSpeed,
-                info.RegistFire, info.RegistCold, info.RegistLightning);
+                info.RegistFire, info.RegistCold, info.RegistLightning, info.RegistPoison);
             CurrentHp.OnNext(info.StatHp);
             CurrentSuperArmor.OnNext(info.StatSuperArmor);
             SetScale(info.Scale);

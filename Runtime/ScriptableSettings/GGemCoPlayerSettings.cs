@@ -42,6 +42,8 @@ namespace GGemCo2DCore
         public int statRegistCold;
         [Tooltip("전기 속성 저항 (100 → 1배 = 면역)")]
         public int statRegistLightning;
+        [Tooltip("독 속성 저항 (100 → 1배 = 면역)")]
+        public int statRegistPoison;
 
         [Header("맵 경계 제한 옵션")]
         [Tooltip("왼쪽 경계를 벗어날 수 없도록 제한합니다.")]

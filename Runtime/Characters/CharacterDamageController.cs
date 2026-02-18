@@ -1,4 +1,4 @@
-﻿using UnityEngine;
+using UnityEngine;
 
 namespace GGemCo2DCore
 {
@@ -105,6 +105,11 @@ namespace GGemCo2DCore
                 {
                     damage = (long)(damage * ((100f - _characterBase.TotalRegistLightning.Value) / 100f));
                     damageTextColor = Color.yellow;
+                }
+                else if (damageType == ConfigCommon.DamageType.Poison)
+                {
+                    damage = (long)(damage * ((100f - _characterBase.TotalRegistPoison.Value) / 100f));
+                    damageTextColor = Color.green;
                 }
 
                 if (damage <= 0)

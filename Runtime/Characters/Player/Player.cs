@@ -98,7 +98,7 @@ namespace GGemCo2DCore
             SetBaseInfos(_playerSettings.statAtk, _playerSettings.statDef, _playerSettings.statHp,
                 _playerSettings.statMp, _playerSettings.statStamina, 0,
                 _playerSettings.statMoveSpeed, _playerSettings.statAttackSpeed, _playerSettings.statRegistFire,
-                _playerSettings.statRegistCold, _playerSettings.statRegistLightning);
+                _playerSettings.statRegistCold, _playerSettings.statRegistLightning, _playerSettings.statRegistPoison);
             CurrentHp.OnNext(TotalHp.Value);
             CurrentMp.OnNext(TotalMp.Value);
             CurrentStamina.OnNext(TotalStamina.Value);
@@ -501,7 +501,7 @@ namespace GGemCo2DCore
                     TotalSuperArmor.Value,
                     TotalMoveSpeed.Value, TotalAttackSpeed.Value,
                     TotalCriticalDamage.Value, TotalCriticalProbability.Value,
-                    TotalRegistFire.Value, TotalRegistCold.Value, TotalRegistLightning.Value);
+                    TotalRegistFire.Value, TotalRegistCold.Value, TotalRegistLightning.Value, TotalRegistPoison.Value);
             }
 
             var flat = new Dictionary<string, int>(8);

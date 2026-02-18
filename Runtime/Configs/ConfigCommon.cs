@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 
 namespace GGemCo2DCore
 {
@@ -39,6 +39,7 @@ namespace GGemCo2DCore
         public const string StatusStatResistanceFire = "STAT_RESISTANCE_FIRE";
         public const string StatusStatResistanceCold = "STAT_RESISTANCE_COLD";
         public const string StatusStatResistanceLightning = "STAT_RESISTANCE_LIGHTNING";
+        public const string StatusStatResistancePoison = "STAT_RESISTANCE_POISON";
         public const string StatusAffectId = "AFFECT_UID";
         public const string StatusKnockBack = "KNOCK_BACK";
         public class StruckStatus
@@ -109,15 +110,17 @@ namespace GGemCo2DCore
              Physic,
              Fire,
              Cold,
-             Lightning
+             Lightning,
+             Poison
          }
 
          public static class DamageTypeString
          {
-             public const string Physic = "Physic";
-             public const string Fire = "Fire";
-             public const string Cold = "Cold";
-             public const string Lightning = "Lightning";
+             public const string Physic = "DT_Physic";
+             public const string Fire = "DT_Fire";
+             public const string Cold = "DT_Cold";
+             public const string Lightning = "DT_Lightning";
+             public const string Poison = "DT_Poison";
          }
 
          public static readonly Dictionary<DamageType, string> NameByDamageType = new Dictionary<DamageType, string>
@@ -127,6 +130,7 @@ namespace GGemCo2DCore
              { DamageType.Fire, "Fire DMG" },
              { DamageType.Cold, "Cold DMG" },
              { DamageType.Lightning, "Lighting DMG" },
+             { DamageType.Poison, "Poison DMG" },
          };
     }
 }

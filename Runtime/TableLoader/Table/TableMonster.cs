@@ -27,6 +27,7 @@ namespace GGemCo2DCore
         public int RegistFire;
         public int RegistCold;
         public int RegistLightning;
+        public int RegistPoison;
         public int[] SkillUid;
         public string BtFileName;
     }
@@ -64,6 +65,7 @@ namespace GGemCo2DCore
                 RegistFire = MathHelper.ParseInt(data["RegistFire"]),
                 RegistCold = MathHelper.ParseInt(data["RegistCold"]),
                 RegistLightning = MathHelper.ParseInt(data["RegistLightning"]),
+                RegistPoison = MathHelper.ParseInt(data["RegistPoison"]),
                 RewardGold = MathHelper.ParseInt(data["RewardGold"]),
                 SkillUid = ConvertIntArray(data["SkillUid"]),
                 BtFileName = (data["BtFileName"]),

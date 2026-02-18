@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using R3;
 
@@ -138,7 +138,8 @@ namespace GGemCo2DCore
                 new StatUIBinding { textUI = CharacterConstants.IndexPlayerInfo.CriticalProbability, getStat = p => p.TotalCriticalProbability },
                 new StatUIBinding { textUI = CharacterConstants.IndexPlayerInfo.RegistFire, getStat = p => p.TotalRegistFire },
                 new StatUIBinding { textUI = CharacterConstants.IndexPlayerInfo.RegistCold, getStat = p => p.TotalRegistCold },
-                new StatUIBinding { textUI = CharacterConstants.IndexPlayerInfo.RegistLightning, getStat = p => p.TotalRegistLightning }
+                new StatUIBinding { textUI = CharacterConstants.IndexPlayerInfo.RegistLightning, getStat = p => p.TotalRegistLightning },
+                new StatUIBinding { textUI = CharacterConstants.IndexPlayerInfo.RegistPoison, getStat = p => p.TotalRegistPoison }
             });
             foreach (var binding in _statBindings)
             {

@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using System.Linq;
 using R3;
 using UnityEngine;
@@ -29,13 +29,14 @@ namespace GGemCo2DCore
             public readonly long RegistFire;
             public readonly long RegistCold;
             public readonly long RegistLightning;
+            public readonly long RegistPoison;
 
             public CharacterTotals(
                 long atk, long def, long hp, long mp, long stamina,
                 int superArmor,
                 long moveSpeed, long attackSpeed,
                 long criticalDamage, long criticalProbability,
-                long registFire, long registCold, long registLightning)
+                long registFire, long registCold, long registLightning, long registPoison)
             {
                 Atk = atk;
                 Def = def;
@@ -50,6 +51,7 @@ namespace GGemCo2DCore
                 RegistFire = registFire;
                 RegistCold = registCold;
                 RegistLightning = registLightning;
+                RegistPoison = registPoison;
             }
         }
         // 기본 스탯
@@ -66,6 +68,7 @@ namespace GGemCo2DCore
         private int BaseRegistFire { get; set; }
         private int BaseRegistCold { get; set; }
         private int BaseRegistLightning { get; set; }
+        private int BaseRegistPoison { get; set; }
 
         // 장비/옵션 기반 Modifier (장비 갱신 시 재구성)
         private readonly Dictionary<string, int> _flatEquipmentModifiers = new();
@@ -86,7 +89,8 @@ namespace GGemCo2DCore
             _totalCriticalProbability,
             _totalRegistFire,
             _totalRegistCold,
-            _totalRegistLightning;
+            _totalRegistLightning,
+            _totalRegistPoison;
         private int _totalSuperArmor;
         // 최종 적용된 스탯 (캐싱)
         public readonly BehaviorSubject<long> TotalAtk = new(1);
@@ -102,6 +106,7 @@ namespace GGemCo2DCore
         public readonly BehaviorSubject<long> TotalRegistFire = new(100);
         public readonly BehaviorSubject<long> TotalRegistCold = new(100);
         public readonly BehaviorSubject<long> TotalRegistLightning = new(100);
+        public readonly BehaviorSubject<long> TotalRegistPoison = new(100);
 
         // 장비에서 부여된 Affect(착용 지속) 추적
         private readonly HashSet<int> _equipAppliedAffects = new();
@@ -123,9 +128,10 @@ namespace GGemCo2DCore
         /// <param name="statRegistFire"></param>
         /// <param name="statRegistCold"></param>
         /// <param name="statRegistLightning"></param>
+        /// <param name="statRegistPoison"></param>
         protected void SetBaseInfos(int statAtk, int statDef, int statHp, int statMp, int statStamina,
             int statSuperArmor, int statMoveSpeed,
-            int statAttackSpeed, int statRegistFire, int statRegistCold, int statRegistLightning)
+            int statAttackSpeed, int statRegistFire, int statRegistCold, int statRegistLightning, int statRegistPoison)
         {
             BaseAtk = statAtk;
             BaseDef = statDef;
@@ -138,6 +144,7 @@ namespace GGemCo2DCore
             BaseRegistFire = statRegistFire;
             BaseRegistCold = statRegistCold;
             BaseRegistLightning = statRegistLightning;
+            BaseRegistPoison = statRegistPoison;
             RecalculateStats();
         }
 
@@ -419,13 +426,14 @@ namespace GGemCo2DCore
             long registFire = CalculateFinalStatProjected(ConfigCommon.StatusStatResistanceFire, BaseRegistFire, flatPersistentProjected, percentPersistentProjected);
             long registCold = CalculateFinalStatProjected(ConfigCommon.StatusStatResistanceCold, BaseRegistCold, flatPersistentProjected, percentPersistentProjected);
             long registLightning = CalculateFinalStatProjected(ConfigCommon.StatusStatResistanceLightning, BaseRegistLightning, flatPersistentProjected, percentPersistentProjected);
+            long registPoison = CalculateFinalStatProjected(ConfigCommon.StatusStatResistancePoison, BaseRegistPoison, flatPersistentProjected, percentPersistentProjected);
 
             return new CharacterTotals(
                 atk, def, hp, mp, stamina,
                 superArmor,
                 moveSpeed, attackSpeed,
                 criticalDamage, criticalProbability,
-                registFire, registCold, registLightning);
+                registFire, registCold, registLightning, registPoison);
         }
         /// <summary>
         /// 최종 계산하기
@@ -445,6 +453,7 @@ namespace GGemCo2DCore
             _totalRegistFire = CalculateFinalStat(ConfigCommon.StatusStatResistanceFire, BaseRegistFire);
             _totalRegistCold = CalculateFinalStat(ConfigCommon.StatusStatResistanceCold, BaseRegistCold);
             _totalRegistLightning = CalculateFinalStat(ConfigCommon.StatusStatResistanceLightning, BaseRegistLightning);
+            _totalRegistPoison = CalculateFinalStat(ConfigCommon.StatusStatResistancePoison, BaseRegistPoison);
 
             TotalAtk.OnNext(_totalAtk);
             TotalDef.OnNext(_totalDef);
@@ -459,6 +468,7 @@ namespace GGemCo2DCore
             TotalRegistFire.OnNext(_totalRegistFire);
             TotalRegistCold.OnNext(_totalRegistCold);
             TotalRegistLightning.OnNext(_totalRegistLightning);
+            TotalRegistPoison.OnNext(_totalRegistPoison);
         }
 
         public float GetCurrentMoveSpeed(bool isPercent = true) => isPercent ? TotalMoveSpeed.Value / 100f : TotalMoveSpeed.Value;

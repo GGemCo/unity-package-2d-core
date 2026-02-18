@@ -90,9 +90,10 @@ namespace GGemCo2DCore
                 const int statRegistFire = 0;
                 const int statRegistCold = 0;
                 const int statRegistLightning = 0;
+                const int statRegistPoison = 0;
                 SetBaseInfos(statAtk, statDef, _struckTableNpc.StatHp, statMp, statStamina, 0,
                     _struckTableNpc.StatMoveSpeed, statAttackSpeed, statRegistFire,
-                    statRegistCold, statRegistLightning);
+                    statRegistCold, statRegistLightning, statRegistPoison);
                 float scale = _struckTableNpc.Scale;
                 SetScale(scale);
                 CurrentHp.OnNext(_struckTableNpc.StatHp);

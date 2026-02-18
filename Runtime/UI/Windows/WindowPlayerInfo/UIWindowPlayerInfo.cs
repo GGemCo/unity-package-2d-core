@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using TMPro;
 using System.Collections.Generic;
 using UnityEngine;
@@ -347,6 +347,7 @@ namespace GGemCo2DCore
                 CharacterConstants.IndexPlayerInfo.RegistFire => ConfigCommon.StatusStatResistanceFire,
                 CharacterConstants.IndexPlayerInfo.RegistCold => ConfigCommon.StatusStatResistanceCold,
                 CharacterConstants.IndexPlayerInfo.RegistLightning => ConfigCommon.StatusStatResistanceLightning,
+                CharacterConstants.IndexPlayerInfo.RegistPoison => ConfigCommon.StatusStatResistancePoison,
                 _ => string.Empty
             };
 

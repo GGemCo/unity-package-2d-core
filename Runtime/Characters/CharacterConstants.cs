@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using UnityEngine;
 
 namespace GGemCo2DCore
@@ -227,6 +227,7 @@ namespace GGemCo2DCore
             RegistFire,
             RegistCold,
             RegistLightning,
+            RegistPoison,
         }
         /// <summary>
         /// 스탯 포인트 투자 대상 집합
