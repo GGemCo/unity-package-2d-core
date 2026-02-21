@@ -255,6 +255,26 @@ namespace GGemCo2DCore
             bind.Invoke(presenter, new object[] { affectComp, view, 0.10f });
         }
 
+
+        /// <summary>
+        /// 공격자(attacker)가 타격(hitTarget)에 성공했음을 Affect 런타임에 알린다.
+        /// - 공격자에게 적용된 Buff(예: PoisonCoating)의 OnHit Modifier가 이 시점에 실행될 수 있다.
+        /// - Affect 패키지가 설치되지 않았거나, attacker/hitTarget이 null이면 아무 일도 하지 않는다.
+        /// </summary>
+        public static void NotifyOnHit(GameObject attacker, GameObject hitTarget)
+        {
+            if (attacker == null || hitTarget == null) return;
+
+            EnsureAffectSystem(attacker);
+
+            var affectComp = GetAffectComponent(attacker);
+            if (affectComp == null) return;
+
+            // NotifyHit(GameObject hitTarget)
+            var method = affectComp.GetType().GetMethod("NotifyHit", BindingFlags.Instance | BindingFlags.Public);
+            method?.Invoke(affectComp, new object[] { hitTarget });
+        }
+
         private static Component GetAffectComponent(GameObject go)
         {
             if (go == null) return null;

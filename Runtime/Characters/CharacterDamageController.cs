@@ -134,6 +134,12 @@ namespace GGemCo2DCore
                 remainHp = 1;
             }
 
+            // 타격 확정: 공격자에게 OnHit(코팅/부여형 버프 등) 트리거를 전달한다.
+            if (attacker != null)
+            {
+                AffectRuntimeBridge.NotifyOnHit(attacker, _characterBase.gameObject);
+            }
+
             if (_characterBase.CompareTag(ConfigTags.GetValue(ConfigTags.Keys.Player)))
             {
                 damageTextColor = Color.red;
