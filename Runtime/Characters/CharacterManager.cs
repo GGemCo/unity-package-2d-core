@@ -227,7 +227,6 @@ namespace GGemCo2DCore
 
                 if (regenData != null)
                 {
-                    characterBase.uid = regenData.Uid;
                     npcObj.transform.position = new Vector3(
                         regenData.x, regenData.y, npcObj.transform.position.z);
                 }
@@ -244,7 +243,8 @@ namespace GGemCo2DCore
                 characterBase.CharacterAnimationController = iAnim;
 
                 // 4) 데이터 기반 스케일 적용
-                npcObj.GetComponent<Npc>()?.SetScale(infoNpc.Scale);
+                characterBase.uid = uid;
+                characterBase.SetScale(infoNpc.Scale);
 
                 _characters.Add(npcObj);
                 OnCharacterSpawned?.Invoke(characterBase);
@@ -285,7 +285,12 @@ namespace GGemCo2DCore
 
             if (!monster) return null;
 
-            monster.GetComponent<Monster>()?.SetScale(infoMonster.Scale);
+            var characterBase = monster.GetComponent<CharacterBase>();
+            if (characterBase)
+            {
+                characterBase.uid = uid;
+                characterBase.SetScale(infoMonster.Scale);
+            }
             return monster;
         }
 

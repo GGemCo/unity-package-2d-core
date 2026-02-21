@@ -633,6 +633,8 @@ namespace GGemCo2DCore
         private void UpdateAnimationMoveTimeScale(long value)
         {
             CharacterAnimationController.UpdateTimeScaleMove(value/100f);
+            if (value == 0)
+                GcLogger.LogError($"이동속도가 0으로 업데이트 되었습니다. {gameObject.name}");
         }
         /// <summary>
         /// 현재 마력 더하기
