@@ -219,7 +219,7 @@ namespace GGemCo2DCore
                 };
 
                 // 몬스터와 마주보고 있으면 공격 
-                if (AreFacingEachOther(monster.transform))
+                if (AreFacingEachOther(monster))
                 {
                     monster.TakeDamage(metadataDamage);
                     ++countDamageMonster;

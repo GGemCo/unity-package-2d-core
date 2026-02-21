@@ -319,19 +319,16 @@ namespace GGemCo2DCore
         /// <summary>
         /// 플레이어와 몬스터가 마주보고 있는지 체크 
         /// </summary>
-        /// <param name="monster"></param>
+        /// <param name="target"></param>
         /// <returns></returns>
-        public bool AreFacingEachOther(Transform monster)
+        public bool AreFacingEachOther(CharacterBase target)
         {
-            CharacterBase player = SceneGame.Instance.player.GetComponent<CharacterBase>();
-            CharacterBase monsterChar = monster.GetComponent<CharacterBase>();
+            float attackerDir = GetFacingDirection();
+            float targetDir = target.GetFacingDirection();
 
-            float playerDir = player.GetFacingDirection();
-            float monsterDir = monsterChar.GetFacingDirection();
+            float directionToMonster = Mathf.Sign(target.transform.position.x - transform.position.x);
 
-            float directionToMonster = Mathf.Sign(monster.position.x - transform.position.x);
-
-            return Mathf.Approximately(playerDir, directionToMonster) && Mathf.Approximately(monsterDir, -directionToMonster);
+            return Mathf.Approximately(attackerDir, directionToMonster) && Mathf.Approximately(targetDir, -directionToMonster);
         }
         /// <summary>
         /// 캐릭터 순서. sorting order 처리 
