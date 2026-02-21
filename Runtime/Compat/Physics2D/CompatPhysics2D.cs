@@ -78,5 +78,40 @@ namespace GGemCo2DCore
             return Physics2D.BoxCastNonAlloc(origin, size, angle, direction, results, distance, layerMask, minDepth, maxDepth);
 #endif
         }
+        
+        /// <summary>
+        /// Collider2D 오브젝트 기준 오버랩을 results 배열에 채우고, 채워진 개수를 반환합니다.
+        /// Unity 6+: Collider2D.Overlap(ContactFilter2D, Collider2D[]) 사용
+        /// 이전: Collider2D.OverlapCollider(ContactFilter2D, Collider2D[]) 사용
+        /// </summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static int OverlapColliderNonAlloc(
+            Collider2D collider,
+            ContactFilter2D contactFilter,
+            Collider2D[] results)
+        {
+            if (!collider || results == null || results.Length == 0)
+                return 0;
+
+#if UNITY_6000_0_OR_NEWER
+            // Unity 6+: OverlapCollider -> Overlap 로 변경됨
+            return collider.Overlap(contactFilter, results);
+#else
+            return collider.OverlapCollider(contactFilter, results);
+#endif
+        }
+
+        /// <summary>
+        /// 필터 없이(=no filter) 오버랩.
+        /// 내부적으로 "필터 없음"을 생성해 전달합니다.
+        /// </summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static int OverlapColliderNonAlloc(
+            Collider2D collider,
+            Collider2D[] results)
+        {
+            var filter = CompatContactFilter2D.CreateNoFilter();
+            return OverlapColliderNonAlloc(collider, filter, results);
+        }
     }
 }

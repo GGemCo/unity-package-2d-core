@@ -41,7 +41,7 @@ namespace GGemCo2DCore
             filter.SetLayerMask(targetMask); // 레이어 필터링 적용. :contentReference[oaicite:2]{index=2}
 
             // 1차 시도
-            int written = Physics2D.OverlapCollider(areaCollider, filter, _overlapBuffer); // :contentReference[oaicite:3]{index=3}
+            int written = CompatPhysics2D.OverlapColliderNonAlloc(areaCollider, filter, _overlapBuffer); // :contentReference[oaicite:3]{index=3}
 
             // 버퍼가 꽉 찼다면(더 많은 결과가 있을 수 있음) 버퍼 확장 후 한 번 더 시도
             if (written >= _overlapBuffer.Length)
@@ -49,7 +49,7 @@ namespace GGemCo2DCore
                 // 2배씩 확장 (상황에 따라 상한선 도입 권장)
                 int newSize = _overlapBuffer.Length * 2;
                 _overlapBuffer = new Collider2D[newSize];
-                written = Physics2D.OverlapCollider(areaCollider, filter, _overlapBuffer); // 재시도
+                written = CompatPhysics2D.OverlapColliderNonAlloc(areaCollider, filter, _overlapBuffer); // 재시도
             }
 
             for (int i = 0; i < written && i < _overlapBuffer.Length; i++)
