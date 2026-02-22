@@ -16,6 +16,10 @@ namespace GGemCo2DCore
         public readonly CharacterBase Owner;
         public readonly CharacterBase Target;
 
+        // --- Target Position Override (dynamic) ---
+        public readonly bool UseTargetPositionOverride;
+        public readonly Vector2 TargetPositionOverride;
+
         // --- Combat (dynamic) ---
         public readonly ConfigCommon.DamageType DamageType;
         public readonly long Damage;
@@ -41,7 +45,9 @@ namespace GGemCo2DCore
             ProjectileConstants.ProjectileVisualType visualType = ProjectileConstants.ProjectileVisualType.Default,
             Sprite visualSprite = null,
             RuntimeAnimatorController visualAnimatorController = null,
-            int visualEffectUidOverride = 0)
+            int visualEffectUidOverride = 0,
+            bool useTargetPositionOverride = false,
+            Vector2 targetPositionOverride = default)
         {
             Uid = uid;
             DamageType = damageType;
@@ -56,6 +62,9 @@ namespace GGemCo2DCore
             VisualSprite = visualSprite;
             VisualAnimatorController = visualAnimatorController;
             VisualEffectUidOverride = visualEffectUidOverride;
+
+            UseTargetPositionOverride = useTargetPositionOverride;
+            TargetPositionOverride = targetPositionOverride;
         }
     }
 

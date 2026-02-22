@@ -32,5 +32,12 @@
             Default,
             Laser
         }
+
+        public enum BoundaryMode
+        {
+            Destroy = 0,
+            Bounce = 1,
+        }
+
     }
 }

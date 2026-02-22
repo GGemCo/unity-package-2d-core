@@ -1119,6 +1119,14 @@ namespace GGemCo2DCoreEditor
                 _editingProjectile.Count = EditorGUILayout.IntField(new GUIContent("Count"), _editingProjectile.Count);
                 _editingProjectile.SecDelayByOne = EditorGUILayout.FloatField(new GUIContent("SecDelayByOne"), _editingProjectile.SecDelayByOne);
 
+                // 화면 경계 처리(신규)
+                _editingProjectile.BoundaryMode = (ProjectileConstants.BoundaryMode)EditorGUILayout.EnumPopup(
+                    new GUIContent("BoundaryMode"), _editingProjectile.BoundaryMode);
+                _editingProjectile.BoundaryPadding = EditorGUILayout.FloatField(new GUIContent("BoundaryPadding"), _editingProjectile.BoundaryPadding);
+                _editingProjectile.BounceMaxCount = EditorGUILayout.IntField(new GUIContent("BounceMaxCount"), _editingProjectile.BounceMaxCount);
+                _editingProjectile.BounceSpeedMultiplier = EditorGUILayout.FloatField(
+                    new GUIContent("BounceSpeedMultiplier"), _editingProjectile.BounceSpeedMultiplier);
+
                 if (EditorGUI.EndChangeCheck())
                 {
                     _editingProjectileDirty = true;
@@ -1179,6 +1187,10 @@ namespace GGemCo2DCoreEditor
                             info.StartPosition = _editingProjectile.StartPosition;
                             info.ColliderSize = _editingProjectile.ColliderSize;
                             info.HitEffectUid = _editingProjectile.HitEffectUid;
+                            info.BoundaryMode = _editingProjectile.BoundaryMode;
+                            info.BoundaryPadding = _editingProjectile.BoundaryPadding;
+                            info.BounceMaxCount = _editingProjectile.BounceMaxCount;
+                            info.BounceSpeedMultiplier = _editingProjectile.BounceSpeedMultiplier;
                             // info.TargetType = _editingProjectile.TargetType;
                             // info.TargetPositionRangeX = _editingProjectile.TargetPositionRangeX;
                         }
@@ -1219,6 +1231,11 @@ namespace GGemCo2DCoreEditor
             _cachedProjectileInfo.Count = _editingProjectile.Count;
             _cachedProjectileInfo.SecDelayByOne = _editingProjectile.SecDelayByOne;
 
+            _cachedProjectileInfo.BoundaryMode = _editingProjectile.BoundaryMode;
+            _cachedProjectileInfo.BoundaryPadding = _editingProjectile.BoundaryPadding;
+            _cachedProjectileInfo.BounceMaxCount = _editingProjectile.BounceMaxCount;
+            _cachedProjectileInfo.BounceSpeedMultiplier = _editingProjectile.BounceSpeedMultiplier;
+
             return true;
         }
 
@@ -1243,7 +1260,11 @@ namespace GGemCo2DCoreEditor
                 TargetType = row.TargetType,
                 TargetPositionRangeX = row.TargetPositionRangeX,
                 Count = row.Count,
-                SecDelayByOne = row.SecDelayByOne
+                SecDelayByOne = row.SecDelayByOne,
+                BoundaryMode = row.BoundaryMode,
+                BoundaryPadding = row.BoundaryPadding,
+                BounceMaxCount = row.BounceMaxCount,
+                BounceSpeedMultiplier = row.BounceSpeedMultiplier
             };
         }
 
@@ -1262,6 +1283,11 @@ namespace GGemCo2DCoreEditor
                 info.StartPosition = row.StartPosition;
                 info.ColliderSize = row.ColliderSize;
                 info.HitEffectUid = row.HitEffectUid;
+
+                info.BoundaryMode = row.BoundaryMode;
+                info.BoundaryPadding = row.BoundaryPadding;
+                info.BounceMaxCount = row.BounceMaxCount;
+                info.BounceSpeedMultiplier = row.BounceSpeedMultiplier;
                 // info.TargetType = _editingProjectile.TargetType;
                 // info.TargetPositionRangeX = _editingProjectile.TargetPositionRangeX;
             }
@@ -1291,7 +1317,8 @@ namespace GGemCo2DCoreEditor
                 var header = string.Join("\t", new[]
                 {
                     "Uid","Type","Name","EffectUid","EffectScale","MoveSpeed","ArcHeightMin","ArcHeightMax",
-                    "StartPosition","ColliderSize","HitEffectUid","TargetType","TargetPositionRangeX","Count","SecDelayByOne"
+                    "StartPosition","ColliderSize","HitEffectUid","TargetType","TargetPositionRangeX","Count","SecDelayByOne",
+                    "BoundaryMode","BoundaryPadding","BounceMaxCount","BounceSpeedMultiplier"
                 });
 
                 var sb = new StringBuilder(1024 * 32);
@@ -1323,7 +1350,12 @@ namespace GGemCo2DCoreEditor
                     sb.Append(r.TargetType).Append('\t');
                     sb.Append(r.TargetPositionRangeX).Append('\t');
                     sb.Append(r.Count).Append('\t');
-                    sb.Append(FormatFloat(r.SecDelayByOne));
+                    sb.Append(FormatFloat(r.SecDelayByOne)).Append('\t');
+
+                    sb.Append(r.BoundaryMode).Append('\t');
+                    sb.Append(FormatFloat(r.BoundaryPadding)).Append('\t');
+                    sb.Append(r.BounceMaxCount).Append('\t');
+                    sb.Append(FormatFloat(r.BounceSpeedMultiplier));
                     sb.AppendLine();
                 }
 

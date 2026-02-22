@@ -39,7 +39,7 @@ namespace GGemCo2DCore
         /// ProjectileBase.Update()는 보간 이동/화면 이탈 파괴를 수행합니다.
         /// 레이저는 그 루틴이 맞지 않으므로 여기서 완전히 재정의합니다.
         /// </summary>
-        protected override void Update()
+        protected override void FixedUpdate()
         {
             if (!Initialized) return;
 

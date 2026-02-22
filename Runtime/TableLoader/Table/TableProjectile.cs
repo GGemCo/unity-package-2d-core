@@ -23,6 +23,12 @@ namespace GGemCo2DCore
         public int TargetPositionRangeX;
         public int Count;
         public float SecDelayByOne;
+
+        // ---- Boundary (Camera view) ----
+        public ProjectileConstants.BoundaryMode BoundaryMode;
+        public float BoundaryPadding;
+        public int BounceMaxCount;
+        public float BounceSpeedMultiplier;
     }
 
     /// <summary>
@@ -56,6 +62,10 @@ namespace GGemCo2DCore
                 TargetPositionRangeX = MathHelper.ParseInt(data["TargetPositionRangeX"]),
                 Count = MathHelper.ParseInt(data["Count"]),
                 SecDelayByOne = MathHelper.ParseFloat(data["SecDelayByOne"]),
+                BoundaryMode = EnumHelper.ConvertEnum<ProjectileConstants.BoundaryMode>(data["BoundaryMode"]),
+                BoundaryPadding = MathHelper.ParseFloat(data["BoundaryPadding"]),
+                BounceMaxCount = MathHelper.ParseInt(data["BounceMaxCount"]),
+                BounceSpeedMultiplier = MathHelper.ParseFloat(data["BounceSpeedMultiplier"]),
             };
         }
     }

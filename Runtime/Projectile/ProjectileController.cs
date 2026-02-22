@@ -48,7 +48,9 @@ namespace GGemCo2DCore
                     visualType: metadataProjectile.VisualType,
                     visualSprite: metadataProjectile.VisualSprite,
                     visualAnimatorController: metadataProjectile.VisualAnimatorController,
-                    visualEffectUidOverride: metadataProjectile.VisualEffectUidOverride)
+                    visualEffectUidOverride: metadataProjectile.VisualEffectUidOverride,
+                    useTargetPositionOverride: metadataProjectile.UseTargetPositionOverride,
+                    targetPositionOverride: metadataProjectile.TargetPositionOverride)
                 : metadataProjectile;
 
             _character.StartCoroutine(CreateProjectileBurst(info, meta));
@@ -74,23 +76,33 @@ namespace GGemCo2DCore
                     else
                     {
                         // Area/None: 좌표 기반
-                        // 직선형은 X를 고정, 곡선형은 X를 범위에서 샘플
-                        float x = _target
-                            ? _target.transform.position.x
-                            : _character.transform.position.x;
-
-                        bool isArc = (info.ArcHeightMin > 0) || (info.ArcHeightMax > 0);
-                        if (isArc && _target)
+                        // Skill 등 외부 시스템에서 좌표를 직접 지정하는 경우, override 좌표를 우선 사용한다.
+                        if (meta.UseTargetPositionOverride)
                         {
-                            x = Random.Range(_target.transform.position.x - info.TargetPositionRangeX,
-                                             _target.transform.position.x + info.TargetPositionRangeX);
+                            proj.Launch(meta.TargetPositionOverride);
+                        }
+                        else
+                        {
+
+                            // 직선형은 X를 고정, 곡선형은 X를 범위에서 샘플
+                            float x = _target
+                                ? _target.transform.position.x
+                                : _character.transform.position.x;
+
+                            bool isArc = (info.ArcHeightMin > 0) || (info.ArcHeightMax > 0);
+                            if (isArc && _target)
+                            {
+                                x = Random.Range(_target.transform.position.x - info.TargetPositionRangeX,
+                                    _target.transform.position.x + info.TargetPositionRangeX);
+                            }
+
+                            float y = _target
+                                ? _target.GetRandomPositionYInHitArea()
+                                : _character.transform.position.y;
+
+                            proj.Launch(new Vector2(x, y));
                         }
 
-                        float y = _target
-                            ? _target.GetRandomPositionYInHitArea()
-                            : _character.transform.position.y;
-
-                        proj.Launch(new Vector2(x, y));
                     }
                 }
 
