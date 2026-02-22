@@ -71,9 +71,9 @@ namespace GGemCo2DCore
 
             // Collider2D: Trigger 로 충돌 판정
             Vector2 size = (info.ColliderSize != Vector2.zero) ? info.ColliderSize : Vector2.zero;
-            ComponentController.AddCapsuleCollider2D(gameObject, true, Vector2.zero, size);
-
-            _hitCollider = GetComponent<CapsuleCollider2D>();
+            // ColliderOffset: Projectile 로컬 좌표 기준(회전/스케일에도 자연스럽게 따라감)
+            Vector2 offset = info.ColliderOffset;
+            _hitCollider = ComponentController.AddCapsuleCollider2D(gameObject, true, offset, size);
             // Cast 결과 버퍼(할당 최소화)
             if (_castResults == null) _castResults = new RaycastHit2D[16];
             SetupCastFilter();

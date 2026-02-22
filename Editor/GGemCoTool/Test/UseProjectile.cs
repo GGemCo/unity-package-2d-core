@@ -1110,6 +1110,7 @@ namespace GGemCo2DCoreEditor
 
                 _editingProjectile.StartPosition = EditorGUILayout.Vector2Field(new GUIContent("StartPosition (x,y)"), _editingProjectile.StartPosition);
                 _editingProjectile.ColliderSize = EditorGUILayout.Vector2Field(new GUIContent("ColliderSize (x,y)"), _editingProjectile.ColliderSize);
+                _editingProjectile.ColliderOffset = EditorGUILayout.Vector2Field(new GUIContent("ColliderOffset (x,y)"), _editingProjectile.ColliderOffset);
 
                 _editingProjectile.HitEffectUid = EditorGUILayout.IntField(new GUIContent("HitEffectUid"), _editingProjectile.HitEffectUid);
 
@@ -1186,6 +1187,7 @@ namespace GGemCo2DCoreEditor
                             info.ArcHeightMax = _editingProjectile.ArcHeightMax;
                             info.StartPosition = _editingProjectile.StartPosition;
                             info.ColliderSize = _editingProjectile.ColliderSize;
+                            info.ColliderOffset = _editingProjectile.ColliderOffset;
                             info.HitEffectUid = _editingProjectile.HitEffectUid;
                             info.BoundaryMode = _editingProjectile.BoundaryMode;
                             info.BoundaryPadding = _editingProjectile.BoundaryPadding;
@@ -1225,6 +1227,7 @@ namespace GGemCo2DCoreEditor
             _cachedProjectileInfo.ArcHeightMax = _editingProjectile.ArcHeightMax;
             _cachedProjectileInfo.StartPosition = _editingProjectile.StartPosition;
             _cachedProjectileInfo.ColliderSize = _editingProjectile.ColliderSize;
+            _cachedProjectileInfo.ColliderOffset = _editingProjectile.ColliderOffset;
             _cachedProjectileInfo.HitEffectUid = _editingProjectile.HitEffectUid;
             _cachedProjectileInfo.TargetType = _editingProjectile.TargetType;
             _cachedProjectileInfo.TargetPositionRangeX = _editingProjectile.TargetPositionRangeX;
@@ -1256,6 +1259,7 @@ namespace GGemCo2DCoreEditor
                 ArcHeightMax = row.ArcHeightMax,
                 StartPosition = row.StartPosition,
                 ColliderSize = row.ColliderSize,
+                ColliderOffset = row.ColliderOffset,
                 HitEffectUid = row.HitEffectUid,
                 TargetType = row.TargetType,
                 TargetPositionRangeX = row.TargetPositionRangeX,
@@ -1282,6 +1286,7 @@ namespace GGemCo2DCoreEditor
                 info.ArcHeightMax = row.ArcHeightMax;
                 info.StartPosition = row.StartPosition;
                 info.ColliderSize = row.ColliderSize;
+                info.ColliderOffset = row.ColliderOffset;
                 info.HitEffectUid = row.HitEffectUid;
 
                 info.BoundaryMode = row.BoundaryMode;
@@ -1317,7 +1322,7 @@ namespace GGemCo2DCoreEditor
                 var header = string.Join("\t", new[]
                 {
                     "Uid","Type","Name","EffectUid","EffectScale","MoveSpeed","ArcHeightMin","ArcHeightMax",
-                    "StartPosition","ColliderSize","HitEffectUid","TargetType","TargetPositionRangeX","Count","SecDelayByOne",
+                    "StartPosition","ColliderSize","ColliderOffset","HitEffectUid","TargetType","TargetPositionRangeX","Count","SecDelayByOne",
                     "BoundaryMode","BoundaryPadding","BounceMaxCount","BounceSpeedMultiplier"
                 });
 
@@ -1346,6 +1351,7 @@ namespace GGemCo2DCoreEditor
                     sb.Append(r.ArcHeightMax).Append('\t');
                     sb.Append(FormatVector2(r.StartPosition)).Append('\t');
                     sb.Append(FormatVector2(r.ColliderSize)).Append('\t');
+                    sb.Append(FormatVector2(r.ColliderOffset)).Append('\t');
                     sb.Append(r.HitEffectUid).Append('\t');
                     sb.Append(r.TargetType).Append('\t');
                     sb.Append(r.TargetPositionRangeX).Append('\t');

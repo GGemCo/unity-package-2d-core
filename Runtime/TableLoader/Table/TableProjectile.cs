@@ -18,6 +18,11 @@ namespace GGemCo2DCore
         public int ArcHeightMax;
         public Vector2 StartPosition;
         public Vector2 ColliderSize;
+        /// <summary>
+        /// Projectile 로컬 좌표 기준 Collider 중심 오프셋.
+        /// - (0,0) 이면 기존(중심) 동작과 동일합니다.
+        /// </summary>
+        public Vector2 ColliderOffset;
         public int HitEffectUid;
         public ProjectileConstants.TargetType TargetType;
         public int TargetPositionRangeX;
@@ -45,6 +50,11 @@ namespace GGemCo2DCore
             if (data.TryGetValue("Type", out string typeRaw) && !string.IsNullOrEmpty(typeRaw))
                 type = EnumHelper.ConvertEnum<ProjectileConstants.Type>(typeRaw);
 
+            // ColliderOffset 컬럼이 없던 레거시 데이터와의 호환을 위해 기본값은 (0,0)으로 둔다.
+            Vector2 colliderOffset = Vector2.zero;
+            if (data.TryGetValue("ColliderOffset", out string colliderOffsetRaw) && !string.IsNullOrEmpty(colliderOffsetRaw))
+                colliderOffset = ConvertVector2(colliderOffsetRaw);
+
             return new StruckTableProjectile
             {
                 Uid = MathHelper.ParseInt(data["Uid"]),
@@ -57,6 +67,7 @@ namespace GGemCo2DCore
                 ArcHeightMax = MathHelper.ParseInt(data["ArcHeightMax"]),
                 StartPosition = ConvertVector2(data["StartPosition"]),
                 ColliderSize = ConvertVector2(data["ColliderSize"]),
+                ColliderOffset = colliderOffset,
                 HitEffectUid = MathHelper.ParseInt(data["HitEffectUid"]),
                 TargetType = EnumHelper.ConvertEnum<ProjectileConstants.TargetType>(data["TargetType"]),
                 TargetPositionRangeX = MathHelper.ParseInt(data["TargetPositionRangeX"]),
