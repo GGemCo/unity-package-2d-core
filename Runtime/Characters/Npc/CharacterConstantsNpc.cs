@@ -3,7 +3,7 @@ using System.Collections.Generic;
 
 namespace GGemCo2DCore
 {
-    public class CharacterConstantsNpc
+    public static class CharacterConstantsNpc
     {
         /// <summary>
         /// NPC의 기본 존재 유형
