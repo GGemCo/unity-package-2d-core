@@ -296,11 +296,11 @@ namespace GGemCo2DCore
             if (!other) return null;
 
             // HitArea가 있으면 해당 타겟을 우선 사용
-            var hitArea = other.GetComponentInParent<CharacterHitArea>();
+            var hitArea = other.GetComponent<CharacterHitArea>();
             if (hitArea && hitArea.target) return hitArea.target;
 
             // 없으면 루트 CharacterBase로 판정
-            return other.GetComponentInParent<CharacterBase>();
+            return other.GetComponent<CharacterBase>();
         }
 
         private CharacterHitArea ResolveHitArea(Collider2D other, CharacterBase target)
@@ -308,12 +308,12 @@ namespace GGemCo2DCore
             if (!other) return null;
 
             // 충돌한 콜라이더가 HitArea 하위일 수 있으므로 Parent 우선
-            var area = other.GetComponentInParent<CharacterHitArea>();
+            var area = other.GetComponent<CharacterHitArea>();
             if (area) return area;
 
             // 루트에서 탐색(레거시 호환)
             if (target)
-                return target.GetComponentInChildren<CharacterHitArea>();
+                return target.GetComponent<CharacterHitArea>();
 
             return null;
         }
