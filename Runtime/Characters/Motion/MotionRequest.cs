@@ -22,6 +22,24 @@ namespace GGemCo2DCore
     }
 
     /// <summary>
+    /// Arc 모션 구현 모드.
+    /// </summary>
+    public enum MotionArcMode
+    {
+        /// <summary>
+        /// 기존 구현: 시간(t) 기반 + sin(pi*t) 형태.
+        /// </summary>
+        LegacyTimeSine = 0,
+
+        /// <summary>
+        /// Distance/Height 진행률 기반 Phase Arc.
+        /// - 기본 진행축은 수평 누적 거리(0..Distance)이며, Distance가 0이면 시간 진행률로 폴백합니다.
+        /// - Phase는 u 구간(0..1) 기반으로 Rise → ApexHold → Fall로 동작합니다.
+        /// </summary>
+        DistancePhased = 1,
+    }
+
+    /// <summary>
     /// 캐릭터 모션(짧은 이동/대시/넉백/점프형 회피 등) 요청 데이터.
     /// - DurationSeconds 동안 Distance 만큼 이동합니다(진행률은 Easing으로 변환).
     /// - Arc는 수직 오프셋(0→정점→0)을 추가합니다.
@@ -59,6 +77,28 @@ namespace GGemCo2DCore
         /// </summary>
         public float ArcHeight { get; }
 
+        /// <summary>
+        /// Arc 구현 모드. 기본값은 <see cref="MotionArcMode.LegacyTimeSine"/>입니다.
+        /// </summary>
+        public MotionArcMode ArcMode { get; }
+
+        /// <summary>
+        /// Arc(상승/낙하) Phase에서 사용할 easing. <see cref="MotionArcMode.DistancePhased"/>에서 사용됩니다.
+        /// </summary>
+        public Easing.EaseType ArcRiseEaseType { get; }
+
+        /// <summary>
+        /// Arc(낙하) Phase에서 사용할 easing. <see cref="MotionArcMode.DistancePhased"/>에서 사용됩니다.
+        /// </summary>
+        public Easing.EaseType ArcFallEaseType { get; }
+
+        /// <summary>
+        /// Apex(정점) 유지 구간 폭(정규화 0..1).
+        /// - 0이면 ApexHold 없이 Rise → Fall로 바로 전환됩니다.
+        /// - 0.1이면 u=0.45~0.55 구간에서 y=H를 유지하는 형태가 됩니다.
+        /// </summary>
+        public float ArcApexHoldNormalized { get; }
+
         public MotionRequest(
             MotionChannel channel,
             MotionKind kind,
@@ -70,7 +110,11 @@ namespace GGemCo2DCore
             bool useMovePosition = true,
             bool allowReplace = false,
             float holdSecondsAfter = 0f,
-            float arcHeight = 0f)
+            float arcHeight = 0f,
+            MotionArcMode arcMode = MotionArcMode.LegacyTimeSine,
+            Easing.EaseType arcRiseEaseType = Easing.EaseType.Linear,
+            Easing.EaseType arcFallEaseType = Easing.EaseType.Linear,
+            float arcApexHoldNormalized = 0f)
         {
             Channel = channel;
             Kind = kind;
@@ -83,6 +127,11 @@ namespace GGemCo2DCore
             AllowReplace = allowReplace;
             HoldSecondsAfter = Mathf.Max(0f, holdSecondsAfter);
             ArcHeight = Mathf.Max(0f, arcHeight);
+
+            ArcMode = arcMode;
+            ArcRiseEaseType = arcRiseEaseType;
+            ArcFallEaseType = arcFallEaseType;
+            ArcApexHoldNormalized = Mathf.Clamp01(arcApexHoldNormalized);
         }
     }
 }

@@ -108,6 +108,7 @@ namespace GGemCo2DCore
 
             MotionKind kind = MotionKind.Linear;
             float arcHeight = 0f;
+            MotionArcMode arcMode = MotionArcMode.LegacyTimeSine;
             float holdAfter = 0f;
 
             switch (crowdControl.Type)
@@ -115,6 +116,7 @@ namespace GGemCo2DCore
                 case CrowdControlConstants.Type.KnockUp:
                     kind = MotionKind.Arc;
                     arcHeight = Mathf.Max(0f, crowdControl.Height);
+                    arcMode = MotionArcMode.DistancePhased;
                     break;
 
                 case CrowdControlConstants.Type.KnockDown:
@@ -137,7 +139,11 @@ namespace GGemCo2DCore
                 useMovePosition: true,
                 allowReplace: true,
                 holdSecondsAfter: holdAfter,
-                arcHeight: arcHeight);
+                arcHeight: arcHeight,
+                arcMode: arcMode,
+                arcRiseEaseType: crowdControl.EaseType,
+                arcFallEaseType: crowdControl.EaseType,
+                arcApexHoldNormalized: 0f);
 
             if (!_motionController.TryStartMotion(in req))
             {
