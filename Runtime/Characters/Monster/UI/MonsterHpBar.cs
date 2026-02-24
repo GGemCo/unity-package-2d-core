@@ -7,18 +7,20 @@ namespace GGemCo2DCore
 {
     public class MonsterHpBar : MonoBehaviour
     {
+        [Tooltip("몬스터 머리 위 기준에서 X축 값. flip Slider가 있으면 x 좌표를 이동시켜 주어야 한다.")]
+        public float diffX;
         [Tooltip("몬스터 머리 위 기준에서 Y축 높이 값")]
         public float diffY;
         [Tooltip("몬스터 이름. 사용안할 경우 비워 둠")]
         public TextMeshProUGUI textMonsterName;
         
-        private Monster _monster;
+        protected Monster Monster;
         private Slider _hpSlider;
         private bool _isStartFade;
         private CanvasGroup _canvasGroup;
         private float _monsterHeight;
 
-        private void Awake()
+        protected virtual void Awake()
         {
             _hpSlider = GetComponent<Slider>();
             _canvasGroup = GetComponent<CanvasGroup>();
@@ -27,16 +29,16 @@ namespace GGemCo2DCore
         }
         public void Initialize(Monster monster)
         {
-            _monster = monster;
-            if (_monster == null)
+            Monster = monster;
+            if (Monster == null)
             {
                 GcLogger.LogError("몬스터 오브젝트가 없습니다.");
                 return;
             }
-            var info = TableLoaderManager.Instance.GetMonsterData(_monster.uid);
+            var info = TableLoaderManager.Instance.GetMonsterData(Monster.uid);
             if (info == null)
             {
-                GcLogger.LogError("몬스터 테이블에 정보가 없습니다. uid:"+_monster.uid);
+                GcLogger.LogError("몬스터 테이블에 정보가 없습니다. uid:"+Monster.uid);
                 return;
             }
             if (textMonsterName == null) return;
@@ -45,19 +47,19 @@ namespace GGemCo2DCore
 
         private void Start()
         {
-            _monsterHeight = _monster.GetHeightByScale();
+            _monsterHeight = Monster.GetHeightByScale();
         }
 
         private void Update()
         {
-            if (_monster == null) return;
-            gameObject.transform.position = _monster.transform.position + new Vector3(0, _monsterHeight + diffY, 0);
+            if (Monster == null) return;
+            gameObject.transform.position = Monster.transform.position + new Vector3(diffX, _monsterHeight + diffY, 0);
         }
 
-        public void SetValue(long value)
+        public virtual void SetValue(long value)
         {
             if (_hpSlider == null) return;
-            _hpSlider.value = (float)value / _monster.TotalHp.Value;
+            _hpSlider.value = (float)value / Monster.TotalHp.Value;
 
             if (textMonsterName == null) return;
             textMonsterName.color = _hpSlider.value < _hpSlider.maxValue * 0.5f ? Color.black : Color.white;
