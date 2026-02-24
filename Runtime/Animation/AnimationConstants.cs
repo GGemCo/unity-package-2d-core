@@ -31,6 +31,32 @@
     {
         public int Uid { get; set; }
     }
+
+    /// <summary>
+    /// 백스탭/대시/회피 트레일(AnimationEvent) 설정.
+    /// - AnimationEvent의 string 파라미터에 아래 JSON을 넣어 런타임 오버라이드를 적용할 수 있습니다.
+    /// 예) {"DurationSeconds":0.25,"SpawnIntervalSeconds":0.03,"GhostLifetimeSeconds":0.25,"ColorHex":"66A9FF","SortingOrderOffset":-1}
+    /// </summary>
+    public sealed class StruckAnimationEventBackstepTrail
+    {
+        /// <summary>트레일을 자동으로 중지할 시간(0이면 자동 중지 없음).</summary>
+        public float DurationSeconds { get; set; } = 0f;
+
+        /// <summary>잔상 생성 주기(0이면 컴포넌트 기본값 사용).</summary>
+        public float SpawnIntervalSeconds { get; set; } = 0f;
+
+        /// <summary>잔상 수명(0이면 컴포넌트 기본값 사용).</summary>
+        public float GhostLifetimeSeconds { get; set; } = 0f;
+
+        /// <summary>
+        /// 잔상 색상(Hex). "RRGGBB" 또는 "#RRGGBB", "RRGGBBAA" 형식 지원.
+        /// 비어있으면 컴포넌트 기본값 사용.
+        /// </summary>
+        public string ColorHex { get; set; } = null;
+
+        /// <summary>SortingOrder 오프셋(값이 지정되면 오버라이드).</summary>
+        public int? SortingOrderOffset { get; set; } = null;
+    }
     public static class AnimationConstants
     {
         private const string Prefix = "GGemCoAniEvent";
@@ -48,5 +74,8 @@
         public const string EventNameDashEnd = Prefix+"DashEnd";
         
         public const string EventNameUseTool = Prefix+"UseTool";
+
+        public const string EventNameStartBackstepTrail = Prefix+"StartBackstepTrail";
+        public const string EventNameStopBackstepTrail = Prefix+"StopBackstepTrail";
     }
 }

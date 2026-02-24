@@ -125,5 +125,44 @@ namespace GGemCo2DCore
         {
             fromObject.GetComponent<CharacterBase>()?.AnimationEventGuardEnd();
         }
+
+        public void OnAnimationEventStartBackstepTrail(string json, GameObject fromObject)
+        {
+            if (fromObject == null) return;
+
+            var trail = fromObject.GetComponentInChildren<CharacterAfterimageTrail>(true);
+            if (trail == null)
+            {
+                // CharacterAfterimageTrail이 없는 캐릭터는 이벤트를 무시합니다.
+                return;
+            }
+
+            // JSON이 없으면 컴포넌트 기본 설정으로 시작합니다.
+            if (string.IsNullOrWhiteSpace(json))
+            {
+                trail.StartTrail();
+                return;
+            }
+
+            try
+            {
+                var data = JsonConvert.DeserializeObject<StruckAnimationEventBackstepTrail>(json);
+                trail.StartTrail(data);
+            }
+            catch (Exception e)
+            {
+                GcLogger.LogError($"animation backstep trail(start) event, json parsing error: {e.Message} / json: {json}");
+                // 파싱 실패시에도 기본값으로는 동작하게 합니다.
+                trail.StartTrail();
+            }
+        }
+
+        public void OnAnimationEventStopBackstepTrail(string json, GameObject fromObject)
+        {
+            if (fromObject == null) return;
+            var trail = fromObject.GetComponentInChildren<CharacterAfterimageTrail>(true);
+            if (trail == null) return;
+            trail.StopTrail();
+        }
     }
 }

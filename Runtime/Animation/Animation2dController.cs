@@ -194,6 +194,23 @@ namespace GGemCo2DCore
         {
             EventListener?.OnAnimationEventGuardEnd(gameObject);
         }
+
+        /// <summary>
+        /// 백스탭(또는 대시/회피) 트레일 시작.
+        /// - AnimationEvent의 string 파라미터에 JSON을 전달하여 런타임 설정을 오버라이드할 수 있습니다.
+        /// </summary>
+        public void GGemCoAniEventStartBackstepTrail(string json)
+        {
+            EventListener?.OnAnimationEventStartBackstepTrail(json, gameObject);
+        }
+
+        /// <summary>
+        /// 백스탭(또는 대시/회피) 트레일 종료.
+        /// </summary>
+        public void GGemCoAniEventStopBackstepTrail(string json)
+        {
+            EventListener?.OnAnimationEventStopBackstepTrail(json, gameObject);
+        }
 #if GGEMCO_2D_CONTROL
         /// <summary>
         /// 점프 시작 애니메이션 마지막 프레임에서 호출
