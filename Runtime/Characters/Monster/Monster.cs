@@ -25,6 +25,7 @@ namespace GGemCo2DCore
         private GameObject _prefabSliderHpBar;
         private GameObject _prefabPanelMonsterSuperArmor;
         private Transform _containerMonsterHpBar;
+        private CharacterConstants.Grade _grade;
 
         // 충돌 체크할 플레이어 수  
         private const int CountCollider = 10;
@@ -112,6 +113,7 @@ namespace GGemCo2DCore
             var info = tableLoaderManager.GetMonsterData(uid);
             // GcLogger.Log("InitializationStat uid: "+uid+" / info.uid: "+info.uid+" / StatMoveSpeed: "+info.statMoveSpeed);
             if (info.Uid <= 0) return;
+            _grade = info.Grade;
             characterName = info.Name;
             SetBaseInfos(info.StatAtk, info.StatDef, info.StatHp, 0, 0, info.StatSuperArmor, info.StatMoveSpeed, info.StatAttackSpeed,
                 info.RegistFire, info.RegistCold, info.RegistLightning, info.RegistPoison);
@@ -151,8 +153,8 @@ namespace GGemCo2DCore
                 GcLogger.LogError("SceneGame 에 containerMonsterHpBar 가 설정되지 않았습니다.");
                 return;
             }
-            _prefabSliderHpBar = ConfigResources.SliderMonsterHp.Load();
-            if (_prefabSliderHpBar == null) return;
+            _prefabSliderHpBar = AddressableLoaderSettings.Instance.monsterSettings.GetMonsterHpBar(_grade);
+            if (!_prefabSliderHpBar) return;
             _containerMonsterHpBar = SceneGame.Instance.containerMonsterHpBar.transform;
             sliderHpBar = Instantiate(_prefabSliderHpBar, _containerMonsterHpBar);
             MonsterHpBar monsterHpBar = sliderHpBar.GetComponent<MonsterHpBar>();
