@@ -27,7 +27,8 @@ namespace GGemCo2DCore
             Vegetable,
             Grain,
             Wood,
-            Ore
+            Ore,
+            Remnant
         }
 
         public enum SubCategory

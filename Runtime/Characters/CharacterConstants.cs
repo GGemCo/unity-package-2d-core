@@ -99,6 +99,7 @@ namespace GGemCo2DCore
         {
             None,
             Common,
+            Elite,
             Boss
         }
         /// <summary>

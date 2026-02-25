@@ -10,6 +10,7 @@ namespace GGemCo2DCore
             None,
             Gold,
             Silver,
+            Remnant
         }
 
         public const int ItemUidGold = 301011001;
