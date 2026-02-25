@@ -13,8 +13,8 @@ namespace GGemCo2DCore
         public float diffY;
         [Tooltip("몬스터 이름. 사용안할 경우 비워 둠")]
         public TextMeshProUGUI textMonsterName;
-        
-        protected Monster Monster;
+
+        private Monster _monster;
         private Slider _hpSlider;
         private bool _isStartFade;
         private CanvasGroup _canvasGroup;
@@ -29,40 +29,40 @@ namespace GGemCo2DCore
         }
         public void Initialize(Monster monster)
         {
-            Monster = monster;
-            if (Monster == null)
+            _monster = monster;
+            if (_monster == null)
             {
                 GcLogger.LogError("몬스터 오브젝트가 없습니다.");
                 return;
             }
-            var info = TableLoaderManager.Instance.GetMonsterData(Monster.uid);
+            var info = TableLoaderManager.Instance.GetMonsterData(_monster.uid);
             if (info == null)
             {
-                GcLogger.LogError("몬스터 테이블에 정보가 없습니다. uid:"+Monster.uid);
+                GcLogger.LogError("몬스터 테이블에 정보가 없습니다. uid:"+_monster.uid);
                 return;
             }
-            if (textMonsterName == null) return;
-            textMonsterName.text = info.Name;
-        }
+            _monsterHeight = _monster.GetHeightByScale();
 
-        private void Start()
-        {
-            _monsterHeight = Monster.GetHeightByScale();
+            SetName(info.Name);
         }
 
         private void Update()
         {
-            if (Monster == null) return;
-            gameObject.transform.position = Monster.transform.position + new Vector3(diffX, _monsterHeight + diffY, 0);
+            if (_monster == null) return;
+            gameObject.transform.position = _monster.transform.position + new Vector3(diffX, _monsterHeight + diffY, 0);
         }
 
         public virtual void SetValue(long value)
         {
-            if (_hpSlider == null) return;
-            _hpSlider.value = (float)value / Monster.TotalHp.Value;
+            if (_hpSlider != null)
+            {
+                _hpSlider.value = (float)value / _monster.TotalHp.Value;    
+            }
 
-            if (textMonsterName == null) return;
-            textMonsterName.color = _hpSlider.value < _hpSlider.maxValue * 0.5f ? Color.black : Color.white;
+            if (textMonsterName != null)
+            {
+                textMonsterName.color = _hpSlider.value < _hpSlider.maxValue * 0.5f ? Color.black : Color.white;    
+            }
         }
         /// <summary>
         /// fade in 효과 시작. 맵 컬링시 사용
@@ -113,6 +113,12 @@ namespace GGemCo2DCore
         private void SetIsStartFade(bool value)
         {
             _isStartFade = value;
+        }
+
+        private void SetName(string monsterName)
+        {
+            if (textMonsterName == null) return;
+            textMonsterName.text = monsterName;
         }
     }
 }
