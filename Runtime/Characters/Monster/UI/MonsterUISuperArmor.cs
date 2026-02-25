@@ -36,12 +36,12 @@ namespace GGemCo2DCore
                 GcLogger.LogError("몬스터 테이블에 정보가 없습니다. uid:"+_monster.uid);
                 return;
             }
-        }
-        private void Start()
-        {
             _monsterHeight = _monster.GetHeightByScale();
 
             InitializeSuperArmorIcon();
+        }
+        private void Start()
+        {
         }
 
         private void InitializeSuperArmorIcon()

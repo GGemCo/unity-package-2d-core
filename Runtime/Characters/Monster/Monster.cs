@@ -19,19 +19,14 @@ namespace GGemCo2DCore
         // 몬스터 행동 처리
         private ControllerMonster _controllerMonster;
         private float _delayDestroyMonster;
-        // 생명력 slier
-        [HideInInspector] public GameObject sliderHpBar;
-        [HideInInspector] public GameObject monsterUISuperArmor;
-        private GameObject _prefabSliderHpBar;
-        private GameObject _prefabPanelMonsterSuperArmor;
-        private Transform _containerMonsterHpBar;
         private CharacterConstants.Grade _grade;
+        public CharacterConstants.Grade Grade => _grade;
 
         // 충돌 체크할 플레이어 수  
         private const int CountCollider = 10;
         private Collider2D[] _collider2Ds;
         
-        private ProjectileManager _projectileManager;
+        private MonsterUIController _monsterUIController;
         
         protected override void Awake()
         {
@@ -43,28 +38,18 @@ namespace GGemCo2DCore
             
             if (AddressableLoaderSettings.Instance)
                 _delayDestroyMonster = AddressableLoaderSettings.Instance.settings.delayDestroyMonster;
+            
+            _monsterUIController = new MonsterUIController();
+            _monsterUIController.Initialize(this);
         }
 
         protected override void Start()
         {
             base.Start();
             
-            CreateHpBar();
-            CurrentHp
-                .Subscribe(SetSliderHp)
-                .AddTo(this);
-
-            if (CurrentSuperArmor.Value > 0)
-            {
-                CreateSuperArmor();
-                CurrentSuperArmor
-                    .Subscribe(SetSuperArmor)
-                    .AddTo(this);
-            }
+            _monsterUIController.InitSubscribe();
             
             EnableSuperArmor(CurrentSuperArmor.Value > 0);
-            
-            _projectileManager = SceneGame.Instance.ProjectileManager;
         }
 
         /// <summary>
@@ -146,20 +131,7 @@ namespace GGemCo2DCore
             
             return true;
         }
-        public void CreateHpBar()
-        {
-            if (SceneGame.Instance.containerMonsterHpBar == null)
-            {
-                GcLogger.LogError("SceneGame 에 containerMonsterHpBar 가 설정되지 않았습니다.");
-                return;
-            }
-            _prefabSliderHpBar = AddressableLoaderSettings.Instance.monsterSettings.GetMonsterHpBar(_grade);
-            if (!_prefabSliderHpBar) return;
-            _containerMonsterHpBar = SceneGame.Instance.containerMonsterHpBar.transform;
-            sliderHpBar = Instantiate(_prefabSliderHpBar, _containerMonsterHpBar);
-            MonsterHpBar monsterHpBar = sliderHpBar.GetComponent<MonsterHpBar>();
-            monsterHpBar.Initialize(this);
-        }
+
 
         /// <summary>
         /// 데미지 받으면 어그로 on. 공격자 등록하기
@@ -181,14 +153,10 @@ namespace GGemCo2DCore
         protected override void OnDead(CharacterConstants.DieReasonType dieReasonType = CharacterConstants.DieReasonType.None, GameObject attacker = null)
         {
             base.OnDead(dieReasonType, attacker);
-            if (sliderHpBar != null)
-            {
-                Destroy(sliderHpBar);
-            }
 
-            if (monsterUISuperArmor != null)
+            if (_monsterUIController != null)
             {
-                Destroy(monsterUISuperArmor);
+                _monsterUIController.Dispose();
             }
 
             _controllerMonster?.StopAllCoroutines();
@@ -208,19 +176,14 @@ namespace GGemCo2DCore
         }
         protected void OnDestroy()
         {
-            if (sliderHpBar != null)
+            if (_monsterUIController != null)
             {
-                Destroy(sliderHpBar);
+                _monsterUIController.Dispose();
             }
 
             if (patrolObject != null)
             {
                 Destroy(patrolObject);
-            }
-
-            if (monsterUISuperArmor != null)
-            {
-                Destroy(monsterUISuperArmor);
             }
         }
         /// <summary>
@@ -264,63 +227,24 @@ namespace GGemCo2DCore
 
         }
 
-        private void SetSliderHp(long value)
-        {
-            if (sliderHpBar == null) return;
-            sliderHpBar.GetComponent<MonsterHpBar>().SetValue(value);
-        }
-
         protected override void OnStartFadeIn()
         {
-            if (sliderHpBar != null)
+            if (_monsterUIController != null)
             {
-                sliderHpBar.GetComponent<MonsterHpBar>().StartFadeIn();
-            }
-
-            if (monsterUISuperArmor != null)
-            {
-                monsterUISuperArmor.GetComponent<MonsterUISuperArmor>().StartFadeIn();
+                _monsterUIController.StartFadeIn();
             }
         }
         protected override void OnStartFadeOut()
         {
-            if (sliderHpBar != null)
+            if (_monsterUIController != null)
             {
-                sliderHpBar.GetComponent<MonsterHpBar>().StartFadeOut();
-            }
-            if (monsterUISuperArmor != null)
-            {
-                monsterUISuperArmor.GetComponent<MonsterUISuperArmor>().StartFadeOut();
+                _monsterUIController.StartFadeOut();
             }
         }
         public override void OnAnimationCompleteDead()
         {
             base.OnAnimationCompleteDead();
             Destroy(gameObject, _delayDestroyMonster);
-        }
-        /// <summary>
-        /// 슈퍼 아머 UI 만들기
-        /// </summary>
-        private void CreateSuperArmor()
-        {
-            if (SceneGame.Instance.containerMonsterHpBar == null)
-            {
-                GcLogger.LogError("SceneGame 에 containerMonsterHpBar 가 설정되지 않았습니다.");
-                return;
-            }
-            _prefabPanelMonsterSuperArmor = ConfigResources.PanelMonsterSuperArmor.Load();
-            if (_prefabPanelMonsterSuperArmor == null) return;
-            _containerMonsterHpBar ??= SceneGame.Instance.containerMonsterHpBar.transform;
-            monsterUISuperArmor = Instantiate(_prefabPanelMonsterSuperArmor, _containerMonsterHpBar);
-            MonsterUISuperArmor monsterSuperArmor = monsterUISuperArmor.GetComponent<MonsterUISuperArmor>();
-            monsterSuperArmor.Initialize(this);
-        }
-
-        public void SetSuperArmor(int value)
-        {
-            // GcLogger.Log("SetSuperArmor: " + value);
-            if (!monsterUISuperArmor) return;
-            monsterUISuperArmor.GetComponent<MonsterUISuperArmor>().SetValue(value);
         }
     }
 }
