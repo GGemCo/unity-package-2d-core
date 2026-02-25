@@ -24,6 +24,13 @@ namespace GGemCo2DCore
         
         [Header("HP 바")]
         public List<PrefabHpBar> prefabHpBars;
+
+        [Header("Battle HUD")]
+        [Tooltip("몬스터 전투 HUD 사용 여부")]
+        [SerializeField] private bool useBattleHud = true;
+
+        [Tooltip("전투 HUD를 사용할 몬스터 등급(멀티 선택)")]
+        [SerializeField] private int useBattleHudGradeMask = 0;
         
         [Header("Stacks")]
         [HideInInspector]
@@ -51,6 +58,26 @@ namespace GGemCo2DCore
         [HideInInspector]
         [Min(0f)] public float perAttackConsumeCooldown = 0f;
 
+        /// <summary>
+        /// 몬스터 전투 HUD 사용 여부.
+        /// </summary>
+        public bool UseBattleHud => useBattleHud;
+
+        /// <summary>
+        /// 전투 HUD 적용 대상 등급(비트 마스크).
+        /// - <see cref="CharacterConstants.Grade"/> enum index를 비트 위치로 사용합니다.
+        /// </summary>
+        public int UseBattleHudGradeMask => useBattleHudGradeMask;
+
+        public bool IsBattleHudEnabledFor(CharacterConstants.Grade grade)
+        {
+            if (!useBattleHud) return false;
+            if (useBattleHudGradeMask == 0) return false;
+            
+            var flag = 1 << (int)grade;
+            return (useBattleHudGradeMask & flag) != 0;
+        }
+
         public GameObject GetMonsterHpBar(CharacterConstants.Grade grade)
         {
             foreach (var prefabHpBar in prefabHpBars)
@@ -65,6 +92,12 @@ namespace GGemCo2DCore
         /// </summary>
         private void Reset()
         {
+            // 기본값: Common, Boss
+            if (useBattleHudGradeMask == 0)
+            {
+                useBattleHudGradeMask = (1 << (int)CharacterConstants.Grade.Common)
+                                     | (1 << (int)CharacterConstants.Grade.Boss);
+            }
         }
     }
 }
