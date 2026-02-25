@@ -1,7 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.IO;
 using GGemCo2DCore;
-using Newtonsoft.Json;
 using UnityEditor;
 using UnityEditor.AddressableAssets;
 using UnityEditor.AddressableAssets.Settings;
@@ -16,11 +15,6 @@ namespace GGemCo2DCoreEditor
     {
         private const string Title = "맵 추가하기";
         private readonly AddressableEditor _addressableEditor;
-        private enum Type
-        {
-            Npc,
-            Monster
-        }
 
         public SettingMap(AddressableEditor addressableEditorWindow)
         {
@@ -105,14 +99,26 @@ namespace GGemCo2DCoreEditor
                 assetPath = ConfigAddressableMap.GetAssetPathRegenMonster(info.FolderName);
                 Add(settings, group, key, assetPath);
                 
-                SetCharacterLabel(assetPath, info, settings, Type.Monster);
+                AddressableCharacterLabelUtility.ApplyMapLabelFromRegen(
+                    settings,
+                    mapFolderName: info.FolderName,
+                    regenJsonAssetPath: assetPath,
+                    type: AddressableCharacterType.Monster,
+                    clearExistingLabel: true
+                );
                 
                 // npc 리젠 파일
                 key = ConfigAddressableMap.GetKeyJsonRegenNpc(info.FolderName);
                 assetPath = ConfigAddressableMap.GetAssetPathRegenNpc(info.FolderName);
                 Add(settings, group, key, assetPath);
                 
-                SetCharacterLabel(assetPath, info, settings, Type.Npc);
+                AddressableCharacterLabelUtility.ApplyMapLabelFromRegen(
+                    settings,
+                    mapFolderName: info.FolderName,
+                    regenJsonAssetPath: assetPath,
+                    type: AddressableCharacterType.Npc,
+                    clearExistingLabel: true
+                );
                 
                 // 워프 리젠 파일
                 key = ConfigAddressableMap.GetKeyJsonWarp(info.FolderName);
@@ -130,81 +136,6 @@ namespace GGemCo2DCoreEditor
             {
                 AssetDatabase.SaveAssets();
                 EditorUtility.DisplayDialog(Title, "[Addressable] 맵 설정 완료\n사용안하는 맵 Group은 삭제해주세요.", "OK");
-            }
-        }
-        /// <summary>
-        /// regen_monster, regen_npc 정보로 캐릭터 label 설정하기
-        /// </summary>
-        private void SetCharacterLabel(string regenFileName, StruckTableMap struckTableMap, AddressableAssetSettings settings, Type type)
-        {
-            string labelName = ConfigAddressableMap.GetLabel(struckTableMap.FolderName);
-            if (string.IsNullOrEmpty(labelName)) return;
-
-            // 기존에 설정된 map 라벨은 삭제
-            RemoveCharacterMapLabel(settings, type, labelName);
-            
-            string content = AssetDatabaseLoaderManager.LoadFileJson(regenFileName);
-            if (string.IsNullOrEmpty(content)) return;
-            CharacterRegenDataList regenDataList = JsonConvert.DeserializeObject<CharacterRegenDataList>(content);
-
-            foreach (CharacterRegenData characterRegenData in regenDataList.CharacterRegenDatas)
-            {
-                int uid = characterRegenData.Uid;
-                int spineUid = 0;
-                if (type == Type.Monster)
-                {
-                    var info = TableLoaderManager.LoadMonsterTable().GetDataByUid(uid);
-                    if (info == null) continue;
-                    spineUid = info.AnimationUid;
-                }
-                else if (type == Type.Npc)
-                {
-                    var info = TableLoaderManager.LoadNpcTable().GetDataByUid(uid);
-                    if (info == null) continue;
-                    spineUid = info.AnimationUid;
-                }
-                if (spineUid <= 0) continue;
-
-                var infoAnimation = TableLoaderManager.LoadAnimationTable().GetDataByUid(spineUid);
-                if (infoAnimation == null) continue;
-                string assetPath = ConfigAddressableMap.GetPathCharacter(infoAnimation) + ".prefab";
-                // 기존 Addressable 항목 확인
-                AddressableAssetEntry entry = settings.FindAssetEntry(AssetDatabase.AssetPathToGUID(assetPath));
-                entry?.SetLabel(labelName, true, true);
-            }
-        }
-
-        private void RemoveCharacterMapLabel(AddressableAssetSettings settings, Type type, string labelName)
-        {
-            if (type == Type.Monster)
-            {
-                Dictionary<int, StruckTableMonster> datas = TableLoaderManager.LoadMonsterTable().GetDatas();
-                foreach (KeyValuePair<int, StruckTableMonster> outerPair in datas)
-                {
-                    var info = outerPair.Value;
-                    if (info == null) continue;
-                    var infoAnimation = TableLoaderManager.LoadAnimationTable().GetDataByUid(info.AnimationUid);
-                    if (infoAnimation == null) continue;
-                    string assetPath = ConfigAddressableMap.GetPathCharacter(infoAnimation, true);
-                    // 기존 Addressable 항목 확인
-                    AddressableAssetEntry entry = settings.FindAssetEntry(AssetDatabase.AssetPathToGUID(assetPath));
-                    entry?.SetLabel(labelName, false, true);
-                }
-            }
-            else if (type == Type.Npc)
-            {
-                Dictionary<int, StruckTableNpc> datas = TableLoaderManager.LoadNpcTable().GetDatas();
-                foreach (KeyValuePair<int, StruckTableNpc> outerPair in datas)
-                {
-                    var info = outerPair.Value;
-                    if (info == null) continue;
-                    var infoAnimation = TableLoaderManager.LoadAnimationTable().GetDataByUid(info.AnimationUid);
-                    if (infoAnimation == null) continue;
-                    string assetPath = ConfigAddressableMap.GetPathCharacter(infoAnimation, true);
-                    // 기존 Addressable 항목 확인
-                    AddressableAssetEntry entry = settings.FindAssetEntry(AssetDatabase.AssetPathToGUID(assetPath));
-                    entry?.SetLabel(labelName, false, true);
-                }
             }
         }
     }
