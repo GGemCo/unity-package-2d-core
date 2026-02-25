@@ -529,6 +529,7 @@ namespace GGemCo2DCore
         public void Dead(CharacterConstants.DieReasonType dieReasonType = CharacterConstants.DieReasonType.None, GameObject attacker = null)
         {
             SetStatusDead();
+            SetBattleStatusNone();
             if (dieReasonType != CharacterConstants.DieReasonType.EndTilemapY)
                 CharacterAnimationController.PlayDeadAnimation();
             
