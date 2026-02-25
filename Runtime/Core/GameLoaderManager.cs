@@ -191,6 +191,7 @@ namespace GGemCo2DCore
             var addrSound = Object.FindFirstObjectByType<AddressableLoaderSound>() ?? new GameObject("AddressableLoaderSound").AddComponent<AddressableLoaderSound>();
             var saveData = Object.FindFirstObjectByType<SaveDataLoader>() ?? new GameObject("SaveDataLoader").AddComponent<SaveDataLoader>();
             var loc = Object.FindFirstObjectByType<LocalizationManager>() ?? new GameObject("LocalizationManager").AddComponent<LocalizationManager>();
+            var addressableLoaderCharacterImageName = Object.FindFirstObjectByType<AddressableLoaderCharacterImageName>() ?? new GameObject("AddressableLoaderCharacterImageName").AddComponent<AddressableLoaderCharacterImageName>();
             // 테이블 대상 목록은 프로젝트/씬에 따라 별도 주입(예: ScriptableObject나 Config에서)
             var targetTables = ConfigAddressableTable.All; // 사용 중인 곳에서 구현(예시)
 
@@ -240,6 +241,13 @@ namespace GGemCo2DCore
                 localizedKey: LocalizationConstants.Keys.Loading.TextTypeSound(),
                 startTask: () => addrSound.LoadSoundAsync(ConfigAddressableLabel.Sound),
                 getProgress: () => addrSound.GetLoadProgress()
+            ));
+            Register(new AddressableTaskStep(
+                id: "core.character.imageName",
+                order: 360,
+                localizedKey: LocalizationConstants.Keys.Loading.TextTypeSound(),
+                startTask: () => addressableLoaderCharacterImageName.LoadAsync(),
+                getProgress: () => addressableLoaderCharacterImageName.GetLoadProgress()
             ));
 
             Register(new SaveDataLoadStep(

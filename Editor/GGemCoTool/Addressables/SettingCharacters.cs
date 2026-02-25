@@ -18,6 +18,9 @@ namespace GGemCo2DCoreEditor
         private readonly string _targetGroupNameMonster;
         private readonly string _targetGroupNameNpc;
         private readonly string _targetGroupNamePlayer;
+        
+        private readonly string _targetGroupNameCharacterThumbnail;
+        private readonly string _targetGroupNameCharacterImageName;
 
         public SettingCharacters(AddressableEditor addressableEditorWindow)
         {
@@ -25,6 +28,8 @@ namespace GGemCo2DCoreEditor
             _targetGroupNameMonster = ConfigAddressableGroupName.Monster;
             _targetGroupNameNpc = ConfigAddressableGroupName.Npc;
             _targetGroupNamePlayer = ConfigAddressableGroupName.Player;
+            _targetGroupNameCharacterThumbnail = ConfigAddressableGroupName.CharacterThumbnail;
+            _targetGroupNameCharacterImageName = ConfigAddressableGroupName.CharacterImageName;
         }
         public void OnGUI()
         {
@@ -72,9 +77,13 @@ namespace GGemCo2DCoreEditor
                 settings = CreateAddressableSettings();
             }
 
+            AddressableAssetGroup groupCharacterThumbnail = GetOrCreateGroup(settings, _targetGroupNameCharacterThumbnail);
+            AddressableAssetGroup groupNameCharacterImageName = GetOrCreateGroup(settings, _targetGroupNameCharacterImageName);
+            
+            #region 몬스터
+
             // GGemCo_Tables 그룹 가져오기 또는 생성
             AddressableAssetGroup group = GetOrCreateGroup(settings, _targetGroupNameMonster);
-
             // 그룹 엔트리 전체 초기화 (스키마/설정은 유지)
             ClearGroupEntries(settings, group);
             
@@ -99,10 +108,21 @@ namespace GGemCo2DCoreEditor
                     {
                         key = $"{ConfigAddressableKey.CharacterThumbnailMonster}_{info.ImageThumbnailFileName}";
                         assetPath = $"{ConfigAddressablePath.Characters.Thumbnails.Monster}/{info.ImageThumbnailFileName}.png";
-                        Add(settings, group, key, assetPath);
+                        Add(settings, groupCharacterThumbnail, key, assetPath);
+                    }
+                    // UIWindowBattleHudMonster의 이름 이미지
+                    if (!string.IsNullOrEmpty(info.ImageThumbnailFileName))
+                    {
+                        key = $"{ConfigAddressableKey.CharacterImageNameMonster}_{info.ImageThumbnailFileName}";
+                        assetPath = $"{ConfigAddressablePath.Characters.ImageName.Monster}/{info.ImageThumbnailFileName}.png";
+                        label = ConfigAddressableLabel.CharacterImageName;
+                        Add(settings, groupNameCharacterImageName, key, assetPath, label);
                     }
                 }
             }
+            #endregion
+
+            #region NPC
             
             // GGemCo_Tables 그룹 가져오기 또는 생성
             AddressableAssetGroup groupNpc = GetOrCreateGroup(settings, _targetGroupNameNpc);
@@ -128,11 +148,21 @@ namespace GGemCo2DCoreEditor
                     {
                         key = $"{ConfigAddressableKey.CharacterThumbnailNpc}_{info.ImageThumbnailFileName}";
                         assetPath = $"{ConfigAddressablePath.Characters.Thumbnails.Npc}/{info.ImageThumbnailFileName}.png";
-                        Add(settings, groupNpc, key, assetPath);
+                        Add(settings, groupCharacterThumbnail, key, assetPath);
+                    }
+                    // UIWindowBattleHudMonster의 이름 이미지
+                    if (!string.IsNullOrEmpty(info.ImageThumbnailFileName))
+                    {
+                        key = $"{ConfigAddressableKey.CharacterImageNameNpc}_{info.ImageThumbnailFileName}";
+                        assetPath = $"{ConfigAddressablePath.Characters.ImageName.Npc}/{info.ImageThumbnailFileName}.png";
+                        var label = ConfigAddressableLabel.CharacterImageName;
+                        Add(settings, groupNameCharacterImageName, key, assetPath, label);
                     }
                 }
             }
-            
+            #endregion
+
+            #region 플레이어
             AddressableAssetGroup groupPlayer = GetOrCreateGroup(settings, _targetGroupNamePlayer);
             ClearGroupEntries(settings, groupPlayer);
             if (groupPlayer)
@@ -142,7 +172,31 @@ namespace GGemCo2DCoreEditor
                 
                 Add(settings, groupPlayer, key, assetPath);
             }
+            #endregion
 
+            var maps = TableLoaderManager.LoadMapTable().GetDatas(); // 프로젝트의 Map 테이블 타입/로더에 맞게 사용
+            foreach (var pair in maps)
+            {
+                var mapInfo = pair.Value;
+                if (mapInfo == null) continue;
+
+                string folderName = mapInfo.FolderName;
+
+                AddressableCharacterLabelUtility.ApplyMapLabelFromRegen(
+                    settings,
+                    folderName,
+                    ConfigAddressableMap.GetAssetPathRegenMonster(folderName),
+                    AddressableCharacterType.Monster,
+                    clearExistingLabel: true);
+
+                AddressableCharacterLabelUtility.ApplyMapLabelFromRegen(
+                    settings,
+                    folderName,
+                    ConfigAddressableMap.GetAssetPathRegenNpc(folderName),
+                    AddressableCharacterType.Npc,
+                    clearExistingLabel: true);
+            }
+            
             // 설정 저장
             settings.SetDirty(AddressableAssetSettings.ModificationEvent.EntryMoved, null, true);
             

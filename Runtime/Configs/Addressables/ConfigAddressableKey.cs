@@ -12,9 +12,14 @@
         public const string PrefabPlayer    = Character + "_Player";
 
         // Character Thumbnails
-        public const string CharacterThumbnail       = ConfigDefine.NameSDK + "_CharacterThumbnail";
-        public const string CharacterThumbnailNpc    = CharacterThumbnail + "_Npc";
-        public const string CharacterThumbnailMonster= CharacterThumbnail + "_Monster";
+        public const string CharacterThumbnail        = ConfigDefine.NameSDK + "_CharacterThumbnail";
+        public const string CharacterThumbnailNpc     = CharacterThumbnail + "_Npc";
+        public const string CharacterThumbnailMonster = CharacterThumbnail + "_Monster";
+        
+        // Character Image Name
+        public const string CharacterImageName        = ConfigDefine.NameSDK + "_CharacterImageName";
+        public const string CharacterImageNameNpc     = CharacterImageName + "_Npc";
+        public const string CharacterImageNameMonster = CharacterImageName + "_Monster";
 
         // Dialogue / Quest / Cutscene
         public const string Dialogue = ConfigDefine.NameSDK + "_Dialogue";

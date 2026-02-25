@@ -12,6 +12,8 @@
         public const string Monster = ConfigDefine.NameSDK + "_Character_Monster";
         public const string Npc     = ConfigDefine.NameSDK + "_Character_Npc";
         public const string Player  = ConfigDefine.NameSDK + "_Character_Player";
+        public const string CharacterThumbnail  = ConfigDefine.NameSDK + "_Character_Thumbnail";
+        public const string CharacterImageName  = ConfigDefine.NameSDK + "_Character_ImageName";
 
         // Effects
         public const string Effect = ConfigDefine.NameSDK + "_Effect";

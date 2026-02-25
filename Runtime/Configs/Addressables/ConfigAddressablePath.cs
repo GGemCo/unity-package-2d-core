@@ -78,6 +78,17 @@ namespace GGemCo2DCore
                 /// <summary>Images/Thumbnail/Monster</summary>
                 public static string Monster => Combine(RootThumbnail, "Monster");
             }
+
+            public static class ImageName
+            {
+                /// <summary>Images/CharacterName</summary>
+                private static string RootImageName => Combine(Images.RootImage, "CharacterName");
+                /// <summary>Images/CharacterName/Npc</summary>
+                public static string Npc => Combine(RootImageName, "Npc");
+                
+                /// <summary>Images/CharacterName/Monster</summary>
+                public static string Monster => Combine(RootImageName, "Monster");
+            }
         }
 
         // -------------------------
