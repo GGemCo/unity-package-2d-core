@@ -8,7 +8,10 @@
         public enum Keys
         {
             // 맵 터레인
-            MapTerrain,
+            MapBackground,
+            Map_Under,
+            Map_Ground,
+            Map_Upper,
             // 맵 오브젝트
             MapObject,
             // 캐릭터 밑에
@@ -25,7 +28,10 @@
         {
             return value switch
             {
-                "MapTerrain" => Keys.MapTerrain,
+                "MapBackground" => Keys.MapBackground,
+                "Map_Under" => Keys.Map_Under,
+                "Map_Ground" => Keys.Map_Ground,
+                "Map_Upper" => Keys.Map_Upper,
                 "MapObject" => Keys.MapObject,
                 "CharacterBottom" => Keys.CharacterBottom,
                 "Character" => Keys.Character,

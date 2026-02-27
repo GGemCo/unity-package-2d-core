@@ -35,7 +35,7 @@ namespace GGemCo2DCore
         public virtual void InitTagSortingLayer()
         {
             tag = ConfigTags.GetValue(ConfigTags.Keys.Map);
-            GetComponent<TilemapRenderer>().sortingLayerName = ConfigSortingLayer.GetValue(ConfigSortingLayer.Keys.MapTerrain);
+            GetComponent<TilemapRenderer>().sortingLayerName = ConfigSortingLayer.GetValue(ConfigSortingLayer.Keys.Map_Ground);
         }
 
         public virtual void Initialize(int uid, string name, MapConstants.Type type, MapConstants.SubType subType)
