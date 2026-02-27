@@ -183,15 +183,15 @@ namespace GGemCo2DCoreEditor
 
             _scroll = EditorGUILayout.BeginScrollView(_scroll);
 
-            EditorGUILayout.LabelField("Effect Prefab Auto Builder", EditorStyles.boldLabel);
+            EditorGUILayout.LabelField("이펙트 프리팹 자동 생성기", EditorStyles.boldLabel);
             EditorGUILayout.Space(6);
 
             using (new EditorGUILayout.VerticalScope("box"))
             {
-                _targetType = (EffectTargetType)EditorGUILayout.EnumPopup("Target Type", _targetType);
-                _prefabName = EditorGUILayout.TextField("Prefab Name", _prefabName);
+                _targetType = (EffectTargetType)EditorGUILayout.EnumPopup("대상 타입", _targetType);
+                _prefabName = EditorGUILayout.TextField("프리팹 이름", _prefabName);
 
-                _fps = EditorGUILayout.FloatField("FPS (Frames Per Second)", _fps);
+                _fps = EditorGUILayout.FloatField("FPS(초당 프레임)", _fps);
                 _fps = Mathf.Clamp(_fps, 1f, 120f);
             }
 
@@ -199,23 +199,23 @@ namespace GGemCo2DCoreEditor
 
             using (new EditorGUILayout.VerticalScope("box"))
             {
-                EditorGUILayout.LabelField("Output Folders", EditorStyles.boldLabel);
+                EditorGUILayout.LabelField("출력 폴더", EditorStyles.boldLabel);
 
                 _prefabOutputFolder = (DefaultAsset?)EditorGUILayout.ObjectField(
-                    "Prefab Output Folder",
+                    "프리팹 출력 폴더",
                     _prefabOutputFolder,
                     typeof(DefaultAsset),
                     false);
 
                 _animOutputFolder = (DefaultAsset?)EditorGUILayout.ObjectField(
-                    "Animator & Clips Output Folder",
+                    "애니메이터/클립 출력 폴더",
                     _animOutputFolder,
                     typeof(DefaultAsset),
                     false);
 
                 EditorGUILayout.HelpBox(
-                    "Prefab은 Prefab Output Folder에 저장됩니다.\n" +
-                    "AnimatorController(.controller) 및 AnimationClip(.anim)은 Animator & Clips Output Folder에 저장됩니다.",
+                    "Prefab은 프리팹 출력 폴더에 저장됩니다.\n" +
+                    "AnimatorController(.controller) 및 AnimationClip(.anim)은 애니메이터/클립 출력 폴더에 저장됩니다.",
                     MessageType.Info);
             }
 
@@ -223,7 +223,7 @@ namespace GGemCo2DCoreEditor
 
             using (new EditorGUILayout.VerticalScope("box"))
             {
-                EditorGUILayout.LabelField("Sprites per Clip (start / play / end)", EditorStyles.boldLabel);
+                EditorGUILayout.LabelField("클립별 스프라이트 (start / play / end)", EditorStyles.boldLabel);
                 EditorGUILayout.HelpBox(
                     "클립 이름은 start/play/end로 고정됩니다.\n" +
                     "드래그앤드롭으로 여러 장을 한 번에 넣을 수 있습니다.\n" +
@@ -239,11 +239,11 @@ namespace GGemCo2DCoreEditor
 
             using (new EditorGUI.DisabledScope(!CanBuild(out _)))
             {
-                if (GUILayout.Button("Build Prefab + Animator + Clips", GUILayout.Height(36)))
+                if (GUILayout.Button("프리팹 + 애니메이터 + 클립 생성", GUILayout.Height(36)))
                 {
                     if (!CanBuild(out var error))
                     {
-                        EditorUtility.DisplayDialog("Build Failed", error, "OK");
+                        EditorUtility.DisplayDialog("생성 실패", error, "확인");
                         EditorGUILayout.EndScrollView();
                         return;
                     }
@@ -252,12 +252,12 @@ namespace GGemCo2DCoreEditor
                     {
                         Build();
                         SavePrefs();
-                        EditorUtility.DisplayDialog("Build Complete", "생성이 완료되었습니다.", "OK");
+                        EditorUtility.DisplayDialog("생성 완료", "생성이 완료되었습니다.", "확인");
                     }
                     catch (Exception ex)
                     {
                         Debug.LogException(ex);
-                        EditorUtility.DisplayDialog("Build Failed", ex.Message, "OK");
+                        EditorUtility.DisplayDialog("생성 실패", ex.Message, "확인");
                     }
                 }
             }
@@ -284,7 +284,7 @@ namespace GGemCo2DCoreEditor
         private void DrawSpriteListSection(string clipLabel, ClipSprites clip, int pickerId)
         {
             EditorGUILayout.Space(6);
-            EditorGUILayout.LabelField($"{clipLabel} Clip Sprites", EditorStyles.miniBoldLabel);
+            EditorGUILayout.LabelField($"{clipLabel} 클립 스프라이트", EditorStyles.miniBoldLabel);
 
             using (new EditorGUILayout.VerticalScope("box"))
             {
@@ -294,9 +294,9 @@ namespace GGemCo2DCoreEditor
 
                 using (new EditorGUILayout.HorizontalScope())
                 {
-                    clip.sortMode = (SortMode)EditorGUILayout.EnumPopup("Sort", clip.sortMode);
+                    clip.sortMode = (SortMode)EditorGUILayout.EnumPopup("정렬", clip.sortMode);
 
-                    if (GUILayout.Button("Apply Sort", GUILayout.Width(110)))
+                    if (GUILayout.Button("정렬 적용", GUILayout.Width(110)))
                         ApplySort(clip.sprites, clip.sortMode);
                 }
 
@@ -334,17 +334,17 @@ namespace GGemCo2DCoreEditor
 
                 using (new EditorGUILayout.HorizontalScope())
                 {
-                    if (GUILayout.Button("+ Add Sprite", GUILayout.Height(22)))
+                    if (GUILayout.Button("+ 스프라이트 추가", GUILayout.Height(22)))
                         clip.sprites.Add(null!);
 
-                    if (GUILayout.Button("+ Add Sprite…", GUILayout.Height(22)))
+                    if (GUILayout.Button("+ 스프라이트 선택…", GUILayout.Height(22)))
                     {
                         // Unity 오브젝트 피커는 환경에 따라 “진짜 멀티 선택”이 보장되지 않으므로,
                         // 멀티는 드래그앤드롭을 주력으로 사용합니다.
                         EditorGUIUtility.ShowObjectPicker<Sprite>(null, false, "", pickerId);
                     }
 
-                    if (GUILayout.Button("Clear", GUILayout.Height(22)))
+                    if (GUILayout.Button("모두 비우기", GUILayout.Height(22)))
                         clip.sprites.Clear();
                 }
             }
@@ -357,7 +357,7 @@ namespace GGemCo2DCoreEditor
         private void DrawDropArea(List<Sprite> targetList)
         {
             var rect = GUILayoutUtility.GetRect(0, 46, GUILayout.ExpandWidth(true));
-            GUI.Box(rect, "Drop Sprites Here (Project 창에서 여러 개 드래그 가능)", EditorStyles.helpBox);
+            GUI.Box(rect, "여기에 스프라이트를 드롭하세요 (Project 창에서 여러 개 드래그 가능)", EditorStyles.helpBox);
 
             var evt = Event.current;
             if (evt.type != EventType.DragUpdated && evt.type != EventType.DragPerform)
@@ -523,45 +523,45 @@ namespace GGemCo2DCoreEditor
         {
             if (string.IsNullOrWhiteSpace(_prefabName))
             {
-                error = "Prefab Name을 입력하세요.";
+                error = "프리팹 이름을 입력하세요.";
                 return false;
             }
 
             if (_prefabOutputFolder == null)
             {
-                error = "Prefab Output Folder를 지정하세요.";
+                error = "프리팹 출력 폴더를 지정하세요.";
                 return false;
             }
 
             if (_animOutputFolder == null)
             {
-                error = "Animator & Clips Output Folder를 지정하세요.";
+                error = "애니메이터/클립 출력 폴더를 지정하세요.";
                 return false;
             }
 
             var prefabFolderPath = AssetDatabase.GetAssetPath(_prefabOutputFolder);
             if (string.IsNullOrEmpty(prefabFolderPath) || !AssetDatabase.IsValidFolder(prefabFolderPath))
             {
-                error = "Prefab Output Folder가 유효한 프로젝트 폴더가 아닙니다.";
+                error = "프리팹 출력 폴더가 유효한 프로젝트 폴더가 아닙니다.";
                 return false;
             }
 
             var animFolderPath = AssetDatabase.GetAssetPath(_animOutputFolder);
             if (string.IsNullOrEmpty(animFolderPath) || !AssetDatabase.IsValidFolder(animFolderPath))
             {
-                error = "Animator & Clips Output Folder가 유효한 프로젝트 폴더가 아닙니다.";
+                error = "애니메이터/클립 출력 폴더가 유효한 프로젝트 폴더가 아닙니다.";
                 return false;
             }
 
             if (_start.sprites.Count == 0 || _play.sprites.Count == 0 || _end.sprites.Count == 0)
             {
-                error = "start/play/end 각각 최소 1개의 Sprite가 필요합니다.";
+                error = "start/play/end 각각 최소 1개의 스프라이트가 필요합니다.";
                 return false;
             }
 
             if (HasNull(_start.sprites) || HasNull(_play.sprites) || HasNull(_end.sprites))
             {
-                error = "Sprite 리스트에 비어있는 항목(null)이 있습니다.";
+                error = "스프라이트 리스트에 비어있는 항목(null)이 있습니다.";
                 return false;
             }
 
