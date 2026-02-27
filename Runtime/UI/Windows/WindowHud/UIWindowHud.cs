@@ -12,9 +12,10 @@ namespace GGemCo2DCore
         [Header(UIWindowConstants.TitleHeaderIndividual)]
         // exp 는 UITextPlayerExp 에서 처리한다.
         [Tooltip("생명력 Slider")]
-        public Slider sliderHp;
+        public UIWindowHudResourceBase sliderHp;
         [Tooltip("마력 Slider")]
-        public Slider sliderMp;
+        public UIWindowHudResourceBase sliderMp;
+        
         [Tooltip("스테미나 Slider")]
         public Slider sliderStamina;
         [Tooltip("현재 플레이어 생명력 수치")]
@@ -55,13 +56,11 @@ namespace GGemCo2DCore
         }
         public void SetSliderHp(long currentValue, long total)
         {
-            sliderHp.value = (float)currentValue / total;
-            textHp.text = $"{currentValue} / {total}";
+            sliderHp.SetValue(UIWindowHudResourceType.Hp, currentValue, total);
         }
         public void SetSliderMp(long currentValue, long total)
         {
-            sliderMp.value = (float)currentValue / total;
-            textMp.text = $"{currentValue} / {total}";
+            sliderMp.SetValue(UIWindowHudResourceType.Mp, currentValue, total);
         }
         public void SetSliderStamina(long currentValue, long total)
         {

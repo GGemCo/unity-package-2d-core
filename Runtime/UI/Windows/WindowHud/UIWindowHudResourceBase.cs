@@ -1,0 +1,19 @@
+﻿using UnityEngine;
+
+namespace GGemCo2DCore
+{
+    public enum UIWindowHudResourceType
+    {
+        Hp,
+        Mp,
+        Stamina
+    }
+    public abstract class UIWindowHudResourceBase : MonoBehaviour
+    {
+        /// <summary>
+        /// current/total이 변경될 때마다 호출됩니다.
+        /// 구현체는 내부 UI(Slider, Heart 등)를 갱신합니다.
+        /// </summary>
+        public abstract void SetValue(UIWindowHudResourceType type, long current, long total);
+    }
+}
