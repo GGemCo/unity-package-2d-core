@@ -120,10 +120,10 @@ namespace GGemCo2DCore
                     break;
 
                 case CrowdControlConstants.Type.KnockDown:
+                case CrowdControlConstants.Type.KnockBack:
                     holdAfter = Mathf.Max(0f, crowdControl.DownWaitTime);
                     break;
 
-                case CrowdControlConstants.Type.KnockBack:
                 default:
                     break;
             }

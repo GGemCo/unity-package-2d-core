@@ -36,7 +36,7 @@ namespace GGemCo2DCore
         public float Height;
 
         /// <summary>
-        /// Knockdown 전용: 넘어짐/눕기 상태로 유지할 시간(초)입니다.
+        /// KnockBack, Knockdown 전용: 밀려나기/넘어짐/눕기 상태로 유지할 시간(초)입니다.
         /// - 0이면 대기 없이 종료 구간으로 넘어갑니다.
         /// </summary>
         public float DownWaitTime;
@@ -47,7 +47,7 @@ namespace GGemCo2DCore
         /// </summary>
         public float RecoverTime;
 
-public bool IsLockControl;
+        public bool IsLockControl;
         public bool IsUseKnockbackStatus;
         public bool IsUseDontControlStatus;
 
