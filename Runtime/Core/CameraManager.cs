@@ -17,11 +17,18 @@ namespace GGemCo2DCore
         [Tooltip("타겟을 따라다니는 속도")]
         [SerializeField] private float cameraMoveSpeed;
         
+        [Header("Camera Offset")]
+        [Tooltip("타겟(플레이어) 기준 카메라 기본 오프셋(월드 단위). 예) x>0이면 캐릭터 오른쪽을 더 보여줍니다.")]
+        [SerializeField]
+        private Vector2 followOffset = Vector2.zero;
+
         private float _originalOrthographicSize;
         private Vector3 _originCameraPosition;
         private Camera _currentCamera;
-        
-        private Vector3 _cameraPosition;
+
+        private Vector3 _cameraPosition; // (legacy) runtime override
+        private Vector3 _basePosition;
+        private Vector3 _shakeOffset;
         private Vector2 _center;
         private Vector2 _mapSize;
         private Vector2 _monsterSpawnPositionBoxSize;
@@ -31,7 +38,6 @@ namespace GGemCo2DCore
         private float _height;
 
         // 흔들림 효과 관련 변수
-        private Vector3 _originalPos;
         private bool _isShaking;
         
         // 줌 관련 처리 
@@ -52,17 +58,21 @@ namespace GGemCo2DCore
             _zoomEndSize = 0;
             _zoomEasing = Easing.EaseType.Linear;
             _originCameraPosition = Vector3.zero;
-            
+            _cameraPosition = new Vector3(followOffset.x, followOffset.y, 0f);
+            _basePosition = transform.position;
+            _shakeOffset = Vector3.zero;
+
             _currentCamera = GetComponent<Camera>();
             _originalOrthographicSize = _currentCamera.orthographicSize;
             _height = _originalOrthographicSize;
             _width = _height * Screen.width / Screen.height;
-            _originalPos = transform.localPosition;
         }
+
         private void Update()
         {
             LimitCameraArea();
         }
+
         private void LimitCameraArea()
         {
             if (_followTarget == null || _mapSize.x == 0) return;
@@ -74,43 +84,48 @@ namespace GGemCo2DCore
             float clampX = targetPos.x;
             float clampY = targetPos.y;
 
-            if (_mapSize.x > _width)
+            // 카메라 half extents (Orthographic)
+            float halfH = _currentCamera.orthographicSize;
+            float halfW = halfH * _currentCamera.aspect;
+
+            // --- 좌우 제한 ---
+            if (useLimitLeft || useLimitRight)
             {
-                // --- 좌우 제한 ---
-                if (useLimitLeft && clampX < _width)
+                float minX = halfW;
+                float maxX = _mapSize.x - halfW;
+
+                // 맵이 화면보다 작아 clamp 구간이 뒤집히는 경우 -> 중앙 고정
+                if (maxX < minX)
                 {
-                    clampX = _width;
+                    clampX = _mapSize.x * 0.5f;
                 }
-                if (useLimitRight && clampX > _mapSize.x - _width)
+                else
                 {
-                    clampX = _mapSize.x - _width;
+                    if (useLimitLeft) clampX = Mathf.Max(clampX, minX);
+                    if (useLimitRight) clampX = Mathf.Min(clampX, maxX);
                 }
             }
 
-            if (_mapSize.y > _height)
+            // --- 상하 제한 ---
+            if (useLimitBottom || useLimitTop)
             {
-                // --- 상하 제한 ---
-                if (useLimitBottom && clampY < _height)
-                {
-                    clampY = _height;
-                }
+                float minY = halfH;
+                float maxY = _mapSize.y - halfH;
 
-                if (useLimitTop && clampY > _mapSize.y - _height)
+                if (maxY < minY)
                 {
-                    clampY = _mapSize.y - _height;
+                    clampY = _mapSize.y * 0.5f;
+                }
+                else
+                {
+                    if (useLimitBottom) clampY = Mathf.Max(clampY, minY);
+                    if (useLimitTop) clampY = Mathf.Min(clampY, maxY);
                 }
             }
 
-            // 최종 위치 적용
-            if (_isShaking)
-            {
-                transform.position = new Vector3(clampX, clampY, -10f) + (Vector3)Random.insideUnitCircle * 0.1f;
-            }
-            else
-            {
-                transform.position = new Vector3(clampX, clampY, -10f);
-                _originalPos = transform.position;
-            }
+            // 최종 위치 적용 (Shake는 "기본 위치"를 기준으로 오프셋으로만 적용)
+            _basePosition = new Vector3(clampX, clampY, -10f);
+            transform.position = _basePosition + _shakeOffset;
 
             // 줌 처리
             if (_isZooming)
@@ -130,57 +145,52 @@ namespace GGemCo2DCore
         private IEnumerator Shake(float duration, float magnitude)
         {
             _isShaking = true;
-            float elapsed = 0.0f;
 
+            float elapsed = 0f;
             while (elapsed < duration)
             {
                 float x = Random.Range(-1f, 1f) * magnitude;
                 float y = Random.Range(-1f, 1f) * magnitude;
-
-                transform.localPosition = _originalPos + new Vector3(x, y, 0);
+                _shakeOffset = new Vector3(x, y, 0f);
 
                 elapsed += Time.deltaTime;
                 yield return null;
             }
 
+            _shakeOffset = Vector3.zero;
             _isShaking = false;
-            transform.localPosition = _originalPos;
         }
+
         /// <summary>
         /// 카메라 흔들림 효과 주기
         /// </summary>
-        /// <param name="shakeDuration"></param>
-        /// <param name="shakeMagnitude"></param>
         public void StartShake(float shakeDuration, float shakeMagnitude)
         {
             if (shakeDuration <= 0 || shakeMagnitude <= 0) return;
             StartCoroutine(Shake(shakeDuration, shakeMagnitude));
         }
+
         /// <summary>
         /// 맵 경계선 사이즈 변경하기
         /// </summary>
-        /// <param name="pWidth"></param>
-        /// <param name="pHeight"></param>
         public void ChangeMapSize(float pWidth, float pHeight)
         {
             _mapSize.x = pWidth;
             _mapSize.y = pHeight;
         }
+
         /// <summary>
         /// 카메라 강제로 이동시키기
         /// </summary>
-        /// <param name="x"></param>
-        /// <param name="y"></param>
         public void MoveCameraPosition(float x, float y)
         {
             transform.position = new Vector3(x, y, -10f) + _cameraPosition;
-            _originalPos = transform.position;
+            _basePosition = transform.position;
         }
+
         /// <summary>
-        /// 플레이어 기준에서의 카메라 위치 값 바꾸기 
+        /// 플레이어 기준에서의 카메라 위치 값 바꾸기
         /// </summary>
-        /// <param name="x"></param>
-        /// <param name="y"></param>
         public void ChangeCameraPositionValue(float x, float y)
         {
             _originCameraPosition.x = _cameraPosition.x;
@@ -188,11 +198,13 @@ namespace GGemCo2DCore
             _cameraPosition.x = x;
             _cameraPosition.y = y;
         }
+
         public void ResetCameraPositionValue()
         {
             _cameraPosition.x = _originCameraPosition.x;
             _cameraPosition.y = _originCameraPosition.y;
         }
+
         /// <summary>
         /// 카메라가 따라가는 캐릭터 지우기
         /// </summary>
@@ -200,14 +212,15 @@ namespace GGemCo2DCore
         {
             _followTarget = null;
         }
+
         /// <summary>
         /// 따라가는 캐릭터 변경
         /// </summary>
-        /// <param name="target"></param>
         public void SetFollowTarget(Transform target)
         {
             _followTarget = target == null ? SceneGame.Instance.player.transform : target;
         }
+
         /// <summary>
         /// player 따라가도록 설정
         /// </summary>
@@ -216,12 +229,10 @@ namespace GGemCo2DCore
             if (SceneGame.Instance == null || SceneGame.Instance.player == null) return;
             SetFollowTarget(SceneGame.Instance.player.transform);
         }
+
         /// <summary>
         /// orthographicSize 변경하기
         /// </summary>
-        /// <param name="endSize"></param>
-        /// <param name="duration"></param>
-        /// <param name="easeType"></param>
         public void StartZoom(float endSize, float duration = 1f, Easing.EaseType easeType = Easing.EaseType.EaseOutQuad)
         {
             _zoomTimer = 0;
@@ -231,6 +242,7 @@ namespace GGemCo2DCore
             _zoomEasing = easeType;
             _isZooming = true;
         }
+
         /// <summary>
         /// orthographicSize 초기화
         /// </summary>
@@ -243,29 +255,40 @@ namespace GGemCo2DCore
             _zoomEasing = Easing.EaseType.EaseOutQuad;
             _isZooming = true;
         }
+
         /// <summary>
         /// 연출 종료시 호출
         /// </summary>
         public void ReSetByCutscene()
         {
-            // 카메라 player 따라가
             SetFollowPlayer();
             ReSetZoom();
         }
+
+        /// <summary>
+        /// 타겟(플레이어) 기준 카메라 기본 오프셋(월드 단위).
+        /// Inspector에서 설정한 값은 시작 시 기본값으로 사용되며, 흔들림(Shake)은 이 기본 위치를 기준으로 적용됩니다.
+        /// </summary>
+        public Vector2 FollowOffset
+        {
+            get => new Vector2(_cameraPosition.x, _cameraPosition.y);
+            set => _cameraPosition = new Vector3(value.x, value.y, 0f);
+        }
+
         public void SetCameraMoveSpeed(float speed)
         {
             cameraMoveSpeed = speed;
         }
+
         /// <summary>
-        /// 카메라 위치 가져오기
-        /// Z 값은 제외
+        /// 카메라 위치 가져오기 (Z 값은 제외)
         /// </summary>
-        /// <returns></returns>
         public Vector2 GetPositionCenter()
         {
             return transform.position;
         }
-#if UNITY_EDITOR        
+
+#if UNITY_EDITOR
         private void OnDrawGizmos()
         {
             // Gizmos.color = Color.red;
