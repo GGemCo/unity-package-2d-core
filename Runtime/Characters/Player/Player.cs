@@ -99,9 +99,11 @@ namespace GGemCo2DCore
                 _playerSettings.statMp, _playerSettings.statStamina, 0,
                 _playerSettings.statMoveSpeed, _playerSettings.statAttackSpeed, _playerSettings.statRegistFire,
                 _playerSettings.statRegistCold, _playerSettings.statRegistLightning, _playerSettings.statRegistPoison);
-            CurrentHp.OnNext(TotalHp.Value);
-            CurrentMp.OnNext(TotalMp.Value);
-            CurrentStamina.OnNext(TotalStamina.Value);
+            // 시작 자원 값은 '최대치'가 아니라, 설정에 따라 별도로 초기화할 수 있다.
+            // (예: HP=최대치의 50%, MP=0, Stamina=최대치의 50% 등)
+            CurrentHp.OnNext(_playerSettings.startHp.Evaluate(TotalHp.Value));
+            CurrentMp.OnNext(_playerSettings.startMp.Evaluate(TotalMp.Value));
+            CurrentStamina.OnNext(_playerSettings.startStamina.Evaluate(TotalStamina.Value));
             CurrentSuperArmor.OnNext(0);
             currentMoveStep = _playerSettings.statMoveStep;
             originalScaleX = transform.localScale.x;

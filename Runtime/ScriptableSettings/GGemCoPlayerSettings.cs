@@ -1,4 +1,5 @@
-﻿using UnityEngine;
+using System;
+using UnityEngine;
 using UnityEngine.Serialization;
 
 namespace GGemCo2DCore
@@ -6,6 +7,71 @@ namespace GGemCo2DCore
     [CreateAssetMenu(fileName = ConfigScriptableObject.Player.FileName, menuName = ConfigScriptableObject.Player.MenuName, order = ConfigScriptableObject.Player.Ordering)]
     public class GGemCoPlayerSettings : ScriptableObject
     {
+        // =========================
+        // Resource Start Value (시작 자원)
+        // =========================
+        public enum ResourceStartMode
+        {
+            /// <summary>최대치로 시작</summary>
+            Max = 0,
+            /// <summary>최대치의 %로 시작 (0~1)</summary>
+            PercentOfMax = 1,
+            /// <summary>고정 값으로 시작</summary>
+            FixedValue = 2,
+        }
+
+        [Serializable]
+        public struct ResourceStartSetting
+        {
+            [Tooltip("시작 자원 계산 방식")]
+            public ResourceStartMode mode;
+
+            [Tooltip("PercentOfMax 일 때 사용 (0~1)")]
+            [Range(0f, 1f)]
+            public float percentOfMax;
+
+            [Tooltip("FixedValue 일 때 사용")]
+            public long fixedValue;
+
+            [Tooltip("최대치(및 0) 범위로 클램프할지 여부")]
+            public bool clampToRange;
+
+            public static ResourceStartSetting CreateMax()
+            {
+                return new ResourceStartSetting
+                {
+                    mode = ResourceStartMode.Max,
+                    percentOfMax = 1f,
+                    fixedValue = 0,
+                    clampToRange = true
+                };
+            }
+
+            public long Evaluate(long maxValue)
+            {
+                long value;
+                switch (mode)
+                {
+                    case ResourceStartMode.FixedValue:
+                        value = fixedValue;
+                        break;
+
+                    case ResourceStartMode.PercentOfMax:
+                        value = (long)Math.Round(maxValue * Mathf.Clamp01(percentOfMax), MidpointRounding.AwayFromZero);
+                        break;
+
+                    case ResourceStartMode.Max:
+                    default:
+                        value = maxValue;
+                        break;
+                }
+
+                if (!clampToRange) return value;
+                if (value < 0) return 0;
+                return value > maxValue ? maxValue : value;
+            }
+        }
+
         [FormerlySerializedAs("defaultFacing")]
         [Header("플레이어 디폴트 값 설정")]
         [Tooltip("플레이어의 초기 바라보는 방향 (좌/우/기타)")]
@@ -44,6 +110,15 @@ namespace GGemCo2DCore
         public int statRegistLightning;
         [Tooltip("독 속성 저항 (100 → 1배 = 면역)")]
         public int statRegistPoison;
+
+        [Header("시작 자원 값")]
+        [Tooltip("게임 시작 시 현재 HP 값 설정")]
+        public ResourceStartSetting startHp = ResourceStartSetting.CreateMax();
+        [Tooltip("게임 시작 시 현재 MP 값 설정")]
+        public ResourceStartSetting startMp = ResourceStartSetting.CreateMax();
+        [Tooltip("게임 시작 시 현재 Stamina 값 설정")]
+        public ResourceStartSetting startStamina = ResourceStartSetting.CreateMax();
+
 
         [Header("맵 경계 제한 옵션")]
         [Tooltip("왼쪽 경계를 벗어날 수 없도록 제한합니다.")]
