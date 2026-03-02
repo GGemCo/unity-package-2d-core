@@ -51,6 +51,9 @@ namespace GGemCo2DCore
             _player.TotalHp
                 .Subscribe(_ => SetWindowHudSliderHp(_player.CurrentHp.Value))
                 .AddTo(_player);
+            _player.PassiveBonusHp
+                .Subscribe(_ => SetWindowHudHpBonus(_player.PassiveBonusHp.Value))
+                .AddTo(_player);
             _player.CurrentHp
                 .Subscribe(_ => SetWindowHudSliderHp(_player.CurrentHp.Value))
                 .AddTo(_player);
@@ -93,6 +96,15 @@ namespace GGemCo2DCore
                 return;
             }
             _uiWindowHud.SetSliderHp(value, _player.TotalHp.Value);
+        }
+
+        private void SetWindowHudHpBonus(long bonus)
+        {
+            if (_uiWindowHud == null)
+            {
+                return;
+            }
+            _uiWindowHud.SetHpBonus(bonus);
         }
         private void SetWindowHudSliderMp(long value)
         {

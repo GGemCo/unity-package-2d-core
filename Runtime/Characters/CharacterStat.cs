@@ -1,6 +1,8 @@
+using System;
 using System.Collections.Generic;
 using R3;
 using UnityEngine;
+using Random = UnityEngine.Random;
 
 namespace GGemCo2DCore
 {
@@ -101,11 +103,17 @@ namespace GGemCo2DCore
         /// </summary>
         private readonly List<IStatModifierProvider> _providersWithoutPersistent = new(2);
 
+        /// <summary>
+        /// 패시브 Provider를 제외한 Provider 목록입니다(UI에서 "패시브로 증가한 HP" 등을 계산하는 데 사용).
+        /// </summary>
+        private readonly List<IStatModifierProvider> _providersWithoutPassive = new(2);
+
         // 내부 캐시(마지막으로 계산된 최종값)
         private long _totalAtk,
             _totalDef,
             _totalHp,
             _totalMp,
+            _passiveBonusHp,
             _totalStamina,
             _totalMoveSpeed,
             _totalAttackSpeed,
@@ -132,6 +140,13 @@ namespace GGemCo2DCore
         /// 최종 HP(계산 결과)를 스트림으로 제공합니다.
         /// </summary>
         public readonly BehaviorSubject<long> TotalHp = new(100);
+
+        /// <summary>
+        /// 패시브 스킬로 인해 증가한 "추가 최대 HP"(Delta)를 스트림으로 제공합니다.
+        /// - UI에서 기본 HP와 보너스 HP를 분리 표기할 때 사용합니다.
+        /// - 값은 0 이상으로 보정됩니다.
+        /// </summary>
+        public readonly BehaviorSubject<long> PassiveBonusHp = new(0);
 
         /// <summary>
         /// 최종 MP(계산 결과)를 스트림으로 제공합니다.
@@ -210,6 +225,10 @@ namespace GGemCo2DCore
             _providersWithoutPersistent.Clear();
             _providersWithoutPersistent.Add(_equipmentProvider);
             _providersWithoutPersistent.Add(_passiveProvider);
+
+            _providersWithoutPassive.Clear();
+            _providersWithoutPassive.Add(_equipmentProvider);
+            _providersWithoutPassive.Add(_persistentProvider);
         }
 
         /// <summary>
@@ -400,6 +419,11 @@ namespace GGemCo2DCore
             _totalAtk = StatCalculator.CalculateFinal(ConfigCommon.StatusStatAtk, BaseAtk, _allProviders);
             _totalDef = StatCalculator.CalculateFinal(ConfigCommon.StatusStatDef, BaseDef, _allProviders);
             _totalHp = StatCalculator.CalculateFinal(ConfigCommon.StatusStatHp, BaseHp, _allProviders);
+
+            // UI 표시용: 패시브 스킬로 인해 증가한 추가 최대 HP(Delta)
+            // - 계산 규칙(Percent 포함)을 일치시키기 위해 "패시브 Provider 제외" 총합과의 차이로 산출합니다.
+            long hpWithoutPassive = StatCalculator.CalculateFinal(ConfigCommon.StatusStatHp, BaseHp, _providersWithoutPassive);
+            _passiveBonusHp = Math.Max(0, _totalHp - hpWithoutPassive);
             _totalMp = StatCalculator.CalculateFinal(ConfigCommon.StatusStatMp, BaseMp, _allProviders);
             _totalStamina = StatCalculator.CalculateFinal(ConfigCommon.StatusStatStamina, BaseStamina, _allProviders);
             _totalSuperArmor = (int)StatCalculator.CalculateFinal(ConfigCommon.StatusStatSuperArmor, BaseSuperArmor, _allProviders);
@@ -418,6 +442,7 @@ namespace GGemCo2DCore
             TotalAtk.OnNext(_totalAtk);
             TotalDef.OnNext(_totalDef);
             TotalHp.OnNext(_totalHp);
+            PassiveBonusHp.OnNext(_passiveBonusHp);
             TotalMp.OnNext(_totalMp);
             TotalStamina.OnNext(_totalStamina);
             TotalSuperArmor.OnNext(_totalSuperArmor);
@@ -460,7 +485,7 @@ namespace GGemCo2DCore
         /// 현재 스탯(크리티컬 확률/피해량 포함)을 반영하여 1회 공격의 최종 피해를 계산합니다.
         /// </summary>
         /// <remarks>
-        /// - 크리티컬 확률에 따라 난수(<see cref="Random.value"/>)로 크리티컬 여부를 결정합니다.
+        /// - 크리티컬 확률에 따라 난수(<see cref="UnityEngine.Random.value"/>)로 크리티컬 여부를 결정합니다.
         /// - 크리티컬 피해 배율은 최소 1.0으로 보정합니다.
         /// </remarks>
         /// <returns>난수 결과를 반영한 1회 공격 피해량입니다.</returns>
