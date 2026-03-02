@@ -40,6 +40,7 @@ namespace GGemCo2DCore
             TcgCard,
             TcgMyDeck,
             TcgMyDeckCard,
+            SkillPassive
         }
         public enum Status
         {
@@ -50,10 +51,16 @@ namespace GGemCo2DCore
         }
 
         public static GameObject LoadByIconType(Type iconType)
-        { 
-            return iconType == Type.Skill
-            ? ConfigResources.IconSkill.Load()
-            : ConfigResources.IconItem.Load();
+        {
+            switch (iconType)
+            {
+                case Type.Item:
+                    return ConfigResources.IconItem.Load();
+                case Type.Skill:
+                    return ConfigResources.IconSkill.Load();
+                default:
+                    return ConfigResources.IconItem.Load();
+            }
         }
     }
 }

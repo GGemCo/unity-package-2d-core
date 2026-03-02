@@ -68,6 +68,7 @@ namespace GGemCo2DCore
         private UIWindowManager _uiWindowManager;
         
         private Vector2 _slotSize;
+        private UIIconCoolTimeManager _iconCoolTimeManager;
 
         protected virtual void Awake()
         {
@@ -121,6 +122,7 @@ namespace GGemCo2DCore
         {
             if (SceneGame.Instance)
                 _uiWindowManager = SceneGame.Instance.uIWindowManager;
+            _iconCoolTimeManager = SceneGame.Instance.uIIconCoolTimeManager;   
         }
 
         public void Initialize(UIWindow pwindow, UIWindowConstants.WindowUid pwindowUid, int pindex, int pslotIndex, 
@@ -223,7 +225,7 @@ namespace GGemCo2DCore
         /// <param name="iconInstanceId"></param>
         public virtual bool ChangeInfoByUid(int cardUid, int iconCount = 0, int iconLevel = 0, bool iconIsLearn = false, int remainCoolTime = 0, long iconInstanceId = 0)
         {
-            SceneGame.Instance.uIIconCoolTimeManager.SetRemainCoolTime(windowUid, cardUid, remainCoolTime);
+            _iconCoolTimeManager?.SetRemainCoolTime(windowUid, cardUid, remainCoolTime);
             
             if (cardUid == 0 && iconCount == 0)
             {
@@ -283,7 +285,7 @@ namespace GGemCo2DCore
         /// </summary>
         public virtual void ClearIconInfos()
         {
-            SceneGame.Instance.uIIconCoolTimeManager.ResetCoolTime(windowUid, uid);
+            _iconCoolTimeManager?.ResetCoolTime(windowUid, uid);
             instanceId = 0;
             
             uid = 0;
@@ -430,14 +432,14 @@ namespace GGemCo2DCore
         /// <returns></returns>
         public bool PlayCoolTime(float coolTime)
         {
-            float time = SceneGame.Instance.uIIconCoolTimeManager.GetCurrentCoolTime(windowUid, uid);
+            float time = _iconCoolTimeManager.GetCurrentCoolTime(windowUid, uid);
             if (time > 0)
             {
                 SceneGame.Instance.systemMessageManager.ShowMessageWarning("Action_CannotUseDuringCooldown");//"쿨타임 중에는 사용할 수 없습니다."
                 return false;
             }
             
-            return SceneGame.Instance.uIIconCoolTimeManager.StartHandler(windowUid, this, coolTime);
+            return _iconCoolTimeManager.StartHandler(windowUid, this, coolTime);
         }
         /// <summary>
         /// Raycast Target 설정

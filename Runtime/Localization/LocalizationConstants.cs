@@ -48,8 +48,6 @@ namespace GGemCo2DCore
             
             public const string UIWindowTitle = "GGemCo_UI_Window_Title";
             public const string UIWindowItemInfo = "GGemCo_UIWindowItemInfo";
-            public const string UIWindowSkill = "GGemCo_UIWindowSkill";
-            public const string UIWindowSkillInfo = "GGemCo_UIWindowSkillInfo";
             public const string UIWindowItemUpgrade = "GGemCo_UIWindowItemUpgrade";
             public const string UIWindowItemCraft = "GGemCo_UIWindowItemCraft";
             public const string UIWindowQuestReward = "GGemCo_UIWindowQuestReward";
@@ -62,7 +60,6 @@ namespace GGemCo2DCore
             public const string ItemName = "GGemCo_Item_Name";
             public const string ItemDescription = "GGemCo_Item_Description";
             public const string MapName = "GGemCo_Map_Name";
-            public const string SkillName = "GGemCo_Skill_Name";
             public const string NpcName = "GGemCo_Npc_Name";
             public const string MonsterName = "GGemCo_Monster_Name";
 
@@ -77,8 +74,6 @@ namespace GGemCo2DCore
                 Scene,
                 UIWindowTitle,
                 UIWindowItemInfo,
-                UIWindowSkill,
-                UIWindowSkillInfo,
                 UIWindowItemUpgrade,
                 UIWindowItemCraft,
                 UIWindowOption,
@@ -88,7 +83,6 @@ namespace GGemCo2DCore
                 ItemName,
                 ItemDescription,
                 MapName,
-                SkillName,
                 NpcName,
                 MonsterName,
                 UIWindowPlayerStatInfo,

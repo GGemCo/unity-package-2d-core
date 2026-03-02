@@ -106,8 +106,6 @@ namespace GGemCo2DCore
         public string GetSmartUIWindowItemInfoByKey(string key, params object[] arguments) =>
             GetSmartString(LocalizationConstants.Tables.UIWindowItemInfo, key, arguments);
 
-        public string GetSmartUIWindowSkillInfoByKey(string key, params object[] arguments) =>
-            GetSmartString(LocalizationConstants.Tables.UIWindowSkillInfo, key, arguments);
 
         /// <summary>
         /// UI 에서 사용하는 공용 단어
@@ -142,8 +140,6 @@ namespace GGemCo2DCore
         /// <param name="key"></param>
         /// <returns></returns>
         public string GetStatusNameByKey(string key) => GetString(LocalizationConstants.Tables.StatusName, key);
-        public string GetUIWindowSkillInfoByKey(string key) => GetString(LocalizationConstants.Tables.UIWindowSkillInfo, key);
-        public string GetUIWindowSkillByKey(string key) => GetString(LocalizationConstants.Tables.UIWindowSkill, key);
         public string GetUIWindowItemUpgradeByKey(string key) => GetString(LocalizationConstants.Tables.UIWindowItemUpgrade, key);
         public string GetUIWindowItemCraftByKey(string key) => GetString(LocalizationConstants.Tables.UIWindowItemCraft, key);
         public string GetUIWindowQuestRewardByKey(string key) => GetString(LocalizationConstants.Tables.UIWindowQuestReward, key);
@@ -155,7 +151,6 @@ namespace GGemCo2DCore
         public string GetItemDescriptionSmartByKey(string key, params object[] arguments) =>
             GetSmartString(LocalizationConstants.Tables.ItemDescription, key, arguments);
         public string GetMapNameByKey(string key) => GetString(LocalizationConstants.Tables.MapName, key);
-        public string GetSkillNameByKey(string key) => GetString(LocalizationConstants.Tables.SkillName, key);
         public string GetNpcNameByKey(string key) => GetString(LocalizationConstants.Tables.NpcName, key);
         public string GetMonsterNameByKey(string key) => GetString(LocalizationConstants.Tables.MonsterName, key);
         public string GetUIWindowTitleByKey(string key) => GetString(LocalizationConstants.Tables.UIWindowTitle, key);
@@ -164,12 +159,6 @@ namespace GGemCo2DCore
         public string GetInteractionByKey(string key) => GetString(LocalizationConstants.Tables.UIWindowInteractionDialogue, key);
 
         public string GetUIWindowTcgBattleHudByKey(string key) => GetString(LocalizationConstants.Tables.UIWindowTcgBattleHud, key);
-
-        // ----------------------------
-        // Smart String helpers
-        // ----------------------------
-        public string GetUIWindowSkillInfoSmart(string key, params object[] args) =>
-            GetSmartString(LocalizationConstants.Tables.UIWindowSkillInfo, key, args);
 
         public string GetUIWindowPlayerInfoByKey(string key) =>
             GetString(LocalizationConstants.Tables.UIWindowPlayerStatInfo, key);
