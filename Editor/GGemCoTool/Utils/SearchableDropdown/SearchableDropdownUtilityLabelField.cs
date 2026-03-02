@@ -13,7 +13,7 @@ namespace GGemCo2DCoreEditor
         /// Inspector 스타일: 라벨(Prefix) + 드롭다운 필드(버튼) 형태를 렌더링하고,
         /// 클릭 시 검색 가능한 드롭다운 팝업을 버튼 바로 아래에 표시합니다.
         /// </summary>
-        public static bool DrawLabeledFieldAndShow<T>(
+        private static bool DrawLabeledFieldAndShow<T>(
             GUIContent label,
             GUIContent fieldContent,
             IReadOnlyList<Option<T>> options,
@@ -21,12 +21,12 @@ namespace GGemCo2DCoreEditor
             Action<int, Option<T>> onSelected,
             GUILayoutOption[]? layoutOptions = null,
             GUIStyle? fieldStyle = null,
-            float fieldHeight = 18f,
-            int maxVisibleItems = 10,
-            float rowHeight = 18f,
-            float popupWidth = 320f,
+            float fieldHeight = EditorConstants.SearchableDropdownUtility.FieldHeight,
+            int maxVisibleItems = EditorConstants.SearchableDropdownUtility.MaxVisibleItems,
+            float rowHeight = EditorConstants.SearchableDropdownUtility.RowHeight,
+            float popupWidth = EditorConstants.SearchableDropdownUtility.PopupWidth,
             SearchMode defaultSearchMode = SearchMode.Both,
-            float verticalOffset = 2f,
+            float verticalOffset = EditorConstants.SearchableDropdownUtility.VerticalOffset,
             bool disabled = false)
         {
             if (label == null) throw new ArgumentNullException(nameof(label));
@@ -76,12 +76,12 @@ namespace GGemCo2DCoreEditor
             string noneText = "(Select...)",
             GUILayoutOption[]? layoutOptions = null,
             GUIStyle? fieldStyle = null,
-            float fieldHeight = 18f,
-            int maxVisibleItems = 10,
-            float rowHeight = 18f,
-            float popupWidth = 320f,
+            float fieldHeight = EditorConstants.SearchableDropdownUtility.FieldHeight,
+            int maxVisibleItems = EditorConstants.SearchableDropdownUtility.MaxVisibleItems,
+            float rowHeight = EditorConstants.SearchableDropdownUtility.RowHeight,
+            float popupWidth = EditorConstants.SearchableDropdownUtility.PopupWidth,
             SearchMode defaultSearchMode = SearchMode.Both,
-            float verticalOffset = 2f,
+            float verticalOffset = EditorConstants.SearchableDropdownUtility.VerticalOffset,
             bool disabled = false)
         {
             string text = (selectedIndex >= 0 && selectedIndex < options.Count)
@@ -113,12 +113,12 @@ namespace GGemCo2DCoreEditor
             string noneText = "(Select...)",
             GUILayoutOption[]? layoutOptions = null,
             GUIStyle? fieldStyle = null,
-            float fieldHeight = 18f,
-            int maxVisibleItems = 10,
-            float rowHeight = 18f,
-            float popupWidth = 320f,
+            float fieldHeight = EditorConstants.SearchableDropdownUtility.FieldHeight,
+            int maxVisibleItems = EditorConstants.SearchableDropdownUtility.MaxVisibleItems,
+            float rowHeight = EditorConstants.SearchableDropdownUtility.RowHeight,
+            float popupWidth = EditorConstants.SearchableDropdownUtility.PopupWidth,
             SearchMode defaultSearchMode = SearchMode.Both,
-            float verticalOffset = 2f,
+            float verticalOffset = EditorConstants.SearchableDropdownUtility.VerticalOffset,
             bool disabled = false)
         {
             return DrawLabeledFieldAndShow(

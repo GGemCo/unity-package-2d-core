@@ -32,11 +32,11 @@ namespace GGemCo2DCoreEditor
             IReadOnlyList<Option<T>> options,
             int selectedIndex,
             Action<int, Option<T>> onSelected,
-            int maxVisibleItems = 10,
-            float rowHeight = 20f,
-            float popupWidth = 360f,
+            int maxVisibleItems = EditorConstants.SearchableDropdownUtility.MaxVisibleItems,
+            float rowHeight = EditorConstants.SearchableDropdownUtility.RowHeight,
+            float popupWidth = EditorConstants.SearchableDropdownUtility.PopupWidth,
             SearchMode defaultSearchMode = SearchMode.Both,
-            float verticalOffset = 2f)
+            float verticalOffset = EditorConstants.SearchableDropdownUtility.VerticalOffset)
         {
             if (owner == null) throw new ArgumentNullException(nameof(owner));
             if (options == null) throw new ArgumentNullException(nameof(options));

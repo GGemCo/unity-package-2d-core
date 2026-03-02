@@ -1,22 +1,21 @@
-﻿// namespace GGemCo2DCoreEditor
-// {
-//     public static class EditorConstants
-//     {
-//         private const string NameToolGGemCo = ConfigDefine.NameSDK+"Tool/";
-//         
-//         // 오브젝트 생성시 사용
-//         public const string NamePrefixCore = ConfigDefine.NameSDK + "_" + ConfigDefine.NamePackageCore;
-//         
-//         public enum ToolCategory
-//         {
-//             Settings = 100,
-//             CoreTools = 200,
-//             ContentCreation = 300,
-//             Testing = 400,
-//             Utilities = 500,
-//             GenreAction = 1000,
-//             GenreRPG = 1100,
-//             GenreSimulation = 1200,
-//         }
-//     }
-// }
+﻿namespace GGemCo2DCoreEditor
+{
+    public static class EditorConstants
+    {
+        public static class SearchableDropdownUtility
+        {
+            // SearchableDropdownUtility 에서 디폴트 MaxVisibleItems 값
+            public const int MaxVisibleItems = 15;
+            // 팝업 width 값
+            public const float PopupWidth = 350f;
+            public const float RowHeight = 18f;
+            public const float VerticalOffset = 2f;
+            
+            // SearchableDropdownUtilityButton.cs
+            public const float ButtonHeight = 20f;
+            
+            // SearchableDropdownUtilityLabelField.cs
+            public const float FieldHeight = 18f;
+        }
+    }
+}

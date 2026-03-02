@@ -13,18 +13,18 @@ namespace GGemCo2DCoreEditor
         /// 버튼을 그리고, 클릭 시 검색 가능한 드롭다운 팝업을 버튼 바로 아래에 표시합니다.
         /// (GUILayout 기반 Rect 계산/이벤트 단계 이슈를 유틸 내부에서 해결)
         /// </summary>
-        public static bool DrawButtonAndShow<T>(
+        private static bool DrawButtonAndShow<T>(
             GUIContent buttonLabel,
             IReadOnlyList<Option<T>> options,
             int selectedIndex,
             Action<int, Option<T>> onSelected,
             GUIStyle? buttonStyle = null,
-            float buttonHeight = 22f,
-            int maxVisibleItems = 10,
-            float rowHeight = 18f,
-            float popupWidth = 320f,
+            float buttonHeight = EditorConstants.SearchableDropdownUtility.ButtonHeight,
+            int maxVisibleItems = EditorConstants.SearchableDropdownUtility.MaxVisibleItems,
+            float rowHeight = EditorConstants.SearchableDropdownUtility.RowHeight,
+            float popupWidth = EditorConstants.SearchableDropdownUtility.PopupWidth,
             SearchMode defaultSearchMode = SearchMode.Both,
-            float verticalOffset = 2f,
+            float verticalOffset = EditorConstants.SearchableDropdownUtility.VerticalOffset,
             bool disabled = false)
         {
             if (buttonLabel == null) throw new ArgumentNullException(nameof(buttonLabel));
@@ -71,12 +71,12 @@ namespace GGemCo2DCoreEditor
             int selectedIndex,
             Action<int, Option<T>> onSelected,
             GUIStyle? buttonStyle = null,
-            float buttonHeight = 22f,
-            int maxVisibleItems = 10,
-            float rowHeight = 18f,
-            float popupWidth = 320f,
+            float buttonHeight = EditorConstants.SearchableDropdownUtility.ButtonHeight,
+            int maxVisibleItems = EditorConstants.SearchableDropdownUtility.MaxVisibleItems,
+            float rowHeight = EditorConstants.SearchableDropdownUtility.RowHeight,
+            float popupWidth = EditorConstants.SearchableDropdownUtility.PopupWidth,
             SearchMode defaultSearchMode = SearchMode.Both,
-            float verticalOffset = 2f,
+            float verticalOffset = EditorConstants.SearchableDropdownUtility.VerticalOffset,
             bool disabled = false)
         {
             return DrawButtonAndShow(

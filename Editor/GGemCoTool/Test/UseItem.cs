@@ -131,9 +131,6 @@ namespace GGemCo2DCoreEditor
                             _itemUid = opt.Data;
                             Repaint();
                         },
-                        buttonHeight: 20f,
-                        maxVisibleItems: 14,
-                        popupWidth: 520f,
                         defaultSearchMode: SearchableDropdownUtility.SearchMode.Both);
                 }
 
