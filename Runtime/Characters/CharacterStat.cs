@@ -78,6 +78,10 @@ namespace GGemCo2DCore
         private readonly Dictionary<string, int> _flatPersistentModifiers = new();
         private readonly Dictionary<string, float> _percentPersistentModifiers = new();
 
+        // 패시브 스킬 Modifier (장착/해제 시 재구성)
+        private readonly Dictionary<string, int> _flatPassiveSkillModifiers = new();
+        private readonly Dictionary<string, float> _percentPassiveSkillModifiers = new();
+
         private long _totalAtk,
             _totalDef,
             _totalHp,
@@ -371,6 +375,52 @@ namespace GGemCo2DCore
         }
 
         /// <summary>
+        /// 패시브 스킬(장착형) Modifier 값을 갱신합니다.
+        /// - 장비/스탯포인트와 별도 버킷으로 관리됩니다.
+        /// - 레벨 업/장착 변경 등에서 호출되어 전체를 재구성하는 방식(권장)입니다.
+        /// </summary>
+        public void SetPassiveSkillModifiers(Dictionary<string, int> flatByStatKey, Dictionary<string, float> percentByStatKey, bool recalculate = true)
+        {
+            _flatPassiveSkillModifiers.Clear();
+            _percentPassiveSkillModifiers.Clear();
+
+            if (flatByStatKey != null)
+            {
+                foreach (var kv in flatByStatKey)
+                {
+                    if (string.IsNullOrEmpty(kv.Key)) continue;
+                    if (kv.Value == 0) continue;
+                    _flatPassiveSkillModifiers[kv.Key] = kv.Value;
+                }
+            }
+
+            if (percentByStatKey != null)
+            {
+                foreach (var kv in percentByStatKey)
+                {
+                    if (string.IsNullOrEmpty(kv.Key)) continue;
+                    if (Mathf.Approximately(kv.Value, 0f)) continue;
+                    _percentPassiveSkillModifiers[kv.Key] = kv.Value;
+                }
+            }
+
+            if (recalculate)
+                RecalculateStats();
+        }
+
+        /// <summary>
+        /// 패시브 스킬 Modifier 를 제거합니다.
+        /// </summary>
+        public void ClearPassiveSkillModifiers(bool recalculate = true)
+        {
+            _flatPassiveSkillModifiers.Clear();
+            _percentPassiveSkillModifiers.Clear();
+
+            if (recalculate)
+                RecalculateStats();
+        }
+
+        /// <summary>
         /// 스탯별 최종 계산하기
         /// </summary>
         /// <param name="statKey"></param>
@@ -378,8 +428,12 @@ namespace GGemCo2DCore
         /// <returns></returns>
         private long CalculateFinalStat(string statKey, int baseValue)
         {
-            int flatBonus = _flatEquipmentModifiers.GetValueOrDefault(statKey, 0) + _flatPersistentModifiers.GetValueOrDefault(statKey, 0);
-            float percentBonus = _percentEquipmentModifiers.GetValueOrDefault(statKey, 0) + _percentPersistentModifiers.GetValueOrDefault(statKey, 0);
+            int flatBonus = _flatEquipmentModifiers.GetValueOrDefault(statKey, 0)
+                           + _flatPersistentModifiers.GetValueOrDefault(statKey, 0)
+                           + _flatPassiveSkillModifiers.GetValueOrDefault(statKey, 0);
+            float percentBonus = _percentEquipmentModifiers.GetValueOrDefault(statKey, 0)
+                             + _percentPersistentModifiers.GetValueOrDefault(statKey, 0)
+                             + _percentPassiveSkillModifiers.GetValueOrDefault(statKey, 0);
 
             float finalMultiplier = 1 + (percentBonus / 100f);
             if (finalMultiplier < 0) finalMultiplier = 0; // 최소 0으로 제한
@@ -394,10 +448,12 @@ namespace GGemCo2DCore
             Dictionary<string, float> percentPersistentProjected)
         {
             int flatBonus = _flatEquipmentModifiers.GetValueOrDefault(statKey, 0)
-                            + (flatPersistentProjected?.GetValueOrDefault(statKey, 0) ?? 0);
+                            + (flatPersistentProjected?.GetValueOrDefault(statKey, 0) ?? 0)
+                            + _flatPassiveSkillModifiers.GetValueOrDefault(statKey, 0);
 
             float percentBonus = _percentEquipmentModifiers.GetValueOrDefault(statKey, 0)
-                                 + (percentPersistentProjected?.GetValueOrDefault(statKey, 0f) ?? 0f);
+                                 + (percentPersistentProjected?.GetValueOrDefault(statKey, 0f) ?? 0f)
+                                 + _percentPassiveSkillModifiers.GetValueOrDefault(statKey, 0f);
 
             float finalMultiplier = 1 + (percentBonus / 100f);
             if (finalMultiplier < 0) finalMultiplier = 0; // 최소 0
