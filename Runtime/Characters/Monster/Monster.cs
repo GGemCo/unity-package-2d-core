@@ -174,8 +174,9 @@ namespace GGemCo2DCore
             );
             GameEventManager.MonsterKilled(data);
         }
-        protected void OnDestroy()
+        protected override void OnDestroy()
         {
+            base.OnDestroy();
             if (_monsterUIController != null)
             {
                 _monsterUIController.Dispose();

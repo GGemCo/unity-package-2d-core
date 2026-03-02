@@ -1,18 +1,25 @@
 using System.Collections.Generic;
-using System.Linq;
 using R3;
 using UnityEngine;
 
 namespace GGemCo2DCore
 {
     /// <summary>
-    /// 캐릭터 스탯 관리
+    /// 캐릭터 스탯을 관리하는 Facade 컴포넌트입니다.
+    /// - 스탯 변경 요인을 Provider(장비/영구/패시브)로 분리하여 유지보수성과 확장성을 높입니다.
+    /// - 합산/계산 규칙은 <see cref="StatCalculator"/>에서 담당합니다.
     /// </summary>
+    /// <remarks>
+    /// Provider 목록:
+    /// - 장비/옵션: <see cref="EquipmentOptionModifierProvider"/>
+    /// - 영구(스탯 포인트 등): <see cref="PersistentModifierProvider"/>
+    /// - 패시브 스킬: <see cref="PassiveSkillModifierProvider"/>
+    /// </remarks>
     public class CharacterStat : MonoBehaviour
     {
         /// <summary>
-        /// 캐릭터의 계산된 스탯 총합 스냅샷(읽기 전용)
-        /// - UI 미리보기/시뮬레이션 등에 사용합니다.
+        /// 캐릭터의 계산된 스탯 총합 스냅샷(읽기 전용)입니다.
+        /// - UI 미리보기/시뮬레이션 등에서 특정 시점의 값을 전달하기 위해 사용합니다.
         /// </summary>
         public readonly struct CharacterTotals
         {
@@ -31,6 +38,9 @@ namespace GGemCo2DCore
             public readonly long RegistLightning;
             public readonly long RegistPoison;
 
+            /// <summary>
+            /// 모든 스탯 총합 값을 받아 스냅샷을 생성합니다.
+            /// </summary>
             public CharacterTotals(
                 long atk, long def, long hp, long mp, long stamina,
                 int superArmor,
@@ -54,10 +64,16 @@ namespace GGemCo2DCore
                 RegistPoison = registPoison;
             }
         }
-        // 기본 스탯
+
+        // 기본 스탯(베이스 값). Provider의 modifier들이 이 값에 누적되어 최종값이 계산됩니다.
         private int BaseAtk { get; set; }
         private int BaseDef { get; set; }
+
+        /// <summary>
+        /// 기본 HP(베이스 값)입니다.
+        /// </summary>
         public int BaseHp { get; set; }
+
         private int BaseMp { get; set; }
         private int BaseStamina { get; set; }
         private int BaseSuperArmor { get; set; }
@@ -70,18 +86,22 @@ namespace GGemCo2DCore
         private int BaseRegistLightning { get; set; }
         private int BaseRegistPoison { get; set; }
 
-        // 장비/옵션 기반 Modifier (장비 갱신 시 재구성)
-        private readonly Dictionary<string, int> _flatEquipmentModifiers = new();
-        private readonly Dictionary<string, float> _percentEquipmentModifiers = new();
+        // Provider 분리(장비/영구/패시브)
+        private EquipmentOptionModifierProvider _equipmentProvider;
+        private PersistentModifierProvider _persistentProvider;
+        private PassiveSkillModifierProvider _passiveProvider;
 
-        // 영구 Modifier (스탯 포인트 등). 장비 갱신으로 초기화되지 않는다.
-        private readonly Dictionary<string, int> _flatPersistentModifiers = new();
-        private readonly Dictionary<string, float> _percentPersistentModifiers = new();
+        /// <summary>
+        /// 최종 계산에 포함되는 전체 Provider 목록입니다.
+        /// </summary>
+        private readonly List<IStatModifierProvider> _allProviders = new(3);
 
-        // 패시브 스킬 Modifier (장착/해제 시 재구성)
-        private readonly Dictionary<string, int> _flatPassiveSkillModifiers = new();
-        private readonly Dictionary<string, float> _percentPassiveSkillModifiers = new();
+        /// <summary>
+        /// 영구 Provider를 제외한 Provider 목록입니다(영구 modifier 가정 계산에 사용).
+        /// </summary>
+        private readonly List<IStatModifierProvider> _providersWithoutPersistent = new(2);
 
+        // 내부 캐시(마지막으로 계산된 최종값)
         private long _totalAtk,
             _totalDef,
             _totalHp,
@@ -95,44 +115,141 @@ namespace GGemCo2DCore
             _totalRegistCold,
             _totalRegistLightning,
             _totalRegistPoison;
+
         private int _totalSuperArmor;
-        // 최종 적용된 스탯 (캐싱)
+
+        /// <summary>
+        /// 최종 공격력(계산 결과)을 스트림으로 제공합니다.
+        /// </summary>
         public readonly BehaviorSubject<long> TotalAtk = new(1);
+
+        /// <summary>
+        /// 최종 방어력(계산 결과)을 스트림으로 제공합니다.
+        /// </summary>
         public readonly BehaviorSubject<long> TotalDef = new(1);
+
+        /// <summary>
+        /// 최종 HP(계산 결과)를 스트림으로 제공합니다.
+        /// </summary>
         public readonly BehaviorSubject<long> TotalHp = new(100);
+
+        /// <summary>
+        /// 최종 MP(계산 결과)를 스트림으로 제공합니다.
+        /// </summary>
         public readonly BehaviorSubject<long> TotalMp = new(100);
+
+        /// <summary>
+        /// 최종 스태미나(계산 결과)를 스트림으로 제공합니다.
+        /// </summary>
         public readonly BehaviorSubject<long> TotalStamina = new(100);
+
+        /// <summary>
+        /// 최종 슈퍼아머(계산 결과)를 스트림으로 제공합니다.
+        /// </summary>
         public readonly BehaviorSubject<int> TotalSuperArmor = new(100);
+
+        /// <summary>
+        /// 최종 이동속도(계산 결과)를 스트림으로 제공합니다.
+        /// </summary>
         public readonly BehaviorSubject<long> TotalMoveSpeed = new(100);
+
+        /// <summary>
+        /// 최종 공격속도(계산 결과)를 스트림으로 제공합니다.
+        /// </summary>
         public readonly BehaviorSubject<long> TotalAttackSpeed = new(100);
+
+        /// <summary>
+        /// 최종 크리티컬 피해량(계산 결과)을 스트림으로 제공합니다.
+        /// </summary>
         public readonly BehaviorSubject<long> TotalCriticalDamage = new(100);
+
+        /// <summary>
+        /// 최종 크리티컬 확률(계산 결과)을 스트림으로 제공합니다.
+        /// </summary>
         public readonly BehaviorSubject<long> TotalCriticalProbability = new(100);
+
+        /// <summary>
+        /// 최종 화염 저항(계산 결과)을 스트림으로 제공합니다.
+        /// </summary>
         public readonly BehaviorSubject<long> TotalRegistFire = new(100);
+
+        /// <summary>
+        /// 최종 냉기 저항(계산 결과)을 스트림으로 제공합니다.
+        /// </summary>
         public readonly BehaviorSubject<long> TotalRegistCold = new(100);
+
+        /// <summary>
+        /// 최종 번개 저항(계산 결과)을 스트림으로 제공합니다.
+        /// </summary>
         public readonly BehaviorSubject<long> TotalRegistLightning = new(100);
+
+        /// <summary>
+        /// 최종 독 저항(계산 결과)을 스트림으로 제공합니다.
+        /// </summary>
         public readonly BehaviorSubject<long> TotalRegistPoison = new(100);
 
-        // 장비에서 부여된 Affect(착용 지속) 추적
-        private readonly HashSet<int> _equipAppliedAffects = new();
+        /// <summary>
+        /// Provider 인스턴스를 생성하고 변경 이벤트를 연결합니다.
+        /// </summary>
+        protected virtual void Awake()
+        {
+            // Provider 초기화
+            _equipmentProvider = new EquipmentOptionModifierProvider(gameObject);
+            _persistentProvider = new PersistentModifierProvider();
+            _passiveProvider = new PassiveSkillModifierProvider();
 
-        protected virtual void Awake() { }
+            _equipmentProvider.Changed += OnProviderChanged;
+            _persistentProvider.Changed += OnProviderChanged;
+            _passiveProvider.Changed += OnProviderChanged;
+
+            _allProviders.Clear();
+            _allProviders.Add(_equipmentProvider);
+            _allProviders.Add(_persistentProvider);
+            _allProviders.Add(_passiveProvider);
+
+            _providersWithoutPersistent.Clear();
+            _providersWithoutPersistent.Add(_equipmentProvider);
+            _providersWithoutPersistent.Add(_passiveProvider);
+        }
+
+        /// <summary>
+        /// Provider의 이벤트 구독을 해제합니다.
+        /// </summary>
+        protected virtual void OnDestroy()
+        {
+            if (_equipmentProvider != null) _equipmentProvider.Changed -= OnProviderChanged;
+            if (_persistentProvider != null) _persistentProvider.Changed -= OnProviderChanged;
+            if (_passiveProvider != null) _passiveProvider.Changed -= OnProviderChanged;
+        }
+
+        /// <summary>
+        /// Unity Start 훅입니다(확장 지점).
+        /// </summary>
         protected virtual void Start() { }
 
         /// <summary>
-        /// 스크립터블 오브젝트에 설정된 base 값 셋팅
+        /// Provider 변경 이벤트를 받아 전체 스탯을 재계산합니다.
         /// </summary>
-        /// <param name="statAtk"></param>
-        /// <param name="statDef"></param>
-        /// <param name="statHp"></param>
-        /// <param name="statMp"></param>
-        /// <param name="statStamina"></param>
-        /// <param name="statSuperArmor"></param>
-        /// <param name="statMoveSpeed"></param>
-        /// <param name="statAttackSpeed"></param>
-        /// <param name="statRegistFire"></param>
-        /// <param name="statRegistCold"></param>
-        /// <param name="statRegistLightning"></param>
-        /// <param name="statRegistPoison"></param>
+        private void OnProviderChanged()
+        {
+            RecalculateStats();
+        }
+
+        /// <summary>
+        /// 스크립터블 오브젝트 등에 정의된 기본 스탯 값을 설정하고 즉시 재계산합니다.
+        /// </summary>
+        /// <param name="statAtk">기본 공격력입니다.</param>
+        /// <param name="statDef">기본 방어력입니다.</param>
+        /// <param name="statHp">기본 HP입니다.</param>
+        /// <param name="statMp">기본 MP입니다.</param>
+        /// <param name="statStamina">기본 스태미나입니다.</param>
+        /// <param name="statSuperArmor">기본 슈퍼아머입니다.</param>
+        /// <param name="statMoveSpeed">기본 이동속도입니다.</param>
+        /// <param name="statAttackSpeed">기본 공격속도입니다.</param>
+        /// <param name="statRegistFire">기본 화염 저항입니다.</param>
+        /// <param name="statRegistCold">기본 냉기 저항입니다.</param>
+        /// <param name="statRegistLightning">기본 번개 저항입니다.</param>
+        /// <param name="statRegistPoison">기본 독 저항입니다.</param>
         protected void SetBaseInfos(int statAtk, int statDef, int statHp, int statMp, int statStamina,
             int statSuperArmor, int statMoveSpeed,
             int statAttackSpeed, int statRegistFire, int statRegistCold, int statRegistLightning, int statRegistPoison)
@@ -149,340 +266,122 @@ namespace GGemCo2DCore
             BaseRegistCold = statRegistCold;
             BaseRegistLightning = statRegistLightning;
             BaseRegistPoison = statRegistPoison;
+
             RecalculateStats();
         }
 
         /// <summary>
-        /// 값 업데이트
-        /// - 장착 아이템(정의/인스턴스)을 기준으로 최종 옵션을 계산하여 Stat/Affect를 반영한다.
+        /// 장착 아이템 정보를 기반으로 장비 Provider의 캐시를 갱신합니다.
+        /// - 실제 재계산은 Provider의 Changed 이벤트에 의해 트리거됩니다.
         /// </summary>
-        /// <param name="characterBase"></param>
-        /// <param name="equippedItems"></param>
+        /// <param name="characterBase">캐릭터의 기본 정의(직업/성장 등) 정보입니다.</param>
+        /// <param name="equippedItems">슬롯/부위 기준의 장착 아이템 참조 목록입니다.</param>
         public void UpdateStatCache(CharacterBase characterBase, Dictionary<int, EquippedItemRef> equippedItems)
         {
-            _flatEquipmentModifiers.Clear();
-            _percentEquipmentModifiers.Clear();
-
-            var statModifiers = new List<ConfigCommon.StruckStatus>(32);
-            var desiredEquipAffects = new HashSet<int>();
-
-            // 옵션 리졸버(테이블 기반)
-            var tables = TableLoaderManager.Instance;
-            var resolver = new ItemOptionResolver(tables);
-
-            var instanceStore = SceneGame.Instance?.saveDataManager?.ItemInstances;
-
-            foreach (var kv in equippedItems)
-            {
-                var equipRef = kv.Value;
-                if (equipRef == null || equipRef.ItemUid <= 0) continue;
-
-                // 1) 인스턴스 기반이면 Base + Rolled 옵션을 사용
-                if (equipRef.InstanceId <= 0 || instanceStore == null ||
-                    !instanceStore.TryGet(equipRef.InstanceId, out var inst) || inst == null) continue;
-                
-                var options = resolver.ResolveFinalOptions(inst);
-                ApplyOptionsFromEntries(options, statModifiers, desiredEquipAffects);
-            }
-
-            ApplyStatModifiers(statModifiers);
-            SyncEquipAffects(desiredEquipAffects);
-            RecalculateStats();
-        }
-
-        private void ApplyOptionsFromEntries(List<ItemOptionEntry> options, List<ConfigCommon.StruckStatus> outStatModifiers, HashSet<int> outEquipAffects)
-        {
-            if (options == null || options.Count <= 0) return;
-
-            for (int i = 0; i < options.Count; i++)
-            {
-                var op = options[i];
-                if (!op.IsValid) continue;
-
-                switch (op.Kind)
-                {
-                    case ItemOptionKind.Stat:
-                        // CharacterStat은 기존처럼 STAT_* key를 받아서 처리
-                        outStatModifiers.Add(new ConfigCommon.StruckStatus(op.TargetId, op.Op, op.Value));
-                        break;
-
-                    case ItemOptionKind.Affect:
-                    {
-                        if (TryParseIntId(op.TargetId, out var affectUid) && affectUid > 0)
-                        {
-                            // 착용 지속 효과는 장비 변경 시점에 apply/remove를 동기화한다.
-                            outEquipAffects.Add(affectUid);
-                        }
-                        break;
-                    }
-
-                    case ItemOptionKind.State:
-                        // State는 Affect 패키지 쪽 정책(STATE -> Affect 매핑)에 따라 처리될 수 있다.
-                        // Core에서는 브리지만 제공하고, 실제 매핑은 Affect 런타임에서 처리하도록 한다.
-                        AffectRuntimeBridge.ApplyState(gameObject, op.TargetId, op.Duration);
-                        break;
-
-                    case ItemOptionKind.DamageType:
-                        // DamageType 기반 옵션(예: 속성 추가/전환)은 전투 파이프라인에 맞춰 확장 필요.
-                        // Core 기본안에서는 저항/증가를 Stat으로 처리하는 것을 권장한다.
-                        break;
-                }
-            }
-        }
-
-        private void SyncEquipAffects(HashSet<int> desired)
-        {
-            // remove
-            var toRemove = _equipAppliedAffects.Where(x => !desired.Contains(x)).ToArray();
-            for (int i = 0; i < toRemove.Length; i++)
-            {
-                RemoveAffect(toRemove[i]);
-                _equipAppliedAffects.Remove(toRemove[i]);
-            }
-
-            // apply
-            foreach (var uid in desired)
-            {
-                if (_equipAppliedAffects.Contains(uid)) continue;
-                ApplyAffect(uid, 0);
-                _equipAppliedAffects.Add(uid);
-            }
-        }
-
-        private static bool TryParseIntId(string v, out int id)
-        {
-            id = 0;
-            if (string.IsNullOrEmpty(v)) return false;
-            return int.TryParse(v, out id);
+            _equipmentProvider.UpdateFromEquippedItems(characterBase, equippedItems);
+            // Provider의 Changed 이벤트가 재계산을 트리거합니다.
         }
 
         /// <summary>
-        /// 버프 적용하기
+        /// 장비/옵션 버킷(Equipment Provider)에 스탯 변경값을 누적 적용합니다.
         /// </summary>
-        /// <param name="affectUid"></param>
-        /// <param name="duration"></param>
-        protected void ApplyAffect(int affectUid, float duration)
-        {
-            AffectRuntimeBridge.ApplyAffect(gameObject, affectUid, duration);
-        }
-
-        /// <summary>
-        /// 버프 해제하기
-        /// </summary>
-        /// <param name="affectUid"></param>
-        public void RemoveAffect(int affectUid)
-        {
-            AffectRuntimeBridge.RemoveAffect(gameObject, affectUid);
-        }
-
-        /// <summary>
-        /// 스탯 변경값 적용하기
-        /// </summary>
-        /// <param name="modifiers"></param>
+        /// <param name="modifiers">적용할 스탯 변경 목록입니다.</param>
         public void ApplyStatModifiers(List<ConfigCommon.StruckStatus> modifiers)
         {
-            foreach (var kvp in modifiers)
-            {
-                ModifyStat(kvp.ID, kvp, true);
-            }
+            _equipmentProvider.ApplyStatModifiers(modifiers);
         }
 
+        /// <summary>
+        /// 장비/옵션 버킷(Equipment Provider)에서 스탯 변경값을 제거합니다.
+        /// </summary>
+        /// <param name="modifiers">제거할 스탯 변경 목록입니다.</param>
         public void RemoveStatModifiers(List<ConfigCommon.StruckStatus> modifiers)
         {
-            foreach (var kvp in modifiers)
-            {
-                ModifyStat(kvp.ID, kvp, false);
-            }
+            _equipmentProvider.RemoveStatModifiers(modifiers);
         }
-        /// <summary>
-        /// 접미사에 따라 적용할 값 배열에 넣기
-        /// </summary>
-        /// <param name="statType"></param>
-        /// <param name="struckStatus"></param>
-        /// <param name="isAdding"></param>
-        private void ModifyStat(string statType, ConfigCommon.StruckStatus struckStatus, bool isAdding)
-        {
-            if (string.IsNullOrEmpty(statType)) return;
 
-            string baseStat = statType;
-
-            float value = struckStatus.Value;
-            ConfigCommon.SuffixType suffixType = struckStatus.SuffixType;
-            switch (suffixType)
-            {
-                case ConfigCommon.SuffixType.Plus:
-                {
-                    _flatEquipmentModifiers[baseStat] = _flatEquipmentModifiers.GetValueOrDefault(baseStat, 0) + (isAdding ? (int)value : -(int)value);
-                    if (_flatEquipmentModifiers[baseStat] == 0) _flatEquipmentModifiers.Remove(baseStat);
-                    break;
-                }
-                case ConfigCommon.SuffixType.Minus:
-                {
-                    _flatEquipmentModifiers[baseStat] = _flatEquipmentModifiers.GetValueOrDefault(baseStat, 0) - (isAdding ? (int)value : -(int)value);
-                    if (_flatEquipmentModifiers[baseStat] == 0) _flatEquipmentModifiers.Remove(baseStat);
-                    break;
-                }
-                case ConfigCommon.SuffixType.Increase:
-                {
-                    _percentEquipmentModifiers[baseStat] = _percentEquipmentModifiers.GetValueOrDefault(baseStat, 0) + (isAdding ? value : -value);
-                    if (Mathf.Approximately(_percentEquipmentModifiers[baseStat], 0)) _percentEquipmentModifiers.Remove(baseStat);
-                    break;
-                }
-                case ConfigCommon.SuffixType.Decrease:
-                {
-                    _percentEquipmentModifiers[baseStat] = _percentEquipmentModifiers.GetValueOrDefault(baseStat, 0) - (isAdding ? value : -value);
-                    if (Mathf.Approximately(_percentEquipmentModifiers[baseStat], 0)) _percentEquipmentModifiers.Remove(baseStat);
-                    break;
-                }
-                case ConfigCommon.SuffixType.None:
-                default:
-                {
-                    // legacy/간편 표기: None이면 Plus로 간주(기존 OptionType* 호환)
-                    _flatEquipmentModifiers[baseStat] = _flatEquipmentModifiers.GetValueOrDefault(baseStat, 0) + (isAdding ? (int)value : -(int)value);
-                    if (_flatEquipmentModifiers[baseStat] == 0) _flatEquipmentModifiers.Remove(baseStat);
-                    break;
-                }
-            }
-        }
         /// <summary>
-        /// 스탯 포인트(영구 Modifier) 값을 갱신합니다.
-        /// - 장비 갱신(UpdateStatCache)과 무관하게 유지됩니다.
+        /// 스탯 포인트 등 영구 Modifier 값을 갱신합니다.
+        /// - 장비 갱신(<see cref="UpdateStatCache"/>)과 무관하게 유지됩니다.
+        /// - 이 메서드는 기본적으로 재계산을 트리거하지 않습니다(호출 측에서 <see cref="RecalculateStats"/> 호출).
         /// </summary>
+        /// <param name="flatByStatKey">스탯 키별 고정(Flat) 증가량입니다.</param>
+        /// <param name="percentByStatKey">스탯 키별 퍼센트(Percent) 증가율입니다.</param>
         public void SetStatPointModifiers(Dictionary<string, int> flatByStatKey, Dictionary<string, float> percentByStatKey)
         {
-            _flatPersistentModifiers.Clear();
-            _percentPersistentModifiers.Clear();
-
-            if (flatByStatKey != null)
-            {
-                foreach (var kv in flatByStatKey)
-                {
-                    if (string.IsNullOrEmpty(kv.Key)) continue;
-                    if (kv.Value == 0) continue;
-                    _flatPersistentModifiers[kv.Key] = kv.Value;
-                }
-            }
-
-            if (percentByStatKey != null)
-            {
-                foreach (var kv in percentByStatKey)
-                {
-                    if (string.IsNullOrEmpty(kv.Key)) continue;
-                    if (Mathf.Approximately(kv.Value, 0f)) continue;
-                    _percentPersistentModifiers[kv.Key] = kv.Value;
-                }
-            }
+            // 기존 CharacterStat은 SetStatPointModifiers만으로 재계산을 수행하지 않았습니다.
+            // (호출 측에서 RecalculateStats()를 호출하는 패턴 유지)
+            _persistentProvider.SetModifiers(flatByStatKey, percentByStatKey, raiseEvent: false);
         }
 
         /// <summary>
         /// 패시브 스킬(장착형) Modifier 값을 갱신합니다.
         /// - 장비/스탯포인트와 별도 버킷으로 관리됩니다.
-        /// - 레벨 업/장착 변경 등에서 호출되어 전체를 재구성하는 방식(권장)입니다.
+        /// - 레벨 업/장착 변경 등에서 전체를 재구성하는 방식으로 호출하는 것을 권장합니다.
         /// </summary>
+        /// <param name="flatByStatKey">스탯 키별 고정(Flat) 증가량입니다.</param>
+        /// <param name="percentByStatKey">스탯 키별 퍼센트(Percent) 증가율입니다.</param>
+        /// <param name="recalculate">true이면 변경 이벤트를 발생시켜 즉시 재계산합니다.</param>
         public void SetPassiveSkillModifiers(Dictionary<string, int> flatByStatKey, Dictionary<string, float> percentByStatKey, bool recalculate = true)
         {
-            _flatPassiveSkillModifiers.Clear();
-            _percentPassiveSkillModifiers.Clear();
-
-            if (flatByStatKey != null)
-            {
-                foreach (var kv in flatByStatKey)
-                {
-                    if (string.IsNullOrEmpty(kv.Key)) continue;
-                    if (kv.Value == 0) continue;
-                    _flatPassiveSkillModifiers[kv.Key] = kv.Value;
-                }
-            }
-
-            if (percentByStatKey != null)
-            {
-                foreach (var kv in percentByStatKey)
-                {
-                    if (string.IsNullOrEmpty(kv.Key)) continue;
-                    if (Mathf.Approximately(kv.Value, 0f)) continue;
-                    _percentPassiveSkillModifiers[kv.Key] = kv.Value;
-                }
-            }
-
+            _passiveProvider.SetModifiers(flatByStatKey, percentByStatKey, raiseEvent: recalculate);
             if (recalculate)
-                RecalculateStats();
+            {
+                // Changed 이벤트로 인해 RecalculateStats()가 호출됩니다.
+            }
         }
 
         /// <summary>
-        /// 패시브 스킬 Modifier 를 제거합니다.
+        /// 패시브 스킬 Modifier를 모두 제거합니다.
         /// </summary>
+        /// <param name="recalculate">true이면 변경 이벤트를 발생시켜 즉시 재계산합니다.</param>
         public void ClearPassiveSkillModifiers(bool recalculate = true)
         {
-            _flatPassiveSkillModifiers.Clear();
-            _percentPassiveSkillModifiers.Clear();
-
-            if (recalculate)
-                RecalculateStats();
+            _passiveProvider.Clear(raiseEvent: recalculate);
         }
 
         /// <summary>
-        /// 스탯별 최종 계산하기
-        /// </summary>
-        /// <param name="statKey"></param>
-        /// <param name="baseValue"></param>
-        /// <returns></returns>
-        private long CalculateFinalStat(string statKey, int baseValue)
-        {
-            int flatBonus = _flatEquipmentModifiers.GetValueOrDefault(statKey, 0)
-                           + _flatPersistentModifiers.GetValueOrDefault(statKey, 0)
-                           + _flatPassiveSkillModifiers.GetValueOrDefault(statKey, 0);
-            float percentBonus = _percentEquipmentModifiers.GetValueOrDefault(statKey, 0)
-                             + _percentPersistentModifiers.GetValueOrDefault(statKey, 0)
-                             + _percentPassiveSkillModifiers.GetValueOrDefault(statKey, 0);
-
-            float finalMultiplier = 1 + (percentBonus / 100f);
-            if (finalMultiplier < 0) finalMultiplier = 0; // 최소 0으로 제한
-
-            return (long)((baseValue + flatBonus) * finalMultiplier);
-        }
-
-        private long CalculateFinalStatProjected(
-            string statKey,
-            int baseValue,
-            Dictionary<string, int> flatPersistentProjected,
-            Dictionary<string, float> percentPersistentProjected)
-        {
-            int flatBonus = _flatEquipmentModifiers.GetValueOrDefault(statKey, 0)
-                            + (flatPersistentProjected?.GetValueOrDefault(statKey, 0) ?? 0)
-                            + _flatPassiveSkillModifiers.GetValueOrDefault(statKey, 0);
-
-            float percentBonus = _percentEquipmentModifiers.GetValueOrDefault(statKey, 0)
-                                 + (percentPersistentProjected?.GetValueOrDefault(statKey, 0f) ?? 0f)
-                                 + _percentPassiveSkillModifiers.GetValueOrDefault(statKey, 0f);
-
-            float finalMultiplier = 1 + (percentBonus / 100f);
-            if (finalMultiplier < 0) finalMultiplier = 0; // 최소 0
-
-            return (long)((baseValue + flatBonus) * finalMultiplier);
-        }
-
-        /// <summary>
-        /// (부작용 없음) 현재 장비/기타 modifier는 그대로 두고,
+        /// (부작용 없음) 현재 장비/패시브 modifier는 유지한 채,
         /// 영구 modifier(스탯 포인트 등)만 특정 값으로 가정했을 때의 총합을 계산합니다.
         /// </summary>
+        /// <param name="flatPersistentProjected">가정할 영구 Flat 증가량(스탯 키 기준)입니다.</param>
+        /// <param name="percentPersistentProjected">가정할 영구 Percent 증가율(스탯 키 기준)입니다.</param>
+        /// <returns>가정값을 반영하여 계산된 스탯 총합 스냅샷입니다.</returns>
         public CharacterTotals CalculateTotalsWithPersistentModifiers(
             Dictionary<string, int> flatPersistentProjected,
             Dictionary<string, float> percentPersistentProjected)
         {
-            long atk = CalculateFinalStatProjected(ConfigCommon.StatusStatAtk, BaseAtk, flatPersistentProjected, percentPersistentProjected);
-            long def = CalculateFinalStatProjected(ConfigCommon.StatusStatDef, BaseDef, flatPersistentProjected, percentPersistentProjected);
-            long hp = CalculateFinalStatProjected(ConfigCommon.StatusStatHp, BaseHp, flatPersistentProjected, percentPersistentProjected);
-            long mp = CalculateFinalStatProjected(ConfigCommon.StatusStatMp, BaseMp, flatPersistentProjected, percentPersistentProjected);
-            long stamina = CalculateFinalStatProjected(ConfigCommon.StatusStatStamina, BaseStamina, flatPersistentProjected, percentPersistentProjected);
-            int superArmor = (int)CalculateFinalStatProjected(ConfigCommon.StatusStatSuperArmor, BaseSuperArmor, flatPersistentProjected, percentPersistentProjected);
-            long moveSpeed = CalculateFinalStatProjected(ConfigCommon.StatusStatMoveSpeed, BaseMoveSpeed, flatPersistentProjected, percentPersistentProjected);
-            long attackSpeed = CalculateFinalStatProjected(ConfigCommon.StatusStatAttackSpeed, BaseAttackSpeed, flatPersistentProjected, percentPersistentProjected);
-            long criticalDamage = CalculateFinalStatProjected(ConfigCommon.StatusStatCriticalDamage, BaseCriticalDamage, flatPersistentProjected, percentPersistentProjected);
-            long criticalProbability = CalculateFinalStatProjected(ConfigCommon.StatusStatCriticalProbability, BaseCriticalProbability, flatPersistentProjected, percentPersistentProjected);
-            long registFire = CalculateFinalStatProjected(ConfigCommon.StatusStatResistanceFire, BaseRegistFire, flatPersistentProjected, percentPersistentProjected);
-            long registCold = CalculateFinalStatProjected(ConfigCommon.StatusStatResistanceCold, BaseRegistCold, flatPersistentProjected, percentPersistentProjected);
-            long registLightning = CalculateFinalStatProjected(ConfigCommon.StatusStatResistanceLightning, BaseRegistLightning, flatPersistentProjected, percentPersistentProjected);
-            long registPoison = CalculateFinalStatProjected(ConfigCommon.StatusStatResistancePoison, BaseRegistPoison, flatPersistentProjected, percentPersistentProjected);
+            long atk = StatCalculator.CalculateFinalProjected(ConfigCommon.StatusStatAtk, BaseAtk,
+                flatPersistentProjected, percentPersistentProjected, _providersWithoutPersistent);
+            long def = StatCalculator.CalculateFinalProjected(ConfigCommon.StatusStatDef, BaseDef,
+                flatPersistentProjected, percentPersistentProjected, _providersWithoutPersistent);
+            long hp = StatCalculator.CalculateFinalProjected(ConfigCommon.StatusStatHp, BaseHp,
+                flatPersistentProjected, percentPersistentProjected, _providersWithoutPersistent);
+            long mp = StatCalculator.CalculateFinalProjected(ConfigCommon.StatusStatMp, BaseMp,
+                flatPersistentProjected, percentPersistentProjected, _providersWithoutPersistent);
+            long stamina = StatCalculator.CalculateFinalProjected(ConfigCommon.StatusStatStamina, BaseStamina,
+                flatPersistentProjected, percentPersistentProjected, _providersWithoutPersistent);
+            int superArmor = (int)StatCalculator.CalculateFinalProjected(ConfigCommon.StatusStatSuperArmor, BaseSuperArmor,
+                flatPersistentProjected, percentPersistentProjected, _providersWithoutPersistent);
+
+            long moveSpeed = StatCalculator.CalculateFinalProjected(ConfigCommon.StatusStatMoveSpeed, BaseMoveSpeed,
+                flatPersistentProjected, percentPersistentProjected, _providersWithoutPersistent);
+            long attackSpeed = StatCalculator.CalculateFinalProjected(ConfigCommon.StatusStatAttackSpeed, BaseAttackSpeed,
+                flatPersistentProjected, percentPersistentProjected, _providersWithoutPersistent);
+
+            long criticalDamage = StatCalculator.CalculateFinalProjected(ConfigCommon.StatusStatCriticalDamage, BaseCriticalDamage,
+                flatPersistentProjected, percentPersistentProjected, _providersWithoutPersistent);
+            long criticalProbability = StatCalculator.CalculateFinalProjected(ConfigCommon.StatusStatCriticalProbability, BaseCriticalProbability,
+                flatPersistentProjected, percentPersistentProjected, _providersWithoutPersistent);
+
+            long registFire = StatCalculator.CalculateFinalProjected(ConfigCommon.StatusStatResistanceFire, BaseRegistFire,
+                flatPersistentProjected, percentPersistentProjected, _providersWithoutPersistent);
+            long registCold = StatCalculator.CalculateFinalProjected(ConfigCommon.StatusStatResistanceCold, BaseRegistCold,
+                flatPersistentProjected, percentPersistentProjected, _providersWithoutPersistent);
+            long registLightning = StatCalculator.CalculateFinalProjected(ConfigCommon.StatusStatResistanceLightning, BaseRegistLightning,
+                flatPersistentProjected, percentPersistentProjected, _providersWithoutPersistent);
+            long registPoison = StatCalculator.CalculateFinalProjected(ConfigCommon.StatusStatResistancePoison, BaseRegistPoison,
+                flatPersistentProjected, percentPersistentProjected, _providersWithoutPersistent);
 
             return new CharacterTotals(
                 atk, def, hp, mp, stamina,
@@ -491,25 +390,30 @@ namespace GGemCo2DCore
                 criticalDamage, criticalProbability,
                 registFire, registCold, registLightning, registPoison);
         }
+
         /// <summary>
-        /// 최종 계산하기
+        /// 모든 Provider(장비/영구/패시브)를 반영하여 최종 스탯을 재계산하고,
+        /// 각 <see cref="BehaviorSubject{T}"/>에 계산 결과를 발행합니다.
         /// </summary>
         public void RecalculateStats()
         {
-            _totalAtk = CalculateFinalStat(ConfigCommon.StatusStatAtk, BaseAtk);
-            _totalDef = CalculateFinalStat(ConfigCommon.StatusStatDef, BaseDef);
-            _totalHp = CalculateFinalStat(ConfigCommon.StatusStatHp, BaseHp);
-            _totalMp = CalculateFinalStat(ConfigCommon.StatusStatMp, BaseMp);
-            _totalStamina = CalculateFinalStat(ConfigCommon.StatusStatStamina, BaseStamina);
-            _totalSuperArmor = (int)CalculateFinalStat(ConfigCommon.StatusStatSuperArmor, BaseSuperArmor);
-            _totalMoveSpeed = CalculateFinalStat(ConfigCommon.StatusStatMoveSpeed, BaseMoveSpeed);
-            _totalAttackSpeed = CalculateFinalStat(ConfigCommon.StatusStatAttackSpeed, BaseAttackSpeed);
-            _totalCriticalDamage = CalculateFinalStat(ConfigCommon.StatusStatCriticalDamage, BaseCriticalDamage);
-            _totalCriticalProbability = CalculateFinalStat(ConfigCommon.StatusStatCriticalProbability, BaseCriticalProbability);
-            _totalRegistFire = CalculateFinalStat(ConfigCommon.StatusStatResistanceFire, BaseRegistFire);
-            _totalRegistCold = CalculateFinalStat(ConfigCommon.StatusStatResistanceCold, BaseRegistCold);
-            _totalRegistLightning = CalculateFinalStat(ConfigCommon.StatusStatResistanceLightning, BaseRegistLightning);
-            _totalRegistPoison = CalculateFinalStat(ConfigCommon.StatusStatResistancePoison, BaseRegistPoison);
+            _totalAtk = StatCalculator.CalculateFinal(ConfigCommon.StatusStatAtk, BaseAtk, _allProviders);
+            _totalDef = StatCalculator.CalculateFinal(ConfigCommon.StatusStatDef, BaseDef, _allProviders);
+            _totalHp = StatCalculator.CalculateFinal(ConfigCommon.StatusStatHp, BaseHp, _allProviders);
+            _totalMp = StatCalculator.CalculateFinal(ConfigCommon.StatusStatMp, BaseMp, _allProviders);
+            _totalStamina = StatCalculator.CalculateFinal(ConfigCommon.StatusStatStamina, BaseStamina, _allProviders);
+            _totalSuperArmor = (int)StatCalculator.CalculateFinal(ConfigCommon.StatusStatSuperArmor, BaseSuperArmor, _allProviders);
+
+            _totalMoveSpeed = StatCalculator.CalculateFinal(ConfigCommon.StatusStatMoveSpeed, BaseMoveSpeed, _allProviders);
+            _totalAttackSpeed = StatCalculator.CalculateFinal(ConfigCommon.StatusStatAttackSpeed, BaseAttackSpeed, _allProviders);
+
+            _totalCriticalDamage = StatCalculator.CalculateFinal(ConfigCommon.StatusStatCriticalDamage, BaseCriticalDamage, _allProviders);
+            _totalCriticalProbability = StatCalculator.CalculateFinal(ConfigCommon.StatusStatCriticalProbability, BaseCriticalProbability, _allProviders);
+
+            _totalRegistFire = StatCalculator.CalculateFinal(ConfigCommon.StatusStatResistanceFire, BaseRegistFire, _allProviders);
+            _totalRegistCold = StatCalculator.CalculateFinal(ConfigCommon.StatusStatResistanceCold, BaseRegistCold, _allProviders);
+            _totalRegistLightning = StatCalculator.CalculateFinal(ConfigCommon.StatusStatResistanceLightning, BaseRegistLightning, _allProviders);
+            _totalRegistPoison = StatCalculator.CalculateFinal(ConfigCommon.StatusStatResistancePoison, BaseRegistPoison, _allProviders);
 
             TotalAtk.OnNext(_totalAtk);
             TotalDef.OnNext(_totalDef);
@@ -527,19 +431,39 @@ namespace GGemCo2DCore
             TotalRegistPoison.OnNext(_totalRegistPoison);
         }
 
-        public float GetCurrentMoveSpeed(bool isPercent = true) => isPercent ? TotalMoveSpeed.Value / 100f : TotalMoveSpeed.Value;
+        /// <summary>
+        /// 현재 이동속도를 반환합니다.
+        /// </summary>
+        /// <param name="isPercent">true이면 100 기준 퍼센트 값(예: 120 → 1.2)으로 변환합니다.</param>
+        /// <returns>이동속도 값(퍼센트 변환 여부에 따라 스케일이 달라집니다).</returns>
+        public float GetCurrentMoveSpeed(bool isPercent = true)
+            => isPercent ? TotalMoveSpeed.Value / 100f : TotalMoveSpeed.Value;
+
+        /// <summary>
+        /// 현재 공격속도를 100 기준 퍼센트 값으로 반환합니다.
+        /// </summary>
+        /// <returns>공격속도(예: 120 → 1.2)입니다.</returns>
         public float GetCurrentAttackSpeed() => TotalAttackSpeed.Value / 100f;
 
+        /// <summary>
+        /// 기본 이동속도를 변경하고 전체 스탯을 재계산합니다.
+        /// </summary>
+        /// <param name="value">설정할 기본 이동속도 값입니다(0 이하는 무시).</param>
         public void SetCurrentMoveSpeed(int value)
         {
             if (value <= 0) return;
             BaseMoveSpeed = value;
             RecalculateStats();
         }
+
         /// <summary>
-        /// 최종 공격력 계산
+        /// 현재 스탯(크리티컬 확률/피해량 포함)을 반영하여 1회 공격의 최종 피해를 계산합니다.
         /// </summary>
-        /// <returns>계산된 최종 공격력</returns>
+        /// <remarks>
+        /// - 크리티컬 확률에 따라 난수(<see cref="Random.value"/>)로 크리티컬 여부를 결정합니다.
+        /// - 크리티컬 피해 배율은 최소 1.0으로 보정합니다.
+        /// </remarks>
+        /// <returns>난수 결과를 반영한 1회 공격 피해량입니다.</returns>
         protected long CalculateFinalAttack()
         {
             long baseAttack = TotalAtk.Value;
@@ -547,9 +471,9 @@ namespace GGemCo2DCore
 
             float finalDamage = baseAttack;
             float criticalChance = Mathf.Clamp01(TotalCriticalProbability.Value / 100f);
-            
+
             if (!(Random.value < criticalChance)) return Mathf.RoundToInt(finalDamage);
-            
+
             float critMultiplier = Mathf.Max(1f, TotalCriticalDamage.Value / 100f);
             finalDamage *= critMultiplier;
 
@@ -557,8 +481,12 @@ namespace GGemCo2DCore
         }
 
         /// <summary>
-        /// 예상 평균 공격력 (크리티컬 기대값 포함)
+        /// 크리티컬 기대값을 포함한 예상 평균 공격력을 계산합니다.
         /// </summary>
+        /// <remarks>
+        /// 기대값 = 일반 공격 * (1 - 크리확) + (일반 공격 * 크리배율) * 크리확
+        /// </remarks>
+        /// <returns>크리티컬 확률/배율을 반영한 평균 피해 기대값입니다.</returns>
         public float CalculateExpectedAttack()
         {
             long baseAttack = TotalAtk.Value;
@@ -570,6 +498,25 @@ namespace GGemCo2DCore
             // 기대값 = 일반 공격 * (1 - 크리확) + 크리티컬 공격 * (크리확)
             float expectedDamage = baseAttack * (1 - criticalChance) + (baseAttack * critMultiplier * criticalChance);
             return expectedDamage;
+        }
+
+        /// <summary>
+        /// 지정한 Affect를 현재 캐릭터에 적용합니다.
+        /// </summary>
+        /// <param name="affectUid">적용할 Affect의 UID입니다.</param>
+        /// <param name="duration">지속 시간(초)입니다.</param>
+        public void ApplyAffect(int affectUid, float duration)
+        {
+            AffectRuntimeBridge.ApplyAffect(gameObject, affectUid, duration);
+        }
+
+        /// <summary>
+        /// 지정한 Affect를 현재 캐릭터에서 제거합니다.
+        /// </summary>
+        /// <param name="affectUid">제거할 Affect의 UID입니다.</param>
+        public void RemoveAffect(int affectUid)
+        {
+            AffectRuntimeBridge.RemoveAffect(gameObject, affectUid);
         }
     }
 }

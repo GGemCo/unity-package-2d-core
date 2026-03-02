@@ -135,8 +135,9 @@ namespace GGemCo2DCore
         /// <summary>
         /// Destroy 되었을때 태그 지워주기
         /// </summary>
-        private void OnDestroy()
+        protected override void OnDestroy()
         {
+            base.OnDestroy();
             if (_tagNameNpc != null)
             {
                 Destroy(_tagNameNpc.gameObject);    
