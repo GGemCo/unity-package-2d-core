@@ -119,6 +119,15 @@ namespace GGemCo2DCore
         [Tooltip("게임 시작 시 현재 Stamina 값 설정")]
         public ResourceStartSetting startStamina = ResourceStartSetting.CreateMax();
 
+        [Header("최대치 변경 시 현재 자원 보정 정책")]
+        [Tooltip("최대 HP가 변할 때 현재 HP를 어떻게 보정할지 결정합니다.")]
+        public CharacterConstants.ResourceMaxChangePolicy hpMaxChangePolicy = CharacterConstants.ResourceMaxChangePolicy.AddDelta;
+
+        [Tooltip("최대 MP가 변할 때 현재 MP를 어떻게 보정할지 결정합니다.")]
+        public CharacterConstants.ResourceMaxChangePolicy mpMaxChangePolicy = CharacterConstants.ResourceMaxChangePolicy.PreserveRatio;
+
+        [Tooltip("최대 Stamina가 변할 때 현재 Stamina를 어떻게 보정할지 결정합니다.")]
+        public CharacterConstants.ResourceMaxChangePolicy staminaMaxChangePolicy = CharacterConstants.ResourceMaxChangePolicy.KeepCurrent;
 
         [Header("맵 경계 제한 옵션")]
         [Tooltip("왼쪽 경계를 벗어날 수 없도록 제한합니다.")]
@@ -130,22 +139,11 @@ namespace GGemCo2DCore
         [Tooltip("위쪽(천장) 경계를 벗어날 수 없도록 제한합니다.")]
         public bool limitBoundaryTop = true;
 
-
-
-        // =========================
-        // Stat Point (스탯 포인트)
-        // =========================
-        public enum StatPointBonusMode
-        {
-            Flat = 0,
-            Percent = 1,
-        }
-
-        [System.Serializable]
+        [Serializable]
         public struct StatPointBonus
         {
             [Tooltip("포인트 1당 증가 방식 (Flat: 고정값, Percent: % 증가)")]
-            public StatPointBonusMode mode;
+            public ConfigCommon.CalculateType mode;
             [Tooltip("포인트 1당 증가량. Percent는 '퍼센트 값'을 입력합니다. 예) 1.5 = 1.5%")]
             public float valuePerPoint;
         }
@@ -190,11 +188,11 @@ namespace GGemCo2DCore
             statPointInitial = 0;
             statPointPerLevel = 0;
 
-            statPointAtk = new StatPointBonus { mode = StatPointBonusMode.Flat, valuePerPoint = 1f };
-            statPointDef = new StatPointBonus { mode = StatPointBonusMode.Flat, valuePerPoint = 1f };
-            statPointHp = new StatPointBonus { mode = StatPointBonusMode.Flat, valuePerPoint = 10f };
-            statPointMp = new StatPointBonus { mode = StatPointBonusMode.Flat, valuePerPoint = 5f };
-            statPointStamina = new StatPointBonus { mode = StatPointBonusMode.Flat, valuePerPoint = 5f };
+            statPointAtk = new StatPointBonus { mode = ConfigCommon.CalculateType.Flat, valuePerPoint = 1f };
+            statPointDef = new StatPointBonus { mode = ConfigCommon.CalculateType.Flat, valuePerPoint = 1f };
+            statPointHp = new StatPointBonus { mode = ConfigCommon.CalculateType.Flat, valuePerPoint = 10f };
+            statPointMp = new StatPointBonus { mode = ConfigCommon.CalculateType.Flat, valuePerPoint = 5f };
+            statPointStamina = new StatPointBonus { mode = ConfigCommon.CalculateType.Flat, valuePerPoint = 5f };
 
         }
     }

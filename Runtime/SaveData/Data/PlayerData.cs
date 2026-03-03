@@ -19,6 +19,9 @@ namespace GGemCo2DCore
         private readonly BehaviorSubject<long> _currentNeedExp = new(0);
         private readonly BehaviorSubject<long> _currentGold = new(0);
         private readonly BehaviorSubject<long> _currentSilver = new(0);
+
+        // 아이템 보너스 HP(소모형 추가 최대 HP, 추가 하트) - 저장 대상
+        private readonly BehaviorSubject<long> _itemBonusHpCurrent = new(0);
         
         // Stat Point (스탯 포인트)
         private readonly BehaviorSubject<int> _unspentStatPoints = new(0);
@@ -57,6 +60,17 @@ namespace GGemCo2DCore
         {
             get => _currentSilver.Value;
             set => _currentSilver.OnNext(value);
+        }
+
+        /// <summary>
+        /// 아이템 보너스 HP(소모형 추가 최대 HP, 추가 하트)
+        /// - 게임 종료/재시작에도 유지되어야 하므로 저장/로드 대상
+        /// - 사망 시 즉시 0으로 초기화되어 저장에도 반영되어야 함
+        /// </summary>
+        public long ItemBonusHpCurrent
+        {
+            get => _itemBonusHpCurrent.Value;
+            set => _itemBonusHpCurrent.OnNext(System.Math.Max(0, value));
         }
 
 
@@ -183,6 +197,7 @@ namespace GGemCo2DCore
                     _currentExp.DistinctUntilChanged().Select(_ => Unit.Default),
                     _currentGold.DistinctUntilChanged().Select(_ => Unit.Default),
                     _currentSilver.DistinctUntilChanged().Select(_ => Unit.Default),
+                    _itemBonusHpCurrent.DistinctUntilChanged().Select(_ => Unit.Default),
                     _unspentStatPoints.DistinctUntilChanged().Select(_ => Unit.Default),
                     _investedStatPointAtk.DistinctUntilChanged().Select(_ => Unit.Default),
                     _investedStatPointDef.DistinctUntilChanged().Select(_ => Unit.Default),
@@ -218,6 +233,7 @@ namespace GGemCo2DCore
                 CurrentExp = saveDataContainer.PlayerData.CurrentExp;
                 CurrentGold = saveDataContainer.PlayerData.CurrentGold;
                 CurrentSilver = saveDataContainer.PlayerData.CurrentSilver;
+                ItemBonusHpCurrent = saveDataContainer.PlayerData.ItemBonusHpCurrent;
                 UnspentStatPoints = saveDataContainer.PlayerData.UnspentStatPoints;
                 InvestedStatPointAtk = saveDataContainer.PlayerData.InvestedStatPointAtk;
                 InvestedStatPointDef = saveDataContainer.PlayerData.InvestedStatPointDef;

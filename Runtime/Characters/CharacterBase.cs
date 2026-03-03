@@ -11,6 +11,20 @@ namespace GGemCo2DCore
     /// </summary>
     public class CharacterBase : CharacterStat, ICharacterActionController
     {
+
+        /// <summary>
+        /// CharacterBase 초기화 완료 여부.
+        /// - <see cref="Start"/>에서 테이블/리젠/리소스 동기화 초기화가 끝난 뒤 true로 전환된다.
+        /// - 패시브/장비/세이브 로드 등 외부 시스템은 이 값이 true가 된 이후에 적용하는 것을 권장한다.
+        /// </summary>
+        public bool IsInitialized { get; private set; }
+
+        /// <summary>
+        /// CharacterBase 초기화 완료 이벤트.
+        /// - <see cref="IsInitialized"/>가 true로 전환되는 시점에 1회 호출된다.
+        /// </summary>
+        public event Action Initialized;
+        
         [Header("캐릭터 정보")]
         // 캐릭터 타입
         [HideInInspector] public CharacterConstants.Type type;
@@ -54,6 +68,54 @@ namespace GGemCo2DCore
         public readonly BehaviorSubject<long> CurrentMp = new(0);
         public readonly BehaviorSubject<long> CurrentStamina = new(0);
         public readonly BehaviorSubject<int> CurrentSuperArmor = new(0);
+        
+        /// <summary>
+        /// 리소스 동기화(최대치 변경 시 현재값 보정)
+        /// 특정 구간에서 Current 값을 직접 세팅하는 경우, 자동 보정을 잠시 비활성화할 수 있습니다.
+        /// </summary>
+        private int _suppressAutoResourceSyncCount;
+
+        private bool IsAutoResourceSyncSuppressed => _suppressAutoResourceSyncCount > 0;
+
+        /// <summary>
+        /// 특정 구간에서 Current 값을 직접 세팅해야 할 때, 최대치 변경 자동 보정을 잠시 비활성화합니다.
+        /// - 예) 스탯 포인트 재분배 후 현재값을 비율 유지로 직접 세팅하는 경우
+        /// </summary>
+        public IDisposable SuppressAutoResourceSync()
+        {
+            _suppressAutoResourceSyncCount++;
+            return new AutoResourceSyncScope(this);
+        }
+
+        private readonly struct AutoResourceSyncScope : IDisposable
+        {
+            private readonly CharacterBase _owner;
+            public AutoResourceSyncScope(CharacterBase owner) => _owner = owner;
+            public void Dispose()
+            {
+                if (_owner == null) return;
+                _owner._suppressAutoResourceSyncCount = Math.Max(0, _owner._suppressAutoResourceSyncCount - 1);
+            }
+        }
+
+
+        /// <summary>
+        /// 아이템 사용 등으로 얻는 "소모형 추가 최대 HP(추가 하트)".
+        /// - 데미지를 먼저 흡수하고, 0이 되면 즉시 소멸합니다.
+        /// - 회복/리젠으로 다시 채워지지 않습니다.
+        /// - 플레이어는 저장/로드 대상입니다(세이브 연동은 Player에서 처리).
+        /// </summary>
+        public readonly BehaviorSubject<long> ItemBonusHpCurrent = new(0);
+
+        /// <summary>
+        /// ItemBonusHpCurrent 변경 알림(저장/UI 갱신 등 외부 구독용).
+        /// </summary>
+        public event Action<long> ItemBonusHpChanged;
+
+        /// <summary>
+        /// ItemBonusHpCurrent가 0이 되어 소멸한 순간 1회 호출됩니다.
+        /// </summary>
+        public event Action ItemBonusHpDepleted;
 
         
         [Header("전투")] 
@@ -180,7 +242,8 @@ namespace GGemCo2DCore
             InitializeByTable();
             InitializeByAnimationTable();
             InitializeByRegenData();
-            
+
+            SetupResourceMaxChangeSync();
             TotalMoveSpeed
                 .Subscribe(UpdateAnimationMoveTimeScale)
                 .AddTo(this);
@@ -188,7 +251,120 @@ namespace GGemCo2DCore
             Vector2 size = SceneGame.Instance.mapManager.GetCurrentMapSize();
             _mapSizeHeight = size.y;
             Stop(true);
+            MarkInitialized();
         }
+
+        private void MarkInitialized()
+        {
+            if (IsInitialized)
+                return;
+
+            IsInitialized = true;
+            Initialized?.Invoke();
+        }
+
+
+        /// <summary>
+        /// 최대치(TotalHp/TotalMp/TotalStamina) 변경 시 현재값(Current*)을 정책에 따라 보정합니다.
+        /// - 정책 값은 <see cref="GGemCoPlayerSettings"/>에서 설정할 수 있습니다.
+        /// - Player는 자신의 settings를 우선 사용하고, 그 외 캐릭터는 AddressableLoaderSettings의 playerSettings를 fallback으로 사용합니다.
+        /// </summary>
+        private void SetupResourceMaxChangeSync()
+        {
+            var settings = GetPlayerSettingsForResourcePolicy();
+            if (settings == null)
+            {
+                // settings가 없으면 최소한의 안전 동작(감소 시 clamp)만 수행하도록 KeepCurrent로 구독합니다.
+                SubscribeResourceMaxChange(TotalHp, CurrentHp, CharacterConstants.ResourceMaxChangePolicy.KeepCurrent);
+                SubscribeResourceMaxChange(TotalMp, CurrentMp, CharacterConstants.ResourceMaxChangePolicy.KeepCurrent);
+                SubscribeResourceMaxChange(TotalStamina, CurrentStamina, CharacterConstants.ResourceMaxChangePolicy.KeepCurrent);
+                return;
+            }
+
+            SubscribeResourceMaxChange(TotalHp, CurrentHp, settings.hpMaxChangePolicy);
+            SubscribeResourceMaxChange(TotalMp, CurrentMp, settings.mpMaxChangePolicy);
+            SubscribeResourceMaxChange(TotalStamina, CurrentStamina, settings.staminaMaxChangePolicy);
+        }
+
+        /// <summary>
+        /// 리소스 보정 정책을 적용할 Settings를 반환합니다.
+        /// </summary>
+        protected virtual GGemCoPlayerSettings GetPlayerSettingsForResourcePolicy()
+        {
+            return AddressableLoaderSettings.Instance != null ? AddressableLoaderSettings.Instance.playerSettings : null;
+        }
+
+        private void SubscribeResourceMaxChange(BehaviorSubject<long> totalMax, BehaviorSubject<long> current,
+            CharacterConstants.ResourceMaxChangePolicy policy)
+        {
+            if (totalMax == null || current == null) return;
+
+            long lastMax = totalMax.Value;
+            bool isFirst = true;
+
+            totalMax.Subscribe(newMax =>
+                {
+                    // BehaviorSubject는 Subscribe 즉시 현재값을 내보내므로, 최초 1회는 무시합니다.
+                    if (isFirst)
+                    {
+                        isFirst = false;
+                        lastMax = newMax;
+                        return;
+                    }
+
+                    long oldMax = lastMax;
+                    lastMax = newMax;
+
+                    if (IsAutoResourceSyncSuppressed) return;
+                    if (newMax == oldMax) return;
+
+                    long newCur = EvaluateCurrentOnMaxChanged(current.Value, oldMax, newMax, policy);
+                    if (newCur == current.Value) return;
+
+                    current.OnNext(newCur);
+                })
+                .AddTo(this);
+        }
+
+        private static long EvaluateCurrentOnMaxChanged(long current, long oldMax, long newMax,
+            CharacterConstants.ResourceMaxChangePolicy policy)
+        {
+            if (newMax < 0) newMax = 0;
+
+            // 감소 시에는 어떤 정책이든 clamp가 최우선입니다.
+            if (newMax < oldMax)
+            {
+                return Math.Clamp(current, 0, newMax);
+            }
+
+            // 증가 또는 초기화(동일 포함)
+            switch (policy)
+            {
+                case CharacterConstants.ResourceMaxChangePolicy.AddDelta:
+                {
+                    long delta = newMax - oldMax;
+                    long v = current + delta;
+                    return Math.Clamp(v, 0, newMax);
+                }
+
+                case CharacterConstants.ResourceMaxChangePolicy.PreserveRatio:
+                {
+                    if (oldMax <= 0)
+                    {
+                        return Math.Clamp(current, 0, newMax);
+                    }
+
+                    float ratio = Mathf.Clamp01((float)current / oldMax);
+                    long v = Mathf.RoundToInt(ratio * newMax);
+                    return Math.Clamp(v, 0, newMax);
+                }
+
+                case CharacterConstants.ResourceMaxChangePolicy.KeepCurrent:
+                default:
+                    return Math.Clamp(current, 0, newMax);
+            }
+        }
+
         /// <summary>
         /// 테이블에서 가져온 몬스터 정보 셋팅
         /// </summary>
@@ -557,6 +733,68 @@ namespace GGemCo2DCore
         {
             _characterDamageController.TakeDamage(metadataDamage);
         }
+
+        #region Item Bonus HP (소모형 추가 최대 HP)
+        /// <summary>
+        /// 아이템 보너스 HP를 추가합니다.
+        /// - 유일한 증가 경로(회복/리젠은 Base HP만 회복)
+        /// </summary>
+        public void AddItemBonusHp(long amount)
+        {
+            if (amount <= 0) return;
+
+            long next = ItemBonusHpCurrent.Value + amount;
+            if (next < 0) next = long.MaxValue; // overflow 방어
+            SetItemBonusHpCurrentInternal(next, invokeDepleted: false);
+        }
+
+        /// <summary>
+        /// 데미지 처리에서 사용: ItemBonusHpCurrent를 먼저 소모하고, 남은 데미지를 반환합니다.
+        /// </summary>
+        public long ConsumeItemBonusHp(long incomingDamage)
+        {
+            if (incomingDamage <= 0) return 0;
+
+            long current = ItemBonusHpCurrent.Value;
+            if (current <= 0) return incomingDamage;
+
+            long consume = System.Math.Min(current, incomingDamage);
+            long remainingBonus = current - consume;
+            long remainingDamage = incomingDamage - consume;
+
+            bool depleted = remainingBonus <= 0;
+            SetItemBonusHpCurrentInternal(depleted ? 0 : remainingBonus, invokeDepleted: depleted);
+            return remainingDamage;
+        }
+
+        /// <summary>
+        /// 저장/로드 또는 사망 처리 등에서 직접 값을 세팅할 때 사용합니다.
+        /// </summary>
+        public void SetItemBonusHpCurrent(long value)
+        {
+            SetItemBonusHpCurrentInternal(System.Math.Max(0, value), invokeDepleted: value <= 0 && ItemBonusHpCurrent.Value > 0);
+        }
+
+        private void SetItemBonusHpCurrentInternal(long value, bool invokeDepleted)
+        {
+            value = System.Math.Max(0, value);
+            if (ItemBonusHpCurrent.Value == value)
+                return;
+
+            ItemBonusHpCurrent.OnNext(value);
+            ItemBonusHpChanged?.Invoke(value);
+
+            if (invokeDepleted)
+            {
+                // ItemBonus가 0이 되는 순간: 최대치(표시) 변화에 따른 클램프/리빌드 트리거
+                if (CurrentHp.Value > TotalHp.Value)
+                {
+                    CurrentHp.OnNext(TotalHp.Value);
+                }
+                ItemBonusHpDepleted?.Invoke();
+            }
+        }
+        #endregion
         public virtual void OnDamage(GameObject attacker)
         {
         }
@@ -663,8 +901,9 @@ namespace GGemCo2DCore
             }
             CurrentMp.OnNext(newVale);
         }
-        private void OnDestroy()
+        protected override void OnDestroy()
         {
+            base.OnDestroy();
             // todo 지워야하는 어펙트가 있고 유지해야하는 어펙트가 있다
             // AffectController?.RemoveAllAffects();
 

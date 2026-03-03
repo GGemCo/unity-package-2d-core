@@ -248,5 +248,21 @@ namespace GGemCo2DCore
         /// 해당 PlayerInfo 라인이 스탯 포인트 투자 대상인지 여부
         /// </summary>
         public static bool IsStatPointTarget(IndexPlayerInfo idx) => PlayerStatPointTargets.Contains(idx);
+        
+        // =========================
+        // Resource Max Change Policy (최대치 변경 시 현재값 보정 정책)
+        // =========================
+        public enum ResourceMaxChangePolicy
+        {
+            /// <summary>현재값을 유지하고, 최대치 감소 시에만 클램프합니다.</summary>
+            KeepCurrent = 0,
+
+            /// <summary>최대치 증가분(Delta)만큼 현재값을 즉시 증가시킵니다. (ARPG에서 HP에 흔히 사용)</summary>
+            AddDelta = 1,
+
+            /// <summary>현재/최대 비율을 유지합니다. (PvP/밸런스 안정형)</summary>
+            PreserveRatio = 2,
+        }
+
     }
 }

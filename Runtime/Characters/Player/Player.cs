@@ -27,6 +27,8 @@ namespace GGemCo2DCore
 
         private PlayerUIController _playerUIController;
 
+        private Action<long> _onItemBonusHpChangedSave;
+
         protected override void Awake()
         {
             onEventDeadByEndGround = new UnityEvent();
@@ -38,11 +40,23 @@ namespace GGemCo2DCore
             _playerUIController = new PlayerUIController();
             _playerUIController.Initialize(this);
         }
+
+
+        /// <summary>
+        /// 플레이어는 자신의 Settings(주소어블 설정)를 우선 사용합니다.
+        /// </summary>
+        protected override GGemCoPlayerSettings GetPlayerSettingsForResourcePolicy()
+        {
+            return _playerSettings != null ? _playerSettings : base.GetPlayerSettingsForResourcePolicy();
+        }
+
         protected override void Start()
         {
-            base.Start();
+            // 순서 중요
             _sceneGame = SceneGame.Instance;
             _playerData = _sceneGame.saveDataManager.Player;
+            base.Start();
+
             InitializeStatPointSystem();
             // 연출중 체크를 위해 추가
             _controllerPlayer.Initialize(_sceneGame.CutsceneManager);
@@ -110,6 +124,16 @@ namespace GGemCo2DCore
             SetScale(_playerSettings.startScale);
             SetWidth(_playerSettings.size.x);
             SetHeight(_playerSettings.size.y);
+            
+            // 저장된 Item Bonus HP(소모형 추가 최대 HP) 복원
+            if (_playerData != null)
+            {
+                SetItemBonusHpCurrent(_playerData.ItemBonusHpCurrent);
+
+                // 런타임 값 변경 → 저장 반영
+                _onItemBonusHpChangedSave = value => _playerData.ItemBonusHpCurrent = value;
+                ItemBonusHpChanged += _onItemBonusHpChangedSave;
+            }
         }
 
         /// <summary>
@@ -324,6 +348,19 @@ namespace GGemCo2DCore
             _sceneGame.SetState(SceneGame.GameState.End);
             Destroy(gameObject, 0.5f);
         }
+
+        /// <summary>
+        /// 플레이어 사망 처리
+        /// - Item Bonus HP(추가 하트)는 즉시 소멸(0)되어야 하며, 저장에도 반영되어야 합니다.
+        /// </summary>
+        protected override void OnDead(CharacterConstants.DieReasonType dieReasonType = CharacterConstants.DieReasonType.None,
+            GameObject attacker = null)
+        {
+            // 먼저 ItemBonus를 0으로 초기화(저장 구독이 연결되어 있다면 즉시 저장 반영)
+            SetItemBonusHpCurrent(0);
+
+            base.OnDead(dieReasonType, attacker);
+        }
         /// <summary>
         /// 사망 했다가 부활할 때, stat 리셋 해주기
         /// </summary>
@@ -400,9 +437,16 @@ namespace GGemCo2DCore
             characterPickUpPosition.ChangePickUpSprite(sprite);
         }
 
-        private void OnDestroy()
+        protected override void OnDestroy()
         {
+            base.OnDestroy();
             _sceneGame.mapManager.OnLoadStartMap -= OnLoadStartMap;
+
+            if (_onItemBonusHpChangedSave != null)
+            {
+                ItemBonusHpChanged -= _onItemBonusHpChangedSave;
+                _onItemBonusHpChangedSave = null;
+            }
         }
         
         /// <summary>
@@ -554,8 +598,11 @@ namespace GGemCo2DCore
             AddStatPointBonus(settings.statPointMp, _playerData.InvestedStatPointMp, ConfigCommon.StatusStatMp, flat, percent);
             AddStatPointBonus(settings.statPointStamina, _playerData.InvestedStatPointStamina, ConfigCommon.StatusStatStamina, flat, percent);
 
-            SetStatPointModifiers(flat, percent);
-            RecalculateStats();
+            using (SuppressAutoResourceSync())
+            {
+                SetStatPointModifiers(flat, percent);
+                RecalculateStats();
+            }
 
             // 비율 유지(0/0 케이스는 무시)
             if (oldHpMax > 0 && TotalHp.Value > 0)
@@ -591,10 +638,10 @@ namespace GGemCo2DCore
 
             switch (bonus.mode)
             {
-                case GGemCoPlayerSettings.StatPointBonusMode.Flat:
+                case ConfigCommon.CalculateType.Flat:
                     flatOut[statKey] = flatOut.GetValueOrDefault(statKey, 0) + Mathf.RoundToInt(total);
                     break;
-                case GGemCoPlayerSettings.StatPointBonusMode.Percent:
+                case ConfigCommon.CalculateType.PercentOfMax:
                     percentOut[statKey] = percentOut.GetValueOrDefault(statKey, 0f) + total;
                     break;
             }
