@@ -26,6 +26,13 @@ namespace GGemCo2DCore
         /// <summary>MP 회복</summary>
         AddMp = 4,
 
+        /// <summary>
+        /// "소모형 추가 최대 HP(추가 하트)" 추가
+        /// - 데미지를 먼저 흡수하고, 0이 되면 즉시 소멸
+        /// - 회복/리젠으로 재충전되지 않음
+        /// </summary>
+        AddItemBonusHp = 7,
+
         /// <summary>스킬 지급(외부 패키지와 연동을 위한 훅)</summary>
         GrantSkill = 5,
 

@@ -47,7 +47,8 @@ namespace GGemCo2DCore
             Sickle, // 낫
             Watering, // 물뿌리개
             HandHarvestable, // 손으로 수확
-            ScytheHarvestable // 낫으로 수확
+            ScytheHarvestable, // 낫으로 수확
+            IncreaseHp
         }
 
         public enum Class
@@ -151,7 +152,8 @@ namespace GGemCo2DCore
                     SubCategory.RecoverHp,
                     SubCategory.RecoverMp,
                     SubCategory.IncreaseAttackSpeed,
-                    SubCategory.IncreaseMoveSpeed
+                    SubCategory.IncreaseMoveSpeed,
+                    SubCategory.IncreaseHp,
                 }
             },
             {

@@ -33,6 +33,10 @@ namespace GGemCo2DCore
                     // ParamIntA = amount
                     return new ItemUseActionAddMp(row.ParamIntA);
 
+                case ItemUseActionType.AddItemBonusHp:
+                    // ParamIntA = amount
+                    return new ItemUseActionAddItemBonusHp(row.ParamIntA);
+
                 case ItemUseActionType.ApplyAffect:
                     // ParamIntA = affectUid, ParamFloatA = durationOverrideSeconds(<=0이면 기본)
                     return new ItemUseActionApplyAffect(row.ParamIntA, row.ParamFloatA);
