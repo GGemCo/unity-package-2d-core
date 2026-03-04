@@ -37,17 +37,41 @@ namespace GGemCo2DCore
         {
             if (skillUid <= 0) return;
 
-            QuickSlotDatas[slotIndex] = new SaveDataIcon(slotIndex, skillUid, skillCount, level, skillLearn);
+            QuickSlotDatas[slotIndex] = new SaveDataIcon(slotIndex, skillUid, skillCount, level, skillLearn, 0, (int)QuickSlotContentKind.Skill);
             SaveDatas();
         }
+        
+        /// <summary>
+        /// 아이템 설정
+        /// </summary>
+        public void SetItem(int slotIndex, int itemUid, int itemCount, long instanceId = 0)
+        {
+            if (itemUid <= 0) return;
+            if (itemCount <= 0)
+            {
+                Remove(slotIndex);
+                return;
+            }
+
+            QuickSlotDatas[slotIndex] = new SaveDataIcon(slotIndex, itemUid, itemCount, 0, false, instanceId, (int)QuickSlotContentKind.Item);
+            SaveDatas();
+        }
+
         /// <summary>
         /// 스킬 삭제
         /// </summary>
-        public void RemoveSkill(int slotIndex)
+        public void Remove(int slotIndex)
         {
             if (!QuickSlotDatas.ContainsKey(slotIndex)) return;
             QuickSlotDatas[slotIndex] = new SaveDataIcon(slotIndex, 0);
             SaveDatas();
+        }
+        /// <summary>
+        /// 스킬 삭제(호환용)
+        /// </summary>
+        public void RemoveSkill(int slotIndex)
+        {
+            Remove(slotIndex);
         }
         /// <summary>
         /// 스킬 추가.
@@ -70,6 +94,16 @@ namespace GGemCo2DCore
                 }
             }
             return -1;
+        }
+
+        
+        public bool TryGetEntry(int slotIndex, out SaveDataIcon entry)
+        {
+            if (QuickSlotDatas != null && QuickSlotDatas.TryGetValue(slotIndex, out entry))
+                return true;
+
+            entry = null;
+            return false;
         }
 
         public Dictionary<int, SaveDataIcon> GetAllDatas()

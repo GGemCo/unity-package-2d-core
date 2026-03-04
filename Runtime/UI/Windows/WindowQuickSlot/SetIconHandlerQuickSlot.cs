@@ -9,13 +9,22 @@
         {
             UIIcon icon = window.GetIconByIndex(slotIndex);
             if (icon == null) return;
-            SceneGame.Instance.saveDataManager.QuickSlot.SetSkill(slotIndex, iconUid, iconCount, iconLevel, isLearned);
+            var type = icon.GetIconType();
+            if (type == IconConstants.Type.Item)
+            {
+                SceneGame.Instance.saveDataManager.QuickSlot.SetItem(slotIndex, iconUid, iconCount, icon.instanceId);
+            }
+            else
+            {
+                // 기본은 Skill 로 저장 (기존 동작)
+                SceneGame.Instance.saveDataManager.QuickSlot.SetSkill(slotIndex, iconUid, iconCount, iconLevel, isLearned);
+            }
         }
         public void OnDetachIcon(UIWindow window, int slotIndex)
         {
             UIIcon icon = window.GetIconByIndex(slotIndex);
             if (icon == null) return;
-            SceneGame.Instance.saveDataManager.QuickSlot.RemoveSkill(slotIndex);
+            SceneGame.Instance.saveDataManager.QuickSlot.Remove(slotIndex);
         }
     }
 }

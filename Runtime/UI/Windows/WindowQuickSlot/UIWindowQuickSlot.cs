@@ -30,6 +30,8 @@ namespace GGemCo2DCore
             // uid 를 먼저 지정해야 한다.
             uid = UIWindowConstants.WindowUid.QuickSlot;
             base.Awake();
+            RegisterQuickSlotProviders();
+
             IconPoolManager.SetSetIconHandler(new SetIconHandlerQuickSlot());
             DragDropHandler.SetStrategy(new DragDropStrategyQuickSlot());
         }
@@ -39,6 +41,45 @@ namespace GGemCo2DCore
             base.Start();
             SceneGame.Instance.KeyboardManager.RegisterInputHandler(this);
             LoadIcons();
+        }
+
+
+        /// <summary>
+        /// 퀵슬롯 아이콘 제공자 등록(Core 기본: Item Provider)
+        /// - Skill Provider 는 Skill 패키지에서 별도로 등록한다.
+        /// </summary>
+        private void RegisterQuickSlotProviders()
+        {
+            // Core 기본 아이템 Provider
+            QuickSlotContentProviderRegistry.Register(new QuickSlotItemContentProvider());
+        }
+
+        /// <summary>
+        /// 세이브 엔트리를 슬롯 아이콘에 반영한다(세이브를 다시 쓰지 않도록 직접 아이콘에 적용).
+        /// </summary>
+        private void ApplyEntryToSlot(int slotIndex, QuickSlotContentKind kind, int iconUid, int iconCount, int iconLevel, bool iconIsLearn, long iconInstanceId)
+        {
+            var icon = GetIconByIndex(slotIndex);
+            if (icon == null) return;
+
+            if (kind == QuickSlotContentKind.None || iconUid <= 0 || iconCount <= 0)
+            {
+                if (icon is UIIconQuickSlot qs)
+                    qs.ClearEntry();
+                else
+                    icon.ChangeInfoByUid(0, 0, 0, false, 0, 0);
+                return;
+            }
+
+            // QuickSlot 전용 아이콘이면 ProviderRegistry 기반으로 스킬/아이템 모두 표시
+            if (icon is UIIconQuickSlot quickSlotIcon)
+            {
+                quickSlotIcon.ApplyEntry(kind, iconUid, iconCount, iconLevel, iconIsLearn, iconInstanceId);
+                return;
+            }
+
+            // 구버전 아이콘 프리팹(스킬 전용 등) 호환: 최소한 데이터는 반영
+            icon.ChangeInfoByUid(iconUid, iconCount, iconLevel, iconIsLearn, 0, iconInstanceId);
         }
         /// <summary>
         /// 저장되어있는 스킬 정보로 아이콘 셋팅하기
@@ -61,7 +102,16 @@ namespace GGemCo2DCore
 
                 var icon = icons[index];
                 if (icon == null) continue;
-                // todo. 정리 필요.
+                if (datas.TryGetValue(index, out var entry) && entry != null && entry.Uid > 0 && entry.Count > 0)
+                {
+                    var kind = (QuickSlotContentKind)entry.Kind;
+                    ApplyEntryToSlot(index, kind, entry.Uid, entry.Count, entry.Level, entry.IsLearned, entry.InstanceId);
+                }
+                else
+                {
+                    // 비어있는 슬롯
+                    ApplyEntryToSlot(index, QuickSlotContentKind.None, 0, 0, 0, false, 0);
+                }
             }
         }
         protected void OnDisable()
@@ -125,7 +175,6 @@ namespace GGemCo2DCore
         /// <param name="keyCode"></param>
         private void OnKeyDownSkill(KeyCode keyCode)
         {
-            // todo. 정리 필요
             if (SceneGame == null) return;
             var playerGo = SceneGame.player;
             if (playerGo == null) return;
@@ -135,17 +184,14 @@ namespace GGemCo2DCore
                 return;
 
             // 2) 세이브 데이터에서 스킬 UID 조회
-/*
             var quickSlot = SceneGame.Instance.saveDataManager?.QuickSlot;
             if (quickSlot == null) return;
 
-            var all = quickSlot.GetAllDatas();
-            if (all == null || !all.TryGetValue(slotIndex, out var iconData) || iconData == null)
+            var all = quickSlot.TryGetEntry(slotIndex, out SaveDataIcon entry);
+            if (entry == null || entry.Kind != (int)QuickSlotContentKind.Skill)
                 return;
-            int skillUid = iconData.Uid;
+            int skillUid = entry.Uid;
             if (skillUid <= 0) return;
-*/
-            int skillUid = 10001;
 
             // (선택) Count를 “남은 횟수/탄약”처럼 쓰는 정책이면 여기서 체크
             // 무제한 스킬이면 Count를 0으로 저장할 수도 있으니,
