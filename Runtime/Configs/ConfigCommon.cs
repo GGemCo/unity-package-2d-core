@@ -29,6 +29,11 @@ namespace GGemCo2DCore
         public const string StatusStatAtk = "STAT_ATK";
         public const string StatusStatDef = "STAT_DEF";
         public const string StatusStatHp = "STAT_HP";
+        /// <summary>
+        /// 임시(Temporary) 최대 HP(추가 하트/보호막 등) 스탯 키
+        /// - 기본값(Base)은 0이며, Provider를 통해서만 증가합니다.
+        /// </summary>
+        public const string StatusStatHpTemp = "STAT_HP_TEMP";
         public const string StatusStatMp = "STAT_MP";
         public const string StatusStatStamina = "STAT_STAMINA";
         public const string StatusStatSuperArmor = "STAT_SUPER_ARMOR";

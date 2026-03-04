@@ -278,12 +278,16 @@ namespace GGemCo2DCore
                 SubscribeResourceMaxChange(TotalHp, CurrentHp, CharacterConstants.ResourceMaxChangePolicy.KeepCurrent);
                 SubscribeResourceMaxChange(TotalMp, CurrentMp, CharacterConstants.ResourceMaxChangePolicy.KeepCurrent);
                 SubscribeResourceMaxChange(TotalStamina, CurrentStamina, CharacterConstants.ResourceMaxChangePolicy.KeepCurrent);
+                // 임시 최대 HP는 기본적으로 자동 충전하지 않고(증가 시 Keep), 감소 시 clamp만 수행합니다.
+                SubscribeResourceMaxChange(TotalTempHp, ItemBonusHpCurrent, CharacterConstants.ResourceMaxChangePolicy.KeepCurrent);
                 return;
             }
 
             SubscribeResourceMaxChange(TotalHp, CurrentHp, settings.hpMaxChangePolicy);
             SubscribeResourceMaxChange(TotalMp, CurrentMp, settings.mpMaxChangePolicy);
             SubscribeResourceMaxChange(TotalStamina, CurrentStamina, settings.staminaMaxChangePolicy);
+            // 임시 최대 HP는 기본적으로 자동 충전하지 않고(증가 시 Keep), 감소 시 clamp만 수행합니다.
+            SubscribeResourceMaxChange(TotalTempHp, ItemBonusHpCurrent, CharacterConstants.ResourceMaxChangePolicy.KeepCurrent);
         }
 
         /// <summary>
@@ -778,6 +782,10 @@ namespace GGemCo2DCore
         private void SetItemBonusHpCurrentInternal(long value, bool invokeDepleted)
         {
             value = System.Math.Max(0, value);
+            // 임시 최대 HP(TotalTempHp)를 초과하지 않도록 클램프
+            long tempMax = TotalTempHp.Value;
+            if (tempMax > 0)
+                value = System.Math.Min(value, tempMax);
             if (ItemBonusHpCurrent.Value == value)
                 return;
 

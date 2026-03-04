@@ -92,28 +92,31 @@ namespace GGemCo2DCore
         private EquipmentOptionModifierProvider _equipmentProvider;
         private PersistentModifierProvider _persistentProvider;
         private PassiveSkillModifierProvider _passiveProvider;
+        private ItemBonusModifierProvider _itemBonusProvider;
 
         /// <summary>
         /// 최종 계산에 포함되는 전체 Provider 목록입니다.
         /// </summary>
-        private readonly List<IStatModifierProvider> _allProviders = new(3);
+        private readonly List<IStatModifierProvider> _allProviders = new(4);
 
         /// <summary>
         /// 영구 Provider를 제외한 Provider 목록입니다(영구 modifier 가정 계산에 사용).
         /// </summary>
-        private readonly List<IStatModifierProvider> _providersWithoutPersistent = new(2);
+        private readonly List<IStatModifierProvider> _providersWithoutPersistent = new(3);
 
         /// <summary>
         /// 패시브 Provider를 제외한 Provider 목록입니다(UI에서 "패시브로 증가한 HP" 등을 계산하는 데 사용).
         /// </summary>
-        private readonly List<IStatModifierProvider> _providersWithoutPassive = new(2);
+        private readonly List<IStatModifierProvider> _providersWithoutPassive = new(3);
 
         // 내부 캐시(마지막으로 계산된 최종값)
         private long _totalAtk,
             _totalDef,
             _totalHp,
+            _totalHpTemp,
             _totalMp,
             _passiveBonusHp,
+            _passiveBonusHpTemp,
             _totalStamina,
             _totalMoveSpeed,
             _totalAttackSpeed,
@@ -147,6 +150,18 @@ namespace GGemCo2DCore
         /// - 값은 0 이상으로 보정됩니다.
         /// </summary>
         public readonly BehaviorSubject<long> PassiveBonusHp = new(0);
+
+        /// <summary>
+        /// 최종 임시 최대 HP(Temporary Max HP, 계산 결과)를 스트림으로 제공합니다.
+        /// - 추가 하트/보호막 등의 "최대치"로 사용됩니다.
+        /// </summary>
+        public readonly BehaviorSubject<long> TotalTempHp = new(0);
+
+        /// <summary>
+        /// 패시브 스킬로 인해 증가한 "임시 최대 HP"(Delta)를 스트림으로 제공합니다.
+        /// - 값은 0 이상으로 보정됩니다.
+        /// </summary>
+        public readonly BehaviorSubject<long> PassiveBonusTempHp = new(0);
 
         /// <summary>
         /// 최종 MP(계산 결과)를 스트림으로 제공합니다.
@@ -212,23 +227,28 @@ namespace GGemCo2DCore
             _equipmentProvider = new EquipmentOptionModifierProvider(gameObject);
             _persistentProvider = new PersistentModifierProvider();
             _passiveProvider = new PassiveSkillModifierProvider();
+            _itemBonusProvider = new ItemBonusModifierProvider();
 
             _equipmentProvider.Changed += OnProviderChanged;
             _persistentProvider.Changed += OnProviderChanged;
             _passiveProvider.Changed += OnProviderChanged;
+            _itemBonusProvider.Changed += OnProviderChanged;
 
             _allProviders.Clear();
             _allProviders.Add(_equipmentProvider);
             _allProviders.Add(_persistentProvider);
             _allProviders.Add(_passiveProvider);
+            _allProviders.Add(_itemBonusProvider);
 
             _providersWithoutPersistent.Clear();
             _providersWithoutPersistent.Add(_equipmentProvider);
             _providersWithoutPersistent.Add(_passiveProvider);
+            _providersWithoutPersistent.Add(_itemBonusProvider);
 
             _providersWithoutPassive.Clear();
             _providersWithoutPassive.Add(_equipmentProvider);
             _providersWithoutPassive.Add(_persistentProvider);
+            _providersWithoutPassive.Add(_itemBonusProvider);
         }
 
         /// <summary>
@@ -239,12 +259,15 @@ namespace GGemCo2DCore
             if (_equipmentProvider != null) _equipmentProvider.Changed -= OnProviderChanged;
             if (_persistentProvider != null) _persistentProvider.Changed -= OnProviderChanged;
             if (_passiveProvider != null) _passiveProvider.Changed -= OnProviderChanged;
+            if (_itemBonusProvider != null) _itemBonusProvider.Changed -= OnProviderChanged;
         }
 
         /// <summary>
         /// Unity Start 훅입니다(확장 지점).
         /// </summary>
-        protected virtual void Start() { }
+        protected virtual void Start()
+        {
+        }
 
         /// <summary>
         /// Provider 변경 이벤트를 받아 전체 스탯을 재계산합니다.
@@ -326,7 +349,8 @@ namespace GGemCo2DCore
         /// </summary>
         /// <param name="flatByStatKey">스탯 키별 고정(Flat) 증가량입니다.</param>
         /// <param name="percentByStatKey">스탯 키별 퍼센트(Percent) 증가율입니다.</param>
-        public void SetStatPointModifiers(Dictionary<string, int> flatByStatKey, Dictionary<string, float> percentByStatKey)
+        public void SetStatPointModifiers(Dictionary<string, int> flatByStatKey,
+            Dictionary<string, float> percentByStatKey)
         {
             // 기존 CharacterStat은 SetStatPointModifiers만으로 재계산을 수행하지 않았습니다.
             // (호출 측에서 RecalculateStats()를 호출하는 패턴 유지)
@@ -341,7 +365,8 @@ namespace GGemCo2DCore
         /// <param name="flatByStatKey">스탯 키별 고정(Flat) 증가량입니다.</param>
         /// <param name="percentByStatKey">스탯 키별 퍼센트(Percent) 증가율입니다.</param>
         /// <param name="recalculate">true이면 변경 이벤트를 발생시켜 즉시 재계산합니다.</param>
-        public void SetPassiveSkillModifiers(Dictionary<string, int> flatByStatKey, Dictionary<string, float> percentByStatKey, bool recalculate = true)
+        public void SetPassiveSkillModifiers(Dictionary<string, int> flatByStatKey,
+            Dictionary<string, float> percentByStatKey, bool recalculate = true)
         {
             _passiveProvider.SetModifiers(flatByStatKey, percentByStatKey, raiseEvent: recalculate);
             if (recalculate)
@@ -380,26 +405,34 @@ namespace GGemCo2DCore
                 flatPersistentProjected, percentPersistentProjected, _providersWithoutPersistent);
             long stamina = StatCalculator.CalculateFinalProjected(ConfigCommon.StatusStatStamina, BaseStamina,
                 flatPersistentProjected, percentPersistentProjected, _providersWithoutPersistent);
-            int superArmor = (int)StatCalculator.CalculateFinalProjected(ConfigCommon.StatusStatSuperArmor, BaseSuperArmor,
+            int superArmor = (int)StatCalculator.CalculateFinalProjected(ConfigCommon.StatusStatSuperArmor,
+                BaseSuperArmor,
                 flatPersistentProjected, percentPersistentProjected, _providersWithoutPersistent);
 
             long moveSpeed = StatCalculator.CalculateFinalProjected(ConfigCommon.StatusStatMoveSpeed, BaseMoveSpeed,
                 flatPersistentProjected, percentPersistentProjected, _providersWithoutPersistent);
-            long attackSpeed = StatCalculator.CalculateFinalProjected(ConfigCommon.StatusStatAttackSpeed, BaseAttackSpeed,
+            long attackSpeed = StatCalculator.CalculateFinalProjected(ConfigCommon.StatusStatAttackSpeed,
+                BaseAttackSpeed,
                 flatPersistentProjected, percentPersistentProjected, _providersWithoutPersistent);
 
-            long criticalDamage = StatCalculator.CalculateFinalProjected(ConfigCommon.StatusStatCriticalDamage, BaseCriticalDamage,
+            long criticalDamage = StatCalculator.CalculateFinalProjected(ConfigCommon.StatusStatCriticalDamage,
+                BaseCriticalDamage,
                 flatPersistentProjected, percentPersistentProjected, _providersWithoutPersistent);
-            long criticalProbability = StatCalculator.CalculateFinalProjected(ConfigCommon.StatusStatCriticalProbability, BaseCriticalProbability,
+            long criticalProbability = StatCalculator.CalculateFinalProjected(
+                ConfigCommon.StatusStatCriticalProbability, BaseCriticalProbability,
                 flatPersistentProjected, percentPersistentProjected, _providersWithoutPersistent);
 
-            long registFire = StatCalculator.CalculateFinalProjected(ConfigCommon.StatusStatResistanceFire, BaseRegistFire,
+            long registFire = StatCalculator.CalculateFinalProjected(ConfigCommon.StatusStatResistanceFire,
+                BaseRegistFire,
                 flatPersistentProjected, percentPersistentProjected, _providersWithoutPersistent);
-            long registCold = StatCalculator.CalculateFinalProjected(ConfigCommon.StatusStatResistanceCold, BaseRegistCold,
+            long registCold = StatCalculator.CalculateFinalProjected(ConfigCommon.StatusStatResistanceCold,
+                BaseRegistCold,
                 flatPersistentProjected, percentPersistentProjected, _providersWithoutPersistent);
-            long registLightning = StatCalculator.CalculateFinalProjected(ConfigCommon.StatusStatResistanceLightning, BaseRegistLightning,
+            long registLightning = StatCalculator.CalculateFinalProjected(ConfigCommon.StatusStatResistanceLightning,
+                BaseRegistLightning,
                 flatPersistentProjected, percentPersistentProjected, _providersWithoutPersistent);
-            long registPoison = StatCalculator.CalculateFinalProjected(ConfigCommon.StatusStatResistancePoison, BaseRegistPoison,
+            long registPoison = StatCalculator.CalculateFinalProjected(ConfigCommon.StatusStatResistancePoison,
+                BaseRegistPoison,
                 flatPersistentProjected, percentPersistentProjected, _providersWithoutPersistent);
 
             return new CharacterTotals(
@@ -419,30 +452,47 @@ namespace GGemCo2DCore
             _totalAtk = StatCalculator.CalculateFinal(ConfigCommon.StatusStatAtk, BaseAtk, _allProviders);
             _totalDef = StatCalculator.CalculateFinal(ConfigCommon.StatusStatDef, BaseDef, _allProviders);
             _totalHp = StatCalculator.CalculateFinal(ConfigCommon.StatusStatHp, BaseHp, _allProviders);
+            _totalHpTemp = StatCalculator.CalculateFinal(ConfigCommon.StatusStatHpTemp, 0, _allProviders);
 
             // UI 표시용: 패시브 스킬로 인해 증가한 추가 최대 HP(Delta)
             // - 계산 규칙(Percent 포함)을 일치시키기 위해 "패시브 Provider 제외" 총합과의 차이로 산출합니다.
-            long hpWithoutPassive = StatCalculator.CalculateFinal(ConfigCommon.StatusStatHp, BaseHp, _providersWithoutPassive);
+            long hpWithoutPassive =
+                StatCalculator.CalculateFinal(ConfigCommon.StatusStatHp, BaseHp, _providersWithoutPassive);
             _passiveBonusHp = Math.Max(0, _totalHp - hpWithoutPassive);
+
+            long tempHpWithoutPassive =
+                StatCalculator.CalculateFinal(ConfigCommon.StatusStatHpTemp, 0, _providersWithoutPassive);
+            _passiveBonusHpTemp = Math.Max(0, _totalHpTemp - tempHpWithoutPassive);
             _totalMp = StatCalculator.CalculateFinal(ConfigCommon.StatusStatMp, BaseMp, _allProviders);
             _totalStamina = StatCalculator.CalculateFinal(ConfigCommon.StatusStatStamina, BaseStamina, _allProviders);
-            _totalSuperArmor = (int)StatCalculator.CalculateFinal(ConfigCommon.StatusStatSuperArmor, BaseSuperArmor, _allProviders);
+            _totalSuperArmor =
+                (int)StatCalculator.CalculateFinal(ConfigCommon.StatusStatSuperArmor, BaseSuperArmor, _allProviders);
 
-            _totalMoveSpeed = StatCalculator.CalculateFinal(ConfigCommon.StatusStatMoveSpeed, BaseMoveSpeed, _allProviders);
-            _totalAttackSpeed = StatCalculator.CalculateFinal(ConfigCommon.StatusStatAttackSpeed, BaseAttackSpeed, _allProviders);
+            _totalMoveSpeed =
+                StatCalculator.CalculateFinal(ConfigCommon.StatusStatMoveSpeed, BaseMoveSpeed, _allProviders);
+            _totalAttackSpeed =
+                StatCalculator.CalculateFinal(ConfigCommon.StatusStatAttackSpeed, BaseAttackSpeed, _allProviders);
 
-            _totalCriticalDamage = StatCalculator.CalculateFinal(ConfigCommon.StatusStatCriticalDamage, BaseCriticalDamage, _allProviders);
-            _totalCriticalProbability = StatCalculator.CalculateFinal(ConfigCommon.StatusStatCriticalProbability, BaseCriticalProbability, _allProviders);
+            _totalCriticalDamage = StatCalculator.CalculateFinal(ConfigCommon.StatusStatCriticalDamage,
+                BaseCriticalDamage, _allProviders);
+            _totalCriticalProbability = StatCalculator.CalculateFinal(ConfigCommon.StatusStatCriticalProbability,
+                BaseCriticalProbability, _allProviders);
 
-            _totalRegistFire = StatCalculator.CalculateFinal(ConfigCommon.StatusStatResistanceFire, BaseRegistFire, _allProviders);
-            _totalRegistCold = StatCalculator.CalculateFinal(ConfigCommon.StatusStatResistanceCold, BaseRegistCold, _allProviders);
-            _totalRegistLightning = StatCalculator.CalculateFinal(ConfigCommon.StatusStatResistanceLightning, BaseRegistLightning, _allProviders);
-            _totalRegistPoison = StatCalculator.CalculateFinal(ConfigCommon.StatusStatResistancePoison, BaseRegistPoison, _allProviders);
+            _totalRegistFire =
+                StatCalculator.CalculateFinal(ConfigCommon.StatusStatResistanceFire, BaseRegistFire, _allProviders);
+            _totalRegistCold =
+                StatCalculator.CalculateFinal(ConfigCommon.StatusStatResistanceCold, BaseRegistCold, _allProviders);
+            _totalRegistLightning = StatCalculator.CalculateFinal(ConfigCommon.StatusStatResistanceLightning,
+                BaseRegistLightning, _allProviders);
+            _totalRegistPoison = StatCalculator.CalculateFinal(ConfigCommon.StatusStatResistancePoison,
+                BaseRegistPoison, _allProviders);
 
             TotalAtk.OnNext(_totalAtk);
             TotalDef.OnNext(_totalDef);
             TotalHp.OnNext(_totalHp);
+            TotalTempHp.OnNext(_totalHpTemp);
             PassiveBonusHp.OnNext(_passiveBonusHp);
+            PassiveBonusTempHp.OnNext(_passiveBonusHpTemp);
             TotalMp.OnNext(_totalMp);
             TotalStamina.OnNext(_totalStamina);
             TotalSuperArmor.OnNext(_totalSuperArmor);
@@ -543,5 +593,30 @@ namespace GGemCo2DCore
         {
             AffectRuntimeBridge.RemoveAffect(gameObject, affectUid);
         }
+
+        #region Item Bonus Provider (아이템 최대 HP 보너스)
+
+        /// <summary>
+        /// 아이템 사용으로 인해 증가한 "일반 최대 HP / 임시 최대 HP" 누적치를 설정합니다(저장값 복원 등).
+        /// </summary>
+        public void SetItemBonusHpBonuses(long normalHpDelta, long tempHpDelta, bool raiseEvent = true)
+        {
+            _itemBonusProvider?.SetHpBonuses(normalHpDelta, tempHpDelta, raiseEvent);
+        }
+
+        public long GetItemBonusHpNormal() => _itemBonusProvider?.GetHpBonusNormal() ?? 0;
+        public long GetItemBonusHpTemp() => _itemBonusProvider?.GetHpBonusTemp() ?? 0;
+
+        public void AddItemBonusHpNormal(long add, bool raiseEvent = true)
+        {
+            _itemBonusProvider?.AddHpBonusNormal(add, raiseEvent);
+        }
+
+        public void AddItemBonusHpTemp(long add, bool raiseEvent = true)
+        {
+            _itemBonusProvider?.AddHpBonusTemp(add, raiseEvent);
+        }
+
+        #endregion
     }
 }

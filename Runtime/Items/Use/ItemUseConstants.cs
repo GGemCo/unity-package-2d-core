@@ -33,6 +33,18 @@ namespace GGemCo2DCore
         /// </summary>
         AddItemBonusHp = 7,
 
+        /// <summary>
+        /// 아이템 사용으로 "일반 최대 HP"를 영구적으로 증가(저장/로드)합니다.
+        /// - ParamIntA = amount
+        /// </summary>
+        AddMaxHpNormal = 8,
+
+        /// <summary>
+        /// 아이템 사용으로 "임시 최대 HP"를 증가(저장/로드)합니다.
+        /// - ParamIntA = amount
+        /// </summary>
+        AddMaxHpTemp = 9,
+
         /// <summary>스킬 지급(외부 패키지와 연동을 위한 훅)</summary>
         GrantSkill = 5,
 

@@ -109,6 +109,14 @@ namespace GGemCo2DCore
         protected override void InitializeByTable()
         {
             if (AddressableLoaderSettings.Instance == null) return;
+            // 저장된 Item Bonus Max HP(일반/임시) 복원
+            // - PlayerData에 저장된 누적치를 Stat Provider(ItemBonusModifierProvider)에 다시 주입해야 TotalHp/TotalTempHp에 반영됩니다.
+            // - 이 시점에 먼저 반영해두면, 아래의 startHp/startMp/startStamina 초기화가 "복원된 최대치" 기준으로 계산됩니다.
+            if (_playerData != null)
+            {
+                SetItemBonusHpBonuses(_playerData.ItemBonusHpNormal, _playerData.ItemBonusHpTemp, raiseEvent: false);
+            }
+            
             SetBaseInfos(_playerSettings.statAtk, _playerSettings.statDef, _playerSettings.statHp,
                 _playerSettings.statMp, _playerSettings.statStamina, 0,
                 _playerSettings.statMoveSpeed, _playerSettings.statAttackSpeed, _playerSettings.statRegistFire,
@@ -128,14 +136,53 @@ namespace GGemCo2DCore
             // 저장된 Item Bonus HP(소모형 추가 최대 HP) 복원
             if (_playerData != null)
             {
-                SetItemBonusHpCurrent(_playerData.ItemBonusHpCurrent);
+                SetItemBonusHpCurrent(_playerData.TempHpCurrent);
 
                 // 런타임 값 변경 → 저장 반영
-                _onItemBonusHpChangedSave = value => _playerData.ItemBonusHpCurrent = value;
+                _onItemBonusHpChangedSave = value => _playerData.TempHpCurrent = value;
                 ItemBonusHpChanged += _onItemBonusHpChangedSave;
             }
         }
 
+        
+        #region Item Bonus Max HP (아이템 최대 HP 보너스)
+
+        /// <summary>
+        /// 아이템 사용으로 "일반 최대 HP" 누적치를 증가시킵니다(저장 + 스탯 반영).
+        /// </summary>
+        public void AddItemBonusMaxHpNormal(long amount)
+        {
+            if (amount <= 0) return;
+
+            // 저장값 갱신
+            if (_playerData != null)
+                _playerData.ItemBonusHpNormal = _playerData.ItemBonusHpNormal + amount;
+
+            // 스탯 Provider 갱신
+            AddItemBonusHpNormal(amount);
+        }
+
+        /// <summary>
+        /// 아이템 사용으로 "임시 최대 HP" 누적치를 증가시킵니다(저장 + 스탯 반영).
+        /// - 기본 동작: 최대치 증가분만큼 임시 HP(Current)도 함께 증가(즉시 체감).
+        /// </summary>
+        public void AddItemBonusMaxHpTemp(long amount, bool fillCurrent = true)
+        {
+            if (amount <= 0) return;
+
+            if (_playerData != null)
+                _playerData.ItemBonusHpTemp = _playerData.ItemBonusHpTemp + amount;
+
+            AddItemBonusHpTemp(amount);
+
+            if (fillCurrent)
+            {
+                AddItemBonusHp(amount); // 임시 HP(Current) 충전
+            }
+        }
+
+        #endregion
+        
         /// <summary>
         /// 세이브 데이터에 있는 장착 아이템 정보 가져와서 장착 시키기
         /// </summary>

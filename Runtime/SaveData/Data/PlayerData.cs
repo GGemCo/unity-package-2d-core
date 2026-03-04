@@ -20,8 +20,12 @@ namespace GGemCo2DCore
         private readonly BehaviorSubject<long> _currentGold = new(0);
         private readonly BehaviorSubject<long> _currentSilver = new(0);
 
-        // 아이템 보너스 HP(소모형 추가 최대 HP, 추가 하트) - 저장 대상
-        private readonly BehaviorSubject<long> _itemBonusHpCurrent = new(0);
+        // 아이템 보너스 최대 HP(일반/임시) - 저장 대상
+        private readonly BehaviorSubject<long> _itemBonusHpNormal = new(0);
+        private readonly BehaviorSubject<long> _itemBonusHpTemp = new(0);
+
+        // 임시 HP(Current) - 저장 대상(추가 하트/보호막의 현재치)
+        private readonly BehaviorSubject<long> _tempHpCurrent = new(0);
         
         // Stat Point (스탯 포인트)
         private readonly BehaviorSubject<int> _unspentStatPoints = new(0);
@@ -63,16 +67,35 @@ namespace GGemCo2DCore
         }
 
         /// <summary>
-        /// 아이템 보너스 HP(소모형 추가 최대 HP, 추가 하트)
-        /// - 게임 종료/재시작에도 유지되어야 하므로 저장/로드 대상
-        /// - 사망 시 즉시 0으로 초기화되어 저장에도 반영되어야 함
+        /// 아이템 사용으로 증가한 "일반 최대 HP" 누적치입니다.
+        /// - 저장/로드 대상
         /// </summary>
-        public long ItemBonusHpCurrent
+        public long ItemBonusHpNormal
         {
-            get => _itemBonusHpCurrent.Value;
-            set => _itemBonusHpCurrent.OnNext(System.Math.Max(0, value));
+            get => _itemBonusHpNormal.Value;
+            set => _itemBonusHpNormal.OnNext(System.Math.Max(0, value));
         }
 
+        /// <summary>
+        /// 아이템 사용으로 증가한 "임시 최대 HP" 누적치입니다.
+        /// - 저장/로드 대상
+        /// </summary>
+        public long ItemBonusHpTemp
+        {
+            get => _itemBonusHpTemp.Value;
+            set => _itemBonusHpTemp.OnNext(System.Math.Max(0, value));
+        }
+
+        /// <summary>
+        /// 임시 HP(Current)입니다.
+        /// - 데미지를 먼저 흡수하는 추가 하트/보호막의 현재치로 사용됩니다.
+        /// - 저장/로드 대상
+        /// </summary>
+        public long TempHpCurrent
+        {
+            get => _tempHpCurrent.Value;
+            set => _tempHpCurrent.OnNext(System.Math.Max(0, value));
+        }
 
         // =========================
         // Stat Point (스탯 포인트) - JSON 직렬화 대상(프로퍼티로 노출)
@@ -197,13 +220,15 @@ namespace GGemCo2DCore
                     _currentExp.DistinctUntilChanged().Select(_ => Unit.Default),
                     _currentGold.DistinctUntilChanged().Select(_ => Unit.Default),
                     _currentSilver.DistinctUntilChanged().Select(_ => Unit.Default),
-                    _itemBonusHpCurrent.DistinctUntilChanged().Select(_ => Unit.Default),
                     _unspentStatPoints.DistinctUntilChanged().Select(_ => Unit.Default),
                     _investedStatPointAtk.DistinctUntilChanged().Select(_ => Unit.Default),
                     _investedStatPointDef.DistinctUntilChanged().Select(_ => Unit.Default),
                     _investedStatPointHp.DistinctUntilChanged().Select(_ => Unit.Default),
                     _investedStatPointMp.DistinctUntilChanged().Select(_ => Unit.Default),
-                    _investedStatPointStamina.DistinctUntilChanged().Select(_ => Unit.Default))
+                    _investedStatPointStamina.DistinctUntilChanged().Select(_ => Unit.Default),
+                    _itemBonusHpNormal.DistinctUntilChanged().Select(_ => Unit.Default),
+                    _itemBonusHpTemp.DistinctUntilChanged().Select(_ => Unit.Default),
+                    _tempHpCurrent.DistinctUntilChanged().Select(_ => Unit.Default))
                 .Subscribe(_ =>
                 {
                     if (_isBatchUpdating) return;
@@ -233,7 +258,9 @@ namespace GGemCo2DCore
                 CurrentExp = saveDataContainer.PlayerData.CurrentExp;
                 CurrentGold = saveDataContainer.PlayerData.CurrentGold;
                 CurrentSilver = saveDataContainer.PlayerData.CurrentSilver;
-                ItemBonusHpCurrent = saveDataContainer.PlayerData.ItemBonusHpCurrent;
+                ItemBonusHpNormal = saveDataContainer.PlayerData.ItemBonusHpNormal;
+                ItemBonusHpTemp = saveDataContainer.PlayerData.ItemBonusHpTemp;
+                TempHpCurrent = saveDataContainer.PlayerData.TempHpCurrent;
                 UnspentStatPoints = saveDataContainer.PlayerData.UnspentStatPoints;
                 InvestedStatPointAtk = saveDataContainer.PlayerData.InvestedStatPointAtk;
                 InvestedStatPointDef = saveDataContainer.PlayerData.InvestedStatPointDef;
