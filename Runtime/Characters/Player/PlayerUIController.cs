@@ -53,12 +53,6 @@ namespace GGemCo2DCore
             _player.TotalHp
                 .Subscribe(_ => SetWindowHudSliderHp(_player.CurrentHp.Value))
                 .AddTo(_player);
-            _player.PassiveBonusHp
-                .Subscribe(_ => SetWindowHudHpBonus(_player.PassiveBonusHp.Value))
-                .AddTo(_player);
-            _player.ItemBonusHpCurrent
-                .Subscribe(_ => SetWindowHudHpItemBonus(_player.ItemBonusHpCurrent.Value))
-                .AddTo(_player);
             _player.CurrentHp
                 .Subscribe(_ => SetWindowHudSliderHp(_player.CurrentHp.Value))
                 .AddTo(_player);
@@ -70,6 +64,13 @@ namespace GGemCo2DCore
                 .AddTo(_player);
             _player.CurrentStamina
                 .Subscribe(_ => SetWindowHudSliderStamina(_player.CurrentStamina.Value))
+                .AddTo(_player);
+            
+            _player.TotalHpTemp
+                .Subscribe(_ => SetWindowHudSliderHpTemp(_player.CurrentHpTemp.Value))
+                .AddTo(_player);
+            _player.CurrentHpTemp
+                .Subscribe(_ => SetWindowHudSliderHpTemp(_player.CurrentHpTemp.Value))
                 .AddTo(_player);
 
             _player.CurrentBattleStatus
@@ -104,34 +105,24 @@ namespace GGemCo2DCore
             long displayCurrent = value;
             if (_playerSettings.hpMaxChangePolicy == CharacterConstants.ResourceMaxChangePolicy.AddDelta)
             {
-                displayCurrent = value + _player.ItemBonusHpCurrent.Value;
+                displayCurrent = value + _player.CurrentHpTemp.Value;
             }
             // todo. 정리 필요. 비율 계산 해야 됨
             else if (_playerSettings.hpMaxChangePolicy == CharacterConstants.ResourceMaxChangePolicy.PreserveRatio)
             {
-                displayCurrent = value + _player.ItemBonusHpCurrent.Value;
+                displayCurrent = value + _player.CurrentHpTemp.Value;
             }
             
-            long displayTotal = _player.TotalHp.Value + _player.ItemBonusHpCurrent.Value;
+            long displayTotal = _player.TotalHp.Value + _player.TotalHpTemp.Value;
             _uiWindowHud.SetSliderHp(displayCurrent, displayTotal);
         }
-
-        private void SetWindowHudHpBonus(long bonus)
+        private void SetWindowHudSliderHpTemp(long value)
         {
             if (_uiWindowHud == null)
             {
                 return;
             }
-            _uiWindowHud.SetHpBonus(bonus);
-        }
-
-        private void SetWindowHudHpItemBonus(long itemBonus)
-        {
-            if (_uiWindowHud == null)
-            {
-                return;
-            }
-            _uiWindowHud.SetHpItemBonus(itemBonus);
+            _uiWindowHud.SetSliderHpTemp(value, _player.TotalHpTemp.Value);
 
             // ItemBonus가 변하면 표시 total/current도 바뀌므로 HP 값 갱신을 한 번 더 호출합니다.
             SetWindowHudSliderHp(_player.CurrentHp.Value);

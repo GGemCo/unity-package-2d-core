@@ -63,9 +63,9 @@ namespace GGemCo2DCore
             sliderHp.SetBonus(UIWindowHudResourceType.Hp, bonus);
         }
 
-        public void SetHpItemBonus(long itemBonus)
+        public void SetSliderHpTemp(long currentValue, long total)
         {
-            sliderHp.SetItemBonus(UIWindowHudResourceType.Hp, itemBonus);
+            sliderHp.SetValueTemp(UIWindowHudResourceType.Hp, currentValue, total);
         }
         public void SetSliderMp(long currentValue, long total)
         {

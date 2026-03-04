@@ -30,7 +30,7 @@ namespace GGemCo2DCore
         /// - 기본 구현은 아무 동작도 하지 않습니다.
         /// - Heart UI처럼 ItemBonus 영역을 별도 스프라이트/레이어로 표시해야 할 때 오버라이드하여 사용합니다.
         /// </summary>
-        public virtual void SetItemBonus(UIWindowHudResourceType type, long itemBonus)
+        public virtual void SetValueTemp(UIWindowHudResourceType type, long current, long total)
         {
         }
 

@@ -1,4 +1,3 @@
-using System;
 using System.Collections.Generic;
 using R3;
 using UnityEngine;
@@ -103,20 +102,12 @@ namespace GGemCo2DCore
         /// 영구 Provider를 제외한 Provider 목록입니다(영구 modifier 가정 계산에 사용).
         /// </summary>
         private readonly List<IStatModifierProvider> _providersWithoutPersistent = new(3);
-
-        /// <summary>
-        /// 패시브 Provider를 제외한 Provider 목록입니다(UI에서 "패시브로 증가한 HP" 등을 계산하는 데 사용).
-        /// </summary>
-        private readonly List<IStatModifierProvider> _providersWithoutPassive = new(3);
-
         // 내부 캐시(마지막으로 계산된 최종값)
         private long _totalAtk,
             _totalDef,
             _totalHp,
             _totalHpTemp,
             _totalMp,
-            _passiveBonusHp,
-            _passiveBonusHpTemp,
             _totalStamina,
             _totalMoveSpeed,
             _totalAttackSpeed,
@@ -143,26 +134,11 @@ namespace GGemCo2DCore
         /// 최종 HP(계산 결과)를 스트림으로 제공합니다.
         /// </summary>
         public readonly BehaviorSubject<long> TotalHp = new(100);
-
-        /// <summary>
-        /// 패시브 스킬로 인해 증가한 "추가 최대 HP"(Delta)를 스트림으로 제공합니다.
-        /// - UI에서 기본 HP와 보너스 HP를 분리 표기할 때 사용합니다.
-        /// - 값은 0 이상으로 보정됩니다.
-        /// </summary>
-        public readonly BehaviorSubject<long> PassiveBonusHp = new(0);
-
         /// <summary>
         /// 최종 임시 최대 HP(Temporary Max HP, 계산 결과)를 스트림으로 제공합니다.
         /// - 추가 하트/보호막 등의 "최대치"로 사용됩니다.
         /// </summary>
-        public readonly BehaviorSubject<long> TotalTempHp = new(0);
-
-        /// <summary>
-        /// 패시브 스킬로 인해 증가한 "임시 최대 HP"(Delta)를 스트림으로 제공합니다.
-        /// - 값은 0 이상으로 보정됩니다.
-        /// </summary>
-        public readonly BehaviorSubject<long> PassiveBonusTempHp = new(0);
-
+        public readonly BehaviorSubject<long> TotalHpTemp = new(0);
         /// <summary>
         /// 최종 MP(계산 결과)를 스트림으로 제공합니다.
         /// </summary>
@@ -244,11 +220,6 @@ namespace GGemCo2DCore
             _providersWithoutPersistent.Add(_equipmentProvider);
             _providersWithoutPersistent.Add(_passiveProvider);
             _providersWithoutPersistent.Add(_itemBonusProvider);
-
-            _providersWithoutPassive.Clear();
-            _providersWithoutPassive.Add(_equipmentProvider);
-            _providersWithoutPassive.Add(_persistentProvider);
-            _providersWithoutPassive.Add(_itemBonusProvider);
         }
 
         /// <summary>
@@ -453,16 +424,6 @@ namespace GGemCo2DCore
             _totalDef = StatCalculator.CalculateFinal(ConfigCommon.StatusStatDef, BaseDef, _allProviders);
             _totalHp = StatCalculator.CalculateFinal(ConfigCommon.StatusStatHp, BaseHp, _allProviders);
             _totalHpTemp = StatCalculator.CalculateFinal(ConfigCommon.StatusStatHpTemp, 0, _allProviders);
-
-            // UI 표시용: 패시브 스킬로 인해 증가한 추가 최대 HP(Delta)
-            // - 계산 규칙(Percent 포함)을 일치시키기 위해 "패시브 Provider 제외" 총합과의 차이로 산출합니다.
-            long hpWithoutPassive =
-                StatCalculator.CalculateFinal(ConfigCommon.StatusStatHp, BaseHp, _providersWithoutPassive);
-            _passiveBonusHp = Math.Max(0, _totalHp - hpWithoutPassive);
-
-            long tempHpWithoutPassive =
-                StatCalculator.CalculateFinal(ConfigCommon.StatusStatHpTemp, 0, _providersWithoutPassive);
-            _passiveBonusHpTemp = Math.Max(0, _totalHpTemp - tempHpWithoutPassive);
             _totalMp = StatCalculator.CalculateFinal(ConfigCommon.StatusStatMp, BaseMp, _allProviders);
             _totalStamina = StatCalculator.CalculateFinal(ConfigCommon.StatusStatStamina, BaseStamina, _allProviders);
             _totalSuperArmor =
@@ -490,9 +451,7 @@ namespace GGemCo2DCore
             TotalAtk.OnNext(_totalAtk);
             TotalDef.OnNext(_totalDef);
             TotalHp.OnNext(_totalHp);
-            TotalTempHp.OnNext(_totalHpTemp);
-            PassiveBonusHp.OnNext(_passiveBonusHp);
-            PassiveBonusTempHp.OnNext(_passiveBonusHpTemp);
+            TotalHpTemp.OnNext(_totalHpTemp);
             TotalMp.OnNext(_totalMp);
             TotalStamina.OnNext(_totalStamina);
             TotalSuperArmor.OnNext(_totalSuperArmor);

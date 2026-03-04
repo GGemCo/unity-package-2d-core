@@ -105,7 +105,7 @@ namespace GGemCo2DCore
         /// - 회복/리젠으로 다시 채워지지 않습니다.
         /// - 플레이어는 저장/로드 대상입니다(세이브 연동은 Player에서 처리).
         /// </summary>
-        public readonly BehaviorSubject<long> ItemBonusHpCurrent = new(0);
+        public readonly BehaviorSubject<long> CurrentHpTemp = new(0);
 
         /// <summary>
         /// ItemBonusHpCurrent 변경 알림(저장/UI 갱신 등 외부 구독용).
@@ -279,7 +279,7 @@ namespace GGemCo2DCore
                 SubscribeResourceMaxChange(TotalMp, CurrentMp, CharacterConstants.ResourceMaxChangePolicy.KeepCurrent);
                 SubscribeResourceMaxChange(TotalStamina, CurrentStamina, CharacterConstants.ResourceMaxChangePolicy.KeepCurrent);
                 // 임시 최대 HP는 기본적으로 자동 충전하지 않고(증가 시 Keep), 감소 시 clamp만 수행합니다.
-                SubscribeResourceMaxChange(TotalTempHp, ItemBonusHpCurrent, CharacterConstants.ResourceMaxChangePolicy.KeepCurrent);
+                SubscribeResourceMaxChange(TotalHpTemp, CurrentHpTemp, CharacterConstants.ResourceMaxChangePolicy.KeepCurrent);
                 return;
             }
 
@@ -287,7 +287,7 @@ namespace GGemCo2DCore
             SubscribeResourceMaxChange(TotalMp, CurrentMp, settings.mpMaxChangePolicy);
             SubscribeResourceMaxChange(TotalStamina, CurrentStamina, settings.staminaMaxChangePolicy);
             // 임시 최대 HP는 기본적으로 자동 충전하지 않고(증가 시 Keep), 감소 시 clamp만 수행합니다.
-            SubscribeResourceMaxChange(TotalTempHp, ItemBonusHpCurrent, CharacterConstants.ResourceMaxChangePolicy.KeepCurrent);
+            SubscribeResourceMaxChange(TotalHpTemp, CurrentHpTemp, CharacterConstants.ResourceMaxChangePolicy.KeepCurrent);
         }
 
         /// <summary>
@@ -747,7 +747,7 @@ namespace GGemCo2DCore
         {
             if (amount <= 0) return;
 
-            long next = ItemBonusHpCurrent.Value + amount;
+            long next = CurrentHpTemp.Value + amount;
             if (next < 0) next = long.MaxValue; // overflow 방어
             SetItemBonusHpCurrentInternal(next, invokeDepleted: false);
         }
@@ -759,7 +759,7 @@ namespace GGemCo2DCore
         {
             if (incomingDamage <= 0) return 0;
 
-            long current = ItemBonusHpCurrent.Value;
+            long current = CurrentHpTemp.Value;
             if (current <= 0) return incomingDamage;
 
             long consume = System.Math.Min(current, incomingDamage);
@@ -776,20 +776,20 @@ namespace GGemCo2DCore
         /// </summary>
         public void SetItemBonusHpCurrent(long value)
         {
-            SetItemBonusHpCurrentInternal(System.Math.Max(0, value), invokeDepleted: value <= 0 && ItemBonusHpCurrent.Value > 0);
+            SetItemBonusHpCurrentInternal(System.Math.Max(0, value), invokeDepleted: value <= 0 && CurrentHpTemp.Value > 0);
         }
 
         private void SetItemBonusHpCurrentInternal(long value, bool invokeDepleted)
         {
             value = System.Math.Max(0, value);
             // 임시 최대 HP(TotalTempHp)를 초과하지 않도록 클램프
-            long tempMax = TotalTempHp.Value;
+            long tempMax = TotalHpTemp.Value;
             if (tempMax > 0)
                 value = System.Math.Min(value, tempMax);
-            if (ItemBonusHpCurrent.Value == value)
+            if (CurrentHpTemp.Value == value)
                 return;
 
-            ItemBonusHpCurrent.OnNext(value);
+            CurrentHpTemp.OnNext(value);
             ItemBonusHpChanged?.Invoke(value);
 
             if (invokeDepleted)
