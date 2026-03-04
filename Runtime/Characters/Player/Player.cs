@@ -182,6 +182,73 @@ namespace GGemCo2DCore
         }
 
         #endregion
+
+        #region Item Bonus Temp HP - Permanent Heart Depletion
+
+        /// <summary>
+        /// ItemBonusHpCurrent(임시/추가 HP 현재치)가 감소했을 때, “하트 1개 완전 소모” 여부를 판정하여
+        /// ItemBonusHpTemp(임시/추가 HP 최대치)를 영구 감소(저장)합니다.
+        /// </summary>
+        /// <remarks>
+        /// - ItemBonusHpTemp는 PlayerData에 저장되어, 게임 재시작 후에도 유지됩니다.
+        /// - UI의 하트 삭제는 TotalHpTemp(=ItemBonusHpTemp 반영) 변화로 자연스럽게 발생합니다.
+        /// </remarks>
+        protected override void OnItemBonusHpConsumed(long beforeCurrent, long afterCurrent, long consumedAmount)
+        {
+            base.OnItemBonusHpConsumed(beforeCurrent, afterCurrent, consumedAmount);
+            TryApplyPermanentItemBonusTempHeartDeletion(beforeCurrent, afterCurrent);
+        }
+
+        private void TryApplyPermanentItemBonusTempHeartDeletion(long beforeCurrent, long afterCurrent)
+        {
+            if (_playerData == null) return;
+            if (_playerSettings == null) return;
+
+            int perPiece = Mathf.Max(1, _playerSettings.itemBonusTempHpPerPiece);
+            int piecesPerHeart = Mathf.Max(1, _playerSettings.itemBonusTempPiecesPerHeart);
+            long heartHp = (long)perPiece * piecesPerHeart;
+            if (heartHp <= 0) return;
+
+            long maxBefore = _playerData.ItemBonusHpTemp;
+            if (maxBefore <= 0) return;
+
+            // 방어: 저장/런타임 불일치로 current가 max를 초과한 경우, 계산 안정화를 위해 클램프
+            beforeCurrent = ClampLong(beforeCurrent, 0, maxBefore);
+            afterCurrent = ClampLong(afterCurrent, 0, maxBefore);
+
+            long consumedBefore = maxBefore - beforeCurrent;
+            long consumedAfter = maxBefore - afterCurrent;
+            if (consumedBefore < 0) consumedBefore = 0;
+            if (consumedAfter < 0) consumedAfter = 0;
+
+            long depletedHearts = (consumedAfter / heartHp) - (consumedBefore / heartHp);
+            if (depletedHearts <= 0) return;
+
+            long reduceHp = depletedHearts * heartHp;
+            long newMax = maxBefore - reduceHp;
+            if (newMax < 0) newMax = 0;
+
+            // 1) 저장값(최대치) 영구 감소
+            _playerData.ItemBonusHpTemp = newMax;
+
+            // 2) 스탯 Provider 갱신 (TotalHpTemp에 반영)
+            SetItemBonusHpBonuses(_playerData.ItemBonusHpNormal, _playerData.ItemBonusHpTemp, raiseEvent: true);
+
+            // 3) 현재치 안전 보정 (일반적으로 afterCurrent가 newMax 이하이지만, 데이터 불일치 방어용)
+            if (_playerData.TempHpCurrent > _playerData.ItemBonusHpTemp)
+            {
+                _playerData.TempHpCurrent = _playerData.ItemBonusHpTemp;
+                SetItemBonusHpCurrent(_playerData.TempHpCurrent);
+            }
+        }
+
+        private static long ClampLong(long value, long min, long max)
+        {
+            if (value < min) return min;
+            return value > max ? max : value;
+        }
+
+        #endregion
         
         /// <summary>
         /// 세이브 데이터에 있는 장착 아이템 정보 가져와서 장착 시키기

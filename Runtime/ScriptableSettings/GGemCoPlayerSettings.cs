@@ -129,6 +129,13 @@ namespace GGemCo2DCore
         [Tooltip("최대 Stamina가 변할 때 현재 Stamina를 어떻게 보정할지 결정합니다.")]
         public CharacterConstants.ResourceMaxChangePolicy staminaMaxChangePolicy = CharacterConstants.ResourceMaxChangePolicy.KeepCurrent;
 
+        [Header("소모형 추가 최대 HP(아이템 보너스) - 하트 단위")]
+        [Tooltip("임시(추가) HP의 '조각 1개'가 의미하는 HP 값입니다. UI 하트 조각 규칙과 동일한 값을 사용하세요.")]
+        public int itemBonusTempHpPerPiece = 100;
+
+        [Tooltip("임시(추가) HP의 '하트 1개'가 가지는 조각 수입니다. UI 하트 조각 규칙과 동일한 값을 사용하세요.")]
+        public int itemBonusTempPiecesPerHeart = 4;
+
         [Header("맵 경계 제한 옵션")]
         [Tooltip("왼쪽 경계를 벗어날 수 없도록 제한합니다.")]
         public bool limitBoundaryLeft = true;
@@ -193,6 +200,9 @@ namespace GGemCo2DCore
             statPointHp = new StatPointBonus { mode = ConfigCommon.CalculateType.Flat, valuePerPoint = 10f };
             statPointMp = new StatPointBonus { mode = ConfigCommon.CalculateType.Flat, valuePerPoint = 5f };
             statPointStamina = new StatPointBonus { mode = ConfigCommon.CalculateType.Flat, valuePerPoint = 5f };
+
+            itemBonusTempHpPerPiece = 100;
+            itemBonusTempPiecesPerHeart = 4;
 
         }
     }

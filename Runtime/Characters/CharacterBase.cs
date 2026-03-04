@@ -759,16 +759,33 @@ namespace GGemCo2DCore
         {
             if (incomingDamage <= 0) return 0;
 
-            long current = CurrentHpTemp.Value;
-            if (current <= 0) return incomingDamage;
+            long beforeCurrent = CurrentHpTemp.Value;
+            if (beforeCurrent <= 0) return incomingDamage;
 
-            long consume = System.Math.Min(current, incomingDamage);
-            long remainingBonus = current - consume;
+            long consume = System.Math.Min(beforeCurrent, incomingDamage);
+            long remainingBonus = beforeCurrent - consume;
             long remainingDamage = incomingDamage - consume;
 
             bool depleted = remainingBonus <= 0;
             SetItemBonusHpCurrentInternal(depleted ? 0 : remainingBonus, invokeDepleted: depleted);
+
+            // NOTE:
+            // - 소모형 추가 최대 HP(아이템 보너스 HP)의 “현재치”가 감소한 시점을 외부에서 해석할 수 있도록 훅을 제공합니다.
+            // - 기본 구현은 no-op이며, 플레이어는 여기에서 “하트 1개 소모 → 최대치 영구 감소(저장)” 같은 규칙을 적용할 수 있습니다.
+            OnItemBonusHpConsumed(beforeCurrent, depleted ? 0 : remainingBonus, consume);
             return remainingDamage;
+        }
+
+        /// <summary>
+        /// ItemBonusHpCurrent(소모형 추가 HP)가 감소했을 때 호출되는 훅.
+        /// </summary>
+        /// <remarks>
+        /// - <see cref="ConsumeItemBonusHp"/> 경로에서만 호출됩니다.
+        /// - 기본 구현은 아무 것도 하지 않습니다.
+        /// - 예: 플레이어는 “하트 단위 소모가 완료되면 ItemBonusHpTemp(최대치) 자체를 영구 감소” 같은 규칙을 적용할 수 있습니다.
+        /// </remarks>
+        protected virtual void OnItemBonusHpConsumed(long beforeCurrent, long afterCurrent, long consumedAmount)
+        {
         }
 
         /// <summary>

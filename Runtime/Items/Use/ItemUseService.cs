@@ -68,6 +68,7 @@ namespace GGemCo2DCore
                 inventory: null, slotIndex: -1, itemUid: itemUid, consumeCount: consumeCount,
                 skillReceiver: skillReceiver, targetObject: targetObject);
 
+            // 사용할 수 있는지 먼저 체크
             foreach (var row in actions)
             {
                 var action = ItemUseActionFactory.Create(row);
@@ -77,6 +78,7 @@ namespace GGemCo2DCore
                     return can ?? ResultCommon.Fail("ItemUse_CannotExecute");
             }
 
+            // 실제 사용하기
             foreach (var row in actions)
             {
                 var action = ItemUseActionFactory.Create(row);
