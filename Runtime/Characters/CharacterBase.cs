@@ -1373,5 +1373,42 @@ namespace GGemCo2DCore
             if (GcLogger.IsNull(_crowdControlController, nameof(CharacterCrowdControlController))) return;
             _crowdControlController.ApplyCrowdControlByUid(crowdControlUid, metadataDamageAttacker);
         }
+        /// <summary>
+        /// 현재 생명력이 최대치인지
+        /// </summary>
+        /// <returns></returns>
+        public bool IsMaxHp()
+        {
+            return CurrentHp.Value >= TotalHp.Value;
+        }
+        /// <summary>
+        /// 현재 생명력 더하기
+        /// </summary>
+        /// <param name="value"></param>
+        public void AddHp(int value)
+        {
+            long newVale = CurrentHp.Value + value;
+            if (newVale > TotalHp.Value)
+            {
+                newVale = TotalHp.Value;
+            }
+            CurrentHp.OnNext(newVale);
+        }
+        /// <summary>
+        /// 현재 마력이 최대치 인지
+        /// </summary>
+        /// <returns></returns>
+        public bool IsMaxMp()
+        {
+            return CurrentMp.Value >= TotalMp.Value;
+        }
+        /// <summary>
+        /// 현재 마력이 최대치 인지
+        /// </summary>
+        /// <returns></returns>
+        public bool CheckNeedMp(int needMp)
+        {
+            return CurrentMp.Value >= needMp;
+        }
     }
 }
