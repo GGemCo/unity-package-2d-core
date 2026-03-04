@@ -37,6 +37,30 @@ namespace GGemCo2DCore
 
         // 일괄 업데이트 중(Apply 버튼 등) 자동 저장/이벤트 폭주를 줄이기 위한 플래그
         private bool _isBatchUpdating;
+        private static long ClampLong(long value, long min, long max)
+        {
+            if (value < min) return min;
+            if (value > max) return max;
+            return value;
+        }
+
+        /// <summary>
+        /// 저장 데이터의 불변식을 보정합니다.
+        /// - 0 ≤ TempHpCurrent ≤ ItemBonusHpTemp
+        /// - 0 ≤ ItemBonusHpTemp / ItemBonusHpNormal
+        /// </summary>
+        private void NormalizeTempHpInvariants()
+        {
+            long maxTemp = _itemBonusHpTemp.Value;
+            if (maxTemp < 0) maxTemp = 0;
+
+            long current = _tempHpCurrent.Value;
+            long clamped = ClampLong(current, 0, maxTemp);
+            if (clamped != current)
+            {
+                _tempHpCurrent.OnNext(clamped);
+            }
+        }
 
         public int CurrentMapUid
         {
@@ -83,7 +107,15 @@ namespace GGemCo2DCore
         public long ItemBonusHpTemp
         {
             get => _itemBonusHpTemp.Value;
-            set => _itemBonusHpTemp.OnNext(System.Math.Max(0, value));
+            set
+            {
+                long v = System.Math.Max(0, value);
+                if (_itemBonusHpTemp.Value == v) return;
+
+                _itemBonusHpTemp.OnNext(v);
+                // 최대치가 감소한 경우 현재치를 초과하지 않도록 보정
+                NormalizeTempHpInvariants();
+            }
         }
 
         /// <summary>
@@ -94,7 +126,16 @@ namespace GGemCo2DCore
         public long TempHpCurrent
         {
             get => _tempHpCurrent.Value;
-            set => _tempHpCurrent.OnNext(System.Math.Max(0, value));
+            set
+            {
+                long maxTemp = _itemBonusHpTemp.Value;
+                if (maxTemp < 0) maxTemp = 0;
+
+                long clamped = ClampLong(value, 0, maxTemp);
+                if (_tempHpCurrent.Value == clamped) return;
+
+                _tempHpCurrent.OnNext(clamped);
+            }
         }
 
         // =========================
@@ -277,6 +318,8 @@ namespace GGemCo2DCore
                     UnspentStatPoints = settings.statPointInitial;
                 }
             }
+
+            NormalizeTempHpInvariants();
 
             // 필요 경험치 업데이트
             UpdateRequiredExp(_tableExp.GetNeedExp(CurrentLevel + 1));
