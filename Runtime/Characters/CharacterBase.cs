@@ -63,61 +63,7 @@ namespace GGemCo2DCore
         public ICharacterAnimationController CharacterAnimationController;
         private Renderer _characterRenderer;
         private CharacterConstants.CharacterSortingOrder _sortingOrder;
-        
-        [Header("상태 및 스탯")] public readonly BehaviorSubject<long> CurrentHp = new(0);
-        public readonly BehaviorSubject<long> CurrentMp = new(0);
-        public readonly BehaviorSubject<long> CurrentStamina = new(0);
-        public readonly BehaviorSubject<int> CurrentSuperArmor = new(0);
-        
-        /// <summary>
-        /// 리소스 동기화(최대치 변경 시 현재값 보정)
-        /// 특정 구간에서 Current 값을 직접 세팅하는 경우, 자동 보정을 잠시 비활성화할 수 있습니다.
-        /// </summary>
-        private int _suppressAutoResourceSyncCount;
 
-        private bool IsAutoResourceSyncSuppressed => _suppressAutoResourceSyncCount > 0;
-
-        /// <summary>
-        /// 특정 구간에서 Current 값을 직접 세팅해야 할 때, 최대치 변경 자동 보정을 잠시 비활성화합니다.
-        /// - 예) 스탯 포인트 재분배 후 현재값을 비율 유지로 직접 세팅하는 경우
-        /// </summary>
-        public IDisposable SuppressAutoResourceSync()
-        {
-            _suppressAutoResourceSyncCount++;
-            return new AutoResourceSyncScope(this);
-        }
-
-        private readonly struct AutoResourceSyncScope : IDisposable
-        {
-            private readonly CharacterBase _owner;
-            public AutoResourceSyncScope(CharacterBase owner) => _owner = owner;
-            public void Dispose()
-            {
-                if (_owner == null) return;
-                _owner._suppressAutoResourceSyncCount = Math.Max(0, _owner._suppressAutoResourceSyncCount - 1);
-            }
-        }
-
-
-        /// <summary>
-        /// 아이템 사용 등으로 얻는 "소모형 추가 최대 HP(추가 하트)".
-        /// - 데미지를 먼저 흡수하고, 0이 되면 즉시 소멸합니다.
-        /// - 회복/리젠으로 다시 채워지지 않습니다.
-        /// - 플레이어는 저장/로드 대상입니다(세이브 연동은 Player에서 처리).
-        /// </summary>
-        public readonly BehaviorSubject<long> CurrentHpTemp = new(0);
-
-        /// <summary>
-        /// ItemBonusHpCurrent 변경 알림(저장/UI 갱신 등 외부 구독용).
-        /// </summary>
-        public event Action<long> ItemBonusHpChanged;
-
-        /// <summary>
-        /// ItemBonusHpCurrent가 0이 되어 소멸한 순간 1회 호출됩니다.
-        /// </summary>
-        public event Action ItemBonusHpDepleted;
-
-        
         [Header("전투")] 
         public readonly BehaviorSubject<CharacterConstants.BattleStatus> CurrentBattleStatus = new(CharacterConstants.BattleStatus.None);
         
@@ -279,7 +225,7 @@ namespace GGemCo2DCore
                 SubscribeResourceMaxChange(TotalMp, CurrentMp, CharacterConstants.ResourceMaxChangePolicy.KeepCurrent);
                 SubscribeResourceMaxChange(TotalStamina, CurrentStamina, CharacterConstants.ResourceMaxChangePolicy.KeepCurrent);
                 // 임시 최대 HP는 기본적으로 자동 충전하지 않고(증가 시 Keep), 감소 시 clamp만 수행합니다.
-                SubscribeResourceMaxChange(TotalHpTemp, CurrentHpTemp, CharacterConstants.ResourceMaxChangePolicy.KeepCurrent);
+                SubscribeResourceMaxChange(TotalHpTemp, TotalItemBonusHpTemp, CharacterConstants.ResourceMaxChangePolicy.KeepCurrent);
                 return;
             }
 
@@ -287,7 +233,7 @@ namespace GGemCo2DCore
             SubscribeResourceMaxChange(TotalMp, CurrentMp, settings.mpMaxChangePolicy);
             SubscribeResourceMaxChange(TotalStamina, CurrentStamina, settings.staminaMaxChangePolicy);
             // 임시 최대 HP는 기본적으로 자동 충전하지 않고(증가 시 Keep), 감소 시 clamp만 수행합니다.
-            SubscribeResourceMaxChange(TotalHpTemp, CurrentHpTemp, CharacterConstants.ResourceMaxChangePolicy.KeepCurrent);
+            SubscribeResourceMaxChange(TotalHpTemp, TotalItemBonusHpTemp, CharacterConstants.ResourceMaxChangePolicy.KeepCurrent);
         }
 
         /// <summary>
@@ -296,77 +242,6 @@ namespace GGemCo2DCore
         protected virtual GGemCoPlayerSettings GetPlayerSettingsForResourcePolicy()
         {
             return AddressableLoaderSettings.Instance != null ? AddressableLoaderSettings.Instance.playerSettings : null;
-        }
-
-        private void SubscribeResourceMaxChange(BehaviorSubject<long> totalMax, BehaviorSubject<long> current,
-            CharacterConstants.ResourceMaxChangePolicy policy)
-        {
-            if (totalMax == null || current == null) return;
-
-            long lastMax = totalMax.Value;
-            bool isFirst = true;
-
-            totalMax.Subscribe(newMax =>
-                {
-                    // BehaviorSubject는 Subscribe 즉시 현재값을 내보내므로, 최초 1회는 무시합니다.
-                    if (isFirst)
-                    {
-                        isFirst = false;
-                        lastMax = newMax;
-                        return;
-                    }
-
-                    long oldMax = lastMax;
-                    lastMax = newMax;
-
-                    if (IsAutoResourceSyncSuppressed) return;
-                    if (newMax == oldMax) return;
-
-                    long newCur = EvaluateCurrentOnMaxChanged(current.Value, oldMax, newMax, policy);
-                    if (newCur == current.Value) return;
-
-                    current.OnNext(newCur);
-                })
-                .AddTo(this);
-        }
-
-        private static long EvaluateCurrentOnMaxChanged(long current, long oldMax, long newMax,
-            CharacterConstants.ResourceMaxChangePolicy policy)
-        {
-            if (newMax < 0) newMax = 0;
-
-            // 감소 시에는 어떤 정책이든 clamp가 최우선입니다.
-            if (newMax < oldMax)
-            {
-                return Math.Clamp(current, 0, newMax);
-            }
-
-            // 증가 또는 초기화(동일 포함)
-            switch (policy)
-            {
-                case CharacterConstants.ResourceMaxChangePolicy.AddDelta:
-                {
-                    long delta = newMax - oldMax;
-                    long v = current + delta;
-                    return Math.Clamp(v, 0, newMax);
-                }
-
-                case CharacterConstants.ResourceMaxChangePolicy.PreserveRatio:
-                {
-                    if (oldMax <= 0)
-                    {
-                        return Math.Clamp(current, 0, newMax);
-                    }
-
-                    float ratio = Mathf.Clamp01((float)current / oldMax);
-                    long v = Mathf.RoundToInt(ratio * newMax);
-                    return Math.Clamp(v, 0, newMax);
-                }
-
-                case CharacterConstants.ResourceMaxChangePolicy.KeepCurrent:
-                default:
-                    return Math.Clamp(current, 0, newMax);
-            }
         }
 
         /// <summary>
@@ -738,88 +613,6 @@ namespace GGemCo2DCore
             _characterDamageController.TakeDamage(metadataDamage);
         }
 
-        #region Item Bonus HP (소모형 추가 최대 HP)
-        /// <summary>
-        /// 아이템 보너스 HP를 추가합니다.
-        /// - 유일한 증가 경로(회복/리젠은 Base HP만 회복)
-        /// </summary>
-        public void AddItemBonusHp(long amount)
-        {
-            if (amount <= 0) return;
-
-            long next = CurrentHpTemp.Value + amount;
-            if (next < 0) next = long.MaxValue; // overflow 방어
-            SetItemBonusHpCurrentInternal(next, invokeDepleted: false);
-        }
-
-        /// <summary>
-        /// 데미지 처리에서 사용: ItemBonusHpCurrent를 먼저 소모하고, 남은 데미지를 반환합니다.
-        /// </summary>
-        public long ConsumeItemBonusHp(long incomingDamage)
-        {
-            if (incomingDamage <= 0) return 0;
-
-            long beforeCurrent = CurrentHpTemp.Value;
-            if (beforeCurrent <= 0) return incomingDamage;
-
-            long consume = System.Math.Min(beforeCurrent, incomingDamage);
-            long remainingBonus = beforeCurrent - consume;
-            long remainingDamage = incomingDamage - consume;
-
-            bool depleted = remainingBonus <= 0;
-            SetItemBonusHpCurrentInternal(depleted ? 0 : remainingBonus, invokeDepleted: depleted);
-
-            // NOTE:
-            // - 소모형 추가 최대 HP(아이템 보너스 HP)의 “현재치”가 감소한 시점을 외부에서 해석할 수 있도록 훅을 제공합니다.
-            // - 기본 구현은 no-op이며, 플레이어는 여기에서 “하트 1개 소모 → 최대치 영구 감소(저장)” 같은 규칙을 적용할 수 있습니다.
-            OnItemBonusHpConsumed(beforeCurrent, depleted ? 0 : remainingBonus, consume);
-            return remainingDamage;
-        }
-
-        /// <summary>
-        /// ItemBonusHpCurrent(소모형 추가 HP)가 감소했을 때 호출되는 훅.
-        /// </summary>
-        /// <remarks>
-        /// - <see cref="ConsumeItemBonusHp"/> 경로에서만 호출됩니다.
-        /// - 기본 구현은 아무 것도 하지 않습니다.
-        /// - 예: 플레이어는 “하트 단위 소모가 완료되면 ItemBonusHpTemp(최대치) 자체를 영구 감소” 같은 규칙을 적용할 수 있습니다.
-        /// </remarks>
-        protected virtual void OnItemBonusHpConsumed(long beforeCurrent, long afterCurrent, long consumedAmount)
-        {
-        }
-
-        /// <summary>
-        /// 저장/로드 또는 사망 처리 등에서 직접 값을 세팅할 때 사용합니다.
-        /// </summary>
-        public void SetItemBonusHpCurrent(long value)
-        {
-            SetItemBonusHpCurrentInternal(System.Math.Max(0, value), invokeDepleted: value <= 0 && CurrentHpTemp.Value > 0);
-        }
-
-        private void SetItemBonusHpCurrentInternal(long value, bool invokeDepleted)
-        {
-            value = System.Math.Max(0, value);
-            // 임시 최대 HP(TotalTempHp)를 초과하지 않도록 클램프
-            long tempMax = TotalHpTemp.Value;
-            if (tempMax > 0)
-                value = System.Math.Min(value, tempMax);
-            if (CurrentHpTemp.Value == value)
-                return;
-
-            CurrentHpTemp.OnNext(value);
-            ItemBonusHpChanged?.Invoke(value);
-
-            if (invokeDepleted)
-            {
-                // ItemBonus가 0이 되는 순간: 최대치(표시) 변화에 따른 클램프/리빌드 트리거
-                if (CurrentHp.Value > TotalHp.Value)
-                {
-                    CurrentHp.OnNext(TotalHp.Value);
-                }
-                ItemBonusHpDepleted?.Invoke();
-            }
-        }
-        #endregion
         public virtual void OnDamage(GameObject attacker)
         {
         }
@@ -878,7 +671,6 @@ namespace GGemCo2DCore
             // 미설치 시에는 아무 일도 하지 않는다.
             AffectRuntimeBridge.ApplyAffect(gameObject, affectUid, duration);
         }
-
         
 
         /// <summary>
@@ -889,7 +681,8 @@ namespace GGemCo2DCore
         {
             AffectRuntimeBridge.ApplyAffect(gameObject, affectUid, source, duration);
         }
-/// <summary>
+        
+        /// <summary>
         /// total move speed 가 변경되었을때 wait 애니메이션의 time scale 도 변경해주기 위해서
         /// track index = 0 의 time scale 을 변경해준다.
         /// </summary>
@@ -900,32 +693,7 @@ namespace GGemCo2DCore
             if (value == 0)
                 GcLogger.LogError($"이동속도가 0으로 업데이트 되었습니다. {gameObject.name}");
         }
-        /// <summary>
-        /// 현재 마력 더하기
-        /// </summary>
-        /// <param name="value"></param>
-        public void AddMp(int value)
-        {
-            long newVale = CurrentMp.Value + value;
-            if (newVale > TotalMp.Value)
-            {
-                newVale = TotalMp.Value;
-            }
-            CurrentMp.OnNext(newVale);
-        }
-        /// <summary>
-        /// 현재 마력 빼기
-        /// </summary>
-        /// <param name="value"></param>
-        public void MinusMp(int value)
-        {
-            long newVale = CurrentMp.Value - value;
-            if (newVale < 0)
-            {
-                newVale = 0;
-            }
-            CurrentMp.OnNext(newVale);
-        }
+        
         protected override void OnDestroy()
         {
             base.OnDestroy();
@@ -1282,101 +1050,7 @@ namespace GGemCo2DCore
             }
         }
 
-        #region 스테미나
-
-        /// <summary>
-        /// 스테미나 소비 가능 여부를 반환합니다.
-        /// - amount가 0 이하이면 항상 가능으로 처리합니다.
-        /// </summary>
-        public bool CanSpendStamina(long amount)
-        {
-            if (amount <= 0) return true;
-            return CurrentStamina.Value >= amount;
-        }
-
-        /// <summary>
-        /// 스테미나를 즉시 차감합니다.
-        /// - 부족하면 차감하지 않고 false
-        /// - 성공 시 0~TotalStamina로 Clamp 합니다.
-        /// </summary>
-        public bool TrySpendStamina(long amount)
-        {
-            if (amount <= 0) return true;
-
-            long cur = CurrentStamina.Value;
-            if (cur < amount) return false;
-
-            SetCurrentStaminaInternal(cur - amount);
-            return true;
-        }
-
-        /// <summary>
-        /// 스테미나를 회복합니다.
-        /// - amount가 0 이하이면 아무 처리도 하지 않습니다.
-        /// </summary>
-        public void RestoreStamina(long amount)
-        {
-            if (amount <= 0) return;
-            SetCurrentStaminaInternal(CurrentStamina.Value + amount);
-        }
-
-        private void SetCurrentStaminaInternal(long value)
-        {
-            long max = TotalStamina.Value;
-            if (max < 0) max = 0;
-
-            if (value < 0) value = 0;
-            if (value > max) value = max;
-
-            CurrentStamina.OnNext(value);
-        }
-        
-        #endregion
-
         #region 슈퍼아머
-        
-        public bool CanSpendSuperArmor(int amount)
-        {
-            if (amount <= 0) return true;
-            return CurrentSuperArmor.Value >= amount;
-        }
-
-        /// <summary>
-        /// 스테미나를 즉시 차감합니다.
-        /// - 부족하면 차감하지 않고 false
-        /// - 성공 시 0~TotalSuperArmor로 Clamp 합니다.
-        /// </summary>
-        public bool TrySpendSuperArmor(int amount)
-        {
-            if (amount <= 0) return true;
-
-            int cur = CurrentSuperArmor.Value;
-            if (cur < amount) return false;
-
-            SetCurrentSuperArmorInternal(cur - amount);
-            return true;
-        }
-
-        /// <summary>
-        /// 스테미나를 회복합니다.
-        /// - amount가 0 이하이면 아무 처리도 하지 않습니다.
-        /// </summary>
-        public void RestoreSuperArmor(int amount)
-        {
-            if (amount <= 0) return;
-            SetCurrentSuperArmorInternal(CurrentSuperArmor.Value + amount);
-        }
-
-        private void SetCurrentSuperArmorInternal(int value)
-        {
-            int max = TotalSuperArmor.Value;
-            if (max < 0) max = 0;
-
-            if (value < 0) value = 0;
-            if (value > max) value = max;
-
-            CurrentSuperArmor.OnNext(value);
-        }
 
         protected void EnableSuperArmor(bool enable)
         {
@@ -1389,43 +1063,6 @@ namespace GGemCo2DCore
         {
             if (GcLogger.IsNull(_crowdControlController, nameof(CharacterCrowdControlController))) return;
             _crowdControlController.ApplyCrowdControlByUid(crowdControlUid, metadataDamageAttacker);
-        }
-        /// <summary>
-        /// 현재 생명력이 최대치인지
-        /// </summary>
-        /// <returns></returns>
-        public bool IsMaxHp()
-        {
-            return CurrentHp.Value >= TotalHp.Value;
-        }
-        /// <summary>
-        /// 현재 생명력 더하기
-        /// </summary>
-        /// <param name="value"></param>
-        public void AddHp(int value)
-        {
-            long newVale = CurrentHp.Value + value;
-            if (newVale > TotalHp.Value)
-            {
-                newVale = TotalHp.Value;
-            }
-            CurrentHp.OnNext(newVale);
-        }
-        /// <summary>
-        /// 현재 마력이 최대치 인지
-        /// </summary>
-        /// <returns></returns>
-        public bool IsMaxMp()
-        {
-            return CurrentMp.Value >= TotalMp.Value;
-        }
-        /// <summary>
-        /// 현재 마력이 최대치 인지
-        /// </summary>
-        /// <returns></returns>
-        public bool CheckNeedMp(int needMp)
-        {
-            return CurrentMp.Value >= needMp;
         }
     }
 }

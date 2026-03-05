@@ -1,7 +1,7 @@
+using System;
 using System.Collections.Generic;
 using R3;
 using UnityEngine;
-using Random = UnityEngine.Random;
 
 namespace GGemCo2DCore
 {
@@ -16,8 +16,12 @@ namespace GGemCo2DCore
     /// - 영구(스탯 포인트 등): <see cref="PersistentModifierProvider"/>
     /// - 패시브 스킬: <see cref="PassiveSkillModifierProvider"/>
     /// </remarks>
-    public class CharacterStat : MonoBehaviour
+    public partial class CharacterStat : MonoBehaviour
     {
+        // 스탯 계산/발행 로직 모듈(군별 분리)
+        private readonly List<ICharacterStatModule> _statModules = new(4);
+        private bool _statModulesInitialized;
+
         /// <summary>
         /// 캐릭터의 계산된 스탯 총합 스냅샷(읽기 전용)입니다.
         /// - UI 미리보기/시뮬레이션 등에서 특정 시점의 값을 전달하기 위해 사용합니다.
@@ -135,11 +139,6 @@ namespace GGemCo2DCore
         /// </summary>
         public readonly BehaviorSubject<long> TotalHp = new(100);
         /// <summary>
-        /// 최종 임시 최대 HP(Temporary Max HP, 계산 결과)를 스트림으로 제공합니다.
-        /// - 추가 하트/보호막 등의 "최대치"로 사용됩니다.
-        /// </summary>
-        public readonly BehaviorSubject<long> TotalHpTemp = new(0);
-        /// <summary>
         /// 최종 MP(계산 결과)를 스트림으로 제공합니다.
         /// </summary>
         public readonly BehaviorSubject<long> TotalMp = new(100);
@@ -194,6 +193,8 @@ namespace GGemCo2DCore
         /// </summary>
         public readonly BehaviorSubject<long> TotalRegistPoison = new(100);
 
+        
+        
         /// <summary>
         /// Provider 인스턴스를 생성하고 변경 이벤트를 연결합니다.
         /// </summary>
@@ -220,6 +221,20 @@ namespace GGemCo2DCore
             _providersWithoutPersistent.Add(_equipmentProvider);
             _providersWithoutPersistent.Add(_passiveProvider);
             _providersWithoutPersistent.Add(_itemBonusProvider);
+            
+            EnsureStatModules();
+        }
+
+        private void EnsureStatModules()
+        {
+            if (_statModulesInitialized) return;
+            _statModulesInitialized = true;
+
+            _statModules.Clear();
+            _statModules.Add(new ResourceStatModule(this));
+            _statModules.Add(new CombatStatModule(this));
+            _statModules.Add(new MovementStatModule(this));
+            _statModules.Add(new ResistanceStatModule(this));
         }
 
         /// <summary>
@@ -240,6 +255,7 @@ namespace GGemCo2DCore
         {
         }
 
+        
         /// <summary>
         /// Provider 변경 이벤트를 받아 전체 스탯을 재계산합니다.
         /// </summary>
@@ -420,118 +436,14 @@ namespace GGemCo2DCore
         /// </summary>
         public void RecalculateStats()
         {
-            _totalAtk = StatCalculator.CalculateFinal(ConfigCommon.StatusStatAtk, BaseAtk, _allProviders);
-            _totalDef = StatCalculator.CalculateFinal(ConfigCommon.StatusStatDef, BaseDef, _allProviders);
-            _totalHp = StatCalculator.CalculateFinal(ConfigCommon.StatusStatHp, BaseHp, _allProviders);
-            _totalHpTemp = StatCalculator.CalculateFinal(ConfigCommon.StatusStatHpTemp, 0, _allProviders);
-            _totalMp = StatCalculator.CalculateFinal(ConfigCommon.StatusStatMp, BaseMp, _allProviders);
-            _totalStamina = StatCalculator.CalculateFinal(ConfigCommon.StatusStatStamina, BaseStamina, _allProviders);
-            _totalSuperArmor =
-                (int)StatCalculator.CalculateFinal(ConfigCommon.StatusStatSuperArmor, BaseSuperArmor, _allProviders);
+            EnsureStatModules();
+            // 1) 계산
+            for (int i = 0; i < _statModules.Count; i++)
+                _statModules[i].Recalculate();
 
-            _totalMoveSpeed =
-                StatCalculator.CalculateFinal(ConfigCommon.StatusStatMoveSpeed, BaseMoveSpeed, _allProviders);
-            _totalAttackSpeed =
-                StatCalculator.CalculateFinal(ConfigCommon.StatusStatAttackSpeed, BaseAttackSpeed, _allProviders);
-
-            _totalCriticalDamage = StatCalculator.CalculateFinal(ConfigCommon.StatusStatCriticalDamage,
-                BaseCriticalDamage, _allProviders);
-            _totalCriticalProbability = StatCalculator.CalculateFinal(ConfigCommon.StatusStatCriticalProbability,
-                BaseCriticalProbability, _allProviders);
-
-            _totalRegistFire =
-                StatCalculator.CalculateFinal(ConfigCommon.StatusStatResistanceFire, BaseRegistFire, _allProviders);
-            _totalRegistCold =
-                StatCalculator.CalculateFinal(ConfigCommon.StatusStatResistanceCold, BaseRegistCold, _allProviders);
-            _totalRegistLightning = StatCalculator.CalculateFinal(ConfigCommon.StatusStatResistanceLightning,
-                BaseRegistLightning, _allProviders);
-            _totalRegistPoison = StatCalculator.CalculateFinal(ConfigCommon.StatusStatResistancePoison,
-                BaseRegistPoison, _allProviders);
-
-            TotalAtk.OnNext(_totalAtk);
-            TotalDef.OnNext(_totalDef);
-            TotalHp.OnNext(_totalHp);
-            TotalHpTemp.OnNext(_totalHpTemp);
-            TotalMp.OnNext(_totalMp);
-            TotalStamina.OnNext(_totalStamina);
-            TotalSuperArmor.OnNext(_totalSuperArmor);
-            TotalMoveSpeed.OnNext(_totalMoveSpeed);
-            TotalAttackSpeed.OnNext(_totalAttackSpeed);
-            TotalCriticalDamage.OnNext(_totalCriticalDamage);
-            TotalCriticalProbability.OnNext(_totalCriticalProbability);
-            TotalRegistFire.OnNext(_totalRegistFire);
-            TotalRegistCold.OnNext(_totalRegistCold);
-            TotalRegistLightning.OnNext(_totalRegistLightning);
-            TotalRegistPoison.OnNext(_totalRegistPoison);
-        }
-
-        /// <summary>
-        /// 현재 이동속도를 반환합니다.
-        /// </summary>
-        /// <param name="isPercent">true이면 100 기준 퍼센트 값(예: 120 → 1.2)으로 변환합니다.</param>
-        /// <returns>이동속도 값(퍼센트 변환 여부에 따라 스케일이 달라집니다).</returns>
-        public float GetCurrentMoveSpeed(bool isPercent = true)
-            => isPercent ? TotalMoveSpeed.Value / 100f : TotalMoveSpeed.Value;
-
-        /// <summary>
-        /// 현재 공격속도를 100 기준 퍼센트 값으로 반환합니다.
-        /// </summary>
-        /// <returns>공격속도(예: 120 → 1.2)입니다.</returns>
-        public float GetCurrentAttackSpeed() => TotalAttackSpeed.Value / 100f;
-
-        /// <summary>
-        /// 기본 이동속도를 변경하고 전체 스탯을 재계산합니다.
-        /// </summary>
-        /// <param name="value">설정할 기본 이동속도 값입니다(0 이하는 무시).</param>
-        public void SetCurrentMoveSpeed(int value)
-        {
-            if (value <= 0) return;
-            BaseMoveSpeed = value;
-            RecalculateStats();
-        }
-
-        /// <summary>
-        /// 현재 스탯(크리티컬 확률/피해량 포함)을 반영하여 1회 공격의 최종 피해를 계산합니다.
-        /// </summary>
-        /// <remarks>
-        /// - 크리티컬 확률에 따라 난수(<see cref="UnityEngine.Random.value"/>)로 크리티컬 여부를 결정합니다.
-        /// - 크리티컬 피해 배율은 최소 1.0으로 보정합니다.
-        /// </remarks>
-        /// <returns>난수 결과를 반영한 1회 공격 피해량입니다.</returns>
-        protected long CalculateFinalAttack()
-        {
-            long baseAttack = TotalAtk.Value;
-            if (baseAttack <= 0) return 0;
-
-            float finalDamage = baseAttack;
-            float criticalChance = Mathf.Clamp01(TotalCriticalProbability.Value / 100f);
-
-            if (!(Random.value < criticalChance)) return Mathf.RoundToInt(finalDamage);
-
-            float critMultiplier = Mathf.Max(1f, TotalCriticalDamage.Value / 100f);
-            finalDamage *= critMultiplier;
-
-            return Mathf.RoundToInt(finalDamage);
-        }
-
-        /// <summary>
-        /// 크리티컬 기대값을 포함한 예상 평균 공격력을 계산합니다.
-        /// </summary>
-        /// <remarks>
-        /// 기대값 = 일반 공격 * (1 - 크리확) + (일반 공격 * 크리배율) * 크리확
-        /// </remarks>
-        /// <returns>크리티컬 확률/배율을 반영한 평균 피해 기대값입니다.</returns>
-        public float CalculateExpectedAttack()
-        {
-            long baseAttack = TotalAtk.Value;
-            if (baseAttack <= 0) return 0;
-
-            float criticalChance = Mathf.Clamp01(TotalCriticalProbability.Value / 100f);
-            float critMultiplier = Mathf.Max(1f, TotalCriticalDamage.Value / 100f);
-
-            // 기대값 = 일반 공격 * (1 - 크리확) + 크리티컬 공격 * (크리확)
-            float expectedDamage = baseAttack * (1 - criticalChance) + (baseAttack * critMultiplier * criticalChance);
-            return expectedDamage;
+            // 2) 발행(스트림 업데이트)
+            for (int i = 0; i < _statModules.Count; i++)
+                _statModules[i].Publish();
         }
 
         /// <summary>
@@ -553,29 +465,76 @@ namespace GGemCo2DCore
             AffectRuntimeBridge.RemoveAffect(gameObject, affectUid);
         }
 
-        #region Item Bonus Provider (아이템 최대 HP 보너스)
 
-        /// <summary>
-        /// 아이템 사용으로 인해 증가한 "일반 최대 HP / 임시 최대 HP" 누적치를 설정합니다(저장값 복원 등).
-        /// </summary>
-        public void SetItemBonusHpBonuses(long normalHpDelta, long tempHpDelta, bool raiseEvent = true)
+        protected void SubscribeResourceMaxChange(BehaviorSubject<long> totalMax, BehaviorSubject<long> current,
+            CharacterConstants.ResourceMaxChangePolicy policy)
         {
-            _itemBonusProvider?.SetHpBonuses(normalHpDelta, tempHpDelta, raiseEvent);
+            if (totalMax == null || current == null) return;
+
+            long lastMax = totalMax.Value;
+            bool isFirst = true;
+
+            totalMax.Subscribe(newMax =>
+                {
+                    // BehaviorSubject는 Subscribe 즉시 현재값을 내보내므로, 최초 1회는 무시합니다.
+                    if (isFirst)
+                    {
+                        isFirst = false;
+                        lastMax = newMax;
+                        return;
+                    }
+
+                    long oldMax = lastMax;
+                    lastMax = newMax;
+
+                    if (IsAutoResourceSyncSuppressed) return;
+                    if (newMax == oldMax) return;
+
+                    long newCur = EvaluateCurrentOnMaxChanged(current.Value, oldMax, newMax, policy);
+                    if (newCur == current.Value) return;
+
+                    current.OnNext(newCur);
+                })
+                .AddTo(this);
         }
-
-        public long GetItemBonusHpNormal() => _itemBonusProvider?.GetHpBonusNormal() ?? 0;
-        public long GetItemBonusHpTemp() => _itemBonusProvider?.GetHpBonusTemp() ?? 0;
-
-        public void AddItemBonusHpNormal(long add, bool raiseEvent = true)
+        
+        private static long EvaluateCurrentOnMaxChanged(long current, long oldMax, long newMax,
+            CharacterConstants.ResourceMaxChangePolicy policy)
         {
-            _itemBonusProvider?.AddHpBonusNormal(add, raiseEvent);
-        }
+            if (newMax < 0) newMax = 0;
 
-        public void AddItemBonusHpTemp(long add, bool raiseEvent = true)
-        {
-            _itemBonusProvider?.AddHpBonusTemp(add, raiseEvent);
-        }
+            // 감소 시에는 어떤 정책이든 clamp가 최우선입니다.
+            if (newMax < oldMax)
+            {
+                return Math.Clamp(current, 0, newMax);
+            }
 
-        #endregion
+            // 증가 또는 초기화(동일 포함)
+            switch (policy)
+            {
+                case CharacterConstants.ResourceMaxChangePolicy.AddDelta:
+                {
+                    long delta = newMax - oldMax;
+                    long v = current + delta;
+                    return Math.Clamp(v, 0, newMax);
+                }
+
+                case CharacterConstants.ResourceMaxChangePolicy.PreserveRatio:
+                {
+                    if (oldMax <= 0)
+                    {
+                        return Math.Clamp(current, 0, newMax);
+                    }
+
+                    float ratio = Mathf.Clamp01((float)current / oldMax);
+                    long v = Mathf.RoundToInt(ratio * newMax);
+                    return Math.Clamp(v, 0, newMax);
+                }
+
+                case CharacterConstants.ResourceMaxChangePolicy.KeepCurrent:
+                default:
+                    return Math.Clamp(current, 0, newMax);
+            }
+        }
     }
 }
