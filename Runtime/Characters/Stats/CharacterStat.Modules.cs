@@ -1,7 +1,20 @@
+using System.Collections.Generic;
+using R3;
+
 namespace GGemCo2DCore
 {
     public partial class CharacterStat
     {
+        private static void PublishIfChanged<T>(BehaviorSubject<T> subject, ref bool hasLast, ref T lastValue, T currentValue)
+        {
+            if (!hasLast || !EqualityComparer<T>.Default.Equals(lastValue, currentValue))
+            {
+                subject.OnNext(currentValue);
+                lastValue = currentValue;
+                hasLast = true;
+            }
+        }
+
         /// <summary>
         /// CharacterStat 내부에서만 사용하는 “계산/발행” 모듈 인터페이스입니다.
         /// - Recalculate: Provider/베이스 값을 바탕으로 내부 캐시(_totalX)를 갱신
@@ -17,6 +30,16 @@ namespace GGemCo2DCore
         {
             private readonly CharacterStat _owner;
 
+            private bool _hasTotalHp;
+            private long _lastTotalHp;
+            private bool _hasTotalHpTemp;
+            private long _lastTotalHpTemp;
+            private bool _hasTotalMp;
+            private long _lastTotalMp;
+            private bool _hasTotalStamina;
+            private long _lastTotalStamina;
+            private bool _hasTotalSuperArmor;
+            private int _lastTotalSuperArmor;
             public ResourceStatModule(CharacterStat owner) => _owner = owner;
 
             public void Recalculate()
@@ -30,11 +53,11 @@ namespace GGemCo2DCore
 
             public void Publish()
             {
-                _owner.TotalHp.OnNext(_owner._totalHp);
-                _owner.TotalHpTemp.OnNext(_owner._totalHpTemp);
-                _owner.TotalMp.OnNext(_owner._totalMp);
-                _owner.TotalStamina.OnNext(_owner._totalStamina);
-                _owner.TotalSuperArmor.OnNext(_owner._totalSuperArmor);
+                PublishIfChanged(_owner.TotalHp, ref _hasTotalHp, ref _lastTotalHp, _owner._totalHp);
+                PublishIfChanged(_owner.TotalHpTemp, ref _hasTotalHpTemp, ref _lastTotalHpTemp, _owner._totalHpTemp);
+                PublishIfChanged(_owner.TotalMp, ref _hasTotalMp, ref _lastTotalMp, _owner._totalMp);
+                PublishIfChanged(_owner.TotalStamina, ref _hasTotalStamina, ref _lastTotalStamina, _owner._totalStamina);
+                PublishIfChanged(_owner.TotalSuperArmor, ref _hasTotalSuperArmor, ref _lastTotalSuperArmor, _owner._totalSuperArmor);
             }
         }
 
@@ -42,6 +65,14 @@ namespace GGemCo2DCore
         {
             private readonly CharacterStat _owner;
 
+            private bool _hasTotalAtk;
+            private long _lastTotalAtk;
+            private bool _hasTotalDef;
+            private long _lastTotalDef;
+            private bool _hasTotalCriticalDamage;
+            private long _lastTotalCriticalDamage;
+            private bool _hasTotalCriticalProbability;
+            private long _lastTotalCriticalProbability;
             public CombatStatModule(CharacterStat owner) => _owner = owner;
 
             public void Recalculate()
@@ -54,17 +85,21 @@ namespace GGemCo2DCore
 
             public void Publish()
             {
-                _owner.TotalAtk.OnNext(_owner._totalAtk);
-                _owner.TotalDef.OnNext(_owner._totalDef);
-                _owner.TotalCriticalDamage.OnNext(_owner._totalCriticalDamage);
-                _owner.TotalCriticalProbability.OnNext(_owner._totalCriticalProbability);
+                PublishIfChanged(_owner.TotalAtk, ref _hasTotalAtk, ref _lastTotalAtk, _owner._totalAtk);
+                PublishIfChanged(_owner.TotalDef, ref _hasTotalDef, ref _lastTotalDef, _owner._totalDef);
+                PublishIfChanged(_owner.TotalCriticalDamage, ref _hasTotalCriticalDamage, ref _lastTotalCriticalDamage, _owner._totalCriticalDamage);
+                PublishIfChanged(_owner.TotalCriticalProbability, ref _hasTotalCriticalProbability, ref _lastTotalCriticalProbability, _owner._totalCriticalProbability);
             }
         }
 
         private sealed class MovementStatModule : ICharacterStatModule
         {
             private readonly CharacterStat _owner;
-
+            
+            private bool _hasTotalMoveSpeed;
+            private long _lastTotalMoveSpeed;
+            private bool _hasTotalAttackSpeed;
+            private long _lastTotalAttackSpeed;
             public MovementStatModule(CharacterStat owner) => _owner = owner;
 
             public void Recalculate()
@@ -75,15 +110,23 @@ namespace GGemCo2DCore
 
             public void Publish()
             {
-                _owner.TotalMoveSpeed.OnNext(_owner._totalMoveSpeed);
-                _owner.TotalAttackSpeed.OnNext(_owner._totalAttackSpeed);
+                PublishIfChanged(_owner.TotalMoveSpeed, ref _hasTotalMoveSpeed, ref _lastTotalMoveSpeed, _owner._totalMoveSpeed);
+                PublishIfChanged(_owner.TotalAttackSpeed, ref _hasTotalAttackSpeed, ref _lastTotalAttackSpeed, _owner._totalAttackSpeed);
             }
         }
 
         private sealed class ResistanceStatModule : ICharacterStatModule
         {
             private readonly CharacterStat _owner;
-
+            
+            private bool _hasTotalRegistFire;
+            private long _lastTotalRegistFire;
+            private bool _hasTotalRegistCold;
+            private long _lastTotalRegistCold;
+            private bool _hasTotalRegistLightning;
+            private long _lastTotalRegistLightning;
+            private bool _hasTotalRegistPoison;
+            private long _lastTotalRegistPoison;
             public ResistanceStatModule(CharacterStat owner) => _owner = owner;
 
             public void Recalculate()
@@ -96,10 +139,10 @@ namespace GGemCo2DCore
 
             public void Publish()
             {
-                _owner.TotalRegistFire.OnNext(_owner._totalRegistFire);
-                _owner.TotalRegistCold.OnNext(_owner._totalRegistCold);
-                _owner.TotalRegistLightning.OnNext(_owner._totalRegistLightning);
-                _owner.TotalRegistPoison.OnNext(_owner._totalRegistPoison);
+                PublishIfChanged(_owner.TotalRegistFire, ref _hasTotalRegistFire, ref _lastTotalRegistFire, _owner._totalRegistFire);
+                PublishIfChanged(_owner.TotalRegistCold, ref _hasTotalRegistCold, ref _lastTotalRegistCold, _owner._totalRegistCold);
+                PublishIfChanged(_owner.TotalRegistLightning, ref _hasTotalRegistLightning, ref _lastTotalRegistLightning, _owner._totalRegistLightning);
+                PublishIfChanged(_owner.TotalRegistPoison, ref _hasTotalRegistPoison, ref _lastTotalRegistPoison, _owner._totalRegistPoison);
             }
         }
     }
