@@ -19,14 +19,6 @@ namespace GGemCo2DCore
         private readonly BehaviorSubject<long> _currentNeedExp = new(0);
         private readonly BehaviorSubject<long> _currentGold = new(0);
         private readonly BehaviorSubject<long> _currentSilver = new(0);
-
-        // 아이템 보너스 최대 HP(일반/임시) - 저장 대상
-        private readonly BehaviorSubject<long> _itemBonusHpNormal = new(0);
-        private readonly BehaviorSubject<long> _itemBonusHpTemp = new(0);
-
-        // 임시 HP(Current) - 저장 대상(추가 하트/보호막의 현재치)
-        private readonly BehaviorSubject<long> _tempHpCurrent = new(0);
-        
         // Stat Point (스탯 포인트)
         private readonly BehaviorSubject<int> _unspentStatPoints = new(0);
         private readonly BehaviorSubject<int> _investedStatPointAtk = new(0);
@@ -35,6 +27,13 @@ namespace GGemCo2DCore
         private readonly BehaviorSubject<int> _investedStatPointMp = new(0);
         private readonly BehaviorSubject<int> _investedStatPointStamina = new(0);
 
+        // 아이템 보너스 최대 HP(일반/임시) - 저장 대상
+        public long TotalItemBonusHpNormal;
+        public long TotalItemBonusHpTemp;
+
+        // 임시 HP(Current) - 저장 대상(추가 하트/보호막의 현재치)
+        public long CurrentItemBonusHpTemp;
+
         // 일괄 업데이트 중(Apply 버튼 등) 자동 저장/이벤트 폭주를 줄이기 위한 플래그
         private bool _isBatchUpdating;
         private static long ClampLong(long value, long min, long max)
@@ -42,24 +41,6 @@ namespace GGemCo2DCore
             if (value < min) return min;
             if (value > max) return max;
             return value;
-        }
-
-        /// <summary>
-        /// 저장 데이터의 불변식을 보정합니다.
-        /// - 0 ≤ TempHpCurrent ≤ ItemBonusHpTemp
-        /// - 0 ≤ ItemBonusHpTemp / ItemBonusHpNormal
-        /// </summary>
-        private void NormalizeTempHpInvariants()
-        {
-            long maxTemp = _itemBonusHpTemp.Value;
-            if (maxTemp < 0) maxTemp = 0;
-
-            long current = _tempHpCurrent.Value;
-            long clamped = ClampLong(current, 0, maxTemp);
-            if (clamped != current)
-            {
-                _tempHpCurrent.OnNext(clamped);
-            }
         }
 
         public int CurrentMapUid
@@ -88,54 +69,6 @@ namespace GGemCo2DCore
         {
             get => _currentSilver.Value;
             set => _currentSilver.OnNext(value);
-        }
-
-        /// <summary>
-        /// 아이템 사용으로 증가한 "일반 최대 HP" 누적치입니다.
-        /// - 저장/로드 대상
-        /// </summary>
-        public long ItemBonusHpNormal
-        {
-            get => _itemBonusHpNormal.Value;
-            set => _itemBonusHpNormal.OnNext(System.Math.Max(0, value));
-        }
-
-        /// <summary>
-        /// 아이템 사용으로 증가한 "임시 최대 HP" 누적치입니다.
-        /// - 저장/로드 대상
-        /// </summary>
-        public long ItemBonusHpTemp
-        {
-            get => _itemBonusHpTemp.Value;
-            set
-            {
-                long v = System.Math.Max(0, value);
-                if (_itemBonusHpTemp.Value == v) return;
-
-                _itemBonusHpTemp.OnNext(v);
-                // 최대치가 감소한 경우 현재치를 초과하지 않도록 보정
-                NormalizeTempHpInvariants();
-            }
-        }
-
-        /// <summary>
-        /// 임시 HP(Current)입니다.
-        /// - 데미지를 먼저 흡수하는 추가 하트/보호막의 현재치로 사용됩니다.
-        /// - 저장/로드 대상
-        /// </summary>
-        public long TempHpCurrent
-        {
-            get => _tempHpCurrent.Value;
-            set
-            {
-                long maxTemp = _itemBonusHpTemp.Value;
-                if (maxTemp < 0) maxTemp = 0;
-
-                long clamped = ClampLong(value, 0, maxTemp);
-                if (_tempHpCurrent.Value == clamped) return;
-
-                _tempHpCurrent.OnNext(clamped);
-            }
         }
 
         // =========================
@@ -266,10 +199,7 @@ namespace GGemCo2DCore
                     _investedStatPointDef.DistinctUntilChanged().Select(_ => Unit.Default),
                     _investedStatPointHp.DistinctUntilChanged().Select(_ => Unit.Default),
                     _investedStatPointMp.DistinctUntilChanged().Select(_ => Unit.Default),
-                    _investedStatPointStamina.DistinctUntilChanged().Select(_ => Unit.Default),
-                    _itemBonusHpNormal.DistinctUntilChanged().Select(_ => Unit.Default),
-                    _itemBonusHpTemp.DistinctUntilChanged().Select(_ => Unit.Default),
-                    _tempHpCurrent.DistinctUntilChanged().Select(_ => Unit.Default))
+                    _investedStatPointStamina.DistinctUntilChanged().Select(_ => Unit.Default))
                 .Subscribe(_ =>
                 {
                     if (_isBatchUpdating) return;
@@ -299,15 +229,15 @@ namespace GGemCo2DCore
                 CurrentExp = saveDataContainer.PlayerData.CurrentExp;
                 CurrentGold = saveDataContainer.PlayerData.CurrentGold;
                 CurrentSilver = saveDataContainer.PlayerData.CurrentSilver;
-                ItemBonusHpNormal = saveDataContainer.PlayerData.ItemBonusHpNormal;
-                ItemBonusHpTemp = saveDataContainer.PlayerData.ItemBonusHpTemp;
-                TempHpCurrent = saveDataContainer.PlayerData.TempHpCurrent;
                 UnspentStatPoints = saveDataContainer.PlayerData.UnspentStatPoints;
                 InvestedStatPointAtk = saveDataContainer.PlayerData.InvestedStatPointAtk;
                 InvestedStatPointDef = saveDataContainer.PlayerData.InvestedStatPointDef;
                 InvestedStatPointHp = saveDataContainer.PlayerData.InvestedStatPointHp;
                 InvestedStatPointMp = saveDataContainer.PlayerData.InvestedStatPointMp;
                 InvestedStatPointStamina = saveDataContainer.PlayerData.InvestedStatPointStamina;
+                TotalItemBonusHpNormal = saveDataContainer.PlayerData.TotalItemBonusHpNormal;
+                TotalItemBonusHpTemp = saveDataContainer.PlayerData.TotalItemBonusHpTemp;
+                CurrentItemBonusHpTemp = saveDataContainer.PlayerData.CurrentItemBonusHpTemp;
             }
             else
             {
@@ -318,8 +248,6 @@ namespace GGemCo2DCore
                     UnspentStatPoints = settings.statPointInitial;
                 }
             }
-
-            NormalizeTempHpInvariants();
 
             // 필요 경험치 업데이트
             UpdateRequiredExp(_tableExp.GetNeedExp(CurrentLevel + 1));
@@ -626,6 +554,62 @@ namespace GGemCo2DCore
                 buyCount = CurrentSilver / currencyValue;
             }
             return buyCount;
+        }
+
+        public void AddTotalItemBonusHpNormal(long amount)
+        {
+            if (amount == 0) return;
+            SetTotalItemBonusHpNormal(TotalItemBonusHpNormal + amount);
+        }
+
+        public void SetTotalItemBonusHpNormal(long value, bool save = true)
+        {
+            value = System.Math.Max(0, value);
+            if (TotalItemBonusHpNormal == value) return;
+            TotalItemBonusHpNormal = value;
+            if (save)
+            {
+                SaveDatas();
+            }
+        }
+
+        public void AddTotalItemBonusHpTemp(long amount)
+        {
+            if (amount == 0) return;
+            SetTotalItemBonusHpTemp(TotalItemBonusHpTemp + amount);
+        }
+
+        public void SetTotalItemBonusHpTemp(long value, bool save = true)
+        {
+            value = System.Math.Max(0, value);
+            if (TotalItemBonusHpTemp == value) return;
+            TotalItemBonusHpTemp = value;
+
+            if (CurrentItemBonusHpTemp > TotalItemBonusHpTemp)
+            {
+                CurrentItemBonusHpTemp = TotalItemBonusHpTemp;
+            }
+
+            if (save)
+            {
+                SaveDatas();
+            }
+        }
+
+        public void SetCurrentItemBonusHpTemp(long value, bool save = true)
+        {
+            value = ClampLong(value, 0, TotalItemBonusHpTemp);
+            if (CurrentItemBonusHpTemp == value) return;
+            CurrentItemBonusHpTemp = value;
+            if (save)
+            {
+                SaveDatas();
+            }
+        }
+
+        public void SaveItemBonusHpState()
+        {
+            SaveDatas();
         }
     }
 }
