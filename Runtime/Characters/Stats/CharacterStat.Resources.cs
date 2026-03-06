@@ -31,6 +31,7 @@ namespace GGemCo2DCore
             {
                 newVale = TotalHp.Value;
             }
+            if (CurrentHp.Value == newVale) return;
             CurrentHp.OnNext(newVale);
         }
 
@@ -49,6 +50,7 @@ namespace GGemCo2DCore
             {
                 newVale = TotalMp.Value;
             }
+            if (CurrentMp.Value == newVale) return;
             CurrentMp.OnNext(newVale);
         }
         /// <summary>
@@ -62,6 +64,7 @@ namespace GGemCo2DCore
             {
                 newVale = 0;
             }
+            if (CurrentMp.Value == newVale) return;
             CurrentMp.OnNext(newVale);
         }
 
@@ -125,6 +128,7 @@ namespace GGemCo2DCore
             if (value < 0) value = 0;
             if (value > max) value = max;
 
+            if (CurrentSuperArmor.Value == value) return;
             CurrentSuperArmor.OnNext(value);
         }
         #endregion
@@ -175,6 +179,7 @@ namespace GGemCo2DCore
             if (value < 0) value = 0;
             if (value > max) value = max;
 
+            if (CurrentStamina.Value == value) return;
             CurrentStamina.OnNext(value);
         }
         
