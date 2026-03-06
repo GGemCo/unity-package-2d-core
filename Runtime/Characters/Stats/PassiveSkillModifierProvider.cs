@@ -4,6 +4,19 @@ using UnityEngine;
 
 namespace GGemCo2DCore
 {
+    public enum PassiveTempHpApplyPolicy
+    {
+        KeepCurrent = 0,
+        FillDelta = 1,
+    }
+
+    public enum PassiveTempHpApplyMode
+    {
+        UsePolicy = 0,
+        KeepCurrent = 1,
+        FillDelta = 2,
+        FillToMax = 3,
+    }
     /// <summary>
     /// 패시브 스킬(장착형) Modifier Provider입니다.
     /// - 장착/해제/레벨 변경 시 “전체를 재구성(Set)”하는 방식으로 갱신하는 것을 권장합니다.
@@ -31,6 +44,9 @@ namespace GGemCo2DCore
         /// </summary>
         public event Action Changed;
 
+        public long GetHpBonusNormal() => GetFlatAsLong(ConfigCommon.StatusStatHp);
+        public long GetHpBonusTemp() => GetFlatAsLong(ConfigCommon.StatusStatHpTemp);
+        
         /// <summary>
         /// 패시브 스킬 modifier를 “전체 재구성” 방식으로 설정합니다.
         /// </summary>
@@ -82,6 +98,12 @@ namespace GGemCo2DCore
             _bucket.Clear();
             if (raiseEvent)
                 Changed?.Invoke();
+        }
+        
+        private long GetFlatAsLong(string statKey)
+        {
+            if (string.IsNullOrEmpty(statKey)) return 0;
+            return _bucket.Flat.TryGetValue(statKey, out int v) ? Mathf.Max(0, v) : 0;
         }
     }
 }

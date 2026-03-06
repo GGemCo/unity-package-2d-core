@@ -11,10 +11,10 @@ namespace GGemCo2DCore
     {
         [Header(UIWindowConstants.TitleHeaderIndividual)]
         // exp 는 UITextPlayerExp 에서 처리한다.
-        [Tooltip("생명력 Slider")]
-        public UIWindowHudResourceBase sliderHp;
-        [Tooltip("마력 Slider")]
-        public UIWindowHudResourceBase sliderMp;
+        [Tooltip("생명력 오브젝트. 예) Slider, UIElement")]
+        public UIWindowHudResourceBase gameObjectHp;
+        [Tooltip("마력 오브젝트. 예) Slider, UIElement")]
+        public UIWindowHudResourceBase gameObjectMp;
         
         [Tooltip("스테미나 Slider")]
         public Slider sliderStamina;
@@ -54,24 +54,25 @@ namespace GGemCo2DCore
         {
             SceneGame.Instance.uIWindowManager?.ShowWindow(UIWindowConstants.WindowUid.Option, true);
         }
-        public void SetSliderHp(long currentValue, long total)
+        public void SetHp(long currentValue, long total)
         {
-            sliderHp.SetValue(UIWindowHudResourceType.Hp, currentValue, total);
-        }
-        public void SetHpBonus(long bonus)
-        {
-            sliderHp.SetBonus(UIWindowHudResourceType.Hp, bonus);
+            gameObjectHp.SetValue(UIWindowHudResourceType.Hp, currentValue, total);
         }
 
-        public void SetSliderHpTemp(long currentValue, long total)
+        public void SetHpTemp(long currentValue, long total)
         {
-            sliderHp.SetValueTemp(UIWindowHudResourceType.Hp, currentValue, total);
+            gameObjectHp.SetValue(UIWindowHudResourceType.HpTemp, currentValue, total);
         }
-        public void SetSliderMp(long currentValue, long total)
+
+        public void SetMaxHpTemp(long total)
         {
-            sliderMp.SetValue(UIWindowHudResourceType.Mp, currentValue, total);
+            gameObjectHp.SetMaxValue(UIWindowHudResourceType.HpTemp, total);
         }
-        public void SetSliderStamina(long currentValue, long total)
+        public void SetMp(long currentValue, long total)
+        {
+            gameObjectMp.SetValue(UIWindowHudResourceType.Mp, currentValue, total);
+        }
+        public void SetStamina(long currentValue, long total)
         {
             sliderStamina.value = (float)currentValue / total;
             textStamina.text = $"{currentValue} / {total}";

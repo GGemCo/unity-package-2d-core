@@ -40,13 +40,30 @@ namespace GGemCo2DCore
             AddFlatInternal(ConfigCommon.StatusStatHp, add);
             if (raiseEvent) Changed?.Invoke();
         }
+        public void SetHpBonusNormal(long value, bool raiseEvent = true)
+        {
+            if (value <= 0) return;
+            SetFlatInternal(ConfigCommon.StatusStatHp, value);
+            if (raiseEvent) Changed?.Invoke();
+        }
 
         public void AddHpBonusTemp(long add, bool raiseEvent = true)
         {
             if (add <= 0) return;
             AddFlatInternal(ConfigCommon.StatusStatHpTemp, add);
+            // Changed 는 CharacterStat.OnProviderChanged 호출 
+            // TotalHpTemp 가 업데이트 된다.
             if (raiseEvent) Changed?.Invoke();
         }
+        public void SetHpBonusTemp(long value, bool raiseEvent = true)
+        {
+            if (value <= 0) return;
+            SetFlatInternal(ConfigCommon.StatusStatHpTemp, value);
+            // Changed 는 CharacterStat.OnProviderChanged 호출 
+            // TotalHpTemp 가 업데이트 된다.
+            if (raiseEvent) Changed?.Invoke();
+        }
+        
 
         private void SetFlatInternal(string statKey, long value)
         {

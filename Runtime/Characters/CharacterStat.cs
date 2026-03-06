@@ -18,6 +18,14 @@ namespace GGemCo2DCore
     /// </remarks>
     public partial class CharacterStat : MonoBehaviour
     {
+        // =========================
+        // Batch Update (이벤트/발행 묶음)
+        // =========================
+
+        // 여러 값이 연쇄적으로 갱신되는 구간(로드/리빌드/장착 변경 등)에서
+        // Recalculate는 허용하되 Publish를 지연하여 이벤트 폭발을 방지합니다.
+        private int _batchUpdateCount;
+        private bool _batchPublishPending;
         // 스탯 계산/발행 로직 모듈(군별 분리)
         private readonly List<ICharacterStatModule> _statModules = new(4);
         private bool _statModulesInitialized;
@@ -193,7 +201,34 @@ namespace GGemCo2DCore
         /// </summary>
         public readonly BehaviorSubject<long> TotalRegistPoison = new(100);
 
+        /// <summary>
+        /// 리소스 동기화(최대치 변경 시 현재값 보정)
+        /// 특정 구간에서 Current 값을 직접 세팅하는 경우, 자동 보정을 잠시 비활성화할 수 있습니다.
+        /// </summary>
+        private int _suppressAutoResourceSyncCount;
+
+        private bool IsAutoResourceSyncSuppressed => _suppressAutoResourceSyncCount > 0;
         
+        /// <summary>
+        /// 특정 구간에서 Current 값을 직접 세팅해야 할 때, 최대치 변경 자동 보정을 잠시 비활성화합니다.
+        /// - 예) 스탯 포인트 재분배 후 현재값을 비율 유지로 직접 세팅하는 경우
+        /// </summary>
+        protected IDisposable SuppressAutoResourceSync()
+        {
+            _suppressAutoResourceSyncCount++;
+            return new AutoResourceSyncScope(this);
+        }
+
+        private readonly struct AutoResourceSyncScope : IDisposable
+        {
+            private readonly CharacterStat _owner;
+            public AutoResourceSyncScope(CharacterStat owner) => _owner = owner;
+            public void Dispose()
+            {
+                if (_owner == null) return;
+                _owner._suppressAutoResourceSyncCount = Math.Max(0, _owner._suppressAutoResourceSyncCount - 1);
+            }
+        }
         
         /// <summary>
         /// Provider 인스턴스를 생성하고 변경 이벤트를 연결합니다.
@@ -344,6 +379,13 @@ namespace GGemCo2DCore
             _persistentProvider.SetModifiers(flatByStatKey, percentByStatKey, raiseEvent: false);
         }
 
+        #region 패시브 스킬
+
+        public void SyncPassiveBonusHpTempMaxFromProvider()
+        {
+            SetPassiveBonusHpTempMax(_passiveProvider?.GetHpBonusTemp() ?? 0);
+        }
+
         /// <summary>
         /// 패시브 스킬(장착형) Modifier 값을 갱신합니다.
         /// - 장비/스탯포인트와 별도 버킷으로 관리됩니다.
@@ -370,6 +412,7 @@ namespace GGemCo2DCore
         {
             _passiveProvider.Clear(raiseEvent: recalculate);
         }
+        #endregion
 
         /// <summary>
         /// (부작용 없음) 현재 장비/패시브 modifier는 유지한 채,
@@ -441,9 +484,51 @@ namespace GGemCo2DCore
             for (int i = 0; i < _statModules.Count; i++)
                 _statModules[i].Recalculate();
 
+            // 배치 업데이트 중에는 발행을 지연합니다.
+            if (_batchUpdateCount > 0)
+            {
+                _batchPublishPending = true;
+                return;
+            }
+
             // 2) 발행(스트림 업데이트)
             for (int i = 0; i < _statModules.Count; i++)
                 _statModules[i].Publish();
+        }
+
+        /// <summary>
+        /// 여러 스탯 변경이 연쇄적으로 일어나는 구간에서, Publish를 End 시점으로 지연하기 위한 스코프를 시작합니다.
+        /// - 스코프 내에서 <see cref="RecalculateStats"/>가 호출되더라도 실제 발행은 지연됩니다.
+        /// - 스코프 종료 시, 지연된 발행이 있으면 1회만 Publish 합니다.
+        /// </summary>
+        public IDisposable BeginBatchUpdate()
+        {
+            _batchUpdateCount++;
+            return new BatchUpdateScope(this);
+        }
+
+        private void EndBatchUpdate()
+        {
+            _batchUpdateCount = Mathf.Max(0, _batchUpdateCount - 1);
+            if (_batchUpdateCount > 0) return;
+
+            if (!_batchPublishPending) return;
+            _batchPublishPending = false;
+
+            EnsureStatModules();
+            for (int i = 0; i < _statModules.Count; i++)
+                _statModules[i].Publish();
+        }
+
+        private readonly struct BatchUpdateScope : IDisposable
+        {
+            private readonly CharacterStat _owner;
+            public BatchUpdateScope(CharacterStat owner) => _owner = owner;
+            public void Dispose()
+            {
+                if (_owner == null) return;
+                _owner.EndBatchUpdate();
+            }
         }
 
         /// <summary>
@@ -464,8 +549,7 @@ namespace GGemCo2DCore
         {
             AffectRuntimeBridge.RemoveAffect(gameObject, affectUid);
         }
-
-
+        
         protected void SubscribeResourceMaxChange(BehaviorSubject<long> totalMax, BehaviorSubject<long> current,
             CharacterConstants.ResourceMaxChangePolicy policy)
         {

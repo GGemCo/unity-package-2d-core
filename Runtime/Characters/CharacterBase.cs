@@ -225,7 +225,7 @@ namespace GGemCo2DCore
                 SubscribeResourceMaxChange(TotalMp, CurrentMp, CharacterConstants.ResourceMaxChangePolicy.KeepCurrent);
                 SubscribeResourceMaxChange(TotalStamina, CurrentStamina, CharacterConstants.ResourceMaxChangePolicy.KeepCurrent);
                 // 임시 최대 HP는 기본적으로 자동 충전하지 않고(증가 시 Keep), 감소 시 clamp만 수행합니다.
-                SubscribeResourceMaxChange(TotalHpTemp, TotalItemBonusHpTemp, CharacterConstants.ResourceMaxChangePolicy.KeepCurrent);
+                SubscribeResourceMaxChange(TotalHpTemp, CurrentHpTemp, CharacterConstants.ResourceMaxChangePolicy.KeepCurrent);
                 return;
             }
 
@@ -233,7 +233,7 @@ namespace GGemCo2DCore
             SubscribeResourceMaxChange(TotalMp, CurrentMp, settings.mpMaxChangePolicy);
             SubscribeResourceMaxChange(TotalStamina, CurrentStamina, settings.staminaMaxChangePolicy);
             // 임시 최대 HP는 기본적으로 자동 충전하지 않고(증가 시 Keep), 감소 시 clamp만 수행합니다.
-            SubscribeResourceMaxChange(TotalHpTemp, TotalItemBonusHpTemp, CharacterConstants.ResourceMaxChangePolicy.KeepCurrent);
+            SubscribeResourceMaxChange(TotalHpTemp, CurrentHpTemp, CharacterConstants.ResourceMaxChangePolicy.KeepCurrent);
         }
 
         /// <summary>

@@ -51,10 +51,10 @@ namespace GGemCo2DCore
 
             // TotalHp, Mp 가 바뀌어도 현재 값이 바뀌면 안된다.
             _player.TotalHp
-                .Subscribe(_ => SetWindowHudSliderHp(_player.CurrentHp.Value))
+                .Subscribe(_ => SetWindowHudHp())
                 .AddTo(_player);
             _player.CurrentHp
-                .Subscribe(_ => SetWindowHudSliderHp(_player.CurrentHp.Value))
+                .Subscribe(_ => SetWindowHudHp())
                 .AddTo(_player);
             _player.TotalMp
                 .Subscribe(_ => SetWindowHudSliderMp(_player.CurrentMp.Value))
@@ -67,10 +67,10 @@ namespace GGemCo2DCore
                 .AddTo(_player);
             
             _player.TotalHpTemp
-                .Subscribe(_ => SetWindowHudSliderHpTemp(_player.CurrentHpTemp.Value))
+                .Subscribe(_ => SetWindowHudHpTemp())
                 .AddTo(_player);
             _player.CurrentHpTemp
-                .Subscribe(_ => SetWindowHudSliderHpTemp(_player.CurrentHpTemp.Value))
+                .Subscribe(_ => SetWindowHudHpTemp())
                 .AddTo(_player);
 
             _player.CurrentBattleStatus
@@ -95,45 +95,28 @@ namespace GGemCo2DCore
                 }
             }
         }
-        private void SetWindowHudSliderHp(long value)
-        {
-            if (_uiWindowHud == null)
-            {
-                return;
-            }
-            // 표시 기준: Base HP(CurrentHp) + ItemBonusHp(추가 하트)
-            long displayCurrent = value;
-            if (_playerSettings.hpMaxChangePolicy == CharacterConstants.ResourceMaxChangePolicy.AddDelta)
-            {
-                displayCurrent = value + _player.CurrentHpTemp.Value;
-            }
-            // todo. 정리 필요. 비율 계산 해야 됨
-            else if (_playerSettings.hpMaxChangePolicy == CharacterConstants.ResourceMaxChangePolicy.PreserveRatio)
-            {
-                displayCurrent = value + _player.CurrentHpTemp.Value;
-            }
-            
-            long displayTotal = _player.TotalHp.Value + _player.TotalHpTemp.Value;
-            _uiWindowHud.SetSliderHp(displayCurrent, displayTotal);
-        }
-        private void SetWindowHudSliderHpTemp(long value)
-        {
-            if (_uiWindowHud == null)
-            {
-                return;
-            }
-            _uiWindowHud.SetSliderHpTemp(value, _player.TotalHpTemp.Value);
 
-            // ItemBonus가 변하면 표시 total/current도 바뀌므로 HP 값 갱신을 한 번 더 호출합니다.
-            SetWindowHudSliderHp(_player.CurrentHp.Value);
+        private void SetWindowHudHp()
+        {
+            if (_uiWindowHud == null)
+            {
+                return;
+            }
+            _uiWindowHud.SetHp(_player.CurrentHp.Value, _player.TotalHp.Value);
         }
+        private void SetWindowHudHpTemp()
+        {
+            if (_uiWindowHud == null) return;
+            _uiWindowHud.SetHpTemp(_player.CurrentHpTemp.Value, _player.TotalHpTemp.Value);
+        }
+        
         private void SetWindowHudSliderMp(long value)
         {
             if (_uiWindowHud == null) 
             {
                 return;
             }
-            _uiWindowHud.SetSliderMp(value, _player.TotalMp.Value);
+            _uiWindowHud.SetMp(value, _player.TotalMp.Value);
         }
         private void SetWindowHudSliderStamina(long value)
         {
@@ -141,7 +124,7 @@ namespace GGemCo2DCore
             {
                 return;
             }
-            _uiWindowHud.SetSliderStamina(value, _player.TotalStamina.Value);
+            _uiWindowHud.SetStamina(value, _player.TotalStamina.Value);
         }
 
         private void SetWindowHudBattle(CharacterConstants.BattleStatus value)

@@ -41,7 +41,6 @@ namespace GGemCo2DCore
             _playerUIController.Initialize(this);
         }
 
-
         /// <summary>
         /// 플레이어는 자신의 Settings(주소어블 설정)를 우선 사용합니다.
         /// </summary>
@@ -63,7 +62,6 @@ namespace GGemCo2DCore
             _sceneGame.mapManager.OnLoadStartMap += OnLoadStartMap;
 
             _playerUIController.InitSubscribe();
-            BindItemBonusHpSaveSync();
 
             LoadEquipItems();
         }
@@ -110,12 +108,14 @@ namespace GGemCo2DCore
         protected override void InitializeByTable()
         {
             if (AddressableLoaderSettings.Instance == null) return;
+            
             // 저장된 Item Bonus Max HP(일반/임시) 복원
             // - PlayerData에 저장된 누적치를 Stat Provider(ItemBonusModifierProvider)에 다시 주입해야 TotalHp/TotalTempHp에 반영됩니다.
             // - 이 시점에 먼저 반영해두면, 아래의 startHp/startMp/startStamina 초기화가 "복원된 최대치" 기준으로 계산됩니다.
             if (_playerData != null)
             {
-                SetItemBonusHpBonuses(_playerData.TotalItemBonusHpNormal, _playerData.TotalItemBonusHpTemp, raiseEvent: false);
+                // raiseEvent 를 true 로 해주어야 TotalHpTemp 가 업데이트 된다.
+                SetItemBonusHpBonuses(_playerData.TotalItemBonusHpNormal, _playerData.TotalItemBonusHpTemp, raiseEvent: true);
             }
             
             SetBaseInfos(_playerSettings.statAtk, _playerSettings.statDef, _playerSettings.statHp,
@@ -129,87 +129,41 @@ namespace GGemCo2DCore
             CurrentStamina.OnNext(_playerSettings.startStamina.Evaluate(TotalStamina.Value));
             CurrentSuperArmor.OnNext(0);
 
-            RestoreSavedItemBonusHpState();
             currentMoveStep = _playerSettings.statMoveStep;
             originalScaleX = transform.localScale.x;
             SetScale(_playerSettings.startScale);
             SetWidth(_playerSettings.size.x);
             SetHeight(_playerSettings.size.y);
+            
+            if (_playerData != null)
+            {
+                SetItemBonusHpCurrent(_playerData.CurrentItemBonusHpTemp);
+                UpdateCurrentHpTemp();
+            }
         }
-
-
-        private void RestoreSavedItemBonusHpState()
-        {
-            if (_playerData == null)
-            {
-                return;
-            }
-
-            long clampedCurrent = ClampLong(_playerData.CurrentItemBonusHpTemp, 0, _playerData.TotalItemBonusHpTemp);
-            if (clampedCurrent != _playerData.CurrentItemBonusHpTemp)
-            {
-                _playerData.SetCurrentItemBonusHpTemp(clampedCurrent, save: false);
-            }
-
-            SetItemBonusHpCurrent(clampedCurrent);
-        }
-
-        private void BindItemBonusHpSaveSync()
-        {
-            if (_playerData == null)
-            {
-                return;
-            }
-
-            if (OnItemBonusHpChangedSave != null)
-            {
-                ItemBonusHpChanged -= OnItemBonusHpChangedSave;
-            }
-
-            OnItemBonusHpChangedSave = value => _playerData.SetCurrentItemBonusHpTemp(value);
-            ItemBonusHpChanged += OnItemBonusHpChangedSave;
-        }
-        
-        #region Item Bonus Max HP (아이템 최대 HP 보너스)
 
         /// <summary>
         /// 아이템 사용으로 "일반 최대 HP" 누적치를 증가시킵니다(저장 + 스탯 반영).
         /// </summary>
-        public void AddItemBonusMaxHpNormal(long amount)
+        public override void AddItemBonusMaxHpNormal(long amount, bool raiseEvent = true)
         {
             if (amount <= 0) return;
 
+            // ItemBonusModifierProvider를 통해서 TotalHpTemp 를 증가 시킨다.
+            base.AddItemBonusMaxHpNormal(amount, raiseEvent);
             // 저장값 갱신
             _playerData?.AddTotalItemBonusHpNormal(amount);
-
-            // 스탯 Provider 갱신
-            AddItemBonusHpNormal(amount);
         }
 
-        /// <summary>
-        /// 아이템 사용으로 "임시 최대 HP" 누적치를 증가시킵니다(저장 + 스탯 반영).
-        /// - 기본 동작: 최대치 증가분만큼 임시 HP(Current)도 함께 증가(즉시 체감).
-        /// </summary>
-        public void AddItemBonusMaxHpTemp(long amount, bool fillCurrent = true)
+        public override void AddItemBonusMaxHpTemp(long amount, bool raiseEvent = true, bool fillCurrent = true)
         {
-            if (amount <= 0) return;
-
-            // 저장값 갱신
-            if (_playerData != null)
-                _playerData.AddTotalItemBonusHpTemp(amount);
-
-            // 스탯 Provider 갱신
-            AddItemBonusHpTemp(amount);
-
+            base.AddItemBonusMaxHpTemp(amount, raiseEvent, fillCurrent);
+            
+            _playerData?.AddTotalItemBonusHpTemp(amount);
+            
             if (fillCurrent)
-            {
-                AddItemBonusHp(amount);
-            }
+                _playerData?.SetCurrentItemBonusHpTemp(TotalHpTempItem);
         }
-
-        #endregion
-
-        #region Item Bonus Temp HP - Permanent Heart Depletion
 
         /// <summary>
         /// ItemBonusHpCurrent(임시/추가 HP 현재치)가 감소했을 때, “하트 1개 완전 소모” 여부를 판정하여
@@ -222,6 +176,9 @@ namespace GGemCo2DCore
         protected override void OnItemBonusHpConsumed(long beforeCurrent, long afterCurrent, long consumedAmount)
         {
             base.OnItemBonusHpConsumed(beforeCurrent, afterCurrent, consumedAmount);
+            
+            _playerData?.SetCurrentItemBonusHpTemp(afterCurrent);
+            
             TryApplyPermanentItemBonusTempHeartDeletion(beforeCurrent, afterCurrent);
         }
 
@@ -276,8 +233,6 @@ namespace GGemCo2DCore
             return value > max ? max : value;
         }
 
-        #endregion
-        
         /// <summary>
         /// 세이브 데이터에 있는 장착 아이템 정보 가져와서 장착 시키기
         /// </summary>
@@ -545,12 +500,6 @@ namespace GGemCo2DCore
         {
             base.OnDestroy();
             _sceneGame.mapManager.OnLoadStartMap -= OnLoadStartMap;
-
-            if (OnItemBonusHpChangedSave != null)
-            {
-                ItemBonusHpChanged -= OnItemBonusHpChangedSave;
-                OnItemBonusHpChangedSave = null;
-            }
         }
         
         /// <summary>
