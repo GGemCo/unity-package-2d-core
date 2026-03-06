@@ -33,10 +33,6 @@ namespace GGemCo2DCore
                     // ParamIntA = amount
                     return new ItemUseActionAddMp(row.ParamIntA);
 
-                case ItemUseActionType.AddItemBonusHp:
-                    // ParamIntA = amount (임시 HP Current 충전)
-                    return new ItemUseActionAddItemBonusHp(row.ParamIntA);
-
                 case ItemUseActionType.AddMaxHpNormal:
                     // ParamIntA = amount
                     return new ItemUseActionAddMaxHpNormal(row.ParamIntA);

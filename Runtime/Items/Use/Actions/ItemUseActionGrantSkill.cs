@@ -38,21 +38,21 @@ namespace GGemCo2DCore
             {
                 if (ctx.SkillReceiver.HasSkill(_skillUid))
                     return ResultCommon.Fail("ItemUse_AlreadyHasSkill");
-                return ResultCommon.SuccessWithIcons(null);
+                return ResultCommon.Success();
             }
 
             var args = ParseArgs(_optA, _optB);
             var dup = GetDuplicatePolicy(args);
 
             if (!ctx.SkillReceiver.HasSkill(_skillUid))
-                return ResultCommon.SuccessWithIcons(null);
+                return ResultCommon.Success();
 
             switch (dup)
             {
                 case SkillDuplicatePolicy.Fail:
                     return ResultCommon.Fail("ItemUse_AlreadyHasSkill");
                 case SkillDuplicatePolicy.Ignore:
-                    return ResultCommon.SuccessWithIcons(null);
+                    return ResultCommon.Success();
                 case SkillDuplicatePolicy.LevelUp:
                     return (ctx.SkillReceiver is IItemUseSkillReceiverEx)
                         ? ResultCommon.SuccessWithIcons(null)
@@ -86,7 +86,7 @@ namespace GGemCo2DCore
                 case SkillDuplicatePolicy.Fail:
                     return ResultCommon.Fail("ItemUse_AlreadyHasSkill");
                 case SkillDuplicatePolicy.Ignore:
-                    return ResultCommon.SuccessWithIcons(null);
+                    return ResultCommon.Success();
                 case SkillDuplicatePolicy.LevelUp:
                     return LevelUp(ctx);
                 case SkillDuplicatePolicy.AlternativeReward:
@@ -102,7 +102,7 @@ namespace GGemCo2DCore
             {
                 return ResultCommon.Fail(string.IsNullOrEmpty(messageKey) ? "ItemUse_GrantSkill_Fail" : messageKey);
             }
-            return ResultCommon.SuccessWithIcons(null);
+            return ResultCommon.Success();
         }
 
         private ResultCommon LevelUp(ItemUseContext ctx)
@@ -115,7 +115,7 @@ namespace GGemCo2DCore
                 return ResultCommon.Fail(string.IsNullOrEmpty(messageKey) ? "ItemUse_LevelUpSkill_Fail" : messageKey);
             }
 
-            return ResultCommon.SuccessWithIcons(null);
+            return ResultCommon.Success();
         }
 
         private static ResultCommon ValidateAlternativeReward(ItemUseContext ctx, Dictionary<string, string> args)
@@ -134,7 +134,7 @@ namespace GGemCo2DCore
                 return ResultCommon.Fail("ItemUse_InvalidConfig");
             }
 
-            return ResultCommon.SuccessWithIcons(null);
+            return ResultCommon.Success();
         }
 
         private static ResultCommon ApplyAlternativeReward(ItemUseContext ctx, Dictionary<string, string> args)
@@ -154,7 +154,7 @@ namespace GGemCo2DCore
                 ctx.PlayerData.UnspentStatPoints += altValue;
             }
 
-            return ResultCommon.SuccessWithIcons(null);
+            return ResultCommon.Success();
         }
 
         private static SkillDuplicatePolicy GetDuplicatePolicy(Dictionary<string, string> args)

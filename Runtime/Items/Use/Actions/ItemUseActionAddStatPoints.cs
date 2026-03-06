@@ -13,13 +13,13 @@ namespace GGemCo2DCore
         {
             if (ctx?.PlayerData == null) return ResultCommon.Fail("ItemUse_NoPlayerData");
             if (_points <= 0) return ResultCommon.Fail("ItemUse_InvalidValue");
-            return ResultCommon.SuccessWithIcons(null);
+            return ResultCommon.Success();
         }
 
         public ResultCommon Execute(ItemUseContext ctx)
         {
             ctx.PlayerData.UnspentStatPoints += _points;
-            return ResultCommon.SuccessWithIcons(null);
+            return ResultCommon.Success();
         }
     }
 }

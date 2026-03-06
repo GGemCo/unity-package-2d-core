@@ -30,7 +30,7 @@ namespace GGemCo2DCore
             if (ctx.TargetObject == null && ctx.Player == null)
                 return ResultCommon.Fail("ItemUse_NoTarget");
 
-            return ResultCommon.SuccessWithIcons(null);
+            return ResultCommon.Success();
         }
 
         public ResultCommon Execute(ItemUseContext ctx)
@@ -41,7 +41,7 @@ namespace GGemCo2DCore
             // Source는 Player(자기 자신)로 둔다.
             var source = ctx.Player != null ? ctx.Player.gameObject : null;
             AffectRuntimeBridge.ApplyAffect(target, _affectUid, source, _durationOverrideSeconds);
-            return ResultCommon.SuccessWithIcons(null);
+            return ResultCommon.Success();
         }
     }
 }

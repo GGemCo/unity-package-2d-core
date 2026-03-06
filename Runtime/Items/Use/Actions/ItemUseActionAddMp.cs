@@ -24,13 +24,13 @@ namespace GGemCo2DCore
                 return ResultCommon.Fail("Item_ManaFull");
             }
 
-            return ResultCommon.SuccessWithIcons(null);
+            return ResultCommon.Success();
         }
 
         public ResultCommon Execute(ItemUseContext ctx)
         {
             ctx.Player.AddMp(_amount);
-            return ResultCommon.SuccessWithIcons(null);
+            return ResultCommon.Success();
         }
     }
 }

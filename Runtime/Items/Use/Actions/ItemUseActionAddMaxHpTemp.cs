@@ -19,13 +19,13 @@ namespace GGemCo2DCore
         {
             if (ctx?.Player == null) return ResultCommon.Fail("ItemUse_NoPlayer");
             if (_amount <= 0) return ResultCommon.Fail("ItemUse_InvalidValue");
-            return ResultCommon.SuccessWithIcons(null);
+            return ResultCommon.Success();
         }
 
         public ResultCommon Execute(ItemUseContext ctx)
         {
             ctx.Player.AddItemBonusMaxHpTemp(_amount, fillCurrent: true);
-            return ResultCommon.SuccessWithIcons(null);
+            return ResultCommon.Success();
         }
     }
 }

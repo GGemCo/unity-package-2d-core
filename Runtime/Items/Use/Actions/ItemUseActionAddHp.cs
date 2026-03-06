@@ -25,13 +25,13 @@ namespace GGemCo2DCore
                 return ResultCommon.Fail("Item_HealthFull");
             }
 
-            return ResultCommon.SuccessWithIcons(null);
+            return ResultCommon.Success();
         }
 
         public ResultCommon Execute(ItemUseContext ctx)
         {
             ctx.Player.AddHp(_amount);
-            return ResultCommon.SuccessWithIcons(null);
+            return ResultCommon.Success();
         }
     }
 }

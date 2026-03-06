@@ -18,41 +18,34 @@ namespace GGemCo2DCore
         None = 0,
 
         /// <summary>PlayerData.CurrentExp 증가</summary>
-        AddExp = 1,
+        AddExp,
         /// <summary>PlayerData.UnspentStatPoints 증가</summary>
-        AddStatPoints = 2,
+        AddStatPoints,
         /// <summary>HP 회복</summary>
-        AddHp = 3,
+        AddHp,
         /// <summary>MP 회복</summary>
-        AddMp = 4,
+        AddMp,
 
         /// <summary>
-        /// "소모형 추가 최대 HP(추가 하트)" 추가
-        /// - 데미지를 먼저 흡수하고, 0이 되면 즉시 소멸
-        /// - 회복/리젠으로 재충전되지 않음
-        /// </summary>
-        AddItemBonusHp = 7,
-
-        /// <summary>
-        /// 아이템 사용으로 "일반 최대 HP"를 영구적으로 증가(저장/로드)합니다.
+        /// 아이템 사용으로 "일반 최대 HP"를 영구적으로 증가합니다.
         /// - ParamIntA = amount
         /// </summary>
-        AddMaxHpNormal = 8,
+        AddMaxHpNormal,
 
         /// <summary>
-        /// 아이템 사용으로 "임시 최대 HP"를 증가(저장/로드)합니다.
+        /// 아이템 사용으로 "임시 최대 HP"를 증가합니다.
         /// - ParamIntA = amount
         /// </summary>
-        AddMaxHpTemp = 9,
+        AddMaxHpTemp,
 
         /// <summary>스킬 지급(외부 패키지와 연동을 위한 훅)</summary>
-        GrantSkill = 5,
+        GrantSkill,
 
         /// <summary>
         /// Affect 적용(옵션 패키지: com.ggemco.2d.affect)
         /// - Affect 미설치 시 실패 처리
         /// </summary>
-        ApplyAffect = 6,
+        ApplyAffect,
 
         // <summary>추후 확장용(예: 아이템 지급 등)</summary>
         // GiveItem = 10,
