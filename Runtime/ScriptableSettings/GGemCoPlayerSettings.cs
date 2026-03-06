@@ -172,6 +172,11 @@ namespace GGemCo2DCore
         [Tooltip("스테미나 포인트 1당 증가량")]
         public StatPointBonus statPointStamina;
 
+        [Header("Passive Temp HP")]
+        [SerializeField]
+        private PassiveTempHpApplyPolicy passiveTempHpApplyPolicy = PassiveTempHpApplyPolicy.KeepCurrent;
+
+        public PassiveTempHpApplyPolicy PassiveTempHpApplyPolicy => passiveTempHpApplyPolicy;
         /// <summary>
         /// 처음 생성 시 한 번만 실행됨
         /// </summary>
