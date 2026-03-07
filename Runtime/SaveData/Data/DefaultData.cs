@@ -22,17 +22,17 @@ namespace GGemCo2DCore
         /// - 1: Skill
         /// - 2: Item
         /// </summary>
-        public int Kind { get; private set; }
+        public int IconType { get; private set; }
         public int Level { get; private set; }
         public bool IsLearned { get; private set; }
 
-        public SaveDataIcon(int slotIndex, int uid, int count = 0, int level = 0, bool isLearned = false, long instanceId = 0, int kind = 0)
+        public SaveDataIcon(int slotIndex, int uid, int count = 0, int level = 0, bool isLearned = false, long instanceId = 0, int iconType = 0)
         {
             SlotIndex = slotIndex;
             Uid = uid;
             Count = count;
             InstanceId = instanceId;
-            Kind = kind;
+            IconType = iconType;
             Level = level;
             IsLearned = isLearned;
         }

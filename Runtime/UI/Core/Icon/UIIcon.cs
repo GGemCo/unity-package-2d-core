@@ -326,6 +326,13 @@ namespace GGemCo2DCore
 
             ImageIcon.sprite = AddressableLoaderItem.Instance.GetImageIconItemByName(path);
         }
+
+        public void ChangeIconImage(Sprite sprite)
+        {
+            if (ImageIcon == null) return;
+            if (GcLogger.IsNull(sprite, nameof(sprite))) return;
+            ImageIcon.sprite = sprite;
+        }
         /// <summary>
         /// 이미지 사이즈 변경하기
         /// ray cast 사이즈를 슬롯 사이즈와 같게 변경하기 

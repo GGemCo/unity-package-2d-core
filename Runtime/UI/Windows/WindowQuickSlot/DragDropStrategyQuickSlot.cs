@@ -38,30 +38,16 @@ namespace GGemCo2DCore
             // 다른 윈도우에서 Skill로 드래그 앤 드랍 했을 때 
             if (droppedWindowUid != targetWindowUid)
             {
+                if (QuickSlotDragStrategyRegistry.TryGet(droppedUIIcon.windowUid, out var strategy))
+                {
+                    strategy.HandleDragInIcon(window, droppedUIIcon, targetUIIcon);
+                    return;
+                }
                 switch (droppedWindowUid)
                 {
                     case UIWindowConstants.WindowUid.Skill:
-                    {
-                        // Skill 패키지 타입을 직접 참조하지 않고, UIIcon 의 공용 정보(uid/level/isLearn)만 저장한다.
-                        ApplyToQuickSlot(uiWindowQuickSlot, targetIconSlotIndex,
-                            QuickSlotContentKind.Skill, dropIconUid, dropIconCount, dropIconLevel, dropIconIsLearn, droppedUIIcon.instanceId);
-                        break;
-                    }
                     case UIWindowConstants.WindowUid.PassiveSkill:
-                    {
-                        // Skill 패키지 타입을 직접 참조하지 않고, UIIcon 의 공용 정보(uid/level/isLearn)만 저장한다.
-                        ApplyToQuickSlot(uiWindowQuickSlot, targetIconSlotIndex,
-                            QuickSlotContentKind.SkillPassive, dropIconUid, dropIconCount, dropIconLevel, dropIconIsLearn, droppedUIIcon.instanceId);
-                        break;
-                    }
                     case UIWindowConstants.WindowUid.Inventory:
-                    {
-                        // 인벤토리 아이템 → 퀵슬롯
-                        ApplyToQuickSlot(uiWindowQuickSlot, targetIconSlotIndex,
-                            QuickSlotContentKind.Item, dropIconUid, dropIconCount, 0, false, droppedUIIcon.instanceId);
-                        break;
-                    }
-
                     case UIWindowConstants.WindowUid.None:
                     case UIWindowConstants.WindowUid.Hud:
                     case UIWindowConstants.WindowUid.ItemInfo:
@@ -87,56 +73,28 @@ namespace GGemCo2DCore
         public void HandleDragOut(UIWindow window, Vector3 worldPosition, GameObject droppedIcon, GameObject targetIcon,
             Vector3 originalPosition)
         {
-            window.DetachIcon(droppedIcon.GetComponent<UIIcon>().slotIndex);
-        }
+            var droppedUIIcon = droppedIcon.GetComponent<UIIcon>();
+            if (!droppedUIIcon) return;
+            window.DetachIcon(droppedUIIcon.slotIndex);
 
-
-        private static void ApplyToQuickSlot(
-            UIWindowQuickSlot window,
-            int targetSlotIndex,
-            QuickSlotContentKind kind,
-            int uid,
-            int count,
-            int level,
-            bool isLearn,
-            long instanceId)
-        {
-            if (window == null) return;
-
-            // 1) 아이콘(UI) 반영
-            var icon = window.GetIconByIndex(targetSlotIndex);
-            if (icon is UIIconQuickSlot quickSlotIcon)
+            UIWindowConstants.WindowUid windowUid = UIWindowConstants.WindowUid.None;
+            var iconType = droppedUIIcon.GetIconType();
+            switch (iconType)
             {
-                if (kind == QuickSlotContentKind.None || uid <= 0 || count <= 0)
-                    quickSlotIcon.ClearEntry();
-                else
-                    quickSlotIcon.ApplyEntry(kind, uid, count, level, isLearn, instanceId);
-            }
-            else
-            {
-                // 구버전 아이콘 프리팹 호환
-                icon?.ChangeInfoByUid(uid, count, level, isLearn, 0, instanceId);
-            }
-
-            // 2) 저장 반영 (Core는 Skill 패키지를 몰라도 됨)
-            var quickSlot = SceneGame.Instance?.saveDataManager?.QuickSlot;
-            if (quickSlot == null) return;
-
-            switch (kind)
-            {
-                case QuickSlotContentKind.Skill:
-                    quickSlot.SetSkill(targetSlotIndex, uid, count, level, isLearn);
+                case IconConstants.Type.Item:
+                    windowUid = UIWindowConstants.WindowUid.Inventory;
                     break;
-                case QuickSlotContentKind.SkillPassive:
-                    quickSlot.SetSkillPassive(targetSlotIndex, uid, count, level, isLearn);
+                case IconConstants.Type.Skill:
+                    windowUid = UIWindowConstants.WindowUid.Skill;
                     break;
-                case QuickSlotContentKind.Item:
-                    quickSlot.SetItem(targetSlotIndex, uid, count, instanceId);
+                case IconConstants.Type.SkillPassive:
+                    windowUid = UIWindowConstants.WindowUid.PassiveSkill;
                     break;
                 default:
-                    quickSlot.Remove(targetSlotIndex);
                     break;
             }
+            if (!QuickSlotDragStrategyRegistry.TryGet(windowUid, out var strategy)) return;
+            strategy.HandleDragOut(window, worldPosition, droppedIcon, targetIcon, originalPosition);
         }
     }
 }

@@ -7,21 +7,18 @@ namespace GGemCo2DCore
     /// </summary>
     public class UIIconQuickSlot : UIIcon
     {
-        private QuickSlotContentKind _kind = QuickSlotContentKind.None;
-
         protected override void Awake()
         {
             base.Awake();
-            IconType = IconConstants.Type.None; // 퀵슬롯은 컨텐츠 타입이 슬롯마다 달라질 수 있음
+            IconType = IconConstants.Type.QuickSlot; // 퀵슬롯은 컨텐츠 타입이 슬롯마다 달라질 수 있음
         }
 
         /// <summary>
         /// 퀵슬롯 엔트리를 적용한다.
         /// </summary>
-        public bool ApplyEntry(QuickSlotContentKind kind, int iconUid, int iconCount, int iconLevel = 0, bool iconIsLearn = false, long iconInstanceId = 0)
+        public bool ApplyEntry(IconConstants.Type iconType, int iconUid, int iconCount, int iconLevel = 0, bool iconIsLearn = false, long iconInstanceId = 0)
         {
-            _kind = kind;
-            IconType = IconConstants.ConvertToIconType(kind);
+            IconType = iconType;
             return ChangeInfoByUid(iconUid, iconCount, iconLevel, iconIsLearn, 0, iconInstanceId);
         }
         
@@ -42,23 +39,15 @@ namespace GGemCo2DCore
 
         public void ClearEntry()
         {
-            _kind = QuickSlotContentKind.None;
             IconType = IconConstants.Type.None;
             base.ChangeInfoByUid(0, 0, 0, false, 0, 0);
         }
 
+        /// <summary>
+        /// 각 아이콘 별로 처리한다.
+        /// </summary>
         protected override void UpdateIconImage()
         {
-            if (ImageIcon == null) return;
-
-            if (_kind == QuickSlotContentKind.None || uid <= 0 || count <= 0)
-            {
-                ImageIcon.sprite = null;
-                return;
-            }
-
-            var sprite = QuickSlotContentProviderRegistry.TryGetIconSprite(_kind, uid, GetLevel(), instanceId);
-            ImageIcon.sprite = sprite;
         }
 
         // 퀵슬롯은 스킬/아이템 공용이므로 기본 path 기반 로더는 사용하지 않음

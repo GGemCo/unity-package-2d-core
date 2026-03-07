@@ -44,16 +44,6 @@ namespace GGemCo2DCore
             TcgMyDeckCard,
         }
 
-        public static Type ConvertToIconType(QuickSlotContentKind kind)
-        {
-            return kind switch
-            {
-                QuickSlotContentKind.Item => Type.Item,
-                QuickSlotContentKind.Skill => Type.Skill,
-                QuickSlotContentKind.SkillPassive => Type.SkillPassive,
-                _ => Type.None
-            };
-        }
         public enum Status
         {
             None,

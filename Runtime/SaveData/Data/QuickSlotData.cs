@@ -4,17 +4,6 @@ using System.Linq;
 namespace GGemCo2DCore
 {
     /// <summary>
-    /// 퀵슬롯에 저장되는 컨텐츠 종류.
-    /// - Core 는 Skill 패키지를 직접 참조하지 않고 Kind 값만 저장한다.
-    /// </summary>
-    public enum QuickSlotContentKind
-    {
-        None = 0,
-        Skill,
-        SkillPassive,
-        Item
-    }
-    /// <summary>
     /// 퀵슬롯에 들어간 스킬 정보 관리
     /// </summary>
     public class QuickSlotData : DefaultData, ISaveData
@@ -48,15 +37,16 @@ namespace GGemCo2DCore
         {
             if (skillUid <= 0) return;
 
-            QuickSlotDatas[slotIndex] = new SaveDataIcon(slotIndex, skillUid, skillCount, level, skillLearn, 0, (int)QuickSlotContentKind.Skill);
+            QuickSlotDatas[slotIndex] = new SaveDataIcon(slotIndex, skillUid, skillCount, level, skillLearn, 0, (int)IconConstants.Type.Skill);
             SaveDatas();
         }
-        public void SetSkillPassive(int slotIndex, int skillUid, int skillCount, int level, bool skillLearn = false)
+        public bool SetSkillPassive(int slotIndex, int skillUid, int skillCount, int level, bool skillLearn = false)
         {
-            if (skillUid <= 0) return;
-
-            QuickSlotDatas[slotIndex] = new SaveDataIcon(slotIndex, skillUid, skillCount, level, skillLearn, 0, (int)QuickSlotContentKind.SkillPassive);
+            if (skillUid <= 0) return false;
+            
+            QuickSlotDatas[slotIndex] = new SaveDataIcon(slotIndex, skillUid, skillCount, level, skillLearn, 0, (int)IconConstants.Type.SkillPassive);
             SaveDatas();
+            return true;
         }
         
         /// <summary>
@@ -71,7 +61,7 @@ namespace GGemCo2DCore
                 return;
             }
 
-            QuickSlotDatas[slotIndex] = new SaveDataIcon(slotIndex, itemUid, itemCount, 0, false, instanceId, (int)QuickSlotContentKind.Item);
+            QuickSlotDatas[slotIndex] = new SaveDataIcon(slotIndex, itemUid, itemCount, 0, false, instanceId, (int)IconConstants.Type.Item);
             SaveDatas();
         }
 
@@ -96,8 +86,22 @@ namespace GGemCo2DCore
         /// </summary>
         public ResultCommon AddSkill(int skillUid, int skillCount, int skillLevel, bool isLearn)
         {
-            // todo. 정리 필요
-            return ResultCommon.Fail($"QuickSlot_NoSkillInfo");//스킬 정보가 없습니다.
+            bool exist = QuickSlotDatas.Any(data => data.Value.Uid == skillUid);
+            if (exist)
+            {
+                return ResultCommon.Fail($"QuickSlot_SkillAlreadyAssigned");//이미 등록된 스킬입니다.
+            }
+            List<SaveDataIcon> controls = new List<SaveDataIcon>();
+            int emptyIndex = FindEmptySlot();
+            if (emptyIndex == -1)
+            {
+                return ResultCommon.Fail("QuickSlot_NotEnoughSpace");//퀵슬롯에 공간이 부족합니다.
+            }
+
+            controls.Add(new SaveDataIcon(emptyIndex, skillUid, skillCount, skillLevel, isLearn));
+
+            SaveDatas();
+            return ResultCommon.SuccessWithIcons(controls);
         }
         /// <summary>
         /// 빈 슬롯 찾기
@@ -127,6 +131,24 @@ namespace GGemCo2DCore
         public Dictionary<int, SaveDataIcon> GetAllDatas()
         {
             return QuickSlotDatas;
+        }
+
+        public bool GetSkillPassive(int dropIconUid)
+        {
+            return QuickSlotDatas.Any(data => data.Value.Uid == dropIconUid && data.Value.IconType == (int)IconConstants.Type.SkillPassive);
+        }
+
+        public int CheckSkillPassive(int dropIconUid)
+        {
+            if (!GetSkillPassive(dropIconUid)) return -1;
+            int slotIndex = QuickSlotDatas.FirstOrDefault(data => data.Value.Uid == dropIconUid && data.Value.IconType == (int)IconConstants.Type.SkillPassive).Key;
+            Remove(slotIndex);
+            return slotIndex;
+        }
+
+        public Dictionary<int, int> GetAllSkillPassive()
+        {
+            return QuickSlotDatas.Where(data => data.Value.IconType == (int)IconConstants.Type.SkillPassive).ToDictionary(data => data.Value.Uid, data => data.Value.Level);
         }
     }
 }

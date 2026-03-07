@@ -30,7 +30,6 @@ namespace GGemCo2DCore
             // uid 를 먼저 지정해야 한다.
             uid = UIWindowConstants.WindowUid.QuickSlot;
             base.Awake();
-            RegisterQuickSlotProviders();
 
             IconPoolManager.SetSetIconHandler(new SetIconHandlerQuickSlot());
             DragDropHandler.SetStrategy(new DragDropStrategyQuickSlot());
@@ -43,26 +42,15 @@ namespace GGemCo2DCore
             LoadIcons();
         }
 
-
-        /// <summary>
-        /// 퀵슬롯 아이콘 제공자 등록(Core 기본: Item Provider)
-        /// - Skill Provider 는 Skill 패키지에서 별도로 등록한다.
-        /// </summary>
-        private void RegisterQuickSlotProviders()
-        {
-            // Core 기본 아이템 Provider
-            QuickSlotContentProviderRegistry.Register(new QuickSlotItemContentProvider());
-        }
-
         /// <summary>
         /// 세이브 엔트리를 슬롯 아이콘에 반영한다(세이브를 다시 쓰지 않도록 직접 아이콘에 적용).
         /// </summary>
-        private void ApplyEntryToSlot(int slotIndex, QuickSlotContentKind kind, int iconUid, int iconCount, int iconLevel, bool iconIsLearn, long iconInstanceId)
+        private void ApplyEntryToSlot(int slotIndex, IconConstants.Type type, int iconUid, int iconCount, int iconLevel, bool iconIsLearn, long iconInstanceId)
         {
             var icon = GetIconByIndex(slotIndex);
             if (icon == null) return;
 
-            if (kind == QuickSlotContentKind.None || iconUid <= 0 || iconCount <= 0)
+            if (type == IconConstants.Type.None || iconUid <= 0 || iconCount <= 0)
             {
                 if (icon is UIIconQuickSlot qs)
                     qs.ClearEntry();
@@ -74,7 +62,7 @@ namespace GGemCo2DCore
             // QuickSlot 전용 아이콘이면 ProviderRegistry 기반으로 스킬/아이템 모두 표시
             if (icon is UIIconQuickSlot quickSlotIcon)
             {
-                quickSlotIcon.ApplyEntry(kind, iconUid, iconCount, iconLevel, iconIsLearn, iconInstanceId);
+                quickSlotIcon.ApplyEntry(type, iconUid, iconCount, iconLevel, iconIsLearn, iconInstanceId);
                 return;
             }
 
@@ -104,13 +92,13 @@ namespace GGemCo2DCore
                 if (icon == null) continue;
                 if (datas.TryGetValue(index, out var entry) && entry != null && entry.Uid > 0 && entry.Count > 0)
                 {
-                    var kind = (QuickSlotContentKind)entry.Kind;
-                    ApplyEntryToSlot(index, kind, entry.Uid, entry.Count, entry.Level, entry.IsLearned, entry.InstanceId);
+                    var type = (IconConstants.Type)entry.IconType;
+                    ApplyEntryToSlot(index, type, entry.Uid, entry.Count, entry.Level, entry.IsLearned, entry.InstanceId);
                 }
                 else
                 {
                     // 비어있는 슬롯
-                    ApplyEntryToSlot(index, QuickSlotContentKind.None, 0, 0, 0, false, 0);
+                    ApplyEntryToSlot(index, IconConstants.Type.None, 0, 0, 0, false, 0);
                 }
             }
         }
@@ -188,7 +176,7 @@ namespace GGemCo2DCore
             if (quickSlot == null) return;
 
             var all = quickSlot.TryGetEntry(slotIndex, out SaveDataIcon entry);
-            if (entry == null || entry.Kind != (int)QuickSlotContentKind.Skill)
+            if (entry == null || entry.IconType != (int)IconConstants.Type.Skill)
                 return;
             int skillUid = entry.Uid;
             if (skillUid <= 0) return;
