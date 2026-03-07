@@ -36,11 +36,23 @@ namespace GGemCo2DCore
             None,
             Item,
             Skill,
+            SkillPassive,
+            QuickSlot,
             Buff,
             TcgCard,
             TcgMyDeck,
             TcgMyDeckCard,
-            SkillPassive
+        }
+
+        public static Type ConvertToIconType(QuickSlotContentKind kind)
+        {
+            return kind switch
+            {
+                QuickSlotContentKind.Item => Type.Item,
+                QuickSlotContentKind.Skill => Type.Skill,
+                QuickSlotContentKind.SkillPassive => Type.SkillPassive,
+                _ => Type.None
+            };
         }
         public enum Status
         {

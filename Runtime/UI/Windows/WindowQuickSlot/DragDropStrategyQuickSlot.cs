@@ -47,6 +47,13 @@ namespace GGemCo2DCore
                             QuickSlotContentKind.Skill, dropIconUid, dropIconCount, dropIconLevel, dropIconIsLearn, droppedUIIcon.instanceId);
                         break;
                     }
+                    case UIWindowConstants.WindowUid.PassiveSkill:
+                    {
+                        // Skill 패키지 타입을 직접 참조하지 않고, UIIcon 의 공용 정보(uid/level/isLearn)만 저장한다.
+                        ApplyToQuickSlot(uiWindowQuickSlot, targetIconSlotIndex,
+                            QuickSlotContentKind.SkillPassive, dropIconUid, dropIconCount, dropIconLevel, dropIconIsLearn, droppedUIIcon.instanceId);
+                        break;
+                    }
                     case UIWindowConstants.WindowUid.Inventory:
                     {
                         // 인벤토리 아이템 → 퀵슬롯
@@ -119,6 +126,9 @@ namespace GGemCo2DCore
             {
                 case QuickSlotContentKind.Skill:
                     quickSlot.SetSkill(targetSlotIndex, uid, count, level, isLearn);
+                    break;
+                case QuickSlotContentKind.SkillPassive:
+                    quickSlot.SetSkillPassive(targetSlotIndex, uid, count, level, isLearn);
                     break;
                 case QuickSlotContentKind.Item:
                     quickSlot.SetItem(targetSlotIndex, uid, count, instanceId);

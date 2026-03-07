@@ -1,5 +1,3 @@
-using UnityEngine;
-
 namespace GGemCo2DCore
 {
     /// <summary>
@@ -23,8 +21,23 @@ namespace GGemCo2DCore
         public bool ApplyEntry(QuickSlotContentKind kind, int iconUid, int iconCount, int iconLevel = 0, bool iconIsLearn = false, long iconInstanceId = 0)
         {
             _kind = kind;
-            IconType = kind == QuickSlotContentKind.Item ? IconConstants.Type.Item : IconConstants.Type.Skill;
-            return base.ChangeInfoByUid(iconUid, iconCount, iconLevel, iconIsLearn, 0, iconInstanceId);
+            IconType = IconConstants.ConvertToIconType(kind);
+            return ChangeInfoByUid(iconUid, iconCount, iconLevel, iconIsLearn, 0, iconInstanceId);
+        }
+        
+        public override bool ChangeInfoByUid(
+            int iconUid,
+            int iconCount = 0,
+            int iconLevel = 0,
+            bool iconIsLearn = false,
+            int remainCoolTime = 0,
+            long iconInstanceId = 0)
+        {
+            if (!base.ChangeInfoByUid(iconUid, iconCount, iconLevel, iconIsLearn, remainCoolTime, iconInstanceId))
+                return false;
+
+            UpdateInfo();
+            return true;
         }
 
         public void ClearEntry()

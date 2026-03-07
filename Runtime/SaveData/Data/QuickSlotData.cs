@@ -4,6 +4,17 @@ using System.Linq;
 namespace GGemCo2DCore
 {
     /// <summary>
+    /// 퀵슬롯에 저장되는 컨텐츠 종류.
+    /// - Core 는 Skill 패키지를 직접 참조하지 않고 Kind 값만 저장한다.
+    /// </summary>
+    public enum QuickSlotContentKind
+    {
+        None = 0,
+        Skill,
+        SkillPassive,
+        Item
+    }
+    /// <summary>
     /// 퀵슬롯에 들어간 스킬 정보 관리
     /// </summary>
     public class QuickSlotData : DefaultData, ISaveData
@@ -38,6 +49,13 @@ namespace GGemCo2DCore
             if (skillUid <= 0) return;
 
             QuickSlotDatas[slotIndex] = new SaveDataIcon(slotIndex, skillUid, skillCount, level, skillLearn, 0, (int)QuickSlotContentKind.Skill);
+            SaveDatas();
+        }
+        public void SetSkillPassive(int slotIndex, int skillUid, int skillCount, int level, bool skillLearn = false)
+        {
+            if (skillUid <= 0) return;
+
+            QuickSlotDatas[slotIndex] = new SaveDataIcon(slotIndex, skillUid, skillCount, level, skillLearn, 0, (int)QuickSlotContentKind.SkillPassive);
             SaveDatas();
         }
         
