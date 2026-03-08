@@ -181,19 +181,15 @@ namespace GGemCo2DCore
             }
             uiIcon.window = _window;
             uiIcon.windowUid = _window.uid;
-            if (iconType != IconConstants.Type.None)
-            {
-                uiIcon.ChangeIconType(iconType);
-            }
-            uiIcon.ChangeInfoByUid(uid, count, level, learn, 0, instanceId);
+            uiIcon.ChangeInfoByUid(uid, count, level, learn, 0, instanceId, iconType);
             
-            if (QuickSlotSetIconStrategyRegistry.TryGet(uiIcon.GetIconType(), out var strategy))
+            if (QuickSlotSetIconStrategyRegistry.TryGet(iconType, out var strategy))
             {
-                strategy.OnSetIcon(_window, slotIndex, uid, count, level, learn);
+                strategy.OnSetIcon(_window, slotIndex, uid, count, level, learn, iconType);
                 return uiIcon;
             }
             // 아이콘 정보 세팅 후, 전략으로 후처리
-            _setIconHandler?.OnSetIcon(_window, slotIndex, uid, count, level, learn);
+            _setIconHandler?.OnSetIcon(_window, slotIndex, uid, count, level, learn, iconType);
             return uiIcon;
         }
         /// <summary>

@@ -214,6 +214,7 @@ namespace GGemCo2DCore
             if (uid <= 0) return;
             UpdateIconImage();
         }
+
         /// <summary>
         /// 다른 uid 로 변경하기
         /// </summary>
@@ -223,22 +224,29 @@ namespace GGemCo2DCore
         /// <param name="iconIsLearn"></param>
         /// <param name="remainCoolTime"></param>
         /// <param name="iconInstanceId"></param>
-        public virtual bool ChangeInfoByUid(int cardUid, int iconCount = 0, int iconLevel = 0, bool iconIsLearn = false, int remainCoolTime = 0, long iconInstanceId = 0)
+        /// <param name="iconType"></param>
+        public virtual bool ChangeInfoByUid(int cardUid, int iconCount = 0, int iconLevel = 0, 
+            bool iconIsLearn = false, int remainCoolTime = 0, long iconInstanceId = 0, 
+            IconConstants.Type iconType = IconConstants.Type.None)
         {
             _iconCoolTimeManager?.SetRemainCoolTime(windowUid, cardUid, remainCoolTime);
-            
+
             if (cardUid == 0 && iconCount == 0)
             {
                 ClearIconInfos();
                 return false;
             }
+
             uid = cardUid;
             instanceId = iconInstanceId;
+            if (iconType != IconConstants.Type.None)
+                IconType = iconType;
             SetCount(iconCount);
             SetLevel(iconLevel);
             SetIsLearn(iconIsLearn);
             return true;
         }
+
         /// <summary>
         /// 개수 추가하기
         /// </summary>
@@ -507,11 +515,6 @@ namespace GGemCo2DCore
         {
             if (!useCanvasGroup) return;
             _canvasGroup.alpha = alpha;
-        }
-
-        public void ChangeIconType(IconConstants.Type iconType)
-        {
-            IconType = iconType;
         }
     }
 }

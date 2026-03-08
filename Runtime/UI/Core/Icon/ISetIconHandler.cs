@@ -14,7 +14,8 @@
         /// <param name="iconCount"></param>
         /// <param name="iconLevel"></param>
         /// <param name="isLearned"></param>
-        void OnSetIcon(UIWindow window, int slotIndex, int iconUid, int iconCount, int iconLevel, bool isLearned);
+        /// <param name="iconType"></param>
+        void OnSetIcon(UIWindow window, int slotIndex, int iconUid, int iconCount, int iconLevel, bool isLearned, IconConstants.Type iconType);
         /// <summary>
         /// 윈도우에서 아이콘 지우기
         /// </summary>

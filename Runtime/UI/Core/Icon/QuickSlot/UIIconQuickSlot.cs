@@ -19,9 +19,11 @@ namespace GGemCo2DCore
             int iconLevel = 0,
             bool iconIsLearn = false,
             int remainCoolTime = 0,
-            long iconInstanceId = 0)
+            long iconInstanceId = 0,
+            IconConstants.Type iconType = IconConstants.Type.None)
         {
-            if (!base.ChangeInfoByUid(iconUid, iconCount, iconLevel, iconIsLearn, remainCoolTime, iconInstanceId))
+            if (!base.ChangeInfoByUid(iconUid, iconCount, iconLevel, iconIsLearn, remainCoolTime, iconInstanceId,
+                    iconType))
                 return false;
 
             UpdateInfo();

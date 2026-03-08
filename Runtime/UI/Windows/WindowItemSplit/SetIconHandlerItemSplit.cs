@@ -5,7 +5,7 @@
     /// </summary>
     public class SetIconHandlerItemSplit : ISetIconHandler
     {
-        public void OnSetIcon(UIWindow window, int slotIndex, int iconUid, int iconCount, int iconLevel, bool isLearned)
+        public void OnSetIcon(UIWindow window, int slotIndex, int iconUid, int iconCount, int iconLevel, bool isLearned, IconConstants.Type iconType)
         {
             UIWindowItemSplit uiWindowItemSplit = window as UIWindowItemSplit;
             if (uiWindowItemSplit == null) return;

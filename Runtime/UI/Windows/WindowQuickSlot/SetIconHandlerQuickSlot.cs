@@ -5,11 +5,11 @@
     /// </summary>
     public class SetIconHandlerQuickSlot : ISetIconHandler
     {
-        public void OnSetIcon(UIWindow window, int slotIndex, int iconUid, int iconCount, int iconLevel, bool isLearned)
+        public void OnSetIcon(UIWindow window, int slotIndex, int iconUid, int iconCount, int iconLevel, bool isLearned, IconConstants.Type iconType)
         {
             UIIcon icon = window.GetIconByIndex(slotIndex);
             if (icon == null) return;
-            SceneGame.Instance.saveDataManager.QuickSlot.SetIcon(slotIndex, icon.GetIconType(), iconUid, iconCount, iconLevel, isLearned);
+            SceneGame.Instance.saveDataManager.QuickSlot.SetIcon(slotIndex, iconUid, iconCount, iconLevel, isLearned, iconType);
         }
         public void OnDetachIcon(UIWindow window, int slotIndex)
         {

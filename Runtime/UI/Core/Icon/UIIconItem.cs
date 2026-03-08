@@ -29,6 +29,7 @@ namespace GGemCo2DCore
                 SceneGame.Instance.uIWindowManager.GetUIWindowByUid<UIWindowItemInfo>(
                     UIWindowConstants.WindowUid.ItemInfo);
         }
+
         /// <summary>
         /// 다른 uid 로 변경하기
         /// </summary>
@@ -37,20 +38,27 @@ namespace GGemCo2DCore
         /// <param name="iconLevel"></param>
         /// <param name="iconIsLearn"></param>
         /// <param name="remainCoolTime"></param>
-        public override bool ChangeInfoByUid(int iconUid, int iconCount = 0, int iconLevel = 0, bool iconIsLearn = false, int remainCoolTime = 0, long iconInstanceId = 0)
+        /// <param name="iconInstanceId"></param>
+        /// <param name="iconType"></param>
+        public override bool ChangeInfoByUid(int iconUid, int iconCount = 0, int iconLevel = 0,
+            bool iconIsLearn = false, int remainCoolTime = 0, long iconInstanceId = 0,
+            IconConstants.Type iconType = IconConstants.Type.None)
         {
-            if (!base.ChangeInfoByUid(iconUid, iconCount, iconLevel, iconIsLearn, remainCoolTime, iconInstanceId)) return false;
+            if (!base.ChangeInfoByUid(iconUid, iconCount, iconLevel, iconIsLearn, remainCoolTime, iconInstanceId,
+                    iconType)) return false;
             var info = _tableItem.GetDataByUid(iconUid);
             if (info == null)
             {
                 GcLogger.LogError("아이콘 테이블에 없는 아이템 입니다.");
                 return false;
             }
+
             _struckTableItem = info;
-            
+
             UpdateInfo();
             return true;
         }
+
         public void OnPointerEnter(PointerEventData eventData)
         {
             // GcLogger.Log("OnPointerEnter "+eventData);

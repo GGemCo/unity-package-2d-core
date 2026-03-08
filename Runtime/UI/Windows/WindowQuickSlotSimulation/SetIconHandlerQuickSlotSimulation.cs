@@ -6,7 +6,7 @@ namespace GGemCo2DCore
     /// </summary>
     public class SetIconHandlerQuickSlotSimulation : ISetIconHandler
     {
-        public void OnSetIcon(UIWindow window, int slotIndex, int iconUid, int iconCount, int iconLevel, bool isLearned)
+        public void OnSetIcon(UIWindow window, int slotIndex, int iconUid, int iconCount, int iconLevel, bool isLearned, IconConstants.Type iconType)
         {
             var quickSlotSimulationData = SceneGame.Instance.saveDataManager.QuickSlotSimulation;
             UIIcon icon = window.GetIconByIndex(slotIndex);

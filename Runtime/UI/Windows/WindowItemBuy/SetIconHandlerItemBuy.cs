@@ -5,7 +5,7 @@
     /// </summary>
     public class SetIconHandlerItemBuy : ISetIconHandler
     {
-        public void OnSetIcon(UIWindow window, int slotIndex, int iconUid, int iconCount, int iconLevel, bool isLearned)
+        public void OnSetIcon(UIWindow window, int slotIndex, int iconUid, int iconCount, int iconLevel, bool isLearned, IconConstants.Type iconType)
         {
             UIWindowItemBuy uiWindowItemBuy = window as UIWindowItemBuy;
             if (uiWindowItemBuy == null) return;

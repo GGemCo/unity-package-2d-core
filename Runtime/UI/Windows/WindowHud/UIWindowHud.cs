@@ -36,6 +36,7 @@ namespace GGemCo2DCore
             base.Awake();
         }
 
+        #region 윈도우 열기 버튼
         /// <summary>
         /// 인벤토리 열기 
         /// </summary>
@@ -54,6 +55,12 @@ namespace GGemCo2DCore
         {
             SceneGame.Instance.uIWindowManager?.ShowWindow(UIWindowConstants.WindowUid.Option, true);
         }
+        public void OnClickShowSkillPassive()
+        {
+            SceneGame.Instance.uIWindowManager?.ShowWindow(UIWindowConstants.WindowUid.SkillPassive, true);
+        }
+        #endregion
+        
         public void SetHp(long currentValue, long total)
         {
             gameObjectHp.SetValue(UIWindowHudResourceType.Hp, currentValue, total);

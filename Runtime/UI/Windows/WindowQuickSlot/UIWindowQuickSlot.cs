@@ -39,37 +39,23 @@ namespace GGemCo2DCore
         {
             base.Start();
             SceneGame.Instance.KeyboardManager.RegisterInputHandler(this);
-            LoadIcons();
-        }
 
-        /// <summary>
-        /// 세이브 엔트리를 슬롯 아이콘에 반영한다(세이브를 다시 쓰지 않도록 직접 아이콘에 적용).
-        /// </summary>
-        private void ApplyEntryToSlot(int slotIndex, IconConstants.Type type, int iconUid, int iconCount, int iconLevel, bool iconIsLearn, long iconInstanceId)
+            // DefaultActive 값이 True이면 OnShow는 호출되지 않으므로 여기서 LoadIcons 호출
+            var info = TableLoaderManager.Instance.GetWindowData((int)uid);
+            if (info != null && info.DefaultActive)
+            {
+                LoadIcons();
+            }
+        }
+        public override void OnShow(bool show)
         {
-            var icon = GetIconByIndex(slotIndex);
-            if (icon == null) return;
-
-            if (type == IconConstants.Type.None || iconUid <= 0 || iconCount <= 0)
+            if (SceneGame == null || TableLoaderManager.Instance == null) return;
+            if (show)
             {
-                if (icon is UIIconQuickSlot qs)
-                    qs.ClearEntry();
-                else
-                    icon.ChangeInfoByUid(0, 0, 0, false, 0, 0);
-                return;
+                LoadIcons();
             }
-
-            // QuickSlot 전용 아이콘이면 ProviderRegistry 기반으로 스킬/아이템 모두 표시
-            if (icon is UIIconQuickSlot quickSlotIcon)
-            {
-                // todo. 정리 필요
-                // quickSlotIcon.ApplyEntry(type, iconUid, iconCount, iconLevel, iconIsLearn, iconInstanceId);
-                return;
-            }
-
-            // 구버전 아이콘 프리팹(스킬 전용 등) 호환: 최소한 데이터는 반영
-            icon.ChangeInfoByUid(iconUid, iconCount, iconLevel, iconIsLearn, 0, iconInstanceId);
         }
+
         /// <summary>
         /// 저장되어있는 스킬 정보로 아이콘 셋팅하기
         /// 스킬창이 열려있지 않으면 업데이트 하지 않음
@@ -91,16 +77,41 @@ namespace GGemCo2DCore
 
                 var icon = icons[index];
                 if (icon == null) continue;
-                if (datas.TryGetValue(index, out var entry) && entry != null && entry.Uid > 0 && entry.Count > 0)
+                UIIconItem uiIcon = icon.GetComponent<UIIconItem>();
+                if (uiIcon == null) continue;
+                if (!datas.TryGetValue(index, out var info))
                 {
-                    var type = (IconConstants.Type)entry.IconType;
-                    ApplyEntryToSlot(index, type, entry.Uid, entry.Count, entry.Level, entry.IsLearned, entry.InstanceId);
+                    uiIcon.ClearIconInfos();
+                    continue;
                 }
-                else
+                SaveDataIcon structInventoryIcon = info;
+                int itemUid = structInventoryIcon.Uid;
+                int itemCount = structInventoryIcon.Count;
+                int itemLevel = structInventoryIcon.Level;
+                bool itemIsLearn = structInventoryIcon.IsLearned;
+                IconConstants.Type type = (IconConstants.Type)structInventoryIcon.IconType;
+                if (itemUid <= 0 || itemCount <= 0)
                 {
-                    // 비어있는 슬롯
-                    ApplyEntryToSlot(index, IconConstants.Type.None, 0, 0, 0, false, 0);
+                    uiIcon.ClearIconInfos();
+                    continue;
                 }
+                uiIcon.ChangeInfoByUid(itemUid, itemCount, iconInstanceId: structInventoryIcon.InstanceId, iconType: type);
+                
+                if (QuickSlotSetIconStrategyRegistry.TryGet(type, out var strategy))
+                {
+                    strategy.OnSetIcon(this, index, itemUid, itemCount, itemLevel, itemIsLearn, type);
+                }
+                
+                // if (datas.TryGetValue(index, out var entry) && entry != null && entry.Uid > 0 && entry.Count > 0)
+                // {
+                //     var type = (IconConstants.Type)entry.IconType;
+                //     ApplyEntryToSlot(index, type, entry.Uid, entry.Count, entry.Level, entry.IsLearned, entry.InstanceId);
+                // }
+                // else
+                // {
+                //     // 비어있는 슬롯
+                //     ApplyEntryToSlot(index, IconConstants.Type.None, 0, 0, 0, false, 0);
+                // }
             }
         }
         protected void OnDisable()

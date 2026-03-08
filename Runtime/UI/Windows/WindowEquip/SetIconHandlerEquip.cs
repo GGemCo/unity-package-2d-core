@@ -5,7 +5,7 @@ namespace GGemCo2DCore
     /// </summary>
     public class SetIconHandlerEquip : ISetIconHandler
     {
-        public void OnSetIcon(UIWindow window, int slotIndex, int iconUid, int iconCount, int iconLevel, bool isLearned)
+        public void OnSetIcon(UIWindow window, int slotIndex, int iconUid, int iconCount, int iconLevel, bool isLearned, IconConstants.Type iconType)
         {
             UIIcon icon = window.GetIconByIndex(slotIndex);
             if (icon == null) return;
