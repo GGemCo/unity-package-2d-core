@@ -55,6 +55,14 @@ namespace GGemCo2DCore
 
         [Tooltip("데미지 텍스트 출력 시, X축 랜덤 좌표 범위")]
         public float damageTextRandomXRange;
+
+        [Header("데미지 텍스트 색상")]
+        [Tooltip("몬스터 피격시 색상")]
+        public Color textColorDamageMonster = Color.white;
+        [Tooltip("플레이어 피격시 색상")]
+        public Color textColorDamagePlayer = Color.red;
+        [Tooltip("플레이어 HP 증가시 색상")]
+        public Color textColorHeal = Color.green;
         
         [Header("캐릭터 방향")] 
         [Tooltip("캐릭터의 방향 타입")]

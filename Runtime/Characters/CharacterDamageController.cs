@@ -43,6 +43,10 @@ namespace GGemCo2DCore
         private float _monsterGroggyAffectDuration;
         private int _monsterGroggyAffectUid;
         
+        private Color _textColorDamageMonster;
+        private Color _textColorDamagePlayer;
+        private Color _textColorHeal;
+        
         public void Initialize(CharacterBase characterBase)
         {
             _characterBase = characterBase;
@@ -60,6 +64,13 @@ namespace GGemCo2DCore
             {
                 _monsterGroggyAffectDuration = AddressableLoaderSettings.Instance.monsterSettings.monsterGroggyAffectDuration;
                 _monsterGroggyAffectUid = AddressableLoaderSettings.Instance.monsterSettings.monsterGroggyAffectUid;
+            }
+
+            if (AddressableLoaderSettings.Instance.settings)
+            {
+                _textColorDamageMonster = AddressableLoaderSettings.Instance.settings.textColorDamageMonster;
+                _textColorDamagePlayer = AddressableLoaderSettings.Instance.settings.textColorDamagePlayer;
+                _textColorHeal = AddressableLoaderSettings.Instance.settings.textColorHeal;
             }
         }
 
@@ -85,7 +96,7 @@ namespace GGemCo2DCore
             int crowdControlUid = metadataDamage.crowdControlUid;
 
             // 데미지 텍스트 색상 설정
-            Color damageTextColor = Color.white;
+            Color damageTextColor = _textColorDamageMonster;
             Vector3 damageTextPosition = _characterBase.transform.position + new Vector3(0,
                 _characterBase.GetHeight() * Mathf.Abs(_characterBase.originalScaleX), 0);
             // 속성 데미지일때, 저항값 처리
@@ -149,7 +160,7 @@ namespace GGemCo2DCore
 
             if (_characterBase.CompareTag(ConfigTags.GetValue(ConfigTags.Keys.Player)))
             {
-                damageTextColor = Color.red;
+                damageTextColor = _textColorDamagePlayer;
             }
             MetadataDamageText metadataDamageText2 = new MetadataDamageText
             {
