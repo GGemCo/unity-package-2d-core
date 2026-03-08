@@ -173,9 +173,9 @@ namespace GGemCo2DCore
         /// - ItemBonusHpTemp는 PlayerData에 저장되어, 게임 재시작 후에도 유지됩니다.
         /// - UI의 하트 삭제는 TotalHpTemp(=ItemBonusHpTemp 반영) 변화로 자연스럽게 발생합니다.
         /// </remarks>
-        protected override void OnItemBonusHpConsumed(long beforeCurrent, long afterCurrent, long consumedAmount)
+        protected override void OnConsumedHpTempItem(long beforeCurrent, long afterCurrent, long consumedAmount)
         {
-            base.OnItemBonusHpConsumed(beforeCurrent, afterCurrent, consumedAmount);
+            base.OnConsumedHpTempItem(beforeCurrent, afterCurrent, consumedAmount);
             
             _playerData?.SetCurrentItemBonusHpTemp(afterCurrent);
             

@@ -127,11 +127,13 @@ namespace GGemCo2DCore
             }
             if (damage <= 0) return;
 
-            // 1) Item Bonus HP(소모형 추가 최대 HP)부터 먼저 차감
-            //    - 0이 되면 즉시 소멸(외부에서 UI/저장 갱신 처리)
-            long remainingDamage = _characterBase.ConsumeItemBonusHp(damage);
+            // Item Bonus HP(소모형 추가 최대 HP)부터 먼저 차감
+            //  - 0이 되면 즉시 소멸(외부에서 UI/저장 갱신 처리)
+            long remainingDamage = _characterBase.ConsumeHpTempItem(damage);
+            // 패시브 임시 HP 소모
+            remainingDamage = _characterBase.ConsumeHpTempPassive(remainingDamage);
 
-            // 2) 남은 데미지를 Base HP에서 차감
+            // 남은 데미지를 Base HP에서 차감
             long remainHp = _characterBase.CurrentHp.Value - remainingDamage;
             // -1 이면 죽지 않는다
             if (_characterBase.BaseHp < 0)

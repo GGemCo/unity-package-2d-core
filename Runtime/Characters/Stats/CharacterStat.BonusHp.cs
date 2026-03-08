@@ -24,91 +24,6 @@ namespace GGemCo2DCore
         protected long TotalHpTempPassive;
         protected long CurrentHpTempPassive;
         
-        /// <summary>
-        /// 아이템 사용으로 인해 증가한 "일반 최대 HP / 임시 최대 HP" 누적치를 설정합니다(저장값 복원 등).
-        /// </summary>
-        public void SetItemBonusHpBonuses(long normalHpDelta, long tempHpDelta, bool raiseEvent = true)
-        {
-            _itemBonusProvider?.SetHpBonuses(normalHpDelta, tempHpDelta, raiseEvent);
-        }
-
-        /// <summary>
-        /// 데미지 처리에서 사용: ItemBonusHpCurrent를 먼저 소모하고, 남은 데미지를 반환합니다.
-        /// </summary>
-        public long ConsumeItemBonusHp(long incomingDamage)
-        {
-            if (incomingDamage <= 0) return 0;
-
-            long beforeCurrent = CurrentHpTempItem;
-            if (beforeCurrent <= 0) return incomingDamage;
-
-            long consume = System.Math.Min(beforeCurrent, incomingDamage);
-            long remainingBonus = beforeCurrent - consume;
-            long remainingDamage = incomingDamage - consume;
-
-            bool depleted = remainingBonus <= 0;
-            SetItemBonusHpCurrentInternal(depleted ? 0 : remainingBonus, invokeDepleted: depleted);
-
-            // NOTE:
-            // - 소모형 추가 최대 HP(아이템 보너스 HP)의 “현재치”가 감소한 시점을 외부에서 해석할 수 있도록 훅을 제공합니다.
-            // - 기본 구현은 no-op이며, 플레이어는 여기에서 “하트 1개 소모 → 최대치 영구 감소(저장)” 같은 규칙을 적용할 수 있습니다.
-            OnItemBonusHpConsumed(beforeCurrent, depleted ? 0 : remainingBonus, consume);
-            return remainingDamage;
-        }
-
-        /// <summary>
-        /// ItemBonusHpCurrent(소모형 추가 HP)가 감소했을 때 호출되는 훅.
-        /// </summary>
-        /// <remarks>
-        /// - <see cref="ConsumeItemBonusHp"/> 경로에서만 호출됩니다.
-        /// - 기본 구현은 아무 것도 하지 않습니다.
-        /// - 예: 플레이어는 “하트 단위 소모가 완료되면 ItemBonusHpTemp(최대치) 자체를 영구 감소” 같은 규칙을 적용할 수 있습니다.
-        /// </remarks>
-        protected virtual void OnItemBonusHpConsumed(long beforeCurrent, long afterCurrent, long consumedAmount)
-        {
-        }
-
-        /// <summary>
-        /// 저장/로드 또는 사망 처리 등에서 직접 값을 세팅할 때 사용합니다.
-        /// </summary>
-        public void SetItemBonusHpCurrent(long value)
-        {
-            SetItemBonusHpCurrentInternal(System.Math.Max(0, value),
-                invokeDepleted: value <= 0 && TotalHpTempItem > 0);
-        }
-
-        private void SetItemBonusHpCurrentInternal(long value, bool invokeDepleted)
-        {
-            value = System.Math.Max(0, value);
-            // 임시 최대 HP(TotalTempHp)를 초과하지 않도록 클램프
-            long tempMax = TotalHpTempItem;
-            if (tempMax > 0)
-                value = System.Math.Min(value, tempMax);
-            if (CurrentHpTempItem == value)
-                return;
-
-            CurrentHpTempItem = value;
-            
-            UpdateCurrentHpTemp();
-
-            if (invokeDepleted)
-            {
-                // ItemBonus가 0이 되는 순간: 최대치(표시) 변화에 따른 클램프/리빌드 트리거
-                if (CurrentHp.Value > TotalHp.Value)
-                {
-                    CurrentHp.OnNext(TotalHp.Value);
-                }
-            }
-        }
-
-        protected void UpdateCurrentHpTemp()
-        {
-            var newValue = CurrentHpTempPassive + CurrentHpTempItem;
-            if (newValue > TotalHpTemp.Value)
-                newValue = TotalHpTemp.Value;
-            if (CurrentHpTemp.Value == newValue) return;
-            CurrentHpTemp.OnNext(newValue);
-        }
 
         #region 일반 HP
         
@@ -135,6 +50,7 @@ namespace GGemCo2DCore
 
         #region 임시 HP
 
+        #region 아이템 임시 HP
         public long GetItemBonusHpTemp() => _itemBonusProvider?.GetHpBonusTemp() ?? 0;
 
         /// <summary>
@@ -166,6 +82,83 @@ namespace GGemCo2DCore
             // 스탯 Provider 갱신
             _itemBonusProvider?.SetHpBonusTemp(amount, raiseEvent);
         }
+        /// <summary>
+        /// 아이템 사용으로 인해 증가한 "일반 최대 HP / 임시 최대 HP" 누적치를 설정합니다(저장값 복원 등).
+        /// </summary>
+        public void SetItemBonusHpBonuses(long normalHpDelta, long tempHpDelta, bool raiseEvent = true)
+        {
+            _itemBonusProvider?.SetHpBonuses(normalHpDelta, tempHpDelta, raiseEvent);
+        }
+        /// <summary>
+        /// 데미지 처리에서 사용: ItemBonusHpCurrent를 먼저 소모하고, 남은 데미지를 반환합니다.
+        /// </summary>
+        public long ConsumeHpTempItem(long incomingDamage)
+        {
+            if (incomingDamage <= 0) return 0;
+
+            long beforeCurrent = CurrentHpTempItem;
+            if (beforeCurrent <= 0) return incomingDamage;
+
+            long consume = System.Math.Min(beforeCurrent, incomingDamage);
+            long remainingBonus = beforeCurrent - consume;
+            long remainingDamage = incomingDamage - consume;
+
+            bool depleted = remainingBonus <= 0;
+            SetCurrentHpTempItem(depleted ? 0 : remainingBonus, invokeDepleted: depleted);
+
+            // NOTE:
+            // - 소모형 추가 최대 HP(아이템 보너스 HP)의 “현재치”가 감소한 시점을 외부에서 해석할 수 있도록 훅을 제공합니다.
+            // - 기본 구현은 no-op이며, 플레이어는 여기에서 “하트 1개 소모 → 최대치 영구 감소(저장)” 같은 규칙을 적용할 수 있습니다.
+            OnConsumedHpTempItem(beforeCurrent, depleted ? 0 : remainingBonus, consume);
+            return remainingDamage;
+        }
+
+        /// <summary>
+        /// ItemBonusHpCurrent(소모형 추가 HP)가 감소했을 때 호출되는 훅.
+        /// </summary>
+        /// <remarks>
+        /// - <see cref="ConsumeHpTempItem"/> 경로에서만 호출됩니다.
+        /// - 기본 구현은 아무 것도 하지 않습니다.
+        /// - 예: 플레이어는 “하트 단위 소모가 완료되면 ItemBonusHpTemp(최대치) 자체를 영구 감소” 같은 규칙을 적용할 수 있습니다.
+        /// </remarks>
+        protected virtual void OnConsumedHpTempItem(long beforeCurrent, long afterCurrent, long consumedAmount)
+        {
+        }
+
+        /// <summary>
+        /// 저장/로드 또는 사망 처리 등에서 직접 값을 세팅할 때 사용합니다.
+        /// </summary>
+        public void SetItemBonusHpCurrent(long value)
+        {
+            SetCurrentHpTempItem(System.Math.Max(0, value),
+                invokeDepleted: value <= 0 && TotalHpTempItem > 0);
+        }
+
+        private void SetCurrentHpTempItem(long value, bool invokeDepleted)
+        {
+            value = System.Math.Max(0, value);
+            // 임시 최대 HP(TotalTempHp)를 초과하지 않도록 클램프
+            long tempMax = TotalHpTempItem;
+            if (tempMax > 0)
+                value = System.Math.Min(value, tempMax);
+            if (CurrentHpTempItem == value)
+                return;
+
+            CurrentHpTempItem = value;
+            
+            UpdateCurrentHpTemp();
+
+            if (invokeDepleted)
+            {
+                // ItemBonus가 0이 되는 순간: 최대치(표시) 변화에 따른 클램프/리빌드 트리거
+                if (CurrentHp.Value > TotalHp.Value)
+                {
+                    CurrentHp.OnNext(TotalHp.Value);
+                }
+            }
+        }
+
+        #endregion
 
         private void AddCurrentHpTemp(long amount)
         {
@@ -174,6 +167,15 @@ namespace GGemCo2DCore
             if (newVale > TotalHpTemp.Value)
                 newVale = TotalHpTemp.Value;
             CurrentHpTemp.OnNext(newVale);  
+        }
+        
+        protected void UpdateCurrentHpTemp()
+        {
+            var newValue = CurrentHpTempPassive + CurrentHpTempItem;
+            if (newValue > TotalHpTemp.Value)
+                newValue = TotalHpTemp.Value;
+            if (CurrentHpTemp.Value == newValue) return;
+            CurrentHpTemp.OnNext(newValue);
         }
         #endregion
 
@@ -212,7 +214,7 @@ namespace GGemCo2DCore
             UpdateCurrentHpTemp();
         }
 
-        public void SetPassiveBonusHpTempCurrent(long value)
+        public void SetCurrentHpTempPassive(long value)
         {
             value = Math.Max(0, value);
             if (value > TotalHpTempPassive)
@@ -226,9 +228,29 @@ namespace GGemCo2DCore
         }
         public void FillPassiveBonusHpTempToMax()
         {
-            SetPassiveBonusHpTempCurrent(GetPassiveBonusHpTempMax());
+            SetCurrentHpTempPassive(GetPassiveBonusHpTempMax());
         }
 
+        public long ConsumeHpTempPassive(long incomingDamage)
+        {
+            if (incomingDamage <= 0) return 0;
+
+            long beforeCurrent = CurrentHpTempPassive;
+            if (beforeCurrent <= 0) return incomingDamage;
+
+            long consume = Math.Min(beforeCurrent, incomingDamage);
+            long remainingPassive = beforeCurrent - consume;
+            long remainingDamage = incomingDamage - consume;
+
+            SetCurrentHpTempPassive(remainingPassive);
+
+            OnConsumedHpTempPassive(beforeCurrent, remainingPassive, consume);
+
+            return remainingDamage;
+        }
+        protected virtual void OnConsumedHpTempPassive(long beforeCurrent, long afterCurrent, long consumedAmount)
+        {
+        }
         #endregion
     }
 }
