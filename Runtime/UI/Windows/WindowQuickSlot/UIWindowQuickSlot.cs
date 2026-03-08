@@ -77,11 +77,11 @@ namespace GGemCo2DCore
 
                 var icon = icons[index];
                 if (icon == null) continue;
-                UIIconItem uiIcon = icon.GetComponent<UIIconItem>();
-                if (uiIcon == null) continue;
+                UIIconQuickSlot uiIconQuickSlot = icon.GetComponent<UIIconQuickSlot>();
+                if (uiIconQuickSlot == null) continue;
                 if (!datas.TryGetValue(index, out var info))
                 {
-                    uiIcon.ClearIconInfos();
+                    uiIconQuickSlot.ClearIconInfos();
                     continue;
                 }
                 SaveDataIcon structInventoryIcon = info;
@@ -92,26 +92,10 @@ namespace GGemCo2DCore
                 IconConstants.Type type = (IconConstants.Type)structInventoryIcon.IconType;
                 if (itemUid <= 0 || itemCount <= 0)
                 {
-                    uiIcon.ClearIconInfos();
+                    uiIconQuickSlot.ClearIconInfos();
                     continue;
                 }
-                uiIcon.ChangeInfoByUid(itemUid, itemCount, iconInstanceId: structInventoryIcon.InstanceId, iconType: type);
-                
-                if (QuickSlotSetIconStrategyRegistry.TryGet(type, out var strategy))
-                {
-                    strategy.OnSetIcon(this, index, itemUid, itemCount, itemLevel, itemIsLearn, type);
-                }
-                
-                // if (datas.TryGetValue(index, out var entry) && entry != null && entry.Uid > 0 && entry.Count > 0)
-                // {
-                //     var type = (IconConstants.Type)entry.IconType;
-                //     ApplyEntryToSlot(index, type, entry.Uid, entry.Count, entry.Level, entry.IsLearned, entry.InstanceId);
-                // }
-                // else
-                // {
-                //     // 비어있는 슬롯
-                //     ApplyEntryToSlot(index, IconConstants.Type.None, 0, 0, 0, false, 0);
-                // }
+                SetIconCount(index, itemUid, itemCount, itemLevel, itemIsLearn, type: type);
             }
         }
         protected void OnDisable()
