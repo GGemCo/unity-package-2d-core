@@ -13,15 +13,6 @@ namespace GGemCo2DCore
             IconType = IconConstants.Type.QuickSlot; // 퀵슬롯은 컨텐츠 타입이 슬롯마다 달라질 수 있음
         }
 
-        /// <summary>
-        /// 퀵슬롯 엔트리를 적용한다.
-        /// </summary>
-        public bool ApplyEntry(IconConstants.Type iconType, int iconUid, int iconCount, int iconLevel = 0, bool iconIsLearn = false, long iconInstanceId = 0)
-        {
-            IconType = iconType;
-            return ChangeInfoByUid(iconUid, iconCount, iconLevel, iconIsLearn, 0, iconInstanceId);
-        }
-        
         public override bool ChangeInfoByUid(
             int iconUid,
             int iconCount = 0,

@@ -139,13 +139,21 @@ namespace GGemCo2DCore
         {
             if (_window.icons.Length <= 0) return;
             var uiIcon = GetIcon(slotIndex);
+            IconConstants.Type iconType = IconConstants.Type.None;
             if (uiIcon != null)
             {
+                iconType = uiIcon.GetIconType();
                 uiIcon.ClearIconInfos();
             }
             
             // 선택 표시 지워주기
             _window.RemoveSelectedIcon();
+            
+            if (QuickSlotSetIconStrategyRegistry.TryGet(iconType, out var strategy))
+            {
+                strategy.OnDetachIcon(_window, slotIndex);
+                return;
+            }
             // 아이콘 정보 세팅 후, 전략으로 후처리
             _setIconHandler?.OnDetachIcon(_window, slotIndex);
         }
@@ -157,9 +165,10 @@ namespace GGemCo2DCore
         /// <param name="count">개수</param>
         /// <param name="level">레벨</param>
         /// <param name="learn">배우기 여부 Y/N</param>
-        /// <param name="instanceId">배우기 여부 Y/N</param>
+        /// <param name="instanceId">랜덤 아이템 옵션 고유번호</param>
+        /// <param name="iconType">아이콘 타입 변경할 경우 입력</param>
         /// <returns></returns>
-        public UIIcon SetIcon(int slotIndex, int uid, int count, int level = 0, bool learn = false, long instanceId = 0)
+        public UIIcon SetIcon(int slotIndex, int uid, int count, int level = 0, bool learn = false, long instanceId = 0, IconConstants.Type iconType = IconConstants.Type.None)
         {
             UIIcon uiIcon = GetIcon(slotIndex);
             
@@ -172,8 +181,17 @@ namespace GGemCo2DCore
             }
             uiIcon.window = _window;
             uiIcon.windowUid = _window.uid;
+            if (iconType != IconConstants.Type.None)
+            {
+                uiIcon.ChangeIconType(iconType);
+            }
             uiIcon.ChangeInfoByUid(uid, count, level, learn, 0, instanceId);
             
+            if (QuickSlotSetIconStrategyRegistry.TryGet(uiIcon.GetIconType(), out var strategy))
+            {
+                strategy.OnSetIcon(_window, slotIndex, uid, count, level, learn);
+                return uiIcon;
+            }
             // 아이콘 정보 세팅 후, 전략으로 후처리
             _setIconHandler?.OnSetIcon(_window, slotIndex, uid, count, level, learn);
             return uiIcon;

@@ -62,7 +62,8 @@ namespace GGemCo2DCore
             // QuickSlot 전용 아이콘이면 ProviderRegistry 기반으로 스킬/아이템 모두 표시
             if (icon is UIIconQuickSlot quickSlotIcon)
             {
-                quickSlotIcon.ApplyEntry(type, iconUid, iconCount, iconLevel, iconIsLearn, iconInstanceId);
+                // todo. 정리 필요
+                // quickSlotIcon.ApplyEntry(type, iconUid, iconCount, iconLevel, iconIsLearn, iconInstanceId);
                 return;
             }
 

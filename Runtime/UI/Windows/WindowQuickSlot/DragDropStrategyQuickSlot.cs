@@ -46,7 +46,7 @@ namespace GGemCo2DCore
                 switch (droppedWindowUid)
                 {
                     case UIWindowConstants.WindowUid.Skill:
-                    case UIWindowConstants.WindowUid.PassiveSkill:
+                    case UIWindowConstants.WindowUid.SkillPassive:
                     case UIWindowConstants.WindowUid.Inventory:
                     case UIWindowConstants.WindowUid.None:
                     case UIWindowConstants.WindowUid.Hud:
@@ -75,7 +75,6 @@ namespace GGemCo2DCore
         {
             var droppedUIIcon = droppedIcon.GetComponent<UIIcon>();
             if (!droppedUIIcon) return;
-            window.DetachIcon(droppedUIIcon.slotIndex);
 
             UIWindowConstants.WindowUid windowUid = UIWindowConstants.WindowUid.None;
             var iconType = droppedUIIcon.GetIconType();
@@ -88,11 +87,13 @@ namespace GGemCo2DCore
                     windowUid = UIWindowConstants.WindowUid.Skill;
                     break;
                 case IconConstants.Type.SkillPassive:
-                    windowUid = UIWindowConstants.WindowUid.PassiveSkill;
+                    windowUid = UIWindowConstants.WindowUid.SkillPassive;
                     break;
                 default:
                     break;
             }
+            // 아이콘 타입을 위에서 가져온 후 삭제
+            window.DetachIcon(droppedUIIcon.slotIndex);
             if (!QuickSlotDragStrategyRegistry.TryGet(windowUid, out var strategy)) return;
             strategy.HandleDragOut(window, worldPosition, droppedIcon, targetIcon, originalPosition);
         }

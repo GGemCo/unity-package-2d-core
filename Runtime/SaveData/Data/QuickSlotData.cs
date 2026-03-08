@@ -30,17 +30,32 @@ namespace GGemCo2DCore
                 .GetUIWindowByUid<UIWindowQuickSlot>(UIWindowConstants.WindowUid.QuickSlot)?.maxCountIcon ?? 0;
         }
         
+        public void SetIcon(int slotIndex, IconConstants.Type getIconType, int iconUid, int iconCount, int iconLevel, bool isLearned)
+        {
+            if (getIconType == IconConstants.Type.Skill)
+            {
+                SetSkill(slotIndex, iconUid, iconCount, iconLevel, isLearned);
+            }
+            else if (getIconType == IconConstants.Type.SkillPassive)
+            {
+                SetSkillPassive(slotIndex, iconUid, iconCount, iconLevel, isLearned);
+            }
+            else if (getIconType == IconConstants.Type.Item)
+            {
+                SetItem(slotIndex, iconUid, iconCount);
+            }
+        }
         /// <summary>
         /// 스킬 설정
         /// </summary>
-        public void SetSkill(int slotIndex, int skillUid, int skillCount, int level, bool skillLearn = false)
+        private void SetSkill(int slotIndex, int skillUid, int skillCount, int level, bool skillLearn = false)
         {
             if (skillUid <= 0) return;
 
             QuickSlotDatas[slotIndex] = new SaveDataIcon(slotIndex, skillUid, skillCount, level, skillLearn, 0, (int)IconConstants.Type.Skill);
             SaveDatas();
         }
-        public bool SetSkillPassive(int slotIndex, int skillUid, int skillCount, int level, bool skillLearn = false)
+        private bool SetSkillPassive(int slotIndex, int skillUid, int skillCount, int level, bool skillLearn = false)
         {
             if (skillUid <= 0) return false;
             
@@ -52,7 +67,7 @@ namespace GGemCo2DCore
         /// <summary>
         /// 아이템 설정
         /// </summary>
-        public void SetItem(int slotIndex, int itemUid, int itemCount, long instanceId = 0)
+        private void SetItem(int slotIndex, int itemUid, int itemCount, long instanceId = 0)
         {
             if (itemUid <= 0) return;
             if (itemCount <= 0)
@@ -75,35 +90,6 @@ namespace GGemCo2DCore
             SaveDatas();
         }
         /// <summary>
-        /// 스킬 삭제(호환용)
-        /// </summary>
-        public void RemoveSkill(int slotIndex)
-        {
-            Remove(slotIndex);
-        }
-        /// <summary>
-        /// 스킬 추가.
-        /// </summary>
-        public ResultCommon AddSkill(int skillUid, int skillCount, int skillLevel, bool isLearn)
-        {
-            bool exist = QuickSlotDatas.Any(data => data.Value.Uid == skillUid);
-            if (exist)
-            {
-                return ResultCommon.Fail($"QuickSlot_SkillAlreadyAssigned");//이미 등록된 스킬입니다.
-            }
-            List<SaveDataIcon> controls = new List<SaveDataIcon>();
-            int emptyIndex = FindEmptySlot();
-            if (emptyIndex == -1)
-            {
-                return ResultCommon.Fail("QuickSlot_NotEnoughSpace");//퀵슬롯에 공간이 부족합니다.
-            }
-
-            controls.Add(new SaveDataIcon(emptyIndex, skillUid, skillCount, skillLevel, isLearn));
-
-            SaveDatas();
-            return ResultCommon.SuccessWithIcons(controls);
-        }
-        /// <summary>
         /// 빈 슬롯 찾기
         /// </summary>
         private int FindEmptySlot()
@@ -117,7 +103,6 @@ namespace GGemCo2DCore
             }
             return -1;
         }
-
         
         public bool TryGetEntry(int slotIndex, out SaveDataIcon entry)
         {
@@ -133,15 +118,28 @@ namespace GGemCo2DCore
             return QuickSlotDatas;
         }
 
-        public bool GetSkillPassive(int dropIconUid)
+        private bool GetSkill(int iconUid)
         {
-            return QuickSlotDatas.Any(data => data.Value.Uid == dropIconUid && data.Value.IconType == (int)IconConstants.Type.SkillPassive);
+            return QuickSlotDatas.Any(data => data.Value.Uid == iconUid && data.Value.IconType == (int)IconConstants.Type.Skill);
+        }
+        private bool GetSkillPassive(int iconUid)
+        {
+            return QuickSlotDatas.Any(data => data.Value.Uid == iconUid && data.Value.IconType == (int)IconConstants.Type.SkillPassive);
         }
 
-        public int CheckSkillPassive(int dropIconUid)
+
+        public int CheckSkill(int iconUid)
         {
-            if (!GetSkillPassive(dropIconUid)) return -1;
-            int slotIndex = QuickSlotDatas.FirstOrDefault(data => data.Value.Uid == dropIconUid && data.Value.IconType == (int)IconConstants.Type.SkillPassive).Key;
+            if (!GetSkill(iconUid)) return -1;
+            int slotIndex = QuickSlotDatas.FirstOrDefault(data => data.Value.Uid == iconUid && data.Value.IconType == (int)IconConstants.Type.Skill).Key;
+            Remove(slotIndex);
+            return slotIndex;
+        }
+        
+        public int CheckSkillPassive(int iconUid)
+        {
+            if (!GetSkillPassive(iconUid)) return -1;
+            int slotIndex = QuickSlotDatas.FirstOrDefault(data => data.Value.Uid == iconUid && data.Value.IconType == (int)IconConstants.Type.SkillPassive).Key;
             Remove(slotIndex);
             return slotIndex;
         }

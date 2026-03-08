@@ -42,7 +42,7 @@
             TcgFieldPlayer,
             TcgBattleHud,
             BattleHudMonster,
-            PassiveSkill,
+            SkillPassive,
         }
         public const string TitleHeaderCommon = "[공통속성]";
         public const string TitleHeaderIndividual = "[개별속성]";

@@ -508,5 +508,10 @@ namespace GGemCo2DCore
             if (!useCanvasGroup) return;
             _canvasGroup.alpha = alpha;
         }
+
+        public void ChangeIconType(IconConstants.Type iconType)
+        {
+            IconType = iconType;
+        }
     }
 }
