@@ -138,6 +138,37 @@ namespace GGemCo2DCore
             }
             if (damage <= 0) return;
 
+            bool suppressHitReactionByGuard = false;
+            bool hasGuardFeedbackText = false;
+            var guardResolver = _characterBase.GetComponent<IIncomingHitGuardResolver>();
+            if (guardResolver != null)
+            {
+                metadataDamage.damage = damage;
+                if (guardResolver.TryResolveIncomingHit(metadataDamage, out var guardResult) && guardResult.IsResolved)
+                {
+                    damage = guardResult.RemainingDamage < 0 ? 0 : guardResult.RemainingDamage;
+                    suppressHitReactionByGuard = guardResult.SuppressHitReaction;
+
+                    if (!string.IsNullOrEmpty(guardResult.FeedbackText))
+                    {
+                        MetadataDamageText guardText = new MetadataDamageText
+                        {
+                            Damage = 0,
+                            Color = guardResult.FeedbackColor == default ? Color.cyan : guardResult.FeedbackColor,
+                            SpecialDamageText = guardResult.FeedbackText,
+                            WorldPosition = damageTextPosition,
+                        };
+                        SceneGame.Instance.damageTextManager.ShowDamageText(guardText);
+                        hasGuardFeedbackText = true;
+                    }
+                }
+            }
+
+            if (damage <= 0)
+            {
+                return;
+            }
+
             // Item Bonus HP(소모형 추가 최대 HP)부터 먼저 차감
             //  - 0이 되면 즉시 소멸(외부에서 UI/저장 갱신 처리)
             long remainingDamage = _characterBase.ConsumeHpTempItem(damage);
@@ -162,13 +193,16 @@ namespace GGemCo2DCore
             {
                 damageTextColor = _textColorDamagePlayer;
             }
-            MetadataDamageText metadataDamageText2 = new MetadataDamageText
+            if (!hasGuardFeedbackText)
             {
-                Damage = damage,
-                Color = damageTextColor,
-                WorldPosition = damageTextPosition
-            };
-            SceneGame.Instance.damageTextManager.ShowDamageText(metadataDamageText2);
+                MetadataDamageText metadataDamageText2 = new MetadataDamageText
+                {
+                    Damage = damage,
+                    Color = damageTextColor,
+                    WorldPosition = damageTextPosition
+                };
+                SceneGame.Instance.damageTextManager.ShowDamageText(metadataDamageText2);
+            }
             
             if (remainHp <= 0)
             {
@@ -179,7 +213,7 @@ namespace GGemCo2DCore
             }
             else
             {
-                bool shouldPlayDamageReaction = true;
+                bool shouldPlayDamageReaction = !suppressHitReactionByGuard;
                 CharacterConstants.HitReactionType hitReactionType = CharacterConstants.HitReactionType.None;
                 
                 // StaggerResistanceController가 있고, 이번 타격이 스태거 판정에 관여하는 경우에만
