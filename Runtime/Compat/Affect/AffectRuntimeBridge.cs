@@ -282,5 +282,31 @@ namespace GGemCo2DCore
             if (t == null) return null;
             return go.GetComponent(t);
         }
+
+        public static bool HasAffect(GameObject go, int affectUid)
+        {
+            if (go == null || affectUid <= 0)
+                return false;
+
+            EnsureAffectSystem(go);
+
+            var affectComp = GetAffectComponent(go);
+            if (affectComp == null)
+                return false;
+
+            var method = affectComp.GetType().GetMethod("HasAffect", BindingFlags.Instance | BindingFlags.Public);
+            if (method == null)
+                return false;
+
+            try
+            {
+                object result = method.Invoke(affectComp, new object[] { affectUid });
+                return result is bool has && has;
+            }
+            catch
+            {
+                return false;
+            }
+        }
     }
 }

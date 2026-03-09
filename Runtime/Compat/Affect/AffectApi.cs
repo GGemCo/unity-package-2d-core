@@ -59,5 +59,9 @@ namespace GGemCo2DCore
         {
             AffectRuntimeBridge.NotifyOnHit(attacker, hitTarget);
         }
+        public static bool Has(GameObject target, int affectUid)
+        {
+            return AffectRuntimeBridge.HasAffect(target, affectUid);
+        }
     }
 }
