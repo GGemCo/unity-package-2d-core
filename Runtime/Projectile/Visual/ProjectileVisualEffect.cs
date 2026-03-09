@@ -52,14 +52,6 @@ namespace GGemCo2DCore
         public void OnUpdate(in ProjectileVisualUpdateContext context)
         {
             if (_effect == null) return;
-
-            // 좌우 Flip: 이동 방향 기준
-            if (context.Direction.x < -0.001f)
-                _shouldFlip = true;
-            else if (context.Direction.x > 0.001f)
-                _shouldFlip = false;
-
-            _effect.SetFlip(_shouldFlip);
         }
 
         public void OnHit(in ProjectileVisualHitContext context)
@@ -74,7 +66,6 @@ namespace GGemCo2DCore
 
                 hit.SetCreateCharacter(context.FromCharacter);
                 hit.transform.position = context.HitPosition;
-                hit.SetFlip(_shouldFlip);
             }
             else
             {
