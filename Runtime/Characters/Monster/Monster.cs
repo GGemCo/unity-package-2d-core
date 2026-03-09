@@ -67,6 +67,7 @@ namespace GGemCo2DCore
         {
             // AddComponent 순서 중요
             base.InitComponents();
+            colliderHitArea.gameObject.layer = LayerMask.NameToLayer(ConfigLayer.GetValue(ConfigLayer.Keys.MonsterHitArea));
             
             // 순서 중요. ControllerMonster 에서 콜라이더를 사용
             _controllerMonster = gameObject.AddComponent<ControllerMonster>();

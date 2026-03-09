@@ -12,8 +12,7 @@ namespace GGemCo2DCore
     {
         /// <summary>
         /// Capsule Overlap 결과를 results 배열에 채우고, 채워진 개수를 반환합니다.
-        /// Unity 6+: OverlapCapsule(ContactFilter2D, Collider2D[]) 경로 사용
-        /// 이전: OverlapCapsuleNonAlloc(layerMask/minDepth/maxDepth) 경로 사용
+        /// 필터 없이 전체를 검색합니다.
         /// </summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static int OverlapCapsuleNonAlloc(
@@ -27,21 +26,62 @@ namespace GGemCo2DCore
                 return 0;
 
             var filter = CompatContactFilter2D.CreateNoFilter();
+            return OverlapCapsuleNonAlloc(point, size, direction, angle, filter, results);
+        }
+
+        /// <summary>
+        /// Capsule Overlap 결과를 results 배열에 채우고, 채워진 개수를 반환합니다.
+        /// ContactFilter2D를 통해 Layer / Depth / Trigger 정책을 전달할 수 있습니다.
+        /// Unity 6+: OverlapCapsule(ContactFilter2D, Collider2D[]) 경로 사용
+        /// 이전: OverlapCapsuleNonAlloc(layerMask/minDepth/maxDepth) 경로 사용
+        /// </summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static int OverlapCapsuleNonAlloc(
+            Vector2 point,
+            Vector2 size,
+            CapsuleDirection2D direction,
+            float angle,
+            ContactFilter2D contactFilter,
+            Collider2D[] results)
+        {
+            if (results == null || results.Length == 0)
+                return 0;
+
 #if UNITY_6000_0_OR_NEWER
-            // Unity 6에서는 ContactFilter2D + 배열에 결과를 채우고 개수를 반환하는 형태를 사용
-            // (사용자 코드에서 이미 이 오버로드를 사용 중)
-            return Physics2D.OverlapCapsule(point, size, direction, angle, filter, results);
+            return Physics2D.OverlapCapsule(point, size, direction, angle, contactFilter, results);
 #else
-            // 구버전: NonAlloc + layerMask/minDepth/maxDepth 기반
-            // OverlapCapsuleNonAlloc는 results 배열에 채운 개수를 반환합니다. :contentReference[oaicite:0]{index=0}
-            int layerMask = filter.useLayerMask ? filter.layerMask : Physics2D.AllLayers;
+            int layerMask = contactFilter.useLayerMask ? contactFilter.layerMask : Physics2D.AllLayers;
 
-            // Depth 옵션을 쓰지 않으면 전체로
-            float minDepth = filter.useDepth ? filter.minDepth : float.NegativeInfinity;
-            float maxDepth = filter.useDepth ? filter.maxDepth : float.PositiveInfinity;
+            float minDepth = contactFilter.useDepth ? contactFilter.minDepth : float.NegativeInfinity;
+            float maxDepth = contactFilter.useDepth ? contactFilter.maxDepth : float.PositiveInfinity;
 
-            return Physics2D.OverlapCapsuleNonAlloc(point, size, direction, angle, results, layerMask, minDepth, maxDepth);
+            // NOTE:
+            // 구버전 OverlapCapsuleNonAlloc는 ContactFilter2D의 모든 세부 옵션을 직접 반영하지 못할 수 있습니다.
+            // 현재는 layerMask / depth 중심으로 degrade 합니다.
+            return Physics2D.OverlapCapsuleNonAlloc(
+                point,
+                size,
+                direction,
+                angle,
+                results,
+                layerMask,
+                minDepth,
+                maxDepth);
 #endif
+        }
+
+        /// <summary>
+        /// LayerMask 기반 ContactFilter2D 생성 헬퍼.
+        /// </summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static ContactFilter2D CreateLayerFilter(
+            LayerMask layerMask,
+            bool useTriggers = true)
+        {
+            var filter = CompatContactFilter2D.CreateNoFilter();
+            filter.SetLayerMask(layerMask);
+            filter.useTriggers = useTriggers;
+            return filter;
         }
 
         /// <summary>
@@ -63,22 +103,17 @@ namespace GGemCo2DCore
                 return 0;
 
 #if UNITY_6000_0_OR_NEWER
-            // Unity 6: int를 반환하며 results 배열에 채움
             return Physics2D.BoxCast(origin, size, angle, direction, contactFilter, results, distance);
 #else
-            // 구버전: NonAlloc + layerMask/minDepth/maxDepth 기반
             int layerMask = contactFilter.useLayerMask ? contactFilter.layerMask : Physics2D.AllLayers;
 
             float minDepth = contactFilter.useDepth ? contactFilter.minDepth : float.NegativeInfinity;
             float maxDepth = contactFilter.useDepth ? contactFilter.maxDepth : float.PositiveInfinity;
 
-            // NOTE:
-            // 구버전 BoxCastNonAlloc는 ContactFilter2D의 "노멀 각도" 등의 세부 필터를 직접 지원하지 않습니다.
-            // (현재 사용처가 벽 감지용이라 layer/depth 필터만으로도 충분한 케이스가 대부분)
             return Physics2D.BoxCastNonAlloc(origin, size, angle, direction, results, distance, layerMask, minDepth, maxDepth);
 #endif
         }
-        
+
         /// <summary>
         /// Collider2D 오브젝트 기준 오버랩을 results 배열에 채우고, 채워진 개수를 반환합니다.
         /// Unity 6+: Collider2D.Overlap(ContactFilter2D, Collider2D[]) 사용
@@ -94,7 +129,6 @@ namespace GGemCo2DCore
                 return 0;
 
 #if UNITY_6000_0_OR_NEWER
-            // Unity 6+: OverlapCollider -> Overlap 로 변경됨
             return collider.Overlap(contactFilter, results);
 #else
             return collider.OverlapCollider(contactFilter, results);

@@ -29,6 +29,9 @@ namespace GGemCo2DCore
 
         public Action<long> OnItemBonusHpChangedSave;
 
+        private ContactFilter2D _attackHitFilter;
+        private int _monsterHitAreaLayerMask;
+        
         protected override void Awake()
         {
             onEventDeadByEndGround = new UnityEvent();
@@ -36,6 +39,13 @@ namespace GGemCo2DCore
             IsUseSkill = true;
             _playerSettings = AddressableLoaderSettings.Instance.playerSettings;
             _collider2Ds = new Collider2D[CountCollider];
+        
+            _monsterHitAreaLayerMask = LayerMask.GetMask(
+                ConfigLayer.GetValue(ConfigLayer.Keys.MonsterHitArea));
+
+            _attackHitFilter = CompatPhysics2D.CreateLayerFilter(
+                _monsterHitAreaLayerMask,
+                true);
             base.Awake();
             _playerUIController = new PlayerUIController();
             _playerUIController.Initialize(this);
@@ -293,6 +303,7 @@ namespace GGemCo2DCore
             
             CharacterAnimationController.ChangeCharacterImageInSlot(partIndex);
         }
+        
         /// <summary>
         /// attack 이벤트 처리 
         /// </summary>
@@ -315,17 +326,18 @@ namespace GGemCo2DCore
             
             int countDamageMonster = 0;
             
-            // ContactFilter2D.noFilter 사용 (필요하면 레이어/트리거 정책을 별도 생성해서 전달)
-            int hitCount = CompatPhysics2D.OverlapCapsuleNonAlloc(
-                point, size, colliderAttackRange.direction, 0f,
-                _collider2Ds);
+            // 몬스터의 HitArea를 체크하기 위해 _monsterHitAreaLayerMask 적용 중
+            int hitCount = CompatPhysics2D.OverlapCapsuleNonAlloc(point, size, colliderAttackRange.direction,
+                0f, _attackHitFilter, _collider2Ds);
             
             for (int i = 0; i < hitCount; i++)
             {
                 Collider2D hit = _collider2Ds[i];
-                if (!hit || !hit.CompareTag(ConfigTags.GetValue(ConfigTags.Keys.Monster))) continue;
+                // if (!hit || !hit.CompareTag(ConfigTags.GetValue(ConfigTags.Keys.Monster))) continue;
                 CharacterHitArea characterHitArea = hit.GetComponent<CharacterHitArea>();
                 if (characterHitArea == null) continue;
+                if (characterHitArea.target == null) continue;
+                if (characterHitArea.target == this) continue;
                 
                 // GcLogger.Log("Player attacked the monster after animation!");
                 CharacterBase monster = characterHitArea.target;
