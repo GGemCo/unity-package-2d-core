@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using GGemCo2DCore;
+using UnityEditor;
 using UnityEngine;
 
 namespace GGemCo2DCoreEditor
@@ -29,6 +30,10 @@ namespace GGemCo2DCoreEditor
             T tableData;
             try
             {
+                if (forceReload)
+                {
+                    AssetDatabase.ImportAsset(filePath, ImportAssetOptions.ForceUpdate);
+                }
                 var content = AssetDatabaseLoaderManager.LoadFileText(filePath);
                 if (string.IsNullOrEmpty(content))
                 {
