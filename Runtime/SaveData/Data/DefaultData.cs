@@ -50,6 +50,11 @@ namespace GGemCo2DCore
         {
             InstanceId = instanceId;
         }
+
+        public void SetIsLearn(bool isLearn)
+        {
+            IsLearned = isLearn;
+        }
     }
 
     /// <summary>
