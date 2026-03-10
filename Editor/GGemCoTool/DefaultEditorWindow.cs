@@ -10,7 +10,8 @@ namespace GGemCo2DCoreEditor
     /// <summary>
     /// GGemCo 에디터 툴 윈도우들이 공통으로 사용하는 기본 베이스 EditorWindow 입니다.
     /// 테이블 로더(TableLoaderManager)와 패키지 타입(packageType)을 초기화하고,
-    /// Hierarchy 오브젝트 생성/컴포넌트 추가, 씬 생성 및 Build Settings 등록, 프리팹 검색 등의 유틸을 제공합니다.
+    /// Hierarchy 오브젝트 생성/컴포넌트 추가, 씬 생성 및 Build Settings 등록, 프리팹 검색,
+    /// 런타임 CharacterBase 대상 선택 UI를 제공합니다.
     /// </summary>
     public class DefaultEditorWindow : EditorWindow
     {
@@ -19,6 +20,27 @@ namespace GGemCo2DCoreEditor
         /// GameObject 이름 생성/루트 패키지 오브젝트 구성에 사용됩니다.
         /// </summary>
         protected ConfigPackageInfo.PackageType packageType;
+
+        /// <summary>
+        /// 공통 대상 캐릭터입니다.
+        /// 런타임 테스트 툴에서 직접 대상 지정/ObjectField/Popup 선택에 공통 사용됩니다.
+        /// </summary>
+        protected CharacterBase selectedCharacter;
+
+        /// <summary>
+        /// 현재 씬에서 찾은 CharacterBase 목록입니다.
+        /// </summary>
+        protected readonly List<CharacterBase> sceneCharacters = new();
+
+        /// <summary>
+        /// 팝업 표시용 캐릭터 이름 목록입니다.
+        /// </summary>
+        protected readonly List<string> sceneCharacterNames = new();
+
+        /// <summary>
+        /// 현재 팝업 선택 인덱스입니다.
+        /// </summary>
+        protected int selectedCharacterIndex;
 
         /// <summary>
         /// 에디터 윈도우가 활성화될 때 공용 의존성을 초기화합니다.
@@ -185,6 +207,174 @@ namespace GGemCo2DCoreEditor
                 ImportAssetOptions.ForceUpdate | ImportAssetOptions.ForceSynchronousImport);
 
             return AssetDatabase.LoadAssetAtPath<GameObject>(assetPath);
+        }
+
+        /// <summary>
+        /// 현재 Hierarchy 선택에서 CharacterBase를 찾아 공통 대상 캐릭터로 지정합니다.
+        /// </summary>
+        /// <param name="dialogTitle">실패 시 표시할 다이얼로그 제목입니다.</param>
+        /// <returns>지정 성공 시 true, 실패 시 false를 반환합니다.</returns>
+        protected bool TryAssignCharacterFromSelection(string dialogTitle)
+        {
+            var go = Selection.activeGameObject;
+            if (go == null)
+            {
+                EditorUtility.DisplayDialog(dialogTitle, "Hierarchy에서 대상 오브젝트를 선택해주세요.", "OK");
+                return false;
+            }
+
+            if (!go.TryGetComponent<CharacterBase>(out var character))
+                character = go.GetComponentInParent<CharacterBase>();
+
+            if (character == null)
+            {
+                EditorUtility.DisplayDialog(dialogTitle, "선택한 오브젝트에서 CharacterBase를 찾지 못했습니다.", "OK");
+                return false;
+            }
+
+            selectedCharacter = character;
+            SyncSelectedCharacterIndex();
+            Repaint();
+            OnSelectedCharacterChanged(character);
+            return true;
+        }
+
+        /// <summary>
+        /// 현재 씬에서 CharacterBase를 다시 수집합니다.
+        /// </summary>
+        protected void RefreshSceneCharacters()
+        {
+            sceneCharacters.Clear();
+            sceneCharacterNames.Clear();
+
+            if (!Application.isPlaying)
+                return;
+
+#if UNITY_2023_1_OR_NEWER
+            var characters = Object.FindObjectsByType<CharacterBase>(FindObjectsInactive.Exclude, FindObjectsSortMode.None);
+#else
+            var characters = Object.FindObjectsOfType<CharacterBase>();
+#endif
+            foreach (var character in characters)
+            {
+                if (character == null)
+                    continue;
+
+                sceneCharacters.Add(character);
+                sceneCharacterNames.Add($"{character.name} (id:{character.GetInstanceID()})");
+            }
+
+            selectedCharacterIndex = Mathf.Clamp(selectedCharacterIndex, 0, Mathf.Max(0, sceneCharacters.Count - 1));
+
+            if (sceneCharacters.Count <= 0)
+            {
+                selectedCharacter = null;
+                return;
+            }
+
+            if (selectedCharacter == null)
+            {
+                selectedCharacter = sceneCharacters[selectedCharacterIndex];
+                OnSelectedCharacterChanged(selectedCharacter);
+                return;
+            }
+
+            SyncSelectedCharacterIndex();
+        }
+
+        /// <summary>
+        /// 공통 대상 캐릭터와 팝업 인덱스를 동기화합니다.
+        /// </summary>
+        protected void SyncSelectedCharacterIndex()
+        {
+            if (selectedCharacter == null || sceneCharacters.Count <= 0)
+                return;
+
+            int index = sceneCharacters.IndexOf(selectedCharacter);
+            if (index >= 0)
+                selectedCharacterIndex = index;
+        }
+
+        /// <summary>
+        /// CharacterBase 선택 공통 UI를 그립니다.
+        /// </summary>
+        /// <param name="dialogTitle">Selection 지정 실패 시 표시할 다이얼로그 제목입니다.</param>
+        /// <param name="sectionTitle">섹션 제목입니다.</param>
+        protected void DrawCharacterSelectionSection(string dialogTitle, string sectionTitle = "대상 캐릭터")
+        {
+            using (new EditorGUILayout.VerticalScope(EditorStyles.helpBox))
+            {
+                EditorGUILayout.LabelField(sectionTitle, EditorStyles.boldLabel);
+
+                using (new EditorGUI.DisabledScope(!Application.isPlaying))
+                {
+                    using (new EditorGUILayout.HorizontalScope())
+                    {
+                        if (GUILayout.Button("현재 선택 오브젝트로 지정", GUILayout.Height(22)))
+                            TryAssignCharacterFromSelection(dialogTitle);
+
+                        if (GUILayout.Button("씬 캐릭터 목록 새로고침", GUILayout.Height(22)))
+                            RefreshSceneCharacters();
+                    }
+
+                    if (sceneCharacterNames.Count == 0)
+                    {
+                        EditorGUILayout.HelpBox("씬에서 CharacterBase를 찾지 못했습니다. (비활성 오브젝트는 제외됩니다)", MessageType.Info);
+                    }
+                    else
+                    {
+                        selectedCharacterIndex = Mathf.Clamp(selectedCharacterIndex, 0, sceneCharacterNames.Count - 1);
+                        int newIndex = EditorGUILayout.Popup("캐릭터 목록", selectedCharacterIndex, sceneCharacterNames.ToArray());
+                        if (newIndex != selectedCharacterIndex)
+                        {
+                            selectedCharacterIndex = newIndex;
+                            selectedCharacter = sceneCharacters[selectedCharacterIndex];
+                            OnSelectedCharacterChanged(selectedCharacter);
+                        }
+                    }
+
+                    var newCharacter = (CharacterBase)EditorGUILayout.ObjectField("대상(직접 지정)", selectedCharacter, typeof(CharacterBase), true);
+                    if (newCharacter != selectedCharacter)
+                    {
+                        selectedCharacter = newCharacter;
+                        SyncSelectedCharacterIndex();
+                        OnSelectedCharacterChanged(selectedCharacter);
+                    }
+
+                    if (selectedCharacter != null)
+                        EditorGUILayout.LabelField("대상 이름", selectedCharacter.name);
+                }
+            }
+        }
+
+        /// <summary>
+        /// 공통 대상 캐릭터가 변경되었을 때 하위 클래스가 후처리할 수 있는 훅입니다.
+        /// </summary>
+        protected virtual void OnSelectedCharacterChanged(CharacterBase character)
+        {
+        }
+
+        protected void DrawPlayModeGate()
+        {
+            using (new EditorGUILayout.VerticalScope(EditorStyles.helpBox))
+            {
+                EditorGUILayout.LabelField("실행 조건", EditorStyles.boldLabel);
+
+                if (!Application.isPlaying)
+                {
+                    EditorGUILayout.HelpBox("Play Mode에서만 동작합니다.", MessageType.Warning);
+                    return;
+                }
+
+                if (!SceneGame.Instance)
+                {
+                    EditorGUILayout.HelpBox("SceneGame.Instance를 찾지 못했습니다. 게임 씬이 로드되어 있는지 확인해주세요.", MessageType.Warning);
+                }
+                else
+                {
+                    EditorGUILayout.HelpBox("Play Mode에서 동작 중입니다.", MessageType.Info);
+                }
+            }
         }
     }
 }
