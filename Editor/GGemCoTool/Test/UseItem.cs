@@ -261,53 +261,38 @@ namespace GGemCo2DCoreEditor
         }
         private void RebuildDropdown()
         {
-            _dropDownOptions.Clear();
+            RebuildDropdownOptions(
+                source: _dictionary?.Values,
+                targetOptions: _dropDownOptions,
+                isValidRow: row => row.Uid > 0,
+                keySelector: row => row.Uid.ToString(),
+                valueSelector: row =>
+                {
+                    bool hasUse = _tableItemUse != null
+                                  && _tableItemUse.TryGetByItemUid(row.Uid, out var useGroup)
+                                  && useGroup != null;
 
-            if (_tableItem == null)
-            {
-                _selectedData = null;
-                return;
-            }
+                    var mark = hasUse ? "[Use]" : "[NoUse]";
+                    return $"{mark} {row.Name}";
+                },
+                assignSelected: row => _selectedData = row,
+                filter: row =>
+                {
+                    if (_showAllItems)
+                        return true;
 
-            var datas = _tableItem.GetDatas();
-            foreach (var kv in datas)
-            {
-                var row = kv.Value;
-                if (row == null || row.Uid <= 0) continue;
-
-                bool hasUse = _tableItemUse != null && _tableItemUse.TryGetByItemUid(row.Uid, out var useGroup) && useGroup != null;
-                if (!_showAllItems && !hasUse) continue;
-
-                var mark = hasUse ? "[Use]" : "[NoUse]";
-
-                // Key(Uid) + Value(Name) 형태로 표시되며, 검색은 Key/Value 모두 지원
-                _dropDownOptions.Add(new SearchableDropdownUtility.Option<StruckTableItem>(
-                    key: row.Uid.ToString(),
-                    value: $"{mark} {row.Name}",
-                    data: row));
-            }
-
-            _selectedData = _dropDownOptions[0].Data;
+                    return _tableItemUse != null
+                           && _tableItemUse.TryGetByItemUid(row.Uid, out var useGroup)
+                           && useGroup != null;
+                });
         }
         
         private void DrawReloadSection()
         {
-            using (new EditorGUILayout.VerticalScope(EditorStyles.helpBox))
-            {
-                EditorGUILayout.LabelField("테이블 재로딩", EditorStyles.boldLabel);
-
-                using (new EditorGUI.DisabledScope(!Application.isPlaying))
-                {
-                    if (GUILayout.Button("item / item_use / item_use_action 재로딩", GUILayout.Height(24)))
-                    {
-                        ReloadAllTables();
-                        RefreshSceneCharacters();
-                    }
-                }
-
-                if (!string.IsNullOrEmpty(_lastReloadMessage))
-                    EditorGUILayout.HelpBox(_lastReloadMessage, MessageType.Info);
-            }
+            DrawTableReloadSection(
+                _lastReloadMessage,
+                "item / item_use / item_use_action 재로딩",
+                ReloadAllTables);
         }
     }
 }

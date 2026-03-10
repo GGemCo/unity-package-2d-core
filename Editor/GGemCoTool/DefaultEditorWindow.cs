@@ -1,9 +1,11 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using GGemCo2DCore;
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
+using Object = UnityEngine.Object;
 
 namespace GGemCo2DCoreEditor
 {
@@ -375,6 +377,74 @@ namespace GGemCo2DCoreEditor
                     EditorGUILayout.HelpBox("Play Mode에서 동작 중입니다.", MessageType.Info);
                 }
             }
+        }
+        
+        /// <summary>
+        /// 테이블 재로딩 섹션을 공통 UI로 그립니다.
+        /// 하위 클래스는 실제 재로딩 로직과 버튼 라벨만 제공하면 됩니다.
+        /// </summary>
+        /// <param name="lastReloadMessage">최근 재로딩 결과 메시지</param>
+        /// <param name="buttonLabel">재로딩 버튼 라벨</param>
+        /// <param name="reloadAction">실제 재로딩 처리</param>
+        protected void DrawTableReloadSection(string lastReloadMessage, string buttonLabel, System.Action reloadAction)
+        {
+            using (new EditorGUILayout.VerticalScope(EditorStyles.helpBox))
+            {
+                EditorGUILayout.LabelField("테이블 재로딩", EditorStyles.boldLabel);
+
+                if (GUILayout.Button(buttonLabel, GUILayout.Height(24)))
+                    ExecuteTableReload(reloadAction);
+
+                if (!string.IsNullOrEmpty(lastReloadMessage))
+                    EditorGUILayout.HelpBox(lastReloadMessage, MessageType.Info);
+            }
+        }
+        /// <summary>
+        /// 테이블 재로딩의 공통 실행 흐름을 처리합니다.
+        /// 성공/실패 메시지 저장은 콜백 내부에서 수행합니다.
+        /// </summary>
+        /// <param name="reloadAction">실제 재로딩 처리</param>
+        protected void ExecuteTableReload(System.Action reloadAction)
+        {
+            reloadAction?.Invoke();
+            Repaint();
+        }
+        protected void RebuildDropdownOptions<TRow>(
+            IEnumerable<TRow> source,
+            List<SearchableDropdownUtility.Option<TRow>> targetOptions,
+            Func<TRow, bool> isValidRow,
+            Func<TRow, string> keySelector,
+            Func<TRow, string> valueSelector,
+            Action<TRow> assignSelected,
+            Func<TRow, bool> filter = null)
+            where TRow : class
+        {
+            targetOptions.Clear();
+
+            if (source == null)
+            {
+                assignSelected?.Invoke(null);
+                return;
+            }
+
+            foreach (var row in source)
+            {
+                if (row == null)
+                    continue;
+
+                if (isValidRow != null && !isValidRow(row))
+                    continue;
+
+                if (filter != null && !filter(row))
+                    continue;
+
+                targetOptions.Add(new SearchableDropdownUtility.Option<TRow>(
+                    key: keySelector(row),
+                    value: valueSelector(row),
+                    data: row));
+            }
+
+            assignSelected?.Invoke(targetOptions.Count > 0 ? targetOptions[0].Data : null);
         }
     }
 }
