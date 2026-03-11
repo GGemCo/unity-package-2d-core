@@ -349,6 +349,57 @@ namespace GGemCo2DCoreEditor
             }
         }
 
+
+        /// <summary>
+        /// 지정한 CharacterBase를 기준으로 테스트용 더미 Target을 생성하거나 기존 더미를 재사용합니다.
+        /// </summary>
+        protected bool TryCreateOrReuseDummyTargetCharacter(
+            string dialogTitle,
+            CharacterBase sourceCharacter,
+            out CharacterBase dummyCharacter,
+            string toolOwnerKey = null,
+            string dummyName = null,
+            Vector3? spawnPosition = null,
+            Vector3? spawnOffset = null)
+        {
+            dummyCharacter = null;
+
+            var options = new CharacterTestDummyFactory.CreateOptions
+            {
+                ToolOwnerKey = string.IsNullOrEmpty(toolOwnerKey) ? GetType().FullName : toolOwnerKey,
+                DummyName = string.IsNullOrEmpty(dummyName) ? "CharacterTest_DummyTarget" : dummyName,
+                SpawnPosition = spawnPosition,
+                SpawnOffset = spawnOffset ?? new Vector3(150f, 0f, 0f)
+            };
+
+            if (CharacterTestDummyFactory.TryCreateOrReuseDummyTarget(sourceCharacter, options, out dummyCharacter, out var error))
+                return true;
+
+            EditorUtility.DisplayDialog(dialogTitle, error, "OK");
+            return false;
+        }
+
+        /// <summary>
+        /// 현재 선택된 공통 대상 캐릭터(<see cref="selectedCharacter"/>)를 기준으로 테스트용 더미 Target을 생성하거나 재사용합니다.
+        /// </summary>
+        protected bool TryCreateOrReuseDummyTargetCharacter(
+            string dialogTitle,
+            out CharacterBase dummyCharacter,
+            string toolOwnerKey = null,
+            string dummyName = null,
+            Vector3? spawnPosition = null,
+            Vector3? spawnOffset = null)
+        {
+            return TryCreateOrReuseDummyTargetCharacter(
+                dialogTitle,
+                selectedCharacter,
+                out dummyCharacter,
+                toolOwnerKey,
+                dummyName,
+                spawnPosition,
+                spawnOffset);
+        }
+
         /// <summary>
         /// 공통 대상 캐릭터가 변경되었을 때 하위 클래스가 후처리할 수 있는 훅입니다.
         /// </summary>

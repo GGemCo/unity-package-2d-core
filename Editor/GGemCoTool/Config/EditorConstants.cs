@@ -1,7 +1,11 @@
-﻿namespace GGemCo2DCoreEditor
+﻿using UnityEngine;
+
+namespace GGemCo2DCoreEditor
 {
     public static class EditorConstants
     {
+        public static GUILayoutOption GUILayoutButtonHeight22 => GUILayout.Height(22);
+        
         public static class SearchableDropdownUtility
         {
             // SearchableDropdownUtility 에서 디폴트 MaxVisibleItems 값
