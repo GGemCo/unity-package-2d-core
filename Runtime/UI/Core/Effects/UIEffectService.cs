@@ -5,224 +5,114 @@ using UnityEngine;
 namespace GGemCo2DCore
 {
     /// <summary>
-    /// UI 효과 실행 진입점입니다.
-    /// 프리셋을 해석하여 기존 Fade/Move 유틸리티와 Scale/Shake 유틸리티를 조합해 재생합니다.
+    /// UIEffectPreset을 해석하여 공용 UI 연출을 실행하는 서비스입니다.
     /// </summary>
     public static class UIEffectService
     {
-        public static bool Play(MonoBehaviour runner, GameObject target, UIEffectPreset preset, Action onComplete = null)
+        public static Coroutine Play(MonoBehaviour runner, UIEffectTarget target, UIEffectPreset preset, Action onComplete = null)
         {
             if (runner == null || target == null || preset == null)
-                return false;
-
-            var effectTarget = UIEffectTarget.GetOrAdd(target);
-            if (effectTarget == null)
-                return false;
-
-            runner.StartCoroutine(PlayRoutine(runner, effectTarget, preset, onComplete));
-            return true;
-        }
-
-        public static bool PlayWindow(
-            MonoBehaviour runner,
-            GameObject target,
-            bool show,
-            UIEffectPreset openPreset,
-            UIEffectPreset closePreset,
-            Action<bool> onComplete = null)
-        {
-            if (runner == null || target == null)
-                return false;
-
-            var effectTarget = UIEffectTarget.GetOrAdd(target);
-            if (effectTarget == null)
-                return false;
-
-            if (show)
             {
-                var preset = openPreset != null ? openPreset : UIEffectPreset.WindowOpenFallback;
-                if (!target.activeSelf)
-                    target.SetActive(true);
-
-                runner.StartCoroutine(PlayWindowOpenRoutine(runner, effectTarget, preset, () => onComplete?.Invoke(true)));
-                return true;
+                onComplete?.Invoke();
+                return null;
             }
 
-            var close = closePreset != null ? closePreset : UIEffectPreset.WindowCloseFallback;
-            runner.StartCoroutine(PlayWindowCloseRoutine(runner, effectTarget, close, () => onComplete?.Invoke(false)));
-            return true;
-        }
-
-        public static void PlayHudResource(
-            MonoBehaviour runner,
-            GameObject target,
-            UIEffectContext context,
-            UIEffectPreset increasePreset,
-            UIEffectPreset decreasePreset,
-            UIEffectPreset maxChangedPreset)
-        {
-            if (runner == null || target == null || context.IsInitial)
-                return;
-
-            if (context.HasCurrentDecrease)
-            {
-                Play(runner, target, decreasePreset != null ? decreasePreset : UIEffectPreset.ResourceDecreaseFallback);
-                return;
-            }
-
-            if (context.HasCurrentIncrease)
-            {
-                Play(runner, target, increasePreset != null ? increasePreset : UIEffectPreset.ResourceIncreaseFallback);
-                return;
-            }
-
-            if (context.HasTotalChanged)
-            {
-                Play(runner, target, maxChangedPreset != null ? maxChangedPreset : UIEffectPreset.ResourceMaxChangedFallback);
-            }
-        }
-
-        public static void PlayCooldownCompleted(MonoBehaviour runner, GameObject target, UIEffectPreset preset = null)
-        {
-            if (runner == null || target == null)
-                return;
-
-            Play(runner, target, preset != null ? preset : UIEffectPreset.CooldownCompletedFallback);
+            target.AutoBind();
+            return runner.StartCoroutine(PlayRoutine(runner, target, preset, onComplete));
         }
 
         private static IEnumerator PlayRoutine(MonoBehaviour runner, UIEffectTarget target, UIEffectPreset preset, Action onComplete)
         {
-            if (runner == null || target == null || preset == null)
-                yield break;
-
-            var maxDuration = 0f;
-
-            if (preset.UseFade)
+            if (target == null || preset == null)
             {
-                var fadeOptions = preset.FadeOptions;
-                fadeOptions.useUnscaledTime = preset.UseUnscaledTime || fadeOptions.useUnscaledTime;
-                if (fadeOptions.startAlpha.HasValue)
-                    UiFadeUtility.FadeIn(runner, target.gameObject, preset.FadeDuration, fadeOptions, true);
-                else
-                    UiFadeUtility.FadeOut(runner, target.gameObject, preset.FadeDuration, fadeOptions, true);
-
-                maxDuration = Mathf.Max(maxDuration, GetTotalDuration(preset.FadeDuration, fadeOptions.delay));
+                onComplete?.Invoke();
+                yield break;
             }
 
-            if (preset.UseScalePulse && target.ScaleTarget != null)
+            UIEffectScaleUtility.CacheBaseScale(target.ScaleTarget);
+            UIEffectShakeUtility.CacheBasePosition(target.ShakeTarget);
+
+            float maxDuration = 0f;
+            if (preset.useFade)
             {
-                UIEffectScaleUtility.PlayPulse(
+                maxDuration = Mathf.Max(maxDuration, preset.fadeDuration);
+                var fadeOptions = UiFadeUtility.FadeOptions.Default;
+                fadeOptions.useUnscaledTime = preset.useUnscaledTime;
+                fadeOptions.startAlpha = preset.fadeStartAlpha >= 0f ? preset.fadeStartAlpha : null;
+                fadeOptions.easeType = preset.fadeEaseType;
+                fadeOptions.updateInteractableOnComplete = preset.fadeUpdateInteractableOnComplete;
+                fadeOptions.updateBlocksRaycastsOnComplete = preset.fadeUpdateBlocksRaycastsOnComplete;
+                fadeOptions.disableInputWhenInvisible = preset.fadeDisableInputWhenInvisible;
+
+                if (preset.fadeStartAlpha >= 0f && UiFadeUtility.TryGetCanvasGroup(target.gameObject, true, out var canvasGroup))
+                    canvasGroup.alpha = Mathf.Clamp01(preset.fadeStartAlpha);
+
+                if (preset.fadeTargetAlpha >= 0.5f)
+                    UiFadeUtility.FadeIn(runner, target.gameObject, preset.fadeDuration, fadeOptions, true);
+                else
+                    UiFadeUtility.FadeOut(runner, target.gameObject, preset.fadeDuration, fadeOptions, true);
+            }
+
+            if (preset.useMove && target.MoveTarget != null)
+            {
+                maxDuration = Mathf.Max(maxDuration, preset.moveDuration);
+                Vector2 basePosition = target.MoveTarget.anchoredPosition;
+                target.MoveTarget.anchoredPosition = basePosition + preset.moveFromOffset;
+                var moveOptions = MoveOptions.Default;
+                moveOptions.useUnscaledTime = preset.useUnscaledTime;
+                moveOptions.easeType = preset.moveEaseType;
+                moveOptions.snapToTargetOnComplete = preset.moveSnapToTargetOnComplete;
+                UiMoveAnchoredPosition.MoveTo(runner, target.MoveTarget, basePosition, preset.moveDuration, moveOptions);
+            }
+
+            if (preset.useScale && target.ScaleTarget != null)
+            {
+                maxDuration = Mathf.Max(maxDuration, preset.scaleDuration);
+                UIEffectScaleUtility.AnimateTo(
                     runner,
                     target.ScaleTarget,
-                    preset.PulseScale,
-                    preset.ScaleDuration,
-                    preset.UseUnscaledTime,
-                    preset.ScaleEaseType);
-                maxDuration = Mathf.Max(maxDuration, preset.ScaleDuration);
+                    preset.scaleFrom,
+                    preset.scaleTo,
+                    preset.scaleDuration,
+                    preset.useUnscaledTime,
+                    preset.scaleEaseType);
             }
 
-            if (preset.UseShake && target.ShakeTarget != null)
+            if (preset.usePunchScale && target.ScaleTarget != null)
             {
-                UIEffectShakeUtility.PlayAnchoredPositionShake(
+                maxDuration = Mathf.Max(maxDuration, preset.punchDuration);
+                UIEffectScaleUtility.Punch(
+                    runner,
+                    target.ScaleTarget,
+                    preset.punchScale,
+                    preset.punchDuration,
+                    preset.useUnscaledTime,
+                    preset.punchEaseType);
+            }
+
+            if (preset.useShake && target.ShakeTarget != null)
+            {
+                maxDuration = Mathf.Max(maxDuration, preset.shakeDuration);
+                UIEffectShakeUtility.Shake(
                     runner,
                     target.ShakeTarget,
-                    preset.ShakeDuration,
-                    preset.ShakeStrength,
-                    preset.ShakeVibrato,
-                    preset.UseUnscaledTime,
-                    preset.ShakeEaseType);
-                maxDuration = Mathf.Max(maxDuration, preset.ShakeDuration);
+                    preset.shakeStrength,
+                    preset.shakeDuration,
+                    preset.shakeVibrato,
+                    preset.useUnscaledTime);
             }
 
             if (maxDuration > 0f)
             {
-                yield return WaitForDuration(maxDuration, preset.UseUnscaledTime);
-            }
-            else
-            {
-                yield return null;
+                float elapsed = 0f;
+                while (elapsed < maxDuration)
+                {
+                    elapsed += preset.useUnscaledTime ? Time.unscaledDeltaTime : Time.deltaTime;
+                    yield return null;
+                }
             }
 
             onComplete?.Invoke();
-        }
-
-        private static IEnumerator PlayWindowOpenRoutine(MonoBehaviour runner, UIEffectTarget target, UIEffectPreset preset, Action onComplete)
-        {
-            var maxDuration = 0f;
-            var moveTarget = target.MoveTarget;
-
-            if (preset.UseMove && moveTarget != null)
-            {
-                var endPosition = moveTarget.anchoredPosition;
-                moveTarget.anchoredPosition = endPosition + preset.MoveFromOffset;
-                UiMoveAnchoredPosition.MoveTo(runner, moveTarget, endPosition, preset.MoveDuration, preset.MoveOptions);
-                maxDuration = Mathf.Max(maxDuration, GetTotalDuration(preset.MoveDuration, preset.MoveOptions.delay));
-            }
-
-            if (preset.UseFade)
-            {
-                var fadeOptions = preset.FadeOptions;
-                fadeOptions.useUnscaledTime = preset.UseUnscaledTime || fadeOptions.useUnscaledTime;
-                UiFadeUtility.FadeIn(runner, target.gameObject, preset.FadeDuration, fadeOptions, true);
-                maxDuration = Mathf.Max(maxDuration, GetTotalDuration(preset.FadeDuration, fadeOptions.delay));
-            }
-
-            if (preset.UseScalePulse && target.ScaleTarget != null)
-            {
-                UIEffectScaleUtility.PlayPulse(runner, target.ScaleTarget, preset.PulseScale, preset.ScaleDuration, preset.UseUnscaledTime, preset.ScaleEaseType);
-                maxDuration = Mathf.Max(maxDuration, preset.ScaleDuration);
-            }
-
-            if (maxDuration > 0f)
-                yield return WaitForDuration(maxDuration, preset.UseUnscaledTime);
-            else
-                yield return null;
-
-            onComplete?.Invoke();
-        }
-
-        private static IEnumerator PlayWindowCloseRoutine(MonoBehaviour runner, UIEffectTarget target, UIEffectPreset preset, Action onComplete)
-        {
-            var maxDuration = 0f;
-            var moveTarget = target.MoveTarget;
-
-            if (preset.UseMove && moveTarget != null)
-            {
-                var startPosition = moveTarget.anchoredPosition;
-                var endPosition = startPosition + preset.MoveFromOffset;
-                UiMoveAnchoredPosition.MoveTo(runner, moveTarget, endPosition, preset.MoveDuration, preset.MoveOptions);
-                maxDuration = Mathf.Max(maxDuration, GetTotalDuration(preset.MoveDuration, preset.MoveOptions.delay));
-            }
-
-            if (preset.UseFade)
-            {
-                var fadeOptions = preset.FadeOptions;
-                fadeOptions.useUnscaledTime = preset.UseUnscaledTime || fadeOptions.useUnscaledTime;
-                UiFadeUtility.FadeOut(runner, target.gameObject, preset.FadeDuration, fadeOptions, true);
-                maxDuration = Mathf.Max(maxDuration, GetTotalDuration(preset.FadeDuration, fadeOptions.delay));
-            }
-
-            if (maxDuration > 0f)
-                yield return WaitForDuration(maxDuration, preset.UseUnscaledTime);
-            else
-                yield return null;
-
-            onComplete?.Invoke();
-        }
-
-        private static IEnumerator WaitForDuration(float duration, bool useUnscaledTime)
-        {
-            float elapsed = 0f;
-            while (elapsed < duration)
-            {
-                elapsed += useUnscaledTime ? Time.unscaledDeltaTime : Time.deltaTime;
-                yield return null;
-            }
-        }
-
-        private static float GetTotalDuration(float duration, float delay)
-        {
-            return Mathf.Max(0f, duration) + Mathf.Max(0f, delay);
         }
     }
 }

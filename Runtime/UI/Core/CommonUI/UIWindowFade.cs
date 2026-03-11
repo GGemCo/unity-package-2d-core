@@ -3,18 +3,31 @@ using UnityEngine;
 namespace GGemCo2DCore
 {
     /// <summary>
-    /// 윈도우 표시/숨김 연출을 담당하는 컴포넌트입니다.
+    /// UIWindowBase와 UIEffectPreset을 연결하는 윈도우 전환 브리지입니다.
     /// </summary>
     public class UIWindowFade : MonoBehaviour
     {
-        private UIWindowBase _uiWindowBase;
-        private bool _isTransitioning;
+        private UIWindowBase _uiWindow;
+        private UIEffectTarget _effectTarget;
+        private UIEffectPreset _openPreset;
+        private UIEffectPreset _closePreset;
+        private bool _isTransitionRunning;
 
         private void Awake()
         {
-            _uiWindowBase = GetComponent<UIWindowBase>();
-            UiFadeUtility.TryGetCanvasGroup(gameObject, true, out _);
-            UIEffectTarget.GetOrAdd(gameObject);
+            if (_uiWindow == null)
+                _uiWindow = GetComponent<UIWindowBase>();
+
+            if (_effectTarget == null)
+                _effectTarget = UIEffectTarget.GetOrAdd(gameObject);
+        }
+
+        public void Initialize(UIWindowBase windowBase, UIEffectTarget effectTarget, UIEffectPreset openPreset, UIEffectPreset closePreset)
+        {
+            _uiWindow = windowBase;
+            _effectTarget = effectTarget != null ? effectTarget : UIEffectTarget.GetOrAdd(gameObject);
+            _openPreset = openPreset;
+            _closePreset = closePreset;
         }
 
         /// <summary>
@@ -22,23 +35,20 @@ namespace GGemCo2DCore
         /// </summary>
         public void ShowPanel()
         {
-            if (_isTransitioning)
-                return;
+            if (_isTransitionRunning) return;
+            if (gameObject.activeSelf) return;
 
-            if (gameObject.activeSelf)
-                return;
-
-            _isTransitioning = true;
             gameObject.SetActive(true);
-            _uiWindowBase?.OnShow(true);
+            _uiWindow?.OnShow(true);
 
-            UIEffectService.PlayWindow(
-                this,
-                gameObject,
-                true,
-                _uiWindowBase != null ? _uiWindowBase.WindowOpenPreset : null,
-                _uiWindowBase != null ? _uiWindowBase.WindowClosePreset : null,
-                _ => { _isTransitioning = false; });
+            if (_openPreset == null)
+            {
+                UiFadeUtility.SetVisible(gameObject, true, true, true);
+                return;
+            }
+
+            _isTransitionRunning = true;
+            UIEffectService.Play(this, _effectTarget, _openPreset, () => _isTransitionRunning = false);
         }
 
         /// <summary>
@@ -46,37 +56,23 @@ namespace GGemCo2DCore
         /// </summary>
         public void HidePanel()
         {
-            if (_isTransitioning)
-                return;
+            if (_isTransitionRunning) return;
+            if (!gameObject.activeSelf) return;
 
-            if (!gameObject.activeSelf)
-                return;
-
-            _isTransitioning = true;
-            var canvasGroup = GetComponent<CanvasGroup>();
-            if (canvasGroup != null)
+            if (_closePreset == null)
             {
-                canvasGroup.interactable = false;
-                canvasGroup.blocksRaycasts = false;
+                _uiWindow?.OnShow(false);
+                gameObject.SetActive(false);
+                return;
             }
 
-            UIEffectService.PlayWindow(
-                this,
-                gameObject,
-                false,
-                _uiWindowBase != null ? _uiWindowBase.WindowOpenPreset : null,
-                _uiWindowBase != null ? _uiWindowBase.WindowClosePreset : null,
-                OnWindowClosed);
-        }
-
-        private void OnWindowClosed(bool show)
-        {
-            _isTransitioning = false;
-            if (show)
-                return;
-
-            _uiWindowBase?.OnShow(false);
-            gameObject.SetActive(false);
+            _isTransitionRunning = true;
+            UIEffectService.Play(this, _effectTarget, _closePreset, () =>
+            {
+                _isTransitionRunning = false;
+                _uiWindow?.OnShow(false);
+                gameObject.SetActive(false);
+            });
         }
     }
 }

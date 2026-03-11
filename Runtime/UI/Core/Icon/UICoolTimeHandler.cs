@@ -86,7 +86,7 @@ namespace GGemCo2DCore
 
             if (icon != null && icon.gameObject.activeInHierarchy)
             {
-                UIEffectService.PlayCooldownCompleted(icon, icon.gameObject);
+                // UIEffectService.PlayCooldownCompleted(icon, icon.gameObject);
             }
         }
 

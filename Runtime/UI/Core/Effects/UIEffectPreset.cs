@@ -1,202 +1,77 @@
-using System;
 using UnityEngine;
 
 namespace GGemCo2DCore
 {
     /// <summary>
-    /// UI 효과 프리셋 데이터입니다.
-    /// ScriptableObject 에셋으로 생성하여 윈도우/리소스 UI에서 공통으로 재사용할 수 있습니다.
+    /// 공용 UI 효과 프리셋 데이터입니다.
     /// </summary>
     [CreateAssetMenu(fileName = "UIEffectPreset", menuName = "GGemCo/UI/UI Effect Preset")]
     public sealed class UIEffectPreset : ScriptableObject
     {
-        [Header("Common")]
-        [SerializeField] private bool useUnscaledTime = true;
+        [Header("Time")]
+        [Tooltip("TimeScale 영향을 받지 않는 시간으로 효과를 재생할지 여부")]
+        public bool useUnscaledTime = true;
 
         [Header("Fade")]
-        [SerializeField] private bool useFade;
-        [SerializeField] private float fadeDuration = 0.2f;
-        [SerializeField] private UiFadeUtility.FadeOptions fadeOptions = new UiFadeUtility.FadeOptions
-        {
-            delay = 0f,
-            useUnscaledTime = true,
-            updateInteractableOnComplete = true,
-            updateBlocksRaycastsOnComplete = true,
-            disableInputWhenInvisible = true,
-            startAlpha = null,
-            easeType = Easing.EaseType.EaseOutQuintic
-        };
+        [Tooltip("Fade 효과 사용 여부")]
+        public bool useFade;
+        [Tooltip("Fade 시작 알파. 음수면 현재 값을 유지합니다.")]
+        public float fadeStartAlpha = -1f;
+        [Tooltip("Fade 목표 알파")]
+        [Range(0f, 1f)] public float fadeTargetAlpha = 1f;
+        [Tooltip("Fade 시간")]
+        public float fadeDuration = 0.2f;
+        [Tooltip("Fade 이징")]
+        public Easing.EaseType fadeEaseType = Easing.EaseType.Linear;
+        [Tooltip("Fade 완료 후 interactable 동기화 여부")]
+        public bool fadeUpdateInteractableOnComplete = true;
+        [Tooltip("Fade 완료 후 blocksRaycasts 동기화 여부")]
+        public bool fadeUpdateBlocksRaycastsOnComplete = true;
+        [Tooltip("알파가 0일 때 입력을 비활성화할지 여부")]
+        public bool fadeDisableInputWhenInvisible = true;
 
         [Header("Move")]
-        [SerializeField] private bool useMove;
-        [SerializeField] private Vector2 moveFromOffset;
-        [SerializeField] private float moveDuration = 0.22f;
-        [SerializeField] private MoveOptions moveOptions = new MoveOptions
-        {
-            delay = 0f,
-            useUnscaledTime = true,
-            easeType = Easing.EaseType.EaseOutQuintic,
-            snapToTargetOnComplete = true
-        };
+        [Tooltip("AnchoredPosition 이동 효과 사용 여부")]
+        public bool useMove;
+        [Tooltip("시작 시 적용할 오프셋")]
+        public Vector2 moveFromOffset = Vector2.zero;
+        [Tooltip("이동 시간")]
+        public float moveDuration = 0.2f;
+        [Tooltip("이동 이징")]
+        public Easing.EaseType moveEaseType = Easing.EaseType.EaseOutCubic;
+        [Tooltip("이동 종료 시 목표 위치로 스냅할지 여부")]
+        public bool moveSnapToTargetOnComplete = true;
 
-        [Header("Scale Pulse")]
-        [SerializeField] private bool useScalePulse;
-        [SerializeField] private Vector3 pulseScale = new(1.08f, 1.08f, 1f);
-        [SerializeField] private float scaleDuration = 0.16f;
-        [SerializeField] private Easing.EaseType scaleEaseType = Easing.EaseType.EaseOutBack;
+        [Header("Scale")]
+        [Tooltip("절대 스케일 애니메이션 사용 여부")]
+        public bool useScale;
+        [Tooltip("시작 스케일")]
+        public Vector3 scaleFrom = Vector3.one;
+        [Tooltip("종료 스케일")]
+        public Vector3 scaleTo = Vector3.one;
+        [Tooltip("스케일 애니메이션 시간")]
+        public float scaleDuration = 0.15f;
+        [Tooltip("스케일 애니메이션 이징")]
+        public Easing.EaseType scaleEaseType = Easing.EaseType.EaseOutCubic;
+
+        [Header("Punch")]
+        [Tooltip("펀치 스케일 효과 사용 여부")]
+        public bool usePunchScale;
+        [Tooltip("기준 스케일 대비 추가로 줄 펀치 값")]
+        public Vector3 punchScale = new Vector3(0.08f, 0.08f, 0f);
+        [Tooltip("펀치 시간")]
+        public float punchDuration = 0.15f;
+        [Tooltip("펀치 이징")]
+        public Easing.EaseType punchEaseType = Easing.EaseType.EaseOutBack;
 
         [Header("Shake")]
-        [SerializeField] private bool useShake;
-        [SerializeField] private float shakeDuration = 0.16f;
-        [SerializeField] private float shakeStrength = 10f;
-        [SerializeField] private int shakeVibrato = 10;
-        [SerializeField] private Easing.EaseType shakeEaseType = Easing.EaseType.EaseOutQuad;
-
-        public bool UseUnscaledTime => useUnscaledTime;
-        public bool UseFade => useFade;
-        public float FadeDuration => fadeDuration;
-        public UiFadeUtility.FadeOptions FadeOptions => fadeOptions;
-        public bool UseMove => useMove;
-        public Vector2 MoveFromOffset => moveFromOffset;
-        public float MoveDuration => moveDuration;
-        public MoveOptions MoveOptions => moveOptions;
-        public bool UseScalePulse => useScalePulse;
-        public Vector3 PulseScale => pulseScale;
-        public float ScaleDuration => scaleDuration;
-        public Easing.EaseType ScaleEaseType => scaleEaseType;
-        public bool UseShake => useShake;
-        public float ShakeDuration => shakeDuration;
-        public float ShakeStrength => shakeStrength;
-        public int ShakeVibrato => shakeVibrato;
-        public Easing.EaseType ShakeEaseType => shakeEaseType;
-
-        private static UIEffectPreset _windowOpenFallback;
-        private static UIEffectPreset _windowCloseFallback;
-        private static UIEffectPreset _resourceIncreaseFallback;
-        private static UIEffectPreset _resourceDecreaseFallback;
-        private static UIEffectPreset _resourceMaxChangedFallback;
-        private static UIEffectPreset _cooldownCompletedFallback;
-
-        public static UIEffectPreset WindowOpenFallback => _windowOpenFallback != null ? _windowOpenFallback : _windowOpenFallback = CreateWindowOpenFallback();
-        public static UIEffectPreset WindowCloseFallback => _windowCloseFallback != null ? _windowCloseFallback : _windowCloseFallback = CreateWindowCloseFallback();
-        public static UIEffectPreset ResourceIncreaseFallback => _resourceIncreaseFallback != null ? _resourceIncreaseFallback : _resourceIncreaseFallback = CreateResourceIncreaseFallback();
-        public static UIEffectPreset ResourceDecreaseFallback => _resourceDecreaseFallback != null ? _resourceDecreaseFallback : _resourceDecreaseFallback = CreateResourceDecreaseFallback();
-        public static UIEffectPreset ResourceMaxChangedFallback => _resourceMaxChangedFallback != null ? _resourceMaxChangedFallback : _resourceMaxChangedFallback = CreateResourceMaxChangedFallback();
-        public static UIEffectPreset CooldownCompletedFallback => _cooldownCompletedFallback != null ? _cooldownCompletedFallback : _cooldownCompletedFallback = CreateCooldownCompletedFallback();
-
-        private static UIEffectPreset CreateWindowOpenFallback()
-        {
-            var preset = CreateRuntimeInstance("UIEffectPreset_WindowOpen_Default");
-            preset.useUnscaledTime = true;
-            preset.useFade = true;
-            preset.fadeDuration = 0.24f;
-            preset.fadeOptions = new UiFadeUtility.FadeOptions
-            {
-                delay = 0f,
-                useUnscaledTime = true,
-                updateInteractableOnComplete = true,
-                updateBlocksRaycastsOnComplete = true,
-                disableInputWhenInvisible = true,
-                startAlpha = 0f,
-                easeType = Easing.EaseType.EaseOutQuintic
-            };
-            preset.useMove = true;
-            preset.moveFromOffset = new Vector2(0f, -18f);
-            preset.moveDuration = 0.24f;
-            preset.moveOptions = new MoveOptions
-            {
-                delay = 0f,
-                useUnscaledTime = true,
-                easeType = Easing.EaseType.EaseOutQuintic,
-                snapToTargetOnComplete = true
-            };
-            return preset;
-        }
-
-        private static UIEffectPreset CreateWindowCloseFallback()
-        {
-            var preset = CreateRuntimeInstance("UIEffectPreset_WindowClose_Default");
-            preset.useUnscaledTime = true;
-            preset.useFade = true;
-            preset.fadeDuration = 0.18f;
-            preset.fadeOptions = new UiFadeUtility.FadeOptions
-            {
-                delay = 0f,
-                useUnscaledTime = true,
-                updateInteractableOnComplete = true,
-                updateBlocksRaycastsOnComplete = true,
-                disableInputWhenInvisible = true,
-                startAlpha = null,
-                easeType = Easing.EaseType.EaseInQuintic
-            };
-            preset.useMove = true;
-            preset.moveFromOffset = new Vector2(0f, -12f);
-            preset.moveDuration = 0.18f;
-            preset.moveOptions = new MoveOptions
-            {
-                delay = 0f,
-                useUnscaledTime = true,
-                easeType = Easing.EaseType.EaseInQuad,
-                snapToTargetOnComplete = true
-            };
-            return preset;
-        }
-
-        private static UIEffectPreset CreateResourceIncreaseFallback()
-        {
-            var preset = CreateRuntimeInstance("UIEffectPreset_HudIncrease_Default");
-            preset.useUnscaledTime = true;
-            preset.useScalePulse = true;
-            preset.pulseScale = new Vector3(1.06f, 1.06f, 1f);
-            preset.scaleDuration = 0.18f;
-            preset.scaleEaseType = Easing.EaseType.EaseOutBack;
-            return preset;
-        }
-
-        private static UIEffectPreset CreateResourceDecreaseFallback()
-        {
-            var preset = CreateRuntimeInstance("UIEffectPreset_HudDecrease_Default");
-            preset.useUnscaledTime = true;
-            preset.useShake = true;
-            preset.shakeDuration = 0.14f;
-            preset.shakeStrength = 10f;
-            preset.shakeVibrato = 10;
-            preset.shakeEaseType = Easing.EaseType.EaseOutQuad;
-            preset.useScalePulse = true;
-            preset.pulseScale = new Vector3(1.04f, 1.04f, 1f);
-            preset.scaleDuration = 0.14f;
-            preset.scaleEaseType = Easing.EaseType.EaseOutBack;
-            return preset;
-        }
-
-        private static UIEffectPreset CreateResourceMaxChangedFallback()
-        {
-            var preset = CreateRuntimeInstance("UIEffectPreset_HudMaxChanged_Default");
-            preset.useUnscaledTime = true;
-            preset.useScalePulse = true;
-            preset.pulseScale = new Vector3(1.05f, 1.05f, 1f);
-            preset.scaleDuration = 0.16f;
-            preset.scaleEaseType = Easing.EaseType.EaseOutBack;
-            return preset;
-        }
-
-        private static UIEffectPreset CreateCooldownCompletedFallback()
-        {
-            var preset = CreateRuntimeInstance("UIEffectPreset_CooldownCompleted_Default");
-            preset.useUnscaledTime = true;
-            preset.useScalePulse = true;
-            preset.pulseScale = new Vector3(1.12f, 1.12f, 1f);
-            preset.scaleDuration = 0.18f;
-            preset.scaleEaseType = Easing.EaseType.EaseOutBack;
-            return preset;
-        }
-
-        private static UIEffectPreset CreateRuntimeInstance(string name)
-        {
-            var preset = CreateInstance<UIEffectPreset>();
-            preset.name = name;
-            preset.hideFlags = HideFlags.HideAndDontSave;
-            return preset;
-        }
+        [Tooltip("흔들기 효과 사용 여부")]
+        public bool useShake;
+        [Tooltip("흔들기 강도")]
+        public float shakeStrength = 8f;
+        [Tooltip("흔들기 시간")]
+        public float shakeDuration = 0.15f;
+        [Tooltip("진동 횟수")]
+        public int shakeVibrato = 14;
     }
 }

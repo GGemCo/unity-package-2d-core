@@ -1,28 +1,36 @@
-﻿using TMPro;
+using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
 namespace GGemCo2DCore
 {
     /// <summary>
-    /// Slider 기반 HUD 리소스 표현입니다.
-    /// 값 변화 방향에 따라 프리셋 기반 UI 효과를 재생합니다.
+    /// Slider 기반 HUD 자원 표현 클래스입니다.
     /// </summary>
     public sealed class UIWindowHudResourceSlider : UIWindowHudResourceBase
     {
         [SerializeField] private Slider slider;
         [SerializeField] private TextMeshProUGUI text;
-        [SerializeField] private UISliderDelayedFill delayedFill;
-        [SerializeField] private bool useEffects = true;
-
-        [Header("UI Effect Presets")]
+        [SerializeField] private UIEffectTarget effectTarget;
         [SerializeField] private UIEffectPreset increasePreset;
         [SerializeField] private UIEffectPreset decreasePreset;
         [SerializeField] private UIEffectPreset maxValueChangedPreset;
 
-        protected override void ApplyValue(UIWindowHudResourceType type, long current, long total, UIEffectContext context)
+        private void Awake()
         {
-            if (!context.IsInitial && context.DeltaCurrent == 0 && context.DeltaTotal == 0)
+            if (effectTarget == null)
+                effectTarget = UIEffectTarget.GetOrAdd(gameObject);
+            else
+                effectTarget.AutoBind();
+        }
+
+        protected override void ApplyValue(
+            UIWindowHudResourceType type,
+            long current,
+            long total,
+            ResourceChangeContext context)
+        {
+            if (context.HasPreviousValue && context.Current == context.PreviousCurrent && context.Total == context.PreviousTotal)
             {
                 return;
             }
@@ -31,29 +39,33 @@ namespace GGemCo2DCore
             {
                 if (slider != null) slider.value = 0f;
                 if (text != null) text.text = "0 / 0";
-                delayedFill?.SyncImmediately();
                 return;
             }
 
             if (slider != null) slider.value = (float)current / total;
             if (text != null) text.text = $"{current} / {total}";
 
-            if (context.IsInitial)
+            if (!context.HasPreviousValue || effectTarget == null)
             {
-                delayedFill?.SyncImmediately();
                 return;
             }
 
-            if (!useEffects)
+            if (context.IsDecrease && decreasePreset != null)
+            {
+                UIEffectService.Play(this, effectTarget, decreasePreset);
                 return;
+            }
 
-            UIEffectService.PlayHudResource(
-                this,
-                gameObject,
-                context,
-                increasePreset,
-                decreasePreset,
-                maxValueChangedPreset);
+            if (context.IsIncrease && increasePreset != null)
+            {
+                UIEffectService.Play(this, effectTarget, increasePreset);
+                return;
+            }
+
+            if (context.IsMaxValueChanged && maxValueChangedPreset != null)
+            {
+                UIEffectService.Play(this, effectTarget, maxValueChangedPreset);
+            }
         }
 
         public override void SetMaxValue(UIWindowHudResourceType hpTemp, long total)

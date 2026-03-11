@@ -1,68 +1,99 @@
+using System;
 using System.Collections;
-using System.Collections.Generic;
+using System.Runtime.CompilerServices;
 using UnityEngine;
 
 namespace GGemCo2DCore
 {
     /// <summary>
-    /// RectTransform 기반 UI 흔들림 유틸리티입니다.
+    /// RectTransform anchoredPosition 기반 흔들기 효과 유틸리티입니다.
     /// </summary>
     public static class UIEffectShakeUtility
     {
-        private static readonly Dictionary<RectTransform, Coroutine> RunningTable = new();
+        private sealed class State
+        {
+            public Coroutine running;
+            public Vector2 basePosition;
+            public bool hasBasePosition;
+        }
 
-        public static Coroutine PlayAnchoredPositionShake(
+        private static readonly ConditionalWeakTable<RectTransform, State> States = new();
+
+        public static void StopIfRunning(RectTransform target, MonoBehaviour runner)
+        {
+            if (target == null || runner == null) return;
+            if (!States.TryGetValue(target, out var state)) return;
+
+            if (state.running != null)
+            {
+                runner.StopCoroutine(state.running);
+                state.running = null;
+            }
+        }
+
+        public static void CacheBasePosition(RectTransform target)
+        {
+            if (target == null) return;
+            var state = States.GetOrCreateValue(target);
+            if (state.hasBasePosition) return;
+            state.basePosition = target.anchoredPosition;
+            state.hasBasePosition = true;
+        }
+
+        public static Coroutine Shake(
             MonoBehaviour runner,
             RectTransform target,
-            float duration,
             float strength,
+            float duration,
             int vibrato,
-            bool useUnscaledTime,
-            Easing.EaseType easeType)
+            bool useUnscaledTime)
         {
-            if (runner == null || target == null)
-                return null;
+            if (runner == null) throw new ArgumentNullException(nameof(runner));
+            if (target == null) return null;
 
-            if (RunningTable.TryGetValue(target, out var running) && running != null)
+            StopIfRunning(target, runner);
+            var state = States.GetOrCreateValue(target);
+            if (!state.hasBasePosition)
             {
-                runner.StopCoroutine(running);
-                RunningTable.Remove(target);
+                state.basePosition = target.anchoredPosition;
+                state.hasBasePosition = true;
             }
 
-            var coroutine = runner.StartCoroutine(ShakeRoutine(target, duration, strength, vibrato, useUnscaledTime, easeType));
-            RunningTable[target] = coroutine;
-            return coroutine;
+            state.running = runner.StartCoroutine(ShakeRoutine(target, state.basePosition, strength, duration, vibrato, useUnscaledTime));
+            return state.running;
         }
 
         private static IEnumerator ShakeRoutine(
             RectTransform target,
-            float duration,
+            Vector2 basePosition,
             float strength,
+            float duration,
             int vibrato,
-            bool useUnscaledTime,
-            Easing.EaseType easeType)
+            bool useUnscaledTime)
         {
-            var original = target.anchoredPosition;
-            if (duration <= 0f || strength <= 0f || vibrato <= 0)
+            if (target == null) yield break;
+
+            if (duration <= 0f || strength <= 0f)
             {
-                target.anchoredPosition = original;
-                RunningTable.Remove(target);
+                target.anchoredPosition = basePosition;
                 yield break;
             }
 
-            var elapsed = 0f;
+            float elapsed = 0f;
+            int safeVibrato = Mathf.Max(1, vibrato);
             while (elapsed < duration)
             {
                 elapsed += useUnscaledTime ? Time.unscaledDeltaTime : Time.deltaTime;
-                var normalized = Mathf.Clamp01(elapsed / duration);
-                var attenuation = 1f - Mathf.Clamp01(Easing.Apply(normalized, easeType));
-                var offset = Random.insideUnitCircle * strength * attenuation;
-                target.anchoredPosition = original + offset;
+                float nt = Mathf.Clamp01(elapsed / duration);
+                float attenuation = 1f - nt;
+                float angle = nt * safeVibrato * Mathf.PI * 2f;
+                float x = Mathf.Sin(angle) * strength * attenuation;
+                float y = Mathf.Cos(angle * 0.73f) * strength * 0.5f * attenuation;
+                target.anchoredPosition = basePosition + new Vector2(x, y);
                 yield return null;
             }
 
-            target.anchoredPosition = original;
-            RunningTable.Remove(target);
+            target.anchoredPosition = basePosition;
         }
     }
 }

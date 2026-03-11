@@ -4,62 +4,71 @@ using UnityEngine.UI;
 namespace GGemCo2DCore
 {
     /// <summary>
-    /// UI 효과 실행 시 반복 조회되는 참조를 캐싱하는 컴포넌트입니다.
+    /// UI 효과에 사용할 대상 참조를 캐싱하는 컴포넌트입니다.
     /// </summary>
-    [DisallowMultipleComponent]
     public sealed class UIEffectTarget : MonoBehaviour
     {
         [SerializeField] private RectTransform rootRectTransform;
         [SerializeField] private CanvasGroup canvasGroup;
         [SerializeField] private RectTransform moveTarget;
+        [SerializeField] private RectTransform scaleTarget;
         [SerializeField] private RectTransform shakeTarget;
-        [SerializeField] private Transform scaleTarget;
         [SerializeField] private Graphic flashTargetGraphic;
 
-        public RectTransform RootRectTransform
-        {
-            get
-            {
-                if (rootRectTransform == null)
-                    rootRectTransform = transform as RectTransform;
-                return rootRectTransform;
-            }
-        }
-
-        public CanvasGroup CanvasGroup
-        {
-            get
-            {
-                if (canvasGroup == null)
-                    canvasGroup = GetComponent<CanvasGroup>();
-                return canvasGroup;
-            }
-        }
-
-        public RectTransform MoveTarget => moveTarget != null ? moveTarget : RootRectTransform;
-        public RectTransform ShakeTarget => shakeTarget != null ? shakeTarget : RootRectTransform;
-        public Transform ScaleTarget => scaleTarget != null ? scaleTarget : transform;
+        public RectTransform RootRectTransform => rootRectTransform;
+        public CanvasGroup CanvasGroup => canvasGroup;
+        public RectTransform MoveTarget => moveTarget;
+        public RectTransform ScaleTarget => scaleTarget;
+        public RectTransform ShakeTarget => shakeTarget;
         public Graphic FlashTargetGraphic => flashTargetGraphic;
 
         private void Reset()
         {
-            rootRectTransform = transform as RectTransform;
-            canvasGroup = GetComponent<CanvasGroup>();
-            moveTarget = transform as RectTransform;
-            shakeTarget = transform as RectTransform;
-            scaleTarget = transform;
+            AutoBind();
         }
 
+        private void Awake()
+        {
+            AutoBind();
+        }
+
+        /// <summary>
+        /// 비어 있는 참조를 현재 GameObject 기준으로 자동 바인딩합니다.
+        /// </summary>
+        public void AutoBind()
+        {
+            if (rootRectTransform == null)
+                rootRectTransform = GetComponent<RectTransform>();
+
+            if (canvasGroup == null)
+                canvasGroup = GetComponent<CanvasGroup>();
+
+            if (moveTarget == null)
+                moveTarget = rootRectTransform;
+
+            if (scaleTarget == null)
+                scaleTarget = rootRectTransform;
+
+            if (shakeTarget == null)
+                shakeTarget = rootRectTransform;
+
+            if (flashTargetGraphic == null)
+                flashTargetGraphic = GetComponent<Graphic>();
+        }
+
+        /// <summary>
+        /// 대상 GameObject에서 UIEffectTarget을 가져오거나 생성합니다.
+        /// </summary>
         public static UIEffectTarget GetOrAdd(GameObject target)
         {
-            if (target == null)
-                return null;
+            if (target == null) return null;
 
-            var result = target.GetComponent<UIEffectTarget>();
-            if (result != null)
-                return result;
+            var effectTarget = target.GetComponent<UIEffectTarget>();
+            if (effectTarget == null)
+                effectTarget = target.AddComponent<UIEffectTarget>();
 
-            return target.AddComponent<UIEffectTarget>();
+            effectTarget.AutoBind();
+            return effectTarget;
         }
     }
 }

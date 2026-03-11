@@ -4,43 +4,39 @@ using UnityEngine.UI;
 namespace GGemCo2DCore
 {
     /// <summary>
-    /// 윈도우 공통 베이스 클래스입니다.
-    /// 윈도우 표시/숨김과 테이블 기반 연계 처리를 담당합니다.
+    /// 윈도우 공용 베이스 클래스입니다.
     /// </summary>
     public class UIWindowBase : MonoBehaviour
     {
         [HideInInspector] public UIWindowConstants.WindowUid uid;
-
         [Header(UIWindowConstants.TitleHeaderCommon)]
         [Tooltip("윈도우 닫기 버튼")]
         public Button buttonClose;
-
-        [Tooltip("윈도우 On/Off 시 fade in/Out 효과 사용 여부")]
+        [Tooltip("윈도우 On/Off 시 fade in/out 효과 사용 여부")]
         public bool useFade = true;
-
-        [Header("UI Effect Presets")]
-        [SerializeField] private UIEffectPreset windowOpenPreset;
-        [SerializeField] private UIEffectPreset windowClosePreset;
+        [Tooltip("윈도우 열기 효과 프리셋")]
+        public UIEffectPreset windowOpenPreset;
+        [Tooltip("윈도우 닫기 효과 프리셋")]
+        public UIEffectPreset windowClosePreset;
 
         private UIWindowFade _uiWindowFade;
         private StruckTableWindow _struckTableWindow;
         private InteractionManager _interactionManager;
+        private UIEffectTarget _uiEffectTarget;
 
         [HideInInspector] public SceneGame SceneGame;
-
-        public UIEffectPreset WindowOpenPreset => windowOpenPreset;
-        public UIEffectPreset WindowClosePreset => windowClosePreset;
 
         protected virtual void Awake()
         {
             UiFadeUtility.TryGetCanvasGroup(gameObject, true, out _);
-            UIEffectTarget.GetOrAdd(gameObject);
+            _uiEffectTarget = UIEffectTarget.GetOrAdd(gameObject);
 
             if (useFade)
             {
                 _uiWindowFade = gameObject.GetComponent<UIWindowFade>();
                 if (_uiWindowFade == null)
                     _uiWindowFade = gameObject.AddComponent<UIWindowFade>();
+                _uiWindowFade.Initialize(this, _uiEffectTarget, windowOpenPreset, windowClosePreset);
             }
 
             InitializeButtonClose();
@@ -54,7 +50,8 @@ namespace GGemCo2DCore
             if (buttonClose == null) return;
             buttonClose.onClick.AddListener(OnClickClose);
 
-            var clickSoundEventBroadcaster = buttonClose.gameObject.GetComponent<ClickSoundEventBroadcaster>();
+            ClickSoundEventBroadcaster clickSoundEventBroadcaster =
+                buttonClose.gameObject.GetComponent<ClickSoundEventBroadcaster>();
             if (!clickSoundEventBroadcaster)
             {
                 clickSoundEventBroadcaster = buttonClose.gameObject.AddComponent<ClickSoundEventBroadcaster>();
@@ -87,15 +84,24 @@ namespace GGemCo2DCore
         /// </summary>
         private void ShowByTable(int[] windowUids, bool show)
         {
-            if (windowUids == null || SceneGame == null || SceneGame.uIWindowManager == null)
-                return;
-
             foreach (var openWindowUid in windowUids)
             {
-                var windowUid = (UIWindowConstants.WindowUid)openWindowUid;
-                var uiWindow = SceneGame.uIWindowManager.GetUIWindowByUid<UIWindow>(windowUid);
+                UIWindowConstants.WindowUid windowUid = (UIWindowConstants.WindowUid)openWindowUid;
+                UIWindow uiWindow = SceneGame.uIWindowManager.GetUIWindowByUid<UIWindow>(windowUid);
                 if (uiWindow == null) continue;
-                uiWindow.Show(show);
+
+                if (uiWindow._uiWindowFade == null)
+                {
+                    if (uiWindow.gameObject == null) continue;
+                    uiWindow.gameObject.SetActive(show);
+                    uiWindow.OnShow(show);
+                    continue;
+                }
+
+                if (show)
+                    uiWindow._uiWindowFade.ShowPanel();
+                else
+                    uiWindow._uiWindowFade.HidePanel();
             }
         }
 
@@ -129,7 +135,7 @@ namespace GGemCo2DCore
         }
 
         /// <summary>
-        /// 윈도우가 show 가 된 후 처리
+        /// 윈도우가 show 된 후 처리
         /// </summary>
         public virtual void OnShow(bool show)
         {
@@ -137,6 +143,7 @@ namespace GGemCo2DCore
 
         public void OnClickClose()
         {
+            if (_uiWindowFade == null) return;
             if (_struckTableWindow is { IsInteraction: true } && _interactionManager != null && _interactionManager.IsInteractioning())
             {
                 _interactionManager.EndInteraction();
@@ -150,9 +157,9 @@ namespace GGemCo2DCore
         /// <summary>
         /// 각 윈도우에 table 정보 연결하기
         /// </summary>
-        public void SetTableWindow(StruckTableWindow struckTableWindow)
+        public void SetTableWindow(StruckTableWindow pstruckTableWindow)
         {
-            _struckTableWindow = struckTableWindow;
+            _struckTableWindow = pstruckTableWindow;
         }
 
         public virtual void OnRightClick(UIIcon icon)
