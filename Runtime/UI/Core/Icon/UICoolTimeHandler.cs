@@ -1,4 +1,4 @@
-using UnityEngine;
+﻿using UnityEngine;
 
 namespace GGemCo2DCore
 {
@@ -53,7 +53,7 @@ namespace GGemCo2DCore
                 icon.imageCoolTimeGauge.gameObject.SetActive(true);
             }
 
-            icon?.PlayCooldownStartEffect();
+            icon?.HandleCooldownStartedEffect();
             return true;
         }
 
@@ -64,7 +64,7 @@ namespace GGemCo2DCore
             currentCoolTime -= Time.deltaTime;
             if (currentCoolTime <= 0)
             {
-                ResetCoolTime();
+                CompleteCoolTime();
                 return;
             }
 
@@ -78,6 +78,16 @@ namespace GGemCo2DCore
 
         public void ResetCoolTime()
         {
+            ResetCoolTime(playCompletedEffect: false);
+        }
+
+        private void CompleteCoolTime()
+        {
+            ResetCoolTime(playCompletedEffect: true);
+        }
+
+        private void ResetCoolTime(bool playCompletedEffect)
+        {
             isPlayingCoolTime = false;
             currentCoolTime = 0;
 
@@ -86,9 +96,9 @@ namespace GGemCo2DCore
                 icon.imageCoolTimeGauge.gameObject.SetActive(false);
             }
 
-            if (icon != null && icon.gameObject.activeInHierarchy)
+            if (playCompletedEffect && icon != null && icon.gameObject.activeInHierarchy)
             {
-                icon.PlayCooldownCompletedEffect();
+                icon.HandleCooldownReadyEffect();
             }
         }
 
@@ -113,6 +123,7 @@ namespace GGemCo2DCore
 
             isPlayingCoolTime = true;
             currentCoolTime = remainCoolTime;
+            coolTimeDuration = Mathf.Max(coolTimeDuration, remainCoolTime);
 
             if (icon.imageCoolTimeGauge != null)
             {

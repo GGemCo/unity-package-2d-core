@@ -13,12 +13,24 @@ namespace GGemCo2DCore
     {
         private sealed class RunningEffectHandle
         {
+            public int HandleId;
+            public int TargetId;
+            public UIEffectChannel Channel;
             public MonoBehaviour Runner;
             public Coroutine Coroutine;
             public UIEffectTarget Target;
+            public Graphic FlashGraphic;
+            public Color FlashBaseColor;
+            public bool HasFlashBaseColor;
         }
 
-        private static readonly Dictionary<int, RunningEffectHandle> RunningEffects = new Dictionary<int, RunningEffectHandle>();
+        private sealed class TargetState
+        {
+            public readonly Dictionary<UIEffectChannel, List<RunningEffectHandle>> HandlesByChannel = new Dictionary<UIEffectChannel, List<RunningEffectHandle>>();
+        }
+
+        private static readonly Dictionary<int, TargetState> RunningEffects = new Dictionary<int, TargetState>();
+        private static int _nextHandleId = 1;
 
         public static Coroutine Play(MonoBehaviour runner, UIEffectTarget target, UIEffectPreset preset, Action onComplete = null)
         {
@@ -34,31 +46,23 @@ namespace GGemCo2DCore
             }
 
             target.AutoBind();
-            int targetId = target.GetInstanceID();
-
-            if (preset.playPolicy == UIEffectPlayPolicy.IgnoreIfPlaying && RunningEffects.ContainsKey(targetId))
+            if (!ApplyPlayPolicy(target, preset))
             {
                 return null;
             }
 
-            if (preset.playPolicy == UIEffectPlayPolicy.Restart)
+            var handle = new RunningEffectHandle
             {
-                Stop(target);
-            }
+                HandleId = _nextHandleId++,
+                TargetId = target.GetInstanceID(),
+                Channel = preset.channel,
+                Runner = runner,
+                Target = target,
+            };
 
-            Coroutine coroutine = runner.StartCoroutine(PlayRoutine(runner, target, preset, context, onComplete));
-
-            if (preset.playPolicy != UIEffectPlayPolicy.Parallel)
-            {
-                RunningEffects[targetId] = new RunningEffectHandle
-                {
-                    Runner = runner,
-                    Coroutine = coroutine,
-                    Target = target
-                };
-            }
-
-            return coroutine;
+            RegisterHandle(handle);
+            handle.Coroutine = runner.StartCoroutine(PlayRoutine(handle, preset, context, onComplete));
+            return handle.Coroutine;
         }
 
         public static void Stop(UIEffectTarget target)
@@ -69,24 +73,109 @@ namespace GGemCo2DCore
             }
 
             int targetId = target.GetInstanceID();
-            if (!RunningEffects.TryGetValue(targetId, out var handle))
+            if (!RunningEffects.TryGetValue(targetId, out var targetState))
             {
                 return;
             }
 
-            if (handle.Runner != null && handle.Coroutine != null)
+            var copiedHandles = new List<RunningEffectHandle>();
+            foreach (var pair in targetState.HandlesByChannel)
             {
-                handle.Runner.StopCoroutine(handle.Coroutine);
+                copiedHandles.AddRange(pair.Value);
             }
 
-            RunningEffects.Remove(targetId);
+            foreach (var handle in copiedHandles)
+            {
+                StopHandle(handle, removeFromRegistry: true);
+            }
         }
 
-        private static IEnumerator PlayRoutine(MonoBehaviour runner, UIEffectTarget target, UIEffectPreset preset, UIEffectContext context, Action onComplete)
+        public static void Stop(UIEffectTarget target, UIEffectChannel channel)
         {
-            if (target == null || preset == null)
+            if (target == null)
             {
-                onComplete?.Invoke();
+                return;
+            }
+
+            int targetId = target.GetInstanceID();
+            if (!RunningEffects.TryGetValue(targetId, out var targetState))
+            {
+                return;
+            }
+
+            if (!targetState.HandlesByChannel.TryGetValue(channel, out var handles) || handles.Count == 0)
+            {
+                return;
+            }
+
+            var copiedHandles = new List<RunningEffectHandle>(handles);
+            foreach (var handle in copiedHandles)
+            {
+                StopHandle(handle, removeFromRegistry: true);
+            }
+        }
+
+        public static bool IsPlaying(UIEffectTarget target, UIEffectChannel channel)
+        {
+            if (target == null)
+            {
+                return false;
+            }
+
+            int targetId = target.GetInstanceID();
+            if (!RunningEffects.TryGetValue(targetId, out var targetState))
+            {
+                return false;
+            }
+
+            return targetState.HandlesByChannel.TryGetValue(channel, out var handles) && handles.Count > 0;
+        }
+
+        private static bool ApplyPlayPolicy(UIEffectTarget target, UIEffectPreset preset)
+        {
+            switch (preset.playPolicy)
+            {
+                case UIEffectPlayPolicy.IgnoreIfPlaying:
+                    return !IsPlaying(target, preset.channel);
+
+                case UIEffectPlayPolicy.Restart:
+                    Stop(target);
+                    return true;
+
+                case UIEffectPlayPolicy.StopSameChannelAndPlay:
+                    Stop(target, preset.channel);
+                    return true;
+
+                case UIEffectPlayPolicy.Parallel:
+                default:
+                    return true;
+            }
+        }
+
+        private static void RegisterHandle(RunningEffectHandle handle)
+        {
+            if (!RunningEffects.TryGetValue(handle.TargetId, out var targetState))
+            {
+                targetState = new TargetState();
+                RunningEffects.Add(handle.TargetId, targetState);
+            }
+
+            if (!targetState.HandlesByChannel.TryGetValue(handle.Channel, out var handles))
+            {
+                handles = new List<RunningEffectHandle>();
+                targetState.HandlesByChannel.Add(handle.Channel, handles);
+            }
+
+            handles.Add(handle);
+        }
+
+        private static IEnumerator PlayRoutine(RunningEffectHandle handle, UIEffectPreset preset, UIEffectContext context, Action onComplete)
+        {
+            UIEffectTarget target = handle.Target;
+            MonoBehaviour runner = handle.Runner;
+            if (target == null || runner == null || preset == null)
+            {
+                Complete(handle, onComplete);
                 yield break;
             }
 
@@ -106,7 +195,9 @@ namespace GGemCo2DCore
                 fadeOptions.disableInputWhenInvisible = preset.fadeDisableInputWhenInvisible;
 
                 if (preset.fadeStartAlpha >= 0f && UiFadeUtility.TryGetCanvasGroup(target.gameObject, true, out var canvasGroup))
+                {
                     canvasGroup.alpha = Mathf.Clamp01(preset.fadeStartAlpha);
+                }
 
                 if (preset.fadeTargetAlpha >= 0.5f)
                     UiFadeUtility.FadeIn(runner, target.gameObject, preset.fadeDuration, fadeOptions, true);
@@ -165,72 +256,144 @@ namespace GGemCo2DCore
 
             if (preset.useFlash && target.FlashTargetGraphic != null)
             {
+                handle.FlashGraphic = target.FlashTargetGraphic;
+                handle.FlashBaseColor = target.FlashTargetGraphic.color;
+                handle.HasFlashBaseColor = true;
                 maxDuration = Mathf.Max(maxDuration, preset.flashDuration);
-                runner.StartCoroutine(PlayFlashRoutine(target.FlashTargetGraphic, preset));
             }
 
-            if (maxDuration > 0f)
+            if (maxDuration <= 0f)
             {
-                float elapsed = 0f;
-                while (elapsed < maxDuration)
-                {
-                    if (target == null || runner == null)
-                    {
-                        break;
-                    }
-
-                    elapsed += preset.useUnscaledTime ? Time.unscaledDeltaTime : Time.deltaTime;
-                    yield return null;
-                }
-            }
-
-            Complete(target, onComplete);
-        }
-
-        private static IEnumerator PlayFlashRoutine(Graphic targetGraphic, UIEffectPreset preset)
-        {
-            if (targetGraphic == null || preset == null)
-            {
+                RestoreFlash(handle);
+                Complete(handle, onComplete);
                 yield break;
             }
 
-            Color baseColor = targetGraphic.color;
-            Color flashColor = preset.flashColor;
-            flashColor.a = Mathf.Clamp01(preset.flashPeakAlpha);
-
-            float duration = Mathf.Max(0.0001f, preset.flashDuration);
             float elapsed = 0f;
-
-            while (elapsed < duration)
+            while (elapsed < maxDuration)
             {
-                if (targetGraphic == null)
+                if (handle.Target == null || handle.Runner == null)
                 {
-                    yield break;
+                    break;
                 }
 
                 elapsed += preset.useUnscaledTime ? Time.unscaledDeltaTime : Time.deltaTime;
-                float t = Mathf.Clamp01(elapsed / duration);
-                float pingPong = t <= 0.5f ? t * 2f : (1f - t) * 2f;
-                float eased = Easing.Apply(pingPong, preset.flashEaseType);
-                targetGraphic.color = Color.LerpUnclamped(baseColor, flashColor, eased);
+                UpdateFlash(handle, preset, elapsed);
                 yield return null;
             }
 
-            if (targetGraphic != null)
+            RestoreFlash(handle);
+            Complete(handle, onComplete);
+        }
+
+        private static void UpdateFlash(RunningEffectHandle handle, UIEffectPreset preset, float elapsed)
+        {
+            if (!preset.useFlash || handle.FlashGraphic == null || !handle.HasFlashBaseColor)
             {
-                targetGraphic.color = baseColor;
+                return;
+            }
+
+            float duration = Mathf.Max(0.0001f, preset.flashDuration);
+            float t = Mathf.Clamp01(elapsed / duration);
+            float pingPong = t <= 0.5f ? t * 2f : (1f - t) * 2f;
+            float eased = Mathf.Clamp01(Easing.Apply(pingPong, preset.flashEaseType));
+
+            Color flashColor = preset.flashColor;
+            flashColor.a = Mathf.Clamp01(preset.flashPeakAlpha);
+            handle.FlashGraphic.color = Color.LerpUnclamped(handle.FlashBaseColor, flashColor, eased);
+        }
+
+        private static void StopHandle(RunningEffectHandle handle, bool removeFromRegistry)
+        {
+            if (handle == null)
+            {
+                return;
+            }
+
+            if (removeFromRegistry)
+            {
+                UnregisterHandle(handle);
+            }
+
+            if (handle.Runner != null && handle.Coroutine != null)
+            {
+                handle.Runner.StopCoroutine(handle.Coroutine);
+            }
+
+            StopTargetAnimations(handle);
+            RestoreFlash(handle);
+        }
+
+        private static void StopTargetAnimations(RunningEffectHandle handle)
+        {
+            if (handle?.Target == null || handle.Runner == null)
+            {
+                return;
+            }
+
+            if (handle.Target.CanvasGroup != null)
+            {
+                UiFadeUtility.StopFadeIfRunning(handle.Target.CanvasGroup, handle.Runner);
+            }
+
+            if (handle.Target.MoveTarget != null)
+            {
+                UiMoveAnchoredPosition.StopIfRunning(handle.Target.MoveTarget, handle.Runner);
+            }
+
+            if (handle.Target.ScaleTarget != null)
+            {
+                UIEffectScaleUtility.StopIfRunning(handle.Target.ScaleTarget, handle.Runner);
+            }
+
+            if (handle.Target.ShakeTarget != null)
+            {
+                UIEffectShakeUtility.StopIfRunning(handle.Target.ShakeTarget, handle.Runner);
             }
         }
 
-        private static void Complete(UIEffectTarget target, Action onComplete)
+        private static void RestoreFlash(RunningEffectHandle handle)
         {
-            if (target != null)
+            if (handle?.FlashGraphic == null || !handle.HasFlashBaseColor)
             {
-                int targetId = target.GetInstanceID();
-                RunningEffects.Remove(targetId);
+                return;
             }
 
+            handle.FlashGraphic.color = handle.FlashBaseColor;
+        }
+
+        private static void Complete(RunningEffectHandle handle, Action onComplete)
+        {
+            UnregisterHandle(handle);
             onComplete?.Invoke();
+        }
+
+        private static void UnregisterHandle(RunningEffectHandle handle)
+        {
+            if (handle == null)
+            {
+                return;
+            }
+
+            if (!RunningEffects.TryGetValue(handle.TargetId, out var targetState))
+            {
+                return;
+            }
+
+            if (targetState.HandlesByChannel.TryGetValue(handle.Channel, out var handles))
+            {
+                handles.RemoveAll(item => item == null);
+                handles.Remove(handle);
+                if (handles.Count == 0)
+                {
+                    targetState.HandlesByChannel.Remove(handle.Channel);
+                }
+            }
+
+            if (targetState.HandlesByChannel.Count == 0)
+            {
+                RunningEffects.Remove(handle.TargetId);
+            }
         }
     }
 }

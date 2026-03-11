@@ -1,159 +1,64 @@
-using System.Collections;
-using System.Collections.Generic;
-using TMPro;
 using UnityEngine;
-using UnityEngine.UI;
-using Random = UnityEngine.Random;
 
 namespace GGemCo2DCore
 {
-    public class MetadataDamageText
-    {
-        public Vector3 WorldPosition;
-        public float Damage;
-        public Color Color;
-        // damage 숫자 대신 텍스트를 사용해야 할때
-        public string SpecialDamageText = "";
-        public int FontSize = 0;
-    }
     /// <summary>
-    /// 데미지 텍스트 매니저
+    /// 기존 데미지 텍스트 요청 형식을 유지하기 위한 호환 데이터입니다.
     /// </summary>
-    public class DamageTextManager : MonoBehaviour
+    public class MetadataDamageText : UIFloatingTextRequest
     {
-        private Transform canvasTransform;
-        private const int PoolSize = 20;
-        private Easing.EaseType easeType;
-        private float moveUpTime = 0.3f;
-        private float moveUpDistance = 50.0f; // 추가된 이동 거리 설정
-        private float fadeOutTime = 0.1f;
-        private float randomXRange = 10.0f; // X 좌표 랜덤 범위 추가
-        private GGemCoSettings _settings;
-        
-        private readonly Queue<TextMeshProUGUI> textPool = new Queue<TextMeshProUGUI>();
-        private void Awake()
+        public float Damage
         {
-            _settings = AddressableLoaderSettings.Instance.settings;
-            CreateTextDamageCanvas();
-            InitializePool();
-            InitializeInfos();
+            get => NumericValue;
+            set => NumericValue = value;
         }
 
-        private void InitializeInfos()
-        {
-            if (!AddressableLoaderSettings.Instance) return;
-            var settings = AddressableLoaderSettings.Instance.settings;
-            easeType = settings.damageTextEasingType;
-            moveUpTime = settings.damageTextMoveUpTime;
-            moveUpDistance = settings.damageTextMoveUpDistance;
-            fadeOutTime = settings.damageTextFadeOutTime;
-            randomXRange = settings.damageTextRandomXRange;
-        }
         /// <summary>
-        /// 데미지 텍스트가 들어갈 canvas 만들기
+        /// damage 숫자 대신 텍스트를 사용해야 할 때 사용합니다.
         /// </summary>
-        private void CreateTextDamageCanvas()
+        public string SpecialDamageText
         {
-            GameObject gameObjectCanvas = new GameObject("CanvasTextDamage");
-            Canvas canvas = gameObjectCanvas.gameObject.AddComponent<Canvas>();
-            gameObjectCanvas.gameObject.AddComponent<CanvasScaler>();
-            gameObjectCanvas.gameObject.AddComponent<GraphicRaycaster>();
-            
-            canvas.sortingLayerName = ConfigSortingLayer.GetValue(ConfigSortingLayer.Keys.UI);
-            canvas.sortingOrder = 999;
-            canvas.renderMode = _settings.damageTextCanvasRenderMode;
+            get => Text;
+            set => Text = value;
+        }
 
-            canvasTransform = gameObjectCanvas.transform;
-        }
-        /// <summary>
-        /// Addressable 에 등록된 damageText 를 불러와서 pool 을 만든다 
-        /// </summary>
-        private void InitializePool()
+        public MetadataDamageText()
         {
-            if (AddressableLoaderSettings.Instance == null) return;
-            textPool.Clear();
-            GameObject textFloatingDamage = ConfigResources.TextDamage.Load();
-            if (textFloatingDamage == null) return;
-            for (int i = 0; i < PoolSize; i++)
-            {
-                GameObject gameObjectText = Instantiate(textFloatingDamage, canvasTransform);
-                TextMeshProUGUI text = gameObjectText.GetComponent<TextMeshProUGUI>();
-                text.gameObject.SetActive(false);
-                textPool.Enqueue(text);
-            }
+            Type = UIFloatingTextType.Damage;
         }
-        /// <summary>
-        /// 데미지 텍스트 보여주기
-        /// </summary>
-        /// <param name="metadataDamageText"></param>
+    }
+
+    /// <summary>
+    /// 기존 DamageTextManager 이름을 유지하면서 범용 플로팅 텍스트 기능을 제공합니다.
+    /// </summary>
+    public class DamageTextManager : UIFloatingTextManager
+    {
         public void ShowDamageText(MetadataDamageText metadataDamageText)
         {
-            if (textPool.Count == 0)
+            if (metadataDamageText == null)
+            {
                 return;
-
-            TextMeshProUGUI text = textPool.Dequeue();
-            text.text = $"{metadataDamageText.Damage}";
-            if (!string.IsNullOrEmpty(metadataDamageText.SpecialDamageText))
-            {
-                text.text = metadataDamageText.SpecialDamageText;
-            }
-            text.color = metadataDamageText.Color;
-            text.fontSize = _settings.damageTextFontSize > 0 ? _settings.damageTextFontSize : 24f;
-            if (metadataDamageText.FontSize > 0)
-            {
-                text.fontSize = metadataDamageText.FontSize;
             }
 
-            // X 좌표를 -10 ~ +10 범위에서 랜덤 설정
-            metadataDamageText.WorldPosition.x += Random.Range(-randomXRange, randomXRange);
-        
-            text.transform.position = metadataDamageText.WorldPosition;
-            
-            text.gameObject.SetActive(true);
+            if (metadataDamageText.Type == UIFloatingTextType.None)
+            {
+                metadataDamageText.Type = UIFloatingTextType.Damage;
+            }
 
-            StartCoroutine(AnimateDamageText(text));
+            ShowFloatingText(metadataDamageText);
         }
-        /// <summary>
-        /// 데미지 floating 애니메이션
-        /// </summary>
-        /// <param name="text"></param>
-        /// <returns></returns>
-        private IEnumerator AnimateDamageText(TextMeshProUGUI text)
+
+        public void ShowFloatingText(Vector3 worldPosition, string text, Color color,
+            UIFloatingTextType type = UIFloatingTextType.Info, int fontSize = 0)
         {
-            if (text == null) yield break;
-            
-            Vector3 startPos = text.transform.position;
-            Vector3 endPos = startPos + new Vector3(0, moveUpDistance, 0); // 이동 거리 적
-            float elapsedTime = 0f;
-            Color originalColor = text.color;
-
-            // Move Up
-            while (elapsedTime < moveUpTime)
+            ShowFloatingText(new UIFloatingTextRequest
             {
-                float t = Mathf.Clamp01(elapsedTime / moveUpTime);
-                float easedT = Easing.Apply(t, easeType);
-                
-                text.transform.position = Vector3.Lerp(startPos, endPos, easedT);
-                elapsedTime += Time.deltaTime;
-                yield return null;
-            }
-
-            // Fade Out
-            elapsedTime = 0f;
-            while (elapsedTime < fadeOutTime)
-            {
-                text.color = new Color(originalColor.r, originalColor.g, originalColor.b, 1 - (elapsedTime / fadeOutTime));
-                elapsedTime += Time.deltaTime;
-                yield return null;
-            }
-
-            text.gameObject.SetActive(false);
-            text.color = originalColor;
-            textPool.Enqueue(text);
-        }
-        private void OnDestroy()
-        {
-            
+                WorldPosition = worldPosition,
+                Text = text,
+                Color = color,
+                FontSize = fontSize,
+                Type = type,
+            });
         }
     }
 }

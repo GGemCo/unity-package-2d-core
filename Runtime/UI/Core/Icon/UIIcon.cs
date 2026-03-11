@@ -21,19 +21,22 @@ namespace GGemCo2DCore
         public bool useCanvasGroup;
         [Tooltip("Canvas Group의 Interactable 설정")]
         public bool isCanvasGroupInteractable = true;
+
         [Header("UI Effect")]
-        [Tooltip("아이콘 공용 UI 효과 대상")]
+        [Tooltip("아이콘에 연결할 UIEffectTarget. 비어 있으면 현재 GameObject에서 자동 탐색합니다.")]
         [SerializeField] protected UIEffectTarget effectTarget;
-        [Tooltip("호버 효과 프리셋")]
+        [Tooltip("포인터 오버 시 재생할 프리셋")]
         [SerializeField] protected UIEffectPreset hoverPreset;
-        [Tooltip("클릭 효과 프리셋")]
+        [Tooltip("포인터 클릭 시 재생할 프리셋")]
         [SerializeField] protected UIEffectPreset clickPreset;
-        [Tooltip("사용 불가 효과 프리셋")]
+        [Tooltip("잘못된 사용 시 재생할 프리셋")]
         [SerializeField] protected UIEffectPreset invalidPreset;
-        [Tooltip("쿨타임 시작 효과 프리셋")]
+        [Tooltip("쿨타임 시작 시 재생할 프리셋")]
         [SerializeField] protected UIEffectPreset cooldownStartPreset;
-        [Tooltip("쿨타임 완료 효과 프리셋")]
-        [SerializeField] protected UIEffectPreset cooldownCompletedPreset;
+        [Tooltip("쿨타임 완료 시 재생할 프리셋")]
+        [SerializeField] protected UIEffectPreset cooldownReadyPreset;
+        [Tooltip("장착/등록 완료 시 재생할 프리셋")]
+        [SerializeField] protected UIEffectPreset equipPreset;
         
         // 윈도우 
         [HideInInspector] public UIWindow window;
@@ -132,9 +135,9 @@ namespace GGemCo2DCore
             }
 
             if (effectTarget == null)
-                effectTarget = UIEffectTarget.GetOrAdd(gameObject);
-            else
-                effectTarget.AutoBind();
+            {
+                effectTarget = GetComponent<UIEffectTarget>();
+            }
         }
 
         protected virtual void Start()
@@ -163,62 +166,13 @@ namespace GGemCo2DCore
         public bool IsSkill() => IconType == IconConstants.Type.Skill;
         public bool IsBuff() => IconType == IconConstants.Type.Buff;
 
-        /// <summary>
-        /// 장비 타입인지
-        /// </summary>
-        /// <returns></returns>
-        public virtual bool IsEquipType()
-        {
-            return false;
-        }
-        /// <summary>
-        /// 물약 타입인지
-        /// </summary>
-        /// <returns></returns>
-        public virtual bool IsPotionType()
-        {
-            return false;
-        }
-        /// <summary>
-        /// 생명력 물약인지
-        /// </summary>
-        /// <returns></returns>
-        public virtual bool IsHpPotionType()
-        {
-            return false;
-        }
-        /// <summary>
-        /// 마력 물약인지
-        /// </summary>
-        /// <returns></returns>
-        public virtual bool IsMpPotionType()
-        {
-            return false;
-        }
-        /// <summary>
-        /// 씨앗인지
-        /// </summary>
-        /// <returns></returns>
-        public virtual bool IsSeedType()
-        {
-            return false;
-        }
-        /// <summary>
-        /// 도구 인지
-        /// </summary>
-        /// <returns></returns>
-        public virtual bool IsToolType()
-        {
-            return false;
-        }
-        /// <summary>
-        /// 어펙트 옵션이 있는지 
-        /// </summary>
-        /// <returns></returns>
-        public virtual bool IsAffectUid()
-        {
-            return false;
-        }
+        public virtual bool IsEquipType() => false;
+        public virtual bool IsPotionType() => false;
+        public virtual bool IsHpPotionType() => false;
+        public virtual bool IsMpPotionType() => false;
+        public virtual bool IsSeedType() => false;
+        public virtual bool IsToolType() => false;
+        public virtual bool IsAffectUid() => false;
         public IconConstants.Type GetIconType() => IconType;
         public IconConstants.Grade GetGrade() => _grade;
         private void SetStatus(IconConstants.Status status) => this._iconStatus = status;
@@ -397,44 +351,17 @@ namespace GGemCo2DCore
             if (!_showOverImage || !_uiWindowManager) return;
             _uiWindowManager.ShowOverIconImage(show, gameObject.transform.position, _slotSize);
         }
-        public virtual ItemConstants.PartsType GetPartsType()
-        {
-            return ItemConstants.PartsType.None;
-        }
-        /// <summary>
-        /// item 테이블에 StatusValue1 컬럼값 가져오기
-        /// </summary>
-        /// <returns></returns>
-        public virtual int GetStatusValue1()
-        {
-            return 0;
-        }
-        /// <summary>
-        /// item 테이블에 StatusID1 컬럼값 가져오기
-        /// </summary>
-        /// <returns></returns>
-        public virtual string GetStatusId1()
-        {
-            return "";
-        }
-        /// <summary>
-        /// item 테이블에 duration 컬럼값 가져오기
-        /// </summary>
-        /// <returns></returns>
-        public virtual float GetDuration()
-        {
-            return 0;
-        }
+        public virtual ItemConstants.PartsType GetPartsType() => ItemConstants.PartsType.None;
+        public virtual int GetStatusValue1() => 0;
+        public virtual string GetStatusId1() => "";
+        public virtual float GetDuration() => 0;
 
         public void SetPosition(Vector3 position)
         {
             transform.localPosition = position;
         }
 
-        public virtual bool CheckRequireLevel()
-        {
-            return false;
-        }
+        public virtual bool CheckRequireLevel() => false;
 
         private void SetLevel(int value)
         {
@@ -451,14 +378,9 @@ namespace GGemCo2DCore
         public bool IsLearn() => _isLearn;
         public Sprite GetImageIconSprite() => ImageIcon.sprite;
 
-        public virtual ConfigCommon.SuffixType GetStatusSuffix1()
-        {
-            return ConfigCommon.SuffixType.None;
-        }
+        public virtual ConfigCommon.SuffixType GetStatusSuffix1() => ConfigCommon.SuffixType.None;
+        public virtual void CheckStatusAffect() { }
 
-        public virtual void CheckStatusAffect()
-        {
-        }
         /// <summary>
         /// 쿨타임 시작하기
         /// </summary>
@@ -470,11 +392,16 @@ namespace GGemCo2DCore
             if (time > 0)
             {
                 SceneGame.Instance.systemMessageManager.ShowMessageWarning("Action_CannotUseDuringCooldown");//"쿨타임 중에는 사용할 수 없습니다."
-                PlayInvalidEffect();
+                HandleInvalidEffect();
                 return false;
             }
             
-            return _iconCoolTimeManager.StartHandler(windowUid, this, coolTime);
+            bool started = _iconCoolTimeManager.StartHandler(windowUid, this, coolTime);
+            if (!started)
+            {
+                HandleInvalidEffect();
+            }
+            return started;
         }
         /// <summary>
         /// Raycast Target 설정
@@ -486,10 +413,8 @@ namespace GGemCo2DCore
             ImageIcon.raycastTarget = set;
         }
 
-        public virtual bool IsAntiFlag(ItemConstants.AntiFlag flag)
-        {
-            return false;
-        }
+        public virtual bool IsAntiFlag(ItemConstants.AntiFlag flag) => false;
+
         /// <summary>
         /// Regist 되었을때 부모 윈도우와 slot index 정보 셋팅하기
         /// </summary>
@@ -504,10 +429,8 @@ namespace GGemCo2DCore
         {
             return (_parentWindowUid, _parentSlotIndex);
         }
-        public virtual float GetCoolTime()
-        {
-            return 0;
-        }
+        public virtual float GetCoolTime() => 0;
+
         /// <summary>
         /// lock 이미지를 사용안하도록 삭제처리 하기
         /// </summary>
@@ -521,67 +444,73 @@ namespace GGemCo2DCore
             PossibleClick = set;
         }
 
-        public virtual int GetPartsSlotIndex()
-        {
-            return -1;
-        }
+        public virtual int GetPartsSlotIndex() => -1;
 
         public void SetOriginalPosition(Vector3 position)
         {
             _dragHandler.SetOriginalPosition(position);
         }
 
-
-        protected void PlayHoverEffect()
-        {
-            PlayEffect(hoverPreset);
-        }
-
-        protected void PlayClickEffect()
-        {
-            PlayEffect(clickPreset);
-        }
-
-        public void PlayInvalidEffect()
-        {
-            PlayEffect(invalidPreset);
-        }
-
-        public void PlayCooldownStartEffect()
-        {
-            PlayEffect(cooldownStartPreset);
-        }
-
-        public void PlayCooldownCompletedEffect()
-        {
-            PlayEffect(cooldownCompletedPreset);
-        }
-
-        protected void HandlePointerEnterEffect(PointerEventData eventData)
-        {
-            if (eventData == null) return;
-            PlayHoverEffect();
-        }
-
-        protected void HandlePointerClickEffect(PointerEventData eventData)
-        {
-            if (eventData == null || eventData.button != PointerEventData.InputButton.Left) return;
-            PlayClickEffect();
-        }
-
-        private void PlayEffect(UIEffectPreset preset)
-        {
-            if (preset == null || effectTarget == null || !gameObject.activeInHierarchy)
-            {
-                return;
-            }
-
-            UIEffectService.Play(this, effectTarget, preset);
-        }
         protected void SetAlpha(float alpha)
         {
             if (!useCanvasGroup) return;
             _canvasGroup.alpha = alpha;
+        }
+
+        protected UIEffectTarget ResolveEffectTarget()
+        {
+            if (effectTarget == null)
+            {
+                effectTarget = UIEffectTarget.GetOrAdd(gameObject);
+            }
+
+            return effectTarget;
+        }
+
+        protected void HandlePointerEnterEffect(PointerEventData eventData)
+        {
+            PlayEffect(hoverPreset, UIEffectEventType.None);
+        }
+
+        protected void HandlePointerClickEffect(PointerEventData eventData)
+        {
+            PlayEffect(clickPreset, UIEffectEventType.None);
+        }
+
+        public virtual void HandleInvalidEffect()
+        {
+            PlayEffect(invalidPreset, UIEffectEventType.None);
+        }
+
+        public virtual void HandleCooldownStartedEffect()
+        {
+            PlayEffect(cooldownStartPreset, UIEffectEventType.None);
+        }
+
+        public virtual void HandleCooldownReadyEffect()
+        {
+            PlayEffect(cooldownReadyPreset, UIEffectEventType.CooldownCompleted);
+        }
+
+        public virtual void HandleEquipEffect()
+        {
+            PlayEffect(equipPreset, UIEffectEventType.None);
+        }
+
+        protected void PlayEffect(UIEffectPreset preset, UIEffectEventType eventType)
+        {
+            if (preset == null || !gameObject.activeInHierarchy)
+            {
+                return;
+            }
+
+            UIEffectTarget target = ResolveEffectTarget();
+            if (target == null)
+            {
+                return;
+            }
+
+            UIEffectService.Play(this, target, preset);
         }
     }
 }

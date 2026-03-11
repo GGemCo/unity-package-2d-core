@@ -11,8 +11,10 @@ namespace GGemCo2DCore
         [Header("Time")]
         [Tooltip("TimeScale 영향을 받지 않는 시간으로 효과를 재생할지 여부")]
         public bool useUnscaledTime = true;
-        [Tooltip("같은 대상에 동일 서비스가 재생 중일 때 처리 정책")]
-        public UIEffectPlayPolicy playPolicy = UIEffectPlayPolicy.Restart;
+        [Tooltip("효과 간 간섭을 제어할 채널")]
+        public UIEffectChannel channel = UIEffectChannel.Default;
+        [Tooltip("같은 대상에 동일 채널 효과가 재생 중일 때 처리 정책")]
+        public UIEffectPlayPolicy playPolicy = UIEffectPlayPolicy.StopSameChannelAndPlay;
 
         [Header("Fade")]
         [Tooltip("Fade 효과 사용 여부")]

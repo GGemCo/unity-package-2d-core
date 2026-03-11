@@ -1,3 +1,5 @@
+using UnityEngine.EventSystems;
+
 namespace GGemCo2DCore
 {
     /// <summary>
@@ -5,12 +7,12 @@ namespace GGemCo2DCore
     /// - 스킬/아이템 모두 표시 가능 (ProviderRegistry 기반)
     /// - Core 는 Skill 패키지를 직접 참조하지 않는다.
     /// </summary>
-    public class UIIconQuickSlot : UIIcon
+    public class UIIconQuickSlot : UIIcon, IPointerEnterHandler, IPointerExitHandler, IPointerClickHandler
     {
         protected override void Awake()
         {
             base.Awake();
-            IconType = IconConstants.Type.QuickSlot; // 퀵슬롯은 컨텐츠 타입이 슬롯마다 달라질 수 있음
+            IconType = IconConstants.Type.QuickSlot;
         }
 
         public override bool ChangeInfoByUid(
@@ -36,14 +38,39 @@ namespace GGemCo2DCore
             base.ChangeInfoByUid(0, 0, 0, false, 0, 0);
         }
 
-        /// <summary>
-        /// 각 아이콘 별로 처리한다.
-        /// </summary>
+        public void OnPointerEnter(PointerEventData eventData)
+        {
+            ShowOverImage(true);
+            HandlePointerEnterEffect(eventData);
+        }
+
+        public void OnPointerExit(PointerEventData eventData)
+        {
+            ShowOverImage(false);
+        }
+
+        public void OnPointerClick(PointerEventData eventData)
+        {
+            if (!PossibleClick || IsLock()) return;
+
+            if (eventData.button == PointerEventData.InputButton.Left)
+            {
+                if (window != null)
+                {
+                    window.SetSelectedIcon(index);
+                }
+                HandlePointerClickEffect(eventData);
+            }
+            else if (eventData.button == PointerEventData.InputButton.Right)
+            {
+                window?.OnRightClick(this);
+            }
+        }
+
         protected override void UpdateIconImage()
         {
         }
 
-        // 퀵슬롯은 스킬/아이템 공용이므로 기본 path 기반 로더는 사용하지 않음
         protected override string GetIconImagePath() => null;
     }
 }
