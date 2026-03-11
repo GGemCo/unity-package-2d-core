@@ -1,6 +1,8 @@
 using System;
 using System.Collections;
+using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.UI;
 
 namespace GGemCo2DCore
 {
@@ -9,7 +11,21 @@ namespace GGemCo2DCore
     /// </summary>
     public static class UIEffectService
     {
+        private sealed class RunningEffectHandle
+        {
+            public MonoBehaviour Runner;
+            public Coroutine Coroutine;
+            public UIEffectTarget Target;
+        }
+
+        private static readonly Dictionary<int, RunningEffectHandle> RunningEffects = new Dictionary<int, RunningEffectHandle>();
+
         public static Coroutine Play(MonoBehaviour runner, UIEffectTarget target, UIEffectPreset preset, Action onComplete = null)
+        {
+            return Play(runner, target, preset, default, onComplete);
+        }
+
+        public static Coroutine Play(MonoBehaviour runner, UIEffectTarget target, UIEffectPreset preset, UIEffectContext context, Action onComplete = null)
         {
             if (runner == null || target == null || preset == null)
             {
@@ -18,10 +34,55 @@ namespace GGemCo2DCore
             }
 
             target.AutoBind();
-            return runner.StartCoroutine(PlayRoutine(runner, target, preset, onComplete));
+            int targetId = target.GetInstanceID();
+
+            if (preset.playPolicy == UIEffectPlayPolicy.IgnoreIfPlaying && RunningEffects.ContainsKey(targetId))
+            {
+                return null;
+            }
+
+            if (preset.playPolicy == UIEffectPlayPolicy.Restart)
+            {
+                Stop(target);
+            }
+
+            Coroutine coroutine = runner.StartCoroutine(PlayRoutine(runner, target, preset, context, onComplete));
+
+            if (preset.playPolicy != UIEffectPlayPolicy.Parallel)
+            {
+                RunningEffects[targetId] = new RunningEffectHandle
+                {
+                    Runner = runner,
+                    Coroutine = coroutine,
+                    Target = target
+                };
+            }
+
+            return coroutine;
         }
 
-        private static IEnumerator PlayRoutine(MonoBehaviour runner, UIEffectTarget target, UIEffectPreset preset, Action onComplete)
+        public static void Stop(UIEffectTarget target)
+        {
+            if (target == null)
+            {
+                return;
+            }
+
+            int targetId = target.GetInstanceID();
+            if (!RunningEffects.TryGetValue(targetId, out var handle))
+            {
+                return;
+            }
+
+            if (handle.Runner != null && handle.Coroutine != null)
+            {
+                handle.Runner.StopCoroutine(handle.Coroutine);
+            }
+
+            RunningEffects.Remove(targetId);
+        }
+
+        private static IEnumerator PlayRoutine(MonoBehaviour runner, UIEffectTarget target, UIEffectPreset preset, UIEffectContext context, Action onComplete)
         {
             if (target == null || preset == null)
             {
@@ -102,14 +163,71 @@ namespace GGemCo2DCore
                     preset.useUnscaledTime);
             }
 
+            if (preset.useFlash && target.FlashTargetGraphic != null)
+            {
+                maxDuration = Mathf.Max(maxDuration, preset.flashDuration);
+                runner.StartCoroutine(PlayFlashRoutine(target.FlashTargetGraphic, preset));
+            }
+
             if (maxDuration > 0f)
             {
                 float elapsed = 0f;
                 while (elapsed < maxDuration)
                 {
+                    if (target == null || runner == null)
+                    {
+                        break;
+                    }
+
                     elapsed += preset.useUnscaledTime ? Time.unscaledDeltaTime : Time.deltaTime;
                     yield return null;
                 }
+            }
+
+            Complete(target, onComplete);
+        }
+
+        private static IEnumerator PlayFlashRoutine(Graphic targetGraphic, UIEffectPreset preset)
+        {
+            if (targetGraphic == null || preset == null)
+            {
+                yield break;
+            }
+
+            Color baseColor = targetGraphic.color;
+            Color flashColor = preset.flashColor;
+            flashColor.a = Mathf.Clamp01(preset.flashPeakAlpha);
+
+            float duration = Mathf.Max(0.0001f, preset.flashDuration);
+            float elapsed = 0f;
+
+            while (elapsed < duration)
+            {
+                if (targetGraphic == null)
+                {
+                    yield break;
+                }
+
+                elapsed += preset.useUnscaledTime ? Time.unscaledDeltaTime : Time.deltaTime;
+                float t = Mathf.Clamp01(elapsed / duration);
+                float pingPong = t <= 0.5f ? t * 2f : (1f - t) * 2f;
+                float eased = Easing.Apply(pingPong, preset.flashEaseType);
+                targetGraphic.color = Color.LerpUnclamped(baseColor, flashColor, eased);
+                yield return null;
+            }
+
+            if (targetGraphic != null)
+            {
+                targetGraphic.color = baseColor;
+            }
+        }
+
+        private static void Complete(UIEffectTarget target, Action onComplete)
+        {
+            if (target != null)
+            {
+                int targetId = target.GetInstanceID();
+                RunningEffects.Remove(targetId);
             }
 
             onComplete?.Invoke();

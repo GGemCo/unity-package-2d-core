@@ -1,5 +1,6 @@
 ﻿using TMPro;
 using UnityEngine;
+using UnityEngine.EventSystems;
 using UnityEngine.UI;
 
 namespace GGemCo2DCore
@@ -20,6 +21,19 @@ namespace GGemCo2DCore
         public bool useCanvasGroup;
         [Tooltip("Canvas Group의 Interactable 설정")]
         public bool isCanvasGroupInteractable = true;
+        [Header("UI Effect")]
+        [Tooltip("아이콘 공용 UI 효과 대상")]
+        [SerializeField] protected UIEffectTarget effectTarget;
+        [Tooltip("호버 효과 프리셋")]
+        [SerializeField] protected UIEffectPreset hoverPreset;
+        [Tooltip("클릭 효과 프리셋")]
+        [SerializeField] protected UIEffectPreset clickPreset;
+        [Tooltip("사용 불가 효과 프리셋")]
+        [SerializeField] protected UIEffectPreset invalidPreset;
+        [Tooltip("쿨타임 시작 효과 프리셋")]
+        [SerializeField] protected UIEffectPreset cooldownStartPreset;
+        [Tooltip("쿨타임 완료 효과 프리셋")]
+        [SerializeField] protected UIEffectPreset cooldownCompletedPreset;
         
         // 윈도우 
         [HideInInspector] public UIWindow window;
@@ -116,6 +130,11 @@ namespace GGemCo2DCore
                     _canvasGroup = gameObject.AddComponent<CanvasGroup>();
                 _canvasGroup.interactable = isCanvasGroupInteractable;
             }
+
+            if (effectTarget == null)
+                effectTarget = UIEffectTarget.GetOrAdd(gameObject);
+            else
+                effectTarget.AutoBind();
         }
 
         protected virtual void Start()
@@ -451,6 +470,7 @@ namespace GGemCo2DCore
             if (time > 0)
             {
                 SceneGame.Instance.systemMessageManager.ShowMessageWarning("Action_CannotUseDuringCooldown");//"쿨타임 중에는 사용할 수 없습니다."
+                PlayInvalidEffect();
                 return false;
             }
             
@@ -511,6 +531,53 @@ namespace GGemCo2DCore
             _dragHandler.SetOriginalPosition(position);
         }
 
+
+        protected void PlayHoverEffect()
+        {
+            PlayEffect(hoverPreset);
+        }
+
+        protected void PlayClickEffect()
+        {
+            PlayEffect(clickPreset);
+        }
+
+        public void PlayInvalidEffect()
+        {
+            PlayEffect(invalidPreset);
+        }
+
+        public void PlayCooldownStartEffect()
+        {
+            PlayEffect(cooldownStartPreset);
+        }
+
+        public void PlayCooldownCompletedEffect()
+        {
+            PlayEffect(cooldownCompletedPreset);
+        }
+
+        protected void HandlePointerEnterEffect(PointerEventData eventData)
+        {
+            if (eventData == null) return;
+            PlayHoverEffect();
+        }
+
+        protected void HandlePointerClickEffect(PointerEventData eventData)
+        {
+            if (eventData == null || eventData.button != PointerEventData.InputButton.Left) return;
+            PlayClickEffect();
+        }
+
+        private void PlayEffect(UIEffectPreset preset)
+        {
+            if (preset == null || effectTarget == null || !gameObject.activeInHierarchy)
+            {
+                return;
+            }
+
+            UIEffectService.Play(this, effectTarget, preset);
+        }
         protected void SetAlpha(float alpha)
         {
             if (!useCanvasGroup) return;

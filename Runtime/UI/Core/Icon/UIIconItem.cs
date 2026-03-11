@@ -64,6 +64,7 @@ namespace GGemCo2DCore
             // GcLogger.Log("OnPointerEnter "+eventData);
             window.ShowItemInfo(true, this);
             ShowOverImage(true);
+            HandlePointerEnterEffect(eventData);
         }
 
         public void OnPointerExit(PointerEventData eventData)
@@ -81,6 +82,7 @@ namespace GGemCo2DCore
             {
                 if (!window) return;
                 window.SetSelectedIcon(index);
+                HandlePointerClickEffect(eventData);
             }
             else if(eventData.button == PointerEventData.InputButton.Middle)
             {

@@ -1,4 +1,4 @@
-﻿using UnityEngine;
+using UnityEngine;
 
 namespace GGemCo2DCore
 {
@@ -9,7 +9,7 @@ namespace GGemCo2DCore
     {
         // 현재 쿨타임 시간
         private float currentCoolTime;
-        // true : 시계 반대 방향으로 쿨타임이 표시된다. 
+        // true : 시계 반대 방향으로 쿨타임이 표시된다.
         private bool isReverseFillAmount;
         // true : 현재 쿨타임이 진행중이다.
         private bool isPlayingCoolTime;
@@ -52,6 +52,8 @@ namespace GGemCo2DCore
                 icon.imageCoolTimeGauge.fillAmount = isReverseFillAmount ? 0 : 1;
                 icon.imageCoolTimeGauge.gameObject.SetActive(true);
             }
+
+            icon?.PlayCooldownStartEffect();
             return true;
         }
 
@@ -86,7 +88,7 @@ namespace GGemCo2DCore
 
             if (icon != null && icon.gameObject.activeInHierarchy)
             {
-                // UIEffectService.PlayCooldownCompleted(icon, icon.gameObject);
+                icon.PlayCooldownCompletedEffect();
             }
         }
 

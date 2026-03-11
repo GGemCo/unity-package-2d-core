@@ -11,6 +11,8 @@ namespace GGemCo2DCore
         [Header("Time")]
         [Tooltip("TimeScale 영향을 받지 않는 시간으로 효과를 재생할지 여부")]
         public bool useUnscaledTime = true;
+        [Tooltip("같은 대상에 동일 서비스가 재생 중일 때 처리 정책")]
+        public UIEffectPlayPolicy playPolicy = UIEffectPlayPolicy.Restart;
 
         [Header("Fade")]
         [Tooltip("Fade 효과 사용 여부")]
@@ -73,5 +75,17 @@ namespace GGemCo2DCore
         public float shakeDuration = 0.15f;
         [Tooltip("진동 횟수")]
         public int shakeVibrato = 14;
+
+        [Header("Flash")]
+        [Tooltip("Graphic 색상 플래시 효과 사용 여부")]
+        public bool useFlash;
+        [Tooltip("플래시에 사용할 색상")]
+        public Color flashColor = Color.white;
+        [Tooltip("플래시 색상의 최대 알파")]
+        [Range(0f, 1f)] public float flashPeakAlpha = 0.8f;
+        [Tooltip("플래시 전체 시간")]
+        public float flashDuration = 0.2f;
+        [Tooltip("플래시 이징")]
+        public Easing.EaseType flashEaseType = Easing.EaseType.EaseOutCubic;
     }
 }

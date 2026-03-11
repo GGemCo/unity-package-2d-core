@@ -14,15 +14,14 @@ namespace GGemCo2DCore
             None,
             Default // 메시지, 확인, 취소 버튼 있는 타입
         }
+
         [SerializeField] private GameObject[] popupTypePrefabs;
         public void SetPopupTypePrefabs(GameObject[] prefabs) => popupTypePrefabs = prefabs;
         
         [SerializeField] private Transform canvasPopup; // 팝업이 들어갈 canvas
         public void SetCanvasPopup(Transform value) => canvasPopup = value;
 
-        private GameObject _elementRewardItem;
-    
-        private readonly Queue<DefaultPopup> _popupQueue = new Queue<DefaultPopup>();
+        private readonly Queue<PopupMetadata> _popupQueue = new Queue<PopupMetadata>();
         private DefaultPopup _currentDefaultPopup;
         
         /// <summary>
@@ -31,31 +30,21 @@ namespace GGemCo2DCore
         /// <param name="popupMetadata"></param>
         private void ShowPopupWithMetadata(PopupMetadata popupMetadata)
         {
-            GameObject prefab = GetPopupPrefab(popupMetadata.PopupType);
-            if (prefab == null)
+            if (popupMetadata == null)
             {
                 GcLogger.LogError($"팝업 prefab이 없습니다. type: {popupMetadata.PopupType}");
                 return;
             }
 
-            DefaultPopup newPopup = Instantiate(prefab, canvasPopup).GetComponent<DefaultPopup>();
-            if (newPopup == null)
+            if (popupMetadata.ForceShow)
             {
-                GcLogger.LogError("팝업을 생성할 수 없습니다.");
+                var popup = CreatePopup(popupMetadata);
+                popup?.ShowPopup();
                 return;
             }
 
-            newPopup.Initialize(popupMetadata);
-
-            if (popupMetadata.ForceShow)
-            {
-                newPopup.ShowPopup();
-            }
-            else
-            {
-                _popupQueue.Enqueue(newPopup);
-                ShowNextPopup();
-            }
+            _popupQueue.Enqueue(popupMetadata);
+            ShowNextPopup();
         }
         /// <summary>
         /// 단순 팝업 메시지
@@ -121,49 +110,65 @@ namespace GGemCo2DCore
         {
             if (_currentDefaultPopup != null)
             {
-                _currentDefaultPopup.ClosePopup();
-                _currentDefaultPopup = null;
+                return;
             }
 
-            if (_popupQueue.Count == 0) return;
+            if (_popupQueue.Count == 0)
+            {
+                return;
+            }
 
-            _currentDefaultPopup = _popupQueue.Dequeue();
-            _currentDefaultPopup.ShowPopup();
+            PopupMetadata nextMetadata = _popupQueue.Dequeue();
+            _currentDefaultPopup = CreatePopup(nextMetadata);
+            _currentDefaultPopup?.ShowPopup();
+        }
+
+        private DefaultPopup CreatePopup(PopupMetadata popupMetadata)
+        {
+            GameObject prefab = GetPopupPrefab(popupMetadata.PopupType);
+            if (prefab == null)
+            {
+                GcLogger.LogError($"팝업 prefab이 없습니다. type: {popupMetadata.PopupType}");
+                return null;
+            }
+
+            DefaultPopup newPopup = Instantiate(prefab, canvasPopup).GetComponent<DefaultPopup>();
+            if (newPopup == null)
+            {
+                GcLogger.LogError("팝업을 생성할 수 없습니다.");
+                return null;
+            }
+
+            newPopup.Initialize(popupMetadata);
+            newPopup.Closed += OnPopupClosed;
+            return newPopup;
         }
         /// <summary>
         /// 팝업이 닫힐 때 호출
         /// </summary>
-        private void OnPopupClosed()
+        private void OnPopupClosed(DefaultPopup popup)
         {
-            if (_currentDefaultPopup != null)
+            if (popup != null)
             {
-                RemovePopupListeners(_currentDefaultPopup);
+                popup.Closed -= OnPopupClosed;
+            }
+
+            if (_currentDefaultPopup == popup)
+            {
                 _currentDefaultPopup = null;
             }
+
             ShowNextPopup();
         }
-        /// <summary>
-        /// 버튼 리스너 제거
-        /// </summary>
-        /// <param name="popup"></param>
-        private void RemovePopupListeners(DefaultPopup popup)
-        {
-            if (popup.buttonConfirm != null)
-            {
-                popup.buttonConfirm.onClick.RemoveListener(OnPopupClosed);
-            }
-            if (popup.buttonCancel != null)
-            {
-                popup.buttonCancel.onClick.RemoveListener(OnPopupClosed);
-            }
-        }
-        /// <summary>
-        /// 예외 처리 추가한 팝업 프리팹 검색
-        /// </summary>
-        /// <param name="popupType"></param>
-        /// <returns></returns>
+
         private GameObject GetPopupPrefab(Type popupType)
         {
+            if (popupTypePrefabs == null || popupTypePrefabs.Length == 0)
+            {
+                GcLogger.LogError("Popup prefab 배열이 비어 있습니다.");
+                return null;
+            }
+
             if ((int)popupType < 0 || (int)popupType >= popupTypePrefabs.Length)
             {
                 GcLogger.LogError($"잘못된 PopupType: {popupType}");

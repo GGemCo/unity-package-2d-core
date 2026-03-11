@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using TMPro;
 using UnityEngine;
@@ -32,7 +33,7 @@ namespace GGemCo2DCore
         // 마우스 클릭했을때도 닫히게 할 것인지 
         public bool IsClosableByClick = true;
     }
-    
+
     /// <summary>
     /// 디폴트 팝업창
     /// </summary>
@@ -51,36 +52,46 @@ namespace GGemCo2DCore
         [Tooltip("내용이 들어가는 Panel")]
         public RectTransform panelContent;
         [Tooltip("팝업창이 보여질때 Fade in/out 시간(초)")]
-        public float fadeDuration;
-        // 페이드 인/아웃을 위한 CanvasGroup
+        public float fadeDuration = 0.2f;
+        [Header("UI Effect")]
+        [SerializeField] private UIEffectTarget effectTarget;
+        [SerializeField] private UIEffectPreset popupOpenPreset;
+        [SerializeField] private UIEffectPreset popupClosePreset;
+
         private CanvasGroup _canvasGroup;
-        // 마우스 클릭했을때도 닫히게 할 것인지 
         private bool _isClosableByClick;
+        private Coroutine _fallbackFadeCoroutine;
+        private bool _isClosing;
+
+        public event Action<DefaultPopup> Closed;
 
         private void Awake()
         {
             _canvasGroup = GetComponent<CanvasGroup>();
+            if (_canvasGroup == null)
+                _canvasGroup = gameObject.AddComponent<CanvasGroup>();
+
+            if (effectTarget == null)
+                effectTarget = UIEffectTarget.GetOrAdd(gameObject);
+            else
+                effectTarget.AutoBind();
         }
+
         /// <summary>
         /// 초기화
         /// </summary>
-        /// <param name="popupMetadata"></param>
         public void Initialize(PopupMetadata popupMetadata)
         {
             PopupType = popupMetadata.PopupType;
             _isClosableByClick = popupMetadata.IsClosableByClick;
-            
+
             SetupTitle(popupMetadata.Title);
             SetupMessage(popupMetadata.Message, popupMetadata.MessageColor);
             SetupButtons(popupMetadata);
 
-            // 레이아웃 업데이트
             LayoutRebuilder.ForceRebuildLayoutImmediate(panelContent);
         }
-        /// <summary>
-        /// 타이틀 셋팅하기
-        /// </summary>
-        /// <param name="title"></param>
+
         private void SetupTitle(string title)
         {
             string localeTitle = LocalizationManager.Instance.GetSystemByKey(title);
@@ -93,11 +104,7 @@ namespace GGemCo2DCore
                 textTitle.text = title;
             }
         }
-        /// <summary>
-        /// 메시지 셋팅하기
-        /// </summary>
-        /// <param name="message"></param>
-        /// <param name="color"></param>
+
         private void SetupMessage(string message, Color color)
         {
             if (textMessage == null) return;
@@ -120,25 +127,16 @@ namespace GGemCo2DCore
                 textMessage.gameObject.SetActive(false);
             }
         }
-        /// <summary>
-        /// 확인, 취소 버튼 셋팅하기
-        /// </summary>
-        /// <param name="popupMetadata"></param>
+
         private void SetupButtons(PopupMetadata popupMetadata)
         {
-            popupMetadata.OnConfirm ??= ClosePopup;
-            popupMetadata.OnCancel ??= ClosePopup;
+            popupMetadata.OnConfirm ??= delegate { };
+            popupMetadata.OnCancel ??= delegate { };
 
             SetupButton(buttonConfirm, popupMetadata.ShowConfirmButton, popupMetadata.OnConfirm, "Confirm 버튼이 없습니다.");
             SetupButton(buttonCancel, popupMetadata.ShowCancelButton, popupMetadata.OnCancel, "Cancel 버튼이 없습니다.");
         }
-        /// <summary>
-        /// 버튼 셋팅하기
-        /// </summary>
-        /// <param name="button"></param>
-        /// <param name="isActive"></param>
-        /// <param name="callback"></param>
-        /// <param name="errorMessage"></param>
+
         private void SetupButton(Button button, bool isActive, System.Action callback, string errorMessage)
         {
             if (button == null)
@@ -151,52 +149,78 @@ namespace GGemCo2DCore
             }
 
             button.gameObject.SetActive(isActive);
+            button.onClick.RemoveAllListeners();
 
             if (!isActive) return;
-            button.onClick.RemoveListener(callback.Invoke);
-            button.onClick.RemoveListener(ClosePopup);
-            button.onClick.AddListener(callback.Invoke);
+
+            button.onClick.AddListener(() => callback?.Invoke());
             button.onClick.AddListener(ClosePopup);
         }
+
         /// <summary>
         /// 팝업창 띄우기
         /// </summary>
         public void ShowPopup()
         {
-            StartCoroutine(FadeCoroutine(0f, 1f, OnFadeInStart, OnFadeInEnd));
+            _isClosing = false;
+            PlayPresetOrFallback(popupOpenPreset, 0f, 1f, OnFadeInEnd);
         }
+
         /// <summary>
         /// 팝업창 닫기
         /// </summary>
         public void ClosePopup()
         {
-            StartCoroutine(FadeCoroutine(1f, 0f, OnFadeOutDestroyStart, OnFadeOutDestroyEnd));
+            if (_isClosing) return;
+            _isClosing = true;
+            PlayPresetOrFallback(popupClosePreset, 1f, 0f, CompleteClose);
         }
-        private IEnumerator FadeCoroutine(float startAlpha, float endAlpha, System.Action onStart, System.Action onEnd)
+
+        private void PlayPresetOrFallback(UIEffectPreset preset, float fallbackStartAlpha, float fallbackEndAlpha, Action onComplete)
         {
+            if (_fallbackFadeCoroutine != null)
+            {
+                StopCoroutine(_fallbackFadeCoroutine);
+                _fallbackFadeCoroutine = null;
+            }
+
+            if (preset != null && effectTarget != null)
+            {
+                UIEffectService.Play(this, effectTarget, preset, onComplete: () => onComplete?.Invoke());
+                return;
+            }
+
+            _fallbackFadeCoroutine = StartCoroutine(FadeCoroutine(fallbackStartAlpha, fallbackEndAlpha, onComplete));
+        }
+
+        private IEnumerator FadeCoroutine(float startAlpha, float endAlpha, Action onEnd)
+        {
+            float duration = Mathf.Max(0.0001f, fadeDuration);
             float elapsedTime = 0f;
             _canvasGroup.alpha = startAlpha;
 
-            onStart?.Invoke();
-
-            while (elapsedTime < fadeDuration)
+            while (elapsedTime < duration)
             {
                 elapsedTime += Time.deltaTime;
-                float t = Mathf.Clamp01(elapsedTime / fadeDuration);
+                float t = Mathf.Clamp01(elapsedTime / duration);
                 _canvasGroup.alpha = Mathf.Lerp(startAlpha, endAlpha, Easing.EaseOutQuintic(t));
                 yield return null;
             }
 
+            _canvasGroup.alpha = endAlpha;
+            _fallbackFadeCoroutine = null;
             onEnd?.Invoke();
         }
 
-        private void OnFadeInStart() { }
-        private void OnFadeInEnd() => _canvasGroup.alpha = 1.0f;
-
-        private void OnFadeOutDestroyStart() { }
-
-        private void OnFadeOutDestroyEnd()
+        private void OnFadeInEnd()
         {
+            _canvasGroup.alpha = 1f;
+        }
+
+        private void CompleteClose()
+        {
+            if (!this) return;
+            Closed?.Invoke(this);
             Destroy(gameObject);
         }
         /// <summary>
@@ -223,7 +247,7 @@ namespace GGemCo2DCore
         {
             if (button != null)
             {
-                button.onClick.RemoveListener(ClosePopup);
+                button.onClick.RemoveAllListeners();
             }
         }
     }
