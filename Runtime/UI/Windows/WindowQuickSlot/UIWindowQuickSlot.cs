@@ -184,7 +184,7 @@ namespace GGemCo2DCore
 
             // 3) Core 추상화(드라이버)로 스킬 사용 요청
             // Core가 Skill 패키지 타입을 몰라도 되게 GetComponent<Interface>로 찾습니다.
-            var driver = playerGo.GetComponent<IMonsterSkillDriver>();
+            var driver = playerGo.GetComponent<ICharacterSkillDriver>();
             if (driver == null) return;
 
             if (driver.IsSkillBusy) return;
@@ -192,13 +192,14 @@ namespace GGemCo2DCore
             // 4) 최소 타겟 컨텍스트 구성 (현재 Core에는 “플레이어 락온/조준” 시스템이 명확히 없으므로,
             //    우선은 forward + 자기 위치 기반으로 전달)
             var forward = ResolveForward2D(playerGo);
-            var target = new MonsterSkillTarget(
+            var request = new SkillDriverRequest(
                 lockedTarget: null,
                 groundPoint: playerGo.transform.position,
-                forward: forward
+                forward: forward,
+                source: ConfigCommon.SkillTableSource.Player
             );
 
-            driver.TryUseSkill(skillUid, target);
+            driver.TryUseSkill(skillUid, request);
         }
         private static Vector2 ResolveForward2D(GameObject caster)
         {

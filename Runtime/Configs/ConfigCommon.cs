@@ -137,5 +137,13 @@ namespace GGemCo2DCore
              { DamageType.Lightning, "Lighting DMG" },
              { DamageType.Poison, "Poison DMG" },
          };
+         /// <summary>
+         /// 스킬 정의를 조회할 원본 테이블 종류입니다.
+         /// </summary>
+         public enum SkillTableSource
+         {
+             Player = 0,
+             Monster = 1,
+         }
     }
 }
