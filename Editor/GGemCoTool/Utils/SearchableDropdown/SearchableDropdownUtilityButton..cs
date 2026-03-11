@@ -31,7 +31,8 @@ namespace GGemCo2DCoreEditor
             if (options == null) throw new ArgumentNullException(nameof(options));
             if (onSelected == null) throw new ArgumentNullException(nameof(onSelected));
 
-            buttonStyle ??= GUI.skin.button;
+            buttonStyle ??= new GUIStyle(GUI.skin.button);
+            buttonStyle.alignment = TextAnchor.MiddleLeft;
 
             using (new EditorGUI.DisabledScope(disabled))
             {
@@ -48,7 +49,7 @@ namespace GGemCo2DCoreEditor
                     return false;
 
                 Rect screenRect = GUIUtility.GUIToScreenRect(btnRect);
-                screenRect.x = 0;
+                screenRect.x = btnRect.x;
                 screenRect.y = btnRect.y;
 
                 Show(

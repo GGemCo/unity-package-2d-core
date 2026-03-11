@@ -48,7 +48,7 @@ namespace GGemCo2DCoreEditor
                     return false;
 
                 Rect screenRect = GUIUtility.GUIToScreenRect(fieldRect);
-                screenRect.x = 0;
+                screenRect.x = fieldRect.x;
                 screenRect.y = fieldRect.y;
 
                 Show(
