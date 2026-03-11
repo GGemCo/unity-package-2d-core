@@ -139,6 +139,30 @@ namespace GGemCo2DCoreEditor
         [SerializeField] private bool _foldProjectileRowEdit = true;
         private StruckTableProjectile _editingProjectile;
         private bool _editingProjectileDirty;
+        private static readonly TableRowEditorUtility.TableRowEditorField[] ProjectileRowEditorFields =
+        {
+            new("Uid", readOnly: true),
+            new("Type"),
+            new("Name"),
+            new("EffectUid"),
+            new("EffectScale"),
+            new("MoveSpeed"),
+            new("ArcHeightMin"),
+            new("ArcHeightMax"),
+            new("StartPosition", "StartPosition (x,y)"),
+            new("ColliderSize", "ColliderSize (x,y)"),
+            new("ColliderOffset", "ColliderOffset (x,y)"),
+            new("HitEffectUid"),
+            new("TargetType"),
+            new("TargetPositionRangeX"),
+            new("Count"),
+            new("SecDelayByOne"),
+            new("BoundaryMode"),
+            new("BoundaryPadding"),
+            new("BounceMaxCount"),
+            new("BounceSpeedMultiplier"),
+        };
+
 
 
         protected override void OnEnable()
@@ -1090,45 +1114,8 @@ namespace GGemCo2DCoreEditor
 
             using (new EditorGUILayout.VerticalScope("box"))
             {
-                using (new EditorGUI.DisabledScope(true))
-                {
-                    EditorGUILayout.IntField(new GUIContent("Uid"), _editingProjectile.Uid);
-                }
-
-                EditorGUI.BeginChangeCheck();
-
-                _editingProjectile.Type = (ProjectileConstants.Type)EditorGUILayout.EnumPopup(new GUIContent("Type"), _editingProjectile.Type);
-                _editingProjectile.Name = EditorGUILayout.TextField(new GUIContent("Name"), _editingProjectile.Name);
-
-                _editingProjectile.EffectUid = EditorGUILayout.IntField(new GUIContent("EffectUid"), _editingProjectile.EffectUid);
-                _editingProjectile.EffectScale = EditorGUILayout.FloatField(new GUIContent("EffectScale"), _editingProjectile.EffectScale);
-
-                _editingProjectile.MoveSpeed = EditorGUILayout.IntField(new GUIContent("MoveSpeed"), _editingProjectile.MoveSpeed);
-
-                _editingProjectile.ArcHeightMin = EditorGUILayout.IntField(new GUIContent("ArcHeightMin"), _editingProjectile.ArcHeightMin);
-                _editingProjectile.ArcHeightMax = EditorGUILayout.IntField(new GUIContent("ArcHeightMax"), _editingProjectile.ArcHeightMax);
-
-                _editingProjectile.StartPosition = EditorGUILayout.Vector2Field(new GUIContent("StartPosition (x,y)"), _editingProjectile.StartPosition);
-                _editingProjectile.ColliderSize = EditorGUILayout.Vector2Field(new GUIContent("ColliderSize (x,y)"), _editingProjectile.ColliderSize);
-                _editingProjectile.ColliderOffset = EditorGUILayout.Vector2Field(new GUIContent("ColliderOffset (x,y)"), _editingProjectile.ColliderOffset);
-
-                _editingProjectile.HitEffectUid = EditorGUILayout.IntField(new GUIContent("HitEffectUid"), _editingProjectile.HitEffectUid);
-
-                _editingProjectile.TargetType = (ProjectileConstants.TargetType)EditorGUILayout.EnumPopup(new GUIContent("TargetType"), _editingProjectile.TargetType);
-                _editingProjectile.TargetPositionRangeX = EditorGUILayout.IntField(new GUIContent("TargetPositionRangeX"), _editingProjectile.TargetPositionRangeX);
-
-                _editingProjectile.Count = EditorGUILayout.IntField(new GUIContent("Count"), _editingProjectile.Count);
-                _editingProjectile.SecDelayByOne = EditorGUILayout.FloatField(new GUIContent("SecDelayByOne"), _editingProjectile.SecDelayByOne);
-
-                // 화면 경계 처리(신규)
-                _editingProjectile.BoundaryMode = (ProjectileConstants.BoundaryMode)EditorGUILayout.EnumPopup(
-                    new GUIContent("BoundaryMode"), _editingProjectile.BoundaryMode);
-                _editingProjectile.BoundaryPadding = EditorGUILayout.FloatField(new GUIContent("BoundaryPadding"), _editingProjectile.BoundaryPadding);
-                _editingProjectile.BounceMaxCount = EditorGUILayout.IntField(new GUIContent("BounceMaxCount"), _editingProjectile.BounceMaxCount);
-                _editingProjectile.BounceSpeedMultiplier = EditorGUILayout.FloatField(
-                    new GUIContent("BounceSpeedMultiplier"), _editingProjectile.BounceSpeedMultiplier);
-
-                if (EditorGUI.EndChangeCheck())
+                var drawResult = TableRowEditorUtility.DrawObjectEditor(_editingProjectile, ProjectileRowEditorFields);
+                if (drawResult.Changed)
                 {
                     _editingProjectileDirty = true;
                 }
@@ -1150,7 +1137,6 @@ namespace GGemCo2DCoreEditor
                     {
                         if (GUILayout.Button("테스트 적용"))
                         {
-                            // 인게임 TableLoaderManager 의 값도 바꿔주기
                             var info = GGemCo2DCore.TableLoaderManager.Instance.GetProjectileData(projectileUid);
                             if (info != null)
                             {
@@ -1170,31 +1156,15 @@ namespace GGemCo2DCoreEditor
                             return;
                         }
 
-                        // 저장 후 재로드
                         var keepUid = projectileUid;
 
                         TableLoaderManagerBase.Unload(ConfigAddressableTable.TableProjectile.Path);
                         _tableProjectile = TableLoaderManager.LoadProjectileTable(forceReload: true);
-                        
-                        // 인게임 TableLoaderManager 의 값도 바꿔주기
+
                         var info = GGemCo2DCore.TableLoaderManager.Instance.GetProjectileData(projectileUid);
                         if (info != null)
                         {
-                            info.EffectUid = _editingProjectile.EffectUid;
-                            info.EffectScale = _editingProjectile.EffectScale;
-                            info.MoveSpeed = _editingProjectile.MoveSpeed;
-                            info.ArcHeightMin = _editingProjectile.ArcHeightMin;
-                            info.ArcHeightMax = _editingProjectile.ArcHeightMax;
-                            info.StartPosition = _editingProjectile.StartPosition;
-                            info.ColliderSize = _editingProjectile.ColliderSize;
-                            info.ColliderOffset = _editingProjectile.ColliderOffset;
-                            info.HitEffectUid = _editingProjectile.HitEffectUid;
-                            info.BoundaryMode = _editingProjectile.BoundaryMode;
-                            info.BoundaryPadding = _editingProjectile.BoundaryPadding;
-                            info.BounceMaxCount = _editingProjectile.BounceMaxCount;
-                            info.BounceSpeedMultiplier = _editingProjectile.BounceSpeedMultiplier;
-                            // info.TargetType = _editingProjectile.TargetType;
-                            // info.TargetPositionRangeX = _editingProjectile.TargetPositionRangeX;
+                            UpdateInGameProjectileTableInfo(_editingProjectile);
                         }
 
                         LoadProjectileDropdown();
@@ -1217,59 +1187,13 @@ namespace GGemCo2DCoreEditor
             if (_cachedProjectileInfo == null || _editingProjectile == null)
                 return false;
 
-            // Uid는 키이므로 편집하지 않습니다(표시만).
-            _cachedProjectileInfo.Type = _editingProjectile.Type;
-            _cachedProjectileInfo.Name = _editingProjectile.Name;
-            _cachedProjectileInfo.EffectUid = _editingProjectile.EffectUid;
-            _cachedProjectileInfo.EffectScale = _editingProjectile.EffectScale;
-            _cachedProjectileInfo.MoveSpeed = _editingProjectile.MoveSpeed;
-            _cachedProjectileInfo.ArcHeightMin = _editingProjectile.ArcHeightMin;
-            _cachedProjectileInfo.ArcHeightMax = _editingProjectile.ArcHeightMax;
-            _cachedProjectileInfo.StartPosition = _editingProjectile.StartPosition;
-            _cachedProjectileInfo.ColliderSize = _editingProjectile.ColliderSize;
-            _cachedProjectileInfo.ColliderOffset = _editingProjectile.ColliderOffset;
-            _cachedProjectileInfo.HitEffectUid = _editingProjectile.HitEffectUid;
-            _cachedProjectileInfo.TargetType = _editingProjectile.TargetType;
-            _cachedProjectileInfo.TargetPositionRangeX = _editingProjectile.TargetPositionRangeX;
-            _cachedProjectileInfo.Count = _editingProjectile.Count;
-            _cachedProjectileInfo.SecDelayByOne = _editingProjectile.SecDelayByOne;
-
-            _cachedProjectileInfo.BoundaryMode = _editingProjectile.BoundaryMode;
-            _cachedProjectileInfo.BoundaryPadding = _editingProjectile.BoundaryPadding;
-            _cachedProjectileInfo.BounceMaxCount = _editingProjectile.BounceMaxCount;
-            _cachedProjectileInfo.BounceSpeedMultiplier = _editingProjectile.BounceSpeedMultiplier;
-
+            TableRowEditorUtility.CopyMembers(_editingProjectile, _cachedProjectileInfo, ProjectileRowEditorFields);
             return true;
         }
 
         private static StruckTableProjectile CloneProjectileRow(StruckTableProjectile row)
         {
-            if (row == null) return null;
-
-            UpdateInGameProjectileTableInfo(row);
-            return new StruckTableProjectile
-            {
-                Uid = row.Uid,
-                Type = row.Type,
-                Name = row.Name,
-                EffectUid = row.EffectUid,
-                EffectScale = row.EffectScale,
-                MoveSpeed = row.MoveSpeed,
-                ArcHeightMin = row.ArcHeightMin,
-                ArcHeightMax = row.ArcHeightMax,
-                StartPosition = row.StartPosition,
-                ColliderSize = row.ColliderSize,
-                ColliderOffset = row.ColliderOffset,
-                HitEffectUid = row.HitEffectUid,
-                TargetType = row.TargetType,
-                TargetPositionRangeX = row.TargetPositionRangeX,
-                Count = row.Count,
-                SecDelayByOne = row.SecDelayByOne,
-                BoundaryMode = row.BoundaryMode,
-                BoundaryPadding = row.BoundaryPadding,
-                BounceMaxCount = row.BounceMaxCount,
-                BounceSpeedMultiplier = row.BounceSpeedMultiplier
-            };
+            return TableRowEditorUtility.CloneShallow<StruckTableProjectile>(row);
         }
 
         private static void UpdateInGameProjectileTableInfo(StruckTableProjectile row)

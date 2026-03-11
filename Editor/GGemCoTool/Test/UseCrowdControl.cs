@@ -53,12 +53,32 @@ namespace GGemCo2DCoreEditor
         // ------------------------------
         // Editing
         // ------------------------------
-        [SerializeField] private bool _foldRowEdit = true;
+        private bool _foldRowEdit = true;
         private StruckTableCrowdControl _cachedRow;
         private StruckTableCrowdControl _editingRow;
         private bool _editingDirty;
 
         private Vector2 _scroll;
+        private static readonly TableRowEditorUtility.TableRowEditorField[] RowEditorFields =
+        {
+            new("Uid", readOnly: true),
+            new("Id"),
+            new("Type"),
+            new("DirectionType"),
+            new("FixedDirectionX"),
+            new("FixedDirectionY"),
+            new("Distance"),
+            new("EaseType"),
+            new("Duration"),
+            new("IsLockControl", group: "Flags"),
+            new("IsUseKnockbackStatus", group: "Flags"),
+            new("IsUseDontControlStatus", group: "Flags"),
+            new("StaggerAnimationName", group: "Flags"),
+            new("IsStopOnWall", group: "Flags"),
+            new("IsGroundOnly", group: "Flags"),
+            new("IsAirOnly", group: "Flags"),
+        };
+
 
         protected override void OnEnable()
         {
@@ -191,41 +211,8 @@ namespace GGemCo2DCoreEditor
 
             using (new EditorGUILayout.VerticalScope("box"))
             {
-                using (new EditorGUI.DisabledScope(true))
-                {
-                    EditorGUILayout.IntField(new GUIContent("Uid"), _editingRow.Uid);
-                }
-
-                EditorGUI.BeginChangeCheck();
-
-                _editingRow.Id = EditorGUILayout.TextField(new GUIContent("Id"), _editingRow.Id ?? string.Empty);
-                _editingRow.Type = (CrowdControlConstants.Type)EditorGUILayout.EnumPopup(new GUIContent("Type"), _editingRow.Type);
-                _editingRow.DirectionType = (CrowdControlConstants.DirectionType)EditorGUILayout.EnumPopup(new GUIContent("DirectionType"), _editingRow.DirectionType);
-
-                _editingRow.FixedDirectionX = EditorGUILayout.FloatField(new GUIContent("FixedDirectionX"), _editingRow.FixedDirectionX);
-                _editingRow.FixedDirectionY = EditorGUILayout.FloatField(new GUIContent("FixedDirectionY"), _editingRow.FixedDirectionY);
-
-                _editingRow.Distance = EditorGUILayout.FloatField(new GUIContent("Distance"), _editingRow.Distance);
-                if (_editingRow.Distance < 0f) _editingRow.Distance = 0f;
-
-                _editingRow.EaseType = (Easing.EaseType)EditorGUILayout.EnumPopup(new GUIContent("EaseType"), _editingRow.EaseType);
-
-                _editingRow.Duration = EditorGUILayout.FloatField(new GUIContent("Duration"), _editingRow.Duration);
-                if (_editingRow.Duration < 0f) _editingRow.Duration = 0f;
-
-                EditorGUILayout.Space(6);
-                EditorGUILayout.LabelField("Flags", EditorStyles.miniBoldLabel);
-                _editingRow.IsLockControl = EditorGUILayout.ToggleLeft("IsLockControl", _editingRow.IsLockControl);
-                _editingRow.IsUseKnockbackStatus = EditorGUILayout.ToggleLeft("IsUseKnockbackStatus", _editingRow.IsUseKnockbackStatus);
-                _editingRow.IsUseDontControlStatus = EditorGUILayout.ToggleLeft("IsUseDontControlStatus", _editingRow.IsUseDontControlStatus);
-
-                _editingRow.StaggerAnimationName =EditorGUILayout.TextField(new GUIContent("StaggerAnimationName"), _editingRow.StaggerAnimationName ?? string.Empty);
-
-                _editingRow.IsStopOnWall = EditorGUILayout.ToggleLeft("IsStopOnWall", _editingRow.IsStopOnWall);
-                _editingRow.IsGroundOnly = EditorGUILayout.ToggleLeft("IsGroundOnly", _editingRow.IsGroundOnly);
-                _editingRow.IsAirOnly = EditorGUILayout.ToggleLeft("IsAirOnly", _editingRow.IsAirOnly);
-
-                if (EditorGUI.EndChangeCheck())
+                var drawResult = TableRowEditorUtility.DrawObjectEditor(_editingRow, RowEditorFields, NormalizeEditingFieldValue);
+                if (drawResult.Changed)
                     _editingDirty = true;
             }
         }
@@ -366,27 +353,7 @@ namespace GGemCo2DCoreEditor
 
         private static StruckTableCrowdControl CloneRow(StruckTableCrowdControl row)
         {
-            if (row == null) return null;
-
-            return new StruckTableCrowdControl
-            {
-                Uid = row.Uid,
-                Id = row.Id,
-                Type = row.Type,
-                DirectionType = row.DirectionType,
-                FixedDirectionX = row.FixedDirectionX,
-                FixedDirectionY = row.FixedDirectionY,
-                Distance = row.Distance,
-                EaseType = row.EaseType,
-                Duration = row.Duration,
-                IsLockControl = row.IsLockControl,
-                IsUseKnockbackStatus = row.IsUseKnockbackStatus,
-                IsUseDontControlStatus = row.IsUseDontControlStatus,
-                StaggerAnimationName = row.StaggerAnimationName,
-                IsStopOnWall = row.IsStopOnWall,
-                IsGroundOnly = row.IsGroundOnly,
-                IsAirOnly = row.IsAirOnly,
-            };
+            return TableRowEditorUtility.CloneShallow<StruckTableCrowdControl>(row);
         }
 
         private bool ApplyEditingToCachedRow()
@@ -394,23 +361,33 @@ namespace GGemCo2DCoreEditor
             if (_cachedRow == null || _editingRow == null)
                 return false;
 
-            _cachedRow.Id = _editingRow.Id;
-            _cachedRow.Type = _editingRow.Type;
-            _cachedRow.DirectionType = _editingRow.DirectionType;
-            _cachedRow.FixedDirectionX = _editingRow.FixedDirectionX;
-            _cachedRow.FixedDirectionY = _editingRow.FixedDirectionY;
-            _cachedRow.Distance = _editingRow.Distance;
-            _cachedRow.EaseType = _editingRow.EaseType;
-            _cachedRow.Duration = _editingRow.Duration;
-            _cachedRow.IsLockControl = _editingRow.IsLockControl;
-            _cachedRow.IsUseKnockbackStatus = _editingRow.IsUseKnockbackStatus;
-            _cachedRow.IsUseDontControlStatus = _editingRow.IsUseDontControlStatus;
-            _cachedRow.StaggerAnimationName = _editingRow.StaggerAnimationName;
-            _cachedRow.IsStopOnWall = _editingRow.IsStopOnWall;
-            _cachedRow.IsGroundOnly = _editingRow.IsGroundOnly;
-            _cachedRow.IsAirOnly = _editingRow.IsAirOnly;
+            TableRowEditorUtility.CopyMembers(_editingRow, _cachedRow, RowEditorFields);
+            NormalizeEditingRow();
 
             return true;
+        }
+
+        private void NormalizeEditingFieldValue(object target, string memberName)
+        {
+            if (!ReferenceEquals(target, _editingRow) || string.IsNullOrWhiteSpace(memberName))
+                return;
+
+            switch (memberName)
+            {
+                case nameof(StruckTableCrowdControl.Distance):
+                    if (_editingRow.Distance < 0f) _editingRow.Distance = 0f;
+                    break;
+
+                case nameof(StruckTableCrowdControl.Duration):
+                    if (_editingRow.Duration < 0f) _editingRow.Duration = 0f;
+                    break;
+            }
+        }
+
+        private void NormalizeEditingRow()
+        {
+            NormalizeEditingFieldValue(_editingRow, nameof(StruckTableCrowdControl.Distance));
+            NormalizeEditingFieldValue(_editingRow, nameof(StruckTableCrowdControl.Duration));
         }
 
         // ==============================
