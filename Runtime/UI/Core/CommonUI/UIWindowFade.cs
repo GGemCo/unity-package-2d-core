@@ -1,86 +1,51 @@
-using System.Collections;
 using UnityEngine;
 
 namespace GGemCo2DCore
 {
+    /// <summary>
+    /// 윈도우 표시/숨김 연출을 담당하는 컴포넌트입니다.
+    /// 기존 CanvasGroup Fade 흐름을 유지하면서 공용 UI 효과 서비스와 연결합니다.
+    /// </summary>
     public class UIWindowFade : MonoBehaviour
     {
-        private CanvasGroup canvasGroup;
-        private const float FadeDuration = 0.3f;
         private UIWindow uiWindow;
-        private Coroutine coroutineFadeIn;
-        private Coroutine coroutineFadeOut;
 
         private void Awake()
         {
-            canvasGroup = GetComponent<CanvasGroup>();
             uiWindow = GetComponent<UIWindow>();
+            UiFadeUtility.TryGetCanvasGroup(gameObject, true, out _);
+            UIEffectTarget.GetOrAdd(gameObject);
         }
 
-        private void StartFadeOut()
-        {
-            // 패널 비활성화 시 페이드 아웃
-            coroutineFadeOut = StartCoroutine(FadeOut());
-        }
-
-        private IEnumerator FadeIn()
-        {
-            float elapsedTime = 0.0f;
-            canvasGroup.alpha = 0.0f;
-            canvasGroup.interactable = true;
-            canvasGroup.blocksRaycasts = true;
-            
-            // 미리 처리해야 깔끔하게 보인다.
-            uiWindow?.OnShow(true);
-            
-            while (elapsedTime < FadeDuration)
-            {
-                elapsedTime += Time.deltaTime;
-                float t = Mathf.Clamp01(elapsedTime / FadeDuration);
-                canvasGroup.alpha = Easing.EaseOutQuintic(t);
-                yield return null;
-            }
-            canvasGroup.alpha = 1.0f;
-        }
-
-        private IEnumerator FadeOut()
-        {
-            float elapsedTime = 0.0f;
-            canvasGroup.alpha = 1.0f;
-            canvasGroup.interactable = false;
-            canvasGroup.blocksRaycasts = false;
-
-            while (elapsedTime < FadeDuration)
-            {
-                elapsedTime += Time.deltaTime;
-                float t = Mathf.Clamp01(elapsedTime / FadeDuration);
-                canvasGroup.alpha = Easing.EaseInQuintic(1.0f - t);
-                yield return null;
-            }
-            canvasGroup.alpha = 0.0f;
-            uiWindow?.OnShow(false);
-            // 페이드 아웃 완료 후 비활성화
-            gameObject.SetActive(false);
-        }
         /// <summary>
         /// window 열기
         /// </summary>
         public void ShowPanel()
         {
-            if (uiWindow.gameObject.activeSelf) return;
-            // 먼저 활성화 해야 fade in 이 작동함
-            gameObject.SetActive(true);
-            // 패널 활성화 시 페이드 인
-            StartCoroutine(FadeIn());
+            if (uiWindow != null && uiWindow.gameObject.activeSelf)
+                return;
+
+            uiWindow?.OnShow(true);
+            UIEffectService.PlayWindow(this, gameObject, true);
         }
+
         /// <summary>
         /// window 닫기
         /// </summary>
         public void HidePanel()
         {
-            if (!uiWindow.gameObject.activeSelf) return;
-            // 페이드 아웃을 시작하도록 OnDisable을 호출
-            StartFadeOut();
+            if (uiWindow == null || !uiWindow.gameObject.activeSelf)
+                return;
+
+            UIEffectService.PlayWindow(this, gameObject, false, OnWindowClosed);
+        }
+
+        private void OnWindowClosed(bool show)
+        {
+            if (show)
+                return;
+
+            uiWindow?.OnShow(false);
         }
     }
 }

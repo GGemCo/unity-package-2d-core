@@ -1,39 +1,48 @@
-﻿using TMPro;
+using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
 namespace GGemCo2DCore
 {
+    /// <summary>
+    /// Slider 기반 HUD 리소스 표현입니다.
+    /// 값이 바뀌면 표시를 갱신하고, 변화 방향에 따라 공용 UI 효과를 재생합니다.
+    /// </summary>
     public sealed class UIWindowHudResourceSlider : UIWindowHudResourceBase
     {
         [SerializeField] private Slider slider;
         [SerializeField] private TextMeshProUGUI text;
+        [SerializeField] private UISliderDelayedFill delayedFill;
+        [SerializeField] private bool useEffects = true;
 
-        private bool _hasLast;
-        private long _lastCurrent;
-        private long _lastTotal;
-
-        public override void SetValue(UIWindowHudResourceType type, long current, long total)
+        protected override void ApplyValue(UIWindowHudResourceType type, long current, long total, UIEffectContext context)
         {
-            // 값이 동일하면 UI 갱신을 생략하여 Canvas 리빌드/문자열 할당을 줄입니다.
-            if (_hasLast && _lastCurrent == current && _lastTotal == total)
+            if (context.IsInitial == false && context.DeltaCurrent == 0 && context.DeltaTotal == 0)
             {
                 return;
             }
-
-            _hasLast = true;
-            _lastCurrent = current;
-            _lastTotal = total;
 
             if (total <= 0)
             {
                 if (slider != null) slider.value = 0f;
                 if (text != null) text.text = "0 / 0";
+                delayedFill?.SyncImmediately();
                 return;
             }
 
             if (slider != null) slider.value = (float)current / total;
             if (text != null) text.text = $"{current} / {total}";
+
+            if (context.IsInitial)
+            {
+                delayedFill?.SyncImmediately();
+                return;
+            }
+
+            if (useEffects)
+            {
+                UIEffectService.PlayHudResource(this, gameObject, context);
+            }
         }
 
         public override void SetMaxValue(UIWindowHudResourceType hpTemp, long total)

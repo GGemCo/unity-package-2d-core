@@ -25,10 +25,15 @@ namespace GGemCo2DCore
 
         protected virtual void Awake()
         {
-            gameObject.AddComponent<CanvasGroup>();
+            UiFadeUtility.TryGetCanvasGroup(gameObject, true, out _);
+            UIEffectTarget.GetOrAdd(gameObject);
             if (useFade)
             {
-                _uiWindowFade = gameObject.AddComponent<UIWindowFade>();
+                _uiWindowFade = gameObject.GetComponent<UIWindowFade>();
+                if (_uiWindowFade == null)
+                {
+                    _uiWindowFade = gameObject.AddComponent<UIWindowFade>();
+                }
             }
             InitializeButtonClose();
         }
@@ -77,22 +82,7 @@ namespace GGemCo2DCore
                 UIWindow uiWindow = SceneGame.uIWindowManager.GetUIWindowByUid<UIWindow>(windowUid);
                 if (uiWindow == null) continue;
                     
-                if (uiWindow._uiWindowFade == null)
-                {
-                    if (uiWindow.gameObject == null) continue;
-                    uiWindow.gameObject.SetActive(show);
-                    uiWindow.OnShow(show); 
-                    continue;
-                }
-
-                if (show)
-                {
-                    uiWindow._uiWindowFade.ShowPanel();
-                }
-                else
-                {
-                    uiWindow._uiWindowFade.HidePanel();
-                }
+                uiWindow.Show(show);
             }
         }
         /// <summary>
@@ -137,7 +127,6 @@ namespace GGemCo2DCore
 
         public void OnClickClose()
         {
-            if (_uiWindowFade == null) return;
             if (_struckTableWindow is { IsInteraction: true } && _interactionManager != null && _interactionManager.IsInteractioning())
             {
                 _interactionManager.EndInteraction();

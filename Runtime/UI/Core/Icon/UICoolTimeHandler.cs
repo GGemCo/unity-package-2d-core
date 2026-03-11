@@ -30,7 +30,7 @@ namespace GGemCo2DCore
 
         public bool ReStartCoolTime(float coolTime, UIIcon picon)
         {
-            ResetCoolTime();
+            StopCoolTimeVisual();
             icon = picon;
             return StartCoolTime(coolTime);
         }
@@ -81,9 +81,25 @@ namespace GGemCo2DCore
             {
                 icon.imageCoolTimeGauge.gameObject.SetActive(false);
             }
+
+            if (icon != null && icon.gameObject.activeInHierarchy)
+            {
+                UIEffectService.PlayCooldownCompleted(icon, icon.gameObject);
+            }
         }
 
         private void SetCoolTime(float time) => coolTimeDuration = time;
+
+        private void StopCoolTimeVisual()
+        {
+            isPlayingCoolTime = false;
+            currentCoolTime = 0;
+
+            if (icon != null && icon.imageCoolTimeGauge != null)
+            {
+                icon.imageCoolTimeGauge.gameObject.SetActive(false);
+            }
+        }
 
         public float GetCurrentCoolTime() => currentCoolTime;
 
