@@ -176,5 +176,8 @@ namespace GGemCo2DCore
             if (!TryParseFloatInvariant(z, out var fz)) return fallback;
             return new Vector3(fx, fy, fz);
         }
+        public static string FormatFloat(float v) => v.ToString(CultureInfo.InvariantCulture);
+        public static string FormatBool(bool v) => v ? "Y" : "N";
+        public static string FormatVector2(Vector2 v) => $"{FormatFloat(v.x)},{FormatFloat(v.y)}";
     }
 }

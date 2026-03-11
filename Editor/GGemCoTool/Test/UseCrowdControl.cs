@@ -1,8 +1,6 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Globalization;
-using System.IO;
-using System.Text;
 using UnityEditor;
 using UnityEngine;
 using GGemCo2DCore;
@@ -202,11 +200,11 @@ namespace GGemCo2DCoreEditor
         {
             if (_cachedRow == null || _editingRow == null)
             {
-                EditorGUILayout.HelpBox("선택된 CrowdControl 데이터가 없습니다.", MessageType.Info);
+                EditorGUILayout.HelpBox("선택된 데이터가 없습니다.", MessageType.Info);
                 return;
             }
 
-            _foldRowEdit = EditorGUILayout.Foldout(_foldRowEdit, "CrowdControl 테이블 편집(선택 Row)", true);
+            _foldRowEdit = EditorGUILayout.Foldout(_foldRowEdit, "테이블 편집(선택 Row)", true);
             if (!_foldRowEdit) return;
 
             using (new EditorGUILayout.VerticalScope("box"))
@@ -260,7 +258,7 @@ namespace GGemCo2DCoreEditor
                     UpdateInGameTableInfo(_cachedRow);
 
                     _editingDirty = false;
-                    ShowNotification(new GUIContent("crowd_control 테이블 저장 완료"));
+                    ShowNotification(new GUIContent("테이블 저장 완료"));
                 }
 
                 using (new EditorGUI.DisabledScope(!Application.isPlaying))
@@ -446,85 +444,69 @@ namespace GGemCo2DCoreEditor
         // ==============================
         // Save
         // ==============================
-        private static string FormatFloat(float v) => v.ToString(CultureInfo.InvariantCulture);
-        private static int BoolToInt(bool v) => v ? 1 : 0;
+
+        private static string SerializeCrowdControlRow(StruckTableCrowdControl row, IReadOnlyList<string> headers)
+        {
+            var values = new string[headers.Count];
+
+            for (int i = 0; i < headers.Count; i++)
+            {
+                values[i] = headers[i] switch
+                {
+                    "Uid" => row.Uid.ToString(),
+                    "Id" => row.Id ?? string.Empty,
+                    "Type" => row.Type.ToString(),
+                    "DirectionType" => row.DirectionType.ToString(),
+                    "FixedDirectionX" => MathHelper.FormatFloat(row.FixedDirectionX),
+                    "FixedDirectionY" => MathHelper.FormatFloat(row.FixedDirectionY),
+                    "Distance" => MathHelper.FormatFloat(row.Distance),
+                    "EaseType" => row.EaseType.ToString(),
+                    "Duration" => MathHelper.FormatFloat(row.Duration),
+                    "Height" => MathHelper.FormatFloat(row.Height),
+                    "DownWaitTime" => MathHelper.FormatFloat(row.DownWaitTime),
+                    "RecoverTime" => MathHelper.FormatFloat(row.RecoverTime),
+                    "IsLockControl" => MathHelper.FormatBool(row.IsLockControl),
+                    "IsUseKnockbackStatus" => MathHelper.FormatBool(row.IsUseKnockbackStatus),
+                    "IsUseDontControlStatus" => MathHelper.FormatBool(row.IsUseDontControlStatus),
+                    "StaggerAnimationName" => row.StaggerAnimationName ?? string.Empty,
+                    "IsStopOnWall" => MathHelper.FormatBool(row.IsStopOnWall),
+                    "IsGroundOnly" => MathHelper.FormatBool(row.IsGroundOnly),
+                    "IsAirOnly" => MathHelper.FormatBool(row.IsAirOnly),
+                    _ => string.Empty,
+                };
+            }
+
+            return string.Join("\t", values);
+        }
 
         private bool TrySaveCrowdControlTableFile(out string error)
         {
             error = null;
 
+            if (_cachedRow == null)
+            {
+                error = "저장할 Row가 없습니다.";
+                return false;
+            }
+
             if (_tableCrowdControl == null)
             {
-                error = "CrowdControl 테이블이 로드되지 않았습니다.";
+                error = "테이블이 로드되지 않았습니다.";
                 return false;
             }
 
-            try
+            if (!TableTextRowPatchUtility.TryPatchRowByUid(
+                    ConfigAddressableTable.TableCrowdControl.Path,
+                    _cachedRow.Uid,
+                    _cachedRow,
+                    SerializeCrowdControlRow,
+                    out error))
             {
-                var assetPath = ConfigAddressableTable.TableCrowdControl.Path; // Assets/.../crowd_control.txt
-                var projectRoot = Path.GetDirectoryName(Application.dataPath);
-                var fullPath = Path.Combine(projectRoot ?? string.Empty, assetPath);
-
-                // Canonical header order (TableCrowdControl 기준)
-                var header = string.Join("\t", new[]
-                {
-                    "Uid","Id",
-                    "Type","DirectionType",
-                    "FixedDirectionX","FixedDirectionY",
-                    "Distance","EaseType","Duration",
-                    "IsLockControl","IsUseKnockbackStatus","IsUseDontControlStatus",
-                    "StaggerAnimationName",
-                    "IsStopOnWall","IsGroundOnly","IsAirOnly",
-                });
-
-                var sb = new StringBuilder(1024 * 32);
-                sb.AppendLine(header);
-
-                var datas = _tableCrowdControl.GetDatas();
-                var uids = new List<int>(datas.Keys);
-                uids.Sort();
-
-                foreach (var uid in uids)
-                {
-                    if (!datas.TryGetValue(uid, out var r) || r == null)
-                        continue;
-
-                    sb.Append(r.Uid).Append('\t');
-                    sb.Append(r.Id ?? string.Empty).Append('\t');
-
-                    sb.Append(r.Type).Append('\t');
-                    sb.Append(r.DirectionType).Append('\t');
-
-                    sb.Append(FormatFloat(r.FixedDirectionX)).Append('\t');
-                    sb.Append(FormatFloat(r.FixedDirectionY)).Append('\t');
-
-                    sb.Append(FormatFloat(r.Distance)).Append('\t');
-                    sb.Append(r.EaseType).Append('\t');
-                    sb.Append(FormatFloat(r.Duration)).Append('\t');
-
-                    sb.Append(r.IsLockControl).Append('\t');
-                    sb.Append(r.IsUseKnockbackStatus).Append('\t');
-                    sb.Append(r.IsUseDontControlStatus).Append('\t');
-
-                    sb.Append(r.StaggerAnimationName).Append('\t');
-
-                    sb.Append(r.IsStopOnWall).Append('\t');
-                    sb.Append(r.IsGroundOnly).Append('\t');
-                    sb.Append(r.IsAirOnly);
-                    sb.AppendLine();
-                }
-
-                File.WriteAllText(fullPath, sb.ToString(), new UTF8Encoding(false));
-
-                AssetDatabase.ImportAsset(assetPath, ImportAssetOptions.ForceUpdate | ImportAssetOptions.ForceSynchronousImport);
-                AssetDatabase.Refresh();
-                return true;
-            }
-            catch (Exception e)
-            {
-                error = $"CrowdControl 테이블 저장 중 오류: {e.Message}";
+                error = $"테이블 저장 중 오류: {error}";
                 return false;
             }
+
+            return true;
         }
     }
 }

@@ -2,8 +2,6 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Globalization;
-using System.IO;
-using System.Text;
 using System.Reflection;
 using UnityEditor;
 using UnityEngine;
@@ -1105,11 +1103,11 @@ namespace GGemCo2DCoreEditor
         {
             if (_cachedProjectileInfo == null || _editingProjectile == null)
             {
-                EditorGUILayout.HelpBox("선택된 Projectile 데이터가 없습니다.", MessageType.Info);
+                EditorGUILayout.HelpBox("선택된 데이터가 없습니다.", MessageType.Info);
                 return;
             }
 
-            _foldProjectileRowEdit = EditorGUILayout.Foldout(_foldProjectileRowEdit, "Projectile 테이블 편집(선택 Row)", true);
+            _foldProjectileRowEdit = EditorGUILayout.Foldout(_foldProjectileRowEdit, "테이블 편집(선택 Row)", true);
             if (!_foldProjectileRowEdit) return;
 
             using (new EditorGUILayout.VerticalScope("box"))
@@ -1176,7 +1174,7 @@ namespace GGemCo2DCoreEditor
                         RepaintSceneViews();
 
                         _editingProjectileDirty = false;
-                        ShowNotification(new GUIContent("Projectile 테이블 저장 완료"));
+                        ShowNotification(new GUIContent("테이블 저장 완료"));
                     }
                 }
             }
@@ -1222,87 +1220,69 @@ namespace GGemCo2DCoreEditor
             }
         }
 
-        private static string FormatFloat(float v) => v.ToString(CultureInfo.InvariantCulture);
+        private static string SerializeProjectileRow(StruckTableProjectile row, IReadOnlyList<string> headers)
+        {
+            var values = new string[headers.Count];
 
-        private static string FormatVector2(Vector2 v) => $"{FormatFloat(v.x)},{FormatFloat(v.y)}";
+            for (int i = 0; i < headers.Count; i++)
+            {
+                values[i] = headers[i] switch
+                {
+                    "Uid" => row.Uid.ToString(),
+                    "Type" => row.Type.ToString(),
+                    "Name" => row.Name ?? string.Empty,
+                    "EffectUid" => row.EffectUid.ToString(),
+                    "EffectScale" => MathHelper.FormatFloat(row.EffectScale),
+                    "MoveSpeed" => row.MoveSpeed.ToString(),
+                    "ArcHeightMin" => row.ArcHeightMin.ToString(),
+                    "ArcHeightMax" => row.ArcHeightMax.ToString(),
+                    "StartPosition" => MathHelper.FormatVector2(row.StartPosition),
+                    "ColliderSize" => MathHelper.FormatVector2(row.ColliderSize),
+                    "ColliderOffset" => MathHelper.FormatVector2(row.ColliderOffset),
+                    "HitEffectUid" => row.HitEffectUid.ToString(),
+                    "TargetType" => row.TargetType.ToString(),
+                    "TargetPositionRangeX" => row.TargetPositionRangeX.ToString(),
+                    "Count" => row.Count.ToString(),
+                    "SecDelayByOne" => MathHelper.FormatFloat(row.SecDelayByOne),
+                    "BoundaryMode" => row.BoundaryMode.ToString(),
+                    "BoundaryPadding" => MathHelper.FormatFloat(row.BoundaryPadding),
+                    "BounceMaxCount" => row.BounceMaxCount.ToString(),
+                    "BounceSpeedMultiplier" => MathHelper.FormatFloat(row.BounceSpeedMultiplier),
+                    _ => string.Empty,
+                };
+            }
+
+            return string.Join("\t", values);
+        }
 
         private bool TrySaveProjectileTableFile(out string error)
         {
             error = null;
 
+            if (_cachedProjectileInfo == null)
+            {
+                error = "저장할 Row가 없습니다.";
+                return false;
+            }
+
             if (_tableProjectile == null)
             {
-                error = "Projectile 테이블이 로드되지 않았습니다.";
+                error = "테이블이 로드되지 않았습니다.";
                 return false;
             }
 
-            try
+            if (!TableTextRowPatchUtility.TryPatchRowByUid(
+                    ConfigAddressableTable.TableProjectile.Path,
+                    _cachedProjectileInfo.Uid,
+                    _cachedProjectileInfo,
+                    SerializeProjectileRow,
+                    out error))
             {
-                var assetPath = ConfigAddressableTable.TableProjectile.Path; // Assets/.../projectile.txt
-                var projectRoot = Path.GetDirectoryName(Application.dataPath);
-                var fullPath = Path.Combine(projectRoot ?? string.Empty, assetPath);
-
-                // Canonical header order (TableProjectile 기준)
-                var header = string.Join("\t", new[]
-                {
-                    "Uid","Type","Name","EffectUid","EffectScale","MoveSpeed","ArcHeightMin","ArcHeightMax",
-                    "StartPosition","ColliderSize","ColliderOffset","HitEffectUid","TargetType","TargetPositionRangeX","Count","SecDelayByOne",
-                    "BoundaryMode","BoundaryPadding","BounceMaxCount","BounceSpeedMultiplier"
-                });
-
-                var sb = new StringBuilder(1024 * 32);
-                sb.AppendLine(header);
-
-                var datas = _tableProjectile.GetDatas();
-
-                // uid 오름차순으로 저장(가독성/버전관리 용이)
-                var uids = new List<int>(datas.Keys);
-                uids.Sort();
-
-                foreach (var uid in uids)
-                {
-                    if (!datas.TryGetValue(uid, out var r) || r == null)
-                        continue;
-                    if (r == null) continue;
-
-                    sb.Append(r.Uid).Append('\t');
-                    sb.Append(r.Type).Append('\t');
-                    sb.Append(r.Name ?? string.Empty).Append('\t');
-                    sb.Append(r.EffectUid).Append('\t');
-                    sb.Append(FormatFloat(r.EffectScale)).Append('\t');
-                    sb.Append(r.MoveSpeed).Append('\t');
-                    sb.Append(r.ArcHeightMin).Append('\t');
-                    sb.Append(r.ArcHeightMax).Append('\t');
-                    sb.Append(FormatVector2(r.StartPosition)).Append('\t');
-                    sb.Append(FormatVector2(r.ColliderSize)).Append('\t');
-                    sb.Append(FormatVector2(r.ColliderOffset)).Append('\t');
-                    sb.Append(r.HitEffectUid).Append('\t');
-                    sb.Append(r.TargetType).Append('\t');
-                    sb.Append(r.TargetPositionRangeX).Append('\t');
-                    sb.Append(r.Count).Append('\t');
-                    sb.Append(FormatFloat(r.SecDelayByOne)).Append('\t');
-
-                    sb.Append(r.BoundaryMode).Append('\t');
-                    sb.Append(FormatFloat(r.BoundaryPadding)).Append('\t');
-                    sb.Append(r.BounceMaxCount).Append('\t');
-                    sb.Append(FormatFloat(r.BounceSpeedMultiplier));
-                    sb.AppendLine();
-                }
-
-                // 디스크에 저장
-                File.WriteAllText(fullPath, sb.ToString(), new UTF8Encoding(false));
-
-                // 에셋 리임포트
-                AssetDatabase.ImportAsset(assetPath, ImportAssetOptions.ForceUpdate | ImportAssetOptions.ForceSynchronousImport);
-                AssetDatabase.Refresh();
-
-                return true;
-            }
-            catch (Exception e)
-            {
-                error = $"Projectile 테이블 저장 중 오류: {e.Message}";
+                error = $"테이블 저장 중 오류: {error}";
                 return false;
             }
+
+            return true;
         }
 
         private static CharacterBase TryGetOwnerPlayer()
