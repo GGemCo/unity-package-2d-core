@@ -11,8 +11,13 @@ namespace GGemCo2DCore
     {
         private static readonly Dictionary<Transform, Coroutine> RunningTable = new();
 
-        public static Coroutine PlayPulse(MonoBehaviour runner, Transform target, Vector3 pulseScale, float duration,
-            bool useUnscaledTime, Easing.EaseType easeType)
+        public static Coroutine PlayPulse(
+            MonoBehaviour runner,
+            Transform target,
+            Vector3 pulseScale,
+            float duration,
+            bool useUnscaledTime,
+            Easing.EaseType easeType)
         {
             if (runner == null || target == null)
                 return null;
@@ -23,13 +28,17 @@ namespace GGemCo2DCore
                 RunningTable.Remove(target);
             }
 
-            var coroutine = runner.StartCoroutine(PulseRoutine(runner, target, pulseScale, duration, useUnscaledTime, easeType));
+            var coroutine = runner.StartCoroutine(PulseRoutine(target, pulseScale, duration, useUnscaledTime, easeType));
             RunningTable[target] = coroutine;
             return coroutine;
         }
 
-        private static IEnumerator PulseRoutine(MonoBehaviour runner, Transform target, Vector3 pulseScale, float duration,
-            bool useUnscaledTime, Easing.EaseType easeType)
+        private static IEnumerator PulseRoutine(
+            Transform target,
+            Vector3 pulseScale,
+            float duration,
+            bool useUnscaledTime,
+            Easing.EaseType easeType)
         {
             if (duration <= 0f)
             {

@@ -4,15 +4,15 @@ namespace GGemCo2DCore
 {
     /// <summary>
     /// 윈도우 표시/숨김 연출을 담당하는 컴포넌트입니다.
-    /// 기존 CanvasGroup Fade 흐름을 유지하면서 공용 UI 효과 서비스와 연결합니다.
     /// </summary>
     public class UIWindowFade : MonoBehaviour
     {
-        private UIWindow uiWindow;
+        private UIWindowBase _uiWindowBase;
+        private bool _isTransitioning;
 
         private void Awake()
         {
-            uiWindow = GetComponent<UIWindow>();
+            _uiWindowBase = GetComponent<UIWindowBase>();
             UiFadeUtility.TryGetCanvasGroup(gameObject, true, out _);
             UIEffectTarget.GetOrAdd(gameObject);
         }
@@ -22,11 +22,23 @@ namespace GGemCo2DCore
         /// </summary>
         public void ShowPanel()
         {
-            if (uiWindow != null && uiWindow.gameObject.activeSelf)
+            if (_isTransitioning)
                 return;
 
-            uiWindow?.OnShow(true);
-            UIEffectService.PlayWindow(this, gameObject, true);
+            if (gameObject.activeSelf)
+                return;
+
+            _isTransitioning = true;
+            gameObject.SetActive(true);
+            _uiWindowBase?.OnShow(true);
+
+            UIEffectService.PlayWindow(
+                this,
+                gameObject,
+                true,
+                _uiWindowBase != null ? _uiWindowBase.WindowOpenPreset : null,
+                _uiWindowBase != null ? _uiWindowBase.WindowClosePreset : null,
+                _ => { _isTransitioning = false; });
         }
 
         /// <summary>
@@ -34,18 +46,37 @@ namespace GGemCo2DCore
         /// </summary>
         public void HidePanel()
         {
-            if (uiWindow == null || !uiWindow.gameObject.activeSelf)
+            if (_isTransitioning)
                 return;
 
-            UIEffectService.PlayWindow(this, gameObject, false, OnWindowClosed);
+            if (!gameObject.activeSelf)
+                return;
+
+            _isTransitioning = true;
+            var canvasGroup = GetComponent<CanvasGroup>();
+            if (canvasGroup != null)
+            {
+                canvasGroup.interactable = false;
+                canvasGroup.blocksRaycasts = false;
+            }
+
+            UIEffectService.PlayWindow(
+                this,
+                gameObject,
+                false,
+                _uiWindowBase != null ? _uiWindowBase.WindowOpenPreset : null,
+                _uiWindowBase != null ? _uiWindowBase.WindowClosePreset : null,
+                OnWindowClosed);
         }
 
         private void OnWindowClosed(bool show)
         {
+            _isTransitioning = false;
             if (show)
                 return;
 
-            uiWindow?.OnShow(false);
+            _uiWindowBase?.OnShow(false);
+            gameObject.SetActive(false);
         }
     }
 }

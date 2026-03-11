@@ -11,8 +11,14 @@ namespace GGemCo2DCore
     {
         private static readonly Dictionary<RectTransform, Coroutine> RunningTable = new();
 
-        public static Coroutine PlayAnchoredPositionShake(MonoBehaviour runner, RectTransform target, float duration,
-            float strength, int vibrato, bool useUnscaledTime, Easing.EaseType easeType)
+        public static Coroutine PlayAnchoredPositionShake(
+            MonoBehaviour runner,
+            RectTransform target,
+            float duration,
+            float strength,
+            int vibrato,
+            bool useUnscaledTime,
+            Easing.EaseType easeType)
         {
             if (runner == null || target == null)
                 return null;
@@ -23,13 +29,18 @@ namespace GGemCo2DCore
                 RunningTable.Remove(target);
             }
 
-            var coroutine = runner.StartCoroutine(ShakeRoutine(runner, target, duration, strength, vibrato, useUnscaledTime, easeType));
+            var coroutine = runner.StartCoroutine(ShakeRoutine(target, duration, strength, vibrato, useUnscaledTime, easeType));
             RunningTable[target] = coroutine;
             return coroutine;
         }
 
-        private static IEnumerator ShakeRoutine(MonoBehaviour runner, RectTransform target, float duration,
-            float strength, int vibrato, bool useUnscaledTime, Easing.EaseType easeType)
+        private static IEnumerator ShakeRoutine(
+            RectTransform target,
+            float duration,
+            float strength,
+            int vibrato,
+            bool useUnscaledTime,
+            Easing.EaseType easeType)
         {
             var original = target.anchoredPosition;
             if (duration <= 0f || strength <= 0f || vibrato <= 0)

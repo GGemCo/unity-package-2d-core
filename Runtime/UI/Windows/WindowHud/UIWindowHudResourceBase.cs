@@ -1,4 +1,4 @@
-using UnityEngine;
+﻿using UnityEngine;
 
 namespace GGemCo2DCore
 {
@@ -12,8 +12,7 @@ namespace GGemCo2DCore
 
     /// <summary>
     /// HUD 리소스 표현의 공통 베이스입니다.
-    /// 값 변경 감지와 효과 문맥 계산은 베이스에서 처리하고,
-    /// 실제 UI 반영은 구현체가 담당합니다.
+    /// 값 변경 감지와 효과 문맥 계산은 베이스에서 처리하고, 실제 UI 반영은 구현체가 담당합니다.
     /// </summary>
     public abstract class UIWindowHudResourceBase : MonoBehaviour
     {
@@ -25,7 +24,7 @@ namespace GGemCo2DCore
         /// current/total이 변경될 때마다 호출됩니다.
         /// 구현체는 내부 UI(Slider, Heart 등)를 갱신합니다.
         /// </summary>
-        public virtual void SetValue(UIWindowHudResourceType type, long current, long total)
+        public void SetValue(UIWindowHudResourceType type, long current, long total)
         {
             var context = BuildEffectContext(type, current, total);
             ApplyValue(type, current, total, context);

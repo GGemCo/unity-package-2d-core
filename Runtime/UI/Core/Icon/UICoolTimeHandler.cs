@@ -34,6 +34,7 @@ namespace GGemCo2DCore
             icon = picon;
             return StartCoolTime(coolTime);
         }
+
         public bool StartCoolTime(float coolTime = 0)
         {
             if (coolTime > 0)
@@ -72,6 +73,7 @@ namespace GGemCo2DCore
                     : currentCoolTime / coolTimeDuration;
             }
         }
+
         public void ResetCoolTime()
         {
             isPlayingCoolTime = false;

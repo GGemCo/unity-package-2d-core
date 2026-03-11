@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.UI;
 
 namespace GGemCo2DCore
 {
@@ -8,18 +9,20 @@ namespace GGemCo2DCore
     [DisallowMultipleComponent]
     public sealed class UIEffectTarget : MonoBehaviour
     {
-        [SerializeField] private RectTransform rectTransform;
+        [SerializeField] private RectTransform rootRectTransform;
         [SerializeField] private CanvasGroup canvasGroup;
-        [SerializeField] private Transform scaleTarget;
+        [SerializeField] private RectTransform moveTarget;
         [SerializeField] private RectTransform shakeTarget;
+        [SerializeField] private Transform scaleTarget;
+        [SerializeField] private Graphic flashTargetGraphic;
 
-        public RectTransform RectTransform
+        public RectTransform RootRectTransform
         {
             get
             {
-                if (rectTransform == null)
-                    rectTransform = transform as RectTransform;
-                return rectTransform;
+                if (rootRectTransform == null)
+                    rootRectTransform = transform as RectTransform;
+                return rootRectTransform;
             }
         }
 
@@ -33,22 +36,29 @@ namespace GGemCo2DCore
             }
         }
 
+        public RectTransform MoveTarget => moveTarget != null ? moveTarget : RootRectTransform;
+        public RectTransform ShakeTarget => shakeTarget != null ? shakeTarget : RootRectTransform;
         public Transform ScaleTarget => scaleTarget != null ? scaleTarget : transform;
-        public RectTransform ShakeTarget => shakeTarget != null ? shakeTarget : RectTransform;
+        public Graphic FlashTargetGraphic => flashTargetGraphic;
 
         private void Reset()
         {
-            rectTransform = transform as RectTransform;
+            rootRectTransform = transform as RectTransform;
             canvasGroup = GetComponent<CanvasGroup>();
-            scaleTarget = transform;
+            moveTarget = transform as RectTransform;
             shakeTarget = transform as RectTransform;
+            scaleTarget = transform;
         }
 
         public static UIEffectTarget GetOrAdd(GameObject target)
         {
-            if (target == null) return null;
+            if (target == null)
+                return null;
+
             var result = target.GetComponent<UIEffectTarget>();
-            if (result != null) return result;
+            if (result != null)
+                return result;
+
             return target.AddComponent<UIEffectTarget>();
         }
     }
