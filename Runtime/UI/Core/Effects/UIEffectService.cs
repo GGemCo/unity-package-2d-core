@@ -180,6 +180,7 @@ namespace GGemCo2DCore
             }
 
             UIEffectScaleUtility.CacheBaseScale(target.ScaleTarget);
+            UIEffectMoveUtility.CacheBasePosition(target.MoveTarget);
             UIEffectShakeUtility.CacheBasePosition(target.ShakeTarget);
 
             float maxDuration = 0f;
@@ -208,13 +209,31 @@ namespace GGemCo2DCore
             if (preset.useMove && target.MoveTarget != null)
             {
                 maxDuration = Mathf.Max(maxDuration, preset.moveDuration);
-                Vector2 basePosition = target.MoveTarget.anchoredPosition;
-                target.MoveTarget.anchoredPosition = basePosition + preset.moveFromOffset;
+
+                Vector2 basePosition = UIEffectMoveUtility.GetOrCacheBasePosition(target.MoveTarget);
+                Vector2 from;
+                Vector2 to;
+                switch (preset.moveMode)
+                {
+                    case UIEffectMoveMode.FromBaseToOffset:
+                        from = basePosition;
+                        to = basePosition + preset.moveFromOffset;
+                        break;
+
+                    case UIEffectMoveMode.FromOffsetToBase:
+                    default:
+                        from = basePosition + preset.moveFromOffset;
+                        to = basePosition;
+                        break;
+                }
+
+                target.MoveTarget.anchoredPosition = from;
+
                 var moveOptions = MoveOptions.Default;
                 moveOptions.useUnscaledTime = preset.useUnscaledTime;
                 moveOptions.easeType = preset.moveEaseType;
                 moveOptions.snapToTargetOnComplete = preset.moveSnapToTargetOnComplete;
-                UiMoveAnchoredPosition.MoveTo(runner, target.MoveTarget, basePosition, preset.moveDuration, moveOptions);
+                UiMoveAnchoredPosition.MoveTo(runner, target.MoveTarget, to, preset.moveDuration, moveOptions);
             }
 
             if (preset.useScale && target.ScaleTarget != null)

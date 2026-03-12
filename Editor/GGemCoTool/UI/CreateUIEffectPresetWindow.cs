@@ -278,6 +278,7 @@ namespace GGemCo2DCoreEditor
                     DrawProperty("useMove");
                     using (new EditorGUI.DisabledScope(!FindProperty("useMove").boolValue))
                     {
+                        DrawProperty("moveMode");
                         DrawProperty("moveFromOffset");
                         DrawProperty("moveDuration");
                         DrawProperty("moveEaseType");
@@ -438,7 +439,17 @@ namespace GGemCo2DCoreEditor
             if (_preset.useMove)
             {
                 float eased = EvaluateProgress(progress, _preset.moveDuration, _preset.moveEaseType);
-                frame.PositionOffset += Vector2.LerpUnclamped(_preset.moveFromOffset, Vector2.zero, eased);
+                switch (_preset.moveMode)
+                {
+                    case UIEffectMoveMode.FromBaseToOffset:
+                        frame.PositionOffset += Vector2.LerpUnclamped(Vector2.zero, _preset.moveFromOffset, eased);
+                        break;
+
+                    case UIEffectMoveMode.FromOffsetToBase:
+                    default:
+                        frame.PositionOffset += Vector2.LerpUnclamped(_preset.moveFromOffset, Vector2.zero, eased);
+                        break;
+                }
             }
 
             if (_preset.useScale)
@@ -714,6 +725,7 @@ namespace GGemCo2DCoreEditor
             preset.fadeDisableInputWhenInvisible = true;
 
             preset.useMove = false;
+            preset.moveMode = UIEffectMoveMode.FromOffsetToBase;
             preset.moveFromOffset = Vector2.zero;
             preset.moveDuration = 0.2f;
             preset.moveEaseType = Easing.EaseType.EaseOutCubic;

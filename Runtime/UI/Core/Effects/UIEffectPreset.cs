@@ -37,7 +37,9 @@ namespace GGemCo2DCore
         [Header("Move")]
         [Tooltip("AnchoredPosition 이동 효과 사용 여부")]
         public bool useMove;
-        [Tooltip("시작 시 적용할 오프셋")]
+        [Tooltip("기준 위치와 오프셋 적용 방향")]
+        public UIEffectMoveMode moveMode = UIEffectMoveMode.FromOffsetToBase;
+        [Tooltip("기준 위치 대비 적용할 오프셋")]
         public Vector2 moveFromOffset = Vector2.zero;
         [Tooltip("이동 시간")]
         public float moveDuration = 0.2f;
