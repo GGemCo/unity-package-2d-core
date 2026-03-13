@@ -32,6 +32,11 @@ namespace GGemCo2DCore
         /// 다단 히트(연타) 구분용 공격 ID(선택)
         /// </summary>
         public int AttackId;
+
+        /// <summary>
+        /// 현재 데미지가 어떤 스킬에서 발생했는지 추적하기 위한 스킬 UID입니다.
+        /// </summary>
+        public int SkillUid;
     }
     /// <summary>
     /// 캐릭터 데미지 처리
@@ -77,6 +82,36 @@ namespace GGemCo2DCore
         public void Dispose()
         {
             _controllerMonsterSuperArmor.BreakTriggered -= OnSuperArmorBreak;
+        }
+
+        private void NotifyIncomingHitCombatFeedback(MetadataDamage metadataDamage, MonsterSkillCombatOutcome outcome)
+        {
+            if (metadataDamage == null)
+                return;
+
+            var attacker = metadataDamage.attacker;
+            if (attacker == null || metadataDamage.SkillUid <= 0)
+                return;
+
+            var feedback = new IncomingHitCombatFeedback(
+                attacker,
+                _characterBase != null ? _characterBase.gameObject : null,
+                metadataDamage.SkillUid,
+                metadataDamage.AttackId,
+                outcome,
+                Time.time);
+
+            var behaviours = attacker.GetComponents<MonoBehaviour>();
+            if (behaviours == null || behaviours.Length == 0)
+                return;
+
+            for (int i = 0; i < behaviours.Length; i++)
+            {
+                if (behaviours[i] is IIncomingHitCombatFeedbackSink sink)
+                {
+                    sink.NotifyIncomingHitResolved(in feedback);
+                }
+            }
         }
 
         public void TakeDamage(MetadataDamage metadataDamage)
@@ -134,6 +169,7 @@ namespace GGemCo2DCore
                         FontSize = 20
                     };
                     SceneGame.Instance.damageTextManager.ShowDamageText(metadataDamageText);
+                    NotifyIncomingHitCombatFeedback(metadataDamage, MonsterSkillCombatOutcome.Immune);
                 }
             }
             if (damage <= 0) return;
@@ -162,6 +198,10 @@ namespace GGemCo2DCore
                         SceneGame.Instance.damageTextManager.ShowDamageText(guardText);
                         hasGuardFeedbackText = true;
                     }
+
+                    NotifyIncomingHitCombatFeedback(
+                        metadataDamage,
+                        guardResult.IsJustGuard ? MonsterSkillCombatOutcome.JustGuarded : MonsterSkillCombatOutcome.Guarded);
                 }
             }
 
@@ -189,6 +229,8 @@ namespace GGemCo2DCore
             {
                 AffectRuntimeBridge.NotifyOnHit(attacker, _characterBase.gameObject);
             }
+
+            NotifyIncomingHitCombatFeedback(metadataDamage, MonsterSkillCombatOutcome.Hit);
 
             if (_characterBase.CompareTag(ConfigTags.GetValue(ConfigTags.Keys.Player)))
             {

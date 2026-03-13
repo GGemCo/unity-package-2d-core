@@ -66,6 +66,37 @@ namespace GGemCo2DCore
         }
     }
 
+    public enum MonsterSkillCombatOutcome
+    {
+        Hit = 0,
+        Guarded = 1,
+        JustGuarded = 2,
+        Missed = 3,
+        Immune = 4,
+        Evaded = 5,
+    }
+
+    /// <summary>
+    /// 몬스터 스킬의 전투 결과(명중/가드/빗나감 등)를 BT가 확인할 수 있도록 제공하는 리포트입니다.
+    /// </summary>
+    public readonly struct MonsterSkillCombatReport
+    {
+        public readonly int SkillUid;
+        public readonly MonsterSkillCombatOutcome Outcome;
+        public readonly int AttackId;
+        public readonly int Sequence;
+        public readonly float Time;
+
+        public MonsterSkillCombatReport(int skillUid, MonsterSkillCombatOutcome outcome, int attackId, int sequence, float time)
+        {
+            SkillUid = skillUid;
+            Outcome = outcome;
+            AttackId = attackId;
+            Sequence = sequence;
+            Time = time;
+        }
+    }
+
     /// <summary>
     /// BT가 몬스터 스킬의 진행/종료 결과를 추적할 수 있도록 확장한 스킬 드라이버 인터페이스입니다.
     /// </summary>
@@ -86,6 +117,17 @@ namespace GGemCo2DCore
         /// 같은 결과는 한 번만 읽을 수 있습니다.
         /// </summary>
         bool ConsumeLastSkillResult(int skillUid, out MonsterSkillExecutionResult result);
+
+        /// <summary>
+        /// 지정한 스킬 UID의 마지막 전투 결과를 조회합니다.
+        /// </summary>
+        bool TryGetLastSkillCombatReport(int skillUid, out MonsterSkillCombatReport report);
+
+        /// <summary>
+        /// 지정한 스킬 UID의 마지막 전투 결과를 소비합니다.
+        /// 같은 결과는 한 번만 읽을 수 있습니다.
+        /// </summary>
+        bool ConsumeLastSkillCombatReport(int skillUid, out MonsterSkillCombatReport report);
     }
 
     public enum SkillUseResult
