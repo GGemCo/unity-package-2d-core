@@ -2,7 +2,7 @@
 	"name": "com.ggemco.2d.core",
 	"version": "2.10.2",
 	"displayName": "GGemCo 2D Core",
-	"description": "타일맵 시스템, 캐릭터 시스템, 개발툴 등 공통 기능 패키지\nTextMeshPro 를 설치해주세요.",
+    "description": "게임 공통 시스템을 제공하는 기반 패키지입니다.\n캐릭터 상태 관리, 데이터 테이블 로딩, UI 시스템, Addressables 연동 및 공용 유틸리티 기능을 포함합니다.\n다른 GGemCo 패키지의 공통 인프라로 사용됩니다.",
 	"documentationUrl": "https://ggemco.notion.site/216bf593397e800a8f66e70c96aefbc2?v=270bf593397e8007b746000c5b2fca89",
     "changelogUrl": "https://github.com/GGemCo/unity-package-2d-core/blob/main/CHANGELOG.md",
     "unity": "2022.3",
