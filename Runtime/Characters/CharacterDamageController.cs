@@ -141,6 +141,7 @@ namespace GGemCo2DCore
             bool suppressHitReactionByGuard = false;
             bool hasGuardFeedbackText = false;
             var guardResolver = _characterBase.GetComponent<IIncomingHitGuardResolver>();
+            var incomingHitActionCanceler = _characterBase.GetComponent<IIncomingHitActionCanceler>();
             if (guardResolver != null)
             {
                 metadataDamage.damage = damage;
@@ -206,6 +207,9 @@ namespace GGemCo2DCore
             
             if (remainHp <= 0)
             {
+                // 사망 처리 전에 입력 액션을 먼저 정리해 후속 입력이 잠기지 않도록 합니다.
+                incomingHitActionCanceler?.CancelActionsOnIncomingHit(IncomingHitCancelReason.Death);
+
                 // 사망했을 때, UI 표현을 위해 0으로 처리
                 remainHp = 0;
                 _characterBase.CurrentMp.OnNext(0);
@@ -238,6 +242,9 @@ namespace GGemCo2DCore
                 // 넉백 상태에서는 별도 시스템이 상태/연출을 담당하므로 여기서는 피격 모션을 막는다.
                 if (shouldPlayDamageReaction)
                 {
+                    // 피격 상태/CC 적용 전에 입력 액션을 먼저 정리해 가드/점프/대시 상태가 남지 않도록 합니다.
+                    incomingHitActionCanceler?.CancelActionsOnIncomingHit(IncomingHitCancelReason.Damage);
+
                     if (hitReactionType == CharacterConstants.HitReactionType.Flinch)
                     {
                         _characterBase.CharacterAnimationController.PlayAnimationGroggy();
