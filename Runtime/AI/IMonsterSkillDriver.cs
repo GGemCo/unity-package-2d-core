@@ -38,12 +38,61 @@ namespace GGemCo2DCore
         SkillUseResult TryUseSkill(int skillUid, in MonsterSkillTarget target);
     }
 
+    public enum MonsterSkillExecutionState
+    {
+        None = 0,
+        Started = 1,
+        Succeeded = 2,
+        Canceled = 3,
+        Failed = 4,
+    }
+
+    /// <summary>
+    /// 몬스터 스킬 실행 종료 결과를 BT 등 외부 의사결정 시스템이 읽을 수 있도록 제공하는 결과 모델입니다.
+    /// </summary>
+    public readonly struct MonsterSkillExecutionResult
+    {
+        public readonly int SkillUid;
+        public readonly MonsterSkillExecutionState State;
+        public readonly int Sequence;
+        public readonly float EndTime;
+
+        public MonsterSkillExecutionResult(int skillUid, MonsterSkillExecutionState state, int sequence, float endTime)
+        {
+            SkillUid = skillUid;
+            State = state;
+            Sequence = sequence;
+            EndTime = endTime;
+        }
+    }
+
+    /// <summary>
+    /// BT가 몬스터 스킬의 진행/종료 결과를 추적할 수 있도록 확장한 스킬 드라이버 인터페이스입니다.
+    /// </summary>
+    public interface IMonsterSkillDriverFeedback : IMonsterSkillDriver
+    {
+        /// <summary>
+        /// 지정한 스킬 UID가 현재 실행 중인지 여부입니다.
+        /// </summary>
+        bool IsRunningSkill(int skillUid);
+
+        /// <summary>
+        /// 지정한 스킬 UID의 마지막 실행 결과를 조회합니다.
+        /// </summary>
+        bool TryGetLastSkillResult(int skillUid, out MonsterSkillExecutionResult result);
+
+        /// <summary>
+        /// 지정한 스킬 UID의 마지막 실행 결과를 소비합니다.
+        /// 같은 결과는 한 번만 읽을 수 있습니다.
+        /// </summary>
+        bool ConsumeLastSkillResult(int skillUid, out MonsterSkillExecutionResult result);
+    }
+
     public enum SkillUseResult
     {
         Rejected = 0,
         Started = 1,
     }
-
 
     /// <summary>
     /// 공용 스킬 드라이버가 스킬 실행 계층으로 전달하는 최소 요청 컨텍스트입니다.
