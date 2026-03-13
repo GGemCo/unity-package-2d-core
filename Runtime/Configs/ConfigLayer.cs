@@ -10,7 +10,8 @@
             // 타일맵에서 가지 못하는 영역
             TileMapWall,
             TileMapGround,
-            MonsterHitArea
+            HitAreaMonster,
+            HitAreaPlayer
         }
     }
 }

@@ -41,7 +41,7 @@ namespace GGemCo2DCore
             _collider2Ds = new Collider2D[CountCollider];
         
             _monsterHitAreaLayerMask = LayerMask.GetMask(
-                ConfigLayer.GetValue(ConfigLayer.Keys.MonsterHitArea));
+                ConfigLayer.GetValue(ConfigLayer.Keys.HitAreaMonster));
 
             _attackHitFilter = CompatPhysics2D.CreateLayerFilter(
                 _monsterHitAreaLayerMask,
@@ -110,6 +110,8 @@ namespace GGemCo2DCore
                 // 순서 중요.
                 gameObject.AddComponent<PlayerAutoMoveController>();
             }
+            if (colliderHitArea)
+                colliderHitArea.gameObject.layer = LayerMask.NameToLayer(ConfigLayer.GetValue(ConfigLayer.Keys.HitAreaPlayer));
         }
 
         /// <summary>
