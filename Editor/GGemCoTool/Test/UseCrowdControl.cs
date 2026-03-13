@@ -58,25 +58,15 @@ namespace GGemCo2DCoreEditor
 
         private Vector2 _scroll;
         private static readonly TableRowEditorUtility.TableRowEditorField[] RowEditorFields =
-        {
-            new("Uid", readOnly: true),
-            new("Id"),
-            new("Type"),
-            new("DirectionType"),
-            new("FixedDirectionX"),
-            new("FixedDirectionY"),
-            new("Distance"),
-            new("EaseType"),
-            new("Duration"),
-            new("IsLockControl", group: "Flags"),
-            new("IsUseKnockbackStatus", group: "Flags"),
-            new("IsUseDontControlStatus", group: "Flags"),
-            new("StaggerAnimationName", group: "Flags"),
-            new("IsStopOnWall", group: "Flags"),
-            new("IsGroundOnly", group: "Flags"),
-            new("IsAirOnly", group: "Flags"),
-        };
+            TableRowEditorUtility.BuildFields<StruckTableCrowdControl>(BuildRowEditorOptions());
 
+        private static TableRowEditorUtility.TableRowEditorBuildOptions BuildRowEditorOptions()
+        {
+            var options = new TableRowEditorUtility.TableRowEditorBuildOptions();
+            options.ReadOnlyMembers.Add(nameof(StruckTableCrowdControl.Uid));
+            options.GroupByMemberName[nameof(StruckTableCrowdControl.StaggerAnimationName)] = null;
+            return options;
+        }
 
         protected override void OnEnable()
         {
@@ -424,21 +414,7 @@ namespace GGemCo2DCoreEditor
             var info = GGemCo2DCore.TableLoaderManager.Instance.TableCrowdControl.GetDataByUid(row.Uid);
             if (info == null) return;
 
-            info.Id = row.Id;
-            info.Type = row.Type;
-            info.DirectionType = row.DirectionType;
-            info.FixedDirectionX = row.FixedDirectionX;
-            info.FixedDirectionY = row.FixedDirectionY;
-            info.Distance = row.Distance;
-            info.EaseType = row.EaseType;
-            info.Duration = row.Duration;
-            info.IsLockControl = row.IsLockControl;
-            info.IsUseKnockbackStatus = row.IsUseKnockbackStatus;
-            info.IsUseDontControlStatus = row.IsUseDontControlStatus;
-            info.StaggerAnimationName = row.StaggerAnimationName;
-            info.IsStopOnWall = row.IsStopOnWall;
-            info.IsGroundOnly = row.IsGroundOnly;
-            info.IsAirOnly = row.IsAirOnly;
+            TableRowEditorUtility.CopyMembers(row, info);
         }
 
         // ==============================
