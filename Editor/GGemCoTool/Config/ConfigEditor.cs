@@ -38,6 +38,8 @@ namespace GGemCo2DCoreEditor
             DebugFps,
             DebugPhysics2D,
             DebugMemory,
+            ListEnabledDebugOptions,
+            DisableAllDebugOptions,
             Etc = 900,
             PlayerPrefs,
             OpenSaveDataFolder,
@@ -92,6 +94,8 @@ namespace GGemCo2DCoreEditor
         public const string NameToolFps = NameToolDebug + "FPS HUD";
         public const string NameToolPhysics2D = NameToolDebug + "Physics2D HUD";
         public const string NameToolMemory = NameToolDebug + "메모리 HUD";
+        public const string NameToolListEnabledDebugOptions = NameToolDebug + "디버그 설정 리스트 보기";
+        public const string NameToolDisableAllDebugOptions = NameToolDebug + "디버그 설정 모두 false 변경하기";
         
         // etc
         private const string NameToolEtc = NameToolGGemCo + "기타/";
