@@ -11,7 +11,8 @@
             TileMapWall,
             TileMapGround,
             HitAreaMonster,
-            HitAreaPlayer
+            HitAreaPlayer,
+            TileMapOneWayPlatform
         }
     }
 }
