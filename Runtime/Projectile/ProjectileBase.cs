@@ -40,6 +40,7 @@ namespace GGemCo2DCore
         private CapsuleCollider2D _hitCollider;
         private ContactFilter2D _castFilter;
         private RaycastHit2D[] _castResults;
+        private Collider2D[] _overlapResults;
         private bool _hasHit;
 
         #region Lifecycle
@@ -76,6 +77,7 @@ namespace GGemCo2DCore
             _hitCollider = ComponentController.AddCapsuleCollider2D(gameObject, true, offset, size);
             // Cast 결과 버퍼(할당 최소화)
             if (_castResults == null) _castResults = new RaycastHit2D[16];
+            if (_overlapResults == null) _overlapResults = new Collider2D[16];
             SetupCastFilter();
 
             // Visual 연결(Effect/Sprite/Animator/None)
@@ -122,6 +124,11 @@ namespace GGemCo2DCore
             PrevPos = StartPoint;
 
             Initialized = true;
+
+            // 발사 직후 이미 타겟/지면과 겹쳐 있는 경우를 보정한다.
+            // Trigger Enter / Cast는 "생성 시점의 초기 겹침"을 놓칠 수 있으므로,
+            // Launch 직후 한 번 즉시 overlap 검사를 수행한다.
+            TryHandleInitialOverlap();
         }
 
         /// <summary>
@@ -267,6 +274,54 @@ namespace GGemCo2DCore
 
             bestHit = candidate;
             return true;
+        }
+
+        private void TryHandleInitialOverlap()
+        {
+            if (_hasHit) return;
+            if (_hitCollider == null) return;
+            if (_overlapResults == null || _overlapResults.Length == 0)
+                _overlapResults = new Collider2D[16];
+
+            int count = CompatPhysics2D.OverlapColliderNonAlloc(_hitCollider, _castFilter, _overlapResults);
+            if (count <= 0) return;
+
+            Collider2D bestCandidate = null;
+            float bestDistance = float.PositiveInfinity;
+
+            for (int i = 0; i < count; i++)
+            {
+                var col = _overlapResults[i];
+                if (!col) continue;
+
+                if (_hitCollider != null && col == _hitCollider)
+                    continue;
+
+                if (FromCharacter)
+                {
+                    var owner = col.GetComponentInParent<CharacterBase>();
+                    if (owner == FromCharacter)
+                        continue;
+                }
+
+                if (!IsValidHitCandidate(col))
+                    continue;
+
+                float distance = Vector2.Distance(StartPoint, col.ClosestPoint(StartPoint));
+                if (distance < bestDistance)
+                {
+                    bestDistance = distance;
+                    bestCandidate = col;
+                }
+            }
+
+            if (!bestCandidate) return;
+
+            Vector2 hitPos = bestCandidate.ClosestPoint(StartPoint);
+            if ((hitPos - Vector2.zero).sqrMagnitude <= 1e-8f)
+                hitPos = StartPoint;
+
+            TryHandleHit(bestCandidate, hitPos);
         }
 
         private bool IsValidHitCandidate(Collider2D other)
