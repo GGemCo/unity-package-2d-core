@@ -64,6 +64,15 @@ namespace GGemCo2DCore
             enabled = false;
         }
 
+        private void OnDestroy()
+        {
+            foreach (var sr in _pool)
+            {
+                if (sr == null) continue;
+                Destroy(sr.gameObject);
+            }
+        }
+
         private void ApplyDefaults()
         {
             _spawnIntervalSeconds = Mathf.Max(0.005f, defaultSpawnIntervalSeconds);
