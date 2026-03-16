@@ -17,7 +17,7 @@ namespace GGemCo2DCore
         {
             get
             {
-#if UNITY_EDITOR
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
                 return true;
 #else
                 return Debug.isDebugBuild;
