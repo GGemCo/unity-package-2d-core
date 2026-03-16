@@ -13,8 +13,9 @@ namespace GGemCo2DCore
         /// </summary>
         /// <param name="loader"></param>
         /// <param name="saveDataContainer"></param>
-        public void Initialize(TableLoaderManager loader, SaveDataContainer saveDataContainer = null)
+        public override void Initialize(TableLoaderManager loader, SaveDataContainer saveDataContainer = null)
         {
+            base.Initialize(loader, saveDataContainer);
             ItemCounts.Clear();
             if (saveDataContainer?.QuickSlotSimulationData != null)
             {

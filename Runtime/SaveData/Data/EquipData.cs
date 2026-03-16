@@ -7,8 +7,9 @@ namespace GGemCo2DCore
     /// </summary>
     public class EquipData : ItemStorageData
     {
-        public void Initialize(TableLoaderManager loader, SaveDataContainer saveDataContainer = null)
+        public override void Initialize(TableLoaderManager loader, SaveDataContainer saveDataContainer = null)
         {
+            base.Initialize(loader, saveDataContainer);
             ItemCounts.Clear();
             if (saveDataContainer?.EquipData != null)
             {

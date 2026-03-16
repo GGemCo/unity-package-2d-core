@@ -12,6 +12,7 @@ namespace GGemCo2DCore
         private int _maxPlayerLevel;
         private TableLoaderManager _tableLoaderManager;
         private readonly CompositeDisposable _disposables = new CompositeDisposable();
+        private SaveDataManager _saveDataManager;
         
         private readonly BehaviorSubject<int> _currentMapUid = new(0);
         private readonly BehaviorSubject<int> _currentLevel = new(1);
@@ -163,8 +164,9 @@ namespace GGemCo2DCore
         /// <summary>
         /// 초기화 (저장된 데이터를 불러오거나 새로운 데이터 생성)
         /// </summary>
-        public void Initialize(TableLoaderManager loader, SaveDataContainer saveDataContainer = null)
+        public void Initialize(SaveDataManager saveDataManager, TableLoaderManager loader, SaveDataContainer saveDataContainer = null)
         {
+            _saveDataManager = saveDataManager;
             _tableLoaderManager = loader;
             _maxPlayerLevel = AddressableLoaderSettings.Instance.playerSettings.maxLevel;
             // 최대 레벨이 없을때는 경험치 테이블에서 가져온다
@@ -214,7 +216,7 @@ namespace GGemCo2DCore
         private void SavePlayerData()
         {
             if (_isBatchUpdating) return;
-            SceneGame.Instance.saveDataManager.StartSaveData();
+            _saveDataManager.StartSaveData();
         }
 
         /// <summary>

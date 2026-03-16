@@ -68,7 +68,7 @@ namespace GGemCo2DCore
             ItemInstances = new ItemInstanceStore();
 
             // 초기화 실행
-            Player.Initialize(tableLoaderManager, saveDataContainer);
+            Player.Initialize(this, tableLoaderManager, saveDataContainer);
             Inventory.Initialize(tableLoaderManager, saveDataContainer);
             Equip.Initialize(tableLoaderManager, saveDataContainer);
             Quest.Initialize(tableLoaderManager, saveDataContainer);

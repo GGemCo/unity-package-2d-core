@@ -16,6 +16,17 @@ namespace GGemCo2DCore
         // FindEmptySlot 에서 빈 공간을 찾을때 사용한다.
         public Dictionary<int, SaveDataIcon> TempItemCounts = new();
 
+        protected TableLoaderManager TableLoaderManager;
+        
+        /// <summary>
+        /// 초기화. Awake 단계에서 실행
+        /// </summary>
+        /// <param name="loader"></param>
+        /// <param name="saveDataContainer"></param>
+        public virtual void Initialize(TableLoaderManager loader, SaveDataContainer saveDataContainer = null)
+        {
+            TableLoaderManager = loader;
+        }
         /// <summary>
         /// 아이템 개수 설정
         /// </summary>
