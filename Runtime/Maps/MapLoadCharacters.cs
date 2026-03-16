@@ -119,7 +119,7 @@ namespace GGemCo2DCore
 
                         // 스폰 이후 후처리(Hook): 예) 몬스터 BT 에셋 Addressables 로드/적용.
                         // - 실패해도 로그만 남기고 맵 로딩은 계속 진행한다.
-                        await CharacterSpawnHooks.InvokeAllAsync(spawned);
+                        // await CharacterSpawnHooks.InvokeAllAsync(spawned);
                     }
                 }
             }
