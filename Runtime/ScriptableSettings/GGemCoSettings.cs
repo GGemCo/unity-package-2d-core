@@ -35,62 +35,9 @@ namespace GGemCo2DCore
         [Tooltip("드랍된 아이템이 사라지는 시간 (초 단위)")]
         public int dropItemDestroyTimeSec;
 
-        [Header("디버그 HUD")]
-        [Tooltip("디버그 HUD 전체 활성화 여부")]
-        public bool enableDebugHud;
-
-        [Tooltip("FPS HUD 활성화 여부")]
-        public bool enableFpsHud;
-
-        [Tooltip("메모리 HUD 활성화 여부")]
-        public bool enableMemoryHud;
-
-        [Tooltip("Physics2D HUD 활성화 여부")]
-        public bool enablePhysics2DHud;
-
-        [Tooltip("Tilemap DrawCall HUD 활성화 여부")]
-        public bool enableTilemapDrawCallHud;
-
-        [Tooltip("HUD 폰트 크기")]
-        public int debugHudFontSize;
-
-        [Tooltip("HUD 박스 X 패딩")]
-        public float debugHudPaddingX;
-
-        [Tooltip("HUD 박스 Y 패딩")]
-        public float debugHudPaddingY;
-
-        [Tooltip("HUD 배경 색상")]
-        public Color debugHudBackgroundColor;
-
-        [Tooltip("FPS HUD 갱신 주기")]
-        public float debugHudFpsUpdateInterval;
-
-        [Tooltip("FPS HUD 프레임 히스토리 수")]
-        public int debugHudFpsHistorySize;
-
-        [Tooltip("메모리 HUD 갱신 주기")]
-        public float debugHudMemoryUpdateInterval;
-
-        [Tooltip("Physics2D HUD 갱신 주기")]
-        public float debugHudPhysics2DUpdateInterval;
-
-        [Tooltip("Tilemap DrawCall HUD 갱신 주기")]
-        public float debugHudTilemapUpdateInterval;
-
-        [Tooltip("Tilemap DrawCall HUD에서 카메라 뷰 범위만 스캔할지 여부")]
-        public bool debugHudTilemapCameraViewOnly;
-
-        [Tooltip("Tilemap DrawCall HUD에서 비활성 타일맵 포함 여부")]
-        public bool debugHudTilemapIncludeInactive;
-
-        [Tooltip("Tilemap DrawCall HUD 한 축당 최대 스캔 셀 수")]
-        public int debugHudTilemapCellScanBudgetPerAxis;
-
         [Header("데미지 텍스트 설정")]
         [Tooltip("데미지 텍스트 Canvas의 Render Mode")]
         public RenderMode damageTextCanvasRenderMode;
-
         [Tooltip("데미지 텍스트의 기본 폰트 크기")]
         public float damageTextFontSize;
 
@@ -112,22 +59,71 @@ namespace GGemCo2DCore
         [Header("데미지 텍스트 색상")]
         [Tooltip("몬스터 피격시 색상")]
         public Color textColorDamageMonster = Color.white;
-
         [Tooltip("플레이어 피격시 색상")]
         public Color textColorDamagePlayer = Color.red;
-
         [Tooltip("플레이어 HP 증가시 색상")]
         public Color textColorHeal = Color.green;
-
-        [Header("캐릭터 방향")]
+        
+        [Header("캐릭터 방향")] 
         [Tooltip("캐릭터의 방향 타입")]
         public ConfigCommon.FacingDirectionType facingDirectionType;
-
-        [Header("인 게임 시간")]
+        
+        [Header("인 게임 시간")] 
         [Tooltip("사용/미사용")]
         public bool useInGameTime;
 
-        [Header("자동 이동")]
+        [Header("Debug HUD")]
+        [SerializeField, DebugOption("Debug HUD 전체 사용 여부")]
+        private bool enableDebugHud;
+        public bool EnableDebugHud => DebugOptionRuntimeUtility.Resolve(enableDebugHud);
+        
+
+        [Tooltip("FPS HUD 사용 여부")]
+        public bool enableFpsHud;
+
+        [Tooltip("Memory HUD 사용 여부")]
+        public bool enableMemoryHud;
+
+        [Tooltip("Physics2D HUD 사용 여부")]
+        public bool enablePhysics2DHud;
+
+        [Tooltip("Tilemap DrawCall HUD 사용 여부")]
+        public bool enableTilemapDrawCallHud;
+
+        [Tooltip("HUD 폰트 크기")]
+        public int debugHudFontSize;
+
+        [Tooltip("HUD 패딩")]
+        public Vector2 debugHudPadding = new Vector2(8f, 8f);
+
+        [Tooltip("HUD 배경 색상")]
+        public Color debugHudBackgroundColor = new Color(0f, 0f, 0f, 0.55f);
+
+        [Tooltip("FPS HUD 갱신 주기(초)")]
+        public float debugHudFpsUpdateInterval;
+
+        [Tooltip("FPS HUD 샘플 히스토리 크기")]
+        public int debugHudFpsHistorySize;
+
+        [Tooltip("Memory HUD 갱신 주기(초)")]
+        public float debugHudMemoryUpdateInterval;
+
+        [Tooltip("Physics2D HUD 갱신 주기(초)")]
+        public float debugHudPhysics2DUpdateInterval;
+
+        [Tooltip("Tilemap HUD 갱신 주기(초)")]
+        public float debugHudTilemapUpdateInterval;
+
+        [Tooltip("Tilemap HUD에서 카메라 뷰 기준으로만 스캔할지 여부")]
+        public bool debugHudTilemapCameraViewOnly;
+
+        [Tooltip("Tilemap HUD에서 비활성 Tilemap을 포함할지 여부")]
+        public bool debugHudTilemapIncludeInactive;
+
+        [Tooltip("Tilemap HUD 한 축당 최대 스캔 셀 수")]
+        public int debugHudTilemapCellScanBudgetPerAxis;
+
+        [Header("자동 이동")] 
         [Tooltip("플레이어 자동 이동 시스템 사용 여부")]
         public bool enableAutoMove;
 
@@ -142,33 +138,34 @@ namespace GGemCo2DCore
 
         [Tooltip("autoMoveStartOnMapLoad가 true이고 무한 이동이 아닐 때, 유지 시간(초)")]
         public float autoMoveStartDuration;
-
         [Tooltip("자동 이동 취소 정책")]
         public AutoMoveCancelPolicy autoMoveCancelPolicy;
-
+        
+        /// <summary>
+        /// 기존 값이 비어있을 때만 기본값을 설정
+        /// </summary>
         private void OnEnable()
         {
-            if (defaultMonsterRegenTimeSec <= 0f) defaultMonsterRegenTimeSec = 7.0f;
-            if (maxEnemyValue <= 0) maxEnemyValue = 10;
-            if (delayDestroyMonster <= 0f) delayDestroyMonster = 2f;
-            if (dropItemDestroyTimeSec <= 0) dropItemDestroyTimeSec = 10;
-
-            if (debugHudFontSize <= 0) debugHudFontSize = 12;
-            if (debugHudPaddingX < 0f) debugHudPaddingX = 8f;
-            if (debugHudPaddingY < 0f) debugHudPaddingY = 8f;
-            if (debugHudFpsUpdateInterval <= 0f) debugHudFpsUpdateInterval = 0.5f;
-            if (debugHudFpsHistorySize <= 0) debugHudFpsHistorySize = 100;
-            if (debugHudMemoryUpdateInterval <= 0f) debugHudMemoryUpdateInterval = 0.5f;
-            if (debugHudPhysics2DUpdateInterval <= 0f) debugHudPhysics2DUpdateInterval = 0.5f;
-            if (debugHudTilemapUpdateInterval <= 0f) debugHudTilemapUpdateInterval = 0.5f;
-            if (debugHudTilemapCellScanBudgetPerAxis <= 0) debugHudTilemapCellScanBudgetPerAxis = 4096;
-
+            if (defaultMonsterRegenTimeSec <= 0) defaultMonsterRegenTimeSec = 7.0f;
+            if (maxEnemyValue <= 0f) maxEnemyValue = 10;
+            if (delayDestroyMonster <= 0f) delayDestroyMonster = 2;
+            if (dropItemDestroyTimeSec <= 0f) dropItemDestroyTimeSec = 10;
             if (damageTextMoveUpTime <= 0f) damageTextMoveUpTime = 0.3f;
             if (damageTextFadeOutTime <= 0f) damageTextFadeOutTime = 0.1f;
             if (damageTextMoveUpDistance <= 0f) damageTextMoveUpDistance = 50.0f;
             if (damageTextRandomXRange <= 0f) damageTextRandomXRange = 10.0f;
+            if (debugHudFontSize <= 0) debugHudFontSize = 12;
+            if (debugHudFpsUpdateInterval <= 0f) debugHudFpsUpdateInterval = 0.25f;
+            if (debugHudFpsHistorySize <= 0) debugHudFpsHistorySize = 100;
+            if (debugHudMemoryUpdateInterval <= 0f) debugHudMemoryUpdateInterval = 1.0f;
+            if (debugHudPhysics2DUpdateInterval <= 0f) debugHudPhysics2DUpdateInterval = 0.5f;
+            if (debugHudTilemapUpdateInterval <= 0f) debugHudTilemapUpdateInterval = 1.0f;
+            if (debugHudTilemapCellScanBudgetPerAxis <= 0) debugHudTilemapCellScanBudgetPerAxis = 4096;
         }
 
+        /// <summary>
+        /// 처음 생성 시 한 번만 실행됨
+        /// </summary>
         private void Reset()
         {
             useSpine2d = false;
@@ -179,24 +176,6 @@ namespace GGemCo2DCore
             delayDestroyMonster = 2f;
             dropItemDestroyTimeSec = 10;
 
-            enableDebugHud = false;
-            enableFpsHud = false;
-            enableMemoryHud = false;
-            enablePhysics2DHud = false;
-            enableTilemapDrawCallHud = false;
-            debugHudFontSize = 12;
-            debugHudPaddingX = 8f;
-            debugHudPaddingY = 8f;
-            debugHudBackgroundColor = new Color(0f, 0f, 0f, 0.55f);
-            debugHudFpsUpdateInterval = 0.5f;
-            debugHudFpsHistorySize = 100;
-            debugHudMemoryUpdateInterval = 0.5f;
-            debugHudPhysics2DUpdateInterval = 0.5f;
-            debugHudTilemapUpdateInterval = 0.5f;
-            debugHudTilemapCameraViewOnly = true;
-            debugHudTilemapIncludeInactive = false;
-            debugHudTilemapCellScanBudgetPerAxis = 4096;
-
             damageTextCanvasRenderMode = RenderMode.WorldSpace;
             damageTextFontSize = 20f;
             damageTextEasingType = Easing.EaseType.Linear;
@@ -204,9 +183,27 @@ namespace GGemCo2DCore
             damageTextMoveUpDistance = 50.0f;
             damageTextFadeOutTime = 0.1f;
             damageTextRandomXRange = 10.0f;
-
+            
             facingDirectionType = ConfigCommon.FacingDirectionType.TwoWay;
+            
             useInGameTime = false;
+
+            enableDebugHud = false;
+            enableFpsHud = false;
+            enableMemoryHud = false;
+            enablePhysics2DHud = false;
+            enableTilemapDrawCallHud = false;
+            debugHudFontSize = 12;
+            debugHudPadding = new Vector2(8f, 8f);
+            debugHudBackgroundColor = new Color(0f, 0f, 0f, 0.55f);
+            debugHudFpsUpdateInterval = 0.25f;
+            debugHudFpsHistorySize = 100;
+            debugHudMemoryUpdateInterval = 1.0f;
+            debugHudPhysics2DUpdateInterval = 0.5f;
+            debugHudTilemapUpdateInterval = 1.0f;
+            debugHudTilemapCameraViewOnly = true;
+            debugHudTilemapIncludeInactive = false;
+            debugHudTilemapCellScanBudgetPerAxis = 4096;
 
             enableAutoMove = false;
             autoMoveLockMovementOnly = false;

@@ -1,163 +1,128 @@
-﻿#if UNITY_EDITOR || DEVELOPMENT_BUILD
 using UnityEngine;
 
 namespace GGemCo2DCore
 {
     /// <summary>
-    /// 디버그 HUD 프레젠터입니다. 실제 측정은 프로바이더가 담당하고, 이 클래스는 화면 표시만 담당합니다.
+    /// Debug HUD 출력 전용 Presenter 입니다.
+    /// Manager에서 구성한 스냅샷을 화면에 렌더링합니다.
     /// </summary>
-    public class GGemCoDebugHudRoot : MonoBehaviour
+    public sealed class GGemCoDebugHudRoot : MonoBehaviour
     {
-        [Range(8, 32)] public int fontSize = 12;
-        public Vector2 padding = new(8, 8);
-        public Color backgroundColor = new(0, 0, 0, 0.55f);
-
-        private GUIStyle _box;
-        private Texture2D _bgTex;
+        private GUIStyle _boxStyle;
+        private Texture2D _backgroundTexture;
         private int _appliedFontSize = -1;
-        private Color _appliedBg;
+        private Vector2 _appliedPadding;
+        private Color _appliedBackgroundColor = Color.clear;
+
         private static GGemCoDebugHudRoot _instance;
 
         private void Awake()
         {
-            if (_instance != null && _instance != this)
-            {
-                Destroy(gameObject);
-                return;
-            }
-
-            _instance = this;
             if (Application.isPlaying)
             {
+                if (_instance != null && _instance != this)
+                {
+                    Destroy(gameObject);
+                    return;
+                }
+
+                _instance = this;
                 DontDestroyOnLoad(gameObject);
             }
-
-            ApplySettings(GGemCoDebugHudManager.Settings);
         }
 
         private void Update()
         {
-            GGemCoSettings settings = GGemCoDebugHudManager.Settings;
-            if (settings == null || !DebugOptionRuntimeUtility.Resolve(settings.enableDebugHud) || !GGemCoDebugHudManager.HasAnyEnabledProvider(settings))
-            {
-                return;
-            }
-
-            ApplySettings(settings);
-
-            float deltaTime = Time.unscaledDeltaTime;
-            foreach (IDebugHudProvider provider in GGemCoDebugHudManager.RegisteredProviders)
-            {
-                if (!provider.IsEnabled(settings))
-                {
-                    continue;
-                }
-
-                provider.Tick(deltaTime, settings);
-            }
+            GGemCoDebugHudManager.Tick(Time.unscaledDeltaTime);
         }
 
         private void OnGUI()
         {
-            GGemCoSettings settings = GGemCoDebugHudManager.Settings;
-            if (settings == null || !DebugOptionRuntimeUtility.Resolve(settings.enableDebugHud))
+            string snapshot = GGemCoDebugHudManager.BuildSnapshot();
+            if (string.IsNullOrWhiteSpace(snapshot))
             {
                 return;
             }
 
-            foreach (IDebugHudProvider provider in GGemCoDebugHudManager.RegisteredProviders)
+            GUIContent content = new GUIContent(snapshot);
+            GUIStyle style = GetStyle();
+            Vector2 padding = GetPadding();
+            Vector2 size = style.CalcSize(content);
+            Rect rect = new Rect(
+                padding.x,
+                padding.y,
+                Mathf.Min(size.x + 10f, Screen.width - padding.x * 2f),
+                Mathf.Min(size.y + 10f, Screen.height - padding.y * 2f));
+
+            GUI.Box(rect, content, style);
+        }
+
+        private void OnDestroy()
+        {
+            if (_instance == this)
             {
-                if (!provider.IsEnabled(settings))
-                {
-                    continue;
-                }
+                _instance = null;
+            }
 
-                string text = provider.GetText();
-                if (string.IsNullOrWhiteSpace(text))
-                {
-                    continue;
-                }
-
-                DrawAnchoredBox(provider.Anchor, new GUIContent(text));
+            if (_backgroundTexture != null)
+            {
+                DestroyImmediate(_backgroundTexture);
+                _backgroundTexture = null;
             }
         }
 
-        public void ApplySettings(GGemCoSettings settings)
+        public void MarkStyleDirty()
         {
-            if (settings == null)
+            _boxStyle = null;
+            if (_backgroundTexture != null)
             {
-                return;
+                DestroyImmediate(_backgroundTexture);
+                _backgroundTexture = null;
             }
-
-            fontSize = Mathf.Clamp(settings.debugHudFontSize, 8, 32);
-            padding = new Vector2(Mathf.Max(0f, settings.debugHudPaddingX), Mathf.Max(0f, settings.debugHudPaddingY));
-            backgroundColor = settings.debugHudBackgroundColor;
-            Invalidate();
+            _appliedFontSize = -1;
+            _appliedPadding = Vector2.zero;
+            _appliedBackgroundColor = Color.clear;
         }
 
-        public GUIStyle GetStyle()
+        private GUIStyle GetStyle()
         {
-            if (_box == null || _appliedFontSize != fontSize)
+            GGemCoSettings settings = GGemCoDebugHudManager.CurrentSettings;
+            int fontSize = settings != null ? Mathf.Clamp(settings.debugHudFontSize, 8, 32) : 12;
+            Color backgroundColor = settings != null ? settings.debugHudBackgroundColor : new Color(0f, 0f, 0f, 0.55f);
+
+            if (_boxStyle == null || _appliedFontSize != fontSize || _appliedBackgroundColor != backgroundColor)
             {
-                _box = new GUIStyle(GUI.skin.box)
+                _boxStyle = new GUIStyle(GUI.skin.box)
                 {
                     fontSize = fontSize,
                     alignment = TextAnchor.UpperLeft,
                     wordWrap = false
                 };
                 _appliedFontSize = fontSize;
-            }
 
-            if (_bgTex == null || _appliedBg != backgroundColor)
-            {
-                if (_bgTex == null)
+                if (_backgroundTexture == null)
                 {
-                    _bgTex = new Texture2D(1, 1) { hideFlags = HideFlags.HideAndDontSave };
+                    _backgroundTexture = new Texture2D(1, 1)
+                    {
+                        hideFlags = HideFlags.HideAndDontSave
+                    };
                 }
 
-                _bgTex.SetPixel(0, 0, backgroundColor);
-                _bgTex.Apply();
-                _appliedBg = backgroundColor;
-                _box.normal.background = _bgTex;
+                _backgroundTexture.SetPixel(0, 0, backgroundColor);
+                _backgroundTexture.Apply();
+                _boxStyle.normal.background = _backgroundTexture;
+                _appliedBackgroundColor = backgroundColor;
             }
 
-            return _box;
+            return _boxStyle;
         }
 
-        public void DrawBox(Rect rect, GUIContent content)
+        private Vector2 GetPadding()
         {
-            GUI.Box(rect, content, GetStyle());
-        }
-
-        private void DrawAnchoredBox(DebugHudAnchor anchor, GUIContent content)
-        {
-            GUIStyle style = GetStyle();
-            Vector2 size = style.CalcSize(content);
-            float width = Mathf.Min(size.x + 10f, Screen.width - padding.x * 2f);
-            float height = size.y + 10f;
-
-            Rect rect = anchor switch
-            {
-                DebugHudAnchor.TopLeft => new Rect(padding.x, padding.y, width, height),
-                DebugHudAnchor.TopRight => new Rect(Screen.width - width - padding.x, padding.y, width, height),
-                DebugHudAnchor.BottomLeft => new Rect(padding.x, Screen.height - height - padding.y, width, height),
-                DebugHudAnchor.BottomRight => new Rect(Screen.width - width - padding.x, Screen.height - height - padding.y, width, height),
-                _ => new Rect(padding.x, padding.y, width, height),
-            };
-
-            DrawBox(rect, content);
-        }
-
-        private void Invalidate()
-        {
-            _box = null;
-            if (_bgTex != null)
-            {
-                DestroyImmediate(_bgTex);
-            }
-
-            _bgTex = null;
+            GGemCoSettings settings = GGemCoDebugHudManager.CurrentSettings;
+            Vector2 padding = settings != null ? settings.debugHudPadding : new Vector2(8f, 8f);
+            _appliedPadding = padding;
+            return padding;
         }
     }
 }
-#endif

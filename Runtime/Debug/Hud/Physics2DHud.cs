@@ -1,70 +1,71 @@
-﻿#if UNITY_EDITOR || DEVELOPMENT_BUILD
+using System.Text;
 using UnityEngine;
 
 namespace GGemCo2DCore
 {
     /// <summary>
-    /// Physics2D HUD 데이터를 계산하는 런타임 프로바이더입니다.
+    /// Physics2D 객체 수와 시뮬레이션 설정을 수집하는 HUD Provider 입니다.
     /// </summary>
+    [DebugHudProvider(300)]
     public sealed class Physics2DHud : IDebugHudProvider
     {
-        private float _remainingTime;
+        private readonly StringBuilder _builder = new(160);
+
         private int _rigidbodies;
         private int _colliders;
         private int _triggers;
-        private bool _initialized;
-        private string _text = "[Physics2D]\nCollecting...";
-
-        public DebugHudAnchor Anchor => DebugHudAnchor.BottomLeft;
 
         public bool IsEnabled(GGemCoSettings settings)
         {
-            return settings != null && DebugOptionRuntimeUtility.Resolve(settings.enableDebugHud) && DebugOptionRuntimeUtility.Resolve(settings.enablePhysics2DHud);
+            return settings != null && settings.EnableDebugHud && settings.enablePhysics2DHud;
         }
 
-        public void Initialize(GGemCoSettings settings)
+        public float GetUpdateInterval(GGemCoSettings settings)
         {
-            _remainingTime = Mathf.Max(0.1f, settings != null ? settings.debugHudPhysics2DUpdateInterval : 0.5f);
-            _text = "[Physics2D]\nCollecting...";
-            _initialized = true;
+            return settings != null ? Mathf.Max(0.1f, settings.debugHudPhysics2DUpdateInterval) : 0.5f;
         }
 
-        public void Tick(float unscaledDeltaTime, GGemCoSettings settings)
+        public void Reset()
         {
-            if (!_initialized)
-            {
-                Initialize(settings);
-            }
+            _rigidbodies = 0;
+            _colliders = 0;
+            _triggers = 0;
+        }
 
-            _remainingTime -= Mathf.Max(0f, unscaledDeltaTime);
-            if (_remainingTime > 0f)
-            {
-                return;
-            }
-
+        public void Tick(float elapsedSeconds)
+        {
             Rigidbody2D[] rigidbodies = Object.FindObjectsByType<Rigidbody2D>(FindObjectsSortMode.None);
             Collider2D[] colliders = Object.FindObjectsByType<Collider2D>(FindObjectsSortMode.None);
 
             _rigidbodies = rigidbodies.Length;
             _colliders = colliders.Length;
             _triggers = 0;
+
             foreach (Collider2D collider in colliders)
             {
-                if (collider != null && collider.enabled && collider.isTrigger)
+                if (collider.enabled && collider.isTrigger)
                 {
                     _triggers++;
                 }
             }
-
-            _remainingTime = Mathf.Max(0.1f, settings != null ? settings.debugHudPhysics2DUpdateInterval : 0.5f);
-            _text = $"[Physics2D]\n" +
-                    $"Rigidbodies:  {_rigidbodies}\n" +
-                    $"Colliders:    {_colliders}  (Triggers: {_triggers})\n" +
-                    $"FixedDelta:   {Time.fixedDeltaTime * 1000f:0.##} ms\n" +
-                    $"Sim Mode:     {Physics2D.simulationMode}";
         }
 
-        public string GetText() => _text;
+        public bool TryBuildContent(StringBuilder builder)
+        {
+            _builder.Clear();
+            _builder.AppendLine("[Physics2D]");
+            _builder.Append("Rigidbodies:  ").AppendLine(_rigidbodies.ToString());
+            _builder.Append("Colliders:    ").Append(_colliders).Append("  (Triggers: ").Append(_triggers).AppendLine(")");
+            _builder.Append("FixedDelta:   ").Append((Time.fixedDeltaTime * 1000f).ToString("0.##")).AppendLine(" ms");
+            _builder.Append("Sim Mode:     ").Append(Physics2D.simulationMode);
+
+            if (_builder.Length <= 0)
+            {
+                return false;
+            }
+
+            builder.Append(_builder);
+            return true;
+        }
     }
 }
-#endif

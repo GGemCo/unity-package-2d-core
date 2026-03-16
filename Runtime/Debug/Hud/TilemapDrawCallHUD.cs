@@ -1,4 +1,3 @@
-﻿#if UNITY_EDITOR || DEVELOPMENT_BUILD
 using System.Collections.Generic;
 using System.Text;
 using UnityEngine;
@@ -7,101 +6,109 @@ using UnityEngine.Tilemaps;
 namespace GGemCo2DCore
 {
     /// <summary>
-    /// 타일맵 최소 DrawCall 추정 정보를 계산하는 런타임 프로바이더입니다.
+    /// TilemapRenderer 기준 최소 DrawCall 하한 추정치를 계산하는 HUD Provider 입니다.
     /// </summary>
+    [DebugHudProvider(400)]
     public sealed class TilemapDrawCallEstimator : IDebugHudProvider
     {
         private static readonly List<Tilemap> Tilemaps = new();
         private static readonly HashSet<Texture> Textures = new();
 
-        private readonly StringBuilder _sb = new();
-        private readonly List<(Tilemap tm, TilemapRenderer renderer)> _cache = new();
-        private float _remainingTime;
-        private bool _initialized;
-
-        public DebugHudAnchor Anchor => DebugHudAnchor.TopLeft;
+        private readonly StringBuilder _builder = new(512);
+        private readonly List<(Tilemap tilemap, TilemapRenderer renderer)> _cache = new();
 
         public bool IsEnabled(GGemCoSettings settings)
         {
-            return settings != null && DebugOptionRuntimeUtility.Resolve(settings.enableDebugHud) && DebugOptionRuntimeUtility.Resolve(settings.enableTilemapDrawCallHud);
+            return settings != null && settings.EnableDebugHud && settings.enableTilemapDrawCallHud;
         }
 
-        public void Initialize(GGemCoSettings settings)
+        public float GetUpdateInterval(GGemCoSettings settings)
         {
-            _remainingTime = 0f;
-            _sb.Length = 0;
-            _sb.AppendLine("[Tilemap DrawCall]");
-            _sb.Append("Collecting...");
-            _initialized = true;
+            return settings != null ? Mathf.Max(0.1f, settings.debugHudTilemapUpdateInterval) : 1f;
         }
 
-        public void Tick(float unscaledDeltaTime, GGemCoSettings settings)
+        public void Reset()
         {
-            if (!_initialized)
-            {
-                Initialize(settings);
-            }
+            _cache.Clear();
+            _builder.Clear();
+        }
 
-            _remainingTime -= Mathf.Max(0f, unscaledDeltaTime);
-            if (_remainingTime > 0f)
+        public void Tick(float elapsedSeconds)
+        {
+            GGemCoSettings settings = GGemCoDebugHudManager.CurrentSettings;
+            if (settings == null)
             {
+                _builder.Clear();
                 return;
             }
 
-            RefreshNow(settings);
-            _remainingTime = Mathf.Max(0.1f, settings != null ? settings.debugHudTilemapUpdateInterval : 0.5f);
-        }
-
-        public string GetText() => _sb.ToString();
-
-        private void RefreshNow(GGemCoSettings settings)
-        {
-            _cache.Clear();
-            IReadOnlyList<(Tilemap tilemap, TilemapRenderer tmr)> tilemaps = CollectAllTilemaps(settings != null && settings.debugHudTilemapIncludeInactive);
-            foreach (var tilemap in tilemaps)
-            {
-                _cache.Add((tilemap.tilemap, tilemap.tmr));
-            }
-
             Camera targetCamera = Camera.main;
-            bool cameraViewOnly = settings == null || settings.debugHudTilemapCameraViewOnly;
-            int scanBudgetPerAxis = settings != null ? Mathf.Max(64, settings.debugHudTilemapCellScanBudgetPerAxis) : 4096;
+            _cache.Clear();
+            _cache.AddRange(CollectAllTilemaps(settings.debugHudTilemapIncludeInactive));
 
-            _sb.Length = 0;
-            _sb.AppendLine("Tilemap DrawCall Estimator (min, by unique textures)");
-            _sb.AppendLine($"CamViewOnly: {cameraViewOnly}, Interval: {(settings != null ? settings.debugHudTilemapUpdateInterval : 0.5f):0.00}s");
-            _sb.AppendLine("----------------------------------------------------");
+            _builder.Clear();
+            _builder.AppendLine("[Tilemap DrawCall]");
+            _builder.Append("CamViewOnly: ").Append(settings.debugHudTilemapCameraViewOnly)
+                .Append(", Interval: ").Append(settings.debugHudTilemapUpdateInterval.ToString("0.00")).AppendLine("s");
+            _builder.AppendLine("----------------------------------------");
 
-            int grandTotal = 0;
-            foreach ((Tilemap tm, TilemapRenderer renderer) in _cache)
+            int total = 0;
+            foreach ((Tilemap tilemap, TilemapRenderer renderer) entry in _cache)
             {
-                int estimate = EstimateMinDrawCalls(tm, renderer, targetCamera, cameraViewOnly, scanBudgetPerAxis);
-                grandTotal += estimate;
+                int estimate = EstimateMinDrawCalls(
+                    entry.tilemap,
+                    entry.renderer,
+                    targetCamera,
+                    settings.debugHudTilemapCameraViewOnly,
+                    Mathf.Max(16, settings.debugHudTilemapCellScanBudgetPerAxis));
 
-                _sb.Append($"{renderer.sortingLayerName}#{renderer.sortingOrder}  ");
-                _sb.Append($"{tm.gameObject.name}  ");
-                _sb.Append($"[Mat:{(renderer.sharedMaterial ? renderer.sharedMaterial.name : "Default")}]  ");
-                _sb.AppendLine($"→ Min DC ≈ {estimate}");
+                total += estimate;
+                _builder.Append(entry.renderer.sortingLayerName)
+                    .Append('#').Append(entry.renderer.sortingOrder).Append("  ")
+                    .Append(entry.tilemap.gameObject.name).Append("  ")
+                    .Append("[Mat:")
+                    .Append(entry.renderer.sharedMaterial ? entry.renderer.sharedMaterial.name : "Default")
+                    .Append("]  -> Min DC ~= ")
+                    .AppendLine(estimate.ToString());
             }
 
-            _sb.AppendLine("----------------------------------------------------");
-            _sb.AppendLine($"Scene Sum (lower bound): ≈ {grandTotal}");
-            _sb.AppendLine("Tips: SpriteAtlas로 묶이면 Min DC가 1로 수렴합니다.");
+            _builder.AppendLine("----------------------------------------");
+            _builder.Append("Scene Sum (lower bound): ~= ").AppendLine(total.ToString());
+            _builder.Append("Tips: SpriteAtlas로 묶이면 Min DC가 1로 수렴합니다.");
         }
 
-        private static Bounds GetCameraWorldAabb(Camera cam)
+        public bool TryBuildContent(StringBuilder builder)
         {
-            if (!cam) return new Bounds(Vector3.zero, Vector3.zero);
+            if (_builder.Length <= 0)
+            {
+                return false;
+            }
 
-            float z = 0f;
-            Vector3 min = cam.ViewportToWorldPoint(new Vector3(0f, 0f, Mathf.Abs(cam.transform.position.z - z)));
-            Vector3 max = cam.ViewportToWorldPoint(new Vector3(1f, 1f, Mathf.Abs(cam.transform.position.z - z)));
+            builder.Append(_builder);
+            return true;
+        }
+
+        private static Bounds GetCameraWorldAabb(Camera camera)
+        {
+            if (!camera)
+            {
+                return new Bounds(Vector3.zero, Vector3.zero);
+            }
+
+            float z = Mathf.Abs(camera.transform.position.z);
+            Vector3 min = camera.ViewportToWorldPoint(new Vector3(0f, 0f, z));
+            Vector3 max = camera.ViewportToWorldPoint(new Vector3(1f, 1f, z));
             Vector3 center = (min + max) * 0.5f;
             Vector3 size = new Vector3(Mathf.Abs(max.x - min.x), Mathf.Abs(max.y - min.y), 2f);
             return new Bounds(center, size);
         }
 
-        public static int EstimateMinDrawCalls(Tilemap tilemap, TilemapRenderer tilemapRenderer, Camera camera, bool cameraViewOnly, int cellScanBudgetPerAxis = 4096)
+        public static int EstimateMinDrawCalls(
+            Tilemap tilemap,
+            TilemapRenderer tilemapRenderer,
+            Camera camera,
+            bool cameraViewOnly,
+            int cellScanBudgetPerAxis = 4096)
         {
             if (!tilemap || !tilemapRenderer)
             {
@@ -110,13 +117,14 @@ namespace GGemCo2DCore
 
             Textures.Clear();
             BoundsInt cells = tilemap.cellBounds;
+
             if (cameraViewOnly && camera)
             {
                 Bounds aabb = GetCameraWorldAabb(camera);
                 Vector3Int minCell = tilemap.WorldToCell(aabb.min);
                 Vector3Int maxCell = tilemap.WorldToCell(aabb.max);
 
-                const int pad = 2;
+                int pad = 2;
                 int x0 = Mathf.Clamp(Mathf.Min(minCell.x, maxCell.x) - pad, cells.xMin, cells.xMax);
                 int x1 = Mathf.Clamp(Mathf.Max(minCell.x, maxCell.x) + pad, cells.xMin, cells.xMax);
                 int y0 = Mathf.Clamp(Mathf.Min(minCell.y, maxCell.y) - pad, cells.yMin, cells.yMax);
@@ -149,28 +157,21 @@ namespace GGemCo2DCore
             return Mathf.Max(1, Textures.Count);
         }
 
-        public static IReadOnlyList<(Tilemap tilemap, TilemapRenderer tmr)> CollectAllTilemaps(bool includeInactive = false)
+        public static IReadOnlyList<(Tilemap tilemap, TilemapRenderer renderer)> CollectAllTilemaps(bool includeInactive = false)
         {
             Tilemaps.Clear();
-            if (includeInactive)
+
+            foreach (Tilemap tilemap in Object.FindObjectsByType<Tilemap>(FindObjectsSortMode.None))
             {
-                foreach (Tilemap tilemap in Object.FindObjectsByType<Tilemap>(FindObjectsSortMode.None))
+                if (!includeInactive && !tilemap.isActiveAndEnabled)
                 {
-                    Tilemaps.Add(tilemap);
+                    continue;
                 }
-            }
-            else
-            {
-                foreach (Tilemap tilemap in Object.FindObjectsByType<Tilemap>(FindObjectsSortMode.InstanceID))
-                {
-                    if (tilemap.isActiveAndEnabled)
-                    {
-                        Tilemaps.Add(tilemap);
-                    }
-                }
+
+                Tilemaps.Add(tilemap);
             }
 
-            List<(Tilemap, TilemapRenderer)> result = new(Tilemaps.Count);
+            List<(Tilemap tilemap, TilemapRenderer renderer)> result = new(Tilemaps.Count);
             foreach (Tilemap tilemap in Tilemaps)
             {
                 TilemapRenderer renderer = tilemap.GetComponent<TilemapRenderer>();
@@ -184,4 +185,3 @@ namespace GGemCo2DCore
         }
     }
 }
-#endif

@@ -1,5 +1,5 @@
-﻿#if UNITY_EDITOR || DEVELOPMENT_BUILD
 using System;
+using System.Text;
 using UnityEngine;
 #if UNITY_2019_4_OR_NEWER
 using UnityEngine.Profiling;
@@ -8,88 +8,78 @@ using UnityEngine.Profiling;
 namespace GGemCo2DCore
 {
     /// <summary>
-    /// 메모리 HUD 데이터를 계산하는 런타임 프로바이더입니다.
+    /// 메모리 사용량을 수집하는 HUD Provider 입니다.
     /// </summary>
+    [DebugHudProvider(200)]
     public sealed class MemoryHud : IDebugHudProvider
     {
-        private float _remainingTime;
-        private long _monoUsed;
-        private long _totalAlloc;
-        private long _totalReserved;
-        private long _gcBytes;
-        private float _allocPerFrameAvg;
-        private float _accumAlloc;
-        private int _frames;
-        private bool _initialized;
-        private string _text = "[Memory]\nCollecting...";
+        private readonly StringBuilder _builder = new(192);
 
-        public DebugHudAnchor Anchor => DebugHudAnchor.BottomRight;
+        private long _monoUsed;
+        private long _totalAllocated;
+        private long _totalReserved;
+        private long _gcSnapshot;
 
         public bool IsEnabled(GGemCoSettings settings)
         {
-            return settings != null && DebugOptionRuntimeUtility.Resolve(settings.enableDebugHud) && DebugOptionRuntimeUtility.Resolve(settings.enableMemoryHud);
+            return settings != null && settings.EnableDebugHud && settings.enableMemoryHud;
         }
 
-        public void Initialize(GGemCoSettings settings)
+        public float GetUpdateInterval(GGemCoSettings settings)
         {
-            _remainingTime = Mathf.Max(0.1f, settings != null ? settings.debugHudMemoryUpdateInterval : 0.5f);
-            _accumAlloc = 0f;
-            _frames = 0;
-            _text = "[Memory]\nCollecting...";
-            _initialized = true;
+            return settings != null ? Mathf.Max(0.1f, settings.debugHudMemoryUpdateInterval) : 1f;
         }
 
-        public void Tick(float unscaledDeltaTime, GGemCoSettings settings)
+        public void Reset()
         {
-            if (!_initialized)
-            {
-                Initialize(settings);
-            }
+            _monoUsed = 0L;
+            _totalAllocated = 0L;
+            _totalReserved = 0L;
+            _gcSnapshot = 0L;
+        }
 
-            _accumAlloc += (float)GC.GetTotalMemory(false);
-            _frames++;
-            _remainingTime -= Mathf.Max(0f, unscaledDeltaTime);
-            if (_remainingTime > 0f)
-            {
-                return;
-            }
-
+        public void Tick(float elapsedSeconds)
+        {
 #if UNITY_2019_4_OR_NEWER
             _monoUsed = Profiler.GetMonoUsedSizeLong();
-            _totalAlloc = Profiler.GetTotalAllocatedMemoryLong();
+            _totalAllocated = Profiler.GetTotalAllocatedMemoryLong();
             _totalReserved = Profiler.GetTotalReservedMemoryLong();
 #else
             _monoUsed = GC.GetTotalMemory(false);
-            _totalAlloc = _monoUsed;
-            _totalReserved = 0;
+            _totalAllocated = _monoUsed;
+            _totalReserved = 0L;
 #endif
-            _gcBytes = GC.GetTotalMemory(false);
-            _allocPerFrameAvg = _frames > 0 ? _accumAlloc / _frames : 0f;
-            _remainingTime = Mathf.Max(0.1f, settings != null ? settings.debugHudMemoryUpdateInterval : 0.5f);
-            _accumAlloc = 0f;
-            _frames = 0;
-
-            _text = $"[Memory]\n" +
-                    $"Total Alloc:  {FormatBytes(_totalAlloc)}\n" +
-                    $"Total Reserv: {FormatBytes(_totalReserved)}\n" +
-                    $"Mono Used:    {FormatBytes(_monoUsed)}\n" +
-                    $"GC Snapshot:  {FormatBytes(_gcBytes)}\n" +
-                    $"GC/Frame(avg est): {FormatBytes((long)_allocPerFrameAvg)}";
+            _gcSnapshot = GC.GetTotalMemory(false);
         }
 
-        public string GetText() => _text;
+        public bool TryBuildContent(StringBuilder builder)
+        {
+            _builder.Clear();
+            _builder.AppendLine("[Memory]");
+            _builder.Append("Total Alloc:  ").AppendLine(FormatBytes(_totalAllocated));
+            _builder.Append("Total Reserv: ").AppendLine(FormatBytes(_totalReserved));
+            _builder.Append("Mono Used:    ").AppendLine(FormatBytes(_monoUsed));
+            _builder.Append("GC Snapshot:  ").Append(FormatBytes(_gcSnapshot));
+
+            if (_builder.Length <= 0)
+            {
+                return false;
+            }
+
+            builder.Append(_builder);
+            return true;
+        }
 
         private static string FormatBytes(long bytes)
         {
-            const long KB = 1024;
-            const long MB = KB * 1024;
-            const long GB = MB * 1024;
+            const long kilobyte = 1024;
+            const long megabyte = kilobyte * 1024;
+            const long gigabyte = megabyte * 1024;
 
-            if (bytes >= GB) return $"{(double)bytes / GB:0.00} GB";
-            if (bytes >= MB) return $"{(double)bytes / MB:0.00} MB";
-            if (bytes >= KB) return $"{(double)bytes / KB:0.00} KB";
+            if (bytes >= gigabyte) return $"{(double)bytes / gigabyte:0.00} GB";
+            if (bytes >= megabyte) return $"{(double)bytes / megabyte:0.00} MB";
+            if (bytes >= kilobyte) return $"{(double)bytes / kilobyte:0.00} KB";
             return $"{bytes} B";
         }
     }
 }
-#endif

@@ -1,125 +1,217 @@
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
+using System;
 using System.Collections.Generic;
+using System.Reflection;
+using System.Text;
 using UnityEngine;
+using Object = UnityEngine.Object;
 
 namespace GGemCo2DCore
 {
     /// <summary>
-    /// 디버그 HUD 프로바이더 초기화와 루트 프레젠터 생성을 담당하는 매니저입니다.
-    /// Settings 로드 완료 후 명시적으로 Initialize 를 호출해야 합니다.
+    /// Debug HUD Provider를 관리하고 HUD 스냅샷을 구성하는 중앙 매니저입니다.
     /// </summary>
-    internal static class GGemCoDebugHudManager
+    public static class GGemCoDebugHudManager
     {
-        private static readonly List<IDebugHudProvider> Providers = new()
+        private sealed class ProviderState
         {
-            new TilemapDrawCallEstimator(),
-            new FpsHud(),
-            new Physics2DHud(),
-            new MemoryHud(),
-        };
-
-        private static GGemCoSettings _cachedSettings;
-        private static bool _initialized;
-
-        internal static IReadOnlyList<IDebugHudProvider> RegisteredProviders => Providers;
-        internal static bool IsInitialized => _initialized;
-        internal static GGemCoSettings Settings => _cachedSettings;
-
-        internal static void Initialize(GGemCoSettings settings)
-        {
-            if (settings == null)
+            public ProviderState(IDebugHudProvider provider)
             {
-                return;
+                Provider = provider;
+                Elapsed = 0f;
+                HasSample = false;
             }
 
-            _cachedSettings = settings;
-            _initialized = true;
-
-            foreach (IDebugHudProvider provider in Providers)
-            {
-                provider.Initialize(settings);
-            }
-
-            EnsureRootState(settings);
+            public IDebugHudProvider Provider { get; }
+            public float Elapsed { get; set; }
+            public bool HasSample { get; set; }
         }
 
-        internal static bool TryInitializeFromLoadedSettings()
+        private static readonly List<ProviderState> ProviderStates = new();
+        private static readonly StringBuilder SnapshotBuilder = new(1024);
+
+        private static bool _initialized;
+        private static bool _snapshotDirty;
+        private static string _cachedSnapshot = string.Empty;
+
+        public static GGemCoSettings CurrentSettings { get; private set; }
+        public static bool IsInitialized => _initialized;
+
+        public static void Initialize(GGemCoSettings settings)
         {
-            if (_initialized && _cachedSettings != null)
-            {
-                EnsureRootState(_cachedSettings);
-                return true;
-            }
+            CurrentSettings = settings;
+            _initialized = true;
+            RebuildProviders();
+            RefreshRootVisibility();
+        }
 
-            GGemCoSettings settings = AddressableLoaderSettings.Instance != null
-                ? AddressableLoaderSettings.Instance.settings
-                : null;
-
-            if (settings == null)
+        public static bool TryInitializeFromLoadedSettings()
+        {
+            AddressableLoaderSettings loader = AddressableLoaderSettings.Instance;
+            if (loader == null || loader.settings == null)
             {
                 return false;
             }
 
-            Initialize(settings);
+            Initialize(loader.settings);
             return true;
         }
 
-        internal static void EnsureRootState(GGemCoSettings settings)
+        public static void Tick(float unscaledDeltaTime)
         {
-            if (settings == null)
+            if (!_initialized || !GGemCoBuildFlags.AllowDebugFeatures)
             {
-                DestroyRootIfExists();
                 return;
             }
 
-            if (!DebugOptionRuntimeUtility.Resolve(settings.enableDebugHud) || !HasAnyEnabledProvider(settings))
+            if (CurrentSettings == null || !CurrentSettings.EnableDebugHud)
             {
-                DestroyRootIfExists();
+                RefreshRootVisibility();
                 return;
             }
 
-            GGemCoDebugHudRoot existing = Object.FindAnyObjectByType<GGemCoDebugHudRoot>(FindObjectsInactive.Include);
-            if (existing != null)
-            {
-                existing.ApplySettings(settings);
-                return;
-            }
+            bool anyProviderUpdated = false;
 
-            GameObject rootObject = new("GGemCoDebug");
-            Object.DontDestroyOnLoad(rootObject);
-            GGemCoDebugHudRoot root = rootObject.AddComponent<GGemCoDebugHudRoot>();
-            root.ApplySettings(settings);
-        }
-
-        internal static bool HasAnyEnabledProvider(GGemCoSettings settings)
-        {
-            foreach (IDebugHudProvider provider in Providers)
+            foreach (ProviderState state in ProviderStates)
             {
-                if (provider.IsEnabled(settings))
+                if (!state.Provider.IsEnabled(CurrentSettings))
                 {
-                    return true;
+                    state.Elapsed = 0f;
+                    state.HasSample = false;
+                    continue;
+                }
+
+                float interval = Mathf.Max(0.05f, state.Provider.GetUpdateInterval(CurrentSettings));
+                state.Elapsed += unscaledDeltaTime;
+
+                if (!state.HasSample || state.Elapsed >= interval)
+                {
+                    state.Provider.Tick(state.Elapsed);
+                    state.Elapsed = 0f;
+                    state.HasSample = true;
+                    anyProviderUpdated = true;
                 }
             }
 
-            return false;
+            if (anyProviderUpdated)
+            {
+                _snapshotDirty = true;
+            }
         }
 
-        private static void DestroyRootIfExists()
+        public static string BuildSnapshot()
         {
-            GGemCoDebugHudRoot existing = Object.FindAnyObjectByType<GGemCoDebugHudRoot>(FindObjectsInactive.Include);
-            if (existing == null)
+            if (!_initialized || !GGemCoBuildFlags.AllowDebugFeatures || CurrentSettings == null || !CurrentSettings.EnableDebugHud)
             {
+                _cachedSnapshot = string.Empty;
+                _snapshotDirty = false;
+                return _cachedSnapshot;
+            }
+
+            if (!_snapshotDirty)
+            {
+                return _cachedSnapshot;
+            }
+
+            SnapshotBuilder.Clear();
+            bool wroteAny = false;
+
+            foreach (ProviderState state in ProviderStates)
+            {
+                if (!state.Provider.IsEnabled(CurrentSettings) || !state.HasSample)
+                {
+                    continue;
+                }
+
+                if (wroteAny)
+                {
+                    SnapshotBuilder.AppendLine();
+                    SnapshotBuilder.AppendLine();
+                }
+
+                bool appended = state.Provider.TryBuildContent(SnapshotBuilder);
+                wroteAny |= appended;
+            }
+
+            _cachedSnapshot = SnapshotBuilder.ToString();
+            _snapshotDirty = false;
+            return _cachedSnapshot;
+        }
+
+        public static void MarkDirty()
+        {
+            _snapshotDirty = true;
+            RefreshRootVisibility();
+        }
+
+        private static void RebuildProviders()
+        {
+            ProviderStates.Clear();
+
+            if (CurrentSettings == null)
+            {
+                _snapshotDirty = true;
                 return;
             }
 
+            List<(int order, Type type)> providerTypes = new();
+            Assembly assembly = typeof(IDebugHudProvider).Assembly;
+            foreach (Type type in assembly.GetTypes())
+            {
+                if (type.IsAbstract || type.IsInterface || !typeof(IDebugHudProvider).IsAssignableFrom(type))
+                {
+                    continue;
+                }
+
+                DebugHudProviderAttribute attribute = type.GetCustomAttribute<DebugHudProviderAttribute>();
+                if (attribute == null)
+                {
+                    continue;
+                }
+
+                providerTypes.Add((attribute.Order, type));
+            }
+
+            providerTypes.Sort((a, b) => a.order.CompareTo(b.order));
+
+            foreach ((int _, Type type) in providerTypes)
+            {
+                if (Activator.CreateInstance(type) is IDebugHudProvider provider)
+                {
+                    provider.Reset();
+                    ProviderStates.Add(new ProviderState(provider));
+                }
+            }
+
+            _snapshotDirty = true;
+        }
+
+        private static void RefreshRootVisibility()
+        {
+            bool shouldShow = GGemCoBuildFlags.AllowDebugFeatures && CurrentSettings != null && CurrentSettings.EnableDebugHud;
+            GGemCoDebugHudRoot existingRoot = Object.FindAnyObjectByType<GGemCoDebugHudRoot>(FindObjectsInactive.Include);
+
+            if (!shouldShow)
+            {
+                if (existingRoot != null)
+                {
+                    Object.Destroy(existingRoot.gameObject);
+                }
+                return;
+            }
+
+            if (existingRoot != null)
+            {
+                existingRoot.gameObject.SetActive(true);
+                existingRoot.MarkStyleDirty();
+                return;
+            }
+
+            GameObject rootObject = new GameObject("GGemCoDebugHudRoot");
+            rootObject.AddComponent<GGemCoDebugHudRoot>();
             if (Application.isPlaying)
             {
-                Object.Destroy(existing.gameObject);
-                return;
+                Object.DontDestroyOnLoad(rootObject);
             }
-
-            Object.DestroyImmediate(existing.gameObject);
         }
     }
 }
-#endif

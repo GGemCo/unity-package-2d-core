@@ -1,4 +1,4 @@
-﻿using System.Collections;
+using System.Collections;
 using TMPro;
 using UnityEngine;
 using UnityEngine.Localization;
@@ -44,10 +44,9 @@ namespace GGemCo2DCore
         
         private GameLoaderManager _gameLoaderManager;
         private LocalizationManager _localizationManager;
-        private AddressableLoaderSettings _addressableLoaderSettings;
         private bool _waitingForInput;
-        private bool _debugHudInitialized;
         private InputSystemType _resolvedMode = InputSystemType.Both;
+        private AddressableLoaderSettings _addressableLoaderSettings;
 
         private void Awake()
         {
@@ -58,9 +57,7 @@ namespace GGemCo2DCore
                 _gameLoaderManager = new GameObject("GameLoaderManager").AddComponent<GameLoaderManager>();
             }
             _localizationManager = new GameObject("LocalizationManager").AddComponent<LocalizationManager>();
-            _addressableLoaderSettings = Object.FindFirstObjectByType<AddressableLoaderSettings>() ?? new GameObject("AddressableLoaderSettings").AddComponent<AddressableLoaderSettings>();
-            _addressableLoaderSettings.OnLoadSettings -= HandleLoadSettings;
-            _addressableLoaderSettings.OnLoadSettings += HandleLoadSettings;
+            _addressableLoaderSettings = FindFirstObjectByType<AddressableLoaderSettings>() ?? new GameObject("AddressableLoaderSettings").AddComponent<AddressableLoaderSettings>();
 
             if (textLoadingPercent != null) {
                 _gameLoaderManager.SetTextLoadingPercent(textLoadingPercent);
@@ -91,12 +88,12 @@ namespace GGemCo2DCore
                 yield return null;
             }
 
+            GGemCoDebugHudManager.TryInitializeFromLoadedSettings();
             OnIntroLoadComplete();
         }
 
         private void OnIntroLoadComplete()
         {
-            TryInitializeDebugHudFromLoadedSettings();
             SceneManager.ChangeScene(ConfigDefine.SceneNameIntro);
         }
 
@@ -109,29 +106,16 @@ namespace GGemCo2DCore
             }
         }
 
-        private void HandleLoadSettings(GGemCoSettings settings, GGemCoPlayerSettings playerSettings,
-            GGemCoMapSettings mapSettings, GGemCoSaveSettings saveSettings, GGemCoOptionSettings optionSettings,
-            GGemCoSoundSettings soundSettings, GGemCoMonsterSettings monsterSettings)
+        private void HandleLoadSettings(
+            GGemCoSettings settings,
+            GGemCoPlayerSettings playerSettings,
+            GGemCoMapSettings mapSettings,
+            GGemCoSaveSettings saveSettings,
+            GGemCoOptionSettings optionSettings,
+            GGemCoSoundSettings soundSettings,
+            GGemCoMonsterSettings monsterSettings)
         {
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
             GGemCoDebugHudManager.Initialize(settings);
-            _debugHudInitialized = settings != null;
-#endif
-        }
-
-        private void TryInitializeDebugHudFromLoadedSettings()
-        {
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
-            if (_debugHudInitialized)
-            {
-                return;
-            }
-
-            if (GGemCoDebugHudManager.TryInitializeFromLoadedSettings())
-            {
-                _debugHudInitialized = true;
-            }
-#endif
         }
 
         private void Update()
@@ -155,8 +139,16 @@ namespace GGemCo2DCore
 
         private void ChangeSceneToIntro()
         {
+            if (_addressableLoaderSettings == null)
+            {
+                _addressableLoaderSettings = FindFirstObjectByType<AddressableLoaderSettings>() ?? new GameObject("AddressableLoaderSettings").AddComponent<AddressableLoaderSettings>();
+            }
+
+            _addressableLoaderSettings.OnLoadSettings -= HandleLoadSettings;
+            _addressableLoaderSettings.OnLoadSettings += HandleLoadSettings;
+
             _gameLoaderManager.StartLoadingInScenePreIntro();
-            
+
             if (textLoadingPercent != null) {
                 textLoadingPercent.gameObject.SetActive(true);
             }
