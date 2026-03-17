@@ -71,5 +71,8 @@ namespace GGemCo2DCore
         public override void SetMaxValue(UIWindowHudResourceType hpTemp, long total)
         {
         }
+        protected override void ApplyAffectVisualProfile()
+        {
+        }
     }
 }

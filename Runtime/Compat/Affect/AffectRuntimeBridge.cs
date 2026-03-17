@@ -17,6 +17,7 @@ namespace GGemCo2DCore
         private const string TypeNameAffectApplyContext = "GGemCo2DAffect.AffectApplyContext";
         private const string TypeNameCoreTargetAdapter = "GGemCo2DAffect.CoreAffectTargetAdapter";
         private const string TypeNamePlayerAffectUiPresenter = "GGemCo2DAffect.PlayerAffectUiPresenter";
+        private const string TypeNamePlayerAffectHudVisualStatePresenter = "GGemCo2DAffect.PlayerAffectHudVisualStatePresenter";
         private const string TypeNameAddressableLoaderAffect = "GGemCo2DAffect.AddressableLoaderAffect";
 
         private static readonly Dictionary<string, Type> STypeCache = new(StringComparer.Ordinal);
@@ -255,6 +256,34 @@ namespace GGemCo2DCore
             bind.Invoke(presenter, new object[] { affectComp, view, 0.10f });
         }
 
+
+
+        /// <summary>
+        /// 플레이어의 Affect 상태를 HUD 시각 상태 수신자에 자동 바인딩합니다.
+        /// </summary>
+        public static void TryBindPlayerHudAffectState(Player player, IAffectHudVisualStateReceiver receiver)
+        {
+            if (player == null || receiver == null) return;
+
+            var presenterType = ResolveType(TypeNamePlayerAffectHudVisualStatePresenter);
+            var affectCompType = ResolveType(TypeNameAffectComponent);
+            if (presenterType == null || affectCompType == null)
+                return;
+
+            EnsureAffectSystem(player.gameObject);
+
+            var presenter = player.gameObject.GetComponent(presenterType) as Component;
+            if (presenter == null)
+                presenter = player.gameObject.AddComponent(presenterType);
+
+            var affectComp = player.GetComponent(affectCompType);
+            if (affectComp == null) return;
+
+            var bind = presenterType.GetMethod("Bind", BindingFlags.Instance | BindingFlags.Public);
+            if (bind == null) return;
+
+            bind.Invoke(presenter, new object[] { affectComp, receiver, 0.10f });
+        }
 
         /// <summary>
         /// 공격자(attacker)가 타격(hitTarget)에 성공했음을 Affect 런타임에 알린다.

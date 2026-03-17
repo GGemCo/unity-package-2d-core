@@ -80,6 +80,11 @@ namespace GGemCo2DCore
                 AffectRuntimeBridge.TryBindPlayerBuffInfo(_player, _uiWindowPlayerBuffInfo);
             }
 
+            if (_player != null && _uiWindowHud != null && _uiWindowHud.gameObjectHp is IAffectHudVisualStateReceiver affectHudReceiver)
+            {
+                AffectRuntimeBridge.TryBindPlayerHudAffectState(_player, affectHudReceiver);
+            }
+
             // 최대 HP/현재 HP 중 어느 값이 바뀌어도 HUD HP 표시를 다시 계산한다.
             _player.TotalHp
                 .Subscribe(_ => SetWindowHudHp())

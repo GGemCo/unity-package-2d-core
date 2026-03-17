@@ -15,6 +15,11 @@ namespace GGemCo2DCore
     /// </summary>
     public abstract class UIWindowHudResourceBase : MonoBehaviour
     {
+        [Header("Affect Visual")]
+        public HeartHudAffectVisualSettings affectVisualSettings;
+
+        protected string CurrentAffectVisualStateKey;
+
         /// <summary>
         /// 자원 변화 문맥 정보입니다.
         /// </summary>
@@ -91,5 +96,36 @@ namespace GGemCo2DCore
             bool isMaxValueChanged = total != _lastTotal;
             return new ResourceChangeContext(true, _lastCurrent, _lastTotal, current, total, isIncrease, isDecrease, isMaxValueChanged);
         }
+
+        /// <summary>
+        /// 지정한 Affect 상태 키에 대응하는 하트 HUD 시각 상태를 적용합니다.
+        /// </summary>
+        public void SetAffectVisualState(string stateKey)
+        {
+            CurrentAffectVisualStateKey = string.IsNullOrWhiteSpace(stateKey)
+                ? affectVisualSettings != null ? affectVisualSettings.DefaultStateKey : null
+                : stateKey.Trim();
+
+            ApplyAffectVisualProfile();
+        }
+
+        /// <summary>
+        /// 하트 HUD 시각 상태를 기본 상태로 복원합니다.
+        /// </summary>
+        public void ResetAffectVisualState()
+        {
+            CurrentAffectVisualStateKey = affectVisualSettings != null ? affectVisualSettings.DefaultStateKey : null;
+            ApplyAffectVisualProfile();
+        }
+
+        /// <summary>
+        /// 지정한 상태 키의 우선순위를 반환합니다.
+        /// </summary>
+        public int GetAffectVisualPriority(string stateKey)
+        {
+            return affectVisualSettings != null ? affectVisualSettings.GetPriority(stateKey) : 0;
+        }
+
+        protected abstract void ApplyAffectVisualProfile();
     }
 }
