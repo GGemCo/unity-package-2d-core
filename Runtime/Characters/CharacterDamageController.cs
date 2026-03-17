@@ -132,6 +132,10 @@ namespace GGemCo2DCore
 
             // 데미지 텍스트 색상 설정
             Color damageTextColor = _textColorDamageMonster;
+            if (_characterBase.CompareTag(ConfigTags.GetValue(ConfigTags.Keys.Player)))
+            {
+                damageTextColor = _textColorDamagePlayer;
+            }
             Vector3 damageTextPosition = _characterBase.transform.position + new Vector3(0,
                 _characterBase.GetHeight() * Mathf.Abs(_characterBase.originalScaleX), 0);
             // 속성 데미지일때, 저항값 처리
@@ -232,10 +236,6 @@ namespace GGemCo2DCore
 
             NotifyIncomingHitCombatFeedback(metadataDamage, MonsterSkillCombatOutcome.Hit);
 
-            if (_characterBase.CompareTag(ConfigTags.GetValue(ConfigTags.Keys.Player)))
-            {
-                damageTextColor = _textColorDamagePlayer;
-            }
             if (!hasGuardFeedbackText)
             {
                 MetadataDamageText metadataDamageText2 = new MetadataDamageText
