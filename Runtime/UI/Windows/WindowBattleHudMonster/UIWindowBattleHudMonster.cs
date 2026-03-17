@@ -1,5 +1,4 @@
 ﻿using System.Collections.Generic;
-using System.Threading.Tasks;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
@@ -50,6 +49,7 @@ namespace GGemCo2DCore
             Sprite sprite = _addressableLoaderCharacterImageName.GetImageNameByKey(key);
             if (GcLogger.IsNull(sprite, $"[CharacterLoader] Failed to load character sprite. key={key}")) return;
             imageCharacterName.sprite = sprite;
+            imageCharacterName.SetNativeSize();
         }
 
         private void InitMonsterNameText(int monsterUid)
