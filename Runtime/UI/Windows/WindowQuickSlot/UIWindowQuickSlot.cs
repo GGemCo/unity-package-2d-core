@@ -69,7 +69,7 @@ namespace GGemCo2DCore
             {
                 if (index >= icons.Length) continue;
                 // 단축키 이미지 위치 설정
-                if (iconHotKey[index])
+                if (index < iconHotKey.Length && iconHotKey[index])
                 {
                     iconHotKey[index].transform.SetParent(slots[index].transform);
                     iconHotKey[index].transform.localPosition = new Vector3(-slotSize.x / 2f, slotSize.y / 2f, 0);
