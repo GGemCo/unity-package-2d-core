@@ -13,10 +13,11 @@ namespace GGemCo2DCore
     /// <summary>
     /// HUD 자원 표현 공용 베이스 클래스입니다.
     /// </summary>
-    public abstract class UIWindowHudResourceBase : MonoBehaviour
+    public abstract class UIWindowHudResourceBase : MonoBehaviour, IAffectHudVisualStateReceiver
     {
         [Header("Affect Visual")]
-        public HeartHudAffectVisualSettings affectVisualSettings;
+        [SerializeField] private HudAffectVisualSettings affectVisualSettings;
+        [SerializeField] private HudAffectVisualStrategyBase affectVisualStrategy;
 
         protected string CurrentAffectVisualStateKey;
 
@@ -63,6 +64,9 @@ namespace GGemCo2DCore
         private long _lastCurrent;
         private long _lastTotal;
 
+        protected HudAffectVisualSettings AffectVisualSettings => affectVisualSettings;
+        protected HudAffectVisualStrategyBase AffectVisualStrategy => affectVisualStrategy;
+
         /// <summary>
         /// current/total이 변경될 때마다 호출됩니다.
         /// 구현체는 내부 UI(Slider, Heart 등)를 갱신합니다.
@@ -74,6 +78,15 @@ namespace GGemCo2DCore
             _hasLastValue = true;
             _lastCurrent = current;
             _lastTotal = total;
+        }
+
+        protected void InitializeAffectVisualStrategy()
+        {
+            if (affectVisualStrategy == null)
+                affectVisualStrategy = GetComponent<HudAffectVisualStrategyBase>();
+
+            if (affectVisualStrategy != null)
+                affectVisualStrategy.Initialize(this);
         }
 
         protected abstract void ApplyValue(
@@ -98,7 +111,7 @@ namespace GGemCo2DCore
         }
 
         /// <summary>
-        /// 지정한 Affect 상태 키에 대응하는 하트 HUD 시각 상태를 적용합니다.
+        /// 지정한 Affect 상태 키에 대응하는 HUD 시각 상태를 적용합니다.
         /// </summary>
         public void SetAffectVisualState(string stateKey)
         {
@@ -110,7 +123,7 @@ namespace GGemCo2DCore
         }
 
         /// <summary>
-        /// 하트 HUD 시각 상태를 기본 상태로 복원합니다.
+        /// HUD 시각 상태를 기본 상태로 복원합니다.
         /// </summary>
         public void ResetAffectVisualState()
         {
@@ -126,6 +139,19 @@ namespace GGemCo2DCore
             return affectVisualSettings != null ? affectVisualSettings.GetPriority(stateKey) : 0;
         }
 
-        protected abstract void ApplyAffectVisualProfile();
+        protected virtual void ApplyAffectVisualProfile()
+        {
+            if (affectVisualStrategy == null)
+                return;
+
+            var profile = affectVisualSettings != null
+                ? affectVisualSettings.GetProfileOrDefault(CurrentAffectVisualStateKey)
+                : null;
+
+            if (profile == null)
+                affectVisualStrategy.ResetToDefault(null);
+            else
+                affectVisualStrategy.Apply(profile);
+        }
     }
 }

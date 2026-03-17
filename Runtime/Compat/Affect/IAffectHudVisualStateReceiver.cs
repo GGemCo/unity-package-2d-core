@@ -14,5 +14,10 @@ namespace GGemCo2DCore
         /// HUD 시각 상태를 기본값으로 되돌립니다.
         /// </summary>
         void ResetAffectVisualState();
+
+        /// <summary>
+        /// 지정한 상태 키의 시각 우선순위를 반환합니다.
+        /// </summary>
+        int GetAffectVisualPriority(string stateKey);
     }
 }

@@ -18,10 +18,19 @@ namespace GGemCo2DCore
 
         private void Awake()
         {
+            InitializeAffectVisualStrategy();
+
             if (effectTarget == null)
                 effectTarget = UIEffectTarget.GetOrAdd(gameObject);
             else
                 effectTarget.AutoBind();
+
+            ResetAffectVisualState();
+        }
+
+        public Slider GetSlider()
+        {
+            return slider;
         }
 
         protected override void ApplyValue(
@@ -69,9 +78,6 @@ namespace GGemCo2DCore
         }
 
         public override void SetMaxValue(UIWindowHudResourceType hpTemp, long total)
-        {
-        }
-        protected override void ApplyAffectVisualProfile()
         {
         }
     }
