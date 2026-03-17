@@ -27,8 +27,6 @@ namespace GGemCo2DCore
 
         private PlayerUIController _playerUIController;
 
-        public Action<long> OnItemBonusHpChangedSave;
-
         private ContactFilter2D _attackHitFilter;
         private int _monsterHitAreaLayerMask;
         

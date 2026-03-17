@@ -10,7 +10,6 @@ namespace GGemCo2DCoreEditor
     /// </summary>
     public static class DebugOptionMenu
     {
-        [MenuItem("Tools/GGemCo/Debug/디버그 설정 리스트 보기")]
         [MenuItem(ConfigEditor.NameToolListEnabledDebugOptions, false, (int)ConfigEditor.ToolOrdering.ListEnabledDebugOptions)]
         public static void ListEnabledDebugOptions()
         {
