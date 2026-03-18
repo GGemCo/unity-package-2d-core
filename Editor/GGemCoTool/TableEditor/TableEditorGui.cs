@@ -37,9 +37,9 @@ namespace GGemCo2DCoreEditor
             }
 
             object previewObject = TableEditorValueUtility.BuildRowObject(currentDefinition, row, out List<string> fieldErrors);
-            row.CachedDisplayName = TableEditorReflectionUtility.GetDisplayName(previewObject, 0);
+            row.cachedDisplayName = TableEditorReflectionUtility.GetDisplayName(previewObject, 0);
 
-            Label title = new Label(row.CachedDisplayName)
+            Label title = new Label(row.cachedDisplayName)
             {
                 style =
                 {
@@ -55,10 +55,50 @@ namespace GGemCo2DCoreEditor
                     root.Add(new HelpBox(fieldErrors[i], HelpBoxMessageType.Warning));
             }
 
+            ITableEditorTableRuleProvider ruleProvider = TableEditorRuleProviderRegistry.GetProvider(currentDefinition);
+            Dictionary<string, TableEditorColumnRule> ruleByColumn = BuildRuleMap(ruleProvider);
+            HashSet<string> drawnColumns = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            string lastSectionName = null;
+
             for (int i = 0; i < columns.Count; i++)
             {
                 TableEditorColumnDefinition column = columns[i];
-                root.Add(CreateField(owner, currentDefinition, column, row, onValueChanged, onJumpToReference));
+                ruleByColumn.TryGetValue(column.HeaderName, out TableEditorColumnRule columnRule);
+                if (columnRule != null && columnRule.InactiveDisplayMode == TableEditorInactiveDisplayMode.Hide && !columnRule.IsActive(row))
+                    continue;
+
+                string sectionName = columnRule?.SectionName;
+                if (!string.Equals(lastSectionName, sectionName, StringComparison.Ordinal))
+                {
+                    if (!string.IsNullOrWhiteSpace(sectionName))
+                        root.Add(CreateSectionHeader(sectionName));
+                    lastSectionName = sectionName;
+                }
+
+                root.Add(CreateField(owner, currentDefinition, column, row, columnRule, onValueChanged, onJumpToReference));
+                drawnColumns.Add(column.HeaderName);
+            }
+
+            if (ruleProvider != null)
+            {
+                IReadOnlyList<TableEditorColumnRule> rules = ruleProvider.GetColumnRules();
+                for (int i = 0; i < rules.Count; i++)
+                {
+                    TableEditorColumnRule rule = rules[i];
+                    if (rule == null || drawnColumns.Contains(rule.ColumnName))
+                        continue;
+                    if (rule.InactiveDisplayMode == TableEditorInactiveDisplayMode.Hide && !rule.IsActive(row))
+                        continue;
+
+                    if (!string.Equals(lastSectionName, rule.SectionName, StringComparison.Ordinal))
+                    {
+                        if (!string.IsNullOrWhiteSpace(rule.SectionName))
+                            root.Add(CreateSectionHeader(rule.SectionName));
+                        lastSectionName = rule.SectionName;
+                    }
+
+                    root.Add(CreateMissingFieldNotice(rule, row));
+                }
             }
 
             return root;
@@ -111,11 +151,52 @@ namespace GGemCo2DCoreEditor
             return root;
         }
 
+        private static Dictionary<string, TableEditorColumnRule> BuildRuleMap(ITableEditorTableRuleProvider provider)
+        {
+            Dictionary<string, TableEditorColumnRule> result = new Dictionary<string, TableEditorColumnRule>(StringComparer.OrdinalIgnoreCase);
+            if (provider == null)
+                return result;
+
+            IReadOnlyList<TableEditorColumnRule> rules = provider.GetColumnRules();
+            for (int i = 0; i < rules.Count; i++)
+            {
+                TableEditorColumnRule rule = rules[i];
+                if (rule != null && !string.IsNullOrWhiteSpace(rule.ColumnName))
+                    result[rule.ColumnName] = rule;
+            }
+
+            return result;
+        }
+
+        private static VisualElement CreateSectionHeader(string sectionName)
+        {
+            Label header = new Label(sectionName)
+            {
+                style =
+                {
+                    unityFontStyleAndWeight = FontStyle.Bold,
+                    marginTop = 8f,
+                    marginBottom = 4f,
+                    fontSize = 12,
+                }
+            };
+            return header;
+        }
+
+        private static VisualElement CreateMissingFieldNotice(TableEditorColumnRule rule, TableEditorDocumentRow row)
+        {
+            HelpBox box = new HelpBox($"{rule.ColumnName}: 현재 row 클래스/헤더에 없는 컬럼입니다.", HelpBoxMessageType.Info);
+            bool isActive = rule == null || rule.IsActive(row);
+            box.SetEnabled(isActive);
+            return box;
+        }
+
         private static VisualElement CreateField(
             EditorWindow owner,
             TableEditorTableDefinition currentDefinition,
             TableEditorColumnDefinition column,
             TableEditorDocumentRow row,
+            TableEditorColumnRule columnRule,
             Action<string, string> onValueChanged,
             Action<TableEditorTableDefinition, int> onJumpToReference)
         {
@@ -139,6 +220,7 @@ namespace GGemCo2DCoreEditor
                 }
             };
 
+            bool isActive = columnRule == null || columnRule.IsActive(row);
             Label label = new Label(column.HeaderName)
             {
                 style = { unityFontStyleAndWeight = FontStyle.Bold, marginBottom = 4f }
@@ -149,11 +231,18 @@ namespace GGemCo2DCoreEditor
 
             VisualElement input = CreateInputField(owner, currentDefinition, column, row, rawValue ?? string.Empty, onValueChanged, onJumpToReference);
             if (input != null)
+            {
+                input.SetEnabled(isActive || (columnRule != null && columnRule.InactiveDisplayMode == TableEditorInactiveDisplayMode.ReadOnly));
                 container.Add(input);
+            }
+
+            if (!isActive && !string.IsNullOrWhiteSpace(columnRule?.InactiveHint))
+                container.Add(new HelpBox(columnRule.InactiveHint, HelpBoxMessageType.Info));
 
             if (!column.ExistsInRowType)
                 container.Add(new HelpBox("현재 row 클래스에 없는 컬럼입니다. 저장은 유지되지만 타입 검증은 제한됩니다.", HelpBoxMessageType.Info));
 
+            container.SetEnabled(isActive || columnRule == null || columnRule.InactiveDisplayMode != TableEditorInactiveDisplayMode.ShowDisabled ? true : false);
             return container;
         }
 
@@ -170,11 +259,19 @@ namespace GGemCo2DCoreEditor
             if (!TableEditorValueUtility.TryConvertFromRaw(rawValue, type, out object converted, out _))
                 converted = GetDefaultValue(type);
 
-            if (column.IsReferenceCandidate)
-                return CreateReferenceField(owner, currentDefinition, column, row, rawValue, onValueChanged, onJumpToReference);
+            TableEditorReferenceRule referenceRule = column.ResolveReferenceRule(row);
+            TableEditorTableDefinition referenceTable = column.GetReferenceTable(referenceRule);
+            if (referenceRule != null)
+            {
+                if (referenceRule.ValueKind == TableEditorReferenceValueKind.StringId)
+                    return CreateStringIdReferenceField(owner, referenceTable, column, row, rawValue, onValueChanged, onJumpToReference);
 
-            if (column.IsMultiReferenceCandidate)
-                return CreateMultiReferenceField(owner, currentDefinition, column, row, rawValue, onValueChanged, onJumpToReference);
+                if (column.IsReferenceCandidate)
+                    return CreateReferenceField(owner, referenceTable, column, row, rawValue, onValueChanged, onJumpToReference);
+
+                if (column.IsMultiReferenceCandidate)
+                    return CreateMultiReferenceField(owner, referenceTable, column, row, rawValue, onValueChanged, onJumpToReference);
+            }
 
             if (type == typeof(string) || type.IsArray)
             {
@@ -269,7 +366,7 @@ namespace GGemCo2DCoreEditor
 
         private static VisualElement CreateReferenceField(
             EditorWindow owner,
-            TableEditorTableDefinition currentDefinition,
+            TableEditorTableDefinition referenceTable,
             TableEditorColumnDefinition column,
             TableEditorDocumentRow row,
             string rawValue,
@@ -281,56 +378,11 @@ namespace GGemCo2DCoreEditor
             IntegerField uidField = new IntegerField { value = ParseInt(rawValue), isDelayed = true };
             root.Add(uidField);
 
-            TableEditorTableDefinition referenceTable = column.ReferenceTable;
             IReadOnlyList<TableEditorReferenceItem> items = TableEditorReferenceCache.GetItems(referenceTable);
-            List<SearchableDropdownUtility.Option<TableEditorReferenceItem>> options = new List<SearchableDropdownUtility.Option<TableEditorReferenceItem>>(items.Count);
-            int selectedIndex = -1;
-            int currentUid = ParseInt(rawValue);
-
-            for (int i = 0; i < items.Count; i++)
-            {
-                TableEditorReferenceItem item = items[i];
-                options.Add(new SearchableDropdownUtility.Option<TableEditorReferenceItem>(item.Uid.ToString(CultureInfo.InvariantCulture), item.DisplayName, item));
-                if (item.Uid == currentUid)
-                    selectedIndex = i;
-            }
+            List<SearchableDropdownUtility.Option<TableEditorReferenceItem>> options = BuildUidOptions(items);
 
             VisualElement rowElement = new VisualElement { style = { flexDirection = FlexDirection.Row, alignItems = Align.Center, marginTop = 4f } };
-            Button pickerButton = new Button
-            {
-                text = selectedIndex >= 0 ? options[selectedIndex].ToString() : $"Select {referenceTable?.TableKey ?? "Reference"}",
-                style = { flexGrow = 1f, marginRight = 4f }
-            };
-
-            if (options.Count > 0 && owner != null)
-            {
-                SearchableDropdownUtility.BindUiToolkitButton(
-                    owner,
-                    pickerButton,
-                    options,
-                    () =>
-                    {
-                        int latestUid = ParseInt(row.Values.TryGetValue(column.HeaderName, out string latestRaw) ? latestRaw : rawValue);
-                        for (int i = 0; i < items.Count; i++)
-                        {
-                            if (items[i].Uid == latestUid)
-                                return i;
-                        }
-
-                        return -1;
-                    },
-                    (selectedOptionIndex, option) =>
-                    {
-                        pickerButton.text = option.ToString();
-                        uidField.SetValueWithoutNotify(option.Data.Uid);
-                        onValueChanged?.Invoke(column.HeaderName, option.Data.Uid.ToString(CultureInfo.InvariantCulture));
-                    });
-            }
-            else
-            {
-                pickerButton.SetEnabled(false);
-            }
-
+            Button pickerButton = new Button { style = { flexGrow = 1f, marginRight = 4f } };
             rowElement.Add(pickerButton);
 
             Button openButton = new Button(() =>
@@ -350,9 +402,26 @@ namespace GGemCo2DCoreEditor
             {
                 openButton.SetEnabled(referenceTable != null && uid > 0);
                 TableEditorReferenceItem currentItem = TableEditorReferenceCache.FindItem(referenceTable, uid);
-                pickerButton.text = currentItem != null
-                    ? $"{uid}  |  {currentItem.DisplayName}"
-                    : $"Select {referenceTable?.TableKey ?? "Reference"}";
+                pickerButton.text = currentItem != null ? BuildItemText(currentItem, false) : $"Select {referenceTable?.TableKey ?? "Reference"}";
+            }
+
+            if (options.Count > 0 && owner != null)
+            {
+                SearchableDropdownUtility.BindUiToolkitButton(
+                    owner,
+                    pickerButton,
+                    options,
+                    () => FindSelectedUidIndex(items, ParseInt(row.Values.TryGetValue(column.HeaderName, out string latestRaw) ? latestRaw : rawValue)),
+                    (selectedOptionIndex, option) =>
+                    {
+                        pickerButton.text = option.ToString();
+                        uidField.SetValueWithoutNotify(option.Data.Uid);
+                        onValueChanged?.Invoke(column.HeaderName, option.Data.Uid.ToString(CultureInfo.InvariantCulture));
+                    });
+            }
+            else
+            {
+                pickerButton.SetEnabled(false);
             }
 
             uidField.RegisterValueChangedCallback(evt =>
@@ -368,9 +437,9 @@ namespace GGemCo2DCoreEditor
             return root;
         }
 
-        private static VisualElement CreateMultiReferenceField(
+        private static VisualElement CreateStringIdReferenceField(
             EditorWindow owner,
-            TableEditorTableDefinition currentDefinition,
+            TableEditorTableDefinition referenceTable,
             TableEditorColumnDefinition column,
             TableEditorDocumentRow row,
             string rawValue,
@@ -378,16 +447,85 @@ namespace GGemCo2DCoreEditor
             Action<TableEditorTableDefinition, int> onJumpToReference)
         {
             VisualElement root = new VisualElement { style = { flexDirection = FlexDirection.Column } };
-            TableEditorTableDefinition referenceTable = column.ReferenceTable;
+
+            TextField idField = new TextField { value = rawValue ?? string.Empty, multiline = false, isDelayed = true };
+            root.Add(idField);
+
+            IReadOnlyList<TableEditorReferenceItem> items = TableEditorReferenceCache.GetItems(referenceTable);
+            List<SearchableDropdownUtility.Option<TableEditorReferenceItem>> options = BuildStringIdOptions(items);
+
+            VisualElement rowElement = new VisualElement { style = { flexDirection = FlexDirection.Row, alignItems = Align.Center, marginTop = 4f } };
+            Button pickerButton = new Button { style = { flexGrow = 1f, marginRight = 4f } };
+            rowElement.Add(pickerButton);
+
+            Button openButton = new Button(() =>
+            {
+                string id = row.Values.TryGetValue(column.HeaderName, out string latestRaw) ? latestRaw : rawValue;
+                TableEditorReferenceItem item = TableEditorReferenceCache.FindItem(referenceTable, id);
+                if (item != null && item.Uid > 0)
+                    onJumpToReference?.Invoke(referenceTable, item.Uid);
+            })
+            {
+                text = "Open",
+                style = { width = 60f }
+            };
+            rowElement.Add(openButton);
+            root.Add(rowElement);
+
+            void RefreshReferenceUi(string stringId)
+            {
+                TableEditorReferenceItem currentItem = TableEditorReferenceCache.FindItem(referenceTable, stringId);
+                openButton.SetEnabled(referenceTable != null && currentItem != null && currentItem.Uid > 0);
+                pickerButton.text = currentItem != null ? BuildItemText(currentItem, true) : $"Select {referenceTable?.TableKey ?? "Reference"}";
+            }
+
+            if (options.Count > 0 && owner != null)
+            {
+                SearchableDropdownUtility.BindUiToolkitButton(
+                    owner,
+                    pickerButton,
+                    options,
+                    () => FindSelectedStringIdIndex(items, row.Values.TryGetValue(column.HeaderName, out string latestRaw) ? latestRaw : rawValue),
+                    (selectedOptionIndex, option) =>
+                    {
+                        string nextValue = option.Data.StringId ?? string.Empty;
+                        idField.SetValueWithoutNotify(nextValue);
+                        pickerButton.text = option.ToString();
+                        onValueChanged?.Invoke(column.HeaderName, nextValue);
+                    });
+            }
+            else
+            {
+                pickerButton.SetEnabled(false);
+            }
+
+            idField.RegisterValueChangedCallback(evt =>
+            {
+                onValueChanged?.Invoke(column.HeaderName, evt.newValue ?? string.Empty);
+                RefreshReferenceUi(evt.newValue ?? string.Empty);
+            });
+            RefreshReferenceUi(rawValue);
+
+            if (referenceTable == null)
+                root.Add(new HelpBox("참조 테이블을 찾지 못했습니다.", HelpBoxMessageType.Warning));
+
+            return root;
+        }
+
+        private static VisualElement CreateMultiReferenceField(
+            EditorWindow owner,
+            TableEditorTableDefinition referenceTable,
+            TableEditorColumnDefinition column,
+            TableEditorDocumentRow row,
+            string rawValue,
+            Action<string, string> onValueChanged,
+            Action<TableEditorTableDefinition, int> onJumpToReference)
+        {
+            VisualElement root = new VisualElement { style = { flexDirection = FlexDirection.Column } };
 
             List<int> selectedUids = ParseIntList(rawValue);
             IReadOnlyList<TableEditorReferenceItem> items = TableEditorReferenceCache.GetItems(referenceTable);
-            List<SearchableDropdownUtility.Option<TableEditorReferenceItem>> options = new List<SearchableDropdownUtility.Option<TableEditorReferenceItem>>(items.Count);
-            for (int i = 0; i < items.Count; i++)
-            {
-                TableEditorReferenceItem item = items[i];
-                options.Add(new SearchableDropdownUtility.Option<TableEditorReferenceItem>(item.Uid.ToString(CultureInfo.InvariantCulture), item.DisplayName, item));
-            }
+            List<SearchableDropdownUtility.Option<TableEditorReferenceItem>> options = BuildUidOptions(items);
 
             VisualElement listRoot = new VisualElement
             {
@@ -399,10 +537,7 @@ namespace GGemCo2DCoreEditor
             };
             root.Add(listRoot);
 
-            void Commit()
-            {
-                onValueChanged?.Invoke(column.HeaderName, string.Join(",", selectedUids));
-            }
+            void Commit() => onValueChanged?.Invoke(column.HeaderName, string.Join(",", selectedUids));
 
             void Refresh()
             {
@@ -443,23 +578,12 @@ namespace GGemCo2DCoreEditor
                     IntegerField uidField = new IntegerField($"Element {capturedIndex + 1}")
                     {
                         value = currentUid,
+                        isDelayed = true,
                     };
                     itemRoot.Add(uidField);
 
-                    VisualElement buttonRow = new VisualElement
-                    {
-                        style =
-                        {
-                            flexDirection = FlexDirection.Row,
-                            alignItems = Align.Center,
-                            marginTop = 4f,
-                        }
-                    };
-
-                    Button pickerButton = new Button
-                    {
-                        style = { flexGrow = 1f, marginRight = 4f },
-                    };
+                    VisualElement buttonRow = new VisualElement { style = { flexDirection = FlexDirection.Row, alignItems = Align.Center, marginTop = 4f } };
+                    Button pickerButton = new Button { style = { flexGrow = 1f, marginRight = 4f } };
                     buttonRow.Add(pickerButton);
 
                     Button openButton = new Button(() =>
@@ -494,9 +618,7 @@ namespace GGemCo2DCoreEditor
                     {
                         openButton.SetEnabled(referenceTable != null && uid > 0);
                         TableEditorReferenceItem currentItem = TableEditorReferenceCache.FindItem(referenceTable, uid);
-                        pickerButton.text = currentItem != null
-                            ? $"{uid}  |  {currentItem.DisplayName}"
-                            : $"Select {referenceTable?.TableKey ?? "Reference"}";
+                        pickerButton.text = currentItem != null ? BuildItemText(currentItem, false) : $"Select {referenceTable?.TableKey ?? "Reference"}";
                     }
 
                     uidField.RegisterValueChangedCallback(evt =>
@@ -515,17 +637,7 @@ namespace GGemCo2DCoreEditor
                             owner,
                             pickerButton,
                             options,
-                            () =>
-                            {
-                                int latestUid = selectedUids.Count > capturedIndex ? selectedUids[capturedIndex] : 0;
-                                for (int optionIndex = 0; optionIndex < items.Count; optionIndex++)
-                                {
-                                    if (items[optionIndex].Uid == latestUid)
-                                        return optionIndex;
-                                }
-
-                                return -1;
-                            },
+                            () => FindSelectedUidIndex(items, selectedUids.Count > capturedIndex ? selectedUids[capturedIndex] : 0),
                             (selectedOptionIndex, option) =>
                             {
                                 if (capturedIndex < 0 || capturedIndex >= selectedUids.Count)
@@ -563,6 +675,60 @@ namespace GGemCo2DCoreEditor
 
             Refresh();
             return root;
+        }
+
+        private static List<SearchableDropdownUtility.Option<TableEditorReferenceItem>> BuildUidOptions(IReadOnlyList<TableEditorReferenceItem> items)
+        {
+            List<SearchableDropdownUtility.Option<TableEditorReferenceItem>> options = new List<SearchableDropdownUtility.Option<TableEditorReferenceItem>>(items.Count);
+            for (int i = 0; i < items.Count; i++)
+            {
+                TableEditorReferenceItem item = items[i];
+                options.Add(new SearchableDropdownUtility.Option<TableEditorReferenceItem>(item.Uid.ToString(CultureInfo.InvariantCulture), item.DisplayName, item));
+            }
+            return options;
+        }
+
+        private static List<SearchableDropdownUtility.Option<TableEditorReferenceItem>> BuildStringIdOptions(IReadOnlyList<TableEditorReferenceItem> items)
+        {
+            List<SearchableDropdownUtility.Option<TableEditorReferenceItem>> options = new List<SearchableDropdownUtility.Option<TableEditorReferenceItem>>(items.Count);
+            for (int i = 0; i < items.Count; i++)
+            {
+                TableEditorReferenceItem item = items[i];
+                string key = string.IsNullOrWhiteSpace(item.StringId) ? item.Uid.ToString(CultureInfo.InvariantCulture) : item.StringId;
+                options.Add(new SearchableDropdownUtility.Option<TableEditorReferenceItem>(key, item.DisplayName, item));
+            }
+            return options;
+        }
+
+        private static int FindSelectedUidIndex(IReadOnlyList<TableEditorReferenceItem> items, int currentUid)
+        {
+            for (int i = 0; i < items.Count; i++)
+            {
+                if (items[i].Uid == currentUid)
+                    return i;
+            }
+            return -1;
+        }
+
+        private static int FindSelectedStringIdIndex(IReadOnlyList<TableEditorReferenceItem> items, string currentId)
+        {
+            for (int i = 0; i < items.Count; i++)
+            {
+                if (string.Equals(items[i].StringId, currentId, StringComparison.OrdinalIgnoreCase))
+                    return i;
+            }
+            return -1;
+        }
+
+        private static string BuildItemText(TableEditorReferenceItem item, bool preferStringId)
+        {
+            if (item == null)
+                return string.Empty;
+
+            string key = preferStringId && !string.IsNullOrWhiteSpace(item.StringId)
+                ? item.StringId
+                : item.Uid.ToString(CultureInfo.InvariantCulture);
+            return $"{key}  |  {item.DisplayName}";
         }
 
         private static object GetDefaultValue(Type type)

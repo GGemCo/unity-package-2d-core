@@ -15,11 +15,11 @@ namespace GGemCo2DCoreEditor
     }
 
     [Serializable]
-    internal sealed class TableEditorDocumentRow
+    public sealed class TableEditorDocumentRow
     {
-        public int StableId;
+        public int stableId;
         public Dictionary<string, string> Values = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
-        public string CachedDisplayName;
+        public string cachedDisplayName;
     }
 
     [Serializable]
@@ -119,7 +119,7 @@ namespace GGemCo2DCoreEditor
 
                 TableEditorDocumentRow row = new TableEditorDocumentRow
                 {
-                    StableId = _rowIdSeed++
+                    stableId = _rowIdSeed++
                 };
 
                 for (int c = 0; c < document.Headers.Count; c++)
@@ -168,7 +168,7 @@ namespace GGemCo2DCoreEditor
         {
             TableEditorDocumentRow row = new TableEditorDocumentRow
             {
-                StableId = _rowIdSeed++
+                stableId = _rowIdSeed++
             };
 
             for (int i = 0; i < Headers.Count; i++)
@@ -192,7 +192,7 @@ namespace GGemCo2DCoreEditor
 
             TableEditorDocumentRow row = new TableEditorDocumentRow
             {
-                StableId = _rowIdSeed++
+                stableId = _rowIdSeed++
             };
 
             foreach (KeyValuePair<string, string> pair in source.Values)
@@ -289,8 +289,8 @@ namespace GGemCo2DCoreEditor
                 {
                     SnapshotRow rowSnapshot = new SnapshotRow
                     {
-                        stableId = line.Row.StableId,
-                        cachedDisplayName = line.Row.CachedDisplayName,
+                        stableId = line.Row.stableId,
+                        cachedDisplayName = line.Row.cachedDisplayName,
                     };
 
                     foreach (KeyValuePair<string, string> pair in line.Row.Values)
@@ -340,8 +340,8 @@ namespace GGemCo2DCoreEditor
                     {
                         TableEditorDocumentRow row = new TableEditorDocumentRow
                         {
-                            StableId = lineSnapshot.row.stableId,
-                            CachedDisplayName = lineSnapshot.row.cachedDisplayName,
+                            stableId = lineSnapshot.row.stableId,
+                            cachedDisplayName = lineSnapshot.row.cachedDisplayName,
                         };
 
                         int valueCount = Math.Min(lineSnapshot.row.keys.Count, lineSnapshot.row.values.Count);
@@ -349,8 +349,8 @@ namespace GGemCo2DCoreEditor
                             row.Values[lineSnapshot.row.keys[k]] = lineSnapshot.row.values[k] ?? string.Empty;
 
                         line.Row = row;
-                        if (row.StableId >= _rowIdSeed)
-                            _rowIdSeed = row.StableId + 1;
+                        if (row.stableId >= _rowIdSeed)
+                            _rowIdSeed = row.stableId + 1;
                     }
 
                     document.Lines.Add(line);

@@ -32,6 +32,7 @@ namespace GGemCo2DCoreEditor
                 columnMap[columns[i].HeaderName] = columns[i];
 
             HashSet<int> uniqueUids = new HashSet<int>();
+            ITableEditorTableRuleProvider ruleProvider = TableEditorRuleProviderRegistry.GetProvider(definition);
             foreach (TableEditorDocumentRow row in document.GetRows())
             {
                 object rowObject = TableEditorValueUtility.BuildRowObject(definition, row, out List<string> fieldErrors);
@@ -41,7 +42,7 @@ namespace GGemCo2DCoreEditor
                     {
                         Severity = TableEditorValidationSeverity.Error,
                         Message = fieldErrors[i],
-                        RowStableId = row.StableId,
+                        RowStableId = row.stableId,
                     });
                 }
 
@@ -54,7 +55,7 @@ namespace GGemCo2DCoreEditor
                         {
                             Severity = TableEditorValidationSeverity.Error,
                             Message = "Uid 파싱 실패",
-                            RowStableId = row.StableId,
+                            RowStableId = row.stableId,
                         });
                     }
                     else if (!uniqueUids.Add(uid))
@@ -63,12 +64,13 @@ namespace GGemCo2DCoreEditor
                         {
                             Severity = TableEditorValidationSeverity.Error,
                             Message = $"중복 Uid: {uid}",
-                            RowStableId = row.StableId,
+                            RowStableId = row.stableId,
                         });
                     }
                 }
 
                 ValidateReferenceFields(row, columnMap, messages);
+                ruleProvider?.ValidateRow(definition, row, columnMap, messages);
             }
 
             try
@@ -105,12 +107,23 @@ namespace GGemCo2DCoreEditor
                 if (!columnMap.TryGetValue(pair.Key, out TableEditorColumnDefinition column) || !column.HasReferenceCandidate)
                     continue;
 
+                TableEditorReferenceRule rule = column.ResolveReferenceRule(row);
+                TableEditorTableDefinition referenceTable = column.GetReferenceTable(rule);
+                if (rule != null && rule.ValueKind == TableEditorReferenceValueKind.StringId)
+                {
+                    if (string.IsNullOrWhiteSpace(pair.Value))
+                        continue;
+
+                    AddReferenceWarningIfMissing(row, messages, referenceTable, pair.Key, pair.Value);
+                    continue;
+                }
+
                 if (column.IsReferenceCandidate)
                 {
                     if (!int.TryParse(pair.Value, NumberStyles.Integer, CultureInfo.InvariantCulture, out int uid) || uid <= 0)
                         continue;
 
-                    AddReferenceWarningIfMissing(row, messages, column, pair.Key, uid);
+                    AddReferenceWarningIfMissing(row, messages, referenceTable, pair.Key, uid);;
                     continue;
                 }
 
@@ -127,7 +140,7 @@ namespace GGemCo2DCoreEditor
                     if (!int.TryParse(token, NumberStyles.Integer, CultureInfo.InvariantCulture, out int uid) || uid <= 0)
                         continue;
 
-                    AddReferenceWarningIfMissing(row, messages, column, pair.Key, uid);
+                    AddReferenceWarningIfMissing(row, messages, referenceTable, pair.Key, uid);
                 }
             }
         }
@@ -135,18 +148,36 @@ namespace GGemCo2DCoreEditor
         private static void AddReferenceWarningIfMissing(
             TableEditorDocumentRow row,
             List<TableEditorValidationMessage> messages,
-            TableEditorColumnDefinition column,
+            TableEditorTableDefinition referenceTable,
             string headerName,
             int uid)
         {
-            if (TableEditorReferenceCache.Contains(column.ReferenceTable, uid))
+            if (TableEditorReferenceCache.Contains(referenceTable, uid))
                 return;
 
             messages.Add(new TableEditorValidationMessage
             {
                 Severity = TableEditorValidationSeverity.Warning,
-                Message = $"참조 없음: {headerName} -> {column.ReferenceTable.TableKey}:{uid}",
-                RowStableId = row.StableId,
+                Message = $"참조 없음: {headerName} -> {referenceTable?.TableKey}:{uid}",
+                RowStableId = row.stableId,
+            });
+        }
+
+        private static void AddReferenceWarningIfMissing(
+            TableEditorDocumentRow row,
+            List<TableEditorValidationMessage> messages,
+            TableEditorTableDefinition referenceTable,
+            string headerName,
+            string stringId)
+        {
+            if (TableEditorReferenceCache.Contains(referenceTable, stringId))
+                return;
+
+            messages.Add(new TableEditorValidationMessage
+            {
+                Severity = TableEditorValidationSeverity.Warning,
+                Message = $"참조 없음: {headerName} -> {referenceTable?.TableKey}:{stringId}",
+                RowStableId = row.stableId,
             });
         }
     }

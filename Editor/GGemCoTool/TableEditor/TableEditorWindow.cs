@@ -450,7 +450,13 @@ namespace GGemCo2DCoreEditor
             if (string.Equals(_selectedRow.Values.TryGetValue(headerName, out string current) ? current : string.Empty, nextValue ?? string.Empty, StringComparison.Ordinal))
                 return;
 
-            ApplyDocumentMutation($"Edit {headerName}", () => _document.SetCellValue(_selectedRow, headerName, nextValue), refreshInspector: false);
+            ITableEditorTableRuleProvider ruleProvider = TableEditorRuleProviderRegistry.GetProvider(_selectedTable);
+            bool inspectorLayoutChanged = string.Equals(headerName, "Kind", StringComparison.OrdinalIgnoreCase);
+            ApplyDocumentMutation($"Edit {headerName}", () =>
+            {
+                _document.SetCellValue(_selectedRow, headerName, nextValue);
+                ruleProvider?.OnBeforeCellValueChanged(_document, _selectedRow, headerName, nextValue);
+            }, !inspectorLayoutChanged);
         }
 
         private void JumpToReference(TableEditorTableDefinition table, int uid)
@@ -479,7 +485,7 @@ namespace GGemCo2DCoreEditor
             }
         }
 
-        private void ApplyDocumentMutation(string undoName, Action mutation, bool refreshInspector = true)
+        private void ApplyDocumentMutation(string undoName, Action mutation, bool keepInspectorState = false)
         {
             if (_selectedTable == null || _document == null || mutation == null)
                 return;
@@ -489,19 +495,10 @@ namespace GGemCo2DCoreEditor
             _undoController?.Commit(_selectedTable.TableKey, _document);
             _selectedTable?.ReloadAction?.Invoke();
             TableEditorReferenceCache.Invalidate(_selectedTable);
-
-            if (refreshInspector)
-                RefreshAllViews();
-            else
+            if (keepInspectorState)
                 RefreshViewsWithoutInspectorRebuild();
-        }
-
-        private void RefreshViewsWithoutInspectorRebuild()
-        {
-            RefreshStatus();
-            RefreshVisibleRows();
-            RebuildValidation();
-            RefreshTableList();
+            else
+                RefreshAllViews();
         }
 
         private void HandleUndoRedoRestore(string tableKey, string snapshotJson)
@@ -513,11 +510,11 @@ namespace GGemCo2DCoreEditor
             if (restored == null)
                 return;
 
-            int selectedStableId = _selectedRow?.StableId ?? -1;
+            int selectedStableId = _selectedRow?.stableId ?? -1;
             _document = restored;
             _columns = _selectedTable.BuildColumns(_document.Headers);
             _document.MergeHeaders(_columns);
-            _selectedRow = _document.GetRows().FirstOrDefault(r => r.StableId == selectedStableId) ?? _document.GetRows().FirstOrDefault();
+            _selectedRow = _document.GetRows().FirstOrDefault(r => r.stableId == selectedStableId) ?? _document.GetRows().FirstOrDefault();
             RefreshAllViews();
         }
 
@@ -527,6 +524,15 @@ namespace GGemCo2DCoreEditor
             RebuildColumns();
             RefreshVisibleRows();
             RebuildInspector();
+            RebuildValidation();
+            RefreshTableList();
+        }
+
+        private void RefreshViewsWithoutInspectorRebuild()
+        {
+            RefreshStatus();
+            RebuildColumns();
+            RefreshVisibleRows();
             RebuildValidation();
             RefreshTableList();
         }
@@ -551,7 +557,7 @@ namespace GGemCo2DCoreEditor
                 {
                     if (!string.IsNullOrWhiteSpace(_rowSearch) && !MatchesSearch(row, _rowSearch))
                         continue;
-                    if (_showOnlyValidationRows && !invalidRowIds.Contains(row.StableId))
+                    if (_showOnlyValidationRows && !invalidRowIds.Contains(row.stableId))
                         continue;
                     _visibleRows.Add(row);
                 }
@@ -608,7 +614,7 @@ namespace GGemCo2DCoreEditor
                         Label label = (Label)element;
                         TableEditorDocumentRow row = _visibleRows[index];
                         row.Values.TryGetValue(column.HeaderName, out string value);
-                        label.text = BuildGridCellText(column, value);
+                        label.text = BuildGridCellText(column, row, value);
                         label.tooltip = value ?? string.Empty;
                     },
                     comparison = (firstIndex, secondIndex) =>
@@ -635,7 +641,7 @@ namespace GGemCo2DCoreEditor
             if (_validationHost == null)
                 return;
             _validationHost.Clear();
-            _validationHost.Add(TableEditorGui.BuildValidationView(_validationMessages, _selectedRow?.StableId ?? -1, _showOnlySelectedValidation));
+            _validationHost.Add(TableEditorGui.BuildValidationView(_validationMessages, _selectedRow?.stableId ?? -1, _showOnlySelectedValidation));
         }
 
         private bool TryConfirmDiscardChanges()
@@ -694,16 +700,24 @@ namespace GGemCo2DCoreEditor
             return row != null && row.Values.TryGetValue(header, out string value) ? value ?? string.Empty : string.Empty;
         }
 
-        private static string BuildGridCellText(TableEditorColumnDefinition column, string raw)
+        private static string BuildGridCellText(TableEditorColumnDefinition column, TableEditorDocumentRow row, string raw)
         {
             raw ??= string.Empty;
-            if (column != null)
+            if (column != null && column.HasReferenceCandidate)
             {
-                if (column.IsReferenceCandidate && int.TryParse(raw, out int uid) && uid > 0)
+                TableEditorReferenceRule rule = column.ResolveReferenceRule(row);
+                TableEditorTableDefinition referenceTable = column.GetReferenceTable(rule);
+                if (rule != null && rule.ValueKind == TableEditorReferenceValueKind.StringId && !string.IsNullOrWhiteSpace(raw))
                 {
-                    TableEditorReferenceItem item = TableEditorReferenceCache.FindItem(column.ReferenceTable, uid);
+                    TableEditorReferenceItem item = TableEditorReferenceCache.FindItem(referenceTable, raw);
                     if (item != null)
-                        return $"{uid} ({item.DisplayName})";
+                        raw = $"{raw} ({item.DisplayName})";
+                }
+                else if (column.IsReferenceCandidate && int.TryParse(raw, out int uid) && uid > 0)
+                {
+                    TableEditorReferenceItem item = TableEditorReferenceCache.FindItem(referenceTable, uid);
+                    if (item != null)
+                        raw = $"{uid} ({item.DisplayName})";
                 }
                 else if (column.IsMultiReferenceCandidate && !string.IsNullOrWhiteSpace(raw))
                 {
@@ -717,10 +731,8 @@ namespace GGemCo2DCoreEditor
 
                         if (int.TryParse(token, out int referenceUid) && referenceUid > 0)
                         {
-                            TableEditorReferenceItem item = TableEditorReferenceCache.FindItem(column.ReferenceTable, referenceUid);
-                            labels.Add(item != null
-                                ? $"{referenceUid} ({item.DisplayName})"
-                                : referenceUid.ToString());
+                            TableEditorReferenceItem item = TableEditorReferenceCache.FindItem(referenceTable, referenceUid);
+                            labels.Add(item != null ? $"{referenceUid} ({item.DisplayName})" : referenceUid.ToString());
                         }
                     }
 

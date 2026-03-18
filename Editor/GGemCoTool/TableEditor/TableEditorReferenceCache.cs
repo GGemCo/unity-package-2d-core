@@ -8,6 +8,7 @@ namespace GGemCo2DCoreEditor
     internal sealed class TableEditorReferenceItem
     {
         public int Uid;
+        public string StringId;
         public string DisplayName;
     }
 
@@ -40,6 +41,11 @@ namespace GGemCo2DCoreEditor
             return UidsByTableKey.TryGetValue(definition.TableKey, out HashSet<int> set) && set.Contains(uid);
         }
 
+        public static bool Contains(TableEditorTableDefinition definition, string stringId)
+        {
+            return FindItem(definition, stringId) != null;
+        }
+
         public static TableEditorReferenceItem FindItem(TableEditorTableDefinition definition, int uid)
         {
             if (definition == null || uid <= 0)
@@ -52,6 +58,24 @@ namespace GGemCo2DCoreEditor
             for (int i = 0; i < items.Count; i++)
             {
                 if (items[i].Uid == uid)
+                    return items[i];
+            }
+
+            return null;
+        }
+
+        public static TableEditorReferenceItem FindItem(TableEditorTableDefinition definition, string stringId)
+        {
+            if (definition == null || string.IsNullOrWhiteSpace(stringId))
+                return null;
+
+            EnsureLoaded(definition);
+            if (!ItemsByTableKey.TryGetValue(definition.TableKey, out List<TableEditorReferenceItem> items))
+                return null;
+
+            for (int i = 0; i < items.Count; i++)
+            {
+                if (string.Equals(items[i].StringId, stringId, StringComparison.OrdinalIgnoreCase))
                     return items[i];
             }
 
@@ -102,6 +126,7 @@ namespace GGemCo2DCoreEditor
                             items.Add(new TableEditorReferenceItem
                             {
                                 Uid = uid,
+                                StringId = TableEditorReflectionUtility.TryGetMemberValue(valueObj, valueObj.GetType(), "ID")?.ToString() ?? TableEditorReflectionUtility.TryGetMemberValue(valueObj, valueObj.GetType(), "Id")?.ToString() ?? string.Empty,
                                 DisplayName = TableEditorReflectionUtility.GetDisplayName(valueObj, items.Count),
                             });
                         }
@@ -113,7 +138,12 @@ namespace GGemCo2DCoreEditor
                 // keep empty cache on failure
             }
 
-            items.Sort(static (a, b) => string.Compare(a.DisplayName, b.DisplayName, StringComparison.OrdinalIgnoreCase));
+            items.Sort(static (a, b) =>
+            {
+                string left = string.IsNullOrWhiteSpace(a.StringId) ? a.DisplayName : $"{a.StringId} {a.DisplayName}";
+                string right = string.IsNullOrWhiteSpace(b.StringId) ? b.DisplayName : $"{b.StringId} {b.DisplayName}";
+                return string.Compare(left, right, StringComparison.OrdinalIgnoreCase);
+            });
             UidsByTableKey[definition.TableKey] = uidSet;
             ItemsByTableKey[definition.TableKey] = items;
         }

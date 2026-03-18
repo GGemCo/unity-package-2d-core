@@ -15,15 +15,38 @@ namespace GGemCo2DCoreEditor
         public bool ExistsInRowType;
         public bool ExistsInFileHeader;
         public TableEditorTableDefinition ReferenceTable;
+        public List<TableEditorReferenceRule> ReferenceRules;
 
         public bool IsUidColumn => string.Equals(HeaderName, "Uid", StringComparison.OrdinalIgnoreCase);
-        public bool IsReferenceCandidate => !IsUidColumn && ReferenceTable != null && ValueType == typeof(int);
-        public bool IsMultiReferenceCandidate => !IsUidColumn
-            && ReferenceTable != null
+        public bool IsReferenceCandidate => ResolveReferenceRule(null)?.ValueKind == TableEditorReferenceValueKind.Uid && ValueType == typeof(int);
+        public bool IsMultiReferenceCandidate => ResolveReferenceRule(null)?.ValueKind == TableEditorReferenceValueKind.Uid
             && ValueType != null
             && ValueType.IsArray
             && ValueType.GetElementType() == typeof(int);
-        public bool HasReferenceCandidate => IsReferenceCandidate || IsMultiReferenceCandidate;
+        public bool HasReferenceCandidate => ReferenceRules != null && ReferenceRules.Count > 0;
+
+        public TableEditorReferenceRule ResolveReferenceRule(TableEditorDocumentRow row)
+        {
+            if (ReferenceRules == null || ReferenceRules.Count == 0)
+                return null;
+
+            for (int i = 0; i < ReferenceRules.Count; i++)
+            {
+                TableEditorReferenceRule rule = ReferenceRules[i];
+                if (rule != null && rule.IsEnabled(row))
+                    return rule;
+            }
+
+            return ReferenceRules[0];
+        }
+
+        public TableEditorTableDefinition GetReferenceTable(TableEditorReferenceRule rule)
+        {
+            if (rule == null)
+                return ReferenceTable;
+
+            return TableEditorRegistry.FindByKey(rule.TargetTableKey) ?? ReferenceTable;
+        }
     }
 
     public sealed class TableEditorTableDefinition
@@ -94,6 +117,9 @@ namespace GGemCo2DCoreEditor
                 ? TableEditorReflectionUtility.GetMemberType(memberInfo)
                 : typeof(string);
 
+            TableEditorTableDefinition referenceTable = owner.TryResolveReferenceTable(headerName);
+            List<TableEditorReferenceRule> referenceRules = TableEditorRegistry.BuildReferenceRules(owner, headerName, memberInfo, referenceTable);
+
             return new TableEditorColumnDefinition
             {
                 HeaderName = headerName,
@@ -101,7 +127,8 @@ namespace GGemCo2DCoreEditor
                 ValueType = valueType,
                 ExistsInFileHeader = existsInHeader,
                 ExistsInRowType = memberInfo != null,
-                ReferenceTable = owner.TryResolveReferenceTable(headerName),
+                ReferenceTable = referenceTable,
+                ReferenceRules = referenceRules,
             };
         }
     }
@@ -192,6 +219,83 @@ namespace GGemCo2DCoreEditor
 
             string key = ToSnakeCase(normalized);
             return FindByKey(key);
+        }
+
+        public static List<TableEditorReferenceRule> BuildReferenceRules(TableEditorTableDefinition owner, string headerName, MemberInfo memberInfo, TableEditorTableDefinition directReferenceTable)
+        {
+            List<TableEditorReferenceRule> rules = new List<TableEditorReferenceRule>();
+            Type valueType = memberInfo != null ? TableEditorReflectionUtility.GetMemberType(memberInfo) : typeof(string);
+
+            if (directReferenceTable != null)
+            {
+                rules.Add(new TableEditorReferenceRule
+                {
+                    TargetTableKey = directReferenceTable.TableKey,
+                    ValueKind = valueType == typeof(string) ? TableEditorReferenceValueKind.StringId : TableEditorReferenceValueKind.Uid,
+                    IsEnabledForRow = _ => true,
+                });
+            }
+
+            if (owner != null && string.Equals(owner.TableKey, "affect_modifier", StringComparison.OrdinalIgnoreCase))
+            {
+                if (string.Equals(headerName, "StatId", StringComparison.OrdinalIgnoreCase))
+                {
+                    rules.Clear();
+                    rules.Add(CreateConditionalStringIdRule(ConfigAddressableTable.Stat, "Stat"));
+                }
+                else if (string.Equals(headerName, "DamageTypeId", StringComparison.OrdinalIgnoreCase))
+                {
+                    rules.Clear();
+                    rules.Add(CreateConditionalStringIdRule(ConfigAddressableTable.DamageType, "Damage"));
+                }
+                else if (string.Equals(headerName, "ScalingStatId", StringComparison.OrdinalIgnoreCase))
+                {
+                    rules.Clear();
+                    rules.Add(CreateConditionalStringIdRule(ConfigAddressableTable.Stat, "Damage"));
+                }
+                else if (string.Equals(headerName, "HealScalingStatId", StringComparison.OrdinalIgnoreCase))
+                {
+                    rules.Clear();
+                    rules.Add(CreateConditionalStringIdRule(ConfigAddressableTable.Stat, "Heal"));
+                }
+                else if (string.Equals(headerName, "StateId", StringComparison.OrdinalIgnoreCase))
+                {
+                    rules.Clear();
+                    rules.Add(CreateConditionalStringIdRule(ConfigAddressableTable.State, "State"));
+                }
+                else if (string.Equals(headerName, "AffectUid", StringComparison.OrdinalIgnoreCase))
+                {
+                    rules.Clear();
+                    rules.Add(new TableEditorReferenceRule
+                    {
+                        TargetTableKey = "affect",
+                        ValueKind = TableEditorReferenceValueKind.Uid,
+                        IsEnabledForRow = _ => true,
+                    });
+                }
+                else if (string.Equals(headerName, "ApplyAffectUid", StringComparison.OrdinalIgnoreCase))
+                {
+                    rules.Clear();
+                    rules.Add(new TableEditorReferenceRule
+                    {
+                        TargetTableKey = "affect",
+                        ValueKind = TableEditorReferenceValueKind.Uid,
+                        IsEnabledForRow = row => string.Equals(row != null && row.Values.TryGetValue("Kind", out string kind) ? kind : string.Empty, "ApplyAffectToTarget", StringComparison.OrdinalIgnoreCase),
+                    });
+                }
+            }
+
+            return rules;
+        }
+
+        private static TableEditorReferenceRule CreateConditionalStringIdRule(string tableKey, string kindValue)
+        {
+            return new TableEditorReferenceRule
+            {
+                TargetTableKey = tableKey,
+                ValueKind = TableEditorReferenceValueKind.StringId,
+                IsEnabledForRow = row => string.Equals(row != null && row.Values.TryGetValue("Kind", out string kind) ? kind : string.Empty, kindValue, StringComparison.OrdinalIgnoreCase),
+            };
         }
 
         private static void EnsureModules()
