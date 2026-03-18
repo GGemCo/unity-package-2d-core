@@ -1,6 +1,6 @@
 using System;
 using System.Collections.Generic;
-using System.Reflection;
+using System.Globalization;
 
 namespace GGemCo2DCoreEditor
 {
@@ -26,6 +26,11 @@ namespace GGemCo2DCoreEditor
             if (definition == null || document == null)
                 return messages;
 
+            Dictionary<string, TableEditorColumnDefinition> columnMap = new Dictionary<string, TableEditorColumnDefinition>(StringComparer.OrdinalIgnoreCase);
+            IReadOnlyList<TableEditorColumnDefinition> columns = definition.BuildColumns(document.Headers);
+            for (int i = 0; i < columns.Count; i++)
+                columnMap[columns[i].HeaderName] = columns[i];
+
             HashSet<int> uniqueUids = new HashSet<int>();
             foreach (TableEditorDocumentRow row in document.GetRows())
             {
@@ -43,7 +48,7 @@ namespace GGemCo2DCoreEditor
                 string uidRaw = TableEditorValueUtility.GetRowUidRaw(row);
                 if (!string.IsNullOrWhiteSpace(uidRaw))
                 {
-                    if (!int.TryParse(uidRaw, out int uid))
+                    if (!int.TryParse(uidRaw, NumberStyles.Integer, CultureInfo.InvariantCulture, out int uid))
                     {
                         messages.Add(new TableEditorValidationMessage
                         {
@@ -63,10 +68,7 @@ namespace GGemCo2DCoreEditor
                     }
                 }
 
-                if (rowObject != null)
-                {
-                    ValidateReferenceFields(row, rowObject, messages);
-                }
+                ValidateReferenceFields(row, columnMap, messages);
             }
 
             try
@@ -96,32 +98,24 @@ namespace GGemCo2DCoreEditor
             return messages;
         }
 
-        private static void ValidateReferenceFields(TableEditorDocumentRow row, object rowObject, List<TableEditorValidationMessage> messages)
+        private static void ValidateReferenceFields(TableEditorDocumentRow row, IReadOnlyDictionary<string, TableEditorColumnDefinition> columnMap, List<TableEditorValidationMessage> messages)
         {
-            Type rowType = rowObject.GetType();
-            foreach (MemberInfo member in TableEditorReflectionUtility.GetEditableMembers(rowType))
+            foreach (KeyValuePair<string, string> pair in row.Values)
             {
-                Type memberType = TableEditorReflectionUtility.GetMemberType(member);
-                TableEditorTableDefinition referenceTable = TableEditorRegistry.FindReferenceTable(member.Name);
-                if (referenceTable == null)
+                if (!columnMap.TryGetValue(pair.Key, out TableEditorColumnDefinition column) || !column.IsReferenceCandidate)
                     continue;
 
-                object value = TableEditorReflectionUtility.GetValue(rowObject, member);
-                if (memberType == typeof(int))
-                {
-                    int uid = (int)(value ?? 0);
-                    if (uid <= 0)
-                        continue;
+                if (!int.TryParse(pair.Value, NumberStyles.Integer, CultureInfo.InvariantCulture, out int uid) || uid <= 0)
+                    continue;
 
-                    if (!TableEditorReferenceCache.Contains(referenceTable, uid))
+                if (!TableEditorReferenceCache.Contains(column.ReferenceTable, uid))
+                {
+                    messages.Add(new TableEditorValidationMessage
                     {
-                        messages.Add(new TableEditorValidationMessage
-                        {
-                            Severity = TableEditorValidationSeverity.Warning,
-                            Message = $"참조 없음: {member.Name} -> {referenceTable.TableKey}:{uid}",
-                            RowStableId = row.StableId,
-                        });
-                    }
+                        Severity = TableEditorValidationSeverity.Warning,
+                        Message = $"참조 없음: {pair.Key} -> {column.ReferenceTable.TableKey}:{uid}",
+                        RowStableId = row.StableId,
+                    });
                 }
             }
         }

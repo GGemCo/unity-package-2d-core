@@ -25,6 +25,12 @@ namespace GGemCo2DCoreEditor
             ItemsByTableKey.Remove(definition.TableKey);
         }
 
+        public static void InvalidateAll()
+        {
+            UidsByTableKey.Clear();
+            ItemsByTableKey.Clear();
+        }
+
         public static bool Contains(TableEditorTableDefinition definition, int uid)
         {
             if (definition == null)
@@ -65,7 +71,7 @@ namespace GGemCo2DCoreEditor
 
         private static void EnsureLoaded(TableEditorTableDefinition definition)
         {
-            if (UidsByTableKey.ContainsKey(definition.TableKey))
+            if (definition == null || UidsByTableKey.ContainsKey(definition.TableKey))
                 return;
 
             HashSet<int> uidSet = new HashSet<int>();
@@ -104,7 +110,7 @@ namespace GGemCo2DCoreEditor
             }
             catch
             {
-                // 캐시 실패 시 빈 컬렉션 유지
+                // keep empty cache on failure
             }
 
             items.Sort(static (a, b) => string.Compare(a.DisplayName, b.DisplayName, StringComparison.OrdinalIgnoreCase));

@@ -80,7 +80,7 @@ namespace GGemCo2DCoreEditor
 
             if (messages == null || messages.Count == 0)
             {
-                root.Add(new HelpBox("검증 결과, 오류가 없습니다.", HelpBoxMessageType.Info));
+                root.Add(new HelpBox("검증 결과가 없습니다. Validate 버튼으로 다시 확인하세요.", HelpBoxMessageType.Info));
                 return root;
             }
 
@@ -146,9 +146,8 @@ namespace GGemCo2DCoreEditor
             container.Add(label);
 
             row.Values.TryGetValue(column.HeaderName, out string rawValue);
-            string nextRaw = rawValue ?? string.Empty;
 
-            VisualElement input = CreateInputField(owner, currentDefinition, column, row, nextRaw, onValueChanged, onJumpToReference);
+            VisualElement input = CreateInputField(owner, currentDefinition, column, row, rawValue ?? string.Empty, onValueChanged, onJumpToReference);
             if (input != null)
                 container.Add(input);
 
@@ -202,6 +201,13 @@ namespace GGemCo2DCoreEditor
                 return field;
             }
 
+            if (type == typeof(double))
+            {
+                DoubleField field = new DoubleField { value = converted is double d ? d : 0d };
+                field.RegisterValueChangedCallback(evt => onValueChanged?.Invoke(column.HeaderName, TableEditorValueUtility.ConvertToRaw(evt.newValue, type)));
+                return field;
+            }
+
             if (type == typeof(bool))
             {
                 Toggle field = new Toggle { value = converted is bool b && b };
@@ -213,6 +219,35 @@ namespace GGemCo2DCoreEditor
             {
                 Vector2Field field = new Vector2Field { value = converted is Vector2 v ? v : Vector2.zero };
                 field.RegisterValueChangedCallback(evt => onValueChanged?.Invoke(column.HeaderName, TableEditorValueUtility.ConvertToRaw(evt.newValue, type)));
+                return field;
+            }
+
+            if (type == typeof(Vector3))
+            {
+                Vector3Field field = new Vector3Field { value = converted is Vector3 v ? v : Vector3.zero };
+                field.RegisterValueChangedCallback(evt => onValueChanged?.Invoke(column.HeaderName, TableEditorValueUtility.ConvertToRaw(evt.newValue, type)));
+                return field;
+            }
+
+            if (type == typeof(Vector4))
+            {
+                Vector4Field field = new Vector4Field { value = converted is Vector4 v ? v : Vector4.zero };
+                field.RegisterValueChangedCallback(evt => onValueChanged?.Invoke(column.HeaderName, TableEditorValueUtility.ConvertToRaw(evt.newValue, type)));
+                return field;
+            }
+
+            if (type == typeof(Color))
+            {
+                ColorField field = new ColorField { value = converted is Color c ? c : Color.white, showAlpha = true, hdr = false };
+                field.RegisterValueChangedCallback(evt => onValueChanged?.Invoke(column.HeaderName, TableEditorValueUtility.ConvertToRaw(evt.newValue, type)));
+                return field;
+            }
+
+            if (type == typeof(Color32))
+            {
+                Color initial = converted is Color32 c ? (Color)c : Color.white;
+                ColorField field = new ColorField { value = initial, showAlpha = true, hdr = false };
+                field.RegisterValueChangedCallback(evt => onValueChanged?.Invoke(column.HeaderName, TableEditorValueUtility.ConvertToRaw((Color32)evt.newValue, type)));
                 return field;
             }
 

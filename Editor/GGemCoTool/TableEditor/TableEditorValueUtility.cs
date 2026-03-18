@@ -1,10 +1,8 @@
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 using System.Reflection;
-using GGemCo2DCore;
 using UnityEngine;
 
 namespace GGemCo2DCoreEditor
@@ -23,6 +21,7 @@ namespace GGemCo2DCoreEditor
             }
 
             raw ??= string.Empty;
+            targetType = UnwrapNullable(targetType);
 
             if (targetType == typeof(string))
             {
@@ -66,28 +65,83 @@ namespace GGemCo2DCoreEditor
                 return false;
             }
 
+            if (targetType == typeof(double))
+            {
+                if (double.TryParse(NormalizeNumeric(raw), NumberStyles.Float, CultureInfo.InvariantCulture, out double doubleValue))
+                {
+                    value = doubleValue;
+                    return true;
+                }
+
+                error = "double 파싱 실패";
+                return false;
+            }
+
             if (targetType == typeof(bool))
             {
-                value = string.Equals(raw, "Y", StringComparison.OrdinalIgnoreCase) || string.Equals(raw, "true", StringComparison.OrdinalIgnoreCase);
+                value = string.Equals(raw, "Y", StringComparison.OrdinalIgnoreCase)
+                        || string.Equals(raw, "true", StringComparison.OrdinalIgnoreCase)
+                        || string.Equals(raw, "1", StringComparison.OrdinalIgnoreCase);
                 return true;
             }
 
             if (targetType == typeof(Vector2))
             {
-                string[] tokens = raw.Split(',');
-                if (tokens.Length == 0 || string.IsNullOrWhiteSpace(raw))
+                if (TryParseVector(raw, 2, out float[] values2))
                 {
-                    value = Vector2.zero;
-                    return true;
-                }
-
-                if (TryParseFloat(tokens.ElementAtOrDefault(0), out float x) && TryParseFloat(tokens.ElementAtOrDefault(1), out float y))
-                {
-                    value = new Vector2(x, y);
+                    value = new Vector2(values2[0], values2[1]);
                     return true;
                 }
 
                 error = "Vector2 형식 오류 (x,y)";
+                return false;
+            }
+
+            if (targetType == typeof(Vector3))
+            {
+                if (TryParseVector(raw, 3, out float[] values3))
+                {
+                    value = new Vector3(values3[0], values3[1], values3[2]);
+                    return true;
+                }
+
+                error = "Vector3 형식 오류 (x,y,z)";
+                return false;
+            }
+
+            if (targetType == typeof(Vector4))
+            {
+                if (TryParseVector(raw, 4, out float[] values4))
+                {
+                    value = new Vector4(values4[0], values4[1], values4[2], values4[3]);
+                    return true;
+                }
+
+                error = "Vector4 형식 오류 (x,y,z,w)";
+                return false;
+            }
+
+            if (targetType == typeof(Color))
+            {
+                if (TryParseColor(raw, out Color color))
+                {
+                    value = color;
+                    return true;
+                }
+
+                error = "Color 파싱 실패 (#RRGGBB / #RRGGBBAA)";
+                return false;
+            }
+
+            if (targetType == typeof(Color32))
+            {
+                if (TryParseColor(raw, out Color32 color32))
+                {
+                    value = color32;
+                    return true;
+                }
+
+                error = "Color32 파싱 실패 (#RRGGBB / #RRGGBBAA)";
                 return false;
             }
 
@@ -141,7 +195,11 @@ namespace GGemCo2DCoreEditor
 
         public static string ConvertToRaw(object value, Type sourceType)
         {
-            if (sourceType == null || sourceType == typeof(string))
+            if (sourceType == null)
+                return value?.ToString() ?? string.Empty;
+
+            sourceType = UnwrapNullable(sourceType);
+            if (sourceType == typeof(string))
                 return value?.ToString() ?? string.Empty;
 
             if (sourceType == typeof(bool))
@@ -157,6 +215,30 @@ namespace GGemCo2DCoreEditor
             {
                 Vector2 v = value is Vector2 vector ? vector : Vector2.zero;
                 return $"{v.x.ToString(CultureInfo.InvariantCulture)},{v.y.ToString(CultureInfo.InvariantCulture)}";
+            }
+
+            if (sourceType == typeof(Vector3))
+            {
+                Vector3 v = value is Vector3 vector ? vector : Vector3.zero;
+                return $"{v.x.ToString(CultureInfo.InvariantCulture)},{v.y.ToString(CultureInfo.InvariantCulture)},{v.z.ToString(CultureInfo.InvariantCulture)}";
+            }
+
+            if (sourceType == typeof(Vector4))
+            {
+                Vector4 v = value is Vector4 vector ? vector : Vector4.zero;
+                return $"{v.x.ToString(CultureInfo.InvariantCulture)},{v.y.ToString(CultureInfo.InvariantCulture)},{v.z.ToString(CultureInfo.InvariantCulture)},{v.w.ToString(CultureInfo.InvariantCulture)}";
+            }
+
+            if (sourceType == typeof(Color))
+            {
+                Color color = value is Color c ? c : Color.white;
+                return ColorUtility.ToHtmlStringRGBA(color);
+            }
+
+            if (sourceType == typeof(Color32))
+            {
+                Color32 color = value is Color32 c ? c : new Color32(255, 255, 255, 255);
+                return ColorUtility.ToHtmlStringRGBA(color);
             }
 
             if (sourceType.IsArray)
@@ -220,8 +302,8 @@ namespace GGemCo2DCoreEditor
                     if (i > 0)
                         builder.Append('\t');
 
-                    row.Values.TryGetValue(document.Headers[i], out string value);
-                    builder.Append((value ?? string.Empty).Replace("\r", string.Empty).Replace("\n", "\\n"));
+                    row.Values.TryGetValue(document.Headers[i], out string itemValue);
+                    builder.Append((itemValue ?? string.Empty).Replace("\r", string.Empty).Replace("\n", "\\n"));
                 }
 
                 builder.Append('\n');
@@ -238,6 +320,11 @@ namespace GGemCo2DCoreEditor
             return row.Values.TryGetValue("Uid", out string value) ? value : string.Empty;
         }
 
+        private static Type UnwrapNullable(Type type)
+        {
+            return Nullable.GetUnderlyingType(type) ?? type;
+        }
+
         private static string NormalizeNumeric(string raw)
         {
             return string.IsNullOrWhiteSpace(raw) ? "0" : raw.Trim();
@@ -246,6 +333,62 @@ namespace GGemCo2DCoreEditor
         private static bool TryParseFloat(string raw, out float value)
         {
             return float.TryParse(NormalizeNumeric(raw), NumberStyles.Float, CultureInfo.InvariantCulture, out value);
+        }
+
+        private static bool TryParseVector(string raw, int expectedCount, out float[] values)
+        {
+            values = new float[expectedCount];
+            if (string.IsNullOrWhiteSpace(raw))
+                return true;
+
+            string[] tokens = raw.Split(',');
+            if (tokens.Length < expectedCount)
+                return false;
+
+            for (int i = 0; i < expectedCount; i++)
+            {
+                if (!TryParseFloat(tokens[i], out values[i]))
+                    return false;
+            }
+
+            return true;
+        }
+
+        private static bool TryParseColor(string raw, out Color value)
+        {
+            string normalized = NormalizeColor(raw);
+            if (ColorUtility.TryParseHtmlString(normalized, out Color parsed))
+            {
+                value = parsed;
+                return true;
+            }
+
+            value = Color.white;
+            return false;
+        }
+
+        private static bool TryParseColor(string raw, out Color32 value)
+        {
+            if (TryParseColor(raw, out Color parsed))
+            {
+                value = (Color32)parsed;
+                return true;
+            }
+
+            value = new Color32(255, 255, 255, 255);
+            return false;
+        }
+
+        private static string NormalizeColor(string raw)
+        {
+            if (string.IsNullOrWhiteSpace(raw))
+                return "#FFFFFFFF";
+
+            string normalized = raw.Trim();
+            if (!normalized.StartsWith("#", StringComparison.Ordinal))
+                normalized = "#" + normalized;
+
+            return normalized;
         }
     }
 }

@@ -21,12 +21,20 @@ namespace GGemCo2DCoreEditor
 
     internal sealed class TableEditorTableDefinition
     {
+        public string ModuleName;
+        public string PackageName;
         public string TableKey;
         public string AssetPath;
         public string DisplayName;
         public Type TableType;
         public Type RowType;
         public Func<string, object> CreateTableInstanceAndLoad;
+        public Action ReloadAction;
+        public Func<string, TableEditorTableDefinition> ResolveReferenceTable;
+
+        public string QualifiedDisplayName => string.IsNullOrWhiteSpace(PackageName)
+            ? DisplayName
+            : $"{PackageName} / {DisplayName}";
 
         public IReadOnlyList<TableEditorColumnDefinition> BuildColumns(IReadOnlyList<string> fileHeaders)
         {
@@ -46,22 +54,34 @@ namespace GGemCo2DCoreEditor
                         continue;
 
                     memberMap.TryGetValue(header, out MemberInfo memberInfo);
-                    columns.Add(CreateColumn(header, memberInfo, true));
+                    columns.Add(CreateColumn(this, header, memberInfo, true));
                 }
             }
 
-            foreach (var pair in memberMap)
+            foreach (KeyValuePair<string, MemberInfo> pair in memberMap)
             {
                 if (!added.Add(pair.Key))
                     continue;
 
-                columns.Add(CreateColumn(pair.Value.Name, pair.Value, false));
+                columns.Add(CreateColumn(this, pair.Value.Name, pair.Value, false));
             }
 
             return columns;
         }
 
-        private static TableEditorColumnDefinition CreateColumn(string headerName, MemberInfo memberInfo, bool existsInHeader)
+        public TableEditorTableDefinition TryResolveReferenceTable(string headerName)
+        {
+            if (ResolveReferenceTable != null)
+            {
+                TableEditorTableDefinition explicitTable = ResolveReferenceTable(headerName);
+                if (explicitTable != null)
+                    return explicitTable;
+            }
+
+            return TableEditorRegistry.FindReferenceTable(headerName);
+        }
+
+        private static TableEditorColumnDefinition CreateColumn(TableEditorTableDefinition owner, string headerName, MemberInfo memberInfo, bool existsInHeader)
         {
             Type valueType = memberInfo != null
                 ? TableEditorReflectionUtility.GetMemberType(memberInfo)
@@ -74,14 +94,13 @@ namespace GGemCo2DCoreEditor
                 ValueType = valueType,
                 ExistsInFileHeader = existsInHeader,
                 ExistsInRowType = memberInfo != null,
-                ReferenceTable = TableEditorRegistry.FindReferenceTable(headerName),
+                ReferenceTable = owner.TryResolveReferenceTable(headerName),
             };
         }
     }
 
     internal static class TableEditorRegistry
     {
-        private static List<TableEditorTableDefinition> _tables;
         private static readonly Dictionary<string, string> ReferenceAliasByHeader = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
         {
             { "ItemUid", ConfigAddressableTable.Item },
@@ -91,29 +110,44 @@ namespace GGemCo2DCoreEditor
             { "AnimationUid", ConfigAddressableTable.Animation },
             { "EffectUid", ConfigAddressableTable.Effect },
             { "ProjectileUid", ConfigAddressableTable.Projectile },
-            { "BgmUid", ConfigAddressableTable.Sound },
-            { "SoundUid", ConfigAddressableTable.Sound },
+            { "CrowdControlUid", ConfigAddressableTable.CrowdControl },
             { "OpenWindowUid", ConfigAddressableTable.Window },
             { "CloseWindowUid", ConfigAddressableTable.Window },
-            { "ResultItemUid", ConfigAddressableTable.Item },
-            { "SourceItemUid", ConfigAddressableTable.Item },
-            { "NeedItemUid1", ConfigAddressableTable.Item },
-            { "NeedItemUid2", ConfigAddressableTable.Item },
-            { "NeedItemUid3", ConfigAddressableTable.Item },
-            { "NeedItemUid4", ConfigAddressableTable.Item },
-            { "NeedItemUid5", ConfigAddressableTable.Item },
-            { "ItemBaseOptionUid", ConfigAddressableTable.ItemBaseOption },
-            { "UseGroupUid", ConfigAddressableTable.ItemUse },
-            { "PlayerDeadSpawnUid", ConfigAddressableTable.Map },
+            { "SoundUid", ConfigAddressableTable.Sound },
+            { "BgmUid", ConfigAddressableTable.Sound },
+            { "ApplyAffectUid", "affect" },
+            { "AffectUid", "affect" },
         };
+
+        private static List<TableEditorTableDefinition> _tables;
+        private static List<ITableEditorModule> _modules;
 
         public static IReadOnlyList<TableEditorTableDefinition> GetAll()
         {
             if (_tables != null)
                 return _tables;
 
-            _tables = BuildRegistry();
+            EnsureModules();
+            _tables = new List<TableEditorTableDefinition>(64);
+            for (int i = 0; i < _modules.Count; i++)
+                _tables.AddRange(_modules[i].BuildDefinitions());
+
+            _tables = _tables
+                .Where(static t => t != null && !string.IsNullOrWhiteSpace(t.TableKey) && !string.IsNullOrWhiteSpace(t.AssetPath))
+                .OrderBy(static t => t.PackageName, StringComparer.OrdinalIgnoreCase)
+                .ThenBy(static t => t.DisplayName, StringComparer.OrdinalIgnoreCase)
+                .ToList();
             return _tables;
+        }
+
+        public static IReadOnlyList<string> GetPackages()
+        {
+            return GetAll()
+                .Select(static t => t.PackageName)
+                .Where(static p => !string.IsNullOrWhiteSpace(p))
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .OrderBy(static p => p, StringComparer.OrdinalIgnoreCase)
+                .ToList();
         }
 
         public static TableEditorTableDefinition FindByKey(string tableKey)
@@ -139,72 +173,53 @@ namespace GGemCo2DCoreEditor
             return FindByKey(key);
         }
 
-        private static List<TableEditorTableDefinition> BuildRegistry()
+        private static void EnsureModules()
         {
-            List<TableEditorTableDefinition> result = new List<TableEditorTableDefinition>();
-            List<AddressableAssetInfo> addressableInfos = ConfigAddressableTable.All;
+            if (_modules != null)
+                return;
 
-            Type defaultTableType = typeof(DefaultTable<>);
-            Assembly runtimeAssembly = typeof(DefaultTable<>).Assembly;
-
-            foreach (Type type in runtimeAssembly.GetTypes())
+            _modules = new List<ITableEditorModule>();
+            Assembly[] assemblies = AppDomain.CurrentDomain.GetAssemblies();
+            for (int i = 0; i < assemblies.Length; i++)
             {
-                if (type.IsAbstract)
-                    continue;
-
-                Type baseType = type.BaseType;
-                if (baseType == null || !baseType.IsGenericType)
-                    continue;
-
-                if (baseType.GetGenericTypeDefinition() != defaultTableType)
-                    continue;
-
-                Type rowType = baseType.GetGenericArguments()[0];
-
-                object tableInstance;
+                Type[] types;
                 try
                 {
-                    tableInstance = Activator.CreateInstance(type);
+                    types = assemblies[i].GetTypes();
                 }
-                catch
+                catch (ReflectionTypeLoadException ex)
                 {
-                    continue;
+                    types = ex.Types;
                 }
 
-                if (!(tableInstance is ITableParser parser))
+                if (types == null)
                     continue;
 
-                string key = parser.Key;
-                if (string.IsNullOrWhiteSpace(key) || string.Equals(key, ConfigAddressableTable.None, StringComparison.OrdinalIgnoreCase))
-                    continue;
-
-                AddressableAssetInfo addressable = addressableInfos.FirstOrDefault(a => string.Equals(a.Etc1, key, StringComparison.OrdinalIgnoreCase));
-                if (addressable == null)
-                    continue;
-
-                result.Add(new TableEditorTableDefinition
+                for (int t = 0; t < types.Length; t++)
                 {
-                    TableKey = key,
-                    AssetPath = addressable.Path,
-                    DisplayName = key,
-                    TableType = type,
-                    RowType = rowType,
-                    CreateTableInstanceAndLoad = content =>
+                    Type type = types[t];
+                    if (type == null || type.IsAbstract || type.IsInterface)
+                        continue;
+                    if (!typeof(ITableEditorModule).IsAssignableFrom(type))
+                        continue;
+
+                    try
                     {
-                        object instance = Activator.CreateInstance(type);
-                        if (instance is ITableParser tableParser)
-                        {
-                            tableParser.LoadData(content);
-                            return instance;
-                        }
-
-                        return null;
+                        if (Activator.CreateInstance(type) is ITableEditorModule module)
+                            _modules.Add(module);
                     }
-                });
+                    catch
+                    {
+                        // ignore invalid module instantiation
+                    }
+                }
             }
 
-            result.Sort(static (a, b) => string.Compare(a.DisplayName, b.DisplayName, StringComparison.OrdinalIgnoreCase));
-            return result;
+            _modules = _modules
+                .GroupBy(static m => m.GetType().FullName, StringComparer.Ordinal)
+                .Select(static g => g.First())
+                .OrderBy(static m => m.PackageName, StringComparer.OrdinalIgnoreCase)
+                .ToList();
         }
 
         private static string ToSnakeCase(string value)
@@ -218,7 +233,6 @@ namespace GGemCo2DCoreEditor
                 char c = value[i];
                 if (char.IsUpper(c) && i > 0)
                     chars.Add('_');
-
                 chars.Add(char.ToLowerInvariant(c));
             }
 

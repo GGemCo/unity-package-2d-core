@@ -19,13 +19,16 @@ namespace GGemCo2DCoreEditor
         private readonly List<TableEditorValidationMessage> _validationMessages = new List<TableEditorValidationMessage>();
         private readonly List<TableEditorDocumentRow> _visibleRows = new List<TableEditorDocumentRow>();
         private readonly List<TableEditorTableDefinition> _filteredTables = new List<TableEditorTableDefinition>();
+        private readonly List<string> _packageChoices = new List<string>();
 
         private string _tableSearch = string.Empty;
+        private string _packageFilter = "All";
         private string _rowSearch = string.Empty;
         private bool _showOnlyValidationRows;
         private bool _showOnlySelectedValidation;
 
         private ToolbarSearchField _tableSearchField;
+        private PopupField<string> _packagePopup;
         private ListView _tableListView;
         private ToolbarSearchField _rowSearchField;
         private MultiColumnListView _rowListView;
@@ -49,6 +52,7 @@ namespace GGemCo2DCoreEditor
         private void OnEnable()
         {
             _tables = TableEditorRegistry.GetAll();
+            BuildPackageChoices();
             _undoController ??= new TableEditorUndoController(HandleUndoRedoRestore);
         }
 
@@ -142,6 +146,17 @@ namespace GGemCo2DCoreEditor
             };
 
             panel.Add(new Label("Tables") { style = { unityFontStyleAndWeight = FontStyle.Bold, marginBottom = 4f } });
+            _packagePopup = new PopupField<string>(_packageChoices, Mathf.Max(0, _packageChoices.IndexOf(_packageFilter)))
+            {
+                label = "Package"
+            };
+            _packagePopup.RegisterValueChangedCallback(evt =>
+            {
+                _packageFilter = string.IsNullOrWhiteSpace(evt.newValue) ? "All" : evt.newValue;
+                RefreshTableList();
+            });
+            panel.Add(_packagePopup);
+
             _tableSearchField = new ToolbarSearchField();
             _tableSearchField.RegisterValueChangedCallback(evt =>
             {
@@ -162,7 +177,8 @@ namespace GGemCo2DCoreEditor
                 {
                     if (index < 0 || index >= _filteredTables.Count)
                         return;
-                    ((Label)element).text = _filteredTables[index].DisplayName;
+                    TableEditorTableDefinition definition = _filteredTables[index];
+                    ((Label)element).text = $"[{definition.PackageName}] {definition.DisplayName}";
                 }
             };
 
@@ -291,7 +307,12 @@ namespace GGemCo2DCoreEditor
                 for (int i = 0; i < _tables.Count; i++)
                 {
                     TableEditorTableDefinition table = _tables[i];
-                    if (!string.IsNullOrWhiteSpace(_tableSearch) && table.DisplayName.IndexOf(_tableSearch, StringComparison.OrdinalIgnoreCase) < 0)
+                    if (!string.Equals(_packageFilter, "All", StringComparison.OrdinalIgnoreCase) && !string.Equals(table.PackageName, _packageFilter, StringComparison.OrdinalIgnoreCase))
+                        continue;
+                    if (!string.IsNullOrWhiteSpace(_tableSearch)
+                        && table.DisplayName.IndexOf(_tableSearch, StringComparison.OrdinalIgnoreCase) < 0
+                        && table.PackageName.IndexOf(_tableSearch, StringComparison.OrdinalIgnoreCase) < 0
+                        && table.TableKey.IndexOf(_tableSearch, StringComparison.OrdinalIgnoreCase) < 0)
                         continue;
                     _filteredTables.Add(table);
                 }
@@ -304,6 +325,18 @@ namespace GGemCo2DCoreEditor
                 if (index >= 0)
                     _tableListView?.SetSelectionWithoutNotify(new[] { index });
             }
+        }
+
+        private void BuildPackageChoices()
+        {
+            _packageChoices.Clear();
+            _packageChoices.Add("All");
+            IReadOnlyList<string> packages = TableEditorRegistry.GetPackages();
+            for (int i = 0; i < packages.Count; i++)
+                _packageChoices.Add(packages[i]);
+
+            if (!_packageChoices.Contains(_packageFilter))
+                _packageFilter = "All";
         }
 
         private void LoadTable(TableEditorTableDefinition table)
@@ -347,6 +380,7 @@ namespace GGemCo2DCoreEditor
             try
             {
                 _document.Save();
+                _selectedTable?.ReloadAction?.Invoke();
                 TableEditorReferenceCache.Invalidate(_selectedTable);
                 ValidateCurrentTable();
                 _undoController?.Commit(_selectedTable.TableKey, _document);
@@ -450,6 +484,7 @@ namespace GGemCo2DCoreEditor
             _undoController?.BeginRecord(undoName);
             mutation();
             _undoController?.Commit(_selectedTable.TableKey, _document);
+            _selectedTable?.ReloadAction?.Invoke();
             TableEditorReferenceCache.Invalidate(_selectedTable);
             RefreshAllViews();
         }
