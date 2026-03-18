@@ -80,22 +80,30 @@ namespace GGemCo2DCoreEditor
         public static string GetDisplayName(object row, int fallbackIndex)
         {
             if (row == null)
-                return $"Row {fallbackIndex + 1}";
+                return fallbackIndex.ToString();
 
+            Type rowType = row.GetType();
+
+            // IUidName 우선 처리
             if (row is IUidName uidName)
             {
-                if (!string.IsNullOrWhiteSpace(uidName.Name) && uidName.Uid.ToString() != uidName.Name)
-                    return $"{uidName.Uid} - {uidName.Name}";
+                string name = uidName.Name;
+
+                if (!string.IsNullOrWhiteSpace(name) && uidName.Uid.ToString() != name)
+                    return $"{uidName.Uid} - {name}";
 
                 return uidName.Uid.ToString();
             }
 
-            Type rowType = row.GetType();
             object uidValue = TryGetMemberValue(row, rowType, "Uid");
-            object nameValue = TryGetMemberValue(row, rowType, "Name") ?? TryGetMemberValue(row, rowType, "ID") ?? TryGetMemberValue(row, rowType, "Id") ?? TryGetMemberValue(row, rowType, "Memo");
+            string uidText = uidValue?.ToString();
 
-            string uidText = uidValue != null ? uidValue.ToString() : string.Empty;
-            string nameText = nameValue != null ? nameValue.ToString() : string.Empty;
+            // 공백까지 고려한 fallback 체인
+            string nameText =
+                GetValidString(row, rowType, "Name") ??
+                GetValidString(row, rowType, "ID") ??
+                GetValidString(row, rowType, "Id") ??
+                GetValidString(row, rowType, "Memo");
 
             if (!string.IsNullOrWhiteSpace(uidText) && !string.IsNullOrWhiteSpace(nameText))
                 return $"{uidText} - {nameText}";
@@ -103,10 +111,17 @@ namespace GGemCo2DCoreEditor
             if (!string.IsNullOrWhiteSpace(uidText))
                 return uidText;
 
-            if (!string.IsNullOrWhiteSpace(nameText))
-                return nameText;
+            return fallbackIndex.ToString();
+        }
 
-            return $"Row {fallbackIndex + 1}";
+        private static string GetValidString(object row, Type rowType, string memberName)
+        {
+            object value = TryGetMemberValue(row, rowType, memberName);
+            if (value == null)
+                return null;
+
+            string text = value.ToString();
+            return string.IsNullOrWhiteSpace(text) ? null : text;
         }
 
         public static object TryGetMemberValue(object target, Type type, string memberName)
