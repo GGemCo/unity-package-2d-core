@@ -51,7 +51,7 @@ namespace GGemCo2DCore
                 ImageThumbnailFileName = data["ImageThumbnailFileName"],
                 AnimationUid = MathHelper.ParseInt(data["AnimationUid"]),
                 DefaultSkin = data["DefaultSkin"],
-                AttackType = EnumHelper.ConvertEnum<CharacterConstants.AttackType>(data["Type"]),
+                AttackType = EnumHelper.ConvertEnum<CharacterConstants.AttackType>(data["AttackType"]),
                 Scale = MathHelper.ParseFloat(data["Scale"]),
                 Grade = EnumHelper.ConvertEnum<CharacterConstants.Grade>(data["Grade"]),
                 Level = MathHelper.ParseInt(data["Level"]),
