@@ -14,6 +14,7 @@ namespace GGemCo2DCoreEditor
         Data,
     }
 
+    [Serializable]
     internal sealed class TableEditorDocumentRow
     {
         public int StableId;
@@ -21,6 +22,7 @@ namespace GGemCo2DCoreEditor
         public string CachedDisplayName;
     }
 
+    [Serializable]
     internal sealed class TableEditorDocumentLine
     {
         public TableEditorLineKind Kind;
@@ -28,8 +30,36 @@ namespace GGemCo2DCoreEditor
         public TableEditorDocumentRow Row;
     }
 
+    [Serializable]
     internal sealed class TableEditorDocument
     {
+        [Serializable]
+        private sealed class SnapshotRoot
+        {
+            public string assetPath;
+            public string newLine;
+            public bool isDirty;
+            public List<string> headers = new List<string>();
+            public List<SnapshotLine> lines = new List<SnapshotLine>();
+        }
+
+        [Serializable]
+        private sealed class SnapshotLine
+        {
+            public int kind;
+            public string rawText;
+            public SnapshotRow row;
+        }
+
+        [Serializable]
+        private sealed class SnapshotRow
+        {
+            public int stableId;
+            public string cachedDisplayName;
+            public List<string> keys = new List<string>();
+            public List<string> values = new List<string>();
+        }
+
         private static int _rowIdSeed = 1;
 
         public string AssetPath;
@@ -165,7 +195,7 @@ namespace GGemCo2DCoreEditor
                 StableId = _rowIdSeed++
             };
 
-            foreach (var pair in source.Values)
+            foreach (KeyValuePair<string, string> pair in source.Values)
                 row.Values[pair.Key] = pair.Value;
 
             Lines.Add(new TableEditorDocumentLine
@@ -186,6 +216,22 @@ namespace GGemCo2DCoreEditor
 
             Lines.RemoveAll(line => line.Kind == TableEditorLineKind.Data && line.Row == target);
             IsDirty = true;
+        }
+
+        public bool SetCellValue(TableEditorDocumentRow row, string header, string value)
+        {
+            if (row == null || string.IsNullOrWhiteSpace(header))
+                return false;
+
+            row.Values.TryGetValue(header, out string current);
+            current ??= string.Empty;
+            value ??= string.Empty;
+            if (string.Equals(current, value, StringComparison.Ordinal))
+                return false;
+
+            row.Values[header] = value;
+            IsDirty = true;
+            return true;
         }
 
         public void Save()
@@ -218,6 +264,100 @@ namespace GGemCo2DCoreEditor
             AssetDatabase.ImportAsset(AssetPath, ImportAssetOptions.ForceUpdate | ImportAssetOptions.ForceSynchronousImport);
             AssetDatabase.Refresh();
             IsDirty = false;
+        }
+
+        public string ToSnapshotJson()
+        {
+            SnapshotRoot snapshot = new SnapshotRoot
+            {
+                assetPath = AssetPath,
+                newLine = NewLine,
+                isDirty = IsDirty,
+                headers = new List<string>(Headers),
+            };
+
+            for (int i = 0; i < Lines.Count; i++)
+            {
+                TableEditorDocumentLine line = Lines[i];
+                SnapshotLine lineSnapshot = new SnapshotLine
+                {
+                    kind = (int)line.Kind,
+                    rawText = line.RawText,
+                };
+
+                if (line.Row != null)
+                {
+                    SnapshotRow rowSnapshot = new SnapshotRow
+                    {
+                        stableId = line.Row.StableId,
+                        cachedDisplayName = line.Row.CachedDisplayName,
+                    };
+
+                    foreach (KeyValuePair<string, string> pair in line.Row.Values)
+                    {
+                        rowSnapshot.keys.Add(pair.Key);
+                        rowSnapshot.values.Add(pair.Value ?? string.Empty);
+                    }
+
+                    lineSnapshot.row = rowSnapshot;
+                }
+
+                snapshot.lines.Add(lineSnapshot);
+            }
+
+            return JsonUtility.ToJson(snapshot, false);
+        }
+
+        public static TableEditorDocument FromSnapshotJson(string snapshotJson)
+        {
+            if (string.IsNullOrWhiteSpace(snapshotJson))
+                return null;
+
+            SnapshotRoot snapshot = JsonUtility.FromJson<SnapshotRoot>(snapshotJson);
+            if (snapshot == null)
+                return null;
+
+            TableEditorDocument document = new TableEditorDocument
+            {
+                AssetPath = snapshot.assetPath,
+                NewLine = string.IsNullOrEmpty(snapshot.newLine) ? "\n" : snapshot.newLine,
+                IsDirty = snapshot.isDirty,
+                Headers = snapshot.headers ?? new List<string>(),
+            };
+
+            if (snapshot.lines != null)
+            {
+                for (int i = 0; i < snapshot.lines.Count; i++)
+                {
+                    SnapshotLine lineSnapshot = snapshot.lines[i];
+                    TableEditorDocumentLine line = new TableEditorDocumentLine
+                    {
+                        Kind = (TableEditorLineKind)lineSnapshot.kind,
+                        RawText = lineSnapshot.rawText,
+                    };
+
+                    if (lineSnapshot.row != null)
+                    {
+                        TableEditorDocumentRow row = new TableEditorDocumentRow
+                        {
+                            StableId = lineSnapshot.row.stableId,
+                            CachedDisplayName = lineSnapshot.row.cachedDisplayName,
+                        };
+
+                        int valueCount = Math.Min(lineSnapshot.row.keys.Count, lineSnapshot.row.values.Count);
+                        for (int k = 0; k < valueCount; k++)
+                            row.Values[lineSnapshot.row.keys[k]] = lineSnapshot.row.values[k] ?? string.Empty;
+
+                        line.Row = row;
+                        if (row.StableId >= _rowIdSeed)
+                            _rowIdSeed = row.StableId + 1;
+                    }
+
+                    document.Lines.Add(line);
+                }
+            }
+
+            return document;
         }
 
         private string SerializeRow(TableEditorDocumentRow row)

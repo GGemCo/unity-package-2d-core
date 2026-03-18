@@ -1,8 +1,11 @@
+using UnityEditor;
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
-using UnityEditor;
+using UnityEditor.UIElements;
 using UnityEngine;
+using UnityEngine.UIElements;
 
 namespace GGemCo2DCoreEditor
 {
@@ -13,267 +16,317 @@ namespace GGemCo2DCoreEditor
         private TableEditorDocument _document;
         private IReadOnlyList<TableEditorColumnDefinition> _columns;
         private TableEditorDocumentRow _selectedRow;
-        private List<TableEditorValidationMessage> _validationMessages = new List<TableEditorValidationMessage>();
+        private readonly List<TableEditorValidationMessage> _validationMessages = new List<TableEditorValidationMessage>();
+        private readonly List<TableEditorDocumentRow> _visibleRows = new List<TableEditorDocumentRow>();
+        private readonly List<TableEditorTableDefinition> _filteredTables = new List<TableEditorTableDefinition>();
 
         private string _tableSearch = string.Empty;
         private string _rowSearch = string.Empty;
-        private Vector2 _leftScroll;
-        private Vector2 _centerScroll;
-        private Vector2 _rightScroll;
-        private Vector2 _bottomScroll;
         private bool _showOnlyValidationRows;
+        private bool _showOnlySelectedValidation;
+
+        private ToolbarSearchField _tableSearchField;
+        private ListView _tableListView;
+        private ToolbarSearchField _rowSearchField;
+        private MultiColumnListView _rowListView;
+        private VisualElement _inspectorHost;
+        private VisualElement _validationHost;
+        private Label _pathLabel;
+        private Label _statusLabel;
+        private Toggle _showOnlyValidationToggle;
+        private Toggle _showOnlySelectedValidationToggle;
+
+        private TableEditorUndoController _undoController;
 
         public static void OpenWindow()
         {
             TableEditorWindow window = GetWindow<TableEditorWindow>();
             window.titleContent = new GUIContent("Table Editor");
-            window.minSize = new Vector2(1400f, 700f);
+            window.minSize = new Vector2(1400f, 760f);
             window.Show();
         }
 
         private void OnEnable()
         {
             _tables = TableEditorRegistry.GetAll();
-            if (_selectedTable == null && _tables.Count > 0)
+            _undoController ??= new TableEditorUndoController(HandleUndoRedoRestore);
+        }
+
+        private void OnDisable()
+        {
+            _undoController?.Dispose();
+            _undoController = null;
+        }
+
+        private void CreateGUI()
+        {
+            rootVisualElement.Clear();
+            rootVisualElement.style.flexGrow = 1f;
+            rootVisualElement.style.flexDirection = FlexDirection.Column;
+
+            BuildToolbar();
+            BuildBody();
+
+            RefreshTableList();
+            if (_selectedTable == null && _tables != null && _tables.Count > 0)
                 LoadTable(_tables[0]);
+            else
+                RefreshAllViews();
         }
 
-        private void OnGUI()
+        private void BuildToolbar()
         {
-            DrawToolbar();
+            Toolbar toolbar = new Toolbar();
 
-            if (_selectedTable == null)
-            {
-                EditorGUILayout.HelpBox("표시할 테이블이 없습니다.", MessageType.Info);
-                return;
-            }
+            toolbar.Add(CreateToolbarButton("Reload", ReloadCurrentTable));
+            toolbar.Add(CreateToolbarButton("Save", SaveCurrentTable));
+            toolbar.Add(CreateToolbarButton("Validate", ValidateCurrentTable));
+            toolbar.Add(CreateToolbarButton("Add Row", AddRow));
+            toolbar.Add(CreateToolbarButton("Duplicate", DuplicateRow));
+            toolbar.Add(CreateToolbarButton("Delete", DeleteSelectedRow));
 
-            Rect contentRect = GUILayoutUtility.GetRect(position.width, position.height - 70f, GUILayout.ExpandWidth(true), GUILayout.ExpandHeight(true));
-            float leftWidth = Mathf.Max(240f, contentRect.width * 0.18f);
-            float rightWidth = Mathf.Max(380f, contentRect.width * 0.32f);
-            float centerWidth = Mathf.Max(300f, contentRect.width - leftWidth - rightWidth - 8f);
+            toolbar.Add(new ToolbarSpacer { style = { width = 10f } });
+            _pathLabel = new Label { style = { unityTextAlign = TextAnchor.MiddleLeft, flexGrow = 1f } };
+            toolbar.Add(_pathLabel);
+            _statusLabel = new Label { style = { minWidth = 90f, unityTextAlign = TextAnchor.MiddleRight } };
+            toolbar.Add(_statusLabel);
 
-            Rect leftRect = new Rect(contentRect.x, contentRect.y, leftWidth, contentRect.height * 0.72f);
-            Rect centerRect = new Rect(leftRect.xMax + 4f, contentRect.y, centerWidth, contentRect.height * 0.72f);
-            Rect rightRect = new Rect(centerRect.xMax + 4f, contentRect.y, rightWidth, contentRect.height * 0.72f);
-            Rect bottomRect = new Rect(contentRect.x, leftRect.yMax + 4f, contentRect.width, contentRect.height * 0.28f - 4f);
-
-            GUILayout.BeginArea(leftRect, EditorStyles.helpBox);
-            DrawTableListPanel();
-            GUILayout.EndArea();
-
-            GUILayout.BeginArea(centerRect, EditorStyles.helpBox);
-            DrawGridPanel();
-            GUILayout.EndArea();
-
-            GUILayout.BeginArea(rightRect, EditorStyles.helpBox);
-            DrawInspectorPanel();
-            GUILayout.EndArea();
-
-            GUILayout.BeginArea(bottomRect, EditorStyles.helpBox);
-            DrawValidationPanel();
-            GUILayout.EndArea();
+            rootVisualElement.Add(toolbar);
         }
 
-        private void DrawToolbar()
+        private void BuildBody()
         {
-            EditorGUILayout.BeginHorizontal(EditorStyles.toolbar);
-            if (GUILayout.Button("Reload", EditorStyles.toolbarButton, GUILayout.Width(60f)))
+            TwoPaneSplitView horizontal = new TwoPaneSplitView(0, 260, TwoPaneSplitViewOrientation.Horizontal)
             {
-                ReloadCurrentTable();
-            }
+                style = { flexGrow = 1f }
+            };
+            rootVisualElement.Add(horizontal);
 
-            using (new EditorGUI.DisabledScope(_document == null || !_document.IsDirty))
+            VisualElement leftPanel = BuildTableListPanel();
+            horizontal.Add(leftPanel);
+
+            TwoPaneSplitView rightSplit = new TwoPaneSplitView(1, 430, TwoPaneSplitViewOrientation.Horizontal)
             {
-                if (GUILayout.Button("Save", EditorStyles.toolbarButton, GUILayout.Width(60f)))
+                style = { flexGrow = 1f }
+            };
+            horizontal.Add(rightSplit);
+
+            TwoPaneSplitView centerVertical = new TwoPaneSplitView(0, 480, TwoPaneSplitViewOrientation.Vertical)
+            {
+                style = { flexGrow = 1f }
+            };
+            rightSplit.Add(centerVertical);
+
+            VisualElement gridPanel = BuildGridPanel();
+            centerVertical.Add(gridPanel);
+
+            VisualElement validationPanel = BuildValidationPanel();
+            centerVertical.Add(validationPanel);
+
+            VisualElement inspectorPanel = BuildInspectorPanel();
+            rightSplit.Add(inspectorPanel);
+        }
+
+        private VisualElement BuildTableListPanel()
+        {
+            VisualElement panel = new VisualElement
+            {
+                style =
                 {
-                    SaveCurrentTable();
+                    flexGrow = 1f,
+                    paddingLeft = 6f,
+                    paddingRight = 6f,
+                    paddingTop = 6f,
+                    paddingBottom = 6f,
+                }
+            };
+
+            panel.Add(new Label("Tables") { style = { unityFontStyleAndWeight = FontStyle.Bold, marginBottom = 4f } });
+            _tableSearchField = new ToolbarSearchField();
+            _tableSearchField.RegisterValueChangedCallback(evt =>
+            {
+                _tableSearch = evt.newValue ?? string.Empty;
+                RefreshTableList();
+            });
+            panel.Add(_tableSearchField);
+
+            _tableListView = new ListView
+            {
+                style = { flexGrow = 1f, marginTop = 4f },
+                selectionType = SelectionType.Single,
+                fixedItemHeight = 22f,
+                showAlternatingRowBackgrounds = AlternatingRowBackground.ContentOnly,
+                itemsSource = _filteredTables,
+                makeItem = () => new Label { style = { unityTextAlign = TextAnchor.MiddleLeft } },
+                bindItem = (element, index) =>
+                {
+                    if (index < 0 || index >= _filteredTables.Count)
+                        return;
+                    ((Label)element).text = _filteredTables[index].DisplayName;
+                }
+            };
+
+            _tableListView.selectionChanged += selection =>
+            {
+                TableEditorTableDefinition next = selection.OfType<TableEditorTableDefinition>().FirstOrDefault();
+                if (next != null && next != _selectedTable && TryConfirmDiscardChanges())
+                    LoadTable(next);
+            };
+            panel.Add(_tableListView);
+            return panel;
+        }
+
+        private VisualElement BuildGridPanel()
+        {
+            VisualElement panel = new VisualElement
+            {
+                style =
+                {
+                    flexGrow = 1f,
+                    paddingLeft = 6f,
+                    paddingRight = 6f,
+                    paddingTop = 6f,
+                    paddingBottom = 6f,
+                }
+            };
+
+            panel.Add(new Label("Rows") { style = { unityFontStyleAndWeight = FontStyle.Bold, marginBottom = 4f } });
+            VisualElement filterRow = new VisualElement { style = { flexDirection = FlexDirection.Row, alignItems = Align.Center, marginBottom = 4f } };
+            _rowSearchField = new ToolbarSearchField { style = { flexGrow = 1f } };
+            _rowSearchField.RegisterValueChangedCallback(evt =>
+            {
+                _rowSearch = evt.newValue ?? string.Empty;
+                RefreshVisibleRows();
+            });
+            filterRow.Add(_rowSearchField);
+
+            _showOnlyValidationToggle = new Toggle("Errors only") { style = { marginLeft = 6f } };
+            _showOnlyValidationToggle.RegisterValueChangedCallback(evt =>
+            {
+                _showOnlyValidationRows = evt.newValue;
+                RefreshVisibleRows();
+            });
+            filterRow.Add(_showOnlyValidationToggle);
+            panel.Add(filterRow);
+
+            _rowListView = new MultiColumnListView
+            {
+                style = { flexGrow = 1f },
+                fixedItemHeight = 22f,
+                itemsSource = _visibleRows,
+                showAlternatingRowBackgrounds = AlternatingRowBackground.ContentOnly,
+                selectionType = SelectionType.Single,
+                sortingMode = ColumnSortingMode.Default,
+                showBorder = true,
+                horizontalScrollingEnabled = true,
+            };
+            _rowListView.selectionChanged += selection =>
+            {
+                _selectedRow = selection.OfType<TableEditorDocumentRow>().FirstOrDefault();
+                RebuildInspector();
+                RebuildValidation();
+            };
+            panel.Add(_rowListView);
+            return panel;
+        }
+
+        private VisualElement BuildInspectorPanel()
+        {
+            VisualElement panel = new VisualElement
+            {
+                style =
+                {
+                    flexGrow = 1f,
+                    paddingLeft = 6f,
+                    paddingRight = 6f,
+                    paddingTop = 6f,
+                    paddingBottom = 6f,
+                }
+            };
+            panel.Add(new Label("Inspector") { style = { unityFontStyleAndWeight = FontStyle.Bold, marginBottom = 4f } });
+            _inspectorHost = new VisualElement { style = { flexGrow = 1f } };
+            panel.Add(_inspectorHost);
+            return panel;
+        }
+
+        private VisualElement BuildValidationPanel()
+        {
+            VisualElement panel = new VisualElement
+            {
+                style =
+                {
+                    flexGrow = 1f,
+                    paddingLeft = 6f,
+                    paddingRight = 6f,
+                    paddingTop = 6f,
+                    paddingBottom = 6f,
+                }
+            };
+            VisualElement header = new VisualElement { style = { flexDirection = FlexDirection.Row, alignItems = Align.Center, marginBottom = 4f } };
+            header.Add(new Label("Validation") { style = { unityFontStyleAndWeight = FontStyle.Bold, flexGrow = 1f } });
+            _showOnlySelectedValidationToggle = new Toggle("Selected row only");
+            _showOnlySelectedValidationToggle.RegisterValueChangedCallback(evt =>
+            {
+                _showOnlySelectedValidation = evt.newValue;
+                RebuildValidation();
+            });
+            header.Add(_showOnlySelectedValidationToggle);
+            panel.Add(header);
+
+            _validationHost = new VisualElement { style = { flexGrow = 1f } };
+            panel.Add(_validationHost);
+            return panel;
+        }
+
+        private Button CreateToolbarButton(string text, Action onClick)
+        {
+            return new Button(onClick) { text = text };
+        }
+
+        private void RefreshTableList()
+        {
+            _filteredTables.Clear();
+            if (_tables != null)
+            {
+                for (int i = 0; i < _tables.Count; i++)
+                {
+                    TableEditorTableDefinition table = _tables[i];
+                    if (!string.IsNullOrWhiteSpace(_tableSearch) && table.DisplayName.IndexOf(_tableSearch, StringComparison.OrdinalIgnoreCase) < 0)
+                        continue;
+                    _filteredTables.Add(table);
                 }
             }
 
-            using (new EditorGUI.DisabledScope(_document == null))
+            _tableListView?.Rebuild();
+            if (_selectedTable != null)
             {
-                if (GUILayout.Button("Validate", EditorStyles.toolbarButton, GUILayout.Width(70f)))
-                {
-                    ValidateCurrentTable();
-                }
-
-                if (GUILayout.Button("Add Row", EditorStyles.toolbarButton, GUILayout.Width(70f)))
-                {
-                    AddRow();
-                }
-
-                using (new EditorGUI.DisabledScope(_selectedRow == null))
-                {
-                    if (GUILayout.Button("Duplicate", EditorStyles.toolbarButton, GUILayout.Width(80f)))
-                    {
-                        DuplicateRow();
-                    }
-
-                    if (GUILayout.Button("Delete", EditorStyles.toolbarButton, GUILayout.Width(70f)))
-                    {
-                        DeleteSelectedRow();
-                    }
-                }
+                int index = _filteredTables.IndexOf(_selectedTable);
+                if (index >= 0)
+                    _tableListView?.SetSelectionWithoutNotify(new[] { index });
             }
-
-            GUILayout.Space(12f);
-            GUILayout.Label(_selectedTable != null ? _selectedTable.AssetPath : string.Empty, EditorStyles.miniLabel);
-            GUILayout.FlexibleSpace();
-            if (_document != null && _document.IsDirty)
-                GUILayout.Label("Modified", EditorStyles.toolbarButton, GUILayout.Width(80f));
-            EditorGUILayout.EndHorizontal();
-        }
-
-        private void DrawTableListPanel()
-        {
-            EditorGUILayout.LabelField("Tables", EditorStyles.boldLabel);
-            _tableSearch = EditorGUILayout.TextField("Search", _tableSearch);
-            _leftScroll = EditorGUILayout.BeginScrollView(_leftScroll);
-
-            foreach (TableEditorTableDefinition table in _tables)
-            {
-                if (!string.IsNullOrWhiteSpace(_tableSearch) && table.DisplayName.IndexOf(_tableSearch, StringComparison.OrdinalIgnoreCase) < 0)
-                    continue;
-
-                GUIStyle style = table == _selectedTable ? EditorStyles.toolbarButton : EditorStyles.miniButton;
-                if (GUILayout.Button(table.DisplayName, style))
-                {
-                    if (TryConfirmDiscardChanges())
-                        LoadTable(table);
-                }
-            }
-
-            EditorGUILayout.EndScrollView();
-        }
-
-        private void DrawGridPanel()
-        {
-            EditorGUILayout.LabelField($"Rows - {_selectedTable.DisplayName}", EditorStyles.boldLabel);
-            _rowSearch = EditorGUILayout.TextField("Filter", _rowSearch);
-            _centerScroll = EditorGUILayout.BeginScrollView(_centerScroll);
-
-            if (_document == null)
-            {
-                EditorGUILayout.HelpBox("문서를 불러오지 못했습니다.", MessageType.Warning);
-                EditorGUILayout.EndScrollView();
-                return;
-            }
-
-            List<TableEditorDocumentRow> rows = GetVisibleRows();
-            DrawGridHeader();
-
-            for (int i = 0; i < rows.Count; i++)
-            {
-                TableEditorDocumentRow row = rows[i];
-                EditorGUILayout.BeginHorizontal(row == _selectedRow ? EditorStyles.helpBox : GUIStyle.none);
-
-                if (GUILayout.Button($"#{i + 1}", GUILayout.Width(44f)))
-                    _selectedRow = row;
-
-                for (int c = 0; c < _columns.Count; c++)
-                {
-                    TableEditorColumnDefinition column = _columns[c];
-                    row.Values.TryGetValue(column.HeaderName, out string value);
-                    string display = value ?? string.Empty;
-                    if (display.Length > 24)
-                        display = display.Substring(0, 24) + "…";
-
-                    if (GUILayout.Button(display, EditorStyles.miniButton, GUILayout.Width(120f)))
-                        _selectedRow = row;
-                }
-
-                EditorGUILayout.EndHorizontal();
-            }
-
-            EditorGUILayout.EndScrollView();
-        }
-
-        private void DrawGridHeader()
-        {
-            EditorGUILayout.BeginHorizontal();
-            GUILayout.Label("Row", EditorStyles.miniBoldLabel, GUILayout.Width(44f));
-            for (int i = 0; i < _columns.Count; i++)
-                GUILayout.Label(_columns[i].HeaderName, EditorStyles.miniBoldLabel, GUILayout.Width(120f));
-            EditorGUILayout.EndHorizontal();
-        }
-
-        private void DrawInspectorPanel()
-        {
-            EditorGUILayout.LabelField("Inspector", EditorStyles.boldLabel);
-            if (_selectedRow == null)
-            {
-                EditorGUILayout.HelpBox("행을 선택해주세요.", MessageType.Info);
-                return;
-            }
-
-            _rightScroll = EditorGUILayout.BeginScrollView(_rightScroll);
-            object previewObject = TableEditorValueUtility.BuildRowObject(_selectedTable, _selectedRow, out List<string> fieldErrors);
-            _selectedRow.CachedDisplayName = TableEditorReflectionUtility.GetDisplayName(previewObject, 0);
-            EditorGUILayout.LabelField(_selectedRow.CachedDisplayName, EditorStyles.boldLabel);
-            EditorGUILayout.Space(6f);
-
-            for (int i = 0; i < _columns.Count; i++)
-            {
-                bool changed = TableEditorGui.DrawCellEditor(_columns[i], _selectedRow, JumpToReference, _selectedTable);
-                if (changed)
-                {
-                    _document.IsDirty = true;
-                    GUI.changed = true;
-                }
-            }
-
-            if (fieldErrors.Count > 0)
-            {
-                EditorGUILayout.Space(8f);
-                EditorGUILayout.LabelField("Field Errors", EditorStyles.boldLabel);
-                for (int i = 0; i < fieldErrors.Count; i++)
-                    EditorGUILayout.HelpBox(fieldErrors[i], MessageType.Warning);
-            }
-
-            EditorGUILayout.EndScrollView();
-        }
-
-        private void DrawValidationPanel()
-        {
-            EditorGUILayout.BeginHorizontal();
-            EditorGUILayout.LabelField("Validation", EditorStyles.boldLabel);
-            GUILayout.FlexibleSpace();
-            _showOnlyValidationRows = EditorGUILayout.ToggleLeft("Selected Row Only", _showOnlyValidationRows, GUILayout.Width(150f));
-            EditorGUILayout.EndHorizontal();
-
-            _bottomScroll = EditorGUILayout.BeginScrollView(_bottomScroll);
-            int rowStableId = _showOnlyValidationRows && _selectedRow != null ? _selectedRow.StableId : -1;
-            TableEditorGui.DrawValidationSummary(_validationMessages, rowStableId);
-            EditorGUILayout.EndScrollView();
         }
 
         private void LoadTable(TableEditorTableDefinition table)
         {
-            _selectedTable = table;
+            if (table == null)
+                return;
+
             try
             {
+                _selectedTable = table;
                 _document = TableEditorDocument.Load(table.AssetPath);
                 _columns = table.BuildColumns(_document.Headers);
                 _document.MergeHeaders(_columns);
-                _columns = table.BuildColumns(_document.Headers);
                 _selectedRow = _document.GetRows().FirstOrDefault();
                 _validationMessages.Clear();
+                _undoController?.Initialize(_selectedTable.TableKey, _document);
+                TableEditorReferenceCache.Invalidate(_selectedTable);
+                RefreshAllViews();
             }
             catch (Exception ex)
             {
-                _document = null;
-                _columns = Array.Empty<TableEditorColumnDefinition>();
-                _selectedRow = null;
-                _validationMessages = new List<TableEditorValidationMessage>
-                {
-                    new TableEditorValidationMessage
-                    {
-                        Severity = TableEditorValidationSeverity.Error,
-                        Message = ex.Message,
-                        RowStableId = -1,
-                    }
-                };
+                Debug.LogException(ex);
+                EditorUtility.DisplayDialog("Table Editor", ex.Message, "OK");
             }
         }
 
@@ -281,10 +334,8 @@ namespace GGemCo2DCoreEditor
         {
             if (_selectedTable == null)
                 return;
-
             if (!TryConfirmDiscardChanges())
                 return;
-
             LoadTable(_selectedTable);
         }
 
@@ -293,26 +344,28 @@ namespace GGemCo2DCoreEditor
             if (_document == null)
                 return;
 
-            ValidateCurrentTable();
-            bool hasError = _validationMessages.Any(static m => m.Severity == TableEditorValidationSeverity.Error);
-            if (hasError)
+            try
             {
-                bool forceSave = EditorUtility.DisplayDialog("Table Editor", "검증 에러가 있습니다. 그래도 저장하시겠습니까?", "저장", "취소");
-                if (!forceSave)
-                    return;
+                _document.Save();
+                TableEditorReferenceCache.Invalidate(_selectedTable);
+                ValidateCurrentTable();
+                _undoController?.Commit(_selectedTable.TableKey, _document);
+                RefreshStatus();
             }
-
-            _document.Save();
-            TableLoaderManagerBase.Unload(_selectedTable.AssetPath);
-            LoadTable(_selectedTable);
+            catch (Exception ex)
+            {
+                Debug.LogException(ex);
+                EditorUtility.DisplayDialog("Table Editor", ex.Message, "OK");
+            }
         }
 
         private void ValidateCurrentTable()
         {
-            if (_selectedTable == null || _document == null)
-                return;
-
-            _validationMessages = TableEditorValidator.Validate(_selectedTable, _document);
+            _validationMessages.Clear();
+            if (_selectedTable != null && _document != null)
+                _validationMessages.AddRange(TableEditorValidator.Validate(_selectedTable, _document));
+            RebuildValidation();
+            RefreshVisibleRows();
         }
 
         private void AddRow()
@@ -320,12 +373,11 @@ namespace GGemCo2DCoreEditor
             if (_document == null)
                 return;
 
-            TableEditorDocumentRow row = _document.AddRow();
-            int nextUid = GetNextUid();
-            if (row.Values.ContainsKey("Uid"))
-                row.Values["Uid"] = nextUid > 0 ? nextUid.ToString() : string.Empty;
-
-            _selectedRow = row;
+            ApplyDocumentMutation("Table Add Row", () =>
+            {
+                _selectedRow = _document.AddRow();
+                AssignAutoUidIfNeeded(_selectedRow);
+            });
         }
 
         private void DuplicateRow()
@@ -333,11 +385,11 @@ namespace GGemCo2DCoreEditor
             if (_document == null || _selectedRow == null)
                 return;
 
-            TableEditorDocumentRow row = _document.DuplicateRow(_selectedRow);
-            if (row.Values.ContainsKey("Uid"))
-                row.Values["Uid"] = GetNextUid().ToString();
-
-            _selectedRow = row;
+            ApplyDocumentMutation("Table Duplicate Row", () =>
+            {
+                _selectedRow = _document.DuplicateRow(_selectedRow);
+                AssignAutoUidIfNeeded(_selectedRow);
+            });
         }
 
         private void DeleteSelectedRow()
@@ -345,68 +397,266 @@ namespace GGemCo2DCoreEditor
             if (_document == null || _selectedRow == null)
                 return;
 
-            if (!EditorUtility.DisplayDialog("Table Editor", "선택한 행을 삭제하시겠습니까?", "삭제", "취소"))
-                return;
-
-            TableEditorDocumentRow current = _selectedRow;
-            _document.RemoveRow(current);
-            _selectedRow = _document.GetRows().FirstOrDefault();
+            TableEditorDocumentRow rowToDelete = _selectedRow;
+            ApplyDocumentMutation("Table Delete Row", () =>
+            {
+                _document.RemoveRow(rowToDelete);
+                _selectedRow = _document.GetRows().FirstOrDefault();
+            });
         }
 
-        private void JumpToReference(TableEditorTableDefinition targetTable, int uid)
+        private void HandleCellValueChanged(string headerName, string nextValue)
         {
-            if (targetTable == null)
+            if (_document == null || _selectedRow == null)
                 return;
 
-            if (_selectedTable != targetTable)
-            {
-                if (!TryConfirmDiscardChanges())
-                    return;
+            if (string.Equals(_selectedRow.Values.TryGetValue(headerName, out string current) ? current : string.Empty, nextValue ?? string.Empty, StringComparison.Ordinal))
+                return;
 
-                LoadTable(targetTable);
-            }
+            ApplyDocumentMutation($"Edit {headerName}", () => _document.SetCellValue(_selectedRow, headerName, nextValue));
+        }
 
+        private void JumpToReference(TableEditorTableDefinition table, int uid)
+        {
+            if (table == null)
+                return;
+
+            if (!TryConfirmDiscardChanges())
+                return;
+
+            LoadTable(table);
             if (_document == null)
                 return;
 
-            _selectedRow = _document.GetRows().FirstOrDefault(row =>
-                row.Values.TryGetValue("Uid", out string rawUid) &&
-                int.TryParse(rawUid, out int rowUid) &&
-                rowUid == uid);
+            _selectedRow = _document.GetRows().FirstOrDefault(r =>
+                int.TryParse(TableEditorValueUtility.GetRowUidRaw(r), NumberStyles.Integer, CultureInfo.InvariantCulture, out int value) && value == uid);
+            RefreshAllViews();
+            if (_selectedRow != null)
+            {
+                int rowIndex = _visibleRows.IndexOf(_selectedRow);
+                if (rowIndex >= 0)
+                {
+                    _rowListView.SetSelectionWithoutNotify(new[] { rowIndex });
+                    _rowListView.ScrollToItem(rowIndex);
+                }
+            }
         }
 
-        private List<TableEditorDocumentRow> GetVisibleRows()
+        private void ApplyDocumentMutation(string undoName, Action mutation)
         {
-            IEnumerable<TableEditorDocumentRow> query = _document.GetRows();
-            if (!string.IsNullOrWhiteSpace(_rowSearch))
-            {
-                query = query.Where(row => row.Values.Values.Any(v => !string.IsNullOrEmpty(v) && v.IndexOf(_rowSearch, StringComparison.OrdinalIgnoreCase) >= 0));
-            }
+            if (_selectedTable == null || _document == null || mutation == null)
+                return;
 
-            return query.ToList();
+            _undoController?.BeginRecord(undoName);
+            mutation();
+            _undoController?.Commit(_selectedTable.TableKey, _document);
+            TableEditorReferenceCache.Invalidate(_selectedTable);
+            RefreshAllViews();
         }
 
-        private int GetNextUid()
+        private void HandleUndoRedoRestore(string tableKey, string snapshotJson)
         {
-            int maxUid = 0;
-            foreach (TableEditorDocumentRow row in _document.GetRows())
-            {
-                if (!row.Values.TryGetValue("Uid", out string rawUid))
-                    continue;
+            if (_selectedTable == null || !string.Equals(_selectedTable.TableKey, tableKey, StringComparison.OrdinalIgnoreCase))
+                return;
 
-                if (int.TryParse(rawUid, out int uid))
-                    maxUid = Math.Max(maxUid, uid);
+            TableEditorDocument restored = TableEditorDocument.FromSnapshotJson(snapshotJson);
+            if (restored == null)
+                return;
+
+            int selectedStableId = _selectedRow?.StableId ?? -1;
+            _document = restored;
+            _columns = _selectedTable.BuildColumns(_document.Headers);
+            _document.MergeHeaders(_columns);
+            _selectedRow = _document.GetRows().FirstOrDefault(r => r.StableId == selectedStableId) ?? _document.GetRows().FirstOrDefault();
+            RefreshAllViews();
+        }
+
+        private void RefreshAllViews()
+        {
+            RefreshStatus();
+            RebuildColumns();
+            RefreshVisibleRows();
+            RebuildInspector();
+            RebuildValidation();
+            RefreshTableList();
+        }
+
+        private void RefreshStatus()
+        {
+            if (_pathLabel != null)
+                _pathLabel.text = _selectedTable != null ? _selectedTable.AssetPath : string.Empty;
+            if (_statusLabel != null)
+                _statusLabel.text = _document != null && _document.IsDirty ? "Modified" : string.Empty;
+        }
+
+        private void RefreshVisibleRows()
+        {
+            _visibleRows.Clear();
+            if (_document != null)
+            {
+                IEnumerable<TableEditorDocumentRow> rows = _document.GetRows();
+                HashSet<int> invalidRowIds = BuildInvalidRowIdSet();
+
+                foreach (TableEditorDocumentRow row in rows)
+                {
+                    if (!string.IsNullOrWhiteSpace(_rowSearch) && !MatchesSearch(row, _rowSearch))
+                        continue;
+                    if (_showOnlyValidationRows && !invalidRowIds.Contains(row.StableId))
+                        continue;
+                    _visibleRows.Add(row);
+                }
             }
 
-            return maxUid + 1;
+            _rowListView?.Rebuild();
+            if (_selectedRow != null)
+            {
+                int index = _visibleRows.IndexOf(_selectedRow);
+                if (index >= 0)
+                    _rowListView?.SetSelectionWithoutNotify(new[] { index });
+            }
+        }
+
+        private void RebuildColumns()
+        {
+            if (_rowListView == null)
+                return;
+
+            _rowListView.columns.Clear();
+            if (_document == null || _columns == null)
+                return;
+
+            Column indexColumn = new Column
+            {
+                name = "rowIndex",
+                title = "Row",
+                width = 56,
+                stretchable = false,
+                makeCell = () => new Label(),
+                bindCell = (element, index) =>
+                {
+                    ((Label)element).text = (index + 1).ToString(CultureInfo.InvariantCulture);
+                }
+            };
+            _rowListView.columns.Add(indexColumn);
+
+            for (int i = 0; i < _columns.Count; i++)
+            {
+                TableEditorColumnDefinition column = _columns[i];
+                Column uiColumn = new Column
+                {
+                    name = column.HeaderName,
+                    title = column.HeaderName,
+                    width = column.IsUidColumn ? 80 : 150,
+                    minWidth = 70,
+                    stretchable = true,
+                    sortable = true,
+                    makeCell = () => new Label { style = { unityTextAlign = TextAnchor.MiddleLeft } },
+                    bindCell = (element, index) =>
+                    {
+                        if (index < 0 || index >= _visibleRows.Count)
+                            return;
+                        Label label = (Label)element;
+                        TableEditorDocumentRow row = _visibleRows[index];
+                        row.Values.TryGetValue(column.HeaderName, out string value);
+                        label.text = BuildGridCellText(column, value);
+                        label.tooltip = value ?? string.Empty;
+                    },
+                    comparison = (firstIndex, secondIndex) =>
+                    {
+                        string left = GetColumnRaw(_visibleRows[firstIndex], column.HeaderName);
+                        string right = GetColumnRaw(_visibleRows[secondIndex], column.HeaderName);
+                        return string.Compare(left, right, StringComparison.OrdinalIgnoreCase);
+                    }
+                };
+                _rowListView.columns.Add(uiColumn);
+            }
+        }
+
+        private void RebuildInspector()
+        {
+            if (_inspectorHost == null)
+                return;
+            _inspectorHost.Clear();
+            _inspectorHost.Add(TableEditorGui.BuildInspector(this, _selectedTable, _columns ?? Array.Empty<TableEditorColumnDefinition>(), _selectedRow, HandleCellValueChanged, JumpToReference));
+        }
+
+        private void RebuildValidation()
+        {
+            if (_validationHost == null)
+                return;
+            _validationHost.Clear();
+            _validationHost.Add(TableEditorGui.BuildValidationView(_validationMessages, _selectedRow?.StableId ?? -1, _showOnlySelectedValidation));
         }
 
         private bool TryConfirmDiscardChanges()
         {
-            if (_document == null || !_document.IsDirty)
+            return _document == null || !_document.IsDirty || EditorUtility.DisplayDialog("Table Editor", "저장하지 않은 변경사항이 있습니다. 버리고 진행할까요?", "Discard", "Cancel");
+        }
+
+        private void AssignAutoUidIfNeeded(TableEditorDocumentRow row)
+        {
+            if (row == null || !_document.Headers.Contains("Uid"))
+                return;
+
+            if (int.TryParse(TableEditorValueUtility.GetRowUidRaw(row), out int existing) && existing > 0)
+                return;
+
+            int nextUid = 1;
+            foreach (TableEditorDocumentRow item in _document.GetRows())
+            {
+                if (item == row)
+                    continue;
+                if (int.TryParse(TableEditorValueUtility.GetRowUidRaw(item), out int uid))
+                    nextUid = Math.Max(nextUid, uid + 1);
+            }
+
+            _document.SetCellValue(row, "Uid", nextUid.ToString(CultureInfo.InvariantCulture));
+        }
+
+        private HashSet<int> BuildInvalidRowIdSet()
+        {
+            HashSet<int> result = new HashSet<int>();
+            for (int i = 0; i < _validationMessages.Count; i++)
+            {
+                TableEditorValidationMessage message = _validationMessages[i];
+                if (message.RowStableId > 0)
+                    result.Add(message.RowStableId);
+            }
+            return result;
+        }
+
+        private static bool MatchesSearch(TableEditorDocumentRow row, string search)
+        {
+            if (row == null || string.IsNullOrWhiteSpace(search))
                 return true;
 
-            return EditorUtility.DisplayDialog("Table Editor", "저장하지 않은 변경사항이 있습니다. 버리고 진행하시겠습니까?", "진행", "취소");
+            foreach (KeyValuePair<string, string> pair in row.Values)
+            {
+                if ((pair.Value ?? string.Empty).IndexOf(search, StringComparison.OrdinalIgnoreCase) >= 0)
+                    return true;
+            }
+
+            return false;
+        }
+
+        private static string GetColumnRaw(TableEditorDocumentRow row, string header)
+        {
+            return row != null && row.Values.TryGetValue(header, out string value) ? value ?? string.Empty : string.Empty;
+        }
+
+        private static string BuildGridCellText(TableEditorColumnDefinition column, string raw)
+        {
+            raw ??= string.Empty;
+            if (column != null && column.IsReferenceCandidate && int.TryParse(raw, out int uid) && uid > 0)
+            {
+                TableEditorReferenceItem item = TableEditorReferenceCache.FindItem(column.ReferenceTable, uid);
+                if (item != null)
+                    return $"{uid} ({item.DisplayName})";
+            }
+
+            if (raw.Length > 48)
+                return raw.Substring(0, 48) + "…";
+            return raw;
         }
     }
 }

@@ -13,9 +13,10 @@ namespace GGemCo2DCoreEditor
         public MemberInfo MemberInfo;
         public bool ExistsInRowType;
         public bool ExistsInFileHeader;
+        public TableEditorTableDefinition ReferenceTable;
 
         public bool IsUidColumn => string.Equals(HeaderName, "Uid", StringComparison.OrdinalIgnoreCase);
-        public bool IsReferenceCandidate => !IsUidColumn && (HeaderName.EndsWith("Uid", StringComparison.Ordinal) || HeaderName.EndsWith("Id", StringComparison.Ordinal));
+        public bool IsReferenceCandidate => !IsUidColumn && ReferenceTable != null && ValueType == typeof(int);
     }
 
     internal sealed class TableEditorTableDefinition
@@ -45,14 +46,7 @@ namespace GGemCo2DCoreEditor
                         continue;
 
                     memberMap.TryGetValue(header, out MemberInfo memberInfo);
-                    columns.Add(new TableEditorColumnDefinition
-                    {
-                        HeaderName = header,
-                        MemberInfo = memberInfo,
-                        ValueType = memberInfo != null ? TableEditorReflectionUtility.GetMemberType(memberInfo) : typeof(string),
-                        ExistsInFileHeader = true,
-                        ExistsInRowType = memberInfo != null,
-                    });
+                    columns.Add(CreateColumn(header, memberInfo, true));
                 }
             }
 
@@ -61,17 +55,27 @@ namespace GGemCo2DCoreEditor
                 if (!added.Add(pair.Key))
                     continue;
 
-                columns.Add(new TableEditorColumnDefinition
-                {
-                    HeaderName = pair.Value.Name,
-                    MemberInfo = pair.Value,
-                    ValueType = TableEditorReflectionUtility.GetMemberType(pair.Value),
-                    ExistsInFileHeader = false,
-                    ExistsInRowType = true,
-                });
+                columns.Add(CreateColumn(pair.Value.Name, pair.Value, false));
             }
 
             return columns;
+        }
+
+        private static TableEditorColumnDefinition CreateColumn(string headerName, MemberInfo memberInfo, bool existsInHeader)
+        {
+            Type valueType = memberInfo != null
+                ? TableEditorReflectionUtility.GetMemberType(memberInfo)
+                : typeof(string);
+
+            return new TableEditorColumnDefinition
+            {
+                HeaderName = headerName,
+                MemberInfo = memberInfo,
+                ValueType = valueType,
+                ExistsInFileHeader = existsInHeader,
+                ExistsInRowType = memberInfo != null,
+                ReferenceTable = TableEditorRegistry.FindReferenceTable(headerName),
+            };
         }
     }
 
@@ -98,6 +102,7 @@ namespace GGemCo2DCoreEditor
             { "NeedItemUid3", ConfigAddressableTable.Item },
             { "NeedItemUid4", ConfigAddressableTable.Item },
             { "NeedItemUid5", ConfigAddressableTable.Item },
+            { "ItemBaseOptionUid", ConfigAddressableTable.ItemBaseOption },
             { "UseGroupUid", ConfigAddressableTable.ItemUse },
             { "PlayerDeadSpawnUid", ConfigAddressableTable.Map },
         };
@@ -137,7 +142,7 @@ namespace GGemCo2DCoreEditor
         private static List<TableEditorTableDefinition> BuildRegistry()
         {
             List<TableEditorTableDefinition> result = new List<TableEditorTableDefinition>();
-            var addressableInfos = ConfigAddressableTable.All;
+            List<AddressableAssetInfo> addressableInfos = ConfigAddressableTable.All;
 
             Type defaultTableType = typeof(DefaultTable<>);
             Assembly runtimeAssembly = typeof(DefaultTable<>).Assembly;
@@ -155,7 +160,8 @@ namespace GGemCo2DCoreEditor
                     continue;
 
                 Type rowType = baseType.GetGenericArguments()[0];
-                object tableInstance = null;
+
+                object tableInstance;
                 try
                 {
                     tableInstance = Activator.CreateInstance(type);
@@ -172,7 +178,7 @@ namespace GGemCo2DCoreEditor
                 if (string.IsNullOrWhiteSpace(key) || string.Equals(key, ConfigAddressableTable.None, StringComparison.OrdinalIgnoreCase))
                     continue;
 
-                var addressable = addressableInfos.FirstOrDefault(a => string.Equals(a.Etc1, key, StringComparison.OrdinalIgnoreCase));
+                AddressableAssetInfo addressable = addressableInfos.FirstOrDefault(a => string.Equals(a.Etc1, key, StringComparison.OrdinalIgnoreCase));
                 if (addressable == null)
                     continue;
 

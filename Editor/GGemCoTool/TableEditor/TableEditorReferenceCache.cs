@@ -16,6 +16,15 @@ namespace GGemCo2DCoreEditor
         private static readonly Dictionary<string, HashSet<int>> UidsByTableKey = new Dictionary<string, HashSet<int>>(StringComparer.OrdinalIgnoreCase);
         private static readonly Dictionary<string, List<TableEditorReferenceItem>> ItemsByTableKey = new Dictionary<string, List<TableEditorReferenceItem>>(StringComparer.OrdinalIgnoreCase);
 
+        public static void Invalidate(TableEditorTableDefinition definition)
+        {
+            if (definition == null)
+                return;
+
+            UidsByTableKey.Remove(definition.TableKey);
+            ItemsByTableKey.Remove(definition.TableKey);
+        }
+
         public static bool Contains(TableEditorTableDefinition definition, int uid)
         {
             if (definition == null)
@@ -23,6 +32,24 @@ namespace GGemCo2DCoreEditor
 
             EnsureLoaded(definition);
             return UidsByTableKey.TryGetValue(definition.TableKey, out HashSet<int> set) && set.Contains(uid);
+        }
+
+        public static TableEditorReferenceItem FindItem(TableEditorTableDefinition definition, int uid)
+        {
+            if (definition == null || uid <= 0)
+                return null;
+
+            EnsureLoaded(definition);
+            if (!ItemsByTableKey.TryGetValue(definition.TableKey, out List<TableEditorReferenceItem> items))
+                return null;
+
+            for (int i = 0; i < items.Count; i++)
+            {
+                if (items[i].Uid == uid)
+                    return items[i];
+            }
+
+            return null;
         }
 
         public static IReadOnlyList<TableEditorReferenceItem> GetItems(TableEditorTableDefinition definition)
@@ -80,6 +107,7 @@ namespace GGemCo2DCoreEditor
                 // 캐시 실패 시 빈 컬렉션 유지
             }
 
+            items.Sort(static (a, b) => string.Compare(a.DisplayName, b.DisplayName, StringComparison.OrdinalIgnoreCase));
             UidsByTableKey[definition.TableKey] = uidSet;
             ItemsByTableKey[definition.TableKey] = items;
         }
