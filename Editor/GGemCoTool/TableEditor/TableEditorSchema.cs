@@ -111,6 +111,12 @@ namespace GGemCo2DCoreEditor
         private static readonly Dictionary<string, string> ReferenceAliasByHeader = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
         {
             { "ItemUid", ConfigAddressableTable.Item },
+            { "ResultItemUid", ConfigAddressableTable.Item },
+            { "NeedItemUid1", ConfigAddressableTable.Item },
+            { "NeedItemUid2", ConfigAddressableTable.Item },
+            { "NeedItemUid3", ConfigAddressableTable.Item },
+            { "NeedItemUid4", ConfigAddressableTable.Item },
+            { "SourceItemUid", ConfigAddressableTable.Item },
             { "MonsterUid", ConfigAddressableTable.Monster },
             { "NpcUid", ConfigAddressableTable.Npc },
             { "MapUid", ConfigAddressableTable.Map },
