@@ -33,7 +33,7 @@ namespace GGemCo2DCore
                 Type = EnumHelper.ConvertEnum<CharacterConstants.Type>(data["Type"]),
                 Controller = ConvertAnimationController(data["Controller"]),
                 PrefabName = data["PrefabName"],
-                DefaultFacingDirection8 = ConvertFacing(data["DefaultFacing"]),
+                DefaultFacingDirection8 = ConvertFacing(data["DefaultFacingDirection8"]),
                 Width = MathHelper.ParseFloat(data["Width"]),
                 Height = MathHelper.ParseFloat(data["Height"]),
                 MoveStep = MathHelper.ParseFloat(data["MoveStep"]),
