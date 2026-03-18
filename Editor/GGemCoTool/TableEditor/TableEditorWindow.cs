@@ -450,7 +450,7 @@ namespace GGemCo2DCoreEditor
             if (string.Equals(_selectedRow.Values.TryGetValue(headerName, out string current) ? current : string.Empty, nextValue ?? string.Empty, StringComparison.Ordinal))
                 return;
 
-            ApplyDocumentMutation($"Edit {headerName}", () => _document.SetCellValue(_selectedRow, headerName, nextValue));
+            ApplyDocumentMutation($"Edit {headerName}", () => _document.SetCellValue(_selectedRow, headerName, nextValue), refreshInspector: false);
         }
 
         private void JumpToReference(TableEditorTableDefinition table, int uid)
@@ -479,7 +479,7 @@ namespace GGemCo2DCoreEditor
             }
         }
 
-        private void ApplyDocumentMutation(string undoName, Action mutation)
+        private void ApplyDocumentMutation(string undoName, Action mutation, bool refreshInspector = true)
         {
             if (_selectedTable == null || _document == null || mutation == null)
                 return;
@@ -489,7 +489,19 @@ namespace GGemCo2DCoreEditor
             _undoController?.Commit(_selectedTable.TableKey, _document);
             _selectedTable?.ReloadAction?.Invoke();
             TableEditorReferenceCache.Invalidate(_selectedTable);
-            RefreshAllViews();
+
+            if (refreshInspector)
+                RefreshAllViews();
+            else
+                RefreshViewsWithoutInspectorRebuild();
+        }
+
+        private void RefreshViewsWithoutInspectorRebuild()
+        {
+            RefreshStatus();
+            RefreshVisibleRows();
+            RebuildValidation();
+            RefreshTableList();
         }
 
         private void HandleUndoRedoRestore(string tableKey, string snapshotJson)

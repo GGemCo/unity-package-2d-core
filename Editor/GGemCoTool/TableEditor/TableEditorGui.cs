@@ -178,35 +178,35 @@ namespace GGemCo2DCoreEditor
 
             if (type == typeof(string) || type.IsArray)
             {
-                TextField field = new TextField { value = rawValue, multiline = false };
+                TextField field = new TextField { value = rawValue, multiline = false, isDelayed = true };
                 field.RegisterValueChangedCallback(evt => onValueChanged?.Invoke(column.HeaderName, evt.newValue ?? string.Empty));
                 return field;
             }
 
             if (type == typeof(int))
             {
-                IntegerField field = new IntegerField { value = converted is int i ? i : 0 };
+                IntegerField field = new IntegerField { value = converted is int i ? i : 0, isDelayed = true };
                 field.RegisterValueChangedCallback(evt => onValueChanged?.Invoke(column.HeaderName, TableEditorValueUtility.ConvertToRaw(evt.newValue, type)));
                 return field;
             }
 
             if (type == typeof(long))
             {
-                LongField field = new LongField { value = converted is long l ? l : 0L };
+                LongField field = new LongField { value = converted is long l ? l : 0L, isDelayed = true };
                 field.RegisterValueChangedCallback(evt => onValueChanged?.Invoke(column.HeaderName, TableEditorValueUtility.ConvertToRaw(evt.newValue, type)));
                 return field;
             }
 
             if (type == typeof(float))
             {
-                FloatField field = new FloatField { value = converted is float f ? f : 0f };
+                FloatField field = new FloatField { value = converted is float f ? f : 0f, isDelayed = true };
                 field.RegisterValueChangedCallback(evt => onValueChanged?.Invoke(column.HeaderName, TableEditorValueUtility.ConvertToRaw(evt.newValue, type)));
                 return field;
             }
 
             if (type == typeof(double))
             {
-                DoubleField field = new DoubleField { value = converted is double d ? d : 0d };
+                DoubleField field = new DoubleField { value = converted is double d ? d : 0d, isDelayed = true };
                 field.RegisterValueChangedCallback(evt => onValueChanged?.Invoke(column.HeaderName, TableEditorValueUtility.ConvertToRaw(evt.newValue, type)));
                 return field;
             }
@@ -262,7 +262,7 @@ namespace GGemCo2DCoreEditor
                 return field;
             }
 
-            TextField fallback = new TextField { value = rawValue };
+            TextField fallback = new TextField { value = rawValue, isDelayed = true };
             fallback.RegisterValueChangedCallback(evt => onValueChanged?.Invoke(column.HeaderName, evt.newValue ?? string.Empty));
             return fallback;
         }
@@ -278,7 +278,7 @@ namespace GGemCo2DCoreEditor
         {
             VisualElement root = new VisualElement { style = { flexDirection = FlexDirection.Column } };
 
-            IntegerField uidField = new IntegerField { value = ParseInt(rawValue) };
+            IntegerField uidField = new IntegerField { value = ParseInt(rawValue), isDelayed = true };
             root.Add(uidField);
 
             TableEditorTableDefinition referenceTable = column.ReferenceTable;
