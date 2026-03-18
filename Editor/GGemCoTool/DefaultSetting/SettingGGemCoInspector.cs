@@ -1,4 +1,5 @@
-﻿using System.Linq;
+﻿using System.Collections.Generic;
+using System.Linq;
 using GGemCo2DCore;
 using UnityEditor;
 using UnityEditor.Build;
@@ -15,132 +16,169 @@ namespace GGemCo2DCoreEditor
 
             GGemCoSettings settings = (GGemCoSettings)target;
 
-            // 기존 use_spine 값 저장
             bool oldUseSpine = settings.useSpine2d;
             InputSystemType oldInputSystemType = settings.inputSystemType;
             bool oldUseInGameTime = settings.useInGameTime;
 
-            // 기본 Inspector 표시
+            EditorGUI.BeginChangeCheck();
             DrawDefaultInspector();
+            bool changed = EditorGUI.EndChangeCheck();
 
-            // 값이 변경되었을 경우 define 업데이트
+            serializedObject.ApplyModifiedProperties();
+
+            if (!changed)
+            {
+                return;
+            }
+
             if (oldUseSpine != settings.useSpine2d)
             {
                 UpdateScriptingDefineSymbols(settings.useSpine2d);
             }
-            
-            // 값이 변경되었을 경우 define 업데이트
+
             if (oldInputSystemType != settings.inputSystemType)
             {
                 SyncInputDefineSymbols(settings.inputSystemType);
             }
-            
-            // 값이 변경되었을 경우 define 업데이트
+
             if (oldUseInGameTime != settings.useInGameTime)
             {
                 SyncDefineSymbolUseInGameTime(settings.useInGameTime);
             }
-
-            serializedObject.ApplyModifiedProperties();
         }
 
         public void UpdateScriptingDefineSymbols(bool enable)
         {
-#if UNITY_6000_0_OR_NEWER
-            string symbols = PlayerSettings.GetScriptingDefineSymbols(NamedBuildTarget.Standalone);
-#else
-            string symbols = PlayerSettings.GetScriptingDefineSymbolsForGroup(BuildTargetGroup.Standalone);
-#endif
+            List<string> symbols = GetCurrentDefineSymbols();
+
             if (enable)
             {
-                if (!symbols.Contains(ConfigDefine.DefineSymbolSpine))
-                {
-                    symbols += $";{ConfigDefine.DefineSymbolSpine}";
-                }
+                AddSymbol(symbols, ConfigDefine.DefineSymbolSpine);
             }
             else
             {
-                if (symbols.Contains(ConfigDefine.DefineSymbolSpine))
-                {
-                    symbols = symbols.Replace(ConfigDefine.DefineSymbolSpine, "").Replace(";;", ";").Trim(';');
-                }
+                RemoveSymbol(symbols, ConfigDefine.DefineSymbolSpine);
             }
-            
-#if UNITY_6000_0_OR_NEWER
-            PlayerSettings.SetScriptingDefineSymbols(NamedBuildTarget.Standalone, symbols);
-#else
-            PlayerSettings.SetScriptingDefineSymbolsForGroup(BuildTargetGroup.Standalone, symbols);
-#endif
-            Debug.Log($"Scripting Define Symbols updated: {symbols}");
-        }
-        public void SyncInputDefineSymbols(GGemCo2DCore.InputSystemType inputType)
-        {
-#if UNITY_6000_0_OR_NEWER
-            string symbols = PlayerSettings.GetScriptingDefineSymbols(NamedBuildTarget.Standalone);
-#else
-            string symbols = PlayerSettings.GetScriptingDefineSymbolsForGroup(BuildTargetGroup.Standalone);
-#endif
 
-            // 기존 Define 제거
-            symbols = symbols.Replace(ConfigDefine.DefineSymbolInputSystemOld, "")
-                .Replace(ConfigDefine.DefineSymbolInputSystemNew, "")
-                .Replace($"{ConfigDefine.DefineSymbolInputSystemOld};{ConfigDefine.DefineSymbolInputSystemNew}", "");
+            ApplyDefineSymbols(symbols, "Scripting Define Symbols updated");
+        }
+
+        public void SyncInputDefineSymbols(InputSystemType inputType)
+        {
+            List<string> symbols = GetCurrentDefineSymbols();
+
+            RemoveSymbol(symbols, ConfigDefine.DefineSymbolInputSystemOld);
+            RemoveSymbol(symbols, ConfigDefine.DefineSymbolInputSystemNew);
 
             switch (inputType)
             {
-                case GGemCo2DCore.InputSystemType.OldInputManager:
-                    symbols += $";{ConfigDefine.DefineSymbolInputSystemOld}";
+                case InputSystemType.OldInputManager:
+                    AddSymbol(symbols, ConfigDefine.DefineSymbolInputSystemOld);
                     break;
-                case GGemCo2DCore.InputSystemType.NewInputSystem:
-                    symbols += $";{ConfigDefine.DefineSymbolInputSystemNew}";
+                case InputSystemType.NewInputSystem:
+                    AddSymbol(symbols, ConfigDefine.DefineSymbolInputSystemNew);
                     break;
-                case GGemCo2DCore.InputSystemType.Both:
-                    symbols += $";{ConfigDefine.DefineSymbolInputSystemOld};{ConfigDefine.DefineSymbolInputSystemNew}";
+                case InputSystemType.Both:
+                    AddSymbol(symbols, ConfigDefine.DefineSymbolInputSystemOld);
+                    AddSymbol(symbols, ConfigDefine.DefineSymbolInputSystemNew);
                     break;
             }
 
-            // 앞뒤 세미콜론 정리
-            symbols = string.Join(";", symbols.Split(';')
-                .Select(s => s.Trim())
-                .Where(s => !string.IsNullOrEmpty(s))
-                .Distinct());
-
-#if UNITY_6000_0_OR_NEWER
-            PlayerSettings.SetScriptingDefineSymbols(NamedBuildTarget.Standalone, symbols);
-#else
-            PlayerSettings.SetScriptingDefineSymbolsForGroup(BuildTargetGroup.Standalone, symbols);
-#endif
-            Debug.Log($"[GGemCoSettingsEditor] Define Symbols 설정 완료: {symbols}");
+            ApplyDefineSymbols(symbols, "[GGemCoSettingsEditor] Define Symbols 설정 완료");
         }
-        
+
         private void SyncDefineSymbolUseInGameTime(bool enable)
         {
-#if UNITY_6000_0_OR_NEWER
-            string symbols = PlayerSettings.GetScriptingDefineSymbols(NamedBuildTarget.Standalone);
-#else
-            string symbols = PlayerSettings.GetScriptingDefineSymbolsForGroup(BuildTargetGroup.Standalone);
-#endif
+            List<string> symbols = GetCurrentDefineSymbols();
+
             if (enable)
             {
-                if (!symbols.Contains(ConfigDefine.DefineSymbolUseInGameTime))
-                {
-                    symbols += $";{ConfigDefine.DefineSymbolUseInGameTime}";
-                }
+                AddSymbol(symbols, ConfigDefine.DefineSymbolUseInGameTime);
             }
             else
             {
-                if (symbols.Contains(ConfigDefine.DefineSymbolUseInGameTime))
-                {
-                    symbols = symbols.Replace(ConfigDefine.DefineSymbolUseInGameTime, "").Replace(";;", ";").Trim(';');
-                }
+                RemoveSymbol(symbols, ConfigDefine.DefineSymbolUseInGameTime);
             }
-            
+
+            ApplyDefineSymbols(symbols, "Scripting Define Symbols updated");
+        }
+
+        private static List<string> GetCurrentDefineSymbols()
+        {
 #if UNITY_6000_0_OR_NEWER
-            PlayerSettings.SetScriptingDefineSymbols(NamedBuildTarget.Standalone, symbols);
+            string symbols = PlayerSettings.GetScriptingDefineSymbols(GetActiveNamedBuildTarget());
 #else
-            PlayerSettings.SetScriptingDefineSymbolsForGroup(BuildTargetGroup.Standalone, symbols);
+            string symbols = PlayerSettings.GetScriptingDefineSymbolsForGroup(GetActiveBuildTargetGroup());
 #endif
-            Debug.Log($"Scripting Define Symbols updated: {symbols}");
+            return SplitDefineSymbols(symbols);
+        }
+
+        private static void ApplyDefineSymbols(List<string> symbols, string logPrefix)
+        {
+            string symbolText = string.Join(";", symbols);
+
+#if UNITY_6000_0_OR_NEWER
+            NamedBuildTarget buildTarget = GetActiveNamedBuildTarget();
+            PlayerSettings.SetScriptingDefineSymbols(buildTarget, symbolText);
+            Debug.Log($"{logPrefix} ({buildTarget.TargetName}): {symbolText}");
+#else
+            BuildTargetGroup buildTargetGroup = GetActiveBuildTargetGroup();
+            PlayerSettings.SetScriptingDefineSymbolsForGroup(buildTargetGroup, symbolText);
+            Debug.Log($"{logPrefix} ({buildTargetGroup}): {symbolText}");
+#endif
+        }
+
+        private static List<string> SplitDefineSymbols(string symbols)
+        {
+            return symbols.Split(';')
+                .Select(s => s.Trim())
+                .Where(s => !string.IsNullOrEmpty(s))
+                .Distinct()
+                .ToList();
+        }
+
+        private static void AddSymbol(List<string> symbols, string symbol)
+        {
+            if (string.IsNullOrWhiteSpace(symbol))
+            {
+                return;
+            }
+
+            if (!symbols.Contains(symbol))
+            {
+                symbols.Add(symbol);
+            }
+        }
+
+        private static void RemoveSymbol(List<string> symbols, string symbol)
+        {
+            if (string.IsNullOrWhiteSpace(symbol))
+            {
+                return;
+            }
+
+            symbols.RemoveAll(s => s == symbol);
+        }
+
+#if UNITY_6000_0_OR_NEWER
+        private static NamedBuildTarget GetActiveNamedBuildTarget()
+        {
+            BuildTargetGroup group = GetActiveBuildTargetGroup();
+            return NamedBuildTarget.FromBuildTargetGroup(group);
+        }
+#endif
+
+        private static BuildTargetGroup GetActiveBuildTargetGroup()
+        {
+            BuildTarget activeBuildTarget = EditorUserBuildSettings.activeBuildTarget;
+            BuildTargetGroup buildTargetGroup = BuildPipeline.GetBuildTargetGroup(activeBuildTarget);
+
+            if (buildTargetGroup == BuildTargetGroup.Unknown)
+            {
+                return BuildTargetGroup.Standalone;
+            }
+
+            return buildTargetGroup;
         }
     }
 }
