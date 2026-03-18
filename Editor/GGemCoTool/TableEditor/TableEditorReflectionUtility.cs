@@ -84,7 +84,7 @@ namespace GGemCo2DCoreEditor
 
             if (row is IUidName uidName)
             {
-                if (!string.IsNullOrWhiteSpace(uidName.Name))
+                if (!string.IsNullOrWhiteSpace(uidName.Name) && uidName.Uid.ToString() != uidName.Name)
                     return $"{uidName.Uid} - {uidName.Name}";
 
                 return uidName.Uid.ToString();

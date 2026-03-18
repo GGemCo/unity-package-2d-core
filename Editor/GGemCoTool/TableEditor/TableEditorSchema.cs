@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
@@ -18,6 +18,12 @@ namespace GGemCo2DCoreEditor
 
         public bool IsUidColumn => string.Equals(HeaderName, "Uid", StringComparison.OrdinalIgnoreCase);
         public bool IsReferenceCandidate => !IsUidColumn && ReferenceTable != null && ValueType == typeof(int);
+        public bool IsMultiReferenceCandidate => !IsUidColumn
+            && ReferenceTable != null
+            && ValueType != null
+            && ValueType.IsArray
+            && ValueType.GetElementType() == typeof(int);
+        public bool HasReferenceCandidate => IsReferenceCandidate || IsMultiReferenceCandidate;
     }
 
     public sealed class TableEditorTableDefinition

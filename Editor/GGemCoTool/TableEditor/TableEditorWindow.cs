@@ -1,4 +1,4 @@
-using UnityEditor;
+﻿using UnityEditor;
 using System;
 using System.Collections.Generic;
 using System.Globalization;
@@ -685,11 +685,36 @@ namespace GGemCo2DCoreEditor
         private static string BuildGridCellText(TableEditorColumnDefinition column, string raw)
         {
             raw ??= string.Empty;
-            if (column != null && column.IsReferenceCandidate && int.TryParse(raw, out int uid) && uid > 0)
+            if (column != null)
             {
-                TableEditorReferenceItem item = TableEditorReferenceCache.FindItem(column.ReferenceTable, uid);
-                if (item != null)
-                    return $"{uid} ({item.DisplayName})";
+                if (column.IsReferenceCandidate && int.TryParse(raw, out int uid) && uid > 0)
+                {
+                    TableEditorReferenceItem item = TableEditorReferenceCache.FindItem(column.ReferenceTable, uid);
+                    if (item != null)
+                        return $"{uid} ({item.DisplayName})";
+                }
+                else if (column.IsMultiReferenceCandidate && !string.IsNullOrWhiteSpace(raw))
+                {
+                    string[] tokens = raw.Split(',');
+                    List<string> labels = new List<string>(tokens.Length);
+                    for (int i = 0; i < tokens.Length; i++)
+                    {
+                        string token = tokens[i]?.Trim();
+                        if (string.IsNullOrWhiteSpace(token))
+                            continue;
+
+                        if (int.TryParse(token, out int referenceUid) && referenceUid > 0)
+                        {
+                            TableEditorReferenceItem item = TableEditorReferenceCache.FindItem(column.ReferenceTable, referenceUid);
+                            labels.Add(item != null
+                                ? $"{referenceUid} ({item.DisplayName})"
+                                : referenceUid.ToString());
+                        }
+                    }
+
+                    if (labels.Count > 0)
+                        raw = string.Join(", ", labels);
+                }
             }
 
             if (raw.Length > 48)

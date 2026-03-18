@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Globalization;
 
@@ -102,22 +102,52 @@ namespace GGemCo2DCoreEditor
         {
             foreach (KeyValuePair<string, string> pair in row.Values)
             {
-                if (!columnMap.TryGetValue(pair.Key, out TableEditorColumnDefinition column) || !column.IsReferenceCandidate)
+                if (!columnMap.TryGetValue(pair.Key, out TableEditorColumnDefinition column) || !column.HasReferenceCandidate)
                     continue;
 
-                if (!int.TryParse(pair.Value, NumberStyles.Integer, CultureInfo.InvariantCulture, out int uid) || uid <= 0)
-                    continue;
-
-                if (!TableEditorReferenceCache.Contains(column.ReferenceTable, uid))
+                if (column.IsReferenceCandidate)
                 {
-                    messages.Add(new TableEditorValidationMessage
-                    {
-                        Severity = TableEditorValidationSeverity.Warning,
-                        Message = $"참조 없음: {pair.Key} -> {column.ReferenceTable.TableKey}:{uid}",
-                        RowStableId = row.StableId,
-                    });
+                    if (!int.TryParse(pair.Value, NumberStyles.Integer, CultureInfo.InvariantCulture, out int uid) || uid <= 0)
+                        continue;
+
+                    AddReferenceWarningIfMissing(row, messages, column, pair.Key, uid);
+                    continue;
+                }
+
+                if (!column.IsMultiReferenceCandidate || string.IsNullOrWhiteSpace(pair.Value))
+                    continue;
+
+                string[] tokens = pair.Value.Split(',');
+                for (int i = 0; i < tokens.Length; i++)
+                {
+                    string token = tokens[i]?.Trim();
+                    if (string.IsNullOrWhiteSpace(token))
+                        continue;
+
+                    if (!int.TryParse(token, NumberStyles.Integer, CultureInfo.InvariantCulture, out int uid) || uid <= 0)
+                        continue;
+
+                    AddReferenceWarningIfMissing(row, messages, column, pair.Key, uid);
                 }
             }
+        }
+
+        private static void AddReferenceWarningIfMissing(
+            TableEditorDocumentRow row,
+            List<TableEditorValidationMessage> messages,
+            TableEditorColumnDefinition column,
+            string headerName,
+            int uid)
+        {
+            if (TableEditorReferenceCache.Contains(column.ReferenceTable, uid))
+                return;
+
+            messages.Add(new TableEditorValidationMessage
+            {
+                Severity = TableEditorValidationSeverity.Warning,
+                Message = $"참조 없음: {headerName} -> {column.ReferenceTable.TableKey}:{uid}",
+                RowStableId = row.StableId,
+            });
         }
     }
 }

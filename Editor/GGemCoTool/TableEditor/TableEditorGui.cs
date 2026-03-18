@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Globalization;
 using UnityEditor;
@@ -172,6 +172,9 @@ namespace GGemCo2DCoreEditor
 
             if (column.IsReferenceCandidate)
                 return CreateReferenceField(owner, currentDefinition, column, row, rawValue, onValueChanged, onJumpToReference);
+
+            if (column.IsMultiReferenceCandidate)
+                return CreateMultiReferenceField(owner, currentDefinition, column, row, rawValue, onValueChanged, onJumpToReference);
 
             if (type == typeof(string) || type.IsArray)
             {
@@ -365,6 +368,203 @@ namespace GGemCo2DCoreEditor
             return root;
         }
 
+        private static VisualElement CreateMultiReferenceField(
+            EditorWindow owner,
+            TableEditorTableDefinition currentDefinition,
+            TableEditorColumnDefinition column,
+            TableEditorDocumentRow row,
+            string rawValue,
+            Action<string, string> onValueChanged,
+            Action<TableEditorTableDefinition, int> onJumpToReference)
+        {
+            VisualElement root = new VisualElement { style = { flexDirection = FlexDirection.Column } };
+            TableEditorTableDefinition referenceTable = column.ReferenceTable;
+
+            List<int> selectedUids = ParseIntList(rawValue);
+            IReadOnlyList<TableEditorReferenceItem> items = TableEditorReferenceCache.GetItems(referenceTable);
+            List<SearchableDropdownUtility.Option<TableEditorReferenceItem>> options = new List<SearchableDropdownUtility.Option<TableEditorReferenceItem>>(items.Count);
+            for (int i = 0; i < items.Count; i++)
+            {
+                TableEditorReferenceItem item = items[i];
+                options.Add(new SearchableDropdownUtility.Option<TableEditorReferenceItem>(item.Uid.ToString(CultureInfo.InvariantCulture), item.DisplayName, item));
+            }
+
+            VisualElement listRoot = new VisualElement
+            {
+                style =
+                {
+                    flexDirection = FlexDirection.Column,
+                    marginBottom = 4f,
+                }
+            };
+            root.Add(listRoot);
+
+            void Commit()
+            {
+                onValueChanged?.Invoke(column.HeaderName, string.Join(",", selectedUids));
+            }
+
+            void Refresh()
+            {
+                listRoot.Clear();
+
+                if (selectedUids.Count == 0)
+                {
+                    listRoot.Add(new HelpBox($"{referenceTable?.TableKey ?? "Reference"} 항목이 없습니다.", HelpBoxMessageType.Info));
+                    return;
+                }
+
+                for (int index = 0; index < selectedUids.Count; index++)
+                {
+                    int capturedIndex = index;
+                    int currentUid = selectedUids[capturedIndex];
+
+                    VisualElement itemRoot = new VisualElement
+                    {
+                        style =
+                        {
+                            flexDirection = FlexDirection.Column,
+                            marginBottom = 4f,
+                            paddingLeft = 4f,
+                            paddingRight = 4f,
+                            paddingTop = 4f,
+                            paddingBottom = 4f,
+                            borderBottomWidth = 1f,
+                            borderTopWidth = 1f,
+                            borderLeftWidth = 1f,
+                            borderRightWidth = 1f,
+                            borderBottomColor = new Color(0.23f, 0.23f, 0.23f),
+                            borderTopColor = new Color(0.23f, 0.23f, 0.23f),
+                            borderLeftColor = new Color(0.23f, 0.23f, 0.23f),
+                            borderRightColor = new Color(0.23f, 0.23f, 0.23f),
+                        }
+                    };
+
+                    IntegerField uidField = new IntegerField($"Element {capturedIndex + 1}")
+                    {
+                        value = currentUid,
+                    };
+                    itemRoot.Add(uidField);
+
+                    VisualElement buttonRow = new VisualElement
+                    {
+                        style =
+                        {
+                            flexDirection = FlexDirection.Row,
+                            alignItems = Align.Center,
+                            marginTop = 4f,
+                        }
+                    };
+
+                    Button pickerButton = new Button
+                    {
+                        style = { flexGrow = 1f, marginRight = 4f },
+                    };
+                    buttonRow.Add(pickerButton);
+
+                    Button openButton = new Button(() =>
+                    {
+                        int uid = selectedUids.Count > capturedIndex ? selectedUids[capturedIndex] : 0;
+                        if (uid > 0)
+                            onJumpToReference?.Invoke(referenceTable, uid);
+                    })
+                    {
+                        text = "Open",
+                        style = { width = 60f, marginRight = 4f }
+                    };
+                    buttonRow.Add(openButton);
+
+                    Button removeButton = new Button(() =>
+                    {
+                        if (capturedIndex < 0 || capturedIndex >= selectedUids.Count)
+                            return;
+
+                        selectedUids.RemoveAt(capturedIndex);
+                        Commit();
+                        Refresh();
+                    })
+                    {
+                        text = "Remove",
+                        style = { width = 80f }
+                    };
+                    buttonRow.Add(removeButton);
+                    itemRoot.Add(buttonRow);
+
+                    void RefreshItemUi(int uid)
+                    {
+                        openButton.SetEnabled(referenceTable != null && uid > 0);
+                        TableEditorReferenceItem currentItem = TableEditorReferenceCache.FindItem(referenceTable, uid);
+                        pickerButton.text = currentItem != null
+                            ? $"{uid}  |  {currentItem.DisplayName}"
+                            : $"Select {referenceTable?.TableKey ?? "Reference"}";
+                    }
+
+                    uidField.RegisterValueChangedCallback(evt =>
+                    {
+                        if (capturedIndex < 0 || capturedIndex >= selectedUids.Count)
+                            return;
+
+                        selectedUids[capturedIndex] = evt.newValue;
+                        Commit();
+                        RefreshItemUi(evt.newValue);
+                    });
+
+                    if (options.Count > 0 && owner != null)
+                    {
+                        SearchableDropdownUtility.BindUiToolkitButton(
+                            owner,
+                            pickerButton,
+                            options,
+                            () =>
+                            {
+                                int latestUid = selectedUids.Count > capturedIndex ? selectedUids[capturedIndex] : 0;
+                                for (int optionIndex = 0; optionIndex < items.Count; optionIndex++)
+                                {
+                                    if (items[optionIndex].Uid == latestUid)
+                                        return optionIndex;
+                                }
+
+                                return -1;
+                            },
+                            (selectedOptionIndex, option) =>
+                            {
+                                if (capturedIndex < 0 || capturedIndex >= selectedUids.Count)
+                                    return;
+
+                                selectedUids[capturedIndex] = option.Data.Uid;
+                                uidField.SetValueWithoutNotify(option.Data.Uid);
+                                Commit();
+                                RefreshItemUi(option.Data.Uid);
+                            });
+                    }
+                    else
+                    {
+                        pickerButton.SetEnabled(false);
+                    }
+
+                    RefreshItemUi(currentUid);
+                    listRoot.Add(itemRoot);
+                }
+            }
+
+            Button addButton = new Button(() =>
+            {
+                selectedUids.Add(0);
+                Commit();
+                Refresh();
+            })
+            {
+                text = $"Add {referenceTable?.DisplayName ?? referenceTable?.TableKey ?? "Reference"}"
+            };
+            root.Add(addButton);
+
+            if (referenceTable == null)
+                root.Add(new HelpBox("참조 테이블을 찾지 못했습니다.", HelpBoxMessageType.Warning));
+
+            Refresh();
+            return root;
+        }
+
         private static object GetDefaultValue(Type type)
         {
             if (type == null)
@@ -376,6 +576,22 @@ namespace GGemCo2DCoreEditor
         private static int ParseInt(string raw)
         {
             return int.TryParse(raw, NumberStyles.Integer, CultureInfo.InvariantCulture, out int value) ? value : 0;
+        }
+
+        private static List<int> ParseIntList(string raw)
+        {
+            List<int> values = new List<int>();
+            if (string.IsNullOrWhiteSpace(raw))
+                return values;
+
+            string[] tokens = raw.Split(',');
+            for (int i = 0; i < tokens.Length; i++)
+            {
+                if (int.TryParse(tokens[i]?.Trim(), NumberStyles.Integer, CultureInfo.InvariantCulture, out int value))
+                    values.Add(value);
+            }
+
+            return values;
         }
     }
 }
