@@ -14,7 +14,7 @@ namespace GGemCo2DCore
         public int Uid { get; set; }
         public string Name { get; set; }
 
-        public int UseGroupUid;
+        public int ItemUseUid;
         public int Order;
         public ItemUseActionType ActionType;
 
@@ -45,7 +45,7 @@ namespace GGemCo2DCore
         protected override StruckTableItemUseAction BuildRow(Dictionary<string, string> d)
         {
             int uid = MathHelper.ParseInt(d.GetValueOrDefault("Uid"));
-            int useGroupUid = MathHelper.ParseInt(d.GetValueOrDefault("UseGroupUid"));
+            int itemUseUid = MathHelper.ParseInt(d.GetValueOrDefault("ItemUseUid"));
             int order = MathHelper.ParseInt(d.GetValueOrDefault("Order"));
             var type = EnumHelper.ConvertEnum<ItemUseActionType>(d.GetValueOrDefault("ActionType"));
 
@@ -59,7 +59,7 @@ namespace GGemCo2DCore
             {
                 Uid = uid,
                 Name = name,
-                UseGroupUid = useGroupUid,
+                ItemUseUid = itemUseUid,
                 Order = order,
                 ActionType = type,
                 ParamIntA = MathHelper.ParseInt(d.GetValueOrDefault("ParamIntA")),
@@ -74,11 +74,11 @@ namespace GGemCo2DCore
         protected override void OnLoadedData(StruckTableItemUseAction row)
         {
             base.OnLoadedData(row);
-            if (row == null || row.UseGroupUid <= 0) return;
-            if (!_byUseGroupUid.TryGetValue(row.UseGroupUid, out var list))
+            if (row == null || row.ItemUseUid <= 0) return;
+            if (!_byUseGroupUid.TryGetValue(row.ItemUseUid, out var list))
             {
                 list = new List<StruckTableItemUseAction>();
-                _byUseGroupUid[row.UseGroupUid] = list;
+                _byUseGroupUid[row.ItemUseUid] = list;
             }
             list.Add(row);
         }
