@@ -12,9 +12,7 @@
         "Unity.Localization.Editor",
         "Unity.Localization",
         "Unity.2D.Sprite.Editor",
-        "GGemCoScripts",
-        "GGemCo2DSkill",
-        "GGemCo2DAffect"
+        "GGemCoScripts"
     ],
     "includePlatforms": [
         "Editor"

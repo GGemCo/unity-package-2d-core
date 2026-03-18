@@ -11,6 +11,8 @@ namespace GGemCo2DCoreEditor
 {
     public sealed class TableEditorWindow : EditorWindow
     {
+        private const string Title = "데이터 테이블 에디터";
+        
         private IReadOnlyList<TableEditorTableDefinition> _tables;
         private TableEditorTableDefinition _selectedTable;
         private TableEditorDocument _document;
@@ -41,6 +43,7 @@ namespace GGemCo2DCoreEditor
 
         private TableEditorUndoController _undoController;
 
+        [MenuItem(ConfigEditor.NameToolTableEditor, false, (int)ConfigEditor.ToolOrdering.TableEditor)]
         public static void OpenWindow()
         {
             TableEditorWindow window = GetWindow<TableEditorWindow>();

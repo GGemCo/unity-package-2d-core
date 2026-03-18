@@ -4,14 +4,14 @@ using GGemCo2DCore;
 
 namespace GGemCo2DCoreEditor
 {
-    internal interface ITableEditorModule
+    public interface ITableEditorModule
     {
         string ModuleName { get; }
         string PackageName { get; }
         IEnumerable<TableEditorTableDefinition> BuildDefinitions();
     }
 
-    internal static class TableEditorDefinitionFactory
+    public static class TableEditorDefinitionFactory
     {
         public static TableEditorTableDefinition Create(
             string moduleName,

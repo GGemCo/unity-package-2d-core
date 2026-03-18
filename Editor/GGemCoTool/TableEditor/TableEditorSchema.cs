@@ -3,10 +3,11 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using GGemCo2DCore;
+using UnityEditor;
 
 namespace GGemCo2DCoreEditor
 {
-    internal sealed class TableEditorColumnDefinition
+    public sealed class TableEditorColumnDefinition
     {
         public string HeaderName;
         public Type ValueType;
@@ -19,7 +20,7 @@ namespace GGemCo2DCoreEditor
         public bool IsReferenceCandidate => !IsUidColumn && ReferenceTable != null && ValueType == typeof(int);
     }
 
-    internal sealed class TableEditorTableDefinition
+    public sealed class TableEditorTableDefinition
     {
         public string ModuleName;
         public string PackageName;
@@ -99,7 +100,7 @@ namespace GGemCo2DCoreEditor
         }
     }
 
-    internal static class TableEditorRegistry
+    public static class TableEditorRegistry
     {
         private static readonly Dictionary<string, string> ReferenceAliasByHeader = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
         {
@@ -134,10 +135,18 @@ namespace GGemCo2DCoreEditor
 
             _tables = _tables
                 .Where(static t => t != null && !string.IsNullOrWhiteSpace(t.TableKey) && !string.IsNullOrWhiteSpace(t.AssetPath))
+                .GroupBy(static t => t.TableKey, StringComparer.OrdinalIgnoreCase)
+                .Select(static g => g.First())
                 .OrderBy(static t => t.PackageName, StringComparer.OrdinalIgnoreCase)
                 .ThenBy(static t => t.DisplayName, StringComparer.OrdinalIgnoreCase)
                 .ToList();
             return _tables;
+        }
+
+        public static void Invalidate()
+        {
+            _tables = null;
+            _modules = null;
         }
 
         public static IReadOnlyList<string> GetPackages()
@@ -179,39 +188,20 @@ namespace GGemCo2DCoreEditor
                 return;
 
             _modules = new List<ITableEditorModule>();
-            Assembly[] assemblies = AppDomain.CurrentDomain.GetAssemblies();
-            for (int i = 0; i < assemblies.Length; i++)
-            {
-                Type[] types;
-                try
-                {
-                    types = assemblies[i].GetTypes();
-                }
-                catch (ReflectionTypeLoadException ex)
-                {
-                    types = ex.Types;
-                }
 
-                if (types == null)
+            foreach (Type type in TypeCache.GetTypesDerivedFrom<ITableEditorModule>())
+            {
+                if (type == null || type.IsAbstract || type.IsInterface)
                     continue;
 
-                for (int t = 0; t < types.Length; t++)
+                try
                 {
-                    Type type = types[t];
-                    if (type == null || type.IsAbstract || type.IsInterface)
-                        continue;
-                    if (!typeof(ITableEditorModule).IsAssignableFrom(type))
-                        continue;
-
-                    try
-                    {
-                        if (Activator.CreateInstance(type) is ITableEditorModule module)
-                            _modules.Add(module);
-                    }
-                    catch
-                    {
-                        // ignore invalid module instantiation
-                    }
+                    if (Activator.CreateInstance(type) is ITableEditorModule module)
+                        _modules.Add(module);
+                }
+                catch
+                {
+                    // ignore invalid module instantiation
                 }
             }
 
@@ -219,6 +209,7 @@ namespace GGemCo2DCoreEditor
                 .GroupBy(static m => m.GetType().FullName, StringComparer.Ordinal)
                 .Select(static g => g.First())
                 .OrderBy(static m => m.PackageName, StringComparer.OrdinalIgnoreCase)
+                .ThenBy(static m => m.ModuleName, StringComparer.OrdinalIgnoreCase)
                 .ToList();
         }
 
