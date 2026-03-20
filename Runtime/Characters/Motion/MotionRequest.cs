@@ -99,6 +99,20 @@ namespace GGemCo2DCore
         /// </summary>
         public float ArcApexHoldNormalized { get; }
 
+        /// <summary>
+        /// Arc 상승 구간 비율입니다.
+        /// <see cref="MotionArcMode.DistancePhased"/> 에서만 사용되며,
+        /// Rise/ApexHold/Fall 비율 합은 런타임에서 자동 정규화됩니다.
+        /// </summary>
+        public float ArcRiseRatioNormalized { get; }
+
+        /// <summary>
+        /// Arc 하강 구간 비율입니다.
+        /// <see cref="MotionArcMode.DistancePhased"/> 에서만 사용되며,
+        /// Rise/ApexHold/Fall 비율 합은 런타임에서 자동 정규화됩니다.
+        /// </summary>
+        public float ArcFallRatioNormalized { get; }
+
         public MotionRequest(
             MotionChannel channel,
             MotionKind kind,
@@ -114,7 +128,9 @@ namespace GGemCo2DCore
             MotionArcMode arcMode = MotionArcMode.LegacyTimeSine,
             Easing.EaseType arcRiseEaseType = Easing.EaseType.Linear,
             Easing.EaseType arcFallEaseType = Easing.EaseType.Linear,
-            float arcApexHoldNormalized = 0f)
+            float arcApexHoldNormalized = 0f,
+            float arcRiseRatioNormalized = 0.5f,
+            float arcFallRatioNormalized = 0.5f)
         {
             Channel = channel;
             Kind = kind;
@@ -132,6 +148,8 @@ namespace GGemCo2DCore
             ArcRiseEaseType = arcRiseEaseType;
             ArcFallEaseType = arcFallEaseType;
             ArcApexHoldNormalized = Mathf.Clamp01(arcApexHoldNormalized);
+            ArcRiseRatioNormalized = Mathf.Max(0f, arcRiseRatioNormalized);
+            ArcFallRatioNormalized = Mathf.Max(0f, arcFallRatioNormalized);
         }
     }
 }

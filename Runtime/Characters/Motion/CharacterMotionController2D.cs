@@ -184,6 +184,12 @@ namespace GGemCo2DCore
             /// <summary>Apex 유지 구간 폭(정규화 0..1). 0이면 ApexHold 없이 Rise->Fall로 전환됩니다.</summary>
             public float ArcApexHoldNormalized;
 
+            /// <summary>Arc 상승 구간 비율(정규화 전 원본 값).</summary>
+            public float ArcRiseRatioNormalized;
+
+            /// <summary>Arc 하강 구간 비율(정규화 전 원본 값).</summary>
+            public float ArcFallRatioNormalized;
+
             public float HoldSecondsAfter;
             public float HoldRemaining;
 
@@ -209,6 +215,8 @@ namespace GGemCo2DCore
                 ArcRiseEaseType = req.ArcRiseEaseType;
                 ArcFallEaseType = req.ArcFallEaseType;
                 ArcApexHoldNormalized = req.ArcApexHoldNormalized;
+                ArcRiseRatioNormalized = req.ArcRiseRatioNormalized;
+                ArcFallRatioNormalized = req.ArcFallRatioNormalized;
 
                 HoldSecondsAfter = req.HoldSecondsAfter;
                 HoldRemaining = req.HoldSecondsAfter;

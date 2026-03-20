@@ -45,15 +45,25 @@ namespace GGemCo2DCore
             float height = state.ArcHeight;
             if (height > 0f)
             {
-                float apexHoldWidth = Mathf.Clamp01(state.ArcApexHoldNormalized);
-                float half = apexHoldWidth * 0.5f;
-                float apexStart = Mathf.Clamp01(0.5f - half);
-                float apexEnd = Mathf.Clamp01(0.5f + half);
+                float riseRatio = Mathf.Max(0f, state.ArcRiseRatioNormalized);
+                float holdRatio = Mathf.Max(0f, state.ArcApexHoldNormalized);
+                float fallRatio = Mathf.Max(0f, state.ArcFallRatioNormalized);
 
-                // 극단값 방지(구간 길이 0 방지)
-                const float minGap = 0.02f;
-                apexStart = Mathf.Clamp(apexStart, 0f + minGap, 1f - minGap);
-                apexEnd = Mathf.Clamp(apexEnd, apexStart + minGap, 1f);
+                float totalRatio = riseRatio + holdRatio + fallRatio;
+                if (totalRatio <= 1e-6f)
+                {
+                    riseRatio = 0.5f;
+                    holdRatio = 0f;
+                    fallRatio = 0.5f;
+                    totalRatio = 1f;
+                }
+
+                riseRatio /= totalRatio;
+                holdRatio /= totalRatio;
+                fallRatio /= totalRatio;
+
+                float apexStart = Mathf.Clamp01(riseRatio);
+                float apexEnd = Mathf.Clamp01(riseRatio + holdRatio);
 
                 float y;
                 if (u < apexStart)
