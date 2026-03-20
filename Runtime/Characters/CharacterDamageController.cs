@@ -124,7 +124,6 @@ namespace GGemCo2DCore
             }
 
             long damage = metadataDamage.damage;
-            if (damage <= 0) return;
             ConfigCommon.DamageType damageType = metadataDamage.damageType;
             GameObject attacker = metadataDamage.attacker;
             int affectUid = metadataDamage.affectUid;
@@ -176,12 +175,22 @@ namespace GGemCo2DCore
                     NotifyIncomingHitCombatFeedback(metadataDamage, MonsterSkillCombatOutcome.Immune);
                 }
             }
-            if (damage <= 0) return;
+
+            var incomingHitActionCanceler = _characterBase.GetComponent<IIncomingHitActionCanceler>();
+            if (damage <= 0)
+            {
+                if (crowdControlUid > 0)
+                {
+                    incomingHitActionCanceler?.CancelActionsOnIncomingHit(IncomingHitCancelReason.Damage);
+                    _characterBase.ApplyCrowdControl(crowdControlUid, attacker);
+                }
+                return;
+            }
 
             bool suppressHitReactionByGuard = false;
             bool hasGuardFeedbackText = false;
             var guardResolver = _characterBase.GetComponent<IIncomingHitGuardResolver>();
-            var incomingHitActionCanceler = _characterBase.GetComponent<IIncomingHitActionCanceler>();
+
             if (guardResolver != null)
             {
                 metadataDamage.damage = damage;
