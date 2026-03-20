@@ -235,8 +235,9 @@ namespace GGemCo2DCore
         /// </summary>
         /// <param name="animationName">길이를 조회할 애니메이션 이름입니다.</param>
         /// <param name="isMilliseconds">true면 밀리초(ms), false면 초(s) 단위로 반환합니다.</param>
+        /// <param name="showDebug">애니메이션 클립이 없을 때, 디버그 로그를 출력할 것인지</param>
         /// <returns>클립 길이(단위는 <paramref name="isMilliseconds"/>에 따름). 찾지 못하면 0을 반환합니다.</returns>
-        protected float GetAnimationDuration(string animationName, bool isMilliseconds = true)
+        protected float GetAnimationDuration(string animationName, bool isMilliseconds = true, bool showDebug = true)
         {
             // Animator에서 직접 길이를 구하는 방법은 제한적이므로 AnimationClip 참조를 사용합니다.
             foreach (var clip in _animationClips)
@@ -246,8 +247,9 @@ namespace GGemCo2DCore
                     return isMilliseconds ? clip.length * 1000f : clip.length;
                 }
             }
-
-            Debug.LogWarning($"애니메이션 클립을 찾을 수 없습니다. AnimationName: {animationName}");
+            
+            if (showDebug)
+                GcLogger.LogWarning($"애니메이션 클립을 찾을 수 없습니다. AnimationName: {animationName}");
             return 0f;
         }
 

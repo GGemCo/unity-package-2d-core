@@ -21,9 +21,10 @@ namespace GGemCo2DCore
             if (_effectRenderer)
                 _effectRenderer.sortingLayerName = ConfigSortingLayer.GetValue(ConfigSortingLayer.Keys.CharacterTop);
             
-            durationStart = GetAnimationDuration(IEffectAnimationController.KeyClipNameStart, false);
-            durationPlay = GetAnimationDuration(IEffectAnimationController.KeyClipNamePlay, false);
-            durationEnd = GetAnimationDuration(IEffectAnimationController.KeyClipNameEnd, false);
+            // 이펙트는 상황에 따라 클립이 없는 경우가 있다.
+            durationStart = GetAnimationDuration(IEffectAnimationController.KeyClipNameStart, false, false);
+            durationPlay = GetAnimationDuration(IEffectAnimationController.KeyClipNamePlay, false, false);
+            durationEnd = GetAnimationDuration(IEffectAnimationController.KeyClipNameEnd, false, false);
             durationTotal = durationStart + durationPlay + durationEnd; 
         }
 
