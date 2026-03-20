@@ -1,4 +1,4 @@
-
+﻿
 namespace GGemCo2DCore
 {
     public static class CrowdControlConstants
@@ -35,6 +35,39 @@ namespace GGemCo2DCore
             /// 테이블에 정의된 고정 방향(FixedDirectionX/Y)을 사용합니다.
             /// </summary>
             Fixed = 3,
+        }
+
+
+
+        /// <summary>
+        /// CrowdControl 종료 시 최종 Y 위치를 어떻게 결정할지 정의합니다.
+        /// </summary>
+        public enum EndYMode
+        {
+            /// <summary>
+            /// 기존 동작 유지. 계산된 이동 벡터의 Y를 그대로 사용합니다.
+            /// </summary>
+            None = 0,
+
+            /// <summary>
+            /// CC 시작 시점의 Y를 유지합니다.
+            /// </summary>
+            KeepStartY = 1,
+
+            /// <summary>
+            /// CC 시작 시점의 Y에 <c>EndYOffset</c>를 더한 값을 사용합니다.
+            /// </summary>
+            AddOffsetFromStart = 2,
+
+            /// <summary>
+            /// 월드 절대 Y 값(<c>EndYAbsolute</c>)을 사용합니다.
+            /// </summary>
+            Absolute = 3,
+
+            /// <summary>
+            /// 종료 X 위치에서 바닥을 다시 탐색한 뒤, 탐지된 지면 Y에 <c>EndYOffset</c>를 더해 사용합니다.
+            /// </summary>
+            GroundAtEndX = 4,
         }
 
         /// <summary>

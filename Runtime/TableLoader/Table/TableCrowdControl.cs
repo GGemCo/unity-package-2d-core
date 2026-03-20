@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 
 namespace GGemCo2DCore
 {
@@ -34,6 +34,23 @@ namespace GGemCo2DCore
         /// - 0이면 수직 이동 없이 수평 이동만 처리됩니다.
         /// </summary>
         public float Height;
+
+        /// <summary>
+        /// CrowdControl 종료 시 최종 Y 위치를 어떻게 결정할지 정의합니다.
+        /// </summary>
+        public CrowdControlConstants.EndYMode EndYMode;
+
+        /// <summary>
+        /// 종료 Y 보정값입니다.
+        /// - <see cref="CrowdControlConstants.EndYMode.AddOffsetFromStart"/>에서는 시작 Y 기준 오프셋으로 사용합니다.
+        /// - <see cref="CrowdControlConstants.EndYMode.GroundAtEndX"/>에서는 탐지된 지면 Y에 더할 추가 오프셋으로 사용합니다.
+        /// </summary>
+        public float EndYOffset;
+
+        /// <summary>
+        /// 종료 Y 절대값입니다. <see cref="CrowdControlConstants.EndYMode.Absolute"/>에서 사용합니다.
+        /// </summary>
+        public float EndYAbsolute;
 
         /// <summary>
         /// KnockBack, Knockdown 전용: 밀려나기/넘어짐/눕기 상태로 유지할 시간(초)입니다.
@@ -93,6 +110,9 @@ namespace GGemCo2DCore
                 Duration = MathHelper.ParseFloat(data.GetValueOrDefault("Duration")),
 
                 Height = MathHelper.ParseFloat(data.GetValueOrDefault("Height")),
+                EndYMode = EnumHelper.ConvertEnum<CrowdControlConstants.EndYMode>(data.GetValueOrDefault("EndYMode")),
+                EndYOffset = MathHelper.ParseFloat(data.GetValueOrDefault("EndYOffset")),
+                EndYAbsolute = MathHelper.ParseFloat(data.GetValueOrDefault("EndYAbsolute")),
                 DownWaitTime = MathHelper.ParseFloat(data.GetValueOrDefault("DownWaitTime")),
                 RecoverTime = MathHelper.ParseFloat(data.GetValueOrDefault("RecoverTime")),
 

@@ -1,4 +1,4 @@
-using System.Collections;
+﻿using System.Collections;
 using UnityEngine;
 
 namespace GGemCo2DCore
@@ -26,6 +26,8 @@ namespace GGemCo2DCore
 
         private Coroutine _stopRoutine;
         private const float Epsilon = 0.0001f;
+        private const float GroundProbeDefaultHeight = 2f;
+        private const float GroundProbeDefaultDistance = 12f;
         
         private void Awake()
         {
@@ -71,17 +73,22 @@ namespace GGemCo2DCore
             // 애니메이션(경직)
             PlayStaggerAnimation(crowdControl);
 
-            // 시작/종료 위치 계산(기본: 수평 이동)
+            // 시작/종료 위치 계산
             var currentPos = _rigidbody2D != null ? _rigidbody2D.position : (Vector2)transform.position;
             var startPos = currentPos;
-            var endPos = currentPos + (direction * crowdControl.Distance);
+            var rawEndPos = currentPos + (direction * crowdControl.Distance);
+            var endPos = ResolveEndPosition(crowdControl, startPos, rawEndPos);
+
+            var travel = endPos - startPos;
+            var travelDistance = travel.magnitude;
+            var travelDirection = travelDistance > Epsilon ? (travel / travelDistance) : direction;
 
             // 이동/대기 여부 판단
             bool hasAnyTime =
                 Mathf.Abs(crowdControl.Duration) > Epsilon ||
                 Mathf.Abs(crowdControl.DownWaitTime) > Epsilon;
 
-            bool hasDistance = Mathf.Abs(crowdControl.Distance) > Epsilon;
+            bool hasDistance = travelDistance > Epsilon;
 
             // 즉시 스냅 + 종료 시퀀스만 원하는 경우
             if (!hasAnyTime)
@@ -131,9 +138,9 @@ namespace GGemCo2DCore
             var req = new MotionRequest(
                 MotionChannel.CrowdControl,
                 kind,
-                direction,
+                travelDirection,
                 duration,
-                Mathf.Max(0f, crowdControl.Distance),
+                Mathf.Max(0f, travelDistance),
                 crowdControl.EaseType,
                 stopAtEnd: true,
                 useMovePosition: true,
@@ -188,6 +195,65 @@ namespace GGemCo2DCore
             {
                 transform.position = position;
             }
+        }
+
+        /// <summary>
+        /// 시작 위치와 원시 종료 위치를 기반으로 최종 종료 위치를 계산합니다.
+        /// </summary>
+        private Vector2 ResolveEndPosition(StruckTableCrowdControl crowdControl, Vector2 startPos, Vector2 rawEndPos)
+        {
+            switch (crowdControl.EndYMode)
+            {
+                case CrowdControlConstants.EndYMode.KeepStartY:
+                    return new Vector2(rawEndPos.x, startPos.y);
+
+                case CrowdControlConstants.EndYMode.AddOffsetFromStart:
+                    return new Vector2(rawEndPos.x, startPos.y + crowdControl.EndYOffset);
+
+                case CrowdControlConstants.EndYMode.Absolute:
+                    return new Vector2(rawEndPos.x, crowdControl.EndYAbsolute);
+
+                case CrowdControlConstants.EndYMode.GroundAtEndX:
+                {
+                    float groundY = ResolveGroundYAtEndX(rawEndPos, startPos.y);
+                    return new Vector2(rawEndPos.x, groundY + crowdControl.EndYOffset);
+                }
+
+                case CrowdControlConstants.EndYMode.None:
+                default:
+                    return rawEndPos;
+            }
+        }
+
+        /// <summary>
+        /// 종료 X 지점에서 아래 방향으로 바닥을 탐색해 Y 값을 반환합니다.
+        /// </summary>
+        private float ResolveGroundYAtEndX(Vector2 rawEndPos, float fallbackY)
+        {
+            int groundMask = GetGroundProbeMask();
+            if (groundMask == 0)
+                return fallbackY;
+
+            float originY = Mathf.Max(rawEndPos.y, fallbackY) + GroundProbeDefaultHeight;
+            Vector2 origin = new Vector2(rawEndPos.x, originY);
+            var hit = Physics2D.Raycast(origin, Vector2.down, GroundProbeDefaultDistance, groundMask);
+            if (hit.collider != null)
+                return hit.point.y;
+
+            return fallbackY;
+        }
+
+        /// <summary>
+        /// CrowdControl 종료 위치용 지면 탐색 마스크를 구성합니다.
+        /// </summary>
+        private static int GetGroundProbeMask()
+        {
+            int mask = 0;
+
+            mask |= LayerMask.GetMask(ConfigLayer.GetValue(ConfigLayer.Keys.TileMapGround));
+            mask |= LayerMask.GetMask(ConfigLayer.GetValue(ConfigLayer.Keys.TileMapOneWayPlatform));
+
+            return mask;
         }
 
         /// <summary>
