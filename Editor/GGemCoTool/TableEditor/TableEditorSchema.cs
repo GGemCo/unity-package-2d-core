@@ -149,6 +149,7 @@ namespace GGemCo2DCoreEditor
             { "MapUid", ConfigAddressableTable.Map },
             { "AnimationUid", ConfigAddressableTable.Animation },
             { "EffectUid", ConfigAddressableTable.Effect },
+            { "HitEffectUid", ConfigAddressableTable.Effect },
             { "ProjectileUid", ConfigAddressableTable.Projectile },
             { "CrowdControlUid", ConfigAddressableTable.CrowdControl },
             { "OpenWindowUid", ConfigAddressableTable.Window },
