@@ -187,17 +187,33 @@ namespace GGemCo2DCore
             var driver = playerGo.GetComponent<ICharacterSkillDriver>();
             if (driver == null) return;
 
-            if (driver.IsSkillBusy) return;
+            if (driver.IsSkillBusy)
+            {
+                GcLogger.Log($"skill is busy. uid: {skillUid}");
+                return;
+            }
 
-            // 4) 최소 타겟 컨텍스트 구성 (현재 Core에는 “플레이어 락온/조준” 시스템이 명확히 없으므로,
-            //    우선은 forward + 자기 위치 기반으로 전달)
-            var forward = ResolveForward2D(playerGo);
-            var request = new SkillDriverRequest(
-                lockedTarget: null,
-                groundPoint: playerGo.transform.position,
-                forward: forward,
-                source: ConfigCommon.SkillTableSource.Player
-            );
+            SkillDriverRequest request;
+            var targetingProvider = playerGo.GetComponent<IPlayerSkillTargetingProvider>();
+            if (targetingProvider != null && targetingProvider.TryBuildSkillRequest(
+                    playerGo,
+                    skillUid,
+                    ConfigCommon.SkillTableSource.Player,
+                    out var resolvedRequest))
+            {
+                request = resolvedRequest;
+            }
+            else
+            {
+                // 타겟팅 제공자가 없거나 현재 스킬에 맞는 타겟을 만들지 못했으면 기존 전방/자기 위치 fallback을 사용합니다.
+                var forward = ResolveForward2D(playerGo);
+                request = new SkillDriverRequest(
+                    lockedTarget: null,
+                    groundPoint: playerGo.transform.position,
+                    forward: forward,
+                    source: ConfigCommon.SkillTableSource.Player
+                );
+            }
 
             driver.TryUseSkill(skillUid, request);
         }
