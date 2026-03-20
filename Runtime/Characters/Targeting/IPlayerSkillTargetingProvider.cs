@@ -18,6 +18,18 @@ namespace GGemCo2DCore
         /// <returns>요청 구성이 성공하면 true, 타겟을 확보하지 못했거나 정의를 해석할 수 없으면 false입니다.</returns>
         bool TryBuildSkillRequest(GameObject caster, int skillUid, ConfigCommon.SkillTableSource source,
             out SkillDriverRequest request);
+
+        /// <summary>
+        /// 지정한 스킬 UID와 캐스터 기준으로 실행 가능한 요청 컨텍스트를 구성하고, 실패 시 원인을 함께 반환합니다.
+        /// </summary>
+        /// <param name="caster">스킬을 사용하는 캐스터입니다.</param>
+        /// <param name="skillUid">사용할 스킬 UID입니다.</param>
+        /// <param name="source">스킬 테이블 소스입니다.</param>
+        /// <param name="request">구성된 드라이버 요청입니다.</param>
+        /// <param name="failReason">요청 구성이 실패한 경우의 원인입니다.</param>
+        /// <returns>요청 구성이 성공하면 true, 실패하면 false입니다.</returns>
+        bool TryBuildSkillRequest(GameObject caster, int skillUid, ConfigCommon.SkillTableSource source,
+            out SkillDriverRequest request, out SkillUseFailReason failReason);
     }
 
     /// <summary>

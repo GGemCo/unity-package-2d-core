@@ -130,10 +130,35 @@ namespace GGemCo2DCore
         bool ConsumeLastSkillCombatReport(int skillUid, out MonsterSkillCombatReport report);
     }
 
-    public enum SkillUseResult
+    public enum SkillUseFailReason
     {
-        Rejected = 0,
-        Started = 1,
+        None = 0,
+        InvalidSource = 1,
+        InvalidInput = 2,
+        Busy = 3,
+        Cooldown = 4,
+        InvalidDefinition = 5,
+        NoTarget = 6,
+        OutOfRange = 7,
+        ExecutionRejected = 8,
+    }
+
+    public readonly struct SkillUseResult
+    {
+        public bool IsStarted { get; }
+        public SkillUseFailReason FailReason { get; }
+
+        public static SkillUseResult Started => new SkillUseResult(true, SkillUseFailReason.None);
+        public static SkillUseResult Rejected => new SkillUseResult(false, SkillUseFailReason.None);
+
+        public SkillUseResult(bool isStarted, SkillUseFailReason failReason)
+        {
+            IsStarted = isStarted;
+            FailReason = isStarted ? SkillUseFailReason.None : failReason;
+        }
+
+        public static SkillUseResult Fail(SkillUseFailReason failReason)
+            => new SkillUseResult(false, failReason);
     }
 
     /// <summary>

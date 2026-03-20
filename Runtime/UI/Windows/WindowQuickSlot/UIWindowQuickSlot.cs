@@ -187,25 +187,26 @@ namespace GGemCo2DCore
             var driver = playerGo.GetComponent<ICharacterSkillDriver>();
             if (driver == null) return;
 
-            if (driver.IsSkillBusy)
-            {
-                GcLogger.Log($"skill is busy. uid: {skillUid}");
-                return;
-            }
-
             SkillDriverRequest request;
             var targetingProvider = playerGo.GetComponent<IPlayerSkillTargetingProvider>();
-            if (targetingProvider != null && targetingProvider.TryBuildSkillRequest(
-                    playerGo,
-                    skillUid,
-                    ConfigCommon.SkillTableSource.Player,
-                    out var resolvedRequest))
+            if (targetingProvider != null)
             {
+                if (!targetingProvider.TryBuildSkillRequest(
+                        playerGo,
+                        skillUid,
+                        ConfigCommon.SkillTableSource.Player,
+                        out var resolvedRequest,
+                        out var targetingFailReason))
+                {
+                    ShowSkillUseFailedMessage(targetingFailReason);
+                    return;
+                }
+
                 request = resolvedRequest;
             }
             else
             {
-                // 타겟팅 제공자가 없거나 현재 스킬에 맞는 타겟을 만들지 못했으면 기존 전방/자기 위치 fallback을 사용합니다.
+                // 타겟팅 제공자가 없으면 기존 전방/자기 위치 fallback을 사용합니다.
                 var forward = ResolveForward2D(playerGo);
                 request = new SkillDriverRequest(
                     lockedTarget: null,
@@ -215,8 +216,41 @@ namespace GGemCo2DCore
                 );
             }
 
-            driver.TryUseSkill(skillUid, request);
+            var result = driver.TryUseSkill(skillUid, request);
+            if (!result.IsStarted)
+            {
+                ShowSkillUseFailedMessage(result.FailReason);
+            }
         }
+        private void ShowSkillUseFailedMessage(SkillUseFailReason failReason)
+        {
+            if (SceneGame == null || SceneGame.systemMessageManager == null)
+                return;
+
+            string message = ResolveSkillUseFailedMessage(failReason);
+            if (string.IsNullOrEmpty(message))
+                return;
+
+            SceneGame.systemMessageManager.ShowMessageWarning(message);
+        }
+
+        private static string ResolveSkillUseFailedMessage(SkillUseFailReason failReason)
+        {
+            switch (failReason)
+            {
+                case SkillUseFailReason.NoTarget:
+                    return "타겟이 필요합니다.";
+                case SkillUseFailReason.OutOfRange:
+                    return "사거리 안에 타겟이 없습니다.";
+                case SkillUseFailReason.Cooldown:
+                    return "Action_CannotUseDuringCooldown";
+                case SkillUseFailReason.Busy:
+                    return "다른 스킬을 사용 중입니다.";
+                default:
+                    return null;
+            }
+        }
+
         private static Vector2 ResolveForward2D(GameObject caster)
         {
             // CharacterBase가 있으면 CurrentFacing 기반으로 방향을 안정적으로 만들 수 있습니다.
