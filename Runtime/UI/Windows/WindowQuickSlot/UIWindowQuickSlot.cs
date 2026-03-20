@@ -17,13 +17,32 @@ namespace GGemCo2DCore
         public Image[] iconHotKey;
         public int Priority => 1;
 
-        private readonly Dictionary<KeyCode, int> _indexByKeyCode = new Dictionary<KeyCode, int>
+        private static readonly KeyCode[] HotKeyCodes =
         {
-            { KeyCode.Alpha1, 0 },
-            { KeyCode.Alpha2, 1 },
-            { KeyCode.Alpha3, 2 },
-            { KeyCode.Alpha4, 3 },
+            KeyCode.Alpha1,
+            KeyCode.Alpha2,
+            KeyCode.Alpha3,
+            KeyCode.Alpha4,
+            KeyCode.Alpha5,
+            KeyCode.Alpha6,
+            KeyCode.Alpha7,
+            KeyCode.Alpha8,
+            KeyCode.Alpha9,
         };
+#if GGEMCO_USE_NEW_INPUT
+        private static readonly System.Func<Keyboard, bool>[] HotKeyPressedChecks =
+        {
+            keyboard => keyboard != null && keyboard.digit1Key.wasPressedThisFrame,
+            keyboard => keyboard != null && keyboard.digit2Key.wasPressedThisFrame,
+            keyboard => keyboard != null && keyboard.digit3Key.wasPressedThisFrame,
+            keyboard => keyboard != null && keyboard.digit4Key.wasPressedThisFrame,
+            keyboard => keyboard != null && keyboard.digit5Key.wasPressedThisFrame,
+            keyboard => keyboard != null && keyboard.digit6Key.wasPressedThisFrame,
+            keyboard => keyboard != null && keyboard.digit7Key.wasPressedThisFrame,
+            keyboard => keyboard != null && keyboard.digit8Key.wasPressedThisFrame,
+            keyboard => keyboard != null && keyboard.digit9Key.wasPressedThisFrame,
+        };
+#endif
         
         protected override void Awake()
         {
@@ -103,69 +122,62 @@ namespace GGemCo2DCore
             if (SceneGame.Instance == null) return;
             SceneGame.Instance.KeyboardManager.RemoveInputHandler(this);
         }
-
         public bool HandleInput()
         {
-            
+            int inputCount = GetProcessableHotKeyCount();
+            if (inputCount <= 0)
+                return false;
+
 #if GGEMCO_USE_OLD_INPUT
-            if (Input.GetKeyDown(KeyCode.Alpha1))
+            for (int i = 0; i < inputCount; i++)
             {
-                OnKeyDownSkill(KeyCode.Alpha1);
-                return true;
-            }
-            if (Input.GetKeyDown(KeyCode.Alpha2))
-            {
-                OnKeyDownSkill(KeyCode.Alpha2);
-                return true;
-            }
-            if (Input.GetKeyDown(KeyCode.Alpha3))
-            {
-                OnKeyDownSkill(KeyCode.Alpha3);
-                return true;
-            }
-            if (Input.GetKeyDown(KeyCode.Alpha4))
-            {
-                OnKeyDownSkill(KeyCode.Alpha4);
-                return true;
+                if (Input.GetKeyDown(HotKeyCodes[i]))
+                {
+                    OnKeyDownSkill(i);
+                    return true;
+                }
             }
 #elif GGEMCO_USE_NEW_INPUT
-            if (Keyboard.current.digit1Key.wasPressedThisFrame)
+            var keyboard = Keyboard.current;
+            if (keyboard == null)
+                return false;
+
+            for (int i = 0; i < inputCount; i++)
             {
-                OnKeyDownSkill(KeyCode.Alpha1);
-                return true;
-            }
-            if (Keyboard.current.digit2Key.wasPressedThisFrame)
-            {
-                OnKeyDownSkill(KeyCode.Alpha2);
-                return true;
-            }
-            if (Keyboard.current.digit3Key.wasPressedThisFrame)
-            {
-                OnKeyDownSkill(KeyCode.Alpha3);
-                return true;
-            }
-            if (Keyboard.current.digit4Key.wasPressedThisFrame)
-            {
-                OnKeyDownSkill(KeyCode.Alpha4);
-                return true;
+                if (HotKeyPressedChecks[i](keyboard))
+                {
+                    OnKeyDownSkillBySlotIndex(i);
+                    return true;
+                }
             }
 #endif
 
             return false;
         }
+
+        private int GetProcessableHotKeyCount()
+        {
+            int maxByUi = Mathf.Max(0, maxCountIcon);
+            int maxByIcons = icons?.Length ?? 0;
+            int maxByHotKeys = HotKeyCodes.Length;
+
+#if GGEMCO_USE_NEW_INPUT
+            int maxByInputSystem = HotKeyPressedChecks.Length;
+            return Mathf.Min(maxByUi, maxByIcons, maxByHotKeys, maxByInputSystem);
+#else
+            return Mathf.Min(maxByUi, maxByIcons, maxByHotKeys);
+#endif
+        }
+        
         /// <summary>
         /// 키보드로 스킬 사용하기
         /// </summary>
-        /// <param name="keyCode"></param>
-        private void OnKeyDownSkill(KeyCode keyCode)
+        /// <param name="slotIndex"></param>
+        private void OnKeyDownSkillBySlotIndex(int slotIndex)
         {
             if (SceneGame == null) return;
             var playerGo = SceneGame.player;
             if (playerGo == null) return;
-
-            // 1) 어떤 슬롯인지 결정
-            if (!_indexByKeyCode.TryGetValue(keyCode, out int slotIndex))
-                return;
 
             // 2) 세이브 데이터에서 스킬 UID 조회
             var quickSlot = SceneGame.Instance.saveDataManager?.QuickSlot;
