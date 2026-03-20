@@ -1,4 +1,5 @@
-﻿using UnityEngine;
+﻿using System;
+using UnityEngine;
 
 namespace GGemCo2DCore
 {
@@ -11,5 +12,6 @@ namespace GGemCo2DCore
         public void OnUpdate(in ProjectileVisualUpdateContext context) { }
         public void OnHit(in ProjectileVisualHitContext context) { }
         public void OnDespawn() { }
+        public bool TryPlayEnd(Action onComplete) { return false; }
     }
 }

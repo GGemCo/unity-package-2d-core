@@ -42,6 +42,7 @@ namespace GGemCo2DCore
         private RaycastHit2D[] _castResults;
         private Collider2D[] _overlapResults;
         private bool _hasHit;
+        private bool _isWaitingForEndVisual;
 
         #region Lifecycle
         /// <summary>
@@ -154,7 +155,7 @@ namespace GGemCo2DCore
 
         protected virtual void FixedUpdate()
         {
-            if (!Initialized) return;
+            if (!Initialized || _isWaitingForEndVisual) return;
 
             // 등속 이동: 현재까지 이동 거리 / 전체 거리 => 0..1
             float distCovered = (Time.fixedTime - StartTime) * Speed;
@@ -431,10 +432,35 @@ namespace GGemCo2DCore
 
         protected virtual void OnArrived()
         {
+            if (TryPlayEndAndDestroy())
+                return;
+
             Destroy(gameObject);
         }
 
         #endregion
+
+        private bool TryPlayEndAndDestroy()
+        {
+            if (_isWaitingForEndVisual)
+                return true;
+
+            if (_visual == null)
+                return false;
+
+            _isWaitingForEndVisual = _visual.TryPlayEnd(HandleEndVisualComplete);
+            return _isWaitingForEndVisual;
+        }
+
+        private void HandleEndVisualComplete()
+        {
+            _isWaitingForEndVisual = false;
+
+            if (this == null || gameObject == null)
+                return;
+
+            Destroy(gameObject);
+        }
 
         #region Helpers
 
@@ -499,7 +525,7 @@ namespace GGemCo2DCore
         #region Collision
         private void OnTriggerEnter2D(Collider2D other)
         {
-            if (!Initialized) return;
+            if (!Initialized || _isWaitingForEndVisual) return;
             if (_hasHit) return;
 
             // 기존 정책을 유지하되, "충돌한 콜라이더의 태그"가 아니라 "루트 캐릭터" 기준으로 판정합니다.

@@ -1,4 +1,5 @@
-﻿using UnityEngine;
+﻿using System;
+using UnityEngine;
 
 namespace GGemCo2DCore
 {
@@ -50,6 +51,11 @@ namespace GGemCo2DCore
 
         public void OnDespawn()
         {
+        }
+
+        public bool TryPlayEnd(Action onComplete)
+        {
+            return false;
         }
     }
 }

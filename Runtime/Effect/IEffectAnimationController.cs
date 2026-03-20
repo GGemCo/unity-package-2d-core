@@ -10,6 +10,7 @@ namespace GGemCo2DCore
         // 없어지는 애니 클립 이름
         public const string KeyClipNameEnd = "end";
         void SetEffectColor(string colorHex);
+        bool HasEndAnimation();
         
         bool Play(float duration);
         void PlayEnd();

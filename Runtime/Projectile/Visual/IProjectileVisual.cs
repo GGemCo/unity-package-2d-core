@@ -1,4 +1,5 @@
-﻿using UnityEngine;
+﻿using System;
+using UnityEngine;
 
 namespace GGemCo2DCore
 {
@@ -27,6 +28,12 @@ namespace GGemCo2DCore
         /// 발사체가 소멸되기 직전에 호출된다.
         /// </summary>
         void OnDespawn();
+
+        /// <summary>
+        /// End 표현이 있으면 재생하고, 완료 시 onComplete를 호출한다.
+        /// End 표현이 없으면 false를 반환한다.
+        /// </summary>
+        bool TryPlayEnd(Action onComplete);
     }
 
     /// <summary>

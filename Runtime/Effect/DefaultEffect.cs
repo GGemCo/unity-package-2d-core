@@ -203,6 +203,18 @@ namespace GGemCo2DCore
             OnEffectDestroy?.Invoke();
         }
 
+        public bool TryPlayEndAnimation(DelegateEffectDestroy onEffectDestroy = null)
+        {
+            if (effectAnimationController == null || !effectAnimationController.HasEndAnimation())
+                return false;
+
+            if (onEffectDestroy != null)
+                OnEffectDestroy += onEffectDestroy;
+
+            PlayEndAnimation();
+            return true;
+        }
+
         public void PlayEndAnimation()
         {
             effectAnimationController.PlayEnd();

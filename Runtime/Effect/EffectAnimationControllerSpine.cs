@@ -116,6 +116,11 @@ namespace GGemCo2DCore
             return true;
         }
 
+        public bool HasEndAnimation()
+        {
+            return FindAnimation(IEffectAnimationController.KeyClipNameEnd) != null;
+        }
+
         public void PlayEnd()
         {
             PlayAnimation(IEffectAnimationController.KeyClipNameEnd);

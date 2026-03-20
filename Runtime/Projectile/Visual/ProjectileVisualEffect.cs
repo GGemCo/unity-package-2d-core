@@ -1,4 +1,5 @@
-﻿using UnityEngine;
+﻿using System;
+using UnityEngine;
 
 namespace GGemCo2DCore
 {
@@ -77,6 +78,26 @@ namespace GGemCo2DCore
         {
             // Effect가 별도 파괴 정책을 가지고 있다면 여기서 정리할 수 있다.
             // 기본적으로 Projectile GameObject가 Destroy되면 자식도 함께 정리된다.
+        }
+
+        public bool TryPlayEnd(Action onComplete)
+        {
+            if (_effect == null)
+                return false;
+
+            void HandleEffectDestroy()
+            {
+                if (_effect != null)
+                    _effect.OnEffectDestroy -= HandleEffectDestroy;
+
+                onComplete?.Invoke();
+            }
+
+            bool started = _effect.TryPlayEndAnimation(HandleEffectDestroy);
+            if (!started && _effect != null)
+                _effect.OnEffectDestroy -= HandleEffectDestroy;
+
+            return started;
         }
 
         public void SetEndpoints(Vector3 start, Vector3 end)
