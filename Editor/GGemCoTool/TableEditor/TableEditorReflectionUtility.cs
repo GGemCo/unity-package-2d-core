@@ -90,7 +90,7 @@ namespace GGemCo2DCoreEditor
                 string name = uidName.Name;
 
                 if (!string.IsNullOrWhiteSpace(name) && uidName.Uid.ToString() != name)
-                    return $"{uidName.Uid} - {name}";
+                    return name;
 
                 return uidName.Uid.ToString();
             }
@@ -105,8 +105,8 @@ namespace GGemCo2DCoreEditor
                 GetValidString(row, rowType, "Id") ??
                 GetValidString(row, rowType, "Memo");
 
-            if (!string.IsNullOrWhiteSpace(uidText) && !string.IsNullOrWhiteSpace(nameText))
-                return $"{uidText} - {nameText}";
+            if (!string.IsNullOrWhiteSpace(nameText))
+                return nameText;
 
             if (!string.IsNullOrWhiteSpace(uidText))
                 return uidText;
