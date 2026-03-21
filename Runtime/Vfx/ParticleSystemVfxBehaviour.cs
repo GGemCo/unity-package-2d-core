@@ -14,7 +14,7 @@ namespace GGemCo2DCore
             CacheParticleSystems();
         }
 
-        public override void Initialize(StruckTableVfx struckTableVfx, System.Action<int, GameObject> releaseAction = null)
+        public override void Initialize(VfxRuntimeData struckTableVfx, System.Action<int, GameObject> releaseAction = null)
         {
             base.Initialize(struckTableVfx, releaseAction);
             CacheParticleSystems();

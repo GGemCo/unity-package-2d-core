@@ -125,10 +125,9 @@ namespace GGemCo2DCoreEditor
         private readonly List<string> _namesVfx = new();
         private readonly List<int> _uidsVfx = new();
 
-        private Dictionary<int, StruckTableVfx> _tableDictionaryVfx;
+        private Dictionary<int, VfxRuntimeData> _tableDictionaryVfx;
 
         private TableProjectile _tableProjectile;
-        private VfxTableCollection _tableVfx;
         private ProjectileController _projectileController;
 
         private StruckTableProjectile _cachedProjectileInfo;
@@ -171,8 +170,7 @@ namespace GGemCo2DCoreEditor
             _selectedIndexVfx = 0;
 
             _tableProjectile = TableLoaderManager.LoadProjectileTable();
-            _tableVfx = TableLoaderManager.LoadVfxTable();
-            _tableDictionaryVfx = _tableVfx != null ? _tableVfx.GetDatas() : null;
+            _tableDictionaryVfx = TableLoaderManager.LoadVfxRuntimeData();
 
             _projectileController ??= new ProjectileController();
 

@@ -23,7 +23,7 @@ namespace GGemCo2DCore
         private RectTransform _effectRectTransform;
         private Animator _animator;
         protected Coroutine CoroutineTickTimeDamage;
-        private StruckTableVfx _struckTableVfx;
+        private VfxRuntimeData _struckTableVfx;
 
         private bool _started;
         private bool _releaseOnAnimationComplete;
@@ -42,7 +42,7 @@ namespace GGemCo2DCore
             _animator = GetComponent<Animator>();
         }
 
-        public virtual void Initialize(StruckTableVfx struckTableVfx, Action<int, GameObject> releaseAction = null)
+        public virtual void Initialize(VfxRuntimeData struckTableVfx, Action<int, GameObject> releaseAction = null)
         {
             _struckTableVfx = struckTableVfx;
             _pooledVfxUid = struckTableVfx?.Uid ?? 0;

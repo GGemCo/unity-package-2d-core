@@ -2,13 +2,13 @@ using UnityEngine;
 
 namespace GGemCo2DCore
 {
-    public class StruckTableVfx
+    public sealed class VfxRuntimeData
     {
         public int Uid;
         public string Name;
         public VfxConstants.AssetKind AssetKind;
         public VfxConstants.Category Category;
-        public VfxConstants.Type Type;
+        public VfxConstants.EffectType EffectType;
         public string PrefabPath;
         public ConfigCommon.AnimationController AnimationController;
         public int Width;

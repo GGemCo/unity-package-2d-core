@@ -8,7 +8,6 @@ namespace GGemCo2DCoreEditor
     public class UseVfx : DefaultEditorWindow
     {
         private const string Title = "Vfx 사용툴";
-        private VfxTableCollection _tableVfx;
         private int _selectedIndex;
         private float _scale = 1f;
         private float _duration;
@@ -18,7 +17,7 @@ namespace GGemCo2DCoreEditor
 
         private readonly List<string> _names = new List<string>();
         private readonly List<int> _uids = new List<int>();
-        private Dictionary<int, StruckTableVfx> _tableDictionary;
+        private Dictionary<int, VfxRuntimeData> _tableDictionary;
 
         [MenuItem(ConfigEditor.NameToolUseVfx, false, (int)ConfigEditor.ToolOrdering.UseVfx)]
         public static void ShowWindow()
@@ -30,8 +29,7 @@ namespace GGemCo2DCoreEditor
         {
             base.OnEnable();
             _selectedIndex = 0;
-            _tableVfx = TableLoaderManager.LoadVfxTable();
-            _tableDictionary = _tableVfx.GetDatas();
+            _tableDictionary = TableLoaderManager.LoadVfxRuntimeData();
             LoadTableInfoData();
         }
 

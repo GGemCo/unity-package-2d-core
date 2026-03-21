@@ -20,7 +20,7 @@ namespace GGemCo2DCore
             Etc
         }
 
-        public enum Type
+        public enum EffectType
         {
             None,
             Default,

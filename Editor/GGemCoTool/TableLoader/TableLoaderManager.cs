@@ -61,21 +61,30 @@ namespace GGemCo2DCoreEditor
         public static TableVfxParticle LoadVfxParticleTable(bool forceReload = true)
             => LoadTable<TableVfxParticle>(ConfigAddressableTable.TableVfxParticle.Path, forceReload);
 
-        public static VfxTableCollection LoadVfxTable(bool forceReload = true)
+        public static Dictionary<int, VfxRuntimeData> LoadVfxRuntimeData(bool forceReload = true)
         {
-            var merged = new Dictionary<int, StruckTableVfx>();
+            var merged = new Dictionary<int, VfxRuntimeData>();
             MergeVfxRows(merged, LoadVfxEffectTable(forceReload)?.GetDatas());
             MergeVfxRows(merged, LoadVfxParticleTable(forceReload)?.GetDatas());
-            return new VfxTableCollection(merged);
+            return merged;
         }
 
-        private static void MergeVfxRows(Dictionary<int, StruckTableVfx> target, IReadOnlyDictionary<int, StruckTableVfx> source)
+        private static void MergeVfxRows(Dictionary<int, VfxRuntimeData> target, IReadOnlyDictionary<int, StruckTableVfxEffect> source)
         {
             if (target == null || source == null)
                 return;
 
-            foreach (KeyValuePair<int, StruckTableVfx> pair in source)
-                target[pair.Key] = pair.Value;
+            foreach (KeyValuePair<int, StruckTableVfxEffect> pair in source)
+                target[pair.Key] = VfxRuntimeDataFactory.Create(pair.Value);
+        }
+
+        private static void MergeVfxRows(Dictionary<int, VfxRuntimeData> target, IReadOnlyDictionary<int, StruckTableVfxParticle> source)
+        {
+            if (target == null || source == null)
+                return;
+
+            foreach (KeyValuePair<int, StruckTableVfxParticle> pair in source)
+                target[pair.Key] = VfxRuntimeDataFactory.Create(pair.Value);
         }
 
         public static TableCrowdControl LoadCrowdControlTable(bool forceReload = true)

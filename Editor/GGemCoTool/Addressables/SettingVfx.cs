@@ -58,8 +58,7 @@ namespace GGemCo2DCoreEditor
                 if (!result) return;
             }
             
-            VfxTableCollection mergedTable = TableLoaderManager.LoadVfxTable();
-            Dictionary<int, StruckTableVfx> dictionary = mergedTable != null ? mergedTable.GetDatas() : new Dictionary<int, StruckTableVfx>();
+            Dictionary<int, VfxRuntimeData> dictionary = TableLoaderManager.LoadVfxRuntimeData() ?? new Dictionary<int, VfxRuntimeData>();
             
             // AddressableSettings 가져오기 (없으면 생성)
             AddressableAssetSettings settings = AddressableAssetSettingsDefaultObject.Settings;
@@ -84,7 +83,7 @@ namespace GGemCo2DCoreEditor
             {
                 var registeredPrefabPaths = new HashSet<string>();
 
-                foreach (KeyValuePair<int, StruckTableVfx> outerPair in dictionary)
+                foreach (KeyValuePair<int, VfxRuntimeData> outerPair in dictionary)
                 {
                     var info = outerPair.Value;
                     if (info == null || info.Uid <= 0 || string.IsNullOrWhiteSpace(info.PrefabPath))

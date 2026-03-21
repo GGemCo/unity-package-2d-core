@@ -60,7 +60,7 @@ namespace GGemCo2DCore
             return behaviour;
         }
 
-        private void ApplyRequest(GameObject instance, VfxBehaviourBase behaviour, StruckTableVfx info, VfxSpawnRequest request)
+        private void ApplyRequest(GameObject instance, VfxBehaviourBase behaviour, VfxRuntimeData info, VfxSpawnRequest request)
         {
             if (request.Parent != null)
                 instance.transform.SetParent(request.Parent, false);
@@ -117,7 +117,7 @@ namespace GGemCo2DCore
             }
         }
 
-        private static VfxBehaviourBase EnsureBehaviour(GameObject instance, StruckTableVfx info)
+        private static VfxBehaviourBase EnsureBehaviour(GameObject instance, VfxRuntimeData info)
         {
             if (info == null)
                 return null;
@@ -125,13 +125,13 @@ namespace GGemCo2DCore
             if (info.AssetKind == VfxConstants.AssetKind.Particle || info.PlaybackType == VfxConstants.PlaybackType.ParticleSystem)
                 return GetOrAdd<ParticleSystemVfxBehaviour>(instance);
 
-            if (info.Type == VfxConstants.Type.Laser || info.PlaybackType == VfxConstants.PlaybackType.Laser)
+            if (info.EffectType == VfxConstants.EffectType.Laser || info.PlaybackType == VfxConstants.PlaybackType.Laser)
                 return GetOrAdd<VfxLaser>(instance);
 
             return GetOrAdd<DefaultVfx>(instance);
         }
 
-        private static VfxConstants.FollowMode ResolveFollowMode(StruckTableVfx info, bool isExplicitFollowRequest)
+        private static VfxConstants.FollowMode ResolveFollowMode(VfxRuntimeData info, bool isExplicitFollowRequest)
         {
             if (info == null)
                 return isExplicitFollowRequest ? VfxConstants.FollowMode.Position : VfxConstants.FollowMode.None;
@@ -142,7 +142,7 @@ namespace GGemCo2DCore
             return isExplicitFollowRequest ? VfxConstants.FollowMode.Position : VfxConstants.FollowMode.Position;
         }
 
-        private void EnsureAnimationController(GameObject instance, VfxBehaviourBase behaviour, StruckTableVfx info)
+        private void EnsureAnimationController(GameObject instance, VfxBehaviourBase behaviour, VfxRuntimeData info)
         {
             if (behaviour is ParticleSystemVfxBehaviour || info == null || info.AssetKind == VfxConstants.AssetKind.Particle)
             {

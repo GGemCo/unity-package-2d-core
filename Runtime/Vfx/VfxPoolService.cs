@@ -27,7 +27,7 @@ namespace GGemCo2DCore
             go.SetActive(false);
         }
 
-        public void Configure(StruckTableVfx info, GameObject prefab)
+        public void Configure(VfxRuntimeData info, GameObject prefab)
         {
             if (info == null || prefab == null || info.Uid <= 0)
                 return;

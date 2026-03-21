@@ -191,16 +191,16 @@ namespace GGemCo2DCore
             => TryGetData(TableWindow, uid, out data, "Window", (t, i) => t.GetDataByUid(i), logIfMissing);
 
         // Vfx
-        public StruckTableVfx GetVfxData(int uid, bool logIfMissing = true)
+        public VfxRuntimeData GetVfxData(int uid, bool logIfMissing = true)
         {
             if (uid <= 0)
                 return null;
 
             if (TableVfxEffect != null && TableVfxEffect.TryGetDataByUid(uid, out var effectRow))
-                return effectRow;
+                return VfxRuntimeDataFactory.Create(effectRow);
 
             if (TableVfxParticle != null && TableVfxParticle.TryGetDataByUid(uid, out var particleRow))
-                return particleRow;
+                return VfxRuntimeDataFactory.Create(particleRow);
 
             if (logIfMissing)
                 GcLogger.LogError($"Vfx 데이터를 찾을 수 없습니다. uid={uid}");
@@ -208,28 +208,37 @@ namespace GGemCo2DCore
             return null;
         }
 
-        public bool TryGetVfxData(int uid, out StruckTableVfx data, bool logIfMissing = false)
+        public bool TryGetVfxData(int uid, out VfxRuntimeData data, bool logIfMissing = false)
         {
             data = GetVfxData(uid, logIfMissing);
             return data != null;
         }
 
-        public IReadOnlyDictionary<int, StruckTableVfx> GetAllVfxData()
+        public IReadOnlyDictionary<int, VfxRuntimeData> GetAllVfxData()
         {
-            var merged = new Dictionary<int, StruckTableVfx>();
+            var merged = new Dictionary<int, VfxRuntimeData>();
 
             MergeVfxRows(merged, TableVfxEffect?.GetAll());
             MergeVfxRows(merged, TableVfxParticle?.GetAll());
             return merged;
         }
 
-        private static void MergeVfxRows(Dictionary<int, StruckTableVfx> target, IReadOnlyDictionary<int, StruckTableVfx> source)
+        private static void MergeVfxRows(Dictionary<int, VfxRuntimeData> target, IReadOnlyDictionary<int, StruckTableVfxEffect> source)
         {
             if (target == null || source == null)
                 return;
 
             foreach (var pair in source)
-                target[pair.Key] = pair.Value;
+                target[pair.Key] = VfxRuntimeDataFactory.Create(pair.Value);
+        }
+
+        private static void MergeVfxRows(Dictionary<int, VfxRuntimeData> target, IReadOnlyDictionary<int, StruckTableVfxParticle> source)
+        {
+            if (target == null || source == null)
+                return;
+
+            foreach (var pair in source)
+                target[pair.Key] = VfxRuntimeDataFactory.Create(pair.Value);
         }
 
         // Interaction
