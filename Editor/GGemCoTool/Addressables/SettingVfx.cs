@@ -23,13 +23,12 @@ namespace GGemCo2DCoreEditor
         }
         public void OnGUI()
         {
-            bool hasLegacy = File.Exists(ConfigAddressableTable.TableVfx.Path);
             bool hasEffect = File.Exists(ConfigAddressableTable.TableVfxEffect.Path);
             bool hasParticle = File.Exists(ConfigAddressableTable.TableVfxParticle.Path);
 
-            if (!hasLegacy && !hasEffect && !hasParticle)
+            if (!hasEffect && !hasParticle)
             {
-                EditorGUILayout.HelpBox($"{ConfigAddressableTable.Vfx}, {ConfigAddressableTable.VfxEffect}, {ConfigAddressableTable.VfxParticle} 테이블이 없습니다.", MessageType.Info);
+                EditorGUILayout.HelpBox($"{ConfigAddressableTable.VfxEffect}, {ConfigAddressableTable.VfxParticle} 테이블이 없습니다.", MessageType.Info);
             }
             else
             {
@@ -59,7 +58,7 @@ namespace GGemCo2DCoreEditor
                 if (!result) return;
             }
             
-            TableVfx mergedTable = TableLoaderManager.LoadVfxTable();
+            VfxTableCollection mergedTable = TableLoaderManager.LoadVfxTable();
             Dictionary<int, StruckTableVfx> dictionary = mergedTable != null ? mergedTable.GetDatas() : new Dictionary<int, StruckTableVfx>();
             
             // AddressableSettings 가져오기 (없으면 생성)

@@ -28,7 +28,6 @@ namespace GGemCo2DCore
         public TableDamageType TableDamageType { get; private set; } = new TableDamageType();
         public TableState TableState { get; private set; } = new TableState();
         public TableCrowdControl TableCrowdControl { get; private set; } = new TableCrowdControl();
-        public TableVfx TableVfx { get; private set; } = new TableVfx();
         public TableVfxEffect TableVfxEffect { get; private set; } = new TableVfxEffect();
         public TableVfxParticle TableVfxParticle { get; private set; } = new TableVfxParticle();
         public TableInteraction TableInteraction { get; private set; } = new TableInteraction();
@@ -75,7 +74,6 @@ namespace GGemCo2DCore
                 registry.Register(TableDamageType);
                 registry.Register(TableState);
                 registry.Register(TableCrowdControl);
-                registry.Register(TableVfx);
                 registry.Register(TableVfxEffect);
                 registry.Register(TableVfxParticle);
                 registry.Register(TableInteraction);
@@ -204,7 +202,10 @@ namespace GGemCo2DCore
             if (TableVfxParticle != null && TableVfxParticle.TryGetDataByUid(uid, out var particleRow))
                 return particleRow;
 
-            return GetData(TableVfx, uid, "Vfx", (t, i) => t.GetDataByUid(i), logIfMissing);
+            if (logIfMissing)
+                GcLogger.LogError($"Vfx 데이터를 찾을 수 없습니다. uid={uid}");
+
+            return null;
         }
 
         public bool TryGetVfxData(int uid, out StruckTableVfx data, bool logIfMissing = false)
@@ -217,7 +218,6 @@ namespace GGemCo2DCore
         {
             var merged = new Dictionary<int, StruckTableVfx>();
 
-            MergeVfxRows(merged, TableVfx?.GetAll());
             MergeVfxRows(merged, TableVfxEffect?.GetAll());
             MergeVfxRows(merged, TableVfxParticle?.GetAll());
             return merged;

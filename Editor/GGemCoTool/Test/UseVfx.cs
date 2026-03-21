@@ -8,7 +8,7 @@ namespace GGemCo2DCoreEditor
     public class UseVfx : DefaultEditorWindow
     {
         private const string Title = "Vfx 사용툴";
-        private TableVfx _tableVfx;
+        private VfxTableCollection _tableVfx;
         private int _selectedIndex;
         private float _scale = 1f;
         private float _duration;

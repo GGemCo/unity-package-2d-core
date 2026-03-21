@@ -145,22 +145,4 @@ namespace GGemCo2DCore
 
         private static bool ConvertBoolean(string value) => value == "Y";
     }
-
-    public class TableVfx : DefaultTable<StruckTableVfx>
-    {
-        public override string Key => ConfigAddressableTable.Vfx;
-
-        protected override StruckTableVfx BuildRow(Dictionary<string, string> data)
-        {
-            if (TableVfxRowBuilder.Has(data, "AssetKind"))
-            {
-                var assetKind = EnumHelper.ConvertEnum<VfxConstants.AssetKind>(TableVfxRowBuilder.Get(data, "AssetKind"));
-                return assetKind == VfxConstants.AssetKind.Particle
-                    ? TableVfxRowBuilder.BuildParticleRow(data)
-                    : TableVfxRowBuilder.BuildEffectRow(data);
-            }
-
-            return TableVfxRowBuilder.BuildEffectRow(data);
-        }
-    }
 }

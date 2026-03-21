@@ -128,7 +128,7 @@ namespace GGemCo2DCoreEditor
         private Dictionary<int, StruckTableVfx> _tableDictionaryVfx;
 
         private TableProjectile _tableProjectile;
-        private TableVfx _tableVfx;
+        private VfxTableCollection _tableVfx;
         private ProjectileController _projectileController;
 
         private StruckTableProjectile _cachedProjectileInfo;

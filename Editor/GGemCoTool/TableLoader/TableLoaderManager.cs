@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using GGemCo2DCore;
 using UnityEngine;
@@ -32,7 +32,7 @@ namespace GGemCo2DCoreEditor
 
         public static TableItemUseAction LoadItemUseActionTable(bool forceReload = true)
             => LoadTable<TableItemUseAction>(ConfigAddressableTable.TableItemUseAction.Path, forceReload);
-public static TableItemDropGroup LoadItemDropGroupTable(bool forceReload = true)
+        public static TableItemDropGroup LoadItemDropGroupTable(bool forceReload = true)
         {
             return LoadTable<TableItemDropGroup>(ConfigAddressableTable.TableItemDropGroup.Path, forceReload);
         }
@@ -55,31 +55,33 @@ public static TableItemDropGroup LoadItemDropGroupTable(bool forceReload = true)
             return LoadTable<TableQuest>(ConfigAddressableTable.TableQuest.Path, forceReload);
         }
 
-        public static TableVfx LoadVfxTable(bool forceReload = true)
-        {
-            var merged = new TableVfx();
-
-            MergeVfxTable(merged, LoadVfxLegacyTable(forceReload));
-            MergeVfxTable(merged, LoadVfxEffectTable(forceReload));
-            MergeVfxTable(merged, LoadVfxParticleTable(forceReload));
-
-            return merged;
-        }
-
-        public static TableVfx LoadVfxLegacyTable(bool forceReload = true)
-            => LoadOptionalTable<TableVfx>(ConfigAddressableTable.TableVfx.Path, forceReload);
-
         public static TableVfxEffect LoadVfxEffectTable(bool forceReload = true)
-            => LoadOptionalTable<TableVfxEffect>(ConfigAddressableTable.TableVfxEffect.Path, forceReload);
+            => LoadTable<TableVfxEffect>(ConfigAddressableTable.TableVfxEffect.Path, forceReload);
 
         public static TableVfxParticle LoadVfxParticleTable(bool forceReload = true)
-            => LoadOptionalTable<TableVfxParticle>(ConfigAddressableTable.TableVfxParticle.Path, forceReload);
+            => LoadTable<TableVfxParticle>(ConfigAddressableTable.TableVfxParticle.Path, forceReload);
+
+        public static VfxTableCollection LoadVfxTable(bool forceReload = true)
+        {
+            var merged = new Dictionary<int, StruckTableVfx>();
+            MergeVfxRows(merged, LoadVfxEffectTable(forceReload)?.GetDatas());
+            MergeVfxRows(merged, LoadVfxParticleTable(forceReload)?.GetDatas());
+            return new VfxTableCollection(merged);
+        }
+
+        private static void MergeVfxRows(Dictionary<int, StruckTableVfx> target, IReadOnlyDictionary<int, StruckTableVfx> source)
+        {
+            if (target == null || source == null)
+                return;
+
+            foreach (KeyValuePair<int, StruckTableVfx> pair in source)
+                target[pair.Key] = pair.Value;
+        }
 
         public static TableCrowdControl LoadCrowdControlTable(bool forceReload = true)
         {
             return LoadTable<TableCrowdControl>(ConfigAddressableTable.TableCrowdControl.Path, forceReload);
         }
-
 
         public static TableWindow LoadWindowTable(bool forceReload = true)
         {
@@ -110,22 +112,6 @@ public static TableItemDropGroup LoadItemDropGroupTable(bool forceReload = true)
             return LoadTable<TableAnimation>(ConfigAddressableTable.TableAnimation.Path, forceReload);
         }
 
-
-        private static T LoadOptionalTable<T>(string filePath, bool forceReload = true)
-            where T : class, ITableParser, new()
-        {
-            return System.IO.File.Exists(filePath) ? LoadTable<T>(filePath, forceReload) : null;
-        }
-
-        private static void MergeVfxTable(TableVfx target, ITableParser<StruckTableVfx> source)
-        {
-            if (target == null || source == null)
-                return;
-
-            foreach (var pair in source.GetAll())
-                target.GetDatas()[pair.Key] = pair.Value;
-        }
-
         /// <summary>
         /// 툴에서 드롭다운 메뉴를 만들기 위해 사용중
         /// 사용하려면 Table 에 TryGetDataByUid 함수를 추가해야 함
@@ -152,7 +138,7 @@ public static TableItemDropGroup LoadItemDropGroupTable(bool forceReload = true)
             structTable = new Dictionary<int, TRow>();
 
             string path = $"{ConfigAddressablePath.Tables}/{tableFileName}.txt";
-            table = LoadTable<TTable>(path, forceReload); // 제약 TTable : ITableData도 만족
+            table = LoadTable<TTable>(path, forceReload);
             if (table == null)
             {
                 Debug.LogError($"{tableFileName} 테이블을 불러오지 못 했습니다.");
@@ -160,7 +146,7 @@ public static TableItemDropGroup LoadItemDropGroupTable(bool forceReload = true)
             }
 
             int index = 0;
-            foreach (var kv in table.GetDatas()) // Dictionary<int, TRow>
+            foreach (var kv in table.GetDatas())
             {
                 var row = kv.Value;
                 nameList.Add(displayNameFunc(row));
