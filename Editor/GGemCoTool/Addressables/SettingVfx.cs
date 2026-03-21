@@ -13,7 +13,7 @@ namespace GGemCo2DCoreEditor
     /// </summary>
     public class SettingVfx : DefaultAddressable
     {
-        private const string Title = "이펙트 추가하기";
+        private const string Title = "Vfx 추가하기";
         private readonly AddressableEditor _addressableEditor;
 
         public SettingVfx(AddressableEditor addressableEditorWindow)
@@ -38,7 +38,7 @@ namespace GGemCo2DCoreEditor
                     catch (System.Exception e)
                     {
                         Debug.LogException(e);
-                        EditorUtility.DisplayDialog(Title, "이펙트 Addressable 설정 중 오류가 발생했습니다.\n자세한 내용은 콘솔 로그를 확인해주세요.", "OK");
+                        EditorUtility.DisplayDialog(Title, "VFX Addressable 설정 중 오류가 발생했습니다.\n자세한 내용은 콘솔 로그를 확인해주세요.", "OK");
                     }
                 }
             }
@@ -84,10 +84,10 @@ namespace GGemCo2DCoreEditor
                     var info = outerPair.Value;
                     if (info.Uid <= 0) continue;
                 
-                    // 이펙트는 같은 프리팹으로 베리에이션 해서 사용할 수 있기때문에 info.PrefabPath 을 key 로 사용한다.
+                    // VFX는 같은 프리팹으로 베리에이션 해서 사용할 수 있기때문에 info.PrefabPath 을 key 로 사용한다.
                     string key = $"{ConfigAddressableGroupName.Vfx}_{info.PrefabPath}";
-                    string assetPath = $"{ConfigAddressablePath.Effects.RootEffect}/{info.PrefabPath}.prefab";
-                    string label = ConfigAddressableLabel.Effect;
+                    string assetPath = $"{ConfigAddressablePath.Vfx.RootVfx}/{info.PrefabPath}.prefab";
+                    string label = ConfigAddressableLabel.Vfx;
                 
                     Add(settings, group, key, assetPath, label);
                 }
@@ -98,12 +98,12 @@ namespace GGemCo2DCoreEditor
             
             if (ctx != null)
             {
-                HelperLog.Info("[Addressable] 이펙트 설정 완료", ctx);
+                HelperLog.Info("[Addressable] VFX 설정 완료", ctx);
             }
             else
             {
                 AssetDatabase.SaveAssets();
-                EditorUtility.DisplayDialog(Title, "[Addressable] 이펙트 설정 완료", "OK");
+                EditorUtility.DisplayDialog(Title, "[Addressable] VFX 설정 완료", "OK");
             }
         }
     }

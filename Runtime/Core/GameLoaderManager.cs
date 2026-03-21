@@ -186,7 +186,7 @@ namespace GGemCo2DCore
             // 필요한 로더/매니저 찾기(또는 생성)
             var tableLoader = Object.FindFirstObjectByType<TableLoaderManager>() ?? new GameObject("TableLoaderManager").AddComponent<TableLoaderManager>();
             var addrPrefabCommon = Object.FindFirstObjectByType<AddressableLoaderPrefabCommon>() ?? new GameObject("AddressableLoaderPrefabCommon").AddComponent<AddressableLoaderPrefabCommon>();
-            var addrPrefabEffect = Object.FindFirstObjectByType<AddressableLoaderPrefabEffect>() ?? new GameObject("AddressableLoaderPrefabEffect").AddComponent<AddressableLoaderPrefabEffect>();
+            var addrPrefabVfx = Object.FindFirstObjectByType<AddressableLoaderPrefabVfx>() ?? new GameObject("AddressableLoaderPrefabVfx").AddComponent<AddressableLoaderPrefabVfx>();
             var addrItem = Object.FindFirstObjectByType<AddressableLoaderItem>() ?? new GameObject("AddressableLoaderItem").AddComponent<AddressableLoaderItem>();
             var addrSound = Object.FindFirstObjectByType<AddressableLoaderSound>() ?? new GameObject("AddressableLoaderSound").AddComponent<AddressableLoaderSound>();
             var saveData = Object.FindFirstObjectByType<SaveDataLoader>() ?? new GameObject("SaveDataLoader").AddComponent<SaveDataLoader>();
@@ -220,11 +220,11 @@ namespace GGemCo2DCore
             ));
 
             Register(new AddressableTaskStep(
-                id: "core.prefab.effect",
+                id: "core.prefab.vfx",
                 order: 310,
-                localizedKey: LocalizationConstants.Keys.Loading.TextTypeEffect(),
-                startTask: () => addrPrefabEffect.LoadPrefabsAsync(),
-                getProgress: () => addrPrefabEffect.GetPrefabLoadProgress()
+                localizedKey: LocalizationConstants.Keys.Loading.TextTypeVfx(),
+                startTask: () => addrPrefabVfx.LoadPrefabsAsync(),
+                getProgress: () => addrPrefabVfx.GetPrefabLoadProgress()
             ));
 
             Register(new AddressableTaskStep(

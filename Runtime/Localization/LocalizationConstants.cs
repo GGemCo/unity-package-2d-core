@@ -110,7 +110,7 @@ namespace GGemCo2DCore
                 public static string TextTypeTables() => $"{NameLoading}_{NameText}_Tables";
                 public static string TextTypePrefab() => $"{NameLoading}_{NameText}_Resources";
                 public static string TextTypeSaveData() => $"{NameLoading}_{NameText}_SaveData";
-                public static string TextTypeEffect() => $"{NameLoading}_{NameText}_Effect";
+                public static string TextTypeVfx() => $"{NameLoading}_{NameText}_Effect";
                 public static string TextTypeItem() => $"{NameLoading}_{NameText}_Item";
                 public static string TextTypeSkill() => $"{NameLoading}_{NameText}_Skill";
                 public static string TextTypeAffect() => $"{NameLoading}_{NameText}_Affect";

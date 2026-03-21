@@ -60,12 +60,6 @@ public static TableItemDropGroup LoadItemDropGroupTable(bool forceReload = true)
             return LoadTable<TableVfx>(ConfigAddressableTable.TableVfx.Path, forceReload);
         }
 
-        public static TableVfx LoadEffectTable(bool forceReload = true)
-        {
-            return LoadVfxTable(forceReload);
-        }
-
-
         public static TableCrowdControl LoadCrowdControlTable(bool forceReload = true)
         {
             return LoadTable<TableCrowdControl>(ConfigAddressableTable.TableCrowdControl.Path, forceReload);

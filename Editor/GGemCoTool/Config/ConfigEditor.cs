@@ -19,7 +19,7 @@ namespace GGemCo2DCoreEditor
             Quest = 110,
             CreateDialogue,
             Cutscene = 120,
-            CreateEffectPrefab,
+            CreateVfxEffectPrefab,
             CreateUIEffectPreset,
             LocalizationUpdate =  130,
             LocalizationFind,
@@ -68,7 +68,7 @@ namespace GGemCo2DCoreEditor
         public const string NameToolCreateDialogue = NameToolDevelopment + "대사 생성툴";
         
         public const string NameToolCutscene = NameToolDevelopment + "연출툴";
-        public const string NameToolCreateEffectPrefab = NameToolDevelopment + "이팩트 프리팹 생성툴";
+        public const string NameToolCreateVfxEffectPrefab = NameToolDevelopment + "이팩트 프리팹 생성툴";
         public const string NameToolCreateUIEffectPreset = NameToolDevelopment + "UI 효과 프리셋 편집툴";
         
         public const string NameToolLocalizationUpdate = NameToolDevelopment + "Localize 업데이트툴";

@@ -20,7 +20,7 @@ namespace GGemCo2DCoreEditor
     /// - start/end 마지막 프레임에는 완료 이벤트(<see cref="EventNameComplete"/>)가 자동 추가됩니다.
     /// - 생성 파일의 저장 경로 및 마지막 입력값은 EditorPrefs로 유지됩니다.
     /// </remarks>
-    public sealed class EffectPrefabAutoBuilderWindow : EditorWindow
+    public sealed class VfxEffectPrefabAutoBuilderWindow : EditorWindow
     {
         /// <summary>
         /// 생성될 프리팹이 스프라이트를 표시할 대상 컴포넌트 타입입니다.
@@ -63,7 +63,7 @@ namespace GGemCo2DCoreEditor
         // EditorPrefs Keys
         // -------------------------
         /// <summary>이 툴에서 사용하는 EditorPrefs 키 접두사입니다.</summary>
-        private const string PrefKeyPrefix = "GGemCo.EffectPrefabAutoBuilder.";
+        private const string PrefKeyPrefix = "GGemCo.VfxEffectPrefabAutoBuilder.";
 
         private const string KeyTargetType     = PrefKeyPrefix + "TargetType";
         private const string KeyPrefabName     = PrefKeyPrefix + "PrefabName";
@@ -142,10 +142,10 @@ namespace GGemCo2DCoreEditor
         /// <summary>
         /// 메뉴에서 본 윈도우를 열고 기본 크기/타이틀을 설정합니다.
         /// </summary>
-        [MenuItem(ConfigEditor.NameToolCreateEffectPrefab, false, (int)ConfigEditor.ToolOrdering.CreateEffectPrefab)]
+        [MenuItem(ConfigEditor.NameToolCreateVfxEffectPrefab, false, (int)ConfigEditor.ToolOrdering.CreateVfxEffectPrefab)]
         public static void Open()
         {
-            var w = GetWindow<EffectPrefabAutoBuilderWindow>();
+            var w = GetWindow<VfxEffectPrefabAutoBuilderWindow>();
             w.titleContent = new GUIContent(Title);
             w.minSize = new Vector2(600, 620);
             w.Show();

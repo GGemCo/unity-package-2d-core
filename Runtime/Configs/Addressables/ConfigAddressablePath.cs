@@ -122,12 +122,12 @@ namespace GGemCo2DCore
         }
 
         // -------------------------
-        // Effects
+        // Vfx
         // -------------------------
-        public static class Effects
+        public static class Vfx
         {
-            /// <summary>Assets/{SDK}/DataAddressable/Effects</summary>
-            public static string RootEffect => Combine(Root, "Effects");
+            /// <summary>Assets/{SDK}/DataAddressable/Vfx</summary>
+            public static string RootVfx => Combine(Root, "Vfx");
         }
 
         // -------------------------

@@ -14,9 +14,9 @@ namespace GGemCo2DCore
             _poolService = new VfxPoolService(sceneGame != null ? sceneGame.transform : null);
         }
 
-        public VfxBehaviourBase CreateVfx(int effectUid)
+        public VfxBehaviourBase CreateVfx(int vfxUid)
         {
-            return CreateVfx(new VfxSpawnRequest { VfxUid = effectUid });
+            return CreateVfx(new VfxSpawnRequest { VfxUid = vfxUid });
         }
 
         public VfxBehaviourBase CreateVfx(StruckAnimationEventVfx struckAnimationEventVfx)
@@ -40,7 +40,7 @@ namespace GGemCo2DCore
             }
 
             string key = $"{ConfigAddressableGroupName.Vfx}_{info.PrefabPath}";
-            GameObject prefab = AddressableLoaderPrefabEffect.Instance.GetPrefabByName(key);
+            GameObject prefab = AddressableLoaderPrefabVfx.Instance.GetPrefabByName(key);
             if (prefab == null)
                 return null;
 
@@ -136,10 +136,10 @@ namespace GGemCo2DCore
 
             IVfxAnimationController vfxAnimationController = null;
 #if GGEMCO_USE_SPINE
-            if (info.PlaybackType == EffectConstants.PlaybackType.SpineSequence ||
+            if (info.PlaybackType == VfxConstants.PlaybackType.SpineSequence ||
                 info.AnimationController == ConfigCommon.AnimationController.Spine)
             {
-                effectAnimationController = GetOrAdd<EffectAnimationControllerSpine>(instance);
+                vfxAnimationController = GetOrAdd<VfxAnimationControllerSpine>(instance);
                 var spineController = instance.GetComponent<Spine2dController>();
                 if (spineController != null && _animationEventMediator != null)
                     spineController.EventListener = _animationEventMediator;

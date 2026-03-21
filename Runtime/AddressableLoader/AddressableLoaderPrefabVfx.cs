@@ -8,11 +8,11 @@ using UnityEngine.ResourceManagement.AsyncOperations;
 namespace GGemCo2DCore
 {
     /// <summary>
-    /// 이펙트 프리팹 로드
+    /// Vfx 프리팹 로드
     /// </summary>
-    public class AddressableLoaderPrefabEffect : MonoBehaviour
+    public class AddressableLoaderPrefabVfx : MonoBehaviour
     {
-        public static AddressableLoaderPrefabEffect Instance { get; private set; }
+        public static AddressableLoaderPrefabVfx Instance { get; private set; }
         private readonly Dictionary<string, GameObject> _preLoadGamePrefabs = new Dictionary<string, GameObject>();
         private readonly HashSet<AsyncOperationHandle> _activeHandles = new HashSet<AsyncOperationHandle>();
         private float _prefabLoadProgress;
@@ -48,12 +48,12 @@ namespace GGemCo2DCore
             try
             {
                 _preLoadGamePrefabs.Clear();
-                var locationHandle = Addressables.LoadResourceLocationsAsync(ConfigAddressableLabel.Effect);
+                var locationHandle = Addressables.LoadResourceLocationsAsync(ConfigAddressableLabel.Vfx);
                 await locationHandle.Task;
 
                 if (!locationHandle.IsValid() || locationHandle.Status != AsyncOperationStatus.Succeeded)
                 {
-                    GcLogger.LogError($"{ConfigAddressableLabel.Effect} 레이블을 가진 리소스를 찾을 수 없습니다.");
+                    GcLogger.LogError($"{ConfigAddressableLabel.Vfx} 레이블을 가진 리소스를 찾을 수 없습니다.");
                     return;
                 }
 
