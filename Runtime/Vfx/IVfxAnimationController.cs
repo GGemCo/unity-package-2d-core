@@ -1,7 +1,7 @@
 ﻿
 namespace GGemCo2DCore
 {
-    public interface IEffectAnimationController
+    public interface IVfxAnimationController
     {
         // 이펙트 시작 애니 클립 이름
         public const string KeyClipNameStart = "start";

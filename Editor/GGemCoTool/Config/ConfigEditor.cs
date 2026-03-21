@@ -29,7 +29,7 @@ namespace GGemCo2DCoreEditor
             CreateItem,
             DropItemRate,
             MoveMap,
-            UseEffect,
+            UseVfx,
             UseCrowdControl,
             UseProjectile,
             UseItem,
@@ -84,7 +84,7 @@ namespace GGemCo2DCoreEditor
         public const string NameToolDropItemRate = NameToolTest + "아이템 드랍 확률";
         public const string NameToolCreateItem = NameToolTest + "아이템 생성툴";
         public const string NameToolMoveMap = NameToolTest + "맵 이동툴";
-        public const string NameToolUseEffect = NameToolTest + "이펙트 사용툴";
+        public const string NameToolUseVfx = NameToolTest + "Vfx 사용툴";
         public const string NameToolUseCrowdControl = NameToolTest + "CrowdControl 사용툴";
         public const string NameToolUseProjectile = NameToolTest + "프로젝타일 사용툴";
         public const string NameToolUseItem = NameToolTest + "아이템 사용툴";

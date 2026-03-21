@@ -11,8 +11,8 @@ namespace GGemCo2DCore
         public int Uid;
         public ProjectileConstants.Type Type;
         public string Name;
-        public int EffectUid;
-        public float EffectScale;
+        public int VfxUid;
+        public float VfxScale;
         public int MoveSpeed;
         public int ArcHeightMin;
         public int ArcHeightMax;
@@ -23,7 +23,7 @@ namespace GGemCo2DCore
         /// - (0,0) 이면 기존(중심) 동작과 동일합니다.
         /// </summary>
         public Vector2 ColliderOffset;
-        public int HitEffectUid;
+        public int HitVfxUid;
         public ProjectileConstants.TargetType TargetType;
         public int TargetPositionRangeX;
         public int Count;
@@ -60,15 +60,15 @@ namespace GGemCo2DCore
                 Uid = MathHelper.ParseInt(data["Uid"]),
                 Type = type,
                 Name = data["Name"],
-                EffectUid = MathHelper.ParseInt(data["EffectUid"]),
-                EffectScale = MathHelper.ParseFloat(data["EffectScale"]),
+                VfxUid = MathHelper.ParseInt(data["VfxUid"]),
+                VfxScale = MathHelper.ParseFloat(data["VfxScale"]),
                 MoveSpeed = MathHelper.ParseInt(data["MoveSpeed"]),
                 ArcHeightMin = MathHelper.ParseInt(data["ArcHeightMin"]),
                 ArcHeightMax = MathHelper.ParseInt(data["ArcHeightMax"]),
                 StartPosition = ConvertVector2(data["StartPosition"]),
                 ColliderSize = ConvertVector2(data["ColliderSize"]),
                 ColliderOffset = colliderOffset,
-                HitEffectUid = MathHelper.ParseInt(data["HitEffectUid"]),
+                HitVfxUid = MathHelper.ParseInt(data["HitVfxUid"]),
                 TargetType = EnumHelper.ConvertEnum<ProjectileConstants.TargetType>(data["TargetType"]),
                 TargetPositionRangeX = MathHelper.ParseInt(data["TargetPositionRangeX"]),
                 Count = MathHelper.ParseInt(data["Count"]),

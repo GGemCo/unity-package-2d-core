@@ -19,9 +19,9 @@ namespace GGemCo2DCore
         {
             base.Awake();
             
-            _durationStart = GetAnimationDuration(IEffectAnimationController.KeyClipNameStart, false);
-            _durationPlay = GetAnimationDuration(IEffectAnimationController.KeyClipNamePlay, false);
-            _durationEnd = GetAnimationDuration(IEffectAnimationController.KeyClipNameEnd, false);
+            _durationStart = GetAnimationDuration(IVfxAnimationController.KeyClipNameStart, false);
+            _durationPlay = GetAnimationDuration(IVfxAnimationController.KeyClipNamePlay, false);
+            _durationEnd = GetAnimationDuration(IVfxAnimationController.KeyClipNameEnd, false);
             _durationTotal = _durationStart + _durationPlay + _durationEnd; 
         }
 
@@ -30,9 +30,9 @@ namespace GGemCo2DCore
             List<StruckAddAnimation> newAddAnimations = new List<StruckAddAnimation>();
             if (_durationPlay > 0)
             {
-                newAddAnimations.Add(new(IEffectAnimationController.KeyClipNamePlay, true, 0, timeScale));
+                newAddAnimations.Add(new(IVfxAnimationController.KeyClipNamePlay, true, 0, timeScale));
             }
-            PlayAnimation(IEffectAnimationController.KeyClipNameStart, false, timeScale, newAddAnimations);
+            PlayAnimation(IVfxAnimationController.KeyClipNameStart, false, timeScale, newAddAnimations);
         }
 
     }

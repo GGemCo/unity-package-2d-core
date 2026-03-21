@@ -70,7 +70,7 @@ namespace GGemCo2DCore
         public InteractionManager InteractionManager;
         public CutsceneManager CutsceneManager;
         public QuestManager QuestManager;
-        public EffectManager EffectManager;
+        public VfxManager VfxManager;
         public ProjectileManager ProjectileManager;
         public AddressableLoaderPrefabCharacter AddressableLoaderPrefabCharacter;
         
@@ -164,9 +164,9 @@ namespace GGemCo2DCore
             CutsceneManager.Initialize(this);
             QuestManager = new QuestManager();
             QuestManager.Initialize(this);
-            EffectManager = new EffectManager();
-            EffectManager.Initialize(this);
-            EffectManager.SetAnimationEventMediator(animationEventMediator);
+            VfxManager = new VfxManager();
+            VfxManager.Initialize(this);
+            VfxManager.SetAnimationEventMediator(animationEventMediator);
             ProjectileManager = new ProjectileManager();
             ProjectileManager.Initialize(this);
             

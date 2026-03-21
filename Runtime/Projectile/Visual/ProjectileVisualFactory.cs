@@ -23,8 +23,8 @@ namespace GGemCo2DCore
                 case ProjectileConstants.ProjectileVisualType.Animator:
                     return projectileTransform.gameObject.AddComponent<ProjectileVisualAnimator>();
 
-                case ProjectileConstants.ProjectileVisualType.Effect:
-                    return projectileTransform.gameObject.AddComponent<ProjectileVisualEffect>();
+                case ProjectileConstants.ProjectileVisualType.Vfx:
+                    return projectileTransform.gameObject.AddComponent<ProjectileVisualVfx>();
 
                 default:
                     // Safety fallback
@@ -40,8 +40,8 @@ namespace GGemCo2DCore
                 return runtimeData.VisualType;
 
             // Default: 테이블에 EffectUid가 있으면 Effect, 아니면 None.
-            return staticData != null && staticData.EffectUid > 0
-                ? ProjectileConstants.ProjectileVisualType.Effect
+            return staticData != null && staticData.VfxUid > 0
+                ? ProjectileConstants.ProjectileVisualType.Vfx
                 : ProjectileConstants.ProjectileVisualType.None;
         }
     }

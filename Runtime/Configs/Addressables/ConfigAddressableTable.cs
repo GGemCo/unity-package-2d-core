@@ -34,7 +34,7 @@ namespace GGemCo2DCore
         public const string Stat             = "stat";
         public const string DamageType       = "damage_type";
         public const string State            = "state";
-        public const string Effect           = "effect";
+        public const string Vfx              = "vfx";
         public const string Interaction      = "interaction";
         public const string Shop             = "shop";
         public const string ItemUpgrade      = "item_upgrade";
@@ -70,7 +70,7 @@ namespace GGemCo2DCore
         public static readonly AddressableAssetInfo TableStat            = Make(Stat);
         public static readonly AddressableAssetInfo TableDamageType      = Make(DamageType);
         public static readonly AddressableAssetInfo TableState           = Make(State);
-        public static readonly AddressableAssetInfo TableEffect          = Make(Effect);
+        public static readonly AddressableAssetInfo TableVfx             = Make(Vfx);
         public static readonly AddressableAssetInfo TableInteraction     = Make(Interaction);
         public static readonly AddressableAssetInfo TableShop            = Make(Shop);
         public static readonly AddressableAssetInfo TableItemUpgrade     = Make(ItemUpgrade);
@@ -96,7 +96,7 @@ namespace GGemCo2DCore
             // Status 3분리 테이블
             TableStat, TableDamageType, TableState,
             // Others
-            TableEffect, TableInteraction,
+            TableVfx, TableInteraction,
             TableShop, TableItemUpgrade, TableItemSalvage, TableItemCraft,
             TableCutscene, TableDialogue, TableQuest, TableProjectile, TableSound, TableSimulationTool,
             TableSimulationGrowth, TableCrowdControl, TableItemUse, TableItemUseAction

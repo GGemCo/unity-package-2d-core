@@ -1,4 +1,4 @@
-﻿#if GGEMCO_USE_SPINE
+#if GGEMCO_USE_SPINE
 using System;
 using System.Collections.Generic;
 using Spine;
@@ -7,7 +7,7 @@ namespace GGemCo2DCore
 {
     public class EffectAnimationControllerSpine : Spine2dController, IEffectAnimationController
     {
-        private DefaultEffect _defaultEffect;
+        private VfxBehaviourBase _defaultEffect;
         private float durationStart;
         private float durationPlay;
         private float durationEnd;
@@ -16,11 +16,11 @@ namespace GGemCo2DCore
         protected override void Awake()
         {
             base.Awake();
-            _defaultEffect = GetComponent<DefaultEffect>();
+            _defaultEffect = GetComponent<VfxBehaviourBase>();
             if (_defaultEffect == null)
             {
                 enabled = false;
-                GcLogger.LogError("DefaultEffect not found");
+                GcLogger.LogError("VfxBehaviourBase not found");
                 return;
             }
             durationStart = GetAnimationDuration(IEffectAnimationController.KeyClipNameStart, false);

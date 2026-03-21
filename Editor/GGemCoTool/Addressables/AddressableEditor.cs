@@ -20,7 +20,7 @@ namespace GGemCo2DCoreEditor
         private SettingTable _settingTable;
         private SettingCharacters _settingCharacters;
         private SettingMap _settingMap;
-        private SettingEffect _settingEffect;
+        private SettingVfx _settingVfx;
         private SettingItem _settingItem;
         private SettingDialogue _settingDialogue;
         private SettingQuest _settingQuest;
@@ -59,7 +59,7 @@ namespace GGemCo2DCoreEditor
             _settingTable = new SettingTable(this);
             _settingMap = new SettingMap(this);
             _settingCharacters = new SettingCharacters(this);
-            _settingEffect = new SettingEffect(this);
+            _settingVfx = new SettingVfx(this);
             _settingItem = new SettingItem(this);
             _settingDialogue = new SettingDialogue(this);
             _settingQuest = new SettingQuest(this);
@@ -97,7 +97,7 @@ namespace GGemCo2DCoreEditor
 
                 using (new EditorGUILayout.HorizontalScope())
                 {
-                    _settingEffect?.OnGUI();
+                    _settingVfx?.OnGUI();
                     _settingItem?.OnGUI();
                 }
 

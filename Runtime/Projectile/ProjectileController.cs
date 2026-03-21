@@ -48,7 +48,7 @@ namespace GGemCo2DCore
                     visualType: metadataProjectile.VisualType,
                     visualSprite: metadataProjectile.VisualSprite,
                     visualAnimatorController: metadataProjectile.VisualAnimatorController,
-                    visualEffectUidOverride: metadataProjectile.VisualEffectUidOverride,
+                    visualVfxUidOverride: metadataProjectile.VisualVfxUidOverride,
                     useTargetPositionOverride: metadataProjectile.UseTargetPositionOverride,
                     targetPositionOverride: metadataProjectile.TargetPositionOverride)
                 : metadataProjectile;

@@ -14,7 +14,7 @@ namespace GGemCo2DCore
     /// - DefaultEffect 의 수명/정렬/색상/플립/End 재생 파이프라인을 그대로 따름
     /// </summary>
     [DisallowMultipleComponent]
-    public class EffectLaser : DefaultEffect
+    public class VfxLaser : DefaultVfx
     {
         private static readonly int MainTex   = Shader.PropertyToID("_MainTex");
         private static readonly int MainTexSt = Shader.PropertyToID("_MainTex_ST");

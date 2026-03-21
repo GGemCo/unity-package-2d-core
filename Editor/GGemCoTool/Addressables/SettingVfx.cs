@@ -11,21 +11,21 @@ namespace GGemCo2DCoreEditor
     /// <summary>
     /// 테이블 등록하기
     /// </summary>
-    public class SettingEffect : DefaultAddressable
+    public class SettingVfx : DefaultAddressable
     {
         private const string Title = "이펙트 추가하기";
         private readonly AddressableEditor _addressableEditor;
 
-        public SettingEffect(AddressableEditor addressableEditorWindow)
+        public SettingVfx(AddressableEditor addressableEditorWindow)
         {
             _addressableEditor = addressableEditorWindow;
-            targetGroupName = $"{ConfigAddressableGroupName.Effect}";
+            targetGroupName = $"{ConfigAddressableGroupName.Vfx}";
         }
         public void OnGUI()
         {
-            if (!File.Exists($"{ConfigAddressableTable.TableEffect.Path}"))
+            if (!File.Exists($"{ConfigAddressableTable.TableVfx.Path}"))
             {
-                EditorGUILayout.HelpBox($"{ConfigAddressableTable.Effect} 테이블이 없습니다.", MessageType.Info);
+                EditorGUILayout.HelpBox($"{ConfigAddressableTable.Vfx} 테이블이 없습니다.", MessageType.Info);
             }
             else
             {
@@ -55,7 +55,7 @@ namespace GGemCo2DCoreEditor
                 if (!result) return;
             }
             
-            Dictionary<int, StruckTableEffect> dictionary = TableLoaderManager.LoadEffectTable().GetDatas();
+            Dictionary<int, StruckTableVfx> dictionary = TableLoaderManager.LoadVfxTable().GetDatas();
             
             // AddressableSettings 가져오기 (없으면 생성)
             AddressableAssetSettings settings = AddressableAssetSettingsDefaultObject.Settings;
@@ -79,13 +79,13 @@ namespace GGemCo2DCoreEditor
             if (group)
             {
                 // foreach 문을 사용하여 딕셔너리 내용을 출력
-                foreach (KeyValuePair<int, StruckTableEffect> outerPair in dictionary)
+                foreach (KeyValuePair<int, StruckTableVfx> outerPair in dictionary)
                 {
                     var info = outerPair.Value;
                     if (info.Uid <= 0) continue;
                 
                     // 이펙트는 같은 프리팹으로 베리에이션 해서 사용할 수 있기때문에 info.PrefabPath 을 key 로 사용한다.
-                    string key = $"{ConfigAddressableGroupName.Effect}_{info.PrefabPath}";
+                    string key = $"{ConfigAddressableGroupName.Vfx}_{info.PrefabPath}";
                     string assetPath = $"{ConfigAddressablePath.Effects.RootEffect}/{info.PrefabPath}.prefab";
                     string label = ConfigAddressableLabel.Effect;
                 

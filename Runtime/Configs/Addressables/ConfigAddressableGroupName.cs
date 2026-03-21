@@ -15,8 +15,8 @@
         public const string CharacterThumbnail  = ConfigDefine.NameSDK + "_Character_Thumbnail";
         public const string CharacterImageName  = ConfigDefine.NameSDK + "_Character_ImageName";
 
-        // Effects
-        public const string Effect = ConfigDefine.NameSDK + "_Effect";
+        // Vfxs
+        public const string Vfx = ConfigDefine.NameSDK + "_Vfx";
 
         // Items (하위 그룹 형태로 구조화)
         public const string Item = ConfigDefine.NameSDK + "_Item";

@@ -292,9 +292,9 @@ namespace GGemCo2DCore
         /// 이펙트(AnimationEvent) 이벤트를 리스너로 전달합니다.
         /// </summary>
         /// <param name="json">이펙트 파라미터(JSON 문자열)입니다.</param>
-        public void GGemCoAniEventEffect(string json)
+        public void GGemCoAniEventVfx(string json)
         {
-            EventListener?.OnAnimationEventEffect(json, gameObject);
+            EventListener?.OnAnimationEventVfx(json, gameObject);
         }
 
         /// <summary>

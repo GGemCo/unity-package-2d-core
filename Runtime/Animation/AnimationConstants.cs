@@ -1,6 +1,6 @@
 ﻿namespace GGemCo2DCore
 {
-    public class StruckAnimationEventEffect
+    public class StruckAnimationEventVfx
     {
         public int Uid { get; set; }
         public float Scale { get; set; } = 1.0f;
@@ -63,7 +63,7 @@
         public const string EventNameAttack = Prefix+"Attack";
         public const string EventNameSound = Prefix+"Sound";
         public const string EventNameCameraShake = Prefix+"CameraShake";
-        public const string EventNameEffect = Prefix+"Effect";
+        public const string EventNameVfx = Prefix+"Vfx";
         public const string EventNameSkill = Prefix+"Skill";
         
         public const string EventNameJumpUp = Prefix+"JumpUp";

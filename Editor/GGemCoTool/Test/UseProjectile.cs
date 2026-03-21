@@ -95,8 +95,8 @@ namespace GGemCo2DCoreEditor
         [Tooltip("Animator 타입일 때 사용")]
         [SerializeField] private RuntimeAnimatorController visualAnimatorController;
 
-        [Tooltip("Effect 타입일 때: 0이면 테이블 EffectUid 사용, 0보다 크면 이 값을 우선")]
-        [SerializeField] private int visualEffectUidOverride;
+        [Tooltip("Vfx 타입일 때: 0이면 테이블 VfxUid 사용, 0보다 크면 이 값을 우선")]
+        [SerializeField] private int visualVfxUidOverride;
 
         // ------------------------------
         // Spawn (Tool control)
@@ -120,15 +120,15 @@ namespace GGemCo2DCoreEditor
         private readonly List<string> _namesProjectile = new();
         private readonly List<int> _uidsProjectile = new();
 
-        // Effect dropdown
-        private int _selectedIndexEffect;
-        private readonly List<string> _namesEffect = new();
-        private readonly List<int> _uidsEffect = new();
+        // Vfx dropdown
+        private int _selectedIndexVfx;
+        private readonly List<string> _namesVfx = new();
+        private readonly List<int> _uidsVfx = new();
 
-        private Dictionary<int, StruckTableEffect> _tableDictionaryEffect;
+        private Dictionary<int, StruckTableVfx> _tableDictionaryVfx;
 
         private TableProjectile _tableProjectile;
-        private TableEffect _tableEffect;
+        private TableVfx _tableVfx;
         private ProjectileController _projectileController;
 
         private StruckTableProjectile _cachedProjectileInfo;
@@ -142,15 +142,15 @@ namespace GGemCo2DCoreEditor
             new("Uid", readOnly: true),
             new("Type"),
             new("Name"),
-            new("EffectUid"),
-            new("EffectScale"),
+            new("VfxUid"),
+            new("VfxScale"),
             new("MoveSpeed"),
             new("ArcHeightMin"),
             new("ArcHeightMax"),
             new("StartPosition", "StartPosition (x,y)"),
             new("ColliderSize", "ColliderSize (x,y)"),
             new("ColliderOffset", "ColliderOffset (x,y)"),
-            new("HitEffectUid"),
+            new("HitVfxUid"),
             new("TargetType"),
             new("TargetPositionRangeX"),
             new("Count"),
@@ -168,20 +168,20 @@ namespace GGemCo2DCoreEditor
             base.OnEnable();
 
             _selectedIndexProjectile = 0;
-            _selectedIndexEffect = 0;
+            _selectedIndexVfx = 0;
 
             _tableProjectile = TableLoaderManager.LoadProjectileTable();
-            _tableEffect = TableLoaderManager.LoadEffectTable();
-            _tableDictionaryEffect = _tableEffect != null ? _tableEffect.GetDatas() : null;
+            _tableVfx = TableLoaderManager.LoadVfxTable();
+            _tableDictionaryVfx = _tableVfx != null ? _tableVfx.GetDatas() : null;
 
             _projectileController ??= new ProjectileController();
 
             LoadProjectileDropdown();
-            LoadEffectDropdown();
+            LoadVfxDropdown();
             LoadPrefs();
 
             SyncProjectileSelectionByUid();
-            SyncEffectSelectionByUid();
+            SyncVfxSelectionByUid();
 
             CacheProjectileInfo();
             ApplyAutoSnapTargetModeIfNeeded(force: true);
@@ -400,22 +400,22 @@ namespace GGemCo2DCoreEditor
             {
                 visualType = (ProjectileConstants.ProjectileVisualType)EditorGUILayout.EnumPopup(new GUIContent("VisualType"), visualType);
 
-                using (new EditorGUI.DisabledScope(visualType != ProjectileConstants.ProjectileVisualType.Effect))
+                using (new EditorGUI.DisabledScope(visualType != ProjectileConstants.ProjectileVisualType.Vfx))
                 {
-                    EditorGUILayout.LabelField("Effect (선택)", EditorStyles.miniBoldLabel);
+                    EditorGUILayout.LabelField("Vfx (선택)", EditorStyles.miniBoldLabel);
 
-                    _selectedIndexEffect = EditorGUILayout.Popup(
-                        new GUIContent("EffectUid Override"),
-                        _selectedIndexEffect,
-                        _namesEffect.ToArray());
+                    _selectedIndexVfx = EditorGUILayout.Popup(
+                        new GUIContent("VfxUid Override"),
+                        _selectedIndexVfx,
+                        _namesVfx.ToArray());
 
-                    visualEffectUidOverride = (_selectedIndexEffect >= 0 && _selectedIndexEffect < _uidsEffect.Count)
-                        ? _uidsEffect[_selectedIndexEffect]
+                    visualVfxUidOverride = (_selectedIndexVfx >= 0 && _selectedIndexVfx < _uidsVfx.Count)
+                        ? _uidsVfx[_selectedIndexVfx]
                         : 0;
 
                     EditorGUILayout.HelpBox(
-                        "Effect 타입일 때만 사용됩니다.\n" +
-                        "0이면 테이블 EffectUid를 사용하고, 0보다 크면 Override 값을 우선합니다.",
+                        "Vfx 타입일 때만 사용됩니다.\n" +
+                        "0이면 테이블 VfxUid를 사용하고, 0보다 크면 Override 값을 우선합니다.",
                         MessageType.None);
                 }
 
@@ -595,7 +595,7 @@ namespace GGemCo2DCoreEditor
                     visualType: visualType,
                     visualSprite: visualSprite,
                     visualAnimatorController: visualAnimatorController,
-                    visualEffectUidOverride: visualEffectUidOverride);
+                    visualVfxUidOverride: visualVfxUidOverride);
 
                 if (hasTargetPosition)
                 {
@@ -864,30 +864,30 @@ namespace GGemCo2DCoreEditor
             _selectedIndexProjectile = 0;
         }
 
-        private void LoadEffectDropdown()
+        private void LoadVfxDropdown()
         {
-            _namesEffect.Clear();
-            _uidsEffect.Clear();
+            _namesVfx.Clear();
+            _uidsVfx.Clear();
 
-            _namesEffect.Add("None");
-            _uidsEffect.Add(0);
+            _namesVfx.Add("None");
+            _uidsVfx.Add(0);
 
-            if (_tableDictionaryEffect == null)
+            if (_tableDictionaryVfx == null)
             {
-                _selectedIndexEffect = 0;
+                _selectedIndexVfx = 0;
                 return;
             }
 
-            foreach (var kvp in _tableDictionaryEffect)
+            foreach (var kvp in _tableDictionaryVfx)
             {
                 var info = kvp.Value;
                 if (info == null || info.Uid <= 0) continue;
 
-                _namesEffect.Add($"{info.Uid} - {info.Name}");
-                _uidsEffect.Add(info.Uid);
+                _namesVfx.Add($"{info.Uid} - {info.Name}");
+                _uidsVfx.Add(info.Uid);
             }
 
-            _selectedIndexEffect = 0;
+            _selectedIndexVfx = 0;
         }
 
         private void SyncProjectileSelectionByUid()
@@ -904,16 +904,16 @@ namespace GGemCo2DCoreEditor
             return 0;
         }
 
-        private void SyncEffectSelectionByUid()
+        private void SyncVfxSelectionByUid()
         {
-            _selectedIndexEffect = GetEffectIndex(visualEffectUidOverride);
+            _selectedIndexVfx = GetVfxIndex(visualVfxUidOverride);
         }
 
-        private int GetEffectIndex(int searchUid)
+        private int GetVfxIndex(int searchUid)
         {
-            for (int i = 0; i < _uidsEffect.Count; i++)
+            for (int i = 0; i < _uidsVfx.Count; i++)
             {
-                if (searchUid == _uidsEffect[i]) return i;
+                if (searchUid == _uidsVfx[i]) return i;
             }
             return 0;
         }
@@ -981,8 +981,8 @@ namespace GGemCo2DCoreEditor
             EditorPrefs.SetString(PrefsKey + "scaleMultiplier", scaleMultiplier.ToString(CultureInfo.InvariantCulture));
 
             EditorPrefs.SetInt(PrefsKey + "visualType", (int)visualType);
-            EditorPrefs.SetInt(PrefsKey + "visualEffectUidOverride", visualEffectUidOverride);
-            EditorPrefs.SetInt(PrefsKey + "effectSelectedIndex", _selectedIndexEffect);
+            EditorPrefs.SetInt(PrefsKey + "visualVfxUidOverride", visualVfxUidOverride);
+            EditorPrefs.SetInt(PrefsKey + "effectSelectedIndex", _selectedIndexVfx);
 
             EditorPrefs.SetInt(PrefsKey + "count", count);
             EditorPrefs.SetString(PrefsKey + "secDelayByOne", secDelayByOne.ToString(CultureInfo.InvariantCulture));
@@ -1019,8 +1019,8 @@ namespace GGemCo2DCoreEditor
                 scaleMultiplier = scm;
 
             visualType = (ProjectileConstants.ProjectileVisualType)EditorPrefs.GetInt(PrefsKey + "visualType", (int)visualType);
-            visualEffectUidOverride = EditorPrefs.GetInt(PrefsKey + "visualEffectUidOverride", visualEffectUidOverride);
-            _selectedIndexEffect = EditorPrefs.GetInt(PrefsKey + "effectSelectedIndex", _selectedIndexEffect);
+            visualVfxUidOverride = EditorPrefs.GetInt(PrefsKey + "visualVfxUidOverride", visualVfxUidOverride);
+            _selectedIndexVfx = EditorPrefs.GetInt(PrefsKey + "effectSelectedIndex", _selectedIndexVfx);
 
             count = EditorPrefs.GetInt(PrefsKey + "count", count);
 
@@ -1078,8 +1078,8 @@ namespace GGemCo2DCoreEditor
             visualType = ProjectileConstants.ProjectileVisualType.Default;
             visualSprite = null;
             visualAnimatorController = null;
-            visualEffectUidOverride = 0;
-            _selectedIndexEffect = 0;
+            visualVfxUidOverride = 0;
+            _selectedIndexVfx = 0;
 
             count = 1;
             secDelayByOne = 0f;
@@ -1201,15 +1201,15 @@ namespace GGemCo2DCoreEditor
             var info = GGemCo2DCore.TableLoaderManager.Instance.GetProjectileData(row.Uid);
             if (info != null)
             {
-                info.EffectUid = row.EffectUid;
-                info.EffectScale = row.EffectScale;
+                info.VfxUid = row.VfxUid;
+                info.VfxScale = row.VfxScale;
                 info.MoveSpeed = row.MoveSpeed;
                 info.ArcHeightMin = row.ArcHeightMin;
                 info.ArcHeightMax = row.ArcHeightMax;
                 info.StartPosition = row.StartPosition;
                 info.ColliderSize = row.ColliderSize;
                 info.ColliderOffset = row.ColliderOffset;
-                info.HitEffectUid = row.HitEffectUid;
+                info.HitVfxUid = row.HitVfxUid;
 
                 info.BoundaryMode = row.BoundaryMode;
                 info.BoundaryPadding = row.BoundaryPadding;
@@ -1231,15 +1231,15 @@ namespace GGemCo2DCoreEditor
                     "Uid" => row.Uid.ToString(),
                     "Type" => row.Type.ToString(),
                     "Name" => row.Name ?? string.Empty,
-                    "EffectUid" => row.EffectUid.ToString(),
-                    "EffectScale" => MathHelper.FormatFloat(row.EffectScale),
+                    "VfxUid" => row.VfxUid.ToString(),
+                    "VfxScale" => MathHelper.FormatFloat(row.VfxScale),
                     "MoveSpeed" => row.MoveSpeed.ToString(),
                     "ArcHeightMin" => row.ArcHeightMin.ToString(),
                     "ArcHeightMax" => row.ArcHeightMax.ToString(),
                     "StartPosition" => MathHelper.FormatVector2(row.StartPosition),
                     "ColliderSize" => MathHelper.FormatVector2(row.ColliderSize),
                     "ColliderOffset" => MathHelper.FormatVector2(row.ColliderOffset),
-                    "HitEffectUid" => row.HitEffectUid.ToString(),
+                    "HitVfxUid" => row.HitVfxUid.ToString(),
                     "TargetType" => row.TargetType.ToString(),
                     "TargetPositionRangeX" => row.TargetPositionRangeX.ToString(),
                     "Count" => row.Count.ToString(),

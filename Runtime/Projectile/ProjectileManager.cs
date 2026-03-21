@@ -32,7 +32,7 @@ namespace GGemCo2DCore
         public readonly ProjectileConstants.ProjectileVisualType VisualType;
         public readonly Sprite VisualSprite;
         public readonly RuntimeAnimatorController VisualAnimatorController;
-        public readonly int VisualEffectUidOverride;
+        public readonly int VisualVfxUidOverride;
 
         public MetadataProjectile(
             int uid,
@@ -45,7 +45,7 @@ namespace GGemCo2DCore
             ProjectileConstants.ProjectileVisualType visualType = ProjectileConstants.ProjectileVisualType.Default,
             Sprite visualSprite = null,
             RuntimeAnimatorController visualAnimatorController = null,
-            int visualEffectUidOverride = 0,
+            int visualVfxUidOverride = 0,
             bool useTargetPositionOverride = false,
             Vector2 targetPositionOverride = default)
         {
@@ -61,7 +61,7 @@ namespace GGemCo2DCore
             VisualType = visualType;
             VisualSprite = visualSprite;
             VisualAnimatorController = visualAnimatorController;
-            VisualEffectUidOverride = visualEffectUidOverride;
+            VisualVfxUidOverride = visualVfxUidOverride;
 
             UseTargetPositionOverride = useTargetPositionOverride;
             TargetPositionOverride = targetPositionOverride;

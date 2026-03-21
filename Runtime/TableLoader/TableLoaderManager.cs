@@ -32,7 +32,7 @@ namespace GGemCo2DCore
         public TableDamageType TableDamageType { get; private set; } = new TableDamageType();
         public TableState TableState { get; private set; } = new TableState();
         public TableCrowdControl TableCrowdControl { get; private set; } = new TableCrowdControl();
-        public TableEffect TableEffect { get; private set; } = new TableEffect();
+        public TableVfx TableVfx { get; private set; } = new TableVfx();
         public TableInteraction TableInteraction { get; private set; } = new TableInteraction();
         public TableShop TableShop { get; private set; } = new TableShop();
         public TableItemUpgrade TableItemUpgrade { get; private set; } = new TableItemUpgrade();
@@ -77,7 +77,7 @@ namespace GGemCo2DCore
                 registry.Register(TableDamageType);
                 registry.Register(TableState);
                 registry.Register(TableCrowdControl);
-                registry.Register(TableEffect);
+                registry.Register(TableVfx);
                 registry.Register(TableInteraction);
                 registry.Register(TableShop);
                 registry.Register(TableItemUpgrade);
@@ -192,11 +192,11 @@ namespace GGemCo2DCore
         public bool TryGetWindowData(int uid, out StruckTableWindow data, bool logIfMissing = false)
             => TryGetData(TableWindow, uid, out data, "Window", (t, i) => t.GetDataByUid(i), logIfMissing);
 
-        // Effect
-        public StruckTableEffect GetEffectData(int uid, bool logIfMissing = true)
-            => GetData(TableEffect, uid, "Effect", (t, i) => t.GetDataByUid(i), logIfMissing);
-        public bool TryGetEffectData(int uid, out StruckTableEffect data, bool logIfMissing = false)
-            => TryGetData(TableEffect, uid, out data, "Effect", (t, i) => t.GetDataByUid(i), logIfMissing);
+        // Vfx
+        public StruckTableVfx GetVfxData(int uid, bool logIfMissing = true)
+            => GetData(TableVfx, uid, "Vfx", (t, i) => t.GetDataByUid(i), logIfMissing);
+        public bool TryGetVfxData(int uid, out StruckTableVfx data, bool logIfMissing = false)
+            => TryGetData(TableVfx, uid, out data, "Vfx", (t, i) => t.GetDataByUid(i), logIfMissing);
 
         // Interaction
         public StruckTableInteraction GetInteractionData(int uid, bool logIfMissing = true)

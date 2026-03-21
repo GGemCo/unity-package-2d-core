@@ -55,9 +55,14 @@ public static TableItemDropGroup LoadItemDropGroupTable(bool forceReload = true)
             return LoadTable<TableQuest>(ConfigAddressableTable.TableQuest.Path, forceReload);
         }
 
-        public static TableEffect LoadEffectTable(bool forceReload = true)
+        public static TableVfx LoadVfxTable(bool forceReload = true)
         {
-            return LoadTable<TableEffect>(ConfigAddressableTable.TableEffect.Path, forceReload);
+            return LoadTable<TableVfx>(ConfigAddressableTable.TableVfx.Path, forceReload);
+        }
+
+        public static TableVfx LoadEffectTable(bool forceReload = true)
+        {
+            return LoadVfxTable(forceReload);
         }
 
 

@@ -21,8 +21,8 @@ namespace GGemCo2DCoreEditor
             var settingMap = new SettingMap(addressableEditor);
             settingMap.Setup(ctx);
             
-            var settingEffect = new SettingEffect(addressableEditor);
-            settingEffect.Setup(ctx);
+            var settingVfx = new SettingVfx(addressableEditor);
+            settingVfx.Setup(ctx);
             
             var settingItem = new SettingItem(addressableEditor);
             settingItem.Setup(ctx);

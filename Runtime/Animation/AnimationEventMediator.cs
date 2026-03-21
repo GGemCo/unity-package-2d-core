@@ -11,27 +11,27 @@ namespace GGemCo2DCore
     {
         private CameraManager _cameraManager;
         private SoundManager _soundManager;
-        private EffectManager _effectManager;
+        private VfxManager _vfxManager;
 
         public void Initialize(SceneGame sceneGame)
         {
             _cameraManager = sceneGame.cameraManager;
             _soundManager = sceneGame.soundManager;
-            _effectManager = sceneGame.EffectManager;
+            _vfxManager = sceneGame.VfxManager;
         }
 
-        public void OnAnimationEventEffect(string json, GameObject fromObject)
+        public void OnAnimationEventVfx(string json, GameObject fromObject)
         {
             try
             {
-                var data = JsonConvert.DeserializeObject<StruckAnimationEventEffect>(json);
-                var effect = _effectManager.CreateEffect(data);
-                if (effect == null) return;
-                effect.SetCreateCharacter(fromObject);
+                var data = JsonConvert.DeserializeObject<StruckAnimationEventVfx>(json);
+                var vfx = _vfxManager.CreateVfx(data);
+                if (vfx == null) return;
+                vfx.SetCreateCharacter(fromObject);
             }
             catch (Exception e)
             {
-                GcLogger.LogError($"animation effect event, json parsing error: {e.Message} / json: {json}");
+                GcLogger.LogError($"animation vfx event, json parsing error: {e.Message} / json: {json}");
             }
         }
 
