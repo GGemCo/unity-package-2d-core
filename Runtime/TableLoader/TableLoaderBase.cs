@@ -48,7 +48,11 @@ namespace GGemCo2DCore
 
             if (!locationsHandle.Status.Equals(AsyncOperationStatus.Succeeded) || locationsHandle.Result.Count == 0)
             {
-                GcLogger.LogError($"[AddressableSettingsLoader] '{key}' 가 Addressables에 등록되지 않았습니다. '{key}' 를 생성한 후 {ConfigDefine.NameSDK}Tool > 기본 셋팅하기 메뉴를 열고 Addressable 추가하기 버튼을 클릭해주세요.");
+                if (!IsOptionalMissingTable(key))
+                {
+                    GcLogger.LogError($"[AddressableSettingsLoader] '{key}' 가 Addressables에 등록되지 않았습니다. '{key}' 를 생성한 후 {ConfigDefine.NameSDK}Tool > 기본 셋팅하기 메뉴를 열고 Addressable 추가하기 버튼을 클릭해주세요.");
+                }
+
                 Addressables.Release(locationsHandle);
                 return null;
             }
@@ -64,6 +68,13 @@ namespace GGemCo2DCore
 
             return content;
         }
+
+        private static bool IsOptionalMissingTable(string key)
+        {
+            return key == ConfigAddressableTable.TableVfxEffect.Key
+                   || key == ConfigAddressableTable.TableVfxParticle.Key;
+        }
+
         public async Task LoadDataFile(AddressableAssetInfo info)
         {
             var content = await LoadTextAsync(info.Key);

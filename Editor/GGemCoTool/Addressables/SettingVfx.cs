@@ -23,9 +23,13 @@ namespace GGemCo2DCoreEditor
         }
         public void OnGUI()
         {
-            if (!File.Exists($"{ConfigAddressableTable.TableVfx.Path}"))
+            bool hasLegacy = File.Exists(ConfigAddressableTable.TableVfx.Path);
+            bool hasEffect = File.Exists(ConfigAddressableTable.TableVfxEffect.Path);
+            bool hasParticle = File.Exists(ConfigAddressableTable.TableVfxParticle.Path);
+
+            if (!hasLegacy && !hasEffect && !hasParticle)
             {
-                EditorGUILayout.HelpBox($"{ConfigAddressableTable.Vfx} 테이블이 없습니다.", MessageType.Info);
+                EditorGUILayout.HelpBox($"{ConfigAddressableTable.Vfx}, {ConfigAddressableTable.VfxEffect}, {ConfigAddressableTable.VfxParticle} 테이블이 없습니다.", MessageType.Info);
             }
             else
             {
@@ -55,7 +59,8 @@ namespace GGemCo2DCoreEditor
                 if (!result) return;
             }
             
-            Dictionary<int, StruckTableVfx> dictionary = TableLoaderManager.LoadVfxTable().GetDatas();
+            TableVfx mergedTable = TableLoaderManager.LoadVfxTable();
+            Dictionary<int, StruckTableVfx> dictionary = mergedTable != null ? mergedTable.GetDatas() : new Dictionary<int, StruckTableVfx>();
             
             // AddressableSettings 가져오기 (없으면 생성)
             AddressableAssetSettings settings = AddressableAssetSettingsDefaultObject.Settings;
@@ -78,17 +83,21 @@ namespace GGemCo2DCoreEditor
 
             if (group)
             {
-                // foreach 문을 사용하여 딕셔너리 내용을 출력
+                var registeredPrefabPaths = new HashSet<string>();
+
                 foreach (KeyValuePair<int, StruckTableVfx> outerPair in dictionary)
                 {
                     var info = outerPair.Value;
-                    if (info.Uid <= 0) continue;
-                
-                    // VFX는 같은 프리팹으로 베리에이션 해서 사용할 수 있기때문에 info.PrefabPath 을 key 로 사용한다.
+                    if (info == null || info.Uid <= 0 || string.IsNullOrWhiteSpace(info.PrefabPath))
+                        continue;
+
+                    if (!registeredPrefabPaths.Add(info.PrefabPath))
+                        continue;
+
                     string key = $"{ConfigAddressableGroupName.Vfx}_{info.PrefabPath}";
                     string assetPath = $"{ConfigAddressablePath.Vfx.RootVfx}/{info.PrefabPath}.prefab";
                     string label = ConfigAddressableLabel.Vfx;
-                
+
                     Add(settings, group, key, assetPath, label);
                 }
             }

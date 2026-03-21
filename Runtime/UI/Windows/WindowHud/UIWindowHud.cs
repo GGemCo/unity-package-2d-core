@@ -16,7 +16,9 @@ namespace GGemCo2DCore
         [Tooltip("마력 오브젝트. 예) Slider, UIElement")]
         public UIWindowHudResourceBase gameObjectMp;
         
-        [Tooltip("스테미나 Slider")]
+        [Tooltip("스테미나 오브젝트. 예) Slider, UIElement")]
+        public UIWindowHudResourceBase gameObjectStamina;
+        [Tooltip("(레거시) 스테미나 Slider")]
         public Slider sliderStamina;
         [Tooltip("현재 플레이어 생명력 수치")]
         public TextMeshProUGUI textHp;
@@ -81,8 +83,17 @@ namespace GGemCo2DCore
         }
         public void SetStamina(long currentValue, long total)
         {
-            sliderStamina.value = (float)currentValue / total;
-            textStamina.text = $"{currentValue} / {total}";
+            if (gameObjectStamina)
+            {
+                gameObjectStamina.SetValue(UIWindowHudResourceType.Stamina, currentValue, total);
+            }
+            else if (sliderStamina)
+            {
+                sliderStamina.value = total > 0 ? (float)currentValue / total : 0f;
+            }
+
+            if (textStamina)
+                textStamina.text = $"{currentValue} / {total}";
         }
 
         public void SetBattleStatus(CharacterConstants.BattleStatus value)

@@ -2,6 +2,13 @@ namespace GGemCo2DCore
 {
     public static class VfxConstants
     {
+        public enum AssetKind
+        {
+            None,
+            Effect,
+            Particle,
+        }
+
         public enum Category
         {
             None,

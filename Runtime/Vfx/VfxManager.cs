@@ -119,10 +119,15 @@ namespace GGemCo2DCore
 
         private static VfxBehaviourBase EnsureBehaviour(GameObject instance, StruckTableVfx info)
         {
-            if (info.PlaybackType == VfxConstants.PlaybackType.Laser || info.Type == VfxConstants.Type.Laser)
-                return GetOrAdd<VfxLaser>(instance);
-            if (info.PlaybackType == VfxConstants.PlaybackType.ParticleSystem)
+            if (info == null)
+                return null;
+
+            if (info.AssetKind == VfxConstants.AssetKind.Particle || info.PlaybackType == VfxConstants.PlaybackType.ParticleSystem)
                 return GetOrAdd<ParticleSystemVfxBehaviour>(instance);
+
+            if (info.Type == VfxConstants.Type.Laser || info.PlaybackType == VfxConstants.PlaybackType.Laser)
+                return GetOrAdd<VfxLaser>(instance);
+
             return GetOrAdd<DefaultVfx>(instance);
         }
 
@@ -139,7 +144,7 @@ namespace GGemCo2DCore
 
         private void EnsureAnimationController(GameObject instance, VfxBehaviourBase behaviour, StruckTableVfx info)
         {
-            if (behaviour is ParticleSystemVfxBehaviour)
+            if (behaviour is ParticleSystemVfxBehaviour || info == null || info.AssetKind == VfxConstants.AssetKind.Particle)
             {
                 behaviour.VfxAnimationController = null;
                 return;

@@ -1,8 +1,5 @@
-using System;
-using System.Threading.Tasks;
+using System.Collections.Generic;
 using UnityEngine;
-using UnityEngine.AddressableAssets;
-using UnityEngine.ResourceManagement.AsyncOperations;
 
 namespace GGemCo2DCore
 {
@@ -18,7 +15,6 @@ namespace GGemCo2DCore
         public TableMonster TableMonster { get; private set; } = new TableMonster();
         public TableAnimation TableAnimation { get; private set; } = new TableAnimation();
         public TableItem TableItem { get; private set; } = new TableItem();
-        // Item option tables
         public TableItemBaseOption TableItemBaseOption { get; private set; } = new TableItemBaseOption();
         public TableItemAffixDef TableItemAffixDef { get; private set; } = new TableItemAffixDef();
         public TableItemAffixPool TableItemAffixPool { get; private set; } = new TableItemAffixPool();
@@ -33,6 +29,8 @@ namespace GGemCo2DCore
         public TableState TableState { get; private set; } = new TableState();
         public TableCrowdControl TableCrowdControl { get; private set; } = new TableCrowdControl();
         public TableVfx TableVfx { get; private set; } = new TableVfx();
+        public TableVfxEffect TableVfxEffect { get; private set; } = new TableVfxEffect();
+        public TableVfxParticle TableVfxParticle { get; private set; } = new TableVfxParticle();
         public TableInteraction TableInteraction { get; private set; } = new TableInteraction();
         public TableShop TableShop { get; private set; } = new TableShop();
         public TableItemUpgrade TableItemUpgrade { get; private set; } = new TableItemUpgrade();
@@ -78,6 +76,8 @@ namespace GGemCo2DCore
                 registry.Register(TableState);
                 registry.Register(TableCrowdControl);
                 registry.Register(TableVfx);
+                registry.Register(TableVfxEffect);
+                registry.Register(TableVfxParticle);
                 registry.Register(TableInteraction);
                 registry.Register(TableShop);
                 registry.Register(TableItemUpgrade);
@@ -194,9 +194,43 @@ namespace GGemCo2DCore
 
         // Vfx
         public StruckTableVfx GetVfxData(int uid, bool logIfMissing = true)
-            => GetData(TableVfx, uid, "Vfx", (t, i) => t.GetDataByUid(i), logIfMissing);
+        {
+            if (uid <= 0)
+                return null;
+
+            if (TableVfxEffect != null && TableVfxEffect.TryGetDataByUid(uid, out var effectRow))
+                return effectRow;
+
+            if (TableVfxParticle != null && TableVfxParticle.TryGetDataByUid(uid, out var particleRow))
+                return particleRow;
+
+            return GetData(TableVfx, uid, "Vfx", (t, i) => t.GetDataByUid(i), logIfMissing);
+        }
+
         public bool TryGetVfxData(int uid, out StruckTableVfx data, bool logIfMissing = false)
-            => TryGetData(TableVfx, uid, out data, "Vfx", (t, i) => t.GetDataByUid(i), logIfMissing);
+        {
+            data = GetVfxData(uid, logIfMissing);
+            return data != null;
+        }
+
+        public IReadOnlyDictionary<int, StruckTableVfx> GetAllVfxData()
+        {
+            var merged = new Dictionary<int, StruckTableVfx>();
+
+            MergeVfxRows(merged, TableVfx?.GetAll());
+            MergeVfxRows(merged, TableVfxEffect?.GetAll());
+            MergeVfxRows(merged, TableVfxParticle?.GetAll());
+            return merged;
+        }
+
+        private static void MergeVfxRows(Dictionary<int, StruckTableVfx> target, IReadOnlyDictionary<int, StruckTableVfx> source)
+        {
+            if (target == null || source == null)
+                return;
+
+            foreach (var pair in source)
+                target[pair.Key] = pair.Value;
+        }
 
         // Interaction
         public StruckTableInteraction GetInteractionData(int uid, bool logIfMissing = true)

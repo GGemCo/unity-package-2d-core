@@ -111,7 +111,7 @@ namespace GGemCo2DCoreEditor
                 var info = kvp.Value;
                 if (info.Uid <= 0) continue;
 
-                _names.Add($"{info.Uid} - {info.Name} [{info.PlaybackType}]");
+                _names.Add($"{info.Uid} - {info.Name} [{info.AssetKind}/{info.PlaybackType}]");
                 _uids.Add(info.Uid);
             }
             _selectedIndex = 0;

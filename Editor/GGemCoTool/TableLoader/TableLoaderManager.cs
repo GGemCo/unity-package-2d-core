@@ -57,8 +57,23 @@ public static TableItemDropGroup LoadItemDropGroupTable(bool forceReload = true)
 
         public static TableVfx LoadVfxTable(bool forceReload = true)
         {
-            return LoadTable<TableVfx>(ConfigAddressableTable.TableVfx.Path, forceReload);
+            var merged = new TableVfx();
+
+            MergeVfxTable(merged, LoadVfxLegacyTable(forceReload));
+            MergeVfxTable(merged, LoadVfxEffectTable(forceReload));
+            MergeVfxTable(merged, LoadVfxParticleTable(forceReload));
+
+            return merged;
         }
+
+        public static TableVfx LoadVfxLegacyTable(bool forceReload = true)
+            => LoadOptionalTable<TableVfx>(ConfigAddressableTable.TableVfx.Path, forceReload);
+
+        public static TableVfxEffect LoadVfxEffectTable(bool forceReload = true)
+            => LoadOptionalTable<TableVfxEffect>(ConfigAddressableTable.TableVfxEffect.Path, forceReload);
+
+        public static TableVfxParticle LoadVfxParticleTable(bool forceReload = true)
+            => LoadOptionalTable<TableVfxParticle>(ConfigAddressableTable.TableVfxParticle.Path, forceReload);
 
         public static TableCrowdControl LoadCrowdControlTable(bool forceReload = true)
         {
@@ -93,6 +108,22 @@ public static TableItemDropGroup LoadItemDropGroupTable(bool forceReload = true)
         public static TableAnimation LoadAnimationTable(bool forceReload = true)
         {
             return LoadTable<TableAnimation>(ConfigAddressableTable.TableAnimation.Path, forceReload);
+        }
+
+
+        private static T LoadOptionalTable<T>(string filePath, bool forceReload = true)
+            where T : class, ITableParser, new()
+        {
+            return System.IO.File.Exists(filePath) ? LoadTable<T>(filePath, forceReload) : null;
+        }
+
+        private static void MergeVfxTable(TableVfx target, ITableParser<StruckTableVfx> source)
+        {
+            if (target == null || source == null)
+                return;
+
+            foreach (var pair in source.GetAll())
+                target.GetDatas()[pair.Key] = pair.Value;
         }
 
         /// <summary>
