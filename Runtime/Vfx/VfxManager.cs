@@ -11,7 +11,7 @@ namespace GGemCo2DCore
         public void Initialize(SceneGame sceneGame)
         {
             _sceneGame = sceneGame;
-            _poolService = new VfxPoolService(sceneGame != null ? sceneGame.transform : null);
+            _poolService = new VfxPoolService();
         }
 
         public VfxBehaviourBase CreateVfx(int vfxUid)

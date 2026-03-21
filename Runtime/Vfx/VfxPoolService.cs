@@ -18,12 +18,11 @@ namespace GGemCo2DCore
         private readonly Transform _poolRoot;
         private readonly Dictionary<int, PoolBucket> _poolByUid = new Dictionary<int, PoolBucket>();
 
-        public VfxPoolService(Transform parent)
+        public VfxPoolService()
         {
-            var go = new GameObject("[VfxPool]");
+            var go = new GameObject($"{ConfigDefine.NameSDK}_VfxPool");
             _poolRoot = go.transform;
-            if (parent != null)
-                _poolRoot.SetParent(parent);
+
             Object.DontDestroyOnLoad(go);
             go.SetActive(false);
         }
