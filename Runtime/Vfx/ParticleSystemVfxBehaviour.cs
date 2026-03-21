@@ -34,8 +34,12 @@ namespace GGemCo2DCore
             for (int i = 0; i < _particleSystems.Length; i++)
             {
                 var ps = _particleSystems[i];
+                if (ps == null)
+                    continue;
+
                 var main = ps.main;
                 main.stopAction = ParticleSystemStopAction.Callback;
+                main.useUnscaledTime = UseUnscaledTime();
             }
             _subscribed = true;
         }
@@ -49,6 +53,9 @@ namespace GGemCo2DCore
                 return;
             }
 
+            ConfigureStopAction();
+            StartLifecycleTimerIfNeeded();
+
             for (int i = 0; i < _particleSystems.Length; i++)
             {
                 if (_particleSystems[i] == null)
@@ -56,9 +63,6 @@ namespace GGemCo2DCore
                 _particleSystems[i].Clear(true);
                 _particleSystems[i].Play(true);
             }
-
-            if (_duration > 0f)
-                StartCoroutine(RemoveEffectDuration(_duration));
         }
 
         public override void PlayEndAnimation()

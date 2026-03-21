@@ -43,7 +43,7 @@ namespace GGemCo2DCore
                 ? EnumHelper.ConvertEnum<VfxConstants.Type>(Get("Type"))
                 : VfxConstants.Type.Default;
 
-            var playbackType = ResolvePlaybackType(Get("PlaybackType"), type, animationController, Get("PrefabPath"));
+            var playbackType = ResolvePlaybackType(Get("PlaybackType"), type, animationController);
 
             return new StruckTableVfx
             {
@@ -79,17 +79,13 @@ namespace GGemCo2DCore
         private static VfxConstants.PlaybackType ResolvePlaybackType(
             string playbackTypeValue,
             VfxConstants.Type type,
-            ConfigCommon.AnimationController animationController,
-            string prefabPath)
+            ConfigCommon.AnimationController animationController)
         {
             if (!string.IsNullOrWhiteSpace(playbackTypeValue))
                 return EnumHelper.ConvertEnum<VfxConstants.PlaybackType>(playbackTypeValue);
 
             if (type == VfxConstants.Type.Laser)
                 return VfxConstants.PlaybackType.Laser;
-
-            if (!string.IsNullOrWhiteSpace(prefabPath) && prefabPath.ToLowerInvariant().Contains("particle"))
-                return VfxConstants.PlaybackType.ParticleSystem;
 
             return animationController == ConfigCommon.AnimationController.Spine
                 ? VfxConstants.PlaybackType.SpineSequence

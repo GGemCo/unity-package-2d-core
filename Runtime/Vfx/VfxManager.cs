@@ -44,6 +44,7 @@ namespace GGemCo2DCore
             if (prefab == null)
                 return null;
 
+            _poolService.Configure(info, prefab);
             GameObject instance = _poolService.Acquire(info.Uid, prefab);
             if (instance == null)
                 return null;
@@ -76,7 +77,7 @@ namespace GGemCo2DCore
                 behaviour.SetCreateCharacter(owner);
 
             if (request.FollowTarget != null)
-                behaviour.SetFollowCharacter(request.FollowTarget);
+                behaviour.SetFollowCharacter(request.FollowTarget, ResolveFollowMode(info, true));
 
             if (request.DurationOverride != 0f)
                 behaviour.SetDuration(request.DurationOverride);
@@ -102,11 +103,11 @@ namespace GGemCo2DCore
             {
                 case VfxConstants.AttachType.Owner:
                     if (owner != null)
-                        behaviour.SetFollowCharacter(owner);
+                        behaviour.SetFollowCharacter(owner, ResolveFollowMode(info, false));
                     break;
                 case VfxConstants.AttachType.Target:
                     if (request.Target != null)
-                        behaviour.SetFollowCharacter(request.Target);
+                        behaviour.SetFollowCharacter(request.Target, ResolveFollowMode(info, false));
                     break;
                 case VfxConstants.AttachType.UI:
                     if (_sceneGame != null && _sceneGame.canvasUI != null)
@@ -118,12 +119,22 @@ namespace GGemCo2DCore
 
         private static VfxBehaviourBase EnsureBehaviour(GameObject instance, StruckTableVfx info)
         {
-            bool wantsParticle = info.PlaybackType == VfxConstants.PlaybackType.ParticleSystem || instance.GetComponentInChildren<ParticleSystem>(true) != null;
             if (info.PlaybackType == VfxConstants.PlaybackType.Laser || info.Type == VfxConstants.Type.Laser)
                 return GetOrAdd<VfxLaser>(instance);
-            if (wantsParticle)
+            if (info.PlaybackType == VfxConstants.PlaybackType.ParticleSystem)
                 return GetOrAdd<ParticleSystemVfxBehaviour>(instance);
             return GetOrAdd<DefaultVfx>(instance);
+        }
+
+        private static VfxConstants.FollowMode ResolveFollowMode(StruckTableVfx info, bool isExplicitFollowRequest)
+        {
+            if (info == null)
+                return isExplicitFollowRequest ? VfxConstants.FollowMode.Position : VfxConstants.FollowMode.None;
+
+            if (info.FollowMode != VfxConstants.FollowMode.None)
+                return info.FollowMode;
+
+            return isExplicitFollowRequest ? VfxConstants.FollowMode.Position : VfxConstants.FollowMode.Position;
         }
 
         private void EnsureAnimationController(GameObject instance, VfxBehaviourBase behaviour, StruckTableVfx info)

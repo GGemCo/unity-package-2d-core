@@ -8,23 +8,25 @@ namespace GGemCo2DCore
     {
         public IVfxAnimationController VfxAnimationController;
 
-        protected CharacterBase _character;
-        protected CharacterBase _targetCharacter;
-        protected float _duration;
-        protected string _color;
-        protected Vector3 _direction;
-        protected float _originalScaleX;
-        protected float _mapSizeHeight;
-        protected CharacterBase _followCharacter;
-        protected float _positionY;
-        protected ConfigCommon.PositionYType _positionYType;
-        protected Renderer _effectRenderer;
-        protected RectTransform _effectRectTransform;
-        protected Animator _animator;
-        protected Coroutine _coroutineTickTimeDamage;
-        protected StruckTableVfx _struckTableVfx;
+        private CharacterBase _character;
+        protected CharacterBase TargetCharacter;
+        private float _duration;
+        private string _color;
+        protected Vector3 Direction;
+        private float _originalScaleX;
+        private float _mapSizeHeight;
+        private CharacterBase _followCharacter;
+        private VfxConstants.FollowMode _followMode;
+        private float _positionY;
+        private ConfigCommon.PositionYType _positionYType;
+        private Renderer _effectRenderer;
+        private RectTransform _effectRectTransform;
+        private Animator _animator;
+        protected Coroutine CoroutineTickTimeDamage;
+        private StruckTableVfx _struckTableVfx;
 
         private bool _started;
+        private bool _releaseOnAnimationComplete;
         private int _pooledVfxUid;
         private Action<int, GameObject> _releaseAction;
 
@@ -37,13 +39,16 @@ namespace GGemCo2DCore
             _originalScaleX = transform.localScale.x;
             _effectRenderer = GetComponent<Renderer>();
             _effectRectTransform = GetComponent<RectTransform>();
+            _animator = GetComponent<Animator>();
         }
 
         public virtual void Initialize(StruckTableVfx struckTableVfx, Action<int, GameObject> releaseAction = null)
         {
             _struckTableVfx = struckTableVfx;
-            _pooledVfxUid = struckTableVfx != null ? struckTableVfx.Uid : 0;
+            _pooledVfxUid = struckTableVfx?.Uid ?? 0;
             _releaseAction = releaseAction;
+            _followMode = struckTableVfx?.FollowMode ?? VfxConstants.FollowMode.None;
+            _releaseOnAnimationComplete = false;
             _started = false;
         }
 
@@ -68,11 +73,10 @@ namespace GGemCo2DCore
         protected virtual void PlayOnSpawn()
         {
             ApplyCommonVisuals();
-            if (_duration > 0)
-                StartCoroutine(RemoveEffectDuration(_duration));
+            StartLifecycleTimerIfNeeded();
 
             if (VfxAnimationController != null)
-                VfxAnimationController.Play(_duration);
+                VfxAnimationController.Play(GetPlaybackDuration());
         }
 
         protected void ApplyCommonVisuals()
@@ -93,6 +97,9 @@ namespace GGemCo2DCore
                 Vector2 size = SceneGame.Instance.mapManager.GetCurrentMapSize();
                 _mapSizeHeight = size.y;
             }
+
+            if (_animator != null)
+                _animator.updateMode = UseUnscaledTime() ? AnimatorUpdateMode.UnscaledTime : AnimatorUpdateMode.Normal;
 
             UpdateSortingOrder();
         }
@@ -121,8 +128,12 @@ namespace GGemCo2DCore
 
         protected IEnumerator RemoveEffectDuration(float f)
         {
-            yield return new WaitForSeconds(f);
-            OnEndAnimationComplete();
+            if (UseUnscaledTime())
+                yield return new WaitForSecondsRealtime(f);
+            else
+                yield return new WaitForSeconds(f);
+
+            ReleaseNow();
         }
 
         protected void UpdateSortingOrder()
@@ -130,6 +141,45 @@ namespace GGemCo2DCore
             int baseSortingOrder = MathHelper.GetSortingOrder(_mapSizeHeight, transform.position.y);
             if (_effectRenderer)
                 _effectRenderer.sortingOrder = baseSortingOrder;
+        }
+
+        protected void StartLifecycleTimerIfNeeded()
+        {
+            if (_struckTableVfx == null)
+                return;
+
+            if (_struckTableVfx.LifecycleType == VfxConstants.LifecycleType.Duration && _duration > 0f)
+            {
+                StartCoroutine(RemoveEffectDuration(_duration));
+                return;
+            }
+
+            if (_struckTableVfx.LifecycleType == VfxConstants.LifecycleType.AutoRelease && _duration > 0f)
+                StartCoroutine(RemoveEffectDuration(_duration));
+        }
+
+        protected float GetPlaybackDuration()
+        {
+            if (_struckTableVfx == null)
+                return _duration;
+
+            return _struckTableVfx.LifecycleType == VfxConstants.LifecycleType.ManualRelease
+                ? -1f
+                : _duration;
+        }
+
+        protected bool ShouldAutoReleaseOnNaturalComplete()
+        {
+            if (_struckTableVfx == null)
+                return true;
+
+            return _struckTableVfx.LifecycleType == VfxConstants.LifecycleType.AutoRelease
+                || (_struckTableVfx.LifecycleType == VfxConstants.LifecycleType.Duration && _duration <= 0f);
+        }
+
+        protected bool UseUnscaledTime()
+        {
+            return _struckTableVfx != null && _struckTableVfx.UseUnscaledTime;
         }
 
         public void SetDuration(float f) => _duration = f;
@@ -148,7 +198,7 @@ namespace GGemCo2DCore
         public virtual void DestroyForce()
         {
             StopAllCoroutines();
-            ReleaseOrDestroy();
+            ReleaseNow();
         }
 
         public void SetScale(float scale)
@@ -174,6 +224,20 @@ namespace GGemCo2DCore
 
         public virtual void OnEndAnimationComplete()
         {
+            if (!_releaseOnAnimationComplete && !ShouldAutoReleaseOnNaturalComplete())
+                return;
+
+            _releaseOnAnimationComplete = false;
+            StopAllCoroutines();
+            var callback = OnVfxDestroy;
+            OnVfxDestroy = null;
+            callback?.Invoke();
+            ReleaseOrDestroy();
+        }
+
+        protected void ReleaseNow()
+        {
+            _releaseOnAnimationComplete = false;
             StopAllCoroutines();
             var callback = OnVfxDestroy;
             OnVfxDestroy = null;
@@ -206,10 +270,12 @@ namespace GGemCo2DCore
 
         public virtual void PlayEndAnimation()
         {
+            _releaseOnAnimationComplete = true;
+
             if (VfxAnimationController != null)
                 VfxAnimationController.PlayEnd();
             else
-                OnEndAnimationComplete();
+                ReleaseNow();
         }
 
         public void SetColor(string color) => _color = color;
@@ -230,7 +296,11 @@ namespace GGemCo2DCore
             _effectRenderer.sortingOrder = sortingOrder;
         }
 
-        public void SetFollowCharacter(CharacterBase character) => _followCharacter = character;
+        public void SetFollowCharacter(CharacterBase character, VfxConstants.FollowMode followMode = VfxConstants.FollowMode.Position)
+        {
+            _followCharacter = character;
+            _followMode = followMode;
+        }
         public void SetPositionY(float y) => _positionY = y;
         public void SetPositionYType(ConfigCommon.PositionYType type) => _positionYType = type;
 
@@ -251,7 +321,7 @@ namespace GGemCo2DCore
 
         protected virtual void Update()
         {
-            if (_followCharacter == null)
+            if (_followCharacter == null || _followMode == VfxConstants.FollowMode.None)
                 return;
 
             transform.position = _followCharacter.transform.position;
@@ -264,6 +334,9 @@ namespace GGemCo2DCore
                 if (heightOwner != null)
                     transform.position += new Vector3(0, heightOwner.GetHeightByScale(), 0);
             }
+
+            if (_followMode == VfxConstants.FollowMode.PositionAndFlip)
+                SetFlip(_followCharacter.IsFlipped());
         }
     }
 }
