@@ -6,22 +6,15 @@ namespace GGemCo2DCore
 {
     public class VfxBehaviourBase : MonoBehaviour
     {
-        public IVfxAnimationController VfxAnimationController;
-
         private CharacterBase _character;
         protected CharacterBase TargetCharacter;
         private float _duration;
-        private string _color;
         protected Vector3 Direction;
         private float _originalScaleX;
-        private float _mapSizeHeight;
         private CharacterBase _followCharacter;
         private VfxConstants.FollowMode _followMode;
         private float _positionY;
         private ConfigCommon.PositionYType _positionYType;
-        private Renderer _effectRenderer;
-        private RectTransform _effectRectTransform;
-        private Animator _animator;
         protected Coroutine CoroutineTickTimeDamage;
         private VfxRuntimeData _runtimeData;
         private VfxSpawnPolicy _spawnPolicy;
@@ -41,11 +34,7 @@ namespace GGemCo2DCore
 
         protected virtual void Awake()
         {
-            _color = string.Empty;
             _originalScaleX = transform.localScale.x;
-            _effectRenderer = GetComponent<Renderer>();
-            _effectRectTransform = GetComponent<RectTransform>();
-            _animator = GetComponent<Animator>();
         }
 
         public virtual void Initialize(VfxRuntimeData runtimeData, VfxSpawnPolicy spawnPolicy, Action<int, GameObject> releaseAction = null)
@@ -79,76 +68,17 @@ namespace GGemCo2DCore
 
         protected virtual void PlayOnSpawn()
         {
-            ApplyCommonVisuals();
             StartLifecycleTimerIfNeeded();
-
-            if (VfxAnimationController != null)
-                VfxAnimationController.Play(GetPlaybackDuration());
         }
 
-        protected void ApplyCommonVisuals()
-        {
-            if (!string.IsNullOrEmpty(_color))
-            {
-                VfxAnimationController?.SetEffectColor(NormalizeColorHex(_color));
-            }
-            else if (EffectRuntimeData != null && !string.IsNullOrEmpty(EffectRuntimeData.Color))
-            {
-                VfxAnimationController?.SetEffectColor(NormalizeColorHex(EffectRuntimeData.Color));
-            }
-
-            if (EffectRuntimeData != null)
-                SetSize(EffectRuntimeData.Width, EffectRuntimeData.Height);
-
-            if (SceneGame.Instance != null && SceneGame.Instance.mapManager)
-            {
-                Vector2 size = SceneGame.Instance.mapManager.GetCurrentMapSize();
-                _mapSizeHeight = size.y;
-            }
-
-            if (_animator != null)
-                _animator.updateMode = UseUnscaledTime() ? AnimatorUpdateMode.UnscaledTime : AnimatorUpdateMode.Normal;
-
-            UpdateSortingOrder();
-        }
-
-        protected static string NormalizeColorHex(string color)
-        {
-            if (string.IsNullOrWhiteSpace(color))
-                return color;
-            return color.StartsWith("#") ? color : $"#{color}";
-        }
-
-        public void SetSize(float width, float height)
-        {
-            if (width <= 0 || height <= 0) return;
-
-            if (_effectRectTransform != null)
-            {
-                _effectRectTransform.sizeDelta = new Vector2(width, height);
-            }
-            else if (_effectRenderer != null)
-            {
-                Bounds b = _effectRenderer.bounds;
-                if (b.size.x <= 0 || b.size.y <= 0) return;
-            }
-        }
-
-        protected IEnumerator RemoveEffectDuration(float f)
+        protected IEnumerator RemoveEffectDuration(float duration)
         {
             if (UseUnscaledTime())
-                yield return new WaitForSecondsRealtime(f);
+                yield return new WaitForSecondsRealtime(duration);
             else
-                yield return new WaitForSeconds(f);
+                yield return new WaitForSeconds(duration);
 
             ReleaseNow();
-        }
-
-        protected void UpdateSortingOrder()
-        {
-            int baseSortingOrder = MathHelper.GetSortingOrder(_mapSizeHeight, transform.position.y);
-            if (_effectRenderer)
-                _effectRenderer.sortingOrder = baseSortingOrder;
         }
 
         protected void StartLifecycleTimerIfNeeded()
@@ -190,18 +120,7 @@ namespace GGemCo2DCore
             return _runtimeData != null && _runtimeData.UseUnscaledTime;
         }
 
-        public void SetDuration(float f) => _duration = f;
-
-        public void SetRotation(Vector2 directionByTarget, Vector2 vector2)
-        {
-            if (EffectRuntimeData == null || !EffectRuntimeData.NeedRotation) return;
-
-            float angle = Mathf.Atan2(directionByTarget.y, directionByTarget.x) * Mathf.Rad2Deg;
-            if (EffectRuntimeData.DefaultDirection == ConfigCommon.DirectionType.Left && vector2.x < 0)
-                angle += 180;
-
-            transform.rotation = Quaternion.Euler(0, 0, angle);
-        }
+        public void SetDuration(float duration) => _duration = duration;
 
         public virtual void DestroyForce()
         {
@@ -211,7 +130,9 @@ namespace GGemCo2DCore
 
         public void SetScale(float scale)
         {
-            if (scale <= 0) return;
+            if (scale <= 0f)
+                return;
+
             transform.localScale = new Vector2(scale, scale);
             _originalScaleX = transform.localScale.x;
         }
@@ -223,12 +144,14 @@ namespace GGemCo2DCore
 
         public void SetFlip(bool shouldFlip)
         {
-            float dirX = shouldFlip ? -1 : 1;
+            float dirX = shouldFlip ? -1f : 1f;
             SetDirection(dirX);
             OnSetFlip(dirX);
         }
 
-        protected virtual void OnSetFlip(float dirX) { }
+        protected virtual void OnSetFlip(float dirX)
+        {
+        }
 
         public virtual void OnEndAnimationComplete()
         {
@@ -264,44 +187,34 @@ namespace GGemCo2DCore
             Destroy(gameObject);
         }
 
-        public bool TryPlayEndAnimation(DelegateEffectDestroy onEffectDestroy = null)
+        public virtual bool TryPlayEndAnimation(DelegateEffectDestroy onEffectDestroy = null)
         {
-            if (VfxAnimationController == null || !VfxAnimationController.HasEndAnimation())
-                return false;
-
             if (onEffectDestroy != null)
                 OnVfxDestroy += onEffectDestroy;
 
-            PlayEndAnimation();
-            return true;
+            return false;
         }
 
         public virtual void PlayEndAnimation()
         {
             _releaseOnAnimationComplete = true;
-
-            if (VfxAnimationController != null)
-                VfxAnimationController.PlayEnd();
-            else
-                ReleaseNow();
+            ReleaseNow();
         }
 
-        public void SetColor(string color) => _color = color;
-
-        public void SetSortingLayer(ConfigSortingLayer.Keys sortingLayer)
+        public virtual void SetColor(string color)
         {
-            if (_effectRenderer == null)
-                _effectRenderer = GetComponent<Renderer>();
-            if (_effectRenderer == null) return;
-            _effectRenderer.sortingLayerName = ConfigSortingLayer.GetValue(sortingLayer);
         }
 
-        public void SetSortingOrder(int sortingOrder)
+        public virtual void SetSortingLayer(ConfigSortingLayer.Keys sortingLayer)
         {
-            if (_effectRenderer == null)
-                _effectRenderer = GetComponent<Renderer>();
-            if (_effectRenderer == null) return;
-            _effectRenderer.sortingOrder = sortingOrder;
+        }
+
+        public virtual void SetSortingOrder(int sortingOrder)
+        {
+        }
+
+        public virtual void SetRotation(Vector2 directionByTarget, Vector2 sourceDirection)
+        {
         }
 
         public void SetFollowCharacter(CharacterBase character, VfxConstants.FollowMode followMode = VfxConstants.FollowMode.Position)
@@ -309,6 +222,7 @@ namespace GGemCo2DCore
             _followCharacter = character;
             _followMode = followMode;
         }
+
         public void SetPositionY(float y) => _positionY = y;
         public void SetPositionYType(ConfigCommon.PositionYType type) => _positionYType = type;
 
@@ -333,14 +247,14 @@ namespace GGemCo2DCore
                 return;
 
             transform.position = _followCharacter.transform.position;
-            if (_positionY > 0)
-                transform.position += new Vector3(0, _positionY, 0);
+            if (_positionY > 0f)
+                transform.position += new Vector3(0f, _positionY, 0f);
 
             if (_positionYType == ConfigCommon.PositionYType.CharacterHeight)
             {
                 var heightOwner = _followCharacter != null ? _followCharacter : _character;
                 if (heightOwner != null)
-                    transform.position += new Vector3(0, heightOwner.GetHeightByScale(), 0);
+                    transform.position += new Vector3(0f, heightOwner.GetHeightByScale(), 0f);
             }
 
             if (_followMode == VfxConstants.FollowMode.PositionAndFlip)

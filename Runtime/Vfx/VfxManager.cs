@@ -56,12 +56,12 @@ namespace GGemCo2DCore
             var spawnPolicy = ResolveSpawnPolicy(info, request);
             EnsureAnimationController(instance, behaviour, info);
             behaviour.Initialize(info, spawnPolicy, ReleaseToPool);
-            ApplyRequest(instance, behaviour, info, spawnPolicy, request);
+            ApplyRequest(instance, behaviour, spawnPolicy, request);
             instance.SetActive(true);
             return behaviour;
         }
 
-        private void ApplyRequest(GameObject instance, VfxBehaviourBase behaviour, VfxRuntimeData info, VfxSpawnPolicy spawnPolicy, VfxSpawnRequest request)
+        private void ApplyRequest(GameObject instance, VfxBehaviourBase behaviour, VfxSpawnPolicy spawnPolicy, VfxSpawnRequest request)
         {
             if (request.Parent != null)
                 instance.transform.SetParent(request.Parent, false);
@@ -124,12 +124,12 @@ namespace GGemCo2DCore
                 return null;
 
             if (info is VfxParticleRuntimeData || info.PlaybackType == VfxConstants.PlaybackType.ParticleSystem)
-                return GetOrAdd<ParticleSystemVfxBehaviour>(instance);
+                return GetOrAdd<VfxBehaviourParticle>(instance);
 
             if (info.EffectType == VfxConstants.EffectType.Laser || info.PlaybackType == VfxConstants.PlaybackType.Laser)
-                return GetOrAdd<VfxLaser>(instance);
+                return GetOrAdd<VfxEffectLaser>(instance);
 
-            return GetOrAdd<DefaultVfx>(instance);
+            return GetOrAdd<VfxBehaviourEffect>(instance);
         }
 
         private static VfxConstants.FollowMode ResolveFollowMode(VfxSpawnPolicy spawnPolicy, bool isExplicitFollowRequest)
@@ -140,7 +140,7 @@ namespace GGemCo2DCore
             if (spawnPolicy.FollowMode != VfxConstants.FollowMode.None)
                 return spawnPolicy.FollowMode;
 
-            return isExplicitFollowRequest ? VfxConstants.FollowMode.Position : VfxConstants.FollowMode.Position;
+            return VfxConstants.FollowMode.Position;
         }
 
         private static VfxSpawnPolicy ResolveSpawnPolicy(VfxRuntimeData info, VfxSpawnRequest request)
@@ -161,11 +161,8 @@ namespace GGemCo2DCore
 
         private void EnsureAnimationController(GameObject instance, VfxBehaviourBase behaviour, VfxRuntimeData info)
         {
-            if (behaviour is ParticleSystemVfxBehaviour || info == null || info is VfxParticleRuntimeData)
-            {
-                behaviour.VfxAnimationController = null;
+            if (!(behaviour is VfxBehaviourEffect effectBehaviour) || info == null || info is VfxParticleRuntimeData)
                 return;
-            }
 
             IVfxAnimationController vfxAnimationController = null;
 #if GGEMCO_USE_SPINE
@@ -186,7 +183,7 @@ namespace GGemCo2DCore
                     animatorController.EventListener = _animationEventMediator;
             }
 
-            behaviour.VfxAnimationController = vfxAnimationController;
+            effectBehaviour.VfxAnimationController = vfxAnimationController;
         }
 
         private static T GetOrAdd<T>(GameObject instance) where T : Component

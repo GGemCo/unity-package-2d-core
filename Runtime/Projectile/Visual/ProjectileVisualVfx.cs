@@ -102,7 +102,7 @@ namespace GGemCo2DCore
 
         public void SetEndpoints(Vector3 start, Vector3 end)
         {
-            if (_vfx is VfxLaser laser)
+            if (_vfx is VfxEffectLaser laser)
             {
                 laser.SetEndpoints(start, end);
             }

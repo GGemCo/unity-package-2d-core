@@ -3,7 +3,7 @@ using UnityEngine;
 namespace GGemCo2DCore
 {
     [DisallowMultipleComponent]
-    public sealed class ParticleSystemVfxBehaviour : VfxBehaviourBase
+    public sealed class VfxBehaviourParticle : VfxBehaviourBase
     {
         private ParticleSystem[] _particleSystems;
         private bool _subscribed;
@@ -46,7 +46,8 @@ namespace GGemCo2DCore
 
         protected override void PlayOnSpawn()
         {
-            ApplyCommonVisuals();
+            base.PlayOnSpawn();
+
             if (_particleSystems == null || _particleSystems.Length == 0)
             {
                 OnEndAnimationComplete();
@@ -54,7 +55,6 @@ namespace GGemCo2DCore
             }
 
             ConfigureStopAction();
-            StartLifecycleTimerIfNeeded();
 
             for (int i = 0; i < _particleSystems.Length; i++)
             {
@@ -65,11 +65,23 @@ namespace GGemCo2DCore
             }
         }
 
+        public override bool TryPlayEndAnimation(DelegateEffectDestroy onEffectDestroy = null)
+        {
+            if (_particleSystems == null || _particleSystems.Length == 0)
+                return false;
+
+            if (onEffectDestroy != null)
+                OnVfxDestroy += onEffectDestroy;
+
+            PlayEndAnimation();
+            return true;
+        }
+
         public override void PlayEndAnimation()
         {
             if (_particleSystems == null || _particleSystems.Length == 0)
             {
-                OnEndAnimationComplete();
+                base.PlayEndAnimation();
                 return;
             }
 

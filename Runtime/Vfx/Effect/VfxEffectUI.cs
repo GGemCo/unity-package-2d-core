@@ -6,7 +6,7 @@ namespace GGemCo2DCore
     /// <summary>
     /// 디폴트 이펙트
     /// </summary>
-    public class EffectUI : Animation2dController
+    public class VfxEffectUI : Animation2dController
     {
         [Tooltip("재생 속도")]
         public float timeScale;
