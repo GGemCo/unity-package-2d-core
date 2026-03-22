@@ -35,13 +35,56 @@ namespace GGemCo2DCoreEditor
             button.clicked += () =>
             {
                 int selectedIndex = getSelectedIndex.Invoke();
-
                 Rect screenRect = GetScreenRect(owner, button);
 
                 ShowUiToolkit(
                     owner,
                     screenRect,
                     options,
+                    selectedIndex,
+                    onSelected,
+                    maxVisibleItems,
+                    rowHeight,
+                    popupWidth,
+                    defaultSearchMode,
+                    verticalOffset);
+            };
+        }
+
+        /// <summary>
+        /// UI Toolkit Button에 탭 기반 검색 드롭다운을 바인딩합니다.
+        /// </summary>
+        public static void BindUiToolkitButton<T>(
+            EditorWindow owner,
+            Button button,
+            IReadOnlyList<OptionTab<T>> tabs,
+            Func<string> getSelectedTabId,
+            Func<string, int> getSelectedIndex,
+            Action<OptionTab<T>, int, Option<T>> onSelected,
+            int maxVisibleItems = EditorConstants.SearchableDropdownUtility.MaxVisibleItems,
+            float rowHeight = EditorConstants.SearchableDropdownUtility.RowHeight,
+            float popupWidth = EditorConstants.SearchableDropdownUtility.PopupWidth,
+            SearchMode defaultSearchMode = SearchMode.Both,
+            float verticalOffset = EditorConstants.SearchableDropdownUtility.VerticalOffset)
+        {
+            if (owner == null) throw new ArgumentNullException(nameof(owner));
+            if (button == null) throw new ArgumentNullException(nameof(button));
+            if (tabs == null) throw new ArgumentNullException(nameof(tabs));
+            if (getSelectedTabId == null) throw new ArgumentNullException(nameof(getSelectedTabId));
+            if (getSelectedIndex == null) throw new ArgumentNullException(nameof(getSelectedIndex));
+            if (onSelected == null) throw new ArgumentNullException(nameof(onSelected));
+
+            button.clicked += () =>
+            {
+                string selectedTabId = getSelectedTabId.Invoke();
+                int selectedIndex = getSelectedIndex.Invoke(selectedTabId);
+                Rect screenRect = GetScreenRect(owner, button);
+
+                ShowUiToolkit(
+                    owner,
+                    screenRect,
+                    tabs,
+                    selectedTabId,
                     selectedIndex,
                     onSelected,
                     maxVisibleItems,
@@ -73,10 +116,10 @@ namespace GGemCo2DCoreEditor
             if (getSelectedIndex == null) throw new ArgumentNullException(nameof(getSelectedIndex));
             if (onSelected == null) throw new ArgumentNullException(nameof(onSelected));
 
-            // ClickEvent는 버튼이 아니면 안 올 수 있어, PointerDown으로 처리
             element.RegisterCallback<PointerDownEvent>(evt =>
             {
-                if (evt.button != 0) return; // left click only
+                if (evt.button != 0)
+                    return;
 
                 int selectedIndex = getSelectedIndex.Invoke();
                 Rect screenRect = GetScreenRect(owner, element);

@@ -715,9 +715,16 @@ namespace GGemCo2DCoreEditor
                 }
                 else if (column.IsReferenceCandidate && int.TryParse(raw, out int uid) && uid > 0)
                 {
-                    TableEditorReferenceItem item = TableEditorReferenceCache.FindItem(referenceTable, uid);
-                    if (item != null)
-                        raw = $"{uid} ({item.DisplayName})";
+                    if (TableEditorVfxReferenceUtility.IsTabbedVfxReference(column))
+                    {
+                        raw = TableEditorVfxReferenceUtility.BuildCellText(uid);
+                    }
+                    else
+                    {
+                        TableEditorReferenceItem item = TableEditorReferenceCache.FindItem(referenceTable, uid);
+                        if (item != null)
+                            raw = $"{uid} ({item.DisplayName})";
+                    }
                 }
                 else if (column.IsMultiReferenceCandidate && !string.IsNullOrWhiteSpace(raw))
                 {

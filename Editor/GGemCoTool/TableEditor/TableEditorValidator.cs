@@ -152,6 +152,20 @@ namespace GGemCo2DCoreEditor
             string headerName,
             int uid)
         {
+            if (TableEditorVfxReferenceUtility.IsTabbedVfxReference(headerName))
+            {
+                if (TableEditorVfxReferenceUtility.Contains(uid))
+                    return;
+
+                messages.Add(new TableEditorValidationMessage
+                {
+                    Severity = TableEditorValidationSeverity.Warning,
+                    Message = $"참조 없음: {headerName} -> vfx:{uid}",
+                    RowStableId = row.stableId,
+                });
+                return;
+            }
+
             if (TableEditorReferenceCache.Contains(referenceTable, uid))
                 return;
 

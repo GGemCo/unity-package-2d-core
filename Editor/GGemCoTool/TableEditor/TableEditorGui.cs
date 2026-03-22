@@ -267,7 +267,12 @@ namespace GGemCo2DCoreEditor
                     return CreateStringIdReferenceField(owner, referenceTable, column, row, rawValue, onValueChanged, onJumpToReference);
 
                 if (column.IsReferenceCandidate)
+                {
+                    if (TableEditorVfxReferenceUtility.IsTabbedVfxReference(column))
+                        return CreateTabbedVfxReferenceField(owner, column, rawValue, onValueChanged, onJumpToReference);
+
                     return CreateReferenceField(owner, referenceTable, column, row, rawValue, onValueChanged, onJumpToReference);
+                }
 
                 if (column.IsMultiReferenceCandidate)
                     return CreateMultiReferenceField(owner, referenceTable, column, row, rawValue, onValueChanged, onJumpToReference);
@@ -362,6 +367,89 @@ namespace GGemCo2DCoreEditor
             TextField fallback = new TextField { value = rawValue, isDelayed = true };
             fallback.RegisterValueChangedCallback(evt => onValueChanged?.Invoke(column.HeaderName, evt.newValue ?? string.Empty));
             return fallback;
+        }
+
+
+        private static VisualElement CreateTabbedVfxReferenceField(
+            EditorWindow owner,
+            TableEditorColumnDefinition column,
+            string rawValue,
+            Action<string, string> onValueChanged,
+            Action<TableEditorTableDefinition, int> onJumpToReference)
+        {
+            int currentUid = ParseInt(rawValue);
+            IReadOnlyList<SearchableDropdownUtility.OptionTab<TableEditorVfxReferenceOption>> tabs = TableEditorVfxReferenceUtility.BuildTabs();
+
+            VisualElement root = new VisualElement
+            {
+                style = { flexDirection = FlexDirection.Column }
+            };
+
+            IntegerField uidField = new IntegerField
+            {
+                value = currentUid,
+                isDelayed = true,
+            };
+            root.Add(uidField);
+
+            VisualElement buttonRow = new VisualElement
+            {
+                style = { flexDirection = FlexDirection.Row, alignItems = Align.Center, marginTop = 4f }
+            };
+
+            Button pickerButton = new Button
+            {
+                style = { flexGrow = 1f, marginRight = 4f }
+            };
+            buttonRow.Add(pickerButton);
+
+            Button openButton = new Button(() =>
+            {
+                int uid = ParseInt(uidField.value.ToString(CultureInfo.InvariantCulture));
+                TableEditorVfxReferenceUtility.JumpToReference(onJumpToReference, uid);
+            })
+            {
+                text = "Open",
+                style = { width = 60f }
+            };
+            buttonRow.Add(openButton);
+            root.Add(buttonRow);
+
+            void RefreshUi(int uid)
+            {
+                pickerButton.text = TableEditorVfxReferenceUtility.BuildButtonText(uid);
+                openButton.SetEnabled(TableEditorVfxReferenceUtility.Contains(uid));
+            }
+
+            uidField.RegisterValueChangedCallback(evt =>
+            {
+                onValueChanged?.Invoke(column.HeaderName, TableEditorValueUtility.ConvertToRaw(evt.newValue, typeof(int)));
+                RefreshUi(evt.newValue);
+            });
+
+            if (owner != null)
+            {
+                SearchableDropdownUtility.BindUiToolkitButton(
+                    owner,
+                    pickerButton,
+                    tabs,
+                    () => TableEditorVfxReferenceUtility.GetSelectedTabId(uidField.value),
+                    tabId => TableEditorVfxReferenceUtility.GetSelectedIndex(tabs, tabId, uidField.value),
+                    (selectedTab, selectedOptionIndex, option) =>
+                    {
+                        int selectedUid = option.Data?.Item?.Uid ?? 0;
+                        uidField.SetValueWithoutNotify(selectedUid);
+                        onValueChanged?.Invoke(column.HeaderName, TableEditorValueUtility.ConvertToRaw(selectedUid, typeof(int)));
+                        RefreshUi(selectedUid);
+                    });
+            }
+            else
+            {
+                pickerButton.SetEnabled(false);
+            }
+
+            RefreshUi(currentUid);
+            return root;
         }
 
         private static VisualElement CreateReferenceField(

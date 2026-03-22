@@ -51,6 +51,25 @@ namespace GGemCo2DCoreEditor
             }
         }
 
+
+
+        /// <summary>
+        /// 탭으로 구분된 드롭다운 옵션 묶음.
+        /// </summary>
+        public readonly struct OptionTab<T>
+        {
+            public readonly string Id;
+            public readonly string Label;
+            public readonly IReadOnlyList<Option<T>> Options;
+
+            public OptionTab(string id, string label, IReadOnlyList<Option<T>> options)
+            {
+                Id = string.IsNullOrWhiteSpace(id) ? "default" : id;
+                Label = string.IsNullOrWhiteSpace(label) ? Id : label;
+                Options = options ?? Array.Empty<Option<T>>();
+            }
+        }
+
         public enum SearchMode
         {
             Key = 0,

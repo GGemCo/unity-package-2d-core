@@ -2,6 +2,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Reflection;
 using UnityEditor;
 using UnityEditor.UIElements;
@@ -14,14 +15,12 @@ namespace GGemCo2DCoreEditor
     /// SearchableDropdownUtility (UI Toolkit)
     /// - DropDown EditorWindow + UI Toolkit 기반 검색/선택 팝업
     /// - CreateGUI 초기화 중 selection 콜백 발생/Close 호출 NRE 방지(억제 플래그 + delayClose)
+    /// - 탭 분리 검색 지원
     /// </summary>
     public static partial class SearchableDropdownUtility
     {
-        // --------------------------------------------------------------------
-        // NOTE:
-        // - Option<T>, SearchMode는 기존 코어(SearchableDropdownUtility.cs)에 있다고 가정합니다.
-        // - 네임스페이스는 사용 중인 프로젝트에 맞춰 조정하세요.
-        // --------------------------------------------------------------------
+        private const string DefaultTabId = "default";
+        private const string DefaultTabLabel = "All";
 
         /// <summary>
         /// UI Toolkit용 검색 드롭다운을 DropDown EditorWindow로 표시합니다.
@@ -42,56 +41,148 @@ namespace GGemCo2DCoreEditor
             if (options == null) throw new ArgumentNullException(nameof(options));
             if (onSelected == null) throw new ArgumentNullException(nameof(onSelected));
 
+            OptionTab<T>[] tabs =
+            {
+                new OptionTab<T>(DefaultTabId, DefaultTabLabel, options),
+            };
+
+            ShowUiToolkit(
+                owner,
+                activatorRectScreen,
+                tabs,
+                DefaultTabId,
+                selectedIndex,
+                (selectedTab, selectedOptionIndex, option) => onSelected(selectedOptionIndex, option),
+                maxVisibleItems,
+                rowHeight,
+                popupWidth,
+                defaultSearchMode,
+                verticalOffset);
+        }
+
+        /// <summary>
+        /// UI Toolkit용 검색 드롭다운을 탭 기반으로 표시합니다.
+        /// </summary>
+        public static void ShowUiToolkit<T>(
+            EditorWindow owner,
+            Rect activatorRectScreen,
+            IReadOnlyList<OptionTab<T>> tabs,
+            string selectedTabId,
+            int selectedIndex,
+            Action<OptionTab<T>, int, Option<T>> onSelected,
+            int maxVisibleItems = EditorConstants.SearchableDropdownUtility.MaxVisibleItems,
+            float rowHeight = EditorConstants.SearchableDropdownUtility.RowHeight,
+            float popupWidth = EditorConstants.SearchableDropdownUtility.PopupWidth,
+            SearchMode defaultSearchMode = SearchMode.Both,
+            float verticalOffset = EditorConstants.SearchableDropdownUtility.VerticalOffset)
+        {
+            if (owner == null) throw new ArgumentNullException(nameof(owner));
+            if (tabs == null) throw new ArgumentNullException(nameof(tabs));
+            if (onSelected == null) throw new ArgumentNullException(nameof(onSelected));
+
             maxVisibleItems = Mathf.Clamp(maxVisibleItems, 3, 40);
             rowHeight = Mathf.Clamp(rowHeight, 18f, 28f);
             popupWidth = Mathf.Clamp(popupWidth, 240f, 900f);
 
-            // 버튼/필드 바로 아래로 앵커 이동
             activatorRectScreen.y = activatorRectScreen.yMax + verticalOffset;
 
-            var wnd = ScriptableObject.CreateInstance<SearchableDropdownUiToolkitWindow>();
+            SearchableDropdownUiToolkitWindow wnd = ScriptableObject.CreateInstance<SearchableDropdownUiToolkitWindow>();
             if (wnd == null)
             {
                 Debug.LogError("[SearchableDropdownUiToolkit] Failed to create window instance.");
                 return;
             }
 
-            // 제네릭 옵션을 비제네릭 엔트리로 변환
-            var entries = new List<SearchableDropdownUiToolkitWindow.Entry>(options.Count);
-            for (int i = 0; i < options.Count; i++)
+            List<SearchableDropdownUiToolkitWindow.TabInfo> tabInfos = new List<SearchableDropdownUiToolkitWindow.TabInfo>(tabs.Count);
+            List<SearchableDropdownUiToolkitWindow.Entry> entries = new List<SearchableDropdownUiToolkitWindow.Entry>();
+
+            for (int tabIndex = 0; tabIndex < tabs.Count; tabIndex++)
             {
-                var opt = options[i];
-                entries.Add(new SearchableDropdownUiToolkitWindow.Entry(
-                    optionIndex: i,
-                    key: opt.Key,
-                    value: opt.Value,
-                    display: opt.ToString()));
+                OptionTab<T> tab = tabs[tabIndex];
+                string tabId = string.IsNullOrWhiteSpace(tab.Id) ? $"tab_{tabIndex}" : tab.Id;
+                string tabLabel = string.IsNullOrWhiteSpace(tab.Label) ? tabId : tab.Label;
+                IReadOnlyList<Option<T>> options = tab.Options ?? Array.Empty<Option<T>>();
+
+                tabInfos.Add(new SearchableDropdownUiToolkitWindow.TabInfo(tabId, tabLabel));
+
+                for (int optionIndex = 0; optionIndex < options.Count; optionIndex++)
+                {
+                    Option<T> opt = options[optionIndex];
+                    entries.Add(new SearchableDropdownUiToolkitWindow.Entry(
+                        tabId: tabId,
+                        tabLabel: tabLabel,
+                        optionIndex: optionIndex,
+                        key: opt.Key,
+                        value: opt.Value,
+                        display: opt.ToString()));
+                }
             }
+
+            string initialTabId = ResolveInitialTabId(tabInfos, selectedTabId);
 
             wnd.Initialize(
                 entries: entries,
+                tabs: tabInfos,
+                selectedTabId: initialTabId,
                 selectedOptionIndex: selectedIndex,
-                onSelectedOptionIndex: optionIndex =>
+                onSelectedEntry: entry =>
                 {
-                    if (optionIndex < 0 || optionIndex >= options.Count)
+                    OptionTab<T> selectedTab = FindTab(tabs, entry.TabId);
+                    IReadOnlyList<Option<T>> options = selectedTab.Options ?? Array.Empty<Option<T>>();
+                    if (entry.OptionIndex < 0 || entry.OptionIndex >= options.Count)
                         return;
 
-                    onSelected(optionIndex, options[optionIndex]);
+                    onSelected(selectedTab, entry.OptionIndex, options[entry.OptionIndex]);
                 },
                 maxVisibleItems: maxVisibleItems,
                 rowHeight: rowHeight,
                 popupWidth: popupWidth,
-                defaultMode: defaultSearchMode);
+                defaultMode: defaultSearchMode,
+                showTabs: tabInfos.Count > 1);
 
-            // DropDown 크기(헤더 + 리스트)
             int visibleCount = Mathf.Min(entries.Count, maxVisibleItems);
             visibleCount = Mathf.Max(visibleCount, 3);
 
-            float headerHeight = 56f;
+            float headerHeight = tabInfos.Count > 1 ? 84f : 56f;
             float listHeight = visibleCount * rowHeight;
             float height = headerHeight + listHeight + 10f;
 
             wnd.ShowAsDropDown(activatorRectScreen, new Vector2(popupWidth, height));
+        }
+
+        private static string ResolveInitialTabId(IReadOnlyList<SearchableDropdownUiToolkitWindow.TabInfo> tabs, string requestedTabId)
+        {
+            if (tabs == null || tabs.Count == 0)
+                return DefaultTabId;
+
+            if (!string.IsNullOrWhiteSpace(requestedTabId))
+            {
+                for (int i = 0; i < tabs.Count; i++)
+                {
+                    if (string.Equals(tabs[i].Id, requestedTabId, StringComparison.OrdinalIgnoreCase))
+                        return tabs[i].Id;
+                }
+            }
+
+            return tabs[0].Id;
+        }
+
+        private static OptionTab<T> FindTab<T>(IReadOnlyList<OptionTab<T>> tabs, string tabId)
+        {
+            if (tabs != null)
+            {
+                for (int i = 0; i < tabs.Count; i++)
+                {
+                    OptionTab<T> tab = tabs[i];
+                    if (string.Equals(tab.Id, tabId, StringComparison.OrdinalIgnoreCase))
+                        return tab;
+                }
+
+                if (tabs.Count > 0)
+                    return tabs[0];
+            }
+
+            return new OptionTab<T>(DefaultTabId, DefaultTabLabel, Array.Empty<Option<T>>());
         }
 
         /// <summary>
@@ -102,19 +193,18 @@ namespace GGemCo2DCoreEditor
             if (owner == null) throw new ArgumentNullException(nameof(owner));
             if (element == null) throw new ArgumentNullException(nameof(element));
 
-            Rect wb = element.worldBound; // panel 좌표
-            Rect ow = owner.position;     // screen 좌표
+            Rect wb = element.worldBound;
+            Rect ow = owner.position;
 
             return new Rect(ow.x + wb.x, ow.y + wb.y, wb.width, wb.height);
         }
 
-        // --------------------------------------------------------------------
-        // DropDown Window (non-generic)
-        // --------------------------------------------------------------------
         private sealed class SearchableDropdownUiToolkitWindow : EditorWindow
         {
             internal readonly struct Entry
             {
+                public readonly string TabId;
+                public readonly string TabLabel;
                 public readonly int OptionIndex;
                 public readonly string Key;
                 public readonly string Value;
@@ -123,8 +213,10 @@ namespace GGemCo2DCoreEditor
                 public readonly string KeyLower;
                 public readonly string ValueLower;
 
-                public Entry(int optionIndex, string key, string value, string display)
+                public Entry(string tabId, string tabLabel, int optionIndex, string key, string value, string display)
                 {
+                    TabId = string.IsNullOrWhiteSpace(tabId) ? DefaultTabId : tabId;
+                    TabLabel = string.IsNullOrWhiteSpace(tabLabel) ? TabId : tabLabel;
                     OptionIndex = optionIndex;
                     Key = key ?? string.Empty;
                     Value = value ?? string.Empty;
@@ -135,77 +227,112 @@ namespace GGemCo2DCoreEditor
                 }
             }
 
-            private List<Entry> _entries = new();
-            private Action<int>? _onSelectedOptionIndex;
+            internal readonly struct TabInfo
+            {
+                public readonly string Id;
+                public readonly string Label;
 
+                public TabInfo(string id, string label)
+                {
+                    Id = string.IsNullOrWhiteSpace(id) ? DefaultTabId : id;
+                    Label = string.IsNullOrWhiteSpace(label) ? Id : label;
+                }
+            }
+
+            private List<Entry> _entries = new();
+            private List<TabInfo> _tabs = new();
+            private Action<Entry>? _onSelectedEntry;
+
+            private string _selectedTabId = DefaultTabId;
             private int _selectedOptionIndex;
             private int _maxVisibleItems;
             private float _rowHeight;
             private float _popupWidth;
             private SearchMode _mode;
+            private bool _showTabs;
 
             private string _query = string.Empty;
 
-            // filteredEntryIndices: _entries 인덱스 목록
             private readonly List<int> _filteredEntryIndices = new(256);
             private readonly List<string> _display = new(256);
 
-            // UI
             private ToolbarSearchField? _searchField;
             private ToolbarMenu? _modeMenu;
             private ListView? _listView;
-            private const float HeaderFixedHeight = 44f; // 검색(1줄) + 모드(1줄) + 여유
+            private VisualElement? _tabRow;
+            private const float HeaderWithoutTabsHeight = 44f;
+            private const float HeaderWithTabsHeight = 72f;
             private const float WindowPadding = 6f;
 
-            // 핵심: 초기/리프레시 선택 세팅 시 selectionChange 콜백 억제
             private bool _suppressSelectionCallback;
-
-            // 리플렉션 캐시 (Unity 버전에 따라 SetSelectionWithoutNotify 존재 여부가 다릅니다)
             private static MethodInfo? _setSelectionWithoutNotifyInt;
 
             public void Initialize(
                 List<Entry> entries,
+                List<TabInfo> tabs,
+                string selectedTabId,
                 int selectedOptionIndex,
-                Action<int> onSelectedOptionIndex,
+                Action<Entry> onSelectedEntry,
                 int maxVisibleItems,
                 float rowHeight,
                 float popupWidth,
-                SearchMode defaultMode)
+                SearchMode defaultMode,
+                bool showTabs)
             {
                 _entries = entries ?? new List<Entry>();
+                _tabs = tabs ?? new List<TabInfo>();
+                _selectedTabId = string.IsNullOrWhiteSpace(selectedTabId) ? ResolveDefaultTabId(_tabs) : selectedTabId;
                 _selectedOptionIndex = selectedOptionIndex;
-                _onSelectedOptionIndex = onSelectedOptionIndex ?? throw new ArgumentNullException(nameof(onSelectedOptionIndex));
-
+                _onSelectedEntry = onSelectedEntry ?? throw new ArgumentNullException(nameof(onSelectedEntry));
                 _maxVisibleItems = maxVisibleItems;
                 _rowHeight = rowHeight;
                 _popupWidth = popupWidth;
                 _mode = defaultMode;
+                _showTabs = showTabs && _tabs.Count > 1;
 
                 RebuildFilter();
+            }
+
+            private static string ResolveDefaultTabId(IReadOnlyList<TabInfo> tabs)
+            {
+                return tabs != null && tabs.Count > 0 ? tabs[0].Id : DefaultTabId;
             }
 
             private void CreateGUI()
             {
                 rootVisualElement.style.flexDirection = FlexDirection.Column;
-                rootVisualElement.style.paddingLeft = 6;
-                rootVisualElement.style.paddingRight = 6;
-                rootVisualElement.style.paddingTop = 6;
-                rootVisualElement.style.paddingBottom = 6;
+                rootVisualElement.style.paddingLeft = WindowPadding;
+                rootVisualElement.style.paddingRight = WindowPadding;
+                rootVisualElement.style.paddingTop = WindowPadding;
+                rootVisualElement.style.paddingBottom = WindowPadding;
                 rootVisualElement.style.backgroundColor = new Color(0.3f, 0.3f, 0.3f);
-                
-                // Header
-                var header = new VisualElement
+
+                VisualElement header = new VisualElement
                 {
                     style =
                     {
                         flexDirection = FlexDirection.Column,
-                        // gap = 4,
-                        flexShrink = 0,                 // 헤더가 줄어들지 않게
-                        height = HeaderFixedHeight      // 고정 높이
+                        flexShrink = 0,
+                        height = _showTabs ? HeaderWithTabsHeight : HeaderWithoutTabsHeight
                     }
                 };
-                
-                // (선택) ToolbarSearchField 높이를 명확히 하고 싶다면
+
+                if (_showTabs)
+                {
+                    _tabRow = new VisualElement
+                    {
+                        style =
+                        {
+                            flexDirection = FlexDirection.Row,
+                            flexWrap = Wrap.NoWrap,
+                            marginBottom = 4f,
+                            flexShrink = 0
+                        }
+                    };
+                    header.Add(_tabRow);
+                    RebuildTabRow();
+                }
+
                 _searchField = new ToolbarSearchField { value = _query };
                 _searchField.style.flexShrink = 0;
                 _searchField.RegisterValueChangedCallback(evt =>
@@ -215,8 +342,7 @@ namespace GGemCo2DCoreEditor
                     RefreshListView();
                 });
 
-                // modeRow도 shrink 방지
-                var modeRow = new VisualElement
+                VisualElement modeRow = new VisualElement
                 {
                     style =
                     {
@@ -227,7 +353,7 @@ namespace GGemCo2DCoreEditor
                     }
                 };
 
-                var modeLabel = new Label("Search:")
+                Label modeLabel = new Label("Search:")
                 {
                     style = { marginRight = 6 }
                 };
@@ -246,7 +372,6 @@ namespace GGemCo2DCoreEditor
                 header.Add(_searchField);
                 header.Add(modeRow);
 
-                // ListView
                 _listView = new ListView
                 {
                     virtualizationMethod = CollectionVirtualizationMethod.FixedHeight,
@@ -255,13 +380,12 @@ namespace GGemCo2DCoreEditor
                     itemsSource = _display
                 };
 
-                // ListView가 헤더를 침범하지 않도록 명확히
-                _listView.style.flexGrow = 0;   // 높이를 우리가 직접 지정할 것이므로 grow는 0
+                _listView.style.flexGrow = 0;
                 _listView.style.flexShrink = 0;
 
                 _listView.makeItem = () =>
                 {
-                    var item = new Label
+                    Label item = new Label
                     {
                         style =
                         {
@@ -278,34 +402,31 @@ namespace GGemCo2DCoreEditor
                     ((Label)ve).text = (i >= 0 && i < _display.Count) ? _display[i] : string.Empty;
                 };
 
-                // 선택 변경: suppress 플래그로 초기화/리프레시 시 이벤트 무시
                 _listView.selectionChanged += _ =>
                 {
-                    if (_suppressSelectionCallback)
+                    if (_suppressSelectionCallback || _listView == null)
                         return;
 
-                    if (_listView == null) return;
+                    int selectedFilteredIndex = _listView.selectedIndex;
+                    if (selectedFilteredIndex < 0 || selectedFilteredIndex >= _filteredEntryIndices.Count)
+                        return;
 
-                    int sel = _listView.selectedIndex;
-                    if (sel < 0 || sel >= _filteredEntryIndices.Count) return;
-
-                    int entryIndex = _filteredEntryIndices[sel];
-                    int optionIndex = _entries[entryIndex].OptionIndex;
-                    Select(optionIndex);
+                    int entryIndex = _filteredEntryIndices[selectedFilteredIndex];
+                    Select(_entries[entryIndex]);
                 };
 
-                // 키보드 처리 (Enter/Escape)
                 _listView.RegisterCallback<KeyDownEvent>(evt =>
                 {
-                    if (_listView == null) return;
+                    if (_listView == null)
+                        return;
 
                     if (evt.keyCode == KeyCode.Return || evt.keyCode == KeyCode.KeypadEnter)
                     {
-                        int sel = _listView.selectedIndex;
-                        if (sel >= 0 && sel < _filteredEntryIndices.Count)
+                        int selectedFilteredIndex = _listView.selectedIndex;
+                        if (selectedFilteredIndex >= 0 && selectedFilteredIndex < _filteredEntryIndices.Count)
                         {
-                            int entryIndex = _filteredEntryIndices[sel];
-                            Select(_entries[entryIndex].OptionIndex);
+                            int entryIndex = _filteredEntryIndices[selectedFilteredIndex];
+                            Select(_entries[entryIndex]);
                             evt.StopPropagation();
                         }
                     }
@@ -315,21 +436,62 @@ namespace GGemCo2DCoreEditor
                         evt.StopPropagation();
                     }
                 });
-                
+
                 rootVisualElement.Add(header);
                 rootVisualElement.Add(_listView);
 
                 RefreshListView();
-
                 _searchField.Focus();
+            }
+
+            private void RebuildTabRow()
+            {
+                if (_tabRow == null)
+                    return;
+
+                _tabRow.Clear();
+
+                for (int i = 0; i < _tabs.Count; i++)
+                {
+                    TabInfo tab = _tabs[i];
+                    Button button = new Button(() => SetActiveTab(tab.Id))
+                    {
+                        text = tab.Label
+                    };
+
+                    bool isActive = string.Equals(_selectedTabId, tab.Id, StringComparison.OrdinalIgnoreCase);
+                    button.style.flexGrow = 1f;
+                    button.style.marginRight = i < _tabs.Count - 1 ? 4f : 0f;
+                    button.style.unityFontStyleAndWeight = isActive ? FontStyle.Bold : FontStyle.Normal;
+                    button.style.opacity = isActive ? 1f : 0.75f;
+                    _tabRow.Add(button);
+                }
+            }
+
+            private void SetActiveTab(string tabId)
+            {
+                if (string.IsNullOrWhiteSpace(tabId) || string.Equals(_selectedTabId, tabId, StringComparison.OrdinalIgnoreCase))
+                    return;
+
+                _selectedTabId = tabId;
+                _query = string.Empty;
+                if (_searchField != null)
+                    _searchField.SetValueWithoutNotify(_query);
+
+                RebuildTabRow();
+                RebuildFilter();
+                RefreshListView();
+                _searchField?.Focus();
             }
 
             private void SetMode(SearchMode mode)
             {
-                if (_mode == mode) return;
+                if (_mode == mode)
+                    return;
 
                 _mode = mode;
-                if (_modeMenu != null) _modeMenu.text = ModeToText(_mode);
+                if (_modeMenu != null)
+                    _modeMenu.text = ModeToText(_mode);
 
                 RebuildFilter();
                 RefreshListView();
@@ -354,8 +516,7 @@ namespace GGemCo2DCoreEditor
 
                 _listView?.Rebuild();
 
-                // 선택 유지 시도 (초기화 중에는 알림 없이 선택 설정)
-                int idxInFiltered = FindFilteredIndexByOptionIndex(_selectedOptionIndex);
+                int idxInFiltered = FindFilteredIndex(_selectedTabId, _selectedOptionIndex);
                 int targetSelection =
                     idxInFiltered >= 0 ? idxInFiltered :
                     (_filteredEntryIndices.Count > 0 ? 0 : -1);
@@ -363,50 +524,42 @@ namespace GGemCo2DCoreEditor
                 if (_listView != null && targetSelection >= 0 && _selectedOptionIndex > -1)
                     SetSelectionWithoutNotifySafe(_listView, targetSelection);
 
-                // Window 고정 크기 (표시 개수 제한)
                 int visibleCount = Mathf.Min(_filteredEntryIndices.Count, _maxVisibleItems);
                 visibleCount = Mathf.Max(visibleCount, 3);
 
                 float listHeight = visibleCount * _rowHeight;
 
-                // (핵심) ListView 높이를 명시적으로 지정
                 if (_listView != null)
-                {
                     _listView.style.height = listHeight;
-                }
 
-                // DropDown Window 전체 높이 = padding(top/bottom) + header + list + padding 여유
-                float height = (WindowPadding * 2f) + HeaderFixedHeight + listHeight + 4f;
+                float headerHeight = _showTabs ? HeaderWithTabsHeight : HeaderWithoutTabsHeight;
+                float height = (WindowPadding * 2f) + headerHeight + listHeight + 4f;
 
-                // DropDown은 크기 변경에 민감하므로 min/max를 동일하게 유지
                 EditorApplication.delayCall += () =>
                 {
-                    if (this == null) return;
+                    if (this == null)
+                        return;
                     minSize = maxSize = new Vector2(_popupWidth, height);
                 };
             }
 
-            private int FindFilteredIndexByOptionIndex(int optionIndex)
+            private int FindFilteredIndex(string tabId, int optionIndex)
             {
                 for (int i = 0; i < _filteredEntryIndices.Count; i++)
                 {
-                    int entryIndex = _filteredEntryIndices[i];
-                    if (_entries[entryIndex].OptionIndex == optionIndex)
+                    Entry entry = _entries[_filteredEntryIndices[i]];
+                    if (string.Equals(entry.TabId, tabId, StringComparison.OrdinalIgnoreCase) && entry.OptionIndex == optionIndex)
                         return i;
                 }
+
                 return -1;
             }
 
-            /// <summary>
-            /// Unity 버전에 따라 SetSelectionWithoutNotify가 없을 수 있으므로,
-            /// suppress 플래그 + reflection fallback으로 안전하게 선택을 설정합니다.
-            /// </summary>
             private void SetSelectionWithoutNotifySafe(ListView listView, int index)
             {
                 _suppressSelectionCallback = true;
                 try
                 {
-                    // reflection 캐시
                     if (_setSelectionWithoutNotifyInt == null)
                     {
                         _setSelectionWithoutNotifyInt = listView
@@ -420,7 +573,6 @@ namespace GGemCo2DCoreEditor
                     }
                     else
                     {
-                        // 대안: 일반 SetSelection 사용(하지만 suppress로 콜백은 무시)
                         listView.SetSelection(index);
                     }
                 }
@@ -430,14 +582,11 @@ namespace GGemCo2DCoreEditor
                 }
             }
 
-            private void Select(int optionIndex)
+            private void Select(Entry entry)
             {
-                _selectedOptionIndex = optionIndex;
-
-                // 콜백 먼저 실행 (호출부에서 상태 갱신)
-                _onSelectedOptionIndex?.Invoke(optionIndex);
-
-                // CreateGUI/초기화 중 Close 호출 NRE 방지: 다음 틱에 닫기
+                _selectedTabId = entry.TabId;
+                _selectedOptionIndex = entry.OptionIndex;
+                _onSelectedEntry?.Invoke(entry);
                 DelayClose();
             }
 
@@ -445,15 +594,15 @@ namespace GGemCo2DCoreEditor
             {
                 EditorApplication.delayCall += () =>
                 {
-                    // 이미 파괴/닫힘 상태일 수 있으므로 방어
-                    if (this == null) return;
+                    if (this == null)
+                        return;
+
                     try
                     {
                         Close();
                     }
                     catch
                     {
-                        // Close 내부가 Unity 상태에 따라 예외를 낼 수 있어 방어적으로 무시
                     }
                 };
             }
@@ -465,25 +614,23 @@ namespace GGemCo2DCoreEditor
                 if (_entries.Count == 0)
                     return;
 
-                string q = (_query ?? string.Empty).Trim();
-                if (q.Length == 0)
-                {
-                    for (int i = 0; i < _entries.Count; i++)
-                        _filteredEntryIndices.Add(i);
-                    return;
-                }
-
-                string qLower = q.ToLowerInvariant();
+                string activeTabId = string.IsNullOrWhiteSpace(_selectedTabId)
+                    ? ResolveDefaultTabId(_tabs)
+                    : _selectedTabId;
+                string query = (_query ?? string.Empty).Trim();
+                string queryLower = query.ToLowerInvariant();
 
                 for (int i = 0; i < _entries.Count; i++)
                 {
-                    Entry e = _entries[i];
+                    Entry entry = _entries[i];
+                    if (_showTabs && !string.Equals(entry.TabId, activeTabId, StringComparison.OrdinalIgnoreCase))
+                        continue;
 
-                    bool match = _mode switch
+                    bool match = query.Length == 0 || _mode switch
                     {
-                        SearchMode.Key => e.KeyLower.Contains(qLower),
-                        SearchMode.Value => e.ValueLower.Contains(qLower),
-                        _ => e.KeyLower.Contains(qLower) || e.ValueLower.Contains(qLower)
+                        SearchMode.Key => entry.KeyLower.Contains(queryLower),
+                        SearchMode.Value => entry.ValueLower.Contains(queryLower),
+                        _ => entry.KeyLower.Contains(queryLower) || entry.ValueLower.Contains(queryLower)
                     };
 
                     if (match)
