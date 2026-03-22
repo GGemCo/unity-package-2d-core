@@ -7,11 +7,18 @@ namespace GGemCo2DCore
         private SceneGame _sceneGame;
         private AnimationEventMediator _animationEventMediator;
         private VfxPoolService _poolService;
+        private bool _didInitialPrewarm;
 
         public void Initialize(SceneGame sceneGame)
         {
             _sceneGame = sceneGame;
             _poolService = new VfxPoolService();
+            TryPrewarmAllConfiguredVfx();
+        }
+
+        public void OnStartBySceneGame()
+        {
+            TryPrewarmAllConfiguredVfx();
         }
 
         public VfxBehaviourBase CreateVfx(int vfxUid)
@@ -39,8 +46,7 @@ namespace GGemCo2DCore
                 return null;
             }
 
-            string key = $"{ConfigAddressableGroupName.Vfx}_{info.PrefabPath}";
-            GameObject prefab = AddressableLoaderPrefabVfx.Instance.GetPrefabByName(key);
+            GameObject prefab = ResolvePrefab(info);
             if (prefab == null)
                 return null;
 
@@ -59,6 +65,55 @@ namespace GGemCo2DCore
             ApplyRequest(instance, behaviour, spawnPolicy, request);
             instance.SetActive(true);
             return behaviour;
+        }
+
+        private void TryPrewarmAllConfiguredVfx()
+        {
+            if (_didInitialPrewarm)
+                return;
+
+            if (_poolService == null)
+                return;
+
+            var tableLoader = TableLoaderManager.Instance;
+            var prefabLoader = AddressableLoaderPrefabVfx.Instance;
+            if (tableLoader == null || prefabLoader == null)
+                return;
+
+            var allVfxData = tableLoader.GetAllVfxData();
+            if (allVfxData == null || allVfxData.Count == 0)
+            {
+                _didInitialPrewarm = true;
+                return;
+            }
+
+            foreach (var pair in allVfxData)
+            {
+                var info = pair.Value;
+                if (info == null || info.Uid <= 0 || info.PoolPrewarmCount <= 0)
+                    continue;
+
+                var prefab = ResolvePrefab(info);
+                if (prefab == null)
+                    continue;
+
+                _poolService.Configure(info, prefab);
+            }
+
+            _didInitialPrewarm = true;
+        }
+
+        private static GameObject ResolvePrefab(VfxRuntimeData info)
+        {
+            if (info == null || string.IsNullOrWhiteSpace(info.PrefabPath))
+                return null;
+
+            var prefabLoader = AddressableLoaderPrefabVfx.Instance;
+            if (prefabLoader == null)
+                return null;
+
+            string key = $"{ConfigAddressableGroupName.Vfx}_{info.PrefabPath}";
+            return prefabLoader.GetPrefabByName(key);
         }
 
         private void ApplyRequest(GameObject instance, VfxBehaviourBase behaviour, VfxSpawnPolicy spawnPolicy, VfxSpawnRequest request)

@@ -188,6 +188,7 @@ namespace GGemCo2DCore
             
             ItemManager?.OnStartBySceneGame();
             QuestManager?.OnStartBySceneGame();
+            VfxManager?.OnStartBySceneGame();
             
             _uiWindowInventory = uIWindowManager?.GetUIWindowByUid<UIWindowInventory>(UIWindowConstants.WindowUid
                 .Inventory);
