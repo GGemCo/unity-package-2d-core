@@ -474,9 +474,23 @@ namespace GGemCo2DCoreEditor
                     return;
 
                 _selectedTabId = tabId;
+                _selectedOptionIndex = -1;
                 _query = string.Empty;
                 if (_searchField != null)
                     _searchField.SetValueWithoutNotify(_query);
+
+                if (_listView != null)
+                {
+                    _suppressSelectionCallback = true;
+                    try
+                    {
+                        _listView.ClearSelection();
+                    }
+                    finally
+                    {
+                        _suppressSelectionCallback = false;
+                    }
+                }
 
                 RebuildTabRow();
                 RebuildFilter();
