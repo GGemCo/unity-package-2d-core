@@ -10,6 +10,8 @@ namespace GGemCo2DCore
         private bool _subscribed;
         private bool _forceOneShot;
 
+        protected override bool UseTimelineFadeOutAlpha => false;
+
         protected override void Awake()
         {
             base.Awake();
@@ -133,6 +135,11 @@ namespace GGemCo2DCore
                     continue;
                 _particleSystems[i].Stop(true, ParticleSystemStopBehavior.StopEmitting);
             }
+        }
+
+        protected override void OnTimelineDurationElapsed()
+        {
+            PlayEndAnimation();
         }
 
         private void OnParticleSystemStopped()

@@ -27,6 +27,7 @@ namespace GGemCo2DCore
         private bool _isReleasing;
         private bool _useTimelineFade;
         private float _lifetimeElapsed;
+        private bool _timelineDurationElapsedHandled;
 
         private float _vfxFadeInSec;
         private float _vfxFadeOutSec;
@@ -40,6 +41,7 @@ namespace GGemCo2DCore
         protected VfxEffectRuntimeData EffectRuntimeData => _runtimeData as VfxEffectRuntimeData;
         protected VfxParticleRuntimeData ParticleRuntimeData => _runtimeData as VfxParticleRuntimeData;
         protected VfxSpawnPolicy SpawnPolicy => _spawnPolicy;
+        protected virtual bool UseTimelineFadeOutAlpha => true;
 
         protected virtual void Awake()
         {
@@ -61,6 +63,7 @@ namespace GGemCo2DCore
             _releaseOnAnimationComplete = false;
             _isReleasing = false;
             _lifetimeElapsed = 0f;
+            _timelineDurationElapsedHandled = false;
             _useTimelineFade = ShouldUseTimelineFade();
             EnsureFadeController();
             RestoreVisibleState();
@@ -74,6 +77,7 @@ namespace GGemCo2DCore
             _releaseOnAnimationComplete = false;
             _isReleasing = false;
             _lifetimeElapsed = 0f;
+            _timelineDurationElapsedHandled = false;
             _useTimelineFade = ShouldUseTimelineFade();
             StopManagedCoroutines();
             PrepareSpawnFadeState();
@@ -90,6 +94,7 @@ namespace GGemCo2DCore
             _releaseOnAnimationComplete = false;
             _isReleasing = false;
             _lifetimeElapsed = 0f;
+            _timelineDurationElapsedHandled = false;
             _useTimelineFade = false;
         }
 
@@ -463,15 +468,25 @@ namespace GGemCo2DCore
             _lifetimeElapsed += GetDeltaTime();
 
             float fadeInAlpha = EvaluateFadeInAlpha(_lifetimeElapsed);
-            float fadeOutAlpha = EvaluateFadeOutAlpha(_lifetimeElapsed, _duration);
+            float fadeOutAlpha = UseTimelineFadeOutAlpha
+                ? EvaluateFadeOutAlpha(_lifetimeElapsed, _duration)
+                : 1f;
             float finalAlpha = Mathf.Min(fadeInAlpha, fadeOutAlpha);
             _fadeController.SetAlpha(finalAlpha);
 
-            if (_lifetimeElapsed >= _duration)
+            if (_lifetimeElapsed >= _duration && !_timelineDurationElapsedHandled)
             {
-                _fadeController.SetAlpha(0f);
-                ReleaseImmediateInternal();
+                _timelineDurationElapsedHandled = true;
+                OnTimelineDurationElapsed();
             }
+        }
+
+        protected virtual void OnTimelineDurationElapsed()
+        {
+            if (_fadeController != null)
+                _fadeController.SetAlpha(0f);
+
+            ReleaseImmediateInternal();
         }
 
         private float EvaluateFadeInAlpha(float elapsed)
