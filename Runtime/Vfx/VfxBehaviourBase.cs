@@ -23,7 +23,8 @@ namespace GGemCo2DCore
         private RectTransform _effectRectTransform;
         private Animator _animator;
         protected Coroutine CoroutineTickTimeDamage;
-        private VfxRuntimeData _struckTableVfx;
+        private VfxRuntimeData _runtimeData;
+        private VfxSpawnPolicy _spawnPolicy;
 
         private bool _started;
         private bool _releaseOnAnimationComplete;
@@ -32,6 +33,11 @@ namespace GGemCo2DCore
 
         public delegate void DelegateEffectDestroy();
         public event DelegateEffectDestroy OnVfxDestroy;
+
+        protected VfxRuntimeData RuntimeData => _runtimeData;
+        protected VfxEffectRuntimeData EffectRuntimeData => _runtimeData as VfxEffectRuntimeData;
+        protected VfxParticleRuntimeData ParticleRuntimeData => _runtimeData as VfxParticleRuntimeData;
+        protected VfxSpawnPolicy SpawnPolicy => _spawnPolicy;
 
         protected virtual void Awake()
         {
@@ -42,19 +48,20 @@ namespace GGemCo2DCore
             _animator = GetComponent<Animator>();
         }
 
-        public virtual void Initialize(VfxRuntimeData struckTableVfx, Action<int, GameObject> releaseAction = null)
+        public virtual void Initialize(VfxRuntimeData runtimeData, VfxSpawnPolicy spawnPolicy, Action<int, GameObject> releaseAction = null)
         {
-            _struckTableVfx = struckTableVfx;
-            _pooledVfxUid = struckTableVfx?.Uid ?? 0;
+            _runtimeData = runtimeData;
+            _spawnPolicy = spawnPolicy ?? runtimeData?.DefaultSpawnPolicy?.Clone() ?? new VfxSpawnPolicy();
+            _pooledVfxUid = runtimeData?.Uid ?? 0;
             _releaseAction = releaseAction;
-            _followMode = struckTableVfx?.FollowMode ?? VfxConstants.FollowMode.None;
+            _followMode = _spawnPolicy.FollowMode;
             _releaseOnAnimationComplete = false;
             _started = false;
         }
 
         protected virtual void OnEnable()
         {
-            if (_struckTableVfx == null)
+            if (_runtimeData == null)
                 return;
 
             if (_started)
@@ -63,7 +70,7 @@ namespace GGemCo2DCore
 
         protected virtual void Start()
         {
-            if (_struckTableVfx == null)
+            if (_runtimeData == null)
                 return;
 
             _started = true;
@@ -85,12 +92,13 @@ namespace GGemCo2DCore
             {
                 VfxAnimationController?.SetEffectColor(NormalizeColorHex(_color));
             }
-            else if (!string.IsNullOrEmpty(_struckTableVfx.Color))
+            else if (EffectRuntimeData != null && !string.IsNullOrEmpty(EffectRuntimeData.Color))
             {
-                VfxAnimationController?.SetEffectColor(NormalizeColorHex(_struckTableVfx.Color));
+                VfxAnimationController?.SetEffectColor(NormalizeColorHex(EffectRuntimeData.Color));
             }
 
-            SetSize(_struckTableVfx.Width, _struckTableVfx.Height);
+            if (EffectRuntimeData != null)
+                SetSize(EffectRuntimeData.Width, EffectRuntimeData.Height);
 
             if (SceneGame.Instance != null && SceneGame.Instance.mapManager)
             {
@@ -145,51 +153,51 @@ namespace GGemCo2DCore
 
         protected void StartLifecycleTimerIfNeeded()
         {
-            if (_struckTableVfx == null)
+            if (_spawnPolicy == null)
                 return;
 
-            if (_struckTableVfx.LifecycleType == VfxConstants.LifecycleType.Duration && _duration > 0f)
+            if (_spawnPolicy.LifecycleType == VfxConstants.LifecycleType.Duration && _duration > 0f)
             {
                 StartCoroutine(RemoveEffectDuration(_duration));
                 return;
             }
 
-            if (_struckTableVfx.LifecycleType == VfxConstants.LifecycleType.AutoRelease && _duration > 0f)
+            if (_spawnPolicy.LifecycleType == VfxConstants.LifecycleType.AutoRelease && _duration > 0f)
                 StartCoroutine(RemoveEffectDuration(_duration));
         }
 
         protected float GetPlaybackDuration()
         {
-            if (_struckTableVfx == null)
+            if (_spawnPolicy == null)
                 return _duration;
 
-            return _struckTableVfx.LifecycleType == VfxConstants.LifecycleType.ManualRelease
+            return _spawnPolicy.LifecycleType == VfxConstants.LifecycleType.ManualRelease
                 ? -1f
                 : _duration;
         }
 
         protected bool ShouldAutoReleaseOnNaturalComplete()
         {
-            if (_struckTableVfx == null)
+            if (_spawnPolicy == null)
                 return true;
 
-            return _struckTableVfx.LifecycleType == VfxConstants.LifecycleType.AutoRelease
-                || (_struckTableVfx.LifecycleType == VfxConstants.LifecycleType.Duration && _duration <= 0f);
+            return _spawnPolicy.LifecycleType == VfxConstants.LifecycleType.AutoRelease
+                || (_spawnPolicy.LifecycleType == VfxConstants.LifecycleType.Duration && _duration <= 0f);
         }
 
         protected bool UseUnscaledTime()
         {
-            return _struckTableVfx != null && _struckTableVfx.UseUnscaledTime;
+            return _runtimeData != null && _runtimeData.UseUnscaledTime;
         }
 
         public void SetDuration(float f) => _duration = f;
 
         public void SetRotation(Vector2 directionByTarget, Vector2 vector2)
         {
-            if (_struckTableVfx == null || !_struckTableVfx.NeedRotation) return;
+            if (EffectRuntimeData == null || !EffectRuntimeData.NeedRotation) return;
 
             float angle = Mathf.Atan2(directionByTarget.y, directionByTarget.x) * Mathf.Rad2Deg;
-            if (_struckTableVfx.DefaultDirection == ConfigCommon.DirectionType.Left && vector2.x < 0)
+            if (EffectRuntimeData.DefaultDirection == ConfigCommon.DirectionType.Left && vector2.x < 0)
                 angle += 180;
 
             transform.rotation = Quaternion.Euler(0, 0, angle);

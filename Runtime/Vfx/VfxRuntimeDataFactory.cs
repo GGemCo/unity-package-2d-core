@@ -7,24 +7,29 @@ namespace GGemCo2DCore
             if (row == null)
                 return null;
 
-            return new VfxRuntimeData
+            return new VfxEffectRuntimeData
             {
                 Uid = row.Uid,
                 Name = row.Name,
-                AssetKind = VfxConstants.AssetKind.Effect,
-                Category = row.Category,
-                EffectType = row.EffectType,
                 PrefabPath = row.PrefabPath,
-                AnimationController = row.AnimationController,
-                Width = row.Width,
-                Height = row.Height,
-                ColliderSize = row.ColliderSize,
-                NeedRotation = row.NeedRotation,
-                Color = row.Color,
-                DefaultDirection = row.DefaultDirection,
+                EffectCategory = row.Category,
+                EffectKind = row.EffectType,
+                EffectAnimationController = row.AnimationController,
+                EffectWidth = row.Width,
+                EffectHeight = row.Height,
+                EffectColliderSize = row.ColliderSize,
+                EffectNeedRotation = row.NeedRotation,
+                EffectColor = row.Color,
+                EffectDefaultDirection = row.DefaultDirection,
                 PoolPrewarmCount = row.PoolPrewarmCount,
                 PoolMaxSize = row.PoolMaxSize,
                 UseUnscaledTime = row.UseUnscaledTime,
+                DefaultSpawnPolicy = new VfxSpawnPolicy
+                {
+                    LifecycleType = row.LifecycleType,
+                    AttachType = row.AttachType,
+                    FollowMode = row.FollowMode,
+                },
             };
         }
 
@@ -33,18 +38,21 @@ namespace GGemCo2DCore
             if (row == null)
                 return null;
 
-            return new VfxRuntimeData
+            return new VfxParticleRuntimeData
             {
                 Uid = row.Uid,
                 Name = row.Name,
-                AssetKind = VfxConstants.AssetKind.Particle,
-                EffectType = VfxConstants.EffectType.None,
                 PrefabPath = row.PrefabPath,
-                AnimationController = ConfigCommon.AnimationController.Sprite,
                 PoolPrewarmCount = row.PoolPrewarmCount,
                 PoolMaxSize = row.PoolMaxSize,
-                Loop = row.Loop,
+                ParticleLoop = row.Loop,
                 UseUnscaledTime = row.UseUnscaledTime,
+                DefaultSpawnPolicy = new VfxSpawnPolicy
+                {
+                    LifecycleType = row.LifecycleType,
+                    AttachType = row.AttachType,
+                    FollowMode = row.FollowMode,
+                },
             };
         }
     }

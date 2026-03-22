@@ -19,17 +19,20 @@ namespace GGemCo2DCore
         public int? SortingOrderOverride;
         public float PositionY;
         public ConfigCommon.PositionYType PositionYType;
+        public VfxConstants.LifecycleType? LifecycleTypeOverride;
+        public VfxConstants.AttachType? AttachTypeOverride;
+        public VfxConstants.FollowMode? FollowModeOverride;
 
         public static VfxSpawnRequest FromAnimationEvent(StruckAnimationEventVfx data, GameObject fromObject = null)
         {
             var owner = fromObject != null ? fromObject.GetComponent<CharacterBase>() : null;
             return new VfxSpawnRequest
             {
-                VfxUid = data != null ? data.Uid : 0,
+                VfxUid = data?.Uid ?? 0,
                 Owner = owner,
                 OwnerGameObject = fromObject,
-                DurationOverride = data != null ? data.Duration : 0f,
-                ScaleOverride = data != null ? data.Scale : 0f,
+                DurationOverride = data?.Duration ?? 0f,
+                ScaleOverride = data?.Scale ?? 0f,
                 ColorOverride = data != null ? data.Color : string.Empty,
             };
         }

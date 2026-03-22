@@ -17,6 +17,9 @@ namespace GGemCo2DCore
         public bool NeedRotation;
         public string Color;
         public ConfigCommon.DirectionType DefaultDirection;
+        public VfxConstants.LifecycleType LifecycleType;
+        public VfxConstants.AttachType AttachType;
+        public VfxConstants.FollowMode FollowMode;
         public int PoolPrewarmCount;
         public int PoolMaxSize;
         public bool UseUnscaledTime;
@@ -27,7 +30,6 @@ namespace GGemCo2DCore
 
         protected override StruckTableVfxEffect BuildRow(Dictionary<string, string> data)
         {
-
             return new StruckTableVfxEffect
             {
                 Uid = MathHelper.ParseInt(data.GetValueOrDefault("Uid")),
@@ -42,10 +44,34 @@ namespace GGemCo2DCore
                 NeedRotation = ConvertBoolean(data.GetValueOrDefault("NeedRotation")),
                 Color = data.GetValueOrDefault("Color"),
                 DefaultDirection = ConfigCommon.GetDirectionType(data.GetValueOrDefault("DefaultDirection", "Left")),
+                LifecycleType = ParseLifecycleType(data.GetValueOrDefault("LifecycleType")),
+                AttachType = ParseAttachType(data.GetValueOrDefault("AttachType")),
+                FollowMode = ParseFollowMode(data.GetValueOrDefault("FollowMode")),
                 PoolPrewarmCount = MathHelper.ParseInt(data.GetValueOrDefault("PoolPrewarmCount")),
                 PoolMaxSize = MathHelper.ParseInt(data.GetValueOrDefault("PoolMaxSize")),
                 UseUnscaledTime = ConvertBoolean(data.GetValueOrDefault("UseUnscaledTime")),
             };
+        }
+
+        private static VfxConstants.LifecycleType ParseLifecycleType(string value)
+        {
+            return string.IsNullOrWhiteSpace(value)
+                ? VfxConstants.LifecycleType.AutoRelease
+                : EnumHelper.ConvertEnum<VfxConstants.LifecycleType>(value);
+        }
+
+        private static VfxConstants.AttachType ParseAttachType(string value)
+        {
+            return string.IsNullOrWhiteSpace(value)
+                ? VfxConstants.AttachType.World
+                : EnumHelper.ConvertEnum<VfxConstants.AttachType>(value);
+        }
+
+        private static VfxConstants.FollowMode ParseFollowMode(string value)
+        {
+            return string.IsNullOrWhiteSpace(value)
+                ? VfxConstants.FollowMode.None
+                : EnumHelper.ConvertEnum<VfxConstants.FollowMode>(value);
         }
     }
 }

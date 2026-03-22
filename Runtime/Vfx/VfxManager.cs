@@ -53,14 +53,15 @@ namespace GGemCo2DCore
             if (behaviour == null)
                 return null;
 
+            var spawnPolicy = ResolveSpawnPolicy(info, request);
             EnsureAnimationController(instance, behaviour, info);
-            behaviour.Initialize(info, ReleaseToPool);
-            ApplyRequest(instance, behaviour, info, request);
+            behaviour.Initialize(info, spawnPolicy, ReleaseToPool);
+            ApplyRequest(instance, behaviour, info, spawnPolicy, request);
             instance.SetActive(true);
             return behaviour;
         }
 
-        private void ApplyRequest(GameObject instance, VfxBehaviourBase behaviour, VfxRuntimeData info, VfxSpawnRequest request)
+        private void ApplyRequest(GameObject instance, VfxBehaviourBase behaviour, VfxRuntimeData info, VfxSpawnPolicy spawnPolicy, VfxSpawnRequest request)
         {
             if (request.Parent != null)
                 instance.transform.SetParent(request.Parent, false);
@@ -77,7 +78,7 @@ namespace GGemCo2DCore
                 behaviour.SetCreateCharacter(owner);
 
             if (request.FollowTarget != null)
-                behaviour.SetFollowCharacter(request.FollowTarget, ResolveFollowMode(info, true));
+                behaviour.SetFollowCharacter(request.FollowTarget, ResolveFollowMode(spawnPolicy, true));
 
             if (request.DurationOverride != 0f)
                 behaviour.SetDuration(request.DurationOverride);
@@ -99,15 +100,15 @@ namespace GGemCo2DCore
             if (request.PositionYType != ConfigCommon.PositionYType.None)
                 behaviour.SetPositionYType(request.PositionYType);
 
-            switch (info.AttachType)
+            switch (spawnPolicy.AttachType)
             {
                 case VfxConstants.AttachType.Owner:
                     if (owner != null)
-                        behaviour.SetFollowCharacter(owner, ResolveFollowMode(info, false));
+                        behaviour.SetFollowCharacter(owner, ResolveFollowMode(spawnPolicy, false));
                     break;
                 case VfxConstants.AttachType.Target:
                     if (request.Target != null)
-                        behaviour.SetFollowCharacter(request.Target, ResolveFollowMode(info, false));
+                        behaviour.SetFollowCharacter(request.Target, ResolveFollowMode(spawnPolicy, false));
                     break;
                 case VfxConstants.AttachType.UI:
                     if (_sceneGame != null && _sceneGame.canvasUI != null)
@@ -122,7 +123,7 @@ namespace GGemCo2DCore
             if (info == null)
                 return null;
 
-            if (info.AssetKind == VfxConstants.AssetKind.Particle || info.PlaybackType == VfxConstants.PlaybackType.ParticleSystem)
+            if (info is VfxParticleRuntimeData || info.PlaybackType == VfxConstants.PlaybackType.ParticleSystem)
                 return GetOrAdd<ParticleSystemVfxBehaviour>(instance);
 
             if (info.EffectType == VfxConstants.EffectType.Laser || info.PlaybackType == VfxConstants.PlaybackType.Laser)
@@ -131,20 +132,36 @@ namespace GGemCo2DCore
             return GetOrAdd<DefaultVfx>(instance);
         }
 
-        private static VfxConstants.FollowMode ResolveFollowMode(VfxRuntimeData info, bool isExplicitFollowRequest)
+        private static VfxConstants.FollowMode ResolveFollowMode(VfxSpawnPolicy spawnPolicy, bool isExplicitFollowRequest)
         {
-            if (info == null)
+            if (spawnPolicy == null)
                 return isExplicitFollowRequest ? VfxConstants.FollowMode.Position : VfxConstants.FollowMode.None;
 
-            if (info.FollowMode != VfxConstants.FollowMode.None)
-                return info.FollowMode;
+            if (spawnPolicy.FollowMode != VfxConstants.FollowMode.None)
+                return spawnPolicy.FollowMode;
 
             return isExplicitFollowRequest ? VfxConstants.FollowMode.Position : VfxConstants.FollowMode.Position;
         }
 
+        private static VfxSpawnPolicy ResolveSpawnPolicy(VfxRuntimeData info, VfxSpawnRequest request)
+        {
+            var resolved = info?.DefaultSpawnPolicy?.Clone() ?? new VfxSpawnPolicy();
+
+            if (request.LifecycleTypeOverride.HasValue)
+                resolved.LifecycleType = request.LifecycleTypeOverride.Value;
+
+            if (request.AttachTypeOverride.HasValue)
+                resolved.AttachType = request.AttachTypeOverride.Value;
+
+            if (request.FollowModeOverride.HasValue)
+                resolved.FollowMode = request.FollowModeOverride.Value;
+
+            return resolved;
+        }
+
         private void EnsureAnimationController(GameObject instance, VfxBehaviourBase behaviour, VfxRuntimeData info)
         {
-            if (behaviour is ParticleSystemVfxBehaviour || info == null || info.AssetKind == VfxConstants.AssetKind.Particle)
+            if (behaviour is ParticleSystemVfxBehaviour || info == null || info is VfxParticleRuntimeData)
             {
                 behaviour.VfxAnimationController = null;
                 return;
