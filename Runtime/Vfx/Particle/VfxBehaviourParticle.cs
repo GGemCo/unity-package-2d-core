@@ -119,9 +119,11 @@ namespace GGemCo2DCore
 
         public override void PlayEndAnimation()
         {
+            BeginReleaseOnAnimationComplete();
+
             if (_particleSystems == null || _particleSystems.Length == 0)
             {
-                base.PlayEndAnimation();
+                BeginReleaseSequence();
                 return;
             }
 

@@ -22,6 +22,10 @@ namespace GGemCo2DCore
         private bool _releaseOnAnimationComplete;
         private int _pooledVfxUid;
         private Action<int, GameObject> _releaseAction;
+        private Coroutine _lifecycleCoroutine;
+        private Coroutine _fadeCoroutine;
+        private VfxFadeController _fadeController;
+        private bool _isReleasing;
 
         public delegate void DelegateEffectDestroy();
         public event DelegateEffectDestroy OnVfxDestroy;
@@ -44,6 +48,9 @@ namespace GGemCo2DCore
             _releaseAction = releaseAction;
             _followMode = _spawnPolicy.FollowMode;
             _releaseOnAnimationComplete = false;
+            _isReleasing = false;
+            EnsureFadeController();
+            RestoreVisibleState();
         }
 
         protected virtual void OnEnable()
@@ -51,7 +58,20 @@ namespace GGemCo2DCore
             if (_runtimeData == null)
                 return;
 
+            _releaseOnAnimationComplete = false;
+            _isReleasing = false;
+            StopManagedCoroutines();
+            PrepareSpawnFadeState();
             PlayOnSpawn();
+            StartFadeInIfNeeded();
+        }
+
+        protected virtual void OnDisable()
+        {
+            StopManagedCoroutines();
+            RestoreVisibleState();
+            _releaseOnAnimationComplete = false;
+            _isReleasing = false;
         }
 
         protected virtual void PlayOnSpawn()
@@ -66,7 +86,7 @@ namespace GGemCo2DCore
             else
                 yield return new WaitForSeconds(duration);
 
-            ReleaseNow();
+            PlayEndAnimation();
         }
 
         protected void StartLifecycleTimerIfNeeded()
@@ -74,14 +94,11 @@ namespace GGemCo2DCore
             if (_spawnPolicy == null)
                 return;
 
-            if (_spawnPolicy.LifecycleType == VfxConstants.LifecycleType.Duration && _duration > 0f)
+            if ((_spawnPolicy.LifecycleType == VfxConstants.LifecycleType.Duration && _duration > 0f) ||
+                (_spawnPolicy.LifecycleType == VfxConstants.LifecycleType.AutoRelease && _duration > 0f))
             {
-                StartCoroutine(RemoveEffectDuration(_duration));
-                return;
+                StartLifecycleCoroutine(RemoveEffectDuration(_duration));
             }
-
-            if (_spawnPolicy.LifecycleType == VfxConstants.LifecycleType.AutoRelease && _duration > 0f)
-                StartCoroutine(RemoveEffectDuration(_duration));
         }
 
         protected float GetPlaybackDuration()
@@ -116,8 +133,7 @@ namespace GGemCo2DCore
 
         public virtual void DestroyForce()
         {
-            StopAllCoroutines();
-            ReleaseNow();
+            BeginReleaseSequence();
         }
 
         public void SetScale(float scale)
@@ -151,17 +167,73 @@ namespace GGemCo2DCore
                 return;
 
             _releaseOnAnimationComplete = false;
-            StopAllCoroutines();
-            var callback = OnVfxDestroy;
-            OnVfxDestroy = null;
-            callback?.Invoke();
-            ReleaseOrDestroy();
+            BeginReleaseSequence();
         }
 
         protected void ReleaseNow()
         {
             _releaseOnAnimationComplete = false;
-            StopAllCoroutines();
+            BeginReleaseSequence();
+        }
+
+        protected void BeginReleaseOnAnimationComplete()
+        {
+            _releaseOnAnimationComplete = true;
+        }
+
+        protected void BeginReleaseSequence()
+        {
+            if (_isReleasing)
+                return;
+
+            _isReleasing = true;
+            StopManagedCoroutines();
+
+            float fadeOutDuration = ConfigCommon.VfxFadeOutSec;
+            if (fadeOutDuration <= 0f || _fadeController == null)
+            {
+                ReleaseImmediateInternal();
+                return;
+            }
+
+            _fadeCoroutine = StartCoroutine(FadeAndReleaseRoutine(1f, 0f, fadeOutDuration, ConfigCommon.VfxFadeOutEase));
+        }
+
+        private IEnumerator FadeAndReleaseRoutine(float startAlpha, float endAlpha, float duration, Easing.EaseType easeType)
+        {
+            if (_fadeController == null)
+            {
+                ReleaseImmediateInternal();
+                yield break;
+            }
+
+            if (duration <= 0f)
+            {
+                _fadeController.SetAlpha(endAlpha);
+                ReleaseImmediateInternal();
+                yield break;
+            }
+
+            float elapsed = 0f;
+            _fadeController.SetAlpha(startAlpha);
+
+            while (elapsed < duration)
+            {
+                elapsed += UseUnscaledTime() ? Time.unscaledDeltaTime : Time.deltaTime;
+                float t = Mathf.Clamp01(elapsed / duration);
+                float eased = Mathf.Clamp01(Easing.Apply(t, easeType));
+                float alpha = Mathf.Lerp(startAlpha, endAlpha, eased);
+                _fadeController.SetAlpha(alpha);
+                yield return null;
+            }
+
+            _fadeController.SetAlpha(endAlpha);
+            ReleaseImmediateInternal();
+        }
+
+        private void ReleaseImmediateInternal()
+        {
+            StopManagedCoroutines();
             var callback = OnVfxDestroy;
             OnVfxDestroy = null;
             callback?.Invoke();
@@ -189,8 +261,8 @@ namespace GGemCo2DCore
 
         public virtual void PlayEndAnimation()
         {
-            _releaseOnAnimationComplete = true;
-            ReleaseNow();
+            BeginReleaseOnAnimationComplete();
+            BeginReleaseSequence();
         }
 
         public virtual void SetColor(string color)
@@ -251,6 +323,101 @@ namespace GGemCo2DCore
 
             if (_followMode == VfxConstants.FollowMode.PositionAndFlip)
                 SetFlip(_followCharacter.IsFlipped());
+        }
+
+        protected void EnsureFadeController()
+        {
+            if (_fadeController != null)
+                return;
+
+            _fadeController = GetComponent<VfxFadeController>();
+            if (_fadeController == null)
+                _fadeController = gameObject.AddComponent<VfxFadeController>();
+
+            _fadeController.EnsureInitialized();
+        }
+
+        private void PrepareSpawnFadeState()
+        {
+            EnsureFadeController();
+            if (_fadeController == null)
+                return;
+
+            _fadeController.SetAlpha(ConfigCommon.VfxFadeInSec > 0f ? 0f : 1f);
+        }
+
+        private void RestoreVisibleState()
+        {
+            if (_fadeController == null)
+                return;
+
+            _fadeController.RestoreFullAlpha();
+        }
+
+        private void StartFadeInIfNeeded()
+        {
+            if (_fadeController == null)
+                return;
+
+            float fadeInDuration = ConfigCommon.VfxFadeInSec;
+            if (fadeInDuration <= 0f)
+            {
+                _fadeController.SetAlpha(1f);
+                return;
+            }
+
+            _fadeCoroutine = StartCoroutine(FadeRoutine(0f, 1f, fadeInDuration, ConfigCommon.VfxFadeInEase));
+        }
+
+        private IEnumerator FadeRoutine(float startAlpha, float endAlpha, float duration, Easing.EaseType easeType)
+        {
+            if (_fadeController == null)
+                yield break;
+
+            float elapsed = 0f;
+            _fadeController.SetAlpha(startAlpha);
+
+            while (elapsed < duration)
+            {
+                elapsed += UseUnscaledTime() ? Time.unscaledDeltaTime : Time.deltaTime;
+                float t = Mathf.Clamp01(elapsed / duration);
+                float eased = Mathf.Clamp01(Easing.Apply(t, easeType));
+                float alpha = Mathf.Lerp(startAlpha, endAlpha, eased);
+                _fadeController.SetAlpha(alpha);
+                yield return null;
+            }
+
+            _fadeController.SetAlpha(endAlpha);
+            _fadeCoroutine = null;
+        }
+
+        private void StartLifecycleCoroutine(IEnumerator routine)
+        {
+            if (_lifecycleCoroutine != null)
+                StopCoroutine(_lifecycleCoroutine);
+
+            _lifecycleCoroutine = StartCoroutine(routine);
+        }
+
+        private void StopManagedCoroutines()
+        {
+            if (_lifecycleCoroutine != null)
+            {
+                StopCoroutine(_lifecycleCoroutine);
+                _lifecycleCoroutine = null;
+            }
+
+            if (_fadeCoroutine != null)
+            {
+                StopCoroutine(_fadeCoroutine);
+                _fadeCoroutine = null;
+            }
+
+            if (CoroutineTickTimeDamage != null)
+            {
+                StopCoroutine(CoroutineTickTimeDamage);
+                CoroutineTickTimeDamage = null;
+            }
         }
     }
 }

@@ -121,14 +121,15 @@ namespace GGemCo2DCore
 
         public override void PlayEndAnimation()
         {
+            BeginReleaseOnAnimationComplete();
+
             if (VfxAnimationController != null)
             {
-                base.PlayEndAnimation();
                 VfxAnimationController.PlayEnd();
                 return;
             }
 
-            base.PlayEndAnimation();
+            BeginReleaseSequence();
         }
 
         public override void SetColor(string color)
