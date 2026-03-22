@@ -19,7 +19,6 @@ namespace GGemCo2DCore
         private VfxRuntimeData _runtimeData;
         private VfxSpawnPolicy _spawnPolicy;
 
-        private bool _started;
         private bool _releaseOnAnimationComplete;
         private int _pooledVfxUid;
         private Action<int, GameObject> _releaseAction;
@@ -45,7 +44,6 @@ namespace GGemCo2DCore
             _releaseAction = releaseAction;
             _followMode = _spawnPolicy.FollowMode;
             _releaseOnAnimationComplete = false;
-            _started = false;
         }
 
         protected virtual void OnEnable()
@@ -53,16 +51,6 @@ namespace GGemCo2DCore
             if (_runtimeData == null)
                 return;
 
-            if (_started)
-                PlayOnSpawn();
-        }
-
-        protected virtual void Start()
-        {
-            if (_runtimeData == null)
-                return;
-
-            _started = true;
             PlayOnSpawn();
         }
 

@@ -8,28 +8,39 @@ namespace GGemCo2DCore
     {
         private VfxBehaviourBase _defaultEffect;
         private Renderer _effectRenderer;
-        private float durationStart;
-        private float durationPlay;
-        private float durationEnd;
-        private float durationTotal;
-        
+        private float _durationStart;
+        private float _durationPlay;
+        private float _durationEnd;
+        private float _durationTotal;
+        private bool _isInitialized;
+
         protected override void Awake()
         {
             base.Awake();
+            EnsureInitialized();
+        }
+
+        private void EnsureInitialized()
+        {
+            if (_isInitialized)
+                return;
+
             _defaultEffect = GetComponent<VfxBehaviourBase>();
             _effectRenderer = GetComponent<Renderer>();
-            if (_effectRenderer)
+            if (_effectRenderer != null)
                 _effectRenderer.sortingLayerName = ConfigSortingLayer.GetValue(ConfigSortingLayer.Keys.CharacterTop);
-            
+
             // 이펙트는 상황에 따라 클립이 없는 경우가 있다.
-            durationStart = GetAnimationDuration(IVfxAnimationController.KeyClipNameStart, false, false);
-            durationPlay = GetAnimationDuration(IVfxAnimationController.KeyClipNamePlay, false, false);
-            durationEnd = GetAnimationDuration(IVfxAnimationController.KeyClipNameEnd, false, false);
-            durationTotal = durationStart + durationPlay + durationEnd; 
+            _durationStart = GetAnimationDuration(IVfxAnimationController.KeyClipNameStart, false, false);
+            _durationPlay = GetAnimationDuration(IVfxAnimationController.KeyClipNamePlay, false, false);
+            _durationEnd = GetAnimationDuration(IVfxAnimationController.KeyClipNameEnd, false, false);
+            _durationTotal = _durationStart + _durationPlay + _durationEnd;
+            _isInitialized = true;
         }
 
         public void SetEffectColor(string colorHex)
         {
+            EnsureInitialized();
             SetColor(colorHex);
         }
 
@@ -38,111 +49,142 @@ namespace GGemCo2DCore
         /// </summary>
         public override void GGemCoAniEventComplete()
         {
-            if (!GetClipByName(IVfxAnimationController.KeyClipNameEnd))
+            EnsureInitialized();
+
+            if (GetClipByName(IVfxAnimationController.KeyClipNameEnd) == null)
             {
-                _defaultEffect.DestroyForce();
+                _defaultEffect?.DestroyForce();
                 return;
             }
+
+            if (Animator == null)
+                return;
+
             AnimatorStateInfo state = Animator.GetCurrentAnimatorStateInfo(0);
-            if (!state.IsName(IVfxAnimationController.KeyClipNameEnd)) return;
-            _defaultEffect.OnEndAnimationComplete();
+            if (!state.IsName(IVfxAnimationController.KeyClipNameEnd))
+                return;
+
+            _defaultEffect?.OnEndAnimationComplete();
         }
+
         public void SetLoop(bool loop, int layerIndex = 0)
         {
             SetAnimationLoop(loop, layerIndex);
         }
+
         public float GetAnimationEventTime(string aniName, string eventName, List<string> exceptEventName = null)
         {
             return 0;
         }
-		public bool Play(float duration) 
-		{
-            var findAnimation = GetClipByName(IVfxAnimationController.KeyClipNameStart);
-            if (findAnimation == null) return false;
+
+        public bool Play(float duration)
+        {
+            EnsureInitialized();
+
+            var startClip = GetClipByName(IVfxAnimationController.KeyClipNameStart);
+            var playClip = GetClipByName(IVfxAnimationController.KeyClipNamePlay);
+            var endClip = GetClipByName(IVfxAnimationController.KeyClipNameEnd);
+
+            if (startClip == null && playClip == null && endClip == null)
+                return false;
+
+            var startAnimationName = startClip != null
+                ? IVfxAnimationController.KeyClipNameStart
+                : playClip != null
+                    ? IVfxAnimationController.KeyClipNamePlay
+                    : IVfxAnimationController.KeyClipNameEnd;
+
+            var addAnimations = new List<StruckAddAnimation>();
+            float startTimeScale = 1f;
 
             // 무제한 플레이
-            if (duration < 0)
+            if (duration < 0f)
             {
-                float timeScale = 1f;
-                List<StruckAddAnimation> newAddAnimations = new List<StruckAddAnimation>();
-                if (durationPlay > 0)
+                if (playClip != null)
                 {
-                    newAddAnimations.Add(new(IVfxAnimationController.KeyClipNamePlay, true, 0, timeScale));
+                    if (startClip != null)
+                        addAnimations.Add(new StruckAddAnimation(IVfxAnimationController.KeyClipNamePlay, true, 0f, 1f));
+                    else
+                        startAnimationName = IVfxAnimationController.KeyClipNamePlay;
                 }
-                PlayAnimation(IVfxAnimationController.KeyClipNameStart, false, timeScale, newAddAnimations);
             }
             // 한번만 재생
-            else if (duration <= 0)
+            else if (duration <= 0f)
             {
-                float timeScale = 1f;
-                List<StruckAddAnimation> newAddAnimations = new List<StruckAddAnimation>();
-                if (durationPlay > 0)
+                if (startClip != null)
                 {
-                    newAddAnimations.Add(new(IVfxAnimationController.KeyClipNamePlay, false, 0, timeScale));
+                    if (playClip != null)
+                        addAnimations.Add(new StruckAddAnimation(IVfxAnimationController.KeyClipNamePlay, false, 0f, 1f));
+                    if (endClip != null)
+                        addAnimations.Add(new StruckAddAnimation(IVfxAnimationController.KeyClipNameEnd, false, 0f, 1f));
                 }
-                if (durationEnd > 0)
+                else if (startAnimationName == IVfxAnimationController.KeyClipNamePlay && endClip != null)
                 {
-                    newAddAnimations.Add(new(IVfxAnimationController.KeyClipNameEnd, false, 0, timeScale));
+                    addAnimations.Add(new StruckAddAnimation(IVfxAnimationController.KeyClipNameEnd, false, 0f, 1f));
                 }
-                PlayAnimation(IVfxAnimationController.KeyClipNameStart, false, timeScale, newAddAnimations);
             }
             // play 클립 loop 하기
-            else if (durationTotal < duration)
+            else if (_durationTotal < duration && playClip != null && _durationPlay > 0f)
             {
-                //loopAni
-                var realLoopDuration = duration - durationStart - durationEnd;
-                var loopCnt = realLoopDuration/durationPlay;
-                var loopCntCeil = Math.Ceiling(realLoopDuration/durationPlay);
-                float newTimeScale = (float)loopCntCeil/loopCnt;
-                List<StruckAddAnimation> newAddAnimations = new List<StruckAddAnimation>();
+                var realLoopDuration = Mathf.Max(0f, duration - _durationStart - _durationEnd);
+                var loopRatio = realLoopDuration / _durationPlay;
+                var loopCntCeil = Math.Max(1, (int)Math.Ceiling(loopRatio));
+                var newTimeScale = loopRatio > 0f ? loopCntCeil / (float)loopRatio : 1f;
 
-                if (durationPlay > 0)
-                {
-                    for (var i = 0; i < loopCntCeil; i++)
-                    {
-                        StruckAddAnimation struckAddAnimation =
-                            new StruckAddAnimation(IVfxAnimationController.KeyClipNamePlay, false, 0, newTimeScale);
-                        newAddAnimations.Add(struckAddAnimation);
-                    }
-                }
+                for (var i = 0; i < loopCntCeil; i++)
+                    addAnimations.Add(new StruckAddAnimation(IVfxAnimationController.KeyClipNamePlay, false, 0f, newTimeScale));
 
-                //endAni
-                if (durationEnd > 0)
-                {
-                    StruckAddAnimation struckAddAnimation =
-                        new StruckAddAnimation(IVfxAnimationController.KeyClipNameEnd);
-                    newAddAnimations.Add(struckAddAnimation);
-                }
-
-                //startAni
-                PlayAnimation(IVfxAnimationController.KeyClipNameStart, false, 1, newAddAnimations);
+                if (endClip != null)
+                    addAnimations.Add(new StruckAddAnimation(IVfxAnimationController.KeyClipNameEnd));
             }
-            // 전체 클립 timescale 빠르게 
+            // 전체 클립 timescale 빠르게 또는 loop 클립이 없는 fallback
             else
             {
-                float timeScale = durationTotal / duration;
-                List<StruckAddAnimation> newAddAnimations = new List<StruckAddAnimation>();
-                if (durationPlay > 0)
+                var totalPlayableDuration = 0f;
+                if (startClip != null)
+                    totalPlayableDuration += _durationStart;
+                if (playClip != null)
+                    totalPlayableDuration += _durationPlay;
+                if (endClip != null)
+                    totalPlayableDuration += _durationEnd;
+
+                if (duration > 0f && totalPlayableDuration > 0f)
+                    startTimeScale = totalPlayableDuration / duration;
+
+                if (startClip != null)
                 {
-                    newAddAnimations.Add(new(IVfxAnimationController.KeyClipNamePlay, false, 0, timeScale));
+                    if (playClip != null)
+                        addAnimations.Add(new StruckAddAnimation(IVfxAnimationController.KeyClipNamePlay, false, 0f, startTimeScale));
+                    if (endClip != null)
+                        addAnimations.Add(new StruckAddAnimation(IVfxAnimationController.KeyClipNameEnd, false, 0f, startTimeScale));
                 }
-                if (durationEnd > 0)
+                else if (startAnimationName == IVfxAnimationController.KeyClipNamePlay && endClip != null)
                 {
-                    newAddAnimations.Add(new(IVfxAnimationController.KeyClipNameEnd, false, 0, timeScale));
+                    addAnimations.Add(new StruckAddAnimation(IVfxAnimationController.KeyClipNameEnd, false, 0f, startTimeScale));
                 }
-                PlayAnimation(IVfxAnimationController.KeyClipNameStart, false, timeScale, newAddAnimations);
             }
 
+            PlayAnimation(startAnimationName, false, startTimeScale, addAnimations);
             return true;
         }
+
         public bool HasEndAnimation()
         {
+            EnsureInitialized();
             return GetClipByName(IVfxAnimationController.KeyClipNameEnd) != null;
         }
 
         public void PlayEnd()
         {
-            PlayAnimation(IVfxAnimationController.KeyClipNameEnd);
+            EnsureInitialized();
+
+            if (GetClipByName(IVfxAnimationController.KeyClipNameEnd) != null)
+            {
+                PlayAnimation(IVfxAnimationController.KeyClipNameEnd);
+                return;
+            }
+
+            _defaultEffect?.OnEndAnimationComplete();
         }
     }
 }

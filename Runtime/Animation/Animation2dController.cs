@@ -44,6 +44,9 @@ namespace GGemCo2DCore
         /// </summary>
         private readonly Dictionary<string, SpriteRenderer> _spriteRenderers = new();
 
+        private bool _isInitialized;
+        private RuntimeAnimatorController _cachedRuntimeAnimatorController;
+        
         /// <summary>
         /// 초기화 시 자식 SpriteRenderer를 캐싱하고, Animator 및 클립/이벤트 캐시를 구성합니다.
         /// </summary>
@@ -52,22 +55,43 @@ namespace GGemCo2DCore
         /// </remarks>
         protected virtual void Awake()
         {
-            foreach (var sr in GetComponentsInChildren<SpriteRenderer>())
-            {
-                _spriteRenderers[sr.gameObject.name] = sr;
-            }
-
-            Animator = GetComponent<Animator>();
-            if (!Animator || !Animator.runtimeAnimatorController)
-            {
-                Debug.LogError("Animator component 가 없습니다.");
-                return;
-            }
-
-            _animationClips = Animator.runtimeAnimatorController.animationClips;
-            BuildClipEventTimeCache(_animationClips);
+            EnsureInitialized();
         }
+        
+        private void EnsureInitialized()
+        {
+            if (!Animator)
+                Animator = GetComponent<Animator>();
 
+            if (!Animator)
+                return;
+
+            var runtimeController = Animator.runtimeAnimatorController;
+            if (!runtimeController)
+                return;
+
+            bool controllerChanged = _cachedRuntimeAnimatorController != runtimeController;
+            if (_isInitialized && !controllerChanged)
+                return;
+
+            _cachedRuntimeAnimatorController = runtimeController;
+            _animationClips = runtimeController.animationClips;
+
+            _clipEventTimeCache.Clear();
+            BuildClipEventTimeCache(_animationClips);
+
+            _spriteRenderers.Clear();
+            foreach (var spriteRenderer in GetComponentsInChildren<SpriteRenderer>(true))
+            {
+                if (!spriteRenderer)
+                    continue;
+
+                _spriteRenderers[spriteRenderer.gameObject.name] = spriteRenderer;
+            }
+
+            _isInitialized = true;
+        }
+        
         /// <summary>
         /// 지정한 이름의 애니메이션을 재생합니다.
         /// </summary>
@@ -239,17 +263,24 @@ namespace GGemCo2DCore
         /// <returns>클립 길이(단위는 <paramref name="isMilliseconds"/>에 따름). 찾지 못하면 0을 반환합니다.</returns>
         protected float GetAnimationDuration(string animationName, bool isMilliseconds = true, bool showDebug = true)
         {
-            // Animator에서 직접 길이를 구하는 방법은 제한적이므로 AnimationClip 참조를 사용합니다.
+            EnsureInitialized();
+
+            if (_animationClips == null || _animationClips.Length == 0)
+            {
+                if (showDebug)
+                    GcLogger.LogWarning($"Animation clips are not initialized. AnimationName: {animationName}");
+                return 0f;
+            }
+
             foreach (var clip in _animationClips)
             {
-                if (clip.name == animationName)
-                {
+                if (clip != null && clip.name == animationName)
                     return isMilliseconds ? clip.length * 1000f : clip.length;
-                }
             }
-            
+
             if (showDebug)
                 GcLogger.LogWarning($"애니메이션 클립을 찾을 수 없습니다. AnimationName: {animationName}");
+
             return 0f;
         }
 
@@ -429,7 +460,13 @@ namespace GGemCo2DCore
         /// <returns>찾으면 AnimationClip, 없으면 null을 반환합니다.</returns>
         protected AnimationClip GetClipByName(string animationName)
         {
-            if (_animationClips == null) return null;
+            EnsureInitialized();
+
+            if (_animationClips == null || _animationClips.Length == 0)
+            {
+                GcLogger.LogWarning($"Animation clips are not initialized. AnimationName: {animationName}");
+                return null;
+            }
 
             foreach (var clip in _animationClips)
             {
@@ -663,7 +700,15 @@ namespace GGemCo2DCore
         {
             Dictionary<string, float> clipLength = new Dictionary<string, float>();
             if (!Animator || !Animator.runtimeAnimatorController) return clipLength;
+            
+            EnsureInitialized();
 
+            if (_animationClips == null || _animationClips.Length == 0)
+            {
+                GcLogger.LogWarning($"Animation clips are not initialized.");
+                return clipLength;
+            }
+            
             foreach (var clip in _animationClips)
             {
                 if (!clipLength.ContainsKey(clip.name))

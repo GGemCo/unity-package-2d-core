@@ -17,18 +17,36 @@ namespace GGemCo2DCore
         {
             base.Awake();
             _color = string.Empty;
-            _effectRenderer = GetComponent<Renderer>();
-            _effectRectTransform = GetComponent<RectTransform>();
-            _animator = GetComponent<Animator>();
+            EnsureCachedReferences();
         }
 
         protected override void PlayOnSpawn()
         {
+            EnsureCachedReferences();
             ApplyCommonVisuals();
             base.PlayOnSpawn();
 
-            if (VfxAnimationController != null)
-                VfxAnimationController.Play(GetPlaybackDuration());
+            if (VfxAnimationController == null)
+                return;
+
+            bool started = VfxAnimationController.Play(GetPlaybackDuration());
+            if (!started)
+            {
+                GcLogger.LogWarning($"VFX animation play failed. name: {gameObject.name}, uid: {RuntimeData?.Uid ?? 0}");
+                OnEndAnimationComplete();
+            }
+        }
+
+        private void EnsureCachedReferences()
+        {
+            if (_effectRenderer == null)
+                _effectRenderer = GetComponent<Renderer>();
+
+            if (_effectRectTransform == null)
+                _effectRectTransform = GetComponent<RectTransform>();
+
+            if (_animator == null)
+                _animator = GetComponent<Animator>();
         }
 
         protected void ApplyCommonVisuals()
