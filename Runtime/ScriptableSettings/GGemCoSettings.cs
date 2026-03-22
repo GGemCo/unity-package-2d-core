@@ -141,6 +141,16 @@ namespace GGemCo2DCore
         [Tooltip("자동 이동 취소 정책")]
         public AutoMoveCancelPolicy autoMoveCancelPolicy;
         
+        [Header("VFX")]
+        [Tooltip("VFX Fade In 시간")]
+        public float vfxFadeInSec = 0.3f;
+        [Tooltip("VFX Fade Out 시간")]
+        public float vfxFadeOutSec = 0.3f;
+        [Tooltip("VFX Fade In Easing")]
+        public Easing.EaseType vfxFadeInEase = Easing.EaseType.EaseOutQuad;
+        [Tooltip("VFX Fade Out Easing")]
+        public Easing.EaseType vfxFadeOutEase = Easing.EaseType.EaseInQuad;
+        
         /// <summary>
         /// 기존 값이 비어있을 때만 기본값을 설정
         /// </summary>

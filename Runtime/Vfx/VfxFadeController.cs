@@ -12,7 +12,7 @@ namespace GGemCo2DCore
         private readonly List<SpriteEntry> _sprites = new List<SpriteEntry>();
         private readonly List<RendererEntry> _renderers = new List<RendererEntry>();
         private readonly List<CanvasGroup> _canvasGroups = new List<CanvasGroup>();
-        private readonly MaterialPropertyBlock _propertyBlock = new MaterialPropertyBlock();
+        private MaterialPropertyBlock _propertyBlock;
         private bool _initialized;
         private float _currentAlpha = 1f;
 
@@ -37,6 +37,10 @@ namespace GGemCo2DCore
                 return;
 
             _initialized = true;
+
+            if (_propertyBlock == null)
+                _propertyBlock = new MaterialPropertyBlock();
+
             CacheTargets();
         }
 

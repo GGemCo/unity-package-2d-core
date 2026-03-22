@@ -145,10 +145,5 @@ namespace GGemCo2DCore
              Player = 0,
              Monster = 1,
          }
-         
-         public const float VfxFadeInSec = 2.15f;
-         public const float VfxFadeOutSec = 2.2f;
-         public const Easing.EaseType VfxFadeInEase = Easing.EaseType.EaseOutQuad;
-         public const Easing.EaseType VfxFadeOutEase = Easing.EaseType.EaseInQuad;
     }
 }
