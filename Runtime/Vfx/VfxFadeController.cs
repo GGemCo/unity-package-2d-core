@@ -14,6 +14,9 @@ namespace GGemCo2DCore
         private readonly List<CanvasGroup> _canvasGroups = new List<CanvasGroup>();
         private readonly MaterialPropertyBlock _propertyBlock = new MaterialPropertyBlock();
         private bool _initialized;
+        private float _currentAlpha = 1f;
+
+        public float CurrentAlpha => _currentAlpha;
 
         private struct SpriteEntry
         {
@@ -41,6 +44,7 @@ namespace GGemCo2DCore
         {
             EnsureInitialized();
             alpha = Mathf.Clamp01(alpha);
+            _currentAlpha = alpha;
 
             for (int i = 0; i < _sprites.Count; i++)
             {

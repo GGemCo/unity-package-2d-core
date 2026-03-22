@@ -81,10 +81,38 @@ namespace GGemCo2DCore
 
         protected IEnumerator RemoveEffectDuration(float duration)
         {
-            if (UseUnscaledTime())
-                yield return new WaitForSecondsRealtime(duration);
-            else
-                yield return new WaitForSeconds(duration);
+            if (duration <= 0f)
+            {
+                PlayEndAnimation();
+                yield break;
+            }
+
+            float fadeOutDuration = GetDurationOverlapFadeOutDuration(duration);
+            float preFadeDuration = Mathf.Max(0f, duration - fadeOutDuration);
+
+            if (preFadeDuration > 0f)
+            {
+                if (UseUnscaledTime())
+                    yield return new WaitForSecondsRealtime(preFadeDuration);
+                else
+                    yield return new WaitForSeconds(preFadeDuration);
+            }
+
+            if (ShouldOverlapFadeOutDuringPlayback(duration, fadeOutDuration))
+            {
+                StartFadeOutOnly(fadeOutDuration);
+
+                if (fadeOutDuration > 0f)
+                {
+                    if (UseUnscaledTime())
+                        yield return new WaitForSecondsRealtime(fadeOutDuration);
+                    else
+                        yield return new WaitForSeconds(fadeOutDuration);
+                }
+
+                ReleaseImmediateInternal();
+                yield break;
+            }
 
             PlayEndAnimation();
         }
@@ -99,6 +127,26 @@ namespace GGemCo2DCore
             {
                 StartLifecycleCoroutine(RemoveEffectDuration(_duration));
             }
+        }
+
+        protected virtual bool ShouldOverlapFadeOutDuringPlayback(float duration, float fadeOutDuration)
+        {
+            if (_spawnPolicy == null)
+                return false;
+
+            if (duration <= 0f || fadeOutDuration <= 0f)
+                return false;
+
+            return _spawnPolicy.LifecycleType == VfxConstants.LifecycleType.Duration
+                || _spawnPolicy.LifecycleType == VfxConstants.LifecycleType.AutoRelease;
+        }
+
+        protected virtual float GetDurationOverlapFadeOutDuration(float duration)
+        {
+            if (duration <= 0f)
+                return 0f;
+
+            return Mathf.Clamp(ConfigCommon.VfxFadeOutSec, 0f, duration);
         }
 
         protected float GetPlaybackDuration()
@@ -196,7 +244,27 @@ namespace GGemCo2DCore
                 return;
             }
 
-            _fadeCoroutine = StartCoroutine(FadeAndReleaseRoutine(1f, 0f, fadeOutDuration, ConfigCommon.VfxFadeOutEase));
+            _fadeCoroutine = StartCoroutine(FadeAndReleaseRoutine(GetCurrentAlpha(), 0f, fadeOutDuration, ConfigCommon.VfxFadeOutEase));
+        }
+
+        private void StartFadeOutOnly(float duration)
+        {
+            if (_fadeController == null)
+                return;
+
+            if (_fadeCoroutine != null)
+            {
+                StopCoroutine(_fadeCoroutine);
+                _fadeCoroutine = null;
+            }
+
+            if (duration <= 0f)
+            {
+                _fadeController.SetAlpha(0f);
+                return;
+            }
+
+            _fadeCoroutine = StartCoroutine(FadeRoutine(GetCurrentAlpha(), 0f, duration, ConfigCommon.VfxFadeOutEase));
         }
 
         private IEnumerator FadeAndReleaseRoutine(float startAlpha, float endAlpha, float duration, Easing.EaseType easeType)
@@ -233,6 +301,7 @@ namespace GGemCo2DCore
 
         private void ReleaseImmediateInternal()
         {
+            _isReleasing = true;
             StopManagedCoroutines();
             var callback = OnVfxDestroy;
             OnVfxDestroy = null;
@@ -335,6 +404,11 @@ namespace GGemCo2DCore
                 _fadeController = gameObject.AddComponent<VfxFadeController>();
 
             _fadeController.EnsureInitialized();
+        }
+
+        private float GetCurrentAlpha()
+        {
+            return _fadeController != null ? _fadeController.CurrentAlpha : 1f;
         }
 
         private void PrepareSpawnFadeState()
