@@ -135,6 +135,8 @@ namespace GGemCo2DCore
             if (request.FollowTarget != null)
                 behaviour.SetFollowCharacter(request.FollowTarget, ResolveFollowMode(spawnPolicy, true));
 
+            behaviour.SetForceOneShot(request.ForceOneShot);
+
             if (request.DurationOverride != 0f)
                 behaviour.SetDuration(request.DurationOverride);
 

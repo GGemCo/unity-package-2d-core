@@ -6,7 +6,9 @@ namespace GGemCo2DCore
     public sealed class VfxBehaviourParticle : VfxBehaviourBase
     {
         private ParticleSystem[] _particleSystems;
+        private bool[] _originalLoopStates;
         private bool _subscribed;
+        private bool _forceOneShot;
 
         protected override void Awake()
         {
@@ -24,6 +26,43 @@ namespace GGemCo2DCore
         private void CacheParticleSystems()
         {
             _particleSystems = GetComponentsInChildren<ParticleSystem>(true);
+            if (_particleSystems == null)
+            {
+                _originalLoopStates = null;
+                return;
+            }
+
+            if (_originalLoopStates == null || _originalLoopStates.Length != _particleSystems.Length)
+            {
+                _originalLoopStates = new bool[_particleSystems.Length];
+                for (int i = 0; i < _particleSystems.Length; i++)
+                {
+                    var ps = _particleSystems[i];
+                    _originalLoopStates[i] = ps != null && ps.main.loop;
+                }
+            }
+        }
+
+        public override void SetForceOneShot(bool forceOneShot)
+        {
+            _forceOneShot = forceOneShot;
+        }
+
+        private void ApplyLoopConfiguration()
+        {
+            if (_particleSystems == null || _originalLoopStates == null)
+                return;
+
+            for (int i = 0; i < _particleSystems.Length; i++)
+            {
+                var ps = _particleSystems[i];
+                if (ps == null)
+                    continue;
+
+                var main = ps.main;
+                bool originalLoop = i < _originalLoopStates.Length && _originalLoopStates[i];
+                main.loop = _forceOneShot ? false : originalLoop;
+            }
         }
 
         private void ConfigureStopAction()
@@ -55,6 +94,7 @@ namespace GGemCo2DCore
             }
 
             ConfigureStopAction();
+            ApplyLoopConfiguration();
 
             for (int i = 0; i < _particleSystems.Length; i++)
             {

@@ -110,6 +110,10 @@ namespace GGemCo2DCore
 
         public void SetDuration(float duration) => _duration = duration;
 
+        public virtual void SetForceOneShot(bool forceOneShot)
+        {
+        }
+
         public virtual void DestroyForce()
         {
             StopAllCoroutines();

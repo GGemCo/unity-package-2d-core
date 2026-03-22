@@ -12,6 +12,7 @@ namespace GGemCo2DCore
         public Vector3? WorldPosition;
         public Transform Parent;
         public float DurationOverride;
+        public bool ForceOneShot;
         public float ScaleOverride;
         public string ColorOverride;
         public bool ForceUiCanvasParent;
