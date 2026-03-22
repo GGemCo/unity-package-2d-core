@@ -12,7 +12,7 @@ namespace GGemCo2DCore
         void SetEffectColor(string colorHex);
         bool HasEndAnimation();
         
-        bool Play(float duration);
+        bool Play(float duration, float timeScale = 1f);
         void PlayEnd();
     }
 }

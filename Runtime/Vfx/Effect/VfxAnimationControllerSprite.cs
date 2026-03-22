@@ -20,7 +20,7 @@ namespace GGemCo2DCore
             EnsureInitialized();
         }
 
-        private void EnsureInitialized()
+        protected void EnsureInitialized()
         {
             if (_isInitialized)
                 return;
@@ -77,7 +77,7 @@ namespace GGemCo2DCore
             return 0;
         }
 
-        public bool Play(float duration)
+        public bool Play(float duration, float timeScale = 1f)
         {
             EnsureInitialized();
 
@@ -95,7 +95,7 @@ namespace GGemCo2DCore
                     : IVfxAnimationController.KeyClipNameEnd;
 
             var addAnimations = new List<StruckAddAnimation>();
-            float startTimeScale = 1f;
+            float startTimeScale = timeScale;
 
             // 무제한 플레이
             if (duration < 0f)
