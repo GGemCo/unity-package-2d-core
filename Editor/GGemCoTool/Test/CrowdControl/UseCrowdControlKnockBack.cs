@@ -62,14 +62,14 @@ namespace GGemCo2DCoreEditor
             return new StruckTableCrowdControlKnockBack
             {
                 CrowdControlUid = commonRow?.Uid ?? 0,
-                DownWaitTime = commonRow?.DownWaitTime ?? 0f,
-                EndYMode = commonRow?.EndYMode ?? CrowdControlConstants.EndYMode.None,
-                EndYOffset = commonRow?.EndYOffset ?? 0f,
-                EndYAbsolute = commonRow?.EndYAbsolute ?? 0f,
-                RecoverTime = commonRow?.RecoverTime ?? 0f,
-                IsStopOnWall = commonRow?.IsStopOnWall ?? false,
-                IsGroundOnly = commonRow?.IsGroundOnly ?? false,
-                IsAirOnly = commonRow?.IsAirOnly ?? false,
+                DownWaitTime = 0f,
+                EndYMode = CrowdControlConstants.EndYMode.None,
+                EndYOffset = 0f,
+                EndYAbsolute = 0f,
+                RecoverTime = 0f,
+                IsStopOnWall = false,
+                IsGroundOnly = false,
+                IsAirOnly = false,
             };
         }
 

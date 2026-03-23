@@ -576,8 +576,7 @@ namespace GGemCo2DCoreEditor
             _rules = new List<TableEditorColumnRule>();
             AddRuleGroup(new[] { "Uid", "Name", "Type" }, "Common");
             AddRuleGroup(new[] { "DirectionType", "FixedDirectionX", "FixedDirectionY", "Distance", "EaseType", "Duration" }, "Motion");
-            AddRuleGroup(new[] { "IsLockControl", "IsUseKnockbackStatus", "IsUseDontControlStatus", "StaggerAnimationName" }, "State / Animation");
-            AddLegacyRuleGroup(new[] { "Height", "EndYMode", "EndYOffset", "EndYAbsolute", "DownWaitTime", "RecoverTime", "IsStopOnWall", "IsGroundOnly", "IsAirOnly" }, "Legacy Detail Fallback");
+            AddRuleGroup(new[] { "IsUseKnockbackStatus", "IsUseDontControlStatus", "StaggerAnimationName" }, "State / Animation");
         }
 
         public bool CanHandle(TableEditorTableDefinition definition)

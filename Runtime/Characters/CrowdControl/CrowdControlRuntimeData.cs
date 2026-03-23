@@ -4,8 +4,8 @@ namespace GGemCo2DCore
 {
     /// <summary>
     /// Crowd Control 공통 테이블과 타입별 상세 테이블을 합쳐 만든 런타임용 데이터입니다.
-    /// - 기본값은 기존 crowd_control.txt의 레거시 컬럼을 사용합니다.
-    /// - 타입별 상세 테이블이 존재하면 해당 값을 우선 적용합니다.
+    /// - crowd_control.txt에는 공통 정의만 둡니다.
+    /// - 타입별 상세 값은 crowd_control_knock_back / knock_down / knock_up 테이블에서 채웁니다.
     /// </summary>
     public sealed class CrowdControlRuntimeData
     {
@@ -29,7 +29,6 @@ namespace GGemCo2DCore
         public float DownWaitTime;
         public float RecoverTime;
 
-        public bool IsLockControl;
         public bool IsUseKnockbackStatus;
         public bool IsUseDontControlStatus;
 
@@ -39,7 +38,7 @@ namespace GGemCo2DCore
         public bool IsGroundOnly;
         public bool IsAirOnly;
 
-        public static CrowdControlRuntimeData FromLegacy(StruckTableCrowdControl row)
+        public static CrowdControlRuntimeData FromShared(StruckTableCrowdControl row)
         {
             if (row == null) return null;
 
@@ -54,19 +53,18 @@ namespace GGemCo2DCore
                 Distance = row.Distance,
                 EaseType = row.EaseType,
                 Duration = row.Duration,
-                Height = row.Height,
-                EndYMode = row.EndYMode,
-                EndYOffset = row.EndYOffset,
-                EndYAbsolute = row.EndYAbsolute,
-                DownWaitTime = row.DownWaitTime,
-                RecoverTime = row.RecoverTime,
-                IsLockControl = row.IsLockControl,
+                Height = 0f,
+                EndYMode = CrowdControlConstants.EndYMode.None,
+                EndYOffset = 0f,
+                EndYAbsolute = 0f,
+                DownWaitTime = 0f,
+                RecoverTime = 0f,
                 IsUseKnockbackStatus = row.IsUseKnockbackStatus,
                 IsUseDontControlStatus = row.IsUseDontControlStatus,
                 StaggerAnimationName = row.StaggerAnimationName,
-                IsStopOnWall = row.IsStopOnWall,
-                IsGroundOnly = row.IsGroundOnly,
-                IsAirOnly = row.IsAirOnly,
+                IsStopOnWall = false,
+                IsGroundOnly = false,
+                IsAirOnly = false,
             };
         }
     }
@@ -89,7 +87,7 @@ namespace GGemCo2DCore
 
         public static CrowdControlRuntimeData Resolve(TableLoaderManager tableLoader, StruckTableCrowdControl row)
         {
-            var runtime = CrowdControlRuntimeData.FromLegacy(row);
+            var runtime = CrowdControlRuntimeData.FromShared(row);
             if (runtime == null) return null;
             if (tableLoader == null) return runtime;
 

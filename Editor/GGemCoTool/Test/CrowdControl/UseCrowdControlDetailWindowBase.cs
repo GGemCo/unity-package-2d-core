@@ -16,12 +16,10 @@ namespace GGemCo2DCoreEditor
     public abstract class UseCrowdControlDetailWindowBase<TDetailRow> : DefaultEditorWindow
         where TDetailRow : StruckTableCrowdControlDetailBase, new()
     {
-        [Header("대상")]
-        [SerializeField] private GameObject _target;
-        [SerializeField] private GameObject _source;
+        private GameObject _target;
+        private GameObject _source;
 
-        [Header("정의(테이블)")]
-        [SerializeField] private int crowdControlUid;
+        private int _crowdControlUid;
 
         private TableCrowdControl _tableCrowdControl;
         private Dictionary<int, StruckTableCrowdControl> _crowdControlRows;
@@ -128,7 +126,7 @@ namespace GGemCo2DCoreEditor
                         selectedIndex: selectedIndex,
                         onSelected: (_, option) =>
                         {
-                            crowdControlUid = option.Data?.Uid ?? 0;
+                            _crowdControlUid = option.Data?.Uid ?? 0;
                             CacheSelectedRows();
                             Repaint();
                         },
@@ -136,10 +134,10 @@ namespace GGemCo2DCoreEditor
                 }
 
                 EditorGUI.BeginChangeCheck();
-                int newUid = EditorGUILayout.IntField("CrowdControlUid", crowdControlUid);
+                int newUid = EditorGUILayout.IntField("CrowdControlUid", _crowdControlUid);
                 if (EditorGUI.EndChangeCheck())
                 {
-                    crowdControlUid = Mathf.Max(0, newUid);
+                    _crowdControlUid = Mathf.Max(0, newUid);
                     CacheSelectedRows();
                 }
             }
@@ -185,7 +183,7 @@ namespace GGemCo2DCoreEditor
                     return;
                 }
 
-                if (_detailRows != null && _detailRows.ContainsKey(crowdControlUid))
+                if (_detailRows != null && _detailRows.ContainsKey(_crowdControlUid))
                     EditorGUILayout.HelpBox("기존 상세 Row를 편집중입니다.", MessageType.Info);
                 else
                     EditorGUILayout.HelpBox("상세 Row가 없어 공통 테이블 fallback 값으로 임시 생성했습니다. 저장 시 상세 테이블에 새 Row가 추가됩니다.", MessageType.Warning);
@@ -300,7 +298,7 @@ namespace GGemCo2DCoreEditor
 
         private void ReloadAllTables(bool preserveSelection)
         {
-            int previousUid = preserveSelection ? crowdControlUid : 0;
+            int previousUid = preserveSelection ? _crowdControlUid : 0;
             try
             {
                 _tableCrowdControl = TableLoaderManager.LoadCrowdControlTable(forceReload: true);
@@ -311,7 +309,7 @@ namespace GGemCo2DCoreEditor
                 _detailRows = LoadDetailRows();
                 RebuildDropdown();
 
-                crowdControlUid = previousUid > 0 ? previousUid : FindFirstUid();
+                _crowdControlUid = previousUid > 0 ? previousUid : FindFirstUid();
                 _lastReloadMessage = $"테이블 재로딩 완료: {DateTime.Now:yyyy-MM-dd HH:mm:ss}";
             }
             catch (Exception e)
@@ -350,14 +348,14 @@ namespace GGemCo2DCoreEditor
                 return;
 
             if (_crowdControlRows != null && _crowdControlRows.TryGetValue(pendingUid, out StruckTableCrowdControl row) && row != null && row.Type == SupportedType)
-                crowdControlUid = pendingUid;
+                _crowdControlUid = pendingUid;
 
             UseCrowdControlSelectionBridge.PendingCrowdControlUid = 0;
         }
 
         private void CacheSelectedRows()
         {
-            _selectedCommonRow = FindCommonRowByUid(crowdControlUid);
+            _selectedCommonRow = FindCommonRowByUid(_crowdControlUid);
             _cachedRow = BuildWorkingDetailRow(_selectedCommonRow);
             _editingRow = CloneDetailRow(_cachedRow);
             NormalizeRow(_editingRow);
@@ -424,7 +422,7 @@ namespace GGemCo2DCoreEditor
             }
 
             ApplyRowToRuntime(_cachedRow);
-            controller.ApplyCrowdControlByUid(crowdControlUid, _source);
+            controller.ApplyCrowdControlByUid(_crowdControlUid, _source);
         }
 
         private void TrySaveTable()

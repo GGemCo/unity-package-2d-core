@@ -29,44 +29,6 @@ namespace GGemCo2DCore
 
         public float Duration;
 
-        /// <summary>
-        /// 레거시 상세 컬럼입니다. KnockUp 상세 테이블이 없을 때 fallback으로 사용합니다.
-        /// - KnockUp 전용: 공중으로 띄우는 높이(유닛)입니다.
-        /// - 0이면 수직 이동 없이 수평 이동만 처리됩니다.
-        /// </summary>
-        public float Height;
-
-        /// <summary>
-        /// CrowdControl 종료 시 최종 Y 위치를 어떻게 결정할지 정의합니다.
-        /// </summary>
-        public CrowdControlConstants.EndYMode EndYMode;
-
-        /// <summary>
-        /// 종료 Y 보정값입니다.
-        /// - <see cref="CrowdControlConstants.EndYMode.AddOffsetFromStart"/>에서는 시작 Y 기준 오프셋으로 사용합니다.
-        /// - <see cref="CrowdControlConstants.EndYMode.GroundAtEndX"/>에서는 탐지된 지면 Y에 더할 추가 오프셋으로 사용합니다.
-        /// </summary>
-        public float EndYOffset;
-
-        /// <summary>
-        /// 종료 Y 절대값입니다. <see cref="CrowdControlConstants.EndYMode.Absolute"/>에서 사용합니다.
-        /// </summary>
-        public float EndYAbsolute;
-
-        /// <summary>
-        /// 레거시 상세 컬럼입니다. KnockBack/KnockDown 상세 테이블이 없을 때 fallback으로 사용합니다.
-        /// - KnockBack, Knockdown 전용: 밀려나기/넘어짐/눕기 상태로 유지할 시간(초)입니다.
-        /// - 0이면 대기 없이 종료 구간으로 넘어갑니다.
-        /// </summary>
-        public float DownWaitTime;
-
-        /// <summary>
-        /// 선택: Recover(기상) 연출 시간을 데이터로 관리하고 싶을 때 사용합니다.
-        /// - 현재 Core 구현에서는 End 애니메이션 종료를 우선으로 하므로, 기본값(0)으로 두어도 됩니다.
-        /// </summary>
-        public float RecoverTime;
-
-        public bool IsLockControl;
         public bool IsUseKnockbackStatus;
         public bool IsUseDontControlStatus;
 
@@ -80,9 +42,6 @@ namespace GGemCo2DCore
         public const string StaggerAnimationWaitSuffix = "_wait";
         public const string StaggerAnimationEndSuffix = "_end";
 
-        public bool IsStopOnWall;
-        public bool IsGroundOnly;
-        public bool IsAirOnly;
     }
 
     /// <summary>
@@ -111,22 +70,10 @@ namespace GGemCo2DCore
 
                 Duration = MathHelper.ParseFloat(data.GetValueOrDefault("Duration")),
 
-                Height = MathHelper.ParseFloat(data.GetValueOrDefault("Height")),
-                EndYMode = EnumHelper.ConvertEnum<CrowdControlConstants.EndYMode>(data.GetValueOrDefault("EndYMode")),
-                EndYOffset = MathHelper.ParseFloat(data.GetValueOrDefault("EndYOffset")),
-                EndYAbsolute = MathHelper.ParseFloat(data.GetValueOrDefault("EndYAbsolute")),
-                DownWaitTime = MathHelper.ParseFloat(data.GetValueOrDefault("DownWaitTime")),
-                RecoverTime = MathHelper.ParseFloat(data.GetValueOrDefault("RecoverTime")),
-
-                IsLockControl = ConvertBoolean(data.GetValueOrDefault("IsLockControl")),
                 IsUseKnockbackStatus = ConvertBoolean(data.GetValueOrDefault("IsUseKnockbackStatus")),
                 IsUseDontControlStatus = ConvertBoolean(data.GetValueOrDefault("IsUseDontControlStatus")),
 
                 StaggerAnimationName = data.GetValueOrDefault("StaggerAnimationName"),
-
-                IsStopOnWall = ConvertBoolean(data.GetValueOrDefault("IsStopOnWall")),
-                IsGroundOnly = ConvertBoolean(data.GetValueOrDefault("IsGroundOnly")),
-                IsAirOnly = ConvertBoolean(data.GetValueOrDefault("IsAirOnly")),
             };
 
             // 유효성 최소 보정
