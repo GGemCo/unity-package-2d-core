@@ -1,4 +1,5 @@
 ﻿using System.Collections;
+using System.Collections.Generic;
 using UnityEngine;
 
 namespace GGemCo2DCore
@@ -19,7 +20,9 @@ namespace GGemCo2DCore
         private ICharacterMotionController _motionController;
 
         // 현재 적용된 CC(한 번에 1개 정책: 새 CC가 오면 기존을 강제 중단)
-        private StruckTableCrowdControl _activeCrowdControl;
+        private CrowdControlRuntimeData _activeCrowdControl;
+
+        private Dictionary<CrowdControlConstants.Type, ICrowdControlHandler> _handlers;
 
         // 애니메이션 시퀀스(이름 기반)
         private string _currentStaggerAnimationName;
@@ -33,6 +36,7 @@ namespace GGemCo2DCore
         {
             _character = GetComponent<CharacterBase>();
             _rigidbody2D = GetComponent<Rigidbody2D>();
+            _handlers = CreateHandlers();
         }
 
         private void Start()
@@ -51,6 +55,12 @@ namespace GGemCo2DCore
         /// - 이동은 <see cref="MotionChannel.CrowdControl"/> 채널로 요청되며, 종료 시 End 애니메이션 및 상태 해제를 수행합니다.
         /// </remarks>
         public void ApplyCrowdControl(StruckTableCrowdControl crowdControl, GameObject source)
+        {
+            var runtimeData = CrowdControlRuntimeDataResolver.Resolve(TableLoaderManager.Instance, crowdControl);
+            ApplyCrowdControl(runtimeData, source);
+        }
+
+        public void ApplyCrowdControl(CrowdControlRuntimeData crowdControl, GameObject source)
         {
             if (crowdControl == null) return;
             if (_character == null) return;
@@ -83,80 +93,77 @@ namespace GGemCo2DCore
             var travelDistance = travel.magnitude;
             var travelDirection = travelDistance > Epsilon ? (travel / travelDistance) : direction;
 
-            // 이동/대기 여부 판단
             bool hasAnyTime =
                 Mathf.Abs(crowdControl.Duration) > Epsilon ||
                 Mathf.Abs(crowdControl.DownWaitTime) > Epsilon;
 
             bool hasDistance = travelDistance > Epsilon;
 
-            // 즉시 스냅 + 종료 시퀀스만 원하는 경우
             if (!hasAnyTime)
             {
                 if (hasDistance)
                     MoveTo(endPos);
 
-                // End 애니메이션이 없으면 즉시 상태 해제
                 PlayEndAndStop(crowdControl);
                 _activeCrowdControl = null;
                 return;
             }
 
-            // 모션 요청 생성(실제 이동은 CharacterMotionController2D로 위임)
             if (_motionController == null)
             {
-                // 모션 컨트롤러가 없으면 즉시 종료 처리
+                if (hasDistance)
+                    MoveTo(endPos);
+
                 PlayEndAndStop(crowdControl);
                 _activeCrowdControl = null;
                 return;
             }
 
-            float duration = Mathf.Max(0f, crowdControl.Duration);
-
-            MotionKind kind = MotionKind.Linear;
-            float arcHeight = 0f;
-            MotionArcMode arcMode = MotionArcMode.LegacyTimeSine;
-            float holdAfter = 0f;
-
-            switch (crowdControl.Type)
+            if (!TryBuildMotionRequest(crowdControl, travelDirection, travelDistance, out var req) ||
+                !_motionController.TryStartMotion(in req))
             {
-                case CrowdControlConstants.Type.KnockUp:
-                    kind = MotionKind.Arc;
-                    arcHeight = Mathf.Max(0f, crowdControl.Height);
-                    arcMode = MotionArcMode.DistancePhased;
-                    break;
+                if (hasDistance)
+                    MoveTo(endPos);
 
-                case CrowdControlConstants.Type.KnockDown:
-                case CrowdControlConstants.Type.KnockBack:
-                    holdAfter = Mathf.Max(0f, crowdControl.DownWaitTime);
-                    break;
-
-                default:
-                    break;
+                PlayEndAndStop(crowdControl);
+                _activeCrowdControl = null;
             }
+        }
 
-            var req = new MotionRequest(
+
+        private bool TryBuildMotionRequest(
+            CrowdControlRuntimeData crowdControl,
+            Vector2 travelDirection,
+            float travelDistance,
+            out MotionRequest request)
+        {
+            request = default;
+            if (crowdControl == null) return false;
+
+            if (_handlers != null && _handlers.TryGetValue(crowdControl.Type, out var handler) && handler != null)
+                return handler.TryBuildMotionRequest(crowdControl, travelDirection, travelDistance, out request);
+
+            request = new MotionRequest(
                 MotionChannel.CrowdControl,
-                kind,
+                MotionKind.Linear,
                 travelDirection,
-                duration,
+                Mathf.Max(0f, crowdControl.Duration),
                 Mathf.Max(0f, travelDistance),
                 crowdControl.EaseType,
                 stopAtEnd: true,
                 useMovePosition: true,
-                allowReplace: true,
-                holdSecondsAfter: holdAfter,
-                arcHeight: arcHeight,
-                arcMode: arcMode,
-                arcRiseEaseType: crowdControl.EaseType,
-                arcFallEaseType: crowdControl.EaseType,
-                arcApexHoldNormalized: 0f);
+                allowReplace: true);
+            return true;
+        }
 
-            if (!_motionController.TryStartMotion(in req))
+        private static Dictionary<CrowdControlConstants.Type, ICrowdControlHandler> CreateHandlers()
+        {
+            return new Dictionary<CrowdControlConstants.Type, ICrowdControlHandler>
             {
-                PlayEndAndStop(crowdControl);
-                _activeCrowdControl = null;
-            }
+                { CrowdControlConstants.Type.KnockBack, new KnockBackCrowdControlHandler() },
+                { CrowdControlConstants.Type.KnockDown, new KnockDownCrowdControlHandler() },
+                { CrowdControlConstants.Type.KnockUp, new KnockUpCrowdControlHandler() },
+            };
         }
 
         private void Update()
@@ -200,7 +207,7 @@ namespace GGemCo2DCore
         /// <summary>
         /// 시작 위치와 원시 종료 위치를 기반으로 최종 종료 위치를 계산합니다.
         /// </summary>
-        private Vector2 ResolveEndPosition(StruckTableCrowdControl crowdControl, Vector2 startPos, Vector2 rawEndPos)
+        private Vector2 ResolveEndPosition(CrowdControlRuntimeData crowdControl, Vector2 startPos, Vector2 rawEndPos)
         {
             switch (crowdControl.EndYMode)
             {
@@ -265,7 +272,7 @@ namespace GGemCo2DCore
         /// <remarks>
         /// 유효한 방향을 얻지 못하면 캐릭터의 현재 바라보는 방향을 fallback으로 사용합니다.
         /// </remarks>
-        private Vector2 ResolveDirection(StruckTableCrowdControl crowdControl, GameObject source)
+        private Vector2 ResolveDirection(CrowdControlRuntimeData crowdControl, GameObject source)
         {
             switch (crowdControl.DirectionType)
             {
@@ -318,7 +325,7 @@ namespace GGemCo2DCore
         /// 테이블의 애니메이션 이름이 비어있으면 아무 것도 재생하지 않으며,
         /// Start → Wait 전환은 Animator의 Transition으로 구성되어 있다고 가정합니다.
         /// </remarks>
-        private void PlayStaggerAnimation(StruckTableCrowdControl crowdControl)
+        private void PlayStaggerAnimation(CrowdControlRuntimeData crowdControl)
         {
             if (_character?.CharacterAnimationController == null) return;
 
@@ -341,7 +348,7 @@ namespace GGemCo2DCore
         /// End 애니메이션이 존재하면 클립 길이(또는 RecoverTime 중 더 큰 값)만큼 대기한 뒤
         /// <c>Stop(isForce: true)</c>로 상태를 강제 해제합니다.
         /// </remarks>
-        private void PlayEndAndStop(StruckTableCrowdControl crowdControl = null)
+        private void PlayEndAndStop(CrowdControlRuntimeData crowdControl = null)
         {
             if (_stopRoutine != null)
             {
@@ -422,7 +429,9 @@ namespace GGemCo2DCore
         /// <param name="source">방향 계산에 사용할 공격/발생 원본 오브젝트입니다(없을 수 있음).</param>
         public void ApplyCrowdControlByUid(int crowdControlUid, GameObject source)
         {
-            var info = TableLoaderManager.Instance.TableCrowdControl.GetDataByUid(crowdControlUid);
+            var info = TableLoaderManager.Instance != null
+                ? TableLoaderManager.Instance.GetCrowdControlRuntimeData(crowdControlUid, logIfMissing: false)
+                : null;
             if (info == null) return;
             ApplyCrowdControl(info, source);
         }

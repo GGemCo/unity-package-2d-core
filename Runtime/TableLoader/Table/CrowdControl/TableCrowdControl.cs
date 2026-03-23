@@ -3,12 +3,12 @@
 namespace GGemCo2DCore
 {
     /// <summary>
-    /// CrowdControl 테이블의 한 행(row) 데이터입니다.
+    /// CrowdControl 공통 테이블의 한 행(row) 데이터입니다.
     /// </summary>
     public sealed class StruckTableCrowdControl
     {
         public int Uid;
-        public string Id;
+        public string Name;
 
         public CrowdControlConstants.Type Type;
         public CrowdControlConstants.DirectionType DirectionType;
@@ -30,7 +30,8 @@ namespace GGemCo2DCore
         public float Duration;
 
         /// <summary>
-        /// KnockUp 전용: 공중으로 띄우는 높이(유닛)입니다.
+        /// 레거시 상세 컬럼입니다. KnockUp 상세 테이블이 없을 때 fallback으로 사용합니다.
+        /// - KnockUp 전용: 공중으로 띄우는 높이(유닛)입니다.
         /// - 0이면 수직 이동 없이 수평 이동만 처리됩니다.
         /// </summary>
         public float Height;
@@ -53,7 +54,8 @@ namespace GGemCo2DCore
         public float EndYAbsolute;
 
         /// <summary>
-        /// KnockBack, Knockdown 전용: 밀려나기/넘어짐/눕기 상태로 유지할 시간(초)입니다.
+        /// 레거시 상세 컬럼입니다. KnockBack/KnockDown 상세 테이블이 없을 때 fallback으로 사용합니다.
+        /// - KnockBack, Knockdown 전용: 밀려나기/넘어짐/눕기 상태로 유지할 시간(초)입니다.
         /// - 0이면 대기 없이 종료 구간으로 넘어갑니다.
         /// </summary>
         public float DownWaitTime;
@@ -96,7 +98,7 @@ namespace GGemCo2DCore
             var row = new StruckTableCrowdControl
             {
                 Uid = MathHelper.ParseInt(data.GetValueOrDefault("Uid")),
-                Id = data.GetValueOrDefault("Id"),
+                Name = data.GetValueOrDefault("Name"),
 
                 Type = EnumHelper.ConvertEnum<CrowdControlConstants.Type>(data.GetValueOrDefault("Type")),
                 DirectionType = EnumHelper.ConvertEnum<CrowdControlConstants.DirectionType>(data.GetValueOrDefault("DirectionType")),

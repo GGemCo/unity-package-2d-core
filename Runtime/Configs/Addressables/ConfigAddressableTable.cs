@@ -48,7 +48,10 @@ namespace GGemCo2DCore
         public const string Sound            = "sound";
         public const string SimulationTool   = "simulation_tool";
         public const string SimulationGrowth = "simulation_growth";
-        public const string CrowdControl     = "crowd_control";
+        public const string CrowdControl          = "crowd_control";
+        public const string CrowdControlKnockBack = "crowd_control_knock_back";
+        public const string CrowdControlKnockDown = "crowd_control_knock_down";
+        public const string CrowdControlKnockUp   = "crowd_control_knock_up";
         public const string ItemUse          = "item_use";
         public const string ItemUseAction    = "item_use_action";
 
@@ -84,7 +87,10 @@ namespace GGemCo2DCore
         public static readonly AddressableAssetInfo TableSound           = Make(Sound);
         public static readonly AddressableAssetInfo TableSimulationTool  = Make(SimulationTool);
         public static readonly AddressableAssetInfo TableSimulationGrowth  = Make(SimulationGrowth);
-        public static readonly AddressableAssetInfo TableCrowdControl    = Make(CrowdControl);
+        public static readonly AddressableAssetInfo TableCrowdControl          = Make(CrowdControl);
+        public static readonly AddressableAssetInfo TableCrowdControlKnockBack = Make(CrowdControlKnockBack);
+        public static readonly AddressableAssetInfo TableCrowdControlKnockDown = Make(CrowdControlKnockDown);
+        public static readonly AddressableAssetInfo TableCrowdControlKnockUp   = Make(CrowdControlKnockUp);
         public static readonly AddressableAssetInfo TableItemUse         = Make(ItemUse);
         public static readonly AddressableAssetInfo TableItemUseAction   = Make(ItemUseAction);
 
@@ -100,7 +106,7 @@ namespace GGemCo2DCore
             TableVfxEffect, TableVfxParticle, TableInteraction,
             TableShop, TableItemUpgrade, TableItemSalvage, TableItemCraft,
             TableCutscene, TableDialogue, TableQuest, TableProjectile, TableSound, TableSimulationTool,
-            TableSimulationGrowth, TableCrowdControl, TableItemUse, TableItemUseAction
+            TableSimulationGrowth, TableCrowdControl, TableCrowdControlKnockBack, TableCrowdControlKnockDown, TableCrowdControlKnockUp, TableItemUse, TableItemUseAction
         };
         public static AddressableAssetInfo GetByKey(string key)
         {

@@ -298,9 +298,9 @@ namespace GGemCo2DCoreEditor
                     continue;
 
                 _uids.Add(uid);
-                string name = string.IsNullOrWhiteSpace(row.Id)
+                string name = string.IsNullOrWhiteSpace(row.Name)
                     ? $"{uid}"
-                    : $"{uid} - {row.Id}";
+                    : $"{uid} - {row.Name}";
                 _names.Add(name);
             }
 
@@ -430,7 +430,7 @@ namespace GGemCo2DCoreEditor
                 values[i] = headers[i] switch
                 {
                     "Uid" => row.Uid.ToString(),
-                    "Id" => row.Id ?? string.Empty,
+                    "Name" => row.Name ?? string.Empty,
                     "Type" => row.Type.ToString(),
                     "DirectionType" => row.DirectionType.ToString(),
                     "FixedDirectionX" => MathHelper.FormatFloat(row.FixedDirectionX),

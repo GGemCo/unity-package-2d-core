@@ -28,6 +28,9 @@ namespace GGemCo2DCore
         public TableDamageType TableDamageType { get; private set; } = new TableDamageType();
         public TableState TableState { get; private set; } = new TableState();
         public TableCrowdControl TableCrowdControl { get; private set; } = new TableCrowdControl();
+        public TableCrowdControlKnockBack TableCrowdControlKnockBack { get; private set; } = new TableCrowdControlKnockBack();
+        public TableCrowdControlKnockDown TableCrowdControlKnockDown { get; private set; } = new TableCrowdControlKnockDown();
+        public TableCrowdControlKnockUp TableCrowdControlKnockUp { get; private set; } = new TableCrowdControlKnockUp();
         public TableVfxEffect TableVfxEffect { get; private set; } = new TableVfxEffect();
         public TableVfxParticle TableVfxParticle { get; private set; } = new TableVfxParticle();
         public TableInteraction TableInteraction { get; private set; } = new TableInteraction();
@@ -74,6 +77,9 @@ namespace GGemCo2DCore
                 registry.Register(TableDamageType);
                 registry.Register(TableState);
                 registry.Register(TableCrowdControl);
+                registry.Register(TableCrowdControlKnockBack);
+                registry.Register(TableCrowdControlKnockDown);
+                registry.Register(TableCrowdControlKnockUp);
                 registry.Register(TableVfxEffect);
                 registry.Register(TableVfxParticle);
                 registry.Register(TableInteraction);
@@ -189,6 +195,24 @@ namespace GGemCo2DCore
             => GetData(TableWindow, uid, "Window", (t, i) => t.GetDataByUid(i), logIfMissing);
         public bool TryGetWindowData(int uid, out StruckTableWindow data, bool logIfMissing = false)
             => TryGetData(TableWindow, uid, out data, "Window", (t, i) => t.GetDataByUid(i), logIfMissing);
+
+        // CrowdControl
+        public StruckTableCrowdControl GetCrowdControlData(int uid, bool logIfMissing = true)
+            => GetData(TableCrowdControl, uid, "CrowdControl", (t, i) => t.GetDataByUid(i), logIfMissing);
+        public bool TryGetCrowdControlData(int uid, out StruckTableCrowdControl data, bool logIfMissing = false)
+            => TryGetData(TableCrowdControl, uid, out data, "CrowdControl", (t, i) => t.GetDataByUid(i), logIfMissing);
+
+        public CrowdControlRuntimeData GetCrowdControlRuntimeData(int uid, bool logIfMissing = true)
+        {
+            var data = GetCrowdControlData(uid, logIfMissing);
+            return CrowdControlRuntimeDataResolver.Resolve(this, data);
+        }
+
+        public bool TryGetCrowdControlRuntimeData(int uid, out CrowdControlRuntimeData data, bool logIfMissing = false)
+        {
+            data = GetCrowdControlRuntimeData(uid, logIfMissing);
+            return data != null;
+        }
 
         // Vfx
         public VfxRuntimeData GetVfxData(int uid, bool logIfMissing = true)
