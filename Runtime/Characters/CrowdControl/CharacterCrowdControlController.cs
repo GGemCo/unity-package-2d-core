@@ -33,6 +33,25 @@ namespace GGemCo2DCore
         private const float Epsilon = 0.0001f;
         private const float GroundProbeDefaultHeight = 2f;
         private const float GroundProbeDefaultDistance = 12f;
+        /// <summary>
+        /// Ground probe 시작 위치를 캐릭터 하단보다 약간 위로 올리기 위한 오프셋.
+        /// 지면과 거의 붙어있는 상태에서 Raycast가 시작 지점에서 바로 히트되는 것을 방지하고,
+        /// 안정적인 착지 판정을 위해 사용됩니다.
+        /// </summary>
+        private const float KnockUpLandingProbeUpOffset = 0.1f;
+
+        /// <summary>
+        /// FallLoop 단계에서 지면과의 거리가 이 값 이하가 되면,
+        /// 아직 Arc 모션이 끝나지 않았더라도 강제로 착지(LandEnd) 단계로 전환하기 위한 임계 거리입니다.
+        /// 너무 크면 공중에서 조기 종료되고, 너무 작으면 여전히 부자연스러운 끊김이 발생할 수 있습니다.
+        /// </summary>
+        private const float KnockUpLandingTriggerDistance = 0.2f;
+
+        /// <summary>
+        /// Arc 모션이 종료된 이후, 캐릭터를 최종적으로 지면에 스냅시키기 위한 최대 거리입니다.
+        /// 지면과 약간의 오차가 있는 경우에도 확실히 바닥에 붙도록 보정하기 위한 값입니다.
+        /// </summary>
+        private const float KnockUpLandingFinalSnapDistance = 0.75f;
 
         private enum KnockUpAnimationPhase
         {
@@ -188,11 +207,18 @@ namespace GGemCo2DCore
 
             UpdateKnockUpPhaseAnimation();
 
+            if (TryHandleActiveKnockUpLanding())
+                return;
+
             // CC 채널 모션이 끝나면 종료 시퀀스
             if (!_motionController.IsPlaying(MotionChannel.CrowdControl))
             {
                 var finished = _activeCrowdControl;
                 _activeCrowdControl = null;
+
+                if (finished != null && finished.Type == CrowdControlConstants.Type.KnockUp)
+                    SnapKnockUpToGroundIfNear(KnockUpLandingFinalSnapDistance);
+
                 PlayEndAndStop(finished);
             }
         }
@@ -443,6 +469,129 @@ namespace GGemCo2DCore
             _character?.Stop(isForce: true);
             ResetAnimationState();
             _activeCrowdControl = null;
+        }
+
+
+        private bool TryHandleActiveKnockUpLanding()
+        {
+            if (_activeCrowdControl == null || _activeCrowdControl.Type != CrowdControlConstants.Type.KnockUp)
+                return false;
+
+            if (!_motionController.IsPlaying(MotionChannel.CrowdControl))
+                return false;
+
+            if (!IsKnockUpLandingPhase(_activeCrowdControl))
+                return false;
+
+            if (!TryProbeGroundBelow(out float groundY, out float bottomY))
+                return false;
+
+            float distanceToGround = bottomY - groundY;
+            if (distanceToGround < -KnockUpLandingProbeUpOffset || distanceToGround > KnockUpLandingTriggerDistance)
+                return false;
+
+            SnapCharacterBottomToGround(groundY, bottomY);
+            _motionController.CancelMotion(MotionChannel.CrowdControl, reason: 201);
+
+            var finished = _activeCrowdControl;
+            _activeCrowdControl = null;
+            PlayEndAndStop(finished);
+            return true;
+        }
+
+        private bool IsKnockUpLandingPhase(CrowdControlRuntimeData crowdControl)
+        {
+            if (crowdControl == null)
+                return false;
+
+            if (_currentKnockUpAnimationPhase == KnockUpAnimationPhase.FallLoop)
+                return true;
+
+            if (!_motionController.TryGetMotionProgress(MotionChannel.CrowdControl, out float progress01))
+                return false;
+
+            return EvaluateKnockUpAnimationPhase(crowdControl, progress01) == KnockUpAnimationPhase.FallLoop;
+        }
+
+        private void SnapKnockUpToGroundIfNear(float maxSnapDistance)
+        {
+            if (!TryProbeGroundBelow(out float groundY, out float bottomY))
+                return;
+
+            float distanceToGround = bottomY - groundY;
+            if (distanceToGround < -KnockUpLandingProbeUpOffset || distanceToGround > maxSnapDistance)
+                return;
+
+            SnapCharacterBottomToGround(groundY, bottomY);
+        }
+
+        private bool TryProbeGroundBelow(out float groundY, out float bottomY)
+        {
+            groundY = 0f;
+            bottomY = 0f;
+
+            int groundMask = GetGroundProbeMask();
+            if (groundMask == 0)
+                return false;
+
+            if (!TryGetCharacterWorldBounds(out Bounds bounds))
+                return false;
+
+            bottomY = bounds.min.y;
+            Vector2 origin = new Vector2(bounds.center.x, bottomY + KnockUpLandingProbeUpOffset);
+            float distance = Mathf.Max(KnockUpLandingFinalSnapDistance, KnockUpLandingTriggerDistance) + KnockUpLandingProbeUpOffset;
+            RaycastHit2D hit = Physics2D.Raycast(origin, Vector2.down, distance, groundMask);
+            if (hit.collider == null)
+                return false;
+
+            groundY = hit.point.y;
+            return true;
+        }
+
+        private bool TryGetCharacterWorldBounds(out Bounds bounds)
+        {
+            bounds = default;
+
+            Collider2D[] colliders = GetComponentsInChildren<Collider2D>();
+            bool hasBounds = false;
+
+            for (int i = 0; i < colliders.Length; i++)
+            {
+                Collider2D collider = colliders[i];
+                if (collider == null || !collider.enabled || collider.isTrigger)
+                    continue;
+
+                if (_rigidbody2D != null && collider.attachedRigidbody != null && collider.attachedRigidbody != _rigidbody2D)
+                    continue;
+
+                if (!hasBounds)
+                {
+                    bounds = collider.bounds;
+                    hasBounds = true;
+                }
+                else
+                {
+                    bounds.Encapsulate(collider.bounds);
+                }
+            }
+
+            if (!hasBounds)
+            {
+                Vector3 position = _rigidbody2D != null ? (Vector3)_rigidbody2D.position : transform.position;
+                bounds = new Bounds(position, Vector3.zero);
+            }
+
+            return true;
+        }
+
+        private void SnapCharacterBottomToGround(float groundY, float currentBottomY)
+        {
+            float deltaY = groundY - currentBottomY;
+            if (Mathf.Abs(deltaY) <= Epsilon)
+                return;
+
+            Vector2 currentPos = _rigidbody2D != null ? _rigidbody2D.position : (Vector2)transform.position;
+            MoveTo(currentPos + new Vector2(0f, deltaY));
         }
 
 
