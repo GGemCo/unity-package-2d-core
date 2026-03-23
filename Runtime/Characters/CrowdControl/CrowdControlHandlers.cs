@@ -65,11 +65,22 @@ namespace GGemCo2DCore
             request = default;
             if (crowdControl == null) return false;
 
+            float riseTime = Mathf.Max(0f, crowdControl.KnockUpRiseTime);
+            float airTime = Mathf.Max(0f, crowdControl.KnockUpAirTime);
+            float fallTime = Mathf.Max(0f, crowdControl.KnockUpFallTime);
+            float totalTime = riseTime + airTime + fallTime;
+            if (totalTime <= 0f)
+                totalTime = Mathf.Max(0f, crowdControl.Duration);
+
+            float riseRatio = totalTime > 0f ? (riseTime / totalTime) : 0.5f;
+            float airRatio = totalTime > 0f ? (airTime / totalTime) : 0f;
+            float fallRatio = totalTime > 0f ? (fallTime / totalTime) : 0.5f;
+
             request = new MotionRequest(
                 MotionChannel.CrowdControl,
                 MotionKind.Arc,
                 travelDirection,
-                Mathf.Max(0f, crowdControl.Duration),
+                totalTime,
                 Mathf.Max(0f, travelDistance),
                 crowdControl.EaseType,
                 stopAtEnd: true,
@@ -78,9 +89,11 @@ namespace GGemCo2DCore
                 holdSecondsAfter: 0f,
                 arcHeight: Mathf.Max(0f, crowdControl.Height),
                 arcMode: MotionArcMode.DistancePhased,
-                arcRiseEaseType: crowdControl.EaseType,
-                arcFallEaseType: crowdControl.EaseType,
-                arcApexHoldNormalized: 0f);
+                arcRiseEaseType: crowdControl.KnockUpRiseEaseType,
+                arcFallEaseType: crowdControl.KnockUpFallEaseType,
+                arcApexHoldNormalized: airRatio,
+                arcRiseRatioNormalized: riseRatio,
+                arcFallRatioNormalized: fallRatio);
 
             return true;
         }

@@ -23,6 +23,14 @@ namespace GGemCo2DCore
         public float Duration;
 
         public float Height;
+        public float KnockUpRiseTime;
+        public float KnockUpAirTime;
+        public float KnockUpFallTime;
+        public string KnockUpRiseAnimationName;
+        public string KnockUpAirAnimationName;
+        public string KnockUpFallAnimationName;
+        public Easing.EaseType KnockUpRiseEaseType;
+        public Easing.EaseType KnockUpFallEaseType;
         public CrowdControlConstants.EndYMode EndYMode;
         public float EndYOffset;
         public float EndYAbsolute;
@@ -54,6 +62,14 @@ namespace GGemCo2DCore
                 EaseType = row.EaseType,
                 Duration = row.Duration,
                 Height = 0f,
+                KnockUpRiseTime = 0f,
+                KnockUpAirTime = 0f,
+                KnockUpFallTime = 0f,
+                KnockUpRiseAnimationName = string.Empty,
+                KnockUpAirAnimationName = string.Empty,
+                KnockUpFallAnimationName = string.Empty,
+                KnockUpRiseEaseType = row.EaseType,
+                KnockUpFallEaseType = row.EaseType,
                 EndYMode = CrowdControlConstants.EndYMode.None,
                 EndYOffset = 0f,
                 EndYAbsolute = 0f,
@@ -117,6 +133,24 @@ namespace GGemCo2DCore
                     {
                         ApplyBaseDetail(runtime, knockUp);
                         runtime.Height = knockUp.Height;
+                        runtime.KnockUpRiseTime = Mathf.Max(0f, knockUp.RiseTime);
+                        runtime.KnockUpAirTime = Mathf.Max(0f, knockUp.AirTime);
+                        runtime.KnockUpFallTime = Mathf.Max(0f, knockUp.FallTime);
+                        runtime.KnockUpRiseAnimationName = knockUp.RiseAnimationName ?? string.Empty;
+                        runtime.KnockUpAirAnimationName = knockUp.AirAnimationName ?? string.Empty;
+                        runtime.KnockUpFallAnimationName = knockUp.FallAnimationName ?? string.Empty;
+                        runtime.KnockUpRiseEaseType = knockUp.RiseEaseType;
+                        runtime.KnockUpFallEaseType = knockUp.FallEaseType;
+
+                        if (runtime.KnockUpRiseEaseType == Easing.EaseType.Linear && row.EaseType != Easing.EaseType.Linear)
+                            runtime.KnockUpRiseEaseType = row.EaseType;
+
+                        if (runtime.KnockUpFallEaseType == Easing.EaseType.Linear && row.EaseType != Easing.EaseType.Linear)
+                            runtime.KnockUpFallEaseType = row.EaseType;
+
+                        float knockUpDuration = runtime.KnockUpRiseTime + runtime.KnockUpAirTime + runtime.KnockUpFallTime;
+                        if (knockUpDuration > 0f)
+                            runtime.Duration = knockUpDuration;
                     }
                     break;
             }

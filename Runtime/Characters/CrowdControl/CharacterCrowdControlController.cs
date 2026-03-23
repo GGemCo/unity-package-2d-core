@@ -26,11 +26,21 @@ namespace GGemCo2DCore
 
         // 애니메이션 시퀀스(이름 기반)
         private string _currentStaggerAnimationName;
+        private string _currentPhaseAnimationName;
+        private KnockUpAnimationPhase _currentKnockUpAnimationPhase;
 
         private Coroutine _stopRoutine;
         private const float Epsilon = 0.0001f;
         private const float GroundProbeDefaultHeight = 2f;
         private const float GroundProbeDefaultDistance = 12f;
+
+        private enum KnockUpAnimationPhase
+        {
+            None = 0,
+            Rise = 1,
+            Air = 2,
+            Fall = 3,
+        }
         
         private void Awake()
         {
@@ -174,6 +184,8 @@ namespace GGemCo2DCore
                 _activeCrowdControl = null;
                 return;
             }
+
+            UpdateKnockUpPhaseAnimation();
 
             // CC 채널 모션이 끝나면 종료 시퀀스
             if (!_motionController.IsPlaying(MotionChannel.CrowdControl))
@@ -332,6 +344,16 @@ namespace GGemCo2DCore
             // 테이블이 비어있으면 아무 것도 재생하지 않습니다.
             // Start → Wait 전환은 Animator의 Transition으로 구성하는 전제입니다.
             _currentStaggerAnimationName = crowdControl?.StaggerAnimationName;
+            _currentPhaseAnimationName = _currentStaggerAnimationName;
+            _currentKnockUpAnimationPhase = KnockUpAnimationPhase.None;
+
+            if (crowdControl != null && crowdControl.Type == CrowdControlConstants.Type.KnockUp && HasKnockUpPhasedAnimation(crowdControl))
+            {
+                var initialPhase = EvaluateKnockUpAnimationPhase(crowdControl, 0f);
+                ApplyKnockUpPhaseAnimation(crowdControl, initialPhase, force: true);
+                return;
+            }
+
             if (string.IsNullOrWhiteSpace(_currentStaggerAnimationName)) return;
 
             if (_character.CharacterAnimationController.HasAnimation(_currentStaggerAnimationName))
@@ -360,10 +382,10 @@ namespace GGemCo2DCore
             // (CharacterBase.Stop은 Knockback 상태일 때 기본적으로 return 하므로, CC 종료에는 강제가 필요합니다.)
             string endName = null;
 
-            if (_character?.CharacterAnimationController != null && !string.IsNullOrWhiteSpace(_currentStaggerAnimationName))
+            if (_character?.CharacterAnimationController != null)
             {
-                endName = _currentStaggerAnimationName + StruckTableCrowdControl.StaggerAnimationEndSuffix;
-                if (_character.CharacterAnimationController.HasAnimation(endName))
+                endName = ResolveEndAnimationName();
+                if (!string.IsNullOrWhiteSpace(endName) && _character.CharacterAnimationController.HasAnimation(endName))
                 {
                     _character.CharacterAnimationController.PlayCharacterAnimation(endName, loop: false);
 
@@ -381,7 +403,7 @@ namespace GGemCo2DCore
 
             // End 애니메이션이 없으면 즉시 정리
             _character?.Stop(isForce: true);
-            _currentStaggerAnimationName = null;
+            ResetAnimationState();
         }
 
         /// <summary>
@@ -395,7 +417,7 @@ namespace GGemCo2DCore
                 yield return new WaitForSeconds(durationSec);
 
             _character?.Stop(isForce: true);
-            _currentStaggerAnimationName = null;
+            ResetAnimationState();
             _stopRoutine = null;
         }
 
@@ -418,8 +440,130 @@ namespace GGemCo2DCore
 
             // 진행 중인 CC를 강제 해제
             _character?.Stop(isForce: true);
-            _currentStaggerAnimationName = null;
+            ResetAnimationState();
             _activeCrowdControl = null;
+        }
+
+
+        private void UpdateKnockUpPhaseAnimation()
+        {
+            if (_activeCrowdControl == null || _activeCrowdControl.Type != CrowdControlConstants.Type.KnockUp)
+                return;
+
+            if (!HasKnockUpPhasedAnimation(_activeCrowdControl))
+                return;
+
+            if (!_motionController.TryGetMotionProgress(MotionChannel.CrowdControl, out float progress01))
+                return;
+
+            var nextPhase = EvaluateKnockUpAnimationPhase(_activeCrowdControl, progress01);
+            ApplyKnockUpPhaseAnimation(_activeCrowdControl, nextPhase, force: false);
+        }
+
+        private static bool HasKnockUpPhasedAnimation(CrowdControlRuntimeData crowdControl)
+        {
+            if (crowdControl == null)
+                return false;
+
+            return !string.IsNullOrWhiteSpace(crowdControl.KnockUpRiseAnimationName)
+                || !string.IsNullOrWhiteSpace(crowdControl.KnockUpAirAnimationName)
+                || !string.IsNullOrWhiteSpace(crowdControl.KnockUpFallAnimationName);
+        }
+
+        private static KnockUpAnimationPhase EvaluateKnockUpAnimationPhase(CrowdControlRuntimeData crowdControl, float progress01)
+        {
+            if (crowdControl == null)
+                return KnockUpAnimationPhase.None;
+
+            float riseTime = Mathf.Max(0f, crowdControl.KnockUpRiseTime);
+            float airTime = Mathf.Max(0f, crowdControl.KnockUpAirTime);
+            float fallTime = Mathf.Max(0f, crowdControl.KnockUpFallTime);
+            float totalTime = riseTime + airTime + fallTime;
+            if (totalTime <= Epsilon)
+                return KnockUpAnimationPhase.Rise;
+
+            float riseEnd = riseTime / totalTime;
+            float airEnd = (riseTime + airTime) / totalTime;
+            float normalized = Mathf.Clamp01(progress01);
+
+            if (normalized < riseEnd)
+                return KnockUpAnimationPhase.Rise;
+            if (normalized < airEnd)
+                return KnockUpAnimationPhase.Air;
+            return KnockUpAnimationPhase.Fall;
+        }
+
+        private void ApplyKnockUpPhaseAnimation(CrowdControlRuntimeData crowdControl, KnockUpAnimationPhase phase, bool force)
+        {
+            if (_character?.CharacterAnimationController == null)
+                return;
+
+            if (!force && _currentKnockUpAnimationPhase == phase)
+                return;
+
+            string animationName = GetKnockUpPhaseAnimationName(crowdControl, phase);
+            if (string.IsNullOrWhiteSpace(animationName))
+                return;
+
+            if (!_character.CharacterAnimationController.HasAnimation(animationName))
+                return;
+
+            bool loop = phase == KnockUpAnimationPhase.Air;
+            _character.CharacterAnimationController.PlayCharacterAnimation(animationName, loop);
+            _currentPhaseAnimationName = animationName;
+            _currentKnockUpAnimationPhase = phase;
+        }
+
+        private static string GetKnockUpPhaseAnimationName(CrowdControlRuntimeData crowdControl, KnockUpAnimationPhase phase)
+        {
+            if (crowdControl == null)
+                return string.Empty;
+
+            switch (phase)
+            {
+                case KnockUpAnimationPhase.Rise:
+                    return !string.IsNullOrWhiteSpace(crowdControl.KnockUpRiseAnimationName)
+                        ? crowdControl.KnockUpRiseAnimationName
+                        : crowdControl.StaggerAnimationName;
+
+                case KnockUpAnimationPhase.Air:
+                    return crowdControl.KnockUpAirAnimationName;
+
+                case KnockUpAnimationPhase.Fall:
+                    return crowdControl.KnockUpFallAnimationName;
+
+                default:
+                    return crowdControl.StaggerAnimationName;
+            }
+        }
+
+        private string ResolveEndAnimationName()
+        {
+            if (_character?.CharacterAnimationController == null)
+                return null;
+
+            if (!string.IsNullOrWhiteSpace(_currentPhaseAnimationName))
+            {
+                string phaseEndName = _currentPhaseAnimationName + StruckTableCrowdControl.StaggerAnimationEndSuffix;
+                if (_character.CharacterAnimationController.HasAnimation(phaseEndName))
+                    return phaseEndName;
+            }
+
+            if (!string.IsNullOrWhiteSpace(_currentStaggerAnimationName))
+            {
+                string defaultEndName = _currentStaggerAnimationName + StruckTableCrowdControl.StaggerAnimationEndSuffix;
+                if (_character.CharacterAnimationController.HasAnimation(defaultEndName))
+                    return defaultEndName;
+            }
+
+            return null;
+        }
+
+        private void ResetAnimationState()
+        {
+            _currentStaggerAnimationName = null;
+            _currentPhaseAnimationName = null;
+            _currentKnockUpAnimationPhase = KnockUpAnimationPhase.None;
         }
 
         /// <summary>

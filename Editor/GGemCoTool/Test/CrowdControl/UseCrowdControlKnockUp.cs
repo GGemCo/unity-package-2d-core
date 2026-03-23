@@ -37,6 +37,14 @@ namespace GGemCo2DCoreEditor
             options.ReadOnlyMembers.Add(nameof(StruckTableCrowdControlKnockUp.CrowdControlUid));
             options.GroupByMemberName[nameof(StruckTableCrowdControlKnockUp.CrowdControlUid)] = "Reference";
             options.GroupByMemberName[nameof(StruckTableCrowdControlKnockUp.Height)] = "Motion / Timing";
+            options.GroupByMemberName[nameof(StruckTableCrowdControlKnockUp.RiseTime)] = "Motion / Timing";
+            options.GroupByMemberName[nameof(StruckTableCrowdControlKnockUp.AirTime)] = "Motion / Timing";
+            options.GroupByMemberName[nameof(StruckTableCrowdControlKnockUp.FallTime)] = "Motion / Timing";
+            options.GroupByMemberName[nameof(StruckTableCrowdControlKnockUp.RiseEaseType)] = "Motion / Timing";
+            options.GroupByMemberName[nameof(StruckTableCrowdControlKnockUp.FallEaseType)] = "Motion / Timing";
+            options.GroupByMemberName[nameof(StruckTableCrowdControlKnockUp.RiseAnimationName)] = "Animation";
+            options.GroupByMemberName[nameof(StruckTableCrowdControlKnockUp.AirAnimationName)] = "Animation";
+            options.GroupByMemberName[nameof(StruckTableCrowdControlKnockUp.FallAnimationName)] = "Animation";
             options.GroupByMemberName[nameof(StruckTableCrowdControlKnockUp.EndYMode)] = "End Position";
             options.GroupByMemberName[nameof(StruckTableCrowdControlKnockUp.EndYOffset)] = "End Position";
             options.GroupByMemberName[nameof(StruckTableCrowdControlKnockUp.EndYAbsolute)] = "End Position";
@@ -63,6 +71,14 @@ namespace GGemCo2DCoreEditor
             {
                 CrowdControlUid = commonRow?.Uid ?? 0,
                 Height = 0f,
+                RiseTime = commonRow != null ? commonRow.Duration : 0f,
+                AirTime = 0f,
+                FallTime = 0f,
+                RiseAnimationName = commonRow?.StaggerAnimationName ?? string.Empty,
+                AirAnimationName = string.Empty,
+                FallAnimationName = string.Empty,
+                RiseEaseType = commonRow != null ? commonRow.EaseType : Easing.EaseType.Linear,
+                FallEaseType = commonRow != null ? commonRow.EaseType : Easing.EaseType.Linear,
                 EndYMode = CrowdControlConstants.EndYMode.None,
                 EndYOffset = 0f,
                 EndYAbsolute = 0f,
@@ -76,6 +92,11 @@ namespace GGemCo2DCoreEditor
         protected override void AppendSpecificPreview(StringBuilder sb, StruckTableCrowdControlKnockUp row)
         {
             sb.AppendLine($"- Height: {row.Height}");
+            sb.AppendLine($"- Rise / Air / Fall: {row.RiseTime} / {row.AirTime} / {row.FallTime}");
+            sb.AppendLine($"- RiseEase / FallEase: {row.RiseEaseType} / {row.FallEaseType}");
+            sb.AppendLine($"- RiseAnim: {row.RiseAnimationName}");
+            sb.AppendLine($"- AirAnim: {row.AirAnimationName}");
+            sb.AppendLine($"- FallAnim: {row.FallAnimationName}");
         }
 
         protected override Dictionary<int, StruckTableCrowdControlKnockUp> GetRuntimeRows(GGemCo2DCore.TableLoaderManager runtimeLoader)
@@ -94,6 +115,15 @@ namespace GGemCo2DCoreEditor
                     break;
                 case nameof(StruckTableCrowdControlKnockUp.Height):
                     if (row.Height < 0f) row.Height = 0f;
+                    break;
+                case nameof(StruckTableCrowdControlKnockUp.RiseTime):
+                    if (row.RiseTime < 0f) row.RiseTime = 0f;
+                    break;
+                case nameof(StruckTableCrowdControlKnockUp.AirTime):
+                    if (row.AirTime < 0f) row.AirTime = 0f;
+                    break;
+                case nameof(StruckTableCrowdControlKnockUp.FallTime):
+                    if (row.FallTime < 0f) row.FallTime = 0f;
                     break;
                 case nameof(StruckTableCrowdControlKnockUp.RecoverTime):
                     if (row.RecoverTime < 0f) row.RecoverTime = 0f;

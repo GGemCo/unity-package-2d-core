@@ -23,5 +23,10 @@ namespace GGemCo2DCore
         /// 지정 채널이 모션을 재생 중인지 여부를 반환합니다.
         /// </summary>
         bool IsPlaying(MotionChannel channel);
+
+        /// <summary>
+        /// 지정 채널 모션의 현재 진행률(0..1)을 조회합니다.
+        /// </summary>
+        bool TryGetMotionProgress(MotionChannel channel, out float progress01);
     }
 }

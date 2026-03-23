@@ -75,6 +75,12 @@ namespace GGemCo2DCore
             return state.IsPlaying;
         }
 
+        public bool TryGetMotionProgress(MotionChannel channel, out float progress01)
+        {
+            ref MotionState state = ref GetStateRef(channel);
+            return state.TryGetProgress(out progress01);
+        }
+
         private void FixedUpdate()
         {
             if (rb == null)
@@ -231,6 +237,22 @@ namespace GGemCo2DCore
             public void MarkComplete()
             {
                 IsComplete = true;
+            }
+
+            public bool TryGetProgress(out float progress01)
+            {
+                progress01 = 0f;
+                if (!IsPlaying)
+                    return false;
+
+                if (Duration <= 1e-6f)
+                {
+                    progress01 = 1f;
+                    return true;
+                }
+
+                progress01 = Mathf.Clamp01(Elapsed / Duration);
+                return true;
             }
 
             public void Stop()

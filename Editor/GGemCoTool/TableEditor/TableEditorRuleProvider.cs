@@ -690,7 +690,18 @@ namespace GGemCo2DCoreEditor
     internal sealed class CrowdControlKnockUpTableRuleProvider : CrowdControlDetailTableRuleProviderBase
     {
         public CrowdControlKnockUpTableRuleProvider()
-            : base("crowd_control_knock_up", CrowdControlConstants.Type.KnockUp, new[] { "Height" })
+            : base("crowd_control_knock_up", CrowdControlConstants.Type.KnockUp, new[]
+            {
+                "Height",
+                "RiseTime",
+                "AirTime",
+                "FallTime",
+                "RiseAnimationName",
+                "AirAnimationName",
+                "FallAnimationName",
+                "RiseEaseType",
+                "FallEaseType"
+            })
         {
         }
 
@@ -698,6 +709,9 @@ namespace GGemCo2DCoreEditor
         {
             base.ValidateCoreValues(row, messages);
             ValidateNonNegative(row, messages, "Height");
+            ValidateNonNegative(row, messages, "RiseTime");
+            ValidateNonNegative(row, messages, "AirTime");
+            ValidateNonNegative(row, messages, "FallTime");
         }
     }
 

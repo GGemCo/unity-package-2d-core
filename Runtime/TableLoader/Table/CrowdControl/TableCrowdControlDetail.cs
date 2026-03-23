@@ -29,5 +29,16 @@ namespace GGemCo2DCore
     public sealed class StruckTableCrowdControlKnockUp : StruckTableCrowdControlDetailBase
     {
         public float Height;
+
+        public float RiseTime;
+        public float AirTime;
+        public float FallTime;
+
+        public string RiseAnimationName;
+        public string AirAnimationName;
+        public string FallAnimationName;
+
+        public Easing.EaseType RiseEaseType;
+        public Easing.EaseType FallEaseType;
     }
 }
