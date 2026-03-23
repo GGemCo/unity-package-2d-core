@@ -16,7 +16,6 @@ namespace GGemCo2DCore
         protected override void Awake()
         {
             base.Awake();
-            _color = string.Empty;
             EnsureCachedReferences();
         }
 
@@ -73,6 +72,7 @@ namespace GGemCo2DCore
                 _animator.updateMode = UseUnscaledTime() ? AnimatorUpdateMode.UnscaledTime : AnimatorUpdateMode.Normal;
 
             UpdateSortingOrder();
+            RefreshFadeControllerVisualBaseline();
         }
 
         protected static string NormalizeColorHex(string color)
@@ -135,6 +135,13 @@ namespace GGemCo2DCore
         public override void SetColor(string color)
         {
             _color = color;
+
+            string normalizedColor = NormalizeColorHex(_color);
+            if (string.IsNullOrWhiteSpace(normalizedColor))
+                return;
+
+            VfxAnimationController?.SetEffectColor(normalizedColor);
+            RefreshFadeControllerVisualBaseline();
         }
 
         public override void SetSortingLayer(ConfigSortingLayer.Keys sortingLayer)

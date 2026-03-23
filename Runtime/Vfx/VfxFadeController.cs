@@ -90,6 +90,45 @@ namespace GGemCo2DCore
             SetAlpha(1f);
         }
 
+        public void RefreshOriginalColorsFromCurrentState()
+        {
+            EnsureInitialized();
+
+            for (int i = 0; i < _sprites.Count; i++)
+            {
+                var entry = _sprites[i];
+                if (entry.Renderer == null)
+                    continue;
+
+                entry.OriginalColor = entry.Renderer.color;
+                _sprites[i] = entry;
+            }
+
+            for (int i = 0; i < _renderers.Count; i++)
+            {
+                var entry = _renderers[i];
+                if (entry.Renderer == null)
+                    continue;
+
+                Color currentColor = entry.OriginalColor;
+                var sharedMaterial = entry.Renderer.sharedMaterial;
+                if (sharedMaterial != null && sharedMaterial.HasProperty(entry.ColorPropertyId))
+                {
+                    try
+                    {
+                        currentColor = sharedMaterial.GetColor(entry.ColorPropertyId);
+                    }
+                    catch
+                    {
+                        currentColor = entry.OriginalColor;
+                    }
+                }
+
+                entry.OriginalColor = currentColor;
+                _renderers[i] = entry;
+            }
+        }
+
         private void CacheTargets()
         {
             _sprites.Clear();

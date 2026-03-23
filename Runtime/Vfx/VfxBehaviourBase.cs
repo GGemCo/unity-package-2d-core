@@ -382,6 +382,16 @@ namespace GGemCo2DCore
             return _fadeController != null ? _fadeController.CurrentAlpha : 1f;
         }
 
+        protected void RefreshFadeControllerVisualBaseline()
+        {
+            if (_fadeController == null)
+                return;
+
+            float currentAlpha = _fadeController.CurrentAlpha;
+            _fadeController.RefreshOriginalColorsFromCurrentState();
+            _fadeController.SetAlpha(currentAlpha);
+        }
+
         private void PrepareSpawnFadeState()
         {
             EnsureFadeController();
