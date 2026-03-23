@@ -71,11 +71,7 @@ namespace GGemCo2DCore
 
         private static bool IsOptionalMissingTable(string key)
         {
-            return key == ConfigAddressableTable.TableVfxEffect.Key
-                   || key == ConfigAddressableTable.TableVfxParticle.Key
-                   || key == ConfigAddressableTable.TableCrowdControlKnockBack.Key
-                   || key == ConfigAddressableTable.TableCrowdControlKnockDown.Key
-                   || key == ConfigAddressableTable.TableCrowdControlKnockUp.Key;
+            return false;
         }
 
         public async Task LoadDataFile(AddressableAssetInfo info)
