@@ -39,7 +39,8 @@ namespace GGemCo2DCore
             None = 0,
             Rise = 1,
             Air = 2,
-            Fall = 3,
+            FallLoop = 3,
+            LandEnd = 4,
         }
         
         private void Awake()
@@ -384,7 +385,7 @@ namespace GGemCo2DCore
 
             if (_character?.CharacterAnimationController != null)
             {
-                endName = ResolveEndAnimationName();
+                endName = ResolveEndAnimationName(crowdControl);
                 if (!string.IsNullOrWhiteSpace(endName) && _character.CharacterAnimationController.HasAnimation(endName))
                 {
                     _character.CharacterAnimationController.PlayCharacterAnimation(endName, loop: false);
@@ -467,7 +468,8 @@ namespace GGemCo2DCore
 
             return !string.IsNullOrWhiteSpace(crowdControl.KnockUpRiseAnimationName)
                 || !string.IsNullOrWhiteSpace(crowdControl.KnockUpAirAnimationName)
-                || !string.IsNullOrWhiteSpace(crowdControl.KnockUpFallAnimationName);
+                || !string.IsNullOrWhiteSpace(crowdControl.KnockUpFallAnimationName)
+                || !string.IsNullOrWhiteSpace(crowdControl.KnockUpLandEndAnimationName);
         }
 
         private static KnockUpAnimationPhase EvaluateKnockUpAnimationPhase(CrowdControlRuntimeData crowdControl, float progress01)
@@ -490,7 +492,7 @@ namespace GGemCo2DCore
                 return KnockUpAnimationPhase.Rise;
             if (normalized < airEnd)
                 return KnockUpAnimationPhase.Air;
-            return KnockUpAnimationPhase.Fall;
+            return KnockUpAnimationPhase.FallLoop;
         }
 
         private void ApplyKnockUpPhaseAnimation(CrowdControlRuntimeData crowdControl, KnockUpAnimationPhase phase, bool force)
@@ -508,7 +510,7 @@ namespace GGemCo2DCore
             if (!_character.CharacterAnimationController.HasAnimation(animationName))
                 return;
 
-            bool loop = phase == KnockUpAnimationPhase.Air;
+            bool loop = phase == KnockUpAnimationPhase.Air || phase == KnockUpAnimationPhase.FallLoop;
             _character.CharacterAnimationController.PlayCharacterAnimation(animationName, loop);
             _currentPhaseAnimationName = animationName;
             _currentKnockUpAnimationPhase = phase;
@@ -529,18 +531,32 @@ namespace GGemCo2DCore
                 case KnockUpAnimationPhase.Air:
                     return crowdControl.KnockUpAirAnimationName;
 
-                case KnockUpAnimationPhase.Fall:
+                case KnockUpAnimationPhase.FallLoop:
                     return crowdControl.KnockUpFallAnimationName;
+
+                case KnockUpAnimationPhase.LandEnd:
+                    return crowdControl.KnockUpLandEndAnimationName;
 
                 default:
                     return crowdControl.StaggerAnimationName;
             }
         }
 
-        private string ResolveEndAnimationName()
+        private string ResolveEndAnimationName(CrowdControlRuntimeData crowdControl)
         {
             if (_character?.CharacterAnimationController == null)
                 return null;
+
+            if (crowdControl != null && crowdControl.Type == CrowdControlConstants.Type.KnockUp)
+            {
+                string knockUpEndName = GetKnockUpPhaseAnimationName(crowdControl, KnockUpAnimationPhase.LandEnd);
+                if (!string.IsNullOrWhiteSpace(knockUpEndName) && _character.CharacterAnimationController.HasAnimation(knockUpEndName))
+                {
+                    _currentKnockUpAnimationPhase = KnockUpAnimationPhase.LandEnd;
+                    _currentPhaseAnimationName = knockUpEndName;
+                    return knockUpEndName;
+                }
+            }
 
             if (!string.IsNullOrWhiteSpace(_currentPhaseAnimationName))
             {

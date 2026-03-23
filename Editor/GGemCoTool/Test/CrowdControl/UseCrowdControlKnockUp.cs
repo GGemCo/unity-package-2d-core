@@ -45,6 +45,7 @@ namespace GGemCo2DCoreEditor
             options.GroupByMemberName[nameof(StruckTableCrowdControlKnockUp.RiseAnimationName)] = "Animation";
             options.GroupByMemberName[nameof(StruckTableCrowdControlKnockUp.AirAnimationName)] = "Animation";
             options.GroupByMemberName[nameof(StruckTableCrowdControlKnockUp.FallAnimationName)] = "Animation";
+            options.GroupByMemberName[nameof(StruckTableCrowdControlKnockUp.LandEndAnimationName)] = "Animation";
             options.GroupByMemberName[nameof(StruckTableCrowdControlKnockUp.EndYMode)] = "End Position";
             options.GroupByMemberName[nameof(StruckTableCrowdControlKnockUp.EndYOffset)] = "End Position";
             options.GroupByMemberName[nameof(StruckTableCrowdControlKnockUp.EndYAbsolute)] = "End Position";
@@ -77,6 +78,7 @@ namespace GGemCo2DCoreEditor
                 RiseAnimationName = commonRow?.StaggerAnimationName ?? string.Empty,
                 AirAnimationName = string.Empty,
                 FallAnimationName = string.Empty,
+                LandEndAnimationName = string.Empty,
                 RiseEaseType = commonRow != null ? commonRow.EaseType : Easing.EaseType.Linear,
                 FallEaseType = commonRow != null ? commonRow.EaseType : Easing.EaseType.Linear,
                 EndYMode = CrowdControlConstants.EndYMode.None,
@@ -96,7 +98,8 @@ namespace GGemCo2DCoreEditor
             sb.AppendLine($"- RiseEase / FallEase: {row.RiseEaseType} / {row.FallEaseType}");
             sb.AppendLine($"- RiseAnim: {row.RiseAnimationName}");
             sb.AppendLine($"- AirAnim: {row.AirAnimationName}");
-            sb.AppendLine($"- FallAnim: {row.FallAnimationName}");
+            sb.AppendLine($"- FallLoopAnim: {row.FallAnimationName}");
+            sb.AppendLine($"- LandEndAnim: {row.LandEndAnimationName}");
         }
 
         protected override Dictionary<int, StruckTableCrowdControlKnockUp> GetRuntimeRows(GGemCo2DCore.TableLoaderManager runtimeLoader)

@@ -18,6 +18,7 @@ namespace GGemCo2DCore
                 RiseAnimationName = data.GetValueOrDefault("RiseAnimationName"),
                 AirAnimationName = data.GetValueOrDefault("AirAnimationName"),
                 FallAnimationName = data.GetValueOrDefault("FallAnimationName"),
+                LandEndAnimationName = data.GetValueOrDefault("LandEndAnimationName"),
                 RiseEaseType = EnumHelper.ConvertEnum<Easing.EaseType>(data.GetValueOrDefault("RiseEaseType")),
                 FallEaseType = EnumHelper.ConvertEnum<Easing.EaseType>(data.GetValueOrDefault("FallEaseType")),
                 EndYMode = EnumHelper.ConvertEnum<CrowdControlConstants.EndYMode>(data.GetValueOrDefault("EndYMode")),

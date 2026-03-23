@@ -29,6 +29,7 @@ namespace GGemCo2DCore
         public string KnockUpRiseAnimationName;
         public string KnockUpAirAnimationName;
         public string KnockUpFallAnimationName;
+        public string KnockUpLandEndAnimationName;
         public Easing.EaseType KnockUpRiseEaseType;
         public Easing.EaseType KnockUpFallEaseType;
         public CrowdControlConstants.EndYMode EndYMode;
@@ -68,6 +69,7 @@ namespace GGemCo2DCore
                 KnockUpRiseAnimationName = string.Empty,
                 KnockUpAirAnimationName = string.Empty,
                 KnockUpFallAnimationName = string.Empty,
+                KnockUpLandEndAnimationName = string.Empty,
                 KnockUpRiseEaseType = row.EaseType,
                 KnockUpFallEaseType = row.EaseType,
                 EndYMode = CrowdControlConstants.EndYMode.None,
@@ -139,6 +141,7 @@ namespace GGemCo2DCore
                         runtime.KnockUpRiseAnimationName = knockUp.RiseAnimationName ?? string.Empty;
                         runtime.KnockUpAirAnimationName = knockUp.AirAnimationName ?? string.Empty;
                         runtime.KnockUpFallAnimationName = knockUp.FallAnimationName ?? string.Empty;
+                        runtime.KnockUpLandEndAnimationName = knockUp.LandEndAnimationName ?? string.Empty;
                         runtime.KnockUpRiseEaseType = knockUp.RiseEaseType;
                         runtime.KnockUpFallEaseType = knockUp.FallEaseType;
 

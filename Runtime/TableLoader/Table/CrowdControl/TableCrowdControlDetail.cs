@@ -37,6 +37,7 @@ namespace GGemCo2DCore
         public string RiseAnimationName;
         public string AirAnimationName;
         public string FallAnimationName;
+        public string LandEndAnimationName;
 
         public Easing.EaseType RiseEaseType;
         public Easing.EaseType FallEaseType;
