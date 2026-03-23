@@ -20,6 +20,8 @@ namespace GGemCo2DCore
         private MotionState _skill;
         private MotionState _crowdControl;
 
+        private const float GravityDisableValue = 0f;
+
         private void Reset()
         {
             rb = GetComponentInParent<Rigidbody2D>();
@@ -29,6 +31,12 @@ namespace GGemCo2DCore
         {
             if (rb == null)
                 rb = GetComponentInParent<Rigidbody2D>();
+        }
+
+        private void OnDisable()
+        {
+            RestoreMotionPhysics(ref _crowdControl, zeroVerticalVelocity: true);
+            RestoreMotionPhysics(ref _skill, zeroVerticalVelocity: true);
         }
 
         /// <summary>
@@ -44,7 +52,14 @@ namespace GGemCo2DCore
             if (state.IsPlaying && !request.AllowReplace)
                 return false;
 
+            if (state.IsPlaying)
+            {
+                RestoreMotionPhysics(ref state, zeroVerticalVelocity: false);
+                state.Stop();
+            }
+
             state.Start(request);
+            PrepareForMotionStart(ref state);
             return true;
         }
 
@@ -57,6 +72,7 @@ namespace GGemCo2DCore
             if (!state.IsPlaying) return;
 
             bool stopAtEnd = state.StopAtEnd;
+            RestoreMotionPhysics(ref state, zeroVerticalVelocity: true);
             state.Stop();
 
             // velocity 기반 구현을 사용하는 경우를 대비해 정지 정책 제공
@@ -118,6 +134,7 @@ namespace GGemCo2DCore
             if (state.IsComplete)
             {
                 bool stopAtEnd = state.StopAtEnd;
+                RestoreMotionPhysics(ref state, zeroVerticalVelocity: true);
                 state.Stop();
                 StopVelocityIfNeeded(stopAtEnd);
             }
@@ -143,6 +160,61 @@ namespace GGemCo2DCore
                 float vy = dt > 1e-6f ? (delta.y / dt) : rb.GetLinearVelocity().y;
                 rb.SetLinearVelocity(new Vector2(vx, vy));
             }
+        }
+
+        private void PrepareForMotionStart(ref MotionState state)
+        {
+            if (rb == null)
+                return;
+
+            if (rb.bodyType != RigidbodyType2D.Dynamic)
+                return;
+
+            if (state.Kind != MotionKind.Arc)
+                return;
+
+            state.HasSavedGravityScale = true;
+            state.SavedGravityScale = rb.gravityScale;
+            state.IsGravitySuspended = true;
+
+            rb.gravityScale = GravityDisableValue;
+            ZeroDynamicVerticalVelocity();
+        }
+
+        private void RestoreMotionPhysics(ref MotionState state, bool zeroVerticalVelocity)
+        {
+            if (rb == null)
+                return;
+
+            if (!state.IsGravitySuspended)
+                return;
+
+            if (state.HasSavedGravityScale)
+            {
+                rb.gravityScale = state.SavedGravityScale;
+            }
+
+            state.IsGravitySuspended = false;
+            state.HasSavedGravityScale = false;
+            state.SavedGravityScale = 0f;
+
+            if (zeroVerticalVelocity)
+            {
+                ZeroDynamicVerticalVelocity();
+            }
+        }
+
+        private void ZeroDynamicVerticalVelocity()
+        {
+            if (rb == null || rb.bodyType != RigidbodyType2D.Dynamic)
+                return;
+
+            Vector2 velocity = rb.GetLinearVelocity();
+            if (Mathf.Abs(velocity.y) <= 1e-6f)
+                return;
+
+            velocity.y = 0f;
+            rb.SetLinearVelocity(velocity);
         }
 
         private void StopVelocityIfNeeded(bool stopAtEnd)
@@ -202,6 +274,10 @@ namespace GGemCo2DCore
             public bool StopAtEnd;
             public bool UseMovePosition;
 
+            public bool IsGravitySuspended;
+            public bool HasSavedGravityScale;
+            public float SavedGravityScale;
+
             public void Start(in MotionRequest req)
             {
                 IsPlaying = true;
@@ -229,6 +305,10 @@ namespace GGemCo2DCore
 
                 StopAtEnd = req.StopAtEnd;
                 UseMovePosition = req.UseMovePosition;
+
+                IsGravitySuspended = false;
+                HasSavedGravityScale = false;
+                SavedGravityScale = 0f;
 
                 // Solver 선택
                 Solver = SelectSolver(req);
@@ -270,6 +350,10 @@ namespace GGemCo2DCore
 
                 HoldSecondsAfter = 0f;
                 HoldRemaining = 0f;
+
+                IsGravitySuspended = false;
+                HasSavedGravityScale = false;
+                SavedGravityScale = 0f;
             }
 
             private static IMotionSolver SelectSolver(in MotionRequest req)
