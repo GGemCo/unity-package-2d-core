@@ -145,12 +145,6 @@ namespace GGemCo2DCore
                         runtime.KnockUpRiseEaseType = knockUp.RiseEaseType;
                         runtime.KnockUpFallEaseType = knockUp.FallEaseType;
 
-                        if (runtime.KnockUpRiseEaseType == Easing.EaseType.Linear && row.EaseType != Easing.EaseType.Linear)
-                            runtime.KnockUpRiseEaseType = row.EaseType;
-
-                        if (runtime.KnockUpFallEaseType == Easing.EaseType.Linear && row.EaseType != Easing.EaseType.Linear)
-                            runtime.KnockUpFallEaseType = row.EaseType;
-
                         float knockUpDuration = runtime.KnockUpRiseTime + runtime.KnockUpAirTime + runtime.KnockUpFallTime;
                         if (knockUpDuration > 0f)
                             runtime.Duration = knockUpDuration;
