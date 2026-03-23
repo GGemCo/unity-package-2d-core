@@ -12,7 +12,7 @@ namespace GGemCo2DCore
         private float _durationPlay;
         private float _durationEnd;
         private float _durationTotal;
-        private bool _isInitialized;
+        private bool _isInitializedClip;
 
         protected override void Awake()
         {
@@ -20,9 +20,9 @@ namespace GGemCo2DCore
             EnsureInitialized();
         }
 
-        protected void EnsureInitialized()
+        private void EnsureInitialized()
         {
-            if (_isInitialized)
+            if (_isInitializedClip)
                 return;
 
             _defaultEffect = GetComponent<VfxBehaviourBase>();
@@ -35,7 +35,7 @@ namespace GGemCo2DCore
             _durationPlay = GetAnimationDuration(IVfxAnimationController.KeyClipNamePlay, false, false);
             _durationEnd = GetAnimationDuration(IVfxAnimationController.KeyClipNameEnd, false, false);
             _durationTotal = _durationStart + _durationPlay + _durationEnd;
-            _isInitialized = true;
+            _isInitializedClip = true;
         }
 
         public void SetEffectColor(string colorHex)
