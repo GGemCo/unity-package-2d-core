@@ -47,8 +47,8 @@ namespace GGemCo2DCoreEditor
         /// <summary>
         /// 맵에 npc 추가하기
         /// </summary>
-        /// <param name="selectedNpcIndex"></param>
-        public void AddNpcToMap(int selectedNpcIndex)
+        /// <param name="npcUid"></param>
+        public void AddNpcToMap(int npcUid)
         {
             if (!_defaultMap)
             {
@@ -56,18 +56,17 @@ namespace GGemCo2DCoreEditor
                 return;
             }
 
-            var npcDictionary = _tableNpc.GetDatas();
-            int index = 0;
-            StruckTableNpc npcData = new StruckTableNpc();
-
-            foreach (var outerPair in npcDictionary)
+            if (npcUid <= 0)
             {
-                if (index == selectedNpcIndex)
-                {
-                    npcData = _tableNpc.GetDataByUid(outerPair.Key);
-                    break;
-                }
-                index++;
+                Debug.LogWarning("선택된 NPC Uid 가 유효하지 않습니다.");
+                return;
+            }
+
+            StruckTableNpc npcData = _tableNpc.GetDataByUid(npcUid);
+            if (npcData == null || npcData.Uid <= 0)
+            {
+                Debug.LogError($"NPC 데이터를 찾을 수 없습니다. uid:{npcUid}");
+                return;
             }
             var infoAnimation = _tableAnimation.GetDataByUid(npcData.AnimationUid);
             if (infoAnimation == null) return;

@@ -47,9 +47,9 @@ namespace GGemCo2DCoreEditor
         /// <summary>
         /// 맵에 몬스터 추가하기
         /// </summary>
-        /// <param name="selectedMonsterIndex"></param>
+        /// <param name="monsterUid"></param>
         /// <param name="usePatrolMonster"></param>
-        public void AddMonsterToMap(int selectedMonsterIndex, bool usePatrolMonster)
+        public void AddMonsterToMap(int monsterUid, bool usePatrolMonster)
         {
             if (!_defaultMap)
             {
@@ -57,18 +57,17 @@ namespace GGemCo2DCoreEditor
                 return;
             }
 
-            var monsterDictionary = _tableMonster.GetDatas();
-            int index = 0;
-            StruckTableMonster monsterData = new StruckTableMonster();
-
-            foreach (var outerPair in monsterDictionary)
+            if (monsterUid <= 0)
             {
-                if (index == selectedMonsterIndex)
-                {
-                    monsterData = _tableMonster.GetDataByUid(outerPair.Key);
-                    break;
-                }
-                index++;
+                Debug.LogWarning("선택된 몬스터 Uid 가 유효하지 않습니다.");
+                return;
+            }
+
+            StruckTableMonster monsterData = _tableMonster.GetDataByUid(monsterUid);
+            if (monsterData == null || monsterData.Uid <= 0)
+            {
+                Debug.LogError($"몬스터 데이터를 찾을 수 없습니다. uid:{monsterUid}");
+                return;
             }
             var infoAnimation = _tableAnimation.GetDataByUid(monsterData.AnimationUid);
             if (infoAnimation == null) return;

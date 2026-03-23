@@ -36,16 +36,15 @@ namespace GGemCo2DCoreEditor
         private bool _foldMonster = true;
         private bool _foldWarp = true;
 
-        private int _selectedMapIndex;
-        private int _selectedNpcIndex;
-        private int _selectedMonsterIndex;
+        private int _selectedMapUid;
+        private int _selectedNpcUid;
+        private int _selectedMonsterUid;
         private bool _usePatrolMonster;
 
-        // ---- Cached names (for Popup) ----
-        private readonly List<int> _mapUids = new List<int>();
-        private readonly List<string> _mapNames = new List<string>();
-        private readonly List<string> _npcNames = new List<string>();
-        private readonly List<string> _monsterNames = new List<string>();
+        // ---- Cached options (for SearchableDropdown) ----
+        private readonly List<SearchableDropdownUtility.Option<int>> _mapOptions = new List<SearchableDropdownUtility.Option<int>>();
+        private readonly List<SearchableDropdownUtility.Option<int>> _npcOptions = new List<SearchableDropdownUtility.Option<int>>();
+        private readonly List<SearchableDropdownUtility.Option<int>> _monsterOptions = new List<SearchableDropdownUtility.Option<int>>();
         
         // MapEditor.cs 상단 필드 추가
         private bool _suppressSceneOpsThisEnable;
@@ -60,9 +59,9 @@ namespace GGemCo2DCoreEditor
         {
             base.OnEnable();
 
-            _selectedMapIndex = 0;
-            _selectedNpcIndex = 0;
-            _selectedMonsterIndex = 0;
+            _selectedMapUid = 0;
+            _selectedNpcUid = 0;
+            _selectedMonsterUid = 0;
             _usePatrolMonster = false;
 
             // 컴파일/도메인리로드 직후에는 씬 변경 작업을 막습니다.
@@ -167,10 +166,13 @@ namespace GGemCo2DCoreEditor
 
         private void RebuildPopupCaches()
         {
-            _mapUids.Clear();
-            _mapNames.Clear();
-            _npcNames.Clear();
-            _monsterNames.Clear();
+            int previousMapUid = _selectedMapUid;
+            int previousNpcUid = _selectedNpcUid;
+            int previousMonsterUid = _selectedMonsterUid;
+
+            _mapOptions.Clear();
+            _npcOptions.Clear();
+            _monsterOptions.Clear();
 
             if (_tableMap != null)
             {
@@ -179,8 +181,10 @@ namespace GGemCo2DCoreEditor
                 {
                     var info = kv.Value;
                     if (info == null || info.Uid <= 0) continue;
-                    _mapUids.Add(info.Uid);
-                    _mapNames.Add($"{info.Uid} - {info.Name}");
+                    _mapOptions.Add(new SearchableDropdownUtility.Option<int>(
+                        info.Uid.ToString(),
+                        info.Name,
+                        info.Uid));
                 }
             }
 
@@ -191,7 +195,10 @@ namespace GGemCo2DCoreEditor
                 {
                     var info = kv.Value;
                     if (info == null || info.Uid <= 0) continue;
-                    _npcNames.Add($"{info.Uid} - {info.Name}");
+                    _npcOptions.Add(new SearchableDropdownUtility.Option<int>(
+                        info.Uid.ToString(),
+                        info.Name,
+                        info.Uid));
                 }
             }
 
@@ -202,13 +209,16 @@ namespace GGemCo2DCoreEditor
                 {
                     var info = kv.Value;
                     if (info == null || info.Uid <= 0) continue;
-                    _monsterNames.Add($"{info.Uid} - {info.Name}");
+                    _monsterOptions.Add(new SearchableDropdownUtility.Option<int>(
+                        info.Uid.ToString(),
+                        info.Name,
+                        info.Uid));
                 }
             }
 
-            _selectedMapIndex = Mathf.Clamp(_selectedMapIndex, 0, Math.Max(0, _mapNames.Count - 1));
-            _selectedNpcIndex = Mathf.Clamp(_selectedNpcIndex, 0, Math.Max(0, _npcNames.Count - 1));
-            _selectedMonsterIndex = Mathf.Clamp(_selectedMonsterIndex, 0, Math.Max(0, _monsterNames.Count - 1));
+            _selectedMapUid = TryGetPreservedUid(_mapOptions, previousMapUid);
+            _selectedNpcUid = TryGetPreservedUid(_npcOptions, previousNpcUid);
+            _selectedMonsterUid = TryGetPreservedUid(_monsterOptions, previousMonsterUid);
         }
 
         private void OnGUI()
@@ -259,7 +269,7 @@ namespace GGemCo2DCoreEditor
                    && _tableNpc != null
                    && _tableMonster != null
                    && _tableAnimation != null
-                   && _mapNames.Count > 0;
+                   && _mapOptions.Count > 0;
         }
 
         private void DrawDataNotReady()
@@ -272,10 +282,39 @@ namespace GGemCo2DCoreEditor
                 MessageType.Warning); // :contentReference[oaicite:4]{index=4}
         }
 
+        private static int FindOptionIndexByUid(IReadOnlyList<SearchableDropdownUtility.Option<int>> options, int selectedUid)
+        {
+            if (options == null || options.Count == 0 || selectedUid <= 0)
+            {
+                return -1;
+            }
+
+            for (int i = 0; i < options.Count; i++)
+            {
+                if (options[i].Data == selectedUid)
+                {
+                    return i;
+                }
+            }
+
+            return -1;
+        }
+
+        private static int TryGetPreservedUid(IReadOnlyList<SearchableDropdownUtility.Option<int>> options, int previousUid)
+        {
+            if (options == null || options.Count == 0)
+            {
+                return 0;
+            }
+
+            return FindOptionIndexByUid(options, previousUid) >= 0
+                ? previousUid
+                : options[0].Data;
+        }
+
         private int GetSelectedMapUid()
         {
-            if (_selectedMapIndex < 0 || _selectedMapIndex >= _mapUids.Count) return 0;
-            return _mapUids[_selectedMapIndex];
+            return _selectedMapUid;
         }
 
         private void DrawMapSection()
@@ -296,21 +335,26 @@ namespace GGemCo2DCoreEditor
                         MessageType.Info);
                 }
 
-                EditorGUI.BeginChangeCheck();
-                _selectedMapIndex = EditorGUILayout.Popup("맵 선택", _selectedMapIndex, _mapNames.ToArray()); // :contentReference[oaicite:5]{index=5}
-                if (EditorGUI.EndChangeCheck())
-                {
-                    // 선택 변경 시 즉시 로드(기존 동작 유지)
-                    if (_suppressSceneOpsThisEnable)
+                int selectedMapIndex = FindOptionIndexByUid(_mapOptions, _selectedMapUid);
+                SearchableDropdownUtility.DrawLabeledFieldAndShow(
+                    "맵 선택",
+                    _mapOptions,
+                    selectedMapIndex,
+                    (_, option) =>
                     {
-                        // 컴파일 직후에는 자동 로드 금지 (사용자 명시 액션으로만)
-                        Repaint();
-                    }
-                    else
-                    {
+                        _selectedMapUid = option.Data;
+
+                        // 선택 변경 시 즉시 로드(기존 동작 유지)
+                        if (_suppressSceneOpsThisEnable)
+                        {
+                            // 컴파일 직후에는 자동 로드 금지 (사용자 명시 액션으로만)
+                            Repaint();
+                            return;
+                        }
+
                         TryLoadSelectedMapWithConfirm();
-                    }
-                }
+                    },
+                    noneText: "(맵 선택)");
 
                 using (new EditorGUILayout.HorizontalScope())
                 {
@@ -338,7 +382,13 @@ namespace GGemCo2DCoreEditor
 
             using (new EditorGUILayout.VerticalScope(EditorStyles.helpBox))
             {
-                _selectedNpcIndex = EditorGUILayout.Popup("NPC 선택", _selectedNpcIndex, _npcNames.ToArray());
+                int selectedNpcIndex = FindOptionIndexByUid(_npcOptions, _selectedNpcUid);
+                SearchableDropdownUtility.DrawLabeledFieldAndShow(
+                    "NPC 선택",
+                    _npcOptions,
+                    selectedNpcIndex,
+                    (_, option) => _selectedNpcUid = option.Data,
+                    noneText: "(NPC 선택)");
 
                 using (new EditorGUILayout.HorizontalScope())
                 {
@@ -346,7 +396,7 @@ namespace GGemCo2DCoreEditor
 
                     if (GUILayout.Button("NPC 추가", GUILayout.Height(26)))
                     {
-                        _npcExporter.AddNpcToMap(_selectedNpcIndex);
+                        _npcExporter.AddNpcToMap(_selectedNpcUid);
                     }
 
                     GUI.enabled = true;
@@ -361,7 +411,13 @@ namespace GGemCo2DCoreEditor
 
             using (new EditorGUILayout.VerticalScope(EditorStyles.helpBox))
             {
-                _selectedMonsterIndex = EditorGUILayout.Popup("몬스터 선택", _selectedMonsterIndex, _monsterNames.ToArray());
+                int selectedMonsterIndex = FindOptionIndexByUid(_monsterOptions, _selectedMonsterUid);
+                SearchableDropdownUtility.DrawLabeledFieldAndShow(
+                    "몬스터 선택",
+                    _monsterOptions,
+                    selectedMonsterIndex,
+                    (_, option) => _selectedMonsterUid = option.Data,
+                    noneText: "(몬스터 선택)");
 
                 _usePatrolMonster = HelperEditorUI.ToggleLeft(
                     "패트롤 영역 생성",
@@ -375,7 +431,7 @@ namespace GGemCo2DCoreEditor
 
                     if (GUILayout.Button("몬스터 추가", GUILayout.Height(26)))
                     {
-                        _monsterExporter.AddMonsterToMap(_selectedMonsterIndex, _usePatrolMonster);
+                        _monsterExporter.AddMonsterToMap(_selectedMonsterUid, _usePatrolMonster);
                     }
 
                     GUI.enabled = true;
