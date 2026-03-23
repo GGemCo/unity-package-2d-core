@@ -92,6 +92,21 @@ namespace GGemCo2DCoreEditor
             return LoadTable<TableCrowdControl>(ConfigAddressableTable.TableCrowdControl.Path, forceReload);
         }
 
+        public static TableCrowdControlKnockBack LoadCrowdControlKnockBackTable(bool forceReload = true)
+        {
+            return LoadTable<TableCrowdControlKnockBack>(ConfigAddressableTable.TableCrowdControlKnockBack.Path, forceReload);
+        }
+
+        public static TableCrowdControlKnockDown LoadCrowdControlKnockDownTable(bool forceReload = true)
+        {
+            return LoadTable<TableCrowdControlKnockDown>(ConfigAddressableTable.TableCrowdControlKnockDown.Path, forceReload);
+        }
+
+        public static TableCrowdControlKnockUp LoadCrowdControlKnockUpTable(bool forceReload = true)
+        {
+            return LoadTable<TableCrowdControlKnockUp>(ConfigAddressableTable.TableCrowdControlKnockUp.Path, forceReload);
+        }
+
         public static TableWindow LoadWindowTable(bool forceReload = true)
         {
             return LoadTable<TableWindow>(ConfigAddressableTable.TableWindow.Path, forceReload);

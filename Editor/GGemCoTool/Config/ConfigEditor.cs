@@ -32,6 +32,9 @@ namespace GGemCo2DCoreEditor
             UseVfxEffect,
             UseVfxParticle,
             UseCrowdControl,
+            UseCrowdControlKnockBack,
+            UseCrowdControlKnockDown,
+            UseCrowdControlKnockUp,
             UseProjectile,
             UseItem,
             OpenWindow,
@@ -89,6 +92,9 @@ namespace GGemCo2DCoreEditor
         public const string NameToolUseVfxEffect = NameToolTest + "Vfx Effect 사용툴";
         public const string NameToolUseVfxParticle = NameToolTest + "Vfx Particle 사용툴";
         public const string NameToolUseCrowdControl = NameToolTest + "CrowdControl 사용툴";
+        public const string NameToolUseCrowdControlKnockBack = NameToolTest + "CrowdControl/KnockBack 사용툴";
+        public const string NameToolUseCrowdControlKnockDown = NameToolTest + "CrowdControl/KnockDown 사용툴";
+        public const string NameToolUseCrowdControlKnockUp = NameToolTest + "CrowdControl/KnockUp 사용툴";
         public const string NameToolUseProjectile = NameToolTest + "프로젝타일 사용툴";
         public const string NameToolUseItem = NameToolTest + "아이템 사용툴";
         public const string NameToolOpenWindow = NameToolTest + "윈도우 열기";

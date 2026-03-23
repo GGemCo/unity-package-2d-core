@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
+using GGemCo2DCore;
 
 namespace GGemCo2DCoreEditor
 {
@@ -61,6 +62,10 @@ namespace GGemCo2DCoreEditor
         private static readonly ITableEditorTableRuleProvider[] Providers =
         {
             new AffectModifierTableRuleProvider(),
+            new CrowdControlCommonTableRuleProvider(),
+            new CrowdControlKnockBackTableRuleProvider(),
+            new CrowdControlKnockDownTableRuleProvider(),
+            new CrowdControlKnockUpTableRuleProvider(),
         };
 
         public static ITableEditorTableRuleProvider GetProvider(TableEditorTableDefinition definition)
@@ -400,4 +405,301 @@ namespace GGemCo2DCoreEditor
             });
         }
     }
+
+
+    internal abstract class CrowdControlDetailTableRuleProviderBase : ITableEditorTableRuleProvider
+    {
+        private readonly string _tableKey;
+        private readonly CrowdControlConstants.Type _expectedType;
+        private readonly List<TableEditorColumnRule> _rules;
+
+        protected CrowdControlDetailTableRuleProviderBase(string tableKey, CrowdControlConstants.Type expectedType, IEnumerable<string> motionColumns)
+        {
+            _tableKey = tableKey;
+            _expectedType = expectedType;
+            _rules = new List<TableEditorColumnRule>();
+
+            AddRules(new[] { "CrowdControlUid" }, "Reference");
+            AddRules(motionColumns, "Motion / Timing");
+            AddRules(new[] { "EndYMode", "EndYOffset", "EndYAbsolute" }, "End Position");
+            AddRules(new[] { "RecoverTime" }, "Recover");
+            AddRules(new[] { "IsStopOnWall", "IsGroundOnly", "IsAirOnly" }, "Flags");
+        }
+
+        public bool CanHandle(TableEditorTableDefinition definition)
+        {
+            return definition != null && string.Equals(definition.TableKey, _tableKey, StringComparison.OrdinalIgnoreCase);
+        }
+
+        public IReadOnlyList<TableEditorColumnRule> GetColumnRules() => _rules;
+
+        public bool OnBeforeCellValueChanged(TableEditorDocument document, TableEditorDocumentRow row, string changedColumnName, string nextValue)
+        {
+            return false;
+        }
+
+        public void ValidateRow(TableEditorTableDefinition definition, TableEditorDocumentRow row, IReadOnlyDictionary<string, TableEditorColumnDefinition> columnMap, List<TableEditorValidationMessage> messages)
+        {
+            if (row == null || messages == null)
+                return;
+
+            int crowdControlUid = ParsePositiveInt(GetRaw(row, "CrowdControlUid"));
+            if (crowdControlUid <= 0)
+            {
+                messages.Add(new TableEditorValidationMessage
+                {
+                    Severity = TableEditorValidationSeverity.Warning,
+                    Message = "CrowdControlUid는 필수입니다.",
+                    RowStableId = row.stableId,
+                });
+                return;
+            }
+
+            TableCrowdControl table = TableLoaderManager.LoadCrowdControlTable(forceReload: false);
+            StruckTableCrowdControl crowdControlRow = table != null ? table.GetDataByUid(crowdControlUid) : null;
+            if (crowdControlRow == null)
+            {
+                messages.Add(new TableEditorValidationMessage
+                {
+                    Severity = TableEditorValidationSeverity.Warning,
+                    Message = $"CrowdControlUid 참조를 찾을 수 없습니다: {crowdControlUid}",
+                    RowStableId = row.stableId,
+                });
+                return;
+            }
+
+            if (crowdControlRow.Type != _expectedType)
+            {
+                messages.Add(new TableEditorValidationMessage
+                {
+                    Severity = TableEditorValidationSeverity.Warning,
+                    Message = $"참조한 crowd_control 타입이 {_expectedType} 이(가) 아닙니다. 현재 타입: {crowdControlRow.Type}",
+                    RowStableId = row.stableId,
+                });
+            }
+
+            ValidateCoreValues(row, messages);
+
+            bool isGroundOnly = ParseBool01(GetRaw(row, "IsGroundOnly"));
+            bool isAirOnly = ParseBool01(GetRaw(row, "IsAirOnly"));
+            if (isGroundOnly && isAirOnly)
+            {
+                messages.Add(new TableEditorValidationMessage
+                {
+                    Severity = TableEditorValidationSeverity.Warning,
+                    Message = "IsGroundOnly 와 IsAirOnly 를 동시에 활성화하지 않는 것이 좋습니다.",
+                    RowStableId = row.stableId,
+                });
+            }
+        }
+
+        protected virtual void ValidateCoreValues(TableEditorDocumentRow row, List<TableEditorValidationMessage> messages)
+        {
+            ValidateNonNegative(row, messages, "RecoverTime");
+            ValidateNumeric(row, messages, "EndYOffset");
+            ValidateNumeric(row, messages, "EndYAbsolute");
+        }
+
+        private void AddRules(IEnumerable<string> columnNames, string sectionName)
+        {
+            foreach (string columnName in columnNames)
+            {
+                _rules.Add(new TableEditorColumnRule
+                {
+                    ColumnName = columnName,
+                    SectionName = sectionName,
+                    IsActiveForRow = _ => true,
+                    InactiveDisplayMode = TableEditorInactiveDisplayMode.ShowDisabled,
+                });
+            }
+        }
+
+        protected static string GetRaw(TableEditorDocumentRow row, string headerName)
+        {
+            return row != null && row.Values.TryGetValue(headerName, out string value) ? value ?? string.Empty : string.Empty;
+        }
+
+        protected static int ParsePositiveInt(string raw)
+        {
+            return int.TryParse(raw, NumberStyles.Integer, CultureInfo.InvariantCulture, out int value) && value > 0 ? value : 0;
+        }
+
+        protected static bool ParseBool01(string raw)
+        {
+            return string.Equals(raw, "1", StringComparison.Ordinal)
+                || string.Equals(raw, "Y", StringComparison.OrdinalIgnoreCase)
+                || string.Equals(raw, "true", StringComparison.OrdinalIgnoreCase);
+        }
+
+        protected static void ValidateNonNegative(TableEditorDocumentRow row, List<TableEditorValidationMessage> messages, string headerName)
+        {
+            string raw = GetRaw(row, headerName);
+            if (string.IsNullOrWhiteSpace(raw))
+                return;
+
+            if (float.TryParse(raw, NumberStyles.Float, CultureInfo.InvariantCulture, out float value) && value >= 0f)
+                return;
+
+            messages.Add(new TableEditorValidationMessage
+            {
+                Severity = TableEditorValidationSeverity.Warning,
+                Message = $"{headerName} 는 0 이상이어야 합니다.",
+                RowStableId = row.stableId,
+            });
+        }
+
+        protected static void ValidateNumeric(TableEditorDocumentRow row, List<TableEditorValidationMessage> messages, string headerName)
+        {
+            string raw = GetRaw(row, headerName);
+            if (string.IsNullOrWhiteSpace(raw))
+                return;
+
+            if (float.TryParse(raw, NumberStyles.Float, CultureInfo.InvariantCulture, out _))
+                return;
+
+            messages.Add(new TableEditorValidationMessage
+            {
+                Severity = TableEditorValidationSeverity.Warning,
+                Message = $"{headerName} 값이 숫자가 아닙니다.",
+                RowStableId = row.stableId,
+            });
+        }
+    }
+
+    internal sealed class CrowdControlCommonTableRuleProvider : ITableEditorTableRuleProvider
+    {
+        private const string TableKey = "crowd_control";
+        private readonly List<TableEditorColumnRule> _rules;
+
+        public CrowdControlCommonTableRuleProvider()
+        {
+            _rules = new List<TableEditorColumnRule>();
+            AddRuleGroup(new[] { "Uid", "Name", "Type" }, "Common");
+            AddRuleGroup(new[] { "DirectionType", "FixedDirectionX", "FixedDirectionY", "Distance", "EaseType", "Duration" }, "Motion");
+            AddRuleGroup(new[] { "IsLockControl", "IsUseKnockbackStatus", "IsUseDontControlStatus", "StaggerAnimationName" }, "State / Animation");
+            AddLegacyRuleGroup(new[] { "Height", "EndYMode", "EndYOffset", "EndYAbsolute", "DownWaitTime", "RecoverTime", "IsStopOnWall", "IsGroundOnly", "IsAirOnly" }, "Legacy Detail Fallback");
+        }
+
+        public bool CanHandle(TableEditorTableDefinition definition)
+        {
+            return definition != null && string.Equals(definition.TableKey, TableKey, StringComparison.OrdinalIgnoreCase);
+        }
+
+        public IReadOnlyList<TableEditorColumnRule> GetColumnRules() => _rules;
+        public bool OnBeforeCellValueChanged(TableEditorDocument document, TableEditorDocumentRow row, string changedColumnName, string nextValue) => false;
+
+        public void ValidateRow(TableEditorTableDefinition definition, TableEditorDocumentRow row, IReadOnlyDictionary<string, TableEditorColumnDefinition> columnMap, List<TableEditorValidationMessage> messages)
+        {
+            if (row == null || messages == null)
+                return;
+
+            string typeRaw = GetRaw(row, "Type");
+            if (!Enum.TryParse(typeRaw, true, out CrowdControlConstants.Type crowdControlType) || crowdControlType == CrowdControlConstants.Type.None)
+            {
+                messages.Add(new TableEditorValidationMessage
+                {
+                    Severity = TableEditorValidationSeverity.Warning,
+                    Message = "Type 값을 확인해주세요.",
+                    RowStableId = row.stableId,
+                });
+            }
+
+            ValidatePositiveOrZero(row, messages, "Distance");
+            ValidatePositiveOrZero(row, messages, "Duration");
+        }
+
+        private void AddRuleGroup(IEnumerable<string> columns, string section)
+        {
+            foreach (string column in columns)
+            {
+                _rules.Add(new TableEditorColumnRule
+                {
+                    ColumnName = column,
+                    SectionName = section,
+                    IsActiveForRow = _ => true,
+                    InactiveDisplayMode = TableEditorInactiveDisplayMode.ShowDisabled,
+                });
+            }
+        }
+
+        private void AddLegacyRuleGroup(IEnumerable<string> columns, string section)
+        {
+            foreach (string column in columns)
+            {
+                _rules.Add(new TableEditorColumnRule
+                {
+                    ColumnName = column,
+                    SectionName = section,
+                    IsActiveForRow = _ => false,
+                    InactiveDisplayMode = TableEditorInactiveDisplayMode.ReadOnly,
+                    InactiveHint = "타입별 상세 테이블(crowd_control_knock_back / knock_down / knock_up)에서 편집하세요.",
+                });
+            }
+        }
+
+        private static string GetRaw(TableEditorDocumentRow row, string headerName)
+        {
+            return row != null && row.Values.TryGetValue(headerName, out string value) ? value ?? string.Empty : string.Empty;
+        }
+
+        private static void ValidatePositiveOrZero(TableEditorDocumentRow row, List<TableEditorValidationMessage> messages, string headerName)
+        {
+            string raw = GetRaw(row, headerName);
+            if (string.IsNullOrWhiteSpace(raw))
+                return;
+
+            if (float.TryParse(raw, NumberStyles.Float, CultureInfo.InvariantCulture, out float value) && value >= 0f)
+                return;
+
+            messages.Add(new TableEditorValidationMessage
+            {
+                Severity = TableEditorValidationSeverity.Warning,
+                Message = $"{headerName} 는 0 이상이어야 합니다.",
+                RowStableId = row.stableId,
+            });
+        }
+    }
+
+    internal sealed class CrowdControlKnockBackTableRuleProvider : CrowdControlDetailTableRuleProviderBase
+    {
+        public CrowdControlKnockBackTableRuleProvider()
+            : base("crowd_control_knock_back", CrowdControlConstants.Type.KnockBack, new[] { "DownWaitTime" })
+        {
+        }
+
+        protected override void ValidateCoreValues(TableEditorDocumentRow row, List<TableEditorValidationMessage> messages)
+        {
+            base.ValidateCoreValues(row, messages);
+            ValidateNonNegative(row, messages, "DownWaitTime");
+        }
+    }
+
+    internal sealed class CrowdControlKnockDownTableRuleProvider : CrowdControlDetailTableRuleProviderBase
+    {
+        public CrowdControlKnockDownTableRuleProvider()
+            : base("crowd_control_knock_down", CrowdControlConstants.Type.KnockDown, new[] { "DownWaitTime" })
+        {
+        }
+
+        protected override void ValidateCoreValues(TableEditorDocumentRow row, List<TableEditorValidationMessage> messages)
+        {
+            base.ValidateCoreValues(row, messages);
+            ValidateNonNegative(row, messages, "DownWaitTime");
+        }
+    }
+
+    internal sealed class CrowdControlKnockUpTableRuleProvider : CrowdControlDetailTableRuleProviderBase
+    {
+        public CrowdControlKnockUpTableRuleProvider()
+            : base("crowd_control_knock_up", CrowdControlConstants.Type.KnockUp, new[] { "Height" })
+        {
+        }
+
+        protected override void ValidateCoreValues(TableEditorDocumentRow row, List<TableEditorValidationMessage> messages)
+        {
+            base.ValidateCoreValues(row, messages);
+            ValidateNonNegative(row, messages, "Height");
+        }
+    }
+
 }

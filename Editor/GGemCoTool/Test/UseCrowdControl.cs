@@ -1,24 +1,18 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
-using System.Globalization;
+using GGemCo2DCore;
 using UnityEditor;
 using UnityEngine;
-using GGemCo2DCore;
 
 namespace GGemCo2DCoreEditor
 {
     /// <summary>
-    /// CrowdControl 테스트/편집 EditorWindow.
-    /// - crowd_control 테이블 Row를 직접 편집하고,
+    /// CrowdControl 공통 테이블 테스트/편집 EditorWindow.
+    /// - crowd_control 공통 Row를 직접 편집하고,
     ///   (1) 플레이 모드에서 즉시 적용/테스트
     ///   (2) 테이블 파일(crowd_control.txt)에 저장
     /// 할 수 있습니다.
-    ///
-    /// NOTE
-    /// - EditorPrefs 저장은 사용하지 않습니다.
-    /// - 런타임 오버라이드는 제거했습니다.
-    /// - 읽기 전용 표시 영역을 제거하고, 편집 영역에서 바로 수정합니다.
-    /// - 대상 선택 섹션을 최상단에 배치했습니다(UseProjectile UX 참고).
+    /// - KnockBack / KnockDown / KnockUp 상세 값은 타입별 전용 툴에서 편집합니다.
     /// </summary>
     public sealed class UseCrowdControl : DefaultEditorWindow
     {
@@ -27,132 +21,130 @@ namespace GGemCo2DCoreEditor
         [MenuItem(ConfigEditor.NameToolUseCrowdControl, false, (int)ConfigEditor.ToolOrdering.UseCrowdControl)]
         public static void ShowWindow() => GetWindow<UseCrowdControl>(Title);
 
-        // ------------------------------
-        // Target
-        // ------------------------------
+        public static void OpenAndSelect(int uid)
+        {
+            UseCrowdControlSelectionBridge.PendingCrowdControlUid = uid;
+            GetWindow<UseCrowdControl>(Title).Show();
+        }
+
         [Header("대상")]
         [SerializeField] private GameObject _target;
         [SerializeField] private GameObject _source;
 
-        // ------------------------------
-        // Table
-        // ------------------------------
         [Header("정의(테이블)")]
-        [Tooltip("crowd_control 테이블 Uid")]
         [SerializeField] private int crowdControlUid;
 
         private TableCrowdControl _tableCrowdControl;
         private Dictionary<int, StruckTableCrowdControl> _tableDictionary;
+        private readonly List<SearchableDropdownUtility.Option<StruckTableCrowdControl>> _dropDownOptions = new();
 
-        private readonly List<string> _names = new();
-        private readonly List<int> _uids = new();
-        private int _selectedIndex;
-
-        // ------------------------------
-        // Editing
-        // ------------------------------
         private bool _foldRowEdit = true;
         private StruckTableCrowdControl _cachedRow;
         private StruckTableCrowdControl _editingRow;
         private bool _editingDirty;
-
+        private string _lastReloadMessage = string.Empty;
         private Vector2 _scroll;
-        private static readonly TableRowEditorUtility.TableRowEditorField[] RowEditorFields =
-            TableRowEditorUtility.BuildFields<StruckTableCrowdControl>(BuildRowEditorOptions());
 
-        private static TableRowEditorUtility.TableRowEditorBuildOptions BuildRowEditorOptions()
+        private static readonly HashSet<string> LegacyDetailMembers = new(StringComparer.Ordinal)
         {
-            var options = new TableRowEditorUtility.TableRowEditorBuildOptions();
-            options.ReadOnlyMembers.Add(nameof(StruckTableCrowdControl.Uid));
-            options.GroupByMemberName[nameof(StruckTableCrowdControl.StaggerAnimationName)] = null;
-            return options;
-        }
+            nameof(StruckTableCrowdControl.Height),
+            nameof(StruckTableCrowdControl.EndYMode),
+            nameof(StruckTableCrowdControl.EndYOffset),
+            nameof(StruckTableCrowdControl.EndYAbsolute),
+            nameof(StruckTableCrowdControl.DownWaitTime),
+            nameof(StruckTableCrowdControl.RecoverTime),
+            nameof(StruckTableCrowdControl.IsStopOnWall),
+            nameof(StruckTableCrowdControl.IsGroundOnly),
+            nameof(StruckTableCrowdControl.IsAirOnly),
+        };
+
+        private static readonly TableRowEditorUtility.TableRowEditorField[] RowEditorFields = BuildCommonRowFields();
 
         protected override void OnEnable()
         {
             base.OnEnable();
-
             ReloadTable(preserveSelection: true);
+            TryConsumePendingSelection();
             CacheRow();
         }
 
         private void OnGUI()
         {
-            _scroll = EditorGUILayout.BeginScrollView(_scroll);
-            try
+            using (var scrollScope = new EditorGUILayout.ScrollViewScope(_scroll))
             {
-                using (new EditorGUILayout.VerticalScope("box"))
-                {
-                    EditorGUILayout.LabelField("CrowdControl 테스트/편집(테이블 저장 + 인게임 적용)", EditorStyles.boldLabel);
-                    EditorGUILayout.Space(4);
+                _scroll = scrollScope.scrollPosition;
+                EditorGUILayout.Space(6);
 
-                    DrawTargetSection();
-                    EditorGUILayout.Space(6);
+                DrawTargetSection();
+                EditorGUILayout.Space(6);
 
-                    DrawTableSelectionSection();
-                    EditorGUILayout.Space(6);
+                DrawTableSelectionSection();
+                EditorGUILayout.Space(6);
 
-                    DrawRowEditorSection();
-                    EditorGUILayout.Space(10);
+                DrawCommonRowEditorSection();
+                EditorGUILayout.Space(6);
 
-                    DrawBottomButtons();
-                }
-            }
-            finally
-            {
-                EditorGUILayout.EndScrollView();
+                DrawDetailToolSection();
+                EditorGUILayout.Space(8);
+
+                DrawBottomButtons();
+                EditorGUILayout.Space(6);
+
+                DrawReloadSection();
+                EditorGUILayout.Space(20);
             }
         }
 
-        // ==============================
-        // Sections
-        // ==============================
         private void DrawTargetSection()
         {
             EditorGUILayout.LabelField("대상 선택", EditorStyles.boldLabel);
-
-            using (new EditorGUILayout.VerticalScope("box"))
+            using (new EditorGUILayout.VerticalScope(EditorStyles.helpBox))
             {
                 _target = (GameObject)EditorGUILayout.ObjectField("Target", _target, typeof(GameObject), true);
                 _source = (GameObject)EditorGUILayout.ObjectField("Source", _source, typeof(GameObject), true);
 
                 using (new EditorGUILayout.HorizontalScope())
                 {
-                    if (GUILayout.Button("Selection → Target"))
+                    if (GUILayout.Button("Selection → Target", GUILayout.Height(22)))
                         _target = Selection.activeGameObject;
 
-                    if (GUILayout.Button("Selection → Source"))
+                    if (GUILayout.Button("Selection → Source", GUILayout.Height(22)))
                         _source = Selection.activeGameObject;
                 }
 
                 if (_target == null)
-                {
                     EditorGUILayout.HelpBox("Target이 비어있습니다. Hierarchy에서 캐릭터를 선택 후 지정하세요.", MessageType.Warning);
-                }
             }
         }
 
         private void DrawTableSelectionSection()
         {
-            EditorGUILayout.LabelField("테이블 선택", EditorStyles.boldLabel);
-
-            using (new EditorGUILayout.VerticalScope("box"))
+            EditorGUILayout.LabelField("공통 테이블 선택", EditorStyles.boldLabel);
+            using (new EditorGUILayout.VerticalScope(EditorStyles.helpBox))
             {
-                if (_names.Count <= 0)
+                if (_dropDownOptions.Count <= 0)
                 {
-                    EditorGUILayout.HelpBox("crowd_control 테이블을 불러오지 못했습니다. 테이블 경로/설정을 확인해주세요.", MessageType.Error);
+                    EditorGUILayout.HelpBox("crowd_control 테이블 Row를 불러오지 못했습니다.", MessageType.Error);
                     return;
                 }
 
-                if (_selectedIndex >= _names.Count)
-                    _selectedIndex = 0;
-
-                EditorGUI.BeginChangeCheck();
-                _selectedIndex = EditorGUILayout.Popup("CrowdControl", _selectedIndex, _names.ToArray());
-                if (EditorGUI.EndChangeCheck())
+                using (new EditorGUILayout.HorizontalScope())
                 {
-                    crowdControlUid = _uids[_selectedIndex];
-                    CacheRow();
+                    EditorGUILayout.PrefixLabel("CrowdControl");
+                    string currentText = _cachedRow != null ? BuildDropdownValue(_cachedRow) : "선택...";
+                    int selectedIndex = _cachedRow?.Uid ?? 0;
+
+                    SearchableDropdownUtility.DrawButtonAndShow(
+                        buttonText: currentText,
+                        options: _dropDownOptions,
+                        selectedIndex: selectedIndex,
+                        onSelected: (_, option) =>
+                        {
+                            crowdControlUid = option.Data?.Uid ?? 0;
+                            CacheRow();
+                            Repaint();
+                        },
+                        defaultSearchMode: SearchableDropdownUtility.SearchMode.Both);
                 }
 
                 EditorGUI.BeginChangeCheck();
@@ -160,169 +152,170 @@ namespace GGemCo2DCoreEditor
                 if (EditorGUI.EndChangeCheck())
                 {
                     crowdControlUid = Mathf.Max(0, newUid);
-                    SyncSelectedIndexByUid();
                     CacheRow();
                 }
+            }
+        }
 
+        private void DrawCommonRowEditorSection()
+        {
+            EditorGUILayout.LabelField("공통 Row 편집", EditorStyles.boldLabel);
+            using (new EditorGUILayout.VerticalScope(EditorStyles.helpBox))
+            {
+                if (_editingRow == null)
+                {
+                    EditorGUILayout.HelpBox("편집할 공통 Row를 선택하세요.", MessageType.Info);
+                    return;
+                }
+
+                _foldRowEdit = EditorGUILayout.Foldout(_foldRowEdit, "공통 Row 편집", true);
+                if (!_foldRowEdit)
+                    return;
+
+                var result = TableRowEditorUtility.DrawObjectEditor(_editingRow, RowEditorFields, NormalizeEditingFieldValue);
+                if (result.Changed)
+                    _editingDirty = true;
+
+                EditorGUILayout.Space(6);
                 using (new EditorGUILayout.HorizontalScope())
                 {
-                    if (GUILayout.Button("테이블 다시 불러오기"))
+                    using (new EditorGUI.DisabledScope(_cachedRow == null))
                     {
-                        ReloadTable(preserveSelection: true);
-                        CacheRow();
-                        ShowNotification(new GUIContent("테이블 리로드 완료"));
+                        if (GUILayout.Button("편집값 되돌리기", GUILayout.Height(24)))
+                            CacheRow();
                     }
 
-                    using (new EditorGUI.DisabledScope(!_editingDirty))
+                    using (new EditorGUI.DisabledScope(_editingRow == null))
                     {
-                        if (GUILayout.Button("되돌리기"))
-                        {
-                            _editingRow = CloneRow(_cachedRow);
-                            _editingDirty = false;
-                            GUI.FocusControl(null);
-                        }
+                        if (GUILayout.Button("편집값 적용", GUILayout.Height(24)))
+                            CommitEditingIfNeeded();
                     }
                 }
             }
         }
 
-        private void DrawRowEditorSection()
+        private void DrawDetailToolSection()
         {
-            if (_cachedRow == null || _editingRow == null)
+            EditorGUILayout.LabelField("타입별 상세 설정", EditorStyles.boldLabel);
+            using (new EditorGUILayout.VerticalScope(EditorStyles.helpBox))
             {
-                EditorGUILayout.HelpBox("선택된 데이터가 없습니다.", MessageType.Info);
-                return;
-            }
+                if (_cachedRow == null)
+                {
+                    EditorGUILayout.HelpBox("Row를 선택하면 상세 설정 툴로 이동할 수 있습니다.", MessageType.Info);
+                    return;
+                }
 
-            _foldRowEdit = EditorGUILayout.Foldout(_foldRowEdit, "테이블 편집(선택 Row)", true);
-            if (!_foldRowEdit) return;
+                EditorGUILayout.LabelField($"현재 타입: {_cachedRow.Type}");
+                EditorGUILayout.HelpBox(
+                    "Height / DownWaitTime / EndYMode / RecoverTime / IsStopOnWall / IsGroundOnly / IsAirOnly 등 상세 컬럼은 타입별 상세 테이블에서 관리합니다.",
+                    MessageType.Info);
 
-            using (new EditorGUILayout.VerticalScope("box"))
-            {
-                var drawResult = TableRowEditorUtility.DrawObjectEditor(_editingRow, RowEditorFields, NormalizeEditingFieldValue);
-                if (drawResult.Changed)
-                    _editingDirty = true;
+                using (new EditorGUILayout.HorizontalScope())
+                {
+                    using (new EditorGUI.DisabledScope(GetOpenDetailAction(_cachedRow.Type) == null))
+                    {
+                        if (GUILayout.Button("상세 사용툴 열기", GUILayout.Height(24)))
+                            GetOpenDetailAction(_cachedRow.Type)?.Invoke(_cachedRow.Uid);
+                    }
+
+                    if (GUILayout.Button("TableEditor(공통) 열기", GUILayout.Height(24)))
+                        TableEditorWindow.OpenAndFocusRowByIntKey(ConfigAddressableTable.CrowdControl, "Uid", _cachedRow.Uid);
+
+                    using (new EditorGUI.DisabledScope(GetDetailTableKey(_cachedRow.Type) == null))
+                    {
+                        if (GUILayout.Button("TableEditor(상세) 열기", GUILayout.Height(24)))
+                            TableEditorWindow.OpenAndFocusRowByIntKey(GetDetailTableKey(_cachedRow.Type), "CrowdControlUid", _cachedRow.Uid);
+                    }
+                }
             }
         }
 
         private void DrawBottomButtons()
         {
-            using (new EditorGUILayout.HorizontalScope())
+            EditorGUILayout.LabelField("실행 / 저장", EditorStyles.boldLabel);
+            using (new EditorGUILayout.VerticalScope(EditorStyles.helpBox))
             {
-                using (new EditorGUI.DisabledScope(!_editingDirty))
+                using (new EditorGUILayout.HorizontalScope())
                 {
-                    if (GUILayout.Button("테스트 적용(인게임 테이블 반영)"))
+                    using (new EditorGUI.DisabledScope(_cachedRow == null))
                     {
-                        if (!ApplyEditingToCachedRow())
-                            return;
+                        if (GUILayout.Button("테이블 파일 저장", GUILayout.Height(24)))
+                        {
+                            CommitEditingIfNeeded();
+                            TrySaveTable();
+                        }
+                    }
 
-                        UpdateInGameTableInfo(_cachedRow);
-                        _editingDirty = false;
-                        ShowNotification(new GUIContent("인게임 테이블 반영 완료"));
+                    using (new EditorGUI.DisabledScope(!Application.isPlaying || _cachedRow == null))
+                    {
+                        if (GUILayout.Button("인게임 테이블 적용", GUILayout.Height(24)))
+                        {
+                            CommitEditingIfNeeded();
+                            ApplyCommonRowToRuntime(_cachedRow);
+                        }
                     }
                 }
 
-                if (GUILayout.Button("저장(테이블 파일)"))
-                {
-                    if (!ApplyEditingToCachedRow())
-                        return;
+                EditorGUILayout.Space(4);
 
-                    if (!TrySaveCrowdControlTableFile(out var err))
+                using (new EditorGUI.DisabledScope(!Application.isPlaying || _cachedRow == null))
+                {
+                    if (GUILayout.Button("CrowdControl 적용", GUILayout.Height(24)))
                     {
-                        EditorUtility.DisplayDialog(Title, err, "OK");
-                        return;
-                    }
-
-                    // 저장 후 재로드(툴 테이블)
-                    int keepUid = crowdControlUid;
-                    TableLoaderManagerBase.Unload(ConfigAddressableTable.TableCrowdControl.Path);
-                    _tableCrowdControl = TableLoaderManager.LoadCrowdControlTable(forceReload: true);
-                    _tableDictionary = _tableCrowdControl != null ? _tableCrowdControl.GetDatas() : null;
-
-                    LoadDropdown();
-                    crowdControlUid = keepUid;
-                    SyncSelectedIndexByUid();
-                    CacheRow();
-
-                    // 플레이 중이면 인게임에도 반영
-                    UpdateInGameTableInfo(_cachedRow);
-
-                    _editingDirty = false;
-                    ShowNotification(new GUIContent("테이블 저장 완료"));
-                }
-
-                using (new EditorGUI.DisabledScope(!Application.isPlaying))
-                {
-                    if (GUILayout.Button("CrowdControl 적용"))
+                        CommitEditingIfNeeded();
                         ApplyCrowdControlToTarget();
+                    }
                 }
             }
-
-            EditorGUILayout.HelpBox(
-                "- '테스트 적용'은 플레이 중인 게임의 TableLoaderManager.Instance.TableCrowdControl 값을 즉시 갱신합니다.\n" +
-                "- '저장(테이블 파일)'은 Assets/.../Tables/crowd_control.txt 파일을 저장하고 리임포트합니다.\n" +
-                "- 'CrowdControl 적용'은 플레이 모드에서만 동작합니다.",
-                MessageType.Info);
         }
 
-        // ==============================
-        // Table / Cache
-        // ==============================
+        private void DrawReloadSection()
+        {
+            DrawTableReloadSection(_lastReloadMessage, "crowd_control 재로딩", () => ReloadTable(preserveSelection: true));
+        }
+
         private void ReloadTable(bool preserveSelection)
         {
-            int keepUid = preserveSelection ? crowdControlUid : 0;
+            int previousUid = preserveSelection ? crowdControlUid : 0;
+            try
+            {
+                _tableCrowdControl = TableLoaderManager.LoadCrowdControlTable(forceReload: true);
+                _tableDictionary = _tableCrowdControl != null ? _tableCrowdControl.GetDatas() : new Dictionary<int, StruckTableCrowdControl>();
+                RebuildDropdown();
+                crowdControlUid = previousUid > 0 ? previousUid : FindFirstUid();
+                _lastReloadMessage = $"테이블 재로딩 완료: {DateTime.Now:yyyy-MM-dd HH:mm:ss}";
+            }
+            catch (Exception e)
+            {
+                Debug.LogException(e);
+                _lastReloadMessage = $"테이블 재로딩 실패: {e.GetType().Name} - {e.Message}";
+            }
 
-            _tableCrowdControl = TableLoaderManager.LoadCrowdControlTable(forceReload: true);
-            _tableDictionary = _tableCrowdControl != null ? _tableCrowdControl.GetDatas() : null;
-
-            LoadDropdown();
-
-            crowdControlUid = keepUid;
-            SyncSelectedIndexByUid();
+            Repaint();
         }
 
-        private void LoadDropdown()
+        private void RebuildDropdown()
         {
-            _names.Clear();
-            _uids.Clear();
-
-            if (_tableDictionary == null || _tableDictionary.Count == 0)
-                return;
-
-            var uids = new List<int>(_tableDictionary.Keys);
-            uids.Sort();
-
-            foreach (var uid in uids)
-            {
-                if (!_tableDictionary.TryGetValue(uid, out var row) || row == null)
-                    continue;
-
-                _uids.Add(uid);
-                string name = string.IsNullOrWhiteSpace(row.Name)
-                    ? $"{uid}"
-                    : $"{uid} - {row.Name}";
-                _names.Add(name);
-            }
-
-            if (_uids.Count > 0 && crowdControlUid == 0)
-            {
-                crowdControlUid = _uids[0];
-                _selectedIndex = 0;
-            }
+            RebuildDropdownOptions(
+                source: _tableDictionary?.Values,
+                targetOptions: _dropDownOptions,
+                isValidRow: row => row != null && row.Uid > 0,
+                keySelector: row => row.Uid.ToString(),
+                valueSelector: BuildDropdownValue,
+                assignSelected: row => { });
         }
 
-        private void SyncSelectedIndexByUid()
+        private int FindFirstUid()
         {
-            if (_uids.Count == 0)
-            {
-                _selectedIndex = 0;
-                return;
-            }
+            return _dropDownOptions.Count > 0 ? _dropDownOptions[0].Data?.Uid ?? 0 : 0;
+        }
 
-            int idx = _uids.IndexOf(crowdControlUid);
-            _selectedIndex = idx >= 0 ? idx : 0;
-            if (idx < 0)
-                crowdControlUid = _uids[_selectedIndex];
+        private void TryConsumePendingSelection()
+        {
+            int pendingUid = UseCrowdControlSelectionBridge.PendingCrowdControlUid;
+            if (pendingUid > 0)
+                crowdControlUid = pendingUid;
+            UseCrowdControlSelectionBridge.PendingCrowdControlUid = 0;
         }
 
         private void CacheRow()
@@ -331,17 +324,12 @@ namespace GGemCo2DCoreEditor
             _editingRow = null;
             _editingDirty = false;
 
-            if (_tableDictionary == null) return;
-            if (!_tableDictionary.TryGetValue(crowdControlUid, out var row) || row == null)
+            if (_tableDictionary == null || !_tableDictionary.TryGetValue(crowdControlUid, out StruckTableCrowdControl row) || row == null)
                 return;
 
             _cachedRow = row;
-            _editingRow = CloneRow(row);
-        }
-
-        private static StruckTableCrowdControl CloneRow(StruckTableCrowdControl row)
-        {
-            return TableRowEditorUtility.CloneShallow<StruckTableCrowdControl>(row);
+            _editingRow = TableRowEditorUtility.CloneShallow<StruckTableCrowdControl>(row);
+            NormalizeRow(_editingRow);
         }
 
         private bool ApplyEditingToCachedRow()
@@ -350,37 +338,57 @@ namespace GGemCo2DCoreEditor
                 return false;
 
             TableRowEditorUtility.CopyMembers(_editingRow, _cachedRow, RowEditorFields);
-            NormalizeEditingRow();
-
+            NormalizeRow(_cachedRow);
             return true;
+        }
+
+        private void CommitEditingIfNeeded()
+        {
+            if (!_editingDirty)
+                return;
+
+            if (ApplyEditingToCachedRow())
+                _editingDirty = false;
         }
 
         private void NormalizeEditingFieldValue(object target, string memberName)
         {
-            if (!ReferenceEquals(target, _editingRow) || string.IsNullOrWhiteSpace(memberName))
+            var row = target as StruckTableCrowdControl;
+            if (row == null || string.IsNullOrWhiteSpace(memberName))
                 return;
 
             switch (memberName)
             {
                 case nameof(StruckTableCrowdControl.Distance):
-                    if (_editingRow.Distance < 0f) _editingRow.Distance = 0f;
+                    if (row.Distance < 0f) row.Distance = 0f;
                     break;
-
                 case nameof(StruckTableCrowdControl.Duration):
-                    if (_editingRow.Duration < 0f) _editingRow.Duration = 0f;
+                    if (row.Duration < 0f) row.Duration = 0f;
                     break;
             }
         }
 
-        private void NormalizeEditingRow()
+        private void NormalizeRow(StruckTableCrowdControl row)
         {
-            NormalizeEditingFieldValue(_editingRow, nameof(StruckTableCrowdControl.Distance));
-            NormalizeEditingFieldValue(_editingRow, nameof(StruckTableCrowdControl.Duration));
+            if (row == null)
+                return;
+
+            foreach (var field in RowEditorFields)
+                NormalizeEditingFieldValue(row, field.MemberName);
         }
 
-        // ==============================
-        // Apply / Runtime
-        // ==============================
+        private void ApplyCommonRowToRuntime(StruckTableCrowdControl row)
+        {
+            if (row == null || !Application.isPlaying || !GGemCo2DCore.TableLoaderManager.Instance)
+                return;
+
+            StruckTableCrowdControl runtimeRow = GGemCo2DCore.TableLoaderManager.Instance.TableCrowdControl?.GetDataByUid(row.Uid);
+            if (runtimeRow == null)
+                return;
+
+            TableRowEditorUtility.CopyMembers(row, runtimeRow, RowEditorFields);
+        }
+
         private void ApplyCrowdControlToTarget()
         {
             if (!Application.isPlaying)
@@ -395,36 +403,38 @@ namespace GGemCo2DCoreEditor
                 return;
             }
 
-            var controller = _target.GetComponent<CharacterCrowdControlController>();
+            CharacterCrowdControlController controller = _target.GetComponent<CharacterCrowdControlController>();
             if (controller == null)
             {
                 EditorUtility.DisplayDialog(Title, "Target에 CharacterCrowdControlController가 없습니다.", "OK");
                 return;
             }
 
+            ApplyCommonRowToRuntime(_cachedRow);
             controller.ApplyCrowdControlByUid(crowdControlUid, _source);
         }
 
-        private static void UpdateInGameTableInfo(StruckTableCrowdControl row)
+        private void TrySaveTable()
         {
-            if (row == null) return;
-            if (!Application.isPlaying) return;
-            if (!GGemCo2DCore.TableLoaderManager.Instance) return;
+            if (!TableTextRowPatchUtility.TryPatchRowByUid(
+                    ConfigAddressableTable.TableCrowdControl.Path,
+                    _cachedRow.Uid,
+                    _cachedRow,
+                    SerializeRow,
+                    out string error))
+            {
+                EditorUtility.DisplayDialog(Title, error, "OK");
+                return;
+            }
 
-            var info = GGemCo2DCore.TableLoaderManager.Instance.TableCrowdControl.GetDataByUid(row.Uid);
-            if (info == null) return;
-
-            TableRowEditorUtility.CopyMembers(row, info);
+            _lastReloadMessage = $"테이블 저장 완료: {DateTime.Now:yyyy-MM-dd HH:mm:ss}";
+            ReloadTable(preserveSelection: true);
+            CacheRow();
         }
 
-        // ==============================
-        // Save
-        // ==============================
-
-        private static string SerializeCrowdControlRow(StruckTableCrowdControl row, IReadOnlyList<string> headers)
+        private static string SerializeRow(StruckTableCrowdControl row, IReadOnlyList<string> headers)
         {
-            var values = new string[headers.Count];
-
+            string[] values = new string[headers.Count];
             for (int i = 0; i < headers.Count; i++)
             {
                 values[i] = headers[i] switch
@@ -458,34 +468,59 @@ namespace GGemCo2DCoreEditor
             return string.Join("\t", values);
         }
 
-        private bool TrySaveCrowdControlTableFile(out string error)
+        private static string BuildDropdownValue(StruckTableCrowdControl row)
         {
-            error = null;
+            return row == null ? string.Empty : $"[{row.Type}] {row.Uid} - {row.Name}";
+        }
 
-            if (_cachedRow == null)
+        private static Action<int> GetOpenDetailAction(CrowdControlConstants.Type type)
+        {
+            return type switch
             {
-                error = "저장할 Row가 없습니다.";
-                return false;
+                CrowdControlConstants.Type.KnockBack => UseCrowdControlKnockBack.OpenAndSelect,
+                CrowdControlConstants.Type.KnockDown => UseCrowdControlKnockDown.OpenAndSelect,
+                CrowdControlConstants.Type.KnockUp => UseCrowdControlKnockUp.OpenAndSelect,
+                _ => null,
+            };
+        }
+
+        private static string GetDetailTableKey(CrowdControlConstants.Type type)
+        {
+            return type switch
+            {
+                CrowdControlConstants.Type.KnockBack => ConfigAddressableTable.CrowdControlKnockBack,
+                CrowdControlConstants.Type.KnockDown => ConfigAddressableTable.CrowdControlKnockDown,
+                CrowdControlConstants.Type.KnockUp => ConfigAddressableTable.CrowdControlKnockUp,
+                _ => null,
+            };
+        }
+
+        private static TableRowEditorUtility.TableRowEditorField[] BuildCommonRowFields()
+        {
+            var options = new TableRowEditorUtility.TableRowEditorBuildOptions();
+            options.ReadOnlyMembers.Add(nameof(StruckTableCrowdControl.Uid));
+            options.GroupByMemberName[nameof(StruckTableCrowdControl.Uid)] = "Common";
+            options.GroupByMemberName[nameof(StruckTableCrowdControl.Name)] = "Common";
+            options.GroupByMemberName[nameof(StruckTableCrowdControl.Type)] = "Common";
+            options.GroupByMemberName[nameof(StruckTableCrowdControl.DirectionType)] = "Motion";
+            options.GroupByMemberName[nameof(StruckTableCrowdControl.FixedDirectionX)] = "Motion";
+            options.GroupByMemberName[nameof(StruckTableCrowdControl.FixedDirectionY)] = "Motion";
+            options.GroupByMemberName[nameof(StruckTableCrowdControl.Distance)] = "Motion";
+            options.GroupByMemberName[nameof(StruckTableCrowdControl.EaseType)] = "Motion";
+            options.GroupByMemberName[nameof(StruckTableCrowdControl.Duration)] = "Motion";
+            options.GroupByMemberName[nameof(StruckTableCrowdControl.IsLockControl)] = "State / Animation";
+            options.GroupByMemberName[nameof(StruckTableCrowdControl.IsUseKnockbackStatus)] = "State / Animation";
+            options.GroupByMemberName[nameof(StruckTableCrowdControl.IsUseDontControlStatus)] = "State / Animation";
+            options.GroupByMemberName[nameof(StruckTableCrowdControl.StaggerAnimationName)] = "State / Animation";
+
+            List<TableRowEditorUtility.TableRowEditorField> result = new();
+            foreach (var field in TableRowEditorUtility.BuildFields<StruckTableCrowdControl>(options))
+            {
+                if (!LegacyDetailMembers.Contains(field.MemberName))
+                    result.Add(field);
             }
 
-            if (_tableCrowdControl == null)
-            {
-                error = "테이블이 로드되지 않았습니다.";
-                return false;
-            }
-
-            if (!TableTextRowPatchUtility.TryPatchRowByUid(
-                    ConfigAddressableTable.TableCrowdControl.Path,
-                    _cachedRow.Uid,
-                    _cachedRow,
-                    SerializeCrowdControlRow,
-                    out error))
-            {
-                error = $"테이블 저장 중 오류: {error}";
-                return false;
-            }
-
-            return true;
+            return result.ToArray();
         }
     }
 }

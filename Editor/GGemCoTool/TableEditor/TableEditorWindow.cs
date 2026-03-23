@@ -12,6 +12,15 @@ namespace GGemCo2DCoreEditor
     public sealed class TableEditorWindow : EditorWindow
     {
         private const string Title = "데이터 테이블 에디터";
+
+        private sealed class PendingOpenRequest
+        {
+            public string TableKey;
+            public string HeaderName;
+            public string RawValue;
+        }
+
+        private static PendingOpenRequest s_pendingOpenRequest;
         
         private IReadOnlyList<TableEditorTableDefinition> _tables;
         private TableEditorTableDefinition _selectedTable;
@@ -46,10 +55,32 @@ namespace GGemCo2DCoreEditor
         [MenuItem(ConfigEditor.NameToolTableEditor, false, (int)ConfigEditor.ToolOrdering.TableEditor)]
         public static void OpenWindow()
         {
+            GetOrCreateWindow().Show();
+        }
+
+        public static void OpenAndFocusRowByIntKey(string tableKey, string headerName, int keyValue)
+        {
+            if (string.IsNullOrWhiteSpace(tableKey) || string.IsNullOrWhiteSpace(headerName) || keyValue <= 0)
+                return;
+
+            s_pendingOpenRequest = new PendingOpenRequest
+            {
+                TableKey = tableKey,
+                HeaderName = headerName,
+                RawValue = keyValue.ToString(CultureInfo.InvariantCulture),
+            };
+
+            TableEditorWindow window = GetOrCreateWindow();
+            window.Show();
+            window.TryApplyPendingOpenRequest();
+        }
+
+        private static TableEditorWindow GetOrCreateWindow()
+        {
             TableEditorWindow window = GetWindow<TableEditorWindow>();
             window.titleContent = new GUIContent("Table Editor");
             window.minSize = new Vector2(1400f, 760f);
-            window.Show();
+            return window;
         }
 
         private void OnEnable()
@@ -79,6 +110,8 @@ namespace GGemCo2DCoreEditor
                 LoadTable(_tables[0]);
             else
                 RefreshAllViews();
+
+            TryApplyPendingOpenRequest();
         }
 
         private void BuildToolbar()
@@ -358,6 +391,7 @@ namespace GGemCo2DCoreEditor
                 _undoController?.Initialize(_selectedTable.TableKey, _document);
                 TableEditorReferenceCache.Invalidate(_selectedTable);
                 RefreshAllViews();
+                TryApplyPendingOpenRequest();
             }
             catch (Exception ex)
             {
@@ -482,6 +516,46 @@ namespace GGemCo2DCoreEditor
                     _rowListView.SetSelectionWithoutNotify(new[] { rowIndex });
                     _rowListView.ScrollToItem(rowIndex);
                 }
+            }
+        }
+
+        private void TryApplyPendingOpenRequest()
+        {
+            PendingOpenRequest request = s_pendingOpenRequest;
+            if (request == null || _tables == null || _tables.Count == 0)
+                return;
+
+            TableEditorTableDefinition requestTable = TableEditorRegistry.FindByKey(request.TableKey);
+            if (requestTable == null)
+            {
+                s_pendingOpenRequest = null;
+                return;
+            }
+
+            if (_selectedTable != requestTable)
+            {
+                LoadTable(requestTable);
+                return;
+            }
+
+            if (_document == null)
+                return;
+
+            s_pendingOpenRequest = null;
+            _selectedRow = _document.GetRows().FirstOrDefault(row =>
+                row != null
+                && row.Values.TryGetValue(request.HeaderName, out string currentValue)
+                && string.Equals(currentValue ?? string.Empty, request.RawValue ?? string.Empty, StringComparison.Ordinal));
+
+            RefreshAllViews();
+            if (_selectedRow == null)
+                return;
+
+            int rowIndex = _visibleRows.IndexOf(_selectedRow);
+            if (rowIndex >= 0)
+            {
+                _rowListView?.SetSelectionWithoutNotify(new[] { rowIndex });
+                _rowListView?.ScrollToItem(rowIndex);
             }
         }
 
