@@ -10,12 +10,12 @@ namespace GGemCo2DCoreEditor
     {
         private const string Title = "아이템 드랍 확률";
         private ItemManager.DropTestResult _testResult;
-        private int _selectedMonsterIndex;
+        private int _selectedMonsterUid;
         private int _testCount;
         private ItemManager _itemManager;
         private TableMonster _tableMonster;
         private TableItem _tableItem;
-        private List<string> _monsterNames; // 몬스터 이름 목록
+        private readonly List<SearchableDropdownUtility.Option<int>> _monsterOptions = new List<SearchableDropdownUtility.Option<int>>();
         private Vector2 _scrollPos;
         
         private Dictionary<ItemConstants.Category, List<StruckTableItem>> _dictionaryByCategory;
@@ -32,7 +32,7 @@ namespace GGemCo2DCoreEditor
         protected override void OnEnable()
         {
             base.OnEnable();
-            _selectedMonsterIndex = 0;
+            _selectedMonsterUid = 0;
             _testCount = 10000;
 
             _itemManager = new ItemManager();
@@ -54,64 +54,63 @@ namespace GGemCo2DCoreEditor
         /// </summary>
         private void LoadMonsterInfoData()
         {
-            Dictionary<int, StruckTableMonster> monsterDictionary = _tableMonster.GetDatas();
+            int previousUid = _selectedMonsterUid;
 
-            _monsterNames = new List<string>();
-            // foreach 문을 사용하여 딕셔너리 내용을 출력
+            _monsterOptions.Clear();
+
+            if (_tableMonster == null)
+            {
+                _selectedMonsterUid = 0;
+                return;
+            }
+
+            Dictionary<int, StruckTableMonster> monsterDictionary = _tableMonster.GetDatas();
             foreach (KeyValuePair<int, StruckTableMonster> outerPair in monsterDictionary)
             {
-                var info = outerPair.Value;
-                if (info.Uid <= 0) continue;
-                _monsterNames.Add($"{info.Uid} - {info.Name}");
+                StruckTableMonster info = outerPair.Value;
+                if (info == null || info.Uid <= 0)
+                {
+                    continue;
+                }
+
+                _monsterOptions.Add(new SearchableDropdownUtility.Option<int>(
+                    info.Uid.ToString(),
+                    info.Name,
+                    info.Uid));
             }
+
+            _selectedMonsterUid = TryGetPreservedUid(_monsterOptions, previousUid);
         }
 
 
         private void OnGUI()
         {
             _scrollPos = EditorGUILayout.BeginScrollView(_scrollPos);
-            // 몬스터 드롭다운
-            _selectedMonsterIndex = EditorGUILayout.Popup("몬스터 선택", _selectedMonsterIndex, _monsterNames.ToArray());
-            // 테스트 횟수
+
+            if (_monsterOptions.Count == 0)
+            {
+                EditorGUILayout.HelpBox("선택 가능한 몬스터 데이터가 없습니다. 테이블 로드 상태를 확인해주세요.", MessageType.Warning);
+            }
+
+            int selectedMonsterIndex = FindOptionIndexByUid(_monsterOptions, _selectedMonsterUid);
+            SearchableDropdownUtility.DrawLabeledFieldAndShow(
+                "몬스터 선택",
+                _monsterOptions,
+                selectedMonsterIndex,
+                (_, option) =>
+                {
+                    _selectedMonsterUid = option.Data;
+                    Repaint();
+                },
+                noneText: "(몬스터 선택)");
+
             _testCount = EditorGUILayout.IntField("테스트 횟수", _testCount);
 
-            // 테스트 실행 버튼
-            if (GUILayout.Button("테스트 실행", GUILayout.Height(30)))
+            using (new EditorGUI.DisabledScope(_itemManager == null || _tableMonster == null || _selectedMonsterUid <= 0))
             {
-                if (_itemManager != null)
+                if (GUILayout.Button("테스트 실행", GUILayout.Height(30)))
                 {
-                    var monsterDictionary = _tableMonster.GetDatas();
-                    int index = 0;
-                    StruckTableMonster monsterData = new StruckTableMonster();
-
-                    foreach (var outerPair in monsterDictionary)
-                    {
-                        if (index == _selectedMonsterIndex)
-                        {
-                            monsterData = _tableMonster.GetDataByUid(outerPair.Key);
-                            break;
-                        }
-                        index++;
-                    }
-
-                    if (monsterData.Uid > 0)
-                    {
-                        ItemManager.DropTestResult dropTestResult = _itemManager.TestDropRates(monsterData.Uid,
-                            _testCount, _dictionaryByCategory, _dictionaryBySubCategory, _dropGroupDictionary,
-                            _monsterDropDictionary, _tableItem);
-
-                        if (dropTestResult != null)
-                        {
-                            EditorUtility.DisplayDialog(Title, $"테스트 완료: 몬스터 UID {monsterData.Uid}, {_testCount}회 실행됨.",
-                                "OK");
-                            _testResult = dropTestResult;
-                            Repaint(); // UI 갱신
-                        }
-                    }
-                    else
-                    {
-                        EditorUtility.DisplayDialog(Title, "몬스터 데이터가 없습니다.", "OK");
-                    }
+                    RunDropTest();
                 }
             }
 
@@ -136,6 +135,69 @@ namespace GGemCo2DCoreEditor
             }
 
             EditorGUILayout.EndScrollView();
+        }
+
+
+        private static int FindOptionIndexByUid(IReadOnlyList<SearchableDropdownUtility.Option<int>> options, int selectedUid)
+        {
+            if (options == null || options.Count == 0 || selectedUid <= 0)
+            {
+                return -1;
+            }
+
+            for (int i = 0; i < options.Count; i++)
+            {
+                if (options[i].Data == selectedUid)
+                {
+                    return i;
+                }
+            }
+
+            return -1;
+        }
+
+        private static int TryGetPreservedUid(IReadOnlyList<SearchableDropdownUtility.Option<int>> options, int previousUid)
+        {
+            if (options == null || options.Count == 0)
+            {
+                return 0;
+            }
+
+            return FindOptionIndexByUid(options, previousUid) >= 0
+                ? previousUid
+                : options[0].Data;
+        }
+
+        private void RunDropTest()
+        {
+            StruckTableMonster monsterData = _tableMonster.GetDataByUid(_selectedMonsterUid);
+            if (monsterData == null || monsterData.Uid <= 0)
+            {
+                EditorUtility.DisplayDialog(Title, "몬스터 데이터가 없습니다.", "OK");
+                return;
+            }
+
+            ItemManager.DropTestResult dropTestResult = _itemManager.TestDropRates(
+                monsterData.Uid,
+                _testCount,
+                _dictionaryByCategory,
+                _dictionaryBySubCategory,
+                _dropGroupDictionary,
+                _monsterDropDictionary,
+                _tableItem);
+
+            if (dropTestResult == null)
+            {
+                return;
+            }
+
+            EditorUtility.DisplayDialog(
+                Title,
+                $"테스트 완료: 몬스터 UID {monsterData.Uid}, {_testCount}회 실행됨.",
+                "OK");
+
+            _testResult = dropTestResult;
+            Repaint();
         }
 
         private void DrawTable<T>(string subTitle, Dictionary<T, int> data)
