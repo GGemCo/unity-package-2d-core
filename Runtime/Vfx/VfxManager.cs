@@ -21,9 +21,9 @@ namespace GGemCo2DCore
             TryPrewarmAllConfiguredVfx();
         }
 
-        public VfxBehaviourBase CreateVfx(int vfxUid)
+        public VfxBehaviourBase CreateVfx(int vfxUid, float duration = 0f)
         {
-            return CreateVfx(new VfxSpawnRequest { VfxUid = vfxUid });
+            return CreateVfx(new VfxSpawnRequest { VfxUid = vfxUid, DurationOverride = duration });
         }
 
         public VfxBehaviourBase CreateVfx(StruckAnimationEventVfx struckAnimationEventVfx)

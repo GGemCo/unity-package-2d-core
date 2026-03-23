@@ -29,15 +29,13 @@ namespace GGemCo2DCore
             if (vfxManager == null)
                 return;
 
-            _vfx = vfxManager.CreateVfx(vfxUid);
+            // 충돌 후 End 애니를 돌릴 수 있으므로 무한(-1) 지속
+            _vfx = vfxManager.CreateVfx(vfxUid, -1f);
             if (_vfx == null)
                 return;
 
             _vfx.transform.SetParent(transform);
             _vfx.transform.localPosition = Vector3.zero;
-
-            // 충돌 후 End 애니를 돌릴 수 있으므로 무한(-1) 지속
-            _vfx.SetDuration(-1);
 
             float scale = 1f;
             if (_static != null && _static.VfxScale > 0)
