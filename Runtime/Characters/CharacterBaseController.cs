@@ -203,6 +203,7 @@ namespace GGemCo2DCore
             if (targetCharacter.IsStatusDead())      return false;
             if (targetCharacter.IsStatusDamage())    return false;
             if (targetCharacter.IsStatusKnockback()) return false;
+            if (targetCharacter.IsStatusDontControl()) return false;
             return true;
         }
     }
