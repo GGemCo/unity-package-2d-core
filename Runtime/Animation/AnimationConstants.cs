@@ -65,6 +65,12 @@
         Cancel = 2,
     }
 
+    public sealed class StruckAnimationEventCrowdControl
+    {
+        public int CrowdControlUid { get; set; } = 0;
+        public bool UseSelfAsSource { get; set; } = true;
+    }
+
     public sealed class StruckAnimationEventMotion
     {
         public AnimationMotionEventAction Action { get; set; } = AnimationMotionEventAction.Trigger;
@@ -106,6 +112,7 @@
         public const string EventNameDashEnd = Prefix+"DashEnd";
         
         public const string EventNameMotion = Prefix+"Motion";
+        public const string EventNameCrowdControl = Prefix+"CrowdControl";
 
         public const string EventNameUseTool = Prefix+"UseTool";
 

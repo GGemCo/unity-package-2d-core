@@ -77,6 +77,9 @@ namespace GGemCo2DCore
                 case AnimationConstants.EventNameSkill:
                     EventListener?.OnAnimationEventSkill(e.String, gameObject);
                     break;
+                case AnimationConstants.EventNameCrowdControl:
+                    EventListener?.OnAnimationEventCrowdControl(e.String, gameObject);
+                    break;
                 case AnimationConstants.EventNameStartBackstepTrail:
                     EventListener?.OnAnimationEventStartBackstepTrail(e.String, gameObject);
                     break;

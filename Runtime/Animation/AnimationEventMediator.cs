@@ -126,6 +126,29 @@ namespace GGemCo2DCore
             }
         }
 
+        public void OnAnimationEventCrowdControl(string json, GameObject fromObject)
+        {
+            if (fromObject == null)
+                return;
+
+            if (string.IsNullOrWhiteSpace(json))
+            {
+                fromObject.GetComponent<CharacterBase>()?.AnimationEventCrowdControl(new StruckAnimationEventCrowdControl());
+                return;
+            }
+
+            try
+            {
+                var data = JsonConvert.DeserializeObject<StruckAnimationEventCrowdControl>(json);
+                fromObject.GetComponent<CharacterBase>()
+                    ?.AnimationEventCrowdControl(data ?? new StruckAnimationEventCrowdControl());
+            }
+            catch (Exception e)
+            {
+                GcLogger.LogError($"animation crowd control event, json parsing error: {e.Message} / json: {json}");
+            }
+        }
+
         /// <summary>
         /// 시뮬레이션 패키지, 도구 사용
         /// </summary>

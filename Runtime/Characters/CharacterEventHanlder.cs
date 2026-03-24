@@ -74,4 +74,15 @@ namespace GGemCo2DCore
     }
 
     public delegate void EventHandlerOnAnimationEventMotion(CharacterBase sender, EventArgsOnAnimationEventMotion e);
+
+    /// <summary>
+    /// CrowdControl 애니메이션 이벤트 발생시
+    /// </summary>
+    public sealed class EventArgsOnAnimationEventCrowdControl : EventArgs
+    {
+        public bool Handled { get; set; }
+        public StruckAnimationEventCrowdControl CrowdControl { get; set; }
+    }
+
+    public delegate void EventHandlerOnAnimationEventCrowdControl(CharacterBase sender, EventArgsOnAnimationEventCrowdControl e);
 }

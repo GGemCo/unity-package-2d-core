@@ -110,6 +110,7 @@ namespace GGemCo2DCore
         public event EventHandlerOnAnimationEventJump OnAnimationEventJump;
         public event EventHandlerOnAnimationEventDash OnAnimationEventDash;
         public event EventHandlerOnAnimationEventMotion OnAnimationEventMotion;
+        public event EventHandlerOnAnimationEventCrowdControl OnAnimationEventCrowdControl;
         // 방어 end 애니메이션 종료 후
         public event EventHandlerOnAnimationEventGuardEnd OnAnimationEventGuardEnd;
         
@@ -924,6 +925,44 @@ namespace GGemCo2DCore
             {
                 TryHandleMotionEventLegacy(e.Motion);
             }
+        }
+
+        /// <summary>
+        /// CrowdControl 애니메이션 event 발생시 처리
+        /// </summary>
+        /// <param name="crowdControl"></param>
+        public void AnimationEventCrowdControl(StruckAnimationEventCrowdControl crowdControl)
+        {
+            crowdControl ??= new StruckAnimationEventCrowdControl();
+
+            var e = new EventArgsOnAnimationEventCrowdControl
+            {
+                Handled = false,
+                CrowdControl = crowdControl
+            };
+
+            OnAnimationEventCrowdControl?.Invoke(this, e);
+
+            if (!e.Handled)
+            {
+                TryHandleCrowdControlEventLegacy(e.CrowdControl);
+            }
+        }
+
+        private void TryHandleCrowdControlEventLegacy(StruckAnimationEventCrowdControl crowdControl)
+        {
+            if (crowdControl == null || crowdControl.CrowdControlUid <= 0)
+                return;
+
+            if (_crowdControlController == null)
+            {
+                _crowdControlController = GetComponent<CharacterCrowdControlController>();
+                if (_crowdControlController == null)
+                    return;
+            }
+
+            GameObject source = crowdControl.UseSelfAsSource ? gameObject : null;
+            _crowdControlController.ApplyCrowdControlByUid(crowdControl.CrowdControlUid, source);
         }
 
         private void TryHandleMotionEventLegacy(StruckAnimationEventMotion motion)
