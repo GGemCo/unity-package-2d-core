@@ -32,6 +32,8 @@ namespace GGemCo2DCore
         protected long Damage;
         protected ConfigCommon.DamageType DamageType;
         protected CharacterBase FromCharacter;
+        protected int SkillUid;
+        protected int AttackId;
 
         // ---- Visual ----
         private IProjectileVisual _visual;
@@ -63,6 +65,8 @@ namespace GGemCo2DCore
             FromCharacter = metadata != null ? metadata.Owner : null;
             Damage = metadata != null ? metadata.Damage : 0;
             DamageType = metadata != null ? metadata.DamageType : ConfigCommon.DamageType.Physic;
+            SkillUid = metadata != null ? metadata.SkillUid : 0;
+            AttackId = metadata != null ? metadata.AttackId : 0;
 
             float speedMul = metadata != null ? metadata.SpeedMultiplier : 1f;
             Speed = info.MoveSpeed * Mathf.Max(0.01f, speedMul);
@@ -421,7 +425,9 @@ namespace GGemCo2DCore
                 {
                     damage = Damage,
                     attacker = FromCharacter ? FromCharacter.gameObject : null,
-                    damageType = DamageType
+                    damageType = DamageType,
+                    SkillUid = SkillUid,
+                    AttackId = AttackId
                 };
                 target.TakeDamage(md);
                 Destroy(gameObject);
@@ -542,7 +548,9 @@ namespace GGemCo2DCore
             {
                 damage = Damage,
                 attacker = FromCharacter ? FromCharacter.gameObject : null,
-                damageType = DamageType
+                damageType = DamageType,
+                SkillUid = SkillUid,
+                AttackId = AttackId
             };
             area.target?.TakeDamage(md);
 

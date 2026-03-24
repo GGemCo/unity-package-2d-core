@@ -50,7 +50,10 @@ namespace GGemCo2DCore
                     visualAnimatorController: metadataProjectile.VisualAnimatorController,
                     visualVfxUidOverride: metadataProjectile.VisualVfxUidOverride,
                     useTargetPositionOverride: metadataProjectile.UseTargetPositionOverride,
-                    targetPositionOverride: metadataProjectile.TargetPositionOverride)
+                    targetPositionOverride: metadataProjectile.TargetPositionOverride,
+                    skillUid: metadataProjectile.SkillUid,
+                    attackId: metadataProjectile.AttackId,
+                    allowSkillChainOnConfirmedDamage: metadataProjectile.AllowSkillChainOnConfirmedDamage)
                 : metadataProjectile;
 
             _character.StartCoroutine(CreateProjectileBurst(info, meta));

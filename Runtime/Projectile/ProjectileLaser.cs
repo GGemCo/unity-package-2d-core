@@ -133,7 +133,9 @@ namespace GGemCo2DCore
             {
                 damage = Damage,
                 attacker = FromCharacter ? FromCharacter.gameObject : gameObject,
-                damageType = DamageType
+                damageType = DamageType,
+                SkillUid = SkillUid,
+                AttackId = AttackId
             };
             area.target?.TakeDamage(md);
         }

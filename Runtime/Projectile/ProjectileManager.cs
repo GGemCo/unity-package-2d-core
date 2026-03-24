@@ -23,6 +23,9 @@ namespace GGemCo2DCore
         // --- Combat (dynamic) ---
         public readonly ConfigCommon.DamageType DamageType;
         public readonly long Damage;
+        public readonly int SkillUid;
+        public readonly int AttackId;
+        public readonly bool AllowSkillChainOnConfirmedDamage;
 
         // --- Movement/Scale (dynamic) ---
         public readonly float SpeedMultiplier;
@@ -47,11 +50,17 @@ namespace GGemCo2DCore
             RuntimeAnimatorController visualAnimatorController = null,
             int visualVfxUidOverride = 0,
             bool useTargetPositionOverride = false,
-            Vector2 targetPositionOverride = default)
+            Vector2 targetPositionOverride = default,
+            int skillUid = 0,
+            int attackId = 0,
+            bool allowSkillChainOnConfirmedDamage = false)
         {
             Uid = uid;
             DamageType = damageType;
             Damage = damage;
+            SkillUid = skillUid;
+            AttackId = attackId;
+            AllowSkillChainOnConfirmedDamage = allowSkillChainOnConfirmedDamage;
             Target = target;
             Owner = owner;
 

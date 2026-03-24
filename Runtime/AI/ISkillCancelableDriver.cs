@@ -15,6 +15,7 @@
         Stun,
         Death,
         StateChanged,
-        ForcedBySystem
+        ForcedBySystem,
+        ComboChain
     }
 }
