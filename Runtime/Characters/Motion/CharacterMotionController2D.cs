@@ -50,7 +50,10 @@ namespace GGemCo2DCore
             ref MotionState state = ref GetStateRef(request.Channel);
 
             if (state.IsPlaying && !request.AllowReplace)
-                return false;
+            {
+                GcLogger.LogWarning($"Motion is already playing on channel {request.Channel}.");
+                return false;                
+            }
 
             if (state.IsPlaying)
             {
@@ -60,6 +63,7 @@ namespace GGemCo2DCore
 
             state.Start(request);
             PrepareForMotionStart(ref state);
+            GcLogger.Log($"Motion started on channel {request.Channel}.");
             return true;
         }
 

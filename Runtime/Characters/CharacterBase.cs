@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections;
+using System.Collections.Generic;
 using R3;
 using UnityEngine;
 using Random = UnityEngine.Random;
@@ -1200,6 +1201,12 @@ namespace GGemCo2DCore
         {
             if (GcLogger.IsNull(_crowdControlController, nameof(CharacterCrowdControlController))) return;
             _crowdControlController.ApplyCrowdControlByUid(crowdControlUid, metadataDamageAttacker);
+        }
+
+        public void ApplyCrowdControlSequence(IReadOnlyList<int> crowdControlUids, GameObject metadataDamageAttacker)
+        {
+            if (GcLogger.IsNull(_crowdControlController, nameof(CharacterCrowdControlController))) return;
+            _crowdControlController.ApplyCrowdControlSequenceByUid(crowdControlUids, metadataDamageAttacker, gameObject);
         }
     }
 }

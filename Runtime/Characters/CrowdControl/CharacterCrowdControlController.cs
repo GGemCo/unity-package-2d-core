@@ -24,6 +24,11 @@ namespace GGemCo2DCore
 
         private Dictionary<CrowdControlConstants.Type, ICrowdControlHandler> _handlers;
 
+        private readonly Queue<QueuedCrowdControl> _queuedCrowdControls = new();
+        private bool _isSequenceRunning;
+        private GameObject _sequenceSource;
+        private GameObject _sequenceTarget;
+
         // 애니메이션 시퀀스(이름 기반)
         private string _currentStaggerAnimationName;
         private string _currentPhaseAnimationName;
@@ -52,6 +57,16 @@ namespace GGemCo2DCore
         /// 지면과 약간의 오차가 있는 경우에도 확실히 바닥에 붙도록 보정하기 위한 값입니다.
         /// </summary>
         private const float KnockUpLandingFinalSnapDistance = 0.75f;
+
+        private readonly struct QueuedCrowdControl
+        {
+            public readonly CrowdControlRuntimeData CrowdControl;
+
+            public QueuedCrowdControl(CrowdControlRuntimeData crowdControl)
+            {
+                CrowdControl = crowdControl;
+            }
+        }
 
         private enum KnockUpAnimationPhase
         {
@@ -92,11 +107,17 @@ namespace GGemCo2DCore
 
         public void ApplyCrowdControl(CrowdControlRuntimeData crowdControl, GameObject source)
         {
+            ClearQueuedSequence();
+            ApplyCrowdControlInternal(crowdControl, source, forceReplaceCurrent: true);
+        }
+
+        private void ApplyCrowdControlInternal(CrowdControlRuntimeData crowdControl, GameObject source, bool forceReplaceCurrent)
+        {
             if (crowdControl == null) return;
             if (_character == null) return;
 
-            // 기존 CC가 진행 중이면 중단(강제)
-            ForceStopInternal();
+            if (forceReplaceCurrent)
+                ForceStopInternal(clearSequence: false);
 
             _activeCrowdControl = crowdControl;
 
@@ -202,6 +223,7 @@ namespace GGemCo2DCore
             if (_motionController == null)
             {
                 _activeCrowdControl = null;
+                TryStartNextQueuedCrowdControl();
                 return;
             }
 
@@ -443,6 +465,7 @@ namespace GGemCo2DCore
             // End 애니메이션이 없으면 즉시 정리
             _character?.Stop(isForce: true);
             ResetAnimationState();
+            TryStartNextQueuedCrowdControl();
         }
 
         /// <summary>
@@ -458,6 +481,7 @@ namespace GGemCo2DCore
             _character?.Stop(isForce: true);
             ResetAnimationState();
             _stopRoutine = null;
+            TryStartNextQueuedCrowdControl();
         }
 
         /// <summary>
@@ -466,7 +490,7 @@ namespace GGemCo2DCore
         /// <remarks>
         /// 외부에 공개하지 않고, 새 CC 적용 전에 내부적으로 교체(replace) 처리할 때 사용합니다.
         /// </remarks>
-        private void ForceStopInternal()
+        private void ForceStopInternal(bool clearSequence = true)
         {
             if (_stopRoutine != null)
             {
@@ -481,6 +505,9 @@ namespace GGemCo2DCore
             _character?.Stop(isForce: true);
             ResetAnimationState();
             _activeCrowdControl = null;
+
+            if (clearSequence)
+                ClearQueuedSequence();
         }
 
 
@@ -741,6 +768,89 @@ namespace GGemCo2DCore
             _currentStaggerAnimationName = null;
             _currentPhaseAnimationName = null;
             _currentKnockUpAnimationPhase = KnockUpAnimationPhase.None;
+        }
+
+
+        private void TryStartNextQueuedCrowdControl()
+        {
+            if (_activeCrowdControl != null)
+                return;
+
+            if (!_isSequenceRunning)
+                return;
+
+            if (_sequenceTarget != null && _character != null && _sequenceTarget != _character.gameObject)
+            {
+                ClearQueuedSequence();
+                return;
+            }
+
+            while (_queuedCrowdControls.Count > 0)
+            {
+                var next = _queuedCrowdControls.Dequeue();
+                if (next.CrowdControl == null)
+                    continue;
+
+                ApplyCrowdControlInternal(next.CrowdControl, _sequenceSource, forceReplaceCurrent: false);
+                if (_activeCrowdControl != null)
+                    return;
+            }
+
+            ClearQueuedSequence();
+        }
+
+        private void ClearQueuedSequence()
+        {
+            _queuedCrowdControls.Clear();
+            _isSequenceRunning = false;
+            _sequenceSource = null;
+            _sequenceTarget = null;
+        }
+
+        public void ApplyCrowdControlSequenceByUid(IReadOnlyList<int> crowdControlUids, GameObject source, GameObject target)
+        {
+            if (crowdControlUids == null || crowdControlUids.Count == 0)
+                return;
+
+            if (TableLoaderManager.Instance == null)
+                return;
+
+            var runtimeList = new List<CrowdControlRuntimeData>(crowdControlUids.Count);
+            for (int i = 0; i < crowdControlUids.Count; i++)
+            {
+                int uid = crowdControlUids[i];
+                if (uid <= 0)
+                    continue;
+
+                var info = TableLoaderManager.Instance.GetCrowdControlRuntimeData(uid, logIfMissing: false);
+                if (info != null)
+                    runtimeList.Add(info);
+            }
+
+            ApplyCrowdControlSequence(runtimeList, source, target);
+        }
+
+        public void ApplyCrowdControlSequence(IReadOnlyList<CrowdControlRuntimeData> crowdControls, GameObject source, GameObject target)
+        {
+            if (crowdControls == null || crowdControls.Count == 0)
+                return;
+
+            ForceStopInternal();
+
+            _isSequenceRunning = true;
+            _sequenceSource = source;
+            _sequenceTarget = target;
+
+            for (int i = 0; i < crowdControls.Count; i++)
+            {
+                var crowdControl = crowdControls[i];
+                if (crowdControl == null)
+                    continue;
+
+                _queuedCrowdControls.Enqueue(new QueuedCrowdControl(crowdControl));
+            }
+
+            TryStartNextQueuedCrowdControl();
         }
 
         /// <summary>
