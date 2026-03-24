@@ -45,7 +45,8 @@ namespace GGemCo2DCore
         public bool TryStartMotion(in MotionRequest request)
         {
             if (rb == null) return false;
-            if (request.Distance <= 0f && request.HoldSecondsAfter <= 0f && request.ArcHeight <= 0f) return false;
+            bool hasGroundSlamTravel = request.Kind == MotionKind.GroundSlam && (request.StartPosition - request.TargetPosition).sqrMagnitude > 1e-8f;
+            if (request.Distance <= 0f && request.HoldSecondsAfter <= 0f && request.ArcHeight <= 0f && !hasGroundSlamTravel) return false;
 
             ref MotionState state = ref GetStateRef(request.Channel);
 
@@ -61,9 +62,34 @@ namespace GGemCo2DCore
                 state.Stop();
             }
 
-            state.Start(request);
+            MotionRequest requestToUse = request;
+            if (request.Kind == MotionKind.GroundSlam)
+            {
+                requestToUse = new MotionRequest(
+                    request.Channel,
+                    request.Kind,
+                    request.Direction,
+                    request.DurationSeconds,
+                    request.Distance,
+                    request.EaseType,
+                    stopAtEnd: request.StopAtEnd,
+                    useMovePosition: request.UseMovePosition,
+                    allowReplace: request.AllowReplace,
+                    holdSecondsAfter: request.HoldSecondsAfter,
+                    arcHeight: request.ArcHeight,
+                    arcMode: request.ArcMode,
+                    arcRiseEaseType: request.ArcRiseEaseType,
+                    arcFallEaseType: request.ArcFallEaseType,
+                    arcApexHoldNormalized: request.ArcApexHoldNormalized,
+                    arcRiseRatioNormalized: request.ArcRiseRatioNormalized,
+                    arcFallRatioNormalized: request.ArcFallRatioNormalized,
+                    startPosition: rb.position,
+                    targetPosition: request.TargetPosition,
+                    groundSnapDistance: request.GroundSnapDistance);
+            }
+
+            state.Start(requestToUse);
             PrepareForMotionStart(ref state);
-            GcLogger.Log($"Motion started on channel {request.Channel}.");
             return true;
         }
 
@@ -174,7 +200,7 @@ namespace GGemCo2DCore
             if (rb.bodyType != RigidbodyType2D.Dynamic)
                 return;
 
-            if (state.Kind != MotionKind.Arc)
+            if (state.Kind != MotionKind.Arc && state.Kind != MotionKind.GroundSlam)
                 return;
 
             state.HasSavedGravityScale = true;
@@ -278,6 +304,11 @@ namespace GGemCo2DCore
             public bool StopAtEnd;
             public bool UseMovePosition;
 
+            public Vector2 StartPosition;
+            public Vector2 TargetPosition;
+            public Vector2 CurrentPosition;
+            public float GroundSnapDistance;
+
             public bool IsGravitySuspended;
             public bool HasSavedGravityScale;
             public float SavedGravityScale;
@@ -309,6 +340,11 @@ namespace GGemCo2DCore
 
                 StopAtEnd = req.StopAtEnd;
                 UseMovePosition = req.UseMovePosition;
+
+                StartPosition = req.StartPosition;
+                TargetPosition = req.TargetPosition;
+                CurrentPosition = req.StartPosition;
+                GroundSnapDistance = req.GroundSnapDistance;
 
                 IsGravitySuspended = false;
                 HasSavedGravityScale = false;
@@ -355,6 +391,11 @@ namespace GGemCo2DCore
                 HoldSecondsAfter = 0f;
                 HoldRemaining = 0f;
 
+                StartPosition = Vector2.zero;
+                TargetPosition = Vector2.zero;
+                CurrentPosition = Vector2.zero;
+                GroundSnapDistance = 0f;
+
                 IsGravitySuspended = false;
                 HasSavedGravityScale = false;
                 SavedGravityScale = 0f;
@@ -379,6 +420,9 @@ namespace GGemCo2DCore
 
                     return MotionSolverArcLegacySine.Instance;
                 }
+
+                if (req.Kind == MotionKind.GroundSlam)
+                    return MotionSolverGroundSlam.Instance;
 
                 return MotionSolverLinearMove.Instance;
             }

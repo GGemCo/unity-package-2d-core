@@ -19,6 +19,7 @@ namespace GGemCo2DCore
     {
         Linear = 0,
         Arc = 1,
+        GroundSlam = 2,
     }
 
     /// <summary>
@@ -113,6 +114,21 @@ namespace GGemCo2DCore
         /// </summary>
         public float ArcFallRatioNormalized { get; }
 
+        /// <summary>
+        /// GroundSlam 시작 위치입니다.
+        /// </summary>
+        public Vector2 StartPosition { get; }
+
+        /// <summary>
+        /// GroundSlam 목표 위치(착지 위치)입니다.
+        /// </summary>
+        public Vector2 TargetPosition { get; }
+
+        /// <summary>
+        /// GroundSlam 종료 시 목표 Y에 스냅하는 허용 거리입니다.
+        /// </summary>
+        public float GroundSnapDistance { get; }
+
         public MotionRequest(
             MotionChannel channel,
             MotionKind kind,
@@ -130,7 +146,10 @@ namespace GGemCo2DCore
             Easing.EaseType arcFallEaseType = Easing.EaseType.Linear,
             float arcApexHoldNormalized = 0f,
             float arcRiseRatioNormalized = 0.5f,
-            float arcFallRatioNormalized = 0.5f)
+            float arcFallRatioNormalized = 0.5f,
+            Vector2? startPosition = null,
+            Vector2? targetPosition = null,
+            float groundSnapDistance = 0.15f)
         {
             Channel = channel;
             Kind = kind;
@@ -150,6 +169,9 @@ namespace GGemCo2DCore
             ArcApexHoldNormalized = Mathf.Clamp01(arcApexHoldNormalized);
             ArcRiseRatioNormalized = Mathf.Max(0f, arcRiseRatioNormalized);
             ArcFallRatioNormalized = Mathf.Max(0f, arcFallRatioNormalized);
+            StartPosition = startPosition ?? Vector2.zero;
+            TargetPosition = targetPosition ?? Vector2.zero;
+            GroundSnapDistance = Mathf.Max(0f, groundSnapDistance);
         }
     }
 }
