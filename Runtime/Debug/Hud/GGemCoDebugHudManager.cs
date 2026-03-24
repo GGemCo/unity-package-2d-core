@@ -154,21 +154,40 @@ namespace GGemCo2DCore
             }
 
             List<(int order, Type type)> providerTypes = new();
-            Assembly assembly = typeof(IDebugHudProvider).Assembly;
-            foreach (Type type in assembly.GetTypes())
+            Assembly[] assemblies = AppDomain.CurrentDomain.GetAssemblies();
+            for (int assemblyIndex = 0; assemblyIndex < assemblies.Length; assemblyIndex++)
             {
-                if (type.IsAbstract || type.IsInterface || !typeof(IDebugHudProvider).IsAssignableFrom(type))
+                Assembly assembly = assemblies[assemblyIndex];
+                Type[] types;
+                try
+                {
+                    types = assembly.GetTypes();
+                }
+                catch (ReflectionTypeLoadException ex)
+                {
+                    types = ex.Types;
+                }
+
+                if (types == null)
                 {
                     continue;
                 }
 
-                DebugHudProviderAttribute attribute = type.GetCustomAttribute<DebugHudProviderAttribute>();
-                if (attribute == null)
+                foreach (Type type in types)
                 {
-                    continue;
-                }
+                    if (type == null || type.IsAbstract || type.IsInterface || !typeof(IDebugHudProvider).IsAssignableFrom(type))
+                    {
+                        continue;
+                    }
 
-                providerTypes.Add((attribute.Order, type));
+                    DebugHudProviderAttribute attribute = type.GetCustomAttribute<DebugHudProviderAttribute>();
+                    if (attribute == null)
+                    {
+                        continue;
+                    }
+
+                    providerTypes.Add((attribute.Order, type));
+                }
             }
 
             providerTypes.Sort((a, b) => a.order.CompareTo(b.order));
