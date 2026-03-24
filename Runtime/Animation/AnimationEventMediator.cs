@@ -102,6 +102,30 @@ namespace GGemCo2DCore
         {
             fromObject.GetComponent<CharacterBase>()?.AnimationEventDash(eventName);
         }
+
+        public void OnAnimationEventMotion(string json, GameObject fromObject)
+        {
+            if (fromObject == null)
+                return;
+
+            if (string.IsNullOrWhiteSpace(json))
+            {
+                fromObject.GetComponent<CharacterBase>()?.AnimationEventMotion(new StruckAnimationEventMotion());
+                return;
+            }
+
+            try
+            {
+                var data = JsonConvert.DeserializeObject<StruckAnimationEventMotion>(json);
+                fromObject.GetComponent<CharacterBase>()
+                    ?.AnimationEventMotion(data ?? new StruckAnimationEventMotion());
+            }
+            catch (Exception e)
+            {
+                GcLogger.LogError($"animation motion event, json parsing error: {e.Message} / json: {json}");
+            }
+        }
+
         /// <summary>
         /// 시뮬레이션 패키지, 도구 사용
         /// </summary>

@@ -100,6 +100,7 @@ namespace GGemCo2DCore
         // pick up 액션시 위치, 스프라이트 처리
         protected CharacterPickUpPosition characterPickUpPosition;
         private CharacterCrowdControlController _crowdControlController;
+        private ICharacterMotionController _motionController;
         
         // 공격 애니메이션 종료 후 
         public event EventHandlerAnimationCompleteAttack AnimationCompleteAttack;
@@ -108,6 +109,7 @@ namespace GGemCo2DCore
         public event EventHandlerOnStop OnStop;
         public event EventHandlerOnAnimationEventJump OnAnimationEventJump;
         public event EventHandlerOnAnimationEventDash OnAnimationEventDash;
+        public event EventHandlerOnAnimationEventMotion OnAnimationEventMotion;
         // 방어 end 애니메이션 종료 후
         public event EventHandlerOnAnimationEventGuardEnd OnAnimationEventGuardEnd;
         
@@ -178,7 +180,11 @@ namespace GGemCo2DCore
             // CC 처리
             _crowdControlController = gameObject.AddComponent<CharacterCrowdControlController>();
             // 움직임 처리
-            gameObject.AddComponent<CharacterMotionController2D>();
+            _motionController = gameObject.GetComponent<ICharacterMotionController>();
+            if (_motionController == null)
+            {
+                _motionController = gameObject.AddComponent<CharacterMotionController2D>();
+            }
         }
         protected override void Start()
         {
@@ -896,6 +902,98 @@ namespace GGemCo2DCore
             {
                 
             }
+        }
+
+        /// <summary>
+        /// 범용 모션 애니메이션 event 발생시 처리
+        /// </summary>
+        /// <param name="motion"></param>
+        public void AnimationEventMotion(StruckAnimationEventMotion motion)
+        {
+            motion ??= new StruckAnimationEventMotion();
+
+            var e = new EventArgsOnAnimationEventMotion
+            {
+                Handled = false,
+                Motion = motion
+            };
+
+            OnAnimationEventMotion?.Invoke(this, e);
+
+            if (!e.Handled)
+            {
+                TryHandleMotionEventLegacy(e.Motion);
+            }
+        }
+
+        private void TryHandleMotionEventLegacy(StruckAnimationEventMotion motion)
+        {
+            if (motion == null)
+                return;
+
+            if (_motionController == null)
+            {
+                _motionController = GetComponent<ICharacterMotionController>();
+                if (_motionController == null)
+                    return;
+            }
+
+            switch (motion.Action)
+            {
+                case AnimationMotionEventAction.Trigger:
+                    return;
+                case AnimationMotionEventAction.Start:
+                {
+                    MotionRequest request = BuildMotionRequest(motion);
+                    _motionController.TryStartMotion(in request);
+                    return;
+                }
+                case AnimationMotionEventAction.Cancel:
+                    _motionController.CancelMotion(motion.Channel);
+                    return;
+                default:
+                    return;
+            }
+        }
+
+        private MotionRequest BuildMotionRequest(StruckAnimationEventMotion motion)
+        {
+            Vector2 direction = ResolveMotionEventDirection(motion);
+
+            return new MotionRequest(
+                motion.Channel,
+                motion.Kind,
+                direction,
+                motion.Duration,
+                motion.Distance,
+                motion.EaseType,
+                motion.StopAtEnd,
+                motion.UseMovePosition,
+                motion.AllowReplace,
+                motion.HoldSecondsAfter,
+                motion.Height,
+                motion.ArcMode,
+                motion.RiseEaseType,
+                motion.FallEaseType,
+                motion.ApexHoldNormalized,
+                motion.RiseRatioNormalized,
+                motion.FallRatioNormalized);
+        }
+
+        private Vector2 ResolveMotionEventDirection(StruckAnimationEventMotion motion)
+        {
+            if (motion.UseFacingDirection)
+            {
+                return new Vector2(GetFacingDirection(), 0f);
+            }
+
+            Vector2 direction = new Vector2(motion.DirectionX, motion.DirectionY);
+            if (direction.sqrMagnitude <= 1e-6f)
+            {
+                return new Vector2(GetFacingDirection(), 0f);
+            }
+
+            return direction.normalized;
         }
 
         public virtual void OnTriggerEnterByAttackRange(Collider2D collision)

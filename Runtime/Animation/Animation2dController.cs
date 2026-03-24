@@ -365,6 +365,15 @@ namespace GGemCo2DCore
         }
 
         /// <summary>
+        /// 모션(AnimationEvent) 이벤트를 리스너로 전달합니다.
+        /// </summary>
+        /// <param name="json">모션 파라미터(JSON 문자열)입니다.</param>
+        public void GGemCoAniEventMotion(string json)
+        {
+            EventListener?.OnAnimationEventMotion(json, gameObject);
+        }
+
+        /// <summary>
         /// 도구 사용(AnimationEvent) 이벤트를 리스너로 전달합니다.
         /// </summary>
         /// <param name="json">도구 사용 파라미터(JSON 문자열)입니다.</param>

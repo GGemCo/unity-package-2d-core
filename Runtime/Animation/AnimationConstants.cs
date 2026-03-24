@@ -57,6 +57,38 @@
         /// <summary>SortingOrder 오프셋(값이 지정되면 오버라이드).</summary>
         public int? SortingOrderOffset { get; set; } = null;
     }
+
+    public enum AnimationMotionEventAction
+    {
+        Trigger = 0,
+        Start = 1,
+        Cancel = 2,
+    }
+
+    public sealed class StruckAnimationEventMotion
+    {
+        public AnimationMotionEventAction Action { get; set; } = AnimationMotionEventAction.Trigger;
+        public MotionChannel Channel { get; set; } = MotionChannel.Skill;
+        public MotionKind Kind { get; set; } = MotionKind.Linear;
+        public float Distance { get; set; } = 0f;
+        public float Duration { get; set; } = 0f;
+        public float Height { get; set; } = 0f;
+        public bool UseFacingDirection { get; set; } = true;
+        public float DirectionX { get; set; } = 0f;
+        public float DirectionY { get; set; } = 0f;
+        public bool StopAtEnd { get; set; } = true;
+        public bool UseMovePosition { get; set; } = true;
+        public bool AllowReplace { get; set; } = true;
+        public float HoldSecondsAfter { get; set; } = 0f;
+        public Easing.EaseType EaseType { get; set; } = Easing.EaseType.Linear;
+        public MotionArcMode ArcMode { get; set; } = MotionArcMode.LegacyTimeSine;
+        public Easing.EaseType RiseEaseType { get; set; } = Easing.EaseType.Linear;
+        public Easing.EaseType FallEaseType { get; set; } = Easing.EaseType.Linear;
+        public float ApexHoldNormalized { get; set; } = 0f;
+        public float RiseRatioNormalized { get; set; } = 0.5f;
+        public float FallRatioNormalized { get; set; } = 0.5f;
+    }
+    
     public static class AnimationConstants
     {
         private const string Prefix = "GGemCoAniEvent";
@@ -73,6 +105,8 @@
         public const string EventNameDashPlay = Prefix+"DashPlay";
         public const string EventNameDashEnd = Prefix+"DashEnd";
         
+        public const string EventNameMotion = Prefix+"Motion";
+
         public const string EventNameUseTool = Prefix+"UseTool";
 
         public const string EventNameStartBackstepTrail = Prefix+"StartBackstepTrail";

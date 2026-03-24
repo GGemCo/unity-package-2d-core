@@ -64,4 +64,14 @@ namespace GGemCo2DCore
     }
     public delegate void EventHandlerOnAnimationEventGuardEnd(CharacterBase sender, EventArgsOnAnimationEventGuardEnd e);
 
+    /// <summary>
+    /// 범용 모션 애니메이션 이벤트 발생시
+    /// </summary>
+    public sealed class EventArgsOnAnimationEventMotion : EventArgs
+    {
+        public bool Handled { get; set; }
+        public StruckAnimationEventMotion Motion { get; set; }
+    }
+
+    public delegate void EventHandlerOnAnimationEventMotion(CharacterBase sender, EventArgsOnAnimationEventMotion e);
 }
