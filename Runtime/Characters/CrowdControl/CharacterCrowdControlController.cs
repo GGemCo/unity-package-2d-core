@@ -316,34 +316,37 @@ namespace GGemCo2DCore
             switch (crowdControl.DirectionType)
             {
                 case CrowdControlConstants.DirectionType.FromSourceToTarget:
-                {
-                    if (source != null)
-                    {
-                        var a = source.transform.position;
-                        var b = transform.position;
-                        var dir = (b - a);
-                        if (dir.sqrMagnitude > Epsilon)
-                            return ((Vector2)dir).normalized;
-                    }
-                    // fallback: target facing
-                    return ResolveFacingDirection();
-                }
+                    return ResolveDirectionBetween(sourceFirst: true, source);
+
+                case CrowdControlConstants.DirectionType.FromTargetToSource:
+                    return ResolveDirectionBetween(sourceFirst: false, source);
 
                 case CrowdControlConstants.DirectionType.FromTargetFacing:
                     return ResolveFacingDirection();
 
                 case CrowdControlConstants.DirectionType.Fixed:
-                {
-                    var v = new Vector2(crowdControl.FixedDirectionX, crowdControl.FixedDirectionY);
-                    if (v.sqrMagnitude > Epsilon) return v.normalized;
-                    return ResolveFacingDirection();
-                }
+                    return ResolveFixedDirection(crowdControl);
 
                 default:
                     return ResolveFacingDirection();
             }
         }
+        
+        private Vector2 ResolveDirectionBetween(bool sourceFirst, GameObject source)
+        {
+            if (source != null)
+            {
+                Vector2 from = sourceFirst ? source.transform.position : transform.position;
+                Vector2 to   = sourceFirst ? transform.position : source.transform.position;
 
+                var dir = to - from;
+                if (dir.sqrMagnitude > Epsilon)
+                    return dir.normalized;
+            }
+
+            return sourceFirst ? ResolveFacingDirection() : -ResolveFacingDirection();
+        }
+        
         /// <summary>
         /// 캐릭터의 현재 바라보는 방향을 수평 방향(Vector2.left/right)으로 변환합니다.
         /// </summary>
@@ -356,6 +359,15 @@ namespace GGemCo2DCore
             return _character.CurrentFacing == CharacterConstants.FacingDirection8.Left ? Vector2.left : Vector2.right;
         }
 
+        private Vector2 ResolveFixedDirection(CrowdControlRuntimeData crowdControl)
+        {
+            var v = new Vector2(crowdControl.FixedDirectionX, crowdControl.FixedDirectionY);
+            if (v.sqrMagnitude > Epsilon)
+                return v.normalized;
+
+            return ResolveFacingDirection();
+        }
+        
         /// <summary>
         /// CC 시작 시 재생할 경직(Stagger) 애니메이션을 재생합니다.
         /// </summary>

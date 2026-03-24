@@ -35,6 +35,11 @@ namespace GGemCo2DCore
             /// 테이블에 정의된 고정 방향(FixedDirectionX/Y)을 사용합니다.
             /// </summary>
             Fixed = 3,
+            
+            /// <summary>
+            /// Target → Source 방향으로 적용합니다.
+            /// </summary>
+            FromTargetToSource = 4,
         }
 
 
