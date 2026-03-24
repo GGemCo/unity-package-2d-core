@@ -557,6 +557,14 @@ MonoBehaviour:
     m_Metadata:
       m_Items:
       - rid: 8386690252867633262
+  - m_Id: 92875990981713920
+    m_Key: Skill_TargetOutOfRange
+    m_Metadata:
+      m_Items: []
+  - m_Id: 92876031624519680
+    m_Key: Skill_AlreadyInUse
+    m_Metadata:
+      m_Items: []
   m_Metadata:
     m_Items: []
   m_KeyGenerator:

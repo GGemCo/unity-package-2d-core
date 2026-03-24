@@ -484,6 +484,14 @@ MonoBehaviour:
     m_Localized: Failed to consume item.
     m_Metadata:
       m_Items: []
+  - m_Id: 92875990981713920
+    m_Localized: No target within range.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 92876031624519680
+    m_Localized: Another skill is already in use.
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []

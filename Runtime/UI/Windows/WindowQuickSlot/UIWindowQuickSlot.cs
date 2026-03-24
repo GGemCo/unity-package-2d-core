@@ -251,13 +251,13 @@ namespace GGemCo2DCore
             switch (failReason)
             {
                 case SkillUseFailReason.NoTarget:
-                    return "타겟이 필요합니다.";
+                    return "Skill_NoTarget"; // 타겟이 필요합니다.
                 case SkillUseFailReason.OutOfRange:
-                    return "사거리 안에 타겟이 없습니다.";
+                    return "Skill_TargetOutOfRange"; // 사거리 안에 타겟이 없습니다.
                 case SkillUseFailReason.Cooldown:
                     return "Action_CannotUseDuringCooldown";
                 case SkillUseFailReason.Busy:
-                    return "다른 스킬을 사용 중입니다.";
+                    return "Skill_AlreadyInUse"; // 다른 스킬을 사용 중입니다.
                 default:
                     return null;
             }
