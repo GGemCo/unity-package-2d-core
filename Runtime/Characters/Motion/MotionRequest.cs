@@ -20,6 +20,7 @@ namespace GGemCo2DCore
         Linear = 0,
         Arc = 1,
         GroundSlam = 2,
+        PositionHold = 3,
     }
 
     /// <summary>
@@ -115,7 +116,7 @@ namespace GGemCo2DCore
         public float ArcFallRatioNormalized { get; }
 
         /// <summary>
-        /// GroundSlam 시작 위치입니다.
+        /// PositionHold / GroundSlam 시작 위치입니다.
         /// </summary>
         public Vector2 StartPosition { get; }
 

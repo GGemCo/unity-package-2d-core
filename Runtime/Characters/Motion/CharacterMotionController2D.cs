@@ -46,7 +46,8 @@ namespace GGemCo2DCore
         {
             if (rb == null) return false;
             bool hasGroundSlamTravel = request.Kind == MotionKind.GroundSlam && (request.StartPosition - request.TargetPosition).sqrMagnitude > 1e-8f;
-            if (request.Distance <= 0f && request.HoldSecondsAfter <= 0f && request.ArcHeight <= 0f && !hasGroundSlamTravel) return false;
+            bool hasPositionHold = request.Kind == MotionKind.PositionHold && request.DurationSeconds > 0f;
+            if (request.Distance <= 0f && request.HoldSecondsAfter <= 0f && request.ArcHeight <= 0f && !hasGroundSlamTravel && !hasPositionHold) return false;
 
             ref MotionState state = ref GetStateRef(request.Channel);
 
@@ -63,7 +64,7 @@ namespace GGemCo2DCore
             }
 
             MotionRequest requestToUse = request;
-            if (request.Kind == MotionKind.GroundSlam)
+            if (request.Kind == MotionKind.GroundSlam || request.Kind == MotionKind.PositionHold)
             {
                 requestToUse = new MotionRequest(
                     request.Channel,
@@ -158,11 +159,51 @@ namespace GGemCo2DCore
         {
             if (!state.IsPlaying) return;
 
+            if (state.Kind == MotionKind.PositionHold)
+            {
+                TickPositionHold(ref state, dt);
+                return;
+            }
+
             state.Solver.Tick(ref state, dt, out Vector2 delta);
             ApplyDelta(delta, state.UseMovePosition);
 
             if (state.IsComplete)
             {
+                bool stopAtEnd = state.StopAtEnd;
+                RestoreMotionPhysics(ref state, zeroVerticalVelocity: true);
+                state.Stop();
+                StopVelocityIfNeeded(stopAtEnd);
+            }
+        }
+
+
+        private void TickPositionHold(ref MotionState state, float dt)
+        {
+            if (rb == null)
+            {
+                state.Stop();
+                return;
+            }
+
+            state.Elapsed += dt;
+
+            Vector2 desired = state.StartPosition;
+            if (state.UseMovePosition || rb.bodyType != RigidbodyType2D.Dynamic)
+            {
+                rb.MovePosition(desired);
+            }
+            else
+            {
+                rb.position = desired;
+            }
+
+            ZeroDynamicVelocity();
+            state.CurrentPosition = desired;
+
+            if (state.Duration <= 1e-6f || state.Elapsed >= state.Duration)
+            {
+                state.MarkComplete();
                 bool stopAtEnd = state.StopAtEnd;
                 RestoreMotionPhysics(ref state, zeroVerticalVelocity: true);
                 state.Stop();
@@ -200,7 +241,7 @@ namespace GGemCo2DCore
             if (rb.bodyType != RigidbodyType2D.Dynamic)
                 return;
 
-            if (state.Kind != MotionKind.Arc && state.Kind != MotionKind.GroundSlam)
+            if (state.Kind != MotionKind.Arc && state.Kind != MotionKind.GroundSlam && state.Kind != MotionKind.PositionHold)
                 return;
 
             state.HasSavedGravityScale = true;
@@ -208,6 +249,12 @@ namespace GGemCo2DCore
             state.IsGravitySuspended = true;
 
             rb.gravityScale = GravityDisableValue;
+            if (state.Kind == MotionKind.PositionHold)
+            {
+                ZeroDynamicVelocity();
+                return;
+            }
+
             ZeroDynamicVerticalVelocity();
         }
 
@@ -245,6 +292,18 @@ namespace GGemCo2DCore
 
             velocity.y = 0f;
             rb.SetLinearVelocity(velocity);
+        }
+
+        private void ZeroDynamicVelocity()
+        {
+            if (rb == null || rb.bodyType != RigidbodyType2D.Dynamic)
+                return;
+
+            Vector2 velocity = rb.GetLinearVelocity();
+            if (velocity.sqrMagnitude <= 1e-6f)
+                return;
+
+            rb.SetLinearVelocity(Vector2.zero);
         }
 
         private void StopVelocityIfNeeded(bool stopAtEnd)
@@ -423,6 +482,9 @@ namespace GGemCo2DCore
 
                 if (req.Kind == MotionKind.GroundSlam)
                     return MotionSolverGroundSlam.Instance;
+
+                if (req.Kind == MotionKind.PositionHold)
+                    return MotionSolverLinearMove.Instance;
 
                 return MotionSolverLinearMove.Instance;
             }
