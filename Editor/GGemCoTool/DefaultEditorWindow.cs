@@ -271,6 +271,7 @@ namespace GGemCo2DCoreEditor
             if (sceneCharacters.Count <= 0)
             {
                 selectedCharacter = null;
+                ApplyPostRefreshCharacterSelectionPolicy();
                 return;
             }
 
@@ -278,10 +279,13 @@ namespace GGemCo2DCoreEditor
             {
                 selectedCharacter = sceneCharacters[selectedCharacterIndex];
                 OnSelectedCharacterChanged(selectedCharacter);
-                return;
+            }
+            else
+            {
+                SyncSelectedCharacterIndex();
             }
 
-            SyncSelectedCharacterIndex();
+            ApplyPostRefreshCharacterSelectionPolicy();
         }
 
         /// <summary>
@@ -398,6 +402,13 @@ namespace GGemCo2DCoreEditor
                 dummyName,
                 spawnPosition,
                 spawnOffset);
+        }
+
+        /// <summary>
+        /// 씬 캐릭터 목록 새로고침 후, 하위 클래스가 선택 정책을 보정할 수 있는 훅입니다.
+        /// </summary>
+        protected virtual void ApplyPostRefreshCharacterSelectionPolicy()
+        {
         }
 
         /// <summary>
