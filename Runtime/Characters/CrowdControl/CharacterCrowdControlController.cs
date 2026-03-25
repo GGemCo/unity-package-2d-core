@@ -58,6 +58,12 @@ namespace GGemCo2DCore
         /// </summary>
         private const float KnockUpLandingFinalSnapDistance = 0.75f;
 
+        /// <summary>
+        /// CC 시작 가능 조건(IsGroundOnly / IsAirOnly) 판정에 사용할 지면 거리 임계값입니다.
+        /// 캐릭터 하단에서 이 값 이하로 지면이 탐지되면 지상 상태로 간주합니다.
+        /// </summary>
+        private const float CrowdControlGroundedCheckDistance = 1.0f;
+
         private readonly struct QueuedCrowdControl
         {
             public readonly CrowdControlRuntimeData CrowdControl;
@@ -115,6 +121,9 @@ namespace GGemCo2DCore
         {
             if (crowdControl == null) return;
             if (_character == null) return;
+
+            if (!IsCrowdControlStartStateAllowed(crowdControl))
+                return;
 
             if (forceReplaceCurrent)
                 ForceStopInternal(clearSequence: false);
@@ -511,6 +520,43 @@ namespace GGemCo2DCore
         }
 
 
+
+        private bool IsCrowdControlStartStateAllowed(CrowdControlRuntimeData crowdControl)
+        {
+            if (crowdControl == null)
+                return false;
+
+            if (crowdControl.IsGroundOnly && crowdControl.IsAirOnly)
+            {
+                Debug.LogWarning($"[CharacterCrowdControlController] CrowdControl UID={crowdControl.Uid} has both IsGroundOnly and IsAirOnly enabled. The crowd control will be skipped.", this);
+                return false;
+            }
+
+            if (!crowdControl.IsGroundOnly && !crowdControl.IsAirOnly)
+                return true;
+
+            bool isGrounded = IsCurrentlyGrounded(CrowdControlGroundedCheckDistance);
+            if (crowdControl.IsGroundOnly)
+                return isGrounded;
+
+            if (crowdControl.IsAirOnly)
+                return !isGrounded;
+
+            return true;
+        }
+
+        private bool IsCurrentlyGrounded(float maxGroundDistance)
+        {
+            if (maxGroundDistance < 0f)
+                maxGroundDistance = 0f;
+
+            if (!TryProbeGroundBelow(maxGroundDistance, out float groundY, out float bottomY))
+                return false;
+
+            float distanceToGround = bottomY - groundY;
+            return distanceToGround >= -KnockUpLandingProbeUpOffset && distanceToGround <= maxGroundDistance;
+        }
+
         private bool TryHandleActiveKnockUpLanding()
         {
             if (_activeCrowdControl == null || _activeCrowdControl.Type != CrowdControlConstants.Type.KnockUp)
@@ -566,6 +612,12 @@ namespace GGemCo2DCore
 
         private bool TryProbeGroundBelow(out float groundY, out float bottomY)
         {
+            float probeDistance = Mathf.Max(KnockUpLandingFinalSnapDistance, KnockUpLandingTriggerDistance);
+            return TryProbeGroundBelow(probeDistance, out groundY, out bottomY);
+        }
+
+        private bool TryProbeGroundBelow(float maxGroundDistance, out float groundY, out float bottomY)
+        {
             groundY = 0f;
             bottomY = 0f;
 
@@ -578,7 +630,7 @@ namespace GGemCo2DCore
 
             bottomY = bounds.min.y;
             Vector2 origin = new Vector2(bounds.center.x, bottomY + KnockUpLandingProbeUpOffset);
-            float distance = Mathf.Max(KnockUpLandingFinalSnapDistance, KnockUpLandingTriggerDistance) + KnockUpLandingProbeUpOffset;
+            float distance = Mathf.Max(0f, maxGroundDistance) + KnockUpLandingProbeUpOffset;
             RaycastHit2D hit = Physics2D.Raycast(origin, Vector2.down, distance, groundMask);
             if (hit.collider == null)
                 return false;
