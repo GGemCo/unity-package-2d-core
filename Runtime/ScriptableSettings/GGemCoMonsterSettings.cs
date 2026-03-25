@@ -25,6 +25,17 @@ namespace GGemCo2DCore
         [Header("HP 바")]
         public List<PrefabHpBar> prefabHpBars;
 
+
+        [Header("Sprite White Overlay")]
+        [Tooltip("피격 시 Sprite White Overlay 효과를 사용할지 여부")]
+        public bool useSpriteWhiteOverlay;
+        [Tooltip("Sprite White Overlay 효과에 사용할 색상")]
+        public Color spriteWhiteOverlayColor = Color.white;
+        [Tooltip("피격 시 Sprite White Overlay 유지 시간(초)")]
+        [Min(0.01f)]
+        public float spriteWhiteOverlayFlashDuration = 0.08f;
+
+
         [Header("Battle HUD")]
         [Tooltip("몬스터 전투 HUD 사용 여부")]
         [SerializeField] private bool useBattleHud = true;
@@ -98,6 +109,10 @@ namespace GGemCo2DCore
                 useBattleHudGradeMask = (1 << (int)CharacterConstants.Grade.Common)
                                      | (1 << (int)CharacterConstants.Grade.Boss);
             }
+
+            useSpriteWhiteOverlay = false;
+            spriteWhiteOverlayColor = Color.white;
+            spriteWhiteOverlayFlashDuration = 0.08f;
         }
     }
 }

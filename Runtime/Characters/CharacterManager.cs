@@ -105,6 +105,7 @@ namespace GGemCo2DCore
                 }
 
                 characterBase.CharacterAnimationController = iAnim;
+                characterBase.TryEnsureSpriteWhiteOverlayController();
 
                 _characters.Add(characterObj);
                 OnCharacterSpawned?.Invoke(characterBase);

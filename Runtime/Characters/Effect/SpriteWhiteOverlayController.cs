@@ -7,17 +7,21 @@ namespace GGemCo2DCore
     public sealed class SpriteWhiteOverlayController : MonoBehaviour
     {
         private static readonly int OverlayStrengthId = Shader.PropertyToID("_OverlayStrength");
+        private static readonly int OverlayColorId = Shader.PropertyToID("_OverlayColor");
 
         [Header("Targets")]
         [SerializeField] private SpriteRenderer[] targetRenderers;
 
         [Header("Default")]
         [SerializeField, Range(0f, 1f)] private float overlayStrength = 0f;
+        
+        [SerializeField] private Color overlayColor = Color.white;
 
         private MaterialPropertyBlock _propertyBlock;
         private Coroutine _flashRoutine;
 
         public float OverlayStrength => overlayStrength;
+        public Color OverlayColor => overlayColor;
 
         private void Awake()
         {
@@ -28,6 +32,35 @@ namespace GGemCo2DCore
                 targetRenderers = GetComponentsInChildren<SpriteRenderer>(true);
             }
 
+            ApplyOverlay();
+        }
+
+
+        /// <summary>
+        /// 오버레이 기본 설정을 적용합니다.
+        /// 필요 시 대상 SpriteRenderer 목록도 다시 수집합니다.
+        /// </summary>
+        public void Configure(Color color, bool refreshTargets = false)
+        {
+            SetOverlayColor(color);
+
+            if (refreshTargets)
+            {
+                RefreshTargets();
+            }
+        }
+
+        /// <summary>
+        /// 오버레이 색상을 즉시 적용합니다.
+        /// </summary>
+        public void SetOverlayColor(Color color)
+        {
+            if (overlayColor == color)
+            {
+                return;
+            }
+
+            overlayColor = color;
             ApplyOverlay();
         }
 
@@ -157,6 +190,7 @@ namespace GGemCo2DCore
                 // 기존 블록을 읽은 뒤 필요한 값만 갱신하는 패턴을 유지합니다.
                 renderer.GetPropertyBlock(_propertyBlock);
                 _propertyBlock.SetFloat(OverlayStrengthId, overlayStrength);
+                _propertyBlock.SetColor(OverlayColorId, overlayColor);
                 renderer.SetPropertyBlock(_propertyBlock);
             }
         }

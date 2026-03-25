@@ -102,6 +102,7 @@ namespace GGemCo2DCore
         protected CharacterPickUpPosition characterPickUpPosition;
         private CharacterCrowdControlController _crowdControlController;
         private ICharacterMotionController _motionController;
+        private SpriteWhiteOverlayController _spriteWhiteOverlayController;
         
         // 공격 애니메이션 종료 후 
         public event EventHandlerAnimationCompleteAttack AnimationCompleteAttack;
@@ -144,6 +145,111 @@ namespace GGemCo2DCore
             _characterDamageController.Initialize(this);
             
             characterPickUpPosition = GetComponentInChildren<CharacterPickUpPosition>();
+        }
+
+
+        public readonly struct SpriteWhiteOverlayConfig
+        {
+            public static SpriteWhiteOverlayConfig Disabled => new SpriteWhiteOverlayConfig(false, Color.white, 0f);
+
+            public readonly bool Enabled;
+            public readonly Color Color;
+            public readonly float FlashDuration;
+
+            public SpriteWhiteOverlayConfig(bool enabled, Color color, float flashDuration)
+            {
+                Enabled = enabled;
+                Color = color;
+                FlashDuration = flashDuration;
+            }
+        }
+
+        public void BindSpriteWhiteOverlayController(SpriteWhiteOverlayController controller)
+        {
+            _spriteWhiteOverlayController = controller;
+        }
+
+        public bool TryEnsureSpriteWhiteOverlayController()
+        {
+            var config = GetSpriteWhiteOverlayConfig();
+            if (!config.Enabled)
+            {
+                return false;
+            }
+
+            var controller = _spriteWhiteOverlayController != null
+                ? _spriteWhiteOverlayController
+                : GetComponent<SpriteWhiteOverlayController>();
+
+            if (controller == null)
+            {
+                controller = gameObject.AddComponent<SpriteWhiteOverlayController>();
+            }
+
+            controller.Configure(config.Color, refreshTargets: true);
+            BindSpriteWhiteOverlayController(controller);
+            return true;
+        }
+
+        public void TryPlaySpriteWhiteOverlayOnHit()
+        {
+            var config = GetSpriteWhiteOverlayConfig();
+            if (!config.Enabled)
+            {
+                return;
+            }
+
+            var controller = _spriteWhiteOverlayController != null
+                ? _spriteWhiteOverlayController
+                : GetComponent<SpriteWhiteOverlayController>();
+
+            if (controller == null)
+            {
+                return;
+            }
+
+            controller.Configure(config.Color);
+            controller.Flash(Mathf.Max(0.01f, config.FlashDuration));
+            BindSpriteWhiteOverlayController(controller);
+        }
+
+        protected virtual SpriteWhiteOverlayConfig GetSpriteWhiteOverlayConfig()
+        {
+            if (this is Player)
+            {
+                var playerSettings = AddressableLoaderSettings.Instance != null
+                    ? AddressableLoaderSettings.Instance.playerSettings
+                    : null;
+
+                if (playerSettings == null || !playerSettings.useSpriteWhiteOverlay)
+                {
+                    return SpriteWhiteOverlayConfig.Disabled;
+                }
+
+                return new SpriteWhiteOverlayConfig(
+                    true,
+                    playerSettings.spriteWhiteOverlayColor,
+                    playerSettings.spriteWhiteOverlayFlashDuration);
+            }
+
+            if (this is Monster)
+            {
+                var monsterSettings = AddressableLoaderSettings.Instance != null
+                    ? AddressableLoaderSettings.Instance.monsterSettings
+                    : null;
+
+                if (monsterSettings == null || !monsterSettings.useSpriteWhiteOverlay)
+                {
+                    return SpriteWhiteOverlayConfig.Disabled;
+                }
+
+                return new SpriteWhiteOverlayConfig(
+                    true,
+                    monsterSettings.spriteWhiteOverlayColor,
+                    monsterSettings.spriteWhiteOverlayFlashDuration);
+            }
+
+            return SpriteWhiteOverlayConfig.Disabled;
         }
 
         /// <summary>

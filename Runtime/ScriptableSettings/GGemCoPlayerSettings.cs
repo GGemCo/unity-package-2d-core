@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using UnityEngine;
 using UnityEngine.Serialization;
 
@@ -146,6 +146,16 @@ namespace GGemCo2DCore
         [Tooltip("위쪽(천장) 경계를 벗어날 수 없도록 제한합니다.")]
         public bool limitBoundaryTop = true;
 
+
+        [Header("Sprite White Overlay")]
+        [Tooltip("피격 시 Sprite White Overlay 효과를 사용할지 여부")]
+        public bool useSpriteWhiteOverlay;
+        [Tooltip("Sprite White Overlay 효과에 사용할 색상")]
+        public Color spriteWhiteOverlayColor = Color.white;
+        [Tooltip("피격 시 Sprite White Overlay 유지 시간(초)")]
+        [Min(0.01f)]
+        public float spriteWhiteOverlayFlashDuration = 0.08f;
+
         [Serializable]
         public struct StatPointBonus
         {
@@ -208,6 +218,10 @@ namespace GGemCo2DCore
 
             itemBonusTempHpPerPiece = 100;
             itemBonusTempPiecesPerHeart = 4;
+
+            useSpriteWhiteOverlay = false;
+            spriteWhiteOverlayColor = Color.white;
+            spriteWhiteOverlayFlashDuration = 0.08f;
 
         }
     }

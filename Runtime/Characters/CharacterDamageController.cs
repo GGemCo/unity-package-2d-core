@@ -1,4 +1,4 @@
-using UnityEngine;
+﻿using UnityEngine;
 
 namespace GGemCo2DCore
 {
@@ -255,6 +255,8 @@ namespace GGemCo2DCore
                 };
                 SceneGame.Instance.damageTextManager.ShowDamageText(metadataDamageText2);
             }
+
+            _characterBase.TryPlaySpriteWhiteOverlayOnHit();
             
             if (remainHp <= 0)
             {
