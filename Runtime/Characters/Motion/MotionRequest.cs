@@ -41,6 +41,16 @@ namespace GGemCo2DCore
         DistancePhased = 1,
     }
 
+
+    /// <summary>
+    /// 모션 중 대상 캐릭터와의 충돌 처리 정책입니다.
+    /// </summary>
+    public enum MotionCollisionPolicy
+    {
+        Default = 0,
+        IgnoreTargetCharacter = 1,
+    }
+
     /// <summary>
     /// 캐릭터 모션(짧은 이동/대시/넉백/점프형 회피 등) 요청 데이터.
     /// - DurationSeconds 동안 Distance 만큼 이동합니다(진행률은 Easing으로 변환).
@@ -130,6 +140,16 @@ namespace GGemCo2DCore
         /// </summary>
         public float GroundSnapDistance { get; }
 
+        /// <summary>
+        /// 모션 중 대상 캐릭터와의 충돌 처리 정책입니다.
+        /// </summary>
+        public MotionCollisionPolicy CollisionPolicy { get; }
+
+        /// <summary>
+        /// 충돌 정책이 타겟을 필요로 할 때 사용되는 대상 GameObject 입니다.
+        /// </summary>
+        public GameObject CollisionTarget { get; }
+
         public MotionRequest(
             MotionChannel channel,
             MotionKind kind,
@@ -150,7 +170,9 @@ namespace GGemCo2DCore
             float arcFallRatioNormalized = 0.5f,
             Vector2? startPosition = null,
             Vector2? targetPosition = null,
-            float groundSnapDistance = 0.15f)
+            float groundSnapDistance = 0.15f,
+            MotionCollisionPolicy collisionPolicy = MotionCollisionPolicy.Default,
+            GameObject collisionTarget = null)
         {
             Channel = channel;
             Kind = kind;
@@ -173,6 +195,8 @@ namespace GGemCo2DCore
             StartPosition = startPosition ?? Vector2.zero;
             TargetPosition = targetPosition ?? Vector2.zero;
             GroundSnapDistance = Mathf.Max(0f, groundSnapDistance);
+            CollisionPolicy = collisionPolicy;
+            CollisionTarget = collisionTarget;
         }
     }
 }

@@ -36,7 +36,9 @@ namespace GGemCo2DCore
         private void OnDisable()
         {
             RestoreMotionPhysics(ref _crowdControl, zeroVerticalVelocity: true);
+            _crowdControl.Stop();
             RestoreMotionPhysics(ref _skill, zeroVerticalVelocity: true);
+            _skill.Stop();
         }
 
         /// <summary>
@@ -86,7 +88,9 @@ namespace GGemCo2DCore
                     arcFallRatioNormalized: request.ArcFallRatioNormalized,
                     startPosition: rb.position,
                     targetPosition: request.TargetPosition,
-                    groundSnapDistance: request.GroundSnapDistance);
+                    groundSnapDistance: request.GroundSnapDistance,
+                    collisionPolicy: request.CollisionPolicy,
+                    collisionTarget: request.CollisionTarget);
             }
 
             state.Start(requestToUse);
@@ -238,6 +242,11 @@ namespace GGemCo2DCore
             if (rb == null)
                 return;
 
+            if (state.CollisionPolicy == MotionCollisionPolicy.IgnoreTargetCharacter && state.CollisionTarget != null)
+            {
+                state.CollisionIgnoreScope = MotionCollisionIgnoreScope2D.Create(gameObject, state.CollisionTarget);
+            }
+
             if (rb.bodyType != RigidbodyType2D.Dynamic)
                 return;
 
@@ -368,6 +377,10 @@ namespace GGemCo2DCore
             public Vector2 CurrentPosition;
             public float GroundSnapDistance;
 
+            public MotionCollisionPolicy CollisionPolicy;
+            public GameObject CollisionTarget;
+            public MotionCollisionIgnoreScope2D CollisionIgnoreScope;
+
             public bool IsGravitySuspended;
             public bool HasSavedGravityScale;
             public float SavedGravityScale;
@@ -404,6 +417,9 @@ namespace GGemCo2DCore
                 TargetPosition = req.TargetPosition;
                 CurrentPosition = req.StartPosition;
                 GroundSnapDistance = req.GroundSnapDistance;
+                CollisionPolicy = req.CollisionPolicy;
+                CollisionTarget = req.CollisionTarget;
+                CollisionIgnoreScope = null;
 
                 IsGravitySuspended = false;
                 HasSavedGravityScale = false;
@@ -454,6 +470,15 @@ namespace GGemCo2DCore
                 TargetPosition = Vector2.zero;
                 CurrentPosition = Vector2.zero;
                 GroundSnapDistance = 0f;
+
+                if (CollisionIgnoreScope != null)
+                {
+                    CollisionIgnoreScope.Dispose();
+                    CollisionIgnoreScope = null;
+                }
+
+                CollisionPolicy = MotionCollisionPolicy.Default;
+                CollisionTarget = null;
 
                 IsGravitySuspended = false;
                 HasSavedGravityScale = false;
