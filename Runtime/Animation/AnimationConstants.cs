@@ -11,6 +11,37 @@
     {
         public float Duration { get; set; }
         public float Magnitude { get; set; }
+        public float LeftStrength { get; set; } = 0f;
+        public float RightStrength { get; set; } = 0f;
+        public float DownStrength { get; set; } = 0f;
+        public float UpStrength { get; set; } = 0f;
+        public int RepeatCount { get; set; } = 3;
+        public bool UseUnscaledTime { get; set; } = false;
+
+        public float GetLeftStrength()
+        {
+            return LeftStrength > 0f ? LeftStrength : Magnitude;
+        }
+
+        public float GetRightStrength()
+        {
+            return RightStrength > 0f ? RightStrength : Magnitude;
+        }
+
+        public float GetDownStrength()
+        {
+            return DownStrength > 0f ? DownStrength : Magnitude;
+        }
+
+        public float GetUpStrength()
+        {
+            return UpStrength > 0f ? UpStrength : Magnitude;
+        }
+
+        public int GetRepeatCount()
+        {
+            return RepeatCount > 0 ? RepeatCount : 3;
+        }
     }
     public class StruckAnimationEventSkill
     {

@@ -8,51 +8,59 @@ namespace GGemCo2DCore
     /// </summary>
     public class CameraShakeController : CutsceneDefaultController, ICutsceneController
     {
-        private Camera cam;
-        private float duration;
-        private float timer;
-
-        private bool isShaking;
-        private float shakeIntensity;
-        private float shakeDuration;
+        private CameraManager _cameraManager;
+        private float _timer;
+        private float _duration;
+        private bool _isPlaying;
 
         public CameraShakeController(CutsceneManager manager)
         {
             CutsceneManager = manager;
-            cam = SceneGame.Instance.mainCamera;
+            _cameraManager = SceneGame.Instance.cameraManager;
         }
 
         public IEnumerator Ready(CutsceneEvent evt)
         {
-            if (evt.type != CutsceneEventType.CameraShake) yield break;
-            var data = evt.cameraShake;
-            // 캐릭터 타겟 찾기 같은 준비
+            if (evt.type != CutsceneEventType.CameraShake)
+            {
+                yield break;
+            }
+
             yield return null;
         }
+
         public void Trigger(CutsceneEvent evt)
         {
-            if (evt.type != CutsceneEventType.CameraShake) return;
-            var data = evt.cameraShake;
-            shakeDuration = evt.duration;
-            shakeIntensity = data.shakeIntensity;
-            timer = 0;
-            isShaking = true;
+            if (evt.type != CutsceneEventType.CameraShake || _cameraManager == null)
+            {
+                return;
+            }
+
+            CameraShakeData data = evt.cameraShake ?? new CameraShakeData();
+            _duration = evt.duration > 0f ? evt.duration : data.duration;
+            _timer = 0f;
+            _isPlaying = _duration > 0f;
+
+            _cameraManager.StartShake(
+                _duration,
+                data.GetLeftStrength(),
+                data.GetRightStrength(),
+                data.GetDownStrength(),
+                data.GetUpStrength(),
+                data.GetRepeatCount(),
+                CameraShakeChannel.Cutscene,
+                data.useUnscaledTime);
         }
+
         public void Update()
         {
-            if (!isShaking || cam == null || cam.transform == null) return;
+            if (!_isPlaying)
+            {
+                return;
+            }
 
-            timer += Time.deltaTime;
-
-            Vector2 shakeOffset = isShaking && shakeDuration > 0
-                ? Random.insideUnitSphere * shakeIntensity
-                : Vector2.zero;
-            // 카메라 실시간 위치로 반영해야 한다
-            Vector2 newPos = new Vector2(cam.transform.position.x, cam.transform.position.y) + shakeOffset;
-            cam.transform.position= new Vector3(newPos.x, newPos.y, cam.transform.position.z);
-
-            shakeDuration -= Time.deltaTime;
-            if (shakeDuration <= 0)
+            _timer += Time.deltaTime;
+            if (_timer >= _duration)
             {
                 Stop();
             }
@@ -60,11 +68,13 @@ namespace GGemCo2DCore
 
         public void Stop()
         {
-            isShaking = false;
+            _isPlaying = false;
         }
+
         public void End()
         {
-            isShaking = false;
+            _isPlaying = false;
+            _cameraManager?.StopShake(CameraShakeChannel.Cutscene);
         }
     }
 }

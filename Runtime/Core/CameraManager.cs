@@ -1,26 +1,91 @@
-using System.Collections;
+using System.Collections.Generic;
 using UnityEngine;
-using Random = UnityEngine.Random;
 
 namespace GGemCo2DCore
 {
+    public enum CameraShakeChannel
+    {
+        Default = 0,
+        AnimationEvent = 1,
+        Cutscene = 2,
+    }
+
+    public struct CameraShakeRequest
+    {
+        public float Duration;
+        public float LeftStrength;
+        public float RightStrength;
+        public float DownStrength;
+        public float UpStrength;
+        public int RepeatCount;
+        public CameraShakeChannel Channel;
+        public bool UseUnscaledTime;
+
+        public bool IsValid
+        {
+            get
+            {
+                if (Duration <= 0f)
+                {
+                    return false;
+                }
+
+                if (RepeatCount <= 0)
+                {
+                    return false;
+                }
+
+                return LeftStrength > 0f || RightStrength > 0f || DownStrength > 0f || UpStrength > 0f;
+            }
+        }
+
+        public static CameraShakeRequest CreateSymmetric(
+            float duration,
+            float magnitude,
+            int repeatCount,
+            CameraShakeChannel channel,
+            bool useUnscaledTime = false)
+        {
+            return new CameraShakeRequest
+            {
+                Duration = duration,
+                LeftStrength = magnitude,
+                RightStrength = magnitude,
+                DownStrength = magnitude,
+                UpStrength = magnitude,
+                RepeatCount = Mathf.Max(1, repeatCount),
+                Channel = channel,
+                UseUnscaledTime = useUnscaledTime,
+            };
+        }
+    }
+
     public class CameraManager : MonoBehaviour
     {
-        [Tooltip("왼쪽 경계 제한 여부")] 
+        private sealed class ActiveCameraShake
+        {
+            public CameraShakeRequest Request;
+            public float Elapsed;
+            public float PhaseOffset;
+        }
+
+        [Tooltip("왼쪽 경계 제한 여부")]
         public bool useLimitLeft = true;
-        [Tooltip("오른쪽 경계 제한 여부")] 
+        [Tooltip("오른쪽 경계 제한 여부")]
         public bool useLimitRight = true;
-        [Tooltip("위쪽 경계 제한 여부")] 
+        [Tooltip("위쪽 경계 제한 여부")]
         public bool useLimitTop = true;
-        [Tooltip("아래쪽 경계 제한 여부")] 
+        [Tooltip("아래쪽 경계 제한 여부")]
         public bool useLimitBottom = true;
         [Tooltip("타겟을 따라다니는 속도")]
         [SerializeField] private float cameraMoveSpeed;
-        
+
         [Header("Camera Offset")]
         [Tooltip("타겟(플레이어) 기준 카메라 기본 오프셋(월드 단위). 예) x>0이면 캐릭터 오른쪽을 더 보여줍니다.")]
         [SerializeField]
         private Vector2 followOffset = Vector2.zero;
+
+        private readonly List<ActiveCameraShake> _activeShakes = new();
 
         private float _originalOrthographicSize;
         private Vector3 _originCameraPosition;
@@ -33,14 +98,11 @@ namespace GGemCo2DCore
         private Vector2 _mapSize;
         private Vector2 _monsterSpawnPositionBoxSize;
         private Transform _followTarget;
-        
+
         private float _width;
         private float _height;
 
-        // 흔들림 효과 관련 변수
-        private bool _isShaking;
-        
-        // 줌 관련 처리 
+        // 줌 관련 처리
         private bool _isZooming;
         private float _zoomTimer;
         private float _zoomDuration;
@@ -50,7 +112,6 @@ namespace GGemCo2DCore
 
         private void Awake()
         {
-            _isShaking = false;
             _isZooming = false;
             _zoomTimer = 0;
             _zoomDuration = 0;
@@ -75,7 +136,13 @@ namespace GGemCo2DCore
 
         private void LimitCameraArea()
         {
-            if (_followTarget == null || _mapSize.x == 0) return;
+            UpdateShakeOffset();
+
+            if (_followTarget == null || _mapSize.x == 0f)
+            {
+                transform.position = _basePosition + _shakeOffset;
+                return;
+            }
 
             // 플레이어를 따라가는 카메라 위치 계산
             Vector3 targetPos = _followTarget.position + _cameraPosition;
@@ -142,23 +209,50 @@ namespace GGemCo2DCore
             }
         }
 
-        private IEnumerator Shake(float duration, float magnitude)
+        private void UpdateShakeOffset()
         {
-            _isShaking = true;
-
-            float elapsed = 0f;
-            while (elapsed < duration)
+            if (_activeShakes.Count == 0)
             {
-                float x = Random.Range(-1f, 1f) * magnitude;
-                float y = Random.Range(-1f, 1f) * magnitude;
-                _shakeOffset = new Vector3(x, y, 0f);
-
-                elapsed += Time.deltaTime;
-                yield return null;
+                _shakeOffset = Vector3.zero;
+                return;
             }
 
-            _shakeOffset = Vector3.zero;
-            _isShaking = false;
+            Vector3 totalOffset = Vector3.zero;
+
+            for (int i = _activeShakes.Count - 1; i >= 0; i--)
+            {
+                ActiveCameraShake shake = _activeShakes[i];
+                float deltaTime = shake.Request.UseUnscaledTime ? Time.unscaledDeltaTime : Time.deltaTime;
+                shake.Elapsed += deltaTime;
+
+                if (shake.Elapsed >= shake.Request.Duration)
+                {
+                    _activeShakes.RemoveAt(i);
+                    continue;
+                }
+
+                totalOffset += EvaluateShakeOffset(shake);
+            }
+
+            _shakeOffset = totalOffset;
+        }
+
+        private static Vector3 EvaluateShakeOffset(ActiveCameraShake shake)
+        {
+            float normalized = Mathf.Clamp01(shake.Elapsed / shake.Request.Duration);
+            float attenuation = 1f - normalized;
+
+            float phase = shake.PhaseOffset + (normalized * shake.Request.RepeatCount * Mathf.PI * 2f);
+            float signedX = Mathf.Sin(phase);
+            float signedY = Mathf.Cos(phase + (Mathf.PI * 0.5f));
+
+            float amplitudeX = signedX >= 0f ? shake.Request.RightStrength : shake.Request.LeftStrength;
+            float amplitudeY = signedY >= 0f ? shake.Request.UpStrength : shake.Request.DownStrength;
+
+            return new Vector3(
+                signedX * amplitudeX * attenuation,
+                signedY * amplitudeY * attenuation,
+                0f);
         }
 
         /// <summary>
@@ -166,8 +260,79 @@ namespace GGemCo2DCore
         /// </summary>
         public void StartShake(float shakeDuration, float shakeMagnitude)
         {
-            if (shakeDuration <= 0 || shakeMagnitude <= 0) return;
-            StartCoroutine(Shake(shakeDuration, shakeMagnitude));
+            if (shakeDuration <= 0f || shakeMagnitude <= 0f)
+            {
+                return;
+            }
+
+            PlayShake(CameraShakeRequest.CreateSymmetric(
+                shakeDuration,
+                shakeMagnitude,
+                3,
+                CameraShakeChannel.Default));
+        }
+
+        /// <summary>
+        /// 방향별 카메라 흔들림 효과를 재생합니다.
+        /// </summary>
+        public void StartShake(
+            float duration,
+            float leftStrength,
+            float rightStrength,
+            float downStrength,
+            float upStrength,
+            int repeatCount,
+            CameraShakeChannel channel = CameraShakeChannel.Default,
+            bool useUnscaledTime = false)
+        {
+            PlayShake(new CameraShakeRequest
+            {
+                Duration = duration,
+                LeftStrength = Mathf.Max(0f, leftStrength),
+                RightStrength = Mathf.Max(0f, rightStrength),
+                DownStrength = Mathf.Max(0f, downStrength),
+                UpStrength = Mathf.Max(0f, upStrength),
+                RepeatCount = Mathf.Max(1, repeatCount),
+                Channel = channel,
+                UseUnscaledTime = useUnscaledTime,
+            });
+        }
+
+        public void PlayShake(CameraShakeRequest request)
+        {
+            if (!request.IsValid)
+            {
+                return;
+            }
+
+            _activeShakes.Add(new ActiveCameraShake
+            {
+                Request = request,
+                Elapsed = 0f,
+                PhaseOffset = Random.Range(0f, Mathf.PI * 2f),
+            });
+        }
+
+        public void StopShake(CameraShakeChannel channel)
+        {
+            for (int i = _activeShakes.Count - 1; i >= 0; i--)
+            {
+                if (_activeShakes[i].Request.Channel == channel)
+                {
+                    _activeShakes.RemoveAt(i);
+                }
+            }
+
+            if (_activeShakes.Count == 0)
+            {
+                _shakeOffset = Vector3.zero;
+            }
+        }
+
+        public void StopAllShakes()
+        {
+            _activeShakes.Clear();
+            _shakeOffset = Vector3.zero;
         }
 
         /// <summary>
@@ -262,6 +427,7 @@ namespace GGemCo2DCore
         public void ReSetByCutscene()
         {
             SetFollowPlayer();
+            StopShake(CameraShakeChannel.Cutscene);
             ReSetZoom();
         }
 

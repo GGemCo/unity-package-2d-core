@@ -53,7 +53,20 @@ namespace GGemCo2DCore
             try
             {
                 var data = JsonConvert.DeserializeObject<StruckAnimationEventCameraShake>(json);
-                _cameraManager.StartShake(data.Duration, data.Magnitude);
+                if (data == null)
+                {
+                    return;
+                }
+
+                _cameraManager.StartShake(
+                    data.Duration,
+                    data.GetLeftStrength(),
+                    data.GetRightStrength(),
+                    data.GetDownStrength(),
+                    data.GetUpStrength(),
+                    data.GetRepeatCount(),
+                    CameraShakeChannel.AnimationEvent,
+                    data.UseUnscaledTime);
             }
             catch (Exception e)
             {
