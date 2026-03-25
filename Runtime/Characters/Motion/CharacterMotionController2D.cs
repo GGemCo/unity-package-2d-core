@@ -181,7 +181,6 @@ namespace GGemCo2DCore
             }
         }
 
-
         private void TickPositionHold(ref MotionState state, float dt)
         {
             if (rb == null)
@@ -205,7 +204,8 @@ namespace GGemCo2DCore
             ZeroDynamicVelocity();
             state.CurrentPosition = desired;
 
-            if (state.Duration <= 1e-6f || state.Elapsed >= state.Duration)
+            // duration <= 0 이면 무기한 hold
+            if (state.Duration > 1e-6f && state.Elapsed >= state.Duration)
             {
                 state.MarkComplete();
                 bool stopAtEnd = state.StopAtEnd;
