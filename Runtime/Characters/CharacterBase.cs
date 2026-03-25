@@ -102,6 +102,7 @@ namespace GGemCo2DCore
         protected CharacterPickUpPosition characterPickUpPosition;
         private CharacterCrowdControlController _crowdControlController;
         private ICharacterMotionController _motionController;
+        private CharacterPhysicsOverrideController _physicsOverrideController;
         private SpriteWhiteOverlayController _spriteWhiteOverlayController;
         
         // 공격 애니메이션 종료 후 
@@ -269,6 +270,11 @@ namespace GGemCo2DCore
         protected virtual void InitComponents()
         {
             characterRigidbody2D = gameObject.GetComponent<Rigidbody2D>();
+            _physicsOverrideController = gameObject.GetComponent<CharacterPhysicsOverrideController>();
+            if (_physicsOverrideController == null)
+            {
+                _physicsOverrideController = gameObject.AddComponent<CharacterPhysicsOverrideController>();
+            }
             // 맵 object 충돌 체크용
             colliderMapObject = gameObject.GetComponentInChildren<CapsuleCollider2D>();
             // attack range
@@ -297,6 +303,7 @@ namespace GGemCo2DCore
         protected override void Start()
         {
             base.Start();
+            _physicsOverrideController?.CaptureBaseGravityScale(force: true);
             originalScaleX = transform.localScale.x;
             
             InitializeByTable();
@@ -321,6 +328,23 @@ namespace GGemCo2DCore
 
             IsInitialized = true;
             Initialized?.Invoke();
+        }
+
+        public CharacterPhysicsOverrideController PhysicsOverrideController
+        {
+            get
+            {
+                if (_physicsOverrideController == null)
+                {
+                    _physicsOverrideController = GetComponent<CharacterPhysicsOverrideController>();
+                    if (_physicsOverrideController == null)
+                    {
+                        _physicsOverrideController = gameObject.AddComponent<CharacterPhysicsOverrideController>();
+                    }
+                }
+
+                return _physicsOverrideController;
+            }
         }
 
 
@@ -813,6 +837,8 @@ namespace GGemCo2DCore
             base.OnDestroy();
             // todo 지워야하는 어펙트가 있고 유지해야하는 어펙트가 있다
             // AffectController?.RemoveAllAffects();
+
+            _physicsOverrideController?.ForceRestoreBaseGravity();
 
             if (_characterDamageController != null)
             {

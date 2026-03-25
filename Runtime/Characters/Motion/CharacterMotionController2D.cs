@@ -1,4 +1,4 @@
-using UnityEngine;
+﻿using UnityEngine;
 
 namespace GGemCo2DCore
 {
@@ -16,6 +16,7 @@ namespace GGemCo2DCore
     {
         [Header("References")]
         [SerializeField] private Rigidbody2D rb;
+        [SerializeField] private CharacterPhysicsOverrideController physicsOverrideController;
 
         private MotionState _skill;
         private MotionState _crowdControl;
@@ -25,12 +26,19 @@ namespace GGemCo2DCore
         private void Reset()
         {
             rb = GetComponentInParent<Rigidbody2D>();
+            physicsOverrideController = GetComponentInParent<CharacterPhysicsOverrideController>();
         }
 
         private void Awake()
         {
             if (rb == null)
                 rb = GetComponentInParent<Rigidbody2D>();
+
+            if (physicsOverrideController == null)
+                physicsOverrideController = GetComponentInParent<CharacterPhysicsOverrideController>();
+
+            if (physicsOverrideController == null)
+                physicsOverrideController = gameObject.AddComponent<CharacterPhysicsOverrideController>();
         }
 
         private void OnDisable()
@@ -253,11 +261,33 @@ namespace GGemCo2DCore
             if (state.Kind != MotionKind.Arc && state.Kind != MotionKind.GroundSlam && state.Kind != MotionKind.PositionHold)
                 return;
 
-            state.HasSavedGravityScale = true;
-            state.SavedGravityScale = rb.gravityScale;
             state.IsGravitySuspended = true;
 
-            rb.gravityScale = GravityDisableValue;
+            if (physicsOverrideController != null)
+            {
+                int priority = state.Channel == MotionChannel.CrowdControl
+                    ? CharacterPhysicsOverridePriority.MotionCrowdControl
+                    : CharacterPhysicsOverridePriority.MotionSkill;
+
+                state.GravityOverrideHandle = physicsOverrideController.AcquireGravityOverride(
+                    ownerKey: this,
+                    lifecycleOwner: this,
+                    channel: state.Channel == MotionChannel.CrowdControl
+                        ? CharacterPhysicsOverrideChannel.CrowdControl
+                        : CharacterPhysicsOverrideChannel.Skill,
+                    priority: priority,
+                    gravityScale: GravityDisableValue,
+                    reason: $"Motion:{state.Channel}:{state.Kind}");
+
+                state.HasSavedGravityScale = false;
+                state.SavedGravityScale = 0f;
+            }
+            else
+            {
+                state.HasSavedGravityScale = true;
+                state.SavedGravityScale = rb.gravityScale;
+                rb.gravityScale = GravityDisableValue;
+            }
             if (state.Kind == MotionKind.PositionHold)
             {
                 ZeroDynamicVelocity();
@@ -275,7 +305,11 @@ namespace GGemCo2DCore
             if (!state.IsGravitySuspended)
                 return;
 
-            if (state.HasSavedGravityScale)
+            if (state.GravityOverrideHandle.IsValid && physicsOverrideController != null)
+            {
+                physicsOverrideController.ReleaseGravityOverride(ref state.GravityOverrideHandle);
+            }
+            else if (state.HasSavedGravityScale)
             {
                 rb.gravityScale = state.SavedGravityScale;
             }
@@ -384,6 +418,7 @@ namespace GGemCo2DCore
             public bool IsGravitySuspended;
             public bool HasSavedGravityScale;
             public float SavedGravityScale;
+            public CharacterPhysicsOverrideHandle GravityOverrideHandle;
 
             public void Start(in MotionRequest req)
             {
@@ -424,6 +459,7 @@ namespace GGemCo2DCore
                 IsGravitySuspended = false;
                 HasSavedGravityScale = false;
                 SavedGravityScale = 0f;
+                GravityOverrideHandle = default;
 
                 // Solver 선택
                 Solver = SelectSolver(req);
@@ -483,6 +519,7 @@ namespace GGemCo2DCore
                 IsGravitySuspended = false;
                 HasSavedGravityScale = false;
                 SavedGravityScale = 0f;
+                GravityOverrideHandle = default;
             }
 
             private static IMotionSolver SelectSolver(in MotionRequest req)
