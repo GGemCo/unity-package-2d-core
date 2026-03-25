@@ -313,6 +313,16 @@ namespace GGemCo2DCore
             });
         }
 
+        public void PlayShake(CameraShakePreset preset, CameraShakeChannel channel = CameraShakeChannel.Default)
+        {
+            if (preset == null)
+            {
+                return;
+            }
+
+            PlayShake(preset.ToRequest(channel));
+        }
+
         public void StopShake(CameraShakeChannel channel)
         {
             for (int i = _activeShakes.Count - 1; i >= 0; i--)
