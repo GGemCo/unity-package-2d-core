@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -29,6 +29,8 @@ namespace GGemCo2DCore
         [Header("Sprite White Overlay")]
         [Tooltip("피격 시 Sprite White Overlay 효과를 사용할지 여부")]
         public bool useSpriteWhiteOverlay;
+        [Tooltip("Sprite White Overlay에서 사용할 기본 호환 Material. 비워두면 기존 Material을 유지합니다.")]
+        public Material spriteWhiteOverlayMaterial;
         [Tooltip("Sprite White Overlay 효과에 사용할 색상")]
         public Color spriteWhiteOverlayColor = Color.white;
         [Tooltip("피격 시 Sprite White Overlay 유지 시간(초)")]
@@ -111,6 +113,7 @@ namespace GGemCo2DCore
             }
 
             useSpriteWhiteOverlay = false;
+            spriteWhiteOverlayMaterial = null;
             spriteWhiteOverlayColor = Color.white;
             spriteWhiteOverlayFlashDuration = 0.08f;
         }

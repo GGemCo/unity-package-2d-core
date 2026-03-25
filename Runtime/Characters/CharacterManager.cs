@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using UnityEngine;
@@ -105,7 +105,7 @@ namespace GGemCo2DCore
                 }
 
                 characterBase.CharacterAnimationController = iAnim;
-                characterBase.TryEnsureSpriteWhiteOverlayController();
+                TrySetupSpriteWhiteOverlay(characterType, characterObj, characterBase);
 
                 _characters.Add(characterObj);
                 OnCharacterSpawned?.Invoke(characterBase);
@@ -116,6 +116,67 @@ namespace GGemCo2DCore
                 GcLogger.LogException(ex);
                 if (characterObj) Object.Destroy(characterObj);
                 return null;
+            }
+        }
+
+
+        private void TrySetupSpriteWhiteOverlay(
+            CharacterConstants.Type characterType,
+            GameObject characterObj,
+            CharacterBase characterBase)
+        {
+            if (characterObj == null || characterBase == null)
+            {
+                return;
+            }
+
+            if (!characterBase.TryEnsureSpriteWhiteOverlayController())
+            {
+                return;
+            }
+
+            var controller = characterObj.GetComponent<SpriteWhiteOverlayController>();
+            if (controller == null)
+            {
+                return;
+            }
+
+            switch (characterType)
+            {
+                case CharacterConstants.Type.Player:
+                {
+                    var playerSettings = AddressableLoaderSettings.Instance != null
+                        ? AddressableLoaderSettings.Instance.playerSettings
+                        : null;
+
+                    if (playerSettings == null)
+                    {
+                        return;
+                    }
+
+                    controller.Configure(
+                        playerSettings.spriteWhiteOverlayColor,
+                        playerSettings.spriteWhiteOverlayMaterial,
+                        refreshTargets: true);
+                    break;
+                }
+                case CharacterConstants.Type.Monster:
+                {
+                    var monsterSettings = AddressableLoaderSettings.Instance != null
+                        ? AddressableLoaderSettings.Instance.monsterSettings
+                        : null;
+
+                    if (monsterSettings == null)
+                    {
+                        return;
+                    }
+
+                    controller.Configure(
+                        monsterSettings.spriteWhiteOverlayColor,
+                        monsterSettings.spriteWhiteOverlayMaterial,
+                        refreshTargets: true);
+                    break;
+                }
             }
         }
 

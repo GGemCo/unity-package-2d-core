@@ -1,4 +1,4 @@
-﻿using System.Collections;
+using System.Collections;
 using UnityEngine;
 
 namespace GGemCo2DCore
@@ -16,12 +16,14 @@ namespace GGemCo2DCore
         [SerializeField, Range(0f, 1f)] private float overlayStrength = 0f;
         
         [SerializeField] private Color overlayColor = Color.white;
+        [SerializeField] private Material overlayMaterial;
 
         private MaterialPropertyBlock _propertyBlock;
         private Coroutine _flashRoutine;
 
         public float OverlayStrength => overlayStrength;
         public Color OverlayColor => overlayColor;
+        public Material OverlayMaterial => overlayMaterial;
 
         private void Awake()
         {
@@ -42,7 +44,23 @@ namespace GGemCo2DCore
         /// </summary>
         public void Configure(Color color, bool refreshTargets = false)
         {
+            Configure(color, null, refreshTargets);
+        }
+
+        /// <summary>
+        /// 오버레이 기본 설정을 적용합니다.
+        /// 필요 시 대상 SpriteRenderer 목록을 다시 수집하고,
+        /// Material이 지정되면 각 SpriteRenderer의 sharedMaterial에 적용합니다.
+        /// </summary>
+        public void Configure(Color color, Material material, bool refreshTargets = false)
+        {
             SetOverlayColor(color);
+
+            if (material != null)
+            {
+                ApplyOverlayMaterial(material, refreshTargets);
+                return;
+            }
 
             if (refreshTargets)
             {
@@ -61,6 +79,49 @@ namespace GGemCo2DCore
             }
 
             overlayColor = color;
+            ApplyOverlay();
+        }
+
+
+        /// <summary>
+        /// Sprite White Overlay 호환 Material을 각 대상 SpriteRenderer에 적용합니다.
+        /// 런타임 중 Material asset 자체의 속성은 수정하지 않고 sharedMaterial 참조만 교체합니다.
+        /// </summary>
+        public void ApplyOverlayMaterial(Material material, bool refreshTargets = false)
+        {
+            if (material == null)
+            {
+                if (refreshTargets)
+                {
+                    RefreshTargets();
+                }
+
+                return;
+            }
+
+            overlayMaterial = material;
+
+            if (refreshTargets || targetRenderers == null || targetRenderers.Length == 0)
+            {
+                targetRenderers = GetComponentsInChildren<SpriteRenderer>(true);
+            }
+
+            if (targetRenderers == null || targetRenderers.Length == 0)
+            {
+                return;
+            }
+
+            for (int i = 0; i < targetRenderers.Length; i++)
+            {
+                var renderer = targetRenderers[i];
+                if (renderer == null)
+                {
+                    continue;
+                }
+
+                renderer.sharedMaterial = overlayMaterial;
+            }
+
             ApplyOverlay();
         }
 
