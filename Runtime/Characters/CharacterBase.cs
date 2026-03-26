@@ -254,6 +254,31 @@ namespace GGemCo2DCore
         }
 
         /// <summary>
+        /// 공용 Ground probe 규칙으로 현재 캐릭터가 지면 위에 있는지 판정합니다.
+        /// Skill, Crowd Control 등 여러 시스템이 동일한 기준을 사용할 수 있도록 제공합니다.
+        /// </summary>
+        public bool IsCurrentlyGrounded(float maxGroundDistance = CharacterGroundProbeUtility.DefaultGroundedCheckDistance)
+        {
+            return CharacterGroundProbeUtility.IsCurrentlyGrounded(this, characterRigidbody2D, maxGroundDistance);
+        }
+
+        /// <summary>
+        /// 공용 Ground probe 규칙으로 캐릭터 하단의 지면을 탐색합니다.
+        /// </summary>
+        public bool TryProbeGroundBelow(float maxGroundDistance, out float groundY, out float bottomY)
+        {
+            return CharacterGroundProbeUtility.TryProbeGroundBelow(this, characterRigidbody2D, maxGroundDistance, out groundY, out bottomY);
+        }
+
+        /// <summary>
+        /// Skill/Crowd Control 공용 Ground probe 레이어 마스크를 반환합니다.
+        /// </summary>
+        public static int GetDefaultGroundProbeMask()
+        {
+            return CharacterGroundProbeUtility.GetDefaultGroundProbeMask();
+        }
+
+        /// <summary>
         /// tag, sorting layer, layer 셋팅하기
         /// </summary>
         public virtual void InitTagSortingLayer()

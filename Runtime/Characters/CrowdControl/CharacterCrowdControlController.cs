@@ -60,9 +60,9 @@ namespace GGemCo2DCore
 
         /// <summary>
         /// CC 시작 가능 조건(IsGroundOnly / IsAirOnly) 판정에 사용할 지면 거리 임계값입니다.
-        /// 캐릭터 하단에서 이 값 이하로 지면이 탐지되면 지상 상태로 간주합니다.
+        /// CharacterGroundProbeUtility 기본값과 동일한 기준을 사용합니다.
         /// </summary>
-        private const float CrowdControlGroundedCheckDistance = 1.0f;
+        private const float CrowdControlGroundedCheckDistance = CharacterGroundProbeUtility.DefaultGroundedCheckDistance;
 
         private readonly struct QueuedCrowdControl
         {
@@ -325,12 +325,7 @@ namespace GGemCo2DCore
         /// </summary>
         private static int GetGroundProbeMask()
         {
-            int mask = 0;
-
-            mask |= LayerMask.GetMask(ConfigLayer.GetValue(ConfigLayer.Keys.TileMapGround));
-            mask |= LayerMask.GetMask(ConfigLayer.GetValue(ConfigLayer.Keys.TileMapOneWayPlatform));
-
-            return mask;
+            return CharacterGroundProbeUtility.GetDefaultGroundProbeMask();
         }
 
         /// <summary>
@@ -550,11 +545,7 @@ namespace GGemCo2DCore
             if (maxGroundDistance < 0f)
                 maxGroundDistance = 0f;
 
-            if (!TryProbeGroundBelow(maxGroundDistance, out float groundY, out float bottomY))
-                return false;
-
-            float distanceToGround = bottomY - groundY;
-            return distanceToGround >= -KnockUpLandingProbeUpOffset && distanceToGround <= maxGroundDistance;
+            return CharacterGroundProbeUtility.IsCurrentlyGrounded(this, _rigidbody2D, GetGroundProbeMask(), maxGroundDistance);
         }
 
         private bool TryHandleActiveKnockUpLanding()
@@ -618,61 +609,7 @@ namespace GGemCo2DCore
 
         private bool TryProbeGroundBelow(float maxGroundDistance, out float groundY, out float bottomY)
         {
-            groundY = 0f;
-            bottomY = 0f;
-
-            int groundMask = GetGroundProbeMask();
-            if (groundMask == 0)
-                return false;
-
-            if (!TryGetCharacterWorldBounds(out Bounds bounds))
-                return false;
-
-            bottomY = bounds.min.y;
-            Vector2 origin = new Vector2(bounds.center.x, bottomY + KnockUpLandingProbeUpOffset);
-            float distance = Mathf.Max(0f, maxGroundDistance) + KnockUpLandingProbeUpOffset;
-            RaycastHit2D hit = Physics2D.Raycast(origin, Vector2.down, distance, groundMask);
-            if (hit.collider == null)
-                return false;
-
-            groundY = hit.point.y;
-            return true;
-        }
-
-        private bool TryGetCharacterWorldBounds(out Bounds bounds)
-        {
-            bounds = default;
-
-            Collider2D[] colliders = GetComponentsInChildren<Collider2D>();
-            bool hasBounds = false;
-
-            for (int i = 0; i < colliders.Length; i++)
-            {
-                Collider2D collider = colliders[i];
-                if (collider == null || !collider.enabled || collider.isTrigger)
-                    continue;
-
-                if (_rigidbody2D != null && collider.attachedRigidbody != null && collider.attachedRigidbody != _rigidbody2D)
-                    continue;
-
-                if (!hasBounds)
-                {
-                    bounds = collider.bounds;
-                    hasBounds = true;
-                }
-                else
-                {
-                    bounds.Encapsulate(collider.bounds);
-                }
-            }
-
-            if (!hasBounds)
-            {
-                Vector3 position = _rigidbody2D != null ? (Vector3)_rigidbody2D.position : transform.position;
-                bounds = new Bounds(position, Vector3.zero);
-            }
-
-            return true;
+            return CharacterGroundProbeUtility.TryProbeGroundBelow(this, _rigidbody2D, maxGroundDistance, GetGroundProbeMask(), out groundY, out bottomY);
         }
 
         private void SnapCharacterBottomToGround(float groundY, float currentBottomY)
