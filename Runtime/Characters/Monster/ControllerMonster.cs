@@ -155,7 +155,11 @@ namespace GGemCo2DCore
         /// </remarks>
         internal void TickLegacy()
         {
-            if (!CheckPossibleControl()) return;
+            if (!CheckPossibleControl())
+            {
+                StopAttackCoroutine();
+                return;
+            }
 
             if (targetCharacter.IsAggro())
             {
@@ -173,6 +177,21 @@ namespace GGemCo2DCore
             {
                 Wait();
             }
+        }
+
+        /// <summary>
+        /// 몬스터가 공격/공격 루프를 시작할 수 있는 상태인지 확인한다.
+        /// </summary>
+        private bool CanStartAttackAction()
+        {
+            if (targetCharacter == null) return false;
+            if (targetCharacter.IsStatusDead()) return false;
+            if (targetCharacter.IsStatusAttack()) return false;
+            if (targetCharacter.IsStatusKnockback()) return false;
+            if (targetCharacter.IsStatusDontControl()) return false;
+            if (targetCharacter.IsStatusDamage()) return false;
+            if (targetCharacter.IsStatusMoveForce()) return false;
+            return true;
         }
         /// <summary>
         /// Wait  
@@ -308,10 +327,11 @@ namespace GGemCo2DCore
             if (targetCharacter.IsAttackerStatusDead())
             {
                 targetCharacter.SetAttackerTarget(null);
+                StopAttackCoroutine();
                 Stop();
                 return;
             }
-            if (targetCharacter.IsStatusAttack() || targetCharacter.IsStatusDead() || targetCharacter.IsStatusKnockback()) return;
+            if (!CanStartAttackAction()) return;
 
             // 공격자 방향 찾기
             HandleInput();
@@ -326,9 +346,8 @@ namespace GGemCo2DCore
         /// </summary>
         private void StartAttackCoroutine()
         {
-            if (_coroutineAttack != null || targetCharacter.IsStatusAttack() || targetCharacter.IsStatusDead()
-                || targetCharacter.IsStatusKnockback()
-                ) return;
+            if (_coroutineAttack != null) return;
+            if (!CanStartAttackAction()) return;
 
             _coroutineAttack = StartCoroutine(DownAttackByTime());
         }

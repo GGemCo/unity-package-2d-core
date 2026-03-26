@@ -45,7 +45,9 @@ namespace GGemCo2DCore
 
                 if (_controller.targetCharacter.IsAggro() && _controller.targetCharacter.attackerTransform != null)
                 {
-                    _controller.Attack();
+                    // Trigger 진입은 감지만 담당한다.
+                    // 실제 공격 시작은 TickLegacy()에서 공통 제어 가능 여부를 확인한 뒤 결정한다.
+                    return;
                 }
                 // 선공
                 else if (_controller.targetCharacter.GetAttackType() == CharacterConstants.AttackType.AggroFirst &&
