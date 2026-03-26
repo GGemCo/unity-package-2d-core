@@ -133,7 +133,7 @@ namespace GGemCo2DCore
             {
                 if (Input.GetKeyDown(HotKeyCodes[i]))
                 {
-                    OnKeyDownSkill(i);
+                    OnKeyDownSkillBySlotIndex(i);
                     return true;
                 }
             }

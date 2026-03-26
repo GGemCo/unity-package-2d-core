@@ -71,8 +71,8 @@ namespace GGemCo2DCore
                 case AnimationConstants.EventNameCameraShake:
                     EventListener?.OnAnimationEventCameraShake(e.String);
                     break;
-                case AnimationConstants.EventNameEffect:
-                    EventListener?.OnAnimationEventEffect(e.String, gameObject);
+                case AnimationConstants.EventNameVfx:
+                    EventListener?.OnAnimationEventVfx(e.String, gameObject);
                     break;
                 case AnimationConstants.EventNameSkill:
                     EventListener?.OnAnimationEventSkill(e.String, gameObject);

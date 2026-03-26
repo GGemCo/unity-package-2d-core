@@ -5,7 +5,7 @@ using Spine;
 
 namespace GGemCo2DCore
 {
-    public class EffectAnimationControllerSpine : Spine2dController, IEffectAnimationController
+    public class VfxAnimationControllerSpine : Spine2dController, IVfxAnimationController
     {
         private VfxBehaviourBase _defaultEffect;
         private float durationStart;
@@ -23,9 +23,9 @@ namespace GGemCo2DCore
                 GcLogger.LogError("VfxBehaviourBase not found");
                 return;
             }
-            durationStart = GetAnimationDuration(IEffectAnimationController.KeyClipNameStart, false);
-            durationPlay = GetAnimationDuration(IEffectAnimationController.KeyClipNamePlay, false);
-            durationEnd = GetAnimationDuration(IEffectAnimationController.KeyClipNameEnd, false);
+            durationStart = GetAnimationDuration(IVfxAnimationController.KeyClipNameStart, false);
+            durationPlay = GetAnimationDuration(IVfxAnimationController.KeyClipNamePlay, false);
+            durationEnd = GetAnimationDuration(IVfxAnimationController.KeyClipNameEnd, false);
             durationTotal = durationStart + durationPlay + durationEnd; 
         }
 
