@@ -137,11 +137,7 @@ namespace GGemCo2DCoreEditor
         /// </summary>
         private static void CreateEventSystemIfNotExists()
         {
-#if UNITY_6000_0_OR_NEWER
-            if (Object.FindFirstObjectByType<EventSystem>() == null)
-#else
-            if (Object.FindObjectOfType<EventSystem>() == null)
-#endif
+            if (CompatObjectFind.FindFirst<EventSystem>() == null)
             {
                 var eventSystem = new GameObject("EventSystem", typeof(EventSystem));
 

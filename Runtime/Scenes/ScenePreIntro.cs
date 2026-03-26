@@ -57,8 +57,8 @@ namespace GGemCo2DCore
                 _gameLoaderManager = new GameObject("GameLoaderManager").AddComponent<GameLoaderManager>();
             }
             _localizationManager = new GameObject("LocalizationManager").AddComponent<LocalizationManager>();
-            _addressableLoaderSettings = FindFirstObjectByType<AddressableLoaderSettings>() ?? new GameObject("AddressableLoaderSettings").AddComponent<AddressableLoaderSettings>();
-
+            _addressableLoaderSettings = CompatObjectFind.FindFirst<AddressableLoaderSettings>() ?? new GameObject("AddressableLoaderSettings").AddComponent<AddressableLoaderSettings>();
+            
             if (textLoadingPercent != null) {
                 _gameLoaderManager.SetTextLoadingPercent(textLoadingPercent);
                 textLoadingPercent.gameObject.SetActive(false);
@@ -141,7 +141,7 @@ namespace GGemCo2DCore
         {
             if (_addressableLoaderSettings == null)
             {
-                _addressableLoaderSettings = FindFirstObjectByType<AddressableLoaderSettings>() ?? new GameObject("AddressableLoaderSettings").AddComponent<AddressableLoaderSettings>();
+                _addressableLoaderSettings = CompatObjectFind.FindFirst<AddressableLoaderSettings>() ?? new GameObject("AddressableLoaderSettings").AddComponent<AddressableLoaderSettings>();
             }
 
             _addressableLoaderSettings.OnLoadSettings -= HandleLoadSettings;

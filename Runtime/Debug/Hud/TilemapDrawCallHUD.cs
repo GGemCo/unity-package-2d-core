@@ -161,7 +161,7 @@ namespace GGemCo2DCore
         {
             Tilemaps.Clear();
 
-            foreach (Tilemap tilemap in Object.FindObjectsByType<Tilemap>(FindObjectsSortMode.None))
+            foreach (Tilemap tilemap in CompatObjectFind.FindAll<Tilemap>())
             {
                 if (!includeInactive && !tilemap.isActiveAndEnabled)
                 {

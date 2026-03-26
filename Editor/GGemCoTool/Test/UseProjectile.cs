@@ -784,7 +784,8 @@ namespace GGemCo2DCoreEditor
         {
             if (uid <= 0) return null;
 
-            var characters = UnityEngine.Object.FindObjectsByType<CharacterBase>(FindObjectsInactive.Include, FindObjectsSortMode.None);
+            var characters = CompatObjectFind.FindAll<CharacterBase>(includeInactive: true);
+            
             foreach (var c in characters)
             {
                 if (!c) continue;

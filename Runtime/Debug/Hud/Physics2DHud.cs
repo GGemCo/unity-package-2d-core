@@ -34,9 +34,9 @@ namespace GGemCo2DCore
 
         public void Tick(float elapsedSeconds)
         {
-            Rigidbody2D[] rigidbodies = Object.FindObjectsByType<Rigidbody2D>(FindObjectsSortMode.None);
-            Collider2D[] colliders = Object.FindObjectsByType<Collider2D>(FindObjectsSortMode.None);
-
+            Rigidbody2D[] rigidbodies = CompatObjectFind.FindAll<Rigidbody2D>();
+            Collider2D[] colliders = CompatObjectFind.FindAll<Collider2D>();
+            
             _rigidbodies = rigidbodies.Length;
             _colliders = colliders.Length;
             _triggers = 0;

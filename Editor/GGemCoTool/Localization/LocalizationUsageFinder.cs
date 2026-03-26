@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
+using GGemCo2DCore;
 using UnityEditor;
 using UnityEditor.Localization;
 using UnityEditor.SceneManagement;
@@ -7,6 +8,7 @@ using UnityEngine;
 using UnityEngine.Localization.Components;
 using UnityEngine.Localization.Settings;
 using UnityEngine.SceneManagement;
+using SceneManager = UnityEngine.SceneManagement.SceneManager;
 
 namespace GGemCo2DCoreEditor
 {
@@ -112,12 +114,7 @@ namespace GGemCo2DCoreEditor
         private void FindInOpenScenes(string tableName, string keyName)
         {
             int total = 0;
-
-#if UNITY_6000_0_OR_NEWER
-            var events = GameObject.FindObjectsByType<LocalizeStringEvent>(FindObjectsSortMode.None);
-#else
-            var events = GameObject.FindObjectsOfType<LocalizeStringEvent>(true);
-#endif
+            var events = CompatObjectFind.FindAll<LocalizeStringEvent>(includeInactive: true);            
             foreach (var evt in events)
             {
                 if (!IsMatching(evt, tableName, keyName)) continue;

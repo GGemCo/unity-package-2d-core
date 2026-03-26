@@ -207,8 +207,7 @@ namespace GGemCo2DCore
         private static void RefreshRootVisibility()
         {
             bool shouldShow = GGemCoBuildFlags.AllowDebugFeatures && CurrentSettings != null && CurrentSettings.EnableDebugHud;
-            GGemCoDebugHudRoot existingRoot = Object.FindAnyObjectByType<GGemCoDebugHudRoot>(FindObjectsInactive.Include);
-
+            GGemCoDebugHudRoot existingRoot = CompatObjectFind.FindAny<GGemCoDebugHudRoot>(includeInactive: true);
             if (!shouldShow)
             {
                 if (existingRoot != null)

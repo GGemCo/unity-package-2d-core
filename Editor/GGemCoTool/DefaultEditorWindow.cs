@@ -252,11 +252,7 @@ namespace GGemCo2DCoreEditor
             if (!Application.isPlaying)
                 return;
 
-#if UNITY_2023_1_OR_NEWER
-            var characters = Object.FindObjectsByType<CharacterBase>(FindObjectsInactive.Exclude, FindObjectsSortMode.None);
-#else
-            var characters = Object.FindObjectsOfType<CharacterBase>();
-#endif
+            var characters = CompatObjectFind.FindAll<CharacterBase>();
             foreach (var character in characters)
             {
                 if (character == null)

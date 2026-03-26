@@ -153,11 +153,7 @@ namespace GGemCo2DCoreEditor
 
         private void InitializeExporters()
         {
-#if UNITY_6000_0_OR_NEWER
-            var defaultMap = FindFirstObjectByType<DefaultMap>();
-#else
-            var defaultMap = FindObjectOfType<DefaultMap>();
-#endif
+            var defaultMap = CompatObjectFind.FindFirst<DefaultMap>();
             _npcExporter.Initialize(_tableNpc, _tableAnimation, defaultMap, _characterManager);
             _monsterExporter.Initialize(_tableMonster, _tableAnimation, defaultMap, _characterManager);
             _warpExporter.Initialize(defaultMap);

@@ -18,7 +18,7 @@ namespace GGemCo2DCore
             {
                 if (_instance != null) return _instance;
 
-                var existing = FindFirstObjectByType<CoroutineHelper>();
+                var existing = CompatObjectFind.FindFirst<CoroutineHelper>();
                 if (existing != null)
                 {
                     _instance = existing;

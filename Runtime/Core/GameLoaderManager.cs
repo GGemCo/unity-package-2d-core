@@ -184,14 +184,15 @@ namespace GGemCo2DCore
         public void StartLoadingInSceneLoading()
         { 
             // 필요한 로더/매니저 찾기(또는 생성)
-            var tableLoader = Object.FindFirstObjectByType<TableLoaderManager>() ?? new GameObject("TableLoaderManager").AddComponent<TableLoaderManager>();
-            var addrPrefabCommon = Object.FindFirstObjectByType<AddressableLoaderPrefabCommon>() ?? new GameObject("AddressableLoaderPrefabCommon").AddComponent<AddressableLoaderPrefabCommon>();
-            var addrPrefabVfx = Object.FindFirstObjectByType<AddressableLoaderPrefabVfx>() ?? new GameObject("AddressableLoaderPrefabVfx").AddComponent<AddressableLoaderPrefabVfx>();
-            var addrItem = Object.FindFirstObjectByType<AddressableLoaderItem>() ?? new GameObject("AddressableLoaderItem").AddComponent<AddressableLoaderItem>();
-            var addrSound = Object.FindFirstObjectByType<AddressableLoaderSound>() ?? new GameObject("AddressableLoaderSound").AddComponent<AddressableLoaderSound>();
-            var saveData = Object.FindFirstObjectByType<SaveDataLoader>() ?? new GameObject("SaveDataLoader").AddComponent<SaveDataLoader>();
-            var loc = Object.FindFirstObjectByType<LocalizationManager>() ?? new GameObject("LocalizationManager").AddComponent<LocalizationManager>();
-            var addressableLoaderCharacterImageName = Object.FindFirstObjectByType<AddressableLoaderCharacterImageName>() ?? new GameObject("AddressableLoaderCharacterImageName").AddComponent<AddressableLoaderCharacterImageName>();
+            var tableLoader = CompatObjectFind.FindFirst<TableLoaderManager>() ?? new GameObject("TableLoaderManager").AddComponent<TableLoaderManager>();
+            var addrPrefabCommon = CompatObjectFind.FindFirst<AddressableLoaderPrefabCommon>() ?? new GameObject("AddressableLoaderPrefabCommon").AddComponent<AddressableLoaderPrefabCommon>();
+            var addrPrefabVfx = CompatObjectFind.FindFirst<AddressableLoaderPrefabVfx>() ?? new GameObject("AddressableLoaderPrefabVfx").AddComponent<AddressableLoaderPrefabVfx>();
+            var addrItem = CompatObjectFind.FindFirst<AddressableLoaderItem>() ?? new GameObject("AddressableLoaderItem").AddComponent<AddressableLoaderItem>();
+            var addrSound = CompatObjectFind.FindFirst<AddressableLoaderSound>() ?? new GameObject("AddressableLoaderSound").AddComponent<AddressableLoaderSound>();
+            var saveData = CompatObjectFind.FindFirst<SaveDataLoader>() ?? new GameObject("SaveDataLoader").AddComponent<SaveDataLoader>();
+            var loc = CompatObjectFind.FindFirst<LocalizationManager>() ?? new GameObject("LocalizationManager").AddComponent<LocalizationManager>();
+            var addressableLoaderCharacterImageName = CompatObjectFind.FindFirst<AddressableLoaderCharacterImageName>() ?? new GameObject("AddressableLoaderCharacterImageName").AddComponent<AddressableLoaderCharacterImageName>();
+            
             // 테이블 대상 목록은 프로젝트/씬에 따라 별도 주입(예: ScriptableObject나 Config에서)
             var targetTables = ConfigAddressableTable.All; // 사용 중인 곳에서 구현(예시)
 
@@ -265,11 +266,13 @@ namespace GGemCo2DCore
 
         public void StartLoadingInScenePreIntro()
         {
-            var tableLoader = Object.FindFirstObjectByType<TableLoaderManager>() ?? new GameObject("TableLoaderManager").AddComponent<TableLoaderManager>();
-            var addrSound = Object.FindFirstObjectByType<AddressableLoaderSound>() ?? new GameObject("AddressableLoaderSound").AddComponent<AddressableLoaderSound>();
-            var addrSettings = Object.FindFirstObjectByType<AddressableLoaderSettings>() ?? new GameObject("AddressableLoaderSettings").AddComponent<AddressableLoaderSettings>();
-            var loc = Object.FindFirstObjectByType<LocalizationManager>() ?? new GameObject("LocalizationManager").AddComponent<LocalizationManager>();
+            var tableLoader = CompatObjectFind.FindFirst<TableLoaderManager>() ?? new GameObject("TableLoaderManager").AddComponent<TableLoaderManager>();
+            var addrSound = CompatObjectFind.FindFirst<AddressableLoaderSound>() ?? new GameObject("AddressableLoaderSound").AddComponent<AddressableLoaderSound>();
+            var addrSettings = CompatObjectFind.FindFirst<AddressableLoaderSettings>() ?? new GameObject("AddressableLoaderSettings").AddComponent<AddressableLoaderSettings>();
+            var loc = CompatObjectFind.FindFirst<LocalizationManager>() ?? new GameObject("LocalizationManager").AddComponent<LocalizationManager>();
 
+            
+            
             var soundTable = ConfigAddressableTable.GetByKey(ConfigAddressableTable.KeySoundTable());
             var targetTables = new List<AddressableAssetInfo> { soundTable };
             

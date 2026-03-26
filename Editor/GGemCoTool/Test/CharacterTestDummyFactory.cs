@@ -93,11 +93,7 @@ namespace GGemCo2DCoreEditor
 
         private static CharacterBase FindReusableDummy(string toolOwnerKey, string dummyName)
         {
-#if UNITY_2023_1_OR_NEWER
-            var markers = Object.FindObjectsByType<CharacterTestDummyMarker>(FindObjectsInactive.Exclude, FindObjectsSortMode.None);
-#else
-            var markers = Object.FindObjectsOfType<CharacterTestDummyMarker>();
-#endif
+            var markers = CompatObjectFind.FindAll<CharacterTestDummyMarker>();            
             foreach (var marker in markers)
             {
                 if (marker == null || !marker.Matches(toolOwnerKey, dummyName))

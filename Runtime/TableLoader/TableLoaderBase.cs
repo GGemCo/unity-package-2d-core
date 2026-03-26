@@ -14,7 +14,7 @@ namespace GGemCo2DCore
         {
             if (registry != null) return true;
 
-            var manager = FindFirstObjectByType<TableLoaderManager>();
+            var manager = CompatObjectFind.FindFirst<TableLoaderManager>();
             if (manager == null)
             {
                 GcLogger.LogWarning("[TableLoaderManager] Instance not found.");

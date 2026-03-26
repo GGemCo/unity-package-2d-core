@@ -2,13 +2,14 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using GGemCo2DCore;
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
 using UnityEngine.Localization;
 using UnityEngine.Localization.Components;
 using UnityEngine.Localization.Settings;
-using UnityEngine.SceneManagement;
+using SceneManager = UnityEngine.SceneManagement.SceneManager;
 
 namespace GGemCo2DCoreEditor
 {
@@ -108,14 +109,9 @@ namespace GGemCo2DCoreEditor
         private static int ProcessScene(string scenePath)
         {
             var scene = EditorSceneManager.OpenScene(scenePath, OpenSceneMode.Single);
-#if UNITY_6000_0_OR_NEWER
-            var components = GameObject.FindObjectsByType<LocalizeStringEvent>(FindObjectsSortMode.None);
-#else
-            var components = GameObject.FindObjectsOfType<LocalizeStringEvent>(true);
-#endif
+            var components = CompatObjectFind.FindAll<LocalizeStringEvent>(includeInactive: true);
             
             int updated = 0;
-
             foreach (var comp in components)
             {
                 if (TryUpdateLocalizeStringEvent(comp))

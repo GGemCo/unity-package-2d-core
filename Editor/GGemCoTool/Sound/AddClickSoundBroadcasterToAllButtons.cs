@@ -74,11 +74,7 @@ namespace GGemCo2DCoreEditor
 
             int count = 0;
 
-#if UNITY_6000_0_OR_NEWER
-            var buttons = Object.FindObjectsByType<Button>(FindObjectsSortMode.None);
-#else
-    var buttons = FindObjectsOfType<Button>(true);
-#endif
+            var buttons = CompatObjectFind.FindAll<Button>(includeInactive: true);            
 
             foreach (var btn in buttons)
             {
