@@ -43,6 +43,7 @@ namespace GGemCo2DCore
         private CharacterWhiteOverlayController _characterWhiteOverlayController;
         private SceneGame _sceneGame;
         private CutsceneOverlayPresenter _overlayPresenter;
+        private ScreenFadePresenter _screenFadePresenter;
         
         public void Initialize(SceneGame scene)
         {
@@ -86,6 +87,32 @@ namespace GGemCo2DCore
             _overlayPresenter = root.AddComponent<CutsceneOverlayPresenter>();
             _overlayPresenter.Initialize();
             return _overlayPresenter;
+        }
+
+        public ScreenFadePresenter GetOrCreateScreenFadePresenter(ScreenFadeData data)
+        {
+            if (_sceneGame == null)
+            {
+                GcLogger.LogError("Screen Fade Presenter를 만들기 위한 SceneGame 참조가 없습니다.");
+                return null;
+            }
+
+            if (_screenFadePresenter == null)
+            {
+                var root = new GameObject("ScreenFadePresenter", typeof(RectTransform), typeof(Canvas));
+                root.transform.SetParent(_sceneGame.transform, false);
+
+                var rect = root.GetComponent<RectTransform>();
+                rect.anchorMin = Vector2.zero;
+                rect.anchorMax = Vector2.one;
+                rect.offsetMin = Vector2.zero;
+                rect.offsetMax = Vector2.zero;
+
+                _screenFadePresenter = root.AddComponent<ScreenFadePresenter>();
+            }
+
+            _screenFadePresenter.Initialize(data, _sceneGame);
+            return _screenFadePresenter;
         }
         /// <summary>
         /// 초기화
@@ -202,6 +229,7 @@ namespace GGemCo2DCore
             }
             
             _overlayPresenter?.ResetPresentation();
+            _screenFadePresenter?.ResetPresentation();
             // 원래 카메라로 되돌리기
             SceneGame.Instance.cameraManager?.ReSetByCutscene();
         }
@@ -271,6 +299,12 @@ namespace GGemCo2DCore
             {
                 Object.Destroy(_overlayPresenter.gameObject);
                 _overlayPresenter = null;
+            }
+
+            if (_screenFadePresenter != null)
+            {
+                Object.Destroy(_screenFadePresenter.gameObject);
+                _screenFadePresenter = null;
             }
         }
     }

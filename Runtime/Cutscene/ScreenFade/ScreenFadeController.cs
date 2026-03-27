@@ -8,7 +8,7 @@ namespace GGemCo2DCore
     /// </summary>
     public sealed class ScreenFadeController : CutsceneDefaultController, ICutsceneController
     {
-        private CutsceneOverlayPresenter _presenter;
+        private ScreenFadePresenter _presenter;
         private ScreenFadeData _data;
         private float _elapsed;
         private float _duration;
@@ -26,7 +26,7 @@ namespace GGemCo2DCore
                 yield break;
             }
 
-            _presenter = CutsceneManager.GetOrCreateOverlayPresenter();
+            _presenter = CutsceneManager.GetOrCreateScreenFadePresenter(evt.screenFade);
             yield return null;
         }
 
@@ -37,24 +37,25 @@ namespace GGemCo2DCore
                 return;
             }
 
-            _presenter ??= CutsceneManager.GetOrCreateOverlayPresenter();
+            _presenter = CutsceneManager.GetOrCreateScreenFadePresenter(evt.screenFade);
             if (_presenter == null)
             {
                 return;
             }
 
             _data = evt.screenFade ?? new ScreenFadeData();
+            _presenter?.ApplyRenderSettings(_data, SceneGame.Instance);
             _duration = evt.duration > 0f ? evt.duration : 0f;
             _elapsed = 0f;
             _isPlaying = _duration > 0f;
 
             if (_duration <= 0f)
             {
-                _presenter.SetScreenFade(_data.color, _data.toAlpha, _data.toAlpha > 0f);
+                _presenter.SetFade(_data.color, _data.toAlpha, _data.toAlpha > 0f);
                 return;
             }
 
-            _presenter.SetScreenFade(_data.color, _data.fromAlpha, true);
+            _presenter.SetFade(_data.color, _data.fromAlpha, true);
         }
 
         public void Update()
@@ -68,7 +69,7 @@ namespace GGemCo2DCore
             float t = Mathf.Clamp01(_elapsed / Mathf.Max(0.0001f, _duration));
             float eased = Mathf.Clamp01(Easing.Apply(t, _data.easing));
             float alpha = Mathf.Lerp(_data.fromAlpha, _data.toAlpha, eased);
-            _presenter.SetScreenFade(_data.color, alpha, true);
+            _presenter.SetFade(_data.color, alpha, true);
 
             if (_elapsed >= _duration)
             {
@@ -86,11 +87,11 @@ namespace GGemCo2DCore
 
             if (_data.holdFinalState)
             {
-                _presenter.SetScreenFade(_data.color, _data.toAlpha, _data.toAlpha > 0f);
+                _presenter.SetFade(_data.color, _data.toAlpha, _data.toAlpha > 0f);
             }
             else
             {
-                _presenter.SetScreenFade(_data.color, 0f, false);
+                _presenter.SetFade(_data.color, 0f, false);
             }
         }
 

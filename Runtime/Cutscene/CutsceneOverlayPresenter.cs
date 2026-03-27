@@ -1,42 +1,29 @@
 ﻿using UnityEngine;
 using TMPro;
-using UnityEngine.UI;
 
 namespace GGemCo2DCore
 {
     /// <summary>
-    /// CutsceneManager가 사용하는 공용 오버레이 UI 프레젠터입니다.
-    /// Screen Fade, Overlay Text 같은 전역 UI 연출을 한 곳에서 관리합니다.
+    /// CutsceneManager가 사용하는 오버레이 텍스트 전용 UI 프레젠터입니다.
+    /// Screen Fade는 별도 ScreenFadePresenter에서 관리합니다.
     /// </summary>
     [DisallowMultipleComponent]
     public sealed class CutsceneOverlayPresenter : MonoBehaviour
     {
-        private Image _screenFadeImage;
         private RectTransform _textRoot;
         private TextMeshProUGUI _overlayText;
         private CanvasGroup _textCanvasGroup;
 
         public void Initialize()
         {
-            EnsureScreenFadeImage();
             EnsureOverlayText();
             ResetPresentation();
         }
 
         public void ResetPresentation()
         {
-            SetScreenFade(Color.black, 0f, false);
             SetOverlayTextVisible(false);
             SetOverlayTextAlpha(0f);
-        }
-
-        public void SetScreenFade(Color color, float alpha, bool visible = true)
-        {
-            EnsureScreenFadeImage();
-            alpha = Mathf.Clamp01(alpha);
-            color.a = alpha;
-            _screenFadeImage.color = color;
-            _screenFadeImage.gameObject.SetActive(visible && alpha > 0f);
         }
 
         public void ConfigureOverlayText(OverlayTextData data)
@@ -65,26 +52,6 @@ namespace GGemCo2DCore
         {
             EnsureOverlayText();
             _textCanvasGroup.alpha = Mathf.Clamp01(alpha);
-        }
-
-        private void EnsureScreenFadeImage()
-        {
-            if (_screenFadeImage != null)
-            {
-                return;
-            }
-
-            var go = new GameObject("ScreenFade", typeof(RectTransform), typeof(CanvasRenderer), typeof(Image));
-            go.transform.SetParent(transform, false);
-            var rect = go.GetComponent<RectTransform>();
-            rect.anchorMin = Vector2.zero;
-            rect.anchorMax = Vector2.one;
-            rect.offsetMin = Vector2.zero;
-            rect.offsetMax = Vector2.zero;
-
-            _screenFadeImage = go.GetComponent<Image>();
-            _screenFadeImage.raycastTarget = false;
-            _screenFadeImage.color = new Color(0f, 0f, 0f, 0f);
         }
 
         private void EnsureOverlayText()

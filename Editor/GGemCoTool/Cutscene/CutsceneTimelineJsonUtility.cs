@@ -400,6 +400,10 @@ namespace GGemCo2DCoreEditor
                 holdFinalState = source.holdFinalState,
                 useUnscaledTime = source.useUnscaledTime,
                 easing = source.easing,
+                renderMode = source.renderMode,
+                sortingLayerName = source.sortingLayerName,
+                orderInLayer = source.orderInLayer,
+                planeDistance = source.planeDistance,
             };
         }
 

@@ -19,5 +19,15 @@ namespace GGemCo2DCore
         public bool useUnscaledTime = true;
         [Tooltip("알파 보간 easing 입니다.")]
         public Easing.EaseType easing = Easing.EaseType.Linear;
+
+        [Header("Render")]
+        [Tooltip("Screen Fade를 어떤 Canvas 계층에 렌더링할지 결정합니다.")]
+        public ScreenFadeRenderMode renderMode = ScreenFadeRenderMode.OverlayUi;
+        [Tooltip("Screen Space - Camera 사용 시 적용할 Sorting Layer 이름입니다.")]
+        public string sortingLayerName = nameof(ConfigSortingLayer.Keys.UI);
+        [Tooltip("Screen Space - Camera 사용 시 적용할 Order in Layer 값입니다.")]
+        public int orderInLayer = 0;
+        [Tooltip("Screen Space - Camera Canvas 의 Plane Distance 값입니다.")]
+        public float planeDistance = 10f;
     }
 }
