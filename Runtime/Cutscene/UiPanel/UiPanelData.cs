@@ -34,6 +34,18 @@ namespace GGemCo2DCore
         [Tooltip("형제 인덱스입니다. 음수이면 변경하지 않습니다.")]
         public int siblingIndex = -1;
 
+        [Header("Render")]
+        [Tooltip("UI Panel을 어떤 Canvas 계층에 렌더링할지 결정합니다.")]
+        public ScreenFadeRenderMode renderMode = ScreenFadeRenderMode.OverlayUi;
+        [Tooltip("패널별로 독립 Canvas 정렬을 사용할지 여부입니다. Off면 siblingIndex만 사용합니다.")]
+        public bool useIndependentCanvasSorting;
+        [Tooltip("독립 정렬 사용 시 적용할 Sorting Layer 이름입니다.")]
+        public string sortingLayerName = nameof(ConfigSortingLayer.Keys.UI);
+        [Tooltip("독립 정렬 사용 시 적용할 Order in Layer 값입니다.")]
+        public int orderInLayer = 0;
+        [Tooltip("Screen Space - Camera Canvas 의 Plane Distance 값입니다.")]
+        public float planeDistance = 10f;
+
         [Header("Visual")]
         [Tooltip("패널 시작 색상입니다.")]
         public Color fromColor = Color.black;

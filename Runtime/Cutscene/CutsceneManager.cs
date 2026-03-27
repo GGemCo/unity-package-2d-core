@@ -99,15 +99,14 @@ namespace GGemCo2DCore
                 return _uiPanelPresenter;
             }
 
-            var canvas = _sceneGame != null ? _sceneGame.canvasUI : null;
-            if (canvas == null)
+            if (_sceneGame == null)
             {
-                GcLogger.LogError("Cutscene UI Panel presenter를 만들기 위한 Canvas UI가 없습니다.");
+                GcLogger.LogError("Cutscene UI Panel presenter를 만들기 위한 SceneGame 참조가 없습니다.");
                 return null;
             }
 
-            var root = new GameObject("CutsceneUiPanelPresenter", typeof(RectTransform));
-            root.transform.SetParent(canvas.transform, false);
+            var root = new GameObject("CutsceneUiPanelPresenter", typeof(RectTransform), typeof(Canvas));
+            root.transform.SetParent(_sceneGame.transform, false);
 
             var rect = root.GetComponent<RectTransform>();
             rect.anchorMin = Vector2.zero;

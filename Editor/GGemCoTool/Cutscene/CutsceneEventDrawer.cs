@@ -79,7 +79,8 @@ namespace GGemCo2DCoreEditor
                     EditorGUI.PropertyField(line, characterWhiteOverlayProp, true);
                     break;
                 case CutsceneEventType.UiPanel:
-                    EditorGUI.PropertyField(line, uiPanelProp, true);
+                    uiPanelProp.isExpanded = true;
+                    EditorGUI.PropertyField(line, uiPanelProp, new GUIContent("Ui Panel"), true);
                     break;
             }
 

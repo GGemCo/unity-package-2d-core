@@ -28,9 +28,14 @@ namespace GGemCo2DCore
 
             _presenter = CutsceneManager.GetOrCreateUiPanelPresenter();
             var data = evt.uiPanel ?? new UiPanelData();
-            if (_presenter != null && data.createIfMissing)
+            if (_presenter != null)
             {
-                _presenter.ConfigurePanel(data.panelId, data);
+                _presenter.ApplyRenderSettings(data, SceneGame.Instance);
+
+                if (data.createIfMissing)
+                {
+                    _presenter.ConfigurePanel(data.panelId, data);
+                }
             }
 
             yield return null;
@@ -50,6 +55,8 @@ namespace GGemCo2DCore
             }
 
             _data = evt.uiPanel ?? new UiPanelData();
+            _presenter.ApplyRenderSettings(_data, SceneGame.Instance);
+
             if (!_data.createIfMissing && !_presenter.HasPanel(_data.panelId))
             {
                 return;
@@ -131,6 +138,7 @@ namespace GGemCo2DCore
 
         private void ApplyStartState()
         {
+            _presenter.ApplyRenderSettings(_data, SceneGame.Instance);
             _presenter.ConfigurePanel(_data.panelId, _data);
             _presenter.ApplyState(_data.panelId, _data.fromAnchoredPosition, _data.fromSizeDelta, _data.fromColor, _data.fromAlpha);
             _presenter.SetPanelVisible(_data.panelId, true);
@@ -138,6 +146,7 @@ namespace GGemCo2DCore
 
         private void ApplyFinalState()
         {
+            _presenter.ApplyRenderSettings(_data, SceneGame.Instance);
             _presenter.ConfigurePanel(_data.panelId, _data);
             _presenter.ApplyState(_data.panelId, _data.toAnchoredPosition, _data.toSizeDelta, _data.toColor, _data.toAlpha);
             _presenter.SetPanelVisible(_data.panelId, true);

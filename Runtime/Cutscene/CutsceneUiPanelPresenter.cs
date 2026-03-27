@@ -18,13 +18,59 @@ namespace GGemCo2DCore
             public RectTransform RectTransform;
             public CanvasGroup CanvasGroup;
             public Image Image;
+            public Canvas Canvas;
         }
 
         private readonly Dictionary<string, PanelHandle> _panels = new();
+        private Canvas _canvas;
+        private RectTransform _rootRect;
+        private ScreenFadeRenderMode _currentRenderMode = ScreenFadeRenderMode.OverlayUi;
 
         public void Initialize()
         {
+            EnsureCanvas();
             ResetPresentation();
+        }
+
+        public void ApplyRenderSettings(UiPanelData data, SceneGame sceneGame)
+        {
+            EnsureCanvas();
+
+            var resolved = data ?? new UiPanelData();
+            _currentRenderMode = resolved.renderMode;
+            var mainCamera = sceneGame != null ? sceneGame.mainCamera : Camera.main;
+            string sortingLayerName = ResolveSortingLayerName(resolved.sortingLayerName);
+
+            switch (_currentRenderMode)
+            {
+                case ScreenFadeRenderMode.ScreenSpaceCamera:
+                    _canvas.renderMode = RenderMode.ScreenSpaceCamera;
+                    _canvas.worldCamera = mainCamera;
+                    _canvas.planeDistance = Mathf.Max(0.01f, resolved.planeDistance);
+                    break;
+
+                case ScreenFadeRenderMode.OverlayUi:
+                default:
+                    _canvas.renderMode = RenderMode.ScreenSpaceOverlay;
+                    _canvas.worldCamera = null;
+                    _canvas.planeDistance = Mathf.Max(0.01f, resolved.planeDistance);
+                    break;
+            }
+
+            _canvas.overrideSorting = true;
+            _canvas.sortingLayerName = sortingLayerName;
+            _canvas.sortingOrder = resolved.useIndependentCanvasSorting ? 0 : resolved.orderInLayer;
+
+            if (_rootRect != null)
+            {
+                _rootRect.anchorMin = Vector2.zero;
+                _rootRect.anchorMax = Vector2.one;
+                _rootRect.offsetMin = Vector2.zero;
+                _rootRect.offsetMax = Vector2.zero;
+                _rootRect.anchoredPosition3D = Vector3.zero;
+                _rootRect.localScale = Vector3.one;
+                _rootRect.localRotation = Quaternion.identity;
+            }
         }
 
         public void ResetPresentation()
@@ -65,6 +111,7 @@ namespace GGemCo2DCore
 
             ApplyLayout(handle, data);
             ApplyVisualOptions(handle, data);
+            ApplySorting(handle, data);
         }
 
         public void ApplyState(string panelId, Vec2 anchoredPosition, Vec2 sizeDelta, Color color, float alpha)
@@ -159,6 +206,26 @@ namespace GGemCo2DCore
             return _panels.TryGetValue(NormalizePanelId(panelId), out handle);
         }
 
+        private void EnsureCanvas()
+        {
+            if (_canvas != null)
+            {
+                return;
+            }
+
+            _canvas = GetComponent<Canvas>();
+            if (_canvas == null)
+            {
+                _canvas = gameObject.AddComponent<Canvas>();
+            }
+
+            _rootRect = GetComponent<RectTransform>();
+            if (_rootRect == null)
+            {
+                _rootRect = gameObject.AddComponent<RectTransform>();
+            }
+        }
+
         private static void ApplyLayout(PanelHandle handle, UiPanelData data)
         {
             if (handle == null || data == null)
@@ -188,9 +255,43 @@ namespace GGemCo2DCore
             handle.CanvasGroup.interactable = data.raycastTarget;
         }
 
+        private static void ApplySorting(PanelHandle handle, UiPanelData data)
+        {
+            if (handle == null)
+            {
+                return;
+            }
+
+            if (data == null || !data.useIndependentCanvasSorting)
+            {
+                if (handle.Canvas != null)
+                {
+                    Object.Destroy(handle.Canvas);
+                    handle.Canvas = null;
+                }
+
+                return;
+            }
+
+            handle.Canvas ??= handle.GameObject.GetComponent<Canvas>() ?? handle.GameObject.AddComponent<Canvas>();
+            handle.Canvas.renderMode = RenderMode.ScreenSpaceOverlay;
+            handle.Canvas.worldCamera = null;
+            handle.Canvas.planeDistance = Mathf.Max(0.01f, data.planeDistance);
+            handle.Canvas.overrideSorting = true;
+            handle.Canvas.sortingLayerName = ResolveSortingLayerName(data.sortingLayerName);
+            handle.Canvas.sortingOrder = data.orderInLayer;
+        }
+
         private static string NormalizePanelId(string panelId)
         {
             return string.IsNullOrWhiteSpace(panelId) ? "Panel" : panelId.Trim();
+        }
+
+        private static string ResolveSortingLayerName(string sortingLayerName)
+        {
+            return string.IsNullOrWhiteSpace(sortingLayerName)
+                ? nameof(ConfigSortingLayer.Keys.UI)
+                : sortingLayerName;
         }
     }
 }
