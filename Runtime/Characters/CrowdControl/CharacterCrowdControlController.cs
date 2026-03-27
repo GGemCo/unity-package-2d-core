@@ -247,8 +247,8 @@ namespace GGemCo2DCore
             {
                 if (_activeCrowdControl != null && IsLandingDrivenCrowdControl(_activeCrowdControl))
                 {
-                    if (!TryHandleCompletedLandingDrivenCrowdControl())
-                        return;
+                    TryHandleCompletedLandingDrivenCrowdControl();
+                    return;
                 }
 
                 var finished = _activeCrowdControl;
