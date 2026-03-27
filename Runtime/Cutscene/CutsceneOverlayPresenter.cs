@@ -1,4 +1,5 @@
 ﻿using UnityEngine;
+using TMPro;
 using UnityEngine.UI;
 
 namespace GGemCo2DCore
@@ -12,9 +13,8 @@ namespace GGemCo2DCore
     {
         private Image _screenFadeImage;
         private RectTransform _textRoot;
-        private Text _overlayText;
+        private TextMeshProUGUI _overlayText;
         private CanvasGroup _textCanvasGroup;
-        private Outline _textOutline;
 
         public void Initialize()
         {
@@ -94,7 +94,7 @@ namespace GGemCo2DCore
                 return;
             }
 
-            var go = new GameObject("OverlayText", typeof(RectTransform), typeof(CanvasRenderer), typeof(CanvasGroup), typeof(Text), typeof(Outline));
+            var go = new GameObject("OverlayText", typeof(RectTransform), typeof(CanvasRenderer), typeof(CanvasGroup), typeof(TextMeshProUGUI));
             go.transform.SetParent(transform, false);
             _textRoot = go.GetComponent<RectTransform>();
             _textRoot.anchorMin = new Vector2(0.5f, 0.5f);
@@ -107,18 +107,18 @@ namespace GGemCo2DCore
             _textCanvasGroup.interactable = false;
             _textCanvasGroup.blocksRaycasts = false;
 
-            _overlayText = go.GetComponent<Text>();
+            _overlayText = go.GetComponent<TextMeshProUGUI>();
             _overlayText.raycastTarget = false;
-            _overlayText.alignment = TextAnchor.MiddleCenter;
-            _overlayText.horizontalOverflow = HorizontalWrapMode.Wrap;
-            _overlayText.verticalOverflow = VerticalWrapMode.Overflow;
-            _overlayText.font = Resources.GetBuiltinResource<Font>("Arial.ttf");
+            _overlayText.alignment = TextAlignmentOptions.Center;
+            _overlayText.enableWordWrapping = true;
+            _overlayText.overflowMode = TextOverflowModes.Overflow;
             _overlayText.text = string.Empty;
             _overlayText.color = Color.white;
 
-            _textOutline = go.GetComponent<Outline>();
-            _textOutline.effectColor = new Color(0f, 0f, 0f, 0.85f);
-            _textOutline.effectDistance = new Vector2(2f, -2f);
+            if (TMP_Settings.defaultFontAsset != null)
+            {
+                _overlayText.font = TMP_Settings.defaultFontAsset;
+            }
 
             go.SetActive(false);
         }
