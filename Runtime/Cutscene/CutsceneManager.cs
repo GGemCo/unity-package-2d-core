@@ -14,60 +14,60 @@ namespace GGemCo2DCore
     public class CutsceneManager
     {
         private enum State { Idle, Loading, Ready, Playing, Finished }
-        private State currentState;
+        private State _currentState;
 
-        private CutsceneData currentCutscene;
-        private float playTimer;
-        private int currentIndex;
-        private float originalOrthographicSize;
-        private DialogueBalloonPool dialogueBalloonPool;
+        private CutsceneData _currentCutscene;
+        private float _playTimer;
+        private int _currentIndex;
+        private float _originalOrthographicSize;
+        private DialogueBalloonPool _dialogueBalloonPool;
 
         // 연출중 생성된 캐릭터 관리
-        private readonly Dictionary<CharacterConstants.Type, Dictionary<int, GameObject>> createCharacters =
+        private readonly Dictionary<CharacterConstants.Type, Dictionary<int, GameObject>> _createCharacters =
             new Dictionary<CharacterConstants.Type, Dictionary<int, GameObject>>();
         
         // 연출 컨트롤러
-        private readonly List<ICutsceneController> activeControllers = new();
+        private readonly List<ICutsceneController> _activeControllers = new();
         
-        private CameraMoveController cameraMoveController;
-        private CameraZoomController cameraZoomController;
-        private CameraShakeController cameraShakeController;
-        private CameraChangeTargetController cameraChangeTargetController;
+        private CameraMoveController _cameraMoveController;
+        private CameraZoomController _cameraZoomController;
+        private CameraShakeController _cameraShakeController;
+        private CameraChangeTargetController _cameraChangeTargetController;
         
-        private CharacterMoveController characterMoveController;
-        private CharacterAnimationController characterAnimationController;
+        private CharacterMoveController _characterMoveController;
+        private CharacterAnimationController _characterAnimationController;
         
-        private DialogueBalloonController dialogueBalloonController;
-        private ScreenFadeController screenFadeController;
-        private OverlayTextController overlayTextController;
-        private CharacterWhiteOverlayController characterWhiteOverlayController;
-        private SceneGame sceneGame;
-        private CutsceneOverlayPresenter overlayPresenter;
+        private DialogueBalloonController _dialogueBalloonController;
+        private ScreenFadeController _screenFadeController;
+        private OverlayTextController _overlayTextController;
+        private CharacterWhiteOverlayController _characterWhiteOverlayController;
+        private SceneGame _sceneGame;
+        private CutsceneOverlayPresenter _overlayPresenter;
         
         public void Initialize(SceneGame scene)
         {
-            sceneGame = scene;
-            createCharacters.Clear();
-            playTimer = 0f;
-            currentIndex = 0;
-            currentState = State.Idle;
+            _sceneGame = scene;
+            _createCharacters.Clear();
+            _playTimer = 0f;
+            _currentIndex = 0;
+            _currentState = State.Idle;
             
             // 기존 컨트롤러 초기화 이후
-            if (sceneGame.containerDialogueBalloon)
+            if (_sceneGame.containerDialogueBalloon)
             {
-                dialogueBalloonPool = new DialogueBalloonPool(sceneGame.containerDialogueBalloon.transform); // 부모는 선택
+                _dialogueBalloonPool = new DialogueBalloonPool(_sceneGame.containerDialogueBalloon.transform); // 부모는 선택
             }
         }
-        public bool IsPlaying() => currentState == State.Playing;
+        public bool IsPlaying() => _currentState == State.Playing;
 
         public CutsceneOverlayPresenter GetOrCreateOverlayPresenter()
         {
-            if (overlayPresenter != null)
+            if (_overlayPresenter != null)
             {
-                return overlayPresenter;
+                return _overlayPresenter;
             }
 
-            var canvas = sceneGame != null ? sceneGame.canvasUI : null;
+            var canvas = _sceneGame != null ? _sceneGame.canvasUI : null;
             if (canvas == null)
             {
                 GcLogger.LogError("Cutscene overlay presenter를 만들기 위한 Canvas UI가 없습니다.");
@@ -83,18 +83,18 @@ namespace GGemCo2DCore
             rect.offsetMin = Vector2.zero;
             rect.offsetMax = Vector2.zero;
 
-            overlayPresenter = root.AddComponent<CutsceneOverlayPresenter>();
-            overlayPresenter.Initialize();
-            return overlayPresenter;
+            _overlayPresenter = root.AddComponent<CutsceneOverlayPresenter>();
+            _overlayPresenter.Initialize();
+            return _overlayPresenter;
         }
         /// <summary>
         /// 초기화
         /// </summary>
         private void Reset()
         {
-            createCharacters.Clear();
-            playTimer = 0f;
-            currentIndex = 0;
+            _createCharacters.Clear();
+            _playTimer = 0f;
+            _currentIndex = 0;
         }
         /// <summary>
         /// 연출 플레이
@@ -110,7 +110,7 @@ namespace GGemCo2DCore
                     return;
                 }
                 Reset();
-                currentState = State.Loading;
+                _currentState = State.Loading;
 
                 string key = $"{ConfigAddressableKey.Cutscene}_{info.Uid}";
                 TextAsset asset = await AddressableLoaderController.LoadByKeyAsync<TextAsset>(key);
@@ -121,13 +121,13 @@ namespace GGemCo2DCore
                     return;
                 }
                 // 카메라 원본 size 저장 
-                originalOrthographicSize = SceneGame.Instance.mainCamera.orthographicSize;
+                _originalOrthographicSize = SceneGame.Instance.mainCamera.orthographicSize;
                 // 모든 캐릭터 활성화, 컬링 적용되지 않음
-                sceneGame.mapManager.ActiveAllCharacters();
+                _sceneGame.mapManager.ActiveAllCharacters();
                 // json 파싱하기
-                currentCutscene = JsonConvert.DeserializeObject<CutsceneData>(asset.text);    
+                _currentCutscene = JsonConvert.DeserializeObject<CutsceneData>(asset.text);    
                 // 리소스 생성, 프리팹 로딩, 사운드 등 선행 처리
-                sceneGame.StartCoroutine(PrepareAndPlay());
+                _sceneGame.StartCoroutine(PrepareAndPlay());
             }
             catch (Exception e)
             {
@@ -140,41 +140,41 @@ namespace GGemCo2DCore
         /// <returns></returns>
         private IEnumerator PrepareAndPlay()
         {
-            currentState = State.Ready;
+            _currentState = State.Ready;
 
-            foreach (var cutsceneEvent in currentCutscene.events)
+            foreach (var cutsceneEvent in _currentCutscene.events)
             {
                 var controller = CreateController(cutsceneEvent.type);
                 if (controller == null) continue;
                 cutsceneEvent.Controller = controller; // 저장
-                activeControllers.Add(controller);
-                yield return sceneGame.StartCoroutine(controller.Ready(cutsceneEvent));
+                _activeControllers.Add(controller);
+                yield return _sceneGame.StartCoroutine(controller.Ready(cutsceneEvent));
             }
 
             // GcLogger.Log("모든 컨트롤러 준비 완료 → 연출 시작");
-            currentState = State.Playing;
+            _currentState = State.Playing;
         }
 
         public void Update()
         {
-            if (currentState != State.Playing || currentCutscene == null) return;
+            if (_currentState != State.Playing || _currentCutscene == null) return;
 
-            playTimer += Time.deltaTime;
+            _playTimer += Time.deltaTime;
 
-            while (currentIndex < currentCutscene.events.Count &&
-                   currentCutscene.events[currentIndex].time <= playTimer)
+            while (_currentIndex < _currentCutscene.events.Count &&
+                   _currentCutscene.events[_currentIndex].time <= _playTimer)
             {
-                var evt = currentCutscene.events[currentIndex];
+                var evt = _currentCutscene.events[_currentIndex];
                 evt.Controller?.Trigger(evt); // 재사용
-                currentIndex++;
+                _currentIndex++;
             }
 
-            foreach (var controller in activeControllers)
+            foreach (var controller in _activeControllers)
             {
                 controller.Update();
             }
 
-            if (!(playTimer > currentCutscene.duration)) return;
+            if (!(_playTimer > _currentCutscene.duration)) return;
             OnCutsceneEnd();
             
         }
@@ -184,16 +184,16 @@ namespace GGemCo2DCore
         private void OnCutsceneEnd()
         {
             // GcLogger.Log("연출 종료");
-            currentState = State.Finished;
+            _currentState = State.Finished;
             
-            foreach (var controller in activeControllers)
+            foreach (var controller in _activeControllers)
             {
                 controller.End();
             }
-            activeControllers.Clear(); // 메모리 정리
+            _activeControllers.Clear(); // 메모리 정리
             
             // 만들었던 캐릭터 지우기
-            foreach (var dic1 in createCharacters)
+            foreach (var dic1 in _createCharacters)
             {
                 foreach (var dic2 in dic1.Value)
                 {
@@ -201,7 +201,7 @@ namespace GGemCo2DCore
                 }
             }
             
-            overlayPresenter?.ResetPresentation();
+            _overlayPresenter?.ResetPresentation();
             // 원래 카메라로 되돌리기
             SceneGame.Instance.cameraManager?.ReSetByCutscene();
         }
@@ -213,11 +213,11 @@ namespace GGemCo2DCore
         /// <param name="character"></param>
         public void AddCharacter(CharacterConstants.Type type, int characterUid, GameObject character)
         {
-            if (!createCharacters.ContainsKey(type))
+            if (!_createCharacters.ContainsKey(type))
             {
-                createCharacters.Add(type, new Dictionary<int, GameObject>());
+                _createCharacters.Add(type, new Dictionary<int, GameObject>());
             }
-            createCharacters[type].Add(characterUid, character);
+            _createCharacters[type].Add(characterUid, character);
         }
         /// <summary>
         /// 연출 중 생성된 캐릭터에서 찾기
@@ -227,7 +227,7 @@ namespace GGemCo2DCore
         /// <returns></returns>
         public Transform GetCharacter(CharacterConstants.Type type, int characterUid)
         {
-            return createCharacters.GetValueOrDefault(type)?.GetValueOrDefault(characterUid)?.transform;
+            return _createCharacters.GetValueOrDefault(type)?.GetValueOrDefault(characterUid)?.transform;
         }
         private ICutsceneController CreateController(CutsceneEventType type)
         {
@@ -241,7 +241,7 @@ namespace GGemCo2DCore
                 CutsceneEventType.CharacterMove => new CharacterMoveController(this),
                 CutsceneEventType.CharacterAnimation => new CharacterAnimationController(this),
 
-                CutsceneEventType.DialogueBalloon => new DialogueBalloonController(this, dialogueBalloonPool),
+                CutsceneEventType.DialogueBalloon => new DialogueBalloonController(this, _dialogueBalloonPool),
                 CutsceneEventType.ScreenFade => new ScreenFadeController(this),
                 CutsceneEventType.OverlayText => new OverlayTextController(this),
                 CutsceneEventType.CharacterWhiteOverlay => new CharacterWhiteOverlayController(this),
@@ -252,14 +252,14 @@ namespace GGemCo2DCore
 
         public void OnDestroy()
         {
-            foreach (var controller in activeControllers)
+            foreach (var controller in _activeControllers)
             {
                 controller.End();
             }
-            activeControllers.Clear(); // 메모리 정리
+            _activeControllers.Clear(); // 메모리 정리
             
             // 만들었던 캐릭터 지우기
-            foreach (var dic1 in createCharacters)
+            foreach (var dic1 in _createCharacters)
             {
                 foreach (var dic2 in dic1.Value)
                 {
@@ -267,10 +267,10 @@ namespace GGemCo2DCore
                 }
             }
 
-            if (overlayPresenter != null)
+            if (_overlayPresenter != null)
             {
-                Object.Destroy(overlayPresenter.gameObject);
-                overlayPresenter = null;
+                Object.Destroy(_overlayPresenter.gameObject);
+                _overlayPresenter = null;
             }
         }
     }

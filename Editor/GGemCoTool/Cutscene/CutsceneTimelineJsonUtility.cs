@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using GGemCo2DCore;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using UnityEditor;
 using UnityEngine;
 using UnityEngine.Timeline;
@@ -14,6 +15,8 @@ namespace GGemCo2DCoreEditor
     /// </summary>
     internal static class CutsceneTimelineJsonUtility
     {
+        private static readonly JsonSerializerSettings CutsceneJsonSettings = CreateCutsceneJsonSettings();
+
         public static bool TryCreateTimelineFromJsonAsset(TextAsset jsonAsset, string timelineAssetPath, out TimelineAsset timelineAsset, out string error)
         {
             timelineAsset = null;
@@ -27,7 +30,7 @@ namespace GGemCo2DCoreEditor
 
             try
             {
-                var cutsceneData = JsonConvert.DeserializeObject<CutsceneData>(jsonAsset.text);
+                var cutsceneData = JsonConvert.DeserializeObject<CutsceneData>(jsonAsset.text, CutsceneJsonSettings);
                 if (cutsceneData == null)
                 {
                     error = "Json 파싱 결과가 비어 있습니다.";
@@ -149,13 +152,7 @@ namespace GGemCo2DCoreEditor
                     Directory.CreateDirectory(directory);
                 }
 
-                var json = JsonConvert.SerializeObject(
-                    data,
-                    Formatting.Indented,
-                    new JsonSerializerSettings
-                    {
-                        NullValueHandling = NullValueHandling.Ignore
-                    });
+                var json = JsonConvert.SerializeObject(data, Formatting.Indented, CutsceneJsonSettings);
 
                 File.WriteAllText(jsonPath, json);
                 AssetDatabase.Refresh();
@@ -250,31 +247,216 @@ namespace GGemCo2DCoreEditor
                 time = source.time,
                 duration = source.duration,
                 type = source.type,
-                cameraMove = source.type == CutsceneEventType.CameraMove ? CloneData(source.cameraMove) : null,
-                cameraZoom = source.type == CutsceneEventType.CameraZoom ? CloneData(source.cameraZoom) : null,
-                cameraShake = source.type == CutsceneEventType.CameraShake ? CloneData(source.cameraShake) : null,
-                cameraChangeTarget = source.type == CutsceneEventType.CameraChangeTarget ? CloneData(source.cameraChangeTarget) : null,
-                characterMove = source.type == CutsceneEventType.CharacterMove ? CloneData(source.characterMove) : null,
-                characterAnimation = source.type == CutsceneEventType.CharacterAnimation ? CloneData(source.characterAnimation) : null,
-                dialogueBalloon = source.type == CutsceneEventType.DialogueBalloon ? CloneData(source.dialogueBalloon) : null,
-                screenFade = source.type == CutsceneEventType.ScreenFade ? CloneData(source.screenFade) : null,
-                overlayText = source.type == CutsceneEventType.OverlayText ? CloneData(source.overlayText) : null,
-                characterWhiteOverlay = source.type == CutsceneEventType.CharacterWhiteOverlay ? CloneData(source.characterWhiteOverlay) : null,
+                cameraMove = source.type == CutsceneEventType.CameraMove ? CloneCameraMoveData(source.cameraMove) : null,
+                cameraZoom = source.type == CutsceneEventType.CameraZoom ? CloneCameraZoomData(source.cameraZoom) : null,
+                cameraShake = source.type == CutsceneEventType.CameraShake ? CloneCameraShakeData(source.cameraShake) : null,
+                cameraChangeTarget = source.type == CutsceneEventType.CameraChangeTarget ? CloneCameraChangeTargetData(source.cameraChangeTarget) : null,
+                characterMove = source.type == CutsceneEventType.CharacterMove ? CloneCharacterMoveData(source.characterMove) : null,
+                characterAnimation = source.type == CutsceneEventType.CharacterAnimation ? CloneCharacterAnimationData(source.characterAnimation) : null,
+                dialogueBalloon = source.type == CutsceneEventType.DialogueBalloon ? CloneDialogueBalloonData(source.dialogueBalloon) : null,
+                screenFade = source.type == CutsceneEventType.ScreenFade ? CloneScreenFadeData(source.screenFade) : null,
+                overlayText = source.type == CutsceneEventType.OverlayText ? CloneOverlayTextData(source.overlayText) : null,
+                characterWhiteOverlay = source.type == CutsceneEventType.CharacterWhiteOverlay ? CloneCharacterWhiteOverlayData(source.characterWhiteOverlay) : null,
             };
 
             clone.EnsureDataForType();
             return clone;
         }
 
-        private static T CloneData<T>(T source) where T : class
+        private static CameraMoveData CloneCameraMoveData(CameraMoveData source)
         {
             if (source == null)
             {
                 return null;
             }
 
-            var json = JsonConvert.SerializeObject(source);
-            return JsonConvert.DeserializeObject<T>(json);
+            return new CameraMoveData
+            {
+                startPosition = source.startPosition,
+                endPosition = source.endPosition,
+                endTargetPlayer = source.endTargetPlayer,
+                easing = source.easing,
+            };
+        }
+
+        private static CameraZoomData CloneCameraZoomData(CameraZoomData source)
+        {
+            if (source == null)
+            {
+                return null;
+            }
+
+            return new CameraZoomData
+            {
+                startSize = source.startSize,
+                endSize = source.endSize,
+                easing = source.easing,
+            };
+        }
+
+        private static CameraShakeData CloneCameraShakeData(CameraShakeData source)
+        {
+            if (source == null)
+            {
+                return null;
+            }
+
+            return new CameraShakeData
+            {
+                duration = source.duration,
+                shakeIntensity = source.shakeIntensity,
+                leftStrength = source.leftStrength,
+                rightStrength = source.rightStrength,
+                downStrength = source.downStrength,
+                upStrength = source.upStrength,
+                repeatCount = source.repeatCount,
+                useUnscaledTime = source.useUnscaledTime,
+            };
+        }
+
+        private static CameraChangeTargetData CloneCameraChangeTargetData(CameraChangeTargetData source)
+        {
+            if (source == null)
+            {
+                return null;
+            }
+
+            return new CameraChangeTargetData
+            {
+                characterType = source.characterType,
+                characterUid = source.characterUid,
+            };
+        }
+
+        private static CharacterMoveData CloneCharacterMoveData(CharacterMoveData source)
+        {
+            if (source == null)
+            {
+                return null;
+            }
+
+            return new CharacterMoveData
+            {
+                isFollowTarget = source.isFollowTarget,
+                characterType = source.characterType,
+                characterUid = source.characterUid,
+                characterScale = source.characterScale,
+                characterMoveSpeed = source.characterMoveSpeed,
+                startPosition = source.startPosition,
+                endPosition = source.endPosition,
+            };
+        }
+
+        private static CharacterAnimationData CloneCharacterAnimationData(CharacterAnimationData source)
+        {
+            if (source == null)
+            {
+                return null;
+            }
+
+            return new CharacterAnimationData
+            {
+                isFollowTarget = source.isFollowTarget,
+                characterType = source.characterType,
+                characterUid = source.characterUid,
+                characterScale = source.characterScale,
+                spawnPosition = source.spawnPosition,
+                isFlip = source.isFlip,
+                animationName = source.animationName,
+                animationLoop = source.animationLoop,
+                animationTimeScale = source.animationTimeScale,
+            };
+        }
+
+        private static DialogueBalloonData CloneDialogueBalloonData(DialogueBalloonData source)
+        {
+            if (source == null)
+            {
+                return null;
+            }
+
+            return new DialogueBalloonData
+            {
+                isFollowTarget = source.isFollowTarget,
+                characterType = source.characterType,
+                characterUid = source.characterUid,
+                message = source.message,
+                fontSize = source.fontSize,
+            };
+        }
+
+        private static ScreenFadeData CloneScreenFadeData(ScreenFadeData source)
+        {
+            if (source == null)
+            {
+                return null;
+            }
+
+            return new ScreenFadeData
+            {
+                color = source.color,
+                fromAlpha = source.fromAlpha,
+                toAlpha = source.toAlpha,
+                holdFinalState = source.holdFinalState,
+                useUnscaledTime = source.useUnscaledTime,
+                easing = source.easing,
+            };
+        }
+
+        private static OverlayTextData CloneOverlayTextData(OverlayTextData source)
+        {
+            if (source == null)
+            {
+                return null;
+            }
+
+            return new OverlayTextData
+            {
+                text = source.text,
+                anchoredPosition = source.anchoredPosition,
+                sizeDelta = source.sizeDelta,
+                fontSize = source.fontSize,
+                textColor = source.textColor,
+                maxAlpha = source.maxAlpha,
+                fadeIn = source.fadeIn,
+                fadeOut = source.fadeOut,
+                easing = source.easing,
+                useUnscaledTime = source.useUnscaledTime,
+            };
+        }
+
+        private static CharacterWhiteOverlayData CloneCharacterWhiteOverlayData(CharacterWhiteOverlayData source)
+        {
+            if (source == null)
+            {
+                return null;
+            }
+
+            return new CharacterWhiteOverlayData
+            {
+                characterType = source.characterType,
+                characterUid = source.characterUid,
+                color = source.color,
+                fromStrength = source.fromStrength,
+                toStrength = source.toStrength,
+                restoreOnStop = source.restoreOnStop,
+                refreshTargetsOnTrigger = source.refreshTargetsOnTrigger,
+                useUnscaledTime = source.useUnscaledTime,
+                easing = source.easing,
+            };
+        }
+
+        private static JsonSerializerSettings CreateCutsceneJsonSettings()
+        {
+            return new JsonSerializerSettings
+            {
+                NullValueHandling = NullValueHandling.Ignore,
+                ReferenceLoopHandling = ReferenceLoopHandling.Ignore,
+                Converters = new List<JsonConverter>
+                {
+                    new UnityColorJsonConverter(),
+                },
+            };
         }
 
         private static void EnsureFolderExistsForAssetPath(string assetPath)
@@ -322,6 +504,43 @@ namespace GGemCo2DCoreEditor
             if (existing != null)
             {
                 AssetDatabase.DeleteAsset(assetPath);
+            }
+        }
+
+        private sealed class UnityColorJsonConverter : JsonConverter<Color>
+        {
+            public override void WriteJson(JsonWriter writer, Color value, JsonSerializer serializer)
+            {
+                writer.WriteStartObject();
+                writer.WritePropertyName("r");
+                writer.WriteValue(value.r);
+                writer.WritePropertyName("g");
+                writer.WriteValue(value.g);
+                writer.WritePropertyName("b");
+                writer.WriteValue(value.b);
+                writer.WritePropertyName("a");
+                writer.WriteValue(value.a);
+                writer.WriteEndObject();
+            }
+
+            public override Color ReadJson(JsonReader reader, Type objectType, Color existingValue, bool hasExistingValue, JsonSerializer serializer)
+            {
+                if (reader.TokenType == JsonToken.Null)
+                {
+                    return default;
+                }
+
+                var token = JToken.Load(reader);
+                if (token.Type != JTokenType.Object)
+                {
+                    return existingValue;
+                }
+
+                return new Color(
+                    token.Value<float?>("r") ?? existingValue.r,
+                    token.Value<float?>("g") ?? existingValue.g,
+                    token.Value<float?>("b") ?? existingValue.b,
+                    token.Value<float?>("a") ?? existingValue.a);
             }
         }
     }
