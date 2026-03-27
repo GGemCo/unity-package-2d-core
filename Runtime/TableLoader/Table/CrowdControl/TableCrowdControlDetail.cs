@@ -42,4 +42,21 @@ namespace GGemCo2DCore
         public Easing.EaseType RiseEaseType;
         public Easing.EaseType FallEaseType;
     }
+
+    public sealed class StruckTableCrowdControlKnockDownAir : StruckTableCrowdControlDetailBase
+    {
+        public float Height;
+
+        public float RiseTime;
+        public float AirTime;
+        public float FallTime;
+
+        public string RiseAnimationName;
+        public string AirAnimationName;
+        public string FallAnimationName;
+        public string LandEndAnimationName;
+
+        public Easing.EaseType RiseEaseType;
+        public Easing.EaseType FallEaseType;
+    }
 }

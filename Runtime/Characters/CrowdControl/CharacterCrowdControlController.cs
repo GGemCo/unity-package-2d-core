@@ -223,6 +223,7 @@ namespace GGemCo2DCore
                 { CrowdControlConstants.Type.KnockBack, new KnockBackCrowdControlHandler() },
                 { CrowdControlConstants.Type.KnockDown, new KnockDownCrowdControlHandler() },
                 { CrowdControlConstants.Type.KnockUp, new KnockUpCrowdControlHandler() },
+                { CrowdControlConstants.Type.KnockDownAir, new KnockDownAirCrowdControlHandler() },
             };
         }
 
@@ -236,14 +237,20 @@ namespace GGemCo2DCore
                 return;
             }
 
-            UpdateKnockUpPhaseAnimation();
+            UpdateAirbornePhaseAnimation();
 
-            if (TryHandleActiveKnockUpLanding())
+            if (TryHandleActiveAirborneLanding())
                 return;
 
             // CC 채널 모션이 끝나면 종료 시퀀스
             if (!_motionController.IsPlaying(MotionChannel.CrowdControl))
             {
+                if (_activeCrowdControl != null && IsLandingDrivenCrowdControl(_activeCrowdControl))
+                {
+                    if (!TryHandleCompletedLandingDrivenCrowdControl())
+                        return;
+                }
+
                 var finished = _activeCrowdControl;
                 _activeCrowdControl = null;
 
@@ -412,10 +419,10 @@ namespace GGemCo2DCore
             _currentPhaseAnimationName = _currentStaggerAnimationName;
             _currentKnockUpAnimationPhase = KnockUpAnimationPhase.None;
 
-            if (crowdControl != null && crowdControl.Type == CrowdControlConstants.Type.KnockUp && HasKnockUpPhasedAnimation(crowdControl))
+            if (IsAirborneCrowdControl(crowdControl) && HasAirbornePhasedAnimation(crowdControl))
             {
-                var initialPhase = EvaluateKnockUpAnimationPhase(crowdControl, 0f);
-                ApplyKnockUpPhaseAnimation(crowdControl, initialPhase, force: true);
+                var initialPhase = EvaluateAirborneAnimationPhase(crowdControl, 0f);
+                ApplyAirbornePhaseAnimation(crowdControl, initialPhase, force: true);
                 return;
             }
 
@@ -548,15 +555,15 @@ namespace GGemCo2DCore
             return CharacterGroundProbeUtility.IsCurrentlyGrounded(this, _rigidbody2D, GetGroundProbeMask(), maxGroundDistance);
         }
 
-        private bool TryHandleActiveKnockUpLanding()
+        private bool TryHandleActiveAirborneLanding()
         {
-            if (_activeCrowdControl == null || _activeCrowdControl.Type != CrowdControlConstants.Type.KnockUp)
+            if (!IsAirborneCrowdControl(_activeCrowdControl))
                 return false;
 
             if (!_motionController.IsPlaying(MotionChannel.CrowdControl))
                 return false;
 
-            if (!IsKnockUpLandingPhase(_activeCrowdControl))
+            if (!IsAirborneLandingPhase(_activeCrowdControl))
                 return false;
 
             if (!TryProbeGroundBelow(out float groundY, out float bottomY))
@@ -575,7 +582,38 @@ namespace GGemCo2DCore
             return true;
         }
 
-        private bool IsKnockUpLandingPhase(CrowdControlRuntimeData crowdControl)
+        private bool TryHandleCompletedLandingDrivenCrowdControl()
+        {
+            if (!IsLandingDrivenCrowdControl(_activeCrowdControl))
+                return true;
+
+            float snapProbeDistance = Mathf.Max(
+                KnockUpLandingFinalSnapDistance,
+                Mathf.Max(1f, _activeCrowdControl.Height + Mathf.Abs(_activeCrowdControl.EndYOffset)));
+
+            if (TryProbeGroundBelow(snapProbeDistance, out float groundY, out float bottomY))
+            {
+                float distanceToGround = bottomY - groundY;
+                if (distanceToGround >= -KnockUpLandingProbeUpOffset && distanceToGround <= snapProbeDistance)
+                {
+                    SnapCharacterBottomToGround(groundY, bottomY);
+                    var finished = _activeCrowdControl;
+                    _activeCrowdControl = null;
+                    PlayEndAndStop(finished);
+                    return true;
+                }
+            }
+
+            if (!IsCurrentlyGrounded(KnockUpLandingTriggerDistance))
+                return false;
+
+            var landedCrowdControl = _activeCrowdControl;
+            _activeCrowdControl = null;
+            PlayEndAndStop(landedCrowdControl);
+            return true;
+        }
+
+        private bool IsAirborneLandingPhase(CrowdControlRuntimeData crowdControl)
         {
             if (crowdControl == null)
                 return false;
@@ -586,7 +624,7 @@ namespace GGemCo2DCore
             if (!_motionController.TryGetMotionProgress(MotionChannel.CrowdControl, out float progress01))
                 return false;
 
-            return EvaluateKnockUpAnimationPhase(crowdControl, progress01) == KnockUpAnimationPhase.FallLoop;
+            return EvaluateAirborneAnimationPhase(crowdControl, progress01) == KnockUpAnimationPhase.FallLoop;
         }
 
         private void SnapKnockUpToGroundIfNear(float maxSnapDistance)
@@ -623,22 +661,22 @@ namespace GGemCo2DCore
         }
 
 
-        private void UpdateKnockUpPhaseAnimation()
+        private void UpdateAirbornePhaseAnimation()
         {
-            if (_activeCrowdControl == null || _activeCrowdControl.Type != CrowdControlConstants.Type.KnockUp)
+            if (!IsAirborneCrowdControl(_activeCrowdControl))
                 return;
 
-            if (!HasKnockUpPhasedAnimation(_activeCrowdControl))
+            if (!HasAirbornePhasedAnimation(_activeCrowdControl))
                 return;
 
             if (!_motionController.TryGetMotionProgress(MotionChannel.CrowdControl, out float progress01))
                 return;
 
-            var nextPhase = EvaluateKnockUpAnimationPhase(_activeCrowdControl, progress01);
-            ApplyKnockUpPhaseAnimation(_activeCrowdControl, nextPhase, force: false);
+            var nextPhase = EvaluateAirborneAnimationPhase(_activeCrowdControl, progress01);
+            ApplyAirbornePhaseAnimation(_activeCrowdControl, nextPhase, force: false);
         }
 
-        private static bool HasKnockUpPhasedAnimation(CrowdControlRuntimeData crowdControl)
+        private static bool HasAirbornePhasedAnimation(CrowdControlRuntimeData crowdControl)
         {
             if (crowdControl == null)
                 return false;
@@ -649,7 +687,7 @@ namespace GGemCo2DCore
                 || !string.IsNullOrWhiteSpace(crowdControl.KnockUpLandEndAnimationName);
         }
 
-        private static KnockUpAnimationPhase EvaluateKnockUpAnimationPhase(CrowdControlRuntimeData crowdControl, float progress01)
+        private static KnockUpAnimationPhase EvaluateAirborneAnimationPhase(CrowdControlRuntimeData crowdControl, float progress01)
         {
             if (crowdControl == null)
                 return KnockUpAnimationPhase.None;
@@ -672,7 +710,7 @@ namespace GGemCo2DCore
             return KnockUpAnimationPhase.FallLoop;
         }
 
-        private void ApplyKnockUpPhaseAnimation(CrowdControlRuntimeData crowdControl, KnockUpAnimationPhase phase, bool force)
+        private void ApplyAirbornePhaseAnimation(CrowdControlRuntimeData crowdControl, KnockUpAnimationPhase phase, bool force)
         {
             if (_character?.CharacterAnimationController == null)
                 return;
@@ -680,7 +718,7 @@ namespace GGemCo2DCore
             if (!force && _currentKnockUpAnimationPhase == phase)
                 return;
 
-            string animationName = GetKnockUpPhaseAnimationName(crowdControl, phase);
+            string animationName = GetAirbornePhaseAnimationName(crowdControl, phase);
             if (string.IsNullOrWhiteSpace(animationName))
                 return;
 
@@ -693,7 +731,7 @@ namespace GGemCo2DCore
             _currentKnockUpAnimationPhase = phase;
         }
 
-        private static string GetKnockUpPhaseAnimationName(CrowdControlRuntimeData crowdControl, KnockUpAnimationPhase phase)
+        private static string GetAirbornePhaseAnimationName(CrowdControlRuntimeData crowdControl, KnockUpAnimationPhase phase)
         {
             if (crowdControl == null)
                 return string.Empty;
@@ -719,14 +757,31 @@ namespace GGemCo2DCore
             }
         }
 
+        private static bool IsAirborneCrowdControl(CrowdControlRuntimeData crowdControl)
+        {
+            if (crowdControl == null)
+                return false;
+
+            return crowdControl.Type == CrowdControlConstants.Type.KnockUp
+                || crowdControl.Type == CrowdControlConstants.Type.KnockDownAir;
+        }
+
+        private static bool IsLandingDrivenCrowdControl(CrowdControlRuntimeData crowdControl)
+        {
+            if (crowdControl == null)
+                return false;
+
+            return crowdControl.Type == CrowdControlConstants.Type.KnockDownAir;
+        }
+
         private string ResolveEndAnimationName(CrowdControlRuntimeData crowdControl)
         {
             if (_character?.CharacterAnimationController == null)
                 return null;
 
-            if (crowdControl != null && crowdControl.Type == CrowdControlConstants.Type.KnockUp)
+            if (IsAirborneCrowdControl(crowdControl))
             {
-                string knockUpEndName = GetKnockUpPhaseAnimationName(crowdControl, KnockUpAnimationPhase.LandEnd);
+                string knockUpEndName = GetAirbornePhaseAnimationName(crowdControl, KnockUpAnimationPhase.LandEnd);
                 if (!string.IsNullOrWhiteSpace(knockUpEndName) && _character.CharacterAnimationController.HasAnimation(knockUpEndName))
                 {
                     _currentKnockUpAnimationPhase = KnockUpAnimationPhase.LandEnd;

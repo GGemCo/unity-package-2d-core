@@ -150,6 +150,28 @@ namespace GGemCo2DCore
                             runtime.Duration = knockUpDuration;
                     }
                     break;
+
+                case CrowdControlConstants.Type.KnockDownAir:
+                    if (tableLoader.TableCrowdControlKnockDownAir != null &&
+                        tableLoader.TableCrowdControlKnockDownAir.TryGetDataByUid(runtime.Uid, out var knockDownAir))
+                    {
+                        ApplyBaseDetail(runtime, knockDownAir);
+                        runtime.Height = knockDownAir.Height;
+                        runtime.KnockUpRiseTime = Mathf.Max(0f, knockDownAir.RiseTime);
+                        runtime.KnockUpAirTime = Mathf.Max(0f, knockDownAir.AirTime);
+                        runtime.KnockUpFallTime = Mathf.Max(0f, knockDownAir.FallTime);
+                        runtime.KnockUpRiseAnimationName = knockDownAir.RiseAnimationName ?? string.Empty;
+                        runtime.KnockUpAirAnimationName = knockDownAir.AirAnimationName ?? string.Empty;
+                        runtime.KnockUpFallAnimationName = knockDownAir.FallAnimationName ?? string.Empty;
+                        runtime.KnockUpLandEndAnimationName = knockDownAir.LandEndAnimationName ?? string.Empty;
+                        runtime.KnockUpRiseEaseType = knockDownAir.RiseEaseType;
+                        runtime.KnockUpFallEaseType = knockDownAir.FallEaseType;
+
+                        float knockDownAirDuration = runtime.KnockUpRiseTime + runtime.KnockUpAirTime + runtime.KnockUpFallTime;
+                        if (knockDownAirDuration > 0f)
+                            runtime.Duration = knockDownAirDuration;
+                    }
+                    break;
             }
 
             return runtime;

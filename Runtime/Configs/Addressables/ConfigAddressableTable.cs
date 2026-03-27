@@ -52,6 +52,7 @@ namespace GGemCo2DCore
         public const string CrowdControlKnockBack = "crowd_control_knock_back";
         public const string CrowdControlKnockDown = "crowd_control_knock_down";
         public const string CrowdControlKnockUp   = "crowd_control_knock_up";
+        public const string CrowdControlKnockDownAir = "crowd_control_knock_down_air";
         public const string ItemUse          = "item_use";
         public const string ItemUseAction    = "item_use_action";
 
@@ -91,6 +92,7 @@ namespace GGemCo2DCore
         public static readonly AddressableAssetInfo TableCrowdControlKnockBack = Make(CrowdControlKnockBack);
         public static readonly AddressableAssetInfo TableCrowdControlKnockDown = Make(CrowdControlKnockDown);
         public static readonly AddressableAssetInfo TableCrowdControlKnockUp   = Make(CrowdControlKnockUp);
+        public static readonly AddressableAssetInfo TableCrowdControlKnockDownAir = Make(CrowdControlKnockDownAir);
         public static readonly AddressableAssetInfo TableItemUse         = Make(ItemUse);
         public static readonly AddressableAssetInfo TableItemUseAction   = Make(ItemUseAction);
 
@@ -106,7 +108,7 @@ namespace GGemCo2DCore
             TableVfxEffect, TableVfxParticle, TableInteraction,
             TableShop, TableItemUpgrade, TableItemSalvage, TableItemCraft,
             TableCutscene, TableDialogue, TableQuest, TableProjectile, TableSound, TableSimulationTool,
-            TableSimulationGrowth, TableCrowdControl, TableCrowdControlKnockBack, TableCrowdControlKnockDown, TableCrowdControlKnockUp, TableItemUse, TableItemUseAction
+            TableSimulationGrowth, TableCrowdControl, TableCrowdControlKnockBack, TableCrowdControlKnockDown, TableCrowdControlKnockUp, TableCrowdControlKnockDownAir, TableItemUse, TableItemUseAction
         };
         public static AddressableAssetInfo GetByKey(string key)
         {

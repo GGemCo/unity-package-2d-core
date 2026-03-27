@@ -12,6 +12,7 @@ namespace GGemCo2DCore
             KnockBack = 1,
             KnockDown = 2,
             KnockUp = 3,
+            KnockDownAir = 4,
         }
 
         /// <summary>
