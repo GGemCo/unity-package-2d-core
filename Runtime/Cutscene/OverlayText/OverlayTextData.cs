@@ -3,12 +3,22 @@ using UnityEngine;
 
 namespace GGemCo2DCore
 {
+    public enum OverlayTextSourceMode
+    {
+        Fixed = 0,
+        RuntimeOverride = 1,
+    }
+
     [Serializable]
     public class OverlayTextData
     {
         [Header("Content")]
-        [Tooltip("화면에 출력할 텍스트입니다.")]
+        [Tooltip("텍스트 소스 모드입니다. Fixed는 text를, RuntimeOverride는 runtimeTextKey로 런타임 값을 조회합니다.")]
+        public OverlayTextSourceMode sourceMode = OverlayTextSourceMode.Fixed;
+        [Tooltip("sourceMode가 Fixed일 때 출력할 기본 텍스트이자, RuntimeOverride 모드에서 값을 찾지 못했을 때 사용할 fallback 텍스트입니다.")]
         public string text;
+        [Tooltip("sourceMode가 RuntimeOverride일 때 CutsceneManager에서 조회할 런타임 텍스트 키입니다.")]
+        public string runtimeTextKey;
 
         [Header("Layout")]
         [Tooltip("Canvas 중앙 기준 anchoredPosition 입니다.")]

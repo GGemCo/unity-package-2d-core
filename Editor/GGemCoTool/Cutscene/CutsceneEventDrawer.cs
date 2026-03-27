@@ -10,6 +10,8 @@ namespace GGemCo2DCoreEditor
     [CustomPropertyDrawer(typeof(CutsceneEvent))]
     public class CutsceneEventDrawer : PropertyDrawer
     {
+        private const float VerticalSpacing = 2f;
+
         public override void OnGUI(Rect pos, SerializedProperty property, GUIContent label)
         {
             EditorGUI.BeginProperty(pos, label, property);
@@ -44,7 +46,7 @@ namespace GGemCo2DCoreEditor
                 EnsureEventData(property, cutsceneEventType);
             }
 
-            line.y += line.height + 2f;
+            line.y += line.height + VerticalSpacing;
 
             switch (cutsceneEventType)
             {
@@ -73,14 +75,13 @@ namespace GGemCo2DCoreEditor
                     EditorGUI.PropertyField(line, screenFadeProp, true);
                     break;
                 case CutsceneEventType.OverlayText:
-                    EditorGUI.PropertyField(line, overlayTextProp, true);
+                    DrawOverlayTextProperty(line, overlayTextProp);
                     break;
                 case CutsceneEventType.CharacterWhiteOverlay:
                     EditorGUI.PropertyField(line, characterWhiteOverlayProp, true);
                     break;
                 case CutsceneEventType.UiPanel:
-                    uiPanelProp.isExpanded = true;
-                    EditorGUI.PropertyField(line, uiPanelProp, new GUIContent("Ui Panel"), true);
+                    EditorGUI.PropertyField(line, uiPanelProp, true);
                     break;
             }
 
@@ -114,7 +115,7 @@ namespace GGemCo2DCoreEditor
                 case CutsceneEventType.ScreenFade:
                     return baseHeight + EditorGUI.GetPropertyHeight(property.FindPropertyRelative("screenFade"), true);
                 case CutsceneEventType.OverlayText:
-                    return baseHeight + EditorGUI.GetPropertyHeight(property.FindPropertyRelative("overlayText"), true);
+                    return baseHeight + GetOverlayTextPropertyHeight(property.FindPropertyRelative("overlayText"));
                 case CutsceneEventType.CharacterWhiteOverlay:
                     return baseHeight + EditorGUI.GetPropertyHeight(property.FindPropertyRelative("characterWhiteOverlay"), true);
                 case CutsceneEventType.UiPanel:
@@ -122,6 +123,113 @@ namespace GGemCo2DCoreEditor
                 default:
                     return baseHeight;
             }
+        }
+
+        private static void DrawOverlayTextProperty(Rect position, SerializedProperty overlayTextProp)
+        {
+            if (overlayTextProp == null)
+            {
+                return;
+            }
+
+            Rect current = position;
+            current.height = EditorGUIUtility.singleLineHeight;
+
+            EditorGUI.LabelField(current, overlayTextProp.displayName, EditorStyles.boldLabel);
+            current.y += current.height + VerticalSpacing;
+
+            int originalIndent = EditorGUI.indentLevel;
+            EditorGUI.indentLevel++;
+
+            var sourceModeProp = overlayTextProp.FindPropertyRelative("sourceMode");
+            var textProp = overlayTextProp.FindPropertyRelative("text");
+            var runtimeTextKeyProp = overlayTextProp.FindPropertyRelative("runtimeTextKey");
+            var anchoredPositionProp = overlayTextProp.FindPropertyRelative("anchoredPosition");
+            var sizeDeltaProp = overlayTextProp.FindPropertyRelative("sizeDelta");
+            var fontSizeProp = overlayTextProp.FindPropertyRelative("fontSize");
+            var textColorProp = overlayTextProp.FindPropertyRelative("textColor");
+            var maxAlphaProp = overlayTextProp.FindPropertyRelative("maxAlpha");
+            var fadeInProp = overlayTextProp.FindPropertyRelative("fadeIn");
+            var fadeOutProp = overlayTextProp.FindPropertyRelative("fadeOut");
+            var easingProp = overlayTextProp.FindPropertyRelative("easing");
+            var useUnscaledTimeProp = overlayTextProp.FindPropertyRelative("useUnscaledTime");
+
+            DrawPropertyLine(ref current, sourceModeProp);
+
+            var sourceMode = (OverlayTextSourceMode)sourceModeProp.enumValueIndex;
+            if (sourceMode == OverlayTextSourceMode.RuntimeOverride)
+            {
+                DrawPropertyLine(ref current, runtimeTextKeyProp);
+                DrawPropertyLine(ref current, textProp, new GUIContent("Fallback Text"));
+            }
+            else
+            {
+                DrawPropertyLine(ref current, textProp);
+            }
+
+            DrawPropertyLine(ref current, anchoredPositionProp);
+            DrawPropertyLine(ref current, sizeDeltaProp);
+            DrawPropertyLine(ref current, fontSizeProp);
+            DrawPropertyLine(ref current, textColorProp);
+            DrawPropertyLine(ref current, maxAlphaProp);
+            DrawPropertyLine(ref current, fadeInProp);
+            DrawPropertyLine(ref current, fadeOutProp);
+            DrawPropertyLine(ref current, easingProp);
+            DrawPropertyLine(ref current, useUnscaledTimeProp);
+
+            EditorGUI.indentLevel = originalIndent;
+        }
+
+        private static float GetOverlayTextPropertyHeight(SerializedProperty overlayTextProp)
+        {
+            if (overlayTextProp == null)
+            {
+                return EditorGUIUtility.singleLineHeight;
+            }
+
+            float height = EditorGUIUtility.singleLineHeight + VerticalSpacing;
+            height += EditorGUI.GetPropertyHeight(overlayTextProp.FindPropertyRelative("sourceMode"), true) + VerticalSpacing;
+
+            var sourceModeProp = overlayTextProp.FindPropertyRelative("sourceMode");
+            var sourceMode = (OverlayTextSourceMode)sourceModeProp.enumValueIndex;
+            if (sourceMode == OverlayTextSourceMode.RuntimeOverride)
+            {
+                height += EditorGUI.GetPropertyHeight(overlayTextProp.FindPropertyRelative("runtimeTextKey"), true) + VerticalSpacing;
+                height += EditorGUI.GetPropertyHeight(overlayTextProp.FindPropertyRelative("text"), true) + VerticalSpacing;
+            }
+            else
+            {
+                height += EditorGUI.GetPropertyHeight(overlayTextProp.FindPropertyRelative("text"), true) + VerticalSpacing;
+            }
+
+            height += EditorGUI.GetPropertyHeight(overlayTextProp.FindPropertyRelative("anchoredPosition"), true) + VerticalSpacing;
+            height += EditorGUI.GetPropertyHeight(overlayTextProp.FindPropertyRelative("sizeDelta"), true) + VerticalSpacing;
+            height += EditorGUI.GetPropertyHeight(overlayTextProp.FindPropertyRelative("fontSize"), true) + VerticalSpacing;
+            height += EditorGUI.GetPropertyHeight(overlayTextProp.FindPropertyRelative("textColor"), true) + VerticalSpacing;
+            height += EditorGUI.GetPropertyHeight(overlayTextProp.FindPropertyRelative("maxAlpha"), true) + VerticalSpacing;
+            height += EditorGUI.GetPropertyHeight(overlayTextProp.FindPropertyRelative("fadeIn"), true) + VerticalSpacing;
+            height += EditorGUI.GetPropertyHeight(overlayTextProp.FindPropertyRelative("fadeOut"), true) + VerticalSpacing;
+            height += EditorGUI.GetPropertyHeight(overlayTextProp.FindPropertyRelative("easing"), true) + VerticalSpacing;
+            height += EditorGUI.GetPropertyHeight(overlayTextProp.FindPropertyRelative("useUnscaledTime"), true);
+
+            return height;
+        }
+
+        private static void DrawPropertyLine(ref Rect current, SerializedProperty property, GUIContent label = null)
+        {
+            float height = EditorGUI.GetPropertyHeight(property, true);
+            current.height = height;
+            if (label == null)
+            {
+                EditorGUI.PropertyField(current, property, true);
+            }
+            else
+            {
+                EditorGUI.PropertyField(current, property, label, true);
+            }
+
+            current.y += height + VerticalSpacing;
+            current.height = EditorGUIUtility.singleLineHeight;
         }
 
         private static void EnsureEventData(SerializedProperty property, CutsceneEventType eventType)

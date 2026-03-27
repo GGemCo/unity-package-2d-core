@@ -241,7 +241,9 @@ namespace GGemCo2DCoreEditor
                 EditorUtility.DisplayDialog(Title, "게임을 실행해주세요.", "OK");
                 return;
             }
-
+            
+            SceneGame.Instance.CutsceneManager.SetOverlayTextOverride("boss_name", "Shadow Queen");
+            
             _ = SceneGame.Instance.CutsceneManager.PlayCutscene(_selectedCutscene.Uid);
         }
 

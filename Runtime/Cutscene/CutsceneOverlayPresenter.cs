@@ -24,22 +24,30 @@ namespace GGemCo2DCore
         {
             SetOverlayTextVisible(false);
             SetOverlayTextAlpha(0f);
+            SetOverlayTextContent(string.Empty);
         }
 
-        public void ConfigureOverlayText(OverlayTextData data)
+        public void ConfigureOverlayText(OverlayTextData data, string displayText)
         {
             EnsureOverlayText();
             if (data == null)
             {
                 SetOverlayTextVisible(false);
+                SetOverlayTextContent(string.Empty);
                 return;
             }
 
-            _overlayText.text = data.text ?? string.Empty;
+            SetOverlayTextContent(displayText);
             _overlayText.fontSize = Mathf.Max(1, data.fontSize);
             _overlayText.color = new Color(data.textColor.r, data.textColor.g, data.textColor.b, 1f);
             _textRoot.anchoredPosition = data.anchoredPosition.ToVector2();
             _textRoot.sizeDelta = data.sizeDelta.ToVector2();
+        }
+
+        public void SetOverlayTextContent(string text)
+        {
+            EnsureOverlayText();
+            _overlayText.text = text ?? string.Empty;
         }
 
         public void SetOverlayTextVisible(bool visible)

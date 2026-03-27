@@ -13,6 +13,7 @@ namespace GGemCo2DCore
         private float _elapsed;
         private float _duration;
         private bool _isPlaying;
+        private string _resolvedText = string.Empty;
 
         public OverlayTextController(CutsceneManager manager)
         {
@@ -44,11 +45,12 @@ namespace GGemCo2DCore
             }
 
             _data = evt.overlayText ?? new OverlayTextData();
+            _resolvedText = ResolveDisplayText(_data);
             _duration = evt.duration > 0f ? evt.duration : 0f;
             _elapsed = 0f;
             _isPlaying = _duration > 0f;
 
-            _presenter.ConfigureOverlayText(_data);
+            _presenter.ConfigureOverlayText(_data, _resolvedText);
             _presenter.SetOverlayTextVisible(true);
 
             if (_duration <= 0f)
@@ -99,9 +101,39 @@ namespace GGemCo2DCore
         public void End()
         {
             _isPlaying = false;
+            _resolvedText = string.Empty;
             if (_presenter != null)
             {
                 _presenter.SetOverlayTextVisible(false);
+            }
+        }
+
+        private string ResolveDisplayText(OverlayTextData data)
+        {
+            if (data == null)
+            {
+                return string.Empty;
+            }
+
+            switch (data.sourceMode)
+            {
+                case OverlayTextSourceMode.RuntimeOverride:
+                    if (!string.IsNullOrWhiteSpace(data.runtimeTextKey) &&
+                        CutsceneManager != null &&
+                        CutsceneManager.TryGetOverlayTextOverride(data.runtimeTextKey, out string overrideText))
+                    {
+                        return overrideText ?? string.Empty;
+                    }
+
+                    if (!string.IsNullOrWhiteSpace(data.runtimeTextKey))
+                    {
+                        GcLogger.Log($"OverlayText runtime override not found. key={data.runtimeTextKey}");
+                    }
+                    return data.text ?? string.Empty;
+
+                case OverlayTextSourceMode.Fixed:
+                default:
+                    return data.text ?? string.Empty;
             }
         }
 

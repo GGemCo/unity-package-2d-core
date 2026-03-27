@@ -25,6 +25,9 @@ namespace GGemCo2DCore
         // 연출중 생성된 캐릭터 관리
         private readonly Dictionary<CharacterConstants.Type, Dictionary<int, GameObject>> _createCharacters =
             new Dictionary<CharacterConstants.Type, Dictionary<int, GameObject>>();
+
+        // OverlayText 런타임 문자열 치환값
+        private readonly Dictionary<string, string> _overlayTextOverrides = new(StringComparer.Ordinal);
         
         // 연출 컨트롤러
         private readonly List<ICutsceneController> _activeControllers = new();
@@ -51,6 +54,7 @@ namespace GGemCo2DCore
         {
             _sceneGame = scene;
             _createCharacters.Clear();
+            _overlayTextOverrides.Clear();
             _playTimer = 0f;
             _currentIndex = 0;
             _currentState = State.Idle;
@@ -65,6 +69,8 @@ namespace GGemCo2DCore
 
         public CutsceneOverlayPresenter GetOrCreateOverlayPresenter()
         {
+            ClearOverlayTextOverrides();
+
             if (_overlayPresenter != null)
             {
                 return _overlayPresenter;
@@ -99,14 +105,15 @@ namespace GGemCo2DCore
                 return _uiPanelPresenter;
             }
 
-            if (_sceneGame == null)
+            var canvas = _sceneGame != null ? _sceneGame.canvasUI : null;
+            if (canvas == null)
             {
-                GcLogger.LogError("Cutscene UI Panel presenter를 만들기 위한 SceneGame 참조가 없습니다.");
+                GcLogger.LogError("Cutscene UI Panel presenter를 만들기 위한 Canvas UI가 없습니다.");
                 return null;
             }
 
-            var root = new GameObject("CutsceneUiPanelPresenter", typeof(RectTransform), typeof(Canvas));
-            root.transform.SetParent(_sceneGame.transform, false);
+            var root = new GameObject("CutsceneUiPanelPresenter", typeof(RectTransform));
+            root.transform.SetParent(canvas.transform, false);
 
             var rect = root.GetComponent<RectTransform>();
             rect.anchorMin = Vector2.zero;
@@ -150,6 +157,7 @@ namespace GGemCo2DCore
         private void Reset()
         {
             _createCharacters.Clear();
+            _overlayTextOverrides.Clear();
             _playTimer = 0f;
             _currentIndex = 0;
         }
@@ -258,6 +266,7 @@ namespace GGemCo2DCore
                 }
             }
             
+            ClearOverlayTextOverrides();
             _overlayPresenter?.ResetPresentation();
             _uiPanelPresenter?.ResetPresentation();
             _screenFadePresenter?.ResetPresentation();
@@ -287,6 +296,42 @@ namespace GGemCo2DCore
         public Transform GetCharacter(CharacterConstants.Type type, int characterUid)
         {
             return _createCharacters.GetValueOrDefault(type)?.GetValueOrDefault(characterUid)?.transform;
+        }
+
+        public void SetOverlayTextOverride(string key, string text)
+        {
+            if (string.IsNullOrWhiteSpace(key))
+            {
+                return;
+            }
+
+            _overlayTextOverrides[key] = text ?? string.Empty;
+        }
+
+        public bool TryGetOverlayTextOverride(string key, out string text)
+        {
+            text = string.Empty;
+            if (string.IsNullOrWhiteSpace(key))
+            {
+                return false;
+            }
+
+            return _overlayTextOverrides.TryGetValue(key, out text);
+        }
+
+        public void RemoveOverlayTextOverride(string key)
+        {
+            if (string.IsNullOrWhiteSpace(key))
+            {
+                return;
+            }
+
+            _overlayTextOverrides.Remove(key);
+        }
+
+        public void ClearOverlayTextOverrides()
+        {
+            _overlayTextOverrides.Clear();
         }
         private ICutsceneController CreateController(CutsceneEventType type)
         {
@@ -326,6 +371,8 @@ namespace GGemCo2DCore
                     Object.Destroy(dic2.Value);
                 }
             }
+
+            ClearOverlayTextOverrides();
 
             if (_overlayPresenter != null)
             {
