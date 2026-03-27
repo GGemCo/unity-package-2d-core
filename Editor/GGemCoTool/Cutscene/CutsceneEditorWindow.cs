@@ -242,8 +242,7 @@ namespace GGemCo2DCoreEditor
                 return;
             }
             
-            SceneGame.Instance.CutsceneManager.SetOverlayTextOverride("boss_name", "Shadow Queen");
-            
+            // SceneGame.Instance.CutsceneManager.SetOverlayTextOverride("boss_name", "Shadow Queen");
             _ = SceneGame.Instance.CutsceneManager.PlayCutscene(_selectedCutscene.Uid);
         }
 

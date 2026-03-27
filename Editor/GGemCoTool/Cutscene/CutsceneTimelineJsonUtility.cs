@@ -417,7 +417,9 @@ namespace GGemCo2DCoreEditor
 
             return new OverlayTextData
             {
+                sourceMode = source.sourceMode,
                 text = source.text,
+                runtimeTextKey = source.runtimeTextKey,
                 anchoredPosition = source.anchoredPosition,
                 sizeDelta = source.sizeDelta,
                 fontSize = source.fontSize,

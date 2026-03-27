@@ -69,8 +69,6 @@ namespace GGemCo2DCore
 
         public CutsceneOverlayPresenter GetOrCreateOverlayPresenter()
         {
-            ClearOverlayTextOverrides();
-
             if (_overlayPresenter != null)
             {
                 return _overlayPresenter;
@@ -157,7 +155,6 @@ namespace GGemCo2DCore
         private void Reset()
         {
             _createCharacters.Clear();
-            _overlayTextOverrides.Clear();
             _playTimer = 0f;
             _currentIndex = 0;
         }
