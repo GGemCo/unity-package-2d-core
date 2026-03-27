@@ -143,6 +143,9 @@ namespace GGemCo2DCoreEditor
                                 characterAnimation = e.type == GGemCo2DCore.CutsceneEventType.CharacterAnimation ? e.characterAnimation : null,
                                 
                                 dialogueBalloon = e.type == GGemCo2DCore.CutsceneEventType.DialogueBalloon ? e.dialogueBalloon : null,
+                                screenFade = e.type == GGemCo2DCore.CutsceneEventType.ScreenFade ? e.screenFade : null,
+                                overlayText = e.type == GGemCo2DCore.CutsceneEventType.OverlayText ? e.overlayText : null,
+                                characterWhiteOverlay = e.type == GGemCo2DCore.CutsceneEventType.CharacterWhiteOverlay ? e.characterWhiteOverlay : null,
                             };
                             events.Add(evtCopy);
                         }

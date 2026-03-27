@@ -23,6 +23,9 @@ namespace GGemCo2DCoreEditor
             var characterAnimationProp = property.FindPropertyRelative("characterAnimation");
             
             var dialogueBalloonProp = property.FindPropertyRelative("dialogueBalloon");
+            var screenFadeProp = property.FindPropertyRelative("screenFade");
+            var overlayTextProp = property.FindPropertyRelative("overlayText");
+            var characterWhiteOverlayProp = property.FindPropertyRelative("characterWhiteOverlay");
 
             var line = pos;
             line.height = EditorGUIUtility.singleLineHeight;
@@ -55,6 +58,15 @@ namespace GGemCo2DCoreEditor
                 case CutsceneEventType.DialogueBalloon:
                     EditorGUI.PropertyField(line, dialogueBalloonProp, true);
                     break;
+                case CutsceneEventType.ScreenFade:
+                    EditorGUI.PropertyField(line, screenFadeProp, true);
+                    break;
+                case CutsceneEventType.OverlayText:
+                    EditorGUI.PropertyField(line, overlayTextProp, true);
+                    break;
+                case CutsceneEventType.CharacterWhiteOverlay:
+                    EditorGUI.PropertyField(line, characterWhiteOverlayProp, true);
+                    break;
             }
         }
 
@@ -82,6 +94,12 @@ namespace GGemCo2DCoreEditor
                 
                 case CutsceneEventType.DialogueBalloon: 
                     return baseHeight + EditorGUI.GetPropertyHeight(property.FindPropertyRelative("dialogueBalloon"));
+                case CutsceneEventType.ScreenFade:
+                    return baseHeight + EditorGUI.GetPropertyHeight(property.FindPropertyRelative("screenFade"));
+                case CutsceneEventType.OverlayText:
+                    return baseHeight + EditorGUI.GetPropertyHeight(property.FindPropertyRelative("overlayText"));
+                case CutsceneEventType.CharacterWhiteOverlay:
+                    return baseHeight + EditorGUI.GetPropertyHeight(property.FindPropertyRelative("characterWhiteOverlay"));
                 default: return baseHeight;
             }
         }

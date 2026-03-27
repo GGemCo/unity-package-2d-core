@@ -12,6 +12,9 @@ namespace GGemCo2DCore
         CameraChangeTarget,
         CharacterMove,
         DialogueBalloon,
-        CharacterAnimation
+        CharacterAnimation,
+        ScreenFade,
+        OverlayText,
+        CharacterWhiteOverlay
     }
 }

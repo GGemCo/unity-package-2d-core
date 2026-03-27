@@ -28,6 +28,9 @@ namespace GGemCo2DCore
         public CharacterAnimationData characterAnimation;
         
         public DialogueBalloonData dialogueBalloon;
+        public ScreenFadeData screenFade;
+        public OverlayTextData overlayText;
+        public CharacterWhiteOverlayData characterWhiteOverlay;
 
         public bool ShouldSerializeCameraMove() => type == CutsceneEventType.CameraMove && cameraMove != null;
         public bool ShouldSerializeCameraZoom() => type == CutsceneEventType.CameraZoom && cameraZoom != null;
@@ -38,6 +41,9 @@ namespace GGemCo2DCore
         public bool ShouldSerializeCharacterAnimationData() => type == CutsceneEventType.CharacterAnimation && characterAnimation != null;
         
         public bool ShouldSerializeDialogueBalloonData() => type == CutsceneEventType.DialogueBalloon && dialogueBalloon != null;
+        public bool ShouldSerializeScreenFade() => type == CutsceneEventType.ScreenFade && screenFade != null;
+        public bool ShouldSerializeOverlayText() => type == CutsceneEventType.OverlayText && overlayText != null;
+        public bool ShouldSerializeCharacterWhiteOverlay() => type == CutsceneEventType.CharacterWhiteOverlay && characterWhiteOverlay != null;
     }
     
     [Serializable]

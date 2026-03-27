@@ -38,7 +38,11 @@ namespace GGemCo2DCore
         private CharacterAnimationController characterAnimationController;
         
         private DialogueBalloonController dialogueBalloonController;
+        private ScreenFadeController screenFadeController;
+        private OverlayTextController overlayTextController;
+        private CharacterWhiteOverlayController characterWhiteOverlayController;
         private SceneGame sceneGame;
+        private CutsceneOverlayPresenter overlayPresenter;
         
         public void Initialize(SceneGame scene)
         {
@@ -55,6 +59,34 @@ namespace GGemCo2DCore
             }
         }
         public bool IsPlaying() => currentState == State.Playing;
+
+        public CutsceneOverlayPresenter GetOrCreateOverlayPresenter()
+        {
+            if (overlayPresenter != null)
+            {
+                return overlayPresenter;
+            }
+
+            var canvas = sceneGame != null ? sceneGame.canvasUI : null;
+            if (canvas == null)
+            {
+                GcLogger.LogError("Cutscene overlay presenter를 만들기 위한 Canvas UI가 없습니다.");
+                return null;
+            }
+
+            var root = new GameObject("CutsceneOverlayPresenter", typeof(RectTransform));
+            root.transform.SetParent(canvas.transform, false);
+
+            var rect = root.GetComponent<RectTransform>();
+            rect.anchorMin = Vector2.zero;
+            rect.anchorMax = Vector2.one;
+            rect.offsetMin = Vector2.zero;
+            rect.offsetMax = Vector2.zero;
+
+            overlayPresenter = root.AddComponent<CutsceneOverlayPresenter>();
+            overlayPresenter.Initialize();
+            return overlayPresenter;
+        }
         /// <summary>
         /// 초기화
         /// </summary>
@@ -169,6 +201,7 @@ namespace GGemCo2DCore
                 }
             }
             
+            overlayPresenter?.ResetPresentation();
             // 원래 카메라로 되돌리기
             SceneGame.Instance.cameraManager?.ReSetByCutscene();
         }
@@ -209,6 +242,9 @@ namespace GGemCo2DCore
                 CutsceneEventType.CharacterAnimation => new CharacterAnimationController(this),
 
                 CutsceneEventType.DialogueBalloon => new DialogueBalloonController(this, dialogueBalloonPool),
+                CutsceneEventType.ScreenFade => new ScreenFadeController(this),
+                CutsceneEventType.OverlayText => new OverlayTextController(this),
+                CutsceneEventType.CharacterWhiteOverlay => new CharacterWhiteOverlayController(this),
 
                 _ => null,
             };
@@ -229,6 +265,12 @@ namespace GGemCo2DCore
                 {
                     Object.Destroy(dic2.Value);
                 }
+            }
+
+            if (overlayPresenter != null)
+            {
+                Object.Destroy(overlayPresenter.gameObject);
+                overlayPresenter = null;
             }
         }
     }
