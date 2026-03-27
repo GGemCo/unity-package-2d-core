@@ -12,16 +12,21 @@ namespace GGemCo2DCoreEditor
     {
         public override void OnGUI(Rect pos, SerializedProperty property, GUIContent label)
         {
+            EditorGUI.BeginProperty(pos, label, property);
+
             var typeProp = property.FindPropertyRelative("type");
+            CutsceneEventType cutsceneEventType = (CutsceneEventType)typeProp.enumValueIndex;
+
+            EnsureEventData(property, cutsceneEventType);
 
             var cameraMoveProp = property.FindPropertyRelative("cameraMove");
             var cameraZoomProp = property.FindPropertyRelative("cameraZoom");
             var cameraShakeProp = property.FindPropertyRelative("cameraShake");
             var cameraChangeTargetProp = property.FindPropertyRelative("cameraChangeTarget");
-            
+
             var characterMoveProp = property.FindPropertyRelative("characterMove");
             var characterAnimationProp = property.FindPropertyRelative("characterAnimation");
-            
+
             var dialogueBalloonProp = property.FindPropertyRelative("dialogueBalloon");
             var screenFadeProp = property.FindPropertyRelative("screenFade");
             var overlayTextProp = property.FindPropertyRelative("overlayText");
@@ -30,10 +35,15 @@ namespace GGemCo2DCoreEditor
             var line = pos;
             line.height = EditorGUIUtility.singleLineHeight;
 
+            EditorGUI.BeginChangeCheck();
             EditorGUI.PropertyField(line, typeProp);
-            line.y += line.height + 2;
+            if (EditorGUI.EndChangeCheck())
+            {
+                cutsceneEventType = (CutsceneEventType)typeProp.enumValueIndex;
+                EnsureEventData(property, cutsceneEventType);
+            }
 
-            CutsceneEventType cutsceneEventType = (CutsceneEventType)typeProp.enumValueIndex;
+            line.y += line.height + 2f;
 
             switch (cutsceneEventType)
             {
@@ -68,6 +78,8 @@ namespace GGemCo2DCoreEditor
                     EditorGUI.PropertyField(line, characterWhiteOverlayProp, true);
                     break;
             }
+
+            EditorGUI.EndProperty();
         }
 
         public override float GetPropertyHeight(SerializedProperty property, GUIContent label)
@@ -75,34 +87,90 @@ namespace GGemCo2DCoreEditor
             var typeProp = property.FindPropertyRelative("type");
             CutsceneEventType cutsceneEventType = (CutsceneEventType)typeProp.enumValueIndex;
 
-            float baseHeight = EditorGUIUtility.singleLineHeight * 2 + 6;
+            EnsureEventData(property, cutsceneEventType);
+
+            float baseHeight = EditorGUIUtility.singleLineHeight * 2f + 6f;
             switch (cutsceneEventType)
             {
                 case CutsceneEventType.CameraMove:
-                    return baseHeight + EditorGUI.GetPropertyHeight(property.FindPropertyRelative("cameraMove"));
+                    return baseHeight + EditorGUI.GetPropertyHeight(property.FindPropertyRelative("cameraMove"), true);
                 case CutsceneEventType.CameraZoom:
-                    return baseHeight + EditorGUI.GetPropertyHeight(property.FindPropertyRelative("cameraZoom"));
+                    return baseHeight + EditorGUI.GetPropertyHeight(property.FindPropertyRelative("cameraZoom"), true);
                 case CutsceneEventType.CameraShake:
-                    return baseHeight + EditorGUI.GetPropertyHeight(property.FindPropertyRelative("cameraShake"));
+                    return baseHeight + EditorGUI.GetPropertyHeight(property.FindPropertyRelative("cameraShake"), true);
                 case CutsceneEventType.CameraChangeTarget:
-                    return baseHeight + EditorGUI.GetPropertyHeight(property.FindPropertyRelative("cameraChangeTarget"));
-                
-                case CutsceneEventType.CharacterMove: 
-                    return baseHeight + EditorGUI.GetPropertyHeight(property.FindPropertyRelative("characterMove"));
-                case CutsceneEventType.CharacterAnimation: 
-                    return baseHeight + EditorGUI.GetPropertyHeight(property.FindPropertyRelative("characterAnimation"));
-                
-                case CutsceneEventType.DialogueBalloon: 
-                    return baseHeight + EditorGUI.GetPropertyHeight(property.FindPropertyRelative("dialogueBalloon"));
+                    return baseHeight + EditorGUI.GetPropertyHeight(property.FindPropertyRelative("cameraChangeTarget"), true);
+                case CutsceneEventType.CharacterMove:
+                    return baseHeight + EditorGUI.GetPropertyHeight(property.FindPropertyRelative("characterMove"), true);
+                case CutsceneEventType.CharacterAnimation:
+                    return baseHeight + EditorGUI.GetPropertyHeight(property.FindPropertyRelative("characterAnimation"), true);
+                case CutsceneEventType.DialogueBalloon:
+                    return baseHeight + EditorGUI.GetPropertyHeight(property.FindPropertyRelative("dialogueBalloon"), true);
                 case CutsceneEventType.ScreenFade:
-                    return baseHeight + EditorGUI.GetPropertyHeight(property.FindPropertyRelative("screenFade"));
+                    return baseHeight + EditorGUI.GetPropertyHeight(property.FindPropertyRelative("screenFade"), true);
                 case CutsceneEventType.OverlayText:
-                    return baseHeight + EditorGUI.GetPropertyHeight(property.FindPropertyRelative("overlayText"));
+                    return baseHeight + EditorGUI.GetPropertyHeight(property.FindPropertyRelative("overlayText"), true);
                 case CutsceneEventType.CharacterWhiteOverlay:
-                    return baseHeight + EditorGUI.GetPropertyHeight(property.FindPropertyRelative("characterWhiteOverlay"));
-                default: return baseHeight;
+                    return baseHeight + EditorGUI.GetPropertyHeight(property.FindPropertyRelative("characterWhiteOverlay"), true);
+                default:
+                    return baseHeight;
             }
         }
-    }
 
+        private static void EnsureEventData(SerializedProperty property, CutsceneEventType eventType)
+        {
+            EnsureManagedReference(property.FindPropertyRelative("cameraMove"), eventType == CutsceneEventType.CameraMove, typeof(CameraMoveData));
+            EnsureManagedReference(property.FindPropertyRelative("cameraZoom"), eventType == CutsceneEventType.CameraZoom, typeof(CameraZoomData));
+            EnsureManagedReference(property.FindPropertyRelative("cameraShake"), eventType == CutsceneEventType.CameraShake, typeof(CameraShakeData));
+            EnsureManagedReference(property.FindPropertyRelative("cameraChangeTarget"), eventType == CutsceneEventType.CameraChangeTarget, typeof(CameraChangeTargetData));
+            EnsureManagedReference(property.FindPropertyRelative("characterMove"), eventType == CutsceneEventType.CharacterMove, typeof(CharacterMoveData));
+            EnsureManagedReference(property.FindPropertyRelative("characterAnimation"), eventType == CutsceneEventType.CharacterAnimation, typeof(CharacterAnimationData));
+            EnsureManagedReference(property.FindPropertyRelative("dialogueBalloon"), eventType == CutsceneEventType.DialogueBalloon, typeof(DialogueBalloonData));
+            EnsureManagedReference(property.FindPropertyRelative("screenFade"), eventType == CutsceneEventType.ScreenFade, typeof(ScreenFadeData));
+            EnsureManagedReference(property.FindPropertyRelative("overlayText"), eventType == CutsceneEventType.OverlayText, typeof(OverlayTextData));
+            EnsureManagedReference(property.FindPropertyRelative("characterWhiteOverlay"), eventType == CutsceneEventType.CharacterWhiteOverlay, typeof(CharacterWhiteOverlayData));
+
+            property.serializedObject.ApplyModifiedProperties();
+        }
+
+        private static void EnsureManagedReference(SerializedProperty dataProperty, bool shouldCreate, System.Type dataType)
+        {
+            if (dataProperty == null || dataProperty.propertyType != SerializedPropertyType.Generic)
+            {
+                return;
+            }
+
+            if (!shouldCreate || dataProperty.hasVisibleChildren)
+            {
+                return;
+            }
+
+            object boxedValue = GetBoxedValue(dataProperty);
+            if (boxedValue != null)
+            {
+                return;
+            }
+
+            SetBoxedValue(dataProperty, System.Activator.CreateInstance(dataType));
+        }
+
+        private static object GetBoxedValue(SerializedProperty property)
+        {
+#if UNITY_2023_1_OR_NEWER
+            return property.boxedValue;
+#else
+            return null;
+#endif
+        }
+
+        private static void SetBoxedValue(SerializedProperty property, object value)
+        {
+#if UNITY_2023_1_OR_NEWER
+            property.boxedValue = value;
+#else
+            // Unity 2022+ 환경을 주 대상으로 하지만, boxedValue 미지원 환경에서는
+            // CutsceneEvent 기본 생성자/Export 보정으로 null 직렬화 누락을 최소화합니다.
+#endif
+        }
+    }
 }

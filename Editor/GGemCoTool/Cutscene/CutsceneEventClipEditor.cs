@@ -22,6 +22,7 @@ namespace GGemCo2DCoreEditor
 
         public override void OnInspectorGUI()
         {
+            serializedObject.Update();
             EditorGUILayout.PropertyField(_eventsProp, true);
 
             EditorGUILayout.HelpBox(
@@ -29,55 +30,16 @@ namespace GGemCo2DCoreEditor
                 MessageType.Info);
             if (GUILayout.Button("이 클립이 포함된 타임라인을 JSON으로 저장"))
             {
+                serializedObject.ApplyModifiedProperties();
                 ExportTimelineFromClip();
+                return;
             }
-            
-            /*
-            var clip = (CutsceneEventClip)target;
 
-            EditorGUILayout.LabelField("Drag a Character object here:");
-
-            Rect dropArea = GUILayoutUtility.GetRect(0, 50, GUILayout.ExpandWidth(true));
-            GUI.Box(dropArea, "Drop Character Here", EditorStyles.helpBox);
-
-            Event evt = Event.current;
-            if (evt.type == EventType.DragUpdated || evt.type == EventType.DragPerform)
-            {
-                if (dropArea.Contains(evt.mousePosition))
-                {
-                    DragAndDrop.visualMode = DragAndDropVisualMode.Copy;
-
-                    if (evt.type == EventType.DragPerform)
-                    {
-                        DragAndDrop.AcceptDrag();
-
-                        foreach (var obj in DragAndDrop.objectReferences)
-                        {
-                            GameObject go = obj as GameObject;
-                            if (go != null && go.GetComponent<CharacterBase>() != null)
-                            {
-                                // clip.characterObject.exposedName = UnityEditor.GUID.Generate().ToString();
-                                // var director = TimelineEditor.inspectedDirector;
-                                // if (director != null)
-                                // {
-                                //     director.SetReferenceValue(clip.characterObject.exposedName, go);
-                                //     Debug.Log("Character assigned: " + go.name);
-                                // }
-
-                                EditorUtility.SetDirty(clip);
-                            }
-                        }
-
-                        evt.Use();
-                    }
-                }
-            }
-            */
             serializedObject.ApplyModifiedProperties();
         }
+
         private void ExportTimelineFromClip()
         {
-            // 타임라인 찾기
             TimelineAsset timeline = FindTimelineAsset();
             if (timeline == null)
             {
@@ -85,70 +47,76 @@ namespace GGemCo2DCoreEditor
                 return;
             }
 
-            // JSON 저장
-            Debug.Log(timeline);
             ExportToJson(timeline);
         }
+
         private TimelineAsset FindTimelineAsset()
         {
-            // 현재 열린 Timeline에서 찾아봄
             var director = TimelineEditor.inspectedDirector;
             if (director != null && director.playableAsset is TimelineAsset timelineAsset)
             {
                 return timelineAsset;
             }
-    
-            // 대체 방법: 강제로 Timeline을 검색하거나 연결
+
             return null;
         }
-        
+
         private void ExportToJson(TimelineAsset timeline)
         {
             var events = new List<GGemCo2DCore.CutsceneEvent>();
 
             foreach (var track in timeline.GetOutputTracks())
             {
-                if (!(track is GGemCo2DCore.CutsceneEventTrack)) continue;
-                
-                if (track.muted) continue;
-                
+                if (track is not GGemCo2DCore.CutsceneEventTrack)
+                {
+                    continue;
+                }
+
+                if (track.muted)
+                {
+                    continue;
+                }
+
                 foreach (var clip in track.GetClips())
                 {
-                    if (clip.asset is GGemCo2DCore.CutsceneEventClip cutsceneClip)
+                    if (clip.asset is not GGemCo2DCore.CutsceneEventClip cutsceneClip)
                     {
-                        foreach (var e in cutsceneClip.events)
-                        {
-                            if (e != null &&
-                                ((e.type == GGemCo2DCore.CutsceneEventType.CharacterMove &&
-                                  e.characterMove.characterType == GGemCo2DCore.CharacterConstants.Type.None)
-                                 || (e.type == GGemCo2DCore.CutsceneEventType.CameraChangeTarget &&
-                                     e.cameraChangeTarget.characterType == GGemCo2DCore.CharacterConstants.Type.None)
-                                ))
-                            {
-                                Debug.LogError($"type: {e.type} / 캐릭터 타입을 정하지 않았습니다.");
-                                continue;
-                            }
+                        continue;
+                    }
 
-                            var evtCopy = new GGemCo2DCore.CutsceneEvent
-                            {
-                                time = (float)(clip.start),
-                                duration = (float)clip.duration,
-                                type = e.type,
-                                cameraMove = e.type == GGemCo2DCore.CutsceneEventType.CameraMove ? e.cameraMove : null,
-                                cameraZoom = e.type == GGemCo2DCore.CutsceneEventType.CameraZoom ? e.cameraZoom : null,
-                                cameraShake = e.type == GGemCo2DCore.CutsceneEventType.CameraShake ? e.cameraShake : null,
-                                cameraChangeTarget = e.type == GGemCo2DCore.CutsceneEventType.CameraChangeTarget ? e.cameraChangeTarget : null,
-                                
-                                characterMove = e.type == GGemCo2DCore.CutsceneEventType.CharacterMove ? e.characterMove : null,
-                                characterAnimation = e.type == GGemCo2DCore.CutsceneEventType.CharacterAnimation ? e.characterAnimation : null,
-                                
-                                dialogueBalloon = e.type == GGemCo2DCore.CutsceneEventType.DialogueBalloon ? e.dialogueBalloon : null,
-                                screenFade = e.type == GGemCo2DCore.CutsceneEventType.ScreenFade ? e.screenFade : null,
-                                overlayText = e.type == GGemCo2DCore.CutsceneEventType.OverlayText ? e.overlayText : null,
-                                characterWhiteOverlay = e.type == GGemCo2DCore.CutsceneEventType.CharacterWhiteOverlay ? e.characterWhiteOverlay : null,
-                            };
-                            events.Add(evtCopy);
+                    foreach (var e in cutsceneClip.events)
+                    {
+                        if (e == null)
+                        {
+                            continue;
                         }
+
+                        e.EnsureDataForType();
+
+                        if (!ValidateEvent(e))
+                        {
+                            continue;
+                        }
+
+                        var evtCopy = new GGemCo2DCore.CutsceneEvent
+                        {
+                            time = (float)clip.start,
+                            duration = (float)clip.duration,
+                            type = e.type,
+                            cameraMove = e.type == GGemCo2DCore.CutsceneEventType.CameraMove ? CloneData(e.cameraMove) : null,
+                            cameraZoom = e.type == GGemCo2DCore.CutsceneEventType.CameraZoom ? CloneData(e.cameraZoom) : null,
+                            cameraShake = e.type == GGemCo2DCore.CutsceneEventType.CameraShake ? CloneData(e.cameraShake) : null,
+                            cameraChangeTarget = e.type == GGemCo2DCore.CutsceneEventType.CameraChangeTarget ? CloneData(e.cameraChangeTarget) : null,
+                            characterMove = e.type == GGemCo2DCore.CutsceneEventType.CharacterMove ? CloneData(e.characterMove) : null,
+                            characterAnimation = e.type == GGemCo2DCore.CutsceneEventType.CharacterAnimation ? CloneData(e.characterAnimation) : null,
+                            dialogueBalloon = e.type == GGemCo2DCore.CutsceneEventType.DialogueBalloon ? CloneData(e.dialogueBalloon) : null,
+                            screenFade = e.type == GGemCo2DCore.CutsceneEventType.ScreenFade ? CloneData(e.screenFade) : null,
+                            overlayText = e.type == GGemCo2DCore.CutsceneEventType.OverlayText ? CloneData(e.overlayText) : null,
+                            characterWhiteOverlay = e.type == GGemCo2DCore.CutsceneEventType.CharacterWhiteOverlay ? CloneData(e.characterWhiteOverlay) : null,
+                        };
+
+                        evtCopy.EnsureDataForType();
+                        events.Add(evtCopy);
                     }
                 }
             }
@@ -157,22 +125,56 @@ namespace GGemCo2DCoreEditor
 
             var data = new GGemCo2DCore.CutsceneData
             {
-                duration = events.Count > 0 ? (events[^1].time + events[^1].duration) : 0f,
+                duration = events.Count > 0 ? events[^1].time + events[^1].duration : 0f,
                 events = events
             };
-            
-            string json = JsonConvert.SerializeObject(data, Formatting.Indented,
+
+            string json = JsonConvert.SerializeObject(
+                data,
+                Formatting.Indented,
                 new JsonSerializerSettings
                 {
                     NullValueHandling = NullValueHandling.Ignore
                 });
 
             string path = $"{GGemCo2DCore.ConfigAddressablePath.Narrative.Cutscene}/{timeline.name}.json";
-                
+
             File.WriteAllText(path, json);
             Debug.Log($"Saved cutscene to: {path}");
             AssetDatabase.Refresh();
             EditorUtility.DisplayDialog(Title, "Json 저장하기 완료", "OK");
+        }
+
+        private static bool ValidateEvent(GGemCo2DCore.CutsceneEvent cutsceneEvent)
+        {
+            if (cutsceneEvent.type == GGemCo2DCore.CutsceneEventType.CharacterMove &&
+                cutsceneEvent.characterMove != null &&
+                cutsceneEvent.characterMove.characterType == GGemCo2DCore.CharacterConstants.Type.None)
+            {
+                Debug.LogError($"type: {cutsceneEvent.type} / 캐릭터 타입을 정하지 않았습니다.");
+                return false;
+            }
+
+            if (cutsceneEvent.type == GGemCo2DCore.CutsceneEventType.CameraChangeTarget &&
+                cutsceneEvent.cameraChangeTarget != null &&
+                cutsceneEvent.cameraChangeTarget.characterType == GGemCo2DCore.CharacterConstants.Type.None)
+            {
+                Debug.LogError($"type: {cutsceneEvent.type} / 캐릭터 타입을 정하지 않았습니다.");
+                return false;
+            }
+
+            return true;
+        }
+
+        private static T CloneData<T>(T source) where T : class
+        {
+            if (source == null)
+            {
+                return null;
+            }
+
+            string json = JsonConvert.SerializeObject(source);
+            return JsonConvert.DeserializeObject<T>(json);
         }
     }
 }
