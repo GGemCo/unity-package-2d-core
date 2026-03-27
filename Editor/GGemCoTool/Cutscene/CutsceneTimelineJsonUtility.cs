@@ -257,6 +257,7 @@ namespace GGemCo2DCoreEditor
                 screenFade = source.type == CutsceneEventType.ScreenFade ? CloneScreenFadeData(source.screenFade) : null,
                 overlayText = source.type == CutsceneEventType.OverlayText ? CloneOverlayTextData(source.overlayText) : null,
                 characterWhiteOverlay = source.type == CutsceneEventType.CharacterWhiteOverlay ? CloneCharacterWhiteOverlayData(source.characterWhiteOverlay) : null,
+                uiPanel = source.type == CutsceneEventType.UiPanel ? CloneUiPanelData(source.uiPanel) : null,
             };
 
             clone.EnsureDataForType();
@@ -447,6 +448,38 @@ namespace GGemCo2DCoreEditor
                 refreshTargetsOnTrigger = source.refreshTargetsOnTrigger,
                 useUnscaledTime = source.useUnscaledTime,
                 easing = source.easing,
+            };
+        }
+
+
+        private static UiPanelData CloneUiPanelData(UiPanelData source)
+        {
+            if (source == null)
+            {
+                return null;
+            }
+
+            return new UiPanelData
+            {
+                panelId = source.panelId,
+                createIfMissing = source.createIfMissing,
+                destroyOnStop = source.destroyOnStop,
+                hideOnStop = source.hideOnStop,
+                anchorMin = source.anchorMin,
+                anchorMax = source.anchorMax,
+                pivot = source.pivot,
+                fromAnchoredPosition = source.fromAnchoredPosition,
+                toAnchoredPosition = source.toAnchoredPosition,
+                fromSizeDelta = source.fromSizeDelta,
+                toSizeDelta = source.toSizeDelta,
+                siblingIndex = source.siblingIndex,
+                fromColor = source.fromColor,
+                toColor = source.toColor,
+                fromAlpha = source.fromAlpha,
+                toAlpha = source.toAlpha,
+                raycastTarget = source.raycastTarget,
+                easing = source.easing,
+                useUnscaledTime = source.useUnscaledTime,
             };
         }
 

@@ -30,6 +30,7 @@ namespace GGemCo2DCore
         public ScreenFadeData screenFade;
         public OverlayTextData overlayText;
         public CharacterWhiteOverlayData characterWhiteOverlay;
+        public UiPanelData uiPanel;
 
         public CutsceneEvent()
         {
@@ -77,6 +78,9 @@ namespace GGemCo2DCore
                 case CutsceneEventType.CharacterWhiteOverlay:
                     characterWhiteOverlay ??= new CharacterWhiteOverlayData();
                     break;
+                case CutsceneEventType.UiPanel:
+                    uiPanel ??= new UiPanelData();
+                    break;
             }
         }
 
@@ -92,6 +96,7 @@ namespace GGemCo2DCore
         public bool ShouldSerializeScreenFade() => type == CutsceneEventType.ScreenFade && screenFade != null;
         public bool ShouldSerializeOverlayText() => type == CutsceneEventType.OverlayText && overlayText != null;
         public bool ShouldSerializeCharacterWhiteOverlay() => type == CutsceneEventType.CharacterWhiteOverlay && characterWhiteOverlay != null;
+        public bool ShouldSerializeUiPanel() => type == CutsceneEventType.UiPanel && uiPanel != null;
     }
 
     [Serializable]

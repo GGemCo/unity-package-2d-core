@@ -41,8 +41,10 @@ namespace GGemCo2DCore
         private ScreenFadeController _screenFadeController;
         private OverlayTextController _overlayTextController;
         private CharacterWhiteOverlayController _characterWhiteOverlayController;
+        private UiPanelController _uiPanelController;
         private SceneGame _sceneGame;
         private CutsceneOverlayPresenter _overlayPresenter;
+        private CutsceneUiPanelPresenter _uiPanelPresenter;
         private ScreenFadePresenter _screenFadePresenter;
         
         public void Initialize(SceneGame scene)
@@ -87,6 +89,35 @@ namespace GGemCo2DCore
             _overlayPresenter = root.AddComponent<CutsceneOverlayPresenter>();
             _overlayPresenter.Initialize();
             return _overlayPresenter;
+        }
+
+
+        public CutsceneUiPanelPresenter GetOrCreateUiPanelPresenter()
+        {
+            if (_uiPanelPresenter != null)
+            {
+                return _uiPanelPresenter;
+            }
+
+            var canvas = _sceneGame != null ? _sceneGame.canvasUI : null;
+            if (canvas == null)
+            {
+                GcLogger.LogError("Cutscene UI Panel presenter를 만들기 위한 Canvas UI가 없습니다.");
+                return null;
+            }
+
+            var root = new GameObject("CutsceneUiPanelPresenter", typeof(RectTransform));
+            root.transform.SetParent(canvas.transform, false);
+
+            var rect = root.GetComponent<RectTransform>();
+            rect.anchorMin = Vector2.zero;
+            rect.anchorMax = Vector2.one;
+            rect.offsetMin = Vector2.zero;
+            rect.offsetMax = Vector2.zero;
+
+            _uiPanelPresenter = root.AddComponent<CutsceneUiPanelPresenter>();
+            _uiPanelPresenter.Initialize();
+            return _uiPanelPresenter;
         }
 
         public ScreenFadePresenter GetOrCreateScreenFadePresenter(ScreenFadeData data)
@@ -229,6 +260,7 @@ namespace GGemCo2DCore
             }
             
             _overlayPresenter?.ResetPresentation();
+            _uiPanelPresenter?.ResetPresentation();
             _screenFadePresenter?.ResetPresentation();
             // 원래 카메라로 되돌리기
             SceneGame.Instance.cameraManager?.ReSetByCutscene();
@@ -273,6 +305,7 @@ namespace GGemCo2DCore
                 CutsceneEventType.ScreenFade => new ScreenFadeController(this),
                 CutsceneEventType.OverlayText => new OverlayTextController(this),
                 CutsceneEventType.CharacterWhiteOverlay => new CharacterWhiteOverlayController(this),
+                CutsceneEventType.UiPanel => new UiPanelController(this),
 
                 _ => null,
             };
@@ -299,6 +332,12 @@ namespace GGemCo2DCore
             {
                 Object.Destroy(_overlayPresenter.gameObject);
                 _overlayPresenter = null;
+            }
+
+            if (_uiPanelPresenter != null)
+            {
+                Object.Destroy(_uiPanelPresenter.gameObject);
+                _uiPanelPresenter = null;
             }
 
             if (_screenFadePresenter != null)

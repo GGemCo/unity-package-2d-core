@@ -31,6 +31,7 @@ namespace GGemCo2DCoreEditor
             var screenFadeProp = property.FindPropertyRelative("screenFade");
             var overlayTextProp = property.FindPropertyRelative("overlayText");
             var characterWhiteOverlayProp = property.FindPropertyRelative("characterWhiteOverlay");
+            var uiPanelProp = property.FindPropertyRelative("uiPanel");
 
             var line = pos;
             line.height = EditorGUIUtility.singleLineHeight;
@@ -77,6 +78,9 @@ namespace GGemCo2DCoreEditor
                 case CutsceneEventType.CharacterWhiteOverlay:
                     EditorGUI.PropertyField(line, characterWhiteOverlayProp, true);
                     break;
+                case CutsceneEventType.UiPanel:
+                    EditorGUI.PropertyField(line, uiPanelProp, true);
+                    break;
             }
 
             EditorGUI.EndProperty();
@@ -112,6 +116,8 @@ namespace GGemCo2DCoreEditor
                     return baseHeight + EditorGUI.GetPropertyHeight(property.FindPropertyRelative("overlayText"), true);
                 case CutsceneEventType.CharacterWhiteOverlay:
                     return baseHeight + EditorGUI.GetPropertyHeight(property.FindPropertyRelative("characterWhiteOverlay"), true);
+                case CutsceneEventType.UiPanel:
+                    return baseHeight + EditorGUI.GetPropertyHeight(property.FindPropertyRelative("uiPanel"), true);
                 default:
                     return baseHeight;
             }
@@ -129,6 +135,7 @@ namespace GGemCo2DCoreEditor
             EnsureManagedReference(property.FindPropertyRelative("screenFade"), eventType == CutsceneEventType.ScreenFade, typeof(ScreenFadeData));
             EnsureManagedReference(property.FindPropertyRelative("overlayText"), eventType == CutsceneEventType.OverlayText, typeof(OverlayTextData));
             EnsureManagedReference(property.FindPropertyRelative("characterWhiteOverlay"), eventType == CutsceneEventType.CharacterWhiteOverlay, typeof(CharacterWhiteOverlayData));
+            EnsureManagedReference(property.FindPropertyRelative("uiPanel"), eventType == CutsceneEventType.UiPanel, typeof(UiPanelData));
 
             property.serializedObject.ApplyModifiedProperties();
         }
