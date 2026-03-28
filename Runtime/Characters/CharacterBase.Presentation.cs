@@ -191,7 +191,7 @@ namespace GGemCo2DCore
         /// </summary>
         public void StartFadeIn()
         {
-            if (_isStartFade) return;
+            if (_isStartFade || gameObject.activeSelf) return;
             _isStartFade = true;
             gameObject.SetActive(true);
             StartCoroutine(FadeIn(ConfigCommon.CharacterFadeSec));
@@ -210,7 +210,7 @@ namespace GGemCo2DCore
         /// </summary>
         public void StartFadeOut()
         {
-            if (_isStartFade) return;
+            if (_isStartFade || !gameObject.activeSelf) return;
             _isStartFade = true;
             StartCoroutine(FadeOut(ConfigCommon.CharacterFadeSec));
             OnStartFadeOut();
