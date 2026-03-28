@@ -259,6 +259,8 @@ namespace GGemCo2DCoreEditor
                 overlayText = source.type == CutsceneEventType.OverlayText ? CloneOverlayTextData(source.overlayText) : null,
                 characterWhiteOverlay = source.type == CutsceneEventType.CharacterWhiteOverlay ? CloneCharacterWhiteOverlayData(source.characterWhiteOverlay) : null,
                 uiPanel = source.type == CutsceneEventType.UiPanel ? CloneUiPanelData(source.uiPanel) : null,
+                uiWindowVisibility = source.type == CutsceneEventType.UiWindowVisibility ? CloneUiWindowVisibilityData(source.uiWindowVisibility) : null,
+                timeScale = source.type == CutsceneEventType.TimeScale ? CloneTimeScaleData(source.timeScale) : null,
             };
 
             clone.EnsureDataForType();
@@ -506,6 +508,47 @@ namespace GGemCo2DCoreEditor
                 raycastTarget = source.raycastTarget,
                 easing = source.easing,
                 useUnscaledTime = source.useUnscaledTime,
+            };
+        }
+
+        private static UiWindowVisibilityData CloneUiWindowVisibilityData(UiWindowVisibilityData source)
+        {
+            if (source == null)
+            {
+                return null;
+            }
+
+            return new UiWindowVisibilityData
+            {
+                mode = source.mode,
+                targetWindows = source.targetWindows != null ? new List<UIWindowConstants.WindowUid>(source.targetWindows) : new List<UIWindowConstants.WindowUid>(),
+                exceptWindows = source.exceptWindows != null ? new List<UIWindowConstants.WindowUid>(source.exceptWindows) : new List<UIWindowConstants.WindowUid>(),
+                show = source.show,
+                restoreOnStop = source.restoreOnStop,
+                restoreOnCutsceneEnd = source.restoreOnCutsceneEnd,
+            };
+        }
+
+        private static TimeScaleData CloneTimeScaleData(TimeScaleData source)
+        {
+            if (source == null)
+            {
+                return null;
+            }
+
+            return new TimeScaleData
+            {
+                actionMode = source.actionMode,
+                fromScale = source.fromScale,
+                toScale = source.toScale,
+                restoreScale = source.restoreScale,
+                easing = source.easing,
+                useUnscaledTime = source.useUnscaledTime,
+                timelineMode = source.timelineMode,
+                useCapturedScaleForRestore = source.useCapturedScaleForRestore,
+                restoreOnCutsceneEnd = source.restoreOnCutsceneEnd,
+                affectFixedDeltaTime = source.affectFixedDeltaTime,
+                minimumScaleForFixedDeltaTime = source.minimumScaleForFixedDeltaTime,
             };
         }
 
