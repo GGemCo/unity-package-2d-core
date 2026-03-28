@@ -10,7 +10,7 @@ namespace GGemCo2DCore
         [Tooltip("재생 속도")]
         public float timeScale;
         
-        private void Start()
+        private void OnEnable()
         {
             Play(-1f, timeScale);
         }
