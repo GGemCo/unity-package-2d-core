@@ -57,7 +57,9 @@ namespace GGemCo2DCore
             if (rb == null) return false;
             bool hasGroundSlamTravel = request.Kind == MotionKind.GroundSlam && (request.StartPosition - request.TargetPosition).sqrMagnitude > 1e-8f;
             bool hasPositionHold = request.Kind == MotionKind.PositionHold && request.DurationSeconds > 0f;
-            if (request.Distance <= 0f && request.HoldSecondsAfter <= 0f && request.ArcHeight <= 0f && !hasGroundSlamTravel && !hasPositionHold) return false;
+            bool hasKnockDownAirTravel = request.Kind == MotionKind.KnockDownAir
+                && (request.Distance > 0f || request.ArcHeight > 0f || request.DurationSeconds > 0f || request.FallSpeed > 0f);
+            if (request.Distance <= 0f && request.HoldSecondsAfter <= 0f && request.ArcHeight <= 0f && !hasGroundSlamTravel && !hasPositionHold && !hasKnockDownAirTravel) return false;
 
             ref MotionState state = ref GetStateRef(request.Channel);
 
@@ -74,7 +76,7 @@ namespace GGemCo2DCore
             }
 
             MotionRequest requestToUse = request;
-            if (request.Kind == MotionKind.GroundSlam || request.Kind == MotionKind.PositionHold)
+            if (request.Kind == MotionKind.GroundSlam || request.Kind == MotionKind.PositionHold || request.Kind == MotionKind.KnockDownAir)
             {
                 requestToUse = new MotionRequest(
                     request.Channel,
@@ -94,6 +96,7 @@ namespace GGemCo2DCore
                     arcApexHoldNormalized: request.ArcApexHoldNormalized,
                     arcRiseRatioNormalized: request.ArcRiseRatioNormalized,
                     arcFallRatioNormalized: request.ArcFallRatioNormalized,
+                    fallSpeed: request.FallSpeed,
                     startPosition: rb.position,
                     targetPosition: request.TargetPosition,
                     groundSnapDistance: request.GroundSnapDistance,
@@ -177,6 +180,12 @@ namespace GGemCo2DCore
                 return;
             }
 
+            if (state.Kind == MotionKind.KnockDownAir)
+            {
+                TickKnockDownAir(ref state, dt);
+                return;
+            }
+
             state.Solver.Tick(ref state, dt, out Vector2 delta);
             ApplyDelta(delta, state.UseMovePosition);
 
@@ -187,6 +196,107 @@ namespace GGemCo2DCore
                 state.Stop();
                 StopVelocityIfNeeded(stopAtEnd);
             }
+        }
+
+        private void TickKnockDownAir(ref MotionState state, float dt)
+        {
+            if (rb == null)
+            {
+                state.Stop();
+                return;
+            }
+
+            float previousElapsed = state.Elapsed;
+            state.Elapsed += dt;
+
+            float riseRatio = Mathf.Max(0f, state.ArcRiseRatioNormalized);
+            float airRatio = Mathf.Max(0f, state.ArcApexHoldNormalized);
+            float totalRatio = riseRatio + airRatio;
+            float normalizedRise = totalRatio > 1e-6f ? (riseRatio / totalRatio) : 1f;
+
+            bool isFallPhase = state.Duration <= 1e-6f || previousElapsed >= state.Duration;
+            if (!isFallPhase)
+            {
+                float clampedElapsed = Mathf.Min(state.Elapsed, state.Duration);
+                float t = state.Duration <= 1e-6f ? 1f : Mathf.Clamp01(clampedElapsed / state.Duration);
+                float eased = Easing.Apply(t, state.EaseType);
+
+                float targetDistance = state.Distance * eased;
+                float deltaDistance = targetDistance - state.MovedDistance;
+                state.MovedDistance = targetDistance;
+
+                Vector2 delta = state.Direction * deltaDistance;
+
+                float height = Mathf.Max(0f, state.ArcHeight);
+                if (height > 0f)
+                {
+                    float y;
+                    if (normalizedRise <= 1e-6f)
+                    {
+                        y = height;
+                    }
+                    else if (t < normalizedRise)
+                    {
+                        float riseT = Mathf.Clamp01(t / normalizedRise);
+                        float riseEased = Easing.Apply(riseT, state.ArcRiseEaseType);
+                        y = height * riseEased;
+                    }
+                    else
+                    {
+                        y = height;
+                    }
+
+                    float deltaY = y - state.AppliedArcY;
+                    state.AppliedArcY = y;
+                    delta += Vector2.up * deltaY;
+                }
+
+                ApplyDelta(delta, state.UseMovePosition);
+                state.CurrentPosition = rb.position;
+                return;
+            }
+
+            float fallSpeed = Mathf.Max(0f, state.FallSpeed);
+            if (fallSpeed <= 1e-6f)
+                fallSpeed = Mathf.Max(1f, state.ArcHeight);
+
+            float fallStep = fallSpeed * dt;
+            if (fallStep <= 1e-6f)
+                fallStep = 0.01f;
+
+            if (CharacterGroundProbeUtility.TryProbeGroundBelow(this, rb, fallStep, out float groundY, out float bottomY))
+            {
+                float distanceToGround = bottomY - groundY;
+                if (distanceToGround >= -CharacterGroundProbeUtility.ProbeUpOffset && distanceToGround <= fallStep)
+                {
+                    Vector2 currentPos = rb.position;
+                    float deltaY = groundY - bottomY;
+                    Vector2 snapped = currentPos + new Vector2(0f, deltaY);
+                    if (state.UseMovePosition || rb.bodyType != RigidbodyType2D.Dynamic)
+                    {
+                        rb.MovePosition(snapped);
+                    }
+                    else
+                    {
+                        rb.position = snapped;
+                        ZeroDynamicVelocity();
+                    }
+
+                    state.CurrentPosition = snapped;
+                    state.AppliedArcY = 0f;
+                    state.MarkComplete();
+                    bool stopAtEnd = state.StopAtEnd;
+                    RestoreMotionPhysics(ref state, zeroVerticalVelocity: true);
+                    state.Stop();
+                    StopVelocityIfNeeded(stopAtEnd);
+                    return;
+                }
+            }
+
+            Vector2 fallDelta = Vector2.down * fallStep;
+            ApplyDelta(fallDelta, state.UseMovePosition);
+            state.CurrentPosition = rb.position;
+            state.AppliedArcY = Mathf.Max(0f, state.AppliedArcY - fallStep);
         }
 
         private void TickPositionHold(ref MotionState state, float dt)
@@ -258,7 +368,7 @@ namespace GGemCo2DCore
             if (rb.bodyType != RigidbodyType2D.Dynamic)
                 return;
 
-            if (state.Kind != MotionKind.Arc && state.Kind != MotionKind.GroundSlam && state.Kind != MotionKind.PositionHold)
+            if (state.Kind != MotionKind.Arc && state.Kind != MotionKind.GroundSlam && state.Kind != MotionKind.PositionHold && state.Kind != MotionKind.KnockDownAir)
                 return;
 
             state.IsGravitySuspended = true;
@@ -289,6 +399,12 @@ namespace GGemCo2DCore
                 rb.gravityScale = GravityDisableValue;
             }
             if (state.Kind == MotionKind.PositionHold)
+            {
+                ZeroDynamicVelocity();
+                return;
+            }
+
+            if (state.Kind == MotionKind.KnockDownAir)
             {
                 ZeroDynamicVelocity();
                 return;
@@ -399,6 +515,7 @@ namespace GGemCo2DCore
 
             /// <summary>Arc 하강 구간 비율(정규화 전 원본 값).</summary>
             public float ArcFallRatioNormalized;
+            public float FallSpeed;
 
             public float HoldSecondsAfter;
             public float HoldRemaining;
@@ -441,6 +558,7 @@ namespace GGemCo2DCore
                 ArcApexHoldNormalized = req.ArcApexHoldNormalized;
                 ArcRiseRatioNormalized = req.ArcRiseRatioNormalized;
                 ArcFallRatioNormalized = req.ArcFallRatioNormalized;
+                FallSpeed = req.FallSpeed;
 
                 HoldSecondsAfter = req.HoldSecondsAfter;
                 HoldRemaining = req.HoldSecondsAfter;
@@ -498,6 +616,7 @@ namespace GGemCo2DCore
                 MovedDistance = 0f;
 
                 AppliedArcY = 0f;
+                FallSpeed = 0f;
 
                 HoldSecondsAfter = 0f;
                 HoldRemaining = 0f;
@@ -546,6 +665,9 @@ namespace GGemCo2DCore
                     return MotionSolverGroundSlam.Instance;
 
                 if (req.Kind == MotionKind.PositionHold)
+                    return MotionSolverLinearMove.Instance;
+
+                if (req.Kind == MotionKind.KnockDownAir)
                     return MotionSolverLinearMove.Instance;
 
                 return MotionSolverLinearMove.Instance;

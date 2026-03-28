@@ -26,6 +26,7 @@ namespace GGemCo2DCore
         public float KnockUpRiseTime;
         public float KnockUpAirTime;
         public float KnockUpFallTime;
+        public float KnockDownAirFallSpeed;
         public string KnockUpRiseAnimationName;
         public string KnockUpAirAnimationName;
         public string KnockUpFallAnimationName;
@@ -66,6 +67,7 @@ namespace GGemCo2DCore
                 KnockUpRiseTime = 0f,
                 KnockUpAirTime = 0f,
                 KnockUpFallTime = 0f,
+                KnockDownAirFallSpeed = 0f,
                 KnockUpRiseAnimationName = string.Empty,
                 KnockUpAirAnimationName = string.Empty,
                 KnockUpFallAnimationName = string.Empty,
@@ -159,7 +161,8 @@ namespace GGemCo2DCore
                         runtime.Height = knockDownAir.Height;
                         runtime.KnockUpRiseTime = Mathf.Max(0f, knockDownAir.RiseTime);
                         runtime.KnockUpAirTime = Mathf.Max(0f, knockDownAir.AirTime);
-                        runtime.KnockUpFallTime = Mathf.Max(0f, knockDownAir.FallTime);
+                        runtime.KnockUpFallTime = 0f;
+                        runtime.KnockDownAirFallSpeed = Mathf.Max(0f, knockDownAir.FallSpeed);
                         runtime.KnockUpRiseAnimationName = knockDownAir.RiseAnimationName ?? string.Empty;
                         runtime.KnockUpAirAnimationName = knockDownAir.AirAnimationName ?? string.Empty;
                         runtime.KnockUpFallAnimationName = knockDownAir.FallAnimationName ?? string.Empty;
@@ -167,7 +170,7 @@ namespace GGemCo2DCore
                         runtime.KnockUpRiseEaseType = knockDownAir.RiseEaseType;
                         runtime.KnockUpFallEaseType = knockDownAir.FallEaseType;
 
-                        float knockDownAirDuration = runtime.KnockUpRiseTime + runtime.KnockUpAirTime + runtime.KnockUpFallTime;
+                        float knockDownAirDuration = runtime.KnockUpRiseTime + runtime.KnockUpAirTime;
                         if (knockDownAirDuration > 0f)
                             runtime.Duration = knockDownAirDuration;
                     }

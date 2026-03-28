@@ -21,6 +21,7 @@ namespace GGemCo2DCore
         Arc = 1,
         GroundSlam = 2,
         PositionHold = 3,
+        KnockDownAir = 4,
     }
 
     /// <summary>
@@ -126,6 +127,12 @@ namespace GGemCo2DCore
         public float ArcFallRatioNormalized { get; }
 
         /// <summary>
+        /// KnockDownAir 하강 단계에서 사용할 낙하 속도(월드 단위/초)입니다.
+        /// Kind가 KnockDownAir일 때만 유효합니다.
+        /// </summary>
+        public float FallSpeed { get; }
+
+        /// <summary>
         /// PositionHold / GroundSlam 시작 위치입니다.
         /// </summary>
         public Vector2 StartPosition { get; }
@@ -168,6 +175,7 @@ namespace GGemCo2DCore
             float arcApexHoldNormalized = 0f,
             float arcRiseRatioNormalized = 0.5f,
             float arcFallRatioNormalized = 0.5f,
+            float fallSpeed = 0f,
             Vector2? startPosition = null,
             Vector2? targetPosition = null,
             float groundSnapDistance = 0.15f,
@@ -192,6 +200,7 @@ namespace GGemCo2DCore
             ArcApexHoldNormalized = Mathf.Clamp01(arcApexHoldNormalized);
             ArcRiseRatioNormalized = Mathf.Max(0f, arcRiseRatioNormalized);
             ArcFallRatioNormalized = Mathf.Max(0f, arcFallRatioNormalized);
+            FallSpeed = Mathf.Max(0f, fallSpeed);
             StartPosition = startPosition ?? Vector2.zero;
             TargetPosition = targetPosition ?? Vector2.zero;
             GroundSnapDistance = Mathf.Max(0f, groundSnapDistance);

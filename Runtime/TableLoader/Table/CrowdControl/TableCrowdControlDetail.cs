@@ -49,7 +49,7 @@ namespace GGemCo2DCore
 
         public float RiseTime;
         public float AirTime;
-        public float FallTime;
+        public float FallSpeed;
 
         public string RiseAnimationName;
         public string AirAnimationName;
