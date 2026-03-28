@@ -51,6 +51,11 @@ namespace GGemCo2DCore
         private CutsceneOverlayPresenter _overlayPresenter;
         private CutsceneUiPanelPresenter _uiPanelPresenter;
         private ScreenFadePresenter _screenFadePresenter;
+
+        private bool _hasCapturedTimeScaleState;
+        private float _capturedTimeScale;
+        private float _capturedFixedDeltaTime;
+        private TimeScaleController _activeTimeScaleOwner;
         
         public void Initialize(SceneGame scene)
         {
@@ -60,6 +65,10 @@ namespace GGemCo2DCore
             _playTimer = 0f;
             _currentIndex = 0;
             _currentState = State.Idle;
+            _hasCapturedTimeScaleState = false;
+            _capturedTimeScale = 1f;
+            _capturedFixedDeltaTime = 0.02f;
+            _activeTimeScaleOwner = null;
             
             // 기존 컨트롤러 초기화 이후
             if (_sceneGame.containerDialogueBalloon)
@@ -159,6 +168,8 @@ namespace GGemCo2DCore
             _createCharacters.Clear();
             _playTimer = 0f;
             _currentIndex = 0;
+            _hasCapturedTimeScaleState = false;
+            _activeTimeScaleOwner = null;
         }
         /// <summary>
         /// 연출 플레이
@@ -332,6 +343,58 @@ namespace GGemCo2DCore
         {
             _overlayTextOverrides.Clear();
         }
+        public void RegisterTimeScaleOwner(TimeScaleController controller)
+        {
+            if (controller == null)
+            {
+                return;
+            }
+
+            if (!_hasCapturedTimeScaleState)
+            {
+                _capturedTimeScale = Time.timeScale;
+                _capturedFixedDeltaTime = Time.fixedDeltaTime;
+                _hasCapturedTimeScaleState = true;
+            }
+
+            _activeTimeScaleOwner = controller;
+        }
+
+        public bool TryGetCapturedTimeScaleState(out float timeScale, out float fixedDeltaTime)
+        {
+            if (_hasCapturedTimeScaleState)
+            {
+                timeScale = _capturedTimeScale;
+                fixedDeltaTime = _capturedFixedDeltaTime;
+                return true;
+            }
+
+            timeScale = Time.timeScale;
+            fixedDeltaTime = Time.fixedDeltaTime;
+            return false;
+        }
+
+        public bool IsActiveTimeScaleOwner(TimeScaleController controller)
+        {
+            return controller != null && ReferenceEquals(_activeTimeScaleOwner, controller);
+        }
+
+        public void ClearTimeScaleOwner(TimeScaleController controller)
+        {
+            if (controller == null)
+            {
+                return;
+            }
+
+            if (_activeTimeScaleOwner != null && !ReferenceEquals(_activeTimeScaleOwner, controller))
+            {
+                return;
+            }
+
+            _activeTimeScaleOwner = null;
+            _hasCapturedTimeScaleState = false;
+        }
+
         private ICutsceneController CreateController(CutsceneEventType type)
         {
             return type switch

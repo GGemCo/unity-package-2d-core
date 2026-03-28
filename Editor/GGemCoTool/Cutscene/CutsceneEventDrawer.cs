@@ -89,7 +89,7 @@ namespace GGemCo2DCoreEditor
                     EditorGUI.PropertyField(line, uiWindowVisibilityProp, true);
                     break;
                 case CutsceneEventType.TimeScale:
-                    EditorGUI.PropertyField(line, timeScaleProp, true);
+                    DrawTimeScaleProperty(line, timeScaleProp);
                     break;
             }
 
@@ -131,7 +131,7 @@ namespace GGemCo2DCoreEditor
                 case CutsceneEventType.UiWindowVisibility:
                     return baseHeight + EditorGUI.GetPropertyHeight(property.FindPropertyRelative("uiWindowVisibility"), true);
                 case CutsceneEventType.TimeScale:
-                    return baseHeight + EditorGUI.GetPropertyHeight(property.FindPropertyRelative("timeScale"), true);
+                    return baseHeight + GetTimeScalePropertyHeight(property.FindPropertyRelative("timeScale"));
                 default:
                     return baseHeight;
             }
@@ -223,6 +223,139 @@ namespace GGemCo2DCoreEditor
             height += EditorGUI.GetPropertyHeight(overlayTextProp.FindPropertyRelative("fadeOut"), true) + VerticalSpacing;
             height += EditorGUI.GetPropertyHeight(overlayTextProp.FindPropertyRelative("easing"), true) + VerticalSpacing;
             height += EditorGUI.GetPropertyHeight(overlayTextProp.FindPropertyRelative("useUnscaledTime"), true);
+
+            return height;
+        }
+
+        private static void DrawTimeScaleProperty(Rect position, SerializedProperty timeScaleProp)
+        {
+            if (timeScaleProp == null)
+            {
+                return;
+            }
+
+            Rect current = position;
+            current.height = EditorGUIUtility.singleLineHeight;
+
+            EditorGUI.LabelField(current, timeScaleProp.displayName, EditorStyles.boldLabel);
+            current.y += current.height + VerticalSpacing;
+
+            int originalIndent = EditorGUI.indentLevel;
+            EditorGUI.indentLevel++;
+
+            var actionModeProp = timeScaleProp.FindPropertyRelative("actionMode");
+            var fromScaleProp = timeScaleProp.FindPropertyRelative("fromScale");
+            var toScaleProp = timeScaleProp.FindPropertyRelative("toScale");
+            var restoreScaleProp = timeScaleProp.FindPropertyRelative("restoreScale");
+            var easingProp = timeScaleProp.FindPropertyRelative("easing");
+            var useUnscaledTimeProp = timeScaleProp.FindPropertyRelative("useUnscaledTime");
+            var useCapturedScaleForRestoreProp = timeScaleProp.FindPropertyRelative("useCapturedScaleForRestore");
+            var restoreOnCutsceneEndProp = timeScaleProp.FindPropertyRelative("restoreOnCutsceneEnd");
+            var affectFixedDeltaTimeProp = timeScaleProp.FindPropertyRelative("affectFixedDeltaTime");
+            var minimumScaleForFixedDeltaTimeProp = timeScaleProp.FindPropertyRelative("minimumScaleForFixedDeltaTime");
+
+            DrawPropertyLine(ref current, actionModeProp);
+
+            var actionMode = (TimeScaleActionMode)actionModeProp.enumValueIndex;
+            switch (actionMode)
+            {
+                case TimeScaleActionMode.BlendAndHold:
+                    DrawPropertyLine(ref current, fromScaleProp);
+                    DrawPropertyLine(ref current, toScaleProp);
+                    DrawPropertyLine(ref current, easingProp);
+                    DrawPropertyLine(ref current, useUnscaledTimeProp);
+                    DrawPropertyLine(ref current, restoreOnCutsceneEndProp);
+                    DrawPropertyLine(ref current, affectFixedDeltaTimeProp);
+                    if (affectFixedDeltaTimeProp.boolValue)
+                    {
+                        DrawPropertyLine(ref current, minimumScaleForFixedDeltaTimeProp);
+                    }
+                    break;
+
+                case TimeScaleActionMode.SetAndHold:
+                    DrawPropertyLine(ref current, toScaleProp);
+                    DrawPropertyLine(ref current, restoreOnCutsceneEndProp);
+                    DrawPropertyLine(ref current, affectFixedDeltaTimeProp);
+                    if (affectFixedDeltaTimeProp.boolValue)
+                    {
+                        DrawPropertyLine(ref current, minimumScaleForFixedDeltaTimeProp);
+                    }
+                    break;
+
+                case TimeScaleActionMode.Restore:
+                    DrawPropertyLine(ref current, useCapturedScaleForRestoreProp);
+                    if (!useCapturedScaleForRestoreProp.boolValue)
+                    {
+                        DrawPropertyLine(ref current, restoreScaleProp);
+                    }
+                    DrawPropertyLine(ref current, easingProp);
+                    DrawPropertyLine(ref current, useUnscaledTimeProp);
+                    DrawPropertyLine(ref current, affectFixedDeltaTimeProp);
+                    if (affectFixedDeltaTimeProp.boolValue)
+                    {
+                        DrawPropertyLine(ref current, minimumScaleForFixedDeltaTimeProp);
+                    }
+                    break;
+            }
+
+            EditorGUI.indentLevel = originalIndent;
+        }
+
+        private static float GetTimeScalePropertyHeight(SerializedProperty timeScaleProp)
+        {
+            if (timeScaleProp == null)
+            {
+                return EditorGUIUtility.singleLineHeight;
+            }
+
+            float height = EditorGUIUtility.singleLineHeight + VerticalSpacing;
+            var actionModeProp = timeScaleProp.FindPropertyRelative("actionMode");
+            height += EditorGUI.GetPropertyHeight(actionModeProp, true) + VerticalSpacing;
+
+            var affectFixedDeltaTimeProp = timeScaleProp.FindPropertyRelative("affectFixedDeltaTime");
+            var useCapturedScaleForRestoreProp = timeScaleProp.FindPropertyRelative("useCapturedScaleForRestore");
+            var actionMode = (TimeScaleActionMode)actionModeProp.enumValueIndex;
+
+            switch (actionMode)
+            {
+                case TimeScaleActionMode.BlendAndHold:
+                    height += EditorGUI.GetPropertyHeight(timeScaleProp.FindPropertyRelative("fromScale"), true) + VerticalSpacing;
+                    height += EditorGUI.GetPropertyHeight(timeScaleProp.FindPropertyRelative("toScale"), true) + VerticalSpacing;
+                    height += EditorGUI.GetPropertyHeight(timeScaleProp.FindPropertyRelative("easing"), true) + VerticalSpacing;
+                    height += EditorGUI.GetPropertyHeight(timeScaleProp.FindPropertyRelative("useUnscaledTime"), true) + VerticalSpacing;
+                    height += EditorGUI.GetPropertyHeight(timeScaleProp.FindPropertyRelative("restoreOnCutsceneEnd"), true) + VerticalSpacing;
+                    height += EditorGUI.GetPropertyHeight(affectFixedDeltaTimeProp, true) + VerticalSpacing;
+                    if (affectFixedDeltaTimeProp.boolValue)
+                    {
+                        height += EditorGUI.GetPropertyHeight(timeScaleProp.FindPropertyRelative("minimumScaleForFixedDeltaTime"), true) + VerticalSpacing;
+                    }
+                    break;
+
+                case TimeScaleActionMode.SetAndHold:
+                    height += EditorGUI.GetPropertyHeight(timeScaleProp.FindPropertyRelative("toScale"), true) + VerticalSpacing;
+                    height += EditorGUI.GetPropertyHeight(timeScaleProp.FindPropertyRelative("restoreOnCutsceneEnd"), true) + VerticalSpacing;
+                    height += EditorGUI.GetPropertyHeight(affectFixedDeltaTimeProp, true) + VerticalSpacing;
+                    if (affectFixedDeltaTimeProp.boolValue)
+                    {
+                        height += EditorGUI.GetPropertyHeight(timeScaleProp.FindPropertyRelative("minimumScaleForFixedDeltaTime"), true) + VerticalSpacing;
+                    }
+                    break;
+
+                case TimeScaleActionMode.Restore:
+                    height += EditorGUI.GetPropertyHeight(useCapturedScaleForRestoreProp, true) + VerticalSpacing;
+                    if (!useCapturedScaleForRestoreProp.boolValue)
+                    {
+                        height += EditorGUI.GetPropertyHeight(timeScaleProp.FindPropertyRelative("restoreScale"), true) + VerticalSpacing;
+                    }
+                    height += EditorGUI.GetPropertyHeight(timeScaleProp.FindPropertyRelative("easing"), true) + VerticalSpacing;
+                    height += EditorGUI.GetPropertyHeight(timeScaleProp.FindPropertyRelative("useUnscaledTime"), true) + VerticalSpacing;
+                    height += EditorGUI.GetPropertyHeight(affectFixedDeltaTimeProp, true) + VerticalSpacing;
+                    if (affectFixedDeltaTimeProp.boolValue)
+                    {
+                        height += EditorGUI.GetPropertyHeight(timeScaleProp.FindPropertyRelative("minimumScaleForFixedDeltaTime"), true) + VerticalSpacing;
+                    }
+                    break;
+            }
 
             return height;
         }
