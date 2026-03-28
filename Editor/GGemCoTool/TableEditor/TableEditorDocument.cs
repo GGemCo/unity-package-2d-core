@@ -237,8 +237,7 @@ namespace GGemCo2DCoreEditor
         public void Save()
         {
             StringBuilder builder = new StringBuilder(4096);
-            builder.Append(string.Join("\t", Headers));
-            builder.Append(NewLine);
+            builder.Append(string.Join("	", Headers));
 
             for (int i = 0; i < Lines.Count; i++)
             {
@@ -246,18 +245,19 @@ namespace GGemCo2DCoreEditor
                 switch (line.Kind)
                 {
                     case TableEditorLineKind.Empty:
-                        builder.Append(NewLine);
-                        break;
+                        continue;
                     case TableEditorLineKind.Comment:
-                        builder.Append(line.RawText ?? string.Empty);
                         builder.Append(NewLine);
+                        builder.Append(line.RawText ?? string.Empty);
                         break;
                     case TableEditorLineKind.Data:
-                        builder.Append(SerializeRow(line.Row));
                         builder.Append(NewLine);
+                        builder.Append(SerializeRow(line.Row));
                         break;
                 }
             }
+
+            builder.Append(NewLine);
 
             string fullPath = GetFullPath(AssetPath);
             File.WriteAllText(fullPath, builder.ToString(), new UTF8Encoding(false));
