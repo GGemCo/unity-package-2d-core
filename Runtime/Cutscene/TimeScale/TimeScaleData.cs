@@ -1,5 +1,6 @@
 using System;
 using UnityEngine;
+using UnityEngine.Serialization;
 
 namespace GGemCo2DCore
 {
@@ -8,6 +9,13 @@ namespace GGemCo2DCore
         BlendAndHold,
         SetAndHold,
         Restore
+    }
+
+    public enum CutsceneTimeScaleTimelineMode
+    {
+        UseCutsceneDefault,
+        KeepRunningWhenTimeScaleIsZero,
+        PauseWithTimeScale
     }
 
     [Serializable]
@@ -28,8 +36,11 @@ namespace GGemCo2DCore
         [Header("Playback")]
         [Tooltip("duration 동안의 보간 easing 입니다.")]
         public Easing.EaseType easing = Easing.EaseType.Linear;
-        [Tooltip("Time.timeScale과 무관하게 duration을 진행할지 여부입니다.")]
+        [Tooltip("Time.timeScale과 무관하게 이 TimeScale 이벤트 자신의 duration을 진행할지 여부입니다. timeScale=0 연출에서는 켜두는 것을 권장합니다.")]
+        [FormerlySerializedAs("useUnscaledTime")]
         public bool useUnscaledTime = true;
+        [Tooltip("timeScale이 0이 되었을 때, 컷신 타임라인 전체를 unscaled time으로 계속 진행할지 여부입니다.")]
+        public CutsceneTimeScaleTimelineMode timelineMode = CutsceneTimeScaleTimelineMode.KeepRunningWhenTimeScaleIsZero;
         [Tooltip("Restore 시 컷신에서 처음 저장한 timeScale 값으로 복구할지 여부입니다.")]
         public bool useCapturedScaleForRestore = true;
         [Tooltip("컷신 종료 시 현재 유지 중인 timeScale 값을 자동 복구할지 여부입니다.")]
@@ -39,6 +50,6 @@ namespace GGemCo2DCore
         [Tooltip("timeScale 변경 시 Time.fixedDeltaTime도 함께 조정할지 여부입니다.")]
         public bool affectFixedDeltaTime = true;
         [Tooltip("Time.fixedDeltaTime 계산 시 사용할 최소 scale 값입니다. 0이면 FixedUpdate 멈춤을 허용합니다.")]
-        [Min(0f)] public float minimumScaleForFixedDeltaTime = 0.0001f;
+        [Min(0f)] public float minimumScaleForFixedDeltaTime = 0f;
     }
 }

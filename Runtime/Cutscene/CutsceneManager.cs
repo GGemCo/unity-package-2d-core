@@ -56,6 +56,7 @@ namespace GGemCo2DCore
         private float _capturedTimeScale;
         private float _capturedFixedDeltaTime;
         private TimeScaleController _activeTimeScaleOwner;
+        private bool _useUnscaledTimelineTime;
         
         public void Initialize(SceneGame scene)
         {
@@ -69,6 +70,7 @@ namespace GGemCo2DCore
             _capturedTimeScale = 1f;
             _capturedFixedDeltaTime = 0.02f;
             _activeTimeScaleOwner = null;
+            _useUnscaledTimelineTime = false;
             
             // 기존 컨트롤러 초기화 이후
             if (_sceneGame.containerDialogueBalloon)
@@ -170,6 +172,7 @@ namespace GGemCo2DCore
             _currentIndex = 0;
             _hasCapturedTimeScaleState = false;
             _activeTimeScaleOwner = null;
+            _useUnscaledTimelineTime = false;
         }
         /// <summary>
         /// 연출 플레이
@@ -234,7 +237,7 @@ namespace GGemCo2DCore
         {
             if (_currentState != State.Playing || _currentCutscene == null) return;
 
-            _playTimer += Time.deltaTime;
+            _playTimer += GetTimelineDeltaTime();
 
             while (_currentIndex < _currentCutscene.events.Count &&
                    _currentCutscene.events[_currentIndex].time <= _playTimer)
@@ -343,6 +346,27 @@ namespace GGemCo2DCore
         {
             _overlayTextOverrides.Clear();
         }
+
+
+        public float GetTimelineDeltaTime()
+        {
+            return _useUnscaledTimelineTime ? Time.unscaledDeltaTime : Time.deltaTime;
+        }
+
+        public void SetTimeScaleTimelineMode(TimeScaleController controller, bool useUnscaledTimelineTime)
+        {
+            if (controller == null)
+            {
+                return;
+            }
+
+            if (_activeTimeScaleOwner != null && !ReferenceEquals(_activeTimeScaleOwner, controller))
+            {
+                return;
+            }
+
+            _useUnscaledTimelineTime = useUnscaledTimelineTime;
+        }
         public void RegisterTimeScaleOwner(TimeScaleController controller)
         {
             if (controller == null)
@@ -358,6 +382,7 @@ namespace GGemCo2DCore
             }
 
             _activeTimeScaleOwner = controller;
+            _useUnscaledTimelineTime = false;
         }
 
         public bool TryGetCapturedTimeScaleState(out float timeScale, out float fixedDeltaTime)
@@ -393,6 +418,7 @@ namespace GGemCo2DCore
 
             _activeTimeScaleOwner = null;
             _hasCapturedTimeScaleState = false;
+            _useUnscaledTimelineTime = false;
         }
 
         private ICutsceneController CreateController(CutsceneEventType type)

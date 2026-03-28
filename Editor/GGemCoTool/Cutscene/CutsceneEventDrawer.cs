@@ -249,6 +249,7 @@ namespace GGemCo2DCoreEditor
             var restoreScaleProp = timeScaleProp.FindPropertyRelative("restoreScale");
             var easingProp = timeScaleProp.FindPropertyRelative("easing");
             var useUnscaledTimeProp = timeScaleProp.FindPropertyRelative("useUnscaledTime");
+            var timelineModeProp = timeScaleProp.FindPropertyRelative("timelineMode");
             var useCapturedScaleForRestoreProp = timeScaleProp.FindPropertyRelative("useCapturedScaleForRestore");
             var restoreOnCutsceneEndProp = timeScaleProp.FindPropertyRelative("restoreOnCutsceneEnd");
             var affectFixedDeltaTimeProp = timeScaleProp.FindPropertyRelative("affectFixedDeltaTime");
@@ -264,6 +265,8 @@ namespace GGemCo2DCoreEditor
                     DrawPropertyLine(ref current, toScaleProp);
                     DrawPropertyLine(ref current, easingProp);
                     DrawPropertyLine(ref current, useUnscaledTimeProp);
+                    DrawPropertyLine(ref current, timelineModeProp);
+                    DrawTimeScaleWarnings(ref current, actionMode, toScaleProp, useUnscaledTimeProp, timelineModeProp, restoreOnCutsceneEndProp);
                     DrawPropertyLine(ref current, restoreOnCutsceneEndProp);
                     DrawPropertyLine(ref current, affectFixedDeltaTimeProp);
                     if (affectFixedDeltaTimeProp.boolValue)
@@ -274,6 +277,8 @@ namespace GGemCo2DCoreEditor
 
                 case TimeScaleActionMode.SetAndHold:
                     DrawPropertyLine(ref current, toScaleProp);
+                    DrawPropertyLine(ref current, timelineModeProp);
+                    DrawTimeScaleWarnings(ref current, actionMode, toScaleProp, useUnscaledTimeProp, timelineModeProp, restoreOnCutsceneEndProp);
                     DrawPropertyLine(ref current, restoreOnCutsceneEndProp);
                     DrawPropertyLine(ref current, affectFixedDeltaTimeProp);
                     if (affectFixedDeltaTimeProp.boolValue)
@@ -323,6 +328,8 @@ namespace GGemCo2DCoreEditor
                     height += EditorGUI.GetPropertyHeight(timeScaleProp.FindPropertyRelative("toScale"), true) + VerticalSpacing;
                     height += EditorGUI.GetPropertyHeight(timeScaleProp.FindPropertyRelative("easing"), true) + VerticalSpacing;
                     height += EditorGUI.GetPropertyHeight(timeScaleProp.FindPropertyRelative("useUnscaledTime"), true) + VerticalSpacing;
+                    height += EditorGUI.GetPropertyHeight(timeScaleProp.FindPropertyRelative("timelineMode"), true) + VerticalSpacing;
+                    height += GetTimeScaleWarningHeight(actionMode, timeScaleProp.FindPropertyRelative("toScale"), timeScaleProp.FindPropertyRelative("useUnscaledTime"), timeScaleProp.FindPropertyRelative("timelineMode"), timeScaleProp.FindPropertyRelative("restoreOnCutsceneEnd"));
                     height += EditorGUI.GetPropertyHeight(timeScaleProp.FindPropertyRelative("restoreOnCutsceneEnd"), true) + VerticalSpacing;
                     height += EditorGUI.GetPropertyHeight(affectFixedDeltaTimeProp, true) + VerticalSpacing;
                     if (affectFixedDeltaTimeProp.boolValue)
@@ -333,6 +340,8 @@ namespace GGemCo2DCoreEditor
 
                 case TimeScaleActionMode.SetAndHold:
                     height += EditorGUI.GetPropertyHeight(timeScaleProp.FindPropertyRelative("toScale"), true) + VerticalSpacing;
+                    height += EditorGUI.GetPropertyHeight(timeScaleProp.FindPropertyRelative("timelineMode"), true) + VerticalSpacing;
+                    height += GetTimeScaleWarningHeight(actionMode, timeScaleProp.FindPropertyRelative("toScale"), timeScaleProp.FindPropertyRelative("useUnscaledTime"), timeScaleProp.FindPropertyRelative("timelineMode"), timeScaleProp.FindPropertyRelative("restoreOnCutsceneEnd"));
                     height += EditorGUI.GetPropertyHeight(timeScaleProp.FindPropertyRelative("restoreOnCutsceneEnd"), true) + VerticalSpacing;
                     height += EditorGUI.GetPropertyHeight(affectFixedDeltaTimeProp, true) + VerticalSpacing;
                     if (affectFixedDeltaTimeProp.boolValue)
@@ -358,6 +367,71 @@ namespace GGemCo2DCoreEditor
             }
 
             return height;
+        }
+
+        private static void DrawTimeScaleWarnings(ref Rect current, TimeScaleActionMode actionMode, SerializedProperty toScaleProp,
+            SerializedProperty useUnscaledTimeProp, SerializedProperty timelineModeProp, SerializedProperty restoreOnCutsceneEndProp)
+        {
+            if (toScaleProp == null || !Mathf.Approximately(toScaleProp.floatValue, 0f))
+            {
+                return;
+            }
+
+            if (actionMode == TimeScaleActionMode.BlendAndHold && !useUnscaledTimeProp.boolValue)
+            {
+                DrawHelpBox(ref current, "timeScale이 0이면 Time.deltaTime도 0이 되므로, 이 이벤트 duration 진행이 멈출 수 있습니다. Use Unscaled Time 활성화를 권장합니다.", MessageType.Warning);
+            }
+
+            if ((CutsceneTimeScaleTimelineMode)timelineModeProp.enumValueIndex != CutsceneTimeScaleTimelineMode.KeepRunningWhenTimeScaleIsZero)
+            {
+                DrawHelpBox(ref current, "timeScale이 0일 때 컷신 타임라인도 같이 멈출 수 있습니다. 후속 이벤트를 계속 진행하려면 Timeline Mode를 KeepRunningWhenTimeScaleIsZero로 설정하세요.", MessageType.Warning);
+            }
+
+            if (actionMode == TimeScaleActionMode.SetAndHold && !restoreOnCutsceneEndProp.boolValue)
+            {
+                DrawHelpBox(ref current, "SetAndHold + toScale 0 + Restore On Cutscene End 비활성 상태입니다. 별도 Restore 이벤트가 없으면 컷신 종료 후에도 게임이 멈춘 상태로 남을 수 있습니다.", MessageType.Info);
+            }
+        }
+
+        private static float GetTimeScaleWarningHeight(TimeScaleActionMode actionMode, SerializedProperty toScaleProp,
+            SerializedProperty useUnscaledTimeProp, SerializedProperty timelineModeProp, SerializedProperty restoreOnCutsceneEndProp)
+        {
+            if (toScaleProp == null || !Mathf.Approximately(toScaleProp.floatValue, 0f))
+            {
+                return 0f;
+            }
+
+            float height = 0f;
+            if (actionMode == TimeScaleActionMode.BlendAndHold && !useUnscaledTimeProp.boolValue)
+            {
+                height += GetHelpBoxHeight("timeScale이 0이면 Time.deltaTime도 0이 되므로, 이 이벤트 duration 진행이 멈출 수 있습니다. Use Unscaled Time 활성화를 권장합니다.");
+            }
+
+            if ((CutsceneTimeScaleTimelineMode)timelineModeProp.enumValueIndex != CutsceneTimeScaleTimelineMode.KeepRunningWhenTimeScaleIsZero)
+            {
+                height += GetHelpBoxHeight("timeScale이 0일 때 컷신 타임라인도 같이 멈출 수 있습니다. 후속 이벤트를 계속 진행하려면 Timeline Mode를 KeepRunningWhenTimeScaleIsZero로 설정하세요.");
+            }
+
+            if (actionMode == TimeScaleActionMode.SetAndHold && !restoreOnCutsceneEndProp.boolValue)
+            {
+                height += GetHelpBoxHeight("SetAndHold + toScale 0 + Restore On Cutscene End 비활성 상태입니다. 별도 Restore 이벤트가 없으면 컷신 종료 후에도 게임이 멈춘 상태로 남을 수 있습니다.");
+            }
+
+            return height;
+        }
+
+        private static float GetHelpBoxHeight(string message)
+        {
+            return EditorStyles.helpBox.CalcHeight(new GUIContent(message), EditorGUIUtility.currentViewWidth - 80f) + VerticalSpacing;
+        }
+
+        private static void DrawHelpBox(ref Rect current, string message, MessageType messageType)
+        {
+            float height = EditorStyles.helpBox.CalcHeight(new GUIContent(message), current.width);
+            current.height = height;
+            EditorGUI.HelpBox(current, message, messageType);
+            current.y += height + VerticalSpacing;
+            current.height = EditorGUIUtility.singleLineHeight;
         }
 
         private static void DrawPropertyLine(ref Rect current, SerializedProperty property, GUIContent label = null)

@@ -139,6 +139,7 @@ namespace GGemCo2DCore
         private void TriggerBlendAndHold()
         {
             CutsceneManager.RegisterTimeScaleOwner(this);
+            ApplyTimelineModeForCurrentData(_data.toScale);
             _state = _duration > 0f ? PlaybackState.Blending : PlaybackState.Holding;
 
             if (_duration <= 0f)
@@ -153,12 +154,14 @@ namespace GGemCo2DCore
         private void TriggerSetAndHold()
         {
             CutsceneManager.RegisterTimeScaleOwner(this);
+            ApplyTimelineModeForCurrentData(_data.toScale);
             ApplyScale(_data.toScale);
             _state = PlaybackState.Holding;
         }
 
         private void TriggerRestore()
         {
+            ApplyTimelineMode(false);
             _restoreStartScale = Time.timeScale;
             _restoreStartFixedDeltaTime = Time.fixedDeltaTime;
 
@@ -180,7 +183,7 @@ namespace GGemCo2DCore
 
         private void UpdateBlendAndHold()
         {
-            _elapsed += _data.useUnscaledTime ? Time.unscaledDeltaTime : Time.deltaTime;
+            _elapsed += GetControllerDeltaTime();
             float t = Mathf.Clamp01(_elapsed / Mathf.Max(0.0001f, _duration));
             float eased = Mathf.Clamp01(Easing.Apply(t, _data.easing));
             float scale = Mathf.Lerp(_data.fromScale, _data.toScale, eased);
@@ -194,7 +197,7 @@ namespace GGemCo2DCore
 
         private void UpdateRestore()
         {
-            _elapsed += _data.useUnscaledTime ? Time.unscaledDeltaTime : Time.deltaTime;
+            _elapsed += GetControllerDeltaTime();
             float t = Mathf.Clamp01(_elapsed / Mathf.Max(0.0001f, _duration));
             float eased = Mathf.Clamp01(Easing.Apply(t, _data.easing));
             float scale = Mathf.Lerp(_restoreStartScale, _restoreTargetScale, eased);
@@ -235,8 +238,52 @@ namespace GGemCo2DCore
 
         private void FinalizeRestore()
         {
+            ApplyTimelineMode(false);
             _state = PlaybackState.Completed;
             CutsceneManager.ClearTimeScaleOwner(this);
+        }
+
+        private float GetControllerDeltaTime()
+        {
+            if (_data == null)
+            {
+                return Time.deltaTime;
+            }
+
+            if (_data.useUnscaledTime)
+            {
+                return Time.unscaledDeltaTime;
+            }
+
+            if (Mathf.Approximately(Time.timeScale, 0f))
+            {
+                return Time.unscaledDeltaTime;
+            }
+
+            return Time.deltaTime;
+        }
+
+        private void ApplyTimelineModeForCurrentData(float targetScale)
+        {
+            if (_data == null)
+            {
+                ApplyTimelineMode(false);
+                return;
+            }
+
+            bool shouldKeepRunning = _data.timelineMode switch
+            {
+                CutsceneTimeScaleTimelineMode.KeepRunningWhenTimeScaleIsZero => Mathf.Approximately(targetScale, 0f),
+                CutsceneTimeScaleTimelineMode.PauseWithTimeScale => false,
+                _ => false,
+            };
+
+            ApplyTimelineMode(shouldKeepRunning);
+        }
+
+        private void ApplyTimelineMode(bool useUnscaledTimelineTime)
+        {
+            CutsceneManager.SetTimeScaleTimelineMode(this, useUnscaledTimelineTime);
         }
 
         private void ApplyScale(float scale)
@@ -271,7 +318,7 @@ namespace GGemCo2DCore
                 ? capturedFixedDeltaTime
                 : Time.fixedDeltaTime;
 
-            float minimumScale = Mathf.Max(0f, _data != null ? _data.minimumScaleForFixedDeltaTime : 0.0001f);
+            float minimumScale = Mathf.Max(0f, _data?.minimumScaleForFixedDeltaTime ?? 0f);
             float safeScale = Mathf.Max(0f, scale);
             float fixedScale = minimumScale > 0f ? Mathf.Max(minimumScale, safeScale) : safeScale;
             return baseFixedDeltaTime * fixedScale;
