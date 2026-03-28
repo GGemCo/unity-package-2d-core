@@ -33,6 +33,7 @@ namespace GGemCo2DCore
         private string _currentStaggerAnimationName;
         private string _currentPhaseAnimationName;
         private KnockUpAnimationPhase _currentKnockUpAnimationPhase;
+        private bool _hasPlayedKnockDownAirSingleAir;
 
         private Coroutine _stopRoutine;
         private const float Epsilon = 0.0001f;
@@ -418,10 +419,11 @@ namespace GGemCo2DCore
             _currentStaggerAnimationName = crowdControl?.StaggerAnimationName;
             _currentPhaseAnimationName = _currentStaggerAnimationName;
             _currentKnockUpAnimationPhase = KnockUpAnimationPhase.None;
+            _hasPlayedKnockDownAirSingleAir = false;
 
             if (IsAirborneCrowdControl(crowdControl) && HasAirbornePhasedAnimation(crowdControl))
             {
-                var initialPhase = EvaluateAirborneAnimationPhase(crowdControl, 0f, KnockUpAnimationPhase.None);
+                var initialPhase = EvaluateAirborneAnimationPhase(crowdControl, 0f, KnockUpAnimationPhase.None, false);
                 ApplyAirbornePhaseAnimation(crowdControl, initialPhase, force: true);
                 return;
             }
@@ -627,7 +629,7 @@ namespace GGemCo2DCore
             if (!_motionController.TryGetMotionProgress(MotionChannel.CrowdControl, out float progress01))
                 return false;
 
-            return EvaluateAirborneAnimationPhase(crowdControl, progress01, _currentKnockUpAnimationPhase) == KnockUpAnimationPhase.FallLoop;
+            return EvaluateAirborneAnimationPhase(crowdControl, progress01, _currentKnockUpAnimationPhase, _hasPlayedKnockDownAirSingleAir) == KnockUpAnimationPhase.FallLoop;
         }
 
         private void SnapKnockUpToGroundIfNear(float maxSnapDistance)
@@ -675,7 +677,7 @@ namespace GGemCo2DCore
             if (!_motionController.TryGetMotionProgress(MotionChannel.CrowdControl, out float progress01))
                 return;
 
-            var nextPhase = EvaluateAirborneAnimationPhase(_activeCrowdControl, progress01, _currentKnockUpAnimationPhase);
+            var nextPhase = EvaluateAirborneAnimationPhase(_activeCrowdControl, progress01, _currentKnockUpAnimationPhase, _hasPlayedKnockDownAirSingleAir);
             ApplyAirbornePhaseAnimation(_activeCrowdControl, nextPhase, force: false);
         }
 
@@ -693,7 +695,8 @@ namespace GGemCo2DCore
         private static KnockUpAnimationPhase EvaluateAirborneAnimationPhase(
             CrowdControlRuntimeData crowdControl,
             float progress01,
-            KnockUpAnimationPhase currentPhase)
+            KnockUpAnimationPhase currentPhase,
+            bool hasPlayedKnockDownAirSingleAir)
         {
             if (crowdControl == null)
                 return KnockUpAnimationPhase.None;
@@ -721,7 +724,7 @@ namespace GGemCo2DCore
                     return KnockUpAnimationPhase.FallLoop;
                 }
 
-                if (currentPhase != KnockUpAnimationPhase.Air)
+                if (!hasPlayedKnockDownAirSingleAir)
                     return KnockUpAnimationPhase.Air;
 
                 return KnockUpAnimationPhase.FallLoop;
@@ -763,6 +766,14 @@ namespace GGemCo2DCore
             _character.CharacterAnimationController.PlayCharacterAnimation(animationName, loop);
             _currentPhaseAnimationName = animationName;
             _currentKnockUpAnimationPhase = phase;
+
+            if (phase == KnockUpAnimationPhase.Air
+                && crowdControl != null
+                && crowdControl.Type == CrowdControlConstants.Type.KnockDownAir
+                && crowdControl.KnockUpAirTime <= Epsilon)
+            {
+                _hasPlayedKnockDownAirSingleAir = true;
+            }
         }
 
         private static string GetAirbornePhaseAnimationName(CrowdControlRuntimeData crowdControl, KnockUpAnimationPhase phase)
@@ -846,6 +857,7 @@ namespace GGemCo2DCore
             _currentStaggerAnimationName = null;
             _currentPhaseAnimationName = null;
             _currentKnockUpAnimationPhase = KnockUpAnimationPhase.None;
+            _hasPlayedKnockDownAirSingleAir = false;
         }
 
 
