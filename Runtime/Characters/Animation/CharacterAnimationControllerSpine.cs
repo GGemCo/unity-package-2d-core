@@ -1,4 +1,4 @@
-#if GGEMCO_USE_SPINE
+﻿#if GGEMCO_USE_SPINE
 using System.Collections;
 using System.Collections.Generic;
 using Spine;
@@ -223,9 +223,34 @@ namespace GGemCo2DCore
         /// <param name="value"></param>
         public void UpdateTimeScaleMove(float value)
         {
+            SetPlaybackTimeScale(value);
+        }
+
+        public void SetPlaybackTimeScale(float value)
+        {
+            if (SkeletonAnimation == null || SkeletonAnimation.AnimationState == null)
+            {
+                return;
+            }
+
             TrackEntry trackEntry = SkeletonAnimation.AnimationState.GetCurrent(0);
-            if (trackEntry == null) return;
-            trackEntry.TimeScale = value;
+            if (trackEntry == null)
+            {
+                return;
+            }
+
+            trackEntry.TimeScale = Mathf.Max(0f, value);
+        }
+
+        public float GetPlaybackTimeScale()
+        {
+            if (SkeletonAnimation == null || SkeletonAnimation.AnimationState == null)
+            {
+                return 1f;
+            }
+
+            TrackEntry trackEntry = SkeletonAnimation.AnimationState.GetCurrent(0);
+            return trackEntry?.TimeScale ?? 1f;
         }
         /// <summary>
         /// 색상 변경 하기

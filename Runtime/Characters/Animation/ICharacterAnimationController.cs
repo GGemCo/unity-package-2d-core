@@ -1,4 +1,4 @@
-using System.Collections;
+﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -112,6 +112,8 @@ namespace GGemCo2DCore
         IEnumerator FadeEffect(float duration, bool fadeIn);
         void SetCharacterColor(Color red);
         void UpdateTimeScaleMove(float value);
+        void SetPlaybackTimeScale(float value);
+        float GetPlaybackTimeScale();
         float GetCharacterAnimationDuration(string animationName, bool isMilliseconds = true);
         bool HasAnimation(string stateName);
         Dictionary<string, float> GetAnimationAllLength();

@@ -36,6 +36,8 @@ namespace GGemCo2DCoreEditor
             var uiPanelProp = property.FindPropertyRelative("uiPanel");
             var uiWindowVisibilityProp = property.FindPropertyRelative("uiWindowVisibility");
             var timeScaleProp = property.FindPropertyRelative("timeScale");
+            
+            var characterAnimationTimeScaleProp = property.FindPropertyRelative("characterAnimationTimeScale");
 
             var line = pos;
             line.height = EditorGUIUtility.singleLineHeight;
@@ -69,6 +71,9 @@ namespace GGemCo2DCoreEditor
                     break;
                 case CutsceneEventType.CharacterAnimation:
                     EditorGUI.PropertyField(line, characterAnimationProp, true);
+                    break;
+                case CutsceneEventType.CharacterAnimationTimeScale:
+                    DrawCharacterAnimationTimeScaleProperty(line, characterAnimationTimeScaleProp);
                     break;
                 case CutsceneEventType.DialogueBalloon:
                     EditorGUI.PropertyField(line, dialogueBalloonProp, true);
@@ -118,6 +123,8 @@ namespace GGemCo2DCoreEditor
                     return baseHeight + EditorGUI.GetPropertyHeight(property.FindPropertyRelative("characterMove"), true);
                 case CutsceneEventType.CharacterAnimation:
                     return baseHeight + EditorGUI.GetPropertyHeight(property.FindPropertyRelative("characterAnimation"), true);
+                case CutsceneEventType.CharacterAnimationTimeScale:
+                    return baseHeight + GetCharacterAnimationTimeScalePropertyHeight(property.FindPropertyRelative("characterAnimationTimeScale"));
                 case CutsceneEventType.DialogueBalloon:
                     return baseHeight + EditorGUI.GetPropertyHeight(property.FindPropertyRelative("dialogueBalloon"), true);
                 case CutsceneEventType.ScreenFade:
@@ -223,6 +230,183 @@ namespace GGemCo2DCoreEditor
             height += EditorGUI.GetPropertyHeight(overlayTextProp.FindPropertyRelative("fadeOut"), true) + VerticalSpacing;
             height += EditorGUI.GetPropertyHeight(overlayTextProp.FindPropertyRelative("easing"), true) + VerticalSpacing;
             height += EditorGUI.GetPropertyHeight(overlayTextProp.FindPropertyRelative("useUnscaledTime"), true);
+
+            return height;
+        }
+
+
+        private static void DrawCharacterAnimationTimeScaleProperty(Rect position, SerializedProperty timeScaleProp)
+        {
+            if (timeScaleProp == null)
+            {
+                return;
+            }
+
+            Rect current = position;
+            current.height = EditorGUIUtility.singleLineHeight;
+
+            EditorGUI.LabelField(current, timeScaleProp.displayName, EditorStyles.boldLabel);
+            current.y += current.height + VerticalSpacing;
+
+            int originalIndent = EditorGUI.indentLevel;
+            EditorGUI.indentLevel++;
+
+            var characterTypeProp = timeScaleProp.FindPropertyRelative("characterType");
+            var characterUidProp = timeScaleProp.FindPropertyRelative("characterUid");
+            var actionModeProp = timeScaleProp.FindPropertyRelative("actionMode");
+            var fromScaleProp = timeScaleProp.FindPropertyRelative("fromScale");
+            var toScaleProp = timeScaleProp.FindPropertyRelative("toScale");
+            var restoreScaleProp = timeScaleProp.FindPropertyRelative("restoreScale");
+            var easingProp = timeScaleProp.FindPropertyRelative("easing");
+            var useUnscaledTimeProp = timeScaleProp.FindPropertyRelative("useUnscaledTime");
+            var captureOriginalOnTriggerProp = timeScaleProp.FindPropertyRelative("captureOriginalOnTrigger");
+            var useCapturedScaleForRestoreProp = timeScaleProp.FindPropertyRelative("useCapturedScaleForRestore");
+            var restoreOnCutsceneEndProp = timeScaleProp.FindPropertyRelative("restoreOnCutsceneEnd");
+
+            DrawPropertyLine(ref current, characterTypeProp);
+            if ((CharacterConstants.Type)characterTypeProp.enumValueIndex != CharacterConstants.Type.Player)
+            {
+                DrawPropertyLine(ref current, characterUidProp);
+            }
+
+            DrawPropertyLine(ref current, actionModeProp);
+            var actionMode = (CharacterAnimationTimeScaleActionMode)actionModeProp.enumValueIndex;
+            switch (actionMode)
+            {
+                case CharacterAnimationTimeScaleActionMode.BlendAndHold:
+                    DrawPropertyLine(ref current, captureOriginalOnTriggerProp);
+                    if (!captureOriginalOnTriggerProp.boolValue)
+                    {
+                        DrawPropertyLine(ref current, fromScaleProp);
+                    }
+                    DrawPropertyLine(ref current, toScaleProp);
+                    DrawPropertyLine(ref current, easingProp);
+                    DrawPropertyLine(ref current, useUnscaledTimeProp);
+                    DrawCharacterAnimationTimeScaleWarnings(ref current, actionMode, toScaleProp, useUnscaledTimeProp, restoreOnCutsceneEndProp);
+                    DrawPropertyLine(ref current, restoreOnCutsceneEndProp);
+                    break;
+
+                case CharacterAnimationTimeScaleActionMode.SetAndHold:
+                    DrawPropertyLine(ref current, captureOriginalOnTriggerProp);
+                    DrawPropertyLine(ref current, toScaleProp);
+                    DrawCharacterAnimationTimeScaleWarnings(ref current, actionMode, toScaleProp, useUnscaledTimeProp, restoreOnCutsceneEndProp);
+                    DrawPropertyLine(ref current, restoreOnCutsceneEndProp);
+                    break;
+
+                case CharacterAnimationTimeScaleActionMode.Restore:
+                    DrawPropertyLine(ref current, useCapturedScaleForRestoreProp);
+                    if (!useCapturedScaleForRestoreProp.boolValue)
+                    {
+                        DrawPropertyLine(ref current, restoreScaleProp);
+                    }
+                    DrawPropertyLine(ref current, easingProp);
+                    DrawPropertyLine(ref current, useUnscaledTimeProp);
+                    DrawPropertyLine(ref current, restoreOnCutsceneEndProp);
+                    break;
+            }
+
+            EditorGUI.indentLevel = originalIndent;
+        }
+
+        private static float GetCharacterAnimationTimeScalePropertyHeight(SerializedProperty timeScaleProp)
+        {
+            if (timeScaleProp == null)
+            {
+                return EditorGUIUtility.singleLineHeight;
+            }
+
+            float height = EditorGUIUtility.singleLineHeight + VerticalSpacing;
+            var characterTypeProp = timeScaleProp.FindPropertyRelative("characterType");
+            var actionModeProp = timeScaleProp.FindPropertyRelative("actionMode");
+            var captureOriginalOnTriggerProp = timeScaleProp.FindPropertyRelative("captureOriginalOnTrigger");
+            var useCapturedScaleForRestoreProp = timeScaleProp.FindPropertyRelative("useCapturedScaleForRestore");
+            var restoreOnCutsceneEndProp = timeScaleProp.FindPropertyRelative("restoreOnCutsceneEnd");
+            var toScaleProp = timeScaleProp.FindPropertyRelative("toScale");
+            var useUnscaledTimeProp = timeScaleProp.FindPropertyRelative("useUnscaledTime");
+
+            height += EditorGUI.GetPropertyHeight(characterTypeProp, true) + VerticalSpacing;
+            if ((CharacterConstants.Type)characterTypeProp.enumValueIndex != CharacterConstants.Type.Player)
+            {
+                height += EditorGUI.GetPropertyHeight(timeScaleProp.FindPropertyRelative("characterUid"), true) + VerticalSpacing;
+            }
+
+            height += EditorGUI.GetPropertyHeight(actionModeProp, true) + VerticalSpacing;
+
+            var actionMode = (CharacterAnimationTimeScaleActionMode)actionModeProp.enumValueIndex;
+            switch (actionMode)
+            {
+                case CharacterAnimationTimeScaleActionMode.BlendAndHold:
+                    height += EditorGUI.GetPropertyHeight(captureOriginalOnTriggerProp, true) + VerticalSpacing;
+                    if (!captureOriginalOnTriggerProp.boolValue)
+                    {
+                        height += EditorGUI.GetPropertyHeight(timeScaleProp.FindPropertyRelative("fromScale"), true) + VerticalSpacing;
+                    }
+                    height += EditorGUI.GetPropertyHeight(toScaleProp, true) + VerticalSpacing;
+                    height += EditorGUI.GetPropertyHeight(timeScaleProp.FindPropertyRelative("easing"), true) + VerticalSpacing;
+                    height += EditorGUI.GetPropertyHeight(useUnscaledTimeProp, true) + VerticalSpacing;
+                    height += GetCharacterAnimationTimeScaleWarningHeight(actionMode, toScaleProp, useUnscaledTimeProp, restoreOnCutsceneEndProp);
+                    height += EditorGUI.GetPropertyHeight(restoreOnCutsceneEndProp, true) + VerticalSpacing;
+                    break;
+
+                case CharacterAnimationTimeScaleActionMode.SetAndHold:
+                    height += EditorGUI.GetPropertyHeight(captureOriginalOnTriggerProp, true) + VerticalSpacing;
+                    height += EditorGUI.GetPropertyHeight(toScaleProp, true) + VerticalSpacing;
+                    height += GetCharacterAnimationTimeScaleWarningHeight(actionMode, toScaleProp, useUnscaledTimeProp, restoreOnCutsceneEndProp);
+                    height += EditorGUI.GetPropertyHeight(restoreOnCutsceneEndProp, true) + VerticalSpacing;
+                    break;
+
+                case CharacterAnimationTimeScaleActionMode.Restore:
+                    height += EditorGUI.GetPropertyHeight(useCapturedScaleForRestoreProp, true) + VerticalSpacing;
+                    if (!useCapturedScaleForRestoreProp.boolValue)
+                    {
+                        height += EditorGUI.GetPropertyHeight(timeScaleProp.FindPropertyRelative("restoreScale"), true) + VerticalSpacing;
+                    }
+                    height += EditorGUI.GetPropertyHeight(timeScaleProp.FindPropertyRelative("easing"), true) + VerticalSpacing;
+                    height += EditorGUI.GetPropertyHeight(useUnscaledTimeProp, true) + VerticalSpacing;
+                    height += EditorGUI.GetPropertyHeight(restoreOnCutsceneEndProp, true) + VerticalSpacing;
+                    break;
+            }
+
+            return height;
+        }
+
+        private static void DrawCharacterAnimationTimeScaleWarnings(ref Rect current, CharacterAnimationTimeScaleActionMode actionMode, SerializedProperty toScaleProp,
+            SerializedProperty useUnscaledTimeProp, SerializedProperty restoreOnCutsceneEndProp)
+        {
+            if (toScaleProp == null || !Mathf.Approximately(toScaleProp.floatValue, 0f))
+            {
+                return;
+            }
+
+            if (actionMode == CharacterAnimationTimeScaleActionMode.BlendAndHold && !useUnscaledTimeProp.boolValue)
+            {
+                DrawHelpBox(ref current, "animation time scale을 0으로 만들면 애니메이션은 멈춰 보이지만, 이 이벤트 duration은 Time.deltaTime 기준일 경우 진행이 멈출 수 있습니다. Use Unscaled Time 활성화를 권장합니다.", MessageType.Warning);
+            }
+
+            if (actionMode == CharacterAnimationTimeScaleActionMode.SetAndHold && !restoreOnCutsceneEndProp.boolValue)
+            {
+                DrawHelpBox(ref current, "SetAndHold + toScale 0 + Restore On Cutscene End 비활성 상태입니다. 별도 Restore 이벤트가 없으면 컷씬 종료 후에도 애니메이션이 멈춘 상태로 남을 수 있습니다.", MessageType.Info);
+            }
+        }
+
+        private static float GetCharacterAnimationTimeScaleWarningHeight(CharacterAnimationTimeScaleActionMode actionMode, SerializedProperty toScaleProp,
+            SerializedProperty useUnscaledTimeProp, SerializedProperty restoreOnCutsceneEndProp)
+        {
+            if (toScaleProp == null || !Mathf.Approximately(toScaleProp.floatValue, 0f))
+            {
+                return 0f;
+            }
+
+            float height = 0f;
+            if (actionMode == CharacterAnimationTimeScaleActionMode.BlendAndHold && !useUnscaledTimeProp.boolValue)
+            {
+                height += GetHelpBoxHeight("animation time scale을 0으로 만들면 애니메이션은 멈춰 보이지만, 이 이벤트 duration은 Time.deltaTime 기준일 경우 진행이 멈출 수 있습니다. Use Unscaled Time 활성화를 권장합니다.");
+            }
+
+            if (actionMode == CharacterAnimationTimeScaleActionMode.SetAndHold && !restoreOnCutsceneEndProp.boolValue)
+            {
+                height += GetHelpBoxHeight("SetAndHold + toScale 0 + Restore On Cutscene End 비활성 상태입니다. 별도 Restore 이벤트가 없으면 컷씬 종료 후에도 애니메이션이 멈춘 상태로 남을 수 있습니다.");
+            }
 
             return height;
         }
@@ -459,6 +643,7 @@ namespace GGemCo2DCoreEditor
             EnsureManagedReference(property.FindPropertyRelative("cameraChangeTarget"), eventType == CutsceneEventType.CameraChangeTarget, typeof(CameraChangeTargetData));
             EnsureManagedReference(property.FindPropertyRelative("characterMove"), eventType == CutsceneEventType.CharacterMove, typeof(CharacterMoveData));
             EnsureManagedReference(property.FindPropertyRelative("characterAnimation"), eventType == CutsceneEventType.CharacterAnimation, typeof(CharacterAnimationData));
+            EnsureManagedReference(property.FindPropertyRelative("characterAnimationTimeScale"), eventType == CutsceneEventType.CharacterAnimationTimeScale, typeof(CharacterAnimationTimeScaleData));
             EnsureManagedReference(property.FindPropertyRelative("dialogueBalloon"), eventType == CutsceneEventType.DialogueBalloon, typeof(DialogueBalloonData));
             EnsureManagedReference(property.FindPropertyRelative("screenFade"), eventType == CutsceneEventType.ScreenFade, typeof(ScreenFadeData));
             EnsureManagedReference(property.FindPropertyRelative("overlayText"), eventType == CutsceneEventType.OverlayText, typeof(OverlayTextData));

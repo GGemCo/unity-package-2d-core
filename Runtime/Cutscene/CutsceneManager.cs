@@ -57,6 +57,7 @@ namespace GGemCo2DCore
         private float _capturedFixedDeltaTime;
         private TimeScaleController _activeTimeScaleOwner;
         private bool _useUnscaledTimelineTime;
+        private readonly Dictionary<string, float> _capturedCharacterAnimationTimeScales = new(StringComparer.Ordinal);
         
         public void Initialize(SceneGame scene)
         {
@@ -71,6 +72,7 @@ namespace GGemCo2DCore
             _capturedFixedDeltaTime = 0.02f;
             _activeTimeScaleOwner = null;
             _useUnscaledTimelineTime = false;
+            _capturedCharacterAnimationTimeScales.Clear();
             
             // 기존 컨트롤러 초기화 이후
             if (_sceneGame.containerDialogueBalloon)
@@ -173,6 +175,7 @@ namespace GGemCo2DCore
             _hasCapturedTimeScaleState = false;
             _activeTimeScaleOwner = null;
             _useUnscaledTimelineTime = false;
+            _capturedCharacterAnimationTimeScales.Clear();
         }
         /// <summary>
         /// 연출 플레이
@@ -264,6 +267,7 @@ namespace GGemCo2DCore
             // GcLogger.Log("연출 종료");
             _currentState = State.Finished;
 
+            ForceRestoreCharacterAnimationTimeScale();
             foreach (var controller in _activeControllers)
             {
                 controller.End();
@@ -347,6 +351,22 @@ namespace GGemCo2DCore
             _overlayTextOverrides.Clear();
         }
 
+
+
+        public string BuildCharacterAnimationTimeScaleKey(CharacterConstants.Type characterType, int characterUid)
+        {
+            return $"{(int)characterType}:{characterUid}";
+        }
+
+        public bool TryGetCapturedCharacterAnimationTimeScale(CharacterConstants.Type characterType, int characterUid, out float timeScale)
+        {
+            return _capturedCharacterAnimationTimeScales.TryGetValue(BuildCharacterAnimationTimeScaleKey(characterType, characterUid), out timeScale);
+        }
+
+        public void CaptureCharacterAnimationTimeScale(CharacterConstants.Type characterType, int characterUid, float timeScale)
+        {
+            _capturedCharacterAnimationTimeScales[BuildCharacterAnimationTimeScaleKey(characterType, characterUid)] = Mathf.Max(0f, timeScale);
+        }
 
         public float GetTimelineDeltaTime()
         {
@@ -432,6 +452,7 @@ namespace GGemCo2DCore
 
                 CutsceneEventType.CharacterMove => new CharacterMoveController(this),
                 CutsceneEventType.CharacterAnimation => new CharacterAnimationController(this),
+                CutsceneEventType.CharacterAnimationTimeScale => new CharacterAnimationTimeScaleController(this),
 
                 CutsceneEventType.DialogueBalloon => new DialogueBalloonController(this, _dialogueBalloonPool),
                 CutsceneEventType.ScreenFade => new ScreenFadeController(this),
@@ -456,9 +477,21 @@ namespace GGemCo2DCore
             }
         }
 
+        private void ForceRestoreCharacterAnimationTimeScale()
+        {
+            foreach (var controller in _activeControllers)
+            {
+                if (controller is CharacterAnimationTimeScaleController characterAnimationTimeScaleController)
+                {
+                    characterAnimationTimeScaleController.ForceRestoreOriginalState();
+                }
+            }
+        }
+
         public void OnDestroy()
         {
             ForceRestoreTimeScale();
+            ForceRestoreCharacterAnimationTimeScale();
             foreach (var controller in _activeControllers)
             {
                 controller.End();

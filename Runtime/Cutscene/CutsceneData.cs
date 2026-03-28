@@ -25,6 +25,7 @@ namespace GGemCo2DCore
 
         public CharacterMoveData characterMove;
         public CharacterAnimationData characterAnimation;
+        public CharacterAnimationTimeScaleData characterAnimationTimeScale;
 
         public DialogueBalloonData dialogueBalloon;
         public ScreenFadeData screenFade;
@@ -68,6 +69,9 @@ namespace GGemCo2DCore
                 case CutsceneEventType.CharacterAnimation:
                     characterAnimation ??= new CharacterAnimationData();
                     break;
+                case CutsceneEventType.CharacterAnimationTimeScale:
+                    characterAnimationTimeScale ??= new CharacterAnimationTimeScaleData();
+                    break;
                 case CutsceneEventType.DialogueBalloon:
                     dialogueBalloon ??= new DialogueBalloonData();
                     break;
@@ -99,6 +103,7 @@ namespace GGemCo2DCore
 
         public bool ShouldSerializeCharacterMove() => type == CutsceneEventType.CharacterMove && characterMove != null;
         public bool ShouldSerializeCharacterAnimation() => type == CutsceneEventType.CharacterAnimation && characterAnimation != null;
+        public bool ShouldSerializeCharacterAnimationTimeScale() => type == CutsceneEventType.CharacterAnimationTimeScale && characterAnimationTimeScale != null;
 
         public bool ShouldSerializeDialogueBalloon() => type == CutsceneEventType.DialogueBalloon && dialogueBalloon != null;
         public bool ShouldSerializeScreenFade() => type == CutsceneEventType.ScreenFade && screenFade != null;

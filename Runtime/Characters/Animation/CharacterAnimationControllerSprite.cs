@@ -1,4 +1,4 @@
-using System.Collections;
+﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -322,8 +322,23 @@ namespace GGemCo2DCore
         /// <param name="value"></param>
         public void UpdateTimeScaleMove(float value)
         {
-            Animator.speed = value;
-            Animator.Update(0); // 즉시 반영 (옵션)
+            SetPlaybackTimeScale(value);
+        }
+
+        public void SetPlaybackTimeScale(float value)
+        {
+            if (Animator == null)
+            {
+                return;
+            }
+
+            Animator.speed = Mathf.Max(0f, value);
+            Animator.Update(0f);
+        }
+
+        public float GetPlaybackTimeScale()
+        {
+            return Animator != null ? Animator.speed : 1f;
         }
         /// <summary>
         /// 색상 변경 하기

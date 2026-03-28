@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.IO;
 using GGemCo2DCore;
@@ -253,6 +253,7 @@ namespace GGemCo2DCoreEditor
                 cameraChangeTarget = source.type == CutsceneEventType.CameraChangeTarget ? CloneCameraChangeTargetData(source.cameraChangeTarget) : null,
                 characterMove = source.type == CutsceneEventType.CharacterMove ? CloneCharacterMoveData(source.characterMove) : null,
                 characterAnimation = source.type == CutsceneEventType.CharacterAnimation ? CloneCharacterAnimationData(source.characterAnimation) : null,
+                characterAnimationTimeScale = source.type == CutsceneEventType.CharacterAnimationTimeScale ? CloneCharacterAnimationTimeScaleData(source.characterAnimationTimeScale) : null,
                 dialogueBalloon = source.type == CutsceneEventType.DialogueBalloon ? CloneDialogueBalloonData(source.dialogueBalloon) : null,
                 screenFade = source.type == CutsceneEventType.ScreenFade ? CloneScreenFadeData(source.screenFade) : null,
                 overlayText = source.type == CutsceneEventType.OverlayText ? CloneOverlayTextData(source.overlayText) : null,
@@ -366,6 +367,29 @@ namespace GGemCo2DCoreEditor
                 animationName = source.animationName,
                 animationLoop = source.animationLoop,
                 animationTimeScale = source.animationTimeScale,
+            };
+        }
+
+        private static CharacterAnimationTimeScaleData CloneCharacterAnimationTimeScaleData(CharacterAnimationTimeScaleData source)
+        {
+            if (source == null)
+            {
+                return null;
+            }
+
+            return new CharacterAnimationTimeScaleData
+            {
+                characterType = source.characterType,
+                characterUid = source.characterUid,
+                actionMode = source.actionMode,
+                fromScale = source.fromScale,
+                toScale = source.toScale,
+                restoreScale = source.restoreScale,
+                easing = source.easing,
+                useUnscaledTime = source.useUnscaledTime,
+                captureOriginalOnTrigger = source.captureOriginalOnTrigger,
+                useCapturedScaleForRestore = source.useCapturedScaleForRestore,
+                restoreOnCutsceneEnd = source.restoreOnCutsceneEnd,
             };
         }
 
