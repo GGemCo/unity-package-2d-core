@@ -17,14 +17,11 @@ namespace GGemCo2DCoreEditor
         private Dictionary<int, StruckTableCutscene> _cutsceneDictionary;
 
         private readonly List<SearchableDropdownUtility.Option<StruckTableCutscene>> _dropDownOptions = new();
-        private StruckTableCutscene _selectedCutscene;
+        private readonly CutsceneEditorState _state = new();
 
-        private Vector2 _scroll;
-        private string _lastReloadMessage = string.Empty;
-        private string _lastActionMessage = string.Empty;
-
-        private TextAsset _selectedJson;
-        private TimelineAsset _selectedTimelineAsset;
+        private CutsceneSelectionPanel _selectionPanel;
+        private CutsceneTimelinePanel _timelinePanel;
+        private CutsceneJsonImportPanel _jsonImportPanel;
 
         [MenuItem(ConfigEditor.NameToolCutscene, false, (int)ConfigEditor.ToolOrdering.Cutscene)]
         private static void Open()
@@ -35,143 +32,45 @@ namespace GGemCo2DCoreEditor
         protected override void OnEnable()
         {
             base.OnEnable();
+            _selectionPanel = new CutsceneSelectionPanel(Title);
+            _timelinePanel = new CutsceneTimelinePanel();
+            _jsonImportPanel = new CutsceneJsonImportPanel();
             ReloadCutsceneTable();
         }
 
         private void OnGUI()
         {
-            using (var scroll = new EditorGUILayout.ScrollViewScope(_scroll))
+            using (var scroll = new EditorGUILayout.ScrollViewScope(_state.Scroll))
             {
-                _scroll = scroll.scrollPosition;
+                _state.Scroll = scroll.scrollPosition;
 
                 EditorGUILayout.Space(6);
-                DrawSelectionSection();
+                _selectionPanel.Draw(
+                    state: _state,
+                    dropDownOptions: _dropDownOptions,
+                    getSelectedCutsceneJsonPath: GetSelectedCutsceneJsonPath,
+                    onCutsceneSelected: OnCutsceneSelected,
+                    playSelectedCutscene: PlaySelectedCutscene,
+                    pingSelectedCutsceneJson: PingSelectedCutsceneJson,
+                    importSelectedCutsceneJsonToTempTimeline: ImportSelectedCutsceneJsonToTempTimeline,
+                    repaint: Repaint);
                 EditorGUILayout.Space(8);
 
-                DrawTimelineSection();
+                _timelinePanel.Draw(
+                    state: _state,
+                    exportSelectedTimelineToCutsceneJson: ExportSelectedTimelineToCutsceneJson,
+                    pingSelectedTimeline: PingSelectedTimeline);
                 EditorGUILayout.Space(8);
 
-                DrawJsonImportSection();
+                _jsonImportPanel.Draw(_state, ImportJsonToTempTimeline);
                 EditorGUILayout.Space(8);
 
-                DrawTableReloadSection(_lastReloadMessage, "cutscene 재로딩", ReloadCutsceneTable);
+                DrawTableReloadSection(_state.LastReloadMessage, "cutscene 재로딩", ReloadCutsceneTable);
                 EditorGUILayout.Space(10);
 
-                if (!string.IsNullOrEmpty(_lastActionMessage))
+                if (!string.IsNullOrEmpty(_state.LastActionMessage))
                 {
-                    EditorGUILayout.HelpBox(_lastActionMessage, MessageType.Info);
-                }
-            }
-        }
-
-        private void DrawSelectionSection()
-        {
-            using (new EditorGUILayout.VerticalScope(EditorStyles.helpBox))
-            {
-                EditorGUILayout.LabelField("연출 선택", EditorStyles.boldLabel);
-
-                if (_dropDownOptions.Count == 0)
-                {
-                    EditorGUILayout.HelpBox("등록된 연출이 없습니다. cutscene 테이블을 확인해주세요.", MessageType.Warning);
-                    return;
-                }
-
-                using (new EditorGUILayout.HorizontalScope())
-                {
-                    EditorGUILayout.PrefixLabel("Cutscene");
-
-                    var currentText = _selectedCutscene != null
-                        ? $"{_selectedCutscene.Uid} - {_selectedCutscene.Memo}"
-                        : "선택...";
-
-                    var selectedIndex = _selectedCutscene != null ? _selectedCutscene.Uid : 0;
-
-                    SearchableDropdownUtility.DrawButtonAndShow(
-                        buttonText: currentText,
-                        options: _dropDownOptions,
-                        selectedIndex: selectedIndex,
-                        onSelected: (idx, opt) =>
-                        {
-                            _selectedCutscene = opt.Data;
-                            SyncTimelineSelectionWithCutscene();
-                            Repaint();
-                        },
-                        defaultSearchMode: SearchableDropdownUtility.SearchMode.Both);
-                }
-
-                if (_selectedCutscene == null)
-                {
-                    return;
-                }
-
-                EditorGUILayout.LabelField("UID", _selectedCutscene.Uid.ToString());
-                EditorGUILayout.LabelField("Memo", _selectedCutscene.Memo);
-                EditorGUILayout.LabelField("FileName", _selectedCutscene.FileName);
-                EditorGUILayout.LabelField("Json Path", GetSelectedCutsceneJsonPath());
-
-                using (new EditorGUILayout.HorizontalScope())
-                {
-                    using (new EditorGUI.DisabledScope(!Application.isPlaying))
-                    {
-                        if (GUILayout.Button("연출 플레이", GUILayout.Height(24)))
-                        {
-                            PlaySelectedCutscene();
-                        }
-                    }
-
-                    if (GUILayout.Button("Json 에셋 선택", GUILayout.Height(24)))
-                    {
-                        PingSelectedCutsceneJson();
-                    }
-
-                    if (GUILayout.Button("Json -> Temp Timeline", GUILayout.Height(24)))
-                    {
-                        ImportSelectedCutsceneJsonToTempTimeline();
-                    }
-                }
-            }
-        }
-
-        private void DrawTimelineSection()
-        {
-            using (new EditorGUILayout.VerticalScope(EditorStyles.helpBox))
-            {
-                EditorGUILayout.LabelField("연출 타임라인", EditorStyles.boldLabel);
-                EditorGUILayout.HelpBox("선택한 TimelineAsset을 현재 cutscene 테이블 행의 FileName.json으로 바로 내보낼 수 있습니다.", MessageType.Info);
-
-                _selectedTimelineAsset = (TimelineAsset)EditorGUILayout.ObjectField(
-                    "Timeline Asset",
-                    _selectedTimelineAsset,
-                    typeof(TimelineAsset),
-                    false);
-
-                using (new EditorGUILayout.HorizontalScope())
-                {
-                    if (GUILayout.Button("선택한 Timeline 등록(Json 저장)", GUILayout.Height(24)))
-                    {
-                        ExportSelectedTimelineToCutsceneJson();
-                    }
-
-                    if (GUILayout.Button("Timeline 에셋 선택", GUILayout.Height(24)))
-                    {
-                        PingSelectedTimeline();
-                    }
-                }
-            }
-        }
-
-        private void DrawJsonImportSection()
-        {
-            using (new EditorGUILayout.VerticalScope(EditorStyles.helpBox))
-            {
-                EditorGUILayout.LabelField("JSON -> Timeline 생성", EditorStyles.boldLabel);
-                EditorGUILayout.HelpBox("임의의 Json 파일을 선택해 Temp Timeline으로 변환할 수 있습니다.", MessageType.None);
-
-                _selectedJson = (TextAsset)EditorGUILayout.ObjectField("JSON 파일", _selectedJson, typeof(TextAsset), false);
-
-                if (GUILayout.Button("선택한 Json으로 Temp Timeline 생성", GUILayout.Height(24)))
-                {
-                    ImportJsonToTempTimeline(_selectedJson);
+                    EditorGUILayout.HelpBox(_state.LastActionMessage, MessageType.Info);
                 }
             }
         }
@@ -184,12 +83,12 @@ namespace GGemCo2DCoreEditor
                 _cutsceneDictionary = _tableCutscene != null ? _tableCutscene.GetDatas() : null;
                 RebuildDropdown();
                 SyncTimelineSelectionWithCutscene();
-                _lastReloadMessage = $"테이블 재로딩 완료: {DateTime.Now:yyyy-MM-dd HH:mm:ss}";
+                _state.LastReloadMessage = $"테이블 재로딩 완료: {DateTime.Now:yyyy-MM-dd HH:mm:ss}";
             }
             catch (Exception e)
             {
                 Debug.LogException(e);
-                _lastReloadMessage = $"테이블 재로딩 실패: {e.GetType().Name} - {e.Message}";
+                _state.LastReloadMessage = $"테이블 재로딩 실패: {e.GetType().Name} - {e.Message}";
             }
 
             Repaint();
@@ -205,32 +104,38 @@ namespace GGemCo2DCoreEditor
                 valueSelector: row => string.IsNullOrWhiteSpace(row.Memo) ? row.FileName : row.Memo,
                 assignSelected: row =>
                 {
-                    if (_selectedCutscene == null)
+                    if (_state.SelectedCutscene == null)
                     {
-                        _selectedCutscene = row;
+                        _state.SelectedCutscene = row;
                         return;
                     }
 
                     if (row == null)
                     {
-                        _selectedCutscene = null;
+                        _state.SelectedCutscene = null;
                         return;
                     }
 
-                    if (_cutsceneDictionary != null && _cutsceneDictionary.TryGetValue(_selectedCutscene.Uid, out var selectedRow))
+                    if (_cutsceneDictionary != null && _cutsceneDictionary.TryGetValue(_state.SelectedCutscene.Uid, out var selectedRow))
                     {
-                        _selectedCutscene = selectedRow;
+                        _state.SelectedCutscene = selectedRow;
                     }
                     else
                     {
-                        _selectedCutscene = row;
+                        _state.SelectedCutscene = row;
                     }
                 });
         }
 
+        private void OnCutsceneSelected(StruckTableCutscene cutscene)
+        {
+            _state.SelectedCutscene = cutscene;
+            SyncTimelineSelectionWithCutscene(forceRefresh: true);
+        }
+
         private void PlaySelectedCutscene()
         {
-            if (_selectedCutscene == null)
+            if (_state.SelectedCutscene == null)
             {
                 EditorUtility.DisplayDialog(Title, "연출을 먼저 선택해주세요.", "OK");
                 return;
@@ -241,14 +146,14 @@ namespace GGemCo2DCoreEditor
                 EditorUtility.DisplayDialog(Title, "게임을 실행해주세요.", "OK");
                 return;
             }
-            
+
             // SceneGame.Instance.CutsceneManager.SetOverlayTextOverride("boss_name", "Shadow Queen");
-            _ = SceneGame.Instance.CutsceneManager.PlayCutscene(_selectedCutscene.Uid);
+            _ = SceneGame.Instance.CutsceneManager.PlayCutscene(_state.SelectedCutscene.Uid);
         }
 
         private void ImportSelectedCutsceneJsonToTempTimeline()
         {
-            if (_selectedCutscene == null)
+            if (_state.SelectedCutscene == null)
             {
                 EditorUtility.DisplayDialog(Title, "연출을 먼저 선택해주세요.", "OK");
                 return;
@@ -262,7 +167,7 @@ namespace GGemCo2DCoreEditor
                 return;
             }
 
-            var timelinePath = GetTempTimelinePath(_selectedCutscene.FileName);
+            var timelinePath = GetTempTimelinePath(_state.SelectedCutscene.FileName);
             CreateTimelineFromJsonAsset(jsonAsset, timelinePath, $"선택 연출 Json을 Temp Timeline으로 변환 완료\n{timelinePath}");
         }
 
@@ -289,22 +194,22 @@ namespace GGemCo2DCoreEditor
                 return;
             }
 
-            _selectedTimelineAsset = createdTimeline;
+            _state.SelectedTimelineAsset = createdTimeline;
             Selection.activeObject = createdTimeline;
             EditorGUIUtility.PingObject(createdTimeline);
-            _lastActionMessage = successMessage;
+            _state.LastActionMessage = successMessage;
             EditorUtility.DisplayDialog(Title, successMessage, "OK");
         }
 
         private void ExportSelectedTimelineToCutsceneJson()
         {
-            if (_selectedCutscene == null)
+            if (_state.SelectedCutscene == null)
             {
                 EditorUtility.DisplayDialog(Title, "연출을 먼저 선택해주세요.", "OK");
                 return;
             }
 
-            if (_selectedTimelineAsset == null)
+            if (_state.SelectedTimelineAsset == null)
             {
                 EditorUtility.DisplayDialog(Title, "등록할 TimelineAsset을 선택해주세요.", "OK");
                 return;
@@ -313,47 +218,47 @@ namespace GGemCo2DCoreEditor
             var jsonPath = GetSelectedCutsceneJsonPath();
             CutsceneData exportedData;
             string error;
-            if (!CutsceneTimelineJsonUtility.TryExportTimelineToJson(_selectedTimelineAsset, jsonPath, out exportedData, out error))
+            if (!CutsceneTimelineJsonUtility.TryExportTimelineToJson(_state.SelectedTimelineAsset, jsonPath, out exportedData, out error))
             {
                 EditorUtility.DisplayDialog(Title, error, "OK");
                 return;
             }
 
-            _lastActionMessage = $"Timeline 등록 완료: {_selectedCutscene.Uid} / {_selectedCutscene.FileName}.json";
+            _state.LastActionMessage = $"Timeline 등록 완료: {_state.SelectedCutscene.Uid} / {_state.SelectedCutscene.FileName}.json";
             EditorUtility.DisplayDialog(Title, "선택한 Timeline을 cutscene Json으로 저장했습니다.", "OK");
         }
 
-        private void SyncTimelineSelectionWithCutscene()
+        private void SyncTimelineSelectionWithCutscene(bool forceRefresh = false)
         {
-            if (_selectedCutscene == null || string.IsNullOrWhiteSpace(_selectedCutscene.FileName))
+            if (_state.SelectedCutscene == null || string.IsNullOrWhiteSpace(_state.SelectedCutscene.FileName))
             {
                 return;
             }
 
-            if (_selectedTimelineAsset != null)
+            if (!forceRefresh && _state.SelectedTimelineAsset != null)
             {
                 return;
             }
 
-            var tempTimelinePath = GetTempTimelinePath(_selectedCutscene.FileName);
-            _selectedTimelineAsset = AssetDatabase.LoadAssetAtPath<TimelineAsset>(tempTimelinePath);
+            var tempTimelinePath = GetTempTimelinePath(_state.SelectedCutscene.FileName);
+            _state.SelectedTimelineAsset = AssetDatabase.LoadAssetAtPath<TimelineAsset>(tempTimelinePath);
         }
 
         private void PingSelectedTimeline()
         {
-            if (_selectedTimelineAsset == null)
+            if (_state.SelectedTimelineAsset == null)
             {
                 EditorUtility.DisplayDialog(Title, "선택된 TimelineAsset이 없습니다.", "OK");
                 return;
             }
 
-            Selection.activeObject = _selectedTimelineAsset;
-            EditorGUIUtility.PingObject(_selectedTimelineAsset);
+            Selection.activeObject = _state.SelectedTimelineAsset;
+            EditorGUIUtility.PingObject(_state.SelectedTimelineAsset);
         }
 
         private void PingSelectedCutsceneJson()
         {
-            if (_selectedCutscene == null)
+            if (_state.SelectedCutscene == null)
             {
                 EditorUtility.DisplayDialog(Title, "연출을 먼저 선택해주세요.", "OK");
                 return;
@@ -372,9 +277,9 @@ namespace GGemCo2DCoreEditor
 
         private string GetSelectedCutsceneJsonPath()
         {
-            return _selectedCutscene == null
+            return _state.SelectedCutscene == null
                 ? string.Empty
-                : $"{ConfigAddressablePath.Narrative.Cutscene}/{_selectedCutscene.FileName}.json";
+                : $"{ConfigAddressablePath.Narrative.Cutscene}/{_state.SelectedCutscene.FileName}.json";
         }
 
         private static string GetTempTimelinePath(string assetName)

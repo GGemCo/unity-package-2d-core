@@ -1,4 +1,4 @@
-using GGemCo2DCore;
+﻿using GGemCo2DCore;
 using UnityEditor;
 using UnityEditor.Timeline;
 using UnityEngine;
@@ -14,13 +14,26 @@ namespace GGemCo2DCoreEditor
 
         private void OnEnable()
         {
+            if (CutsceneEventPayloadEditorUtility.EnsurePayloadsForClip(target as CutsceneEventClip))
+            {
+                EditorUtility.SetDirty(target);
+            }
+
             serializedObject.Update();
             _eventsProp = serializedObject.FindProperty("events");
         }
 
         public override void OnInspectorGUI()
         {
-            serializedObject.Update();
+            if (CutsceneEventPayloadEditorUtility.EnsurePayloadsForClip(target as CutsceneEventClip))
+            {
+                serializedObject.Update();
+            }
+            else
+            {
+                serializedObject.Update();
+            }
+
             EditorGUILayout.PropertyField(_eventsProp, true);
 
             EditorGUILayout.HelpBox(
