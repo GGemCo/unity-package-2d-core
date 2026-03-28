@@ -37,6 +37,8 @@ namespace GGemCo2DCoreEditor
         private int _changedEventCountLastApply;
         private int _changedAssetCountLastApply;
         private string _lastSummary = string.Empty;
+        
+        private Vector2 _scroll;
 
         [MenuItem(ConfigEditor.NameToolAnimationEventNameChanger, false, (int)ConfigEditor.ToolOrdering.AnimationEventNameChanger)]
         public static void ShowWindow()
@@ -46,15 +48,21 @@ namespace GGemCo2DCoreEditor
 
         private void OnGUI()
         {
-            DrawHeader();
-            EditorGUILayout.Space(4f);
-            DrawSearchOptions();
-            EditorGUILayout.Space(8f);
-            DrawActions();
-            EditorGUILayout.Space(8f);
-            DrawSummary();
-            EditorGUILayout.Space(8f);
-            DrawResults();
+            using (var scroll = new EditorGUILayout.ScrollViewScope(_scroll))
+            {
+                _scroll = scroll.scrollPosition;
+                
+                DrawHeader();
+                EditorGUILayout.Space(4f);
+                DrawSearchOptions();
+                EditorGUILayout.Space(8f);
+                DrawActions();
+                EditorGUILayout.Space(8f);
+                DrawSummary();
+                EditorGUILayout.Space(8f);
+                DrawResults();
+                EditorGUILayout.Space(20f);
+            }
         }
 
         private void DrawHeader()
@@ -180,7 +188,6 @@ namespace GGemCo2DCoreEditor
 
             DrawResultHeader();
 
-            _scrollEntries = EditorGUILayout.BeginScrollView(_scrollEntries);
             foreach (ScanEntry entry in _entries)
             {
                 if (!ShouldDrawEntry(entry))
@@ -215,7 +222,6 @@ namespace GGemCo2DCoreEditor
                 EditorGUILayout.SelectableLabel(entry.AssetPath, EditorStyles.textField, GUILayout.Height(EditorGUIUtility.singleLineHeight));
                 EditorGUILayout.EndHorizontal();
             }
-            EditorGUILayout.EndScrollView();
             EditorGUILayout.EndVertical();
         }
 
