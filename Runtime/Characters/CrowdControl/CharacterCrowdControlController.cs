@@ -33,7 +33,6 @@ namespace GGemCo2DCore
         private string _currentStaggerAnimationName;
         private string _currentPhaseAnimationName;
         private KnockUpAnimationPhase _currentKnockUpAnimationPhase;
-        private bool _hasPlayedKnockDownAirSingleAir;
 
         private Coroutine _stopRoutine;
         private const float Epsilon = 0.0001f;
@@ -419,11 +418,10 @@ namespace GGemCo2DCore
             _currentStaggerAnimationName = crowdControl?.StaggerAnimationName;
             _currentPhaseAnimationName = _currentStaggerAnimationName;
             _currentKnockUpAnimationPhase = KnockUpAnimationPhase.None;
-            _hasPlayedKnockDownAirSingleAir = false;
 
             if (IsAirborneCrowdControl(crowdControl) && HasAirbornePhasedAnimation(crowdControl))
             {
-                var initialPhase = EvaluateAirborneAnimationPhase(crowdControl, 0f, KnockUpAnimationPhase.None, false);
+                var initialPhase = EvaluateAirborneAnimationPhase(crowdControl, 0f);
                 ApplyAirbornePhaseAnimation(crowdControl, initialPhase, force: true);
                 return;
             }
@@ -620,16 +618,13 @@ namespace GGemCo2DCore
             if (crowdControl == null)
                 return false;
 
-            if (crowdControl.Type == CrowdControlConstants.Type.KnockDownAir)
-                return _currentKnockUpAnimationPhase == KnockUpAnimationPhase.FallLoop;
-
             if (_currentKnockUpAnimationPhase == KnockUpAnimationPhase.FallLoop)
                 return true;
 
             if (!_motionController.TryGetMotionProgress(MotionChannel.CrowdControl, out float progress01))
                 return false;
 
-            return EvaluateAirborneAnimationPhase(crowdControl, progress01, _currentKnockUpAnimationPhase, _hasPlayedKnockDownAirSingleAir) == KnockUpAnimationPhase.FallLoop;
+            return EvaluateAirborneAnimationPhase(crowdControl, progress01) == KnockUpAnimationPhase.FallLoop;
         }
 
         private void SnapKnockUpToGroundIfNear(float maxSnapDistance)
@@ -677,7 +672,7 @@ namespace GGemCo2DCore
             if (!_motionController.TryGetMotionProgress(MotionChannel.CrowdControl, out float progress01))
                 return;
 
-            var nextPhase = EvaluateAirborneAnimationPhase(_activeCrowdControl, progress01, _currentKnockUpAnimationPhase, _hasPlayedKnockDownAirSingleAir);
+            var nextPhase = EvaluateAirborneAnimationPhase(_activeCrowdControl, progress01);
             ApplyAirbornePhaseAnimation(_activeCrowdControl, nextPhase, force: false);
         }
 
@@ -692,11 +687,7 @@ namespace GGemCo2DCore
                 || !string.IsNullOrWhiteSpace(crowdControl.KnockUpLandEndAnimationName);
         }
 
-        private static KnockUpAnimationPhase EvaluateAirborneAnimationPhase(
-            CrowdControlRuntimeData crowdControl,
-            float progress01,
-            KnockUpAnimationPhase currentPhase,
-            bool hasPlayedKnockDownAirSingleAir)
+        private static KnockUpAnimationPhase EvaluateAirborneAnimationPhase(CrowdControlRuntimeData crowdControl, float progress01)
         {
             if (crowdControl == null)
                 return KnockUpAnimationPhase.None;
@@ -704,40 +695,15 @@ namespace GGemCo2DCore
             float riseTime = Mathf.Max(0f, crowdControl.KnockUpRiseTime);
             float airTime = Mathf.Max(0f, crowdControl.KnockUpAirTime);
             float fallTime = Mathf.Max(0f, crowdControl.KnockUpFallTime);
-            float normalized = Mathf.Clamp01(progress01);
-
-            if (crowdControl.Type == CrowdControlConstants.Type.KnockDownAir)
-            {
-                float preFallTime = riseTime + airTime;
-                if (preFallTime <= Epsilon)
-                    return KnockUpAnimationPhase.FallLoop;
-
-                float riseEnd = riseTime / preFallTime;
-                if (normalized < riseEnd)
-                    return KnockUpAnimationPhase.Rise;
-
-                if (airTime > Epsilon)
-                {
-                    if (normalized < 1f)
-                        return KnockUpAnimationPhase.Air;
-
-                    return KnockUpAnimationPhase.FallLoop;
-                }
-
-                if (!hasPlayedKnockDownAirSingleAir)
-                    return KnockUpAnimationPhase.Air;
-
-                return KnockUpAnimationPhase.FallLoop;
-            }
-
             float totalTime = riseTime + airTime + fallTime;
             if (totalTime <= Epsilon)
                 return KnockUpAnimationPhase.Rise;
 
-            float riseEndNormal = riseTime / totalTime;
+            float riseEnd = riseTime / totalTime;
             float airEnd = (riseTime + airTime) / totalTime;
+            float normalized = Mathf.Clamp01(progress01);
 
-            if (normalized < riseEndNormal)
+            if (normalized < riseEnd)
                 return KnockUpAnimationPhase.Rise;
             if (normalized < airEnd)
                 return KnockUpAnimationPhase.Air;
@@ -759,21 +725,21 @@ namespace GGemCo2DCore
             if (!_character.CharacterAnimationController.HasAnimation(animationName))
                 return;
 
-            bool loop = phase == KnockUpAnimationPhase.FallLoop;
+            bool loop;
             if (phase == KnockUpAnimationPhase.Air)
-                loop = crowdControl == null || crowdControl.Type != CrowdControlConstants.Type.KnockDownAir || crowdControl.KnockUpAirTime > Epsilon;
+            {
+                loop = crowdControl != null
+                    && crowdControl.Type == CrowdControlConstants.Type.KnockDownAir
+                    && crowdControl.KnockDownAirAnimationIsLoop;
+            }
+            else
+            {
+                loop = phase == KnockUpAnimationPhase.FallLoop;
+            }
 
             _character.CharacterAnimationController.PlayCharacterAnimation(animationName, loop);
             _currentPhaseAnimationName = animationName;
             _currentKnockUpAnimationPhase = phase;
-
-            if (phase == KnockUpAnimationPhase.Air
-                && crowdControl != null
-                && crowdControl.Type == CrowdControlConstants.Type.KnockDownAir
-                && crowdControl.KnockUpAirTime <= Epsilon)
-            {
-                _hasPlayedKnockDownAirSingleAir = true;
-            }
         }
 
         private static string GetAirbornePhaseAnimationName(CrowdControlRuntimeData crowdControl, KnockUpAnimationPhase phase)
@@ -857,7 +823,6 @@ namespace GGemCo2DCore
             _currentStaggerAnimationName = null;
             _currentPhaseAnimationName = null;
             _currentKnockUpAnimationPhase = KnockUpAnimationPhase.None;
-            _hasPlayedKnockDownAirSingleAir = false;
         }
 
 

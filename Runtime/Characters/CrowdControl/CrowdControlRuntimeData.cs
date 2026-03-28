@@ -27,6 +27,7 @@ namespace GGemCo2DCore
         public float KnockUpAirTime;
         public float KnockUpFallTime;
         public float KnockDownAirFallSpeed;
+        public bool KnockDownAirAnimationIsLoop;
         public string KnockUpRiseAnimationName;
         public string KnockUpAirAnimationName;
         public string KnockUpFallAnimationName;
@@ -68,6 +69,7 @@ namespace GGemCo2DCore
                 KnockUpAirTime = 0f,
                 KnockUpFallTime = 0f,
                 KnockDownAirFallSpeed = 0f,
+                KnockDownAirAnimationIsLoop = false,
                 KnockUpRiseAnimationName = string.Empty,
                 KnockUpAirAnimationName = string.Empty,
                 KnockUpFallAnimationName = string.Empty,
@@ -166,6 +168,7 @@ namespace GGemCo2DCore
                         runtime.KnockUpRiseAnimationName = knockDownAir.RiseAnimationName ?? string.Empty;
                         runtime.KnockUpAirAnimationName = knockDownAir.AirAnimationName ?? string.Empty;
                         runtime.KnockUpFallAnimationName = knockDownAir.FallAnimationName ?? string.Empty;
+                        runtime.KnockDownAirAnimationIsLoop = knockDownAir.AirAnimationIsLoop;
                         runtime.KnockUpLandEndAnimationName = knockDownAir.LandEndAnimationName ?? string.Empty;
                         runtime.KnockUpRiseEaseType = knockDownAir.RiseEaseType;
                         runtime.KnockUpFallEaseType = knockDownAir.FallEaseType;

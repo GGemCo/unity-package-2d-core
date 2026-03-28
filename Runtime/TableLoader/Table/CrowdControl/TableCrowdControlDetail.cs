@@ -51,6 +51,13 @@ namespace GGemCo2DCore
         public float AirTime;
         public float FallSpeed;
 
+        /// <summary>
+        /// KnockDownAir의 공중(Air) 애니메이션을 루프 재생할지 여부입니다.
+        /// - true : AirTime 동안 루프 재생
+        /// - false: 최초 1회만 재생하고, 남은 AirTime은 채공만 유지
+        /// </summary>
+        public bool AirAnimationIsLoop;
+
         public string RiseAnimationName;
         public string AirAnimationName;
         public string FallAnimationName;
