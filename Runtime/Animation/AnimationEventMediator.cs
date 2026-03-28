@@ -224,5 +224,32 @@ namespace GGemCo2DCore
             if (trail == null) return;
             trail.StopTrail();
         }
+        public void OnAnimationEventCaptureAfterimageSnapshot(string json, GameObject fromObject)
+        {
+            if (fromObject == null)
+                return;
+
+            var trail = fromObject.GetComponentInChildren<CharacterAfterimageTrail>(true);
+            if (trail == null)
+                return;
+
+            if (string.IsNullOrWhiteSpace(json))
+            {
+                trail.CaptureOnce();
+                return;
+            }
+
+            try
+            {
+                var data = JsonConvert.DeserializeObject<StruckAnimationEventAfterimageSnapshot>(json);
+                trail.CaptureOnce(data);
+            }
+            catch (Exception e)
+            {
+                GcLogger.LogError($"animation afterimage snapshot event, json parsing error: {e.Message} / json: {json}");
+                trail.CaptureOnce();
+            }
+        }
+
     }
 }

@@ -28,5 +28,10 @@ namespace GGemCo2DCore
         /// 백스탭(또는 대시/회피) 트레일 종료.
         /// </summary>
         void OnAnimationEventStopBackstepTrail(string json, GameObject fromObject);
+
+        /// <summary>
+        /// 현재 프레임의 Sprite를 단발 잔상으로 1회 캡처합니다.
+        /// </summary>
+        void OnAnimationEventCaptureAfterimageSnapshot(string json, GameObject fromObject);
     }
 }

@@ -4,8 +4,9 @@ using UnityEngine;
 namespace GGemCo2DCore
 {
     /// <summary>
-    /// SpriteRenderer 기반 잔상(Afterimage) 트레일.
-    /// - 백스탭/대시/회피 등 빠른 이동 구간의 잔상 연출에 사용합니다.
+    /// SpriteRenderer 기반 잔상(Afterimage) 트레일 / 스냅샷 연출.
+    /// - 백스탭/대시/회피 등 빠른 이동 구간의 연속 잔상에 사용합니다.
+    /// - 공격 특정 프레임의 단발 스냅샷 잔상에도 재사용합니다.
     /// - 풀링을 사용하여 Instantiate/GC 비용을 최소화합니다.
     /// - AnimationEvent(string json)로 런타임 오버라이드 설정을 적용할 수 있습니다.
     /// </summary>
@@ -50,10 +51,8 @@ namespace GGemCo2DCore
             if (source == null)
                 source = GetComponent<SpriteRenderer>();
 
-            // 초기 기본값 적용
             ApplyDefaults();
 
-            // 프리웜
             for (int i = 0; i < prewarmCount; i++)
             {
                 var sr = CreateGhostRenderer();
@@ -97,50 +96,109 @@ namespace GGemCo2DCore
         public void StartTrail(StruckAnimationEventBackstepTrail settings)
         {
             ApplyDefaults();
+            ApplyTrailSettings(settings);
+            StartInternal(settings?.DurationSeconds ?? 0f);
+        }
 
-            if (settings != null)
-            {
-                if (settings.SpawnIntervalSeconds > 0f)
-                    _spawnIntervalSeconds = Mathf.Max(0.005f, settings.SpawnIntervalSeconds);
+        /// <summary>
+        /// 현재 프레임의 Sprite를 단발 잔상으로 1회 캡처합니다.
+        /// </summary>
+        public void CaptureOnce()
+        {
+            ApplyDefaults();
+            CaptureNow();
+        }
 
-                if (settings.GhostLifetimeSeconds > 0f)
-                    _ghostLifetimeSeconds = Mathf.Max(0.01f, settings.GhostLifetimeSeconds);
-
-                if (!string.IsNullOrWhiteSpace(settings.ColorHex) &&
-                    ColorUtility.TryParseHtmlString(NormalizeHtmlColor(settings.ColorHex), out var c))
-                {
-                    _ghostColor = c;
-                    _ghostColor.a = Mathf.Clamp01(_ghostColor.a);
-                }
-
-                if (settings.SortingOrderOffset.HasValue)
-                    _sortingOrderOffset = settings.SortingOrderOffset.Value;
-
-                StartInternal(settings.DurationSeconds);
-                return;
-            }
-
-            StartInternal(0f);
+        /// <summary>
+        /// AnimationEvent JSON으로 받은 설정(선택)을 적용하여 단발 잔상을 1회 캡처합니다.
+        /// </summary>
+        public void CaptureOnce(StruckAnimationEventAfterimageSnapshot settings)
+        {
+            ApplyDefaults();
+            ApplySnapshotSettings(settings);
+            CaptureNow();
         }
 
         public void StopTrail()
         {
             _running = false;
             _stopTime = 0f;
-            // 잔상은 lifetime 동안 자연스럽게 사라지게 둡니다.
             if (_active.Count > 0)
                 enabled = true;
         }
 
         private void StartInternal(float durationSeconds)
         {
-            if (source == null || source.sprite == null)
+            if (!CanCaptureSource())
                 return;
 
             _running = true;
             _nextSpawnTime = Time.time;
             _stopTime = durationSeconds > 0f ? (Time.time + durationSeconds) : 0f;
             enabled = true;
+        }
+
+        private void CaptureNow()
+        {
+            if (!CanCaptureSource())
+                return;
+
+            SpawnGhost(Time.time);
+            enabled = true;
+        }
+
+        private bool CanCaptureSource()
+        {
+            return source != null && source.sprite != null;
+        }
+
+        private void ApplyTrailSettings(StruckAnimationEventBackstepTrail settings)
+        {
+            if (settings == null)
+                return;
+
+            if (settings.SpawnIntervalSeconds > 0f)
+                _spawnIntervalSeconds = Mathf.Max(0.005f, settings.SpawnIntervalSeconds);
+
+            if (settings.GhostLifetimeSeconds > 0f)
+                _ghostLifetimeSeconds = Mathf.Max(0.01f, settings.GhostLifetimeSeconds);
+
+            ApplyColorOverride(settings.ColorHex, null);
+
+            if (settings.SortingOrderOffset.HasValue)
+                _sortingOrderOffset = settings.SortingOrderOffset.Value;
+        }
+
+        private void ApplySnapshotSettings(StruckAnimationEventAfterimageSnapshot settings)
+        {
+            if (settings == null)
+                return;
+
+            if (settings.GhostLifetimeSeconds > 0f)
+                _ghostLifetimeSeconds = Mathf.Max(0.01f, settings.GhostLifetimeSeconds);
+
+            ApplyColorOverride(settings.ColorHex, settings.Alpha);
+
+            if (settings.SortingOrderOffset.HasValue)
+                _sortingOrderOffset = settings.SortingOrderOffset.Value;
+        }
+
+        private void ApplyColorOverride(string colorHex, float? alphaOverride)
+        {
+            if (!string.IsNullOrWhiteSpace(colorHex) &&
+                ColorUtility.TryParseHtmlString(NormalizeHtmlColor(colorHex), out var parsedColor))
+            {
+                _ghostColor = parsedColor;
+            }
+
+            if (alphaOverride.HasValue && alphaOverride.Value >= 0f)
+            {
+                _ghostColor.a = Mathf.Clamp01(alphaOverride.Value);
+            }
+            else
+            {
+                _ghostColor.a = Mathf.Clamp01(_ghostColor.a);
+            }
         }
 
         private void Update()
@@ -168,20 +226,20 @@ namespace GGemCo2DCore
         private void SpawnGhost(float now)
         {
             var sprite = source.sprite;
-            if (sprite == null) return;
+            if (sprite == null)
+                return;
 
             var sr = Rent();
 
-            var st = source.transform;
-            var tr = sr.transform;
-            tr.position = st.position;
-            tr.rotation = st.rotation;
-            tr.localScale = st.localScale;
+            var sourceTransform = source.transform;
+            var ghostTransform = sr.transform;
+            ghostTransform.position = sourceTransform.position;
+            ghostTransform.rotation = sourceTransform.rotation;
+            ghostTransform.localScale = sourceTransform.lossyScale;
 
             sr.sprite = sprite;
             sr.flipX = source.flipX;
             sr.flipY = source.flipY;
-
             sr.sortingLayerID = source.sortingLayerID;
             sr.sortingOrder = source.sortingOrder + _sortingOrderOffset;
             sr.color = _ghostColor;
@@ -199,18 +257,18 @@ namespace GGemCo2DCore
         {
             for (int i = _active.Count - 1; i >= 0; i--)
             {
-                var g = _active[i];
-                if (now >= g.EndTime)
+                var ghost = _active[i];
+                if (now >= ghost.EndTime)
                 {
-                    Return(g.Sr);
+                    Return(ghost.Sr);
                     _active.RemoveAt(i);
                     continue;
                 }
 
-                float t = Mathf.InverseLerp(g.StartTime, g.EndTime, now);
-                var c = g.Sr.color;
-                c.a = g.BaseAlpha * (1f - t);
-                g.Sr.color = c;
+                float normalized = Mathf.InverseLerp(ghost.StartTime, ghost.EndTime, now);
+                var color = ghost.Sr.color;
+                color.a = ghost.BaseAlpha * (1f - normalized);
+                ghost.Sr.color = color;
             }
         }
 
@@ -230,7 +288,9 @@ namespace GGemCo2DCore
 
         private void Return(SpriteRenderer sr)
         {
-            if (sr == null) return;
+            if (sr == null)
+                return;
+
             sr.gameObject.SetActive(false);
             sr.sprite = null;
             _pool.Enqueue(sr);
@@ -239,7 +299,6 @@ namespace GGemCo2DCore
         private SpriteRenderer CreateGhostRenderer()
         {
             var go = new GameObject("AfterimageGhost");
-            // 소스 오브젝트와 같은 Scene에서만 필요하므로, 부모는 null 유지(정렬/좌표 독립).
             go.transform.SetParent(null, false);
             var sr = go.AddComponent<SpriteRenderer>();
             return sr;
@@ -247,8 +306,9 @@ namespace GGemCo2DCore
 
         private static string NormalizeHtmlColor(string hex)
         {
-            // Unity ColorUtility는 "#RRGGBB" / "#RRGGBBAA" 를 선호합니다.
-            if (string.IsNullOrWhiteSpace(hex)) return "#FFFFFFFF";
+            if (string.IsNullOrWhiteSpace(hex))
+                return "#FFFFFFFF";
+
             return hex.StartsWith("#") ? hex : "#" + hex;
         }
     }

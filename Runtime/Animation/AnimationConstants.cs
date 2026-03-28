@@ -126,6 +126,26 @@
         public float FallRatioNormalized { get; set; } = 0.5f;
     }
     
+    
+    /// <summary>
+    /// 공격/연출 프레임에서 단발 잔상을 캡처하는 AnimationEvent 설정.
+    /// 예) {"GhostLifetimeSeconds":2.0,"ColorHex":"4AA3FF","Alpha":0.45,"SortingOrderOffset":-1}
+    /// </summary>
+    public sealed class StruckAnimationEventAfterimageSnapshot
+    {
+        /// <summary>잔상 수명(0이면 컴포넌트 기본값 사용).</summary>
+        public float GhostLifetimeSeconds { get; set; } = 0f;
+
+        /// <summary>잔상 색상 HTML Hex. 예) "4AA3FF" 또는 "#4AA3FF"</summary>
+        public string ColorHex { get; set; } = string.Empty;
+
+        /// <summary>잔상 알파(0~1). 음수면 색상에 포함된 알파 또는 컴포넌트 기본값 사용.</summary>
+        public float Alpha { get; set; } = -1f;
+
+        /// <summary>원본 SpriteRenderer 대비 sortingOrder 보정값.</summary>
+        public int? SortingOrderOffset { get; set; } = null;
+    }
+
     public static class AnimationConstants
     {
         private const string Prefix = "GGemCoAniEvent";
@@ -149,5 +169,6 @@
 
         public const string EventNameStartBackstepTrail = Prefix+"StartBackstepTrail";
         public const string EventNameStopBackstepTrail = Prefix+"StopBackstepTrail";
+        public const string EventNameCaptureAfterimageSnapshot = Prefix+"CaptureAfterimageSnapshot";
     }
 }

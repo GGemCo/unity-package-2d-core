@@ -429,6 +429,16 @@ namespace GGemCo2DCore
             EventListener?.OnAnimationEventStopBackstepTrail(json, gameObject);
         }
 
+
+        /// <summary>
+        /// 현재 프레임의 Sprite를 단발 잔상으로 1회 캡처하는 이벤트입니다.
+        /// </summary>
+        /// <param name="json">AnimationEvent string 파라미터(JSON)입니다.</param>
+        public void GGemCoAniEventCaptureAfterimageSnapshot(string json)
+        {
+            EventListener?.OnAnimationEventCaptureAfterimageSnapshot(json, gameObject);
+        }
+
 #if GGEMCO_2D_CONTROL
         /// <summary>
         /// 점프 시작 애니메이션의 마지막 프레임에서 호출되는 이벤트입니다.
