@@ -147,7 +147,7 @@ namespace GGemCo2DCore
         /// <param name="toWindowUid"></param>
         protected void UnRegisterAllIcons(UIWindowConstants.WindowUid fromWindowUid,
             UIWindowConstants.WindowUid toWindowUid = UIWindowConstants.WindowUid.Inventory) =>
-            IconPoolManager.UnRegisterAllIcons(fromWindowUid, toWindowUid);
+            IconPoolManager?.UnRegisterAllIcons(fromWindowUid, toWindowUid);
 
         /// <summary>
         /// 해당 윈도우에 있던 아이콘은 Detach 하고, Register 되었던 인벤토리 아이템은 지운다.

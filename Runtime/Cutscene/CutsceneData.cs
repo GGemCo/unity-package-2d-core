@@ -31,6 +31,8 @@ namespace GGemCo2DCore
         public OverlayTextData overlayText;
         public CharacterWhiteOverlayData characterWhiteOverlay;
         public UiPanelData uiPanel;
+        public UiWindowVisibilityData uiWindowVisibility;
+        public TimeScaleData timeScale;
 
         public CutsceneEvent()
         {
@@ -81,6 +83,12 @@ namespace GGemCo2DCore
                 case CutsceneEventType.UiPanel:
                     uiPanel ??= new UiPanelData();
                     break;
+                case CutsceneEventType.UiWindowVisibility:
+                    uiWindowVisibility ??= new UiWindowVisibilityData();
+                    break;
+                case CutsceneEventType.TimeScale:
+                    timeScale ??= new TimeScaleData();
+                    break;
             }
         }
 
@@ -97,6 +105,8 @@ namespace GGemCo2DCore
         public bool ShouldSerializeOverlayText() => type == CutsceneEventType.OverlayText && overlayText != null;
         public bool ShouldSerializeCharacterWhiteOverlay() => type == CutsceneEventType.CharacterWhiteOverlay && characterWhiteOverlay != null;
         public bool ShouldSerializeUiPanel() => type == CutsceneEventType.UiPanel && uiPanel != null;
+        public bool ShouldSerializeUiWindowVisibility() => type == CutsceneEventType.UiWindowVisibility && uiWindowVisibility != null;
+        public bool ShouldSerializeTimeScale() => type == CutsceneEventType.TimeScale && timeScale != null;
     }
 
     [Serializable]

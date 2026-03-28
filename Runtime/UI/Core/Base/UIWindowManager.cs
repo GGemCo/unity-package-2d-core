@@ -170,6 +170,94 @@ namespace GGemCo2DCore
             return uiWindow.gameObject.activeSelf;
         }
 
+
+        /// <summary>
+        /// 관리 중인 윈도우인지 여부를 반환합니다.
+        /// </summary>
+        public bool HasManagedWindow(UIWindowConstants.WindowUid windowUid)
+        {
+            return GetUIWindowByUid<UIWindow>(windowUid) != null;
+        }
+
+        /// <summary>
+        /// 현재 관리 중인 윈도우 UID 목록을 반환합니다.
+        /// </summary>
+        public List<UIWindowConstants.WindowUid> GetManagedWindowUids()
+        {
+            var result = new List<UIWindowConstants.WindowUid>();
+            foreach (var uid in _struckTableWindows.Keys)
+            {
+                if (uid <= 0) continue;
+                var windowUid = (UIWindowConstants.WindowUid)uid;
+                if (GetUIWindowByUid<UIWindow>(windowUid) == null) continue;
+                result.Add(windowUid);
+            }
+
+            return result;
+        }
+
+        /// <summary>
+        /// 지정한 윈도우들의 현재 표시 상태를 캡처합니다.
+        /// </summary>
+        public Dictionary<UIWindowConstants.WindowUid, bool> CaptureVisibilityState(IEnumerable<UIWindowConstants.WindowUid> windowUids)
+        {
+            var result = new Dictionary<UIWindowConstants.WindowUid, bool>();
+            if (windowUids == null)
+            {
+                return result;
+            }
+
+            foreach (var windowUid in windowUids)
+            {
+                if (windowUid == UIWindowConstants.WindowUid.None || result.ContainsKey(windowUid))
+                {
+                    continue;
+                }
+
+                var uiWindow = GetUIWindowByUid<UIWindow>(windowUid);
+                if (uiWindow == null)
+                {
+                    continue;
+                }
+
+                result[windowUid] = uiWindow.gameObject.activeSelf;
+            }
+
+            return result;
+        }
+
+        /// <summary>
+        /// 저장된 윈도우 표시 상태를 복원합니다.
+        /// </summary>
+        public void RestoreVisibilityState(IReadOnlyDictionary<UIWindowConstants.WindowUid, bool> state)
+        {
+            if (state == null)
+            {
+                return;
+            }
+
+            foreach (var pair in state)
+            {
+                ShowWindow(pair.Key, pair.Value);
+            }
+        }
+
+        /// <summary>
+        /// 지정한 윈도우들을 일괄 표시/숨김 처리합니다.
+        /// </summary>
+        public void SetWindowsVisible(IEnumerable<UIWindowConstants.WindowUid> windowUids, bool show)
+        {
+            if (windowUids == null)
+            {
+                return;
+            }
+
+            foreach (var windowUid in windowUids)
+            {
+                ShowWindow(windowUid, show);
+            }
+        }
+
         /// <summary>
         /// fromWindowUid 의 fromIndex 에 있는 아이템을 toWindowUid 로 toCount 개수 옮기기.
         /// toIndex 있으면 해당 위치로 옮기기 

@@ -45,6 +45,8 @@ namespace GGemCo2DCore
         private OverlayTextController _overlayTextController;
         private CharacterWhiteOverlayController _characterWhiteOverlayController;
         private UiPanelController _uiPanelController;
+        private UiWindowVisibilityController _uiWindowVisibilityController;
+        private TimeScaleController _timeScaleController;
         private SceneGame _sceneGame;
         private CutsceneOverlayPresenter _overlayPresenter;
         private CutsceneUiPanelPresenter _uiPanelPresenter;
@@ -247,7 +249,7 @@ namespace GGemCo2DCore
         {
             // GcLogger.Log("연출 종료");
             _currentState = State.Finished;
-            
+
             foreach (var controller in _activeControllers)
             {
                 controller.End();
@@ -347,13 +349,27 @@ namespace GGemCo2DCore
                 CutsceneEventType.OverlayText => new OverlayTextController(this),
                 CutsceneEventType.CharacterWhiteOverlay => new CharacterWhiteOverlayController(this),
                 CutsceneEventType.UiPanel => new UiPanelController(this),
+                CutsceneEventType.UiWindowVisibility => new UiWindowVisibilityController(this),
+                CutsceneEventType.TimeScale => new TimeScaleController(this),
 
                 _ => null,
             };
         }
 
+        private void ForceRestoreTimeScale()
+        {
+            foreach (var controller in _activeControllers)
+            {
+                if (controller is TimeScaleController timeScaleController)
+                {
+                    timeScaleController.ForceRestoreOriginalState();
+                }
+            }
+        }
+
         public void OnDestroy()
         {
+            ForceRestoreTimeScale();
             foreach (var controller in _activeControllers)
             {
                 controller.End();

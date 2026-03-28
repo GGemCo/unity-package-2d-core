@@ -16,6 +16,8 @@ namespace GGemCo2DCore
         ScreenFade,
         OverlayText,
         CharacterWhiteOverlay,
-        UiPanel
+        UiPanel,
+        UiWindowVisibility,
+        TimeScale
     }
 }

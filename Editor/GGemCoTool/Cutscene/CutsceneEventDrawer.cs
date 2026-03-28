@@ -34,6 +34,8 @@ namespace GGemCo2DCoreEditor
             var overlayTextProp = property.FindPropertyRelative("overlayText");
             var characterWhiteOverlayProp = property.FindPropertyRelative("characterWhiteOverlay");
             var uiPanelProp = property.FindPropertyRelative("uiPanel");
+            var uiWindowVisibilityProp = property.FindPropertyRelative("uiWindowVisibility");
+            var timeScaleProp = property.FindPropertyRelative("timeScale");
 
             var line = pos;
             line.height = EditorGUIUtility.singleLineHeight;
@@ -83,6 +85,12 @@ namespace GGemCo2DCoreEditor
                 case CutsceneEventType.UiPanel:
                     EditorGUI.PropertyField(line, uiPanelProp, true);
                     break;
+                case CutsceneEventType.UiWindowVisibility:
+                    EditorGUI.PropertyField(line, uiWindowVisibilityProp, true);
+                    break;
+                case CutsceneEventType.TimeScale:
+                    EditorGUI.PropertyField(line, timeScaleProp, true);
+                    break;
             }
 
             EditorGUI.EndProperty();
@@ -120,6 +128,10 @@ namespace GGemCo2DCoreEditor
                     return baseHeight + EditorGUI.GetPropertyHeight(property.FindPropertyRelative("characterWhiteOverlay"), true);
                 case CutsceneEventType.UiPanel:
                     return baseHeight + EditorGUI.GetPropertyHeight(property.FindPropertyRelative("uiPanel"), true);
+                case CutsceneEventType.UiWindowVisibility:
+                    return baseHeight + EditorGUI.GetPropertyHeight(property.FindPropertyRelative("uiWindowVisibility"), true);
+                case CutsceneEventType.TimeScale:
+                    return baseHeight + EditorGUI.GetPropertyHeight(property.FindPropertyRelative("timeScale"), true);
                 default:
                     return baseHeight;
             }
@@ -245,6 +257,8 @@ namespace GGemCo2DCoreEditor
             EnsureManagedReference(property.FindPropertyRelative("overlayText"), eventType == CutsceneEventType.OverlayText, typeof(OverlayTextData));
             EnsureManagedReference(property.FindPropertyRelative("characterWhiteOverlay"), eventType == CutsceneEventType.CharacterWhiteOverlay, typeof(CharacterWhiteOverlayData));
             EnsureManagedReference(property.FindPropertyRelative("uiPanel"), eventType == CutsceneEventType.UiPanel, typeof(UiPanelData));
+            EnsureManagedReference(property.FindPropertyRelative("uiWindowVisibility"), eventType == CutsceneEventType.UiWindowVisibility, typeof(UiWindowVisibilityData));
+            EnsureManagedReference(property.FindPropertyRelative("timeScale"), eventType == CutsceneEventType.TimeScale, typeof(TimeScaleData));
 
             property.serializedObject.ApplyModifiedProperties();
         }

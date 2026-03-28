@@ -175,6 +175,10 @@ namespace GGemCo2DCore
                 killerUid: null
             );
             GameEventManager.MonsterKilled(data);
+            
+            // todo 정리 필요
+            SceneGame.Instance.CutsceneManager.SetOverlayTextOverride("boss_name", characterName);
+            _ = SceneGame.Instance.CutsceneManager.PlayCutscene(1001);
         }
         protected override void OnDestroy()
         {
