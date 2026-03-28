@@ -73,7 +73,6 @@ namespace GGemCo2DCore
             {
                 quickSlotSimulationData = SceneGame.saveDataManager.QuickSlotSimulation;
             }
-            SceneGame.KeyboardManager.RegisterInputHandler(this);
             _uiWindowInventory =
                 SceneGame.uIWindowManager.GetUIWindowByUid<UIWindowInventory>(UIWindowConstants.WindowUid.Inventory);
             
@@ -114,6 +113,11 @@ namespace GGemCo2DCore
                 int level = dataIcon.Level;
                 uiIcon.ChangeInfoByUid(iconUid, count, level);
             }
+        }
+        protected void OnEnable()
+        {
+            if (SceneGame.Instance == null) return;
+            SceneGame.KeyboardManager.RegisterInputHandler(this);
         }
         protected void OnDisable()
         {

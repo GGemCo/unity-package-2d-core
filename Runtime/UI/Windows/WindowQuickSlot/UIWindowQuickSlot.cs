@@ -57,7 +57,6 @@ namespace GGemCo2DCore
         protected override void Start()
         {
             base.Start();
-            SceneGame.Instance.KeyboardManager.RegisterInputHandler(this);
 
             // DefaultActive 값이 True이면 OnShow는 호출되지 않으므로 여기서 LoadIcons 호출
             var info = TableLoaderManager.Instance.GetWindowData((int)uid);
@@ -116,6 +115,12 @@ namespace GGemCo2DCore
                 }
                 SetIconCount(index, itemUid, itemCount, itemLevel, itemIsLearn, type: type);
             }
+        }
+
+        protected void OnEnable()
+        {
+            if (SceneGame.Instance == null) return;
+            SceneGame.Instance.KeyboardManager.RegisterInputHandler(this);
         }
         protected void OnDisable()
         {
