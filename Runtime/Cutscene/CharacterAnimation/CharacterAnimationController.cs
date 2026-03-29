@@ -4,149 +4,220 @@ using UnityEngine;
 namespace GGemCo2DCore
 {
     /// <summary>
-    /// 연출 - 캐릭터 이동
+    /// 컷신 중 캐릭터를 생성/설정하고 지정된 애니메이션을 재생하는 컨트롤러입니다.
+    /// 필요 시 캐릭터를 스폰하고 카메라 추적 대상 및 상태를 함께 제어합니다.
     /// </summary>
     public class CharacterAnimationController : CutsceneDefaultController, ICutsceneController
     {
-        private Camera cam;
+        private Camera _cam;
         
-        private bool isFollowTarget;
-        private CharacterConstants.Type characterType;
-        private int characterUid;
-        private float characterScale;
-        private Vec2 spawnPosition;
-        private bool isFlip;
+        private bool _isFollowTarget;
+        private CharacterConstants.Type _characterType;
+        private int _characterUid;
+        private float _characterScale;
+        private Vec2 _spawnPosition;
+        private bool _isFlip;
         
-        private string animationName;
-        private bool animationLoop;
-        private float animationTimeScale;
+        private string _animationName;
+        private bool _animationLoop;
+        private float _animationTimeScale;
         
-        private float timer;
-        private float duration;
-        private bool isAnimation;
+        private float _timer;
+        private float _duration;
+        private bool _isAnimation;
 
-        private Transform target;
-        private CharacterBase targetCharacter;
+        private Transform _target;
+        private CharacterBase _targetCharacter;
 
+        /// <summary>
+        /// 캐릭터 애니메이션 연출 컨트롤러를 생성합니다.
+        /// </summary>
+        /// <param name="manager">현재 컷신 흐름을 관리하는 매니저입니다.</param>
         public CharacterAnimationController(CutsceneManager manager)
         {
             CutsceneManager = manager;
         }
 
+        /// <summary>
+        /// 컷신 이벤트 데이터에서 캐릭터 및 애니메이션 관련 파라미터를 추출하여 내부 상태에 설정합니다.
+        /// </summary>
+        /// <param name="evt">설정에 사용할 컷신 이벤트 정보입니다.</param>
         private void SetParameter(CutsceneEvent evt)
         {
-            duration = evt.duration;
+            _duration = evt.duration;
+
             var data = evt.characterAnimation;
-            isFollowTarget = data.isFollowTarget;
-            characterType = data.characterType;
-            characterUid = data.characterUid;
-            characterScale = data.characterScale;
-            spawnPosition = data.spawnPosition;
-            isFlip = data.isFlip;
+            _isFollowTarget = data.isFollowTarget;
+            _characterType = data.characterType;
+            _characterUid = data.characterUid;
+            _characterScale = data.characterScale;
+            _spawnPosition = data.spawnPosition;
+            _isFlip = data.isFlip;
             
-            animationName = data.animationName;
-            animationLoop = data.animationLoop;
-            animationTimeScale = data.animationTimeScale;
+            _animationName = data.animationName;
+            _animationLoop = data.animationLoop;
+            _animationTimeScale = data.animationTimeScale;
         }
+
+        /// <summary>
+        /// 캐릭터 애니메이션 실행 전 필요한 캐릭터를 준비합니다.
+        /// 현재 맵에 존재하지 않는 경우 생성 및 초기 설정을 수행합니다.
+        /// </summary>
+        /// <param name="evt">준비할 컷신 이벤트 정보입니다.</param>
+        /// <returns>캐릭터 생성 및 초기화를 위한 비동기 처리 열거자입니다.</returns>
         public IEnumerator Ready(CutsceneEvent evt)
         {
-            if (evt.type != CutsceneEventType.CharacterAnimation) yield break;
+            if (evt.type != CutsceneEventType.CharacterAnimation)
+                yield break;
+
             SetParameter(evt);
             
-            Transform character = GetTargetTransform(characterType, characterUid);
-            // 현재 맵에서 없으면 스폰한다 
+            Transform character = GetTargetTransform(_characterType, _characterUid);
+
+            // 현재 맵에 캐릭터가 없으면 생성
             if (character == null)
             {
-                character = CutsceneManager.GetCharacter(characterType, characterUid);
+                character = CutsceneManager.GetCharacter(_characterType, _characterUid);
+
                 if (character == null)
                 {
-                    character = SceneGame.Instance.CharacterManager.CreateCharacter(characterType, characterUid)?.transform;
-                    if (character == null) yield break;
+                    character = SceneGame.Instance.CharacterManager
+                        .CreateCharacter(_characterType, _characterUid)?.transform;
 
-                    if (spawnPosition.ToVector2() != Vector2.zero)
+                    if (character == null)
+                        yield break;
+
+                    // 스폰 위치 지정
+                    if (_spawnPosition.ToVector2() != Vector2.zero)
                     {
-                        character.transform.position = spawnPosition.ToVector2();
+                        character.transform.position = _spawnPosition.ToVector2();
                     }
 
-                    character.transform.SetParent(SceneGame.Instance.mapManager.GetCurrentMap()?.transform);
-                    
+                    // 현재 맵에 부모 설정
+                    character.transform.SetParent(
+                        SceneGame.Instance.mapManager.GetCurrentMap()?.transform);
+
                     CharacterBase characterBase = character.GetComponent<CharacterBase>();
-                    characterBase.uid = characterUid;
-                    // Awake, Start 함수가 호출되게 하기 위해 추가
+                    characterBase.uid = _characterUid;
+
+                    // Awake/Start 호출 보장
                     yield return null;
+
                     character.gameObject.SetActive(false);
-                    CutsceneManager.AddCharacter(characterType, characterUid, character.gameObject);
+
+                    // 컷신 매니저에 등록
+                    CutsceneManager.AddCharacter(
+                        _characterType,
+                        _characterUid,
+                        character.gameObject);
                 }
             }
+
             yield return null;
         }
 
+        /// <summary>
+        /// 캐릭터를 활성화하고 위치, 방향, 스케일을 설정한 뒤 애니메이션을 재생합니다.
+        /// 필요 시 카메라 추적 대상으로 지정합니다.
+        /// </summary>
+        /// <param name="evt">실행할 컷신 이벤트 정보입니다.</param>
         public void Trigger(CutsceneEvent evt)
         {
-            if (evt.type != CutsceneEventType.CharacterAnimation) return;
+            if (evt.type != CutsceneEventType.CharacterAnimation)
+                return;
+
             SetParameter(evt);
             
-            target = GetTargetTransform(characterType, characterUid);
-            if (target == null)
+            _target = GetTargetTransform(_characterType, _characterUid);
+
+            if (_target == null)
             {
-                target = CutsceneManager.GetCharacter(characterType, characterUid);
-                if (target == null)
+                _target = CutsceneManager.GetCharacter(_characterType, _characterUid);
+
+                if (_target == null)
                 {
-                    GcLogger.LogError("이동 시킬 캐릭터가 없습니다. type: " + characterType + "/ uid: " + characterUid);
+                    GcLogger.LogError(
+                        "이동 시킬 캐릭터가 없습니다. type: " +
+                        _characterType + "/ uid: " + _characterUid);
                     return;
                 }
             }
-            if (target.gameObject.activeSelf == false)
+
+            if (_target.gameObject.activeSelf == false)
             {
-                target.gameObject.SetActive(true);
+                _target.gameObject.SetActive(true);
             }
             
-            if (target != null)
+            if (_target != null)
             {
-                targetCharacter = target.GetComponent<CharacterBase>();
-                // 크기 조정
-                if (characterScale > 0)
+                _targetCharacter = _target.GetComponent<CharacterBase>();
+
+                // 크기 설정
+                if (_characterScale > 0)
                 {
-                    targetCharacter?.SetScale(characterScale);
+                    _targetCharacter?.SetScale(_characterScale);
                 }
-                // 위치 조정
-                if (spawnPosition.ToVector2() != Vector2.zero)
+
+                // 위치 설정
+                if (_spawnPosition.ToVector2() != Vector2.zero)
                 {
-                    target.transform.position = spawnPosition.ToVector2();
+                    _target.transform.position = _spawnPosition.ToVector2();
                 }
-                targetCharacter?.SetFlip(isFlip);
-                // 카메라가 따라가야하는 타겟 설정
-                if (isFollowTarget)
+
+                // 방향 설정
+                _targetCharacter?.SetFlip(_isFlip);
+
+                // 카메라 추적 대상 설정
+                if (_isFollowTarget)
                 {
-                    SceneGame.Instance.cameraManager.SetFollowTarget(target);
+                    SceneGame.Instance.cameraManager.SetFollowTarget(_target);
                 }
-                targetCharacter?.SetStatusMoveForce();
-                if (animationName != "")
+
+                // 강제 이동 상태 설정
+                _targetCharacter?.SetStatusMoveForce();
+
+                // 애니메이션 재생
+                if (_animationName != "")
                 {
-                    targetCharacter?.CharacterAnimationController?.PlayCharacterAnimation(animationName,
-                        animationLoop, animationTimeScale);
+                    _targetCharacter?.CharacterAnimationController
+                        ?.PlayCharacterAnimation(
+                            _animationName,
+                            _animationLoop,
+                            _animationTimeScale);
                 }
             }
-            timer = 0f;
-            isAnimation = true;
+
+            _timer = 0f;
+            _isAnimation = true;
         }
+
+        /// <summary>
+        /// 애니메이션 진행 시간을 갱신하고 지정된 시간이 지나면 자동으로 종료합니다.
+        /// </summary>
         public void Update()
         {
-            if (!isAnimation) return;
+            if (!_isAnimation) return;
             
-            timer += Time.deltaTime;
-            float t = Mathf.Clamp01(timer / duration);
+            _timer += Time.deltaTime;
             
-            if (timer > duration)
+            if (_timer > _duration)
             {
                 Stop();
             }
         }
+
+        /// <summary>
+        /// 현재 캐릭터의 동작을 중지하고 애니메이션 상태를 종료합니다.
+        /// </summary>
         public void Stop()
         {
-            targetCharacter?.Stop();
-            isAnimation = false;
+            _targetCharacter?.Stop();
+            _isAnimation = false;
         }
+
+        /// <summary>
+        /// 컷신 종료 시 추가 정리는 수행하지 않습니다.
+        /// </summary>
         public void End()
         {
         }

@@ -85,7 +85,7 @@ namespace GGemCo2DCore
             _overlayText = go.GetComponent<TextMeshProUGUI>();
             _overlayText.raycastTarget = false;
             _overlayText.alignment = TextAlignmentOptions.Center;
-            _overlayText.enableWordWrapping = true;
+            _overlayText.textWrappingMode = TextWrappingModes.Normal;
             _overlayText.overflowMode = TextOverflowModes.Overflow;
             _overlayText.text = string.Empty;
             _overlayText.color = Color.white;

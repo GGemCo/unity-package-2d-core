@@ -1,28 +1,59 @@
-using System.Collections;
+﻿using System.Collections;
 using System.Collections.Generic;
 
 namespace GGemCo2DCore
 {
     /// <summary>
-    /// UIWindowManager에 등록된 UI 윈도우의 표시 상태를 컷신 이벤트로 제어합니다.
+    /// 컷신 이벤트에 따라 UIWindowManager에 등록된 UI 창의 표시 상태를 제어합니다.
+    /// 필요 시 변경 전 상태를 저장한 뒤 Stop 또는 End 시점에 복원합니다.
     /// </summary>
     public sealed class UiWindowVisibilityController : CutsceneDefaultController, ICutsceneController
     {
+        /// <summary>
+        /// 현재 처리 중인 UI 창 가시성 이벤트 데이터입니다.
+        /// </summary>
         private UiWindowVisibilityData _data;
+
+        /// <summary>
+        /// UI 창의 표시 상태를 조회하고 변경하는 매니저입니다.
+        /// </summary>
         private UIWindowManager _windowManager;
+
+        /// <summary>
+        /// 대상 UI 창의 기존 표시 상태를 보관하는 스냅샷입니다.
+        /// </summary>
         private Dictionary<UIWindowConstants.WindowUid, bool> _snapshot;
+
+        /// <summary>
+        /// 복원 가능한 표시 상태 스냅샷이 존재하는지 여부입니다.
+        /// </summary>
         private bool _hasSnapshot;
 
+        /// <summary>
+        /// UI 창 표시 상태를 제어하는 컷신 컨트롤러를 초기화합니다.
+        /// </summary>
+        /// <param name="manager">이 컨트롤러를 관리하는 컷신 매니저입니다.</param>
         public UiWindowVisibilityController(CutsceneManager manager)
         {
             CutsceneManager = manager;
         }
 
+        /// <summary>
+        /// 컷신 이벤트 실행 전 필요한 준비를 수행합니다.
+        /// 현재 구현에서는 별도 준비 작업 없이 한 프레임을 양보합니다.
+        /// </summary>
+        /// <param name="evt">준비할 컷신 이벤트입니다.</param>
+        /// <returns>준비 완료까지의 코루틴입니다.</returns>
         public IEnumerator Ready(CutsceneEvent evt)
         {
             yield return null;
         }
 
+        /// <summary>
+        /// UI 창 표시 상태 변경 이벤트를 실행합니다.
+        /// 대상 창의 현재 상태를 저장한 뒤 지정된 표시 여부를 적용합니다.
+        /// </summary>
+        /// <param name="evt">실행할 컷신 이벤트입니다.</param>
         public void Trigger(CutsceneEvent evt)
         {
             if (evt.type != CutsceneEventType.UiWindowVisibility)
@@ -45,30 +76,46 @@ namespace GGemCo2DCore
             }
 
             _snapshot = _windowManager.CaptureVisibilityState(targetWindows);
-            _hasSnapshot = _snapshot != null && _snapshot.Count > 0;
+            _hasSnapshot = _snapshot is { Count: > 0 };
             _windowManager.SetWindowsVisible(targetWindows, _data.show);
         }
 
+        /// <summary>
+        /// 매 프레임 호출되는 업데이트를 처리합니다.
+        /// 현재 컨트롤러는 프레임 기반 추가 동작을 수행하지 않습니다.
+        /// </summary>
         public void Update()
         {
         }
 
+        /// <summary>
+        /// 컨트롤러 중지 시점에 필요한 정리를 수행합니다.
+        /// 설정에 따라 저장된 UI 창 표시 상태를 복원합니다.
+        /// </summary>
         public void Stop()
         {
-            if (_data != null && _data.restoreOnStop)
+            if (_data is { restoreOnStop: true })
             {
                 RestoreSnapshot();
             }
         }
 
+        /// <summary>
+        /// 컷신 종료 시점에 필요한 정리를 수행합니다.
+        /// 설정에 따라 저장된 UI 창 표시 상태를 복원합니다.
+        /// </summary>
         public void End()
         {
-            if (_data != null && _data.restoreOnCutsceneEnd)
+            if (_data is { restoreOnCutsceneEnd: true })
             {
                 RestoreSnapshot();
             }
         }
 
+        /// <summary>
+        /// 저장해 둔 UI 창 표시 상태 스냅샷을 복원합니다.
+        /// 복원 후에는 동일 스냅샷이 다시 사용되지 않도록 상태를 초기화합니다.
+        /// </summary>
         private void RestoreSnapshot()
         {
             if (!_hasSnapshot || _windowManager == null || _snapshot == null)
@@ -80,6 +127,12 @@ namespace GGemCo2DCore
             _hasSnapshot = false;
         }
 
+        /// <summary>
+        /// 설정된 모드에 따라 실제로 표시 상태를 변경할 대상 UI 창 목록을 계산합니다.
+        /// </summary>
+        /// <param name="windowManager">관리 중인 UI 창 정보를 제공하는 매니저입니다.</param>
+        /// <param name="data">대상 선정 방식과 표시 옵션이 담긴 데이터입니다.</param>
+        /// <returns>표시 상태 변경 대상이 되는 UI 창 식별자 목록입니다.</returns>
         private static List<UIWindowConstants.WindowUid> ResolveTargetWindows(UIWindowManager windowManager, UiWindowVisibilityData data)
         {
             var managedWindows = windowManager.GetManagedWindowUids();
@@ -114,6 +167,12 @@ namespace GGemCo2DCore
             }
         }
 
+        /// <summary>
+        /// 입력된 UI 창 식별자 목록에서 실제로 관리 중인 유효한 항목만 중복 없이 추출합니다.
+        /// </summary>
+        /// <param name="windowManager">UI 창 관리 여부를 확인할 매니저입니다.</param>
+        /// <param name="source">필터링할 원본 UI 창 식별자 목록입니다.</param>
+        /// <returns>유효하고 중복이 제거된 UI 창 식별자 목록입니다.</returns>
         private static List<UIWindowConstants.WindowUid> FilterExistingWindowUids(UIWindowManager windowManager, List<UIWindowConstants.WindowUid> source)
         {
             var result = new List<UIWindowConstants.WindowUid>();

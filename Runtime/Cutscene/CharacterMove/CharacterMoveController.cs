@@ -4,164 +4,251 @@ using UnityEngine;
 namespace GGemCo2DCore
 {
     /// <summary>
-    /// 연출 - 캐릭터 이동
+    /// 컷신 중 캐릭터를 지정된 위치까지 이동시키는 컨트롤러입니다.
+    /// 이동 속도, 스텝(step), 방향 및 애니메이션을 함께 제어합니다.
     /// </summary>
     public class CharacterMoveController : CutsceneDefaultController, ICutsceneController
     {
-        private Camera cam;
-        private Vector2 startPosition, endPosition;
-        private float characterMoveStep;
-        private float characterMoveSpeed;
-        private float distance;
-        private float timer;
-        private bool isMoving;
-        private bool isFollowTarget;
+        private Camera _cam;
+
+        private Vector2 _startPosition, _endPosition;
+        private float _characterMoveStep;
+        private float _characterMoveSpeed;
+        private float _distance;
+        private float _timer;
+        private bool _isMoving;
+        private bool _isFollowTarget;
         
-        private float duration;
+        private float _duration;
 
-        private Transform target;
-        private CharacterBase targetCharacter;
+        private Transform _target;
+        private CharacterBase _targetCharacter;
 
+        /// <summary>
+        /// 캐릭터 이동 컨트롤러를 생성합니다.
+        /// </summary>
+        /// <param name="manager">컷신 흐름을 관리하는 매니저입니다.</param>
         public CharacterMoveController(CutsceneManager manager)
         {
             CutsceneManager = manager;
         }
 
+        /// <summary>
+        /// 이동 대상 캐릭터를 준비합니다.
+        /// 존재하지 않을 경우 생성 및 초기화를 수행합니다.
+        /// </summary>
+        /// <param name="evt">준비할 컷신 이벤트입니다.</param>
+        /// <returns>캐릭터 생성 및 초기화를 위한 비동기 처리 열거자입니다.</returns>
         public IEnumerator Ready(CutsceneEvent evt)
         {
-            if (evt.type != CutsceneEventType.CharacterMove) yield break;
+            if (evt.type != CutsceneEventType.CharacterMove)
+                yield break;
+
             var data = evt.characterMove;
             
             Transform character = GetTargetTransform(data.characterType, data.characterUid);
-            // 현재 맵에서 없으면 스폰한다 
+
+            // 현재 맵에 캐릭터가 없으면 생성
             if (character == null)
             {
                 character = CutsceneManager.GetCharacter(data.characterType, data.characterUid);
+
                 if (character == null)
                 {
-                    character = SceneGame.Instance.CharacterManager.CreateCharacter(data.characterType, data.characterUid)?.transform;
-                    if (character == null) yield break;
+                    character = SceneGame.Instance.CharacterManager
+                        .CreateCharacter(data.characterType, data.characterUid)?.transform;
+
+                    if (character == null)
+                        yield break;
                     
-                    character.transform.position = startPosition;
-                    character.transform.SetParent(SceneGame.Instance.mapManager.GetCurrentMap()?.transform);
-                    character.position = startPosition;
+                    // TODO: startPosition이 아직 설정되지 않았을 수 있음 (Trigger 의존)
+                    character.transform.position = _startPosition;
+
+                    character.transform.SetParent(
+                        SceneGame.Instance.mapManager.GetCurrentMap()?.transform);
+
+                    character.position = _startPosition;
                     
                     CharacterBase characterBase = character.GetComponent<CharacterBase>();
                     characterBase.uid = data.characterUid;
-                    // Awake, Start 함수가 호출되게 하기 위해 추가
+
+                    // Awake/Start 호출 보장
                     yield return null;
+
                     character.gameObject.SetActive(false);
-                    CutsceneManager.AddCharacter(data.characterType, data.characterUid, character.gameObject);
+
+                    // 컷신 매니저 등록
+                    CutsceneManager.AddCharacter(
+                        data.characterType,
+                        data.characterUid,
+                        character.gameObject);
                 }
             }
             
-            // 캐릭터 타겟 찾기 같은 준비
             yield return null;
         }
 
+        /// <summary>
+        /// 캐릭터 이동을 시작하고 위치, 속도, 방향, 애니메이션을 설정합니다.
+        /// 이동 시간은 거리와 속도를 기반으로 계산됩니다.
+        /// </summary>
+        /// <param name="evt">실행할 컷신 이벤트입니다.</param>
         public void Trigger(CutsceneEvent evt)
         {
-            if (evt.type != CutsceneEventType.CharacterMove) return;
-            duration = evt.duration;
+            if (evt.type != CutsceneEventType.CharacterMove)
+                return;
+
+            _duration = evt.duration;
             var data = evt.characterMove;
-            isFollowTarget = data.isFollowTarget;
-            target = GetTargetTransform(data.characterType, data.characterUid);
-            if (target == null)
+
+            _isFollowTarget = data.isFollowTarget;
+
+            _target = GetTargetTransform(data.characterType, data.characterUid);
+
+            if (_target == null)
             {
-                target = CutsceneManager.GetCharacter(data.characterType, data.characterUid);
-                if (target == null)
+                _target = CutsceneManager.GetCharacter(data.characterType, data.characterUid);
+
+                if (_target == null)
                 {
-                    GcLogger.LogError("이동 시킬 캐릭터가 없습니다. type: " + data.characterType + "/ uid: " + data.characterUid);
+                    GcLogger.LogError(
+                        "이동 시킬 캐릭터가 없습니다. type: " +
+                        data.characterType + "/ uid: " + data.characterUid);
                     return;
                 }
             }
-            if (target.gameObject.activeSelf == false)
+
+            if (_target.gameObject.activeSelf == false)
             {
-                target.gameObject.SetActive(true);
+                _target.gameObject.SetActive(true);
             }
 
-            startPosition = data.startPosition.ToVector2();
-            endPosition = data.endPosition.ToVector2();
-            if (startPosition == Vector2.zero)
+            _startPosition = data.startPosition.ToVector2();
+            _endPosition = data.endPosition.ToVector2();
+
+            // 시작 위치 미지정 시 현재 위치 사용
+            if (_startPosition == Vector2.zero)
             {
-                startPosition = target.position;
+                _startPosition = _target.position;
             }
-            distance = Vector2.Distance(startPosition, endPosition);
+
+            _distance = Vector2.Distance(_startPosition, _endPosition);
             
-            if (target != null)
+            if (_target != null)
             {
-                targetCharacter = target.GetComponent<CharacterBase>();
-                // step 적용
-                characterMoveStep = AddressableLoaderSettings.Instance.playerSettings.statMoveStep;
+                _targetCharacter = _target.GetComponent<CharacterBase>();
+
+                // 이동 step 설정 (플레이어 vs NPC)
+                _characterMoveStep = AddressableLoaderSettings.Instance.playerSettings.statMoveStep;
+
                 if (data.characterType != CharacterConstants.Type.Player)
                 {
-                    characterMoveStep = TableLoaderManager.Instance.GetCharacterMoveStep(data.characterType, data.characterUid);
+                    _characterMoveStep =
+                        TableLoaderManager.Instance.GetCharacterMoveStep(
+                            data.characterType,
+                            data.characterUid);
                 }
-                // 이동 속도
+
+                // 이동 속도 설정
                 if (data.characterMoveSpeed > 0)
                 {
-                    targetCharacter?.SetCurrentMoveSpeed(data.characterMoveSpeed);
-                    characterMoveSpeed = data.characterMoveSpeed;
+                    _targetCharacter?.SetCurrentMoveSpeed(data.characterMoveSpeed);
+                    _characterMoveSpeed = data.characterMoveSpeed;
                 }
-                // 크기 조정
+
+                // 크기 설정
                 if (data.characterScale > 0)
                 {
-                    targetCharacter?.SetScale(data.characterScale);
+                    _targetCharacter?.SetScale(data.characterScale);
                 }
-                // 카메라가 따라가야하는 타겟 설정
-                if (isFollowTarget)
+
+                // 카메라 추적 설정
+                if (_isFollowTarget)
                 {
-                    SceneGame.Instance.cameraManager.SetFollowTarget(target);
+                    SceneGame.Instance.cameraManager.SetFollowTarget(_target);
                 }
-                targetCharacter?.SetStatusMoveForce();
-                targetCharacter?.CharacterAnimationController?.PlayRunAnimation();
+
+                // 이동 상태 강제 적용
+                _targetCharacter?.SetStatusMoveForce();
+
+                // 이동 애니메이션 실행
+                _targetCharacter?.CharacterAnimationController?.PlayRunAnimation();
             }
 
-            duration = distance / (characterMoveStep * (characterMoveSpeed / 100f));
+            // 거리 / 속도 기반 이동 시간 계산
+            _duration = _distance / (_characterMoveStep * (_characterMoveSpeed / 100f));
             
-            timer = 0f;
+            _timer = 0f;
+
+            // 이동 방향에 따른 flip 설정
             UpdateFacing();
-            isMoving = true;
+
+            _isMoving = true;
         }
+
+        /// <summary>
+        /// 캐릭터 위치를 시간 기반으로 보간하여 이동시키고 완료 시 종료합니다.
+        /// </summary>
         public void Update()
         {
-            if (target == null || !isMoving) return;
+            if (_target == null || !_isMoving) return;
 
-            timer += Time.deltaTime;
-            float t = timer * characterMoveStep * (characterMoveSpeed / 100f) / distance;
+            _timer += Time.deltaTime;
+
+            float t = _timer * _characterMoveStep * (_characterMoveSpeed / 100f) / _distance;
             t = Mathf.Clamp01(t);
 
-            Vector2 interpolated = Vector2.Lerp(startPosition, endPosition, t);
-            target.position = new Vector3(interpolated.x, interpolated.y, target.position.z);
+            Vector2 interpolated = Vector2.Lerp(_startPosition, _endPosition, t);
 
-            if (timer > duration)
+            _target.position = new Vector3(
+                interpolated.x,
+                interpolated.y,
+                _target.position.z);
+
+            if (_timer > _duration)
             {
                 Stop();
             }
         }
+
+        /// <summary>
+        /// 이동 방향을 기준으로 캐릭터 좌우 방향(flip)을 설정합니다.
+        /// </summary>
         private void UpdateFacing()
         {
-            if (target == null) return;
+            if (_target == null) return;
 
-            Vector2 direction = endPosition - startPosition;
+            Vector2 direction = _endPosition - _startPosition;
 
-            // 좌우만 처리하는 경우
+            // 좌우 기준 flip 처리
             if (Mathf.Abs(direction.x) > Mathf.Abs(direction.y))
             {
                 bool movingRight = direction.x > 0f;
-                bool defaultIsRight = targetCharacter?.defaultFacingDirection8 == CharacterConstants.FacingDirection8.Right;
+
+                bool defaultIsRight =
+                    _targetCharacter?.defaultFacingDirection8 ==
+                    CharacterConstants.FacingDirection8.Right;
 
                 bool shouldFlip = (movingRight != defaultIsRight);
-                targetCharacter?.SetFlip(shouldFlip);
+
+                _targetCharacter?.SetFlip(shouldFlip);
             }
 
-            // 상하 전환도 필요하다면 추가 구현 가능
+            // TODO: 상하 방향 처리 필요 시 확장 가능
         }
+
+        /// <summary>
+        /// 캐릭터 이동을 중지하고 상태를 정리합니다.
+        /// </summary>
         public void Stop()
         {
-            targetCharacter?.Stop();
-            isMoving = false;
+            _targetCharacter?.Stop();
+            _isMoving = false;
         }
+
+        /// <summary>
+        /// 컷신 종료 시 추가 정리는 수행하지 않습니다.
+        /// </summary>
         public void End()
         {
         }
