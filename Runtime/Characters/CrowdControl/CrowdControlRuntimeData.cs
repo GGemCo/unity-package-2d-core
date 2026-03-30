@@ -51,6 +51,15 @@ namespace GGemCo2DCore
         public bool IsGroundOnly;
         public bool IsAirOnly;
 
+        public bool UseWallImpactReaction;
+        public float WallImpactMinSpeed;
+        public int WallImpactCrowdControlUid;
+
+        public CrowdControlRuntimeData Clone()
+        {
+            return (CrowdControlRuntimeData)MemberwiseClone();
+        }
+
         public static CrowdControlRuntimeData FromShared(StruckTableCrowdControl row)
         {
             if (row == null) return null;
@@ -91,6 +100,9 @@ namespace GGemCo2DCore
                 IsStopOnWall = false,
                 IsGroundOnly = false,
                 IsAirOnly = false,
+                UseWallImpactReaction = false,
+                WallImpactMinSpeed = 0f,
+                WallImpactCrowdControlUid = 0,
             };
         }
     }
@@ -125,6 +137,9 @@ namespace GGemCo2DCore
                     {
                         ApplyBaseDetail(runtime, knockBack);
                         runtime.DownWaitTime = knockBack.DownWaitTime;
+                        runtime.UseWallImpactReaction = knockBack.UseWallImpactReaction;
+                        runtime.WallImpactMinSpeed = Mathf.Max(0f, knockBack.WallImpactMinSpeed);
+                        runtime.WallImpactCrowdControlUid = knockBack.WallImpactCrowdControlUid;
                     }
                     break;
 

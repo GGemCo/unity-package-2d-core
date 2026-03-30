@@ -23,7 +23,8 @@ namespace GGemCo2DCore
                 stopAtEnd: true,
                 useMovePosition: true,
                 allowReplace: true,
-                holdSecondsAfter: Mathf.Max(0f, crowdControl.DownWaitTime));
+                holdSecondsAfter: Mathf.Max(0f, crowdControl.DownWaitTime),
+                stopOnWall: crowdControl.IsStopOnWall);
 
             return true;
         }

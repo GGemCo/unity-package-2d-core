@@ -14,6 +14,8 @@ namespace GGemCo2DCore
     [DisallowMultipleComponent]
     public sealed class CharacterMotionController2D : MonoBehaviour, ICharacterMotionController
     {
+        private const float DefaultWallCollisionSkin = 0.02f;
+
         [Header("References")]
         [SerializeField] private Rigidbody2D rb;
         [SerializeField] private CharacterPhysicsOverrideController physicsOverrideController;
@@ -21,7 +23,11 @@ namespace GGemCo2DCore
         private MotionState _skill;
         private MotionState _crowdControl;
 
+        private readonly RaycastHit2D[] _wallCastHits = new RaycastHit2D[8];
+
         private const float GravityDisableValue = 0f;
+
+        public event System.Action<MotionWallImpactInfo> WallImpacted;
 
         private void Reset()
         {
@@ -100,6 +106,8 @@ namespace GGemCo2DCore
                     startPosition: rb.position,
                     targetPosition: request.TargetPosition,
                     groundSnapDistance: request.GroundSnapDistance,
+                    stopOnWall: request.StopOnWall,
+                    wallCollisionSkin: request.WallCollisionSkin,
                     collisionPolicy: request.CollisionPolicy,
                     collisionTarget: request.CollisionTarget);
             }
@@ -187,7 +195,16 @@ namespace GGemCo2DCore
             }
 
             state.Solver.Tick(ref state, dt, out Vector2 delta);
-            ApplyDelta(delta, state.UseMovePosition);
+            ApplyDelta(ref state, delta, state.UseMovePosition);
+
+            if (state.WasWallImpacted)
+            {
+                bool stopAtEnd = state.StopAtEnd;
+                RestoreMotionPhysics(ref state, zeroVerticalVelocity: true);
+                state.Stop();
+                StopVelocityIfNeeded(stopAtEnd);
+                return;
+            }
 
             if (state.IsComplete)
             {
@@ -251,7 +268,16 @@ namespace GGemCo2DCore
                     delta += Vector2.up * deltaY;
                 }
 
-                ApplyDelta(delta, state.UseMovePosition);
+                ApplyDelta(ref state, delta, state.UseMovePosition);
+                if (state.WasWallImpacted)
+                {
+                    bool stopAtEnd = state.StopAtEnd;
+                    RestoreMotionPhysics(ref state, zeroVerticalVelocity: true);
+                    state.Stop();
+                    StopVelocityIfNeeded(stopAtEnd);
+                    return;
+                }
+
                 state.CurrentPosition = rb.position;
                 return;
             }
@@ -294,7 +320,16 @@ namespace GGemCo2DCore
             }
 
             Vector2 fallDelta = Vector2.down * fallStep;
-            ApplyDelta(fallDelta, state.UseMovePosition);
+            ApplyDelta(ref state, fallDelta, state.UseMovePosition);
+            if (state.WasWallImpacted)
+            {
+                bool stopAtEnd = state.StopAtEnd;
+                RestoreMotionPhysics(ref state, zeroVerticalVelocity: true);
+                state.Stop();
+                StopVelocityIfNeeded(stopAtEnd);
+                return;
+            }
+
             state.CurrentPosition = rb.position;
             state.AppliedArcY = Mathf.Max(0f, state.AppliedArcY - fallStep);
         }
@@ -336,23 +371,105 @@ namespace GGemCo2DCore
         /// <summary>
         /// 계산된 증분 이동량을 <see cref="Rigidbody2D"/>에 적용합니다.
         /// </summary>
-        private void ApplyDelta(Vector2 delta, bool useMovePosition)
+        private void ApplyDelta(ref MotionState state, Vector2 delta, bool useMovePosition)
         {
             if (delta.sqrMagnitude <= 1e-12f) return;
+
+            Vector2 appliedDelta = delta;
+            if (state.StopOnWall && TryResolveWallImpact(state, delta, out MotionWallImpactInfo wallImpactInfo, out appliedDelta))
+            {
+                state.WasWallImpacted = true;
+                state.LastWallImpact = wallImpactInfo;
+                WallImpacted?.Invoke(wallImpactInfo);
+            }
+
+            if (appliedDelta.sqrMagnitude <= 1e-12f)
+                return;
 
             // Kinematic: MovePosition 권장
             if (useMovePosition && rb.bodyType == RigidbodyType2D.Kinematic)
             {
-                rb.MovePosition(rb.position + delta);
+                rb.MovePosition(rb.position + appliedDelta);
             }
             else
             {
                 // Dynamic 또는 정책상 velocity 사용
                 float dt = Time.fixedDeltaTime;
-                float vx = dt > 1e-6f ? (delta.x / dt) : 0f;
-                float vy = dt > 1e-6f ? (delta.y / dt) : rb.GetLinearVelocity().y;
+                float vx = dt > 1e-6f ? (appliedDelta.x / dt) : 0f;
+                float vy = dt > 1e-6f ? (appliedDelta.y / dt) : rb.GetLinearVelocity().y;
                 rb.SetLinearVelocity(new Vector2(vx, vy));
             }
+        }
+
+        private bool TryResolveWallImpact(MotionState state, Vector2 requestedDelta, out MotionWallImpactInfo impactInfo, out Vector2 appliedDelta)
+        {
+            impactInfo = default;
+            appliedDelta = requestedDelta;
+
+            if (rb == null)
+                return false;
+
+            float distance = requestedDelta.magnitude;
+            if (distance <= 1e-6f)
+                return false;
+
+            int wallMask = GetWallProbeMask();
+            if (wallMask == 0)
+                return false;
+
+            ContactFilter2D filter = default;
+            filter.useLayerMask = true;
+            filter.layerMask = wallMask;
+            filter.useTriggers = false;
+
+            int hitCount = rb.Cast(requestedDelta.normalized, filter, _wallCastHits, distance + Mathf.Max(DefaultWallCollisionSkin, state.WallCollisionSkin));
+            if (hitCount <= 0)
+                return false;
+
+            RaycastHit2D bestHit = default;
+            bool hasHit = false;
+            float minDistance = float.MaxValue;
+            for (int i = 0; i < hitCount; i++)
+            {
+                RaycastHit2D hit = _wallCastHits[i];
+                if (hit.collider == null)
+                    continue;
+
+                if (!hasHit || hit.distance < minDistance)
+                {
+                    minDistance = hit.distance;
+                    bestHit = hit;
+                    hasHit = true;
+                }
+            }
+
+            if (!hasHit)
+                return false;
+
+            float safeDistance = Mathf.Max(0f, bestHit.distance - Mathf.Max(DefaultWallCollisionSkin, state.WallCollisionSkin));
+            Vector2 normalized = requestedDelta.normalized;
+            appliedDelta = normalized * Mathf.Min(distance, safeDistance);
+
+            float dt = Time.fixedDeltaTime;
+            float impactSpeed = dt > 1e-6f ? (requestedDelta.magnitude / dt) : 0f;
+            impactInfo = new MotionWallImpactInfo(
+                state.Channel,
+                state.Kind,
+                bestHit.point,
+                bestHit.normal,
+                impactSpeed,
+                requestedDelta,
+                bestHit.collider);
+            return true;
+        }
+
+        private static int GetWallProbeMask()
+        {
+            string wallLayerName = ConfigLayer.GetValue(ConfigLayer.Keys.TileMapGround);
+            if (string.IsNullOrWhiteSpace(wallLayerName))
+                return 0;
+
+            return LayerMask.GetMask(wallLayerName);
         }
 
         private void PrepareForMotionStart(ref MotionState state)
@@ -528,6 +645,11 @@ namespace GGemCo2DCore
             public Vector2 CurrentPosition;
             public float GroundSnapDistance;
 
+            public bool StopOnWall;
+            public float WallCollisionSkin;
+            public bool WasWallImpacted;
+            public MotionWallImpactInfo LastWallImpact;
+
             public MotionCollisionPolicy CollisionPolicy;
             public GameObject CollisionTarget;
             public MotionCollisionIgnoreScope2D CollisionIgnoreScope;
@@ -570,6 +692,10 @@ namespace GGemCo2DCore
                 TargetPosition = req.TargetPosition;
                 CurrentPosition = req.StartPosition;
                 GroundSnapDistance = req.GroundSnapDistance;
+                StopOnWall = req.StopOnWall;
+                WallCollisionSkin = req.WallCollisionSkin;
+                WasWallImpacted = false;
+                LastWallImpact = default;
                 CollisionPolicy = req.CollisionPolicy;
                 CollisionTarget = req.CollisionTarget;
                 CollisionIgnoreScope = null;
@@ -625,6 +751,10 @@ namespace GGemCo2DCore
                 TargetPosition = Vector2.zero;
                 CurrentPosition = Vector2.zero;
                 GroundSnapDistance = 0f;
+                StopOnWall = false;
+                WallCollisionSkin = 0f;
+                WasWallImpacted = false;
+                LastWallImpact = default;
 
                 if (CollisionIgnoreScope != null)
                 {

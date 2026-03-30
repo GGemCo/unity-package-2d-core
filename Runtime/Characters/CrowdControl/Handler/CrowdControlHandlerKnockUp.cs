@@ -43,7 +43,8 @@ namespace GGemCo2DCore
                 arcFallEaseType: crowdControl.KnockUpFallEaseType,
                 arcApexHoldNormalized: airRatio,
                 arcRiseRatioNormalized: riseRatio,
-                arcFallRatioNormalized: fallRatio);
+                arcFallRatioNormalized: fallRatio,
+                stopOnWall: crowdControl.IsStopOnWall);
 
             return true;
         }

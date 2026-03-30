@@ -18,6 +18,8 @@ namespace GGemCo2DCore
         private CharacterBase _character;
         private Rigidbody2D _rigidbody2D;
         private ICharacterMotionController _motionController;
+        private CharacterMotionController2D _motionController2D;
+        private GameObject _activeSource;
 
         // 현재 적용된 CC(한 번에 1개 정책: 새 CC가 오면 기존을 강제 중단)
         private CrowdControlRuntimeData _activeCrowdControl;
@@ -85,6 +87,15 @@ namespace GGemCo2DCore
         private void Start()
         {
             _motionController = GetComponent<ICharacterMotionController>();
+            _motionController2D = _motionController as CharacterMotionController2D ?? GetComponent<CharacterMotionController2D>();
+            if (_motionController2D != null)
+                _motionController2D.WallImpacted += OnMotionWallImpacted;
+        }
+
+        private void OnDestroy()
+        {
+            if (_motionController2D != null)
+                _motionController2D.WallImpacted -= OnMotionWallImpacted;
         }
 
         /// <summary>
@@ -121,6 +132,7 @@ namespace GGemCo2DCore
                 ForceStopInternal(clearSequence: false);
 
             _activeCrowdControl = crowdControl;
+            _activeSource = source;
 
             // 방향 결정
             var direction = ResolveDirection(crowdControl, source);
@@ -158,6 +170,7 @@ namespace GGemCo2DCore
 
                 PlayEndAndStop(crowdControl);
                 _activeCrowdControl = null;
+                _activeSource = null;
                 return;
             }
 
@@ -168,6 +181,7 @@ namespace GGemCo2DCore
 
                 PlayEndAndStop(crowdControl);
                 _activeCrowdControl = null;
+                _activeSource = null;
                 return;
             }
 
@@ -179,6 +193,7 @@ namespace GGemCo2DCore
 
                 PlayEndAndStop(crowdControl);
                 _activeCrowdControl = null;
+                _activeSource = null;
             }
         }
 
@@ -204,7 +219,8 @@ namespace GGemCo2DCore
                 crowdControl.EaseType,
                 stopAtEnd: true,
                 useMovePosition: true,
-                allowReplace: true);
+                allowReplace: true,
+                stopOnWall: crowdControl.IsStopOnWall);
             return true;
         }
 
@@ -225,6 +241,7 @@ namespace GGemCo2DCore
             if (_motionController == null)
             {
                 _activeCrowdControl = null;
+                _activeSource = null;
                 TryStartNextQueuedCrowdControl();
                 return;
             }
@@ -235,6 +252,7 @@ namespace GGemCo2DCore
             {
                 var finishedActive = _activeCrowdControl;
                 _activeCrowdControl = null;
+                _activeSource = null;
                 PlayEndAndStop(finishedActive);
                 return;
             }
@@ -255,6 +273,7 @@ namespace GGemCo2DCore
                 }
 
                 _activeCrowdControl = null;
+                _activeSource = null;
                 PlayEndAndStop(finished);
             }
         }
@@ -530,11 +549,84 @@ namespace GGemCo2DCore
             _character?.Stop(isForce: true);
             ResetAnimationState();
             _activeCrowdControl = null;
+            _activeSource = null;
 
             if (clearSequence)
                 ClearQueuedSequence();
         }
 
+
+        private void OnMotionWallImpacted(MotionWallImpactInfo wallImpactInfo)
+        {
+            if (_activeCrowdControl == null)
+                return;
+
+            if (wallImpactInfo.Channel != MotionChannel.CrowdControl)
+                return;
+
+            if (!_activeCrowdControl.IsStopOnWall)
+                return;
+
+            if (_activeCrowdControl.Type != CrowdControlConstants.Type.KnockBack)
+                return;
+
+            if (!ShouldTriggerWallImpactReaction(_activeCrowdControl, wallImpactInfo))
+                return;
+
+            CrowdControlRuntimeData followUp = BuildWallImpactFollowUp(_activeCrowdControl, wallImpactInfo);
+            if (followUp == null)
+                return;
+
+            GameObject source = _activeSource;
+            ForceStopInternal(clearSequence: false);
+            ApplyCrowdControlInternal(followUp, source, forceReplaceCurrent: false);
+        }
+
+        private static bool ShouldTriggerWallImpactReaction(CrowdControlRuntimeData crowdControl, MotionWallImpactInfo wallImpactInfo)
+        {
+            if (crowdControl == null)
+                return false;
+
+            if (!crowdControl.UseWallImpactReaction)
+                return false;
+
+            if (crowdControl.WallImpactCrowdControlUid <= 0)
+                return false;
+
+            return wallImpactInfo.ImpactSpeed >= Mathf.Max(0f, crowdControl.WallImpactMinSpeed);
+        }
+
+        private CrowdControlRuntimeData BuildWallImpactFollowUp(CrowdControlRuntimeData crowdControl, MotionWallImpactInfo wallImpactInfo)
+        {
+            if (crowdControl == null)
+                return null;
+
+            if (crowdControl.WallImpactCrowdControlUid <= 0)
+                return null;
+
+            var runtime = TableLoaderManager.Instance != null
+                ? TableLoaderManager.Instance.GetCrowdControlRuntimeData(crowdControl.WallImpactCrowdControlUid, logIfMissing: false)
+                : null;
+            if (runtime == null)
+                return null;
+
+            CrowdControlRuntimeData cloned = runtime.Clone();
+            Vector2 sourceDirection = wallImpactInfo.RequestedDelta.sqrMagnitude > Epsilon
+                ? wallImpactInfo.RequestedDelta.normalized
+                : ResolveFacingDirection();
+            Vector2 reflectionDirection = Vector2.Reflect(sourceDirection, wallImpactInfo.Normal);
+            if (reflectionDirection.sqrMagnitude <= Epsilon)
+                reflectionDirection = ResolveFacingDirection();
+
+            if (reflectionDirection.y < 0f)
+                reflectionDirection.y = Mathf.Abs(reflectionDirection.y);
+
+            reflectionDirection.Normalize();
+            cloned.DirectionType = CrowdControlConstants.DirectionType.Fixed;
+            cloned.FixedDirectionX = reflectionDirection.x;
+            cloned.FixedDirectionY = reflectionDirection.y;
+            return cloned;
+        }
 
 
         private bool IsCrowdControlStartStateAllowed(CrowdControlRuntimeData crowdControl)

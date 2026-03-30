@@ -1,4 +1,4 @@
-using UnityEngine;
+﻿using UnityEngine;
 
 namespace GGemCo2DCore
 {
@@ -50,6 +50,38 @@ namespace GGemCo2DCore
     {
         Default = 0,
         IgnoreTargetCharacter = 1,
+    }
+
+    /// <summary>
+    /// 모션 중 벽 충돌이 감지되었을 때 전달되는 정보입니다.
+    /// </summary>
+    public readonly struct MotionWallImpactInfo
+    {
+        public MotionChannel Channel { get; }
+        public MotionKind Kind { get; }
+        public Vector2 Point { get; }
+        public Vector2 Normal { get; }
+        public float ImpactSpeed { get; }
+        public Vector2 RequestedDelta { get; }
+        public Collider2D Collider { get; }
+
+        public MotionWallImpactInfo(
+            MotionChannel channel,
+            MotionKind kind,
+            Vector2 point,
+            Vector2 normal,
+            float impactSpeed,
+            Vector2 requestedDelta,
+            Collider2D collider)
+        {
+            Channel = channel;
+            Kind = kind;
+            Point = point;
+            Normal = normal;
+            ImpactSpeed = Mathf.Max(0f, impactSpeed);
+            RequestedDelta = requestedDelta;
+            Collider = collider;
+        }
     }
 
     /// <summary>
@@ -148,6 +180,16 @@ namespace GGemCo2DCore
         public float GroundSnapDistance { get; }
 
         /// <summary>
+        /// 벽에 충돌하면 이동을 중지하고 충돌 이벤트를 발생시킬지 여부입니다.
+        /// </summary>
+        public bool StopOnWall { get; }
+
+        /// <summary>
+        /// 벽 충돌 탐지에 사용할 skin width 입니다.
+        /// </summary>
+        public float WallCollisionSkin { get; }
+
+        /// <summary>
         /// 모션 중 대상 캐릭터와의 충돌 처리 정책입니다.
         /// </summary>
         public MotionCollisionPolicy CollisionPolicy { get; }
@@ -179,6 +221,8 @@ namespace GGemCo2DCore
             Vector2? startPosition = null,
             Vector2? targetPosition = null,
             float groundSnapDistance = 0.15f,
+            bool stopOnWall = false,
+            float wallCollisionSkin = 0.02f,
             MotionCollisionPolicy collisionPolicy = MotionCollisionPolicy.Default,
             GameObject collisionTarget = null)
         {
@@ -204,6 +248,8 @@ namespace GGemCo2DCore
             StartPosition = startPosition ?? Vector2.zero;
             TargetPosition = targetPosition ?? Vector2.zero;
             GroundSnapDistance = Mathf.Max(0f, groundSnapDistance);
+            StopOnWall = stopOnWall;
+            WallCollisionSkin = Mathf.Max(0f, wallCollisionSkin);
             CollisionPolicy = collisionPolicy;
             CollisionTarget = collisionTarget;
         }

@@ -19,6 +19,9 @@ namespace GGemCo2DCore
                 IsStopOnWall = ConvertBoolean(data.GetValueOrDefault("IsStopOnWall")),
                 IsGroundOnly = ConvertBoolean(data.GetValueOrDefault("IsGroundOnly")),
                 IsAirOnly = ConvertBoolean(data.GetValueOrDefault("IsAirOnly")),
+                UseWallImpactReaction = ConvertBoolean(data.GetValueOrDefault("UseWallImpactReaction")),
+                WallImpactMinSpeed = MathHelper.ParseFloat(data.GetValueOrDefault("WallImpactMinSpeed")),
+                WallImpactCrowdControlUid = MathHelper.ParseInt(data.GetValueOrDefault("WallImpactCrowdControlUid")),
             };
 
             return row.CrowdControlUid > 0 ? row : null;

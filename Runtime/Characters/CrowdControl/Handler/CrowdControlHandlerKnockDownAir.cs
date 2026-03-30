@@ -43,7 +43,8 @@ namespace GGemCo2DCore
                 arcApexHoldNormalized: airRatio,
                 arcRiseRatioNormalized: riseRatio,
                 arcFallRatioNormalized: 0f,
-                fallSpeed: Mathf.Max(0f, crowdControl.KnockDownAirFallSpeed));
+                fallSpeed: Mathf.Max(0f, crowdControl.KnockDownAirFallSpeed),
+                stopOnWall: crowdControl.IsStopOnWall);
 
             return true;
         }

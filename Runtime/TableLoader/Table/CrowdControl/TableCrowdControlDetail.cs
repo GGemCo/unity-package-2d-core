@@ -19,6 +19,9 @@
     public sealed class StruckTableCrowdControlKnockBack : StruckTableCrowdControlDetailBase
     {
         public float DownWaitTime;
+        public bool UseWallImpactReaction;
+        public float WallImpactMinSpeed;
+        public int WallImpactCrowdControlUid;
     }
 
     public sealed class StruckTableCrowdControlKnockDown : StruckTableCrowdControlDetailBase
