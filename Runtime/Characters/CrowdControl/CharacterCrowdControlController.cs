@@ -437,10 +437,13 @@ namespace GGemCo2DCore
         /// <summary>
         /// CC 종료 애니메이션(있다면)을 재생하고, 최종적으로 CC 상태를 정리합니다.
         /// </summary>
-        /// <param name="crowdControl">RecoverTime 등 종료 대기 시간 보정에 사용할 CC 데이터입니다(없을 수 있음).</param>
+        /// <param name="crowdControl">종료 대기 시간 보정에 사용할 CC 데이터입니다(없을 수 있음).</param>
         /// <remarks>
-        /// End 애니메이션이 존재하면 클립 길이(또는 RecoverTime 중 더 큰 값)만큼 대기한 뒤
-        /// <c>Stop(isForce: true)</c>로 상태를 강제 해제합니다.
+        /// End 애니메이션이 존재하면
+        /// - 애니메이션 길이
+        /// - RecoverTime
+        /// - KnockDownAir 전용 추가 대기 시간
+        /// 을 반영한 최종 시간만큼 대기한 뒤 <c>Stop(isForce: true)</c>로 상태를 강제 해제합니다.
         /// </remarks>
         private void PlayEndAndStop(CrowdControlRuntimeData crowdControl = null)
         {
@@ -450,33 +453,58 @@ namespace GGemCo2DCore
                 _stopRoutine = null;
             }
 
-            // End 애니메이션이 있으면, 클립 길이만큼 대기 후 Stop(true)로 상태를 강제 해제합니다.
-            // (CharacterBase.Stop은 Knockback 상태일 때 기본적으로 return 하므로, CC 종료에는 강제가 필요합니다.)
             string endName = null;
+            bool hasEndAnimation = false;
+            float animationDurationSec = 0f;
 
             if (_character?.CharacterAnimationController != null)
             {
                 endName = ResolveEndAnimationName(crowdControl);
-                if (!string.IsNullOrWhiteSpace(endName) && _character.CharacterAnimationController.HasAnimation(endName))
+                hasEndAnimation = !string.IsNullOrWhiteSpace(endName) &&
+                                  _character.CharacterAnimationController.HasAnimation(endName);
+
+                if (hasEndAnimation)
                 {
                     _character.CharacterAnimationController.PlayCharacterAnimation(endName, loop: false);
-
-                    float durationSec = _character.CharacterAnimationController.GetCharacterAnimationDuration(endName, isMilliseconds: false);
-                    durationSec = Mathf.Max(0f, durationSec);
-
-                    // RecoverTime을 사용하는 경우(선택): 데이터 시간이 더 길면 그 시간을 우선
-                    if (crowdControl != null && crowdControl.RecoverTime > durationSec)
-                        durationSec = crowdControl.RecoverTime;
-
-                    _stopRoutine = StartCoroutine(StopAfter(durationSec));
-                    return;
+                    animationDurationSec = _character.CharacterAnimationController.GetCharacterAnimationDuration(endName, isMilliseconds: false);
+                    animationDurationSec = Mathf.Max(0f, animationDurationSec);
                 }
             }
 
-            // End 애니메이션이 없으면 즉시 정리
+            float durationSec = ResolveEndStopDuration(crowdControl, animationDurationSec, hasEndAnimation);
+            if (durationSec > 0f || hasEndAnimation)
+            {
+                _stopRoutine = StartCoroutine(StopAfter(durationSec));
+                return;
+            }
+
             _character?.Stop(isForce: true);
             ResetAnimationState();
             TryStartNextQueuedCrowdControl();
+        }
+
+        /// <summary>
+        /// CC 종료 후 강제 해제까지의 최종 대기 시간을 계산합니다.
+        /// </summary>
+        private static float ResolveEndStopDuration(
+            CrowdControlRuntimeData crowdControl,
+            float animationDurationSec,
+            bool hasEndAnimation)
+        {
+            float durationSec = 0f;
+
+            if (hasEndAnimation)
+                durationSec = Mathf.Max(0f, animationDurationSec);
+
+            if (crowdControl != null)
+            {
+                durationSec = Mathf.Max(durationSec, Mathf.Max(0f, crowdControl.RecoverTime));
+
+                if (crowdControl.Type == CrowdControlConstants.Type.KnockDownAir)
+                    durationSec += Mathf.Max(0f, crowdControl.KnockDownAirLandEndWaitTime);
+            }
+
+            return durationSec;
         }
 
         /// <summary>

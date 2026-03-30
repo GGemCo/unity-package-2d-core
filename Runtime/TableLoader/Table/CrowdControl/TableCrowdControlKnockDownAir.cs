@@ -15,6 +15,7 @@ namespace GGemCo2DCore
                 RiseTime = MathHelper.ParseFloat(data.GetValueOrDefault("RiseTime")),
                 AirTime = MathHelper.ParseFloat(data.GetValueOrDefault("AirTime")),
                 FallSpeed = MathHelper.ParseFloat(data.GetValueOrDefault("FallSpeed")),
+                LandEndWaitTime = MathHelper.ParseFloat(data.GetValueOrDefault("LandEndWaitTime")),
                 AirAnimationIsLoop = ConvertBoolean(data.GetValueOrDefault("AirAnimationIsLoop")),
                 RiseAnimationName = data.GetValueOrDefault("RiseAnimationName"),
                 AirAnimationName = data.GetValueOrDefault("AirAnimationName"),

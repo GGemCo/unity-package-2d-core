@@ -52,6 +52,11 @@ namespace GGemCo2DCore
         public float FallSpeed;
 
         /// <summary>
+        /// 착지 후 End 애니메이션이 끝난 뒤 추가로 다운 상태를 유지할 시간(초)입니다.
+        /// </summary>
+        public float LandEndWaitTime;
+
+        /// <summary>
         /// KnockDownAir의 공중(Air) 애니메이션을 루프 재생할지 여부입니다.
         /// - true : AirTime 동안 루프 재생
         /// - false: 최초 1회만 재생하고, 남은 AirTime은 채공만 유지
