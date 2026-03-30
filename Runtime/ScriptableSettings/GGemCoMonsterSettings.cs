@@ -27,8 +27,6 @@ namespace GGemCo2DCore
 
 
         [Header("Hit Stop")]
-        [Tooltip("경직(Hit Stop) 시스템을 사용할지 여부")]
-        public bool useHitStop;
         [Tooltip("자신이 타격을 성공시켰을 때 적용할 기본 경직 시간(초)")]
         [Min(0f)] public float defaultSelfHitStopSeconds = 0.03f;
         [Tooltip("피격 대상에게 적용할 기본 경직 시간(초)")]
@@ -128,7 +126,6 @@ namespace GGemCo2DCore
                                      | (1 << (int)CharacterConstants.Grade.Boss);
             }
 
-            useHitStop = true;
             defaultSelfHitStopSeconds = 0.03f;
             defaultReceiveHitStopSeconds = 0.05f;
             hitStopPauseAnimation = true;
