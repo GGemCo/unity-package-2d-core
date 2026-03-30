@@ -147,6 +147,12 @@ namespace GGemCo2DCore
             }
 
             _crowdControlController = gameObject.AddComponent<CharacterCrowdControlController>();
+            _hitStopController = gameObject.GetComponent<CharacterHitStopController>();
+            if (_hitStopController == null)
+            {
+                _hitStopController = gameObject.AddComponent<CharacterHitStopController>();
+            }
+
             _motionController = gameObject.GetComponent<ICharacterMotionController>();
             if (_motionController == null)
             {

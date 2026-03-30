@@ -147,6 +147,22 @@ namespace GGemCo2DCore
         public bool limitBoundaryTop = true;
 
 
+        [Header("Hit Stop")]
+        [Tooltip("경직(Hit Stop) 시스템을 사용할지 여부")]
+        public bool useHitStop;
+        [Tooltip("자신이 타격을 성공시켰을 때 적용할 기본 경직 시간(초)")]
+        [Min(0f)] public float defaultSelfHitStopSeconds = 0.03f;
+        [Tooltip("피격 대상에게 적용할 기본 경직 시간(초)")]
+        [Min(0f)] public float defaultReceiveHitStopSeconds = 0.05f;
+        [Tooltip("경직 중 애니메이션을 현재 프레임에서 멈출지 여부")]
+        public bool hitStopPauseAnimation = true;
+        [Tooltip("경직 중 Rigidbody2D 물리를 멈출지 여부")]
+        public bool hitStopFreezePhysics = true;
+        [Tooltip("경직 중 DontControl 상태를 적용할지 여부")]
+        public bool hitStopLockControl = true;
+        [Tooltip("경직 중 DontMove 상태를 적용할지 여부")]
+        public bool hitStopLockMovement = true;
+
         [Header("Sprite White Overlay")]
         [Tooltip("피격 시 Sprite White Overlay 효과를 사용할지 여부")]
         public bool useSpriteWhiteOverlay;
@@ -195,6 +211,13 @@ namespace GGemCo2DCore
         private void Reset()
         {
             facingDirection8   = CharacterConstants.FacingDirection8.Left;
+            useHitStop = true;
+            defaultSelfHitStopSeconds = 0.03f;
+            defaultReceiveHitStopSeconds = 0.05f;
+            hitStopPauseAnimation = true;
+            hitStopFreezePhysics = true;
+            hitStopLockControl = true;
+            hitStopLockMovement = true;
             animationController = ConfigCommon.AnimationController.Sprite;
             startScale = 1;
             statAtk = 100;

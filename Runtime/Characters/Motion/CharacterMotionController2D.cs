@@ -19,6 +19,7 @@ namespace GGemCo2DCore
         [Header("References")]
         [SerializeField] private Rigidbody2D rb;
         [SerializeField] private CharacterPhysicsOverrideController physicsOverrideController;
+        [SerializeField] private CharacterHitStopController hitStopController;
 
         private MotionState _skill;
         private MotionState _crowdControl;
@@ -33,6 +34,7 @@ namespace GGemCo2DCore
         {
             rb = GetComponentInParent<Rigidbody2D>();
             physicsOverrideController = GetComponentInParent<CharacterPhysicsOverrideController>();
+            hitStopController = GetComponentInParent<CharacterHitStopController>();
         }
 
         private void Awake()
@@ -45,6 +47,9 @@ namespace GGemCo2DCore
 
             if (physicsOverrideController == null)
                 physicsOverrideController = gameObject.AddComponent<CharacterPhysicsOverrideController>();
+
+            if (hitStopController == null)
+                hitStopController = GetComponentInParent<CharacterHitStopController>();
         }
 
         private void OnDisable()
@@ -159,6 +164,12 @@ namespace GGemCo2DCore
                 _crowdControl.Stop();
                 return;
             }
+
+            if (hitStopController == null)
+                hitStopController = GetComponentInParent<CharacterHitStopController>();
+
+            if (hitStopController != null && hitStopController.IsActive)
+                return;
 
             float dt = Time.fixedDeltaTime;
 
