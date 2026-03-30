@@ -32,10 +32,10 @@ namespace GGemCo2DCore
         // 애니메이션 시퀀스(이름 기반)
         private string _currentStaggerAnimationName;
         private string _currentPhaseAnimationName;
-        private KnockUpAnimationPhase _currentKnockUpAnimationPhase;
+        private CrowdControlAirborneAnimationPhase _currentAirborneAnimationPhase;
 
         private Coroutine _stopRoutine;
-        private const float Epsilon = 0.0001f;
+        internal const float Epsilon = 0.0001f;
         private const float GroundProbeDefaultHeight = 2f;
         private const float GroundProbeDefaultDistance = 12f;
         /// <summary>
@@ -43,20 +43,20 @@ namespace GGemCo2DCore
         /// 지면과 거의 붙어있는 상태에서 Raycast가 시작 지점에서 바로 히트되는 것을 방지하고,
         /// 안정적인 착지 판정을 위해 사용됩니다.
         /// </summary>
-        private const float KnockUpLandingProbeUpOffset = 0.1f;
+        internal const float KnockUpLandingProbeUpOffset = 0.1f;
 
         /// <summary>
         /// FallLoop 단계에서 지면과의 거리가 이 값 이하가 되면,
         /// 아직 Arc 모션이 끝나지 않았더라도 강제로 착지(LandEnd) 단계로 전환하기 위한 임계 거리입니다.
         /// 너무 크면 공중에서 조기 종료되고, 너무 작으면 여전히 부자연스러운 끊김이 발생할 수 있습니다.
         /// </summary>
-        private const float KnockUpLandingTriggerDistance = 0.2f;
+        internal const float KnockUpLandingTriggerDistance = 0.2f;
 
         /// <summary>
         /// Arc 모션이 종료된 이후, 캐릭터를 최종적으로 지면에 스냅시키기 위한 최대 거리입니다.
         /// 지면과 약간의 오차가 있는 경우에도 확실히 바닥에 붙도록 보정하기 위한 값입니다.
         /// </summary>
-        private const float KnockUpLandingFinalSnapDistance = 0.75f;
+        internal const float KnockUpLandingFinalSnapDistance = 0.75f;
 
         /// <summary>
         /// CC 시작 가능 조건(IsGroundOnly / IsAirOnly) 판정에 사용할 지면 거리 임계값입니다.
@@ -74,14 +74,6 @@ namespace GGemCo2DCore
             }
         }
 
-        private enum KnockUpAnimationPhase
-        {
-            None = 0,
-            Rise = 1,
-            Air = 2,
-            FallLoop = 3,
-            LandEnd = 4,
-        }
         
         private void Awake()
         {
@@ -220,10 +212,10 @@ namespace GGemCo2DCore
         {
             return new Dictionary<CrowdControlConstants.Type, ICrowdControlHandler>
             {
-                { CrowdControlConstants.Type.KnockBack, new KnockBackCrowdControlHandler() },
-                { CrowdControlConstants.Type.KnockDown, new KnockDownCrowdControlHandler() },
-                { CrowdControlConstants.Type.KnockUp, new KnockUpCrowdControlHandler() },
-                { CrowdControlConstants.Type.KnockDownAir, new KnockDownAirCrowdControlHandler() },
+                { CrowdControlConstants.Type.KnockBack, new CrowdControlHandlerKnockBack() },
+                { CrowdControlConstants.Type.KnockDown, new CrowdControlHandlerKnockDown() },
+                { CrowdControlConstants.Type.KnockUp, new CrowdControlHandlerKnockUp() },
+                { CrowdControlConstants.Type.KnockDownAir, new CrowdControlHandlerKnockDownAir() },
             };
         }
 
@@ -237,26 +229,32 @@ namespace GGemCo2DCore
                 return;
             }
 
-            UpdateAirbornePhaseAnimation();
+            GetHandler(_activeCrowdControl)?.UpdateRuntime(this, _activeCrowdControl);
 
-            if (TryHandleActiveAirborneLanding())
+            if (GetHandler(_activeCrowdControl)?.TryHandleActiveLanding(this, _activeCrowdControl) == true)
+            {
+                var finishedActive = _activeCrowdControl;
+                _activeCrowdControl = null;
+                PlayEndAndStop(finishedActive);
                 return;
+            }
 
             // CC 채널 모션이 끝나면 종료 시퀀스
             if (!_motionController.IsPlaying(MotionChannel.CrowdControl))
             {
-                if (_activeCrowdControl != null && IsLandingDrivenCrowdControl(_activeCrowdControl))
+                var finished = _activeCrowdControl;
+                var handler = GetHandler(finished);
+                if (finished != null && handler != null && handler.IsLandingDriven(finished))
                 {
-                    TryHandleCompletedLandingDrivenCrowdControl();
-                    return;
+                    if (!handler.TryHandleCompletedLanding(this, finished))
+                        return;
+                }
+                else if (finished != null && finished.Type == CrowdControlConstants.Type.KnockUp)
+                {
+                    SnapKnockUpToGroundIfNear(KnockUpLandingFinalSnapDistance);
                 }
 
-                var finished = _activeCrowdControl;
                 _activeCrowdControl = null;
-
-                if (finished != null && finished.Type == CrowdControlConstants.Type.KnockUp)
-                    SnapKnockUpToGroundIfNear(KnockUpLandingFinalSnapDistance);
-
                 PlayEndAndStop(finished);
             }
         }
@@ -417,13 +415,18 @@ namespace GGemCo2DCore
             // Start → Wait 전환은 Animator의 Transition으로 구성하는 전제입니다.
             _currentStaggerAnimationName = crowdControl?.StaggerAnimationName;
             _currentPhaseAnimationName = _currentStaggerAnimationName;
-            _currentKnockUpAnimationPhase = KnockUpAnimationPhase.None;
+            _currentAirborneAnimationPhase = CrowdControlAirborneAnimationPhase.None;
 
-            if (IsAirborneCrowdControl(crowdControl) && HasAirbornePhasedAnimation(crowdControl))
+            var handler = GetHandler(crowdControl);
+            if (handler != null && handler.TryGetInitialAnimation(this, crowdControl, out string initialAnimationName, out bool loop, out CrowdControlAirborneAnimationPhase initialPhase))
             {
-                var initialPhase = EvaluateAirborneAnimationPhase(crowdControl, 0f);
-                ApplyAirbornePhaseAnimation(crowdControl, initialPhase, force: true);
-                return;
+                if (_character.CharacterAnimationController.HasAnimation(initialAnimationName))
+                {
+                    _character.CharacterAnimationController.PlayCharacterAnimation(initialAnimationName, loop);
+                    _currentPhaseAnimationName = initialAnimationName;
+                    _currentAirborneAnimationPhase = initialPhase;
+                    return;
+                }
             }
 
             if (string.IsNullOrWhiteSpace(_currentStaggerAnimationName)) return;
@@ -485,22 +488,9 @@ namespace GGemCo2DCore
             TryStartNextQueuedCrowdControl();
         }
 
-        private static float GetAdditionalLandEndWaitTime(CrowdControlRuntimeData crowdControl)
+        private float GetAdditionalLandEndWaitTime(CrowdControlRuntimeData crowdControl)
         {
-            if (crowdControl == null)
-                return 0f;
-
-            switch (crowdControl.Type)
-            {
-                case CrowdControlConstants.Type.KnockUp:
-                    return Mathf.Max(0f, crowdControl.KnockUpLandEndWaitTime);
-
-                case CrowdControlConstants.Type.KnockDownAir:
-                    return Mathf.Max(0f, crowdControl.KnockDownAirLandEndWaitTime);
-
-                default:
-                    return 0f;
-            }
+            return GetHandler(crowdControl)?.GetAdditionalEndWaitTime(crowdControl) ?? 0f;
         }
 
         /// <summary>
@@ -571,84 +561,12 @@ namespace GGemCo2DCore
             return true;
         }
 
-        private bool IsCurrentlyGrounded(float maxGroundDistance)
+        internal bool IsCurrentlyGrounded(float maxGroundDistance)
         {
             if (maxGroundDistance < 0f)
                 maxGroundDistance = 0f;
 
             return CharacterGroundProbeUtility.IsCurrentlyGrounded(this, _rigidbody2D, GetGroundProbeMask(), maxGroundDistance);
-        }
-
-        private bool TryHandleActiveAirborneLanding()
-        {
-            if (!IsAirborneCrowdControl(_activeCrowdControl))
-                return false;
-
-            if (!_motionController.IsPlaying(MotionChannel.CrowdControl))
-                return false;
-
-            if (!IsAirborneLandingPhase(_activeCrowdControl))
-                return false;
-
-            if (!TryProbeGroundBelow(out float groundY, out float bottomY))
-                return false;
-
-            float distanceToGround = bottomY - groundY;
-            if (distanceToGround < -KnockUpLandingProbeUpOffset || distanceToGround > KnockUpLandingTriggerDistance)
-                return false;
-
-            SnapCharacterBottomToGround(groundY, bottomY);
-            _motionController.CancelMotion(MotionChannel.CrowdControl, reason: 201);
-
-            var finished = _activeCrowdControl;
-            _activeCrowdControl = null;
-            PlayEndAndStop(finished);
-            return true;
-        }
-
-        private bool TryHandleCompletedLandingDrivenCrowdControl()
-        {
-            if (!IsLandingDrivenCrowdControl(_activeCrowdControl))
-                return true;
-
-            float snapProbeDistance = Mathf.Max(
-                KnockUpLandingFinalSnapDistance,
-                Mathf.Max(1f, _activeCrowdControl.Height + Mathf.Abs(_activeCrowdControl.EndYOffset)));
-
-            if (TryProbeGroundBelow(snapProbeDistance, out float groundY, out float bottomY))
-            {
-                float distanceToGround = bottomY - groundY;
-                if (distanceToGround >= -KnockUpLandingProbeUpOffset && distanceToGround <= snapProbeDistance)
-                {
-                    SnapCharacterBottomToGround(groundY, bottomY);
-                    var finished = _activeCrowdControl;
-                    _activeCrowdControl = null;
-                    PlayEndAndStop(finished);
-                    return true;
-                }
-            }
-
-            if (!IsCurrentlyGrounded(KnockUpLandingTriggerDistance))
-                return false;
-
-            var landedCrowdControl = _activeCrowdControl;
-            _activeCrowdControl = null;
-            PlayEndAndStop(landedCrowdControl);
-            return true;
-        }
-
-        private bool IsAirborneLandingPhase(CrowdControlRuntimeData crowdControl)
-        {
-            if (crowdControl == null)
-                return false;
-
-            if (_currentKnockUpAnimationPhase == KnockUpAnimationPhase.FallLoop)
-                return true;
-
-            if (!_motionController.TryGetMotionProgress(MotionChannel.CrowdControl, out float progress01))
-                return false;
-
-            return EvaluateAirborneAnimationPhase(crowdControl, progress01) == KnockUpAnimationPhase.FallLoop;
         }
 
         private void SnapKnockUpToGroundIfNear(float maxSnapDistance)
@@ -663,18 +581,16 @@ namespace GGemCo2DCore
             SnapCharacterBottomToGround(groundY, bottomY);
         }
 
-        private bool TryProbeGroundBelow(out float groundY, out float bottomY)
+        internal bool TryProbeGroundBelow(out float groundY, out float bottomY)
         {
             float probeDistance = Mathf.Max(KnockUpLandingFinalSnapDistance, KnockUpLandingTriggerDistance);
             return TryProbeGroundBelow(probeDistance, out groundY, out bottomY);
         }
-
-        private bool TryProbeGroundBelow(float maxGroundDistance, out float groundY, out float bottomY)
+        internal bool TryProbeGroundBelow(float maxGroundDistance, out float groundY, out float bottomY)
         {
             return CharacterGroundProbeUtility.TryProbeGroundBelow(this, _rigidbody2D, maxGroundDistance, GetGroundProbeMask(), out groundY, out bottomY);
         }
-
-        private void SnapCharacterBottomToGround(float groundY, float currentBottomY)
+        internal void SnapCharacterBottomToGround(float groundY, float currentBottomY)
         {
             float deltaY = groundY - currentBottomY;
             if (Mathf.Abs(deltaY) <= Epsilon)
@@ -685,170 +601,52 @@ namespace GGemCo2DCore
         }
 
 
-        private void UpdateAirbornePhaseAnimation()
-        {
-            if (!IsAirborneCrowdControl(_activeCrowdControl))
-                return;
-
-            if (!HasAirbornePhasedAnimation(_activeCrowdControl))
-                return;
-
-            if (!_motionController.TryGetMotionProgress(MotionChannel.CrowdControl, out float progress01))
-                return;
-
-            var nextPhase = EvaluateAirborneAnimationPhase(_activeCrowdControl, progress01);
-            ApplyAirbornePhaseAnimation(_activeCrowdControl, nextPhase, force: false);
-        }
-
-        private static bool HasAirbornePhasedAnimation(CrowdControlRuntimeData crowdControl)
-        {
-            if (crowdControl == null)
-                return false;
-
-            return !string.IsNullOrWhiteSpace(crowdControl.KnockUpRiseAnimationName)
-                || !string.IsNullOrWhiteSpace(crowdControl.KnockUpAirAnimationName)
-                || !string.IsNullOrWhiteSpace(crowdControl.KnockUpFallAnimationName)
-                || !string.IsNullOrWhiteSpace(crowdControl.KnockUpLandEndAnimationName);
-        }
-
-        private static KnockUpAnimationPhase EvaluateAirborneAnimationPhase(CrowdControlRuntimeData crowdControl, float progress01)
-        {
-            if (crowdControl == null)
-                return KnockUpAnimationPhase.None;
-
-            float riseTime = Mathf.Max(0f, crowdControl.KnockUpRiseTime);
-            float airTime = Mathf.Max(0f, crowdControl.KnockUpAirTime);
-            float fallTime = Mathf.Max(0f, crowdControl.KnockUpFallTime);
-            float totalTime = riseTime + airTime + fallTime;
-            if (totalTime <= Epsilon)
-                return KnockUpAnimationPhase.Rise;
-
-            float riseEnd = riseTime / totalTime;
-            float airEnd = (riseTime + airTime) / totalTime;
-            float normalized = Mathf.Clamp01(progress01);
-
-            if (normalized < riseEnd)
-                return KnockUpAnimationPhase.Rise;
-            if (normalized < airEnd)
-                return KnockUpAnimationPhase.Air;
-            return KnockUpAnimationPhase.FallLoop;
-        }
-
-        private void ApplyAirbornePhaseAnimation(CrowdControlRuntimeData crowdControl, KnockUpAnimationPhase phase, bool force)
-        {
-            if (_character?.CharacterAnimationController == null)
-                return;
-
-            if (!force && _currentKnockUpAnimationPhase == phase)
-                return;
-
-            string animationName = GetAirbornePhaseAnimationName(crowdControl, phase);
-            if (string.IsNullOrWhiteSpace(animationName))
-                return;
-
-            if (!_character.CharacterAnimationController.HasAnimation(animationName))
-                return;
-
-            bool loop;
-            if (phase == KnockUpAnimationPhase.Air)
-            {
-                loop = crowdControl != null
-                    && crowdControl.Type == CrowdControlConstants.Type.KnockDownAir
-                    && crowdControl.KnockDownAirAnimationIsLoop;
-            }
-            else
-            {
-                loop = phase == KnockUpAnimationPhase.FallLoop;
-            }
-
-            _character.CharacterAnimationController.PlayCharacterAnimation(animationName, loop);
-            _currentPhaseAnimationName = animationName;
-            _currentKnockUpAnimationPhase = phase;
-        }
-
-        private static string GetAirbornePhaseAnimationName(CrowdControlRuntimeData crowdControl, KnockUpAnimationPhase phase)
-        {
-            if (crowdControl == null)
-                return string.Empty;
-
-            switch (phase)
-            {
-                case KnockUpAnimationPhase.Rise:
-                    return !string.IsNullOrWhiteSpace(crowdControl.KnockUpRiseAnimationName)
-                        ? crowdControl.KnockUpRiseAnimationName
-                        : crowdControl.StaggerAnimationName;
-
-                case KnockUpAnimationPhase.Air:
-                    return crowdControl.KnockUpAirAnimationName;
-
-                case KnockUpAnimationPhase.FallLoop:
-                    return crowdControl.KnockUpFallAnimationName;
-
-                case KnockUpAnimationPhase.LandEnd:
-                    return crowdControl.KnockUpLandEndAnimationName;
-
-                default:
-                    return crowdControl.StaggerAnimationName;
-            }
-        }
-
-        private static bool IsAirborneCrowdControl(CrowdControlRuntimeData crowdControl)
-        {
-            if (crowdControl == null)
-                return false;
-
-            return crowdControl.Type == CrowdControlConstants.Type.KnockUp
-                || crowdControl.Type == CrowdControlConstants.Type.KnockDownAir;
-        }
-
-        private static bool IsLandingDrivenCrowdControl(CrowdControlRuntimeData crowdControl)
-        {
-            if (crowdControl == null)
-                return false;
-
-            return crowdControl.Type == CrowdControlConstants.Type.KnockDownAir;
-        }
-
         private string ResolveEndAnimationName(CrowdControlRuntimeData crowdControl)
         {
-            if (_character?.CharacterAnimationController == null)
-                return null;
-
-            if (IsAirborneCrowdControl(crowdControl))
-            {
-                string knockUpEndName = GetAirbornePhaseAnimationName(crowdControl, KnockUpAnimationPhase.LandEnd);
-                if (!string.IsNullOrWhiteSpace(knockUpEndName) && _character.CharacterAnimationController.HasAnimation(knockUpEndName))
-                {
-                    _currentKnockUpAnimationPhase = KnockUpAnimationPhase.LandEnd;
-                    _currentPhaseAnimationName = knockUpEndName;
-                    return knockUpEndName;
-                }
-            }
-
-            if (!string.IsNullOrWhiteSpace(_currentPhaseAnimationName))
-            {
-                string phaseEndName = _currentPhaseAnimationName + StruckTableCrowdControl.StaggerAnimationEndSuffix;
-                if (_character.CharacterAnimationController.HasAnimation(phaseEndName))
-                    return phaseEndName;
-            }
-
-            if (!string.IsNullOrWhiteSpace(_currentStaggerAnimationName))
-            {
-                string defaultEndName = _currentStaggerAnimationName + StruckTableCrowdControl.StaggerAnimationEndSuffix;
-                if (_character.CharacterAnimationController.HasAnimation(defaultEndName))
-                    return defaultEndName;
-            }
-
-            return null;
+            return GetHandler(crowdControl)?.ResolveEndAnimationName(this, crowdControl);
         }
 
         private void ResetAnimationState()
         {
             _currentStaggerAnimationName = null;
             _currentPhaseAnimationName = null;
-            _currentKnockUpAnimationPhase = KnockUpAnimationPhase.None;
+            _currentAirborneAnimationPhase = CrowdControlAirborneAnimationPhase.None;
         }
 
+
+        internal ICharacterAnimationController AnimationController => _character?.CharacterAnimationController;
+        internal string CurrentStaggerAnimationName => _currentStaggerAnimationName;
+        internal string CurrentPhaseAnimationName
+        {
+            get => _currentPhaseAnimationName;
+            set => _currentPhaseAnimationName = value;
+        }
+
+        internal CrowdControlAirborneAnimationPhase CurrentAirborneAnimationPhase
+        {
+            get => _currentAirborneAnimationPhase;
+            set => _currentAirborneAnimationPhase = value;
+        }
+
+        internal bool TryGetCrowdControlMotionProgress(out float progress01)
+        {
+            progress01 = 0f;
+            return _motionController != null && _motionController.TryGetMotionProgress(MotionChannel.CrowdControl, out progress01);
+        }
+
+        internal void CancelCrowdControlMotion(int reason)
+        {
+            _motionController?.CancelMotion(MotionChannel.CrowdControl, reason);
+        }
+
+        private ICrowdControlHandler GetHandler(CrowdControlRuntimeData crowdControl)
+        {
+            if (crowdControl == null || _handlers == null)
+                return null;
+
+            _handlers.TryGetValue(crowdControl.Type, out var handler);
+            return handler;
+        }
 
         private void TryStartNextQueuedCrowdControl()
         {
