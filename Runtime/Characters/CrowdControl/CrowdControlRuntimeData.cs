@@ -1,4 +1,4 @@
-using UnityEngine;
+﻿using UnityEngine;
 
 namespace GGemCo2DCore
 {
@@ -26,6 +26,7 @@ namespace GGemCo2DCore
         public float KnockUpRiseTime;
         public float KnockUpAirTime;
         public float KnockUpFallTime;
+        public float KnockUpLandEndWaitTime;
         public float KnockDownAirFallSpeed;
         public float KnockDownAirLandEndWaitTime;
         public bool KnockDownAirAnimationIsLoop;
@@ -69,6 +70,7 @@ namespace GGemCo2DCore
                 KnockUpRiseTime = 0f,
                 KnockUpAirTime = 0f,
                 KnockUpFallTime = 0f,
+                KnockUpLandEndWaitTime = 0f,
                 KnockDownAirFallSpeed = 0f,
                 KnockDownAirLandEndWaitTime = 0f,
                 KnockDownAirAnimationIsLoop = false,
@@ -144,6 +146,7 @@ namespace GGemCo2DCore
                         runtime.KnockUpRiseTime = Mathf.Max(0f, knockUp.RiseTime);
                         runtime.KnockUpAirTime = Mathf.Max(0f, knockUp.AirTime);
                         runtime.KnockUpFallTime = Mathf.Max(0f, knockUp.FallTime);
+                        runtime.KnockUpLandEndWaitTime = Mathf.Max(0f, knockUp.LandEndWaitTime);
                         runtime.KnockUpRiseAnimationName = knockUp.RiseAnimationName ?? string.Empty;
                         runtime.KnockUpAirAnimationName = knockUp.AirAnimationName ?? string.Empty;
                         runtime.KnockUpFallAnimationName = knockUp.FallAnimationName ?? string.Empty;
@@ -166,6 +169,7 @@ namespace GGemCo2DCore
                         runtime.KnockUpRiseTime = Mathf.Max(0f, knockDownAir.RiseTime);
                         runtime.KnockUpAirTime = Mathf.Max(0f, knockDownAir.AirTime);
                         runtime.KnockUpFallTime = 0f;
+                        runtime.KnockDownAirLandEndWaitTime = Mathf.Max(0f, knockDownAir.LandEndWaitTime);
                         runtime.KnockDownAirFallSpeed = Mathf.Max(0f, knockDownAir.FallSpeed);
                         runtime.KnockDownAirLandEndWaitTime = Mathf.Max(0f, knockDownAir.LandEndWaitTime);
                         runtime.KnockUpRiseAnimationName = knockDownAir.RiseAnimationName ?? string.Empty;

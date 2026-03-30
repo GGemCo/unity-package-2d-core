@@ -11,6 +11,7 @@ namespace GGemCo2DCore
             var row = new StruckTableCrowdControlKnockUp
             {
                 CrowdControlUid = MathHelper.ParseInt(data.GetValueOrDefault("CrowdControlUid")),
+                LandEndWaitTime = MathHelper.ParseFloat(data.GetValueOrDefault("LandEndWaitTime")),
                 Height = MathHelper.ParseFloat(data.GetValueOrDefault("Height")),
                 RiseTime = MathHelper.ParseFloat(data.GetValueOrDefault("RiseTime")),
                 AirTime = MathHelper.ParseFloat(data.GetValueOrDefault("AirTime")),

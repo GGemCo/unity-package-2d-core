@@ -1,4 +1,4 @@
-namespace GGemCo2DCore
+﻿namespace GGemCo2DCore
 {
     /// <summary>
     /// Crowd Control 타입별 상세 테이블의 공통 베이스입니다.
@@ -28,6 +28,8 @@ namespace GGemCo2DCore
 
     public sealed class StruckTableCrowdControlKnockUp : StruckTableCrowdControlDetailBase
     {
+        public float LandEndWaitTime;
+
         public float Height;
 
         public float RiseTime;

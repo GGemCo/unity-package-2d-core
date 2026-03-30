@@ -443,6 +443,7 @@ namespace GGemCo2DCore
         /// - 애니메이션 길이
         /// - RecoverTime
         /// - KnockDownAir 전용 추가 대기 시간
+        /// - KnockUp 전용 추가 대기 시간
         /// 을 반영한 최종 시간만큼 대기한 뒤 <c>Stop(isForce: true)</c>로 상태를 강제 해제합니다.
         /// </remarks>
         private void PlayEndAndStop(CrowdControlRuntimeData crowdControl = null)
@@ -453,58 +454,53 @@ namespace GGemCo2DCore
                 _stopRoutine = null;
             }
 
+            // End 애니메이션이 있으면, 클립 길이만큼 대기 후 Stop(true)로 상태를 강제 해제합니다.
+            // (CharacterBase.Stop은 Knockback 상태일 때 기본적으로 return 하므로, CC 종료에는 강제가 필요합니다.)
             string endName = null;
-            bool hasEndAnimation = false;
-            float animationDurationSec = 0f;
 
             if (_character?.CharacterAnimationController != null)
             {
                 endName = ResolveEndAnimationName(crowdControl);
-                hasEndAnimation = !string.IsNullOrWhiteSpace(endName) &&
-                                  _character.CharacterAnimationController.HasAnimation(endName);
-
-                if (hasEndAnimation)
+                if (!string.IsNullOrWhiteSpace(endName) && _character.CharacterAnimationController.HasAnimation(endName))
                 {
                     _character.CharacterAnimationController.PlayCharacterAnimation(endName, loop: false);
-                    animationDurationSec = _character.CharacterAnimationController.GetCharacterAnimationDuration(endName, isMilliseconds: false);
-                    animationDurationSec = Mathf.Max(0f, animationDurationSec);
+
+                    float durationSec = _character.CharacterAnimationController.GetCharacterAnimationDuration(endName, isMilliseconds: false);
+                    durationSec = Mathf.Max(0f, durationSec);
+
+                    // RecoverTime을 사용하는 경우(선택): 데이터 시간이 더 길면 그 시간을 우선
+                    if (crowdControl != null && crowdControl.RecoverTime > durationSec)
+                        durationSec = crowdControl.RecoverTime;
+
+                    durationSec += GetAdditionalLandEndWaitTime(crowdControl);
+
+                    _stopRoutine = StartCoroutine(StopAfter(durationSec));
+                    return;
                 }
             }
 
-            float durationSec = ResolveEndStopDuration(crowdControl, animationDurationSec, hasEndAnimation);
-            if (durationSec > 0f || hasEndAnimation)
-            {
-                _stopRoutine = StartCoroutine(StopAfter(durationSec));
-                return;
-            }
-
+            // End 애니메이션이 없으면 즉시 정리
             _character?.Stop(isForce: true);
             ResetAnimationState();
             TryStartNextQueuedCrowdControl();
         }
 
-        /// <summary>
-        /// CC 종료 후 강제 해제까지의 최종 대기 시간을 계산합니다.
-        /// </summary>
-        private static float ResolveEndStopDuration(
-            CrowdControlRuntimeData crowdControl,
-            float animationDurationSec,
-            bool hasEndAnimation)
+        private static float GetAdditionalLandEndWaitTime(CrowdControlRuntimeData crowdControl)
         {
-            float durationSec = 0f;
+            if (crowdControl == null)
+                return 0f;
 
-            if (hasEndAnimation)
-                durationSec = Mathf.Max(0f, animationDurationSec);
-
-            if (crowdControl != null)
+            switch (crowdControl.Type)
             {
-                durationSec = Mathf.Max(durationSec, Mathf.Max(0f, crowdControl.RecoverTime));
+                case CrowdControlConstants.Type.KnockUp:
+                    return Mathf.Max(0f, crowdControl.KnockUpLandEndWaitTime);
 
-                if (crowdControl.Type == CrowdControlConstants.Type.KnockDownAir)
-                    durationSec += Mathf.Max(0f, crowdControl.KnockDownAirLandEndWaitTime);
+                case CrowdControlConstants.Type.KnockDownAir:
+                    return Mathf.Max(0f, crowdControl.KnockDownAirLandEndWaitTime);
+
+                default:
+                    return 0f;
             }
-
-            return durationSec;
         }
 
         /// <summary>
