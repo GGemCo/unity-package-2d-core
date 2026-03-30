@@ -32,6 +32,17 @@ namespace GGemCo2DCore
             if (_controller == null) return;
             if (!MonsterBrainSelector.IsHighestPriority(this, gameObject)) return;
 
+            // Hit Stop 중에는 레거시 Brain 의사결정도 완전히 멈춘다.
+            // 기존에도 TickLegacy() 내부 CheckPossibleControl()이 DontControl 상태에서 차단하지만,
+            // 여기서 선차단하면 불필요한 Tick/공격 코루틴 정리 호출을 줄일 수 있다.
+            if (_controller.targetCharacter != null)
+            {
+                if (_controller.targetCharacter.IsHitStopped) return;
+                if (_controller.targetCharacter.IsStatusDead()) return;
+            }
+
+            if (_controller.ShouldSuspendBrain) return;
+
             _controller.TickLegacy();
         }
 
