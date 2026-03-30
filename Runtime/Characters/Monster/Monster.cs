@@ -1,12 +1,12 @@
+using System.Collections.Generic;
 using UnityEngine;
-using R3;
 
 namespace GGemCo2DCore
 {
     /// <summary>
     /// 몬스터 기본 클레스
     /// </summary>
-    public class Monster : CharacterBase
+    public class Monster : CharacterBase, IMonsterPoolLifecycle
     {
         [Tooltip("X좌표 움직임 여부")]
         public bool canMoveX = true;
@@ -27,7 +27,142 @@ namespace GGemCo2DCore
         private Collider2D[] _collider2Ds;
         
         private MonsterUIController _monsterUIController;
+        private readonly List<IMonsterPoolLifecycle> _poolLifecycles = new(8);
+        private bool _isPoolManaged;
+        private Coroutine _returnToPoolRoutine;
         
+        public void SetPoolManaged(bool value)
+        {
+            _isPoolManaged = value;
+        }
+
+        public void CancelPendingPoolReturn()
+        {
+            if (_returnToPoolRoutine != null)
+            {
+                StopCoroutine(_returnToPoolRoutine);
+                _returnToPoolRoutine = null;
+            }
+        }
+
+        public void PrepareForPoolRent(int monsterUid, CharacterRegenData regenData)
+        {
+            CancelPendingPoolReturn();
+            CharacterRegenData = regenData;
+            uid = monsterUid;
+            SetPoolManaged(true);
+
+            if (regenData != null)
+            {
+                transform.position = new Vector3(regenData.x, regenData.y, transform.position.z);
+            }
+
+            SetAggro(false);
+            SetBattleStatusNone();
+            SetStatusNone();
+            ClearSubStatus();
+            SetAttackerTarget(null);
+            canMoveX = true;
+            canMoveY = true;
+
+            var crowdControl = GetComponent<CharacterCrowdControlController>();
+            crowdControl?.ResetForPoolReturn();
+
+            var motion = GetComponent<ICharacterMotionController>();
+            motion?.CancelMotion(MotionChannel.Skill, reason: 9901);
+            motion?.CancelMotion(MotionChannel.CrowdControl, reason: 9902);
+
+            var physicsOverride = GetComponent<CharacterPhysicsOverrideController>();
+            physicsOverride?.ForceRestoreBaseGravity();
+
+            NotifyPoolRentLifecycles();
+
+            StopAllCoroutines();
+            _controllerMonster?.StopAttackCoroutine();
+
+            AffectRuntimeBridge.RemoveAll(gameObject);
+            InitializeByTable();
+            InitializeByAnimationTable();
+            InitializeByRegenData();
+            Stop(true);
+
+            _monsterUIController ??= new MonsterUIController();
+            _monsterUIController.Initialize(this);
+            _monsterUIController.RebuildRuntimeUi();
+            EnableSuperArmor(CurrentSuperArmor.Value > 0);
+        }
+
+        public void PrepareForPoolReturn()
+        {
+            CancelPendingPoolReturn();
+            _controllerMonster?.StopAttackCoroutine();
+            _controllerMonster?.StopAllCoroutines();
+
+            var crowdControl = GetComponent<CharacterCrowdControlController>();
+            crowdControl?.ResetForPoolReturn();
+
+            var motion = GetComponent<ICharacterMotionController>();
+            motion?.CancelMotion(MotionChannel.Skill, reason: 9911);
+            motion?.CancelMotion(MotionChannel.CrowdControl, reason: 9912);
+
+            var physicsOverride = GetComponent<CharacterPhysicsOverrideController>();
+            physicsOverride?.ForceRestoreBaseGravity();
+
+            NotifyPoolReturnLifecycles();
+
+            AffectRuntimeBridge.RemoveAll(gameObject);
+            SetAggro(false);
+            SetBattleStatusNone();
+            SetStatusNone();
+            ClearSubStatus();
+            SetAttackerTarget(null);
+            if (characterRigidbody2D != null)
+            {
+                characterRigidbody2D.linearVelocity = Vector2.zero;
+                characterRigidbody2D.angularVelocity = 0f;
+            }
+
+            if (patrolObject != null)
+            {
+                Destroy(patrolObject);
+                patrolObject = null;
+            }
+
+            _monsterUIController?.Dispose();
+        }
+
+        private void NotifyPoolRentLifecycles()
+        {
+            CollectPoolLifecycles();
+            for (int i = 0; i < _poolLifecycles.Count; i++)
+            {
+                var lifecycle = _poolLifecycles[i];
+                if (lifecycle == null || ReferenceEquals(lifecycle, this))
+                    continue;
+
+                lifecycle.OnPoolRent(this);
+            }
+        }
+
+        private void NotifyPoolReturnLifecycles()
+        {
+            CollectPoolLifecycles();
+            for (int i = 0; i < _poolLifecycles.Count; i++)
+            {
+                var lifecycle = _poolLifecycles[i];
+                if (lifecycle == null || ReferenceEquals(lifecycle, this))
+                    continue;
+
+                lifecycle.OnPoolReturn(this);
+            }
+        }
+
+        private void CollectPoolLifecycles()
+        {
+            _poolLifecycles.Clear();
+            GetComponents(_poolLifecycles);
+        }
+
         protected override void Awake()
         {
             // 먼저 선언한다.
@@ -251,7 +386,40 @@ namespace GGemCo2DCore
         public override void OnAnimationCompleteDead()
         {
             base.OnAnimationCompleteDead();
+
+            if (_isPoolManaged && SceneGame.Instance != null && SceneGame.Instance.CharacterManager != null)
+            {
+                CancelPendingPoolReturn();
+                _returnToPoolRoutine = StartCoroutine(ReturnToPoolAfterDelay(_delayDestroyMonster));
+                return;
+            }
+
             Destroy(gameObject, _delayDestroyMonster);
+        }
+
+        private System.Collections.IEnumerator ReturnToPoolAfterDelay(float delay)
+        {
+            if (delay > 0f)
+            {
+                yield return new WaitForSeconds(delay);
+            }
+
+            _returnToPoolRoutine = null;
+            if (SceneGame.Instance != null && SceneGame.Instance.CharacterManager != null &&
+                SceneGame.Instance.CharacterManager.ReturnMonsterToPool(this))
+            {
+                yield break;
+            }
+
+            Destroy(gameObject);
+        }
+
+        public void OnPoolRent(Monster owner)
+        {
+        }
+
+        public void OnPoolReturn(Monster owner)
+        {
         }
     }
 }

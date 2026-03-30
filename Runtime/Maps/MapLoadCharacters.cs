@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Threading.Tasks;
@@ -16,13 +16,17 @@ namespace GGemCo2DCore
         private TableMonster tableMonster;
         private TableAnimation tableAnimation;
         private TableLoaderManager tableLoaderManager;
-        // 몬스터가 죽었을때 다시 리젠될는 시간
         private float defaultMonsterRegenTimeSec;
+        private readonly Dictionary<int, CharacterRegenData> _monsterRegenDataByVid = new Dictionary<int, CharacterRegenData>();
+        private readonly HashSet<int> _monsterRespawnPending = new HashSet<int>();
 
         public void Reset()
         {
-            characterVid = 1;
+            characterVid = 0;
+            _monsterRegenDataByVid.Clear();
+            _monsterRespawnPending.Clear();
         }
+
         public void Initialize(MapManager manager)
         {
             mapManager = manager;
@@ -33,13 +37,7 @@ namespace GGemCo2DCore
             tableMonster = tableLoaderManager.TableMonster;
             defaultMonsterRegenTimeSec = AddressableLoaderSettings.Instance.settings.defaultMonsterRegenTimeSec;
         }
-        /// <summary>
-        /// 플레이어 스폰
-        /// </summary>
-        /// <param name="playSpawnPosition"></param>
-        /// <param name="currentMapTableData"></param>
-        /// <param name="mapTileCommon"></param>
-        /// <returns></returns>
+
         public async Task LoadPlayer(Vector3 playSpawnPosition, StruckTableMap currentMapTableData, DefaultMap mapTileCommon)
         {
             try
@@ -49,8 +47,7 @@ namespace GGemCo2DCore
                     GameObject player = await SceneGame.Instance.CharacterManager.CreatePlayer();
                     SceneGame.Instance.player = player;
                 }
-            
-                // 플레이어 위치
+
                 Vector3 spawnPosition = currentMapTableData.PlayerSpawnPosition;
                 if (playSpawnPosition != Vector3.zero)
                 {
@@ -62,9 +59,6 @@ namespace GGemCo2DCore
                 scriptPlayer.SetMapSize(mapManager.GetMapSize());
                 scriptPlayer.Stop(true);
                 SceneGame.Instance.cameraManager?.SetFollowTarget(SceneGame.Instance.player?.transform);
-
-                // (예시 연결) 플레이어 스폰 직후 자동 이동 시작
-                // - GGemCoSettings에서 전역 활성/비활성 및 시작 옵션을 제어합니다.
                 TryStartAutoMoveOnMapLoad(scriptPlayer);
             }
             catch (Exception e)
@@ -95,31 +89,23 @@ namespace GGemCo2DCore
                 cancelPolicy = settings.autoMoveCancelPolicy
             }, lockInput: true);
         }
-        
+
         #region 몬스터
-        
-        /// <summary>
-        /// 몬스터 스폰하기
-        /// </summary>
-        /// <returns></returns>
+
         public async Task LoadMonsters(MapTileCommon mapTileCommon, StruckTableMap currentMapTableData)
         {
             string key = ConfigAddressableMap.GetKeyJsonRegenMonster(currentMapTableData.FolderName);
             try
             {
                 TextAsset textFile = await AddressableLoaderController.LoadByKeyAsync<TextAsset>(key);
-                
+
                 if (textFile)
                 {
                     string content = textFile.text;
                     if (!string.IsNullOrEmpty(content))
                     {
                         CharacterRegenDataList characterRegenDataList = JsonConvert.DeserializeObject<CharacterRegenDataList>(content);
-                        var spawned = SpawnMonsters(characterRegenDataList.CharacterRegenDatas, mapTileCommon);
-
-                        // 스폰 이후 후처리(Hook): 예) 몬스터 BT 에셋 Addressables 로드/적용.
-                        // - 실패해도 로그만 남기고 맵 로딩은 계속 진행한다.
-                        // await CharacterSpawnHooks.InvokeAllAsync(spawned);
+                        SpawnMonsters(characterRegenDataList.CharacterRegenDatas, mapTileCommon);
                     }
                 }
             }
@@ -128,15 +114,10 @@ namespace GGemCo2DCore
                 GcLogger.LogError($"몬스터 regen json 파싱중 오류. file {key}: {ex.Message}");
             }
         }
-        /// <summary>
-        /// 몬스터 스폰하기
-        /// </summary>
-        /// <param name="monsterList"></param>
-        /// <param name="mapTileCommon"></param>
-        private List<CharacterBase> SpawnMonsters(List<CharacterRegenData> monsterList, MapTileCommon mapTileCommon)
+
+        private void SpawnMonsters(List<CharacterRegenData> monsterList, MapTileCommon mapTileCommon)
         {
-            var spawned = new List<CharacterBase>(monsterList != null ? monsterList.Count : 0);
-            if (monsterList == null) return spawned;
+            if (monsterList == null) return;
 
             foreach (CharacterRegenData monsterData in monsterList)
             {
@@ -144,37 +125,31 @@ namespace GGemCo2DCore
                 if (uid <= 0) continue;
                 var info = tableMonster.GetDataByUid(uid);
                 if (info.Uid <= 0 || info.AnimationUid <= 0) continue;
-                var ch = SpawnMonster(uid, monsterData, mapTileCommon);
-                if (ch != null) spawned.Add(ch);
+                SpawnMonster(uid, monsterData, mapTileCommon);
             }
-
-            return spawned;
         }
 
-        #endregion
-
-        /// <summary>
-        /// 몬스터 스폰하기
-        /// </summary>
-        /// <param name="monsterUid"></param>
-        /// <param name="monsterData"></param>
-        /// <param name="mapTileCommon"></param>
-        private CharacterBase SpawnMonster(int monsterUid, CharacterRegenData monsterData, MapTileCommon mapTileCommon)
+        private CharacterBase SpawnMonster(int monsterUid, CharacterRegenData monsterData, MapTileCommon mapTileCommon, int forcedVid = 0)
         {
-            GameObject monster = SceneGame.Instance.CharacterManager.CreateMonster(monsterUid, monsterData);
+            GameObject monster = SceneGame.Instance.CharacterManager.RentMonster(monsterUid, monsterData);
             if (!monster) return null;
-            monster.transform.SetParent(mapTileCommon.gameObject.transform);
-            
-            Monster myMonsterScript = monster.GetComponent<Monster>();
-            myMonsterScript.vid = characterVid;
-            mapTileCommon.AddMonster(characterVid, monster);
-            characterVid++;
+            monster.transform.SetParent(mapTileCommon.gameObject.transform, worldPositionStays: true);
 
-            // 스폰 이후 후처리(Hook): 예) 몬스터 BT 에셋 Addressables 로드/적용.
-            // - 실패해도 로그만 남기고 맵 로딩은 계속 진행한다.
+            Monster myMonsterScript = monster.GetComponent<Monster>();
+            if (myMonsterScript == null)
+                return null;
+
+            int spawnVid = forcedVid > 0 ? forcedVid : ++characterVid;
+            if (spawnVid > characterVid)
+                characterVid = spawnVid;
+
+            myMonsterScript.vid = spawnVid;
+            mapTileCommon.AddMonster(spawnVid, monster);
+            _monsterRegenDataByVid[spawnVid] = monsterData;
+            _monsterRespawnPending.Remove(spawnVid);
+
             _ = CharacterSpawnHooks.InvokeAsync(myMonsterScript);
 
-            // 패트롤 생성
             if (monsterData.patrolData != null)
             {
                 var patrolData = monsterData.patrolData;
@@ -185,7 +160,7 @@ namespace GGemCo2DCore
                     GameObject warp = Object.Instantiate(prefabPatrol,
                         new Vector3(patrolData.X, patrolData.Y, patrolData.Z), Quaternion.identity,
                         mapTileCommon.gameObject.transform);
-        
+
                     ObjectPatrol objectPatrol = warp.GetComponent<ObjectPatrol>();
                     if (objectPatrol)
                     {
@@ -203,23 +178,78 @@ namespace GGemCo2DCore
                     GcLogger.LogError($"패트롤 프리팹이 없습니다. path: {ConfigAddressableMap.ObjectPatrol.Path}");
                 }
             }
-            
+
             return monster.GetComponent<CharacterBase>();
         }
-        
+
+        public void MarkMonsterDead(int monsterVid)
+        {
+            if (monsterVid <= 0)
+                return;
+
+            if (_monsterRegenDataByVid.ContainsKey(monsterVid))
+                _monsterRespawnPending.Add(monsterVid);
+        }
+
+        public void OnMonsterReturnedToPool(int monsterVid, MapTileCommon mapTileCommon)
+        {
+            if (monsterVid <= 0 || mapTileCommon == null)
+                return;
+
+            mapTileCommon.RemoveMonster(monsterVid);
+        }
+
+        public void ReturnAllMonstersToPool(MapTileCommon mapTileCommon)
+        {
+            if (mapTileCommon == null)
+                return;
+
+            var monsters = mapTileCommon.GetMonsterEntries();
+            for (int i = 0; i < monsters.Count; i++)
+            {
+                var entry = monsters[i];
+                var monster = entry.Value != null ? entry.Value.GetComponent<Monster>() : null;
+                if (monster == null)
+                    continue;
+
+                SceneGame.Instance.CharacterManager.ReturnMonsterToPool(monster);
+            }
+
+            mapTileCommon.ClearMonsters();
+        }
+
+        public IEnumerator RegenMonster(int monsterVid, int currentMapUid, MapTileCommon mapTileCommon)
+        {
+            if (!_monsterRegenDataByVid.TryGetValue(monsterVid, out CharacterRegenData monsterData) || monsterData == null)
+                yield break;
+
+            if (!_monsterRespawnPending.Contains(monsterVid))
+                yield break;
+
+            yield return new WaitForSeconds(defaultMonsterRegenTimeSec);
+
+            if (!_monsterRespawnPending.Contains(monsterVid))
+                yield break;
+
+            int uid = monsterData.Uid;
+            int mapUid = monsterData.MapUid;
+            if (mapUid != currentMapUid) yield break;
+            if (uid <= 0) yield break;
+            if (mapTileCommon == null) yield break;
+
+            SpawnMonster(uid, monsterData, mapTileCommon, monsterVid);
+        }
+        #endregion
+
         #region NPC
 
-        /// <summary>
-        /// npc 스폰하기
-        /// </summary>
-        /// <returns></returns>
         public async Task LoadNpcs(MapTileCommon mapTileCommon, StruckTableMap currentMapTableData)
         {
             string key = ConfigAddressableMap.GetKeyJsonRegenNpc(currentMapTableData.FolderName);
             try
             {
                 TextAsset textFile = await AddressableLoaderController.LoadByKeyAsync<TextAsset>(key);
-                
+
                 if (textFile)
                 {
                     string content = textFile.text;
@@ -235,11 +265,7 @@ namespace GGemCo2DCore
                 GcLogger.LogError($"npc json 파싱중 오류. file {key}: {ex.Message}");
             }
         }
-        /// <summary>
-        /// npc 스폰하기
-        /// </summary>
-        /// <param name="npcList"></param>
-        /// <param name="mapTileCommon"></param>
+
         private void SpawnNpcs(List<CharacterRegenData> npcList, MapTileCommon mapTileCommon)
         {
             foreach (CharacterRegenData npcData in npcList)
@@ -248,52 +274,29 @@ namespace GGemCo2DCore
                 GameObject npc = SceneGame.Instance.CharacterManager.CreateNpc(uid, npcData);
                 if (!npc) continue;
                 npc.transform.SetParent(mapTileCommon.gameObject.transform);
-            
-                // NPC의 이름과 기타 속성 설정
+
                 Npc myNpcScript = npc.GetComponent<Npc>();
                 if (!myNpcScript) continue;
-                // npcExporter.cs:158 도 수정
                 myNpcScript.vid = characterVid;
                 myNpcScript.uid = npcData.Uid;
                 myNpcScript.CharacterRegenData = npcData;
-                    
+
                 mapTileCommon.AddNpc(characterVid, npc);
                 characterVid++;
             }
         }
-        /// <summary>
-        /// 몬스터 리젠하기 
-        /// </summary>
-        /// <param name="monsterVid"></param>
-        /// <param name="currentMapUid"></param>
-        /// <param name="mapTileCommon"></param>
-        public IEnumerator RegenMonster(int monsterVid, int currentMapUid, MapTileCommon mapTileCommon)
-        {
-            CharacterRegenData monsterData = mapTileCommon.GetMonsterDataByVid(monsterVid);
-            if (monsterData == null) yield break;
 
-            yield return new WaitForSeconds(defaultMonsterRegenTimeSec);
-            int uid = monsterData.Uid;
-            int mapUid = monsterData.MapUid;
-            if (mapUid != currentMapUid) yield break;
-            if (uid <= 0) yield break;
-            SpawnMonster(uid, monsterData, mapTileCommon);
-        }
         #endregion
 
         #region 워프
 
-        /// <summary>
-        /// 워프 스폰하기
-        /// </summary>
-        /// <returns></returns>
         public async Task LoadWarps(MapTileCommon mapTileCommon, StruckTableMap currentMapTableData)
         {
             string key = ConfigAddressableMap.GetKeyJsonWarp(currentMapTableData.FolderName);
             try
             {
                 TextAsset textFile = await AddressableLoaderController.LoadByKeyAsync<TextAsset>(key);
-                
+
                 if (textFile)
                 {
                     string content = textFile.text;
@@ -309,25 +312,19 @@ namespace GGemCo2DCore
                 GcLogger.LogError($"워프 json 파싱중 오류. file {key}: {ex.Message}");
             }
         }
-        /// <summary>
-        /// 워프 스폰하기
-        /// </summary>
-        /// <param name="warpDatas"></param>
-        /// <param name="mapTileCommon"></param>
+
         private void SpawnWarps(List<WarpData> warpDatas, MapTileCommon mapTileCommon)
         {
             GameObject warpPrefab =
                 AddressableLoaderPrefabCommon.Instance.GetPreLoadGamePrefabByName(ConfigAddressableMap.ObjectWarp.Key);
             if (!warpPrefab) return;
-            
+
             foreach (WarpData warpData in warpDatas)
             {
                 GameObject warp = Object.Instantiate(warpPrefab, new Vector3(warpData.x, warpData.y, warpData.z), Quaternion.identity, mapTileCommon.gameObject.transform);
-            
-                // 워프의 이름과 기타 속성 설정
+
                 ObjectWarp objectWarp = warp.GetComponent<ObjectWarp>();
                 if (!objectWarp) continue;
-                // warpExporter.cs:128 도 수정
                 objectWarp.WarpData = warpData;
             }
         }

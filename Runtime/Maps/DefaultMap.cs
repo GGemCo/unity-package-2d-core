@@ -133,7 +133,22 @@ namespace GGemCo2DCore
         public void AddMonster(int vid, GameObject monster)
         {
             if (monster == null) return;
-            Monsters.Add(vid, monster);
+            Monsters[vid] = monster;
+        }
+
+        public void RemoveMonster(int vid)
+        {
+            Monsters.Remove(vid);
+        }
+
+        public List<KeyValuePair<int, GameObject>> GetMonsterEntries()
+        {
+            return new List<KeyValuePair<int, GameObject>>(Monsters);
+        }
+
+        public void ClearMonsters()
+        {
+            Monsters.Clear();
         }
         /// <summary>
         /// vid 값으로 몬스터 찾기  

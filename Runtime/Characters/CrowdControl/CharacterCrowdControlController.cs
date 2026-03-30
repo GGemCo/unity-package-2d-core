@@ -1,4 +1,4 @@
-﻿using System.Collections;
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -13,7 +13,7 @@ namespace GGemCo2DCore
     /// 모션 컨트롤러가 없거나 모션 시작에 실패하면 위치 스냅 방식으로 대체 처리합니다.
     /// </remarks>
     [DisallowMultipleComponent]
-    public sealed class CharacterCrowdControlController : MonoBehaviour
+    public sealed class CharacterCrowdControlController : MonoBehaviour, IMonsterPoolLifecycle
     {
         private CharacterBase _character;
         private Rigidbody2D _rigidbody2D;
@@ -827,6 +827,23 @@ namespace GGemCo2DCore
         /// </summary>
         /// <param name="crowdControlUid">조회할 CC 테이블 UID입니다.</param>
         /// <param name="source">방향 계산에 사용할 공격/발생 원본 오브젝트입니다(없을 수 있음).</param>
+
+        public void ResetForPoolReturn()
+        {
+            ForceStopInternal(clearSequence: true);
+            ResetAnimationState();
+        }
+
+        public void OnPoolRent(Monster owner)
+        {
+            ResetForPoolReturn();
+        }
+
+        public void OnPoolReturn(Monster owner)
+        {
+            ResetForPoolReturn();
+        }
+
         public void ApplyCrowdControlByUid(int crowdControlUid, GameObject source)
         {
             var info = TableLoaderManager.Instance != null

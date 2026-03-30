@@ -316,8 +316,8 @@ namespace GGemCo2DCore
         /// <returns></returns>
         IEnumerator UnloadPreviousStage()
         {
-            // 현재 씬에 있는 모든 몬스터 오브젝트를 삭제
-            DestroyByTag(ConfigTags.GetValue(ConfigTags.Keys.Monster));
+            // 현재 씬에 있는 몬스터는 Destroy 대신 Pool로 반환한다.
+            _mapLoadCharacters?.ReturnAllMonstersToPool(_mapTileCommon);
             DestroyByTag(ConfigTags.GetValue(ConfigTags.Keys.Npc));
             // 드랍 아이템 지우기
             DestroyByTag(ConfigTags.GetValue(ConfigTags.Keys.DropItem));
@@ -463,7 +463,14 @@ namespace GGemCo2DCore
         public void OnDeadMonster(int monsterVid)
         {
             if (monsterVid <= 0) return;
+            _mapLoadCharacters?.MarkMonsterDead(monsterVid);
             StartCoroutine(_mapLoadCharacters.RegenMonster(monsterVid, _currentMapUid, _mapTileCommon));
+        }
+
+        public void OnMonsterReturnedToPool(int monsterVid)
+        {
+            if (monsterVid <= 0) return;
+            _mapLoadCharacters?.OnMonsterReturnedToPool(monsterVid, _mapTileCommon);
         }
         /// <summary>
         /// 현재 맵 사이즈 가져오기

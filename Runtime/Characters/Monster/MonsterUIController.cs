@@ -34,11 +34,40 @@ namespace GGemCo2DCore
             if (_sliderHpBar != null)
             {
                 UnityEngine.Object.Destroy(_sliderHpBar);
+                _sliderHpBar = null;
             }
             if (_monsterUISuperArmor != null)
             {
                 UnityEngine.Object.Destroy(_monsterUISuperArmor);
+                _monsterUISuperArmor = null;
             }
+            if (_uiWindowBattleHudMonster != null)
+                _uiWindowBattleHudMonster.Show(false);
+        }
+
+        public void RebuildRuntimeUi()
+        {
+            _sceneGame ??= SceneGame.Instance;
+            _monsterSettings ??= AddressableLoaderSettings.Instance.monsterSettings;
+            _uiWindowBattleHudMonster =
+                _sceneGame.uIWindowManager?.GetUIWindowByUid<UIWindowBattleHudMonster>(UIWindowConstants.WindowUid.BattleHudMonster);
+
+            if (_sliderHpBar == null)
+            {
+                CreateHpBar();
+            }
+
+            if (_monster.CurrentSuperArmor.Value > 0 && _monsterUISuperArmor == null)
+            {
+                CreateSuperArmor();
+            }
+
+            SetSliderHp(_monster.CurrentHp.Value);
+            if (_monster.CurrentSuperArmor.Value > 0)
+            {
+                SetSuperArmor(_monster.CurrentSuperArmor.Value);
+            }
+            SetBattleStatus(_monster.CurrentBattleStatus.Value);
         }
 
         public void InitSubscribe()

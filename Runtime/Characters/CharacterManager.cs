@@ -10,20 +10,22 @@ namespace GGemCo2DCore
     /// 캐릭터 생성/파괴, 애니메이션 컨트롤러 부착, 스폰/파괴 이벤트 브로드캐스트를 담당하는 매니저
     /// - Player/Monster: 공용 생성 경로 (CreateCharacter)
     /// - NPC: 세부 타입(Npc, NpcObject 등) 분기 전용 경로 (CreateNpc)
+    /// - Monster: 재생성 비용을 줄이기 위해 풀 기반 재사용 경로(Rent/Return)를 지원합니다.
     /// </summary>
     public class CharacterManager
     {
-        // 외부 확장용 생성/파괴 이벤트 (Core는 구독자에 대해 알지 못함)
-        public static event Action<CharacterBase> OnCharacterSpawned;   // 생성 직후 1회
-        public static event Action<CharacterBase> OnCharacterDestroyed; // Destroy 직전 1회
+        public static event Action<CharacterBase> OnCharacterSpawned;
+        public static event Action<CharacterBase> OnCharacterDestroyed;
 
         private readonly List<GameObject> _characters = new List<GameObject>();
+        private readonly Dictionary<int, Stack<Monster>> _monsterPoolByUid = new Dictionary<int, Stack<Monster>>();
 
         private TableNpc _tableNpc;
         private TableMonster _tableMonster;
         private TableAnimation _tableAnimation;
         private AddressableLoaderPrefabCharacter _addressableLoaderPrefabCharacter;
         private AnimationEventMediator _animationEventMediator;
+        private Transform _monsterPoolRoot;
 
         public void Initialize(
             TableNpc pTableNpc,
@@ -37,10 +39,22 @@ namespace GGemCo2DCore
             _addressableLoaderPrefabCharacter = addressableLoaderPrefabCharacter;
         }
 
-        /// <summary>
-        /// 내부 공용: Player/Monster 전용 생성 경로.
-        /// NPC는 세부 타입(Npc/NpcObject/기타) 분기가 필요하므로 CreateNpc()를 사용한다.
-        /// </summary>
+        private Transform EnsureMonsterPoolRoot()
+        {
+            if (_monsterPoolRoot != null)
+                return _monsterPoolRoot;
+
+            var go = GameObject.Find("__MonsterPoolRoot__");
+            if (go == null)
+            {
+                go = new GameObject("__MonsterPoolRoot__");
+                go.SetActive(false);
+            }
+
+            _monsterPoolRoot = go.transform;
+            return _monsterPoolRoot;
+        }
+
         private GameObject CreateCharacter(
             CharacterConstants.Type characterType,
             ConfigCommon.AnimationController animationController,
@@ -70,16 +84,15 @@ namespace GGemCo2DCore
                         var monster = characterObj.AddComponent<Monster>();
                         monster.type = CharacterConstants.Type.Monster;
                         monster.CharacterRegenData = regenData;
+                        monster.SetPoolManaged(true);
                         break;
                     }
                     case CharacterConstants.Type.Npc:
-                        // NPC는 세부 타입 분기 필요. 여기로 들어오지 않도록 CreateNpc 사용.
                         GcLogger.LogWarning("CreateCharacter(Type.Npc) is not supported. Use CreateNpc instead.");
                         Object.Destroy(characterObj);
                         return null;
                 }
 
-                // 애니메이션 컨트롤러 세팅
                 var iAnim = SetupAnimationController(characterObj, animationController);
                 if (iAnim == null)
                 {
@@ -88,7 +101,6 @@ namespace GGemCo2DCore
                     return null;
                 }
 
-                // 공통 Base 세팅
                 var characterBase = characterObj.GetComponent<CharacterBase>();
                 if (characterBase == null)
                 {
@@ -118,7 +130,6 @@ namespace GGemCo2DCore
                 return null;
             }
         }
-
 
         private void TrySetupSpriteWhiteOverlay(
             CharacterConstants.Type characterType,
@@ -180,9 +191,6 @@ namespace GGemCo2DCore
             }
         }
 
-        /// <summary>
-        /// 애니메이션 컨트롤러/이벤트 중개자 연결(SRP 분리)
-        /// </summary>
         private ICharacterAnimationController SetupAnimationController(
             GameObject obj,
             ConfigCommon.AnimationController controllerType)
@@ -219,9 +227,6 @@ namespace GGemCo2DCore
             return animController;
         }
 
-        /// <summary>
-        /// 플레이어 생성 (Addressables 로드 포함)
-        /// </summary>
         public async Task<GameObject> CreatePlayer()
         {
             try
@@ -247,9 +252,6 @@ namespace GGemCo2DCore
             }
         }
 
-        /// <summary>
-        /// NPC 생성: 세부 타입(Object/Functional/Event/Default 등)에 따라 컴포넌트 분기
-        /// </summary>
         public GameObject CreateNpc(int uid, CharacterRegenData regenData = null, GameObject prefab = null)
         {
             if (uid <= 0) return null;
@@ -273,12 +275,9 @@ namespace GGemCo2DCore
             GameObject npcObj = Object.Instantiate(prefab);
             try
             {
-                // 1) 세부 타입에 맞는 NPC 컴포넌트 부착
                 Npc npcComponent = npcObj.AddComponent<Npc>();
-
                 npcComponent.type = CharacterConstants.Type.Npc;
 
-                // 2) 공통 Base 세팅
                 var characterBase = npcObj.GetComponent<CharacterBase>();
                 if (characterBase == null)
                 {
@@ -293,7 +292,6 @@ namespace GGemCo2DCore
                         regenData.x, regenData.y, npcObj.transform.position.z);
                 }
 
-                // 3) 애니메이션 컨트롤러 부착
                 var iAnim = SetupAnimationController(npcObj, animationInfo.Controller);
                 if (iAnim == null)
                 {
@@ -303,8 +301,6 @@ namespace GGemCo2DCore
                 }
 
                 characterBase.CharacterAnimationController = iAnim;
-
-                // 4) 데이터 기반 스케일 적용
                 characterBase.uid = uid;
                 characterBase.SetScale(infoNpc.Scale);
 
@@ -320,9 +316,6 @@ namespace GGemCo2DCore
             }
         }
 
-        /// <summary>
-        /// 몬스터 생성
-        /// </summary>
         public GameObject CreateMonster(int uid, CharacterRegenData regenData = null, GameObject prefab = null)
         {
             if (uid <= 0) return null;
@@ -353,31 +346,86 @@ namespace GGemCo2DCore
                 characterBase.uid = uid;
                 characterBase.SetScale(infoMonster.Scale);
             }
+
             return monster;
         }
 
-        /// <summary>
-        /// 타입+UID로 캐릭터 생성(편의 함수)
-        /// </summary>
+        public GameObject RentMonster(int uid, CharacterRegenData regenData = null, GameObject prefab = null)
+        {
+            if (uid <= 0)
+                return null;
+
+            Monster pooledMonster = null;
+            if (_monsterPoolByUid.TryGetValue(uid, out var bucket))
+            {
+                while (bucket.Count > 0 && pooledMonster == null)
+                {
+                    pooledMonster = bucket.Pop();
+                }
+            }
+
+            if (pooledMonster == null)
+            {
+                return CreateMonster(uid, regenData, prefab);
+            }
+
+            var pooledObject = pooledMonster.gameObject;
+            pooledMonster.CancelPendingPoolReturn();
+            pooledObject.transform.SetParent(null, worldPositionStays: false);
+            pooledObject.SetActive(true);
+            pooledMonster.PrepareForPoolRent(uid, regenData);
+            return pooledObject;
+        }
+
+        public bool ReturnMonsterToPool(Monster monster)
+        {
+            if (monster == null)
+                return false;
+
+            int uid = monster.uid;
+            if (uid <= 0)
+                return false;
+
+            monster.CancelPendingPoolReturn();
+            monster.PrepareForPoolReturn();
+
+            if (!_monsterPoolByUid.TryGetValue(uid, out var bucket))
+            {
+                bucket = new Stack<Monster>();
+                _monsterPoolByUid.Add(uid, bucket);
+            }
+
+            var poolRoot = EnsureMonsterPoolRoot();
+            poolRoot.gameObject.SetActive(true);
+            monster.transform.SetParent(poolRoot, worldPositionStays: false);
+            monster.gameObject.SetActive(false);
+            bucket.Push(monster);
+            poolRoot.gameObject.SetActive(false);
+
+            if (SceneGame.Instance != null && SceneGame.Instance.mapManager != null)
+            {
+                SceneGame.Instance.mapManager.OnMonsterReturnedToPool(monster.vid);
+            }
+
+            return true;
+        }
+
         public GameObject CreateCharacter(CharacterConstants.Type type, int characterUid)
         {
             if (type == CharacterConstants.Type.Player)
             {
-                _ = CreatePlayer(); // 비동기 시작 (호출자는 별도 await 가능)
+                _ = CreatePlayer();
                 return null;
             }
 
             return type switch
             {
-                CharacterConstants.Type.Npc     => CreateNpc(characterUid),
+                CharacterConstants.Type.Npc => CreateNpc(characterUid),
                 CharacterConstants.Type.Monster => CreateMonster(characterUid),
                 _ => null
             };
         }
 
-        /// <summary>
-        /// 캐릭터 제거 (Destroy는 프레임 종료 시점에 수행)
-        /// </summary>
         public void RemoveCharacter(GameObject character)
         {
             if (character == null) return;
@@ -393,7 +441,6 @@ namespace GGemCo2DCore
 
         public void OnDestroy()
         {
-            // 필요 시 정리 로직 추가
         }
 
         public void SetAnimationEventMediator(AnimationEventMediator mediator)
