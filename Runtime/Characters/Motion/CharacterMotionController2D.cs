@@ -82,7 +82,19 @@ namespace GGemCo2DCore
 
             if (state.IsPlaying)
             {
-                RestoreMotionPhysics(ref state, zeroVerticalVelocity: false);
+                bool zeroVerticalVelocity = request.Kind == MotionKind.PositionHold
+                    || state.Kind == MotionKind.PositionHold
+                    || state.Kind == MotionKind.Arc
+                    || state.Kind == MotionKind.GroundSlam
+                    || state.Kind == MotionKind.KnockDownAir;
+
+                RestoreMotionPhysics(ref state, zeroVerticalVelocity: zeroVerticalVelocity);
+
+                if (request.Kind == MotionKind.PositionHold)
+                {
+                    ZeroDynamicVelocity();
+                }
+
                 state.Stop();
             }
 
@@ -135,9 +147,16 @@ namespace GGemCo2DCore
             state.Stop();
 
             // velocity 기반 구현을 사용하는 경우를 대비해 정지 정책 제공
-            if (stopAtEnd && rb != null && rb.bodyType == RigidbodyType2D.Dynamic)
+            if (rb != null && rb.bodyType == RigidbodyType2D.Dynamic)
             {
-                rb.SetLinearVelocity(new Vector2(0f, rb.GetLinearVelocity().y));
+                if (state.Kind == MotionKind.PositionHold)
+                {
+                    rb.SetLinearVelocity(Vector2.zero);
+                }
+                else if (stopAtEnd)
+                {
+                    rb.SetLinearVelocity(new Vector2(0f, rb.GetLinearVelocity().y));
+                }
             }
         }
 
@@ -213,7 +232,7 @@ namespace GGemCo2DCore
                 bool stopAtEnd = state.StopAtEnd;
                 RestoreMotionPhysics(ref state, zeroVerticalVelocity: true);
                 state.Stop();
-                StopVelocityIfNeeded(stopAtEnd);
+                StopVelocityIfNeeded(stopAtEnd, state.Kind);
                 return;
             }
 
@@ -222,7 +241,7 @@ namespace GGemCo2DCore
                 bool stopAtEnd = state.StopAtEnd;
                 RestoreMotionPhysics(ref state, zeroVerticalVelocity: true);
                 state.Stop();
-                StopVelocityIfNeeded(stopAtEnd);
+                StopVelocityIfNeeded(stopAtEnd, state.Kind);
             }
         }
 
@@ -285,7 +304,7 @@ namespace GGemCo2DCore
                     bool stopAtEnd = state.StopAtEnd;
                     RestoreMotionPhysics(ref state, zeroVerticalVelocity: true);
                     state.Stop();
-                    StopVelocityIfNeeded(stopAtEnd);
+                    StopVelocityIfNeeded(stopAtEnd, state.Kind);
                     return;
                 }
 
@@ -325,7 +344,7 @@ namespace GGemCo2DCore
                     bool stopAtEnd = state.StopAtEnd;
                     RestoreMotionPhysics(ref state, zeroVerticalVelocity: true);
                     state.Stop();
-                    StopVelocityIfNeeded(stopAtEnd);
+                    StopVelocityIfNeeded(stopAtEnd, state.Kind);
                     return;
                 }
             }
@@ -337,7 +356,7 @@ namespace GGemCo2DCore
                 bool stopAtEnd = state.StopAtEnd;
                 RestoreMotionPhysics(ref state, zeroVerticalVelocity: true);
                 state.Stop();
-                StopVelocityIfNeeded(stopAtEnd);
+                StopVelocityIfNeeded(stopAtEnd, state.Kind);
                 return;
             }
 
@@ -375,7 +394,7 @@ namespace GGemCo2DCore
                 bool stopAtEnd = state.StopAtEnd;
                 RestoreMotionPhysics(ref state, zeroVerticalVelocity: true);
                 state.Stop();
-                StopVelocityIfNeeded(stopAtEnd);
+                StopVelocityIfNeeded(stopAtEnd, state.Kind);
             }
         }
 
@@ -593,11 +612,18 @@ namespace GGemCo2DCore
             rb.SetLinearVelocity(Vector2.zero);
         }
 
-        private void StopVelocityIfNeeded(bool stopAtEnd)
+        private void StopVelocityIfNeeded(bool stopAtEnd, MotionKind kind)
         {
-            if (!stopAtEnd) return;
             if (rb == null) return;
             if (rb.bodyType != RigidbodyType2D.Dynamic) return;
+
+            if (kind == MotionKind.PositionHold)
+            {
+                rb.SetLinearVelocity(Vector2.zero);
+                return;
+            }
+
+            if (!stopAtEnd) return;
 
             rb.SetLinearVelocity(new Vector2(0f, rb.GetLinearVelocity().y));
         }
