@@ -308,6 +308,23 @@ namespace GGemCo2DCore
                 PlayWaitAnimation();
             }
         }
+
+        public void FreezeCurrentAnimationAtLastFrame()
+        {
+            if (SkeletonAnimation == null || SkeletonAnimation.AnimationState == null)
+                return;
+
+            TrackEntry trackEntry = SkeletonAnimation.AnimationState.GetCurrent(0);
+            if (trackEntry == null || trackEntry.Animation == null)
+                return;
+
+            float duration = trackEntry.Animation.Duration;
+            if (duration > 0f)
+                trackEntry.TrackTime = Mathf.Max(0f, duration - 0.0001f);
+
+            trackEntry.TimeScale = 0f;
+            SkeletonAnimation.Update(0f);
+        }
     }
 }
 #endif

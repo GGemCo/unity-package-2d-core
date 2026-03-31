@@ -131,5 +131,10 @@ namespace GGemCo2DCore
         /// (구현체 정책에 따라 빈 애니메이션/기본 대기 애니메이션으로 전환할 수 있다)
         /// </summary>
         void StopSkillAnimation();
+
+        /// <summary>
+        /// 현재 재생 중인 애니메이션의 마지막 프레임에 즉시 고정합니다.
+        /// </summary>
+        void FreezeCurrentAnimationAtLastFrame();
     }
 }

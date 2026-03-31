@@ -406,5 +406,21 @@ namespace GGemCo2DCore
             // 기본 정책: 대기 애니메이션으로 복귀
             PlayWaitAnimation();
         }
+
+        public void FreezeCurrentAnimationAtLastFrame()
+        {
+            if (Animator == null)
+                return;
+
+            var clips = Animator.GetCurrentAnimatorClipInfo(0);
+            if (clips == null || clips.Length == 0 || clips[0].clip == null)
+                return;
+
+            string clipName = clips[0].clip.name;
+            Animator.speed = 1f;
+            Animator.Play(clipName, 0, 0.999f);
+            Animator.Update(0f);
+            Animator.speed = 0f;
+        }
     }
 }
