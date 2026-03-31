@@ -768,6 +768,23 @@ namespace GGemCo2DCore
             ClearQueuedSequence();
         }
 
+        private bool HasCrowdControlStateToReplace()
+        {
+            if (_activeCrowdControl != null)
+                return true;
+
+            if (_stopRoutine != null)
+                return true;
+
+            if (_motionController != null && _motionController.IsPlaying(MotionChannel.CrowdControl))
+                return true;
+
+            if (_isSequenceRunning)
+                return true;
+
+            return _queuedCrowdControls.Count > 0;
+        }
+
         private void ClearQueuedSequence()
         {
             _queuedCrowdControls.Clear();
@@ -804,7 +821,8 @@ namespace GGemCo2DCore
             if (crowdControls == null || crowdControls.Count == 0)
                 return;
 
-            ForceStopInternal();
+            if (HasCrowdControlStateToReplace())
+                ForceStopInternal();
 
             _isSequenceRunning = true;
             _sequenceSource = source;

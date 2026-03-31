@@ -37,6 +37,12 @@ namespace GGemCo2DCore
         /// 현재 데미지가 어떤 스킬에서 발생했는지 추적하기 위한 스킬 UID입니다.
         /// </summary>
         public int SkillUid;
+
+        /// <summary>
+        /// 즉시 CC는 아니지만, 데미지 처리 직후 AfterDamage CC가 이어질 예정인지 여부입니다.
+        /// 일반 피격 모션을 먼저 재생하면 HitStop/CC 전환이 어색해질 수 있을 때 사용합니다.
+        /// </summary>
+        public bool HasPendingAfterDamageCrowdControl;
     }
     /// <summary>
     /// 캐릭터 데미지 처리
@@ -307,7 +313,7 @@ namespace GGemCo2DCore
                     {
                         _characterBase.ApplyCrowdControl(crowdControlUid, metadataDamage.attacker);
                     }
-                    else
+                    else if (!metadataDamage.HasPendingAfterDamageCrowdControl)
                     {
                         // 순서 중요.
                         _characterBase.SetStatusDamage();
