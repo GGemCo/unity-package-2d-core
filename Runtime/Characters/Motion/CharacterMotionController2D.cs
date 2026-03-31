@@ -67,7 +67,7 @@ namespace GGemCo2DCore
         {
             if (rb == null) return false;
             bool hasGroundSlamTravel = request.Kind == MotionKind.GroundSlam && (request.StartPosition - request.TargetPosition).sqrMagnitude > 1e-8f;
-            bool hasPositionHold = request.Kind == MotionKind.PositionHold && request.DurationSeconds > 0f;
+            bool hasPositionHold = request.Kind == MotionKind.PositionHold;
             bool hasKnockDownAirTravel = request.Kind == MotionKind.KnockDownAir
                 && (request.Distance > 0f || request.ArcHeight > 0f || request.DurationSeconds > 0f || request.FallSpeed > 0f);
             if (request.Distance <= 0f && request.HoldSecondsAfter <= 0f && request.ArcHeight <= 0f && !hasGroundSlamTravel && !hasPositionHold && !hasKnockDownAirTravel) return false;
