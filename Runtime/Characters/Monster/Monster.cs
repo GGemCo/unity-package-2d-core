@@ -30,6 +30,7 @@ namespace GGemCo2DCore
         private readonly List<IMonsterPoolLifecycle> _poolLifecycles = new(8);
         private bool _isPoolManaged;
         private Coroutine _returnToPoolRoutine;
+        private GGemCoMonsterSettings _monsterSettings;
         
         public void SetPoolManaged(bool value)
         {
@@ -170,10 +171,13 @@ namespace GGemCo2DCore
             _collider2Ds = new Collider2D[CountCollider];
             base.Awake();
             SetAttackType(CharacterConstants.AttackType.PassiveDefense);
-            
+
             if (AddressableLoaderSettings.Instance)
+            {
                 _delayDestroyMonster = AddressableLoaderSettings.Instance.settings.delayDestroyMonster;
-            
+                _monsterSettings = AddressableLoaderSettings.Instance.monsterSettings;
+            }
+
             _monsterUIController = new MonsterUIController();
             _monsterUIController.Initialize(this);
         }
@@ -311,9 +315,12 @@ namespace GGemCo2DCore
             );
             GameEventManager.MonsterKilled(data);
             
-            // todo 정리 필요
-            SceneGame.Instance.CutsceneManager.SetOverlayTextOverride("boss_name", characterName);
-            _ = SceneGame.Instance.CutsceneManager.PlayCutscene(1001);
+            // 사망 연출
+            if (!_monsterSettings.UseCutsceneDie) return;
+            bool useCutscene = _monsterSettings.IsUseCutsceneDieEnabledFor(Grade);
+            if (!useCutscene) return;
+            SceneGame.Instance.CutsceneManager.SetOverlayTextOverride(CutsceneKeyTextOverlay.MonsterName, characterName);
+            _ = SceneGame.Instance.CutsceneManager.PlayCutscene(_monsterSettings.CutsceneUidDie);
         }
         protected override void OnDestroy()
         {

@@ -32,7 +32,7 @@ namespace GGemCo2DCore
             new Dictionary<CharacterConstants.Type, Dictionary<int, GameObject>>();
 
         // OverlayText에서 사용할 런타임 문자열 치환값을 보관합니다.
-        private readonly Dictionary<string, string> _overlayTextOverrides = new(StringComparer.Ordinal);
+        private readonly Dictionary<CutsceneKeyTextOverlay, string> _overlayTextOverrides = new();
         
         // 현재 컷신에서 활성화된 컨트롤러 목록입니다.
         private readonly List<ICutsceneController> _activeControllers = new();
@@ -391,9 +391,9 @@ namespace GGemCo2DCore
         /// </summary>
         /// <param name="key">치환 항목을 식별하는 키입니다.</param>
         /// <param name="text">적용할 텍스트입니다. <see langword="null"/>이면 빈 문자열로 저장됩니다.</param>
-        public void SetOverlayTextOverride(string key, string text)
+        public void SetOverlayTextOverride(CutsceneKeyTextOverlay key, string text)
         {
-            if (string.IsNullOrWhiteSpace(key))
+            if (key == CutsceneKeyTextOverlay.None)
             {
                 return;
             }
@@ -407,10 +407,10 @@ namespace GGemCo2DCore
         /// <param name="key">조회할 치환 키입니다.</param>
         /// <param name="text">키가 존재할 경우 대응되는 치환 문자열을 반환합니다.</param>
         /// <returns>치환 문자열을 찾았으면 <see langword="true"/>, 그렇지 않으면 <see langword="false"/>를 반환합니다.</returns>
-        public bool TryGetOverlayTextOverride(string key, out string text)
+        public bool TryGetOverlayTextOverride(CutsceneKeyTextOverlay key, out string text)
         {
             text = string.Empty;
-            if (string.IsNullOrWhiteSpace(key))
+            if (key == CutsceneKeyTextOverlay.None)
             {
                 return false;
             }
@@ -422,9 +422,9 @@ namespace GGemCo2DCore
         /// 등록된 OverlayText 치환 문자열을 제거합니다.
         /// </summary>
         /// <param name="key">제거할 치환 키입니다.</param>
-        public void RemoveOverlayTextOverride(string key)
+        public void RemoveOverlayTextOverride(CutsceneKeyTextOverlay key)
         {
-            if (string.IsNullOrWhiteSpace(key))
+            if (key == CutsceneKeyTextOverlay.None)
             {
                 return;
             }

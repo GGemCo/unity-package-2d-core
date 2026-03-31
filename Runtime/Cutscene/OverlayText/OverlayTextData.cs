@@ -18,7 +18,7 @@ namespace GGemCo2DCore
         [Tooltip("sourceMode가 Fixed일 때 출력할 기본 텍스트이자, RuntimeOverride 모드에서 값을 찾지 못했을 때 사용할 fallback 텍스트입니다.")]
         public string text;
         [Tooltip("sourceMode가 RuntimeOverride일 때 CutsceneManager에서 조회할 런타임 텍스트 키입니다.")]
-        public string runtimeTextKey;
+        public CutsceneKeyTextOverlay runtimeTextKey;
 
         [Header("Layout")]
         [Tooltip("Canvas 중앙 기준 anchoredPosition 입니다.")]

@@ -77,4 +77,10 @@
         /// </summary>
         TimeScale = 13
     }
+    
+    public enum CutsceneKeyTextOverlay
+    {
+        None,
+        MonsterName
+    }
 }

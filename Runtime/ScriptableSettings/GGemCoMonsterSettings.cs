@@ -51,38 +51,33 @@ namespace GGemCo2DCore
         [Min(0.01f)]
         public float spriteWhiteOverlayFlashDuration = 0.08f;
 
-
         [Header("Battle HUD")]
         [Tooltip("몬스터 전투 HUD 사용 여부")]
         [SerializeField] private bool useBattleHud = true;
-
         [Tooltip("전투 HUD를 사용할 몬스터 등급(멀티 선택)")]
         [SerializeField] private int useBattleHudGradeMask = 0;
+
+        [Header("사망 연출")]
+        [Tooltip("사망 연출 사용 여부")]
+        [SerializeField] private bool useCutsceneDie = true;
+        [Tooltip("사망 연출 사용할 몬스터 등급(멀티 선택)")]
+        [SerializeField] private int useCutsceneDieGradeMask = 0;
+        [Tooltip("사망 연출 Cutscene Uid")]
+        [SerializeField] private int cutsceneUidDie = 0;
         
-        [Header("Stacks")]
-        [HideInInspector]
-        [Min(0)] public int maxIgnoreStacks = 0;
-        
-        [Header("Regen")]
+        [Header("Supper Armor")]
         [Tooltip("스택이 깎인 이후, 회복을 시작하기까지 대기 시간(초)")]
-        [HideInInspector]
         [Min(0f)] public float regenDelay = 0f;
 
         [Tooltip("회복 틱 간격(초)")]
-        [HideInInspector]
         [Min(0.01f)] public float regenInterval = 0f;
 
         [Tooltip("틱당 회복량(스택)")]
-        [HideInInspector]
         [Min(1)] public int regenPerTick = 0;
 
-        [Header("Break")]
-        [HideInInspector]
         public CharacterConstants.StaggerBreakResetMode breakResetMode = CharacterConstants.StaggerBreakResetMode.KeepZero;
 
-        [Header("Optional - Anti multi-hit spam")]
         [Tooltip("같은 AttackId가 매우 짧은 시간에 여러 번 들어올 때 스택이 과도하게 깎이는 것을 방지(초). 0이면 비활성.")]
-        [HideInInspector]
         [Min(0f)] public float perAttackConsumeCooldown = 0f;
 
         /// <summary>
@@ -104,6 +99,27 @@ namespace GGemCo2DCore
             var flag = 1 << (int)grade;
             return (useBattleHudGradeMask & flag) != 0;
         }
+        
+        /// <summary>
+        /// 몬스터 사망 연출 사용 여부.
+        /// </summary>
+        public bool UseCutsceneDie => useCutsceneDie;
+        public int CutsceneUidDie => cutsceneUidDie;
+
+        /// <summary>
+        /// 몬스터 사망 연출 적용 대상 등급(비트 마스크).
+        /// - <see cref="CharacterConstants.Grade"/> enum index를 비트 위치로 사용합니다.
+        /// </summary>
+        public int UseCutsceneDieGradeMask => useCutsceneDieGradeMask;
+
+        public bool IsUseCutsceneDieEnabledFor(CharacterConstants.Grade grade)
+        {
+            if (!useCutsceneDie) return false;
+            if (useCutsceneDieGradeMask == 0) return false;
+            
+            var flag = 1 << (int)grade;
+            return (useCutsceneDieGradeMask & flag) != 0;
+        }
 
         public GameObject GetMonsterHpBar(CharacterConstants.Grade grade)
         {
@@ -124,6 +140,11 @@ namespace GGemCo2DCore
             {
                 useBattleHudGradeMask = (1 << (int)CharacterConstants.Grade.Common)
                                      | (1 << (int)CharacterConstants.Grade.Boss);
+            }
+            if (useCutsceneDieGradeMask == 0)
+            {
+                useCutsceneDieGradeMask = (1 << (int)CharacterConstants.Grade.Elite)
+                                          | (1 << (int)CharacterConstants.Grade.Boss);
             }
 
             defaultSelfHitStopSeconds = 0.03f;

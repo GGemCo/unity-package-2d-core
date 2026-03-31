@@ -244,10 +244,6 @@ namespace GGemCo2DCore
                 if (cur > 0) return cur;
             }
 
-            // 최후의 폴백: config에 maxIgnoreStacks가 남아있다면 사용(호환 목적)
-            if (_config != null && _config.maxIgnoreStacks > 0)
-                return _config.maxIgnoreStacks;
-
             return 0;
         }
         private void RestoreToMax()

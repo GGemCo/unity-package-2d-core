@@ -160,14 +160,14 @@ namespace GGemCo2DCore
             switch (data.sourceMode)
             {
                 case OverlayTextSourceMode.RuntimeOverride:
-                    if (!string.IsNullOrWhiteSpace(data.runtimeTextKey) &&
+                    if (data.runtimeTextKey != CutsceneKeyTextOverlay.None &&
                         CutsceneManager != null &&
                         CutsceneManager.TryGetOverlayTextOverride(data.runtimeTextKey, out string overrideText))
                     {
                         return overrideText ?? string.Empty;
                     }
 
-                    if (!string.IsNullOrWhiteSpace(data.runtimeTextKey))
+                    if (data.runtimeTextKey != CutsceneKeyTextOverlay.None)
                     {
                         GcLogger.Log($"OverlayText runtime override not found. key={data.runtimeTextKey}");
                     }

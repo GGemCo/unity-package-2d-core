@@ -14,6 +14,10 @@ namespace GGemCo2DCoreEditor
     {
         private SerializedProperty _useBattleHud;
         private SerializedProperty _useBattleHudGradeMask;
+        
+        private SerializedProperty _useCutsceneDie;
+        private SerializedProperty _useCutsceneDieGradeMask;
+        private SerializedProperty _cutsceneUidDie;
 
         private static readonly string[] GradeNames = Enum.GetNames(typeof(CharacterConstants.Grade));
 
@@ -21,13 +25,18 @@ namespace GGemCo2DCoreEditor
         {
             _useBattleHud = serializedObject.FindProperty("useBattleHud");
             _useBattleHudGradeMask = serializedObject.FindProperty("useBattleHudGradeMask");
+            
+            _useCutsceneDie = serializedObject.FindProperty("useCutsceneDie");
+            _useCutsceneDieGradeMask = serializedObject.FindProperty("useCutsceneDieGradeMask");
+            _cutsceneUidDie = serializedObject.FindProperty("cutsceneUidDie");
         }
 
         public override void OnInspectorGUI()
         {
             serializedObject.Update();
 
-            DrawPropertiesExcluding(serializedObject, "m_Script", "useBattleHud", "useBattleHudGradeMask");
+            DrawPropertiesExcluding(serializedObject, "m_Script", "useBattleHud", "useBattleHudGradeMask",
+                "useCutsceneDie", "useCutsceneDieGradeMask", "cutsceneUidDie");
 
             // EditorGUILayout.Space(8);
 
@@ -48,6 +57,27 @@ namespace GGemCo2DCoreEditor
 
                     _useBattleHudGradeMask.intValue = newMask;
                 }
+            }
+            
+            if (_useCutsceneDie != null)
+                EditorGUILayout.PropertyField(_useCutsceneDie);
+            
+            using (new EditorGUI.DisabledScope(_useCutsceneDie != null && !_useCutsceneDie.boolValue))
+            {
+                if (_useCutsceneDieGradeMask != null)
+                {
+                    var content = new GUIContent("Use Cutscene Die Grades", "사망 연출을 사용할 몬스터 등급(멀티 선택)");
+                    var mask = _useCutsceneDieGradeMask.intValue;
+                    var newMask = EditorGUILayout.MaskField(content, mask, GradeNames);
+
+                    // None(0) 선택 방지
+                    if ((newMask & 1) != 0)
+                        newMask &= ~1;
+
+                    _useCutsceneDieGradeMask.intValue = newMask;
+                }
+                if (_cutsceneUidDie != null)
+                    EditorGUILayout.PropertyField(_cutsceneUidDie);
             }
 
             serializedObject.ApplyModifiedProperties();
