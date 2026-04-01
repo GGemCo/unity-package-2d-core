@@ -82,6 +82,10 @@ MonoBehaviour:
     m_Localized: Input Action Data
     m_Metadata:
       m_Items: []
+  - m_Id: 98235697623769088
+    m_Localized: Cutscene Data
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []

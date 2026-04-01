@@ -188,7 +188,7 @@ namespace GGemCo2DCoreEditor
                 return;
             }
 
-            _ = SceneGame.Instance.CutsceneManager.PlayCutscene(_state.SelectedCutscene.Uid);
+            SceneGame.Instance.CutsceneManager.PlayCutscene(_state.SelectedCutscene.Uid);
         }
 
         /// <summary>

@@ -236,6 +236,12 @@ namespace GGemCo2DCoreEditor
 
         public void Save()
         {
+            SaveToDisk();
+            ReimportAsset();
+        }
+
+        public void SaveToDisk()
+        {
             StringBuilder builder = new StringBuilder(4096);
             builder.Append(string.Join("	", Headers));
 
@@ -261,9 +267,16 @@ namespace GGemCo2DCoreEditor
 
             string fullPath = GetFullPath(AssetPath);
             File.WriteAllText(fullPath, builder.ToString(), new UTF8Encoding(false));
+            IsDirty = false;
+        }
+
+        public void ReimportAsset()
+        {
+            if (string.IsNullOrWhiteSpace(AssetPath))
+                return;
+
             AssetDatabase.ImportAsset(AssetPath, ImportAssetOptions.ForceUpdate | ImportAssetOptions.ForceSynchronousImport);
             AssetDatabase.Refresh();
-            IsDirty = false;
         }
 
         public string ToSnapshotJson()

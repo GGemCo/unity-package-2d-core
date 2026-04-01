@@ -8,6 +8,13 @@ using UnityEngine;
 
 namespace GGemCo2DCoreEditor
 {
+    public sealed class SettingCutsceneOptions
+    {
+        public bool ShowConfirmDialog = true;
+        public bool ShowCompletedDialog = true;
+        public EditorSetupContext Context;
+    }
+
     public class SettingCutscene : DefaultAddressable
     {
         private const string Title = "연출 추가하기";
@@ -45,58 +52,68 @@ namespace GGemCo2DCoreEditor
         /// </summary>
         public void Setup(EditorSetupContext ctx = null)
         {
-            if (ctx == null)
+            SyncFromTable(new SettingCutsceneOptions
+            {
+                Context = ctx,
+                ShowConfirmDialog = ctx == null,
+                ShowCompletedDialog = ctx == null,
+            });
+        }
+
+        public static void SyncFromTable(SettingCutsceneOptions options = null)
+        {
+            options ??= new SettingCutsceneOptions();
+            EditorSetupContext ctx = options.Context;
+
+            if (options.ShowConfirmDialog)
             {
                 bool result = EditorUtility.DisplayDialog(TextDisplayDialogTitle, TextDisplayDialogMessage, "네", "아니요");
-                if (!result) return;
+                if (!result)
+                    return;
             }
-            
-            Dictionary<int, StruckTableCutscene> dictionary = TableLoaderManager.LoadCutsceneTable().GetDatas();
-            
-            // AddressableSettings 가져오기 (없으면 생성)
+
+            Dictionary<int, StruckTableCutscene> dictionary = TableLoaderManager.LoadCutsceneTable(true).GetDatas();
+
             AddressableAssetSettings settings = AddressableAssetSettingsDefaultObject.Settings;
             if (!settings)
             {
                 HelperLog.Warn("Addressable 설정을 찾을 수 없습니다. 새로 생성합니다.", ctx);
-                settings = CreateAddressableSettings();
+                settings = new SettingCutscene(null).CreateAddressableSettings();
             }
 
-            // GGemCo_Tables 그룹 가져오기 또는 생성
-            AddressableAssetGroup group = GetOrCreateGroup(settings, targetGroupName);
+            SettingCutscene helper = new SettingCutscene(null);
+            AddressableAssetGroup group = helper.GetOrCreateGroup(settings, helper.targetGroupName);
             if (!group)
             {
-                HelperLog.Error($"'{targetGroupName}' 그룹을 설정할 수 없습니다.", ctx);
+                HelperLog.Error($"'{helper.targetGroupName}' 그룹을 설정할 수 없습니다.", ctx);
                 return;
             }
-            
+
             ClearGroupEntries(settings, group);
-            
-            // foreach 문을 사용하여 딕셔너리 내용을 출력
+
             foreach (KeyValuePair<int, StruckTableCutscene> outerPair in dictionary)
             {
-                var info = outerPair.Value;
-                if (info.Uid <= 0) continue;
-            
+                StruckTableCutscene info = outerPair.Value;
+                if (info.Uid <= 0)
+                    continue;
+
                 string key = $"{ConfigAddressableKey.Cutscene}_{info.Uid}";
                 string assetPath = $"{ConfigAddressablePath.Narrative.Cutscene}/{info.FileName}.json";
-                string label = "";
-                if (info.PreLoad)
-                {
-                    label = ConfigAddressableLabel.Cutscene;
-                }
-            
-                Add(settings, group, key, assetPath, label);
+                string label = info.PreLoad ? ConfigAddressableLabel.Cutscene : string.Empty;
+
+                helper.Add(settings, group, key, assetPath, label);
             }
-            
-            // 설정 저장
+
             settings.SetDirty(AddressableAssetSettings.ModificationEvent.EntryMoved, null, true);
+            AssetDatabase.SaveAssets();
+            AssetDatabase.Refresh();
+
             if (ctx != null)
             {
                 HelperLog.Info("[Addressable] 연출 설정 완료", ctx);
             }
-            else
+            else if (options.ShowCompletedDialog)
             {
-                AssetDatabase.SaveAssets();
                 EditorUtility.DisplayDialog(Title, "[Addressable] 연출 설정 완료", "OK");
             }
         }

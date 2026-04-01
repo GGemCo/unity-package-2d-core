@@ -411,13 +411,35 @@ namespace GGemCo2DCoreEditor
 
         private void SaveCurrentTable()
         {
-            if (_document == null)
+            if (_document == null || _selectedTable == null)
                 return;
 
             try
             {
-                _document.Save();
-                _selectedTable?.ReloadAction?.Invoke();
+                TableEditorSaveContext context = new TableEditorSaveContext
+                {
+                    TableDefinition = _selectedTable,
+                };
+
+                IReadOnlyList<ITableEditorSaveProcessor> processors = TableEditorSaveProcessorRegistry.GetAll();
+                for (int i = 0; i < processors.Count; i++)
+                {
+                    ITableEditorSaveProcessor processor = processors[i];
+                    if (processor.CanProcess(context))
+                        processor.BeforeSave(context);
+                }
+
+                _document.SaveToDisk();
+                _document.ReimportAsset();
+                _selectedTable.ReloadAction?.Invoke();
+
+                for (int i = 0; i < processors.Count; i++)
+                {
+                    ITableEditorSaveProcessor processor = processors[i];
+                    if (processor.CanProcess(context))
+                        processor.AfterSave(context);
+                }
+
                 TableEditorReferenceCache.Invalidate(_selectedTable);
                 ValidateCurrentTable();
                 _undoController?.Commit(_selectedTable.TableKey, _document);

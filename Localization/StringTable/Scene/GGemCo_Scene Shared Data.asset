@@ -88,6 +88,10 @@ MonoBehaviour:
     m_Key: Loading_Text_InputAction
     m_Metadata:
       m_Items: []
+  - m_Id: 98235697623769088
+    m_Key: Loading_Text_Cutscene
+    m_Metadata:
+      m_Items: []
   m_Metadata:
     m_Items: []
   m_KeyGenerator:
