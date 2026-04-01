@@ -89,7 +89,7 @@ namespace GGemCo2DCore
 
         /// <inheritdoc />
         public bool ShouldSuspendBrain =>
-            targetCharacter != null && (targetCharacter.IsStatusDead() || targetCharacter.IsStatusDontControl() || targetCharacter.IsStatusDamage());
+            targetCharacter != null && (targetCharacter.IsStatusDead() || targetCharacter.IsDontControl() || targetCharacter.IsStatusDamage());
 
         #endregion
 
@@ -187,8 +187,7 @@ namespace GGemCo2DCore
             if (targetCharacter == null) return false;
             if (targetCharacter.IsStatusDead()) return false;
             if (targetCharacter.IsStatusAttack()) return false;
-            if (targetCharacter.IsStatusKnockback()) return false;
-            if (targetCharacter.IsStatusDontControl()) return false;
+            if (targetCharacter.IsDontControl()) return false;
             if (targetCharacter.IsStatusDamage()) return false;
             if (targetCharacter.IsStatusMoveForce()) return false;
             return true;

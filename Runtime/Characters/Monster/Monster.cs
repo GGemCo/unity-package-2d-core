@@ -320,7 +320,7 @@ namespace GGemCo2DCore
             bool useCutscene = _monsterSettings.IsUseCutsceneDieEnabledFor(Grade);
             if (!useCutscene) return;
             SceneGame.Instance.CutsceneManager.SetOverlayTextOverride(CutsceneKeyTextOverlay.MonsterName, characterName);
-            _ = SceneGame.Instance.CutsceneManager.PlayCutscene(_monsterSettings.CutsceneUidDie);
+            SceneGame.Instance.CutsceneManager.PlayCutscene(_monsterSettings.CutsceneUidDie);
         }
         protected override void OnDestroy()
         {

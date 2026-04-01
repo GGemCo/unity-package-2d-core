@@ -54,20 +54,11 @@ namespace GGemCo2DCore
             /// 움직이지 못함
             /// </summary>
             DontMove,
-            /// <summary>
-            /// 조작/입력 기반 제어를 할 수 없음(그로기/기절/컷씬 등)
-            /// - 이동/공격/스킬/상호작용 등, 플레이어/AI 제어가 차단되는 상태
-            /// </summary>
-            DontControl,
-            /// <summary>
-            /// 움직이지 못함
-            /// </summary>
             CastingSkill,
             UseSkill,
             MoveForce,
             Damage,
             Jump,
-            Knockback,
             Dash,
             Climb,
             Push,

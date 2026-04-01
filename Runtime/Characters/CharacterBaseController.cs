@@ -99,7 +99,7 @@ namespace GGemCo2DCore
         /// </summary>
         public virtual bool Run()
         {
-            if (targetCharacter.IsStatusDontMove() || targetCharacter.IsStatusDontControl()) return false;
+            if (targetCharacter.IsStatusDontMove() || targetCharacter.IsDontControl()) return false;
             if (targetCharacter.IsStatusAttack())   return false;
             if (targetCharacter.IsStatusDead())     return false;
 
@@ -202,8 +202,7 @@ namespace GGemCo2DCore
             if (targetCharacter.IsStatusMoveForce()) return false;
             if (targetCharacter.IsStatusDead())      return false;
             if (targetCharacter.IsStatusDamage())    return false;
-            if (targetCharacter.IsStatusKnockback()) return false;
-            if (targetCharacter.IsStatusDontControl()) return false;
+            if (targetCharacter.IsDontControl()) return false;
             return true;
         }
     }

@@ -11,6 +11,10 @@ namespace GGemCo2DCore
         private readonly CharacterStateTracker _stateTracker = new();
         private bool _isAggro;
 
+        public bool IsDontControl()
+        {
+            return HitStopController.IsActive || _crowdControlController.IsActive || IsStatusUseSkill();
+        }
         /// <summary>
         /// 현재 상태가 사망인지 확인합니다.
         /// </summary>
@@ -35,11 +39,11 @@ namespace GGemCo2DCore
         /// <returns>현재 상태가 이동 금지 상태이면 <see langword="true"/>를 반환합니다.</returns>
         public bool IsStatusDontMove() => _stateTracker.CurrentStatus == CharacterConstants.CharacterStatus.DontMove;
 
-        /// <summary>
-        /// 현재 상태가 조작 금지인지 확인합니다.
-        /// </summary>
-        /// <returns>현재 상태가 조작 금지 상태이면 <see langword="true"/>를 반환합니다.</returns>
-        public bool IsStatusDontControl() => _stateTracker.CurrentStatus == CharacterConstants.CharacterStatus.DontControl;
+        // /// <summary>
+        // /// 현재 상태가 조작 금지인지 확인합니다.
+        // /// </summary>
+        // /// <returns>현재 상태가 조작 금지 상태이면 <see langword="true"/>를 반환합니다.</returns>
+        // public bool IsStatusDontControl() => _dontControl == true;
 
         /// <summary>
         /// 현재 상태가 달리기인지 확인합니다.
@@ -77,11 +81,11 @@ namespace GGemCo2DCore
         /// <returns>현재 상태가 점프 상태이면 <see langword="true"/>를 반환합니다.</returns>
         public bool IsStatusJump() => _stateTracker.CurrentStatus == CharacterConstants.CharacterStatus.Jump;
 
-        /// <summary>
-        /// 현재 상태가 넉백인지 확인합니다.
-        /// </summary>
-        /// <returns>현재 상태가 넉백 상태이면 <see langword="true"/>를 반환합니다.</returns>
-        public bool IsStatusKnockback() => _stateTracker.CurrentStatus == CharacterConstants.CharacterStatus.Knockback;
+        // /// <summary>
+        // /// 현재 상태가 넉백인지 확인합니다.
+        // /// </summary>
+        // /// <returns>현재 상태가 넉백 상태이면 <see langword="true"/>를 반환합니다.</returns>
+        // public bool IsStatusKnockback() => _knockback == true;
 
         /// <summary>
         /// 현재 상태가 대시인지 확인합니다.
@@ -197,10 +201,14 @@ namespace GGemCo2DCore
         /// </summary>
         public void SetStatusDontMove() => SetStatus(CharacterConstants.CharacterStatus.DontMove);
 
-        /// <summary>
-        /// 액션 상태를 DontControl로 설정합니다.
-        /// </summary>
-        public void SetStatusDontControl() => SetStatus(CharacterConstants.CharacterStatus.DontControl);
+        // /// <summary>
+        // /// 액션 상태를 DontControl로 설정합니다.
+        // /// </summary>
+        // public void SetStatusDontControl(bool value = true)
+        // {
+        //     GcLogger.Log($"SetStatusDontControl {_dontControl} -> {value}");
+        //     _dontControl = value;
+        // }
 
         /// <summary>
         /// 액션 상태를 MoveForce로 설정합니다.
@@ -227,10 +235,13 @@ namespace GGemCo2DCore
         /// </summary>
         public void SetStatusJump() => SetStatus(CharacterConstants.CharacterStatus.Jump);
 
-        /// <summary>
-        /// 액션 상태를 Knockback으로 설정합니다.
-        /// </summary>
-        public void SetStatusKnockback() => SetStatus(CharacterConstants.CharacterStatus.Knockback);
+        // /// <summary>
+        // /// 액션 상태를 Knockback으로 설정합니다.
+        // /// </summary>
+        // public void SetStatusKnockback(bool value = true)
+        // {
+        //     _knockback = value;
+        // }
 
         /// <summary>
         /// 액션 상태를 Dash로 설정합니다.
@@ -330,10 +341,9 @@ namespace GGemCo2DCore
         /// <returns>정지 요청을 처리할 수 있으면 <see langword="true"/>를 반환합니다.</returns>
         private bool CanStopCurrentAction(bool isForce)
         {
-            if (isForce) return true;
             if (IsStatusDead()) return false;
+            if (isForce) return true;
             if (IsStatusIdle()) return false;
-            if (IsStatusKnockback()) return false;
             return true;
         }
 

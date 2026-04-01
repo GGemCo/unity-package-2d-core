@@ -266,6 +266,10 @@ namespace GGemCo2DCore
             
             if (remainHp <= 0)
             {
+                if (crowdControlUid > 0)
+                {
+                    _characterBase.ApplyCrowdControl(crowdControlUid, metadataDamage.attacker);
+                }
                 // 사망 처리 전에 입력 액션을 먼저 정리해 후속 입력이 잠기지 않도록 합니다.
                 incomingHitActionCanceler?.CancelActionsOnIncomingHit(IncomingHitCancelReason.Death);
 
@@ -276,6 +280,9 @@ namespace GGemCo2DCore
             }
             else
             {
+                // 순서 중요.
+                _characterBase.SetStatusDamage();
+                
                 bool shouldPlayDamageReaction = !suppressHitReactionByGuard;
                 CharacterConstants.HitReactionType hitReactionType = CharacterConstants.HitReactionType.None;
                 
@@ -311,12 +318,10 @@ namespace GGemCo2DCore
                     // CC 처리가 있을 때 
                     else if (crowdControlUid > 0)
                     {
-                        _characterBase.ApplyCrowdControl(crowdControlUid, metadataDamage.attacker);
+                        _characterBase.ApplyCrowdControl(crowdControlUid, metadataDamage.attacker, true);
                     }
                     else if (!metadataDamage.HasPendingAfterDamageCrowdControl)
                     {
-                        // 순서 중요.
-                        _characterBase.SetStatusDamage();
                         _characterBase.CharacterAnimationController.PlayDamageAnimation();
                     }
                 }

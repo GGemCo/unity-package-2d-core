@@ -8,8 +8,6 @@ namespace GGemCo2DCore
     public readonly struct HitStopRequest
     {
         public readonly float DurationSeconds;
-        public readonly bool LockControl;
-        public readonly bool LockMovement;
         public readonly bool PauseAnimation;
         public readonly bool FreezePhysics;
         public readonly int SourceSkillUid;
@@ -19,15 +17,11 @@ namespace GGemCo2DCore
         /// </summary>
         public HitStopRequest(
             float durationSeconds,
-            bool lockControl = true,
-            bool lockMovement = true,
             bool pauseAnimation = true,
             bool freezePhysics = true,
             int sourceSkillUid = 0)
         {
             DurationSeconds = Mathf.Max(0f, durationSeconds);
-            LockControl = lockControl;
-            LockMovement = lockMovement;
             PauseAnimation = pauseAnimation;
             FreezePhysics = freezePhysics;
             SourceSkillUid = sourceSkillUid;

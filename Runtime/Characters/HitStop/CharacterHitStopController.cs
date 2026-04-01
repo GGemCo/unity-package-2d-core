@@ -86,15 +86,6 @@ namespace GGemCo2DCore
             {
                 _savedStatus = _character.GetCurrentStatus();
                 _savedStatusValid = true;
-
-                if (request.LockControl)
-                {
-                    _character.SetStatusDontControl();
-                }
-                else if (request.LockMovement)
-                {
-                    _character.SetStatusDontMove();
-                }
             }
 
             if (request.PauseAnimation && _animationController != null)
@@ -168,9 +159,6 @@ namespace GGemCo2DCore
                 case CharacterConstants.CharacterStatus.DontMove:
                     _character.SetStatusDontMove();
                     break;
-                case CharacterConstants.CharacterStatus.DontControl:
-                    _character.SetStatusDontControl();
-                    break;
                 case CharacterConstants.CharacterStatus.CastingSkill:
                     _character.SetStatusCastingSkill();
                     break;
@@ -185,9 +173,6 @@ namespace GGemCo2DCore
                     break;
                 case CharacterConstants.CharacterStatus.Jump:
                     _character.SetStatusJump();
-                    break;
-                case CharacterConstants.CharacterStatus.Knockback:
-                    _character.SetStatusKnockback();
                     break;
                 case CharacterConstants.CharacterStatus.Dash:
                     _character.SetStatusDash();

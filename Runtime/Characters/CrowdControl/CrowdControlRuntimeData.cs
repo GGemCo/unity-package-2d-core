@@ -42,9 +42,6 @@ namespace GGemCo2DCore
         public float DownWaitTime;
         public float RecoverTime;
 
-        public bool IsUseKnockbackStatus;
-        public bool IsUseDontControlStatus;
-
         public string StaggerAnimationName;
 
         public bool IsStopOnWall;
@@ -54,6 +51,9 @@ namespace GGemCo2DCore
         public bool UseWallImpactReaction;
         public float WallImpactMinSpeed;
         public int WallImpactCrowdControlUid;
+
+        // CC 처리 후 Character.Stop 처리를 할지 여부
+        public bool IsEndCharacterStop;
 
         public CrowdControlRuntimeData Clone()
         {
@@ -94,8 +94,6 @@ namespace GGemCo2DCore
                 EndYAbsolute = 0f,
                 DownWaitTime = 0f,
                 RecoverTime = 0f,
-                IsUseKnockbackStatus = row.IsUseKnockbackStatus,
-                IsUseDontControlStatus = row.IsUseDontControlStatus,
                 StaggerAnimationName = row.StaggerAnimationName,
                 IsStopOnWall = false,
                 IsGroundOnly = false,
@@ -103,6 +101,7 @@ namespace GGemCo2DCore
                 UseWallImpactReaction = false,
                 WallImpactMinSpeed = 0f,
                 WallImpactCrowdControlUid = 0,
+                IsEndCharacterStop = false
             };
         }
     }

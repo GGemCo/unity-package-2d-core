@@ -139,8 +139,6 @@ namespace GGemCo2DCore
 
             ApplyHitStop(new HitStopRequest(
                 seconds,
-                lockControl: config.LockControl,
-                lockMovement: config.LockMovement,
                 pauseAnimation: config.PauseAnimation,
                 freezePhysics: config.FreezePhysics,
                 sourceSkillUid: sourceSkillUid));
