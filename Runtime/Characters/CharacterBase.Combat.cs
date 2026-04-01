@@ -15,11 +15,12 @@ namespace GGemCo2DCore
         /// </summary>
         /// <param name="dieReasonType">사망 원인입니다.</param>
         /// <param name="attacker">사망을 유발한 공격자 오브젝트입니다.</param>
-        public void Dead(CharacterConstants.DieReasonType dieReasonType = CharacterConstants.DieReasonType.None, GameObject attacker = null)
+        /// <param name="playDeadAnimation">사망 애니메이션 재생 여부.</param>
+        public void Dead(CharacterConstants.DieReasonType dieReasonType = CharacterConstants.DieReasonType.None, GameObject attacker = null, bool playDeadAnimation = true)
         {
             SetStatusDead();
             SetBattleStatusNone();
-            if (dieReasonType != CharacterConstants.DieReasonType.EndTilemapY)
+            if (dieReasonType != CharacterConstants.DieReasonType.EndTilemapY && playDeadAnimation)
                 CharacterAnimationController.PlayDeadAnimation();
 
             AffectRuntimeBridge.RemoveAll(gameObject);
@@ -129,10 +130,11 @@ namespace GGemCo2DCore
         /// </summary>
         /// <param name="crowdControlUid">적용할 Crowd Control 식별자입니다.</param>
         /// <param name="metadataDamageAttacker">원인 공격자 오브젝트입니다.</param>
-        public void ApplyCrowdControl(int crowdControlUid, GameObject metadataDamageAttacker)
+        /// <param name="isEndCharacterStop">CC 완료 후 CharacterBase.Stop 호출 여부.</param>
+        public void ApplyCrowdControl(int crowdControlUid, GameObject metadataDamageAttacker, bool isEndCharacterStop = false)
         {
             if (GcLogger.IsNull(_crowdControlController, nameof(CharacterCrowdControlController))) return;
-            _crowdControlController.ApplyCrowdControlByUid(crowdControlUid, metadataDamageAttacker);
+            _crowdControlController.ApplyCrowdControlByUid(crowdControlUid, metadataDamageAttacker, isEndCharacterStop);
         }
 
         /// <summary>
@@ -140,10 +142,11 @@ namespace GGemCo2DCore
         /// </summary>
         /// <param name="crowdControlUids">적용할 Crowd Control 식별자 목록입니다.</param>
         /// <param name="metadataDamageAttacker">원인 공격자 오브젝트입니다.</param>
-        public void ApplyCrowdControlSequence(IReadOnlyList<int> crowdControlUids, GameObject metadataDamageAttacker)
+        /// <param name="isEndCharacterStop">CC 완료 후 CharacterBase.Stop 호출 여부.</param>
+        public void ApplyCrowdControlSequence(IReadOnlyList<int> crowdControlUids, GameObject metadataDamageAttacker, bool isEndCharacterStop)
         {
             if (GcLogger.IsNull(_crowdControlController, nameof(CharacterCrowdControlController))) return;
-            _crowdControlController.ApplyCrowdControlSequenceByUid(crowdControlUids, metadataDamageAttacker, gameObject);
+            _crowdControlController.ApplyCrowdControlSequenceByUid(crowdControlUids, metadataDamageAttacker, gameObject, isEndCharacterStop);
         }
     }
 }

@@ -1,4 +1,5 @@
-﻿using UnityEngine;
+﻿using System.Collections.Generic;
+using UnityEngine;
 
 namespace GGemCo2DCore
 {
@@ -43,6 +44,8 @@ namespace GGemCo2DCore
         /// 일반 피격 모션을 먼저 재생하면 HitStop/CC 전환이 어색해질 수 있을 때 사용합니다.
         /// </summary>
         public bool HasPendingAfterDamageCrowdControl;
+
+        public List<int> ResolvedOnHitCrowdControls;
     }
     /// <summary>
     /// 캐릭터 데미지 처리
@@ -134,6 +137,7 @@ namespace GGemCo2DCore
             GameObject attacker = metadataDamage.attacker;
             int affectUid = metadataDamage.affectUid;
             int crowdControlUid = metadataDamage.crowdControlUid;
+            List<int> resolvedOnHitCrowdControls = metadataDamage.ResolvedOnHitCrowdControls;
 
             // 데미지 텍스트 색상 설정
             Color damageTextColor = _textColorDamageMonster;
@@ -276,7 +280,13 @@ namespace GGemCo2DCore
                 // 사망했을 때, UI 표현을 위해 0으로 처리
                 remainHp = 0;
                 _characterBase.CurrentMp.OnNext(0);
-                _characterBase.Dead(CharacterConstants.DieReasonType.Battle, attacker);
+                bool playDeadAnimation = true;
+                // CC 가 있으면 CC 처리 후 사망 처리
+                if ((resolvedOnHitCrowdControls != null && resolvedOnHitCrowdControls.Count > 0) || crowdControlUid > 0)
+                {
+                    playDeadAnimation = false;
+                }
+                _characterBase.Dead(CharacterConstants.DieReasonType.Battle, attacker, playDeadAnimation);
             }
             else
             {
@@ -332,6 +342,9 @@ namespace GGemCo2DCore
                     _characterBase.AddAffect(affectUid, metadataDamage.attacker);
                 }
             }
+
+            _characterBase.ApplyCrowdControlSequence(resolvedOnHitCrowdControls, metadataDamage.attacker, false);
+            
             _characterBase.CurrentHp.OnNext(remainHp);
         }
         public void EnableSuperArmor(bool enable)
