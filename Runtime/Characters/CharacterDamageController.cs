@@ -290,9 +290,6 @@ namespace GGemCo2DCore
             }
             else
             {
-                // 순서 중요.
-                _characterBase.SetStatusDamage();
-                
                 bool shouldPlayDamageReaction = !suppressHitReactionByGuard;
                 CharacterConstants.HitReactionType hitReactionType = CharacterConstants.HitReactionType.None;
                 
@@ -332,6 +329,8 @@ namespace GGemCo2DCore
                     }
                     else if (!metadataDamage.HasPendingAfterDamageCrowdControl)
                     {
+                        // 순서 중요.
+                        _characterBase.SetStatusDamage();
                         _characterBase.CharacterAnimationController.PlayDamageAnimation();
                     }
                 }
@@ -343,7 +342,13 @@ namespace GGemCo2DCore
                 }
             }
 
-            _characterBase.ApplyCrowdControlSequence(resolvedOnHitCrowdControls, metadataDamage.attacker, false);
+            bool isEndCharacterStop = false;
+            // CC 가 있으면 CC 처리 후 사망 처리
+            if ((resolvedOnHitCrowdControls != null && resolvedOnHitCrowdControls.Count > 0) || crowdControlUid > 0)
+            {
+                isEndCharacterStop = true;
+            }
+            _characterBase.ApplyCrowdControlSequence(resolvedOnHitCrowdControls, metadataDamage.attacker, isEndCharacterStop);
             
             _characterBase.CurrentHp.OnNext(remainHp);
         }
