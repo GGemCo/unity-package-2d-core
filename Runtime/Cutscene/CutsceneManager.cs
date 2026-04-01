@@ -220,6 +220,44 @@ namespace GGemCo2DCore
             _capturedCharacterAnimationTimeScales.Clear();
         }
 
+        public void PlayCutscene(int uid)
+        {
+            var info = TableLoaderManager.Instance.GetCutsceneData(uid);
+            if (info == null)
+            {
+                return;
+            }
+
+            if (!info.PreLoad)
+            {
+                _ = PlayCutsceneAsync(uid);
+                return;
+            }
+            string key = $"{ConfigAddressableKey.Cutscene}_{info.Uid}";
+            _currentCutscene = AddressableLoaderCutscene.Instance.GetCutsceneDataByKey(key);
+            if (GcLogger.IsNull(_currentCutscene, $"{nameof(TableCutscene)} 테이블에 정보가 없습니다. Uid: {info.Uid}")) return;
+            
+            Reset();
+            _currentState = State.Loading;
+            
+            // 카메라 원본 size 저장
+            _originalOrthographicSize = SceneGame.Instance.mainCamera.orthographicSize;
+
+            // 모든 캐릭터 활성화, 컬링 적용되지 않음
+            _sceneGame.mapManager.ActiveAllCharacters();
+
+            if (_testTool)
+            {
+                _testTool.SetActive(false);
+            }
+
+            // 즉시 준비 가능한 컷신은 현재 프레임에 바로 재생을 시작합니다.
+            if (!TryPrepareAndPlayImmediate())
+            {
+                _sceneGame.StartCoroutine(PrepareAndPlay());
+            }
+        }
+        
         /// <summary>
         /// 지정한 UID의 컷신 데이터를 로드하고 재생 준비를 시작합니다.
         /// Addressable에서 JSON 에셋을 불러온 뒤 파싱하여 준비 코루틴을 실행합니다.
@@ -227,7 +265,7 @@ namespace GGemCo2DCore
         /// <param name="uid">재생할 컷신의 고유 식별자입니다.</param>
         /// <returns>컷신 로드 및 준비 시작이 완료될 때까지 비동기로 대기하는 작업입니다.</returns>
         /// <exception cref="Exception">컷신 로드 또는 파싱 과정에서 예외가 발생할 수 있으며, 내부에서 로그를 남깁니다.</exception>
-        public async Task PlayCutscene(int uid)
+        private async Task PlayCutsceneAsync(int uid)
         {
             try
             {
@@ -263,8 +301,11 @@ namespace GGemCo2DCore
                     _testTool.SetActive(false);
                 }
 
-                // 리소스 생성, 프리팹 로딩, 사운드 등 선행 처리
-                _sceneGame.StartCoroutine(PrepareAndPlay());
+                // 즉시 준비 가능한 컷신은 현재 프레임에 바로 재생을 시작합니다.
+                if (!TryPrepareAndPlayImmediate())
+                {
+                    _sceneGame.StartCoroutine(PrepareAndPlay());
+                }
             }
             catch (Exception e)
             {
@@ -292,7 +333,58 @@ namespace GGemCo2DCore
 
             _currentState = State.Playing;
         }
+        
+        /// <summary>
+        /// 현재 컷신의 모든 이벤트가 즉시 준비 가능한 경우 같은 프레임에 재생을 시작합니다.
+        /// 하나라도 비동기 준비가 필요하면 <see langword="false"/>를 반환합니다.
+        /// </summary>
+        private bool TryPrepareAndPlayImmediate()
+        {
+            if (_currentCutscene == null)
+            {
+                return false;
+            }
 
+            _currentState = State.Ready;
+            _activeControllers.Clear();
+
+            for (int i = 0; i < _currentCutscene.events.Count; i++)
+            {
+                var cutsceneEvent = _currentCutscene.events[i];
+                var controller = CreateController(cutsceneEvent.type);
+                if (controller == null)
+                {
+                    continue;
+                }
+
+                if (!controller.SupportsImmediateReady)
+                {
+                    _activeControllers.Clear();
+                    return false;
+                }
+
+                cutsceneEvent.Controller = controller;
+                _activeControllers.Add(controller);
+                controller.ReadyImmediate(cutsceneEvent);
+            }
+
+            StartPlaybackImmediate();
+            return true;
+        }
+        
+        
+        /// <summary>
+        /// 컷신 재생 상태를 즉시 시작 상태로 전환하고 0초 이벤트를 현재 프레임에서 바로 실행합니다.
+        /// </summary>
+        private void StartPlaybackImmediate()
+        {
+            _playTimer = 0f;
+            _currentIndex = 0;
+            _currentState = State.Playing;
+
+            TriggerDueEvents();
+        }
+        
         /// <summary>
         /// 현재 재생 중인 컷신의 타임라인을 진행시키고, 실행 시점에 도달한 이벤트를 트리거합니다.
         /// 활성 컨트롤러의 프레임 업데이트도 함께 수행합니다.
@@ -320,6 +412,20 @@ namespace GGemCo2DCore
             OnCutsceneEnd();
         }
 
+        /// <summary>
+        /// 현재 재생 시간 이하인 이벤트를 모두 실행합니다.
+        /// </summary>
+        private void TriggerDueEvents()
+        {
+            while (_currentIndex < _currentCutscene.events.Count &&
+                   _currentCutscene.events[_currentIndex].time <= _playTimer)
+            {
+                var evt = _currentCutscene.events[_currentIndex];
+                evt.Controller?.Trigger(evt);
+                _currentIndex++;
+            }
+        }
+        
         /// <summary>
         /// 컷신 종료 시 호출되어 컨트롤러, 생성 객체, UI 상태 및 카메라 상태를 정리하고 복원합니다.
         /// </summary>

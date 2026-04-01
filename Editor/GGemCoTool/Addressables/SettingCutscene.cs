@@ -79,7 +79,11 @@ namespace GGemCo2DCoreEditor
             
                 string key = $"{ConfigAddressableKey.Cutscene}_{info.Uid}";
                 string assetPath = $"{ConfigAddressablePath.Narrative.Cutscene}/{info.FileName}.json";
-                string label = ConfigAddressableLabel.Cutscene;
+                string label = "";
+                if (info.PreLoad)
+                {
+                    label = ConfigAddressableLabel.Cutscene;
+                }
             
                 Add(settings, group, key, assetPath, label);
             }

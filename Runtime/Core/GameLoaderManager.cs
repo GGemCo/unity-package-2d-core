@@ -192,6 +192,7 @@ namespace GGemCo2DCore
             var saveData = CompatObjectFind.FindFirst<SaveDataLoader>() ?? new GameObject("SaveDataLoader").AddComponent<SaveDataLoader>();
             var loc = CompatObjectFind.FindFirst<LocalizationManager>() ?? new GameObject("LocalizationManager").AddComponent<LocalizationManager>();
             var addressableLoaderCharacterImageName = CompatObjectFind.FindFirst<AddressableLoaderCharacterImageName>() ?? new GameObject("AddressableLoaderCharacterImageName").AddComponent<AddressableLoaderCharacterImageName>();
+            var addressableLoaderCutscene = CompatObjectFind.FindFirst<AddressableLoaderCutscene>() ?? new GameObject("AddressableLoaderCutscene").AddComponent<AddressableLoaderCutscene>();
             
             // 테이블 대상 목록은 프로젝트/씬에 따라 별도 주입(예: ScriptableObject나 Config에서)
             var targetTables = ConfigAddressableTable.All; // 사용 중인 곳에서 구현(예시)
@@ -249,6 +250,14 @@ namespace GGemCo2DCore
                 localizedKey: LocalizationConstants.Keys.Loading.TextTypeSound(),
                 startTask: () => addressableLoaderCharacterImageName.LoadAsync(),
                 getProgress: () => addressableLoaderCharacterImageName.GetLoadProgress()
+            ));
+            
+            Register(new AddressableTaskStep(
+                id: "core.cutscene",
+                order: 370,
+                localizedKey: LocalizationConstants.Keys.Loading.TextTypeCutscene(),
+                startTask: () => addressableLoaderCutscene.LoadAsync(),
+                getProgress: () => addressableLoaderCutscene.GetLoadProgress()
             ));
 
             Register(new SaveDataLoadStep(

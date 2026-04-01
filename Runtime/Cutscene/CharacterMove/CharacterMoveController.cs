@@ -34,6 +34,19 @@ namespace GGemCo2DCore
         }
 
         /// <summary>
+        /// 이 컨트롤러는 캐릭터 생성 시 한 프레임 대기가 필요할 수 있으므로 즉시 준비를 지원하지 않습니다.
+        /// </summary>
+        public bool SupportsImmediateReady => false;
+
+        /// <summary>
+        /// 즉시 준비 경로에서는 별도 동작을 수행하지 않습니다.
+        /// </summary>
+        public void ReadyImmediate(CutsceneEvent evt)
+        {
+        }
+
+
+        /// <summary>
         /// 이동 대상 캐릭터를 준비합니다.
         /// 존재하지 않을 경우 생성 및 초기화를 수행합니다.
         /// </summary>

@@ -42,11 +42,22 @@ namespace GGemCo2DCore
         }
 
         /// <summary>
+        /// 다음 프레임 대기 없이 즉시 준비를 지원합니다.
+        /// </summary>
+        public bool SupportsImmediateReady => true;
+
+
+        /// <summary>
         /// 사전 준비 단계입니다. 현재는 별도 처리 없이 한 프레임을 양보합니다.
         /// </summary>
+        public void ReadyImmediate(CutsceneEvent evt)
+        {
+        }
+
         public IEnumerator Ready(CutsceneEvent evt)
         {
-            yield return null;
+            ReadyImmediate(evt);
+            yield break;
         }
 
         /// <summary>

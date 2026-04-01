@@ -8,6 +8,7 @@ namespace GGemCo2DCore
     public class StruckTableCutscene
     {
         public int Uid;
+        public bool PreLoad;
         public string Memo;
         public string FileName;
     }
@@ -22,6 +23,7 @@ namespace GGemCo2DCore
             return new StruckTableCutscene
             {
                 Uid = MathHelper.ParseInt(data["Uid"]),
+                PreLoad = ConvertBoolean(data["PreLoad"]),
                 Memo = data["Memo"],
                 FileName = data["FileName"],
             };

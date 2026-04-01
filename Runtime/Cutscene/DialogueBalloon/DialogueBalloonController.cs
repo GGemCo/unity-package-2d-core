@@ -33,18 +33,31 @@ namespace GGemCo2DCore
         }
 
         /// <summary>
+        /// 다음 프레임 대기 없이 즉시 준비를 지원합니다.
+        /// </summary>
+        public bool SupportsImmediateReady => true;
+
+
+        /// <summary>
         /// 말풍선 이벤트 실행 전 필요한 사전 준비를 수행합니다.
         /// 현재는 별도의 준비 작업 없이 한 프레임을 양보합니다.
         /// </summary>
         /// <param name="evt">준비할 컷신 이벤트 정보입니다.</param>
         /// <returns>준비 과정을 비동기적으로 진행하기 위한 열거자입니다.</returns>
-        public IEnumerator Ready(CutsceneEvent evt)
+        public void ReadyImmediate(CutsceneEvent evt)
         {
             if (evt.type != CutsceneEventType.DialogueBalloon)
-                yield break;
-            
+            {
+                return;
+            }
+
             // TODO: 필요 시 대상 캐릭터 유효성 검사나 말풍선 사전 할당을 이 단계에서 수행합니다.
-            yield return null;
+        }
+
+        public IEnumerator Ready(CutsceneEvent evt)
+        {
+            ReadyImmediate(evt);
+            yield break;
         }
 
         /// <summary>

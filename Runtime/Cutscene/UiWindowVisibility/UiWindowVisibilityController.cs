@@ -39,14 +39,26 @@ namespace GGemCo2DCore
         }
 
         /// <summary>
+        /// 다음 프레임 대기 없이 즉시 준비를 지원합니다.
+        /// </summary>
+        public bool SupportsImmediateReady => true;
+
+
+        /// <summary>
         /// 컷신 이벤트 실행 전 필요한 준비를 수행합니다.
         /// 현재 구현에서는 별도 준비 작업 없이 한 프레임을 양보합니다.
         /// </summary>
         /// <param name="evt">준비할 컷신 이벤트입니다.</param>
         /// <returns>준비 완료까지의 코루틴입니다.</returns>
+        public void ReadyImmediate(CutsceneEvent evt)
+        {
+            _windowManager = SceneGame.Instance != null ? SceneGame.Instance.uIWindowManager : null;
+        }
+
         public IEnumerator Ready(CutsceneEvent evt)
         {
-            yield return null;
+            ReadyImmediate(evt);
+            yield break;
         }
 
         /// <summary>

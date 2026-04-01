@@ -26,20 +26,31 @@ namespace GGemCo2DCore
         }
 
         /// <summary>
+        /// 다음 프레임 대기 없이 즉시 준비를 지원합니다.
+        /// </summary>
+        public bool SupportsImmediateReady => true;
+
+
+        /// <summary>
         /// Overlay Presenter를 준비합니다.
         /// 없을 경우 생성하여 이후 텍스트 출력에 사용합니다.
         /// </summary>
         /// <param name="evt">준비할 컷신 이벤트입니다.</param>
         /// <returns>비동기 준비 처리를 위한 열거자입니다.</returns>
-        public IEnumerator Ready(CutsceneEvent evt)
+        public void ReadyImmediate(CutsceneEvent evt)
         {
             if (evt.type != CutsceneEventType.OverlayText)
             {
-                yield break;
+                return;
             }
 
             _presenter = CutsceneManager.GetOrCreateOverlayPresenter();
-            yield return null;
+        }
+
+        public IEnumerator Ready(CutsceneEvent evt)
+        {
+            ReadyImmediate(evt);
+            yield break;
         }
 
         /// <summary>

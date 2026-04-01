@@ -16,6 +16,18 @@ namespace GGemCo2DCore
         IEnumerator Ready(CutsceneEvent evt);
 
         /// <summary>
+        /// 현재 컨트롤러가 다음 프레임 대기 없이 즉시 준비 가능한지 여부를 반환합니다.
+        /// </summary>
+        bool SupportsImmediateReady { get; }
+
+        /// <summary>
+        /// 코루틴 없이 즉시 준비 단계를 수행합니다.
+        /// 즉시 준비를 지원하지 않는 컨트롤러는 빈 구현을 둘 수 있습니다.
+        /// </summary>
+        /// <param name="evt">준비할 컷신 이벤트 데이터입니다.</param>
+        void ReadyImmediate(CutsceneEvent evt);
+
+        /// <summary>
         /// 지정한 컷신 이벤트를 실제로 시작하거나 즉시 반영합니다.
         /// </summary>
         /// <param name="evt">실행할 컷신 이벤트 데이터입니다.</param>

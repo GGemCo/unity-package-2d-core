@@ -25,14 +25,20 @@ namespace GGemCo2DCore
         }
 
         /// <summary>
+        /// 다음 프레임 대기 없이 즉시 준비를 지원합니다.
+        /// </summary>
+        public bool SupportsImmediateReady => true;
+
+
+        /// <summary>
         /// UI Panel 이벤트 실행 전 Presenter를 준비하고,
         /// 필요 시 Panel을 미리 생성합니다.
         /// </summary>
-        public IEnumerator Ready(CutsceneEvent evt)
+        public void ReadyImmediate(CutsceneEvent evt)
         {
             if (evt.type != CutsceneEventType.UiPanel)
             {
-                yield break;
+                return;
             }
 
             _presenter = CutsceneManager.GetOrCreateUiPanelPresenter();
@@ -49,8 +55,12 @@ namespace GGemCo2DCore
                     _presenter.ConfigurePanel(data.panelId, data);
                 }
             }
+        }
 
-            yield return null;
+        public IEnumerator Ready(CutsceneEvent evt)
+        {
+            ReadyImmediate(evt);
+            yield break;
         }
 
         /// <summary>
