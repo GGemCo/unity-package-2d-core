@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using R3;
 using UnityEngine;
 
@@ -9,11 +10,45 @@ namespace GGemCo2DCore
     public partial class CharacterBase
     {
         private readonly CharacterStateTracker _stateTracker = new();
+        private readonly HashSet<object> _controlLockTokens = new();
         private bool _isAggro;
 
+        /// <summary>
+        /// Affect, 컷씬, 대화 등 외부 시스템이 캐릭터 조작을 잠글 때 사용하는 토큰을 획득합니다.
+        /// </summary>
+        /// <param name="owner">잠금 요청 소유자입니다. null이면 새 토큰을 생성합니다.</param>
+        /// <returns>해제 시 사용할 잠금 토큰입니다.</returns>
+        public object AcquireControlLock(object owner = null)
+        {
+            object token = owner ?? new object();
+            _controlLockTokens.Add(token);
+            return token;
+        }
+
+        /// <summary>
+        /// 이전에 획득한 외부 제어 잠금을 해제합니다.
+        /// </summary>
+        /// <param name="token">해제할 잠금 토큰입니다.</param>
+        public void ReleaseControlLock(object token)
+        {
+            if (token == null)
+            {
+                return;
+            }
+
+            _controlLockTokens.Remove(token);
+        }
+
+        /// <summary>
+        /// HitStop, CrowdControl, 스킬 사용, 외부 제어 잠금 중 하나라도 활성화되어 있으면 조작 불가로 판단합니다.
+        /// </summary>
+        /// <returns>현재 캐릭터를 조작할 수 없으면 <see langword="true"/>를 반환합니다.</returns>
         public bool IsDontControl()
         {
-            return HitStopController.IsActive || _crowdControlController.IsActive || IsStatusUseSkill();
+            return HitStopController.IsActive ||
+                   _crowdControlController.IsActive ||
+                   IsStatusUseSkill() ||
+                   _controlLockTokens.Count > 0;
         }
         /// <summary>
         /// 현재 상태가 사망인지 확인합니다.
