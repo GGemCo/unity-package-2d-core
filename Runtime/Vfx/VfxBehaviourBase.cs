@@ -170,6 +170,19 @@ namespace GGemCo2DCore
 
         public virtual void DestroyForce()
         {
+            if (this == null)
+                return;
+
+            var go = gameObject;
+            if (go == null)
+                return;
+
+            if (!go.activeInHierarchy || !isActiveAndEnabled)
+            {
+                ReleaseImmediateInternal();
+                return;
+            }
+
             BeginReleaseSequence();
         }
 
@@ -226,14 +239,21 @@ namespace GGemCo2DCore
             _isReleasing = true;
             StopManagedCoroutines();
 
-            float fadeOutDuration = _vfxFadeInSec;
+            if (!gameObject.activeInHierarchy || !isActiveAndEnabled)
+            {
+                ReleaseImmediateInternal();
+                return;
+            }
+
+            float fadeOutDuration = _vfxFadeOutSec;
             if (fadeOutDuration <= 0f || _fadeController == null)
             {
                 ReleaseImmediateInternal();
                 return;
             }
 
-            _fadeCoroutine = StartCoroutine(FadeAndReleaseRoutine(GetCurrentAlpha(), 0f, fadeOutDuration, _vfxFadeOutEase));
+            _fadeCoroutine = StartCoroutine(
+                FadeAndReleaseRoutine(GetCurrentAlpha(), 0f, fadeOutDuration, _vfxFadeOutEase));
         }
 
         private IEnumerator FadeAndReleaseRoutine(float startAlpha, float endAlpha, float duration, Easing.EaseType easeType)
@@ -512,7 +532,7 @@ namespace GGemCo2DCore
 
         private float EvaluateFadeOutAlpha(float elapsed, float duration)
         {
-            float fadeOutDuration = Mathf.Clamp(_vfxFadeInSec, 0f, duration);
+            float fadeOutDuration = Mathf.Clamp(_vfxFadeOutSec, 0f, duration);
             if (fadeOutDuration <= 0f)
                 return 1f;
 
