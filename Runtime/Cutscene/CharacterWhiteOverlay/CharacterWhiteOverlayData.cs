@@ -7,8 +7,11 @@ namespace GGemCo2DCore
     public class CharacterWhiteOverlayData
     {
         [Header("Target")]
-        public CharacterConstants.Type characterType;
-        public int characterUid;
+        [Tooltip("캐릭터 대상 참조 정보입니다. Fixed는 직접 타입/uid를, RuntimeOverride는 런타임 키를 사용합니다.")]
+        public CutsceneCharacterReference target = new CutsceneCharacterReference();
+
+        [HideInInspector] public CharacterConstants.Type characterType;
+        [HideInInspector] public int characterUid;
 
         [Header("Overlay")]
         public Color color = Color.white;

@@ -83,4 +83,21 @@
         None,
         MonsterName
     }
+
+    public enum CutsceneCharacterTargetSourceMode
+    {
+        Fixed = 0,
+        RuntimeOverride = 1,
+    }
+
+    public enum CutsceneKeyCharacterTarget
+    {
+        None = 0,
+        Player = 1,
+        Monster = 2,
+        Npc = 3,
+        Killer = 4,
+        Victim = 5,
+        Speaker = 6,
+    }
 }

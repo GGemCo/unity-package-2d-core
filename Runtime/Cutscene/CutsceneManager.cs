@@ -33,6 +33,9 @@ namespace GGemCo2DCore
 
         // OverlayText에서 사용할 런타임 문자열 치환값을 보관합니다.
         private readonly Dictionary<CutsceneKeyTextOverlay, string> _overlayTextOverrides = new();
+
+        // 캐릭터 대상 기반 컷신 이벤트에서 사용할 런타임 캐릭터 치환값을 보관합니다.
+        private readonly Dictionary<CutsceneKeyCharacterTarget, CharacterBase> _characterTargetOverrides = new();
         
         // 현재 컷신에서 활성화된 컨트롤러 목록입니다.
         private readonly List<ICutsceneController> _activeControllers = new();
@@ -80,6 +83,7 @@ namespace GGemCo2DCore
             _sceneGame = scene;
             _createCharacters.Clear();
             _overlayTextOverrides.Clear();
+            _characterTargetOverrides.Clear();
             _playTimer = 0f;
             _currentIndex = 0;
             _currentState = State.Idle;
@@ -547,6 +551,66 @@ namespace GGemCo2DCore
         }
 
         /// <summary>
+        /// 캐릭터 대상 기반 컷신 이벤트에서 사용할 런타임 캐릭터를 등록하거나 갱신합니다.
+        /// </summary>
+        /// <param name="key">치환 항목을 식별하는 키입니다.</param>
+        /// <param name="character">적용할 캐릭터입니다. <see langword="null"/>이면 등록을 제거합니다.</param>
+        public void SetCharacterTargetOverride(CutsceneKeyCharacterTarget key, CharacterBase character)
+        {
+            if (key == CutsceneKeyCharacterTarget.None)
+            {
+                return;
+            }
+
+            if (character == null)
+            {
+                _characterTargetOverrides.Remove(key);
+                return;
+            }
+
+            _characterTargetOverrides[key] = character;
+        }
+
+        /// <summary>
+        /// 등록된 런타임 캐릭터 치환값을 조회합니다.
+        /// </summary>
+        /// <param name="key">조회할 치환 키입니다.</param>
+        /// <param name="character">키가 존재할 경우 대응되는 캐릭터를 반환합니다.</param>
+        /// <returns>치환 캐릭터를 찾았으면 <see langword="true"/>, 그렇지 않으면 <see langword="false"/>를 반환합니다.</returns>
+        public bool TryGetCharacterTargetOverride(CutsceneKeyCharacterTarget key, out CharacterBase character)
+        {
+            character = null;
+            if (key == CutsceneKeyCharacterTarget.None)
+            {
+                return false;
+            }
+
+            return _characterTargetOverrides.TryGetValue(key, out character) && character != null;
+        }
+
+        /// <summary>
+        /// 등록된 런타임 캐릭터 치환값을 제거합니다.
+        /// </summary>
+        /// <param name="key">제거할 치환 키입니다.</param>
+        public void RemoveCharacterTargetOverride(CutsceneKeyCharacterTarget key)
+        {
+            if (key == CutsceneKeyCharacterTarget.None)
+            {
+                return;
+            }
+
+            _characterTargetOverrides.Remove(key);
+        }
+
+        /// <summary>
+        /// 등록된 모든 런타임 캐릭터 치환값을 제거합니다.
+        /// </summary>
+        public void ClearCharacterTargetOverrides()
+        {
+            _characterTargetOverrides.Clear();
+        }
+
+        /// <summary>
         /// 캐릭터 애니메이션 TimeScale 저장용 키를 생성합니다.
         /// </summary>
         /// <param name="characterType">캐릭터 분류 타입입니다.</param>
@@ -766,6 +830,7 @@ namespace GGemCo2DCore
             }
 
             ClearOverlayTextOverrides();
+            ClearCharacterTargetOverrides();
 
             if (_overlayPresenter != null)
             {

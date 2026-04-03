@@ -31,6 +31,7 @@ namespace GGemCo2DCore
         private bool _isPoolManaged;
         private Coroutine _returnToPoolRoutine;
         private GGemCoMonsterSettings _monsterSettings;
+        private CutsceneManager _cutsceneManager;
         
         public void SetPoolManaged(bool value)
         {
@@ -189,6 +190,8 @@ namespace GGemCo2DCore
             _monsterUIController.InitSubscribe();
             
             EnableSuperArmor(CurrentSuperArmor.Value > 0);
+            
+            _cutsceneManager = SceneGame.Instance.CutsceneManager;
         }
 
         /// <summary>
@@ -315,13 +318,26 @@ namespace GGemCo2DCore
             );
             GameEventManager.MonsterKilled(data);
             
-            // 사망 연출
+            PlayDeadCutscene(attacker);
+        }
+
+        /// <summary>
+        /// 사망 연출
+        /// </summary>
+        /// <param name="attacker"></param>
+        private void PlayDeadCutscene(GameObject attacker)
+        {
             if (!_monsterSettings.UseCutsceneDie) return;
             bool useCutscene = _monsterSettings.IsUseCutsceneDieEnabledFor(Grade);
-            if (!useCutscene) return;
-            SceneGame.Instance.CutsceneManager.SetOverlayTextOverride(CutsceneKeyTextOverlay.MonsterName, characterName);
-            SceneGame.Instance.CutsceneManager.PlayCutscene(_monsterSettings.CutsceneUidDie);
+            if (!useCutscene || !attacker) return;
+            var player = attacker.GetComponent<Player>();
+            if (player == null) return;
+            _cutsceneManager.SetCharacterTargetOverride(CutsceneKeyCharacterTarget.Player, player);
+            _cutsceneManager.SetCharacterTargetOverride(CutsceneKeyCharacterTarget.Monster, this);
+            _cutsceneManager.SetOverlayTextOverride(CutsceneKeyTextOverlay.MonsterName, characterName);
+            _cutsceneManager.PlayCutscene(_monsterSettings.CutsceneUidDie);
         }
+
         protected override void OnDestroy()
         {
             base.OnDestroy();

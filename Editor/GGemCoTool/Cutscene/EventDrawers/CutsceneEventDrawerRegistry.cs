@@ -37,7 +37,7 @@ namespace GGemCo2DCoreEditor
 
             // 커스텀 Drawer
             Register(new CutsceneOverlayTextEventTypeDrawer());
-            Register(new CutsceneDefaultEventTypeDrawer(CutsceneEventType.CharacterWhiteOverlay, "characterWhiteOverlay"));
+            Register(new CutsceneCharacterWhiteOverlayEventTypeDrawer());
             Register(new CutsceneDefaultEventTypeDrawer(CutsceneEventType.UiPanel, "uiPanel"));
             Register(new CutsceneDefaultEventTypeDrawer(CutsceneEventType.UiWindowVisibility, "uiWindowVisibility"));
             Register(new CutsceneTimeScaleEventTypeDrawer());

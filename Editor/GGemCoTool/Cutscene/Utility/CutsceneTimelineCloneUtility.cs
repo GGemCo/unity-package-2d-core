@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using GGemCo2DCore;
 
 namespace GGemCo2DCoreEditor
@@ -292,6 +292,7 @@ namespace GGemCo2DCoreEditor
         {
             return source == null ? null : new CharacterWhiteOverlayData
             {
+                target = CloneCharacterReference(source.target),
                 characterType = source.characterType,
                 characterUid = source.characterUid,
                 color = source.color,
@@ -301,6 +302,20 @@ namespace GGemCo2DCoreEditor
                 refreshTargetsOnTrigger = source.refreshTargetsOnTrigger,
                 useUnscaledTime = source.useUnscaledTime,
                 easing = source.easing,
+            };
+        }
+
+        /// <summary>
+        /// 캐릭터 참조 데이터를 깊은 복사합니다.
+        /// </summary>
+        private static CutsceneCharacterReference CloneCharacterReference(CutsceneCharacterReference source)
+        {
+            return source == null ? null : new CutsceneCharacterReference
+            {
+                sourceMode = source.sourceMode,
+                characterType = source.characterType,
+                characterUid = source.characterUid,
+                runtimeTargetKey = source.runtimeTargetKey,
             };
         }
 
