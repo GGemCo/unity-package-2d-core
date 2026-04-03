@@ -126,6 +126,18 @@ namespace GGemCo2DCore
             _mapLoadCharacters?.Reset();
             _addressableLoaderPrefabCharacter?.Release();
         }
+
+        private bool HasValidCurrentMap()
+        {
+            return _mapTileCommon != null;
+        }
+
+        private MapTileCommon DetachCurrentMapReference()
+        {
+            var previousMap = _mapTileCommon;
+            _mapTileCommon = null;
+            return previousMap;
+        }
         /// <summary>
         /// 맵 불러오기
         /// </summary>
@@ -316,8 +328,10 @@ namespace GGemCo2DCore
         /// <returns></returns>
         IEnumerator UnloadPreviousStage()
         {
+            var previousMap = DetachCurrentMapReference();
+
             // 현재 씬에 있는 몬스터는 Destroy 대신 Pool로 반환한다.
-            _mapLoadCharacters?.ReturnAllMonstersToPool(_mapTileCommon);
+            _mapLoadCharacters?.ReturnAllMonstersToPool(previousMap);
             DestroyByTag(ConfigTags.GetValue(ConfigTags.Keys.Npc));
             // 드랍 아이템 지우기
             DestroyByTag(ConfigTags.GetValue(ConfigTags.Keys.DropItem));
@@ -387,6 +401,13 @@ namespace GGemCo2DCore
 
                 GameObject currentMap = Instantiate(prefab, _grid.transform);
                 _mapTileCommon = currentMap.GetComponent<MapTileCommon>();
+                if (_mapTileCommon == null)
+                {
+                    SetLoadFailed($"MapTileCommon 컴포넌트가 없습니다. key: {key} / currentMapUid: {_currentMapUid}");
+                    Destroy(currentMap);
+                    return;
+                }
+
                 _mapTileCommon.Initialize(_currentMapTableData.Uid, _currentMapTableData.Name, _currentMapTableData.Type, _currentMapTableData.Subtype);
                 var result = GetMapSize();
 
@@ -463,6 +484,8 @@ namespace GGemCo2DCore
         public void OnDeadMonster(int monsterVid)
         {
             if (monsterVid <= 0) return;
+            if (!HasValidCurrentMap()) return;
+
             _mapLoadCharacters?.MarkMonsterDead(monsterVid);
             StartCoroutine(_mapLoadCharacters.RegenMonster(monsterVid, _currentMapUid, _mapTileCommon));
         }
@@ -470,6 +493,8 @@ namespace GGemCo2DCore
         public void OnMonsterReturnedToPool(int monsterVid)
         {
             if (monsterVid <= 0) return;
+            if (!HasValidCurrentMap()) return;
+
             _mapLoadCharacters?.OnMonsterReturnedToPool(monsterVid, _mapTileCommon);
         }
         /// <summary>
@@ -539,7 +564,7 @@ namespace GGemCo2DCore
 
         public Transform GetCurrentMap()
         {
-            return _mapTileCommon.transform;
+            return _mapTileCommon != null ? _mapTileCommon.transform : null;
         }
         /// <summary>
         /// 모든 캐릭터 활성화
@@ -563,10 +588,12 @@ namespace GGemCo2DCore
         /// <returns></returns>
         public Vector2 GetMapSize()
         {
-            // 이 스크립트가 붙은 객체가 Grid여야 함
-            Tilemap[] tilemaps = _mapTileCommon.gameObject.GetComponentsInChildren<Tilemap>();
+            if (!HasValidCurrentMap())
+                return Vector2.zero;
 
-            if (tilemaps.Length == 0)
+            Tilemap[] tilemaps = _mapTileCommon.GetComponentsInChildren<Tilemap>();
+
+            if (tilemaps == null || tilemaps.Length == 0)
                 return Vector2.zero;
 
             Vector3 minWorld = new Vector3(float.MaxValue, float.MaxValue, float.MaxValue);
@@ -608,11 +635,11 @@ namespace GGemCo2DCore
 
         public GridInformation GetGridInformation()
         {
-            return _grid.GetComponent<GridInformation>();
+            return _grid != null ? _grid.GetComponent<GridInformation>() : null;
         }
         public Grid GetGrid()
         {
-            return _grid.GetComponent<Grid>();
+            return _grid != null ? _grid.GetComponent<Grid>() : null;
         }
     }
 }

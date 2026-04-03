@@ -40,8 +40,8 @@ namespace GGemCo2DCore
             // 타일맵 좌하단(0,0) 기준
             minBounds = new Vector2(0f, 0f);
 
-            _mapManager = SceneGame.Instance.mapManager;
-            _mapSize = _mapManager.GetCurrentMapSize();
+            _mapManager = SceneGame.Instance != null ? SceneGame.Instance.mapManager : null;
+            RefreshMapBounds(force: true);
 
             iCharacterAnimationController = targetCharacter.CharacterAnimationController;
 
@@ -58,12 +58,47 @@ namespace GGemCo2DCore
             UpdateCheckMaxBounds();
         }
 
+
+        protected bool RefreshMapBounds(bool force = false)
+        {
+            if (_mapManager == null)
+            {
+                _mapManager = SceneGame.Instance != null ? SceneGame.Instance.mapManager : null;
+            }
+
+            if (_mapManager == null)
+            {
+                if (force)
+                {
+                    _mapSize = Vector2.zero;
+                }
+
+                return false;
+            }
+
+            Vector2 latestMapSize = _mapManager.GetCurrentMapSize();
+            if (!force && latestMapSize == Vector2.zero && _mapSize != Vector2.zero)
+            {
+                return true;
+            }
+
+            _mapSize = latestMapSize;
+            return _mapSize != Vector2.zero;
+        }
+
         /// <summary>
         /// 현재 맵 크기와 캐릭터 크기를 고려하여 유효한 움직임 경계 재계산
         /// </summary>
         protected void UpdateCheckMaxBounds()
         {
             if (targetCharacter.IsStatusDead()) return;
+
+            RefreshMapBounds();
+            if (_mapSize == Vector2.zero)
+            {
+                maxBounds = minBounds;
+                return;
+            }
 
             // 캐릭터 폭/높이(Flip 포함). Transform.localScale은 음수(Flip) 가능 → 절댓값 사용
             float characterWidth  = Mathf.Abs(targetCharacter.GetWidth()  * targetCharacter.transform.localScale.x);

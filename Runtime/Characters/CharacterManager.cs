@@ -372,8 +372,8 @@ namespace GGemCo2DCore
             var pooledObject = pooledMonster.gameObject;
             pooledMonster.CancelPendingPoolReturn();
             pooledObject.transform.SetParent(null, worldPositionStays: false);
-            pooledObject.SetActive(true);
             pooledMonster.PrepareForPoolRent(uid, regenData);
+            pooledObject.SetActive(true);
             return pooledObject;
         }
 
