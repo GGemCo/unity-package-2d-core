@@ -86,7 +86,6 @@ namespace GGemCo2DCore
             InitializeByTable();
             InitializeByAnimationTable();
             InitializeByRegenData();
-            Stop(true);
 
             _monsterUIController ??= new MonsterUIController();
             _monsterUIController.Initialize(this);

@@ -374,6 +374,7 @@ namespace GGemCo2DCore
             pooledObject.transform.SetParent(null, worldPositionStays: false);
             pooledMonster.PrepareForPoolRent(uid, regenData);
             pooledObject.SetActive(true);
+            pooledObject.GetComponent<CharacterBase>()?.Stop();
             return pooledObject;
         }
 
