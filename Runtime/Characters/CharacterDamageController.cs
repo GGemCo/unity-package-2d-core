@@ -45,6 +45,16 @@ namespace GGemCo2DCore
         /// </summary>
         public bool HasPendingAfterDamageCrowdControl;
 
+        /// <summary>
+        /// 실제 데미지 확정 시 재생할 카메라 Shake Preset 입니다.
+        /// </summary>
+        public CameraShakePreset DamageCameraShakePreset;
+
+        /// <summary>
+        /// 시전자/대상 기준 방향을 어떤 방식으로 카메라 Shake 요청으로 변환할지 지정합니다.
+        /// </summary>
+        public DirectionalCameraShakeMode DamageCameraShakeDirectionMode = DirectionalCameraShakeMode.PresetRaw;
+
         public List<int> ResolvedOnHitCrowdControls;
     }
     /// <summary>
@@ -254,6 +264,7 @@ namespace GGemCo2DCore
             }
 
             NotifyIncomingHitCombatFeedback(metadataDamage, MonsterSkillCombatOutcome.Hit);
+            TryPlayDamageCameraShake(metadataDamage);
 
             if (!hasGuardFeedbackText)
             {
@@ -352,6 +363,36 @@ namespace GGemCo2DCore
             
             _characterBase.CurrentHp.OnNext(remainHp);
         }
+
+        private void TryPlayDamageCameraShake(MetadataDamage metadataDamage)
+        {
+            if (metadataDamage == null)
+            {
+                return;
+            }
+
+            if (metadataDamage.DamageCameraShakePreset == null)
+            {
+                return;
+            }
+
+            CameraManager cameraManager = SceneGame.Instance != null ? SceneGame.Instance.cameraManager : null;
+            if (cameraManager == null)
+            {
+                return;
+            }
+
+            Transform attackerTransform = metadataDamage.attacker != null ? metadataDamage.attacker.transform : null;
+            CameraShakeRequest request = DirectionalCameraShakeUtility.CreateRequest(
+                metadataDamage.DamageCameraShakePreset,
+                attackerTransform,
+                _characterBase != null ? _characterBase.transform : null,
+                metadataDamage.DamageCameraShakeDirectionMode,
+                CameraShakeChannel.SkillDamage);
+
+            cameraManager.PlayShake(request);
+        }
+
         public void EnableSuperArmor(bool enable)
         {
             _controllerMonsterSuperArmor.EnableSuperArmor(enable);

@@ -8,6 +8,7 @@ namespace GGemCo2DCore
         Default = 0,
         AnimationEvent = 1,
         Cutscene = 2,
+        SkillDamage = 3,
     }
 
     public struct CameraShakeRequest
