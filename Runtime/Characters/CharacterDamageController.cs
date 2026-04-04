@@ -301,6 +301,8 @@ namespace GGemCo2DCore
             }
             else
             {
+                TryPlayPlayerHudDamageFeedback(metadataDamage);
+                
                 bool shouldPlayDamageReaction = !suppressHitReactionByGuard;
                 CharacterConstants.HitReactionType hitReactionType = CharacterConstants.HitReactionType.None;
                 
@@ -362,6 +364,28 @@ namespace GGemCo2DCore
             _characterBase.ApplyCrowdControlSequence(resolvedOnHitCrowdControls, metadataDamage.attacker, isEndCharacterStop);
             
             _characterBase.CurrentHp.OnNext(remainHp);
+        }
+
+
+        private void TryPlayPlayerHudDamageFeedback(MetadataDamage metadataDamage)
+        {
+            if (metadataDamage == null)
+            {
+                return;
+            }
+
+            if (!(_characterBase is Player player))
+            {
+                return;
+            }
+
+            if (metadataDamage.attacker != null)
+            {
+                player.PlayStaminaDamageFeedbackFromAttacker(metadataDamage.attacker.transform);
+                return;
+            }
+
+            player.PlayDefaultStaminaDamageFeedback();
         }
 
         private void TryPlayDamageCameraShake(MetadataDamage metadataDamage)

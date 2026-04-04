@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using R3;
 using UnityEngine;
@@ -269,15 +269,61 @@ namespace GGemCo2DCore
             long delta = currentHp - _lastObservedHp;
             _lastObservedHp = currentHp;
 
-            if (delta < 0)
+            if (delta <= 0) return;
+
+            ShowHealText(delta);
+        }
+
+        /// <summary>
+        /// 스테미나 HUD 피격 피드백을 프리셋 기본 방향으로 재생합니다.
+        /// </summary>
+        public void PlayStaminaDamageFeedback()
+        {
+            _uiWindowHud?.PlayStaminaDamageFeedback();
+        }
+
+        /// <summary>
+        /// 공격자의 월드 위치를 기준으로 스테미나 HUD 피격 피드백 방향을 결정하여 재생합니다.
+        /// </summary>
+        /// <param name="attackerWorldPosition">피격을 발생시킨 공격자 월드 위치입니다.</param>
+        public void PlayStaminaDamageFeedbackFromAttackerPosition(Vector3 attackerWorldPosition)
+        {
+            if (_player == null)
+            {
+                return;
+            }
+
+            var directionMode = ResolveDamageShakeDirection(_player.transform.position.x, attackerWorldPosition.x);
+            _uiWindowHud?.PlayStaminaDamageFeedback(directionMode);
+        }
+
+        /// <summary>
+        /// 공격자 Transform을 기준으로 스테미나 HUD 피격 피드백 방향을 결정하여 재생합니다.
+        /// </summary>
+        /// <param name="attackerTransform">피격을 발생시킨 공격자의 Transform입니다.</param>
+        public void PlayStaminaDamageFeedbackFromAttacker(Transform attackerTransform)
+        {
+            if (attackerTransform == null)
             {
                 _uiWindowHud?.PlayStaminaDamageFeedback();
                 return;
             }
 
-            if (delta == 0) return;
+            PlayStaminaDamageFeedbackFromAttackerPosition(attackerTransform.position);
+        }
 
-            ShowHealText(delta);
+        /// <summary>
+        /// 피해자와 공격자의 X축 위치를 비교해 HUD 흔들림 방향을 계산합니다.
+        /// 공격자가 오른쪽에 있으면 왼쪽으로, 공격자가 왼쪽에 있으면 오른쪽으로 흔들립니다.
+        /// </summary>
+        /// <param name="victimWorldX">피해자 X 위치입니다.</param>
+        /// <param name="attackerWorldX">공격자 X 위치입니다.</param>
+        /// <returns>HUD 흔들림 방향입니다.</returns>
+        private static UIEffectShakeDirectionMode ResolveDamageShakeDirection(float victimWorldX, float attackerWorldX)
+        {
+            return attackerWorldX >= victimWorldX
+                ? UIEffectShakeDirectionMode.Left
+                : UIEffectShakeDirectionMode.Right;
         }
 
         /// <summary>

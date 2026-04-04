@@ -34,10 +34,31 @@ namespace GGemCo2DCore
 
         public static Coroutine Play(MonoBehaviour runner, UIEffectTarget target, UIEffectPreset preset, Action onComplete = null)
         {
-            return Play(runner, target, preset, default, onComplete);
+            return Play(runner, target, preset, default, null, onComplete);
+        }
+
+        public static Coroutine Play(
+            MonoBehaviour runner,
+            UIEffectTarget target,
+            UIEffectPreset preset,
+            UIEffectShakeDirectionMode? shakeDirectionOverride,
+            Action onComplete = null)
+        {
+            return Play(runner, target, preset, default, shakeDirectionOverride, onComplete);
         }
 
         public static Coroutine Play(MonoBehaviour runner, UIEffectTarget target, UIEffectPreset preset, UIEffectContext context, Action onComplete = null)
+        {
+            return Play(runner, target, preset, context, null, onComplete);
+        }
+
+        public static Coroutine Play(
+            MonoBehaviour runner,
+            UIEffectTarget target,
+            UIEffectPreset preset,
+            UIEffectContext context,
+            UIEffectShakeDirectionMode? shakeDirectionOverride,
+            Action onComplete = null)
         {
             if (runner == null || target == null || preset == null)
             {
@@ -61,7 +82,7 @@ namespace GGemCo2DCore
             };
 
             RegisterHandle(handle);
-            handle.Coroutine = runner.StartCoroutine(PlayRoutine(handle, preset, context, onComplete));
+            handle.Coroutine = runner.StartCoroutine(PlayRoutine(handle, preset, context, shakeDirectionOverride, onComplete));
             return handle.Coroutine;
         }
 
@@ -169,7 +190,12 @@ namespace GGemCo2DCore
             handles.Add(handle);
         }
 
-        private static IEnumerator PlayRoutine(RunningEffectHandle handle, UIEffectPreset preset, UIEffectContext context, Action onComplete)
+        private static IEnumerator PlayRoutine(
+            RunningEffectHandle handle,
+            UIEffectPreset preset,
+            UIEffectContext context,
+            UIEffectShakeDirectionMode? shakeDirectionOverride,
+            Action onComplete)
         {
             UIEffectTarget target = handle.Target;
             MonoBehaviour runner = handle.Runner;
@@ -270,7 +296,7 @@ namespace GGemCo2DCore
                     preset.shakeStrength,
                     preset.shakeDuration,
                     preset.shakeVibrato,
-                    preset.shakeDirectionMode,
+                    ResolveShakeDirection(preset, shakeDirectionOverride),
                     preset.useUnscaledTime);
             }
 
@@ -304,6 +330,20 @@ namespace GGemCo2DCore
 
             RestoreFlash(handle);
             Complete(handle, onComplete);
+        }
+
+        private static UIEffectShakeDirectionMode ResolveShakeDirection(
+            UIEffectPreset preset,
+            UIEffectShakeDirectionMode? shakeDirectionOverride)
+        {
+            if (shakeDirectionOverride.HasValue)
+            {
+                return shakeDirectionOverride.Value;
+            }
+
+            return preset != null
+                ? preset.shakeDirectionMode
+                : UIEffectShakeDirectionMode.RandomHorizontal;
         }
 
         private static void UpdateFlash(RunningEffectHandle handle, UIEffectPreset preset, float elapsed)

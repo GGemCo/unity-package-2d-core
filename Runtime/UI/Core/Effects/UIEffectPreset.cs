@@ -79,7 +79,7 @@ namespace GGemCo2DCore
         public float shakeDuration = 0.15f;
         [Tooltip("진동 횟수")]
         public int shakeVibrato = 14;
-        [Tooltip("흔들림 수평 시작 방향 정책")]
+        [Tooltip("흔들림 수평 시작 방향 정책. 런타임에서 오버라이드가 전달되면 그 값을 우선 사용합니다.")]
         public UIEffectShakeDirectionMode shakeDirectionMode = UIEffectShakeDirectionMode.RandomHorizontal;
 
         [Header("Flash")]

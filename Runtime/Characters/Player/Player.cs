@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using R3;
 using UnityEngine;
@@ -47,6 +47,34 @@ namespace GGemCo2DCore
             base.Awake();
             _playerUIController = new PlayerUIController();
             _playerUIController.Initialize(this);
+        }
+
+        /// <summary>
+        /// 기본 방향 정책으로 스테미나 HUD 피격 피드백을 재생합니다.
+        /// </summary>
+        public void PlayDefaultStaminaDamageFeedback()
+        {
+            _playerUIController?.PlayStaminaDamageFeedback();
+        }
+
+        /// <summary>
+        /// 공격자 Transform을 기준으로 스테미나 HUD 피격 피드백을 재생합니다.
+        /// </summary>
+        /// <param name="attackerTransform">피격을 발생시킨 공격자의 Transform입니다.</param>
+        public void PlayStaminaDamageFeedbackFromAttacker(Transform attackerTransform)
+        {
+            if (_playerUIController == null)
+            {
+                return;
+            }
+
+            if (attackerTransform == null)
+            {
+                _playerUIController.PlayStaminaDamageFeedback();
+                return;
+            }
+
+            _playerUIController.PlayStaminaDamageFeedbackFromAttacker(attackerTransform);
         }
 
         /// <summary>

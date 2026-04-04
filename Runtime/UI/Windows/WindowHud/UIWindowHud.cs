@@ -1,4 +1,4 @@
-﻿using TMPro;
+using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -110,6 +110,18 @@ namespace GGemCo2DCore
             if (gameObjectStamina is IHudDamageFeedbackReceiver receiver)
             {
                 receiver.PlayDamageFeedback();
+            }
+        }
+
+        /// <summary>
+        /// 스테미나 HUD에 지정 방향 기반 피격 피드백을 요청합니다.
+        /// </summary>
+        /// <param name="directionMode">런타임에서 지정할 흔들림 방향입니다.</param>
+        public void PlayStaminaDamageFeedback(UIEffectShakeDirectionMode directionMode)
+        {
+            if (gameObjectStamina is IHudDamageFeedbackReceiver receiver)
+            {
+                receiver.PlayDamageFeedback(directionMode);
             }
         }
     }
