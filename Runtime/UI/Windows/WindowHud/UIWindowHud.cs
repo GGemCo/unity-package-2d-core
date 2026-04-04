@@ -101,5 +101,16 @@ namespace GGemCo2DCore
             if (!textBattleStatus) return;
             textBattleStatus.text = value.ToString();
         }
+
+        /// <summary>
+        /// 스테미나 HUD에 피격 피드백을 요청합니다.
+        /// </summary>
+        public void PlayStaminaDamageFeedback()
+        {
+            if (gameObjectStamina is IHudDamageFeedbackReceiver receiver)
+            {
+                receiver.PlayDamageFeedback();
+            }
+        }
     }
 }

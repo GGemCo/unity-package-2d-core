@@ -269,7 +269,13 @@ namespace GGemCo2DCore
             long delta = currentHp - _lastObservedHp;
             _lastObservedHp = currentHp;
 
-            if (delta <= 0) return;
+            if (delta < 0)
+            {
+                _uiWindowHud?.PlayStaminaDamageFeedback();
+                return;
+            }
+
+            if (delta == 0) return;
 
             ShowHealText(delta);
         }
