@@ -341,6 +341,7 @@ namespace GGemCo2DCoreEditor
                         DrawProperty("shakeStrength");
                         DrawProperty("shakeDuration");
                         DrawProperty("shakeVibrato");
+                        DrawProperty("shakeDirectionMode");
                     }
                 }
             }
@@ -475,7 +476,8 @@ namespace GGemCo2DCoreEditor
                 float attenuation = 1f - normalized;
                 int safeVibrato = Mathf.Max(1, _preset.shakeVibrato);
                 float angle = normalized * safeVibrato * Mathf.PI * 2f;
-                float x = Mathf.Sin(angle) * _preset.shakeStrength * attenuation;
+                float horizontalSign = ResolvePreviewShakeHorizontalSign(_preset.shakeDirectionMode);
+                float x = Mathf.Sin(angle) * _preset.shakeStrength * attenuation * horizontalSign;
                 float y = Mathf.Cos(angle * 0.73f) * _preset.shakeStrength * 0.5f * attenuation;
                 frame.PositionOffset += new Vector2(x, y);
             }
@@ -497,6 +499,22 @@ namespace GGemCo2DCoreEditor
             float safeDuration = Mathf.Max(0.0001f, duration);
             float normalized = Mathf.Clamp01(progress / safeDuration);
             return Mathf.Clamp01(Easing.Apply(normalized, easeType));
+        }
+
+        private static float ResolvePreviewShakeHorizontalSign(UIEffectShakeDirectionMode directionMode)
+        {
+            switch (directionMode)
+            {
+                case UIEffectShakeDirectionMode.Left:
+                    return -1f;
+
+                case UIEffectShakeDirectionMode.Right:
+                    return 1f;
+
+                case UIEffectShakeDirectionMode.RandomHorizontal:
+                default:
+                    return 1f;
+            }
         }
 
         private float GetPreviewProgress()
@@ -746,6 +764,7 @@ namespace GGemCo2DCoreEditor
             preset.shakeStrength = 8f;
             preset.shakeDuration = 0.15f;
             preset.shakeVibrato = 14;
+            preset.shakeDirectionMode = UIEffectShakeDirectionMode.RandomHorizontal;
 
             preset.useFlash = false;
             preset.flashColor = Color.white;

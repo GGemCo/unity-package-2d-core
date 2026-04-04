@@ -270,6 +270,7 @@ namespace GGemCo2DCore
                     preset.shakeStrength,
                     preset.shakeDuration,
                     preset.shakeVibrato,
+                    preset.shakeDirectionMode,
                     preset.useUnscaledTime);
             }
 

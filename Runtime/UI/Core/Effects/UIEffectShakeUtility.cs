@@ -46,6 +46,7 @@ namespace GGemCo2DCore
             float strength,
             float duration,
             int vibrato,
+            UIEffectShakeDirectionMode directionMode,
             bool useUnscaledTime)
         {
             if (runner == null) throw new ArgumentNullException(nameof(runner));
@@ -59,7 +60,8 @@ namespace GGemCo2DCore
                 state.hasBasePosition = true;
             }
 
-            state.running = runner.StartCoroutine(ShakeRoutine(target, state.basePosition, strength, duration, vibrato, useUnscaledTime));
+            float horizontalSign = ResolveHorizontalSign(directionMode);
+            state.running = runner.StartCoroutine(ShakeRoutine(target, state.basePosition, strength, duration, vibrato, horizontalSign, useUnscaledTime));
             return state.running;
         }
 
@@ -69,6 +71,7 @@ namespace GGemCo2DCore
             float strength,
             float duration,
             int vibrato,
+            float horizontalSign,
             bool useUnscaledTime)
         {
             if (target == null) yield break;
@@ -87,13 +90,29 @@ namespace GGemCo2DCore
                 float nt = Mathf.Clamp01(elapsed / duration);
                 float attenuation = 1f - nt;
                 float angle = nt * safeVibrato * Mathf.PI * 2f;
-                float x = Mathf.Sin(angle) * strength * attenuation;
+                float x = Mathf.Sin(angle) * strength * attenuation * horizontalSign;
                 float y = Mathf.Cos(angle * 0.73f) * strength * 0.5f * attenuation;
                 target.anchoredPosition = basePosition + new Vector2(x, y);
                 yield return null;
             }
 
             target.anchoredPosition = basePosition;
+        }
+
+        private static float ResolveHorizontalSign(UIEffectShakeDirectionMode directionMode)
+        {
+            switch (directionMode)
+            {
+                case UIEffectShakeDirectionMode.Left:
+                    return -1f;
+
+                case UIEffectShakeDirectionMode.Right:
+                    return 1f;
+
+                case UIEffectShakeDirectionMode.RandomHorizontal:
+                default:
+                    return UnityEngine.Random.value < 0.5f ? -1f : 1f;
+            }
         }
     }
 }
