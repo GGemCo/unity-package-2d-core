@@ -141,6 +141,7 @@ namespace GGemCo2DCore
         NoTarget = 6,
         OutOfRange = 7,
         ExecutionRejected = 8,
+        ControlLocked = 9,
     }
 
     public readonly struct SkillUseResult

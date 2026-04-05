@@ -263,6 +263,8 @@ namespace GGemCo2DCore
                     return "Action_CannotUseDuringCooldown";
                 case SkillUseFailReason.Busy:
                     return "Skill_AlreadyInUse"; // 다른 스킬을 사용 중입니다.
+                case SkillUseFailReason.ControlLocked:
+                    return null; // 제어 잠금 상태(예: 탈진)에서는 별도 메시지를 노출하지 않습니다.
                 default:
                     return null;
             }
