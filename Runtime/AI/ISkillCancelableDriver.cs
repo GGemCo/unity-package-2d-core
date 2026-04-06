@@ -16,6 +16,7 @@
         Death,
         StateChanged,
         ForcedBySystem,
-        ComboChain
+        ComboChain,
+        Damage
     }
 }

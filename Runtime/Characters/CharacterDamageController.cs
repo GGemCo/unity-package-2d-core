@@ -109,6 +109,7 @@ namespace GGemCo2DCore
                 return;
 
             var attacker = metadataDamage.attacker;
+            // 스킬 데미지 처리
             if (attacker == null || metadataDamage.SkillUid <= 0)
                 return;
 
@@ -201,7 +202,7 @@ namespace GGemCo2DCore
             {
                 if (crowdControlUid > 0)
                 {
-                    incomingHitActionCanceler?.CancelActionsOnIncomingHit(IncomingHitCancelReason.Damage);
+                    NotifyIncomingHitActionCancelers(IncomingHitCancelReason.Damage);
                     _characterBase.ApplyCrowdControl(crowdControlUid, attacker);
                 }
                 return;
@@ -286,7 +287,7 @@ namespace GGemCo2DCore
                     _characterBase.ApplyCrowdControl(crowdControlUid, metadataDamage.attacker);
                 }
                 // 사망 처리 전에 입력 액션을 먼저 정리해 후속 입력이 잠기지 않도록 합니다.
-                incomingHitActionCanceler?.CancelActionsOnIncomingHit(IncomingHitCancelReason.Death);
+                NotifyIncomingHitActionCancelers(IncomingHitCancelReason.Death);
 
                 // 사망했을 때, UI 표현을 위해 0으로 처리
                 remainHp = 0;
@@ -329,7 +330,7 @@ namespace GGemCo2DCore
                 if (shouldPlayDamageReaction)
                 {
                     // 피격 상태/CC 적용 전에 입력 액션을 먼저 정리해 가드/점프/대시 상태가 남지 않도록 합니다.
-                    incomingHitActionCanceler?.CancelActionsOnIncomingHit(IncomingHitCancelReason.Damage);
+                    NotifyIncomingHitActionCancelers(IncomingHitCancelReason.Damage);
 
                     if (hitReactionType == CharacterConstants.HitReactionType.Flinch)
                     {
@@ -434,6 +435,24 @@ namespace GGemCo2DCore
                 return;
             }
             _characterBase.AddAffect(_monsterGroggyAffectUid, _monsterGroggyAffectDuration);
+        }
+        
+        private void NotifyIncomingHitActionCancelers(IncomingHitCancelReason reason)
+        {
+            if (_characterBase == null)
+                return;
+
+            var behaviours = _characterBase.GetComponents<MonoBehaviour>();
+            if (behaviours == null || behaviours.Length == 0)
+                return;
+
+            for (int i = 0; i < behaviours.Length; i++)
+            {
+                if (behaviours[i] is IIncomingHitActionCanceler canceler)
+                {
+                    canceler.CancelActionsOnIncomingHit(reason);
+                }
+            }
         }
     }
 }
