@@ -169,7 +169,6 @@ namespace GGemCo2DCore
                 PlayEndAndStop(crowdControl);
                 _activeCrowdControl = null;
                 _activeSource = null;
-                _isActive = false;
                 return;
             }
 
@@ -181,7 +180,6 @@ namespace GGemCo2DCore
                 PlayEndAndStop(crowdControl);
                 _activeCrowdControl = null;
                 _activeSource = null;
-                _isActive = false;
                 return;
             }
 
@@ -194,7 +192,6 @@ namespace GGemCo2DCore
                 PlayEndAndStop(crowdControl);
                 _activeCrowdControl = null;
                 _activeSource = null;
-                _isActive = false;
             }
         }
 
@@ -255,7 +252,6 @@ namespace GGemCo2DCore
                 var finishedActive = _activeCrowdControl;
                 _activeCrowdControl = null;
                 _activeSource = null;
-                _isActive = false;
                 PlayEndAndStop(finishedActive);
                 return;
             }
@@ -277,7 +273,6 @@ namespace GGemCo2DCore
 
                 _activeCrowdControl = null;
                 _activeSource = null;
-                _isActive = false;
                 PlayEndAndStop(finished);
             }
         }
@@ -581,7 +576,7 @@ namespace GGemCo2DCore
             _activeCrowdControl = null;
             _activeSource = null;
             _isActive = false;
-
+            
             if (clearSequence)
                 ClearQueuedSequence();
         }
@@ -780,13 +775,21 @@ namespace GGemCo2DCore
         private void TryStartNextQueuedCrowdControl()
         {
             if (_activeCrowdControl != null)
-                return;
+            {
+                _isActive = false;
+                return;   
+            }
+                
 
             if (!_isSequenceRunning)
-                return;
+            {
+                _isActive = false;
+                return;   
+            }
 
             if (_sequenceTarget != null && _character != null && _sequenceTarget != _character.gameObject)
             {
+                _isActive = false;
                 ClearQueuedSequence();
                 return;
             }
@@ -803,6 +806,7 @@ namespace GGemCo2DCore
             }
 
             ClearQueuedSequence();
+            _isActive = false;
         }
 
         private bool HasCrowdControlStateToReplace()
