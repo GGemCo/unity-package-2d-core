@@ -330,15 +330,25 @@ namespace GGemCo2DCore
 
             mapManager.OnDeadMonster(e.monsterVid);
         }
-
-        private void OnItemCollected(ItemCollectedEventData e)
+        
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
+        private static void InitializeLogging()
         {
-        }
-        private void OnDialogStart(DialogEventData e)
-        {
-        }
-        private void OnDialogEnd(DialogEventData e)
-        {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            GcLogger.ConfigureStackTraceLogging(
+                log: StackTraceLogType.ScriptOnly,
+                warning: StackTraceLogType.ScriptOnly,
+                error: StackTraceLogType.Full,
+                exception: StackTraceLogType.Full,
+                assert: StackTraceLogType.Full);
+#else
+            GcLogger.ConfigureStackTraceLogging(
+                log: StackTraceLogType.None,
+                warning: StackTraceLogType.None,
+                error: StackTraceLogType.ScriptOnly,
+                exception: StackTraceLogType.ScriptOnly,
+                assert: StackTraceLogType.ScriptOnly);
+#endif
         }
     }
 }
