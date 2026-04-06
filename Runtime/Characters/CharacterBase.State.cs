@@ -47,7 +47,6 @@ namespace GGemCo2DCore
         {
             return HitStopController.IsActive ||
                    _crowdControlController.IsActive ||
-                   IsStatusUseSkill() ||
                    _controlLockTokens.Count > 0;
         }
         /// <summary>
