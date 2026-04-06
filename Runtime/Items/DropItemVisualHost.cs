@@ -90,18 +90,22 @@ namespace GGemCo2DCore
             if (tableItemVisual == null || tableItemVisual.VfxUid <= 0 || SceneGame.Instance == null || SceneGame.Instance.VfxManager == null)
                 return false;
 
+            Vector3 worldOffset = new Vector3(0f, offsetY, 0f);
             _activeVfx = SceneGame.Instance.VfxManager.CreateVfx(new VfxSpawnRequest
             {
                 VfxUid = tableItemVisual.VfxUid,
-                Parent = transform,
-                WorldPosition = transform.position,
+                WorldPosition = transform.position + worldOffset,
                 ScaleOverride = visualScale,
-                PositionY = offsetY,
                 LifecycleTypeOverride = VfxConstants.LifecycleType.ManualRelease
             });
 
             if (_activeVfx == null)
                 return false;
+
+            var positionFollower = _activeVfx.GetComponent<TransformPositionFollower>();
+            if (positionFollower == null)
+                positionFollower = _activeVfx.gameObject.AddComponent<TransformPositionFollower>();
+            positionFollower.Bind(transform, worldOffset);
 
             _activeVisualType = ItemConstants.DropVisualType.Vfx;
             return true;

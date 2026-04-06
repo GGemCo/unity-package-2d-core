@@ -280,7 +280,6 @@ namespace GGemCo2DCore
         {
             StopCoroutineDropItemDestroy();
             _circleCollider2D.enabled = false;
-            _visualHost?.ReleaseVisual();
             if (_objectTagNameItem != null)
             {
                 _objectTagNameItem.SetActive(false);
@@ -296,6 +295,13 @@ namespace GGemCo2DCore
                 // 바닥에서 사라지는 등 미획득 처리 시 인스턴스 데이터도 함께 제거한다.
                 SceneGame.Instance?.saveDataManager?.ItemInstances?.Remove(_instanceId);
             }
+
+            // DropItem 비활성화 전, 자식으로 붙어있는 VFX를 먼저 정리한다.
+            // OnDisable 시점에는 부모 오브젝트가 활성/비활성 전환 중일 수 있어서
+            // 풀 반환 과정의 SetParent 가 Unity 에러를 발생시킬 수 있다.
+            if (gameObject.activeInHierarchy)
+                _visualHost?.ReleaseVisual();
+
             _itemUid = 0;
             _instanceId = 0;
             gameObject.SetActive(false);
