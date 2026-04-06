@@ -147,6 +147,12 @@ namespace GGemCo2DCore
                 }
             }
 
+            if (ShouldAcquireDirectly(info))
+            {
+                AcquireDirectly(itemUid, itemCount, instanceId);
+                return;
+            }
+
             Item item = GetOrCreateItem();
             item.Initialize(itemUid, itemCount, worldPosition, instanceId);
             item.StartDrop();
@@ -170,6 +176,42 @@ namespace GGemCo2DCore
 
             // GcLogger.Log($"풀 크기 정리 완료: {poolSize}개 유지");
             _reducePoolCoroutine = null;
+        }
+
+        private bool ShouldAcquireDirectly(StruckTableItem info)
+        {
+            var settings = AddressableLoaderSettings.Instance?.itemSettings;
+            if (settings == null || info == null)
+                return false;
+
+            return info.Type == ItemConstants.Type.Currency
+                ? settings.acquireCurrenciesDirectly
+                : settings.acquireItemsDirectly;
+        }
+
+        private ResultCommon CollectItemCore(int itemUid, int itemCount, long instanceId)
+        {
+            return _sceneGame.saveDataManager.Inventory.AddItem(new IconPayload(itemUid, itemCount, instanceId));
+        }
+
+        private void NotifyItemCollected(int itemUid, int itemCount, ResultCommon result)
+        {
+            if (_uiWindowInventory != null)
+            {
+                _uiWindowInventory.SetIcons(result);
+
+                var data = new ItemCollectedEventData(
+                    itemUid: itemUid,
+                    count: itemCount
+                );
+                GameEventManager.ItemCollected(data);
+            }
+        }
+
+        private void AcquireDirectly(int itemUid, int itemCount, long instanceId)
+        {
+            var result = CollectItemCore(itemUid, itemCount, instanceId);
+            NotifyItemCollected(itemUid, itemCount, result);
         }
         /// <summary>
         /// 드랍되는 아이템 확률 계산하기 
@@ -289,20 +331,9 @@ namespace GGemCo2DCore
         {
             if (item ==null || item.GetItemUid() <= 0) return;
 
-            // 인스턴스 아이템이면 InstanceId를 함께 저장
-            ResultCommon result;
             long instanceId = item.GetInstanceId();
-            result = _sceneGame.saveDataManager.Inventory.AddItem(new IconPayload(item.GetItemUid(), item.GetItemCount(), instanceId));
-
-            if (_uiWindowInventory != null)
-            {
-                _uiWindowInventory.SetIcons(result);
-                var data = new ItemCollectedEventData(
-                    itemUid: item.GetItemUid(),
-                    count: item.GetItemCount()
-                );
-                GameEventManager.ItemCollected(data);
-            }
+            var result = CollectItemCore(item.GetItemUid(), item.GetItemCount(), instanceId);
+            NotifyItemCollected(item.GetItemUid(), item.GetItemCount(), result);
 
             // 획득 시에는 인스턴스를 유지해야 한다.
             item.ResetInfos(removeInstanceFromDb: false);

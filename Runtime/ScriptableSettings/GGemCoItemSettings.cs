@@ -24,6 +24,13 @@ namespace GGemCo2DCore
         [Tooltip("item_visual 테이블에서 OffsetY 값을 비워두었을 때 사용할 기본 Y 오프셋")]
         public float defaultVisualOffsetY = 0f;
 
+        [Header("Drop Item Acquire Policy")]
+        [Tooltip("일반 아이템 드랍 시 월드 드랍 오브젝트를 생성하지 않고 즉시 인벤토리에 획득합니다.")]
+        public bool acquireItemsDirectly;
+
+        [Tooltip("재화 아이템 드랍 시 월드 드랍 오브젝트를 생성하지 않고 즉시 인벤토리에 획득합니다.")]
+        public bool acquireCurrenciesDirectly;
+
         private void Reset()
         {
             defaultDropVisualType = ItemConstants.DropVisualType.Sprite;
@@ -32,6 +39,8 @@ namespace GGemCo2DCore
             hideSpriteRendererWhenUsingVfx = true;
             defaultVisualScale = 1f;
             defaultVisualOffsetY = 0f;
+            acquireItemsDirectly = false;
+            acquireCurrenciesDirectly = false;
         }
 
         private void OnEnable()
