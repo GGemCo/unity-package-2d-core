@@ -15,6 +15,7 @@ namespace GGemCo2DCore
         public TableMonster TableMonster { get; private set; } = new TableMonster();
         public TableAnimation TableAnimation { get; private set; } = new TableAnimation();
         public TableItem TableItem { get; private set; } = new TableItem();
+        public TableItemVisual TableItemVisual { get; private set; } = new TableItemVisual();
         public TableItemBaseOption TableItemBaseOption { get; private set; } = new TableItemBaseOption();
         public TableItemAffixDef TableItemAffixDef { get; private set; } = new TableItemAffixDef();
         public TableItemAffixPool TableItemAffixPool { get; private set; } = new TableItemAffixPool();
@@ -65,6 +66,7 @@ namespace GGemCo2DCore
                 registry.Register(TableNpc);
                 registry.Register(TableMap);
                 registry.Register(TableItem);
+                registry.Register(TableItemVisual);
                 registry.Register(TableItemBaseOption);
                 registry.Register(TableItemAffixDef);
                 registry.Register(TableItemAffixPool);

@@ -9,30 +9,30 @@ namespace GGemCo2DCore
     /// </summary>
     public class UITextCurrencyGold : MonoBehaviour
     {
-        private TextMeshProUGUI textGold;
-        private PlayerData playerData;
+        private TextMeshProUGUI _textGold;
+        private PlayerData _playerData;
 
         private void Awake()
         {
-            textGold = GetComponent<TextMeshProUGUI>();
+            _textGold = GetComponent<TextMeshProUGUI>();
         }
 
         private void Start()
         {
-            playerData = SceneGame.Instance.saveDataManager.Player;
-            playerData.OnCurrentGoldChanged()
+            _playerData = SceneGame.Instance.saveDataManager.Player;
+            _playerData.OnCurrentGoldChanged()
                 .Subscribe(UpdateText) // 값이 변경될 때마다 UI 업데이트
                 .AddTo(this);
         }
 
-        private void UpdateText(long newLevel)
+        private void UpdateText(long value)
         {
-            if (textGold == null)
+            if (_textGold == null)
             {
                 GcLogger.LogError("TextMeshProUGUI 컴포넌트가 없습니다.");
                 return;
             }
-            textGold.text = $"Gold {newLevel}";
+            _textGold.text = $"x{value}";
         }
     }
 }

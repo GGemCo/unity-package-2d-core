@@ -237,11 +237,11 @@ namespace GGemCo2DCore
         /// <param name="monsterObject"></param>
         public void OnMonsterDead(int monsterUid, GameObject monsterObject)
         {
+            MakeDropGold(monsterUid, monsterObject);
             int itemUid = GetDropItem(monsterUid);
             if (itemUid <= 0) return;
             // todo. Class 확률 적용해야 함.
             MakeDropItem(monsterObject.transform.position, itemUid, 1, ItemConstants.Class.Normal, _playerData.CurrentLevel);
-            MakeDropGold(monsterUid, monsterObject);
         }
         /// <summary>
         /// 골드 드랍 처리

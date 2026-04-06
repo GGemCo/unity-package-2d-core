@@ -16,6 +16,7 @@ namespace GGemCo2DCore
             Main,
             Player,
             Monster,
+            Item,
             Map,
             Save,
             Option,
@@ -32,11 +33,12 @@ namespace GGemCo2DCore
             MainSettings = 0,
             PlayerSettings = 10,
             MonsterSettings = 20,
-            MapSettings = 30,
-            SaveSettings = 40,
-            OptionSettings = 50,
-            SoundSettings = 60,
-            GameTimeSettings = 70,
+            ItemSettings = 30,
+            MapSettings = 40,
+            SaveSettings = 50,
+            OptionSettings = 60,
+            SoundSettings = 70,
+            GameTimeSettings = 80,
         }
 
         public const string BasePath = ConfigDefine.NameSDK + "/Settings/";
@@ -76,6 +78,18 @@ namespace GGemCo2DCore
             public const int Ordering =
                 (int)ConfigScriptableObjectCommon.PackageOrder.Core +
                 (int)CoreLocalOrder.MonsterSettings;
+        }
+
+        /// <summary>
+        /// 아이템 설정 메뉴 정보
+        /// </summary>
+        public static class Item
+        {
+            public const string FileName = BaseName + "ItemSettings";
+            public const string MenuName = BasePath + FileName;
+            public const int Ordering =
+                (int)ConfigScriptableObjectCommon.PackageOrder.Core +
+                (int)CoreLocalOrder.ItemSettings;
         }
 
         /// <summary>
@@ -170,6 +184,14 @@ namespace GGemCo2DCore
                         typeof(GGemCoMonsterSettings))
                 },
                 {
+                    CoreSettingsKey.Item,
+                    new ConfigScriptableObjectCommon.MenuInfo(
+                        Item.FileName,
+                        Item.MenuName,
+                        Item.Ordering,
+                        typeof(GGemCoItemSettings))
+                },
+                {
                     CoreSettingsKey.Map,
                     new ConfigScriptableObjectCommon.MenuInfo(
                         Map.FileName,
@@ -220,6 +242,7 @@ namespace GGemCo2DCore
                 { Main.FileName, typeof(GGemCoSettings) },
                 { Player.FileName, typeof(GGemCoPlayerSettings) },
                 { Monster.FileName, typeof(GGemCoMonsterSettings) },
+                { Item.FileName, typeof(GGemCoItemSettings) },
                 { Map.FileName, typeof(GGemCoMapSettings) },
                 { Save.FileName, typeof(GGemCoSaveSettings) },
                 { Option.FileName, typeof(GGemCoOptionSettings) },

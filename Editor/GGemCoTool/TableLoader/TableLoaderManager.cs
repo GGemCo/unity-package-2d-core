@@ -26,6 +26,9 @@ namespace GGemCo2DCoreEditor
         {
             return LoadTable<TableItem>(ConfigAddressableTable.TableItem.Path, forceReload);
         }
+
+        public static TableItemVisual LoadItemVisualTable(bool forceReload = true)
+            => LoadTable<TableItemVisual>(ConfigAddressableTable.TableItemVisual.Path, forceReload);
         
         public static TableItemUse LoadItemUseTable(bool forceReload = true)
             => LoadTable<TableItemUse>(ConfigAddressableTable.TableItemUse.Path, forceReload);

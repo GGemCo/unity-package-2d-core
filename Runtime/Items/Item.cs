@@ -12,28 +12,38 @@ namespace GGemCo2DCore
     {
         [Header("드랍 애니메이션 설정")]
         [Tooltip("최소 드랍 거리 (픽셀 단위). 너무 작으면 아이템들이 겹칠 수 있습니다.")]
-        public float minDistance = 40f;
+        [SerializeField] private float minDistance = 40f;
 
         [Tooltip("최대 드랍 거리 (픽셀 단위). 아이템이 퍼지는 최대 반경입니다.")]
-        public float maxDistance = 80f;
+        [SerializeField] private float maxDistance = 80f;
 
         [Tooltip("비행 시간 (초 단위). 짧을수록 빠르게 떨어집니다.")]
-        public float flightTime = 0.3f;
+        [SerializeField] private float flightTime = 0.3f;
 
         [Tooltip("중력 가속도 값. 클수록 빠르게 떨어집니다.")]
-        public float gravity = 25f;
+        [SerializeField] private float gravity = 25f;
 
         [Tooltip("최고점에서의 크기 증가 배율. 예: 1.2f = 20% 커짐.")]
-        public float scaleMultiplier = 1.2f;
+        [SerializeField] private float scaleMultiplier = 1.2f;
 
         [Tooltip("드랍된 아이템 간의 최소 간격 (픽셀 단위).")]
-        public float minSpacing = 20f;
+        [SerializeField] private float minSpacing = 20f;
 
         [Tooltip("착지 시 살짝 튀는 바운스 높이.")]
-        public float bounceHeight = 5f;
+        [SerializeField] private float bounceHeight = 5f;
 
         [Tooltip("회전 속도 (도/초 단위). 떨어질 때의 회전 효과.")]
-        public float rotationSpeed = 180f;
+        [SerializeField] private float rotationSpeed = 180f;
+        
+        [Tooltip("네임 태그 생성 여부")]
+        [SerializeField] private bool useNameTag = true;
+
+        [Header("VFX 이펙트 사용시")] 
+        [SerializeField] private string vfxEffectLoopClipName = "play";
+        [SerializeField] private float vfxEffectLoopTimeScale = 1.0f;
+        
+        [Header("Sorting Layer")]
+        [SerializeField] private ConfigSortingLayer.Keys sortingLayerName = ConfigSortingLayer.Keys.CharacterTop;
 
         private static readonly List<Vector2> DroppedItemPositions = new List<Vector2>(); // 드랍된 아이템 위치 저장
         
@@ -61,6 +71,7 @@ namespace GGemCo2DCore
         private Renderer _itemRenderer;
         private SpriteRenderer _spriteRenderer;
         private CircleCollider2D _circleCollider2D;
+        private DropItemVisualHost _visualHost;
 
         private bool _isStart;
         private ItemManager _itemManager;
@@ -71,10 +82,17 @@ namespace GGemCo2DCore
             _isBouncing = false;
             _bounceTime = 0.1f;
             _originalScale = transform.localScale; // 원래 크기 저장
-
+            
+            tag = ConfigTags.GetValue(ConfigTags.Keys.DropItem);
+            
             _itemRenderer = GetComponent<Renderer>();
             _spriteRenderer = GetComponent<SpriteRenderer>();
             _circleCollider2D = GetComponent<CircleCollider2D>();
+            _visualHost = GetComponent<DropItemVisualHost>();
+            if (_visualHost == null)
+            {
+                _visualHost = gameObject.AddComponent<DropItemVisualHost>();
+            }
             _circleCollider2D.enabled = false;
             
             _dropItemDestroyTimeSec = AddressableLoaderSettings.Instance.settings.dropItemDestroyTimeSec;
@@ -98,13 +116,14 @@ namespace GGemCo2DCore
             var info = TableLoaderManager.Instance.GetItemData(_itemUid);
             if (info == null || info.Uid <= 0) return;
             
-            _itemRenderer.sortingLayerName = ConfigSortingLayer.GetValue(ConfigSortingLayer.Keys.CharacterTop);
+            _itemRenderer.sortingLayerName = ConfigSortingLayer.GetValue(sortingLayerName);
             _itemRenderer.sortingOrder = 1;
+            _visualHost?.ApplySorting(_itemRenderer.sortingLayerName, _itemRenderer.sortingOrder);
             _timeElapsed = 0f;
             _isBouncing = false;
             transform.localScale = Vector3.one;
 
-            _spriteRenderer.sprite = AddressableLoaderItem.Instance.GetImageDropByName(info.FileName);
+            _visualHost?.Bind(_itemUid, info.FileName);
 
             // 특정 반경 내에서 랜덤한 위치 선택 (X, Y 축 모두 분산)
             int maxAttempts = 10; // 겹치지 않도록 최대 시도 횟수
@@ -163,6 +182,7 @@ namespace GGemCo2DCore
         /// </summary>
         private void CreateTagName()
         {
+            if (!useNameTag) return;
             GameObject prefabTagNameItem = ConfigResources.TextDropItemNameTag.Load();
             if (prefabTagNameItem == null) return;
             if (_containerItemName == null)
@@ -245,12 +265,13 @@ namespace GGemCo2DCore
             transform.localScale = _originalScale;
             _isBouncing = false;
             // 드랍된 후에는 캐릭터 layer 로 적용한다.
-            _itemRenderer.sortingLayerName = ConfigSortingLayer.GetValue(ConfigSortingLayer.Keys.Character);
+            _itemRenderer.sortingLayerName = ConfigSortingLayer.GetValue(sortingLayerName);
             _itemRenderer.sortingOrder = MathHelper.GetSortingOrder(_mapSizeHeight, transform.position.y);
             _circleCollider2D.enabled = true;
             _circleCollider2D.isTrigger = true;
 
-            _coroutineDropItemDestroy = StartCoroutine(CheckDestroyTime());
+            if (_dropItemDestroyTimeSec > 0)
+                _coroutineDropItemDestroy = StartCoroutine(CheckDestroyTime());
         }
         /// <summary>
         /// 플레이어가 아이템을 먹거나 맵에서 없어졌을때 
@@ -259,6 +280,7 @@ namespace GGemCo2DCore
         {
             StopCoroutineDropItemDestroy();
             _circleCollider2D.enabled = false;
+            _visualHost?.ReleaseVisual();
             if (_objectTagNameItem != null)
             {
                 _objectTagNameItem.SetActive(false);

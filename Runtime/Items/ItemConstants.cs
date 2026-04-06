@@ -58,6 +58,13 @@ namespace GGemCo2DCore
             Rare,
             Unique,
         }
+
+        public enum DropVisualType
+        {
+            Sprite,
+            Vfx,
+        }
+
         public enum PartsType
         {
             None,

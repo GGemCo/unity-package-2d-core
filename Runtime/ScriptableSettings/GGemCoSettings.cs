@@ -32,7 +32,7 @@ namespace GGemCo2DCore
         [Tooltip("몬스터가 죽은 뒤, 삭제되기까지의 지연 시간 (초 단위)")]
         public float delayDestroyMonster;
 
-        [Tooltip("드랍된 아이템이 사라지는 시간 (초 단위)")]
+        [Tooltip("드랍된 아이템이 사라지는 시간 (초 단위). -1이면 사라지지 않습니다.")]
         public int dropItemDestroyTimeSec;
 
         [Header("데미지 텍스트 설정")]
@@ -159,7 +159,6 @@ namespace GGemCo2DCore
             if (defaultMonsterRegenTimeSec <= 0) defaultMonsterRegenTimeSec = 7.0f;
             if (maxEnemyValue <= 0f) maxEnemyValue = 10;
             if (delayDestroyMonster <= 0f) delayDestroyMonster = 2;
-            if (dropItemDestroyTimeSec <= 0f) dropItemDestroyTimeSec = 10;
             if (damageTextMoveUpTime <= 0f) damageTextMoveUpTime = 0.3f;
             if (damageTextFadeOutTime <= 0f) damageTextFadeOutTime = 0.1f;
             if (damageTextMoveUpDistance <= 0f) damageTextMoveUpDistance = 50.0f;

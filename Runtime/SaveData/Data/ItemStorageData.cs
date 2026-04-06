@@ -93,6 +93,22 @@ namespace GGemCo2DCore
             
             int itemCount = iconPayload.Count;
             long instanceId = iconPayload.InstanceId;
+            
+            if (info.Type == ItemConstants.Type.Currency)
+            {
+                CurrencyConstants.Type currencyType = CurrencyConstants.Type.None;
+                if (info.Category == ItemConstants.Category.Gold)
+                {
+                    currencyType = CurrencyConstants.Type.Gold;
+                }
+                else if (info.Category == ItemConstants.Category.Silver)
+                {
+                    currencyType = CurrencyConstants.Type.Silver;
+                }
+                SceneGame.Instance.saveDataManager.Player.AddCurrency(currencyType, itemCount);
+                return ResultCommon.Success();
+            }
+            
             return AddItem(emptyIndex, itemUid, itemCount, instanceId);
         }
 
@@ -101,6 +117,28 @@ namespace GGemCo2DCore
             int itemUid = iconPayload.Uid;
             int itemCount = iconPayload.Count;
             long instanceId = iconPayload.InstanceId;
+            
+            var info = TableLoaderManager.Instance.GetItemData(itemUid);
+            if (info == null || info.Uid <= 0)
+            {
+                return ResultCommon.Fail();
+            }
+            
+            if (info.Type == ItemConstants.Type.Currency)
+            {
+                CurrencyConstants.Type currencyType = CurrencyConstants.Type.None;
+                if (info.Category == ItemConstants.Category.Gold)
+                {
+                    currencyType = CurrencyConstants.Type.Gold;
+                }
+                else if (info.Category == ItemConstants.Category.Silver)
+                {
+                    currencyType = CurrencyConstants.Type.Silver;
+                }
+                SceneGame.Instance.saveDataManager.Player.AddCurrency(currencyType, itemCount);
+                return ResultCommon.Success();
+            }
+            
             return AddItem(slotIndex, itemUid, itemCount, instanceId);
         }
         /// <summary>

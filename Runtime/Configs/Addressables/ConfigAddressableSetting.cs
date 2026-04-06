@@ -19,6 +19,7 @@ namespace GGemCo2DCore
 
         public static readonly AddressableAssetInfo Settings       = Make(nameof(Settings));
         public static readonly AddressableAssetInfo PlayerSettings = Make(nameof(PlayerSettings));
+        public static readonly AddressableAssetInfo ItemSettings   = Make(nameof(ItemSettings));
         public static readonly AddressableAssetInfo MapSettings    = Make(nameof(MapSettings));
         public static readonly AddressableAssetInfo SaveSettings   = Make(nameof(SaveSettings));
         public static readonly AddressableAssetInfo OptionSettings = Make(nameof(OptionSettings));
@@ -33,6 +34,7 @@ namespace GGemCo2DCore
         {
             Settings,
             PlayerSettings,
+            ItemSettings,
             MapSettings,
             SaveSettings,
             OptionSettings,

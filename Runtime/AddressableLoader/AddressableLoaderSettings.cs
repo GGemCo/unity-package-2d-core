@@ -17,6 +17,7 @@ namespace GGemCo2DCore
         [HideInInspector] public GGemCoSettings settings;
         [HideInInspector] public GGemCoPlayerSettings playerSettings;
         [HideInInspector] public GGemCoMapSettings mapSettings;
+        [HideInInspector] public GGemCoItemSettings itemSettings;
         [HideInInspector] public GGemCoSaveSettings saveSettings;
         [HideInInspector] public GGemCoOptionSettings optionSettings;
         [HideInInspector] public GGemCoSoundSettings soundSettings;
@@ -24,7 +25,7 @@ namespace GGemCo2DCore
         [HideInInspector] public GGemCoMonsterSettings monsterSettings;
         public delegate void DelegateLoadSettings(GGemCoSettings settings, GGemCoPlayerSettings playerSettings,
             GGemCoMapSettings mapSettings, GGemCoSaveSettings saveSettings, GGemCoOptionSettings optionSettings,
-            GGemCoSoundSettings soundSettings, GGemCoMonsterSettings monsterSettings);
+            GGemCoSoundSettings soundSettings, GGemCoMonsterSettings monsterSettings, GGemCoItemSettings itemSettings);
         public event DelegateLoadSettings OnLoadSettings;
         
         private readonly HashSet<AsyncOperationHandle> _activeHandles = new HashSet<AsyncOperationHandle>();
@@ -67,6 +68,7 @@ namespace GGemCo2DCore
                 var settingsTask = LoadSettingsAsync<GGemCoSettings>(ConfigAddressableSetting.Settings.Key);
                 var playerSettingsTask = LoadSettingsAsync<GGemCoPlayerSettings>(ConfigAddressableSetting.PlayerSettings.Key);
                 var mapSettingsTask = LoadSettingsAsync<GGemCoMapSettings>(ConfigAddressableSetting.MapSettings.Key);
+                var itemSettingsTask = LoadSettingsAsync<GGemCoItemSettings>(ConfigAddressableSetting.ItemSettings.Key);
                 var saveSettingsTask = LoadSettingsAsync<GGemCoSaveSettings>(ConfigAddressableSetting.SaveSettings.Key);
                 var optionSettingsTask = LoadSettingsAsync<GGemCoOptionSettings>(ConfigAddressableSetting.OptionSettings.Key);
                 var soundSettingsTask = LoadSettingsAsync<GGemCoSoundSettings>(ConfigAddressableSetting.SoundSettings.Key);
@@ -78,11 +80,11 @@ namespace GGemCo2DCore
 #if GGEMCO_USE_INGAME_TIME
                 // 모든 작업이 완료될 때까지 대기
                 await Task.WhenAll(settingsTask, playerSettingsTask, mapSettingsTask, saveSettingsTask,
-                    optionSettingsTask, soundSettingsTask, monsterSettingsTask, gameTimeSettingsTask);
+                    optionSettingsTask, soundSettingsTask, monsterSettingsTask, itemSettingsTask, gameTimeSettingsTask);
 #else
                 // 모든 작업이 완료될 때까지 대기
                 await Task.WhenAll(settingsTask, playerSettingsTask, mapSettingsTask, saveSettingsTask,
-                    optionSettingsTask, soundSettingsTask, monsterSettingsTask);
+                    optionSettingsTask, soundSettingsTask, monsterSettingsTask, itemSettingsTask);
 #endif
 
                 // 결과 저장
@@ -90,6 +92,7 @@ namespace GGemCo2DCore
                 playerSettings = playerSettingsTask.Result;
                 mapSettings = mapSettingsTask.Result;
                 saveSettings = saveSettingsTask.Result;
+                itemSettings = itemSettingsTask.Result;
                 optionSettings = optionSettingsTask.Result;
                 soundSettings = soundSettingsTask.Result;
                 monsterSettings = monsterSettingsTask.Result;
@@ -108,7 +111,7 @@ namespace GGemCo2DCore
                 //     GcLogger.Log("최대 저장 슬롯 개수 : " + saveSettings.saveDataMaxSlotCount);
 
                 // 이벤트 호출
-                OnLoadSettings?.Invoke(settings, playerSettings, mapSettings, saveSettings, optionSettings, soundSettings, monsterSettings);
+                OnLoadSettings?.Invoke(settings, playerSettings, mapSettings, saveSettings, optionSettings, soundSettings, monsterSettings, itemSettings);
             }
             catch (Exception ex)
             {

@@ -22,6 +22,7 @@ namespace GGemCo2DCore
         public const string Npc              = "npc";
         public const string Animation        = "animation";
         public const string Item             = "item";
+        public const string ItemVisual       = "item_visual";
         public const string ItemBaseOption   = "item_base_option";
         public const string ItemAffixDef     = "item_affix_def";
         public const string ItemAffixPool    = "item_affix_pool";
@@ -62,6 +63,7 @@ namespace GGemCo2DCore
         public static readonly AddressableAssetInfo TableNpc             = Make(Npc);
         public static readonly AddressableAssetInfo TableAnimation       = Make(Animation);
         public static readonly AddressableAssetInfo TableItem            = Make(Item);
+        public static readonly AddressableAssetInfo TableItemVisual      = Make(ItemVisual);
         public static readonly AddressableAssetInfo TableItemBaseOption  = Make(ItemBaseOption);
         public static readonly AddressableAssetInfo TableItemAffixDef    = Make(ItemAffixDef);
         public static readonly AddressableAssetInfo TableItemAffixPool   = Make(ItemAffixPool);
@@ -99,7 +101,7 @@ namespace GGemCo2DCore
         // 전체 목록 + 읽기 전용 뷰
         public static readonly List<AddressableAssetInfo> All = new()
         {
-            TableMap, TableMonster, TableNpc, TableAnimation, TableItem,
+            TableMap, TableMonster, TableNpc, TableAnimation, TableItem, TableItemVisual,
             TableItemBaseOption, TableItemAffixDef, TableItemAffixPool, TableItemRollRule,
             TableMonsterDropRate, TableNpcDropRate, TableItemDropGroup, TableExp, TableWindow,
             // Status 3분리 테이블

@@ -113,7 +113,8 @@ namespace GGemCo2DCore
             GGemCoSaveSettings saveSettings,
             GGemCoOptionSettings optionSettings,
             GGemCoSoundSettings soundSettings,
-            GGemCoMonsterSettings monsterSettings)
+            GGemCoMonsterSettings monsterSettings,
+            GGemCoItemSettings itemSettings)
         {
             GGemCoDebugHudManager.Initialize(settings);
         }
