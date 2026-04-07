@@ -1,4 +1,5 @@
-using System;
+﻿using System;
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Serialization;
 
@@ -198,6 +199,10 @@ namespace GGemCo2DCore
         [Tooltip("스테미나 포인트 1당 증가량")]
         public StatPointBonus statPointStamina;
 
+        [Header("Element Gauge")]
+        [Tooltip("플레이어에게 적용할 속성 게이지 규칙 목록입니다. 비어 있으면 런타임 기본값을 사용합니다.")]
+        public List<ElementGaugeRuleDefinition> elementGaugeRules = new();
+
         [Header("Passive Temp HP")]
         [SerializeField]
         private PassiveTempHpApplyPolicy passiveTempHpApplyPolicy = PassiveTempHpApplyPolicy.KeepCurrent;
@@ -245,6 +250,8 @@ namespace GGemCo2DCore
             spriteWhiteOverlayMaterial = null;
             spriteWhiteOverlayColor = Color.white;
             spriteWhiteOverlayFlashDuration = 0.08f;
+
+            elementGaugeRules = ElementGaugeRuleDefinition.CreateDefaultPlayerRules();
 
         }
     }

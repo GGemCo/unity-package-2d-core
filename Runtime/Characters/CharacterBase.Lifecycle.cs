@@ -1,4 +1,4 @@
-using R3;
+﻿using R3;
 using UnityEngine;
 
 namespace GGemCo2DCore
@@ -147,10 +147,14 @@ namespace GGemCo2DCore
             }
 
             _crowdControlController = gameObject.AddComponent<CharacterCrowdControlController>();
-            _elementGaugeController = gameObject.GetComponent<CharacterElementGaugeController>();
-            if (_elementGaugeController == null)
+            _elementGaugeController = null;
+            if (this is Player)
             {
-                _elementGaugeController = gameObject.AddComponent<CharacterElementGaugeController>();
+                _elementGaugeController = gameObject.GetComponent<CharacterElementGaugeController>();
+                if (_elementGaugeController == null)
+                {
+                    _elementGaugeController = gameObject.AddComponent<CharacterElementGaugeController>();
+                }
             }
             _hitStopController = gameObject.GetComponent<CharacterHitStopController>();
             if (_hitStopController == null)

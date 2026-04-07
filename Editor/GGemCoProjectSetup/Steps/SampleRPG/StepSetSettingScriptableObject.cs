@@ -75,6 +75,11 @@ namespace GGemCo2DCoreEditor
                 playerSettings.statHp = 10000;
                 playerSettings.statMp = 10000;
 
+                if (playerSettings.elementGaugeRules == null || playerSettings.elementGaugeRules.Count == 0)
+                {
+                    playerSettings.elementGaugeRules = ElementGaugeRuleDefinition.CreateDefaultPlayerRules();
+                }
+
                 EditorUtility.SetDirty(playerSettings);
             }
 

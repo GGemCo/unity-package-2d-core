@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -11,20 +11,6 @@ namespace GGemCo2DCore
     [DisallowMultipleComponent]
     public sealed class CharacterElementGaugeController : MonoBehaviour
     {
-        [Serializable]
-        private sealed class ElementGaugeRule
-        {
-            public ConfigCommon.DamageType damageType = ConfigCommon.DamageType.None;
-            [Min(1f)] public float gaugeMax = 100f;
-            [Min(0f)] public float decayDelaySeconds = 2f;
-            [Min(0.01f)] public float decayTickSeconds = 0.1f;
-            [Min(0f)] public float decayPercentPerTick = 0.5f;
-            [Min(0)] public int corruptionHeartCount = 0;
-            public bool blockAccumulationWhileTriggered = false;
-            public bool consumeCorruptedHpOnMatchingDamage = false;
-            [Min(0)] public int thresholdAffectUid = 0;
-            [Min(0f)] public float thresholdAffectDurationSeconds = 0f;
-        }
 
         private sealed class RuntimeGaugeState
         {
@@ -33,10 +19,9 @@ namespace GGemCo2DCore
             public float DecayElapsed;
         }
 
-        [Header("Element Gauge Rules")]
-        [SerializeField] private List<ElementGaugeRule> gaugeRules = new();
+        private readonly List<ElementGaugeRuleDefinition> _rules = new();
 
-        private readonly Dictionary<ConfigCommon.DamageType, ElementGaugeRule> _ruleMap = new();
+        private readonly Dictionary<ConfigCommon.DamageType, ElementGaugeRuleDefinition> _ruleMap = new();
         private readonly Dictionary<ConfigCommon.DamageType, RuntimeGaugeState> _stateMap = new();
         private readonly List<ElementGaugeSnapshot> _snapshots = new();
 
@@ -50,21 +35,19 @@ namespace GGemCo2DCore
 
         public HpCorruptionSnapshot CurrentCorruption => new(_corruptedBaseHp, _corruptedTempItemHp, _corruptedTempPassiveHp);
 
-        private void Reset()
-        {
-            EnsureDefaultRules();
-        }
-
         private void Awake()
         {
             _owner = GetComponent<CharacterBase>();
-            EnsureDefaultRules();
+            InitializeRules();
             RebuildCaches();
         }
 
         private void Update()
         {
             if (_owner == null || _owner.IsStatusDead())
+                return;
+
+            if (!(_owner is Player))
                 return;
 
             bool changed = false;
@@ -158,7 +141,7 @@ namespace GGemCo2DCore
 
         public void HandleAfterIncomingDamage(MetadataDamage metadataDamage)
         {
-            if (_owner == null)
+            if (_owner == null || !(_owner is Player))
                 return;
 
             ClampCorruptionToCurrentResources();
@@ -179,6 +162,9 @@ namespace GGemCo2DCore
         private bool ApplyGaugeInternal(ElementGaugeApplication application, GameObject source)
         {
             if (_owner == null || _owner.IsStatusDead())
+                return false;
+
+            if (!(_owner is Player))
                 return false;
 
             if (!application.IsValid)
@@ -215,7 +201,7 @@ namespace GGemCo2DCore
             return true;
         }
 
-        private void HandleThresholdReached(ElementGaugeRule rule, GameObject source)
+        private void HandleThresholdReached(ElementGaugeRuleDefinition rule, GameObject source)
         {
             if (rule == null)
                 return;
@@ -231,7 +217,7 @@ namespace GGemCo2DCore
             }
         }
 
-        private void ApplyPoisonCorruption(ElementGaugeRule rule)
+        private void ApplyPoisonCorruption(ElementGaugeRuleDefinition rule)
         {
             if (_owner == null)
                 return;
@@ -344,7 +330,7 @@ namespace GGemCo2DCore
 
         private long ResolveHeartHp()
         {
-            var settings = AddressableLoaderSettings.Instance != null ? AddressableLoaderSettings.Instance.playerSettings : null;
+            var settings = ResolvePlayerSettings();
             int hpPerPiece = settings != null ? Mathf.Max(1, settings.itemBonusTempHpPerPiece) : 100;
             int piecesPerHeart = settings != null ? Mathf.Max(1, settings.itemBonusTempPiecesPerHeart) : 4;
             return (long)hpPerPiece * piecesPerHeart;
@@ -367,34 +353,39 @@ namespace GGemCo2DCore
             return Mathf.Clamp01((100f - Mathf.Clamp(resistance, 0f, 100f)) / 100f);
         }
 
-        private void EnsureDefaultRules()
+        private void InitializeRules()
         {
-            gaugeRules ??= new List<ElementGaugeRule>();
-            EnsureRule(ConfigCommon.DamageType.Fire, createPoisonDefaults: false);
-            EnsureRule(ConfigCommon.DamageType.Cold, createPoisonDefaults: false);
-            EnsureRule(ConfigCommon.DamageType.Lightning, createPoisonDefaults: false);
-            EnsureRule(ConfigCommon.DamageType.Poison, createPoisonDefaults: true);
-        }
+            _rules.Clear();
 
-        private void EnsureRule(ConfigCommon.DamageType damageType, bool createPoisonDefaults)
-        {
-            for (int i = 0; i < gaugeRules.Count; i++)
+            if (!(_owner is Player))
+                return;
+
+            var settings = ResolvePlayerSettings();
+            var configuredRules = settings != null ? settings.elementGaugeRules : null;
+            if (configuredRules != null)
             {
-                if (gaugeRules[i] != null && gaugeRules[i].damageType == damageType)
-                    return;
+                for (int i = 0; i < configuredRules.Count; i++)
+                {
+                    var rule = configuredRules[i];
+                    if (rule == null)
+                        continue;
+
+                    _rules.Add(rule.Clone());
+                }
             }
 
-            gaugeRules.Add(new ElementGaugeRule
+            if (_rules.Count == 0)
             {
-                damageType = damageType,
-                gaugeMax = 100f,
-                decayDelaySeconds = 2f,
-                decayTickSeconds = 0.1f,
-                decayPercentPerTick = 0.5f,
-                corruptionHeartCount = createPoisonDefaults ? 2 : 0,
-                blockAccumulationWhileTriggered = createPoisonDefaults,
-                consumeCorruptedHpOnMatchingDamage = createPoisonDefaults,
-            });
+                _rules.AddRange(ElementGaugeRuleDefinition.CreateDefaultPlayerRules());
+            }
+        }
+
+        private GGemCoPlayerSettings ResolvePlayerSettings()
+        {
+            if (!(_owner is Player))
+                return null;
+
+            return AddressableLoaderSettings.Instance != null ? AddressableLoaderSettings.Instance.playerSettings : null;
         }
 
         private void RebuildCaches()
@@ -402,9 +393,9 @@ namespace GGemCo2DCore
             _ruleMap.Clear();
             _stateMap.Clear();
 
-            for (int i = 0; i < gaugeRules.Count; i++)
+            for (int i = 0; i < _rules.Count; i++)
             {
-                var rule = gaugeRules[i];
+                var rule = _rules[i];
                 if (rule == null)
                     continue;
                 if (rule.damageType == ConfigCommon.DamageType.None || rule.damageType == ConfigCommon.DamageType.Physic)
