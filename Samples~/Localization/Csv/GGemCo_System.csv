@@ -115,5 +115,6 @@ Key,Shared Comments,English(en),English(en) Comments,Korean(ko),Korean(ko) Comme
 "ItemUse_NoActions","ItemUseService","No actions defined for this item.","","이 아이템에 정의된 효과가 없습니다.",""
 "ItemUse_Execute_Fail","ItemUseService","Item execution failed.","","아이템 실행에 실패했습니다.",""
 "ItemUse_Consume_Fail","ItemUseService","Failed to consume item.","","아이템 소모에 실패했습니다.",""
-
-"New Entry 1","",,,"다른 스킬을 사용 중입니다.",""
+"Skill_TargetOutOfRange","","No target within range.","","사거리 안에 타겟이 없습니다.",""
+"Skill_AlreadyInUse","","Another skill is already in use.","","다른 스킬을 사용 중입니다.",""
+"Skill_NotEnoughMp","","Not Enough Mana","","마나가 부족합니다.",""

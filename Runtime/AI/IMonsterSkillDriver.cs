@@ -142,6 +142,7 @@ namespace GGemCo2DCore
         OutOfRange = 7,
         ExecutionRejected = 8,
         ControlLocked = 9,
+        InsufficientMp = 10,
     }
 
     public readonly struct SkillUseResult

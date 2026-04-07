@@ -492,6 +492,10 @@ MonoBehaviour:
     m_Localized: Another skill is already in use.
     m_Metadata:
       m_Items: []
+  - m_Id: 97854949569896448
+    m_Localized: Not Enough Mana
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []

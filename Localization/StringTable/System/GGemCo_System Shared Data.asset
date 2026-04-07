@@ -565,6 +565,10 @@ MonoBehaviour:
     m_Key: Skill_AlreadyInUse
     m_Metadata:
       m_Items: []
+  - m_Id: 97854949569896448
+    m_Key: Skill_NotEnoughMp
+    m_Metadata:
+      m_Items: []
   m_Metadata:
     m_Items: []
   m_KeyGenerator:
