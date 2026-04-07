@@ -14,14 +14,16 @@ namespace GGemCo2DCore
         public readonly float RemainingTime;
         public readonly float TotalDuration;
         public readonly string IconKey;
+        public readonly AffectUiDecoratorData Decorator;
 
-        public AffectUiItem(int affectUid, int stacks, float remainingTime, float totalDuration, string iconKey)
+        public AffectUiItem(int affectUid, int stacks, float remainingTime, float totalDuration, string iconKey, AffectUiDecoratorData decorator)
         {
             AffectUid = affectUid;
             Stacks = stacks;
             RemainingTime = remainingTime;
             TotalDuration = totalDuration;
             IconKey = iconKey;
+            Decorator = decorator;
         }
     }
 }
