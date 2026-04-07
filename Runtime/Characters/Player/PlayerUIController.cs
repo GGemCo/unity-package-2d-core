@@ -84,7 +84,10 @@ namespace GGemCo2DCore
             {
                 AffectRuntimeBridge.TryBindPlayerHudAffectState(_player, affectHudReceiver);
             }
-
+            if (_player != null && _uiWindowHud != null && _player.ElementGaugeController != null)
+            {
+                _uiWindowHud.BindElementGauge(_player.ElementGaugeController);
+            }
             if (_player != null && _uiWindowHud != null && _player.ElementGaugeController != null && _uiWindowHud.gameObjectHp is IHpCorruptionHudReceiver corruptionReceiver)
             {
                 corruptionReceiver.SetHpCorruption(_player.ElementGaugeController.CurrentCorruption);

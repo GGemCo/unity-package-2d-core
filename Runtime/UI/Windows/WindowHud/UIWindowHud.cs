@@ -27,9 +27,17 @@ namespace GGemCo2DCore
         [Tooltip("현재 플레이어 스테미나 수치")]
         public TextMeshProUGUI textStamina;
         
+        [Tooltip("중독 게이지")]
+        public UISliderElementCharge poisonCharge;
+        
         // todo. 정리 필요
         [Tooltip("전투 상태")]
         public TMP_Text textBattleStatus;
+        
+        public void BindElementGauge(CharacterElementGaugeController controller)
+        {
+            poisonCharge?.Bind(controller);
+        }
         
         protected override void Awake()
         {
