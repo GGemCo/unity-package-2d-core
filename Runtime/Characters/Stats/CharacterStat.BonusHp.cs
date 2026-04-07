@@ -52,6 +52,7 @@ namespace GGemCo2DCore
 
         #region 아이템 임시 HP
         public long GetItemBonusHpTemp() => _itemBonusProvider?.GetHpBonusTemp() ?? 0;
+        public long GetItemBonusHpTempCurrent() => CurrentHpTempItem;
 
         /// <summary>
         /// 아이템 사용했을 때 CharacterStat.TotalHpTemp 업데이트 하기

@@ -78,6 +78,9 @@ namespace GGemCo2DCore
         private CharacterCrowdControlController _crowdControlController;
         private ICharacterMotionController _motionController;
         private CharacterPhysicsOverrideController _physicsOverrideController;
+        private CharacterElementGaugeController _elementGaugeController;
+
+        public CharacterElementGaugeController ElementGaugeController => _elementGaugeController;
         
         public event EventHandlerAnimationCompleteAttack AnimationCompleteAttack;
         public event EventHandlerAnimationCompleteAttackEnd AnimationCompleteAttackEnd;

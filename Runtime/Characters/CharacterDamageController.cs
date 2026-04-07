@@ -55,6 +55,11 @@ namespace GGemCo2DCore
         /// </summary>
         public DirectionalCameraShakeMode DamageCameraShakeDirectionMode = DirectionalCameraShakeMode.PresetRaw;
 
+        /// <summary>
+        /// 이번 타격이 추가로 누적할 속성 게이지 목록입니다.
+        /// </summary>
+        public ElementGaugeApplication[] ElementGaugeApplications;
+
         public List<int> ResolvedOnHitCrowdControls;
     }
     /// <summary>
@@ -136,6 +141,7 @@ namespace GGemCo2DCore
 
         public void TakeDamage(MetadataDamage metadataDamage)
         {
+            if (metadataDamage == null) return;
             if (SceneGame.Instance.CutsceneManager.IsPlaying()) return;
             if (_characterBase.IsStatusDead())
             {
@@ -365,6 +371,38 @@ namespace GGemCo2DCore
             _characterBase.ApplyCrowdControlSequence(resolvedOnHitCrowdControls, metadataDamage.attacker, isEndCharacterStop);
             
             _characterBase.CurrentHp.OnNext(remainHp);
+
+            // 속성 데미지 게이지 처리
+            var elementGaugeController = _characterBase.ElementGaugeController;
+            if (elementGaugeController != null && metadataDamage.ElementGaugeApplications != null && metadataDamage.ElementGaugeApplications.Length > 0)
+            {
+                elementGaugeController.ApplyGauge(metadataDamage.ElementGaugeApplications, metadataDamage.attacker);
+            }
+
+            if (elementGaugeController != null)
+            {
+                elementGaugeController.HandleAfterIncomingDamage(metadataDamage);
+                TryFinalizeDeathAfterElementGauge(metadataDamage.attacker);
+            }
+        }
+
+        private void TryFinalizeDeathAfterElementGauge(GameObject attacker)
+        {
+            if (_characterBase == null || _characterBase.IsStatusDead())
+                return;
+
+            if (_characterBase.BaseHp < 0 && _characterBase.CurrentHp.Value <= 0)
+            {
+                _characterBase.CurrentHp.OnNext(1);
+                return;
+            }
+
+            if (_characterBase.CurrentHp.Value > 0)
+                return;
+
+            NotifyIncomingHitActionCancelers(IncomingHitCancelReason.Death);
+            _characterBase.CurrentMp.OnNext(0);
+            _characterBase.Dead(CharacterConstants.DieReasonType.Battle, attacker, playDeadAnimation: true);
         }
 
 

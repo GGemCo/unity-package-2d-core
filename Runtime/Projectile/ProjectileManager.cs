@@ -26,6 +26,7 @@ namespace GGemCo2DCore
         public readonly int SkillUid;
         public readonly int AttackId;
         public readonly bool AllowSkillChainOnConfirmedDamage;
+        public readonly ElementGaugeApplication[] ElementGaugeApplications;
 
         // --- Movement/Scale (dynamic) ---
         public readonly float SpeedMultiplier;
@@ -53,7 +54,8 @@ namespace GGemCo2DCore
             Vector2 targetPositionOverride = default,
             int skillUid = 0,
             int attackId = 0,
-            bool allowSkillChainOnConfirmedDamage = false)
+            bool allowSkillChainOnConfirmedDamage = false,
+            ElementGaugeApplication[] elementGaugeApplications = null)
         {
             Uid = uid;
             DamageType = damageType;
@@ -61,6 +63,7 @@ namespace GGemCo2DCore
             SkillUid = skillUid;
             AttackId = attackId;
             AllowSkillChainOnConfirmedDamage = allowSkillChainOnConfirmedDamage;
+            ElementGaugeApplications = elementGaugeApplications;
             Target = target;
             Owner = owner;
 

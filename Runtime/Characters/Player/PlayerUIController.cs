@@ -85,6 +85,12 @@ namespace GGemCo2DCore
                 AffectRuntimeBridge.TryBindPlayerHudAffectState(_player, affectHudReceiver);
             }
 
+            if (_player != null && _uiWindowHud != null && _player.ElementGaugeController != null && _uiWindowHud.gameObjectHp is IHpCorruptionHudReceiver corruptionReceiver)
+            {
+                corruptionReceiver.SetHpCorruption(_player.ElementGaugeController.CurrentCorruption);
+                _player.ElementGaugeController.CorruptionChanged += corruptionReceiver.SetHpCorruption;
+            }
+
             // 최대 HP/현재 HP 중 어느 값이 바뀌어도 HUD HP 표시를 다시 계산한다.
             _player.TotalHp
                 .Subscribe(_ => SetWindowHudHp())

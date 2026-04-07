@@ -427,7 +427,8 @@ namespace GGemCo2DCore
                     attacker = FromCharacter ? FromCharacter.gameObject : null,
                     damageType = DamageType,
                     SkillUid = SkillUid,
-                    AttackId = AttackId
+                    AttackId = AttackId,
+                    ElementGaugeApplications = Runtime != null ? Runtime.ElementGaugeApplications : null,
                 };
                 target.TakeDamage(md);
                 Destroy(gameObject);
@@ -550,7 +551,8 @@ namespace GGemCo2DCore
                 attacker = FromCharacter ? FromCharacter.gameObject : null,
                 damageType = DamageType,
                 SkillUid = SkillUid,
-                AttackId = AttackId
+                AttackId = AttackId,
+                ElementGaugeApplications = Runtime != null ? Runtime.ElementGaugeApplications : null,
             };
             area.target?.TakeDamage(md);
 
