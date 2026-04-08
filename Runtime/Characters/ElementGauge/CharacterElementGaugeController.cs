@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -222,11 +222,10 @@ namespace GGemCo2DCore
             if (_owner == null)
                 return;
 
-            long heartHp = ResolveHeartHp();
-            if (heartHp <= 0)
+            long corruptionBudget = Math.Max(0L, rule.corruptionHpAmount);
+            if (corruptionBudget <= 0)
                 return;
 
-            long corruptionBudget = heartHp * Mathf.Max(1, rule.corruptionHeartCount);
             long remaining = corruptionBudget;
 
             long currentTempItem = (long)Mathf.Max(0, _owner.GetItemBonusHpTempCurrent());
@@ -326,14 +325,6 @@ namespace GGemCo2DCore
         private bool HasPoisonCorruption()
         {
             return (_corruptedBaseHp + _corruptedTempItemHp + _corruptedTempPassiveHp) > 0;
-        }
-
-        private long ResolveHeartHp()
-        {
-            var settings = ResolvePlayerSettings();
-            int hpPerPiece = settings != null ? Mathf.Max(1, settings.itemBonusTempHpPerPiece) : 100;
-            int piecesPerHeart = settings != null ? Mathf.Max(1, settings.itemBonusTempPiecesPerHeart) : 4;
-            return (long)hpPerPiece * piecesPerHeart;
         }
 
         private float ResolveResistanceMultiplier(ConfigCommon.DamageType damageType)

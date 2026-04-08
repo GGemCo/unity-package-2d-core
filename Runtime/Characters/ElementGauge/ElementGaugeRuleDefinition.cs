@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Serialization;
 
 namespace GGemCo2DCore
 {
@@ -30,9 +31,10 @@ namespace GGemCo2DCore
         [Tooltip("감소 Tick마다 줄어드는 비율(%)입니다. (예: 0.5 = 0.5%)")]
         public float decayPercentPerTick = 0.5f;
 
+        [FormerlySerializedAs("corruptionHeartCount")]
         [Min(0)]
-        [Tooltip("임계 도달 시 오염(또는 변질)되는 하트 개수입니다.")]
-        public int corruptionHeartCount = 0;
+        [Tooltip("임계 도달 시 오염(또는 변질)시킬 HP 양입니다.")]
+        public int corruptionHpAmount = 0;
 
         [Tooltip("임계 상태가 유지되는 동안 게이지 누적을 차단할지 여부입니다.")]
         public bool blockAccumulationWhileTriggered = false;
@@ -57,7 +59,7 @@ namespace GGemCo2DCore
                 decayDelaySeconds = decayDelaySeconds,
                 decayTickSeconds = decayTickSeconds,
                 decayPercentPerTick = decayPercentPerTick,
-                corruptionHeartCount = corruptionHeartCount,
+                corruptionHpAmount = corruptionHpAmount,
                 blockAccumulationWhileTriggered = blockAccumulationWhileTriggered,
                 consumeCorruptedHpOnMatchingDamage = consumeCorruptedHpOnMatchingDamage,
                 thresholdAffectUid = thresholdAffectUid,
@@ -85,7 +87,8 @@ namespace GGemCo2DCore
                 decayDelaySeconds = 2f,
                 decayTickSeconds = 0.1f,
                 decayPercentPerTick = 0.5f,
-                corruptionHeartCount = createPoisonDefaults ? 2 : 0,
+                // 기본 Heart 설정(100 x 4) 기준 2하트 = 800 HP
+                corruptionHpAmount = createPoisonDefaults ? 800 : 0,
                 blockAccumulationWhileTriggered = createPoisonDefaults,
                 consumeCorruptedHpOnMatchingDamage = createPoisonDefaults,
             };
