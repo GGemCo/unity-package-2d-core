@@ -36,6 +36,9 @@ namespace GGemCo2DCore
         [Tooltip("임계 도달 시 오염(또는 변질)시킬 HP 양입니다.")]
         public int corruptionHpAmount = 0;
 
+        [Tooltip("임계 반응 하트 HUD에 적용할 시각 상태 키입니다. 비어 있으면 damageType 이름을 소문자로 사용합니다.")]
+        public string triggeredHudStateKey = string.Empty;
+
         [Tooltip("임계 상태가 유지되는 동안 게이지 누적을 차단할지 여부입니다.")]
         public bool blockAccumulationWhileTriggered = false;
 
@@ -74,6 +77,7 @@ namespace GGemCo2DCore
                 decayTickSeconds = decayTickSeconds,
                 decayPercentPerTick = decayPercentPerTick,
                 corruptionHpAmount = corruptionHpAmount,
+                triggeredHudStateKey = triggeredHudStateKey,
                 blockAccumulationWhileTriggered = blockAccumulationWhileTriggered,
                 consumeCorruptedHpOnMatchingDamage = consumeCorruptedHpOnMatchingDamage,
                 consumePolicies = ClonePolicies(consumePolicies),
@@ -134,6 +138,7 @@ namespace GGemCo2DCore
                 decayPercentPerTick = 0.5f,
                 // 기본 Heart 설정(100 x 4) 기준 2하트 = 800 HP
                 corruptionHpAmount = createPoisonDefaults ? 800 : 0,
+                triggeredHudStateKey = damageType.ToString().ToLowerInvariant(),
                 blockAccumulationWhileTriggered = createPoisonDefaults,
                 consumeCorruptedHpOnMatchingDamage = createPoisonDefaults,
                 consumePolicies = createPoisonDefaults ? CreateDefaultConsumePolicies(damageType) : new List<ElementGaugeCorruptedHpConsumePolicyDefinition>(),

@@ -6,12 +6,11 @@ namespace GGemCo2DCore
 {
     /// <summary>
     /// 캐릭터의 속성 게이지 누적/감쇠/임계 반응을 관리합니다.
-    /// 1차 구현에서는 Poison 임계 반응으로 독 하트 오염 상태를 지원합니다.
+    /// 임계 반응이 발생하면 속성별로 표시/소모할 HP 구간을 별도로 추적합니다.
     /// </summary>
     [DisallowMultipleComponent]
     public sealed class CharacterElementGaugeController : MonoBehaviour
     {
-
         private sealed class RuntimeGaugeState
         {
             public float CurrentValue;
@@ -20,22 +19,39 @@ namespace GGemCo2DCore
             public float CorruptedHpTickElapsed;
         }
 
-        private readonly List<ElementGaugeRuleDefinition> _rules = new();
+        private sealed class TriggeredHpState
+        {
+            public long BaseHp;
+            public long TempItemHp;
+            public long TempRuntimeHp;
+            public long TempPassiveHp;
 
+            public long TotalHp => BaseHp + TempItemHp + TempRuntimeHp + TempPassiveHp;
+
+            public void Clear()
+            {
+                BaseHp = 0;
+                TempItemHp = 0;
+                TempRuntimeHp = 0;
+                TempPassiveHp = 0;
+            }
+        }
+
+        private readonly List<ElementGaugeRuleDefinition> _rules = new();
         private readonly Dictionary<ConfigCommon.DamageType, ElementGaugeRuleDefinition> _ruleMap = new();
         private readonly Dictionary<ConfigCommon.DamageType, RuntimeGaugeState> _stateMap = new();
+        private readonly Dictionary<ConfigCommon.DamageType, TriggeredHpState> _triggeredStateMap = new();
         private readonly List<ElementGaugeSnapshot> _snapshots = new();
+        private readonly List<ElementTriggeredHpSnapshot> _triggeredSnapshotBuffer = new();
 
         private CharacterBase _owner;
-        private long _corruptedBaseHp;
-        private long _corruptedTempItemHp;
-        private long _corruptedTempRuntimeHp;
-        private long _corruptedTempPassiveHp;
 
         public event Action GaugeChanged;
+        public event Action<ElementTriggeredHpCollectionSnapshot> TriggeredHpChanged;
         public event Action<HpCorruptionSnapshot> CorruptionChanged;
 
-        public HpCorruptionSnapshot CurrentCorruption => new(_corruptedBaseHp, _corruptedTempItemHp, _corruptedTempRuntimeHp, _corruptedTempPassiveHp);
+        public ElementTriggeredHpCollectionSnapshot CurrentTriggeredHpStates => BuildTriggeredHpCollectionSnapshot();
+        public HpCorruptionSnapshot CurrentCorruption => CurrentTriggeredHpStates.GetLegacyCorruptionSnapshot(ConfigCommon.DamageType.Poison);
 
         private void Awake()
         {
@@ -53,53 +69,50 @@ namespace GGemCo2DCore
                 return;
 
             bool gaugeChanged = false;
-            bool corruptionChanged = false;
+            bool triggeredHpChanged = false;
             bool requiresDeathFinalize = false;
             float now = Time.time;
             float delta = Time.deltaTime;
 
             foreach (var pair in _ruleMap)
             {
-                var damageType = pair.Key;
-                var rule = pair.Value;
+                ConfigCommon.DamageType damageType = pair.Key;
+                ElementGaugeRuleDefinition rule = pair.Value;
                 if (rule == null)
                     continue;
 
-                if (!_stateMap.TryGetValue(damageType, out var state) || state == null)
+                if (!_stateMap.TryGetValue(damageType, out RuntimeGaugeState state) || state == null)
                     continue;
 
-                if (state.CurrentValue > 0f)
+                if (state.CurrentValue > 0f && now - state.LastAccumulatedTime >= Mathf.Max(0f, rule.decayDelaySeconds))
                 {
-                    if (now - state.LastAccumulatedTime >= Mathf.Max(0f, rule.decayDelaySeconds))
+                    state.DecayElapsed += delta;
+                    float tick = Mathf.Max(0.01f, rule.decayTickSeconds);
+                    float decayPerTick = Mathf.Max(0f, rule.gaugeMax) * Mathf.Max(0f, rule.decayPercentPerTick) * 0.01f;
+
+                    if (decayPerTick > 0f)
                     {
-                        state.DecayElapsed += delta;
-                        float tick = Mathf.Max(0.01f, rule.decayTickSeconds);
-                        float decayPerTick = Mathf.Max(0f, rule.gaugeMax) * Mathf.Max(0f, rule.decayPercentPerTick) * 0.01f;
-
-                        if (decayPerTick > 0f)
+                        while (state.DecayElapsed >= tick)
                         {
-                            while (state.DecayElapsed >= tick)
+                            state.DecayElapsed -= tick;
+                            float next = Mathf.Max(0f, state.CurrentValue - decayPerTick);
+                            if (!Mathf.Approximately(next, state.CurrentValue))
                             {
-                                state.DecayElapsed -= tick;
-                                float next = Mathf.Max(0f, state.CurrentValue - decayPerTick);
-                                if (!Mathf.Approximately(next, state.CurrentValue))
-                                {
-                                    state.CurrentValue = next;
-                                    gaugeChanged = true;
-                                }
+                                state.CurrentValue = next;
+                                gaugeChanged = true;
+                            }
 
-                                if (state.CurrentValue <= 0f)
-                                {
-                                    state.CurrentValue = 0f;
-                                    state.DecayElapsed = 0f;
-                                    break;
-                                }
+                            if (state.CurrentValue <= 0f)
+                            {
+                                state.CurrentValue = 0f;
+                                state.DecayElapsed = 0f;
+                                break;
                             }
                         }
                     }
                 }
 
-                ClampTriggeredCorruptionToCurrentResources(damageType, raiseChangedEvent: false);
+                triggeredHpChanged |= ClampTriggeredCorruptionToCurrentResources(damageType, raiseChangedEvent: false);
 
                 if (!rule.useCorruptedHpTickDamage)
                 {
@@ -129,7 +142,7 @@ namespace GGemCo2DCore
                     long consumed = ConsumeTriggeredCorruptionHp(damageType, tickHpAmount);
                     if (consumed > 0)
                     {
-                        corruptionChanged = true;
+                        triggeredHpChanged = true;
                         if (_owner.CurrentHp.Value <= 0)
                             requiresDeathFinalize = true;
                     }
@@ -145,8 +158,8 @@ namespace GGemCo2DCore
             if (gaugeChanged)
                 RaiseGaugeChanged();
 
-            if (corruptionChanged)
-                RaiseCorruptionChanged();
+            if (triggeredHpChanged)
+                RaiseTriggeredHpChanged();
 
             if (requiresDeathFinalize)
                 FinalizeDeathFromTriggeredCorruption();
@@ -158,7 +171,7 @@ namespace GGemCo2DCore
 
             foreach (var pair in _ruleMap)
             {
-                if (!_stateMap.TryGetValue(pair.Key, out var state) || state == null)
+                if (!_stateMap.TryGetValue(pair.Key, out RuntimeGaugeState state) || state == null)
                     continue;
 
                 bool isBlocked = HasTriggeredCorruption(pair.Key);
@@ -197,29 +210,45 @@ namespace GGemCo2DCore
             if (_owner == null || !(_owner is Player))
                 return;
 
-            ClampTriggeredCorruptionToCurrentResources(ConfigCommon.DamageType.Poison, raiseChangedEvent: false);
+            bool triggeredHpChanged = false;
+            bool requiresDeathFinalize = false;
 
-            if (!HasTriggeredCorruption(ConfigCommon.DamageType.Poison))
-                return;
+            foreach (var pair in _ruleMap)
+            {
+                ConfigCommon.DamageType damageType = pair.Key;
+                ClampTriggeredCorruptionToCurrentResources(damageType, raiseChangedEvent: false);
 
-            if (!ShouldConsumeTriggeredCorruption(ConfigCommon.DamageType.Poison, metadataDamage))
-                return;
+                if (!HasTriggeredCorruption(damageType))
+                    continue;
 
-            long consumed = ConsumeTriggeredCorruptionHp(ConfigCommon.DamageType.Poison, GetTriggeredCorruptionTotalHp(ConfigCommon.DamageType.Poison));
-            if (consumed > 0)
-                RaiseCorruptionChanged();
+                if (!ShouldConsumeTriggeredCorruption(damageType, metadataDamage))
+                    continue;
+
+                long consumed = ConsumeTriggeredCorruptionHp(damageType, GetTriggeredCorruptionTotalHp(damageType));
+                if (consumed <= 0)
+                    continue;
+
+                triggeredHpChanged = true;
+                if (_owner.CurrentHp.Value <= 0)
+                    requiresDeathFinalize = true;
+            }
+
+            if (triggeredHpChanged)
+                RaiseTriggeredHpChanged();
+
+            if (requiresDeathFinalize)
+                FinalizeDeathFromTriggeredCorruption();
         }
-
 
         private bool ShouldConsumeTriggeredCorruption(ConfigCommon.DamageType damageType, MetadataDamage metadataDamage)
         {
             if (metadataDamage == null)
                 return false;
 
-            if (!_ruleMap.TryGetValue(damageType, out var rule) || rule == null)
+            if (!_ruleMap.TryGetValue(damageType, out ElementGaugeRuleDefinition rule) || rule == null)
                 return false;
 
-            var hasExplicitPolicies = rule.consumePolicies != null && rule.consumePolicies.Count > 0;
+            bool hasExplicitPolicies = rule.consumePolicies != null && rule.consumePolicies.Count > 0;
             if (!hasExplicitPolicies && !rule.consumeCorruptedHpOnMatchingDamage)
                 return false;
 
@@ -227,7 +256,7 @@ namespace GGemCo2DCore
             {
                 for (int i = 0; i < rule.consumePolicies.Count; i++)
                 {
-                    var policy = rule.consumePolicies[i];
+                    ElementGaugeCorruptedHpConsumePolicyDefinition policy = rule.consumePolicies[i];
                     if (policy == null)
                         continue;
 
@@ -277,7 +306,7 @@ namespace GGemCo2DCore
             if (metadataDamage == null)
                 return false;
 
-            var apps = metadataDamage.ElementGaugeApplications;
+            ElementGaugeApplication[] apps = metadataDamage.ElementGaugeApplications;
             if (apps == null || apps.Length == 0)
                 return false;
 
@@ -309,13 +338,13 @@ namespace GGemCo2DCore
             if (!application.IsValid)
                 return false;
 
-            if (!_ruleMap.TryGetValue(application.DamageType, out var rule) || rule == null)
+            if (!_ruleMap.TryGetValue(application.DamageType, out ElementGaugeRuleDefinition rule) || rule == null)
                 return false;
 
             if (rule.blockAccumulationWhileTriggered && HasTriggeredCorruption(application.DamageType))
                 return false;
 
-            if (!_stateMap.TryGetValue(application.DamageType, out var state) || state == null)
+            if (!_stateMap.TryGetValue(application.DamageType, out RuntimeGaugeState state) || state == null)
             {
                 state = new RuntimeGaugeState();
                 _stateMap[application.DamageType] = state;
@@ -358,139 +387,129 @@ namespace GGemCo2DCore
             if (rule == null)
                 return;
 
-            switch (rule.damageType)
-            {
-                case ConfigCommon.DamageType.Poison:
-                    ApplyPoisonCorruption(rule.corruptionHpAmount);
-                    break;
-            }
+            ApplyTriggeredCorruption(rule.damageType, rule.corruptionHpAmount);
         }
 
-        private void ApplyPoisonCorruption(long corruptionHpAmount)
+        private void ApplyTriggeredCorruption(ConfigCommon.DamageType damageType, long corruptionHpAmount)
         {
             if (_owner == null)
                 return;
 
-            long corruptionBudget = Math.Max(0L, corruptionHpAmount);
-            if (corruptionBudget <= 0)
+            TriggeredHpState state = GetOrCreateTriggeredState(damageType);
+            if (state == null)
                 return;
 
+            long corruptionBudget = Math.Max(0L, corruptionHpAmount);
+            if (corruptionBudget <= 0)
+            {
+                state.Clear();
+                ResetCorruptedHpTickElapsed(damageType);
+                RaiseTriggeredHpChanged();
+                return;
+            }
+
             long remaining = corruptionBudget;
+            long currentTempItem = Math.Max(0L, _owner.GetItemBonusHpTempCurrent());
+            long currentTempRuntime = Math.Max(0L, _owner.GetRuntimeBonusHpTempCurrent());
+            long currentTempPassive = Math.Max(0L, _owner.GetPassiveBonusHpTempCurrent());
+            long currentBase = Math.Max(0L, _owner.CurrentHp.Value);
 
-            long currentTempItem = (long)Mathf.Max(0, _owner.GetItemBonusHpTempCurrent());
-            long currentTempRuntime = (long)Mathf.Max(0, _owner.GetRuntimeBonusHpTempCurrent());
-            long currentTempPassive = (long)Mathf.Max(0, _owner.GetPassiveBonusHpTempCurrent());
-            long currentBase = (long)Mathf.Max(0, _owner.CurrentHp.Value);
+            state.TempItemHp = Math.Min(remaining, currentTempItem);
+            remaining -= state.TempItemHp;
 
-            _corruptedTempItemHp = Math.Min(remaining, currentTempItem);
-            remaining -= _corruptedTempItemHp;
+            state.TempRuntimeHp = Math.Min(remaining, currentTempRuntime);
+            remaining -= state.TempRuntimeHp;
 
-            _corruptedTempRuntimeHp = Math.Min(remaining, currentTempRuntime);
-            remaining -= _corruptedTempRuntimeHp;
+            state.TempPassiveHp = Math.Min(remaining, currentTempPassive);
+            remaining -= state.TempPassiveHp;
 
-            _corruptedTempPassiveHp = Math.Min(remaining, currentTempPassive);
-            remaining -= _corruptedTempPassiveHp;
+            state.BaseHp = Math.Min(remaining, currentBase);
 
-            _corruptedBaseHp = Math.Min(remaining, currentBase);
-
-            if (_stateMap.TryGetValue(ConfigCommon.DamageType.Poison, out var state) && state != null)
-                state.CorruptedHpTickElapsed = 0f;
-
-            RaiseCorruptionChanged();
+            ResetCorruptedHpTickElapsed(damageType);
+            RaiseTriggeredHpChanged();
         }
 
         private long ConsumeTriggeredCorruptionHp(ConfigCommon.DamageType damageType, long requestedAmount)
         {
-            if (requestedAmount <= 0)
+            if (requestedAmount <= 0 || _owner == null)
                 return 0;
 
-            return damageType switch
-            {
-                ConfigCommon.DamageType.Poison => ConsumePoisonCorruptionHp(requestedAmount),
-                _ => 0,
-            };
-        }
+            if (!_triggeredStateMap.TryGetValue(damageType, out TriggeredHpState state) || state == null)
+                return 0;
 
-        private long ConsumePoisonCorruptionHp(long requestedAmount)
-        {
             long remainingBudget = Math.Max(0, requestedAmount);
             long totalConsumed = 0;
 
-            if (_corruptedTempItemHp > 0 && remainingBudget > 0)
+            if (state.TempItemHp > 0 && remainingBudget > 0)
             {
-                long target = Math.Min(_corruptedTempItemHp, remainingBudget);
+                long target = Math.Min(state.TempItemHp, remainingBudget);
                 long remaining = _owner.ConsumeHpTempItem(target);
                 long consumed = target - remaining;
                 totalConsumed += consumed;
                 remainingBudget -= consumed;
-                _corruptedTempItemHp = Math.Max(0, _corruptedTempItemHp - consumed);
+                state.TempItemHp = Math.Max(0, state.TempItemHp - consumed);
             }
 
-            if (_corruptedTempRuntimeHp > 0 && remainingBudget > 0)
+            if (state.TempRuntimeHp > 0 && remainingBudget > 0)
             {
-                long target = Math.Min(_corruptedTempRuntimeHp, remainingBudget);
+                long target = Math.Min(state.TempRuntimeHp, remainingBudget);
                 long remaining = _owner.ConsumeHpTempRuntime(target);
                 long consumed = target - remaining;
                 totalConsumed += consumed;
                 remainingBudget -= consumed;
-                _corruptedTempRuntimeHp = Math.Max(0, _corruptedTempRuntimeHp - consumed);
+                state.TempRuntimeHp = Math.Max(0, state.TempRuntimeHp - consumed);
             }
 
-            if (_corruptedTempPassiveHp > 0 && remainingBudget > 0)
+            if (state.TempPassiveHp > 0 && remainingBudget > 0)
             {
-                long target = Math.Min(_corruptedTempPassiveHp, remainingBudget);
+                long target = Math.Min(state.TempPassiveHp, remainingBudget);
                 long remaining = _owner.ConsumeHpTempPassive(target);
                 long consumed = target - remaining;
                 totalConsumed += consumed;
                 remainingBudget -= consumed;
-                _corruptedTempPassiveHp = Math.Max(0, _corruptedTempPassiveHp - consumed);
+                state.TempPassiveHp = Math.Max(0, state.TempPassiveHp - consumed);
             }
 
-            if (_corruptedBaseHp > 0 && remainingBudget > 0)
+            if (state.BaseHp > 0 && remainingBudget > 0)
             {
-                long consume = Math.Min(Math.Min(_corruptedBaseHp, remainingBudget), Math.Max(0, _owner.CurrentHp.Value));
+                long consume = Math.Min(Math.Min(state.BaseHp, remainingBudget), Math.Max(0, _owner.CurrentHp.Value));
                 if (consume > 0)
                 {
                     _owner.CurrentHp.OnNext(Math.Max(0, _owner.CurrentHp.Value - consume));
-                    _corruptedBaseHp -= consume;
+                    state.BaseHp -= consume;
                     totalConsumed += consume;
                 }
             }
 
-            ClampTriggeredCorruptionToCurrentResources(ConfigCommon.DamageType.Poison, raiseChangedEvent: false);
+            ClampTriggeredCorruptionToCurrentResources(damageType, raiseChangedEvent: false);
             return totalConsumed;
         }
 
-        private void ClampTriggeredCorruptionToCurrentResources(ConfigCommon.DamageType damageType, bool raiseChangedEvent)
+        private bool ClampTriggeredCorruptionToCurrentResources(ConfigCommon.DamageType damageType, bool raiseChangedEvent)
         {
-            switch (damageType)
-            {
-                case ConfigCommon.DamageType.Poison:
-                    ClampPoisonCorruptionToCurrentResources(raiseChangedEvent);
-                    break;
-            }
-        }
+            if (!_triggeredStateMap.TryGetValue(damageType, out TriggeredHpState state) || state == null || _owner == null)
+                return false;
 
-        private void ClampPoisonCorruptionToCurrentResources(bool raiseChangedEvent)
-        {
-            long clampedBase = Math.Min(_corruptedBaseHp, Math.Max(0, _owner.CurrentHp.Value));
-            long clampedTempItem = Math.Min(_corruptedTempItemHp, Math.Max(0, _owner.GetItemBonusHpTempCurrent()));
-            long clampedTempRuntime = Math.Min(_corruptedTempRuntimeHp, Math.Max(0, _owner.GetRuntimeBonusHpTempCurrent()));
-            long clampedTempPassive = Math.Min(_corruptedTempPassiveHp, Math.Max(0, _owner.GetPassiveBonusHpTempCurrent()));
+            long clampedBase = Math.Min(state.BaseHp, Math.Max(0, _owner.CurrentHp.Value));
+            long clampedTempItem = Math.Min(state.TempItemHp, Math.Max(0, _owner.GetItemBonusHpTempCurrent()));
+            long clampedTempRuntime = Math.Min(state.TempRuntimeHp, Math.Max(0, _owner.GetRuntimeBonusHpTempCurrent()));
+            long clampedTempPassive = Math.Min(state.TempPassiveHp, Math.Max(0, _owner.GetPassiveBonusHpTempCurrent()));
 
-            if (clampedBase == _corruptedBaseHp &&
-                clampedTempItem == _corruptedTempItemHp &&
-                clampedTempRuntime == _corruptedTempRuntimeHp &&
-                clampedTempPassive == _corruptedTempPassiveHp)
-                return;
+            if (clampedBase == state.BaseHp &&
+                clampedTempItem == state.TempItemHp &&
+                clampedTempRuntime == state.TempRuntimeHp &&
+                clampedTempPassive == state.TempPassiveHp)
+                return false;
 
-            _corruptedBaseHp = clampedBase;
-            _corruptedTempItemHp = clampedTempItem;
-            _corruptedTempRuntimeHp = clampedTempRuntime;
-            _corruptedTempPassiveHp = clampedTempPassive;
+            state.BaseHp = clampedBase;
+            state.TempItemHp = clampedTempItem;
+            state.TempRuntimeHp = clampedTempRuntime;
+            state.TempPassiveHp = clampedTempPassive;
 
             if (raiseChangedEvent)
-                RaiseCorruptionChanged();
+                RaiseTriggeredHpChanged();
+
+            return true;
         }
 
         private bool HasTriggeredCorruption(ConfigCommon.DamageType damageType)
@@ -500,11 +519,9 @@ namespace GGemCo2DCore
 
         private long GetTriggeredCorruptionTotalHp(ConfigCommon.DamageType damageType)
         {
-            return damageType switch
-            {
-                ConfigCommon.DamageType.Poison => _corruptedBaseHp + _corruptedTempItemHp + _corruptedTempRuntimeHp + _corruptedTempPassiveHp,
-                _ => 0,
-            };
+            return _triggeredStateMap.TryGetValue(damageType, out TriggeredHpState state) && state != null
+                ? state.TotalHp
+                : 0L;
         }
 
         private void FinalizeDeathFromTriggeredCorruption()
@@ -549,13 +566,13 @@ namespace GGemCo2DCore
             if (!(_owner is Player))
                 return;
 
-            var settings = ResolvePlayerSettings();
-            var configuredRules = settings != null ? settings.elementGaugeRules : null;
+            GGemCoPlayerSettings settings = ResolvePlayerSettings();
+            List<ElementGaugeRuleDefinition> configuredRules = settings != null ? settings.elementGaugeRules : null;
             if (configuredRules != null)
             {
                 for (int i = 0; i < configuredRules.Count; i++)
                 {
-                    var rule = configuredRules[i];
+                    ElementGaugeRuleDefinition rule = configuredRules[i];
                     if (rule == null)
                         continue;
 
@@ -564,9 +581,7 @@ namespace GGemCo2DCore
             }
 
             if (_rules.Count == 0)
-            {
                 _rules.AddRange(ElementGaugeRuleDefinition.CreateDefaultPlayerRules());
-            }
         }
 
         private GGemCoPlayerSettings ResolvePlayerSettings()
@@ -581,10 +596,11 @@ namespace GGemCo2DCore
         {
             _ruleMap.Clear();
             _stateMap.Clear();
+            _triggeredStateMap.Clear();
 
             for (int i = 0; i < _rules.Count; i++)
             {
-                var rule = _rules[i];
+                ElementGaugeRuleDefinition rule = _rules[i];
                 if (rule == null)
                     continue;
                 if (rule.damageType == ConfigCommon.DamageType.None || rule.damageType == ConfigCommon.DamageType.Physic)
@@ -592,7 +608,67 @@ namespace GGemCo2DCore
 
                 _ruleMap[rule.damageType] = rule;
                 _stateMap[rule.damageType] = new RuntimeGaugeState();
+                _triggeredStateMap[rule.damageType] = new TriggeredHpState();
             }
+        }
+
+        private TriggeredHpState GetOrCreateTriggeredState(ConfigCommon.DamageType damageType)
+        {
+            if (_triggeredStateMap.TryGetValue(damageType, out TriggeredHpState state) && state != null)
+                return state;
+
+            state = new TriggeredHpState();
+            _triggeredStateMap[damageType] = state;
+            return state;
+        }
+
+        private void ResetCorruptedHpTickElapsed(ConfigCommon.DamageType damageType)
+        {
+            if (_stateMap.TryGetValue(damageType, out RuntimeGaugeState state) && state != null)
+                state.CorruptedHpTickElapsed = 0f;
+        }
+
+        private string ResolveTriggeredHudStateKey(ConfigCommon.DamageType damageType)
+        {
+            if (_ruleMap.TryGetValue(damageType, out ElementGaugeRuleDefinition rule) && rule != null)
+            {
+                string configured = rule.triggeredHudStateKey;
+                if (!string.IsNullOrWhiteSpace(configured))
+                    return configured.Trim();
+            }
+
+            return damageType.ToString().ToLowerInvariant();
+        }
+
+        private ElementTriggeredHpCollectionSnapshot BuildTriggeredHpCollectionSnapshot()
+        {
+            _triggeredSnapshotBuffer.Clear();
+
+            for (int i = 0; i < _rules.Count; i++)
+            {
+                ElementGaugeRuleDefinition rule = _rules[i];
+                if (rule == null)
+                    continue;
+
+                ConfigCommon.DamageType damageType = rule.damageType;
+                if (damageType == ConfigCommon.DamageType.None || damageType == ConfigCommon.DamageType.Physic)
+                    continue;
+
+                if (!_triggeredStateMap.TryGetValue(damageType, out TriggeredHpState state) || state == null || state.TotalHp <= 0)
+                    continue;
+
+                _triggeredSnapshotBuffer.Add(new ElementTriggeredHpSnapshot(
+                    damageType,
+                    ResolveTriggeredHudStateKey(damageType),
+                    state.BaseHp,
+                    state.TempItemHp,
+                    state.TempRuntimeHp,
+                    state.TempPassiveHp));
+            }
+
+            return _triggeredSnapshotBuffer.Count > 0
+                ? new ElementTriggeredHpCollectionSnapshot(_triggeredSnapshotBuffer.ToArray())
+                : ElementTriggeredHpCollectionSnapshot.Empty;
         }
 
         private void RaiseGaugeChanged()
@@ -600,9 +676,11 @@ namespace GGemCo2DCore
             GaugeChanged?.Invoke();
         }
 
-        private void RaiseCorruptionChanged()
+        private void RaiseTriggeredHpChanged()
         {
-            CorruptionChanged?.Invoke(CurrentCorruption);
+            ElementTriggeredHpCollectionSnapshot snapshot = CurrentTriggeredHpStates;
+            TriggeredHpChanged?.Invoke(snapshot);
+            CorruptionChanged?.Invoke(snapshot.GetLegacyCorruptionSnapshot(ConfigCommon.DamageType.Poison));
         }
     }
 }
