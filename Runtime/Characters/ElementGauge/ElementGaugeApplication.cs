@@ -44,17 +44,20 @@ namespace GGemCo2DCore
     /// </summary>
     public readonly struct HpCorruptionSnapshot
     {
-        public HpCorruptionSnapshot(long corruptedBaseHp, long corruptedTempItemHp, long corruptedTempPassiveHp)
+        public HpCorruptionSnapshot(long corruptedBaseHp, long corruptedTempItemHp, long corruptedTempRuntimeHp, long corruptedTempPassiveHp)
         {
             CorruptedBaseHp = corruptedBaseHp;
             CorruptedTempItemHp = corruptedTempItemHp;
+            CorruptedTempRuntimeHp = corruptedTempRuntimeHp;
             CorruptedTempPassiveHp = corruptedTempPassiveHp;
         }
 
         public long CorruptedBaseHp { get; }
         public long CorruptedTempItemHp { get; }
+        public long CorruptedTempRuntimeHp { get; }
         public long CorruptedTempPassiveHp { get; }
-        public long TotalCorruptedHp => CorruptedBaseHp + CorruptedTempItemHp + CorruptedTempPassiveHp;
+        public long TotalCorruptedTempHp => CorruptedTempItemHp + CorruptedTempRuntimeHp + CorruptedTempPassiveHp;
+        public long TotalCorruptedHp => CorruptedBaseHp + TotalCorruptedTempHp;
         public bool HasAny => TotalCorruptedHp > 0;
     }
 }

@@ -28,12 +28,13 @@ namespace GGemCo2DCore
         private CharacterBase _owner;
         private long _corruptedBaseHp;
         private long _corruptedTempItemHp;
+        private long _corruptedTempRuntimeHp;
         private long _corruptedTempPassiveHp;
 
         public event Action GaugeChanged;
         public event Action<HpCorruptionSnapshot> CorruptionChanged;
 
-        public HpCorruptionSnapshot CurrentCorruption => new(_corruptedBaseHp, _corruptedTempItemHp, _corruptedTempPassiveHp);
+        public HpCorruptionSnapshot CurrentCorruption => new(_corruptedBaseHp, _corruptedTempItemHp, _corruptedTempRuntimeHp, _corruptedTempPassiveHp);
 
         private void Awake()
         {
@@ -229,11 +230,15 @@ namespace GGemCo2DCore
             long remaining = corruptionBudget;
 
             long currentTempItem = (long)Mathf.Max(0, _owner.GetItemBonusHpTempCurrent());
+            long currentTempRuntime = (long)Mathf.Max(0, _owner.GetRuntimeBonusHpTempCurrent());
             long currentTempPassive = (long)Mathf.Max(0, _owner.GetPassiveBonusHpTempCurrent());
             long currentBase = (long)Mathf.Max(0, _owner.CurrentHp.Value);
 
             _corruptedTempItemHp = Math.Min(remaining, currentTempItem);
             remaining -= _corruptedTempItemHp;
+
+            _corruptedTempRuntimeHp = Math.Min(remaining, currentTempRuntime);
+            remaining -= _corruptedTempRuntimeHp;
 
             _corruptedTempPassiveHp = Math.Min(remaining, currentTempPassive);
             remaining -= _corruptedTempPassiveHp;
@@ -283,6 +288,15 @@ namespace GGemCo2DCore
                 _corruptedTempItemHp = Math.Max(0, _corruptedTempItemHp - consumed);
             }
 
+            if (_corruptedTempRuntimeHp > 0)
+            {
+                long target = _corruptedTempRuntimeHp;
+                long remaining = _owner.ConsumeHpTempRuntime(target);
+                long consumed = target - remaining;
+                totalConsumed += consumed;
+                _corruptedTempRuntimeHp = Math.Max(0, _corruptedTempRuntimeHp - consumed);
+            }
+
             if (_corruptedTempPassiveHp > 0)
             {
                 long target = _corruptedTempPassiveHp;
@@ -311,20 +325,25 @@ namespace GGemCo2DCore
         {
             long clampedBase = Math.Min(_corruptedBaseHp, Math.Max(0, _owner.CurrentHp.Value));
             long clampedTempItem = Math.Min(_corruptedTempItemHp, Math.Max(0, _owner.GetItemBonusHpTempCurrent()));
+            long clampedTempRuntime = Math.Min(_corruptedTempRuntimeHp, Math.Max(0, _owner.GetRuntimeBonusHpTempCurrent()));
             long clampedTempPassive = Math.Min(_corruptedTempPassiveHp, Math.Max(0, _owner.GetPassiveBonusHpTempCurrent()));
 
-            if (clampedBase == _corruptedBaseHp && clampedTempItem == _corruptedTempItemHp && clampedTempPassive == _corruptedTempPassiveHp)
+            if (clampedBase == _corruptedBaseHp &&
+                clampedTempItem == _corruptedTempItemHp &&
+                clampedTempRuntime == _corruptedTempRuntimeHp &&
+                clampedTempPassive == _corruptedTempPassiveHp)
                 return;
 
             _corruptedBaseHp = clampedBase;
             _corruptedTempItemHp = clampedTempItem;
+            _corruptedTempRuntimeHp = clampedTempRuntime;
             _corruptedTempPassiveHp = clampedTempPassive;
             RaiseCorruptionChanged();
         }
 
         private bool HasPoisonCorruption()
         {
-            return (_corruptedBaseHp + _corruptedTempItemHp + _corruptedTempPassiveHp) > 0;
+            return (_corruptedBaseHp + _corruptedTempItemHp + _corruptedTempRuntimeHp + _corruptedTempPassiveHp) > 0;
         }
 
         private float ResolveResistanceMultiplier(ConfigCommon.DamageType damageType)
