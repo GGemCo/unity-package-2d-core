@@ -256,11 +256,63 @@ namespace GGemCo2DCore
             if (!_ruleMap.TryGetValue(ConfigCommon.DamageType.Poison, out var rule) || rule == null)
                 return false;
 
-            if (!rule.consumeCorruptedHpOnMatchingDamage)
+            var hasExplicitPolicies = rule.consumePolicies != null && rule.consumePolicies.Count > 0;
+            if (!hasExplicitPolicies && !rule.consumeCorruptedHpOnMatchingDamage)
+                return false;
+
+            if (hasExplicitPolicies)
+            {
+                for (int i = 0; i < rule.consumePolicies.Count; i++)
+                {
+                    var policy = rule.consumePolicies[i];
+                    if (policy == null)
+                        continue;
+
+                    if (IsMatchedCorruptedHpConsumePolicy(policy, metadataDamage))
+                        return true;
+                }
+
+                return false;
+            }
+
+            return MatchesLegacyPoisonConsumePolicy(metadataDamage);
+        }
+
+        private bool IsMatchedCorruptedHpConsumePolicy(ElementGaugeCorruptedHpConsumePolicyDefinition policy, MetadataDamage metadataDamage)
+        {
+            if (policy == null || metadataDamage == null)
+                return false;
+
+            switch (policy.triggerType)
+            {
+                case ElementGaugeCorruptedHpConsumeTriggerType.IncomingDamageType:
+                    return metadataDamage.damageType == policy.damageType;
+
+                case ElementGaugeCorruptedHpConsumeTriggerType.IncomingGaugeApplication:
+                    return HasMatchingGaugeApplication(metadataDamage, policy.damageType);
+
+                case ElementGaugeCorruptedHpConsumeTriggerType.IncomingDamageIfAttackerHasAffect:
+                    return HasRequiredAttackerAffect(metadataDamage.attacker, policy.requiredAttackerAffectUid);
+            }
+
+            return false;
+        }
+
+        private static bool MatchesLegacyPoisonConsumePolicy(MetadataDamage metadataDamage)
+        {
+            if (metadataDamage == null)
                 return false;
 
             if (metadataDamage.damageType == ConfigCommon.DamageType.Poison)
                 return true;
+
+            return HasMatchingGaugeApplication(metadataDamage, ConfigCommon.DamageType.Poison);
+        }
+
+        private static bool HasMatchingGaugeApplication(MetadataDamage metadataDamage, ConfigCommon.DamageType damageType)
+        {
+            if (metadataDamage == null)
+                return false;
 
             var apps = metadataDamage.ElementGaugeApplications;
             if (apps == null || apps.Length == 0)
@@ -268,11 +320,19 @@ namespace GGemCo2DCore
 
             for (int i = 0; i < apps.Length; i++)
             {
-                if (apps[i].DamageType == ConfigCommon.DamageType.Poison && apps[i].GaugeValue > 0f)
+                if (apps[i].DamageType == damageType && apps[i].GaugeValue > 0f)
                     return true;
             }
 
             return false;
+        }
+
+        private static bool HasRequiredAttackerAffect(GameObject attacker, int affectUid)
+        {
+            if (attacker == null || affectUid <= 0)
+                return false;
+
+            return AffectApi.HasAttached(attacker, affectUid);
         }
 
         private long ConsumePoisonCorruptionHp()

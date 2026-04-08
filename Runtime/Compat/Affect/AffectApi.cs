@@ -63,5 +63,14 @@ namespace GGemCo2DCore
         {
             return AffectRuntimeBridge.HasAffect(target, affectUid);
         }
+
+        /// <summary>
+        /// 대상에 Affect 시스템이 이미 붙어 있을 때만 특정 Affect 보유 여부를 조회합니다.
+        /// 조회 과정에서 컴포넌트를 자동 부착하지 않습니다.
+        /// </summary>
+        public static bool HasAttached(GameObject target, int affectUid)
+        {
+            return AffectRuntimeBridge.HasAttachedAffect(target, affectUid);
+        }
     }
 }

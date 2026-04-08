@@ -39,8 +39,11 @@ namespace GGemCo2DCore
         [Tooltip("임계 상태가 유지되는 동안 게이지 누적을 차단할지 여부입니다.")]
         public bool blockAccumulationWhileTriggered = false;
 
-        [Tooltip("같은 속성 데미지를 받을 때 오염된 HP를 즉시 소모할지 여부입니다.")]
+        [Tooltip("[Legacy] 같은 속성 데미지를 받을 때 오염된 HP를 즉시 소모할지 여부입니다. consumePolicies가 비어 있을 때만 사용됩니다.")]
         public bool consumeCorruptedHpOnMatchingDamage = false;
+
+        [Tooltip("오염된 HP를 즉시 소모할 정책 목록입니다. 여러 정책이 있으면 OR 조건으로 평가합니다.")]
+        public List<ElementGaugeCorruptedHpConsumePolicyDefinition> consumePolicies = new();
 
         [Min(0)]
         [Tooltip("게이지가 최대에 도달했을 때 적용할 Affect UID입니다. (0이면 미사용)")]
@@ -62,8 +65,36 @@ namespace GGemCo2DCore
                 corruptionHpAmount = corruptionHpAmount,
                 blockAccumulationWhileTriggered = blockAccumulationWhileTriggered,
                 consumeCorruptedHpOnMatchingDamage = consumeCorruptedHpOnMatchingDamage,
+                consumePolicies = ClonePolicies(consumePolicies),
                 thresholdAffectUid = thresholdAffectUid,
                 thresholdAffectDurationSeconds = thresholdAffectDurationSeconds,
+            };
+        }
+
+        private static List<ElementGaugeCorruptedHpConsumePolicyDefinition> ClonePolicies(List<ElementGaugeCorruptedHpConsumePolicyDefinition> policies)
+        {
+            var cloned = new List<ElementGaugeCorruptedHpConsumePolicyDefinition>();
+            if (policies == null || policies.Count == 0)
+                return cloned;
+
+            for (int i = 0; i < policies.Count; i++)
+            {
+                var policy = policies[i];
+                if (policy == null)
+                    continue;
+
+                cloned.Add(policy.Clone());
+            }
+
+            return cloned;
+        }
+
+        private static List<ElementGaugeCorruptedHpConsumePolicyDefinition> CreateDefaultConsumePolicies(ConfigCommon.DamageType damageType)
+        {
+            return new List<ElementGaugeCorruptedHpConsumePolicyDefinition>
+            {
+                ElementGaugeCorruptedHpConsumePolicyDefinition.CreateIncomingDamageType(damageType),
+                ElementGaugeCorruptedHpConsumePolicyDefinition.CreateIncomingGaugeApplication(damageType),
             };
         }
 
@@ -91,6 +122,7 @@ namespace GGemCo2DCore
                 corruptionHpAmount = createPoisonDefaults ? 800 : 0,
                 blockAccumulationWhileTriggered = createPoisonDefaults,
                 consumeCorruptedHpOnMatchingDamage = createPoisonDefaults,
+                consumePolicies = createPoisonDefaults ? CreateDefaultConsumePolicies(damageType) : new List<ElementGaugeCorruptedHpConsumePolicyDefinition>(),
             };
         }
     }

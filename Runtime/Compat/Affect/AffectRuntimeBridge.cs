@@ -318,7 +318,19 @@ namespace GGemCo2DCore
                 return false;
 
             EnsureAffectSystem(go);
+            return HasAffectInternal(go, affectUid);
+        }
 
+        public static bool HasAttachedAffect(GameObject go, int affectUid)
+        {
+            if (go == null || affectUid <= 0)
+                return false;
+
+            return HasAffectInternal(go, affectUid);
+        }
+
+        private static bool HasAffectInternal(GameObject go, int affectUid)
+        {
             var affectComp = GetAffectComponent(go);
             if (affectComp == null)
                 return false;

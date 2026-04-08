@@ -205,6 +205,7 @@ namespace GGemCo2DCore
 
         [Header("Passive Temp HP")]
         [SerializeField]
+        [Tooltip("패시브 스킬로 임시 HP 증가/변할 때 현재 임시 HP를 어떻게 보정할지 결정합니다.")]
         private PassiveTempHpApplyPolicy passiveTempHpApplyPolicy = PassiveTempHpApplyPolicy.KeepCurrent;
 
         public PassiveTempHpApplyPolicy PassiveTempHpApplyPolicy => passiveTempHpApplyPolicy;
