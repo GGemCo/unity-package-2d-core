@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using R3;
 
 namespace GGemCo2DCore
@@ -23,10 +24,24 @@ namespace GGemCo2DCore
 
         protected long TotalHpTempPassive;
         protected long CurrentHpTempPassive;
-        
+
+        private readonly Dictionary<int, RuntimeTempHpEntry> _runtimeTempHpBySource = new();
+
+        private struct RuntimeTempHpEntry
+        {
+            public long Max;
+            public long Current;
+
+            public RuntimeTempHpEntry(long max, long current)
+            {
+                Max = max;
+                Current = current;
+            }
+        }
+
 
         #region 일반 HP
-        
+
         public long GetItemBonusHpNormal() => _itemBonusProvider?.GetHpBonusNormal() ?? 0;
         /// <summary>
         /// 아이템 사용으로 "일반 최대 HP" 누적치를 증가시킵니다(저장 + 스탯 반영).
@@ -45,7 +60,7 @@ namespace GGemCo2DCore
             // 스탯 Provider 갱신
             _itemBonusProvider?.SetHpBonusNormal(amount, raiseEvent);
         }
-        
+
         #endregion
 
         #region 임시 HP
@@ -66,7 +81,7 @@ namespace GGemCo2DCore
 
             // 스탯 Provider 갱신. CharacterStat._totalHpTemp 가 갱신된다.
             _itemBonusProvider?.AddHpBonusTemp(amount, raiseEvent);
-            
+
             // 구독 처리로 인해서 PlayerData 저장 됨
             TotalHpTempItem = TotalHpTempItem + amount;
 
@@ -146,7 +161,7 @@ namespace GGemCo2DCore
                 return;
 
             CurrentHpTempItem = value;
-            
+
             UpdateCurrentHpTemp();
 
             if (invokeDepleted)
@@ -161,18 +176,9 @@ namespace GGemCo2DCore
 
         #endregion
 
-        private void AddCurrentHpTemp(long amount)
-        {
-            if (amount <= 0) return;
-            var newVale = CurrentHpTemp.Value + amount;
-            if (newVale > TotalHpTemp.Value)
-                newVale = TotalHpTemp.Value;
-            CurrentHpTemp.OnNext(newVale);  
-        }
-        
         protected void UpdateCurrentHpTemp()
         {
-            var newValue = CurrentHpTempPassive + CurrentHpTempItem;
+            var newValue = CurrentHpTempPassive + CurrentHpTempItem + SumRuntimeTempHpCurrent();
             if (newValue > TotalHpTemp.Value)
                 newValue = TotalHpTemp.Value;
             if (CurrentHpTemp.Value == newValue) return;
@@ -244,14 +250,151 @@ namespace GGemCo2DCore
             long remainingDamage = incomingDamage - consume;
 
             SetCurrentHpTempPassive(remainingPassive);
-
-            OnConsumedHpTempPassive(beforeCurrent, remainingPassive, consume);
-
             return remainingDamage;
         }
-        protected virtual void OnConsumedHpTempPassive(long beforeCurrent, long afterCurrent, long consumedAmount)
+        #endregion
+
+        #region 런타임 Temp HP
+
+        /// <summary>
+        /// 런타임 전용 Temp HP 최대치를 합산한 값을 반환합니다.
+        /// 저장하지 않는 보호막/스킬 Temp HP 용도입니다.
+        /// </summary>
+        public long GetRuntimeBonusHpTempMax() => _runtimeTempHpProvider?.GetHpBonusTemp() ?? 0;
+
+        /// <summary>
+        /// 런타임 전용 Temp HP 현재치를 합산한 값을 반환합니다.
+        /// </summary>
+        public long GetRuntimeBonusHpTempCurrent() => SumRuntimeTempHpCurrent();
+
+        /// <summary>
+        /// source key 단위 런타임 Temp HP를 설정합니다.
+        /// - 같은 key가 다시 들어오면 누적하지 않고 해당 값으로 교체합니다.
+        /// - fillToMax=true 이면 현재치를 설정값까지 즉시 채웁니다.
+        /// - 값이 0 이하이면 해당 source를 제거합니다.
+        /// </summary>
+        public void SetRuntimeBonusHpTemp(int sourceKey, long amount, bool fillToMax = true)
         {
+            if (amount <= 0)
+            {
+                ClearRuntimeBonusHpTemp(sourceKey);
+                return;
+            }
+
+            amount = Math.Max(0, amount);
+
+            if (_runtimeTempHpBySource.TryGetValue(sourceKey, out var existing))
+            {
+                existing.Max = amount;
+                existing.Current = fillToMax ? amount : Math.Min(existing.Current, amount);
+                _runtimeTempHpBySource[sourceKey] = existing;
+            }
+            else
+            {
+                _runtimeTempHpBySource[sourceKey] = new RuntimeTempHpEntry(amount, fillToMax ? amount : 0);
+            }
+
+            _runtimeTempHpProvider?.SetHpBonusTempBySource(sourceKey, amount, raiseEvent: true);
+            UpdateCurrentHpTemp();
         }
+
+        /// <summary>
+        /// source key 단위 런타임 Temp HP를 제거합니다.
+        /// </summary>
+        public void ClearRuntimeBonusHpTemp(int sourceKey)
+        {
+            bool removed = _runtimeTempHpBySource.Remove(sourceKey);
+            _runtimeTempHpProvider?.RemoveHpBonusTempSource(sourceKey, raiseEvent: true);
+
+            if (removed)
+                UpdateCurrentHpTemp();
+        }
+
+        /// <summary>
+        /// 모든 런타임 Temp HP를 제거합니다.
+        /// </summary>
+        public void ClearAllRuntimeBonusHpTemp()
+        {
+            if (_runtimeTempHpBySource.Count == 0)
+                return;
+
+            _runtimeTempHpBySource.Clear();
+            _runtimeTempHpProvider?.Clear(raiseEvent: true);
+            UpdateCurrentHpTemp();
+        }
+
+        /// <summary>
+        /// 데미지 처리에서 사용: 런타임 Temp HP를 소모하고 남은 데미지를 반환합니다.
+        /// - source key 별 현재치를 먼저 소모합니다.
+        /// - 어떤 source의 현재치가 0이 되면 해당 source의 최대치까지 함께 제거합니다.
+        /// </summary>
+        public long ConsumeHpTempRuntime(long incomingDamage)
+        {
+            if (incomingDamage <= 0)
+                return 0;
+
+            if (_runtimeTempHpBySource.Count == 0)
+                return incomingDamage;
+
+            long remainingDamage = incomingDamage;
+            var sourceKeys = new List<int>(_runtimeTempHpBySource.Keys);
+            sourceKeys.Sort();
+
+            for (int i = 0; i < sourceKeys.Count; i++)
+            {
+                if (remainingDamage <= 0)
+                    break;
+
+                int sourceKey = sourceKeys[i];
+                if (!_runtimeTempHpBySource.TryGetValue(sourceKey, out var entry))
+                    continue;
+
+                if (entry.Current <= 0)
+                {
+                    RemoveRuntimeTempHpSource(sourceKey, updateCurrent: false);
+                    continue;
+                }
+
+                long consume = Math.Min(entry.Current, remainingDamage);
+                entry.Current -= consume;
+                remainingDamage -= consume;
+
+                if (entry.Current <= 0)
+                {
+                    RemoveRuntimeTempHpSource(sourceKey, updateCurrent: false);
+                }
+                else
+                {
+                    _runtimeTempHpBySource[sourceKey] = entry;
+                }
+            }
+
+            UpdateCurrentHpTemp();
+            return remainingDamage;
+        }
+
+        private void RemoveRuntimeTempHpSource(int sourceKey, bool updateCurrent)
+        {
+            if (!_runtimeTempHpBySource.Remove(sourceKey))
+                return;
+
+            _runtimeTempHpProvider?.RemoveHpBonusTempSource(sourceKey, raiseEvent: true);
+
+            if (updateCurrent)
+                UpdateCurrentHpTemp();
+        }
+
+        private long SumRuntimeTempHpCurrent()
+        {
+            long total = 0;
+            foreach (var pair in _runtimeTempHpBySource)
+            {
+                total += Math.Max(0, pair.Value.Current);
+            }
+
+            return total;
+        }
+
         #endregion
     }
 }

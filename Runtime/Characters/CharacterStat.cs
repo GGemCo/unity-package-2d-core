@@ -104,6 +104,7 @@ namespace GGemCo2DCore
         private PersistentModifierProvider _persistentProvider;
         private PassiveSkillModifierProvider _passiveProvider;
         private ItemBonusModifierProvider _itemBonusProvider;
+        private RuntimeTempHpModifierProvider _runtimeTempHpProvider;
 
         /// <summary>
         /// 최종 계산에 포함되는 전체 Provider 목록입니다.
@@ -240,22 +241,26 @@ namespace GGemCo2DCore
             _persistentProvider = new PersistentModifierProvider();
             _passiveProvider = new PassiveSkillModifierProvider();
             _itemBonusProvider = new ItemBonusModifierProvider();
+            _runtimeTempHpProvider = new RuntimeTempHpModifierProvider();
 
             _equipmentProvider.Changed += OnProviderChanged;
             _persistentProvider.Changed += OnProviderChanged;
             _passiveProvider.Changed += OnProviderChanged;
             _itemBonusProvider.Changed += OnProviderChanged;
+            _runtimeTempHpProvider.Changed += OnProviderChanged;
 
             _allProviders.Clear();
             _allProviders.Add(_equipmentProvider);
             _allProviders.Add(_persistentProvider);
             _allProviders.Add(_passiveProvider);
             _allProviders.Add(_itemBonusProvider);
+            _allProviders.Add(_runtimeTempHpProvider);
 
             _providersWithoutPersistent.Clear();
             _providersWithoutPersistent.Add(_equipmentProvider);
             _providersWithoutPersistent.Add(_passiveProvider);
             _providersWithoutPersistent.Add(_itemBonusProvider);
+            _providersWithoutPersistent.Add(_runtimeTempHpProvider);
             
             EnsureStatModules();
         }
@@ -281,6 +286,7 @@ namespace GGemCo2DCore
             if (_persistentProvider != null) _persistentProvider.Changed -= OnProviderChanged;
             if (_passiveProvider != null) _passiveProvider.Changed -= OnProviderChanged;
             if (_itemBonusProvider != null) _itemBonusProvider.Changed -= OnProviderChanged;
+            if (_runtimeTempHpProvider != null) _runtimeTempHpProvider.Changed -= OnProviderChanged;
         }
 
         /// <summary>

@@ -253,6 +253,8 @@ namespace GGemCo2DCore
             // Item Bonus HP(소모형 추가 최대 HP)부터 먼저 차감
             //  - 0이 되면 즉시 소멸(외부에서 UI/저장 갱신 처리)
             long remainingDamage = _characterBase.ConsumeHpTempItem(damage);
+            // 런타임 스킬 Temp HP(비저장 보호막) 소모
+            remainingDamage = _characterBase.ConsumeHpTempRuntime(remainingDamage);
             // 패시브 임시 HP 소모
             remainingDamage = _characterBase.ConsumeHpTempPassive(remainingDamage);
 
