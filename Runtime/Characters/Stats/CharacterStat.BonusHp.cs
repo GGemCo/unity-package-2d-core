@@ -189,6 +189,8 @@ namespace GGemCo2DCore
         #region 패시브 스킬
         public long GetPassiveBonusHpTempMax() => TotalHpTempPassive;
         public long GetPassiveBonusHpTempCurrent() => CurrentHpTempPassive;
+        public long GetPersistentBonusHpTempMax() => GetItemBonusHpTemp() + GetPassiveBonusHpTempMax();
+        public long GetPersistentBonusHpTempCurrent() => GetItemBonusHpTempCurrent() + GetPassiveBonusHpTempCurrent();
 
         public void SetPassiveBonusHpTempMax(long value)
         {

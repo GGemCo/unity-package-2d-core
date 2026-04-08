@@ -5,6 +5,11 @@ using UnityEngine;
 
 namespace GGemCo2DCore
 {
+    public interface IRuntimeTempHpHudReceiver
+    {
+        void SetHpTempSegments(long persistentCurrent, long persistentMax, long runtimeCurrent, long runtimeMax);
+    }
+
     /// <summary>
     /// 플레이어와 연관된 HUD, 플레이어 정보창, 버프 정보창 UI를 초기화하고
     /// 플레이어 상태 변화에 따라 각 UI를 갱신합니다.
@@ -171,7 +176,22 @@ namespace GGemCo2DCore
         /// </summary>
         private void SetWindowHudHpTemp()
         {
-            if (_uiWindowHud == null) return;
+            if (_uiWindowHud == null || _player == null) return;
+
+            long runtimeCurrent = _player.GetRuntimeBonusHpTempCurrent();
+            long runtimeMax = _player.GetRuntimeBonusHpTempMax();
+            long persistentCurrent = _player.GetPersistentBonusHpTempCurrent();
+            long persistentMax = _player.GetPersistentBonusHpTempMax();
+
+            if (_uiWindowHud.gameObjectHp is IRuntimeTempHpHudReceiver runtimeTempHpHudReceiver)
+            {
+                runtimeTempHpHudReceiver.SetHpTempSegments(
+                    persistentCurrent,
+                    persistentMax,
+                    runtimeCurrent,
+                    runtimeMax);
+                return;
+            }
 
             _uiWindowHud.SetHpTemp(_player.CurrentHpTemp.Value, _player.TotalHpTemp.Value);
         }
