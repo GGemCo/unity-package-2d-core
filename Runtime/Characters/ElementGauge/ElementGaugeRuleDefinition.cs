@@ -45,6 +45,17 @@ namespace GGemCo2DCore
         [Tooltip("오염된 HP를 즉시 소모할 정책 목록입니다. 여러 정책이 있으면 OR 조건으로 평가합니다.")]
         public List<ElementGaugeCorruptedHpConsumePolicyDefinition> consumePolicies = new();
 
+        [Tooltip("오염된 HP에 주기 피해를 활성화할지 여부입니다.")]
+        public bool useCorruptedHpTickDamage = false;
+
+        [Min(0.01f)]
+        [Tooltip("오염된 HP 주기 피해가 실행되는 간격(초)입니다.")]
+        public float corruptedHpTickIntervalSeconds = 1f;
+
+        [Min(0)]
+        [Tooltip("오염된 HP 주기 피해 1회당 소모할 HP 양입니다.")]
+        public int corruptedHpTickHpAmount = 0;
+
         [Min(0)]
         [Tooltip("게이지가 최대에 도달했을 때 적용할 Affect UID입니다. (0이면 미사용)")]
         public int thresholdAffectUid = 0;
@@ -66,6 +77,9 @@ namespace GGemCo2DCore
                 blockAccumulationWhileTriggered = blockAccumulationWhileTriggered,
                 consumeCorruptedHpOnMatchingDamage = consumeCorruptedHpOnMatchingDamage,
                 consumePolicies = ClonePolicies(consumePolicies),
+                useCorruptedHpTickDamage = useCorruptedHpTickDamage,
+                corruptedHpTickIntervalSeconds = corruptedHpTickIntervalSeconds,
+                corruptedHpTickHpAmount = corruptedHpTickHpAmount,
                 thresholdAffectUid = thresholdAffectUid,
                 thresholdAffectDurationSeconds = thresholdAffectDurationSeconds,
             };
@@ -123,6 +137,9 @@ namespace GGemCo2DCore
                 blockAccumulationWhileTriggered = createPoisonDefaults,
                 consumeCorruptedHpOnMatchingDamage = createPoisonDefaults,
                 consumePolicies = createPoisonDefaults ? CreateDefaultConsumePolicies(damageType) : new List<ElementGaugeCorruptedHpConsumePolicyDefinition>(),
+                useCorruptedHpTickDamage = createPoisonDefaults,
+                corruptedHpTickIntervalSeconds = 1f,
+                corruptedHpTickHpAmount = createPoisonDefaults ? 100 : 0,
             };
         }
     }
