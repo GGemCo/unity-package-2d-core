@@ -213,3 +213,31 @@ Core Runtime는 **게임 시작과 로딩, 캐릭터 공통 로직, UI, 데이�
 - 새 Projectile / VFX를 붙일 때
 - 저장 데이터를 늘릴 때
 - 새 Editor Tool을 만들 때
+
+
+---
+
+## 이번 단계에서 추가된 디버깅 체크리스트 문서
+
+- `docs/05_debugging/initialization_order_checklist.md`
+- `docs/05_debugging/addressables_checklist.md`
+- `docs/05_debugging/ui_sync_checklist.md`
+- `docs/05_debugging/save_restore_checklist.md`
+
+이 문서들은 구조 설명이나 확장 가이드보다 더 실전적인 용도로,
+**문제가 생겼을 때 어떤 순서로 원인을 좁혀야 하는지**를 체크리스트 형태로 정리한 문서입니다.
+
+추천 활용 순서는 다음과 같습니다.
+
+1. 개요 문서로 시스템 책임 범위 확인
+2. Runtime 기능 문서로 관련 영역 찾기
+3. 핵심 클래스 문서로 실제 진입점 확인
+4. 확장 레시피 문서로 구현 방식 검토
+5. 디버깅 체크리스트 문서로 원인 추적
+
+특히 다음 상황에서 바로 참고하기 좋습니다.
+
+- 게임 시작 직후 null / 누락 문제가 날 때
+- Addressables 로드 / 해제 타이밍이 의심될 때
+- UI 가 상태와 다르게 보일 때
+- 저장은 됐는데 복원이 어긋날 때
