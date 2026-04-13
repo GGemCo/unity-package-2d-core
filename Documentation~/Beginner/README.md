@@ -122,6 +122,22 @@ Core Runtime는 **게임 시작과 로딩, 캐릭터 공통 로직, UI, 데이�
 
 ---
 
+## 이번 단계에서 추가된 Runtime 기능 영역 문서
+
+- `docs/02_runtime/runtime_bootstrap_and_scenes.md`
+- `docs/02_runtime/runtime_characters_and_combat.md`
+- `docs/02_runtime/runtime_ui_system.md`
+- `docs/02_runtime/runtime_data_tables.md`
+- `docs/02_runtime/runtime_addressables_and_settings.md`
+- `docs/02_runtime/runtime_save_and_restore.md`
+- `docs/02_runtime/runtime_feedback_projectile_and_cinematics.md`
+- `docs/02_runtime/runtime_world_and_progression.md`
+
+이 문서들은 Runtime를 기능 축으로 나누어 설명하는 입문/실무 겸용 문서입니다.
+특정 클래스 하나를 자세히 설명하기보다, **어떤 폴더와 클래스가 어떤 책임 범위를 이루는지** 먼저 이해할 수 있도록 구성했습니다.
+
+---
+
 ## 다음에 이어질 문서 방향
 
 이후 문서는 다음 순서로 확장하는 것을 권장합니다.
@@ -133,3 +149,37 @@ Core Runtime는 **게임 시작과 로딩, 캐릭터 공통 로직, UI, 데이�
 5. 디버깅 체크리스트 문서
 
 이 순서를 따르면 문서가 커져도 유지보수가 쉽고, 패키지 구조가 바뀌어도 영향 범위를 추적하기 쉽습니다.
+
+
+---
+
+## 이번 단계에서 추가된 핵심 클래스 상세 문서
+
+- `docs/04_key_classes/character_base.md`
+- `docs/04_key_classes/character_stat.md`
+- `docs/04_key_classes/character_motion_controller_2d.md`
+- `docs/04_key_classes/character_crowd_control_controller.md`
+- `docs/04_key_classes/game_loader_manager.md`
+- `docs/04_key_classes/table_loader_manager.md`
+- `docs/04_key_classes/ui_window_manager.md`
+- `docs/04_key_classes/vfx_manager.md`
+- `docs/04_key_classes/projectile_controller.md`
+- `docs/04_key_classes/save_registry.md`
+- `docs/04_key_classes/save_data_manager_base.md`
+
+이 문서들은 Runtime 기능 영역 문서보다 한 단계 더 들어가서,
+**핵심 클래스가 실제로 어떤 책임을 소유하는지, 어디와 연결되는지, 어떤 순서로 읽어야 하는지**를 설명하는 상세 문서입니다.
+
+추천 읽기 순서는 다음과 같습니다.
+
+1. `game_loader_manager.md`
+2. `table_loader_manager.md`
+3. `character_base.md`
+4. `character_stat.md`
+5. `ui_window_manager.md`
+6. `character_motion_controller_2d.md`
+7. `character_crowd_control_controller.md`
+8. `vfx_manager.md`
+9. `projectile_controller.md`
+10. `save_registry.md`
+11. `save_data_manager_base.md`

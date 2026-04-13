@@ -1,0 +1,170 @@
+# Runtime 기능 영역 문서 - 월드, 상호작용, 진행 시스템
+
+## 1. 문서 목적
+
+이 문서는 Core Runtime에서 **맵, 상호작용, 아이템, 대화, 퀘스트 같은 게임 공통 도메인**을 어떻게 나누어 보는 것이 좋은지 설명합니다.
+전투 바깥의 플레이 흐름을 담당하는 영역을 이해하는 데 목적이 있습니다.
+
+---
+
+## 2. 이 영역에 포함되는 주요 폴더
+
+- `Maps/`
+- `Interaction/`
+- `Items/`
+- `Dialogue/`
+- `Quest/`
+- `Currency/`
+
+이 영역은 Core가 단순 전투 패키지가 아니라 **게임 프레임워크 역할도 한다**는 점을 가장 잘 보여줍니다.
+
+---
+
+## 3. 대표 클래스
+
+### 맵과 월드 배치
+- `Maps/MapManager.cs`
+- `Maps/DefaultMap.cs`
+- `Maps/MapLoadCharacters.cs`
+- `Maps/MapLoadHooks.cs`
+- `Maps/Objects/*`
+
+### 상호작용
+- `Interaction/InteractionManager.cs`
+- `Interaction/*`
+
+### 아이템
+- `Items/ItemManager.cs`
+- `Items/Item.cs`
+- `Items/DropItemVisualHost.cs`
+- `Items/Use/ItemUseService.cs`
+- `Items/Use/ItemUseActionFactory.cs`
+- `Items/Use/Actions/*`
+- `Items/Options/*`
+
+### 대화
+- `Dialogue/DialogueLoader.cs`
+- `Dialogue/DialogueData.cs`
+- `Dialogue/DialogueNode.cs`
+- `Dialogue/DialogueOption.cs`
+
+### 퀘스트
+- `Quest/QuestManager.cs`
+- `Quest/Quest.cs`
+- `Quest/ObjectiveHandlerFactory.cs`
+- `Quest/*/ObjectiveHandler*.cs`
+
+---
+
+## 4. 이 영역의 핵심 책임
+
+## 4-1. 월드 상태와 게임 플레이 연결
+
+`MapManager`와 맵 오브젝트 구조는 단순 배경이 아니라, 캐릭터 생성, 트랩, 워프, 패트롤, 상호작용 대상 배치 같은 실제 게임 상태와 연결됩니다.
+즉, 맵은 정적 배치가 아니라 **게임 시스템의 컨테이너**로 보는 것이 더 정확합니다.
+
+## 4-2. 상호작용을 공통 인터페이스로 다루기
+
+상호작용이 많아질수록 캐릭터가 맵 오브젝트를 직접 다루기 시작하면 결합도가 급격히 올라갑니다.
+따라서 `InteractionManager`나 상호작용 인터페이스를 통해 공통 진입점을 맞추는 구조가 중요합니다.
+
+## 4-3. 아이템의 정의, 옵션, 사용을 분리
+
+아이템 영역은 보통 세 부분으로 나누면 이해하기 쉽습니다.
+
+- **정의**: 아이템 자체 데이터
+- **옵션**: 랜덤 옵션/고정 옵션/표시 문자열
+- **사용**: 실제 사용 시 일어나는 액션
+
+이 프로젝트의 구조에서도 `Items/Options/`, `Items/Use/`, `ItemUseAction*` 계층이 이 분리를 보여줍니다.
+이 구분을 유지하면 아이템 하나에 모든 규칙이 몰리지 않습니다.
+
+## 4-4. 대화와 퀘스트를 별도 도메인으로 유지
+
+대화와 퀘스트는 자주 함께 등장하지만, 같은 시스템은 아닙니다.
+
+- 대화는 정보 전달과 선택지 표시 중심
+- 퀘스트는 진행 상태와 목표 판정 중심
+
+둘을 느슨하게 연결해 두면, 퀘스트 없이도 대화를 재사용할 수 있고, 대화 없이도 퀘스트를 진행시킬 수 있습니다.
+
+---
+
+## 5. 대표 런타임 흐름
+
+### 흐름 A: 맵 진입
+
+1. 맵 관련 데이터가 준비됩니다.
+2. `MapManager`가 맵과 관련 오브젝트를 관리합니다.
+3. 필요 시 NPC, 몬스터, 워프, 트랩, 패트롤 오브젝트가 연결됩니다.
+4. 플레이어는 상호작용 가능한 오브젝트와 만날 수 있는 상태가 됩니다.
+
+### 흐름 B: 아이템 획득/사용
+
+1. 아이템이 드롭되거나 인벤토리에 들어옵니다.
+2. 아이템 정의와 옵션 표시 문자열이 준비됩니다.
+3. 사용 가능한 아이템이면 `ItemUseService`가 적절한 액션으로 분기합니다.
+4. HP 회복, Affect 부여, 스킬 지급, 경험치 증가 같은 결과가 반영됩니다.
+
+### 흐름 C: 대화와 퀘스트 진행
+
+1. 플레이어가 NPC와 상호작용합니다.
+2. 대화 데이터가 로드되어 노드/선택지가 표시됩니다.
+3. 필요 시 퀘스트 수락 또는 진행 조건 갱신이 일어납니다.
+4. `QuestManager`와 Objective Handler가 현재 진행 상태를 업데이트합니다.
+
+---
+
+## 6. 추천 읽기 순서
+
+1. `MapManager`
+2. `Maps/Objects/*`
+3. `InteractionManager`
+4. `ItemManager`, `ItemUseService`, `ItemUseActionFactory`
+5. `DialogueLoader`, `DialogueData`
+6. `QuestManager`, `Quest`, `ObjectiveHandlerFactory`
+7. `Items/Options/*`
+
+---
+
+## 7. 기능 추가 시 배치 기준
+
+## 이 영역에 넣는 것이 맞는 경우
+- 월드 오브젝트와의 상호작용
+- 아이템 사용 액션 추가
+- 퀘스트 목표 타입 추가
+- 대화 데이터 확장
+- 맵 오브젝트 특수 동작
+
+## 다른 영역에 두는 것이 좋은 경우
+- 전투 수치 계산
+- 캐릭터 공통 상태 머신
+- UI 공용 윈도우 프레임워크
+- Addressables 공용 로더
+
+즉, 이 영역은 **플레이어가 월드와 만나고 진행을 쌓는 도메인 계층**으로 보면 됩니다.
+
+---
+
+## 8. 디버깅 포인트
+
+### 상호작용이 안 되는 경우
+- `InteractionManager` 또는 상호작용 스캐너 쪽 연결을 확인합니다.
+- 맵 오브젝트가 실제 상호작용 대상 인터페이스를 구현했는지 확인합니다.
+
+### 아이템 사용 결과가 이상한 경우
+- `ItemUseActionFactory`가 어떤 액션을 생성했는지 확인합니다.
+- 아이템 정의 문제인지, 사용 액션 실행 문제인지 분리합니다.
+- UI 설명과 실제 실행 로직이 같은 데이터를 쓰는지 확인합니다.
+
+### 퀘스트가 진행되지 않는 경우
+- `QuestManager`가 이벤트를 받고 있는지 확인합니다.
+- 해당 목표 타입용 `ObjectiveHandler`가 제대로 선택되는지 확인합니다.
+- 맵/대화/아이템 이벤트와 퀘스트 갱신이 느슨하게 연결되어 있는지 점검합니다.
+
+---
+
+## 9. 새로 합류한 개발자를 위한 한 줄 정리
+
+이 영역은 **전투 외의 플레이 경험을 만드는 월드 도메인 계층**이며,
+맵, 상호작용, 아이템, 대화, 퀘스트를 느슨하게 연결해 게임 진행을 구성하는 구조입니다.
