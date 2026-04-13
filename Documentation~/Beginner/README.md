@@ -155,17 +155,17 @@ Core Runtime는 **게임 시작과 로딩, 캐릭터 공통 로직, UI, 데이�
 
 ## 이번 단계에서 추가된 핵심 클래스 상세 문서
 
-- `docs/04_key_classes/character_base.md`
-- `docs/04_key_classes/character_stat.md`
-- `docs/04_key_classes/character_motion_controller_2d.md`
-- `docs/04_key_classes/character_crowd_control_controller.md`
-- `docs/04_key_classes/game_loader_manager.md`
-- `docs/04_key_classes/table_loader_manager.md`
-- `docs/04_key_classes/ui_window_manager.md`
-- `docs/04_key_classes/vfx_manager.md`
-- `docs/04_key_classes/projectile_controller.md`
-- `docs/04_key_classes/save_registry.md`
-- `docs/04_key_classes/save_data_manager_base.md`
+- `docs/03_key_classes/character_base.md`
+- `docs/03_key_classes/character_stat.md`
+- `docs/03_key_classes/character_motion_controller_2d.md`
+- `docs/03_key_classes/character_crowd_control_controller.md`
+- `docs/03_key_classes/game_loader_manager.md`
+- `docs/03_key_classes/table_loader_manager.md`
+- `docs/03_key_classes/ui_window_manager.md`
+- `docs/03_key_classes/vfx_manager.md`
+- `docs/03_key_classes/projectile_controller.md`
+- `docs/03_key_classes/save_registry.md`
+- `docs/03_key_classes/save_data_manager_base.md`
 
 이 문서들은 Runtime 기능 영역 문서보다 한 단계 더 들어가서,
 **핵심 클래스가 실제로 어떤 책임을 소유하는지, 어디와 연결되는지, 어떤 순서로 읽어야 하는지**를 설명하는 상세 문서입니다.
@@ -183,3 +183,33 @@ Core Runtime는 **게임 시작과 로딩, 캐릭터 공통 로직, UI, 데이�
 9. `projectile_controller.md`
 10. `save_registry.md`
 11. `save_data_manager_base.md`
+
+
+---
+
+## 이번 단계에서 추가된 확장 레시피 문서
+
+- `docs/04_recipes/how_to_add_new_table.md`
+- `docs/04_recipes/how_to_add_new_ui_window.md`
+- `docs/04_recipes/how_to_add_new_projectile.md`
+- `docs/04_recipes/how_to_add_new_vfx.md`
+- `docs/04_recipes/how_to_extend_save_data.md`
+- `docs/04_recipes/how_to_add_editor_tool.md`
+
+이 문서들은 구조 설명보다 한 단계 더 실무에 가깝게,
+**새 기능을 어디에 넣고 어떤 순서로 연결해야 하는지**를 절차형으로 정리한 문서입니다.
+
+추천 활용 순서는 다음과 같습니다.
+
+1. 개요 문서에서 책임 범위 확인
+2. Runtime 기능 문서에서 관련 시스템 찾기
+3. 핵심 클래스 문서에서 진입점 확인
+4. 확장 레시피 문서로 실제 구현 순서 적용
+
+특히 다음 상황에서 바로 참고하기 좋습니다.
+
+- 새 데이터를 테이블로 추가할 때
+- 새 UI 창을 붙일 때
+- 새 Projectile / VFX를 붙일 때
+- 저장 데이터를 늘릴 때
+- 새 Editor Tool을 만들 때
