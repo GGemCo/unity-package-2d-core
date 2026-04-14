@@ -48,6 +48,9 @@ namespace GGemCo2DCore
         public void SetUIWindowLoadSaveData(UIWindowLoadSaveData value) => uIWindowLoadSaveData = value;
         public string GetNameUIWindowLoadSaveData() => nameof(UIWindowLoadSaveData);
 
+        [Tooltip("체크시 바로 게임 시작")]
+        [SerializeField] private bool autoStart = false;
+
         private SlotMetaDatController _slotMetaDatController;
         private GGemCoSaveSettings _saveDataSettings;
         private GameLoaderManager _gameLoaderManager;
@@ -73,6 +76,17 @@ namespace GGemCo2DCore
 
         private void Start()
         {
+            if (autoStart)
+            {
+                buttonGameContinue?.gameObject.SetActive(false);
+                buttonGameExit?.gameObject.SetActive(false);
+                buttonOpenSaveDataWindow?.gameObject.SetActive(false);
+                buttonOpenOption?.gameObject.SetActive(false);
+                buttonNewGame?.gameObject.SetActive(false);
+                
+                OnClickGameContinue();
+                return;
+            }
             // UI 버튼 활성화
             UpdateButtons();
 
