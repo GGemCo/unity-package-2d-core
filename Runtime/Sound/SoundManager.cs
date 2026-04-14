@@ -73,7 +73,7 @@ namespace GGemCo2DCore
             if (!_tableLoaderManager) return;
             var info = _tableLoaderManager.GetSoundData(uid);
             if (info.Type == SoundConstants.Type.Bgm)
-                _soundControllerBgm.Play(_addressableLoaderSound.GetAudioClip($"{ConfigAddressableGroupName.Sound}_{info.FileName}"), this);
+                _soundControllerBgm.Play(_addressableLoaderSound.GetAudioClip($"{ConfigAddressableKey.Sound}_{info.FileName}"), this);
             else if (info.Type == SoundConstants.Type.Sfx)
                 _soundControllerSfx.Play(uid, this);
         }
