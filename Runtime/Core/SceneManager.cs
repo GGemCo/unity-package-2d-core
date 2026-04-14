@@ -13,5 +13,10 @@ namespace GGemCo2DCore
         {
             UnityEngine.SceneManagement.SceneManager.LoadScene(sceneName, LoadSceneMode.Additive);
         }
+
+        public static void UnLoadScene(string name)
+        {
+            UnityEngine.SceneManagement.SceneManager.UnloadSceneAsync(name);
+        }
     }
 }
