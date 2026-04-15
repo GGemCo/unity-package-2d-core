@@ -28,7 +28,13 @@ namespace GGemCo2DCore
         /// 일시적으로 UI 표시 상태를 저장하기 위한 스택입니다.
         /// 중첩된 연출에서도 마지막으로 저장한 상태부터 역순으로 복원합니다.
         /// </summary>
-        private readonly Stack<Dictionary<UIWindowConstants.WindowUid, bool>> _visibilityStateStack = new Stack<Dictionary<UIWindowConstants.WindowUid, bool>>();
+        private readonly Stack<VisibilityStateEntry> _visibilityStateStack = new Stack<VisibilityStateEntry>();
+
+        private sealed class VisibilityStateEntry
+        {
+            public Dictionary<UIWindowConstants.WindowUid, bool> state;
+            public UIWindowConstants.UIWindowVisibilityApplyMode restoreMode;
+        }
 
         private void Awake()
         {
@@ -104,13 +110,30 @@ namespace GGemCo2DCore
         /// <param name="show"></param>
         public void ShowWindow(UIWindowConstants.WindowUid uid, bool show)
         {
+            ShowWindow(uid, show, UIWindowConstants.UIWindowVisibilityApplyMode.Normal);
+        }
+
+        /// <summary>
+        /// 윈도우 보임/안보임 처리 시 적용 모드를 지정합니다.
+        /// </summary>
+        public void ShowWindow(UIWindowConstants.WindowUid uid, bool show, UIWindowConstants.UIWindowVisibilityApplyMode mode)
+        {
             UIWindow uiWindow = GetUIWindowByUid<UIWindow>(uid);
             if (uiWindow == null) {
                 GcLogger.LogError($"{nameof(UIWindow)} 컴포넌트가 없습니다. uid:"+uid);
                 return;
             }
 
-            uiWindow.Show(show);
+            switch (mode)
+            {
+                case UIWindowConstants.UIWindowVisibilityApplyMode.ImmediateSilent:
+                    uiWindow.SetVisibleImmediate(show, invokeOnShow: false, followLinkedWindows: false);
+                    break;
+                case UIWindowConstants.UIWindowVisibilityApplyMode.Normal:
+                default:
+                    uiWindow.Show(show);
+                    break;
+            }
         }
         /// <summary>
         /// 특정 윈도우에서 아이콘 가져오기
@@ -237,6 +260,14 @@ namespace GGemCo2DCore
         /// </summary>
         public void RestoreVisibilityState(IReadOnlyDictionary<UIWindowConstants.WindowUid, bool> state)
         {
+            RestoreVisibilityState(state, UIWindowConstants.UIWindowVisibilityApplyMode.Normal);
+        }
+
+        /// <summary>
+        /// 저장된 윈도우 표시 상태를 지정한 적용 모드로 복원합니다.
+        /// </summary>
+        public void RestoreVisibilityState(IReadOnlyDictionary<UIWindowConstants.WindowUid, bool> state, UIWindowConstants.UIWindowVisibilityApplyMode mode)
+        {
             if (state == null)
             {
                 return;
@@ -244,7 +275,7 @@ namespace GGemCo2DCore
 
             foreach (var pair in state)
             {
-                ShowWindow(pair.Key, pair.Value);
+                ShowWindow(pair.Key, pair.Value, mode);
             }
         }
 
@@ -253,7 +284,7 @@ namespace GGemCo2DCore
         /// 이후 <see cref="PopVisibilityState"/> 호출 시 마지막으로 저장한 상태부터 역순으로 복원됩니다.
         /// </summary>
         /// <returns>실제로 저장된 스냅샷이 있으면 true, 아니면 false입니다.</returns>
-        public bool PushVisibilityState(IEnumerable<UIWindowConstants.WindowUid> windowUids)
+        public bool PushVisibilityState(IEnumerable<UIWindowConstants.WindowUid> windowUids, UIWindowConstants.UIWindowVisibilityApplyMode restoreMode = UIWindowConstants.UIWindowVisibilityApplyMode.Normal)
         {
             var snapshot = CaptureVisibilityState(windowUids);
             if (snapshot == null || snapshot.Count <= 0)
@@ -261,7 +292,11 @@ namespace GGemCo2DCore
                 return false;
             }
 
-            _visibilityStateStack.Push(snapshot);
+            _visibilityStateStack.Push(new VisibilityStateEntry
+            {
+                state = snapshot,
+                restoreMode = restoreMode,
+            });
             return true;
         }
 
@@ -276,8 +311,8 @@ namespace GGemCo2DCore
                 return false;
             }
 
-            var snapshot = _visibilityStateStack.Pop();
-            RestoreVisibilityState(snapshot);
+            var entry = _visibilityStateStack.Pop();
+            RestoreVisibilityState(entry.state, entry.restoreMode);
             return true;
         }
 
@@ -302,6 +337,14 @@ namespace GGemCo2DCore
         /// </summary>
         public void SetWindowsVisible(IEnumerable<UIWindowConstants.WindowUid> windowUids, bool show)
         {
+            SetWindowsVisible(windowUids, show, UIWindowConstants.UIWindowVisibilityApplyMode.Normal);
+        }
+
+        /// <summary>
+        /// 지정한 윈도우들을 일괄 표시/숨김 처리합니다.
+        /// </summary>
+        public void SetWindowsVisible(IEnumerable<UIWindowConstants.WindowUid> windowUids, bool show, UIWindowConstants.UIWindowVisibilityApplyMode mode)
+        {
             if (windowUids == null)
             {
                 return;
@@ -309,7 +352,7 @@ namespace GGemCo2DCore
 
             foreach (var windowUid in windowUids)
             {
-                ShowWindow(windowUid, show);
+                ShowWindow(windowUid, show, mode);
             }
         }
 

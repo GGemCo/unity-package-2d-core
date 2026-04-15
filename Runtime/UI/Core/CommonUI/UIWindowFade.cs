@@ -74,5 +74,45 @@ namespace GGemCo2DCore
                 gameObject.SetActive(false);
             });
         }
+
+
+        /// <summary>
+        /// 실행 중인 전환과 콜백을 생략하고 즉시 표시 상태를 맞춥니다.
+        /// </summary>
+        public void SetVisibleImmediate(bool show, bool invokeOnShow)
+        {
+            if (_effectTarget != null)
+            {
+                UIEffectService.Stop(_effectTarget);
+            }
+
+            if (UiFadeUtility.TryGetCanvasGroup(gameObject, true, out var canvasGroup))
+            {
+                UiFadeUtility.StopFadeIfRunning(canvasGroup, this);
+            }
+
+            _isTransitionRunning = false;
+
+            if (show)
+            {
+                gameObject.SetActive(true);
+                UiFadeUtility.SetVisible(gameObject, true, true, true);
+
+                if (invokeOnShow)
+                {
+                    _uiWindow?.OnShow(true);
+                }
+
+                return;
+            }
+
+            if (invokeOnShow)
+            {
+                _uiWindow?.OnShow(false);
+            }
+
+            UiFadeUtility.SetVisible(gameObject, false, true, true);
+            gameObject.SetActive(false);
+        }
     }
 }

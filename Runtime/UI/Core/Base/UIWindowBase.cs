@@ -106,6 +106,29 @@ namespace GGemCo2DCore
         }
 
         /// <summary>
+        /// window 테이블에 있는 OpenWindowUid, CloseWindowUid 컬럼을 즉시/무음 모드로 처리합니다.
+        /// </summary>
+        private void SetVisibleByTableImmediate(int[] windowUids, bool show, bool invokeOnShow)
+        {
+            if (windowUids == null || SceneGame == null || SceneGame.uIWindowManager == null)
+            {
+                return;
+            }
+
+            foreach (var linkedWindowUid in windowUids)
+            {
+                UIWindowConstants.WindowUid windowUid = (UIWindowConstants.WindowUid)linkedWindowUid;
+                UIWindow uiWindow = SceneGame.uIWindowManager.GetUIWindowByUid<UIWindow>(windowUid);
+                if (uiWindow == null)
+                {
+                    continue;
+                }
+
+                uiWindow.SetVisibleImmediate(show, invokeOnShow, followLinkedWindows: false);
+            }
+        }
+
+        /// <summary>
         /// 윈도우 open/close
         /// </summary>
         public virtual bool Show(bool show)
@@ -132,6 +155,54 @@ namespace GGemCo2DCore
             }
 
             return true;
+        }
+
+        /// <summary>
+        /// 애니메이션과 OnShow 호출 없이 즉시 윈도우 표시 상태를 변경합니다.
+        /// </summary>
+        public virtual void SetVisibleImmediate(bool show, bool invokeOnShow = false, bool followLinkedWindows = false)
+        {
+            if (_uiWindowFade == null)
+            {
+                if (show)
+                {
+                    gameObject.SetActive(true);
+                    UiFadeUtility.SetVisible(gameObject, true, true, true);
+
+                    if (invokeOnShow)
+                    {
+                        OnShow(true);
+                    }
+                }
+                else
+                {
+                    if (invokeOnShow)
+                    {
+                        OnShow(false);
+                    }
+
+                    UiFadeUtility.SetVisible(gameObject, false, true, true);
+                    gameObject.SetActive(false);
+                }
+            }
+            else
+            {
+                _uiWindowFade.SetVisibleImmediate(show, invokeOnShow);
+            }
+
+            if (!followLinkedWindows || _struckTableWindow == null)
+            {
+                return;
+            }
+
+            if (show)
+            {
+                SetVisibleByTableImmediate(_struckTableWindow.OpenWindowUid, true, invokeOnShow);
+            }
+            else
+            {
+                SetVisibleByTableImmediate(_struckTableWindow.CloseWindowUid, false, invokeOnShow);
+            }
         }
 
         /// <summary>
