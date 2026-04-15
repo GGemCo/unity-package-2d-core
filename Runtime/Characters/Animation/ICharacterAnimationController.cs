@@ -136,5 +136,7 @@ namespace GGemCo2DCore
         /// 현재 재생 중인 애니메이션의 마지막 프레임에 즉시 고정합니다.
         /// </summary>
         void FreezeCurrentAnimationAtLastFrame();
+
+        void AnimationEventComplete(StruckAnimationEventComplete struckAnimationEventComplete);
     }
 }

@@ -1,5 +1,10 @@
 ﻿namespace GGemCo2DCore
 {
+    public class StruckAnimationEventComplete
+    {
+        public bool ForceStop { get; set; } = false;
+    }
+    
     public class StruckAnimationEventVfx
     {
         public int Uid { get; set; }

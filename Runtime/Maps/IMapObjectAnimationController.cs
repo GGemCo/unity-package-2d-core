@@ -11,5 +11,7 @@ namespace GGemCo2DCore
         void StopMapObjectAnimation();
         bool HasAnimation(string stateName);
         Dictionary<string, float> GetAnimationAllLength();
+        
+        void AnimationEventComplete(StruckAnimationEventComplete struckAnimationEventComplete);
     }
 }

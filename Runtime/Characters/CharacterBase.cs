@@ -440,5 +440,10 @@ namespace GGemCo2DCore
         {
             _characterDamageController.EnableSuperArmor(enable);
         }
+
+        public void AnimationEventComplete(StruckAnimationEventComplete struckAnimationEventComplete)
+        {
+            CharacterAnimationController.AnimationEventComplete(struckAnimationEventComplete);
+        }
     }
 }

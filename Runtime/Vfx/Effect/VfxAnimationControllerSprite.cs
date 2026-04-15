@@ -47,7 +47,7 @@ namespace GGemCo2DCore
         /// <summary>
         /// 애니메이션 클립이 플레이가 완료되면 호출되는 콜백 함수
         /// </summary>
-        public override void GGemCoAniEventComplete()
+        public void AnimationEventComplete(StruckAnimationEventComplete struckAnimationEventComplete)
         {
             EnsureInitialized();
 

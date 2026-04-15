@@ -1,4 +1,6 @@
 ﻿
+using UnityEngine;
+
 namespace GGemCo2DCore
 {
     public interface IVfxAnimationController
@@ -14,5 +16,7 @@ namespace GGemCo2DCore
         
         bool Play(float duration, float timeScale = 1f);
         void PlayEnd();
+        
+        void AnimationEventComplete(StruckAnimationEventComplete struckAnimationEventComplete);
     }
 }

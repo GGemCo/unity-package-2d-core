@@ -19,7 +19,22 @@ namespace GGemCo2DCore
             _soundManager = sceneGame.soundManager;
             _vfxManager = sceneGame.VfxManager;
         }
-
+        
+        public void OnAnimationEventComplete(string json, GameObject fromObject)
+        {
+            try
+            {
+                var data = JsonConvert.DeserializeObject<StruckAnimationEventComplete>(json);
+                fromObject.GetComponent<CharacterBase>()?.AnimationEventComplete(data);
+                fromObject.GetComponent<VfxBehaviourEffect>()?.AnimationEventComplete(data);
+                fromObject.GetComponent<DefaultObjectTrap>()?.AnimationEventComplete(data);
+            }
+            catch (Exception e)
+            {
+                GcLogger.LogError($"animation complete event, json parsing error: {e.Message} / json: {json}");
+            }
+        }
+        
         public void OnAnimationEventVfx(string json, GameObject fromObject)
         {
             try

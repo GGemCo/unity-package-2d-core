@@ -175,5 +175,10 @@ namespace GGemCo2DCore
 
             transform.rotation = Quaternion.Euler(0f, 0f, angle);
         }
+
+        public void AnimationEventComplete(StruckAnimationEventComplete struckAnimationEventComplete)
+        {
+            VfxAnimationController.AnimationEventComplete(struckAnimationEventComplete);
+        }
     }
 }

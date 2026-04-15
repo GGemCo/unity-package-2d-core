@@ -120,7 +120,7 @@ namespace GGemCo2DCore
         /// <summary>
         /// 애니메이션이 중단되면 호출되는 콜백 함수
         /// </summary>
-        public override void GGemCoAniEventComplete()
+        public void AnimationEventComplete(StruckAnimationEventComplete struckAnimationEventComplete)
         {
             AnimatorStateInfo state = Animator.GetCurrentAnimatorStateInfo(0);
             // GcLogger.Log($"OnAnimationComplete: {animator.GetCurrentAnimatorClipInfo(0)?.}");

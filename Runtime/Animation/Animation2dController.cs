@@ -315,8 +315,9 @@ namespace GGemCo2DCore
         /// AnimationEvent(Inspector에서 이벤트 등록)에서 호출되도록 설계되었습니다.
         /// 파생 클래스에서 완료 처리가 필요하면 override 합니다.
         /// </remarks>
-        public virtual void GGemCoAniEventComplete()
+        public void GGemCoAniEventComplete(string json)
         {
+            EventListener?.OnAnimationEventComplete(json, gameObject);
         }
 
         /// <summary>

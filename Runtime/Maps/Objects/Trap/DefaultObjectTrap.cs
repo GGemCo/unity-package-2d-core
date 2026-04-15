@@ -261,5 +261,10 @@ namespace GGemCo2DCore
             return true;
         }
         #endregion
+
+        public void AnimationEventComplete(StruckAnimationEventComplete struckAnimationEventComplete)
+        {
+            _animationController.AnimationEventComplete(struckAnimationEventComplete);
+        }
     }
 }
