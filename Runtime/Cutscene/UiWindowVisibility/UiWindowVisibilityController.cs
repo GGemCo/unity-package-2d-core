@@ -1,4 +1,4 @@
-﻿using System.Collections;
+using System.Collections;
 using System.Collections.Generic;
 
 namespace GGemCo2DCore
@@ -20,14 +20,9 @@ namespace GGemCo2DCore
         private UIWindowManager _windowManager;
 
         /// <summary>
-        /// 대상 UI 창의 기존 표시 상태를 보관하는 스냅샷입니다.
+        /// UIWindowManager 스택에 복원 가능한 표시 상태를 저장했는지 여부입니다.
         /// </summary>
-        private Dictionary<UIWindowConstants.WindowUid, bool> _snapshot;
-
-        /// <summary>
-        /// 복원 가능한 표시 상태 스냅샷이 존재하는지 여부입니다.
-        /// </summary>
-        private bool _hasSnapshot;
+        private bool _hasPushedVisibilityState;
 
         /// <summary>
         /// UI 창 표시 상태를 제어하는 컷신 컨트롤러를 초기화합니다.
@@ -87,8 +82,12 @@ namespace GGemCo2DCore
                 return;
             }
 
-            _snapshot = _windowManager.CaptureVisibilityState(targetWindows);
-            _hasSnapshot = _snapshot is { Count: > 0 };
+            _hasPushedVisibilityState = false;
+            if (_data.restoreOnStop || _data.restoreOnCutsceneEnd)
+            {
+                _hasPushedVisibilityState = _windowManager.PushVisibilityState(targetWindows);
+            }
+
             _windowManager.SetWindowsVisible(targetWindows, _data.show);
         }
 
@@ -130,13 +129,15 @@ namespace GGemCo2DCore
         /// </summary>
         private void RestoreSnapshot()
         {
-            if (!_hasSnapshot || _windowManager == null || _snapshot == null)
+            if (!_hasPushedVisibilityState || _windowManager == null)
             {
                 return;
             }
 
-            _windowManager.RestoreVisibilityState(_snapshot);
-            _hasSnapshot = false;
+            if (_windowManager.PopVisibilityState())
+            {
+                _hasPushedVisibilityState = false;
+            }
         }
 
         /// <summary>

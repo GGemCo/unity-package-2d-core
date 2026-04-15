@@ -24,6 +24,12 @@ namespace GGemCo2DCore
         
         private readonly Dictionary<int, StruckTableWindow> _struckTableWindows = new Dictionary<int, StruckTableWindow>();
 
+        /// <summary>
+        /// 일시적으로 UI 표시 상태를 저장하기 위한 스택입니다.
+        /// 중첩된 연출에서도 마지막으로 저장한 상태부터 역순으로 복원합니다.
+        /// </summary>
+        private readonly Stack<Dictionary<UIWindowConstants.WindowUid, bool>> _visibilityStateStack = new Stack<Dictionary<UIWindowConstants.WindowUid, bool>>();
+
         private void Awake()
         {
             _struckTableWindows.Clear();
@@ -240,6 +246,55 @@ namespace GGemCo2DCore
             {
                 ShowWindow(pair.Key, pair.Value);
             }
+        }
+
+        /// <summary>
+        /// 지정한 윈도우들의 현재 표시 상태를 스택에 저장합니다.
+        /// 이후 <see cref="PopVisibilityState"/> 호출 시 마지막으로 저장한 상태부터 역순으로 복원됩니다.
+        /// </summary>
+        /// <returns>실제로 저장된 스냅샷이 있으면 true, 아니면 false입니다.</returns>
+        public bool PushVisibilityState(IEnumerable<UIWindowConstants.WindowUid> windowUids)
+        {
+            var snapshot = CaptureVisibilityState(windowUids);
+            if (snapshot == null || snapshot.Count <= 0)
+            {
+                return false;
+            }
+
+            _visibilityStateStack.Push(snapshot);
+            return true;
+        }
+
+        /// <summary>
+        /// 스택에 저장된 가장 마지막 윈도우 표시 상태를 복원합니다.
+        /// </summary>
+        /// <returns>복원에 성공하면 true, 복원할 스냅샷이 없으면 false입니다.</returns>
+        public bool PopVisibilityState()
+        {
+            if (_visibilityStateStack.Count <= 0)
+            {
+                return false;
+            }
+
+            var snapshot = _visibilityStateStack.Pop();
+            RestoreVisibilityState(snapshot);
+            return true;
+        }
+
+        /// <summary>
+        /// 현재 저장된 윈도우 표시 상태 스택을 모두 비웁니다.
+        /// </summary>
+        public void ClearVisibilityStateStack()
+        {
+            _visibilityStateStack.Clear();
+        }
+
+        /// <summary>
+        /// 저장된 윈도우 표시 상태 스택 개수를 반환합니다.
+        /// </summary>
+        public int GetVisibilityStateStackCount()
+        {
+            return _visibilityStateStack.Count;
         }
 
         /// <summary>
