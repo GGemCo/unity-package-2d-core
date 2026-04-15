@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using UnityEngine;
 
 namespace GGemCo2DCore
@@ -110,6 +110,7 @@ namespace GGemCo2DCore
         private float _zoomStartSize;
         private float _zoomEndSize;
         private Easing.EaseType _zoomEasing;
+        private bool _zoomUseUnscaledTime;
 
         private void Awake()
         {
@@ -119,6 +120,7 @@ namespace GGemCo2DCore
             _zoomStartSize = 0;
             _zoomEndSize = 0;
             _zoomEasing = Easing.EaseType.Linear;
+            _zoomUseUnscaledTime = false;
             _originCameraPosition = Vector3.zero;
             _cameraPosition = new Vector3(followOffset.x, followOffset.y, 0f);
             _basePosition = transform.position;
@@ -133,6 +135,7 @@ namespace GGemCo2DCore
         private void Update()
         {
             LimitCameraArea();
+            UpdateZoom();
         }
 
         private void LimitCameraArea()
@@ -194,19 +197,29 @@ namespace GGemCo2DCore
             // 최종 위치 적용 (Shake는 "기본 위치"를 기준으로 오프셋으로만 적용)
             _basePosition = new Vector3(clampX, clampY, -10f);
             transform.position = _basePosition + _shakeOffset;
+        }
 
-            // 줌 처리
-            if (_isZooming)
+        private void UpdateZoom()
+        {
+            if (!_isZooming)
             {
-                _zoomTimer += Time.deltaTime;
-                float t = Mathf.Clamp01(_zoomTimer / _zoomDuration);
-                float easedT = Easing.Apply(t, _zoomEasing);
-                float zoom = Mathf.Lerp(_zoomStartSize, _zoomEndSize, easedT);
-                _currentCamera.orthographicSize = zoom;
+                return;
+            }
 
-                _height = zoom;
-                _width = _height * Screen.width / Screen.height;
-                if (t >= 1f) _isZooming = false;
+            float deltaTime = _zoomUseUnscaledTime ? Time.unscaledDeltaTime : Time.deltaTime;
+            _zoomTimer += deltaTime;
+
+            float duration = Mathf.Max(_zoomDuration, 0.0001f);
+            float t = Mathf.Clamp01(_zoomTimer / duration);
+            float easedT = Easing.Apply(t, _zoomEasing);
+            float zoom = Mathf.Lerp(_zoomStartSize, _zoomEndSize, easedT);
+            _currentCamera.orthographicSize = zoom;
+
+            _height = zoom;
+            _width = _height * Screen.width / Screen.height;
+            if (t >= 1f)
+            {
+                _isZooming = false;
             }
         }
 
@@ -409,14 +422,29 @@ namespace GGemCo2DCore
         /// <summary>
         /// orthographicSize 변경하기
         /// </summary>
-        public void StartZoom(float endSize, float duration = 1f, Easing.EaseType easeType = Easing.EaseType.EaseOutQuad)
+        public void StartZoom(
+            float endSize,
+            float duration = 1f,
+            Easing.EaseType easeType = Easing.EaseType.EaseOutQuad,
+            bool useUnscaledTime = false)
         {
-            _zoomTimer = 0;
+            if (_currentCamera == null || !_currentCamera.orthographic)
+            {
+                return;
+            }
+
+            _zoomTimer = 0f;
             _zoomStartSize = _currentCamera.orthographicSize;
             _zoomEndSize = endSize;
-            _zoomDuration = duration;
+            _zoomDuration = Mathf.Max(duration, 0.0001f);
             _zoomEasing = easeType;
+            _zoomUseUnscaledTime = useUnscaledTime;
             _isZooming = true;
+
+            if (duration <= 0f)
+            {
+                UpdateZoom();
+            }
         }
 
         /// <summary>
@@ -429,6 +457,7 @@ namespace GGemCo2DCore
             _zoomEndSize = _originalOrthographicSize;
             _zoomDuration = 1f;
             _zoomEasing = Easing.EaseType.EaseOutQuad;
+            _zoomUseUnscaledTime = false;
             _isZooming = true;
         }
 
@@ -440,6 +469,23 @@ namespace GGemCo2DCore
             SetFollowPlayer();
             StopShake(CameraShakeChannel.Cutscene);
             ReSetZoom();
+        }
+
+        public void StopZoom(bool snapToTarget = false)
+        {
+            if (!_isZooming)
+            {
+                return;
+            }
+
+            if (snapToTarget && _currentCamera != null)
+            {
+                _currentCamera.orthographicSize = _zoomEndSize;
+                _height = _zoomEndSize;
+                _width = _height * Screen.width / Screen.height;
+            }
+
+            _isZooming = false;
         }
 
         /// <summary>
