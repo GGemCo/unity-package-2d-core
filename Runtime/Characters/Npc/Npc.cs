@@ -219,6 +219,28 @@ namespace GGemCo2DCore
             Destroy(gameObject);
         }
 
+        public bool TryCaptureNameTagVisible(out bool isVisible)
+        {
+            isVisible = false;
+            if (_tagNameNpc == null)
+            {
+                return false;
+            }
+
+            isVisible = _tagNameNpc.IsVisible();
+            return true;
+        }
+
+        public void SetNameTagVisibleImmediate(bool isVisible)
+        {
+            if (_tagNameNpc == null)
+            {
+                return;
+            }
+
+            _tagNameNpc.SetVisibleImmediate(isVisible);
+        }
+
         public bool IsSubCategoryTree()
         {
             return _struckTableNpc.SubCategory == CharacterConstantsNpc.NpcSubCategory.Tree;

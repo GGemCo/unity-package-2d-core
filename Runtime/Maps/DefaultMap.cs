@@ -75,6 +75,14 @@ namespace GGemCo2DCore
             if (myNpc == null) return null;
             return myNpc.CharacterRegenData;
         }
+        public Dictionary<int, GameObject> GetNpcs()
+        {
+            return Npcs;
+        }
+        public Dictionary<int, GameObject> GetMonsters()
+        {
+            return Monsters;
+        }
         /// <summary>
         /// 맵에 배치된 npc 중에 uid 로 가져오기
         /// </summary>

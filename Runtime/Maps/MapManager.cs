@@ -36,6 +36,8 @@ namespace GGemCo2DCore
         public event Action OnLoadStartMap;
         public static event Action<MapTileCommon, GameObject> OnLoadCompleteMap;
         public static event Action<MapTileCommon, GameObject> OnLoadTilemapCompleteMap;
+        public static event Action<MapTileCommon, GameObject> OnLoadCompletePlayer;
+        public static event Action<MapTileCommon, GameObject> OnLoadCompleteNpc;
         
         // 현재 맵 테이블 데이터
         private StruckTableMap _currentMapTableData;
@@ -204,6 +206,7 @@ namespace GGemCo2DCore
                         yield return StartCoroutineSafe(AwaitTask(
                             _mapLoadCharacters.LoadPlayer(_playSpawnPosition, _currentMapTableData, _mapTileCommon)));
                         if (_currentState == MapConstants.State.Failed) yield break;
+                        OnLoadCompletePlayer?.Invoke(_mapTileCommon, _grid);
                         _currentState = MapConstants.State.LoadCharacterPrefabs;
                         break;
                     
@@ -225,6 +228,7 @@ namespace GGemCo2DCore
                         yield return StartCoroutineSafe(
                             AwaitTask(_mapLoadCharacters.LoadNpcs(_mapTileCommon, _currentMapTableData)));
                         if (_currentState == MapConstants.State.Failed) yield break;
+                        OnLoadCompleteNpc?.Invoke(_mapTileCommon, _grid);
                         _currentState = MapConstants.State.CreateWarp;
                         break;
 

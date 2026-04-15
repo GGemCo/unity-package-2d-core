@@ -43,6 +43,24 @@ namespace GGemCo2DCore
             gameObject.transform.position = npcNameWorldPosition;
         }
         
+        public bool IsVisible()
+        {
+            return gameObject.activeSelf && (_canvasGroup == null || _canvasGroup.alpha > 0f);
+        }
+
+        public void SetVisibleImmediate(bool isVisible)
+        {
+            StopAllCoroutines();
+            _isStartFade = false;
+
+            if (_canvasGroup != null)
+            {
+                _canvasGroup.alpha = isVisible ? 1f : 0f;
+            }
+
+            gameObject.SetActive(isVisible);
+        }
+
         /// <summary>
         /// fade in 효과 시작. 맵 컬링시 사용
         /// </summary>
