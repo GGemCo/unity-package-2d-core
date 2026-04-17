@@ -23,6 +23,10 @@ namespace GGemCo2DCore
         public void SetUIWindow(UIWindow[] prefabs) => uiWindows = prefabs;
         
         private readonly Dictionary<int, StruckTableWindow> _struckTableWindows = new Dictionary<int, StruckTableWindow>();
+        private readonly List<ExternalWindowRegistration> _externalWindowRegistrations = new List<ExternalWindowRegistration>();
+        private readonly Dictionary<string, ExternalWindowRegistration> _externalWindowRegistrationMap =
+            new Dictionary<string, ExternalWindowRegistration>(StringComparer.Ordinal);
+        private int _externalWindowRegistrationSequence;
 
         /// <summary>
         /// 일시적으로 UI 표시 상태를 저장하기 위한 스택입니다.
@@ -30,9 +34,33 @@ namespace GGemCo2DCore
         /// </summary>
         private readonly Stack<VisibilityStateEntry> _visibilityStateStack = new Stack<VisibilityStateEntry>();
 
+        public enum ExternalWindowInsertMode
+        {
+            Before = 0,
+            After = 1,
+            First = 2,
+            Last = 3,
+        }
+
+        private sealed class ExternalWindowRegistration
+        {
+            public string key;
+            public UIWindow window;
+            public UIWindowConstants.WindowUid anchorUid;
+            public ExternalWindowInsertMode insertMode;
+            public int priority;
+            public int sequence;
+        }
+
+        private sealed class WindowVisibilityStateItem
+        {
+            public UIWindow window;
+            public bool visible;
+        }
+
         private sealed class VisibilityStateEntry
         {
-            public Dictionary<UIWindowConstants.WindowUid, bool> state;
+            public List<WindowVisibilityStateItem> state;
             public UIWindowConstants.UIWindowVisibilityApplyMode restoreMode;
         }
 
@@ -71,6 +99,8 @@ namespace GGemCo2DCore
         private void InitializationTableInfo()
         {
             if (TableLoaderManager.Instance == null) return;
+            if (uiWindows == null || uiWindows.Length <= 0) return;
+
             TableWindow tableWindow = TableLoaderManager.Instance.TableWindow;
             var tables = tableWindow.GetDatas();
             if (tables == null) return;
@@ -98,11 +128,243 @@ namespace GGemCo2DCore
                     window.gameObject.SetActive(false);
                     continue;
                 }
+
                 window.SetTableWindow(info);
-                window.transform.SetSiblingIndex(info.Ordering);
-                _struckTableWindows.TryAdd(info.Uid, info);
+                _struckTableWindows[info.Uid] = info;
+            }
+
+            RefreshWindowOrder();
+        }
+        private sealed class ManagedWindowOrderInfo
+        {
+            public UIWindow window;
+            public int ordering;
+            public int uid;
+        }
+
+        private List<ManagedWindowOrderInfo> GetCoreManagedWindowOrderInfos()
+        {
+            var result = new List<ManagedWindowOrderInfo>();
+            foreach (var pair in _struckTableWindows)
+            {
+                int uid = pair.Key;
+                if (uid <= 0) continue;
+                if (uiWindows == null || uid >= uiWindows.Length) continue;
+
+                UIWindow window = uiWindows[uid];
+                if (window == null) continue;
+
+                result.Add(new ManagedWindowOrderInfo
+                {
+                    window = window,
+                    ordering = pair.Value.Ordering,
+                    uid = uid,
+                });
+            }
+
+            result.Sort((a, b) =>
+            {
+                int compare = a.ordering.CompareTo(b.ordering);
+                if (compare != 0) return compare;
+                return a.uid.CompareTo(b.uid);
+            });
+            return result;
+        }
+
+        private List<ExternalWindowRegistration> GetOrderedExternalRegistrations()
+        {
+            var result = new List<ExternalWindowRegistration>();
+            for (int i = 0; i < _externalWindowRegistrations.Count; i++)
+            {
+                var registration = _externalWindowRegistrations[i];
+                if (registration == null || registration.window == null)
+                {
+                    continue;
+                }
+
+                result.Add(registration);
+            }
+
+            result.Sort((a, b) =>
+            {
+                int compare = a.priority.CompareTo(b.priority);
+                if (compare != 0) return compare;
+                return a.sequence.CompareTo(b.sequence);
+            });
+            return result;
+        }
+
+        private static void AppendRegistrations(List<UIWindow> target, List<ExternalWindowRegistration> registrations)
+        {
+            if (target == null || registrations == null) return;
+
+            for (int i = 0; i < registrations.Count; i++)
+            {
+                var registration = registrations[i];
+                if (registration == null || registration.window == null) continue;
+                if (target.Contains(registration.window)) continue;
+                target.Add(registration.window);
             }
         }
+
+        private List<UIWindow> BuildManagedWindowOrder()
+        {
+            var orderedCoreWindows = GetCoreManagedWindowOrderInfos();
+            var externalRegistrations = GetOrderedExternalRegistrations();
+            var firstRegistrations = new List<ExternalWindowRegistration>();
+            var lastRegistrations = new List<ExternalWindowRegistration>();
+            var beforeRegistrationsByAnchor = new Dictionary<int, List<ExternalWindowRegistration>>();
+            var afterRegistrationsByAnchor = new Dictionary<int, List<ExternalWindowRegistration>>();
+
+            for (int i = 0; i < externalRegistrations.Count; i++)
+            {
+                var registration = externalRegistrations[i];
+                if (registration == null || registration.window == null)
+                {
+                    continue;
+                }
+
+                switch (registration.insertMode)
+                {
+                    case ExternalWindowInsertMode.First:
+                        firstRegistrations.Add(registration);
+                        break;
+                    case ExternalWindowInsertMode.Before:
+                    {
+                        int anchorUid = (int)registration.anchorUid;
+                        if (!_struckTableWindows.ContainsKey(anchorUid))
+                        {
+                            lastRegistrations.Add(registration);
+                            break;
+                        }
+
+                        if (!beforeRegistrationsByAnchor.TryGetValue(anchorUid, out var beforeList))
+                        {
+                            beforeList = new List<ExternalWindowRegistration>();
+                            beforeRegistrationsByAnchor.Add(anchorUid, beforeList);
+                        }
+                        beforeList.Add(registration);
+                        break;
+                    }
+                    case ExternalWindowInsertMode.After:
+                    {
+                        int anchorUid = (int)registration.anchorUid;
+                        if (!_struckTableWindows.ContainsKey(anchorUid))
+                        {
+                            lastRegistrations.Add(registration);
+                            break;
+                        }
+
+                        if (!afterRegistrationsByAnchor.TryGetValue(anchorUid, out var afterList))
+                        {
+                            afterList = new List<ExternalWindowRegistration>();
+                            afterRegistrationsByAnchor.Add(anchorUid, afterList);
+                        }
+                        afterList.Add(registration);
+                        break;
+                    }
+                    case ExternalWindowInsertMode.Last:
+                    default:
+                        lastRegistrations.Add(registration);
+                        break;
+                }
+            }
+
+            var result = new List<UIWindow>();
+            AppendRegistrations(result, firstRegistrations);
+
+            for (int i = 0; i < orderedCoreWindows.Count; i++)
+            {
+                var coreInfo = orderedCoreWindows[i];
+                if (coreInfo == null || coreInfo.window == null)
+                {
+                    continue;
+                }
+
+                if (beforeRegistrationsByAnchor.TryGetValue(coreInfo.uid, out var beforeRegistrations))
+                {
+                    AppendRegistrations(result, beforeRegistrations);
+                }
+
+                if (!result.Contains(coreInfo.window))
+                {
+                    result.Add(coreInfo.window);
+                }
+
+                if (afterRegistrationsByAnchor.TryGetValue(coreInfo.uid, out var afterRegistrations))
+                {
+                    AppendRegistrations(result, afterRegistrations);
+                }
+            }
+
+            AppendRegistrations(result, lastRegistrations);
+            return result;
+        }
+
+        public void RefreshWindowOrder()
+        {
+            var orderedWindows = BuildManagedWindowOrder();
+            for (int i = 0; i < orderedWindows.Count; i++)
+            {
+                var window = orderedWindows[i];
+                if (window == null) continue;
+                window.transform.SetSiblingIndex(i);
+            }
+        }
+
+        public bool RegisterExternalWindow(string key, UIWindow window, UIWindowConstants.WindowUid anchorUid,
+            ExternalWindowInsertMode insertMode = ExternalWindowInsertMode.After, int priority = 0)
+        {
+            if (string.IsNullOrWhiteSpace(key))
+            {
+                GcLogger.LogError("외부 UIWindow 등록 key 값이 비어 있습니다.");
+                return false;
+            }
+
+            if (window == null)
+            {
+                GcLogger.LogError($"외부 UIWindow 등록 대상이 없습니다. key:{key}");
+                return false;
+            }
+
+            if (!_externalWindowRegistrationMap.TryGetValue(key, out var registration))
+            {
+                registration = new ExternalWindowRegistration
+                {
+                    key = key,
+                    sequence = _externalWindowRegistrationSequence++,
+                };
+                _externalWindowRegistrationMap.Add(key, registration);
+                _externalWindowRegistrations.Add(registration);
+            }
+
+            registration.window = window;
+            registration.anchorUid = anchorUid;
+            registration.insertMode = insertMode;
+            registration.priority = priority;
+
+            RefreshWindowOrder();
+            return true;
+        }
+
+        public bool UnregisterExternalWindow(string key)
+        {
+            if (string.IsNullOrWhiteSpace(key))
+            {
+                return false;
+            }
+
+            if (!_externalWindowRegistrationMap.TryGetValue(key, out var registration))
+            {
+                return false;
+            }
+
+            _externalWindowRegistrationMap.Remove(key);
+            _externalWindowRegistrations.Remove(registration);
+            RefreshWindowOrder();
+            return true;
+        }
+
         /// <summary>
         /// 윈도우 보임/안보임 처리 
         /// </summary>
@@ -226,6 +488,15 @@ namespace GGemCo2DCore
         }
 
         /// <summary>
+        /// 현재 관리 중인 모든 윈도우를 정렬 순서 기준으로 반환합니다.
+        /// Core window 와 외부 등록 window 를 모두 포함합니다.
+        /// </summary>
+        public List<UIWindow> GetManagedWindows()
+        {
+            return BuildManagedWindowOrder();
+        }
+
+        /// <summary>
         /// 지정한 윈도우들의 현재 표시 상태를 캡처합니다.
         /// </summary>
         public Dictionary<UIWindowConstants.WindowUid, bool> CaptureVisibilityState(IEnumerable<UIWindowConstants.WindowUid> windowUids)
@@ -250,6 +521,74 @@ namespace GGemCo2DCore
                 }
 
                 result[windowUid] = uiWindow.gameObject.activeSelf;
+            }
+
+            return result;
+        }
+
+        private static List<WindowVisibilityStateItem> CaptureVisibilityStateItems(IEnumerable<UIWindow> windows)
+        {
+            var result = new List<WindowVisibilityStateItem>();
+            if (windows == null)
+            {
+                return result;
+            }
+
+            var addedWindows = new HashSet<UIWindow>();
+            foreach (var window in windows)
+            {
+                if (window == null || !addedWindows.Add(window))
+                {
+                    continue;
+                }
+
+                result.Add(new WindowVisibilityStateItem
+                {
+                    window = window,
+                    visible = window.gameObject.activeSelf,
+                });
+            }
+
+            return result;
+        }
+
+        private static void RestoreVisibilityStateItems(IEnumerable<WindowVisibilityStateItem> state,
+            UIWindowConstants.UIWindowVisibilityApplyMode mode)
+        {
+            if (state == null)
+            {
+                return;
+            }
+
+            foreach (var item in state)
+            {
+                if (item == null || item.window == null)
+                {
+                    continue;
+                }
+
+                switch (mode)
+                {
+                    case UIWindowConstants.UIWindowVisibilityApplyMode.ImmediateSilent:
+                        item.window.SetVisibleImmediate(item.visible, invokeOnShow: false, followLinkedWindows: false);
+                        break;
+                    case UIWindowConstants.UIWindowVisibilityApplyMode.Normal:
+                    default:
+                        item.window.Show(item.visible);
+                        break;
+                }
+            }
+        }
+
+        public Dictionary<UIWindow, bool> CaptureVisibilityState(IEnumerable<UIWindow> windows)
+        {
+            var result = new Dictionary<UIWindow, bool>();
+            var items = CaptureVisibilityStateItems(windows);
+            for (int i = 0; i < items.Count; i++)
+            {
+                var item = items[i];
+                if (item == null || item.window == null) continue;
+                result[item.window] = item.visible;
             }
 
             return result;
@@ -286,7 +625,30 @@ namespace GGemCo2DCore
         /// <returns>실제로 저장된 스냅샷이 있으면 true, 아니면 false입니다.</returns>
         public bool PushVisibilityState(IEnumerable<UIWindowConstants.WindowUid> windowUids, UIWindowConstants.UIWindowVisibilityApplyMode restoreMode = UIWindowConstants.UIWindowVisibilityApplyMode.Normal)
         {
-            var snapshot = CaptureVisibilityState(windowUids);
+            if (windowUids == null)
+            {
+                return false;
+            }
+
+            var windows = new List<UIWindow>();
+            foreach (var windowUid in windowUids)
+            {
+                var uiWindow = GetUIWindowByUid<UIWindow>(windowUid);
+                if (uiWindow == null)
+                {
+                    continue;
+                }
+
+                windows.Add(uiWindow);
+            }
+
+            return PushVisibilityState(windows, restoreMode);
+        }
+
+        public bool PushVisibilityState(IEnumerable<UIWindow> windows,
+            UIWindowConstants.UIWindowVisibilityApplyMode restoreMode = UIWindowConstants.UIWindowVisibilityApplyMode.Normal)
+        {
+            var snapshot = CaptureVisibilityStateItems(windows);
             if (snapshot == null || snapshot.Count <= 0)
             {
                 return false;
@@ -312,7 +674,7 @@ namespace GGemCo2DCore
             }
 
             var entry = _visibilityStateStack.Pop();
-            RestoreVisibilityState(entry.state, entry.restoreMode);
+            RestoreVisibilityStateItems(entry.state, entry.restoreMode);
             return true;
         }
 
@@ -353,6 +715,34 @@ namespace GGemCo2DCore
             foreach (var windowUid in windowUids)
             {
                 ShowWindow(windowUid, show, mode);
+            }
+        }
+
+        public void SetWindowsVisible(IEnumerable<UIWindow> windows, bool show,
+            UIWindowConstants.UIWindowVisibilityApplyMode mode = UIWindowConstants.UIWindowVisibilityApplyMode.Normal)
+        {
+            if (windows == null)
+            {
+                return;
+            }
+
+            foreach (var window in windows)
+            {
+                if (window == null)
+                {
+                    continue;
+                }
+
+                switch (mode)
+                {
+                    case UIWindowConstants.UIWindowVisibilityApplyMode.ImmediateSilent:
+                        window.SetVisibleImmediate(show, invokeOnShow: false, followLinkedWindows: false);
+                        break;
+                    case UIWindowConstants.UIWindowVisibilityApplyMode.Normal:
+                    default:
+                        window.Show(show);
+                        break;
+                }
             }
         }
 
@@ -481,8 +871,10 @@ namespace GGemCo2DCore
         /// <param name="exceptWindowUids">제외할 윈도우 uid</param>
         public void CloseAll(List<UIWindowConstants.WindowUid> exceptWindowUids = null)
         {
-            foreach (var window in uiWindows)
+            var managedWindows = GetManagedWindows();
+            for (int i = 0; i < managedWindows.Count; i++)
             {
+                var window = managedWindows[i];
                 if (window == null) continue;
                 if (window.GetDefaultActive()) continue;
                 if (!window.gameObject.activeSelf) continue;

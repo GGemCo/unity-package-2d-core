@@ -130,7 +130,7 @@ namespace GGemCo2DCore
 
             var questList = npcQuestDatas ?? new List<NpcQuestData>();
 
-            if (interactionData != null)
+            if (interactionData != null && !string.IsNullOrEmpty(interactionData.Message))
             {
                 textMessage.text = _localizationManager.GetInteractionByKey(interactionData.Message);
             }
@@ -145,7 +145,8 @@ namespace GGemCo2DCore
 
             for (int i = 0; i < ButtonCount; i++)
             {
-                _buttonChoices[i].gameObject.SetActive(false);
+                if (!_buttonChoices.TryGetValue(i, out var button)) continue;
+                button.gameObject.SetActive(false);
             }
 
             _interactionData.Clear();
