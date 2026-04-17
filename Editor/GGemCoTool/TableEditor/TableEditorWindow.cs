@@ -469,8 +469,30 @@ namespace GGemCo2DCoreEditor
             ApplyDocumentMutation("Table Add Row", () =>
             {
                 _selectedRow = _document.AddRow();
+                ApplyDefaultRawValuesToRow(_selectedRow);
                 AssignAutoUidIfNeeded(_selectedRow);
             });
+        }
+
+        private void ApplyDefaultRawValuesToRow(TableEditorDocumentRow row)
+        {
+            if (row == null || _document == null || _columns == null)
+                return;
+
+            for (int i = 0; i < _columns.Count; i++)
+            {
+                TableEditorColumnDefinition column = _columns[i];
+                if (column == null || string.IsNullOrWhiteSpace(column.HeaderName) || column.IsUidColumn)
+                    continue;
+
+                if (!row.Values.TryGetValue(column.HeaderName, out string currentRaw) || !string.IsNullOrWhiteSpace(currentRaw))
+                    continue;
+
+                if (!TableEditorDefaultRawUtility.TryGetDefaultRaw(column, out string defaultRaw))
+                    continue;
+
+                _document.SetCellValue(row, column.HeaderName, defaultRaw);
+            }
         }
 
         private void DuplicateRow()
