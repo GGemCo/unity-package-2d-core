@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 
 namespace GGemCo2DCore
 {
@@ -12,7 +12,9 @@ namespace GGemCo2DCore
         private TableInteraction _tableInteraction;
         private UIWindowInteractionDialogue _uiWindowInteractionDialogue;
         private CharacterBase _currentNpc;
-        
+
+        public CharacterBase CurrentNpc => _currentNpc;
+
         public void Initialize(SceneGame scene)
         {
             _sceneGame = scene;
@@ -27,7 +29,7 @@ namespace GGemCo2DCore
         {
             // 연출 중이면 실행하지 않는다.
             if (_sceneGame.CutsceneManager.IsPlaying()) return;
-            
+
             if (characterBase == null)
             {
                 GcLogger.LogError("Npc 스크립트가 없습니다.");
@@ -37,16 +39,16 @@ namespace GGemCo2DCore
             var infoNpc = _tableNpc.GetDataByUid(characterBase.uid);
             if (infoNpc == null)
             {
-                GcLogger.LogError("npc 테이블에 정보가 없습니다. npc uid: "+characterBase.uid);
+                GcLogger.LogError("npc 테이블에 정보가 없습니다. npc uid: " + characterBase.uid);
                 return;
             }
 
             _currentNpc = characterBase;
-            
+
             // 퀘스트 정보
             Npc npc = _currentNpc as Npc;
             List<NpcQuestData> npcQuestDatas = npc?.GetQuestInfos();
-            
+
             // 인터렉션 정보
             StruckTableInteraction infoInteraction = null;
             if (infoNpc.InteractionUid > 0)
@@ -57,10 +59,10 @@ namespace GGemCo2DCore
             _sceneGame.uIWindowManager?.CloseAll(new List<UIWindowConstants.WindowUid>
                 { UIWindowConstants.WindowUid.InteractionDialogue });
             // 인터렉션 대화창 보여주기
-            ShowDialogue(infoNpc, infoInteraction, npcQuestDatas);
+            ShowDialogue(_currentNpc, infoNpc, infoInteraction, npcQuestDatas);
         }
 
-        private void ShowDialogue(StruckTableNpc struckTableNpc, StruckTableInteraction struckTableInteraction, List<NpcQuestData> questInfos)
+        private void ShowDialogue(CharacterBase npc, StruckTableNpc struckTableNpc, StruckTableInteraction struckTableInteraction, List<NpcQuestData> questInfos)
         {
             if (_uiWindowInteractionDialogue == null)
             {
@@ -68,7 +70,7 @@ namespace GGemCo2DCore
                     _sceneGame.uIWindowManager?.GetUIWindowByUid<UIWindowInteractionDialogue>(UIWindowConstants
                         .WindowUid.InteractionDialogue);
             }
-            _uiWindowInteractionDialogue?.SetInfos(struckTableNpc, struckTableInteraction, questInfos);
+            _uiWindowInteractionDialogue?.SetInfos(npc, struckTableNpc, struckTableInteraction, questInfos);
             _uiWindowInteractionDialogue?.Show(true);
         }
 

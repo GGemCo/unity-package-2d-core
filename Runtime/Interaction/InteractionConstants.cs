@@ -1,6 +1,4 @@
-﻿using System.Collections.Generic;
-
-namespace GGemCo2DCore
+﻿namespace GGemCo2DCore
 {
     public abstract class InteractionConstants
     {

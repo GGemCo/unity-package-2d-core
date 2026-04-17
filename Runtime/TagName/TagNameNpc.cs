@@ -1,4 +1,4 @@
-﻿using System.Collections;
+using System.Collections;
 using UnityEngine;
 
 namespace GGemCo2DCore
@@ -25,14 +25,40 @@ namespace GGemCo2DCore
             if (_struckTableNpc.InteractionUid > 0)
             {
                 var info = TableLoaderManager.Instance.GetInteractionData(_struckTableNpc.InteractionUid);
-                if (info != null && info.Type1 != InteractionConstants.Type.None)
+                string displayName = ResolveFirstInteractionDisplayName(info);
+                if (string.IsNullOrWhiteSpace(displayName) == false)
                 {
-                    nameFunction = $" - {InteractionConstants.GetTypeName(info.Type1)}";
+                    nameFunction = $" - {displayName}";
                 }
             }
 
             textName.text = $"[ {_struckTableNpc.Name}{nameFunction} ]";
             ApplyTextEffect();
+        }
+
+        private static string ResolveFirstInteractionDisplayName(StruckTableInteraction info)
+        {
+            if (info == null)
+            {
+                return string.Empty;
+            }
+
+            if (info.Type1 != InteractionConstants.Type.None)
+            {
+                return InteractionConstants.GetTypeName(info.Type1);
+            }
+
+            if (string.IsNullOrWhiteSpace(info.CustomTypeKey1) == false)
+            {
+                if (InteractionCustomHandlerRegistry.TryGetDisplayName(info.CustomTypeKey1, info.Value1, out var customName))
+                {
+                    return customName;
+                }
+
+                return info.CustomTypeKey1;
+            }
+
+            return string.Empty;
         }
 
         private void LateUpdate()
@@ -42,7 +68,7 @@ namespace GGemCo2DCore
             Vector3 npcNameWorldPosition = _npc.gameObject.transform.position + new Vector3(0, _npc.GetHeightByScale(), 0) + diffTextPosition;
             gameObject.transform.position = npcNameWorldPosition;
         }
-        
+
         public bool IsVisible()
         {
             return gameObject.activeSelf && (_canvasGroup == null || _canvasGroup.alpha > 0f);
