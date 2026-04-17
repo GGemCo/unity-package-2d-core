@@ -84,7 +84,22 @@ namespace GGemCo2DCore
                 buttonOpenOption?.gameObject.SetActive(false);
                 buttonNewGame?.gameObject.SetActive(false);
                 
-                OnClickGameContinue();
+                if (_saveDataSettings && _saveDataSettings.UseSaveData)
+                {
+                    // PlayerPrefs 에서 가져온 값이 있는지 체크 
+                    if (PlayerPrefsManager.LoadSaveDataSlotIndex() <= 0)
+                    {
+                        OnClickNewGame();
+                    }
+                    else
+                    {
+                        OnClickGameContinue();
+                    }
+                }
+                else
+                {
+                    OnClickNewGame();
+                }
                 return;
             }
             // UI 버튼 활성화
