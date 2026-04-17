@@ -5,12 +5,12 @@
         "Unity.TextMeshPro",
         "Unity.Addressables",
         "Unity.ResourceManager",
-        "spine-unity",
-        "spine-csharp",
         "Unity.Timeline",
         "Unity.InputSystem",
         "Unity.Localization",
-        "Unity.2D.Tilemap.Extras"
+        "Unity.2D.Tilemap.Extras",
+        "Unity.RenderPipelines.Universal.Runtime",
+        "Unity.RenderPipelines.Core.Runtime"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],
