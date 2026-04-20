@@ -45,6 +45,9 @@
             SkillPassive,
             TimingBattleRest = 100,
             TimingBattleSkillSetting,
+            TimingBattleTapMenu,
+            TimingBattleWarp,
+            TimingBattleExit,
         }
         public const string TitleHeaderCommon = "[공통속성]";
         public const string TitleHeaderIndividual = "[개별속성]";
