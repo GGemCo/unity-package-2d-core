@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using TMPro;
 using System.Collections.Generic;
 using UnityEngine;
@@ -9,31 +9,39 @@ namespace GGemCo2DCore
     /// <summary>
     /// 플레이어 stat 정보 보여주는 윈도우
     /// </summary>
-    public class UIWindowPlayerInfo : UIWindow
+    public class UIWindowPlayerInfo : UIWindow, IStatPointDraftChangeHandler
     {
         [Header(UIWindowConstants.TitleHeaderIndividual)]
         [Header("StatPoint")]
         [Tooltip("스탯 라인 프리팹(UIElementStat) - 비활성 템플릿으로 두고 런타임에 복제합니다.")]
         public GameObject prefabElementStat;
+
         [Tooltip("UIElementStat 오브젝트를 넣을 오브젝트")]
         public GameObject containerElement;
+
         [Tooltip("미사용 스탯 포인트")]
         public TextMeshProUGUI textUnspent;
 
         [Header("Apply / Reset")]
         [Tooltip("드래프트(미적용) 스탯 포인트를 실제 데이터에 반영")]
         public Button buttonApply;
+
         [Tooltip("드래프트를 원본으로 되돌림(미적용 변경사항 폐기)")]
         public Button buttonReset;
 
+        [Header("보여줄 스탯")]
+        [Tooltip("보여줄 스탯 선택(멀티 선택 가능)")]
+        [SerializeField]
+        private CharacterConstants.PlayerInfoMask useIndexPlayerInfos = CharacterConstants.PlayerInfoMask.All;
+
         private readonly Dictionary<CharacterConstants.IndexPlayerInfo, UIElementStat> _playerInfos = new();
         private Player _boundPlayer;
-
         private StatPointEditSession _editSession;
 
         private bool _labelsApplied;
         private string _unspentPrefix;
         private readonly Dictionary<CharacterConstants.IndexPlayerInfo, string> _labelCache = new();
+
         protected override void Awake()
         {
             // uid 를 먼저 지정해야 한다.
@@ -49,9 +57,21 @@ namespace GGemCo2DCore
 
         private void OnDestroy()
         {
-            if (buttonApply != null) buttonApply.onClick.RemoveAllListeners();
-            if (buttonReset != null) buttonReset.onClick.RemoveAllListeners();
+            if (buttonApply != null) buttonApply.onClick.RemoveListener(OnClickApply);
+            if (buttonReset != null) buttonReset.onClick.RemoveListener(OnClickReset);
         }
+
+        /// <summary>
+        /// 현재 Inspector 설정 기준으로 해당 PlayerInfo 라인을 생성할지 여부
+        /// </summary>
+        private bool ShouldCreateStatPointLine(CharacterConstants.IndexPlayerInfo indexPlayerInfo)
+        {
+            if (indexPlayerInfo == CharacterConstants.IndexPlayerInfo.None)
+                return false;
+
+            return CharacterConstants.HasPlayerInfoFlag(useIndexPlayerInfos, indexPlayerInfo);
+        }
+
         /// <summary>
         /// PlayerInfo 창 내부에서 스탯포인트 투자 라인을 동적으로 생성합니다.
         /// prefabElementStat는 템플릿(비활성)로 두고, 런타임에 복제하여 사용합니다.
@@ -59,14 +79,30 @@ namespace GGemCo2DCore
         private void InitializeStatPointLines()
         {
             _playerInfos.Clear();
+
+            if (prefabElementStat == null)
+            {
+                Debug.LogWarning("[UIWindowPlayerInfo] prefabElementStat가 없습니다.");
+                return;
+            }
+
+            if (containerElement == null)
+            {
+                Debug.LogWarning("[UIWindowPlayerInfo] containerElement가 없습니다.");
+                return;
+            }
+
             foreach (CharacterConstants.IndexPlayerInfo indexPlayerInfo in Enum.GetValues(typeof(CharacterConstants.IndexPlayerInfo)))
             {
-                if (indexPlayerInfo == CharacterConstants.IndexPlayerInfo.None) continue;
-                CreateStatPointLine(indexPlayerInfo, containerElement.transform);    
+                if (!ShouldCreateStatPointLine(indexPlayerInfo))
+                    continue;
+
+                CreateStatPointLine(indexPlayerInfo, containerElement.transform);
             }
         }
 
-        private void CreateStatPointLine(CharacterConstants.IndexPlayerInfo idx, Transform parent) {
+        private void CreateStatPointLine(CharacterConstants.IndexPlayerInfo idx, Transform parent)
+        {
             if (prefabElementStat == null) return;
 
             var go = Instantiate(prefabElementStat, parent);
@@ -80,8 +116,7 @@ namespace GGemCo2DCore
                 return;
             }
 
-            element.Initialize(this, _boundPlayer, idx);
-
+            element.Initialize(this, idx);
             _playerInfos[idx] = element;
         }
 
@@ -93,14 +128,7 @@ namespace GGemCo2DCore
         public void BindPlayer(Player player)
         {
             _boundPlayer = player;
-
             _editSession = player != null ? new StatPointEditSession(player) : null;
-
-            // UIElementStat들은 Awake에서 먼저 생성될 수 있으므로, 여기서 Player를 주입합니다.
-            foreach (var kv in _playerInfos)
-            {
-                kv.Value?.BindPlayer(player);
-            }
 
             ApplyLabelsOnce();
             RefreshValues();
@@ -134,12 +162,8 @@ namespace GGemCo2DCore
             foreach (var kv in _playerInfos)
             {
                 var idx = kv.Key;
-                var element = kv.Value;
-                if (element == null) continue;
-
                 string label = ResolveLabel(loc, idx);
                 _labelCache[idx] = label;
-                element.SetLabel(label);
             }
 
             _labelsApplied = true;
@@ -191,48 +215,8 @@ namespace GGemCo2DCore
                 var uiElementStat = kv.Value;
                 if (uiElementStat == null) continue;
 
-                var (totalValue, invested) = GetStatPointLineData(indexPlayerInfo, _boundPlayer);
-
-                long previewValue = totalValue;
-                if (_editSession.IsDirty)
-                {
-                    previewValue = GetTotalValueByIndex(indexPlayerInfo, projectedTotals);
-                }
-
-                if (uiElementStat.textValue != null)
-                {
-                    var label = GetCachedLabelOrFallback(indexPlayerInfo);
-                    uiElementStat.textValue.text = _editSession.IsDirty
-                        ? $"{label}: {totalValue} → {previewValue}"
-                        : $"{label}: {totalValue}";
-                }
-                
-                // 투자 대상 여부에 따라 투자 UI를 일관되게 갱신/정리합니다.
-                bool isTarget = CharacterConstants.IsStatPointTarget(indexPlayerInfo);
-
-                if (isTarget)
-                {
-                    int draftInvested = _editSession.GetDraftInvested(indexPlayerInfo);
-                    int diff = draftInvested - invested;
-                    if (uiElementStat.textInvested != null)
-                    {
-                        uiElementStat.textInvested.text = _editSession.IsDirty && diff != 0
-                            ? $"(+{draftInvested}, Δ{diff:+#;-#;0})"
-                            : $"(+{draftInvested})";
-                    }
-
-                    // 버튼 활성/비활성
-                    bool canPlus = _editSession.DraftUnspent > 0;
-                    if (uiElementStat.buttonPlus != null) uiElementStat.buttonPlus.interactable = canPlus;
-                    if (uiElementStat.buttonMinus != null) uiElementStat.buttonMinus.interactable = draftInvested > 0;
-                }
-                else
-                {
-                    // 투자 대상이 아닌 라인은 투자 텍스트/버튼 상태가 남지 않도록 정리
-                    if (uiElementStat.textInvested != null) uiElementStat.textInvested.text = string.Empty;
-                    if (uiElementStat.buttonPlus != null) uiElementStat.buttonPlus.interactable = false;
-                    if (uiElementStat.buttonMinus != null) uiElementStat.buttonMinus.interactable = false;
-                }
+                var renderData = BuildRenderData(indexPlayerInfo, projectedTotals);
+                uiElementStat.Render(renderData);
             }
         }
 
@@ -298,7 +282,6 @@ namespace GGemCo2DCore
                 CharacterConstants.IndexPlayerInfo.Hp => player.TotalHp.Value,
                 CharacterConstants.IndexPlayerInfo.Mp => player.TotalMp.Value,
                 CharacterConstants.IndexPlayerInfo.Stamina => player.TotalStamina.Value,
-
                 CharacterConstants.IndexPlayerInfo.MoveSpeed => player.TotalMoveSpeed.Value,
                 CharacterConstants.IndexPlayerInfo.AttackSpeed => player.TotalAttackSpeed.Value,
                 CharacterConstants.IndexPlayerInfo.CriticalDamage => player.TotalCriticalDamage.Value,
@@ -321,6 +304,32 @@ namespace GGemCo2DCore
             };
 
             return (totalValue, invested);
+        }
+
+        private UIElementStatRenderData BuildRenderData(CharacterConstants.IndexPlayerInfo indexPlayerInfo, CharacterStat.CharacterTotals projectedTotals)
+        {
+            var (totalValue, invested) = GetStatPointLineData(indexPlayerInfo, _boundPlayer);
+            bool isDirty = _editSession != null && _editSession.IsDirty;
+            long previewValue = isDirty
+                ? GetTotalValueByIndex(indexPlayerInfo, projectedTotals)
+                : totalValue;
+
+            bool isTarget = CharacterConstants.IsStatPointTarget(indexPlayerInfo);
+            int draftInvested = isTarget && _editSession != null
+                ? _editSession.GetDraftInvested(indexPlayerInfo)
+                : 0;
+            int diff = draftInvested - invested;
+
+            return new UIElementStatRenderData(
+                GetCachedLabelOrFallback(indexPlayerInfo),
+                totalValue,
+                isDirty,
+                previewValue,
+                isTarget,
+                draftInvested,
+                diff,
+                isTarget && _editSession != null && _editSession.DraftUnspent > 0,
+                isTarget && draftInvested > 0);
         }
 
         private string GetCachedLabelOrFallback(CharacterConstants.IndexPlayerInfo idx)
@@ -363,16 +372,16 @@ namespace GGemCo2DCore
         }
 
         /// <summary>
-        /// 라벨은 윈도우가 1회만 적용하고, 이후에는 값만 갱신합니다.
+        /// PlayerInfo는 preview / 투자 상태 / 버튼 활성 조건이 함께 연결되어 있으므로,
+        /// 개별 값 변경 알림도 전체 라인 갱신으로 정리합니다.
         /// </summary>
         public void UpdateValue(CharacterConstants.IndexPlayerInfo index, long value)
         {
             if (index == CharacterConstants.IndexPlayerInfo.None) return;
-            if (_playerInfos.TryGetValue(index, out var element) && element != null)
-            {
-                var label = GetCachedLabelOrFallback(index);
-                element.textValue.text = $"{label}: {value}";
-            }
+            if (_boundPlayer == null) return;
+
+            ApplyLabelsOnce();
+            RefreshValues();
         }
     }
 }

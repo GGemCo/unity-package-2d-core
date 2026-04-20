@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -15,6 +16,7 @@ namespace GGemCo2DCore
 
         public const int SortingOrderTop = 32767;
         public const int SortingOrderBottom = -32768;
+
         public enum FacingDirection8
         {
             None = 0,
@@ -27,6 +29,7 @@ namespace GGemCo2DCore
             Down = 7,
             DownRight = 8
         }
+
         /// <summary>
         /// 캐릭터 상태
         /// </summary>
@@ -64,7 +67,7 @@ namespace GGemCo2DCore
             Push,
             SimulationTool
         }
-        
+
         /// <summary>
         /// 전투 상태 (동작 상태(CharacterStatus)와 별도의 축)
         /// - UI(전투 시작/종료), BGM, 이펙트, 카메라 등 '전투 여부'에 반응하는 시스템을 위해 사용합니다.
@@ -93,6 +96,7 @@ namespace GGemCo2DCore
             Elite,
             Boss
         }
+
         /// <summary>
         /// 캐릭터 정렬
         /// </summary>
@@ -103,6 +107,7 @@ namespace GGemCo2DCore
             AlwaysOnBottom,
             Fixed
         }
+
         public enum AttackType
         {
             None,
@@ -146,7 +151,6 @@ namespace GGemCo2DCore
             else
                 facingDirection8 = FacingDirection8.None;
 
-            // GcLogger.Log($"direction: {facingDirection8}");
             return facingDirection8;
         }
 
@@ -201,8 +205,9 @@ namespace GGemCo2DCore
             /// <summary>브레이크 후 Max로 리셋(보스/패턴 유지에 유리)</summary>
             ResetToMax = 1,
         }
+
         /// <summary>
-        /// Player 클레스에서 subscribe 를 위해 사용중
+        /// Player 클래스에서 subscribe를 위해 사용중
         /// </summary>
         public enum IndexPlayerInfo
         {
@@ -221,6 +226,71 @@ namespace GGemCo2DCore
             RegistLightning,
             RegistPoison,
         }
+
+        /// <summary>
+        /// UIWindowPlayerInfo에서 표시할 항목을 멀티 선택하기 위한 마스크 enum
+        /// - 기존 IndexPlayerInfo는 단일 의미값으로 유지
+        /// - Inspector에서는 이 마스크를 사용하여 여러 항목을 동시에 선택
+        /// </summary>
+        [Flags]
+        public enum PlayerInfoMask
+        {
+            None                = 0,
+            Atk                 = 1 << 0,
+            Def                 = 1 << 1,
+            Hp                  = 1 << 2,
+            Mp                  = 1 << 3,
+            Stamina             = 1 << 4,
+            MoveSpeed           = 1 << 5,
+            AttackSpeed         = 1 << 6,
+            CriticalDamage      = 1 << 7,
+            CriticalProbability = 1 << 8,
+            RegistFire          = 1 << 9,
+            RegistCold          = 1 << 10,
+            RegistLightning     = 1 << 11,
+
+            // RegistPoison은 현재 UIWindowPlayerInfo 쪽 값 매핑이 없으므로
+            // 이번 수정본에서는 기본 지원 목록에서 제외합니다.
+            All = Atk
+                | Def
+                | Hp
+                | Mp
+                | Stamina
+                | MoveSpeed
+                | AttackSpeed
+                | CriticalDamage
+                | CriticalProbability
+                | RegistFire
+                | RegistCold
+                | RegistLightning
+        }
+
+        public static PlayerInfoMask ToPlayerInfoMask(IndexPlayerInfo idx)
+        {
+            return idx switch
+            {
+                IndexPlayerInfo.Atk                 => PlayerInfoMask.Atk,
+                IndexPlayerInfo.Def                 => PlayerInfoMask.Def,
+                IndexPlayerInfo.Hp                  => PlayerInfoMask.Hp,
+                IndexPlayerInfo.Mp                  => PlayerInfoMask.Mp,
+                IndexPlayerInfo.Stamina             => PlayerInfoMask.Stamina,
+                IndexPlayerInfo.MoveSpeed           => PlayerInfoMask.MoveSpeed,
+                IndexPlayerInfo.AttackSpeed         => PlayerInfoMask.AttackSpeed,
+                IndexPlayerInfo.CriticalDamage      => PlayerInfoMask.CriticalDamage,
+                IndexPlayerInfo.CriticalProbability => PlayerInfoMask.CriticalProbability,
+                IndexPlayerInfo.RegistFire          => PlayerInfoMask.RegistFire,
+                IndexPlayerInfo.RegistCold          => PlayerInfoMask.RegistCold,
+                IndexPlayerInfo.RegistLightning     => PlayerInfoMask.RegistLightning,
+                _                                   => PlayerInfoMask.None
+            };
+        }
+
+        public static bool HasPlayerInfoFlag(PlayerInfoMask mask, IndexPlayerInfo idx)
+        {
+            var flag = ToPlayerInfoMask(idx);
+            return flag != PlayerInfoMask.None && (mask & flag) == flag;
+        }
+
         /// <summary>
         /// 스탯 포인트 투자 대상 집합
         /// - 1차 적용 범위: 공격력/방어력/체력/마력/스테미나
@@ -254,6 +324,5 @@ namespace GGemCo2DCore
             /// <summary>현재/최대 비율을 유지합니다. (PvP/밸런스 안정형)</summary>
             PreserveRatio = 2,
         }
-
     }
 }
