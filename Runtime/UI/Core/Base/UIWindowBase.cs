@@ -28,11 +28,10 @@ namespace GGemCo2DCore
 
         protected virtual void Awake()
         {
-            UiFadeUtility.TryGetCanvasGroup(gameObject, true, out _);
-            _uiEffectTarget = UIEffectTarget.GetOrAdd(gameObject);
-
             if (useFade)
             {
+                _uiEffectTarget = UIEffectTarget.GetOrAdd(gameObject);
+                UiFadeUtility.TryGetCanvasGroup(gameObject, true, out _);
                 _uiWindowFade = gameObject.GetComponent<UIWindowFade>();
                 if (_uiWindowFade == null)
                     _uiWindowFade = gameObject.AddComponent<UIWindowFade>();
@@ -167,7 +166,7 @@ namespace GGemCo2DCore
                 if (show)
                 {
                     gameObject.SetActive(true);
-                    UiFadeUtility.SetVisible(gameObject, true, true, true);
+                    UiFadeUtility.SetVisible(gameObject, true, useFade, true);
 
                     if (invokeOnShow)
                     {
@@ -181,7 +180,7 @@ namespace GGemCo2DCore
                         OnShow(false);
                     }
 
-                    UiFadeUtility.SetVisible(gameObject, false, true, true);
+                    UiFadeUtility.SetVisible(gameObject, false, useFade, true);
                     gameObject.SetActive(false);
                 }
             }
