@@ -85,8 +85,10 @@ namespace GGemCo2DCore
             {
                 textName.text = info.Name;
             }
-            if (textPrice != null) textPrice.text = $"{struckTableShop.CurrencyType} {struckTableShop.CurrencyValue}";
-            buttonBuy.gameObject.SetActive(true);
+            if (textPrice != null) 
+                textPrice.text = $"{struckTableShop.CurrencyType} {struckTableShop.CurrencyValue}";
+            if (buttonBuy)
+                buttonBuy.gameObject.SetActive(true);
         }
         /// <summary>
         /// 구매하기

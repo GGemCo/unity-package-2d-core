@@ -38,10 +38,6 @@ namespace GGemCo2DCore
         [Tooltip("네임 태그 생성 여부")]
         [SerializeField] private bool useNameTag = true;
 
-        [Header("VFX 이펙트 사용시")] 
-        [SerializeField] private string vfxEffectLoopClipName = "play";
-        [SerializeField] private float vfxEffectLoopTimeScale = 1.0f;
-        
         [Header("Sorting Layer")]
         [SerializeField] private ConfigSortingLayer.Keys sortingLayerName = ConfigSortingLayer.Keys.CharacterTop;
 
