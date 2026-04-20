@@ -50,14 +50,7 @@ namespace GGemCo2DCore
         {
             if (_instance != null && _instance != this)
             {
-                if (Application.isPlaying)
-                {
-                    Destroy(gameObject);
-                }
-                else
-                {
-                    DestroyImmediate(gameObject);
-                }
+                Destroy(gameObject);
                 return;
             }
 

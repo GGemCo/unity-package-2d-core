@@ -57,6 +57,25 @@ namespace GGemCo2DCore
             GUI.Box(rect, content, style);
         }
 
+        private void ReleaseBackgroundTexture()
+        {
+            if (_backgroundTexture == null)
+            {
+                return;
+            }
+
+            if (Application.isPlaying)
+            {
+                Destroy(_backgroundTexture);
+            }
+            else
+            {
+                DestroyImmediate(_backgroundTexture);
+            }
+
+            _backgroundTexture = null;
+        }
+
         private void OnDestroy()
         {
             if (_instance == this)
@@ -64,21 +83,13 @@ namespace GGemCo2DCore
                 _instance = null;
             }
 
-            if (_backgroundTexture != null)
-            {
-                DestroyImmediate(_backgroundTexture);
-                _backgroundTexture = null;
-            }
+            ReleaseBackgroundTexture();
         }
 
         public void MarkStyleDirty()
         {
             _boxStyle = null;
-            if (_backgroundTexture != null)
-            {
-                DestroyImmediate(_backgroundTexture);
-                _backgroundTexture = null;
-            }
+            ReleaseBackgroundTexture();
             _appliedFontSize = -1;
             _appliedPadding = Vector2.zero;
             _appliedBackgroundColor = Color.clear;
