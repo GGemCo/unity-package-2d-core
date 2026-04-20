@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
@@ -18,10 +18,18 @@ namespace GGemCo2DCore
         public GameObject prefabIconSelected;
         private Image _imageIconSelected;
         
-        [Tooltip("윈도우 리스트")]
-        [SerializeField] private UIWindow[] uiWindows;
-        public void SetUIWindow(UIWindow[] prefabs) => uiWindows = prefabs;
+        [Header("개별 UI 윈도우 연결")]
+        public List<WindowKey> windowKeys = new List<WindowKey>();
         
+        private UIWindow[] _uiWindows;
+        public void SetUIWindow(UIWindow[] prefabs)
+        {
+            _uiWindows = prefabs;
+            RebuildWindowReferenceMap();
+        }
+
+
+        private readonly Dictionary<int, UIWindow> _windowReferenceMap = new Dictionary<int, UIWindow>();
         private readonly Dictionary<int, StruckTableWindow> _struckTableWindows = new Dictionary<int, StruckTableWindow>();
         private readonly List<ExternalWindowRegistration> _externalWindowRegistrations = new List<ExternalWindowRegistration>();
         private readonly Dictionary<string, ExternalWindowRegistration> _externalWindowRegistrationMap =
@@ -67,7 +75,8 @@ namespace GGemCo2DCore
         private void Awake()
         {
             _struckTableWindows.Clear();
-            
+            RebuildWindowReferenceMap();
+
             InitializationTableInfo();
         }
 
@@ -94,12 +103,111 @@ namespace GGemCo2DCore
         }
 
         /// <summary>
+        /// uid 기준 UIWindow 참조 캐시를 다시 구성합니다.
+        /// windowKeys를 우선 사용하고, 누락된 항목만 기존 uiWindows 배열을 fallback으로 채웁니다.
+        /// </summary>
+        private void RebuildWindowReferenceMap()
+        {
+            _windowReferenceMap.Clear();
+
+            if (windowKeys != null)
+            {
+                for (int i = 0; i < windowKeys.Count; i++)
+                {
+                    var windowKey = windowKeys[i];
+                    if (windowKey == null || windowKey.uid <= 0 || windowKey.uiWindow == null)
+                    {
+                        continue;
+                    }
+
+                    _windowReferenceMap[windowKey.uid] = windowKey.uiWindow;
+                }
+            }
+
+            if (_uiWindows == null)
+            {
+                return;
+            }
+
+            for (int i = 0; i < _uiWindows.Length; i++)
+            {
+                UIWindow uiWindow = _uiWindows[i];
+                if (uiWindow == null)
+                {
+                    continue;
+                }
+
+                if (_windowReferenceMap.ContainsKey(i))
+                {
+                    continue;
+                }
+
+                _windowReferenceMap.Add(i, uiWindow);
+            }
+        }
+
+        private UIWindow GetWindowReferenceByUid(int uid)
+        {
+            if (uid <= 0)
+            {
+                return null;
+            }
+
+            _windowReferenceMap.TryGetValue(uid, out var uiWindow);
+            return uiWindow;
+        }
+
+        /// <summary>
+        /// 지정한 uid에 해당하는 UIWindow 참조를 추가하거나 교체합니다.
+        /// </summary>
+        public bool UpsertWindowKey(int uid, UIWindow window)
+        {
+            if (uid <= 0 || window == null)
+            {
+                return false;
+            }
+
+            if (windowKeys == null)
+            {
+                windowKeys = new List<WindowKey>();
+            }
+
+            for (int i = 0; i < windowKeys.Count; i++)
+            {
+                var windowKey = windowKeys[i];
+                if (windowKey == null || windowKey.uid != uid)
+                {
+                    continue;
+                }
+
+                if (windowKey.uiWindow == window)
+                {
+                    return false;
+                }
+
+                windowKey.uiWindow = window;
+                RebuildWindowReferenceMap();
+                return true;
+            }
+
+            windowKeys.Add(new WindowKey
+            {
+                uid = uid,
+                uiWindow = window,
+            });
+            RebuildWindowReferenceMap();
+            return true;
+        }
+
+        /// <summary>
         /// 각 윈도우에 table 정보 연결하기
         /// </summary>
         private void InitializationTableInfo()
         {
             if (TableLoaderManager.Instance == null) return;
-            if (uiWindows == null || uiWindows.Length <= 0) return;
+
+            RebuildWindowReferenceMap();
+            if (_windowReferenceMap.Count <= 0) return;
 
             TableWindow tableWindow = TableLoaderManager.Instance.TableWindow;
             var tables = tableWindow.GetDatas();
@@ -115,13 +223,9 @@ namespace GGemCo2DCore
                 if (uid == 0) continue;
                 StruckTableWindow info = tableWindow.GetDataByUid(uid);
                 if (info == null || info.Uid <= 0) continue;
-                if (uid >= uiWindows.Length || !uiWindows[uid]) continue;
-                UIWindow window = uiWindows[uid].gameObject.GetComponent<UIWindow>();
-                if (window == null)
-                {
-                    GcLogger.LogError($"{nameof(UIWindow)} 스크립트가 없습니다.");
-                    continue;
-                }
+
+                UIWindow window = GetWindowReferenceByUid(uid);
+                if (window == null) continue;
 
                 if (!info.UseInGame)
                 {
@@ -149,9 +253,8 @@ namespace GGemCo2DCore
             {
                 int uid = pair.Key;
                 if (uid <= 0) continue;
-                if (uiWindows == null || uid >= uiWindows.Length) continue;
 
-                UIWindow window = uiWindows[uid];
+                UIWindow window = GetWindowReferenceByUid(uid);
                 if (window == null) continue;
 
                 result.Add(new ManagedWindowOrderInfo
@@ -303,6 +406,8 @@ namespace GGemCo2DCore
 
         public void RefreshWindowOrder()
         {
+            RebuildWindowReferenceMap();
+
             var orderedWindows = BuildManagedWindowOrder();
             for (int i = 0; i < orderedWindows.Count; i++)
             {
@@ -361,7 +466,6 @@ namespace GGemCo2DCore
 
             _externalWindowRegistrationMap.Remove(key);
             _externalWindowRegistrations.Remove(registration);
-            RefreshWindowOrder();
             return true;
         }
 
@@ -421,11 +525,16 @@ namespace GGemCo2DCore
         public T GetUIWindowByUid<T>(UIWindowConstants.WindowUid windowUid) where T : UIWindow
         {
             int uid = (int)windowUid;
-            if (uiWindows.Length <= uid) return null;
-            StruckTableWindow info = _struckTableWindows.GetValueOrDefault(uid);
-            if (info == null) return null;
+            if (uid <= 0) return null;
+
+            if (!_struckTableWindows.TryGetValue(uid, out StruckTableWindow info))
+            {
+                return null;
+            }
+
             if (!info.UseInGame) return null;
-            UIWindow uiWindow = uiWindows[uid];
+
+            UIWindow uiWindow = GetWindowReferenceByUid(uid);
             if (uiWindow == null)
             {
                 GcLogger.LogError($"{nameof(UIWindow)} 컴포넌트가 없습니다. uid:"+windowUid);

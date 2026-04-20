@@ -13,6 +13,7 @@ namespace GGemCo2DCoreEditor
             SettingSceneIntro,
             SettingSceneLoading,
             SettingSceneGame,
+            SettingWindow,
             Development = 100,
             MapExporter = 101,
             TableEditor,
@@ -65,6 +66,7 @@ namespace GGemCo2DCoreEditor
         public const string NameToolSettingSceneIntro = NameToolSettings + "인트로 씬 셋팅하기";
         public const string NameToolSettingSceneLoading = NameToolSettings + "로딩 씬 셋팅하기";
         public const string NameToolSettingSceneGame = NameToolSettings + "게임 씬 셋팅하기";
+        public const string NameToolSettingWindow = NameToolSettings + "UI 윈도우 셋팅하기";
         
         // 개발툴
         private const string NameToolDevelopment = NameToolGGemCo + "개발툴/";
