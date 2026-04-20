@@ -175,9 +175,9 @@ namespace GGemCo2DCore
             }
 
             // 1) UserTable 우선
-            var userTableName = GetUserTableName(tableName);
-            if (TryGetUserTableExists(userTableName))
+            if (TryGetUserTableExists(tableName))
             {
+                var userTableName = GetUserTableName(tableName);
                 var userValue = GetLocalizedStringByTableAndKey(userTableName, key, locale, arguments);
                 if (!string.IsNullOrEmpty(userValue))
                     return userValue;
