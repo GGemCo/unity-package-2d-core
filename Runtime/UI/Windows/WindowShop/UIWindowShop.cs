@@ -12,16 +12,16 @@ namespace GGemCo2DCore
         [Tooltip("상점 Element 프리팹")]
         public GameObject prefabUIElementShop;
         
-        private TableShop tableShop;
-        private readonly Dictionary<int, UIElementShop> uiElementShops = new Dictionary<int, UIElementShop>();
-        private int currentShopUid;
+        private TableShop _tableShop;
+        private readonly Dictionary<int, UIElementShop> _uiElementShops = new Dictionary<int, UIElementShop>();
+        private int _currentShopUid;
         
         protected override void Awake()
         {
-            uiElementShops.Clear();
+            _uiElementShops.Clear();
             uid = UIWindowConstants.WindowUid.Shop;
             if (TableLoaderManager.Instance == null) return;
-            tableShop = TableLoaderManager.Instance.TableShop;
+            _tableShop = TableLoaderManager.Instance.TableShop;
             base.Awake();
         }
         /// <summary>
@@ -30,10 +30,10 @@ namespace GGemCo2DCore
         public void SetInfoByShopUid(int shopUid)
         {
             // 같은 상점을 열었으면 업데이트 하지 않는다
-            if (currentShopUid > 0 && currentShopUid == shopUid) return;
+            if (_currentShopUid > 0 && _currentShopUid == shopUid) return;
             // 기존 element 지우기
             int index = 0;
-            foreach (var data in uiElementShops)
+            foreach (var data in _uiElementShops)
             {
                 Destroy(data.Value.gameObject);
                 if (slots[index])
@@ -49,8 +49,8 @@ namespace GGemCo2DCore
 
             slots = null;
             icons = null;
-            uiElementShops.Clear();
-            currentShopUid = shopUid;
+            _uiElementShops.Clear();
+            _currentShopUid = shopUid;
             
             if (AddressableLoaderSettings.Instance == null || containerIcon == null) return;
             if (prefabUIElementShop == null)
@@ -59,7 +59,7 @@ namespace GGemCo2DCore
                 return;
             }
             if (shopUid <= 0) return;
-            var datas = tableShop.GetItemByUid(shopUid);
+            var datas = _tableShop.GetItemByUid(shopUid);
             if (datas == null)
             {
                 GcLogger.LogError("shop 테이블에 정보가 없습니다. shop Uid: " + shopUid);
@@ -87,7 +87,7 @@ namespace GGemCo2DCore
                     if (uiElementShop == null) continue;
                     uiElementShop.Initialize(this, index, info);
                     uiElementShop.UpdateInfos(datas[index]);
-                    uiElementShops.TryAdd(index, uiElementShop);
+                    _uiElementShops.TryAdd(index, uiElementShop);
                 }
 
                 GameObject slotObject = Instantiate(slot, parent.transform);
@@ -120,7 +120,7 @@ namespace GGemCo2DCore
         /// <param name="index"></param>
         private void SetPositionUiSlot(UISlot slot, int index)
         {
-            UIElementShop uiElementSkill = uiElementShops[index];
+            UIElementShop uiElementSkill = _uiElementShops[index];
             if (uiElementSkill == null) return;
             Vector3 position = uiElementSkill.GetIconPosition();
             if (position == Vector3.zero) return;
@@ -133,7 +133,7 @@ namespace GGemCo2DCore
         private void LoadIcons()
         {
             if (!gameObject.activeSelf) return;
-            var datas = tableShop.GetItemByUid(currentShopUid);
+            var datas = _tableShop.GetItemByUid(_currentShopUid);
             if (datas == null) return;
             for (int index = 0; index < maxCountIcon; index++)
             {
@@ -146,12 +146,23 @@ namespace GGemCo2DCore
                 var info = TableLoaderManager.Instance.GetItemData(datas[index].ItemUid);
                 if (info == null) continue;
                 uiIcon.ChangeInfoByUid(info.Uid, 1);
-                UIElementShop uiElementShop = uiElementShops[index];
+                UIElementShop uiElementShop = _uiElementShops[index];
                 if (uiElementShop != null)
                 {
                     uiElementShop.UpdateInfos(datas[index]);
                 }
             }
+        }
+
+        /// <summary>
+        /// 상점 Uid 로 윈도우 오픈하기
+        /// </summary>
+        /// <param name="shopUid"></param>
+        public void ShowByUid(int shopUid)
+        {
+            if (shopUid <= 0) return;
+            SetInfoByShopUid(shopUid);
+            Show(true);
         }
     }
 }
