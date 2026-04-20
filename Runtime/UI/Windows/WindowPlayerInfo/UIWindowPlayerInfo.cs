@@ -1,6 +1,6 @@
 ﻿using System;
-using TMPro;
 using System.Collections.Generic;
+using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -31,16 +31,15 @@ namespace GGemCo2DCore
 
         [Header("보여줄 스탯")]
         [Tooltip("보여줄 스탯 선택(멀티 선택 가능)")]
-        [SerializeField]
-        private CharacterConstants.PlayerInfoMask useIndexPlayerInfos = CharacterConstants.PlayerInfoMask.All;
+        [SerializeField] private CharacterConstants.PlayerInfoMask useIndexPlayerInfos = CharacterConstants.PlayerInfoMask.All;
 
         private readonly Dictionary<CharacterConstants.IndexPlayerInfo, UIElementStat> _playerInfos = new();
+        private readonly Dictionary<CharacterConstants.IndexPlayerInfo, string> _labelCache = new();
+
         private Player _boundPlayer;
         private StatPointEditSession _editSession;
-
         private bool _labelsApplied;
         private string _unspentPrefix;
-        private readonly Dictionary<CharacterConstants.IndexPlayerInfo, string> _labelCache = new();
 
         protected override void Awake()
         {
@@ -140,7 +139,9 @@ namespace GGemCo2DCore
             if (_editSession == null) _editSession = new StatPointEditSession(_boundPlayer);
 
             bool ok = _editSession.TryChange(statType, delta);
-            if (ok) RefreshValues();
+            if (ok)
+                RefreshValues();
+
             return ok;
         }
 
@@ -153,17 +154,19 @@ namespace GGemCo2DCore
             if (_labelsApplied) return;
 
             var loc = LocalizationManager.Instance;
-
-            // 미사용 포인트 접두어
-            _unspentPrefix = loc.GetUIWindowPlayerInfoByKey("Text_UnspentStatPoints");
+            _unspentPrefix = loc != null ? loc.GetUIWindowPlayerInfoByKey("Text_UnspentStatPoints") : string.Empty;
 
             _labelCache.Clear();
 
             foreach (var kv in _playerInfos)
             {
                 var idx = kv.Key;
+                var element = kv.Value;
+                if (element == null) continue;
+
                 string label = ResolveLabel(loc, idx);
                 _labelCache[idx] = label;
+                element.SetLabel(label);
             }
 
             _labelsApplied = true;
@@ -196,28 +199,67 @@ namespace GGemCo2DCore
                     _editSession.DraftStamina);
             }
 
+            UpdateUnspentUi();
+
+            foreach (var kv in _playerInfos)
+            {
+                var index = kv.Key;
+                var element = kv.Value;
+                if (element == null) continue;
+
+                var renderData = BuildRenderData(index, projectedTotals);
+                element.Render(renderData);
+            }
+        }
+
+        private void UpdateUnspentUi()
+        {
+            if (_editSession == null)
+                return;
+
             if (textUnspent != null)
             {
-                // 라벨은 1회만 세팅되지만, 남은 포인트 숫자는 계속 변할 수 있으므로 여기서만 갱신합니다.
-                // todo. localization
-                var prefix = string.IsNullOrEmpty(_unspentPrefix) ? "남은포인트" : _unspentPrefix;
+                string prefix = string.IsNullOrEmpty(_unspentPrefix) ? "남은포인트" : _unspentPrefix;
                 textUnspent.text = _editSession.IsDirty
                     ? $"{prefix}: {_boundPlayer.UnspentStatPoints} → {_editSession.DraftUnspent}"
                     : $"{prefix}: {_boundPlayer.UnspentStatPoints}";
             }
 
-            if (buttonApply != null) buttonApply.interactable = _editSession.IsDirty;
-            if (buttonReset != null) buttonReset.interactable = _editSession.IsDirty;
+            if (buttonApply != null)
+                buttonApply.interactable = _editSession.IsDirty;
 
-            foreach (var kv in _playerInfos)
-            {
-                var indexPlayerInfo = kv.Key;
-                var uiElementStat = kv.Value;
-                if (uiElementStat == null) continue;
+            if (buttonReset != null)
+                buttonReset.interactable = _editSession.IsDirty;
+        }
 
-                var renderData = BuildRenderData(indexPlayerInfo, projectedTotals);
-                uiElementStat.Render(renderData);
-            }
+        private UIElementStatRenderData BuildRenderData(
+            CharacterConstants.IndexPlayerInfo index,
+            CharacterStat.CharacterTotals projectedTotals)
+        {
+            string label = GetCachedLabelOrFallback(index);
+            var (currentValue, invested) = GetStatPointLineData(index, _boundPlayer);
+
+            bool hasPreview = _editSession != null && _editSession.IsDirty;
+            long previewValue = hasPreview
+                ? GetTotalValueByIndex(index, projectedTotals)
+                : currentValue;
+
+            bool isTarget = CharacterConstants.IsStatPointTarget(index);
+            int draftInvested = isTarget && _editSession != null ? _editSession.GetDraftInvested(index) : 0;
+            int investedDelta = isTarget ? draftInvested - invested : 0;
+            bool canIncrease = isTarget && _editSession != null && _editSession.DraftUnspent > 0;
+            bool canDecrease = isTarget && draftInvested > 0;
+
+            return new UIElementStatRenderData(
+                label,
+                currentValue,
+                hasPreview,
+                previewValue,
+                isTarget,
+                draftInvested,
+                investedDelta,
+                canIncrease,
+                canDecrease);
         }
 
         private void OnClickApply()
@@ -225,7 +267,7 @@ namespace GGemCo2DCore
             if (_boundPlayer == null) return;
             if (_editSession == null || !_editSession.IsDirty) return;
 
-            bool ok = _boundPlayer.TryApplyStatPointAllocation(
+            _boundPlayer.TryApplyStatPointAllocation(
                 _editSession.DraftUnspent,
                 _editSession.DraftAtk,
                 _editSession.DraftDef,
@@ -235,12 +277,6 @@ namespace GGemCo2DCore
 
             // 실패 시(총 포인트 불일치 등) 안전하게 재스냅샷
             _editSession = new StatPointEditSession(_boundPlayer);
-            if (!ok)
-            {
-                RefreshValues();
-                return;
-            }
-
             RefreshValues();
         }
 
@@ -306,36 +342,11 @@ namespace GGemCo2DCore
             return (totalValue, invested);
         }
 
-        private UIElementStatRenderData BuildRenderData(CharacterConstants.IndexPlayerInfo indexPlayerInfo, CharacterStat.CharacterTotals projectedTotals)
-        {
-            var (totalValue, invested) = GetStatPointLineData(indexPlayerInfo, _boundPlayer);
-            bool isDirty = _editSession != null && _editSession.IsDirty;
-            long previewValue = isDirty
-                ? GetTotalValueByIndex(indexPlayerInfo, projectedTotals)
-                : totalValue;
-
-            bool isTarget = CharacterConstants.IsStatPointTarget(indexPlayerInfo);
-            int draftInvested = isTarget && _editSession != null
-                ? _editSession.GetDraftInvested(indexPlayerInfo)
-                : 0;
-            int diff = draftInvested - invested;
-
-            return new UIElementStatRenderData(
-                GetCachedLabelOrFallback(indexPlayerInfo),
-                totalValue,
-                isDirty,
-                previewValue,
-                isTarget,
-                draftInvested,
-                diff,
-                isTarget && _editSession != null && _editSession.DraftUnspent > 0,
-                isTarget && draftInvested > 0);
-        }
-
         private string GetCachedLabelOrFallback(CharacterConstants.IndexPlayerInfo idx)
         {
             if (_labelCache.TryGetValue(idx, out var label) && !string.IsNullOrEmpty(label))
                 return label;
+
             return idx.ToString();
         }
 
@@ -362,25 +373,20 @@ namespace GGemCo2DCore
 
             if (loc != null && !string.IsNullOrEmpty(statusKey))
             {
-                var localized = loc.GetStatusNameByKey(statusKey);
+                string localized = loc.GetStatusNameByKey(statusKey);
                 if (!string.IsNullOrEmpty(localized))
                     return localized;
             }
 
-            // Fallback
             return idx.ToString();
         }
 
         /// <summary>
-        /// PlayerInfo는 preview / 투자 상태 / 버튼 활성 조건이 함께 연결되어 있으므로,
-        /// 개별 값 변경 알림도 전체 라인 갱신으로 정리합니다.
+        /// 외부에서 특정 스탯의 값 변경 알림을 주더라도, 실제 표시에는 preview/투자 상태가 함께 반영되어야 하므로 전체 라인을 다시 렌더링합니다.
         /// </summary>
         public void UpdateValue(CharacterConstants.IndexPlayerInfo index, long value)
         {
             if (index == CharacterConstants.IndexPlayerInfo.None) return;
-            if (_boundPlayer == null) return;
-
-            ApplyLabelsOnce();
             RefreshValues();
         }
     }
