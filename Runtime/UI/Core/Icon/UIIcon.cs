@@ -89,29 +89,6 @@ namespace GGemCo2DCore
 
         protected virtual void Awake()
         {
-            PossibleClick = true;
-            uid = 0;
-            instanceId = 0;
-            count = 0;
-            _level = 0;
-            index = 0;
-            slotIndex = 0;
-            _parentWindowUid = 0;
-            _parentSlotIndex = 0;
-            _isLearn = false;
-            window = null;
-            windowUid = UIWindowConstants.WindowUid.None;
-            _iconStatus = IconConstants.Status.Normal;
-            IconType = IconConstants.Type.None;
-            
-            InitializeComponent();
-
-            if (imageCoolTimeGauge != null)
-            {
-                imageCoolTimeGauge.gameObject.SetActive(false);
-            }
-            SetSelected(false);
-            SetIconLock(false);
         }
 
         private void InitializeComponent()
@@ -150,6 +127,23 @@ namespace GGemCo2DCore
         public void Initialize(UIWindow pwindow, UIWindowConstants.WindowUid pwindowUid, int pindex, int pslotIndex, 
             Vector2 iconSize, Vector2 slotSize)
         {
+            PossibleClick = true;
+            uid = 0;
+            instanceId = 0;
+            _level = 0;
+            _parentWindowUid = 0;
+            _parentSlotIndex = 0;
+            _isLearn = false;
+            _iconStatus = IconConstants.Status.Normal;
+            IconType = IconConstants.Type.None;
+
+            if (imageCoolTimeGauge != null)
+            {
+                imageCoolTimeGauge.gameObject.SetActive(false);
+            }
+            SetSelected(false);
+            SetIconLock(false);
+            
             InitializeComponent();
             window = pwindow;
             windowUid = pwindowUid;
@@ -160,6 +154,11 @@ namespace GGemCo2DCore
             ChangeIconImageSize(iconSize, slotSize);
             _showSelectedImage = window.showSelectedIconImage;
             _showOverImage = window.showOverIconImage;
+            OnInitialize();
+        }
+
+        protected virtual void OnInitialize()
+        {
         }
 
         public bool IsItem() => IconType == IconConstants.Type.Item;

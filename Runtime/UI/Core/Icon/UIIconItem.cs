@@ -8,28 +8,16 @@ namespace GGemCo2DCore
     /// </summary>
     public class UIIconItem : UIIcon, IPointerEnterHandler, IPointerExitHandler, IPointerClickHandler
     {
-        private UIWindowItemInfo _uiWindowItemInfo;
         private StruckTableItem _struckTableItem;
         private TableItem _tableItem;
         private Player _player;
 
-        protected override void Awake()
+        protected override void OnInitialize()
         {
-            base.Awake();
+            base.OnInitialize();
             IconType = IconConstants.Type.Item;
-            _struckTableItem = null;
-            if (TableLoaderManager.Instance == null) return;
-            _tableItem = TableLoaderManager.Instance.TableItem;
+            _tableItem ??= TableLoaderManager.Instance.TableItem;
         }
-
-        protected override void Start()
-        {
-            base.Start();
-            _uiWindowItemInfo =
-                SceneGame.Instance.uIWindowManager.GetUIWindowByUid<UIWindowItemInfo>(
-                    UIWindowConstants.WindowUid.ItemInfo);
-        }
-
         /// <summary>
         /// 다른 uid 로 변경하기
         /// </summary>
