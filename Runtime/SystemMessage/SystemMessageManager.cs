@@ -35,14 +35,14 @@ namespace GGemCo2DCore
             return new ResultCommon(ResultType.Success, resultIcons);
         }
 
-        public static ResultCommon Fail(string message = "", string debugMessage = "", List<SaveDataIcon> icons = null)
+        public static ResultCommon Fail(string message = "", string debugMessage = "", List<SaveDataIcon> icons = null, params object[] args)
         {
             if (!string.IsNullOrEmpty(debugMessage))
             {
                 GcLogger.LogError(debugMessage);
             }
 
-            SceneGame.Instance?.systemMessageManager?.ShowMessageWarning(message);
+            SceneGame.Instance?.systemMessageManager?.ShowMessageWarning(message, args);
             return new ResultCommon(ResultType.Fail, icons);
         }
         public bool IsSuccess() => Result == ResultType.Success;

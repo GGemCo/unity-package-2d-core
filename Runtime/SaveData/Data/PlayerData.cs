@@ -461,6 +461,7 @@ namespace GGemCo2DCore
             }
             return ResultCommon.Fail("Currency_NoTypeInfo", $"currencyType: {currencyType}");//재화 타입 정보가 없습니다.
         }
+        
         /// <summary>
         /// 가지고 있는 재화가 충분하지 체크하기
         /// </summary>
@@ -471,20 +472,27 @@ namespace GGemCo2DCore
         public ResultCommon CheckNeedCurrency(CurrencyConstants.Type currencyType, int currencyValue, int count = 1)
         {
             if (currencyType == CurrencyConstants.Type.None)
-                return ResultCommon.Fail($"Currency_NoTypeInfo", $"currencyType: {currencyType}"); //재화 타입 정보가 없습니다.
-            string currency = CurrencyConstants.GetNameByCurrencyType(currencyType);
-            if (currencyType == CurrencyConstants.Type.Gold && CurrentGold >= currencyValue * count)
             {
-                return ResultCommon.Success();
+                return ResultCommon.Fail("Currency_NoTypeInfo", $"currencyType: {currencyType}");
             }
-            if (currencyType == CurrencyConstants.Type.Silver && CurrentSilver >= currencyValue * count)
+
+            int requiredValue = currencyValue * count;
+            long currentValue = currencyType switch
+            {
+                CurrencyConstants.Type.Gold => CurrentGold,
+                CurrencyConstants.Type.Silver => CurrentSilver,
+                _ => 0
+            };
+
+            if (currentValue >= requiredValue)
             {
                 return ResultCommon.Success();
             }
 
-            string message = string.Format(LocalizationManager.Instance.GetSystemByKey("Currency_NotEnough"), currency);
-            return ResultCommon.Fail(message); // $"{currency} 가 부족합니다."
+            string currencyName = CurrencyConstants.GetNameByCurrencyType(currencyType);
+            return ResultCommon.Fail("Currency_NotEnough", args: new object[] { currencyName });
         }
+        
         /// <summary>
         /// 모든 재화를 채크해야하는 경우
         /// </summary>
