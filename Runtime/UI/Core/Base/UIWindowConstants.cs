@@ -43,10 +43,11 @@
             TcgBattleHud,
             BattleHudMonster,
             SkillPassive,
+            WorldMap,
+            WorldMapInfo,
             TimingBattleRest = 100,
             TimingBattleSkillSetting,
             TimingBattleTapMenu,
-            TimingBattleWarp,
             TimingBattleExit,
         }
         public const string TitleHeaderCommon = "[공통속성]";

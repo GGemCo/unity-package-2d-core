@@ -44,6 +44,7 @@ namespace GGemCo2DCore
         public static readonly ResourcesAssetInfo IconQuestInProgress = new($"{ConfigDefine.NameSDK}/UI/Icon/IconQuestInProgress");
         public static readonly ResourcesAssetInfo IconQuestReady = new($"{ConfigDefine.NameSDK}/UI/Icon/IconQuestReady");
         public static readonly ResourcesAssetInfo IconSkill = new($"{ConfigDefine.NameSDK}/UI/Icon/IconSkill");
+        public static readonly ResourcesAssetInfo IconWorldMap = new($"{ConfigDefine.NameSDK}/UI/Icon/IconWorldMap");
         public static readonly ResourcesAssetInfo Slot = new($"{ConfigDefine.NameSDK}/UI/Icon/Slot");
         public static readonly ResourcesAssetInfo SlotBuff = new($"{ConfigDefine.NameSDK}/UI/Icon/SlotBuff");
         

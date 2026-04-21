@@ -1,5 +1,8 @@
-﻿using System.Collections.Generic;
+﻿using System.Collections;
+using System.Collections.Generic;
+using TMPro;
 using UnityEngine;
+using UnityEngine.UI;
 
 namespace GGemCo2DCore
 {
@@ -10,20 +13,55 @@ namespace GGemCo2DCore
     {
         [Header(UIWindowConstants.TitleHeaderIndividual)]
         [Tooltip("상점 Element 프리팹")]
-        public GameObject prefabUIElementShop;
+        [SerializeField] private GameObject prefabUIElementShop;
+        [Tooltip("구매하기 버튼")]
+        [SerializeField] private Button buttonBuy;
+        
+        [Tooltip("가격 텍스트")]
+        [SerializeField] private TextMeshProUGUI textPrice;
+        [Tooltip("재화가 부족하지 않을 때 적용할 스타일 키")]
+        [SerializeField] private string styleKeyPriceNormal;
+        [Tooltip("재화가 부족할 때 적용할 스타일 키")]
+        [SerializeField] private string styleKeyPriceLack;
+
+        [Tooltip("아이템을 선택했을 때 보여줄 이펙트")]
+        [SerializeField] private VfxEffectUI vfxEffectUISelected;
+        
+        private Coroutine _coRefreshSelectedVfx;
+
         
         private TableShop _tableShop;
         private readonly Dictionary<int, UIElementShop> _uiElementShops = new Dictionary<int, UIElementShop>();
         private int _currentShopUid;
+
+        private UIElementShop _selectedElementShop;
         
         protected override void Awake()
         {
+            _selectedElementShop = null;
             _uiElementShops.Clear();
             uid = UIWindowConstants.WindowUid.Shop;
             if (TableLoaderManager.Instance == null) return;
             _tableShop = TableLoaderManager.Instance.TableShop;
             base.Awake();
+            if (vfxEffectUISelected)
+            {
+                vfxEffectUISelected.gameObject.SetActive(false);
+            }
         }
+
+        private void OnEnable()
+        {
+            if (buttonBuy)
+                buttonBuy.onClick.AddListener(OnClickBuy);
+        }
+
+        private void OnDisable()
+        {
+            if (buttonBuy)
+                buttonBuy.onClick.RemoveAllListeners();
+        }
+
         /// <summary>
         /// 상점 uid 로 ui element shop 정보 셋팅하기
         /// </summary>
@@ -70,8 +108,9 @@ namespace GGemCo2DCore
             slots = new GameObject[maxCountIcon];
             icons = new GameObject[maxCountIcon];
             
-            GameObject iconItem = ConfigResources.IconItem.Load();
-            GameObject slot = ConfigResources.Slot.Load();
+            GameObject iconItem = iconPrefab != null ? iconPrefab : ConfigResources.IconItem.Load();
+            GameObject slot = slotPrefab != null ? slotPrefab : ConfigResources.Slot.Load();
+            
             if (iconItem == null) return;
 
             index = 0;
@@ -163,6 +202,85 @@ namespace GGemCo2DCore
             if (shopUid <= 0) return;
             SetInfoByShopUid(shopUid);
             Show(true);
+        }
+
+        public void SetSelectItem(UIElementShop uiElementShop)
+        {
+            if (_selectedElementShop == uiElementShop) return;
+            if (_selectedElementShop != null)
+            {
+                _selectedElementShop.SetSelected(false);
+            }
+            _selectedElementShop = uiElementShop;
+            
+            UpdatePriceText();
+            
+            if (_coRefreshSelectedVfx != null)
+            {
+                StopCoroutine(_coRefreshSelectedVfx);
+                _coRefreshSelectedVfx = null;
+            }
+
+            _coRefreshSelectedVfx = StartCoroutine(CoRefreshSelectedVfxPosition());
+        }
+
+        
+        private IEnumerator CoRefreshSelectedVfxPosition()
+        {
+            if (_selectedElementShop == null || vfxEffectUISelected == null)
+            {
+                yield break;
+            }
+
+            // 레이아웃 즉시 갱신
+            Canvas.ForceUpdateCanvases();
+
+            if (containerIcon != null)
+            {
+                LayoutRebuilder.ForceRebuildLayoutImmediate(containerIcon.GetComponent<RectTransform>());
+            }
+
+            // ScrollRect / Layout / Canvas 최종 반영 대기
+            yield return null;
+            yield return new WaitForEndOfFrame();
+
+            if (_selectedElementShop == null || vfxEffectUISelected == null)
+            {
+                yield break;
+            }
+
+            vfxEffectUISelected.gameObject.SetActive(true);
+            vfxEffectUISelected.PlayAnimation("start", forceReset: true);
+            vfxEffectUISelected.transform.position = _selectedElementShop.transform.position;
+
+            _coRefreshSelectedVfx = null;
+        }
+
+        private void UpdatePriceText()
+        {
+            if (!textPrice || _selectedElementShop == null) return;
+
+            var playerGold = SceneGame.saveDataManager.Player.CurrentGold;
+            var data = _selectedElementShop.GetPrice();
+            var itemPrice = data.Item2;
+            var key = playerGold < itemPrice ? styleKeyPriceLack : styleKeyPriceNormal;
+
+            textPrice.text = string.Format("( <style={2}>{0}</style> / {1} )", playerGold, itemPrice, key);
+        }
+
+        private void OnClickBuy()
+        {
+            if (!_selectedElementShop) return;
+            _selectedElementShop.OnClickBuy();
+        }
+
+        public override void OnShow(bool show)
+        {
+            if (!show) return;
+            _selectedElementShop = null;
+            var element = _uiElementShops[0];
+            if (element == null) return;
+            element.SetSelected(true);
         }
     }
 }

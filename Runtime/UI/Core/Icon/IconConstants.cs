@@ -42,6 +42,7 @@ namespace GGemCo2DCore
             TcgCard,
             TcgMyDeck,
             TcgMyDeckCard,
+            WorldMap
         }
 
         public enum Status
