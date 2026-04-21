@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
+using UnityEngine.UI;
 
 namespace GGemCo2DCore
 {
@@ -16,32 +17,39 @@ namespace GGemCo2DCore
             None,
             Left,
             Right,
+            /// <summary>
+            /// 배치한 위치에 고정
+            /// </summary>
+            Fixed
         }
         private TableItem tableItem;
-        [Header(UIWindowConstants.TitleHeaderIndividual)]
+
+        [Header(UIWindowConstants.TitleHeaderIndividual)] 
         [Header("기본정보")]
+        [Tooltip("아이템 아이콘 이미지")]
+        [SerializeField] private Image imageIcon;
         [Tooltip("아이템 이름")]
-        public TextMeshProUGUI textName;
+        [SerializeField] private TextMeshProUGUI textName;
         [Tooltip("아이템 타입")]
-        public TextMeshProUGUI textType;
+        [SerializeField] private TextMeshProUGUI textType;
         [Tooltip("아이템 카테고리")]
-        public TextMeshProUGUI textCategory;
+        [SerializeField] private TextMeshProUGUI textCategory;
         [Tooltip("아이템 서브카테고리")]
-        public TextMeshProUGUI textSubCategory;
+        [SerializeField] private TextMeshProUGUI textSubCategory;
         [Tooltip("아이템 Anti Flag")]
-        public TextMeshProUGUI textAntiFlag;
+        [SerializeField] private TextMeshProUGUI textAntiFlag;
 
         [Header("옵션(신규)")]
         [Tooltip("고정(Base) 옵션 텍스트")]
-        public TextMeshProUGUI textBaseOption;
+        [SerializeField] private TextMeshProUGUI textBaseOption;
         [Tooltip("랜덤(Random) 옵션 텍스트")]
-        public TextMeshProUGUI textRandomOption;
+        [SerializeField] private TextMeshProUGUI textRandomOption;
         
         [Tooltip("아이템 설명")]
-        public TextMeshProUGUI textDescription;
+        [SerializeField] private TextMeshProUGUI textDescription;
         
         [Tooltip("아이템 판매가")]
-        public TextMeshProUGUI textSalePrice;
+        [SerializeField] private TextMeshProUGUI textSalePrice;
         
         private Dictionary<ItemConstants.Category, Action> _categoryUIHandlers;
         
@@ -82,6 +90,7 @@ namespace GGemCo2DCore
 
             _currentInstanceId = instanceId;
             
+            SetSpriteIcon();
             SetName();
             SetType();
             SetAntiFlag();
@@ -99,16 +108,25 @@ namespace GGemCo2DCore
             SetPosition(icon, type, iconSlotSize, finalPivot, finalPosition);
         }
 
+        /// <summary>
+        /// 아이템 아이콘 이미지 설정
+        /// </summary>
+        private void SetSpriteIcon()
+        {
+            if (_currentStruckTableItem == null || !imageIcon) return;
+            imageIcon.sprite = AddressableLoaderItem.Instance.GetImageIconItemByName(_currentStruckTableItem.FileName);
+        }
+
         private void SetSalePrice()
         {
-            if (_currentStruckTableItem == null) return;
+            if (_currentStruckTableItem == null || !textSalePrice) return;
             if (_currentStruckTableItem.SaleCurrencyValue <= 0) return;
             textSalePrice.text = string.Format(_localizationManager.GetUIWindowItemInfoByKey("Text_SellPrice"), $"{CurrencyConstants.GetNameByCurrencyType(_currentStruckTableItem.SaleCurrencyType)} {_currentStruckTableItem.SaleCurrencyValue}");
         }
 
         private void SetDescriptionText()
         {
-            if (_currentStruckTableItem == null) return;
+            if (_currentStruckTableItem == null || !textDescription) return;
             // ItemDescription(=GGemCo_Item_Description)는 "아이템 서술/설명" 전용으로 사용한다.
             // 옵션 텍스트(Base/Random)는 별도 UI(TextBaseOption/TextRandomOption)에 바인딩한다.
             var loc = _localizationManager;
@@ -157,7 +175,7 @@ namespace GGemCo2DCore
         /// </summary>
         private void SetAntiFlag()
         {
-            if (_currentStruckTableItem == null) return;
+            if (_currentStruckTableItem == null || !textAntiFlag) return;
             if (string.IsNullOrEmpty(_currentStruckTableItem.AntiFlagText))
             {
                 textAntiFlag.gameObject.SetActive(false);
@@ -173,7 +191,7 @@ namespace GGemCo2DCore
         /// </summary>
         private void SetName()
         {
-            if (_currentStruckTableItem == null) return;
+            if (_currentStruckTableItem == null || !textName) return;
             textName.text = string.Format(_localizationManager.GetUIWindowItemInfoByKey("Text_Name"),
                 _localizationManager.GetItemNameByKey(_currentStruckTableItem.Uid.ToString()));
         }
@@ -182,7 +200,7 @@ namespace GGemCo2DCore
         /// </summary>
         private void SetType()
         {
-            if (_currentStruckTableItem == null) return;
+            if (_currentStruckTableItem == null || !textType) return;
             textType.text = string.Format(_localizationManager.GetUIWindowItemInfoByKey("Text_Type"), _currentStruckTableItem.Type);
         }
         
@@ -204,8 +222,10 @@ namespace GGemCo2DCore
         private void SetCategory()
         {
             if (_currentStruckTableItem == null) return;
-            textCategory.text = string.Format(_localizationManager.GetUIWindowItemInfoByKey("Text_Category"), _currentStruckTableItem.Category);
-            textSubCategory.text = string.Format(_localizationManager.GetUIWindowItemInfoByKey("Text_SubCategory"), _currentStruckTableItem.SubCategory);
+            if (textCategory)
+                textCategory.text = string.Format(_localizationManager.GetUIWindowItemInfoByKey("Text_Category"), _currentStruckTableItem.Category);
+            if (textSubCategory)
+                textSubCategory.text = string.Format(_localizationManager.GetUIWindowItemInfoByKey("Text_SubCategory"), _currentStruckTableItem.SubCategory);
         }
         // 카테고리별 UI 설정 함수
         private void SetWeaponUI()
@@ -247,6 +267,10 @@ namespace GGemCo2DCore
                 transform.position = new Vector2(
                     icon.transform.position.x - iconSlotSize.x / 2f,
                     icon.transform.position.y + iconSlotSize.y / 2f);
+            }
+            else if (type == PositionType.Fixed)
+            {
+                
             }
             else
             {
