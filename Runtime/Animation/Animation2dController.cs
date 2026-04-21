@@ -113,13 +113,18 @@ namespace GGemCo2DCore
         /// 종료 시간(초)입니다.
         /// <para>현재 구현에서는 Animator.Play에 직접 반영되지 않습니다(호출부 호환을 위한 파라미터로 보입니다).</para>
         /// </param>
+        /// <param name="forceReset">
+        /// 강제로 다시 처음 부터 재생할 때 사용합니다.
+        /// <para></para>
+        /// </param>
         public void PlayAnimation(
             string animationName,
             bool loop = false,
             float timeScale = 1.0f,
             List<StruckAddAnimation> addAnimations = null,
             float startTime = 0,
-            float endTime = 0)
+            float endTime = 0,
+            bool forceReset = false)
         {
             if (!Animator) return;
 
@@ -142,7 +147,10 @@ namespace GGemCo2DCore
             }
 
             Animator.speed = timeScale;
-            Animator.Play(animationName);
+            if (forceReset)
+                Animator.Play(animationName, 0, 0);
+            else
+                Animator.Play(animationName);
             // animator.Play(animationName, 0,0f);
             Animator.Update(0); // 즉시 반영(옵션)
 
