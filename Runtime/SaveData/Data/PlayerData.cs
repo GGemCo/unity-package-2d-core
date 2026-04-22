@@ -9,6 +9,12 @@ namespace GGemCo2DCore
     /// </summary>
     public class PlayerData : DefaultData, ISaveData
     {
+        private enum PlayerLevelChangeReason
+        {
+            Exp = 0,
+            StatPointInvestment = 1,
+        }
+
         private int _maxPlayerLevel;
         private TableLoaderManager _tableLoaderManager;
         private readonly CompositeDisposable _disposables = new CompositeDisposable();
@@ -277,22 +283,9 @@ namespace GGemCo2DCore
                 nextLevel++;
             }
 
-            // 최종 값 업데이트
-            CurrentLevel = Mathf.Min(nextLevel, _maxPlayerLevel);
-            CurrentExp = nextLevel < _maxPlayerLevel ? newExp : 0;
-            UpdateRequiredExp(nextLevel < _maxPlayerLevel ? _tableExp.GetNeedExp(nextLevel + 1) : 0);
-
-            // 레벨업 시 스탯 포인트 지급
-            int deltaLevel = CurrentLevel - prevLevel;
-            if (deltaLevel > 0)
-            {
-                var settings = AddressableLoaderSettings.Instance.playerSettings;
-                int perLevel = settings != null ? settings.statPointPerLevel : 0;
-                if (perLevel > 0)
-                {
-                    UnspentStatPoints += deltaLevel * perLevel;
-                }
-            }
+            int deltaLevel = nextLevel - prevLevel;
+            ApplyLevelDelta(deltaLevel, PlayerLevelChangeReason.Exp);
+            CurrentExp = CurrentLevel < _maxPlayerLevel ? newExp : 0;
         }
 #if UNITY_EDITOR
         public void AddLevelUp()
@@ -317,6 +310,144 @@ namespace GGemCo2DCore
         }
 #endif
 
+        private GGemCoPlayerSettings GetPlayerSettings()
+        {
+            return AddressableLoaderSettings.Instance != null ? AddressableLoaderSettings.Instance.playerSettings : null;
+        }
+
+        private static bool CanAcquireStatPointsFromLevelUp(GGemCoPlayerSettings settings)
+        {
+            if (settings == null) return true;
+            return settings.statPointAcquirePolicy == GGemCoPlayerSettings.StatPointAcquirePolicy.LevelUpOnly
+                   || settings.statPointAcquirePolicy == GGemCoPlayerSettings.StatPointAcquirePolicy.LevelUpAndGoldPurchase;
+        }
+
+        private static bool CanAcquireStatPointsFromGoldPurchase(GGemCoPlayerSettings settings)
+        {
+            if (settings == null) return false;
+            return settings.statPointAcquirePolicy == GGemCoPlayerSettings.StatPointAcquirePolicy.GoldPurchaseOnly
+                   || settings.statPointAcquirePolicy == GGemCoPlayerSettings.StatPointAcquirePolicy.LevelUpAndGoldPurchase;
+        }
+
+        private static bool ShouldIncreaseLevelOnStatPointInvest(GGemCoPlayerSettings settings)
+        {
+            if (settings == null) return false;
+            return settings.statPointLevelUpOnInvestPolicy == GGemCoPlayerSettings.StatPointLevelUpOnInvestPolicy.IncreaseLevelByInvestedPoints;
+        }
+
+        private static bool AllowCommittedStatPointRefund(GGemCoPlayerSettings settings)
+        {
+            if (settings == null) return true;
+            return settings.statPointRefundPolicy == GGemCoPlayerSettings.StatPointRefundPolicy.AllowCommittedRefund;
+        }
+
+        private int GetInvestedStatPointTotal()
+        {
+            return InvestedStatPointAtk + InvestedStatPointDef + InvestedStatPointHp + InvestedStatPointMp + InvestedStatPointStamina;
+        }
+
+        private void ApplyLevelDelta(int deltaLevel, PlayerLevelChangeReason reason)
+        {
+            if (deltaLevel <= 0) return;
+
+            int nextLevel = Mathf.Min(CurrentLevel + deltaLevel, _maxPlayerLevel);
+            int appliedDelta = nextLevel - CurrentLevel;
+            if (appliedDelta <= 0) return;
+
+            CurrentLevel = nextLevel;
+            UpdateRequiredExp(CurrentLevel < _maxPlayerLevel ? _tableExp.GetNeedExp(CurrentLevel + 1) : 0);
+
+            if (reason != PlayerLevelChangeReason.Exp)
+            {
+                return;
+            }
+
+            var settings = GetPlayerSettings();
+            if (!CanAcquireStatPointsFromLevelUp(settings))
+            {
+                return;
+            }
+
+            int perLevel = settings != null ? settings.statPointPerLevel : 0;
+            if (perLevel > 0)
+            {
+                UnspentStatPoints += appliedDelta * perLevel;
+            }
+        }
+
+        public bool CanPurchaseStatPoints()
+        {
+            var settings = GetPlayerSettings();
+            if (!CanAcquireStatPointsFromGoldPurchase(settings)) return false;
+            if (settings == null) return false;
+            if (settings.statPointPurchaseCurrencyType == CurrencyConstants.Type.None) return false;
+            return settings.statPointPurchaseCurrencyValue > 0;
+        }
+
+        public CurrencyConstants.Type GetStatPointPurchaseCurrencyType()
+        {
+            var settings = GetPlayerSettings();
+            return settings != null ? settings.statPointPurchaseCurrencyType : CurrencyConstants.Type.None;
+        }
+
+        public long GetStatPointPurchasePrice(int amount = 1)
+        {
+            if (amount <= 0) return 0;
+            var settings = GetPlayerSettings();
+            if (settings == null) return 0;
+            if (!CanAcquireStatPointsFromGoldPurchase(settings)) return 0;
+            if (settings.statPointPurchaseCurrencyValue <= 0) return 0;
+            return (long)settings.statPointPurchaseCurrencyValue * amount;
+        }
+
+        public bool CanAffordStatPointPurchase(int amount = 1)
+        {
+            if (!CanPurchaseStatPoints()) return false;
+            if (amount <= 0) return false;
+
+            var settings = GetPlayerSettings();
+            if (settings == null) return false;
+
+            ResultCommon result = CheckNeedCurrency(settings.statPointPurchaseCurrencyType, settings.statPointPurchaseCurrencyValue, amount);
+            return result.Result == ResultCommon.ResultType.Success;
+        }
+
+        public bool TryPurchaseStatPoints(int amount = 1)
+        {
+            if (!CanPurchaseStatPoints()) return false;
+            if (amount <= 0) return false;
+
+            var settings = GetPlayerSettings();
+            if (settings == null) return false;
+            if (!CanAffordStatPointPurchase(amount)) return false;
+
+            long totalPrice = (long)settings.statPointPurchaseCurrencyValue * amount;
+
+            _isBatchUpdating = true;
+            try
+            {
+                ResultCommon minusCurrency = MinusCurrency(settings.statPointPurchaseCurrencyType, totalPrice);
+                if (minusCurrency.Result == ResultCommon.ResultType.Fail)
+                {
+                    return false;
+                }
+
+                UnspentStatPoints += amount;
+            }
+            finally
+            {
+                _isBatchUpdating = false;
+            }
+
+            SavePlayerData();
+            return true;
+        }
+
+        public bool CanRefundCommittedStatPoints()
+        {
+            return AllowCommittedStatPointRefund(GetPlayerSettings());
+        }
+
         /// <summary>
         /// 스탯 포인트 투자
         /// </summary>
@@ -325,6 +456,8 @@ namespace GGemCo2DCore
             if (type == CharacterConstants.IndexPlayerInfo.None) return false;
             if (amount <= 0) return false;
             if (UnspentStatPoints < amount) return false;
+
+            var settings = GetPlayerSettings();
 
             switch (type)
             {
@@ -337,6 +470,12 @@ namespace GGemCo2DCore
             }
 
             UnspentStatPoints -= amount;
+
+            if (ShouldIncreaseLevelOnStatPointInvest(settings))
+            {
+                ApplyLevelDelta(amount, PlayerLevelChangeReason.StatPointInvestment);
+            }
+
             return true;
         }
 
@@ -347,6 +486,7 @@ namespace GGemCo2DCore
         {
             if (type == CharacterConstants.IndexPlayerInfo.None) return false;
             if (amount <= 0) return false;
+            if (!CanRefundCommittedStatPoints()) return false;
 
             switch (type)
             {
@@ -395,11 +535,25 @@ namespace GGemCo2DCore
             if (investedAtk < 0 || investedDef < 0 || investedHp < 0 || investedMp < 0 || investedStamina < 0)
                 return false;
 
+            var settings = GetPlayerSettings();
+            if (!AllowCommittedStatPointRefund(settings))
+            {
+                if (investedAtk < InvestedStatPointAtk || investedDef < InvestedStatPointDef || investedHp < InvestedStatPointHp ||
+                    investedMp < InvestedStatPointMp || investedStamina < InvestedStatPointStamina)
+                {
+                    return false;
+                }
+            }
+
             int currentTotal = UnspentStatPoints + InvestedStatPointAtk + InvestedStatPointDef + InvestedStatPointHp +
                                InvestedStatPointMp + InvestedStatPointStamina;
 
             int newTotal = unspent + investedAtk + investedDef + investedHp + investedMp + investedStamina;
             if (newTotal != currentTotal) return false;
+
+            int currentInvestedTotal = GetInvestedStatPointTotal();
+            int newInvestedTotal = investedAtk + investedDef + investedHp + investedMp + investedStamina;
+            int investedDelta = Mathf.Max(0, newInvestedTotal - currentInvestedTotal);
 
             _isBatchUpdating = true;
             try
@@ -415,6 +569,11 @@ namespace GGemCo2DCore
             finally
             {
                 _isBatchUpdating = false;
+            }
+
+            if (investedDelta > 0 && ShouldIncreaseLevelOnStatPointInvest(settings))
+            {
+                ApplyLevelDelta(investedDelta, PlayerLevelChangeReason.StatPointInvestment);
             }
 
             // 배치 종료 후 저장 1회

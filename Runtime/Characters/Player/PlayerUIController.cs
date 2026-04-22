@@ -162,6 +162,14 @@ namespace GGemCo2DCore
                     playerData.OnStatPointsChanged()
                         .Subscribe(_ => _uiWindowPlayerInfo.RefreshValues())
                         .AddTo(_player);
+
+                    playerData.OnCurrentGoldChanged()
+                        .Subscribe(_ => _uiWindowPlayerInfo.RefreshValues())
+                        .AddTo(_player);
+
+                    playerData.OnCurrentLevelChanged()
+                        .Subscribe(_ => _uiWindowPlayerInfo.RefreshValues())
+                        .AddTo(_player);
                 }
             }
         }

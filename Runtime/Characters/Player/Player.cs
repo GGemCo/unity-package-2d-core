@@ -577,6 +577,10 @@ namespace GGemCo2DCore
 
         #region (스탯 포인트)
 
+        public int CurrentLevel => _playerData?.CurrentLevel ?? 1;
+        public long CurrentGold => _playerData?.CurrentGold ?? 0;
+        public long CurrentSilver => _playerData?.CurrentSilver ?? 0;
+
         public int UnspentStatPoints => _playerData?.UnspentStatPoints ?? 0;
         public int InvestedStatPointAtk => _playerData?.InvestedStatPointAtk ?? 0;
         public int InvestedStatPointDef => _playerData?.InvestedStatPointDef ?? 0;
@@ -594,6 +598,44 @@ namespace GGemCo2DCore
         {
             if (_playerData == null) return false;
             return _playerData.TryRefundStatPoint(statPointType, amount);
+        }
+
+        public bool TryPurchaseStatPoints(int amount = 1)
+        {
+            if (_playerData == null) return false;
+            return _playerData.TryPurchaseStatPoints(amount);
+        }
+
+        public bool CanPurchaseStatPoints()
+        {
+            return _playerData != null && _playerData.CanPurchaseStatPoints();
+        }
+
+        public bool CanAffordStatPointPurchase(int amount = 1)
+        {
+            return _playerData != null && _playerData.CanAffordStatPointPurchase(amount);
+        }
+
+        public CurrencyConstants.Type GetStatPointPurchaseCurrencyType()
+        {
+            return _playerData != null ? _playerData.GetStatPointPurchaseCurrencyType() : CurrencyConstants.Type.None;
+        }
+
+        public long GetStatPointPurchasePrice(int amount = 1)
+        {
+            return _playerData != null ? _playerData.GetStatPointPurchasePrice(amount) : 0;
+        }
+
+        public bool CanRefundCommittedStatPoints()
+        {
+            return _playerData == null || _playerData.CanRefundCommittedStatPoints();
+        }
+
+        public bool DoesStatPointInvestIncreaseLevel()
+        {
+            var settings = _playerSettings != null ? _playerSettings : AddressableLoaderSettings.Instance.playerSettings;
+            if (settings == null) return false;
+            return settings.statPointLevelUpOnInvestPolicy == GGemCoPlayerSettings.StatPointLevelUpOnInvestPolicy.IncreaseLevelByInvestedPoints;
         }
 
         /// <summary>

@@ -173,6 +173,32 @@ namespace GGemCo2DCore
         [Min(0.01f)]
         public float spriteWhiteOverlayFlashDuration = 0.08f;
 
+        public enum StatPointAcquirePolicy
+        {
+            [Tooltip("경험치 레벨업으로만 스탯 포인트를 획득합니다.")]
+            LevelUpOnly = 0,
+            [Tooltip("골드 구매로만 스탯 포인트를 획득합니다.")]
+            GoldPurchaseOnly = 1,
+            [Tooltip("경험치 레벨업과 골드 구매를 모두 허용합니다.")]
+            LevelUpAndGoldPurchase = 2,
+        }
+
+        public enum StatPointLevelUpOnInvestPolicy
+        {
+            [Tooltip("스탯 포인트를 투자해도 플레이어 레벨은 오르지 않습니다.")]
+            None = 0,
+            [Tooltip("스탯 포인트를 1 투자할 때마다 플레이어 레벨을 1 올립니다.")]
+            IncreaseLevelByInvestedPoints = 1,
+        }
+
+        public enum StatPointRefundPolicy
+        {
+            [Tooltip("이미 커밋된 스탯 포인트를 다시 회수할 수 있습니다.")]
+            AllowCommittedRefund = 0,
+            [Tooltip("이미 커밋된 스탯 포인트는 회수할 수 없고, 이번 드래프트에서 새로 넣은 포인트만 취소할 수 있습니다.")]
+            DisallowCommittedRefund = 1,
+        }
+
         [Serializable]
         public struct StatPointBonus
         {
@@ -183,6 +209,17 @@ namespace GGemCo2DCore
         }
 
         [Header("스탯 포인트")]
+        [Tooltip("스탯 포인트 획득 경로 정책입니다.")]
+        public StatPointAcquirePolicy statPointAcquirePolicy = StatPointAcquirePolicy.LevelUpOnly;
+        [Tooltip("스탯 포인트 투자 시 플레이어 레벨 증가 정책입니다.")]
+        public StatPointLevelUpOnInvestPolicy statPointLevelUpOnInvestPolicy = StatPointLevelUpOnInvestPolicy.None;
+        [Tooltip("이미 적용된 스탯 포인트를 다시 회수할 수 있는지 결정합니다.")]
+        public StatPointRefundPolicy statPointRefundPolicy = StatPointRefundPolicy.AllowCommittedRefund;
+        [Tooltip("골드 구매 정책일 때 사용할 재화 타입입니다.")]
+        public CurrencyConstants.Type statPointPurchaseCurrencyType = CurrencyConstants.Type.Gold;
+        [Tooltip("스탯 포인트 1개 구매에 필요한 재화 값입니다.")]
+        [Min(0)]
+        public int statPointPurchaseCurrencyValue = 0;
         [Tooltip("새 게임 시작 시 지급되는 스탯 포인트")]
         public int statPointInitial;
         [Tooltip("레벨업 1회당 지급되는 스탯 포인트")]
@@ -234,6 +271,12 @@ namespace GGemCo2DCore
             statRegistFire = 0;
             statRegistCold = 0;
             statRegistLightning = 0;
+
+            statPointAcquirePolicy = StatPointAcquirePolicy.LevelUpOnly;
+            statPointLevelUpOnInvestPolicy = StatPointLevelUpOnInvestPolicy.None;
+            statPointRefundPolicy = StatPointRefundPolicy.AllowCommittedRefund;
+            statPointPurchaseCurrencyType = CurrencyConstants.Type.Gold;
+            statPointPurchaseCurrencyValue = 0;
 
             statPointInitial = 0;
             statPointPerLevel = 0;

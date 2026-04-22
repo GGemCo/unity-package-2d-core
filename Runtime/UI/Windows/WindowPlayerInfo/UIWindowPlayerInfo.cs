@@ -14,25 +14,38 @@ namespace GGemCo2DCore
         [Header(UIWindowConstants.TitleHeaderIndividual)]
         [Header("StatPoint")]
         [Tooltip("스탯 라인 프리팹(UIElementStat) - 비활성 템플릿으로 두고 런타임에 복제합니다.")]
-        public GameObject prefabElementStat;
+        [SerializeField] private GameObject prefabElementStat;
 
         [Tooltip("UIElementStat 오브젝트를 넣을 오브젝트")]
-        public GameObject containerElement;
+        [SerializeField] private GameObject containerElement;
 
         [Tooltip("미사용 스탯 포인트")]
-        public TextMeshProUGUI textUnspent;
+        [SerializeField] private TextMeshProUGUI textUnspent;
+        [Tooltip("현재 레벨 및 투자 시 추가 레벨 정보를 보여주는 텍스트")]
+        [SerializeField] private TextMeshProUGUI textExp;
+        [Tooltip("스탯 포인트 구매 비용과 현재 재화를 보여주는 텍스트")]
+        [SerializeField] private TextMeshProUGUI textGold;
+        [Tooltip("재화가 부족하지 않을 때 적용할 스타일 키")]
+        [SerializeField] private string styleKeyPriceNormal;
+        [Tooltip("재화가 부족할 때 적용할 스타일 키")]
+        [SerializeField] private string styleKeyPriceLack;
+        [Tooltip("골드로 스탯 포인트를 구매할 때 1회 클릭당 구매할 포인트 수")]
+        [Min(1)]
+        [SerializeField] private int buyStatPointAmountPerClick = 1;
+        [Tooltip("골드로 스탯 포인트를 구매하는 버튼(선택 사항)")]
+        [SerializeField] private Button buttonBuyStatPoint;
 
         [Header("Apply / Reset")]
         [Tooltip("드래프트(미적용) 스탯 포인트를 실제 데이터에 반영")]
-        public Button buttonApply;
+        [SerializeField] private Button buttonApply;
 
         [Tooltip("드래프트를 원본으로 되돌림(미적용 변경사항 폐기)")]
-        public Button buttonReset;
+        [SerializeField] private Button buttonReset;
 
         [Header("보여줄 스탯")]
         [Tooltip("보여줄 스탯 선택(멀티 선택 가능)")]
         [SerializeField] private CharacterConstants.PlayerInfoMask useIndexPlayerInfos = CharacterConstants.PlayerInfoMask.All;
-
+        
         private readonly Dictionary<CharacterConstants.IndexPlayerInfo, UIElementStat> _playerInfos = new();
         private readonly Dictionary<CharacterConstants.IndexPlayerInfo, string> _labelCache = new();
 
@@ -52,12 +65,14 @@ namespace GGemCo2DCore
 
             if (buttonApply != null) buttonApply.onClick.AddListener(OnClickApply);
             if (buttonReset != null) buttonReset.onClick.AddListener(OnClickReset);
+            if (buttonBuyStatPoint != null) buttonBuyStatPoint.onClick.AddListener(OnClickBuyStatPoint);
         }
 
         private void OnDestroy()
         {
             if (buttonApply != null) buttonApply.onClick.RemoveListener(OnClickApply);
             if (buttonReset != null) buttonReset.onClick.RemoveListener(OnClickReset);
+            if (buttonBuyStatPoint != null) buttonBuyStatPoint.onClick.RemoveListener(OnClickBuyStatPoint);
         }
 
         /// <summary>
@@ -200,6 +215,8 @@ namespace GGemCo2DCore
             }
 
             UpdateUnspentUi();
+            UpdateLevelText();
+            UpdatePurchaseUi();
 
             foreach (var kv in _playerInfos)
             {
@@ -248,7 +265,7 @@ namespace GGemCo2DCore
             int draftInvested = isTarget && _editSession != null ? _editSession.GetDraftInvested(index) : 0;
             int investedDelta = isTarget ? draftInvested - invested : 0;
             bool canIncrease = isTarget && _editSession != null && _editSession.DraftUnspent > 0;
-            bool canDecrease = isTarget && draftInvested > 0;
+            bool canDecrease = isTarget && _editSession != null && _editSession.CanDecrease(index);
 
             return new UIElementStatRenderData(
                 label,
@@ -284,6 +301,110 @@ namespace GGemCo2DCore
         {
             if (_editSession == null) return;
             _editSession.ResetToOriginal();
+            RefreshValues();
+        }
+
+        private void UpdateLevelText()
+        {
+            if (textExp == null)
+                return;
+
+            if (_boundPlayer == null)
+            {
+                textExp.text = string.Empty;
+                return;
+            }
+
+            const string prefix = "Lv";
+            int currentLevel = _boundPlayer.CurrentLevel;
+            int additionalLevels = 0;
+            if (_editSession != null && _editSession.IsDirty && _boundPlayer.DoesStatPointInvestIncreaseLevel())
+            {
+                int currentInvested = _boundPlayer.InvestedStatPointAtk + _boundPlayer.InvestedStatPointDef + _boundPlayer.InvestedStatPointHp +
+                                     _boundPlayer.InvestedStatPointMp + _boundPlayer.InvestedStatPointStamina;
+                int draftInvested = _editSession.DraftAtk + _editSession.DraftDef + _editSession.DraftHp + _editSession.DraftMp + _editSession.DraftStamina;
+                additionalLevels = Mathf.Max(0, draftInvested - currentInvested);
+            }
+
+            textExp.text = additionalLevels > 0
+                ? $"{prefix}: {currentLevel} (+{additionalLevels})"
+                : $"{prefix}: {currentLevel}";
+        }
+
+        private void UpdatePurchaseUi()
+        {
+            if (textGold == null && buttonBuyStatPoint == null)
+                return;
+
+            if (_boundPlayer == null)
+            {
+                if (textGold != null)
+                {
+                    textGold.text = string.Empty;
+                }
+
+                if (buttonBuyStatPoint != null)
+                {
+                    buttonBuyStatPoint.interactable = false;
+                    buttonBuyStatPoint.gameObject.SetActive(false);
+                }
+
+                return;
+            }
+
+            bool canPurchase = _boundPlayer.CanPurchaseStatPoints();
+            int amount = Mathf.Max(1, buyStatPointAmountPerClick);
+            bool canAfford = canPurchase && _boundPlayer.CanAffordStatPointPurchase(amount);
+
+            if (buttonBuyStatPoint != null)
+            {
+                buttonBuyStatPoint.gameObject.SetActive(canPurchase);
+                buttonBuyStatPoint.interactable = canAfford;
+            }
+
+            if (textGold == null)
+                return;
+
+            if (!canPurchase)
+            {
+                textGold.text = string.Empty;
+                return;
+            }
+
+            var currencyType = _boundPlayer.GetStatPointPurchaseCurrencyType();
+            long currentCurrency = currencyType switch
+            {
+                CurrencyConstants.Type.Gold => _boundPlayer.CurrentGold,
+                CurrencyConstants.Type.Silver => _boundPlayer.CurrentSilver,
+                _ => 0
+            };
+            long needCurrency = _boundPlayer.GetStatPointPurchasePrice(amount);
+            string currencyName = CurrencyConstants.GetNameByCurrencyType(currencyType);
+            string styleKey = canAfford ? styleKeyPriceNormal : styleKeyPriceLack;
+
+            textGold.text = string.Format("{0}: <style={1}>{2}</style> / {3} (+{4}pt)", currencyName, styleKey, currentCurrency, needCurrency, amount);
+        }
+
+        private void OnClickBuyStatPoint()
+        {
+            if (_boundPlayer == null)
+                return;
+
+            int amount = Mathf.Max(1, buyStatPointAmountPerClick);
+            if (!_boundPlayer.CanPurchaseStatPoints())
+            {
+                RefreshValues();
+                return;
+            }
+
+            if (!_boundPlayer.CanAffordStatPointPurchase(amount))
+            {
+                SceneGame.systemMessageManager?.ShowWarningCurrency(_boundPlayer.GetStatPointPurchaseCurrencyType());
+                RefreshValues();
+                return;
+            }
+
+            _boundPlayer.TryPurchaseStatPoints(amount);
             RefreshValues();
         }
 
@@ -388,6 +509,33 @@ namespace GGemCo2DCore
         {
             if (index == CharacterConstants.IndexPlayerInfo.None) return;
             RefreshValues();
+        }
+
+        public override void OnShow(bool show)
+        {
+            base.OnShow(show);
+
+            if (_boundPlayer != null)
+            {
+                RefreshValues();
+                return;
+            }
+
+            if (textExp)
+            {
+                textExp.text = string.Empty;
+            }
+
+            if (textGold)
+            {
+                textGold.text = string.Empty;
+            }
+
+            if (buttonBuyStatPoint != null)
+            {
+                buttonBuyStatPoint.interactable = false;
+                buttonBuyStatPoint.gameObject.SetActive(false);
+            }
         }
     }
 }

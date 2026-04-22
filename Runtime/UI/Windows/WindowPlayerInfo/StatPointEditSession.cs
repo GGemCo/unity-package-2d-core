@@ -80,6 +80,35 @@
             };
         }
 
+        private int GetOriginalInvested(CharacterConstants.IndexPlayerInfo type)
+        {
+            return type switch
+            {
+                CharacterConstants.IndexPlayerInfo.Atk => _originalAtk,
+                CharacterConstants.IndexPlayerInfo.Def => _originalDef,
+                CharacterConstants.IndexPlayerInfo.Hp => _originalHp,
+                CharacterConstants.IndexPlayerInfo.Mp => _originalMp,
+                CharacterConstants.IndexPlayerInfo.Stamina => _originalStamina,
+                _ => 0
+            };
+        }
+
+        private int GetMinimumAllowedInvested(CharacterConstants.IndexPlayerInfo type)
+        {
+            if (_player != null && !_player.CanRefundCommittedStatPoints())
+            {
+                return GetOriginalInvested(type);
+            }
+
+            return 0;
+        }
+
+        public bool CanDecrease(CharacterConstants.IndexPlayerInfo type)
+        {
+            if (!CharacterConstants.IsStatPointTarget(type)) return false;
+            return GetDraftInvested(type) > GetMinimumAllowedInvested(type);
+        }
+
         public bool TryChange(CharacterConstants.IndexPlayerInfo type, int delta)
         {
             if (delta == 0) return false;
@@ -106,27 +135,26 @@
 
             // -
             int amount = -delta;
+            int currentValue = GetDraftInvested(type);
+            int nextValue = currentValue - amount;
+            if (nextValue < GetMinimumAllowedInvested(type)) return false;
+
             switch (type)
             {
                 case CharacterConstants.IndexPlayerInfo.Atk:
-                    if (DraftAtk < amount) return false;
-                    DraftAtk -= amount;
+                    DraftAtk = nextValue;
                     break;
                 case CharacterConstants.IndexPlayerInfo.Def:
-                    if (DraftDef < amount) return false;
-                    DraftDef -= amount;
+                    DraftDef = nextValue;
                     break;
                 case CharacterConstants.IndexPlayerInfo.Hp:
-                    if (DraftHp < amount) return false;
-                    DraftHp -= amount;
+                    DraftHp = nextValue;
                     break;
                 case CharacterConstants.IndexPlayerInfo.Mp:
-                    if (DraftMp < amount) return false;
-                    DraftMp -= amount;
+                    DraftMp = nextValue;
                     break;
                 case CharacterConstants.IndexPlayerInfo.Stamina:
-                    if (DraftStamina < amount) return false;
-                    DraftStamina -= amount;
+                    DraftStamina = nextValue;
                     break;
                 default:
                     return false;
