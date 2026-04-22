@@ -28,7 +28,8 @@ namespace GGemCo2DCore
             Grain,
             Wood,
             Ore,
-            Remnant
+            Remnant,
+            SkillBook
         }
 
         public enum SubCategory
@@ -48,7 +49,10 @@ namespace GGemCo2DCore
             Watering, // 물뿌리개
             HandHarvestable, // 손으로 수확
             ScytheHarvestable, // 낫으로 수확
-            IncreaseHp
+            IncreaseHp,
+            Active,
+            Passive,
+            ActiveBuff
         }
 
         public enum Class
@@ -178,6 +182,14 @@ namespace GGemCo2DCore
                 {
                     SubCategory.HandHarvestable,
                     SubCategory.ScytheHarvestable,
+                }
+            },
+            {
+                Category.SkillBook, new List<SubCategory>
+                {
+                    SubCategory.Active,
+                    SubCategory.ActiveBuff,
+                    SubCategory.Passive,
                 }
             }
         };
