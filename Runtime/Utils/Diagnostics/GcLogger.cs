@@ -289,6 +289,13 @@ namespace GGemCo2DCore
             return true;
         }
 
+        public static bool IsZero(int value, string errorLogMessage)
+        {
+            if (value != 0) return false;
+            LogError(errorLogMessage);
+            return true;
+        }
+
         /// <summary>
         /// GameObject 기준으로 Inspector 필드 미할당 여부를 검사합니다.
         /// </summary>
