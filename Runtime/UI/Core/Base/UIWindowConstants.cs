@@ -48,6 +48,7 @@
             TimingBattleRest = 100,
             TimingBattleSkillSetting,
             TimingBattleTapMenu,
+            TimingBattleTrade,
             TimingBattleExit,
         }
         public const string TitleHeaderCommon = "[공통속성]";
