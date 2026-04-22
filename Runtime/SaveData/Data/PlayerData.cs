@@ -341,6 +341,73 @@ namespace GGemCo2DCore
             return settings.statPointRefundPolicy == GGemCoPlayerSettings.StatPointRefundPolicy.AllowCommittedRefund;
         }
 
+        private static bool UseReservedGoldDraftBudget(GGemCoPlayerSettings settings)
+        {
+            if (settings == null) return false;
+            return settings.statPointAcquirePolicy == GGemCoPlayerSettings.StatPointAcquirePolicy.GoldPurchaseOnly;
+        }
+
+        private CurrencyConstants.Type GetReservedDraftCurrencyType(GGemCoPlayerSettings settings)
+        {
+            if (!UseReservedGoldDraftBudget(settings))
+            {
+                return CurrencyConstants.Type.None;
+            }
+
+            return CurrencyConstants.Type.Gold;
+        }
+
+        private long GetStatPointPurchaseFallbackPrice(GGemCoPlayerSettings settings)
+        {
+            if (settings == null) return 0;
+            return settings.statPointPurchaseCurrencyValue > 0 ? settings.statPointPurchaseCurrencyValue : 0;
+        }
+
+        private long GetStatPointInvestPriceForAdditionalInvestCount(int additionalInvestCount, GGemCoPlayerSettings settings = null)
+        {
+            if (additionalInvestCount <= 0) return 0;
+            settings ??= GetPlayerSettings();
+
+            int targetLevel = CurrentLevel + additionalInvestCount;
+            long tablePrice = _tableExp != null ? _tableExp.GetNeedStatPointGold(targetLevel) : 0;
+            if (tablePrice > 0)
+            {
+                return tablePrice;
+            }
+
+            return GetStatPointPurchaseFallbackPrice(settings);
+        }
+
+        private long CalculateReservedDraftGoldCost(int originalUnspent, int originalInvestedTotal, int draftInvestedTotal)
+        {
+            var settings = GetPlayerSettings();
+            if (!UseReservedGoldDraftBudget(settings))
+            {
+                return 0;
+            }
+
+            int additionalInvested = Mathf.Max(0, draftInvestedTotal - originalInvestedTotal);
+            if (additionalInvested <= originalUnspent)
+            {
+                return 0;
+            }
+
+            long totalCost = 0;
+            int firstPurchaseSequence = originalUnspent + 1;
+            for (int sequence = firstPurchaseSequence; sequence <= additionalInvested; sequence++)
+            {
+                long price = GetStatPointInvestPriceForAdditionalInvestCount(sequence, settings);
+                if (price <= 0)
+                {
+                    return -1;
+                }
+
+                totalCost += price;
+            }
+
+            return totalCost;
+        }
+
         private int GetInvestedStatPointTotal()
         {
             return InvestedStatPointAtk + InvestedStatPointDef + InvestedStatPointHp + InvestedStatPointMp + InvestedStatPointStamina;
@@ -380,13 +447,30 @@ namespace GGemCo2DCore
             var settings = GetPlayerSettings();
             if (!CanAcquireStatPointsFromGoldPurchase(settings)) return false;
             if (settings == null) return false;
+
+            // GoldPurchaseOnly 정책은 구매 버튼 대신 스탯 라인의 +/- 드래프트 예약 방식으로 동작합니다.
+            if (UseReservedGoldDraftBudget(settings))
+            {
+                return false;
+            }
+
             if (settings.statPointPurchaseCurrencyType == CurrencyConstants.Type.None) return false;
             return settings.statPointPurchaseCurrencyValue > 0;
+        }
+
+        public bool UsesReservedGoldBudgetForStatPointDraft()
+        {
+            return UseReservedGoldDraftBudget(GetPlayerSettings());
         }
 
         public CurrencyConstants.Type GetStatPointPurchaseCurrencyType()
         {
             var settings = GetPlayerSettings();
+            if (UseReservedGoldDraftBudget(settings))
+            {
+                return CurrencyConstants.Type.Gold;
+            }
+
             return settings != null ? settings.statPointPurchaseCurrencyType : CurrencyConstants.Type.None;
         }
 
@@ -398,6 +482,28 @@ namespace GGemCo2DCore
             if (!CanAcquireStatPointsFromGoldPurchase(settings)) return 0;
             if (settings.statPointPurchaseCurrencyValue <= 0) return 0;
             return (long)settings.statPointPurchaseCurrencyValue * amount;
+        }
+
+        /// <summary>
+        /// 현재 드래프트에서 추가로 투자된 포인트 수(additionalInvestCount)에 대응하는 1회 투자 골드 비용을 반환합니다.
+        /// - additionalInvestCount=1 이면 "이번 드래프트에서 첫 추가 투자" 비용입니다.
+        /// - GoldPurchaseOnly에서는 exp 테이블 NeedStatPointGold(level) 값을 우선 사용합니다.
+        /// </summary>
+        public long GetReservedStatPointDraftPriceForAdditionalInvestCount(int additionalInvestCount)
+        {
+            return GetStatPointInvestPriceForAdditionalInvestCount(additionalInvestCount, GetPlayerSettings());
+        }
+
+        public long CalculateReservedStatPointDraftGoldCost(int originalUnspent, int originalInvestedTotal, int draftInvestedTotal)
+        {
+            return CalculateReservedDraftGoldCost(originalUnspent, originalInvestedTotal, draftInvestedTotal);
+        }
+
+        public bool CanAffordReservedStatPointDraftCost(long reservedCost)
+        {
+            if (reservedCost < 0) return false;
+            if (reservedCost == 0) return true;
+            return CurrentGold >= reservedCost;
         }
 
         public bool CanAffordStatPointPurchase(int amount = 1)
@@ -531,12 +637,72 @@ namespace GGemCo2DCore
             int investedMp,
             int investedStamina)
         {
+            return TryApplyStatPointAllocationInternal(
+                unspent,
+                investedAtk,
+                investedDef,
+                investedHp,
+                investedMp,
+                investedStamina,
+                useReservedDraftGold: false,
+                reservedDraftGoldCost: 0);
+        }
+
+        /// <summary>
+        /// GoldPurchaseOnly 드래프트 예약 골드를 검증한 뒤, 스탯 포인트 투자 상태를 원자적으로 커밋합니다.
+        /// - Plus/Minus 중에는 실제 골드를 차감하지 않고, Apply 시점에만 최종 차감합니다.
+        /// - reservedDraftGoldCost는 UIWindow/Session에서 계산한 예약 골드 총합이며, 서버/치트 방지를 위해 여기서 다시 검증합니다.
+        /// </summary>
+        public bool TryApplyStatPointAllocationWithReservedDraftGold(
+            int unspent,
+            int investedAtk,
+            int investedDef,
+            int investedHp,
+            int investedMp,
+            int investedStamina,
+            long reservedDraftGoldCost)
+        {
+            return TryApplyStatPointAllocationInternal(
+                unspent,
+                investedAtk,
+                investedDef,
+                investedHp,
+                investedMp,
+                investedStamina,
+                useReservedDraftGold: true,
+                reservedDraftGoldCost: reservedDraftGoldCost);
+        }
+
+        private bool TryApplyStatPointAllocationInternal(
+            int unspent,
+            int investedAtk,
+            int investedDef,
+            int investedHp,
+            int investedMp,
+            int investedStamina,
+            bool useReservedDraftGold,
+            long reservedDraftGoldCost)
+        {
             if (unspent < 0) return false;
             if (investedAtk < 0 || investedDef < 0 || investedHp < 0 || investedMp < 0 || investedStamina < 0)
                 return false;
 
             var settings = GetPlayerSettings();
-            if (!AllowCommittedStatPointRefund(settings))
+            bool useReservedBudget = useReservedDraftGold && UseReservedGoldDraftBudget(settings);
+            if (useReservedDraftGold && !useReservedBudget)
+            {
+                return false;
+            }
+
+            if (useReservedBudget)
+            {
+                if (investedAtk < InvestedStatPointAtk || investedDef < InvestedStatPointDef || investedHp < InvestedStatPointHp ||
+                    investedMp < InvestedStatPointMp || investedStamina < InvestedStatPointStamina)
+                {
+                    return false;
+                }
+            }
+            else if (!AllowCommittedStatPointRefund(settings))
             {
                 if (investedAtk < InvestedStatPointAtk || investedDef < InvestedStatPointDef || investedHp < InvestedStatPointHp ||
                     investedMp < InvestedStatPointMp || investedStamina < InvestedStatPointStamina)
@@ -545,19 +711,49 @@ namespace GGemCo2DCore
                 }
             }
 
-            int currentTotal = UnspentStatPoints + InvestedStatPointAtk + InvestedStatPointDef + InvestedStatPointHp +
-                               InvestedStatPointMp + InvestedStatPointStamina;
-
-            int newTotal = unspent + investedAtk + investedDef + investedHp + investedMp + investedStamina;
-            if (newTotal != currentTotal) return false;
-
             int currentInvestedTotal = GetInvestedStatPointTotal();
             int newInvestedTotal = investedAtk + investedDef + investedHp + investedMp + investedStamina;
             int investedDelta = Mathf.Max(0, newInvestedTotal - currentInvestedTotal);
 
+            if (!useReservedBudget)
+            {
+                int currentTotal = UnspentStatPoints + currentInvestedTotal;
+                int newTotal = unspent + newInvestedTotal;
+                if (newTotal != currentTotal) return false;
+            }
+            else
+            {
+                int additionalInvested = Mathf.Max(0, newInvestedTotal - currentInvestedTotal);
+                int expectedUnspent = Mathf.Max(0, UnspentStatPoints - additionalInvested);
+                if (unspent != expectedUnspent)
+                {
+                    return false;
+                }
+
+                long expectedReservedDraftGoldCost = CalculateReservedDraftGoldCost(UnspentStatPoints, currentInvestedTotal, newInvestedTotal);
+                if (expectedReservedDraftGoldCost < 0 || expectedReservedDraftGoldCost != reservedDraftGoldCost)
+                {
+                    return false;
+                }
+
+                if (!CanAffordReservedStatPointDraftCost(expectedReservedDraftGoldCost))
+                {
+                    return false;
+                }
+            }
+
             _isBatchUpdating = true;
             try
             {
+                if (useReservedBudget && reservedDraftGoldCost > 0)
+                {
+                    ResultCommon minusCurrency = MinusCurrency(GetReservedDraftCurrencyType(settings), reservedDraftGoldCost);
+                    if (minusCurrency.Result == ResultCommon.ResultType.Fail)
+                    {
+                        return false;
+                    }
+                }
+
                 // 투자/미사용 값은 프로퍼티로 세팅(= JSON 직렬화 대상)
                 UnspentStatPoints = unspent;
                 InvestedStatPointAtk = investedAtk;

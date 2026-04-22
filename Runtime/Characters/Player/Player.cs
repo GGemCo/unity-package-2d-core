@@ -626,6 +626,32 @@ namespace GGemCo2DCore
             return _playerData != null ? _playerData.GetStatPointPurchasePrice(amount) : 0;
         }
 
+        public bool UsesReservedGoldBudgetForStatPointDraft()
+        {
+            return _playerData != null && _playerData.UsesReservedGoldBudgetForStatPointDraft();
+        }
+
+        public long GetReservedStatPointDraftPriceForAdditionalInvestCount(int additionalInvestCount)
+        {
+            return _playerData != null ? _playerData.GetReservedStatPointDraftPriceForAdditionalInvestCount(additionalInvestCount) : 0;
+        }
+
+        public long CalculateReservedStatPointDraftGoldCost(int originalUnspent, int originalInvestedTotal, int draftInvestedTotal)
+        {
+            return _playerData != null ? _playerData.CalculateReservedStatPointDraftGoldCost(originalUnspent, originalInvestedTotal, draftInvestedTotal) : 0;
+        }
+
+        public long GetPreviewGoldAfterReservedStatPointDraft(long reservedGold)
+        {
+            if (_playerData == null) return 0;
+            return Math.Max(0L, _playerData.CurrentGold - reservedGold);
+        }
+
+        public bool CanAffordReservedStatPointDraftCost(long reservedCost)
+        {
+            return _playerData != null && _playerData.CanAffordReservedStatPointDraftCost(reservedCost);
+        }
+
         public bool CanRefundCommittedStatPoints()
         {
             return _playerData == null || _playerData.CanRefundCommittedStatPoints();
@@ -648,13 +674,16 @@ namespace GGemCo2DCore
             int investedDef,
             int investedHp,
             int investedMp,
-            int investedStamina)
+            int investedStamina,
+            long reservedDraftGoldCost = 0)
         {
             if (_playerData == null) return false;
             // Apply 버튼은 '일괄 커밋'이므로, 변경 직후 totals가 즉시 갱신되어야
             // UIWindowPlayerInfo가 같은 프레임에 최신 값을 표시할 수 있습니다.
             // (Reactive 구독 경로는 스케줄링 타이밍에 따라 한 프레임 뒤에 반영될 수 있음)
-            bool ok = _playerData.TryApplyStatPointAllocation(unspent, investedAtk, investedDef, investedHp, investedMp, investedStamina);
+            bool ok = reservedDraftGoldCost > 0 || UsesReservedGoldBudgetForStatPointDraft()
+                ? _playerData.TryApplyStatPointAllocationWithReservedDraftGold(unspent, investedAtk, investedDef, investedHp, investedMp, investedStamina, reservedDraftGoldCost)
+                : _playerData.TryApplyStatPointAllocation(unspent, investedAtk, investedDef, investedHp, investedMp, investedStamina);
             if (!ok) return false;
 
             // 즉시 반영(HP/MP/Stamina 현재값은 보존)

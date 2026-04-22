@@ -215,9 +215,9 @@ namespace GGemCo2DCore
         public StatPointLevelUpOnInvestPolicy statPointLevelUpOnInvestPolicy = StatPointLevelUpOnInvestPolicy.None;
         [Tooltip("이미 적용된 스탯 포인트를 다시 회수할 수 있는지 결정합니다.")]
         public StatPointRefundPolicy statPointRefundPolicy = StatPointRefundPolicy.AllowCommittedRefund;
-        [Tooltip("골드 구매 정책일 때 사용할 재화 타입입니다.")]
+        [Tooltip("GoldPurchaseOnly 정책에서는 런타임에서 Gold로 고정됩니다. LevelUpAndGoldPurchase 정책의 직접 구매 버튼에서 사용할 재화 타입입니다.")]
         public CurrencyConstants.Type statPointPurchaseCurrencyType = CurrencyConstants.Type.Gold;
-        [Tooltip("스탯 포인트 1개 구매에 필요한 재화 값입니다.")]
+        [Tooltip("LevelUpAndGoldPurchase의 직접 구매 버튼 기본 가격입니다. GoldPurchaseOnly에서는 exp 테이블의 NeedStatPointGold 값을 우선 사용하고, 값이 없을 때 fallback으로 사용합니다.")]
         [Min(0)]
         public int statPointPurchaseCurrencyValue = 0;
         [Tooltip("새 게임 시작 시 지급되는 스탯 포인트")]

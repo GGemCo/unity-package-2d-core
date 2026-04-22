@@ -22,18 +22,16 @@ namespace GGemCo2DCore
         [Tooltip("미사용 스탯 포인트")]
         [SerializeField] private TextMeshProUGUI textUnspent;
         [Tooltip("현재 레벨 및 투자 시 추가 레벨 정보를 보여주는 텍스트")]
-        [SerializeField] private TextMeshProUGUI textExp;
+        [SerializeField] private TextMeshProUGUI textLevel;
         [Tooltip("스탯 포인트 구매 비용과 현재 재화를 보여주는 텍스트")]
         [SerializeField] private TextMeshProUGUI textGold;
         [Tooltip("재화가 부족하지 않을 때 적용할 스타일 키")]
         [SerializeField] private string styleKeyPriceNormal;
         [Tooltip("재화가 부족할 때 적용할 스타일 키")]
         [SerializeField] private string styleKeyPriceLack;
-        [Tooltip("골드로 스탯 포인트를 구매할 때 1회 클릭당 구매할 포인트 수")]
+        [Tooltip("스탯 증가, 감소 버튼 클릭당 적용할 포인트 수")]
         [Min(1)]
         [SerializeField] private int buyStatPointAmountPerClick = 1;
-        [Tooltip("골드로 스탯 포인트를 구매하는 버튼(선택 사항)")]
-        [SerializeField] private Button buttonBuyStatPoint;
 
         [Header("Apply / Reset")]
         [Tooltip("드래프트(미적용) 스탯 포인트를 실제 데이터에 반영")]
@@ -65,14 +63,12 @@ namespace GGemCo2DCore
 
             if (buttonApply != null) buttonApply.onClick.AddListener(OnClickApply);
             if (buttonReset != null) buttonReset.onClick.AddListener(OnClickReset);
-            if (buttonBuyStatPoint != null) buttonBuyStatPoint.onClick.AddListener(OnClickBuyStatPoint);
         }
 
         private void OnDestroy()
         {
             if (buttonApply != null) buttonApply.onClick.RemoveListener(OnClickApply);
             if (buttonReset != null) buttonReset.onClick.RemoveListener(OnClickReset);
-            if (buttonBuyStatPoint != null) buttonBuyStatPoint.onClick.RemoveListener(OnClickBuyStatPoint);
         }
 
         /// <summary>
@@ -237,9 +233,18 @@ namespace GGemCo2DCore
             if (textUnspent != null)
             {
                 string prefix = string.IsNullOrEmpty(_unspentPrefix) ? "남은포인트" : _unspentPrefix;
-                textUnspent.text = _editSession.IsDirty
-                    ? $"{prefix}: {_boundPlayer.UnspentStatPoints} → {_editSession.DraftUnspent}"
-                    : $"{prefix}: {_boundPlayer.UnspentStatPoints}";
+                if (_editSession.UsesReservedGoldBudget())
+                {
+                    textUnspent.text = _editSession.IsDirty
+                        ? $"{prefix}: {_boundPlayer.UnspentStatPoints} → {_editSession.DraftUnspent}"
+                        : $"{prefix}: {_boundPlayer.UnspentStatPoints}";
+                }
+                else
+                {
+                    textUnspent.text = _editSession.IsDirty
+                        ? $"{prefix}: {_boundPlayer.UnspentStatPoints} → {_editSession.DraftUnspent}"
+                        : $"{prefix}: {_boundPlayer.UnspentStatPoints}";
+                }
             }
 
             if (buttonApply != null)
@@ -264,7 +269,7 @@ namespace GGemCo2DCore
             bool isTarget = CharacterConstants.IsStatPointTarget(index);
             int draftInvested = isTarget && _editSession != null ? _editSession.GetDraftInvested(index) : 0;
             int investedDelta = isTarget ? draftInvested - invested : 0;
-            bool canIncrease = isTarget && _editSession != null && _editSession.DraftUnspent > 0;
+            bool canIncrease = isTarget && _editSession != null && _editSession.CanIncrease(index);
             bool canDecrease = isTarget && _editSession != null && _editSession.CanDecrease(index);
 
             return new UIElementStatRenderData(
@@ -284,13 +289,23 @@ namespace GGemCo2DCore
             if (_boundPlayer == null) return;
             if (_editSession == null || !_editSession.IsDirty) return;
 
-            _boundPlayer.TryApplyStatPointAllocation(
+            long reservedDraftGoldCost = _editSession.UsesReservedGoldBudget()
+                ? _editSession.DraftReservedGoldCost
+                : 0;
+
+            bool applied = _boundPlayer.TryApplyStatPointAllocation(
                 _editSession.DraftUnspent,
                 _editSession.DraftAtk,
                 _editSession.DraftDef,
                 _editSession.DraftHp,
                 _editSession.DraftMp,
-                _editSession.DraftStamina);
+                _editSession.DraftStamina,
+                reservedDraftGoldCost);
+
+            if (!applied && _editSession.UsesReservedGoldBudget())
+            {
+                SceneGame.systemMessageManager?.ShowWarningCurrency(CurrencyConstants.Type.Gold);
+            }
 
             // 실패 시(총 포인트 불일치 등) 안전하게 재스냅샷
             _editSession = new StatPointEditSession(_boundPlayer);
@@ -306,12 +321,12 @@ namespace GGemCo2DCore
 
         private void UpdateLevelText()
         {
-            if (textExp == null)
+            if (textLevel == null)
                 return;
 
             if (_boundPlayer == null)
             {
-                textExp.text = string.Empty;
+                textLevel.text = string.Empty;
                 return;
             }
 
@@ -326,14 +341,14 @@ namespace GGemCo2DCore
                 additionalLevels = Mathf.Max(0, draftInvested - currentInvested);
             }
 
-            textExp.text = additionalLevels > 0
-                ? $"{prefix}: {currentLevel} (+{additionalLevels})"
-                : $"{prefix}: {currentLevel}";
+            textLevel.text = additionalLevels > 0
+                ? $"{prefix} {currentLevel} ▶ <style={styleKeyPriceNormal}>{currentLevel+additionalLevels}</style>"
+                : $"{prefix} {currentLevel}";
         }
 
         private void UpdatePurchaseUi()
         {
-            if (textGold == null && buttonBuyStatPoint == null)
+            if (textGold == null)
                 return;
 
             if (_boundPlayer == null)
@@ -343,24 +358,33 @@ namespace GGemCo2DCore
                     textGold.text = string.Empty;
                 }
 
-                if (buttonBuyStatPoint != null)
-                {
-                    buttonBuyStatPoint.interactable = false;
-                    buttonBuyStatPoint.gameObject.SetActive(false);
-                }
+                return;
+            }
 
+            if (_editSession != null && _editSession.UsesReservedGoldBudget())
+            {
+                if (textGold == null)
+                    return;
+
+                long currentGold = _boundPlayer.CurrentGold;
+                long reservedGold = _editSession.DraftReservedGoldCost;
+                long previewGold = _editSession.GetPreviewGoldAfterReservation();
+                long nextNeedGold = _editSession.GetNextRequiredGoldForIncrease();
+                bool canAffordNext = nextNeedGold <= 0 || previewGold >= nextNeedGold;
+                string previewStyleKey = reservedGold > 0 ? styleKeyPriceNormal : string.Empty;
+                string nextStyleKey = canAffordNext ? styleKeyPriceNormal : styleKeyPriceLack;
+
+                string previewGoldText = $"<style={nextStyleKey}>{previewGold}</style>";
+                string nextNeedText = $"{nextNeedGold}";
+
+                // textGold.text = $"Gold: {previewGoldText} / 예약 {reservedGold} / 다음 필요 {nextNeedText}";
+                textGold.text = $"( {previewGoldText} / {nextNeedText} )";
                 return;
             }
 
             bool canPurchase = _boundPlayer.CanPurchaseStatPoints();
             int amount = Mathf.Max(1, buyStatPointAmountPerClick);
             bool canAfford = canPurchase && _boundPlayer.CanAffordStatPointPurchase(amount);
-
-            if (buttonBuyStatPoint != null)
-            {
-                buttonBuyStatPoint.gameObject.SetActive(canPurchase);
-                buttonBuyStatPoint.interactable = canAfford;
-            }
 
             if (textGold == null)
                 return;
@@ -383,29 +407,6 @@ namespace GGemCo2DCore
             string styleKey = canAfford ? styleKeyPriceNormal : styleKeyPriceLack;
 
             textGold.text = string.Format("{0}: <style={1}>{2}</style> / {3} (+{4}pt)", currencyName, styleKey, currentCurrency, needCurrency, amount);
-        }
-
-        private void OnClickBuyStatPoint()
-        {
-            if (_boundPlayer == null)
-                return;
-
-            int amount = Mathf.Max(1, buyStatPointAmountPerClick);
-            if (!_boundPlayer.CanPurchaseStatPoints())
-            {
-                RefreshValues();
-                return;
-            }
-
-            if (!_boundPlayer.CanAffordStatPointPurchase(amount))
-            {
-                SceneGame.systemMessageManager?.ShowWarningCurrency(_boundPlayer.GetStatPointPurchaseCurrencyType());
-                RefreshValues();
-                return;
-            }
-
-            _boundPlayer.TryPurchaseStatPoints(amount);
-            RefreshValues();
         }
 
         private static long GetTotalValueByIndex(CharacterConstants.IndexPlayerInfo idx, CharacterStat.CharacterTotals totals)
@@ -521,20 +522,14 @@ namespace GGemCo2DCore
                 return;
             }
 
-            if (textExp)
+            if (textLevel)
             {
-                textExp.text = string.Empty;
+                textLevel.text = string.Empty;
             }
 
             if (textGold)
             {
                 textGold.text = string.Empty;
-            }
-
-            if (buttonBuyStatPoint != null)
-            {
-                buttonBuyStatPoint.interactable = false;
-                buttonBuyStatPoint.gameObject.SetActive(false);
             }
         }
     }
