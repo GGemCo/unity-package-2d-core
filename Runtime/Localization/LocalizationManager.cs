@@ -162,5 +162,8 @@ namespace GGemCo2DCore
 
         public string GetUIWindowPlayerInfoByKey(string key) =>
             GetString(LocalizationConstants.Tables.UIWindowPlayerStatInfo, key);
+
+        public string GetUIWindowShopByKey(string key) =>
+            GetString(LocalizationConstants.Tables.UIWindowShop, key);
     }
 }

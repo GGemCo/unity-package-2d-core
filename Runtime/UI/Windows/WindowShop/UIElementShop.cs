@@ -43,6 +43,9 @@ namespace GGemCo2DCore
         [Header("선택 시 색상")]
         [SerializeField] private Color colorSelected = Color.white;
         [SerializeField] private Color colorNotSelected = Color.white;
+        
+        [Header("할인 이미지 아이콘")]
+        [SerializeField] private Image imageDiscount;
 
         private UIWindowShop _uiWindowShop;
         private UIWindowItemBuy _uIWindowItemBuy;
@@ -118,6 +121,7 @@ namespace GGemCo2DCore
         /// <param name="shopDisplayItem">표시할 상점 아이템 데이터입니다.</param>
         public void Initialize(UIWindowShop uiWindowShop, int slotIndex, ShopDisplayItem shopDisplayItem)
         {
+            ShowImageDiscount(false);
             _sceneGame ??= SceneGame.Instance;
             _playerData = _sceneGame.saveDataManager.Player;
             _shopDisplayItem = shopDisplayItem;
@@ -141,6 +145,8 @@ namespace GGemCo2DCore
         public void SetSlot(UISlot uiSlot)
         {
             _uiSlot = uiSlot;
+            // 맨 뒤로 배치
+            _uiSlot.gameObject.transform.SetSiblingIndex(0);
         }
         
         /// <summary>
@@ -208,6 +214,8 @@ namespace GGemCo2DCore
                 bool isBuyable = _uiWindowShop.CanBuy(_shopDisplayItem, out var disabledReason);
                 _shopDisplayItem.SetAvailability(isBuyable, disabledReason);
             }
+            
+            ShowImageDiscount(_shopDisplayItem.HasDiscount);
 
             ApplyAvailabilityVisual();
 
@@ -345,6 +353,7 @@ namespace GGemCo2DCore
         /// <param name="value">선택 여부입니다.</param>
         public void SetSelected(bool value)
         {
+            SetColorImageDiscount(colorNotSelected);
             if (value)
             {
                 _uiWindowShop.SetSelectItem(this);
@@ -359,6 +368,8 @@ namespace GGemCo2DCore
                         gameObject,
                         UIWindowItemInfo.PositionType.Fixed,
                         _uiWindowShop.containerIcon.cellSize);
+                    
+                    SetColorImageDiscount(colorSelected);
                 }
             }
 
@@ -383,11 +394,16 @@ namespace GGemCo2DCore
         /// </summary>
         public ShopDisplayItem GetDisplayItem() => _shopDisplayItem;
 
-        public void SetRestoreItem()
+        private void ShowImageDiscount(bool value)
         {
-            if (GcLogger.IsNull(_shopDisplayItem, nameof(ShopDisplayItem))) return;
-            _shopDisplayItem.SetAvailability(true);
-            RefreshAvailability();
+            if (!imageDiscount) return;
+            imageDiscount.gameObject.SetActive(value);
+        }
+
+        private void SetColorImageDiscount(Color color)
+        {
+            if (!imageDiscount) return;
+            imageDiscount.color = color;
         }
     }
 }
