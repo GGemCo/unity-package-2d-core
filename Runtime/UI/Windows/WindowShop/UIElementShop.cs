@@ -32,7 +32,7 @@ namespace GGemCo2DCore
         private UIWindowItemBuy _uIWindowItemBuy;
         private UIWindowItemInfo _uIWindowItemInfo;
         
-        private StruckTableShop _struckTableShop;
+        private ShopDisplayItem _shopDisplayItem;
         private TableItem _tableItem;
         private PlayerData _playerData;
         private int _slotIndex;
@@ -60,8 +60,19 @@ namespace GGemCo2DCore
         /// <param name="struckTableShop"></param>
         public void Initialize(UIWindowShop uiWindowShop, int slotIndex, StruckTableShop struckTableShop)
         {
+            Initialize(uiWindowShop, slotIndex, new ShopDisplayItem(struckTableShop));
+        }
+
+        /// <summary>
+        /// 초기화
+        /// </summary>
+        /// <param name="uiWindowShop"></param>
+        /// <param name="slotIndex"></param>
+        /// <param name="shopDisplayItem"></param>
+        public void Initialize(UIWindowShop uiWindowShop, int slotIndex, ShopDisplayItem shopDisplayItem)
+        {
             _playerData = SceneGame.Instance.saveDataManager.Player;
-            _struckTableShop = struckTableShop;
+            _shopDisplayItem = shopDisplayItem;
             _slotIndex = slotIndex;
             if (buttonBuy != null)
             {
@@ -71,7 +82,7 @@ namespace GGemCo2DCore
             _uiWindowShop = uiWindowShop;
             _tableItem = TableLoaderManager.Instance.TableItem;
             
-            UpdateInfos(struckTableShop);
+            UpdateInfos(shopDisplayItem);
         }
 
         /// <summary>
@@ -79,16 +90,24 @@ namespace GGemCo2DCore
         /// </summary>
         public void UpdateInfos(StruckTableShop struckTableShop)
         {
-            _struckTableShop = struckTableShop;
-            if (_struckTableShop == null)
+            UpdateInfos(new ShopDisplayItem(struckTableShop));
+        }
+
+        /// <summary>
+        /// slotIndex 로 아이템 정보를 가져온다.
+        /// </summary>
+        public void UpdateInfos(ShopDisplayItem shopDisplayItem)
+        {
+            _shopDisplayItem = shopDisplayItem;
+            if (_shopDisplayItem == null || _shopDisplayItem.Source == null)
             {
                 GcLogger.LogError($"shop 테이블에 정보가 없습니다. struckTableItem is null");
                 return;
             }
-            var info = _tableItem.GetDataByUid(_struckTableShop.ItemUid);
+            var info = _tableItem.GetDataByUid(_shopDisplayItem.ItemUid);
             if (info == null)
             {
-                GcLogger.LogError($"item 테이블에 정보가 없습니다. item uid: {_struckTableShop.ItemUid}");
+                GcLogger.LogError($"item 테이블에 정보가 없습니다. item uid: {_shopDisplayItem.ItemUid}");
                 return;
             }
 
@@ -97,9 +116,24 @@ namespace GGemCo2DCore
                 textName.text = info.Name;
             }
             if (textPrice != null) 
-                textPrice.text = $"{_struckTableShop.CurrencyType} {_struckTableShop.CurrencyValue}";
+                textPrice.text = $"{_shopDisplayItem.CurrencyType} {_shopDisplayItem.CurrencyValue}";
+            RefreshAvailability();
+        }
+
+        public void RefreshAvailability()
+        {
+            if (_shopDisplayItem == null) return;
+            if (_uiWindowShop != null)
+            {
+                bool isBuyable = _uiWindowShop.CanBuy(_shopDisplayItem, out var disabledReason);
+                _shopDisplayItem.SetAvailability(isBuyable, disabledReason);
+            }
+
             if (buttonBuy)
+            {
                 buttonBuy.gameObject.SetActive(true);
+                buttonBuy.interactable = _shopDisplayItem.IsBuyable;
+            }
         }
         
         /// <summary>
@@ -107,33 +141,49 @@ namespace GGemCo2DCore
         /// </summary>
         public void OnClickBuy()
         {
+            if (_shopDisplayItem == null || _shopDisplayItem.Source == null) return;
+            string disabledReason = string.Empty;
+            if (!_shopDisplayItem.IsBuyable || !_uiWindowShop.CanBuy(_shopDisplayItem, out disabledReason))
+            {
+                if (!string.IsNullOrEmpty(disabledReason))
+                {
+                    SceneGame.Instance.systemMessageManager.ShowMessageWarning(disabledReason);
+                }
+                else
+                {
+                    SceneGame.Instance.systemMessageManager.ShowMessageWarning("Shop_CannotBuyItem");
+                }
+
+                return;
+            }
+
             // 여러개 살 수 있는지
                 // 팝업창 띄어서 개수 정하기
                 // 골드가 충분하지 체크
-            if (_struckTableShop.MaxBuyCount > 1)
+            if (_shopDisplayItem.MaxBuyCount > 1)
             {
                 // 구매할 수 있는 최대 수량으로 등록
-                int count = (int)_playerData.GetPossibleBuyCount(_struckTableShop.CurrencyType, _struckTableShop.CurrencyValue);
+                int count = (int)_playerData.GetPossibleBuyCount(_shopDisplayItem.CurrencyType, _shopDisplayItem.CurrencyValue);
                 if (count <= 0)
                 {
-                    SceneGame.Instance.systemMessageManager.ShowWarningCurrency(_struckTableShop.CurrencyType);
+                    SceneGame.Instance.systemMessageManager.ShowWarningCurrency(_shopDisplayItem.CurrencyType);
                     return;
                 }
-                var info = _tableItem.GetDataByUid(_struckTableShop.ItemUid);
+                var info = _tableItem.GetDataByUid(_shopDisplayItem.ItemUid);
                 if (info != null && count > info.MaxOverlayCount)
                 {
                     count = info.MaxOverlayCount;
                 }
                 
-                _uIWindowItemBuy?.SetPriceInfo(_struckTableShop);
+                _uIWindowItemBuy?.SetPriceInfo(_shopDisplayItem);
                 SceneGame.Instance.uIWindowManager.RegisterIcon(_uiWindowShop.uid, _slotIndex, UIWindowConstants.WindowUid.ItemBuy, count);
             }
             // 한번에 하나만 살 수 있는지
             // 골드가 충분하지 체크
             else
             {
-                SceneGame.Instance.BuyItem(_struckTableShop.ItemUid, _struckTableShop.CurrencyType,
-                    _struckTableShop.CurrencyValue);
+                SceneGame.Instance.BuyItem(_shopDisplayItem.ItemUid, _shopDisplayItem.CurrencyType,
+                    _shopDisplayItem.CurrencyValue);
             }
         }
         
@@ -159,12 +209,13 @@ namespace GGemCo2DCore
 
         public void SetSelected(bool value)
         {
+            if (_shopDisplayItem == null) return;
             if (value)
             {
                 _uiWindowShop.SetSelectItem(this);
                 
                 EnsureWindows();
-                _uIWindowItemInfo.SetItemUid(_struckTableShop.ItemUid, 0, gameObject, UIWindowItemInfo.PositionType.Fixed,
+                _uIWindowItemInfo.SetItemUid(_shopDisplayItem.ItemUid, 0, gameObject, UIWindowItemInfo.PositionType.Fixed,
                     _uiWindowShop.containerIcon.cellSize);
             }
             else
@@ -175,8 +226,10 @@ namespace GGemCo2DCore
 
         public (CurrencyConstants.Type, int) GetPrice()
         {
-            if (_struckTableShop == null) return (CurrencyConstants.Type.None, 0);
-            return (_struckTableShop.CurrencyType, _struckTableShop.CurrencyValue);
+            if (_shopDisplayItem == null) return (CurrencyConstants.Type.None, 0);
+            return (_shopDisplayItem.CurrencyType, _shopDisplayItem.CurrencyValue);
         }
+
+        public ShopDisplayItem GetDisplayItem() => _shopDisplayItem;
     }
 }

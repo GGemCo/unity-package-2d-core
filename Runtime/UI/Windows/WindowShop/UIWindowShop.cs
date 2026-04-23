@@ -30,7 +30,8 @@ namespace GGemCo2DCore
         private Coroutine _coRefreshSelectedVfx;
 
         
-        private TableShop _tableShop;
+        private ShopResolver _shopResolver;
+        private ShopAvailabilityService _shopAvailabilityService;
         private readonly Dictionary<int, UIElementShop> _uiElementShops = new Dictionary<int, UIElementShop>();
         private int _currentShopUid;
 
@@ -42,7 +43,8 @@ namespace GGemCo2DCore
             _uiElementShops.Clear();
             uid = UIWindowConstants.WindowUid.Shop;
             if (TableLoaderManager.Instance == null) return;
-            _tableShop = TableLoaderManager.Instance.TableShop;
+            _shopAvailabilityService = ShopAvailabilityService.Instance;
+            _shopResolver = new ShopResolver(TableLoaderManager.Instance.TableShop, _shopAvailabilityService);
             base.Awake();
             if (vfxEffectUISelected)
             {
@@ -54,12 +56,16 @@ namespace GGemCo2DCore
         {
             if (buttonBuy)
                 buttonBuy.onClick.AddListener(OnClickBuy);
+            if (_shopAvailabilityService != null)
+                _shopAvailabilityService.Changed += OnShopAvailabilityChanged;
         }
 
         private void OnDisable()
         {
             if (buttonBuy)
                 buttonBuy.onClick.RemoveAllListeners();
+            if (_shopAvailabilityService != null)
+                _shopAvailabilityService.Changed -= OnShopAvailabilityChanged;
         }
 
         /// <summary>
@@ -67,27 +73,22 @@ namespace GGemCo2DCore
         /// </summary>
         public void SetInfoByShopUid(int shopUid)
         {
+            SetInfoByShopUid(shopUid, false, false);
+        }
+
+        /// <summary>
+        /// 상점 uid 로 ui element shop 정보 셋팅하기
+        /// </summary>
+        public void SetInfoByShopUid(int shopUid, bool forceRefresh, bool reroll)
+        {
             // 같은 상점을 열었으면 업데이트 하지 않는다
-            if (_currentShopUid > 0 && _currentShopUid == shopUid) return;
-            // 기존 element 지우기
-            int index = 0;
-            foreach (var data in _uiElementShops)
+            if (!forceRefresh && !reroll && _currentShopUid > 0 && _currentShopUid == shopUid)
             {
-                Destroy(data.Value.gameObject);
-                if (slots[index])
-                {
-                    Destroy(slots[index].gameObject);
-                }
-                if (icons[index])
-                {
-                    Destroy(icons[index].gameObject);
-                }
-                index++;
+                RefreshVisibleAvailability();
+                return;
             }
 
-            slots = null;
-            icons = null;
-            _uiElementShops.Clear();
+            ClearShopElements();
             _currentShopUid = shopUid;
             
             if (AddressableLoaderSettings.Instance == null || containerIcon == null) return;
@@ -97,14 +98,23 @@ namespace GGemCo2DCore
                 return;
             }
             if (shopUid <= 0) return;
-            var datas = _tableShop.GetItemByUid(shopUid);
+            var datas = _shopResolver?.Resolve(shopUid, reroll);
             if (datas == null)
             {
                 GcLogger.LogError("shop 테이블에 정보가 없습니다. shop Uid: " + shopUid);
                 return;
             }
-            maxCountIcon = datas.Count;
             if (datas.Count <= 0) return;
+            int maxSlotIndex = 0;
+            foreach (var data in datas)
+            {
+                if (data != null && data.SlotIndex > maxSlotIndex)
+                {
+                    maxSlotIndex = data.SlotIndex;
+                }
+            }
+
+            maxCountIcon = maxSlotIndex + 1;
             slots = new GameObject[maxCountIcon];
             icons = new GameObject[maxCountIcon];
             
@@ -113,9 +123,12 @@ namespace GGemCo2DCore
             
             if (iconItem == null) return;
 
-            index = 0;
             foreach (var info in datas)
             {
+                if (info == null) continue;
+                int index = info.SlotIndex;
+                if (index < 0 || index >= maxCountIcon) continue;
+
                 GameObject parent = gameObject;
                 // UI Element 프리팹이 있으면 만든다.
                 if (prefabUIElementShop != null)
@@ -125,7 +138,6 @@ namespace GGemCo2DCore
                     UIElementShop uiElementShop = parent.GetComponent<UIElementShop>();
                     if (uiElementShop == null) continue;
                     uiElementShop.Initialize(this, index, info);
-                    uiElementShop.UpdateInfos(datas[index]);
                     _uiElementShops.TryAdd(index, uiElementShop);
                 }
 
@@ -148,7 +160,10 @@ namespace GGemCo2DCore
                 uiIcon.RemoveLockImage();
                 
                 icons[index] = icon;
-                index++;
+            }
+            if (gameObject.activeSelf)
+            {
+                SelectFirstElement();
             }
             // GcLogger.Log($"풀 확장: {amount}개 아이템 추가 (총 {poolDropItem.Count}개)");
         }
@@ -159,7 +174,10 @@ namespace GGemCo2DCore
         /// <param name="index"></param>
         private void SetPositionUiSlot(UISlot slot, int index)
         {
-            UIElementShop uiElementSkill = _uiElementShops[index];
+            if (!_uiElementShops.TryGetValue(index, out var uiElementSkill))
+            {
+                return;
+            }
             if (uiElementSkill == null) return;
             Vector3 position = uiElementSkill.GetIconPosition();
             if (position == Vector3.zero) return;
@@ -172,24 +190,23 @@ namespace GGemCo2DCore
         private void LoadIcons()
         {
             if (!gameObject.activeSelf) return;
-            var datas = _tableShop.GetItemByUid(_currentShopUid);
-            if (datas == null) return;
-            for (int index = 0; index < maxCountIcon; index++)
+            if (icons == null) return;
+            foreach (var pair in _uiElementShops)
             {
+                int index = pair.Key;
                 if (index >= icons.Length) continue;
                 var icon = icons[index];
                 if (icon == null) continue;
                 UIIconItem uiIcon = icon.GetComponent<UIIconItem>();
                 if (uiIcon == null) continue;
+
+                var data = pair.Value.GetDisplayItem();
+                if (data == null) continue;
                 
-                var info = TableLoaderManager.Instance.GetItemData(datas[index].ItemUid);
+                var info = TableLoaderManager.Instance.GetItemData(data.ItemUid);
                 if (info == null) continue;
                 uiIcon.ChangeInfoByUid(info.Uid, 1);
-                UIElementShop uiElementShop = _uiElementShops[index];
-                if (uiElementShop != null)
-                {
-                    uiElementShop.UpdateInfos(datas[index]);
-                }
+                pair.Value.UpdateInfos(data);
             }
         }
 
@@ -258,7 +275,23 @@ namespace GGemCo2DCore
 
         private void UpdatePriceText()
         {
-            if (!textPrice || _selectedElementShop == null) return;
+            if (_selectedElementShop == null)
+            {
+                if (buttonBuy)
+                {
+                    buttonBuy.interactable = false;
+                }
+
+                return;
+            }
+
+            var displayItem = _selectedElementShop.GetDisplayItem();
+            if (buttonBuy)
+            {
+                buttonBuy.interactable = displayItem != null && displayItem.IsBuyable;
+            }
+
+            if (!textPrice) return;
 
             var playerGold = SceneGame.saveDataManager.Player.CurrentGold;
             var data = _selectedElementShop.GetPrice();
@@ -274,11 +307,102 @@ namespace GGemCo2DCore
             _selectedElementShop.OnClickBuy();
         }
 
+        public bool CanBuy(ShopDisplayItem item, out string disabledReason)
+        {
+            disabledReason = null;
+            return _shopAvailabilityService == null || _shopAvailabilityService.CanBuy(item, out disabledReason);
+        }
+
+        public void RefreshCurrentShop(bool reroll = false)
+        {
+            if (_currentShopUid <= 0) return;
+            SetInfoByShopUid(_currentShopUid, true, reroll);
+        }
+
+        public void ClearShopRoll(int shopUid)
+        {
+            _shopResolver?.ClearRoll(shopUid);
+        }
+
+        private void OnShopAvailabilityChanged()
+        {
+            RefreshVisibleAvailability();
+        }
+
+        private void RefreshVisibleAvailability()
+        {
+            foreach (var pair in _uiElementShops)
+            {
+                pair.Value?.RefreshAvailability();
+            }
+
+            UpdatePriceText();
+        }
+
+        private void ClearShopElements()
+        {
+            foreach (var data in _uiElementShops)
+            {
+                if (data.Value)
+                {
+                    Destroy(data.Value.gameObject);
+                }
+            }
+
+            if (slots != null)
+            {
+                foreach (var slot in slots)
+                {
+                    if (slot)
+                    {
+                        Destroy(slot.gameObject);
+                    }
+                }
+            }
+
+            if (icons != null)
+            {
+                foreach (var icon in icons)
+                {
+                    if (icon)
+                    {
+                        Destroy(icon.gameObject);
+                    }
+                }
+            }
+
+            slots = null;
+            icons = null;
+            maxCountIcon = 0;
+            _selectedElementShop = null;
+            _uiElementShops.Clear();
+
+            if (vfxEffectUISelected)
+            {
+                vfxEffectUISelected.gameObject.SetActive(false);
+            }
+        }
+
         public override void OnShow(bool show)
         {
             if (!show) return;
+            SelectFirstElement();
+        }
+
+        private void SelectFirstElement()
+        {
             _selectedElementShop = null;
-            var element = _uiElementShops[0];
+            UIElementShop element = null;
+            int minSlotIndex = int.MaxValue;
+            foreach (var pair in _uiElementShops)
+            {
+                if (pair.Key < minSlotIndex)
+                {
+                    minSlotIndex = pair.Key;
+                    element = pair.Value;
+                }
+            }
+
             if (element == null) return;
             element.SetSelected(true);
         }

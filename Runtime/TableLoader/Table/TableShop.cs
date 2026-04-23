@@ -9,10 +9,12 @@ namespace GGemCo2DCore
     {
         public int Uid;
         public string Memo;
+        public int SlotIndex;
         public int ItemUid;
         public CurrencyConstants.Type CurrencyType;
         public int CurrencyValue;
         public int MaxBuyCount;
+        public int Rate;
     }
     /// <summary>
     /// 상점 판매 테이블
@@ -21,6 +23,12 @@ namespace GGemCo2DCore
     {
         public override string Key => ConfigAddressableTable.Shop;
         private readonly Dictionary<int, List<StruckTableShop>> _shopItems = new Dictionary<int, List<StruckTableShop>>();
+
+        protected override void PreLoad()
+        {
+            _shopItems.Clear();
+        }
+
         protected override void OnLoadedData(StruckTableShop data)
         {
             int uid = data.Uid;
@@ -30,18 +38,25 @@ namespace GGemCo2DCore
                 _shopItems.TryAdd(uid, new List<StruckTableShop>());
             }
 
+            if (data.SlotIndex < 0)
+            {
+                data.SlotIndex = _shopItems[uid].Count;
+            }
+
             _shopItems[uid].Add(data);
         }
         protected override StruckTableShop BuildRow(Dictionary<string, string> data)
         {
             return new StruckTableShop
             {
-                Uid = MathHelper.ParseInt(data["Uid"]),
-                Memo = data["Memo"],
-                ItemUid = MathHelper.ParseInt(data["ItemUid"]),
-                CurrencyType = ConvertCurrencyType(data["CurrencyType"]),
-                CurrencyValue = MathHelper.ParseInt(data["CurrencyValue"]),
-                MaxBuyCount = MathHelper.ParseInt(data["MaxBuyCount"]),
+                Uid = MathHelper.ParseInt(data.GetValueOrDefault("Uid")),
+                Memo = data.GetValueOrDefault("Memo"),
+                SlotIndex = MathHelper.ParseInt(data.GetValueOrDefault("SlotIndex"), -1),
+                ItemUid = MathHelper.ParseInt(data.GetValueOrDefault("ItemUid")),
+                CurrencyType = ConvertCurrencyType(data.GetValueOrDefault("CurrencyType")),
+                CurrencyValue = MathHelper.ParseInt(data.GetValueOrDefault("CurrencyValue")),
+                MaxBuyCount = MathHelper.ParseInt(data.GetValueOrDefault("MaxBuyCount")),
+                Rate = MathHelper.ParseInt(data.GetValueOrDefault("Rate"), 100),
             };
         }
         public List<StruckTableShop> GetItemByUid(int uid)

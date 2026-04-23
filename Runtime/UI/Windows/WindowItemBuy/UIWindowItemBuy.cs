@@ -33,6 +33,7 @@ namespace GGemCo2DCore
         private int _buyItemIndex;
         // 판매하는 아이템의 shop 테이블 정보
         private StruckTableShop _struckTableShop;
+        private ShopDisplayItem _shopDisplayItem;
         
         protected override void Awake()
         {
@@ -83,23 +84,47 @@ namespace GGemCo2DCore
         private void OnClickConfirm()
         {
             if (_struckTableShop == null) return;
+            if (_shopDisplayItem != null &&
+                !ShopAvailabilityService.Instance.CanBuy(_shopDisplayItem, out var disabledReason))
+            {
+                if (!string.IsNullOrEmpty(disabledReason))
+                {
+                    SceneGame.Instance.systemMessageManager.ShowMessageWarning(disabledReason);
+                }
+                else
+                {
+                    SceneGame.Instance.systemMessageManager.ShowMessageWarning("Shop_CannotBuyItem");
+                }
+
+                return;
+            }
+
             // 구매 하기
             SceneGame.Instance.BuyItem(_struckTableShop.ItemUid, _struckTableShop.CurrencyType,
                 _struckTableShop.CurrencyValue, _buyItemCount);
 
             _struckTableShop = null;
+            _shopDisplayItem = null;
             Show(false);
         }
 
         private void OnClickCancel()
         {
             _struckTableShop = null;
+            _shopDisplayItem = null;
             Show(false);
         }
 
         public void SetPriceInfo(StruckTableShop pstruckTableShop)
         {
             _struckTableShop = pstruckTableShop;
+            _shopDisplayItem = null;
+        }
+
+        public void SetPriceInfo(ShopDisplayItem shopDisplayItem)
+        {
+            _shopDisplayItem = shopDisplayItem;
+            _struckTableShop = shopDisplayItem?.Source;
         }
         /// <summary>
         /// 창 닫힐때 register 됬던 아이콘 정보 지워주기
@@ -108,6 +133,7 @@ namespace GGemCo2DCore
         public override void OnShow(bool show)
         {
             if (show) return;
+            _shopDisplayItem = null;
             UnRegisterAllIcons(uid);
         }
     }
