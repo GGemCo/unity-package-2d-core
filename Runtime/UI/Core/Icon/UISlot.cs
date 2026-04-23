@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.UI;
 
 namespace GGemCo2DCore
 {
@@ -16,7 +17,8 @@ namespace GGemCo2DCore
         private CanvasGroup _canvasGroup;
         public CanvasGroup CanvasGroup => _canvasGroup;
 
-        private RectTransform rectTransform;
+        private RectTransform _rectTransform;
+        private Image _imageSlot;
 
         /// <summary>
         /// prefab 생성 후 호출되는 함수
@@ -31,7 +33,10 @@ namespace GGemCo2DCore
             windowUid = pwindowUid;
             index = pindex;
             
-            rectTransform = GetComponent<RectTransform>();
+            if (_imageSlot == null)
+                _imageSlot = GetComponent<Image>();
+            
+            _rectTransform = GetComponent<RectTransform>();
             if (useCanvasGroup)
             {
                 _canvasGroup = gameObject.AddComponent<CanvasGroup>();
@@ -44,7 +49,7 @@ namespace GGemCo2DCore
         /// <param name="size"></param>
         private void ChangeSlotImageSize(Vector2 size)
         {
-            rectTransform.sizeDelta = size;
+            _rectTransform.sizeDelta = size;
         }
 
         public void SetPosition(Vector3 position)
@@ -54,6 +59,12 @@ namespace GGemCo2DCore
         public void SetAlpha(float alpha)
         {
             if (useCanvasGroup) _canvasGroup.alpha = alpha;
+        }
+
+        public void SetColor(Color color)
+        {
+            if (!_imageSlot) return;
+            _imageSlot.color = color;
         }
     }
 }

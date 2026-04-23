@@ -39,11 +39,16 @@ namespace GGemCo2DCore
         [SerializeField] private float normalIconAlpha = 1f;
         [Tooltip("구매 불가능일 때, 아이콘 투명도")]
         [SerializeField] private float soldOutIconAlpha = 0.1f;
+        
+        [Header("선택 시 색상")]
+        [SerializeField] private Color colorSelected = Color.white;
+        [SerializeField] private Color colorNotSelected = Color.white;
 
         private UIWindowShop _uiWindowShop;
         private UIWindowItemBuy _uIWindowItemBuy;
         private UIWindowItemInfo _uIWindowItemInfo;
         private UIIcon _uiIcon;
+        private UISlot _uiSlot;
 
         /// <summary>
         /// 현재 표시 중인 상점 아이템 데이터입니다.
@@ -129,6 +134,15 @@ namespace GGemCo2DCore
             UpdateInfos(shopDisplayItem);
         }
 
+        /// <summary>
+        /// 이 상점 요소가 표시하는 슬롯을 설정합니다.
+        /// </summary>
+        /// <param name="uiSlot">생성된 UI 슬롯입니다.</param>
+        public void SetSlot(UISlot uiSlot)
+        {
+            _uiSlot = uiSlot;
+        }
+        
         /// <summary>
         /// 이 상점 요소가 표시하는 아이콘을 설정합니다.
         /// </summary>
@@ -331,20 +345,26 @@ namespace GGemCo2DCore
         /// <param name="value">선택 여부입니다.</param>
         public void SetSelected(bool value)
         {
-            if (_shopDisplayItem == null) return;
-
             if (value)
             {
                 _uiWindowShop.SetSelectItem(this);
 
                 EnsureWindows();
 
-                _uIWindowItemInfo.SetItemUid(
-                    _shopDisplayItem.ItemUid,
-                    0,
-                    gameObject,
-                    UIWindowItemInfo.PositionType.Fixed,
-                    _uiWindowShop.containerIcon.cellSize);
+                if (_shopDisplayItem != null)
+                {
+                    _uIWindowItemInfo.SetItemUid(
+                        _shopDisplayItem.ItemUid,
+                        0,
+                        gameObject,
+                        UIWindowItemInfo.PositionType.Fixed,
+                        _uiWindowShop.containerIcon.cellSize);
+                }
+            }
+
+            if (_uiSlot)
+            {
+                _uiSlot.SetColor(value ? colorSelected : colorNotSelected);
             }
         }
 
