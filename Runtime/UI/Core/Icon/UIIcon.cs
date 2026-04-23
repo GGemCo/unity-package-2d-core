@@ -450,9 +450,9 @@ namespace GGemCo2DCore
             _dragHandler.SetOriginalPosition(position);
         }
 
-        protected void SetAlpha(float alpha)
+        public void SetAlpha(float alpha)
         {
-            if (!useCanvasGroup) return;
+            if (!useCanvasGroup || _canvasGroup == null) return;
             _canvasGroup.alpha = alpha;
         }
 

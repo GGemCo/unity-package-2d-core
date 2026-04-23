@@ -131,12 +131,13 @@ namespace GGemCo2DCore
                 if (index < 0 || index >= maxCountIcon) continue;
 
                 GameObject parent = gameObject;
+                UIElementShop uiElementShop = null;
                 // UI Element 프리팹이 있으면 만든다.
                 if (prefabUIElementShop != null)
                 {
                     parent = Instantiate(prefabUIElementShop, containerIcon.gameObject.transform);
                     if (parent == null) continue;
-                    UIElementShop uiElementShop = parent.GetComponent<UIElementShop>();
+                    uiElementShop = parent.GetComponent<UIElementShop>();
                     if (uiElementShop == null) continue;
                     uiElementShop.Initialize(this, index, info);
                     _uiElementShops.TryAdd(index, uiElementShop);
@@ -159,6 +160,7 @@ namespace GGemCo2DCore
                 // element 에서 마우스 이벤트 처리
                 uiIcon.SetRaycastTarget(false);
                 uiIcon.RemoveLockImage();
+                uiElementShop?.SetIcon(uiIcon);
                 
                 icons[index] = icon;
             }
@@ -234,6 +236,7 @@ namespace GGemCo2DCore
             _selectedElementShop = uiElementShop;
             
             UpdatePriceText();
+            UpdateButtonBuy();
             
             if (_coRefreshSelectedVfx != null)
             {
@@ -244,7 +247,6 @@ namespace GGemCo2DCore
             _coRefreshSelectedVfx = StartCoroutine(CoRefreshSelectedVfxPosition());
         }
 
-        
         private IEnumerator CoRefreshSelectedVfxPosition()
         {
             if (_selectedElementShop == null || vfxEffectUISelected == null)
@@ -276,7 +278,7 @@ namespace GGemCo2DCore
             _coRefreshSelectedVfx = null;
         }
 
-        private void UpdatePriceText()
+        private void UpdateButtonBuy()
         {
             if (_selectedElementShop == null)
             {
@@ -287,13 +289,16 @@ namespace GGemCo2DCore
 
                 return;
             }
-
             var displayItem = _selectedElementShop.GetDisplayItem();
             if (buttonBuy)
             {
                 buttonBuy.interactable = displayItem != null && displayItem.IsBuyable;
             }
+        }
 
+        private void UpdatePriceText()
+        {
+            if (_selectedElementShop == null) return;
             if (!textPrice) return;
 
             var playerGold = SceneGame.saveDataManager.Player.CurrentGold;
@@ -408,6 +413,13 @@ namespace GGemCo2DCore
 
             if (element == null) return;
             element.SetSelected(true);
+        }
+
+        public void SetRestoreItem(int restoreShopItemSlotIndex)
+        {
+            var element = _uiElementShops.GetValueOrDefault(restoreShopItemSlotIndex);
+            if (GcLogger.IsNull(element, $"{nameof(UIElementShop)} 이 없습니다. index: {restoreShopItemSlotIndex}")) return;
+            element.SetRestoreItem();
         }
     }
 }
