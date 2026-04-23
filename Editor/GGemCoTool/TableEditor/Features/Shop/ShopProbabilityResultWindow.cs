@@ -13,8 +13,11 @@ namespace GGemCo2DCoreEditor
 
         private TableEditorDocument _document;
         private IntegerField _iterationsField;
+        private Button _shopUidButton;
         private ScrollView _resultScroll;
+        private readonly List<SearchableDropdownUtility.Option<int>> _shopUidOptions = new List<SearchableDropdownUtility.Option<int>>();
         private List<ShopProbabilityResult> _results = new List<ShopProbabilityResult>();
+        private int _selectedShopUid;
 
         public static void Open(TableEditorDocument document)
         {
@@ -45,6 +48,28 @@ namespace GGemCo2DCoreEditor
             rootVisualElement.style.paddingBottom = 8f;
 
             var toolbar = new Toolbar();
+            RefreshShopUidOptions();
+
+            toolbar.Add(new Label("Shop Uid")
+            {
+                style =
+                {
+                    unityTextAlign = TextAnchor.MiddleLeft,
+                    marginRight = 4f,
+                }
+            });
+            _shopUidButton = new Button
+            {
+                style =
+                {
+                    width = 220f,
+                    marginRight = 8f,
+                }
+            };
+            toolbar.Add(_shopUidButton);
+            BindShopUidButton();
+            RefreshShopUidButton();
+
             _iterationsField = new IntegerField("Iterations")
             {
                 value = DefaultIterations,
@@ -65,7 +90,7 @@ namespace GGemCo2DCoreEditor
             };
             rootVisualElement.Add(_resultScroll);
 
-            Calculate();
+            // Calculate();
         }
 
         private void Calculate()
@@ -78,8 +103,16 @@ namespace GGemCo2DCoreEditor
             }
 
             int iterations = Mathf.Max(1, _iterationsField?.value ?? DefaultIterations);
-            _results = ShopProbabilityCalculator.Calculate(_document, iterations);
-            BuildResultTable(iterations);
+            int shopUid = GetSelectedShopUid();
+            if (shopUid <= 0)
+            {
+                _results.Clear();
+                _resultScroll?.Add(new Label("No shop uid is available."));
+                return;
+            }
+
+            _results = ShopProbabilityCalculator.Calculate(_document, iterations, shopUid, 1001);
+            BuildResultTable(iterations, shopUid);
         }
 
         private void CopyTsv()
@@ -88,10 +121,10 @@ namespace GGemCo2DCoreEditor
             ShowNotification(new GUIContent("Copied TSV"));
         }
 
-        private void BuildResultTable(int iterations)
+        private void BuildResultTable(int iterations, int shopUid)
         {
             _resultScroll.Clear();
-            _resultScroll.Add(new Label($"Iterations: {iterations.ToString(CultureInfo.InvariantCulture)}")
+            _resultScroll.Add(new Label($"ShopUid: {shopUid.ToString(CultureInfo.InvariantCulture)}, Iterations: {iterations.ToString(CultureInfo.InvariantCulture)}")
             {
                 style =
                 {
@@ -124,6 +157,87 @@ namespace GGemCo2DCoreEditor
                 row.Add(CreateCell(ShopProbabilityCalculator.FormatPercent(result.EstimatedProbability), 110));
                 _resultScroll.Add(row);
             }
+        }
+
+        private void RefreshShopUidOptions()
+        {
+            _shopUidOptions.Clear();
+            List<int> shopUids = ShopProbabilityCalculator.GetShopUids(_document);
+            for (int i = 0; i < shopUids.Count; i++)
+            {
+                int shopUid = shopUids[i];
+                string uidText = shopUid.ToString(CultureInfo.InvariantCulture);
+                _shopUidOptions.Add(new SearchableDropdownUtility.Option<int>(uidText, $"Shop {uidText}", shopUid));
+            }
+
+            if (_shopUidOptions.Count <= 0)
+            {
+                _selectedShopUid = 0;
+                return;
+            }
+
+            if (FindSelectedShopUidIndex() < 0)
+                _selectedShopUid = _shopUidOptions[0].Data;
+        }
+
+        private void BindShopUidButton()
+        {
+            if (_shopUidButton == null)
+                return;
+
+            if (_shopUidOptions.Count <= 0)
+            {
+                _shopUidButton.SetEnabled(false);
+                return;
+            }
+
+            SearchableDropdownUtility.BindUiToolkitButton(
+                this,
+                _shopUidButton,
+                _shopUidOptions,
+                FindSelectedShopUidIndex,
+                (selectedOptionIndex, option) =>
+                {
+                    _selectedShopUid = option.Data;
+                    RefreshShopUidButton();
+                    // Calculate();
+                },
+                popupWidth: 300f,
+                defaultSearchMode: SearchableDropdownUtility.SearchMode.Both);
+        }
+
+        private void RefreshShopUidButton()
+        {
+            if (_shopUidButton == null)
+                return;
+
+            _shopUidButton.text = _selectedShopUid > 0
+                ? _selectedShopUid.ToString(CultureInfo.InvariantCulture)
+                : "Select...";
+        }
+
+        private int GetSelectedShopUid()
+        {
+            if (_selectedShopUid > 0 && FindSelectedShopUidIndex() >= 0)
+                return _selectedShopUid;
+
+            if (_shopUidOptions.Count <= 0)
+                return 0;
+
+            _selectedShopUid = _shopUidOptions[0].Data;
+            RefreshShopUidButton();
+            return _selectedShopUid;
+        }
+
+        private int FindSelectedShopUidIndex()
+        {
+            for (int i = 0; i < _shopUidOptions.Count; i++)
+            {
+                if (_shopUidOptions[i].Data == _selectedShopUid)
+                    return i;
+            }
+
+            return -1;
         }
 
         private static VisualElement CreateRow(bool isHeader)

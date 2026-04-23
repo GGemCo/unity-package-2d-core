@@ -73,9 +73,17 @@ namespace GGemCo2DCoreEditor
 
         public static List<ShopProbabilityResult> Calculate(TableEditorDocument document, int iterations, int seed = 1001)
         {
+            return Calculate(document, iterations, 0, seed);
+        }
+
+        public static List<ShopProbabilityResult> Calculate(TableEditorDocument document, int iterations, int shopUid, int seed)
+        {
             iterations = Math.Max(1, iterations);
 
             var candidates = ReadCandidates(document);
+            if (shopUid > 0)
+                candidates = candidates.Where(candidate => candidate.ShopUid == shopUid).ToList();
+
             var candidatesByShop = candidates
                 .GroupBy(static c => c.ShopUid)
                 .ToDictionary(static g => g.Key, static g => g.ToList());
@@ -114,6 +122,15 @@ namespace GGemCo2DCoreEditor
                 .ThenBy(static r => r.SlotIndex)
                 .ThenBy(static r => r.ShopItemUid)
                 .ThenBy(static r => r.ItemUid)
+                .ToList();
+        }
+
+        public static List<int> GetShopUids(TableEditorDocument document)
+        {
+            return ReadCandidates(document)
+                .Select(static candidate => candidate.ShopUid)
+                .Distinct()
+                .OrderBy(static shopUid => shopUid)
                 .ToList();
         }
 
