@@ -215,10 +215,12 @@ namespace GGemCo2DCore
         /// 상점 Uid 로 윈도우 오픈하기
         /// </summary>
         /// <param name="shopUid"></param>
-        public void ShowByUid(int shopUid)
+        /// <param name="forceRefresh"></param>
+        /// <param name="reroll"></param>
+        public void ShowByUid(int shopUid, bool forceRefresh, bool reroll)
         {
             if (shopUid <= 0) return;
-            SetInfoByShopUid(shopUid);
+            SetInfoByShopUid(shopUid, forceRefresh, reroll);
             Show(true);
         }
 
