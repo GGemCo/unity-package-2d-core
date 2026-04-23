@@ -8,20 +8,22 @@ namespace GGemCo2DCore
     /// </summary>
     public sealed class ShopResolver
     {
-        private readonly TableShop _tableShop;
+        private readonly TableShopItem _tableShopItem;
+        private readonly TableShop _legacyTableShop;
         private readonly ShopAvailabilityService _availabilityService;
-        private readonly Dictionary<int, Dictionary<int, StruckTableShop>> _rolledItemsByShopUid =
-            new Dictionary<int, Dictionary<int, StruckTableShop>>();
+        private readonly Dictionary<int, Dictionary<int, StruckTableShopItem>> _rolledItemsByShopUid =
+            new Dictionary<int, Dictionary<int, StruckTableShopItem>>();
 
-        public ShopResolver(TableShop tableShop, ShopAvailabilityService availabilityService)
+        public ShopResolver(TableShopItem tableShopItem, ShopAvailabilityService availabilityService, TableShop legacyTableShop = null)
         {
-            _tableShop = tableShop;
+            _tableShopItem = tableShopItem;
+            _legacyTableShop = legacyTableShop;
             _availabilityService = availabilityService;
         }
 
         public List<ShopDisplayItem> Resolve(int shopUid, bool reroll = false)
         {
-            var rows = _tableShop?.GetItemByUid(shopUid);
+            var rows = GetRows(shopUid);
             if (rows == null || rows.Count <= 0)
             {
                 return null;
@@ -38,6 +40,11 @@ namespace GGemCo2DCore
             {
                 var item = new ShopDisplayItem(pair.Value);
                 ApplyAvailability(item);
+                if (!item.IsBuyable && item.SoldOutDisplayType == ShopSoldOutDisplayType.Hide)
+                {
+                    continue;
+                }
+
                 result.Add(item);
             }
 
@@ -60,15 +67,33 @@ namespace GGemCo2DCore
             _rolledItemsByShopUid.Clear();
         }
 
-        private Dictionary<int, StruckTableShop> RollItemsBySlot(List<StruckTableShop> rows)
+        private List<StruckTableShopItem> GetRows(int shopUid)
         {
-            var candidatesBySlot = new Dictionary<int, List<StruckTableShop>>();
+            var rows = _tableShopItem?.GetItemsByShopUid(shopUid);
+            if (rows != null && rows.Count > 0) return rows;
+
+            var legacyRows = _legacyTableShop?.GetItemByUid(shopUid);
+            if (legacyRows == null || legacyRows.Count <= 0) return null;
+
+            var converted = new List<StruckTableShopItem>(legacyRows.Count);
+            foreach (var row in legacyRows)
+            {
+                var convertedRow = StruckTableShopItem.FromLegacyShopRow(row);
+                if (convertedRow != null) converted.Add(convertedRow);
+            }
+
+            return converted;
+        }
+
+        private Dictionary<int, StruckTableShopItem> RollItemsBySlot(List<StruckTableShopItem> rows)
+        {
+            var candidatesBySlot = new Dictionary<int, List<StruckTableShopItem>>();
             foreach (var row in rows)
             {
                 if (row == null || row.SlotIndex < 0) continue;
                 if (!candidatesBySlot.TryGetValue(row.SlotIndex, out var candidates))
                 {
-                    candidates = new List<StruckTableShop>();
+                    candidates = new List<StruckTableShopItem>();
                     candidatesBySlot.Add(row.SlotIndex, candidates);
                 }
 
@@ -79,10 +104,12 @@ namespace GGemCo2DCore
             slotIndices.Sort();
 
             var pickedItemUidsByUniqueGroup = new Dictionary<int, HashSet<int>>();
-            var rolledItems = new Dictionary<int, StruckTableShop>();
+            var rolledItems = new Dictionary<int, StruckTableShopItem>();
             foreach (var slotIndex in slotIndices)
             {
-                var candidates = candidatesBySlot[slotIndex];
+                var candidates = FilterHiddenUnavailableCandidates(candidatesBySlot[slotIndex]);
+                if (candidates.Count <= 0) continue;
+
                 var filteredCandidates = FilterUniqueCandidates(candidates, pickedItemUidsByUniqueGroup);
                 var picked = PickWeighted(filteredCandidates.Count > 0 ? filteredCandidates : candidates);
 
@@ -93,11 +120,30 @@ namespace GGemCo2DCore
             return rolledItems;
         }
 
-        private List<StruckTableShop> FilterUniqueCandidates(
-            List<StruckTableShop> candidates,
+        private List<StruckTableShopItem> FilterHiddenUnavailableCandidates(List<StruckTableShopItem> candidates)
+        {
+            var filteredCandidates = new List<StruckTableShopItem>();
+            foreach (var candidate in candidates)
+            {
+                if (candidate == null) continue;
+                var item = new ShopDisplayItem(candidate);
+                ApplyAvailability(item);
+                if (!item.IsBuyable && item.SoldOutDisplayType == ShopSoldOutDisplayType.Hide)
+                {
+                    continue;
+                }
+
+                filteredCandidates.Add(candidate);
+            }
+
+            return filteredCandidates;
+        }
+
+        private List<StruckTableShopItem> FilterUniqueCandidates(
+            List<StruckTableShopItem> candidates,
             Dictionary<int, HashSet<int>> pickedItemUidsByUniqueGroup)
         {
-            var filteredCandidates = new List<StruckTableShop>();
+            var filteredCandidates = new List<StruckTableShopItem>();
             foreach (var candidate in candidates)
             {
                 if (candidate == null) continue;
@@ -124,7 +170,7 @@ namespace GGemCo2DCore
         }
 
         private void RegisterUniquePick(
-            StruckTableShop picked,
+            StruckTableShopItem picked,
             Dictionary<int, HashSet<int>> pickedItemUidsByUniqueGroup)
         {
             if (picked == null || picked.ItemUid <= 0 || picked.UniqueGroup <= 0) return;
@@ -137,7 +183,7 @@ namespace GGemCo2DCore
             pickedItemUids.Add(picked.ItemUid);
         }
 
-        private StruckTableShop PickWeighted(List<StruckTableShop> candidates)
+        private StruckTableShopItem PickWeighted(List<StruckTableShopItem> candidates)
         {
             if (candidates == null || candidates.Count <= 0) return null;
             if (candidates.Count == 1) return candidates[0];

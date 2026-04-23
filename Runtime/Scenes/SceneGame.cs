@@ -282,22 +282,28 @@ namespace GGemCo2DCore
         /// <param name="currencyType"></param>
         /// <param name="price"></param>
         /// <param name="itemCount"></param>
-        public void BuyItem(int itemUid, CurrencyConstants.Type currencyType, int price, int itemCount = 1)
+        public ResultCommon BuyItem(int itemUid, CurrencyConstants.Type currencyType, int price, int itemCount = 1)
         {
             int totalPrice = price * itemCount;
             // 가지고 있는 재화가 충분하지 체크
             var checkNeedCurrency = saveDataManager.Player.CheckNeedCurrency(currencyType, totalPrice);
-            if (checkNeedCurrency.Result == ResultCommon.ResultType.Fail) return;
+            if (checkNeedCurrency.Result == ResultCommon.ResultType.Fail) return checkNeedCurrency;
             // 재화 빼주기
             var minusCurrency = saveDataManager.Player.MinusCurrency(currencyType, totalPrice);
-            if (minusCurrency.Result == ResultCommon.ResultType.Fail) return;
+            if (minusCurrency.Result == ResultCommon.ResultType.Fail) return minusCurrency;
             // 인벤토리에 아이템 넣을 수 있는지 체크
             var addItem = saveDataManager.Inventory.AddItem(itemUid, itemCount);
-            if (addItem.Result == ResultCommon.ResultType.Fail) return;
+            if (addItem.Result == ResultCommon.ResultType.Fail)
+            {
+                saveDataManager.Player.AddCurrency(currencyType, totalPrice);
+                return addItem;
+            }
             if (_uiWindowInventory != null)
             {
                 _uiWindowInventory.SetIcons(addItem);
             }
+
+            return addItem;
         }
 
         private void OnEnable()

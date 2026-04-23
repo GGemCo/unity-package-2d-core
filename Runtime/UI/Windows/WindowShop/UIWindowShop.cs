@@ -44,7 +44,7 @@ namespace GGemCo2DCore
             uid = UIWindowConstants.WindowUid.Shop;
             if (TableLoaderManager.Instance == null) return;
             _shopAvailabilityService = ShopAvailabilityService.Instance;
-            _shopResolver = new ShopResolver(TableLoaderManager.Instance.TableShop, _shopAvailabilityService);
+            _shopResolver = new ShopResolver(TableLoaderManager.Instance.TableShopItem, _shopAvailabilityService, TableLoaderManager.Instance.TableShop);
             base.Awake();
             if (vfxEffectUISelected)
             {
@@ -327,7 +327,7 @@ namespace GGemCo2DCore
 
         private void OnShopAvailabilityChanged()
         {
-            RefreshVisibleAvailability();
+            RefreshCurrentShop();
         }
 
         private void RefreshVisibleAvailability()

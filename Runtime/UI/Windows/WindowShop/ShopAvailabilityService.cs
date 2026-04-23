@@ -82,11 +82,22 @@ namespace GGemCo2DCore
             Changed?.Invoke();
         }
 
+        public void NotifyChanged()
+        {
+            Changed?.Invoke();
+        }
+
         public bool CanBuy(ShopDisplayItem item, out string disabledReason)
         {
             disabledReason = null;
             if (item == null) return false;
             if (item.IsEmpty) return false;
+
+            var shopPurchaseData = SceneGame.Instance?.saveDataManager?.ShopPurchase;
+            if (shopPurchaseData != null && !shopPurchaseData.CanBuy(item, 1, out disabledReason))
+            {
+                return false;
+            }
 
             if (TryGetRule(_productRules, (item.ShopUid, item.SlotIndex, item.ItemUid), out var rule) ||
                 TryGetRule(_shopItemRules, (item.ShopUid, item.ItemUid), out rule) ||

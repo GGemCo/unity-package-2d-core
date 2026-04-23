@@ -37,6 +37,7 @@ namespace GGemCo2DCore
         public TableVfxParticle TableVfxParticle { get; private set; } = new TableVfxParticle();
         public TableInteraction TableInteraction { get; private set; } = new TableInteraction();
         public TableShop TableShop { get; private set; } = new TableShop();
+        public TableShopItem TableShopItem { get; private set; } = new TableShopItem();
         public TableItemUpgrade TableItemUpgrade { get; private set; } = new TableItemUpgrade();
         public TableItemSalvage TableItemSalvage { get; private set; } = new TableItemSalvage();
         public TableItemCraft TableItemCraft { get; private set; } = new TableItemCraft();
@@ -88,6 +89,7 @@ namespace GGemCo2DCore
                 registry.Register(TableVfxParticle);
                 registry.Register(TableInteraction);
                 registry.Register(TableShop);
+                registry.Register(TableShopItem);
                 registry.Register(TableItemUpgrade);
                 registry.Register(TableItemSalvage);
                 registry.Register(TableItemCraft);

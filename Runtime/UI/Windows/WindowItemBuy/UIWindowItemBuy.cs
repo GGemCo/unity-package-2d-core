@@ -32,7 +32,7 @@ namespace GGemCo2DCore
         // 구매 하는 아이템의 인벤토리 slot index
         private int _buyItemIndex;
         // 판매하는 아이템의 shop 테이블 정보
-        private StruckTableShop _struckTableShop;
+        private StruckTableShopItem _struckTableShop;
         private ShopDisplayItem _shopDisplayItem;
         
         protected override void Awake()
@@ -99,9 +99,24 @@ namespace GGemCo2DCore
                 return;
             }
 
+            if (_shopDisplayItem != null)
+            {
+                var shopPurchaseData = SceneGame.Instance?.saveDataManager?.ShopPurchase;
+                if (shopPurchaseData != null && !shopPurchaseData.CanBuy(_shopDisplayItem, _buyItemCount, out disabledReason))
+                {
+                    SceneGame.Instance.systemMessageManager.ShowMessageWarning(
+                        string.IsNullOrEmpty(disabledReason) ? "Shop_CannotBuyItem" : disabledReason);
+                    return;
+                }
+            }
+
             // 구매 하기
-            SceneGame.Instance.BuyItem(_struckTableShop.ItemUid, _struckTableShop.CurrencyType,
+            var result = SceneGame.Instance.BuyItem(_struckTableShop.ItemUid, _struckTableShop.CurrencyType,
                 _struckTableShop.CurrencyValue, _buyItemCount);
+            if (result is { Result: ResultCommon.ResultType.Success })
+            {
+                SceneGame.Instance.saveDataManager?.ShopPurchase?.AddBoughtCount(_shopDisplayItem, _buyItemCount);
+            }
 
             _struckTableShop = null;
             _shopDisplayItem = null;
@@ -117,7 +132,7 @@ namespace GGemCo2DCore
 
         public void SetPriceInfo(StruckTableShop pstruckTableShop)
         {
-            _struckTableShop = pstruckTableShop;
+            _struckTableShop = StruckTableShopItem.FromLegacyShopRow(pstruckTableShop);
             _shopDisplayItem = null;
         }
 

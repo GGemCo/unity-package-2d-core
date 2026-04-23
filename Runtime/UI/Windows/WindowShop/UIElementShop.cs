@@ -169,10 +169,33 @@ namespace GGemCo2DCore
                     SceneGame.Instance.systemMessageManager.ShowWarningCurrency(_shopDisplayItem.CurrencyType);
                     return;
                 }
+
+                if (_shopDisplayItem.MaxBuyCount > 0 && count > _shopDisplayItem.MaxBuyCount)
+                {
+                    count = _shopDisplayItem.MaxBuyCount;
+                }
+
                 var info = _tableItem.GetDataByUid(_shopDisplayItem.ItemUid);
                 if (info != null && count > info.MaxOverlayCount)
                 {
                     count = info.MaxOverlayCount;
+                }
+
+                var shopPurchaseData = SceneGame.Instance?.saveDataManager?.ShopPurchase;
+                if (shopPurchaseData != null)
+                {
+                    int remainingCount = shopPurchaseData.GetRemainingCount(_shopDisplayItem);
+                    if (remainingCount <= 0)
+                    {
+                        SceneGame.Instance.systemMessageManager.ShowMessageWarning("Shop_SoldOut");
+                        RefreshAvailability();
+                        return;
+                    }
+
+                    if (count > remainingCount)
+                    {
+                        count = remainingCount;
+                    }
                 }
                 
                 _uIWindowItemBuy?.SetPriceInfo(_shopDisplayItem);
@@ -182,8 +205,12 @@ namespace GGemCo2DCore
             // 골드가 충분하지 체크
             else
             {
-                SceneGame.Instance.BuyItem(_shopDisplayItem.ItemUid, _shopDisplayItem.CurrencyType,
+                var result = SceneGame.Instance.BuyItem(_shopDisplayItem.ItemUid, _shopDisplayItem.CurrencyType,
                     _shopDisplayItem.CurrencyValue);
+                if (result is { Result: ResultCommon.ResultType.Success })
+                {
+                    SceneGame.Instance.saveDataManager?.ShopPurchase?.AddBoughtCount(_shopDisplayItem, 1);
+                }
             }
         }
         

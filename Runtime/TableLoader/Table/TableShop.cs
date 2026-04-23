@@ -9,6 +9,10 @@ namespace GGemCo2DCore
     {
         public int Uid;
         public string Memo;
+        public string Name;
+
+        // Legacy item columns kept for projects that still read sale rows from shop.txt.
+        public bool IsLegacyItemRow;
         public int SlotIndex;
         public int ItemUid;
         public CurrencyConstants.Type CurrencyType;
@@ -34,16 +38,14 @@ namespace GGemCo2DCore
         {
             int uid = data.Uid;
 
+            if (!data.IsLegacyItemRow) return;
+
             if (!_shopItems.ContainsKey(uid))
             {
                 _shopItems.TryAdd(uid, new List<StruckTableShop>());
             }
 
-            if (data.SlotIndex < 0)
-            {
-                data.SlotIndex = _shopItems[uid].Count;
-            }
-
+            if (data.SlotIndex < 0) data.SlotIndex = _shopItems[uid].Count;
             _shopItems[uid].Add(data);
         }
         protected override StruckTableShop BuildRow(Dictionary<string, string> data)
@@ -52,9 +54,13 @@ namespace GGemCo2DCore
             {
                 Uid = MathHelper.ParseInt(data.GetValueOrDefault("Uid")),
                 Memo = data.GetValueOrDefault("Memo"),
+                Name = data.GetValueOrDefault("Name"),
+                IsLegacyItemRow = data.ContainsKey("ItemUid") || data.ContainsKey("SlotIndex"),
                 SlotIndex = MathHelper.ParseInt(data.GetValueOrDefault("SlotIndex"), -1),
                 ItemUid = MathHelper.ParseInt(data.GetValueOrDefault("ItemUid")),
-                CurrencyType = ConvertCurrencyType(data.GetValueOrDefault("CurrencyType")),
+                CurrencyType = data.ContainsKey("CurrencyType")
+                    ? ConvertCurrencyType(data.GetValueOrDefault("CurrencyType"))
+                    : CurrencyConstants.Type.None,
                 CurrencyValue = MathHelper.ParseInt(data.GetValueOrDefault("CurrencyValue")),
                 MaxBuyCount = MathHelper.ParseInt(data.GetValueOrDefault("MaxBuyCount")),
                 Rate = MathHelper.ParseInt(data.GetValueOrDefault("Rate"), 100),

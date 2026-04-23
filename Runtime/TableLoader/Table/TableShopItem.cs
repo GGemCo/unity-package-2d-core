@@ -1,0 +1,124 @@
+using System.Collections.Generic;
+
+namespace GGemCo2DCore
+{
+    public enum ShopSoldOutDisplayType
+    {
+        Disable = 0,
+        Hide = 1,
+    }
+
+    /// <summary>
+    /// Sale item row displayed by a shop.
+    /// </summary>
+    public sealed class StruckTableShopItem
+    {
+        public int Uid;
+        public int ShopUid;
+        public string Memo;
+        public int SlotIndex;
+        public int ItemUid;
+        public CurrencyConstants.Type CurrencyType;
+        public int CurrencyValue;
+        public int MaxBuyCount;
+        public int Rate;
+        public int UniqueGroup;
+        public int PurchaseLimitCount;
+        public ShopSoldOutDisplayType SoldOutDisplayType;
+
+        public static StruckTableShopItem FromLegacyShopRow(StruckTableShop row)
+        {
+            if (row == null) return null;
+
+            return new StruckTableShopItem
+            {
+                Uid = StableLegacyUid(row),
+                ShopUid = row.Uid,
+                Memo = row.Memo,
+                SlotIndex = row.SlotIndex,
+                ItemUid = row.ItemUid,
+                CurrencyType = row.CurrencyType,
+                CurrencyValue = row.CurrencyValue,
+                MaxBuyCount = row.MaxBuyCount,
+                Rate = row.Rate,
+                UniqueGroup = row.UniqueGroup,
+                PurchaseLimitCount = 0,
+                SoldOutDisplayType = ShopSoldOutDisplayType.Disable,
+            };
+        }
+
+        private static int StableLegacyUid(StruckTableShop row)
+        {
+            unchecked
+            {
+                int hash = 17;
+                hash = hash * 31 + row.Uid;
+                hash = hash * 31 + row.SlotIndex;
+                hash = hash * 31 + row.ItemUid;
+                hash = hash * 31 + (int)row.CurrencyType;
+                hash = hash * 31 + row.CurrencyValue;
+                return hash < 0 ? -hash : hash;
+            }
+        }
+    }
+
+    /// <summary>
+    /// shop_item table.
+    /// </summary>
+    public sealed class TableShopItem : DefaultTable<StruckTableShopItem>
+    {
+        public override string Key => ConfigAddressableTable.ShopItem;
+
+        private readonly Dictionary<int, List<StruckTableShopItem>> _itemsByShopUid = new Dictionary<int, List<StruckTableShopItem>>();
+
+        protected override void PreLoad()
+        {
+            base.PreLoad();
+            _itemsByShopUid.Clear();
+        }
+
+        protected override void OnLoadedData(StruckTableShopItem data)
+        {
+            if (data == null || data.ShopUid <= 0) return;
+
+            if (!_itemsByShopUid.TryGetValue(data.ShopUid, out var items))
+            {
+                items = new List<StruckTableShopItem>();
+                _itemsByShopUid.Add(data.ShopUid, items);
+            }
+
+            if (data.SlotIndex < 0) data.SlotIndex = items.Count;
+            items.Add(data);
+        }
+
+        protected override StruckTableShopItem BuildRow(Dictionary<string, string> data)
+        {
+            return new StruckTableShopItem
+            {
+                Uid = MathHelper.ParseInt(data.GetValueOrDefault("Uid")),
+                ShopUid = MathHelper.ParseInt(data.GetValueOrDefault("ShopUid")),
+                Memo = data.GetValueOrDefault("Memo"),
+                SlotIndex = MathHelper.ParseInt(data.GetValueOrDefault("SlotIndex"), -1),
+                ItemUid = MathHelper.ParseInt(data.GetValueOrDefault("ItemUid")),
+                CurrencyType = ConvertCurrencyType(data.GetValueOrDefault("CurrencyType")),
+                CurrencyValue = MathHelper.ParseInt(data.GetValueOrDefault("CurrencyValue")),
+                MaxBuyCount = MathHelper.ParseInt(data.GetValueOrDefault("MaxBuyCount"), 1),
+                Rate = MathHelper.ParseInt(data.GetValueOrDefault("Rate"), 100),
+                UniqueGroup = MathHelper.ParseInt(data.GetValueOrDefault("UniqueGroup")),
+                PurchaseLimitCount = MathHelper.ParseInt(data.GetValueOrDefault("PurchaseLimitCount")),
+                SoldOutDisplayType = EnumHelper.ConvertEnum<ShopSoldOutDisplayType>(data.GetValueOrDefault("SoldOutDisplayType")),
+            };
+        }
+
+        public List<StruckTableShopItem> GetItemsByShopUid(int shopUid)
+        {
+            if (shopUid <= 0)
+            {
+                GcLogger.LogError("shopUid is 0.");
+                return null;
+            }
+
+            return _itemsByShopUid.GetValueOrDefault(shopUid);
+        }
+    }
+}
