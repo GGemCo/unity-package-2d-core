@@ -101,6 +101,7 @@ namespace GGemCo2DCoreEditor
             });
 
             VisualElement header = CreateRow(true);
+            header.Add(CreateCell("ShopItemUid", 90, true));
             header.Add(CreateCell("ShopUid", 70, true));
             header.Add(CreateCell("SlotIndex", 70, true));
             header.Add(CreateCell("ItemUid", 100, true));
@@ -113,6 +114,7 @@ namespace GGemCo2DCoreEditor
             foreach (ShopProbabilityResult result in _results)
             {
                 VisualElement row = CreateRow(false);
+                row.Add(CreateCell(result.ShopItemUid.ToString(CultureInfo.InvariantCulture), 90));
                 row.Add(CreateCell(result.ShopUid.ToString(CultureInfo.InvariantCulture), 70));
                 row.Add(CreateCell(result.SlotIndex.ToString(CultureInfo.InvariantCulture), 70));
                 row.Add(CreateCell(result.ItemUid <= 0 ? "Empty" : result.ItemUid.ToString(CultureInfo.InvariantCulture), 100));

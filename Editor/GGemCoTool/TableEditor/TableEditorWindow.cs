@@ -672,7 +672,7 @@ namespace GGemCo2DCoreEditor
         private bool IsShopTableSelected()
         {
             return _selectedTable != null
-                   && string.Equals(_selectedTable.TableKey, ConfigAddressableTable.Shop, StringComparison.OrdinalIgnoreCase);
+                   && string.Equals(_selectedTable.TableKey, ConfigAddressableTable.ShopItem, StringComparison.OrdinalIgnoreCase);
         }
 
         private void OpenShopProbabilityWindow()

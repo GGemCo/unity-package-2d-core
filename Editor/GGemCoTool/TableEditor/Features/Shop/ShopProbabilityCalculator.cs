@@ -7,6 +7,7 @@ namespace GGemCo2DCoreEditor
 {
     internal sealed class ShopProbabilityResult
     {
+        public int ShopItemUid;
         public int ShopUid;
         public int SlotIndex;
         public int ItemUid;
@@ -20,6 +21,7 @@ namespace GGemCo2DCoreEditor
     {
         private sealed class Candidate
         {
+            public int ShopItemUid;
             public int ShopUid;
             public int SlotIndex;
             public int ItemUid;
@@ -30,12 +32,14 @@ namespace GGemCo2DCoreEditor
 
         private readonly struct ResultKey : IEquatable<ResultKey>
         {
+            public readonly int ShopItemUid;
             public readonly int ShopUid;
             public readonly int SlotIndex;
             public readonly int ItemUid;
 
-            public ResultKey(int shopUid, int slotIndex, int itemUid)
+            public ResultKey(int shopItemUid, int shopUid, int slotIndex, int itemUid)
             {
+                ShopItemUid = shopItemUid;
                 ShopUid = shopUid;
                 SlotIndex = slotIndex;
                 ItemUid = itemUid;
@@ -43,7 +47,10 @@ namespace GGemCo2DCoreEditor
 
             public bool Equals(ResultKey other)
             {
-                return ShopUid == other.ShopUid && SlotIndex == other.SlotIndex && ItemUid == other.ItemUid;
+                return ShopItemUid == other.ShopItemUid
+                       && ShopUid == other.ShopUid
+                       && SlotIndex == other.SlotIndex
+                       && ItemUid == other.ItemUid;
             }
 
             public override bool Equals(object obj)
@@ -55,7 +62,8 @@ namespace GGemCo2DCoreEditor
             {
                 unchecked
                 {
-                    int hash = ShopUid;
+                    int hash = ShopItemUid;
+                    hash = (hash * 397) ^ ShopUid;
                     hash = (hash * 397) ^ SlotIndex;
                     hash = (hash * 397) ^ ItemUid;
                     return hash;
@@ -86,7 +94,7 @@ namespace GGemCo2DCoreEditor
                         Candidate picked = pickedPair.Value;
                         if (picked == null) continue;
 
-                        var key = new ResultKey(picked.ShopUid, picked.SlotIndex, picked.ItemUid);
+                        var key = new ResultKey(picked.ShopItemUid, picked.ShopUid, picked.SlotIndex, picked.ItemUid);
                         counts.TryGetValue(key, out int count);
                         counts[key] = count + 1;
                     }
@@ -96,7 +104,7 @@ namespace GGemCo2DCoreEditor
             for (int i = 0; i < results.Count; i++)
             {
                 ShopProbabilityResult result = results[i];
-                var key = new ResultKey(result.ShopUid, result.SlotIndex, result.ItemUid);
+                var key = new ResultKey(result.ShopItemUid, result.ShopUid, result.SlotIndex, result.ItemUid);
                 counts.TryGetValue(key, out int count);
                 result.EstimatedProbability = count / (double)iterations;
             }
@@ -104,6 +112,7 @@ namespace GGemCo2DCoreEditor
             return results
                 .OrderBy(static r => r.ShopUid)
                 .ThenBy(static r => r.SlotIndex)
+                .ThenBy(static r => r.ShopItemUid)
                 .ThenBy(static r => r.ItemUid)
                 .ToList();
         }
@@ -112,7 +121,7 @@ namespace GGemCo2DCoreEditor
         {
             var lines = new List<string>
             {
-                "ShopUid\tSlotIndex\tItemUid\tLabel\tRate\tUniqueGroup\tBaseProbability\tEstimatedProbability"
+                "ShopItemUid\tShopUid\tSlotIndex\tItemUid\tLabel\tRate\tUniqueGroup\tBaseProbability\tEstimatedProbability"
             };
 
             if (results != null)
@@ -120,6 +129,7 @@ namespace GGemCo2DCoreEditor
                 foreach (ShopProbabilityResult result in results)
                 {
                     lines.Add(string.Join("\t",
+                        result.ShopItemUid.ToString(CultureInfo.InvariantCulture),
                         result.ShopUid.ToString(CultureInfo.InvariantCulture),
                         result.SlotIndex.ToString(CultureInfo.InvariantCulture),
                         result.ItemUid.ToString(CultureInfo.InvariantCulture),
@@ -145,11 +155,14 @@ namespace GGemCo2DCoreEditor
             if (document == null) return candidates;
 
             int order = 0;
+            bool hasShopUid = document.Headers.Contains("ShopUid");
             foreach (TableEditorDocumentRow row in document.GetRows())
             {
+                int uid = ParseInt(row, "Uid");
                 var candidate = new Candidate
                 {
-                    ShopUid = ParseInt(row, "Uid"),
+                    ShopItemUid = hasShopUid ? uid : order + 1,
+                    ShopUid = hasShopUid ? ParseInt(row, "ShopUid") : uid,
                     SlotIndex = ParseInt(row, "SlotIndex", -1),
                     ItemUid = ParseInt(row, "ItemUid"),
                     Rate = ParseInt(row, "Rate", 100),
@@ -157,7 +170,7 @@ namespace GGemCo2DCoreEditor
                     Order = order++,
                 };
 
-                if (candidate.ShopUid <= 0 || candidate.SlotIndex < 0)
+                if (candidate.ShopUid <= 0 || candidate.SlotIndex < 0 || (hasShopUid && candidate.ShopItemUid <= 0))
                     continue;
 
                 candidates.Add(candidate);
@@ -180,11 +193,12 @@ namespace GGemCo2DCoreEditor
 
                     foreach (Candidate candidate in slotCandidates)
                     {
-                        var key = new ResultKey(candidate.ShopUid, candidate.SlotIndex, candidate.ItemUid);
+                        var key = new ResultKey(candidate.ShopItemUid, candidate.ShopUid, candidate.SlotIndex, candidate.ItemUid);
                         if (!resultByKey.TryGetValue(key, out ShopProbabilityResult result))
                         {
                             result = new ShopProbabilityResult
                             {
+                                ShopItemUid = candidate.ShopItemUid,
                                 ShopUid = candidate.ShopUid,
                                 SlotIndex = candidate.SlotIndex,
                                 ItemUid = candidate.ItemUid,
@@ -200,7 +214,7 @@ namespace GGemCo2DCoreEditor
 
                     foreach (Candidate candidate in slotCandidates)
                     {
-                        var key = new ResultKey(candidate.ShopUid, candidate.SlotIndex, candidate.ItemUid);
+                        var key = new ResultKey(candidate.ShopItemUid, candidate.ShopUid, candidate.SlotIndex, candidate.ItemUid);
                         ShopProbabilityResult result = resultByKey[key];
                         if (totalRate > 0)
                         {
