@@ -14,6 +14,7 @@ namespace GGemCo2DCoreEditor
         private TableEditorDocument _document;
         private IntegerField _iterationsField;
         private Button _shopUidButton;
+        private Label _progressLabel;
         private ScrollView _resultScroll;
         private readonly List<SearchableDropdownUtility.Option<int>> _shopUidOptions = new List<SearchableDropdownUtility.Option<int>>();
         private List<ShopProbabilityResult> _results = new List<ShopProbabilityResult>();
@@ -80,6 +81,18 @@ namespace GGemCo2DCoreEditor
             toolbar.Add(new Button(CopyTsv) { text = "Copy TSV" });
             rootVisualElement.Add(toolbar);
 
+            _progressLabel = new Label
+            {
+                style =
+                {
+                    marginTop = 6f,
+                    marginBottom = 2f,
+                    unityFontStyleAndWeight = FontStyle.Bold,
+                }
+            };
+            rootVisualElement.Add(_progressLabel);
+            SetProgressLabel(0f, false);
+
             _resultScroll = new ScrollView
             {
                 style =
@@ -111,7 +124,24 @@ namespace GGemCo2DCoreEditor
                 return;
             }
 
-            _results = ShopProbabilityCalculator.Calculate(_document, iterations, shopUid, 1001);
+            SetProgressLabel(0f, true);
+            try
+            {
+                _results = ShopProbabilityCalculator.Calculate(_document, iterations, shopUid, 1001, progress =>
+                {
+                    SetProgressLabel(progress, true);
+                    EditorUtility.DisplayProgressBar(
+                        "확률 계산중",
+                        $"ShopUid {shopUid.ToString(CultureInfo.InvariantCulture)} 계산중... {FormatProgress(progress)}",
+                        progress);
+                });
+            }
+            finally
+            {
+                EditorUtility.ClearProgressBar();
+            }
+
+            SetProgressLabel(1f, false);
             BuildResultTable(iterations, shopUid);
         }
 
@@ -238,6 +268,22 @@ namespace GGemCo2DCoreEditor
             }
 
             return -1;
+        }
+
+        private void SetProgressLabel(float progress, bool isCalculating)
+        {
+            if (_progressLabel == null)
+                return;
+
+            _progressLabel.text = isCalculating
+                ? $"Calculating... {FormatProgress(progress)}"
+                : $"Progress: {FormatProgress(progress)}";
+            Repaint();
+        }
+
+        private static string FormatProgress(float progress)
+        {
+            return (Mathf.Clamp01(progress) * 100f).ToString("0.##", CultureInfo.InvariantCulture) + "%";
         }
 
         private static VisualElement CreateRow(bool isHeader)

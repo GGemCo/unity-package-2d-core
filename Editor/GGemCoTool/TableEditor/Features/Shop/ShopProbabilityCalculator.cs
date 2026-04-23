@@ -73,10 +73,15 @@ namespace GGemCo2DCoreEditor
 
         public static List<ShopProbabilityResult> Calculate(TableEditorDocument document, int iterations, int seed = 1001)
         {
-            return Calculate(document, iterations, 0, seed);
+            return Calculate(document, iterations, 0, seed, null);
         }
 
         public static List<ShopProbabilityResult> Calculate(TableEditorDocument document, int iterations, int shopUid, int seed)
+        {
+            return Calculate(document, iterations, shopUid, seed, null);
+        }
+
+        public static List<ShopProbabilityResult> Calculate(TableEditorDocument document, int iterations, int shopUid, int seed, Action<float> onProgress)
         {
             iterations = Math.Max(1, iterations);
 
@@ -91,6 +96,11 @@ namespace GGemCo2DCoreEditor
             var results = BuildBaseResults(candidatesByShop);
             var counts = new Dictionary<ResultKey, int>();
             var rng = new Random(seed);
+            int totalRolls = Math.Max(1, candidatesByShop.Count * iterations);
+            int completedRolls = 0;
+            int progressReportInterval = Math.Max(1, totalRolls / 100);
+
+            onProgress?.Invoke(0f);
 
             foreach (var shopPair in candidatesByShop)
             {
@@ -106,8 +116,14 @@ namespace GGemCo2DCoreEditor
                         counts.TryGetValue(key, out int count);
                         counts[key] = count + 1;
                     }
+
+                    completedRolls++;
+                    if (completedRolls % progressReportInterval == 0 || completedRolls >= totalRolls)
+                        onProgress?.Invoke(Math.Min(1f, completedRolls / (float)totalRolls));
                 }
             }
+
+            onProgress?.Invoke(1f);
 
             for (int i = 0; i < results.Count; i++)
             {
