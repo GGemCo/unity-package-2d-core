@@ -332,6 +332,26 @@ namespace GGemCo2DCore
             _shopResolver?.ClearRoll(shopUid);
         }
 
+        public bool RestockShopItem(ShopDisplayItem item)
+        {
+            return SceneGame.saveDataManager?.ShopPurchase?.ClearBoughtCount(item) == true;
+        }
+
+        public bool RestockShopItem(int shopItemUid)
+        {
+            return SceneGame.saveDataManager?.ShopPurchase?.ClearBoughtCount(shopItemUid) == true;
+        }
+
+        public bool RestockShop(int shopUid)
+        {
+            return SceneGame.saveDataManager?.ShopPurchase?.ClearBoughtCountsByShopUid(shopUid) == true;
+        }
+
+        public bool RestockCurrentShop()
+        {
+            return RestockShop(_currentShopUid);
+        }
+
         private void OnShopAvailabilityChanged()
         {
             RefreshCurrentShop();
@@ -415,11 +435,16 @@ namespace GGemCo2DCore
             element.SetSelected(true);
         }
 
-        public void SetRestoreItem(int restoreShopItemSlotIndex)
+        /// <summary>
+        /// shop_item 테이블의 Uid 찾기
+        /// </summary>
+        /// <param name="slotIndex"></param>
+        /// <returns></returns>
+        public int GetShopItemUid(int slotIndex)
         {
-            var element = _uiElementShops.GetValueOrDefault(restoreShopItemSlotIndex);
-            if (GcLogger.IsNull(element, $"{nameof(UIElementShop)} 이 없습니다. index: {restoreShopItemSlotIndex}")) return;
-            element.SetRestoreItem();
+            var element = _uiElementShops.GetValueOrDefault(slotIndex);
+            if (element == null) return 0;
+            return element.GetDisplayItem()?.Uid ?? 0;
         }
     }
 }

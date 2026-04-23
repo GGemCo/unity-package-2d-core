@@ -9,9 +9,11 @@ namespace GGemCo2DCore
     public sealed class ShopPurchaseData : DefaultData, ISaveData
     {
         public Dictionary<int, int> BoughtCountsByShopItemUid = new Dictionary<int, int>();
+        private TableShopItem _tableShopItem;
 
         public void Initialize(TableLoaderManager loader, SaveDataContainer saveDataContainer = null)
         {
+            _tableShopItem = loader?.TableShopItem;
             BoughtCountsByShopItemUid =
                 saveDataContainer?.ShopPurchaseData?.BoughtCountsByShopItemUid != null
                     ? new Dictionary<int, int>(saveDataContainer.ShopPurchaseData.BoughtCountsByShopItemUid)
@@ -48,6 +50,60 @@ namespace GGemCo2DCore
 
             int nextCount = GetBoughtCount(item.Uid) + count;
             BoughtCountsByShopItemUid[item.Uid] = nextCount;
+            SaveDatas();
+            ShopAvailabilityService.Instance.NotifyChanged();
+        }
+
+        public bool ClearBoughtCount(ShopDisplayItem item)
+        {
+            if (item == null) return false;
+            return ClearBoughtCount(item.Uid);
+        }
+
+        public bool ClearBoughtCount(int shopItemUid)
+        {
+            if (!RemoveBoughtCount(shopItemUid)) return false;
+
+            SaveAndNotifyChanged();
+            return true;
+        }
+
+        public bool ClearBoughtCountsByShopUid(int shopUid)
+        {
+            if (shopUid <= 0 || _tableShopItem == null) return false;
+
+            var items = _tableShopItem.GetItemsByShopUid(shopUid);
+            if (items == null || items.Count <= 0) return false;
+
+            bool changed = false;
+            foreach (var item in items)
+            {
+                if (item == null) continue;
+                changed |= RemoveBoughtCount(item.Uid);
+            }
+
+            if (!changed) return false;
+
+            SaveAndNotifyChanged();
+            return true;
+        }
+
+        public bool ClearAllBoughtCounts()
+        {
+            if (BoughtCountsByShopItemUid.Count <= 0) return false;
+
+            BoughtCountsByShopItemUid.Clear();
+            SaveAndNotifyChanged();
+            return true;
+        }
+
+        private bool RemoveBoughtCount(int shopItemUid)
+        {
+            return shopItemUid > 0 && BoughtCountsByShopItemUid.Remove(shopItemUid);
+        }
+
+        private void SaveAndNotifyChanged()
+        {
             SaveDatas();
             ShopAvailabilityService.Instance.NotifyChanged();
         }
