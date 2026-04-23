@@ -86,6 +86,7 @@ namespace GGemCo2DCore
         {
             disabledReason = null;
             if (item == null) return false;
+            if (item.IsEmpty) return false;
 
             if (TryGetRule(_productRules, (item.ShopUid, item.SlotIndex, item.ItemUid), out var rule) ||
                 TryGetRule(_shopItemRules, (item.ShopUid, item.ItemUid), out rule) ||

@@ -126,6 +126,7 @@ namespace GGemCo2DCore
             foreach (var info in datas)
             {
                 if (info == null) continue;
+                if (info.IsEmpty) continue;
                 int index = info.SlotIndex;
                 if (index < 0 || index >= maxCountIcon) continue;
 

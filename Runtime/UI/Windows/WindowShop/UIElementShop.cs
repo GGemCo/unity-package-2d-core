@@ -99,7 +99,7 @@ namespace GGemCo2DCore
         public void UpdateInfos(ShopDisplayItem shopDisplayItem)
         {
             _shopDisplayItem = shopDisplayItem;
-            if (_shopDisplayItem == null || _shopDisplayItem.Source == null)
+            if (_shopDisplayItem == null || _shopDisplayItem.Source == null || _shopDisplayItem.IsEmpty)
             {
                 GcLogger.LogError($"shop 테이블에 정보가 없습니다. struckTableItem is null");
                 return;

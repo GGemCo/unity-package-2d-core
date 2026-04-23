@@ -101,6 +101,12 @@ namespace GGemCo2DCore
             foreach (var candidate in candidates)
             {
                 if (candidate == null) continue;
+                if (candidate.ItemUid <= 0)
+                {
+                    filteredCandidates.Add(candidate);
+                    continue;
+                }
+
                 if (candidate.UniqueGroup <= 0)
                 {
                     filteredCandidates.Add(candidate);
@@ -121,7 +127,7 @@ namespace GGemCo2DCore
             StruckTableShop picked,
             Dictionary<int, HashSet<int>> pickedItemUidsByUniqueGroup)
         {
-            if (picked == null || picked.UniqueGroup <= 0) return;
+            if (picked == null || picked.ItemUid <= 0 || picked.UniqueGroup <= 0) return;
             if (!pickedItemUidsByUniqueGroup.TryGetValue(picked.UniqueGroup, out var pickedItemUids))
             {
                 pickedItemUids = new HashSet<int>();
@@ -166,6 +172,12 @@ namespace GGemCo2DCore
         private void ApplyAvailability(ShopDisplayItem item)
         {
             if (item == null) return;
+            if (item.IsEmpty)
+            {
+                item.SetAvailability(false);
+                return;
+            }
+
             if (_availabilityService == null)
             {
                 item.SetAvailability(true);

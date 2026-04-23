@@ -9,6 +9,7 @@ namespace GGemCo2DCore
         public int ShopUid => Source?.Uid ?? 0;
         public int SlotIndex => Source?.SlotIndex ?? 0;
         public int ItemUid => Source?.ItemUid ?? 0;
+        public bool IsEmpty => ItemUid <= 0;
         public CurrencyConstants.Type CurrencyType => Source?.CurrencyType ?? CurrencyConstants.Type.None;
         public int CurrencyValue => Source?.CurrencyValue ?? 0;
         public int MaxBuyCount => Source?.MaxBuyCount ?? 0;
