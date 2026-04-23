@@ -12,26 +12,35 @@ namespace GGemCo2DCore
     public class UIWindowPlayerInfo : UIWindow, IStatPointDraftChangeHandler
     {
         [Header(UIWindowConstants.TitleHeaderIndividual)]
-        [Header("StatPoint")]
+        [Header("프리팹")]
         [Tooltip("스탯 라인 프리팹(UIElementStat) - 비활성 템플릿으로 두고 런타임에 복제합니다.")]
         [SerializeField] private GameObject prefabElementStat;
 
         [Tooltip("UIElementStat 오브젝트를 넣을 오브젝트")]
         [SerializeField] private GameObject containerElement;
 
+        [Header("텍스트 오브젝트")]
         [Tooltip("미사용 스탯 포인트")]
         [SerializeField] private TextMeshProUGUI textUnspent;
         [Tooltip("현재 레벨 및 투자 시 추가 레벨 정보를 보여주는 텍스트")]
         [SerializeField] private TextMeshProUGUI textLevel;
         [Tooltip("스탯 포인트 구매 비용과 현재 재화를 보여주는 텍스트")]
         [SerializeField] private TextMeshProUGUI textGold;
+        
+        [Header("스타일 키")]
         [Tooltip("재화가 부족하지 않을 때 적용할 스타일 키")]
         [SerializeField] private string styleKeyPriceNormal;
         [Tooltip("재화가 부족할 때 적용할 스타일 키")]
         [SerializeField] private string styleKeyPriceLack;
-        [Tooltip("스탯 증가, 감소 버튼 클릭당 적용할 포인트 수")]
-        [Min(1)]
-        [SerializeField] private int buyStatPointAmountPerClick = 1;
+
+        [Header("레벨 스타일")]
+        [Tooltip("레벨 텍스트 표시 규칙. 비어 있으면 prefixTextLevel 기반 기본 포맷을 사용합니다.")]
+        [SerializeField] private UIElementStatFormatterAsset levelFormatterAsset;
+        [Tooltip("레벨 숫자 앞에 보여줄 문구")]
+        [SerializeField] private string prefixTextLevel = "LV.";
+
+        // 스탯 증가, 감소 버튼 클릭당 적용할 포인트 수. 1로 고정
+        private const int BuyStatPointAmountPerClick = 1;
 
         [Header("Apply / Reset")]
         [Tooltip("드래프트(미적용) 스탯 포인트를 실제 데이터에 반영")]
@@ -330,7 +339,6 @@ namespace GGemCo2DCore
                 return;
             }
 
-            const string prefix = "Lv";
             int currentLevel = _boundPlayer.CurrentLevel;
             int additionalLevels = 0;
             if (_editSession != null && _editSession.IsDirty && _boundPlayer.DoesStatPointInvestIncreaseLevel())
@@ -341,9 +349,26 @@ namespace GGemCo2DCore
                 additionalLevels = Mathf.Max(0, draftInvested - currentInvested);
             }
 
+            int previewLevel = currentLevel + additionalLevels;
+            if (levelFormatterAsset != null)
+            {
+                var renderData = new UIElementStatRenderData(
+                    prefixTextLevel,
+                    currentLevel,
+                    additionalLevels > 0,
+                    previewLevel,
+                    false,
+                    0,
+                    0,
+                    false,
+                    false);
+                textLevel.text = levelFormatterAsset.FormatValue(renderData);
+                return;
+            }
+
             textLevel.text = additionalLevels > 0
-                ? $"{prefix} {currentLevel} ▶ <style={styleKeyPriceNormal}>{currentLevel+additionalLevels}</style>"
-                : $"{prefix} {currentLevel}";
+                ? $"{prefixTextLevel} {currentLevel} ▶ <style={styleKeyPriceNormal}>{previewLevel}</style>"
+                : $"{prefixTextLevel} {currentLevel}";
         }
 
         private void UpdatePurchaseUi()
@@ -383,7 +408,7 @@ namespace GGemCo2DCore
             }
 
             bool canPurchase = _boundPlayer.CanPurchaseStatPoints();
-            int amount = Mathf.Max(1, buyStatPointAmountPerClick);
+            int amount = Mathf.Max(1, BuyStatPointAmountPerClick);
             bool canAfford = canPurchase && _boundPlayer.CanAffordStatPointPurchase(amount);
 
             if (textGold == null)
