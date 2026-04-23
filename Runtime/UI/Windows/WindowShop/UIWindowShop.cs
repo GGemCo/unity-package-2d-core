@@ -1,5 +1,6 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
+using R3;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
@@ -70,6 +71,19 @@ namespace GGemCo2DCore
                 buttonBuy.onClick.RemoveAllListeners();
             if (_shopAvailabilityService != null)
                 _shopAvailabilityService.Changed -= OnShopAvailabilityChanged;
+        }
+
+        protected override void Start()
+        {
+            base.Start();
+
+            var playerData = SceneGame?.saveDataManager?.Player;
+            if (playerData == null) return;
+
+            playerData.OnCurrentGoldChanged()
+                .CombineLatest(playerData.OnCurrentSilverChanged(), (_, _) => Unit.Default)
+                .Subscribe(_ => UpdatePriceText())
+                .AddTo(this);
         }
 
         /// <summary>
@@ -311,18 +325,18 @@ namespace GGemCo2DCore
             if (_selectedElementShop == null) return;
             if (!textPrice) return;
 
-            var playerGold = SceneGame.saveDataManager.Player.CurrentGold;
             var displayItem = _selectedElementShop.GetDisplayItem();
             if (displayItem == null) return;
 
+            var playerCurrency = GetPlayerCurrencyValue(displayItem.CurrencyType);
             var itemPrice = displayItem.CurrencyValue;
-            var key = playerGold < itemPrice ? styleKeyPriceLack : styleKeyPriceNormal;
+            var key = playerCurrency < itemPrice ? styleKeyPriceLack : styleKeyPriceNormal;
 
             if (displayItem.HasDiscount)
             {
                 textPrice.text = string.Format(
                     "( <style={3}>{0}</style> / <style={4}>{1}</style> {2} )",
-                    playerGold,
+                    playerCurrency,
                     displayItem.BaseCurrencyValue,
                     itemPrice,
                     key,
@@ -330,7 +344,20 @@ namespace GGemCo2DCore
                 return;
             }
 
-            textPrice.text = string.Format("( <style={2}>{0}</style> / {1} )", playerGold, itemPrice, key);
+            textPrice.text = string.Format("( <style={2}>{0}</style> / {1} )", playerCurrency, itemPrice, key);
+        }
+
+        private long GetPlayerCurrencyValue(CurrencyConstants.Type currencyType)
+        {
+            var player = SceneGame?.saveDataManager?.Player;
+            if (player == null) return 0;
+
+            return currencyType switch
+            {
+                CurrencyConstants.Type.Gold => player.CurrentGold,
+                CurrencyConstants.Type.Silver => player.CurrentSilver,
+                _ => 0
+            };
         }
 
         private void OnClickBuy()
