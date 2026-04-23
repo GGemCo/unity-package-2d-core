@@ -31,6 +31,7 @@ namespace GGemCo2DCore
 
         
         private ShopResolver _shopResolver;
+        private ShopPromotionService _shopPromotionService;
         private ShopAvailabilityService _shopAvailabilityService;
         private readonly Dictionary<int, UIElementShop> _uiElementShops = new Dictionary<int, UIElementShop>();
         private int _currentShopUid;
@@ -45,6 +46,7 @@ namespace GGemCo2DCore
             if (TableLoaderManager.Instance == null) return;
             _shopAvailabilityService = ShopAvailabilityService.Instance;
             _shopResolver = new ShopResolver(TableLoaderManager.Instance.TableShopItem, _shopAvailabilityService, TableLoaderManager.Instance.TableShop);
+            _shopPromotionService = new ShopPromotionService(TableLoaderManager.Instance.TableShopPromotion);
             base.Awake();
             if (vfxEffectUISelected)
             {
@@ -81,6 +83,11 @@ namespace GGemCo2DCore
         /// </summary>
         public void SetInfoByShopUid(int shopUid, bool forceRefresh, bool reroll)
         {
+            SetInfoByShopUid(shopUid, forceRefresh, reroll, true);
+        }
+
+        private void SetInfoByShopUid(int shopUid, bool forceRefresh, bool reroll, bool countExposure)
+        {
             // 같은 상점을 열었으면 업데이트 하지 않는다
             if (!forceRefresh && !reroll && _currentShopUid > 0 && _currentShopUid == shopUid)
             {
@@ -104,6 +111,7 @@ namespace GGemCo2DCore
                 GcLogger.LogError("shop 테이블에 정보가 없습니다. shop Uid: " + shopUid);
                 return;
             }
+            _shopPromotionService?.ApplyPromotions(datas, countExposure);
             if (datas.Count <= 0) return;
             int maxSlotIndex = 0;
             foreach (var data in datas)
@@ -354,7 +362,8 @@ namespace GGemCo2DCore
 
         private void OnShopAvailabilityChanged()
         {
-            RefreshCurrentShop();
+            if (_currentShopUid <= 0) return;
+            SetInfoByShopUid(_currentShopUid, true, false, false);
         }
 
         private void RefreshVisibleAvailability()

@@ -12,12 +12,14 @@ namespace GGemCo2DCore
         public int ItemUid => Source?.ItemUid ?? 0;
         public bool IsEmpty => ItemUid <= 0;
         public CurrencyConstants.Type CurrencyType => Source?.CurrencyType ?? CurrencyConstants.Type.None;
-        public int CurrencyValue => Source?.CurrencyValue ?? 0;
+        public int BaseCurrencyValue => Source?.CurrencyValue ?? 0;
+        public int CurrencyValue => Promotion?.FinalCurrencyValue ?? BaseCurrencyValue;
         public int MaxBuyCount => Source?.MaxBuyCount ?? 0;
         public int PurchaseLimitCount => Source?.PurchaseLimitCount ?? 0;
         public ShopSoldOutDisplayType SoldOutDisplayType => Source?.SoldOutDisplayType ?? ShopSoldOutDisplayType.Disable;
         public bool IsBuyable { get; private set; } = true;
         public string DisabledReason { get; private set; }
+        public ShopPromotionResult Promotion { get; private set; }
 
         public ShopDisplayItem(StruckTableShopItem source)
         {
@@ -33,6 +35,11 @@ namespace GGemCo2DCore
         {
             IsBuyable = isBuyable;
             DisabledReason = disabledReason;
+        }
+
+        public void SetPromotion(ShopPromotionResult promotion)
+        {
+            Promotion = promotion;
         }
     }
 }

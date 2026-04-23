@@ -19,6 +19,7 @@ namespace GGemCo2DCore
         public StashData StashData;
         public GameTimeData GameTimeData;
         public ShopPurchaseData ShopPurchaseData;
+        public ShopExposureData ShopExposureData;
 
         /// <summary>
         /// 인스턴스 아이템(랜덤 옵션 등) 저장 데이터.
@@ -41,6 +42,7 @@ namespace GGemCo2DCore
         public StashData Stash { get; private set; }
         public ShopSaleData ShopSale { get; private set; }
         public ShopPurchaseData ShopPurchase { get; private set; }
+        public ShopExposureData ShopExposure { get; private set; }
         public GameTimeData GameTime { get; private set; }
 
         /// <summary>
@@ -65,6 +67,7 @@ namespace GGemCo2DCore
             Stash = new StashData();
             ShopSale = new ShopSaleData();
             ShopPurchase = new ShopPurchaseData();
+            ShopExposure = new ShopExposureData();
             GameTime = new GameTimeData();
 
             // 인스턴스 아이템 저장소 초기화(테이블 로드 이후면 언제든 사용 가능)
@@ -80,6 +83,7 @@ namespace GGemCo2DCore
             Stash.Initialize(tableLoaderManager, saveDataContainer);
             ShopSale.Initialize(tableLoaderManager, saveDataContainer);
             ShopPurchase.Initialize(tableLoaderManager, saveDataContainer);
+            ShopExposure.Initialize(tableLoaderManager, saveDataContainer);
             GameTime.Initialize(tableLoaderManager, saveDataContainer);
 
             // 인스턴스 아이템 복원
@@ -124,6 +128,7 @@ namespace GGemCo2DCore
                 StashData = Stash,
                 GameTimeData = GameTime,
                 ShopPurchaseData = ShopPurchase,
+                ShopExposureData = ShopExposure,
                 ItemInstanceStoreData = ItemInstances?.Capture(),
                 // 확장 섹션 함께 저장
                 Extensions = env?.Sections,

@@ -73,7 +73,11 @@ namespace GGemCo2DCore
             }
             textItemCount.text = $"{_buyItemCount} / {_maxItemCount}";
             textTotalPrice.text = "0";
-            if (_struckTableShop != null)
+            if (_shopDisplayItem != null)
+            {
+                textTotalPrice.text = $"{CurrencyConstants.GetNameByCurrencyType(_shopDisplayItem.CurrencyType)} {_shopDisplayItem.CurrencyValue * _buyItemCount}";
+            }
+            else if (_struckTableShop != null)
             {
                 textTotalPrice.text = $"{CurrencyConstants.GetNameByCurrencyType(_struckTableShop.CurrencyType)} {_struckTableShop.CurrencyValue * _buyItemCount}";
             }
@@ -89,11 +93,11 @@ namespace GGemCo2DCore
             {
                 if (!string.IsNullOrEmpty(disabledReason))
                 {
-                    SceneGame.Instance.systemMessageManager.ShowMessageWarning(disabledReason);
+                    SceneGame.systemMessageManager.ShowMessageWarning(disabledReason);
                 }
                 else
                 {
-                    SceneGame.Instance.systemMessageManager.ShowMessageWarning("Shop_CannotBuyItem");
+                    SceneGame.systemMessageManager.ShowMessageWarning("Shop_CannotBuyItem");
                 }
 
                 return;
@@ -101,21 +105,22 @@ namespace GGemCo2DCore
 
             if (_shopDisplayItem != null)
             {
-                var shopPurchaseData = SceneGame.Instance?.saveDataManager?.ShopPurchase;
+                var shopPurchaseData = SceneGame.saveDataManager?.ShopPurchase;
                 if (shopPurchaseData != null && !shopPurchaseData.CanBuy(_shopDisplayItem, _buyItemCount, out disabledReason))
                 {
-                    SceneGame.Instance.systemMessageManager.ShowMessageWarning(
+                    SceneGame.systemMessageManager.ShowMessageWarning(
                         string.IsNullOrEmpty(disabledReason) ? "Shop_CannotBuyItem" : disabledReason);
                     return;
                 }
             }
 
             // 구매 하기
+            int price = _shopDisplayItem?.CurrencyValue ?? _struckTableShop.CurrencyValue;
             var result = SceneGame.Instance.BuyItem(_struckTableShop.ItemUid, _struckTableShop.CurrencyType,
-                _struckTableShop.CurrencyValue, _buyItemCount);
+                price, _buyItemCount);
             if (result is { Result: ResultCommon.ResultType.Success })
             {
-                SceneGame.Instance.saveDataManager?.ShopPurchase?.AddBoughtCount(_shopDisplayItem, _buyItemCount);
+                SceneGame.saveDataManager?.ShopPurchase?.AddBoughtCount(_shopDisplayItem, _buyItemCount);
             }
 
             _struckTableShop = null;

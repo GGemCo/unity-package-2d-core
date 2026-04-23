@@ -40,6 +40,7 @@ namespace GGemCo2DCore
         public const string Interaction      = "interaction";
         public const string Shop             = "shop";
         public const string ShopItem         = "shop_item";
+        public const string ShopPromotion    = "shop_promotion";
         public const string ItemUpgrade      = "item_upgrade";
         public const string ItemSalvage      = "item_salvage";
         public const string ItemCraft        = "item_craft";
@@ -82,6 +83,7 @@ namespace GGemCo2DCore
         public static readonly AddressableAssetInfo TableInteraction     = Make(Interaction);
         public static readonly AddressableAssetInfo TableShop            = Make(Shop);
         public static readonly AddressableAssetInfo TableShopItem        = Make(ShopItem);
+        public static readonly AddressableAssetInfo TableShopPromotion   = Make(ShopPromotion);
         public static readonly AddressableAssetInfo TableItemUpgrade     = Make(ItemUpgrade);
         public static readonly AddressableAssetInfo TableItemSalvage     = Make(ItemSalvage);
         public static readonly AddressableAssetInfo TableItemCraft       = Make(ItemCraft);
@@ -110,7 +112,7 @@ namespace GGemCo2DCore
             TableStat, TableDamageType, TableState,
             // Others
             TableVfxEffect, TableVfxParticle, TableInteraction,
-            TableShop, TableShopItem, TableItemUpgrade, TableItemSalvage, TableItemCraft,
+            TableShop, TableShopItem, TableShopPromotion, TableItemUpgrade, TableItemSalvage, TableItemCraft,
             TableCutscene, TableDialogue, TableQuest, TableProjectile, TableSound, TableSimulationTool,
             TableSimulationGrowth, TableCrowdControl, TableCrowdControlKnockBack, TableCrowdControlKnockDown, TableCrowdControlKnockUp, TableCrowdControlKnockDownAir, TableItemUse, TableItemUseAction
         };
