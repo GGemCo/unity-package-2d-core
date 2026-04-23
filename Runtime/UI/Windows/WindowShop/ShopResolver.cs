@@ -75,13 +75,60 @@ namespace GGemCo2DCore
                 candidates.Add(row);
             }
 
+            var slotIndices = new List<int>(candidatesBySlot.Keys);
+            slotIndices.Sort();
+
+            var pickedItemUidsByUniqueGroup = new Dictionary<int, HashSet<int>>();
             var rolledItems = new Dictionary<int, StruckTableShop>();
-            foreach (var pair in candidatesBySlot)
+            foreach (var slotIndex in slotIndices)
             {
-                rolledItems[pair.Key] = PickWeighted(pair.Value);
+                var candidates = candidatesBySlot[slotIndex];
+                var filteredCandidates = FilterUniqueCandidates(candidates, pickedItemUidsByUniqueGroup);
+                var picked = PickWeighted(filteredCandidates.Count > 0 ? filteredCandidates : candidates);
+
+                rolledItems[slotIndex] = picked;
+                RegisterUniquePick(picked, pickedItemUidsByUniqueGroup);
             }
 
             return rolledItems;
+        }
+
+        private List<StruckTableShop> FilterUniqueCandidates(
+            List<StruckTableShop> candidates,
+            Dictionary<int, HashSet<int>> pickedItemUidsByUniqueGroup)
+        {
+            var filteredCandidates = new List<StruckTableShop>();
+            foreach (var candidate in candidates)
+            {
+                if (candidate == null) continue;
+                if (candidate.UniqueGroup <= 0)
+                {
+                    filteredCandidates.Add(candidate);
+                    continue;
+                }
+
+                if (!pickedItemUidsByUniqueGroup.TryGetValue(candidate.UniqueGroup, out var pickedItemUids) ||
+                    !pickedItemUids.Contains(candidate.ItemUid))
+                {
+                    filteredCandidates.Add(candidate);
+                }
+            }
+
+            return filteredCandidates;
+        }
+
+        private void RegisterUniquePick(
+            StruckTableShop picked,
+            Dictionary<int, HashSet<int>> pickedItemUidsByUniqueGroup)
+        {
+            if (picked == null || picked.UniqueGroup <= 0) return;
+            if (!pickedItemUidsByUniqueGroup.TryGetValue(picked.UniqueGroup, out var pickedItemUids))
+            {
+                pickedItemUids = new HashSet<int>();
+                pickedItemUidsByUniqueGroup.Add(picked.UniqueGroup, pickedItemUids);
+            }
+
+            pickedItemUids.Add(picked.ItemUid);
         }
 
         private StruckTableShop PickWeighted(List<StruckTableShop> candidates)

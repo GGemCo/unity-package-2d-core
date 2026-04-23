@@ -15,6 +15,7 @@ namespace GGemCo2DCore
         public int CurrencyValue;
         public int MaxBuyCount;
         public int Rate;
+        public int UniqueGroup;
     }
     /// <summary>
     /// 상점 판매 테이블
@@ -57,6 +58,7 @@ namespace GGemCo2DCore
                 CurrencyValue = MathHelper.ParseInt(data.GetValueOrDefault("CurrencyValue")),
                 MaxBuyCount = MathHelper.ParseInt(data.GetValueOrDefault("MaxBuyCount")),
                 Rate = MathHelper.ParseInt(data.GetValueOrDefault("Rate"), 100),
+                UniqueGroup = MathHelper.ParseInt(data.GetValueOrDefault("UniqueGroup")),
             };
         }
         public List<StruckTableShop> GetItemByUid(int uid)
