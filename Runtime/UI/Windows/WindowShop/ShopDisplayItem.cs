@@ -14,6 +14,7 @@ namespace GGemCo2DCore
         public CurrencyConstants.Type CurrencyType => Source?.CurrencyType ?? CurrencyConstants.Type.None;
         public int BaseCurrencyValue => Source?.CurrencyValue ?? 0;
         public int CurrencyValue => Promotion?.FinalCurrencyValue ?? BaseCurrencyValue;
+        public bool HasDiscount => Promotion != null && CurrencyValue < BaseCurrencyValue;
         public int MaxBuyCount => Source?.MaxBuyCount ?? 0;
         public int PurchaseLimitCount => Source?.PurchaseLimitCount ?? 0;
         public ShopSoldOutDisplayType SoldOutDisplayType => Source?.SoldOutDisplayType ?? ShopSoldOutDisplayType.Disable;

@@ -23,6 +23,8 @@ namespace GGemCo2DCore
         [SerializeField] private string styleKeyPriceNormal;
         [Tooltip("재화가 부족할 때 적용할 스타일 키")]
         [SerializeField] private string styleKeyPriceLack;
+        [Tooltip("할인 적용 시 기존 판매 금액에 적용할 TMP color 태그 값")]
+        [SerializeField] private string styleKeyPriceDiscount;
 
         [Tooltip("아이템을 선택했을 때 보여줄 이펙트")]
         [SerializeField] private VfxEffectUI vfxEffectUISelected;
@@ -310,9 +312,23 @@ namespace GGemCo2DCore
             if (!textPrice) return;
 
             var playerGold = SceneGame.saveDataManager.Player.CurrentGold;
-            var data = _selectedElementShop.GetPrice();
-            var itemPrice = data.Item2;
+            var displayItem = _selectedElementShop.GetDisplayItem();
+            if (displayItem == null) return;
+
+            var itemPrice = displayItem.CurrencyValue;
             var key = playerGold < itemPrice ? styleKeyPriceLack : styleKeyPriceNormal;
+
+            if (displayItem.HasDiscount)
+            {
+                textPrice.text = string.Format(
+                    "( <style={3}>{0}</style> / <style={4}>{1}</style> {2} )",
+                    playerGold,
+                    displayItem.BaseCurrencyValue,
+                    itemPrice,
+                    key,
+                    styleKeyPriceDiscount);
+                return;
+            }
 
             textPrice.text = string.Format("( <style={2}>{0}</style> / {1} )", playerGold, itemPrice, key);
         }
