@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
+using GGemCo2DCore;
 using UnityEditor.UIElements;
 using UnityEngine;
 using UnityEngine.UIElements;
@@ -47,6 +48,7 @@ namespace GGemCo2DCoreEditor
         private VisualElement _validationHost;
         private Label _pathLabel;
         private Label _statusLabel;
+        private Button _shopProbabilityButton;
         private Toggle _showOnlyValidationToggle;
         private Toggle _showOnlySelectedValidationToggle;
 
@@ -124,6 +126,8 @@ namespace GGemCo2DCoreEditor
             toolbar.Add(CreateToolbarButton("Add Row", AddRow));
             toolbar.Add(CreateToolbarButton("Duplicate", DuplicateRow));
             toolbar.Add(CreateToolbarButton("Delete", DeleteSelectedRow));
+            _shopProbabilityButton = CreateToolbarButton("Shop Rates", OpenShopProbabilityWindow);
+            toolbar.Add(_shopProbabilityButton);
 
             toolbar.Add(new ToolbarSpacer { style = { width = 10f } });
             _pathLabel = new Label { style = { unityTextAlign = TextAnchor.MiddleLeft, flexGrow = 1f } };
@@ -661,6 +665,22 @@ namespace GGemCo2DCoreEditor
                 _pathLabel.text = _selectedTable != null ? _selectedTable.AssetPath : string.Empty;
             if (_statusLabel != null)
                 _statusLabel.text = _document != null && _document.IsDirty ? "Modified" : string.Empty;
+            if (_shopProbabilityButton != null)
+                _shopProbabilityButton.style.display = IsShopTableSelected() ? DisplayStyle.Flex : DisplayStyle.None;
+        }
+
+        private bool IsShopTableSelected()
+        {
+            return _selectedTable != null
+                   && string.Equals(_selectedTable.TableKey, ConfigAddressableTable.Shop, StringComparison.OrdinalIgnoreCase);
+        }
+
+        private void OpenShopProbabilityWindow()
+        {
+            if (!IsShopTableSelected() || _document == null)
+                return;
+
+            ShopProbabilityResultWindow.Open(_document);
         }
 
         private void RefreshVisibleRows()
