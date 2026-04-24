@@ -505,6 +505,7 @@ namespace GGemCo2DCore
 
         public override void OnShow(bool show)
         {
+            base.OnShow(show);
             if (!show) return;
             SelectFirstElement();
         }

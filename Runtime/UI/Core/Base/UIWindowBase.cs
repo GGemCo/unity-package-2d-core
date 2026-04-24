@@ -125,6 +125,9 @@ namespace GGemCo2DCore
 
                 uiWindow.SetVisibleImmediate(show, invokeOnShow, followLinkedWindows: false);
             }
+            
+            if (!show)
+                SceneGame?.uIWindowManager?.ShowSelectIconImage(false);
         }
 
         /// <summary>
@@ -209,6 +212,8 @@ namespace GGemCo2DCore
         /// </summary>
         public virtual void OnShow(bool show)
         {
+            if (!show)
+                SceneGame?.uIWindowManager?.ShowSelectIconImage(false);
         }
 
         public void OnClickClose()

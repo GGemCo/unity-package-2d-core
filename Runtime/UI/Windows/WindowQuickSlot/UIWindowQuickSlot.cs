@@ -68,6 +68,7 @@ namespace GGemCo2DCore
         public override void OnShow(bool show)
         {
             if (SceneGame == null || TableLoaderManager.Instance == null) return;
+            base.OnShow(show);
             if (show)
             {
                 LoadIcons();

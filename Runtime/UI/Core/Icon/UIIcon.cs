@@ -119,8 +119,8 @@ namespace GGemCo2DCore
 
         protected virtual void Start()
         {
-            if (SceneGame.Instance)
-                _uiWindowManager = SceneGame.Instance.uIWindowManager;
+            if (!SceneGame.Instance) return;
+            _uiWindowManager = SceneGame.Instance.uIWindowManager;
             _iconCoolTimeManager = SceneGame.Instance.uIIconCoolTimeManager;   
         }
 
@@ -340,6 +340,7 @@ namespace GGemCo2DCore
         public void SetSelected(bool selected)
         {
             _isSelected = selected;
+            _uiWindowManager ??= SceneGame.Instance?.uIWindowManager;
             if (!_showSelectedImage || !_uiWindowManager) return;
             _uiWindowManager.ShowSelectIconImage(selected, gameObject.transform.position, _slotSize);
         }
@@ -347,6 +348,7 @@ namespace GGemCo2DCore
 
         protected void ShowOverImage(bool show)
         {
+            _uiWindowManager ??= SceneGame.Instance?.uIWindowManager;
             if (!_showOverImage || !_uiWindowManager) return;
             _uiWindowManager.ShowOverIconImage(show, gameObject.transform.position, _slotSize);
         }

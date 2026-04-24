@@ -12,11 +12,14 @@ namespace GGemCo2DCore
     public class UIWindowManager : MonoBehaviour
     {
         [Header("기본속성")] 
-        [Tooltip("아이콘 선택 이미지")]
+        [Tooltip("아이콘 마우스 오버시 보여줄 이미지")]
         public GameObject prefabIconOver;
         private Image _imageIconOver;
-        public GameObject prefabIconSelected;
+        [Tooltip("선택 되었을 때 보여줄 이미지, 이펙트")]
+        [SerializeField] private GameObject prefabIconSelected;
         private Image _imageIconSelected;
+        [Tooltip("보여줄 이미지 사이즈 고정 여부. False 경우, 해당 윈도우의 Slot Size로 적용됨.")]
+        [SerializeField] private bool isSelectedIconSizeFixed;
         
         [Header("개별 UI 윈도우 연결")]
         public List<WindowKey> windowKeys = new List<WindowKey>();
@@ -1060,12 +1063,18 @@ namespace GGemCo2DCore
             _imageIconSelected.gameObject.SetActive(show);
             if (show)
             {
+                VfxEffectUI vfxEffect = _imageIconSelected.GetComponent<VfxEffectUI>();
+                if (vfxEffect != null)
+                {
+                    vfxEffect.PlayEffect(true);
+                }
+                
                 // position이 null이면 기존 위치 유지
                 if (position.HasValue)
                     _imageIconSelected.rectTransform.position = position.Value;
 
                 // size가 null이면 기존 사이즈 유지
-                if (slotSize.HasValue)
+                if (slotSize.HasValue && !isSelectedIconSizeFixed)
                     _imageIconSelected.rectTransform.sizeDelta = slotSize.Value;
             }
         }

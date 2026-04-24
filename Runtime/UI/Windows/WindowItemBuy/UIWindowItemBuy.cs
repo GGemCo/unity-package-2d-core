@@ -152,6 +152,7 @@ namespace GGemCo2DCore
         /// <param name="show"></param>
         public override void OnShow(bool show)
         {
+            base.OnShow(show);
             if (show) return;
             _shopDisplayItem = null;
             UnRegisterAllIcons(uid);

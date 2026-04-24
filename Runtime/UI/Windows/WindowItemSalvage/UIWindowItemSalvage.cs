@@ -89,6 +89,7 @@ namespace GGemCo2DCore
         public override void OnShow(bool show)
         {
             if (SceneGame == null || TableLoaderManager.Instance == null) return;
+            base.OnShow(show);
             if (show) return;
             UnRegisterAllIcons(uid);
             // 분해 결과 아이콘 지워주기

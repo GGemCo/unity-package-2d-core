@@ -262,6 +262,7 @@ namespace GGemCo2DCore
         public override void OnShow(bool show)
         {
             if (SceneGame == null || TableLoaderManager.Instance == null) return;
+            base.OnShow(show);
             if (show) return;
             ShowTextResult(false);
             // 윈도우가 닫힐때
