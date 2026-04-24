@@ -45,6 +45,7 @@ namespace GGemCo2DCore
             public const string CommonGame = "GGemCo_Common_Game";
             public const string System = "GGemCo_System";
             public const string Scene = "GGemCo_Scene";
+            public const string ItemTaxonomy = "GGemCo_Item_Taxonomy";
             
             public const string UIWindowTitle = "GGemCo_UI_Window_Title";
             public const string UIWindowItemInfo = "GGemCo_UIWindowItemInfo";
@@ -73,6 +74,7 @@ namespace GGemCo2DCore
                 CommonGame,
                 System,
                 Scene,
+                ItemTaxonomy,
                 UIWindowTitle,
                 UIWindowItemInfo,
                 UIWindowItemUpgrade,

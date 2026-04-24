@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using TMPro;
@@ -22,9 +22,8 @@ namespace GGemCo2DCore
             /// </summary>
             Fixed
         }
-        private TableItem tableItem;
 
-        [Header(UIWindowConstants.TitleHeaderIndividual)] 
+        [Header(UIWindowConstants.TitleHeaderIndividual)]
         [Header("기본정보")]
         [Tooltip("아이템 아이콘 이미지")]
         [SerializeField] private Image imageIcon;
@@ -44,27 +43,46 @@ namespace GGemCo2DCore
         [SerializeField] private TextMeshProUGUI textBaseOption;
         [Tooltip("랜덤(Random) 옵션 텍스트")]
         [SerializeField] private TextMeshProUGUI textRandomOption;
-        
+
         [Tooltip("아이템 설명")]
         [SerializeField] private TextMeshProUGUI textDescription;
-        
+
         [Tooltip("아이템 판매가")]
         [SerializeField] private TextMeshProUGUI textSalePrice;
-        
+
         private Dictionary<ItemConstants.Category, Action> _categoryUIHandlers;
-        
+
+        private TableItem _tableItem;
         private StruckTableItem _currentStruckTableItem;
         private long _currentInstanceId;
         private LocalizationManager _localizationManager;
-        
+
         protected override void Awake()
         {
             uid = UIWindowConstants.WindowUid.ItemInfo;
             if (TableLoaderManager.Instance == null) return;
-            tableItem = TableLoaderManager.Instance.TableItem;
+            _tableItem = TableLoaderManager.Instance.TableItem;
             base.Awake();
             InitializeCategoryUIHandlers();
         }
+
+        protected override void Start()
+        {
+            base.Start();
+            BindLocalizationManager();
+        }
+
+        protected void OnEnable()
+        {
+            BindLocalizationManager();
+        }
+
+        protected void OnDisable()
+        {
+            if (_localizationManager == null) return;
+            _localizationManager.OnChangeLocale -= HandleLocaleChanged;
+        }
+
         private void InitializeCategoryUIHandlers()
         {
             _categoryUIHandlers = new Dictionary<ItemConstants.Category, Action>
@@ -75,34 +93,20 @@ namespace GGemCo2DCore
             };
         }
 
-        protected override void Start()
-        {
-            base.Start();
-            _localizationManager = LocalizationManager.Instance;
-        }
-
         public void SetItemUid(int itemUid, long instanceId, GameObject icon, PositionType type, Vector2 iconSlotSize,
             Vector2? pivot = null, Vector3? position = null)
         {
             if (icon == null || itemUid <= 0) return;
-            _currentStruckTableItem = tableItem.GetDataByUid(itemUid);
+            _currentStruckTableItem = _tableItem.GetDataByUid(itemUid);
             if (_currentStruckTableItem is not { Uid: > 0 }) return;
 
             _currentInstanceId = instanceId;
-            
+
             SetSpriteIcon();
-            SetName();
-            SetType();
-            SetAntiFlag();
-            SetCategory();
-            SetSeparatedOptionTexts();
-            SetDescriptionText();
-            SetSalePrice();
+            RefreshTexts();
             SetCategoryUI();
             Show(true);
-            // active 된 후 위치 조정한다.
-            
-            // null 체크 후 기본값 대입 (예: pivot이 null이면 Vector2.zero 사용)
+
             Vector2 finalPivot = pivot ?? Vector2.zero;
             Vector3 finalPosition = position ?? Vector3.zero;
             SetPosition(icon, type, iconSlotSize, finalPivot, finalPosition);
@@ -121,14 +125,25 @@ namespace GGemCo2DCore
         {
             if (_currentStruckTableItem == null || !textSalePrice) return;
             if (_currentStruckTableItem.SaleCurrencyValue <= 0) return;
-            textSalePrice.text = string.Format(_localizationManager.GetUIWindowItemInfoByKey("Text_SellPrice"), $"{CurrencyConstants.GetNameByCurrencyType(_currentStruckTableItem.SaleCurrencyType)} {_currentStruckTableItem.SaleCurrencyValue}");
+
+            string salePriceText =
+                $"{CurrencyConstants.GetNameByCurrencyType(_currentStruckTableItem.SaleCurrencyType)} {_currentStruckTableItem.SaleCurrencyValue}";
+
+            if (_localizationManager == null)
+            {
+                textSalePrice.text = salePriceText;
+                return;
+            }
+
+            textSalePrice.text = string.Format(
+                GetFormatOrDefault(_localizationManager.GetUIWindowItemInfoByKey("Text_SellPrice")),
+                salePriceText);
         }
 
         private void SetDescriptionText()
         {
             if (_currentStruckTableItem == null || !textDescription) return;
-            // ItemDescription(=GGemCo_Item_Description)는 "아이템 서술/설명" 전용으로 사용한다.
-            // 옵션 텍스트(Base/Random)는 별도 UI(TextBaseOption/TextRandomOption)에 바인딩한다.
+
             var loc = _localizationManager;
             if (loc == null)
             {
@@ -136,7 +151,6 @@ namespace GGemCo2DCore
                 return;
             }
 
-            // 기존 Smart String 인자 구조와의 호환을 위해 Options는 빈 문자열로 전달한다.
             var args = new ItemDescriptionSmartArgs(_currentStruckTableItem, loc, string.Empty);
             string smart = loc.GetItemDescriptionSmartByKey(_currentStruckTableItem.Uid.ToString(), args);
             if (string.IsNullOrWhiteSpace(smart))
@@ -144,6 +158,7 @@ namespace GGemCo2DCore
                 textDescription.text = _currentStruckTableItem.Description;
                 return;
             }
+
             textDescription.text = smart;
         }
 
@@ -169,21 +184,28 @@ namespace GGemCo2DCore
                 textRandomOption.text = has ? randomText : string.Empty;
             }
         }
+
         /// <summary>
         /// Anti Flag
-        /// TableItem 에서 미리 파싱 처리한다.
         /// </summary>
         private void SetAntiFlag()
         {
             if (_currentStruckTableItem == null || !textAntiFlag) return;
-            if (string.IsNullOrEmpty(_currentStruckTableItem.AntiFlagText))
+
+            string antiFlagText = _localizationManager != null
+                ? _localizationManager.GetItemAntiFlagNames(_currentStruckTableItem.AntiFlag)
+                : _currentStruckTableItem.AntiFlagText;
+
+            if (string.IsNullOrWhiteSpace(antiFlagText))
             {
                 textAntiFlag.gameObject.SetActive(false);
                 return;
             }
 
             textAntiFlag.gameObject.SetActive(true);
-            textAntiFlag.text = string.Format(_localizationManager.GetUIWindowItemInfoByKey("Text_AntiFlag"), _currentStruckTableItem.AntiFlagText);
+            textAntiFlag.text = string.Format(
+                GetFormatOrDefault(_localizationManager?.GetUIWindowItemInfoByKey("Text_AntiFlag")),
+                antiFlagText);
         }
 
         /// <summary>
@@ -192,18 +214,36 @@ namespace GGemCo2DCore
         private void SetName()
         {
             if (_currentStruckTableItem == null || !textName) return;
-            textName.text = string.Format(_localizationManager.GetUIWindowItemInfoByKey("Text_Name"),
-                _localizationManager.GetItemNameByKey(_currentStruckTableItem.Uid.ToString()));
+
+            string itemName = _currentStruckTableItem.Name;
+            if (_localizationManager != null)
+            {
+                string localized = _localizationManager.GetItemNameByKey(_currentStruckTableItem.Uid.ToString());
+                if (!string.IsNullOrWhiteSpace(localized))
+                    itemName = localized;
+            }
+
+            textName.text = string.Format(
+                GetFormatOrDefault(_localizationManager?.GetUIWindowItemInfoByKey("Text_Name")),
+                itemName);
         }
+
         /// <summary>
         /// 타입 설정하기
         /// </summary>
         private void SetType()
         {
             if (_currentStruckTableItem == null || !textType) return;
-            textType.text = string.Format(_localizationManager.GetUIWindowItemInfoByKey("Text_Type"), _currentStruckTableItem.Type);
+
+            string typeName = _localizationManager != null
+                ? _localizationManager.GetItemTypeName(_currentStruckTableItem.Type)
+                : _currentStruckTableItem.Type.ToString();
+
+            textType.text = string.Format(
+                GetFormatOrDefault(_localizationManager?.GetUIWindowItemInfoByKey("Text_Type")),
+                typeName);
         }
-        
+
         private void SetCategoryUI()
         {
             if (_categoryUIHandlers.TryGetValue(_currentStruckTableItem.Category, out var handler))
@@ -212,7 +252,7 @@ namespace GGemCo2DCore
             }
             else
             {
-                SetDefaultUI(); // 기본 UI 설정
+                SetDefaultUI();
             }
         }
 
@@ -222,12 +262,71 @@ namespace GGemCo2DCore
         private void SetCategory()
         {
             if (_currentStruckTableItem == null) return;
+
             if (textCategory)
-                textCategory.text = string.Format(_localizationManager.GetUIWindowItemInfoByKey("Text_Category"), _currentStruckTableItem.Category);
+            {
+                string categoryName = _localizationManager != null
+                    ? _localizationManager.GetItemCategoryName(_currentStruckTableItem.Category)
+                    : _currentStruckTableItem.Category.ToString();
+
+                textCategory.text = string.Format(
+                    GetFormatOrDefault(_localizationManager?.GetUIWindowItemInfoByKey("Text_Category")),
+                    categoryName);
+            }
+
             if (textSubCategory)
-                textSubCategory.text = string.Format(_localizationManager.GetUIWindowItemInfoByKey("Text_SubCategory"), _currentStruckTableItem.SubCategory);
+            {
+                bool hasSubCategory = _currentStruckTableItem.SubCategory != ItemConstants.SubCategory.None;
+                textSubCategory.gameObject.SetActive(hasSubCategory);
+
+                if (hasSubCategory)
+                {
+                    string subCategoryName = _localizationManager != null
+                        ? _localizationManager.GetItemSubCategoryName(_currentStruckTableItem.SubCategory)
+                        : _currentStruckTableItem.SubCategory.ToString();
+
+                    textSubCategory.text = string.Format(
+                        GetFormatOrDefault(_localizationManager?.GetUIWindowItemInfoByKey("Text_SubCategory")),
+                        subCategoryName);
+                }
+            }
         }
-        // 카테고리별 UI 설정 함수
+
+        private void RefreshTexts()
+        {
+            SetName();
+            SetType();
+            SetAntiFlag();
+            SetCategory();
+            SetSeparatedOptionTexts();
+            SetDescriptionText();
+            SetSalePrice();
+        }
+
+        private void HandleLocaleChanged(string _, int __)
+        {
+            if (_currentStruckTableItem is not { Uid: > 0 }) return;
+            RefreshTexts();
+        }
+
+        private void BindLocalizationManager()
+        {
+            LocalizationManager manager = LocalizationManager.Instance;
+            if (manager == null) return;
+
+            if (_localizationManager != null && _localizationManager != manager)
+                _localizationManager.OnChangeLocale -= HandleLocaleChanged;
+
+            _localizationManager = manager;
+            _localizationManager.OnChangeLocale -= HandleLocaleChanged;
+            _localizationManager.OnChangeLocale += HandleLocaleChanged;
+        }
+
+        private static string GetFormatOrDefault(string format)
+        {
+            return string.IsNullOrWhiteSpace(format) ? "{0}" : format;
+        }
+
         private void SetWeaponUI()
         {
         }
@@ -243,14 +342,10 @@ namespace GGemCo2DCore
         private void SetDefaultUI()
         {
         }
+
         /// <summary>
         /// 위치 보정하기
         /// </summary>
-        /// <param name="icon"></param>
-        /// <param name="type"></param>
-        /// <param name="iconSlotSize"></param>
-        /// <param name="pivot"></param>
-        /// <param name="position"></param>
         private void SetPosition(GameObject icon, PositionType type, Vector2 iconSlotSize, Vector2 pivot, Vector2 position)
         {
             RectTransform itemInfoRect = GetComponent<RectTransform>();
@@ -270,7 +365,6 @@ namespace GGemCo2DCore
             }
             else if (type == PositionType.Fixed)
             {
-                
             }
             else
             {
@@ -278,17 +372,15 @@ namespace GGemCo2DCore
                 transform.position = position;
             }
 
-            // 화면 밖 체크 & 보정
             StartCoroutine(DelayClampToScreen(itemInfoRect));
         }
+
         /// <summary>
         /// 위치 보정 코루틴
         /// </summary>
-        /// <param name="rectTransform"></param>
-        /// <returns></returns>
         private IEnumerator DelayClampToScreen(RectTransform rectTransform)
         {
-            yield return null; // 한 프레임 대기
+            yield return null;
             MathHelper.ClampToScreen(rectTransform);
         }
     }

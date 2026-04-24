@@ -52,7 +52,8 @@ namespace GGemCo2DCore
             IncreaseHp,
             Active,
             Passive,
-            ActiveBuff
+            ActiveBuff,
+            Status
         }
 
         public enum Class
@@ -165,6 +166,7 @@ namespace GGemCo2DCore
                     SubCategory.IncreaseAttackSpeed,
                     SubCategory.IncreaseMoveSpeed,
                     SubCategory.IncreaseHp,
+                    SubCategory.Status,
                 }
             },
             {
