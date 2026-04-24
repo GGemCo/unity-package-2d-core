@@ -187,7 +187,7 @@ namespace GGemCo2DCore
 
             if (textName != null)
             {
-                textName.text = info.Name;
+                textName.text = ItemDisplayNameUtility.GetDisplayName(info);
             }
 
             if (textPrice != null)

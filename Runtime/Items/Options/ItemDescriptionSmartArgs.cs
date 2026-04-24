@@ -37,9 +37,7 @@ namespace GGemCo2DCore
             Uid = item.Uid;
             Upgrade = item.Upgrade;
             CoolTime = item.CoolTime;
-            Name = localization != null
-                ? localization.GetItemNameByKey(item.Uid.ToString())
-                : item.Name;
+            Name = ItemDisplayNameUtility.GetDisplayName(item, localization);
 
             if (item.SaleCurrencyValue > 0)
                 SalePrice = $"{CurrencyConstants.GetNameByCurrencyType(item.SaleCurrencyType)} {item.SaleCurrencyValue}";

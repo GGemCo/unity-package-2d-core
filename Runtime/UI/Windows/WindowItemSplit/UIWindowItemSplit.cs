@@ -56,7 +56,7 @@ namespace GGemCo2DCore
             var info = TableLoaderManager.Instance.GetItemData(iconUid);
             if (info == null) return;
             itemUid = iconUid;
-            textItemName.text = info.Name;
+            textItemName.text = ItemDisplayNameUtility.GetDisplayName(info);
             textItemCount.text = $"{iconCount / iconCount}";
             maxItemCount = iconCount;
             Show(true);

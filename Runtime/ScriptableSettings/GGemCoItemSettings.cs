@@ -31,6 +31,15 @@ namespace GGemCo2DCore
         [Tooltip("재화 아이템 드랍 시 월드 드랍 오브젝트를 생성하지 않고 즉시 인벤토리에 획득합니다.")]
         public bool acquireCurrenciesDirectly;
 
+        [Header("Item Debug")]
+        [SerializeField, DebugOption("아이템 디버그 기능 전체 On/Off")]
+        private bool enableItemDebug;
+        public bool EnableItemDebug => DebugOptionRuntimeUtility.Resolve(enableItemDebug);
+
+        [SerializeField, DebugOption("아이템 이름 옆에 Uid 출력")]
+        private bool enableItemUid;
+        public bool EnableItemUid => EnableItemDebug && DebugOptionRuntimeUtility.Resolve(enableItemUid);
+
         private void Reset()
         {
             defaultDropVisualType = ItemConstants.DropVisualType.Sprite;
@@ -41,6 +50,8 @@ namespace GGemCo2DCore
             defaultVisualOffsetY = 0f;
             acquireItemsDirectly = false;
             acquireCurrenciesDirectly = false;
+            enableItemDebug = false;
+            enableItemUid = false;
         }
 
         private void OnEnable()

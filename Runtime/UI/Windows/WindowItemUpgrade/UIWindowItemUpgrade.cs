@@ -213,7 +213,7 @@ namespace GGemCo2DCore
             if (textItemName != null)
             {
                 textItemName.gameObject.SetActive(true);
-                textItemName.text = sourceInfo.Name;
+                textItemName.text = ItemDisplayNameUtility.GetDisplayName(sourceInfo, _localizationManager);
             }
             if (textRate != null)
             {

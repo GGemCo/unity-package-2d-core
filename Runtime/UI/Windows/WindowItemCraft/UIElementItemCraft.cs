@@ -56,7 +56,7 @@ namespace GGemCo2DCore
                 GcLogger.LogError("item 테이블에 정보가 없습니다. item Uid:" + _struckTableItemCraft.ResultItemUid);
                 return;
             }
-            if (textName != null) textName.text = info.Name;
+            if (textName != null) textName.text = ItemDisplayNameUtility.GetDisplayName(info);
         }
         public void OnPointerEnter(PointerEventData eventData)
         {

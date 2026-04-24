@@ -264,13 +264,7 @@ namespace GGemCo2DCore
         {
             if (_currentStruckTableItem == null || !textName) return;
 
-            string itemName = _currentStruckTableItem.Name;
-            if (_localizationManager != null)
-            {
-                string localized = _localizationManager.GetItemNameByKey(_currentStruckTableItem.Uid.ToString());
-                if (!string.IsNullOrWhiteSpace(localized))
-                    itemName = localized;
-            }
+            string itemName = ItemDisplayNameUtility.GetDisplayName(_currentStruckTableItem, _localizationManager);
 
             textName.text = string.Format(
                 GetFormatOrDefault(_localizationManager?.GetUIWindowItemInfoByKey("Text_Name")),

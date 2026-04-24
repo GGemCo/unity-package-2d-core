@@ -54,7 +54,7 @@ namespace GGemCo2DCore
             {
                 icon.SetCount(0);
             }
-            textItemName.text = info.Name;
+            textItemName.text = ItemDisplayNameUtility.GetDisplayName(info);
             textItemCount.text = $"{iconCount / iconCount}";
             _maxItemCount = iconCount;
             Show(true);

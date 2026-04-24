@@ -81,7 +81,7 @@ namespace GGemCo2DCore
                 case QuestConstants.ObjectiveType.CollectItem:
                     var infoItem = tableItem.GetDataByUid(questStep.targetUid);
                     if (infoItem == null) return;
-                    textQuestObjective.text = $"Collect {infoItem.Name} ({count}/{questStep.count})";//$"({count}/{questStep.count}) {infoItem.Name} 수집하기";
+                    textQuestObjective.text = $"Collect {ItemDisplayNameUtility.GetDisplayName(infoItem)} ({count}/{questStep.count})";//$"({count}/{questStep.count}) {infoItem.Name} 수집하기";
                     break;
                 default:
                     break;
