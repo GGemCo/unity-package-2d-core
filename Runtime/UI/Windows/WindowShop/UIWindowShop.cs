@@ -276,7 +276,6 @@ namespace GGemCo2DCore
             
             UpdatePriceText();
             UpdateButtonBuy();
-            UpdateDiscountTalkBubble();
             
             if (_coRefreshSelectedVfx != null)
             {
@@ -289,7 +288,7 @@ namespace GGemCo2DCore
 
         private IEnumerator CoRefreshSelectedVfxPosition()
         {
-            if (_selectedElementShop == null || vfxEffectUISelected == null)
+            if (_selectedElementShop == null)
             {
                 yield break;
             }
@@ -306,6 +305,8 @@ namespace GGemCo2DCore
             yield return null;
             yield return new WaitForEndOfFrame();
 
+            UpdateDiscountTalkBubble();
+            
             if (_selectedElementShop == null || vfxEffectUISelected == null)
             {
                 yield break;
