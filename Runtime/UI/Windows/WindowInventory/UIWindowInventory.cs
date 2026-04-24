@@ -16,6 +16,8 @@ namespace GGemCo2DCore
         public Button buttonMergeAllItems;
         [Tooltip("아이템 정보 표시 윈도우")]
         [SerializeField] private UIWindowItemInfo overrideUiWindowItemInfo;
+        [Tooltip("인벤토리 창이 열릴 때 첫 번째 아이템 슬롯을 자동 선택할지 여부")]
+        [SerializeField] private bool selectFirstItemOnShow = true;
         
         public TableItem TableItem;
         public InventoryData InventoryData;
@@ -118,6 +120,10 @@ namespace GGemCo2DCore
             return _uiWindowItemInfo != null ? _uiWindowItemInfo : base.ResolveLinkedWindow(windowUid);
         }
 
+        /// <summary>
+        /// 인벤토리 표시 상태가 바뀔 때 아이콘을 갱신하고 필요 시 첫 아이템 슬롯을 자동 선택합니다.
+        /// </summary>
+        /// <param name="show">표시 여부입니다.</param>
         public override void OnShow(bool show)
         {
             if (SceneGame == null || TableLoaderManager.Instance == null) return;
@@ -125,6 +131,7 @@ namespace GGemCo2DCore
             if (show)
             {
                 LoadIcons();
+                TrySelectFirstOccupiedSlot();
             }
         }
         /// <summary>
@@ -161,6 +168,57 @@ namespace GGemCo2DCore
                 if (table == null || table.Uid <= 0) continue;
                 uiIcon.ChangeInfoByUid(table.Uid, itemCount, iconInstanceId: structInventoryIcon.InstanceId);
             }
+        }
+
+        /// <summary>
+        /// 자동 선택 옵션이 활성화되어 있을 때 첫 번째 점유 슬롯을 선택합니다.
+        /// 비어 있는 슬롯만 있으면 아무 작업도 하지 않습니다.
+        /// </summary>
+        private void TrySelectFirstOccupiedSlot()
+        {
+            if (!selectFirstItemOnShow || icons == null || icons.Length <= 0)
+            {
+                return;
+            }
+
+            int firstOccupiedIndex = FindFirstOccupiedSlotIndex();
+            if (firstOccupiedIndex < 0)
+            {
+                return;
+            }
+
+            base.SetSelectedIcon(firstOccupiedIndex);
+        }
+
+        /// <summary>
+        /// 현재 인벤토리 아이콘 배열에서 가장 앞에 있는 점유 슬롯 인덱스를 찾습니다.
+        /// </summary>
+        /// <returns>점유 슬롯 인덱스, 없으면 -1 입니다.</returns>
+        private int FindFirstOccupiedSlotIndex()
+        {
+            if (icons == null)
+            {
+                return -1;
+            }
+
+            for (int index = 0; index < icons.Length; index++)
+            {
+                GameObject iconObject = icons[index];
+                if (iconObject == null)
+                {
+                    continue;
+                }
+
+                UIIcon uiIcon = iconObject.GetComponent<UIIcon>();
+                if (uiIcon == null || uiIcon.uid <= 0 || uiIcon.GetCount() <= 0)
+                {
+                    continue;
+                }
+
+                return index;
+            }
+
+            return -1;
         }
         /// <summary>
         /// 모든 아이템 합치기
