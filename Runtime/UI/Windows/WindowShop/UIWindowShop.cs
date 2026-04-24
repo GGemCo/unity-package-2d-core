@@ -30,13 +30,17 @@ namespace GGemCo2DCore
         [Tooltip("아이템을 선택했을 때 보여줄 이펙트")]
         [SerializeField] private VfxEffectUI vfxEffectUISelected;
         
-        [Header("할인")]
-        [Tooltip("할인이 적용될 때 보여질 말풍선")]
+        [Header("할인/재고없음")]
+        [Tooltip("보여질 말풍선")]
         [SerializeField] private GameObject panelDiscountTalkBubble;
-        [Tooltip("할인이 적용될 때 보여질 말풍선의 텍스트")]
+        [Tooltip("보여질 말풍선의 텍스트")]
         [SerializeField] private TextMeshProUGUI textDiscountTalkBubble;
         [Tooltip("아이템 아이콘 기준으로 어느곳에 위치할 것인지")]
         [SerializeField] private Vector3 offsetDiscountTalkBubble;
+        [Tooltip("캐릭터 썸네일 이미지")]
+        [SerializeField] private GameObject imageThumbnailCharacter;
+        [Tooltip("캐릭터 썸네일 이미지 위치")]
+        [SerializeField] private Vector3 offsetImageThumbnailCharacter;
         
         private Coroutine _coRefreshSelectedVfx;
         
@@ -272,6 +276,7 @@ namespace GGemCo2DCore
             
             UpdatePriceText();
             UpdateButtonBuy();
+            UpdateDiscountTalkBubble();
             
             if (_coRefreshSelectedVfx != null)
             {
@@ -336,8 +341,6 @@ namespace GGemCo2DCore
             if (_selectedElementShop == null) return;
             if (!textPrice) return;
             
-            SetDiscountTalkBubble(false, string.Empty, Vector3.zero);
-            
             var displayItem = _selectedElementShop.GetDisplayItem();
             if (displayItem == null) return;
 
@@ -355,12 +358,32 @@ namespace GGemCo2DCore
                     key,
                     styleKeyPriceDiscount);
 
-                var text = string.Format(LocalizationManager.Instance.GetUIWindowShopByKey("Text_Discount"), itemPrice);
-                SetDiscountTalkBubble(true, text, _selectedElementShop.transform.position);
                 return;
             }
 
             textPrice.text = string.Format("( <style={2}>{0}</style> / {1} )", playerCurrency, itemPrice, key);
+        }
+
+        private void UpdateDiscountTalkBubble()
+        {
+            if (_selectedElementShop == null) return;
+            
+            SetDiscountTalkBubble(false, string.Empty, Vector3.zero);
+            
+            var displayItem = _selectedElementShop.GetDisplayItem();
+            if (displayItem == null) return;
+            
+            if (displayItem.HasDiscount)
+            {
+                var itemPrice = displayItem.CurrencyValue;
+                var text = string.Format(LocalizationManager.Instance.GetUIWindowShopByKey("Text_Discount"), itemPrice);
+                SetDiscountTalkBubble(true, text, _selectedElementShop.transform.position);
+            }
+            else if (!displayItem.IsBuyable)
+            {
+                var text = LocalizationManager.Instance.GetUIWindowShopByKey("Text_Not_Enough_Stock");
+                SetDiscountTalkBubble(true, text, _selectedElementShop.transform.position);
+            }
         }
 
         private long GetPlayerCurrencyValue(CurrencyConstants.Type currencyType)
@@ -523,14 +546,28 @@ namespace GGemCo2DCore
         /// <param name="position"></param>
         private void SetDiscountTalkBubble(bool value, string text, Vector3 position)
         {
+            if (textDiscountTalkBubble)
+            {
+                textDiscountTalkBubble.text = text;
+            }
+
             if (panelDiscountTalkBubble)
             {
                 panelDiscountTalkBubble.SetActive(value);
                 panelDiscountTalkBubble.transform.position = position + offsetDiscountTalkBubble;
-            }
-            if (textDiscountTalkBubble)
-            {
-                textDiscountTalkBubble.text = text;
+
+                if (panelDiscountTalkBubble.TryGetComponent<RectTransform>(out var bubbleRectTransform))
+                {
+                    LayoutRebuilder.ForceRebuildLayoutImmediate(bubbleRectTransform);
+
+                    if (imageThumbnailCharacter && imageThumbnailCharacter.TryGetComponent<RectTransform>(out var thumbnailRectTransform))
+                    {
+                        var anchoredPosition = thumbnailRectTransform.anchoredPosition;
+                        anchoredPosition.x = bubbleRectTransform.rect.width + offsetImageThumbnailCharacter.x;
+                        anchoredPosition.y += offsetImageThumbnailCharacter.y;
+                        thumbnailRectTransform.anchoredPosition = anchoredPosition;
+                    }
+                }
             }
         }
     }
