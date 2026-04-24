@@ -14,9 +14,12 @@ namespace GGemCo2DCore
         [Header(UIWindowConstants.TitleHeaderIndividual)]
         [Tooltip("모든 아이템 합치기 버튼")]
         public Button buttonMergeAllItems;
-        [HideInInspector] public TableItem TableItem;
-        [HideInInspector] public InventoryData InventoryData;
-        [HideInInspector] public EquipData EquipData;
+        [Tooltip("아이템 정보 표시 윈도우")]
+        [SerializeField] private UIWindowItemInfo overrideUiWindowItemInfo;
+        
+        public TableItem TableItem;
+        public InventoryData InventoryData;
+        public EquipData EquipData;
         private QuickSlotSimulationData _quickSlotSimulationData;
         
         private GameObject _iconItem;
@@ -55,6 +58,11 @@ namespace GGemCo2DCore
             _uiWindowItemInfo = 
                 SceneGame.uIWindowManager.GetUIWindowByUid<UIWindowItemInfo>(UIWindowConstants.WindowUid
                     .ItemInfo);
+            if (overrideUiWindowItemInfo != null)
+            {
+                _uiWindowItemInfo = overrideUiWindowItemInfo;
+                _uiWindowItemInfo.Show(false);
+            }
             _uiWindowItemSplit =
                 SceneGame.uIWindowManager.GetUIWindowByUid<UIWindowItemSplit>(UIWindowConstants.WindowUid
                     .ItemSplit);
@@ -77,6 +85,7 @@ namespace GGemCo2DCore
         public override void OnShow(bool show)
         {
             if (SceneGame == null || TableLoaderManager.Instance == null) return;
+            base.OnShow(show);
             if (show)
             {
                 LoadIcons();
@@ -273,6 +282,7 @@ namespace GGemCo2DCore
                 SceneGame.Instance.uIWindowManager.RegisterIcon(uid, icon.slotIndex, UIWindowConstants.WindowUid.ItemSplit, icon.GetCount());
             }
         }
+        
         /// <summary>
         /// 아이템 정보 보기
         /// </summary>
@@ -283,7 +293,7 @@ namespace GGemCo2DCore
             if (show)
             {
                 if (icon == null) return;
-                _uiWindowItemInfo.SetItemUid(icon.uid, icon.instanceId, icon.gameObject, UIWindowItemInfo.PositionType.Right, slotSize);
+                _uiWindowItemInfo.SetItemUid(icon.uid, icon.instanceId, icon.gameObject, UIWindowItemInfo.PositionType.Fixed, slotSize);
             }
             else
             {

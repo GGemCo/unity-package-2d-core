@@ -1,4 +1,5 @@
 using System.Linq;
+using UnityEngine;
 using UnityEngine.EventSystems;
 
 namespace GGemCo2DCore
@@ -8,6 +9,17 @@ namespace GGemCo2DCore
     /// </summary>
     public class UIIconItem : UIIcon, IPointerEnterHandler, IPointerExitHandler, IPointerClickHandler
     {
+        [Header(UIWindowConstants.TitleHeaderIndividual)]
+        [Header("마우스 이벤트 On/Off")]
+        [Tooltip("마우스 오버 시 정보창 표시 여부")]
+        [SerializeField] private bool usePointerEnterEvent = true;
+
+        [Tooltip("마우스 아웃 시 정보창 숨김 여부")]
+        [SerializeField] private bool usePointerExitEvent = true;
+
+        [Tooltip("마우스 클릭 시 정보창 표시 여부")]
+        [SerializeField] private bool usePointerClickEvent = false;
+        
         private StruckTableItem _struckTableItem;
         private TableItem _tableItem;
         private Player _player;
@@ -49,7 +61,9 @@ namespace GGemCo2DCore
 
         public void OnPointerEnter(PointerEventData eventData)
         {
+            if (!usePointerEnterEvent) return;
             // GcLogger.Log("OnPointerEnter "+eventData);
+            
             window.ShowItemInfo(true, this);
             ShowOverImage(true);
             HandlePointerEnterEffect(eventData);
@@ -57,6 +71,7 @@ namespace GGemCo2DCore
 
         public void OnPointerExit(PointerEventData eventData)
         {
+            if (!usePointerExitEvent) return;
             // GcLogger.Log("OnPointerExit "+eventData);
             window.ShowItemInfo(false);
             ShowOverImage(false);
@@ -64,6 +79,12 @@ namespace GGemCo2DCore
 
         public void OnPointerClick(PointerEventData eventData)
         {
+            if (usePointerClickEvent)
+            {
+                window.ShowItemInfo(true, this);
+                SetSelected(true);
+                HandlePointerEnterEffect(eventData);
+            }
             if (!PossibleClick) return;
             if (IsLock()) return;
             if(eventData.button == PointerEventData.InputButton.Left)
