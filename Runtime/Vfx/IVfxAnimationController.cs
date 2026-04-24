@@ -13,8 +13,8 @@ namespace GGemCo2DCore
         public const string KeyClipNameEnd = "end";
         void SetEffectColor(string colorHex);
         bool HasEndAnimation();
-        
-        bool Play(float duration, float timeScale = 1f);
+
+        bool Play(float duration, float timeScale = 1f, bool forceReset = false);
         void PlayEnd();
         
         void AnimationEventComplete(StruckAnimationEventComplete struckAnimationEventComplete);

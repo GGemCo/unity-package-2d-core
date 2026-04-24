@@ -17,5 +17,10 @@ namespace GGemCo2DCore
             if (!autoStart) return;
             Play(-1f, timeScale);
         }
+
+        public void PlayEffect(bool forceReset = false)
+        {
+            Play(-1f, timeScale, forceReset);
+        }
     }
 }

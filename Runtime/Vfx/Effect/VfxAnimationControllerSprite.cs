@@ -77,7 +77,7 @@ namespace GGemCo2DCore
             return 0;
         }
 
-        public bool Play(float duration, float timeScale = 1f)
+        public bool Play(float duration, float timeScale = 1f, bool forceReset = false)
         {
             EnsureInitialized();
 
@@ -164,7 +164,7 @@ namespace GGemCo2DCore
                 }
             }
 
-            PlayAnimation(startAnimationName, false, startTimeScale, addAnimations);
+            PlayAnimation(startAnimationName, false, startTimeScale, addAnimations, forceReset: forceReset);
             return true;
         }
 
