@@ -49,7 +49,6 @@ namespace GGemCo2DCore
 
         private UIWindowShop _uiWindowShop;
         private UIWindowItemBuy _uIWindowItemBuy;
-        private UIWindowItemInfo _uIWindowItemInfo;
         private UIIcon _uiIcon;
         private UISlot _uiSlot;
 
@@ -88,7 +87,7 @@ namespace GGemCo2DCore
         }
 
         /// <summary>
-        /// 관련 UI 윈도우(ItemBuy, ItemInfo)를 캐싱합니다.
+        /// 관련 UI 윈도우(ItemBuy)를 캐싱합니다.
         /// </summary>
         private void EnsureWindows()
         {
@@ -97,9 +96,6 @@ namespace GGemCo2DCore
 
             _uIWindowItemBuy ??=
                 _sceneGame.uIWindowManager.GetUIWindowByUid<UIWindowItemBuy>(UIWindowConstants.WindowUid.ItemBuy);
-
-            _uIWindowItemInfo ??=
-                _sceneGame.uIWindowManager.GetUIWindowByUid<UIWindowItemInfo>(UIWindowConstants.WindowUid.ItemInfo);
         }
 
         /// <summary>
@@ -338,7 +334,7 @@ namespace GGemCo2DCore
         public void OnPointerExit(PointerEventData eventData)
         {
             if (!usePointerExitEvent) return;
-            _uIWindowItemInfo.Show(false);
+            _uiWindowShop?.HideItemInfo();
         }
 
         /// <summary>
@@ -362,13 +358,7 @@ namespace GGemCo2DCore
 
                 if (_shopDisplayItem != null)
                 {
-                    _uIWindowItemInfo.SetItemUid(
-                        _shopDisplayItem.ItemUid,
-                        0,
-                        gameObject,
-                        UIWindowItemInfo.PositionType.Fixed,
-                        _uiWindowShop.containerIcon.cellSize);
-                    
+                    _uiWindowShop?.TryShowItemInfo(this);
                     SetColorImageDiscount(colorSelected);
                 }
             }

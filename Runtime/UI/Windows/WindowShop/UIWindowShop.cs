@@ -15,6 +15,8 @@ namespace GGemCo2DCore
         [Header(UIWindowConstants.TitleHeaderIndividual)]
         [Tooltip("상점 Element 프리팹")]
         [SerializeField] private GameObject prefabUIElementShop;
+        [Tooltip("상점에서 사용할 아이템 정보 표시 윈도우")]
+        [SerializeField] private UIWindowItemInfo overrideUiWindowItemInfo;
         [Tooltip("구매하기 버튼")]
         [SerializeField] private Button buttonBuy;
         
@@ -51,6 +53,7 @@ namespace GGemCo2DCore
         private int _currentShopUid;
 
         private UIElementShop _selectedElementShop;
+        private UIWindowItemInfo _uiWindowItemInfo;
         
         protected override void Awake()
         {
@@ -77,6 +80,9 @@ namespace GGemCo2DCore
                 _shopAvailabilityService.Changed += OnShopAvailabilityChanged;
         }
 
+        /// <summary>
+        /// 상점 비활성화 시 연결된 이벤트와 선택 상태를 정리합니다.
+        /// </summary>
         private void OnDisable()
         {
             if (buttonBuy)
@@ -85,11 +91,16 @@ namespace GGemCo2DCore
                 _shopAvailabilityService.Changed -= OnShopAvailabilityChanged;
             if (_selectedElementShop)
                 _selectedElementShop.SetSelected(false);
+            HideItemInfo();
         }
 
+        /// <summary>
+        /// 상점에서 사용하는 연계 윈도우와 플레이어 상태 구독을 초기화합니다.
+        /// </summary>
         protected override void Start()
         {
             base.Start();
+            ResolveItemInfoWindow();
 
             var playerData = SceneGame?.saveDataManager?.Player;
             if (playerData == null) return;
@@ -98,6 +109,24 @@ namespace GGemCo2DCore
                 .CombineLatest(playerData.OnCurrentSilverChanged(), (_, _) => Unit.Default)
                 .Subscribe(_ => UpdatePriceText())
                 .AddTo(this);
+        }
+
+        /// <summary>
+        /// 상점에서 사용할 아이템 정보창을 결정합니다.
+        /// override 가 연결되어 있으면 해당 창을 우선 사용하고, 없으면 공용 창을 사용합니다.
+        /// </summary>
+        private void ResolveItemInfoWindow()
+        {
+            _uiWindowItemInfo =
+                SceneGame?.uIWindowManager?.GetUIWindowByUid<UIWindowItemInfo>(UIWindowConstants.WindowUid.ItemInfo);
+
+            if (overrideUiWindowItemInfo == null)
+            {
+                return;
+            }
+
+            _uiWindowItemInfo = overrideUiWindowItemInfo;
+            _uiWindowItemInfo.Show(false);
         }
 
         /// <summary>
@@ -284,6 +313,54 @@ namespace GGemCo2DCore
             }
 
             _coRefreshSelectedVfx = StartCoroutine(CoRefreshSelectedVfxPosition());
+        }
+
+        /// <summary>
+        /// 지정한 상점 요소의 아이템 정보를 현재 선택된 정보창에 표시합니다.
+        /// </summary>
+        /// <param name="uiElementShop">아이템 정보를 표시할 상점 요소입니다.</param>
+        /// <returns>표시에 성공하면 true, 아니면 false 입니다.</returns>
+        public bool TryShowItemInfo(UIElementShop uiElementShop)
+        {
+            if (uiElementShop == null)
+            {
+                return false;
+            }
+
+            if (_uiWindowItemInfo == null)
+            {
+                ResolveItemInfoWindow();
+            }
+
+            if (_uiWindowItemInfo == null)
+            {
+                return false;
+            }
+
+            var displayItem = uiElementShop.GetDisplayItem();
+            if (displayItem == null)
+            {
+                return false;
+            }
+
+            Vector2 iconSlotSize = containerIcon != null ? containerIcon.cellSize : slotSize;
+            _uiWindowItemInfo.SetItemInfo(new UIWindowItemInfoRequest
+            {
+                ItemUid = displayItem.ItemUid,
+                InstanceId = 0,
+                AnchorObject = uiElementShop.gameObject,
+                PositionType = UIWindowItemInfo.PositionType.Fixed,
+                IconSlotSize = iconSlotSize,
+            });
+            return true;
+        }
+
+        /// <summary>
+        /// 상점에서 사용 중인 아이템 정보창을 숨깁니다.
+        /// </summary>
+        public void HideItemInfo()
+        {
+            _uiWindowItemInfo?.Show(false);
         }
 
         private IEnumerator CoRefreshSelectedVfxPosition()

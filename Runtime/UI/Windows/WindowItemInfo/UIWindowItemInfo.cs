@@ -93,23 +93,72 @@ namespace GGemCo2DCore
             };
         }
 
+        /// <summary>
+        /// 개별 파라미터로 전달된 아이템 정보를 현재 정보창에 표시합니다.
+        /// </summary>
+        /// <param name="itemUid">표시할 아이템 Uid 입니다.</param>
+        /// <param name="instanceId">표시할 아이템 인스턴스 Id 입니다.</param>
+        /// <param name="icon">정보창 위치 계산의 기준이 되는 아이콘 오브젝트입니다.</param>
+        /// <param name="type">정보창 위치 계산 방식입니다.</param>
+        /// <param name="iconSlotSize">기준 아이콘 슬롯 크기입니다.</param>
+        /// <param name="pivot">고정 위치 계산에 사용할 피벗 값입니다.</param>
+        /// <param name="position">고정 위치 계산에 사용할 위치 값입니다.</param>
         public void SetItemUid(int itemUid, long instanceId, GameObject icon, PositionType type, Vector2 iconSlotSize,
             Vector2? pivot = null, Vector3? position = null)
         {
-            if (icon == null || itemUid <= 0) return;
-            _currentStruckTableItem = _tableItem.GetDataByUid(itemUid);
-            if (_currentStruckTableItem is not { Uid: > 0 }) return;
+            SetItemInfo(new UIWindowItemInfoRequest
+            {
+                ItemUid = itemUid,
+                InstanceId = instanceId,
+                AnchorObject = icon,
+                PositionType = type,
+                IconSlotSize = iconSlotSize,
+                Pivot = pivot,
+                Position = position,
+            });
+        }
 
-            _currentInstanceId = instanceId;
+        /// <summary>
+        /// 요청 객체로 전달된 아이템 정보를 현재 정보창에 표시합니다.
+        /// </summary>
+        /// <param name="request">아이템 정보창 표시에 필요한 문맥 정보입니다.</param>
+        public void SetItemInfo(UIWindowItemInfoRequest request)
+        {
+            if (!TryBindItemInfo(request))
+            {
+                return;
+            }
 
             SetSpriteIcon();
             RefreshTexts();
             SetCategoryUI();
             Show(true);
 
-            Vector2 finalPivot = pivot ?? Vector2.zero;
-            Vector3 finalPosition = position ?? Vector3.zero;
-            SetPosition(icon, type, iconSlotSize, finalPivot, finalPosition);
+            Vector2 finalPivot = request.Pivot ?? Vector2.zero;
+            Vector3 finalPosition = request.Position ?? Vector3.zero;
+            SetPosition(request.AnchorObject, request.PositionType, request.IconSlotSize, finalPivot, finalPosition);
+        }
+
+        /// <summary>
+        /// 요청 객체가 유효한지 확인하고 현재 표시 대상 아이템 상태를 갱신합니다.
+        /// </summary>
+        /// <param name="request">아이템 정보창 표시에 필요한 문맥 정보입니다.</param>
+        /// <returns>표시 가능한 아이템 정보가 준비되면 true, 아니면 false 입니다.</returns>
+        private bool TryBindItemInfo(UIWindowItemInfoRequest request)
+        {
+            if (request == null || request.AnchorObject == null || request.ItemUid <= 0)
+            {
+                return false;
+            }
+
+            _currentStruckTableItem = _tableItem.GetDataByUid(request.ItemUid);
+            if (_currentStruckTableItem is not { Uid: > 0 })
+            {
+                return false;
+            }
+
+            _currentInstanceId = request.InstanceId;
+            return true;
         }
 
         /// <summary>

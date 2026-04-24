@@ -45,6 +45,9 @@ namespace GGemCo2DCore
             DragDropHandler.SetStrategy(new DragDropStrategyInventory());
         }
 
+        /// <summary>
+        /// 인벤토리에서 사용하는 연계 윈도우와 데이터를 초기화합니다.
+        /// </summary>
         protected override void Start()
         {
             base.Start();
@@ -55,14 +58,7 @@ namespace GGemCo2DCore
                 EquipData = SceneGame.saveDataManager.Equip;
                 _quickSlotSimulationData = SceneGame.saveDataManager.QuickSlotSimulation;
             }
-            _uiWindowItemInfo = 
-                SceneGame.uIWindowManager.GetUIWindowByUid<UIWindowItemInfo>(UIWindowConstants.WindowUid
-                    .ItemInfo);
-            if (overrideUiWindowItemInfo != null)
-            {
-                _uiWindowItemInfo = overrideUiWindowItemInfo;
-                _uiWindowItemInfo.Show(false);
-            }
+            ResolveItemInfoWindow();
             _uiWindowItemSplit =
                 SceneGame.uIWindowManager.GetUIWindowByUid<UIWindowItemSplit>(UIWindowConstants.WindowUid
                     .ItemSplit);
@@ -81,6 +77,24 @@ namespace GGemCo2DCore
             _uiWindowQuickSlotSimulation =
                 SceneGame.uIWindowManager.GetUIWindowByUid<UIWindowQuickSlotSimulation>(UIWindowConstants.WindowUid
                     .QuickSlotSimulation);
+        }
+
+        /// <summary>
+        /// 인벤토리에서 사용할 아이템 정보창을 결정합니다.
+        /// override 가 연결되어 있으면 해당 창을 우선 사용하고, 없으면 공용 창을 사용합니다.
+        /// </summary>
+        private void ResolveItemInfoWindow()
+        {
+            _uiWindowItemInfo =
+                SceneGame.uIWindowManager.GetUIWindowByUid<UIWindowItemInfo>(UIWindowConstants.WindowUid.ItemInfo);
+
+            if (overrideUiWindowItemInfo == null)
+            {
+                return;
+            }
+
+            _uiWindowItemInfo = overrideUiWindowItemInfo;
+            _uiWindowItemInfo.Show(false);
         }
         public override void OnShow(bool show)
         {
@@ -284,21 +298,51 @@ namespace GGemCo2DCore
         }
         
         /// <summary>
-        /// 아이템 정보 보기
+        /// 인벤토리 아이콘의 아이템 정보창을 표시하거나 숨깁니다.
         /// </summary>
-        /// <param name="show"></param>
-        /// <param name="icon"></param>
+        /// <param name="show">표시 여부입니다.</param>
+        /// <param name="icon">정보를 표시할 아이콘입니다.</param>
         public override void ShowItemInfo(bool show, UIIcon icon = null)
         {
             if (show)
             {
-                if (icon == null) return;
-                _uiWindowItemInfo.SetItemUid(icon.uid, icon.instanceId, icon.gameObject, UIWindowItemInfo.PositionType.Fixed, slotSize);
+                TryShowItemInfo(icon);
             }
             else
             {
-                _uiWindowItemInfo.Show(false);
+                HideItemInfoWindow();
             }
+        }
+
+        /// <summary>
+        /// 지정한 인벤토리 아이콘 정보를 현재 선택된 아이템 정보창에 표시합니다.
+        /// </summary>
+        /// <param name="icon">정보를 표시할 아이콘입니다.</param>
+        /// <returns>표시에 성공하면 true, 아니면 false 입니다.</returns>
+        private bool TryShowItemInfo(UIIcon icon)
+        {
+            if (icon == null || _uiWindowItemInfo == null)
+            {
+                return false;
+            }
+
+            _uiWindowItemInfo.SetItemInfo(new UIWindowItemInfoRequest
+            {
+                ItemUid = icon.uid,
+                InstanceId = icon.instanceId,
+                AnchorObject = icon.gameObject,
+                PositionType = UIWindowItemInfo.PositionType.Fixed,
+                IconSlotSize = slotSize,
+            });
+            return true;
+        }
+
+        /// <summary>
+        /// 인벤토리에서 사용 중인 아이템 정보창을 숨깁니다.
+        /// </summary>
+        private void HideItemInfoWindow()
+        {
+            _uiWindowItemInfo?.Show(false);
         }
 
         public void AddToQuickSlotSimulation(UIIcon icon)
