@@ -4,6 +4,8 @@ using UnityEngine.UI;
 using UnityEngine.InputSystem;
 #endif
 
+using System.Collections;
+
 namespace GGemCo2DCore
 {
     /// <summary>
@@ -34,6 +36,7 @@ namespace GGemCo2DCore
         private UIWindowItemUpgrade _uiWindowItemUpgrade;
         private UIWindowItemSalvage _uiWindowItemSalvage;
         private UIWindowQuickSlotSimulation _uiWindowQuickSlotSimulation;
+        private Coroutine _coSelectFirstItemOnShow;
 
         protected override void Awake()
         {
@@ -131,7 +134,11 @@ namespace GGemCo2DCore
             if (show)
             {
                 LoadIcons();
-                TrySelectFirstOccupiedSlot();
+                ScheduleSelectFirstOccupiedSlot();
+            }
+            else
+            {
+                StopSelectFirstItemCoroutine();
             }
         }
         /// <summary>
@@ -171,16 +178,59 @@ namespace GGemCo2DCore
         }
 
         /// <summary>
-        /// 자동 선택 옵션이 활성화되어 있을 때 첫 번째 점유 슬롯을 선택합니다.
-        /// 비어 있는 슬롯만 있으면 아무 작업도 하지 않습니다.
+        /// 자동 선택 옵션이 활성화되어 있을 때 첫 번째 점유 슬롯 선택을 다음 프레임으로 예약합니다.
+        /// 레이아웃이 모두 반영된 뒤 선택 이펙트 위치가 계산되도록 한 프레임 지연시킵니다.
         /// </summary>
-        private void TrySelectFirstOccupiedSlot()
+        private void ScheduleSelectFirstOccupiedSlot()
         {
             if (!selectFirstItemOnShow || icons == null || icons.Length <= 0)
             {
                 return;
             }
 
+            StopSelectFirstItemCoroutine();
+            _coSelectFirstItemOnShow = StartCoroutine(CoSelectFirstOccupiedSlotOnShow());
+        }
+
+        /// <summary>
+        /// 인벤토리 레이아웃이 최종 반영된 이후 첫 번째 점유 슬롯을 선택합니다.
+        /// </summary>
+        private IEnumerator CoSelectFirstOccupiedSlotOnShow()
+        {
+            Canvas.ForceUpdateCanvases();
+
+            if (containerIcon != null)
+            {
+                LayoutRebuilder.ForceRebuildLayoutImmediate(containerIcon.GetComponent<RectTransform>());
+            }
+
+            yield return null;
+            yield return new WaitForEndOfFrame();
+
+            TrySelectFirstOccupiedSlotImmediate();
+            _coSelectFirstItemOnShow = null;
+        }
+
+        /// <summary>
+        /// 예약된 첫 아이템 자동 선택 코루틴이 있으면 중지합니다.
+        /// </summary>
+        private void StopSelectFirstItemCoroutine()
+        {
+            if (_coSelectFirstItemOnShow == null)
+            {
+                return;
+            }
+
+            StopCoroutine(_coSelectFirstItemOnShow);
+            _coSelectFirstItemOnShow = null;
+        }
+
+        /// <summary>
+        /// 자동 선택 옵션이 활성화되어 있을 때 첫 번째 점유 슬롯을 즉시 선택합니다.
+        /// 비어 있는 슬롯만 있으면 아무 작업도 하지 않습니다.
+        /// </summary>
+        private void TrySelectFirstOccupiedSlotImmediate()
+        {
             int firstOccupiedIndex = FindFirstOccupiedSlotIndex();
             if (firstOccupiedIndex < 0)
             {
@@ -188,6 +238,7 @@ namespace GGemCo2DCore
             }
 
             base.SetSelectedIcon(firstOccupiedIndex);
+            ShowItemInfo(true, GetIconByIndex(firstOccupiedIndex));
         }
 
         /// <summary>
