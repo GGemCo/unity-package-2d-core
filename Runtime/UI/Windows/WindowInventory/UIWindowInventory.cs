@@ -96,6 +96,28 @@ namespace GGemCo2DCore
             _uiWindowItemInfo = overrideUiWindowItemInfo;
             _uiWindowItemInfo.Show(false);
         }
+
+        /// <summary>
+        /// 인벤토리 문맥에서 테이블 연동 윈도우 Uid 를 실제 윈도우 오브젝트로 해석합니다.
+        /// ItemInfo 는 override 가 연결되어 있으면 해당 전용 창을 우선 반환합니다.
+        /// </summary>
+        /// <param name="windowUid">해석할 연결 윈도우 Uid 입니다.</param>
+        /// <returns>인벤토리 문맥에서 사용해야 하는 실제 윈도우 오브젝트입니다.</returns>
+        protected override UIWindow ResolveLinkedWindow(UIWindowConstants.WindowUid windowUid)
+        {
+            if (windowUid != UIWindowConstants.WindowUid.ItemInfo)
+            {
+                return base.ResolveLinkedWindow(windowUid);
+            }
+
+            if (_uiWindowItemInfo == null && SceneGame != null)
+            {
+                ResolveItemInfoWindow();
+            }
+
+            return _uiWindowItemInfo != null ? _uiWindowItemInfo : base.ResolveLinkedWindow(windowUid);
+        }
+
         public override void OnShow(bool show)
         {
             if (SceneGame == null || TableLoaderManager.Instance == null) return;

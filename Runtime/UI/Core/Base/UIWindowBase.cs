@@ -79,14 +79,35 @@ namespace GGemCo2DCore
         }
 
         /// <summary>
+        /// 테이블에 연결된 윈도우 Uid 를 현재 윈도우 문맥에 맞는 실제 오브젝트로 해석합니다.
+        /// 기본 구현은 UIWindowManager 에 등록된 공용 윈도우를 반환합니다.
+        /// </summary>
+        /// <param name="windowUid">해석할 연결 윈도우 Uid 입니다.</param>
+        /// <returns>현재 윈도우 문맥에서 사용해야 하는 실제 윈도우 오브젝트입니다.</returns>
+        protected virtual UIWindow ResolveLinkedWindow(UIWindowConstants.WindowUid windowUid)
+        {
+            if (SceneGame == null || SceneGame.uIWindowManager == null)
+            {
+                return null;
+            }
+
+            return SceneGame.uIWindowManager.GetUIWindowByUid<UIWindow>(windowUid);
+        }
+
+        /// <summary>
         /// window 테이블에 있는 OpenWindowUid, CloseWindowUid 컬럼 처리
         /// </summary>
         private void ShowByTable(int[] windowUids, bool show)
         {
+            if (windowUids == null)
+            {
+                return;
+            }
+
             foreach (var openWindowUid in windowUids)
             {
                 UIWindowConstants.WindowUid windowUid = (UIWindowConstants.WindowUid)openWindowUid;
-                UIWindow uiWindow = SceneGame.uIWindowManager.GetUIWindowByUid<UIWindow>(windowUid);
+                UIWindow uiWindow = ResolveLinkedWindow(windowUid);
                 if (uiWindow == null) continue;
 
                 if (uiWindow._uiWindowFade == null)
@@ -117,7 +138,7 @@ namespace GGemCo2DCore
             foreach (var linkedWindowUid in windowUids)
             {
                 UIWindowConstants.WindowUid windowUid = (UIWindowConstants.WindowUid)linkedWindowUid;
-                UIWindow uiWindow = SceneGame.uIWindowManager.GetUIWindowByUid<UIWindow>(windowUid);
+                UIWindow uiWindow = ResolveLinkedWindow(windowUid);
                 if (uiWindow == null)
                 {
                     continue;
