@@ -52,13 +52,21 @@ namespace GGemCo2DCore
         {
         }
 
-        public void SetSelectedMap(UIIconWorldMap uiElementWorldMap)
+        /// <summary>
+        /// 월드맵 전용 선택 참조를 기본 selectedIcon 흐름과 동기화합니다.
+        /// 버튼 액션은 이 참조를 사용하므로 선택 변경 시 함께 갱신합니다.
+        /// </summary>
+        /// <param name="icon">선택된 아이콘</param>
+        protected override void OnSelectedIcon(UIIcon icon)
         {
-            if (_selectedUIIconWorldMap != null)
-            {
-                _selectedUIIconWorldMap.SetSelected(false);
-            }
-            _selectedUIIconWorldMap = uiElementWorldMap;
+            base.OnSelectedIcon(icon);
+            _selectedUIIconWorldMap = icon as UIIconWorldMap;
+        }
+
+        protected override void OnClearedSelectedIcon()
+        {
+            base.OnClearedSelectedIcon();
+            _selectedUIIconWorldMap = null;
         }
 
         private void OnClickWarp()

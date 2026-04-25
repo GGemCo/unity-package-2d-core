@@ -13,12 +13,10 @@ namespace GGemCo2DCore
         private TableMap _tableMap;
         private StruckTableMap _struckTableMap;
         private MapManager _mapManager;
-        private bool _isSelect;
         
         protected override void OnInitialize()
         {
             base.OnInitialize();
-            _isSelect = false;
             IconType = IconConstants.Type.WorldMap;
             _tableMap ??= TableLoaderManager.Instance.TableMap;
             _mapManager ??= SceneGame.Instance.mapManager;
@@ -63,10 +61,18 @@ namespace GGemCo2DCore
         {
         }
 
-        public new void SetSelected(bool value)
+        /// <summary>
+        /// 월드맵 아이콘은 기본 선택 처리와 함께 색상 강조를 추가로 반영합니다.
+        /// </summary>
+        /// <param name="value">선택 여부</param>
+        public override void SetSelected(bool value)
         {
-            _isSelect = value;
-            ImageIcon.color = _isSelect ? Color.blue : Color.white;
+            base.SetSelected(value);
+
+            if (ImageIcon != null)
+            {
+                ImageIcon.color = value ? Color.blue : Color.white;
+            }
         }
         
         public void OnPointerClick(PointerEventData eventData)
@@ -74,9 +80,9 @@ namespace GGemCo2DCore
             if (GcLogger.IsNull(_struckTableMap, "map 데이터가 없습니다.")) return;
             if (GcLogger.IsNull(window, "아이콘에 연결된 윈도우가 없습니다.")) return;
             if (GcLogger.IsZero(_struckTableMap.Uid, "map uid 값이 없습니다.")) return;
-            var windowWorldMap = window as UIWindowWorldMap;
-            SetSelected(true);
-            windowWorldMap?.SetSelectedMap(this);
+
+            // 월드맵도 다른 UIIcon과 동일하게 부모 윈도우를 통해 단일 선택 상태를 유지합니다.
+            window.SetSelectedIcon(index);
         }
         
         /// <summary>

@@ -68,16 +68,35 @@ namespace GGemCo2DCore
             IconPoolManager.Initialize(this);
         }
 
+        /// <summary>
+        /// 현재 윈도우에서 선택된 아이콘을 단일 진입점으로 관리합니다.
+        /// 반드시 이 메서드를 통해 선택을 변경해야 이전 선택 아이콘이 정상적으로 해제됩니다.
+        /// </summary>
+        /// <param name="index">선택할 아이콘의 슬롯 index</param>
         public virtual void SetSelectedIcon(int index)
         {
             if (selectedIcon != null)
             {
                 selectedIcon.SetSelected(false);
+                selectedIcon = null;
             }
-            if (icons.Length <= 0 || index >= icons.Length) return;
+            if (icons.Length <= 0 || index >= icons.Length)
+            {
+                OnClearedSelectedIcon();
+                return;
+            }
             var icon = icons[index];
-            if (icon == null) return;
+            if (icon == null)
+            {
+                OnClearedSelectedIcon();
+                return;
+            }
             selectedIcon = icon.GetComponent<UIIcon>();
+            if (selectedIcon == null)
+            {
+                OnClearedSelectedIcon();
+                return;
+            }
             selectedIcon.SetSelected(true);
             OnSelectedIcon(selectedIcon);
         }
@@ -86,6 +105,8 @@ namespace GGemCo2DCore
         {
             if (selectedIcon == null) return;
             selectedIcon.SetSelected(false);
+            selectedIcon = null;
+            OnClearedSelectedIcon();
         }
         public UIIcon GetSelectedIcon() => selectedIcon;
 
@@ -94,6 +115,13 @@ namespace GGemCo2DCore
         /// </summary>
         /// <param name="icon"></param>
         protected virtual void OnSelectedIcon(UIIcon icon)
+        {
+        }
+
+        /// <summary>
+        /// 파생 윈도우가 별도 선택 참조를 관리하는 경우, 선택 해제 시점을 함께 동기화합니다.
+        /// </summary>
+        protected virtual void OnClearedSelectedIcon()
         {
         }
 

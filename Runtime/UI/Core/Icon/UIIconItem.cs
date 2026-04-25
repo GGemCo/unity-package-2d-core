@@ -82,7 +82,9 @@ namespace GGemCo2DCore
             if (usePointerClickEvent)
             {
                 window.ShowItemInfo(true, this);
-                SetSelected(true);
+                // 직접 선택 상태를 바꾸지 않고, 부모 윈도우를 통해 단일 선택 규칙을 적용합니다.
+                if (window)
+                    window.SetSelectedIcon(index);
                 HandlePointerEnterEffect(eventData);
             }
             if (!PossibleClick) return;

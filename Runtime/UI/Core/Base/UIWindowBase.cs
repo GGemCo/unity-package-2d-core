@@ -18,6 +18,8 @@ namespace GGemCo2DCore
         public UIEffectPreset windowOpenPreset;
         [Tooltip("윈도우 닫기 효과 프리셋")]
         public UIEffectPreset windowClosePreset;
+        [Tooltip("윈도우 닫힐 때, 아이콘 선택 효과 삭제 여부")]
+        [SerializeField] private bool removeIconSelectEffectOnClose = true;
 
         private UIWindowFade _uiWindowFade;
         private StruckTableWindow _struckTableWindow;
@@ -147,7 +149,7 @@ namespace GGemCo2DCore
                 uiWindow.SetVisibleImmediate(show, invokeOnShow, followLinkedWindows: false);
             }
             
-            if (!show)
+            if (!show && removeIconSelectEffectOnClose)
                 SceneGame?.uIWindowManager?.ShowSelectIconImage(false);
         }
 
@@ -233,7 +235,7 @@ namespace GGemCo2DCore
         /// </summary>
         public virtual void OnShow(bool show)
         {
-            if (!show)
+            if (!show && removeIconSelectEffectOnClose)
                 SceneGame?.uIWindowManager?.ShowSelectIconImage(false);
         }
 

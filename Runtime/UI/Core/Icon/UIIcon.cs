@@ -337,12 +337,23 @@ namespace GGemCo2DCore
             return _dragHandler.GetOriginalPosition();
         }
         /// <summary>
-        /// UIWindow 통해서 호출해야 한다. 그래야 이전에 선택된 아이콘이 해제된다.
+        /// 선택 상태를 시각적으로 반영합니다.
+        /// 실제 선택 변경은 UIWindow.SetSelectedIcon 에서 관리하고, 이 메서드는 선택 표현만 담당합니다.
         /// </summary>
         /// <param name="selected"></param>
-        public void SetSelected(bool selected)
+        public virtual void SetSelected(bool selected)
         {
             _isSelected = selected;
+
+            if (window)
+            {
+                var slot = window.GetSlotByIndex(index);
+                if (slot != null)
+                {
+                    slot.SetSelected(selected);
+                }
+            }
+            
             _uiWindowManager ??= SceneGame.Instance?.uIWindowManager;
             if (!_showSelectedImage || !_uiWindowManager) return;
             _uiWindowManager.ShowSelectIconImage(selected, gameObject.transform.position, _slotSize);

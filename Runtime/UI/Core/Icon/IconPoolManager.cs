@@ -105,7 +105,7 @@ namespace GGemCo2DCore
             foreach (var gameObjectSlot in _window.slots)
             {
                 UISlot uiSlot = gameObjectSlot?.GetComponent<UISlot>();
-                if (uiSlot != null && uiSlot.index == index) return uiSlot;
+                if (uiSlot != null && uiSlot.Index == index) return uiSlot;
             }
             GcLogger.LogError($"{_window}에 {nameof(UISlot)}이 없습니다. index: {index}");
             return null; 
