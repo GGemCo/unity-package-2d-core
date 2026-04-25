@@ -8,30 +8,39 @@ namespace GGemCo2DCore
     /// </summary>
     public class UISlot : MonoBehaviour
     {
+        [Header(UIWindowConstants.TitleHeaderCommon)]
+        [Tooltip("필터링 된 슬롯인지 여부")]
         public bool isFiltering;
+        [Tooltip("Canvas Group 컴포넌트 사용 여부")]
         public bool useCanvasGroup;
+        
+        [Header("색상")]
+        [Tooltip("일반 상태 색상")]
+        [SerializeField] private Color colorNormal = Color.white;
+        [Tooltip("선택되었을 때 색상")]
+        [SerializeField] private Color colorSelected = Color.blue;
 
-        public UIWindow window;
-        public UIWindowConstants.WindowUid windowUid;
-        public int index;
+        private UIWindow _window;
+        private UIWindowConstants.WindowUid _windowUid;
+        public int Index { get; private set; }
+
         private CanvasGroup _canvasGroup;
-        public CanvasGroup CanvasGroup => _canvasGroup;
-
         private RectTransform _rectTransform;
         private Image _imageSlot;
+        private bool _isSelected;
 
         /// <summary>
         /// prefab 생성 후 호출되는 함수
         /// </summary>
-        /// <param name="pwindow"></param>
-        /// <param name="pwindowUid"></param>
-        /// <param name="pindex"></param>
+        /// <param name="window"></param>
+        /// <param name="windowUid"></param>
+        /// <param name="slotIndex"></param>
         /// <param name="slotSize"></param>
-        public void Initialize(UIWindow pwindow, UIWindowConstants.WindowUid pwindowUid, int pindex, Vector2 slotSize)
+        public void Initialize(UIWindow window, UIWindowConstants.WindowUid windowUid, int slotIndex, Vector2 slotSize)
         {
-            window = pwindow;
-            windowUid = pwindowUid;
-            index = pindex;
+            _window = window;
+            _windowUid = windowUid;
+            Index = slotIndex;
             
             if (_imageSlot == null)
                 _imageSlot = GetComponent<Image>();
@@ -65,6 +74,12 @@ namespace GGemCo2DCore
         {
             if (!_imageSlot) return;
             _imageSlot.color = color;
+        }
+
+        public void SetSelected(bool selected)
+        {
+            _isSelected = selected;
+            SetColor(selected ? colorSelected : colorNormal);
         }
     }
 }
