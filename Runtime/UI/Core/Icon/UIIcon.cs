@@ -13,6 +13,9 @@ namespace GGemCo2DCore
         [Header(UIWindowConstants.TitleHeaderCommon)] 
         [Tooltip("개수를 표현할 텍스트")]
         public TextMeshProUGUI textCount;
+        [Tooltip("개수 앞에 보여줄 문구. 예) x")]
+        [SerializeField] private string prefixCount;
+
         [Tooltip("쿨타임 게이지")]
         public Image imageCoolTimeGauge;
         [Tooltip("잠금 표시 이미지")]
@@ -233,7 +236,7 @@ namespace GGemCo2DCore
             count = value;
             if (textCount != null)
             {
-                textCount.text = count <= 1 ? "" : count.ToString();
+                textCount.text = count <= 1 ? "" : $"{prefixCount}{count}";
             }
         }
         /// <summary>
