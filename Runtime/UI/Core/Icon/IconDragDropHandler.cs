@@ -43,7 +43,16 @@ namespace GGemCo2DCore
             
             // 순서 중요. 먼저 되돌린다. 보임, 안보임 처리는 다음 함수에서 처리
             GoBackToSlot(droppedIcon);
-            // 아니면 HandleDragInIcon 여기서 return 받고 처리
+
+            // 1차 검증은 "대상 슬롯이 dropped 아이콘을 받을 수 있는가"까지만 공통 처리합니다.
+            // 실제 swap 이 필요한지는 각 DragDropStrategy 에서 CanSwap 으로 추가 검사합니다.
+            if (!_window.CanAcceptIcon(dropped, target.slotIndex, out var failMessageKey))
+            {
+                _window.ShowSlotAcceptFailure(failMessageKey);
+                dropped.HandleInvalidEffect();
+                return;
+            }
+
             _dragDropStrategy.HandleDragInIcon(_window, dropped, target);
         }
 

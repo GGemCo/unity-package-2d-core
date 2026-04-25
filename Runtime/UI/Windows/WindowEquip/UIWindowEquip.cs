@@ -6,6 +6,14 @@ namespace GGemCo2DCore
     /// </summary>
     public class UIWindowEquip : UIWindow
     {
+        private static readonly UISlotAcceptRule LegacyDefaultAcceptRule = new UISlotAcceptRule
+        {
+            mode = UISlotAcceptMode.Rule,
+            allowedIconTypes = new[] { IconConstants.Type.Item },
+            allowedItemTypes = new[] { ItemConstants.Type.Equip },
+            failMessageKey = "Equip_InvalidSlot"
+        };
+
         private TableItem tableItem;
         public InventoryData InventoryData;
         public EquipData EquipData;
@@ -96,6 +104,25 @@ namespace GGemCo2DCore
             {
                 uIWindowItemInfo.Show(false);
             }
+        }
+
+        /// <summary>
+        /// 기존 장비창 프리팹이 아직 Inspector 규칙으로 옮겨지지 않았어도
+        /// "장비 아이템 + 부위 일치" 제약이 유지되도록 코드 fallback 을 제공합니다.
+        /// </summary>
+        protected override UISlotAcceptRule GetFallbackAcceptRule(int slotIndex)
+        {
+            if (slotIndex < 0)
+                return LegacyDefaultAcceptRule;
+
+            return new UISlotAcceptRule
+            {
+                mode = UISlotAcceptMode.Rule,
+                allowedIconTypes = LegacyDefaultAcceptRule.allowedIconTypes,
+                allowedItemTypes = LegacyDefaultAcceptRule.allowedItemTypes,
+                allowedPartsTypes = new[] { (ItemConstants.PartsType)slotIndex },
+                failMessageKey = "Equip_InvalidSlot"
+            };
         }
     }
 }

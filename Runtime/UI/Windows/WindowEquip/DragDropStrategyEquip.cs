@@ -11,8 +11,6 @@ namespace GGemCo2DCore
         {
             UIWindowEquip uiWindowEquip = window as UIWindowEquip;
             if (uiWindowEquip == null) return;
-            UIIconItem uiIconItem = droppedUIIcon as UIIconItem;
-            if (uiIconItem == null) return;
             UIWindow droppedWindow = droppedUIIcon.window;
             // UIWindowConstants.WindowUid droppedWindowUid = droppedUIIcon.windowUid;
             int dropIconSlotIndex = droppedUIIcon.slotIndex;
@@ -38,29 +36,29 @@ namespace GGemCo2DCore
 
             if (targetIconSlotIndex < window.maxCountIcon)
             {
-                // 장착 아이템 인지 체크
-                // 착용할 수 있는 부위인지 체크
-                if (uiIconItem.IsTypeEquip() && uiIconItem.IsEquipParts(targetIconSlotIndex))
+                // 장비 슬롯은 공통 규칙을 먼저 통과한 뒤, 실제 swap 가능 여부를 추가로 확인합니다.
+                if (!UISlotPlacementValidator.CanSwap(droppedUIIcon, targetUIIcon, out var failMessageKey))
                 {
-                    var result = uiWindowEquip.InventoryData.MinusItem(dropIconSlotIndex, dropIconUid, 1);
-                    droppedWindow.SetIcons(result);
-                        
-                    // 장착된 아이템이 있을 때
-                    if (targetIconUid > 0)
-                    {
-                        result = uiWindowEquip.EquipData.MinusItem(targetIconSlotIndex, targetIconUid, 1);
-                        targetWindow.SetIcons(result);
-                        
-                        result = uiWindowEquip.InventoryData.AddItem(dropIconSlotIndex, new IconPayload(targetIconUid, 1, targetIconInstanceId));
-                        droppedWindow.SetIcons(result);
-                    }
-                    result = uiWindowEquip.EquipData.AddItem(targetIconSlotIndex, new IconPayload(dropIconUid, 1, dropIconInstanceId));
+                    window.ShowSlotAcceptFailure(failMessageKey);
+                    droppedUIIcon.HandleInvalidEffect();
+                    return;
+                }
+
+                var result = uiWindowEquip.InventoryData.MinusItem(dropIconSlotIndex, dropIconUid, 1);
+                droppedWindow.SetIcons(result);
+                    
+                // 장착된 아이템이 있을 때는 인벤토리 원래 자리로 되돌립니다.
+                if (targetIconUid > 0)
+                {
+                    result = uiWindowEquip.EquipData.MinusItem(targetIconSlotIndex, targetIconUid, 1);
                     targetWindow.SetIcons(result);
+                    
+                    result = uiWindowEquip.InventoryData.AddItem(dropIconSlotIndex, new IconPayload(targetIconUid, 1, targetIconInstanceId));
+                    droppedWindow.SetIcons(result);
                 }
-                else
-                {
-                    SceneGame.Instance.systemMessageManager.ShowMessageWarning("Equip_InvalidSlot");//"해당 슬롯에는 착용할 수 없는 아이템 입니다."
-                }
+
+                result = uiWindowEquip.EquipData.AddItem(targetIconSlotIndex, new IconPayload(dropIconUid, 1, dropIconInstanceId));
+                targetWindow.SetIcons(result);
             }
         }
 

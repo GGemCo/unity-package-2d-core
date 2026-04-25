@@ -157,6 +157,46 @@ namespace GGemCo2DCore
             return totalCount;
         }
 
+        /// <summary>
+        /// 퀵슬롯이 참조할 실제 인벤토리 슬롯을 찾습니다.
+        /// 인스턴스 아이템은 instanceId 를 우선 매칭하고,
+        /// 그렇지 않으면 같은 itemUid 를 가진 첫 번째 점유 슬롯을 사용합니다.
+        /// </summary>
+        public bool TryFindUsableSlot(int itemUid, long instanceId, out int slotIndex)
+        {
+            slotIndex = -1;
+            if (itemUid <= 0)
+                return false;
+
+            if (instanceId > 0)
+            {
+                foreach (var pair in ItemCounts)
+                {
+                    var icon = pair.Value;
+                    if (icon == null || icon.Uid != itemUid || icon.Count <= 0)
+                        continue;
+
+                    if (icon.InstanceId != instanceId)
+                        continue;
+
+                    slotIndex = pair.Key;
+                    return true;
+                }
+            }
+
+            foreach (var pair in ItemCounts)
+            {
+                var icon = pair.Value;
+                if (icon == null || icon.Uid != itemUid || icon.Count <= 0)
+                    continue;
+
+                slotIndex = pair.Key;
+                return true;
+            }
+
+            return false;
+        }
+
         public ResultCommon UpgradeItem(int iconSlotIndex, int resultItemUid)
         {
             SaveDataIcon saveDataIcon = ItemCounts[iconSlotIndex];

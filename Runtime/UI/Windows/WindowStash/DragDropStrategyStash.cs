@@ -78,12 +78,26 @@ namespace GGemCo2DCore
                             }
                             else
                             {
+                                if (!UISlotPlacementValidator.CanSwap(droppedUIIcon, targetUIIcon, out var failMessageKey))
+                                {
+                                    window.ShowSlotAcceptFailure(failMessageKey);
+                                    droppedUIIcon.HandleInvalidEffect();
+                                    return;
+                                }
+
                                 droppedWindow.SetIconCount(dropIconSlotIndex, targetIconUid, targetIconCount);
                                 targetWindow.SetIconCount(targetIconSlotIndex, dropIconUid, dropIconCount);
                             }
                         }
                         else
                         {
+                            if (!UISlotPlacementValidator.CanSwap(droppedUIIcon, targetUIIcon, out var failMessageKey))
+                            {
+                                window.ShowSlotAcceptFailure(failMessageKey);
+                                droppedUIIcon.HandleInvalidEffect();
+                                return;
+                            }
+
                             droppedWindow.SetIconCount(dropIconSlotIndex, targetIconUid, targetIconCount);
                             targetWindow.SetIconCount(targetIconSlotIndex, dropIconUid, dropIconCount);
                         }

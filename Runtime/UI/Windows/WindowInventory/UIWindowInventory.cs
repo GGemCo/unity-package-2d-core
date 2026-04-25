@@ -293,8 +293,15 @@ namespace GGemCo2DCore
             {
                 if (icon.IsToolType() || icon.IsSeedType())
                 {
+                    int targetSlotIndex = _uiWindowQuickSlotSimulation.FindFirstAcceptableEmptySlot(icon);
+                    if (targetSlotIndex < 0)
+                    {
+                        _uiWindowQuickSlotSimulation.ShowSlotAcceptFailure("Slot_ItemNotAllowed");
+                        return;
+                    }
+
                     SceneGame.uIWindowManager.MoveIcon(uid, icon.slotIndex,
-                        UIWindowConstants.WindowUid.QuickSlotSimulation, icon.GetCount());
+                        UIWindowConstants.WindowUid.QuickSlotSimulation, icon.GetCount(), targetSlotIndex);
                     return;
                 }
             }
@@ -361,8 +368,24 @@ namespace GGemCo2DCore
                 // 장비일때
                 if (icon.IsEquipType())
                 {
-                    int partSlotIndex = icon.GetPartsSlotIndex();
-                    if (partSlotIndex < 0) return;
+                    var uiWindowEquip =
+                        SceneGame.uIWindowManager.GetUIWindowByUid<UIWindowEquip>(UIWindowConstants.WindowUid.Equip);
+                    if (uiWindowEquip == null) return;
+
+                    // 자동 장착은 더 이상 PartsType enum index 에 고정하지 않고
+                    // 현재 장비창 규칙을 만족하는 "빈 슬롯 우선"으로 배치합니다.
+                    int partSlotIndex = uiWindowEquip.FindFirstAcceptableEmptySlot(icon);
+                    if (partSlotIndex < 0)
+                    {
+                        partSlotIndex = uiWindowEquip.FindFirstAcceptableSlot(icon);
+                    }
+
+                    if (partSlotIndex < 0)
+                    {
+                        uiWindowEquip.ShowSlotAcceptFailure("Equip_InvalidSlot");
+                        return;
+                    }
+
                     SceneGame.uIWindowManager.MoveIcon(uid, icon.index, UIWindowConstants.WindowUid.Equip, 1, partSlotIndex);
                 }
                 // item_use 테이블에 정의된 "사용형 아이템" 처리

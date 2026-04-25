@@ -50,6 +50,12 @@ namespace GGemCo2DCore
             uid = UIWindowConstants.WindowUid.QuickSlot;
             base.Awake();
 
+            // Core 기본 등록: 인벤토리 아이템 드래그와 기본 사용 핸들러를 연결합니다.
+            QuickSlotDragStrategyRegistry.Register(UIWindowConstants.WindowUid.Inventory,
+                new DragDropStrategyQuickSlotFromInventory());
+            QuickSlotUseHandlerRegistry.Register(IconConstants.Type.Skill, new QuickSlotSkillUseHandler());
+            QuickSlotUseHandlerRegistry.Register(IconConstants.Type.Item, new QuickSlotItemUseHandler());
+
             IconPoolManager.SetSetIconHandler(new SetIconHandlerQuickSlot());
             DragDropHandler.SetStrategy(new DragDropStrategyQuickSlot());
         }
@@ -76,8 +82,7 @@ namespace GGemCo2DCore
         }
 
         /// <summary>
-        /// 저장되어있는 스킬 정보로 아이콘 셋팅하기
-        /// 스킬창이 열려있지 않으면 업데이트 하지 않음
+        /// 저장된 퀵슬롯 엔트리(스킬/아이템/패시브)를 아이콘으로 복원합니다.
         /// </summary>
         private void LoadIcons()
         {
@@ -114,7 +119,7 @@ namespace GGemCo2DCore
                     uiIconQuickSlot.ClearIconInfos();
                     continue;
                 }
-                SetIconCount(index, itemUid, itemCount, itemLevel, itemIsLearn, type: type);
+                SetIconCount(index, itemUid, itemCount, itemLevel, itemIsLearn, structInventoryIcon.InstanceId, type);
             }
         }
 
@@ -139,7 +144,7 @@ namespace GGemCo2DCore
             {
                 if (Input.GetKeyDown(HotKeyCodes[i]))
                 {
-                    OnKeyDownSkillBySlotIndex(i);
+                    OnKeyDownQuickSlotBySlotIndex(i);
                     return true;
                 }
             }
@@ -152,7 +157,7 @@ namespace GGemCo2DCore
             {
                 if (HotKeyPressedChecks[i](keyboard))
                 {
-                    OnKeyDownSkillBySlotIndex(i);
+                    OnKeyDownQuickSlotBySlotIndex(i);
                     return true;
                 }
             }
@@ -176,34 +181,54 @@ namespace GGemCo2DCore
         }
         
         /// <summary>
-        /// 키보드로 스킬 사용하기
+        /// 단축키 입력 시 현재 슬롯 엔트리를 타입별 핸들러에 위임합니다.
+        /// 등록 가능 여부와 실제 사용 동작을 분리해 두면 아이템/스킬/패시브 확장이 쉬워집니다.
         /// </summary>
-        /// <param name="slotIndex"></param>
-        private void OnKeyDownSkillBySlotIndex(int slotIndex)
+        private void OnKeyDownQuickSlotBySlotIndex(int slotIndex)
         {
-            if (SceneGame == null) return;
-            var playerGo = SceneGame.player;
-            if (playerGo == null) return;
-
-            // 2) 세이브 데이터에서 스킬 UID 조회
-            var quickSlot = SceneGame.Instance.saveDataManager?.QuickSlot;
-            if (quickSlot == null) return;
-
-            var all = quickSlot.TryGetEntry(slotIndex, out SaveDataIcon entry);
-            if (entry == null || entry.IconType != (int)IconConstants.Type.Skill)
+            if (SceneGame == null)
                 return;
-            int skillUid = entry.Uid;
-            if (skillUid <= 0) return;
 
-            // (선택) Count를 “남은 횟수/탄약”처럼 쓰는 정책이면 여기서 체크
-            // 무제한 스킬이면 Count를 0으로 저장할 수도 있으니,
-            // 프로젝트 정책에 맞춰 조건을 조정하세요.
-            // if (iconData.Count <= 0) return;
+            var quickSlot = SceneGame.Instance.saveDataManager?.QuickSlot;
+            if (quickSlot == null)
+                return;
 
-            // 3) Core 추상화(드라이버)로 스킬 사용 요청
-            // Core가 Skill 패키지 타입을 몰라도 되게 GetComponent<Interface>로 찾습니다.
+            if (!quickSlot.TryGetEntry(slotIndex, out SaveDataIcon entry) || entry == null || entry.Uid <= 0)
+                return;
+
+            var iconType = (IconConstants.Type)entry.IconType;
+            if (!QuickSlotUseHandlerRegistry.TryGet(iconType, out var handler))
+                return;
+
+            if (!handler.CanUse(this, entry, out var failMessageKey))
+            {
+                ShowQuickSlotUseFailedMessage(failMessageKey);
+                return;
+            }
+
+            if (!handler.Use(this, entry, out failMessageKey))
+            {
+                ShowQuickSlotUseFailedMessage(failMessageKey);
+            }
+        }
+
+        /// <summary>
+        /// 액티브 스킬 퀵슬롯 실행 본문입니다.
+        /// Skill 패키지 직접 참조 없이 Core 인터페이스만 사용합니다.
+        /// </summary>
+        public bool TryUseQuickSlotSkill(SaveDataIcon entry, out string failMessageKey)
+        {
+            failMessageKey = null;
+            if (SceneGame == null)
+                return false;
+
+            var playerGo = SceneGame.player;
+            if (playerGo == null || entry == null || entry.Uid <= 0)
+                return false;
+
             var driver = playerGo.GetComponent<ICharacterSkillDriver>();
-            if (driver == null) return;
+            if (driver == null)
+                return false;
 
             SkillDriverRequest request;
             var targetingProvider = playerGo.GetComponent<IPlayerSkillTargetingProvider>();
@@ -211,20 +236,20 @@ namespace GGemCo2DCore
             {
                 if (!targetingProvider.TryBuildSkillRequest(
                         playerGo,
-                        skillUid,
+                        entry.Uid,
                         ConfigCommon.SkillTableSource.Player,
                         out var resolvedRequest,
                         out var targetingFailReason))
                 {
-                    ShowSkillUseFailedMessage(targetingFailReason);
-                    return;
+                    failMessageKey = ResolveSkillUseFailedMessage(targetingFailReason);
+                    return false;
                 }
 
                 request = resolvedRequest;
             }
             else
             {
-                // 타겟팅 제공자가 없으면 기존 전방/자기 위치 fallback을 사용합니다.
+                // 타겟팅 제공자가 없으면 기존 전방/자기 위치 fallback 을 사용합니다.
                 var forward = ResolveForward2D(playerGo);
                 request = new SkillDriverRequest(
                     lockedTarget: null,
@@ -234,22 +259,119 @@ namespace GGemCo2DCore
                 );
             }
 
-            var result = driver.TryUseSkill(skillUid, request);
-            if (!result.IsStarted)
-            {
-                ShowSkillUseFailedMessage(result.FailReason);
-            }
+            var result = driver.TryUseSkill(entry.Uid, request);
+            if (result.IsStarted)
+                return true;
+
+            failMessageKey = ResolveSkillUseFailedMessage(result.FailReason);
+            return false;
         }
-        private void ShowSkillUseFailedMessage(SkillUseFailReason failReason)
+
+        /// <summary>
+        /// 소비 아이템 퀵슬롯은 인벤토리 원본 슬롯을 찾아 사용합니다.
+        /// 사용 후에는 퀵슬롯 count 를 실제 인벤토리 상태와 다시 맞춰 줍니다.
+        /// </summary>
+        public bool CanUseQuickSlotItem(SaveDataIcon entry, out string failMessageKey)
         {
-            if (SceneGame == null || SceneGame.systemMessageManager == null)
+            failMessageKey = null;
+
+            var inventory = SceneGame?.saveDataManager?.Inventory;
+            if (inventory == null || entry == null || entry.Uid <= 0)
+                return false;
+
+            if (TableLoaderManager.Instance?.TableItemUse == null ||
+                !TableLoaderManager.Instance.TableItemUse.TryGetByItemUid(entry.Uid, out _))
+            {
+                failMessageKey = "Item_NotUsable";
+                return false;
+            }
+
+            if (!inventory.TryFindUsableSlot(entry.Uid, entry.InstanceId, out _))
+            {
+                failMessageKey = "Item_NoUsableCount";
+                return false;
+            }
+
+            return true;
+        }
+
+        public bool TryUseQuickSlotItem(SaveDataIcon entry, out string failMessageKey)
+        {
+            failMessageKey = null;
+            if (!CanUseQuickSlotItem(entry, out failMessageKey))
+            {
+                SyncQuickSlotItemEntry(entry);
+                return false;
+            }
+
+            float currentCd = SceneGame.uIIconCoolTimeManager.GetCurrentCoolTime(uid, entry.Uid);
+            if (currentCd > 0)
+            {
+                failMessageKey = "Action_CannotUseDuringCooldown";
+                return false;
+            }
+
+            var inventory = SceneGame.saveDataManager.Inventory;
+            if (!inventory.TryFindUsableSlot(entry.Uid, entry.InstanceId, out var inventorySlotIndex))
+            {
+                failMessageKey = "Item_NoUsableCount";
+                SyncQuickSlotItemEntry(entry);
+                return false;
+            }
+
+            var useResult = ItemUseService.TryUseInventoryItem(SceneGame, inventory, inventorySlotIndex, out var cooldown);
+
+            // 인벤토리 윈도우가 열려 있지 않아도 데이터 반영 결과는 즉시 동기화합니다.
+            var inventoryWindow = SceneGame.uIWindowManager
+                .GetUIWindowByUid<UIWindowInventory>(UIWindowConstants.WindowUid.Inventory);
+            inventoryWindow?.SetIcons(useResult);
+
+            SyncQuickSlotItemEntry(entry);
+
+            if (!useResult.IsSuccess())
+                return false;
+
+            if (cooldown > 0)
+            {
+                var icon = GetIconByIndex(entry.SlotIndex);
+                icon?.PlayCoolTime(cooldown);
+            }
+
+            return true;
+        }
+
+        /// <summary>
+        /// 인벤토리 변경 이후 퀵슬롯 항목이 실제로 남아 있는지 다시 확인하고
+        /// count/instanceId 를 최신 상태로 맞춥니다.
+        /// </summary>
+        private void SyncQuickSlotItemEntry(SaveDataIcon entry)
+        {
+            if (entry == null)
                 return;
 
-            string message = ResolveSkillUseFailedMessage(failReason);
-            if (string.IsNullOrEmpty(message))
+            var inventory = SceneGame?.saveDataManager?.Inventory;
+            if (inventory == null)
                 return;
 
-            SceneGame.systemMessageManager.ShowMessageWarning(message);
+            if (!inventory.TryFindUsableSlot(entry.Uid, entry.InstanceId, out var inventorySlotIndex) ||
+                !inventory.ItemCounts.TryGetValue(inventorySlotIndex, out var inventoryEntry) ||
+                inventoryEntry == null ||
+                inventoryEntry.Count <= 0)
+            {
+                DetachIcon(entry.SlotIndex);
+                return;
+            }
+
+            SetIconCount(entry.SlotIndex, inventoryEntry.Uid, inventoryEntry.Count, instanceId: inventoryEntry.InstanceId,
+                type: IconConstants.Type.Item);
+        }
+
+        private void ShowQuickSlotUseFailedMessage(string failMessageKey)
+        {
+            if (SceneGame == null || SceneGame.systemMessageManager == null || string.IsNullOrEmpty(failMessageKey))
+                return;
+
+            SceneGame.systemMessageManager.ShowMessageWarning(failMessageKey);
         }
 
         private static string ResolveSkillUseFailedMessage(SkillUseFailReason failReason)

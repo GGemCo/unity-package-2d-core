@@ -138,6 +138,26 @@ namespace GGemCo2DCore
             if (_struckTableItem == null) return ItemConstants.PartsType.None; 
             return _struckTableItem.PartsID;
         }
+
+        public override ItemConstants.Type GetItemType()
+        {
+            return _struckTableItem != null ? _struckTableItem.Type : ItemConstants.Type.None;
+        }
+
+        public override ItemConstants.Category GetItemCategory()
+        {
+            return _struckTableItem != null ? _struckTableItem.Category : ItemConstants.Category.None;
+        }
+
+        public override ItemConstants.SubCategory GetItemSubCategory()
+        {
+            return _struckTableItem != null ? _struckTableItem.SubCategory : ItemConstants.SubCategory.None;
+        }
+
+        public override ItemConstants.PartsType GetItemPartsType()
+        {
+            return _struckTableItem != null ? _struckTableItem.PartsID : ItemConstants.PartsType.None;
+        }
         
         public override bool IsEquipType()
         {

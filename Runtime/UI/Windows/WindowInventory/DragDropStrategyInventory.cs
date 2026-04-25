@@ -53,13 +53,20 @@ namespace GGemCo2DCore
                         {
                             var result = uiWindowInventory.EquipData.MinusItem(dropIconSlotIndex, dropIconUid, dropIconCount);
                             droppedWindow.SetIcons(result);
-                                
+
                             result = uiWindowInventory.InventoryData.AddItem(targetIconSlotIndex, new IconPayload(dropIconUid, dropIconCount, dropIconInstanceId));
                             targetWindow.SetIcons(result);
                         }
-                        else if (droppedUIIcon.GetPartsType() == targetUIIcon.GetPartsType())
+                        else
                         {
-                            // 교체 가능한 PartsType이면 교체 진행
+                            // 장비 <-> 인벤토리 swap 은 공통 슬롯 규칙을 모두 통과한 뒤에만 진행합니다.
+                            if (!UISlotPlacementValidator.CanSwap(droppedUIIcon, targetUIIcon, out var failMessageKey))
+                            {
+                                window.ShowSlotAcceptFailure(failMessageKey);
+                                droppedUIIcon.HandleInvalidEffect();
+                                return;
+                            }
+
                             // 순서 중요
                             // 인벤토리에서 하나 빼고
                             var result = uiWindowInventory.InventoryData.MinusItem(targetIconSlotIndex, targetIconUid, 1);
@@ -75,11 +82,6 @@ namespace GGemCo2DCore
                             // 장비창에 하나 넣기
                             result = uiWindowInventory.EquipData.AddItem(dropIconSlotIndex, new IconPayload(targetIconUid, 1, targetIconInstanceId));
                             droppedWindow.SetIcons(result);
-                        }
-                        else
-                        {
-                            // 교체가 불가능하면 원래 자리로 되돌리기
-                            SceneGame.Instance.systemMessageManager.ShowMessageWarning("Equip_InvalidBodyPart");//"해당 부위에 장착할 수 없는 아이템입니다."
                         }
                         break;
                     case UIWindowConstants.WindowUid.None:
@@ -108,12 +110,26 @@ namespace GGemCo2DCore
                         }
                         else
                         {
+                            if (!UISlotPlacementValidator.CanSwap(droppedUIIcon, targetUIIcon, out var failMessageKey))
+                            {
+                                window.ShowSlotAcceptFailure(failMessageKey);
+                                droppedUIIcon.HandleInvalidEffect();
+                                return;
+                            }
+
                             droppedWindow.SetIconCount(dropIconSlotIndex, targetIconUid, targetIconCount, instanceId: targetIconInstanceId);
                             targetWindow.SetIconCount(targetIconSlotIndex, dropIconUid, dropIconCount, instanceId: dropIconInstanceId);
                         }
                     }
                     else
                     {
+                        if (!UISlotPlacementValidator.CanSwap(droppedUIIcon, targetUIIcon, out var failMessageKey))
+                        {
+                            window.ShowSlotAcceptFailure(failMessageKey);
+                            droppedUIIcon.HandleInvalidEffect();
+                            return;
+                        }
+
                         droppedWindow.SetIconCount(dropIconSlotIndex, targetIconUid, targetIconCount, instanceId: targetIconInstanceId);
                         targetWindow.SetIconCount(targetIconSlotIndex, dropIconUid, dropIconCount, instanceId: dropIconInstanceId);
                     }

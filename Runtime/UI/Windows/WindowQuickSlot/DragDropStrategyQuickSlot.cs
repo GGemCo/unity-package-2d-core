@@ -19,6 +19,8 @@ namespace GGemCo2DCore
             int dropIconCount = droppedUIIcon.GetCount();
             int dropIconLevel = droppedUIIcon.GetLevel();
             bool dropIconIsLearn = droppedUIIcon.IsLearn();
+            long dropIconInstanceId = droppedUIIcon.instanceId;
+            IconConstants.Type dropIconType = droppedUIIcon.GetIconType();
             if (dropIconUid <= 0)
             {
                 return;
@@ -34,6 +36,10 @@ namespace GGemCo2DCore
             int targetIconSlotIndex = targetUIIcon.slotIndex;
             int targetIconUid = targetUIIcon.uid;
             int targetIconCount = targetUIIcon.GetCount();
+            int targetIconLevel = targetUIIcon.GetLevel();
+            bool targetIconIsLearn = targetUIIcon.IsLearn();
+            long targetIconInstanceId = targetUIIcon.instanceId;
+            IconConstants.Type targetIconType = targetUIIcon.GetIconType();
 
             // 다른 윈도우에서 Skill로 드래그 앤 드랍 했을 때 
             if (droppedWindowUid != targetWindowUid)
@@ -66,6 +72,26 @@ namespace GGemCo2DCore
             {
                 if (targetIconSlotIndex < window.maxCountIcon)
                 {
+                    // 퀵슬롯 내부 이동은 실제 slot 데이터 교체이므로 양방향 배치 가능 여부를 확인합니다.
+                    if (!UISlotPlacementValidator.CanSwap(droppedUIIcon, targetUIIcon, out var failMessageKey))
+                    {
+                        window.ShowSlotAcceptFailure(failMessageKey);
+                        droppedUIIcon.HandleInvalidEffect();
+                        return;
+                    }
+
+                    if (targetIconUid <= 0)
+                    {
+                        droppedWindow.DetachIcon(dropIconSlotIndex);
+                        targetWindow.SetIconCount(targetIconSlotIndex, dropIconUid, dropIconCount, dropIconLevel,
+                            dropIconIsLearn, dropIconInstanceId, dropIconType);
+                        return;
+                    }
+
+                    droppedWindow.SetIconCount(dropIconSlotIndex, targetIconUid, targetIconCount, targetIconLevel,
+                        targetIconIsLearn, targetIconInstanceId, targetIconType);
+                    targetWindow.SetIconCount(targetIconSlotIndex, dropIconUid, dropIconCount, dropIconLevel,
+                        dropIconIsLearn, dropIconInstanceId, dropIconType);
                 }
             }
         }

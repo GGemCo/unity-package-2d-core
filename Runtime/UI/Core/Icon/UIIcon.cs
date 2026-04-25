@@ -176,6 +176,10 @@ namespace GGemCo2DCore
         public virtual bool IsToolType() => false;
         public virtual bool IsAffectUid() => false;
         public IconConstants.Type GetIconType() => IconType;
+        public virtual ItemConstants.Type GetItemType() => ItemConstants.Type.None;
+        public virtual ItemConstants.Category GetItemCategory() => ItemConstants.Category.None;
+        public virtual ItemConstants.SubCategory GetItemSubCategory() => ItemConstants.SubCategory.None;
+        public virtual ItemConstants.PartsType GetItemPartsType() => ItemConstants.PartsType.None;
         public IconConstants.Grade GetGrade() => _grade;
         private void SetStatus(IconConstants.Status status) => this._iconStatus = status;
 
@@ -270,6 +274,9 @@ namespace GGemCo2DCore
         {
             _iconCoolTimeManager?.ResetCoolTime(windowUid, uid);
             instanceId = 0;
+            IconType = IconConstants.Type.None;
+            _level = 0;
+            _isLearn = false;
             
             uid = 0;
             Sprite newSprite = AddressableLoaderItem.Instance.GetImageIconItemByName("blank");
@@ -366,7 +373,7 @@ namespace GGemCo2DCore
             if (!_showOverImage || !_uiWindowManager) return;
             _uiWindowManager.ShowOverIconImage(show, gameObject.transform.position, _slotSize);
         }
-        public virtual ItemConstants.PartsType GetPartsType() => ItemConstants.PartsType.None;
+        public virtual ItemConstants.PartsType GetPartsType() => GetItemPartsType();
         public virtual int GetStatusValue1() => 0;
         public virtual string GetStatusId1() => "";
         public virtual float GetDuration() => 0;

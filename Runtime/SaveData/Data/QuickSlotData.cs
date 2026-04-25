@@ -30,7 +30,8 @@ namespace GGemCo2DCore
                 .GetUIWindowByUid<UIWindowQuickSlot>(UIWindowConstants.WindowUid.QuickSlot)?.maxCountIcon ?? 0;
         }
         
-        public void SetIcon(int slotIndex, int iconUid, int iconCount, int iconLevel, bool isLearned, IconConstants.Type getIconType)
+        public void SetIcon(int slotIndex, int iconUid, int iconCount, int iconLevel, bool isLearned,
+            IconConstants.Type getIconType, long instanceId = 0)
         {
             if (getIconType == IconConstants.Type.Skill)
             {
@@ -42,7 +43,7 @@ namespace GGemCo2DCore
             }
             else if (getIconType == IconConstants.Type.Item)
             {
-                SetItem(slotIndex, iconUid, iconCount);
+                SetItem(slotIndex, iconUid, iconCount, instanceId);
             }
         }
         /// <summary>
