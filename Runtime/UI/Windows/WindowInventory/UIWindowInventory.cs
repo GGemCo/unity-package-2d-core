@@ -20,6 +20,8 @@ namespace GGemCo2DCore
         [SerializeField] private UIWindowItemInfo overrideUiWindowItemInfo;
         [Tooltip("인벤토리 창이 열릴 때 첫 번째 아이템 슬롯을 자동 선택할지 여부")]
         [SerializeField] private bool selectFirstItemOnShow = true;
+        [Tooltip("아이템 나누기 가능 여부")]
+        [SerializeField] private bool useItemSplit = true;
         
         public TableItem TableItem;
         public InventoryData InventoryData;
@@ -388,6 +390,7 @@ namespace GGemCo2DCore
                 }
             }
         }
+        
         /// <summary>
         /// index 가 없을때는, 같은 uid 는 중첩 가능여부를 확인하고 합치고, 나머지는 추가
         /// </summary>
@@ -398,12 +401,21 @@ namespace GGemCo2DCore
             ResultCommon result = InventoryData.AddItem(new IconPayload(iconUid, iconCount, instanceId));
             SetIcons(result);
         }
+        
         /// <summary>
         /// 아이템 나누기 단축키 : shift + 좌클릭 적용 
         /// </summary>
         /// <param name="index"></param>
         public override void SetSelectedIcon(int index)
         {
+            base.SetSelectedIcon(index);
+
+            OnItemSplit(index);
+        }
+
+        private void OnItemSplit(int index)
+        {
+            if (!useItemSplit) return;
 #if GGEMCO_USE_OLD_INPUT
             if (Input.GetKey(KeyCode.LeftShift))
 #elif GGEMCO_USE_NEW_INPUT
@@ -427,7 +439,7 @@ namespace GGemCo2DCore
                 SceneGame.Instance.uIWindowManager.RegisterIcon(uid, icon.slotIndex, UIWindowConstants.WindowUid.ItemSplit, icon.GetCount());
             }
         }
-        
+
         /// <summary>
         /// 인벤토리 아이콘의 아이템 정보창을 표시하거나 숨깁니다.
         /// </summary>
