@@ -6,6 +6,7 @@ using UnityEngine.InputSystem;
 #endif
 
 using System.Collections;
+using System.Collections.Generic;
 
 namespace GGemCo2DCore
 {
@@ -76,6 +77,7 @@ namespace GGemCo2DCore
         private IInventorySelectionContext _selectionContext;
         private TextMeshProUGUI _fallbackContextActionText;
         private string _fallbackContextActionTextDefault;
+        private readonly List<int> _contextVisibleSlotOrder = new List<int>(128);
 
         protected override void Awake()
         {
@@ -318,16 +320,49 @@ namespace GGemCo2DCore
         {
             if (!gameObject.activeSelf) return;
             var datas = SceneGame.saveDataManager.Inventory.GetAllItemCounts();
-            if (datas == null) return;
+            bool contextActive = _selectionContext is { IsActive: true };
+            int defaultItemUid = 0;
+            long defaultItemInstanceId = 0;
+            bool hasDefaultSelection = contextActive &&
+                                       _selectionContext.TryGetDefaultSelection(
+                                           out defaultItemUid,
+                                           out defaultItemInstanceId);
+            bool defaultSelectionAdded = false;
+
+            _contextVisibleSlotOrder.Clear();
+
+            if (datas == null)
+            {
+                SetAllSlotFilteringState(!contextActive);
+                RefreshInventorySlotPage(contextActive);
+                return;
+            }
+
             for (int index = 0; index < maxCountIcon; index++)
             {
-                if (index >= icons.Length) continue;
+                if (index >= icons.Length)
+                {
+                    SetSlotFilteringState(index, !contextActive);
+                    continue;
+                }
+
                 var icon = icons[index];
-                if (icon == null) continue;
+                if (icon == null)
+                {
+                    SetSlotFilteringState(index, !contextActive);
+                    continue;
+                }
+
                 UIIconItem uiIcon = icon.GetComponent<UIIconItem>();
-                if (uiIcon == null) continue;
+                if (uiIcon == null)
+                {
+                    SetSlotFilteringState(index, !contextActive);
+                    continue;
+                }
+
                 if (!datas.TryGetValue(index, out var saveDataIcon))
                 {
+                    SetSlotFilteringState(index, !contextActive);
                     ClearInventoryIconAndSlot(uiIcon, index);
                     continue;
                 }
@@ -336,12 +371,14 @@ namespace GGemCo2DCore
                 int itemCount = saveDataIcon.Count;
                 if (itemUid <= 0)
                 {
+                    SetSlotFilteringState(index, !contextActive);
                     ClearInventoryIconAndSlot(uiIcon, index);
                     continue;
                 }
                 var table = TableItem.GetDataByUid(itemUid);
                 if (table == null || table.Uid <= 0)
                 {
+                    SetSlotFilteringState(index, !contextActive);
                     ClearInventoryIconAndSlot(uiIcon, index);
                     continue;
                 }
@@ -350,29 +387,124 @@ namespace GGemCo2DCore
                 bool displayZeroCountItem = ShouldDisplayZeroCountItem(saveDataIcon, table);
                 if (isZeroCountItem && !displayZeroCountItem)
                 {
+                    SetSlotFilteringState(index, !contextActive);
                     ClearInventoryIconAndSlot(uiIcon, index);
                     continue;
                 }
 
                 // 선택 문맥이 있으면 해당 문맥에서 허용한 아이템만 후보로 보여줍니다.
-                if (_selectionContext is { IsActive: true } &&
+                if (contextActive &&
                     !_selectionContext.CanDisplay(saveDataIcon, table))
                 {
+                    SetSlotFilteringState(index, false);
                     ClearInventoryIconAndSlot(uiIcon, index);
                     continue;
+                }
+
+                SetSlotFilteringState(index, true);
+
+                if (contextActive)
+                {
+                    defaultSelectionAdded = AddContextVisibleSlotOrder(
+                        index,
+                        saveDataIcon,
+                        hasDefaultSelection,
+                        defaultItemUid,
+                        defaultItemInstanceId,
+                        defaultSelectionAdded);
                 }
 
                 // 0개 아이템을 보여주는 문맥에서만 개수 텍스트에 0을 표시할 수 있습니다.
                 uiIcon.SetShowZeroCountText(isZeroCountItem && ShouldShowZeroCountText(saveDataIcon, table));
                 uiIcon.ChangeInfoByUid(table.Uid, itemCount, iconInstanceId: saveDataIcon.InstanceId);
-                bool equipped = _selectionContext is { IsActive: true } &&
+                bool equipped = contextActive &&
                                 _selectionContext.IsEquipped(uiIcon);
                 uiIcon.SetEquippedState(equipped);
                 uiIcon.SetDrag(useIconDrag);
                 SetSlotEquippedState(index, equipped);
             }
 
+            RefreshInventorySlotPage(contextActive);
             RefreshContextActionButtons();
+        }
+
+        /// <summary>
+        /// 선택 문맥에서 화면에 보여줄 슬롯 순서를 구성합니다.
+        /// 기본 선택 아이템은 사용자가 클릭한 스킬 슬롯에 이미 장착된 아이템이므로 목록 맨 앞으로 배치합니다.
+        /// </summary>
+        private bool AddContextVisibleSlotOrder(
+            int slotIndex,
+            SaveDataIcon saveDataIcon,
+            bool hasDefaultSelection,
+            int defaultItemUid,
+            long defaultItemInstanceId,
+            bool defaultSelectionAdded)
+        {
+            bool isDefaultSelection =
+                hasDefaultSelection &&
+                !defaultSelectionAdded &&
+                saveDataIcon != null &&
+                saveDataIcon.Uid == defaultItemUid &&
+                saveDataIcon.InstanceId == defaultItemInstanceId;
+
+            if (isDefaultSelection)
+            {
+                _contextVisibleSlotOrder.Insert(0, slotIndex);
+                return true;
+            }
+
+            _contextVisibleSlotOrder.Add(slotIndex);
+            return defaultSelectionAdded;
+        }
+
+        /// <summary>
+        /// 현재 인벤토리 모드에 맞춰 페이지 컨트롤러의 슬롯 표시 순서를 갱신합니다.
+        /// 일반 모드에서는 원래 슬롯 순서를 사용하고, 선택 문맥에서는 후보 슬롯만 앞에서부터 채워 보이게 합니다.
+        /// </summary>
+        private void RefreshInventorySlotPage(bool contextActive)
+        {
+            if (pageController == null)
+            {
+                return;
+            }
+
+            if (contextActive)
+            {
+                pageController.SetSlotDisplayOrder(_contextVisibleSlotOrder);
+                return;
+            }
+
+            pageController.ClearSlotDisplayOrder();
+        }
+
+        /// <summary>
+        /// 전체 슬롯의 필터 표시 상태를 한 번에 설정합니다.
+        /// 선택 문맥이 없을 때는 빈 슬롯까지 일반 인벤토리처럼 보이도록 복구할 때 사용합니다.
+        /// </summary>
+        private void SetAllSlotFilteringState(bool visible)
+        {
+            for (int slotIndex = 0; slotIndex < maxCountIcon; slotIndex++)
+            {
+                SetSlotFilteringState(slotIndex, visible);
+            }
+        }
+
+        /// <summary>
+        /// 특정 슬롯이 페이지 컨트롤러에서 표시 대상으로 취급될지 설정합니다.
+        /// 아이콘만 비우면 빈칸이 남으므로, 후보가 아닌 슬롯은 UISlot 자체를 필터에서 제외합니다.
+        /// </summary>
+        private void SetSlotFilteringState(int slotIndex, bool visible)
+        {
+            if (slots == null || slotIndex < 0 || slotIndex >= slots.Length)
+            {
+                return;
+            }
+
+            UISlot slot = slots[slotIndex] != null ? slots[slotIndex].GetComponent<UISlot>() : null;
+            if (slot != null)
+            {
+                slot.isFiltering = visible;
+            }
         }
 
         /// <summary>
