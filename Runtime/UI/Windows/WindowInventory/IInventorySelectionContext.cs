@@ -1,3 +1,5 @@
+using System;
+
 namespace GGemCo2DCore
 {
     /// <summary>
@@ -64,5 +66,68 @@ namespace GGemCo2DCore
         /// 인벤토리가 일반 모드로 돌아가거나 닫힐 때 문맥이 정리할 수 있는 훅입니다.
         /// </summary>
         void OnClosed();
+    }
+
+    /// <summary>
+    /// 인벤토리 선택 문맥에서 아이템을 실행했을 때 개수를 차감할지 결정합니다.
+    /// 기본값은 선택한 아이템을 1개 소비하는 방식입니다.
+    /// </summary>
+    public enum InventorySelectionConsumeMode
+    {
+        Consume,
+        Keep,
+    }
+
+    /// <summary>
+    /// 아이템 개수가 0이 되었을 때 인벤토리 후보 목록에 계속 보여줄지 결정합니다.
+    /// </summary>
+    public enum InventorySelectionZeroCountItemVisibility
+    {
+        HideItem,
+        ShowItem,
+    }
+
+    /// <summary>
+    /// 아이템 개수가 0이 되었을 때 개수 텍스트를 표시할지 결정합니다.
+    /// </summary>
+    public enum InventorySelectionZeroCountTextVisibility
+    {
+        HideText,
+        ShowZero,
+    }
+
+    /// <summary>
+    /// 인벤토리 선택 문맥의 아이템 소비와 0개 표시 방식을 묶은 정책입니다.
+    /// 이 정책은 일반 인벤토리 동작이 아니라 OpenWithContext 로 열린 선택 모드에서만 사용합니다.
+    /// </summary>
+    [Serializable]
+    public sealed class InventorySelectionConsumePolicy
+    {
+        public InventorySelectionConsumeMode consumeMode = InventorySelectionConsumeMode.Consume;
+        public int consumeCount = 1;
+        public InventorySelectionZeroCountItemVisibility zeroCountItemVisibility =
+            InventorySelectionZeroCountItemVisibility.HideItem;
+        public InventorySelectionZeroCountTextVisibility zeroCountTextVisibility =
+            InventorySelectionZeroCountTextVisibility.HideText;
+
+        public bool ShouldConsume() => consumeMode == InventorySelectionConsumeMode.Consume;
+
+        public int GetConsumeCount() => Math.Max(1, consumeCount);
+
+        public bool ShouldDisplayZeroCountItem() =>
+            zeroCountItemVisibility == InventorySelectionZeroCountItemVisibility.ShowItem;
+
+        public bool ShouldShowZeroCountText() =>
+            zeroCountTextVisibility == InventorySelectionZeroCountTextVisibility.ShowZero;
+    }
+
+    /// <summary>
+    /// 선택 문맥이 0개 아이템 표시 정책을 인벤토리 UI에 알려주기 위한 선택 확장 인터페이스입니다.
+    /// 구현하지 않은 문맥은 기존처럼 0개 아이템을 숨깁니다.
+    /// </summary>
+    public interface IInventorySelectionZeroCountDisplayPolicy
+    {
+        bool ShouldDisplayZeroCountItem(SaveDataIcon itemData, StruckTableItem itemTableData);
+        bool ShouldShowZeroCountText(SaveDataIcon itemData, StruckTableItem itemTableData);
     }
 }

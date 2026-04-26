@@ -316,13 +316,21 @@ namespace GGemCo2DCore
 
                 int itemUid = saveDataIcon.Uid;
                 int itemCount = saveDataIcon.Count;
-                if (itemUid <= 0 || itemCount <= 0)
+                if (itemUid <= 0)
                 {
                     ClearInventoryIconAndSlot(uiIcon, index);
                     continue;
                 }
                 var table = TableItem.GetDataByUid(itemUid);
                 if (table == null || table.Uid <= 0)
+                {
+                    ClearInventoryIconAndSlot(uiIcon, index);
+                    continue;
+                }
+
+                bool isZeroCountItem = itemCount <= 0;
+                bool displayZeroCountItem = ShouldDisplayZeroCountItem(saveDataIcon, table);
+                if (isZeroCountItem && !displayZeroCountItem)
                 {
                     ClearInventoryIconAndSlot(uiIcon, index);
                     continue;
@@ -336,6 +344,8 @@ namespace GGemCo2DCore
                     continue;
                 }
 
+                // 0개 아이템을 보여주는 문맥에서만 개수 텍스트에 0을 표시할 수 있습니다.
+                uiIcon.SetShowZeroCountText(isZeroCountItem && ShouldShowZeroCountText(saveDataIcon, table));
                 uiIcon.ChangeInfoByUid(table.Uid, itemCount, iconInstanceId: saveDataIcon.InstanceId);
                 bool equipped = _selectionContext is { IsActive: true } &&
                                 _selectionContext.IsEquipped(uiIcon);
@@ -352,8 +362,38 @@ namespace GGemCo2DCore
         /// </summary>
         private void ClearInventoryIconAndSlot(UIIconItem uiIcon, int slotIndex)
         {
+            uiIcon.SetShowZeroCountText(false);
             uiIcon.ClearIconInfos();
             SetSlotEquippedState(slotIndex, false);
+        }
+
+        /// <summary>
+        /// 선택 문맥이 0개 아이템 표시를 허용할 때만 인벤토리 후보에 남겨둡니다.
+        /// 일반 인벤토리 모드와 기존 문맥은 계속 0개 아이템을 숨깁니다.
+        /// </summary>
+        private bool ShouldDisplayZeroCountItem(SaveDataIcon itemData, StruckTableItem itemTableData)
+        {
+            if (itemData == null || itemData.Count > 0)
+            {
+                return false;
+            }
+
+            return _selectionContext is IInventorySelectionZeroCountDisplayPolicy displayPolicy &&
+                   displayPolicy.ShouldDisplayZeroCountItem(itemData, itemTableData);
+        }
+
+        /// <summary>
+        /// 0개 아이템을 보여주는 경우에도 텍스트 표시 여부는 문맥 정책을 따로 확인합니다.
+        /// </summary>
+        private bool ShouldShowZeroCountText(SaveDataIcon itemData, StruckTableItem itemTableData)
+        {
+            if (itemData == null || itemData.Count > 0)
+            {
+                return false;
+            }
+
+            return _selectionContext is IInventorySelectionZeroCountDisplayPolicy displayPolicy &&
+                   displayPolicy.ShouldShowZeroCountText(itemData, itemTableData);
         }
 
         /// <summary>
@@ -409,16 +449,11 @@ namespace GGemCo2DCore
             if (_selectionContext is not { IsActive: true }) return;
 
             UIIconItem icon = GetSelectedIcon() as UIIconItem;
-            if (icon == null || icon.uid <= 0)
-            {
-                SceneGame.systemMessageManager.ShowMessageWarning("Inventory_SelectItem");
-                return;
-            }
 
             if (!_selectionContext.CanUnequip(icon, out string failMessageKey))
             {
                 ShowSlotAcceptFailure(failMessageKey);
-                icon.HandleInvalidEffect();
+                icon?.HandleInvalidEffect();
                 return;
             }
 
@@ -426,7 +461,7 @@ namespace GGemCo2DCore
             if (result == null || result.Result != ResultCommon.ResultType.Success)
             {
                 ShowSlotAcceptFailure("Inventory_ContextUnequipFailed");
-                icon.HandleInvalidEffect();
+                icon?.HandleInvalidEffect();
                 return;
             }
 
@@ -442,21 +477,24 @@ namespace GGemCo2DCore
         {
             bool contextActive = _selectionContext is { IsActive: true };
             UIIconItem selectedItem = GetSelectedIcon() as UIIconItem;
-            bool canUnequipSelectedItem =
+            bool canExecuteSelectedItem =
                 contextActive &&
                 selectedItem != null &&
                 selectedItem.uid > 0 &&
+                _selectionContext.CanExecute(selectedItem, out _);
+            bool canUnequipSelectedItem =
+                contextActive &&
                 _selectionContext.CanUnequip(selectedItem, out _);
 
             if (buttonContextAction != null)
             {
                 // 현재 열었던 슬롯에 이미 장착된 아이템을 다시 선택한 경우에는 중복 장착을 막기 위해 장착 버튼을 끕니다.
-                buttonContextAction.interactable = contextActive && !canUnequipSelectedItem;
+                buttonContextAction.interactable = canExecuteSelectedItem && !canUnequipSelectedItem;
             }
             else if (buttonMergeAllItems != null && contextActive)
             {
                 // 별도 장착 버튼이 없는 프리팹에서는 합치기 버튼을 장착 버튼으로 재사용하므로 같은 조건을 적용합니다.
-                buttonMergeAllItems.interactable = !canUnequipSelectedItem;
+                buttonMergeAllItems.interactable = canExecuteSelectedItem && !canUnequipSelectedItem;
             }
             else if (buttonMergeAllItems != null)
             {
@@ -582,7 +620,7 @@ namespace GGemCo2DCore
                 }
 
                 UIIconItem icon = iconObject.GetComponent<UIIconItem>();
-                if (icon == null || icon.uid != itemUid || icon.GetCount() <= 0)
+                if (icon == null || icon.uid != itemUid)
                 {
                     continue;
                 }
@@ -618,7 +656,7 @@ namespace GGemCo2DCore
                 }
 
                 UIIcon uiIcon = iconObject.GetComponent<UIIcon>();
-                if (uiIcon == null || uiIcon.uid <= 0 || uiIcon.GetCount() <= 0)
+                if (uiIcon == null || uiIcon.uid <= 0)
                 {
                     continue;
                 }

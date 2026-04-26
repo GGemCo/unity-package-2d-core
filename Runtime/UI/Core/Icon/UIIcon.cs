@@ -64,6 +64,7 @@ namespace GGemCo2DCore
         
         private bool _showSelectedImage;
         private bool _showOverImage;
+        private bool _showZeroCountText;
         
         // 부모 윈도우 uid
         private UIWindowConstants.WindowUid _parentWindowUid;
@@ -240,8 +241,23 @@ namespace GGemCo2DCore
             count = value;
             if (textCount != null)
             {
-                textCount.text = count <= 1 ? "" : $"{prefixCount}{count}";
+                textCount.text = count switch
+                {
+                    <= 0 => _showZeroCountText ? $"{prefixCount}0" : "",
+                    1 => "",
+                    _ => $"{prefixCount}{count}",
+                };
             }
+        }
+
+        /// <summary>
+        /// 개수가 0인 아이템을 특수하게 보여주는 선택 문맥에서만 0 텍스트를 노출합니다.
+        /// 일반 아이콘은 기존처럼 0 또는 1일 때 개수 텍스트를 숨깁니다.
+        /// </summary>
+        public void SetShowZeroCountText(bool show)
+        {
+            _showZeroCountText = show;
+            SetCount(count);
         }
         /// <summary>
         /// 아이템 잠금
@@ -290,6 +306,7 @@ namespace GGemCo2DCore
             }
 
             SetIconLock(false);
+            SetShowZeroCountText(false);
             SetCount(0);
         }
 
