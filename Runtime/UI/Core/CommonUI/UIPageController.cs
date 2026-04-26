@@ -245,5 +245,46 @@ namespace GGemCo2DCore
             _currentPage = 1;
             UpdatePage();
         }
+
+        /// <summary>
+        /// 지정한 슬롯 인덱스가 포함된 페이지로 이동합니다.
+        /// 인벤토리에서 기본 선택 아이템이 현재 페이지 밖에 있을 때 먼저 해당 페이지를 열기 위해 사용합니다.
+        /// </summary>
+        public bool ShowPageContainingSlot(int slotIndex)
+        {
+            if (!_isInitialized || _objects == null || _slots == null || countPerPage <= 0)
+            {
+                return false;
+            }
+
+            _visibleSlotIndices.Clear();
+            for (int i = 0; i < _objects.Length; i++)
+            {
+                GameObject go = _objects[i];
+                UISlot slot = i < _slots.Length ? _slots[i] : null;
+                if (!go || slot == null || !slot.isFiltering)
+                {
+                    continue;
+                }
+
+                _visibleSlotIndices.Add(i);
+            }
+
+            for (int visibleIndex = 0; visibleIndex < _visibleSlotIndices.Count; visibleIndex++)
+            {
+                int objectIndex = _visibleSlotIndices[visibleIndex];
+                UISlot slot = _slots[objectIndex];
+                if (slot == null || slot.Index != slotIndex)
+                {
+                    continue;
+                }
+
+                _currentPage = Mathf.FloorToInt(visibleIndex / (float)countPerPage) + 1;
+                UpdatePage();
+                return true;
+            }
+
+            return false;
+        }
     }
 }

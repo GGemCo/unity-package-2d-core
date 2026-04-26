@@ -523,6 +523,11 @@ namespace GGemCo2DCore
         /// </summary>
         private void TrySelectFirstOccupiedSlotImmediate()
         {
+            if (TrySelectContextDefaultSlotImmediate())
+            {
+                return;
+            }
+
             int firstOccupiedIndex = FindFirstOccupiedSlotIndex();
             if (firstOccupiedIndex < 0)
             {
@@ -531,6 +536,66 @@ namespace GGemCo2DCore
 
             base.SetSelectedIcon(firstOccupiedIndex);
             ShowItemInfo(true, GetIconByIndex(firstOccupiedIndex));
+        }
+
+        /// <summary>
+        /// 선택 문맥이 기본 선택 아이템을 제공하면 해당 인벤토리 슬롯을 우선 선택합니다.
+        /// 장착된 스킬 슬롯을 클릭해 인벤토리를 열었을 때, 이미 장착 중인 아이템을 바로 선택하기 위한 처리입니다.
+        /// </summary>
+        private bool TrySelectContextDefaultSlotImmediate()
+        {
+            if (_selectionContext is not { IsActive: true } ||
+                !_selectionContext.TryGetDefaultSelection(out int itemUid, out long itemInstanceId))
+            {
+                return false;
+            }
+
+            int defaultSlotIndex = FindIconSlotIndex(itemUid, itemInstanceId);
+            if (defaultSlotIndex < 0)
+            {
+                return false;
+            }
+
+            pageController?.ShowPageContainingSlot(defaultSlotIndex);
+            base.SetSelectedIcon(defaultSlotIndex);
+            ShowItemInfo(true, GetIconByIndex(defaultSlotIndex));
+            return true;
+        }
+
+        /// <summary>
+        /// 현재 로드된 인벤토리 아이콘 중 지정한 아이템 참조와 같은 슬롯을 찾습니다.
+        /// 인스턴스 아이템은 instanceId까지 같아야 하며, 일반 아이템은 instanceId 0과 uid가 같아야 합니다.
+        /// </summary>
+        private int FindIconSlotIndex(int itemUid, long itemInstanceId)
+        {
+            if (itemUid <= 0 || icons == null)
+            {
+                return -1;
+            }
+
+            for (int index = 0; index < icons.Length; index++)
+            {
+                GameObject iconObject = icons[index];
+                if (iconObject == null)
+                {
+                    continue;
+                }
+
+                UIIconItem icon = iconObject.GetComponent<UIIconItem>();
+                if (icon == null || icon.uid != itemUid || icon.GetCount() <= 0)
+                {
+                    continue;
+                }
+
+                if (icon.instanceId != itemInstanceId)
+                {
+                    continue;
+                }
+
+                return icon.index;
+            }
+
+            return -1;
         }
 
         /// <summary>

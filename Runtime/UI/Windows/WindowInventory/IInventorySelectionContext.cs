@@ -38,6 +38,12 @@ namespace GGemCo2DCore
         bool IsEquipped(UIIconItem icon);
 
         /// <summary>
+        /// 인벤토리가 열릴 때 기본으로 선택할 아이템을 제공합니다.
+        /// 스킬 슬롯 문맥에서는 현재 열었던 슬롯에 이미 장착된 아이템을 기본 선택 대상으로 반환합니다.
+        /// </summary>
+        bool TryGetDefaultSelection(out int itemUid, out long itemInstanceId);
+
+        /// <summary>
         /// 선택된 아이콘에 대해 실제 문맥 작업을 실행합니다.
         /// </summary>
         ResultCommon Execute(UIIconItem icon);
