@@ -12,11 +12,16 @@ namespace GGemCo2DCore
     /// </summary>
     public class UIWindowShop : UIWindow
     {
+        private const string ExternalItemInfoWindowKey = "Shop.ItemInfo";
+
         [Header(UIWindowConstants.TitleHeaderIndividual)]
         [Tooltip("상점 Element 프리팹")]
         [SerializeField] private GameObject prefabUIElementShop;
         [Tooltip("상점에서 사용할 아이템 정보 표시 윈도우")]
         [SerializeField] private UIWindowItemInfo overrideUiWindowItemInfo;
+        [Tooltip("상점 오브젝트를 기준으로 아이템 정보 윈도우 위치")] [SerializeField]
+        private UIWindowManager.ExternalWindowInsertMode overrideUiWindowItemInfoInsertMode =
+            UIWindowManager.ExternalWindowInsertMode.After;
         [Tooltip("구매하기 버튼")]
         [SerializeField] private Button buttonBuy;
         
@@ -127,6 +132,25 @@ namespace GGemCo2DCore
 
             _uiWindowItemInfo = overrideUiWindowItemInfo;
             _uiWindowItemInfo.Show(false);
+            RegisterOverrideItemInfoWindowOrder();
+        }
+
+        /// <summary>
+        /// 상점 전용 아이템 정보창을 UIWindowManager 정렬 목록에 등록합니다.
+        /// 같은 ItemInfo Uid 를 여러 창이 공유하므로 windowKeys 대신 외부 윈도우로 붙여 순서를 보존합니다.
+        /// </summary>
+        private void RegisterOverrideItemInfoWindowOrder()
+        {
+            if (SceneGame == null || SceneGame.uIWindowManager == null || overrideUiWindowItemInfo == null)
+            {
+                return;
+            }
+
+            SceneGame.uIWindowManager.RegisterExternalWindow(
+                ExternalItemInfoWindowKey,
+                overrideUiWindowItemInfo,
+                UIWindowConstants.WindowUid.Shop,
+                overrideUiWindowItemInfoInsertMode);
         }
 
         /// <summary>

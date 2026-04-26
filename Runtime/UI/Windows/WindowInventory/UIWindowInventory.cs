@@ -14,11 +14,17 @@ namespace GGemCo2DCore
     /// </summary>
     public class UIWindowInventory : UIWindow
     {
+        private const string ExternalItemInfoWindowKey = "Inventory.ItemInfo";
+
         [Header(UIWindowConstants.TitleHeaderIndividual)]
         [Tooltip("모든 아이템 합치기 버튼")]
         public Button buttonMergeAllItems;
         [Tooltip("아이템 정보 표시 윈도우")]
         [SerializeField] private UIWindowItemInfo overrideUiWindowItemInfo;
+        [Tooltip("인벤토리 오브젝트를 기준으로 아이템 정보 윈도우 위치")] [SerializeField]
+        private UIWindowManager.ExternalWindowInsertMode overrideUiWindowItemInfoInsertMode =
+            UIWindowManager.ExternalWindowInsertMode.After;
+            
         [Tooltip("인벤토리 창이 열릴 때 첫 번째 아이템 슬롯을 자동 선택할지 여부")]
         [SerializeField] private bool selectFirstItemOnShow = true;
         [Tooltip("아이템 나누기 가능 여부")]
@@ -112,6 +118,25 @@ namespace GGemCo2DCore
 
             _uiWindowItemInfo = overrideUiWindowItemInfo;
             _uiWindowItemInfo.Show(false);
+            RegisterOverrideItemInfoWindowOrder();
+        }
+
+        /// <summary>
+        /// 인벤토리 전용 아이템 정보창을 UIWindowManager 정렬 목록에 등록합니다.
+        /// 같은 ItemInfo Uid 를 여러 창이 공유하므로 windowKeys 대신 외부 윈도우로 붙여 순서를 보존합니다.
+        /// </summary>
+        private void RegisterOverrideItemInfoWindowOrder()
+        {
+            if (SceneGame == null || SceneGame.uIWindowManager == null || overrideUiWindowItemInfo == null)
+            {
+                return;
+            }
+
+            SceneGame.uIWindowManager.RegisterExternalWindow(
+                ExternalItemInfoWindowKey,
+                overrideUiWindowItemInfo,
+                UIWindowConstants.WindowUid.Inventory,
+                overrideUiWindowItemInfoInsertMode);
         }
 
         /// <summary>
