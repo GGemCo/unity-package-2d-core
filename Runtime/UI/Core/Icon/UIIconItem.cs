@@ -53,6 +53,9 @@ namespace GGemCo2DCore
             {
                 textEquipped.gameObject.SetActive(equipped);
             }
+
+            // 장착 표식과 개수 텍스트 색상을 같은 장착 상태로 맞춥니다.
+            SetTextCountEquippedState(equipped);
         }
 
         /// <summary>

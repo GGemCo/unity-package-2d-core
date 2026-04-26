@@ -19,6 +19,8 @@ namespace GGemCo2DCore
         [SerializeField] private Color colorTextCountNormal = new(255, 255, 255, 255);
         [Tooltip("선택 되었을 때, 개수 색상")]
         [SerializeField] private Color colorTextCountSelected = new(255, 255, 255, 255);
+        [Tooltip("장착 되었을 때, 개수 색상")]
+        [SerializeField] private Color colorTextCountEquipped = new(255, 255, 0, 255);
 
         [Tooltip("쿨타임 게이지")]
         public Image imageCoolTimeGauge;
@@ -76,6 +78,7 @@ namespace GGemCo2DCore
         private int _parentSlotIndex;
         private IconConstants.Status _iconStatus;
         private bool _isSelected;
+        private bool _isTextCountEquipped;
         // 개수
         protected int count;
         // 레벨
@@ -143,6 +146,7 @@ namespace GGemCo2DCore
             _parentSlotIndex = 0;
             _isLearn = false;
             _iconStatus = IconConstants.Status.Normal;
+            _isTextCountEquipped = false;
             IconType = IconConstants.Type.None;
 
             if (imageCoolTimeGauge != null)
@@ -310,6 +314,7 @@ namespace GGemCo2DCore
             }
 
             SetIconLock(false);
+            SetTextCountEquippedState(false);
             SetShowZeroCountText(false);
             SetCount(0);
         }
@@ -382,16 +387,41 @@ namespace GGemCo2DCore
                 }
             }
 
-            if (textCount)
-            {
-                textCount.color = selected ? colorTextCountSelected : colorTextCountNormal;
-            }
+            RefreshTextCountColor();
             
             _uiWindowManager ??= SceneGame.Instance?.uIWindowManager;
             if (!_showSelectedImage || !_uiWindowManager) return;
             _uiWindowManager.ShowSelectIconImage(selected, gameObject.transform.position, _slotSize);
         }
         public bool IsSelected() => _isSelected;
+
+        /// <summary>
+        /// 개수 텍스트의 장착 상태를 저장하고 색상을 갱신합니다.
+        /// 장착 상태는 선택 상태보다 우선 순위가 높습니다.
+        /// </summary>
+        /// <param name="equipped"></param>
+        protected void SetTextCountEquippedState(bool equipped)
+        {
+            _isTextCountEquipped = equipped;
+            RefreshTextCountColor();
+        }
+
+        /// <summary>
+        /// 개수 텍스트 색상을 현재 상태 우선 순위에 맞게 갱신합니다.
+        /// 우선 순위: 장착 > 선택 > 일반
+        /// </summary>
+        private void RefreshTextCountColor()
+        {
+            if (!textCount) return;
+
+            if (_isTextCountEquipped)
+            {
+                textCount.color = colorTextCountEquipped;
+                return;
+            }
+
+            textCount.color = _isSelected ? colorTextCountSelected : colorTextCountNormal;
+        }
 
         protected void ShowOverImage(bool show)
         {
