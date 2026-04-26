@@ -1,6 +1,8 @@
 using System.Linq;
+using TMPro;
 using UnityEngine;
 using UnityEngine.EventSystems;
+using UnityEngine.UI;
 
 namespace GGemCo2DCore
 {
@@ -19,6 +21,10 @@ namespace GGemCo2DCore
 
         [Tooltip("마우스 클릭 시 정보창 표시 여부")]
         [SerializeField] private bool usePointerClickEvent = false;
+        [Tooltip("아이템이 현재 선택 문맥에서 장착 중임을 표시할 이미지")]
+        [SerializeField] private Image imageEquipped;
+        [Tooltip("아이템이 현재 선택 문맥에서 장착 중임을 표시할 텍스트")]
+        [SerializeField] private TextMeshProUGUI textEquipped;
         
         private StruckTableItem _struckTableItem;
         private TableItem _tableItem;
@@ -29,7 +35,35 @@ namespace GGemCo2DCore
             base.OnInitialize();
             IconType = IconConstants.Type.Item;
             _tableItem ??= TableLoaderManager.Instance.TableItem;
+            SetEquippedState(false);
         }
+
+        /// <summary>
+        /// Shows whether this inventory icon is already used by the current selection context.
+        /// This is only a visual badge and does not lock drag or click behavior.
+        /// </summary>
+        public void SetEquippedState(bool equipped)
+        {
+            if (imageEquipped != null)
+            {
+                imageEquipped.gameObject.SetActive(equipped);
+            }
+
+            if (textEquipped != null)
+            {
+                textEquipped.gameObject.SetActive(equipped);
+            }
+        }
+
+        /// <summary>
+        /// Clears the visual equipped badge when the item slot becomes empty.
+        /// </summary>
+        public override void ClearIconInfos()
+        {
+            base.ClearIconInfos();
+            SetEquippedState(false);
+        }
+
         /// <summary>
         /// 다른 uid 로 변경하기
         /// </summary>

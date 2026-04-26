@@ -1,5 +1,6 @@
 ﻿using UnityEngine;
 using UnityEngine.UI;
+using TMPro;
 #if GGEMCO_USE_NEW_INPUT
 using UnityEngine.InputSystem;
 #endif
@@ -22,6 +23,10 @@ namespace GGemCo2DCore
         [SerializeField] private bool selectFirstItemOnShow = true;
         [Tooltip("아이템 나누기 가능 여부")]
         [SerializeField] private bool useItemSplit = true;
+        [Tooltip("선택 문맥이 있을 때 실행할 버튼")]
+        [SerializeField] private Button buttonContextAction;
+        [Tooltip("선택 문맥 실행 버튼의 표시 텍스트")]
+        [SerializeField] private TextMeshProUGUI textContextAction;
         
         public TableItem TableItem;
         public InventoryData InventoryData;
@@ -39,6 +44,9 @@ namespace GGemCo2DCore
         private UIWindowItemSalvage _uiWindowItemSalvage;
         private UIWindowQuickSlotSimulation _uiWindowQuickSlotSimulation;
         private Coroutine _coSelectFirstItemOnShow;
+        private IInventorySelectionContext _selectionContext;
+        private TextMeshProUGUI _fallbackContextActionText;
+        private string _fallbackContextActionTextDefault;
 
         protected override void Awake()
         {
@@ -46,6 +54,8 @@ namespace GGemCo2DCore
             if (TableLoaderManager.Instance == null) return;
             TableItem = TableLoaderManager.Instance.TableItem;
             buttonMergeAllItems?.onClick.AddListener(OnClickMergeAllItems);
+            buttonContextAction?.onClick.AddListener(OnClickContextAction);
+            UpdateContextActionVisibility();
             base.Awake();
             
             IconPoolManager.SetSetIconHandler(new SetIconHandlerInventory());
@@ -141,8 +151,96 @@ namespace GGemCo2DCore
             else
             {
                 StopSelectFirstItemCoroutine();
+                ClearContext(false);
             }
         }
+
+        /// <summary>
+        /// 상위 기능이 인벤토리를 "아이템 선택 창"으로 열 때 호출합니다.
+        /// 기존 아이콘 이동/등록 로직 대신 context가 표시 필터와 실행 동작을 맡습니다.
+        /// </summary>
+        public void OpenWithContext(IInventorySelectionContext context)
+        {
+            ClearContext(false);
+            _selectionContext = context;
+            UpdateContextActionVisibility();
+
+            Show(true);
+
+            // 이미 열려 있는 인벤토리에 새 문맥을 입히는 경우 OnShow가 다시 호출되지 않을 수 있어 즉시 갱신합니다.
+            if (IsOpen())
+            {
+                LoadIcons();
+                ScheduleSelectFirstOccupiedSlot();
+            }
+        }
+
+        /// <summary>
+        /// 선택 문맥을 정리하고 일반 인벤토리 모드로 되돌립니다.
+        /// </summary>
+        public void ClearContext()
+        {
+            ClearContext(true);
+        }
+
+        /// <summary>
+        /// context 정리 후 화면 갱신 여부를 선택할 수 있는 내부 정리 루틴입니다.
+        /// 창이 닫히는 중에는 불필요한 아이콘 갱신을 피합니다.
+        /// </summary>
+        private void ClearContext(bool reloadIcons)
+        {
+            if (_selectionContext == null)
+            {
+                UpdateContextActionVisibility();
+                return;
+            }
+
+            _selectionContext.OnClosed();
+            _selectionContext = null;
+            UpdateContextActionVisibility();
+
+            if (reloadIcons && IsOpen())
+            {
+                LoadIcons();
+            }
+        }
+
+        /// <summary>
+        /// 문맥 실행 버튼은 선택 context가 살아 있을 때만 표시합니다.
+        /// 프리팹에 버튼이 연결되지 않은 기존 인벤토리는 그대로 동작합니다.
+        /// </summary>
+        private void UpdateContextActionVisibility()
+        {
+            bool show = _selectionContext is { IsActive: true };
+
+            if (buttonContextAction != null)
+            {
+                buttonContextAction.gameObject.SetActive(show);
+            }
+
+            if (textContextAction != null)
+            {
+                textContextAction.text = show ? _selectionContext.ActionMessageKey : string.Empty;
+            }
+            else if (buttonContextAction == null && buttonMergeAllItems != null)
+            {
+                _fallbackContextActionText ??= buttonMergeAllItems.GetComponentInChildren<TextMeshProUGUI>(true);
+                if (_fallbackContextActionText != null)
+                {
+                    _fallbackContextActionTextDefault ??= _fallbackContextActionText.text;
+                    _fallbackContextActionText.text = show
+                        ? _selectionContext.ActionMessageKey
+                        : _fallbackContextActionTextDefault;
+                }
+            }
+
+            // 별도 context 버튼이 있는 프리팹에서는 일반 합치기 버튼과 역할이 겹치지 않게 숨깁니다.
+            if (buttonMergeAllItems != null && buttonContextAction != null)
+            {
+                buttonMergeAllItems.gameObject.SetActive(!show);
+            }
+        }
+
         /// <summary>
         /// 저장되어있는 아이템 정보로 아이콘 셋팅하기
         /// 인벤토리가 열려있지 않으면 업데이트 하지 않음
@@ -174,9 +272,58 @@ namespace GGemCo2DCore
                     continue;
                 }
                 var table = TableItem.GetDataByUid(itemUid);
-                if (table == null || table.Uid <= 0) continue;
+                if (table == null || table.Uid <= 0)
+                {
+                    uiIcon.ClearIconInfos();
+                    continue;
+                }
+
+                // 선택 문맥이 있으면 해당 문맥에서 허용한 아이템만 후보로 보여줍니다.
+                if (_selectionContext is { IsActive: true } &&
+                    !_selectionContext.CanDisplay(structInventoryIcon, table))
+                {
+                    uiIcon.ClearIconInfos();
+                    continue;
+                }
+
                 uiIcon.ChangeInfoByUid(table.Uid, itemCount, iconInstanceId: structInventoryIcon.InstanceId);
+                uiIcon.SetEquippedState(_selectionContext is { IsActive: true } &&
+                                        _selectionContext.IsEquipped(uiIcon));
             }
+        }
+
+        /// <summary>
+        /// 선택 문맥의 실행 버튼 처리입니다.
+        /// 인벤토리 아이콘은 이동하지 않고 context가 제공한 저장/등록 로직만 실행합니다.
+        /// </summary>
+        private void OnClickContextAction()
+        {
+            if (_selectionContext is not { IsActive: true }) return;
+
+            UIIconItem icon = GetSelectedIcon() as UIIconItem;
+            if (icon == null || icon.uid <= 0)
+            {
+                SceneGame.systemMessageManager.ShowMessageWarning("Inventory_SelectItem");
+                return;
+            }
+
+            if (!_selectionContext.CanExecute(icon, out string failMessageKey))
+            {
+                ShowSlotAcceptFailure(failMessageKey);
+                icon.HandleInvalidEffect();
+                return;
+            }
+
+            ResultCommon result = _selectionContext.Execute(icon);
+            if (result == null || result.Result != ResultCommon.ResultType.Success)
+            {
+                ShowSlotAcceptFailure("Inventory_ContextActionFailed");
+                icon.HandleInvalidEffect();
+                return;
+            }
+
+            icon.HandleEquipEffect();
+            LoadIcons();
         }
 
         /// <summary>
@@ -278,6 +425,13 @@ namespace GGemCo2DCore
         /// </summary>
         private void OnClickMergeAllItems()
         {
+            // 별도 context 버튼이 없는 프리팹에서는 합치기 버튼을 문맥 실행 버튼으로 재사용합니다.
+            if (_selectionContext is { IsActive: true })
+            {
+                OnClickContextAction();
+                return;
+            }
+
             InventoryData.MergeAllItems();
             LoadIcons();
         }
@@ -288,6 +442,14 @@ namespace GGemCo2DCore
         public override void OnRightClick(UIIcon icon)
         {
             if (icon == null) return;
+
+            // 선택 문맥에서는 우클릭으로 기존 이동/사용 로직이 실행되지 않게 막고, 현재 아이템 선택만 반영합니다.
+            if (_selectionContext is { IsActive: true })
+            {
+                SetSelectedIcon(icon.index);
+                return;
+            }
+
             // Simulation 퀵슬롯이 있으면
             if (_uiWindowQuickSlotSimulation != null && _uiWindowQuickSlotSimulation.IsOpen())
             {
