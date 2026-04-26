@@ -442,19 +442,30 @@ namespace GGemCo2DCore
         {
             bool contextActive = _selectionContext is { IsActive: true };
             UIIconItem selectedItem = GetSelectedIcon() as UIIconItem;
+            bool canUnequipSelectedItem =
+                contextActive &&
+                selectedItem != null &&
+                selectedItem.uid > 0 &&
+                _selectionContext.CanUnequip(selectedItem, out _);
 
             if (buttonContextAction != null)
             {
-                buttonContextAction.interactable = contextActive;
+                // 현재 열었던 슬롯에 이미 장착된 아이템을 다시 선택한 경우에는 중복 장착을 막기 위해 장착 버튼을 끕니다.
+                buttonContextAction.interactable = contextActive && !canUnequipSelectedItem;
+            }
+            else if (buttonMergeAllItems != null && contextActive)
+            {
+                // 별도 장착 버튼이 없는 프리팹에서는 합치기 버튼을 장착 버튼으로 재사용하므로 같은 조건을 적용합니다.
+                buttonMergeAllItems.interactable = !canUnequipSelectedItem;
+            }
+            else if (buttonMergeAllItems != null)
+            {
+                buttonMergeAllItems.interactable = true;
             }
 
             if (buttonContextUnequip != null)
             {
-                buttonContextUnequip.interactable =
-                    contextActive &&
-                    selectedItem != null &&
-                    selectedItem.uid > 0 &&
-                    _selectionContext.CanUnequip(selectedItem, out _);
+                buttonContextUnequip.interactable = canUnequipSelectedItem;
             }
         }
 
