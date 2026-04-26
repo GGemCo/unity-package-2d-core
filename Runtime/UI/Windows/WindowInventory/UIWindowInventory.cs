@@ -16,7 +16,20 @@ namespace GGemCo2DCore
     {
         private const string ExternalItemInfoWindowKey = "Inventory.ItemInfo";
 
+        /// <summary>
+        /// 장착하기, 해제하기 버튼 활성화 정책
+        /// </summary>
+        private enum ButtonContextActionHidePolicy
+        {
+            // 보이는 상태에서 Interaction만 안되게 처리
+            Disable,
+            // 안보이게 처리
+            Hide
+        }
+
         [Header(UIWindowConstants.TitleHeaderIndividual)]
+        [Tooltip("아이콘 드래그 가능 여부")]
+        [SerializeField] private bool useIconDrag = true;
         [Tooltip("모든 아이템 합치기 버튼")]
         public Button buttonMergeAllItems;
         [Tooltip("아이템 정보 표시 윈도우")]
@@ -29,6 +42,10 @@ namespace GGemCo2DCore
         [SerializeField] private bool selectFirstItemOnShow = true;
         [Tooltip("아이템 나누기 가능 여부")]
         [SerializeField] private bool useItemSplit = true;
+        
+        [Header("선택 문맥")]
+        [Tooltip("장착하기, 해제하기 버튼 활성화 정책")]
+        [SerializeField] private ButtonContextActionHidePolicy buttonContextActionHidePolicy;
         [Tooltip("선택 문맥이 있을 때 실행할 버튼")]
         [SerializeField] private Button buttonContextAction;
         [Tooltip("선택 문맥 실행 버튼의 표시 텍스트")]
@@ -72,7 +89,8 @@ namespace GGemCo2DCore
             base.Awake();
             
             IconPoolManager.SetSetIconHandler(new SetIconHandlerInventory());
-            DragDropHandler.SetStrategy(new DragDropStrategyInventory());
+            if (useIconDrag)
+                DragDropHandler.SetStrategy(new DragDropStrategyInventory());
 
             if (pageController == null)
             {
@@ -350,6 +368,7 @@ namespace GGemCo2DCore
                 bool equipped = _selectionContext is { IsActive: true } &&
                                 _selectionContext.IsEquipped(uiIcon);
                 uiIcon.SetEquippedState(equipped);
+                uiIcon.SetDrag(useIconDrag);
                 SetSlotEquippedState(index, equipped);
             }
 
@@ -483,13 +502,17 @@ namespace GGemCo2DCore
                 selectedItem.uid > 0 &&
                 _selectionContext.CanExecute(selectedItem, out _);
             bool canUnequipSelectedItem =
-                contextActive &&
+                contextActive && 
+                (selectedItem != null && selectedItem.uid > 0) &&
                 _selectionContext.CanUnequip(selectedItem, out _);
 
             if (buttonContextAction != null)
             {
                 // 현재 열었던 슬롯에 이미 장착된 아이템을 다시 선택한 경우에는 중복 장착을 막기 위해 장착 버튼을 끕니다.
-                buttonContextAction.interactable = canExecuteSelectedItem && !canUnequipSelectedItem;
+                if (buttonContextActionHidePolicy == ButtonContextActionHidePolicy.Disable)
+                    buttonContextAction.interactable = canExecuteSelectedItem && !canUnequipSelectedItem;
+                else if (buttonContextActionHidePolicy == ButtonContextActionHidePolicy.Hide)
+                    buttonContextAction.gameObject.SetActive(canExecuteSelectedItem && !canUnequipSelectedItem);
             }
             else if (buttonMergeAllItems != null && contextActive)
             {
@@ -503,7 +526,10 @@ namespace GGemCo2DCore
 
             if (buttonContextUnequip != null)
             {
-                buttonContextUnequip.interactable = canUnequipSelectedItem;
+                if (buttonContextActionHidePolicy == ButtonContextActionHidePolicy.Disable)
+                    buttonContextUnequip.interactable = canUnequipSelectedItem;
+                else if (buttonContextActionHidePolicy == ButtonContextActionHidePolicy.Hide)
+                    buttonContextUnequip.gameObject.SetActive(canUnequipSelectedItem);
             }
         }
 
