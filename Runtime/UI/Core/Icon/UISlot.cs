@@ -39,6 +39,7 @@ namespace GGemCo2DCore
         private RectTransform _rectTransform;
         private Image _imageSlot;
         private bool _isSelected;
+        private bool _isEquipped;
 
         /// <summary>
         /// prefab 생성 후 호출되는 함수
@@ -52,6 +53,8 @@ namespace GGemCo2DCore
             _window = window;
             _windowUid = windowUid;
             Index = slotIndex;
+            _isSelected = false;
+            _isEquipped = false;
             
             if (_imageSlot == null)
                 _imageSlot = GetComponent<Image>();
@@ -91,7 +94,7 @@ namespace GGemCo2DCore
         public void SetSelected(bool selected)
         {
             _isSelected = selected;
-            SetColor(selected ? colorSelected : colorNormal);
+            RefreshSlotVisualState();
         }
 
         /// <summary>
@@ -100,23 +103,40 @@ namespace GGemCo2DCore
         /// </summary>
         public void SetEquippedState(bool equipped)
         {
+            _isEquipped = equipped;
+
             if (imageEquipped != null)
             {
                 imageEquipped.gameObject.SetActive(equipped);
                 imageEquipped.color = equipped ? colorEquip : colorNormal;
             }
-            SetColor(equipped ? colorSelected : colorNormal);
-            
-            _imageSlot.enabled = true;
-            if (_imageSlot && isDisableBackgroundImageOnEquip && equipped)
-            {
-                _imageSlot.enabled = false;
-            }
+
+            RefreshSlotVisualState();
 
             if (textEquipped != null)
             {
                 textEquipped.gameObject.SetActive(equipped);
             }
+        }
+
+        /// <summary>
+        /// 슬롯 배경 표시를 현재 상태 우선 순위에 맞게 갱신합니다.
+        /// 우선 순위: 장착 > 선택 > 일반
+        /// </summary>
+        private void RefreshSlotVisualState()
+        {
+            if (!_imageSlot) return;
+
+            // 장착 상태에서 배경 이미지를 숨기는 옵션은 색상 계산과 별도로 처리합니다.
+            _imageSlot.enabled = !(isDisableBackgroundImageOnEquip && _isEquipped);
+
+            if (_isEquipped)
+            {
+                SetColor(colorEquip);
+                return;
+            }
+
+            SetColor(_isSelected ? colorSelected : colorNormal);
         }
     }
 }
