@@ -273,7 +273,8 @@ namespace GGemCo2DCore
             if (result.ResultIcons == null || result.ResultIcons.Count <= 0) return;
             foreach (var icon in result.ResultIcons)
             {
-                SetIcon(icon.SlotIndex, icon.Uid, icon.Count, icon.Level, icon.IsLearned, icon.InstanceId);
+                var iconType = (IconConstants.Type)icon.IconType;
+                SetIcon(icon.SlotIndex, icon.Uid, icon.Count, icon.Level, icon.IsLearned, icon.InstanceId, iconType);
             }
         }
 

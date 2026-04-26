@@ -95,7 +95,7 @@ namespace GGemCo2DCore
                 while (totalItemCount > 0)
                 {
                     int addAmount = Math.Min(totalItemCount, maxOverlayCount);
-                    ItemCounts[newSlotIndex] = new SaveDataIcon(newSlotIndex, itemUid, addAmount);
+                    ItemCounts[newSlotIndex] = new SaveDataIcon(newSlotIndex, itemUid, addAmount, iconType: IconTypeItem);
                     totalItemCount -= addAmount;
                     newSlotIndex++;
                 }
@@ -135,9 +135,9 @@ namespace GGemCo2DCore
 
             List<SaveDataIcon> controls = new List<SaveDataIcon>();
             int count = itemCount - splitItemCount;
-            controls.Add(count <= 0 ? new SaveDataIcon(slotIndex, 0) : new SaveDataIcon(slotIndex, itemUid, count));
+            controls.Add(count <= 0 ? new SaveDataIcon(slotIndex, 0) : new SaveDataIcon(slotIndex, itemUid, count, iconType: IconTypeItem));
 
-            controls.Add(new SaveDataIcon(emptySlot, itemUid, splitItemCount));
+            controls.Add(new SaveDataIcon(emptySlot, itemUid, splitItemCount, iconType: IconTypeItem));
             
             return ResultCommon.SuccessWithIcons(controls);
         }
@@ -203,7 +203,7 @@ namespace GGemCo2DCore
             if (saveDataIcon == null) return ResultCommon.Fail("Inventory_Upgrade_NoItemInfo");//"강화하려는 아이템 정보가 없습니다."
             saveDataIcon.SetUid(resultItemUid);
             
-            List<SaveDataIcon> controls = new List<SaveDataIcon> { new SaveDataIcon(saveDataIcon.SlotIndex, resultItemUid, saveDataIcon.Count) };
+            List<SaveDataIcon> controls = new List<SaveDataIcon> { new SaveDataIcon(saveDataIcon.SlotIndex, resultItemUid, saveDataIcon.Count, iconType: saveDataIcon.IconType) };
             return ResultCommon.SuccessWithIcons(controls); 
         }
 

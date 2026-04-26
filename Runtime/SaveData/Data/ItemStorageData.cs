@@ -17,6 +17,8 @@ namespace GGemCo2DCore
         public Dictionary<int, SaveDataIcon> TempItemCounts = new();
 
         protected TableLoaderManager TableLoaderManager;
+        // 아이템 타입 고정
+        protected const int IconTypeItem = (int)IconConstants.Type.Item;
         
         /// <summary>
         /// 초기화. Awake 단계에서 실행
@@ -34,7 +36,7 @@ namespace GGemCo2DCore
         {
             if (slotIndex < 0 || slotIndex >= MaxSlotCount) return;
 
-            ItemCounts[slotIndex] = new SaveDataIcon(slotIndex, itemUid, value, instanceId: instanceId);
+            ItemCounts[slotIndex] = new SaveDataIcon(slotIndex, itemUid, value, instanceId: instanceId, iconType: IconTypeItem);
             SaveDatas();
         }
         /// <summary>
@@ -70,7 +72,7 @@ namespace GGemCo2DCore
                     controls.Add(new SaveDataIcon(slotIndex, 0));
                     break;
                 default:
-                    controls.Add(new SaveDataIcon(slotIndex, itemUid, count));
+                    controls.Add(new SaveDataIcon(slotIndex, itemUid, count, iconType: IconTypeItem));
                     break;
             }
 
@@ -188,7 +190,7 @@ namespace GGemCo2DCore
                         int addedAmount = Math.Min(remainingValue, availableSpace);
                         int count = item.Count + addedAmount;
                         
-                        controls.Add(new SaveDataIcon(slotIndex, itemUid, count));
+                        controls.Add(new SaveDataIcon(slotIndex, itemUid, count, iconType: IconTypeItem));
                         
                         remainingValue -= addedAmount;
                         if (remainingValue <= 0) break;
@@ -206,8 +208,8 @@ namespace GGemCo2DCore
                     }
 
                     int addedAmount = Math.Min(remainingValue, maxOverlayCount);
-                    controls.Add(new SaveDataIcon(emptyIndex, itemUid, addedAmount));
-                    TempItemCounts.TryAdd(emptyIndex, new SaveDataIcon(emptyIndex, itemUid, addedAmount));
+                    controls.Add(new SaveDataIcon(emptyIndex, itemUid, addedAmount, iconType: IconTypeItem));
+                    TempItemCounts.TryAdd(emptyIndex, new SaveDataIcon(emptyIndex, itemUid, addedAmount, iconType: IconTypeItem));
                     remainingValue -= addedAmount;
                 }
 
@@ -252,14 +254,14 @@ namespace GGemCo2DCore
                 {
                     int addedAmount = Math.Min(remainingValue, availableSpace);
                     int count = item.Count + addedAmount;
-                    controls.Add(new SaveDataIcon(slotIndex, itemUid, count, instanceId: instanceId));
+                    controls.Add(new SaveDataIcon(slotIndex, itemUid, count, instanceId: instanceId, iconType: IconTypeItem));
 
                     remainingValue -= addedAmount;
                 }
             }
             else
             {
-                controls.Add(new SaveDataIcon(slotIndex, itemUid, itemCount, instanceId: instanceId));
+                controls.Add(new SaveDataIcon(slotIndex, itemUid, itemCount, instanceId: instanceId, iconType: IconTypeItem));
                 remainingValue -= itemCount;
             }
         
@@ -274,8 +276,8 @@ namespace GGemCo2DCore
                 }
 
                 int addedAmount = Math.Min(remainingValue, maxOverlayCount);
-                controls.Add(new SaveDataIcon(emptyIndex, itemUid, addedAmount, instanceId: instanceId));
-                TempItemCounts.TryAdd(emptyIndex, new SaveDataIcon(emptyIndex, itemUid, addedAmount, instanceId: instanceId));
+                controls.Add(new SaveDataIcon(emptyIndex, itemUid, addedAmount, instanceId: instanceId, iconType: IconTypeItem));
+                TempItemCounts.TryAdd(emptyIndex, new SaveDataIcon(emptyIndex, itemUid, addedAmount, instanceId: instanceId, iconType: IconTypeItem));
                 remainingValue -= addedAmount;
             }
             return ResultCommon.SuccessWithIcons(controls);
@@ -379,14 +381,14 @@ namespace GGemCo2DCore
             List<SaveDataIcon> controls = new List<SaveDataIcon>();
             // 아이템 이동
             int toItemCount = toItem.Count + moveAmount;
-            controls.Add(new SaveDataIcon(toIndex, toItem.Uid, toItemCount));
+            controls.Add(new SaveDataIcon(toIndex, toItem.Uid, toItemCount, iconType: IconTypeItem));
             
             int fromItemCount = fromItem.Count - moveAmount;
 
             // fromIndex 슬롯이 비었으면 제거
             controls.Add(fromItemCount <= 0
                 ? new SaveDataIcon(fromIndex, 0)
-                : new SaveDataIcon(fromIndex, fromItem.Uid, fromItemCount));
+                : new SaveDataIcon(fromIndex, fromItem.Uid, fromItemCount, iconType: IconTypeItem));
 
             // string message = string.Format(LocalizationManager.Instance.GetSystemByKey("Slot_MoveSuccess"), moveAmount, fromIndex, toIndex);
             string message = "";
@@ -426,7 +428,7 @@ namespace GGemCo2DCore
                     }
                     else
                     {
-                        controls.Add(new SaveDataIcon(saveDataIcon.SlotIndex, itemUid, remainCount));
+                        controls.Add(new SaveDataIcon(saveDataIcon.SlotIndex, itemUid, remainCount, iconType: IconTypeItem));
                     }
                 }
 
