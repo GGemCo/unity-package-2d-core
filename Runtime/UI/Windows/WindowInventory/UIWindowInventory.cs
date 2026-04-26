@@ -333,7 +333,7 @@ namespace GGemCo2DCore
 
             if (datas == null)
             {
-                SetAllSlotFilteringState(!contextActive);
+                SetAllSlotFilteringState(true);
                 RefreshInventorySlotPage(contextActive);
                 return;
             }
@@ -342,27 +342,27 @@ namespace GGemCo2DCore
             {
                 if (index >= icons.Length)
                 {
-                    SetSlotFilteringState(index, !contextActive);
+                    SetSlotFilteringState(index, true);
                     continue;
                 }
 
                 var icon = icons[index];
                 if (icon == null)
                 {
-                    SetSlotFilteringState(index, !contextActive);
+                    SetSlotFilteringState(index, true);
                     continue;
                 }
 
                 UIIconItem uiIcon = icon.GetComponent<UIIconItem>();
                 if (uiIcon == null)
                 {
-                    SetSlotFilteringState(index, !contextActive);
+                    SetSlotFilteringState(index, true);
                     continue;
                 }
 
                 if (!datas.TryGetValue(index, out var saveDataIcon))
                 {
-                    SetSlotFilteringState(index, !contextActive);
+                    SetSlotFilteringState(index, true);
                     ClearInventoryIconAndSlot(uiIcon, index);
                     continue;
                 }
@@ -371,14 +371,14 @@ namespace GGemCo2DCore
                 int itemCount = saveDataIcon.Count;
                 if (itemUid <= 0)
                 {
-                    SetSlotFilteringState(index, !contextActive);
+                    SetSlotFilteringState(index, true);
                     ClearInventoryIconAndSlot(uiIcon, index);
                     continue;
                 }
                 var table = TableItem.GetDataByUid(itemUid);
                 if (table == null || table.Uid <= 0)
                 {
-                    SetSlotFilteringState(index, !contextActive);
+                    SetSlotFilteringState(index, true);
                     ClearInventoryIconAndSlot(uiIcon, index);
                     continue;
                 }
@@ -387,7 +387,7 @@ namespace GGemCo2DCore
                 bool displayZeroCountItem = ShouldDisplayZeroCountItem(saveDataIcon, table);
                 if (isZeroCountItem && !displayZeroCountItem)
                 {
-                    SetSlotFilteringState(index, !contextActive);
+                    SetSlotFilteringState(index, true);
                     ClearInventoryIconAndSlot(uiIcon, index);
                     continue;
                 }
@@ -396,7 +396,7 @@ namespace GGemCo2DCore
                 if (contextActive &&
                     !_selectionContext.CanDisplay(saveDataIcon, table))
                 {
-                    SetSlotFilteringState(index, false);
+                    SetSlotFilteringState(index, true);
                     ClearInventoryIconAndSlot(uiIcon, index);
                     continue;
                 }
@@ -491,7 +491,7 @@ namespace GGemCo2DCore
 
         /// <summary>
         /// 특정 슬롯이 페이지 컨트롤러에서 표시 대상으로 취급될지 설정합니다.
-        /// 아이콘만 비우면 빈칸이 남으므로, 후보가 아닌 슬롯은 UISlot 자체를 필터에서 제외합니다.
+        /// 선택 후보가 아닌 아이템은 아이콘만 비우고 슬롯은 남겨 후보 목록 뒤의 빈 슬롯처럼 보이게 합니다.
         /// </summary>
         private void SetSlotFilteringState(int slotIndex, bool visible)
         {
