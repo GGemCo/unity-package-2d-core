@@ -298,9 +298,9 @@ namespace GGemCo2DCore
         {
             for (int i = 0; i < MaxSlotCount; i++)
             {
-                if (!ItemCounts.ContainsKey(i) || ItemCounts[i].Uid <= 0 || ItemCounts[i].Count <= 0)
+                if (!ItemCounts.ContainsKey(i) || (ItemCounts[i].Uid <= 0 && ItemCounts[i].Count <= 0))
                 {
-                    if (!TempItemCounts.ContainsKey(i) || TempItemCounts[i].Uid <= 0 || TempItemCounts[i].Count <= 0)
+                    if (!TempItemCounts.ContainsKey(i) || (TempItemCounts[i].Uid <= 0 && TempItemCounts[i].Count <= 0))
                     {
                         return i;
                     }
