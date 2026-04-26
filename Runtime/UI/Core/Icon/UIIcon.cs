@@ -15,6 +15,10 @@ namespace GGemCo2DCore
         public TextMeshProUGUI textCount;
         [Tooltip("개수 앞에 보여줄 문구. 예) x")]
         [SerializeField] private string prefixCount;
+        [Tooltip("일반 상태 색상")]
+        [SerializeField] private Color colorTextCountNormal = new(255, 255, 255, 255);
+        [Tooltip("선택 되었을 때, 개수 색상")]
+        [SerializeField] private Color colorTextCountSelected = new(255, 255, 255, 255);
 
         [Tooltip("쿨타임 게이지")]
         public Image imageCoolTimeGauge;
@@ -376,6 +380,11 @@ namespace GGemCo2DCore
                 {
                     slot.SetSelected(selected);
                 }
+            }
+
+            if (textCount)
+            {
+                textCount.color = selected ? colorTextCountSelected : colorTextCountNormal;
             }
             
             _uiWindowManager ??= SceneGame.Instance?.uIWindowManager;
