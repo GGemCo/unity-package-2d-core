@@ -20,10 +20,16 @@ namespace GGemCo2DCore
         [SerializeField] private Color colorNormal = Color.white;
         [Tooltip("선택되었을 때 색상")]
         [SerializeField] private Color colorSelected = Color.blue;
+        
+        [Header("장착")]
+        [Tooltip("장착되었을 때 색상")]
+        [SerializeField] private Color colorEquip = Color.yellow;
         [Tooltip("현재 선택 문맥에서 이 슬롯의 아이템이 장착 중임을 표시할 이미지")]
         [SerializeField] private Image imageEquipped;
         [Tooltip("현재 선택 문맥에서 이 슬롯의 아이템이 장착 중임을 표시할 텍스트")]
         [SerializeField] private TextMeshProUGUI textEquipped;
+        [Tooltip("장착 되었을 때, 슬롯 배경 이미지 숨기 여부")]
+        [SerializeField] private bool isDisableBackgroundImageOnEquip = false;
 
         private UIWindow _window;
         private UIWindowConstants.WindowUid _windowUid;
@@ -97,6 +103,14 @@ namespace GGemCo2DCore
             if (imageEquipped != null)
             {
                 imageEquipped.gameObject.SetActive(equipped);
+                imageEquipped.color = equipped ? colorEquip : colorNormal;
+            }
+            SetColor(equipped ? colorSelected : colorNormal);
+            
+            _imageSlot.enabled = true;
+            if (_imageSlot && isDisableBackgroundImageOnEquip && equipped)
+            {
+                _imageSlot.enabled = false;
             }
 
             if (textEquipped != null)
