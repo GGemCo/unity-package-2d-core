@@ -24,7 +24,7 @@ namespace GGemCo2DCore
         [Tooltip("인벤토리 오브젝트를 기준으로 아이템 정보 윈도우 위치")] [SerializeField]
         private UIWindowManager.ExternalWindowInsertMode overrideUiWindowItemInfoInsertMode =
             UIWindowManager.ExternalWindowInsertMode.After;
-            
+
         [Tooltip("인벤토리 창이 열릴 때 첫 번째 아이템 슬롯을 자동 선택할지 여부")]
         [SerializeField] private bool selectFirstItemOnShow = true;
         [Tooltip("아이템 나누기 가능 여부")]
@@ -33,6 +33,8 @@ namespace GGemCo2DCore
         [SerializeField] private Button buttonContextAction;
         [Tooltip("선택 문맥 실행 버튼의 표시 텍스트")]
         [SerializeField] private TextMeshProUGUI textContextAction;
+        [Tooltip("인벤토리 슬롯 페이지 컨트롤러")]
+        [SerializeField] private UIPageController pageController;
         
         public TableItem TableItem;
         public InventoryData InventoryData;
@@ -66,6 +68,11 @@ namespace GGemCo2DCore
             
             IconPoolManager.SetSetIconHandler(new SetIconHandlerInventory());
             DragDropHandler.SetStrategy(new DragDropStrategyInventory());
+
+            if (pageController == null)
+            {
+                pageController = GetComponentInChildren<UIPageController>(true);
+            }
         }
 
         /// <summary>
@@ -100,6 +107,8 @@ namespace GGemCo2DCore
             _uiWindowQuickSlotSimulation =
                 SceneGame.uIWindowManager.GetUIWindowByUid<UIWindowQuickSlotSimulation>(UIWindowConstants.WindowUid
                     .QuickSlotSimulation);
+
+            pageController?.InitializeBySlotObjects(slots);
         }
 
         /// <summary>
@@ -282,15 +291,14 @@ namespace GGemCo2DCore
                 if (icon == null) continue;
                 UIIconItem uiIcon = icon.GetComponent<UIIconItem>();
                 if (uiIcon == null) continue;
-                if (!datas.TryGetValue(index, out var info))
+                if (!datas.TryGetValue(index, out var saveDataIcon))
                 {
                     ClearInventoryIconAndSlot(uiIcon, index);
                     continue;
                 }
 
-                SaveDataIcon structInventoryIcon = info;
-                int itemUid = structInventoryIcon.Uid;
-                int itemCount = structInventoryIcon.Count;
+                int itemUid = saveDataIcon.Uid;
+                int itemCount = saveDataIcon.Count;
                 if (itemUid <= 0 || itemCount <= 0)
                 {
                     ClearInventoryIconAndSlot(uiIcon, index);
@@ -305,13 +313,13 @@ namespace GGemCo2DCore
 
                 // 선택 문맥이 있으면 해당 문맥에서 허용한 아이템만 후보로 보여줍니다.
                 if (_selectionContext is { IsActive: true } &&
-                    !_selectionContext.CanDisplay(structInventoryIcon, table))
+                    !_selectionContext.CanDisplay(saveDataIcon, table))
                 {
                     ClearInventoryIconAndSlot(uiIcon, index);
                     continue;
                 }
 
-                uiIcon.ChangeInfoByUid(table.Uid, itemCount, iconInstanceId: structInventoryIcon.InstanceId);
+                uiIcon.ChangeInfoByUid(table.Uid, itemCount, iconInstanceId: saveDataIcon.InstanceId);
                 bool equipped = _selectionContext is { IsActive: true } &&
                                 _selectionContext.IsEquipped(uiIcon);
                 uiIcon.SetEquippedState(equipped);

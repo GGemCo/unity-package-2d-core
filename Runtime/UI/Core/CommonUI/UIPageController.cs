@@ -49,6 +49,9 @@ namespace GGemCo2DCore
         /// <summary>현재 페이지 번호 (1부터 시작)</summary>
         private int _currentPage;
 
+        /// <summary>외부에서 명시적으로 슬롯 목록을 주입했는지 여부</summary>
+        private bool _isInitialized;
+
         /// <summary>
         /// 초기 설정.
         /// Prev/Next 버튼을 클릭 시 OnClickPrev, OnClickNext가 호출되도록 리스너를 등록한다.
@@ -61,23 +64,43 @@ namespace GGemCo2DCore
         }
 
         /// <summary>
-        /// Start()에서 pageContainer 자식 중 UISlot을 전부 수집하고
-        /// 첫 페이지를 구성한다.
+        /// 이미 생성된 슬롯 GameObject 배열을 기준으로 페이지를 구성한다.
+        /// UIWindow.slots 처럼 index 순서가 보장된 배열을 넘기는 용도입니다.
         /// </summary>
-        private void Start()
+        public void InitializeBySlotObjects(GameObject[] slotObjects)
         {
-            // 자식으로 붙어 있는 UISlot 컴포넌트들을 전부 가져온다.
-            var uiSlots = pageContainer.GetComponentsInChildren<UISlot>(true);
-            int len = uiSlots.Length;
+            if (slotObjects == null || slotObjects.Length == 0)
+            {
+                ClearSlots();
+                return;
+            }
+
+            int len = 0;
+            for (int i = 0; i < slotObjects.Length; i++)
+            {
+                if (slotObjects[i] != null && slotObjects[i].GetComponent<UISlot>() != null)
+                {
+                    len++;
+                }
+            }
 
             _objects = new GameObject[len];
             _slots   = new UISlot[len];
 
-            // UISlot과 그 GameObject를 배열로 저장
             int idx = 0;
-            for (int i = 0; i < uiSlots.Length; i++)
+            for (int i = 0; i < slotObjects.Length; i++)
             {
-                var slot = uiSlots[i];
+                if (slotObjects[i] == null)
+                {
+                    continue;
+                }
+
+                var slot = slotObjects[i].GetComponent<UISlot>();
+                if (slot == null)
+                {
+                    continue;
+                }
+
                 _slots[idx]   = slot;
                 _objects[idx] = slot.gameObject;
 
@@ -86,7 +109,18 @@ namespace GGemCo2DCore
                 idx++;
             }
 
-            // 최초 페이지 UI 구성
+            _isInitialized = true;
+            _currentPage = 1;
+            UpdatePage();
+        }
+
+        private void ClearSlots()
+        {
+            _objects = System.Array.Empty<GameObject>();
+            _slots = System.Array.Empty<UISlot>();
+            _visibleSlotIndices.Clear();
+            _isInitialized = true;
+            _currentPage = 1;
             UpdatePage();
         }
 
@@ -184,8 +218,8 @@ namespace GGemCo2DCore
         /// </summary>
         private void OnDestroy()
         {
-            buttonPrev?.onClick.RemoveAllListeners();
-            buttonNext?.onClick.RemoveAllListeners();
+            buttonPrev?.onClick.RemoveListener(OnClickPrev);
+            buttonNext?.onClick.RemoveListener(OnClickNext);
         }
 
         /// <summary>
