@@ -33,6 +33,10 @@ namespace GGemCo2DCore
         [SerializeField] private Button buttonContextAction;
         [Tooltip("선택 문맥 실행 버튼의 표시 텍스트")]
         [SerializeField] private TextMeshProUGUI textContextAction;
+        [Tooltip("선택 문맥의 장착 해제를 실행할 버튼")]
+        [SerializeField] private Button buttonContextUnequip;
+        [Tooltip("선택 문맥 장착 해제 버튼의 표시 텍스트")]
+        [SerializeField] private TextMeshProUGUI textContextUnequip;
         [Tooltip("인벤토리 슬롯 페이지 컨트롤러")]
         [SerializeField] private UIPageController pageController;
         
@@ -63,6 +67,7 @@ namespace GGemCo2DCore
             TableItem = TableLoaderManager.Instance.TableItem;
             buttonMergeAllItems?.onClick.AddListener(OnClickMergeAllItems);
             buttonContextAction?.onClick.AddListener(OnClickContextAction);
+            buttonContextUnequip?.onClick.AddListener(OnClickContextUnequip);
             UpdateContextActionVisibility();
             base.Awake();
             
@@ -252,6 +257,11 @@ namespace GGemCo2DCore
                 buttonContextAction.gameObject.SetActive(show);
             }
 
+            if (buttonContextUnequip != null)
+            {
+                buttonContextUnequip.gameObject.SetActive(show);
+            }
+
             if (textContextAction != null)
             {
                 textContextAction.text = show ? _selectionContext.ActionMessageKey : string.Empty;
@@ -268,11 +278,18 @@ namespace GGemCo2DCore
                 }
             }
 
+            if (textContextUnequip != null)
+            {
+                textContextUnequip.text = show ? _selectionContext.UnequipMessageKey : string.Empty;
+            }
+
             // 별도 context 버튼이 있는 프리팹에서는 일반 합치기 버튼과 역할이 겹치지 않게 숨깁니다.
             if (buttonMergeAllItems != null && buttonContextAction != null)
             {
                 buttonMergeAllItems.gameObject.SetActive(!show);
             }
+
+            RefreshContextActionButtons();
         }
 
         /// <summary>
@@ -325,6 +342,8 @@ namespace GGemCo2DCore
                 uiIcon.SetEquippedState(equipped);
                 SetSlotEquippedState(index, equipped);
             }
+
+            RefreshContextActionButtons();
         }
 
         /// <summary>
@@ -378,6 +397,65 @@ namespace GGemCo2DCore
 
             icon.HandleEquipEffect();
             LoadIcons();
+            RefreshContextActionButtons();
+        }
+
+        /// <summary>
+        /// 선택 문맥의 장착 해제 버튼 처리입니다.
+        /// 인벤토리를 열었던 슬롯에 장착된 아이템과 현재 선택 아이템이 같을 때만 해제를 실행합니다.
+        /// </summary>
+        private void OnClickContextUnequip()
+        {
+            if (_selectionContext is not { IsActive: true }) return;
+
+            UIIconItem icon = GetSelectedIcon() as UIIconItem;
+            if (icon == null || icon.uid <= 0)
+            {
+                SceneGame.systemMessageManager.ShowMessageWarning("Inventory_SelectItem");
+                return;
+            }
+
+            if (!_selectionContext.CanUnequip(icon, out string failMessageKey))
+            {
+                ShowSlotAcceptFailure(failMessageKey);
+                icon.HandleInvalidEffect();
+                return;
+            }
+
+            ResultCommon result = _selectionContext.Unequip(icon);
+            if (result == null || result.Result != ResultCommon.ResultType.Success)
+            {
+                ShowSlotAcceptFailure("Inventory_ContextUnequipFailed");
+                icon.HandleInvalidEffect();
+                return;
+            }
+
+            LoadIcons();
+            RefreshContextActionButtons();
+        }
+
+        /// <summary>
+        /// 선택 문맥 버튼들의 활성 상태를 현재 선택/장착 상태에 맞춰 갱신합니다.
+        /// 장착해제 버튼은 현재 선택 아이템이 인벤토리를 열었던 슬롯의 장착 아이템과 같을 때만 누를 수 있습니다.
+        /// </summary>
+        private void RefreshContextActionButtons()
+        {
+            bool contextActive = _selectionContext is { IsActive: true };
+            UIIconItem selectedItem = GetSelectedIcon() as UIIconItem;
+
+            if (buttonContextAction != null)
+            {
+                buttonContextAction.interactable = contextActive;
+            }
+
+            if (buttonContextUnequip != null)
+            {
+                buttonContextUnequip.interactable =
+                    contextActive &&
+                    selectedItem != null &&
+                    selectedItem.uid > 0 &&
+                    _selectionContext.CanUnequip(selectedItem, out _);
+            }
         }
 
         /// <summary>
@@ -650,6 +728,25 @@ namespace GGemCo2DCore
             base.SetSelectedIcon(index);
 
             OnItemSplit(index);
+        }
+
+        /// <summary>
+        /// 아이콘 선택이 바뀔 때 context 버튼 상태를 다시 계산합니다.
+        /// 자동 선택처럼 base.SetSelectedIcon을 직접 호출하는 경로도 이 훅을 거칩니다.
+        /// </summary>
+        protected override void OnSelectedIcon(UIIcon icon)
+        {
+            base.OnSelectedIcon(icon);
+            RefreshContextActionButtons();
+        }
+
+        /// <summary>
+        /// 선택 아이콘이 사라졌을 때 context 버튼 상태를 다시 계산합니다.
+        /// </summary>
+        protected override void OnClearedSelectedIcon()
+        {
+            base.OnClearedSelectedIcon();
+            RefreshContextActionButtons();
         }
 
         private void OnItemSplit(int index)

@@ -2,7 +2,7 @@ namespace GGemCo2DCore
 {
     /// <summary>
     /// 인벤토리를 특정 선택 작업의 후보 목록으로 사용할 때 필요한 위임 계약입니다.
-    /// Core 인벤토리는 이 인터페이스만 알고, 실제 장착/등록 정책은 각 상위 기능이 구현합니다.
+    /// Core 인벤토리는 이 인터페이스만 알고, 실제 장착/해제/등록 정책은 각 상위 기능이 구현합니다.
     /// </summary>
     public interface IInventorySelectionContext
     {
@@ -16,6 +16,11 @@ namespace GGemCo2DCore
         /// 문맥 실행 버튼에 표시할 메시지 키입니다.
         /// </summary>
         string ActionMessageKey { get; }
+
+        /// <summary>
+        /// 문맥 해제 버튼에 표시할 메시지 키입니다.
+        /// </summary>
+        string UnequipMessageKey { get; }
 
         /// <summary>
         /// 인벤토리 슬롯의 저장 데이터와 아이템 테이블 데이터를 기준으로 후보 표시 여부를 결정합니다.
@@ -36,6 +41,18 @@ namespace GGemCo2DCore
         /// 선택된 아이콘에 대해 실제 문맥 작업을 실행합니다.
         /// </summary>
         ResultCommon Execute(UIIconItem icon);
+
+        /// <summary>
+        /// 현재 선택 아이콘이 이 문맥의 해제 대상과 같은지 검사합니다.
+        /// 스킬 슬롯 문맥에서는 인벤토리를 열었던 슬롯에 장착된 아이템과 현재 선택한 아이템이 같아야 합니다.
+        /// </summary>
+        bool CanUnequip(UIIconItem icon, out string failMessageKey);
+
+        /// <summary>
+        /// 현재 선택 아이콘과 일치하는 문맥의 장착 데이터를 해제합니다.
+        /// Core는 해제 대상이 어떤 저장 데이터인지는 모르고, 구현체가 실제 정책을 수행합니다.
+        /// </summary>
+        ResultCommon Unequip(UIIconItem icon);
 
         /// <summary>
         /// 인벤토리가 일반 모드로 돌아가거나 닫힐 때 문맥이 정리할 수 있는 훅입니다.
