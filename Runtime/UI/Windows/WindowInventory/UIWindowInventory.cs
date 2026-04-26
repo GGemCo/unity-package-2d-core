@@ -259,7 +259,7 @@ namespace GGemCo2DCore
                 if (uiIcon == null) continue;
                 if (!datas.TryGetValue(index, out var info))
                 {
-                    uiIcon.ClearIconInfos();
+                    ClearInventoryIconAndSlot(uiIcon, index);
                     continue;
                 }
 
@@ -268,13 +268,13 @@ namespace GGemCo2DCore
                 int itemCount = structInventoryIcon.Count;
                 if (itemUid <= 0 || itemCount <= 0)
                 {
-                    uiIcon.ClearIconInfos();
+                    ClearInventoryIconAndSlot(uiIcon, index);
                     continue;
                 }
                 var table = TableItem.GetDataByUid(itemUid);
                 if (table == null || table.Uid <= 0)
                 {
-                    uiIcon.ClearIconInfos();
+                    ClearInventoryIconAndSlot(uiIcon, index);
                     continue;
                 }
 
@@ -282,14 +282,35 @@ namespace GGemCo2DCore
                 if (_selectionContext is { IsActive: true } &&
                     !_selectionContext.CanDisplay(structInventoryIcon, table))
                 {
-                    uiIcon.ClearIconInfos();
+                    ClearInventoryIconAndSlot(uiIcon, index);
                     continue;
                 }
 
                 uiIcon.ChangeInfoByUid(table.Uid, itemCount, iconInstanceId: structInventoryIcon.InstanceId);
-                uiIcon.SetEquippedState(_selectionContext is { IsActive: true } &&
-                                        _selectionContext.IsEquipped(uiIcon));
+                bool equipped = _selectionContext is { IsActive: true } &&
+                                _selectionContext.IsEquipped(uiIcon);
+                uiIcon.SetEquippedState(equipped);
+                SetSlotEquippedState(index, equipped);
             }
+        }
+
+        /// <summary>
+        /// 인벤토리 아이콘을 비울 때 슬롯의 장착 표시도 함께 정리합니다.
+        /// 후보 필터링으로 아이템을 숨기는 경우에도 이전 표시가 남지 않게 합니다.
+        /// </summary>
+        private void ClearInventoryIconAndSlot(UIIconItem uiIcon, int slotIndex)
+        {
+            uiIcon.ClearIconInfos();
+            SetSlotEquippedState(slotIndex, false);
+        }
+
+        /// <summary>
+        /// 슬롯 컴포넌트가 장착 표시 오브젝트를 가지고 있으면 context 기준 장착 상태를 반영합니다.
+        /// </summary>
+        private void SetSlotEquippedState(int slotIndex, bool equipped)
+        {
+            UISlot slot = GetSlotByIndex(slotIndex);
+            slot?.SetEquippedState(equipped);
         }
 
         /// <summary>
