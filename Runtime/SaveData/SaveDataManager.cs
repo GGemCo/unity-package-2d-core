@@ -20,6 +20,7 @@ namespace GGemCo2DCore
         public GameTimeData GameTimeData;
         public ShopPurchaseData ShopPurchaseData;
         public ShopExposureData ShopExposureData;
+        public WindowSlotActivationSaveData WindowSlotActivationSaveData;
 
         /// <summary>
         /// 인스턴스 아이템(랜덤 옵션 등) 저장 데이터.
@@ -44,6 +45,7 @@ namespace GGemCo2DCore
         public ShopPurchaseData ShopPurchase { get; private set; }
         public ShopExposureData ShopExposure { get; private set; }
         public GameTimeData GameTime { get; private set; }
+        public WindowSlotActivationSaveData WindowSlotActivation { get; private set; }
 
         /// <summary>
         /// 인스턴스 아이템(랜덤 옵션 등) 저장소.
@@ -69,6 +71,7 @@ namespace GGemCo2DCore
             ShopPurchase = new ShopPurchaseData();
             ShopExposure = new ShopExposureData();
             GameTime = new GameTimeData();
+            WindowSlotActivation = new WindowSlotActivationSaveData();
 
             // 인스턴스 아이템 저장소 초기화(테이블 로드 이후면 언제든 사용 가능)
             ItemInstances = new ItemInstanceStore();
@@ -85,6 +88,8 @@ namespace GGemCo2DCore
             ShopPurchase.Initialize(tableLoaderManager, saveDataContainer);
             ShopExposure.Initialize(tableLoaderManager, saveDataContainer);
             GameTime.Initialize(tableLoaderManager, saveDataContainer);
+            WindowSlotActivation.Initialize(tableLoaderManager, saveDataContainer);
+            SceneGame.Instance?.uIWindowManager?.RefreshWindowSlotActivationStates();
 
             // 인스턴스 아이템 복원
             ItemInstances.Restore(saveDataContainer?.ItemInstanceStoreData);
@@ -129,6 +134,7 @@ namespace GGemCo2DCore
                 GameTimeData = GameTime,
                 ShopPurchaseData = ShopPurchase,
                 ShopExposureData = ShopExposure,
+                WindowSlotActivationSaveData = WindowSlotActivation,
                 ItemInstanceStoreData = ItemInstances?.Capture(),
                 // 확장 섹션 함께 저장
                 Extensions = env?.Sections,

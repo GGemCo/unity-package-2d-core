@@ -141,6 +141,7 @@ namespace GGemCo2DCore
             }
             
             saveDataManager = CreateManager<SaveDataManager>(managerContainer);
+            uIWindowManager?.RefreshWindowSlotActivationStates();
             damageTextManager = CreateManager<DamageTextManager>(managerContainer);
             uIIconCoolTimeManager = CreateManager<UIIconCoolTimeManager>(managerContainer);
             if (AddressableLoaderSettings.Instance && AddressableLoaderSettings.Instance.settings.useInGameTime)
