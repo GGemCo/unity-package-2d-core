@@ -322,7 +322,7 @@ namespace GGemCo2DCore
 
             if (textContextAction != null)
             {
-                textContextAction.text = show ? _selectionContext.ActionMessageKey : string.Empty;
+                RefreshContextActionText(show);
             }
             else if (buttonContextAction == null && buttonMergeAllItems != null)
             {
@@ -330,9 +330,7 @@ namespace GGemCo2DCore
                 if (_fallbackContextActionText != null)
                 {
                     _fallbackContextActionTextDefault ??= _fallbackContextActionText.text;
-                    _fallbackContextActionText.text = show
-                        ? _selectionContext.ActionMessageKey
-                        : _fallbackContextActionTextDefault;
+                    RefreshContextActionText(show);
                 }
             }
 
@@ -463,6 +461,32 @@ namespace GGemCo2DCore
 
             RefreshInventorySlotPage(contextActive);
             RefreshContextActionButtons();
+        }
+
+        /// <summary>
+        /// 선택 문맥의 현재 상태에 맞춰 실행 버튼 문구를 갱신합니다.
+        /// 문맥이 장착/교체처럼 상태 기반 문구를 반환할 수 있으므로 버튼 상태를 갱신할 때마다 다시 호출합니다.
+        /// </summary>
+        private void RefreshContextActionText(bool show)
+        {
+            string actionText = show && _selectionContext != null
+                ? _selectionContext.ActionMessageKey
+                : string.Empty;
+
+            if (textContextAction != null)
+            {
+                textContextAction.text = actionText;
+                return;
+            }
+
+            if (_fallbackContextActionText == null)
+            {
+                return;
+            }
+
+            _fallbackContextActionText.text = show
+                ? actionText
+                : _fallbackContextActionTextDefault;
         }
 
         /// <summary>
@@ -771,6 +795,8 @@ namespace GGemCo2DCore
                 contextActive && 
                 (selectedItem != null && selectedItem.uid > 0) &&
                 _selectionContext.CanUnequip(selectedItem, out _);
+
+            RefreshContextActionText(contextActive);
 
             if (buttonContextAction != null)
             {
