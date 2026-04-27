@@ -98,6 +98,7 @@ namespace GGemCo2DCore
 
         public void OnPointerEnter(PointerEventData eventData)
         {
+            if (IsInactive) return;
             if (!usePointerEnterEvent) return;
             // GcLogger.Log("OnPointerEnter "+eventData);
             
@@ -108,6 +109,7 @@ namespace GGemCo2DCore
 
         public void OnPointerExit(PointerEventData eventData)
         {
+            if (IsInactive) return;
             if (!usePointerExitEvent) return;
             // GcLogger.Log("OnPointerExit "+eventData);
             window.ShowItemInfo(false);
@@ -116,6 +118,7 @@ namespace GGemCo2DCore
 
         public void OnPointerClick(PointerEventData eventData)
         {
+            if (IsInactive) return;
             if (usePointerClickEvent)
             {
                 window.ShowItemInfo(true, this);

@@ -40,17 +40,20 @@ namespace GGemCo2DCore
 
         public void OnPointerEnter(PointerEventData eventData)
         {
+            if (IsInactive) return;
             ShowOverImage(true);
             HandlePointerEnterEffect(eventData);
         }
 
         public void OnPointerExit(PointerEventData eventData)
         {
+            if (IsInactive) return;
             ShowOverImage(false);
         }
 
         public void OnPointerClick(PointerEventData eventData)
         {
+            if (IsInactive) return;
             if (!PossibleClick || IsLock()) return;
 
             if (eventData.button == PointerEventData.InputButton.Left)

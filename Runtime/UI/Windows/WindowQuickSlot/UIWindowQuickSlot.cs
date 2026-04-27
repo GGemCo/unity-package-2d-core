@@ -186,6 +186,9 @@ namespace GGemCo2DCore
         /// </summary>
         private void OnKeyDownQuickSlotBySlotIndex(int slotIndex)
         {
+            if (IsSlotInactive(slotIndex))
+                return;
+
             if (SceneGame == null)
                 return;
 

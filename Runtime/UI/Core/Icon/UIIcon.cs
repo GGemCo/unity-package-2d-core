@@ -46,6 +46,12 @@ namespace GGemCo2DCore
         [SerializeField] protected UIEffectPreset cooldownReadyPreset;
         [Tooltip("장착/등록 완료 시 재생할 프리셋")]
         [SerializeField] protected UIEffectPreset equipPreset;
+
+        [Header("비활성")]
+        [Tooltip("비활성 상태일 때 아이콘 이미지에 적용할 색상입니다. 알파 값으로 투명도를 함께 지정합니다.")]
+        [SerializeField] private Color colorInactive = new Color(1f, 1f, 1f, 0.35f);
+        [Tooltip("비활성 상태일 때 표시할 아이콘 이미지입니다.")]
+        [SerializeField] private Sprite inactiveSprite;
         
         // 윈도우 
         [HideInInspector] public UIWindow window;
@@ -71,6 +77,9 @@ namespace GGemCo2DCore
         private bool _showSelectedImage;
         private bool _showOverImage;
         private bool _showZeroCountText;
+        private bool _isInactive;
+        private bool _hasNormalIconColor;
+        private Color _normalIconColor = Color.white;
         
         // 부모 윈도우 uid
         private UIWindowConstants.WindowUid _parentWindowUid;
@@ -98,6 +107,12 @@ namespace GGemCo2DCore
         private Vector2 _slotSize;
         private UIIconCoolTimeManager _iconCoolTimeManager;
 
+        /// <summary>
+        /// 현재 아이콘이 비활성 슬롯 표현 상태인지 반환합니다.
+        /// 비활성 아이콘은 실제 아이콘 정보를 가지지 않고 드래그와 클릭을 허용하지 않습니다.
+        /// </summary>
+        public bool IsInactive => _isInactive;
+
         protected virtual void Awake()
         {
         }
@@ -106,6 +121,12 @@ namespace GGemCo2DCore
         {
             if (ImageIcon == null)
                 ImageIcon = GetComponent<Image>();
+
+            if (!_hasNormalIconColor && ImageIcon != null)
+            {
+                _normalIconColor = ImageIcon.color;
+                _hasNormalIconColor = true;
+            }
             
             _dragHandler = GetComponent<UIDragHandler>();
             if (_dragHandler == null)
@@ -147,6 +168,7 @@ namespace GGemCo2DCore
             _isLearn = false;
             _iconStatus = IconConstants.Status.Normal;
             _isTextCountEquipped = false;
+            _isInactive = false;
             IconType = IconConstants.Type.None;
 
             if (imageCoolTimeGauge != null)
@@ -164,6 +186,7 @@ namespace GGemCo2DCore
             _slotSize = slotSize;
             SetCount(0);
             ChangeIconImageSize(iconSize, slotSize);
+            ApplyInactiveVisual(false);
             _showSelectedImage = window.showSelectedIconImage;
             _showOverImage = window.showOverIconImage;
             OnInitialize();
@@ -217,6 +240,9 @@ namespace GGemCo2DCore
             bool iconIsLearn = false, int remainCoolTime = 0, long iconInstanceId = 0, 
             IconConstants.Type iconType = IconConstants.Type.None)
         {
+            if (_isInactive)
+                return false;
+
             _iconCoolTimeManager?.SetRemainCoolTime(windowUid, cardUid, remainCoolTime);
 
             if (cardUid == 0 && iconCount == 0)
@@ -267,6 +293,78 @@ namespace GGemCo2DCore
             _showZeroCountText = show;
             SetCount(count);
         }
+
+        /// <summary>
+        /// 아이콘의 비활성 표시 상태를 설정합니다.
+        /// 비활성 상태가 되면 실제 아이콘 정보를 지우고, 드래그/클릭을 차단한 뒤 비활성 이미지를 표시합니다.
+        /// </summary>
+        /// <param name="inactive">비활성 여부입니다.</param>
+        public void SetInactiveState(bool inactive)
+        {
+            if (!_isInactive && !inactive)
+            {
+                ApplyInactiveVisual(false);
+                return;
+            }
+
+            _isInactive = inactive;
+
+            if (_isInactive)
+            {
+                if (uid > 0 || count > 0 || instanceId != 0)
+                {
+                    ClearIconInfos();
+                }
+                else
+                {
+                    uid = 0;
+                    instanceId = 0;
+                    IconType = IconConstants.Type.None;
+                    _level = 0;
+                    _isLearn = false;
+                    SetIconLock(false);
+                    SetTextCountEquippedState(false);
+                    SetShowZeroCountText(false);
+                    SetCount(0);
+                }
+
+                SetSelected(false);
+                SetClick(false);
+                SetDrag(false);
+                ApplyInactiveVisual(true);
+                return;
+            }
+
+            ApplyInactiveVisual(false);
+            SetClick(true);
+            SetDrag(!IsLock());
+
+            if (uid <= 0)
+            {
+                ClearIconInfos();
+            }
+            else
+            {
+                UpdateIconImage();
+            }
+        }
+
+        /// <summary>
+        /// 비활성 상태에 맞춰 아이콘 색상과 비활성 스프라이트를 적용합니다.
+        /// </summary>
+        /// <param name="inactive">비활성 표시를 적용할지 여부입니다.</param>
+        private void ApplyInactiveVisual(bool inactive)
+        {
+            if (ImageIcon == null)
+                return;
+
+            ImageIcon.color = inactive ? colorInactive : _normalIconColor;
+            if (inactive && inactiveSprite != null)
+            {
+                ImageIcon.sprite = inactiveSprite;
+            }
+        }
+
         /// <summary>
         /// 아이템 잠금
         /// </summary>
@@ -277,7 +375,7 @@ namespace GGemCo2DCore
 
             if (imageLock != null)
             {
-                imageLock.gameObject.SetActive(set);
+                imageLock.gameObject.SetActive(set && !_isInactive);
             }
 
             SetDrag(!set);
@@ -289,7 +387,7 @@ namespace GGemCo2DCore
         public void SetDrag(bool set)
         {
             if (_dragHandler == null) return;
-            _dragHandler.SetIsPossibleDrag(set);
+            _dragHandler.SetIsPossibleDrag(set && !_isInactive);
         }
         /// <summary>
         /// 아이템 정보 지우기
@@ -317,6 +415,13 @@ namespace GGemCo2DCore
             SetTextCountEquippedState(false);
             SetShowZeroCountText(false);
             SetCount(0);
+
+            if (_isInactive)
+            {
+                SetClick(false);
+                SetDrag(false);
+                ApplyInactiveVisual(true);
+            }
         }
 
         /// <summary>
@@ -376,14 +481,14 @@ namespace GGemCo2DCore
         /// <param name="selected"></param>
         public virtual void SetSelected(bool selected)
         {
-            _isSelected = selected;
+            _isSelected = selected && !_isInactive;
 
             if (window)
             {
                 var slot = window.GetSlotByIndex(index);
                 if (slot != null)
                 {
-                    slot.SetSelected(selected);
+                    slot.SetSelected(_isSelected);
                 }
             }
 
@@ -391,7 +496,7 @@ namespace GGemCo2DCore
             
             _uiWindowManager ??= SceneGame.Instance?.uIWindowManager;
             if (!_showSelectedImage || !_uiWindowManager) return;
-            _uiWindowManager.ShowSelectIconImage(selected, gameObject.transform.position, _slotSize);
+            _uiWindowManager.ShowSelectIconImage(_isSelected, gameObject.transform.position, _slotSize);
         }
         public bool IsSelected() => _isSelected;
 
@@ -519,7 +624,7 @@ namespace GGemCo2DCore
 
         public void SetClick(bool set)
         {
-            PossibleClick = set;
+            PossibleClick = set && !_isInactive;
         }
 
         public virtual int GetPartsSlotIndex() => -1;

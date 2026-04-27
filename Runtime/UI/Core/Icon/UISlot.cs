@@ -31,6 +31,12 @@ namespace GGemCo2DCore
         [Tooltip("장착 되었을 때, 슬롯 배경 이미지 숨기 여부")]
         [SerializeField] private bool isDisableBackgroundImageOnEquip = false;
 
+        [Header("비활성")]
+        [Tooltip("비활성 상태일 때 슬롯 배경에 적용할 색상입니다. 알파 값으로 투명도를 함께 지정합니다.")]
+        [SerializeField] private Color colorInactive = new Color(1f, 1f, 1f, 0.35f);
+        [Tooltip("비활성 상태일 때 표시할 슬롯 오버레이 이미지입니다.")]
+        [SerializeField] private Image imageInactive;
+
         private UIWindow _window;
         private UIWindowConstants.WindowUid _windowUid;
         public int Index { get; private set; }
@@ -40,6 +46,13 @@ namespace GGemCo2DCore
         private Image _imageSlot;
         private bool _isSelected;
         private bool _isEquipped;
+        private bool _isInactive;
+
+        /// <summary>
+        /// 현재 슬롯이 비활성 상태인지 반환합니다.
+        /// 비활성 슬롯은 아이콘을 받을 수 없고 선택/장착 표시보다 비활성 표시를 우선합니다.
+        /// </summary>
+        public bool IsInactive => _isInactive;
 
         /// <summary>
         /// prefab 생성 후 호출되는 함수
@@ -55,6 +68,7 @@ namespace GGemCo2DCore
             Index = slotIndex;
             _isSelected = false;
             _isEquipped = false;
+            _isInactive = false;
             
             if (_imageSlot == null)
                 _imageSlot = GetComponent<Image>();
@@ -93,7 +107,29 @@ namespace GGemCo2DCore
 
         public void SetSelected(bool selected)
         {
-            _isSelected = selected;
+            _isSelected = selected && !_isInactive;
+            RefreshSlotVisualState();
+        }
+
+        /// <summary>
+        /// 슬롯의 비활성 상태를 설정하고 시각 상태를 갱신합니다.
+        /// 비활성 상태에서는 선택/장착 표현을 해제하고 비활성 오버레이를 표시합니다.
+        /// </summary>
+        /// <param name="inactive">비활성 여부입니다.</param>
+        public void SetInactiveState(bool inactive)
+        {
+            _isInactive = inactive;
+            if (_isInactive)
+            {
+                _isSelected = false;
+                _isEquipped = false;
+            }
+
+            if (imageInactive != null)
+            {
+                imageInactive.gameObject.SetActive(_isInactive);
+            }
+
             RefreshSlotVisualState();
         }
 
@@ -103,19 +139,19 @@ namespace GGemCo2DCore
         /// </summary>
         public void SetEquippedState(bool equipped)
         {
-            _isEquipped = equipped;
+            _isEquipped = equipped && !_isInactive;
 
             if (imageEquipped != null)
             {
-                imageEquipped.gameObject.SetActive(equipped);
-                imageEquipped.color = equipped ? colorEquip : colorNormal;
+                imageEquipped.gameObject.SetActive(_isEquipped);
+                imageEquipped.color = _isEquipped ? colorEquip : colorNormal;
             }
 
             RefreshSlotVisualState();
 
             if (textEquipped != null)
             {
-                textEquipped.gameObject.SetActive(equipped);
+                textEquipped.gameObject.SetActive(_isEquipped);
             }
         }
 
@@ -129,6 +165,13 @@ namespace GGemCo2DCore
 
             // 장착 상태에서 배경 이미지를 숨기는 옵션은 색상 계산과 별도로 처리합니다.
             _imageSlot.enabled = !(isDisableBackgroundImageOnEquip && _isEquipped);
+
+            if (_isInactive)
+            {
+                _imageSlot.enabled = true;
+                SetColor(colorInactive);
+                return;
+            }
 
             if (_isEquipped)
             {

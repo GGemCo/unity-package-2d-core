@@ -53,6 +53,12 @@ namespace GGemCo2DCore
         [Tooltip("특정 슬롯에만 적용할 수용 규칙 오버라이드입니다.")]
         [SerializeField] private UISlotAcceptRuleOverride[] slotAcceptRules;
 
+        [Header("Inactive Slots")]
+        [Tooltip("아이콘 정보 없이 비활성 상태로 표시할 슬롯 목록입니다. WindowUid가 None이면 현재 윈도우로 처리합니다.")]
+        [SerializeField] private UISlotInactiveState[] inactiveSlots;
+        [Tooltip("비활성 슬롯에 아이콘을 배치하려고 할 때 출력할 메시지 키입니다.")]
+        [SerializeField] private string inactiveSlotFailMessageKey = "Slot_Inactive";
+
         protected UIIcon selectedIcon;
 
         // 서브 매니저
@@ -60,11 +66,13 @@ namespace GGemCo2DCore
         protected IconDragDropHandler DragDropHandler;
 
         private Dictionary<int, UISlotAcceptRule> _slotAcceptRuleByIndex;
+        private HashSet<int> _inactiveSlotIndexes;
 
         protected override void Awake()
         {
             base.Awake();
             BuildSlotAcceptRuleCache();
+            BuildInactiveSlotCache();
 
             if (containerIcon != null && containerIcon.cellSize == Vector2.zero && slotSize != Vector2.zero)
             {
@@ -95,6 +103,29 @@ namespace GGemCo2DCore
         }
 
         /// <summary>
+        /// Inspector에 입력된 비활성 슬롯 정보를 현재 윈도우 기준 인덱스 집합으로 캐시합니다.
+        /// 비활성 상태는 아이콘 데이터가 아니라 WindowUid와 SlotIndex만 가진 슬롯 메타 상태입니다.
+        /// </summary>
+        private void BuildInactiveSlotCache()
+        {
+            _inactiveSlotIndexes = new HashSet<int>();
+            if (inactiveSlots == null || inactiveSlots.Length == 0)
+                return;
+
+            for (int i = 0; i < inactiveSlots.Length; i++)
+            {
+                var entry = inactiveSlots[i];
+                if (entry == null || entry.slotIndex < 0)
+                    continue;
+
+                if (entry.windowUid != UIWindowConstants.WindowUid.None && entry.windowUid != uid)
+                    continue;
+
+                _inactiveSlotIndexes.Add(entry.slotIndex);
+            }
+        }
+
+        /// <summary>
         /// 아이콘 pool 을 초기화합니다.
         /// </summary>
         private void InitializeIconPoolManager()
@@ -115,6 +146,12 @@ namespace GGemCo2DCore
             }
 
             if (icons.Length <= 0 || index >= icons.Length)
+            {
+                OnClearedSelectedIcon();
+                return;
+            }
+
+            if (IsSlotInactive(index))
             {
                 OnClearedSelectedIcon();
                 return;
@@ -184,6 +221,80 @@ namespace GGemCo2DCore
             DragDropHandler?.HandleDragOut(eventData, droppedIcon, targetIcon, originalPosition);
 
         /// <summary>
+        /// 지정한 슬롯이 비활성 상태인지 반환합니다.
+        /// </summary>
+        /// <param name="slotIndex">확인할 슬롯 인덱스입니다.</param>
+        /// <returns>비활성 슬롯이면 true입니다.</returns>
+        public bool IsSlotInactive(int slotIndex)
+        {
+            return _inactiveSlotIndexes != null && _inactiveSlotIndexes.Contains(slotIndex);
+        }
+
+        /// <summary>
+        /// 지정한 슬롯의 비활성 상태를 런타임에 변경합니다.
+        /// 비활성으로 전환할 때 기존 아이콘 정보가 있으면 먼저 제거합니다.
+        /// </summary>
+        /// <param name="slotIndex">변경할 슬롯 인덱스입니다.</param>
+        /// <param name="inactive">비활성 여부입니다.</param>
+        public void SetSlotInactive(int slotIndex, bool inactive)
+        {
+            if (slotIndex < 0 || slotIndex >= maxCountIcon)
+                return;
+
+            _inactiveSlotIndexes ??= new HashSet<int>();
+            if (inactive)
+            {
+                _inactiveSlotIndexes.Add(slotIndex);
+                UIIcon icon = null;
+                if (icons != null && slotIndex < icons.Length)
+                {
+                    icon = icons[slotIndex]?.GetComponent<UIIcon>();
+                }
+
+                if (icon != null && icon.uid > 0)
+                {
+                    DetachIcon(slotIndex);
+                }
+            }
+            else
+            {
+                _inactiveSlotIndexes.Remove(slotIndex);
+            }
+
+            RefreshInactiveSlotState(slotIndex);
+        }
+
+        /// <summary>
+        /// 모든 슬롯과 아이콘에 현재 비활성 슬롯 캐시를 반영합니다.
+        /// 슬롯/아이콘 풀 생성 직후 또는 외부 설정 재적용 시 호출합니다.
+        /// </summary>
+        public void RefreshInactiveSlotStates()
+        {
+            for (int i = 0; i < maxCountIcon; i++)
+            {
+                RefreshInactiveSlotState(i);
+            }
+        }
+
+        /// <summary>
+        /// 지정 슬롯 하나의 비활성 시각 상태를 슬롯과 아이콘에 동시에 반영합니다.
+        /// </summary>
+        /// <param name="slotIndex">갱신할 슬롯 인덱스입니다.</param>
+        private void RefreshInactiveSlotState(int slotIndex)
+        {
+            bool inactive = IsSlotInactive(slotIndex);
+            if (slots != null && slotIndex >= 0 && slotIndex < slots.Length)
+            {
+                slots[slotIndex]?.GetComponent<UISlot>()?.SetInactiveState(inactive);
+            }
+
+            if (icons != null && slotIndex >= 0 && slotIndex < icons.Length)
+            {
+                icons[slotIndex]?.GetComponent<UIIcon>()?.SetInactiveState(inactive);
+            }
+        }
+
+        /// <summary>
         /// 대상 슬롯이 주어진 아이콘을 받을 수 있는지 판단합니다.
         /// Drag & Drop 과 자동 장착/등록 모두 이 진입점을 사용합니다.
         /// </summary>
@@ -193,6 +304,12 @@ namespace GGemCo2DCore
 
             if (slotIndex < 0 || slotIndex >= maxCountIcon)
                 return false;
+
+            if (IsSlotInactive(slotIndex))
+            {
+                failMessageKey = inactiveSlotFailMessageKey;
+                return false;
+            }
 
             var rule = GetAcceptRule(slotIndex);
             return UISlotAcceptRuleEvaluator.CanAccept(rule, icon, out failMessageKey);

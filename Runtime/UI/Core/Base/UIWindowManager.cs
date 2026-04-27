@@ -878,25 +878,42 @@ namespace GGemCo2DCore
             }
             UIIcon fromIcon = fromWindow.GetIconByIndex(fromIndex);
             if (fromIcon == null) return;
+            if (fromIcon.uid <= 0 || fromIcon.GetCount() <= 0) return;
             int fromIconUid = fromIcon.uid;
             long fromIconInstanceId = fromIcon.instanceId;
-            
+
+            int targetSlotIndex = toIndex >= 0 ? toIndex : toWindow.FindFirstAcceptableEmptySlot(fromIcon);
+            if (targetSlotIndex < 0)
+            {
+                toWindow.ShowSlotAcceptFailure("Window_NoEmptySpace");
+                return;
+            }
+
+            var targetIcon = toWindow.GetIconByIndex(targetSlotIndex);
+            if (targetIcon != null && !UISlotPlacementValidator.CanSwap(fromIcon, targetIcon, out var failMessageKey))
+            {
+                toWindow.ShowSlotAcceptFailure(failMessageKey);
+                fromIcon.HandleInvalidEffect();
+                return;
+            }
+            if (targetIcon == null && !toWindow.CanAcceptIcon(fromIcon, targetSlotIndex, out failMessageKey))
+            {
+                toWindow.ShowSlotAcceptFailure(failMessageKey);
+                fromIcon.HandleInvalidEffect();
+                return;
+            }
+
             fromWindow.SetIconCount(fromIndex, fromIcon.uid, fromIcon.GetCount() - toCount, instanceId:fromIconInstanceId);
             // 특정 슬롯으로 이동
-            if (toIndex >= 0)
+            if (targetSlotIndex >= 0)
             {
                 // 그 위치에 아이콘이 있으면 되돌려준다
-                var toIcon = toWindow.GetIconByIndex(toIndex);
+                var toIcon = toWindow.GetIconByIndex(targetSlotIndex);
                 if (toIcon != null && toIcon.uid > 0 && toIcon.GetCount() > 0)
                 {
                     fromWindow.SetIconCount(toIcon.uid, toIcon.GetCount(), instanceId:toIcon.instanceId);
                 }
-                toWindow.SetIconCount(toIndex, fromIconUid, toCount, instanceId:fromIconInstanceId);
-            }
-            // 비어있는 슬롯으로 이동
-            else
-            {
-                toWindow.SetIconCount(fromIconUid, toCount, instanceId:fromIconInstanceId);
+                toWindow.SetIconCount(targetSlotIndex, fromIconUid, toCount, instanceId:fromIconInstanceId);
             }
         }
         /// <summary>
@@ -949,28 +966,36 @@ namespace GGemCo2DCore
             }
             UIIcon fromIcon = fromWindow.GetIconByIndex(fromIndex);
             if (fromIcon == null) return;
+            if (fromIcon.uid <= 0 || fromIcon.GetCount() <= 0) return;
+
+            int targetSlotIndex = toIndex >= 0 ? toIndex : toWindow.FindFirstAcceptableEmptySlot(fromIcon);
+            if (targetSlotIndex < 0)
+            {
+                toWindow.ShowSlotAcceptFailure("Window_NoEmptySpace");
+                fromIcon.HandleInvalidEffect();
+                return;
+            }
+
+            if (!toWindow.CanAcceptIcon(fromIcon, targetSlotIndex, out var failMessageKey))
+            {
+                toWindow.ShowSlotAcceptFailure(failMessageKey);
+                fromIcon.HandleInvalidEffect();
+                return;
+            }
 
             fromIcon.SetIconLock(true);
             int itemUid = fromIcon.uid;
             long itemInstanceId = fromIcon.instanceId;
             
-            if (toIndex >= 0)
+            if (targetSlotIndex >= 0)
             {
                 // 그 위치에 아이콘이 있으면 되돌려준다
-                var icon = toWindow.GetIconByIndex(toIndex);
+                var icon = toWindow.GetIconByIndex(targetSlotIndex);
                 if (icon != null && icon.uid > 0 && icon.GetCount() > 0)
                 {
-                    fromWindow.SetIconCount(icon.uid, icon.GetCount(), instanceId: itemInstanceId);
+                    fromWindow.SetIconCount(icon.uid, icon.GetCount(), instanceId: icon.instanceId);
                 }
-                UIIcon uiIcon = toWindow.SetIconCountReturnIcon(toIndex, itemUid, toCount, instanceId: itemInstanceId);
-                if (uiIcon != null)
-                {
-                    uiIcon.SetParentInfo(fromWindowUid, fromIndex);
-                }
-            }
-            else
-            {
-                UIIcon uiIcon = toWindow.SetIconCountReturnIcon(itemUid, toCount, instanceId: itemInstanceId);
+                UIIcon uiIcon = toWindow.SetIconCountReturnIcon(targetSlotIndex, itemUid, toCount, instanceId: itemInstanceId);
                 if (uiIcon != null)
                 {
                     uiIcon.SetParentInfo(fromWindowUid, fromIndex);

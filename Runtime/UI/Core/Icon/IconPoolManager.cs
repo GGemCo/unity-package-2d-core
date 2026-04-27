@@ -38,6 +38,7 @@ namespace GGemCo2DCore
 
             _buildStrategy?.BuildSlotsAndIcons(_window, _window.containerIcon, _window.maxCountIcon,
                 _window.iconType, _window.slotSize, _window.iconSize, _window.slots, _window.icons);
+            _window.RefreshInactiveSlotStates();
         }
         /// <summary>
         /// 별도 아이콘 생성 전략 설정
@@ -174,6 +175,12 @@ namespace GGemCo2DCore
             
             if (GcLogger.IsNull(uiIcon, "")) return null;
 
+            if (_window.IsSlotInactive(slotIndex))
+            {
+                uiIcon.SetInactiveState(true);
+                return null;
+            }
+
             if (count <= 0)
             {
                 DetachIcon(slotIndex);
@@ -213,6 +220,9 @@ namespace GGemCo2DCore
         {
             for (int i = 0; i < _window.maxCountIcon; i++)
             {
+                if (_window.IsSlotInactive(i))
+                    continue;
+
                 UIIcon uiIcon = GetIcon(i);
                 if (uiIcon == null) continue;
                 if (uiIcon.uid <= 0 || uiIcon.GetCount() <= 0)
@@ -266,6 +276,7 @@ namespace GGemCo2DCore
             
             _buildStrategy?.BuildSlotsAndIcons(_window, _window.containerIcon, maxCountIcon,
                 _window.iconType, _window.slotSize, _window.iconSize, _window.slots, _window.icons);
+            _window.RefreshInactiveSlotStates();
         }
 
         public void SetIcons(ResultCommon result)
