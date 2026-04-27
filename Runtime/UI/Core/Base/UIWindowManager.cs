@@ -81,14 +81,12 @@ namespace GGemCo2DCore
             RebuildWindowReferenceMap();
 
             InitializationTableInfo();
-            RefreshWindowSlotActivationStates();
         }
 
         private void Start()
         {
             MakeIconOver();
             MakeIconSelected();
-            RefreshWindowSlotActivationStates();
         }
 
         private void MakeIconOver()
@@ -245,6 +243,7 @@ namespace GGemCo2DCore
 
         /// <summary>
         /// 저장 활성 정보 복원 이후 모든 관리 UIWindow의 비활성 표시를 다시 반영합니다.
+        /// 각 UIWindow의 슬롯/아이콘 배열이 생성된 뒤 호출되어야 하며, 개별 UIWindow는 미생성 배열을 자체적으로 건너뜁니다.
         /// </summary>
         public void RefreshWindowSlotActivationStates()
         {

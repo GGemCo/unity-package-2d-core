@@ -313,6 +313,11 @@ namespace GGemCo2DCore
         /// </summary>
         public void RefreshInactiveSlotStates()
         {
+            if (maxCountIcon <= 0)
+            {
+                return;
+            }
+
             for (int i = 0; i < maxCountIcon; i++)
             {
                 RefreshInactiveSlotState(i);
@@ -325,15 +330,28 @@ namespace GGemCo2DCore
         /// <param name="slotIndex">갱신할 슬롯 인덱스입니다.</param>
         public void RefreshInactiveSlotState(int slotIndex)
         {
-            bool inactive = IsSlotInactive(slotIndex);
-            if (slots != null && slotIndex >= 0 && slotIndex < slots.Length)
+            if (slotIndex < 0)
             {
-                slots[slotIndex]?.GetComponent<UISlot>()?.SetInactiveState(inactive);
+                return;
             }
 
-            if (icons != null && slotIndex >= 0 && slotIndex < icons.Length)
+            bool inactive = IsSlotInactive(slotIndex);
+            if (slots != null && slotIndex < slots.Length)
             {
-                icons[slotIndex]?.GetComponent<UIIcon>()?.SetInactiveState(inactive);
+                GameObject slotObject = slots[slotIndex];
+                if (slotObject != null)
+                {
+                    slotObject.GetComponent<UISlot>()?.SetInactiveState(inactive);
+                }
+            }
+
+            if (icons != null && slotIndex < icons.Length)
+            {
+                GameObject iconObject = icons[slotIndex];
+                if (iconObject != null)
+                {
+                    iconObject.GetComponent<UIIcon>()?.SetInactiveState(inactive);
+                }
             }
         }
 
