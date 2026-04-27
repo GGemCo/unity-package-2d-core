@@ -795,21 +795,27 @@ namespace GGemCo2DCore
                 contextActive && 
                 (selectedItem != null && selectedItem.uid > 0) &&
                 _selectionContext.CanUnequip(selectedItem, out _);
+            bool canUseContextAction = canExecuteSelectedItem && !canUnequipSelectedItem;
 
             RefreshContextActionText(contextActive);
 
             if (buttonContextAction != null)
             {
                 // 현재 열었던 슬롯에 이미 장착된 아이템을 다시 선택한 경우에는 중복 장착을 막기 위해 장착 버튼을 끕니다.
+                buttonContextAction.interactable = canUseContextAction;
                 if (buttonContextActionHidePolicy == ButtonContextActionHidePolicy.Disable)
-                    buttonContextAction.interactable = canExecuteSelectedItem && !canUnequipSelectedItem;
+                {
+                    buttonContextAction.gameObject.SetActive(contextActive);
+                }
                 else if (buttonContextActionHidePolicy == ButtonContextActionHidePolicy.Hide)
-                    buttonContextAction.gameObject.SetActive(canExecuteSelectedItem && !canUnequipSelectedItem);
+                {
+                    buttonContextAction.gameObject.SetActive(canUseContextAction);
+                }
             }
             else if (buttonMergeAllItems != null && contextActive)
             {
                 // 별도 장착 버튼이 없는 프리팹에서는 합치기 버튼을 장착 버튼으로 재사용하므로 같은 조건을 적용합니다.
-                buttonMergeAllItems.interactable = canExecuteSelectedItem && !canUnequipSelectedItem;
+                buttonMergeAllItems.interactable = canUseContextAction;
             }
             else if (buttonMergeAllItems != null)
             {
@@ -818,10 +824,15 @@ namespace GGemCo2DCore
 
             if (buttonContextUnequip != null)
             {
+                buttonContextUnequip.interactable = canUnequipSelectedItem;
                 if (buttonContextActionHidePolicy == ButtonContextActionHidePolicy.Disable)
-                    buttonContextUnequip.interactable = canUnequipSelectedItem;
+                {
+                    buttonContextUnequip.gameObject.SetActive(contextActive);
+                }
                 else if (buttonContextActionHidePolicy == ButtonContextActionHidePolicy.Hide)
+                {
                     buttonContextUnequip.gameObject.SetActive(canUnequipSelectedItem);
+                }
             }
         }
 
