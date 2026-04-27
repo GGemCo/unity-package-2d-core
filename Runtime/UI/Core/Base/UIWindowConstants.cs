@@ -46,12 +46,17 @@
             WorldMap,
             WorldMapInfo,
             TimingBattleRest = 100,
-            TimingBattleSkillSetting,
+            TimingBattleSkillSettingTapMenu,
             TimingBattleTapMenu,
             TimingBattleWarp,
-            TimingBattleExit = 104,
+            TimingBattleExit,
             TimingBattleSkillMap,
             TimingBattleBuySlot,
+            TimingBattleSkillSettingCombo,
+            TimingBattleSkillSettingJustGuard,
+            TimingBattleSkillSettingCounter,
+            TimingBattleSkillSettingNormal,
+            TimingBattleSkillSettingPassive,
         }
         public const string TitleHeaderCommon = "[공통속성]";
         public const string TitleHeaderIndividual = "[개별속성]";
