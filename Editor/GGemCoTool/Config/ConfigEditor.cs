@@ -54,6 +54,7 @@ namespace GGemCo2DCoreEditor
             SpriteSlicerExporter,
             AnimatedTileBatchCreator,
             AnimationEventNameChanger,
+            CreateSpriteComposer
         }
         private const string NameToolGGemCo = ConfigDefine.NameSDK+"Tool/";
         
@@ -120,6 +121,7 @@ namespace GGemCo2DCoreEditor
         public const string NameToolSpriteSlicerExporter = NameToolEtc + "이미지 자르기";
         public const string NameToolAnimatedTileBatchCreator = NameToolEtc + "애니메이션 타일 일괄생성기";
         public const string NameToolAnimationEventNameChanger = NameToolEtc + "애니메이션 Event 이름 변경 툴";
+        public const string NameToolCreateSpriteComposer = NameToolEtc + "이미지 합성 툴";
 
         // 에디터에서 사용되는 프리팹 경로
         public const string PathPackageCore = "Packages/com.ggemco.2d.core";

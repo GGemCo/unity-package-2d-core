@@ -5,15 +5,10 @@ using UnityEngine;
 namespace GGemCo2DCoreEditor
 {
     /// <summary>
-    /// Hierarchy에서 선택한 여러 SpriteRenderer 오브젝트를 하나의 Sprite 에셋으로 합성하는 EditorWindow입니다.
+    /// Hierarchy에서 선택한 여러 SpriteRenderer와 UGUI Image 오브젝트를 하나의 Sprite 에셋으로 합성하는 EditorWindow입니다.
     /// </summary>
     internal sealed class SpriteComposerWindow : EditorWindow
     {
-        /// <summary>
-        /// 툴 내부에서 사용하는 기본 메뉴 경로입니다.
-        /// </summary>
-        private const string MenuPath = "GGemCoTool/Create/Sprite Composer";
-
         /// <summary>
         /// 출력 및 렌더링 옵션입니다.
         /// </summary>
@@ -37,12 +32,12 @@ namespace GGemCo2DCoreEditor
         /// <summary>
         /// Sprite Composer 창을 Unity 메뉴에 등록하고 표시합니다.
         /// </summary>
-        [MenuItem(MenuPath)]
+        [MenuItem(ConfigEditor.NameToolCreateSpriteComposer, false, (int)ConfigEditor.ToolOrdering.CreateSpriteComposer)]
         public static void Open()
         {
             var window = GetWindow<SpriteComposerWindow>();
             window.titleContent = new GUIContent("Sprite Composer");
-            window.minSize = new Vector2(420f, 520f);
+            window.minSize = new Vector2(420f, 540f);
             window.Show();
         }
 
@@ -92,11 +87,11 @@ namespace GGemCo2DCoreEditor
         {
             EditorGUILayout.Space(8f);
             EditorGUILayout.LabelField("Sprite Composer", EditorStyles.boldLabel);
-            EditorGUILayout.HelpBox("Hierarchy에서 선택한 SpriteRenderer 오브젝트들을 투명 배경 PNG로 렌더링한 뒤 Sprite로 Import합니다. 1차 버전은 SpriteRenderer 중심으로 동작합니다.", MessageType.Info);
+            EditorGUILayout.HelpBox("Hierarchy에서 선택한 SpriteRenderer와 UGUI Image 오브젝트들을 투명 배경 PNG로 렌더링한 뒤 Sprite로 Import합니다. UI Image는 임시 World Space Canvas로 복제해 함께 렌더링합니다.", MessageType.Info);
         }
 
         /// <summary>
-        /// 현재 선택된 루트 오브젝트와 합성 가능한 SpriteRenderer 개수를 표시합니다.
+        /// 현재 선택된 루트 오브젝트와 합성 가능한 SpriteRenderer, UGUI Image 개수를 표시합니다.
         /// </summary>
         private void DrawSelectionInfo()
         {
@@ -105,12 +100,14 @@ namespace GGemCo2DCoreEditor
 
             var rootCount = _selection != null && _selection.Roots != null ? _selection.Roots.Length : 0;
             var rendererCount = _selection != null && _selection.Renderers != null ? _selection.Renderers.Length : 0;
+            var imageCount = _selection != null && _selection.Images != null ? _selection.Images.Length : 0;
             EditorGUILayout.LabelField("선택 루트", rootCount.ToString());
             EditorGUILayout.LabelField("합성 대상 SpriteRenderer", rendererCount.ToString());
+            EditorGUILayout.LabelField("합성 대상 UI Image", imageCount.ToString());
 
-            if (_selection == null || !_selection.HasRenderableSprites)
+            if (_selection == null || !_selection.HasRenderableItems)
             {
-                EditorGUILayout.HelpBox("SpriteRenderer와 Sprite가 포함된 GameObject를 Hierarchy에서 선택해주세요.", MessageType.Warning);
+                EditorGUILayout.HelpBox("SpriteRenderer 또는 UGUI Image와 Sprite가 포함된 GameObject를 Hierarchy에서 선택해주세요.", MessageType.Warning);
             }
         }
 
@@ -178,7 +175,7 @@ namespace GGemCo2DCoreEditor
                 ClearPreview();
             }
 
-            using (new EditorGUI.DisabledScope(_selection == null || !_selection.HasRenderableSprites))
+            using (new EditorGUI.DisabledScope(_selection == null || !_selection.HasRenderableItems))
             {
                 if (GUILayout.Button("미리보기 생성", GUILayout.Height(28f)))
                 {

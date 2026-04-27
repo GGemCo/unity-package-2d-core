@@ -1,13 +1,31 @@
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.UI;
 
 namespace GGemCo2DCoreEditor
 {
     /// <summary>
-    /// SpriteRenderer 목록의 월드 Bounds를 계산하는 유틸리티입니다.
+    /// SpriteRenderer와 UGUI Image 목록의 월드 Bounds를 계산하는 유틸리티입니다.
     /// </summary>
     internal static class SpriteComposerBoundsUtility
     {
+        /// <summary>
+        /// 여러 SpriteRenderer와 UGUI Image의 전체 월드 Bounds를 계산합니다.
+        /// </summary>
+        /// <param name="renderers">Bounds를 계산할 SpriteRenderer 목록입니다.</param>
+        /// <param name="images">Bounds를 계산할 UGUI Image 목록입니다.</param>
+        /// <param name="bounds">계산된 전체 Bounds입니다.</param>
+        /// <returns>유효한 Bounds를 계산했으면 true입니다.</returns>
+        public static bool TryCalculateWorldBounds(IReadOnlyList<SpriteRenderer> renderers, IReadOnlyList<Image> images, out Bounds bounds)
+        {
+            bounds = default(Bounds);
+            var initialized = false;
+
+            EncapsulateSpriteRendererBounds(renderers, ref bounds, ref initialized);
+            EncapsulateImageBounds(images, ref bounds, ref initialized);
+            return initialized;
+        }
+
         /// <summary>
         /// 여러 SpriteRenderer의 전체 월드 Bounds를 계산합니다.
         /// </summary>
@@ -16,14 +34,22 @@ namespace GGemCo2DCoreEditor
         /// <returns>유효한 Bounds를 계산했으면 true입니다.</returns>
         public static bool TryCalculateWorldBounds(IReadOnlyList<SpriteRenderer> renderers, out Bounds bounds)
         {
-            bounds = default(Bounds);
+            return TryCalculateWorldBounds(renderers, null, out bounds);
+        }
 
+        /// <summary>
+        /// SpriteRenderer 목록의 Bounds를 전체 Bounds에 포함합니다.
+        /// </summary>
+        /// <param name="renderers">계산할 SpriteRenderer 목록입니다.</param>
+        /// <param name="bounds">확장할 전체 Bounds입니다.</param>
+        /// <param name="initialized">Bounds 초기화 여부입니다.</param>
+        private static void EncapsulateSpriteRendererBounds(IReadOnlyList<SpriteRenderer> renderers, ref Bounds bounds, ref bool initialized)
+        {
             if (renderers == null || renderers.Count == 0)
             {
-                return false;
+                return;
             }
 
-            var initialized = false;
             for (var i = 0; i < renderers.Count; i++)
             {
                 var renderer = renderers[i];
@@ -32,18 +58,51 @@ namespace GGemCo2DCoreEditor
                     continue;
                 }
 
-                var rendererBounds = GetRendererWorldBounds(renderer);
-                if (!initialized)
+                EncapsulateBounds(ref bounds, ref initialized, GetRendererWorldBounds(renderer));
+            }
+        }
+
+        /// <summary>
+        /// UGUI Image 목록의 RectTransform Bounds를 전체 Bounds에 포함합니다.
+        /// </summary>
+        /// <param name="images">계산할 UGUI Image 목록입니다.</param>
+        /// <param name="bounds">확장할 전체 Bounds입니다.</param>
+        /// <param name="initialized">Bounds 초기화 여부입니다.</param>
+        private static void EncapsulateImageBounds(IReadOnlyList<Image> images, ref Bounds bounds, ref bool initialized)
+        {
+            if (images == null || images.Count == 0)
+            {
+                return;
+            }
+
+            for (var i = 0; i < images.Count; i++)
+            {
+                var image = images[i];
+                if (image == null || image.sprite == null)
                 {
-                    bounds = rendererBounds;
-                    initialized = true;
                     continue;
                 }
 
-                bounds.Encapsulate(rendererBounds);
+                EncapsulateBounds(ref bounds, ref initialized, GetImageWorldBounds(image));
+            }
+        }
+
+        /// <summary>
+        /// 전체 Bounds에 새 Bounds를 포함하거나, 첫 Bounds라면 초기화합니다.
+        /// </summary>
+        /// <param name="bounds">확장할 전체 Bounds입니다.</param>
+        /// <param name="initialized">Bounds 초기화 여부입니다.</param>
+        /// <param name="targetBounds">새로 포함할 Bounds입니다.</param>
+        private static void EncapsulateBounds(ref Bounds bounds, ref bool initialized, Bounds targetBounds)
+        {
+            if (!initialized)
+            {
+                bounds = targetBounds;
+                initialized = true;
+                return;
             }
 
-            return initialized;
+            bounds.Encapsulate(targetBounds);
         }
 
         /// <summary>
@@ -60,6 +119,26 @@ namespace GGemCo2DCoreEditor
             }
 
             return TransformBounds(renderer.transform.localToWorldMatrix, renderer.sprite.bounds);
+        }
+
+        /// <summary>
+        /// UGUI Image의 RectTransform 네 모서리를 사용해 월드 Bounds를 계산합니다.
+        /// </summary>
+        /// <param name="image">대상 UGUI Image입니다.</param>
+        /// <returns>월드 좌표 기준 Bounds입니다.</returns>
+        private static Bounds GetImageWorldBounds(Image image)
+        {
+            var rectTransform = image.rectTransform;
+            var corners = new Vector3[4];
+            rectTransform.GetWorldCorners(corners);
+
+            var imageBounds = new Bounds(corners[0], Vector3.zero);
+            for (var i = 1; i < corners.Length; i++)
+            {
+                imageBounds.Encapsulate(corners[i]);
+            }
+
+            return imageBounds;
         }
 
         /// <summary>
