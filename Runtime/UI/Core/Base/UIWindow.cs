@@ -59,6 +59,12 @@ namespace GGemCo2DCore
         [Tooltip("비활성 슬롯에 아이콘을 배치하려고 할 때 출력할 메시지 키입니다.")]
         [SerializeField] private string inactiveSlotFailMessageKey = "Slot_Inactive";
 
+        [Header("Default Active State")]
+        [Tooltip("UIWindow가 생성하거나 초기화하는 슬롯 GameObject의 기본 활성 상태입니다.")]
+        [SerializeField] private bool defaultSlotActive = true;
+        [Tooltip("UIWindow가 생성하거나 초기화하는 아이콘 GameObject의 기본 활성 상태입니다.")]
+        [SerializeField] private bool defaultIconActive = true;
+
         protected UIIcon selectedIcon;
 
         // 서브 매니저
@@ -219,6 +225,37 @@ namespace GGemCo2DCore
         public void OnEndDragOutWindow(PointerEventData eventData, GameObject droppedIcon, GameObject targetIcon,
             Vector3 originalPosition) =>
             DragDropHandler?.HandleDragOut(eventData, droppedIcon, targetIcon, originalPosition);
+
+        /// <summary>
+        /// UIWindow가 생성하거나 초기화하는 슬롯의 기본 활성 상태를 반환합니다.
+        /// </summary>
+        /// <returns>기본 활성 상태이면 true입니다.</returns>
+        public bool GetDefaultSlotActive() => defaultSlotActive;
+
+        /// <summary>
+        /// UIWindow가 생성하거나 초기화하는 아이콘의 기본 활성 상태를 반환합니다.
+        /// </summary>
+        /// <returns>기본 활성 상태이면 true입니다.</returns>
+        public bool GetDefaultIconActive() => defaultIconActive;
+
+        /// <summary>
+        /// 슬롯과 아이콘 GameObject에 UIWindow의 기본 활성 상태를 적용합니다.
+        /// 이 설정은 비활성 슬롯 시스템과 별개로, 생성 직후 activeSelf 기본값만 결정합니다.
+        /// </summary>
+        /// <param name="slotObj">기본 활성 상태를 적용할 슬롯 GameObject입니다.</param>
+        /// <param name="iconObj">기본 활성 상태를 적용할 아이콘 GameObject입니다.</param>
+        public void ApplyDefaultSlotIconActiveState(GameObject slotObj, GameObject iconObj)
+        {
+            if (slotObj != null)
+            {
+                slotObj.SetActive(defaultSlotActive);
+            }
+
+            if (iconObj != null)
+            {
+                iconObj.SetActive(defaultIconActive);
+            }
+        }
 
         /// <summary>
         /// 지정한 슬롯이 비활성 상태인지 반환합니다.

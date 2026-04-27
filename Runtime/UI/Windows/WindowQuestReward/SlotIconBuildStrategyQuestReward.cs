@@ -33,6 +33,8 @@ namespace GGemCo2DCore
                 UIIcon uiIcon = iconObj.GetComponent<UIIcon>();
                 uiIcon.Initialize(window, window.uid, i, i, iconSize, slotSize);
                 icons[i] = iconObj;
+
+                window.ApplyDefaultSlotIconActiveState(slotObj, iconObj);
             }
         }
     }

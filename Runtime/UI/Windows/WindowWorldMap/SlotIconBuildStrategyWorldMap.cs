@@ -70,6 +70,7 @@ namespace GGemCo2DCore
                 uiIcon.ChangeInfoByUid(mapUid, 1, 1);
                 
                 icons[index] = iconObj;
+                window.ApplyDefaultSlotIconActiveState(slotObject, iconObj);
                 index++;
             }
         }
