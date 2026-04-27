@@ -3,6 +3,41 @@ using System;
 namespace GGemCo2DCore
 {
     /// <summary>
+    /// 인벤토리 장착 배지를 어떤 기준으로 표시할지 결정합니다.
+    /// 기본 인벤토리에서는 전체 장착 상태를 보여주고, 선택 문맥에서는 문맥 대상만 보여줄 수 있습니다.
+    /// </summary>
+    public enum InventoryEquippedBadgePolicy
+    {
+        /// <summary>
+        /// 장비창이나 외부 장착 배지 소스에 등록된 모든 장착 아이템을 표시합니다.
+        /// </summary>
+        AllEquipped,
+
+        /// <summary>
+        /// 현재 선택 문맥이 장착 중이라고 판단한 아이템만 표시합니다.
+        /// </summary>
+        SelectionContextOnly,
+    }
+
+    /// <summary>
+    /// 선택 문맥이 인벤토리 장착 배지 표시 정책을 직접 지정할 때 구현합니다.
+    /// 구현하지 않은 선택 문맥은 SelectionContextOnly 정책을 사용합니다.
+    /// </summary>
+    public interface IInventoryEquippedBadgePolicyProvider
+    {
+        InventoryEquippedBadgePolicy EquippedBadgePolicy { get; }
+    }
+
+    /// <summary>
+    /// 인벤토리 기본 모드에서 장비창 외의 장착 상태까지 배지로 표시하고 싶을 때 등록하는 확장 지점입니다.
+    /// 예를 들어 스킬 슬롯, 퀵슬롯처럼 인벤토리 아이템을 참조만 하는 시스템이 이 인터페이스를 사용할 수 있습니다.
+    /// </summary>
+    public interface IInventoryEquippedBadgeSource
+    {
+        bool IsEquipped(UIIconItem icon);
+    }
+
+    /// <summary>
     /// 인벤토리를 특정 선택 작업의 후보 목록으로 사용할 때 필요한 위임 계약입니다.
     /// Core 인벤토리는 이 인터페이스만 알고, 실제 장착/해제/등록 정책은 각 상위 기능이 구현합니다.
     /// </summary>

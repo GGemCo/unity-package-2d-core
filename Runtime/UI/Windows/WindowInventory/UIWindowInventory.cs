@@ -78,6 +78,7 @@ namespace GGemCo2DCore
         private TextMeshProUGUI _fallbackContextActionText;
         private string _fallbackContextActionTextDefault;
         private readonly List<int> _contextVisibleSlotOrder = new List<int>(128);
+        private readonly List<IInventoryEquippedBadgeSource> _equippedBadgeSources = new List<IInventoryEquippedBadgeSource>(4);
 
         protected override void Awake()
         {
@@ -240,6 +241,43 @@ namespace GGemCo2DCore
         public void ClearContext()
         {
             ClearContext(true);
+        }
+
+        /// <summary>
+        /// 장비창 데이터 외에 인벤토리 아이템을 장착처럼 참조하는 시스템을 장착 배지 표시 대상으로 등록합니다.
+        /// 같은 소스가 중복 등록되면 한 번만 유지합니다.
+        /// </summary>
+        public void RegisterEquippedBadgeSource(IInventoryEquippedBadgeSource source)
+        {
+            if (source == null || _equippedBadgeSources.Contains(source))
+            {
+                return;
+            }
+
+            _equippedBadgeSources.Add(source);
+
+            if (IsOpen())
+            {
+                LoadIcons();
+            }
+        }
+
+        /// <summary>
+        /// 더 이상 사용하지 않는 외부 장착 배지 소스를 인벤토리 표시 대상에서 제거합니다.
+        /// </summary>
+        public void UnregisterEquippedBadgeSource(IInventoryEquippedBadgeSource source)
+        {
+            if (source == null)
+            {
+                return;
+            }
+
+            _equippedBadgeSources.Remove(source);
+
+            if (IsOpen())
+            {
+                LoadIcons();
+            }
         }
 
         /// <summary>
@@ -417,8 +455,7 @@ namespace GGemCo2DCore
                 // 0개 아이템을 보여주는 문맥에서만 개수 텍스트에 0을 표시할 수 있습니다.
                 uiIcon.SetShowZeroCountText(isZeroCountItem && ShouldShowZeroCountText(saveDataIcon, table));
                 uiIcon.ChangeInfoByUid(table.Uid, itemCount, iconInstanceId: saveDataIcon.InstanceId);
-                bool equipped = contextActive &&
-                                _selectionContext.IsEquipped(uiIcon);
+                bool equipped = ShouldShowEquippedBadge(uiIcon);
                 uiIcon.SetEquippedState(equipped);
                 uiIcon.SetDrag(useIconDrag);
                 SetSlotEquippedState(index, equipped);
@@ -548,7 +585,104 @@ namespace GGemCo2DCore
         }
 
         /// <summary>
-        /// 슬롯 컴포넌트가 장착 표시 오브젝트를 가지고 있으면 context 기준 장착 상태를 반영합니다.
+        /// 현재 인벤토리 모드와 선택 문맥 정책에 따라 아이콘/슬롯의 장착 배지 표시 여부를 결정합니다.
+        /// 선택 문맥이 있으면 기본적으로 해당 문맥의 장착 상태만 보여주고, 일반 모드에서는 전체 장착 상태를 보여줍니다.
+        /// </summary>
+        private bool ShouldShowEquippedBadge(UIIconItem icon)
+        {
+            if (icon == null || icon.uid <= 0)
+            {
+                return false;
+            }
+
+            if (_selectionContext is { IsActive: true })
+            {
+                InventoryEquippedBadgePolicy policy = GetSelectionContextEquippedBadgePolicy();
+                if (policy == InventoryEquippedBadgePolicy.SelectionContextOnly)
+                {
+                    return _selectionContext.IsEquipped(icon);
+                }
+            }
+
+            return IsEquippedByAnySource(icon);
+        }
+
+        /// <summary>
+        /// 선택 문맥이 별도 정책을 제공하지 않으면 문맥과 일치하는 아이템만 장착 배지로 표시합니다.
+        /// </summary>
+        private InventoryEquippedBadgePolicy GetSelectionContextEquippedBadgePolicy()
+        {
+            return _selectionContext is IInventoryEquippedBadgePolicyProvider policyProvider
+                ? policyProvider.EquippedBadgePolicy
+                : InventoryEquippedBadgePolicy.SelectionContextOnly;
+        }
+
+        /// <summary>
+        /// 장비창 저장 데이터와 등록된 외부 소스를 모두 확인해서 전체 장착 상태를 계산합니다.
+        /// </summary>
+        private bool IsEquippedByAnySource(UIIconItem icon)
+        {
+            if (IsEquippedInEquipData(icon))
+            {
+                return true;
+            }
+
+            for (int index = 0; index < _equippedBadgeSources.Count; index++)
+            {
+                IInventoryEquippedBadgeSource source = _equippedBadgeSources[index];
+                if (source != null && source.IsEquipped(icon))
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        /// <summary>
+        /// 장비창에 들어간 아이템과 현재 인벤토리 아이콘이 같은 참조인지 확인합니다.
+        /// 인스턴스 아이템은 instanceId까지 같아야 하며, 일반 아이템은 uid와 instanceId 0 기준으로 비교합니다.
+        /// </summary>
+        private bool IsEquippedInEquipData(UIIconItem icon)
+        {
+            if (icon == null || icon.uid <= 0)
+            {
+                return false;
+            }
+
+            var equippedItems = EquipData != null
+                ? EquipData.GetAllItemCounts()
+                : SceneGame?.saveDataManager?.Equip?.GetAllItemCounts();
+            if (equippedItems == null)
+            {
+                return false;
+            }
+
+            foreach (var pair in equippedItems)
+            {
+                SaveDataIcon equippedItem = pair.Value;
+                if (IsSameItemReference(icon.uid, icon.instanceId, equippedItem))
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        /// <summary>
+        /// 저장 데이터의 아이템 참조가 현재 아이콘과 같은 아이템을 가리키는지 비교합니다.
+        /// </summary>
+        private static bool IsSameItemReference(int itemUid, long itemInstanceId, SaveDataIcon saveDataIcon)
+        {
+            return saveDataIcon != null &&
+                   saveDataIcon.Uid == itemUid &&
+                   saveDataIcon.Count > 0 &&
+                   saveDataIcon.InstanceId == itemInstanceId;
+        }
+
+        /// <summary>
+        /// 슬롯 컴포넌트가 장착 표시 오브젝트를 가지고 있으면 현재 정책으로 계산된 장착 상태를 반영합니다.
         /// </summary>
         private void SetSlotEquippedState(int slotIndex, bool equipped)
         {
