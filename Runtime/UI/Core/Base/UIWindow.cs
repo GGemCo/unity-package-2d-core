@@ -264,7 +264,13 @@ namespace GGemCo2DCore
         /// <returns>비활성 슬롯이면 true입니다.</returns>
         public bool IsSlotInactive(int slotIndex)
         {
-            return _inactiveSlotIndexes != null && _inactiveSlotIndexes.Contains(slotIndex);
+            if (_inactiveSlotIndexes == null || !_inactiveSlotIndexes.Contains(slotIndex))
+            {
+                return false;
+            }
+
+            UIWindowManager windowManager = SceneGame?.uIWindowManager;
+            return windowManager == null || !windowManager.IsWindowSlotActivated(uid, slotIndex);
         }
 
         /// <summary>
@@ -317,7 +323,7 @@ namespace GGemCo2DCore
         /// 지정 슬롯 하나의 비활성 시각 상태를 슬롯과 아이콘에 동시에 반영합니다.
         /// </summary>
         /// <param name="slotIndex">갱신할 슬롯 인덱스입니다.</param>
-        private void RefreshInactiveSlotState(int slotIndex)
+        public void RefreshInactiveSlotState(int slotIndex)
         {
             bool inactive = IsSlotInactive(slotIndex);
             if (slots != null && slotIndex >= 0 && slotIndex < slots.Length)

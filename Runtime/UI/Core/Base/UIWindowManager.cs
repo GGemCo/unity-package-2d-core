@@ -9,7 +9,7 @@ namespace GGemCo2DCore
     /// <summary>
     /// 윈도우 관리 매니저
     /// </summary>
-    public class UIWindowManager : MonoBehaviour
+    public class UIWindowManager : MonoBehaviour, ISaveContributor
     {
         [Header("기본속성")] 
         [Tooltip("아이콘 마우스 오버시 보여줄 이미지")]
@@ -34,6 +34,7 @@ namespace GGemCo2DCore
 
         private readonly Dictionary<int, UIWindow> _windowReferenceMap = new Dictionary<int, UIWindow>();
         private readonly Dictionary<int, StruckTableWindow> _struckTableWindows = new Dictionary<int, StruckTableWindow>();
+        private readonly Dictionary<int, HashSet<int>> _activatedSlotIndexesByWindow = new Dictionary<int, HashSet<int>>();
         private readonly List<ExternalWindowRegistration> _externalWindowRegistrations = new List<ExternalWindowRegistration>();
         private readonly Dictionary<string, ExternalWindowRegistration> _externalWindowRegistrationMap =
             new Dictionary<string, ExternalWindowRegistration>(StringComparer.Ordinal);
@@ -77,10 +78,90 @@ namespace GGemCo2DCore
 
         private void Awake()
         {
+            SaveRegistry.Register(this);
             _struckTableWindows.Clear();
             RebuildWindowReferenceMap();
 
             InitializationTableInfo();
+            RefreshAllWindowSlotActivationStates();
+        }
+
+        /// <summary>
+        /// UIWindow 슬롯 활성화 정보를 저장할 SaveRegistry 섹션 키입니다.
+        /// </summary>
+        public string SectionKey => WindowSlotActivationSaveData.SectionKey;
+
+        /// <summary>
+        /// 현재 활성화된 UIWindow 슬롯 정보를 저장 봉투에 기록합니다.
+        /// </summary>
+        /// <param name="env">저장 데이터를 담는 봉투입니다.</param>
+        public void Capture(SaveEnvelope env)
+        {
+            if (env == null)
+            {
+                return;
+            }
+
+            var data = new WindowSlotActivationSaveData();
+            foreach (var pair in _activatedSlotIndexesByWindow)
+            {
+                if (pair.Key <= 0 || pair.Value == null || pair.Value.Count <= 0)
+                {
+                    continue;
+                }
+
+                data.ActiveSlotsByWindow[pair.Key] = pair.Value
+                    .Where(slotIndex => slotIndex >= 0)
+                    .OrderBy(slotIndex => slotIndex)
+                    .ToList();
+            }
+
+            env.SetSection(SectionKey, data);
+        }
+
+        /// <summary>
+        /// 저장 봉투에서 UIWindow 슬롯 활성화 정보를 복원합니다.
+        /// 복원 직후 열려 있거나 이미 생성된 UIWindow에는 비활성 표시 상태를 다시 반영합니다.
+        /// </summary>
+        /// <param name="env">복원 데이터를 담은 봉투입니다.</param>
+        public void Restore(SaveEnvelope env)
+        {
+            _activatedSlotIndexesByWindow.Clear();
+
+            if (env == null ||
+                !env.TryGetSection(SectionKey, out WindowSlotActivationSaveData data) ||
+                data?.ActiveSlotsByWindow == null)
+            {
+                RefreshAllWindowSlotActivationStates();
+                return;
+            }
+
+            foreach (var pair in data.ActiveSlotsByWindow)
+            {
+                if (pair.Key <= 0 || pair.Value == null)
+                {
+                    continue;
+                }
+
+                var activatedSlots = new HashSet<int>();
+                for (int i = 0; i < pair.Value.Count; i++)
+                {
+                    int slotIndex = pair.Value[i];
+                    if (slotIndex < 0)
+                    {
+                        continue;
+                    }
+
+                    activatedSlots.Add(slotIndex);
+                }
+
+                if (activatedSlots.Count > 0)
+                {
+                    _activatedSlotIndexesByWindow[pair.Key] = activatedSlots;
+                }
+            }
+
+            RefreshAllWindowSlotActivationStates();
         }
 
         private void Start()
@@ -158,6 +239,115 @@ namespace GGemCo2DCore
 
             _windowReferenceMap.TryGetValue(uid, out var uiWindow);
             return uiWindow;
+        }
+
+        /// <summary>
+        /// 지정한 UIWindow의 슬롯이 저장 데이터에 의해 활성화되어 있는지 확인합니다.
+        /// Inspector의 기본 비활성 슬롯이라도 이 값이 true이면 최종적으로 활성 슬롯으로 취급합니다.
+        /// </summary>
+        /// <param name="windowUid">확인할 UIWindow uid입니다.</param>
+        /// <param name="slotIndex">확인할 슬롯 인덱스입니다.</param>
+        /// <returns>저장된 활성 슬롯이면 true입니다.</returns>
+        public bool IsWindowSlotActivated(UIWindowConstants.WindowUid windowUid, int slotIndex)
+        {
+            int uidValue = (int)windowUid;
+            return uidValue > 0 &&
+                   slotIndex >= 0 &&
+                   _activatedSlotIndexesByWindow.TryGetValue(uidValue, out var activatedSlots) &&
+                   activatedSlots != null &&
+                   activatedSlots.Contains(slotIndex);
+        }
+
+        /// <summary>
+        /// 지정한 UIWindow 슬롯의 저장 활성 상태를 변경합니다.
+        /// 상태가 변경되면 해당 UIWindow의 비활성 표시를 즉시 갱신합니다.
+        /// </summary>
+        /// <param name="windowUid">대상 UIWindow uid입니다.</param>
+        /// <param name="slotIndex">대상 슬롯 인덱스입니다.</param>
+        /// <param name="activated">활성 저장 여부입니다.</param>
+        /// <returns>저장 상태가 실제로 변경되었으면 true입니다.</returns>
+        public bool SetWindowSlotActivated(UIWindowConstants.WindowUid windowUid, int slotIndex, bool activated)
+        {
+            int uidValue = (int)windowUid;
+            if (uidValue <= 0 || slotIndex < 0)
+            {
+                return false;
+            }
+
+            bool changed;
+            if (activated)
+            {
+                if (!_activatedSlotIndexesByWindow.TryGetValue(uidValue, out var activatedSlots) ||
+                    activatedSlots == null)
+                {
+                    activatedSlots = new HashSet<int>();
+                    _activatedSlotIndexesByWindow[uidValue] = activatedSlots;
+                }
+
+                changed = activatedSlots.Add(slotIndex);
+            }
+            else
+            {
+                changed = _activatedSlotIndexesByWindow.TryGetValue(uidValue, out var activatedSlots) &&
+                          activatedSlots != null &&
+                          activatedSlots.Remove(slotIndex);
+                if (changed && activatedSlots.Count <= 0)
+                {
+                    _activatedSlotIndexesByWindow.Remove(uidValue);
+                }
+            }
+
+            if (changed)
+            {
+                RefreshWindowSlotActivationState(windowUid, slotIndex);
+            }
+
+            return changed;
+        }
+
+        /// <summary>
+        /// 지정한 UIWindow 슬롯을 저장 활성 상태로 변경합니다.
+        /// </summary>
+        /// <param name="windowUid">대상 UIWindow uid입니다.</param>
+        /// <param name="slotIndex">대상 슬롯 인덱스입니다.</param>
+        /// <returns>저장 상태가 새로 변경되었으면 true입니다.</returns>
+        public bool ActivateWindowSlot(UIWindowConstants.WindowUid windowUid, int slotIndex)
+        {
+            return SetWindowSlotActivated(windowUid, slotIndex, true);
+        }
+
+        /// <summary>
+        /// 지정한 UIWindow 슬롯의 저장 활성 상태를 해제합니다.
+        /// </summary>
+        /// <param name="windowUid">대상 UIWindow uid입니다.</param>
+        /// <param name="slotIndex">대상 슬롯 인덱스입니다.</param>
+        /// <returns>저장 상태가 새로 변경되었으면 true입니다.</returns>
+        public bool DeactivateWindowSlot(UIWindowConstants.WindowUid windowUid, int slotIndex)
+        {
+            return SetWindowSlotActivated(windowUid, slotIndex, false);
+        }
+
+        /// <summary>
+        /// 저장 활성 상태가 반영되도록 특정 UIWindow 슬롯의 비활성 표시를 갱신합니다.
+        /// </summary>
+        /// <param name="windowUid">대상 UIWindow uid입니다.</param>
+        /// <param name="slotIndex">대상 슬롯 인덱스입니다.</param>
+        private void RefreshWindowSlotActivationState(UIWindowConstants.WindowUid windowUid, int slotIndex)
+        {
+            UIWindow window = GetUIWindowByUid<UIWindow>(windowUid);
+            window?.RefreshInactiveSlotState(slotIndex);
+        }
+
+        /// <summary>
+        /// 저장 활성 정보 복원 이후 모든 관리 UIWindow의 비활성 표시를 다시 반영합니다.
+        /// </summary>
+        private void RefreshAllWindowSlotActivationStates()
+        {
+            var managedWindows = GetManagedWindows();
+            for (int i = 0; i < managedWindows.Count; i++)
+            {
+                managedWindows[i]?.RefreshInactiveSlotStates();
+            }
         }
 
         /// <summary>
@@ -1057,7 +1247,7 @@ namespace GGemCo2DCore
         }
         private void OnDestroy()
         {
-            
+            SaveRegistry.Unregister(this);
         }
 
         public void ShowOverIconImage(bool show, Vector2? position = null, Vector2? slotSize = null)

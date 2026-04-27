@@ -50,7 +50,8 @@
             TimingBattleTapMenu,
             TimingBattleWarp,
             TimingBattleExit = 104,
-            TimingBattleSkillMap
+            TimingBattleSkillMap,
+            TimingBattleBuySlot,
         }
         public const string TitleHeaderCommon = "[공통속성]";
         public const string TitleHeaderIndividual = "[개별속성]";
