@@ -311,7 +311,7 @@ namespace GGemCo2DCore
         /// 모든 슬롯과 아이콘에 현재 비활성 슬롯 캐시를 반영합니다.
         /// 슬롯/아이콘 풀 생성 직후 또는 외부 설정 재적용 시 호출합니다.
         /// </summary>
-        public void RefreshInactiveSlotStates()
+        public virtual void RefreshInactiveSlotStates()
         {
             if (maxCountIcon <= 0)
             {
