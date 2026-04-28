@@ -6,6 +6,14 @@ using UnityEngine.UI;
 
 namespace GGemCo2DCore
 {
+    [Serializable]
+    public class EntityPlayerInfo
+    {
+        public CharacterConstants.IndexPlayerInfo index;
+        [Tooltip("스탯 설명 문구 Localization 키")]
+        public string localizationKeyDescription;
+    }
+    
     /// <summary>
     /// 플레이어 stat 정보 보여주는 윈도우
     /// </summary>
@@ -38,6 +46,9 @@ namespace GGemCo2DCore
         [SerializeField] private UIElementStatFormatterAsset levelFormatterAsset;
         [Tooltip("레벨 숫자 앞에 보여줄 문구")]
         [SerializeField] private string prefixTextLevel = "LV.";
+        
+        [Header("스탯 정보")]
+        [SerializeField] List<EntityPlayerInfo> playerInfos = new();
 
         // 스탯 증가, 감소 버튼 클릭당 적용할 포인트 수. 1로 고정
         private const int BuyStatPointAmountPerClick = 1;
@@ -135,7 +146,7 @@ namespace GGemCo2DCore
                 return;
             }
 
-            element.Initialize(this, idx);
+            element.Initialize(this, idx, GetEntityPlayerInfo(idx));
             _playerInfos[idx] = element;
         }
 
@@ -557,5 +568,16 @@ namespace GGemCo2DCore
                 textGold.text = string.Empty;
             }
         }
+
+        private EntityPlayerInfo GetEntityPlayerInfo(CharacterConstants.IndexPlayerInfo indexPlayerInfo)
+        {
+            foreach (var info in playerInfos)
+            {
+                if (info.index == indexPlayerInfo) return info;
+            }
+
+            return null;
+        }
+        
     }
 }

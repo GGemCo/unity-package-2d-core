@@ -11,19 +11,21 @@ namespace GGemCo2DCore
     public class UIElementStat : MonoBehaviour
     {
         [Tooltip("표시할 스탯 이름")]
-        public TextMeshProUGUI textName;
+        [SerializeField] private TextMeshProUGUI textName;
+        [Tooltip("스탯 설명")]
+        [SerializeField] private TextMeshProUGUI textDescription;
 
         [Tooltip("표시할 스탯 총합 텍스트")]
-        public TextMeshProUGUI textValue;
+        [SerializeField] private TextMeshProUGUI textValue;
 
         [Tooltip("투자 포인트 텍스트")]
-        public TextMeshProUGUI textInvested;
+        [SerializeField] private TextMeshProUGUI textInvested;
 
         [Tooltip("포인트 투자 버튼")]
-        public Button buttonPlus;
+        [SerializeField] private Button buttonPlus;
 
         [Tooltip("포인트 회수 버튼")]
-        public Button buttonMinus;
+        [SerializeField] private Button buttonMinus;
 
         [Header("Formatting")]
         [Tooltip("값/증가량/투자 포인트 텍스트 표현 규칙")]
@@ -31,6 +33,7 @@ namespace GGemCo2DCore
 
         private CharacterConstants.IndexPlayerInfo _indexPlayerInfo;
         private IStatPointDraftChangeHandler _draftChangeHandler;
+        private EntityPlayerInfo _entityPlayerInfo;
         private string _label;
 
         /// <summary>
@@ -38,11 +41,14 @@ namespace GGemCo2DCore
         /// </summary>
         /// <param name="draftChangeHandler">증가/감소 버튼 입력을 처리할 초안 변경 핸들러입니다.</param>
         /// <param name="indexPlayerInfo">이 UI가 표현할 스탯 식별자입니다.</param>
-        public void Initialize(IStatPointDraftChangeHandler draftChangeHandler, CharacterConstants.IndexPlayerInfo indexPlayerInfo)
+        /// <param name="entityPlayerInfo">이 UI가 표현할 스탯 정보.</param>
+        public void Initialize(IStatPointDraftChangeHandler draftChangeHandler, CharacterConstants.IndexPlayerInfo indexPlayerInfo, EntityPlayerInfo entityPlayerInfo)
         {
             _draftChangeHandler = draftChangeHandler;
             _indexPlayerInfo = indexPlayerInfo;
+            _entityPlayerInfo = entityPlayerInfo;
 
+            SetDescription();
             SetupStaticUi();
             RegisterListeners();
         }
@@ -161,6 +167,12 @@ namespace GGemCo2DCore
         private void OnClickMinus()
         {
             _draftChangeHandler?.TryChangeDraft(_indexPlayerInfo, -1);
+        }
+
+        private void SetDescription()
+        {
+            if (!textDescription || _entityPlayerInfo == null) return;
+            textDescription.text = LocalizationManager.Instance.GetUIWindowPlayerInfoByKey(_entityPlayerInfo.localizationKeyDescription);
         }
     }
 }
