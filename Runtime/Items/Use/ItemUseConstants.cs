@@ -40,6 +40,7 @@ namespace GGemCo2DCore
 
         /// <summary>스킬 지급(외부 패키지와 연동을 위한 훅)</summary>
         GrantSkill,
+        GrantSkillPassive,
 
         /// <summary>
         /// Affect 적용(옵션 패키지: com.ggemco.2d.affect)
