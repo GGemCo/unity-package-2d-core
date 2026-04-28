@@ -38,8 +38,10 @@ namespace GGemCo2DCore
         /// </summary>
         AddMaxHpTemp,
 
-        /// <summary>스킬 지급(외부 패키지와 연동을 위한 훅)</summary>
+        /// <summary>액티브 스킬 지급(외부 패키지와 연동을 위한 훅)</summary>
         GrantSkill,
+
+        /// <summary>패시브 스킬 지급(외부 패키지와 연동을 위한 훅)</summary>
         GrantSkillPassive,
 
         /// <summary>

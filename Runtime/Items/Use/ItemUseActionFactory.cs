@@ -24,6 +24,11 @@ namespace GGemCo2DCore
                     // ParamIntA = skillUid, ParamIntB = level
                     // ParamStringA/B = 옵션 문자열 (예: "dup=LevelUp;altKind=Exp;altValue=100")
                     return new ItemUseActionGrantSkill(row.ParamIntA, row.ParamIntB, row.ParamStringA, row.ParamStringB);
+
+                case ItemUseActionType.GrantSkillPassive:
+                    // ParamIntA = skillPassiveUid, ParamIntB = level
+                    // ParamStringA/B = 옵션 문자열 (예: "dup=Ignore")
+                    return new ItemUseActionGrantSkillPassive(row.ParamIntA, row.ParamIntB, row.ParamStringA, row.ParamStringB);
                 
                 case ItemUseActionType.AddHp:
                     // ParamIntA = amount

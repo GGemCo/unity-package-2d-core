@@ -50,23 +50,16 @@ namespace GGemCo2DCore
             if (playerData == null)
                 return ResultCommon.Fail("ItemUse_NoPlayerData");
 
-            IItemUseSkillReceiver skillReceiver = null;
-            if (sceneGame.player != null)
-            {
-                var behaviours = sceneGame.player.GetComponents<MonoBehaviour>();
-                for (int i = 0; i < behaviours.Length; i++)
-                {
-                    if (behaviours[i] is IItemUseSkillReceiver receiver)
-                    {
-                        skillReceiver = receiver;
-                        break;
-                    }
-                }
-            }
+            ResolveSkillReceivers(
+                sceneGame.player,
+                out IItemUseSkillReceiver skillReceiver,
+                out IItemUseSkillPassiveReceiver skillPassiveReceiver);
 
             var ctx = new ItemUseContext(sceneGame, player, playerData,
                 inventory: null, slotIndex: -1, itemUid: itemUid, consumeCount: consumeCount,
-                skillReceiver: skillReceiver, targetObject: targetObject);
+                skillReceiver: skillReceiver,
+                targetObject: targetObject,
+                skillPassiveReceiver: skillPassiveReceiver);
 
             // 사용할 수 있는지 먼저 체크
             foreach (var row in actions)
@@ -140,25 +133,21 @@ namespace GGemCo2DCore
             if (playerData == null)
                 return ResultCommon.Fail("ItemUse_NoPlayerData");
 
-            // SkillReceiver는 Core에서 강제하지 않고, 외부 패키지에서 주입하는 형태를 권장
-            // 기본 구현: 플레이어 오브젝트에 구현체가 붙어있다면 자동 연결
-            IItemUseSkillReceiver skillReceiver = null;
-            if (sceneGame.player != null)
-            {
-                // Unity의 GetComponent<T>()는 인터페이스를 직접 지원하지 않으므로,
-                // MonoBehaviour 중에서 인터페이스 구현체를 찾아 연결합니다.
-                var behaviours = sceneGame.player.GetComponents<MonoBehaviour>();
-                for (int i = 0; i < behaviours.Length; i++)
-                {
-                    if (behaviours[i] is IItemUseSkillReceiver receiver)
-                    {
-                        skillReceiver = receiver;
-                        break;
-                    }
-                }
-            }
+            ResolveSkillReceivers(
+                sceneGame.player,
+                out IItemUseSkillReceiver skillReceiver,
+                out IItemUseSkillPassiveReceiver skillPassiveReceiver);
 
-            var ctx = new ItemUseContext(sceneGame, player, playerData, inventory, slotIndex, itemUid, consumeCount, skillReceiver);
+            var ctx = new ItemUseContext(
+                sceneGame,
+                player,
+                playerData,
+                inventory,
+                slotIndex,
+                itemUid,
+                consumeCount,
+                skillReceiver,
+                skillPassiveReceiver: skillPassiveReceiver);
 
             // 1) CanExecute: 전체 사전 검증
             foreach (var row in actions)
@@ -193,6 +182,46 @@ namespace GGemCo2DCore
                 return minus ?? ResultCommon.Fail("ItemUse_Consume_Fail");
 
             return minus;
+        }
+
+        /// <summary>
+        /// 플레이어 오브젝트에 붙은 아이템 사용용 스킬 지급 수신자를 찾습니다.
+        /// </summary>
+        /// <param name="playerObject">수신자를 찾을 플레이어 오브젝트입니다.</param>
+        /// <param name="skillReceiver">액티브 스킬 지급 수신자입니다.</param>
+        /// <param name="skillPassiveReceiver">패시브 스킬 지급 수신자입니다.</param>
+        private static void ResolveSkillReceivers(
+            GameObject playerObject,
+            out IItemUseSkillReceiver skillReceiver,
+            out IItemUseSkillPassiveReceiver skillPassiveReceiver)
+        {
+            skillReceiver = null;
+            skillPassiveReceiver = null;
+
+            if (playerObject == null)
+            {
+                return;
+            }
+
+            // Unity의 GetComponent<T>()는 인터페이스를 직접 지원하지 않으므로,
+            // MonoBehaviour 중에서 인터페이스 구현체를 찾아 연결합니다.
+            var behaviours = playerObject.GetComponents<MonoBehaviour>();
+            for (int i = 0; i < behaviours.Length; i++)
+            {
+                MonoBehaviour behaviour = behaviours[i];
+                if (behaviour == null)
+                {
+                    continue;
+                }
+
+                skillReceiver ??= behaviour as IItemUseSkillReceiver;
+                skillPassiveReceiver ??= behaviour as IItemUseSkillPassiveReceiver;
+
+                if (skillReceiver != null && skillPassiveReceiver != null)
+                {
+                    return;
+                }
+            }
         }
     }
 }
