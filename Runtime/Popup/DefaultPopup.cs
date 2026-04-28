@@ -65,7 +65,7 @@ namespace GGemCo2DCore
 
         public event Action<DefaultPopup> Closed;
 
-        private void Awake()
+        protected virtual void Awake()
         {
             _canvasGroup = GetComponent<CanvasGroup>();
             if (_canvasGroup == null)
@@ -89,11 +89,20 @@ namespace GGemCo2DCore
             SetupMessage(popupMetadata.Message, popupMetadata.MessageColor);
             SetupButtons(popupMetadata);
 
-            LayoutRebuilder.ForceRebuildLayoutImmediate(panelContent);
+            // LayoutRebuilder.ForceRebuildLayoutImmediate(panelContent);
+            OnInitialize(popupMetadata);
         }
 
+        protected virtual void OnInitialize(PopupMetadata popupMetadata)
+        {
+            
+        }
+        
         private void SetupTitle(string title)
         {
+            if (textTitle == null) return;
+            if (string.IsNullOrEmpty(title)) return;
+            
             string localeTitle = LocalizationManager.Instance.GetSystemByKey(title);
             if (!string.IsNullOrEmpty(localeTitle))
             {
@@ -108,6 +117,7 @@ namespace GGemCo2DCore
         private void SetupMessage(string message, Color color)
         {
             if (textMessage == null) return;
+            if (string.IsNullOrEmpty(message)) return;
 
             string localeMessage = LocalizationManager.Instance.GetSystemByKey(message);
             if (!string.IsNullOrEmpty(localeMessage))
