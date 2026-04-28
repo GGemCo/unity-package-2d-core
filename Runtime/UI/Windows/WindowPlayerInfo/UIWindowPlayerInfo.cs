@@ -48,7 +48,10 @@ namespace GGemCo2DCore
         [SerializeField] private string prefixTextLevel = "LV.";
         
         [Header("스탯 정보")]
-        [SerializeField] List<EntityPlayerInfo> playerInfos = new();
+        [SerializeField] private List<EntityPlayerInfo> playerInfos = new();
+
+        [Tooltip("HP 하트가 표시될 위치")]
+        [SerializeField] private Vector3 positionHeartMp;
 
         // 스탯 증가, 감소 버튼 클릭당 적용할 포인트 수. 1로 고정
         private const int BuyStatPointAmountPerClick = 1;
@@ -551,6 +554,9 @@ namespace GGemCo2DCore
         public override void OnShow(bool show)
         {
             base.OnShow(show);
+            
+            // 예외 처리
+            UpdateUIWindowHudGameObjectHp(show);
 
             if (_boundPlayer != null)
             {
@@ -579,5 +585,34 @@ namespace GGemCo2DCore
             return null;
         }
         
+        /// <summary>
+        /// 플레이어 HP 정보를 보여주기위해 HUD에 있는 UIElementHeart를 여기로 가져온다.
+        /// </summary>
+        /// <param name="show"></param>
+        private void UpdateUIWindowHudGameObjectHp(bool show)
+        {
+            var windowHud = SceneGame.uIWindowManager.GetUIWindowByUid<UIWindowHud>(UIWindowConstants.WindowUid.Hud);
+            if (windowHud != null)
+            {
+                if (windowHud.gameObjectHp != null)
+                {
+                    if (show)
+                    {
+                        windowHud.gameObjectHp.gameObject.transform.SetParent(transform, false);
+                        windowHud.gameObjectHp.gameObject.transform.localPosition = positionHeartMp;
+                        var horizontalLayoutGroup = windowHud.gameObjectHp.GetComponent<HorizontalLayoutGroup>();
+                        if (horizontalLayoutGroup != null)
+                        {
+                            horizontalLayoutGroup.childAlignment = TextAnchor.MiddleLeft;
+                        }
+                    }
+                    else
+                    {
+                        windowHud.gameObjectHp.gameObject.transform.SetParent(windowHud.transform, false);
+                        windowHud.ResetPositionHeartObject();
+                    }
+                }
+            }
+        }
     }
 }

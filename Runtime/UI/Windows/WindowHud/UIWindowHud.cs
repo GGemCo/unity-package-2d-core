@@ -40,6 +40,8 @@ namespace GGemCo2DCore
         // TODO: 전투 상태 표기 방식 정리 필요
         [Tooltip("전투 상태")]
         public TMP_Text textBattleStatus;
+        
+        private Vector3 _prevPositionHp;
 
         /// <summary>
         /// 중독 게이지 UI를 원소/상태 이상 게이지 컨트롤러에 바인딩합니다.
@@ -58,6 +60,8 @@ namespace GGemCo2DCore
             // uid 를 먼저 지정해야 한다.
             uid = UIWindowConstants.WindowUid.Hud;
             base.Awake();
+            if (gameObjectHp)
+                _prevPositionHp = gameObjectHp.transform.localPosition;
         }
 
         #region 윈도우 열기 버튼
@@ -197,6 +201,20 @@ namespace GGemCo2DCore
         {
             if (!gameObjectStamina) return;
             gameObjectStamina.gameObject.SetActive(value);
+        }
+
+        /// <summary>
+        /// 플레이어 정보 UI가 열렸을 때, HP 정보를 실시간으로 보여주기 위해 gameObjectHp를 잠시 이동시켰다가, 플레이어 정보 UI가 닫히면 원래 위치로 되돌린다.
+        /// </summary>
+        public void ResetPositionHeartObject()
+        {
+            if (!gameObjectHp) return;
+            gameObjectHp.transform.localPosition = _prevPositionHp;
+            var horizontalLayoutGroup = gameObjectHp.GetComponent<HorizontalLayoutGroup>();
+            if (horizontalLayoutGroup != null)
+            {
+                horizontalLayoutGroup.childAlignment = TextAnchor.MiddleCenter;
+            }
         }
     }
 }
