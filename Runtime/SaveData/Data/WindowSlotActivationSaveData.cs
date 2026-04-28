@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using Newtonsoft.Json;
 
 namespace GGemCo2DCore
 {
@@ -15,6 +16,13 @@ namespace GGemCo2DCore
         public Dictionary<int, List<int>> ActiveSlotsByWindow = new Dictionary<int, List<int>>();
 
         /// <summary>
+        /// 현재 슬롯 활성화 데이터가 기존 세이브 파일에서 복원되었는지 여부입니다.
+        /// 새 게임 전용 기본 활성 슬롯을 기존 세이브에 다시 적용하지 않기 위해 사용합니다.
+        /// </summary>
+        [JsonIgnore]
+        public bool IsLoadedFromSaveData { get; private set; }
+
+        /// <summary>
         /// 저장 컨테이너에서 UIWindow 슬롯 활성화 정보를 복원합니다.
         /// </summary>
         /// <param name="loader">테이블 로더입니다. 현재 슬롯 활성화 데이터는 테이블을 사용하지 않습니다.</param>
@@ -22,6 +30,7 @@ namespace GGemCo2DCore
         public void Initialize(TableLoaderManager loader, SaveDataContainer saveDataContainer = null)
         {
             ActiveSlotsByWindow.Clear();
+            IsLoadedFromSaveData = saveDataContainer != null;
             if (saveDataContainer?.WindowSlotActivationSaveData?.ActiveSlotsByWindow == null)
             {
                 return;
