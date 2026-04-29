@@ -37,6 +37,7 @@ namespace GGemCo2DCore
             base.OnInitialize();
             IconType = IconConstants.Type.WorldMap;
             _tableMap ??= TableLoaderManager.Instance != null ? TableLoaderManager.Instance.TableMap : null;
+            DisableIconDragHandler();
         }
 
         /// <summary>
@@ -173,6 +174,19 @@ namespace GGemCo2DCore
             }
 
             textName.text = _struckTableMap != null ? _struckTableMap.Name : string.Empty;
+        }
+
+        /// <summary>
+        /// 월드맵 아이콘은 아이템 드래그 대상이 아니므로 공용 아이콘 드래그 핸들러를 비활성화합니다.
+        /// 부모 월드맵 컨테이너가 드래그 이벤트를 받을 수 있도록 하기 위한 처리입니다.
+        /// </summary>
+        private void DisableIconDragHandler()
+        {
+            UIDragHandler dragHandler = GetComponent<UIDragHandler>();
+            if (dragHandler != null)
+            {
+                dragHandler.enabled = false;
+            }
         }
     }
 }

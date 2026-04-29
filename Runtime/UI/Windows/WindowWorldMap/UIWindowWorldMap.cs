@@ -22,6 +22,9 @@ namespace GGemCo2DCore
 
         [Tooltip("월드맵 배경을 표시할 Image입니다. 비어 있으면 containerWorldMap의 Image를 사용합니다.")]
         [SerializeField] private Image imageBackground;
+
+        [Tooltip("월드맵을 표시하는 viewport입니다. 비어 있으면 containerWorldMap의 부모 RectTransform을 사용합니다.")]
+        [SerializeField] private RectTransform viewportWorldMap;
         
         [Tooltip("이동하기 버튼")]
         [SerializeField] private Button buttonWarp;
@@ -50,6 +53,7 @@ namespace GGemCo2DCore
         private TableMap _tableMap;
         private WorldMapDefinition _worldMapDefinition;
         private string _requestedBackgroundAddress;
+        private WorldMapDragController _dragController;
 
         /// <summary>현재 윈도우가 표시 중인 월드맵 정의입니다.</summary>
         public WorldMapDefinition WorldMapDefinition => _worldMapDefinition;
@@ -67,6 +71,7 @@ namespace GGemCo2DCore
             maxCountIcon = GetWorldMapNodeCount(_worldMapDefinition);
 
             EnsureWorldMapLayers();
+            EnsureWorldMapDragController();
             _ = ApplyBackgroundAsync();
 
             // 순서 중요: IconPoolManager에서 사용하므로 base.Awake 호출 전에 등록합니다.
@@ -94,6 +99,7 @@ namespace GGemCo2DCore
             {
                 RepositionWorldMapNodes();
                 RefreshEdgeLines();
+                ClampWorldMapDragPosition();
             }
         }
 
@@ -112,6 +118,7 @@ namespace GGemCo2DCore
         {
             RepositionWorldMapNodes();
             RefreshEdgeLines();
+            ClampWorldMapDragPosition();
         }
 
         /// <summary>
@@ -153,6 +160,7 @@ namespace GGemCo2DCore
 
             RepositionWorldMapNodes();
             RefreshEdgeLines();
+            ClampWorldMapDragPosition();
         }
 
         /// <summary>
@@ -318,6 +326,11 @@ namespace GGemCo2DCore
             }
 
             targetImage.sprite = backgroundSprite;
+            if (targetImage.color.a <= 0f)
+            {
+                targetImage.color = Color.white;
+            }
+
             targetImage.enabled = true;
         }
 
@@ -340,6 +353,44 @@ namespace GGemCo2DCore
 
             containerWorldMap.TryGetComponent(out imageBackground);
             return imageBackground;
+        }
+
+        /// <summary>
+        /// 월드맵 컨테이너에 드래그 컨트롤러를 보장하고 viewport/content 참조를 연결합니다.
+        /// </summary>
+        private void EnsureWorldMapDragController()
+        {
+            if (containerWorldMap == null)
+            {
+                return;
+            }
+
+            RectTransform contentRect = containerWorldMap.GetComponent<RectTransform>();
+            if (contentRect == null)
+            {
+                contentRect = containerWorldMap.AddComponent<RectTransform>();
+            }
+
+            if (viewportWorldMap == null)
+            {
+                viewportWorldMap = contentRect.parent as RectTransform;
+            }
+
+            _dragController = containerWorldMap.GetComponent<WorldMapDragController>();
+            if (_dragController == null)
+            {
+                _dragController = containerWorldMap.AddComponent<WorldMapDragController>();
+            }
+
+            _dragController.Initialize(viewportWorldMap, contentRect);
+        }
+
+        /// <summary>
+        /// 월드맵 드래그 위치가 viewport 경계를 벗어나지 않도록 보정합니다.
+        /// </summary>
+        private void ClampWorldMapDragPosition()
+        {
+            _dragController?.ClampContentPosition();
         }
 
         /// <summary>
