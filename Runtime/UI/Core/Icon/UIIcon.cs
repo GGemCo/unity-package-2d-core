@@ -52,6 +52,8 @@ namespace GGemCo2DCore
         [SerializeField] private Color colorInactive = new Color(1f, 1f, 1f, 0.35f);
         [Tooltip("비활성 상태일 때 표시할 아이콘 이미지입니다.")]
         [SerializeField] private Sprite inactiveSprite;
+        [Tooltip("Inactive Sprite를 표시할 Image입니다. 비어 있으면 기존처럼 ImageIcon에 직접 적용합니다.")]
+        [SerializeField] private Image imageInactiveSprite;
         
         // 윈도우 
         [HideInInspector] public UIWindow window;
@@ -80,6 +82,8 @@ namespace GGemCo2DCore
         private bool _isInactive;
         private bool _hasNormalIconColor;
         private Color _normalIconColor = Color.white;
+        private bool _hasNormalIconSprite;
+        private Sprite _normalIconSprite;
         
         // 부모 윈도우 uid
         private UIWindowConstants.WindowUid _parentWindowUid;
@@ -126,6 +130,11 @@ namespace GGemCo2DCore
             {
                 _normalIconColor = ImageIcon.color;
                 _hasNormalIconColor = true;
+            }
+
+            if (!_hasNormalIconSprite && ImageIcon != null)
+            {
+                CacheNormalIconSprite(ImageIcon.sprite);
             }
             
             _dragHandler = GetComponent<UIDragHandler>();
@@ -398,10 +407,51 @@ namespace GGemCo2DCore
                 return;
 
             ImageIcon.color = inactive ? colorInactive : _normalIconColor;
-            if (inactive && inactiveSprite != null)
+            ApplyInactiveSprite(inactive);
+        }
+
+        /// <summary>
+        /// 비활성 스프라이트를 설정된 전용 Image 또는 기본 아이콘 Image에 적용합니다.
+        /// </summary>
+        /// <param name="inactive">비활성 스프라이트를 표시할지 여부입니다.</param>
+        private void ApplyInactiveSprite(bool inactive)
+        {
+            if (imageInactiveSprite != null)
             {
-                ImageIcon.sprite = inactiveSprite;
+                imageInactiveSprite.sprite = inactive ? inactiveSprite : null;
+                imageInactiveSprite.gameObject.SetActive(inactive && inactiveSprite != null);
+                return;
             }
+
+            if (inactive)
+            {
+                if (inactiveSprite != null)
+                {
+                    if (ImageIcon.sprite != inactiveSprite)
+                    {
+                        CacheNormalIconSprite(ImageIcon.sprite);
+                    }
+
+                    ImageIcon.sprite = inactiveSprite;
+                }
+
+                return;
+            }
+
+            if (_hasNormalIconSprite)
+            {
+                ImageIcon.sprite = _normalIconSprite;
+            }
+        }
+
+        /// <summary>
+        /// 활성 상태에서 사용할 기본 아이콘 스프라이트를 캐시합니다.
+        /// </summary>
+        /// <param name="sprite">기본 아이콘으로 복원할 스프라이트입니다.</param>
+        private void CacheNormalIconSprite(Sprite sprite)
+        {
+            _normalIconSprite = sprite;
+            _hasNormalIconSprite = true;
         }
 
         /// <summary>
@@ -444,6 +494,7 @@ namespace GGemCo2DCore
             if (ImageIcon != null)
             {
                 ImageIcon.sprite = newSprite;
+                CacheNormalIconSprite(newSprite);
             }
             if (imageGrade != null)
             {
@@ -481,10 +532,13 @@ namespace GGemCo2DCore
             if (string.IsNullOrEmpty(path))
             {
                 ImageIcon.sprite = null;
+                CacheNormalIconSprite(null);
                 return;
             }
 
-            ImageIcon.sprite = AddressableLoaderItem.Instance.GetImageIconItemByName(path);
+            Sprite sprite = AddressableLoaderItem.Instance.GetImageIconItemByName(path);
+            ImageIcon.sprite = sprite;
+            CacheNormalIconSprite(sprite);
         }
 
         public void ChangeIconImage(Sprite sprite)
@@ -492,6 +546,7 @@ namespace GGemCo2DCore
             if (ImageIcon == null) return;
             if (GcLogger.IsNull(sprite, nameof(sprite))) return;
             ImageIcon.sprite = sprite;
+            CacheNormalIconSprite(sprite);
         }
         /// <summary>
         /// 이미지 사이즈 변경하기
