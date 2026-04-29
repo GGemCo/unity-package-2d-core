@@ -193,6 +193,7 @@ namespace GGemCo2DCore
             var loc = CompatObjectFind.FindFirst<LocalizationManager>() ?? new GameObject("LocalizationManager").AddComponent<LocalizationManager>();
             var addressableLoaderCharacterImageName = CompatObjectFind.FindFirst<AddressableLoaderCharacterImageName>() ?? new GameObject("AddressableLoaderCharacterImageName").AddComponent<AddressableLoaderCharacterImageName>();
             var addressableLoaderCutscene = CompatObjectFind.FindFirst<AddressableLoaderCutscene>() ?? new GameObject("AddressableLoaderCutscene").AddComponent<AddressableLoaderCutscene>();
+            var addressableLoaderWorldMap = CompatObjectFind.FindFirst<AddressableLoaderWorldMap>() ?? new GameObject("AddressableLoaderWorldMap").AddComponent<AddressableLoaderWorldMap>();
             
             // 테이블 대상 목록은 프로젝트/씬에 따라 별도 주입(예: ScriptableObject나 Config에서)
             var targetTables = ConfigAddressableTable.All; // 사용 중인 곳에서 구현(예시)
@@ -244,6 +245,7 @@ namespace GGemCo2DCore
                 startTask: () => addrSound.LoadSoundAsync(ConfigAddressableLabel.Sound),
                 getProgress: () => addrSound.GetLoadProgress()
             ));
+            
             Register(new AddressableTaskStep(
                 id: "core.character.imageName",
                 order: 360,
@@ -258,6 +260,14 @@ namespace GGemCo2DCore
                 localizedKey: LocalizationConstants.Keys.Loading.TextTypeCutscene(),
                 startTask: () => addressableLoaderCutscene.LoadAsync(),
                 getProgress: () => addressableLoaderCutscene.GetLoadProgress()
+            ));
+            
+            Register(new AddressableTaskStep(
+                id: "core.worldmap",
+                order: 375,
+                localizedKey: LocalizationConstants.Keys.Loading.TextTypeWorldMap(),
+                startTask: () => addressableLoaderWorldMap.LoadAsync(),
+                getProgress: () => addressableLoaderWorldMap.GetLoadProgress()
             ));
 
             Register(new SaveDataLoadStep(

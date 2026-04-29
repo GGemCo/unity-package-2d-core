@@ -26,6 +26,7 @@ namespace GGemCo2DCoreEditor
         private SettingQuest _settingQuest;
         private SettingCutscene _settingCutscene;
         private SettingSound _settingSound;
+        private SettingWorldMap _settingWorldMap;
 
         /// <summary>2열 레이아웃에서 각 모듈 버튼 영역의 폭입니다.</summary>
         public float buttonWidth;
@@ -65,6 +66,7 @@ namespace GGemCo2DCoreEditor
             _settingQuest = new SettingQuest(this);
             _settingCutscene = new SettingCutscene(this);
             _settingSound = new SettingSound(this);
+            _settingWorldMap = new SettingWorldMap(this);
         }
 
         /// <summary>
@@ -104,6 +106,7 @@ namespace GGemCo2DCoreEditor
                 using (new EditorGUILayout.HorizontalScope())
                 {
                     _settingDialogue?.OnGUI();
+                    _settingWorldMap?.OnGUI();
                 }
 
                 using (new EditorGUILayout.HorizontalScope())

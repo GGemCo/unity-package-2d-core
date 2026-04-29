@@ -45,5 +45,8 @@
         public const string SimulationToolDefinition = ConfigDefine.NameSDK + "_Simulation_Tool_Definition";
         // Simulation 성정
         public const string SimulationGrowth = ConfigDefine.NameSDK + "_Simulation_Growth";
+        
+        // 월드맵
+        public const string WorldMap = ConfigDefine.NameSDK + "_WorldMap";
     }
 }

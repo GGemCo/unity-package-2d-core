@@ -1,80 +1,578 @@
-﻿using UnityEngine;
+using System.Collections.Generic;
+using System.Threading.Tasks;
+using UnityEngine;
 using UnityEngine.UI;
 
 namespace GGemCo2DCore
 {
+    /// <summary>
+    /// 월드맵 정의 데이터를 UI 노드와 연결선으로 표시하는 월드맵 윈도우입니다.
+    /// </summary>
     public class UIWindowWorldMap : UIWindow
     {
         [Header(UIWindowConstants.TitleHeaderIndividual)]
-        [Tooltip("맵 아이콘이 들어갈 오브젝트")]
+        [Tooltip("월드맵 노드와 연결선이 들어갈 최상위 오브젝트")]
         public GameObject containerWorldMap;
+
+        [Tooltip("연결선이 들어갈 레이어입니다. 비어 있으면 런타임에 자동 생성합니다.")]
+        [SerializeField] private RectTransform containerLineLayer;
+
+        [Tooltip("노드 슬롯과 아이콘이 들어갈 레이어입니다. 비어 있으면 런타임에 자동 생성합니다.")]
+        [SerializeField] private RectTransform containerNodeLayer;
+
+        [Tooltip("월드맵 배경을 표시할 Image입니다. 비어 있으면 containerWorldMap의 Image를 사용합니다.")]
+        [SerializeField] private Image imageBackground;
         
         [Tooltip("이동하기 버튼")]
         [SerializeField] private Button buttonWarp;
 
+        [Tooltip("일반 연결선 색상")]
+        [SerializeField] private Color edgeColorNormal = new Color(0.72f, 0.72f, 0.72f, 1f);
+
+        [Tooltip("잠긴 연결선 색상")]
+        [SerializeField] private Color edgeColorLocked = new Color(0.95f, 0.62f, 0.24f, 1f);
+
+        [Tooltip("비밀 연결선 색상")]
+        [SerializeField] private Color edgeColorSecret = new Color(0.62f, 0.46f, 0.92f, 1f);
+
+        [Tooltip("선택된 노드와 연결된 연결선 강조 색상")]
+        [SerializeField] private Color edgeColorHighlighted = new Color(0.3f, 0.75f, 1f, 1f);
+
+        [Tooltip("연결선 두께")]
+        [SerializeField] private float edgeThickness = 6f;
+
+        private readonly Dictionary<string, UIIconWorldMap> _nodeIconById = new Dictionary<string, UIIconWorldMap>();
+        private readonly Dictionary<string, RectTransform> _nodeRectById = new Dictionary<string, RectTransform>();
+        private readonly List<WorldMapLineRenderer> _edgeLines = new List<WorldMapLineRenderer>();
+
         private UIIconWorldMap _selectedUIIconWorldMap;
         private MapManager _mapManager;
         private TableMap _tableMap;
+        private WorldMapDefinition _worldMapDefinition;
+        private string _requestedBackgroundAddress;
 
+        /// <summary>현재 윈도우가 표시 중인 월드맵 정의입니다.</summary>
+        public WorldMapDefinition WorldMapDefinition => _worldMapDefinition;
+
+        /// <summary>
+        /// 월드맵 윈도우의 기본 의존성을 준비하고, 로드된 월드맵 정의가 있으면 초기 아이콘을 생성합니다.
+        /// </summary>
         protected override void Awake()
         {
             _selectedUIIconWorldMap = null;
             uid = UIWindowConstants.WindowUid.WorldMap;
-            if (TableLoaderManager.Instance == null) return;
-            _tableMap = TableLoaderManager.Instance.TableMap;
-            maxCountIcon = _tableMap.GetDatas().Count;
 
-            // 순서 중요: IconPoolManager에서 사용 (슬롯 빌드 전략 등록 후 base.Awake 호출)
+            _tableMap = TableLoaderManager.Instance != null ? TableLoaderManager.Instance.TableMap : null;
+            _worldMapDefinition = ResolveDefaultWorldMapDefinition();
+            maxCountIcon = GetWorldMapNodeCount(_worldMapDefinition);
+
+            EnsureWorldMapLayers();
+            _ = ApplyBackgroundAsync();
+
+            // 순서 중요: IconPoolManager에서 사용하므로 base.Awake 호출 전에 등록합니다.
             SlotIconBuildStrategyRegistry.Register(uid, window => new SlotIconBuildStrategyWorldMap(_tableMap));
 
             base.Awake();
-            
+
+            BuildEdgeLines();
             buttonWarp?.onClick.AddListener(OnClickWarp);
         }
 
+        /// <summary>
+        /// 씬 의존성을 연결하고, Awake 시점에 월드맵 정의가 없었다면 다시 적용을 시도합니다.
+        /// </summary>
         protected override void Start()
         {
             base.Start();
             _mapManager = SceneGame.mapManager;
+
+            if (_worldMapDefinition == null)
+            {
+                TryApplyDefaultWorldMap(true);
+            }
+            else
+            {
+                RepositionWorldMapNodes();
+                RefreshEdgeLines();
+            }
         }
 
+        /// <summary>
+        /// 윈도우가 제거될 때 버튼 이벤트를 정리합니다.
+        /// </summary>
         private void OnDestroy()
         {
             buttonWarp?.onClick.RemoveAllListeners();
         }
 
         /// <summary>
-        /// 슬롯 위치 정해주기
+        /// 월드맵 컨테이너 크기가 바뀌면 정규화 좌표 기반 노드 위치를 다시 계산합니다.
         /// </summary>
-        /// <param name="slot"></param>
-        /// <param name="index"></param>
+        private void OnRectTransformDimensionsChange()
+        {
+            RepositionWorldMapNodes();
+            RefreshEdgeLines();
+        }
+
+        /// <summary>
+        /// 기본 월드맵 정의를 조회해 윈도우에 적용합니다.
+        /// </summary>
+        /// <param name="rebuildIcons">아이콘과 연결선을 다시 생성할지 여부입니다.</param>
+        /// <returns>월드맵 정의 적용에 성공하면 true입니다.</returns>
+        public bool TryApplyDefaultWorldMap(bool rebuildIcons)
+        {
+            WorldMapDefinition definition = ResolveDefaultWorldMapDefinition();
+            if (definition == null)
+            {
+                return false;
+            }
+
+            ApplyWorldMapDefinition(definition, rebuildIcons);
+            return true;
+        }
+
+        /// <summary>
+        /// 지정한 월드맵 정의를 현재 윈도우에 적용합니다.
+        /// </summary>
+        /// <param name="definition">표시할 월드맵 정의입니다.</param>
+        /// <param name="rebuildIcons">아이콘과 연결선을 다시 생성할지 여부입니다.</param>
+        public void ApplyWorldMapDefinition(WorldMapDefinition definition, bool rebuildIcons = true)
+        {
+            _worldMapDefinition = definition;
+            maxCountIcon = GetWorldMapNodeCount(_worldMapDefinition);
+            _ = ApplyBackgroundAsync();
+
+            if (rebuildIcons && IconPoolManager != null)
+            {
+                ClearWorldMapNodeCache();
+                ClearEdgeLines();
+                IconPoolManager.ResetMaxCountIcon(maxCountIcon);
+                BuildEdgeLines();
+                return;
+            }
+
+            RepositionWorldMapNodes();
+            RefreshEdgeLines();
+        }
+
+        /// <summary>
+        /// 슬롯 생성 전략에서 생성한 노드 슬롯과 아이콘을 월드맵 윈도우에 등록합니다.
+        /// </summary>
+        /// <param name="node">등록할 월드맵 노드 정의입니다.</param>
+        /// <param name="slot">노드 슬롯 컴포넌트입니다.</param>
+        /// <param name="icon">노드 아이콘 컴포넌트입니다.</param>
+        public void RegisterWorldMapNode(WorldMapNodeDefinition node, UISlot slot, UIIconWorldMap icon)
+        {
+            if (node == null || slot == null || icon == null)
+            {
+                return;
+            }
+
+            RectTransform slotRect = slot.GetComponent<RectTransform>();
+            if (slotRect == null)
+            {
+                return;
+            }
+
+            _nodeRectById[node.NodeId] = slotRect;
+            _nodeIconById[node.NodeId] = icon;
+            PositionWorldMapSlot(slotRect, node);
+        }
+
+        /// <summary>
+        /// 월드맵 노드 정의의 정규화 좌표를 슬롯의 anchoredPosition으로 변환해 적용합니다.
+        /// </summary>
+        /// <param name="slotRect">위치를 적용할 슬롯 RectTransform입니다.</param>
+        /// <param name="node">위치 값을 가진 월드맵 노드 정의입니다.</param>
+        public void PositionWorldMapSlot(RectTransform slotRect, WorldMapNodeDefinition node)
+        {
+            if (slotRect == null || node == null)
+            {
+                return;
+            }
+
+            RectTransform parentRect = GetNodeLayerRect();
+            if (parentRect == null)
+            {
+                return;
+            }
+
+            Rect rect = parentRect.rect;
+            slotRect.anchorMin = Vector2.zero;
+            slotRect.anchorMax = Vector2.zero;
+            slotRect.pivot = new Vector2(0.5f, 0.5f);
+            slotRect.anchoredPosition = new Vector2(
+                node.NormalizedPosition.x * rect.width,
+                node.NormalizedPosition.y * rect.height);
+        }
+
+        /// <summary>
+        /// 월드맵 노드가 들어갈 부모 Transform을 반환합니다.
+        /// </summary>
+        /// <returns>노드 레이어 Transform입니다.</returns>
+        public Transform GetWorldMapNodeParent()
+        {
+            EnsureWorldMapLayers();
+            return containerNodeLayer != null ? containerNodeLayer : containerWorldMap?.transform;
+        }
+
+        /// <summary>
+        /// 슬롯 위치를 index 기반으로 재배치합니다.
+        /// 기존 호출부 호환을 위해 유지하며, 월드맵 정의가 있으면 해당 index의 노드 위치를 사용합니다.
+        /// </summary>
+        /// <param name="slot">위치를 변경할 슬롯입니다.</param>
+        /// <param name="index">월드맵 노드 인덱스입니다.</param>
         public void SetPositionUiSlot(UISlot slot, int index)
         {
+            if (slot == null || _worldMapDefinition == null || index < 0 || index >= _worldMapDefinition.Nodes.Count)
+            {
+                return;
+            }
+
+            PositionWorldMapSlot(slot.GetComponent<RectTransform>(), _worldMapDefinition.Nodes[index]);
         }
 
         /// <summary>
         /// 월드맵 전용 선택 참조를 기본 selectedIcon 흐름과 동기화합니다.
         /// 버튼 액션은 이 참조를 사용하므로 선택 변경 시 함께 갱신합니다.
         /// </summary>
-        /// <param name="icon">선택된 아이콘</param>
+        /// <param name="icon">선택된 아이콘입니다.</param>
         protected override void OnSelectedIcon(UIIcon icon)
         {
             base.OnSelectedIcon(icon);
             _selectedUIIconWorldMap = icon as UIIconWorldMap;
+            RefreshEdgeHighlight();
         }
 
+        /// <summary>
+        /// 월드맵 아이콘 선택이 해제되었을 때 선택 참조와 연결선 강조를 정리합니다.
+        /// </summary>
         protected override void OnClearedSelectedIcon()
         {
             base.OnClearedSelectedIcon();
             _selectedUIIconWorldMap = null;
+            RefreshEdgeHighlight();
         }
 
+        /// <summary>
+        /// 현재 선택된 월드맵 노드의 mapUid로 맵 이동을 요청합니다.
+        /// </summary>
         private void OnClickWarp()
         {
             if (GcLogger.IsNull(_mapManager, nameof(MapManager))) return;
             if (GcLogger.IsNull(_selectedUIIconWorldMap, "선택된 맵이 없습니다.")) return;
             if (_selectedUIIconWorldMap.uid == _mapManager.GetCurrentMapUid()) return;
             _mapManager.LoadMap(_selectedUIIconWorldMap.uid);
+        }
+
+        /// <summary>
+        /// AddressableLoaderWorldMap에 캐싱된 기본 월드맵 정의를 조회합니다.
+        /// </summary>
+        /// <returns>기본 월드맵 정의입니다. 로드되지 않았으면 null입니다.</returns>
+        private static WorldMapDefinition ResolveDefaultWorldMapDefinition()
+        {
+            if (AddressableLoaderWorldMap.Instance == null)
+            {
+                return null;
+            }
+
+            return AddressableLoaderWorldMap.Instance.TryGetDefaultWorldMap(out WorldMapDefinition definition)
+                ? definition
+                : null;
+        }
+
+        /// <summary>
+        /// 월드맵 정의의 노드 개수를 안전하게 반환합니다.
+        /// </summary>
+        /// <param name="definition">노드 개수를 확인할 월드맵 정의입니다.</param>
+        /// <returns>노드 개수입니다.</returns>
+        private static int GetWorldMapNodeCount(WorldMapDefinition definition)
+        {
+            return definition != null && definition.Nodes != null ? definition.Nodes.Count : 0;
+        }
+
+        /// <summary>
+        /// 월드맵 정의의 배경 주소를 읽어 배경 Image에 스프라이트를 적용합니다.
+        /// </summary>
+        /// <returns>비동기 배경 적용 작업입니다.</returns>
+        private async Task ApplyBackgroundAsync()
+        {
+            if (_worldMapDefinition == null || string.IsNullOrWhiteSpace(_worldMapDefinition.BackgroundAddress))
+            {
+                return;
+            }
+
+            Image targetImage = GetBackgroundImage();
+            if (targetImage == null)
+            {
+                return;
+            }
+
+            string address = _worldMapDefinition.BackgroundAddress;
+            _requestedBackgroundAddress = address;
+
+            Sprite backgroundSprite = await AddressableLoaderController.LoadByKeyAsync<Sprite>(address);
+            if (this == null || backgroundSprite == null || _requestedBackgroundAddress != address)
+            {
+                return;
+            }
+
+            targetImage.sprite = backgroundSprite;
+            targetImage.enabled = true;
+        }
+
+        /// <summary>
+        /// 배경을 표시할 Image를 반환합니다.
+        /// 명시 연결이 없으면 containerWorldMap에 붙은 Image를 재사용합니다.
+        /// </summary>
+        /// <returns>배경 Image입니다. 찾지 못하면 null입니다.</returns>
+        private Image GetBackgroundImage()
+        {
+            if (imageBackground != null)
+            {
+                return imageBackground;
+            }
+
+            if (containerWorldMap == null)
+            {
+                return null;
+            }
+
+            containerWorldMap.TryGetComponent(out imageBackground);
+            return imageBackground;
+        }
+
+        /// <summary>
+        /// 월드맵 노드와 연결선 레이어를 보장하고 자유 배치를 위해 LayoutGroup을 비활성화합니다.
+        /// </summary>
+        private void EnsureWorldMapLayers()
+        {
+            if (containerWorldMap == null)
+            {
+                return;
+            }
+
+            LayoutGroup layoutGroup = containerWorldMap.GetComponent<LayoutGroup>();
+            if (layoutGroup != null)
+            {
+                layoutGroup.enabled = false;
+            }
+
+            RectTransform root = containerWorldMap.GetComponent<RectTransform>();
+            if (root == null)
+            {
+                root = containerWorldMap.AddComponent<RectTransform>();
+            }
+
+            containerLineLayer = EnsureLayer(root, containerLineLayer, "LineLayer");
+            containerNodeLayer = EnsureLayer(root, containerNodeLayer, "NodeLayer");
+            containerLineLayer.SetAsFirstSibling();
+            containerNodeLayer.SetAsLastSibling();
+        }
+
+        /// <summary>
+        /// 지정한 이름의 월드맵 레이어 RectTransform을 찾거나 생성합니다.
+        /// </summary>
+        /// <param name="root">레이어를 붙일 루트 RectTransform입니다.</param>
+        /// <param name="current">이미 연결된 레이어 RectTransform입니다.</param>
+        /// <param name="layerName">찾거나 생성할 레이어 이름입니다.</param>
+        /// <returns>보장된 레이어 RectTransform입니다.</returns>
+        private static RectTransform EnsureLayer(RectTransform root, RectTransform current, string layerName)
+        {
+            if (current != null)
+            {
+                return current;
+            }
+
+            Transform found = root.Find(layerName);
+            if (found != null && found.TryGetComponent(out RectTransform foundRect))
+            {
+                return foundRect;
+            }
+
+            GameObject layerObject = new GameObject(layerName, typeof(RectTransform));
+            RectTransform layerRect = layerObject.GetComponent<RectTransform>();
+            layerRect.SetParent(root, false);
+            layerRect.anchorMin = Vector2.zero;
+            layerRect.anchorMax = Vector2.one;
+            layerRect.offsetMin = Vector2.zero;
+            layerRect.offsetMax = Vector2.zero;
+            layerRect.pivot = new Vector2(0.5f, 0.5f);
+            return layerRect;
+        }
+
+        /// <summary>
+        /// 노드 레이어 RectTransform을 반환합니다.
+        /// </summary>
+        /// <returns>노드 레이어 RectTransform입니다.</returns>
+        private RectTransform GetNodeLayerRect()
+        {
+            EnsureWorldMapLayers();
+            return containerNodeLayer != null
+                ? containerNodeLayer
+                : containerWorldMap != null
+                    ? containerWorldMap.GetComponent<RectTransform>()
+                    : null;
+        }
+
+        /// <summary>
+        /// 월드맵 노드/연결선 캐시를 초기화합니다.
+        /// </summary>
+        private void ClearWorldMapNodeCache()
+        {
+            _nodeIconById.Clear();
+            _nodeRectById.Clear();
+        }
+
+        /// <summary>
+        /// 생성되어 있는 모든 연결선 UI를 제거합니다.
+        /// </summary>
+        private void ClearEdgeLines()
+        {
+            for (int i = _edgeLines.Count - 1; i >= 0; i--)
+            {
+                WorldMapLineRenderer line = _edgeLines[i];
+                if (line != null)
+                {
+                    Destroy(line.gameObject);
+                }
+            }
+
+            _edgeLines.Clear();
+        }
+
+        /// <summary>
+        /// 월드맵 정의의 edge 목록을 기준으로 연결선 UI를 생성합니다.
+        /// </summary>
+        private void BuildEdgeLines()
+        {
+            ClearEdgeLines();
+            EnsureWorldMapLayers();
+
+            if (_worldMapDefinition == null || _worldMapDefinition.Edges == null || containerLineLayer == null)
+            {
+                return;
+            }
+
+            for (int i = 0; i < _worldMapDefinition.Edges.Count; i++)
+            {
+                WorldMapEdgeDefinition edge = _worldMapDefinition.Edges[i];
+                if (edge == null)
+                {
+                    continue;
+                }
+
+                if (!_nodeRectById.TryGetValue(edge.FromNodeId, out RectTransform from) ||
+                    !_nodeRectById.TryGetValue(edge.ToNodeId, out RectTransform to))
+                {
+                    continue;
+                }
+
+                GameObject lineObject = new GameObject("Edge_" + edge.EdgeId, typeof(RectTransform), typeof(Image), typeof(WorldMapLineRenderer));
+                RectTransform lineRect = lineObject.GetComponent<RectTransform>();
+                lineRect.SetParent(containerLineLayer, false);
+                lineRect.anchorMin = Vector2.zero;
+                lineRect.anchorMax = Vector2.zero;
+
+                WorldMapLineRenderer line = lineObject.GetComponent<WorldMapLineRenderer>();
+                line.Initialize(edge, from, to, GetEdgeColor(edge.EdgeType), edgeColorHighlighted, edgeThickness);
+                lineObject.SetActive(IsEdgeVisible(edge));
+                _edgeLines.Add(line);
+            }
+
+            RefreshEdgeHighlight();
+        }
+
+        /// <summary>
+        /// 노드 위치를 현재 컨테이너 크기에 맞춰 다시 계산합니다.
+        /// </summary>
+        private void RepositionWorldMapNodes()
+        {
+            if (_worldMapDefinition == null || _worldMapDefinition.Nodes == null)
+            {
+                return;
+            }
+
+            for (int i = 0; i < _worldMapDefinition.Nodes.Count; i++)
+            {
+                WorldMapNodeDefinition node = _worldMapDefinition.Nodes[i];
+                if (node == null)
+                {
+                    continue;
+                }
+
+                if (_nodeRectById.TryGetValue(node.NodeId, out RectTransform slotRect))
+                {
+                    PositionWorldMapSlot(slotRect, node);
+                }
+            }
+        }
+
+        /// <summary>
+        /// 모든 연결선 UI의 위치와 회전을 즉시 갱신합니다.
+        /// </summary>
+        private void RefreshEdgeLines()
+        {
+            for (int i = 0; i < _edgeLines.Count; i++)
+            {
+                if (_edgeLines[i] != null)
+                {
+                    _edgeLines[i].Refresh();
+                }
+            }
+        }
+
+        /// <summary>
+        /// 현재 선택된 노드와 연결된 edge만 강조 표시합니다.
+        /// </summary>
+        private void RefreshEdgeHighlight()
+        {
+            string selectedNodeId = _selectedUIIconWorldMap != null ? _selectedUIIconWorldMap.NodeId : null;
+
+            for (int i = 0; i < _edgeLines.Count; i++)
+            {
+                WorldMapLineRenderer line = _edgeLines[i];
+                if (line != null)
+                {
+                    line.SetHighlighted(line.ContainsNode(selectedNodeId));
+                }
+            }
+        }
+
+        /// <summary>
+        /// 연결선 타입에 맞는 기본 색상을 반환합니다.
+        /// </summary>
+        /// <param name="edgeType">연결선 타입입니다.</param>
+        /// <returns>연결선 색상입니다.</returns>
+        private Color GetEdgeColor(WorldMapEdgeType edgeType)
+        {
+            switch (edgeType)
+            {
+                case WorldMapEdgeType.Locked:
+                    return edgeColorLocked;
+                case WorldMapEdgeType.Secret:
+                    return edgeColorSecret;
+                default:
+                    return edgeColorNormal;
+            }
+        }
+
+        /// <summary>
+        /// edge의 양 끝 노드가 기본 표시 대상인지 확인합니다.
+        /// </summary>
+        /// <param name="edge">표시 여부를 확인할 연결선 정의입니다.</param>
+        /// <returns>양 끝 노드가 표시 대상이면 true입니다.</returns>
+        private bool IsEdgeVisible(WorldMapEdgeDefinition edge)
+        {
+            if (_worldMapDefinition == null || edge == null)
+            {
+                return false;
+            }
+
+            return _worldMapDefinition.TryGetNode(edge.FromNodeId, out WorldMapNodeDefinition from) &&
+                   _worldMapDefinition.TryGetNode(edge.ToNodeId, out WorldMapNodeDefinition to) &&
+                   from.VisibleByDefault &&
+                   to.VisibleByDefault;
         }
     }
 }

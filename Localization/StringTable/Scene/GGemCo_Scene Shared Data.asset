@@ -92,6 +92,10 @@ MonoBehaviour:
     m_Key: Loading_Text_Cutscene
     m_Metadata:
       m_Items: []
+  - m_Id: 108529854850449408
+    m_Key: Loading_Text_WorldMap
+    m_Metadata:
+      m_Items: []
   m_Metadata:
     m_Items: []
   m_KeyGenerator:

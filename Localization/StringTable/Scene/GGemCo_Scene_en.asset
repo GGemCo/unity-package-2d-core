@@ -86,6 +86,10 @@ MonoBehaviour:
     m_Localized: Cutscene Data
     m_Metadata:
       m_Items: []
+  - m_Id: 108529854850449408
+    m_Localized: WorldMap Data
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []

@@ -28,6 +28,15 @@ namespace GGemCo2DCore
         }
 
         /// <summary>
+        /// 기본 월드맵 JSON Addressables 키를 반환합니다.
+        /// </summary>
+        /// <returns>기본 월드맵 Addressables 키입니다.</returns>
+        public static string GetDefaultKey()
+        {
+            return GetKey(DefaultGraphId);
+        }
+
+        /// <summary>
         /// 월드맵 그래프 ID에 대응하는 JSON 에셋 경로를 만듭니다.
         /// </summary>
         /// <param name="graphId">월드맵 그래프 ID입니다.</param>
