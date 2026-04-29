@@ -6,6 +6,22 @@ using UnityEngine.UI;
 namespace GGemCo2DCore
 {
     /// <summary>
+    /// 기본 활성 값이 꺼져 있을 때 슬롯과 아이콘을 표시하는 방식을 정의합니다.
+    /// </summary>
+    public enum UIDefaultInactiveDisplayPolicy
+    {
+        /// <summary>
+        /// 기본 활성 값이 꺼져 있으면 GameObject를 숨깁니다.
+        /// </summary>
+        Hidden,
+
+        /// <summary>
+        /// 기본 활성 값이 꺼져 있어도 GameObject를 보여주고 비활성 비주얼을 적용합니다.
+        /// </summary>
+        VisibleInactive
+    }
+
+    /// <summary>
     /// 윈도우 단위로 아이콘/슬롯/드래그 기능을 공통 제공하는 기본 UI 창입니다.
     /// </summary>
     public class UIWindow : UIWindowBase, IDropHandler
@@ -64,6 +80,10 @@ namespace GGemCo2DCore
         [SerializeField] private bool defaultSlotActive = true;
         [Tooltip("UIWindow가 생성하거나 초기화하는 아이콘 GameObject의 기본 활성 상태입니다.")]
         [SerializeField] private bool defaultIconActive = true;
+        [Tooltip("Default Slot Active가 꺼져 있을 때 슬롯을 숨길지, 보이되 비활성 비주얼로 표시할지 선택합니다.")]
+        [SerializeField] private UIDefaultInactiveDisplayPolicy defaultSlotInactiveDisplayPolicy = UIDefaultInactiveDisplayPolicy.Hidden;
+        [Tooltip("Default Icon Active가 꺼져 있을 때 아이콘을 숨길지, 보이되 비활성 비주얼로 표시할지 선택합니다.")]
+        [SerializeField] private UIDefaultInactiveDisplayPolicy defaultIconInactiveDisplayPolicy = UIDefaultInactiveDisplayPolicy.Hidden;
 
         protected UIIcon selectedIcon;
 
@@ -246,15 +266,58 @@ namespace GGemCo2DCore
         /// <param name="iconObj">기본 활성 상태를 적용할 아이콘 GameObject입니다.</param>
         public void ApplyDefaultSlotIconActiveState(GameObject slotObj, GameObject iconObj)
         {
-            if (slotObj != null)
+            ApplyDefaultSlotActiveState(slotObj);
+            ApplyDefaultIconActiveState(iconObj);
+        }
+
+        /// <summary>
+        /// 기본 슬롯 활성 값과 표시 정책을 슬롯 GameObject에 적용합니다.
+        /// </summary>
+        /// <param name="slotObj">기본 상태를 적용할 슬롯 GameObject입니다.</param>
+        private void ApplyDefaultSlotActiveState(GameObject slotObj)
+        {
+            if (slotObj == null)
             {
-                slotObj.SetActive(defaultSlotActive);
+                return;
             }
 
-            if (iconObj != null)
+            bool visibleInactive = ShouldDisplayDefaultSlotAsInactive();
+            slotObj.SetActive(defaultSlotActive || visibleInactive);
+            slotObj.GetComponent<UISlot>()?.SetInactiveState(visibleInactive);
+        }
+
+        /// <summary>
+        /// 기본 아이콘 활성 값과 표시 정책을 아이콘 GameObject에 적용합니다.
+        /// </summary>
+        /// <param name="iconObj">기본 상태를 적용할 아이콘 GameObject입니다.</param>
+        private void ApplyDefaultIconActiveState(GameObject iconObj)
+        {
+            if (iconObj == null)
             {
-                iconObj.SetActive(defaultIconActive);
+                return;
             }
+
+            bool visibleInactive = ShouldDisplayDefaultIconAsInactive();
+            iconObj.SetActive(defaultIconActive || visibleInactive);
+            iconObj.GetComponent<UIIcon>()?.SetInactiveVisualState(visibleInactive);
+        }
+
+        /// <summary>
+        /// 기본 슬롯 활성 값이 꺼진 경우 슬롯을 비활성 비주얼로 표시해야 하는지 반환합니다.
+        /// </summary>
+        /// <returns>슬롯을 보이되 비활성 비주얼로 표시해야 하면 true를 반환합니다.</returns>
+        private bool ShouldDisplayDefaultSlotAsInactive()
+        {
+            return !defaultSlotActive && defaultSlotInactiveDisplayPolicy == UIDefaultInactiveDisplayPolicy.VisibleInactive;
+        }
+
+        /// <summary>
+        /// 기본 아이콘 활성 값이 꺼진 경우 아이콘을 비활성 비주얼로 표시해야 하는지 반환합니다.
+        /// </summary>
+        /// <returns>아이콘을 보이되 비활성 비주얼로 표시해야 하면 true를 반환합니다.</returns>
+        private bool ShouldDisplayDefaultIconAsInactive()
+        {
+            return !defaultIconActive && defaultIconInactiveDisplayPolicy == UIDefaultInactiveDisplayPolicy.VisibleInactive;
         }
 
         /// <summary>
@@ -328,7 +391,7 @@ namespace GGemCo2DCore
         /// 지정 슬롯 하나의 비활성 시각 상태를 슬롯과 아이콘에 동시에 반영합니다.
         /// </summary>
         /// <param name="slotIndex">갱신할 슬롯 인덱스입니다.</param>
-        public void RefreshInactiveSlotState(int slotIndex)
+        public virtual void RefreshInactiveSlotState(int slotIndex)
         {
             if (slotIndex < 0)
             {
@@ -341,7 +404,9 @@ namespace GGemCo2DCore
                 GameObject slotObject = slots[slotIndex];
                 if (slotObject != null)
                 {
-                    slotObject.GetComponent<UISlot>()?.SetInactiveState(inactive);
+                    bool defaultInactive = ShouldDisplayDefaultSlotAsInactive();
+                    slotObject.SetActive(defaultSlotActive || defaultInactive);
+                    slotObject.GetComponent<UISlot>()?.SetInactiveState(inactive || defaultInactive);
                 }
             }
 
@@ -350,7 +415,17 @@ namespace GGemCo2DCore
                 GameObject iconObject = icons[slotIndex];
                 if (iconObject != null)
                 {
-                    iconObject.GetComponent<UIIcon>()?.SetInactiveState(inactive);
+                    bool defaultInactive = ShouldDisplayDefaultIconAsInactive();
+                    iconObject.SetActive(defaultIconActive || defaultInactive);
+                    UIIcon uiIcon = iconObject.GetComponent<UIIcon>();
+                    if (inactive)
+                    {
+                        uiIcon?.SetInactiveState(true);
+                    }
+                    else
+                    {
+                        uiIcon?.SetInactiveVisualState(defaultInactive);
+                    }
                 }
             }
         }

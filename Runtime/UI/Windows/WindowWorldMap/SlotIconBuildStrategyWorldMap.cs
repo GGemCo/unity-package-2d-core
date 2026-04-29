@@ -119,9 +119,15 @@ namespace GGemCo2DCore
                 uiIcon.SetWorldMapNode(node, _tableWorldMap != null ? _tableWorldMap.GetDataByUid(node.MapUid) : null, iconSprite);
                 
                 icons[index] = iconObj;
-                window.ApplyDefaultSlotIconActiveState(slotObject, iconObj);
-                slotObject.SetActive(node.VisibleByDefault);
-                iconObj.SetActive(node.VisibleByDefault);
+                if (node.VisibleByDefault)
+                {
+                    window.ApplyDefaultSlotIconActiveState(slotObject, iconObj);
+                }
+                else
+                {
+                    slotObject.SetActive(false);
+                    iconObj.SetActive(false);
+                }
                 uiWindowWorldMap.RegisterWorldMapNode(node, uiSlot, uiIcon);
             }
         }

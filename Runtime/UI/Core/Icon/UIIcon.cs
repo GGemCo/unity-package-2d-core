@@ -350,6 +350,45 @@ namespace GGemCo2DCore
         }
 
         /// <summary>
+        /// 아이콘 정보를 지우지 않고 비활성 표시 상태만 설정합니다.
+        /// </summary>
+        /// <param name="inactive">비활성 표시를 적용할지 여부입니다.</param>
+        /// <param name="blockInteraction">비활성 표시 중 클릭과 드래그를 막을지 여부입니다.</param>
+        public void SetInactiveVisualState(bool inactive, bool blockInteraction = true)
+        {
+            if (_isInactive == inactive)
+            {
+                ApplyInactiveVisual(inactive);
+                return;
+            }
+
+            _isInactive = inactive;
+
+            if (_isInactive)
+            {
+                SetSelected(false);
+                SetIconLock(false);
+                if (blockInteraction)
+                {
+                    SetClick(false);
+                    SetDrag(false);
+                }
+
+                ApplyInactiveVisual(true);
+                return;
+            }
+
+            ApplyInactiveVisual(false);
+            SetClick(true);
+            SetDrag(!IsLock());
+
+            if (uid > 0)
+            {
+                UpdateIconImage();
+            }
+        }
+
+        /// <summary>
         /// 비활성 상태에 맞춰 아이콘 색상과 비활성 스프라이트를 적용합니다.
         /// </summary>
         /// <param name="inactive">비활성 표시를 적용할지 여부입니다.</param>

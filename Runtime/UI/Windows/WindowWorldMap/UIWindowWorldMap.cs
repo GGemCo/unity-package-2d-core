@@ -187,6 +187,40 @@ namespace GGemCo2DCore
         }
 
         /// <summary>
+        /// 월드맵 노드의 기본 노출 여부를 유지하면서 슬롯과 아이콘의 비활성 표시 상태를 갱신합니다.
+        /// </summary>
+        /// <param name="slotIndex">갱신할 월드맵 노드 슬롯 인덱스입니다.</param>
+        public override void RefreshInactiveSlotState(int slotIndex)
+        {
+            if (slotIndex < 0)
+            {
+                return;
+            }
+
+            WorldMapNodeDefinition node = _worldMapDefinition != null &&
+                                          _worldMapDefinition.Nodes != null &&
+                                          slotIndex < _worldMapDefinition.Nodes.Count
+                ? _worldMapDefinition.Nodes[slotIndex]
+                : null;
+            if (node != null && !node.VisibleByDefault)
+            {
+                if (slots != null && slotIndex < slots.Length)
+                {
+                    slots[slotIndex]?.SetActive(false);
+                }
+
+                if (icons != null && slotIndex < icons.Length)
+                {
+                    icons[slotIndex]?.SetActive(false);
+                }
+
+                return;
+            }
+
+            base.RefreshInactiveSlotState(slotIndex);
+        }
+
+        /// <summary>
         /// 월드맵 노드 정의의 정규화 좌표를 슬롯의 anchoredPosition으로 변환해 적용합니다.
         /// </summary>
         /// <param name="slotRect">위치를 적용할 슬롯 RectTransform입니다.</param>
