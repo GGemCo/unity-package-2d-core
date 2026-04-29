@@ -3,6 +3,8 @@ using System.IO;
 using GGemCo2DCore;
 using Newtonsoft.Json;
 using UnityEditor;
+using UnityEditor.AddressableAssets;
+using UnityEditor.AddressableAssets.Settings;
 using UnityEngine;
 
 namespace GGemCo2DCoreEditor
@@ -90,6 +92,7 @@ namespace GGemCo2DCoreEditor
                         normalizedPosition = nodeJson.position != null ? nodeJson.position.ToVector2() : new Vector2(0.5f, 0.5f),
                         titleOverride = nodeJson.titleOverride,
                         iconAddress = nodeJson.iconAddress,
+                        iconSprite = LoadSpriteFromAddress(nodeJson.iconAddress),
                         nodeType = ParseEnum(nodeJson.nodeType, WorldMapNodeType.Normal),
                         visibleByDefault = nodeJson.visibleByDefault,
                         unlockConditionKey = nodeJson.unlockConditionKey,
@@ -141,18 +144,46 @@ namespace GGemCo2DCoreEditor
         }
 
         /// <summary>
-        /// address가 프로젝트 에셋 경로일 경우 Sprite를 로드합니다.
+        /// address가 프로젝트 에셋 경로이거나 Addressables 키일 경우 Sprite를 로드합니다.
         /// </summary>
-        /// <param name="address">배경 address 또는 에셋 경로입니다.</param>
+        /// <param name="address">Sprite Addressables 키 또는 에셋 경로입니다.</param>
         /// <returns>로드된 Sprite입니다. 로드할 수 없으면 null입니다.</returns>
         private static Sprite LoadSpriteFromAddress(string address)
         {
-            if (string.IsNullOrWhiteSpace(address) || !address.StartsWith("Assets/"))
+            if (string.IsNullOrWhiteSpace(address))
             {
                 return null;
             }
 
-            return AssetDatabase.LoadAssetAtPath<Sprite>(address);
+            if (address.StartsWith("Assets/"))
+            {
+                return AssetDatabase.LoadAssetAtPath<Sprite>(address);
+            }
+
+            AddressableAssetSettings settings = AddressableAssetSettingsDefaultObject.Settings;
+            if (settings == null)
+            {
+                return null;
+            }
+
+            for (int i = 0; i < settings.groups.Count; i++)
+            {
+                AddressableAssetGroup group = settings.groups[i];
+                if (group == null)
+                {
+                    continue;
+                }
+
+                foreach (AddressableAssetEntry entry in group.entries)
+                {
+                    if (entry != null && entry.address == address)
+                    {
+                        return AssetDatabase.LoadAssetAtPath<Sprite>(entry.AssetPath);
+                    }
+                }
+            }
+
+            return null;
         }
     }
 }

@@ -41,6 +41,11 @@ namespace GGemCo2DCoreEditor
             try
             {
                 asset.EnsureDefaults();
+                if (!WorldMapAddressableRegistrar.TryRegisterSprites(asset, out error))
+                {
+                    return false;
+                }
+
                 WorldMapGraphJson jsonData = CreateJson(asset);
                 string json = JsonConvert.SerializeObject(jsonData, Formatting.Indented);
 
@@ -53,6 +58,11 @@ namespace GGemCo2DCoreEditor
 
                 File.WriteAllText(fullPath, json);
                 AssetDatabase.Refresh();
+                if (!WorldMapAddressableRegistrar.TryRegisterJson(asset.graphId, assetPath, out error))
+                {
+                    return false;
+                }
+
                 return true;
             }
             catch (Exception e)
@@ -127,18 +137,23 @@ namespace GGemCo2DCoreEditor
         }
 
         /// <summary>
-        /// 배경 address가 비어 있을 때 Sprite의 에셋 경로를 대체값으로 사용합니다.
+        /// 배경 Sprite 또는 수동 address를 기준으로 JSON에 기록할 address를 결정합니다.
         /// </summary>
         /// <param name="asset">배경 정보를 가진 그래프 에셋입니다.</param>
         /// <returns>JSON에 기록할 배경 address입니다.</returns>
         private static string ResolveBackgroundAddress(WorldMapGraphAsset asset)
         {
+            if (asset.backgroundSprite != null)
+            {
+                return ConfigAddressableWorldMap.GetBackgroundKey(asset.graphId);
+            }
+
             if (!string.IsNullOrWhiteSpace(asset.backgroundAddress))
             {
                 return asset.backgroundAddress;
             }
 
-            return asset.backgroundSprite != null ? AssetDatabase.GetAssetPath(asset.backgroundSprite) : string.Empty;
+            return string.Empty;
         }
 
         /// <summary>

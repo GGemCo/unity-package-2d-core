@@ -22,6 +22,7 @@ namespace GGemCo2DCore
         private TableMap _tableMap;
         private StruckTableMap _struckTableMap;
         private WorldMapNodeDefinition _nodeDefinition;
+        private Sprite _iconSprite;
 
         /// <summary>현재 아이콘이 표시하는 월드맵 노드 ID입니다.</summary>
         public string NodeId => _nodeDefinition != null ? _nodeDefinition.NodeId : string.Empty;
@@ -45,9 +46,11 @@ namespace GGemCo2DCore
         /// </summary>
         /// <param name="nodeDefinition">표시할 월드맵 노드 정의입니다.</param>
         /// <param name="mapData">노드가 참조하는 TableMap 데이터입니다.</param>
-        public void SetWorldMapNode(WorldMapNodeDefinition nodeDefinition, StruckTableMap mapData)
+        /// <param name="iconSprite">AddressableLoaderWorldMap에서 로드한 노드 아이콘 Sprite입니다.</param>
+        public void SetWorldMapNode(WorldMapNodeDefinition nodeDefinition, StruckTableMap mapData, Sprite iconSprite = null)
         {
             _nodeDefinition = nodeDefinition;
+            _iconSprite = iconSprite;
             if (_nodeDefinition == null)
             {
                 ClearIconInfos();
@@ -144,17 +147,15 @@ namespace GGemCo2DCore
         }
 
         /// <summary>
-        /// 월드맵 노드에 iconAddress가 있을 때만 아이콘 이미지를 교체합니다.
-        /// iconAddress가 비어 있으면 프리팹의 기본 이미지를 유지합니다.
+        /// AddressableLoaderWorldMap에서 전달받은 Sprite가 있을 때만 아이콘 이미지를 교체합니다.
+        /// Sprite가 없으면 프리팹의 기본 이미지를 유지합니다.
         /// </summary>
         protected override void UpdateIconImage()
         {
-            if (_nodeDefinition == null || string.IsNullOrWhiteSpace(_nodeDefinition.IconAddress))
+            if (_iconSprite != null)
             {
-                return;
+                ChangeIconImage(_iconSprite);
             }
-
-            base.UpdateIconImage();
         }
 
         /// <summary>

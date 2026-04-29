@@ -15,6 +15,8 @@ namespace GGemCo2DCore
     {
         public static AddressableLoaderWorldMap Instance { get; private set; }
         private readonly Dictionary<string, WorldMapDefinition> _dicWorldMap = new Dictionary<string, WorldMapDefinition>();
+        private readonly Dictionary<string, Sprite> _backgroundSpriteByAddress = new Dictionary<string, Sprite>();
+        private readonly Dictionary<string, Sprite> _iconSpriteByAddress = new Dictionary<string, Sprite>();
         private readonly HashSet<AsyncOperationHandle> _activeHandles = new HashSet<AsyncOperationHandle>();
         private float _prefabLoadProgress;
 
@@ -52,6 +54,8 @@ namespace GGemCo2DCore
             try
             {
                 _dicWorldMap.Clear();
+                _backgroundSpriteByAddress.Clear();
+                _iconSpriteByAddress.Clear();
 
                 string address = ConfigAddressableWorldMap.GetDefaultKey();
                 var loadHandle = Addressables.LoadAssetAsync<TextAsset>(address);
@@ -84,6 +88,7 @@ namespace GGemCo2DCore
                     return;
                 }
 
+                await LoadSpritesAsync(definition);
                 _dicWorldMap[address] = definition;
 
                 _prefabLoadProgress = 1f; // 100%
@@ -172,6 +177,126 @@ namespace GGemCo2DCore
 
             GcLogger.LogError($"Addressables에서 {key} 월드맵을 찾을 수 없습니다.");
             return null;
+        }
+
+        /// <summary>
+        /// 월드맵 정의에 기록된 배경과 노드 아이콘 Sprite를 Addressables에서 로드해 캐싱합니다.
+        /// </summary>
+        /// <param name="definition">Sprite address를 보유한 월드맵 정의입니다.</param>
+        /// <returns>비동기 로드 작업입니다.</returns>
+        private async Task LoadSpritesAsync(WorldMapDefinition definition)
+        {
+            if (definition == null)
+            {
+                return;
+            }
+
+            if (!string.IsNullOrWhiteSpace(definition.BackgroundAddress))
+            {
+                Sprite backgroundSprite = await LoadSpriteByAddressAsync(definition.BackgroundAddress);
+                if (backgroundSprite != null)
+                {
+                    _backgroundSpriteByAddress[definition.BackgroundAddress] = backgroundSprite;
+                }
+            }
+
+            if (definition.Nodes == null)
+            {
+                return;
+            }
+
+            for (int i = 0; i < definition.Nodes.Count; i++)
+            {
+                WorldMapNodeDefinition node = definition.Nodes[i];
+                if (node == null || string.IsNullOrWhiteSpace(node.IconAddress) || _iconSpriteByAddress.ContainsKey(node.IconAddress))
+                {
+                    continue;
+                }
+
+                Sprite iconSprite = await LoadSpriteByAddressAsync(node.IconAddress);
+                if (iconSprite != null)
+                {
+                    _iconSpriteByAddress[node.IconAddress] = iconSprite;
+                }
+            }
+        }
+
+        /// <summary>
+        /// Addressables 키로 Sprite를 로드하고 핸들을 해제 목록에 등록합니다.
+        /// </summary>
+        /// <param name="address">로드할 Sprite Addressables 키입니다.</param>
+        /// <returns>로드된 Sprite입니다. 실패 시 null입니다.</returns>
+        private async Task<Sprite> LoadSpriteByAddressAsync(string address)
+        {
+            AsyncOperationHandle<Sprite> handle = Addressables.LoadAssetAsync<Sprite>(address);
+            _activeHandles.Add(handle);
+            await handle.Task;
+
+            if (handle.Status == AsyncOperationStatus.Succeeded)
+            {
+                return handle.Result;
+            }
+
+            GcLogger.LogError($"월드맵 Sprite 로드에 실패했습니다. key: {address}");
+            return null;
+        }
+
+        /// <summary>
+        /// 월드맵 정의의 배경 Sprite가 캐싱되어 있는지 확인하고 반환합니다.
+        /// </summary>
+        /// <param name="definition">배경 address를 보유한 월드맵 정의입니다.</param>
+        /// <param name="sprite">캐싱된 배경 Sprite입니다.</param>
+        /// <returns>배경 Sprite가 있으면 true입니다.</returns>
+        public bool TryGetBackgroundSprite(WorldMapDefinition definition, out Sprite sprite)
+        {
+            sprite = null;
+            return definition != null && TryGetBackgroundSprite(definition.BackgroundAddress, out sprite);
+        }
+
+        /// <summary>
+        /// Addressables 키로 캐싱된 월드맵 배경 Sprite를 조회합니다.
+        /// </summary>
+        /// <param name="address">배경 Sprite Addressables 키입니다.</param>
+        /// <param name="sprite">캐싱된 배경 Sprite입니다.</param>
+        /// <returns>배경 Sprite가 있으면 true입니다.</returns>
+        public bool TryGetBackgroundSprite(string address, out Sprite sprite)
+        {
+            if (string.IsNullOrWhiteSpace(address))
+            {
+                sprite = null;
+                return false;
+            }
+
+            return _backgroundSpriteByAddress.TryGetValue(address, out sprite) && sprite != null;
+        }
+
+        /// <summary>
+        /// 월드맵 노드 정의의 아이콘 Sprite가 캐싱되어 있는지 확인하고 반환합니다.
+        /// </summary>
+        /// <param name="node">아이콘 address를 보유한 노드 정의입니다.</param>
+        /// <param name="sprite">캐싱된 아이콘 Sprite입니다.</param>
+        /// <returns>아이콘 Sprite가 있으면 true입니다.</returns>
+        public bool TryGetIconSprite(WorldMapNodeDefinition node, out Sprite sprite)
+        {
+            sprite = null;
+            return node != null && TryGetIconSprite(node.IconAddress, out sprite);
+        }
+
+        /// <summary>
+        /// Addressables 키로 캐싱된 월드맵 노드 아이콘 Sprite를 조회합니다.
+        /// </summary>
+        /// <param name="address">노드 아이콘 Sprite Addressables 키입니다.</param>
+        /// <param name="sprite">캐싱된 아이콘 Sprite입니다.</param>
+        /// <returns>아이콘 Sprite가 있으면 true입니다.</returns>
+        public bool TryGetIconSprite(string address, out Sprite sprite)
+        {
+            if (string.IsNullOrWhiteSpace(address))
+            {
+                sprite = null;
+                return false;
+            }
+
+            return _iconSpriteByAddress.TryGetValue(address, out sprite) && sprite != null;
         }
 
         /// <summary>

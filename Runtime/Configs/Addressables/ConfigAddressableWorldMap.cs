@@ -9,6 +9,8 @@ namespace GGemCo2DCore
         public const string DefaultGraphId = "main";
 
         private const string KeyPrefix = ConfigDefine.NameSDK + "_WorldMap_";
+        private const string BackgroundKeyPrefix = ConfigDefine.NameSDK + "_WorldMap_Background_";
+        private const string IconKeyPrefix = ConfigDefine.NameSDK + "_WorldMap_Icon_";
         private const string FileNamePrefix = "world_map_";
         private const string ExtJson = ".json";
 
@@ -16,6 +18,11 @@ namespace GGemCo2DCore
         /// 월드맵 JSON을 모아둘 프로젝트 상대 경로입니다.
         /// </summary>
         public static string Root => ConfigAddressablePath.Combine(ConfigAddressablePath.Root, "WorldMap");
+
+        /// <summary>
+        /// 월드맵 배경/아이콘 원본 이미지를 모아둘 프로젝트 상대 경로입니다.
+        /// </summary>
+        public static string ImageRoot => ConfigAddressablePath.Combine(Root, "Images");
 
         /// <summary>
         /// 월드맵 그래프 ID에 대응하는 Addressables 키를 만듭니다.
@@ -34,6 +41,27 @@ namespace GGemCo2DCore
         public static string GetDefaultKey()
         {
             return GetKey(DefaultGraphId);
+        }
+
+        /// <summary>
+        /// 월드맵 배경 Sprite에 대응하는 Addressables 키를 만듭니다.
+        /// </summary>
+        /// <param name="graphId">월드맵 그래프 ID입니다.</param>
+        /// <returns>배경 Sprite Addressables 키입니다.</returns>
+        public static string GetBackgroundKey(string graphId)
+        {
+            return BackgroundKeyPrefix + NormalizeGraphId(graphId);
+        }
+
+        /// <summary>
+        /// 월드맵 노드 아이콘 Sprite에 대응하는 Addressables 키를 만듭니다.
+        /// </summary>
+        /// <param name="graphId">월드맵 그래프 ID입니다.</param>
+        /// <param name="nodeId">월드맵 노드 ID입니다.</param>
+        /// <returns>노드 아이콘 Sprite Addressables 키입니다.</returns>
+        public static string GetNodeIconKey(string graphId, string nodeId)
+        {
+            return IconKeyPrefix + NormalizeGraphId(graphId) + "_" + NormalizeNodeId(nodeId);
         }
 
         /// <summary>
@@ -65,6 +93,17 @@ namespace GGemCo2DCore
         {
             string normalized = ConfigAddressablePath.Normalize(graphId);
             return string.IsNullOrWhiteSpace(normalized) ? DefaultGraphId : normalized;
+        }
+
+        /// <summary>
+        /// Addressables 키에 안전한 노드 ID로 정규화합니다.
+        /// </summary>
+        /// <param name="nodeId">원본 노드 ID입니다.</param>
+        /// <returns>정규화된 노드 ID입니다.</returns>
+        public static string NormalizeNodeId(string nodeId)
+        {
+            string normalized = ConfigAddressablePath.Normalize(nodeId);
+            return string.IsNullOrWhiteSpace(normalized) ? "node" : normalized;
         }
     }
 }

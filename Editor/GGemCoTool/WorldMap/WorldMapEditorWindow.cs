@@ -220,6 +220,7 @@ namespace GGemCo2DCoreEditor
             using (new EditorGUILayout.VerticalScope(EditorStyles.helpBox))
             {
                 EditorGUI.BeginChangeCheck();
+                Sprite oldBackgroundSprite = _asset.backgroundSprite;
                 string graphId = EditorGUILayout.TextField("Graph ID", _asset.graphId);
                 Sprite backgroundSprite = (Sprite)EditorGUILayout.ObjectField(
                     "Background Sprite",
@@ -236,6 +237,10 @@ namespace GGemCo2DCoreEditor
                     _asset.graphId = graphId;
                     _asset.backgroundSprite = backgroundSprite;
                     _asset.backgroundAddress = backgroundAddress;
+                    if (backgroundSprite != null && backgroundSprite != oldBackgroundSprite)
+                    {
+                        _asset.backgroundAddress = ConfigAddressableWorldMap.GetBackgroundKey(graphId);
+                    }
                     _asset.referenceResolution = referenceResolution;
                     _asset.startNodeId = startNodeId;
                     OnGraphChanged();
@@ -634,6 +639,10 @@ namespace GGemCo2DCoreEditor
 
             Undo.RecordObject(_asset, "월드맵 노드 ID 변경");
             node.nodeId = newNodeId;
+            if (node.iconSprite != null)
+            {
+                node.iconAddress = ConfigAddressableWorldMap.GetNodeIconKey(_asset.graphId, newNodeId);
+            }
 
             for (int i = 0; i < _asset.edges.Count; i++)
             {

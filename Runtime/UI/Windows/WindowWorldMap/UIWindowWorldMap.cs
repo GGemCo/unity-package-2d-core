@@ -1,5 +1,4 @@
 using System.Collections.Generic;
-using System.Threading.Tasks;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -72,7 +71,7 @@ namespace GGemCo2DCore
 
             EnsureWorldMapLayers();
             EnsureWorldMapDragController();
-            _ = ApplyBackgroundAsync();
+            ApplyBackgroundSprite();
 
             // 순서 중요: IconPoolManager에서 사용하므로 base.Awake 호출 전에 등록합니다.
             SlotIconBuildStrategyRegistry.Register(uid, window => new SlotIconBuildStrategyWorldMap(_tableMap));
@@ -147,7 +146,7 @@ namespace GGemCo2DCore
         {
             _worldMapDefinition = definition;
             maxCountIcon = GetWorldMapNodeCount(_worldMapDefinition);
-            _ = ApplyBackgroundAsync();
+            ApplyBackgroundSprite();
 
             if (rebuildIcons && IconPoolManager != null)
             {
@@ -300,10 +299,9 @@ namespace GGemCo2DCore
         }
 
         /// <summary>
-        /// 월드맵 정의의 배경 주소를 읽어 배경 Image에 스프라이트를 적용합니다.
+        /// AddressableLoaderWorldMap에 캐싱된 월드맵 배경 Sprite를 배경 Image에 적용합니다.
         /// </summary>
-        /// <returns>비동기 배경 적용 작업입니다.</returns>
-        private async Task ApplyBackgroundAsync()
+        private void ApplyBackgroundSprite()
         {
             if (_worldMapDefinition == null || string.IsNullOrWhiteSpace(_worldMapDefinition.BackgroundAddress))
             {
@@ -318,9 +316,10 @@ namespace GGemCo2DCore
 
             string address = _worldMapDefinition.BackgroundAddress;
             _requestedBackgroundAddress = address;
-
-            Sprite backgroundSprite = await AddressableLoaderController.LoadByKeyAsync<Sprite>(address);
-            if (this == null || backgroundSprite == null || _requestedBackgroundAddress != address)
+            if (AddressableLoaderWorldMap.Instance == null ||
+                !AddressableLoaderWorldMap.Instance.TryGetBackgroundSprite(address, out Sprite backgroundSprite) ||
+                backgroundSprite == null ||
+                _requestedBackgroundAddress != address)
             {
                 return;
             }

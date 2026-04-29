@@ -67,10 +67,8 @@ namespace GGemCo2DCoreEditor
                 return;
             }
             
-            ClearGroupEntries(settings, group);
-            
-            string key = ConfigAddressableWorldMap.GetKey("");
-            string assetPath = ConfigAddressableWorldMap.GetAssetPath("");
+            string key = ConfigAddressableWorldMap.GetDefaultKey();
+            string assetPath = ConfigAddressableWorldMap.GetAssetPath(ConfigAddressableWorldMap.DefaultGraphId);
         
             Add(settings, group, key, assetPath);
             

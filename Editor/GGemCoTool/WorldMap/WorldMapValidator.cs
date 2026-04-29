@@ -124,9 +124,9 @@ namespace GGemCo2DCoreEditor
                     report.Add(WorldMapValidationSeverity.Error, "노드 좌표가 0~1 범위를 벗어났습니다.", node.nodeId);
                 }
 
-                if (node.visibleByDefault && string.IsNullOrWhiteSpace(node.iconAddress))
+                if (node.visibleByDefault && node.iconSprite == null && string.IsNullOrWhiteSpace(node.iconAddress))
                 {
-                    report.Add(WorldMapValidationSeverity.Warning, "기본 표시 노드에 iconAddress가 없습니다.", node.nodeId);
+                    report.Add(WorldMapValidationSeverity.Warning, "기본 표시 노드에 icon Sprite 또는 iconAddress가 없습니다.", node.nodeId);
                 }
             }
 

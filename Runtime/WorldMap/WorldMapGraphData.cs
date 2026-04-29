@@ -25,6 +25,9 @@ namespace GGemCo2DCore
         /// <summary>런타임에서 아이콘을 로드할 Addressables 키 또는 경로입니다.</summary>
         public string iconAddress;
 
+        /// <summary>에디터에서 드래그 앤 드랍으로 지정하는 아이콘 Sprite 원본입니다.</summary>
+        public Sprite iconSprite;
+
         /// <summary>노드의 플레이 성격입니다.</summary>
         public WorldMapNodeType nodeType = WorldMapNodeType.Normal;
 

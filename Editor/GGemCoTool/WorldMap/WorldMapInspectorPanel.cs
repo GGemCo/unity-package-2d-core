@@ -111,7 +111,9 @@ namespace GGemCo2DCoreEditor
                 disabled: mapOptions.Options.Count == 0);
 
             EditorGUI.BeginChangeCheck();
+            Sprite oldIconSprite = node.iconSprite;
             string titleOverride = EditorGUILayout.TextField("Title Override", node.titleOverride);
+            Sprite iconSprite = (Sprite)EditorGUILayout.ObjectField("Icon Sprite", node.iconSprite, typeof(Sprite), false);
             string iconAddress = EditorGUILayout.TextField("Icon Address", node.iconAddress);
             WorldMapNodeType nodeType = (WorldMapNodeType)EditorGUILayout.EnumPopup("Node Type", node.nodeType);
             bool visibleByDefault = EditorGUILayout.Toggle("Visible By Default", node.visibleByDefault);
@@ -122,7 +124,12 @@ namespace GGemCo2DCoreEditor
             {
                 Undo.RecordObject(asset, "월드맵 노드 편집");
                 node.titleOverride = titleOverride;
+                node.iconSprite = iconSprite;
                 node.iconAddress = iconAddress;
+                if (iconSprite != null && iconSprite != oldIconSprite)
+                {
+                    node.iconAddress = ConfigAddressableWorldMap.GetNodeIconKey(asset.graphId, node.nodeId);
+                }
                 node.nodeType = nodeType;
                 node.visibleByDefault = visibleByDefault;
                 node.unlockConditionKey = unlockConditionKey;
