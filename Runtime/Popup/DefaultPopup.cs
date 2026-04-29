@@ -89,7 +89,7 @@ namespace GGemCo2DCore
             SetupMessage(popupMetadata.Message, popupMetadata.MessageColor);
             SetupButtons(popupMetadata);
 
-            // LayoutRebuilder.ForceRebuildLayoutImmediate(panelContent);
+            LayoutRebuilder.ForceRebuildLayoutImmediate(panelContent);
             OnInitialize(popupMetadata);
         }
 
