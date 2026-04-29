@@ -20,6 +20,7 @@ namespace GGemCo2DCore
         [HideInInspector] public GGemCoSaveSettings saveSettings;
         [HideInInspector] public GGemCoOptionSettings optionSettings;
         [HideInInspector] public GGemCoSoundSettings soundSettings;
+        [HideInInspector] public GGemCoWorldMapSettings worldMapSettings;
 
         public delegate void DelegateLoadSettings(
             GGemCoSettings settings,
@@ -72,7 +73,7 @@ namespace GGemCo2DCore
             {
                 _loadProgress = 0f;
 
-                // 1) Core 6종 병렬 Task 구성
+                // 1) Core 기본 설정 병렬 Task 구성
                 var tasks = new List<Task<UnityEngine.Object>>(8)
                 {
                     LoadSettingsAsObjectAsync(ConfigAddressableSetting.Settings.Key),
@@ -80,7 +81,8 @@ namespace GGemCo2DCore
                     LoadSettingsAsObjectAsync(ConfigAddressableSetting.MapSettings.Key),
                     LoadSettingsAsObjectAsync(ConfigAddressableSetting.SaveSettings.Key),
                     LoadSettingsAsObjectAsync(ConfigAddressableSetting.OptionSettings.Key),
-                    LoadSettingsAsObjectAsync(ConfigAddressableSetting.SoundSettings.Key)
+                    LoadSettingsAsObjectAsync(ConfigAddressableSetting.SoundSettings.Key),
+                    LoadSettingsAsObjectAsync(ConfigAddressableSetting.WorldMapSettings.Key)
                 };
 
                 // 2) [NEW] 외부 등록 Settings 병렬 Task 추가
@@ -91,13 +93,14 @@ namespace GGemCo2DCore
                 // 3) 전체 병렬 로드
                 await Task.WhenAll(tasks);
 
-                // 4) Core 6종 할당 (null 안전 캐스팅)
+                // 4) Core 기본 설정 할당 (null 안전 캐스팅)
                 settings       = tasks[0].Result as GGemCoSettings;
                 playerSettings = tasks[1].Result as GGemCoPlayerSettings;
                 mapSettings    = tasks[2].Result as GGemCoMapSettings;
                 saveSettings   = tasks[3].Result as GGemCoSaveSettings;
                 optionSettings = tasks[4].Result as GGemCoOptionSettings;
                 soundSettings  = tasks[5].Result as GGemCoSoundSettings;
+                worldMapSettings = tasks[6].Result as GGemCoWorldMapSettings;
 
                 // 5) 이벤트 (기존)
                 OnLoadSettings?.Invoke(settings, playerSettings, mapSettings, saveSettings, optionSettings, soundSettings);

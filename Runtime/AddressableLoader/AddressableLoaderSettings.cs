@@ -23,6 +23,7 @@ namespace GGemCo2DCore
         [HideInInspector] public GGemCoSoundSettings soundSettings;
         [HideInInspector] public GGemCoGameTimeSettings gameTimeSettings;
         [HideInInspector] public GGemCoMonsterSettings monsterSettings;
+        [HideInInspector] public GGemCoWorldMapSettings worldMapSettings;
         public delegate void DelegateLoadSettings(GGemCoSettings settings, GGemCoPlayerSettings playerSettings,
             GGemCoMapSettings mapSettings, GGemCoSaveSettings saveSettings, GGemCoOptionSettings optionSettings,
             GGemCoSoundSettings soundSettings, GGemCoMonsterSettings monsterSettings, GGemCoItemSettings itemSettings);
@@ -73,6 +74,7 @@ namespace GGemCo2DCore
                 var optionSettingsTask = LoadSettingsAsync<GGemCoOptionSettings>(ConfigAddressableSetting.OptionSettings.Key);
                 var soundSettingsTask = LoadSettingsAsync<GGemCoSoundSettings>(ConfigAddressableSetting.SoundSettings.Key);
                 var monsterSettingsTask = LoadSettingsAsync<GGemCoMonsterSettings>(ConfigAddressableSetting.MonsterSettings.Key);
+                var worldMapSettingsTask = LoadSettingsAsync<GGemCoWorldMapSettings>(ConfigAddressableSetting.WorldMapSettings.Key);
 #if GGEMCO_USE_INGAME_TIME
                 var gameTimeSettingsTask = LoadSettingsAsync<GGemCoGameTimeSettings>(ConfigAddressableSetting.GameTimeSettings.Key);
 #endif
@@ -80,11 +82,12 @@ namespace GGemCo2DCore
 #if GGEMCO_USE_INGAME_TIME
                 // 모든 작업이 완료될 때까지 대기
                 await Task.WhenAll(settingsTask, playerSettingsTask, mapSettingsTask, saveSettingsTask,
-                    optionSettingsTask, soundSettingsTask, monsterSettingsTask, itemSettingsTask, gameTimeSettingsTask);
+                    optionSettingsTask, soundSettingsTask, monsterSettingsTask, itemSettingsTask, worldMapSettingsTask,
+                    gameTimeSettingsTask);
 #else
                 // 모든 작업이 완료될 때까지 대기
                 await Task.WhenAll(settingsTask, playerSettingsTask, mapSettingsTask, saveSettingsTask,
-                    optionSettingsTask, soundSettingsTask, monsterSettingsTask, itemSettingsTask);
+                    optionSettingsTask, soundSettingsTask, monsterSettingsTask, itemSettingsTask, worldMapSettingsTask);
 #endif
 
                 // 결과 저장
@@ -96,6 +99,7 @@ namespace GGemCo2DCore
                 optionSettings = optionSettingsTask.Result;
                 soundSettings = soundSettingsTask.Result;
                 monsterSettings = monsterSettingsTask.Result;
+                worldMapSettings = worldMapSettingsTask.Result;
 #if GGEMCO_USE_INGAME_TIME
                 gameTimeSettings = gameTimeSettingsTask.Result;
 #endif

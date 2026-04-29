@@ -1,6 +1,7 @@
 using TMPro;
 using UnityEngine;
 using UnityEngine.EventSystems;
+using UnityEngine.UI;
 
 namespace GGemCo2DCore
 {
@@ -18,6 +19,10 @@ namespace GGemCo2DCore
 
         [Tooltip("선택 상태 아이콘 색상")]
         [SerializeField] private Color colorSelected = Color.blue;
+
+        [Header("월드맵 데코레이션")]
+        [Tooltip("노드 타입별 데코레이션 스프라이트를 표시할 Image입니다.")]
+        public Image IconDeco;
         
         private TableMap _tableMap;
         private StruckTableMap _struckTableMap;
@@ -54,12 +59,14 @@ namespace GGemCo2DCore
             if (_nodeDefinition == null)
             {
                 ClearIconInfos();
+                ApplyNodeDecoration();
                 return;
             }
 
             _struckTableMap = mapData ?? _tableMap?.GetDataByUid(_nodeDefinition.MapUid);
             ChangeInfoByUid(_nodeDefinition.MapUid, 1, 1);
             ApplyNodeDisplayName();
+            ApplyNodeDecoration();
         }
         
         /// <summary>
@@ -90,6 +97,7 @@ namespace GGemCo2DCore
 
             _struckTableMap = info;
             ApplyNodeDisplayName();
+            ApplyNodeDecoration();
             UpdateInfo();
             return true;
         }
@@ -175,6 +183,49 @@ namespace GGemCo2DCore
             }
 
             textName.text = _struckTableMap != null ? _struckTableMap.Name : string.Empty;
+        }
+
+        /// <summary>
+        /// 월드맵 설정에서 노드 타입별 데코레이션 스프라이트를 찾아 IconDeco에 적용합니다.
+        /// </summary>
+        private void ApplyNodeDecoration()
+        {
+            if (IconDeco == null)
+            {
+                return;
+            }
+
+            Sprite decoSprite = ResolveNodeDecorationSprite();
+            IconDeco.sprite = decoSprite;
+            IconDeco.enabled = decoSprite != null;
+            IconDeco.gameObject.SetActive(decoSprite != null);
+        }
+
+        /// <summary>
+        /// 현재 노드 타입에 연결된 데코레이션 스프라이트를 설정 로더에서 조회합니다.
+        /// </summary>
+        /// <returns>노드 타입에 맞는 데코레이션 스프라이트입니다. 설정 또는 스프라이트가 없으면 null을 반환합니다.</returns>
+        private Sprite ResolveNodeDecorationSprite()
+        {
+            if (_nodeDefinition == null)
+            {
+                return null;
+            }
+
+            GGemCoWorldMapSettings worldMapSettings = null;
+            if (AddressableLoaderSettings.Instance != null)
+            {
+                worldMapSettings = AddressableLoaderSettings.Instance.worldMapSettings;
+            }
+
+            if (worldMapSettings == null && AddressableLoaderSettingsRegist.Instance != null)
+            {
+                worldMapSettings = AddressableLoaderSettingsRegist.Instance.worldMapSettings;
+            }
+
+            return worldMapSettings != null
+                ? worldMapSettings.GetDecorationSprite(_nodeDefinition.NodeType)
+                : null;
         }
 
         /// <summary>

@@ -22,6 +22,7 @@ namespace GGemCo2DCore
             Option,
             Sound,
             GameTime,
+            WorldMap,
         }
 
         /// <summary>
@@ -39,6 +40,7 @@ namespace GGemCo2DCore
             OptionSettings = 60,
             SoundSettings = 70,
             GameTimeSettings = 80,
+            WorldMapSettings = 90,
         }
 
         public const string BasePath = ConfigDefine.NameSDK + "/Settings/";
@@ -153,6 +155,18 @@ namespace GGemCo2DCore
         }
 
         /// <summary>
+        /// 월드맵 설정 메뉴 정보
+        /// </summary>
+        public static class WorldMap
+        {
+            public const string FileName = BaseName + "WorldMapSettings";
+            public const string MenuName = BasePath + FileName;
+            public const int Ordering =
+                (int)ConfigScriptableObjectCommon.PackageOrder.Core +
+                (int)CoreLocalOrder.WorldMapSettings;
+        }
+
+        /// <summary>
         /// Core 패키지 전체 메뉴 메타데이터
         /// 에디터 툴, 자동 생성, 검증 로직에서 재사용할 수 있다.
         /// </summary>
@@ -231,6 +245,14 @@ namespace GGemCo2DCore
                         GameTime.Ordering,
                         typeof(GGemCoGameTimeSettings))
                 },
+                {
+                    CoreSettingsKey.WorldMap,
+                    new ConfigScriptableObjectCommon.MenuInfo(
+                        WorldMap.FileName,
+                        WorldMap.MenuName,
+                        WorldMap.Ordering,
+                        typeof(GGemCoWorldMapSettings))
+                },
             };
 
         /// <summary>
@@ -248,6 +270,7 @@ namespace GGemCo2DCore
                 { Option.FileName, typeof(GGemCoOptionSettings) },
                 { Sound.FileName, typeof(GGemCoSoundSettings) },
                 { GameTime.FileName, typeof(GGemCoGameTimeSettings) },
+                { WorldMap.FileName, typeof(GGemCoWorldMapSettings) },
             };
 
         /// <summary>
