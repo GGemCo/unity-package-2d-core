@@ -17,6 +17,7 @@ namespace GGemCo2DCoreEditor
             Development = 100,
             MapExporter = 101,
             TableEditor,
+            WorldMapGraph = 109,
             Quest = 110,
             CreateDialogue,
             Cutscene = 120,
@@ -87,6 +88,7 @@ namespace GGemCo2DCoreEditor
         
         public const string NameToolCreateHubWindow = NameToolDevelopment + "오브젝트 생성툴";
         public const string NameToolTableEditor = NameToolDevelopment + "데이터 테이블 에디터";
+        public const string NameToolWorldMapGraph = NameToolDevelopment + "월드맵 그래프 에디터";
         
         // 테스트
         private const string NameToolTest = NameToolGGemCo + "테스트툴/";
