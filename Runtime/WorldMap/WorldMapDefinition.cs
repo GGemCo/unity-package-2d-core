@@ -117,6 +117,69 @@ namespace GGemCo2DCore
 
             return _nodeById.TryGetValue(nodeId, out node);
         }
+
+        /// <summary>
+        /// TableMap UID를 기준으로 월드맵 노드 정의를 찾습니다.
+        /// </summary>
+        /// <param name="mapUid">찾을 TableMap UID입니다.</param>
+        /// <param name="node">찾은 월드맵 노드 정의입니다.</param>
+        /// <returns>노드를 찾으면 true, 찾지 못하면 false를 반환합니다.</returns>
+        public bool TryGetNodeByMapUid(int mapUid, out WorldMapNodeDefinition node)
+        {
+            if (mapUid <= 0)
+            {
+                node = null;
+                return false;
+            }
+
+            for (int i = 0; i < _nodes.Count; i++)
+            {
+                WorldMapNodeDefinition candidate = _nodes[i];
+                if (candidate != null && candidate.MapUid == mapUid)
+                {
+                    node = candidate;
+                    return true;
+                }
+            }
+
+            node = null;
+            return false;
+        }
+
+        /// <summary>
+        /// 두 노드가 월드맵 edge로 바로 연결되어 있는지 확인합니다.
+        /// </summary>
+        /// <param name="fromNodeId">출발 노드 ID입니다.</param>
+        /// <param name="toNodeId">도착 노드 ID입니다.</param>
+        /// <returns>출발 노드에서 도착 노드로 바로 이동할 수 있는 edge가 있으면 true를 반환합니다.</returns>
+        public bool IsAdjacentNode(string fromNodeId, string toNodeId)
+        {
+            if (string.IsNullOrWhiteSpace(fromNodeId) || string.IsNullOrWhiteSpace(toNodeId))
+            {
+                return false;
+            }
+
+            for (int i = 0; i < _edges.Count; i++)
+            {
+                WorldMapEdgeDefinition edge = _edges[i];
+                if (edge == null)
+                {
+                    continue;
+                }
+
+                if (edge.FromNodeId == fromNodeId && edge.ToNodeId == toNodeId)
+                {
+                    return true;
+                }
+
+                if (edge.Bidirectional && edge.FromNodeId == toNodeId && edge.ToNodeId == fromNodeId)
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
     }
 
     /// <summary>

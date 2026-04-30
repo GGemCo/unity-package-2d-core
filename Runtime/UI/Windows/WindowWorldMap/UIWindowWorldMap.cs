@@ -43,7 +43,7 @@ namespace GGemCo2DCore
         [Tooltip("연결선 두께")]
         [SerializeField] private float edgeThickness = 6f;
 
-        [Header("Edge Sprite")]
+        [Header("연결선 이미지")]
         [Tooltip("일반 연결선에 사용할 기본 스프라이트입니다. 비어 있으면 기존 색상 라인으로 표시합니다.")]
         [SerializeField] private Sprite edgeSpriteNormal;
 
@@ -58,6 +58,14 @@ namespace GGemCo2DCore
 
         [Tooltip("연결선 스프라이트를 그리는 방식입니다.")]
         [SerializeField] private WorldMapEdgeSpriteDrawMode edgeSpriteDrawMode = WorldMapEdgeSpriteDrawMode.Sliced;
+
+        [Header("포인트 상태별 이미지")]
+        [Tooltip("현재 플레이어가 있는 맵일 때 보여줄 이미지")]
+        [SerializeField] private Sprite spriteCurrentMap;
+        [Tooltip("플레이어가 이동 가능한 맵일 때")]
+        [SerializeField] private Sprite spriteMovePossible;
+        [Tooltip("플레이어가 이동 불가능한 맵일 때")]
+        [SerializeField] private Sprite spriteMoveImPossible;
 
         private readonly Dictionary<string, UIIconWorldMap> _nodeIconById = new Dictionary<string, UIIconWorldMap>();
         private readonly Dictionary<string, RectTransform> _nodeRectById = new Dictionary<string, RectTransform>();
@@ -116,6 +124,9 @@ namespace GGemCo2DCore
                 RefreshEdgeLines();
                 ClampWorldMapDragPosition();
             }
+
+            RefreshInactiveSlotStates();
+            RefreshWorldMapNodePointStates();
         }
 
         /// <summary>
@@ -124,6 +135,23 @@ namespace GGemCo2DCore
         private void OnDestroy()
         {
             buttonWarp?.onClick.RemoveAllListeners();
+        }
+
+        /// <summary>
+        /// 월드맵 창 표시 상태가 바뀔 때 현재 플레이어 위치 기준의 노드 포인트를 갱신합니다.
+        /// </summary>
+        /// <param name="show">창을 표시하면 true, 숨기면 false입니다.</param>
+        public override void OnShow(bool show)
+        {
+            base.OnShow(show);
+            if (!show)
+            {
+                return;
+            }
+
+            _mapManager ??= SceneGame.mapManager;
+            RefreshInactiveSlotStates();
+            RefreshWorldMapNodePointStates();
         }
 
         /// <summary>
@@ -170,12 +198,14 @@ namespace GGemCo2DCore
                 ClearEdgeLines();
                 IconPoolManager.ResetMaxCountIcon(maxCountIcon);
                 BuildEdgeLines();
+                RefreshWorldMapNodePointStates();
                 return;
             }
 
             RepositionWorldMapNodes();
             RefreshEdgeLines();
             ClampWorldMapDragPosition();
+            RefreshWorldMapNodePointStates();
         }
 
         /// <summary>
@@ -200,6 +230,43 @@ namespace GGemCo2DCore
             _nodeRectById[node.NodeId] = slotRect;
             _nodeIconById[node.NodeId] = icon;
             PositionWorldMapSlot(slotRect, node);
+            RefreshWorldMapNodePointState(node, icon);
+        }
+
+        /// <summary>
+        /// 월드맵 전용 선택 규칙을 적용합니다.
+        /// </summary>
+        /// <param name="index">선택할 월드맵 노드 슬롯 인덱스입니다.</param>
+        public override void SetSelectedIcon(int index)
+        {
+            if (selectedIcon != null)
+            {
+                selectedIcon.SetSelected(false);
+                selectedIcon = null;
+            }
+
+            if (!CanSelectWorldMapNode(index))
+            {
+                OnClearedSelectedIcon();
+                return;
+            }
+
+            GameObject icon = icons[index];
+            if (icon == null)
+            {
+                OnClearedSelectedIcon();
+                return;
+            }
+
+            selectedIcon = icon.GetComponent<UIIcon>();
+            if (selectedIcon == null)
+            {
+                OnClearedSelectedIcon();
+                return;
+            }
+
+            selectedIcon.SetSelected(true);
+            OnSelectedIcon(selectedIcon);
         }
 
         /// <summary>
@@ -262,7 +329,7 @@ namespace GGemCo2DCore
                 if (iconObject != null)
                 {
                     iconObject.SetActive(true);
-                    iconObject.GetComponent<UIIcon>()?.SetInactiveVisualState(true);
+                    iconObject.GetComponent<UIIcon>()?.SetInactiveVisualState(true, false);
                 }
             }
         }
@@ -349,8 +416,151 @@ namespace GGemCo2DCore
         {
             if (GcLogger.IsNull(_mapManager, nameof(MapManager))) return;
             if (GcLogger.IsNull(_selectedUIIconWorldMap, "선택된 맵이 없습니다.")) return;
+            if (!CanMoveToNode(_selectedUIIconWorldMap.NodeDefinition)) return;
             if (_selectedUIIconWorldMap.uid == _mapManager.GetCurrentMapUid()) return;
             _mapManager.LoadMap(_selectedUIIconWorldMap.uid);
+        }
+
+        /// <summary>
+        /// 지정한 슬롯 인덱스의 월드맵 노드를 선택할 수 있는지 확인합니다.
+        /// </summary>
+        /// <param name="index">확인할 월드맵 노드 슬롯 인덱스입니다.</param>
+        /// <returns>노드가 보이고 현재 맵에서 바로 이동할 수 있으면 true를 반환합니다.</returns>
+        private bool CanSelectWorldMapNode(int index)
+        {
+            if (icons == null || index < 0 || index >= icons.Length)
+            {
+                return false;
+            }
+
+            if (_worldMapDefinition == null || _worldMapDefinition.Nodes == null || index >= _worldMapDefinition.Nodes.Count)
+            {
+                return false;
+            }
+
+            WorldMapNodeDefinition node = _worldMapDefinition.Nodes[index];
+            return CanMoveToNode(node);
+        }
+
+        /// <summary>
+        /// 지정한 월드맵 노드로 현재 플레이어 위치에서 이동할 수 있는지 확인합니다.
+        /// </summary>
+        /// <param name="node">이동 대상 월드맵 노드입니다.</param>
+        /// <returns>노드가 표시 중이고 현재 맵과 바로 연결되어 있으면 true를 반환합니다.</returns>
+        private bool CanMoveToNode(WorldMapNodeDefinition node)
+        {
+            if (_mapManager == null || _worldMapDefinition == null || node == null)
+            {
+                return false;
+            }
+
+            if (!IsNodeVisible(node))
+            {
+                return false;
+            }
+
+            int currentMapUid = _mapManager.GetCurrentMapUid();
+            if (node.MapUid == currentMapUid)
+            {
+                return false;
+            }
+
+            return _worldMapDefinition.TryGetNodeByMapUid(currentMapUid, out WorldMapNodeDefinition currentNode) &&
+                   _worldMapDefinition.IsAdjacentNode(currentNode.NodeId, node.NodeId);
+        }
+
+        /// <summary>
+        /// 월드맵 노드가 플레이어에게 표시되는 상태인지 확인합니다.
+        /// </summary>
+        /// <param name="node">확인할 월드맵 노드입니다.</param>
+        /// <returns>노드가 월드맵에 표시되는 상태이면 true를 반환합니다.</returns>
+        private static bool IsNodeVisible(WorldMapNodeDefinition node)
+        {
+            return node != null && node.VisibleByDefault;
+        }
+
+        /// <summary>
+        /// 모든 월드맵 노드 포인트 이미지를 현재 플레이어 위치 기준으로 갱신합니다.
+        /// </summary>
+        private void RefreshWorldMapNodePointStates()
+        {
+            if (_worldMapDefinition == null || _worldMapDefinition.Nodes == null)
+            {
+                return;
+            }
+
+            for (int i = 0; i < _worldMapDefinition.Nodes.Count; i++)
+            {
+                WorldMapNodeDefinition node = _worldMapDefinition.Nodes[i];
+                if (node == null)
+                {
+                    continue;
+                }
+
+                if (_nodeIconById.TryGetValue(node.NodeId, out UIIconWorldMap icon))
+                {
+                    RefreshWorldMapNodePointState(node, icon);
+                }
+            }
+        }
+
+        /// <summary>
+        /// 지정한 월드맵 노드의 포인트 이미지를 현재 플레이어 위치 기준으로 갱신합니다.
+        /// </summary>
+        /// <param name="node">갱신할 월드맵 노드입니다.</param>
+        /// <param name="icon">포인트 이미지를 표시할 월드맵 아이콘입니다.</param>
+        private void RefreshWorldMapNodePointState(WorldMapNodeDefinition node, UIIconWorldMap icon)
+        {
+            if (icon == null)
+            {
+                return;
+            }
+
+            icon.SetPointSprite(ResolveNodePointSprite(GetNodePointState(node)));
+        }
+
+        /// <summary>
+        /// 지정한 월드맵 노드의 포인트 상태를 계산합니다.
+        /// </summary>
+        /// <param name="node">상태를 계산할 월드맵 노드입니다.</param>
+        /// <returns>현재 플레이어 위치 기준의 노드 포인트 상태입니다.</returns>
+        private WorldMapNodePointState GetNodePointState(WorldMapNodeDefinition node)
+        {
+            if (_mapManager == null || _worldMapDefinition == null || node == null || !IsNodeVisible(node))
+            {
+                return WorldMapNodePointState.None;
+            }
+
+            int currentMapUid = _mapManager.GetCurrentMapUid();
+            if (node.MapUid == currentMapUid)
+            {
+                return WorldMapNodePointState.CurrentMap;
+            }
+
+            return _worldMapDefinition.TryGetNodeByMapUid(currentMapUid, out WorldMapNodeDefinition currentNode) &&
+                   _worldMapDefinition.IsAdjacentNode(currentNode.NodeId, node.NodeId)
+                ? WorldMapNodePointState.MovePossible
+                : WorldMapNodePointState.MoveImpossible;
+        }
+
+        /// <summary>
+        /// 월드맵 노드 포인트 상태에 맞는 Sprite를 반환합니다.
+        /// </summary>
+        /// <param name="state">포인트에 표시할 노드 상태입니다.</param>
+        /// <returns>상태에 맞는 Sprite입니다. 표시할 Sprite가 없으면 null을 반환합니다.</returns>
+        private Sprite ResolveNodePointSprite(WorldMapNodePointState state)
+        {
+            switch (state)
+            {
+                case WorldMapNodePointState.CurrentMap:
+                    return spriteCurrentMap;
+                case WorldMapNodePointState.MovePossible:
+                    return spriteMovePossible;
+                case WorldMapNodePointState.MoveImpossible:
+                    return spriteMoveImPossible;
+                default:
+                    return null;
+            }
         }
 
         /// <summary>

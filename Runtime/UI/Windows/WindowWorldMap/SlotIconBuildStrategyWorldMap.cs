@@ -127,7 +127,7 @@ namespace GGemCo2DCore
                         slotObject.SetActive(true);
                         iconObj.SetActive(true);
                         uiSlot.SetInactiveState(true);
-                        uiIcon.SetInactiveVisualState(true);
+                        uiIcon.SetInactiveVisualState(true, false);
                     }
                 }
                 else

@@ -39,6 +39,32 @@ namespace GGemCo2DCore
     }
 
     /// <summary>
+    /// 월드맵 노드 포인트에 표시할 플레이어 이동 상태를 정의합니다.
+    /// </summary>
+    public enum WorldMapNodePointState
+    {
+        /// <summary>
+        /// 노드 포인트를 표시하지 않습니다.
+        /// </summary>
+        None = 0,
+
+        /// <summary>
+        /// 현재 플레이어가 위치한 맵입니다.
+        /// </summary>
+        CurrentMap = 1,
+
+        /// <summary>
+        /// 현재 맵에서 바로 이동할 수 있는 맵입니다.
+        /// </summary>
+        MovePossible = 2,
+
+        /// <summary>
+        /// 월드맵에 보이지만 현재 맵에서 바로 이동할 수 없는 맵입니다.
+        /// </summary>
+        MoveImpossible = 3,
+    }
+
+    /// <summary>
     /// 월드맵 검증 메시지의 심각도를 정의합니다.
     /// </summary>
     public enum WorldMapValidationSeverity

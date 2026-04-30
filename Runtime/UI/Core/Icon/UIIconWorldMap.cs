@@ -14,16 +14,12 @@ namespace GGemCo2DCore
         [Tooltip("맵 이름")]
         [SerializeField] private TextMeshProUGUI textName;
 
-        [Tooltip("일반 상태 아이콘 색상")]
-        [SerializeField] private Color colorNormal = Color.white;
-
-        [Tooltip("선택 상태 아이콘 색상")]
-        [SerializeField] private Color colorSelected = Color.blue;
-
-        [Header("월드맵 데코레이션")]
-        [Tooltip("노드 타입별 데코레이션 스프라이트를 표시할 Image입니다.")]
+        [Tooltip("노드 타입별 데코레이션 스프라이트를 표시할 Image 오브젝트")]
         [SerializeField] private Image imageIconDeco;
-        
+
+        [Tooltip("노드 포인트 상태 Image 오브젝트")]
+        [SerializeField] private Image imageIconPoint;
+
         private TableMap _tableMap;
         private StruckTableMap _struckTableMap;
         private WorldMapNodeDefinition _nodeDefinition;
@@ -60,6 +56,7 @@ namespace GGemCo2DCore
             {
                 ClearIconInfos();
                 ApplyNodeDecoration();
+                SetPointSprite(null);
                 return;
             }
 
@@ -125,11 +122,6 @@ namespace GGemCo2DCore
         public override void SetSelected(bool value)
         {
             base.SetSelected(value);
-
-            if (ImageIcon != null)
-            {
-                ImageIcon.color = value ? colorSelected : colorNormal;
-            }
         }
 
         /// <summary>
@@ -143,6 +135,22 @@ namespace GGemCo2DCore
             if (GcLogger.IsZero(_struckTableMap.Uid, "map uid 값이 없습니다.")) return;
 
             window.SetSelectedIcon(index);
+        }
+
+        /// <summary>
+        /// 월드맵 노드 포인트 상태 이미지를 설정합니다.
+        /// </summary>
+        /// <param name="sprite">포인트에 표시할 Sprite입니다. null이면 포인트를 숨깁니다.</param>
+        public void SetPointSprite(Sprite sprite)
+        {
+            if (imageIconPoint == null)
+            {
+                return;
+            }
+
+            imageIconPoint.sprite = sprite;
+            imageIconPoint.enabled = sprite != null;
+            imageIconPoint.gameObject.SetActive(sprite != null);
         }
         
         /// <summary>
