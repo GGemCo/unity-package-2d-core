@@ -91,20 +91,47 @@ namespace GGemCo2DCore
         }
 
         /// <summary>
-        /// 현재 선택된 노드와 연결된 edge만 강조 표시합니다.
+        /// 현재 선택된 노드와 현재 플레이어 위치를 기준으로 강조할 연결선을 갱신합니다.
         /// </summary>
         private void RefreshEdgeHighlight()
         {
-            string selectedNodeId = _selectedUIIconWorldMap != null ? _selectedUIIconWorldMap.NodeId : null;
-
             for (int i = 0; i < _edgeLines.Count; i++)
             {
                 WorldMapLineRenderer line = _edgeLines[i];
                 if (line != null)
                 {
-                    line.SetHighlighted(line.ContainsNode(selectedNodeId));
+                    line.SetHighlighted(ShouldHighlightEdge(line));
                 }
             }
+        }
+
+        /// <summary>
+        /// 지정한 연결선을 현재 선택 상태에서 강조해야 하는지 확인합니다.
+        /// 현재 맵을 선택한 경우에는 강조하지 않고, 이동 가능한 다른 맵을 선택한 경우 현재 맵과 선택 맵을 직접 연결하는 선만 강조합니다.
+        /// </summary>
+        /// <param name="line">강조 여부를 확인할 연결선 렌더러입니다.</param>
+        /// <returns>연결선을 강조해야 하면 true를 반환합니다.</returns>
+        private bool ShouldHighlightEdge(WorldMapLineRenderer line)
+        {
+            if (line == null || _selectedUIIconWorldMap == null)
+            {
+                return false;
+            }
+
+            WorldMapNodeDefinition selectedNode = _selectedUIIconWorldMap.NodeDefinition;
+            if (selectedNode == null || IsCurrentMapNode(selectedNode) || !CanMoveToNode(selectedNode))
+            {
+                return false;
+            }
+
+            if (_mapManager == null ||
+                _worldMapDefinition == null ||
+                !_worldMapDefinition.TryGetNodeByMapUid(_mapManager.GetCurrentMapUid(), out WorldMapNodeDefinition currentNode))
+            {
+                return false;
+            }
+
+            return line.ConnectsNode(currentNode.NodeId, selectedNode.NodeId);
         }
 
         /// <summary>

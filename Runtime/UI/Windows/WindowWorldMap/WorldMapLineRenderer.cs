@@ -76,6 +76,32 @@ namespace GGemCo2DCore
         }
 
         /// <summary>
+        /// 연결선이 지정한 두 노드를 직접 연결하는지 확인합니다.
+        /// 양방향 연결선이면 두 노드의 순서가 반대여도 연결된 것으로 판단합니다.
+        /// </summary>
+        /// <param name="fromNodeId">기준이 되는 출발 노드 ID입니다.</param>
+        /// <param name="toNodeId">기준이 되는 도착 노드 ID입니다.</param>
+        /// <returns>연결선이 두 노드를 직접 연결하면 true를 반환합니다.</returns>
+        public bool ConnectsNode(string fromNodeId, string toNodeId)
+        {
+            if (_edgeDefinition == null ||
+                string.IsNullOrWhiteSpace(fromNodeId) ||
+                string.IsNullOrWhiteSpace(toNodeId))
+            {
+                return false;
+            }
+
+            if (_edgeDefinition.FromNodeId == fromNodeId && _edgeDefinition.ToNodeId == toNodeId)
+            {
+                return true;
+            }
+
+            return _edgeDefinition.Bidirectional &&
+                   _edgeDefinition.FromNodeId == toNodeId &&
+                   _edgeDefinition.ToNodeId == fromNodeId;
+        }
+
+        /// <summary>
         /// 연결선 강조 표시 여부를 변경합니다.
         /// </summary>
         /// <param name="highlighted">강조 표시 여부입니다.</param>
