@@ -406,8 +406,20 @@ namespace GGemCo2DCore
             if (ImageIcon == null)
                 return;
 
-            ImageIcon.color = inactive ? colorInactive : _normalIconColor;
+            SetColorImageIcon(inactive ? colorInactive : _normalIconColor);
             ApplyInactiveSprite(inactive);
+        }
+
+        private void SetColorImageIcon(Color color)
+        {
+            if (ImageIcon) 
+                ImageIcon.color = color;
+            OnSetColorImageIcon(color);
+        }
+
+        protected virtual void OnSetColorImageIcon(Color color)
+        {
+            
         }
 
         /// <summary>

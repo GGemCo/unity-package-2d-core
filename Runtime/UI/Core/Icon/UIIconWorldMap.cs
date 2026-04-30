@@ -22,7 +22,7 @@ namespace GGemCo2DCore
 
         [Header("월드맵 데코레이션")]
         [Tooltip("노드 타입별 데코레이션 스프라이트를 표시할 Image입니다.")]
-        public Image IconDeco;
+        [SerializeField] private Image imageIconDeco;
         
         private TableMap _tableMap;
         private StruckTableMap _struckTableMap;
@@ -190,15 +190,15 @@ namespace GGemCo2DCore
         /// </summary>
         private void ApplyNodeDecoration()
         {
-            if (IconDeco == null)
+            if (imageIconDeco == null)
             {
                 return;
             }
 
             Sprite decoSprite = ResolveNodeDecorationSprite();
-            IconDeco.sprite = decoSprite;
-            IconDeco.enabled = decoSprite != null;
-            IconDeco.gameObject.SetActive(decoSprite != null);
+            imageIconDeco.sprite = decoSprite;
+            imageIconDeco.enabled = decoSprite != null;
+            imageIconDeco.gameObject.SetActive(decoSprite != null);
         }
 
         /// <summary>
@@ -239,6 +239,12 @@ namespace GGemCo2DCore
             {
                 dragHandler.enabled = false;
             }
+        }
+        
+        protected override void OnSetColorImageIcon(Color color)
+        {
+            if (!imageIconDeco) return;
+            imageIconDeco.color = color;
         }
     }
 }
