@@ -67,6 +67,10 @@ namespace GGemCo2DCore
         [Tooltip("플레이어가 이동 불가능한 맵일 때")]
         [SerializeField] private Sprite spriteMoveImPossible;
 
+        [Header("선택 노드 중앙 이동")]
+        [Tooltip("선택한 월드맵 아이콘을 viewport 중앙으로 이동시키는 옵션입니다.")]
+        [SerializeField] private WorldMapNodeCenteringOptions selectedNodeCenteringOptions = new WorldMapNodeCenteringOptions();
+
         private readonly Dictionary<string, UIIconWorldMap> _nodeIconById = new Dictionary<string, UIIconWorldMap>();
         private readonly Dictionary<string, RectTransform> _nodeRectById = new Dictionary<string, RectTransform>();
         private readonly List<WorldMapLineRenderer> _edgeLines = new List<WorldMapLineRenderer>();
@@ -397,6 +401,7 @@ namespace GGemCo2DCore
             base.OnSelectedIcon(icon);
             _selectedUIIconWorldMap = icon as UIIconWorldMap;
             RefreshEdgeHighlight();
+            MoveSelectedWorldMapIconToCenter();
         }
 
         /// <summary>
@@ -422,10 +427,29 @@ namespace GGemCo2DCore
         }
 
         /// <summary>
+        /// 선택된 월드맵 아이콘이 viewport 중앙에 오도록 월드맵 컨테이너 이동을 요청합니다.
+        /// </summary>
+        private void MoveSelectedWorldMapIconToCenter()
+        {
+            if (_dragController == null || _selectedUIIconWorldMap == null)
+            {
+                return;
+            }
+
+            RectTransform selectedRect = _selectedUIIconWorldMap.GetComponent<RectTransform>();
+            if (selectedRect == null)
+            {
+                return;
+            }
+
+            _dragController.MoveTargetToViewportCenter(selectedRect, selectedNodeCenteringOptions);
+        }
+
+        /// <summary>
         /// 지정한 슬롯 인덱스의 월드맵 노드를 선택할 수 있는지 확인합니다.
         /// </summary>
         /// <param name="index">확인할 월드맵 노드 슬롯 인덱스입니다.</param>
-        /// <returns>노드가 보이고 현재 맵에서 바로 이동할 수 있으면 true를 반환합니다.</returns>
+        /// <returns>노드가 월드맵에 표시 중이면 true를 반환합니다.</returns>
         private bool CanSelectWorldMapNode(int index)
         {
             if (icons == null || index < 0 || index >= icons.Length)
@@ -439,7 +463,15 @@ namespace GGemCo2DCore
             }
 
             WorldMapNodeDefinition node = _worldMapDefinition.Nodes[index];
-            return CanMoveToNode(node);
+            
+            // 이동 하지 못하는 곳은 애니메이션을 하지 않는다.
+            int currentMapUid = _mapManager.GetCurrentMapUid();
+            if (node.MapUid != currentMapUid)
+            {
+                return CanMoveToNode(node);
+            }
+
+            return IsNodeVisible(node);
         }
 
         /// <summary>

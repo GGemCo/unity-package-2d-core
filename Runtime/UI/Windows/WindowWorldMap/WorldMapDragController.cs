@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using System.Reflection;
 using UnityEngine;
 using UnityEngine.EventSystems;
@@ -6,6 +7,53 @@ using UnityEngine.UI;
 
 namespace GGemCo2DCore
 {
+    /// <summary>
+    /// 월드맵 선택 노드를 화면 중앙으로 이동시키는 옵션입니다.
+    /// </summary>
+    [Serializable]
+    public sealed class WorldMapNodeCenteringOptions
+    {
+        /// <summary>
+        /// 선택 노드를 화면 중앙으로 이동할지 여부입니다.
+        /// </summary>
+        public bool enabled = true;
+
+        /// <summary>
+        /// 중앙 이동에 애니메이션을 적용할지 여부입니다.
+        /// </summary>
+        public bool useAnimation = true;
+
+        /// <summary>
+        /// 가까운 거리에서 사용할 최소 이동 속도입니다.
+        /// </summary>
+        public float minSpeed = 1200f;
+
+        /// <summary>
+        /// 먼 거리에서 사용할 최대 이동 속도입니다.
+        /// </summary>
+        public float maxSpeed = 2200f;
+
+        /// <summary>
+        /// 최대 속도에 가까워지는 기준 거리입니다.
+        /// </summary>
+        public float maxDistanceForSpeed = 1200f;
+
+        /// <summary>
+        /// 중앙 이동 애니메이션의 최소 시간입니다.
+        /// </summary>
+        public float minDuration = 0.12f;
+
+        /// <summary>
+        /// 중앙 이동 애니메이션의 최대 시간입니다.
+        /// </summary>
+        public float maxDuration = 0.45f;
+
+        /// <summary>
+        /// 중앙 이동 애니메이션에 사용할 Easing 타입입니다.
+        /// </summary>
+        public Easing.EaseType easeType = Easing.EaseType.EaseOutCubic;
+    }
+
     /// <summary>
     /// 월드맵 컨테이너를 포인터 입력으로 이동시키고 viewport 밖 빈 공간이 보이지 않도록 제한합니다.
     /// </summary>
@@ -21,6 +69,7 @@ namespace GGemCo2DCore
         private RectTransform _contentRect;
         private Vector2 _lastPointerLocalPosition;
         private bool _isDragging;
+        private Coroutine _centeringRoutine;
 
         /// <summary>
         /// 드래그 컨트롤러가 사용할 viewport와 content RectTransform을 초기화합니다.
@@ -44,6 +93,7 @@ namespace GGemCo2DCore
         public void OnBeginDrag(PointerEventData eventData)
         {
             _isDragging = false;
+            StopCenteringAnimation();
             if (!CanStartDrag(eventData))
             {
                 return;
@@ -142,6 +192,43 @@ namespace GGemCo2DCore
         }
 
         /// <summary>
+        /// 대상 RectTransform이 viewport 중앙에 오도록 월드맵 content 위치를 이동합니다.
+        /// </summary>
+        /// <param name="target">화면 중앙에 오도록 이동할 대상 RectTransform입니다.</param>
+        /// <param name="options">중앙 이동 동작 옵션입니다.</param>
+        public void MoveTargetToViewportCenter(RectTransform target, WorldMapNodeCenteringOptions options)
+        {
+            if (target == null || options == null || !options.enabled || _viewportRect == null || _contentRect == null)
+            {
+                return;
+            }
+
+            Vector3 targetLocalPosition = CalculateCenteredContentLocalPosition(target);
+            if (options.useAnimation)
+            {
+                StartCenteringAnimation(targetLocalPosition, options);
+                return;
+            }
+
+            StopCenteringAnimation();
+            _contentRect.localPosition = targetLocalPosition;
+        }
+
+        /// <summary>
+        /// 진행 중인 중앙 이동 애니메이션을 중단합니다.
+        /// </summary>
+        public void StopCenteringAnimation()
+        {
+            if (_centeringRoutine == null)
+            {
+                return;
+            }
+
+            StopCoroutine(_centeringRoutine);
+            _centeringRoutine = null;
+        }
+
+        /// <summary>
         /// 현재 입력 모드에서 드래그를 시작할 수 있는 포인터인지 확인합니다.
         /// </summary>
         /// <param name="eventData">포인터 이벤트 데이터입니다.</param>
@@ -180,6 +267,142 @@ namespace GGemCo2DCore
         private static bool IsMousePointer(PointerEventData eventData)
         {
             return eventData.pointerId < 0;
+        }
+
+        /// <summary>
+        /// 대상 RectTransform이 viewport 중앙에 오기 위해 필요한 content 로컬 위치를 계산합니다.
+        /// </summary>
+        /// <param name="target">중앙에 맞출 대상 RectTransform입니다.</param>
+        /// <returns>경계 보정까지 반영된 content 로컬 위치입니다.</returns>
+        private Vector3 CalculateCenteredContentLocalPosition(RectTransform target)
+        {
+            Vector3 targetCenterInViewport = _viewportRect.InverseTransformPoint(GetRectWorldCenter(target));
+            Vector3 viewportCenter = _viewportRect.rect.center;
+            Vector3 deltaInViewport = viewportCenter - targetCenterInViewport;
+            Vector3 desiredLocalPosition = _contentRect.localPosition + ConvertViewportDeltaToContentParent(deltaInViewport);
+            return GetClampedContentLocalPosition(desiredLocalPosition);
+        }
+
+        /// <summary>
+        /// 지정한 RectTransform의 월드 좌표 기준 중앙점을 반환합니다.
+        /// </summary>
+        /// <param name="rectTransform">중앙점을 계산할 RectTransform입니다.</param>
+        /// <returns>월드 좌표 기준 중앙점입니다.</returns>
+        private static Vector3 GetRectWorldCenter(RectTransform rectTransform)
+        {
+            Vector3[] corners = new Vector3[4];
+            rectTransform.GetWorldCorners(corners);
+            return (corners[0] + corners[2]) * 0.5f;
+        }
+
+        /// <summary>
+        /// 지정한 content 로컬 위치에 viewport 경계 보정을 적용한 결과를 계산합니다.
+        /// </summary>
+        /// <param name="localPosition">보정할 content 로컬 위치입니다.</param>
+        /// <returns>viewport 경계를 침범하지 않는 content 로컬 위치입니다.</returns>
+        private Vector3 GetClampedContentLocalPosition(Vector3 localPosition)
+        {
+            Vector3 originLocalPosition = _contentRect.localPosition;
+            _contentRect.localPosition = localPosition;
+
+            Rect viewportRect = _viewportRect.rect;
+            Bounds contentBounds = GetContentBoundsInViewport();
+            Vector3 correctionInViewport = Vector3.zero;
+            correctionInViewport.x = CalculateAxisCorrection(
+                contentBounds.min.x,
+                contentBounds.max.x,
+                contentBounds.center.x,
+                viewportRect.xMin,
+                viewportRect.xMax,
+                viewportRect.center.x,
+                viewportRect.width);
+            correctionInViewport.y = CalculateAxisCorrection(
+                contentBounds.min.y,
+                contentBounds.max.y,
+                contentBounds.center.y,
+                viewportRect.yMin,
+                viewportRect.yMax,
+                viewportRect.center.y,
+                viewportRect.height);
+
+            Vector3 result = localPosition + ConvertViewportDeltaToContentParent(correctionInViewport);
+            _contentRect.localPosition = originLocalPosition;
+            return result;
+        }
+
+        /// <summary>
+        /// 중앙 이동 애니메이션을 시작합니다.
+        /// </summary>
+        /// <param name="targetLocalPosition">이동할 content 로컬 위치입니다.</param>
+        /// <param name="options">중앙 이동 동작 옵션입니다.</param>
+        private void StartCenteringAnimation(Vector3 targetLocalPosition, WorldMapNodeCenteringOptions options)
+        {
+            StopCenteringAnimation();
+
+            float duration = CalculateCenteringDuration(_contentRect.localPosition, targetLocalPosition, options);
+            if (duration <= 0f)
+            {
+                _contentRect.localPosition = targetLocalPosition;
+                return;
+            }
+
+            _centeringRoutine = StartCoroutine(MoveContentToCenterRoutine(targetLocalPosition, duration, options.easeType));
+        }
+
+        /// <summary>
+        /// 현재 위치와 목표 위치 사이의 거리로 중앙 이동 시간을 계산합니다.
+        /// </summary>
+        /// <param name="startLocalPosition">시작 content 로컬 위치입니다.</param>
+        /// <param name="targetLocalPosition">목표 content 로컬 위치입니다.</param>
+        /// <param name="options">중앙 이동 동작 옵션입니다.</param>
+        /// <returns>거리와 속도 설정을 반영한 이동 시간입니다.</returns>
+        private static float CalculateCenteringDuration(
+            Vector3 startLocalPosition,
+            Vector3 targetLocalPosition,
+            WorldMapNodeCenteringOptions options)
+        {
+            float distance = Vector3.Distance(startLocalPosition, targetLocalPosition);
+            if (distance <= 0.01f)
+            {
+                return 0f;
+            }
+
+            float maxDistanceForSpeed = Mathf.Max(0.01f, options.maxDistanceForSpeed);
+            float distanceRatio = Mathf.Clamp01(distance / maxDistanceForSpeed);
+            float speed = Mathf.Lerp(
+                Mathf.Max(0.01f, options.minSpeed),
+                Mathf.Max(0.01f, options.maxSpeed),
+                distanceRatio);
+            float minDuration = Mathf.Max(0f, options.minDuration);
+            float maxDuration = Mathf.Max(minDuration, options.maxDuration);
+            return Mathf.Clamp(distance / speed, minDuration, maxDuration);
+        }
+
+        /// <summary>
+        /// content를 목표 로컬 위치까지 Easing을 적용해 이동합니다.
+        /// </summary>
+        /// <param name="targetLocalPosition">목표 content 로컬 위치입니다.</param>
+        /// <param name="duration">이동 시간입니다.</param>
+        /// <param name="easeType">이동에 적용할 Easing 타입입니다.</param>
+        /// <returns>코루틴 실행 상태입니다.</returns>
+        private IEnumerator MoveContentToCenterRoutine(
+            Vector3 targetLocalPosition,
+            float duration,
+            Easing.EaseType easeType)
+        {
+            Vector3 startLocalPosition = _contentRect.localPosition;
+            float elapsedTime = 0f;
+            while (elapsedTime < duration)
+            {
+                elapsedTime += Time.unscaledDeltaTime;
+                float normalizedTime = Mathf.Clamp01(elapsedTime / duration);
+                float easedTime = Mathf.Clamp01(Easing.Apply(normalizedTime, easeType));
+                _contentRect.localPosition = Vector3.LerpUnclamped(startLocalPosition, targetLocalPosition, easedTime);
+                yield return null;
+            }
+
+            _contentRect.localPosition = targetLocalPosition;
+            _centeringRoutine = null;
         }
 
         /// <summary>
