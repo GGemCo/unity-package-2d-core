@@ -39,7 +39,7 @@ namespace GGemCo2DCore
                 return;
             }
 
-            selectedIcon.SetSelected(true);
+            selectedIcon.SetSelected(true, false);
             OnSelectedIcon(selectedIcon);
         }
 
@@ -62,6 +62,7 @@ namespace GGemCo2DCore
         protected override void OnClearedSelectedIcon()
         {
             base.OnClearedSelectedIcon();
+            _selectionCenteringRequestId++;
             _selectedUIIconWorldMap = null;
             RefreshEdgeHighlight();
         }
@@ -109,7 +110,7 @@ namespace GGemCo2DCore
         /// </summary>
         private void MoveSelectedWorldMapIconToCenter()
         {
-            if (_dragController == null || _selectedUIIconWorldMap == null)
+            if (_selectedUIIconWorldMap == null)
             {
                 return;
             }
@@ -120,7 +121,31 @@ namespace GGemCo2DCore
                 return;
             }
 
-            _dragController.MoveTargetToViewportCenter(selectedRect, selectedNodeCenteringOptions);
+            int requestId = ++_selectionCenteringRequestId;
+            if (_dragController == null)
+            {
+                ShowSelectedWorldMapIconImage(requestId);
+                return;
+            }
+
+            _dragController.MoveTargetToViewportCenter(
+                selectedRect,
+                selectedNodeCenteringOptions,
+                () => ShowSelectedWorldMapIconImage(requestId));
+        }
+
+        /// <summary>
+        /// 현재 선택 요청이 유효할 때 월드맵 선택 이미지를 표시합니다.
+        /// </summary>
+        /// <param name="requestId">선택 중앙 이동 요청 ID입니다.</param>
+        private void ShowSelectedWorldMapIconImage(int requestId)
+        {
+            if (requestId != _selectionCenteringRequestId)
+            {
+                return;
+            }
+
+            _selectedUIIconWorldMap?.RefreshSelectedIconImage();
         }
 
         /// <summary>

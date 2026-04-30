@@ -196,22 +196,33 @@ namespace GGemCo2DCore
         /// </summary>
         /// <param name="target">화면 중앙에 오도록 이동할 대상 RectTransform입니다.</param>
         /// <param name="options">중앙 이동 동작 옵션입니다.</param>
-        public void MoveTargetToViewportCenter(RectTransform target, WorldMapNodeCenteringOptions options)
+        /// <param name="onComplete">중앙 이동이 완료된 뒤 호출할 콜백입니다.</param>
+        public void MoveTargetToViewportCenter(
+            RectTransform target,
+            WorldMapNodeCenteringOptions options,
+            Action onComplete = null)
         {
-            if (target == null || options == null || !options.enabled || _viewportRect == null || _contentRect == null)
+            if (target == null || _viewportRect == null || _contentRect == null)
             {
+                return;
+            }
+
+            if (options == null || !options.enabled)
+            {
+                onComplete?.Invoke();
                 return;
             }
 
             Vector3 targetLocalPosition = CalculateCenteredContentLocalPosition(target);
             if (options.useAnimation)
             {
-                StartCenteringAnimation(targetLocalPosition, options);
+                StartCenteringAnimation(targetLocalPosition, options, onComplete);
                 return;
             }
 
             StopCenteringAnimation();
             _contentRect.localPosition = targetLocalPosition;
+            onComplete?.Invoke();
         }
 
         /// <summary>
@@ -335,7 +346,11 @@ namespace GGemCo2DCore
         /// </summary>
         /// <param name="targetLocalPosition">이동할 content 로컬 위치입니다.</param>
         /// <param name="options">중앙 이동 동작 옵션입니다.</param>
-        private void StartCenteringAnimation(Vector3 targetLocalPosition, WorldMapNodeCenteringOptions options)
+        /// <param name="onComplete">이동 완료 후 호출할 콜백입니다.</param>
+        private void StartCenteringAnimation(
+            Vector3 targetLocalPosition,
+            WorldMapNodeCenteringOptions options,
+            Action onComplete)
         {
             StopCenteringAnimation();
 
@@ -343,10 +358,11 @@ namespace GGemCo2DCore
             if (duration <= 0f)
             {
                 _contentRect.localPosition = targetLocalPosition;
+                onComplete?.Invoke();
                 return;
             }
 
-            _centeringRoutine = StartCoroutine(MoveContentToCenterRoutine(targetLocalPosition, duration, options.easeType));
+            _centeringRoutine = StartCoroutine(MoveContentToCenterRoutine(targetLocalPosition, duration, options.easeType, onComplete));
         }
 
         /// <summary>
@@ -384,11 +400,13 @@ namespace GGemCo2DCore
         /// <param name="targetLocalPosition">목표 content 로컬 위치입니다.</param>
         /// <param name="duration">이동 시간입니다.</param>
         /// <param name="easeType">이동에 적용할 Easing 타입입니다.</param>
+        /// <param name="onComplete">이동 완료 후 호출할 콜백입니다.</param>
         /// <returns>코루틴 실행 상태입니다.</returns>
         private IEnumerator MoveContentToCenterRoutine(
             Vector3 targetLocalPosition,
             float duration,
-            Easing.EaseType easeType)
+            Easing.EaseType easeType,
+            Action onComplete)
         {
             Vector3 startLocalPosition = _contentRect.localPosition;
             float elapsedTime = 0f;
@@ -403,6 +421,7 @@ namespace GGemCo2DCore
 
             _contentRect.localPosition = targetLocalPosition;
             _centeringRoutine = null;
+            onComplete?.Invoke();
         }
 
         /// <summary>

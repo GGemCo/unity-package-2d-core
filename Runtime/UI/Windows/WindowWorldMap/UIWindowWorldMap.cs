@@ -88,6 +88,7 @@ namespace GGemCo2DCore
         private WorldMapDefinition _worldMapDefinition;
         private string _requestedBackgroundAddress;
         private WorldMapDragController _dragController;
+        private int _selectionCenteringRequestId;
 
         /// <summary>현재 윈도우가 표시 중인 월드맵 정의입니다.</summary>
         public WorldMapDefinition WorldMapDefinition => _worldMapDefinition;

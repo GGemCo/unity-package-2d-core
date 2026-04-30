@@ -581,11 +581,21 @@ namespace GGemCo2DCore
             return _dragHandler.GetOriginalPosition();
         }
         /// <summary>
-        /// 선택 상태를 시각적으로 반영합니다.
+        /// 선택 상태를 시각적으로 반영하고 선택 이미지를 즉시 갱신합니다.
         /// 실제 선택 변경은 UIWindow.SetSelectedIcon 에서 관리하고, 이 메서드는 선택 표현만 담당합니다.
         /// </summary>
-        /// <param name="selected"></param>
+        /// <param name="selected">선택 상태로 표시하면 true입니다.</param>
         public virtual void SetSelected(bool selected)
+        {
+            SetSelected(selected, true);
+        }
+
+        /// <summary>
+        /// 선택 상태를 시각적으로 반영하고, 선택 이미지 표시 여부를 호출자가 결정할 수 있게 합니다.
+        /// </summary>
+        /// <param name="selected">선택 상태로 표시하면 true입니다.</param>
+        /// <param name="showSelectedImage">선택 이미지를 즉시 갱신하면 true입니다.</param>
+        public void SetSelected(bool selected, bool showSelectedImage)
         {
             _isSelected = selected && !_isInactive;
 
@@ -599,13 +609,25 @@ namespace GGemCo2DCore
             }
 
             RefreshTextCountColor();
-            
+
+            if (showSelectedImage)
+            {
+                RefreshSelectedIconImage();
+            }
+        }
+
+        /// <summary>
+        /// 현재 선택 상태를 기준으로 공통 선택 이미지 표시를 갱신합니다.
+        /// </summary>
+        public void RefreshSelectedIconImage()
+        {
             _uiWindowManager ??= SceneGame.Instance?.uIWindowManager;
             if (!_showSelectedImage || !_uiWindowManager) return;
             Sprite selectedImageSprite = window != null ? window.GetSelectedIconImageSprite(this) : null;
             GameObject selectedImagePrefab = window != null ? window.GetSelectedIconImagePrefab(this) : null;
             _uiWindowManager.ShowSelectIconImage(_isSelected, gameObject.transform.position, _slotSize, selectedImageSprite, selectedImagePrefab);
         }
+
         public bool IsSelected() => _isSelected;
 
         /// <summary>
