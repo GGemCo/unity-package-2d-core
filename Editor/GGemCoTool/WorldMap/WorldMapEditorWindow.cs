@@ -24,6 +24,14 @@ namespace GGemCo2DCoreEditor
         private Vector2 _leftScroll;
         private Vector2 _rightScroll;
         private int _selectedAddMapUid;
+        
+        // -------------------------
+        // EditorPrefs Keys
+        // -------------------------
+        /// <summary>이 툴에서 사용하는 EditorPrefs 키 접두사입니다.</summary>
+        private const string PrefKeyPrefix = "GGemCo.WorldMapEditorWindow.";
+
+        private const string KeyAssetName     = PrefKeyPrefix + "AssetName ";
 
         /// <summary>
         /// 월드맵 그래프 에디터 창을 엽니다.
@@ -41,6 +49,8 @@ namespace GGemCo2DCoreEditor
         {
             _mapOptions.Reload();
             _asset = Selection.activeObject as WorldMapGraphAsset;
+            
+            LoadPrefs();
             EnsureSelectedAddMapUid();
             RunValidation();
         }
@@ -86,6 +96,9 @@ namespace GGemCo2DCoreEditor
                     _asset = selectedAsset;
                     _selectionState.ClearSelection();
                     RunValidation();
+                    // UI 변경 시 즉시 저장(선택 사항이지만, “입력/선택 저장” 만족을 위해 안전하게 적용)
+                    if (GUI.changed)
+                        SavePrefs();
                 }
 
                 if (GUILayout.Button("새 GraphAsset", EditorStyles.toolbarButton, GUILayout.Width(96f)))
@@ -796,6 +809,40 @@ namespace GGemCo2DCoreEditor
             }
 
             _selectedAddMapUid = _mapOptions.Options.Count > 0 ? _mapOptions.Options[0].Data : 0;
+        }
+        
+        // -------------------------
+        // Prefs Save/Load
+        // -------------------------
+        /// <summary>
+        /// 현재 UI 입력값(폴더, 프리팹명, FPS, 스프라이트 목록 등)을 EditorPrefs에 저장합니다.
+        /// </summary>
+        private void SavePrefs()
+        {
+            EditorPrefs.SetString(KeyAssetName, GetFolderPath(_asset));
+        }
+        
+        /// <summary>
+        /// EditorPrefs에서 이전 입력값(폴더, 프리팹명, FPS, 스프라이트 목록 등)을 복원합니다.
+        /// </summary>
+        private void LoadPrefs()
+        {
+            var prefabFolderPath = EditorPrefs.GetString(KeyAssetName, "Assets");
+            _asset = AssetDatabase.LoadAssetAtPath<WorldMapGraphAsset>(prefabFolderPath);
+        }
+        
+        /// <summary>
+        /// 폴더 에셋으로부터 유효한 프로젝트 폴더 경로를 얻습니다(유효하지 않으면 Assets로 대체).
+        /// </summary>
+        /// <param name="folderAsset">폴더로 사용될 DefaultAsset 입니다.</param>
+        /// <returns>유효한 폴더 경로(기본값: Assets)입니다.</returns>
+        private static string GetFolderPath(WorldMapGraphAsset? folderAsset)
+        {
+            if (folderAsset == null) return "Assets";
+            var path = AssetDatabase.GetAssetPath(folderAsset);
+            if (string.IsNullOrEmpty(path))
+                return "Assets";
+            return path;
         }
     }
 }
