@@ -69,6 +69,10 @@ namespace GGemCo2DCore
         [Tooltip("이 윈도우에서 선택 아이콘 이미지에 사용할 Sprite입니다. 비어 있으면 UIWindowManager의 기본 이미지를 사용합니다.")]
         [SerializeField] private Sprite spriteSelectedIconImage;
 
+        [Tooltip("이 윈도우에서 선택 아이콘 이미지 오브젝트를 배치할 부모 기준입니다.")]
+        [SerializeField] private UISelectedIconImageParentMode selectedIconImageParentMode =
+            UISelectedIconImageParentMode.MainCanvas;
+
         [Tooltip("이 윈도우에서 선택 아이콘 이미지 애니메이션을 별도로 지정할지 여부입니다.")]
         [SerializeField] private bool overrideSelectedIconAnimation;
 
@@ -246,6 +250,16 @@ namespace GGemCo2DCore
         public virtual GameObject GetSelectedIconImagePrefab(UIIcon icon)
         {
             return prefabSelectedIconImage;
+        }
+
+        /// <summary>
+        /// 선택된 아이콘에 사용할 선택 이미지 오브젝트의 부모 배치 방식을 반환합니다.
+        /// </summary>
+        /// <param name="icon">선택된 아이콘입니다.</param>
+        /// <returns>선택 이미지 오브젝트의 부모 배치 방식입니다.</returns>
+        public virtual UISelectedIconImageParentMode GetSelectedIconImageParentMode(UIIcon icon)
+        {
+            return selectedIconImageParentMode;
         }
 
         /// <summary>

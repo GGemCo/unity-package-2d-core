@@ -627,6 +627,7 @@ namespace GGemCo2DCore
             GameObject selectedImagePrefab = window != null ? window.GetSelectedIconImagePrefab(this) : null;
             UISelectedIconAnimationSettings selectedIconAnimation =
                 window != null ? window.GetSelectedIconAnimation(this) : null;
+            Transform selectedImageParent = ResolveSelectedIconImageParent();
 
             _uiWindowManager.ShowSelectIconImage(
                 _isSelected,
@@ -634,7 +635,25 @@ namespace GGemCo2DCore
                 _slotSize,
                 selectedImageSprite,
                 selectedImagePrefab,
-                selectedIconAnimation);
+                selectedIconAnimation,
+                selectedImageParent);
+        }
+
+        /// <summary>
+        /// 현재 아이콘 선택 이미지가 배치될 부모 Transform을 반환합니다.
+        /// UIWindow가 선택 아이콘 하위 배치를 요청하면 현재 아이콘 Transform을 반환하고, 기본 캔버스 배치이면 null을 반환합니다.
+        /// </summary>
+        /// <returns>선택 이미지가 붙을 부모 Transform입니다. null이면 UIWindowManager의 기본 캔버스를 사용합니다.</returns>
+        private Transform ResolveSelectedIconImageParent()
+        {
+            if (window == null)
+            {
+                return null;
+            }
+
+            return window.GetSelectedIconImageParentMode(this) == UISelectedIconImageParentMode.SelectedIcon
+                ? transform
+                : null;
         }
 
         public bool IsSelected() => _isSelected;

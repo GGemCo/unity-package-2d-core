@@ -1195,13 +1195,15 @@ namespace GGemCo2DCore
         /// <param name="spriteOverride">선택 이미지에 사용할 Sprite입니다. null이면 선택 프리팹의 기본 Sprite를 사용합니다.</param>
         /// <param name="prefabOverride">선택 이미지에 사용할 Prefab입니다. null이면 기본 Prefab을 사용합니다.</param>
         /// <param name="animationOverride">선택 이미지 애니메이션 설정입니다. null이면 UIWindowManager의 기본 설정을 사용합니다.</param>
+        /// <param name="parentOverride">선택 이미지 오브젝트를 붙일 부모 Transform입니다. null이면 메인 캔버스를 사용합니다.</param>
         public void ShowSelectIconImage(
             bool show,
             Vector2? position = null,
             Vector2? slotSize = null,
             Sprite spriteOverride = null,
             GameObject prefabOverride = null,
-            UISelectedIconAnimationSettings animationOverride = null)
+            UISelectedIconAnimationSettings animationOverride = null,
+            Transform parentOverride = null)
         {
             SelectedIconImageInstance selectedIconImage = GetOrCreateSelectedIconImage(prefabOverride != null ? prefabOverride : prefabIconSelected);
             if (selectedIconImage == null || selectedIconImage.image == null)
@@ -1214,11 +1216,15 @@ namespace GGemCo2DCore
                 _activeSelectedIconImage != selectedIconImage &&
                 _activeSelectedIconImage.image != null)
             {
+                ApplySelectedIconParent(_activeSelectedIconImage, null);
                 _activeSelectedIconImage.image.gameObject.SetActive(false);
             }
 
             _activeSelectedIconImage = selectedIconImage;
             _imageIconSelected = selectedIconImage.image;
+
+            ApplySelectedIconParent(selectedIconImage, show ? parentOverride : null);
+
             _imageIconSelected.gameObject.SetActive(show);
             if (show)
             {
@@ -1234,13 +1240,54 @@ namespace GGemCo2DCore
                 PlaySelectedIconAnimation(animation2dController, animationOverride);
                 
                 // position이 null이면 기존 위치 유지
-                if (position.HasValue)
+                if (parentOverride != null)
+                    _imageIconSelected.rectTransform.anchoredPosition = Vector2.zero;
+                else if (position.HasValue)
                     _imageIconSelected.rectTransform.position = position.Value;
 
                 // size가 null이면 기존 사이즈 유지
                 if (slotSize.HasValue && !isSelectedIconSizeFixed)
                     _imageIconSelected.rectTransform.sizeDelta = slotSize.Value;
             }
+        }
+
+        /// <summary>
+        /// 선택 아이콘 이미지 오브젝트를 요청된 부모 아래로 이동합니다.
+        /// 부모가 지정되지 않으면 메인 UI 캔버스를 기본 부모로 사용합니다.
+        /// </summary>
+        /// <param name="instance">부모를 변경할 선택 이미지 인스턴스 정보입니다.</param>
+        /// <param name="parentOverride">선택 이미지가 붙을 부모 Transform입니다. null이면 메인 캔버스를 사용합니다.</param>
+        private void ApplySelectedIconParent(SelectedIconImageInstance instance, Transform parentOverride)
+        {
+            if (instance == null || instance.image == null)
+            {
+                return;
+            }
+
+            Transform parent = ResolveSelectedIconParent(parentOverride);
+            if (parent == null || instance.image.transform.parent == parent)
+            {
+                return;
+            }
+
+            instance.image.transform.SetParent(parent, false);
+        }
+
+        /// <summary>
+        /// 선택 아이콘 이미지가 배치될 최종 부모 Transform을 반환합니다.
+        /// </summary>
+        /// <param name="parentOverride">윈도우 또는 아이콘에서 요청한 부모 Transform입니다.</param>
+        /// <returns>선택 이미지가 배치될 부모 Transform입니다.</returns>
+        private Transform ResolveSelectedIconParent(Transform parentOverride)
+        {
+            if (parentOverride != null)
+            {
+                return parentOverride;
+            }
+
+            return SceneGame.Instance != null && SceneGame.Instance.canvasUI != null
+                ? SceneGame.Instance.canvasUI.transform
+                : null;
         }
 
         /// <summary>
@@ -1280,10 +1327,21 @@ namespace GGemCo2DCore
 
             if (_selectedIconImageByPrefab.TryGetValue(prefab, out SelectedIconImageInstance cached))
             {
-                return cached;
+                if (cached != null && cached.image != null)
+                {
+                    return cached;
+                }
+
+                _selectedIconImageByPrefab.Remove(prefab);
             }
 
-            Image image = Instantiate(prefab, SceneGame.Instance.canvasUI.transform)?.GetComponent<Image>();
+            Transform parent = ResolveSelectedIconParent(null);
+            if (parent == null)
+            {
+                return null;
+            }
+
+            Image image = Instantiate(prefab, parent)?.GetComponent<Image>();
             if (image == null)
             {
                 return null;
