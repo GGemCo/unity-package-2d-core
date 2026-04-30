@@ -23,6 +23,10 @@ namespace GGemCo2DCore
         private SelectedIconImageInstance _activeSelectedIconImage;
         [Tooltip("보여줄 이미지 사이즈 고정 여부. False 경우, 해당 윈도우의 Slot Size로 적용됨.")]
         [SerializeField] private bool isSelectedIconSizeFixed;
+
+        [Tooltip("선택 아이콘 이미지에 Animation2dController가 있을 때 사용할 기본 애니메이션 설정입니다.")]
+        [SerializeField] private UISelectedIconAnimationSettings defaultSelectedIconAnimation =
+            new UISelectedIconAnimationSettings();
         
         [Header("개별 UI 윈도우 연결")]
         public List<WindowKey> windowKeys = new List<WindowKey>();
@@ -1190,12 +1194,14 @@ namespace GGemCo2DCore
         /// <param name="slotSize">선택 이미지 크기입니다. null이면 기존 크기를 유지합니다.</param>
         /// <param name="spriteOverride">선택 이미지에 사용할 Sprite입니다. null이면 선택 프리팹의 기본 Sprite를 사용합니다.</param>
         /// <param name="prefabOverride">선택 이미지에 사용할 Prefab입니다. null이면 기본 Prefab을 사용합니다.</param>
+        /// <param name="animationOverride">선택 이미지 애니메이션 설정입니다. null이면 UIWindowManager의 기본 설정을 사용합니다.</param>
         public void ShowSelectIconImage(
             bool show,
             Vector2? position = null,
             Vector2? slotSize = null,
             Sprite spriteOverride = null,
-            GameObject prefabOverride = null)
+            GameObject prefabOverride = null,
+            UISelectedIconAnimationSettings animationOverride = null)
         {
             SelectedIconImageInstance selectedIconImage = GetOrCreateSelectedIconImage(prefabOverride != null ? prefabOverride : prefabIconSelected);
             if (selectedIconImage == null || selectedIconImage.image == null)
@@ -1219,10 +1225,13 @@ namespace GGemCo2DCore
                 ApplySelectedIconSprite(selectedIconImage, spriteOverride);
 
                 VfxEffectUI vfxEffect = _imageIconSelected.GetComponent<VfxEffectUI>();
+                Animation2dController animation2dController = _imageIconSelected.GetComponent<Animation2dController>();
                 if (vfxEffect != null)
                 {
                     vfxEffect.PlayEffect(true);
                 }
+
+                PlaySelectedIconAnimation(animation2dController, animationOverride);
                 
                 // position이 null이면 기존 위치 유지
                 if (position.HasValue)
@@ -1232,6 +1241,29 @@ namespace GGemCo2DCore
                 if (slotSize.HasValue && !isSelectedIconSizeFixed)
                     _imageIconSelected.rectTransform.sizeDelta = slotSize.Value;
             }
+        }
+
+        /// <summary>
+        /// 선택 아이콘 이미지의 2D 애니메이션을 요청된 설정으로 재생합니다.
+        /// </summary>
+        /// <param name="animation2dController">선택 아이콘 이미지에 연결된 2D 애니메이션 컨트롤러입니다.</param>
+        /// <param name="animationOverride">윈도우 또는 아이콘 상태에서 전달한 애니메이션 오버라이드 설정입니다.</param>
+        private void PlaySelectedIconAnimation(
+            Animation2dController animation2dController,
+            UISelectedIconAnimationSettings animationOverride)
+        {
+            if (animation2dController == null)
+            {
+                return;
+            }
+
+            UISelectedIconAnimationSettings animationSettings = animationOverride ?? defaultSelectedIconAnimation;
+            if (animationSettings == null || !animationSettings.HasAnimation)
+            {
+                return;
+            }
+
+            animation2dController.PlayAnimation(animationSettings.animationName, animationSettings.isLoop);
         }
 
         /// <summary>

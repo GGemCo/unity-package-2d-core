@@ -625,7 +625,16 @@ namespace GGemCo2DCore
             if (!_showSelectedImage || !_uiWindowManager) return;
             Sprite selectedImageSprite = window != null ? window.GetSelectedIconImageSprite(this) : null;
             GameObject selectedImagePrefab = window != null ? window.GetSelectedIconImagePrefab(this) : null;
-            _uiWindowManager.ShowSelectIconImage(_isSelected, gameObject.transform.position, _slotSize, selectedImageSprite, selectedImagePrefab);
+            UISelectedIconAnimationSettings selectedIconAnimation =
+                window != null ? window.GetSelectedIconAnimation(this) : null;
+
+            _uiWindowManager.ShowSelectIconImage(
+                _isSelected,
+                gameObject.transform.position,
+                _slotSize,
+                selectedImageSprite,
+                selectedImagePrefab,
+                selectedIconAnimation);
         }
 
         public bool IsSelected() => _isSelected;

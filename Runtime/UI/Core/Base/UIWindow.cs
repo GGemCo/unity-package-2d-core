@@ -69,6 +69,13 @@ namespace GGemCo2DCore
         [Tooltip("이 윈도우에서 선택 아이콘 이미지에 사용할 Sprite입니다. 비어 있으면 UIWindowManager의 기본 이미지를 사용합니다.")]
         [SerializeField] private Sprite spriteSelectedIconImage;
 
+        [Tooltip("이 윈도우에서 선택 아이콘 이미지 애니메이션을 별도로 지정할지 여부입니다.")]
+        [SerializeField] private bool overrideSelectedIconAnimation;
+
+        [Tooltip("이 윈도우에서 선택 아이콘 이미지에 사용할 애니메이션 설정입니다.")]
+        [SerializeField] private UISelectedIconAnimationSettings selectedIconAnimation =
+            new UISelectedIconAnimationSettings();
+
         [Header("Slot Accept Rules")]
         [Tooltip("윈도우 전체에 적용할 기본 슬롯 수용 규칙입니다.")]
         [SerializeField] private UISlotAcceptRule defaultAcceptRule = new UISlotAcceptRule();
@@ -239,6 +246,22 @@ namespace GGemCo2DCore
         public virtual GameObject GetSelectedIconImagePrefab(UIIcon icon)
         {
             return prefabSelectedIconImage;
+        }
+
+        /// <summary>
+        /// 선택된 아이콘에 사용할 선택 이미지 애니메이션 설정을 반환합니다.
+        /// 윈도우에서 오버라이드하지 않으면 null을 반환하여 UIWindowManager의 기본 설정을 사용합니다.
+        /// </summary>
+        /// <param name="icon">선택된 아이콘입니다.</param>
+        /// <returns>선택 이미지 애니메이션 설정입니다. null이면 UIWindowManager의 기본 설정을 사용합니다.</returns>
+        public virtual UISelectedIconAnimationSettings GetSelectedIconAnimation(UIIcon icon)
+        {
+            if (!overrideSelectedIconAnimation)
+            {
+                return null;
+            }
+
+            return selectedIconAnimation;
         }
 
         /// <summary>

@@ -78,6 +78,13 @@ namespace GGemCo2DCore
         [Tooltip("현재 플레이어가 있는 맵을 선택했을 때 사용할 선택 이미지 Sprite입니다.")]
         [SerializeField] private Sprite spriteSelectedCurrentMap;
 
+        [Tooltip("현재 플레이어가 있는 맵을 선택했을 때 선택 아이콘 이미지 애니메이션을 별도로 지정할지 여부입니다.")]
+        [SerializeField] private bool overrideSelectedCurrentMapAnimation;
+
+        [Tooltip("현재 플레이어가 있는 맵을 선택했을 때 사용할 선택 아이콘 이미지 애니메이션 설정입니다.")]
+        [SerializeField] private UISelectedIconAnimationSettings selectedCurrentMapAnimation =
+            new UISelectedIconAnimationSettings();
+
         private readonly Dictionary<string, UIIconWorldMap> _nodeIconById = new Dictionary<string, UIIconWorldMap>();
         private readonly Dictionary<string, RectTransform> _nodeRectById = new Dictionary<string, RectTransform>();
         private readonly List<WorldMapLineRenderer> _edgeLines = new List<WorldMapLineRenderer>();
