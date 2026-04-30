@@ -62,6 +62,12 @@ namespace GGemCo2DCore
         /// <summary>연결선의 플레이 성격입니다.</summary>
         public WorldMapEdgeType edgeType = WorldMapEdgeType.Normal;
 
+        /// <summary>에디터에서 지정한 연결선 스프라이트 원본입니다.</summary>
+        public Sprite edgeSprite;
+
+        /// <summary>런타임에서 연결선 스프라이트를 불러올 Addressables 키 또는 에셋 경로입니다.</summary>
+        public string edgeSpriteAddress;
+
         /// <summary>연결선 해금 조건을 판정할 조건 키입니다.</summary>
         public string unlockConditionKey;
     }
@@ -197,6 +203,9 @@ namespace GGemCo2DCore
 
         /// <summary>연결선 타입 문자열입니다.</summary>
         public string edgeType;
+
+        /// <summary>연결선 스프라이트 Addressables 키 또는 에셋 경로입니다.</summary>
+        public string edgeSpriteAddress;
 
         /// <summary>해금 조건 키입니다.</summary>
         public string unlockConditionKey;

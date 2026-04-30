@@ -19,6 +19,9 @@ namespace GGemCo2DCore
         private WorldMapEdgeDefinition _edgeDefinition;
         private Color _normalColor;
         private Color _highlightColor;
+        private Sprite _normalSprite;
+        private Sprite _highlightSprite;
+        private WorldMapEdgeSpriteDrawMode _spriteDrawMode = WorldMapEdgeSpriteDrawMode.Sliced;
         private float _thickness = DefaultThickness;
 
         /// <summary>
@@ -36,18 +39,24 @@ namespace GGemCo2DCore
             RectTransform to,
             Color normalColor,
             Color highlightColor,
-            float thickness = DefaultThickness)
+            float thickness = DefaultThickness,
+            Sprite normalSprite = null,
+            Sprite highlightSprite = null,
+            WorldMapEdgeSpriteDrawMode spriteDrawMode = WorldMapEdgeSpriteDrawMode.Sliced)
         {
             _edgeDefinition = edgeDefinition;
             _from = from;
             _to = to;
             _normalColor = normalColor;
             _highlightColor = highlightColor;
+            _normalSprite = normalSprite;
+            _highlightSprite = highlightSprite;
+            _spriteDrawMode = spriteDrawMode;
             _thickness = Mathf.Max(1f, thickness);
 
             EnsureComponents();
             _image.raycastTarget = false;
-            _image.color = _normalColor;
+            ApplyVisual(false);
             Refresh();
         }
 
@@ -73,7 +82,42 @@ namespace GGemCo2DCore
         public void SetHighlighted(bool highlighted)
         {
             EnsureComponents();
+            ApplyVisual(highlighted);
+        }
+
+        /// <summary>
+        /// 연결선의 현재 강조 상태에 맞춰 색상과 스프라이트를 적용합니다.
+        /// </summary>
+        /// <param name="highlighted">강조 상태로 표시할지 여부입니다.</param>
+        private void ApplyVisual(bool highlighted)
+        {
+            Sprite sprite = highlighted && _highlightSprite != null ? _highlightSprite : _normalSprite;
+            _image.sprite = sprite;
+            _image.type = ResolveImageType(sprite);
             _image.color = highlighted ? _highlightColor : _normalColor;
+        }
+
+        /// <summary>
+        /// 연결선 스프라이트 설정에 맞는 Image 타입을 반환합니다.
+        /// </summary>
+        /// <param name="sprite">현재 연결선에 적용할 스프라이트입니다.</param>
+        /// <returns>스프라이트가 없으면 Simple, 있으면 설정된 그리기 방식에 맞는 Image 타입입니다.</returns>
+        private Image.Type ResolveImageType(Sprite sprite)
+        {
+            if (sprite == null)
+            {
+                return Image.Type.Simple;
+            }
+
+            switch (_spriteDrawMode)
+            {
+                case WorldMapEdgeSpriteDrawMode.Tiled:
+                    return Image.Type.Tiled;
+                case WorldMapEdgeSpriteDrawMode.Simple:
+                    return Image.Type.Simple;
+                default:
+                    return Image.Type.Sliced;
+            }
         }
 
         /// <summary>

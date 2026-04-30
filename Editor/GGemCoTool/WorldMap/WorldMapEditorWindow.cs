@@ -581,6 +581,7 @@ namespace GGemCo2DCoreEditor
                 toNodeId = toNodeId,
                 bidirectional = false,
                 edgeType = WorldMapEdgeType.Normal,
+                edgeSpriteAddress = string.Empty,
             };
 
             _asset.edges.Add(edge);

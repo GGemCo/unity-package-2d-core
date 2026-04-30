@@ -11,6 +11,7 @@ namespace GGemCo2DCore
         private const string KeyPrefix = ConfigDefine.NameSDK + "_WorldMap_";
         private const string BackgroundKeyPrefix = ConfigDefine.NameSDK + "_WorldMap_Background_";
         private const string IconKeyPrefix = ConfigDefine.NameSDK + "_WorldMap_Icon_";
+        private const string EdgeSpriteKeyPrefix = ConfigDefine.NameSDK + "_WorldMap_Edge_";
         private const string FileNamePrefix = "world_map_";
         private const string ExtJson = ".json";
 
@@ -65,6 +66,17 @@ namespace GGemCo2DCore
         }
 
         /// <summary>
+        /// 월드맵 연결선 Sprite에 사용할 Addressables 키를 만듭니다.
+        /// </summary>
+        /// <param name="graphId">월드맵 그래프 ID입니다.</param>
+        /// <param name="edgeId">월드맵 연결선 ID입니다.</param>
+        /// <returns>연결선 Sprite Addressables 키입니다.</returns>
+        public static string GetEdgeSpriteKey(string graphId, string edgeId)
+        {
+            return EdgeSpriteKeyPrefix + NormalizeGraphId(graphId) + "_" + NormalizeEdgeId(edgeId);
+        }
+
+        /// <summary>
         /// 월드맵 그래프 ID에 대응하는 JSON 에셋 경로를 만듭니다.
         /// </summary>
         /// <param name="graphId">월드맵 그래프 ID입니다.</param>
@@ -104,6 +116,17 @@ namespace GGemCo2DCore
         {
             string normalized = ConfigAddressablePath.Normalize(nodeId);
             return string.IsNullOrWhiteSpace(normalized) ? "node" : normalized;
+        }
+
+        /// <summary>
+        /// Addressables 키에 안전한 연결선 ID로 정규화합니다.
+        /// </summary>
+        /// <param name="edgeId">원본 연결선 ID입니다.</param>
+        /// <returns>정규화된 연결선 ID입니다.</returns>
+        public static string NormalizeEdgeId(string edgeId)
+        {
+            string normalized = ConfigAddressablePath.Normalize(edgeId);
+            return string.IsNullOrWhiteSpace(normalized) ? "edge" : normalized;
         }
     }
 }

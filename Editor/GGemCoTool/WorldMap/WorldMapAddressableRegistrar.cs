@@ -80,6 +80,36 @@ namespace GGemCo2DCoreEditor
                 }
             }
 
+            if (asset.edges != null)
+            {
+                for (int i = 0; i < asset.edges.Count; i++)
+                {
+                    WorldMapEdgeData edge = asset.edges[i];
+                    if (edge == null || edge.edgeSprite == null)
+                    {
+                        continue;
+                    }
+
+                    string edgeSpriteKey = ConfigAddressableWorldMap.GetEdgeSpriteKey(asset.graphId, edge.edgeId);
+                    string edgeSpriteAssetPath = AssetDatabase.GetAssetPath(edge.edgeSprite);
+                    if (registeredKeyByAssetPath.TryGetValue(edgeSpriteAssetPath, out string sharedKey))
+                    {
+                        edge.edgeSpriteAddress = sharedKey;
+                        changed = true;
+                        continue;
+                    }
+
+                    if (!TryRegisterAsset(settings, group, edgeSpriteKey, edge.edgeSprite, out error))
+                    {
+                        return false;
+                    }
+
+                    edge.edgeSpriteAddress = edgeSpriteKey;
+                    registeredKeyByAssetPath[edgeSpriteAssetPath] = edgeSpriteKey;
+                    changed = true;
+                }
+            }
+
             if (changed)
             {
                 EditorUtility.SetDirty(asset);

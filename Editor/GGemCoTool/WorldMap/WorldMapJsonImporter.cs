@@ -119,6 +119,8 @@ namespace GGemCo2DCoreEditor
                         toNodeId = edgeJson.toNodeId,
                         bidirectional = edgeJson.bidirectional,
                         edgeType = ParseEnum(edgeJson.edgeType, WorldMapEdgeType.Normal),
+                        edgeSpriteAddress = edgeJson.edgeSpriteAddress,
+                        edgeSprite = LoadSpriteFromAddress(edgeJson.edgeSpriteAddress),
                         unlockConditionKey = edgeJson.unlockConditionKey,
                     });
                 }

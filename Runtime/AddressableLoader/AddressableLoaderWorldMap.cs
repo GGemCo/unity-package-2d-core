@@ -17,6 +17,7 @@ namespace GGemCo2DCore
         private readonly Dictionary<string, WorldMapDefinition> _dicWorldMap = new Dictionary<string, WorldMapDefinition>();
         private readonly Dictionary<string, Sprite> _backgroundSpriteByAddress = new Dictionary<string, Sprite>();
         private readonly Dictionary<string, Sprite> _iconSpriteByAddress = new Dictionary<string, Sprite>();
+        private readonly Dictionary<string, Sprite> _edgeSpriteByAddress = new Dictionary<string, Sprite>();
         private readonly HashSet<AsyncOperationHandle> _activeHandles = new HashSet<AsyncOperationHandle>();
         private float _prefabLoadProgress;
 
@@ -56,6 +57,7 @@ namespace GGemCo2DCore
                 _dicWorldMap.Clear();
                 _backgroundSpriteByAddress.Clear();
                 _iconSpriteByAddress.Clear();
+                _edgeSpriteByAddress.Clear();
 
                 string address = ConfigAddressableWorldMap.GetDefaultKey();
                 var loadHandle = Addressables.LoadAssetAsync<TextAsset>(address);
@@ -200,23 +202,41 @@ namespace GGemCo2DCore
                 }
             }
 
-            if (definition.Nodes == null)
+            if (definition.Nodes != null)
+            {
+                for (int i = 0; i < definition.Nodes.Count; i++)
+                {
+                    WorldMapNodeDefinition node = definition.Nodes[i];
+                    if (node == null || string.IsNullOrWhiteSpace(node.IconAddress) || _iconSpriteByAddress.ContainsKey(node.IconAddress))
+                    {
+                        continue;
+                    }
+
+                    Sprite iconSprite = await LoadSpriteByAddressAsync(node.IconAddress);
+                    if (iconSprite != null)
+                    {
+                        _iconSpriteByAddress[node.IconAddress] = iconSprite;
+                    }
+                }
+            }
+
+            if (definition.Edges == null)
             {
                 return;
             }
 
-            for (int i = 0; i < definition.Nodes.Count; i++)
+            for (int i = 0; i < definition.Edges.Count; i++)
             {
-                WorldMapNodeDefinition node = definition.Nodes[i];
-                if (node == null || string.IsNullOrWhiteSpace(node.IconAddress) || _iconSpriteByAddress.ContainsKey(node.IconAddress))
+                WorldMapEdgeDefinition edge = definition.Edges[i];
+                if (edge == null || string.IsNullOrWhiteSpace(edge.EdgeSpriteAddress) || _edgeSpriteByAddress.ContainsKey(edge.EdgeSpriteAddress))
                 {
                     continue;
                 }
 
-                Sprite iconSprite = await LoadSpriteByAddressAsync(node.IconAddress);
-                if (iconSprite != null)
+                Sprite edgeSprite = await LoadSpriteByAddressAsync(edge.EdgeSpriteAddress);
+                if (edgeSprite != null)
                 {
-                    _iconSpriteByAddress[node.IconAddress] = iconSprite;
+                    _edgeSpriteByAddress[edge.EdgeSpriteAddress] = edgeSprite;
                 }
             }
         }
@@ -297,6 +317,35 @@ namespace GGemCo2DCore
             }
 
             return _iconSpriteByAddress.TryGetValue(address, out sprite) && sprite != null;
+        }
+
+        /// <summary>
+        /// 월드맵 연결선 정의의 Sprite가 캐싱되어 있는지 확인하고 반환합니다.
+        /// </summary>
+        /// <param name="edge">연결선 Sprite address를 보유한 연결선 정의입니다.</param>
+        /// <param name="sprite">캐싱된 연결선 Sprite입니다.</param>
+        /// <returns>연결선 Sprite가 있으면 true를 반환합니다.</returns>
+        public bool TryGetEdgeSprite(WorldMapEdgeDefinition edge, out Sprite sprite)
+        {
+            sprite = null;
+            return edge != null && TryGetEdgeSprite(edge.EdgeSpriteAddress, out sprite);
+        }
+
+        /// <summary>
+        /// Addressables 키로 캐싱된 월드맵 연결선 Sprite를 조회합니다.
+        /// </summary>
+        /// <param name="address">연결선 Sprite Addressables 키입니다.</param>
+        /// <param name="sprite">캐싱된 연결선 Sprite입니다.</param>
+        /// <returns>연결선 Sprite가 있으면 true를 반환합니다.</returns>
+        public bool TryGetEdgeSprite(string address, out Sprite sprite)
+        {
+            if (string.IsNullOrWhiteSpace(address))
+            {
+                sprite = null;
+                return false;
+            }
+
+            return _edgeSpriteByAddress.TryGetValue(address, out sprite) && sprite != null;
         }
 
         /// <summary>

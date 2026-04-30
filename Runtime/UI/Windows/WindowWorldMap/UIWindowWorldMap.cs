@@ -43,6 +43,22 @@ namespace GGemCo2DCore
         [Tooltip("연결선 두께")]
         [SerializeField] private float edgeThickness = 6f;
 
+        [Header("Edge Sprite")]
+        [Tooltip("일반 연결선에 사용할 기본 스프라이트입니다. 비어 있으면 기존 색상 라인으로 표시합니다.")]
+        [SerializeField] private Sprite edgeSpriteNormal;
+
+        [Tooltip("잠김 연결선에 사용할 기본 스프라이트입니다. 비어 있으면 일반 연결선 스프라이트를 사용합니다.")]
+        [SerializeField] private Sprite edgeSpriteLocked;
+
+        [Tooltip("비밀 연결선에 사용할 기본 스프라이트입니다. 비어 있으면 일반 연결선 스프라이트를 사용합니다.")]
+        [SerializeField] private Sprite edgeSpriteSecret;
+
+        [Tooltip("선택된 노드와 연결된 선에 사용할 하이라이트 스프라이트입니다. 비어 있으면 일반 스프라이트에 하이라이트 색상을 적용합니다.")]
+        [SerializeField] private Sprite edgeSpriteHighlighted;
+
+        [Tooltip("연결선 스프라이트를 그리는 방식입니다.")]
+        [SerializeField] private WorldMapEdgeSpriteDrawMode edgeSpriteDrawMode = WorldMapEdgeSpriteDrawMode.Sliced;
+
         private readonly Dictionary<string, UIIconWorldMap> _nodeIconById = new Dictionary<string, UIIconWorldMap>();
         private readonly Dictionary<string, RectTransform> _nodeRectById = new Dictionary<string, RectTransform>();
         private readonly List<WorldMapLineRenderer> _edgeLines = new List<WorldMapLineRenderer>();
@@ -590,7 +606,16 @@ namespace GGemCo2DCore
                 lineRect.anchorMax = Vector2.zero;
 
                 WorldMapLineRenderer line = lineObject.GetComponent<WorldMapLineRenderer>();
-                line.Initialize(edge, from, to, GetEdgeColor(edge.EdgeType), edgeColorHighlighted, edgeThickness);
+                line.Initialize(
+                    edge,
+                    from,
+                    to,
+                    GetEdgeColor(edge.EdgeType),
+                    edgeColorHighlighted,
+                    edgeThickness,
+                    ResolveEdgeSprite(edge),
+                    edgeSpriteHighlighted,
+                    edgeSpriteDrawMode);
                 lineObject.SetActive(IsEdgeVisible(edge));
                 _edgeLines.Add(line);
             }
@@ -677,6 +702,41 @@ namespace GGemCo2DCore
         /// </summary>
         /// <param name="edge">표시 여부를 확인할 연결선 정의입니다.</param>
         /// <returns>양 끝 노드가 표시 대상이면 true입니다.</returns>
+        /// <summary>
+        /// 연결선 정의와 타입별 기본값을 기준으로 사용할 연결선 스프라이트를 반환합니다.
+        /// </summary>
+        /// <param name="edge">스프라이트를 결정할 연결선 정의입니다.</param>
+        /// <returns>사용할 연결선 스프라이트입니다. 없으면 null을 반환합니다.</returns>
+        private Sprite ResolveEdgeSprite(WorldMapEdgeDefinition edge)
+        {
+            if (edge != null &&
+                AddressableLoaderWorldMap.Instance != null &&
+                AddressableLoaderWorldMap.Instance.TryGetEdgeSprite(edge, out Sprite edgeSprite))
+            {
+                return edgeSprite;
+            }
+
+            return edge != null ? GetDefaultEdgeSprite(edge.EdgeType) : edgeSpriteNormal;
+        }
+
+        /// <summary>
+        /// 연결선 타입에 맞는 기본 스프라이트를 반환합니다.
+        /// </summary>
+        /// <param name="edgeType">연결선 타입입니다.</param>
+        /// <returns>타입별 기본 연결선 스프라이트입니다.</returns>
+        private Sprite GetDefaultEdgeSprite(WorldMapEdgeType edgeType)
+        {
+            switch (edgeType)
+            {
+                case WorldMapEdgeType.Locked:
+                    return edgeSpriteLocked != null ? edgeSpriteLocked : edgeSpriteNormal;
+                case WorldMapEdgeType.Secret:
+                    return edgeSpriteSecret != null ? edgeSpriteSecret : edgeSpriteNormal;
+                default:
+                    return edgeSpriteNormal;
+            }
+        }
+
         private bool IsEdgeVisible(WorldMapEdgeDefinition edge)
         {
             if (_worldMapDefinition == null || edge == null)

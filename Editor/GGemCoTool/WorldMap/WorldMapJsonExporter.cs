@@ -130,6 +130,7 @@ namespace GGemCo2DCoreEditor
                     toNodeId = edge.toNodeId,
                     bidirectional = edge.bidirectional,
                     edgeType = edge.edgeType.ToString(),
+                    edgeSpriteAddress = ResolveEdgeSpriteAddress(asset, edge),
                     unlockConditionKey = edge.unlockConditionKey,
                 });
             }
@@ -155,6 +156,29 @@ namespace GGemCo2DCoreEditor
             }
 
             return string.Empty;
+        }
+
+        /// <summary>
+        /// 연결선 Sprite 원본 또는 수동 address를 기반으로 JSON에 기록할 address를 결정합니다.
+        /// </summary>
+        /// <param name="asset">연결선 정보를 보유한 월드맵 그래프 에셋입니다.</param>
+        /// <param name="edge">address를 결정할 연결선 데이터입니다.</param>
+        /// <returns>JSON에 기록할 연결선 Sprite address입니다.</returns>
+        private static string ResolveEdgeSpriteAddress(WorldMapGraphAsset asset, WorldMapEdgeData edge)
+        {
+            if (edge == null)
+            {
+                return string.Empty;
+            }
+
+            if (edge.edgeSprite != null)
+            {
+                return !string.IsNullOrWhiteSpace(edge.edgeSpriteAddress)
+                    ? edge.edgeSpriteAddress
+                    : ConfigAddressableWorldMap.GetEdgeSpriteKey(asset.graphId, edge.edgeId);
+            }
+
+            return edge.edgeSpriteAddress;
         }
 
         /// <summary>

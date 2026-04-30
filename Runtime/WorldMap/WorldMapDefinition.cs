@@ -199,6 +199,9 @@ namespace GGemCo2DCore
         /// <summary>연결선 타입입니다.</summary>
         public WorldMapEdgeType EdgeType { get; private set; }
 
+        /// <summary>연결선 스프라이트 Addressables 키 또는 에셋 경로입니다.</summary>
+        public string EdgeSpriteAddress { get; private set; }
+
         /// <summary>해금 조건 키입니다.</summary>
         public string UnlockConditionKey { get; private set; }
 
@@ -222,6 +225,7 @@ namespace GGemCo2DCore
                 ToNodeId = json.toNodeId,
                 Bidirectional = json.bidirectional,
                 EdgeType = edgeType,
+                EdgeSpriteAddress = json.edgeSpriteAddress,
                 UnlockConditionKey = json.unlockConditionKey,
             };
         }

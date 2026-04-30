@@ -183,11 +183,15 @@ namespace GGemCo2DCoreEditor
             EditorGUILayout.LabelField("선택 연결선", EditorStyles.boldLabel);
 
             EditorGUI.BeginChangeCheck();
+            string oldEdgeId = edge.edgeId;
             string edgeId = EditorGUILayout.DelayedTextField("Edge ID", edge.edgeId);
             EditorGUILayout.LabelField("From", edge.fromNodeId);
             EditorGUILayout.LabelField("To", edge.toNodeId);
             bool bidirectional = EditorGUILayout.Toggle("Bidirectional", edge.bidirectional);
             WorldMapEdgeType edgeType = (WorldMapEdgeType)EditorGUILayout.EnumPopup("Edge Type", edge.edgeType);
+            Sprite oldEdgeSprite = edge.edgeSprite;
+            Sprite edgeSprite = (Sprite)EditorGUILayout.ObjectField("Edge Sprite", edge.edgeSprite, typeof(Sprite), false);
+            string edgeSpriteAddress = EditorGUILayout.TextField("Edge Sprite Address", edge.edgeSpriteAddress);
             string unlockConditionKey = EditorGUILayout.TextField("Unlock Condition", edge.unlockConditionKey);
 
             if (EditorGUI.EndChangeCheck())
@@ -196,6 +200,12 @@ namespace GGemCo2DCoreEditor
                 edge.edgeId = edgeId;
                 edge.bidirectional = bidirectional;
                 edge.edgeType = edgeType;
+                edge.edgeSprite = edgeSprite;
+                edge.edgeSpriteAddress = edgeSpriteAddress;
+                if (edgeSprite != null && (edgeSprite != oldEdgeSprite || edgeId != oldEdgeId))
+                {
+                    edge.edgeSpriteAddress = ConfigAddressableWorldMap.GetEdgeSpriteKey(asset.graphId, edge.edgeId);
+                }
                 edge.unlockConditionKey = unlockConditionKey;
                 EditorUtility.SetDirty(asset);
                 onChanged?.Invoke();
