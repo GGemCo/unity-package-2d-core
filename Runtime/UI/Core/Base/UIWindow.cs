@@ -63,6 +63,9 @@ namespace GGemCo2DCore
         public bool showOverIconImage = true;
 
         [Header("선택 아이콘 이미지")]
+        [Tooltip("이 윈도우에서 선택 아이콘 이미지에 사용할 Prefab입니다. 비어 있으면 UIWindowManager의 기본 프리팹을 사용합니다.")]
+        [SerializeField] private GameObject prefabSelectedIconImage;
+
         [Tooltip("이 윈도우에서 선택 아이콘 이미지에 사용할 Sprite입니다. 비어 있으면 UIWindowManager의 기본 이미지를 사용합니다.")]
         [SerializeField] private Sprite spriteSelectedIconImage;
 
@@ -225,6 +228,17 @@ namespace GGemCo2DCore
         public virtual Sprite GetSelectedIconImageSprite(UIIcon icon)
         {
             return spriteSelectedIconImage;
+        }
+
+        /// <summary>
+        /// 선택된 아이콘에 사용할 선택 이미지 Prefab을 반환합니다.
+        /// 파생 윈도우에서 아이콘 상태에 따라 다른 선택 이미지 프리팹을 반환할 수 있습니다.
+        /// </summary>
+        /// <param name="icon">선택된 아이콘입니다.</param>
+        /// <returns>선택 이미지에 사용할 Prefab입니다. null이면 UIWindowManager의 기본 Prefab을 사용합니다.</returns>
+        public virtual GameObject GetSelectedIconImagePrefab(UIIcon icon)
+        {
+            return prefabSelectedIconImage;
         }
 
         /// <summary>

@@ -86,6 +86,25 @@ namespace GGemCo2DCore
         }
 
         /// <summary>
+        /// 월드맵 선택 아이콘 상태에 맞는 선택 이미지 Prefab을 반환합니다.
+        /// 현재 플레이어가 있는 맵을 선택하면 월드맵 전용 현재 맵 선택 프리팹을 우선 사용합니다.
+        /// </summary>
+        /// <param name="icon">선택된 아이콘입니다.</param>
+        /// <returns>선택 이미지에 사용할 Prefab입니다. null이면 UIWindowManager의 기본 Prefab을 사용합니다.</returns>
+        public override GameObject GetSelectedIconImagePrefab(UIIcon icon)
+        {
+            UIIconWorldMap worldMapIcon = icon as UIIconWorldMap;
+            if (worldMapIcon != null &&
+                IsCurrentMapNode(worldMapIcon.NodeDefinition) &&
+                prefabSelectedCurrentMap != null)
+            {
+                return prefabSelectedCurrentMap;
+            }
+
+            return base.GetSelectedIconImagePrefab(icon);
+        }
+
+        /// <summary>
         /// 선택된 월드맵 아이콘이 viewport 중앙에 오도록 월드맵 컨테이너 이동을 요청합니다.
         /// </summary>
         private void MoveSelectedWorldMapIconToCenter()

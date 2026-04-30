@@ -603,7 +603,8 @@ namespace GGemCo2DCore
             _uiWindowManager ??= SceneGame.Instance?.uIWindowManager;
             if (!_showSelectedImage || !_uiWindowManager) return;
             Sprite selectedImageSprite = window != null ? window.GetSelectedIconImageSprite(this) : null;
-            _uiWindowManager.ShowSelectIconImage(_isSelected, gameObject.transform.position, _slotSize, selectedImageSprite);
+            GameObject selectedImagePrefab = window != null ? window.GetSelectedIconImagePrefab(this) : null;
+            _uiWindowManager.ShowSelectIconImage(_isSelected, gameObject.transform.position, _slotSize, selectedImageSprite, selectedImagePrefab);
         }
         public bool IsSelected() => _isSelected;
 

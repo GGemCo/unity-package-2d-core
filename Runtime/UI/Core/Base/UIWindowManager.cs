@@ -18,7 +18,9 @@ namespace GGemCo2DCore
         [Tooltip("선택 되었을 때 보여줄 이미지, 이펙트")]
         [SerializeField] private GameObject prefabIconSelected;
         private Image _imageIconSelected;
-        private Sprite _defaultIconSelectedSprite;
+        private readonly Dictionary<GameObject, SelectedIconImageInstance> _selectedIconImageByPrefab =
+            new Dictionary<GameObject, SelectedIconImageInstance>();
+        private SelectedIconImageInstance _activeSelectedIconImage;
         [Tooltip("보여줄 이미지 사이즈 고정 여부. False 경우, 해당 윈도우의 Slot Size로 적용됨.")]
         [SerializeField] private bool isSelectedIconSizeFixed;
         
@@ -76,6 +78,15 @@ namespace GGemCo2DCore
             public UIWindowConstants.UIWindowVisibilityApplyMode restoreMode;
         }
 
+        /// <summary>
+        /// 선택 이미지 프리팹으로 생성한 인스턴스와 기본 Sprite를 함께 보관합니다.
+        /// </summary>
+        private sealed class SelectedIconImageInstance
+        {
+            public Image image;
+            public Sprite defaultSprite;
+        }
+
         private void Awake()
         {
             _struckTableWindows.Clear();
@@ -101,10 +112,8 @@ namespace GGemCo2DCore
         private void MakeIconSelected()
         {
             if (prefabIconSelected == null) return;
-            _imageIconSelected = Instantiate(prefabIconSelected, SceneGame.Instance.canvasUI.transform)?.GetComponent<Image>();
-            if (_imageIconSelected == null) return;
-            _defaultIconSelectedSprite = _imageIconSelected.sprite;
-            _imageIconSelected.gameObject.SetActive(false);
+            _activeSelectedIconImage = GetOrCreateSelectedIconImage(prefabIconSelected);
+            _imageIconSelected = _activeSelectedIconImage?.image;
         }
 
         /// <summary>
@@ -1179,18 +1188,35 @@ namespace GGemCo2DCore
         /// <param name="show">선택 이미지를 표시하면 true입니다.</param>
         /// <param name="position">선택 이미지가 표시될 월드 좌표입니다. null이면 기존 위치를 유지합니다.</param>
         /// <param name="slotSize">선택 이미지 크기입니다. null이면 기존 크기를 유지합니다.</param>
-        /// <param name="spriteOverride">선택 이미지에 사용할 Sprite입니다. null이면 기본 Sprite를 사용합니다.</param>
-        public void ShowSelectIconImage(bool show, Vector2? position = null, Vector2? slotSize = null, Sprite spriteOverride = null)
+        /// <param name="spriteOverride">선택 이미지에 사용할 Sprite입니다. null이면 선택 프리팹의 기본 Sprite를 사용합니다.</param>
+        /// <param name="prefabOverride">선택 이미지에 사용할 Prefab입니다. null이면 기본 Prefab을 사용합니다.</param>
+        public void ShowSelectIconImage(
+            bool show,
+            Vector2? position = null,
+            Vector2? slotSize = null,
+            Sprite spriteOverride = null,
+            GameObject prefabOverride = null)
         {
-            if (_imageIconSelected == null)
+            SelectedIconImageInstance selectedIconImage = GetOrCreateSelectedIconImage(prefabOverride != null ? prefabOverride : prefabIconSelected);
+            if (selectedIconImage == null || selectedIconImage.image == null)
             {
                 // GcLogger.LogError($"{nameof(prefabIconSelected)}가 등록되지 않았습니다.");
                 return;
             }
+
+            if (_activeSelectedIconImage != null &&
+                _activeSelectedIconImage != selectedIconImage &&
+                _activeSelectedIconImage.image != null)
+            {
+                _activeSelectedIconImage.image.gameObject.SetActive(false);
+            }
+
+            _activeSelectedIconImage = selectedIconImage;
+            _imageIconSelected = selectedIconImage.image;
             _imageIconSelected.gameObject.SetActive(show);
             if (show)
             {
-                ApplySelectedIconSprite(spriteOverride);
+                ApplySelectedIconSprite(selectedIconImage, spriteOverride);
 
                 VfxEffectUI vfxEffect = _imageIconSelected.GetComponent<VfxEffectUI>();
                 if (vfxEffect != null)
@@ -1209,17 +1235,51 @@ namespace GGemCo2DCore
         }
 
         /// <summary>
-        /// 선택 이미지 Sprite override를 적용하거나 기본 Sprite로 되돌립니다.
+        /// 선택 이미지 Prefab 인스턴스를 조회하거나 생성합니다.
         /// </summary>
-        /// <param name="spriteOverride">적용할 Sprite입니다. null이면 기본 Sprite를 적용합니다.</param>
-        private void ApplySelectedIconSprite(Sprite spriteOverride)
+        /// <param name="prefab">선택 이미지로 사용할 Prefab입니다.</param>
+        /// <returns>선택 이미지 인스턴스 정보입니다. 생성할 수 없으면 null을 반환합니다.</returns>
+        private SelectedIconImageInstance GetOrCreateSelectedIconImage(GameObject prefab)
         {
-            if (_imageIconSelected == null)
+            if (prefab == null)
+            {
+                return null;
+            }
+
+            if (_selectedIconImageByPrefab.TryGetValue(prefab, out SelectedIconImageInstance cached))
+            {
+                return cached;
+            }
+
+            Image image = Instantiate(prefab, SceneGame.Instance.canvasUI.transform)?.GetComponent<Image>();
+            if (image == null)
+            {
+                return null;
+            }
+
+            image.gameObject.SetActive(false);
+            SelectedIconImageInstance instance = new SelectedIconImageInstance
+            {
+                image = image,
+                defaultSprite = image.sprite,
+            };
+            _selectedIconImageByPrefab[prefab] = instance;
+            return instance;
+        }
+
+        /// <summary>
+        /// 선택 이미지 Sprite override를 적용하거나 프리팹 기본 Sprite로 되돌립니다.
+        /// </summary>
+        /// <param name="instance">선택 이미지 인스턴스 정보입니다.</param>
+        /// <param name="spriteOverride">적용할 Sprite입니다. null이면 프리팹 기본 Sprite를 적용합니다.</param>
+        private void ApplySelectedIconSprite(SelectedIconImageInstance instance, Sprite spriteOverride)
+        {
+            if (instance == null || instance.image == null)
             {
                 return;
             }
 
-            _imageIconSelected.sprite = spriteOverride != null ? spriteOverride : _defaultIconSelectedSprite;
+            instance.image.sprite = spriteOverride != null ? spriteOverride : instance.defaultSprite;
         }
     }
 }

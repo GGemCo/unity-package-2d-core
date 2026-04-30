@@ -72,6 +72,9 @@ namespace GGemCo2DCore
         [SerializeField] private WorldMapNodeCenteringOptions selectedNodeCenteringOptions = new WorldMapNodeCenteringOptions();
 
         [Header("월드맵 선택 이미지")]
+        [Tooltip("현재 플레이어가 있는 맵을 선택했을 때 사용할 선택 이미지 Prefab입니다.")]
+        [SerializeField] private GameObject prefabSelectedCurrentMap;
+
         [Tooltip("현재 플레이어가 있는 맵을 선택했을 때 사용할 선택 이미지 Sprite입니다.")]
         [SerializeField] private Sprite spriteSelectedCurrentMap;
 
