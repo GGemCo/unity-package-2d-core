@@ -218,6 +218,37 @@ namespace GGemCo2DCore
             }
 
             base.RefreshInactiveSlotState(slotIndex);
+            if (node != null && node.InactiveByDefault)
+            {
+                ApplyWorldMapNodeInactiveVisual(slotIndex);
+            }
+        }
+
+        /// <summary>
+        /// 월드맵 노드를 보이는 상태로 유지하면서 슬롯과 아이콘에 비활성 비주얼을 적용합니다.
+        /// </summary>
+        /// <param name="slotIndex">비활성 비주얼을 적용할 월드맵 노드 슬롯 인덱스입니다.</param>
+        private void ApplyWorldMapNodeInactiveVisual(int slotIndex)
+        {
+            if (slots != null && slotIndex < slots.Length)
+            {
+                GameObject slotObject = slots[slotIndex];
+                if (slotObject != null)
+                {
+                    slotObject.SetActive(true);
+                    slotObject.GetComponent<UISlot>()?.SetInactiveState(true);
+                }
+            }
+
+            if (icons != null && slotIndex < icons.Length)
+            {
+                GameObject iconObject = icons[slotIndex];
+                if (iconObject != null)
+                {
+                    iconObject.SetActive(true);
+                    iconObject.GetComponent<UIIcon>()?.SetInactiveVisualState(true);
+                }
+            }
         }
 
         /// <summary>

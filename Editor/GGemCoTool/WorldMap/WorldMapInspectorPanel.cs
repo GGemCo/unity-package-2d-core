@@ -117,6 +117,7 @@ namespace GGemCo2DCoreEditor
             string iconAddress = EditorGUILayout.TextField("Icon Address", node.iconAddress);
             WorldMapNodeType nodeType = (WorldMapNodeType)EditorGUILayout.EnumPopup("Node Type", node.nodeType);
             bool visibleByDefault = EditorGUILayout.Toggle("Visible By Default", node.visibleByDefault);
+            bool inactiveByDefault = EditorGUILayout.Toggle("Inactive By Default", node.inactiveByDefault);
             string unlockConditionKey = EditorGUILayout.TextField("Unlock Condition", node.unlockConditionKey);
             Vector2 normalizedPosition = EditorGUILayout.Vector2Field("Normalized Position", node.normalizedPosition);
 
@@ -132,6 +133,7 @@ namespace GGemCo2DCoreEditor
                 }
                 node.nodeType = nodeType;
                 node.visibleByDefault = visibleByDefault;
+                node.inactiveByDefault = inactiveByDefault;
                 node.unlockConditionKey = unlockConditionKey;
                 node.normalizedPosition = new Vector2(Mathf.Clamp01(normalizedPosition.x), Mathf.Clamp01(normalizedPosition.y));
                 if (node.nodeType == WorldMapNodeType.Start)

@@ -122,6 +122,13 @@ namespace GGemCo2DCore
                 if (node.VisibleByDefault)
                 {
                     window.ApplyDefaultSlotIconActiveState(slotObject, iconObj);
+                    if (node.InactiveByDefault)
+                    {
+                        slotObject.SetActive(true);
+                        iconObj.SetActive(true);
+                        uiSlot.SetInactiveState(true);
+                        uiIcon.SetInactiveVisualState(true);
+                    }
                 }
                 else
                 {

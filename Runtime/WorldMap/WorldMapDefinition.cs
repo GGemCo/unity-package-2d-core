@@ -145,6 +145,9 @@ namespace GGemCo2DCore
         /// <summary>기본 표시 여부입니다.</summary>
         public bool VisibleByDefault { get; private set; }
 
+        /// <summary>처음부터 월드맵에 보이지만 비활성 상태로 표시할지 여부입니다.</summary>
+        public bool InactiveByDefault { get; private set; }
+
         /// <summary>해금 조건 키입니다.</summary>
         public string UnlockConditionKey { get; private set; }
 
@@ -170,6 +173,7 @@ namespace GGemCo2DCore
                 IconAddress = json.iconAddress,
                 NodeType = nodeType,
                 VisibleByDefault = json.visibleByDefault,
+                InactiveByDefault = json.inactiveByDefault,
                 UnlockConditionKey = json.unlockConditionKey,
             };
         }

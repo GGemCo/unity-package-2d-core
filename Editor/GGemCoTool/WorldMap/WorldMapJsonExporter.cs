@@ -110,6 +110,7 @@ namespace GGemCo2DCoreEditor
                     iconAddress = node.iconAddress,
                     nodeType = node.nodeType.ToString(),
                     visibleByDefault = node.visibleByDefault,
+                    inactiveByDefault = node.inactiveByDefault,
                     unlockConditionKey = node.unlockConditionKey,
                 });
             }

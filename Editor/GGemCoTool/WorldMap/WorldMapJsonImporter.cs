@@ -95,6 +95,7 @@ namespace GGemCo2DCoreEditor
                         iconSprite = LoadSpriteFromAddress(nodeJson.iconAddress),
                         nodeType = ParseEnum(nodeJson.nodeType, WorldMapNodeType.Normal),
                         visibleByDefault = nodeJson.visibleByDefault,
+                        inactiveByDefault = nodeJson.inactiveByDefault,
                         unlockConditionKey = nodeJson.unlockConditionKey,
                     });
                 }

@@ -455,6 +455,7 @@ namespace GGemCo2DCoreEditor
                 normalizedPosition = new Vector2(0.5f, 0.5f),
                 nodeType = _asset.nodes.Count == 0 ? WorldMapNodeType.Start : WorldMapNodeType.Normal,
                 visibleByDefault = true,
+                inactiveByDefault = false,
             };
 
             _asset.nodes.Add(node);

@@ -34,6 +34,9 @@ namespace GGemCo2DCore
         /// <summary>처음부터 월드맵에 표시할지 여부입니다.</summary>
         public bool visibleByDefault = true;
 
+        /// <summary>처음부터 월드맵에 보이지만 비활성 상태로 표시할지 여부입니다.</summary>
+        public bool inactiveByDefault;
+
         /// <summary>노드 표시/진입 조건을 판정할 조건 키입니다.</summary>
         public string unlockConditionKey;
     }
@@ -166,6 +169,9 @@ namespace GGemCo2DCore
 
         /// <summary>기본 표시 여부입니다.</summary>
         public bool visibleByDefault;
+
+        /// <summary>처음부터 보이지만 비활성 상태로 표시할지 여부입니다.</summary>
+        public bool inactiveByDefault;
 
         /// <summary>해금 조건 키입니다.</summary>
         public string unlockConditionKey;
