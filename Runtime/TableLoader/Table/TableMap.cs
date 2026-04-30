@@ -23,6 +23,30 @@ namespace GGemCo2DCore
     public class TableMap : DefaultTable<StruckTableMap>
     {
         public override string Key => ConfigAddressableTable.Map;
+        
+        /// <summary>
+        /// 테이블 데이터 1행이 로드된 직후 호출된다.
+        /// </summary>
+        /// <param name="data">로드된 어펙트 데이터.</param>
+        /// <remarks>
+        /// 로컬라이징 시스템이 존재하면 UID 기반으로 이름을 치환한다.
+        /// 기존 방식과의 호환을 위해 로컬라이징이 없을 경우 Memo를 이름으로 사용한다.
+        /// </remarks>
+        protected override void OnLoadedData(StruckTableMap data)
+        {
+            if (data == null) return;
+
+            // 기존 방식과의 호환: 로컬라이징 키가 비어있으면 uid 문자열을 사용한다.
+            if (LocalizationManager.Instance != null)
+            {
+                data.Name = LocalizationManager.Instance.GetMapNameByKey($"{data.Uid}");
+            }
+            else
+            {
+                data.Name = $"{data.Name}";
+            }
+        }
+        
         protected override StruckTableMap BuildRow(Dictionary<string, string> data)
         {
             return new StruckTableMap
