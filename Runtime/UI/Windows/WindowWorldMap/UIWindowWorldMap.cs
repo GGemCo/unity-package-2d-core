@@ -61,23 +61,19 @@ namespace GGemCo2DCore
 
         [Header("포인트 상태별 이미지")]
         [Tooltip("현재 플레이어가 있는 맵일 때 보여줄 이미지")]
-        [SerializeField] private Sprite spriteCurrentMap;
+        [SerializeField] private Sprite spritePointCurrentMap;
         [Tooltip("플레이어가 이동 가능한 맵일 때")]
-        [SerializeField] private Sprite spriteMovePossible;
+        [SerializeField] private Sprite spritePointMovePossible;
         [Tooltip("플레이어가 이동 불가능한 맵일 때")]
-        [SerializeField] private Sprite spriteMoveImPossible;
+        [SerializeField] private Sprite spritePointMoveImPossible;
 
         [Header("선택 노드 중앙 이동")]
         [Tooltip("선택한 월드맵 아이콘을 viewport 중앙으로 이동시키는 옵션입니다.")]
         [SerializeField] private WorldMapNodeCenteringOptions selectedNodeCenteringOptions = new WorldMapNodeCenteringOptions();
 
-        [Header("플레이어 아이콘")]
-        [Tooltip("플레이어 위치를 보여줄 아이콘 이미지 오브젝트")]
-        [SerializeField] private Image imageIconPlayer;
-        [Tooltip("현재 있는 맵에 있는 타일 위에 보여질 이미지")]
-        [SerializeField] private Sprite spriteCurrentPlayer;
-        [Tooltip("이동하려고 하는 타일 위에 보여질 이미지")]
-        [SerializeField] private Sprite spriteMovePossiblePlayer;
+        [Header("월드맵 선택 이미지")]
+        [Tooltip("현재 플레이어가 있는 맵을 선택했을 때 사용할 선택 이미지 Sprite입니다.")]
+        [SerializeField] private Sprite spriteSelectedCurrentMap;
 
         private readonly Dictionary<string, UIIconWorldMap> _nodeIconById = new Dictionary<string, UIIconWorldMap>();
         private readonly Dictionary<string, RectTransform> _nodeRectById = new Dictionary<string, RectTransform>();

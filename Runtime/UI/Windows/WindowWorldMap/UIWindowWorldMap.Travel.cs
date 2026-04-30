@@ -47,6 +47,16 @@ namespace GGemCo2DCore
         }
 
         /// <summary>
+        /// 지정한 월드맵 노드가 현재 플레이어가 있는 맵인지 확인합니다.
+        /// </summary>
+        /// <param name="node">확인할 월드맵 노드입니다.</param>
+        /// <returns>현재 플레이어가 있는 맵 노드이면 true를 반환합니다.</returns>
+        private bool IsCurrentMapNode(WorldMapNodeDefinition node)
+        {
+            return _mapManager != null && node != null && node.MapUid == _mapManager.GetCurrentMapUid();
+        }
+
+        /// <summary>
         /// 월드맵 노드가 플레이어에게 표시되는 상태인지 확인합니다.
         /// </summary>
         /// <param name="node">확인할 월드맵 노드입니다.</param>

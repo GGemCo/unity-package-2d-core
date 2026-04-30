@@ -62,6 +62,10 @@ namespace GGemCo2DCore
         [Tooltip("아이콘 마우스 오버 이미지를 표시할지 여부입니다.")]
         public bool showOverIconImage = true;
 
+        [Header("선택 아이콘 이미지")]
+        [Tooltip("이 윈도우에서 선택 아이콘 이미지에 사용할 Sprite입니다. 비어 있으면 UIWindowManager의 기본 이미지를 사용합니다.")]
+        [SerializeField] private Sprite spriteSelectedIconImage;
+
         [Header("Slot Accept Rules")]
         [Tooltip("윈도우 전체에 적용할 기본 슬롯 수용 규칙입니다.")]
         [SerializeField] private UISlotAcceptRule defaultAcceptRule = new UISlotAcceptRule();
@@ -211,6 +215,17 @@ namespace GGemCo2DCore
         }
 
         public UIIcon GetSelectedIcon() => selectedIcon;
+
+        /// <summary>
+        /// 선택된 아이콘에 사용할 선택 이미지 Sprite를 반환합니다.
+        /// 파생 윈도우에서 아이콘 상태에 따라 다른 선택 이미지를 반환할 수 있습니다.
+        /// </summary>
+        /// <param name="icon">선택된 아이콘입니다.</param>
+        /// <returns>선택 이미지에 사용할 Sprite입니다. null이면 UIWindowManager의 기본 Sprite를 사용합니다.</returns>
+        public virtual Sprite GetSelectedIconImageSprite(UIIcon icon)
+        {
+            return spriteSelectedIconImage;
+        }
 
         /// <summary>
         /// 파생 윈도우가 선택 시 추가 동작을 붙일 수 있도록 열어 둔 훅입니다.

@@ -78,6 +78,7 @@ namespace GGemCo2DCore
             _mapManager ??= SceneGame.mapManager;
             RefreshInactiveSlotStates();
             RefreshWorldMapNodePointStates();
+            SetCurrentMapCenter();
         }
 
         /// <summary>

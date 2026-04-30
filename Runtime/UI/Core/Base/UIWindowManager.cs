@@ -18,6 +18,7 @@ namespace GGemCo2DCore
         [Tooltip("선택 되었을 때 보여줄 이미지, 이펙트")]
         [SerializeField] private GameObject prefabIconSelected;
         private Image _imageIconSelected;
+        private Sprite _defaultIconSelectedSprite;
         [Tooltip("보여줄 이미지 사이즈 고정 여부. False 경우, 해당 윈도우의 Slot Size로 적용됨.")]
         [SerializeField] private bool isSelectedIconSizeFixed;
         
@@ -102,6 +103,7 @@ namespace GGemCo2DCore
             if (prefabIconSelected == null) return;
             _imageIconSelected = Instantiate(prefabIconSelected, SceneGame.Instance.canvasUI.transform)?.GetComponent<Image>();
             if (_imageIconSelected == null) return;
+            _defaultIconSelectedSprite = _imageIconSelected.sprite;
             _imageIconSelected.gameObject.SetActive(false);
         }
 
@@ -1171,7 +1173,14 @@ namespace GGemCo2DCore
                 _imageIconOver.rectTransform.sizeDelta = slotSize.Value;
         }
 
-        public void ShowSelectIconImage(bool show, Vector2? position = null, Vector2? slotSize = null)
+        /// <summary>
+        /// 공통 선택 이미지 표시 상태와 위치, 크기, Sprite를 갱신합니다.
+        /// </summary>
+        /// <param name="show">선택 이미지를 표시하면 true입니다.</param>
+        /// <param name="position">선택 이미지가 표시될 월드 좌표입니다. null이면 기존 위치를 유지합니다.</param>
+        /// <param name="slotSize">선택 이미지 크기입니다. null이면 기존 크기를 유지합니다.</param>
+        /// <param name="spriteOverride">선택 이미지에 사용할 Sprite입니다. null이면 기본 Sprite를 사용합니다.</param>
+        public void ShowSelectIconImage(bool show, Vector2? position = null, Vector2? slotSize = null, Sprite spriteOverride = null)
         {
             if (_imageIconSelected == null)
             {
@@ -1181,6 +1190,8 @@ namespace GGemCo2DCore
             _imageIconSelected.gameObject.SetActive(show);
             if (show)
             {
+                ApplySelectedIconSprite(spriteOverride);
+
                 VfxEffectUI vfxEffect = _imageIconSelected.GetComponent<VfxEffectUI>();
                 if (vfxEffect != null)
                 {
@@ -1195,6 +1206,20 @@ namespace GGemCo2DCore
                 if (slotSize.HasValue && !isSelectedIconSizeFixed)
                     _imageIconSelected.rectTransform.sizeDelta = slotSize.Value;
             }
+        }
+
+        /// <summary>
+        /// 선택 이미지 Sprite override를 적용하거나 기본 Sprite로 되돌립니다.
+        /// </summary>
+        /// <param name="spriteOverride">적용할 Sprite입니다. null이면 기본 Sprite를 적용합니다.</param>
+        private void ApplySelectedIconSprite(Sprite spriteOverride)
+        {
+            if (_imageIconSelected == null)
+            {
+                return;
+            }
+
+            _imageIconSelected.sprite = spriteOverride != null ? spriteOverride : _defaultIconSelectedSprite;
         }
     }
 }

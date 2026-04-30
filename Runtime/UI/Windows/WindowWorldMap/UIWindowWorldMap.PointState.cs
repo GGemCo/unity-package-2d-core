@@ -81,11 +81,11 @@ namespace GGemCo2DCore
             switch (state)
             {
                 case WorldMapNodePointState.CurrentMap:
-                    return spriteCurrentMap;
+                    return spritePointCurrentMap;
                 case WorldMapNodePointState.MovePossible:
-                    return spriteMovePossible;
+                    return spritePointMovePossible;
                 case WorldMapNodePointState.MoveImpossible:
-                    return spriteMoveImPossible;
+                    return spritePointMoveImPossible;
                 default:
                     return null;
             }

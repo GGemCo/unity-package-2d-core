@@ -67,6 +67,25 @@ namespace GGemCo2DCore
         }
 
         /// <summary>
+        /// 월드맵 선택 아이콘 상태에 맞는 선택 이미지 Sprite를 반환합니다.
+        /// 현재 플레이어가 있는 맵을 선택하면 월드맵 전용 현재 맵 선택 이미지를 우선 사용합니다.
+        /// </summary>
+        /// <param name="icon">선택된 아이콘입니다.</param>
+        /// <returns>선택 이미지에 사용할 Sprite입니다. null이면 UIWindowManager의 기본 Sprite를 사용합니다.</returns>
+        public override Sprite GetSelectedIconImageSprite(UIIcon icon)
+        {
+            UIIconWorldMap worldMapIcon = icon as UIIconWorldMap;
+            if (worldMapIcon != null &&
+                IsCurrentMapNode(worldMapIcon.NodeDefinition) &&
+                spriteSelectedCurrentMap != null)
+            {
+                return spriteSelectedCurrentMap;
+            }
+
+            return base.GetSelectedIconImageSprite(icon);
+        }
+
+        /// <summary>
         /// 선택된 월드맵 아이콘이 viewport 중앙에 오도록 월드맵 컨테이너 이동을 요청합니다.
         /// </summary>
         private void MoveSelectedWorldMapIconToCenter()
@@ -111,6 +130,24 @@ namespace GGemCo2DCore
             }
 
             return IsNodeVisible(node);
+        }
+
+        /// <summary>
+        /// 현재 플레이어가 있는 월드맵 노드를 선택해 viewport 중앙으로 이동시킵니다.
+        /// </summary>
+        private void SetCurrentMapCenter()
+        {
+            int currentMapUid = _mapManager.GetCurrentMapUid();
+            foreach (var iconObj in icons)
+            {
+                var icon = iconObj.GetComponent<UIIconWorldMap>();
+                if (icon == null || icon.NodeDefinition == null) continue;
+                if (currentMapUid == icon.NodeDefinition.MapUid)
+                {
+                    SetSelectedIcon(icon.index);
+                    return;
+                }
+            }
         }
     }
 }
