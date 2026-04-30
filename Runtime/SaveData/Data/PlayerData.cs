@@ -287,7 +287,7 @@ namespace GGemCo2DCore
             ApplyLevelDelta(deltaLevel, PlayerLevelChangeReason.Exp);
             CurrentExp = CurrentLevel < _maxPlayerLevel ? newExp : 0;
         }
-#if UNITY_EDITOR
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
         public void AddLevelUp()
         {
             if (_maxPlayerLevel <= 0)
