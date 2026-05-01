@@ -4,6 +4,39 @@ using System.Globalization;
 namespace GGemCo2DCore
 {
     /// <summary>
+    /// 맵 입장 규칙을 적용한 결과입니다.
+    /// 요청 맵과 실제 입장 맵을 함께 보관하여 UI가 리다이렉트된 표시 정보를 사용할 수 있게 합니다.
+    /// </summary>
+    public readonly struct MapEntryRuleResolveResult
+    {
+        /// <summary>플레이어가 원래 입장을 요청한 TableMap UID입니다.</summary>
+        public int RequestMapUid { get; }
+
+        /// <summary>규칙 적용 후 실제로 입장할 TableMap UID입니다.</summary>
+        public int TargetMapUid { get; }
+
+        /// <summary>조건에 매칭된 맵 입장 규칙입니다. 매칭된 규칙이 없으면 null입니다.</summary>
+        public StruckTableMapEntryRule MatchedRule { get; }
+
+        /// <summary>요청 맵과 실제 입장 맵이 서로 다르면 true입니다.</summary>
+        public bool IsRedirected => RequestMapUid > 0 && TargetMapUid > 0 && RequestMapUid != TargetMapUid;
+
+        /// <summary>
+        /// 맵 입장 규칙 결과를 생성합니다.
+        /// targetMapUid가 유효하지 않으면 요청 맵 UID를 실제 입장 맵으로 사용합니다.
+        /// </summary>
+        /// <param name="requestMapUid">플레이어가 원래 입장을 요청한 TableMap UID입니다.</param>
+        /// <param name="targetMapUid">규칙 적용 후 실제로 입장할 TableMap UID입니다.</param>
+        /// <param name="matchedRule">조건에 매칭된 맵 입장 규칙입니다.</param>
+        public MapEntryRuleResolveResult(int requestMapUid, int targetMapUid, StruckTableMapEntryRule matchedRule)
+        {
+            RequestMapUid = requestMapUid;
+            TargetMapUid = targetMapUid > 0 ? targetMapUid : requestMapUid;
+            MatchedRule = matchedRule;
+        }
+    }
+
+    /// <summary>
     /// 맵 입장 요청에 map_entry_rule 테이블을 적용하여 실제 입장 맵을 결정합니다.
     /// </summary>
     public sealed class MapEntryRuleResolver
@@ -29,9 +62,19 @@ namespace GGemCo2DCore
         /// <returns>규칙이 매칭되면 대상 맵 UID를, 없으면 요청 맵 UID를 반환합니다.</returns>
         public int ResolveTargetMapUid(int requestMapUid)
         {
+            return ResolveTargetMap(requestMapUid).TargetMapUid;
+        }
+
+        /// <summary>
+        /// 요청 맵 UID에 매칭되는 첫 번째 규칙을 적용하여 실제 입장 맵과 매칭 규칙 정보를 함께 반환합니다.
+        /// </summary>
+        /// <param name="requestMapUid">플레이어가 원래 입장하려는 TableMap UID입니다.</param>
+        /// <returns>요청 맵, 실제 입장 맵, 매칭 규칙을 담은 결과입니다.</returns>
+        public MapEntryRuleResolveResult ResolveTargetMap(int requestMapUid)
+        {
             if (requestMapUid <= 0 || _tableLoaderManager?.TableMapEntryRule == null)
             {
-                return requestMapUid;
+                return new MapEntryRuleResolveResult(requestMapUid, requestMapUid, null);
             }
 
             IReadOnlyList<StruckTableMapEntryRule> rules =
@@ -41,11 +84,11 @@ namespace GGemCo2DCore
                 StruckTableMapEntryRule rule = rules[i];
                 if (IsMatched(rule))
                 {
-                    return rule.TargetMapUid;
+                    return new MapEntryRuleResolveResult(requestMapUid, rule.TargetMapUid, rule);
                 }
             }
 
-            return requestMapUid;
+            return new MapEntryRuleResolveResult(requestMapUid, requestMapUid, null);
         }
 
         /// <summary>

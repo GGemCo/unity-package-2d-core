@@ -50,6 +50,8 @@ namespace GGemCo2DCore
         private TableMap _tableMap;
         private StruckTableMap _struckTableMap;
         private WorldMapNodeDefinition _nodeDefinition;
+        private WorldMapNodeDefinition _displayNodeDefinition;
+        private int _displayMapUid;
         private Sprite _iconSprite;
 
         /// <summary>현재 아이콘이 표시하는 월드맵 노드 ID입니다.</summary>
@@ -57,6 +59,12 @@ namespace GGemCo2DCore
 
         /// <summary>현재 아이콘이 표시하는 월드맵 노드 정의입니다.</summary>
         public WorldMapNodeDefinition NodeDefinition => _nodeDefinition;
+
+        /// <summary>현재 아이콘에 표시 중인 월드맵 노드 정의입니다. 입장 규칙으로 대체되지 않으면 NodeDefinition과 같습니다.</summary>
+        public WorldMapNodeDefinition DisplayNodeDefinition => _displayNodeDefinition;
+
+        /// <summary>현재 아이콘에 표시 중인 TableMap UID입니다. 이동 요청 UID와 다를 수 있습니다.</summary>
+        public int DisplayMapUid => _displayMapUid > 0 ? _displayMapUid : uid;
         
         /// <summary>
         /// 아이콘 초기화 후 월드맵 전용 의존성을 연결합니다.
@@ -77,10 +85,35 @@ namespace GGemCo2DCore
         /// <param name="iconSprite">AddressableLoaderWorldMap에서 로드한 노드 아이콘 Sprite입니다.</param>
         public void SetWorldMapNode(WorldMapNodeDefinition nodeDefinition, StruckTableMap mapData, Sprite iconSprite = null)
         {
+            SetWorldMapNode(nodeDefinition, nodeDefinition, mapData, iconSprite);
+        }
+
+        /// <summary>
+        /// 월드맵 입장 노드와 실제 표시할 노드 정보를 분리해서 아이콘에 연결합니다.
+        /// 입장 요청 UID는 원본 노드를 유지하고, 이름과 이미지는 표시 노드 기준으로 갱신합니다.
+        /// </summary>
+        /// <param name="nodeDefinition">이동 요청과 그래프 판정에 사용할 원본 월드맵 노드입니다.</param>
+        /// <param name="displayNodeDefinition">화면에 표시할 월드맵 노드입니다. null이면 원본 노드를 사용합니다.</param>
+        /// <param name="mapData">표시 노드가 참조하는 TableMap 데이터입니다.</param>
+        /// <param name="iconSprite">표시 노드에 사용할 Sprite입니다.</param>
+        public void SetWorldMapNode(
+            WorldMapNodeDefinition nodeDefinition,
+            WorldMapNodeDefinition displayNodeDefinition,
+            StruckTableMap mapData,
+            Sprite iconSprite = null)
+        {
             _nodeDefinition = nodeDefinition;
+            _displayNodeDefinition = displayNodeDefinition ?? nodeDefinition;
+            _displayMapUid = _displayNodeDefinition != null && _displayNodeDefinition.MapUid > 0
+                ? _displayNodeDefinition.MapUid
+                : _nodeDefinition != null
+                    ? _nodeDefinition.MapUid
+                    : 0;
             _iconSprite = iconSprite;
             if (_nodeDefinition == null)
             {
+                _displayNodeDefinition = null;
+                _displayMapUid = 0;
                 ClearIconInfos();
                 ApplyNodeDecoration();
                 SetPointSprite(null);
@@ -88,7 +121,8 @@ namespace GGemCo2DCore
                 return;
             }
 
-            _struckTableMap = mapData ?? _tableMap?.GetDataByUid(_nodeDefinition.MapUid);
+            _struckTableMap = mapData ?? _tableMap?.GetDataByUid(DisplayMapUid);
+            SetInactiveVisualState(false, false);
             ChangeInfoByUid(_nodeDefinition.MapUid, 1, 1);
             ApplyNodeDisplayName();
             ApplyNodeDecoration();
@@ -184,7 +218,8 @@ namespace GGemCo2DCore
                     iconType)) return false;
 
             _tableMap ??= TableLoaderManager.Instance != null ? TableLoaderManager.Instance.TableMap : null;
-            var info = _tableMap != null ? _tableMap.GetDataByUid(iconUid) : null;
+            int displayMapUid = DisplayMapUid > 0 ? DisplayMapUid : iconUid;
+            var info = _tableMap != null ? _tableMap.GetDataByUid(displayMapUid) : null;
             if (info == null)
             {
                 GcLogger.LogError("월드맵 아이콘에 연결할 TableMap 데이터가 없습니다.");
@@ -258,7 +293,8 @@ namespace GGemCo2DCore
         /// <returns>아이콘 이미지 경로입니다.</returns>
         protected override string GetIconImagePath()
         {
-            return _nodeDefinition != null ? _nodeDefinition.IconAddress : string.Empty;
+            WorldMapNodeDefinition displayNode = _displayNodeDefinition ?? _nodeDefinition;
+            return displayNode != null ? displayNode.IconAddress : string.Empty;
         }
 
         /// <summary>
@@ -283,9 +319,10 @@ namespace GGemCo2DCore
                 return;
             }
 
-            if (_nodeDefinition != null && !string.IsNullOrWhiteSpace(_nodeDefinition.TitleOverride))
+            WorldMapNodeDefinition displayNode = _displayNodeDefinition ?? _nodeDefinition;
+            if (displayNode != null && !string.IsNullOrWhiteSpace(displayNode.TitleOverride))
             {
-                textName.text = _nodeDefinition.TitleOverride;
+                textName.text = displayNode.TitleOverride;
                 return;
             }
 
@@ -314,7 +351,8 @@ namespace GGemCo2DCore
         /// <returns>노드 타입에 맞는 데코레이션 스프라이트입니다. 설정 또는 스프라이트가 없으면 null을 반환합니다.</returns>
         private Sprite ResolveNodeDecorationSprite()
         {
-            if (_nodeDefinition == null)
+            WorldMapNodeDefinition displayNode = _displayNodeDefinition ?? _nodeDefinition;
+            if (displayNode == null)
             {
                 return null;
             }
@@ -331,7 +369,7 @@ namespace GGemCo2DCore
             }
 
             return worldMapSettings != null
-                ? worldMapSettings.GetDecorationSprite(_nodeDefinition.NodeType)
+                ? worldMapSettings.GetDecorationSprite(displayNode.NodeType)
                 : null;
         }
 

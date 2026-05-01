@@ -60,7 +60,7 @@ namespace GGemCo2DCore
             }
 
             int currentMapUid = _mapManager.GetCurrentMapUid();
-            if (node.MapUid == currentMapUid)
+            if (IsCurrentMapNode(node))
             {
                 return WorldMapNodePointState.CurrentMap;
             }

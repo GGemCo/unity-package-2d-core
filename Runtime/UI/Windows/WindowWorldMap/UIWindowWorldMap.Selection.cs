@@ -77,7 +77,7 @@ namespace GGemCo2DCore
         {
             UIIconWorldMap worldMapIcon = icon as UIIconWorldMap;
             if (worldMapIcon != null &&
-                IsCurrentMapNode(worldMapIcon.NodeDefinition) &&
+                IsCurrentMapIcon(worldMapIcon) &&
                 spriteSelectedCurrentMap != null)
             {
                 return spriteSelectedCurrentMap;
@@ -96,7 +96,7 @@ namespace GGemCo2DCore
         {
             UIIconWorldMap worldMapIcon = icon as UIIconWorldMap;
             if (worldMapIcon != null &&
-                IsCurrentMapNode(worldMapIcon.NodeDefinition) &&
+                IsCurrentMapIcon(worldMapIcon) &&
                 prefabSelectedCurrentMap != null)
             {
                 return prefabSelectedCurrentMap;
@@ -115,7 +115,7 @@ namespace GGemCo2DCore
         {
             UIIconWorldMap worldMapIcon = icon as UIIconWorldMap;
             if (worldMapIcon != null &&
-                IsCurrentMapNode(worldMapIcon.NodeDefinition) &&
+                IsCurrentMapIcon(worldMapIcon) &&
                 overrideSelectedCurrentMapAnimation)
             {
                 return selectedCurrentMapAnimation;
@@ -186,8 +186,7 @@ namespace GGemCo2DCore
 
             WorldMapNodeDefinition node = _worldMapDefinition.Nodes[index];
 
-            int currentMapUid = _mapManager.GetCurrentMapUid();
-            if (node.MapUid != currentMapUid)
+            if (!IsCurrentMapNode(node))
             {
                 return CanMoveToNode(node);
             }
@@ -200,12 +199,12 @@ namespace GGemCo2DCore
         /// </summary>
         private void SetCurrentMapCenter()
         {
-            int currentMapUid = _mapManager.GetCurrentMapUid();
             foreach (var iconObj in icons)
             {
+                if (iconObj == null) continue;
                 var icon = iconObj.GetComponent<UIIconWorldMap>();
                 if (icon == null || icon.NodeDefinition == null) continue;
-                if (currentMapUid == icon.NodeDefinition.MapUid)
+                if (IsCurrentMapIcon(icon))
                 {
                     SetSelectedIcon(icon.index);
                     return;

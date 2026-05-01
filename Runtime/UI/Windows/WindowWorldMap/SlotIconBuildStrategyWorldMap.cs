@@ -110,13 +110,7 @@ namespace GGemCo2DCore
                 }
 
                 uiIcon.Initialize(uiWindowWorldMap, uiWindowWorldMap.uid, index, index, iconSize, slotSize);
-                Sprite iconSprite = null;
-                if (AddressableLoaderWorldMap.Instance != null)
-                {
-                    AddressableLoaderWorldMap.Instance.TryGetIconSprite(node, out iconSprite);
-                }
-
-                uiIcon.SetWorldMapNode(node, _tableWorldMap != null ? _tableWorldMap.GetDataByUid(node.MapUid) : null, iconSprite);
+                uiWindowWorldMap.ApplyWorldMapNodeDisplay(uiIcon, node, _tableWorldMap);
                 
                 icons[index] = iconObj;
                 if (uiWindowWorldMap.IsWorldMapNodeVisible(node))

@@ -52,6 +52,7 @@ namespace GGemCo2DCore
             }
 
             base.RefreshInactiveSlotState(slotIndex);
+            RefreshWorldMapNodeDisplay(slotIndex, node);
             ApplyWorldMapNodeVisualState(slotIndex);
         }
 
@@ -63,6 +64,63 @@ namespace GGemCo2DCore
         public bool IsWorldMapNodeVisible(WorldMapNodeDefinition node)
         {
             return node != null && (node.VisibleByDefault || IsWorldMapNodeActivated(node));
+        }
+
+        /// <summary>
+        /// 월드맵 아이콘에 표시할 실제 맵 UID를 반환합니다.
+        /// map_entry_rule 조건에 매칭되면 대상 맵 UID를, 매칭되지 않으면 원본 노드의 mapUid를 사용합니다.
+        /// </summary>
+        /// <param name="node">표시 맵 UID를 계산할 원본 월드맵 노드입니다.</param>
+        /// <returns>월드맵 아이콘에 표시할 TableMap UID입니다.</returns>
+        public int GetWorldMapNodeDisplayMapUid(WorldMapNodeDefinition node)
+        {
+            if (node == null)
+            {
+                return 0;
+            }
+
+            MapEntryRuleResolveResult result = ResolveWorldMapNodeEntryRule(node);
+            return result.TargetMapUid > 0 ? result.TargetMapUid : node.MapUid;
+        }
+
+        /// <summary>
+        /// 원본 월드맵 노드와 map_entry_rule 결과를 사용해 아이콘의 표시 정보를 갱신합니다.
+        /// 위치, 연결선, 이동 요청은 원본 노드를 유지하고 이름과 이미지만 표시 맵 기준으로 교체합니다.
+        /// </summary>
+        /// <param name="icon">표시 정보를 적용할 월드맵 아이콘입니다.</param>
+        /// <param name="node">이동 요청과 그래프 판정에 사용할 원본 월드맵 노드입니다.</param>
+        /// <param name="fallbackTableMap">윈도우 테이블 캐시가 없을 때 사용할 TableMap입니다.</param>
+        public void ApplyWorldMapNodeDisplay(
+            UIIconWorldMap icon,
+            WorldMapNodeDefinition node,
+            TableMap fallbackTableMap = null)
+        {
+            if (icon == null)
+            {
+                return;
+            }
+
+            WorldMapNodeDefinition displayNode = ResolveWorldMapNodeDisplayNode(node);
+            StruckTableMap displayMapData = ResolveWorldMapNodeDisplayMapData(node, fallbackTableMap);
+            Sprite displayIconSprite = ResolveWorldMapNodeDisplayIconSprite(node, displayNode);
+            icon.SetWorldMapNode(node, displayNode, displayMapData, displayIconSprite);
+        }
+
+        /// <summary>
+        /// 지정한 슬롯의 월드맵 아이콘 표시 정보를 현재 map_entry_rule 결과 기준으로 다시 적용합니다.
+        /// 저장 데이터나 라이선스 상태가 바뀐 뒤에도 아이콘 이름과 이미지가 실제 입장 맵을 따라가게 합니다.
+        /// </summary>
+        /// <param name="slotIndex">갱신할 월드맵 노드 슬롯 인덱스입니다.</param>
+        /// <param name="node">이동 요청과 그래프 판정에 사용할 원본 월드맵 노드입니다.</param>
+        private void RefreshWorldMapNodeDisplay(int slotIndex, WorldMapNodeDefinition node)
+        {
+            if (icons == null || slotIndex < 0 || slotIndex >= icons.Length || icons[slotIndex] == null)
+            {
+                return;
+            }
+
+            UIIconWorldMap icon = icons[slotIndex].GetComponent<UIIconWorldMap>();
+            ApplyWorldMapNodeDisplay(icon, node, _tableMap);
         }
 
         /// <summary>
@@ -125,15 +183,124 @@ namespace GGemCo2DCore
         }
 
         /// <summary>
-        /// 저장 데이터 기준으로 지정한 월드맵 노드의 실제 맵을 클리어한 기록이 있는지 확인합니다.
+        /// 원본 월드맵 노드의 입장 규칙을 현재 세이브 데이터 기준으로 계산합니다.
+        /// 규칙을 적용할 수 없으면 원본 mapUid를 그대로 사용하는 결과를 반환합니다.
+        /// </summary>
+        /// <param name="node">입장 규칙을 계산할 원본 월드맵 노드입니다.</param>
+        /// <returns>맵 입장 규칙 적용 결과입니다.</returns>
+        private MapEntryRuleResolveResult ResolveWorldMapNodeEntryRule(WorldMapNodeDefinition node)
+        {
+            if (node == null)
+            {
+                return new MapEntryRuleResolveResult(0, 0, null);
+            }
+
+            MapEntryRuleResolver resolver = CreateWorldMapEntryRuleResolver();
+            return resolver != null
+                ? resolver.ResolveTargetMap(node.MapUid)
+                : new MapEntryRuleResolveResult(node.MapUid, node.MapUid, null);
+        }
+
+        /// <summary>
+        /// 월드맵 표시 정보 계산에 사용할 맵 입장 규칙 해석기를 생성합니다.
+        /// 라이선스 상태가 바뀐 뒤에도 최신 세이브 매니저를 사용하도록 호출 시점마다 의존성을 다시 연결합니다.
+        /// </summary>
+        /// <returns>맵 입장 규칙 해석기입니다. 테이블 로더가 없으면 null입니다.</returns>
+        private static MapEntryRuleResolver CreateWorldMapEntryRuleResolver()
+        {
+            TableLoaderManager tableLoaderManager = TableLoaderManager.Instance;
+            if (tableLoaderManager == null)
+            {
+                return null;
+            }
+
+            LicenseManager licenseManager = SceneGame.Instance?.saveDataManager?.LicenseManager;
+            return new MapEntryRuleResolver(tableLoaderManager, licenseManager);
+        }
+
+        /// <summary>
+        /// map_entry_rule 결과에 해당하는 표시용 월드맵 노드를 찾습니다.
+        /// 대상 맵 UID를 가진 노드가 없으면 원본 노드를 반환하여 위치와 연결 관계를 유지합니다.
+        /// </summary>
+        /// <param name="node">원본 월드맵 노드입니다.</param>
+        /// <returns>표시에 사용할 월드맵 노드입니다.</returns>
+        private WorldMapNodeDefinition ResolveWorldMapNodeDisplayNode(WorldMapNodeDefinition node)
+        {
+            if (node == null || _worldMapDefinition == null)
+            {
+                return node;
+            }
+
+            int displayMapUid = GetWorldMapNodeDisplayMapUid(node);
+            return displayMapUid > 0 &&
+                   displayMapUid != node.MapUid &&
+                   _worldMapDefinition.TryGetNodeByMapUid(displayMapUid, out WorldMapNodeDefinition displayNode)
+                ? displayNode
+                : node;
+        }
+
+        /// <summary>
+        /// map_entry_rule 결과에 해당하는 표시용 TableMap 데이터를 반환합니다.
+        /// 대상 맵 데이터가 없으면 원본 노드의 맵 데이터를 반환합니다.
+        /// </summary>
+        /// <param name="node">원본 월드맵 노드입니다.</param>
+        /// <param name="fallbackTableMap">윈도우 테이블 캐시가 없을 때 사용할 TableMap입니다.</param>
+        /// <returns>표시에 사용할 TableMap 데이터입니다.</returns>
+        private StruckTableMap ResolveWorldMapNodeDisplayMapData(
+            WorldMapNodeDefinition node,
+            TableMap fallbackTableMap)
+        {
+            if (node == null)
+            {
+                return null;
+            }
+
+            TableMap tableMap = _tableMap ?? fallbackTableMap ?? TableLoaderManager.Instance?.TableMap;
+            int displayMapUid = GetWorldMapNodeDisplayMapUid(node);
+            return tableMap?.GetDataByUid(displayMapUid) ?? tableMap?.GetDataByUid(node.MapUid);
+        }
+
+        /// <summary>
+        /// 표시용 노드에 맞는 월드맵 아이콘 Sprite를 반환합니다.
+        /// 표시용 노드 Sprite가 없으면 원본 노드 Sprite를 사용합니다.
+        /// </summary>
+        /// <param name="node">원본 월드맵 노드입니다.</param>
+        /// <param name="displayNode">map_entry_rule 결과로 선택된 표시용 노드입니다.</param>
+        /// <returns>표시에 사용할 월드맵 아이콘 Sprite입니다.</returns>
+        private static Sprite ResolveWorldMapNodeDisplayIconSprite(
+            WorldMapNodeDefinition node,
+            WorldMapNodeDefinition displayNode)
+        {
+            if (AddressableLoaderWorldMap.Instance == null)
+            {
+                return null;
+            }
+
+            if (displayNode != null &&
+                AddressableLoaderWorldMap.Instance.TryGetIconSprite(displayNode, out Sprite displaySprite))
+            {
+                return displaySprite;
+            }
+
+            return node != null &&
+                   node != displayNode &&
+                   AddressableLoaderWorldMap.Instance.TryGetIconSprite(node, out Sprite fallbackSprite)
+                ? fallbackSprite
+                : null;
+        }
+
+        /// <summary>
+        /// 저장 데이터 기준으로 지정한 월드맵 노드의 표시 맵을 클리어한 기록이 있는지 확인합니다.
         /// </summary>
         /// <param name="node">확인할 월드맵 노드입니다.</param>
-        /// <returns>노드의 mapUid가 클리어 기록에 있으면 true를 반환합니다.</returns>
+        /// <returns>표시용 mapUid가 클리어 기록에 있으면 true를 반환합니다.</returns>
         private bool IsWorldMapNodeCleared(WorldMapNodeDefinition node)
         {
+            int displayMapUid = GetWorldMapNodeDisplayMapUid(node);
             return node != null &&
+                   displayMapUid > 0 &&
                    SceneGame.Instance?.saveDataManager?.MapProgress != null &&
-                   SceneGame.Instance.saveDataManager.MapProgress.IsMapCleared(node.MapUid);
+                   SceneGame.Instance.saveDataManager.MapProgress.IsMapCleared(displayMapUid);
         }
 
         /// <summary>

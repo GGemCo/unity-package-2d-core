@@ -15,7 +15,7 @@ namespace GGemCo2DCore
             if (GcLogger.IsNull(_mapManager, nameof(MapManager))) return;
             if (GcLogger.IsNull(_selectedUIIconWorldMap, "선택된 맵이 없습니다.")) return;
             if (!CanMoveToNode(_selectedUIIconWorldMap.NodeDefinition)) return;
-            if (_selectedUIIconWorldMap.uid == _mapManager.GetCurrentMapUid()) return;
+            if (IsCurrentMapIcon(_selectedUIIconWorldMap)) return;
             _mapManager.LoadMap(_selectedUIIconWorldMap.uid);
         }
 
@@ -37,7 +37,7 @@ namespace GGemCo2DCore
             }
 
             int currentMapUid = _mapManager.GetCurrentMapUid();
-            if (node.MapUid == currentMapUid)
+            if (IsCurrentMapNode(node))
             {
                 return false;
             }
@@ -53,7 +53,30 @@ namespace GGemCo2DCore
         /// <returns>현재 플레이어가 있는 맵 노드이면 true를 반환합니다.</returns>
         private bool IsCurrentMapNode(WorldMapNodeDefinition node)
         {
-            return _mapManager != null && node != null && node.MapUid == _mapManager.GetCurrentMapUid();
+            if (_mapManager == null || node == null)
+            {
+                return false;
+            }
+
+            int currentMapUid = _mapManager.GetCurrentMapUid();
+            return node.MapUid == currentMapUid || GetWorldMapNodeDisplayMapUid(node) == currentMapUid;
+        }
+
+        /// <summary>
+        /// 지정한 월드맵 아이콘이 현재 플레이어가 있는 맵을 표시하는지 확인합니다.
+        /// map_entry_rule로 표시 맵이 대체된 경우 DisplayMapUid도 현재 맵 판정에 포함합니다.
+        /// </summary>
+        /// <param name="icon">확인할 월드맵 아이콘입니다.</param>
+        /// <returns>아이콘의 요청 맵 또는 표시 맵이 현재 맵이면 true를 반환합니다.</returns>
+        private bool IsCurrentMapIcon(UIIconWorldMap icon)
+        {
+            if (_mapManager == null || icon == null)
+            {
+                return false;
+            }
+
+            int currentMapUid = _mapManager.GetCurrentMapUid();
+            return icon.uid == currentMapUid || icon.DisplayMapUid == currentMapUid;
         }
 
         /// <summary>
