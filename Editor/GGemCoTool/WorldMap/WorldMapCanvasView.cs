@@ -25,19 +25,64 @@ namespace GGemCo2DCoreEditor
         private Vector2 _lastMousePosition;
 
         /// <summary>
-        /// 중앙 캔버스를 그리고 입력 이벤트를 처리합니다.
+        /// 현재 캔버스 상태를 기준으로 렌더링/입력 판단에 사용할 프레임 정보를 계산합니다.
         /// </summary>
-        /// <param name="canvasRect">캔버스를 그릴 IMGUI 영역입니다.</param>
+        /// <param name="canvasRect">중앙 캔버스의 기본 배치 Rect입니다.</param>
+        /// <param name="asset">편집 중인 월드맵 그래프 에셋입니다.</param>
+        /// <param name="state">선택 및 캔버스 보기 상태입니다.</param>
+        /// <returns>현재 캔버스 프레임 정보입니다.</returns>
+        public WorldMapCanvasFrame BuildFrame(Rect canvasRect, WorldMapGraphAsset asset, WorldMapSelectionState state)
+        {
+            if (asset == null)
+            {
+                return new WorldMapCanvasFrame(canvasRect, canvasRect, canvasRect);
+            }
+
+            Rect graphRect = CalculateGraphRect(canvasRect, asset, state);
+            Rect interactionRect = CalculateInteractionRect(graphRect);
+            return new WorldMapCanvasFrame(canvasRect, graphRect, interactionRect);
+        }
+
+        /// <summary>
+        /// 중앙 캔버스의 시각 요소를 그립니다.
+        /// </summary>
+        /// <param name="frame">현재 캔버스 프레임 정보입니다.</param>
         /// <param name="asset">편집 중인 월드맵 그래프 에셋입니다.</param>
         /// <param name="state">선택 및 캔버스 보기 상태입니다.</param>
         /// <param name="gridSettings">Grid 및 Snap 설정입니다.</param>
         /// <param name="tableMap">노드 표시 이름을 찾을 TableMap입니다.</param>
+        public void Draw(
+            WorldMapCanvasFrame frame,
+            WorldMapGraphAsset asset,
+            WorldMapSelectionState state,
+            WorldMapCanvasGridSettings gridSettings,
+            TableMap tableMap)
+        {
+            if (asset == null)
+            {
+                return;
+            }
+
+            DrawBackground(frame.HostRect, frame.GraphRect, asset, gridSettings);
+            DrawEdges(asset, state, frame.GraphRect);
+            DrawNodes(asset, state, tableMap, frame.GraphRect);
+            DrawCanvasHint(frame.HostRect, gridSettings, state);
+        }
+
+        /// <summary>
+        /// 중앙 캔버스 입력을 처리하여 패널보다 높은 우선순위의 인터랙션을 적용합니다.
+        /// </summary>
+        /// <param name="frame">현재 캔버스 프레임 정보입니다.</param>
+        /// <param name="asset">편집 중인 월드맵 그래프 에셋입니다.</param>
+        /// <param name="state">선택 및 캔버스 보기 상태입니다.</param>
+        /// <param name="gridSettings">Grid 및 Snap 설정입니다.</param>
+        /// <param name="tableMap">현재 표시 중인 TableMap입니다. 입력 처리 우선순위의 의미를 문서화하기 위한 인자입니다.</param>
         /// <param name="onNodeSelected">노드 선택 콜백입니다.</param>
         /// <param name="onEdgeSelected">연결선 선택 콜백입니다.</param>
         /// <param name="onCreateEdge">연결선 생성 콜백입니다.</param>
         /// <param name="onChanged">그래프 데이터 변경 콜백입니다.</param>
-        public void Draw(
-            Rect canvasRect,
+        public void HandleInput(
+            WorldMapCanvasFrame frame,
             WorldMapGraphAsset asset,
             WorldMapSelectionState state,
             WorldMapCanvasGridSettings gridSettings,
@@ -52,12 +97,8 @@ namespace GGemCo2DCoreEditor
                 return;
             }
 
-            Rect graphRect = CalculateGraphRect(canvasRect, asset, state);
-            DrawBackground(canvasRect, graphRect, asset, gridSettings);
-            DrawEdges(asset, state, graphRect);
-            DrawNodes(asset, state, tableMap, graphRect);
-            DrawCanvasHint(canvasRect, gridSettings, state);
-            HandleEvents(canvasRect, graphRect, asset, state, gridSettings, onNodeSelected, onEdgeSelected, onCreateEdge, onChanged);
+            _ = tableMap;
+            HandleEvents(frame, asset, state, gridSettings, onNodeSelected, onEdgeSelected, onCreateEdge, onChanged);
         }
 
         /// <summary>
@@ -278,8 +319,7 @@ namespace GGemCo2DCoreEditor
         /// <summary>
         /// 캔버스 안에서 마우스/키보드 입력을 처리합니다.
         /// </summary>
-        /// <param name="canvasRect">전체 캔버스 영역입니다.</param>
-        /// <param name="graphRect">그래프 배경 영역입니다.</param>
+        /// <param name="frame">현재 캔버스 프레임 정보입니다.</param>
         /// <param name="asset">편집 중인 그래프 에셋입니다.</param>
         /// <param name="state">선택 및 보기 상태입니다.</param>
         /// <param name="gridSettings">Grid 및 Snap 설정입니다.</param>
@@ -288,8 +328,7 @@ namespace GGemCo2DCoreEditor
         /// <param name="onCreateEdge">연결선 생성 콜백입니다.</param>
         /// <param name="onChanged">그래프 데이터 변경 콜백입니다.</param>
         private void HandleEvents(
-            Rect canvasRect,
-            Rect graphRect,
+            WorldMapCanvasFrame frame,
             WorldMapGraphAsset asset,
             WorldMapSelectionState state,
             WorldMapCanvasGridSettings gridSettings,
@@ -299,7 +338,8 @@ namespace GGemCo2DCoreEditor
             Action onChanged)
         {
             Event current = Event.current;
-            if (!canvasRect.Contains(current.mousePosition))
+            Rect inputRect = GetInputCaptureRect(frame);
+            if (!inputRect.Contains(current.mousePosition))
             {
                 return;
             }
@@ -345,7 +385,7 @@ namespace GGemCo2DCoreEditor
 
             if (current.type == EventType.MouseDown && current.button == 0)
             {
-                WorldMapNodeData node = FindNodeAt(asset, graphRect, current.mousePosition);
+                WorldMapNodeData node = FindNodeAt(asset, frame.GraphRect, current.mousePosition);
                 if (node != null)
                 {
                     if (state.IsLinking)
@@ -371,7 +411,7 @@ namespace GGemCo2DCoreEditor
                     return;
                 }
 
-                WorldMapEdgeData edge = FindEdgeAt(asset, graphRect, current.mousePosition);
+                WorldMapEdgeData edge = FindEdgeAt(asset, frame.GraphRect, current.mousePosition);
                 if (edge != null)
                 {
                     state.SelectEdge(edge.edgeId);
@@ -390,7 +430,7 @@ namespace GGemCo2DCoreEditor
                 WorldMapNodeData node = asset.FindNode(_draggingNodeId);
                 if (node != null)
                 {
-                    Vector2 normalized = CanvasToNormalized(current.mousePosition, graphRect);
+                    Vector2 normalized = CanvasToNormalized(current.mousePosition, frame.GraphRect);
                     Vector2 snappedNormalized = WorldMapCanvasGridUtility.ApplySnapNormalized(
                         normalized,
                         asset.referenceResolution,
@@ -411,6 +451,36 @@ namespace GGemCo2DCoreEditor
                 _draggingNodeId = null;
                 current.Use();
             }
+        }
+
+        /// <summary>
+        /// 그래프 Rect와 노드 외곽 여백을 이용해 실제 오버레이 입력 Rect를 계산합니다.
+        /// </summary>
+        /// <param name="graphRect">배경 이미지와 Grid가 그려지는 그래프 Rect입니다.</param>
+        /// <returns>노드 외곽까지 포함한 입력 우선순위 Rect입니다.</returns>
+        private static Rect CalculateInteractionRect(Rect graphRect)
+        {
+            float horizontalPadding = NodeWidth * 0.5f + EdgeHitDistance;
+            float verticalPadding = NodeHeight * 0.5f + EdgeHitDistance;
+            return Rect.MinMaxRect(
+                graphRect.xMin - horizontalPadding,
+                graphRect.yMin - verticalPadding,
+                graphRect.xMax + horizontalPadding,
+                graphRect.yMax + verticalPadding);
+        }
+
+        /// <summary>
+        /// 기본 캔버스 영역과 그래프 오버레이 영역을 합쳐 입력을 선점할 Rect를 계산합니다.
+        /// </summary>
+        /// <param name="frame">현재 캔버스 프레임 정보입니다.</param>
+        /// <returns>캔버스가 우선적으로 입력을 가져갈 Rect입니다.</returns>
+        private static Rect GetInputCaptureRect(WorldMapCanvasFrame frame)
+        {
+            return Rect.MinMaxRect(
+                Mathf.Min(frame.HostRect.xMin, frame.InteractionRect.xMin),
+                Mathf.Min(frame.HostRect.yMin, frame.InteractionRect.yMin),
+                Mathf.Max(frame.HostRect.xMax, frame.InteractionRect.xMax),
+                Mathf.Max(frame.HostRect.yMax, frame.InteractionRect.yMax));
         }
 
         /// <summary>

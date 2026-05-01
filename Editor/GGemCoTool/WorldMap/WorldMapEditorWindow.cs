@@ -12,6 +12,7 @@ namespace GGemCo2DCoreEditor
         private const string Title = "월드맵 그래프 에디터";
         private const float LeftPanelWidth = 320f;
         private const float RightPanelWidth = 340f;
+        private const float ToolbarHeight = 24f;
 
         private readonly WorldMapSelectionState _selectionState = new WorldMapSelectionState();
         private readonly WorldMapTableMapOptionProvider _mapOptions = new WorldMapTableMapOptionProvider();
@@ -73,30 +74,37 @@ namespace GGemCo2DCoreEditor
         /// </summary>
         private void OnGUI()
         {
-            DrawToolbar();
+            WorldMapEditorLayout layout = WorldMapEditorLayoutUtility.Build(
+                new Rect(0f, 0f, position.width, position.height),
+                LeftPanelWidth,
+                RightPanelWidth,
+                ToolbarHeight);
+
+            DrawToolbar(layout.ToolbarRect);
 
             if (_asset == null)
             {
-                DrawEmptyState();
+                DrawEmptyState(layout.BodyRect);
                 return;
             }
 
             _asset.EnsureDefaults();
 
-            using (new EditorGUILayout.HorizontalScope())
-            {
-                DrawLeftPanel();
-                DrawCanvasPanel();
-                DrawRightPanel();
-            }
+            WorldMapCanvasFrame canvasFrame = BuildCanvasFrame(layout);
+            HandleCanvasInput(layout, canvasFrame);
+            DrawLeftPanel(layout.LeftPanelRect);
+            DrawRightPanel(layout.RightPanelRect);
+            DrawCanvasOverlay(layout, canvasFrame);
         }
 
         /// <summary>
-        /// 상단 툴바를 그리고 주요 명령을 처리합니다.
+        /// 상단 툴바를 별도 레이어로 그리고 주요 명령을 처리합니다.
         /// </summary>
-        private void DrawToolbar()
+        /// <param name="toolbarRect">툴바가 배치될 고정 Rect입니다.</param>
+        private void DrawToolbar(Rect toolbarRect)
         {
-            using (new EditorGUILayout.HorizontalScope(EditorStyles.toolbar))
+            GUILayout.BeginArea(toolbarRect, EditorStyles.toolbar);
+            using (new EditorGUILayout.HorizontalScope())
             {
                 WorldMapGraphAsset selectedAsset = (WorldMapGraphAsset)EditorGUILayout.ObjectField(
                     _asset,
@@ -154,13 +162,17 @@ namespace GGemCo2DCoreEditor
                     Repaint();
                 }
             }
+
+            GUILayout.EndArea();
         }
 
         /// <summary>
-        /// 에셋이 선택되지 않은 상태의 안내 UI를 그립니다.
+        /// 에셋이 선택되지 않은 상태의 안내 UI를 본문 영역에 그립니다.
         /// </summary>
-        private void DrawEmptyState()
+        /// <param name="bodyRect">툴바를 제외한 본문 영역 Rect입니다.</param>
+        private void DrawEmptyState(Rect bodyRect)
         {
+            GUILayout.BeginArea(bodyRect);
             EditorGUILayout.Space(12f);
             EditorGUILayout.HelpBox(
                 "월드맵 GraphAsset을 선택하거나 새로 생성해주세요.\n" +
@@ -171,14 +183,18 @@ namespace GGemCo2DCoreEditor
             {
                 CreateGraphAsset();
             }
+
+            GUILayout.EndArea();
         }
 
         /// <summary>
-        /// 좌측 그래프 설정, Grid 설정, 노드 목록, 연결선 목록, 검증 결과 패널을 그립니다.
+        /// 좌측 그래프 설정, Grid 설정, 노드 목록, 연결선 목록, 검증 결과 패널을 고정 Rect 안에 그립니다.
         /// </summary>
-        private void DrawLeftPanel()
+        /// <param name="panelRect">좌측 패널이 배치될 Rect입니다.</param>
+        private void DrawLeftPanel(Rect panelRect)
         {
-            using (new EditorGUILayout.VerticalScope(GUILayout.Width(LeftPanelWidth), GUILayout.ExpandHeight(true)))
+            GUILayout.BeginArea(panelRect);
+            using (new EditorGUILayout.VerticalScope(GUILayout.ExpandWidth(true), GUILayout.ExpandHeight(true)))
             {
                 _leftScroll = EditorGUILayout.BeginScrollView(_leftScroll);
                 DrawGraphSettings();
@@ -194,39 +210,79 @@ namespace GGemCo2DCoreEditor
                 DrawValidationResults();
                 EditorGUILayout.EndScrollView();
             }
+
+            GUILayout.EndArea();
         }
 
         /// <summary>
-        /// 중앙 캔버스 패널을 그리고 노드/연결선 편집 입력을 처리합니다.
+        /// 현재 본문 레이아웃과 선택 상태를 바탕으로 캔버스 프레임을 계산합니다.
         /// </summary>
-        private void DrawCanvasPanel()
+        /// <param name="layout">현재 에디터 레이아웃 정보입니다.</param>
+        /// <returns>본문 로컬 좌표 기준의 캔버스 프레임입니다.</returns>
+        private WorldMapCanvasFrame BuildCanvasFrame(WorldMapEditorLayout layout)
         {
-            Rect canvasRect = GUILayoutUtility.GetRect(
-                240f,
-                10000f,
-                240f,
-                10000f,
-                GUILayout.ExpandWidth(true),
-                GUILayout.ExpandHeight(true));
-
-            _canvasView.Draw(
-                canvasRect,
-                _asset,
-                _selectionState,
-                _canvasGridSettings,
-                _mapOptions.TableMap,
-                node => _selectionState.SelectNode(node.nodeId),
-                edge => _selectionState.SelectEdge(edge.edgeId),
-                CreateEdge,
-                OnGraphChanged);
+            Rect localCanvasHostRect = OffsetRect(layout.CanvasHostRect, -layout.BodyRect.position);
+            return _canvasView.BuildFrame(localCanvasHostRect, _asset, _selectionState);
         }
 
         /// <summary>
-        /// 우측 선택 상세 인스펙터 패널을 그립니다.
+        /// 패널보다 먼저 캔버스 입력을 처리하여 오버레이 영역의 입력 우선순위를 보장합니다.
         /// </summary>
-        private void DrawRightPanel()
+        /// <param name="layout">현재 에디터 레이아웃 정보입니다.</param>
+        /// <param name="canvasFrame">본문 로컬 좌표 기준의 캔버스 프레임입니다.</param>
+        private void HandleCanvasInput(WorldMapEditorLayout layout, WorldMapCanvasFrame canvasFrame)
         {
-            using (new EditorGUILayout.VerticalScope(GUILayout.Width(RightPanelWidth), GUILayout.ExpandHeight(true)))
+            GUI.BeginGroup(layout.BodyRect);
+            try
+            {
+                _canvasView.HandleInput(
+                    canvasFrame,
+                    _asset,
+                    _selectionState,
+                    _canvasGridSettings,
+                    _mapOptions.TableMap,
+                    node => _selectionState.SelectNode(node.nodeId),
+                    edge => _selectionState.SelectEdge(edge.edgeId),
+                    CreateEdge,
+                    OnGraphChanged);
+            }
+            finally
+            {
+                GUI.EndGroup();
+            }
+        }
+
+        /// <summary>
+        /// 중앙 캔버스 오버레이를 본문 레이어의 마지막에 그려 패널 위에 표시합니다.
+        /// </summary>
+        /// <param name="layout">현재 에디터 레이아웃 정보입니다.</param>
+        /// <param name="canvasFrame">본문 로컬 좌표 기준의 캔버스 프레임입니다.</param>
+        private void DrawCanvasOverlay(WorldMapEditorLayout layout, WorldMapCanvasFrame canvasFrame)
+        {
+            GUI.BeginGroup(layout.BodyRect);
+            try
+            {
+                _canvasView.Draw(
+                    canvasFrame,
+                    _asset,
+                    _selectionState,
+                    _canvasGridSettings,
+                    _mapOptions.TableMap);
+            }
+            finally
+            {
+                GUI.EndGroup();
+            }
+        }
+
+        /// <summary>
+        /// 우측 선택 상세 인스펙터 패널을 고정 Rect 안에 그립니다.
+        /// </summary>
+        /// <param name="panelRect">우측 패널이 배치될 Rect입니다.</param>
+        private void DrawRightPanel(Rect panelRect)
+        {
+            GUILayout.BeginArea(panelRect);
+            using (new EditorGUILayout.VerticalScope(GUILayout.ExpandWidth(true), GUILayout.ExpandHeight(true)))
             {
                 _rightScroll = EditorGUILayout.BeginScrollView(_rightScroll);
                 _inspectorPanel.Draw(
@@ -241,6 +297,19 @@ namespace GGemCo2DCoreEditor
                     StartLinking);
                 EditorGUILayout.EndScrollView();
             }
+
+            GUILayout.EndArea();
+        }
+
+        /// <summary>
+        /// Rect 좌표계를 지정한 오프셋만큼 이동합니다.
+        /// </summary>
+        /// <param name="source">이동할 원본 Rect입니다.</param>
+        /// <param name="offset">적용할 오프셋입니다.</param>
+        /// <returns>오프셋이 적용된 Rect입니다.</returns>
+        private static Rect OffsetRect(Rect source, Vector2 offset)
+        {
+            return new Rect(source.position + offset, source.size);
         }
 
         /// <summary>
