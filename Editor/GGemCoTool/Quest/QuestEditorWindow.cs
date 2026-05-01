@@ -60,6 +60,8 @@ namespace GGemCo2DCoreEditor
         private TableItem _tableItem;
         
         private int _selectedQuestIndex;
+        private readonly List<SearchableDropdownUtility.Option<int>> _questOptions =
+            new List<SearchableDropdownUtility.Option<int>>();
         private List<string> _nameQuest = new List<string>();
         private List<string> _nameNpc = new List<string>();
         private List<string> _nameMonster = new List<string>();
@@ -96,6 +98,7 @@ namespace GGemCo2DCoreEditor
                 out _struckTableQuests,
                 info => $"{info.Uid} - {info.Name}"
             );
+            BuildQuestDropdownOptions();
             
             TableLoaderManager.LoadTableData<TableNpc, StruckTableNpc>(
                 ConfigAddressableTable.Npc,
@@ -168,26 +171,33 @@ namespace GGemCo2DCoreEditor
             _maxSlotCount = saveSettings.saveDataMaxSlotCount;
             _saveDirectory = saveSettings.SaveDataFolderName;
         }
+
+        /// <summary>
+        /// 퀘스트 테이블 데이터를 검색 가능한 드롭다운 항목으로 변환합니다.
+        /// </summary>
+        private void BuildQuestDropdownOptions()
+        {
+            _questOptions.Clear();
+
+            foreach (var pair in _struckTableQuests)
+            {
+                StruckTableQuest questInfo = pair.Value;
+                if (questInfo == null) continue;
+
+                _questOptions.Add(new SearchableDropdownUtility.Option<int>(
+                    questInfo.Uid.ToString(),
+                    questInfo.Name,
+                    pair.Key));
+            }
+        }
+
         private void OnGUI()
         {
             EditorGUIUtility.labelWidth = LabelWidth; // 라벨 너비 축소
             _scrollPos = EditorGUILayout.BeginScrollView(_scrollPos);
 
             HelperEditorUI.OnGUITitle("저장/불러오기");
-            _selectedQuestIndex = EditorGUILayout.Popup("연출 선택", _selectedQuestIndex, _nameQuest.ToArray());
-            if (_previousIndex != _selectedQuestIndex)
-            {
-                // 선택이 바뀌었을 때 실행할 코드
-                // Debug.Log($"선택이 변경되었습니다: {questTitle[selectedQuestIndex]}");
-                if (LoadQuestFromJson())
-                {
-                    _previousIndex = _selectedQuestIndex;
-                }
-                else
-                {
-                    _selectedQuestIndex = _previousIndex;
-                }
-            }
+            DrawQuestSearchableDropdown();
             
             GUILayout.BeginHorizontal();
             if (GUILayout.Button("JSON 저장")) SaveQuestToJson();
@@ -205,16 +215,7 @@ namespace GGemCo2DCoreEditor
             HelperEditorUI.GUILineBlue(2);
             // 기본정보
             HelperEditorUI.OnGUITitle("퀘스트 기본 정보");
-            // nextNodeGuid 읽기 전용 처리
-            GUI.enabled = false;
-            if (_selectedQuestIndex > 0)
-            {
-                var info = _struckTableQuests.GetValueOrDefault(_selectedQuestIndex);
-                _quest.uid = EditorGUILayout.IntField("Uid", info.Uid);
-                _quest.title = EditorGUILayout.TextField("제목", info.Name);
-            }
-
-            GUI.enabled = true;
+            DrawQuestBaseInfo();
            
             // 단계별 정보
             HelperEditorUI.GUILineBlue(2);
@@ -227,6 +228,96 @@ namespace GGemCo2DCoreEditor
             GUILayout.Space(30);
 
             EditorGUILayout.EndScrollView();
+        }
+
+        /// <summary>
+        /// 검색 가능한 퀘스트 선택 드롭다운을 그리고 선택 변경을 처리합니다.
+        /// </summary>
+        private void DrawQuestSearchableDropdown()
+        {
+            if (_questOptions.Count <= 0)
+            {
+                EditorGUILayout.HelpBox("퀘스트 테이블 데이터가 없습니다.", MessageType.Warning);
+                return;
+            }
+
+            using (new EditorGUILayout.HorizontalScope())
+            {
+                EditorGUILayout.PrefixLabel("퀘스트 선택");
+
+                SearchableDropdownUtility.DrawButtonAndShow(
+                    buttonText: GetSelectedQuestDropdownText(),
+                    options: _questOptions,
+                    selectedIndex: GetQuestOptionIndex(_selectedQuestIndex),
+                    onSelected: OnQuestDropdownSelected,
+                    defaultSearchMode: SearchableDropdownUtility.SearchMode.Both);
+            }
+        }
+
+        /// <summary>
+        /// 현재 선택된 퀘스트를 드롭다운 버튼에 표시할 문자열로 반환합니다.
+        /// </summary>
+        /// <returns>선택된 퀘스트 표시 문자열입니다.</returns>
+        private string GetSelectedQuestDropdownText()
+        {
+            return _struckTableQuests.TryGetValue(_selectedQuestIndex, out StruckTableQuest questInfo) &&
+                   questInfo != null
+                ? $"{questInfo.Uid} - {questInfo.Name}"
+                : "퀘스트 선택...";
+        }
+
+        /// <summary>
+        /// 퀘스트 테이블 인덱스에 해당하는 드롭다운 옵션 인덱스를 찾습니다.
+        /// </summary>
+        /// <param name="questTableIndex">퀘스트 테이블 로더가 부여한 인덱스입니다.</param>
+        /// <returns>드롭다운 옵션 인덱스입니다. 없으면 -1입니다.</returns>
+        private int GetQuestOptionIndex(int questTableIndex)
+        {
+            return _questOptions.FindIndex(option => option.Data == questTableIndex);
+        }
+
+        /// <summary>
+        /// 검색 드롭다운에서 선택한 퀘스트를 현재 선택 상태에 반영하고 JSON을 불러옵니다.
+        /// 불러오기에 실패하면 이전 선택으로 되돌립니다.
+        /// </summary>
+        /// <param name="index">선택된 드롭다운 옵션 인덱스입니다.</param>
+        /// <param name="option">선택된 퀘스트 옵션입니다.</param>
+        private void OnQuestDropdownSelected(int index, SearchableDropdownUtility.Option<int> option)
+        {
+            int nextQuestIndex = option.Data;
+            if (_selectedQuestIndex == nextQuestIndex) return;
+
+            int previousQuestIndex = _selectedQuestIndex;
+            _selectedQuestIndex = nextQuestIndex;
+            if (LoadQuestFromJson())
+            {
+                _previousIndex = _selectedQuestIndex;
+            }
+            else
+            {
+                _selectedQuestIndex = previousQuestIndex;
+                _previousIndex = previousQuestIndex;
+            }
+
+            Repaint();
+        }
+
+        /// <summary>
+        /// 선택된 퀘스트의 기본 정보를 읽기 전용 비활성화 상태로 표시합니다.
+        /// </summary>
+        private void DrawQuestBaseInfo()
+        {
+            if (!_struckTableQuests.TryGetValue(_selectedQuestIndex, out StruckTableQuest info) || info == null)
+            {
+                EditorGUILayout.HelpBox("선택된 퀘스트 정보가 없습니다.", MessageType.Info);
+                return;
+            }
+
+            using (new EditorGUI.DisabledScope(true))
+            {
+                _quest.uid = EditorGUILayout.IntField("Uid", info.Uid);
+                _quest.title = EditorGUILayout.TextField("제목", info.Name);
+            }
         }
 
         private void StartQuest()
