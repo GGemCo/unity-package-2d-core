@@ -10,6 +10,7 @@ namespace GGemCo2DCoreEditor
             {
                 { QuestConstants.ObjectiveType.TalkToNpc, new StepDrawerTalkToNpc() },
                 { QuestConstants.ObjectiveType.KillMonster, new StepDrawerKillMonster() },
+                { QuestConstants.ObjectiveType.KillMonsterInMap, new StepDrawerKillMonsterInMap() },
                 { QuestConstants.ObjectiveType.ReachPosition, new StepDrawerReachPosition() },
                 { QuestConstants.ObjectiveType.CollectItem, new StepDrawerCollectItem() },
                 // 나머지 ObjectiveType들도 여기에 추가

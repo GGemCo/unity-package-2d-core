@@ -21,15 +21,27 @@ namespace GGemCo2DCore
             Complete, // 보상 받기 전
             End // 보상 받은 후
         }
-        public enum ObjectiveType
+
+        /// <summary>
+        /// 퀘스트가 시작되는 조건을 정의합니다.
+        /// </summary>
+        public enum TriggerType
         {
             None,
             TalkToNpc,
-            KillMonster,
-            CollectItem,
-            ReachMap,
-            ReachPosition,
-            PlayCutscene,
+            EnterMap
+        }
+
+        public enum ObjectiveType
+        {
+            None = 0,
+            TalkToNpc = 1,
+            KillMonster = 2,
+            CollectItem = 3,
+            ReachMap = 4,
+            ReachPosition = 5,
+            PlayCutscene = 6,
+            KillMonsterInMap = 7,
         }
         public static string GetJsonFolderPath()
         {

@@ -19,6 +19,9 @@ namespace GGemCo2DCore
         private QuestData _questData;
         private PlayerData _playerData;
         private InventoryData _inventoryData;
+        private bool _isQuestJsonLoaded;
+        private bool _isRegisteredMapEntered;
+        private int _pendingEnterMapUid;
         
         private readonly ObjectiveHandlerFactory _handlerFactory = new ObjectiveHandlerFactory();
 
@@ -32,9 +35,15 @@ namespace GGemCo2DCore
         {
             _quests.Clear();
             _activeHandlers.Clear();
+            _isQuestJsonLoaded = false;
+            _pendingEnterMapUid = 0;
             _sceneGame = scene;
             _tableQuest = TableLoaderManager.Instance.TableQuest;
         }
+
+        /// <summary>
+        /// 게임 씬 시작 후 저장 데이터와 UI 참조를 연결하고 퀘스트 이벤트를 구독합니다.
+        /// </summary>
         public void OnStartBySceneGame()
         {
             _questData = _sceneGame.saveDataManager.Quest;
@@ -46,7 +55,18 @@ namespace GGemCo2DCore
                 _sceneGame.uIWindowManager?.GetUIWindowByUid<UIWindowQuestReward>(UIWindowConstants.WindowUid.QuestReward);
             _uiWindowInventory =
                 _sceneGame.uIWindowManager?.GetUIWindowByUid<UIWindowInventory>(UIWindowConstants.WindowUid.Inventory);
+            RegisterMapEnteredEvent();
             _ = LoadAllQuestJson();
+        }
+
+        /// <summary>
+        /// 맵 입장 이벤트를 중복 없이 구독합니다.
+        /// </summary>
+        private void RegisterMapEnteredEvent()
+        {
+            if (_isRegisteredMapEntered) return;
+            GameEventManager.MapEnteredEvent += OnMapEntered;
+            _isRegisteredMapEntered = true;
         }
         /// <summary>
         /// 저장되어있는 퀘스트 불러오기
@@ -76,14 +96,54 @@ namespace GGemCo2DCore
             }
             
             LoadQuestDatas();
+            _isQuestJsonLoaded = true;
+            int mapUid = _pendingEnterMapUid > 0
+                ? _pendingEnterMapUid
+                : (_sceneGame.mapManager != null ? _sceneGame.mapManager.GetCurrentMapUid() : 0);
+            _pendingEnterMapUid = 0;
+            await TryStartQuestsByEnterMap(mapUid);
+        }
+
+        /// <summary>
+        /// 맵 입장 이벤트를 받아 EnterMap 트리거 퀘스트를 시작합니다.
+        /// 퀘스트 JSON 적재가 끝나기 전이면 마지막 입장 맵을 보류합니다.
+        /// </summary>
+        /// <param name="eventData">입장 완료된 맵 정보입니다.</param>
+        private async void OnMapEntered(MapEnteredEventData eventData)
+        {
+            if (eventData.MapUid <= 0) return;
+            if (!_isQuestJsonLoaded)
+            {
+                _pendingEnterMapUid = eventData.MapUid;
+                return;
+            }
+
+            await TryStartQuestsByEnterMap(eventData.MapUid);
+        }
+
+        /// <summary>
+        /// 지정한 맵에 입장했을 때 자동 시작 가능한 퀘스트를 찾아 시작합니다.
+        /// </summary>
+        /// <param name="mapUid">입장한 맵 UID입니다.</param>
+        private async Task TryStartQuestsByEnterMap(int mapUid)
+        {
+            if (mapUid <= 0 || _tableQuest == null || _questData == null) return;
+
+            List<int> questUids = _tableQuest.GetQuestsByEnterMap(mapUid);
+            foreach (int questUid in questUids)
+            {
+                if (!_questData.IsStatusNone(questUid)) continue;
+                await StartQuest(questUid, 0, false);
+            }
         }
         /// <summary>
         /// 퀘스트 시작 처리
         /// </summary>
         /// <param name="questUid"></param>
-        /// <param name="npcUid"></param>
+        /// <param name="npcUid">퀘스트를 시작한 NPC UID입니다. 맵 입장 시작 퀘스트는 0을 사용합니다.</param>
+        /// <param name="showAlreadyStartedWarning">이미 진행 중일 때 시스템 경고 메시지를 표시할지 여부입니다.</param>
         /// <returns></returns>
-        public async Task<bool> StartQuest(int questUid, int npcUid)
+        public async Task<bool> StartQuest(int questUid, int npcUid, bool showAlreadyStartedWarning = true)
         {
             if (questUid <= 0) return false;
             var info = _tableQuest.GetDataByUid(questUid);
@@ -91,7 +151,10 @@ namespace GGemCo2DCore
 
             if (_questData.IsStatusNone(questUid) != true)
             {
-                _sceneGame.systemMessageManager.ShowMessageWarning("Quest_InProgress");//"진행중인 퀘스트 입니다."
+                if (showAlreadyStartedWarning)
+                {
+                    _sceneGame.systemMessageManager.ShowMessageWarning("Quest_InProgress");//"진행중인 퀘스트 입니다."
+                }
                 return false;
             }
 
@@ -107,10 +170,11 @@ namespace GGemCo2DCore
             StartObjective(quest.uid, stepIndex, npcUid);
             QuestStep questStep = GetQuestStep(quest.uid, stepIndex);
             // 첫 단계가 talk to npc 이면 바로 시작
-            if (questStep.objectiveType == QuestConstants.ObjectiveType.TalkToNpc)
+            if (questStep != null && questStep.objectiveType == QuestConstants.ObjectiveType.TalkToNpc)
             {
+                int dialogNpcUid = npcUid > 0 ? npcUid : questStep.targetUid;
                 var data = new DialogEventData(
-                    npcUid: npcUid
+                    npcUid: dialogNpcUid
                 );
                 GameEventManager.DialogStart(data);
             }
@@ -235,6 +299,10 @@ namespace GGemCo2DCore
             _uiWindowHudQuest?.RemoveQuestElement(questUid);
         }
 
+        /// <summary>
+        /// 퀘스트 완료 보상을 플레이어 데이터와 맵 진행 데이터에 적용합니다.
+        /// </summary>
+        /// <param name="questUid">보상을 지급할 퀘스트 UID입니다.</param>
         private void GiveReward(int questUid)
         {
             if (questUid <= 0) return;
@@ -254,13 +322,42 @@ namespace GGemCo2DCore
             _playerData?.AddExp(quest.reward.experience);
             _playerData?.AddCurrency(CurrencyConstants.Type.Gold, quest.reward.gold);
             _playerData?.AddCurrency(CurrencyConstants.Type.Silver, quest.reward.silver);
-            if (quest.reward.items.Count <= 0) return;
-            foreach (var rewardItem in quest.reward.items)
+            GiveItemReward(quest.reward.items);
+            GiveMapProgressReward(quest.reward.mapProgress);
+        }
+
+        /// <summary>
+        /// 퀘스트 아이템 보상을 인벤토리에 추가하고 인벤토리 UI를 갱신합니다.
+        /// </summary>
+        /// <param name="items">지급할 아이템 보상 목록입니다.</param>
+        private void GiveItemReward(List<RewardItem> items)
+        {
+            if (items == null || items.Count <= 0) return;
+
+            foreach (var rewardItem in items)
             {
                 if (rewardItem == null) continue;
                 ResultCommon result = _inventoryData?.AddItem(rewardItem.itemUid, rewardItem.amount);
                 _uiWindowInventory?.SetIcons(result);
             }
+        }
+
+        /// <summary>
+        /// 퀘스트 완료 보상으로 맵 클리어와 월드맵 노드 활성화를 적용합니다.
+        /// </summary>
+        /// <param name="mapProgress">맵 진행 보상 정보입니다.</param>
+        private void GiveMapProgressReward(QuestRewardMapProgress mapProgress)
+        {
+            if (mapProgress == null) return;
+
+            bool hasClearMapReward = mapProgress.clearMapUid > 0;
+            bool hasWorldMapNodes = mapProgress.activateWorldMapNodeIds != null &&
+                                    mapProgress.activateWorldMapNodeIds.Count > 0;
+            if (!hasClearMapReward && !hasWorldMapNodes) return;
+
+            _sceneGame.saveDataManager.MapProgressController.ClearMap(
+                mapProgress.clearMapUid,
+                mapProgress.activateWorldMapNodeIds);
         }
 
         /// <summary>
@@ -288,13 +385,6 @@ namespace GGemCo2DCore
             // 저장 먼저.
             ChangeStatus(questUid, stepIndex, QuestConstants.Status.InProgress);
             
-            // 목표 시작
-            if (npcUid <= 0 && questStep.targetUid > 0)
-            {
-                npcUid = questStep.targetUid;
-            }
-            handler.StartObjective(questUid, questStep, stepIndex, npcUid);
-
             if (!_activeHandlers.ContainsKey(questUid))
                 _activeHandlers[questUid] = new Dictionary<int, IObjectiveHandler>();
 
@@ -302,6 +392,13 @@ namespace GGemCo2DCore
             
             // UIWindowHudQuest 에 element 추가
             AddHudQuestElement(questUid, stepIndex);
+
+            // 목표 시작
+            if (npcUid <= 0 && questStep.targetUid > 0)
+            {
+                npcUid = questStep.targetUid;
+            }
+            handler.StartObjective(questUid, questStep, stepIndex, npcUid);
         }
 
         public void CheckStepComplete(int questUid, int stepIndex, QuestStep step)
@@ -313,6 +410,32 @@ namespace GGemCo2DCore
                 GcLogger.Log($"[QuestManager] 퀘스트 {questUid}, 스텝 {stepIndex} 완료!");
                 // 다음 단계 or 완료 처리
             }
+        }
+
+        /// <summary>
+        /// 지정한 맵에서 특정 목표 타입의 퀘스트가 진행 중인지 확인합니다.
+        /// </summary>
+        /// <param name="mapUid">확인할 맵 UID입니다.</param>
+        /// <param name="objectiveType">확인할 목표 타입입니다.</param>
+        /// <returns>해당 맵에서 목표 타입이 진행 중이면 true입니다.</returns>
+        public bool HasActiveObjective(int mapUid, QuestConstants.ObjectiveType objectiveType)
+        {
+            if (mapUid <= 0) return false;
+
+            foreach (var questHandlers in _activeHandlers)
+            {
+                int questUid = questHandlers.Key;
+                foreach (int stepIndex in questHandlers.Value.Keys)
+                {
+                    QuestStep questStep = GetQuestStep(questUid, stepIndex);
+                    if (questStep == null) continue;
+                    if (questStep.objectiveType != objectiveType) continue;
+                    if (questStep.mapUid != mapUid) continue;
+                    return true;
+                }
+            }
+
+            return false;
         }
 
         public void DisposeQuestHandlers(int questUid)
@@ -336,6 +459,12 @@ namespace GGemCo2DCore
 
         public void OnDestroy()
         {
+            if (_isRegisteredMapEntered)
+            {
+                GameEventManager.MapEnteredEvent -= OnMapEntered;
+                _isRegisteredMapEntered = false;
+            }
+
             DisposeAllHandlers();
         }
         private void DisposeAllHandlers()

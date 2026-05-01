@@ -136,6 +136,8 @@ namespace GGemCo2DCoreEditor
             _quest.steps ??= new List<QuestStep>();
             _quest.reward ??= new QuestReward();
             _quest.reward.items ??= new List<RewardItem>();
+            _quest.reward.mapProgress ??= new QuestRewardMapProgress();
+            _quest.reward.mapProgress.activateWorldMapNodeIds ??= new List<string>();
 
             MetadataQuestStepListDrawer metadataQuestStepListDrawer = new MetadataQuestStepListDrawer(
                 _nameQuest, _nameNpc, _nameMonster, _nameMap, _nameDialogue, _nameItem, 

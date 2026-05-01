@@ -13,6 +13,7 @@ namespace GGemCo2DCore
         public static event Action<ItemCollectedEventData> ItemCollectedEvent;
         public static event Action<DialogEventData> DialogStartEvent;
         public static event Action<DialogEventData> DialogEndEvent;
+        public static event Action<MapEnteredEventData> MapEnteredEvent;
 
         // 신규 API (권장)
         public static void MonsterKilled(in MonsterKilledEventData data)
@@ -26,6 +27,13 @@ namespace GGemCo2DCore
 
         public static void DialogEnd(in DialogEventData data)
             => DialogEndEvent?.Invoke(data);
+
+        /// <summary>
+        /// 맵 입장 완료 이벤트를 발행합니다.
+        /// </summary>
+        /// <param name="data">입장한 맵 정보를 담은 이벤트 데이터입니다.</param>
+        public static void MapEntered(in MapEnteredEventData data)
+            => MapEnteredEvent?.Invoke(data);
 
         // ⚠️ 주의: static 이벤트를 명시적으로 null로 지우는 것은 권장하지 않습니다.
         // - 수명주기/조립 루트에서 +=/−= 균형을 유지하세요.

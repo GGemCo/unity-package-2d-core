@@ -12,6 +12,8 @@ namespace GGemCo2DCore
                     return new ObjectiveHandlerTalkToNpc();
                 case QuestConstants.ObjectiveType.KillMonster:
                     return new ObjectiveHandlerKillMonster();
+                case QuestConstants.ObjectiveType.KillMonsterInMap:
+                    return new ObjectiveHandlerKillMonsterInMap();
                 case QuestConstants.ObjectiveType.CollectItem:
                     return new ObjectiveHandlerCollectItem();
                 default:

@@ -1,5 +1,6 @@
 using System;
 using System.Collections;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using UnityEngine;
 using UnityEngine.Events;
@@ -456,6 +457,9 @@ namespace GGemCo2DCore
 
             // Logger.Log("Fade Out 완료");
         }
+        /// <summary>
+        /// 맵 로드 완료 후 저장 데이터 갱신, 기존 완료 콜백, 맵 입장 이벤트 발행을 처리합니다.
+        /// </summary>
         void OnMapLoadComplete()
         {
             StopAllCoroutines();
@@ -466,6 +470,7 @@ namespace GGemCo2DCore
             _saveDataManager.SaveData();
             
             OnLoadCompleteMap?.Invoke(_mapTileCommon, _grid);
+            GameEventManager.MapEntered(new MapEnteredEventData(_currentMapUid, _mapTileCommon != null ? _mapTileCommon.gameObject : null));
             // Logger.Log("맵 로드 완료");
         }
         private bool IsPossibleLoad()
@@ -489,9 +494,21 @@ namespace GGemCo2DCore
         {
             if (monsterVid <= 0) return;
             if (!HasValidCurrentMap()) return;
+            if (ShouldSuppressMonsterRespawn()) return;
 
             _mapLoadCharacters?.MarkMonsterDead(monsterVid);
             StartCoroutine(_mapLoadCharacters.RegenMonster(monsterVid, _currentMapUid, _mapTileCommon));
+        }
+
+        /// <summary>
+        /// 맵 전체 몬스터 처치 목표가 진행 중이면 몬스터 리젠 예약을 막아야 하는지 확인합니다.
+        /// </summary>
+        /// <returns>현재 맵에서 몬스터 리젠을 막아야 하면 true입니다.</returns>
+        private bool ShouldSuppressMonsterRespawn()
+        {
+            return SceneGame.Instance?.QuestManager?.HasActiveObjective(
+                _currentMapUid,
+                QuestConstants.ObjectiveType.KillMonsterInMap) == true;
         }
 
         public void OnMonsterReturnedToPool(int monsterVid)
@@ -570,6 +587,18 @@ namespace GGemCo2DCore
         {
             return _mapTileCommon != null ? _mapTileCommon.transform : null;
         }
+
+        /// <summary>
+        /// 현재 로드된 맵에 배치된 몬스터 항목 목록을 반환합니다.
+        /// </summary>
+        /// <returns>몬스터 VID와 게임 오브젝트 쌍 목록입니다.</returns>
+        public List<KeyValuePair<int, GameObject>> GetCurrentMapMonsterEntries()
+        {
+            return _mapTileCommon != null
+                ? _mapTileCommon.GetMonsterEntries()
+                : new List<KeyValuePair<int, GameObject>>();
+        }
+
         /// <summary>
         /// 모든 캐릭터 활성화
         /// 연출 시작시 사용
