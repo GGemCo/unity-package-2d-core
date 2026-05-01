@@ -691,5 +691,10 @@ namespace GGemCo2DCore
         {
             return _grid != null ? _grid.GetComponent<Grid>() : null;
         }
+
+        public string GetCurrentMapName()
+        {
+            return _currentMapTableData != null ? _currentMapTableData.Name : "";
+        }
     }
 }

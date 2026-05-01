@@ -40,6 +40,8 @@ namespace GGemCo2DCore
         // TODO: 전투 상태 표기 방식 정리 필요
         [Tooltip("전투 상태")]
         public TMP_Text textBattleStatus;
+        [Tooltip("맵 이름 표시 오브젝트")]
+        [SerializeField] private TMP_Text textMapName;
         
         private Vector3 _prevPositionHp;
 
@@ -62,6 +64,12 @@ namespace GGemCo2DCore
             base.Awake();
             if (gameObjectHp)
                 _prevPositionHp = gameObjectHp.transform.localPosition;
+            MapManager.OnLoadCompleteMap += OnLoadCompleteMap;
+        }
+
+        private void OnDestroy()
+        {
+            MapManager.OnLoadCompleteMap -= OnLoadCompleteMap;
         }
 
         #region 윈도우 열기 버튼
@@ -215,6 +223,12 @@ namespace GGemCo2DCore
             {
                 horizontalLayoutGroup.childAlignment = TextAnchor.MiddleCenter;
             }
+        }
+
+        private void OnLoadCompleteMap(MapTileCommon mapTileCommon, GameObject grid)
+        {
+            if (!textMapName) return;
+            textMapName.text = SceneGame.mapManager.GetCurrentMapName();
         }
     }
 }
