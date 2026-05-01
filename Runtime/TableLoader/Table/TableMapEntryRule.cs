@@ -70,11 +70,11 @@ namespace GGemCo2DCore
             {
                 Uid = MathHelper.ParseInt(data.GetValueOrDefault("Uid")),
                 Name = data.GetValueOrDefault("Name"),
-                Enabled = ParseBool(data.GetValueOrDefault("Enabled"), true),
+                Enabled = ConvertBoolean(data["Enabled"]),
                 Priority = MathHelper.ParseInt(data.GetValueOrDefault("Priority")),
                 RequestMapUid = MathHelper.ParseInt(data.GetValueOrDefault("RequestMapUid")),
                 ConditionLicenseUid = MathHelper.ParseInt(data.GetValueOrDefault("ConditionLicenseUid")),
-                CompareType = ParseCompareType(data.GetValueOrDefault("CompareType")),
+                CompareType = EnumHelper.ConvertEnum<MapEntryRuleConstants.CompareType>(data.GetValueOrDefault("CompareType")),
                 CompareValue = data.GetValueOrDefault("CompareValue"),
                 TargetMapUid = MathHelper.ParseInt(data.GetValueOrDefault("TargetMapUid")),
                 Memo = data.GetValueOrDefault("Memo"),
@@ -105,46 +105,5 @@ namespace GGemCo2DCore
             return priorityCompare != 0 ? priorityCompare : left.Uid.CompareTo(right.Uid);
         }
 
-        /// <summary>
-        /// 테이블 문자열을 bool 값으로 변환합니다.
-        /// </summary>
-        /// <param name="value">테이블에 입력된 bool 문자열입니다.</param>
-        /// <param name="defaultValue">값이 비어 있거나 해석할 수 없을 때 사용할 기본값입니다.</param>
-        /// <returns>변환된 bool 값입니다.</returns>
-        private static bool ParseBool(string value, bool defaultValue)
-        {
-            if (string.IsNullOrWhiteSpace(value))
-            {
-                return defaultValue;
-            }
-
-            switch (value.Trim().ToLowerInvariant())
-            {
-                case "1":
-                case "true":
-                case "yes":
-                case "on":
-                    return true;
-                case "0":
-                case "false":
-                case "no":
-                case "off":
-                    return false;
-                default:
-                    return defaultValue;
-            }
-        }
-
-        /// <summary>
-        /// 테이블 문자열을 라이센스 비교 타입으로 변환합니다.
-        /// </summary>
-        /// <param name="value">테이블에 입력된 비교 타입 문자열입니다.</param>
-        /// <returns>변환된 비교 타입입니다.</returns>
-        private static MapEntryRuleConstants.CompareType ParseCompareType(string value)
-        {
-            return string.IsNullOrWhiteSpace(value)
-                ? MapEntryRuleConstants.CompareType.Exists
-                : EnumHelper.ConvertEnum<MapEntryRuleConstants.CompareType>(value);
-        }
     }
 }

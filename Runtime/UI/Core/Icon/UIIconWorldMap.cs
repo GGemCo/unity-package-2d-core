@@ -21,7 +21,7 @@ namespace GGemCo2DCore
         Inactive,
 
         /// <summary>표시는 되지만 아직 클리어한 적이 없는 노드 상태입니다.</summary>
-        NoInvite,
+        NoClear,
     }
 
     /// <summary>
@@ -144,7 +144,7 @@ namespace GGemCo2DCore
             }
 
             SetInactiveVisualState(false, false);
-            ApplyNoInviteVisual(visualState == WorldMapNodeVisualState.NoInvite);
+            ApplyNoInviteVisual(visualState == WorldMapNodeVisualState.NoClear);
         }
 
         /// <summary>

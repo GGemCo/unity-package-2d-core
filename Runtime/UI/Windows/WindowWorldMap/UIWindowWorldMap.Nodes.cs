@@ -166,7 +166,7 @@ namespace GGemCo2DCore
             }
 
             return IsWorldMapNodeNoInvite(node)
-                ? WorldMapNodeVisualState.NoInvite
+                ? WorldMapNodeVisualState.NoClear
                 : WorldMapNodeVisualState.Normal;
         }
 
