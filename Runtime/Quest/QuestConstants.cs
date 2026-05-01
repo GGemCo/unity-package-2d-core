@@ -38,7 +38,7 @@ namespace GGemCo2DCore
             TalkToNpc = 1,
             KillMonster = 2,
             CollectItem = 3,
-            ReachMap = 4,
+            EnterMap = 4,
             ReachPosition = 5,
             PlayCutscene = 6,
             KillMonsterInMap = 7,

@@ -77,12 +77,28 @@ namespace GGemCo2DCore
                     int count = questData.GetCount(uid);
                     SetCount(count);
                     break;
-                case QuestConstants.ObjectiveType.ReachMap:
+                case QuestConstants.ObjectiveType.EnterMap:
+                    SetEnterMapObjective(questStep);
+                    break;
                 case QuestConstants.ObjectiveType.ReachPosition:
                 case QuestConstants.ObjectiveType.PlayCutscene:
                 default:
                     break;
             }
+        }
+
+        /// <summary>
+        /// EnterMap 목표의 맵 입장 안내 문구를 설정합니다.
+        /// </summary>
+        /// <param name="questStep">현재 표시할 퀘스트 단계 정보입니다.</param>
+        private void SetEnterMapObjective(QuestStep questStep)
+        {
+            if (questStep == null || tableMap == null) return;
+
+            var infoMap = tableMap.GetDataByUid(questStep.mapUid);
+            if (infoMap == null) return;
+
+            textQuestObjective.text = $"Enter {infoMap.Name}";
         }
 
         /// <summary>
