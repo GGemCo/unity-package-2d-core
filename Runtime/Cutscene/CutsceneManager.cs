@@ -24,7 +24,6 @@ namespace GGemCo2DCore
         private CutsceneData _currentCutscene;
         private float _playTimer;
         private int _currentIndex;
-        private float _originalOrthographicSize;
         private DialogueBalloonPool _dialogueBalloonPool;
 
         // 연출 중 동적으로 생성된 캐릭터 인스턴스를 타입과 UID 기준으로 관리합니다.
@@ -244,9 +243,6 @@ namespace GGemCo2DCore
             Reset();
             _currentState = State.Loading;
             
-            // 카메라 원본 size 저장
-            _originalOrthographicSize = SceneGame.Instance.mainCamera.orthographicSize;
-
             // 모든 캐릭터 활성화, 컬링 적용되지 않음
             _sceneGame.mapManager.ActiveAllCharacters();
 
@@ -290,9 +286,6 @@ namespace GGemCo2DCore
                     GcLogger.LogError("연출 json 파일이 없습니다. " + info.FileName);
                     return;
                 }
-
-                // 카메라 원본 size 저장
-                _originalOrthographicSize = SceneGame.Instance.mainCamera.orthographicSize;
 
                 // 모든 캐릭터 활성화, 컬링 적용되지 않음
                 _sceneGame.mapManager.ActiveAllCharacters();

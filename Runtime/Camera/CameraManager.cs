@@ -426,7 +426,8 @@ namespace GGemCo2DCore
             float endSize,
             float duration = 1f,
             Easing.EaseType easeType = Easing.EaseType.EaseOutQuad,
-            bool useUnscaledTime = false)
+            bool useUnscaledTime = false,
+            bool changeOriginalSize = false)
         {
             if (_currentCamera == null || !_currentCamera.orthographic)
             {
@@ -440,6 +441,10 @@ namespace GGemCo2DCore
             _zoomEasing = easeType;
             _zoomUseUnscaledTime = useUnscaledTime;
             _isZooming = true;
+            if (changeOriginalSize)
+            {
+                ChangeOriginalOrthographicSize(endSize);
+            }
 
             if (duration <= 0f)
             {
@@ -509,6 +514,11 @@ namespace GGemCo2DCore
         public Vector2 GetPositionCenter()
         {
             return transform.position;
+        }
+
+        public void ChangeOriginalOrthographicSize(float size)
+        {
+            _originalOrthographicSize = size;
         }
 
 #if UNITY_EDITOR
