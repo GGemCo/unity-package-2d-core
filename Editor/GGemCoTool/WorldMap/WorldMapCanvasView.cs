@@ -14,6 +14,12 @@ namespace GGemCo2DCoreEditor
         private const float NodeHeight = 44f;
         private const float EdgeHitDistance = 8f;
 
+        private static readonly Color CanvasBackgroundColor = new Color(0.13f, 0.13f, 0.14f);
+        private static readonly Color GraphBackgroundColor = new Color(0.18f, 0.18f, 0.2f);
+        private static readonly Color GraphBorderColor = new Color(0.65f, 0.65f, 0.68f, 0.8f);
+        private static readonly Color MinorGridColor = new Color(1f, 1f, 1f, 0.08f);
+        private static readonly Color MajorGridColor = new Color(1f, 1f, 1f, 0.16f);
+
         private string _draggingNodeId;
         private bool _isPanning;
         private Vector2 _lastMousePosition;
@@ -24,6 +30,7 @@ namespace GGemCo2DCoreEditor
         /// <param name="canvasRect">캔버스를 그릴 IMGUI 영역입니다.</param>
         /// <param name="asset">편집 중인 월드맵 그래프 에셋입니다.</param>
         /// <param name="state">선택 및 캔버스 보기 상태입니다.</param>
+        /// <param name="gridSettings">Grid 및 Snap 설정입니다.</param>
         /// <param name="tableMap">노드 표시 이름을 찾을 TableMap입니다.</param>
         /// <param name="onNodeSelected">노드 선택 콜백입니다.</param>
         /// <param name="onEdgeSelected">연결선 선택 콜백입니다.</param>
@@ -33,6 +40,7 @@ namespace GGemCo2DCoreEditor
             Rect canvasRect,
             WorldMapGraphAsset asset,
             WorldMapSelectionState state,
+            WorldMapCanvasGridSettings gridSettings,
             TableMap tableMap,
             Action<WorldMapNodeData> onNodeSelected,
             Action<WorldMapEdgeData> onEdgeSelected,
@@ -45,11 +53,11 @@ namespace GGemCo2DCoreEditor
             }
 
             Rect graphRect = CalculateGraphRect(canvasRect, asset, state);
-            DrawBackground(canvasRect, graphRect, asset);
+            DrawBackground(canvasRect, graphRect, asset, gridSettings);
             DrawEdges(asset, state, graphRect);
             DrawNodes(asset, state, tableMap, graphRect);
-            DrawCanvasHint(canvasRect, state);
-            HandleEvents(canvasRect, graphRect, asset, state, onNodeSelected, onEdgeSelected, onCreateEdge, onChanged);
+            DrawCanvasHint(canvasRect, gridSettings, state);
+            HandleEvents(canvasRect, graphRect, asset, state, gridSettings, onNodeSelected, onEdgeSelected, onCreateEdge, onChanged);
         }
 
         /// <summary>
@@ -74,27 +82,29 @@ namespace GGemCo2DCoreEditor
         }
 
         /// <summary>
-        /// 캔버스 배경과 월드맵 배경 이미지를 그립니다.
+        /// 캔버스 배경과 월드맵 배경 이미지를 그리고 필요 시 Grid를 겹쳐서 표시합니다.
         /// </summary>
         /// <param name="canvasRect">전체 캔버스 영역입니다.</param>
         /// <param name="graphRect">그래프 배경 영역입니다.</param>
         /// <param name="asset">배경 Sprite를 가진 그래프 에셋입니다.</param>
-        private static void DrawBackground(Rect canvasRect, Rect graphRect, WorldMapGraphAsset asset)
+        /// <param name="gridSettings">Grid 표시 설정입니다.</param>
+        private static void DrawBackground(Rect canvasRect, Rect graphRect, WorldMapGraphAsset asset, WorldMapCanvasGridSettings gridSettings)
         {
-            EditorGUI.DrawRect(canvasRect, new Color(0.13f, 0.13f, 0.14f));
-            EditorGUI.DrawRect(graphRect, new Color(0.18f, 0.18f, 0.2f));
+            EditorGUI.DrawRect(canvasRect, CanvasBackgroundColor);
+            EditorGUI.DrawRect(graphRect, GraphBackgroundColor);
 
             if (asset.backgroundSprite != null && asset.backgroundSprite.texture != null)
             {
                 GUI.DrawTexture(graphRect, asset.backgroundSprite.texture, ScaleMode.StretchToFill);
             }
-            else
+
+            if (gridSettings != null && gridSettings.ShowGrid)
             {
-                DrawGrid(graphRect);
+                DrawGrid(graphRect, asset.referenceResolution, gridSettings);
             }
 
             Handles.BeginGUI();
-            Handles.color = new Color(0.65f, 0.65f, 0.68f, 0.8f);
+            Handles.color = GraphBorderColor;
             Handles.DrawAAPolyLine(
                 2f,
                 new Vector3(graphRect.xMin, graphRect.yMin),
@@ -106,26 +116,43 @@ namespace GGemCo2DCoreEditor
         }
 
         /// <summary>
-        /// 배경 이미지가 없을 때 기준 영역을 파악하기 위한 격자를 그립니다.
+        /// 기준 해상도와 Grid 설정을 이용해 그래프 위에 격자를 그립니다.
         /// </summary>
         /// <param name="graphRect">격자를 그릴 그래프 영역입니다.</param>
-        private static void DrawGrid(Rect graphRect)
+        /// <param name="referenceResolution">Grid 기준 해상도입니다.</param>
+        /// <param name="gridSettings">Grid 표시 설정입니다.</param>
+        private static void DrawGrid(Rect graphRect, Vector2 referenceResolution, WorldMapCanvasGridSettings gridSettings)
         {
-            Handles.BeginGUI();
-            Handles.color = new Color(1f, 1f, 1f, 0.08f);
-
-            const int columns = 12;
-            const int rows = 8;
-            for (int x = 1; x < columns; x++)
+            if (gridSettings == null)
             {
-                float px = Mathf.Lerp(graphRect.xMin, graphRect.xMax, x / (float)columns);
-                Handles.DrawLine(new Vector3(px, graphRect.yMin), new Vector3(px, graphRect.yMax));
+                return;
             }
 
-            for (int y = 1; y < rows; y++)
+            gridSettings.Sanitize();
+
+            if (referenceResolution.x <= 0f || referenceResolution.y <= 0f)
             {
-                float py = Mathf.Lerp(graphRect.yMin, graphRect.yMax, y / (float)rows);
-                Handles.DrawLine(new Vector3(graphRect.xMin, py), new Vector3(graphRect.xMax, py));
+                referenceResolution = new Vector2(1920f, 1080f);
+            }
+
+            Handles.BeginGUI();
+
+            int columnIndex = 1;
+            for (int x = gridSettings.GridCellSize.x; x < referenceResolution.x; x += gridSettings.GridCellSize.x, columnIndex++)
+            {
+                float normalizedX = x / referenceResolution.x;
+                float canvasX = Mathf.Lerp(graphRect.xMin, graphRect.xMax, normalizedX);
+                Handles.color = columnIndex % gridSettings.MajorLineInterval == 0 ? MajorGridColor : MinorGridColor;
+                Handles.DrawLine(new Vector3(canvasX, graphRect.yMin), new Vector3(canvasX, graphRect.yMax));
+            }
+
+            int rowIndex = 1;
+            for (int y = gridSettings.GridCellSize.y; y < referenceResolution.y; y += gridSettings.GridCellSize.y, rowIndex++)
+            {
+                float normalizedY = y / referenceResolution.y;
+                float canvasY = Mathf.Lerp(graphRect.yMax, graphRect.yMin, normalizedY);
+                Handles.color = rowIndex % gridSettings.MajorLineInterval == 0 ? MajorGridColor : MinorGridColor;
+                Handles.DrawLine(new Vector3(graphRect.xMin, canvasY), new Vector3(graphRect.xMax, canvasY));
             }
 
             Handles.EndGUI();
@@ -234,13 +261,16 @@ namespace GGemCo2DCoreEditor
         /// 캔버스 조작 힌트를 그립니다.
         /// </summary>
         /// <param name="canvasRect">전체 캔버스 영역입니다.</param>
+        /// <param name="gridSettings">Grid 및 Snap 설정입니다.</param>
         /// <param name="state">현재 선택 및 보기 상태입니다.</param>
-        private static void DrawCanvasHint(Rect canvasRect, WorldMapSelectionState state)
+        private static void DrawCanvasHint(Rect canvasRect, WorldMapCanvasGridSettings gridSettings, WorldMapSelectionState state)
         {
             Rect hintRect = new Rect(canvasRect.x + 10f, canvasRect.y + 10f, canvasRect.width - 20f, 38f);
             string hint = state.IsLinking
                 ? "연결 생성: 도착 노드를 클릭하세요. 우클릭으로 취소"
-                : "좌클릭 선택/드래그, 휠 확대, 마우스 휠 버튼 또는 Alt+드래그 팬";
+                : (gridSettings != null && gridSettings.SnapEnabled)
+                    ? "좌클릭 선택/드래그, 휠 확대, 마우스 휠 버튼 또는 Alt+드래그 팬, Snap 활성"
+                    : "좌클릭 선택/드래그, 휠 확대, 마우스 휠 버튼 또는 Alt+드래그 팬";
 
             EditorGUI.LabelField(hintRect, hint, EditorStyles.whiteMiniLabel);
         }
@@ -252,6 +282,7 @@ namespace GGemCo2DCoreEditor
         /// <param name="graphRect">그래프 배경 영역입니다.</param>
         /// <param name="asset">편집 중인 그래프 에셋입니다.</param>
         /// <param name="state">선택 및 보기 상태입니다.</param>
+        /// <param name="gridSettings">Grid 및 Snap 설정입니다.</param>
         /// <param name="onNodeSelected">노드 선택 콜백입니다.</param>
         /// <param name="onEdgeSelected">연결선 선택 콜백입니다.</param>
         /// <param name="onCreateEdge">연결선 생성 콜백입니다.</param>
@@ -261,6 +292,7 @@ namespace GGemCo2DCoreEditor
             Rect graphRect,
             WorldMapGraphAsset asset,
             WorldMapSelectionState state,
+            WorldMapCanvasGridSettings gridSettings,
             Action<WorldMapNodeData> onNodeSelected,
             Action<WorldMapEdgeData> onEdgeSelected,
             Action<string, string> onCreateEdge,
@@ -359,7 +391,13 @@ namespace GGemCo2DCoreEditor
                 if (node != null)
                 {
                     Vector2 normalized = CanvasToNormalized(current.mousePosition, graphRect);
-                    node.normalizedPosition = new Vector2(Mathf.Clamp01(normalized.x), Mathf.Clamp01(normalized.y));
+                    Vector2 snappedNormalized = WorldMapCanvasGridUtility.ApplySnapNormalized(
+                        normalized,
+                        asset.referenceResolution,
+                        gridSettings);
+                    node.normalizedPosition = new Vector2(
+                        Mathf.Clamp01(snappedNormalized.x),
+                        Mathf.Clamp01(snappedNormalized.y));
                     EditorUtility.SetDirty(asset);
                     onChanged?.Invoke();
                 }

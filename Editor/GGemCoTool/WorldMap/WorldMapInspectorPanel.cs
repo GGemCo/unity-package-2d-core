@@ -16,6 +16,7 @@ namespace GGemCo2DCoreEditor
         /// <param name="asset">편집 중인 월드맵 그래프 에셋입니다.</param>
         /// <param name="state">현재 선택 상태입니다.</param>
         /// <param name="mapOptions">TableMap 검색 옵션 제공자입니다.</param>
+        /// <param name="gridSettings">중앙 캔버스의 Grid/Snap 설정입니다.</param>
         /// <param name="onChanged">데이터 변경 콜백입니다.</param>
         /// <param name="onDeleteSelected">선택 항목 삭제 콜백입니다.</param>
         /// <param name="onRenameNode">노드 ID 변경 콜백입니다.</param>
@@ -25,6 +26,7 @@ namespace GGemCo2DCoreEditor
             WorldMapGraphAsset asset,
             WorldMapSelectionState state,
             WorldMapTableMapOptionProvider mapOptions,
+            WorldMapCanvasGridSettings gridSettings,
             Action onChanged,
             Action onDeleteSelected,
             Action<string, string> onRenameNode,
@@ -51,7 +53,7 @@ namespace GGemCo2DCoreEditor
             WorldMapNodeData selectedNode = asset.FindNode(state.SelectedNodeId);
             if (selectedNode != null)
             {
-                DrawNodeInspector(asset, selectedNode, mapOptions, onChanged, onDeleteSelected, onRenameNode, onSetStartNode, onStartLinking);
+                DrawNodeInspector(asset, selectedNode, mapOptions, gridSettings, onChanged, onDeleteSelected, onRenameNode, onSetStartNode, onStartLinking);
                 return;
             }
 
@@ -71,6 +73,7 @@ namespace GGemCo2DCoreEditor
         /// <param name="asset">편집 중인 월드맵 그래프 에셋입니다.</param>
         /// <param name="node">선택된 노드입니다.</param>
         /// <param name="mapOptions">TableMap 검색 옵션 제공자입니다.</param>
+        /// <param name="gridSettings">중앙 캔버스의 Grid/Snap 설정입니다.</param>
         /// <param name="onChanged">데이터 변경 콜백입니다.</param>
         /// <param name="onDeleteSelected">선택 항목 삭제 콜백입니다.</param>
         /// <param name="onRenameNode">노드 ID 변경 콜백입니다.</param>
@@ -80,6 +83,7 @@ namespace GGemCo2DCoreEditor
             WorldMapGraphAsset asset,
             WorldMapNodeData node,
             WorldMapTableMapOptionProvider mapOptions,
+            WorldMapCanvasGridSettings gridSettings,
             Action onChanged,
             Action onDeleteSelected,
             Action<string, string> onRenameNode,
@@ -135,7 +139,13 @@ namespace GGemCo2DCoreEditor
                 node.visibleByDefault = visibleByDefault;
                 node.inactiveByDefault = inactiveByDefault;
                 node.unlockConditionKey = unlockConditionKey;
-                node.normalizedPosition = new Vector2(Mathf.Clamp01(normalizedPosition.x), Mathf.Clamp01(normalizedPosition.y));
+                Vector2 snappedNormalizedPosition = WorldMapCanvasGridUtility.ApplySnapNormalized(
+                    normalizedPosition,
+                    asset.referenceResolution,
+                    gridSettings);
+                node.normalizedPosition = new Vector2(
+                    Mathf.Clamp01(snappedNormalizedPosition.x),
+                    Mathf.Clamp01(snappedNormalizedPosition.y));
                 if (node.nodeType == WorldMapNodeType.Start)
                 {
                     asset.startNodeId = node.nodeId;

@@ -1,4 +1,3 @@
-using System.IO;
 using GGemCo2DCore;
 using UnityEditor;
 using UnityEngine;
@@ -18,20 +17,26 @@ namespace GGemCo2DCoreEditor
         private readonly WorldMapTableMapOptionProvider _mapOptions = new WorldMapTableMapOptionProvider();
         private readonly WorldMapCanvasView _canvasView = new WorldMapCanvasView();
         private readonly WorldMapInspectorPanel _inspectorPanel = new WorldMapInspectorPanel();
+        private readonly WorldMapCanvasGridSettings _canvasGridSettings = new WorldMapCanvasGridSettings();
 
         private WorldMapGraphAsset _asset;
         private WorldMapValidationReport _lastReport;
         private Vector2 _leftScroll;
         private Vector2 _rightScroll;
         private int _selectedAddMapUid;
-        
+
         // -------------------------
         // EditorPrefs Keys
         // -------------------------
         /// <summary>이 툴에서 사용하는 EditorPrefs 키 접두사입니다.</summary>
         private const string PrefKeyPrefix = "GGemCo.WorldMapEditorWindow.";
 
-        private const string KeyAssetName     = PrefKeyPrefix + "AssetName ";
+        private const string KeyAssetName = PrefKeyPrefix + "AssetName ";
+        private const string KeyShowGrid = PrefKeyPrefix + "ShowGrid";
+        private const string KeySnapEnabled = PrefKeyPrefix + "SnapEnabled";
+        private const string KeyGridCellWidth = PrefKeyPrefix + "GridCellWidth";
+        private const string KeyGridCellHeight = PrefKeyPrefix + "GridCellHeight";
+        private const string KeyMajorLineInterval = PrefKeyPrefix + "MajorLineInterval";
 
         /// <summary>
         /// 월드맵 그래프 에디터 창을 엽니다.
@@ -49,10 +54,18 @@ namespace GGemCo2DCoreEditor
         {
             _mapOptions.Reload();
             _asset = Selection.activeObject as WorldMapGraphAsset;
-            
+
             LoadPrefs();
             EnsureSelectedAddMapUid();
             RunValidation();
+        }
+
+        /// <summary>
+        /// 창이 비활성화될 때 현재 편집기 설정을 저장합니다.
+        /// </summary>
+        private void OnDisable()
+        {
+            SavePrefs();
         }
 
         /// <summary>
@@ -96,9 +109,11 @@ namespace GGemCo2DCoreEditor
                     _asset = selectedAsset;
                     _selectionState.ClearSelection();
                     RunValidation();
-                    // UI 변경 시 즉시 저장(선택 사항이지만, “입력/선택 저장” 만족을 위해 안전하게 적용)
+
                     if (GUI.changed)
+                    {
                         SavePrefs();
+                    }
                 }
 
                 if (GUILayout.Button("새 GraphAsset", EditorStyles.toolbarButton, GUILayout.Width(96f)))
@@ -159,7 +174,7 @@ namespace GGemCo2DCoreEditor
         }
 
         /// <summary>
-        /// 좌측 그래프 설정, 노드 목록, 연결선 목록, 검증 결과 패널을 그립니다.
+        /// 좌측 그래프 설정, Grid 설정, 노드 목록, 연결선 목록, 검증 결과 패널을 그립니다.
         /// </summary>
         private void DrawLeftPanel()
         {
@@ -167,6 +182,8 @@ namespace GGemCo2DCoreEditor
             {
                 _leftScroll = EditorGUILayout.BeginScrollView(_leftScroll);
                 DrawGraphSettings();
+                GUILayout.Space(8f);
+                DrawCanvasGridSettings();
                 GUILayout.Space(8f);
                 DrawAddNodeSection();
                 GUILayout.Space(8f);
@@ -196,6 +213,7 @@ namespace GGemCo2DCoreEditor
                 canvasRect,
                 _asset,
                 _selectionState,
+                _canvasGridSettings,
                 _mapOptions.TableMap,
                 node => _selectionState.SelectNode(node.nodeId),
                 edge => _selectionState.SelectEdge(edge.edgeId),
@@ -215,6 +233,7 @@ namespace GGemCo2DCoreEditor
                     _asset,
                     _selectionState,
                     _mapOptions,
+                    _canvasGridSettings,
                     OnGraphChanged,
                     DeleteSelected,
                     RenameNode,
@@ -254,6 +273,7 @@ namespace GGemCo2DCoreEditor
                     {
                         _asset.backgroundAddress = ConfigAddressableWorldMap.GetBackgroundKey(graphId);
                     }
+
                     _asset.referenceResolution = referenceResolution;
                     _asset.startNodeId = startNodeId;
                     OnGraphChanged();
@@ -263,6 +283,38 @@ namespace GGemCo2DCoreEditor
                 EditorGUILayout.LabelField(ConfigAddressableWorldMap.GetAssetPath(_asset.graphId), EditorStyles.wordWrappedMiniLabel);
                 EditorGUILayout.LabelField("Addressable Key", EditorStyles.miniBoldLabel);
                 EditorGUILayout.LabelField(ConfigAddressableWorldMap.GetKey(_asset.graphId), EditorStyles.wordWrappedMiniLabel);
+            }
+        }
+
+        /// <summary>
+        /// 중앙 캔버스의 Grid 및 Snap 설정 UI를 그립니다.
+        /// </summary>
+        private void DrawCanvasGridSettings()
+        {
+            EditorGUILayout.LabelField("Canvas Grid", EditorStyles.boldLabel);
+            using (new EditorGUILayout.VerticalScope(EditorStyles.helpBox))
+            {
+                EditorGUI.BeginChangeCheck();
+                bool showGrid = EditorGUILayout.Toggle("Show Grid", _canvasGridSettings.ShowGrid);
+                bool snapEnabled = EditorGUILayout.Toggle("Snap Enabled", _canvasGridSettings.SnapEnabled);
+                Vector2Int gridCellSize = EditorGUILayout.Vector2IntField("Grid Cell Size", _canvasGridSettings.GridCellSize);
+                int majorLineInterval = EditorGUILayout.IntField("Major Line Interval", _canvasGridSettings.MajorLineInterval);
+
+                if (EditorGUI.EndChangeCheck())
+                {
+                    _canvasGridSettings.ShowGrid = showGrid;
+                    _canvasGridSettings.SnapEnabled = snapEnabled;
+                    _canvasGridSettings.GridCellSize = gridCellSize;
+                    _canvasGridSettings.MajorLineInterval = majorLineInterval;
+                    _canvasGridSettings.Sanitize();
+                    SavePrefs();
+                    Repaint();
+                }
+
+                EditorGUILayout.HelpBox(
+                    "Grid Cell Size는 Reference Resolution 기준 픽셀 단위입니다.\n" +
+                    "Snap Enabled가 켜져 있으면 노드 드래그와 좌표 편집에 같은 기준이 적용됩니다.",
+                    MessageType.None);
             }
         }
 
@@ -445,6 +497,7 @@ namespace GGemCo2DCoreEditor
             _asset = graphAsset;
             Selection.activeObject = graphAsset;
             RunValidation();
+            SavePrefs();
         }
 
         /// <summary>
@@ -461,11 +514,19 @@ namespace GGemCo2DCoreEditor
             Undo.RecordObject(_asset, "월드맵 노드 추가");
             _asset.EnsureDefaults();
 
+            Vector2 initialNormalizedPosition = new Vector2(0.5f, 0.5f);
+            initialNormalizedPosition = WorldMapCanvasGridUtility.ApplySnapNormalized(
+                initialNormalizedPosition,
+                _asset.referenceResolution,
+                _canvasGridSettings);
+
             WorldMapNodeData node = new WorldMapNodeData
             {
                 nodeId = _asset.CreateUniqueNodeId(mapUid),
                 mapUid = mapUid,
-                normalizedPosition = new Vector2(0.5f, 0.5f),
+                normalizedPosition = new Vector2(
+                    Mathf.Clamp01(initialNormalizedPosition.x),
+                    Mathf.Clamp01(initialNormalizedPosition.y)),
                 nodeType = _asset.nodes.Count == 0 ? WorldMapNodeType.Start : WorldMapNodeType.Normal,
                 visibleByDefault = true,
                 inactiveByDefault = false,
@@ -811,38 +872,63 @@ namespace GGemCo2DCoreEditor
 
             _selectedAddMapUid = _mapOptions.Options.Count > 0 ? _mapOptions.Options[0].Data : 0;
         }
-        
+
         // -------------------------
         // Prefs Save/Load
         // -------------------------
         /// <summary>
-        /// 현재 UI 입력값(폴더, 프리팹명, FPS, 스프라이트 목록 등)을 EditorPrefs에 저장합니다.
+        /// 현재 에디터 선택 상태와 Grid/Snap 설정을 EditorPrefs에 저장합니다.
         /// </summary>
         private void SavePrefs()
         {
+            _canvasGridSettings.Sanitize();
             EditorPrefs.SetString(KeyAssetName, GetFolderPath(_asset));
+            EditorPrefs.SetBool(KeyShowGrid, _canvasGridSettings.ShowGrid);
+            EditorPrefs.SetBool(KeySnapEnabled, _canvasGridSettings.SnapEnabled);
+            EditorPrefs.SetInt(KeyGridCellWidth, _canvasGridSettings.GridCellSize.x);
+            EditorPrefs.SetInt(KeyGridCellHeight, _canvasGridSettings.GridCellSize.y);
+            EditorPrefs.SetInt(KeyMajorLineInterval, _canvasGridSettings.MajorLineInterval);
         }
-        
+
         /// <summary>
-        /// EditorPrefs에서 이전 입력값(폴더, 프리팹명, FPS, 스프라이트 목록 등)을 복원합니다.
+        /// EditorPrefs에서 이전 에디터 선택 상태와 Grid/Snap 설정을 복원합니다.
         /// </summary>
         private void LoadPrefs()
         {
-            var prefabFolderPath = EditorPrefs.GetString(KeyAssetName, "Assets");
-            _asset = AssetDatabase.LoadAssetAtPath<WorldMapGraphAsset>(prefabFolderPath);
+            string assetPath = EditorPrefs.GetString(KeyAssetName, "Assets");
+            WorldMapGraphAsset storedAsset = AssetDatabase.LoadAssetAtPath<WorldMapGraphAsset>(assetPath);
+            if (storedAsset != null)
+            {
+                _asset = storedAsset;
+            }
+
+            _canvasGridSettings.ShowGrid = EditorPrefs.GetBool(KeyShowGrid, _canvasGridSettings.ShowGrid);
+            _canvasGridSettings.SnapEnabled = EditorPrefs.GetBool(KeySnapEnabled, _canvasGridSettings.SnapEnabled);
+            _canvasGridSettings.GridCellSize = new Vector2Int(
+                EditorPrefs.GetInt(KeyGridCellWidth, _canvasGridSettings.GridCellSize.x),
+                EditorPrefs.GetInt(KeyGridCellHeight, _canvasGridSettings.GridCellSize.y));
+            _canvasGridSettings.MajorLineInterval = EditorPrefs.GetInt(KeyMajorLineInterval, _canvasGridSettings.MajorLineInterval);
+            _canvasGridSettings.Sanitize();
         }
-        
+
         /// <summary>
-        /// 폴더 에셋으로부터 유효한 프로젝트 폴더 경로를 얻습니다(유효하지 않으면 Assets로 대체).
+        /// 저장 대상 에셋으로부터 유효한 프로젝트 경로를 얻습니다.
         /// </summary>
-        /// <param name="folderAsset">폴더로 사용될 DefaultAsset 입니다.</param>
-        /// <returns>유효한 폴더 경로(기본값: Assets)입니다.</returns>
-        private static string GetFolderPath(WorldMapGraphAsset? folderAsset)
+        /// <param name="asset">저장 경로로 사용할 월드맵 그래프 에셋입니다.</param>
+        /// <returns>유효한 에셋 경로이며, 없으면 Assets를 반환합니다.</returns>
+        private static string GetFolderPath(WorldMapGraphAsset asset)
         {
-            if (folderAsset == null) return "Assets";
-            var path = AssetDatabase.GetAssetPath(folderAsset);
-            if (string.IsNullOrEmpty(path))
+            if (asset == null)
+            {
                 return "Assets";
+            }
+
+            string path = AssetDatabase.GetAssetPath(asset);
+            if (string.IsNullOrEmpty(path))
+            {
+                return "Assets";
+            }
+
             return path;
         }
     }
