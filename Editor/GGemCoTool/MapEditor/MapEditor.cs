@@ -250,6 +250,7 @@ namespace GGemCo2DCoreEditor
 
                 if (GUILayout.Button("데이터 새로고침", EditorStyles.toolbarButton))
                 {
+                    AssetDatabaseLoaderManager.ClearCache();
                     LoadTables();
                     SetupServices();
                     InitializeExporters();

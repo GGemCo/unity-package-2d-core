@@ -9,11 +9,12 @@ namespace GGemCo2DCore
     /// </summary>
     public class DefaultMap : MonoBehaviour
     {
-        private int chapterNumber;
-        private string chapterName;
-        private MapConstants.Type mapType;
-        private MapConstants.SubType mapSubType;
-        private Tilemap tilemap;
+        private int _mapUid;
+        private string _mapName;
+        private MapConstants.Type _mapType;
+        private MapConstants.SubType _mapSubType;
+        private Tilemap _tilemap;
+        
         // 맵에 배치된 몬스터
         protected readonly Dictionary<int, GameObject> Monsters = new Dictionary<int, GameObject>();
         // 맵에 배치된 npc
@@ -21,7 +22,7 @@ namespace GGemCo2DCore
 
         protected virtual void Awake()
         {
-            tilemap = GetComponent<Tilemap>();
+            _tilemap = GetComponent<Tilemap>();
             
             InitComponents();
             InitTagSortingLayer();
@@ -38,12 +39,12 @@ namespace GGemCo2DCore
             GetComponent<TilemapRenderer>().sortingLayerName = ConfigSortingLayer.GetValue(ConfigSortingLayer.Keys.Map_Ground);
         }
 
-        public virtual void Initialize(int uid, string name, MapConstants.Type type, MapConstants.SubType subType)
+        public virtual void Initialize(int uid, string mapName, MapConstants.Type type, MapConstants.SubType subType)
         {
-            chapterNumber = uid;
-            chapterName = name;
-            mapType = type;
-            mapSubType = subType;
+            _mapUid = uid;
+            _mapName = mapName;
+            _mapType = type;
+            _mapSubType = subType;
         }
         /// <summary>
         /// 같은 장의 맵인지 
@@ -52,7 +53,7 @@ namespace GGemCo2DCore
         /// <returns></returns>
         public bool IsSameChapter(int value)
         {
-            return chapterNumber == value;
+            return _mapUid == value;
         }
         /// <summary>
         /// 현재 맵에 연결된 장 가져오기
@@ -60,7 +61,7 @@ namespace GGemCo2DCore
         /// <returns></returns>
         public int GetChapterNumber()
         {
-            return chapterNumber;
+            return _mapUid;
         }
         /// <summary>
         /// vid 값으로 몬스터 찾기  

@@ -45,6 +45,12 @@ namespace GGemCo2DCore
             {
                 data.Name = $"{data.Name}";
             }
+            
+            if (AddressableLoaderSettings.Instance && AddressableLoaderSettings.Instance.mapSettings && 
+                AddressableLoaderSettings.Instance.mapSettings.EnableMapUid)
+            {
+                data.Name += $" ({data.Uid})";
+            }
         }
         
         protected override StruckTableMap BuildRow(Dictionary<string, string> data)

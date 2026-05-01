@@ -32,9 +32,9 @@ namespace GGemCo2DCore
             CalculateCullingBounds();
         }
 
-        public override void Initialize(int uid, string chapterName, MapConstants.Type type, MapConstants.SubType subType)
+        public override void Initialize(int uid, string mapName, MapConstants.Type type, MapConstants.SubType subType)
         {
-            base.Initialize(uid, chapterName, type, subType);
+            base.Initialize(uid, mapName, type, subType);
             gameObject.transform.position = new Vector3(0, 0, 0);
         }
         /// <summary>
