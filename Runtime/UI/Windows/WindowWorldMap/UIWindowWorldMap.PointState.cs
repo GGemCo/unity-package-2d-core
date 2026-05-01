@@ -65,6 +65,11 @@ namespace GGemCo2DCore
                 return WorldMapNodePointState.CurrentMap;
             }
 
+            if (IsWorldMapNodeInactive(node))
+            {
+                return WorldMapNodePointState.MoveImpossible;
+            }
+
             return _worldMapDefinition.TryGetNodeByMapUid(currentMapUid, out WorldMapNodeDefinition currentNode) &&
                    _worldMapDefinition.IsAdjacentNode(currentNode.NodeId, node.NodeId)
                 ? WorldMapNodePointState.MovePossible

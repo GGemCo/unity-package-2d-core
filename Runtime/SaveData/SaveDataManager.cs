@@ -23,6 +23,11 @@ namespace GGemCo2DCore
         public WindowSlotActivationSaveData WindowSlotActivationSaveData;
 
         /// <summary>
+        /// 맵 클리어 기록과 월드맵 노드 활성 상태를 저장하는 진행 데이터입니다.
+        /// </summary>
+        public MapProgressData MapProgressData;
+
+        /// <summary>
         /// 인스턴스 아이템(랜덤 옵션 등) 저장 데이터.
         /// </summary>
         public ItemInstanceStoreData ItemInstanceStoreData;
@@ -46,6 +51,16 @@ namespace GGemCo2DCore
         public ShopExposureData ShopExposure { get; private set; }
         public GameTimeData GameTime { get; private set; }
         public WindowSlotActivationSaveData WindowSlotActivation { get; private set; }
+
+        /// <summary>
+        /// 실제 게임 맵과 월드맵 노드 진행도를 보관하는 저장 데이터입니다.
+        /// </summary>
+        public MapProgressData MapProgress { get; private set; }
+
+        /// <summary>
+        /// 맵 클리어와 월드맵 노드 활성 처리를 담당하는 컨트롤러입니다.
+        /// </summary>
+        public MapProgressController MapProgressController { get; private set; }
 
         /// <summary>
         /// 인스턴스 아이템(랜덤 옵션 등) 저장소.
@@ -72,6 +87,8 @@ namespace GGemCo2DCore
             ShopExposure = new ShopExposureData();
             GameTime = new GameTimeData();
             WindowSlotActivation = new WindowSlotActivationSaveData();
+            MapProgress = new MapProgressData();
+            MapProgressController = new MapProgressController(this);
 
             // 인스턴스 아이템 저장소 초기화(테이블 로드 이후면 언제든 사용 가능)
             ItemInstances = new ItemInstanceStore();
@@ -89,7 +106,11 @@ namespace GGemCo2DCore
             ShopExposure.Initialize(tableLoaderManager, saveDataContainer);
             GameTime.Initialize(tableLoaderManager, saveDataContainer);
             WindowSlotActivation.Initialize(tableLoaderManager, saveDataContainer);
+            MapProgress.Initialize(tableLoaderManager, saveDataContainer);
             SceneGame.Instance?.uIWindowManager?.RefreshWindowSlotActivationStates();
+            SceneGame.Instance?.uIWindowManager
+                ?.GetUIWindowByUid<UIWindowWorldMap>(UIWindowConstants.WindowUid.WorldMap)
+                ?.RefreshWorldMapProgressStates();
 
             // 인스턴스 아이템 복원
             ItemInstances.Restore(saveDataContainer?.ItemInstanceStoreData);
@@ -135,6 +156,7 @@ namespace GGemCo2DCore
                 ShopPurchaseData = ShopPurchase,
                 ShopExposureData = ShopExposure,
                 WindowSlotActivationSaveData = WindowSlotActivation,
+                MapProgressData = MapProgress,
                 ItemInstanceStoreData = ItemInstances?.Capture(),
                 // 확장 섹션 함께 저장
                 Extensions = env?.Sections,

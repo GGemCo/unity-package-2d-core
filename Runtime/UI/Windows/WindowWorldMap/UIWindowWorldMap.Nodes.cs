@@ -48,7 +48,7 @@ namespace GGemCo2DCore
                                           slotIndex < _worldMapDefinition.Nodes.Count
                 ? _worldMapDefinition.Nodes[slotIndex]
                 : null;
-            if (node != null && !node.VisibleByDefault)
+            if (node != null && !IsWorldMapNodeVisible(node))
             {
                 if (slots != null && slotIndex < slots.Length)
                 {
@@ -64,10 +64,53 @@ namespace GGemCo2DCore
             }
 
             base.RefreshInactiveSlotState(slotIndex);
-            if (node != null && node.InactiveByDefault)
+            if (node != null && IsWorldMapNodeInactive(node))
             {
                 ApplyWorldMapNodeInactiveVisual(slotIndex);
             }
+        }
+
+        /// <summary>
+        /// 저장된 월드맵 진행도와 노드 기본값을 함께 사용해 노드 표시 여부를 계산합니다.
+        /// </summary>
+        /// <param name="node">확인할 월드맵 노드입니다.</param>
+        /// <returns>기본 표시 노드이거나 저장 데이터에서 활성화된 노드이면 true를 반환합니다.</returns>
+        public bool IsWorldMapNodeVisible(WorldMapNodeDefinition node)
+        {
+            return node != null && (node.VisibleByDefault || IsWorldMapNodeActivated(node));
+        }
+
+        /// <summary>
+        /// 저장된 월드맵 진행도와 노드 기본값을 함께 사용해 비활성 표시 여부를 계산합니다.
+        /// </summary>
+        /// <param name="node">확인할 월드맵 노드입니다.</param>
+        /// <returns>기본 비활성 노드이고 아직 저장 데이터에서 활성화되지 않았으면 true를 반환합니다.</returns>
+        public bool IsWorldMapNodeInactive(WorldMapNodeDefinition node)
+        {
+            return node != null && node.InactiveByDefault && !IsWorldMapNodeActivated(node);
+        }
+
+        /// <summary>
+        /// 저장 데이터 기준으로 지정한 월드맵 노드가 활성화되었는지 확인합니다.
+        /// </summary>
+        /// <param name="node">확인할 월드맵 노드입니다.</param>
+        /// <returns>저장 데이터에 활성 기록이 있으면 true를 반환합니다.</returns>
+        private bool IsWorldMapNodeActivated(WorldMapNodeDefinition node)
+        {
+            return node != null &&
+                   SceneGame.Instance?.saveDataManager?.MapProgress != null &&
+                   SceneGame.Instance.saveDataManager.MapProgress.IsWorldMapNodeActivated(node.NodeId);
+        }
+
+        /// <summary>
+        /// 저장 데이터가 바뀐 뒤 월드맵 노드와 연결선의 표시 상태를 다시 계산합니다.
+        /// </summary>
+        public void RefreshWorldMapProgressStates()
+        {
+            RefreshInactiveSlotStates();
+            RefreshEdgeVisibility();
+            RefreshWorldMapNodePointStates();
+            RefreshEdgeHighlight();
         }
 
         /// <summary>

@@ -106,6 +106,21 @@ namespace GGemCo2DCore
         }
 
         /// <summary>
+        /// 저장된 월드맵 진행도 기준으로 모든 연결선의 표시 상태를 갱신합니다.
+        /// </summary>
+        private void RefreshEdgeVisibility()
+        {
+            for (int i = 0; i < _edgeLines.Count; i++)
+            {
+                WorldMapLineRenderer line = _edgeLines[i];
+                if (line != null)
+                {
+                    line.gameObject.SetActive(IsEdgeVisible(line.EdgeDefinition));
+                }
+            }
+        }
+
+        /// <summary>
         /// 지정한 연결선을 현재 선택 상태에서 강조해야 하는지 확인합니다.
         /// 현재 맵을 선택한 경우에는 강조하지 않고, 이동 가능한 다른 맵을 선택한 경우 현재 맵과 선택 맵을 직접 연결하는 선만 강조합니다.
         /// </summary>
@@ -201,8 +216,8 @@ namespace GGemCo2DCore
 
             return _worldMapDefinition.TryGetNode(edge.FromNodeId, out WorldMapNodeDefinition from) &&
                    _worldMapDefinition.TryGetNode(edge.ToNodeId, out WorldMapNodeDefinition to) &&
-                   from.VisibleByDefault &&
-                   to.VisibleByDefault;
+                   IsWorldMapNodeVisible(from) &&
+                   IsWorldMapNodeVisible(to);
         }
     }
 }

@@ -25,6 +25,11 @@ namespace GGemCo2DCore
         private float _thickness = DefaultThickness;
 
         /// <summary>
+        /// 이 연결선 UI가 표시하는 월드맵 연결선 정의입니다.
+        /// </summary>
+        public WorldMapEdgeDefinition EdgeDefinition => _edgeDefinition;
+
+        /// <summary>
         /// 연결선 UI를 초기화하고 두 노드 RectTransform을 연결 대상으로 설정합니다.
         /// </summary>
         /// <param name="edgeDefinition">표시할 월드맵 연결선 정의입니다.</param>

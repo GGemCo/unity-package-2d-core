@@ -119,10 +119,10 @@ namespace GGemCo2DCore
                 uiIcon.SetWorldMapNode(node, _tableWorldMap != null ? _tableWorldMap.GetDataByUid(node.MapUid) : null, iconSprite);
                 
                 icons[index] = iconObj;
-                if (node.VisibleByDefault)
+                if (uiWindowWorldMap.IsWorldMapNodeVisible(node))
                 {
                     window.ApplyDefaultSlotIconActiveState(slotObject, iconObj);
-                    if (node.InactiveByDefault)
+                    if (uiWindowWorldMap.IsWorldMapNodeInactive(node))
                     {
                         slotObject.SetActive(true);
                         iconObj.SetActive(true);

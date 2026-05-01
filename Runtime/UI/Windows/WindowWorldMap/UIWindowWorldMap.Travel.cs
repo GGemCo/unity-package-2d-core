@@ -31,7 +31,7 @@ namespace GGemCo2DCore
                 return false;
             }
 
-            if (!IsNodeVisible(node))
+            if (!IsNodeVisible(node) || IsWorldMapNodeInactive(node))
             {
                 return false;
             }
@@ -61,9 +61,9 @@ namespace GGemCo2DCore
         /// </summary>
         /// <param name="node">확인할 월드맵 노드입니다.</param>
         /// <returns>노드가 월드맵에 표시되는 상태이면 true를 반환합니다.</returns>
-        private static bool IsNodeVisible(WorldMapNodeDefinition node)
+        private bool IsNodeVisible(WorldMapNodeDefinition node)
         {
-            return node != null && node.VisibleByDefault;
+            return IsWorldMapNodeVisible(node);
         }
     }
 }
