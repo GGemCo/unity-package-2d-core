@@ -6,6 +6,25 @@ using UnityEngine.UI;
 namespace GGemCo2DCore
 {
     /// <summary>
+    /// 월드맵 노드 아이콘에 적용할 시각 상태입니다.
+    /// 실제 이동 가능 여부는 월드맵 이동 판정에서 별도로 처리합니다.
+    /// </summary>
+    public enum WorldMapNodeVisualState
+    {
+        /// <summary>노드를 월드맵에서 숨기는 상태입니다.</summary>
+        Hidden,
+
+        /// <summary>일반 활성 상태입니다.</summary>
+        Normal,
+
+        /// <summary>활성화되지 않은 노드를 표시하는 비활성 상태입니다.</summary>
+        Inactive,
+
+        /// <summary>표시는 되지만 아직 클리어한 적이 없는 노드 상태입니다.</summary>
+        NoInvite,
+    }
+
+    /// <summary>
     /// 월드맵 노드 하나를 표시하고 선택 입력을 처리하는 아이콘입니다.
     /// </summary>
     public class UIIconWorldMap : UIIcon, IPointerEnterHandler, IPointerExitHandler, IPointerClickHandler
@@ -19,6 +38,14 @@ namespace GGemCo2DCore
 
         [Tooltip("노드 포인트 상태 Image 오브젝트")]
         [SerializeField] private Image imageIconPoint;
+
+        [Header("NoInvite")]
+        [Tooltip("클리어한 적이 없는 월드맵 노드일 때 아이콘 이미지에 적용할 색상입니다.")]
+        [SerializeField] private Color colorNoInvite = new Color(1f, 1f, 1f, 0.35f);
+        [Tooltip("클리어한 적이 없는 월드맵 노드일 때 표시할 아이콘 이미지입니다.")]
+        [SerializeField] private Sprite noInviteSprite;
+        [Tooltip("NoInvite Sprite를 표시할 Image입니다. 비어 있으면 기존처럼 ImageIcon에 직접 적용합니다.")]
+        [SerializeField] private Image imageNoInviteSprite;
 
         private TableMap _tableMap;
         private StruckTableMap _struckTableMap;
@@ -57,6 +84,7 @@ namespace GGemCo2DCore
                 ClearIconInfos();
                 ApplyNodeDecoration();
                 SetPointSprite(null);
+                SetWorldMapNodeVisualState(WorldMapNodeVisualState.Normal);
                 return;
             }
 
@@ -64,6 +92,77 @@ namespace GGemCo2DCore
             ChangeInfoByUid(_nodeDefinition.MapUid, 1, 1);
             ApplyNodeDisplayName();
             ApplyNodeDecoration();
+            SetWorldMapNodeVisualState(WorldMapNodeVisualState.Normal);
+        }
+
+        /// <summary>
+        /// 월드맵 노드의 시각 상태에 맞춰 비활성 또는 미클리어 비주얼을 적용합니다.
+        /// 이동 가능 여부는 변경하지 않고 아이콘 표현만 갱신합니다.
+        /// </summary>
+        /// <param name="visualState">아이콘에 적용할 월드맵 노드 시각 상태입니다.</param>
+        public void SetWorldMapNodeVisualState(WorldMapNodeVisualState visualState)
+        {
+            if (visualState == WorldMapNodeVisualState.Inactive)
+            {
+                ClearNoInviteVisual();
+                SetInactiveVisualState(true, false);
+                return;
+            }
+
+            SetInactiveVisualState(false, false);
+            ApplyNoInviteVisual(visualState == WorldMapNodeVisualState.NoInvite);
+        }
+
+        /// <summary>
+        /// 미클리어 노드 비주얼을 해제하고 기본 아이콘 표현으로 되돌립니다.
+        /// 이후 비활성 비주얼을 적용할 때 NoInvite 오브젝트가 함께 남지 않도록 정리합니다.
+        /// </summary>
+        private void ClearNoInviteVisual()
+        {
+            SetInactiveVisualState(false, false);
+            ApplyNoInviteVisual(false);
+        }
+
+        /// <summary>
+        /// 미클리어 노드 상태에 맞춰 색상과 전용 스프라이트 표시를 갱신합니다.
+        /// 전용 Image가 없으면 기본 아이콘 Image의 스프라이트를 임시로 교체합니다.
+        /// </summary>
+        /// <param name="show">미클리어 비주얼을 표시하면 true입니다.</param>
+        private void ApplyNoInviteVisual(bool show)
+        {
+            ApplyNoInviteSprite(show);
+            if (ImageIcon == null)
+            {
+                return;
+            }
+
+            if (!show)
+            {
+                return;
+            }
+
+            ImageIcon.color = colorNoInvite;
+            OnSetColorImageIcon(colorNoInvite);
+        }
+
+        /// <summary>
+        /// NoInvite Sprite를 전용 Image 또는 기본 아이콘 Image에 적용합니다.
+        /// 숨길 때는 전용 Image를 비활성화하고, 기본 아이콘 복원은 공용 비활성 해제 로직에 맡깁니다.
+        /// </summary>
+        /// <param name="show">NoInvite Sprite를 표시하면 true입니다.</param>
+        private void ApplyNoInviteSprite(bool show)
+        {
+            if (imageNoInviteSprite != null)
+            {
+                imageNoInviteSprite.sprite = show ? noInviteSprite : null;
+                imageNoInviteSprite.gameObject.SetActive(show && noInviteSprite != null);
+                return;
+            }
+
+            if (show && noInviteSprite != null && ImageIcon != null)
+            {
+                ImageIcon.sprite = noInviteSprite;
+            }
         }
         
         /// <summary>

@@ -122,19 +122,14 @@ namespace GGemCo2DCore
                 if (uiWindowWorldMap.IsWorldMapNodeVisible(node))
                 {
                     window.ApplyDefaultSlotIconActiveState(slotObject, iconObj);
-                    if (uiWindowWorldMap.IsWorldMapNodeInactive(node))
-                    {
-                        slotObject.SetActive(true);
-                        iconObj.SetActive(true);
-                        uiSlot.SetInactiveState(true);
-                        uiIcon.SetInactiveVisualState(true, false);
-                    }
                 }
                 else
                 {
                     slotObject.SetActive(false);
                     iconObj.SetActive(false);
                 }
+
+                uiWindowWorldMap.ApplyWorldMapNodeVisualState(index);
                 uiWindowWorldMap.RegisterWorldMapNode(node, uiSlot, uiIcon);
             }
         }
