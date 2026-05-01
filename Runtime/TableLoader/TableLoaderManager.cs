@@ -12,6 +12,7 @@ namespace GGemCo2DCore
 
         public TableNpc TableNpc { get; private set; } = new TableNpc();
         public TableMap TableMap { get; private set; } = new TableMap();
+        public TableMapEntryRule TableMapEntryRule { get; private set; } = new TableMapEntryRule();
         public TableMonster TableMonster { get; private set; } = new TableMonster();
         public TableAnimation TableAnimation { get; private set; } = new TableAnimation();
         public TableItem TableItem { get; private set; } = new TableItem();
@@ -68,6 +69,7 @@ namespace GGemCo2DCore
                 registry.Register(TableMonster);
                 registry.Register(TableNpc);
                 registry.Register(TableMap);
+                registry.Register(TableMapEntryRule);
                 registry.Register(TableItem);
                 registry.Register(TableItemVisual);
                 registry.Register(TableItemBaseOption);
@@ -181,6 +183,25 @@ namespace GGemCo2DCore
             => GetData(TableMap, uid, "Map", (t, i) => t.GetDataByUid(i), logIfMissing);
         public bool TryGetMapData(int uid, out StruckTableMap data, bool logIfMissing = false)
             => TryGetData(TableMap, uid, out data, "Map", (t, i) => t.GetDataByUid(i), logIfMissing);
+
+        /// <summary>
+        /// map_entry_rule 테이블에서 UID로 맵 입장 규칙을 조회합니다.
+        /// </summary>
+        /// <param name="uid">조회할 맵 입장 규칙 UID입니다.</param>
+        /// <param name="logIfMissing">조회 실패 시 경고 로그를 남길지 여부입니다.</param>
+        /// <returns>찾은 맵 입장 규칙입니다. 없으면 null을 반환합니다.</returns>
+        public StruckTableMapEntryRule GetMapEntryRuleData(int uid, bool logIfMissing = true)
+            => GetData(TableMapEntryRule, uid, "MapEntryRule", (t, i) => t.GetDataByUid(i), logIfMissing);
+
+        /// <summary>
+        /// map_entry_rule 테이블에서 UID로 맵 입장 규칙 조회를 시도합니다.
+        /// </summary>
+        /// <param name="uid">조회할 맵 입장 규칙 UID입니다.</param>
+        /// <param name="data">조회에 성공하면 맵 입장 규칙이 설정됩니다.</param>
+        /// <param name="logIfMissing">조회 실패 시 경고 로그를 남길지 여부입니다.</param>
+        /// <returns>맵 입장 규칙을 찾으면 true를 반환합니다.</returns>
+        public bool TryGetMapEntryRuleData(int uid, out StruckTableMapEntryRule data, bool logIfMissing = false)
+            => TryGetData(TableMapEntryRule, uid, out data, "MapEntryRule", (t, i) => t.GetDataByUid(i), logIfMissing);
 
         // Monster
         public StruckTableMonster GetMonsterData(int uid, bool logIfMissing = true)

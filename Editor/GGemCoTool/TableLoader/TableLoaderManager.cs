@@ -9,6 +9,16 @@ namespace GGemCo2DCoreEditor
     {
         public static TableMap LoadMapTable(bool forceReload = true)
             => LoadTable<TableMap>(ConfigAddressableTable.TableMap.Path, forceReload);
+
+        /// <summary>
+        /// 에디터 환경에서 map_entry_rule 테이블을 로드합니다.
+        /// </summary>
+        /// <param name="forceReload">캐시를 무시하고 다시 로드할지 여부입니다.</param>
+        /// <returns>로드된 맵 입장 규칙 테이블입니다.</returns>
+        public static TableMapEntryRule LoadMapEntryRuleTable(bool forceReload = true)
+        {
+            return LoadTable<TableMapEntryRule>(ConfigAddressableTable.TableMapEntryRule.Path, forceReload);
+        }
         
         public static TableNpc LoadNpcTable(bool forceReload = true)
         {

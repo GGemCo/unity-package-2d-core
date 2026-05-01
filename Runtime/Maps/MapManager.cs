@@ -48,6 +48,7 @@ namespace GGemCo2DCore
         // 캐릭터, 워프 스폰 매니저
         private MapLoadCharacters _mapLoadCharacters;
         private AddressableLoaderPrefabCharacter _addressableLoaderPrefabCharacter;
+        private MapEntryRuleResolver _mapEntryRuleResolver;
         protected void Awake()
         {
             if (!TableLoaderManager.Instance) return;
@@ -88,6 +89,7 @@ namespace GGemCo2DCore
             _bgBlackForMapLoading = _sceneGame.bgBlackForMapLoading;
             _saveDataManager = _sceneGame.saveDataManager;
             _addressableLoaderPrefabCharacter = _sceneGame.AddressableLoaderPrefabCharacter;
+            _mapEntryRuleResolver = new MapEntryRuleResolver(_tableLoaderManager, _saveDataManager?.LicenseManager);
             
             // 저장된 맵 불러오기
             int startMapUid = GetStartMapUid();
@@ -158,6 +160,7 @@ namespace GGemCo2DCore
                 GcLogger.LogError("맵 고유번호가 잘 못되었습니다.");
                 return;
             }
+            mapUid = ResolveMapEntryTargetMapUid(mapUid);
             // GcLogger.Log("LoadMap start");
             Reset();
             _currentState = MapConstants.State.FadeIn;
@@ -167,6 +170,20 @@ namespace GGemCo2DCore
             
             StartCoroutine(UpdateState());
         }
+
+        /// <summary>
+        /// map_entry_rule 테이블을 적용하여 실제로 로드할 맵 UID를 결정합니다.
+        /// </summary>
+        /// <param name="requestMapUid">플레이어가 원래 입장하려던 맵 UID입니다.</param>
+        /// <returns>규칙이 매칭되면 대상 맵 UID를, 없으면 요청 맵 UID를 반환합니다.</returns>
+        private int ResolveMapEntryTargetMapUid(int requestMapUid)
+        {
+            _mapEntryRuleResolver ??= new MapEntryRuleResolver(
+                _tableLoaderManager,
+                _saveDataManager?.LicenseManager ?? SceneGame.Instance?.saveDataManager?.LicenseManager);
+            return _mapEntryRuleResolver.ResolveTargetMapUid(requestMapUid);
+        }
+
         private IEnumerator AwaitTask(Task task)
         {
             while (!task.IsCompleted)
