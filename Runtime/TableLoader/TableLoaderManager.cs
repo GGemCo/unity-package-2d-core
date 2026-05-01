@@ -45,6 +45,7 @@ namespace GGemCo2DCore
         public TableCutscene TableCutscene { get; private set; } = new TableCutscene();
         public TableDialogue TableDialogue { get; private set; } = new TableDialogue();
         public TableQuest TableQuest { get; private set; } = new TableQuest();
+        public TableLicense TableLicense { get; private set; } = new TableLicense();
         public TableProjectile TableProjectile { get; private set; } = new TableProjectile();
         public TableSound TableSound { get; private set; } = new TableSound();
         public TableSimulationTool TableSimulationTool { get; private set; } = new TableSimulationTool();
@@ -98,6 +99,7 @@ namespace GGemCo2DCore
                 registry.Register(TableCutscene);
                 registry.Register(TableDialogue);
                 registry.Register(TableQuest);
+                registry.Register(TableLicense);
                 registry.Register(TableProjectile);
                 registry.Register(TableSound);
                 registry.Register(TableSimulationTool);
@@ -302,6 +304,59 @@ namespace GGemCo2DCore
             => GetData(TableQuest, uid, "Quest", (t, i) => t.GetDataByUid(i), logIfMissing);
         public bool TryGetQuestData(int uid, out StruckTableQuest data, bool logIfMissing = false)
             => TryGetData(TableQuest, uid, out data, "Quest", (t, i) => t.GetDataByUid(i), logIfMissing);
+
+        /// <summary>
+        /// license 테이블에서 UID로 라이센스 정의를 조회합니다.
+        /// </summary>
+        /// <param name="uid">조회할 라이센스 UID입니다.</param>
+        /// <param name="logIfMissing">조회 실패 시 경고 로그를 남길지 여부입니다.</param>
+        /// <returns>찾은 라이센스 정의입니다. 없으면 null을 반환합니다.</returns>
+        public StruckTableLicense GetLicenseData(int uid, bool logIfMissing = true)
+            => GetData(TableLicense, uid, "License", (t, i) => t.GetDataByUid(i), logIfMissing);
+
+        /// <summary>
+        /// license 테이블에서 UID로 라이센스 정의 조회를 시도합니다.
+        /// </summary>
+        /// <param name="uid">조회할 라이센스 UID입니다.</param>
+        /// <param name="data">조회에 성공하면 라이센스 정의가 설정됩니다.</param>
+        /// <param name="logIfMissing">조회 실패 시 경고 로그를 남길지 여부입니다.</param>
+        /// <returns>라이센스 정의를 찾으면 true를 반환합니다.</returns>
+        public bool TryGetLicenseData(int uid, out StruckTableLicense data, bool logIfMissing = false)
+            => TryGetData(TableLicense, uid, out data, "License", (t, i) => t.GetDataByUid(i), logIfMissing);
+
+        /// <summary>
+        /// license 테이블에서 Key로 라이센스 정의를 조회합니다.
+        /// </summary>
+        /// <param name="key">조회할 라이센스 Key입니다.</param>
+        /// <param name="logIfMissing">조회 실패 시 경고 로그를 남길지 여부입니다.</param>
+        /// <returns>찾은 라이센스 정의입니다. 없으면 null을 반환합니다.</returns>
+        public StruckTableLicense GetLicenseDataByKey(string key, bool logIfMissing = true)
+        {
+            if (TableLicense == null)
+            {
+                if (logIfMissing)
+                    GcLogger.LogWarning("[Table] License table is null.");
+                return null;
+            }
+
+            StruckTableLicense data = TableLicense.GetDataByKey(key);
+            if (data == null && logIfMissing)
+                GcLogger.LogWarning($"[Table] License not found. key={key}");
+            return data;
+        }
+
+        /// <summary>
+        /// license 테이블에서 Key로 라이센스 정의 조회를 시도합니다.
+        /// </summary>
+        /// <param name="key">조회할 라이센스 Key입니다.</param>
+        /// <param name="data">조회에 성공하면 라이센스 정의가 설정됩니다.</param>
+        /// <param name="logIfMissing">조회 실패 시 경고 로그를 남길지 여부입니다.</param>
+        /// <returns>라이센스 정의를 찾으면 true를 반환합니다.</returns>
+        public bool TryGetLicenseDataByKey(string key, out StruckTableLicense data, bool logIfMissing = false)
+        {
+            data = GetLicenseDataByKey(key, logIfMissing);
+            return data != null;
+        }
 
         // Projectile
         public StruckTableProjectile GetProjectileData(int uid, bool logIfMissing = true)

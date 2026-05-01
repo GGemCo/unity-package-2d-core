@@ -28,6 +28,11 @@ namespace GGemCo2DCore
         public MapProgressData MapProgressData;
 
         /// <summary>
+        /// Key 기반 게임 진행 상태를 저장하는 라이센스 데이터입니다.
+        /// </summary>
+        public LicenseData LicenseData;
+
+        /// <summary>
         /// 인스턴스 아이템(랜덤 옵션 등) 저장 데이터.
         /// </summary>
         public ItemInstanceStoreData ItemInstanceStoreData;
@@ -63,6 +68,16 @@ namespace GGemCo2DCore
         public MapProgressController MapProgressController { get; private set; }
 
         /// <summary>
+        /// Key 기반 라이센스 상태를 설정하고 조회하는 매니저입니다.
+        /// </summary>
+        public LicenseManager LicenseManager { get; private set; }
+
+        /// <summary>
+        /// 세이브 파일에 저장되는 라이센스 상태 데이터입니다.
+        /// </summary>
+        public LicenseData License { get; private set; }
+
+        /// <summary>
         /// 인스턴스 아이템(랜덤 옵션 등) 저장소.
         /// </summary>
         public ItemInstanceStore ItemInstances { get; private set; }
@@ -89,6 +104,8 @@ namespace GGemCo2DCore
             WindowSlotActivation = new WindowSlotActivationSaveData();
             MapProgress = new MapProgressData();
             MapProgressController = new MapProgressController(this);
+            License = new LicenseData();
+            LicenseManager = new LicenseManager(this);
 
             // 인스턴스 아이템 저장소 초기화(테이블 로드 이후면 언제든 사용 가능)
             ItemInstances = new ItemInstanceStore();
@@ -107,6 +124,7 @@ namespace GGemCo2DCore
             GameTime.Initialize(tableLoaderManager, saveDataContainer);
             WindowSlotActivation.Initialize(tableLoaderManager, saveDataContainer);
             MapProgress.Initialize(tableLoaderManager, saveDataContainer);
+            License.Initialize(tableLoaderManager, saveDataContainer);
             SceneGame.Instance?.uIWindowManager?.RefreshWindowSlotActivationStates();
             SceneGame.Instance?.uIWindowManager
                 ?.GetUIWindowByUid<UIWindowWorldMap>(UIWindowConstants.WindowUid.WorldMap)
@@ -157,6 +175,7 @@ namespace GGemCo2DCore
                 ShopExposureData = ShopExposure,
                 WindowSlotActivationSaveData = WindowSlotActivation,
                 MapProgressData = MapProgress,
+                LicenseData = License,
                 ItemInstanceStoreData = ItemInstances?.Capture(),
                 // 확장 섹션 함께 저장
                 Extensions = env?.Sections,

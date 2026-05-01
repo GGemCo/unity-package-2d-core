@@ -152,6 +152,7 @@ namespace GGemCo2DCoreEditor
             { "HitVfxUid", ConfigAddressableTable.VfxEffect },
             { "ProjectileUid", ConfigAddressableTable.Projectile },
             { "CrowdControlUid", ConfigAddressableTable.CrowdControl },
+            { "LicenseUid", ConfigAddressableTable.License },
             { "OpenWindowUid", ConfigAddressableTable.Window },
             { "CloseWindowUid", ConfigAddressableTable.Window },
             { "SoundUid", ConfigAddressableTable.Sound },

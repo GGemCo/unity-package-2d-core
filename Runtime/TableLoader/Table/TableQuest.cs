@@ -148,7 +148,7 @@ namespace GGemCo2DCore
         /// <param name="mapUid">NPC가 배치된 맵 UID입니다.</param>
         /// <param name="npcUid">대화 대상 NPC UID입니다.</param>
         /// <returns>시작 가능한 퀘스트 UID 목록입니다.</returns>
-        public List<int> GetQuestsByNpcUnum(int mapUid, int npcUid)
+        public List<int> GetQuestsByNpcUid(int mapUid, int npcUid)
         {
             List<int> empty = new List<int>();
             if (QuestUidsByNpc.TryGetValue(mapUid, out var npcUids) != true || npcUids.ContainsKey(npcUid) != true)

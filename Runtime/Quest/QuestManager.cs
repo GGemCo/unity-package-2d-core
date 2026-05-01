@@ -333,6 +333,7 @@ namespace GGemCo2DCore
             _playerData?.AddCurrency(CurrencyConstants.Type.Silver, quest.reward.silver);
             GiveItemReward(quest.reward.items);
             GiveMapProgressReward(quest.reward.mapProgress);
+            GiveLicenseReward(quest.reward.licenses);
         }
 
         /// <summary>
@@ -367,6 +368,28 @@ namespace GGemCo2DCore
             _sceneGame.saveDataManager.MapProgressController.ClearMap(
                 mapProgress.clearMapUid,
                 mapProgress.activateWorldMapNodeIds);
+        }
+
+        /// <summary>
+        /// 퀘스트 완료 보상으로 라이센스 값을 저장합니다.
+        /// </summary>
+        /// <param name="licenses">저장할 라이센스 보상 목록입니다.</param>
+        private void GiveLicenseReward(List<QuestRewardLicense> licenses)
+        {
+            if (licenses == null || licenses.Count <= 0) return;
+
+            LicenseManager licenseManager = _sceneGame?.saveDataManager?.LicenseManager;
+            if (licenseManager == null) return;
+
+            foreach (QuestRewardLicense license in licenses)
+            {
+                if (license == null || license.licenseUid <= 0) continue;
+
+                string value = string.IsNullOrWhiteSpace(license.value)
+                    ? LicenseConstants.TrueValue
+                    : license.value;
+                licenseManager.SetByUid(license.licenseUid, value);
+            }
         }
 
         /// <summary>

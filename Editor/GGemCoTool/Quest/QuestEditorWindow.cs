@@ -17,18 +17,21 @@ namespace GGemCo2DCoreEditor
         public List<string> NameMap;
         public List<string> NameDialogue;
         public List<string> NameItem;
+        public List<string> NameLicense;
         public Dictionary<int, StruckTableQuest> StruckTableQuests;
         public Dictionary<int, StruckTableNpc> StruckTableNpcs;
         public Dictionary<int, StruckTableMonster> StruckTableMonsters;
         public Dictionary<int, StruckTableMap> StruckTableMaps;
         public Dictionary<int, StruckTableDialogue> StruckTableDialogues;
         public Dictionary<int, StruckTableItem> StruckTableItems;
+        public Dictionary<int, StruckTableLicense> StruckTableLicenses;
 
         public MetadataQuestStepListDrawer(List<string> nameQuest, List<string> nameNpc, List<string> nameMonster,
-            List<string> nameMap, List<string> nameDialogue, List<string> nameItem,
+            List<string> nameMap, List<string> nameDialogue, List<string> nameItem, List<string> nameLicense,
             Dictionary<int, StruckTableQuest> struckTableQuests, Dictionary<int, StruckTableNpc> struckTableNpcs,
             Dictionary<int, StruckTableMonster> struckTableMonsters, Dictionary<int, StruckTableMap> struckTableMaps,
-            Dictionary<int, StruckTableDialogue> struckTableDialogues, Dictionary<int, StruckTableItem> struckTableItems)
+            Dictionary<int, StruckTableDialogue> struckTableDialogues, Dictionary<int, StruckTableItem> struckTableItems,
+            Dictionary<int, StruckTableLicense> struckTableLicenses)
         {
             NameQuest = nameQuest;
             NameNpc = nameNpc;
@@ -36,12 +39,14 @@ namespace GGemCo2DCoreEditor
             NameMap = nameMap;
             NameDialogue = nameDialogue;
             NameItem = nameItem;
+            NameLicense = nameLicense;
             StruckTableQuests = struckTableQuests;
             StruckTableNpcs = struckTableNpcs;
             StruckTableMonsters = struckTableMonsters;
             StruckTableMaps = struckTableMaps;
             StruckTableDialogues = struckTableDialogues;
             StruckTableItems = struckTableItems;
+            StruckTableLicenses = struckTableLicenses;
         }
     }
     public class QuestEditorWindow : EditorWindow
@@ -58,6 +63,7 @@ namespace GGemCo2DCoreEditor
         private TableMap _tableMap;
         private TableDialogue _tableDialogue;
         private TableItem _tableItem;
+        private TableLicense _tableLicense;
         
         private int _selectedQuestIndex;
         private readonly List<SearchableDropdownUtility.Option<int>> _questOptions =
@@ -68,12 +74,14 @@ namespace GGemCo2DCoreEditor
         private List<string> _nameMap = new List<string>();
         private List<string> _nameDialogue = new List<string>();
         private List<string> _nameItem = new List<string>();
+        private List<string> _nameLicense = new List<string>();
         private Dictionary<int, StruckTableQuest> _struckTableQuests = new Dictionary<int, StruckTableQuest>(); 
         private Dictionary<int, StruckTableNpc> _struckTableNpcs = new Dictionary<int, StruckTableNpc>(); 
         private Dictionary<int, StruckTableMonster> _struckTableMonsters = new Dictionary<int, StruckTableMonster>(); 
         private Dictionary<int, StruckTableMap> _struckTableMaps = new Dictionary<int, StruckTableMap>(); 
         private Dictionary<int, StruckTableDialogue> _struckTableDialogues = new Dictionary<int, StruckTableDialogue>(); 
         private Dictionary<int, StruckTableItem> _struckTableItems = new Dictionary<int, StruckTableItem>(); 
+        private Dictionary<int, StruckTableLicense> _struckTableLicenses = new Dictionary<int, StruckTableLicense>();
 
         private QuestStepListDrawer _questStepListDrawer;
         private RewardItemListDrawer _rewardItemListDrawer;
@@ -135,21 +143,30 @@ namespace GGemCo2DCoreEditor
                 out _struckTableItems,
                 info => $"{info.Uid} - {info.Name}"
             );
+            TableLoaderManager.LoadTableData<TableLicense, StruckTableLicense>(
+                ConfigAddressableTable.License,
+                out _tableLicense,
+                out _nameLicense,
+                out _struckTableLicenses,
+                info => $"{info.Uid} - {info.Key}"
+            );
             
             _quest.steps ??= new List<QuestStep>();
             _quest.reward ??= new QuestReward();
             _quest.reward.items ??= new List<RewardItem>();
             _quest.reward.mapProgress ??= new QuestRewardMapProgress();
             _quest.reward.mapProgress.activateWorldMapNodeIds ??= new List<string>();
+            _quest.reward.licenses ??= new List<QuestRewardLicense>();
 
             MetadataQuestStepListDrawer metadataQuestStepListDrawer = new MetadataQuestStepListDrawer(
-                _nameQuest, _nameNpc, _nameMonster, _nameMap, _nameDialogue, _nameItem, 
+                _nameQuest, _nameNpc, _nameMonster, _nameMap, _nameDialogue, _nameItem, _nameLicense,
                 _struckTableQuests, 
                 _struckTableNpcs,
                 _struckTableMonsters,
                 _struckTableMaps, 
                 _struckTableDialogues, 
-                _struckTableItems
+                _struckTableItems,
+                _struckTableLicenses
                 );
             _questStepListDrawer = new QuestStepListDrawer(_quest.steps, metadataQuestStepListDrawer);
             _rewardItemListDrawer = new RewardItemListDrawer(_quest.reward, metadataQuestStepListDrawer);

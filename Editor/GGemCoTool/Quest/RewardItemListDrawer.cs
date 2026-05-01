@@ -12,6 +12,7 @@ namespace GGemCo2DCoreEditor
         private readonly MetadataQuestStepListDrawer metadataQuestStepListDrawer;
         private readonly ReorderableList list;
         private readonly ReorderableList mapNodeIdList;
+        private readonly ReorderableList licenseList;
         private int selectedIndexItem = 0;
         private int selectedIndexClearMap = 0;
         
@@ -27,6 +28,7 @@ namespace GGemCo2DCoreEditor
             this.reward.items ??= new List<RewardItem>();
             this.reward.mapProgress ??= new QuestRewardMapProgress();
             this.reward.mapProgress.activateWorldMapNodeIds ??= new List<string>();
+            this.reward.licenses ??= new List<QuestRewardLicense>();
 
             list = new ReorderableList(reward.items, typeof(RewardItem), true, true, true, true);
             list.drawHeaderCallback = rect => EditorGUI.LabelField(rect, "아이템 보상 목록");
@@ -64,6 +66,17 @@ namespace GGemCo2DCoreEditor
                     new Rect(rect.x, rect.y + 2, rect.width, 18),
                     this.reward.mapProgress.activateWorldMapNodeIds[index]);
             };
+
+            licenseList = new ReorderableList(
+                this.reward.licenses,
+                typeof(QuestRewardLicense),
+                true,
+                true,
+                true,
+                true);
+            licenseList.drawHeaderCallback = rect => EditorGUI.LabelField(rect, "라이센스 보상 목록");
+            licenseList.elementHeight = 24;
+            licenseList.drawElementCallback = DrawLicenseElement;
         }
 
         /// <summary>
@@ -81,6 +94,9 @@ namespace GGemCo2DCoreEditor
 
             GUILayout.Space(10);
             DrawMapProgressReward();
+
+            GUILayout.Space(10);
+            DrawLicenseReward();
         }
 
         /// <summary>
@@ -121,6 +137,63 @@ namespace GGemCo2DCoreEditor
 
             reward.mapProgress.clearMapUid =
                 metadataQuestStepListDrawer.StruckTableMaps.GetValueOrDefault(selectedIndexClearMap - 1)?.Uid ?? 0;
+        }
+
+        /// <summary>
+        /// 라이센스 보상 목록 UI를 그립니다.
+        /// </summary>
+        private void DrawLicenseReward()
+        {
+            licenseList.DoLayoutList();
+        }
+
+        /// <summary>
+        /// 라이센스 보상 한 줄의 선택 UI와 저장값 입력 UI를 그립니다.
+        /// </summary>
+        /// <param name="rect">그릴 영역입니다.</param>
+        /// <param name="index">그릴 라이센스 보상 인덱스입니다.</param>
+        /// <param name="isActive">현재 줄이 선택되어 있는지 여부입니다.</param>
+        /// <param name="isFocused">현재 줄에 포커스가 있는지 여부입니다.</param>
+        private void DrawLicenseElement(Rect rect, int index, bool isActive, bool isFocused)
+        {
+            QuestRewardLicense license = reward.licenses[index];
+            if (license == null)
+            {
+                license = new QuestRewardLicense();
+                reward.licenses[index] = license;
+            }
+            float half = rect.width * 0.5f;
+
+            List<string> options = new List<string> { "없음" };
+            if (metadataQuestStepListDrawer.NameLicense != null)
+            {
+                options.AddRange(metadataQuestStepListDrawer.NameLicense);
+            }
+
+            int selectedIndex = 0;
+            if (license.licenseUid > 0)
+            {
+                int foundIndex = metadataQuestStepListDrawer.NameLicense != null
+                    ? metadataQuestStepListDrawer.NameLicense.FindIndex(
+                        x => x.StartsWith($"{license.licenseUid} - "))
+                    : -1;
+                selectedIndex = foundIndex >= 0 ? foundIndex + 1 : 0;
+            }
+
+            selectedIndex = EditorGUI.Popup(
+                new Rect(rect.x, rect.y + 2, half - 5, 18),
+                "라이센스",
+                selectedIndex,
+                options.ToArray());
+
+            license.licenseUid = selectedIndex <= 0
+                ? 0
+                : metadataQuestStepListDrawer.StruckTableLicenses?.GetValueOrDefault(selectedIndex - 1)?.Uid ?? 0;
+
+            license.value = EditorGUI.TextField(
+                new Rect(rect.x + half + 5, rect.y + 2, half - 5, 18),
+                "값",
+                string.IsNullOrEmpty(license.value) ? LicenseConstants.TrueValue : license.value);
         }
     }
 }

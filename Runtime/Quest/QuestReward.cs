@@ -11,6 +11,7 @@ namespace GGemCo2DCore
         public int silver;
         public List<RewardItem> items = new List<RewardItem>();
         public QuestRewardMapProgress mapProgress = new QuestRewardMapProgress();
+        public List<QuestRewardLicense> licenses = new List<QuestRewardLicense>();
     }
 
     /// <summary>
@@ -28,5 +29,15 @@ namespace GGemCo2DCore
     {
         public int itemUid;
         public int amount;
+    }
+
+    /// <summary>
+    /// 퀘스트 완료 보상으로 설정할 라이센스 값을 보관합니다.
+    /// </summary>
+    [System.Serializable]
+    public class QuestRewardLicense
+    {
+        public int licenseUid;
+        public string value = LicenseConstants.TrueValue;
     }
 }

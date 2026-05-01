@@ -96,7 +96,7 @@ namespace GGemCo2DCore
             if (questData == null) return;
             // 현재 맵에서 Npc 가 시작할 수 있는 퀘스트 찾기
             questUidByReady =
-                TableLoaderManager.Instance.TableQuest.GetQuestsByNpcUnum(npc.CharacterRegenData.MapUid, npc.uid);
+                TableLoaderManager.Instance.TableQuest.GetQuestsByNpcUid(npc.CharacterRegenData.MapUid, npc.uid);
             // GcLogger.Log("npc.uid: "+npc.uid+" / questuid: "+string.Join(", ", questUids));
             
             // quest 테이블 내용으로는 시작 퀘스트를 찾는다.

@@ -58,6 +58,16 @@ namespace GGemCo2DCoreEditor
             return LoadTable<TableQuest>(ConfigAddressableTable.TableQuest.Path, forceReload);
         }
 
+        /// <summary>
+        /// 에디터 환경에서 license 테이블을 로드합니다.
+        /// </summary>
+        /// <param name="forceReload">캐시를 무시하고 다시 로드할지 여부입니다.</param>
+        /// <returns>로드된 라이센스 테이블입니다.</returns>
+        public static TableLicense LoadLicenseTable(bool forceReload = true)
+        {
+            return LoadTable<TableLicense>(ConfigAddressableTable.TableLicense.Path, forceReload);
+        }
+
         public static TableVfxEffect LoadVfxEffectTable(bool forceReload = true)
             => LoadTable<TableVfxEffect>(ConfigAddressableTable.TableVfxEffect.Path, forceReload);
 

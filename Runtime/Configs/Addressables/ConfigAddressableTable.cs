@@ -47,6 +47,7 @@ namespace GGemCo2DCore
         public const string Cutscene         = "cutscene";
         public const string Dialogue         = "dialogue";
         public const string Quest            = "quest";
+        public const string License          = "license";
         public const string Projectile       = "projectile";
         public const string Sound            = "sound";
         public const string SimulationTool   = "simulation_tool";
@@ -90,6 +91,7 @@ namespace GGemCo2DCore
         public static readonly AddressableAssetInfo TableCutscene        = Make(Cutscene);
         public static readonly AddressableAssetInfo TableDialogue        = Make(Dialogue);
         public static readonly AddressableAssetInfo TableQuest           = Make(Quest);
+        public static readonly AddressableAssetInfo TableLicense         = Make(License);
         public static readonly AddressableAssetInfo TableProjectile      = Make(Projectile);
         public static readonly AddressableAssetInfo TableSound           = Make(Sound);
         public static readonly AddressableAssetInfo TableSimulationTool  = Make(SimulationTool);
@@ -113,7 +115,7 @@ namespace GGemCo2DCore
             // Others
             TableVfxEffect, TableVfxParticle, TableInteraction,
             TableShop, TableShopItem, TableShopPromotion, TableItemUpgrade, TableItemSalvage, TableItemCraft,
-            TableCutscene, TableDialogue, TableQuest, TableProjectile, TableSound, TableSimulationTool,
+            TableCutscene, TableDialogue, TableQuest, TableLicense, TableProjectile, TableSound, TableSimulationTool,
             TableSimulationGrowth, TableCrowdControl, TableCrowdControlKnockBack, TableCrowdControlKnockDown, TableCrowdControlKnockUp, TableCrowdControlKnockDownAir, TableItemUse, TableItemUseAction
         };
         public static AddressableAssetInfo GetByKey(string key)
