@@ -21,7 +21,7 @@ namespace GGemCo2DCore
         private InventoryData _inventoryData;
         private bool _isQuestJsonLoaded;
         private bool _isRegisteredMapEntered;
-        private int _pendingEnterMapUid;
+        private int _pendingMapEnteredUid;
         
         private readonly ObjectiveHandlerFactory _handlerFactory = new ObjectiveHandlerFactory();
 
@@ -36,7 +36,7 @@ namespace GGemCo2DCore
             _quests.Clear();
             _activeHandlers.Clear();
             _isQuestJsonLoaded = false;
-            _pendingEnterMapUid = 0;
+            _pendingMapEnteredUid = 0;
             _sceneGame = scene;
             _tableQuest = TableLoaderManager.Instance.TableQuest;
         }
@@ -97,16 +97,12 @@ namespace GGemCo2DCore
             
             LoadQuestDatas();
             _isQuestJsonLoaded = true;
-            int mapUid = _pendingEnterMapUid > 0
-                ? _pendingEnterMapUid
-                : (_sceneGame.mapManager != null ? _sceneGame.mapManager.GetCurrentMapUid() : 0);
-            _pendingEnterMapUid = 0;
-            await TryStartQuestsByEnterMap(mapUid);
+            await TryStartPendingEnterMapQuests();
         }
 
         /// <summary>
         /// 맵 입장 이벤트를 받아 EnterMap 트리거 퀘스트를 시작합니다.
-        /// 퀘스트 JSON 적재가 끝나기 전이면 마지막 입장 맵을 보류합니다.
+        /// 퀘스트 JSON 적재가 끝나기 전이면 실제 맵 입장 이벤트로 들어온 맵만 보류합니다.
         /// </summary>
         /// <param name="eventData">입장 완료된 맵 정보입니다.</param>
         private async void OnMapEntered(MapEnteredEventData eventData)
@@ -114,11 +110,24 @@ namespace GGemCo2DCore
             if (eventData.MapUid <= 0) return;
             if (!_isQuestJsonLoaded)
             {
-                _pendingEnterMapUid = eventData.MapUid;
+                _pendingMapEnteredUid = eventData.MapUid;
                 return;
             }
 
             await TryStartQuestsByEnterMap(eventData.MapUid);
+        }
+
+        /// <summary>
+        /// 퀘스트 JSON 로드 전에 수신한 맵 입장 이벤트가 있으면 해당 맵의 EnterMap 퀘스트를 시작합니다.
+        /// LoadAllQuestJson 자체에서는 임의의 현재 맵을 사용하지 않고, OnMapLoadComplete에서 발행된 이벤트만 처리합니다.
+        /// </summary>
+        private async Task TryStartPendingEnterMapQuests()
+        {
+            if (_pendingMapEnteredUid <= 0) return;
+
+            int mapUid = _pendingMapEnteredUid;
+            _pendingMapEnteredUid = 0;
+            await TryStartQuestsByEnterMap(mapUid);
         }
 
         /// <summary>
