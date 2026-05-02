@@ -76,7 +76,7 @@ namespace GGemCo2DCoreEditor
         /// <param name="asset">편집 중인 월드맵 그래프 에셋입니다.</param>
         /// <param name="state">선택 및 캔버스 보기 상태입니다.</param>
         /// <param name="gridSettings">Grid 및 Snap 설정입니다.</param>
-        /// <param name="tableMap">현재 표시 중인 TableMap입니다. 입력 처리 우선순위의 의미를 문서화하기 위한 인자입니다.</param>
+        /// <param name="tableMap">현재 표시 중인 TableMap입니다.</param>
         /// <param name="onNodeSelected">노드 선택 콜백입니다.</param>
         /// <param name="onEdgeSelected">연결선 선택 콜백입니다.</param>
         /// <param name="onCreateEdge">연결선 생성 콜백입니다.</param>

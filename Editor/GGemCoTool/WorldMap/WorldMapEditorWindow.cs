@@ -91,10 +91,11 @@ namespace GGemCo2DCoreEditor
             _asset.EnsureDefaults();
 
             WorldMapCanvasFrame canvasFrame = BuildCanvasFrame(layout);
-            HandleCanvasInput(layout, canvasFrame);
+            bool blockCanvasInput = ShouldBlockCanvasInput(layout);
+            HandleCanvasInput(layout, canvasFrame, blockCanvasInput);
             DrawLeftPanel(layout.LeftPanelRect);
-            DrawRightPanel(layout.RightPanelRect);
             DrawCanvasOverlay(layout, canvasFrame);
+            DrawRightPanel(layout.RightPanelRect);
         }
 
         /// <summary>
@@ -230,8 +231,14 @@ namespace GGemCo2DCoreEditor
         /// </summary>
         /// <param name="layout">현재 에디터 레이아웃 정보입니다.</param>
         /// <param name="canvasFrame">본문 로컬 좌표 기준의 캔버스 프레임입니다.</param>
-        private void HandleCanvasInput(WorldMapEditorLayout layout, WorldMapCanvasFrame canvasFrame)
+        /// <param name="blockCanvasInput">현재 이벤트를 캔버스가 가져가면 안 되는지 여부입니다.</param>
+        private void HandleCanvasInput(WorldMapEditorLayout layout, WorldMapCanvasFrame canvasFrame, bool blockCanvasInput)
         {
+            if (blockCanvasInput)
+            {
+                return;
+            }
+
             GUI.BeginGroup(layout.BodyRect);
             try
             {
@@ -250,6 +257,27 @@ namespace GGemCo2DCoreEditor
             {
                 GUI.EndGroup();
             }
+        }
+
+        /// <summary>
+        /// 현재 이벤트가 RightPanel 또는 텍스트 편집 중인 UI에 속해 캔버스 입력을 막아야 하는지 판정합니다.
+        /// </summary>
+        /// <param name="layout">현재 에디터 레이아웃 정보입니다.</param>
+        /// <returns>캔버스 입력을 차단해야 하면 true입니다.</returns>
+        private static bool ShouldBlockCanvasInput(WorldMapEditorLayout layout)
+        {
+            Event current = Event.current;
+            if (current == null)
+            {
+                return false;
+            }
+
+            if (EditorGUIUtility.editingTextField)
+            {
+                return true;
+            }
+
+            return layout.RightPanelRect.Contains(current.mousePosition) || layout.ToolbarRect.Contains(current.mousePosition);
         }
 
         /// <summary>
@@ -277,10 +305,12 @@ namespace GGemCo2DCoreEditor
 
         /// <summary>
         /// 우측 선택 상세 인스펙터 패널을 고정 Rect 안에 그립니다.
+        /// 캔버스보다 마지막에 그려져 항상 상위 편집 레이어로 보이도록 유지합니다.
         /// </summary>
         /// <param name="panelRect">우측 패널이 배치될 Rect입니다.</param>
         private void DrawRightPanel(Rect panelRect)
         {
+            GUI.Box(panelRect, GUIContent.none, EditorStyles.helpBox);
             GUILayout.BeginArea(panelRect);
             using (new EditorGUILayout.VerticalScope(GUILayout.ExpandWidth(true), GUILayout.ExpandHeight(true)))
             {
