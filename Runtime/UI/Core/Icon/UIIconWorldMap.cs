@@ -417,7 +417,7 @@ namespace GGemCo2DCore
         /// <param name="decorationData">적용할 데코레이션 런타임 데이터입니다.</param>
         private void ApplyAnimatedNodeDecoration(WorldMapNodeDecorationRuntimeData decorationData)
         {
-            if (!window.gameObject.activeSelf || !gameObject.activeSelf || !imageIconDeco || !imageIconDeco.gameObject.activeSelf) return;
+            if (!window.gameObject.activeSelf) return;
             Animator animator = GetOrAddNodeDecorationAnimator();
             imageIconDeco.sprite = decorationData.Sprite;
             imageIconDeco.enabled = true;
