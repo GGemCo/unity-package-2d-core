@@ -116,9 +116,12 @@ namespace GGemCo2DCoreEditor
 
             EditorGUI.BeginChangeCheck();
             Sprite oldIconSprite = node.iconSprite;
+            Sprite oldInactiveSprite = node.inactiveSprite;
             string titleOverride = EditorGUILayout.TextField("Title Override", node.titleOverride);
             Sprite iconSprite = (Sprite)EditorGUILayout.ObjectField("Icon Sprite", node.iconSprite, typeof(Sprite), false);
             string iconAddress = EditorGUILayout.TextField("Icon Address", node.iconAddress);
+            Sprite inactiveSprite = (Sprite)EditorGUILayout.ObjectField("Inactive Sprite", node.inactiveSprite, typeof(Sprite), false);
+            string inactiveSpriteAddress = EditorGUILayout.TextField("Inactive Sprite Address", node.inactiveSpriteAddress);
             WorldMapNodeType nodeType = (WorldMapNodeType)EditorGUILayout.EnumPopup("Node Type", node.nodeType);
             bool visibleByDefault = EditorGUILayout.Toggle("Visible By Default", node.visibleByDefault);
             bool inactiveByDefault = EditorGUILayout.Toggle("Inactive By Default", node.inactiveByDefault);
@@ -134,6 +137,12 @@ namespace GGemCo2DCoreEditor
                 if (iconSprite != null && iconSprite != oldIconSprite)
                 {
                     node.iconAddress = ConfigAddressableWorldMap.GetNodeIconKey(asset.graphId, node.nodeId);
+                }
+                node.inactiveSprite = inactiveSprite;
+                node.inactiveSpriteAddress = inactiveSpriteAddress;
+                if (inactiveSprite != null && inactiveSprite != oldInactiveSprite)
+                {
+                    node.inactiveSpriteAddress = ConfigAddressableWorldMap.GetNodeInactiveSpriteKey(asset.graphId, node.nodeId);
                 }
                 node.nodeType = nodeType;
                 node.visibleByDefault = visibleByDefault;

@@ -39,13 +39,17 @@ namespace GGemCo2DCore
         [Tooltip("노드 포인트 상태 Image 오브젝트")]
         [SerializeField] private Image imageIconPoint;
 
-        [Header("NoInvite")]
+        [Header("클리어 상태")]
         [Tooltip("클리어한 적이 없는 월드맵 노드일 때 아이콘 이미지에 적용할 색상입니다.")]
-        [SerializeField] private Color colorNoInvite = new Color(1f, 1f, 1f, 0.35f);
+        [SerializeField] private Color colorNoClear = new Color(1f, 1f, 1f, 0.35f);
         [Tooltip("클리어한 적이 없는 월드맵 노드일 때 표시할 아이콘 이미지입니다.")]
-        [SerializeField] private Sprite noInviteSprite;
+        [SerializeField] private Sprite spriteNoClear;
         [Tooltip("NoInvite Sprite를 표시할 Image입니다. 비어 있으면 기존처럼 ImageIcon에 직접 적용합니다.")]
         [SerializeField] private Image imageNoInviteSprite;
+
+        [Header("이펙트 데코레이션")]
+        [Tooltip("이펙트 데코레이션")]
+        [SerializeField] private VfxEffectUI vfxEffectDeco;
 
         private TableMap _tableMap;
         private StruckTableMap _struckTableMap;
@@ -83,9 +87,10 @@ namespace GGemCo2DCore
         /// <param name="nodeDefinition">표시할 월드맵 노드 정의입니다.</param>
         /// <param name="mapData">노드가 참조하는 TableMap 데이터입니다.</param>
         /// <param name="iconSprite">AddressableLoaderWorldMap에서 로드한 노드 아이콘 Sprite입니다.</param>
-        public void SetWorldMapNode(WorldMapNodeDefinition nodeDefinition, StruckTableMap mapData, Sprite iconSprite = null)
+        /// <param name="inactiveSprite">노드 비활성 상태에서 사용할 override Sprite입니다.</param>
+        public void SetWorldMapNode(WorldMapNodeDefinition nodeDefinition, StruckTableMap mapData, Sprite iconSprite = null, Sprite inactiveSprite = null)
         {
-            SetWorldMapNode(nodeDefinition, nodeDefinition, mapData, iconSprite);
+            SetWorldMapNode(nodeDefinition, nodeDefinition, mapData, iconSprite, inactiveSprite);
         }
 
         /// <summary>
@@ -96,11 +101,13 @@ namespace GGemCo2DCore
         /// <param name="displayNodeDefinition">화면에 표시할 월드맵 노드입니다. null이면 원본 노드를 사용합니다.</param>
         /// <param name="mapData">표시 노드가 참조하는 TableMap 데이터입니다.</param>
         /// <param name="iconSprite">표시 노드에 사용할 Sprite입니다.</param>
+        /// <param name="inactiveSprite">비활성 상태에서 사용할 override Sprite입니다.</param>
         public void SetWorldMapNode(
             WorldMapNodeDefinition nodeDefinition,
             WorldMapNodeDefinition displayNodeDefinition,
             StruckTableMap mapData,
-            Sprite iconSprite = null)
+            Sprite iconSprite = null,
+            Sprite inactiveSprite = null)
         {
             _nodeDefinition = nodeDefinition;
             _displayNodeDefinition = displayNodeDefinition ?? nodeDefinition;
@@ -112,6 +119,7 @@ namespace GGemCo2DCore
             _iconSprite = iconSprite;
             if (_nodeDefinition == null)
             {
+                SetInactiveSpriteOverride(null);
                 _displayNodeDefinition = null;
                 _displayMapUid = 0;
                 ClearIconInfos();
@@ -122,6 +130,7 @@ namespace GGemCo2DCore
             }
 
             _struckTableMap = mapData ?? _tableMap?.GetDataByUid(DisplayMapUid);
+            SetInactiveSpriteOverride(inactiveSprite);
             SetInactiveVisualState(false, false);
             ChangeInfoByUid(_nodeDefinition.MapUid, 1, 1);
             ApplyNodeDisplayName();
@@ -175,8 +184,8 @@ namespace GGemCo2DCore
                 return;
             }
 
-            ImageIcon.color = colorNoInvite;
-            OnSetColorImageIcon(colorNoInvite);
+            ImageIcon.color = colorNoClear;
+            OnSetColorImageIcon(colorNoClear);
         }
 
         /// <summary>
@@ -188,14 +197,14 @@ namespace GGemCo2DCore
         {
             if (imageNoInviteSprite != null)
             {
-                imageNoInviteSprite.sprite = show ? noInviteSprite : null;
-                imageNoInviteSprite.gameObject.SetActive(show && noInviteSprite != null);
+                imageNoInviteSprite.sprite = show ? spriteNoClear : null;
+                imageNoInviteSprite.gameObject.SetActive(show && spriteNoClear != null);
                 return;
             }
 
-            if (show && noInviteSprite != null && ImageIcon != null)
+            if (show && spriteNoClear != null && ImageIcon != null)
             {
-                ImageIcon.sprite = noInviteSprite;
+                ImageIcon.sprite = spriteNoClear;
             }
         }
         

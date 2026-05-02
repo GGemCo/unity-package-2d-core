@@ -55,27 +55,54 @@ namespace GGemCo2DCoreEditor
                 for (int i = 0; i < asset.nodes.Count; i++)
                 {
                     WorldMapNodeData node = asset.nodes[i];
-                    if (node == null || node.iconSprite == null)
+                    if (node == null)
                     {
                         continue;
                     }
 
-                    string iconKey = ConfigAddressableWorldMap.GetNodeIconKey(asset.graphId, node.nodeId);
-                    string iconAssetPath = AssetDatabase.GetAssetPath(node.iconSprite);
-                    if (registeredKeyByAssetPath.TryGetValue(iconAssetPath, out string sharedKey))
+                    if (node.iconSprite != null)
                     {
-                        node.iconAddress = sharedKey;
+                        string iconKey = ConfigAddressableWorldMap.GetNodeIconKey(asset.graphId, node.nodeId);
+                        string iconAssetPath = AssetDatabase.GetAssetPath(node.iconSprite);
+                        if (registeredKeyByAssetPath.TryGetValue(iconAssetPath, out string sharedKey))
+                        {
+                            node.iconAddress = sharedKey;
+                            changed = true;
+                        }
+                        else
+                        {
+                            if (!TryRegisterAsset(settings, group, iconKey, node.iconSprite, out error))
+                            {
+                                return false;
+                            }
+
+                            node.iconAddress = iconKey;
+                            registeredKeyByAssetPath[iconAssetPath] = iconKey;
+                            changed = true;
+                        }
+                    }
+
+                    if (node.inactiveSprite == null)
+                    {
+                        continue;
+                    }
+
+                    string inactiveSpriteKey = ConfigAddressableWorldMap.GetNodeInactiveSpriteKey(asset.graphId, node.nodeId);
+                    string inactiveSpriteAssetPath = AssetDatabase.GetAssetPath(node.inactiveSprite);
+                    if (registeredKeyByAssetPath.TryGetValue(inactiveSpriteAssetPath, out string sharedInactiveSpriteKey))
+                    {
+                        node.inactiveSpriteAddress = sharedInactiveSpriteKey;
                         changed = true;
                         continue;
                     }
 
-                    if (!TryRegisterAsset(settings, group, iconKey, node.iconSprite, out error))
+                    if (!TryRegisterAsset(settings, group, inactiveSpriteKey, node.inactiveSprite, out error))
                     {
                         return false;
                     }
 
-                    node.iconAddress = iconKey;
-                    registeredKeyByAssetPath[iconAssetPath] = iconKey;
+                    node.inactiveSpriteAddress = inactiveSpriteKey;
+                    registeredKeyByAssetPath[inactiveSpriteAssetPath] = inactiveSpriteKey;
                     changed = true;
                 }
             }

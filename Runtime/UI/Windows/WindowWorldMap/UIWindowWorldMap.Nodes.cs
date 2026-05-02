@@ -103,7 +103,8 @@ namespace GGemCo2DCore
             WorldMapNodeDefinition displayNode = ResolveWorldMapNodeDisplayNode(node);
             StruckTableMap displayMapData = ResolveWorldMapNodeDisplayMapData(node, fallbackTableMap);
             Sprite displayIconSprite = ResolveWorldMapNodeDisplayIconSprite(node, displayNode);
-            icon.SetWorldMapNode(node, displayNode, displayMapData, displayIconSprite);
+            Sprite displayInactiveSprite = ResolveWorldMapNodeDisplayInactiveSprite(node, displayNode);
+            icon.SetWorldMapNode(node, displayNode, displayMapData, displayIconSprite, displayInactiveSprite);
         }
 
         /// <summary>
@@ -285,6 +286,35 @@ namespace GGemCo2DCore
             return node != null &&
                    node != displayNode &&
                    AddressableLoaderWorldMap.Instance.TryGetIconSprite(node, out Sprite fallbackSprite)
+                ? fallbackSprite
+                : null;
+        }
+
+        /// <summary>
+        /// 표시용 노드에 맞는 월드맵 비활성 Sprite를 반환합니다.
+        /// 표시용 노드 비활성 Sprite가 없으면 원본 노드 비활성 Sprite를 사용합니다.
+        /// </summary>
+        /// <param name="node">원본 월드맵 노드입니다.</param>
+        /// <param name="displayNode">map_entry_rule 결과로 선택된 표시용 노드입니다.</param>
+        /// <returns>비활성 상태에 사용할 월드맵 아이콘 Sprite입니다.</returns>
+        private static Sprite ResolveWorldMapNodeDisplayInactiveSprite(
+            WorldMapNodeDefinition node,
+            WorldMapNodeDefinition displayNode)
+        {
+            if (AddressableLoaderWorldMap.Instance == null)
+            {
+                return null;
+            }
+
+            if (displayNode != null &&
+                AddressableLoaderWorldMap.Instance.TryGetInactiveSprite(displayNode, out Sprite displaySprite))
+            {
+                return displaySprite;
+            }
+
+            return node != null &&
+                   node != displayNode &&
+                   AddressableLoaderWorldMap.Instance.TryGetInactiveSprite(node, out Sprite fallbackSprite)
                 ? fallbackSprite
                 : null;
         }

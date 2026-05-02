@@ -28,6 +28,12 @@ namespace GGemCo2DCore
         /// <summary>에디터에서 드래그 앤 드랍으로 지정하는 아이콘 Sprite 원본입니다.</summary>
         public Sprite iconSprite;
 
+        /// <summary>런타임 비활성 상태에서 아이콘을 대체할 Addressables 키입니다.</summary>
+        public string inactiveSpriteAddress;
+
+        /// <summary>에디터에서 드래그 앤 드롭으로 지정하는 비활성 상태 Sprite 원본입니다.</summary>
+        public Sprite inactiveSprite;
+
         /// <summary>노드의 플레이 성격입니다.</summary>
         public WorldMapNodeType nodeType = WorldMapNodeType.Normal;
 
@@ -169,6 +175,9 @@ namespace GGemCo2DCore
 
         /// <summary>아이콘 Addressables 키 또는 경로입니다.</summary>
         public string iconAddress;
+
+        /// <summary>비활성 상태에서 아이콘을 대체할 Sprite Addressables 키입니다.</summary>
+        public string inactiveSpriteAddress;
 
         /// <summary>노드 타입 문자열입니다.</summary>
         public string nodeType;

@@ -108,6 +108,7 @@ namespace GGemCo2DCoreEditor
                     position = new WorldMapVector2Json(node.normalizedPosition),
                     titleOverride = node.titleOverride,
                     iconAddress = node.iconAddress,
+                    inactiveSpriteAddress = ResolveNodeInactiveSpriteAddress(asset, node),
                     nodeType = node.nodeType.ToString(),
                     visibleByDefault = node.visibleByDefault,
                     inactiveByDefault = node.inactiveByDefault,
@@ -156,6 +157,29 @@ namespace GGemCo2DCoreEditor
             }
 
             return string.Empty;
+        }
+
+        /// <summary>
+        /// 노드의 비활성 Sprite 원본 또는 수동 address를 기준으로 JSON에 기록할 address를 결정합니다.
+        /// </summary>
+        /// <param name="asset">노드가 포함된 월드맵 그래프 에셋입니다.</param>
+        /// <param name="node">address를 결정할 월드맵 노드 데이터입니다.</param>
+        /// <returns>JSON에 기록할 비활성 Sprite address입니다.</returns>
+        private static string ResolveNodeInactiveSpriteAddress(WorldMapGraphAsset asset, WorldMapNodeData node)
+        {
+            if (node == null)
+            {
+                return string.Empty;
+            }
+
+            if (node.inactiveSprite != null)
+            {
+                return !string.IsNullOrWhiteSpace(node.inactiveSpriteAddress)
+                    ? node.inactiveSpriteAddress
+                    : ConfigAddressableWorldMap.GetNodeInactiveSpriteKey(asset.graphId, node.nodeId);
+            }
+
+            return node.inactiveSpriteAddress;
         }
 
         /// <summary>

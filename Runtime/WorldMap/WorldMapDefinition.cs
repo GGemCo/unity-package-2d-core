@@ -202,6 +202,9 @@ namespace GGemCo2DCore
         /// <summary>아이콘 Addressables 키 또는 경로입니다.</summary>
         public string IconAddress { get; private set; }
 
+        /// <summary>비활성 상태에서 아이콘을 대체할 Sprite Addressables 키입니다.</summary>
+        public string InactiveSpriteAddress { get; private set; }
+
         /// <summary>노드 타입입니다.</summary>
         public WorldMapNodeType NodeType { get; private set; }
 
@@ -234,6 +237,7 @@ namespace GGemCo2DCore
                 NormalizedPosition = json.position != null ? json.position.ToVector2() : Vector2.zero,
                 TitleOverride = json.titleOverride,
                 IconAddress = json.iconAddress,
+                InactiveSpriteAddress = json.inactiveSpriteAddress,
                 NodeType = nodeType,
                 VisibleByDefault = json.visibleByDefault,
                 InactiveByDefault = json.inactiveByDefault,

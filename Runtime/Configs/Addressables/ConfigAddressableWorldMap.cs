@@ -11,6 +11,7 @@ namespace GGemCo2DCore
         private const string KeyPrefix = ConfigDefine.NameSDK + "_WorldMap_";
         private const string BackgroundKeyPrefix = ConfigDefine.NameSDK + "_WorldMap_Background_";
         private const string IconKeyPrefix = ConfigDefine.NameSDK + "_WorldMap_Icon_";
+        private const string InactiveSpriteKeyPrefix = ConfigDefine.NameSDK + "_WorldMap_InactiveSprite_";
         private const string EdgeSpriteKeyPrefix = ConfigDefine.NameSDK + "_WorldMap_Edge_";
         private const string FileNamePrefix = "world_map_";
         private const string ExtJson = ".json";
@@ -63,6 +64,17 @@ namespace GGemCo2DCore
         public static string GetNodeIconKey(string graphId, string nodeId)
         {
             return IconKeyPrefix + NormalizeGraphId(graphId) + "_" + NormalizeNodeId(nodeId);
+        }
+
+        /// <summary>
+        /// 월드맵 노드 비활성 Sprite에 사용할 Addressables 키를 만듭니다.
+        /// </summary>
+        /// <param name="graphId">월드맵 그래프 ID입니다.</param>
+        /// <param name="nodeId">월드맵 노드 ID입니다.</param>
+        /// <returns>노드 비활성 Sprite Addressables 키입니다.</returns>
+        public static string GetNodeInactiveSpriteKey(string graphId, string nodeId)
+        {
+            return InactiveSpriteKeyPrefix + NormalizeGraphId(graphId) + "_" + NormalizeNodeId(nodeId);
         }
 
         /// <summary>

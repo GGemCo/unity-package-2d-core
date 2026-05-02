@@ -93,6 +93,8 @@ namespace GGemCo2DCoreEditor
                         titleOverride = nodeJson.titleOverride,
                         iconAddress = nodeJson.iconAddress,
                         iconSprite = LoadSpriteFromAddress(nodeJson.iconAddress),
+                        inactiveSpriteAddress = nodeJson.inactiveSpriteAddress,
+                        inactiveSprite = LoadSpriteFromAddress(nodeJson.inactiveSpriteAddress),
                         nodeType = ParseEnum(nodeJson.nodeType, WorldMapNodeType.Normal),
                         visibleByDefault = nodeJson.visibleByDefault,
                         inactiveByDefault = nodeJson.inactiveByDefault,

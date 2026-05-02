@@ -84,6 +84,7 @@ namespace GGemCo2DCore
         private Color _normalIconColor = Color.white;
         private bool _hasNormalIconSprite;
         private Sprite _normalIconSprite;
+        private Sprite _inactiveSpriteOverride;
         
         // 부모 윈도우 uid
         private UIWindowConstants.WindowUid _parentWindowUid;
@@ -398,6 +399,19 @@ namespace GGemCo2DCore
         }
 
         /// <summary>
+        /// 비활성 상태에 사용할 Sprite를 런타임 데이터 기준으로 오버라이드합니다.
+        /// </summary>
+        /// <param name="sprite">비활성 상태에 표시할 Sprite입니다. null이면 프리팹 기본 Sprite를 사용합니다.</param>
+        public void SetInactiveSpriteOverride(Sprite sprite)
+        {
+            _inactiveSpriteOverride = sprite;
+            if (_isInactive)
+            {
+                ApplyInactiveVisual(true);
+            }
+        }
+
+        /// <summary>
         /// 비활성 상태에 맞춰 아이콘 색상과 비활성 스프라이트를 적용합니다.
         /// </summary>
         /// <param name="inactive">비활성 표시를 적용할지 여부입니다.</param>
@@ -428,23 +442,24 @@ namespace GGemCo2DCore
         /// <param name="inactive">비활성 스프라이트를 표시할지 여부입니다.</param>
         private void ApplyInactiveSprite(bool inactive)
         {
+            Sprite resolvedInactiveSprite = _inactiveSpriteOverride != null ? _inactiveSpriteOverride : inactiveSprite;
             if (imageInactiveSprite != null)
             {
-                imageInactiveSprite.sprite = inactive ? inactiveSprite : null;
-                imageInactiveSprite.gameObject.SetActive(inactive && inactiveSprite != null);
+                imageInactiveSprite.sprite = inactive ? resolvedInactiveSprite : null;
+                imageInactiveSprite.gameObject.SetActive(inactive && resolvedInactiveSprite != null);
                 return;
             }
 
             if (inactive)
             {
-                if (inactiveSprite != null)
+                if (resolvedInactiveSprite != null)
                 {
-                    if (ImageIcon.sprite != inactiveSprite)
+                    if (ImageIcon.sprite != resolvedInactiveSprite)
                     {
                         CacheNormalIconSprite(ImageIcon.sprite);
                     }
 
-                    ImageIcon.sprite = inactiveSprite;
+                    ImageIcon.sprite = resolvedInactiveSprite;
                 }
 
                 return;

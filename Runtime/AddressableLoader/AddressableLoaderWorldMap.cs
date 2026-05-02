@@ -17,6 +17,7 @@ namespace GGemCo2DCore
         private readonly Dictionary<string, WorldMapDefinition> _dicWorldMap = new Dictionary<string, WorldMapDefinition>();
         private readonly Dictionary<string, Sprite> _backgroundSpriteByAddress = new Dictionary<string, Sprite>();
         private readonly Dictionary<string, Sprite> _iconSpriteByAddress = new Dictionary<string, Sprite>();
+        private readonly Dictionary<string, Sprite> _inactiveSpriteByAddress = new Dictionary<string, Sprite>();
         private readonly Dictionary<string, Sprite> _edgeSpriteByAddress = new Dictionary<string, Sprite>();
         private readonly HashSet<AsyncOperationHandle> _activeHandles = new HashSet<AsyncOperationHandle>();
         private float _prefabLoadProgress;
@@ -57,6 +58,7 @@ namespace GGemCo2DCore
                 _dicWorldMap.Clear();
                 _backgroundSpriteByAddress.Clear();
                 _iconSpriteByAddress.Clear();
+                _inactiveSpriteByAddress.Clear();
                 _edgeSpriteByAddress.Clear();
 
                 string address = ConfigAddressableWorldMap.GetDefaultKey();
@@ -207,15 +209,29 @@ namespace GGemCo2DCore
                 for (int i = 0; i < definition.Nodes.Count; i++)
                 {
                     WorldMapNodeDefinition node = definition.Nodes[i];
-                    if (node == null || string.IsNullOrWhiteSpace(node.IconAddress) || _iconSpriteByAddress.ContainsKey(node.IconAddress))
+                    if (node == null)
                     {
                         continue;
                     }
 
-                    Sprite iconSprite = await LoadSpriteByAddressAsync(node.IconAddress);
-                    if (iconSprite != null)
+                    if (!string.IsNullOrWhiteSpace(node.IconAddress) && !_iconSpriteByAddress.ContainsKey(node.IconAddress))
                     {
-                        _iconSpriteByAddress[node.IconAddress] = iconSprite;
+                        Sprite iconSprite = await LoadSpriteByAddressAsync(node.IconAddress);
+                        if (iconSprite != null)
+                        {
+                            _iconSpriteByAddress[node.IconAddress] = iconSprite;
+                        }
+                    }
+
+                    if (string.IsNullOrWhiteSpace(node.InactiveSpriteAddress) || _inactiveSpriteByAddress.ContainsKey(node.InactiveSpriteAddress))
+                    {
+                        continue;
+                    }
+
+                    Sprite inactiveSprite = await LoadSpriteByAddressAsync(node.InactiveSpriteAddress);
+                    if (inactiveSprite != null)
+                    {
+                        _inactiveSpriteByAddress[node.InactiveSpriteAddress] = inactiveSprite;
                     }
                 }
             }
@@ -317,6 +333,35 @@ namespace GGemCo2DCore
             }
 
             return _iconSpriteByAddress.TryGetValue(address, out sprite) && sprite != null;
+        }
+
+        /// <summary>
+        /// 월드맵 노드 정의에 연결된 비활성 Sprite가 캐싱되어 있는지 확인하고 반환합니다.
+        /// </summary>
+        /// <param name="node">비활성 Sprite address를 보유한 노드 정의입니다.</param>
+        /// <param name="sprite">캐싱된 비활성 Sprite입니다.</param>
+        /// <returns>비활성 Sprite가 있으면 true를 반환합니다.</returns>
+        public bool TryGetInactiveSprite(WorldMapNodeDefinition node, out Sprite sprite)
+        {
+            sprite = null;
+            return node != null && TryGetInactiveSprite(node.InactiveSpriteAddress, out sprite);
+        }
+
+        /// <summary>
+        /// Addressables 키로 캐싱된 월드맵 노드 비활성 Sprite를 조회합니다.
+        /// </summary>
+        /// <param name="address">비활성 Sprite Addressables 키입니다.</param>
+        /// <param name="sprite">캐싱된 비활성 Sprite입니다.</param>
+        /// <returns>비활성 Sprite가 있으면 true를 반환합니다.</returns>
+        public bool TryGetInactiveSprite(string address, out Sprite sprite)
+        {
+            if (string.IsNullOrWhiteSpace(address))
+            {
+                sprite = null;
+                return false;
+            }
+
+            return _inactiveSpriteByAddress.TryGetValue(address, out sprite) && sprite != null;
         }
 
         /// <summary>

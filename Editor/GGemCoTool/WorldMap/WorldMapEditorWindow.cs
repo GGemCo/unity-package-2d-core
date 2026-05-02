@@ -818,6 +818,10 @@ namespace GGemCo2DCoreEditor
             {
                 node.iconAddress = ConfigAddressableWorldMap.GetNodeIconKey(_asset.graphId, newNodeId);
             }
+            if (node.inactiveSprite != null)
+            {
+                node.inactiveSpriteAddress = ConfigAddressableWorldMap.GetNodeInactiveSpriteKey(_asset.graphId, newNodeId);
+            }
 
             for (int i = 0; i < _asset.edges.Count; i++)
             {
