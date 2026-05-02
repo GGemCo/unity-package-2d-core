@@ -136,6 +136,8 @@ namespace GGemCo2DCoreEditor
             string decorationAnimationName = EditorGUILayout.TextField("Decoration Animation Name", node.decorationAnimationName);
             bool decorationLoop = EditorGUILayout.Toggle("Decoration Loop", node.decorationLoop);
             Vector2 decorationOffset = EditorGUILayout.Vector2Field("Decoration Offset", node.decorationOffset);
+            Vector2 decorationSize = EditorGUILayout.Vector2Field("Decoration Size", node.decorationSize);
+            Vector2 decorationScale = EditorGUILayout.Vector2Field("Decoration Scale", node.decorationScale);
             WorldMapNodeType nodeType = (WorldMapNodeType)EditorGUILayout.EnumPopup("Node Type", node.nodeType);
             bool visibleByDefault = EditorGUILayout.Toggle("Visible By Default", node.visibleByDefault);
             bool inactiveByDefault = EditorGUILayout.Toggle("Inactive By Default", node.inactiveByDefault);
@@ -173,6 +175,8 @@ namespace GGemCo2DCoreEditor
                 node.decorationAnimationName = decorationAnimationName;
                 node.decorationLoop = decorationLoop;
                 node.decorationOffset = decorationOffset;
+                node.decorationSize = decorationSize;
+                node.decorationScale = decorationScale;
                 node.nodeType = nodeType;
                 node.visibleByDefault = visibleByDefault;
                 node.inactiveByDefault = inactiveByDefault;

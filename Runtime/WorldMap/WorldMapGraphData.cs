@@ -54,6 +54,12 @@ namespace GGemCo2DCore
 
         /// <summary>월드맵 아이콘 중앙을 기준으로 적용할 데코레이션 위치 오프셋입니다.</summary>
         public Vector2 decorationOffset;
+        
+        /// <summary>데코레이션 Size 입니다.</summary>
+        public Vector2 decorationSize;
+        
+        /// <summary>데코레이션 Scale 입니다.</summary>
+        public Vector2 decorationScale;
 
         /// <summary>노드의 플레이 성격입니다.</summary>
         public WorldMapNodeType nodeType = WorldMapNodeType.Normal;
@@ -215,6 +221,8 @@ namespace GGemCo2DCore
 
         /// <summary>월드맵 아이콘 중앙을 기준으로 적용할 데코레이션 위치 오프셋입니다.</summary>
         public WorldMapVector2Json decorationOffset;
+        public WorldMapVector2Json decorationSize;
+        public WorldMapVector2Json decorationScale;
 
         public string nodeType;
 

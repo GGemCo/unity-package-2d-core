@@ -114,6 +114,8 @@ namespace GGemCo2DCoreEditor
                     decorationAnimationName = node.decorationAnimationName,
                     decorationLoop = node.decorationLoop,
                     decorationOffset = new WorldMapVector2Json(node.decorationOffset),
+                    decorationSize = new WorldMapVector2Json(node.decorationSize),
+                    decorationScale = new WorldMapVector2Json(node.decorationScale),
                     nodeType = node.nodeType.ToString(),
                     visibleByDefault = node.visibleByDefault,
                     inactiveByDefault = node.inactiveByDefault,

@@ -219,6 +219,8 @@ namespace GGemCo2DCore
 
         /// <summary>월드맵 아이콘 중앙을 기준으로 적용할 데코레이션 위치 오프셋입니다.</summary>
         public Vector2 DecorationOffset { get; private set; }
+        public Vector2 DecorationSize { get; private set; }
+        public Vector2 DecorationScale { get; private set; }
 
         /// <summary>노드 타입입니다.</summary>
         public WorldMapNodeType NodeType { get; private set; }
@@ -258,6 +260,8 @@ namespace GGemCo2DCore
                 DecorationAnimationName = json.decorationAnimationName,
                 DecorationLoop = json.decorationLoop,
                 DecorationOffset = json.decorationOffset != null ? json.decorationOffset.ToVector2() : Vector2.zero,
+                DecorationSize = json.decorationSize != null ? json.decorationSize.ToVector2() : Vector2.one,
+                DecorationScale = json.decorationScale != null ? json.decorationScale.ToVector2() : Vector2.one,
                 NodeType = nodeType,
                 VisibleByDefault = json.visibleByDefault,
                 InactiveByDefault = json.inactiveByDefault,
@@ -280,7 +284,9 @@ namespace GGemCo2DCore
             null,
             string.Empty,
             true,
-            Vector2.zero);
+            Vector2.zero,
+            Vector2.one,
+            Vector2.one);
 
         /// <summary>정적 데코레이션으로 표시할 Sprite입니다.</summary>
         public Sprite Sprite { get; private set; }
@@ -296,6 +302,8 @@ namespace GGemCo2DCore
 
         /// <summary>월드맵 아이콘 중앙 기준 데코레이션 위치 오프셋입니다.</summary>
         public Vector2 Offset { get; private set; }
+        public Vector2 Size { get; private set; }
+        public Vector2 Scale { get; private set; }
 
         /// <summary>
         /// 런타임 데코레이션 전달 값을 생성합니다.
@@ -305,18 +313,24 @@ namespace GGemCo2DCore
         /// <param name="animationName">재생할 Animator 상태 이름입니다.</param>
         /// <param name="loop">애니메이션 반복 여부입니다.</param>
         /// <param name="offset">아이콘 중앙 기준 위치 오프셋입니다.</param>
+        /// <param name="size">아이콘 size</param>
+        /// <param name="scale">아이콘 scale</param>
         public WorldMapNodeDecorationRuntimeData(
             Sprite sprite,
             RuntimeAnimatorController animatorController,
             string animationName,
             bool loop,
-            Vector2 offset)
+            Vector2 offset,
+            Vector2 size,
+            Vector2 scale)
         {
             Sprite = sprite;
             AnimatorController = animatorController;
             AnimationName = animationName;
             Loop = loop;
             Offset = offset;
+            Size = size;
+            Scale = scale;
         }
     }
 

@@ -1,3 +1,4 @@
+using Codice.CM.Common.Tree.Partial;
 using TMPro;
 using UnityEngine;
 using UnityEngine.EventSystems;
@@ -384,6 +385,8 @@ namespace GGemCo2DCore
             }
 
             ApplyNodeDecorationOffset(_decorationData.Offset);
+            ApplyNodeDecorationSize(_decorationData.Size);
+            ApplyNodeDecorationScale(_decorationData.Scale);
             if (_decorationData.AnimatorController != null)
             {
                 ApplyAnimatedNodeDecoration(_decorationData);
@@ -414,6 +417,7 @@ namespace GGemCo2DCore
         /// <param name="decorationData">적용할 데코레이션 런타임 데이터입니다.</param>
         private void ApplyAnimatedNodeDecoration(WorldMapNodeDecorationRuntimeData decorationData)
         {
+            if (!window.gameObject.activeSelf || !gameObject.activeSelf || !imageIconDeco || !imageIconDeco.gameObject.activeSelf) return;
             Animator animator = GetOrAddNodeDecorationAnimator();
             imageIconDeco.sprite = decorationData.Sprite;
             imageIconDeco.enabled = true;
@@ -483,6 +487,28 @@ namespace GGemCo2DCore
             }
 
             rectTransform.anchoredPosition = offset;
+        }
+        
+        private void ApplyNodeDecorationSize(Vector2 size)
+        {
+            RectTransform rectTransform = imageIconDeco.rectTransform;
+            if (rectTransform == null)
+            {
+                return;
+            }
+
+            rectTransform.sizeDelta = size;
+        }
+        
+        private void ApplyNodeDecorationScale(Vector2 scale)
+        {
+            RectTransform rectTransform = imageIconDeco.rectTransform;
+            if (rectTransform == null)
+            {
+                return;
+            }
+
+            rectTransform.localScale = scale;
         }
 
         /// <summary>

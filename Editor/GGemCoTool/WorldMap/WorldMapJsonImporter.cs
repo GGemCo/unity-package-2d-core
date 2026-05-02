@@ -102,6 +102,8 @@ namespace GGemCo2DCoreEditor
                         decorationAnimationName = nodeJson.decorationAnimationName,
                         decorationLoop = nodeJson.decorationLoop,
                         decorationOffset = nodeJson.decorationOffset != null ? nodeJson.decorationOffset.ToVector2() : Vector2.zero,
+                        decorationSize = nodeJson.decorationSize != null ? nodeJson.decorationSize.ToVector2() : Vector2.one,
+                        decorationScale = nodeJson.decorationScale != null ? nodeJson.decorationScale.ToVector2() : Vector2.one,
                         nodeType = ParseEnum(nodeJson.nodeType, WorldMapNodeType.Normal),
                         visibleByDefault = nodeJson.visibleByDefault,
                         inactiveByDefault = nodeJson.inactiveByDefault,

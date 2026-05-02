@@ -352,7 +352,9 @@ namespace GGemCo2DCore
                 decorationAnimatorController,
                 decorationNode.DecorationAnimationName,
                 decorationNode.DecorationLoop,
-                decorationNode.DecorationOffset);
+                decorationNode.DecorationOffset,
+                decorationNode.DecorationSize,
+                decorationNode.DecorationScale);
         }
 
         /// <summary>
@@ -387,7 +389,9 @@ namespace GGemCo2DCore
                    (!string.IsNullOrWhiteSpace(node.DecorationAnimatorControllerAddress) ||
                     !string.IsNullOrWhiteSpace(node.DecorationSpriteAddress) ||
                     !string.IsNullOrWhiteSpace(node.DecorationAnimationName) ||
-                    node.DecorationOffset != Vector2.zero);
+                    node.DecorationOffset != Vector2.zero ||
+                    (node.DecorationSize != Vector2.zero && node.DecorationSize != Vector2.one) ||
+                    (node.DecorationScale != Vector2.zero && node.DecorationScale != Vector2.one));
         }
 
         /// <summary>
