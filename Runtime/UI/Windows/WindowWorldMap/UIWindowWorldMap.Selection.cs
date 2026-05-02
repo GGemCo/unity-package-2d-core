@@ -13,18 +13,6 @@ namespace GGemCo2DCore
         /// <param name="index">선택할 월드맵 노드 슬롯 인덱스입니다.</param>
         public override void SetSelectedIcon(int index)
         {
-            if (selectedIcon != null)
-            {
-                selectedIcon.SetSelected(false);
-                selectedIcon = null;
-            }
-
-            if (!CanSelectWorldMapNode(index))
-            {
-                OnClearedSelectedIcon();
-                return;
-            }
-
             GameObject icon = icons[index];
             if (icon == null)
             {
@@ -32,6 +20,19 @@ namespace GGemCo2DCore
                 return;
             }
 
+            // 이동하지 못 하는 곳을 클릭했을 때는 아무것도 하지 않는다.
+            if (!CanSelectWorldMapNode(index))
+            {
+                // OnClearedSelectedIcon();
+                return;
+            }
+            
+            if (selectedIcon != null)
+            {
+                selectedIcon.SetSelected(false);
+                selectedIcon = null;
+            }
+            
             selectedIcon = icon.GetComponent<UIIcon>();
             if (selectedIcon == null)
             {

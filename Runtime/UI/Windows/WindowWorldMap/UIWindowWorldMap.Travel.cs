@@ -1,6 +1,4 @@
-﻿using UnityEngine;
-
-namespace GGemCo2DCore
+﻿namespace GGemCo2DCore
 {
     /// <summary>
     /// UIWindowWorldMap의 맵 이동 판정 책임을 분리한 partial 클래스입니다.
@@ -13,10 +11,11 @@ namespace GGemCo2DCore
         private void OnClickWarp()
         {
             if (GcLogger.IsNull(_mapManager, nameof(MapManager))) return;
-            if (GcLogger.IsNull(_selectedUIIconWorldMap, "선택된 맵이 없습니다.")) return;
+            if (_selectedUIIconWorldMap == null) return;
             if (!CanMoveToNode(_selectedUIIconWorldMap.NodeDefinition)) return;
             if (IsCurrentMapIcon(_selectedUIIconWorldMap)) return;
             _mapManager.LoadMap(_selectedUIIconWorldMap.uid);
+            Show(false);
         }
 
         /// <summary>
