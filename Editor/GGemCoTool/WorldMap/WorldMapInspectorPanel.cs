@@ -117,11 +117,25 @@ namespace GGemCo2DCoreEditor
             EditorGUI.BeginChangeCheck();
             Sprite oldIconSprite = node.iconSprite;
             Sprite oldInactiveSprite = node.inactiveSprite;
+            Sprite oldDecorationSprite = node.decorationSprite;
+            RuntimeAnimatorController oldDecorationAnimatorController = node.decorationAnimatorController;
             string titleOverride = EditorGUILayout.TextField("Title Override", node.titleOverride);
             Sprite iconSprite = (Sprite)EditorGUILayout.ObjectField("Icon Sprite", node.iconSprite, typeof(Sprite), false);
             string iconAddress = EditorGUILayout.TextField("Icon Address", node.iconAddress);
             Sprite inactiveSprite = (Sprite)EditorGUILayout.ObjectField("Inactive Sprite", node.inactiveSprite, typeof(Sprite), false);
             string inactiveSpriteAddress = EditorGUILayout.TextField("Inactive Sprite Address", node.inactiveSpriteAddress);
+            EditorGUILayout.LabelField("Decoration Override", EditorStyles.boldLabel);
+            Sprite decorationSprite = (Sprite)EditorGUILayout.ObjectField("Decoration Sprite", node.decorationSprite, typeof(Sprite), false);
+            string decorationSpriteAddress = EditorGUILayout.TextField("Decoration Sprite Address", node.decorationSpriteAddress);
+            RuntimeAnimatorController decorationAnimatorController = (RuntimeAnimatorController)EditorGUILayout.ObjectField(
+                "Decoration Animator",
+                node.decorationAnimatorController,
+                typeof(RuntimeAnimatorController),
+                false);
+            string decorationAnimatorControllerAddress = EditorGUILayout.TextField("Decoration Animator Address", node.decorationAnimatorControllerAddress);
+            string decorationAnimationName = EditorGUILayout.TextField("Decoration Animation Name", node.decorationAnimationName);
+            bool decorationLoop = EditorGUILayout.Toggle("Decoration Loop", node.decorationLoop);
+            Vector2 decorationOffset = EditorGUILayout.Vector2Field("Decoration Offset", node.decorationOffset);
             WorldMapNodeType nodeType = (WorldMapNodeType)EditorGUILayout.EnumPopup("Node Type", node.nodeType);
             bool visibleByDefault = EditorGUILayout.Toggle("Visible By Default", node.visibleByDefault);
             bool inactiveByDefault = EditorGUILayout.Toggle("Inactive By Default", node.inactiveByDefault);
@@ -144,6 +158,21 @@ namespace GGemCo2DCoreEditor
                 {
                     node.inactiveSpriteAddress = ConfigAddressableWorldMap.GetNodeInactiveSpriteKey(asset.graphId, node.nodeId);
                 }
+                node.decorationSprite = decorationSprite;
+                node.decorationSpriteAddress = decorationSpriteAddress;
+                if (decorationSprite != null && decorationSprite != oldDecorationSprite)
+                {
+                    node.decorationSpriteAddress = ConfigAddressableWorldMap.GetNodeDecorationSpriteKey(asset.graphId, node.nodeId);
+                }
+                node.decorationAnimatorController = decorationAnimatorController;
+                node.decorationAnimatorControllerAddress = decorationAnimatorControllerAddress;
+                if (decorationAnimatorController != null && decorationAnimatorController != oldDecorationAnimatorController)
+                {
+                    node.decorationAnimatorControllerAddress = ConfigAddressableWorldMap.GetNodeDecorationAnimatorKey(asset.graphId, node.nodeId);
+                }
+                node.decorationAnimationName = decorationAnimationName;
+                node.decorationLoop = decorationLoop;
+                node.decorationOffset = decorationOffset;
                 node.nodeType = nodeType;
                 node.visibleByDefault = visibleByDefault;
                 node.inactiveByDefault = inactiveByDefault;

@@ -205,6 +205,21 @@ namespace GGemCo2DCore
         /// <summary>비활성 상태에서 아이콘을 대체할 Sprite Addressables 키입니다.</summary>
         public string InactiveSpriteAddress { get; private set; }
 
+        /// <summary>노드 데코레이션을 대체할 Sprite Addressables 키입니다.</summary>
+        public string DecorationSpriteAddress { get; private set; }
+
+        /// <summary>노드 데코레이션 애니메이션에 사용할 AnimatorController Addressables 키입니다.</summary>
+        public string DecorationAnimatorControllerAddress { get; private set; }
+
+        /// <summary>데코레이션 AnimatorController에서 재생할 상태 이름입니다.</summary>
+        public string DecorationAnimationName { get; private set; }
+
+        /// <summary>데코레이션 애니메이션을 반복 재생할지 여부입니다.</summary>
+        public bool DecorationLoop { get; private set; }
+
+        /// <summary>월드맵 아이콘 중앙을 기준으로 적용할 데코레이션 위치 오프셋입니다.</summary>
+        public Vector2 DecorationOffset { get; private set; }
+
         /// <summary>노드 타입입니다.</summary>
         public WorldMapNodeType NodeType { get; private set; }
 
@@ -238,6 +253,11 @@ namespace GGemCo2DCore
                 TitleOverride = json.titleOverride,
                 IconAddress = json.iconAddress,
                 InactiveSpriteAddress = json.inactiveSpriteAddress,
+                DecorationSpriteAddress = json.decorationSpriteAddress,
+                DecorationAnimatorControllerAddress = json.decorationAnimatorControllerAddress,
+                DecorationAnimationName = json.decorationAnimationName,
+                DecorationLoop = json.decorationLoop,
+                DecorationOffset = json.decorationOffset != null ? json.decorationOffset.ToVector2() : Vector2.zero,
                 NodeType = nodeType,
                 VisibleByDefault = json.visibleByDefault,
                 InactiveByDefault = json.inactiveByDefault,
@@ -248,6 +268,60 @@ namespace GGemCo2DCore
 
     /// <summary>
     /// 런타임에서 사용하는 월드맵 연결선 정의입니다.
+    /// </summary>
+    /// <summary>
+    /// 월드맵 노드 데코레이션을 런타임 UI에 전달하기 위한 값 묶음입니다.
+    /// </summary>
+    public struct WorldMapNodeDecorationRuntimeData
+    {
+        /// <summary>비어 있는 데코레이션 override 값입니다.</summary>
+        public static WorldMapNodeDecorationRuntimeData Empty => new WorldMapNodeDecorationRuntimeData(
+            null,
+            null,
+            string.Empty,
+            true,
+            Vector2.zero);
+
+        /// <summary>정적 데코레이션으로 표시할 Sprite입니다.</summary>
+        public Sprite Sprite { get; private set; }
+
+        /// <summary>애니메이션 데코레이션에 사용할 AnimatorController입니다.</summary>
+        public RuntimeAnimatorController AnimatorController { get; private set; }
+
+        /// <summary>AnimatorController에서 재생할 상태 이름입니다.</summary>
+        public string AnimationName { get; private set; }
+
+        /// <summary>애니메이션을 반복 재생할지 여부입니다.</summary>
+        public bool Loop { get; private set; }
+
+        /// <summary>월드맵 아이콘 중앙 기준 데코레이션 위치 오프셋입니다.</summary>
+        public Vector2 Offset { get; private set; }
+
+        /// <summary>
+        /// 런타임 데코레이션 전달 값을 생성합니다.
+        /// </summary>
+        /// <param name="sprite">정적 데코레이션 Sprite입니다.</param>
+        /// <param name="animatorController">애니메이션 데코레이션 AnimatorController입니다.</param>
+        /// <param name="animationName">재생할 Animator 상태 이름입니다.</param>
+        /// <param name="loop">애니메이션 반복 여부입니다.</param>
+        /// <param name="offset">아이콘 중앙 기준 위치 오프셋입니다.</param>
+        public WorldMapNodeDecorationRuntimeData(
+            Sprite sprite,
+            RuntimeAnimatorController animatorController,
+            string animationName,
+            bool loop,
+            Vector2 offset)
+        {
+            Sprite = sprite;
+            AnimatorController = animatorController;
+            AnimationName = animationName;
+            Loop = loop;
+            Offset = offset;
+        }
+    }
+
+    /// <summary>
+    /// 런타임에 사용하는 월드맵 연결선 정의입니다.
     /// </summary>
     public sealed class WorldMapEdgeDefinition
     {

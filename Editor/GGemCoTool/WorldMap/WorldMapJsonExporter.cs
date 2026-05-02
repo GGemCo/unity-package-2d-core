@@ -109,6 +109,11 @@ namespace GGemCo2DCoreEditor
                     titleOverride = node.titleOverride,
                     iconAddress = node.iconAddress,
                     inactiveSpriteAddress = ResolveNodeInactiveSpriteAddress(asset, node),
+                    decorationSpriteAddress = ResolveNodeDecorationSpriteAddress(asset, node),
+                    decorationAnimatorControllerAddress = ResolveNodeDecorationAnimatorControllerAddress(asset, node),
+                    decorationAnimationName = node.decorationAnimationName,
+                    decorationLoop = node.decorationLoop,
+                    decorationOffset = new WorldMapVector2Json(node.decorationOffset),
                     nodeType = node.nodeType.ToString(),
                     visibleByDefault = node.visibleByDefault,
                     inactiveByDefault = node.inactiveByDefault,
@@ -180,6 +185,52 @@ namespace GGemCo2DCoreEditor
             }
 
             return node.inactiveSpriteAddress;
+        }
+
+        /// <summary>
+        /// 노드 데코레이션 Sprite 원본 또는 수동 address를 기준으로 JSON에 기록할 address를 결정합니다.
+        /// </summary>
+        /// <param name="asset">노드가 포함된 월드맵 그래프 에셋입니다.</param>
+        /// <param name="node">address를 결정할 월드맵 노드 데이터입니다.</param>
+        /// <returns>JSON에 기록할 데코레이션 Sprite address입니다.</returns>
+        private static string ResolveNodeDecorationSpriteAddress(WorldMapGraphAsset asset, WorldMapNodeData node)
+        {
+            if (node == null)
+            {
+                return string.Empty;
+            }
+
+            if (node.decorationSprite != null)
+            {
+                return !string.IsNullOrWhiteSpace(node.decorationSpriteAddress)
+                    ? node.decorationSpriteAddress
+                    : ConfigAddressableWorldMap.GetNodeDecorationSpriteKey(asset.graphId, node.nodeId);
+            }
+
+            return node.decorationSpriteAddress;
+        }
+
+        /// <summary>
+        /// 노드 데코레이션 AnimatorController 원본 또는 수동 address를 기준으로 JSON에 기록할 address를 결정합니다.
+        /// </summary>
+        /// <param name="asset">노드가 포함된 월드맵 그래프 에셋입니다.</param>
+        /// <param name="node">address를 결정할 월드맵 노드 데이터입니다.</param>
+        /// <returns>JSON에 기록할 데코레이션 AnimatorController address입니다.</returns>
+        private static string ResolveNodeDecorationAnimatorControllerAddress(WorldMapGraphAsset asset, WorldMapNodeData node)
+        {
+            if (node == null)
+            {
+                return string.Empty;
+            }
+
+            if (node.decorationAnimatorController != null)
+            {
+                return !string.IsNullOrWhiteSpace(node.decorationAnimatorControllerAddress)
+                    ? node.decorationAnimatorControllerAddress
+                    : ConfigAddressableWorldMap.GetNodeDecorationAnimatorKey(asset.graphId, node.nodeId);
+            }
+
+            return node.decorationAnimatorControllerAddress;
         }
 
         /// <summary>

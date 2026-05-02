@@ -12,6 +12,8 @@ namespace GGemCo2DCore
         private const string BackgroundKeyPrefix = ConfigDefine.NameSDK + "_WorldMap_Background_";
         private const string IconKeyPrefix = ConfigDefine.NameSDK + "_WorldMap_Icon_";
         private const string InactiveSpriteKeyPrefix = ConfigDefine.NameSDK + "_WorldMap_InactiveSprite_";
+        private const string DecorationSpriteKeyPrefix = ConfigDefine.NameSDK + "_WorldMap_DecorationSprite_";
+        private const string DecorationAnimatorKeyPrefix = ConfigDefine.NameSDK + "_WorldMap_DecorationAnimator_";
         private const string EdgeSpriteKeyPrefix = ConfigDefine.NameSDK + "_WorldMap_Edge_";
         private const string FileNamePrefix = "world_map_";
         private const string ExtJson = ".json";
@@ -75,6 +77,28 @@ namespace GGemCo2DCore
         public static string GetNodeInactiveSpriteKey(string graphId, string nodeId)
         {
             return InactiveSpriteKeyPrefix + NormalizeGraphId(graphId) + "_" + NormalizeNodeId(nodeId);
+        }
+
+        /// <summary>
+        /// 월드맵 노드 데코레이션 Sprite에 사용할 Addressables 키를 만듭니다.
+        /// </summary>
+        /// <param name="graphId">월드맵 그래프 ID입니다.</param>
+        /// <param name="nodeId">월드맵 노드 ID입니다.</param>
+        /// <returns>노드 데코레이션 Sprite Addressables 키입니다.</returns>
+        public static string GetNodeDecorationSpriteKey(string graphId, string nodeId)
+        {
+            return DecorationSpriteKeyPrefix + NormalizeGraphId(graphId) + "_" + NormalizeNodeId(nodeId);
+        }
+
+        /// <summary>
+        /// 월드맵 노드 데코레이션 AnimatorController에 사용할 Addressables 키를 만듭니다.
+        /// </summary>
+        /// <param name="graphId">월드맵 그래프 ID입니다.</param>
+        /// <param name="nodeId">월드맵 노드 ID입니다.</param>
+        /// <returns>노드 데코레이션 AnimatorController Addressables 키입니다.</returns>
+        public static string GetNodeDecorationAnimatorKey(string graphId, string nodeId)
+        {
+            return DecorationAnimatorKeyPrefix + NormalizeGraphId(graphId) + "_" + NormalizeNodeId(nodeId);
         }
 
         /// <summary>

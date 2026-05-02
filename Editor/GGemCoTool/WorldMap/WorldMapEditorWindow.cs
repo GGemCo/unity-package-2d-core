@@ -822,6 +822,14 @@ namespace GGemCo2DCoreEditor
             {
                 node.inactiveSpriteAddress = ConfigAddressableWorldMap.GetNodeInactiveSpriteKey(_asset.graphId, newNodeId);
             }
+            if (node.decorationSprite != null)
+            {
+                node.decorationSpriteAddress = ConfigAddressableWorldMap.GetNodeDecorationSpriteKey(_asset.graphId, newNodeId);
+            }
+            if (node.decorationAnimatorController != null)
+            {
+                node.decorationAnimatorControllerAddress = ConfigAddressableWorldMap.GetNodeDecorationAnimatorKey(_asset.graphId, newNodeId);
+            }
 
             for (int i = 0; i < _asset.edges.Count; i++)
             {

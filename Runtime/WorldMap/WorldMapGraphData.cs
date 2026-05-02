@@ -34,6 +34,27 @@ namespace GGemCo2DCore
         /// <summary>에디터에서 드래그 앤 드롭으로 지정하는 비활성 상태 Sprite 원본입니다.</summary>
         public Sprite inactiveSprite;
 
+        /// <summary>노드 데코레이션을 대체할 Sprite Addressables 키입니다.</summary>
+        public string decorationSpriteAddress;
+
+        /// <summary>에디터에서 드래그 앤 드롭으로 지정하는 노드 데코레이션 Sprite 원본입니다.</summary>
+        public Sprite decorationSprite;
+
+        /// <summary>노드 데코레이션 애니메이션에 사용할 AnimatorController Addressables 키입니다.</summary>
+        public string decorationAnimatorControllerAddress;
+
+        /// <summary>에디터에서 드래그 앤 드롭으로 지정하는 노드 데코레이션 AnimatorController 원본입니다.</summary>
+        public RuntimeAnimatorController decorationAnimatorController;
+
+        /// <summary>데코레이션 AnimatorController에서 재생할 상태 이름입니다.</summary>
+        public string decorationAnimationName;
+
+        /// <summary>데코레이션 애니메이션을 반복 재생할지 여부입니다.</summary>
+        public bool decorationLoop = true;
+
+        /// <summary>월드맵 아이콘 중앙을 기준으로 적용할 데코레이션 위치 오프셋입니다.</summary>
+        public Vector2 decorationOffset;
+
         /// <summary>노드의 플레이 성격입니다.</summary>
         public WorldMapNodeType nodeType = WorldMapNodeType.Normal;
 
@@ -180,6 +201,21 @@ namespace GGemCo2DCore
         public string inactiveSpriteAddress;
 
         /// <summary>노드 타입 문자열입니다.</summary>
+        /// <summary>노드 데코레이션을 대체할 Sprite Addressables 키입니다.</summary>
+        public string decorationSpriteAddress;
+
+        /// <summary>노드 데코레이션 애니메이션에 사용할 AnimatorController Addressables 키입니다.</summary>
+        public string decorationAnimatorControllerAddress;
+
+        /// <summary>데코레이션 AnimatorController에서 재생할 상태 이름입니다.</summary>
+        public string decorationAnimationName;
+
+        /// <summary>데코레이션 애니메이션을 반복 재생할지 여부입니다.</summary>
+        public bool decorationLoop;
+
+        /// <summary>월드맵 아이콘 중앙을 기준으로 적용할 데코레이션 위치 오프셋입니다.</summary>
+        public WorldMapVector2Json decorationOffset;
+
         public string nodeType;
 
         /// <summary>기본 표시 여부입니다.</summary>

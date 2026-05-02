@@ -45,11 +45,7 @@ namespace GGemCo2DCore
         [Tooltip("클리어한 적이 없는 월드맵 노드일 때 표시할 아이콘 이미지입니다.")]
         [SerializeField] private Sprite spriteNoClear;
         [Tooltip("NoInvite Sprite를 표시할 Image입니다. 비어 있으면 기존처럼 ImageIcon에 직접 적용합니다.")]
-        [SerializeField] private Image imageNoInviteSprite;
-
-        [Header("이펙트 데코레이션")]
-        [Tooltip("이펙트 데코레이션")]
-        [SerializeField] private VfxEffectUI vfxEffectDeco;
+        [SerializeField] private Image imageNoClear;
 
         private TableMap _tableMap;
         private StruckTableMap _struckTableMap;
@@ -57,6 +53,9 @@ namespace GGemCo2DCore
         private WorldMapNodeDefinition _displayNodeDefinition;
         private int _displayMapUid;
         private Sprite _iconSprite;
+        private WorldMapNodeDecorationRuntimeData _decorationData = WorldMapNodeDecorationRuntimeData.Empty;
+        private Animator _decorationAnimator;
+        private bool _isDecorationAnimationPlaying;
 
         /// <summary>현재 아이콘이 표시하는 월드맵 노드 ID입니다.</summary>
         public string NodeId => _nodeDefinition != null ? _nodeDefinition.NodeId : string.Empty;
@@ -82,6 +81,14 @@ namespace GGemCo2DCore
         }
 
         /// <summary>
+        /// 반복하지 않는 데코레이션 애니메이션이 한 번 재생된 뒤 마지막 상태에서 멈추도록 갱신합니다.
+        /// </summary>
+        private void Update()
+        {
+            UpdateDecorationAnimationPlayback();
+        }
+
+        /// <summary>
         /// 월드맵 노드 정의를 아이콘에 연결하고 TableMap 표시 정보를 갱신합니다.
         /// </summary>
         /// <param name="nodeDefinition">표시할 월드맵 노드 정의입니다.</param>
@@ -90,7 +97,7 @@ namespace GGemCo2DCore
         /// <param name="inactiveSprite">노드 비활성 상태에서 사용할 override Sprite입니다.</param>
         public void SetWorldMapNode(WorldMapNodeDefinition nodeDefinition, StruckTableMap mapData, Sprite iconSprite = null, Sprite inactiveSprite = null)
         {
-            SetWorldMapNode(nodeDefinition, nodeDefinition, mapData, iconSprite, inactiveSprite);
+            SetWorldMapNode(nodeDefinition, nodeDefinition, mapData, iconSprite, inactiveSprite, WorldMapNodeDecorationRuntimeData.Empty);
         }
 
         /// <summary>
@@ -109,6 +116,32 @@ namespace GGemCo2DCore
             Sprite iconSprite = null,
             Sprite inactiveSprite = null)
         {
+            SetWorldMapNode(
+                nodeDefinition,
+                displayNodeDefinition,
+                mapData,
+                iconSprite,
+                inactiveSprite,
+                WorldMapNodeDecorationRuntimeData.Empty);
+        }
+
+        /// <summary>
+        /// 월드맵 노드와 표시용 노드, 아이콘/비활성/데코레이션 override 정보를 아이콘에 연결합니다.
+        /// </summary>
+        /// <param name="nodeDefinition">이동 요청과 그래프 판정에 사용할 원본 월드맵 노드입니다.</param>
+        /// <param name="displayNodeDefinition">화면에 표시할 월드맵 노드입니다.</param>
+        /// <param name="mapData">표시 노드가 참조하는 TableMap 데이터입니다.</param>
+        /// <param name="iconSprite">표시 노드에 사용할 Sprite입니다.</param>
+        /// <param name="inactiveSprite">비활성 상태에서 사용할 override Sprite입니다.</param>
+        /// <param name="decorationData">데코레이션 override 런타임 데이터입니다.</param>
+        public void SetWorldMapNode(
+            WorldMapNodeDefinition nodeDefinition,
+            WorldMapNodeDefinition displayNodeDefinition,
+            StruckTableMap mapData,
+            Sprite iconSprite,
+            Sprite inactiveSprite,
+            WorldMapNodeDecorationRuntimeData decorationData)
+        {
             _nodeDefinition = nodeDefinition;
             _displayNodeDefinition = displayNodeDefinition ?? nodeDefinition;
             _displayMapUid = _displayNodeDefinition != null && _displayNodeDefinition.MapUid > 0
@@ -117,8 +150,10 @@ namespace GGemCo2DCore
                     ? _nodeDefinition.MapUid
                     : 0;
             _iconSprite = iconSprite;
+            _decorationData = decorationData;
             if (_nodeDefinition == null)
             {
+                _decorationData = WorldMapNodeDecorationRuntimeData.Empty;
                 SetInactiveSpriteOverride(null);
                 _displayNodeDefinition = null;
                 _displayMapUid = 0;
@@ -195,10 +230,10 @@ namespace GGemCo2DCore
         /// <param name="show">NoInvite Sprite를 표시하면 true입니다.</param>
         private void ApplyNoInviteSprite(bool show)
         {
-            if (imageNoInviteSprite != null)
+            if (imageNoClear != null)
             {
-                imageNoInviteSprite.sprite = show ? spriteNoClear : null;
-                imageNoInviteSprite.gameObject.SetActive(show && spriteNoClear != null);
+                imageNoClear.sprite = show ? spriteNoClear : null;
+                imageNoClear.gameObject.SetActive(show && spriteNoClear != null);
                 return;
             }
 
@@ -348,10 +383,135 @@ namespace GGemCo2DCore
                 return;
             }
 
-            Sprite decoSprite = ResolveNodeDecorationSprite();
+            ApplyNodeDecorationOffset(_decorationData.Offset);
+            if (_decorationData.AnimatorController != null)
+            {
+                ApplyAnimatedNodeDecoration(_decorationData);
+                return;
+            }
+
+            Sprite decoSprite = _decorationData.Sprite != null
+                ? _decorationData.Sprite
+                : ResolveNodeDecorationSprite();
+            ApplyStaticNodeDecoration(decoSprite);
+        }
+
+        /// <summary>
+        /// 정적 Sprite 기반 노드 데코레이션을 Image Icon Deco에 적용합니다.
+        /// </summary>
+        /// <param name="decoSprite">표시할 데코레이션 Sprite입니다. null이면 데코레이션을 숨깁니다.</param>
+        private void ApplyStaticNodeDecoration(Sprite decoSprite)
+        {
+            ClearNodeDecorationAnimator();
             imageIconDeco.sprite = decoSprite;
             imageIconDeco.enabled = decoSprite != null;
             imageIconDeco.gameObject.SetActive(decoSprite != null);
+        }
+
+        /// <summary>
+        /// AnimatorController 기반 노드 데코레이션을 Image Icon Deco에 적용하고 지정한 상태를 재생합니다.
+        /// </summary>
+        /// <param name="decorationData">적용할 데코레이션 런타임 데이터입니다.</param>
+        private void ApplyAnimatedNodeDecoration(WorldMapNodeDecorationRuntimeData decorationData)
+        {
+            Animator animator = GetOrAddNodeDecorationAnimator();
+            imageIconDeco.sprite = decorationData.Sprite;
+            imageIconDeco.enabled = true;
+            imageIconDeco.gameObject.SetActive(true);
+
+            animator.enabled = true;
+            animator.speed = 1f;
+            animator.runtimeAnimatorController = decorationData.AnimatorController;
+            animator.Rebind();
+            animator.Update(0f);
+
+            if (!string.IsNullOrWhiteSpace(decorationData.AnimationName))
+            {
+                animator.Play(decorationData.AnimationName, 0, 0f);
+                animator.Update(0f);
+            }
+
+            _isDecorationAnimationPlaying = true;
+        }
+
+        /// <summary>
+        /// 데코레이션 Image 오브젝트에 Animator가 없으면 추가하고, 있으면 재사용합니다.
+        /// </summary>
+        /// <returns>Image Icon Deco에 연결된 Animator입니다.</returns>
+        private Animator GetOrAddNodeDecorationAnimator()
+        {
+            if (_decorationAnimator != null)
+            {
+                return _decorationAnimator;
+            }
+
+            _decorationAnimator = imageIconDeco.GetComponent<Animator>();
+            if (_decorationAnimator == null)
+            {
+                _decorationAnimator = imageIconDeco.gameObject.AddComponent<Animator>();
+            }
+
+            return _decorationAnimator;
+        }
+
+        /// <summary>
+        /// 정적 데코레이션을 표시할 때 이전 노드에서 사용하던 Animator 상태를 해제합니다.
+        /// </summary>
+        private void ClearNodeDecorationAnimator()
+        {
+            if (_decorationAnimator == null)
+            {
+                return;
+            }
+
+            _decorationAnimator.runtimeAnimatorController = null;
+            _decorationAnimator.speed = 1f;
+            _decorationAnimator.enabled = false;
+            _isDecorationAnimationPlaying = false;
+        }
+
+        /// <summary>
+        /// 데코레이션 위치를 월드맵 아이콘 중앙 기준 오프셋으로 적용합니다.
+        /// </summary>
+        /// <param name="offset">아이콘 중앙 기준 위치 오프셋입니다.</param>
+        private void ApplyNodeDecorationOffset(Vector2 offset)
+        {
+            RectTransform rectTransform = imageIconDeco.rectTransform;
+            if (rectTransform == null)
+            {
+                return;
+            }
+
+            rectTransform.anchoredPosition = offset;
+        }
+
+        /// <summary>
+        /// Loop가 꺼진 데코레이션 애니메이션을 첫 재생이 끝난 시점에 정지합니다.
+        /// </summary>
+        private void UpdateDecorationAnimationPlayback()
+        {
+            if (!_isDecorationAnimationPlaying ||
+                _decorationData.Loop ||
+                _decorationAnimator == null ||
+                !_decorationAnimator.enabled ||
+                _decorationAnimator.runtimeAnimatorController == null)
+            {
+                return;
+            }
+
+            if (_decorationAnimator.IsInTransition(0))
+            {
+                return;
+            }
+
+            AnimatorStateInfo stateInfo = _decorationAnimator.GetCurrentAnimatorStateInfo(0);
+            if (stateInfo.normalizedTime < 1f)
+            {
+                return;
+            }
+
+            _decorationAnimator.speed = 0f;
+            _isDecorationAnimationPlaying = false;
         }
 
         /// <summary>

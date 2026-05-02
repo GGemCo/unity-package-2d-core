@@ -95,6 +95,13 @@ namespace GGemCo2DCoreEditor
                         iconSprite = LoadSpriteFromAddress(nodeJson.iconAddress),
                         inactiveSpriteAddress = nodeJson.inactiveSpriteAddress,
                         inactiveSprite = LoadSpriteFromAddress(nodeJson.inactiveSpriteAddress),
+                        decorationSpriteAddress = nodeJson.decorationSpriteAddress,
+                        decorationSprite = LoadSpriteFromAddress(nodeJson.decorationSpriteAddress),
+                        decorationAnimatorControllerAddress = nodeJson.decorationAnimatorControllerAddress,
+                        decorationAnimatorController = LoadAssetFromAddress<RuntimeAnimatorController>(nodeJson.decorationAnimatorControllerAddress),
+                        decorationAnimationName = nodeJson.decorationAnimationName,
+                        decorationLoop = nodeJson.decorationLoop,
+                        decorationOffset = nodeJson.decorationOffset != null ? nodeJson.decorationOffset.ToVector2() : Vector2.zero,
                         nodeType = ParseEnum(nodeJson.nodeType, WorldMapNodeType.Normal),
                         visibleByDefault = nodeJson.visibleByDefault,
                         inactiveByDefault = nodeJson.inactiveByDefault,
@@ -155,6 +162,17 @@ namespace GGemCo2DCoreEditor
         /// <returns>로드된 Sprite입니다. 로드할 수 없으면 null입니다.</returns>
         private static Sprite LoadSpriteFromAddress(string address)
         {
+            return LoadAssetFromAddress<Sprite>(address);
+        }
+
+        /// <summary>
+        /// address가 프로젝트 에셋 경로이거나 Addressables 키일 경우 지정한 타입의 에셋을 로드합니다.
+        /// </summary>
+        /// <typeparam name="T">로드할 Unity 에셋 타입입니다.</typeparam>
+        /// <param name="address">Addressables 키 또는 프로젝트 에셋 경로입니다.</param>
+        /// <returns>로드한 에셋입니다. 찾지 못하면 null을 반환합니다.</returns>
+        private static T LoadAssetFromAddress<T>(string address) where T : UnityEngine.Object
+        {
             if (string.IsNullOrWhiteSpace(address))
             {
                 return null;
@@ -162,7 +180,7 @@ namespace GGemCo2DCoreEditor
 
             if (address.StartsWith("Assets/"))
             {
-                return AssetDatabase.LoadAssetAtPath<Sprite>(address);
+                return AssetDatabase.LoadAssetAtPath<T>(address);
             }
 
             AddressableAssetSettings settings = AddressableAssetSettingsDefaultObject.Settings;
@@ -183,7 +201,7 @@ namespace GGemCo2DCoreEditor
                 {
                     if (entry != null && entry.address == address)
                     {
-                        return AssetDatabase.LoadAssetAtPath<Sprite>(entry.AssetPath);
+                        return AssetDatabase.LoadAssetAtPath<T>(entry.AssetPath);
                     }
                 }
             }

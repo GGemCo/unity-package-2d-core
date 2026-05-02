@@ -104,7 +104,8 @@ namespace GGemCo2DCore
             StruckTableMap displayMapData = ResolveWorldMapNodeDisplayMapData(node, fallbackTableMap);
             Sprite displayIconSprite = ResolveWorldMapNodeDisplayIconSprite(node, displayNode);
             Sprite displayInactiveSprite = ResolveWorldMapNodeDisplayInactiveSprite(node, displayNode);
-            icon.SetWorldMapNode(node, displayNode, displayMapData, displayIconSprite, displayInactiveSprite);
+            WorldMapNodeDecorationRuntimeData displayDecoration = ResolveWorldMapNodeDisplayDecoration(node, displayNode);
+            icon.SetWorldMapNode(node, displayNode, displayMapData, displayIconSprite, displayInactiveSprite, displayDecoration);
         }
 
         /// <summary>
@@ -317,6 +318,76 @@ namespace GGemCo2DCore
                    AddressableLoaderWorldMap.Instance.TryGetInactiveSprite(node, out Sprite fallbackSprite)
                 ? fallbackSprite
                 : null;
+        }
+
+        /// <summary>
+        /// 표시용 노드에 맞는 데코레이션 override 데이터를 반환합니다.
+        /// 표시용 노드에 override가 없으면 원본 노드 override를 사용하고, 둘 다 없으면 비어 있는 값을 반환합니다.
+        /// </summary>
+        /// <param name="node">원본 월드맵 노드입니다.</param>
+        /// <param name="displayNode">map_entry_rule 결과로 선택된 표시용 노드입니다.</param>
+        /// <returns>UIIconWorldMap에 전달할 데코레이션 런타임 데이터입니다.</returns>
+        private static WorldMapNodeDecorationRuntimeData ResolveWorldMapNodeDisplayDecoration(
+            WorldMapNodeDefinition node,
+            WorldMapNodeDefinition displayNode)
+        {
+            WorldMapNodeDefinition decorationNode = ResolveWorldMapNodeDecorationNode(node, displayNode);
+            if (decorationNode == null)
+            {
+                return WorldMapNodeDecorationRuntimeData.Empty;
+            }
+
+            Sprite decorationSprite = null;
+            RuntimeAnimatorController decorationAnimatorController = null;
+            if (AddressableLoaderWorldMap.Instance != null)
+            {
+                AddressableLoaderWorldMap.Instance.TryGetDecorationSprite(decorationNode, out decorationSprite);
+                AddressableLoaderWorldMap.Instance.TryGetDecorationAnimatorController(
+                    decorationNode,
+                    out decorationAnimatorController);
+            }
+
+            return new WorldMapNodeDecorationRuntimeData(
+                decorationSprite,
+                decorationAnimatorController,
+                decorationNode.DecorationAnimationName,
+                decorationNode.DecorationLoop,
+                decorationNode.DecorationOffset);
+        }
+
+        /// <summary>
+        /// 데코레이션 override 값을 제공할 노드를 결정합니다.
+        /// 표시용 노드를 먼저 확인하고, 없으면 원본 노드의 override를 fallback으로 사용합니다.
+        /// </summary>
+        /// <param name="node">원본 월드맵 노드입니다.</param>
+        /// <param name="displayNode">표시용 월드맵 노드입니다.</param>
+        /// <returns>데코레이션 override 값을 제공할 노드입니다.</returns>
+        private static WorldMapNodeDefinition ResolveWorldMapNodeDecorationNode(
+            WorldMapNodeDefinition node,
+            WorldMapNodeDefinition displayNode)
+        {
+            if (HasWorldMapNodeDecorationOverride(displayNode))
+            {
+                return displayNode;
+            }
+
+            return node != null && node != displayNode && HasWorldMapNodeDecorationOverride(node)
+                ? node
+                : displayNode ?? node;
+        }
+
+        /// <summary>
+        /// 노드가 스프라이트, 애니메이터, 재생 이름, 오프셋 중 하나 이상의 데코레이션 override 값을 갖는지 확인합니다.
+        /// </summary>
+        /// <param name="node">확인할 월드맵 노드입니다.</param>
+        /// <returns>데코레이션 override 값이 있으면 true를 반환합니다.</returns>
+        private static bool HasWorldMapNodeDecorationOverride(WorldMapNodeDefinition node)
+        {
+            return node != null &&
+                   (!string.IsNullOrWhiteSpace(node.DecorationAnimatorControllerAddress) ||
+                    !string.IsNullOrWhiteSpace(node.DecorationSpriteAddress) ||
+                    !string.IsNullOrWhiteSpace(node.DecorationAnimationName) ||
+                    node.DecorationOffset != Vector2.zero);
         }
 
         /// <summary>

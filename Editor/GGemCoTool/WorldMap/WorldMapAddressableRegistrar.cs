@@ -82,27 +82,71 @@ namespace GGemCo2DCoreEditor
                         }
                     }
 
-                    if (node.inactiveSprite == null)
+                    if (node.inactiveSprite != null)
+                    {
+                        string inactiveSpriteKey = ConfigAddressableWorldMap.GetNodeInactiveSpriteKey(asset.graphId, node.nodeId);
+                        string inactiveSpriteAssetPath = AssetDatabase.GetAssetPath(node.inactiveSprite);
+                        if (registeredKeyByAssetPath.TryGetValue(inactiveSpriteAssetPath, out string sharedInactiveSpriteKey))
+                        {
+                            node.inactiveSpriteAddress = sharedInactiveSpriteKey;
+                            changed = true;
+                        }
+                        else
+                        {
+                            if (!TryRegisterAsset(settings, group, inactiveSpriteKey, node.inactiveSprite, out error))
+                            {
+                                return false;
+                            }
+
+                            node.inactiveSpriteAddress = inactiveSpriteKey;
+                            registeredKeyByAssetPath[inactiveSpriteAssetPath] = inactiveSpriteKey;
+                            changed = true;
+                        }
+                    }
+
+                    if (node.decorationSprite != null)
+                    {
+                        string decorationSpriteKey = ConfigAddressableWorldMap.GetNodeDecorationSpriteKey(asset.graphId, node.nodeId);
+                        string decorationSpriteAssetPath = AssetDatabase.GetAssetPath(node.decorationSprite);
+                        if (registeredKeyByAssetPath.TryGetValue(decorationSpriteAssetPath, out string sharedDecorationSpriteKey))
+                        {
+                            node.decorationSpriteAddress = sharedDecorationSpriteKey;
+                            changed = true;
+                        }
+                        else
+                        {
+                            if (!TryRegisterAsset(settings, group, decorationSpriteKey, node.decorationSprite, out error))
+                            {
+                                return false;
+                            }
+
+                            node.decorationSpriteAddress = decorationSpriteKey;
+                            registeredKeyByAssetPath[decorationSpriteAssetPath] = decorationSpriteKey;
+                            changed = true;
+                        }
+                    }
+
+                    if (node.decorationAnimatorController == null)
                     {
                         continue;
                     }
 
-                    string inactiveSpriteKey = ConfigAddressableWorldMap.GetNodeInactiveSpriteKey(asset.graphId, node.nodeId);
-                    string inactiveSpriteAssetPath = AssetDatabase.GetAssetPath(node.inactiveSprite);
-                    if (registeredKeyByAssetPath.TryGetValue(inactiveSpriteAssetPath, out string sharedInactiveSpriteKey))
+                    string decorationAnimatorKey = ConfigAddressableWorldMap.GetNodeDecorationAnimatorKey(asset.graphId, node.nodeId);
+                    string decorationAnimatorAssetPath = AssetDatabase.GetAssetPath(node.decorationAnimatorController);
+                    if (registeredKeyByAssetPath.TryGetValue(decorationAnimatorAssetPath, out string sharedDecorationAnimatorKey))
                     {
-                        node.inactiveSpriteAddress = sharedInactiveSpriteKey;
+                        node.decorationAnimatorControllerAddress = sharedDecorationAnimatorKey;
                         changed = true;
                         continue;
                     }
 
-                    if (!TryRegisterAsset(settings, group, inactiveSpriteKey, node.inactiveSprite, out error))
+                    if (!TryRegisterAsset(settings, group, decorationAnimatorKey, node.decorationAnimatorController, out error))
                     {
                         return false;
                     }
 
-                    node.inactiveSpriteAddress = inactiveSpriteKey;
-                    registeredKeyByAssetPath[inactiveSpriteAssetPath] = inactiveSpriteKey;
+                    node.decorationAnimatorControllerAddress = decorationAnimatorKey;
+                    registeredKeyByAssetPath[decorationAnimatorAssetPath] = decorationAnimatorKey;
                     changed = true;
                 }
             }

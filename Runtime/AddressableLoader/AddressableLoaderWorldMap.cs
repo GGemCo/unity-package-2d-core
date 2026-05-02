@@ -18,6 +18,8 @@ namespace GGemCo2DCore
         private readonly Dictionary<string, Sprite> _backgroundSpriteByAddress = new Dictionary<string, Sprite>();
         private readonly Dictionary<string, Sprite> _iconSpriteByAddress = new Dictionary<string, Sprite>();
         private readonly Dictionary<string, Sprite> _inactiveSpriteByAddress = new Dictionary<string, Sprite>();
+        private readonly Dictionary<string, Sprite> _decorationSpriteByAddress = new Dictionary<string, Sprite>();
+        private readonly Dictionary<string, RuntimeAnimatorController> _decorationAnimatorByAddress = new Dictionary<string, RuntimeAnimatorController>();
         private readonly Dictionary<string, Sprite> _edgeSpriteByAddress = new Dictionary<string, Sprite>();
         private readonly HashSet<AsyncOperationHandle> _activeHandles = new HashSet<AsyncOperationHandle>();
         private float _prefabLoadProgress;
@@ -59,6 +61,8 @@ namespace GGemCo2DCore
                 _backgroundSpriteByAddress.Clear();
                 _iconSpriteByAddress.Clear();
                 _inactiveSpriteByAddress.Clear();
+                _decorationSpriteByAddress.Clear();
+                _decorationAnimatorByAddress.Clear();
                 _edgeSpriteByAddress.Clear();
 
                 string address = ConfigAddressableWorldMap.GetDefaultKey();
@@ -223,15 +227,35 @@ namespace GGemCo2DCore
                         }
                     }
 
-                    if (string.IsNullOrWhiteSpace(node.InactiveSpriteAddress) || _inactiveSpriteByAddress.ContainsKey(node.InactiveSpriteAddress))
+                    if (!string.IsNullOrWhiteSpace(node.InactiveSpriteAddress) && !_inactiveSpriteByAddress.ContainsKey(node.InactiveSpriteAddress))
+                    {
+                        Sprite inactiveSprite = await LoadSpriteByAddressAsync(node.InactiveSpriteAddress);
+                        if (inactiveSprite != null)
+                        {
+                            _inactiveSpriteByAddress[node.InactiveSpriteAddress] = inactiveSprite;
+                        }
+                    }
+
+                    if (!string.IsNullOrWhiteSpace(node.DecorationSpriteAddress) && !_decorationSpriteByAddress.ContainsKey(node.DecorationSpriteAddress))
+                    {
+                        Sprite decorationSprite = await LoadSpriteByAddressAsync(node.DecorationSpriteAddress);
+                        if (decorationSprite != null)
+                        {
+                            _decorationSpriteByAddress[node.DecorationSpriteAddress] = decorationSprite;
+                        }
+                    }
+
+                    if (string.IsNullOrWhiteSpace(node.DecorationAnimatorControllerAddress) ||
+                        _decorationAnimatorByAddress.ContainsKey(node.DecorationAnimatorControllerAddress))
                     {
                         continue;
                     }
 
-                    Sprite inactiveSprite = await LoadSpriteByAddressAsync(node.InactiveSpriteAddress);
-                    if (inactiveSprite != null)
+                    RuntimeAnimatorController decorationAnimator = await LoadAnimatorControllerByAddressAsync(
+                        node.DecorationAnimatorControllerAddress);
+                    if (decorationAnimator != null)
                     {
-                        _inactiveSpriteByAddress[node.InactiveSpriteAddress] = inactiveSprite;
+                        _decorationAnimatorByAddress[node.DecorationAnimatorControllerAddress] = decorationAnimator;
                     }
                 }
             }
@@ -365,6 +389,68 @@ namespace GGemCo2DCore
         }
 
         /// <summary>
+        /// 월드맵 노드 정의의 데코레이션 Sprite가 캐싱되어 있는지 확인하고 반환합니다.
+        /// </summary>
+        /// <param name="node">데코레이션 Sprite address를 보유한 노드 정의입니다.</param>
+        /// <param name="sprite">캐싱된 데코레이션 Sprite입니다.</param>
+        /// <returns>데코레이션 Sprite가 있으면 true를 반환합니다.</returns>
+        public bool TryGetDecorationSprite(WorldMapNodeDefinition node, out Sprite sprite)
+        {
+            sprite = null;
+            return node != null && TryGetDecorationSprite(node.DecorationSpriteAddress, out sprite);
+        }
+
+        /// <summary>
+        /// Addressables 키로 캐싱된 월드맵 노드 데코레이션 Sprite를 조회합니다.
+        /// </summary>
+        /// <param name="address">데코레이션 Sprite Addressables 키입니다.</param>
+        /// <param name="sprite">캐싱된 데코레이션 Sprite입니다.</param>
+        /// <returns>데코레이션 Sprite가 있으면 true를 반환합니다.</returns>
+        public bool TryGetDecorationSprite(string address, out Sprite sprite)
+        {
+            if (string.IsNullOrWhiteSpace(address))
+            {
+                sprite = null;
+                return false;
+            }
+
+            return _decorationSpriteByAddress.TryGetValue(address, out sprite) && sprite != null;
+        }
+
+        /// <summary>
+        /// 월드맵 노드 정의의 데코레이션 AnimatorController가 캐싱되어 있는지 확인하고 반환합니다.
+        /// </summary>
+        /// <param name="node">데코레이션 AnimatorController address를 보유한 노드 정의입니다.</param>
+        /// <param name="animatorController">캐싱된 데코레이션 AnimatorController입니다.</param>
+        /// <returns>데코레이션 AnimatorController가 있으면 true를 반환합니다.</returns>
+        public bool TryGetDecorationAnimatorController(
+            WorldMapNodeDefinition node,
+            out RuntimeAnimatorController animatorController)
+        {
+            animatorController = null;
+            return node != null && TryGetDecorationAnimatorController(node.DecorationAnimatorControllerAddress, out animatorController);
+        }
+
+        /// <summary>
+        /// Addressables 키로 캐싱된 월드맵 노드 데코레이션 AnimatorController를 조회합니다.
+        /// </summary>
+        /// <param name="address">데코레이션 AnimatorController Addressables 키입니다.</param>
+        /// <param name="animatorController">캐싱된 데코레이션 AnimatorController입니다.</param>
+        /// <returns>데코레이션 AnimatorController가 있으면 true를 반환합니다.</returns>
+        public bool TryGetDecorationAnimatorController(
+            string address,
+            out RuntimeAnimatorController animatorController)
+        {
+            if (string.IsNullOrWhiteSpace(address))
+            {
+                animatorController = null;
+                return false;
+            }
+
+            return _decorationAnimatorByAddress.TryGetValue(address, out animatorController) && animatorController != null;
+        }
+
+        /// <summary>
         /// 월드맵 연결선 정의의 Sprite가 캐싱되어 있는지 확인하고 반환합니다.
         /// </summary>
         /// <param name="edge">연결선 Sprite address를 보유한 연결선 정의입니다.</param>
@@ -398,5 +484,25 @@ namespace GGemCo2DCore
         /// </summary>
         /// <returns>0~1 범위의 로드 진행률입니다.</returns>
         public float GetLoadProgress() => _prefabLoadProgress;
+
+        /// <summary>
+        /// Addressables 키로 RuntimeAnimatorController를 로드하고 해제 대상 핸들에 등록합니다.
+        /// </summary>
+        /// <param name="address">로드할 AnimatorController Addressables 키입니다.</param>
+        /// <returns>로드된 AnimatorController입니다. 실패하면 null을 반환합니다.</returns>
+        private async Task<RuntimeAnimatorController> LoadAnimatorControllerByAddressAsync(string address)
+        {
+            AsyncOperationHandle<RuntimeAnimatorController> handle = Addressables.LoadAssetAsync<RuntimeAnimatorController>(address);
+            _activeHandles.Add(handle);
+            await handle.Task;
+
+            if (handle.Status == AsyncOperationStatus.Succeeded)
+            {
+                return handle.Result;
+            }
+
+            GcLogger.LogError($"월드맵 AnimatorController 로드에 실패했습니다. key: {address}");
+            return null;
+        }
     }
 }
