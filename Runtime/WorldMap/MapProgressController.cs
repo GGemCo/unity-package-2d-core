@@ -3,7 +3,7 @@ using System.Collections.Generic;
 namespace GGemCo2DCore
 {
     /// <summary>
-    /// 맵 클리어와 월드맵 노드 활성 처리를 담당하는 Core 진행 컨트롤러입니다.
+    /// 맵 클리어, 월드맵 노드 표시, 월드맵 노드 활성 처리를 담당하는 Core 진행 컨트롤러입니다.
     /// </summary>
     public sealed class MapProgressController
     {
@@ -19,12 +19,16 @@ namespace GGemCo2DCore
         }
 
         /// <summary>
-        /// 실제 게임 맵 클리어를 기록하고, 함께 전달된 월드맵 노드를 활성화합니다.
+        /// 실제 게임 맵 클리어를 기록하고, 함께 전달된 월드맵 노드를 표시 또는 활성화합니다.
         /// </summary>
         /// <param name="mapUid">클리어한 TableMap UID입니다.</param>
         /// <param name="activateWorldMapNodeIds">클리어 보상으로 활성화할 월드맵 nodeId 목록입니다.</param>
-        /// <returns>맵 클리어 또는 노드 활성 상태가 변경되면 true를 반환합니다.</returns>
-        public bool ClearMap(int mapUid, IEnumerable<string> activateWorldMapNodeIds = null)
+        /// <param name="visibleWorldMapNodeIds">표시만 켤 월드맵 nodeId 목록입니다.</param>
+        /// <returns>맵 클리어, 노드 표시, 노드 활성 상태 중 하나라도 변경되면 true를 반환합니다.</returns>
+        public bool ClearMap(
+            int mapUid,
+            IEnumerable<string> activateWorldMapNodeIds = null,
+            IEnumerable<string> visibleWorldMapNodeIds = null)
         {
             MapProgressData progressData = GetProgressData();
             if (progressData == null)
@@ -38,6 +42,14 @@ namespace GGemCo2DCore
                 foreach (string nodeId in activateWorldMapNodeIds)
                 {
                     changed |= progressData.ActivateWorldMapNode(nodeId);
+                }
+            }
+
+            if (visibleWorldMapNodeIds != null)
+            {
+                foreach (string nodeId in visibleWorldMapNodeIds)
+                {
+                    changed |= progressData.SetWorldMapNodeVisible(nodeId);
                 }
             }
 
@@ -79,6 +91,29 @@ namespace GGemCo2DCore
         }
 
         /// <summary>
+        /// 지정한 월드맵 노드를 표시 상태로 저장하고, 월드맵 UI가 열려 있으면 즉시 갱신합니다.
+        /// 활성화 상태는 변경하지 않으므로 비활성 노드는 비활성 표시를 유지합니다.
+        /// </summary>
+        /// <param name="nodeId">표시할 월드맵 nodeId입니다.</param>
+        /// <returns>표시 기록이 새로 추가되면 true를 반환합니다.</returns>
+        public bool SetWorldMapNodeVisible(string nodeId)
+        {
+            MapProgressData progressData = GetProgressData();
+            if (progressData == null)
+            {
+                return false;
+            }
+
+            bool changed = progressData.SetWorldMapNodeVisible(nodeId);
+            if (changed)
+            {
+                RefreshWorldMapWindow();
+            }
+
+            return changed;
+        }
+
+        /// <summary>
         /// 지정한 월드맵 노드가 저장 데이터에서 활성화되었는지 확인합니다.
         /// </summary>
         /// <param name="nodeId">확인할 월드맵 nodeId입니다.</param>
@@ -87,6 +122,17 @@ namespace GGemCo2DCore
         {
             MapProgressData progressData = GetProgressData();
             return progressData != null && progressData.IsWorldMapNodeActivated(nodeId);
+        }
+
+        /// <summary>
+        /// 지정한 월드맵 노드가 저장 데이터에서 표시 상태인지 확인합니다.
+        /// </summary>
+        /// <param name="nodeId">확인할 월드맵 nodeId입니다.</param>
+        /// <returns>표시 기록이 저장되어 있으면 true를 반환합니다.</returns>
+        public bool IsWorldMapNodeVisible(string nodeId)
+        {
+            MapProgressData progressData = GetProgressData();
+            return progressData != null && progressData.IsWorldMapNodeVisible(nodeId);
         }
 
         /// <summary>

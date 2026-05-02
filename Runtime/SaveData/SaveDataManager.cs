@@ -23,7 +23,7 @@ namespace GGemCo2DCore
         public WindowSlotActivationSaveData WindowSlotActivationSaveData;
 
         /// <summary>
-        /// 맵 클리어 기록과 월드맵 노드 활성 상태를 저장하는 진행 데이터입니다.
+        /// 맵 클리어 기록, 월드맵 노드 표시 상태, 월드맵 노드 활성 상태를 저장하는 진행 데이터입니다.
         /// </summary>
         public MapProgressData MapProgressData;
 
@@ -58,12 +58,12 @@ namespace GGemCo2DCore
         public WindowSlotActivationSaveData WindowSlotActivation { get; private set; }
 
         /// <summary>
-        /// 실제 게임 맵과 월드맵 노드 진행도를 보관하는 저장 데이터입니다.
+        /// 실제 게임 맵 진행도와 월드맵 노드 표시/활성 상태를 보관하는 저장 데이터입니다.
         /// </summary>
         public MapProgressData MapProgress { get; private set; }
 
         /// <summary>
-        /// 맵 클리어와 월드맵 노드 활성 처리를 담당하는 컨트롤러입니다.
+        /// 맵 클리어, 월드맵 노드 표시, 월드맵 노드 활성 처리를 담당하는 컨트롤러입니다.
         /// </summary>
         public MapProgressController MapProgressController { get; private set; }
 

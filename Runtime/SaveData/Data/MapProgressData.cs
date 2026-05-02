@@ -4,7 +4,7 @@ using System.Collections.Generic;
 namespace GGemCo2DCore
 {
     /// <summary>
-    /// 맵 클리어 기록과 월드맵 노드 활성 상태를 저장하는 Core 세이브 데이터입니다.
+    /// 맵 클리어 기록, 월드맵 노드 표시 상태, 월드맵 노드 활성 상태를 저장하는 Core 세이브 데이터입니다.
     /// </summary>
     public sealed class MapProgressData : DefaultData, ISaveData
     {
@@ -19,6 +19,12 @@ namespace GGemCo2DCore
         public Dictionary<string, bool> ActivatedWorldMapNodes = new Dictionary<string, bool>();
 
         /// <summary>
+        /// 표시 상태로 전환된 월드맵 노드 기록입니다. key는 월드맵 그래프의 nodeId입니다.
+        /// 활성화와 달리 비활성 상태는 유지합니다.
+        /// </summary>
+        public Dictionary<string, bool> VisibleWorldMapNodes = new Dictionary<string, bool>();
+
+        /// <summary>
         /// 저장 컨테이너에서 맵 진행 데이터를 복원합니다.
         /// </summary>
         /// <param name="loader">테이블 로더입니다. 현재 맵 진행 데이터는 테이블을 직접 참조하지 않습니다.</param>
@@ -27,6 +33,7 @@ namespace GGemCo2DCore
         {
             ClearedMaps.Clear();
             ActivatedWorldMapNodes.Clear();
+            VisibleWorldMapNodes.Clear();
 
             MapProgressData loadedData = saveDataContainer?.MapProgressData;
             if (loadedData == null)
@@ -36,6 +43,7 @@ namespace GGemCo2DCore
 
             RestoreClearedMaps(loadedData.ClearedMaps);
             RestoreActivatedWorldMapNodes(loadedData.ActivatedWorldMapNodes);
+            RestoreVisibleWorldMapNodes(loadedData.VisibleWorldMapNodes);
         }
 
         /// <summary>
@@ -100,6 +108,35 @@ namespace GGemCo2DCore
         }
 
         /// <summary>
+        /// 지정한 월드맵 노드를 표시 상태로 저장합니다.
+        /// 활성화 상태는 바꾸지 않으므로 inactiveByDefault 노드는 비활성 표시를 유지합니다.
+        /// </summary>
+        /// <param name="nodeId">표시할 월드맵 노드 ID입니다.</param>
+        /// <returns>표시 기록이 새로 추가되면 true를 반환합니다.</returns>
+        public bool SetWorldMapNodeVisible(string nodeId)
+        {
+            nodeId = NormalizeNodeId(nodeId);
+            if (string.IsNullOrEmpty(nodeId))
+            {
+                return false;
+            }
+
+            if (VisibleWorldMapNodes == null)
+            {
+                VisibleWorldMapNodes = new Dictionary<string, bool>();
+            }
+
+            if (VisibleWorldMapNodes.TryGetValue(nodeId, out bool visible) && visible)
+            {
+                return false;
+            }
+
+            VisibleWorldMapNodes[nodeId] = true;
+            SaveDatas();
+            return true;
+        }
+
+        /// <summary>
         /// 지정한 월드맵 노드가 저장 데이터에서 활성화되었는지 확인합니다.
         /// </summary>
         /// <param name="nodeId">확인할 월드맵 노드 ID입니다.</param>
@@ -111,6 +148,20 @@ namespace GGemCo2DCore
                    ActivatedWorldMapNodes != null &&
                    ActivatedWorldMapNodes.TryGetValue(nodeId, out bool activated) &&
                    activated;
+        }
+
+        /// <summary>
+        /// 지정한 월드맵 노드가 저장 데이터에서 표시 상태인지 확인합니다.
+        /// </summary>
+        /// <param name="nodeId">확인할 월드맵 노드 ID입니다.</param>
+        /// <returns>표시 기록이 true로 저장되어 있으면 true를 반환합니다.</returns>
+        public bool IsWorldMapNodeVisible(string nodeId)
+        {
+            nodeId = NormalizeNodeId(nodeId);
+            return !string.IsNullOrEmpty(nodeId) &&
+                   VisibleWorldMapNodes != null &&
+                   VisibleWorldMapNodes.TryGetValue(nodeId, out bool visible) &&
+                   visible;
         }
 
         /// <summary>
@@ -158,6 +209,29 @@ namespace GGemCo2DCore
                 }
 
                 ActivatedWorldMapNodes[nodeId] = true;
+            }
+        }
+
+        /// <summary>
+        /// 저장된 월드맵 노드 표시 기록 중 true 값만 선별해 복원합니다.
+        /// </summary>
+        /// <param name="nodes">저장 파일에서 읽은 월드맵 노드 표시 기록입니다.</param>
+        private void RestoreVisibleWorldMapNodes(Dictionary<string, bool> nodes)
+        {
+            if (nodes == null)
+            {
+                return;
+            }
+
+            foreach (var pair in nodes)
+            {
+                string nodeId = NormalizeNodeId(pair.Key);
+                if (string.IsNullOrEmpty(nodeId) || !pair.Value)
+                {
+                    continue;
+                }
+
+                VisibleWorldMapNodes[nodeId] = true;
             }
         }
 

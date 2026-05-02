@@ -353,7 +353,7 @@ namespace GGemCo2DCore
         }
 
         /// <summary>
-        /// 퀘스트 완료 보상으로 맵 클리어와 월드맵 노드 활성화를 적용합니다.
+        /// 퀘스트 완료 보상으로 맵 클리어, 월드맵 노드 표시, 월드맵 노드 활성화를 적용합니다.
         /// </summary>
         /// <param name="mapProgress">맵 진행 보상 정보입니다.</param>
         private void GiveMapProgressReward(QuestRewardMapProgress mapProgress)
@@ -361,13 +361,16 @@ namespace GGemCo2DCore
             if (mapProgress == null) return;
 
             bool hasClearMapReward = mapProgress.clearMapUid > 0;
+            bool hasVisibleWorldMapNodes = mapProgress.visibleWorldMapNodeIds != null &&
+                                           mapProgress.visibleWorldMapNodeIds.Count > 0;
             bool hasWorldMapNodes = mapProgress.activateWorldMapNodeIds != null &&
                                     mapProgress.activateWorldMapNodeIds.Count > 0;
-            if (!hasClearMapReward && !hasWorldMapNodes) return;
+            if (!hasClearMapReward && !hasVisibleWorldMapNodes && !hasWorldMapNodes) return;
 
             _sceneGame.saveDataManager.MapProgressController.ClearMap(
                 mapProgress.clearMapUid,
-                mapProgress.activateWorldMapNodeIds);
+                mapProgress.activateWorldMapNodeIds,
+                mapProgress.visibleWorldMapNodeIds);
         }
 
         /// <summary>

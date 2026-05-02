@@ -60,10 +60,13 @@ namespace GGemCo2DCore
         /// 저장된 월드맵 진행도와 노드 기본값을 함께 사용해 노드 표시 여부를 계산합니다.
         /// </summary>
         /// <param name="node">확인할 월드맵 노드입니다.</param>
-        /// <returns>기본 표시 노드이거나 저장 데이터에서 활성화된 노드이면 true를 반환합니다.</returns>
+        /// <returns>기본 표시 노드이거나 저장 데이터에서 표시 또는 활성화된 노드이면 true를 반환합니다.</returns>
         public bool IsWorldMapNodeVisible(WorldMapNodeDefinition node)
         {
-            return node != null && (node.VisibleByDefault || IsWorldMapNodeActivated(node));
+            return node != null &&
+                   (node.VisibleByDefault ||
+                    IsWorldMapNodeVisibleByProgress(node) ||
+                    IsWorldMapNodeActivated(node));
         }
 
         /// <summary>
@@ -182,6 +185,19 @@ namespace GGemCo2DCore
             return node != null &&
                    SceneGame.Instance?.saveDataManager?.MapProgress != null &&
                    SceneGame.Instance.saveDataManager.MapProgress.IsWorldMapNodeActivated(node.NodeId);
+        }
+
+        /// <summary>
+        /// 저장 데이터 기준으로 지정한 월드맵 노드가 표시 상태인지 확인합니다.
+        /// 활성화 여부와 분리되어 있으므로 비활성 노드는 비활성 표시를 유지할 수 있습니다.
+        /// </summary>
+        /// <param name="node">확인할 월드맵 노드입니다.</param>
+        /// <returns>저장 데이터에 표시 기록이 있으면 true를 반환합니다.</returns>
+        private bool IsWorldMapNodeVisibleByProgress(WorldMapNodeDefinition node)
+        {
+            return node != null &&
+                   SceneGame.Instance?.saveDataManager?.MapProgress != null &&
+                   SceneGame.Instance.saveDataManager.MapProgress.IsWorldMapNodeVisible(node.NodeId);
         }
 
         /// <summary>

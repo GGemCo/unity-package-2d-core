@@ -155,6 +155,7 @@ namespace GGemCo2DCoreEditor
             _quest.reward ??= new QuestReward();
             _quest.reward.items ??= new List<RewardItem>();
             _quest.reward.mapProgress ??= new QuestRewardMapProgress();
+            _quest.reward.mapProgress.visibleWorldMapNodeIds ??= new List<string>();
             _quest.reward.mapProgress.activateWorldMapNodeIds ??= new List<string>();
             _quest.reward.licenses ??= new List<QuestRewardLicense>();
 
