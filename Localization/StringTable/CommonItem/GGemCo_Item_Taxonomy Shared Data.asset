@@ -15,180 +15,20 @@ MonoBehaviour:
   m_TableCollectionName: GGemCo_Item_Taxonomy
   m_TableCollectionNameGuidString: 09c2d07c494805b448689ebe3710f7b5
   m_Entries:
-  - m_Id: 790385311744
-    m_Key: Item_Type_Equip
-    m_Metadata:
-      m_Items: []
-  - m_Id: 790494363648
-    m_Key: Item_Type_Consumable
-    m_Metadata:
-      m_Items: []
-  - m_Id: 790494363649
-    m_Key: Item_Type_Currency
-    m_Metadata:
-      m_Items: []
-  - m_Id: 790494363650
-    m_Key: Item_Type_Misc
-    m_Metadata:
-      m_Items: []
-  - m_Id: 790494363651
-    m_Key: Item_Category_Weapon
-    m_Metadata:
-      m_Items: []
-  - m_Id: 790494363652
-    m_Key: Item_Category_Armor
-    m_Metadata:
-      m_Items: []
-  - m_Id: 790494363653
-    m_Key: Item_Category_Potion
-    m_Metadata:
-      m_Items: []
-  - m_Id: 790494363654
-    m_Key: Item_Category_Gold
-    m_Metadata:
-      m_Items: []
-  - m_Id: 790494363655
-    m_Key: Item_Category_Silver
-    m_Metadata:
-      m_Items: []
-  - m_Id: 790494363656
-    m_Key: Item_Category_Material
-    m_Metadata:
-      m_Items: []
-  - m_Id: 790494363657
-    m_Key: Item_Category_Tool
-    m_Metadata:
-      m_Items: []
-  - m_Id: 790494363658
-    m_Key: Item_Category_Seed
-    m_Metadata:
-      m_Items: []
-  - m_Id: 790494363659
-    m_Key: Item_Category_Vegetable
-    m_Metadata:
-      m_Items: []
-  - m_Id: 790494363660
-    m_Key: Item_Category_Grain
-    m_Metadata:
-      m_Items: []
-  - m_Id: 790494363661
-    m_Key: Item_Category_Wood
-    m_Metadata:
-      m_Items: []
-  - m_Id: 790494363662
-    m_Key: Item_Category_Ore
-    m_Metadata:
-      m_Items: []
-  - m_Id: 790494363663
-    m_Key: Item_Category_Remnant
-    m_Metadata:
-      m_Items: []
-  - m_Id: 790494363664
-    m_Key: Item_Category_SkillBook
-    m_Metadata:
-      m_Items: []
-  - m_Id: 790494363665
-    m_Key: Item_SubCategory_Sword
-    m_Metadata:
-      m_Items: []
-  - m_Id: 790494363666
-    m_Key: Item_SubCategory_Chest
-    m_Metadata:
-      m_Items: []
-  - m_Id: 790494363667
-    m_Key: Item_SubCategory_Boots
-    m_Metadata:
-      m_Items: []
-  - m_Id: 790494363668
-    m_Key: Item_SubCategory_RecoverHp
-    m_Metadata:
-      m_Items: []
-  - m_Id: 790494363669
-    m_Key: Item_SubCategory_RecoverMp
-    m_Metadata:
-      m_Items: []
-  - m_Id: 790494363670
-    m_Key: Item_SubCategory_IncreaseAttackSpeed
-    m_Metadata:
-      m_Items: []
-  - m_Id: 790494363671
-    m_Key: Item_SubCategory_IncreaseMoveSpeed
-    m_Metadata:
-      m_Items: []
-  - m_Id: 790494363672
-    m_Key: Item_SubCategory_Axe
-    m_Metadata:
-      m_Items: []
-  - m_Id: 790494363673
-    m_Key: Item_SubCategory_Hoe
-    m_Metadata:
-      m_Items: []
-  - m_Id: 790494363674
-    m_Key: Item_SubCategory_PickAxe
-    m_Metadata:
-      m_Items: []
-  - m_Id: 790494363675
-    m_Key: Item_SubCategory_Sickle
-    m_Metadata:
-      m_Items: []
-  - m_Id: 790494363676
-    m_Key: Item_SubCategory_Watering
-    m_Metadata:
-      m_Items: []
-  - m_Id: 790494363677
-    m_Key: Item_SubCategory_HandHarvestable
-    m_Metadata:
-      m_Items: []
-  - m_Id: 790494363678
-    m_Key: Item_SubCategory_ScytheHarvestable
-    m_Metadata:
-      m_Items: []
-  - m_Id: 790494363679
-    m_Key: Item_SubCategory_IncreaseHp
-    m_Metadata:
-      m_Items: []
-  - m_Id: 790494363680
-    m_Key: Item_SubCategory_Active
-    m_Metadata:
-      m_Items: []
-  - m_Id: 790494363681
-    m_Key: Item_SubCategory_Passive
-    m_Metadata:
-      m_Items: []
-  - m_Id: 790494363682
+  - m_Id: 3264535291150336
     m_Key: Item_SubCategory_ActiveBuff
     m_Metadata:
       m_Items: []
-  - m_Id: 790494363683
-    m_Key: Item_Class_Normal
+  - m_Id: 3264535358259200
+    m_Key: Item_SubCategory_Active
     m_Metadata:
       m_Items: []
-  - m_Id: 790494363684
-    m_Key: Item_Class_Magic
+  - m_Id: 3264535358259201
+    m_Key: Item_SubCategory_Passive
     m_Metadata:
       m_Items: []
-  - m_Id: 790494363685
-    m_Key: Item_Class_Rare
-    m_Metadata:
-      m_Items: []
-  - m_Id: 790494363686
-    m_Key: Item_Class_Unique
-    m_Metadata:
-      m_Items: []
-  - m_Id: 790494363687
-    m_Key: Item_AntiFlag_ShopSale
-    m_Metadata:
-      m_Items: []
-  - m_Id: 790494363688
-    m_Key: Item_AntiFlag_Stash
-    m_Metadata:
-      m_Items: []
-  - m_Id: 790494363689
-    m_Key: Item_AntiFlag_Salvage
-    m_Metadata:
-      m_Items: []
-  - m_Id: 790494363690
-    m_Key: Item_AntiFlag_Upgrade
+  - m_Id: 3264535358259202
+    m_Key: Item_SubCategory_Status
     m_Metadata:
       m_Items: []
   m_Metadata:

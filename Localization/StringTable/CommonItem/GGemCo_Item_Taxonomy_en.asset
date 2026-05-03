@@ -18,180 +18,20 @@ MonoBehaviour:
   m_Metadata:
     m_Items: []
   m_TableData:
-  - m_Id: 790385311744
-    m_Localized: Equip
+  - m_Id: 3264535358259202
+    m_Localized: STATUS
     m_Metadata:
       m_Items: []
-  - m_Id: 790494363648
-    m_Localized: Consumable
+  - m_Id: 3264535358259201
+    m_Localized: PASSIVE SKILL
     m_Metadata:
       m_Items: []
-  - m_Id: 790494363649
-    m_Localized: Currency
+  - m_Id: 3264535358259200
+    m_Localized: ACTIVE SKILL
     m_Metadata:
       m_Items: []
-  - m_Id: 790494363650
-    m_Localized: Misc
-    m_Metadata:
-      m_Items: []
-  - m_Id: 790494363651
-    m_Localized: Weapon
-    m_Metadata:
-      m_Items: []
-  - m_Id: 790494363652
-    m_Localized: Armor
-    m_Metadata:
-      m_Items: []
-  - m_Id: 790494363653
-    m_Localized: Potion
-    m_Metadata:
-      m_Items: []
-  - m_Id: 790494363654
-    m_Localized: Gold
-    m_Metadata:
-      m_Items: []
-  - m_Id: 790494363655
-    m_Localized: Silver
-    m_Metadata:
-      m_Items: []
-  - m_Id: 790494363656
-    m_Localized: Material
-    m_Metadata:
-      m_Items: []
-  - m_Id: 790494363657
-    m_Localized: Tool
-    m_Metadata:
-      m_Items: []
-  - m_Id: 790494363658
-    m_Localized: Seed
-    m_Metadata:
-      m_Items: []
-  - m_Id: 790494363659
-    m_Localized: Vegetable
-    m_Metadata:
-      m_Items: []
-  - m_Id: 790494363660
-    m_Localized: Grain
-    m_Metadata:
-      m_Items: []
-  - m_Id: 790494363661
-    m_Localized: Wood
-    m_Metadata:
-      m_Items: []
-  - m_Id: 790494363662
-    m_Localized: Ore
-    m_Metadata:
-      m_Items: []
-  - m_Id: 790494363663
-    m_Localized: Remnant
-    m_Metadata:
-      m_Items: []
-  - m_Id: 790494363664
-    m_Localized: Skill Book
-    m_Metadata:
-      m_Items: []
-  - m_Id: 790494363665
-    m_Localized: Sword
-    m_Metadata:
-      m_Items: []
-  - m_Id: 790494363666
-    m_Localized: Chest
-    m_Metadata:
-      m_Items: []
-  - m_Id: 790494363667
-    m_Localized: Boots
-    m_Metadata:
-      m_Items: []
-  - m_Id: 790494363668
-    m_Localized: Recover HP
-    m_Metadata:
-      m_Items: []
-  - m_Id: 790494363669
-    m_Localized: Recover MP
-    m_Metadata:
-      m_Items: []
-  - m_Id: 790494363670
-    m_Localized: Attack Speed Up
-    m_Metadata:
-      m_Items: []
-  - m_Id: 790494363671
-    m_Localized: Move Speed Up
-    m_Metadata:
-      m_Items: []
-  - m_Id: 790494363672
-    m_Localized: Axe
-    m_Metadata:
-      m_Items: []
-  - m_Id: 790494363673
-    m_Localized: Hoe
-    m_Metadata:
-      m_Items: []
-  - m_Id: 790494363674
-    m_Localized: Pickaxe
-    m_Metadata:
-      m_Items: []
-  - m_Id: 790494363675
-    m_Localized: Sickle
-    m_Metadata:
-      m_Items: []
-  - m_Id: 790494363676
-    m_Localized: Watering Can
-    m_Metadata:
-      m_Items: []
-  - m_Id: 790494363677
-    m_Localized: Hand Harvestable
-    m_Metadata:
-      m_Items: []
-  - m_Id: 790494363678
-    m_Localized: Scythe Harvestable
-    m_Metadata:
-      m_Items: []
-  - m_Id: 790494363679
-    m_Localized: HP Up
-    m_Metadata:
-      m_Items: []
-  - m_Id: 790494363680
-    m_Localized: Active
-    m_Metadata:
-      m_Items: []
-  - m_Id: 790494363681
-    m_Localized: Passive
-    m_Metadata:
-      m_Items: []
-  - m_Id: 790494363682
-    m_Localized: Active Buff
-    m_Metadata:
-      m_Items: []
-  - m_Id: 790494363683
-    m_Localized: Normal
-    m_Metadata:
-      m_Items: []
-  - m_Id: 790494363684
-    m_Localized: Magic
-    m_Metadata:
-      m_Items: []
-  - m_Id: 790494363685
-    m_Localized: Rare
-    m_Metadata:
-      m_Items: []
-  - m_Id: 790494363686
-    m_Localized: Unique
-    m_Metadata:
-      m_Items: []
-  - m_Id: 790494363687
-    m_Localized: Shop Sale Locked
-    m_Metadata:
-      m_Items: []
-  - m_Id: 790494363688
-    m_Localized: Stash Locked
-    m_Metadata:
-      m_Items: []
-  - m_Id: 790494363689
-    m_Localized: Salvage Locked
-    m_Metadata:
-      m_Items: []
-  - m_Id: 790494363690
-    m_Localized: Upgrade Locked
+  - m_Id: 3264535291150336
+    m_Localized: ACTIVE SKILL
     m_Metadata:
       m_Items: []
   references:

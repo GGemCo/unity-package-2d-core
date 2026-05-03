@@ -15,6 +15,10 @@ MonoBehaviour:
   m_TableCollectionName: GGemCo_System
   m_TableCollectionNameGuidString: c42aaa69ca7ec054e8979e53971a10d5
   m_Entries:
+  - m_Id: 107281613710344192
+    m_Key: SkillSetting_PreviousMainSlotRequired
+    m_Metadata:
+      m_Items: []
   - m_Id: 402956816384
     m_Key: Player_LevelTooLow
     m_Metadata:
