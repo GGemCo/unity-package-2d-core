@@ -25,6 +25,7 @@ namespace GGemCo2DCoreEditor
             CreateUIEffectPreset,
             LocalizationUpdate =  130,
             LocalizationFind,
+            LocalizationCsvSync,
             SoundUIButton = 140,
             CreateHubWindow,
             Test = 200,
@@ -83,6 +84,7 @@ namespace GGemCo2DCoreEditor
         
         public const string NameToolLocalizationUpdate = NameToolDevelopment + "Localize 업데이트툴";
         public const string NameToolLocalizationFind = NameToolDevelopment + "Localize 검색기";
+        public const string NameToolLocalizationCsvSync = NameToolDevelopment + "Localization CSV 동기화 툴";
         
         public const string NameToolSoundUIButton = NameToolDevelopment + "UI 버튼 사운드 적용툴";
         
