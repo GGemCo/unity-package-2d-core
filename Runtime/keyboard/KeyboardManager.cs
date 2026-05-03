@@ -83,13 +83,16 @@ namespace GGemCo2DCore
         {
             // GcLogger.Log("OnTriggerEscapeKeyDown");
             if (sceneGame == null) return;
-            
+
+            // todo. 정리 필요. 안드로이드에서 뒤로가기 버튼을 누르면, ESC 처리가 된다.
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
             if (sceneGame.InteractionManager != null && sceneGame.InteractionManager.IsInteractioning())
             {
                 sceneGame.InteractionManager.EndInteraction();
                 return;
             }
             sceneGame.uIWindowManager.CloseAll();
+#endif
         }
 
         public void OnDestroy()
