@@ -45,6 +45,7 @@
             SkillPassive,
             WorldMap,
             WorldMapInfo,
+            PlayerStatReset,
             TimingBattleRest = 100,
             TimingBattleSkillSettingTapMenu,
             TimingBattleTapMenu,

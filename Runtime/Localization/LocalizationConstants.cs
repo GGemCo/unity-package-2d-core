@@ -57,6 +57,7 @@ namespace GGemCo2DCore
             public const string UIWindowTcgBattleHud = "GGemCo_UIWindowTcgBattleHud";
             public const string UIWindowPlayerStatInfo = "GGemCo_UIWindowPlayerStatInfo";
             public const string UIWindowShop = "GGemCo_UIWindowShop";
+            public const string UIWindowPlayerStatReset = "GGemCo_UIWindowPlayerStatReset";
             
             public const string StatusName = "GGemCo_Status_Name";
             public const string ItemName = "GGemCo_Item_Name";
@@ -90,6 +91,7 @@ namespace GGemCo2DCore
                 MonsterName,
                 UIWindowPlayerStatInfo,
                 UIWindowShop,
+                UIWindowPlayerStatReset,
             };
         }
 

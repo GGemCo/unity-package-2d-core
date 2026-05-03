@@ -103,6 +103,8 @@ namespace GGemCo2DCore
         public string GetUIWindowPlayerInfoByKey(string key) => GetString(LocalizationConstants.Tables.UIWindowPlayerStatInfo, key);
         public string GetUIWindowShopByKey(string key) => GetString(LocalizationConstants.Tables.UIWindowShop, key);
 
+        public string GetUIWindowPlayerStatResetByKey(string key) => GetString(LocalizationConstants.Tables.UIWindowPlayerStatReset, key);
+        
         /// <summary>
         /// ItemDescription 테이블의 Smart String(동적 치환) 평가.
         /// </summary>

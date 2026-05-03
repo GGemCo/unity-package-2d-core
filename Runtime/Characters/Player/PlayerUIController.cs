@@ -21,6 +21,7 @@ namespace GGemCo2DCore
 
         private UIWindowHud _uiWindowHud;
         private UIWindowPlayerInfo _uiWindowPlayerInfo;
+        private UIWindowPlayerStatReset _uiWindowPlayerStatReset;
         private UIWindowPlayerBuffInfo _uiWindowPlayerBuffInfo;
         private GGemCoPlayerSettings _playerSettings;
 
@@ -73,6 +74,8 @@ namespace GGemCo2DCore
             _uiWindowHud = _sceneGame.uIWindowManager?.GetUIWindowByUid<UIWindowHud>(UIWindowConstants.WindowUid.Hud);
             _uiWindowPlayerInfo =
                 _sceneGame.uIWindowManager?.GetUIWindowByUid<UIWindowPlayerInfo>(UIWindowConstants.WindowUid.PlayerInfo);
+            _uiWindowPlayerStatReset =
+                _sceneGame.uIWindowManager?.GetUIWindowByUid<UIWindowPlayerStatReset>(UIWindowConstants.WindowUid.PlayerStatReset);
             _uiWindowPlayerBuffInfo =
                 _sceneGame.uIWindowManager?.GetUIWindowByUid<UIWindowPlayerBuffInfo>(
                     UIWindowConstants.WindowUid.PlayerBuffInfo);
@@ -169,6 +172,28 @@ namespace GGemCo2DCore
 
                     playerData.OnCurrentLevelChanged()
                         .Subscribe(_ => _uiWindowPlayerInfo.RefreshValues())
+                        .AddTo(_player);
+                }
+            }
+            if (_uiWindowPlayerStatReset != null && _player != null)
+            {
+                // PlayerInfo 윈도우가 라벨(Localization)을 1회 적용하고 이후 값만 갱신하도록 초기 바인딩한다.
+                _uiWindowPlayerStatReset.BindPlayer(_player);
+
+                // 저장 데이터의 스탯 포인트 변경 시 PlayerInfo 표시값을 다시 갱신한다.
+                var playerData = _sceneGame.saveDataManager.Player;
+                if (playerData != null)
+                {
+                    playerData.OnStatPointsChanged()
+                        .Subscribe(_ => _uiWindowPlayerStatReset.RefreshValues())
+                        .AddTo(_player);
+
+                    playerData.OnCurrentGoldChanged()
+                        .Subscribe(_ => _uiWindowPlayerStatReset.RefreshValues())
+                        .AddTo(_player);
+
+                    playerData.OnCurrentLevelChanged()
+                        .Subscribe(_ => _uiWindowPlayerStatReset.RefreshValues())
                         .AddTo(_player);
                 }
             }
