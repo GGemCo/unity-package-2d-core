@@ -16,20 +16,23 @@ namespace GGemCo2DCore
     {
         // 타일맵이 들갈 grid 오브젝트
         private GameObject _grid;
+
         // 페이드 인에 사용할 검정색 스프라이트 오브젝트
         private GameObject _bgBlackForMapLoading;
+
         // 페이드 인 지속 시간
         private const float FadeDuration = 0.3f;
 
         // 맵 로드 상태
         private MapConstants.State _currentState = MapConstants.State.None;
+
         // 현재 맵 uid
         private int _currentMapUid;
 
         private SceneGame _sceneGame;
         private SaveDataManager _saveDataManager;
         private TableLoaderManager _tableLoaderManager;
-        
+
         // 현재 맵에서 플레이어가 스폰될 위치
         private Vector3 _playSpawnPosition;
 
@@ -39,26 +42,30 @@ namespace GGemCo2DCore
         public static event Action<MapTileCommon, GameObject> OnLoadTilemapCompleteMap;
         public static event Action<MapTileCommon, GameObject> OnLoadCompletePlayer;
         public static event Action<MapTileCommon, GameObject> OnLoadCompleteNpc;
-        
+
         // 현재 맵 테이블 데이터
         private StruckTableMap _currentMapTableData;
+
         // 현재 타이맬 스크립트
         private MapTileCommon _mapTileCommon;
+
         // 타일맵이 로드 완료되었을때 발생하는 이벤트
         // 캐릭터, 워프 스폰 매니저
         private MapLoadCharacters _mapLoadCharacters;
         private AddressableLoaderPrefabCharacter _addressableLoaderPrefabCharacter;
         private MapEntryRuleResolver _mapEntryRuleResolver;
+
         protected void Awake()
         {
             if (!TableLoaderManager.Instance) return;
             _tableLoaderManager = TableLoaderManager.Instance;
-            
+
             _mapLoadCharacters = new MapLoadCharacters();
             _mapLoadCharacters.Initialize(this);
-            
+
             CreateGrid();
         }
+
         /// <summary>
         /// 타일맵을 추가할 grid 오브젝트 만들기
         /// </summary>
@@ -69,6 +76,7 @@ namespace GGemCo2DCore
             {
                 Destroy(exitsGrid.gameObject);
             }
+
             _grid = new GameObject(ConfigTags.GetValue(ConfigTags.Keys.GridTileMap))
             {
                 tag = ConfigTags.GetValue(ConfigTags.Keys.GridTileMap)
@@ -77,12 +85,15 @@ namespace GGemCo2DCore
             Vector2 tilemapGridSize = AddressableLoaderSettings.Instance.mapSettings.tilemapGridCellSize;
             if (tilemapGridSize == Vector2.zero)
             {
-                GcLogger.LogError($"타일맵 Grid 사이즈가 정해지지 않았습니다. {ConfigDefine.NameSDK}MapSettings 에 Tilemap Grid Cell Size 를 입력해주세요.");
+                GcLogger.LogError(
+                    $"타일맵 Grid 사이즈가 정해지지 않았습니다. {ConfigDefine.NameSDK}MapSettings 에 Tilemap Grid Cell Size 를 입력해주세요.");
                 return;
             }
+
             grid.cellSize = new Vector3(tilemapGridSize.x, tilemapGridSize.y, 0);
             grid.cellLayout = GridLayout.CellLayout.Rectangle;
         }
+
         protected void Start()
         {
             _sceneGame = SceneGame.Instance;
@@ -90,12 +101,13 @@ namespace GGemCo2DCore
             _saveDataManager = _sceneGame.saveDataManager;
             _addressableLoaderPrefabCharacter = _sceneGame.AddressableLoaderPrefabCharacter;
             _mapEntryRuleResolver = new MapEntryRuleResolver(_tableLoaderManager, _saveDataManager?.LicenseManager);
-            
+
             // 저장된 맵 불러오기
             int startMapUid = GetStartMapUid();
 
             LoadMap(startMapUid);
         }
+
         /// <summary>
         /// 게임 시작시 맵 불러오기
         /// </summary>
@@ -109,7 +121,8 @@ namespace GGemCo2DCore
                 startMapUid = AddressableLoaderSettings.Instance.mapSettings.startMapUid;
                 if (startMapUid <= 0)
                 {
-                    GcLogger.LogError($"시작 맵 고유번호가 잘 못 되었습니다. {ConfigDefine.NameSDK}MapSettins 에 startMapUid 를 입력해주세요.");
+                    GcLogger.LogError(
+                        $"시작 맵 고유번호가 잘 못 되었습니다. {ConfigDefine.NameSDK}MapSettins 에 startMapUid 를 입력해주세요.");
                     return 0;
                 }
 
@@ -123,6 +136,7 @@ namespace GGemCo2DCore
 
             return startMapUid;
         }
+
         protected void Reset()
         {
             StopAllCoroutines();
@@ -143,6 +157,7 @@ namespace GGemCo2DCore
             _mapTileCommon = null;
             return previousMap;
         }
+
         /// <summary>
         /// 맵 불러오기
         /// </summary>
@@ -160,14 +175,15 @@ namespace GGemCo2DCore
                 GcLogger.LogError("맵 고유번호가 잘 못되었습니다.");
                 return;
             }
+
             mapUid = ResolveMapEntryTargetMapUid(mapUid);
             // GcLogger.Log("LoadMap start");
             Reset();
             _currentState = MapConstants.State.FadeIn;
             _currentMapUid = mapUid;
-            
+
             OnLoadStartMap?.Invoke();
-            
+
             StartCoroutine(UpdateState());
         }
 
@@ -192,6 +208,7 @@ namespace GGemCo2DCore
             if (task.IsFaulted)
                 Debug.LogException(task.Exception);
         }
+
         /// <summary>
         /// 맵 로드 상태별 처리 
         /// </summary>
@@ -213,13 +230,13 @@ namespace GGemCo2DCore
                         if (_currentState == MapConstants.State.Failed) yield break;
                         _currentState = MapConstants.State.LoadTilemapPrefab;
                         break;
-                    
+
                     case MapConstants.State.LoadTilemapPrefab:
                         yield return StartCoroutineSafe(AwaitTask(LoadTilemap()));
                         if (_currentState == MapConstants.State.Failed) yield break;
                         _currentState = MapConstants.State.LoadPlayerPrefabs;
                         break;
-                        
+
                     case MapConstants.State.LoadPlayerPrefabs:
                         yield return StartCoroutineSafe(AwaitTask(
                             _mapLoadCharacters.LoadPlayer(_playSpawnPosition, _currentMapTableData, _mapTileCommon)));
@@ -227,7 +244,7 @@ namespace GGemCo2DCore
                         OnLoadCompletePlayer?.Invoke(_mapTileCommon, _grid);
                         _currentState = MapConstants.State.LoadCharacterPrefabs;
                         break;
-                    
+
                     case MapConstants.State.LoadCharacterPrefabs:
                         yield return StartCoroutineSafe(AwaitTask(
                             _addressableLoaderPrefabCharacter.LoadCharacterByMap(_currentMapTableData)));
@@ -251,7 +268,8 @@ namespace GGemCo2DCore
                         break;
 
                     case MapConstants.State.CreateWarp:
-                        yield return StartCoroutineSafe(AwaitTask(_mapLoadCharacters.LoadWarps(_mapTileCommon, _currentMapTableData)));
+                        yield return StartCoroutineSafe(
+                            AwaitTask(_mapLoadCharacters.LoadWarps(_mapTileCommon, _currentMapTableData)));
                         if (_currentState == MapConstants.State.Failed) yield break;
                         _currentState = MapConstants.State.FadeOut;
                         break;
@@ -275,6 +293,7 @@ namespace GGemCo2DCore
                 Debug.LogError("맵 로드 실패");
             }
         }
+
         /// <summary>
         /// 실패 시 즉시 종료되는 안전한 코루틴 실행 함수
         /// </summary>
@@ -286,6 +305,7 @@ namespace GGemCo2DCore
             {
             }
         }
+
         /// <summary>
         /// 실패 시 currentState를 Failed로 설정하고 코루틴 종료
         /// </summary>
@@ -295,6 +315,7 @@ namespace GGemCo2DCore
             StartCoroutine(FadeOut());
             _currentState = MapConstants.State.Failed;
         }
+
         /// <summary>
         /// 로딩시 보여주는 검은 화면 fade in 처리 
         /// </summary>
@@ -306,6 +327,7 @@ namespace GGemCo2DCore
                 GcLogger.LogError("Fade Sprite가 설정되지 않았습니다.");
                 yield break;
             }
+
             // 이미 활성화 되어있으면 (인게임 처음 시작했을때) 건너뛰기.
             if (_bgBlackForMapLoading.activeSelf)
             {
@@ -331,6 +353,7 @@ namespace GGemCo2DCore
 
             // Logger.Log("Fade In 완료");
         }
+
         /// <summary>
         /// tag 로 맵에 있는 오브젝트 지우기
         /// </summary>
@@ -344,6 +367,7 @@ namespace GGemCo2DCore
                 Destroy(map);
             }
         }
+
         /// <summary>
         /// 맵 이동시 메모리 해제 처리
         /// </summary>
@@ -393,17 +417,20 @@ namespace GGemCo2DCore
                 {
                     _currentMapUid = _saveDataManager.Player.CurrentMapUid;
                 }
+
                 if (_tableLoaderManager.TableMap.GetCount() <= 0)
                 {
                     SetLoadFailed("맵 테이블에 내용이 없습니다.");
                     return;
                 }
+
                 _currentMapTableData = _tableLoaderManager.GetMapData(_currentMapUid);
                 if (_currentMapTableData == null)
                 {
                     SetLoadFailed($"맵 테이블에서 찾을 수 없습니다. Uid: {_currentMapUid}");
                     return;
                 }
+
                 string key = ConfigAddressableMap.GetKeyTileMap(_currentMapTableData.FolderName);
                 GameObject prefab = await AddressableLoaderController.LoadByKeyAsync<GameObject>(key);
                 if (!prefab)
@@ -411,6 +438,7 @@ namespace GGemCo2DCore
                     SetLoadFailed($"타일맵 prefab 이 없습니다. key: {key} / currentMapUid: {_currentMapUid}");
                     return;
                 }
+
                 // bgm 플레이
                 if (_currentMapTableData.BgmUid > 0)
                 {
@@ -430,15 +458,16 @@ namespace GGemCo2DCore
                     return;
                 }
 
-                _mapTileCommon.Initialize(_currentMapTableData.Uid, _currentMapTableData.Name, _currentMapTableData.Type, _currentMapTableData.Subtype);
+                _mapTileCommon.Initialize(_currentMapTableData.Uid, _currentMapTableData.Name,
+                    _currentMapTableData.Type, _currentMapTableData.Subtype);
                 var result = GetMapSize();
 
                 // 로드된 맵에 맞게 맵 영역 사이즈 갱신하기 
                 SceneGame.Instance.cameraManager?.ChangeMapSize(result.x, result.y);
-            
+
                 OnLoadTilemapCompleteMap?.Invoke(_mapTileCommon, _grid);
-                
-                
+
+
                 // Logger.Log("타일맵 프리팹 로드 완료");
             }
             catch (Exception e)
@@ -447,6 +476,7 @@ namespace GGemCo2DCore
                 throw;
             }
         }
+
         IEnumerator FadeOut()
         {
             if (!_bgBlackForMapLoading)
@@ -474,6 +504,7 @@ namespace GGemCo2DCore
 
             // Logger.Log("Fade Out 완료");
         }
+
         /// <summary>
         /// 맵 로드 완료 후 저장 데이터 갱신, 기존 완료 콜백, 맵 입장 이벤트 발행을 처리합니다.
         /// </summary>
@@ -485,11 +516,13 @@ namespace GGemCo2DCore
             _playSpawnPosition = Vector3.zero;
             // 맵 이동 후 한번 저장
             _saveDataManager.SaveData();
-            
+
             OnLoadCompleteMap?.Invoke(_mapTileCommon, _grid);
-            GameEventManager.MapEntered(new MapEnteredEventData(_currentMapUid, _mapTileCommon != null ? _mapTileCommon.gameObject : null));
+            GameEventManager.MapEntered(new MapEnteredEventData(_currentMapUid,
+                _mapTileCommon != null ? _mapTileCommon.gameObject : null));
             // Logger.Log("맵 로드 완료");
         }
+
         private bool IsPossibleLoad()
         {
             return (_currentState == MapConstants.State.Complete || _currentState == MapConstants.State.None);
@@ -499,10 +532,12 @@ namespace GGemCo2DCore
         {
             _playSpawnPosition = position;
         }
+
         public Vector3 GetPlaySpawnPosition()
         {
             return _playSpawnPosition;
         }
+
         /// <summary>
         /// 몬스터 죽었을때 리젠 처리 
         /// </summary>
@@ -535,6 +570,7 @@ namespace GGemCo2DCore
 
             _mapLoadCharacters?.OnMonsterReturnedToPool(monsterVid, _mapTileCommon);
         }
+
         /// <summary>
         /// 현재 맵 사이즈 가져오기
         /// </summary>
@@ -543,6 +579,7 @@ namespace GGemCo2DCore
         {
             return GetMapSize();
         }
+
         /// <summary>
         /// 워프로 맵 이동하기
         /// </summary>
@@ -560,6 +597,7 @@ namespace GGemCo2DCore
                 GcLogger.LogError("이동할 워프 정보가 없습니다.");
                 return;
             }
+
             var info = _tableLoaderManager.TableMap.GetDataByUid(objectWarp.toMapUid);
             if (info == null) return;
             // 맵 이동 전 저장
@@ -567,6 +605,7 @@ namespace GGemCo2DCore
             SetPlaySpawnPosition(objectWarp.toMapPlayerSpawnPosition);
             LoadMap(objectWarp.toMapUid);
         }
+
         /// <summary>
         /// 플레이어가 죽었을때 다시 시작하기
         /// </summary>
@@ -578,8 +617,10 @@ namespace GGemCo2DCore
             {
                 _sceneGame.player.gameObject.GetComponent<Player>().ResetStatsByDead();
             }
+
             LoadMap(info.PlayerDeadSpawnUid);
         }
+
         /// <summary>
         /// 플레이어 기준 range 안에서 가장 가까운 몬스터 찾기
         /// </summary>
@@ -625,68 +666,126 @@ namespace GGemCo2DCore
             if (!_mapTileCommon) return;
             _mapTileCommon.ActiveAllCharacters();
         }
+
         public int GetCurrentMapUid() => _currentMapUid;
 
         public bool IsStateComplete()
         {
             return _currentState == MapConstants.State.Complete;
         }
-        /// <summary>
-        /// 맵 사이즈 구하기
-        /// 타일 텍스쳐만 계산한다.
-        /// </summary>
-        /// <returns></returns>
+
         public Vector2 GetMapSize()
         {
             if (!HasValidCurrentMap())
-                return Vector2.zero;
-
-            Tilemap[] tilemaps = _mapTileCommon.GetComponentsInChildren<Tilemap>();
-
-            if (tilemaps == null || tilemaps.Length == 0)
-                return Vector2.zero;
-
-            Vector3 minWorld = new Vector3(float.MaxValue, float.MaxValue, float.MaxValue);
-            Vector3 maxWorld = new Vector3(float.MinValue, float.MinValue, float.MinValue);
-
-            foreach (var tm in tilemaps)
             {
-                if (tm == null)
-                    continue;
-
-                Vector3Int minCell = new Vector3Int(int.MaxValue, int.MaxValue, int.MaxValue);
-                Vector3Int maxCell = new Vector3Int(int.MinValue, int.MinValue, int.MinValue);
-
-                foreach (Vector3Int pos in tm.cellBounds.allPositionsWithin)
-                {
-                    if (tm.HasTile(pos))
-                    {
-                        // GcLogger.Log($"pos: {pos}");
-                        minCell = Vector3Int.Min(minCell, pos);
-                        maxCell = Vector3Int.Max(maxCell, pos);
-                    }
-                }
-
-                // 타일이 없는 타일맵은 스킵
-                if (minCell.x == int.MaxValue)
-                    continue;
-
-                // 셀 좌표를 월드 좌표로 변환
-                Vector3 minWorldPos = tm.CellToWorld(minCell);
-                Vector3 maxWorldPos = tm.CellToWorld(maxCell + Vector3Int.one);
-
-                minWorld = Vector3.Min(minWorld, minWorldPos);
-                maxWorld = Vector3.Max(maxWorld, maxWorldPos);
+                return Vector2.zero;
             }
 
-            Vector3 totalSize = maxWorld - minWorld;
-            return new Vector2(totalSize.x, totalSize.y);
+            if (!TryGetMapWorldBounds(out Bounds bounds))
+            {
+                return Vector2.zero;
+            }
+
+            return new Vector2(bounds.size.x, bounds.size.y);
+        }
+
+        private bool TryGetMapWorldBounds(out Bounds totalBounds)
+        {
+            totalBounds = default;
+            bool hasBounds = false;
+
+            AppendTilemapBounds(ref totalBounds, ref hasBounds);
+            AppendSpriteRendererBounds(ref totalBounds, ref hasBounds);
+
+            return hasBounds;
+        }
+
+        private void AppendTilemapBounds(ref Bounds totalBounds, ref bool hasBounds)
+        {
+            Tilemap[] tilemaps = _mapTileCommon.GetComponentsInChildren<Tilemap>();
+
+            foreach (Tilemap tilemap in tilemaps)
+            {
+                if (tilemap == null)
+                {
+                    continue;
+                }
+
+                if (!TryGetTilemapWorldBounds(tilemap, out Bounds tileBounds))
+                {
+                    continue;
+                }
+
+                EncapsulateBounds(ref totalBounds, ref hasBounds, tileBounds);
+            }
+        }
+
+        private void AppendSpriteRendererBounds(ref Bounds totalBounds, ref bool hasBounds)
+        {
+            SpriteRenderer[] spriteRenderers = _mapTileCommon.GetComponentsInChildren<SpriteRenderer>();
+
+            foreach (SpriteRenderer spriteRenderer in spriteRenderers)
+            {
+                if (spriteRenderer == null || spriteRenderer.sprite == null)
+                {
+                    continue;
+                }
+
+                EncapsulateBounds(ref totalBounds, ref hasBounds, spriteRenderer.bounds);
+            }
+        }
+
+        private static bool TryGetTilemapWorldBounds(Tilemap tilemap, out Bounds bounds)
+        {
+            Vector3Int minCell = new Vector3Int(int.MaxValue, int.MaxValue, int.MaxValue);
+            Vector3Int maxCell = new Vector3Int(int.MinValue, int.MinValue, int.MinValue);
+
+            foreach (Vector3Int pos in tilemap.cellBounds.allPositionsWithin)
+            {
+                if (!tilemap.HasTile(pos))
+                {
+                    continue;
+                }
+
+                minCell = Vector3Int.Min(minCell, pos);
+                maxCell = Vector3Int.Max(maxCell, pos);
+            }
+
+            if (minCell.x == int.MaxValue)
+            {
+                bounds = default;
+                return false;
+            }
+
+            Vector3 minWorldPos = tilemap.CellToWorld(minCell);
+            Vector3 maxWorldPos = tilemap.CellToWorld(maxCell + Vector3Int.one);
+
+            bounds = new Bounds();
+            bounds.SetMinMax(
+                Vector3.Min(minWorldPos, maxWorldPos),
+                Vector3.Max(minWorldPos, maxWorldPos));
+
+            return true;
+        }
+
+        private static void EncapsulateBounds(ref Bounds totalBounds, ref bool hasBounds, Bounds bounds)
+        {
+            if (!hasBounds)
+            {
+                totalBounds = bounds;
+                hasBounds = true;
+                return;
+            }
+
+            totalBounds.Encapsulate(bounds.min);
+            totalBounds.Encapsulate(bounds.max);
         }
 
         public GridInformation GetGridInformation()
         {
             return _grid != null ? _grid.GetComponent<GridInformation>() : null;
         }
+
         public Grid GetGrid()
         {
             return _grid != null ? _grid.GetComponent<Grid>() : null;
