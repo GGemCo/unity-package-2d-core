@@ -9,13 +9,40 @@ namespace GGemCo2DCore
 {
     public class UIWindowInteractionDialogue : UIWindow
     {
+        private enum ThumbnailPositionType { Left, Right }
+        /// <summary>
+        /// 대화창 위치
+        /// </summary>
+        private enum PositionType { None, CharacterTop }
+        
         [Header(UIWindowConstants.TitleHeaderIndividual)]
-        [Tooltip("캐릭터 썸네일")] public Image imageThumbnail;
-        [Tooltip("캐릭터 이름")] public TextMeshProUGUI textName;
-        [Tooltip("메시지")] public TextMeshProUGUI textMessage;
-        [Tooltip("선택지 버튼 프리팹")] public GameObject prefabButtonChoice;
-        [Tooltip("선택지 버튼이 들어갈 Panel")] public Transform containerButton;
-        [Tooltip("퀘스트 선택 요청 메시지")] public string messageQuestSelect;
+        [Tooltip("썸네일 기준 위치")]
+        [SerializeField] private PositionType positionType;
+        [Tooltip("텍스트 박스, 썸네일, 박스 꼬리가 들어가있는 오브젝트")]
+        [SerializeField] private GameObject panelDialogue;
+        [Tooltip("말풍선 위치")]
+        [SerializeField] private Vector3 offsetPanelDialogue;
+        
+        [Tooltip("캐릭터 썸네일")] 
+        [SerializeField] private Image imageThumbnail;
+        [Tooltip("캐릭터 이름")] 
+        [SerializeField] private TextMeshProUGUI textName;
+        [Tooltip("메시지")] 
+        [SerializeField] private TextMeshProUGUI textMessage;
+        [Tooltip("메시지가 들어가는 Panel")]
+        [SerializeField] private  RectTransform panelMessage;
+        [Tooltip("캐릭터 썸네일 이미지 위치. 오른쪽 기준")]
+        [SerializeField] private Vector3 offsetImageThumbnailCharacter;
+        [Tooltip("캐릭터 썸네일 이미지 위치. 왼쪽 기준")]
+        [SerializeField] private Vector3 offsetImageThumbnailCharacterLeft;
+        
+        [Header("선택지 버튼")]
+        [Tooltip("선택지 버튼 프리팹")] 
+        [SerializeField] private GameObject prefabButtonChoice;
+        [Tooltip("선택지 버튼이 들어갈 Panel")] 
+        [SerializeField] private Transform containerButton;
+        [Tooltip("퀘스트 선택 요청 메시지")] 
+        [SerializeField] private string messageQuestSelect;
 
         private const int ButtonCount = 10;
         private readonly Dictionary<int, Button> _buttonChoices = new();
@@ -30,10 +57,16 @@ namespace GGemCo2DCore
         private UIWindowItemUpgrade _uiWindowItemUpgrade;
         private UIWindowItemSalvage _uiWindowItemSalvage;
         private UIWindowItemCraft _uiWindowItemCraft;
+        private UIWindowPlayerStatReset _uiWindowPlayerStatReset;
+        private UIWindowWorldMap _uiWindowWorldMap;
 
         private TableQuest _tableQuest;
         private QuestManager _questManager;
         private LocalizationManager _localizationManager;
+        private AddressableLoaderCharacterThumbnail _addressableLoaderCharacterThumbnail;
+        private GGemCoPlayerSettings _playerSettings;
+        private PlayerData _playerData;
+        private PopupManager _popupManager;
 
         private enum ChoiceType { Interaction, Quest }
 
@@ -66,10 +99,16 @@ namespace GGemCo2DCore
             _uiWindowItemUpgrade = SceneGame.uIWindowManager?.GetUIWindowByUid<UIWindowItemUpgrade>(UIWindowConstants.WindowUid.ItemUpgrade);
             _uiWindowItemSalvage = SceneGame.uIWindowManager?.GetUIWindowByUid<UIWindowItemSalvage>(UIWindowConstants.WindowUid.ItemSalvage);
             _uiWindowItemCraft = SceneGame.uIWindowManager?.GetUIWindowByUid<UIWindowItemCraft>(UIWindowConstants.WindowUid.ItemCraft);
+            _uiWindowPlayerStatReset = SceneGame.uIWindowManager?.GetUIWindowByUid<UIWindowPlayerStatReset>(UIWindowConstants.WindowUid.PlayerStatReset);
+            _uiWindowWorldMap = SceneGame.uIWindowManager?.GetUIWindowByUid<UIWindowWorldMap>(UIWindowConstants.WindowUid.WorldMap);
 
             _tableQuest = TableLoaderManager.Instance.TableQuest;
-            _questManager = SceneGame.Instance.QuestManager;
+            _questManager = SceneGame.QuestManager;
             _localizationManager = LocalizationManager.Instance;
+            _addressableLoaderCharacterThumbnail = AddressableLoaderCharacterThumbnail.Instance;
+            _playerSettings = AddressableLoaderSettings.Instance.playerSettings;
+            _playerData = SceneGame.saveDataManager.Player;
+            _popupManager = SceneGame.popupManager;
         }
 
         /// <summary>
@@ -77,14 +116,12 @@ namespace GGemCo2DCore
         /// </summary>
         private void InitializeButtonChoice()
         {
-            if (prefabButtonChoice == null)
+            if (GcLogger.IsNull(prefabButtonChoice, "선택 버튼 프리팹이 없습니다."))
             {
-                GcLogger.LogError("선택 버튼 프리팹이 없습니다.");
                 return;
             }
-            if (containerButton == null)
+            if (GcLogger.IsNull(containerButton, "선택 버튼 container 가 없습니다."))
             {
-                GcLogger.LogError("선택 버튼 container 가 없습니다.");
                 return;
             }
 
@@ -111,36 +148,40 @@ namespace GGemCo2DCore
         /// <param name="npcData"></param>
         /// <param name="interactionData"></param>
         /// <param name="npcQuestDatas"></param>
-        public async Task SetInfos(CharacterBase npc, StruckTableNpc npcData, StruckTableInteraction interactionData, List<NpcQuestData> npcQuestDatas)
+        public void SetInfos(CharacterBase npc, StruckTableNpc npcData, StruckTableInteraction interactionData, List<NpcQuestData> npcQuestDatas)
         {
             _currentNpc = npc;
 
             if (!string.IsNullOrEmpty(npcData.ImageThumbnailFileName))
             {
-                string key = $"{ConfigAddressableKey.CharacterThumbnailNpc}_{npcData.ImageThumbnailFileName}";
-                Sprite sprite = await AddressableLoaderController.LoadByKeyAsync<Sprite>(key);
+                string key = ConfigAddressableKey.GetKeyThumbnailNpc(npcData.ImageThumbnailFileName);
+                Sprite sprite = _addressableLoaderCharacterThumbnail.GetCharacterThumbnailByName(key);
                 if (sprite != null)
                 {
                     imageThumbnail.sprite = sprite;
                 }
             }
 
-            textName.text = npcData.Name;
+            SetNpcName(npcData.Name);
+            
             _currentCharacterUid = npcData.Uid;
 
             var questList = npcQuestDatas ?? new List<NpcQuestData>();
 
-            if (interactionData != null && !string.IsNullOrEmpty(interactionData.Message))
+            if (textMessage)
             {
-                textMessage.text = _localizationManager.GetInteractionByKey(interactionData.Message);
-            }
-            else if (questList.Count > 0)
-            {
-                textMessage.text = messageQuestSelect;
-            }
-            else
-            {
-                textMessage.text = string.Empty;
+                if (interactionData != null && !string.IsNullOrEmpty(interactionData.Message))
+                {
+                    textMessage.text = _localizationManager.GetInteractionByKey(interactionData.Message);
+                }
+                else if (questList.Count > 0)
+                {
+                    textMessage.text = messageQuestSelect;
+                }
+                else
+                {
+                    textMessage.text = string.Empty;
+                }
             }
 
             for (int i = 0; i < ButtonCount; i++)
@@ -166,7 +207,67 @@ namespace GGemCo2DCore
                 index += SetupChoiceButton(index, interactionData.Type2, interactionData.Value2, interactionData.CustomTypeKey2) ? 1 : 0;
                 index += SetupChoiceButton(index, interactionData.Type3, interactionData.Value3, interactionData.CustomTypeKey3) ? 1 : 0;
             }
+
+            Show(true);
+            RefreshThumbnailPosition();
+            RefreshPosition();
         }
+
+        /// <summary>
+        /// PositionType 별 위치 조정
+        /// </summary>
+        private void RefreshPosition()
+        {
+            switch (positionType)
+            {
+                case PositionType.CharacterTop:
+                    RefreshPositionCharacterTop();
+                    break;
+            }
+        }
+
+        /// <summary>
+        /// NPC 머리 위에 배치
+        /// </summary>
+        private void RefreshPositionCharacterTop()
+        {
+            if (!_currentNpc) return;
+            panelDialogue.transform.SetParent(SceneGame.containerDialogueBalloon.transform, false);
+            var worldPosition = _currentNpc.transform.position + new Vector3(0, _currentNpc.GetHeightByScale(), 0) + offsetPanelDialogue;
+            panelDialogue.transform.position = worldPosition;
+        }
+
+        /// <summary>
+        /// 썸네일 크기를 대화 내용에 맞게 정리
+        /// </summary>
+        private void RefreshThumbnailPosition()
+        {
+            if (!panelMessage) return;
+            if (!imageThumbnail ||
+                !imageThumbnail.gameObject.TryGetComponent<RectTransform>(out var thumbnailRectTransform)) return;
+            
+            LayoutRebuilder.ForceRebuildLayoutImmediate(panelMessage);
+            
+            var panelHalfWidth = panelMessage.rect.width * 0.5f;
+            var thumbnailHalfWidth = thumbnailRectTransform.rect.width * 0.5f;
+            // todo. 정리 필요
+            // var side = _currentEntityPlayerInfo.thumbnailPositionType == ThumbnailPositionType.Left ? -1f : 1f;
+            var side = 1f;
+
+            var x = side * (panelHalfWidth + thumbnailHalfWidth) + offsetImageThumbnailCharacter.x;
+            // if (_currentEntityPlayerInfo.thumbnailPositionType == ThumbnailPositionType.Left)
+            //     x = side * (panelHalfWidth + thumbnailHalfWidth) + offsetImageThumbnailCharacterLeft.x;
+                
+            var y = offsetImageThumbnailCharacter.y;
+            imageThumbnail.transform.localPosition = new Vector3(x, y, 0);
+        }
+
+        private void SetNpcName(string npcName)
+        {
+            if (!textName) return;
+            textName.text = npcName;
+        }
+
         /// <summary>
         /// 퀘스트 버튼 셋팅
         /// </summary>
@@ -339,9 +440,35 @@ namespace GGemCo2DCore
                 case InteractionConstants.Type.SaveGame:
                     SaveGameBySleep();
                     return true;
+                case InteractionConstants.Type.StatReset:
+                    return OpenPlayerStatReset();;
+                case InteractionConstants.Type.WorldMap:
+                    _uiWindowWorldMap?.Show(true);
+                    return true;
                 default:
                     return false;
             }
+        }
+
+        private bool OpenPlayerStatReset()
+        {
+            // 초기화 비용 체크
+            if (_playerSettings.statPointResetCost > 0)
+            {
+                var playerGold = _playerData.CurrentGold;
+                if (playerGold < _playerSettings.statPointResetCost)
+                {
+                    if (textMessage)
+                    {
+                        textMessage.text = _localizationManager.GetSmartInteractionByKey("Text_Not_Enough_Gold");
+                        RefreshThumbnailPosition();
+                    }
+                    return false;
+                }
+            }
+            
+            _uiWindowPlayerStatReset?.Show(true);
+            return true;
         }
 
         /// <summary>
@@ -350,7 +477,17 @@ namespace GGemCo2DCore
         public void OnEndInteraction()
         {
             _currentNpc = null;
+            ResetPanelDialogue();
             Show(false);
+        }
+
+        private void ResetPanelDialogue()
+        {
+            // 캐릭터 머리위에 표시할 때, 다시 이 윈도우로 되돌려야 함
+            if (positionType == PositionType.CharacterTop)
+            {
+                panelDialogue.transform.SetParent(transform, false);
+            }
         }
 
         private void SaveGameBySleep()

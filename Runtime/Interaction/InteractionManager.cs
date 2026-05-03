@@ -71,7 +71,6 @@ namespace GGemCo2DCore
                         .WindowUid.InteractionDialogue);
             }
             _uiWindowInteractionDialogue?.SetInfos(npc, struckTableNpc, struckTableInteraction, questInfos);
-            _uiWindowInteractionDialogue?.Show(true);
         }
 
         public void RemoveCurrentNpc()

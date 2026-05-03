@@ -11,7 +11,9 @@
             ItemSalvage,
             Stash,
             ItemCraft,
-            SaveGame
+            SaveGame,
+            StatReset,
+            WorldMap
         }
 
         public static string GetTypeName(Type type)
@@ -25,6 +27,8 @@
                 Type.Stash => LocalizationManager.Instance.GetUIWindowTitleByKey("UIWindowStash"), //창고
                 Type.ItemCraft => LocalizationManager.Instance.GetUIWindowTitleByKey("UIWindowItemCraft"),//아이템 제작
                 Type.SaveGame => LocalizationManager.Instance.GetUIWindowOptionByKey("Button_Text_Save"),
+                Type.StatReset => LocalizationManager.Instance.GetUIWindowTitleByKey("UIWindowPlayerStatReset"), // 스탯 초기화
+                Type.WorldMap => LocalizationManager.Instance.GetUIWindowTitleByKey("UIWindowWorldMap"), // 월드맵
                 _ => ""
             };
         }
