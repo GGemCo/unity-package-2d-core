@@ -99,23 +99,22 @@ namespace GGemCo2DCoreEditor
                 
                     string key = $"{ConfigAddressableKey.PrefabMonster}_{infoAnimation.Uid}";
                     string assetPath = ConfigAddressableMap.GetPathCharacter(infoAnimation, true);
-                    string label = "";
-                    
-                    Add(settings, group, key, assetPath, label);
+                    Add(settings, group, key, assetPath);
                 
                     // 썸네일 있으면 추가
                     if (!string.IsNullOrEmpty(info.ImageThumbnailFileName))
                     {
                         key = $"{ConfigAddressableKey.CharacterThumbnailMonster}_{info.ImageThumbnailFileName}";
                         assetPath = $"{ConfigAddressablePath.Characters.Thumbnails.Monster}/{info.ImageThumbnailFileName}.png";
-                        Add(settings, groupCharacterThumbnail, key, assetPath);
+                        var label = ConfigAddressableLabel.CharacterThumbnail;
+                        Add(settings, groupCharacterThumbnail, key, assetPath, label);
                     }
                     // UIWindowBattleHudMonster의 이름 이미지
                     if (!string.IsNullOrEmpty(info.ImageThumbnailFileName))
                     {
                         key = $"{ConfigAddressableKey.CharacterImageNameMonster}_{info.ImageThumbnailFileName}";
                         assetPath = $"{ConfigAddressablePath.Characters.ImageName.Monster}/{info.ImageThumbnailFileName}.png";
-                        label = ConfigAddressableLabel.CharacterImageName;
+                        var label = ConfigAddressableLabel.CharacterImageName;
                         Add(settings, groupNameCharacterImageName, key, assetPath, label);
                     }
                 }
@@ -148,7 +147,8 @@ namespace GGemCo2DCoreEditor
                     {
                         key = $"{ConfigAddressableKey.CharacterThumbnailNpc}_{info.ImageThumbnailFileName}";
                         assetPath = $"{ConfigAddressablePath.Characters.Thumbnails.Npc}/{info.ImageThumbnailFileName}.png";
-                        Add(settings, groupCharacterThumbnail, key, assetPath);
+                        var label = ConfigAddressableLabel.CharacterThumbnail;
+                        Add(settings, groupCharacterThumbnail, key, assetPath, label);
                     }
                     // UIWindowBattleHudMonster의 이름 이미지
                     if (!string.IsNullOrEmpty(info.ImageThumbnailFileName))

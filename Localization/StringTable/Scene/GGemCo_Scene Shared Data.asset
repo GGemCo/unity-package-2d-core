@@ -96,6 +96,10 @@ MonoBehaviour:
     m_Key: Loading_Text_WorldMap
     m_Metadata:
       m_Items: []
+  - m_Id: 109921185128693760
+    m_Key: Loading_Text_CharacterThumbnail
+    m_Metadata:
+      m_Items: []
   m_Metadata:
     m_Items: []
   m_KeyGenerator:

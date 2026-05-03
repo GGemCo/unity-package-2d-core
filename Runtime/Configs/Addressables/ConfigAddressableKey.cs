@@ -38,5 +38,10 @@
         public const string SimulationGrowth = ConfigDefine.NameSDK + "_SimulationGrowth";
         // 씨앗 심는 도구에 사용
         public const string SimulationSeed = ConfigDefine.NameSDK + "_SimulationSeed";
+
+        public static string GetKeyThumbnailNpc(string npcThumbnailFileName)
+        {
+            return $"{CharacterThumbnailNpc}_{npcThumbnailFileName}";
+        }
     }
 }

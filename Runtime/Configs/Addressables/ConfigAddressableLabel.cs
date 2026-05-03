@@ -18,5 +18,6 @@ namespace GGemCo2DCore
         public const string SimulationGrowth = ConfigDefine.NameSDK+"_SimulationGrowth";
         public const string CharacterImageName = ConfigDefine.NameSDK+"_CharacterImageName";
         public const string WorldMap = ConfigDefine.NameSDK+"_WorldMap";
+        public const string CharacterThumbnail = ConfigDefine.NameSDK+"_CharacterThumbnail";
     }
 }

@@ -127,6 +127,7 @@ namespace GGemCo2DCore
                 public static string TextTypeInputAction() => $"{NameLoading}_{NameText}_InputAction";
                 public static string TextTypeCutscene() => $"{NameLoading}_{NameText}_Cutscene";
                 public static string TextTypeWorldMap() => $"{NameLoading}_{NameText}_WorldMap";
+                public static string TextTypeCharacterThumbnail() => $"{NameLoading}_{NameText}_CharacterThumbnail";
             }
 
             // 기타 UI, 시스템 메시지, 팝업 등 계속 확장 가능

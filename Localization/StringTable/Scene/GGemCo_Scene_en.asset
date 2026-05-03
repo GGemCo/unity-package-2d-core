@@ -90,6 +90,10 @@ MonoBehaviour:
     m_Localized: WorldMap Data
     m_Metadata:
       m_Items: []
+  - m_Id: 109921185128693760
+    m_Localized: Character Thumbnail Data
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []
