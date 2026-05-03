@@ -105,6 +105,9 @@ namespace GGemCo2DCore
 
         public string GetUIWindowPlayerStatResetByKey(string key) => GetString(LocalizationConstants.Tables.UIWindowPlayerStatReset, key);
         
+        public string GetSmartInteractionByKey(string key, params object[] arguments) =>
+            GetSmartString(LocalizationConstants.Tables.UIWindowInteractionDialogue, key, arguments);
+        
         /// <summary>
         /// ItemDescription 테이블의 Smart String(동적 치환) 평가.
         /// </summary>
