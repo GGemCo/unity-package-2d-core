@@ -9,17 +9,18 @@ namespace GGemCo2DCore
     [DefaultExecutionOrder(1000)]
     public class ParallaxRig2D : MonoBehaviour
     {
-        [Header("카메라 참조")]
-        [Tooltip("비워두면 SceneGame 의 CameraManager 를 자동으로 찾습니다.")]
-        [SerializeField] private CameraManager cameraManager;
-        [Tooltip("True 이면 흔들림이 적용되기 전의 카메라 기본 위치를 사용합니다.")]
-        [SerializeField] private bool useStableCameraPosition = true;
+        [Header("카메라 참조")] [Tooltip("비워두면 SceneGame 의 CameraManager 를 자동으로 찾습니다.")] [SerializeField]
+        private CameraManager cameraManager;
 
-        [Header("레이어 수집")]
-        [Tooltip("True 이면 자식에 있는 ParallaxLayer2D 를 자동으로 수집합니다.")]
-        [SerializeField] private bool autoCollectChildLayers = true;
-        [Tooltip("True 이면 비활성 오브젝트까지 포함해서 수집합니다.")]
-        [SerializeField] private bool includeInactiveLayers = true;
+        [Tooltip("True 이면 흔들림이 적용되기 전의 카메라 기본 위치를 사용합니다.")] [SerializeField]
+        private bool useStableCameraPosition = true;
+
+        [Header("레이어 수집")] [Tooltip("True 이면 자식에 있는 ParallaxLayer2D 를 자동으로 수집합니다.")] [SerializeField]
+        private bool autoCollectChildLayers = true;
+
+        [Tooltip("True 이면 비활성 오브젝트까지 포함해서 수집합니다.")] [SerializeField]
+        private bool includeInactiveLayers = true;
+
         [SerializeField] private ParallaxLayer2D[] layers = Array.Empty<ParallaxLayer2D>();
 
         private Vector3 _baselineCameraPosition;
@@ -28,12 +29,23 @@ namespace GGemCo2DCore
         private void Awake()
         {
             RefreshLayers();
+            MapManager.OnLoadCompleteMap += OnLoadCompleteMap;
+        }
+
+        private void OnDestroy()
+        {
+            MapManager.OnLoadCompleteMap -= OnLoadCompleteMap;
+        }
+
+        private void OnLoadCompleteMap(MapTileCommon mapTileCommon, GameObject grid)
+        {
+            CaptureBaseline();
         }
 
         private void OnEnable()
         {
             RefreshLayers();
-            CaptureBaseline();
+            // CaptureBaseline();
         }
 
         private void OnDisable()
@@ -51,7 +63,8 @@ namespace GGemCo2DCore
 
             if (!_hasBaseline)
             {
-                CaptureBaseline(referencePosition);
+                return;
+                // CaptureBaseline(referencePosition);
             }
 
             Vector3 cameraDelta = referencePosition - _baselineCameraPosition;
@@ -61,7 +74,7 @@ namespace GGemCo2DCore
         /// <summary>
         /// 현재 설정을 기준으로 파랄럭스 레이어 목록을 다시 구성합니다.
         /// </summary>
-        public void RefreshLayers()
+        private void RefreshLayers()
         {
             if (!autoCollectChildLayers)
             {
@@ -75,7 +88,7 @@ namespace GGemCo2DCore
         /// <summary>
         /// 현재 카메라 위치와 현재 레이어 위치를 기준값으로 다시 저장합니다.
         /// </summary>
-        public void CaptureBaseline()
+        private void CaptureBaseline()
         {
             if (!TryResolveReferencePosition(out Vector3 referencePosition))
             {
@@ -89,7 +102,7 @@ namespace GGemCo2DCore
         /// <summary>
         /// 저장된 기준 위치로 모든 레이어를 복원합니다.
         /// </summary>
-        public void ResetLayersToBaseline()
+        private void ResetLayersToBaseline()
         {
             if (layers == null)
             {
@@ -111,11 +124,17 @@ namespace GGemCo2DCore
         /// 기준 카메라 위치를 명시적으로 지정하여 다시 저장합니다.
         /// </summary>
         /// <param name="referencePosition">기준으로 사용할 카메라 위치입니다.</param>
-        public void CaptureBaseline(Vector3 referencePosition)
+        private void CaptureBaseline(Vector3 referencePosition)
         {
             if (layers == null || layers.Length == 0)
             {
                 RefreshLayers();
+            }
+
+            if (layers == null || layers.Length == 0)
+            {
+                GcLogger.LogWarning($"ParallaxRig2D has no layers.");
+                return;
             }
 
             for (int i = 0; i < layers.Length; i++)
@@ -136,7 +155,7 @@ namespace GGemCo2DCore
         /// 카메라 이동량을 모든 파랄럭스 레이어에 적용합니다.
         /// </summary>
         /// <param name="cameraDelta">기준 시점 대비 카메라 이동량입니다.</param>
-        public void ApplyParallax(Vector3 cameraDelta)
+        private void ApplyParallax(Vector3 cameraDelta)
         {
             if (layers == null)
             {
