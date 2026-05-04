@@ -3,7 +3,7 @@ using System.Collections.Generic;
 namespace GGemCo2DCore
 {
     /// <summary>
-    /// Npc와의 상호작용 처리 매니저
+    /// Npc와의 상호작용 처리 매니저입니다.
     /// </summary>
     public class InteractionManager
     {
@@ -12,23 +12,33 @@ namespace GGemCo2DCore
         private TableInteraction _tableInteraction;
         private UIWindowInteractionDialogue _uiWindowInteractionDialogue;
         private CharacterBase _currentNpc;
+        private GGemCoNpcInteractionSettings _npcInteractionSettings;
 
         public CharacterBase CurrentNpc => _currentNpc;
 
+        /// <summary>
+        /// 상호작용 매니저에 씬 의존성을 연결합니다.
+        /// </summary>
+        /// <param name="scene">현재 게임 씬입니다.</param>
         public void Initialize(SceneGame scene)
         {
             _sceneGame = scene;
             _tableNpc = TableLoaderManager.Instance.TableNpc;
             _tableInteraction = TableLoaderManager.Instance.TableInteraction;
+            _npcInteractionSettings = ResolveNpcInteractionSettings();
         }
+
         /// <summary>
-        /// Npc 의 interaction 정보 가져오기
+        /// NPC의 interaction 정보를 읽어 인터랙션 대화창을 엽니다.
         /// </summary>
-        /// <param name="characterBase"></param>
+        /// <param name="characterBase">대화 대상 NPC입니다.</param>
         public void SetInfo(CharacterBase characterBase)
         {
             // 연출 중이면 실행하지 않는다.
-            if (_sceneGame.CutsceneManager.IsPlaying()) return;
+            if (_sceneGame.CutsceneManager.IsPlaying())
+            {
+                return;
+            }
 
             if (characterBase == null)
             {
@@ -36,7 +46,7 @@ namespace GGemCo2DCore
                 return;
             }
 
-            var infoNpc = _tableNpc.GetDataByUid(characterBase.uid);
+            StruckTableNpc infoNpc = _tableNpc.GetDataByUid(characterBase.uid);
             if (infoNpc == null)
             {
                 GcLogger.LogError("npc 테이블에 정보가 없습니다. npc uid: " + characterBase.uid);
@@ -44,6 +54,7 @@ namespace GGemCo2DCore
             }
 
             _currentNpc = characterBase;
+            _npcInteractionSettings = ResolveNpcInteractionSettings();
 
             // 퀘스트 정보
             Npc npc = _currentNpc as Npc;
@@ -55,49 +66,100 @@ namespace GGemCo2DCore
             {
                 infoInteraction = _tableInteraction.GetDataByUid(infoNpc.InteractionUid);
             }
+
             // 다른 윈도우가 열려있으면 닫아주기
-            _sceneGame.uIWindowManager?.CloseAll(new List<UIWindowConstants.WindowUid>
-                { UIWindowConstants.WindowUid.InteractionDialogue });
+            if (_npcInteractionSettings != null && _npcInteractionSettings.ui.hideOtherUiOnStart)
+            {
+                _sceneGame.uIWindowManager?.CloseAll(new List<UIWindowConstants.WindowUid>
+                {
+                    UIWindowConstants.WindowUid.InteractionDialogue,
+                });
+            }
+
             // 인터렉션 대화창 보여주기
-            ShowDialogue(_currentNpc, infoNpc, infoInteraction, npcQuestDatas);
+            ShowDialogue(_currentNpc, infoNpc, infoInteraction, npcQuestDatas, _npcInteractionSettings);
         }
 
-        private void ShowDialogue(CharacterBase npc, StruckTableNpc struckTableNpc, StruckTableInteraction struckTableInteraction, List<NpcQuestData> questInfos)
+        /// <summary>
+        /// 인터랙션 대화창에 현재 NPC 상호작용 정보를 전달합니다.
+        /// </summary>
+        /// <param name="npc">현재 NPC입니다.</param>
+        /// <param name="struckTableNpc">NPC 테이블 데이터입니다.</param>
+        /// <param name="struckTableInteraction">인터랙션 테이블 데이터입니다.</param>
+        /// <param name="questInfos">NPC 퀘스트 목록입니다.</param>
+        /// <param name="npcInteractionSettings">NPC 인터랙션 설정입니다.</param>
+        private void ShowDialogue(
+            CharacterBase npc,
+            StruckTableNpc struckTableNpc,
+            StruckTableInteraction struckTableInteraction,
+            List<NpcQuestData> questInfos,
+            GGemCoNpcInteractionSettings npcInteractionSettings)
         {
             if (_uiWindowInteractionDialogue == null)
             {
                 _uiWindowInteractionDialogue =
-                    _sceneGame.uIWindowManager?.GetUIWindowByUid<UIWindowInteractionDialogue>(UIWindowConstants
-                        .WindowUid.InteractionDialogue);
+                    _sceneGame.uIWindowManager?.GetUIWindowByUid<UIWindowInteractionDialogue>(
+                        UIWindowConstants.WindowUid.InteractionDialogue);
             }
-            _uiWindowInteractionDialogue?.SetInfos(npc, struckTableNpc, struckTableInteraction, questInfos);
+
+            _uiWindowInteractionDialogue?.SetInfos(
+                npc,
+                struckTableNpc,
+                struckTableInteraction,
+                questInfos,
+                npcInteractionSettings);
         }
 
+        /// <summary>
+        /// 현재 상호작용 중인 NPC 참조를 제거합니다.
+        /// </summary>
         public void RemoveCurrentNpc()
         {
             _currentNpc = null;
         }
+
         /// <summary>
-        /// interaction 종료하기
+        /// 현재 인터랙션 대화창을 종료합니다.
         /// </summary>
         public void EndInteraction()
         {
-            // npc 가 interaction 범위면 다시 열기
-            if (_currentNpc != null)
-            {
-                _sceneGame?.uIWindowManager?.CloseAll(new List<UIWindowConstants.WindowUid>
-                    { UIWindowConstants.WindowUid.InteractionDialogue });
-                SetInfo(_currentNpc);
-                return;
-            }
-            _sceneGame?.uIWindowManager?.CloseAll();
             _uiWindowInteractionDialogue?.OnEndInteraction();
+            _currentNpc = null;
         }
+
+        /// <summary>
+        /// 현재 인터랙션이 활성 상태인지 여부를 반환합니다.
+        /// </summary>
+        /// <returns>현재 NPC 참조가 있으면 true입니다.</returns>
         public bool IsInteractioning()
         {
             return _currentNpc != null;
         }
 
+        /// <summary>
+        /// Addressables 로더에서 NPC 인터랙션 설정을 가져오고,
+        /// 없으면 런타임 기본값을 사용합니다.
+        /// </summary>
+        /// <returns>사용 가능한 NPC 인터랙션 설정입니다.</returns>
+        private GGemCoNpcInteractionSettings ResolveNpcInteractionSettings()
+        {
+            if (AddressableLoaderSettings.Instance != null &&
+                AddressableLoaderSettings.Instance.npcInteractionSettings != null)
+            {
+                _npcInteractionSettings = AddressableLoaderSettings.Instance.npcInteractionSettings;
+            }
+
+            if (_npcInteractionSettings == null)
+            {
+                _npcInteractionSettings = GGemCoNpcInteractionSettings.CreateRuntimeDefault();
+            }
+
+            return _npcInteractionSettings;
+        }
+
+        /// <summary>
+        /// 매니저 종료 시 정리할 작업을 처리합니다.
+        /// </summary>
         public void OnDestroy()
         {
         }

@@ -23,6 +23,7 @@ namespace GGemCo2DCore
             Sound,
             GameTime,
             WorldMap,
+            NpcInteraction
         }
 
         /// <summary>
@@ -41,6 +42,7 @@ namespace GGemCo2DCore
             SoundSettings = 70,
             GameTimeSettings = 80,
             WorldMapSettings = 90,
+            NpcInteractionSettings = 100
         }
 
         public const string BasePath = ConfigDefine.NameSDK + "/Settings/";
@@ -165,6 +167,15 @@ namespace GGemCo2DCore
                 (int)ConfigScriptableObjectCommon.PackageOrder.Core +
                 (int)CoreLocalOrder.WorldMapSettings;
         }
+        
+        public static class NpcInteraction
+        {
+            public const string FileName = BaseName + "NpcInteractionSettings";
+            public const string MenuName = BasePath + FileName;
+            public const int Ordering =
+                (int)ConfigScriptableObjectCommon.PackageOrder.Core +
+                (int)CoreLocalOrder.NpcInteractionSettings;
+        }
 
         /// <summary>
         /// Core 패키지 전체 메뉴 메타데이터
@@ -253,6 +264,14 @@ namespace GGemCo2DCore
                         WorldMap.Ordering,
                         typeof(GGemCoWorldMapSettings))
                 },
+                {
+                    CoreSettingsKey.NpcInteraction,
+                    new ConfigScriptableObjectCommon.MenuInfo(
+                        NpcInteraction.FileName,
+                        NpcInteraction.MenuName,
+                        NpcInteraction.Ordering,
+                        typeof(GGemCoNpcInteractionSettings))
+                },
             };
 
         /// <summary>
@@ -271,6 +290,7 @@ namespace GGemCo2DCore
                 { Sound.FileName, typeof(GGemCoSoundSettings) },
                 { GameTime.FileName, typeof(GGemCoGameTimeSettings) },
                 { WorldMap.FileName, typeof(GGemCoWorldMapSettings) },
+                { NpcInteraction.FileName, typeof(GGemCoNpcInteractionSettings) },
             };
 
         /// <summary>

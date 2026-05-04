@@ -24,11 +24,20 @@ namespace GGemCo2DCore
         [HideInInspector] public GGemCoGameTimeSettings gameTimeSettings;
         [HideInInspector] public GGemCoMonsterSettings monsterSettings;
         [HideInInspector] public GGemCoWorldMapSettings worldMapSettings;
-        public delegate void DelegateLoadSettings(GGemCoSettings settings, GGemCoPlayerSettings playerSettings,
-            GGemCoMapSettings mapSettings, GGemCoSaveSettings saveSettings, GGemCoOptionSettings optionSettings,
-            GGemCoSoundSettings soundSettings, GGemCoMonsterSettings monsterSettings, GGemCoItemSettings itemSettings);
+        [HideInInspector] public GGemCoNpcInteractionSettings npcInteractionSettings;
+
+        public delegate void DelegateLoadSettings(
+            GGemCoSettings settings,
+            GGemCoPlayerSettings playerSettings,
+            GGemCoMapSettings mapSettings,
+            GGemCoSaveSettings saveSettings,
+            GGemCoOptionSettings optionSettings,
+            GGemCoSoundSettings soundSettings,
+            GGemCoMonsterSettings monsterSettings,
+            GGemCoItemSettings itemSettings);
+
         public event DelegateLoadSettings OnLoadSettings;
-        
+
         private readonly HashSet<AsyncOperationHandle> _activeHandles = new HashSet<AsyncOperationHandle>();
         private float _loadProgress;
 
@@ -58,36 +67,56 @@ namespace GGemCo2DCore
         {
             AddressableLoaderController.ReleaseByHandles(_activeHandles);
         }
+
         /// <summary>
-        /// 모든 설정 파일을 Addressables에서 로드
+        /// 모든 설정 파일을 Addressables에서 로드합니다.
         /// </summary>
         public async Task LoadAllSettingsAsync()
         {
             try
             {
                 // 여러 개의 설정을 병렬적으로 로드
-                var settingsTask = LoadSettingsAsync<GGemCoSettings>(ConfigAddressableSetting.Settings.Key);
-                var playerSettingsTask = LoadSettingsAsync<GGemCoPlayerSettings>(ConfigAddressableSetting.PlayerSettings.Key);
-                var mapSettingsTask = LoadSettingsAsync<GGemCoMapSettings>(ConfigAddressableSetting.MapSettings.Key);
-                var itemSettingsTask = LoadSettingsAsync<GGemCoItemSettings>(ConfigAddressableSetting.ItemSettings.Key);
-                var saveSettingsTask = LoadSettingsAsync<GGemCoSaveSettings>(ConfigAddressableSetting.SaveSettings.Key);
-                var optionSettingsTask = LoadSettingsAsync<GGemCoOptionSettings>(ConfigAddressableSetting.OptionSettings.Key);
-                var soundSettingsTask = LoadSettingsAsync<GGemCoSoundSettings>(ConfigAddressableSetting.SoundSettings.Key);
-                var monsterSettingsTask = LoadSettingsAsync<GGemCoMonsterSettings>(ConfigAddressableSetting.MonsterSettings.Key);
-                var worldMapSettingsTask = LoadSettingsAsync<GGemCoWorldMapSettings>(ConfigAddressableSetting.WorldMapSettings.Key);
+                Task<GGemCoSettings> settingsTask = LoadSettingsAsync<GGemCoSettings>(ConfigAddressableSetting.Settings.Key);
+                Task<GGemCoPlayerSettings> playerSettingsTask = LoadSettingsAsync<GGemCoPlayerSettings>(ConfigAddressableSetting.PlayerSettings.Key);
+                Task<GGemCoMapSettings> mapSettingsTask = LoadSettingsAsync<GGemCoMapSettings>(ConfigAddressableSetting.MapSettings.Key);
+                Task<GGemCoItemSettings> itemSettingsTask = LoadSettingsAsync<GGemCoItemSettings>(ConfigAddressableSetting.ItemSettings.Key);
+                Task<GGemCoSaveSettings> saveSettingsTask = LoadSettingsAsync<GGemCoSaveSettings>(ConfigAddressableSetting.SaveSettings.Key);
+                Task<GGemCoOptionSettings> optionSettingsTask = LoadSettingsAsync<GGemCoOptionSettings>(ConfigAddressableSetting.OptionSettings.Key);
+                Task<GGemCoSoundSettings> soundSettingsTask = LoadSettingsAsync<GGemCoSoundSettings>(ConfigAddressableSetting.SoundSettings.Key);
+                Task<GGemCoMonsterSettings> monsterSettingsTask = LoadSettingsAsync<GGemCoMonsterSettings>(ConfigAddressableSetting.MonsterSettings.Key);
+                Task<GGemCoWorldMapSettings> worldMapSettingsTask = LoadSettingsAsync<GGemCoWorldMapSettings>(ConfigAddressableSetting.WorldMapSettings.Key);
+                Task<GGemCoNpcInteractionSettings> npcInteractionSettingsTask = LoadSettingsAsync<GGemCoNpcInteractionSettings>(ConfigAddressableSetting.NpcInteractionSettings.Key);
 #if GGEMCO_USE_INGAME_TIME
-                var gameTimeSettingsTask = LoadSettingsAsync<GGemCoGameTimeSettings>(ConfigAddressableSetting.GameTimeSettings.Key);
+                Task<GGemCoGameTimeSettings> gameTimeSettingsTask = LoadSettingsAsync<GGemCoGameTimeSettings>(ConfigAddressableSetting.GameTimeSettings.Key);
 #endif
 
 #if GGEMCO_USE_INGAME_TIME
                 // 모든 작업이 완료될 때까지 대기
-                await Task.WhenAll(settingsTask, playerSettingsTask, mapSettingsTask, saveSettingsTask,
-                    optionSettingsTask, soundSettingsTask, monsterSettingsTask, itemSettingsTask, worldMapSettingsTask,
+                await Task.WhenAll(
+                    settingsTask,
+                    playerSettingsTask,
+                    mapSettingsTask,
+                    saveSettingsTask,
+                    optionSettingsTask,
+                    soundSettingsTask,
+                    monsterSettingsTask,
+                    itemSettingsTask,
+                    worldMapSettingsTask,
+                    npcInteractionSettingsTask,
                     gameTimeSettingsTask);
 #else
                 // 모든 작업이 완료될 때까지 대기
-                await Task.WhenAll(settingsTask, playerSettingsTask, mapSettingsTask, saveSettingsTask,
-                    optionSettingsTask, soundSettingsTask, monsterSettingsTask, itemSettingsTask, worldMapSettingsTask);
+                await Task.WhenAll(
+                    settingsTask,
+                    playerSettingsTask,
+                    mapSettingsTask,
+                    saveSettingsTask,
+                    optionSettingsTask,
+                    soundSettingsTask,
+                    monsterSettingsTask,
+                    itemSettingsTask,
+                    worldMapSettingsTask,
+                    npcInteractionSettingsTask);
 #endif
 
                 // 결과 저장
@@ -100,22 +129,21 @@ namespace GGemCo2DCore
                 soundSettings = soundSettingsTask.Result;
                 monsterSettings = monsterSettingsTask.Result;
                 worldMapSettings = worldMapSettingsTask.Result;
+                npcInteractionSettings = npcInteractionSettingsTask.Result;
 #if GGEMCO_USE_INGAME_TIME
                 gameTimeSettings = gameTimeSettingsTask.Result;
 #endif
 
-                // 로그 출력
-                // if (settings != null)
-                //     GcLogger.Log("Spine2d 사용여부 : " + settings.useSpine2d);
-                // if (playerSettings != null)
-                //     GcLogger.Log("Player statAtk : " + playerSettings.statAtk);
-                // if (mapSettings != null)
-                //     GcLogger.Log("Tilemap 크기 : " + mapSettings.tilemapGridCellSize);
-                // if (saveSettings != null)
-                //     GcLogger.Log("최대 저장 슬롯 개수 : " + saveSettings.saveDataMaxSlotCount);
-
                 // 이벤트 호출
-                OnLoadSettings?.Invoke(settings, playerSettings, mapSettings, saveSettings, optionSettings, soundSettings, monsterSettings, itemSettings);
+                OnLoadSettings?.Invoke(
+                    settings,
+                    playerSettings,
+                    mapSettings,
+                    saveSettings,
+                    optionSettings,
+                    soundSettings,
+                    monsterSettings,
+                    itemSettings);
             }
             catch (Exception ex)
             {
@@ -124,12 +152,16 @@ namespace GGemCo2DCore
         }
 
         /// <summary>
-        /// 제네릭을 사용하여 Addressables에서 설정을 로드하는 함수
+        /// 제네릭을 사용하여 Addressables에서 설정을 로드하는 함수입니다.
         /// </summary>
+        /// <typeparam name="T">로드할 ScriptableObject 타입입니다.</typeparam>
+        /// <param name="key">Addressables Key입니다.</param>
+        /// <returns>로드된 설정 에셋입니다.</returns>
         private async Task<T> LoadSettingsAsync<T>(string key) where T : ScriptableObject
         {
             // 키가 Addressables에 등록되어 있는지 확인
-            var locationsHandle = Addressables.LoadResourceLocationsAsync(key);
+            AsyncOperationHandle<IList<UnityEngine.ResourceManagement.ResourceLocations.IResourceLocation>> locationsHandle =
+                Addressables.LoadResourceLocationsAsync(key);
             await locationsHandle.Task;
 
             if (!locationsHandle.Status.Equals(AsyncOperationStatus.Succeeded) || locationsHandle.Result.Count == 0)
@@ -147,6 +179,11 @@ namespace GGemCo2DCore
             Addressables.Release(locationsHandle);
             return asset;
         }
+
+        /// <summary>
+        /// 현재 설정 로딩 진행률을 반환합니다.
+        /// </summary>
+        /// <returns>0~1 범위의 진행률입니다.</returns>
         public float GetLoadProgress() => _loadProgress;
     }
 }

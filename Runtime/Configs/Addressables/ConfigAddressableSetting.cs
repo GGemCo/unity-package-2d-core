@@ -27,6 +27,7 @@ namespace GGemCo2DCore
         public static readonly AddressableAssetInfo GameTimeSettings  = Make(nameof(GameTimeSettings));
         public static readonly AddressableAssetInfo MonsterSettings  = Make(nameof(MonsterSettings));
         public static readonly AddressableAssetInfo WorldMapSettings  = Make(nameof(WorldMapSettings));
+        public static readonly AddressableAssetInfo NpcInteractionSettings = Make(nameof(NpcInteractionSettings));
 
         /// <summary>
         /// 로딩 씬에서 로드해야 하는 리스트
@@ -42,6 +43,7 @@ namespace GGemCo2DCore
             SoundSettings,
             MonsterSettings,
             WorldMapSettings,
+            NpcInteractionSettings,
 #if GGEMCO_USE_INGAME_TIME
             GameTimeSettings,
 #endif            
