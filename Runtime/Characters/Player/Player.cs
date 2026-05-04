@@ -652,6 +652,24 @@ namespace GGemCo2DCore
             return _playerData != null && _playerData.CanAffordReservedStatPointDraftCost(reservedCost);
         }
 
+        /// <summary>
+        /// 스탯 초기화에 필요한 골드 비용을 반환합니다.
+        /// </summary>
+        /// <returns>플레이어 설정에 정의된 스탯 초기화 골드 비용입니다.</returns>
+        public long GetStatPointResetGoldCost()
+        {
+            return _playerData != null ? _playerData.GetStatPointResetGoldCost() : 0;
+        }
+
+        /// <summary>
+        /// 현재 플레이어가 스탯 초기화 비용을 지불할 수 있는지 확인합니다.
+        /// </summary>
+        /// <returns>골드가 충분하거나 비용이 0이면 true를 반환합니다.</returns>
+        public bool CanAffordStatPointResetCost()
+        {
+            return _playerData != null && _playerData.CanAffordStatPointResetCost();
+        }
+
         public bool CanRefundCommittedStatPoints()
         {
             return _playerData == null || _playerData.CanRefundCommittedStatPoints();
@@ -687,6 +705,40 @@ namespace GGemCo2DCore
             if (!ok) return false;
 
             // 즉시 반영(HP/MP/Stamina 현재값은 보존)
+            ApplyStatPointModifiersPreserveResources();
+            return true;
+        }
+
+        /// <summary>
+        /// 스탯 초기화 창의 드래프트를 실제 플레이어 데이터에 적용합니다.
+        /// 적용 시점에 골드 비용을 차감하고, 적용 직후 총합 스탯을 즉시 갱신합니다.
+        /// </summary>
+        /// <param name="unspent">적용할 미사용 스탯 포인트입니다.</param>
+        /// <param name="investedAtk">적용할 공격력 투자 포인트입니다.</param>
+        /// <param name="investedDef">적용할 방어력 투자 포인트입니다.</param>
+        /// <param name="investedHp">적용할 체력 투자 포인트입니다.</param>
+        /// <param name="investedMp">적용할 마력 투자 포인트입니다.</param>
+        /// <param name="investedStamina">적용할 스테미나 투자 포인트입니다.</param>
+        /// <returns>골드 차감과 스탯 적용이 모두 성공하면 true를 반환합니다.</returns>
+        public bool TryApplyStatPointResetAllocation(
+            int unspent,
+            int investedAtk,
+            int investedDef,
+            int investedHp,
+            int investedMp,
+            int investedStamina)
+        {
+            if (_playerData == null) return false;
+
+            bool ok = _playerData.TryApplyStatPointResetAllocation(
+                unspent,
+                investedAtk,
+                investedDef,
+                investedHp,
+                investedMp,
+                investedStamina);
+            if (!ok) return false;
+
             ApplyStatPointModifiersPreserveResources();
             return true;
         }

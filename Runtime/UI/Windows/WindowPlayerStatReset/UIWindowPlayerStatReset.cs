@@ -7,7 +7,7 @@ using UnityEngine.UI;
 namespace GGemCo2DCore
 {
     /// <summary>
-    /// 플레이어 stat 정보 보여주는 윈도우
+    /// 플레이어가 이미 분배한 스탯 포인트를 임시로 초기화하고, 골드 비용을 지불해 재분배를 확정하는 윈도우입니다.
     /// </summary>
     public class UIWindowPlayerStatReset : UIWindow, IStatPointDraftChangeHandler
     {
@@ -43,7 +43,7 @@ namespace GGemCo2DCore
         [Tooltip("드래프트(미적용) 스탯 포인트를 실제 데이터에 반영")]
         [SerializeField] private Button buttonApply;
 
-        [Tooltip("드래프트를 원본으로 되돌림(미적용 변경사항 폐기)")]
+        [Tooltip("스탯 초기화 드래프트를 취소하고 창을 닫습니다.")]
         [SerializeField] private Button buttonReset;
 
         [Header("보여줄 스탯")]
@@ -54,7 +54,7 @@ namespace GGemCo2DCore
         private readonly Dictionary<CharacterConstants.IndexPlayerInfo, string> _labelCache = new();
 
         private Player _boundPlayer;
-        private StatPointEditSession _editSession;
+        private StatPointResetEditSession _editSession;
         private bool _labelsApplied;
         private string _unspentPrefix;
 
@@ -135,23 +135,30 @@ namespace GGemCo2DCore
         }
 
         /// <summary>
-        /// PlayerInfo 윈도우의 단일 바인딩 진입점
-        /// - 라벨(Localization)은 1회만 적용
-        /// - 값(스탯/포인트)은 필요 시마다 갱신
+        /// PlayerStatReset 윈도우의 단일 바인딩 진입점입니다.
+        /// 라벨은 1회만 적용하고, 창이 열릴 때마다 현재 플레이어 상태 기준으로 초기화 드래프트를 새로 생성합니다.
         /// </summary>
+        /// <param name="player">스탯 초기화 대상으로 바인딩할 플레이어입니다.</param>
         public void BindPlayer(Player player)
         {
             _boundPlayer = player;
-            _editSession = player != null ? new StatPointEditSession(player) : null;
+            _editSession = player != null ? new StatPointResetEditSession(player) : null;
 
             ApplyLabelsOnce();
             RefreshValues();
         }
 
+        /// <summary>
+        /// 스탯 라인의 +/- 입력을 현재 초기화 드래프트에 반영합니다.
+        /// 실제 플레이어 데이터는 Apply 버튼을 누르기 전까지 변경하지 않습니다.
+        /// </summary>
+        /// <param name="statType">변경할 스탯 타입입니다.</param>
+        /// <param name="delta">증가 또는 감소할 포인트 수입니다.</param>
+        /// <returns>드래프트 변경에 성공하면 true를 반환합니다.</returns>
         public bool TryChangeDraft(CharacterConstants.IndexPlayerInfo statType, int delta)
         {
             if (_boundPlayer == null) return false;
-            if (_editSession == null) _editSession = new StatPointEditSession(_boundPlayer);
+            if (_editSession == null) _editSession = new StatPointResetEditSession(_boundPlayer);
 
             bool ok = _editSession.TryChange(statType, delta);
             if (ok)
@@ -190,18 +197,17 @@ namespace GGemCo2DCore
         }
 
         /// <summary>
-        /// 값(스탯/포인트)만 갱신합니다.
+        /// 현재 초기화 드래프트를 기준으로 값, 미리보기, 버튼 상태를 갱신합니다.
         /// </summary>
         public void RefreshValues()
         {
             if (_boundPlayer == null) return;
 
             // PlayerData(레벨업 등)로 인해 스탯포인트가 변경될 수 있습니다.
-            // 드래프트가 없는 상태(IsDirty == false)에서는 최신 값으로 스냅샷을 재구성하여
-            // + / - 버튼 활성, 남은 포인트 표시가 즉시 반영되도록 합니다.
+            // 편집 중이 아닌 경우에는 초기화 드래프트를 최신 스냅샷으로 다시 생성합니다.
             if (_editSession == null || !_editSession.IsSamePlayer(_boundPlayer) || (!_editSession.IsDirty && _editSession.IsStaleSnapshot()))
             {
-                _editSession = new StatPointEditSession(_boundPlayer);
+                _editSession = new StatPointResetEditSession(_boundPlayer);
             }
 
             // 드래프트가 있을 때만 미리보기 totals를 계산(부작용 없음)
@@ -230,6 +236,9 @@ namespace GGemCo2DCore
             }
         }
 
+        /// <summary>
+        /// 미사용 스탯 포인트와 Apply/Reset 버튼 상태를 현재 드래프트에 맞게 갱신합니다.
+        /// </summary>
         private void UpdateUnspentUi()
         {
             if (_editSession == null)
@@ -238,25 +247,16 @@ namespace GGemCo2DCore
             if (textUnspent != null)
             {
                 string prefix = string.IsNullOrEmpty(_unspentPrefix) ? "" : _unspentPrefix;
-                if (_editSession.UsesReservedGoldBudget())
-                {
-                    textUnspent.text = _editSession.IsDirty
-                        ? $"{prefix}{_boundPlayer.UnspentStatPoints} → <style=UI_Emphasis>{_editSession.DraftUnspent}</style>"
-                        : $"{prefix}{_boundPlayer.UnspentStatPoints}";
-                }
-                else
-                {
-                    textUnspent.text = _editSession.IsDirty
-                        ? $"{prefix}{_boundPlayer.UnspentStatPoints} → <style=UI_Emphasis>{_editSession.DraftUnspent}</style>"
-                        : $"{prefix}{_boundPlayer.UnspentStatPoints}";
-                }
+                textUnspent.text = _editSession.IsDirty
+                    ? $"{prefix}{_boundPlayer.UnspentStatPoints} → <style=UI_Emphasis>{_editSession.DraftUnspent}</style>"
+                    : $"{prefix}{_boundPlayer.UnspentStatPoints}";
             }
 
             if (buttonApply != null)
                 buttonApply.interactable = _editSession.IsDirty;
 
             if (buttonReset != null)
-                buttonReset.interactable = _editSession.IsDirty;
+                buttonReset.interactable = _editSession != null;
         }
 
         private UIElementStatRenderData BuildRenderData(
@@ -289,39 +289,66 @@ namespace GGemCo2DCore
                 canDecrease);
         }
 
+        /// <summary>
+        /// 스탯 초기화 드래프트를 적용합니다.
+        /// 남은 미사용 포인트가 있거나 골드가 부족하면 실제 데이터와 골드를 변경하지 않습니다.
+        /// </summary>
         private void OnClickApply()
         {
             if (_boundPlayer == null) return;
             if (_editSession == null || !_editSession.IsDirty) return;
 
-            long reservedDraftGoldCost = _editSession.UsesReservedGoldBudget()
-                ? _editSession.DraftReservedGoldCost
-                : 0;
+            // 스탯 초기화는 모든 포인트를 다시 분배한 상태에서만 적용합니다.
+            // 남은 포인트가 있으면 요구사항대로 아무 커밋도 하지 않고 종료합니다.
+            if (_editSession.DraftUnspent > 0)
+            {
+                return;
+            }
 
-            bool applied = _boundPlayer.TryApplyStatPointAllocation(
+            if (!_boundPlayer.CanAffordStatPointResetCost())
+            {
+                SceneGame.systemMessageManager?.ShowWarningCurrency(CurrencyConstants.Type.Gold);
+                return;
+            }
+
+            bool applied = _boundPlayer.TryApplyStatPointResetAllocation(
                 _editSession.DraftUnspent,
                 _editSession.DraftAtk,
                 _editSession.DraftDef,
                 _editSession.DraftHp,
                 _editSession.DraftMp,
-                _editSession.DraftStamina,
-                reservedDraftGoldCost);
+                _editSession.DraftStamina);
 
-            if (!applied && _editSession.UsesReservedGoldBudget())
+            if (!applied)
             {
-                SceneGame.systemMessageManager?.ShowWarningCurrency(CurrencyConstants.Type.Gold);
+                if (!_boundPlayer.CanAffordStatPointResetCost())
+                {
+                    SceneGame.systemMessageManager?.ShowWarningCurrency(CurrencyConstants.Type.Gold);
+                }
+
+                _editSession = new StatPointResetEditSession(_boundPlayer);
+                RefreshValues();
+                return;
             }
 
-            // 실패 시(총 포인트 불일치 등) 안전하게 재스냅샷
-            _editSession = new StatPointEditSession(_boundPlayer);
+            _editSession = new StatPointResetEditSession(_boundPlayer);
             RefreshValues();
+            Show(false);
         }
 
+        /// <summary>
+        /// 스탯 초기화 드래프트를 취소하고 창을 닫습니다.
+        /// 실제 플레이어 데이터와 골드는 변경하지 않습니다.
+        /// </summary>
         private void OnClickReset()
         {
-            if (_editSession == null) return;
-            _editSession.ResetToOriginal();
-            RefreshValues();
+            _editSession?.ResetToOriginal();
+            if (_boundPlayer != null)
+            {
+                RefreshValues();
+            }
+
+            Show(false);
         }
 
         private void UpdateLevelText()
@@ -473,9 +500,16 @@ namespace GGemCo2DCore
         public override void OnShow(bool show)
         {
             base.OnShow(show);
-            
+
+            if (!show)
+            {
+                CancelResetDraft();
+                return;
+            }
+
             if (_boundPlayer != null)
             {
+                BeginResetDraft();
                 RefreshValues();
                 return;
             }
@@ -484,6 +518,22 @@ namespace GGemCo2DCore
             {
                 textLevel.text = string.Empty;
             }
+        }
+
+        /// <summary>
+        /// 창이 열릴 때 현재 플레이어 상태를 기준으로 스탯 초기화 드래프트를 새로 생성합니다.
+        /// </summary>
+        private void BeginResetDraft()
+        {
+            _editSession = _boundPlayer != null ? new StatPointResetEditSession(_boundPlayer) : null;
+        }
+
+        /// <summary>
+        /// 창이 닫힐 때 임시 드래프트를 원본 상태로 되돌려 다음 표시 시점에 stale 상태가 남지 않도록 합니다.
+        /// </summary>
+        private void CancelResetDraft()
+        {
+            _editSession?.ResetToOriginal();
         }
 
         private EntityPlayerInfo GetEntityPlayerInfo(CharacterConstants.IndexPlayerInfo indexPlayerInfo)

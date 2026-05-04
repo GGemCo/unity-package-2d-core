@@ -209,6 +209,8 @@ namespace GGemCo2DCore
         }
 
         [Header("스탯 포인트")]
+        [Tooltip("스탯 포인트 리셋 비용")]
+        public int statPointResetCost;
         [Tooltip("스탯 포인트 획득 경로 정책입니다.")]
         public StatPointAcquirePolicy statPointAcquirePolicy = StatPointAcquirePolicy.LevelUpOnly;
         [Tooltip("스탯 포인트 투자 시 플레이어 레벨 증가 정책입니다.")]

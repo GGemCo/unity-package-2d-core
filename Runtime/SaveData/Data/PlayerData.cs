@@ -506,6 +506,27 @@ namespace GGemCo2DCore
             return CurrentGold >= reservedCost;
         }
 
+        /// <summary>
+        /// 플레이어 설정에 정의된 스탯 초기화 골드 비용을 반환합니다.
+        /// </summary>
+        /// <returns>스탯 초기화 비용입니다. 설정이 없거나 음수이면 0을 반환합니다.</returns>
+        public long GetStatPointResetGoldCost()
+        {
+            var settings = GetPlayerSettings();
+            if (settings == null) return 0;
+            return settings.statPointResetCost > 0 ? settings.statPointResetCost : 0;
+        }
+
+        /// <summary>
+        /// 현재 플레이어가 스탯 초기화 비용을 지불할 수 있는지 확인합니다.
+        /// </summary>
+        /// <returns>비용이 없거나 현재 골드가 충분하면 true를 반환합니다.</returns>
+        public bool CanAffordStatPointResetCost()
+        {
+            long resetGoldCost = GetStatPointResetGoldCost();
+            return resetGoldCost <= 0 || CurrentGold >= resetGoldCost;
+        }
+
         public bool CanAffordStatPointPurchase(int amount = 1)
         {
             if (!CanPurchaseStatPoints()) return false;
@@ -773,6 +794,78 @@ namespace GGemCo2DCore
             }
 
             // 배치 종료 후 저장 1회
+            SavePlayerData();
+            return true;
+        }
+
+        /// <summary>
+        /// 스탯 초기화 창에서 확정한 재분배 결과를 골드 비용과 함께 커밋합니다.
+        /// 일반 스탯 분배 정책과 별도로, 유료 초기화 플로우에서는 기존에 적용된 투자 포인트 감소를 허용합니다.
+        /// </summary>
+        /// <param name="unspent">적용할 미사용 스탯 포인트입니다. 초기화 적용 시에는 0이어야 합니다.</param>
+        /// <param name="investedAtk">적용할 공격력 투자 포인트입니다.</param>
+        /// <param name="investedDef">적용할 방어력 투자 포인트입니다.</param>
+        /// <param name="investedHp">적용할 체력 투자 포인트입니다.</param>
+        /// <param name="investedMp">적용할 마력 투자 포인트입니다.</param>
+        /// <param name="investedStamina">적용할 스테미나 투자 포인트입니다.</param>
+        /// <returns>포인트 검증, 골드 차감, 저장 대상 값 반영이 모두 성공하면 true를 반환합니다.</returns>
+        public bool TryApplyStatPointResetAllocation(
+            int unspent,
+            int investedAtk,
+            int investedDef,
+            int investedHp,
+            int investedMp,
+            int investedStamina)
+        {
+            if (unspent != 0) return false;
+            if (investedAtk < 0 || investedDef < 0 || investedHp < 0 || investedMp < 0 || investedStamina < 0)
+                return false;
+
+            var settings = GetPlayerSettings();
+            int currentInvestedTotal = GetInvestedStatPointTotal();
+            int currentTotal = UnspentStatPoints + currentInvestedTotal;
+            int newInvestedTotal = investedAtk + investedDef + investedHp + investedMp + investedStamina;
+            int newTotal = unspent + newInvestedTotal;
+            if (newTotal != currentTotal) return false;
+
+            long resetGoldCost = GetStatPointResetGoldCost();
+            if (resetGoldCost > 0 && CurrentGold < resetGoldCost)
+            {
+                return false;
+            }
+
+            int investedDelta = Mathf.Max(0, newInvestedTotal - currentInvestedTotal);
+
+            _isBatchUpdating = true;
+            try
+            {
+                if (resetGoldCost > 0)
+                {
+                    ResultCommon minusCurrency = MinusCurrency(CurrencyConstants.Type.Gold, resetGoldCost);
+                    if (minusCurrency.Result == ResultCommon.ResultType.Fail)
+                    {
+                        return false;
+                    }
+                }
+
+                // 스탯 초기화 커밋은 저장 대상 프로퍼티만 갱신하고, 자동 저장은 배치 종료 후 1회만 수행합니다.
+                UnspentStatPoints = unspent;
+                InvestedStatPointAtk = investedAtk;
+                InvestedStatPointDef = investedDef;
+                InvestedStatPointHp = investedHp;
+                InvestedStatPointMp = investedMp;
+                InvestedStatPointStamina = investedStamina;
+            }
+            finally
+            {
+                _isBatchUpdating = false;
+            }
+
+            if (investedDelta > 0 && ShouldIncreaseLevelOnStatPointInvest(settings))
+            {
+                ApplyLevelDelta(investedDelta, PlayerLevelChangeReason.StatPointInvestment);
+            }
+
             SavePlayerData();
             return true;
         }
