@@ -81,6 +81,11 @@ namespace GGemCo2DCore
         [Tooltip("타겟을 따라다니는 속도")]
         [SerializeField] private float cameraMoveSpeed;
 
+        [Header("Vertical Follow")]
+        [Tooltip("점프 상태일 때 카메라가 타겟의 Y 이동량을 얼마나 따라갈지 결정합니다. 1이면 기존과 동일하고, 0.5면 절반만 따라갑니다.")]
+        [Range(0f, 1f)]
+        [SerializeField] private float jumpVerticalFollowInfluence = 1f;
+
         [Header("Camera Offset")]
         [Tooltip("타겟(플레이어) 기준 카메라 기본 오프셋(월드 단위). 예) x>0이면 캐릭터 오른쪽을 더 보여줍니다.")]
         [SerializeField]
@@ -99,6 +104,9 @@ namespace GGemCo2DCore
         private Vector2 _mapSize;
         private Vector2 _monsterSpawnPositionBoxSize;
         private Transform _followTarget;
+        private ICameraVerticalFollowStateSource _verticalFollowStateSource;
+        private bool _hasVerticalFollowAnchor;
+        private float _verticalFollowAnchorTargetY;
 
         private float _width;
         private float _height;
@@ -150,6 +158,7 @@ namespace GGemCo2DCore
 
             // 플레이어를 따라가는 카메라 위치 계산
             Vector3 targetPos = _followTarget.position + _cameraPosition;
+            targetPos.y = EvaluateVerticalFollowTargetY(targetPos.y);
             targetPos = Vector3.Lerp(transform.position, targetPos, Time.deltaTime * cameraMoveSpeed);
 
             float clampX = targetPos.x;
@@ -197,6 +206,67 @@ namespace GGemCo2DCore
             // 최종 위치 적용 (Shake는 "기본 위치"를 기준으로 오프셋으로만 적용)
             _basePosition = new Vector3(clampX, clampY, -10f);
             transform.position = _basePosition + _shakeOffset;
+        }
+
+        /// <summary>
+        /// 현재 타겟의 상태에 따라 세로 추적 목표 Y를 계산합니다.
+        /// 점프 상태가 아닐 때는 원본 목표 Y를 그대로 사용합니다.
+        /// </summary>
+        /// <param name="targetY">타겟과 카메라 오프셋을 더한 원본 목표 Y입니다.</param>
+        /// <returns>점프 세로 추적 영향도가 반영된 목표 Y입니다.</returns>
+        private float EvaluateVerticalFollowTargetY(float targetY)
+        {
+            if (_verticalFollowStateSource == null || !_verticalFollowStateSource.IsVerticalFollowInfluenceActive)
+            {
+                _hasVerticalFollowAnchor = false;
+                return targetY;
+            }
+
+            if (Mathf.Approximately(jumpVerticalFollowInfluence, 1f))
+            {
+                if (!_hasVerticalFollowAnchor)
+                {
+                    _verticalFollowAnchorTargetY = targetY;
+                    _hasVerticalFollowAnchor = true;
+                }
+
+                return targetY;
+            }
+
+            if (!_hasVerticalFollowAnchor)
+            {
+                _verticalFollowAnchorTargetY = targetY;
+                _hasVerticalFollowAnchor = true;
+            }
+
+            float deltaY = targetY - _verticalFollowAnchorTargetY;
+            return _verticalFollowAnchorTargetY + (deltaY * jumpVerticalFollowInfluence);
+        }
+
+        /// <summary>
+        /// 현재 따라가는 타겟에서 세로 추적 상태 제공자를 다시 찾고,
+        /// 점프 세로 추적 기준점을 초기화합니다.
+        /// </summary>
+        private void RefreshVerticalFollowStateSource()
+        {
+            _verticalFollowStateSource = null;
+            _hasVerticalFollowAnchor = false;
+            _verticalFollowAnchorTargetY = 0f;
+
+            if (_followTarget == null)
+            {
+                return;
+            }
+
+            MonoBehaviour[] behaviours = _followTarget.GetComponents<MonoBehaviour>();
+            for (int i = 0; i < behaviours.Length; i++)
+            {
+                if (behaviours[i] is ICameraVerticalFollowStateSource stateSource)
+                {
+                    _verticalFollowStateSource = stateSource;
+                    return;
+                }
+            }
         }
 
         private void UpdateZoom()
@@ -400,6 +470,7 @@ namespace GGemCo2DCore
         public void RemoveFollowTarget()
         {
             _followTarget = null;
+            RefreshVerticalFollowStateSource();
         }
 
         /// <summary>
@@ -408,6 +479,7 @@ namespace GGemCo2DCore
         public void SetFollowTarget(Transform target)
         {
             _followTarget = target == null ? SceneGame.Instance.player.transform : target;
+            RefreshVerticalFollowStateSource();
         }
 
         /// <summary>
