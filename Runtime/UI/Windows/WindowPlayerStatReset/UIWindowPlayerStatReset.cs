@@ -51,6 +51,10 @@ namespace GGemCo2DCore
         [Tooltip("보여줄 스탯 선택(멀티 선택 가능)")]
         [SerializeField] private CharacterConstants.PlayerInfoMask useIndexPlayerInfos = CharacterConstants.PlayerInfoMask.All;
         
+        [Header("팝업")]
+        [Tooltip("분배 해야하는 스탯 포인트가 남았을 때 보여줄 대화박스")]
+        [SerializeField] PopupBubble popupBubble;
+        
         private readonly Dictionary<CharacterConstants.IndexPlayerInfo, UIElementPlayerStatReset> _playerInfos = new();
         private readonly Dictionary<CharacterConstants.IndexPlayerInfo, string> _labelCache = new();
 
@@ -70,6 +74,9 @@ namespace GGemCo2DCore
 
             if (buttonApply != null) buttonApply.onClick.AddListener(OnClickApply);
             if (buttonReset != null) buttonReset.onClick.AddListener(OnClickReset);
+            
+            if (popupBubble != null)
+                popupBubble.gameObject.SetActive(false);
         }
 
         private void OnDestroy()
@@ -165,6 +172,9 @@ namespace GGemCo2DCore
             if (ok)
                 RefreshValues();
 
+            // 포인트를 사용하면 대화창 닫기
+            if (popupBubble != null)
+                popupBubble.gameObject.SetActive(false);
             return ok;
         }
 
@@ -304,12 +314,17 @@ namespace GGemCo2DCore
             // 남은 포인트가 있으면 요구사항대로 아무 커밋도 하지 않고 종료합니다.
             if (_editSession.DraftUnspent > 0)
             {
+                if (popupBubble != null)
+                {
+                    popupBubble.gameObject.SetActive(true);
+                }
+
                 return;
             }
 
             if (!_boundPlayer.CanAffordStatPointResetCost())
             {
-                SceneGame.systemMessageManager?.ShowWarningCurrency(CurrencyConstants.Type.Gold);
+                // SceneGame.systemMessageManager?.ShowWarningCurrency(CurrencyConstants.Type.Gold);
                 return;
             }
 
