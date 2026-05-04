@@ -79,16 +79,16 @@ namespace GGemCo2DCore
         }
 
         // 기본 스탯(베이스 값). Provider의 modifier들이 이 값에 누적되어 최종값이 계산됩니다.
-        private int BaseAtk { get; set; }
-        private int BaseDef { get; set; }
+        public int BaseAtk { get; set; }
+        public int BaseDef { get; set; }
 
         /// <summary>
         /// 기본 HP(베이스 값)입니다.
         /// </summary>
         public int BaseHp { get; set; }
 
-        private int BaseMp { get; set; }
-        private int BaseStamina { get; set; }
+        public int BaseMp { get; set; }
+        public int BaseStamina { get; set; }
         private int BaseSuperArmor { get; set; }
         private int BaseMoveSpeed { get; set; }
         private int BaseAttackSpeed { get; set; }

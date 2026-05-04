@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
+using UnityEngine.Localization.SmartFormat.Utilities;
 using UnityEngine.UI;
 
 namespace GGemCo2DCore
@@ -247,9 +248,10 @@ namespace GGemCo2DCore
             if (textUnspent != null)
             {
                 string prefix = string.IsNullOrEmpty(_unspentPrefix) ? "" : _unspentPrefix;
-                textUnspent.text = _editSession.IsDirty
-                    ? $"{prefix}{_boundPlayer.UnspentStatPoints} → <style=UI_Emphasis>{_editSession.DraftUnspent}</style>"
-                    : $"{prefix}{_boundPlayer.UnspentStatPoints}";
+                // textUnspent.text = _editSession.IsDirty
+                //     ? $"{prefix}{_boundPlayer.UnspentStatPoints} → <style=UI_Emphasis>{_editSession.DraftUnspent}</style>"
+                //     : $"{prefix}{_boundPlayer.UnspentStatPoints}";
+                textUnspent.text = $"{prefix}<style=UI_Emphasis>{_editSession.DraftUnspent}</style>";
             }
 
             if (buttonApply != null)
@@ -362,14 +364,17 @@ namespace GGemCo2DCore
                 return;
             }
 
-            int currentLevel = _boundPlayer.CurrentLevel;
+            // 초기화 했기 때문에 1로 처리
+            // int currentLevel = _boundPlayer.CurrentLevel;
+            int currentLevel = 1;
             int additionalLevels = 0;
             if (_editSession != null && _editSession.IsDirty && _boundPlayer.DoesStatPointInvestIncreaseLevel())
             {
                 int currentInvested = _boundPlayer.InvestedStatPointAtk + _boundPlayer.InvestedStatPointDef + _boundPlayer.InvestedStatPointHp +
                                      _boundPlayer.InvestedStatPointMp + _boundPlayer.InvestedStatPointStamina;
                 int draftInvested = _editSession.DraftAtk + _editSession.DraftDef + _editSession.DraftHp + _editSession.DraftMp + _editSession.DraftStamina;
-                additionalLevels = Mathf.Max(0, draftInvested - currentInvested);
+                // additionalLevels = Mathf.Max(0, draftInvested - currentInvested);
+                additionalLevels = draftInvested;
             }
 
             int previewLevel = currentLevel + additionalLevels;
@@ -414,7 +419,35 @@ namespace GGemCo2DCore
             };
         }
 
-        private static (long totalValue, int invested) GetStatPointLineData(CharacterConstants.IndexPlayerInfo idx, Player player)
+        private static (long BaseValue, int invested) GetStatPointLineData(CharacterConstants.IndexPlayerInfo idx, Player player)
+        {
+            // totalValue는 PlayerInfo에 표시되는 모든 라인에서 의미가 있으므로,
+            // IndexPlayerInfo 전체를 커버하도록 구성합니다.
+            long totalValue = idx switch
+            {
+                CharacterConstants.IndexPlayerInfo.Atk => player.BaseAtk,
+                CharacterConstants.IndexPlayerInfo.Def => player.BaseDef,
+                CharacterConstants.IndexPlayerInfo.Hp => player.BaseHp,
+                CharacterConstants.IndexPlayerInfo.Mp => player.BaseMp,
+                CharacterConstants.IndexPlayerInfo.Stamina => player.BaseStamina,
+                _ => 0
+            };
+
+            // invested는 스탯 포인트 투자 대상에만 적용됩니다.
+            int invested = idx switch
+            {
+                CharacterConstants.IndexPlayerInfo.Atk => player.InvestedStatPointAtk,
+                CharacterConstants.IndexPlayerInfo.Def => player.InvestedStatPointDef,
+                CharacterConstants.IndexPlayerInfo.Hp => player.InvestedStatPointHp,
+                CharacterConstants.IndexPlayerInfo.Mp => player.InvestedStatPointMp,
+                CharacterConstants.IndexPlayerInfo.Stamina => player.InvestedStatPointStamina,
+                _ => 0
+            };
+
+            return (totalValue, invested);
+        }
+        
+        private static (long TotalValue, int invested) GetStatPointLineData_bak(CharacterConstants.IndexPlayerInfo idx, Player player)
         {
             // totalValue는 PlayerInfo에 표시되는 모든 라인에서 의미가 있으므로,
             // IndexPlayerInfo 전체를 커버하도록 구성합니다.
