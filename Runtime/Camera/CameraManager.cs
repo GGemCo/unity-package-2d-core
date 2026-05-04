@@ -516,6 +516,22 @@ namespace GGemCo2DCore
             return transform.position;
         }
 
+        /// <summary>
+        /// 흔들림이 적용되기 전의 카메라 기본 월드 위치를 반환합니다.
+        /// </summary>
+        public Vector3 GetBaseWorldPosition()
+        {
+            return _basePosition;
+        }
+
+        /// <summary>
+        /// 현재 카메라에 적용 중인 흔들림 오프셋을 반환합니다.
+        /// </summary>
+        public Vector3 GetShakeOffset()
+        {
+            return _shakeOffset;
+        }
+
         public void ChangeOriginalOrthographicSize(float size)
         {
             _originalOrthographicSize = size;
