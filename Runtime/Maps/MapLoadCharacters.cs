@@ -10,32 +10,28 @@ namespace GGemCo2DCore
 {
     public class MapLoadCharacters
     {
-        private int characterVid;
-        private MapManager mapManager;
-        private TableNpc tableNpc;
-        private TableMonster tableMonster;
-        private TableAnimation tableAnimation;
-        private TableLoaderManager tableLoaderManager;
-        private float defaultMonsterRegenTimeSec;
+        private int _characterVid;
+        private MapManager _mapManager;
+        private TableMonster _tableMonster;
+        private TableLoaderManager _tableLoaderManager;
+        private float _defaultMonsterRegenTimeSec;
         private readonly Dictionary<int, CharacterRegenData> _monsterRegenDataByVid = new Dictionary<int, CharacterRegenData>();
         private readonly HashSet<int> _monsterRespawnPending = new HashSet<int>();
 
         public void Reset()
         {
-            characterVid = 0;
+            _characterVid = 0;
             _monsterRegenDataByVid.Clear();
             _monsterRespawnPending.Clear();
         }
 
         public void Initialize(MapManager manager)
         {
-            mapManager = manager;
-            characterVid = 0;
-            tableLoaderManager = TableLoaderManager.Instance;
-            tableNpc = tableLoaderManager.TableNpc;
-            tableAnimation = tableLoaderManager.TableAnimation;
-            tableMonster = tableLoaderManager.TableMonster;
-            defaultMonsterRegenTimeSec = AddressableLoaderSettings.Instance.settings.defaultMonsterRegenTimeSec;
+            _mapManager = manager;
+            _characterVid = 0;
+            _tableLoaderManager = TableLoaderManager.Instance;
+            _tableMonster = _tableLoaderManager.TableMonster;
+            _defaultMonsterRegenTimeSec = AddressableLoaderSettings.Instance.settings.defaultMonsterRegenTimeSec;
         }
 
         public async Task LoadPlayer(Vector3 playSpawnPosition, StruckTableMap currentMapTableData, DefaultMap mapTileCommon)
@@ -56,7 +52,7 @@ namespace GGemCo2DCore
                 SceneGame.Instance.player.SetActive(true);
                 Player scriptPlayer = SceneGame.Instance.player.GetComponent<Player>();
                 scriptPlayer.MoveTeleport(spawnPosition.x, spawnPosition.y);
-                scriptPlayer.SetMapSize(mapManager.GetMapSize());
+                scriptPlayer.SetMapSize(_mapManager.GetMapSize());
                 scriptPlayer.Stop(true);
                 SceneGame.Instance.cameraManager?.SetFollowTarget(SceneGame.Instance.player?.transform);
                 TryStartAutoMoveOnMapLoad(scriptPlayer);
@@ -123,25 +119,25 @@ namespace GGemCo2DCore
             {
                 int uid = monsterData.Uid;
                 if (uid <= 0) continue;
-                var info = tableMonster.GetDataByUid(uid);
+                var info = _tableMonster.GetDataByUid(uid);
                 if (info.Uid <= 0 || info.AnimationUid <= 0) continue;
                 SpawnMonster(uid, monsterData, mapTileCommon);
             }
         }
 
-        private CharacterBase SpawnMonster(int monsterUid, CharacterRegenData monsterData, MapTileCommon mapTileCommon, int forcedVid = 0)
+        private void SpawnMonster(int monsterUid, CharacterRegenData monsterData, MapTileCommon mapTileCommon, int forcedVid = 0)
         {
             GameObject monster = SceneGame.Instance.CharacterManager.RentMonster(monsterUid, monsterData);
-            if (!monster) return null;
+            if (!monster) return;
             monster.transform.SetParent(mapTileCommon.gameObject.transform, worldPositionStays: true);
 
             Monster myMonsterScript = monster.GetComponent<Monster>();
             if (myMonsterScript == null)
-                return null;
+                return;
 
-            int spawnVid = forcedVid > 0 ? forcedVid : ++characterVid;
-            if (spawnVid > characterVid)
-                characterVid = spawnVid;
+            int spawnVid = forcedVid > 0 ? forcedVid : ++_characterVid;
+            if (spawnVid > _characterVid)
+                _characterVid = spawnVid;
 
             myMonsterScript.vid = spawnVid;
             mapTileCommon.AddMonster(spawnVid, monster);
@@ -178,8 +174,6 @@ namespace GGemCo2DCore
                     GcLogger.LogError($"패트롤 프리팹이 없습니다. path: {ConfigAddressableMap.ObjectPatrol.Path}");
                 }
             }
-
-            return monster.GetComponent<CharacterBase>();
         }
 
         public void MarkMonsterDead(int monsterVid)
@@ -205,9 +199,8 @@ namespace GGemCo2DCore
                 return;
 
             var monsters = mapTileCommon.GetMonsterEntries();
-            for (int i = 0; i < monsters.Count; i++)
+            foreach (var entry in monsters)
             {
-                var entry = monsters[i];
                 var monster = entry.Value != null ? entry.Value.GetComponent<Monster>() : null;
                 if (monster == null)
                     continue;
@@ -226,7 +219,7 @@ namespace GGemCo2DCore
             if (!_monsterRespawnPending.Contains(monsterVid))
                 yield break;
 
-            yield return new WaitForSeconds(defaultMonsterRegenTimeSec);
+            yield return new WaitForSeconds(_defaultMonsterRegenTimeSec);
 
             if (!_monsterRespawnPending.Contains(monsterVid))
                 yield break;
@@ -277,12 +270,12 @@ namespace GGemCo2DCore
 
                 Npc myNpcScript = npc.GetComponent<Npc>();
                 if (!myNpcScript) continue;
-                myNpcScript.vid = characterVid;
+                myNpcScript.vid = _characterVid;
                 myNpcScript.uid = npcData.Uid;
                 myNpcScript.CharacterRegenData = npcData;
 
-                mapTileCommon.AddNpc(characterVid, npc);
-                characterVid++;
+                mapTileCommon.AddNpc(_characterVid, npc);
+                _characterVid++;
             }
         }
 

@@ -1,6 +1,4 @@
 ﻿using UnityEngine;
-using UnityEngine.Experimental.GlobalIllumination;
-using UnityEngine.U2D;
 
 namespace GGemCo2DCore
 {
