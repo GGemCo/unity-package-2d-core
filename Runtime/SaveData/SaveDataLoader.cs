@@ -25,6 +25,7 @@ namespace GGemCo2DCore
                 Destroy(gameObject);
             }
         }
+
         /// <summary>
         /// 바로 해제를 위해 추가
         /// </summary>
@@ -37,9 +38,18 @@ namespace GGemCo2DCore
         {
             _saveDataContainer = JsonConvert.DeserializeObject<SaveDataContainer>(json);
         }
+
         public SaveDataContainer GetSaveDataContainer()
         {
             return _saveDataContainer;
+        }
+
+        /// <summary>
+        /// 메모리에 로드되어 있던 세이브 데이터를 초기화합니다.
+        /// </summary>
+        public void ClearLoadedData()
+        {
+            _saveDataContainer = null;
         }
     }
 }

@@ -12,7 +12,8 @@ namespace GGemCo2DCore
         public enum Type
         {
             None,
-            Default // 메시지, 확인, 취소 버튼 있는 타입
+            Default, // 메시지, 확인, 취소 버튼 있는 타입
+            Bubble,
         }
 
         [SerializeField] private GameObject[] popupTypePrefabs;
