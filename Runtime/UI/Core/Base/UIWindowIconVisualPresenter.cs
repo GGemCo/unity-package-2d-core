@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -247,6 +247,19 @@ namespace GGemCo2DCore
             }
 
             animation2dController.PlayAnimation(animationSettings.animationName, animationSettings.isLoop);
+        }
+
+
+        /// <summary>
+        /// 현재 활성 선택 이미지 오브젝트를 반환합니다.
+        /// 월드맵처럼 선택 이미지에 후처리를 적용해야 하는 UI에서 사용합니다.
+        /// </summary>
+        /// <returns>현재 활성 선택 이미지 오브젝트입니다. 활성 선택 이미지가 없으면 null을 반환합니다.</returns>
+        public GameObject GetActiveSelectedIconImageObject()
+        {
+            return _activeSelectedIconImage != null && _activeSelectedIconImage.image != null
+                ? _activeSelectedIconImage.image.gameObject
+                : null;
         }
 
         /// <summary>

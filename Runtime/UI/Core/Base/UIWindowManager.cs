@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using UnityEngine;
 
 namespace GGemCo2DCore
@@ -652,6 +652,17 @@ namespace GGemCo2DCore
                 prefabOverride,
                 animationOverride,
                 parentOverride);
+        }
+
+        /// <summary>
+        /// 현재 활성 선택 이미지 오브젝트를 반환합니다.
+        /// 선택 이미지 표시 후 추가 후처리가 필요한 윈도우에서 사용합니다.
+        /// </summary>
+        /// <returns>현재 활성 선택 이미지 오브젝트입니다. 활성 선택 이미지가 없으면 null을 반환합니다.</returns>
+        public GameObject GetActiveSelectedIconImageObject()
+        {
+            ConfigureIconVisualPresenter();
+            return _iconVisualPresenter.GetActiveSelectedIconImageObject();
         }
     }
 }

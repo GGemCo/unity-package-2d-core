@@ -166,6 +166,90 @@ namespace GGemCo2DCore
             }
 
             _selectedUIIconWorldMap?.RefreshSelectedIconImage();
+            ApplySelectedWorldMapFacing();
+        }
+
+        /// <summary>
+        /// 현재 선택된 월드맵 노드 위치를 기준으로 선택 이미지의 좌우 방향을 갱신합니다.
+        /// 현재 맵보다 왼쪽 노드를 선택하면 왼쪽을 바라보도록 선택 이미지 루트 스케일을 반전합니다.
+        /// </summary>
+        private void ApplySelectedWorldMapFacing()
+        {
+            if (_selectedUIIconWorldMap == null || SceneGame.Instance == null || SceneGame.Instance.uIWindowManager == null)
+            {
+                return;
+            }
+
+            GameObject selectedIconImageObject = SceneGame.Instance.uIWindowManager.GetActiveSelectedIconImageObject();
+            if (selectedIconImageObject == null)
+            {
+                return;
+            }
+
+            UISelectedIconFacingRuntimeAdapter facingAdapter =
+                selectedIconImageObject.GetComponent<UISelectedIconFacingRuntimeAdapter>();
+            if (facingAdapter == null)
+            {
+                facingAdapter = selectedIconImageObject.AddComponent<UISelectedIconFacingRuntimeAdapter>();
+            }
+
+            facingAdapter.SetFaceLeft(ShouldFaceSelectedWorldMapNodeLeft());
+        }
+
+        /// <summary>
+        /// 현재 선택된 월드맵 노드가 현재 플레이어 위치 노드보다 왼쪽에 있는지 확인합니다.
+        /// 월드맵 그래프 정의의 정규화 X 좌표를 비교하여 중앙 이동 연출과 무관하게 방향을 계산합니다.
+        /// </summary>
+        /// <returns>현재 맵보다 왼쪽 노드를 선택했으면 true를 반환합니다.</returns>
+        private bool ShouldFaceSelectedWorldMapNodeLeft()
+        {
+            if (_selectedUIIconWorldMap == null)
+            {
+                return false;
+            }
+
+            if (IsCurrentMapIcon(_selectedUIIconWorldMap) || !CanMoveToNode(_selectedUIIconWorldMap.NodeDefinition))
+            {
+                return false;
+            }
+
+            UIIconWorldMap currentMapIcon = GetCurrentWorldMapIcon();
+            if (currentMapIcon == null || currentMapIcon.NodeDefinition == null || _selectedUIIconWorldMap.NodeDefinition == null)
+            {
+                return false;
+            }
+
+            return _selectedUIIconWorldMap.NodeDefinition.NormalizedPosition.x <
+                   currentMapIcon.NodeDefinition.NormalizedPosition.x;
+        }
+
+        /// <summary>
+        /// 현재 플레이어가 있는 맵을 표시하는 월드맵 아이콘을 반환합니다.
+        /// </summary>
+        /// <returns>현재 맵 아이콘입니다. 찾지 못하면 null을 반환합니다.</returns>
+        private UIIconWorldMap GetCurrentWorldMapIcon()
+        {
+            if (icons == null)
+            {
+                return null;
+            }
+
+            for (int i = 0; i < icons.Length; i++)
+            {
+                GameObject iconObject = icons[i];
+                if (iconObject == null)
+                {
+                    continue;
+                }
+
+                UIIconWorldMap icon = iconObject.GetComponent<UIIconWorldMap>();
+                if (icon != null && IsCurrentMapIcon(icon))
+                {
+                    return icon;
+                }
+            }
+
+            return null;
         }
 
         /// <summary>
