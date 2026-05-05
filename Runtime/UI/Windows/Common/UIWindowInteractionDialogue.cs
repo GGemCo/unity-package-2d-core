@@ -119,6 +119,9 @@ namespace GGemCo2DCore
         private List<NpcQuestData> _currentQuestDatas = new();
         private float _defaultMessageFontSize;
         private bool _isLoadingDialogue;
+        private bool _isExecutingChoice;
+        private bool _hasAutoStartedCurrentChoiceSet;
+        private int _pendingAutoStartChoiceIndex = -1;
 
         private UIWindowShop _uiWindowShop;
         private UIWindowShopSale _uiWindowShopSale;
@@ -280,6 +283,8 @@ namespace GGemCo2DCore
             ResetChoiceButtons();
             _messagePlayer.Clear(textMessage);
             _dialogueSession.Clear();
+            _isExecutingChoice = false;
+            ClearPendingAutoStartChoice();
             ApplyMessageFontSize(0f);
         }
 
@@ -512,6 +517,7 @@ namespace GGemCo2DCore
         private void BindVisibleChoices(IReadOnlyList<InteractionData> choices)
         {
             _interactionData.Clear();
+            _isExecutingChoice = false;
 
             foreach (KeyValuePair<int, Button> pair in _buttonChoices)
             {
@@ -526,6 +532,7 @@ namespace GGemCo2DCore
 
             if (choices == null)
             {
+                ClearPendingAutoStartChoice();
                 return;
             }
 
@@ -541,6 +548,8 @@ namespace GGemCo2DCore
                 _interactionData[i] = choices[i];
                 SetChoiceButtonLabel(button, choices[i].Label);
             }
+
+            ConfigureAutoStartChoice(choices, count);
         }
 
         /// <summary>
@@ -1011,6 +1020,80 @@ namespace GGemCo2DCore
                     button.gameObject.SetActive(show);
                 }
             }
+
+            TryAutoStartSingleChoice();
+        }
+
+        /// <summary>
+        /// 현재 선택지 상태를 기준으로 단일 선택 자동 시작 예약을 갱신합니다.
+        /// </summary>
+        /// <param name="choices">현재 바인딩한 선택지 목록입니다.</param>
+        /// <param name="count">실제로 바인딩된 선택지 수입니다.</param>
+        private void ConfigureAutoStartChoice(IReadOnlyList<InteractionData> choices, int count)
+        {
+            ClearPendingAutoStartChoice();
+
+            if (!CanAutoStartWhenOneChoice())
+            {
+                return;
+            }
+
+            if (choices == null || count != 1)
+            {
+                return;
+            }
+
+            _pendingAutoStartChoiceIndex = 0;
+            _hasAutoStartedCurrentChoiceSet = false;
+        }
+
+        /// <summary>
+        /// 현재 선택지 목록이 단일 선택 자동 시작 정책을 만족하면 한 번만 자동 실행합니다.
+        /// </summary>
+        private void TryAutoStartSingleChoice()
+        {
+            if (_pendingAutoStartChoiceIndex < 0)
+            {
+                return;
+            }
+
+            if (_hasAutoStartedCurrentChoiceSet || _isExecutingChoice)
+            {
+                return;
+            }
+
+            if (!_messagePlayer.IsSequenceCompleted)
+            {
+                return;
+            }
+
+            if (!_interactionData.ContainsKey(_pendingAutoStartChoiceIndex))
+            {
+                ClearPendingAutoStartChoice();
+                return;
+            }
+
+            _hasAutoStartedCurrentChoiceSet = true;
+            OnClickChoice(_pendingAutoStartChoiceIndex);
+        }
+
+        /// <summary>
+        /// 현재 인터랙션 상태에서 단일 선택 자동 시작 정책을 사용할 수 있는지 확인합니다.
+        /// </summary>
+        /// <returns>정책 사용 가능 시 true입니다.</returns>
+        private bool CanAutoStartWhenOneChoice()
+        {
+            GGemCoNpcInteractionSettings settings = ResolveNpcInteractionSettings();
+            return settings != null && settings.autoStartWhenOneChoice;
+        }
+
+        /// <summary>
+        /// 현재 선택지 집합에 대한 자동 시작 예약 상태를 초기화합니다.
+        /// </summary>
+        private void ClearPendingAutoStartChoice()
+        {
+            _pendingAutoStartChoiceIndex = -1;
+            _hasAutoStartedCurrentChoiceSet = false;
         }
 
         /// <summary>
@@ -1138,22 +1221,37 @@ namespace GGemCo2DCore
         /// <param name="index">클릭한 버튼 인덱스입니다.</param>
         private async void OnClickChoice(int index)
         {
+            if (_isExecutingChoice)
+            {
+                return;
+            }
+
             if (!_interactionData.TryGetValue(index, out InteractionData data))
             {
                 return;
             }
 
-            switch (data.ChoiceType)
+            _isExecutingChoice = true;
+            try
             {
-                case ChoiceType.Quest:
-                    await OnClickChoiceQuest(data.NpcQuestData);
-                    break;
-                case ChoiceType.Interaction:
-                    OnClickChoiceInteraction(data);
-                    break;
-                case ChoiceType.Dialogue:
-                    await OnClickChoiceDialogue(index);
-                    break;
+                _hasAutoStartedCurrentChoiceSet = true;
+
+                switch (data.ChoiceType)
+                {
+                    case ChoiceType.Quest:
+                        await OnClickChoiceQuest(data.NpcQuestData);
+                        break;
+                    case ChoiceType.Interaction:
+                        OnClickChoiceInteraction(data);
+                        break;
+                    case ChoiceType.Dialogue:
+                        await OnClickChoiceDialogue(index);
+                        break;
+                }
+            }
+            finally
+            {
+                _isExecutingChoice = false;
             }
         }
 
@@ -1393,6 +1491,8 @@ namespace GGemCo2DCore
             _currentQuestDatas.Clear();
             _messagePlayer.Clear(textMessage);
             _dialogueSession.Clear();
+            _isExecutingChoice = false;
+            ClearPendingAutoStartChoice();
             ApplyMessageFontSize(0f);
         }
 
