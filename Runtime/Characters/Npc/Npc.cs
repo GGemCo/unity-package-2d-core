@@ -118,7 +118,21 @@ namespace GGemCo2DCore
             if (!collision.gameObject.CompareTag(ConfigTags.GetValue(ConfigTags.Keys.Player))) return;
             var hitArea = collision.gameObject.GetComponent<CharacterHitArea>();
             if (!hitArea) return;
-            SceneGame.Instance.InteractionManager.SetInfo(this);
+            SceneGame.Instance.InteractionManager.SetInfo(this, BuildInteractionTextContext());
+        }
+
+        /// <summary>
+        /// NPC 테이블에 저장된 인터랙션 파라미터 문자열을 대사 텍스트 컨텍스트로 변환합니다.
+        /// </summary>
+        /// <returns>현재 NPC 인터랙션에 사용할 텍스트 컨텍스트입니다.</returns>
+        private InteractionDialogueTextContext BuildInteractionTextContext()
+        {
+            if (_struckTableNpc == null)
+            {
+                return InteractionDialogueTextContext.Empty;
+            }
+
+            return InteractionDialogueTextContextParser.Parse(_struckTableNpc.InteractionParameters);
         }
 
         public override bool OnTriggerExitByAttackRange(Collider2D collision)

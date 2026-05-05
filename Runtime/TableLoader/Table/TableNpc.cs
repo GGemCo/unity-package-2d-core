@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 
 namespace GGemCo2DCore
 {
@@ -18,6 +18,7 @@ namespace GGemCo2DCore
         public CharacterConstants.Grade Grade;
         public int StatMoveSpeed;
         public int InteractionUid;
+        public string InteractionParameters;
         public string ImageThumbnailFileName;
         public int StatHp;
         public bool ShowHpBar;
@@ -57,6 +58,7 @@ namespace GGemCo2DCore
                 Grade = EnumHelper.ConvertEnum<CharacterConstants.Grade>(data["Grade"]),
                 StatMoveSpeed = MathHelper.ParseInt(data["StatMoveSpeed"]),
                 InteractionUid = MathHelper.ParseInt(data["InteractionUid"]),
+                InteractionParameters = data.GetValueOrDefault("InteractionParameters"),
                 ImageThumbnailFileName = data["ImageThumbnailFileName"],
                 StatHp = MathHelper.ParseInt(data["StatHp"]),
                 ShowHpBar = ConvertBoolean(data["ShowHpBar"]),
