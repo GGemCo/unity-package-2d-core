@@ -1261,13 +1261,39 @@ namespace GGemCo2DCore
                 long playerGold = _playerData.CurrentGold;
                 if (playerGold < _playerSettings.statPointResetCost)
                 {
-                    ApplyDialogueMessage(_localizationManager.GetSmartInteractionByKey("Text_Not_Enough_Gold"), revealImmediately: true);
+                    ShowLocalizedInteractionFeedbackMessage("Text_Not_Enough_Gold");
                     return false;
                 }
             }
 
             _uiWindowPlayerStatReset?.Show(true);
             return true;
+        }
+
+        /// <summary>
+        /// 로컬라이즈 키를 사용해 인터랙션 피드백 메시지를 표시합니다.
+        /// GGemCoNpcInteractionSettings 의 대사 연출 정책을 그대로 따르도록 즉시 노출은 사용하지 않습니다.
+        /// </summary>
+        /// <param name="localizationKey">출력할 로컬라이즈 키입니다.</param>
+        private void ShowLocalizedInteractionFeedbackMessage(string localizationKey)
+        {
+            if (_localizationManager == null || string.IsNullOrWhiteSpace(localizationKey))
+            {
+                return;
+            }
+
+            string message = _localizationManager.GetSmartInteractionByKey(localizationKey);
+            ShowInteractionFeedbackMessage(message);
+        }
+
+        /// <summary>
+        /// 인터랙션 실행 실패 또는 안내용 피드백 메시지를 표시합니다.
+        /// 선택지는 메시지 출력이 끝난 뒤 다시 표시되도록 일반 대사와 동일한 타자 효과 파이프라인을 사용합니다.
+        /// </summary>
+        /// <param name="message">표시할 피드백 메시지입니다.</param>
+        private void ShowInteractionFeedbackMessage(string message)
+        {
+            ApplyDialogueMessage(message, revealImmediately: false);
         }
 
         /// <summary>
