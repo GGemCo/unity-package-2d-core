@@ -21,6 +21,11 @@ namespace GGemCo2DCore
         [Tooltip("효과음 볼륨 조절 슬라이더")]
         [SerializeField] private Slider sliderVolumeSfx;
         
+        [Header("% 텍스트 오브젝트")]
+        [SerializeField] private TMP_Text textPercentMaster;
+        [SerializeField] private TMP_Text textPercentBgm;
+        [SerializeField] private TMP_Text textPercentSfx;
+        
         [Header("버튼")]
         [Tooltip("저장하기")]
         [SerializeField] private Button buttonSave;
@@ -141,6 +146,10 @@ namespace GGemCo2DCore
             sliderVolumeMaster?.SetValueWithoutNotify(PlayerPrefsManager.LoadSoundVolumeMaster());
             sliderVolumeBgm?.SetValueWithoutNotify(PlayerPrefsManager.LoadSoundVolumeBGM());
             sliderVolumeSfx?.SetValueWithoutNotify(PlayerPrefsManager.LoadSoundVolumeSfx());
+
+            SetTextPercentMaster();
+            SetTextPercentBgm();
+            SetTextPercentSfx();
         }
 
         /// <summary>
@@ -189,6 +198,7 @@ namespace GGemCo2DCore
         private void OnMasterVolumeChanged(float value)
         {
             soundManager?.SetMasterVolume(value, false);
+            SetTextPercentMaster();
             MarkDirty(true);
         }
 
@@ -199,6 +209,7 @@ namespace GGemCo2DCore
         private void OnBgmVolumeChanged(float value)
         {
             soundManager?.SetBgmVolume(value, false);
+            SetTextPercentBgm();
             MarkDirty(true);
         }
 
@@ -209,6 +220,7 @@ namespace GGemCo2DCore
         private void OnSfxVolumeChanged(float value)
         {
             soundManager?.SetSfxVolume(value, false);
+            SetTextPercentSfx();
             MarkDirty(true);
         }
 
@@ -373,6 +385,29 @@ namespace GGemCo2DCore
 #else
             Application.Quit();
 #endif
+        }
+        
+        private string GetTextPercent(float value)
+        {
+            return $"{(int)(value * 100)}%";
+        }
+        
+        private void SetTextPercentSfx()
+        {
+            if (!sliderVolumeSfx || !textPercentSfx) return;
+            textPercentSfx.text = GetTextPercent(sliderVolumeSfx.value);
+        }
+
+        private void SetTextPercentBgm()
+        {
+            if (!sliderVolumeBgm || !textPercentBgm) return;
+            textPercentBgm.text = GetTextPercent(sliderVolumeBgm.value);
+        }
+
+        private void SetTextPercentMaster()
+        {
+            if (!sliderVolumeMaster || !textPercentMaster) return;
+            textPercentMaster.text = GetTextPercent(sliderVolumeMaster.value);
         }
     }
 }
