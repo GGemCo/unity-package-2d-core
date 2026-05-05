@@ -4,6 +4,9 @@ using System.Threading.Tasks;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
+#if GGEMCO_USE_NEW_INPUT
+using UnityEngine.InputSystem;
+#endif
 
 namespace GGemCo2DCore
 {
@@ -295,17 +298,33 @@ namespace GGemCo2DCore
         }
 
         /// <summary>
-        /// 현재 프레임의 클릭 또는 터치 시작 위치를 가져옵니다.
+        /// 현재 프로젝트의 입력 시스템 정의 심볼에 맞춰 대화 진행 입력 좌표를 가져옵니다.
         /// </summary>
         /// <param name="screenPoint">입력이 발생한 화면 좌표입니다.</param>
-        /// <returns>입력이 감지되었으면 true입니다.</returns>
+        /// <returns>현재 프레임에 대화 진행 입력이 발생했으면 true입니다.</returns>
         private bool TryGetAdvancePointerPosition(out Vector2 screenPoint)
         {
-#if ENABLE_LEGACY_INPUT_MANAGER
+#if GGEMCO_USE_OLD_INPUT
+            return TryGetAdvancePointerPositionOldInput(out screenPoint);
+#elif GGEMCO_USE_NEW_INPUT
+            return TryGetAdvancePointerPositionNewInput(out screenPoint);
+#else
+            screenPoint = default;
+            return false;
+#endif
+        }
+
+        /// <summary>
+        /// Legacy Input Manager 기준으로 클릭 또는 터치 시작 좌표를 가져옵니다.
+        /// </summary>
+        /// <param name="screenPoint">입력이 발생한 화면 좌표입니다.</param>
+        /// <returns>현재 프레임에 입력이 감지되었으면 true입니다.</returns>
+        private bool TryGetAdvancePointerPositionOldInput(out Vector2 screenPoint)
+        {
             if (Input.touchCount > 0)
             {
                 Touch touch = Input.GetTouch(0);
-                if (touch.phase == TouchPhase.Began)
+                if (touch.phase == UnityEngine.TouchPhase.Began)
                 {
                     screenPoint = touch.position;
                     return true;
@@ -313,14 +332,41 @@ namespace GGemCo2DCore
             }
 
             if (Input.GetMouseButtonDown(0))
-
             {
                 Vector3 mousePosition = Input.mousePosition;
                 screenPoint = new Vector2(mousePosition.x, mousePosition.y);
                 return true;
             }
+
+            screenPoint = default;
+            return false;
+        }
+
+        /// <summary>
+        /// New Input System 기준으로 클릭 또는 터치 시작 좌표를 가져옵니다.
+        /// </summary>
+        /// <param name="screenPoint">입력이 발생한 화면 좌표입니다.</param>
+        /// <returns>현재 프레임에 입력이 감지되었으면 true입니다.</returns>
+        private bool TryGetAdvancePointerPositionNewInput(out Vector2 screenPoint)
+        {
+#if GGEMCO_USE_NEW_INPUT
+            if (Touchscreen.current != null)
+            {
+                var primaryTouch = Touchscreen.current.primaryTouch;
+                if (primaryTouch.press.wasPressedThisFrame)
+                {
+                    screenPoint = primaryTouch.position.ReadValue();
+                    return true;
+                }
+            }
+
+            if (Mouse.current != null && Mouse.current.leftButton.wasPressedThisFrame)
+            {
+                screenPoint = Mouse.current.position.ReadValue();
+                return true;
+            }
 #endif
-            
+
             screenPoint = default;
             return false;
         }
