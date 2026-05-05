@@ -9,60 +9,64 @@ namespace GGemCo2DCore
 {
     public class UIWindowDialogue : UIWindow
     {
-        [Header(UIWindowConstants.TitleHeaderIndividual)]
-        [Tooltip("말하는 캐릭터 썸네일")]
-        public Image imageThumbnail;
-        [Tooltip("말하는 캐릭터 이름")]
-        public TextMeshProUGUI textName;
-        [Tooltip("대사")]
-        public TextMeshProUGUI textMessage;
-        [Tooltip("한번에 보여줄 대사 라인 수")]
-        public int maxLineCount = 3;
+        [Header(UIWindowConstants.TitleHeaderIndividual)] 
+        [Tooltip("말하는 캐릭터 썸네일 이미지 오브젝트")]
+        [SerializeField] private Image imageThumbnail;
 
-        [Header("")]
-        [Tooltip("선택지 버튼 프리팹")]
-        public GameObject prefabButtonAnswer;
-        [Tooltip("선택지 버튼이 들어가는 Panel")]
-        public Transform containerAnswer;
-        [Tooltip("선택지 버튼 왼쪽, 오른쪽 여백 사이즈")]
-        public int paddingWidth = 20;
-        [Tooltip("다음 대사 보기 버튼")]
-        public Button buttonNextMessage;
+        [Tooltip("말하는 캐릭터 이름 텍스트 오브젝트")] 
+        [SerializeField] private TextMeshProUGUI textName;
+        [Tooltip("대사 텍스트 오브젝트")] 
+        [SerializeField] private TextMeshProUGUI textMessage;
+        [Tooltip("한번에 보여줄 대사 라인 수")] 
+        [SerializeField] private int maxLineCount = 3;
+
+        [Header("선택지")] 
+        [Tooltip("선택지 버튼 프리팹")] 
+        [SerializeField] private GameObject prefabButtonAnswer;
+        [Tooltip("선택지 버튼이 들어가는 Panel")] 
+        [SerializeField] private Transform containerAnswer;
+        [Tooltip("선택지 버튼 왼쪽, 오른쪽 여백 사이즈")] 
+        [SerializeField] private int paddingWidth = 20;
+        [Tooltip("다음 대사 보기 버튼")] 
+        [SerializeField] private Button buttonNextMessage;
 
         private float _originalFontSize;
         private int _indexMessage;
         private List<string> _messages;
         private Dictionary<string, DialogueNodeData> _dialogueNodeDatas;
-        
+
         // private int _currentDialogueUid;
         private int _currentNpcUid;
         private DialogueNodeData _currentDialogue;
-        
+
         private SystemMessageManager _systemMessageManager;
+
         // 필드 추가
         private ChoiceButtonHandler _choiceButtonHandler;
-        
+
         protected override void Awake()
         {
             uid = UIWindowConstants.WindowUid.Dialogue;
             base.Awake();
             Initialize();
         }
+
         private void Initialize()
         {
             if (textMessage != null)
             {
                 _originalFontSize = textMessage.fontSize;
             }
+
             buttonNextMessage?.onClick.AddListener(OnClickNext);
             _messages = new List<string>();
             _dialogueNodeDatas = new Dictionary<string, DialogueNodeData>();
 
             // 선택지 버튼 관리
             _choiceButtonHandler = new ChoiceButtonHandler(containerAnswer, paddingWidth, prefabButtonAnswer)
-                {
-                    OnChoiceSelected = OnClickAnswer
-                };
+            {
+                OnChoiceSelected = OnClickAnswer
+            };
             _choiceButtonHandler.InitializeButtonChoice(); // 버튼 생성만
         }
 
@@ -71,6 +75,7 @@ namespace GGemCo2DCore
             base.Start();
             _systemMessageManager = SceneGame.Instance.systemMessageManager;
         }
+
         private void ResetDialogue()
         {
             _messages.Clear();
@@ -81,6 +86,7 @@ namespace GGemCo2DCore
             _currentNpcUid = 0;
             _choiceButtonHandler.HideButtons();
         }
+
         /// <summary>
         /// 대사 json 불러오기
         /// </summary>
@@ -95,6 +101,7 @@ namespace GGemCo2DCore
                 _currentNpcUid = npcUid;
             }
         }
+
         /// <summary>
         /// 일반 대화 시작
         /// </summary>
@@ -112,13 +119,14 @@ namespace GGemCo2DCore
             {
                 Show(true);
             }
-            
+
             _indexMessage = 0;
             // 첫번째 대사 선택
             DialogueNodeData dialogue = data.nodes[0];
 
             ProcessNextDialogue(dialogue.guid);
         }
+
         /// <summary>
         /// 다음 대사 처리
         /// </summary>
@@ -147,7 +155,8 @@ namespace GGemCo2DCore
 
                 if (textMessage != null)
                 {
-                    textMessage.fontSize = _currentDialogue.fontSize>0?_currentDialogue.fontSize:_originalFontSize;
+                    textMessage.fontSize =
+                        _currentDialogue.fontSize > 0 ? _currentDialogue.fontSize : _originalFontSize;
                 }
 
                 _messages = DialogueTextFormatter.SplitMessage(_currentDialogue.dialogueText, maxLineCount);
@@ -168,9 +177,10 @@ namespace GGemCo2DCore
             {
                 if (_currentDialogue.options.Count > 0)
                 {
-                    _systemMessageManager.ShowMessageWarning("Dialogue_SelectChoice");//"선택지를 선택해주세요."
+                    _systemMessageManager.ShowMessageWarning("Dialogue_SelectChoice"); //"선택지를 선택해주세요."
                     return;
                 }
+
                 ProcessNextDialogue(_currentDialogue.nextNodeGuid);
                 return;
             }
@@ -184,6 +194,7 @@ namespace GGemCo2DCore
 
             _indexMessage++;
         }
+
         /// <summary>
         /// maxLineCount 만큼 대사 보기
         /// </summary>
@@ -191,6 +202,7 @@ namespace GGemCo2DCore
         {
             DisplayNextMessage();
         }
+
         /// <summary>
         /// 선택지 버튼 클릭시 처리
         /// </summary>
@@ -203,6 +215,7 @@ namespace GGemCo2DCore
             _choiceButtonHandler.HideButtons();
             ProcessNextDialogue(option.nextNodeGuid);
         }
+
         /// <summary>
         /// 일반 대화 도중 종료
         /// </summary>
@@ -211,6 +224,7 @@ namespace GGemCo2DCore
             ResetDialogue();
             gameObject.SetActive(false);
         }
+
         /// <summary>
         /// 일반 대화 종료
         /// </summary>

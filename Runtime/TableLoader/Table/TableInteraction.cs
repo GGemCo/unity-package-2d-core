@@ -10,6 +10,9 @@ namespace GGemCo2DCore
         public int Uid;
         public string Memo;
         public string Message;
+        public int DialogueUid;
+        public string DialogueStartNodeGuid;
+        public InteractionDialogueEndPolicy DialogueEndPolicy;
         public InteractionConstants.Type Type1;
         public int Value1;
         public string CustomTypeKey1;
@@ -20,6 +23,7 @@ namespace GGemCo2DCore
         public int Value3;
         public string CustomTypeKey3;
     }
+
     /// <summary>
     /// Interaction 테이블
     /// </summary>
@@ -27,6 +31,12 @@ namespace GGemCo2DCore
     {
         public override string Key => ConfigAddressableTable.Interaction;
 
+        /// <summary>
+        /// interaction row를 런타임 구조체로 변환합니다.
+        /// 신규 dialogue 컬럼이 없더라도 안전하게 기본값으로 동작합니다.
+        /// </summary>
+        /// <param name="data">원본 테이블 row 데이터입니다.</param>
+        /// <returns>변환된 interaction row입니다.</returns>
         protected override StruckTableInteraction BuildRow(Dictionary<string, string> data)
         {
             return new StruckTableInteraction
@@ -34,6 +44,10 @@ namespace GGemCo2DCore
                 Uid = MathHelper.ParseInt(data.GetValueOrDefault("Uid")),
                 Memo = data.GetValueOrDefault("Memo"),
                 Message = data.GetValueOrDefault("Message"),
+                DialogueUid = MathHelper.ParseInt(data.GetValueOrDefault("DialogueUid")),
+                DialogueStartNodeGuid = data.GetValueOrDefault("DialogueStartNodeGuid"),
+                DialogueEndPolicy = EnumHelper.ConvertEnum<InteractionDialogueEndPolicy>(
+                    data.GetValueOrDefault("DialogueEndPolicy")),
                 Type1 = EnumHelper.ConvertEnum<InteractionConstants.Type>(data.GetValueOrDefault("Type1")),
                 Value1 = MathHelper.ParseInt(data.GetValueOrDefault("Value1")),
                 CustomTypeKey1 = data.GetValueOrDefault("CustomTypeKey1"),
