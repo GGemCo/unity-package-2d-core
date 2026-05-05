@@ -352,7 +352,7 @@ namespace GGemCo2DCore
             await BindDialogueThumbnailAsync(node, requestVersion);
 
             BindVisibleChoices(BuildDialogueChoiceEntries(node));
-            ApplyDialogueMessage(FormatInteractionText(node.dialogueText), revealImmediately: false);
+            ApplyDialogueMessage(ResolveDialogueNodeText(node), revealImmediately: false);
             RefreshChoiceButtonsVisibility();
             RefreshThumbnailPosition();
         }
@@ -381,7 +381,7 @@ namespace GGemCo2DCore
                 {
                     ChoiceType = ChoiceType.Dialogue,
                     DialogueOption = option,
-                    Label = FormatInteractionText(option.optionText),
+                    Label = ResolveDialogueOptionText(option),
                 });
             }
 
@@ -911,6 +911,33 @@ namespace GGemCo2DCore
             }
 
             return _currentNpcData != null ? _currentNpcData.Name : string.Empty;
+        }
+
+
+        /// <summary>
+        /// 현재 대화 노드 본문을 localization table/key 기준으로 해석합니다.
+        /// localization 정보가 없거나 실패하면 기존 raw 문자열 포맷 결과를 fallback 으로 사용합니다.
+        /// </summary>
+        /// <param name="node">현재 대화 노드입니다.</param>
+        /// <returns>표시할 본문 문자열입니다.</returns>
+        private string ResolveDialogueNodeText(DialogueNodeData node)
+        {
+            string fallback = node != null ? FormatInteractionText(node.dialogueText) : string.Empty;
+            object[] arguments = _currentTextContext?.PositionalArgs ?? Array.Empty<object>();
+            return DialogueLocalizationRuntimeResolver.Resolve(node?.dialogueTable, node?.dialogueKey, fallback, arguments);
+        }
+
+        /// <summary>
+        /// 현재 대화 선택지 문자열을 localization table/key 기준으로 해석합니다.
+        /// localization 정보가 없거나 실패하면 기존 raw 문자열 포맷 결과를 fallback 으로 사용합니다.
+        /// </summary>
+        /// <param name="option">현재 선택지입니다.</param>
+        /// <returns>표시할 선택지 문자열입니다.</returns>
+        private string ResolveDialogueOptionText(DialogueOption option)
+        {
+            string fallback = option != null ? FormatInteractionText(option.optionText) : string.Empty;
+            object[] arguments = _currentTextContext?.PositionalArgs ?? Array.Empty<object>();
+            return DialogueLocalizationRuntimeResolver.Resolve(option?.optionTable, option?.optionKey, fallback, arguments);
         }
 
         /// <summary>

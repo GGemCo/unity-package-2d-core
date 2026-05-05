@@ -137,7 +137,7 @@ namespace GGemCo2DCoreEditor
                 if (result)
                 {
                     var info = _dialogueInfos.GetValueOrDefault(_selectedDialogueIndex);
-                    _editorWindowWindow.FileHandler?.LoadFromJson(info.FileName);
+                    _editorWindowWindow.FileHandler?.Load(info);
                 }
                 else
                 {
@@ -147,7 +147,7 @@ namespace GGemCo2DCoreEditor
             else
             {
                 var info = _dialogueInfos.GetValueOrDefault(_selectedDialogueIndex);
-                _editorWindowWindow.FileHandler?.LoadFromJson(info.FileName);
+                _editorWindowWindow.FileHandler?.Load(info);
             }
             return true;
         }
