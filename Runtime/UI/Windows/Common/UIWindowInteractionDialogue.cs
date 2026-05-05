@@ -114,6 +114,8 @@ namespace GGemCo2DCore
         private CharacterBase _currentNpc;
         private StruckTableNpc _currentNpcData;
         private StruckTableInteraction _currentInteractionData;
+        private InteractionDialogueSelectionResult _currentDialogueSelection;
+        private InteractionDialogueTextContext _currentTextContext = InteractionDialogueTextContext.Empty;
         private List<NpcQuestData> _currentQuestDatas = new();
         private float _defaultMessageFontSize;
         private bool _isLoadingDialogue;
@@ -228,17 +230,25 @@ namespace GGemCo2DCore
         /// <param name="interactionData">인터랙션 테이블 데이터입니다.</param>
         /// <param name="npcQuestDatas">퀘스트 목록입니다.</param>
         /// <param name="npcInteractionSettings">NPC 인터랙션 설정입니다.</param>
+        /// <param name="dialogueSelection">이번 인터랙션에서 선택된 dialogue 정보입니다.</param>
+        /// <param name="textContext">대사 포맷에 사용할 텍스트 컨텍스트입니다.</param>
         public void SetInfos(
             CharacterBase npc,
             StruckTableNpc npcData,
             StruckTableInteraction interactionData,
             List<NpcQuestData> npcQuestDatas,
-            GGemCoNpcInteractionSettings npcInteractionSettings = null)
+            GGemCoNpcInteractionSettings npcInteractionSettings = null,
+            InteractionDialogueSelectionResult dialogueSelection = default,
+            InteractionDialogueTextContext textContext = null)
         {
             _dialogueLoadVersion++;
             _currentNpc = npc;
             _currentNpcData = npcData;
             _currentInteractionData = interactionData;
+            _currentDialogueSelection = dialogueSelection.HasDialogue
+                ? dialogueSelection
+                : InteractionDialogueSelector.Select(interactionData);
+            _currentTextContext = textContext ?? InteractionDialogueTextContext.Empty;
             _currentQuestDatas = npcQuestDatas != null ? new List<NpcQuestData>(npcQuestDatas) : new List<NpcQuestData>();
             _npcInteractionSettings = npcInteractionSettings != null ? npcInteractionSettings : ResolveNpcInteractionSettings();
             _currentCharacterUid = npcData != null ? npcData.Uid : 0;
@@ -253,9 +263,9 @@ namespace GGemCo2DCore
             RefreshThumbnailPosition();
             RefreshPosition();
 
-            if (interactionData != null && interactionData.DialogueUid > 0)
+            if (_currentDialogueSelection.HasDialogue)
             {
-                StartInteractionDialogueAsync(_dialogueLoadVersion, interactionData);
+                StartInteractionDialogueAsync(_dialogueLoadVersion, _currentDialogueSelection);
                 return;
             }
 
@@ -277,11 +287,11 @@ namespace GGemCo2DCore
         /// DialogueData를 비동기로 로드하고 interaction 전용 대화 세션을 시작합니다.
         /// </summary>
         /// <param name="requestVersion">요청 시점 버전입니다.</param>
-        /// <param name="interactionData">현재 interaction 데이터입니다.</param>
-        private async void StartInteractionDialogueAsync(int requestVersion, StruckTableInteraction interactionData)
+        /// <param name="dialogueSelection">이번 인터랙션에서 선택된 dialogue 정보입니다.</param>
+        private async void StartInteractionDialogueAsync(int requestVersion, InteractionDialogueSelectionResult dialogueSelection)
         {
             _isLoadingDialogue = true;
-            DialogueData data = await DialogueLoader.LoadDialogueData(interactionData.DialogueUid);
+            DialogueData data = await DialogueLoader.LoadDialogueData(dialogueSelection.DialogueUid);
 
             if (requestVersion != _dialogueLoadVersion)
             {
@@ -295,7 +305,7 @@ namespace GGemCo2DCore
                 return;
             }
 
-            _dialogueSession.Start(data, interactionData.DialogueStartNodeGuid);
+            _dialogueSession.Start(data, dialogueSelection.StartNodeGuid);
             if (_dialogueSession.IsCompleted)
             {
                 HandleDialogueSequenceCompleted();
@@ -337,7 +347,7 @@ namespace GGemCo2DCore
             await BindDialogueThumbnailAsync(node, requestVersion);
 
             BindVisibleChoices(BuildDialogueChoiceEntries(node));
-            ApplyDialogueMessage(node.dialogueText, revealImmediately: false);
+            ApplyDialogueMessage(InteractionDialogueFormatter.FormatRaw(node.dialogueText, _currentTextContext), revealImmediately: false);
             RefreshChoiceButtonsVisibility();
             RefreshThumbnailPosition();
         }
@@ -366,7 +376,7 @@ namespace GGemCo2DCore
                 {
                     ChoiceType = ChoiceType.Dialogue,
                     DialogueOption = option,
-                    Label = option.optionText,
+                    Label = InteractionDialogueFormatter.FormatRaw(option.optionText, _currentTextContext),
                 });
             }
 
@@ -415,12 +425,12 @@ namespace GGemCo2DCore
         {
             if (_currentInteractionData != null && !string.IsNullOrEmpty(_currentInteractionData.Message))
             {
-                return _localizationManager.GetInteractionByKey(_currentInteractionData.Message);
+                return ResolveInteractionLocalizedMessage(_currentInteractionData.Message);
             }
 
             if (_currentQuestDatas != null && _currentQuestDatas.Count > 0)
             {
-                return messageQuestSelect;
+                return InteractionDialogueFormatter.FormatRaw(messageQuestSelect, _currentTextContext);
             }
 
             return string.Empty;
@@ -857,6 +867,21 @@ namespace GGemCo2DCore
         }
 
         /// <summary>
+        /// 인터랙션 전용 로컬라이즈 키를 현재 텍스트 컨텍스트와 함께 평가합니다.
+        /// </summary>
+        /// <param name="localizationKey">평가할 로컬라이즈 키입니다.</param>
+        /// <returns>포맷까지 반영된 최종 메시지입니다.</returns>
+        private string ResolveInteractionLocalizedMessage(string localizationKey)
+        {
+            if (_localizationManager == null || string.IsNullOrWhiteSpace(localizationKey))
+            {
+                return string.Empty;
+            }
+
+            return _localizationManager.GetSmartInteractionByKey(localizationKey, _currentTextContext.PositionalArgs);
+        }
+
+        /// <summary>
         /// 인터랙션 시작 시 표시할 첫 메시지를 계산합니다.
         /// </summary>
         /// <param name="interactionData">인터랙션 데이터입니다.</param>
@@ -866,12 +891,12 @@ namespace GGemCo2DCore
         {
             if (interactionData != null && !string.IsNullOrEmpty(interactionData.Message))
             {
-                return _localizationManager.GetInteractionByKey(interactionData.Message);
+                return ResolveInteractionLocalizedMessage(interactionData.Message);
             }
 
             if (questList != null && questList.Count > 0)
             {
-                return messageQuestSelect;
+                return InteractionDialogueFormatter.FormatRaw(messageQuestSelect, _currentTextContext);
             }
 
             return string.Empty;
@@ -1261,7 +1286,7 @@ namespace GGemCo2DCore
                 long playerGold = _playerData.CurrentGold;
                 if (playerGold < _playerSettings.statPointResetCost)
                 {
-                    ShowLocalizedInteractionFeedbackMessage("Text_Not_Enough_Gold");
+                    ShowLocalizedInteractionFeedbackMessage("Text_Not_Enough_Gold", _playerSettings.statPointResetCost);
                     return false;
                 }
             }
@@ -1275,14 +1300,15 @@ namespace GGemCo2DCore
         /// GGemCoNpcInteractionSettings 의 대사 연출 정책을 그대로 따르도록 즉시 노출은 사용하지 않습니다.
         /// </summary>
         /// <param name="localizationKey">출력할 로컬라이즈 키입니다.</param>
-        private void ShowLocalizedInteractionFeedbackMessage(string localizationKey)
+        /// <param name="arguments">Smart String 평가에 사용할 인자입니다.</param>
+        private void ShowLocalizedInteractionFeedbackMessage(string localizationKey, params object[] arguments)
         {
             if (_localizationManager == null || string.IsNullOrWhiteSpace(localizationKey))
             {
                 return;
             }
 
-            string message = _localizationManager.GetSmartInteractionByKey(localizationKey);
+            string message = _localizationManager.GetSmartInteractionByKey(localizationKey, arguments);
             ShowInteractionFeedbackMessage(message);
         }
 
@@ -1351,6 +1377,8 @@ namespace GGemCo2DCore
             _defaultChoices.Clear();
             _currentNpcData = null;
             _currentInteractionData = null;
+            _currentDialogueSelection = default;
+            _currentTextContext = InteractionDialogueTextContext.Empty;
             _currentQuestDatas.Clear();
             _messagePlayer.Clear(textMessage);
             _dialogueSession.Clear();

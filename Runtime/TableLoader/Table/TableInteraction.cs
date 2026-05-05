@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 
 namespace GGemCo2DCore
 {
@@ -12,6 +12,8 @@ namespace GGemCo2DCore
         public string Message;
         public int DialogueUid;
         public string DialogueStartNodeGuid;
+        public string DialogueUidRandomList;
+        public string DialogueStartNodeGuidRandomList;
         public InteractionDialogueEndPolicy DialogueEndPolicy;
         public InteractionConstants.Type Type1;
         public int Value1;
@@ -46,6 +48,8 @@ namespace GGemCo2DCore
                 Message = data.GetValueOrDefault("Message"),
                 DialogueUid = MathHelper.ParseInt(data.GetValueOrDefault("DialogueUid")),
                 DialogueStartNodeGuid = data.GetValueOrDefault("DialogueStartNodeGuid"),
+                DialogueUidRandomList = data.GetValueOrDefault("DialogueUidRandomList"),
+                DialogueStartNodeGuidRandomList = data.GetValueOrDefault("DialogueStartNodeGuidRandomList"),
                 DialogueEndPolicy = EnumHelper.ConvertEnum<InteractionDialogueEndPolicy>(
                     data.GetValueOrDefault("DialogueEndPolicy")),
                 Type1 = EnumHelper.ConvertEnum<InteractionConstants.Type>(data.GetValueOrDefault("Type1")),

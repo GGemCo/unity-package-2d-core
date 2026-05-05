@@ -34,6 +34,27 @@ namespace GGemCo2DCore
         /// <param name="characterBase">대화 대상 NPC입니다.</param>
         public void SetInfo(CharacterBase characterBase)
         {
+            SetInfo(characterBase, InteractionDialogueTextContext.Empty);
+        }
+
+        /// <summary>
+        /// NPC의 interaction 정보를 읽어 인터랙션 대화창을 엽니다.
+        /// 대사 본문과 선택지에서 사용할 위치 기반 파라미터를 함께 전달합니다.
+        /// </summary>
+        /// <param name="characterBase">대화 대상 NPC입니다.</param>
+        /// <param name="dialogueParameters">대사 포맷에 사용할 위치 기반 파라미터입니다.</param>
+        public void SetInfo(CharacterBase characterBase, params object[] dialogueParameters)
+        {
+            SetInfo(characterBase, InteractionDialogueTextContext.FromArgs(dialogueParameters));
+        }
+
+        /// <summary>
+        /// NPC의 interaction 정보를 읽어 인터랙션 대화창을 엽니다.
+        /// </summary>
+        /// <param name="characterBase">대화 대상 NPC입니다.</param>
+        /// <param name="textContext">대사 포맷에 사용할 텍스트 컨텍스트입니다.</param>
+        public void SetInfo(CharacterBase characterBase, InteractionDialogueTextContext textContext)
+        {
             // 연출 중이면 실행하지 않는다.
             if (_sceneGame.CutsceneManager.IsPlaying())
             {
@@ -76,8 +97,19 @@ namespace GGemCo2DCore
                 });
             }
 
+            // dialogue 랜덤 선택 결과를 먼저 확정합니다.
+            InteractionDialogueSelectionResult dialogueSelection =
+                InteractionDialogueSelector.Select(infoInteraction);
+
             // 인터렉션 대화창 보여주기
-            ShowDialogue(_currentNpc, infoNpc, infoInteraction, npcQuestDatas, _npcInteractionSettings);
+            ShowDialogue(
+                _currentNpc,
+                infoNpc,
+                infoInteraction,
+                npcQuestDatas,
+                _npcInteractionSettings,
+                dialogueSelection,
+                textContext);
         }
 
         /// <summary>
@@ -88,12 +120,16 @@ namespace GGemCo2DCore
         /// <param name="struckTableInteraction">인터랙션 테이블 데이터입니다.</param>
         /// <param name="questInfos">NPC 퀘스트 목록입니다.</param>
         /// <param name="npcInteractionSettings">NPC 인터랙션 설정입니다.</param>
+        /// <param name="dialogueSelection">이번 인터랙션에서 선택된 dialogue 정보입니다.</param>
+        /// <param name="textContext">대사 포맷에 사용할 텍스트 컨텍스트입니다.</param>
         private void ShowDialogue(
             CharacterBase npc,
             StruckTableNpc struckTableNpc,
             StruckTableInteraction struckTableInteraction,
             List<NpcQuestData> questInfos,
-            GGemCoNpcInteractionSettings npcInteractionSettings)
+            GGemCoNpcInteractionSettings npcInteractionSettings,
+            InteractionDialogueSelectionResult dialogueSelection,
+            InteractionDialogueTextContext textContext)
         {
             if (_uiWindowInteractionDialogue == null)
             {
@@ -107,7 +143,9 @@ namespace GGemCo2DCore
                 struckTableNpc,
                 struckTableInteraction,
                 questInfos,
-                npcInteractionSettings);
+                npcInteractionSettings,
+                dialogueSelection,
+                textContext);
         }
 
         /// <summary>
