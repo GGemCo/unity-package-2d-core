@@ -132,7 +132,24 @@ namespace GGemCo2DCore
                 return InteractionDialogueTextContext.Empty;
             }
 
-            return InteractionDialogueTextContextParser.Parse(_struckTableNpc.InteractionParameters);
+            InteractionDialogueTextContext staticContext =
+                InteractionDialogueTextContextParser.Parse(_struckTableNpc.InteractionParameters);
+            InteractionDialogueTextContext dynamicContext = BuildDynamicInteractionTextContext();
+            return InteractionDialogueTextContext.Merge(staticContext, dynamicContext);
+        }
+
+        /// <summary>
+        /// NPC 테이블에 지정된 동적 파라미터 키를 현재 런타임 값으로 해석합니다.
+        /// </summary>
+        /// <returns>현재 NPC 인터랙션에 사용할 동적 텍스트 컨텍스트입니다.</returns>
+        private InteractionDialogueTextContext BuildDynamicInteractionTextContext()
+        {
+            if (_struckTableNpc == null)
+            {
+                return InteractionDialogueTextContext.Empty;
+            }
+
+            return InteractionDynamicParameterResolver.Resolve(_struckTableNpc.InteractionDynamicParameterKey);
         }
 
         public override bool OnTriggerExitByAttackRange(Collider2D collision)

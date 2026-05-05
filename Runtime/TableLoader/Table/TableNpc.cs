@@ -19,6 +19,7 @@ namespace GGemCo2DCore
         public int StatMoveSpeed;
         public int InteractionUid;
         public string InteractionParameters;
+        public string InteractionDynamicParameterKey;
         public string ImageThumbnailFileName;
         public int StatHp;
         public bool ShowHpBar;
@@ -59,6 +60,7 @@ namespace GGemCo2DCore
                 StatMoveSpeed = MathHelper.ParseInt(data["StatMoveSpeed"]),
                 InteractionUid = MathHelper.ParseInt(data["InteractionUid"]),
                 InteractionParameters = data.GetValueOrDefault("InteractionParameters"),
+                InteractionDynamicParameterKey = data.GetValueOrDefault("InteractionDynamicParameterKey"),
                 ImageThumbnailFileName = data["ImageThumbnailFileName"],
                 StatHp = MathHelper.ParseInt(data["StatHp"]),
                 ShowHpBar = ConvertBoolean(data["ShowHpBar"]),

@@ -42,5 +42,33 @@ namespace GGemCo2DCore
             Array.Copy(positionalArgs, clonedArgs, positionalArgs.Length);
             return new InteractionDialogueTextContext(clonedArgs);
         }
+
+        /// <summary>
+        /// 기본 텍스트 컨텍스트와 추가 텍스트 컨텍스트를 순서대로 병합합니다.
+        /// </summary>
+        /// <param name="baseContext">앞쪽에 유지할 기본 텍스트 컨텍스트입니다.</param>
+        /// <param name="additionalContext">뒤쪽에 추가할 텍스트 컨텍스트입니다.</param>
+        /// <returns>병합된 텍스트 컨텍스트입니다.</returns>
+        public static InteractionDialogueTextContext Merge(
+            InteractionDialogueTextContext baseContext,
+            InteractionDialogueTextContext additionalContext)
+        {
+            object[] baseArgs = baseContext?.PositionalArgs ?? Array.Empty<object>();
+            object[] additionalArgs = additionalContext?.PositionalArgs ?? Array.Empty<object>();
+            if (baseArgs.Length == 0)
+            {
+                return additionalArgs.Length == 0 ? Empty : FromArgs(additionalArgs);
+            }
+
+            if (additionalArgs.Length == 0)
+            {
+                return FromArgs(baseArgs);
+            }
+
+            object[] mergedArgs = new object[baseArgs.Length + additionalArgs.Length];
+            Array.Copy(baseArgs, mergedArgs, baseArgs.Length);
+            Array.Copy(additionalArgs, 0, mergedArgs, baseArgs.Length, additionalArgs.Length);
+            return new InteractionDialogueTextContext(mergedArgs);
+        }
     }
 }
