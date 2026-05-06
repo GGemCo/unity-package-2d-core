@@ -44,6 +44,12 @@ namespace GGemCo2DCore
                 return;
             }
 
+            if (!ShouldShowNodePointState(node))
+            {
+                icon.SetPointSprite(null);
+                return;
+            }
+
             icon.SetPointSprite(ResolveNodePointSprite(GetNodePointState(node)));
         }
 
@@ -59,7 +65,6 @@ namespace GGemCo2DCore
                 return WorldMapNodePointState.None;
             }
 
-            int currentMapUid = _mapManager.GetCurrentMapUid();
             if (IsCurrentMapNode(node))
             {
                 return WorldMapNodePointState.CurrentMap;
@@ -70,10 +75,7 @@ namespace GGemCo2DCore
                 return WorldMapNodePointState.MoveImpossible;
             }
 
-            return _worldMapDefinition.TryGetNodeByMapUid(currentMapUid, out WorldMapNodeDefinition currentNode) &&
-                   _worldMapDefinition.IsAdjacentNode(currentNode.NodeId, node.NodeId)
-                ? WorldMapNodePointState.MovePossible
-                : WorldMapNodePointState.MoveImpossible;
+            return CanMoveToNode(node) ? WorldMapNodePointState.MovePossible : WorldMapNodePointState.MoveImpossible;
         }
 
         /// <summary>

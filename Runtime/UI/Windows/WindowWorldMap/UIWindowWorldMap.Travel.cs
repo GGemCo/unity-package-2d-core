@@ -19,30 +19,13 @@
         }
 
         /// <summary>
-        /// 지정한 월드맵 노드로 현재 플레이어 위치에서 이동할 수 있는지 확인합니다.
+        /// 지정한 월드맵 노드로 현재 플레이어 위치에서 이동할 수 있는지 표시 정책 기준으로 확인합니다.
         /// </summary>
         /// <param name="node">이동 대상 월드맵 노드입니다.</param>
-        /// <returns>노드가 표시 중이고 현재 맵과 바로 연결되어 있으면 true를 반환합니다.</returns>
+        /// <returns>현재 표시 정책상 노드로 이동할 수 있으면 true를 반환합니다.</returns>
         private bool CanMoveToNode(WorldMapNodeDefinition node)
         {
-            if (_mapManager == null || _worldMapDefinition == null || node == null)
-            {
-                return false;
-            }
-
-            if (!IsNodeVisible(node) || IsWorldMapNodeInactive(node))
-            {
-                return false;
-            }
-
-            int currentMapUid = _mapManager.GetCurrentMapUid();
-            if (IsCurrentMapNode(node))
-            {
-                return false;
-            }
-
-            return _worldMapDefinition.TryGetNodeByMapUid(currentMapUid, out WorldMapNodeDefinition currentNode) &&
-                   _worldMapDefinition.IsAdjacentNode(currentNode.NodeId, node.NodeId);
+            return CanWarpToNode(node);
         }
 
         /// <summary>

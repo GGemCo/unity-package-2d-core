@@ -24,6 +24,11 @@ namespace GGemCo2DCore
 
         [Tooltip("월드맵을 표시하는 viewport입니다. 비어 있으면 containerWorldMap의 부모 RectTransform을 사용합니다.")]
         [SerializeField] private RectTransform viewportWorldMap;
+
+        [Header("월드맵 표시 정책")]
+        [Tooltip("월드맵 노드, 연결선, 선택, 이동 가능 여부를 결정하는 표시 정책입니다.")]
+        [SerializeField] private WorldMapWindowPresentationOptions presentationOptions =
+            WorldMapWindowPresentationOptions.CreateDefault();
         
         [Tooltip("이동하기 버튼")]
         [SerializeField] private Button buttonWarp;

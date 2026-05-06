@@ -452,6 +452,7 @@ namespace GGemCo2DCore
         /// <param name="visualState">적용할 월드맵 노드 시각 상태입니다.</param>
         private void ApplyWorldMapNodeVisualState(int slotIndex, WorldMapNodeVisualState visualState)
         {
+            WorldMapNodeDefinition node = GetWorldMapNodeBySlotIndex(slotIndex);
             bool visible = visualState != WorldMapNodeVisualState.Hidden;
             bool inactive = visualState == WorldMapNodeVisualState.Inactive;
             bool forceVisible = visible && visualState != WorldMapNodeVisualState.Normal;
@@ -499,6 +500,8 @@ namespace GGemCo2DCore
                     }
                 }
             }
+
+            ApplyWorldMapNodePresentationState(slotIndex, node, visible);
         }
 
         /// <summary>

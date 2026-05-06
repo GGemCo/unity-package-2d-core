@@ -271,12 +271,7 @@ namespace GGemCo2DCore
 
             WorldMapNodeDefinition node = _worldMapDefinition.Nodes[index];
 
-            if (!IsCurrentMapNode(node))
-            {
-                return CanMoveToNode(node);
-            }
-
-            return IsNodeVisible(node);
+            return CanSelectNode(node);
         }
 
         /// <summary>

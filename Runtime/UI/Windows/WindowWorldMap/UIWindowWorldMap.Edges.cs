@@ -128,6 +128,11 @@ namespace GGemCo2DCore
         /// <returns>연결선을 강조해야 하면 true를 반환합니다.</returns>
         private bool ShouldHighlightEdge(WorldMapLineRenderer line)
         {
+            if (!ShouldHighlightSelectedEdges())
+            {
+                return false;
+            }
+
             if (line == null || _selectedUIIconWorldMap == null)
             {
                 return false;
@@ -209,7 +214,7 @@ namespace GGemCo2DCore
         /// <returns>양 끝 노드가 표시 대상이면 true입니다.</returns>
         private bool IsEdgeVisible(WorldMapEdgeDefinition edge)
         {
-            if (_worldMapDefinition == null || edge == null)
+            if (_worldMapDefinition == null || !ShouldShowEdge(edge))
             {
                 return false;
             }

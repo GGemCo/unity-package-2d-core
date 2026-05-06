@@ -8,12 +8,23 @@ namespace GGemCo2DCore
     public partial class UIWindowWorldMap
     {
         /// <summary>
+        /// 이 월드맵 윈도우가 UIWindowManager에 등록될 WindowUid를 반환합니다.
+        /// 파생 윈도우는 UID만 바꿔 같은 월드맵 렌더링 로직을 재사용할 수 있습니다.
+        /// </summary>
+        /// <returns>윈도우 고유 ID입니다.</returns>
+        protected virtual UIWindowConstants.WindowUid ResolveWindowUid()
+        {
+            return UIWindowConstants.WindowUid.WorldMap;
+        }
+
+        /// <summary>
         /// 월드맵 윈도우의 기본 의존성을 준비하고, 로드된 월드맵 정의가 있으면 초기 아이콘을 생성합니다.
         /// </summary>
         protected override void Awake()
         {
+            EnsurePresentationOptions();
             _selectedUIIconWorldMap = null;
-            uid = UIWindowConstants.WindowUid.WorldMap;
+            uid = ResolveWindowUid();
 
             _tableMap = TableLoaderManager.Instance != null ? TableLoaderManager.Instance.TableMap : null;
             _worldMapDefinition = ResolveDefaultWorldMapDefinition();
