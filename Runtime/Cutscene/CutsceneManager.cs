@@ -71,6 +71,19 @@ namespace GGemCo2DCore
         private GameObject _testTool;
         private bool _testToolActive;
         private AddressableLoaderSettings _settings;
+        private bool _isCutsceneSessionActive;
+
+        /// <summary>
+        /// 컷신 세션이 시작되어 외부 시스템이 연출 상태를 반영해야 할 때 발생합니다.
+        /// 로딩 또는 준비 단계에서 숨겨야 하는 UI가 있으므로 실제 Playing 전에도 호출될 수 있습니다.
+        /// </summary>
+        public event Action CutsceneStarted;
+
+        /// <summary>
+        /// 컷신 세션이 종료되어 외부 시스템이 연출 전 상태로 복원해야 할 때 발생합니다.
+        /// 정상 종료, 로드 실패, 매니저 파괴 경로에서 모두 호출될 수 있습니다.
+        /// </summary>
+        public event Action CutsceneEnded;
         
         /// <summary>
         /// 컷신 매니저를 초기화하고 런타임 상태 및 참조를 기본값으로 되돌립니다.
@@ -92,6 +105,7 @@ namespace GGemCo2DCore
             _activeTimeScaleOwner = null;
             _useUnscaledTimelineTime = false;
             _capturedCharacterAnimationTimeScales.Clear();
+            _isCutsceneSessionActive = false;
             _settings = AddressableLoaderSettings.Instance;
             
             // 기존 컨트롤러 초기화 이후
@@ -112,6 +126,13 @@ namespace GGemCo2DCore
         /// </summary>
         /// <returns>현재 상태가 <see cref="State.Playing"/>이면 <see langword="true"/>를 반환합니다.</returns>
         public bool IsPlaying() => _currentState == State.Playing;
+
+        /// <summary>
+        /// 컷신 세션이 외부 UI를 연출 상태로 전환해야 하는 활성 구간인지 확인합니다.
+        /// 로딩, 준비, 재생을 하나의 세션으로 보며 정상 종료 또는 실패 복구 시 비활성화됩니다.
+        /// </summary>
+        /// <returns>컷신 세션이 활성 상태이면 <see langword="true"/>를 반환합니다.</returns>
+        public bool IsSessionActive() => _isCutsceneSessionActive;
 
         /// <summary>
         /// Overlay 연출을 위한 Presenter를 반환하거나, 없으면 생성하여 초기화합니다.
@@ -223,6 +244,11 @@ namespace GGemCo2DCore
             _capturedCharacterAnimationTimeScales.Clear();
         }
 
+        /// <summary>
+        /// 지정한 UID의 컷신을 재생합니다.
+        /// 프리로드된 컷신은 즉시 준비하고, 프리로드되지 않은 컷신은 비동기 로드 후 재생합니다.
+        /// </summary>
+        /// <param name="uid">재생할 컷신 테이블 UID입니다.</param>
         public void PlayCutscene(int uid)
         {
             var info = TableLoaderManager.Instance.GetCutsceneData(uid);
@@ -242,6 +268,7 @@ namespace GGemCo2DCore
             
             Reset();
             _currentState = State.Loading;
+            BeginCutsceneSession();
             
             // 모든 캐릭터 활성화, 컬링 적용되지 않음
             _sceneGame.mapManager.ActiveAllCharacters();
@@ -277,6 +304,7 @@ namespace GGemCo2DCore
 
                 Reset();
                 _currentState = State.Loading;
+                BeginCutsceneSession();
 
                 string key = $"{ConfigAddressableKey.Cutscene}_{info.Uid}";
                 TextAsset asset = await AddressableLoaderController.LoadByKeyAsync<TextAsset>(key);
@@ -284,6 +312,7 @@ namespace GGemCo2DCore
                 if (asset == null)
                 {
                     GcLogger.LogError("연출 json 파일이 없습니다. " + info.FileName);
+                    FailCutsceneSession();
                     return;
                 }
 
@@ -292,6 +321,12 @@ namespace GGemCo2DCore
 
                 // json 파싱하기
                 _currentCutscene = JsonConvert.DeserializeObject<CutsceneData>(asset.text);
+                if (_currentCutscene == null)
+                {
+                    GcLogger.LogError("연출 json 파일을 파싱하지 못했습니다. " + info.FileName);
+                    FailCutsceneSession();
+                    return;
+                }
 
                 if (_testTool)
                 {
@@ -307,7 +342,48 @@ namespace GGemCo2DCore
             catch (Exception e)
             {
                 GcLogger.LogError(e.Message);
+                FailCutsceneSession();
             }
+        }
+
+        /// <summary>
+        /// 컷신 로드 또는 준비 실패 시 내부 상태를 종료 상태로 전환하고 세션 종료 이벤트를 발행합니다.
+        /// 실패 경로에서도 외부 UI가 컷신 중 숨김 상태로 남지 않도록 합니다.
+        /// </summary>
+        private void FailCutsceneSession()
+        {
+            _currentState = State.Finished;
+            EndCutsceneSession();
+        }
+
+        /// <summary>
+        /// 컷신 세션 시작 상태를 기록하고 시작 이벤트를 한 번만 발행합니다.
+        /// 외부 UI는 이 이벤트를 기준으로 조작 UI, HUD 등을 연출 중 상태로 전환합니다.
+        /// </summary>
+        private void BeginCutsceneSession()
+        {
+            if (_isCutsceneSessionActive)
+            {
+                return;
+            }
+
+            _isCutsceneSessionActive = true;
+            CutsceneStarted?.Invoke();
+        }
+
+        /// <summary>
+        /// 컷신 세션 종료 상태를 기록하고 종료 이벤트를 한 번만 발행합니다.
+        /// 로드 실패나 매니저 파괴처럼 정상 재생 완료가 아닌 경로에서도 외부 UI가 복원되도록 보장합니다.
+        /// </summary>
+        private void EndCutsceneSession()
+        {
+            if (!_isCutsceneSessionActive)
+            {
+                return;
+            }
+
+            _isCutsceneSessionActive = false;
+            CutsceneEnded?.Invoke();
         }
 
         /// <summary>
@@ -460,6 +536,8 @@ namespace GGemCo2DCore
             {
                 _testTool.SetActive(_testToolActive);
             }
+
+            EndCutsceneSession();
         }
 
         /// <summary>
@@ -842,6 +920,8 @@ namespace GGemCo2DCore
                 Object.Destroy(_screenFadePresenter.gameObject);
                 _screenFadePresenter = null;
             }
+
+            EndCutsceneSession();
         }
     }
 }
