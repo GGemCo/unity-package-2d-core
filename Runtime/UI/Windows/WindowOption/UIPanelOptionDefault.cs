@@ -12,8 +12,10 @@ namespace GGemCo2DCore
     public class UIPanelOptionDefault : UIPanelOptionBase
     {
         [Header(UIWindowConstants.TitleHeaderIndividual)]
-        [Tooltip("언어 선택 드롭 다운 메뉴")]
-        [SerializeField] private TMP_Dropdown dropdownLanguage;
+        [Tooltip("언어 선택 UI 정책입니다. Dropdown 또는 Toggle 정책 컴포넌트를 연결합니다.")]
+        [SerializeField] private UILanguageSelectionPolicy languageSelectionPolicy;
+
+        [Header("볼륨")]
         [Tooltip("메인 볼륨 조절 슬라이더")]
         [SerializeField] private Slider sliderVolumeMaster;
         [Tooltip("BGM 볼륨 조절 슬라이더")]
@@ -40,8 +42,8 @@ namespace GGemCo2DCore
         
         private GGemCoOptionSettings _optionSettings;
         private LocalizationManager _localizationManager;
-        // 현재 사용하고 있는 언어 locale
-        private Dictionary<string, Locale> _locales;
+        // 현재 사용할 수 있는 언어 Locale 목록입니다.
+        private readonly List<Locale> _locales = new();
 
         protected override void Awake()
         {
@@ -55,12 +57,18 @@ namespace GGemCo2DCore
             {
                 _localizationManager = LocalizationManager.Instance;
                 _localizationManager.OnChangeLocale += OnChangeLocale;
-                _locales = _localizationManager.GetAvailableLocales();
+                _locales.Clear();
+                foreach (var locale in _localizationManager.GetAvailableLocales().Values)
+                {
+                    if (locale != null)
+                    {
+                        _locales.Add(locale);
+                    }
+                }
             }
 
             InitializeLanguage();
             
-            dropdownLanguage?.onValueChanged.AddListener(_ => MarkDirty(true));
             sliderVolumeMaster?.onValueChanged.AddListener(OnMasterVolumeChanged);
             sliderVolumeBgm?.onValueChanged.AddListener(OnBgmVolumeChanged);
             sliderVolumeSfx?.onValueChanged.AddListener(OnSfxVolumeChanged);
@@ -77,7 +85,7 @@ namespace GGemCo2DCore
         /// </summary>
         private void OnValidate()
         {
-            UIAssertionsChecker.Require(this, dropdownLanguage, nameof(dropdownLanguage));
+            // UIAssertionsChecker.Require(this, dropdownLanguage, nameof(dropdownLanguage));
             UIAssertionsChecker.Require(this, sliderVolumeMaster, nameof(sliderVolumeMaster));
             UIAssertionsChecker.Require(this, sliderVolumeBgm, nameof(sliderVolumeBgm));
             UIAssertionsChecker.Require(this, sliderVolumeSfx, nameof(sliderVolumeSfx));
@@ -88,7 +96,7 @@ namespace GGemCo2DCore
         protected override void OnDestroy()
         {
             base.OnDestroy();
-            dropdownLanguage?.onValueChanged.RemoveAllListeners();
+            UnbindLanguageSelectionPolicy();
             sliderVolumeMaster?.onValueChanged.RemoveAllListeners();
             sliderVolumeBgm?.onValueChanged.RemoveAllListeners();
             sliderVolumeSfx?.onValueChanged.RemoveAllListeners();
@@ -106,26 +114,68 @@ namespace GGemCo2DCore
         }
 
         /// <summary>
-        /// 언어 선택 DropDown 만들기
+        /// 언어 선택 정책을 초기화합니다.
+        /// 정책 컴포넌트가 직접 연결되어 있으면 그것을 사용하고, 없으면 기존 Dropdown/Toggle 필드로 호환 정책을 구성합니다.
         /// </summary>
         private void InitializeLanguage()
         {
             if (!_localizationManager) return;
-            if (_locales.Count == 0)
+
+            languageSelectionPolicy = ResolveLanguageSelectionPolicy();
+            if (!languageSelectionPolicy)
             {
-                dropdownLanguage?.ClearOptions();
+                GcLogger.LogWarning(this, $"{nameof(UIPanelOptionDefault)} 언어 선택 정책을 찾을 수 없습니다.");
                 return;
             }
-            
-            // 표시명 정렬(원하는 정렬 기준으로 변경 가능)
-            var options = new List<TMP_Dropdown.OptionData>(_locales.Count);
-            foreach (var data in _locales)
+
+            languageSelectionPolicy.OnSelectedLocaleChanged -= OnLanguageSelected;
+            languageSelectionPolicy.OnSelectedLocaleChanged += OnLanguageSelected;
+            languageSelectionPolicy.Initialize(_locales);
+        }
+
+        /// <summary>
+        /// 사용할 언어 선택 정책 컴포넌트를 찾거나 호환용 정책 컴포넌트를 생성합니다.
+        /// 인스펙터에 직접 연결한 정책을 가장 우선하고, 없으면 자식 컴포넌트와 기존 필드 순서로 대체합니다.
+        /// </summary>
+        /// <returns>초기화할 언어 선택 정책입니다. 사용할 참조가 없으면 null입니다.</returns>
+        private UILanguageSelectionPolicy ResolveLanguageSelectionPolicy()
+        {
+            if (languageSelectionPolicy)
             {
-                options.Add(new TMP_Dropdown.OptionData(LocalizationConstants.GetName(data.Value)));
+                return languageSelectionPolicy;
             }
 
-            dropdownLanguage.ClearOptions();
-            dropdownLanguage.AddOptions(options);
+            UILanguageSelectionPolicy childPolicy = GetComponentInChildren<UILanguageSelectionPolicy>(true);
+            if (childPolicy)
+            {
+                return childPolicy;
+            }
+
+            return null;
+        }
+
+        /// <summary>
+        /// 언어 선택 정책의 이벤트 연결을 해제합니다.
+        /// 패널 파괴 시 정책이 남아 있어도 패널 메서드가 다시 호출되지 않도록 합니다.
+        /// </summary>
+        private void UnbindLanguageSelectionPolicy()
+        {
+            if (!languageSelectionPolicy)
+            {
+                return;
+            }
+
+            languageSelectionPolicy.OnSelectedLocaleChanged -= OnLanguageSelected;
+        }
+
+        /// <summary>
+        /// 사용자가 언어 선택 UI를 조작했을 때 옵션 변경 상태로 표시합니다.
+        /// 실제 Locale 적용은 확인 버튼에서 TryApply를 통해 수행합니다.
+        /// </summary>
+        /// <param name="locale">사용자가 선택한 Locale입니다.</param>
+        private void OnLanguageSelected(Locale locale)
+        {
+            MarkDirty(locale != null);
         }
 
         /// <summary>
@@ -137,11 +187,16 @@ namespace GGemCo2DCore
 
             // 현재 설정된 언어로 dropdownLanguage 셋팅하기
             string code = PlayerPrefsManager.LoadLocalizationLocaleCode();
-            if (!string.IsNullOrEmpty(code))
+            Locale locale = !string.IsNullOrEmpty(code)
+                ? _localizationManager.GetLocaleByCode(code)
+                : LocalizationConstants.GetDefaultLocale();
+
+            if (locale == null)
             {
-                int index = _localizationManager.GetLocaleIndexByCode(code);
-                dropdownLanguage?.SetValueWithoutNotify(index);
+                locale = LocalizationConstants.GetDefaultLocale();
             }
+
+            languageSelectionPolicy?.SetSelectedLocaleWithoutNotify(locale);
 
             sliderVolumeMaster?.SetValueWithoutNotify(PlayerPrefsManager.LoadSoundVolumeMaster());
             sliderVolumeBgm?.SetValueWithoutNotify(PlayerPrefsManager.LoadSoundVolumeBGM());
@@ -157,7 +212,12 @@ namespace GGemCo2DCore
         /// </summary>
         public override bool TryApply()
         {
-            _localizationManager?.StartChangeLocale(dropdownLanguage.value);
+            Locale selectedLocale = languageSelectionPolicy?.GetSelectedLocale();
+            if (selectedLocale != null)
+            {
+                _localizationManager?.StartChangeLocale(selectedLocale);
+            }
+
             soundManager?.SetMasterVolume(sliderVolumeMaster.value);
             soundManager?.SetBgmVolume(sliderVolumeBgm.value);
             soundManager?.SetSfxVolume(sliderVolumeSfx.value);
@@ -179,8 +239,12 @@ namespace GGemCo2DCore
         /// </summary>
         protected override void ResetToDefault()
         {
-            if (dropdownLanguage)
-                _localizationManager?.StartChangeLocale(LocalizationConstants.GetDefaultLocale(), false);
+            Locale defaultLocale = LocalizationConstants.GetDefaultLocale();
+            if (defaultLocale != null)
+            {
+                languageSelectionPolicy?.SetSelectedLocaleWithoutNotify(defaultLocale);
+                _localizationManager?.StartChangeLocale(defaultLocale, false);
+            }
 
             if (!_optionSettings) return;
             if (sliderVolumeMaster)
@@ -225,12 +289,33 @@ namespace GGemCo2DCore
         }
 
         /// <summary>
-        /// 언어 변경이 완료되었을때, DropDown UI 갱신하기
+        /// 언어 변경이 완료되었을 때 현재 정책 UI의 선택 상태를 갱신합니다.
         /// </summary>
+        /// <param name="code">변경된 Locale 코드입니다.</param>
+        /// <param name="index">변경된 Locale의 목록 인덱스입니다.</param>
         private void OnChangeLocale(string code, int index)
         {
-            if (!dropdownLanguage) return;
-            dropdownLanguage.value = index;
+            Locale locale = _localizationManager != null
+                ? _localizationManager.GetLocaleByCode(code)
+                : GetLocaleByIndex(index);
+
+            languageSelectionPolicy?.SetSelectedLocaleWithoutNotify(locale);
+        }
+
+        /// <summary>
+        /// 현재 패널이 보유한 Locale 목록에서 인덱스에 해당하는 Locale을 조회합니다.
+        /// LocalizationManager에서 코드 조회를 실패했을 때의 보조 경로로 사용합니다.
+        /// </summary>
+        /// <param name="index">조회할 Locale 인덱스입니다.</param>
+        /// <returns>인덱스에 해당하는 Locale입니다. 범위를 벗어나면 null입니다.</returns>
+        private Locale GetLocaleByIndex(int index)
+        {
+            if (index >= 0 && index < _locales.Count)
+            {
+                return _locales[index];
+            }
+
+            return null;
         }
 
         /// <summary>
