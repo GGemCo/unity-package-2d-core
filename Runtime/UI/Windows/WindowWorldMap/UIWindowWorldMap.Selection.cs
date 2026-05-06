@@ -29,6 +29,8 @@ namespace GGemCo2DCore
             
             if (selectedIcon != null)
             {
+                if (selectedIcon.index == index) return;
+                
                 selectedIcon.SetSelected(false);
                 selectedIcon = null;
             }
@@ -55,6 +57,7 @@ namespace GGemCo2DCore
             _selectedUIIconWorldMap = icon as UIIconWorldMap;
             RefreshEdgeHighlight();
             MoveSelectedWorldMapIconToCenter();
+            OnWorldMapIconSelectionChanged(_selectedUIIconWorldMap);
         }
 
         /// <summary>
@@ -66,6 +69,97 @@ namespace GGemCo2DCore
             _selectionCenteringRequestId++;
             _selectedUIIconWorldMap = null;
             RefreshEdgeHighlight();
+            OnWorldMapIconSelectionChanged(null);
+        }
+
+        /// <summary>
+        /// 현재 선택된 월드맵 아이콘을 반환합니다.
+        /// 월드맵을 상속한 창에서 선택 상태와 다른 UI를 동기화할 때 사용합니다.
+        /// </summary>
+        protected UIIconWorldMap SelectedWorldMapIcon => _selectedUIIconWorldMap;
+
+        /// <summary>
+        /// 월드맵 아이콘 선택 상태가 변경되었을 때 파생 창이 후처리할 수 있는 확장 지점입니다.
+        /// </summary>
+        /// <param name="icon">현재 선택된 월드맵 아이콘입니다. 선택이 해제되면 null입니다.</param>
+        protected virtual void OnWorldMapIconSelectionChanged(UIIconWorldMap icon)
+        {
+        }
+
+        /// <summary>
+        /// 지정한 맵 UID와 연결된 월드맵 아이콘을 찾아 선택합니다.
+        /// 표시 맵 UID와 실제 이동 맵 UID를 모두 비교하여 입장 규칙으로 대체 표시된 노드도 선택할 수 있게 합니다.
+        /// </summary>
+        /// <param name="mapUid">선택할 맵 UID입니다.</param>
+        /// <returns>해당 맵 UID의 아이콘을 선택했으면 true입니다.</returns>
+        protected bool TrySetSelectedWorldMapIconByMapUid(int mapUid)
+        {
+            UIIconWorldMap icon = FindWorldMapIconByMapUid(mapUid);
+            if (icon == null)
+            {
+                return false;
+            }
+
+            SetSelectedIcon(icon.index);
+            return IsSameWorldMapIconMapUid(SelectedWorldMapIcon, mapUid);
+        }
+
+        /// <summary>
+        /// 월드맵 아이콘이 탭 동기화에 사용할 대표 맵 UID를 반환합니다.
+        /// 화면에 표시 중인 맵 UID를 우선 사용하고, 없으면 아이콘의 원본 UID를 사용합니다.
+        /// </summary>
+        /// <param name="icon">대표 맵 UID를 확인할 월드맵 아이콘입니다.</param>
+        /// <returns>탭과 비교할 맵 UID입니다. 유효하지 않으면 0입니다.</returns>
+        protected int GetWorldMapIconDisplayMapUid(UIIconWorldMap icon)
+        {
+            if (icon == null)
+            {
+                return 0;
+            }
+
+            return icon.DisplayMapUid > 0 ? icon.DisplayMapUid : icon.uid;
+        }
+
+        /// <summary>
+        /// 지정한 맵 UID와 연결된 월드맵 아이콘을 반환합니다.
+        /// </summary>
+        /// <param name="mapUid">찾을 맵 UID입니다.</param>
+        /// <returns>맵 UID와 일치하는 월드맵 아이콘입니다. 찾지 못하면 null입니다.</returns>
+        private UIIconWorldMap FindWorldMapIconByMapUid(int mapUid)
+        {
+            if (mapUid <= 0 || icons == null)
+            {
+                return null;
+            }
+
+            foreach (GameObject iconObject in icons)
+            {
+                if (iconObject == null)
+                {
+                    continue;
+                }
+
+                UIIconWorldMap icon = iconObject.GetComponent<UIIconWorldMap>();
+                if (IsSameWorldMapIconMapUid(icon, mapUid))
+                {
+                    return icon;
+                }
+            }
+
+            return null;
+        }
+
+        /// <summary>
+        /// 월드맵 아이콘이 지정한 맵 UID와 연결되어 있는지 확인합니다.
+        /// </summary>
+        /// <param name="icon">확인할 월드맵 아이콘입니다.</param>
+        /// <param name="mapUid">비교할 맵 UID입니다.</param>
+        /// <returns>아이콘의 표시 맵 UID 또는 원본 UID가 지정한 맵 UID와 같으면 true입니다.</returns>
+        private static bool IsSameWorldMapIconMapUid(UIIconWorldMap icon, int mapUid)
+        {
+            return icon != null &&
+                   mapUid > 0 &&
+                   (icon.DisplayMapUid == mapUid || icon.uid == mapUid);
         }
 
         /// <summary>

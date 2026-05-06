@@ -11,6 +11,9 @@
         {
             None,
             Common,
+            Town,
+            Field,
+            Dungeon,
         }
         public enum SubType
         {
