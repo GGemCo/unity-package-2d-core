@@ -24,6 +24,16 @@ namespace GGemCo2DCore
         /// </summary>
         public Dictionary<string, bool> VisibleWorldMapNodes = new Dictionary<string, bool>();
 
+        private int _lastTownMapUid;
+        /// <summary>
+        /// 마지막에 있었던 마을 Uid
+        /// </summary>
+        public int LastTownMapUid
+        {
+            get => _lastTownMapUid;
+            private set => _lastTownMapUid = value;
+        }
+
         /// <summary>
         /// 저장 컨테이너에서 맵 진행 데이터를 복원합니다.
         /// </summary>
@@ -279,6 +289,16 @@ namespace GGemCo2DCore
         private static string NormalizeNodeId(string nodeId)
         {
             return string.IsNullOrWhiteSpace(nodeId) ? null : nodeId.Trim();
+        }
+
+        /// <summary>
+        /// 마지막에 있었던 Town 맵 uid 저장
+        /// </summary>
+        /// <param name="mapUid"></param>
+        public void SaveLastTownMapUid(int mapUid)
+        {
+            _lastTownMapUid = mapUid;
+            SaveDatas();
         }
 
         protected override int GetMaxSlotCount()

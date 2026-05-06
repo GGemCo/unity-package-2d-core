@@ -513,6 +513,11 @@ namespace GGemCo2DCore
             StopAllCoroutines();
 
             _sceneGame.saveDataManager.Player.CurrentMapUid = _currentMapUid;
+            // 마지막으로 있었던 마을 저장
+            if (_currentMapTableData.Type == MapConstants.Type.Town)
+            {
+                _sceneGame.saveDataManager.MapProgress.SaveLastTownMapUid(_currentMapUid);
+            }
             _playSpawnPosition = Vector3.zero;
             // 맵 이동 후 한번 저장
             _saveDataManager.SaveData();
