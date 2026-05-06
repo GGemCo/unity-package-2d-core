@@ -13,9 +13,15 @@ namespace GGemCo2DCore
         [Tooltip("타일맵에 사용되는 Grid 오브젝트의 Cell 크기 (X, Y 단위)")]
         public Vector2 tilemapGridCellSize;
 
-        [Header("게임 시작 맵 설정")]
+        [Header("첫 게임 시작 맵 설정")]
         [Tooltip("첫 게임 실행 시 로딩되는 맵의 고유번호 (테이블 참조)")]
         public int startMapUid;
+        
+        [Header("게임 시작 맵 설정")]
+        [Tooltip("게임 실행 시 마을 체크 여부.")]
+        public bool useStartMapTown;
+        [Tooltip("마을로 설정할 타입")]
+        public MapConstants.Type typeMapTown;
         
         [Header("Debug")]
         [SerializeField, DebugOption("맵 디버그 기능 전체 사용 여부입니다.")]

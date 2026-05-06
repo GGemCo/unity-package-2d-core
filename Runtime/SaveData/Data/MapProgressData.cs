@@ -31,7 +31,7 @@ namespace GGemCo2DCore
         public int LastTownMapUid
         {
             get => _lastTownMapUid;
-            private set => _lastTownMapUid = value;
+            set => _lastTownMapUid = value;
         }
 
         /// <summary>
@@ -51,6 +51,7 @@ namespace GGemCo2DCore
                 return;
             }
 
+            _lastTownMapUid = loadedData.LastTownMapUid;
             RestoreClearedMaps(loadedData.ClearedMaps);
             RestoreActivatedWorldMapNodes(loadedData.ActivatedWorldMapNodes);
             RestoreVisibleWorldMapNodes(loadedData.VisibleWorldMapNodes);

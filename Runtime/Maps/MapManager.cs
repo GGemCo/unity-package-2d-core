@@ -54,6 +54,7 @@ namespace GGemCo2DCore
         private MapLoadCharacters _mapLoadCharacters;
         private AddressableLoaderPrefabCharacter _addressableLoaderPrefabCharacter;
         private MapEntryRuleResolver _mapEntryRuleResolver;
+        private GGemCoMapSettings _mapSettings;
 
         protected void Awake()
         {
@@ -101,7 +102,8 @@ namespace GGemCo2DCore
             _saveDataManager = _sceneGame.saveDataManager;
             _addressableLoaderPrefabCharacter = _sceneGame.AddressableLoaderPrefabCharacter;
             _mapEntryRuleResolver = new MapEntryRuleResolver(_tableLoaderManager, _saveDataManager?.LicenseManager);
-
+            _mapSettings = AddressableLoaderSettings.Instance.mapSettings;
+            
             // 저장된 맵 불러오기
             int startMapUid = GetStartMapUid();
 
@@ -131,6 +133,27 @@ namespace GGemCo2DCore
                 {
                     GcLogger.LogError($"맵 테이블에 없는 고유번호 입니다. {ConfigDefine.NameSDK}MapSettins 에 startMapUid 를 확인해주세요.");
                     return 0;
+                }
+            }
+            else
+            {
+                var info = TableLoaderManager.Instance.GetMapData(startMapUid);
+                if (GcLogger.IsNull(info,
+                        $"맵 테이블에 없는 고유번호 입니다. mapUid:{startMapUid}")) return 0;
+                // 마을 타입에서 시작하는 설정이 되어있으면 
+                if (_mapSettings != null && _mapSettings.useStartMapTown && info.Type != _mapSettings.typeMapTown) 
+                {
+                    info = TableLoaderManager.Instance.GetMapData(_saveDataManager.MapProgress.LastTownMapUid);
+                    if (info != null && info.Type != _mapSettings.typeMapTown)
+                    {
+                        GcLogger.LogWarning(
+                            $"마지막으로 저장된 마을 타입 번호의 데이터가 마을 타입으로 지정되어 있지 않습니다." +
+                            $"mapUid: {_saveDataManager.MapProgress.LastTownMapUid}, type: {info.Type}");
+                    }
+                    else
+                    {
+                        startMapUid = _saveDataManager.MapProgress.LastTownMapUid;
+                    }
                 }
             }
 
@@ -514,7 +537,7 @@ namespace GGemCo2DCore
 
             _sceneGame.saveDataManager.Player.CurrentMapUid = _currentMapUid;
             // 마지막으로 있었던 마을 저장
-            if (_currentMapTableData.Type == MapConstants.Type.Town)
+            if (_mapSettings != null && _mapSettings.useStartMapTown && _currentMapTableData.Type == _mapSettings.typeMapTown) 
             {
                 _sceneGame.saveDataManager.MapProgress.SaveLastTownMapUid(_currentMapUid);
             }
