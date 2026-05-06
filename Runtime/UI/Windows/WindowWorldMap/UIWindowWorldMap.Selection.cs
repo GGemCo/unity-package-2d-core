@@ -69,6 +69,25 @@ namespace GGemCo2DCore
         }
 
         /// <summary>
+        /// 월드맵 창의 표시 상태가 바뀔 때 선택 상태와 예약된 중앙 이동 콜백을 정리합니다.
+        /// 닫힘 콜백이 누락된 파생 창도 다음 열림 시 선택 이펙트가 새 요청으로 처리되도록 합니다.
+        /// </summary>
+        private void ResetSelectionStateForWindowLifecycle()
+        {
+            _dragController?.StopCenteringAnimation();
+
+            if (selectedIcon != null)
+            {
+                RemoveSelectedIcon();
+                return;
+            }
+
+            // 선택 아이콘 참조가 이미 사라졌더라도 Presenter에 남은 활성 선택 이미지를 숨깁니다.
+            SceneGame?.uIWindowManager?.ShowSelectIconImage(false);
+            OnClearedSelectedIcon();
+        }
+
+        /// <summary>
         /// 월드맵 선택 아이콘 상태에 맞는 선택 이미지 Sprite를 반환합니다.
         /// 현재 플레이어가 있는 맵을 선택하면 월드맵 전용 현재 맵 선택 이미지를 우선 사용합니다.
         /// </summary>

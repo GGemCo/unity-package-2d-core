@@ -83,9 +83,11 @@ namespace GGemCo2DCore
             base.OnShow(show);
             if (!show)
             {
+                ResetSelectionStateForWindowLifecycle();
                 return;
             }
 
+            ResetSelectionStateForWindowLifecycle();
             _mapManager ??= SceneGame.mapManager;
             RefreshInactiveSlotStates();
             RefreshWorldMapNodePointStates();

@@ -170,7 +170,8 @@ namespace GGemCo2DCore
                 vfxEffect.PlayEffect(true);
             }
 
-            PlaySelectedIconAnimation(animation2dController, animationOverride);
+            // 캐시된 선택 이미지가 같은 부모와 같은 애니메이션을 재사용해도 선택 효과가 다시 보이도록 처음부터 재생합니다.
+            PlaySelectedIconAnimation(animation2dController, animationOverride, true);
 
             if (parentOverride != null)
             {
@@ -230,9 +231,11 @@ namespace GGemCo2DCore
         /// </summary>
         /// <param name="animation2dController">선택 이미지에 연결된 2D 애니메이션 컨트롤러입니다.</param>
         /// <param name="animationOverride">윈도우 또는 아이콘 상태에서 전달한 애니메이션 오버라이드 설정입니다.</param>
+        /// <param name="forceReset">이미 같은 애니메이션이 재생 중이어도 첫 프레임부터 다시 재생하면 true입니다.</param>
         private void PlaySelectedIconAnimation(
             Animation2dController animation2dController,
-            UISelectedIconAnimationSettings animationOverride)
+            UISelectedIconAnimationSettings animationOverride,
+            bool forceReset)
         {
             if (animation2dController == null)
             {
@@ -246,7 +249,10 @@ namespace GGemCo2DCore
                 return;
             }
 
-            animation2dController.PlayAnimation(animationSettings.animationName, animationSettings.isLoop);
+            animation2dController.PlayAnimation(
+                animationSettings.animationName,
+                animationSettings.isLoop,
+                forceReset: forceReset);
         }
 
 
