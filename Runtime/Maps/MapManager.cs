@@ -141,7 +141,8 @@ namespace GGemCo2DCore
                 if (GcLogger.IsNull(info,
                         $"맵 테이블에 없는 고유번호 입니다. mapUid:{startMapUid}")) return 0;
                 // 마을 타입에서 시작하는 설정이 되어있으면 
-                if (_mapSettings != null && _mapSettings.useStartMapTown && info.Type != _mapSettings.typeMapTown) 
+                if (_mapSettings != null && _mapSettings.useStartMapTown && info.Type != _mapSettings.typeMapTown &&
+                    _saveDataManager.MapProgress.LastTownMapUid > 0) 
                 {
                     info = TableLoaderManager.Instance.GetMapData(_saveDataManager.MapProgress.LastTownMapUid);
                     if (info != null && info.Type != _mapSettings.typeMapTown)
