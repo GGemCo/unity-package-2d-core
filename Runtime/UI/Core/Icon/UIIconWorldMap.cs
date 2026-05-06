@@ -386,7 +386,7 @@ namespace GGemCo2DCore
             ApplyNodeDecorationOffset(_decorationData.Offset);
             ApplyNodeDecorationSize(_decorationData.Size);
             ApplyNodeDecorationScale(_decorationData.Scale);
-            if (_decorationData.AnimatorController != null)
+            if (!string.IsNullOrEmpty(_decorationData.AnimationName) && _decorationData.AnimatorController != null)
             {
                 ApplyAnimatedNodeDecoration(_decorationData);
                 return;
