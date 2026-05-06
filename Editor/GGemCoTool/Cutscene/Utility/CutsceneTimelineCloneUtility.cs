@@ -111,6 +111,10 @@ namespace GGemCo2DCoreEditor
                 case CutsceneEventType.TimeScale:
                     target.timeScale = CloneTimeScaleData(source.timeScale);
                     break;
+
+                case CutsceneEventType.WorldObjectVisibility:
+                    target.worldObjectVisibility = CloneWorldObjectVisibilityData(source.worldObjectVisibility);
+                    break;
             }
         }
 
@@ -386,6 +390,31 @@ namespace GGemCo2DCoreEditor
                 restoreOnCutsceneEnd = source.restoreOnCutsceneEnd,
                 affectFixedDeltaTime = source.affectFixedDeltaTime,
                 minimumScaleForFixedDeltaTime = source.minimumScaleForFixedDeltaTime,
+            };
+        }
+
+        /// <summary>
+        /// 월드 오브젝트 표시 상태 제어 데이터를 깊은 복사합니다.
+        /// </summary>
+        /// <param name="source">복사할 원본 데이터입니다.</param>
+        /// <returns>복제된 월드 오브젝트 표시 상태 제어 데이터입니다.</returns>
+        private static WorldObjectVisibilityData CloneWorldObjectVisibilityData(WorldObjectVisibilityData source)
+        {
+            return source == null ? null : new WorldObjectVisibilityData
+            {
+                targetMode = source.targetMode,
+                targetGroupKeys = source.targetGroupKeys != null
+                    ? new List<string>(source.targetGroupKeys)
+                    : new List<string>(),
+                exceptGroupKeys = source.exceptGroupKeys != null
+                    ? new List<string>(source.exceptGroupKeys)
+                    : new List<string>(),
+                searchEntireScene = source.searchEntireScene,
+                includeInactiveTargets = source.includeInactiveTargets,
+                show = source.show,
+                applyMode = source.applyMode,
+                restoreOnStop = source.restoreOnStop,
+                restoreOnCutsceneEnd = source.restoreOnCutsceneEnd,
             };
         }
     }

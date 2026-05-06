@@ -75,7 +75,12 @@
         /// <summary>
         /// 게임 전체의 시간 배율(Time Scale)을 변경합니다.
         /// </summary>
-        TimeScale = 13
+        TimeScale = 13,
+
+        /// <summary>
+        /// 컷신 중 월드 오브젝트의 표시 상태를 변경합니다.
+        /// </summary>
+        WorldObjectVisibility = 14
     }
     
     public enum CutsceneKeyTextOverlay

@@ -843,6 +843,7 @@ namespace GGemCo2DCore
                 CutsceneEventType.UiPanel => new UiPanelController(this),
                 CutsceneEventType.UiWindowVisibility => new UiWindowVisibilityController(this),
                 CutsceneEventType.TimeScale => new TimeScaleController(this),
+                CutsceneEventType.WorldObjectVisibility => new WorldObjectVisibilityController(this),
 
                 _ => null,
             };

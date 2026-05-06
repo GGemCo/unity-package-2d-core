@@ -38,6 +38,7 @@ namespace GGemCo2DCoreEditor
                 { CutsceneEventType.UiPanel, nameof(CutsceneEvent.uiPanel) },
                 { CutsceneEventType.UiWindowVisibility, nameof(CutsceneEvent.uiWindowVisibility) },
                 { CutsceneEventType.TimeScale, nameof(CutsceneEvent.timeScale) },
+                { CutsceneEventType.WorldObjectVisibility, nameof(CutsceneEvent.worldObjectVisibility) },
             };
 
         /// <summary>

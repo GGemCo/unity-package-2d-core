@@ -77,6 +77,9 @@ namespace GGemCo2DCore
         /// <summary>시간 배율(Time Scale) 데이터입니다.</summary>
         public TimeScaleData timeScale;
 
+        /// <summary>월드 오브젝트 표시 상태 제어 데이터입니다.</summary>
+        public WorldObjectVisibilityData worldObjectVisibility;
+
         /// <summary>
         /// 기본 생성자입니다.
         /// 현재 타입에 맞는 데이터만 유효하도록 초기화합니다.
@@ -162,6 +165,10 @@ namespace GGemCo2DCore
                 case CutsceneEventType.TimeScale:
                     timeScale ??= new TimeScaleData();
                     break;
+
+                case CutsceneEventType.WorldObjectVisibility:
+                    worldObjectVisibility ??= new WorldObjectVisibilityData();
+                    break;
             }
         }
 
@@ -240,6 +247,11 @@ namespace GGemCo2DCore
             {
                 timeScale = null;
             }
+
+            if (type != CutsceneEventType.WorldObjectVisibility)
+            {
+                worldObjectVisibility = null;
+            }
         }
 
         /// <summary>CameraMove 타입일 때만 cameraMove를 직렬화합니다.</summary>
@@ -283,6 +295,10 @@ namespace GGemCo2DCore
 
         /// <summary>TimeScale 타입일 때만 timeScale을 직렬화합니다.</summary>
         public bool ShouldSerializeTimeScale() => type == CutsceneEventType.TimeScale && timeScale != null;
+
+        /// <summary>WorldObjectVisibility 타입일 때만 worldObjectVisibility를 직렬화합니다.</summary>
+        public bool ShouldSerializeWorldObjectVisibility() =>
+            type == CutsceneEventType.WorldObjectVisibility && worldObjectVisibility != null;
     }
 
     /// <summary>

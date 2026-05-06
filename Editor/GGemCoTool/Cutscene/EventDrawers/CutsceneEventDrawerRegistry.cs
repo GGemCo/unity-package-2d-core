@@ -41,6 +41,7 @@ namespace GGemCo2DCoreEditor
             Register(new CutsceneDefaultEventTypeDrawer(CutsceneEventType.UiPanel, "uiPanel"));
             Register(new CutsceneDefaultEventTypeDrawer(CutsceneEventType.UiWindowVisibility, "uiWindowVisibility"));
             Register(new CutsceneTimeScaleEventTypeDrawer());
+            Register(new CutsceneDefaultEventTypeDrawer(CutsceneEventType.WorldObjectVisibility, "worldObjectVisibility"));
         }
 
         /// <summary>
