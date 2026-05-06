@@ -244,6 +244,7 @@ namespace GGemCo2DCore
         /// </summary>
         private void OnDeadPlayer()
         {
+            Destroy(player);
             SetState(GameState.Begin);
             mapManager.LoadMapByPlayerDead();
         }

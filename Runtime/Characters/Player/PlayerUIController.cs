@@ -209,6 +209,8 @@ namespace GGemCo2DCore
                 return;
             }
 
+            if (_player.CurrentHp.Value <= 0) return;
+            
             _uiWindowHud.SetHp(_player.CurrentHp.Value, _player.TotalHp.Value);
         }
 

@@ -29,6 +29,7 @@ namespace GGemCo2DCore
 
         private ContactFilter2D _attackHitFilter;
         private int _monsterHitAreaLayerMask;
+        private CutsceneManager _cutsceneManager;
         
         protected override void Awake()
         {
@@ -90,6 +91,7 @@ namespace GGemCo2DCore
             // 순서 중요
             _sceneGame = SceneGame.Instance;
             _playerData = _sceneGame.saveDataManager.Player;
+            _cutsceneManager = _sceneGame.CutsceneManager;
             base.Start();
 
             InitializeStatPointSystem();
@@ -420,6 +422,7 @@ namespace GGemCo2DCore
                 }
             }
         }
+        
         public bool IsRequireLevel(int compareLevel)
         {
             bool result = _playerData?.CurrentLevel >= compareLevel;
@@ -434,6 +437,7 @@ namespace GGemCo2DCore
         {
             _controllerPlayer?.ChangeMapSize(mapSize);
         }
+        
         /// <summary>
         /// 맵 이동 시작시 stop 처리 
         /// </summary>
@@ -441,11 +445,14 @@ namespace GGemCo2DCore
         {
             Stop();
         }
+        
+        /// <summary>
+        /// 사망 애니메이션을 한 후, End 처리 
+        /// </summary>
         public override void OnAnimationCompleteDead()
         {
             base.OnAnimationCompleteDead();
             _sceneGame.SetState(SceneGame.GameState.End);
-            Destroy(gameObject, 0.5f);
         }
 
         /// <summary>
@@ -459,7 +466,26 @@ namespace GGemCo2DCore
             SetItemBonusHpCurrent(0);
 
             base.OnDead(dieReasonType, attacker);
+            
+            PlayDeadCutscene(attacker);
         }
+        
+        /// <summary>
+        /// 사망 연출
+        /// </summary>
+        /// <param name="attacker"></param>
+        private void PlayDeadCutscene(GameObject attacker)
+        {
+            if (!_playerSettings.useCutsceneDie) return;
+            if (!attacker) return;
+            var monseter = attacker.GetComponent<Monster>();
+            if (monseter == null) return;
+            _cutsceneManager.SetCharacterTargetOverride(CutsceneKeyCharacterTarget.Monster, monseter);
+            _cutsceneManager.SetCharacterTargetOverride(CutsceneKeyCharacterTarget.Player, this);
+            // _cutsceneManager.SetOverlayTextOverride(CutsceneKeyTextOverlay.MonsterName, characterName);
+            _cutsceneManager.PlayCutscene(_playerSettings.cutsceneUidDie);
+        }
+        
         /// <summary>
         /// 사망 했다가 부활할 때, stat 리셋 해주기
         /// </summary>

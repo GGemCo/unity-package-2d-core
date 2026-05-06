@@ -248,6 +248,13 @@ namespace GGemCo2DCore
         private PassiveTempHpApplyPolicy passiveTempHpApplyPolicy = PassiveTempHpApplyPolicy.KeepCurrent;
 
         public PassiveTempHpApplyPolicy PassiveTempHpApplyPolicy => passiveTempHpApplyPolicy;
+
+        [Header("사망")]
+        [Tooltip("사망 연출 사용 여부")]
+        public bool useCutsceneDie;
+        [Tooltip("사망 연출 Uid")]
+        public int cutsceneUidDie;
+        
         /// <summary>
         /// 처음 생성 시 한 번만 실행됨
         /// </summary>
