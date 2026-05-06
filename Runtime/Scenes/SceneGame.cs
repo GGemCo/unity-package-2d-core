@@ -40,6 +40,9 @@ namespace GGemCo2DCore
         [Tooltip("연출 말풍선이 들어갈 오브젝트 입니다.")]
         public GameObject containerDialogueBalloon;
         public void SetContainerDialogueBalloon(GameObject value) => containerDialogueBalloon = value;
+        [Tooltip("플레이어 보다 밑에 나와야 나와야 하는 UI를 처리하는 Canvas")]
+        public GameObject canvasFromWorldCharacterBottom;
+        public void SetCanvasFromWorldCharacterBottom(GameObject value) => canvasFromWorldCharacterBottom = value;
         
         [Header("매니저")]
         [Tooltip("윈도우 매니저")]
@@ -103,6 +106,12 @@ namespace GGemCo2DCore
             }
             
             InitializeManagers();
+            
+            if (CutsceneManager != null)
+            {
+                CutsceneManager.CutsceneStarted += OnCutsceneStarted;
+                CutsceneManager.CutsceneEnded += OnCutsceneEnded;
+            }
             
             // GameTimeManager가 있을 때만 어댑터 등록
             if (gameTimeManager != null)
@@ -337,6 +346,32 @@ namespace GGemCo2DCore
             }
 
             mapManager.OnDeadMonster(e.monsterVid);
+        }
+        
+        /// <summary>
+        /// 컷신 세션 시작 시 모바일 HUD를 숨김 사유에 추가합니다.
+        /// </summary>
+        private void OnCutsceneStarted()
+        {
+            if (containerMonsterHpBar)
+                containerMonsterHpBar.SetActive(false);
+            if (containerDropItemName)
+                containerDropItemName.SetActive(false);
+            if (canvasFromWorldCharacterBottom)
+                canvasFromWorldCharacterBottom.SetActive(false);
+        }
+
+        /// <summary>
+        /// 컷신 세션 종료 시 모바일 HUD의 컷신 숨김 사유를 제거합니다.
+        /// </summary>
+        private void OnCutsceneEnded()
+        {
+            if (containerMonsterHpBar)
+                containerMonsterHpBar.SetActive(true);
+            if (containerDropItemName)
+                containerDropItemName.SetActive(true);
+            if (canvasFromWorldCharacterBottom)
+                canvasFromWorldCharacterBottom.SetActive(true);
         }
         
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
