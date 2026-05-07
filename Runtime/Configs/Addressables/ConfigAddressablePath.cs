@@ -77,6 +77,9 @@ namespace GGemCo2DCore
 
                 /// <summary>Images/Thumbnail/Monster</summary>
                 public static string Monster => Combine(RootThumbnail, "Monster");
+
+                /// <summary>Images/Thumbnail/Player</summary>
+                public static string Player => Combine(RootThumbnail, "Player");
             }
 
             public static class ImageName

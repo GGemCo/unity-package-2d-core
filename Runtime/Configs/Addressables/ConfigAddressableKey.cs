@@ -15,6 +15,7 @@
         public const string CharacterThumbnail        = ConfigDefine.NameSDK + "_CharacterThumbnail";
         public const string CharacterThumbnailNpc     = CharacterThumbnail + "_Npc";
         public const string CharacterThumbnailMonster = CharacterThumbnail + "_Monster";
+        public const string CharacterThumbnailPlayer = CharacterThumbnail + "_Player";
         
         // Character Image Name
         public const string CharacterImageName        = ConfigDefine.NameSDK + "_CharacterImageName";

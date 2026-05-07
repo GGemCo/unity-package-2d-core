@@ -169,8 +169,14 @@ namespace GGemCo2DCoreEditor
             {
                 string key = ConfigAddressableKey.PrefabPlayer;
                 string assetPath = $"{ConfigAddressablePath.Characters.Player}/Player.prefab";
-                
+
                 Add(settings, groupPlayer, key, assetPath);
+
+                // 썸네일 있으면 추가
+                key = $"{ConfigAddressableKey.CharacterThumbnailPlayer}";
+                assetPath = $"{ConfigAddressablePath.Characters.Thumbnails.Player}/Player.png";
+                var label = ConfigAddressableLabel.CharacterThumbnail;
+                Add(settings, groupCharacterThumbnail, key, assetPath, label);
             }
             #endregion
 
