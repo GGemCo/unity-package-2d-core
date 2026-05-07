@@ -172,7 +172,7 @@ namespace GGemCo2DCoreEditor
         }
 
         /// <summary>
-        /// 선택된 컷신을 게임 내에서 실행합니다.
+        /// 선택된 컷신 JSON 파일을 새로 읽어 게임 내에서 Editor 프리뷰로 실행합니다.
         /// </summary>
         private void PlaySelectedCutscene()
         {
@@ -182,13 +182,22 @@ namespace GGemCo2DCoreEditor
                 return;
             }
 
-            if (!SceneGame.Instance)
+            if (!Application.isPlaying || !SceneGame.Instance)
             {
                 EditorUtility.DisplayDialog(Title, "게임을 실행해주세요.", "OK");
                 return;
             }
 
-            SceneGame.Instance.CutsceneManager.PlayCutscene(_state.SelectedCutscene.Uid);
+            var jsonPath = GetSelectedCutsceneJsonPath();
+            string error;
+
+            if (!CutsceneEditorPreviewPlayService.TryPlayLatestJson(SceneGame.Instance, jsonPath, out error))
+            {
+                EditorUtility.DisplayDialog(Title, error, "OK");
+                return;
+            }
+
+            _state.LastActionMessage = $"최신 Json 프리뷰 재생: {_state.SelectedCutscene.Uid} / {_state.SelectedCutscene.FileName}.json";
         }
 
         /// <summary>

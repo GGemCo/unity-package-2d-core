@@ -245,6 +245,50 @@ namespace GGemCo2DCore
         }
 
         /// <summary>
+        /// 컷신 데이터를 재생하기 전 로딩 세션을 시작하고 이전 재생 진행 상태를 초기화합니다.
+        /// </summary>
+        private void BeginCutsceneLoading()
+        {
+            Reset();
+            _currentState = State.Loading;
+            BeginCutsceneSession();
+        }
+
+        /// <summary>
+        /// 현재 할당된 컷신 데이터를 씬 환경에 준비한 뒤 즉시 재생 또는 준비 코루틴을 시작합니다.
+        /// </summary>
+        private void PlayCurrentCutscene()
+        {
+            if (_currentCutscene == null)
+            {
+                GcLogger.LogError("재생할 연출 데이터가 없습니다.");
+                FailCutsceneSession();
+                return;
+            }
+
+            if (_sceneGame == null || _sceneGame.mapManager == null)
+            {
+                GcLogger.LogError("연출을 재생할 게임 씬 정보를 찾지 못했습니다.");
+                FailCutsceneSession();
+                return;
+            }
+
+            // 모든 캐릭터 활성화, 컬링 적용되지 않음
+            _sceneGame.mapManager.ActiveAllCharacters();
+
+            if (_testTool)
+            {
+                _testTool.SetActive(false);
+            }
+
+            // 즉시 준비 가능한 컷신은 현재 프레임에 바로 재생을 시작합니다.
+            if (!TryPrepareAndPlayImmediate())
+            {
+                _sceneGame.StartCoroutine(PrepareAndPlay());
+            }
+        }
+
+        /// <summary>
         /// 지정한 UID의 컷신을 재생합니다.
         /// 프리로드된 컷신은 즉시 준비하고, 프리로드되지 않은 컷신은 비동기 로드 후 재생합니다.
         /// </summary>
@@ -265,25 +309,29 @@ namespace GGemCo2DCore
             string key = $"{ConfigAddressableKey.Cutscene}_{info.Uid}";
             _currentCutscene = AddressableLoaderCutscene.Instance.GetCutsceneDataByKey(key);
             if (GcLogger.IsNull(_currentCutscene, $"{nameof(TableCutscene)} 테이블에 정보가 없습니다. Uid: {info.Uid}")) return;
-            
-            Reset();
-            _currentState = State.Loading;
-            BeginCutsceneSession();
-            
-            // 모든 캐릭터 활성화, 컬링 적용되지 않음
-            _sceneGame.mapManager.ActiveAllCharacters();
 
-            if (_testTool)
-            {
-                _testTool.SetActive(false);
-            }
-
-            // 즉시 준비 가능한 컷신은 현재 프레임에 바로 재생을 시작합니다.
-            if (!TryPrepareAndPlayImmediate())
-            {
-                _sceneGame.StartCoroutine(PrepareAndPlay());
-            }
+            BeginCutsceneLoading();
+            PlayCurrentCutscene();
         }
+
+#if UNITY_EDITOR
+        /// <summary>
+        /// Editor 컷신 프리뷰에서 파일로부터 새로 읽은 컷신 데이터를 Addressables 캐시 없이 재생합니다.
+        /// </summary>
+        /// <param name="cutsceneData">Editor 툴이 최신 JSON 파일에서 역직렬화한 컷신 데이터입니다.</param>
+        public void PlayCutsceneForEditorPreview(CutsceneData cutsceneData)
+        {
+            if (cutsceneData == null)
+            {
+                GcLogger.LogError("재생할 연출 데이터가 없습니다.");
+                return;
+            }
+
+            _currentCutscene = cutsceneData;
+            BeginCutsceneLoading();
+            PlayCurrentCutscene();
+        }
+#endif
         
         /// <summary>
         /// 지정한 UID의 컷신 데이터를 로드하고 재생 준비를 시작합니다.
@@ -302,9 +350,7 @@ namespace GGemCo2DCore
                     return;
                 }
 
-                Reset();
-                _currentState = State.Loading;
-                BeginCutsceneSession();
+                BeginCutsceneLoading();
 
                 string key = $"{ConfigAddressableKey.Cutscene}_{info.Uid}";
                 TextAsset asset = await AddressableLoaderController.LoadByKeyAsync<TextAsset>(key);
@@ -316,9 +362,6 @@ namespace GGemCo2DCore
                     return;
                 }
 
-                // 모든 캐릭터 활성화, 컬링 적용되지 않음
-                _sceneGame.mapManager.ActiveAllCharacters();
-
                 // json 파싱하기
                 _currentCutscene = JsonConvert.DeserializeObject<CutsceneData>(asset.text);
                 if (_currentCutscene == null)
@@ -328,16 +371,7 @@ namespace GGemCo2DCore
                     return;
                 }
 
-                if (_testTool)
-                {
-                    _testTool.SetActive(false);
-                }
-
-                // 즉시 준비 가능한 컷신은 현재 프레임에 바로 재생을 시작합니다.
-                if (!TryPrepareAndPlayImmediate())
-                {
-                    _sceneGame.StartCoroutine(PrepareAndPlay());
-                }
+                PlayCurrentCutscene();
             }
             catch (Exception e)
             {
