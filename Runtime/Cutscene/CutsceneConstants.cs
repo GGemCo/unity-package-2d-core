@@ -80,7 +80,12 @@
         /// <summary>
         /// 컷신 중 월드 오브젝트의 표시 상태를 변경합니다.
         /// </summary>
-        WorldObjectVisibility = 14
+        WorldObjectVisibility = 14,
+
+        /// <summary>
+        /// 컷신 중 캐릭터의 조작 입력을 잠그거나 지정된 구간 후 해제합니다.
+        /// </summary>
+        CharacterControlLock = 15
     }
     
     public enum CutsceneKeyTextOverlay

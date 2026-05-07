@@ -115,6 +115,10 @@ namespace GGemCo2DCoreEditor
                 case CutsceneEventType.WorldObjectVisibility:
                     target.worldObjectVisibility = CloneWorldObjectVisibilityData(source.worldObjectVisibility);
                     break;
+
+                case CutsceneEventType.CharacterControlLock:
+                    target.characterControlLock = CloneCharacterControlLockData(source.characterControlLock);
+                    break;
             }
         }
 
@@ -415,6 +419,21 @@ namespace GGemCo2DCoreEditor
                 applyMode = source.applyMode,
                 restoreOnStop = source.restoreOnStop,
                 restoreOnCutsceneEnd = source.restoreOnCutsceneEnd,
+            };
+        }
+
+        /// <summary>
+        /// 캐릭터 조작 잠금 제어 데이터를 깊은 복사합니다.
+        /// </summary>
+        /// <param name="source">복사할 원본 데이터입니다.</param>
+        /// <returns>복제된 캐릭터 조작 잠금 제어 데이터입니다.</returns>
+        private static CharacterControlLockData CloneCharacterControlLockData(CharacterControlLockData source)
+        {
+            return source == null ? null : new CharacterControlLockData
+            {
+                target = CloneCharacterReference(source.target),
+                releaseOnClipEnd = source.releaseOnClipEnd,
+                releaseOnCutsceneEnd = source.releaseOnCutsceneEnd,
             };
         }
     }

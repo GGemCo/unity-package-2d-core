@@ -25,18 +25,23 @@ namespace GGemCo2DCore
         /// </returns>
         protected Transform GetTargetTransform(CharacterConstants.Type type, int characterUid)
         {
-            // cam.gameObject.SetActive(true);
+            // 컷신 준비 실패나 씬 전환 중에는 SceneGame 참조가 비어 있을 수 있으므로 안전하게 중단합니다.
+            if (SceneGame.Instance == null)
+            {
+                return null;
+            }
+
             Transform newTarget = null;
 
             if (type == CharacterConstants.Type.Player)
             {
-                newTarget = SceneGame.Instance.player.transform;
+                newTarget = SceneGame.Instance.player != null ? SceneGame.Instance.player.transform : null;
             }
-            else if (type == CharacterConstants.Type.Npc)
+            else if (type == CharacterConstants.Type.Npc && SceneGame.Instance.mapManager != null)
             {
                 newTarget = SceneGame.Instance.mapManager.GetNpcByUid(characterUid)?.gameObject.transform;
             }
-            else if (type == CharacterConstants.Type.Monster)
+            else if (type == CharacterConstants.Type.Monster && SceneGame.Instance.mapManager != null)
             {
                 newTarget = SceneGame.Instance.mapManager.GetMonsterByUid(characterUid)?.gameObject.transform;
             }
