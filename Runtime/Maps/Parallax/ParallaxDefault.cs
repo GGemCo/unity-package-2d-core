@@ -18,6 +18,8 @@ namespace GGemCo2DCore
         [SerializeField, Min(1)] private int preloadCloneCount = 1;
         [SerializeField, Min(0f)] private float segmentSpacing = 0f;
         [SerializeField, Min(0f)] private float recyclePadding = 0f;
+        [SerializeField] private bool useCameraRelativeLoopDirection = true;
+        [SerializeField, Min(0f)] private float cameraRelativeDirectionThreshold = 0.001f;
 
         [Header("Debug")]
         [SerializeField] private bool enableDebugLog = false;
@@ -32,6 +34,9 @@ namespace GGemCo2DCore
         private float _debugElapsedTime;
         private bool _isRuntimeClone;
         private bool _isInfiniteLoopInitialized;
+        private bool _hasPreviousLoopCameraPosition;
+        private Camera _previousLoopCamera;
+        private Vector3 _previousLoopCameraPosition;
 
         /// <summary>
         /// 인스펙터에서 반복 배경 설정값이 유효 범위를 벗어나지 않도록 보정합니다.
@@ -41,6 +46,7 @@ namespace GGemCo2DCore
             preloadCloneCount = Mathf.Max(1, preloadCloneCount);
             segmentSpacing = Mathf.Max(0f, segmentSpacing);
             recyclePadding = Mathf.Max(0f, recyclePadding);
+            cameraRelativeDirectionThreshold = Mathf.Max(0f, cameraRelativeDirectionThreshold);
         }
 
         /// <summary>
@@ -89,8 +95,10 @@ namespace GGemCo2DCore
                     InitializeInfiniteLoop();
                 }
 
+                Camera targetCamera = ResolveLoopCamera();
+                Vector3 cameraDelta = ResolveLoopCameraDelta(targetCamera);
                 MoveInfiniteLoopSegments(moveDelta);
-                RecyclePassedSegments();
+                RecyclePassedSegments(targetCamera, cameraDelta);
             }
             else
             {
@@ -176,25 +184,27 @@ namespace GGemCo2DCore
         /// <summary>
         /// 카메라 화면을 완전히 벗어난 배경 조각을 찾아 가장 뒤쪽 배경 다음 위치로 재배치합니다.
         /// </summary>
-        private void RecyclePassedSegments()
+        /// <param name="targetCamera">반복 배경 판정에 사용할 카메라입니다.</param>
+        /// <param name="cameraDelta">이전 프레임 대비 카메라 월드 이동량입니다.</param>
+        private void RecyclePassedSegments(Camera targetCamera, Vector3 cameraDelta)
         {
             if (_segments.Count <= 1 || !TryResolveWorldMoveAxis(out Vector3 moveAxis))
             {
                 return;
             }
 
-            Camera targetCamera = ResolveLoopCamera();
             if (targetCamera == null)
             {
                 return;
             }
 
-            if (!TryGetCameraProjection(targetCamera, moveAxis, out _, out float cameraForwardEdge))
+            Vector3 recycleAxis = ResolveRecycleAxis(moveAxis, cameraDelta);
+            if (!TryGetCameraProjection(targetCamera, recycleAxis, out _, out float cameraForwardEdge))
             {
                 return;
             }
 
-            Vector3 spawnAxis = -moveAxis;
+            Vector3 spawnAxis = -recycleAxis;
             for (int i = 0; i < _segments.Count; i++)
             {
                 Transform segment = _segments[i];
@@ -203,7 +213,7 @@ namespace GGemCo2DCore
                     continue;
                 }
 
-                if (!TryGetSegmentProjection(segment, moveAxis, out float segmentBackEdge, out _))
+                if (!TryGetSegmentProjection(segment, recycleAxis, out float segmentBackEdge, out _))
                 {
                     continue;
                 }
@@ -376,12 +386,75 @@ namespace GGemCo2DCore
         }
 
         /// <summary>
+        /// 현재 프레임 카메라 위치와 이전 프레임 카메라 위치의 차이를 계산하고, 다음 프레임 비교를 위해 현재 위치를 저장합니다.
+        /// </summary>
+        /// <param name="targetCamera">반복 배경 판정에 사용할 카메라입니다.</param>
+        /// <returns>이전 프레임 대비 카메라 월드 이동량입니다.</returns>
+        private Vector3 ResolveLoopCameraDelta(Camera targetCamera)
+        {
+            if (targetCamera == null)
+            {
+                _previousLoopCamera = null;
+                _hasPreviousLoopCameraPosition = false;
+                return Vector3.zero;
+            }
+
+            Vector3 currentCameraPosition = targetCamera.transform.position;
+            if (!_hasPreviousLoopCameraPosition || _previousLoopCamera != targetCamera)
+            {
+                _previousLoopCamera = targetCamera;
+                _previousLoopCameraPosition = currentCameraPosition;
+                _hasPreviousLoopCameraPosition = true;
+                return Vector3.zero;
+            }
+
+            Vector3 cameraDelta = currentCameraPosition - _previousLoopCameraPosition;
+            _previousLoopCameraPosition = currentCameraPosition;
+            return cameraDelta;
+        }
+
+        /// <summary>
+        /// 배경 자체의 월드 이동량과 카메라 이동량을 비교해 화면 기준으로 배경이 빠져나가는 방향을 계산합니다.
+        /// </summary>
+        /// <param name="moveAxis">direction 필드에서 계산한 월드 이동 축입니다.</param>
+        /// <param name="cameraDelta">이전 프레임 대비 카메라 월드 이동량입니다.</param>
+        /// <returns>화면 기준으로 배경 조각이 빠져나가는 월드 방향입니다.</returns>
+        private Vector3 ResolveRecycleAxis(Vector3 moveAxis, Vector3 cameraDelta)
+        {
+            if (!useCameraRelativeLoopDirection)
+            {
+                return moveAxis;
+            }
+
+            Vector3 backgroundDelta = moveAxis * speed * Time.deltaTime;
+            Vector3 relativeDelta = backgroundDelta - cameraDelta;
+            float relativeMoveAmount = Vector3.Dot(relativeDelta, moveAxis);
+
+            if (relativeMoveAmount < -cameraRelativeDirectionThreshold)
+            {
+                return -moveAxis;
+            }
+
+            return moveAxis;
+        }
+
+        /// <summary>
         /// 반복 배경 판정에 사용할 카메라를 가져옵니다.
         /// </summary>
         /// <returns>명시된 카메라가 있으면 해당 카메라를, 없으면 메인 카메라를 반환합니다.</returns>
         private Camera ResolveLoopCamera()
         {
-            return loopCamera != null ? loopCamera : SceneGame.Instance.mainCamera;
+            if (loopCamera != null)
+            {
+                return loopCamera;
+            }
+
+            if (SceneGame.Instance != null && SceneGame.Instance.mainCamera != null)
+            {
+                return SceneGame.Instance.mainCamera;
+            }
+
+            return Camera.main;
         }
 
         /// <summary>
