@@ -1,6 +1,5 @@
 using System.Collections.Generic;
 using TMPro;
-using UnityEngine;
 
 namespace GGemCo2DCore
 {
@@ -31,11 +30,9 @@ namespace GGemCo2DCore
     public sealed class InteractionDialogueMessagePlayer
     {
         private readonly List<string> _pages = new();
+        private readonly DialogueTextRevealPlayer _revealPlayer = new();
         private GGemCoNpcInteractionSettings _settings;
         private int _currentPageIndex;
-        private float _visibleCharacterCount;
-        private int _currentPageCharacterCount;
-        private bool _currentPageFullyRevealed;
 
         /// <summary>
         /// 현재 표시 중인 메시지 페이지가 존재하는지 여부입니다.
@@ -45,7 +42,7 @@ namespace GGemCo2DCore
         /// <summary>
         /// 현재 페이지가 모두 표시되었는지 여부입니다.
         /// </summary>
-        public bool IsCurrentPageFullyRevealed => _currentPageFullyRevealed;
+        public bool IsCurrentPageFullyRevealed => _revealPlayer.IsFullyRevealed;
 
         /// <summary>
         /// 현재 설정이 타자 효과 모드인지 여부입니다.
@@ -57,7 +54,7 @@ namespace GGemCo2DCore
         /// 전체 메시지 시퀀스가 끝까지 표시되었는지 여부입니다.
         /// </summary>
         public bool IsSequenceCompleted =>
-            !HasMessage || (_currentPageIndex >= _pages.Count - 1 && _currentPageFullyRevealed);
+            !HasMessage || (_currentPageIndex >= _pages.Count - 1 && _revealPlayer.IsFullyRevealed);
 
         /// <summary>
         /// 현재 표시 상태를 초기화하고 새 메시지를 페이지 단위로 바인딩합니다.
@@ -70,13 +67,10 @@ namespace GGemCo2DCore
             _settings = settings != null ? settings : GGemCoNpcInteractionSettings.CreateRuntimeDefault();
             _pages.Clear();
             _currentPageIndex = 0;
-            _visibleCharacterCount = 0f;
-            _currentPageCharacterCount = 0;
-            _currentPageFullyRevealed = true;
+            _revealPlayer.Clear(target);
 
             if (string.IsNullOrEmpty(message))
             {
-                Clear(target);
                 return;
             }
 
@@ -92,17 +86,7 @@ namespace GGemCo2DCore
         {
             _pages.Clear();
             _currentPageIndex = 0;
-            _visibleCharacterCount = 0f;
-            _currentPageCharacterCount = 0;
-            _currentPageFullyRevealed = true;
-
-            if (target == null)
-            {
-                return;
-            }
-
-            target.text = string.Empty;
-            target.maxVisibleCharacters = int.MaxValue;
+            _revealPlayer.Clear(target);
         }
 
         /// <summary>
@@ -112,20 +96,12 @@ namespace GGemCo2DCore
         /// <param name="deltaTime">누적할 시간값입니다.</param>
         public void Tick(TextMeshProUGUI target, float deltaTime)
         {
-            if (target == null || !HasMessage || _currentPageFullyRevealed || !IsTypewriterMode)
+            if (target == null || !HasMessage)
             {
                 return;
             }
 
-            _visibleCharacterCount += _settings.GetSafeCharactersPerSecond() * Mathf.Max(0f, deltaTime);
-            int nextVisibleCharacters = Mathf.Clamp(Mathf.FloorToInt(_visibleCharacterCount), 0, _currentPageCharacterCount);
-            target.maxVisibleCharacters = nextVisibleCharacters;
-
-            if (nextVisibleCharacters >= _currentPageCharacterCount)
-            {
-                _currentPageFullyRevealed = true;
-                target.maxVisibleCharacters = int.MaxValue;
-            }
+            _revealPlayer.Tick(target, deltaTime);
         }
 
         /// <summary>
@@ -140,7 +116,7 @@ namespace GGemCo2DCore
                 return InteractionDialogueAdvanceResult.None;
             }
 
-            if (!_currentPageFullyRevealed)
+            if (!_revealPlayer.IsFullyRevealed)
             {
                 return AdvanceWhileRevealing(target);
             }
@@ -166,9 +142,7 @@ namespace GGemCo2DCore
                 return;
             }
 
-            _visibleCharacterCount = _currentPageCharacterCount;
-            _currentPageFullyRevealed = true;
-            target.maxVisibleCharacters = int.MaxValue;
+            _revealPlayer.RevealAll(target);
         }
 
         /// <summary>
@@ -204,20 +178,7 @@ namespace GGemCo2DCore
             }
 
             string pageText = GetCurrentPageText();
-            target.text = pageText;
-            target.ForceMeshUpdate();
-
-            _currentPageCharacterCount = Mathf.Max(0, target.textInfo.characterCount);
-            _visibleCharacterCount = 0f;
-            _currentPageFullyRevealed = false;
-
-            if (!IsTypewriterMode || _currentPageCharacterCount <= 0)
-            {
-                RevealCurrentPage(target);
-                return;
-            }
-
-            target.maxVisibleCharacters = 0;
+            _revealPlayer.Configure(target, pageText, IsTypewriterMode, _settings.GetSafeCharactersPerSecond());
         }
 
         /// <summary>

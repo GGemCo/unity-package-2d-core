@@ -248,6 +248,8 @@ namespace GGemCo2DCoreEditor
                 characterUid = source.characterUid,
                 message = source.message,
                 fontSize = source.fontSize,
+                useTypewriter = source.useTypewriter,
+                typewriterCharactersPerSecond = source.typewriterCharactersPerSecond,
             };
         }
 
