@@ -250,6 +250,10 @@ namespace GGemCo2DCoreEditor
                 fontSize = source.fontSize,
                 useTypewriter = source.useTypewriter,
                 typewriterCharactersPerSecond = source.typewriterCharactersPerSecond,
+                thumbnailPositionType = source.thumbnailPositionType,
+                thumbnailImage = source.thumbnailImage,
+                offsetImageThumbnailCharacter = source.offsetImageThumbnailCharacter,
+                offsetImageThumbnailCharacterLeft = source.offsetImageThumbnailCharacterLeft,
             };
         }
 
