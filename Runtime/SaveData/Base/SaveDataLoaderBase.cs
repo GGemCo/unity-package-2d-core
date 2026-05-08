@@ -48,7 +48,7 @@ namespace GGemCo2DCore
             onProgressUpdate?.Invoke(_loadProgress);
             yield return null;
 
-            string json = File.ReadAllText(filePath);
+            string json = SaveDataFileService.ReadAllText(filePath);
             _loadProgress = 0.6f; // JSON 읽기 완료
             onProgressUpdate?.Invoke(_loadProgress);
             yield return null;

@@ -29,6 +29,13 @@ namespace GGemCo2DCore
 
         [Tooltip("강제 저장이 수행되는 최소 간격(초)입니다.")]
         public float saveDataForceSaveInterval;
+
+        [Header("세이브 데이터 암호화 설정")]
+        [Tooltip("세이브 데이터 파일 암호화 적용 방식을 설정합니다.")]
+        public SaveDataEncryptionMode saveDataEncryptionMode = SaveDataEncryptionMode.OptionalMigration;
+
+        [Tooltip("Android Keystore에서 사용할 저장 데이터 암호화 키 별칭입니다.")]
+        public string saveDataEncryptionKeyAlias = SaveDataCryptoService.DefaultKeyAlias;
         
         /// <summary>
         /// 처음 생성 시 한 번만 실행됨
@@ -41,10 +48,29 @@ namespace GGemCo2DCore
             saveDataThumbnailFolderName = "SaveThumbnails";
             saveDataDelay = 1f;
             saveDataForceSaveInterval = 30f;
+            saveDataEncryptionMode = SaveDataEncryptionMode.OptionalMigration;
+            saveDataEncryptionKeyAlias = SaveDataCryptoService.DefaultKeyAlias;
         }
         
         public string SaveDataFolderName => Path.Combine(Application.persistentDataPath, saveDataFolderName);
         public string SaveDataThumnailFolderName => Path.Combine(Application.persistentDataPath, saveDataThumbnailFolderName);
         public bool UseSaveData => useSaveData;
+
+        /// <summary>
+        /// 저장 데이터 암호화 적용 방식입니다.
+        /// </summary>
+        public SaveDataEncryptionMode SaveDataEncryptionMode => saveDataEncryptionMode;
+
+        /// <summary>
+        /// 플랫폼 보안 저장소에서 사용할 저장 데이터 암호화 키 별칭입니다.
+        /// </summary>
+        public string SaveDataEncryptionKeyAlias
+        {
+            get
+            {
+                string alias = saveDataEncryptionKeyAlias == null ? string.Empty : saveDataEncryptionKeyAlias.Trim();
+                return string.IsNullOrEmpty(alias) ? SaveDataCryptoService.DefaultKeyAlias : alias;
+            }
+        }
     }
 }
