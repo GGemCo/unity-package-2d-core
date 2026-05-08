@@ -879,6 +879,7 @@ namespace GGemCo2DCore
                 CutsceneEventType.TimeScale => new TimeScaleController(this),
                 CutsceneEventType.WorldObjectVisibility => new WorldObjectVisibilityController(this),
                 CutsceneEventType.CharacterControlLock => new CharacterControlLockController(this),
+                CutsceneEventType.ScreenGlitch => new ScreenGlitchController(this),
 
                 _ => null,
             };

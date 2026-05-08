@@ -119,6 +119,10 @@ namespace GGemCo2DCoreEditor
                 case CutsceneEventType.CharacterControlLock:
                     target.characterControlLock = CloneCharacterControlLockData(source.characterControlLock);
                     break;
+
+                case CutsceneEventType.ScreenGlitch:
+                    target.screenGlitch = CloneScreenGlitchData(source.screenGlitch);
+                    break;
             }
         }
 
@@ -440,6 +444,32 @@ namespace GGemCo2DCoreEditor
                 target = CloneCharacterReference(source.target),
                 releaseOnClipEnd = source.releaseOnClipEnd,
                 releaseOnCutsceneEnd = source.releaseOnCutsceneEnd,
+            };
+        }
+
+        /// <summary>
+        /// 화면 글리치 효과 데이터를 깊은 복사합니다.
+        /// </summary>
+        /// <param name="source">복사할 원본 데이터입니다.</param>
+        /// <returns>복제된 화면 글리치 효과 데이터입니다.</returns>
+        private static ScreenGlitchData CloneScreenGlitchData(ScreenGlitchData source)
+        {
+            return source == null ? null : new ScreenGlitchData
+            {
+                fromIntensity = source.fromIntensity,
+                toIntensity = source.toIntensity,
+                holdFinalState = source.holdFinalState,
+                restoreOnCutsceneEnd = source.restoreOnCutsceneEnd,
+                rgbSplit = source.rgbSplit,
+                horizontalJitter = source.horizontalJitter,
+                verticalJump = source.verticalJump,
+                blockNoise = source.blockNoise,
+                scanlineStrength = source.scanlineStrength,
+                colorDrift = source.colorDrift,
+                useUnscaledTime = source.useUnscaledTime,
+                noiseSpeed = source.noiseSpeed,
+                seed = source.seed,
+                easing = source.easing,
             };
         }
     }

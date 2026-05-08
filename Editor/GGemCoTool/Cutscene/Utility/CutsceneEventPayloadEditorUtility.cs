@@ -40,6 +40,7 @@ namespace GGemCo2DCoreEditor
                 { CutsceneEventType.TimeScale, nameof(CutsceneEvent.timeScale) },
                 { CutsceneEventType.WorldObjectVisibility, nameof(CutsceneEvent.worldObjectVisibility) },
                 { CutsceneEventType.CharacterControlLock, nameof(CutsceneEvent.characterControlLock) },
+                { CutsceneEventType.ScreenGlitch, nameof(CutsceneEvent.screenGlitch) },
             };
 
         /// <summary>

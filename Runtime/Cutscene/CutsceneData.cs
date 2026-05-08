@@ -83,6 +83,9 @@ namespace GGemCo2DCore
         /// <summary>캐릭터 조작 잠금 제어 데이터입니다.</summary>
         public CharacterControlLockData characterControlLock;
 
+        /// <summary>화면 글리치 효과 데이터입니다.</summary>
+        public ScreenGlitchData screenGlitch;
+
         /// <summary>
         /// 기본 생성자입니다.
         /// 현재 타입에 맞는 데이터만 유효하도록 초기화합니다.
@@ -176,6 +179,10 @@ namespace GGemCo2DCore
                 case CutsceneEventType.CharacterControlLock:
                     characterControlLock ??= new CharacterControlLockData();
                     break;
+
+                case CutsceneEventType.ScreenGlitch:
+                    screenGlitch ??= new ScreenGlitchData();
+                    break;
             }
         }
 
@@ -264,6 +271,11 @@ namespace GGemCo2DCore
             {
                 characterControlLock = null;
             }
+
+            if (type != CutsceneEventType.ScreenGlitch)
+            {
+                screenGlitch = null;
+            }
         }
 
         /// <summary>CameraMove 타입일 때만 cameraMove를 직렬화합니다.</summary>
@@ -315,6 +327,10 @@ namespace GGemCo2DCore
         /// <summary>CharacterControlLock 타입일 때만 characterControlLock을 직렬화합니다.</summary>
         public bool ShouldSerializeCharacterControlLock() =>
             type == CutsceneEventType.CharacterControlLock && characterControlLock != null;
+
+        /// <summary>ScreenGlitch 타입일 때만 screenGlitch를 직렬화합니다.</summary>
+        public bool ShouldSerializeScreenGlitch() =>
+            type == CutsceneEventType.ScreenGlitch && screenGlitch != null;
     }
 
     /// <summary>

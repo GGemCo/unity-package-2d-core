@@ -85,7 +85,12 @@
         /// <summary>
         /// 컷신 중 캐릭터의 조작 입력을 잠그거나 지정된 구간 후 해제합니다.
         /// </summary>
-        CharacterControlLock = 15
+        CharacterControlLock = 15,
+
+        /// <summary>
+        /// 컷신 중 화면 전체에 글리치 효과를 적용합니다.
+        /// </summary>
+        ScreenGlitch = 16
     }
     
     public enum CutsceneKeyTextOverlay
