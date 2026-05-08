@@ -11,6 +11,7 @@ namespace GGemCo2DCore
     {
         private readonly CharacterStateTracker _stateTracker = new();
         private readonly HashSet<object> _controlLockTokens = new();
+        private readonly HashSet<object> _brainLockTokens = new();
         private bool _isAggro;
 
         /// <summary>
@@ -37,6 +38,41 @@ namespace GGemCo2DCore
             }
 
             _controlLockTokens.Remove(token);
+        }
+
+        /// <summary>
+        /// 몬스터 Brain 또는 BT 판단을 일시정지하는 토큰을 획득합니다.
+        /// </summary>
+        /// <param name="owner">잠금 요청 소유자입니다. null이면 새 토큰을 생성합니다.</param>
+        /// <returns>해제 시 사용할 Brain 잠금 토큰입니다.</returns>
+        public object AcquireBrainLock(object owner = null)
+        {
+            object token = owner ?? new object();
+            _brainLockTokens.Add(token);
+            return token;
+        }
+
+        /// <summary>
+        /// 이전에 획득한 몬스터 Brain 또는 BT 판단 잠금 토큰을 해제합니다.
+        /// </summary>
+        /// <param name="token">해제할 Brain 잠금 토큰입니다.</param>
+        public void ReleaseBrainLock(object token)
+        {
+            if (token == null)
+            {
+                return;
+            }
+
+            _brainLockTokens.Remove(token);
+        }
+
+        /// <summary>
+        /// 몬스터 Brain 또는 BT 판단이 외부 시스템에 의해 일시정지되어 있는지 확인합니다.
+        /// </summary>
+        /// <returns>Brain 판단 잠금 토큰이 하나 이상 있으면 <see langword="true"/>를 반환합니다.</returns>
+        public bool IsBrainLocked()
+        {
+            return _brainLockTokens.Count > 0;
         }
 
         /// <summary>

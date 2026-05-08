@@ -441,7 +441,10 @@ namespace GGemCo2DCoreEditor
         {
             return source == null ? null : new CharacterControlLockData
             {
+                targetScope = source.targetScope,
                 target = CloneCharacterReference(source.target),
+                lockMask = source.lockMask,
+                stopImmediately = source.stopImmediately,
                 releaseOnClipEnd = source.releaseOnClipEnd,
                 releaseOnCutsceneEnd = source.releaseOnCutsceneEnd,
             };
