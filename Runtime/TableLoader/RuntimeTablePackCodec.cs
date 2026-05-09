@@ -24,6 +24,33 @@ namespace GGemCo2DCore
         /// <returns>Addressables에 등록할 .bytes 파일 내용입니다.</returns>
         public static byte[] Encode(string packageId, IReadOnlyList<RuntimeTablePackEntry> entries)
         {
+            return Encode(packageId, entries, RuntimeTablePackProtectionOptions.Default);
+        }
+
+        /// <summary>
+        /// 테이블 팩 엔트리 목록을 런타임 로드용 바이너리 데이터로 변환하고 보호 옵션을 적용합니다.
+        /// </summary>
+        /// <param name="packageId">패키지 식별자입니다. 예: core, skill, affect.</param>
+        /// <param name="entries">팩에 포함할 개별 테이블 엔트리 목록입니다.</param>
+        /// <param name="protectionOptions">압축/암호화 적용 옵션입니다.</param>
+        /// <returns>Addressables에 등록할 .bytes 파일 내용입니다.</returns>
+        public static byte[] Encode(
+            string packageId,
+            IReadOnlyList<RuntimeTablePackEntry> entries,
+            RuntimeTablePackProtectionOptions protectionOptions)
+        {
+            byte[] rawBytes = EncodeRaw(packageId, entries);
+            return RuntimeTablePackProtectionCodec.Protect(packageId, rawBytes, protectionOptions);
+        }
+
+        /// <summary>
+        /// 테이블 팩 엔트리 목록을 보호 계층 없는 원본 바이너리 데이터로 변환합니다.
+        /// </summary>
+        /// <param name="packageId">패키지 식별자입니다. 예: core, skill, affect.</param>
+        /// <param name="entries">팩에 포함할 개별 테이블 엔트리 목록입니다.</param>
+        /// <returns>테이블 팩 원본 바이너리 데이터입니다.</returns>
+        private static byte[] EncodeRaw(string packageId, IReadOnlyList<RuntimeTablePackEntry> entries)
+        {
             var safeEntries = entries ?? Array.Empty<RuntimeTablePackEntry>();
 
             using var stream = new MemoryStream();
@@ -67,6 +94,40 @@ namespace GGemCo2DCore
                 error = "테이블 팩 데이터가 비어 있습니다.";
                 return false;
             }
+
+            byte[] rawBytes = bytes;
+            string protectedPackageId = null;
+            if (RuntimeTablePackProtectionCodec.IsProtected(bytes))
+            {
+                if (!RuntimeTablePackProtectionCodec.TryUnprotect(bytes, out rawBytes, out protectedPackageId, out error))
+                    return false;
+            }
+
+            if (!TryDecodeRaw(rawBytes, out pack, out error))
+                return false;
+
+            if (!string.IsNullOrEmpty(protectedPackageId) &&
+                !string.Equals(protectedPackageId, pack.PackageId, StringComparison.OrdinalIgnoreCase))
+            {
+                error = $"테이블 팩 보호 envelope와 원본 팩의 패키지 식별자가 다릅니다. envelope={protectedPackageId}, raw={pack.PackageId}";
+                pack = null;
+                return false;
+            }
+
+            return true;
+        }
+
+        /// <summary>
+        /// 보호 계층이 해제된 원본 바이너리 데이터를 테이블 팩 객체로 복원합니다.
+        /// </summary>
+        /// <param name="bytes">테이블 팩 원본 바이너리 데이터입니다.</param>
+        /// <param name="pack">복원된 테이블 팩입니다.</param>
+        /// <param name="error">복원 실패 시 원인 메시지입니다.</param>
+        /// <returns>복원에 성공하면 true를 반환합니다.</returns>
+        private static bool TryDecodeRaw(byte[] bytes, out RuntimeTablePack pack, out string error)
+        {
+            pack = null;
+            error = null;
 
             try
             {
