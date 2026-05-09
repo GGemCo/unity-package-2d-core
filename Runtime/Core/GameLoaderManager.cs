@@ -247,37 +247,12 @@ namespace GGemCo2DCore
                 getProgress: () => addrSound.GetLoadProgress()
             ));
             
-            Register(new AddressableTaskStep(
-                id: "core.character.imageName",
-                order: 360,
-                localizedKey: LocalizationConstants.Keys.Loading.TextTypeSound(),
-                startTask: () => addressableLoaderCharacterImageName.LoadAsync(),
-                getProgress: () => addressableLoaderCharacterImageName.GetLoadProgress()
-            ));
-            
-            Register(new AddressableTaskStep(
-                id: "core.cutscene",
-                order: 370,
-                localizedKey: LocalizationConstants.Keys.Loading.TextTypeCutscene(),
-                startTask: () => addressableLoaderCutscene.LoadAsync(),
-                getProgress: () => addressableLoaderCutscene.GetLoadProgress()
-            ));
-            
-            Register(new AddressableTaskStep(
-                id: "core.worldmap",
-                order: 375,
-                localizedKey: LocalizationConstants.Keys.Loading.TextTypeWorldMap(),
-                startTask: () => addressableLoaderWorldMap.LoadAsync(),
-                getProgress: () => addressableLoaderWorldMap.GetLoadProgress()
-            ));
-            
-            Register(new AddressableTaskStep(
-                id: "core.character.thumbnail",
-                order: 365,
-                localizedKey: LocalizationConstants.Keys.Loading.TextTypeCharacterThumbnail(),
-                startTask: () => addressableLoaderCharacterThumbnail.LoadAsync(),
-                getProgress: () => addressableLoaderCharacterThumbnail.GetLoadProgress()
-            ));
+            // 시작 직후 반드시 필요하지 않은 자산은 선로드 대상에서 제외합니다.
+            // 실제 사용 시 각 AddressableLoader가 지연 로드합니다.
+            _ = addressableLoaderCharacterImageName;
+            _ = addressableLoaderCutscene;
+            _ = addressableLoaderWorldMap;
+            _ = addressableLoaderCharacterThumbnail;
 
             Register(new SaveDataLoadStep(
                 "core.savedata",

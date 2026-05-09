@@ -7,9 +7,13 @@ using UnityEngine.ResourceManagement.AsyncOperations;
 
 namespace GGemCo2DCore
 {
+    /// <summary>
+    /// 캐릭터 이름 이미지를 Addressables에서 로드하고 캐싱합니다.
+    /// </summary>
     public class AddressableLoaderCharacterImageName : MonoBehaviour
     {
         public static AddressableLoaderCharacterImageName Instance { get; private set; }
+
         private readonly Dictionary<string, Sprite> _preLoadCharacterImageName = new Dictionary<string, Sprite>();
         private readonly HashSet<AsyncOperationHandle> _activeHandles = new HashSet<AsyncOperationHandle>();
         private float _prefabLoadProgress;
@@ -40,6 +44,10 @@ namespace GGemCo2DCore
         {
             AddressableLoaderController.ReleaseByHandles(_activeHandles);
         }
+
+        /// <summary>
+        /// 캐릭터 이름 이미지 전체를 선로드합니다.
+        /// </summary>
         public async Task LoadAsync()
         {
             try
@@ -54,7 +62,7 @@ namespace GGemCo2DCore
                     return;
                 }
 
-                int totalCount = locationHandle.Result.Count;
+                int totalCount = Mathf.Max(1, locationHandle.Result.Count);
                 int loadedCount = 0;
 
                 foreach (var location in locationHandle.Result)
@@ -74,10 +82,9 @@ namespace GGemCo2DCore
                     _preLoadCharacterImageName[address] = prefab;
                     loadedCount++;
                 }
-                _activeHandles.Add(locationHandle);
 
-                _prefabLoadProgress = 1f; // 100%
-                // GcLogger.Log($"총 {loadedCount}/{totalCount}개의 프리팹을 성공적으로 로드했습니다.");
+                Addressables.Release(locationHandle);
+                _prefabLoadProgress = 1f;
             }
             catch (Exception ex)
             {
@@ -85,11 +92,42 @@ namespace GGemCo2DCore
             }
         }
 
+        /// <summary>
+        /// 키에 해당하는 캐릭터 이름 이미지를 반환합니다.
+        /// 선로드되지 않은 경우에는 최초 1회 지연 로드를 수행합니다.
+        /// </summary>
+        /// <param name="keyName">Addressables 키입니다.</param>
+        /// <returns>조회된 스프라이트입니다. 없으면 null입니다.</returns>
         public Sprite GetImageNameByKey(string keyName)
         {
-            if (_preLoadCharacterImageName.TryGetValue(keyName, out var prefab))
+            if (string.IsNullOrWhiteSpace(keyName))
+            {
+                return null;
+            }
+
+            if (_preLoadCharacterImageName.TryGetValue(keyName, out var prefab) && prefab != null)
             {
                 return prefab;
+            }
+
+            return LoadSpriteByKeySync(keyName);
+        }
+
+        /// <summary>
+        /// 시작 로딩에서 제외된 자산을 최초 접근 시 동기적으로 지연 로드합니다.
+        /// </summary>
+        /// <param name="keyName">Addressables 키입니다.</param>
+        /// <returns>로드된 스프라이트입니다. 실패 시 null입니다.</returns>
+        private Sprite LoadSpriteByKeySync(string keyName)
+        {
+            AsyncOperationHandle<Sprite> loadHandle = Addressables.LoadAssetAsync<Sprite>(keyName);
+            _activeHandles.Add(loadHandle);
+            Sprite sprite = loadHandle.WaitForCompletion();
+
+            if (loadHandle.Status == AsyncOperationStatus.Succeeded && sprite != null)
+            {
+                _preLoadCharacterImageName[keyName] = sprite;
+                return sprite;
             }
 
             GcLogger.LogError($"Addressables에서 {keyName} 를 찾을 수 없습니다.");

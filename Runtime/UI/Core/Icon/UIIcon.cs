@@ -475,7 +475,7 @@ namespace GGemCo2DCore
         /// 활성 상태에서 사용할 기본 아이콘 스프라이트를 캐시합니다.
         /// </summary>
         /// <param name="sprite">기본 아이콘으로 복원할 스프라이트입니다.</param>
-        private void CacheNormalIconSprite(Sprite sprite)
+        protected void CacheNormalIconSprite(Sprite sprite)
         {
             _normalIconSprite = sprite;
             _hasNormalIconSprite = true;
@@ -520,6 +520,8 @@ namespace GGemCo2DCore
             Sprite newSprite = AddressableLoaderItem.Instance.GetImageIconItemByName("blank");
             if (ImageIcon != null)
             {
+                if (IconType == IconConstants.Type.Skill)
+                    GcLogger.Log($"ClearIconInfos {uid} {ImageIcon.name} {newSprite.name}");
                 ImageIcon.sprite = newSprite;
                 CacheNormalIconSprite(newSprite);
             }

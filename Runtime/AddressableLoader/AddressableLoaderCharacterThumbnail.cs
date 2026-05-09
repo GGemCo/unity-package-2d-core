@@ -8,11 +8,12 @@ using UnityEngine.ResourceManagement.AsyncOperations;
 namespace GGemCo2DCore
 {
     /// <summary>
-    /// 아이템 이미지 로드
+    /// 캐릭터 썸네일 이미지를 Addressables에서 로드하고 캐싱합니다.
     /// </summary>
     public class AddressableLoaderCharacterThumbnail : MonoBehaviour
     {
         public static AddressableLoaderCharacterThumbnail Instance { get; private set; }
+
         private readonly Dictionary<string, Sprite> _dicThumbnail = new Dictionary<string, Sprite>();
         private readonly HashSet<AsyncOperationHandle> _activeHandles = new HashSet<AsyncOperationHandle>();
         private float _prefabLoadProgress;
@@ -43,6 +44,10 @@ namespace GGemCo2DCore
         {
             AddressableLoaderController.ReleaseByHandles(_activeHandles);
         }
+
+        /// <summary>
+        /// 캐릭터 썸네일 전체를 선로드합니다.
+        /// </summary>
         public async Task LoadAsync()
         {
             try
@@ -53,11 +58,11 @@ namespace GGemCo2DCore
 
                 if (!locationHandle.IsValid() || locationHandle.Status != AsyncOperationStatus.Succeeded)
                 {
-                    GcLogger.LogError($"{ConfigAddressableLabel.ImageItemIcon} 레이블을 가진 리소스를 찾을 수 없습니다.");
+                    GcLogger.LogError($"{ConfigAddressableLabel.CharacterThumbnail} 레이블을 가진 리소스를 찾을 수 없습니다.");
                     return;
                 }
 
-                int totalCount = locationHandle.Result.Count;
+                int totalCount = Mathf.Max(1, locationHandle.Result.Count);
                 int loadedCount = 0;
 
                 foreach (var location in locationHandle.Result)
@@ -77,10 +82,9 @@ namespace GGemCo2DCore
                     _dicThumbnail[address] = prefab;
                     loadedCount++;
                 }
-                _activeHandles.Add(locationHandle);
-                
-                _prefabLoadProgress = 1f; // 100%
-                // GcLogger.Log($"총 {loadedCount}/{totalCount}개의 프리팹을 성공적으로 로드했습니다.");
+
+                Addressables.Release(locationHandle);
+                _prefabLoadProgress = 1f;
             }
             catch (Exception ex)
             {
@@ -88,18 +92,48 @@ namespace GGemCo2DCore
             }
         }
 
+        /// <summary>
+        /// 키에 해당하는 캐릭터 썸네일을 반환합니다.
+        /// 선로드되지 않은 경우에는 최초 1회 지연 로드를 수행합니다.
+        /// </summary>
+        /// <param name="key">Addressables 키입니다.</param>
+        /// <returns>조회된 스프라이트입니다. 없으면 null입니다.</returns>
         public Sprite GetCharacterThumbnailByName(string key)
         {
-            if (_dicThumbnail.TryGetValue(key, out var sprite))
+            if (string.IsNullOrWhiteSpace(key))
             {
+                return null;
+            }
+
+            if (_dicThumbnail.TryGetValue(key, out var sprite) && sprite != null)
+            {
+                return sprite;
+            }
+
+            return LoadThumbnailByKeySync(key);
+        }
+
+        /// <summary>
+        /// 시작 로딩에서 제외된 썸네일을 최초 접근 시 동기적으로 로드합니다.
+        /// </summary>
+        /// <param name="key">Addressables 키입니다.</param>
+        /// <returns>로드된 스프라이트입니다. 실패 시 null입니다.</returns>
+        private Sprite LoadThumbnailByKeySync(string key)
+        {
+            AsyncOperationHandle<Sprite> loadHandle = Addressables.LoadAssetAsync<Sprite>(key);
+            _activeHandles.Add(loadHandle);
+            Sprite sprite = loadHandle.WaitForCompletion();
+
+            if (loadHandle.Status == AsyncOperationStatus.Succeeded && sprite != null)
+            {
+                _dicThumbnail[key] = sprite;
                 return sprite;
             }
 
             GcLogger.LogError($"Addressables에서 {key} 캐릭터 썸네일을 찾을 수 없습니다.");
             return null;
         }
-        
-        public float GetLoadProgress() => _prefabLoadProgress;
 
+        public float GetLoadProgress() => _prefabLoadProgress;
     }
 }

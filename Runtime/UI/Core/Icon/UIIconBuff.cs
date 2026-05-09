@@ -243,11 +243,14 @@ namespace GGemCo2DCore
             if (string.IsNullOrEmpty(key))
             {
                 ImageIcon.sprite = null;
+                CacheNormalIconSprite(null);
                 return;
             }
 
             // Affect 패키지가 설치되어 있으면 아이콘을 로드한다. (Core는 Affect를 직접 참조하지 않는다.)
-            ImageIcon.sprite = AffectRuntimeBridge.TryLoadIconSprite(key);
+            Sprite sprite = AffectRuntimeBridge.TryLoadIconSprite(key);
+            ImageIcon.sprite = sprite;
+            CacheNormalIconSprite(sprite);
         }
     }
 }
