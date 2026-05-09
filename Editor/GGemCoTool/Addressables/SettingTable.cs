@@ -36,8 +36,9 @@ namespace GGemCo2DCoreEditor
         }
         
         /// <summary>
-        /// Addressable 설정하기
+        /// Core 테이블 원본과 런타임 테이블 팩을 Addressables에 등록합니다.
         /// </summary>
+        /// <param name="ctx">자동 설정 실행 컨텍스트입니다. null이면 완료 다이얼로그를 표시합니다.</param>
         public void Setup(EditorSetupContext ctx = null)
         {
             // AddressableSettings 가져오기 (없으면 생성)
@@ -57,6 +58,8 @@ namespace GGemCo2DCoreEditor
                 return;
             }
 
+            RegisterRuntimeTablePack(settings, group, ctx);
+
             foreach (var addressableAssetInfo in ConfigAddressableTable.All)
             {
                 Add(settings, group, addressableAssetInfo.Key, addressableAssetInfo.Path, ConfigAddressableLabel.Table);
@@ -75,6 +78,30 @@ namespace GGemCo2DCoreEditor
                 AssetDatabase.SaveAssets();
                 EditorUtility.DisplayDialog(Title, "Addressable 설정 완료", "OK");    
             }
+        }
+
+        /// <summary>
+        /// Core 개별 테이블 txt를 런타임 팩으로 생성하고 Addressables에 등록합니다.
+        /// </summary>
+        /// <param name="settings">Addressables 설정 객체입니다.</param>
+        /// <param name="group">등록 대상 Table 그룹입니다.</param>
+        /// <param name="ctx">자동 설정 실행 컨텍스트입니다.</param>
+        private void RegisterRuntimeTablePack(AddressableAssetSettings settings, AddressableAssetGroup group, EditorSetupContext ctx)
+        {
+            AddressableAssetInfo pack = ConfigAddressableTablePack.Core;
+            bool built = RuntimeTablePackBuilder.Build(
+                ConfigAddressableTablePack.PackageCore,
+                pack,
+                ConfigAddressableTable.All,
+                ctx);
+
+            if (!built)
+            {
+                HelperLog.Warn("Core 런타임 테이블 팩 생성에 실패했습니다. 개별 테이블 등록은 계속 진행합니다.", ctx);
+                return;
+            }
+
+            Add(settings, group, pack.Key, pack.Path, ConfigAddressableLabel.TablePack);
         }
     }
 }

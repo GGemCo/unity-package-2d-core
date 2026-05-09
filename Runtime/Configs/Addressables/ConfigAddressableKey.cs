@@ -34,6 +34,7 @@
         public const string Sound = ConfigDefine.NameSDK + "_Sound";
         
         public const string Table = ConfigDefine.NameSDK + "_Table";
+        public const string TablePack = ConfigDefine.NameSDK + "_TablePack";
         
         public const string SimulationTool = ConfigDefine.NameSDK + "_SimulationTool";
         public const string SimulationGrowth = ConfigDefine.NameSDK + "_SimulationGrowth";

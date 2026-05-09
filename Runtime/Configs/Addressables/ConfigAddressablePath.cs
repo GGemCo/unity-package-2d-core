@@ -28,6 +28,9 @@ namespace GGemCo2DCore
         /// <summary>테이블 파일(.txt) 루트</summary>
         public static string Tables => Combine(Root, "Tables");
 
+        /// <summary>런타임 테이블 팩(.bytes) 루트</summary>
+        public static string TablePacks => Combine(Root, "TablePacks");
+
         /// <summary>사운드 루트</summary>
         public static string Sounds => Combine(Root, "Sounds");
 

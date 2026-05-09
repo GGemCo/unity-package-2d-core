@@ -33,10 +33,96 @@ namespace GGemCo2DCore
             registry.Register(tableParser);
             return true;
         }
+        /// <summary>
+        /// 등록된 테이블 파서에 원문 콘텐츠를 전달해 런타임 캐시를 구성합니다.
+        /// </summary>
+        /// <param name="key">파서 등록에 사용된 논리 테이블 이름입니다.</param>
+        /// <param name="content">파싱할 테이블 원문입니다.</param>
+        /// <returns>등록된 파서가 있고 로드 요청을 전달했으면 true를 반환합니다.</returns>
         public bool TryLoadTable(string key, string content)
         {
+            if (!EnsureInitialized())
+                return false;
+
             return registry.TryLoad(key, content);
         }
+
+        /// <summary>
+        /// Addressables에 등록된 런타임 테이블 팩을 로드하고 포함된 테이블 원문을 각 파서에 주입합니다.
+        /// </summary>
+        /// <param name="info">테이블 팩 Addressables 정보입니다.</param>
+        /// <returns>팩 로드와 테이블 주입이 성공하면 true를 반환합니다.</returns>
+        public async Task<bool> LoadDataPack(AddressableAssetInfo info)
+        {
+            if (info == null || string.IsNullOrWhiteSpace(info.Key))
+            {
+                GcLogger.LogWarning("[TableLoader] 테이블 팩 정보가 없습니다.");
+                return false;
+            }
+
+            if (!EnsureInitialized())
+                return false;
+
+            // 팩이 아직 생성되지 않은 개발 환경에서는 기존 개별 테이블 로딩으로 되돌아갈 수 있도록 존재 여부만 확인합니다.
+            var locationsHandle = Addressables.LoadResourceLocationsAsync(info.Key);
+            await locationsHandle.Task;
+
+            if (!locationsHandle.Status.Equals(AsyncOperationStatus.Succeeded) || locationsHandle.Result.Count == 0)
+            {
+                Addressables.Release(locationsHandle);
+                GcLogger.LogWarning($"[TableLoader] 테이블 팩이 Addressables에 등록되지 않았습니다. fallback으로 전환합니다. key={info.Key}");
+                return false;
+            }
+
+            Addressables.Release(locationsHandle);
+
+            var handle = Addressables.LoadAssetAsync<TextAsset>(info.Key);
+            var asset = await handle.Task;
+
+            if (!handle.Status.Equals(AsyncOperationStatus.Succeeded) || asset == null)
+            {
+                Addressables.Release(handle);
+                GcLogger.LogWarning($"[TableLoader] 테이블 팩을 로드하지 못했습니다. key={info.Key}");
+                return false;
+            }
+
+            byte[] bytes = asset.bytes;
+            Addressables.Release(handle);
+
+            if (!RuntimeTablePackCodec.TryDecode(bytes, out RuntimeTablePack pack, out string error))
+            {
+                GcLogger.LogError($"[TableLoader] 테이블 팩 해석에 실패했습니다. key={info.Key}, error={error}");
+                return false;
+            }
+
+            if (!string.IsNullOrEmpty(info.Etc1) &&
+                !string.Equals(info.Etc1, pack.PackageId, StringComparison.OrdinalIgnoreCase))
+            {
+                GcLogger.LogWarning($"[TableLoader] 테이블 팩 패키지 식별자가 다릅니다. expected={info.Etc1}, actual={pack.PackageId}");
+            }
+
+            int loadedCount = 0;
+            for (int i = 0; i < pack.Entries.Count; i++)
+            {
+                RuntimeTablePackEntry entry = pack.Entries[i];
+                if (entry == null || string.IsNullOrWhiteSpace(entry.TableName))
+                {
+                    GcLogger.LogWarning($"[TableLoader] 테이블 팩 엔트리의 테이블 이름이 비어 있습니다. pack={info.Key}, index={i}");
+                    continue;
+                }
+
+                if (!TryLoadTable(entry.TableName, entry.Content))
+                {
+                    GcLogger.LogWarning($"[TableLoader] 등록되지 않은 테이블 키입니다. table={entry.TableName}, pack={info.Key}");
+                    continue;
+                }
+
+                loadedCount++;
+            }
+
+            return loadedCount > 0;
+        }
+
         /// <summary>
         /// 제네릭을 사용하여 Addressables에서 설정을 로드하는 함수
         /// </summary>
@@ -74,8 +160,18 @@ namespace GGemCo2DCore
             return false;
         }
 
+        /// <summary>
+        /// 개별 Addressables txt 테이블을 로드해 등록된 테이블 파서에 전달합니다.
+        /// </summary>
+        /// <param name="info">개별 테이블 Addressables 정보입니다.</param>
         public async Task LoadDataFile(AddressableAssetInfo info)
         {
+            if (info == null || string.IsNullOrWhiteSpace(info.Key))
+            {
+                GcLogger.LogWarning("[TableLoader] 개별 테이블 정보가 없습니다.");
+                return;
+            }
+
             var content = await LoadTextAsync(info.Key);
             if (string.IsNullOrEmpty(content)) return;
 

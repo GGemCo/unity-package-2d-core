@@ -5,6 +5,7 @@ namespace GGemCo2DCore
     {
         public const string PreLoadGamePrefabs = ConfigDefine.NameSDK+"_PreLoadGamePrefabs";
         public const string Table = ConfigDefine.NameSDK+"_Table";
+        public const string TablePack = ConfigDefine.NameSDK+"_TablePack";
         public const string Vfx = ConfigDefine.NameSDK+"_Vfx";
         public const string ImageItemDrop = ConfigDefine.NameSDK+"_Item_Drop";
         public const string ImageItemEquip = ConfigDefine.NameSDK+"_Item_Equip";

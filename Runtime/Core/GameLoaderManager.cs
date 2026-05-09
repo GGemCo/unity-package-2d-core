@@ -207,12 +207,13 @@ namespace GGemCo2DCore
                 localeCode: PlayerPrefsManager.LoadLocalizationLocaleCode()
             ));
 
-            Register(new TableLoadStep(
+            Register(new TablePackLoadStep(
                 id: "core.table",
                 order: 240,
                 localizedKey: LocalizationConstants.Keys.Loading.TextTypeTables(),
                 tableLoader: tableLoader,
-                tables: targetTables
+                tablePack: ConfigAddressableTablePack.Core,
+                fallbackTables: targetTables
             ));
 
             Register(new AddressableTaskStep(
