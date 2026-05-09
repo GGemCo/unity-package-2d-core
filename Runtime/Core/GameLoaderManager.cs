@@ -189,6 +189,7 @@ namespace GGemCo2DCore
             var addrPrefabVfx = CompatObjectFind.FindFirst<AddressableLoaderPrefabVfx>() ?? new GameObject("AddressableLoaderPrefabVfx").AddComponent<AddressableLoaderPrefabVfx>();
             var addrItem = CompatObjectFind.FindFirst<AddressableLoaderItem>() ?? new GameObject("AddressableLoaderItem").AddComponent<AddressableLoaderItem>();
             var addrSound = CompatObjectFind.FindFirst<AddressableLoaderSound>() ?? new GameObject("AddressableLoaderSound").AddComponent<AddressableLoaderSound>();
+            _ = AddressableDependencyWarmupService.GetOrCreate();
             var saveData = CompatObjectFind.FindFirst<SaveDataLoader>() ?? new GameObject("SaveDataLoader").AddComponent<SaveDataLoader>();
             var loc = CompatObjectFind.FindFirst<LocalizationManager>() ?? new GameObject("LocalizationManager").AddComponent<LocalizationManager>();
             var addressableLoaderCharacterImageName = CompatObjectFind.FindFirst<AddressableLoaderCharacterImageName>() ?? new GameObject("AddressableLoaderCharacterImageName").AddComponent<AddressableLoaderCharacterImageName>();
@@ -228,7 +229,7 @@ namespace GGemCo2DCore
                 id: "core.prefab.vfx",
                 order: 310,
                 localizedKey: LocalizationConstants.Keys.Loading.TextTypeVfx(),
-                startTask: () => addrPrefabVfx.LoadPrefabsAsync(),
+                startTask: () => addrPrefabVfx.PrepareDependenciesAsync(),
                 getProgress: () => addrPrefabVfx.GetPrefabLoadProgress()
             ));
 
@@ -236,7 +237,7 @@ namespace GGemCo2DCore
                 id: "core.item",
                 order: 320,
                 localizedKey: LocalizationConstants.Keys.Loading.TextTypeItem(),
-                startTask: () => addrItem.LoadPrefabsAsync(),
+                startTask: () => addrItem.PrepareDependenciesAsync(),
                 getProgress: () => addrItem.GetPrefabLoadProgress()
             ));
 
@@ -244,7 +245,7 @@ namespace GGemCo2DCore
                 id: "core.sound",
                 order: 350,
                 localizedKey: LocalizationConstants.Keys.Loading.TextTypeSound(),
-                startTask: () => addrSound.LoadSoundAsync(ConfigAddressableLabel.Sound),
+                startTask: () => addrSound.PrepareDependenciesAsync(ConfigAddressableLabel.Sound),
                 getProgress: () => addrSound.GetLoadProgress()
             ));
             
@@ -274,6 +275,7 @@ namespace GGemCo2DCore
             var addrSound = CompatObjectFind.FindFirst<AddressableLoaderSound>() ?? new GameObject("AddressableLoaderSound").AddComponent<AddressableLoaderSound>();
             var addrSettings = CompatObjectFind.FindFirst<AddressableLoaderSettings>() ?? new GameObject("AddressableLoaderSettings").AddComponent<AddressableLoaderSettings>();
             var loc = CompatObjectFind.FindFirst<LocalizationManager>() ?? new GameObject("LocalizationManager").AddComponent<LocalizationManager>();
+            _ = AddressableDependencyWarmupService.GetOrCreate();
 
             
             
@@ -306,7 +308,7 @@ namespace GGemCo2DCore
                 id: "core.sound.intro",
                 order: 355,
                 localizedKey: LocalizationConstants.Keys.Loading.TextTypeSound(),
-                startTask: () => addrSound.LoadSoundAsync(ConfigAddressableLabel.SoundIntro),
+                startTask: () => addrSound.PrepareDependenciesAsync(ConfigAddressableLabel.SoundIntro),
                 getProgress: () => addrSound.GetLoadProgress()
             ));
             StartLoading();

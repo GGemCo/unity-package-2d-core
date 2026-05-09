@@ -113,7 +113,12 @@ namespace GGemCo2DCore
                 return null;
 
             string key = $"{ConfigAddressableGroupName.Vfx}_{info.PrefabPath}";
-            return prefabLoader.GetPrefabByName(key);
+            if (prefabLoader.TryGetPrefabByName(key, out GameObject prefab))
+                return prefab;
+
+            // 시작 로딩에서는 번들 종속성만 준비하므로, 첫 요청 시 실제 프리팹 캐시를 비동기로 채웁니다.
+            prefabLoader.RequestPrefabLoad(key);
+            return null;
         }
 
         private void ApplyRequest(GameObject instance, VfxBehaviourBase behaviour, VfxSpawnPolicy spawnPolicy, VfxSpawnRequest request)

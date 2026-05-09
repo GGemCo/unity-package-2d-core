@@ -4,7 +4,6 @@ using System.Threading.Tasks;
 using UnityEngine;
 using UnityEngine.AddressableAssets;
 using UnityEngine.ResourceManagement.AsyncOperations;
-using UnityEngine.U2D;
 
 namespace GGemCo2DCore
 {
@@ -16,6 +15,8 @@ namespace GGemCo2DCore
         public static AddressableLoaderSound Instance { get; private set; }
         private readonly Dictionary<string, AudioClip> _dicSound = new Dictionary<string, AudioClip>();
         private readonly HashSet<AsyncOperationHandle> _activeHandles = new HashSet<AsyncOperationHandle>();
+        private readonly HashSet<string> _loadingClipKeys = new HashSet<string>();
+        private const string WarmupGroupPrefix = "core.sound";
         private float _prefabLoadProgress;
 
         private void Awake()
@@ -43,16 +44,46 @@ namespace GGemCo2DCore
         private void ReleaseAll()
         {
             AddressableLoaderController.ReleaseByHandles(_activeHandles);
+            _dicSound.Clear();
+            _loadingClipKeys.Clear();
         }
 
+        /// <summary>
+        /// 사운드 라벨의 Addressables 종속성만 미리 다운로드합니다.
+        /// </summary>
+        /// <param name="key">다운로드할 사운드 라벨 또는 키입니다.</param>
+        public async Task PrepareDependenciesAsync(string key)
+        {
+            if (string.IsNullOrWhiteSpace(key))
+            {
+                _prefabLoadProgress = 1f;
+                return;
+            }
+
+            _prefabLoadProgress = 0f;
+
+            string groupId = $"{WarmupGroupPrefix}.{key}";
+            AddressableDependencyWarmupService warmupService = AddressableDependencyWarmupService.GetOrCreate();
+            Task<bool> task = warmupService.WarmupManyAsync(new List<string> { key }, groupId);
+
+            while (!task.IsCompleted)
+            {
+                _prefabLoadProgress = warmupService.GetGroupProgress(groupId);
+                await Task.Yield();
+            }
+
+            _prefabLoadProgress = 1f;
+        }
+
+        /// <summary>
+        /// 지정한 라벨의 사운드 클립을 모두 실제 객체로 로드해 캐시에 저장합니다.
+        /// </summary>
+        /// <param name="key">로드할 사운드 라벨입니다.</param>
         public async Task LoadSoundAsync(string key)
         {
             try
             {
                 if (string.IsNullOrEmpty(key)) return;
-                
-                // 아이콘 이미지
-                _dicSound.Clear();
                 
                 var locationHandle = Addressables.LoadResourceLocationsAsync(key);
                 await locationHandle.Task;
@@ -69,19 +100,15 @@ namespace GGemCo2DCore
                 foreach (var location in locationHandle.Result)
                 {
                     string address = location.PrimaryKey;
-                    var loadHandle = Addressables.LoadAssetAsync<AudioClip>(address);
-
-                    while (!loadHandle.IsDone)
+                    AudioClip prefab = await LoadAudioClipAsync(address);
+                    if (!prefab)
                     {
-                        _prefabLoadProgress = (loadedCount + loadHandle.PercentComplete) / totalCount;
-                        await Task.Yield();
+                        loadedCount++;
+                        continue;
                     }
-                    _activeHandles.Add(loadHandle);
 
-                    AudioClip prefab = await loadHandle.Task;
-                    if (!prefab) continue;
-                    _dicSound[address] = prefab;
                     loadedCount++;
+                    _prefabLoadProgress = totalCount > 0 ? (float)loadedCount / totalCount : 1f;
                 }
                 _activeHandles.Add(locationHandle);
 
@@ -94,6 +121,65 @@ namespace GGemCo2DCore
             }
         }
 
+        /// <summary>
+        /// 사운드 클립을 필요 시점에 비동기로 로드하고 캐시에 저장합니다.
+        /// </summary>
+        /// <param name="keyName">로드할 사운드 Addressables 키입니다.</param>
+        /// <returns>로드된 AudioClip입니다. 실패 시 null을 반환합니다.</returns>
+        public async Task<AudioClip> LoadAudioClipAsync(string keyName)
+        {
+            if (string.IsNullOrWhiteSpace(keyName))
+                return null;
+
+            if (_dicSound.TryGetValue(keyName, out AudioClip cached))
+                return cached;
+
+            if (_loadingClipKeys.Contains(keyName))
+            {
+                while (_loadingClipKeys.Contains(keyName))
+                    await Task.Yield();
+
+                return _dicSound.TryGetValue(keyName, out cached) ? cached : null;
+            }
+
+            _loadingClipKeys.Add(keyName);
+            AsyncOperationHandle<AudioClip> loadHandle = Addressables.LoadAssetAsync<AudioClip>(keyName);
+            _activeHandles.Add(loadHandle);
+
+            try
+            {
+                AudioClip audioClip = await loadHandle.Task;
+                if (loadHandle.Status == AsyncOperationStatus.Succeeded && audioClip != null)
+                {
+                    _dicSound[keyName] = audioClip;
+                    return audioClip;
+                }
+
+                GcLogger.LogWarning($"[AddressableLoaderSound] 사운드 클립 로드에 실패했습니다. key={keyName}");
+                return null;
+            }
+            finally
+            {
+                _loadingClipKeys.Remove(keyName);
+            }
+        }
+
+        /// <summary>
+        /// 캐시된 사운드 클립 조회를 시도합니다.
+        /// </summary>
+        /// <param name="keyName">조회할 사운드 Addressables 키입니다.</param>
+        /// <param name="audioClip">캐시된 AudioClip입니다.</param>
+        /// <returns>캐시에 존재하면 true를 반환합니다.</returns>
+        public bool TryGetAudioClip(string keyName, out AudioClip audioClip)
+        {
+            return _dicSound.TryGetValue(keyName, out audioClip);
+        }
+
+        /// <summary>
+        /// 캐시된 사운드 클립을 반환합니다.
+        /// </summary>
+        /// <param name="keyName">조회할 사운드 Addressables 키입니다.</param>
+        /// <returns>캐시에 있으면 AudioClip, 없으면 null입니다.</returns>
         public AudioClip GetAudioClip(string keyName)
         {
             if (_dicSound.TryGetValue(keyName, out var audioClip))
@@ -101,7 +187,7 @@ namespace GGemCo2DCore
                 return audioClip;
             }
 
-            GcLogger.LogError($"Addressables에서 {keyName} 사운드를 찾을 수 없습니다.");
+            GcLogger.LogWarning($"Addressables에서 {keyName} 사운드 캐시를 찾을 수 없습니다. 필요 시 LoadAudioClipAsync를 사용하세요.");
             return null;
         }
         public float GetLoadProgress() => _prefabLoadProgress;

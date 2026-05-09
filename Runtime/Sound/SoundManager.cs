@@ -1,4 +1,6 @@
 ﻿using System.Collections.Generic;
+using System.Collections;
+using System.Threading.Tasks;
 using UnityEngine;
 using UnityEngine.Audio;
 
@@ -70,12 +72,38 @@ namespace GGemCo2DCore
         /// <param name="uid"></param>
         public void PlayByUid(int uid)
         {
-            if (!_tableLoaderManager) return;
+            if (!_tableLoaderManager || !_addressableLoaderSound) return;
             var info = _tableLoaderManager.GetSoundData(uid);
+            if (info == null) return;
+
             if (info.Type == SoundConstants.Type.Bgm)
-                _soundControllerBgm.Play(_addressableLoaderSound.GetAudioClip($"{ConfigAddressableKey.Sound}_{info.FileName}"), this);
+                StartCoroutine(PlayBgmRoutine(info));
             else if (info.Type == SoundConstants.Type.Sfx)
                 _soundControllerSfx.Play(uid, this);
+        }
+
+        /// <summary>
+        /// BGM 클립을 필요 시점에 비동기로 로드한 뒤 재생합니다.
+        /// </summary>
+        /// <param name="info">재생할 BGM 테이블 행입니다.</param>
+        /// <returns>Unity 코루틴 실행자에 전달할 열거자입니다.</returns>
+        private IEnumerator PlayBgmRoutine(StruckTableSound info)
+        {
+            if (info == null || _addressableLoaderSound == null)
+                yield break;
+
+            string key = $"{ConfigAddressableKey.Sound}_{info.FileName}";
+            Task<AudioClip> task = _addressableLoaderSound.LoadAudioClipAsync(key);
+            while (!task.IsCompleted)
+                yield return null;
+
+            if (task.IsCanceled || task.IsFaulted || task.Result == null)
+            {
+                GcLogger.LogWarning($"BGM 클립을 로드하지 못했습니다. key={key}");
+                yield break;
+            }
+
+            _soundControllerBgm?.Play(task.Result, this);
         }
 
         /// <summary>

@@ -18,7 +18,10 @@ namespace GGemCo2DCore
         private readonly Dictionary<string, SpriteAtlas> _dicImageIcon = new Dictionary<string, SpriteAtlas>();
         private readonly Dictionary<string, SpriteAtlas> _dicImageEquip = new Dictionary<string, SpriteAtlas>();
         private readonly HashSet<AsyncOperationHandle> _activeHandles = new HashSet<AsyncOperationHandle>();
+        private readonly HashSet<string> _loadingAtlasKeys = new HashSet<string>();
+        private const string WarmupGroupId = "core.item";
         private float _prefabLoadProgress;
+        private bool _isLoadingPrefabs;
 
         private void Awake()
         {
@@ -45,11 +48,110 @@ namespace GGemCo2DCore
         private void ReleaseAll()
         {
             AddressableLoaderController.ReleaseByHandles(_activeHandles);
+            _dicImageDrop.Clear();
+            _dicImageIcon.Clear();
+            _dicImageEquip.Clear();
+            _loadingAtlasKeys.Clear();
         }
-        public async Task LoadPrefabsAsync()
+
+        /// <summary>
+        /// 아이템 이미지 아틀라스 라벨의 Addressables 종속성만 미리 다운로드합니다.
+        /// </summary>
+        /// <param name="loadObjectsInBackground">워밍 완료 후 실제 아틀라스 캐시를 백그라운드에서 구성할지 여부입니다.</param>
+        public async Task PrepareDependenciesAsync(bool loadObjectsInBackground = true)
         {
+            _prefabLoadProgress = 0f;
+
+            var labels = new List<string>
+            {
+                ConfigAddressableLabel.ImageItemIcon,
+                ConfigAddressableLabel.ImageItemDrop,
+                ConfigAddressableLabel.ImageItemEquip
+            };
+
+            AddressableDependencyWarmupService warmupService = AddressableDependencyWarmupService.GetOrCreate();
+            Task<bool> task = warmupService.WarmupManyAsync(labels, WarmupGroupId);
+
+            while (!task.IsCompleted)
+            {
+                _prefabLoadProgress = warmupService.GetGroupProgress(WarmupGroupId);
+                await Task.Yield();
+            }
+
+            _prefabLoadProgress = 1f;
+
+            if (loadObjectsInBackground && task.Status == TaskStatus.RanToCompletion && task.Result)
+            {
+                // 기존 UI가 동기 Sprite 조회를 사용하므로, 캐시 구성은 로딩 화면을 막지 않는 백그라운드 작업으로 이어갑니다.
+                _ = LoadPrefabsAsync();
+            }
+        }
+
+        /// <summary>
+        /// 특정 아이템 아틀라스를 필요 시점에 비동기로 로드합니다.
+        /// </summary>
+        /// <param name="key">로드할 SpriteAtlas Addressables 키입니다.</param>
+        /// <param name="target">로드 결과를 저장할 캐시 딕셔너리입니다.</param>
+        /// <returns>로드된 SpriteAtlas입니다. 실패 시 null을 반환합니다.</returns>
+        private async Task<SpriteAtlas> LoadAtlasAsync(string key, Dictionary<string, SpriteAtlas> target)
+        {
+            if (string.IsNullOrWhiteSpace(key) || target == null)
+                return null;
+
+            if (target.TryGetValue(key, out SpriteAtlas cached))
+                return cached;
+
+            if (_loadingAtlasKeys.Contains(key))
+            {
+                while (_loadingAtlasKeys.Contains(key))
+                    await Task.Yield();
+
+                return target.TryGetValue(key, out cached) ? cached : null;
+            }
+
+            _loadingAtlasKeys.Add(key);
+            AsyncOperationHandle<SpriteAtlas> loadHandle = Addressables.LoadAssetAsync<SpriteAtlas>(key);
+            _activeHandles.Add(loadHandle);
+
             try
             {
+                SpriteAtlas atlas = await loadHandle.Task;
+                if (loadHandle.Status == AsyncOperationStatus.Succeeded && atlas != null)
+                {
+                    target[key] = atlas;
+                    return atlas;
+                }
+
+                GcLogger.LogWarning($"[AddressableLoaderItem] 아이템 아틀라스 로드에 실패했습니다. key={key}");
+                return null;
+            }
+            finally
+            {
+                _loadingAtlasKeys.Remove(key);
+            }
+        }
+
+        /// <summary>
+        /// 특정 아이템 아틀라스 로드를 백그라운드로 요청합니다.
+        /// </summary>
+        /// <param name="key">로드할 SpriteAtlas Addressables 키입니다.</param>
+        /// <param name="target">로드 결과를 저장할 캐시 딕셔너리입니다.</param>
+        private void RequestAtlasLoad(string key, Dictionary<string, SpriteAtlas> target)
+        {
+            if (string.IsNullOrWhiteSpace(key) || target == null || target.ContainsKey(key) || _loadingAtlasKeys.Contains(key))
+                return;
+
+            _ = LoadAtlasAsync(key, target);
+        }
+
+        public async Task LoadPrefabsAsync()
+        {
+            if (_isLoadingPrefabs)
+                return;
+
+            try
+            {
+                _isLoadingPrefabs = true;
                 // 아이콘 이미지
                 _dicImageIcon.Clear();
                 var locationHandle = Addressables.LoadResourceLocationsAsync(ConfigAddressableLabel.ImageItemIcon);
@@ -160,6 +262,10 @@ namespace GGemCo2DCore
             {
                 GcLogger.LogError($"프리팹 로딩 중 오류 발생: {ex.Message}");
             }
+            finally
+            {
+                _isLoadingPrefabs = false;
+            }
         }
 
         public Sprite GetImageIconItemByName(string prefabName)
@@ -169,7 +275,8 @@ namespace GGemCo2DCore
                 return prefab.GetSprite(prefabName);
             }
 
-            GcLogger.LogError($"Addressables에서 {prefabName} 프리팹을 찾을 수 없습니다.");
+            RequestAtlasLoad(ConfigAddressableLabel.ImageItemIcon, _dicImageIcon);
+            GcLogger.LogWarning($"Addressables에서 아이템 아이콘 아틀라스를 찾을 수 없어 비동기 로드를 요청했습니다. sprite={prefabName}");
             return null;
         }
         public Sprite GetImageDropByName(string prefabName)
@@ -179,7 +286,8 @@ namespace GGemCo2DCore
                 return prefab.GetSprite(prefabName);
             }
 
-            GcLogger.LogError($"Addressables에서 {prefabName} 프리팹을 찾을 수 없습니다.");
+            RequestAtlasLoad(ConfigAddressableLabel.ImageItemDrop, _dicImageDrop);
+            GcLogger.LogWarning($"Addressables에서 아이템 드랍 아틀라스를 찾을 수 없어 비동기 로드를 요청했습니다. sprite={prefabName}");
             return null;
         }
 
@@ -190,7 +298,8 @@ namespace GGemCo2DCore
                 return prefab.GetSprite(prefabName);
             }
 
-            GcLogger.LogError($"Addressables에서 {prefabName} 프리팹을 찾을 수 없습니다.");
+            RequestAtlasLoad(ConfigAddressableLabel.ImageItemEquip, _dicImageEquip);
+            GcLogger.LogWarning($"Addressables에서 아이템 장착 아틀라스를 찾을 수 없어 비동기 로드를 요청했습니다. sprite={prefabName}");
             return null;
         }
         public float GetPrefabLoadProgress() => _prefabLoadProgress;
