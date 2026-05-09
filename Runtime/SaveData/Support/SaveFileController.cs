@@ -28,7 +28,7 @@ namespace GGemCo2DCore
 
             string filePath = GetSaveFilePath(slot);
             string json = JsonConvert.SerializeObject(saveData, Formatting.Indented);
-            SaveDataFileService.WriteAllText(filePath, json);
+            SaveDataFileService.WriteAllText(filePath, json, SaveDataIdentity.Core(slot));
             GcLogger.Log($"데이터가 저장되었습니다. 슬롯 {slot}");
         }
         /// <summary>
@@ -47,7 +47,7 @@ namespace GGemCo2DCore
                 return null;
             }
 
-            string json = SaveDataFileService.ReadAllText(filePath);
+            string json = SaveDataFileService.ReadAllText(filePath, SaveDataIdentity.Core(slot));
             GcLogger.Log($"데이터가 불러와졌습니다. 슬롯 {slot}");
             return JsonConvert.DeserializeObject<SaveDataContainer>(json);
         }

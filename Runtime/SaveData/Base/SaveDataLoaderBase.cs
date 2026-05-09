@@ -27,6 +27,17 @@ namespace GGemCo2DCore
         {
             return saveFileController.GetSaveFilePath(slotIndex);
         }
+
+        /// <summary>
+        /// 현재 로더가 읽는 저장 데이터의 논리 식별자를 반환합니다.
+        /// </summary>
+        /// <param name="slotIndex">로드할 저장 슬롯 번호입니다.</param>
+        /// <returns>암호화 AAD 구성에 사용할 논리 저장 식별자입니다.</returns>
+        protected virtual SaveDataIdentity GetSaveDataIdentity(int slotIndex)
+        {
+            return SaveDataIdentity.Core(slotIndex);
+        }
+
         /// <summary>
         /// JSON 파일을 읽어오면서 진행률을 업데이트
         /// </summary>
@@ -48,7 +59,7 @@ namespace GGemCo2DCore
             onProgressUpdate?.Invoke(_loadProgress);
             yield return null;
 
-            string json = SaveDataFileService.ReadAllText(filePath);
+            string json = SaveDataFileService.ReadAllText(filePath, GetSaveDataIdentity(slotIndex));
             _loadProgress = 0.6f; // JSON 읽기 완료
             onProgressUpdate?.Invoke(_loadProgress);
             yield return null;

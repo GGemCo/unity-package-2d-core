@@ -181,7 +181,7 @@ namespace GGemCo2DCore
             };
 
             string json = JsonConvert.SerializeObject(saveData);
-            SaveDataFileService.WriteAllText(filePath, json);
+            SaveDataFileService.WriteAllText(filePath, json, SaveDataIdentity.Core(currentSaveSlot));
             // GcLogger.Log($"데이터가 저장되었습니다. 슬롯 {currentSaveSlot}");
             
             // 썸네일 캡처 후 저장

@@ -11,6 +11,7 @@ namespace GGemCo2DCore
     public static class SaveDataCryptoService
     {
         private static bool _providerUnavailableWarningLogged;
+        private static bool _legacyAssociatedDataWarningLogged;
 
         /// <summary>
         /// 암호화 Envelope를 식별하기 위한 고정 문자열입니다.
@@ -29,6 +30,18 @@ namespace GGemCo2DCore
         /// <param name="plainText">직렬화된 평문 JSON입니다.</param>
         /// <returns>파일에 기록할 텍스트입니다.</returns>
         public static string EncryptForWrite(string filePath, string plainText)
+        {
+            return EncryptForWrite(filePath, plainText, null);
+        }
+
+        /// <summary>
+        /// 저장 직전에 평문 JSON을 논리 저장 식별자 기반 AAD로 암호화합니다.
+        /// </summary>
+        /// <param name="filePath">저장 대상 파일 경로입니다.</param>
+        /// <param name="plainText">직렬화된 평문 JSON입니다.</param>
+        /// <param name="identity">암호화 AAD를 구성할 논리 저장 식별자입니다.</param>
+        /// <returns>파일에 기록할 텍스트입니다.</returns>
+        public static string EncryptForWrite(string filePath, string plainText, SaveDataIdentity identity)
         {
             GGemCoSaveSettings saveSettings = GetSaveSettings();
             if (!ShouldEncryptForWrite(saveSettings))
@@ -55,7 +68,7 @@ namespace GGemCo2DCore
 
             try
             {
-                return provider.EncryptToText(plainText, CreateContext(filePath, saveSettings));
+                return provider.EncryptToText(plainText, CreateContext(filePath, saveSettings, identity));
             }
             catch (Exception ex)
             {
@@ -70,6 +83,18 @@ namespace GGemCo2DCore
         /// <param name="fileText">파일에서 읽은 원본 텍스트입니다.</param>
         /// <returns>역직렬화에 사용할 평문 JSON입니다.</returns>
         public static string DecryptAfterRead(string filePath, string fileText)
+        {
+            return DecryptAfterRead(filePath, fileText, null);
+        }
+
+        /// <summary>
+        /// 파일에서 읽은 텍스트를 논리 저장 식별자 기반 AAD로 검증하고 평문 JSON으로 변환합니다.
+        /// </summary>
+        /// <param name="filePath">로드 대상 파일 경로입니다.</param>
+        /// <param name="fileText">파일에서 읽은 원본 텍스트입니다.</param>
+        /// <param name="identity">복호화 AAD를 구성할 논리 저장 식별자입니다.</param>
+        /// <returns>역직렬화에 사용할 평문 JSON입니다.</returns>
+        public static string DecryptAfterRead(string filePath, string fileText, SaveDataIdentity identity)
         {
             if (string.IsNullOrEmpty(fileText))
             {
@@ -96,10 +121,15 @@ namespace GGemCo2DCore
 
             try
             {
-                return provider.DecryptToText(fileText, CreateContext(filePath, saveSettings));
+                return provider.DecryptToText(fileText, CreateContext(filePath, saveSettings, identity));
             }
             catch (Exception ex)
             {
+                if (identity != null && TryDecryptWithLegacyAssociatedData(provider, filePath, fileText, saveSettings, out string legacyPlainText))
+                {
+                    return legacyPlainText;
+                }
+
                 throw new SaveDataCryptoException("저장 데이터 복호화에 실패했습니다.", ex);
             }
         }
@@ -161,20 +191,32 @@ namespace GGemCo2DCore
         /// </summary>
         /// <param name="filePath">저장 파일 경로입니다.</param>
         /// <param name="saveSettings">저장 설정입니다.</param>
+        /// <param name="identity">암호화 AAD를 구성할 논리 저장 식별자입니다.</param>
         /// <returns>암호화 컨텍스트입니다.</returns>
-        private static SaveDataCryptoContext CreateContext(string filePath, GGemCoSaveSettings saveSettings)
+        private static SaveDataCryptoContext CreateContext(string filePath, GGemCoSaveSettings saveSettings, SaveDataIdentity identity)
         {
             string keyAlias = saveSettings != null ? saveSettings.SaveDataEncryptionKeyAlias : DefaultKeyAlias;
-            string associatedData = CreateAssociatedData(filePath);
+            string associatedData = CreateAssociatedData(filePath, identity);
             return new SaveDataCryptoContext(filePath, keyAlias, associatedData);
         }
 
         /// <summary>
-        /// 파일 이름과 슬롯 폴더 이름으로 추가 인증 데이터를 구성합니다.
+        /// 논리 저장 식별자를 우선 사용해 추가 인증 데이터를 구성합니다.
         /// </summary>
         /// <param name="filePath">저장 파일 경로입니다.</param>
+        /// <param name="identity">암호화 AAD를 구성할 논리 저장 식별자입니다.</param>
         /// <returns>암호문 검증에 사용할 추가 인증 데이터입니다.</returns>
-        private static string CreateAssociatedData(string filePath)
+        private static string CreateAssociatedData(string filePath, SaveDataIdentity identity)
+        {
+            return identity != null ? identity.ToAssociatedData() : CreateLegacyAssociatedData(filePath);
+        }
+
+        /// <summary>
+        /// 기존 암호화 파일 호환을 위해 파일 이름과 슬롯 폴더 이름으로 AAD를 구성합니다.
+        /// </summary>
+        /// <param name="filePath">저장 파일 경로입니다.</param>
+        /// <returns>기존 파일명 기반 추가 인증 데이터입니다.</returns>
+        private static string CreateLegacyAssociatedData(string filePath)
         {
             if (string.IsNullOrEmpty(filePath))
             {
@@ -184,6 +226,44 @@ namespace GGemCo2DCore
             string fileName = Path.GetFileName(filePath);
             string slotName = Path.GetFileName(Path.GetDirectoryName(filePath) ?? string.Empty);
             return string.IsNullOrEmpty(slotName) ? fileName : $"{slotName}/{fileName}";
+        }
+
+        /// <summary>
+        /// 이전 버전의 파일명 기반 AAD로 암호화된 저장 파일을 복호화합니다.
+        /// </summary>
+        /// <param name="provider">플랫폼 암호화 구현체입니다.</param>
+        /// <param name="filePath">로드 대상 파일 경로입니다.</param>
+        /// <param name="fileText">파일에서 읽은 원본 텍스트입니다.</param>
+        /// <param name="saveSettings">저장 설정입니다.</param>
+        /// <param name="plainText">복호화에 성공한 평문 JSON입니다.</param>
+        /// <returns>기존 AAD로 복호화에 성공하면 true입니다.</returns>
+        private static bool TryDecryptWithLegacyAssociatedData(
+            ISaveDataCryptoProvider provider,
+            string filePath,
+            string fileText,
+            GGemCoSaveSettings saveSettings,
+            out string plainText)
+        {
+            plainText = null;
+
+            try
+            {
+                string keyAlias = saveSettings != null ? saveSettings.SaveDataEncryptionKeyAlias : DefaultKeyAlias;
+                var legacyContext = new SaveDataCryptoContext(filePath, keyAlias, CreateLegacyAssociatedData(filePath));
+                plainText = provider.DecryptToText(fileText, legacyContext);
+
+                if (!_legacyAssociatedDataWarningLogged)
+                {
+                    _legacyAssociatedDataWarningLogged = true;
+                    GcLogger.LogWarning("[SaveDataCryptoService] 기존 파일명 기반 AAD 저장 파일을 복호화했습니다. 다음 저장 시 논리 슬롯 기반 AAD로 마이그레이션됩니다.");
+                }
+
+                return true;
+            }
+            catch (Exception)
+            {
+                return false;
+            }
         }
 
         /// <summary>
