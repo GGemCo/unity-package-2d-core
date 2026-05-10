@@ -21,6 +21,8 @@ namespace GGemCo2DCore
         [SerializeField] private Color colorTextCountSelected = new(255, 255, 255, 255);
         [Tooltip("장착 되었을 때, 개수 색상")]
         [SerializeField] private Color colorTextCountEquipped = new(255, 255, 0, 255);
+        [Tooltip("아이콘 정보를 지웠을 경우 보여줄, 투명한 이미지")]
+        [SerializeField] private Sprite spriteBlank;
 
         [Tooltip("쿨타임 게이지")]
         public Image imageCoolTimeGauge;
@@ -517,17 +519,14 @@ namespace GGemCo2DCore
             _isLearn = false;
             
             uid = 0;
-            Sprite newSprite = AddressableLoaderItem.Instance.GetImageIconItemByName("blank");
             if (ImageIcon != null)
             {
-                if (IconType == IconConstants.Type.Skill)
-                    GcLogger.Log($"ClearIconInfos {uid} {ImageIcon.name} {newSprite.name}");
-                ImageIcon.sprite = newSprite;
-                CacheNormalIconSprite(newSprite);
+                ImageIcon.sprite = spriteBlank;
+                CacheNormalIconSprite(spriteBlank);
             }
             if (imageGrade != null)
             {
-                imageGrade.sprite = newSprite;
+                imageGrade.sprite = spriteBlank;
             }
 
             SetIconLock(false);

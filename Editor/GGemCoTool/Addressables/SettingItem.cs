@@ -201,9 +201,6 @@ namespace GGemCo2DCoreEditor
                 }
             }
 
-            // blank 아이콘(개별 등록 + atlas 포함)
-            AddBlankIconToLists(settings, groupIconImage, assetsIcon);
-
             // Atlas 구성(기존 packables 정리 후 새 목록 반영)
             ClearAndAddToAtlas(atlasDrop, assetsDrop);
             ClearAndAddToAtlas(atlasIcon, assetsIcon);
@@ -251,21 +248,6 @@ namespace GGemCo2DCoreEditor
                 AssetDatabase.SaveAssets();
                 EditorUtility.DisplayDialog(Title, "[Addressable] 아이템 설정 완료", "OK");
             }
-        }
-
-        /// <summary>
-        /// blank 아이콘을 아이콘 그룹과 Atlas 후보 목록에 추가합니다.
-        /// </summary>
-        /// <param name="settings">Addressable 설정 객체</param>
-        /// <param name="groupIconImage">아이콘 이미지 그룹</param>
-        /// <param name="assetsIcon">아이콘 Atlas에 포함될 에셋 목록</param>
-        private void AddBlankIconToLists(AddressableAssetSettings settings, AddressableAssetGroup groupIconImage, List<Object> assetsIcon)
-        {
-            string key = $"{ConfigAddressableLabel.ImageItemIcon}_blank";
-            string path = GetBlankIconPath();
-
-            Add(settings, groupIconImage, key, path);
-            AddToListIfExists(assetsIcon, path);
         }
 
         /// <summary>
