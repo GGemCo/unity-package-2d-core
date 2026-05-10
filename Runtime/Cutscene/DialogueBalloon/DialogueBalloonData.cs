@@ -4,27 +4,6 @@ using UnityEngine;
 namespace GGemCo2DCore
 {
     /// <summary>
-    /// 말풍선 썸네일을 배치할 기준 위치입니다.
-    /// </summary>
-    public enum DialogueBalloonThumbnailPositionType
-    {
-        /// <summary>
-        /// 썸네일을 표시하지 않습니다.
-        /// </summary>
-        None = 0,
-
-        /// <summary>
-        /// 말풍선 오른쪽에 썸네일을 표시합니다.
-        /// </summary>
-        Right = 1,
-
-        /// <summary>
-        /// 말풍선 왼쪽에 썸네일을 표시합니다.
-        /// </summary>
-        Left = 2,
-    }
-
-    /// <summary>
     /// 컷신에서 캐릭터 위에 표시할 대사 말풍선 데이터를 정의합니다.
     /// </summary>
     [Serializable]
@@ -57,7 +36,7 @@ namespace GGemCo2DCore
 
         [Header("썸네일")]
         [Tooltip("말풍선 썸네일 표시 위치입니다. None이면 썸네일을 표시하지 않습니다.")]
-        public DialogueBalloonThumbnailPositionType thumbnailPositionType = DialogueBalloonThumbnailPositionType.None;
+        public ConfigCommon.ThumbnailPositionType thumbnailPositionType = ConfigCommon.ThumbnailPositionType.None;
         [Tooltip("테이블 썸네일 대신 사용할 썸네일 이미지 이름입니다. 비어 있으면 캐릭터 타입/UID 기준 썸네일을 사용합니다.")]
         public string thumbnailImage;
         [Tooltip("오른쪽 기준 썸네일 위치 보정값입니다.")]

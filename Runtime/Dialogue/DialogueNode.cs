@@ -29,6 +29,8 @@ namespace GGemCo2DCore
         public int characterUid;
         [Tooltip("썸네일 이미지. npc, monster 테이블의 썸네일을 사용하지 않을때 입력해주세요.\nResouces/Images/Thumbnail/ 다음부터 입력해주세요.")]
         public string thumbnailImage;
+        [Tooltip("썸네일 이미지 위치")]
+        public ConfigCommon.ThumbnailPositionType thumbnailPositionType = ConfigCommon.ThumbnailPositionType.Right;
         public Vector2 cachedSize = Vector2.zero;
         
         [Header("현재 대화가 끝났을때 시작되는 퀘스트 고유번호")]

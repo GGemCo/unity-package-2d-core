@@ -30,8 +30,6 @@ namespace GGemCo2DCore
     /// </summary>
     public class PopupBubble : DefaultPopup
     {
-        private enum ThumbnailPositionType { Left, Right }
-        
         [Serializable]
         private class EntityThumbnailInfo
         {
@@ -40,7 +38,7 @@ namespace GGemCo2DCore
             [Tooltip("썸네일 이미지")]
             public Sprite thumbnailSprite;
             [Tooltip("썸네일 표시 기준 위치")]
-            public ThumbnailPositionType thumbnailPositionType;
+            public ConfigCommon.ThumbnailPositionType thumbnailPositionType;
         }
         
         [Header(UIWindowConstants.TitleHeaderIndividual)]
@@ -114,10 +112,10 @@ namespace GGemCo2DCore
             {
                 var panelHalfWidth = panelContent.rect.width * 0.5f;
                 var thumbnailHalfWidth = thumbnailRectTransform.rect.width * 0.5f;
-                var side = _currentEntityPlayerInfo.thumbnailPositionType == ThumbnailPositionType.Left ? -1f : 1f;
+                var side = _currentEntityPlayerInfo.thumbnailPositionType == ConfigCommon.ThumbnailPositionType.Left ? -1f : 1f;
 
                 var x = side * (panelHalfWidth + thumbnailHalfWidth) + offsetImageThumbnailCharacter.x;
-                if (_currentEntityPlayerInfo.thumbnailPositionType == ThumbnailPositionType.Left)
+                if (_currentEntityPlayerInfo.thumbnailPositionType == ConfigCommon.ThumbnailPositionType.Left)
                     x = side * (panelHalfWidth + thumbnailHalfWidth) + offsetImageThumbnailCharacterLeft.x;
                 
                 var y = offsetImageThumbnailCharacter.y;

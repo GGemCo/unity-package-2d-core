@@ -193,6 +193,7 @@ namespace GGemCo2DCoreEditor
                 Debug.LogError("퀘스트 node 가 없습니다.");
             }
             EditorGUILayout.PropertyField(serializedObject.FindProperty("thumbnailImage"));
+            EditorGUILayout.PropertyField(serializedObject.FindProperty("thumbnailPositionType"));
 
             GUILayout.Space(20);
             GUILayout.Label("현재 대화가 끝났을때 시작되는 퀘스트", EditorStyles.boldLabel);

@@ -16,12 +16,6 @@ namespace GGemCo2DCore
     /// </summary>
     public class UIWindowInteractionDialogue : UIWindow
     {
-        private enum ThumbnailPositionType
-        {
-            Left,
-            Right,
-        }
-
         /// <summary>
         /// 대화창 위치 타입입니다.
         /// </summary>
@@ -115,6 +109,11 @@ namespace GGemCo2DCore
         private StruckTableNpc _currentNpcData;
         private StruckTableInteraction _currentInteractionData;
         private InteractionDialogueSelectionResult _currentDialogueSelection;
+        /// <summary>
+        /// 현재 UI에 바인딩된 런타임 대화 노드입니다.
+        /// 썸네일 위치는 세션의 최신 노드가 아니라 실제 출력 중인 이 노드를 기준으로 해석합니다.
+        /// </summary>
+        private DialogueNodeData _currentDialogueNode;
         private InteractionDialogueTextContext _currentTextContext = InteractionDialogueTextContext.Empty;
         private List<NpcQuestData> _currentQuestDatas = new();
         private float _defaultMessageFontSize;
@@ -283,9 +282,27 @@ namespace GGemCo2DCore
             ResetChoiceButtons();
             _messagePlayer.Clear(textMessage);
             _dialogueSession.Clear();
+            ClearCurrentDialogueNode();
             _isExecutingChoice = false;
             ClearPendingAutoStartChoice();
             ApplyMessageFontSize(0f);
+        }
+
+        /// <summary>
+        /// 현재 UI에 출력할 런타임 대화 노드를 지정합니다.
+        /// </summary>
+        /// <param name="node">UI 표시와 썸네일 위치 계산 기준이 되는 대화 노드입니다.</param>
+        private void SetCurrentDialogueNode(DialogueNodeData node)
+        {
+            _currentDialogueNode = node;
+        }
+
+        /// <summary>
+        /// 런타임 대화 노드 표시 상태를 해제해 기본 NPC 표시 규칙을 사용하도록 되돌립니다.
+        /// </summary>
+        private void ClearCurrentDialogueNode()
+        {
+            _currentDialogueNode = null;
         }
 
         /// <summary>
@@ -347,9 +364,14 @@ namespace GGemCo2DCore
                 return;
             }
 
+            SetCurrentDialogueNode(node);
             ApplyMessageFontSize(node.fontSize);
             SetNpcName(ResolveDialogueSpeakerName(node));
             await BindDialogueThumbnailAsync(node, requestVersion);
+            if (requestVersion != _dialogueLoadVersion || _currentDialogueNode != node)
+            {
+                return;
+            }
 
             BindVisibleChoices(BuildDialogueChoiceEntries(node));
             ApplyDialogueMessage(ResolveDialogueNodeText(node), revealImmediately: false);
@@ -394,6 +416,7 @@ namespace GGemCo2DCore
         private void HandleDialogueSequenceCompleted()
         {
             _dialogueSession.Clear();
+            ClearCurrentDialogueNode();
             BindVisibleChoices(_defaultChoices);
 
             if (_currentInteractionData != null && _currentInteractionData.DialogueEndPolicy == InteractionDialogueEndPolicy.Close)
@@ -812,6 +835,7 @@ namespace GGemCo2DCore
         /// </summary>
         private void RestoreNpcPresentation()
         {
+            ClearCurrentDialogueNode();
             if (_currentNpcData == null)
             {
                 return;
@@ -864,7 +888,7 @@ namespace GGemCo2DCore
 
             BindNpcThumbnail(_currentNpcData);
             Sprite sprite = await DialogueCharacterHelper.GetThumbnail(node);
-            if (requestVersion != _dialogueLoadVersion)
+            if (requestVersion != _dialogueLoadVersion || _currentDialogueNode != node)
             {
                 return;
             }
@@ -1173,7 +1197,7 @@ namespace GGemCo2DCore
             Vector3 offset = offsetImageThumbnailCharacter;
             float side = 1f;
 
-            if (ResolveThumbnailPositionType() == ThumbnailPositionType.Left)
+            if (ResolveThumbnailPositionType() == ConfigCommon.ThumbnailPositionType.Left)
             {
                 offset = offsetImageThumbnailCharacterLeft;
                 side = -1f;
@@ -1185,12 +1209,25 @@ namespace GGemCo2DCore
         }
 
         /// <summary>
-        /// 현재 대화 상태 기준 썸네일 배치 방향을 해석합니다.
+        /// 현재 UI에 바인딩된 대화 노드 기준 썸네일 배치 방향을 해석합니다.
         /// </summary>
+        /// <remarks>
+        /// 대화 노드가 없거나 <see cref="ConfigCommon.ThumbnailPositionType.None"/>이면 기존 인터랙션 UI와 동일하게 오른쪽 배치를 사용합니다.
+        /// </remarks>
         /// <returns>썸네일 위치 타입입니다.</returns>
-        private ThumbnailPositionType ResolveThumbnailPositionType()
+        private ConfigCommon.ThumbnailPositionType ResolveThumbnailPositionType()
         {
-            return ThumbnailPositionType.Right;
+            if (_currentDialogueNode == null)
+            {
+                return ConfigCommon.ThumbnailPositionType.Right;
+            }
+
+            if (_currentDialogueNode.thumbnailPositionType == ConfigCommon.ThumbnailPositionType.None)
+            {
+                return ConfigCommon.ThumbnailPositionType.Right;
+            }
+
+            return _currentDialogueNode.thumbnailPositionType;
         }
 
         /// <summary>
@@ -1514,6 +1551,7 @@ namespace GGemCo2DCore
             _currentNpcData = null;
             _currentInteractionData = null;
             _currentDialogueSelection = InteractionDialogueSelectionResult.None;
+            ClearCurrentDialogueNode();
             _currentTextContext = InteractionDialogueTextContext.Empty;
             _currentQuestDatas.Clear();
             _messagePlayer.Clear(textMessage);

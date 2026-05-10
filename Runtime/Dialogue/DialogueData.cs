@@ -29,6 +29,7 @@ namespace GGemCo2DCore
         public int characterUid;
         public float fontSize;
         public string thumbnailImage;
+        public ConfigCommon.ThumbnailPositionType thumbnailPositionType;
         public List<DialogueOption> options = new List<DialogueOption>();
         public string nextNodeGuid;
         public int startQuestUid;

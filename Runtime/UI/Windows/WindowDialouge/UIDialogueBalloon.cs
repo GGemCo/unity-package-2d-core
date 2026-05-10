@@ -20,7 +20,7 @@ namespace GGemCo2DCore
         private RectTransform _balloonRectTransform;
         private RectTransform _panelRectTransform;
         private RectTransform _thumbnailRectTransform;
-        private DialogueBalloonThumbnailPositionType _thumbnailPositionType;
+        private ConfigCommon.ThumbnailPositionType _thumbnailPositionType;
         private Vector3 _offsetImageThumbnailCharacter;
         private Vector3 _offsetImageThumbnailCharacterLeft;
         private int _thumbnailRequestVersion;
@@ -86,7 +86,7 @@ namespace GGemCo2DCore
             RequestThumbnailPositionRefresh();
 
             int requestVersion = ++_thumbnailRequestVersion;
-            if (_thumbnailPositionType == DialogueBalloonThumbnailPositionType.None || !TryEnsureThumbnailImage())
+            if (_thumbnailPositionType == ConfigCommon.ThumbnailPositionType.None || !TryEnsureThumbnailImage())
             {
                 ClearThumbnail();
                 return;
@@ -195,7 +195,7 @@ namespace GGemCo2DCore
         {
             _needsRefreshThumbnailPosition = false;
 
-            if (_thumbnailPositionType == DialogueBalloonThumbnailPositionType.None || !TryEnsureThumbnailImage())
+            if (_thumbnailPositionType == ConfigCommon.ThumbnailPositionType.None || !TryEnsureThumbnailImage())
             {
                 return;
             }
@@ -207,7 +207,7 @@ namespace GGemCo2DCore
             Vector3 offset = _offsetImageThumbnailCharacter;
             float side = 1f;
 
-            if (_thumbnailPositionType == DialogueBalloonThumbnailPositionType.Left)
+            if (_thumbnailPositionType == ConfigCommon.ThumbnailPositionType.Left)
             {
                 offset = _offsetImageThumbnailCharacterLeft;
                 side = -1f;

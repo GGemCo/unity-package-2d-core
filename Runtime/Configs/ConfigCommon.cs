@@ -145,5 +145,7 @@ namespace GGemCo2DCore
              Player = 0,
              Monster = 1,
          }
+         
+         public enum ThumbnailPositionType { None, Left, Right }
     }
 }
