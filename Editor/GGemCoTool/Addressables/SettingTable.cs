@@ -62,6 +62,9 @@ namespace GGemCo2DCoreEditor
 
             foreach (var addressableAssetInfo in ConfigAddressableTable.All)
             {
+                if (ShouldSkipMissingOptionalProjectileTable(addressableAssetInfo))
+                    continue;
+
                 Add(settings, group, addressableAssetInfo.Key, addressableAssetInfo.Path, ConfigAddressableLabel.Table);
                 // Debug.Log($"Addressable 키 값 설정: {keyName}");
             }
@@ -102,6 +105,26 @@ namespace GGemCo2DCoreEditor
             }
 
             Add(settings, group, pack.Key, pack.Path, ConfigAddressableLabel.TablePack);
+        }
+
+        /// <summary>
+        /// Projectile 마이그레이션용 선택 테이블이 아직 생성되지 않았는지 확인합니다.
+        /// - legacy projectile과 분리 테이블(linear/arc/path)을 함께 지원하므로 일부 파일이 없어도 Addressables 등록을 건너뜁니다.
+        /// </summary>
+        /// <param name="info">검사할 테이블 Addressables 정보입니다.</param>
+        /// <returns>선택 Projectile 테이블이 없어서 건너뛰어야 하면 true를 반환합니다.</returns>
+        private static bool ShouldSkipMissingOptionalProjectileTable(AddressableAssetInfo info)
+        {
+            if (info == null)
+                return false;
+
+            bool isProjectileTable =
+                info.Key == ConfigAddressableTable.TableProjectile.Key ||
+                info.Key == ConfigAddressableTable.TableProjectileLinear.Key ||
+                info.Key == ConfigAddressableTable.TableProjectileArc.Key ||
+                info.Key == ConfigAddressableTable.TableProjectilePath.Key;
+
+            return isProjectileTable && string.IsNullOrEmpty(AssetDatabase.AssetPathToGUID(info.Path));
         }
     }
 }

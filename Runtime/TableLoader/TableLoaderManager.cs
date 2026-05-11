@@ -48,6 +48,9 @@ namespace GGemCo2DCore
         public TableQuest TableQuest { get; private set; } = new TableQuest();
         public TableLicense TableLicense { get; private set; } = new TableLicense();
         public TableProjectile TableProjectile { get; private set; } = new TableProjectile();
+        public TableProjectileLinear TableProjectileLinear { get; private set; } = new TableProjectileLinear();
+        public TableProjectileArc TableProjectileArc { get; private set; } = new TableProjectileArc();
+        public TableProjectilePath TableProjectilePath { get; private set; } = new TableProjectilePath();
         public TableSound TableSound { get; private set; } = new TableSound();
         public TableSimulationTool TableSimulationTool { get; private set; } = new TableSimulationTool();
         public TableSimulationGrowth TableSimulationGrowth { get; private set; } = new TableSimulationGrowth();
@@ -103,6 +106,9 @@ namespace GGemCo2DCore
                 registry.Register(TableQuest);
                 registry.Register(TableLicense);
                 registry.Register(TableProjectile);
+                registry.Register(TableProjectileLinear);
+                registry.Register(TableProjectileArc);
+                registry.Register(TableProjectilePath);
                 registry.Register(TableSound);
                 registry.Register(TableSimulationTool);
                 registry.Register(TableSimulationGrowth);
@@ -379,11 +385,68 @@ namespace GGemCo2DCore
             return data != null;
         }
 
-        // Projectile
+        /// <summary>
+        /// 분리된 Projectile 테이블에서 UID에 해당하는 발사체 정의를 조회합니다.
+        /// - 조회 우선순위는 linear → arc → path → legacy(projectile) 입니다.
+        /// - 동일 UID가 여러 테이블에 있으면 먼저 발견된 분리 테이블 데이터가 사용됩니다.
+        /// </summary>
+        /// <param name="uid">조회할 Projectile UID입니다.</param>
+        /// <param name="logIfMissing">조회 실패 시 경고 로그를 남길지 여부입니다.</param>
+        /// <returns>Projectile Row를 찾으면 반환하고, 없으면 null을 반환합니다.</returns>
         public StruckTableProjectile GetProjectileData(int uid, bool logIfMissing = true)
-            => GetData(TableProjectile, uid, "Projectile", (t, i) => t.GetDataByUid(i), logIfMissing);
+        {
+            if (TryGetProjectileData(uid, out StruckTableProjectile data, false))
+                return data;
+
+            if (logIfMissing)
+                GcLogger.LogWarning($"[Table] Projectile not found. uid={uid}");
+
+            return null;
+        }
+
+        /// <summary>
+        /// 분리된 Projectile 테이블에서 UID에 해당하는 발사체 정의 조회를 시도합니다.
+        /// </summary>
+        /// <param name="uid">조회할 Projectile UID입니다.</param>
+        /// <param name="data">조회에 성공하면 Projectile Row가 설정됩니다.</param>
+        /// <param name="logIfMissing">조회 실패 시 경고 로그를 남길지 여부입니다.</param>
+        /// <returns>Projectile Row를 찾으면 true를 반환합니다.</returns>
         public bool TryGetProjectileData(int uid, out StruckTableProjectile data, bool logIfMissing = false)
-            => TryGetData(TableProjectile, uid, out data, "Projectile", (t, i) => t.GetDataByUid(i), logIfMissing);
+        {
+            if (TryGetProjectileDataFromTable(TableProjectileLinear, uid, out data))
+                return true;
+
+            if (TryGetProjectileDataFromTable(TableProjectileArc, uid, out data))
+                return true;
+
+            if (TryGetProjectileDataFromTable(TableProjectilePath, uid, out data))
+                return true;
+
+            if (TryGetProjectileDataFromTable(TableProjectile, uid, out data))
+                return true;
+
+            if (logIfMissing)
+                GcLogger.LogWarning($"[Table] Projectile not found. uid={uid}");
+
+            data = null;
+            return false;
+        }
+
+        /// <summary>
+        /// 지정된 Projectile 테이블에서 경고 로그 없이 UID 조회를 수행합니다.
+        /// </summary>
+        /// <param name="table">조회할 Projectile 테이블입니다.</param>
+        /// <param name="uid">조회할 Projectile UID입니다.</param>
+        /// <param name="data">조회에 성공하면 Projectile Row가 설정됩니다.</param>
+        /// <returns>Row를 찾으면 true를 반환합니다.</returns>
+        private static bool TryGetProjectileDataFromTable(
+            DefaultTable<StruckTableProjectile> table,
+            int uid,
+            out StruckTableProjectile data)
+        {
+            data = null;
+            return table != null && table.TryGetDataByUid(uid, out data);
+        }
 
         // Sound
         public StruckTableSound GetSoundData(int uid, bool logIfMissing = true)

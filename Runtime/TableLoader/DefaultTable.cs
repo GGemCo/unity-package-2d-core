@@ -177,6 +177,21 @@ namespace GGemCo2DCore
         public Dictionary<int, TRow> GetDatas() => _table;
 
         /// <summary>
+        /// 파생 테이블이 외부 테이블의 Row를 현재 캐시에 병합할 때 사용합니다.
+        /// - 동일 UID가 이미 있으면 새 Row로 교체합니다.
+        /// - 에디터용 병합 테이블처럼 원본 파일을 직접 파싱하지 않는 경우에만 사용합니다.
+        /// </summary>
+        /// <param name="uid">등록할 Row의 UID입니다.</param>
+        /// <param name="row">캐시에 저장할 Row 데이터입니다.</param>
+        protected void SetDataByUid(int uid, TRow row)
+        {
+            if (uid <= 0 || row == null)
+                return;
+
+            _table[uid] = row;
+        }
+
+        /// <summary>
         /// 적재된 행의 개수(캐시 크기)를 반환합니다.
         /// </summary>
         public int GetCount() => _table.Count;

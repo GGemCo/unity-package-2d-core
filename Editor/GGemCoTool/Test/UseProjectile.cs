@@ -158,6 +158,12 @@ namespace GGemCo2DCoreEditor
             new("BoundaryPadding"),
             new("BounceMaxCount"),
             new("BounceSpeedMultiplier"),
+            new("DamageApplyMode"),
+            new("TickDamageInterval"),
+            new("TickOnSpawn"),
+            new("PathCoordinateMode"),
+            new("PathPoints"),
+            new("PathDuration"),
         };
 
 
@@ -1155,7 +1161,7 @@ namespace GGemCo2DCoreEditor
 
                         var keepUid = projectileUid;
 
-                        TableLoaderManagerBase.Unload(ConfigAddressableTable.TableProjectile.Path);
+                        TableLoaderManager.UnloadProjectileTables();
                         _tableProjectile = TableLoaderManager.LoadProjectileTable(forceReload: true);
 
                         var info = GGemCo2DCore.TableLoaderManager.Instance.GetProjectileData(projectileUid);
@@ -1200,6 +1206,8 @@ namespace GGemCo2DCoreEditor
             var info = GGemCo2DCore.TableLoaderManager.Instance.GetProjectileData(row.Uid);
             if (info != null)
             {
+                info.Type = row.Type;
+                info.Name = row.Name;
                 info.VfxUid = row.VfxUid;
                 info.VfxScale = row.VfxScale;
                 info.MoveSpeed = row.MoveSpeed;
@@ -1209,13 +1217,21 @@ namespace GGemCo2DCoreEditor
                 info.ColliderSize = row.ColliderSize;
                 info.ColliderOffset = row.ColliderOffset;
                 info.HitVfxUid = row.HitVfxUid;
+                info.TargetType = row.TargetType;
+                info.TargetPositionRangeX = row.TargetPositionRangeX;
+                info.Count = row.Count;
+                info.SecDelayByOne = row.SecDelayByOne;
 
                 info.BoundaryMode = row.BoundaryMode;
                 info.BoundaryPadding = row.BoundaryPadding;
                 info.BounceMaxCount = row.BounceMaxCount;
                 info.BounceSpeedMultiplier = row.BounceSpeedMultiplier;
-                // info.TargetType = _editingProjectile.TargetType;
-                // info.TargetPositionRangeX = _editingProjectile.TargetPositionRangeX;
+                info.DamageApplyMode = row.DamageApplyMode;
+                info.TickDamageInterval = row.TickDamageInterval;
+                info.TickOnSpawn = row.TickOnSpawn;
+                info.PathCoordinateMode = row.PathCoordinateMode;
+                info.PathPoints = row.PathPoints;
+                info.PathDuration = row.PathDuration;
             }
         }
 
@@ -1247,6 +1263,12 @@ namespace GGemCo2DCoreEditor
                     "BoundaryPadding" => MathHelper.FormatFloat(row.BoundaryPadding),
                     "BounceMaxCount" => row.BounceMaxCount.ToString(),
                     "BounceSpeedMultiplier" => MathHelper.FormatFloat(row.BounceSpeedMultiplier),
+                    "DamageApplyMode" => row.DamageApplyMode.ToString(),
+                    "TickDamageInterval" => MathHelper.FormatFloat(row.TickDamageInterval),
+                    "TickOnSpawn" => row.TickOnSpawn ? "Y" : "N",
+                    "PathCoordinateMode" => row.PathCoordinateMode.ToString(),
+                    "PathPoints" => FormatPathPoints(row.PathPoints),
+                    "PathDuration" => MathHelper.FormatFloat(row.PathDuration),
                     _ => string.Empty,
                 };
             }
@@ -1270,8 +1292,9 @@ namespace GGemCo2DCoreEditor
                 return false;
             }
 
+            string tablePath = ResolveProjectileTablePath(_cachedProjectileInfo);
             if (!TableTextRowPatchUtility.TryPatchRowByUid(
-                    ConfigAddressableTable.TableProjectile.Path,
+                    tablePath,
                     _cachedProjectileInfo.Uid,
                     _cachedProjectileInfo,
                     SerializeProjectileRow,
@@ -1282,6 +1305,43 @@ namespace GGemCo2DCoreEditor
             }
 
             return true;
+        }
+
+        /// <summary>
+        /// Projectile 타입에 맞는 저장 대상 테이블 경로를 반환합니다.
+        /// - Linear/Arc/Path는 분리 테이블에 저장하고, legacy Default/Laser는 기존 projectile 테이블을 사용합니다.
+        /// </summary>
+        /// <param name="row">저장할 Projectile Row입니다.</param>
+        /// <returns>Unity 프로젝트 기준 테이블 파일 경로입니다.</returns>
+        private static string ResolveProjectileTablePath(StruckTableProjectile row)
+        {
+            if (row == null)
+                return ConfigAddressableTable.TableProjectile.Path;
+
+            return row.Type switch
+            {
+                ProjectileConstants.Type.Linear => ConfigAddressableTable.TableProjectileLinear.Path,
+                ProjectileConstants.Type.Arc => ConfigAddressableTable.TableProjectileArc.Path,
+                ProjectileConstants.Type.Path => ConfigAddressableTable.TableProjectilePath.Path,
+                _ => ConfigAddressableTable.TableProjectile.Path,
+            };
+        }
+
+        /// <summary>
+        /// PathPoints 배열을 테이블 저장 문자열로 변환합니다.
+        /// </summary>
+        /// <param name="points">저장할 경로 점 배열입니다.</param>
+        /// <returns>"x,y|x,y" 형식의 문자열입니다.</returns>
+        private static string FormatPathPoints(IReadOnlyList<Vector2> points)
+        {
+            if (points == null || points.Count == 0)
+                return string.Empty;
+
+            var values = new string[points.Count];
+            for (int i = 0; i < points.Count; i++)
+                values[i] = MathHelper.FormatVector2(points[i]);
+
+            return string.Join("|", values);
         }
 
         private static CharacterBase TryGetOwnerPlayer()

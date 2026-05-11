@@ -30,7 +30,36 @@
         {
             None,
             Default,
-            Laser
+            Laser,
+            Linear,
+            Arc,
+            Path,
+        }
+
+        /// <summary>
+        /// 프로젝타일이 데미지를 적용하는 방식입니다.
+        /// - OnHitDestroy: 기존 방식처럼 충돌 시 1회 데미지를 주고 제거합니다.
+        /// - PeriodicOverlap: 이동 중 일정 주기로 현재 콜라이더와 겹친 대상에게 데미지를 줍니다.
+        /// - None: 데미지를 주지 않고 이동/연출만 수행합니다.
+        /// </summary>
+        public enum DamageApplyMode
+        {
+            OnHitDestroy = 0,
+            PeriodicOverlap = 1,
+            None = 2,
+        }
+
+        /// <summary>
+        /// Path 타입 프로젝타일의 경로 좌표 기준입니다.
+        /// - StartRelative: 발사 시작 위치를 기준으로 PathPoints를 해석합니다.
+        /// - TargetRelative: 발사 목표 위치를 기준으로 PathPoints를 해석합니다.
+        /// - World: PathPoints를 월드 좌표로 그대로 사용합니다.
+        /// </summary>
+        public enum PathCoordinateMode
+        {
+            StartRelative = 0,
+            TargetRelative = 1,
+            World = 2,
         }
 
         public enum BoundaryMode

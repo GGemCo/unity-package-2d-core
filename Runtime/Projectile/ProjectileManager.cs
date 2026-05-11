@@ -150,15 +150,29 @@ namespace GGemCo2DCore
         }
 #endif
 
+        /// <summary>
+        /// 테이블 타입에 맞는 Projectile 컴포넌트를 생성하고 초기화합니다.
+        /// - 분리 테이블 타입(Path/Arc/Linear)을 우선 사용하고, legacy Default는 ArcHeight 값으로 기존 동작을 유지합니다.
+        /// </summary>
+        /// <param name="info">정적 Projectile 테이블 Row입니다.</param>
+        /// <param name="meta">런타임 발사 메타데이터입니다.</param>
+        /// <returns>생성된 Projectile 컴포넌트입니다.</returns>
         private ProjectileBase CreateProjectileInternal(StruckTableProjectile info, MetadataProjectile meta)
         {
             var go = new GameObject($"Projectile_{info.Uid}");
             ProjectileBase comp;
 
-            bool isArc = (info.ArcHeightMin > 0) || (info.ArcHeightMax > 0);
+            bool isArc = info.Type == ProjectileConstants.Type.Arc ||
+                         (info.Type == ProjectileConstants.Type.Default &&
+                          ((info.ArcHeightMin > 0) || (info.ArcHeightMax > 0)));
+
             if (info.Type == ProjectileConstants.Type.Laser)
             {
                 comp = go.AddComponent<ProjectileLaser>();
+            }
+            else if (info.Type == ProjectileConstants.Type.Path)
+            {
+                comp = go.AddComponent<ProjectilePath>();
             }
             else if (isArc)
             {

@@ -155,9 +155,18 @@ namespace GGemCo2DCore
             return content;
         }
 
+        /// <summary>
+        /// 마이그레이션 중 누락되어도 로딩 오류로 취급하지 않을 테이블인지 확인합니다.
+        /// - Projectile 테이블은 legacy(projectile)와 분리 테이블(linear/arc/path)을 함께 지원하므로 일부 파일이 없을 수 있습니다.
+        /// </summary>
+        /// <param name="key">Addressables 테이블 키입니다.</param>
+        /// <returns>누락을 허용하면 true를 반환합니다.</returns>
         private static bool IsOptionalMissingTable(string key)
         {
-            return false;
+            return key == ConfigAddressableTable.TableProjectile.Key
+                   || key == ConfigAddressableTable.TableProjectileLinear.Key
+                   || key == ConfigAddressableTable.TableProjectileArc.Key
+                   || key == ConfigAddressableTable.TableProjectilePath.Key;
         }
 
         /// <summary>

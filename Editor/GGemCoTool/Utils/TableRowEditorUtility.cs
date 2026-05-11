@@ -1,7 +1,9 @@
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Reflection;
+using GGemCo2DCore;
 using UnityEditor;
 using UnityEngine;
 
@@ -237,6 +239,13 @@ namespace GGemCo2DCoreEditor
             if (memberType == typeof(Vector2))
                 return EditorGUILayout.Vector2Field(label, value != null ? (Vector2)value : Vector2.zero);
 
+            if (memberType == typeof(Vector2[]))
+            {
+                string current = FormatVector2Array(value as Vector2[]);
+                string next = EditorGUILayout.TextField(content, current);
+                return ParseVector2Array(next);
+            }
+
             if (memberType == typeof(Vector3))
                 return EditorGUILayout.Vector3Field(content, value != null ? (Vector3)value : Vector3.zero);
 
@@ -256,6 +265,71 @@ namespace GGemCo2DCoreEditor
 
             EditorGUILayout.LabelField(label, $"지원하지 않는 타입: {memberType.Name}");
             return value;
+        }
+
+        /// <summary>
+        /// Vector2 배열을 테이블 PathPoints 형식의 문자열로 변환합니다.
+        /// - 예: "0,0|120,40|240,0".
+        /// </summary>
+        /// <param name="points">변환할 Vector2 배열입니다.</param>
+        /// <returns>테이블에 저장 가능한 문자열입니다.</returns>
+        private static string FormatVector2Array(IReadOnlyList<Vector2> points)
+        {
+            if (points == null || points.Count == 0)
+                return string.Empty;
+
+            var values = new string[points.Count];
+            for (int i = 0; i < points.Count; i++)
+                values[i] = MathHelper.FormatVector2(points[i]);
+
+            return string.Join("|", values);
+        }
+
+        /// <summary>
+        /// 테이블 PathPoints 형식의 문자열을 Vector2 배열로 변환합니다.
+        /// - "|" 또는 ";"로 점을 구분할 수 있습니다.
+        /// </summary>
+        /// <param name="value">파싱할 문자열입니다.</param>
+        /// <returns>파싱된 Vector2 배열입니다.</returns>
+        private static Vector2[] ParseVector2Array(string value)
+        {
+            if (string.IsNullOrWhiteSpace(value))
+                return Array.Empty<Vector2>();
+
+            string[] tokens = value.Split(new[] { '|', ';' }, StringSplitOptions.RemoveEmptyEntries);
+            var result = new Vector2[tokens.Length];
+            for (int i = 0; i < tokens.Length; i++)
+                result[i] = ParseVector2(tokens[i]);
+
+            return result;
+        }
+
+        /// <summary>
+        /// "x,y" 문자열을 Vector2로 변환합니다.
+        /// </summary>
+        /// <param name="value">파싱할 좌표 문자열입니다.</param>
+        /// <returns>파싱된 Vector2 값입니다.</returns>
+        private static Vector2 ParseVector2(string value)
+        {
+            if (string.IsNullOrWhiteSpace(value))
+                return Vector2.zero;
+
+            string[] parts = value.Split(',');
+            float x = ParseFloat(parts.Length > 0 ? parts[0] : "0");
+            float y = ParseFloat(parts.Length > 1 ? parts[1] : "0");
+            return new Vector2(x, y);
+        }
+
+        /// <summary>
+        /// 문자열을 InvariantCulture 기준 float 값으로 변환합니다.
+        /// </summary>
+        /// <param name="value">파싱할 문자열입니다.</param>
+        /// <returns>파싱된 float 값입니다.</returns>
+        private static float ParseFloat(string value)
+        {
+            return float.TryParse(value?.Trim(), NumberStyles.Float, CultureInfo.InvariantCulture, out float result)
+                ? result
+                : 0f;
         }
 
         private static IEnumerable<MemberAccessor> GetAllWritableMembers(Type type)

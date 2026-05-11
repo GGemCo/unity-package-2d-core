@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using GGemCo2DCore;
 using UnityEngine;
 
@@ -140,9 +141,92 @@ namespace GGemCo2DCoreEditor
             return LoadTable<TableSound>(ConfigAddressableTable.TableSound.Path, forceReload);
         }
 
+        /// <summary>
+        /// 에디터 환경에서 분리된 Projectile 테이블을 하나의 조회 테이블로 병합해 로드합니다.
+        /// - 조회 우선순위는 projectile_linear → projectile_arc → projectile_path → legacy projectile입니다.
+        /// - 같은 UID가 중복되면 우선순위가 높은 테이블의 Row가 최종 병합 결과로 남습니다.
+        /// </summary>
+        /// <param name="forceReload">캐시를 무시하고 다시 로드할지 여부입니다.</param>
+        /// <returns>병합된 Projectile 테이블입니다. 로드된 Row가 없으면 null을 반환합니다.</returns>
         public static TableProjectile LoadProjectileTable(bool forceReload = true)
         {
-            return LoadTable<TableProjectile>(ConfigAddressableTable.TableProjectile.Path, forceReload);
+            var merged = new TableProjectile();
+
+            MergeProjectileRows(merged, TryLoadProjectilePart<TableProjectile>(ConfigAddressableTable.TableProjectile.Path, forceReload));
+            MergeProjectileRows(merged, TryLoadProjectilePart<TableProjectilePath>(ConfigAddressableTable.TableProjectilePath.Path, forceReload));
+            MergeProjectileRows(merged, TryLoadProjectilePart<TableProjectileArc>(ConfigAddressableTable.TableProjectileArc.Path, forceReload));
+            MergeProjectileRows(merged, TryLoadProjectilePart<TableProjectileLinear>(ConfigAddressableTable.TableProjectileLinear.Path, forceReload));
+
+            return merged.GetCount() > 0 ? merged : null;
+        }
+
+        /// <summary>
+        /// projectile_linear 테이블을 단독 로드합니다.
+        /// </summary>
+        /// <param name="forceReload">캐시를 무시하고 다시 로드할지 여부입니다.</param>
+        /// <returns>로드된 projectile_linear 테이블입니다.</returns>
+        public static TableProjectileLinear LoadProjectileLinearTable(bool forceReload = true)
+            => LoadTable<TableProjectileLinear>(ConfigAddressableTable.TableProjectileLinear.Path, forceReload);
+
+        /// <summary>
+        /// projectile_arc 테이블을 단독 로드합니다.
+        /// </summary>
+        /// <param name="forceReload">캐시를 무시하고 다시 로드할지 여부입니다.</param>
+        /// <returns>로드된 projectile_arc 테이블입니다.</returns>
+        public static TableProjectileArc LoadProjectileArcTable(bool forceReload = true)
+            => LoadTable<TableProjectileArc>(ConfigAddressableTable.TableProjectileArc.Path, forceReload);
+
+        /// <summary>
+        /// projectile_path 테이블을 단독 로드합니다.
+        /// </summary>
+        /// <param name="forceReload">캐시를 무시하고 다시 로드할지 여부입니다.</param>
+        /// <returns>로드된 projectile_path 테이블입니다.</returns>
+        public static TableProjectilePath LoadProjectilePathTable(bool forceReload = true)
+            => LoadTable<TableProjectilePath>(ConfigAddressableTable.TableProjectilePath.Path, forceReload);
+
+        /// <summary>
+        /// Projectile 계열 테이블 캐시를 모두 해제합니다.
+        /// </summary>
+        public static void UnloadProjectileTables()
+        {
+            TableLoaderManagerBase.Unload(ConfigAddressableTable.TableProjectile.Path);
+            TableLoaderManagerBase.Unload(ConfigAddressableTable.TableProjectileLinear.Path);
+            TableLoaderManagerBase.Unload(ConfigAddressableTable.TableProjectileArc.Path);
+            TableLoaderManagerBase.Unload(ConfigAddressableTable.TableProjectilePath.Path);
+        }
+
+        /// <summary>
+        /// 테이블 파일이 존재할 때만 Projectile 부분 테이블을 로드합니다.
+        /// </summary>
+        /// <typeparam name="TTable">로드할 Projectile 테이블 타입입니다.</typeparam>
+        /// <param name="assetPath">Unity 프로젝트 기준 테이블 경로입니다.</param>
+        /// <param name="forceReload">캐시를 무시하고 다시 로드할지 여부입니다.</param>
+        /// <returns>로드된 테이블 또는 null입니다.</returns>
+        private static TTable TryLoadProjectilePart<TTable>(string assetPath, bool forceReload)
+            where TTable : class, ITableParser, new()
+        {
+            if (string.IsNullOrWhiteSpace(assetPath))
+                return null;
+
+            string projectRoot = Path.GetDirectoryName(Application.dataPath);
+            string fullPath = Path.Combine(projectRoot ?? string.Empty, assetPath);
+            if (!File.Exists(fullPath))
+                return null;
+
+            return LoadTable<TTable>(assetPath, forceReload);
+        }
+
+        /// <summary>
+        /// 부분 Projectile 테이블의 Row를 병합 테이블에 추가합니다.
+        /// </summary>
+        /// <param name="target">병합 대상 테이블입니다.</param>
+        /// <param name="source">병합할 부분 테이블입니다.</param>
+        private static void MergeProjectileRows(TableProjectile target, DefaultTable<StruckTableProjectile> source)
+        {
+            if (target == null || source == null)
+                return;
+
+            target.MergeFrom(source.GetDatas());
         }
 
         public static TableSimulationTool LoadSimulationToolTable(bool forceReload = true)

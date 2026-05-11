@@ -50,6 +50,9 @@ namespace GGemCo2DCore
         public const string Quest            = "quest";
         public const string License          = "license";
         public const string Projectile       = "projectile";
+        public const string ProjectileLinear = "projectile_linear";
+        public const string ProjectileArc    = "projectile_arc";
+        public const string ProjectilePath   = "projectile_path";
         public const string Sound            = "sound";
         public const string SimulationTool   = "simulation_tool";
         public const string SimulationGrowth = "simulation_growth";
@@ -95,6 +98,9 @@ namespace GGemCo2DCore
         public static readonly AddressableAssetInfo TableQuest           = Make(Quest);
         public static readonly AddressableAssetInfo TableLicense         = Make(License);
         public static readonly AddressableAssetInfo TableProjectile      = Make(Projectile);
+        public static readonly AddressableAssetInfo TableProjectileLinear = Make(ProjectileLinear);
+        public static readonly AddressableAssetInfo TableProjectileArc    = Make(ProjectileArc);
+        public static readonly AddressableAssetInfo TableProjectilePath   = Make(ProjectilePath);
         public static readonly AddressableAssetInfo TableSound           = Make(Sound);
         public static readonly AddressableAssetInfo TableSimulationTool  = Make(SimulationTool);
         public static readonly AddressableAssetInfo TableSimulationGrowth  = Make(SimulationGrowth);
@@ -117,7 +123,9 @@ namespace GGemCo2DCore
             // Others
             TableVfxEffect, TableVfxParticle, TableInteraction,
             TableShop, TableShopItem, TableShopPromotion, TableItemUpgrade, TableItemSalvage, TableItemCraft,
-            TableCutscene, TableDialogue, TableQuest, TableLicense, TableProjectile, TableSound, TableSimulationTool,
+            TableCutscene, TableDialogue, TableQuest, TableLicense,
+            TableProjectile, TableProjectileLinear, TableProjectileArc, TableProjectilePath,
+            TableSound, TableSimulationTool,
             TableSimulationGrowth, TableCrowdControl, TableCrowdControlKnockBack, TableCrowdControlKnockDown, TableCrowdControlKnockUp, TableCrowdControlKnockDownAir, TableItemUse, TableItemUseAction
         };
         public static AddressableAssetInfo GetByKey(string key)

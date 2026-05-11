@@ -46,6 +46,17 @@ namespace GGemCo2DCore
         private bool _hasHit;
         private bool _isWaitingForEndVisual;
 
+        /// <summary>
+        /// 즉시 충돌 데미지 정책을 사용할지 여부입니다.
+        /// - 기본 프로젝타일은 true이며, 주기 데미지형 프로젝타일은 false로 재정의합니다.
+        /// </summary>
+        protected virtual bool ShouldHandleImmediateCollisionDamage => true;
+
+        /// <summary>
+        /// End Visual 재생 대기 중인지 확인합니다.
+        /// </summary>
+        protected bool IsWaitingForEndVisual => _isWaitingForEndVisual;
+
         #region Lifecycle
         /// <summary>
         /// 테이블(정적) + 메타데이터(동적)로 발사체를 초기화합니다.
@@ -130,10 +141,13 @@ namespace GGemCo2DCore
 
             Initialized = true;
 
-            // 발사 직후 이미 타겟/지면과 겹쳐 있는 경우를 보정한다.
-            // Trigger Enter / Cast는 "생성 시점의 초기 겹침"을 놓칠 수 있으므로,
-            // Launch 직후 한 번 즉시 overlap 검사를 수행한다.
-            TryHandleInitialOverlap();
+            if (ShouldHandleImmediateCollisionDamage)
+            {
+                // 발사 직후 이미 타겟/지면과 겹쳐 있는 경우를 보정한다.
+                // Trigger Enter / Cast는 "생성 시점의 초기 겹침"을 놓칠 수 있으므로,
+                // Launch 직후 한 번 즉시 overlap 검사를 수행한다.
+                TryHandleInitialOverlap();
+            }
         }
 
         /// <summary>
@@ -169,7 +183,7 @@ namespace GGemCo2DCore
             Vector2 delta = newPos - PrevPos;
 
             // Anti-tunneling: 이동 구간(PrevPos → newPos)을 스윕(Cast)으로 선검출합니다.
-            if (TrySweepHit(delta, out var sweepHit))
+            if (ShouldHandleImmediateCollisionDamage && TrySweepHit(delta, out var sweepHit))
             {
                 // centroid가 0일 수 있어 point가 유효하면 point를 사용합니다.
                 Vector2 hitPos = sweepHit.point != Vector2.zero ? sweepHit.point : sweepHit.centroid;
@@ -183,12 +197,8 @@ namespace GGemCo2DCore
             transform.position = newPos;
 
             // Visual update (flip 등)
-            _visual?.OnUpdate(new ProjectileVisualUpdateContext(
-                StartPoint,
-                TargetPoint,
-                newPos,
-                delta,
-                Direction));
+            UpdateVisual(newPos, delta);
+            OnProjectileMoved(newPos, delta, t);
 
             if (t >= 1f)
             {
@@ -207,6 +217,18 @@ namespace GGemCo2DCore
         /// 파생 클래스가 구현: 진행률(t) → 위치
         /// </summary>
         protected abstract Vector2 ComputePosition(float t);
+
+        /// <summary>
+        /// 프로젝타일이 한 스텝 이동한 직후 호출되는 확장 지점입니다.
+        /// - Path 타입의 주기 데미지처럼 이동 후 처리가 필요한 파생 클래스가 사용합니다.
+        /// </summary>
+        /// <param name="newPos">이번 스텝에서 적용된 새 위치입니다.</param>
+        /// <param name="delta">이전 위치에서 새 위치까지의 이동량입니다.</param>
+        /// <param name="normalizedTime">전체 이동 기준 진행률입니다.</param>
+        protected virtual void OnProjectileMoved(Vector2 newPos, Vector2 delta, float normalizedTime)
+        {
+            // 기본 구현: NOP
+        }
 
 
         private void SetupCastFilter()
@@ -329,7 +351,14 @@ namespace GGemCo2DCore
             TryHandleHit(bestCandidate, hitPos);
         }
 
-        private bool IsValidHitCandidate(Collider2D other)
+        /// <summary>
+        /// 충돌 후보가 현재 발사체의 유효한 타겟인지 확인합니다.
+        /// - 지면은 즉시 충돌 정책에서 항상 유효한 대상으로 처리합니다.
+        /// - 캐릭터는 시전자와 대상의 태그 조합을 기준으로 판정합니다.
+        /// </summary>
+        /// <param name="other">판정할 Collider입니다.</param>
+        /// <returns>유효한 충돌 후보이면 true를 반환합니다.</returns>
+        protected bool IsValidHitCandidate(Collider2D other)
         {
             if (!other) return false;
 
@@ -351,7 +380,14 @@ namespace GGemCo2DCore
             return (fromMonster && toPlayer) || (fromPlayer && toMonster);
         }
 
-        private CharacterBase ResolveTargetCharacter(Collider2D other)
+        /// <summary>
+        /// 충돌 Collider에서 실제 데미지를 받을 캐릭터를 찾습니다.
+        /// - CharacterHitArea가 있으면 HitArea의 target을 우선 사용합니다.
+        /// - 없으면 Collider가 붙은 오브젝트의 CharacterBase를 사용합니다.
+        /// </summary>
+        /// <param name="other">타겟을 찾을 Collider입니다.</param>
+        /// <returns>해결된 타겟 캐릭터입니다. 없으면 null입니다.</returns>
+        protected CharacterBase ResolveTargetCharacter(Collider2D other)
         {
             if (!other) return null;
 
@@ -363,7 +399,14 @@ namespace GGemCo2DCore
             return other.GetComponent<CharacterBase>();
         }
 
-        private CharacterHitArea ResolveHitArea(Collider2D other, CharacterBase target)
+        /// <summary>
+        /// 충돌 Collider에서 HitArea 정보를 찾습니다.
+        /// - Collider에 직접 붙은 HitArea를 우선 사용하고, 없으면 타겟 루트에서 탐색합니다.
+        /// </summary>
+        /// <param name="other">충돌한 Collider입니다.</param>
+        /// <param name="target">해결된 타겟 캐릭터입니다.</param>
+        /// <returns>HitArea를 찾으면 반환하고, 없으면 null을 반환합니다.</returns>
+        protected CharacterHitArea ResolveHitArea(Collider2D other, CharacterBase target)
         {
             if (!other) return null;
 
@@ -390,7 +433,7 @@ namespace GGemCo2DCore
             if (other.CompareTag(ConfigTags.GetValue(ConfigTags.Keys.MapGround)))
             {
                 _hasHit = true;
-                _visual?.OnHit(new ProjectileVisualHitContext(transform.position, FromCharacter, other));
+                NotifyHitVisual(other);
                 Destroy(gameObject);
                 return true;
             }
@@ -418,22 +461,55 @@ namespace GGemCo2DCore
             }
             else
             {
-                // HitArea가 없는 경우도 안전하게 처리
-                _visual?.OnHit(new ProjectileVisualHitContext(transform.position, FromCharacter, other));
-
-                var md = new MetadataDamage
-                {
-                    damage = Damage,
-                    attacker = FromCharacter ? FromCharacter.gameObject : null,
-                    damageType = DamageType,
-                    SkillUid = SkillUid,
-                    AttackId = AttackId,
-                    ElementGaugeApplications = Runtime != null ? Runtime.ElementGaugeApplications : null,
-                };
-                target.TakeDamage(md);
+                // HitArea가 없는 경우도 안전하게 처리합니다.
+                NotifyHitVisual(other);
+                ApplyDamageToTarget(target);
                 Destroy(gameObject);
             }
 
+            return true;
+        }
+
+        /// <summary>
+        /// Collider 기준으로 데미지 대상 캐릭터를 해석합니다.
+        /// - 지면은 데미지 대상이 아니므로 false를 반환합니다.
+        /// - 시전자와 대상의 태그 조합이 유효하지 않으면 false를 반환합니다.
+        /// </summary>
+        /// <param name="other">대상 후보 Collider입니다.</param>
+        /// <param name="target">해석된 데미지 대상 캐릭터입니다.</param>
+        /// <returns>데미지를 적용할 수 있으면 true를 반환합니다.</returns>
+        protected bool TryResolveDamageTarget(Collider2D other, out CharacterBase target)
+        {
+            target = null;
+            if (!other || !FromCharacter)
+                return false;
+
+            if (other.CompareTag(ConfigTags.GetValue(ConfigTags.Keys.MapGround)))
+                return false;
+
+            target = ResolveTargetCharacter(other);
+            if (!target)
+                return false;
+
+            return IsValidHitCandidate(other);
+        }
+
+        /// <summary>
+        /// Collider에서 데미지 대상을 찾아 즉시 데미지를 적용합니다.
+        /// - 발사체를 제거하지 않으므로 주기 데미지형 프로젝타일에서 재사용할 수 있습니다.
+        /// </summary>
+        /// <param name="other">대상 후보 Collider입니다.</param>
+        /// <param name="playHitVisual">히트 Visual 콜백을 실행할지 여부입니다.</param>
+        /// <returns>데미지를 적용했으면 true를 반환합니다.</returns>
+        protected bool TryApplyDamageToCollider(Collider2D other, bool playHitVisual)
+        {
+            if (!TryResolveDamageTarget(other, out CharacterBase target))
+                return false;
+
+            if (playHitVisual)
+                NotifyHitVisual(other);
+
+            ApplyDamageToTarget(target);
             return true;
         }
 
@@ -479,6 +555,76 @@ namespace GGemCo2DCore
             transform.rotation = Quaternion.Euler(0f, 0f, angle);
         }
 
+        /// <summary>
+        /// 발사체의 히트 Collider와 겹치는 Collider를 NonAlloc 방식으로 조회합니다.
+        /// - 주기 데미지형 프로젝타일이 현재 위치의 대상 목록을 수집할 때 사용합니다.
+        /// </summary>
+        /// <param name="results">결과를 받을 Collider 배열입니다.</param>
+        /// <returns>겹친 Collider 수를 반환합니다.</returns>
+        protected int OverlapHitCollider(Collider2D[] results)
+        {
+            if (_hitCollider == null || results == null || results.Length == 0)
+                return 0;
+
+            return CompatPhysics2D.OverlapColliderNonAlloc(_hitCollider, _castFilter, results);
+        }
+
+        /// <summary>
+        /// 발사체 자체의 히트 Collider를 반환합니다.
+        /// - 자기 자신과의 Overlap 결과를 걸러낼 때 사용합니다.
+        /// </summary>
+        protected Collider2D HitCollider => _hitCollider;
+
+        /// <summary>
+        /// Overlap 조회용 공유 버퍼를 반환합니다.
+        /// - 반복 할당을 줄이기 위해 ProjectileBase가 보유한 버퍼를 재사용합니다.
+        /// </summary>
+        /// <returns>Overlap 결과 버퍼입니다.</returns>
+        protected Collider2D[] GetOverlapResultsBuffer()
+        {
+            if (_overlapResults == null || _overlapResults.Length == 0)
+                _overlapResults = new Collider2D[16];
+
+            return _overlapResults;
+        }
+
+        /// <summary>
+        /// 현재 위치에서 히트 Visual 콜백을 실행합니다.
+        /// </summary>
+        /// <param name="hitCollider">히트 대상 Collider입니다.</param>
+        protected void NotifyHitVisual(Collider2D hitCollider)
+        {
+            _visual?.OnHit(new ProjectileVisualHitContext(transform.position, FromCharacter, hitCollider));
+        }
+
+        /// <summary>
+        /// 현재 발사체의 런타임 정보를 바탕으로 데미지 메타데이터를 생성합니다.
+        /// </summary>
+        /// <returns>대상에게 전달할 데미지 메타데이터입니다.</returns>
+        protected MetadataDamage CreateDamageMetadata()
+        {
+            return new MetadataDamage
+            {
+                damage = Damage,
+                attacker = FromCharacter ? FromCharacter.gameObject : null,
+                damageType = DamageType,
+                SkillUid = SkillUid,
+                AttackId = AttackId,
+                ElementGaugeApplications = Runtime != null ? Runtime.ElementGaugeApplications : null,
+            };
+        }
+
+        /// <summary>
+        /// 지정한 타겟 캐릭터에게 현재 발사체의 데미지를 적용합니다.
+        /// </summary>
+        /// <param name="target">데미지를 받을 캐릭터입니다.</param>
+        protected void ApplyDamageToTarget(CharacterBase target)
+        {
+            if (!target)
+                return;
+
+            target.TakeDamage(CreateDamageMetadata());
+        }
 
         protected void UpdateVisual(Vector2 newPos, Vector2 delta)
         {
@@ -530,10 +676,16 @@ namespace GGemCo2DCore
         #endregion
 
         #region Collision
-        private void OnTriggerEnter2D(Collider2D other)
+        /// <summary>
+        /// Trigger 진입 시 즉시 충돌 데미지 정책을 처리합니다.
+        /// - 주기 데미지형 프로젝타일은 자체 Tick 로직을 사용하므로 여기서 처리하지 않습니다.
+        /// </summary>
+        /// <param name="other">진입한 대상 Collider입니다.</param>
+        protected virtual void OnTriggerEnter2D(Collider2D other)
         {
             if (!Initialized || _isWaitingForEndVisual) return;
             if (_hasHit) return;
+            if (!ShouldHandleImmediateCollisionDamage) return;
 
             // 기존 정책을 유지하되, "충돌한 콜라이더의 태그"가 아니라 "루트 캐릭터" 기준으로 판정합니다.
             TryHandleHit(other);
@@ -541,20 +693,11 @@ namespace GGemCo2DCore
 
         protected virtual void OnHitTarget(CharacterHitArea area, Collider2D hitCollider)
         {
-            _visual?.OnHit(new ProjectileVisualHitContext(transform.position, FromCharacter, hitCollider));
+            NotifyHitVisual(hitCollider);
 
             if (!area) return;
 
-            var md = new MetadataDamage
-            {
-                damage = Damage,
-                attacker = FromCharacter ? FromCharacter.gameObject : null,
-                damageType = DamageType,
-                SkillUid = SkillUid,
-                AttackId = AttackId,
-                ElementGaugeApplications = Runtime != null ? Runtime.ElementGaugeApplications : null,
-            };
-            area.target?.TakeDamage(md);
+            ApplyDamageToTarget(area.target);
 
             Destroy(gameObject);
         }

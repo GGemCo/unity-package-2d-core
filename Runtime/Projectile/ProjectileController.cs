@@ -92,7 +92,9 @@ namespace GGemCo2DCore
                                 ? _target.transform.position.x
                                 : _character.transform.position.x;
 
-                            bool isArc = (info.ArcHeightMin > 0) || (info.ArcHeightMax > 0);
+                            bool isArc = info.Type == ProjectileConstants.Type.Arc ||
+                                         (info.Type == ProjectileConstants.Type.Default &&
+                                          ((info.ArcHeightMin > 0) || (info.ArcHeightMax > 0)));
                             if (isArc && _target)
                             {
                                 x = Random.Range(_target.transform.position.x - info.TargetPositionRangeX,
