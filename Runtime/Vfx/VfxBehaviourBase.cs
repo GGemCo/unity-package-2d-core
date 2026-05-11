@@ -327,10 +327,18 @@ namespace GGemCo2DCore
         {
         }
 
+        /// <summary>
+        /// VFX 렌더러의 Sorting Layer를 외부 생성 요청 기준으로 덮어씁니다.
+        /// </summary>
+        /// <param name="sortingLayer">적용할 Sorting Layer 키입니다.</param>
         public virtual void SetSortingLayer(ConfigSortingLayer.Keys sortingLayer)
         {
         }
 
+        /// <summary>
+        /// VFX 렌더러의 Sorting Order를 외부 생성 요청 기준으로 덮어씁니다.
+        /// </summary>
+        /// <param name="sortingOrder">적용할 Sorting Order 값입니다.</param>
         public virtual void SetSortingOrder(int sortingOrder)
         {
         }

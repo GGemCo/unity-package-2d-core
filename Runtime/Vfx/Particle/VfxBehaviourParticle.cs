@@ -7,6 +7,9 @@ namespace GGemCo2DCore
     {
         private ParticleSystem[] _particleSystems;
         private bool[] _originalLoopStates;
+        private Renderer[] _renderers;
+        private int[] _defaultSortingLayerIds;
+        private int[] _defaultSortingOrders;
         private bool _subscribed;
         private bool _forceOneShot;
 
@@ -22,6 +25,8 @@ namespace GGemCo2DCore
         {
             base.Initialize(runtimeData, spawnPolicy, releaseAction);
             CacheParticleSystems();
+            CacheRenderers();
+            RestoreDefaultSorting();
             ConfigureStopAction();
         }
 
@@ -45,9 +50,105 @@ namespace GGemCo2DCore
             }
         }
 
+        /// <summary>
+        /// 파티클 VFX 하위의 렌더러 목록과 최초 정렬값을 캐시합니다.
+        /// </summary>
+        private void CacheRenderers()
+        {
+            _renderers = GetComponentsInChildren<Renderer>(true);
+            if (_renderers == null || _renderers.Length == 0)
+            {
+                _defaultSortingLayerIds = null;
+                _defaultSortingOrders = null;
+                return;
+            }
+
+            if (_defaultSortingLayerIds != null &&
+                _defaultSortingOrders != null &&
+                _defaultSortingLayerIds.Length == _renderers.Length &&
+                _defaultSortingOrders.Length == _renderers.Length)
+            {
+                return;
+            }
+
+            _defaultSortingLayerIds = new int[_renderers.Length];
+            _defaultSortingOrders = new int[_renderers.Length];
+
+            for (int i = 0; i < _renderers.Length; i++)
+            {
+                var renderer = _renderers[i];
+                if (renderer == null)
+                    continue;
+
+                _defaultSortingLayerIds[i] = renderer.sortingLayerID;
+                _defaultSortingOrders[i] = renderer.sortingOrder;
+            }
+        }
+
+        /// <summary>
+        /// 풀에서 재사용되는 파티클 VFX의 정렬값을 프리팹 기준값으로 되돌립니다.
+        /// </summary>
+        private void RestoreDefaultSorting()
+        {
+            if (_renderers == null || _defaultSortingLayerIds == null || _defaultSortingOrders == null)
+                return;
+
+            for (int i = 0; i < _renderers.Length; i++)
+            {
+                var renderer = _renderers[i];
+                if (renderer == null)
+                    continue;
+
+                if (i < _defaultSortingLayerIds.Length)
+                    renderer.sortingLayerID = _defaultSortingLayerIds[i];
+
+                if (i < _defaultSortingOrders.Length)
+                    renderer.sortingOrder = _defaultSortingOrders[i];
+            }
+        }
+
         public override void SetForceOneShot(bool forceOneShot)
         {
             _forceOneShot = forceOneShot;
+        }
+
+        /// <summary>
+        /// 하위 ParticleSystemRenderer와 일반 Renderer에 동일한 Sorting Layer를 적용합니다.
+        /// </summary>
+        /// <param name="sortingLayer">적용할 Sorting Layer 키입니다.</param>
+        public override void SetSortingLayer(ConfigSortingLayer.Keys sortingLayer)
+        {
+            CacheRenderers();
+            if (_renderers == null)
+                return;
+
+            string sortingLayerName = ConfigSortingLayer.GetValue(sortingLayer);
+            for (int i = 0; i < _renderers.Length; i++)
+            {
+                if (_renderers[i] == null)
+                    continue;
+
+                _renderers[i].sortingLayerName = sortingLayerName;
+            }
+        }
+
+        /// <summary>
+        /// 하위 ParticleSystemRenderer와 일반 Renderer에 동일한 Sorting Order를 적용합니다.
+        /// </summary>
+        /// <param name="sortingOrder">적용할 Sorting Order 값입니다.</param>
+        public override void SetSortingOrder(int sortingOrder)
+        {
+            CacheRenderers();
+            if (_renderers == null)
+                return;
+
+            for (int i = 0; i < _renderers.Length; i++)
+            {
+                if (_renderers[i] == null)
+                    continue;
+
+                _renderers[i].sortingOrder = sortingOrder;
+            }
         }
 
         private void ApplyLoopConfiguration()

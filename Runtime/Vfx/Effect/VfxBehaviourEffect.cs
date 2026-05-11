@@ -12,11 +12,34 @@ namespace GGemCo2DCore
         private Renderer _effectRenderer;
         private RectTransform _effectRectTransform;
         private Animator _animator;
+        private bool _hasDefaultSorting;
+        private int _defaultSortingLayerId;
+        private int _defaultSortingOrder;
+        private bool _hasSortingLayerOverride;
+        private ConfigSortingLayer.Keys _sortingLayerOverride;
+        private bool _hasSortingOrderOverride;
+        private int _sortingOrderOverride;
 
         protected override void Awake()
         {
             base.Awake();
             EnsureCachedReferences();
+        }
+
+        /// <summary>
+        /// 풀링된 VFX가 재사용될 때 이전 생성 요청의 정렬 override가 남지 않도록 기본 정렬 상태를 복원합니다.
+        /// </summary>
+        /// <param name="runtimeData">VFX 테이블에서 해석된 런타임 데이터입니다.</param>
+        /// <param name="spawnPolicy">이번 생성 요청에 적용할 생성 정책입니다.</param>
+        /// <param name="releaseAction">풀 반환 또는 제거 시 호출할 콜백입니다.</param>
+        public override void Initialize(VfxRuntimeData runtimeData, VfxSpawnPolicy spawnPolicy, System.Action<int, GameObject> releaseAction = null)
+        {
+            base.Initialize(runtimeData, spawnPolicy, releaseAction);
+            EnsureCachedReferences();
+            CaptureDefaultSortingIfNeeded();
+            RestoreDefaultSorting();
+            _hasSortingLayerOverride = false;
+            _hasSortingOrderOverride = false;
         }
 
         protected override void PlayOnSpawn()
@@ -26,9 +49,13 @@ namespace GGemCo2DCore
             base.PlayOnSpawn();
 
             if (VfxAnimationController == null)
+            {
+                ApplySortingOverridesIfNeeded();
                 return;
+            }
 
             bool started = VfxAnimationController.Play(GetPlaybackDuration());
+            ApplySortingOverridesIfNeeded();
             if (!started)
             {
                 GcLogger.LogWarning($"VFX animation play failed. name: {gameObject.name}, uid: {RuntimeData?.Uid ?? 0}");
@@ -46,6 +73,51 @@ namespace GGemCo2DCore
 
             if (_animator == null)
                 _animator = GetComponent<Animator>();
+        }
+
+        /// <summary>
+        /// VFX 인스턴스가 처음 초기화될 때 기준 Sorting Layer와 Order를 보관합니다.
+        /// </summary>
+        private void CaptureDefaultSortingIfNeeded()
+        {
+            if (_hasDefaultSorting)
+                return;
+
+            if (_effectRenderer == null)
+                return;
+
+            _defaultSortingLayerId = VfxAnimationController is VfxAnimationControllerSprite
+                ? SortingLayer.NameToID(ConfigSortingLayer.GetValue(ConfigSortingLayer.Keys.CharacterTop))
+                : _effectRenderer.sortingLayerID;
+            _defaultSortingOrder = _effectRenderer.sortingOrder;
+            _hasDefaultSorting = true;
+        }
+
+        /// <summary>
+        /// 풀에서 다시 꺼낸 VFX에 남아 있을 수 있는 이전 정렬 override를 기본값으로 되돌립니다.
+        /// </summary>
+        private void RestoreDefaultSorting()
+        {
+            if (!_hasDefaultSorting || _effectRenderer == null)
+                return;
+
+            _effectRenderer.sortingLayerID = _defaultSortingLayerId;
+            _effectRenderer.sortingOrder = _defaultSortingOrder;
+        }
+
+        /// <summary>
+        /// 애니메이션 컨트롤러 초기화가 정렬값을 다시 설정한 경우를 대비해 요청 override를 재적용합니다.
+        /// </summary>
+        private void ApplySortingOverridesIfNeeded()
+        {
+            if (_effectRenderer == null)
+                return;
+
+            if (_hasSortingLayerOverride)
+                _effectRenderer.sortingLayerName = ConfigSortingLayer.GetValue(_sortingLayerOverride);
+
+            if (_hasSortingOrderOverride)
+                _effectRenderer.sortingOrder = _sortingOrderOverride;
         }
 
         protected void ApplyCommonVisuals()
@@ -102,6 +174,9 @@ namespace GGemCo2DCore
 
         protected void UpdateSortingOrder()
         {
+            if (_hasSortingOrderOverride)
+                return;
+
             int baseSortingOrder = MathHelper.GetSortingOrder(_mapSizeHeight, transform.position.y);
             if (_effectRenderer != null)
                 _effectRenderer.sortingOrder = baseSortingOrder;
@@ -151,6 +226,8 @@ namespace GGemCo2DCore
             if (_effectRenderer == null)
                 return;
 
+            _hasSortingLayerOverride = true;
+            _sortingLayerOverride = sortingLayer;
             _effectRenderer.sortingLayerName = ConfigSortingLayer.GetValue(sortingLayer);
         }
 
@@ -161,6 +238,8 @@ namespace GGemCo2DCore
             if (_effectRenderer == null)
                 return;
 
+            _hasSortingOrderOverride = true;
+            _sortingOrderOverride = sortingOrder;
             _effectRenderer.sortingOrder = sortingOrder;
         }
 
