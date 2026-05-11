@@ -1,1 +1,1 @@
-﻿Uid	Name	EffectUid	EffectScale	MoveSpeed	ArcHeightMin	ArcHeightMax	StartPosition	ColliderSize	HitEffectUid	TargetType	TargetPositionRangeX	Count	SecDelayByOne
+Uid	Type	Name	VfxUid	VfxScale	MoveSpeed	StartPosition	ColliderSize	ColliderOffset	HitVfxUid	TargetType	TargetPositionRangeX	Count	SecDelayByOne	DamageApplyMode

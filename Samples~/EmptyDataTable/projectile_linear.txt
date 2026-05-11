@@ -1,1 +1,1 @@
-Uid	Name	VfxUid	VfxScale	MoveSpeed	StartPosition	ColliderSize	ColliderOffset	HitVfxUid	TargetType	TargetPositionRangeX	Count	SecDelayByOne	BoundaryMode	BoundaryPadding	BounceMaxCount	BounceSpeedMultiplier	DamageApplyMode
+Uid	BoundaryMode	BoundaryPadding	BounceMaxCount	BounceSpeedMultiplier

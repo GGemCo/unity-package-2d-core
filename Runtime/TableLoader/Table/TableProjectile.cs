@@ -5,9 +5,9 @@ using UnityEngine;
 namespace GGemCo2DCore
 {
     /// <summary>
-    /// Projectile 계열 테이블이 공통으로 사용하는 Row 구조입니다.
-    /// - projectile_linear, projectile_arc, projectile_path 테이블은 이 구조로 파싱됩니다.
-    /// - 기존 projectile 테이블도 마이그레이션 호환을 위해 같은 구조를 유지합니다.
+    /// Projectile 런타임에서 사용하는 최종 병합 데이터입니다.
+    /// - projectile.txt 공통 Row에 projectile_linear/arc/path 상세 Row를 UID 기준으로 덧입힌 결과입니다.
+    /// - 런타임 생성 코드는 이 타입 하나만 바라보도록 유지합니다.
     /// </summary>
     public class StruckTableProjectile
     {
@@ -17,8 +17,6 @@ namespace GGemCo2DCore
         public int VfxUid;
         public float VfxScale;
         public int MoveSpeed;
-        public int ArcHeightMin;
-        public int ArcHeightMax;
         public Vector2 StartPosition;
         public Vector2 ColliderSize;
 
@@ -33,76 +31,72 @@ namespace GGemCo2DCore
         public int TargetPositionRangeX;
         public int Count;
         public float SecDelayByOne;
+        public ProjectileConstants.DamageApplyMode DamageApplyMode;
 
-        // ---- Boundary (Camera view) ----
+        // ---- Linear detail ----
         public ProjectileConstants.BoundaryMode BoundaryMode;
         public float BoundaryPadding;
         public int BounceMaxCount;
         public float BounceSpeedMultiplier;
 
-        // ---- Damage policy ----
-        public ProjectileConstants.DamageApplyMode DamageApplyMode;
+        // ---- Arc detail ----
+        public int ArcHeightMin;
+        public int ArcHeightMax;
+
+        // ---- Path detail ----
         public float TickDamageInterval;
         public bool TickOnSpawn;
-
-        // ---- Path movement ----
         public ProjectileConstants.PathCoordinateMode PathCoordinateMode;
         public Vector2[] PathPoints = Array.Empty<Vector2>();
         public float PathDuration;
     }
 
     /// <summary>
-    /// Projectile 분리 테이블의 공통 파서입니다.
-    /// - 각 하위 테이블은 파일명만 다르고 동일한 Row 구조를 공유합니다.
-    /// - 테이블별 기본 Type을 주입하므로 Type 컬럼을 생략해도 안전하게 동작합니다.
+    /// projectile_linear.txt Row 구조입니다.
+    /// - 공통 정보는 projectile.txt에서 관리하고, 직선형 이동 옵션만 보관합니다.
     /// </summary>
-    public abstract class TableProjectileBase : DefaultTable<StruckTableProjectile>
+    public sealed class StruckTableProjectileLinear
     {
-        /// <summary>
-        /// 현재 테이블이 기본으로 부여할 Projectile 타입입니다.
-        /// </summary>
-        protected abstract ProjectileConstants.Type DefaultProjectileType { get; }
+        public int Uid;
+        public ProjectileConstants.BoundaryMode BoundaryMode;
+        public float BoundaryPadding;
+        public int BounceMaxCount;
+        public float BounceSpeedMultiplier;
+    }
 
-        /// <summary>
-        /// 헤더/값 사전에서 Projectile Row를 생성합니다.
-        /// - 공통 컬럼은 모든 분리 테이블에서 읽고, 없는 컬럼은 기본값으로 보정합니다.
-        /// - legacy 컬럼명(EffectUid/EffectScale/HitEffectUid)도 함께 지원합니다.
-        /// </summary>
-        /// <param name="data">헤더명 → 값 사전입니다.</param>
-        /// <returns>파싱된 Projectile Row입니다.</returns>
-        protected override StruckTableProjectile BuildRow(Dictionary<string, string> data)
-        {
-            return new StruckTableProjectile
-            {
-                Uid = GetInt(data, 0, "Uid"),
-                Type = GetEnum(data, DefaultProjectileType, "Type"),
-                Name = GetString(data, string.Empty, "Name"),
-                VfxUid = GetInt(data, 0, "VfxUid", "EffectUid"),
-                VfxScale = GetFloat(data, 1f, "VfxScale", "EffectScale"),
-                MoveSpeed = GetInt(data, 0, "MoveSpeed"),
-                ArcHeightMin = GetInt(data, 0, "ArcHeightMin"),
-                ArcHeightMax = GetInt(data, 0, "ArcHeightMax"),
-                StartPosition = GetVector2(data, Vector2.zero, "StartPosition"),
-                ColliderSize = GetVector2(data, Vector2.zero, "ColliderSize"),
-                ColliderOffset = GetVector2(data, Vector2.zero, "ColliderOffset"),
-                HitVfxUid = GetInt(data, 0, "HitVfxUid", "HitEffectUid"),
-                TargetType = GetEnum(data, ProjectileConstants.TargetType.None, "TargetType"),
-                TargetPositionRangeX = GetInt(data, 0, "TargetPositionRangeX"),
-                Count = GetInt(data, 1, "Count"),
-                SecDelayByOne = GetFloat(data, 0f, "SecDelayByOne"),
-                BoundaryMode = GetEnum(data, ProjectileConstants.BoundaryMode.Destroy, "BoundaryMode"),
-                BoundaryPadding = GetFloat(data, 0f, "BoundaryPadding"),
-                BounceMaxCount = GetInt(data, 0, "BounceMaxCount"),
-                BounceSpeedMultiplier = GetFloat(data, 1f, "BounceSpeedMultiplier"),
-                DamageApplyMode = GetEnum(data, ProjectileConstants.DamageApplyMode.OnHitDestroy, "DamageApplyMode"),
-                TickDamageInterval = GetFloat(data, 0f, "TickDamageInterval"),
-                TickOnSpawn = GetBool(data, false, "TickOnSpawn"),
-                PathCoordinateMode = GetEnum(data, ProjectileConstants.PathCoordinateMode.StartRelative, "PathCoordinateMode"),
-                PathPoints = GetVector2Array(data, "PathPoints"),
-                PathDuration = GetFloat(data, 0f, "PathDuration"),
-            };
-        }
+    /// <summary>
+    /// projectile_arc.txt Row 구조입니다.
+    /// - 공통 정보는 projectile.txt에서 관리하고, 포물선 이동 옵션만 보관합니다.
+    /// </summary>
+    public sealed class StruckTableProjectileArc
+    {
+        public int Uid;
+        public int ArcHeightMin;
+        public int ArcHeightMax;
+    }
 
+    /// <summary>
+    /// projectile_path.txt Row 구조입니다.
+    /// - 공통 정보는 projectile.txt에서 관리하고, 경로 이동/주기 데미지 옵션만 보관합니다.
+    /// </summary>
+    public sealed class StruckTableProjectilePath
+    {
+        public int Uid;
+        public float TickDamageInterval;
+        public bool TickOnSpawn;
+        public ProjectileConstants.PathCoordinateMode PathCoordinateMode;
+        public Vector2[] PathPoints = Array.Empty<Vector2>();
+        public float PathDuration;
+    }
+
+    /// <summary>
+    /// Projectile 계열 테이블 파서의 공통 유틸리티입니다.
+    /// - 공통/상세 테이블의 컬럼 누락을 기본값으로 보정합니다.
+    /// - 레거시 컬럼명(EffectUid/EffectScale/HitEffectUid)도 함께 지원합니다.
+    /// </summary>
+    /// <typeparam name="TRow">파싱할 Row 타입입니다.</typeparam>
+    public abstract class ProjectileTableBase<TRow> : DefaultTable<TRow> where TRow : class
+    {
         /// <summary>
         /// 여러 후보 컬럼명 중 첫 번째로 발견된 문자열 값을 반환합니다.
         /// </summary>
@@ -110,7 +104,7 @@ namespace GGemCo2DCore
         /// <param name="fallback">값이 없을 때 사용할 기본값입니다.</param>
         /// <param name="keys">확인할 컬럼명 목록입니다.</param>
         /// <returns>컬럼 값 또는 기본값입니다.</returns>
-        private static string GetString(Dictionary<string, string> data, string fallback, params string[] keys)
+        protected static string GetString(Dictionary<string, string> data, string fallback, params string[] keys)
         {
             if (data == null || keys == null)
                 return fallback;
@@ -135,7 +129,7 @@ namespace GGemCo2DCore
         /// <param name="fallback">값이 없을 때 사용할 기본값입니다.</param>
         /// <param name="keys">확인할 컬럼명 목록입니다.</param>
         /// <returns>정수 값 또는 기본값입니다.</returns>
-        private static int GetInt(Dictionary<string, string> data, int fallback, params string[] keys)
+        protected static int GetInt(Dictionary<string, string> data, int fallback, params string[] keys)
         {
             string value = GetString(data, null, keys);
             return string.IsNullOrWhiteSpace(value) ? fallback : MathHelper.ParseInt(value);
@@ -148,7 +142,7 @@ namespace GGemCo2DCore
         /// <param name="fallback">값이 없을 때 사용할 기본값입니다.</param>
         /// <param name="keys">확인할 컬럼명 목록입니다.</param>
         /// <returns>실수 값 또는 기본값입니다.</returns>
-        private static float GetFloat(Dictionary<string, string> data, float fallback, params string[] keys)
+        protected static float GetFloat(Dictionary<string, string> data, float fallback, params string[] keys)
         {
             string value = GetString(data, null, keys);
             return string.IsNullOrWhiteSpace(value) ? fallback : MathHelper.ParseFloat(value);
@@ -161,7 +155,7 @@ namespace GGemCo2DCore
         /// <param name="fallback">값이 없을 때 사용할 기본값입니다.</param>
         /// <param name="keys">확인할 컬럼명 목록입니다.</param>
         /// <returns>bool 값 또는 기본값입니다.</returns>
-        private static bool GetBool(Dictionary<string, string> data, bool fallback, params string[] keys)
+        protected static bool GetBool(Dictionary<string, string> data, bool fallback, params string[] keys)
         {
             string value = GetString(data, null, keys);
             if (string.IsNullOrWhiteSpace(value))
@@ -180,7 +174,7 @@ namespace GGemCo2DCore
         /// <param name="fallback">값이 없을 때 사용할 기본값입니다.</param>
         /// <param name="keys">확인할 컬럼명 목록입니다.</param>
         /// <returns>enum 값 또는 기본값입니다.</returns>
-        private static TEnum GetEnum<TEnum>(Dictionary<string, string> data, TEnum fallback, params string[] keys)
+        protected static TEnum GetEnum<TEnum>(Dictionary<string, string> data, TEnum fallback, params string[] keys)
             where TEnum : struct, Enum
         {
             string value = GetString(data, null, keys);
@@ -194,7 +188,7 @@ namespace GGemCo2DCore
         /// <param name="fallback">값이 없을 때 사용할 기본값입니다.</param>
         /// <param name="keys">확인할 컬럼명 목록입니다.</param>
         /// <returns>Vector2 값 또는 기본값입니다.</returns>
-        private static Vector2 GetVector2(Dictionary<string, string> data, Vector2 fallback, params string[] keys)
+        protected static Vector2 GetVector2(Dictionary<string, string> data, Vector2 fallback, params string[] keys)
         {
             string value = GetString(data, null, keys);
             return string.IsNullOrWhiteSpace(value) ? fallback : ConvertVector2(value);
@@ -207,7 +201,7 @@ namespace GGemCo2DCore
         /// <param name="data">헤더명 → 값 사전입니다.</param>
         /// <param name="key">PathPoints 컬럼명입니다.</param>
         /// <returns>파싱된 경로 점 배열입니다.</returns>
-        private static Vector2[] GetVector2Array(Dictionary<string, string> data, string key)
+        protected static Vector2[] GetVector2Array(Dictionary<string, string> data, string key)
         {
             string value = GetString(data, null, key);
             if (string.IsNullOrWhiteSpace(value))
@@ -226,20 +220,70 @@ namespace GGemCo2DCore
     }
 
     /// <summary>
-    /// 기존 projectile 테이블 파서입니다.
-    /// - 새 분리 테이블로 이전하는 동안 레거시 데이터를 읽기 위해 유지합니다.
+    /// projectile.txt 공통 테이블 파서입니다.
+    /// - 신규 구조에서는 공통 컬럼만 관리합니다.
+    /// - 기존 데이터 호환을 위해 상세 컬럼이 남아 있으면 기본 상세값으로 함께 읽습니다.
     /// </summary>
-    public class TableProjectile : TableProjectileBase
+    public class TableProjectile : ProjectileTableBase<StruckTableProjectile>
     {
         public override string Key => ConfigAddressableTable.Projectile;
-        protected override ProjectileConstants.Type DefaultProjectileType => ProjectileConstants.Type.Default;
 
         /// <summary>
-        /// 다른 Projectile 테이블의 Row를 현재 캐시에 병합합니다.
-        /// - 동일 UID가 있으면 나중에 병합된 Row가 우선합니다.
-        /// - 에디터 드롭다운처럼 분리 테이블 전체를 하나로 보여줄 때 사용합니다.
+        /// projectile.txt의 공통 Row를 파싱합니다.
         /// </summary>
-        /// <param name="source">병합할 Row 사전입니다.</param>
+        /// <param name="data">헤더명 → 값 사전입니다.</param>
+        /// <returns>공통 Projectile Row입니다.</returns>
+        protected override StruckTableProjectile BuildRow(Dictionary<string, string> data)
+        {
+            return new StruckTableProjectile
+            {
+                Uid = GetInt(data, 0, "Uid"),
+                Type = GetEnum(data, ProjectileConstants.Type.Default, "Type"),
+                Name = GetString(data, string.Empty, "Name"),
+                VfxUid = GetInt(data, 0, "VfxUid", "EffectUid"),
+                VfxScale = GetFloat(data, 1f, "VfxScale", "EffectScale"),
+                MoveSpeed = GetInt(data, 0, "MoveSpeed"),
+                StartPosition = GetVector2(data, Vector2.zero, "StartPosition"),
+                ColliderSize = GetVector2(data, Vector2.zero, "ColliderSize"),
+                ColliderOffset = GetVector2(data, Vector2.zero, "ColliderOffset"),
+                HitVfxUid = GetInt(data, 0, "HitVfxUid", "HitEffectUid"),
+                TargetType = GetEnum(data, ProjectileConstants.TargetType.None, "TargetType"),
+                TargetPositionRangeX = GetInt(data, 0, "TargetPositionRangeX"),
+                Count = GetInt(data, 1, "Count"),
+                SecDelayByOne = GetFloat(data, 0f, "SecDelayByOne"),
+                DamageApplyMode = GetEnum(data, ProjectileConstants.DamageApplyMode.OnHitDestroy, "DamageApplyMode"),
+
+                // 레거시 projectile.txt가 상세 컬럼까지 들고 있던 경우를 위한 fallback 값입니다.
+                BoundaryMode = GetEnum(data, ProjectileConstants.BoundaryMode.Destroy, "BoundaryMode"),
+                BoundaryPadding = GetFloat(data, 0f, "BoundaryPadding"),
+                BounceMaxCount = GetInt(data, 0, "BounceMaxCount"),
+                BounceSpeedMultiplier = GetFloat(data, 1f, "BounceSpeedMultiplier"),
+                ArcHeightMin = GetInt(data, 0, "ArcHeightMin"),
+                ArcHeightMax = GetInt(data, 0, "ArcHeightMax"),
+                TickDamageInterval = GetFloat(data, 0f, "TickDamageInterval"),
+                TickOnSpawn = GetBool(data, false, "TickOnSpawn"),
+                PathCoordinateMode = GetEnum(data, ProjectileConstants.PathCoordinateMode.StartRelative, "PathCoordinateMode"),
+                PathPoints = GetVector2Array(data, "PathPoints"),
+                PathDuration = GetFloat(data, 0f, "PathDuration"),
+            };
+        }
+
+        /// <summary>
+        /// 병합 또는 에디터 갱신을 위해 Row를 현재 캐시에 저장합니다.
+        /// </summary>
+        /// <param name="row">저장할 공통 Projectile Row입니다.</param>
+        public void Upsert(StruckTableProjectile row)
+        {
+            if (row == null)
+                return;
+
+            SetDataByUid(row.Uid, row);
+        }
+
+        /// <summary>
+        /// 다른 Projectile 공통 Row를 현재 캐시에 병합합니다.
+        /// </summary>
+        /// <param name="source">병합할 공통 Row 사전입니다.</param>
         public void MergeFrom(IReadOnlyDictionary<int, StruckTableProjectile> source)
         {
             if (source == null)
@@ -248,32 +292,300 @@ namespace GGemCo2DCore
             foreach (KeyValuePair<int, StruckTableProjectile> pair in source)
                 SetDataByUid(pair.Key, pair.Value);
         }
+
+        /// <summary>
+        /// linear 상세 Row를 UID 기준으로 병합합니다.
+        /// </summary>
+        /// <param name="source">병합할 linear 상세 Row 사전입니다.</param>
+        public void MergeLinearDetails(IReadOnlyDictionary<int, StruckTableProjectileLinear> source)
+        {
+            if (source == null)
+                return;
+
+            foreach (KeyValuePair<int, StruckTableProjectileLinear> pair in source)
+            {
+                if (!TryGetDataByUid(pair.Key, out StruckTableProjectile row) || row == null)
+                    continue;
+
+                ApplyLinear(row, pair.Value);
+            }
+        }
+
+        /// <summary>
+        /// arc 상세 Row를 UID 기준으로 병합합니다.
+        /// </summary>
+        /// <param name="source">병합할 arc 상세 Row 사전입니다.</param>
+        public void MergeArcDetails(IReadOnlyDictionary<int, StruckTableProjectileArc> source)
+        {
+            if (source == null)
+                return;
+
+            foreach (KeyValuePair<int, StruckTableProjectileArc> pair in source)
+            {
+                if (!TryGetDataByUid(pair.Key, out StruckTableProjectile row) || row == null)
+                    continue;
+
+                ApplyArc(row, pair.Value);
+            }
+        }
+
+        /// <summary>
+        /// path 상세 Row를 UID 기준으로 병합합니다.
+        /// </summary>
+        /// <param name="source">병합할 path 상세 Row 사전입니다.</param>
+        public void MergePathDetails(IReadOnlyDictionary<int, StruckTableProjectilePath> source)
+        {
+            if (source == null)
+                return;
+
+            foreach (KeyValuePair<int, StruckTableProjectilePath> pair in source)
+            {
+                if (!TryGetDataByUid(pair.Key, out StruckTableProjectile row) || row == null)
+                    continue;
+
+                ApplyPath(row, pair.Value);
+            }
+        }
+
+        /// <summary>
+        /// 공통 Row를 복제한 뒤 타입별 상세 Row를 덧입혀 최종 런타임 데이터를 만듭니다.
+        /// </summary>
+        /// <param name="source">복제할 공통 Projectile Row입니다.</param>
+        /// <param name="linear">linear 상세 Row입니다.</param>
+        /// <param name="arc">arc 상세 Row입니다.</param>
+        /// <param name="path">path 상세 Row입니다.</param>
+        /// <returns>상세값이 병합된 Projectile 런타임 데이터입니다.</returns>
+        public static StruckTableProjectile CreateMerged(
+            StruckTableProjectile source,
+            StruckTableProjectileLinear linear,
+            StruckTableProjectileArc arc,
+            StruckTableProjectilePath path)
+        {
+            if (source == null)
+                return null;
+
+            StruckTableProjectile row = Clone(source);
+            ApplyLinear(row, linear);
+            ApplyArc(row, arc);
+            ApplyPath(row, path);
+            return row;
+        }
+
+        /// <summary>
+        /// 공통 Row를 복제합니다.
+        /// </summary>
+        /// <param name="source">복제할 Row입니다.</param>
+        /// <returns>복제된 Row입니다.</returns>
+        private static StruckTableProjectile Clone(StruckTableProjectile source)
+        {
+            return new StruckTableProjectile
+            {
+                Uid = source.Uid,
+                Type = source.Type,
+                Name = source.Name,
+                VfxUid = source.VfxUid,
+                VfxScale = source.VfxScale,
+                MoveSpeed = source.MoveSpeed,
+                StartPosition = source.StartPosition,
+                ColliderSize = source.ColliderSize,
+                ColliderOffset = source.ColliderOffset,
+                HitVfxUid = source.HitVfxUid,
+                TargetType = source.TargetType,
+                TargetPositionRangeX = source.TargetPositionRangeX,
+                Count = source.Count,
+                SecDelayByOne = source.SecDelayByOne,
+                DamageApplyMode = source.DamageApplyMode,
+                BoundaryMode = source.BoundaryMode,
+                BoundaryPadding = source.BoundaryPadding,
+                BounceMaxCount = source.BounceMaxCount,
+                BounceSpeedMultiplier = source.BounceSpeedMultiplier,
+                ArcHeightMin = source.ArcHeightMin,
+                ArcHeightMax = source.ArcHeightMax,
+                TickDamageInterval = source.TickDamageInterval,
+                TickOnSpawn = source.TickOnSpawn,
+                PathCoordinateMode = source.PathCoordinateMode,
+                PathPoints = source.PathPoints != null ? (Vector2[])source.PathPoints.Clone() : Array.Empty<Vector2>(),
+                PathDuration = source.PathDuration,
+            };
+        }
+
+        /// <summary>
+        /// linear 상세값을 최종 Row에 덧입힙니다.
+        /// </summary>
+        /// <param name="target">상세값을 받을 Row입니다.</param>
+        /// <param name="source">linear 상세 Row입니다.</param>
+        private static void ApplyLinear(StruckTableProjectile target, StruckTableProjectileLinear source)
+        {
+            if (target == null || source == null)
+                return;
+
+            if (!ShouldApplyDetail(target.Type, ProjectileConstants.Type.Linear))
+                return;
+
+            target.BoundaryMode = source.BoundaryMode;
+            target.BoundaryPadding = source.BoundaryPadding;
+            target.BounceMaxCount = source.BounceMaxCount;
+            target.BounceSpeedMultiplier = source.BounceSpeedMultiplier;
+        }
+
+        /// <summary>
+        /// arc 상세값을 최종 Row에 덧입힙니다.
+        /// </summary>
+        /// <param name="target">상세값을 받을 Row입니다.</param>
+        /// <param name="source">arc 상세 Row입니다.</param>
+        private static void ApplyArc(StruckTableProjectile target, StruckTableProjectileArc source)
+        {
+            if (target == null || source == null)
+                return;
+
+            if (!ShouldApplyDetail(target.Type, ProjectileConstants.Type.Arc))
+                return;
+
+            target.ArcHeightMin = source.ArcHeightMin;
+            target.ArcHeightMax = source.ArcHeightMax;
+        }
+
+        /// <summary>
+        /// path 상세값을 최종 Row에 덧입힙니다.
+        /// </summary>
+        /// <param name="target">상세값을 받을 Row입니다.</param>
+        /// <param name="source">path 상세 Row입니다.</param>
+        private static void ApplyPath(StruckTableProjectile target, StruckTableProjectilePath source)
+        {
+            if (target == null || source == null)
+                return;
+
+            if (!ShouldApplyDetail(target.Type, ProjectileConstants.Type.Path))
+                return;
+
+            target.TickDamageInterval = source.TickDamageInterval;
+            target.TickOnSpawn = source.TickOnSpawn;
+            target.PathCoordinateMode = source.PathCoordinateMode;
+            target.PathPoints = source.PathPoints != null ? (Vector2[])source.PathPoints.Clone() : Array.Empty<Vector2>();
+            target.PathDuration = source.PathDuration;
+        }
+
+        /// <summary>
+        /// 공용 Row의 Type과 상세 테이블 타입이 병합 가능한지 확인합니다.
+        /// - Type이 명시되어 있으면 같은 타입의 상세 Row만 적용합니다.
+        /// - Type이 Default이면 레거시 데이터 호환을 위해 발견된 상세 Row를 허용합니다.
+        /// </summary>
+        /// <param name="rowType">공용 Projectile Row의 타입입니다.</param>
+        /// <param name="detailType">상세 테이블이 표현하는 타입입니다.</param>
+        /// <returns>상세값을 적용할 수 있으면 true를 반환합니다.</returns>
+        private static bool ShouldApplyDetail(ProjectileConstants.Type rowType, ProjectileConstants.Type detailType)
+        {
+            return rowType == ProjectileConstants.Type.Default || rowType == detailType;
+        }
     }
 
     /// <summary>
-    /// projectile_linear 테이블 파서입니다.
+    /// projectile_linear.txt 상세 테이블 파서입니다.
     /// </summary>
-    public sealed class TableProjectileLinear : TableProjectileBase
+    public sealed class TableProjectileLinear : ProjectileTableBase<StruckTableProjectileLinear>
     {
         public override string Key => ConfigAddressableTable.ProjectileLinear;
-        protected override ProjectileConstants.Type DefaultProjectileType => ProjectileConstants.Type.Linear;
+
+        /// <summary>
+        /// projectile_linear.txt의 상세 Row를 파싱합니다.
+        /// </summary>
+        /// <param name="data">헤더명 → 값 사전입니다.</param>
+        /// <returns>linear 상세 Row입니다.</returns>
+        protected override StruckTableProjectileLinear BuildRow(Dictionary<string, string> data)
+        {
+            return new StruckTableProjectileLinear
+            {
+                Uid = GetInt(data, 0, "Uid"),
+                BoundaryMode = GetEnum(data, ProjectileConstants.BoundaryMode.Destroy, "BoundaryMode"),
+                BoundaryPadding = GetFloat(data, 0f, "BoundaryPadding"),
+                BounceMaxCount = GetInt(data, 0, "BounceMaxCount"),
+                BounceSpeedMultiplier = GetFloat(data, 1f, "BounceSpeedMultiplier"),
+            };
+        }
+
+        /// <summary>
+        /// 에디터 테스트 갱신을 위해 상세 Row를 현재 캐시에 저장합니다.
+        /// </summary>
+        /// <param name="row">저장할 linear 상세 Row입니다.</param>
+        public void Upsert(StruckTableProjectileLinear row)
+        {
+            if (row == null)
+                return;
+
+            SetDataByUid(row.Uid, row);
+        }
     }
 
     /// <summary>
-    /// projectile_arc 테이블 파서입니다.
+    /// projectile_arc.txt 상세 테이블 파서입니다.
     /// </summary>
-    public sealed class TableProjectileArc : TableProjectileBase
+    public sealed class TableProjectileArc : ProjectileTableBase<StruckTableProjectileArc>
     {
         public override string Key => ConfigAddressableTable.ProjectileArc;
-        protected override ProjectileConstants.Type DefaultProjectileType => ProjectileConstants.Type.Arc;
+
+        /// <summary>
+        /// projectile_arc.txt의 상세 Row를 파싱합니다.
+        /// </summary>
+        /// <param name="data">헤더명 → 값 사전입니다.</param>
+        /// <returns>arc 상세 Row입니다.</returns>
+        protected override StruckTableProjectileArc BuildRow(Dictionary<string, string> data)
+        {
+            return new StruckTableProjectileArc
+            {
+                Uid = GetInt(data, 0, "Uid"),
+                ArcHeightMin = GetInt(data, 0, "ArcHeightMin"),
+                ArcHeightMax = GetInt(data, 0, "ArcHeightMax"),
+            };
+        }
+
+        /// <summary>
+        /// 에디터 테스트 갱신을 위해 상세 Row를 현재 캐시에 저장합니다.
+        /// </summary>
+        /// <param name="row">저장할 arc 상세 Row입니다.</param>
+        public void Upsert(StruckTableProjectileArc row)
+        {
+            if (row == null)
+                return;
+
+            SetDataByUid(row.Uid, row);
+        }
     }
 
     /// <summary>
-    /// projectile_path 테이블 파서입니다.
+    /// projectile_path.txt 상세 테이블 파서입니다.
     /// </summary>
-    public sealed class TableProjectilePath : TableProjectileBase
+    public sealed class TableProjectilePath : ProjectileTableBase<StruckTableProjectilePath>
     {
         public override string Key => ConfigAddressableTable.ProjectilePath;
-        protected override ProjectileConstants.Type DefaultProjectileType => ProjectileConstants.Type.Path;
+
+        /// <summary>
+        /// projectile_path.txt의 상세 Row를 파싱합니다.
+        /// </summary>
+        /// <param name="data">헤더명 → 값 사전입니다.</param>
+        /// <returns>path 상세 Row입니다.</returns>
+        protected override StruckTableProjectilePath BuildRow(Dictionary<string, string> data)
+        {
+            return new StruckTableProjectilePath
+            {
+                Uid = GetInt(data, 0, "Uid"),
+                TickDamageInterval = GetFloat(data, 0f, "TickDamageInterval"),
+                TickOnSpawn = GetBool(data, false, "TickOnSpawn"),
+                PathCoordinateMode = GetEnum(data, ProjectileConstants.PathCoordinateMode.StartRelative, "PathCoordinateMode"),
+                PathPoints = GetVector2Array(data, "PathPoints"),
+                PathDuration = GetFloat(data, 0f, "PathDuration"),
+            };
+        }
+
+        /// <summary>
+        /// 에디터 테스트 갱신을 위해 상세 Row를 현재 캐시에 저장합니다.
+        /// </summary>
+        /// <param name="row">저장할 path 상세 Row입니다.</param>
+        public void Upsert(StruckTableProjectilePath row)
+        {
+            if (row == null)
+                return;
+
+            SetDataByUid(row.Uid, row);
+        }
     }
 }

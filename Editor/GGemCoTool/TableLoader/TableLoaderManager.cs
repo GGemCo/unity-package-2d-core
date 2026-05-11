@@ -142,9 +142,9 @@ namespace GGemCo2DCoreEditor
         }
 
         /// <summary>
-        /// 에디터 환경에서 분리된 Projectile 테이블을 하나의 조회 테이블로 병합해 로드합니다.
-        /// - 조회 우선순위는 projectile_linear → projectile_arc → projectile_path → legacy projectile입니다.
-        /// - 같은 UID가 중복되면 우선순위가 높은 테이블의 Row가 최종 병합 결과로 남습니다.
+        /// 에디터 환경에서 projectile.txt 공용 Row와 projectile_linear/arc/path 상세 Row를 하나의 조회 테이블로 병합해 로드합니다.
+        /// - 공용 Row가 없으면 상세 Row만으로는 병합하지 않습니다.
+        /// - 상세 Row가 없으면 공용 Row의 기본값 또는 레거시 상세 컬럼 값을 유지합니다.
         /// </summary>
         /// <param name="forceReload">캐시를 무시하고 다시 로드할지 여부입니다.</param>
         /// <returns>병합된 Projectile 테이블입니다. 로드된 Row가 없으면 null을 반환합니다.</returns>
@@ -153,9 +153,9 @@ namespace GGemCo2DCoreEditor
             var merged = new TableProjectile();
 
             MergeProjectileRows(merged, TryLoadProjectilePart<TableProjectile>(ConfigAddressableTable.TableProjectile.Path, forceReload));
-            MergeProjectileRows(merged, TryLoadProjectilePart<TableProjectilePath>(ConfigAddressableTable.TableProjectilePath.Path, forceReload));
-            MergeProjectileRows(merged, TryLoadProjectilePart<TableProjectileArc>(ConfigAddressableTable.TableProjectileArc.Path, forceReload));
-            MergeProjectileRows(merged, TryLoadProjectilePart<TableProjectileLinear>(ConfigAddressableTable.TableProjectileLinear.Path, forceReload));
+            merged.MergePathDetails(TryLoadProjectilePart<TableProjectilePath>(ConfigAddressableTable.TableProjectilePath.Path, forceReload)?.GetDatas());
+            merged.MergeArcDetails(TryLoadProjectilePart<TableProjectileArc>(ConfigAddressableTable.TableProjectileArc.Path, forceReload)?.GetDatas());
+            merged.MergeLinearDetails(TryLoadProjectilePart<TableProjectileLinear>(ConfigAddressableTable.TableProjectileLinear.Path, forceReload)?.GetDatas());
 
             return merged.GetCount() > 0 ? merged : null;
         }

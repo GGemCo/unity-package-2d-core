@@ -1185,6 +1185,10 @@ namespace GGemCo2DCoreEditor
             }
         }
 
+        /// <summary>
+        /// 에디터 입력값을 현재 선택된 병합 Projectile Row에 반영합니다.
+        /// </summary>
+        /// <returns>반영할 Row가 있으면 true를 반환합니다.</returns>
         private bool ApplyEditingToCachedRow()
         {
             if (_cachedProjectileInfo == null || _editingProjectile == null)
@@ -1194,47 +1198,49 @@ namespace GGemCo2DCoreEditor
             return true;
         }
 
+        /// <summary>
+        /// 편집 중인 값이 원본 캐시를 즉시 오염시키지 않도록 Projectile Row를 복제합니다.
+        /// </summary>
+        /// <param name="row">복제할 Projectile Row입니다.</param>
+        /// <returns>복제된 Projectile Row입니다.</returns>
         private static StruckTableProjectile CloneProjectileRow(StruckTableProjectile row)
         {
             return TableRowEditorUtility.CloneShallow<StruckTableProjectile>(row);
         }
 
+        /// <summary>
+        /// 플레이 모드 테스트에 즉시 반영되도록 런타임 공용/상세 Projectile 테이블 캐시를 갱신합니다.
+        /// </summary>
+        /// <param name="row">갱신할 병합 Projectile Row입니다.</param>
         private static void UpdateInGameProjectileTableInfo(StruckTableProjectile row)
         {
-            if (!GGemCo2DCore.TableLoaderManager.Instance) return;
-            // 인게임 TableLoaderManager 의 값도 바꿔주기
-            var info = GGemCo2DCore.TableLoaderManager.Instance.GetProjectileData(row.Uid);
-            if (info != null)
-            {
-                info.Type = row.Type;
-                info.Name = row.Name;
-                info.VfxUid = row.VfxUid;
-                info.VfxScale = row.VfxScale;
-                info.MoveSpeed = row.MoveSpeed;
-                info.ArcHeightMin = row.ArcHeightMin;
-                info.ArcHeightMax = row.ArcHeightMax;
-                info.StartPosition = row.StartPosition;
-                info.ColliderSize = row.ColliderSize;
-                info.ColliderOffset = row.ColliderOffset;
-                info.HitVfxUid = row.HitVfxUid;
-                info.TargetType = row.TargetType;
-                info.TargetPositionRangeX = row.TargetPositionRangeX;
-                info.Count = row.Count;
-                info.SecDelayByOne = row.SecDelayByOne;
+            if (!GGemCo2DCore.TableLoaderManager.Instance || row == null) return;
 
-                info.BoundaryMode = row.BoundaryMode;
-                info.BoundaryPadding = row.BoundaryPadding;
-                info.BounceMaxCount = row.BounceMaxCount;
-                info.BounceSpeedMultiplier = row.BounceSpeedMultiplier;
-                info.DamageApplyMode = row.DamageApplyMode;
-                info.TickDamageInterval = row.TickDamageInterval;
-                info.TickOnSpawn = row.TickOnSpawn;
-                info.PathCoordinateMode = row.PathCoordinateMode;
-                info.PathPoints = row.PathPoints;
-                info.PathDuration = row.PathDuration;
+            // GetProjectileData는 공통/상세 Row를 병합한 복사본을 반환하므로,
+            // 테스트 적용 시에는 실제 런타임 테이블 캐시에 공통 Row와 상세 Row를 각각 갱신합니다.
+            var tableLoader = GGemCo2DCore.TableLoaderManager.Instance;
+            tableLoader.TableProjectile?.Upsert(row);
+
+            switch (row.Type)
+            {
+                case ProjectileConstants.Type.Linear:
+                    tableLoader.TableProjectileLinear?.Upsert(ToLinearDetail(row));
+                    break;
+                case ProjectileConstants.Type.Arc:
+                    tableLoader.TableProjectileArc?.Upsert(ToArcDetail(row));
+                    break;
+                case ProjectileConstants.Type.Path:
+                    tableLoader.TableProjectilePath?.Upsert(ToPathDetail(row));
+                    break;
             }
         }
 
+        /// <summary>
+        /// 실제 테이블 파일의 헤더 구성에 맞춰 Projectile Row를 탭 구분 문자열로 직렬화합니다.
+        /// </summary>
+        /// <param name="row">저장할 병합 Projectile Row입니다.</param>
+        /// <param name="headers">파일의 헤더 목록입니다.</param>
+        /// <returns>테이블 파일에 기록할 Row 문자열입니다.</returns>
         private static string SerializeProjectileRow(StruckTableProjectile row, IReadOnlyList<string> headers)
         {
             var values = new string[headers.Count];
@@ -1276,6 +1282,11 @@ namespace GGemCo2DCoreEditor
             return string.Join("\t", values);
         }
 
+        /// <summary>
+        /// Projectile 공용 테이블과 타입별 상세 테이블을 현재 편집 Row 기준으로 저장합니다.
+        /// </summary>
+        /// <param name="error">저장 실패 시 오류 메시지입니다.</param>
+        /// <returns>저장에 성공하면 true를 반환합니다.</returns>
         private bool TrySaveProjectileTableFile(out string error)
         {
             error = null;
@@ -1292,9 +1303,8 @@ namespace GGemCo2DCoreEditor
                 return false;
             }
 
-            string tablePath = ResolveProjectileTablePath(_cachedProjectileInfo);
             if (!TableTextRowPatchUtility.TryPatchRowByUid(
-                    tablePath,
+                    ConfigAddressableTable.TableProjectile.Path,
                     _cachedProjectileInfo.Uid,
                     _cachedProjectileInfo,
                     SerializeProjectileRow,
@@ -1304,26 +1314,89 @@ namespace GGemCo2DCoreEditor
                 return false;
             }
 
+            string detailTablePath = ResolveProjectileDetailTablePath(_cachedProjectileInfo);
+            if (!string.IsNullOrWhiteSpace(detailTablePath) &&
+                !TableTextRowPatchUtility.TryPatchRowByUid(
+                    detailTablePath,
+                    _cachedProjectileInfo.Uid,
+                    _cachedProjectileInfo,
+                    SerializeProjectileRow,
+                    out error))
+            {
+                error = $"상세 테이블 저장 중 오류: {error}";
+                return false;
+            }
+
             return true;
         }
 
         /// <summary>
-        /// Projectile 타입에 맞는 저장 대상 테이블 경로를 반환합니다.
-        /// - Linear/Arc/Path는 분리 테이블에 저장하고, legacy Default/Laser는 기존 projectile 테이블을 사용합니다.
+        /// Projectile 타입에 맞는 상세 테이블 저장 경로를 반환합니다.
+        /// - 공통 컬럼은 항상 projectile.txt에 저장하고, 타입별 상세 컬럼만 분리 테이블에 저장합니다.
         /// </summary>
         /// <param name="row">저장할 Projectile Row입니다.</param>
-        /// <returns>Unity 프로젝트 기준 테이블 파일 경로입니다.</returns>
-        private static string ResolveProjectileTablePath(StruckTableProjectile row)
+        /// <returns>Unity 프로젝트 기준 상세 테이블 파일 경로입니다. 상세 테이블이 없으면 null을 반환합니다.</returns>
+        private static string ResolveProjectileDetailTablePath(StruckTableProjectile row)
         {
             if (row == null)
-                return ConfigAddressableTable.TableProjectile.Path;
+                return null;
 
             return row.Type switch
             {
                 ProjectileConstants.Type.Linear => ConfigAddressableTable.TableProjectileLinear.Path,
                 ProjectileConstants.Type.Arc => ConfigAddressableTable.TableProjectileArc.Path,
                 ProjectileConstants.Type.Path => ConfigAddressableTable.TableProjectilePath.Path,
-                _ => ConfigAddressableTable.TableProjectile.Path,
+                _ => null,
+            };
+        }
+
+        /// <summary>
+        /// 병합 Projectile Row에서 linear 상세 Row를 생성합니다.
+        /// </summary>
+        /// <param name="row">병합 Projectile Row입니다.</param>
+        /// <returns>linear 상세 Row입니다.</returns>
+        private static StruckTableProjectileLinear ToLinearDetail(StruckTableProjectile row)
+        {
+            return new StruckTableProjectileLinear
+            {
+                Uid = row.Uid,
+                BoundaryMode = row.BoundaryMode,
+                BoundaryPadding = row.BoundaryPadding,
+                BounceMaxCount = row.BounceMaxCount,
+                BounceSpeedMultiplier = row.BounceSpeedMultiplier,
+            };
+        }
+
+        /// <summary>
+        /// 병합 Projectile Row에서 arc 상세 Row를 생성합니다.
+        /// </summary>
+        /// <param name="row">병합 Projectile Row입니다.</param>
+        /// <returns>arc 상세 Row입니다.</returns>
+        private static StruckTableProjectileArc ToArcDetail(StruckTableProjectile row)
+        {
+            return new StruckTableProjectileArc
+            {
+                Uid = row.Uid,
+                ArcHeightMin = row.ArcHeightMin,
+                ArcHeightMax = row.ArcHeightMax,
+            };
+        }
+
+        /// <summary>
+        /// 병합 Projectile Row에서 path 상세 Row를 생성합니다.
+        /// </summary>
+        /// <param name="row">병합 Projectile Row입니다.</param>
+        /// <returns>path 상세 Row입니다.</returns>
+        private static StruckTableProjectilePath ToPathDetail(StruckTableProjectile row)
+        {
+            return new StruckTableProjectilePath
+            {
+                Uid = row.Uid,
+                TickDamageInterval = row.TickDamageInterval,
+                TickOnSpawn = row.TickOnSpawn,
+                PathCoordinateMode = row.PathCoordinateMode,
+                PathPoints = row.PathPoints != null ? (Vector2[])row.PathPoints.Clone() : Array.Empty<Vector2>(),
+                PathDuration = row.PathDuration,
             };
         }
 

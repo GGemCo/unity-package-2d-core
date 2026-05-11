@@ -386,9 +386,9 @@ namespace GGemCo2DCore
         }
 
         /// <summary>
-        /// 분리된 Projectile 테이블에서 UID에 해당하는 발사체 정의를 조회합니다.
-        /// - 조회 우선순위는 linear → arc → path → legacy(projectile) 입니다.
-        /// - 동일 UID가 여러 테이블에 있으면 먼저 발견된 분리 테이블 데이터가 사용됩니다.
+        /// projectile.txt 공용 Row와 projectile_linear/arc/path 상세 Row를 병합해 발사체 정의를 조회합니다.
+        /// - 공용 Row가 없으면 상세 Row만으로는 발사체를 생성하지 않습니다.
+        /// - 상세 Row가 없으면 공용 Row에 남아 있는 기본값 또는 레거시 상세 컬럼 값을 사용합니다.
         /// </summary>
         /// <param name="uid">조회할 Projectile UID입니다.</param>
         /// <param name="logIfMissing">조회 실패 시 경고 로그를 남길지 여부입니다.</param>
@@ -405,7 +405,7 @@ namespace GGemCo2DCore
         }
 
         /// <summary>
-        /// 분리된 Projectile 테이블에서 UID에 해당하는 발사체 정의 조회를 시도합니다.
+        /// projectile.txt 공용 Row와 타입별 상세 Row를 합쳐 발사체 정의 조회를 시도합니다.
         /// </summary>
         /// <param name="uid">조회할 Projectile UID입니다.</param>
         /// <param name="data">조회에 성공하면 Projectile Row가 설정됩니다.</param>
@@ -413,39 +413,30 @@ namespace GGemCo2DCore
         /// <returns>Projectile Row를 찾으면 true를 반환합니다.</returns>
         public bool TryGetProjectileData(int uid, out StruckTableProjectile data, bool logIfMissing = false)
         {
-            if (TryGetProjectileDataFromTable(TableProjectileLinear, uid, out data))
-                return true;
+            data = null;
+            if (TableProjectile != null && TableProjectile.TryGetDataByUid(uid, out StruckTableProjectile common))
+            {
+                StruckTableProjectileLinear linear = null;
+                StruckTableProjectileArc arc = null;
+                StruckTableProjectilePath path = null;
 
-            if (TryGetProjectileDataFromTable(TableProjectileArc, uid, out data))
-                return true;
+                if (TableProjectileLinear != null)
+                    TableProjectileLinear.TryGetDataByUid(uid, out linear);
 
-            if (TryGetProjectileDataFromTable(TableProjectilePath, uid, out data))
-                return true;
+                if (TableProjectileArc != null)
+                    TableProjectileArc.TryGetDataByUid(uid, out arc);
 
-            if (TryGetProjectileDataFromTable(TableProjectile, uid, out data))
+                if (TableProjectilePath != null)
+                    TableProjectilePath.TryGetDataByUid(uid, out path);
+
+                data = TableProjectile.CreateMerged(common, linear, arc, path);
                 return true;
+            }
 
             if (logIfMissing)
                 GcLogger.LogWarning($"[Table] Projectile not found. uid={uid}");
 
-            data = null;
             return false;
-        }
-
-        /// <summary>
-        /// 지정된 Projectile 테이블에서 경고 로그 없이 UID 조회를 수행합니다.
-        /// </summary>
-        /// <param name="table">조회할 Projectile 테이블입니다.</param>
-        /// <param name="uid">조회할 Projectile UID입니다.</param>
-        /// <param name="data">조회에 성공하면 Projectile Row가 설정됩니다.</param>
-        /// <returns>Row를 찾으면 true를 반환합니다.</returns>
-        private static bool TryGetProjectileDataFromTable(
-            DefaultTable<StruckTableProjectile> table,
-            int uid,
-            out StruckTableProjectile data)
-        {
-            data = null;
-            return table != null && table.TryGetDataByUid(uid, out data);
         }
 
         // Sound
