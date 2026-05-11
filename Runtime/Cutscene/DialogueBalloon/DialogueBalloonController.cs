@@ -20,6 +20,7 @@ namespace GGemCo2DCore
         private bool _isBalloon;
         private bool _isWaitingForUserInput;
         private int _inputWaitStartFrame = -1;
+        private float _inputWaitResumeTime;
 
         private Transform _newTarget;
         private CharacterBase _newTargetCharacter;
@@ -85,6 +86,7 @@ namespace GGemCo2DCore
             var data = evt.dialogueBalloon ?? new DialogueBalloonData();
             _isFollowTarget = data.isFollowTarget;
             _duration = evt.duration;
+            _inputWaitResumeTime = evt.time + evt.duration;
 
             // 말풍선을 표시할 대상 캐릭터 탐색
             _newTarget = GetTargetTransform(data.characterType, data.characterUid);
@@ -199,7 +201,18 @@ namespace GGemCo2DCore
                 return;
             }
 
+            CompleteInputWait();
+        }
+
+        /// <summary>
+        /// 유저 입력 대기를 완료하고 말풍선 종료 시점까지 컷신 타임라인을 즉시 보정합니다.
+        /// 말풍선을 먼저 회수한 뒤 도달 이벤트를 실행하여 다음 말풍선이 같은 프레임에 표시될 수 있게 합니다.
+        /// </summary>
+        private void CompleteInputWait()
+        {
+            float resumeTime = _inputWaitResumeTime;
             Stop();
+            CutsceneManager.CompleteTimelineProgressWait(this, resumeTime);
         }
 
         /// <summary>
@@ -254,6 +267,7 @@ namespace GGemCo2DCore
         {
             ReleaseInputWait();
             _timer = 0f;
+            _inputWaitResumeTime = 0f;
             _isBalloon = false;
             _dialogueBalloonPool?.Return(_currentDialogueBalloon);
             _currentDialogueBalloon = null;

@@ -531,14 +531,31 @@ namespace GGemCo2DCore
                    _currentCutscene.events[_currentIndex].time <= _playTimer)
             {
                 var evt = _currentCutscene.events[_currentIndex];
+                float eventTime = evt.time;
                 evt.Controller?.Trigger(evt);
                 _currentIndex++;
 
-                if (IsTimelineProgressWaiting())
+                if (IsTimelineProgressWaiting() && !HasPendingEventAtSameTime(eventTime))
                 {
                     break;
                 }
             }
+        }
+
+        /// <summary>
+        /// 다음 실행 예정 이벤트가 지정한 이벤트 시간과 같은 시점에 배치되어 있는지 확인합니다.
+        /// 입력 대기 이벤트와 같은 시점의 병렬 연출은 대기 상태에서도 함께 시작되도록 하기 위해 사용합니다.
+        /// </summary>
+        /// <param name="eventTime">방금 실행한 이벤트의 시작 시간입니다.</param>
+        /// <returns>다음 이벤트가 같은 시작 시간에 있으면 <see langword="true"/>를 반환합니다.</returns>
+        private bool HasPendingEventAtSameTime(float eventTime)
+        {
+            if (_currentCutscene == null || _currentIndex >= _currentCutscene.events.Count)
+            {
+                return false;
+            }
+
+            return Mathf.Approximately(_currentCutscene.events[_currentIndex].time, eventTime);
         }
         
         /// <summary>
@@ -794,6 +811,35 @@ namespace GGemCo2DCore
             }
 
             _timelineProgressWaitOwners.Remove(owner);
+        }
+
+        /// <summary>
+        /// 지정한 요청자의 타임라인 진행 대기를 완료하고 컷신 재생 시간을 지정 시점까지 보정합니다.
+        /// 모든 대기 요청이 해제되면 보정된 시간에 도달한 이벤트를 같은 프레임에 즉시 실행합니다.
+        /// </summary>
+        /// <param name="owner">대기를 완료한 컨트롤러 또는 객체입니다.</param>
+        /// <param name="resumeTime">대기 완료 후 보정할 컷신 타임라인 시간입니다.</param>
+        public void CompleteTimelineProgressWait(object owner, float resumeTime)
+        {
+            if (owner == null)
+            {
+                return;
+            }
+
+            _timelineProgressWaitOwners.Remove(owner);
+
+            if (_currentState != State.Playing || _currentCutscene == null)
+            {
+                return;
+            }
+
+            if (IsTimelineProgressWaiting())
+            {
+                return;
+            }
+
+            _playTimer = Mathf.Max(_playTimer, Mathf.Max(0f, resumeTime));
+            TriggerDueEvents();
         }
 
         /// <summary>
