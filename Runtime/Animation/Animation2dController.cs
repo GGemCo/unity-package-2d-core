@@ -158,17 +158,24 @@ namespace GGemCo2DCore
             // addAnimations 처리: 순차 재생이 필요하면 코루틴으로 재생합니다.
             if (addAnimations is { Count: > 0 })
             {
-                StartCoroutine(PlayAddAnimations(addAnimations));
+                StartCoroutine(PlayAddAnimations(animationName, addAnimations));
             }
         }
 
         /// <summary>
         /// 추가 애니메이션 목록을 순차 재생하는 코루틴입니다.
         /// </summary>
+        /// <param name="startAnimationName">시작 애니메이션 이름 입니다.</param>
         /// <param name="addAnimations">순차 재생할 추가 애니메이션 목록입니다.</param>
         /// <returns>코루틴 열거자입니다.</returns>
-        private IEnumerator<WaitForSeconds> PlayAddAnimations(List<StruckAddAnimation> addAnimations)
+        private IEnumerator<WaitForSeconds> PlayAddAnimations(string startAnimationName, List<StruckAddAnimation> addAnimations)
         {
+            if (!string.IsNullOrEmpty(startAnimationName))
+            {
+                float clipLength = GetAnimationDuration(startAnimationName, false);
+                yield return new WaitForSeconds(clipLength / Animator.speed);
+            }
+            
             foreach (var add in addAnimations)
             {
                 if (!GetClipByName(add.AnimationName))
