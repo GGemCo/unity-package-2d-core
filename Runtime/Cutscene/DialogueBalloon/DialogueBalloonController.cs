@@ -1,5 +1,8 @@
 ﻿using System.Collections;
 using UnityEngine;
+#if GGEMCO_USE_NEW_INPUT
+using UnityEngine.InputSystem;
+#endif
 
 namespace GGemCo2DCore
 {
@@ -15,11 +18,14 @@ namespace GGemCo2DCore
         private float _duration;
         private bool _isFollowTarget;
         private bool _isBalloon;
+        private bool _isWaitingForUserInput;
+        private int _inputWaitStartFrame = -1;
 
         private Transform _newTarget;
         private CharacterBase _newTargetCharacter;
         private readonly DialogueBalloonPool _dialogueBalloonPool;
         private GameObject _currentDialogueBalloon;
+        private UIDialogueBalloon _currentDialogueBalloonUi;
 
         /// <summary>
         /// 대사 말풍선 연출 컨트롤러를 생성합니다.
@@ -76,7 +82,7 @@ namespace GGemCo2DCore
                 Stop();
             }
 
-            var data = evt.dialogueBalloon;
+            var data = evt.dialogueBalloon ?? new DialogueBalloonData();
             _isFollowTarget = data.isFollowTarget;
             _duration = evt.duration;
 
@@ -109,9 +115,15 @@ namespace GGemCo2DCore
             }
 
             // 말풍선 초기화 및 텍스트 설정
-            _currentDialogueBalloon
-                .GetComponent<UIDialogueBalloon>()
-                .Initialize(_newTargetCharacter, data);
+            _currentDialogueBalloonUi = _currentDialogueBalloon.GetComponent<UIDialogueBalloon>();
+            if (_currentDialogueBalloonUi == null)
+            {
+                GcLogger.LogError("UIDialogueBalloon 컴포넌트가 없습니다.");
+                Stop();
+                return;
+            }
+
+            _currentDialogueBalloonUi.Initialize(_newTargetCharacter, data);
             
             // 카메라 추적 대상 설정
             if (_isFollowTarget)
@@ -126,14 +138,25 @@ namespace GGemCo2DCore
 
             _timer = 0f;
             _isBalloon = true;
+
+            if (data.waitForUserInput)
+            {
+                StartInputWait();
+            }
         }
 
         /// <summary>
-        /// 말풍선 표시 시간을 갱신하고 지정된 시간이 지나면 자동으로 종료합니다.
+        /// 말풍선 표시 시간을 갱신하고, 입력 대기 상태이면 유저 입력을 받아 컷신 진행을 재개합니다.
         /// </summary>
         public void Update()
         {
             if (!_isBalloon) return;
+
+            if (_isWaitingForUserInput)
+            {
+                HandleUserInputWait();
+                return;
+            }
             
             _timer += Time.deltaTime;
 
@@ -144,21 +167,105 @@ namespace GGemCo2DCore
         }
 
         /// <summary>
+        /// 유저 입력을 받을 때까지 컷신 타임라인 진행을 대기 상태로 전환합니다.
+        /// 대기 시작 프레임의 입력은 컷신을 시작한 입력과 겹칠 수 있으므로 다음 프레임부터 처리합니다.
+        /// </summary>
+        private void StartInputWait()
+        {
+            _isWaitingForUserInput = true;
+            _inputWaitStartFrame = Time.frameCount;
+            CutsceneManager.RequestTimelineProgressWait(this);
+        }
+
+        /// <summary>
+        /// 유저 입력 대기 중의 입력 처리 규칙을 수행합니다.
+        /// 타자 효과가 남아 있으면 먼저 전체 메시지를 표시하고, 이미 모두 표시된 상태이면 컷신 진행을 재개합니다.
+        /// </summary>
+        private void HandleUserInputWait()
+        {
+            if (Time.frameCount <= _inputWaitStartFrame)
+            {
+                return;
+            }
+
+            if (!TryConsumeAdvanceInput())
+            {
+                return;
+            }
+
+            if (_currentDialogueBalloonUi != null && !_currentDialogueBalloonUi.IsFullyRevealed)
+            {
+                _currentDialogueBalloonUi.RevealAll();
+                return;
+            }
+
+            Stop();
+        }
+
+        /// <summary>
+        /// 현재 프레임에 말풍선 진행용 클릭 또는 터치 입력이 발생했는지 확인합니다.
+        /// 프로젝트 입력 방식 정의에 맞춰 Legacy Input Manager 또는 New Input System을 사용합니다.
+        /// </summary>
+        /// <returns>진행 입력이 발생했으면 <see langword="true"/>를 반환합니다.</returns>
+        private static bool TryConsumeAdvanceInput()
+        {
+#if GGEMCO_USE_OLD_INPUT
+            if (Input.touchCount > 0)
+            {
+                Touch touch = Input.GetTouch(0);
+                if (touch.phase == TouchPhase.Began)
+                {
+                    return true;
+                }
+            }
+
+            return Input.GetMouseButtonDown(0);
+#elif GGEMCO_USE_NEW_INPUT
+            if (Touchscreen.current != null && Touchscreen.current.primaryTouch.press.wasPressedThisFrame)
+            {
+                return true;
+            }
+
+            return Mouse.current != null && Mouse.current.leftButton.wasPressedThisFrame;
+#else
+            return false;
+#endif
+        }
+
+        /// <summary>
+        /// 말풍선 입력 대기를 해제하고 컷신 타임라인 진행을 다시 허용합니다.
+        /// </summary>
+        private void ReleaseInputWait()
+        {
+            if (!_isWaitingForUserInput)
+            {
+                return;
+            }
+
+            _isWaitingForUserInput = false;
+            _inputWaitStartFrame = -1;
+            CutsceneManager.ReleaseTimelineProgressWait(this);
+        }
+
+        /// <summary>
         /// 현재 표시 중인 말풍선을 회수하고 상태를 초기화합니다.
         /// </summary>
         public void Stop()
         {
+            ReleaseInputWait();
             _timer = 0f;
             _isBalloon = false;
             _dialogueBalloonPool?.Return(_currentDialogueBalloon);
             _currentDialogueBalloon = null;
+            _currentDialogueBalloonUi = null;
         }
 
         /// <summary>
-        /// 컷신 종료 시 추가 정리는 수행하지 않습니다.
+        /// 컷신 종료 시 표시 중인 말풍선과 입력 대기 상태를 정리합니다.
         /// </summary>
         public void End()
         {
+            Stop();
         }
     }
 }

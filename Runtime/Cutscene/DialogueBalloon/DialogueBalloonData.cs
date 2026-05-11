@@ -34,6 +34,10 @@ namespace GGemCo2DCore
         [Tooltip("타자 효과일 때 초당 표시할 글자 수")]
         public float typewriterCharactersPerSecond = DefaultTypewriterCharactersPerSecond;
 
+        [Header("진행 대기")]
+        [Tooltip("true이면 유저 입력을 받을 때까지 컷신 타임라인 진행을 대기합니다.")]
+        public bool waitForUserInput;
+
         [Header("썸네일")]
         [Tooltip("말풍선 썸네일 표시 위치입니다. None이면 썸네일을 표시하지 않습니다.")]
         public ConfigCommon.ThumbnailPositionType thumbnailPositionType = ConfigCommon.ThumbnailPositionType.None;

@@ -27,6 +27,11 @@ namespace GGemCo2DCore
         private bool _needsRefreshThumbnailPosition;
 
         /// <summary>
+        /// 현재 말풍선 메시지가 모두 표시되었는지 여부를 반환합니다.
+        /// </summary>
+        public bool IsFullyRevealed => _revealPlayer.IsFullyRevealed;
+
+        /// <summary>
         /// 말풍선 UI에 필요한 RectTransform과 썸네일 참조를 캐시합니다.
         /// </summary>
         private void Awake()
@@ -46,6 +51,15 @@ namespace GGemCo2DCore
             SetFontSize(safeData.fontSize);
             SetMessage(safeData);
             SetThumbnailOptions(safeData);
+        }
+
+        /// <summary>
+        /// 타자 효과 진행 중인 메시지를 즉시 전부 표시합니다.
+        /// </summary>
+        public void RevealAll()
+        {
+            _revealPlayer.RevealAll(textMessage);
+            RequestThumbnailPositionRefresh();
         }
 
         /// <summary>

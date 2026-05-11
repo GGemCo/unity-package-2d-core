@@ -254,6 +254,7 @@ namespace GGemCo2DCoreEditor
                 fontSize = source.fontSize,
                 useTypewriter = source.useTypewriter,
                 typewriterCharactersPerSecond = source.typewriterCharactersPerSecond,
+                waitForUserInput = source.waitForUserInput,
                 thumbnailPositionType = source.thumbnailPositionType,
                 thumbnailImage = source.thumbnailImage,
                 offsetImageThumbnailCharacter = source.offsetImageThumbnailCharacter,

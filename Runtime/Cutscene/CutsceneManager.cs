@@ -38,6 +38,9 @@ namespace GGemCo2DCore
         
         // 현재 컷신에서 활성화된 컨트롤러 목록입니다.
         private readonly List<ICutsceneController> _activeControllers = new();
+
+        // 컷신 타임라인 진행을 일시 정지시킨 요청자를 관리합니다.
+        private readonly HashSet<object> _timelineProgressWaitOwners = new();
         
         private CameraMoveController _cameraMoveController;
         private CameraZoomController _cameraZoomController;
@@ -105,6 +108,7 @@ namespace GGemCo2DCore
             _activeTimeScaleOwner = null;
             _useUnscaledTimelineTime = false;
             _capturedCharacterAnimationTimeScales.Clear();
+            _timelineProgressWaitOwners.Clear();
             _isCutsceneSessionActive = false;
             _settings = AddressableLoaderSettings.Instance;
             
@@ -242,6 +246,7 @@ namespace GGemCo2DCore
             _activeTimeScaleOwner = null;
             _useUnscaledTimelineTime = false;
             _capturedCharacterAnimationTimeScales.Clear();
+            _timelineProgressWaitOwners.Clear();
         }
 
         /// <summary>
@@ -416,6 +421,7 @@ namespace GGemCo2DCore
                 return;
             }
 
+            _timelineProgressWaitOwners.Clear();
             _isCutsceneSessionActive = false;
             CutsceneEnded?.Invoke();
         }
@@ -500,14 +506,10 @@ namespace GGemCo2DCore
         {
             if (_currentState != State.Playing || _currentCutscene == null) return;
 
-            _playTimer += GetTimelineDeltaTime();
-
-            while (_currentIndex < _currentCutscene.events.Count &&
-                   _currentCutscene.events[_currentIndex].time <= _playTimer)
+            if (!IsTimelineProgressWaiting())
             {
-                var evt = _currentCutscene.events[_currentIndex];
-                evt.Controller?.Trigger(evt);
-                _currentIndex++;
+                _playTimer += GetTimelineDeltaTime();
+                TriggerDueEvents();
             }
 
             foreach (var controller in _activeControllers)
@@ -515,6 +517,7 @@ namespace GGemCo2DCore
                 controller.Update();
             }
 
+            if (IsTimelineProgressWaiting()) return;
             if (!(_playTimer > _currentCutscene.duration)) return;
             OnCutsceneEnd();
         }
@@ -530,6 +533,11 @@ namespace GGemCo2DCore
                 var evt = _currentCutscene.events[_currentIndex];
                 evt.Controller?.Trigger(evt);
                 _currentIndex++;
+
+                if (IsTimelineProgressWaiting())
+                {
+                    break;
+                }
             }
         }
         
@@ -756,6 +764,45 @@ namespace GGemCo2DCore
         public float GetTimelineDeltaTime()
         {
             return _useUnscaledTimelineTime ? Time.unscaledDeltaTime : Time.deltaTime;
+        }
+
+        /// <summary>
+        /// 지정한 요청자가 컷신 타임라인 진행을 일시 대기하도록 등록합니다.
+        /// 타임라인 시간만 멈추며, 이미 실행 중인 컨트롤러의 갱신은 계속 수행됩니다.
+        /// </summary>
+        /// <param name="owner">대기 요청을 소유하는 컨트롤러 또는 객체입니다.</param>
+        public void RequestTimelineProgressWait(object owner)
+        {
+            if (owner == null)
+            {
+                return;
+            }
+
+            _timelineProgressWaitOwners.Add(owner);
+        }
+
+        /// <summary>
+        /// 지정한 요청자가 등록했던 컷신 타임라인 진행 대기를 해제합니다.
+        /// 모든 요청자가 해제되면 다음 프레임부터 타임라인 시간이 다시 흐릅니다.
+        /// </summary>
+        /// <param name="owner">대기 해제를 요청하는 컨트롤러 또는 객체입니다.</param>
+        public void ReleaseTimelineProgressWait(object owner)
+        {
+            if (owner == null)
+            {
+                return;
+            }
+
+            _timelineProgressWaitOwners.Remove(owner);
+        }
+
+        /// <summary>
+        /// 현재 컷신 타임라인 진행을 대기시키는 요청자가 있는지 확인합니다.
+        /// </summary>
+        /// <returns>하나 이상의 대기 요청자가 있으면 <see langword="true"/>를 반환합니다.</returns>
+        private bool IsTimelineProgressWaiting()
+        {
+            return _timelineProgressWaitOwners.Count > 0;
         }
 
         /// <summary>
