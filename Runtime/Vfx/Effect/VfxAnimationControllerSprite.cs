@@ -77,6 +77,13 @@ namespace GGemCo2DCore
             return 0;
         }
 
+        /// <summary>
+        /// duration 정책에 맞춰 start/play/end 클립 재생 순서를 구성하고 시작 애니메이션을 재생합니다.
+        /// </summary>
+        /// <param name="duration">재생 시간입니다. 0 이하는 1회 재생, 음수는 무제한 재생입니다.</param>
+        /// <param name="timeScale">기본 재생 속도입니다.</param>
+        /// <param name="forceReset">true면 같은 Animator 상태라도 첫 프레임부터 다시 재생합니다.</param>
+        /// <returns>재생 가능한 클립이 있으면 true를 반환합니다.</returns>
         public bool Play(float duration, float timeScale = 1f, bool forceReset = false)
         {
             EnsureInitialized();
@@ -174,13 +181,16 @@ namespace GGemCo2DCore
             return GetClipByName(IVfxAnimationController.KeyClipNameEnd) != null;
         }
 
+        /// <summary>
+        /// 종료 클립을 첫 프레임부터 재생합니다.
+        /// </summary>
         public void PlayEnd()
         {
             EnsureInitialized();
 
             if (GetClipByName(IVfxAnimationController.KeyClipNameEnd) != null)
             {
-                PlayAnimation(IVfxAnimationController.KeyClipNameEnd);
+                PlayAnimation(IVfxAnimationController.KeyClipNameEnd, forceReset: true);
                 return;
             }
 

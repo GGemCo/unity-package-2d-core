@@ -42,6 +42,13 @@ namespace GGemCo2DCore
             _hasSortingOrderOverride = false;
         }
 
+        /// <summary>
+        /// VFX가 활성화될 때 공통 시각 상태를 적용하고 시작 애니메이션을 재생합니다.
+        /// </summary>
+        /// <remarks>
+        /// 풀에서 재사용되는 VFX는 Animator가 이전 상태를 유지할 수 있으므로,
+        /// 시작 애니메이션을 항상 첫 프레임부터 강제 재생합니다.
+        /// </remarks>
         protected override void PlayOnSpawn()
         {
             EnsureCachedReferences();
@@ -54,7 +61,7 @@ namespace GGemCo2DCore
                 return;
             }
 
-            bool started = VfxAnimationController.Play(GetPlaybackDuration());
+            bool started = VfxAnimationController.Play(GetPlaybackDuration(), 1f, true);
             ApplySortingOverridesIfNeeded();
             if (!started)
             {

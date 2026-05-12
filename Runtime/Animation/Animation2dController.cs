@@ -44,6 +44,11 @@ namespace GGemCo2DCore
         /// </summary>
         private readonly Dictionary<string, SpriteRenderer> _spriteRenderers = new();
 
+        /// <summary>
+        /// 순차 추가 애니메이션 재생 코루틴입니다.
+        /// </summary>
+        private Coroutine _addAnimationCoroutine;
+
         private bool _isInitialized;
         private RuntimeAnimatorController _cachedRuntimeAnimatorController;
         
@@ -56,6 +61,18 @@ namespace GGemCo2DCore
         protected virtual void Awake()
         {
             EnsureInitialized();
+        }
+
+        /// <summary>
+        /// 비활성화 시 진행 중인 순차 추가 애니메이션을 중지합니다.
+        /// </summary>
+        /// <remarks>
+        /// 풀에서 재사용되는 Animator는 이전 재생 코루틴이 남으면 다음 재생 상태를 덮어쓸 수 있으므로,
+        /// 비활성화 시점에 추가 애니메이션 코루틴을 명시적으로 정리합니다.
+        /// </remarks>
+        protected virtual void OnDisable()
+        {
+            StopAddAnimationCoroutine();
         }
         
         private void EnsureInitialized()
@@ -146,6 +163,8 @@ namespace GGemCo2DCore
                 timeScale = 1.0f;
             }
 
+            StopAddAnimationCoroutine();
+
             Animator.speed = timeScale;
             if (forceReset)
                 Animator.Play(animationName, 0, 0);
@@ -158,8 +177,20 @@ namespace GGemCo2DCore
             // addAnimations 처리: 순차 재생이 필요하면 코루틴으로 재생합니다.
             if (addAnimations is { Count: > 0 })
             {
-                StartCoroutine(PlayAddAnimations(animationName, addAnimations));
+                _addAnimationCoroutine = StartCoroutine(PlayAddAnimations(animationName, addAnimations));
             }
+        }
+
+        /// <summary>
+        /// 진행 중인 순차 추가 애니메이션 코루틴을 중지합니다.
+        /// </summary>
+        private void StopAddAnimationCoroutine()
+        {
+            if (_addAnimationCoroutine == null)
+                return;
+
+            StopCoroutine(_addAnimationCoroutine);
+            _addAnimationCoroutine = null;
         }
 
         /// <summary>
@@ -191,11 +222,14 @@ namespace GGemCo2DCore
                 float clipLength = GetAnimationDuration(add.AnimationName, false);
 
                 Animator.speed = add.TimeScale > 0 ? add.TimeScale : 1.0f;
-                Animator.Play(add.AnimationName, 0);
+                // 풀 재사용 또는 같은 상태 재진입 시에도 항상 첫 프레임부터 재생합니다.
+                Animator.Play(add.AnimationName, 0, 0f);
                 Animator.Update(0); // 즉시 반영
 
                 yield return new WaitForSeconds(clipLength / Animator.speed);
             }
+
+            _addAnimationCoroutine = null;
         }
 
         /// <summary>
