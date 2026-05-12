@@ -170,6 +170,10 @@ namespace GGemCo2DCore
             {
                 comp = go.AddComponent<ProjectileLaser>();
             }
+            else if (info.Type == ProjectileConstants.Type.LinearThenSegments)
+            {
+                comp = go.AddComponent<ProjectileLinearThenSegments>();
+            }
             else if (info.Type == ProjectileConstants.Type.Path)
             {
                 comp = go.AddComponent<ProjectilePath>();

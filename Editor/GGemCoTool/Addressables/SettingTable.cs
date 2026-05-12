@@ -109,7 +109,7 @@ namespace GGemCo2DCoreEditor
 
         /// <summary>
         /// Projectile 마이그레이션용 선택 테이블이 아직 생성되지 않았는지 확인합니다.
-        /// - projectile.txt는 공용 메인 테이블이므로 필수이고, projectile_linear/arc/path 상세 테이블만 없을 때 건너뜁니다.
+        /// - projectile.txt는 공용 메인 테이블이므로 필수이고, projectile_linear/arc/path/linear_then_segments 상세 테이블만 없을 때 건너뜁니다.
         /// </summary>
         /// <param name="info">검사할 테이블 Addressables 정보입니다.</param>
         /// <returns>선택 Projectile 테이블이 없어서 건너뛰어야 하면 true를 반환합니다.</returns>
@@ -121,7 +121,8 @@ namespace GGemCo2DCoreEditor
             bool isProjectileTable =
                 info.Key == ConfigAddressableTable.TableProjectileLinear.Key ||
                 info.Key == ConfigAddressableTable.TableProjectileArc.Key ||
-                info.Key == ConfigAddressableTable.TableProjectilePath.Key;
+                info.Key == ConfigAddressableTable.TableProjectilePath.Key ||
+                info.Key == ConfigAddressableTable.TableProjectileLinearThenSegments.Key;
 
             return isProjectileTable && string.IsNullOrEmpty(AssetDatabase.AssetPathToGUID(info.Path));
         }

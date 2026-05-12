@@ -51,6 +51,7 @@ namespace GGemCo2DCore
         public TableProjectileLinear TableProjectileLinear { get; private set; } = new TableProjectileLinear();
         public TableProjectileArc TableProjectileArc { get; private set; } = new TableProjectileArc();
         public TableProjectilePath TableProjectilePath { get; private set; } = new TableProjectilePath();
+        public TableProjectileLinearThenSegments TableProjectileLinearThenSegments { get; private set; } = new TableProjectileLinearThenSegments();
         public TableSound TableSound { get; private set; } = new TableSound();
         public TableSimulationTool TableSimulationTool { get; private set; } = new TableSimulationTool();
         public TableSimulationGrowth TableSimulationGrowth { get; private set; } = new TableSimulationGrowth();
@@ -109,6 +110,7 @@ namespace GGemCo2DCore
                 registry.Register(TableProjectileLinear);
                 registry.Register(TableProjectileArc);
                 registry.Register(TableProjectilePath);
+                registry.Register(TableProjectileLinearThenSegments);
                 registry.Register(TableSound);
                 registry.Register(TableSimulationTool);
                 registry.Register(TableSimulationGrowth);
@@ -419,6 +421,7 @@ namespace GGemCo2DCore
                 StruckTableProjectileLinear linear = null;
                 StruckTableProjectileArc arc = null;
                 StruckTableProjectilePath path = null;
+                StruckTableProjectileLinearThenSegments linearThenSegments = null;
 
                 if (TableProjectileLinear != null)
                     TableProjectileLinear.TryGetDataByUid(uid, out linear);
@@ -429,7 +432,10 @@ namespace GGemCo2DCore
                 if (TableProjectilePath != null)
                     TableProjectilePath.TryGetDataByUid(uid, out path);
 
-                data = TableProjectile.CreateMerged(common, linear, arc, path);
+                if (TableProjectileLinearThenSegments != null)
+                    TableProjectileLinearThenSegments.TryGetDataByUid(uid, out linearThenSegments);
+
+                data = TableProjectile.CreateMerged(common, linear, arc, path, linearThenSegments);
                 return true;
             }
 

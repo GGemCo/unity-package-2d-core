@@ -5,6 +5,33 @@ using UnityEngine;
 namespace GGemCo2DCore
 {
     /// <summary>
+    /// 타겟 직선 이동 이후에 이어서 실행할 이동 세그먼트 데이터입니다.
+    /// - Direction: 이동 방향입니다. 실제 해석 기준은 SegmentDirectionMode를 따릅니다.
+    /// - Speed: 해당 세그먼트의 이동 속도입니다.
+    /// - Distance: 해당 세그먼트에서 이동할 거리입니다.
+    /// </summary>
+    [Serializable]
+    public struct ProjectileMoveSegment
+    {
+        public Vector2 Direction;
+        public float Speed;
+        public float Distance;
+
+        /// <summary>
+        /// 이동 세그먼트 값을 생성합니다.
+        /// </summary>
+        /// <param name="direction">세그먼트 방향입니다.</param>
+        /// <param name="speed">세그먼트 속도입니다.</param>
+        /// <param name="distance">세그먼트 이동 거리입니다.</param>
+        public ProjectileMoveSegment(Vector2 direction, float speed, float distance)
+        {
+            Direction = direction;
+            Speed = speed;
+            Distance = distance;
+        }
+    }
+
+    /// <summary>
     /// Projectile 런타임에서 사용하는 최종 병합 데이터입니다.
     /// - projectile.txt 공통 Row에 projectile_linear/arc/path 상세 Row를 UID 기준으로 덧입힌 결과입니다.
     /// - 런타임 생성 코드는 이 타입 하나만 바라보도록 유지합니다.
@@ -49,6 +76,10 @@ namespace GGemCo2DCore
         public ProjectileConstants.PathCoordinateMode PathCoordinateMode;
         public Vector2[] PathPoints = Array.Empty<Vector2>();
         public float PathDuration;
+
+        // ---- LinearThenSegments detail ----
+        public ProjectileConstants.SegmentDirectionMode SegmentDirectionMode;
+        public ProjectileMoveSegment[] MoveSegments = Array.Empty<ProjectileMoveSegment>();
     }
 
     /// <summary>
@@ -87,6 +118,17 @@ namespace GGemCo2DCore
         public ProjectileConstants.PathCoordinateMode PathCoordinateMode;
         public Vector2[] PathPoints = Array.Empty<Vector2>();
         public float PathDuration;
+    }
+
+    /// <summary>
+    /// projectile_linear_then_segments.txt Row 구조입니다.
+    /// - 공통 정보는 projectile.txt에서 관리하고, 타겟 직선 이동 이후의 세그먼트 이동 옵션만 보관합니다.
+    /// </summary>
+    public sealed class StruckTableProjectileLinearThenSegments
+    {
+        public int Uid;
+        public ProjectileConstants.SegmentDirectionMode SegmentDirectionMode;
+        public ProjectileMoveSegment[] MoveSegments = Array.Empty<ProjectileMoveSegment>();
     }
 
     /// <summary>
@@ -217,6 +259,50 @@ namespace GGemCo2DCore
 
             return points;
         }
+
+        /// <summary>
+        /// 이동 세그먼트 컬럼을 <see cref="ProjectileMoveSegment"/> 배열로 변환합니다.
+        /// - 세그먼트 구분자는 "|" 또는 ";"를 사용합니다.
+        /// - 각 세그먼트는 "dirX,dirY,speed,distance" 형식으로 작성합니다.
+        /// </summary>
+        /// <param name="data">헤더명과 값으로 구성된 Row 데이터입니다.</param>
+        /// <param name="keys">확인할 컬럼명 목록입니다.</param>
+        /// <returns>파싱된 이동 세그먼트 배열입니다.</returns>
+        protected static ProjectileMoveSegment[] GetMoveSegments(Dictionary<string, string> data, params string[] keys)
+        {
+            string value = GetString(data, null, keys);
+            if (string.IsNullOrWhiteSpace(value))
+                return Array.Empty<ProjectileMoveSegment>();
+
+            string[] tokens = value.Split(new[] { '|', ';' }, StringSplitOptions.RemoveEmptyEntries);
+            if (tokens.Length == 0)
+                return Array.Empty<ProjectileMoveSegment>();
+
+            var segments = new ProjectileMoveSegment[tokens.Length];
+            for (int i = 0; i < tokens.Length; i++)
+                segments[i] = ConvertMoveSegment(tokens[i].Trim());
+
+            return segments;
+        }
+
+        /// <summary>
+        /// "dirX,dirY,speed,distance" 문자열을 이동 세그먼트 데이터로 변환합니다.
+        /// </summary>
+        /// <param name="value">파싱할 세그먼트 문자열입니다.</param>
+        /// <returns>파싱된 이동 세그먼트입니다.</returns>
+        private static ProjectileMoveSegment ConvertMoveSegment(string value)
+        {
+            if (string.IsNullOrWhiteSpace(value))
+                return default;
+
+            string[] parts = value.Split(',');
+            float dirX = MathHelper.ParseFloat(parts.Length > 0 ? parts[0] : "0");
+            float dirY = MathHelper.ParseFloat(parts.Length > 1 ? parts[1] : "0");
+            float speed = MathHelper.ParseFloat(parts.Length > 2 ? parts[2] : "0");
+            float distance = MathHelper.ParseFloat(parts.Length > 3 ? parts[3] : "0");
+
+            return new ProjectileMoveSegment(new Vector2(dirX, dirY), speed, distance);
+        }
     }
 
     /// <summary>
@@ -265,6 +351,8 @@ namespace GGemCo2DCore
                 PathCoordinateMode = GetEnum(data, ProjectileConstants.PathCoordinateMode.StartRelative, "PathCoordinateMode"),
                 PathPoints = GetVector2Array(data, "PathPoints"),
                 PathDuration = GetFloat(data, 0f, "PathDuration"),
+                SegmentDirectionMode = GetEnum(data, ProjectileConstants.SegmentDirectionMode.World, "SegmentDirectionMode"),
+                MoveSegments = GetMoveSegments(data, "MoveSegments", "Segments"),
             };
         }
 
@@ -348,6 +436,24 @@ namespace GGemCo2DCore
         }
 
         /// <summary>
+        /// linear_then_segments 상세 Row를 UID 기준으로 병합합니다.
+        /// </summary>
+        /// <param name="source">병합할 linear_then_segments 상세 Row 사전입니다.</param>
+        public void MergeLinearThenSegmentsDetails(IReadOnlyDictionary<int, StruckTableProjectileLinearThenSegments> source)
+        {
+            if (source == null)
+                return;
+
+            foreach (KeyValuePair<int, StruckTableProjectileLinearThenSegments> pair in source)
+            {
+                if (!TryGetDataByUid(pair.Key, out StruckTableProjectile row) || row == null)
+                    continue;
+
+                ApplyLinearThenSegments(row, pair.Value);
+            }
+        }
+
+        /// <summary>
         /// 공통 Row를 복제한 뒤 타입별 상세 Row를 덧입혀 최종 런타임 데이터를 만듭니다.
         /// </summary>
         /// <param name="source">복제할 공통 Projectile Row입니다.</param>
@@ -359,7 +465,8 @@ namespace GGemCo2DCore
             StruckTableProjectile source,
             StruckTableProjectileLinear linear,
             StruckTableProjectileArc arc,
-            StruckTableProjectilePath path)
+            StruckTableProjectilePath path,
+            StruckTableProjectileLinearThenSegments linearThenSegments)
         {
             if (source == null)
                 return null;
@@ -368,6 +475,7 @@ namespace GGemCo2DCore
             ApplyLinear(row, linear);
             ApplyArc(row, arc);
             ApplyPath(row, path);
+            ApplyLinearThenSegments(row, linearThenSegments);
             return row;
         }
 
@@ -406,6 +514,8 @@ namespace GGemCo2DCore
                 PathCoordinateMode = source.PathCoordinateMode,
                 PathPoints = source.PathPoints != null ? (Vector2[])source.PathPoints.Clone() : Array.Empty<Vector2>(),
                 PathDuration = source.PathDuration,
+                SegmentDirectionMode = source.SegmentDirectionMode,
+                MoveSegments = source.MoveSegments != null ? (ProjectileMoveSegment[])source.MoveSegments.Clone() : Array.Empty<ProjectileMoveSegment>(),
             };
         }
 
@@ -463,6 +573,25 @@ namespace GGemCo2DCore
             target.PathCoordinateMode = source.PathCoordinateMode;
             target.PathPoints = source.PathPoints != null ? (Vector2[])source.PathPoints.Clone() : Array.Empty<Vector2>();
             target.PathDuration = source.PathDuration;
+        }
+
+        /// <summary>
+        /// linear_then_segments 상세값을 최종 Row에 병합합니다.
+        /// </summary>
+        /// <param name="target">상세값을 받을 Row입니다.</param>
+        /// <param name="source">linear_then_segments 상세 Row입니다.</param>
+        private static void ApplyLinearThenSegments(StruckTableProjectile target, StruckTableProjectileLinearThenSegments source)
+        {
+            if (target == null || source == null)
+                return;
+
+            if (!ShouldApplyDetail(target.Type, ProjectileConstants.Type.LinearThenSegments))
+                return;
+
+            target.SegmentDirectionMode = source.SegmentDirectionMode;
+            target.MoveSegments = source.MoveSegments != null
+                ? (ProjectileMoveSegment[])source.MoveSegments.Clone()
+                : Array.Empty<ProjectileMoveSegment>();
         }
 
         /// <summary>
@@ -581,6 +710,41 @@ namespace GGemCo2DCore
         /// </summary>
         /// <param name="row">저장할 path 상세 Row입니다.</param>
         public void Upsert(StruckTableProjectilePath row)
+        {
+            if (row == null)
+                return;
+
+            SetDataByUid(row.Uid, row);
+        }
+    }
+
+    /// <summary>
+    /// projectile_linear_then_segments.txt 상세 테이블 파서입니다.
+    /// </summary>
+    public sealed class TableProjectileLinearThenSegments : ProjectileTableBase<StruckTableProjectileLinearThenSegments>
+    {
+        public override string Key => ConfigAddressableTable.ProjectileLinearThenSegments;
+
+        /// <summary>
+        /// projectile_linear_then_segments.txt의 상세 Row를 파싱합니다.
+        /// </summary>
+        /// <param name="data">헤더명과 값으로 구성된 Row 데이터입니다.</param>
+        /// <returns>linear_then_segments 상세 Row입니다.</returns>
+        protected override StruckTableProjectileLinearThenSegments BuildRow(Dictionary<string, string> data)
+        {
+            return new StruckTableProjectileLinearThenSegments
+            {
+                Uid = GetInt(data, 0, "Uid"),
+                SegmentDirectionMode = GetEnum(data, ProjectileConstants.SegmentDirectionMode.World, "SegmentDirectionMode"),
+                MoveSegments = GetMoveSegments(data, "MoveSegments", "Segments"),
+            };
+        }
+
+        /// <summary>
+        /// 에디터 테스트 값 갱신을 위해 상세 Row를 현재 캐시에 저장합니다.
+        /// </summary>
+        /// <param name="row">저장할 linear_then_segments 상세 Row입니다.</param>
+        public void Upsert(StruckTableProjectileLinearThenSegments row)
         {
             if (row == null)
                 return;

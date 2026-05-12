@@ -156,6 +156,7 @@ namespace GGemCo2DCoreEditor
             merged.MergePathDetails(TryLoadProjectilePart<TableProjectilePath>(ConfigAddressableTable.TableProjectilePath.Path, forceReload)?.GetDatas());
             merged.MergeArcDetails(TryLoadProjectilePart<TableProjectileArc>(ConfigAddressableTable.TableProjectileArc.Path, forceReload)?.GetDatas());
             merged.MergeLinearDetails(TryLoadProjectilePart<TableProjectileLinear>(ConfigAddressableTable.TableProjectileLinear.Path, forceReload)?.GetDatas());
+            merged.MergeLinearThenSegmentsDetails(TryLoadProjectilePart<TableProjectileLinearThenSegments>(ConfigAddressableTable.TableProjectileLinearThenSegments.Path, forceReload)?.GetDatas());
 
             return merged.GetCount() > 0 ? merged : null;
         }
@@ -185,6 +186,14 @@ namespace GGemCo2DCoreEditor
             => LoadTable<TableProjectilePath>(ConfigAddressableTable.TableProjectilePath.Path, forceReload);
 
         /// <summary>
+        /// projectile_linear_then_segments 테이블을 단독 로드합니다.
+        /// </summary>
+        /// <param name="forceReload">캐시를 무시하고 다시 로드할지 여부입니다.</param>
+        /// <returns>로드된 projectile_linear_then_segments 테이블입니다.</returns>
+        public static TableProjectileLinearThenSegments LoadProjectileLinearThenSegmentsTable(bool forceReload = true)
+            => LoadTable<TableProjectileLinearThenSegments>(ConfigAddressableTable.TableProjectileLinearThenSegments.Path, forceReload);
+
+        /// <summary>
         /// Projectile 계열 테이블 캐시를 모두 해제합니다.
         /// </summary>
         public static void UnloadProjectileTables()
@@ -193,6 +202,7 @@ namespace GGemCo2DCoreEditor
             TableLoaderManagerBase.Unload(ConfigAddressableTable.TableProjectileLinear.Path);
             TableLoaderManagerBase.Unload(ConfigAddressableTable.TableProjectileArc.Path);
             TableLoaderManagerBase.Unload(ConfigAddressableTable.TableProjectilePath.Path);
+            TableLoaderManagerBase.Unload(ConfigAddressableTable.TableProjectileLinearThenSegments.Path);
         }
 
         /// <summary>

@@ -164,6 +164,8 @@ namespace GGemCo2DCoreEditor
             new("PathCoordinateMode"),
             new("PathPoints"),
             new("PathDuration"),
+            new("SegmentDirectionMode"),
+            new("MoveSegments", "MoveSegments (dirX,dirY,speed,distance|...)"),
         };
 
 
@@ -1232,6 +1234,9 @@ namespace GGemCo2DCoreEditor
                 case ProjectileConstants.Type.Path:
                     tableLoader.TableProjectilePath?.Upsert(ToPathDetail(row));
                     break;
+                case ProjectileConstants.Type.LinearThenSegments:
+                    tableLoader.TableProjectileLinearThenSegments?.Upsert(ToLinearThenSegmentsDetail(row));
+                    break;
             }
         }
 
@@ -1275,6 +1280,8 @@ namespace GGemCo2DCoreEditor
                     "PathCoordinateMode" => row.PathCoordinateMode.ToString(),
                     "PathPoints" => FormatPathPoints(row.PathPoints),
                     "PathDuration" => MathHelper.FormatFloat(row.PathDuration),
+                    "SegmentDirectionMode" => row.SegmentDirectionMode.ToString(),
+                    "MoveSegments" => FormatMoveSegments(row.MoveSegments),
                     _ => string.Empty,
                 };
             }
@@ -1346,6 +1353,7 @@ namespace GGemCo2DCoreEditor
                 ProjectileConstants.Type.Linear => ConfigAddressableTable.TableProjectileLinear.Path,
                 ProjectileConstants.Type.Arc => ConfigAddressableTable.TableProjectileArc.Path,
                 ProjectileConstants.Type.Path => ConfigAddressableTable.TableProjectilePath.Path,
+                ProjectileConstants.Type.LinearThenSegments => ConfigAddressableTable.TableProjectileLinearThenSegments.Path,
                 _ => null,
             };
         }
@@ -1401,6 +1409,23 @@ namespace GGemCo2DCoreEditor
         }
 
         /// <summary>
+        /// 병합 Projectile Row에서 linear_then_segments 상세 Row를 생성합니다.
+        /// </summary>
+        /// <param name="row">병합 Projectile Row입니다.</param>
+        /// <returns>linear_then_segments 상세 Row입니다.</returns>
+        private static StruckTableProjectileLinearThenSegments ToLinearThenSegmentsDetail(StruckTableProjectile row)
+        {
+            return new StruckTableProjectileLinearThenSegments
+            {
+                Uid = row.Uid,
+                SegmentDirectionMode = row.SegmentDirectionMode,
+                MoveSegments = row.MoveSegments != null
+                    ? (ProjectileMoveSegment[])row.MoveSegments.Clone()
+                    : Array.Empty<ProjectileMoveSegment>(),
+            };
+        }
+
+        /// <summary>
         /// PathPoints 배열을 테이블 저장 문자열로 변환합니다.
         /// </summary>
         /// <param name="points">저장할 경로 점 배열입니다.</param>
@@ -1413,6 +1438,30 @@ namespace GGemCo2DCoreEditor
             var values = new string[points.Count];
             for (int i = 0; i < points.Count; i++)
                 values[i] = MathHelper.FormatVector2(points[i]);
+
+            return string.Join("|", values);
+        }
+
+        /// <summary>
+        /// 이동 세그먼트 배열을 테이블 저장 문자열로 변환합니다.
+        /// </summary>
+        /// <param name="segments">저장할 이동 세그먼트 배열입니다.</param>
+        /// <returns>"dirX,dirY,speed,distance|..." 형식의 문자열입니다.</returns>
+        private static string FormatMoveSegments(IReadOnlyList<ProjectileMoveSegment> segments)
+        {
+            if (segments == null || segments.Count == 0)
+                return string.Empty;
+
+            var values = new string[segments.Count];
+            for (int i = 0; i < segments.Count; i++)
+            {
+                ProjectileMoveSegment segment = segments[i];
+                values[i] = string.Join(",",
+                    MathHelper.FormatFloat(segment.Direction.x),
+                    MathHelper.FormatFloat(segment.Direction.y),
+                    MathHelper.FormatFloat(segment.Speed),
+                    MathHelper.FormatFloat(segment.Distance));
+            }
 
             return string.Join("|", values);
         }

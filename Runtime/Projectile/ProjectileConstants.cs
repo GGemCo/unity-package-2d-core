@@ -34,6 +34,7 @@
             Linear,
             Arc,
             Path,
+            LinearThenSegments,
         }
 
         /// <summary>
@@ -60,6 +61,17 @@
             StartRelative = 0,
             TargetRelative = 1,
             World = 2,
+        }
+
+        /// <summary>
+        /// 타겟 직선 이동 이후에 실행되는 세그먼트 방향의 해석 기준입니다.
+        /// - World: 입력한 방향 벡터를 월드 좌표 방향으로 그대로 사용합니다.
+        /// - InitialDirectionRelative: 입력한 방향을 최초 타겟 방향 기준의 로컬 방향으로 해석합니다.
+        /// </summary>
+        public enum SegmentDirectionMode
+        {
+            World = 0,
+            InitialDirectionRelative = 1,
         }
 
         public enum BoundaryMode

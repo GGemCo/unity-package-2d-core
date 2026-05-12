@@ -53,6 +53,7 @@ namespace GGemCo2DCore
         public const string ProjectileLinear = "projectile_linear";
         public const string ProjectileArc    = "projectile_arc";
         public const string ProjectilePath   = "projectile_path";
+        public const string ProjectileLinearThenSegments = "projectile_linear_then_segments";
         public const string Sound            = "sound";
         public const string SimulationTool   = "simulation_tool";
         public const string SimulationGrowth = "simulation_growth";
@@ -101,6 +102,7 @@ namespace GGemCo2DCore
         public static readonly AddressableAssetInfo TableProjectileLinear = Make(ProjectileLinear);
         public static readonly AddressableAssetInfo TableProjectileArc    = Make(ProjectileArc);
         public static readonly AddressableAssetInfo TableProjectilePath   = Make(ProjectilePath);
+        public static readonly AddressableAssetInfo TableProjectileLinearThenSegments = Make(ProjectileLinearThenSegments);
         public static readonly AddressableAssetInfo TableSound           = Make(Sound);
         public static readonly AddressableAssetInfo TableSimulationTool  = Make(SimulationTool);
         public static readonly AddressableAssetInfo TableSimulationGrowth  = Make(SimulationGrowth);
@@ -124,7 +126,7 @@ namespace GGemCo2DCore
             TableVfxEffect, TableVfxParticle, TableInteraction,
             TableShop, TableShopItem, TableShopPromotion, TableItemUpgrade, TableItemSalvage, TableItemCraft,
             TableCutscene, TableDialogue, TableQuest, TableLicense,
-            TableProjectile, TableProjectileLinear, TableProjectileArc, TableProjectilePath,
+            TableProjectile, TableProjectileLinear, TableProjectileArc, TableProjectilePath, TableProjectileLinearThenSegments,
             TableSound, TableSimulationTool,
             TableSimulationGrowth, TableCrowdControl, TableCrowdControlKnockBack, TableCrowdControlKnockDown, TableCrowdControlKnockUp, TableCrowdControlKnockDownAir, TableItemUse, TableItemUseAction
         };

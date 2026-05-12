@@ -246,6 +246,13 @@ namespace GGemCo2DCoreEditor
                 return ParseVector2Array(next);
             }
 
+            if (memberType == typeof(ProjectileMoveSegment[]))
+            {
+                string current = FormatMoveSegmentArray(value as ProjectileMoveSegment[]);
+                string next = EditorGUILayout.TextField(content, current);
+                return ParseMoveSegmentArray(next);
+            }
+
             if (memberType == typeof(Vector3))
                 return EditorGUILayout.Vector3Field(content, value != null ? (Vector3)value : Vector3.zero);
 
@@ -302,6 +309,69 @@ namespace GGemCo2DCoreEditor
                 result[i] = ParseVector2(tokens[i]);
 
             return result;
+        }
+
+        /// <summary>
+        /// 이동 세그먼트 배열을 테이블 저장 형식의 문자열로 변환합니다.
+        /// - 각 세그먼트는 "dirX,dirY,speed,distance" 형식입니다.
+        /// </summary>
+        /// <param name="segments">변환할 이동 세그먼트 배열입니다.</param>
+        /// <returns>테이블에 저장 가능한 이동 세그먼트 문자열입니다.</returns>
+        private static string FormatMoveSegmentArray(IReadOnlyList<ProjectileMoveSegment> segments)
+        {
+            if (segments == null || segments.Count == 0)
+                return string.Empty;
+
+            var values = new string[segments.Count];
+            for (int i = 0; i < segments.Count; i++)
+            {
+                ProjectileMoveSegment segment = segments[i];
+                values[i] = string.Join(",",
+                    MathHelper.FormatFloat(segment.Direction.x),
+                    MathHelper.FormatFloat(segment.Direction.y),
+                    MathHelper.FormatFloat(segment.Speed),
+                    MathHelper.FormatFloat(segment.Distance));
+            }
+
+            return string.Join("|", values);
+        }
+
+        /// <summary>
+        /// 테이블 형식의 이동 세그먼트 문자열을 배열로 변환합니다.
+        /// - "|" 또는 ";"로 여러 세그먼트를 구분합니다.
+        /// </summary>
+        /// <param name="value">파싱할 이동 세그먼트 문자열입니다.</param>
+        /// <returns>파싱된 이동 세그먼트 배열입니다.</returns>
+        private static ProjectileMoveSegment[] ParseMoveSegmentArray(string value)
+        {
+            if (string.IsNullOrWhiteSpace(value))
+                return Array.Empty<ProjectileMoveSegment>();
+
+            string[] tokens = value.Split(new[] { '|', ';' }, StringSplitOptions.RemoveEmptyEntries);
+            var result = new ProjectileMoveSegment[tokens.Length];
+            for (int i = 0; i < tokens.Length; i++)
+                result[i] = ParseMoveSegment(tokens[i]);
+
+            return result;
+        }
+
+        /// <summary>
+        /// "dirX,dirY,speed,distance" 문자열을 이동 세그먼트로 변환합니다.
+        /// </summary>
+        /// <param name="value">파싱할 세그먼트 문자열입니다.</param>
+        /// <returns>파싱된 이동 세그먼트입니다.</returns>
+        private static ProjectileMoveSegment ParseMoveSegment(string value)
+        {
+            if (string.IsNullOrWhiteSpace(value))
+                return default;
+
+            string[] parts = value.Split(',');
+            float dirX = ParseFloat(parts.Length > 0 ? parts[0] : "0");
+            float dirY = ParseFloat(parts.Length > 1 ? parts[1] : "0");
+            float speed = ParseFloat(parts.Length > 2 ? parts[2] : "0");
+            float distance = ParseFloat(parts.Length > 3 ? parts[3] : "0");
+
+            return new ProjectileMoveSegment(new Vector2(dirX, dirY), speed, distance);
         }
 
         /// <summary>
