@@ -51,6 +51,17 @@
         }
 
         /// <summary>
+        /// 프로젝타일이 타겟 또는 지형과 충돌했을 때의 생존 정책입니다.
+        /// - DestroyOnTargetHit: 충돌 즉시 종료합니다.
+        /// - KeepUntilRouteEnd: 충돌 여부와 상관없이 마지막 경로 지점까지 유지합니다.
+        /// </summary>
+        public enum HitLifetimeMode
+        {
+            DestroyOnTargetHit = 0,
+            KeepUntilRouteEnd = 1,
+        }
+
+        /// <summary>
         /// Path 타입 프로젝타일의 경로 좌표 기준입니다.
         /// - StartRelative: 발사 시작 위치를 기준으로 PathPoints를 해석합니다.
         /// - TargetRelative: 발사 목표 위치를 기준으로 PathPoints를 해석합니다.

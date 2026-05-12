@@ -38,6 +38,14 @@ namespace GGemCo2DCore
         public readonly RuntimeAnimatorController VisualAnimatorController;
         public readonly int VisualVfxUidOverride;
 
+        // --- Behavior Override (dynamic) ---
+        public readonly bool UseHitLifetimeModeOverride;
+        public readonly ProjectileConstants.HitLifetimeMode HitLifetimeModeOverride;
+        public readonly bool UseDamageApplyModeOverride;
+        public readonly ProjectileConstants.DamageApplyMode DamageApplyModeOverride;
+        public readonly bool UseTickDamageIntervalOverride;
+        public readonly float TickDamageIntervalOverride;
+
         public MetadataProjectile(
             int uid,
             ConfigCommon.DamageType damageType,
@@ -55,7 +63,13 @@ namespace GGemCo2DCore
             int skillUid = 0,
             int attackId = 0,
             bool allowSkillChainOnConfirmedDamage = false,
-            ElementGaugeApplication[] elementGaugeApplications = null)
+            ElementGaugeApplication[] elementGaugeApplications = null,
+            bool useHitLifetimeModeOverride = false,
+            ProjectileConstants.HitLifetimeMode hitLifetimeModeOverride = ProjectileConstants.HitLifetimeMode.DestroyOnTargetHit,
+            bool useDamageApplyModeOverride = false,
+            ProjectileConstants.DamageApplyMode damageApplyModeOverride = ProjectileConstants.DamageApplyMode.OnHitDestroy,
+            bool useTickDamageIntervalOverride = false,
+            float tickDamageIntervalOverride = 0f)
         {
             Uid = uid;
             DamageType = damageType;
@@ -77,6 +91,13 @@ namespace GGemCo2DCore
 
             UseTargetPositionOverride = useTargetPositionOverride;
             TargetPositionOverride = targetPositionOverride;
+
+            UseHitLifetimeModeOverride = useHitLifetimeModeOverride;
+            HitLifetimeModeOverride = hitLifetimeModeOverride;
+            UseDamageApplyModeOverride = useDamageApplyModeOverride;
+            DamageApplyModeOverride = damageApplyModeOverride;
+            UseTickDamageIntervalOverride = useTickDamageIntervalOverride;
+            TickDamageIntervalOverride = Mathf.Max(0f, tickDamageIntervalOverride);
         }
     }
 

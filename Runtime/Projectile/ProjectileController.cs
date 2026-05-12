@@ -53,7 +53,14 @@ namespace GGemCo2DCore
                     targetPositionOverride: metadataProjectile.TargetPositionOverride,
                     skillUid: metadataProjectile.SkillUid,
                     attackId: metadataProjectile.AttackId,
-                    allowSkillChainOnConfirmedDamage: metadataProjectile.AllowSkillChainOnConfirmedDamage)
+                    allowSkillChainOnConfirmedDamage: metadataProjectile.AllowSkillChainOnConfirmedDamage,
+                    elementGaugeApplications: metadataProjectile.ElementGaugeApplications,
+                    useHitLifetimeModeOverride: metadataProjectile.UseHitLifetimeModeOverride,
+                    hitLifetimeModeOverride: metadataProjectile.HitLifetimeModeOverride,
+                    useDamageApplyModeOverride: metadataProjectile.UseDamageApplyModeOverride,
+                    damageApplyModeOverride: metadataProjectile.DamageApplyModeOverride,
+                    useTickDamageIntervalOverride: metadataProjectile.UseTickDamageIntervalOverride,
+                    tickDamageIntervalOverride: metadataProjectile.TickDamageIntervalOverride)
                 : metadataProjectile;
 
             _character.StartCoroutine(CreateProjectileBurst(info, meta));

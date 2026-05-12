@@ -53,6 +53,61 @@ namespace GGemCo2DCore
         protected virtual bool ShouldHandleImmediateCollisionDamage => true;
 
         /// <summary>
+        /// 화면 밖으로 나갔을 때 즉시 제거할지 여부입니다.
+        /// - 경로 끝까지 유지해야 하는 발사체는 false를 반환해 카메라 밖 제거를 막을 수 있습니다.
+        /// </summary>
+        protected virtual bool ShouldDestroyWhenOutOfView => true;
+
+        /// <summary>
+        /// 현재 발사체의 최종 데미지 적용 방식을 반환합니다.
+        /// - 런타임 오버라이드가 있으면 이를 우선 사용하고, 없으면 테이블 기본값을 사용합니다.
+        /// </summary>
+        protected ProjectileConstants.DamageApplyMode EffectiveDamageApplyMode
+        {
+            get
+            {
+                if (Runtime != null && Runtime.UseDamageApplyModeOverride)
+                    return Runtime.DamageApplyModeOverride;
+
+                return Info != null
+                    ? Info.DamageApplyMode
+                    : ProjectileConstants.DamageApplyMode.OnHitDestroy;
+            }
+        }
+
+        /// <summary>
+        /// 현재 발사체의 최종 타겟 충돌 생존 정책을 반환합니다.
+        /// - 런타임 오버라이드가 있으면 이를 우선 사용하고, 없으면 즉시 제거를 기본값으로 사용합니다.
+        /// </summary>
+        protected ProjectileConstants.HitLifetimeMode EffectiveHitLifetimeMode
+        {
+            get
+            {
+                if (Runtime != null && Runtime.UseHitLifetimeModeOverride)
+                    return Runtime.HitLifetimeModeOverride;
+
+                return ProjectileConstants.HitLifetimeMode.DestroyOnTargetHit;
+            }
+        }
+
+        /// <summary>
+        /// 현재 발사체의 최종 주기 데미지 간격(초)을 반환합니다.
+        /// - 런타임 오버라이드가 있으면 이를 우선 사용하고, 없으면 테이블 기본값을 사용합니다.
+        /// </summary>
+        protected float EffectiveTickDamageInterval
+        {
+            get
+            {
+                if (Runtime != null && Runtime.UseTickDamageIntervalOverride)
+                    return Mathf.Max(0f, Runtime.TickDamageIntervalOverride);
+
+                return Info != null
+                    ? Mathf.Max(0f, Info.TickDamageInterval)
+                    : 0f;
+            }
+        }
+
+        /// <summary>
         /// End Visual 재생 대기 중인지 확인합니다.
         /// </summary>
         protected bool IsWaitingForEndVisual => _isWaitingForEndVisual;
@@ -206,7 +261,7 @@ namespace GGemCo2DCore
                 return;
             }
 
-            if (!IsInCameraView())
+            if (ShouldDestroyWhenOutOfView && !IsInCameraView())
             {
                 GcLogger.Log("[Projectile] Out of camera view. Destroy.");
                 Destroy(gameObject);

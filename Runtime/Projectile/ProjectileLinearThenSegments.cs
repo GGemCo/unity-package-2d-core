@@ -47,19 +47,24 @@ namespace GGemCo2DCore
 
         /// <summary>
         /// 즉시 충돌 데미지를 사용할지 결정합니다.
-        /// - OnHitDestroy는 기존 발사체처럼 충돌 시 제거됩니다.
-        /// - PeriodicOverlap/None은 세그먼트 이동을 끝까지 수행할 수 있도록 즉시 충돌 제거를 사용하지 않습니다.
+        /// - OnHitDestroy이면서 충돌 즉시 제거 정책일 때만 기존 방식처럼 충돌과 동시에 종료합니다.
+        /// - 경로 끝까지 유지하는 정책에서는 즉시 충돌 처리 대신 라우트 완주를 우선합니다.
         /// </summary>
         protected override bool ShouldHandleImmediateCollisionDamage
         {
             get
             {
-                if (Info == null)
-                    return false;
-
-                return Info.DamageApplyMode == ProjectileConstants.DamageApplyMode.OnHitDestroy;
+                return EffectiveDamageApplyMode == ProjectileConstants.DamageApplyMode.OnHitDestroy &&
+                       EffectiveHitLifetimeMode == ProjectileConstants.HitLifetimeMode.DestroyOnTargetHit;
             }
         }
+
+        /// <summary>
+        /// 카메라 밖 제거 여부를 결정합니다.
+        /// - 마지막 경로 지점까지 유지하는 정책이면 카메라 밖으로 나가더라도 자동 제거하지 않습니다.
+        /// </summary>
+        protected override bool ShouldDestroyWhenOutOfView
+            => EffectiveHitLifetimeMode != ProjectileConstants.HitLifetimeMode.KeepUntilRouteEnd;
 
         /// <summary>
         /// 좌표 타겟까지 직선으로 이동한 뒤 세그먼트 이동 경로를 구성합니다.
@@ -118,10 +123,10 @@ namespace GGemCo2DCore
         {
             base.OnProjectileMoved(newPos, delta, normalizedTime);
 
-            if (Info == null || Info.DamageApplyMode != ProjectileConstants.DamageApplyMode.PeriodicOverlap)
+            if (EffectiveDamageApplyMode != ProjectileConstants.DamageApplyMode.PeriodicOverlap)
                 return;
 
-            float interval = Mathf.Max(0f, Info.TickDamageInterval);
+            float interval = EffectiveTickDamageInterval;
             if (interval <= 0f)
                 return;
 
@@ -297,7 +302,7 @@ namespace GGemCo2DCore
                 return;
 
             if (Info == null ||
-                Info.DamageApplyMode != ProjectileConstants.DamageApplyMode.PeriodicOverlap ||
+                EffectiveDamageApplyMode != ProjectileConstants.DamageApplyMode.PeriodicOverlap ||
                 !Info.TickOnSpawn)
             {
                 return;
