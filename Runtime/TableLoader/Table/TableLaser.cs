@@ -64,6 +64,19 @@ namespace GGemCo2DCore
         }
 
         /// <summary>
+        /// 병합 또는 에디터 테스트 적용을 위해 Row를 현재 캐시에 저장합니다.
+        /// </summary>
+        /// <param name="row">저장할 laser Row입니다.</param>
+        public void Upsert(StruckTableLaser row)
+        {
+            if (row == null)
+                return;
+
+            SetDataByUid(row.Uid, row);
+        }
+
+
+        /// <summary>
         /// 문자열 값을 정수로 변환합니다.
         /// </summary>
         private static int GetInt(Dictionary<string, string> data, int fallback, params string[] keys)
