@@ -166,6 +166,7 @@ namespace GGemCo2DCoreEditor
             new("PathPoints"),
             new("PathDuration"),
             new("SegmentDirectionMode"),
+            new("SegmentRelativeAxesMode"),
             new("MoveSegments", "MoveSegments (dirX,dirY,speed,distance|...)"),
         };
 
@@ -1283,6 +1284,7 @@ namespace GGemCo2DCoreEditor
                     "PathPoints" => FormatPathPoints(row.PathPoints),
                     "PathDuration" => MathHelper.FormatFloat(row.PathDuration),
                     "SegmentDirectionMode" => row.SegmentDirectionMode.ToString(),
+                    "SegmentRelativeAxesMode" => row.SegmentRelativeAxesMode.ToString(),
                     "MoveSegments" => FormatMoveSegments(row.MoveSegments),
                     _ => string.Empty,
                 };
@@ -1421,6 +1423,7 @@ namespace GGemCo2DCoreEditor
             {
                 Uid = row.Uid,
                 SegmentDirectionMode = row.SegmentDirectionMode,
+                SegmentRelativeAxesMode = row.SegmentRelativeAxesMode,
                 MoveSegments = row.MoveSegments != null
                     ? (ProjectileMoveSegment[])row.MoveSegments.Clone()
                     : Array.Empty<ProjectileMoveSegment>(),

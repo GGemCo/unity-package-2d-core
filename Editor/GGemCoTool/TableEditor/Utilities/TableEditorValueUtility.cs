@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 using System.Reflection;
+using GGemCo2DCore;
 using UnityEngine;
 
 namespace GGemCo2DCoreEditor
@@ -145,6 +146,30 @@ namespace GGemCo2DCoreEditor
                 return false;
             }
 
+            if (targetType == typeof(Vector2[]))
+            {
+                if (TryParseVector2Array(raw, out Vector2[] vectors, out string vectorArrayError))
+                {
+                    value = vectors;
+                    return true;
+                }
+
+                error = vectorArrayError;
+                return false;
+            }
+
+            if (targetType == typeof(ProjectileMoveSegment[]))
+            {
+                if (TryParseProjectileMoveSegmentArray(raw, out ProjectileMoveSegment[] segments, out string segmentArrayError))
+                {
+                    value = segments;
+                    return true;
+                }
+
+                error = segmentArrayError;
+                return false;
+            }
+
             if (targetType.IsArray)
             {
                 Type elementType = targetType.GetElementType();
@@ -159,6 +184,11 @@ namespace GGemCo2DCoreEditor
                     {
                         error = $"배열 원소 파싱 실패: {elementError}";
                         return false;
+                    }
+
+                    if (elementValue == null && elementType.IsValueType)
+                    {
+                        elementValue = Activator.CreateInstance(elementType);
                     }
 
                     array.SetValue(elementValue, i);
@@ -239,6 +269,16 @@ namespace GGemCo2DCoreEditor
             {
                 Color32 color = value is Color32 c ? c : new Color32(255, 255, 255, 255);
                 return ColorUtility.ToHtmlStringRGBA(color);
+            }
+
+            if (sourceType == typeof(Vector2[]))
+            {
+                return ConvertVector2ArrayToRaw(value as IReadOnlyList<Vector2>);
+            }
+
+            if (sourceType == typeof(ProjectileMoveSegment[]))
+            {
+                return ConvertProjectileMoveSegmentArrayToRaw(value as IReadOnlyList<ProjectileMoveSegment>);
             }
 
             if (sourceType.IsArray)
@@ -377,6 +417,147 @@ namespace GGemCo2DCoreEditor
 
             value = new Color32(255, 255, 255, 255);
             return false;
+        }
+
+        /// <summary>
+        /// Table Editor에서 사용하는 PathPoints 형식의 문자열을 Vector2 배열로 변환합니다.
+        /// - 각 점은 "x,y" 형식입니다.
+        /// - 여러 점은 "|" 또는 ";" 로 구분합니다.
+        /// </summary>
+        /// <param name="raw">파싱할 원본 문자열입니다.</param>
+        /// <param name="values">파싱된 Vector2 배열입니다.</param>
+        /// <param name="error">파싱 실패 시 오류 메시지입니다.</param>
+        /// <returns>파싱 성공 여부입니다.</returns>
+        private static bool TryParseVector2Array(string raw, out Vector2[] values, out string error)
+        {
+            values = Array.Empty<Vector2>();
+            error = null;
+
+            if (string.IsNullOrWhiteSpace(raw))
+                return true;
+
+            string[] tokens = raw.Split(new[] { '|', ';' }, StringSplitOptions.RemoveEmptyEntries);
+            values = new Vector2[tokens.Length];
+            for (int i = 0; i < tokens.Length; i++)
+            {
+                if (!TryParseVector(tokens[i], 2, out float[] parsed))
+                {
+                    error = "Vector2 배열 형식 오류 (x,y|x,y)";
+                    values = Array.Empty<Vector2>();
+                    return false;
+                }
+
+                values[i] = new Vector2(parsed[0], parsed[1]);
+            }
+
+            return true;
+        }
+
+        /// <summary>
+        /// Table Editor에서 사용하는 이동 세그먼트 문자열을 <see cref="ProjectileMoveSegment"/> 배열로 변환합니다.
+        /// - 각 세그먼트는 "dirX,dirY,speed,distance" 형식입니다.
+        /// - 여러 세그먼트는 "|" 또는 ";" 로 구분합니다.
+        /// </summary>
+        /// <param name="raw">파싱할 원본 문자열입니다.</param>
+        /// <param name="values">파싱된 이동 세그먼트 배열입니다.</param>
+        /// <param name="error">파싱 실패 시 오류 메시지입니다.</param>
+        /// <returns>파싱 성공 여부입니다.</returns>
+        private static bool TryParseProjectileMoveSegmentArray(string raw, out ProjectileMoveSegment[] values, out string error)
+        {
+            values = Array.Empty<ProjectileMoveSegment>();
+            error = null;
+
+            if (string.IsNullOrWhiteSpace(raw))
+                return true;
+
+            string[] tokens = raw.Split(new[] { '|', ';' }, StringSplitOptions.RemoveEmptyEntries);
+            values = new ProjectileMoveSegment[tokens.Length];
+            for (int i = 0; i < tokens.Length; i++)
+            {
+                if (!TryParseProjectileMoveSegment(tokens[i], out ProjectileMoveSegment segment))
+                {
+                    error = "MoveSegments 형식 오류 (dirX,dirY,speed,distance|...)";
+                    values = Array.Empty<ProjectileMoveSegment>();
+                    return false;
+                }
+
+                values[i] = segment;
+            }
+
+            return true;
+        }
+
+        /// <summary>
+        /// "dirX,dirY,speed,distance" 형식의 문자열을 이동 세그먼트 값으로 변환합니다.
+        /// </summary>
+        /// <param name="raw">파싱할 세그먼트 문자열입니다.</param>
+        /// <param name="value">파싱된 이동 세그먼트입니다.</param>
+        /// <returns>파싱 성공 여부입니다.</returns>
+        private static bool TryParseProjectileMoveSegment(string raw, out ProjectileMoveSegment value)
+        {
+            value = default;
+            if (string.IsNullOrWhiteSpace(raw))
+                return true;
+
+            string[] parts = raw.Split(',');
+            if (!TryParseFloat(parts.Length > 0 ? parts[0] : "0", out float dirX)
+                || !TryParseFloat(parts.Length > 1 ? parts[1] : "0", out float dirY)
+                || !TryParseFloat(parts.Length > 2 ? parts[2] : "0", out float speed)
+                || !TryParseFloat(parts.Length > 3 ? parts[3] : "0", out float distance))
+            {
+                return false;
+            }
+
+            value = new ProjectileMoveSegment(new Vector2(dirX, dirY), speed, distance);
+            return true;
+        }
+
+        /// <summary>
+        /// Vector2 배열을 Table Editor 저장 문자열 형식으로 변환합니다.
+        /// - 각 점은 "x,y" 형식입니다.
+        /// - 여러 점은 "|" 로 연결합니다.
+        /// </summary>
+        /// <param name="values">변환할 Vector2 배열입니다.</param>
+        /// <returns>저장 가능한 원본 문자열입니다.</returns>
+        private static string ConvertVector2ArrayToRaw(IReadOnlyList<Vector2> values)
+        {
+            if (values == null || values.Count == 0)
+                return string.Empty;
+
+            List<string> tokens = new List<string>(values.Count);
+            for (int i = 0; i < values.Count; i++)
+            {
+                Vector2 item = values[i];
+                tokens.Add($"{item.x.ToString(CultureInfo.InvariantCulture)},{item.y.ToString(CultureInfo.InvariantCulture)}");
+            }
+
+            return string.Join("|", tokens);
+        }
+
+        /// <summary>
+        /// 이동 세그먼트 배열을 Table Editor 저장 문자열 형식으로 변환합니다.
+        /// - 각 세그먼트는 "dirX,dirY,speed,distance" 형식입니다.
+        /// - 여러 세그먼트는 "|" 로 연결합니다.
+        /// </summary>
+        /// <param name="values">변환할 이동 세그먼트 배열입니다.</param>
+        /// <returns>저장 가능한 원본 문자열입니다.</returns>
+        private static string ConvertProjectileMoveSegmentArrayToRaw(IReadOnlyList<ProjectileMoveSegment> values)
+        {
+            if (values == null || values.Count == 0)
+                return string.Empty;
+
+            List<string> tokens = new List<string>(values.Count);
+            for (int i = 0; i < values.Count; i++)
+            {
+                ProjectileMoveSegment item = values[i];
+                tokens.Add(string.Join(",",
+                    item.Direction.x.ToString(CultureInfo.InvariantCulture),
+                    item.Direction.y.ToString(CultureInfo.InvariantCulture),
+                    item.Speed.ToString(CultureInfo.InvariantCulture),
+                    item.Distance.ToString(CultureInfo.InvariantCulture)));
+            }
+
+            return string.Join("|", tokens);
         }
 
         private static string NormalizeColor(string raw)

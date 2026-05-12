@@ -74,6 +74,17 @@
             InitialDirectionRelative = 1,
         }
 
+        /// <summary>
+        /// InitialDirectionRelative 모드에서 사용할 상대 축 해석 방식입니다.
+        /// - Full2D: 최초 타겟 방향 전체를 기준으로 로컬 축을 회전시켜 해석합니다.
+        /// - HorizontalMirror: 최초 타겟 방향의 좌/우만 반영하고, Y축은 월드 기준 그대로 유지합니다.
+        /// </summary>
+        public enum SegmentRelativeAxesMode
+        {
+            Full2D = 0,
+            HorizontalMirror = 1,
+        }
+
         public enum BoundaryMode
         {
             Destroy = 0,

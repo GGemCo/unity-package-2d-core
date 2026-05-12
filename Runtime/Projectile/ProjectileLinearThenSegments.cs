@@ -203,9 +203,10 @@ namespace GGemCo2DCore
         /// <returns>정규화된 월드 방향입니다.</returns>
         private Vector2 ResolveSegmentDirection(Vector2 sourceDirection)
         {
-            Vector2 dir = sourceDirection.sqrMagnitude > 1e-6f
-                ? sourceDirection.normalized
-                : _initialDirection;
+            if (sourceDirection.sqrMagnitude <= 1e-6f)
+                return ResolveDefaultSegmentDirection();
+
+            Vector2 dir = sourceDirection.normalized;
 
             if (Info == null ||
                 Info.SegmentDirectionMode != ProjectileConstants.SegmentDirectionMode.InitialDirectionRelative)
@@ -213,11 +214,66 @@ namespace GGemCo2DCore
                 return dir;
             }
 
-            Vector2 forward = _initialDirection.sqrMagnitude > 1e-6f ? _initialDirection.normalized : Vector2.right;
-            Vector2 left = new Vector2(-forward.y, forward.x);
-            Vector2 worldDir = (forward * dir.x) + (left * dir.y);
+            switch (Info.SegmentRelativeAxesMode)
+            {
+                case ProjectileConstants.SegmentRelativeAxesMode.HorizontalMirror:
+                {
+                    float horizontalSign = ResolveInitialHorizontalSign();
+                    Vector2 worldDir = new Vector2(dir.x * horizontalSign, dir.y);
+                    return worldDir.sqrMagnitude > 1e-6f
+                        ? worldDir.normalized
+                        : ResolveDefaultSegmentDirection();
+                }
 
-            return worldDir.sqrMagnitude > 1e-6f ? worldDir.normalized : forward;
+                case ProjectileConstants.SegmentRelativeAxesMode.Full2D:
+                default:
+                {
+                    Vector2 forward = _initialDirection.sqrMagnitude > 1e-6f ? _initialDirection.normalized : Vector2.right;
+                    Vector2 left = new Vector2(-forward.y, forward.x);
+                    Vector2 worldDir = (forward * dir.x) + (left * dir.y);
+                    return worldDir.sqrMagnitude > 1e-6f ? worldDir.normalized : forward;
+                }
+            }
+        }
+
+        /// <summary>
+        /// 방향 입력이 비어 있을 때 사용할 기본 세그먼트 방향을 반환합니다.
+        /// - World/Full2D는 최초 타겟 방향을 그대로 사용합니다.
+        /// - HorizontalMirror는 사이드뷰 authoring 편의를 위해 좌/우만 반영한 수평 전진 방향을 사용합니다.
+        /// </summary>
+        /// <returns>기본 세그먼트 이동 방향입니다.</returns>
+        private Vector2 ResolveDefaultSegmentDirection()
+        {
+            if (Info != null &&
+                Info.SegmentDirectionMode == ProjectileConstants.SegmentDirectionMode.InitialDirectionRelative &&
+                Info.SegmentRelativeAxesMode == ProjectileConstants.SegmentRelativeAxesMode.HorizontalMirror)
+            {
+                return new Vector2(ResolveInitialHorizontalSign(), 0f);
+            }
+
+            return _initialDirection.sqrMagnitude > 1e-6f ? _initialDirection.normalized : Vector2.right;
+        }
+
+        /// <summary>
+        /// HorizontalMirror 모드에서 사용할 초기 수평 방향 부호를 결정합니다.
+        /// - 최초 타겟 방향의 X 성분이 유효하면 이를 우선 사용합니다.
+        /// - X 성분이 거의 0이면 발사 주체의 현재 Facing을 대체 기준으로 사용합니다.
+        /// - 둘 다 사용할 수 없으면 우측(+1) 기준으로 보정합니다.
+        /// </summary>
+        /// <returns>좌측은 -1, 우측은 1입니다.</returns>
+        private float ResolveInitialHorizontalSign()
+        {
+            if (Mathf.Abs(_initialDirection.x) > 1e-4f)
+                return Mathf.Sign(_initialDirection.x);
+
+            if (FromCharacter)
+            {
+                Vector2 facing = CharacterConstants.FacingToVector2(FromCharacter.CurrentFacing);
+                if (Mathf.Abs(facing.x) > 1e-4f)
+                    return Mathf.Sign(facing.x);
+            }
+
+            return 1f;
         }
 
         /// <summary>

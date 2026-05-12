@@ -85,6 +85,7 @@ namespace GGemCo2DCore
 
         // ---- LinearThenSegments detail ----
         public ProjectileConstants.SegmentDirectionMode SegmentDirectionMode;
+        public ProjectileConstants.SegmentRelativeAxesMode SegmentRelativeAxesMode;
         public ProjectileMoveSegment[] MoveSegments = Array.Empty<ProjectileMoveSegment>();
     }
 
@@ -134,6 +135,7 @@ namespace GGemCo2DCore
     {
         public int Uid;
         public ProjectileConstants.SegmentDirectionMode SegmentDirectionMode;
+        public ProjectileConstants.SegmentRelativeAxesMode SegmentRelativeAxesMode;
         public ProjectileMoveSegment[] MoveSegments = Array.Empty<ProjectileMoveSegment>();
     }
 
@@ -508,6 +510,7 @@ namespace GGemCo2DCore
                 PathPoints = source.PathPoints != null ? (Vector2[])source.PathPoints.Clone() : Array.Empty<Vector2>(),
                 PathDuration = source.PathDuration,
                 SegmentDirectionMode = source.SegmentDirectionMode,
+                SegmentRelativeAxesMode = source.SegmentRelativeAxesMode,
                 MoveSegments = source.MoveSegments != null ? (ProjectileMoveSegment[])source.MoveSegments.Clone() : Array.Empty<ProjectileMoveSegment>(),
             };
         }
@@ -582,6 +585,7 @@ namespace GGemCo2DCore
                 return;
 
             target.SegmentDirectionMode = source.SegmentDirectionMode;
+            target.SegmentRelativeAxesMode = source.SegmentRelativeAxesMode;
             target.MoveSegments = source.MoveSegments != null
                 ? (ProjectileMoveSegment[])source.MoveSegments.Clone()
                 : Array.Empty<ProjectileMoveSegment>();
@@ -729,6 +733,7 @@ namespace GGemCo2DCore
             {
                 Uid = GetInt(data, 0, "Uid"),
                 SegmentDirectionMode = GetEnum(data, ProjectileConstants.SegmentDirectionMode.World, "SegmentDirectionMode"),
+                SegmentRelativeAxesMode = GetEnum(data, ProjectileConstants.SegmentRelativeAxesMode.Full2D, "SegmentRelativeAxesMode"),
                 MoveSegments = GetMoveSegments(data, "MoveSegments", "Segments"),
             };
         }

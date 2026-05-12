@@ -400,8 +400,24 @@ namespace GGemCo2DCoreEditor
             catch (Exception ex)
             {
                 Debug.LogException(ex);
-                EditorUtility.DisplayDialog("Table Editor", ex.Message, "OK");
+                EditorUtility.DisplayDialog("Table Editor", BuildSafeDialogMessage(ex), "OK");
             }
+        }
+
+        /// <summary>
+        /// Table Editor 예외를 대화상자에 안전하게 표시할 수 있는 문자열로 변환합니다.
+        /// 예외 메시지가 비어 있을 때는 전체 예외 문자열을 fallback 으로 사용합니다.
+        /// </summary>
+        /// <param name="exception">변환할 예외입니다.</param>
+        /// <returns>대화상자에 표시 가능한 안전한 메시지입니다.</returns>
+        private static string BuildSafeDialogMessage(Exception exception)
+        {
+            if (exception == null)
+                return "알 수 없는 오류가 발생했습니다.";
+
+            return string.IsNullOrWhiteSpace(exception.Message)
+                ? exception.ToString()
+                : exception.Message;
         }
 
         private void ReloadCurrentTable()
@@ -452,7 +468,7 @@ namespace GGemCo2DCoreEditor
             catch (Exception ex)
             {
                 Debug.LogException(ex);
-                EditorUtility.DisplayDialog("Table Editor", ex.Message, "OK");
+                EditorUtility.DisplayDialog("Table Editor", BuildSafeDialogMessage(ex), "OK");
             }
         }
 
