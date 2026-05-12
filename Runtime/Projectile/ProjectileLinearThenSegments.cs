@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using UnityEngine;
 
 namespace GGemCo2DCore
@@ -47,17 +47,11 @@ namespace GGemCo2DCore
 
         /// <summary>
         /// 즉시 충돌 데미지를 사용할지 결정합니다.
-        /// - OnHitDestroy이면서 충돌 즉시 제거 정책일 때만 기존 방식처럼 충돌과 동시에 종료합니다.
-        /// - 경로 끝까지 유지하는 정책에서는 즉시 충돌 처리 대신 라우트 완주를 우선합니다.
+        /// - OnHit이면 적중 즉시 데미지를 적용합니다.
+        /// - HitLifetimeMode가 KeepUntilRouteEnd이면 데미지를 준 뒤에도 경로를 계속 진행합니다.
         /// </summary>
         protected override bool ShouldHandleImmediateCollisionDamage
-        {
-            get
-            {
-                return EffectiveDamageApplyMode == ProjectileConstants.DamageApplyMode.OnHitDestroy &&
-                       EffectiveHitLifetimeMode == ProjectileConstants.HitLifetimeMode.DestroyOnTargetHit;
-            }
-        }
+            => EffectiveDamageApplyMode == ProjectileConstants.DamageApplyMode.OnHit;
 
         /// <summary>
         /// 카메라 밖 제거 여부를 결정합니다.

@@ -39,13 +39,13 @@
 
         /// <summary>
         /// 프로젝타일이 데미지를 적용하는 방식입니다.
-        /// - OnHitDestroy: 기존 방식처럼 충돌 시 1회 데미지를 주고 제거합니다.
+        /// - OnHit: HitArea와 충돌할 때 데미지를 적용합니다. 완전히 이탈한 뒤 다시 진입하면 다시 데미지를 줄 수 있습니다.
         /// - PeriodicOverlap: 이동 중 일정 주기로 현재 콜라이더와 겹친 대상에게 데미지를 줍니다.
         /// - None: 데미지를 주지 않고 이동/연출만 수행합니다.
         /// </summary>
         public enum DamageApplyMode
         {
-            OnHitDestroy = 0,
+            OnHit = 0,
             PeriodicOverlap = 1,
             None = 2,
         }

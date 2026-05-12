@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -345,7 +345,7 @@ namespace GGemCo2DCore
                 TargetPositionRangeX = GetInt(data, 0, "TargetPositionRangeX"),
                 Count = GetInt(data, 1, "Count"),
                 SecDelayByOne = GetFloat(data, 0f, "SecDelayByOne"),
-                DamageApplyMode = GetEnum(data, ProjectileConstants.DamageApplyMode.OnHitDestroy, "DamageApplyMode"),
+                DamageApplyMode = GetEnum(data, ProjectileConstants.DamageApplyMode.OnHit, "DamageApplyMode"),
                 RotateByMoveDirection = GetBool(data, true, "RotateByMoveDirection"),
             };
         }

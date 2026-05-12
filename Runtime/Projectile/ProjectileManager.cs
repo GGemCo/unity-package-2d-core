@@ -67,7 +67,7 @@ namespace GGemCo2DCore
             bool useHitLifetimeModeOverride = false,
             ProjectileConstants.HitLifetimeMode hitLifetimeModeOverride = ProjectileConstants.HitLifetimeMode.DestroyOnTargetHit,
             bool useDamageApplyModeOverride = false,
-            ProjectileConstants.DamageApplyMode damageApplyModeOverride = ProjectileConstants.DamageApplyMode.OnHitDestroy,
+            ProjectileConstants.DamageApplyMode damageApplyModeOverride = ProjectileConstants.DamageApplyMode.OnHit,
             bool useTickDamageIntervalOverride = false,
             float tickDamageIntervalOverride = 0f)
         {

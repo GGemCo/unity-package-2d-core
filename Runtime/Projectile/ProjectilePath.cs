@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using UnityEngine;
 
 namespace GGemCo2DCore
@@ -19,18 +19,11 @@ namespace GGemCo2DCore
 
         /// <summary>
         /// Path 타입이 즉시 충돌 데미지를 사용할지 확인합니다.
+        /// - OnHit이면 충돌 시 데미지를 적용합니다.
         /// - PeriodicOverlap/None은 이동 중 충돌로 제거되지 않아야 하므로 false를 반환합니다.
         /// </summary>
         protected override bool ShouldHandleImmediateCollisionDamage
-        {
-            get
-            {
-                if (Info == null)
-                    return false;
-
-                return Info.DamageApplyMode == ProjectileConstants.DamageApplyMode.OnHitDestroy;
-            }
-        }
+            => EffectiveDamageApplyMode == ProjectileConstants.DamageApplyMode.OnHit;
 
         /// <summary>
         /// 좌표 타겟으로 발사하고, 발사 시작점/목표점을 기준으로 경로를 구성합니다.
@@ -88,10 +81,10 @@ namespace GGemCo2DCore
         {
             base.OnProjectileMoved(newPos, delta, normalizedTime);
 
-            if (Info == null || Info.DamageApplyMode != ProjectileConstants.DamageApplyMode.PeriodicOverlap)
+            if (Info == null || EffectiveDamageApplyMode != ProjectileConstants.DamageApplyMode.PeriodicOverlap)
                 return;
 
-            float interval = Mathf.Max(0f, Info.TickDamageInterval);
+            float interval = EffectiveTickDamageInterval;
             if (interval <= 0f)
                 return;
 
@@ -207,7 +200,7 @@ namespace GGemCo2DCore
                 return;
 
             if (Info == null ||
-                Info.DamageApplyMode != ProjectileConstants.DamageApplyMode.PeriodicOverlap ||
+                EffectiveDamageApplyMode != ProjectileConstants.DamageApplyMode.PeriodicOverlap ||
                 !Info.TickOnSpawn)
             {
                 return;

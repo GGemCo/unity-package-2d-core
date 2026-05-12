@@ -1,4 +1,5 @@
-﻿using UnityEngine;
+﻿using System.Collections.Generic;
+using UnityEngine;
 
 namespace GGemCo2DCore
 {
@@ -43,14 +44,19 @@ namespace GGemCo2DCore
         private ContactFilter2D _castFilter;
         private RaycastHit2D[] _castResults;
         private Collider2D[] _overlapResults;
-        private bool _hasHit;
+        private readonly HashSet<CharacterBase> _latchedHitTargets = new();
+        private readonly HashSet<CharacterBase> _currentOverlapTargets = new();
+        private readonly List<CharacterBase> _releasedHitTargets = new();
+        private bool _isTerminatedByHit;
         private bool _isWaitingForEndVisual;
 
         /// <summary>
         /// 즉시 충돌 데미지 정책을 사용할지 여부입니다.
-        /// - 기본 프로젝타일은 true이며, 주기 데미지형 프로젝타일은 false로 재정의합니다.
+        /// - 기본 구현은 DamageApplyMode가 OnHit일 때 활성화됩니다.
+        /// - 주기 데미지형 프로젝타일은 false를 반환하도록 재정의할 수 있습니다.
         /// </summary>
-        protected virtual bool ShouldHandleImmediateCollisionDamage => true;
+        protected virtual bool ShouldHandleImmediateCollisionDamage
+            => EffectiveDamageApplyMode == ProjectileConstants.DamageApplyMode.OnHit;
 
         /// <summary>
         /// 화면 밖으로 나갔을 때 즉시 제거할지 여부입니다.
@@ -71,7 +77,7 @@ namespace GGemCo2DCore
 
                 return Info != null
                     ? Info.DamageApplyMode
-                    : ProjectileConstants.DamageApplyMode.OnHitDestroy;
+                    : ProjectileConstants.DamageApplyMode.OnHit;
             }
         }
 
@@ -150,6 +156,12 @@ namespace GGemCo2DCore
             if (_castResults == null) _castResults = new RaycastHit2D[16];
             if (_overlapResults == null) _overlapResults = new Collider2D[16];
             SetupCastFilter();
+
+            _latchedHitTargets.Clear();
+            _currentOverlapTargets.Clear();
+            _releasedHitTargets.Clear();
+            _isTerminatedByHit = false;
+            _isWaitingForEndVisual = false;
 
             // Visual 연결(Effect/Sprite/Animator/None)
             _visual = ProjectileVisualFactory.Attach(transform, info, metadata);
@@ -230,6 +242,8 @@ namespace GGemCo2DCore
         {
             if (!Initialized || _isWaitingForEndVisual) return;
 
+            RefreshImmediateHitLatchState();
+
             // 등속 이동: 현재까지 이동 거리 / 전체 거리 => 0..1
             float distCovered = (Time.fixedTime - StartTime) * Speed;
             float t = (JourneyLength > 0f) ? (distCovered / JourneyLength) : 1f;
@@ -301,7 +315,7 @@ namespace GGemCo2DCore
         {
             bestHit = default;
 
-            if (_hasHit) return false;
+            if (_isTerminatedByHit) return false;
             if (_hitCollider == null) return false;
 
             float dist = delta.magnitude;
@@ -331,7 +345,7 @@ namespace GGemCo2DCore
                     if (owner == FromCharacter) continue;
                 }
 
-                if (!IsValidHitCandidate(col)) continue;
+                if (!IsValidImmediateHitCandidate(col)) continue;
 
                 // fraction이 유효하면 그것을, 아니면 centroid 기반 거리로 점수 계산
                 float score;
@@ -360,7 +374,7 @@ namespace GGemCo2DCore
 
         private void TryHandleInitialOverlap()
         {
-            if (_hasHit) return;
+            if (_isTerminatedByHit) return;
             if (_hitCollider == null) return;
             if (_overlapResults == null || _overlapResults.Length == 0)
                 _overlapResults = new Collider2D[16];
@@ -386,7 +400,7 @@ namespace GGemCo2DCore
                         continue;
                 }
 
-                if (!IsValidHitCandidate(col))
+                if (!IsValidImmediateHitCandidate(col))
                     continue;
 
                 float distance = Vector2.Distance(StartPoint, col.ClosestPoint(StartPoint));
@@ -476,53 +490,151 @@ namespace GGemCo2DCore
             return null;
         }
 
+        /// <summary>
+        /// 즉시 충돌 데미지 정책에 따라 충돌 대상을 처리합니다.
+        /// - OnHit 모드에서는 타겟에게 데미지를 적용하고, 완전히 이탈하기 전까지는 같은 타겟 재적중을 잠급니다.
+        /// - HitLifetimeMode가 DestroyOnTargetHit이면 데미지 적용 후 즉시 제거합니다.
+        /// - KeepUntilRouteEnd이면 데미지를 준 뒤 계속 이동합니다.
+        /// </summary>
+        /// <param name="other">충돌한 Collider입니다.</param>
+        /// <param name="overrideWorldPos">스윕 적중 시 사용할 월드 적중 위치입니다.</param>
+        /// <returns>발사체가 종료되어 현재 스텝을 중단해야 하면 true를 반환합니다.</returns>
         private bool TryHandleHit(Collider2D other, Vector2? overrideWorldPos = null)
         {
-            if (_hasHit) return true;
-            if (!other) return false;
+            if (_isTerminatedByHit)
+                return true;
 
-            if (overrideWorldPos.HasValue)
-                transform.position = overrideWorldPos.Value;
+            if (!other)
+                return false;
 
-            // 지면
+            Vector2 hitWorldPos = overrideWorldPos ?? (Vector2)transform.position;
+
+            // 지형 충돌은 수명 정책이 즉시 종료일 때만 처리합니다.
             if (other.CompareTag(ConfigTags.GetValue(ConfigTags.Keys.MapGround)))
             {
-                _hasHit = true;
-                NotifyHitVisual(other);
+                if (!ShouldTerminateOnImmediateHit(other))
+                    return false;
+
+                _isTerminatedByHit = true;
+                NotifyHitVisual(other, hitWorldPos);
                 Destroy(gameObject);
                 return true;
             }
 
-            // 타겟(루트 기준)
-            if (!FromCharacter) return false;
-
-            var target = ResolveTargetCharacter(other);
-            if (!target) return false;
-
-            bool fromMonster = FromCharacter.CompareTag(ConfigTags.GetValue(ConfigTags.Keys.Monster));
-            bool fromPlayer = FromCharacter.CompareTag(ConfigTags.GetValue(ConfigTags.Keys.Player));
-            bool toMonster = target.CompareTag(ConfigTags.GetValue(ConfigTags.Keys.Monster));
-            bool toPlayer = target.CompareTag(ConfigTags.GetValue(ConfigTags.Keys.Player));
-
-            if (!((fromMonster && toPlayer) || (fromPlayer && toMonster)))
+            if (!TryResolveDamageTarget(other, out CharacterBase target))
                 return false;
 
-            var area = ResolveHitArea(other, target);
-            _hasHit = true;
+            if (!CanApplyImmediateHitToTarget(target))
+                return false;
 
-            if (area)
-            {
-                OnHitTarget(area, other);
-            }
-            else
-            {
-                // HitArea가 없는 경우도 안전하게 처리합니다.
-                NotifyHitVisual(other);
-                ApplyDamageToTarget(target);
-                Destroy(gameObject);
-            }
+            CharacterHitArea area = ResolveHitArea(other, target);
+            MarkImmediateHitTarget(target);
+            OnHitTarget(area, other, target, hitWorldPos);
 
+            if (!ShouldTerminateOnImmediateHit(other))
+                return false;
+
+            _isTerminatedByHit = true;
+            Destroy(gameObject);
             return true;
+        }
+
+        /// <summary>
+        /// 동일 타겟에게 즉시 충돌 데미지를 다시 적용할 수 있는지 확인합니다.
+        /// - 같은 타겟의 여러 HitArea와 겹치더라도, 완전히 이탈하기 전까지는 1회만 허용합니다.
+        /// </summary>
+        /// <param name="target">판정할 대상 캐릭터입니다.</param>
+        /// <returns>이번 충돌에서 데미지를 적용할 수 있으면 true를 반환합니다.</returns>
+        private bool CanApplyImmediateHitToTarget(CharacterBase target)
+        {
+            return target && !_latchedHitTargets.Contains(target);
+        }
+
+        /// <summary>
+        /// 즉시 충돌 데미지를 준 타겟을 현재 겹침 잠금 상태로 등록합니다.
+        /// - 타겟의 모든 HitArea에서 완전히 이탈하면 잠금을 해제하여 재적중을 허용합니다.
+        /// </summary>
+        /// <param name="target">잠글 대상 캐릭터입니다.</param>
+        private void MarkImmediateHitTarget(CharacterBase target)
+        {
+            if (!target)
+                return;
+
+            _latchedHitTargets.Add(target);
+        }
+
+        /// <summary>
+        /// 현재 충돌 후보가 즉시 충돌 데미지 대상으로 유효한지 확인합니다.
+        /// - 지형은 수명 정책이 즉시 종료일 때만 유효합니다.
+        /// - 타겟은 팀 판정과 재적중 잠금 상태를 함께 확인합니다.
+        /// </summary>
+        /// <param name="other">판정할 Collider입니다.</param>
+        /// <returns>즉시 충돌 처리를 진행할 수 있으면 true를 반환합니다.</returns>
+        private bool IsValidImmediateHitCandidate(Collider2D other)
+        {
+            if (!other)
+                return false;
+
+            if (other.CompareTag(ConfigTags.GetValue(ConfigTags.Keys.MapGround)))
+                return ShouldTerminateOnImmediateHit(other);
+
+            if (!TryResolveDamageTarget(other, out CharacterBase target))
+                return false;
+
+            return CanApplyImmediateHitToTarget(target);
+        }
+
+        /// <summary>
+        /// 즉시 충돌 후 발사체를 종료해야 하는지 판정합니다.
+        /// - OnHit 모드에서 DestroyOnTargetHit이면 타겟/지형 충돌 후 즉시 제거합니다.
+        /// - KeepUntilRouteEnd이면 충돌 후에도 라우트를 계속 진행합니다.
+        /// </summary>
+        /// <param name="other">충돌한 Collider입니다.</param>
+        /// <returns>즉시 종료가 필요하면 true를 반환합니다.</returns>
+        protected virtual bool ShouldTerminateOnImmediateHit(Collider2D other)
+        {
+            return EffectiveHitLifetimeMode == ProjectileConstants.HitLifetimeMode.DestroyOnTargetHit;
+        }
+
+        /// <summary>
+        /// 현재 발사체 Collider와 실제로 겹치고 있는 타겟 집합을 기준으로 재적중 잠금을 갱신합니다.
+        /// - 같은 타겟의 여러 HitArea 중 일부만 빠졌을 때는 잠금을 유지합니다.
+        /// - 타겟의 모든 HitArea에서 완전히 빠져나간 경우에만 잠금을 해제합니다.
+        /// </summary>
+        private void RefreshImmediateHitLatchState()
+        {
+            if (!ShouldHandleImmediateCollisionDamage)
+                return;
+
+            Collider2D[] results = GetOverlapResultsBuffer();
+            int count = OverlapHitCollider(results);
+
+            _currentOverlapTargets.Clear();
+
+            for (int i = 0; i < count; i++)
+            {
+                Collider2D col = results[i];
+                if (!col || col == HitCollider)
+                    continue;
+
+                if (!TryResolveDamageTarget(col, out CharacterBase target))
+                    continue;
+
+                _currentOverlapTargets.Add(target);
+            }
+
+            if (_latchedHitTargets.Count == 0)
+                return;
+
+            _releasedHitTargets.Clear();
+            foreach (CharacterBase target in _latchedHitTargets)
+            {
+                if (!target || !_currentOverlapTargets.Contains(target))
+                    _releasedHitTargets.Add(target);
+            }
+
+            for (int i = 0; i < _releasedHitTargets.Count; i++)
+                _latchedHitTargets.Remove(_releasedHitTargets[i]);
         }
 
         /// <summary>
@@ -658,7 +770,18 @@ namespace GGemCo2DCore
         /// <param name="hitCollider">히트 대상 Collider입니다.</param>
         protected void NotifyHitVisual(Collider2D hitCollider)
         {
-            _visual?.OnHit(new ProjectileVisualHitContext(transform.position, FromCharacter, hitCollider));
+            NotifyHitVisual(hitCollider, transform.position);
+        }
+
+        /// <summary>
+        /// 지정한 월드 위치에서 히트 Visual 콜백을 실행합니다.
+        /// - 스윕 적중처럼 Transform 위치와 실제 적중 지점을 분리해야 할 때 사용합니다.
+        /// </summary>
+        /// <param name="hitCollider">히트 대상 Collider입니다.</param>
+        /// <param name="worldPosition">히트 연출을 재생할 월드 위치입니다.</param>
+        protected void NotifyHitVisual(Collider2D hitCollider, Vector2 worldPosition)
+        {
+            _visual?.OnHit(new ProjectileVisualHitContext(worldPosition, FromCharacter, hitCollider));
         }
 
         /// <summary>
@@ -748,22 +871,45 @@ namespace GGemCo2DCore
         protected virtual void OnTriggerEnter2D(Collider2D other)
         {
             if (!Initialized || _isWaitingForEndVisual) return;
-            if (_hasHit) return;
+            if (_isTerminatedByHit) return;
             if (!ShouldHandleImmediateCollisionDamage) return;
 
             // 기존 정책을 유지하되, "충돌한 콜라이더의 태그"가 아니라 "루트 캐릭터" 기준으로 판정합니다.
             TryHandleHit(other);
         }
 
-        protected virtual void OnHitTarget(CharacterHitArea area, Collider2D hitCollider)
+        /// <summary>
+        /// Trigger 이탈 시 현재 실제 겹침 상태를 다시 계산하여 재적중 잠금을 갱신합니다.
+        /// - 같은 타겟의 일부 HitArea만 빠진 경우에는 잠금을 유지합니다.
+        /// - 타겟의 모든 HitArea에서 완전히 이탈한 뒤 재진입하면 다시 데미지를 줄 수 있습니다.
+        /// </summary>
+        /// <param name="other">이탈한 대상 Collider입니다.</param>
+        protected virtual void OnTriggerExit2D(Collider2D other)
         {
-            NotifyHitVisual(hitCollider);
+            if (!Initialized || _isWaitingForEndVisual) return;
+            if (!ShouldHandleImmediateCollisionDamage) return;
 
-            if (!area) return;
+            if (!TryResolveDamageTarget(other, out CharacterBase target))
+                return;
 
-            ApplyDamageToTarget(area.target);
+            if (!_latchedHitTargets.Contains(target))
+                return;
 
-            Destroy(gameObject);
+            RefreshImmediateHitLatchState();
+        }
+
+        /// <summary>
+        /// 타겟 적중 시 데미지와 히트 연출을 적용합니다.
+        /// - 생명 주기 종료 여부는 호출부에서 HitLifetimeMode로 별도 결정합니다.
+        /// </summary>
+        /// <param name="area">적중한 HitArea입니다. 없을 수 있습니다.</param>
+        /// <param name="hitCollider">충돌한 Collider입니다.</param>
+        /// <param name="target">데미지를 받을 최종 타겟 캐릭터입니다.</param>
+        /// <param name="hitWorldPosition">히트 연출을 재생할 월드 위치입니다.</param>
+        protected virtual void OnHitTarget(CharacterHitArea area, Collider2D hitCollider, CharacterBase target, Vector2 hitWorldPosition)
+        {
+            NotifyHitVisual(hitCollider, hitWorldPosition);
+            ApplyDamageToTarget(target);
         }
 
         #endregion
