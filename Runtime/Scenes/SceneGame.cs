@@ -75,6 +75,7 @@ namespace GGemCo2DCore
         public QuestManager QuestManager;
         public VfxManager VfxManager;
         public ProjectileManager ProjectileManager;
+        public LaserManager LaserManager;
         public AddressableLoaderPrefabCharacter AddressableLoaderPrefabCharacter;
         
         private UIWindowInventory _uiWindowInventory;
@@ -179,6 +180,8 @@ namespace GGemCo2DCore
             VfxManager.SetAnimationEventMediator(animationEventMediator);
             ProjectileManager = new ProjectileManager();
             ProjectileManager.Initialize(this);
+            LaserManager = new LaserManager();
+            LaserManager.Initialize(this);
             
             // AnimationEventMediator 클래스에서 다른 매니저를 사용하고 있기때문에,
             // 매니저가 생성된 후 Initialize를 해야 한다.

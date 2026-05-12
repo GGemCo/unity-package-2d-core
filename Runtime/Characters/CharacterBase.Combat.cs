@@ -126,6 +126,16 @@ namespace GGemCo2DCore
         }
 
         /// <summary>
+        /// 메타데이터를 기반으로 레이저 생성을 요청합니다.
+        /// </summary>
+        /// <param name="metadataLaser">레이저 생성과 발사에 사용할 메타데이터입니다.</param>
+        public void LaunchLaser(MetadataLaser metadataLaser)
+        {
+            if (_laserController == null) return;
+            _laserController.Launch(metadataLaser);
+        }
+
+        /// <summary>
         /// 단일 Crowd Control 효과를 현재 캐릭터에 적용합니다.
         /// </summary>
         /// <param name="crowdControlUid">적용할 Crowd Control 식별자입니다.</param>

@@ -58,6 +58,7 @@ namespace GGemCo2DCore
         
         protected bool IsUseSkill = false;
         private ProjectileController _projectileController;
+        private LaserController _laserController;
         
         public CharacterRegenData CharacterRegenData;
         

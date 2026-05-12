@@ -78,6 +78,9 @@ namespace GGemCo2DCore
             _projectileController = new ProjectileController();
             _projectileController.Initialize(this);
 
+            _laserController = new LaserController();
+            _laserController.Initialize(this);
+
             _characterDamageController = new CharacterDamageController();
             _characterDamageController.Initialize(this);
 
