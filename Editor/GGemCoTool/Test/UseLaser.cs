@@ -22,28 +22,28 @@ namespace GGemCo2DCoreEditor
             ManualPosition = 2,
         }
 
-        [SerializeField] private int laserUid;
-        [SerializeField] private ConfigCommon.DamageType damageType = ConfigCommon.DamageType.Physic;
-        [SerializeField] private long damage = 10;
-        [SerializeField] private float scaleMultiplier = 1f;
-        [SerializeField] private bool useDurationOverride;
-        [SerializeField] private float durationOverride = 0.25f;
-        [SerializeField] private bool useTickIntervalOverride;
-        [SerializeField] private float tickIntervalOverride;
-        [SerializeField] private bool useMaxDistanceOverride;
-        [SerializeField] private float maxDistanceOverride = 10f;
-        [SerializeField] private bool updateAimContinuously;
-        [SerializeField] private ProjectileConstants.ProjectileVisualType visualType = ProjectileConstants.ProjectileVisualType.Default;
-        [SerializeField] private int visualVfxUidOverride;
-        [SerializeField] private Sprite visualSprite;
-        [SerializeField] private RuntimeAnimatorController visualAnimatorController;
-        [SerializeField] private TargetSelectMode targetMode = TargetSelectMode.NearMonster;
-        [SerializeField] private float nearMonsterSearchDistance = 1000f;
-        [SerializeField] private int targetMonsterUid;
-        [SerializeField] private Vector3 manualTargetPosition = Vector3.right * 3f;
-        [SerializeField] private bool showSceneGizmos = true;
-        [SerializeField] private int count = 1;
-        [SerializeField] private float delaySeconds;
+        [SerializeField, Tooltip("laser 테이블에서 사용할 레이저 Uid입니다.")] private int laserUid;
+        [SerializeField, Tooltip("테스트 발사 시 사용할 데미지 타입입니다.")] private ConfigCommon.DamageType damageType = ConfigCommon.DamageType.Physic;
+        [SerializeField, Tooltip("레이저 적중 시 적용할 기본 데미지 값입니다.")] private long damage = 10;
+        [SerializeField, Tooltip("레이저 비주얼 크기에 곱할 배율입니다.")] private float scaleMultiplier = 1f;
+        [SerializeField, Tooltip("체크하면 테이블 Duration 대신 아래 오버라이드 값을 사용합니다.")] private bool useDurationOverride;
+        [SerializeField, Tooltip("레이저 지속 시간을 직접 덮어쓸 값입니다.")] private float durationOverride = 0.25f;
+        [SerializeField, Tooltip("체크하면 테이블 TickInterval 대신 아래 오버라이드 값을 사용합니다.")] private bool useTickIntervalOverride;
+        [SerializeField, Tooltip("지속형 레이저의 틱 간격을 직접 덮어쓸 값입니다.")] private float tickIntervalOverride;
+        [SerializeField, Tooltip("체크하면 테이블 MaxDistance 대신 아래 오버라이드 값을 사용합니다.")] private bool useMaxDistanceOverride;
+        [SerializeField, Tooltip("레이저 최대 사거리를 직접 덮어쓸 값입니다.")] private float maxDistanceOverride = 10f;
+        [SerializeField, Tooltip("활성 시간 동안 타겟 방향을 계속 추적할지 여부입니다.")] private bool updateAimContinuously;
+        [SerializeField, Tooltip("테스트 발사 시 사용할 비주얼 출력 타입입니다.")] private ProjectileConstants.ProjectileVisualType visualType = ProjectileConstants.ProjectileVisualType.Default;
+        [SerializeField, Tooltip("테이블 VFX 대신 사용할 비주얼 VFX Uid입니다. 0이면 기본값을 사용합니다.")] private int visualVfxUidOverride;
+        [SerializeField, Tooltip("Sprite 비주얼 타입에서 사용할 스프라이트입니다.")] private Sprite visualSprite;
+        [SerializeField, Tooltip("Animator 비주얼 타입에서 사용할 컨트롤러입니다.")] private RuntimeAnimatorController visualAnimatorController;
+        [SerializeField, Tooltip("레이저의 목표 지점을 어떤 방식으로 선택할지 결정합니다.")] private TargetSelectMode targetMode = TargetSelectMode.NearMonster;
+        [SerializeField, Tooltip("가장 가까운 몬스터 검색 방식에서 사용할 최대 탐색 거리입니다.")] private float nearMonsterSearchDistance = 1000f;
+        [SerializeField, Tooltip("특정 몬스터 Uid를 직접 지정해 타겟으로 사용할 때의 값입니다.")] private int targetMonsterUid;
+        [SerializeField, Tooltip("수동 좌표 방식에서 사용할 월드 기준 목표 위치입니다.")] private Vector3 manualTargetPosition = Vector3.right * 3f;
+        [SerializeField, Tooltip("SceneView에 예상 레이저 경로와 목표점을 표시할지 여부입니다.")] private bool showSceneGizmos = true;
+        [SerializeField, Tooltip("한 번의 실행에서 연속으로 발사할 레이저 수입니다.")] private int count = 1;
+        [SerializeField, Tooltip("연속 발사 시 각 발사 사이에 둘 지연 시간입니다.")] private float delaySeconds;
 
         private Vector2 _scroll;
         private int _selectedIndexLaser;
@@ -366,7 +366,7 @@ namespace GGemCo2DCoreEditor
         /// </summary>
         private static CharacterBase FindCharacterByUid(int uid)
         {
-            CharacterBase[] characters = Object.FindObjectsOfType<CharacterBase>();
+            CharacterBase[] characters = CompatObjectFind.FindAll<CharacterBase>();
             for (int i = 0; i < characters.Length; i++)
             {
                 CharacterBase character = characters[i];
