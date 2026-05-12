@@ -15,7 +15,7 @@ namespace GGemCo2DCore
         private const float DefaultMaxDistance = 10f;
         private const int RaycastBufferSize = 32;
 
-        private StruckTableProjectile _info;
+        private StruckTableLaser _info;
         private MetadataLaser _runtime;
         private CharacterBase _owner;
         private CharacterBase _targetObject;
@@ -45,7 +45,7 @@ namespace GGemCo2DCore
         /// </summary>
         /// <param name="info">정적 레이저 테이블 데이터입니다.</param>
         /// <param name="metadata">런타임 레이저 메타데이터입니다.</param>
-        public void Initialize(StruckTableProjectile info, MetadataLaser metadata)
+        public void Initialize(StruckTableLaser info, MetadataLaser metadata)
         {
             if (info == null || metadata == null)
             {
@@ -62,16 +62,17 @@ namespace GGemCo2DCore
             _skillUid = metadata.SkillUid;
             _attackId = metadata.AttackId;
             _targetPoint = metadata.TargetPositionOverride;
-            _durationSeconds = ResolveDurationSeconds(metadata);
-            _tickIntervalSeconds = ResolveTickIntervalSeconds(metadata);
-            _maxDistance = ResolveConfiguredMaxDistance(metadata);
+            _durationSeconds = ResolveDurationSeconds(info, metadata);
+            _tickIntervalSeconds = ResolveTickIntervalSeconds(info, metadata);
+            _maxDistance = ResolveConfiguredMaxDistance(info, metadata);
 
             if (_owner != null)
                 gameObject.layer = _owner.gameObject.layer;
 
-            _visual = ProjectileVisualFactory.Attach(transform, info, metadata.ToVisualMetadata());
+            StruckTableProjectile visualInfo = CreateVisualProjectileInfo(info);
+            _visual = ProjectileVisualFactory.Attach(transform, visualInfo, metadata.ToVisualMetadata());
             _laserVisual = _visual as IProjectileLaserVisual;
-            _visual?.OnSpawn(new ProjectileVisualSpawnContext(transform, info, metadata.ToVisualMetadata()));
+            _visual?.OnSpawn(new ProjectileVisualSpawnContext(transform, visualInfo, metadata.ToVisualMetadata()));
 
             _initialized = true;
         }
@@ -151,10 +152,6 @@ namespace GGemCo2DCore
                 ? (bestHit.point != Vector2.zero ? (Vector3)bestHit.point : (Vector3)(start + direction * bestHit.distance))
                 : (Vector3)(start + direction * _maxDistance);
 
-            _currentTargets.Clear();
-            if (hasBestHit)
-                TryApplyDamage(bestHit.collider, bestHit.point, now);
-
             ReleaseExitedTargets();
             CleanupStaleTickEntries();
 
@@ -188,7 +185,7 @@ namespace GGemCo2DCore
         /// <returns>해석된 정규화 방향입니다.</returns>
         private Vector2 ResolveCurrentDirection(Vector2 start)
         {
-            if (_runtime != null && _runtime.UpdateAimContinuously)
+            if (ShouldUpdateAimContinuously())
             {
                 if (_targetObject != null)
                     return ResolveDirection(start, _targetObject.transform.position);
@@ -211,6 +208,18 @@ namespace GGemCo2DCore
                 fallback = Vector2.left;
 
             return fallback;
+        }
+
+        /// <summary>
+        /// 에임을 지속적으로 갱신할지 여부를 계산합니다.
+        /// - 런타임 오버라이드가 우선하며, 없으면 테이블 AimUpdateMode를 사용합니다.
+        /// </summary>
+        private bool ShouldUpdateAimContinuously()
+        {
+            if (_runtime != null && _runtime.UpdateAimContinuously)
+                return true;
+
+            return _info != null && _info.AimUpdateMode == LaserConstants.AimUpdateMode.Continuous;
         }
 
         /// <summary>
@@ -250,15 +259,16 @@ namespace GGemCo2DCore
         }
 
         /// <summary>
-        /// 유효한 가장 가까운 충돌 대상을 Raycast로 찾습니다.
-        /// - 시전자 자신 및 시전자 소유 Collider는 제외합니다.
-        /// - 지면과 적대 타겟만 유효한 충돌 후보로 취급합니다.
+        /// 현재 정책에 맞는 레이캐스트 적중 결과를 찾습니다.
+        /// - FirstHitOnly는 가장 가까운 적대 대상 하나만 데미지를 적용합니다.
+        /// - PierceHostiles는 사거리 내의 모든 적대 대상을 처리합니다.
+        /// - 빔의 최종 끝점은 BlockMode와 HitMode를 함께 고려해 계산합니다.
         /// </summary>
         /// <param name="start">레이캐스트 시작점입니다.</param>
         /// <param name="direction">레이캐스트 방향입니다.</param>
         /// <param name="distance">최대 사거리입니다.</param>
-        /// <param name="bestHit">가장 가까운 유효 적중 결과입니다.</param>
-        /// <returns>유효한 적중 결과가 있으면 true를 반환합니다.</returns>
+        /// <param name="bestHit">최종 끝점을 결정하는 유효 적중 결과입니다.</param>
+        /// <returns>끝점을 제한하는 유효 적중이 있으면 true를 반환합니다.</returns>
         private bool TryRaycastNearestValidHit(Vector2 start, Vector2 direction, float distance, out RaycastHit2D bestHit)
         {
             bestHit = default;
@@ -272,12 +282,23 @@ namespace GGemCo2DCore
             filter.SetLayerMask(layerMask);
 
             int count = Physics2D.Raycast(start, direction, filter, _raycastResults, distance);
-
             if (count <= 0)
                 return false;
 
-            float bestDistance = float.PositiveInfinity;
-            bool found = false;
+            _currentTargets.Clear();
+
+            bool hasNearestGround = false;
+            RaycastHit2D nearestGround = default;
+            bool hasNearestHostile = false;
+            RaycastHit2D nearestHostile = default;
+
+            LaserConstants.BlockMode blockMode = _info != null
+                ? _info.BlockMode
+                : LaserConstants.BlockMode.StopAtGroundOrHostile;
+            LaserConstants.HitMode hitMode = _info != null
+                ? _info.HitMode
+                : LaserConstants.HitMode.FirstHitOnly;
+
             for (int i = 0; i < count; i++)
             {
                 RaycastHit2D hit = _raycastResults[i];
@@ -292,36 +313,71 @@ namespace GGemCo2DCore
                         continue;
                 }
 
-                if (!IsValidBlockingHit(col))
+                bool isGround = col.CompareTag(ConfigTags.GetValue(ConfigTags.Keys.MapGround));
+                if (isGround)
+                {
+                    if (!hasNearestGround || hit.distance < nearestGround.distance)
+                    {
+                        hasNearestGround = true;
+                        nearestGround = hit;
+                    }
+
+                    continue;
+                }
+
+                if (!CombatHitTargetUtility.TryResolveHostileTarget(_owner, col, out _))
                     continue;
 
-                if (hit.distance < bestDistance)
+                if (!hasNearestHostile || hit.distance < nearestHostile.distance)
                 {
-                    bestDistance = hit.distance;
-                    bestHit = hit;
-                    found = true;
+                    hasNearestHostile = true;
+                    nearestHostile = hit;
                 }
+
+                if (hitMode == LaserConstants.HitMode.PierceHostiles)
+                    TryApplyDamage(col, hit.point, Time.time);
             }
 
-            return found;
-        }
+            if (hitMode == LaserConstants.HitMode.FirstHitOnly && hasNearestHostile)
+                TryApplyDamage(nearestHostile.collider, nearestHostile.point, Time.time);
 
-        /// <summary>
-        /// 현재 충돌 Collider가 레이저를 멈추는 유효한 충돌인지 확인합니다.
-        /// - 지면은 항상 유효합니다.
-        /// - 캐릭터는 시전자와 적대 관계일 때만 유효합니다.
-        /// </summary>
-        /// <param name="col">검사할 Collider입니다.</param>
-        /// <returns>유효한 blocking hit이면 true를 반환합니다.</returns>
-        private bool IsValidBlockingHit(Collider2D col)
-        {
-            if (!col)
-                return false;
+            switch (blockMode)
+            {
+                case LaserConstants.BlockMode.StopAtGround:
+                    if (hasNearestGround)
+                    {
+                        bestHit = nearestGround;
+                        return true;
+                    }
+                    break;
 
-            if (col.CompareTag(ConfigTags.GetValue(ConfigTags.Keys.MapGround)))
-                return true;
+                case LaserConstants.BlockMode.StopAtHostile:
+                    if (hitMode == LaserConstants.HitMode.FirstHitOnly && hasNearestHostile)
+                    {
+                        bestHit = nearestHostile;
+                        return true;
+                    }
+                    break;
 
-            return CombatHitTargetUtility.TryResolveHostileTarget(_owner, col, out _);
+                case LaserConstants.BlockMode.StopAtGroundOrHostile:
+                    if (hitMode == LaserConstants.HitMode.FirstHitOnly && hasNearestHostile)
+                    {
+                        if (!hasNearestGround || nearestHostile.distance <= nearestGround.distance)
+                        {
+                            bestHit = nearestHostile;
+                            return true;
+                        }
+                    }
+
+                    if (hasNearestGround)
+                    {
+                        bestHit = nearestGround;
+                        return true;
+                    }
+                    break;
+            }
+
+            return false;
         }
 
         /// <summary>
@@ -349,8 +405,18 @@ namespace GGemCo2DCore
                 return;
             }
 
-            if (_lastTickDamageTimes.TryGetValue(target, out float lastTime) && now - lastTime < _tickIntervalSeconds)
+            if (!_lastTickDamageTimes.TryGetValue(target, out float lastTime))
+            {
+                if (_info != null && !_info.TickOnSpawn)
+                {
+                    _lastTickDamageTimes[target] = now;
+                    return;
+                }
+            }
+            else if (now - lastTime < _tickIntervalSeconds)
+            {
                 return;
+            }
 
             _lastTickDamageTimes[target] = now;
             ApplyDamageToTarget(target, col, hitPosition);
@@ -447,43 +513,68 @@ namespace GGemCo2DCore
             Destroy(gameObject);
         }
 
+
         /// <summary>
-        /// 런타임 메타데이터에서 지속 시간을 해석합니다.
+        /// 레이저 전용 정적 데이터를 비주얼 시스템에서 요구하는 Projectile 정적 데이터로 변환합니다.
         /// </summary>
-        /// <param name="metadata">런타임 레이저 메타데이터입니다.</param>
-        /// <returns>사용할 지속 시간입니다.</returns>
-        private static float ResolveDurationSeconds(MetadataLaser metadata)
+        /// <param name="info">레이저 정적 데이터입니다.</param>
+        /// <returns>비주얼 표현에 필요한 Projectile 호환 정적 데이터입니다.</returns>
+        private static StruckTableProjectile CreateVisualProjectileInfo(StruckTableLaser info)
+        {
+            if (info == null)
+                return new StruckTableProjectile();
+
+            return new StruckTableProjectile
+            {
+                Uid = info.Uid,
+                Type = ProjectileConstants.Type.Laser,
+                Name = info.Name,
+                VfxUid = info.VfxUid,
+                VfxScale = info.VfxScale,
+                StartPosition = info.StartPosition,
+                HitVfxUid = info.HitVfxUid,
+                RotateByMoveDirection = info.RotateByMoveDirection,
+            };
+        }
+
+        /// <summary>
+        /// 레이저 지속 시간을 해석합니다.
+        /// </summary>
+        private static float ResolveDurationSeconds(StruckTableLaser info, MetadataLaser metadata)
         {
             if (metadata != null && metadata.UseDurationOverride)
                 return metadata.DurationOverride >= 0f ? metadata.DurationOverride : -1f;
+
+            if (info != null)
+                return Mathf.Max(0f, info.Duration);
 
             return DefaultDurationSeconds;
         }
 
         /// <summary>
-        /// 런타임 메타데이터에서 틱 간격을 해석합니다.
+        /// 레이저 틱 간격을 해석합니다.
         /// </summary>
-        /// <param name="metadata">런타임 레이저 메타데이터입니다.</param>
-        /// <returns>사용할 틱 간격입니다.</returns>
-        private static float ResolveTickIntervalSeconds(MetadataLaser metadata)
+        private static float ResolveTickIntervalSeconds(StruckTableLaser info, MetadataLaser metadata)
         {
             if (metadata != null && metadata.UseTickIntervalOverride)
                 return Mathf.Max(0f, metadata.TickIntervalOverride);
+
+            if (info != null)
+                return Mathf.Max(0f, info.TickInterval);
 
             return 0f;
         }
 
         /// <summary>
-        /// 런타임 메타데이터에서 최대 사거리를 해석합니다.
-        /// - 명시적 오버라이드가 있으면 이를 사용합니다.
-        /// - 없으면 목표점 기반 거리 또는 기본값을 사용합니다.
+        /// 레이저 최대 사거리를 해석합니다.
         /// </summary>
-        /// <param name="metadata">런타임 레이저 메타데이터입니다.</param>
-        /// <returns>사용할 최대 사거리입니다.</returns>
-        private float ResolveConfiguredMaxDistance(MetadataLaser metadata)
+        private float ResolveConfiguredMaxDistance(StruckTableLaser info, MetadataLaser metadata)
         {
             if (metadata != null && metadata.UseMaxDistanceOverride && metadata.MaxDistanceOverride > 0f)
                 return metadata.MaxDistanceOverride;
+
+            if (info != null && info.MaxDistance > 0f)
+                return info.MaxDistance;
 
             Vector2 start = ResolveCurrentStartPoint();
             if (metadata != null)
@@ -497,6 +588,7 @@ namespace GGemCo2DCore
 
             return DefaultMaxDistance;
         }
+
 
         /// <summary>
         /// 레이저가 제거될 때 비주얼 정리를 수행합니다.

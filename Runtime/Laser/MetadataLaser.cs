@@ -4,12 +4,17 @@ namespace GGemCo2DCore
 {
     /// <summary>
     /// 레이저 발사 시점의 런타임 파라미터입니다.
-    /// - 정적 정의는 기존 projectile 테이블(Type=Laser)을 재사용합니다.
+    /// - 정적 정의는 laser 테이블을 참조합니다.
     /// - 동적 값(데미지/지속 시간/사거리/표현 오버라이드)은 이 메타데이터로 전달합니다.
     /// </summary>
     public sealed class MetadataLaser
     {
         public readonly int Uid;
+
+        /// <summary>
+        /// 레이저 정적 테이블 UID입니다.
+        /// </summary>
+        public int LaserUid => Uid;
         public readonly CharacterBase Owner;
         public readonly CharacterBase Target;
         public readonly bool UseTargetPositionOverride;
@@ -36,7 +41,7 @@ namespace GGemCo2DCore
         /// <summary>
         /// 레이저 런타임 메타데이터를 생성합니다.
         /// </summary>
-        /// <param name="uid">기존 projectile 테이블(Type=Laser) UID입니다.</param>
+        /// <param name="uid">laser 테이블 UID입니다.</param>
         /// <param name="damageType">적용할 데미지 타입입니다.</param>
         /// <param name="damage">적용할 데미지 값입니다.</param>
         /// <param name="target">고정 타겟 캐릭터입니다.</param>

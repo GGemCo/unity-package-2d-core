@@ -5,7 +5,7 @@ namespace GGemCo2DCore
     /// <summary>
     /// 레이저 인스턴스를 생성하는 전용 팩토리입니다.
     /// - 기존 ProjectileManager와 분리된 신규 시스템입니다.
-    /// - 정적 데이터는 projectile 테이블(Type=Laser)만 재사용합니다.
+    /// - 정적 데이터는 laser 테이블을 사용합니다.
     /// </summary>
     public sealed class LaserManager
     {
@@ -39,16 +39,10 @@ namespace GGemCo2DCore
                 return null;
             }
 
-            StruckTableProjectile info = _table.GetProjectileData(metadata.Uid);
+            StruckTableLaser info = _table.GetLaserData(metadata.LaserUid);
             if (info == null)
             {
-                GcLogger.LogError($"[LaserManager] Unknown laser uid={metadata.Uid}");
-                return null;
-            }
-
-            if (info.Type != ProjectileConstants.Type.Laser)
-            {
-                GcLogger.LogError($"[LaserManager] uid={metadata.Uid} is not a Laser type. currentType={info.Type}");
+                GcLogger.LogError($"[LaserManager] Unknown laser uid={metadata.LaserUid}");
                 return null;
             }
 

@@ -39,6 +39,7 @@ namespace GGemCo2DCoreEditor
             UseCrowdControlKnockDown,
             UseCrowdControlKnockUp,
             UseProjectile,
+            UseLaser,
             UseItem,
             OpenWindow,
             UseCameraShake,
@@ -104,6 +105,7 @@ namespace GGemCo2DCoreEditor
         public const string NameToolUseCrowdControlKnockDown = NameToolTest + "CrowdControl/KnockDown 사용툴";
         public const string NameToolUseCrowdControlKnockUp = NameToolTest + "CrowdControl/KnockUp 사용툴";
         public const string NameToolUseProjectile = NameToolTest + "프로젝타일 사용툴";
+        public const string NameToolUseLaser = NameToolTest + "레이저 사용툴";
         public const string NameToolUseItem = NameToolTest + "아이템 사용툴";
         public const string NameToolOpenWindow = NameToolTest + "윈도우 열기";
         public const string NameToolUseCameraShake = NameToolTest + "카메라 Shake 사용툴";

@@ -50,6 +50,7 @@ namespace GGemCo2DCore
         public const string Quest            = "quest";
         public const string License          = "license";
         public const string Projectile       = "projectile";
+        public const string Laser            = "laser";
         public const string ProjectileLinear = "projectile_linear";
         public const string ProjectileArc    = "projectile_arc";
         public const string ProjectilePath   = "projectile_path";
@@ -99,6 +100,7 @@ namespace GGemCo2DCore
         public static readonly AddressableAssetInfo TableQuest           = Make(Quest);
         public static readonly AddressableAssetInfo TableLicense         = Make(License);
         public static readonly AddressableAssetInfo TableProjectile      = Make(Projectile);
+        public static readonly AddressableAssetInfo TableLaser           = Make(Laser);
         public static readonly AddressableAssetInfo TableProjectileLinear = Make(ProjectileLinear);
         public static readonly AddressableAssetInfo TableProjectileArc    = Make(ProjectileArc);
         public static readonly AddressableAssetInfo TableProjectilePath   = Make(ProjectilePath);
@@ -126,7 +128,7 @@ namespace GGemCo2DCore
             TableVfxEffect, TableVfxParticle, TableInteraction,
             TableShop, TableShopItem, TableShopPromotion, TableItemUpgrade, TableItemSalvage, TableItemCraft,
             TableCutscene, TableDialogue, TableQuest, TableLicense,
-            TableProjectile, TableProjectileLinear, TableProjectileArc, TableProjectilePath, TableProjectileLinearThenSegments,
+            TableProjectile, TableLaser, TableProjectileLinear, TableProjectileArc, TableProjectilePath, TableProjectileLinearThenSegments,
             TableSound, TableSimulationTool,
             TableSimulationGrowth, TableCrowdControl, TableCrowdControlKnockBack, TableCrowdControlKnockDown, TableCrowdControlKnockUp, TableCrowdControlKnockDownAir, TableItemUse, TableItemUseAction
         };

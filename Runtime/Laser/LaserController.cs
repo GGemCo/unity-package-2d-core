@@ -6,7 +6,7 @@ namespace GGemCo2DCore
     /// <summary>
     /// 캐릭터가 사용하는 레이저 발사 컨트롤러입니다.
     /// - 기존 ProjectileController와 분리된 전용 경로입니다.
-    /// - projectile 테이블의 Count / SecDelayByOne 규칙은 그대로 재사용합니다.
+    /// - laser 테이블의 Count / SecDelayByOne 규칙을 사용합니다.
     /// </summary>
     public sealed class LaserController
     {
@@ -35,7 +35,7 @@ namespace GGemCo2DCore
 
             _target = metadataLaser.Target;
 
-            StruckTableProjectile info = TableLoaderManager.Instance.GetProjectileData(metadataLaser.Uid);
+            StruckTableLaser info = TableLoaderManager.Instance.GetLaserData(metadataLaser.LaserUid);
             if (info == null)
                 return;
 
@@ -75,12 +75,9 @@ namespace GGemCo2DCore
         /// <param name="info">정적 레이저 테이블 데이터입니다.</param>
         /// <param name="meta">런타임 레이저 메타데이터입니다.</param>
         /// <returns>다발사 처리를 위한 코루틴입니다.</returns>
-        private IEnumerator CreateLaserBurst(StruckTableProjectile info, MetadataLaser meta)
+        private IEnumerator CreateLaserBurst(StruckTableLaser info, MetadataLaser meta)
         {
             if (_laserManager == null || info == null || meta == null)
-                yield break;
-
-            if (info.TargetType == ProjectileConstants.TargetType.Fixed && !_target && !meta.UseTargetPositionOverride)
                 yield break;
 
             int count = Mathf.Max(1, info.Count);
@@ -89,17 +86,13 @@ namespace GGemCo2DCore
                 LaserBeam laser = _laserManager.CreateLaser(meta);
                 if (laser != null)
                 {
-                    if (info.TargetType == ProjectileConstants.TargetType.Fixed && _target)
-                    {
-                        laser.Launch(_target);
-                    }
-                    else if (meta.UseTargetPositionOverride)
+                    if (meta.UseTargetPositionOverride)
                     {
                         laser.Launch(meta.TargetPositionOverride);
                     }
                     else if (_target)
                     {
-                        laser.Launch(_target.transform.position);
+                        laser.Launch(_target);
                     }
                     else
                     {

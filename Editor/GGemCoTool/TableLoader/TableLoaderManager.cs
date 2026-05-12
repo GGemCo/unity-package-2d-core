@@ -85,6 +85,14 @@ namespace GGemCo2DCoreEditor
         public static TableVfxParticle LoadVfxParticleTable(bool forceReload = true)
             => LoadTable<TableVfxParticle>(ConfigAddressableTable.TableVfxParticle.Path, forceReload);
 
+        /// <summary>
+        /// 에디터 환경에서 laser 테이블을 로드합니다.
+        /// </summary>
+        /// <param name="forceReload">캐시를 무시하고 다시 로드할지 여부입니다.</param>
+        /// <returns>로드된 laser 테이블입니다.</returns>
+        public static TableLaser LoadLaserTable(bool forceReload = true)
+            => LoadTable<TableLaser>(ConfigAddressableTable.TableLaser.Path, forceReload);
+
         public static Dictionary<int, VfxRuntimeData> LoadVfxRuntimeData(bool forceReload = true)
         {
             var merged = new Dictionary<int, VfxRuntimeData>();

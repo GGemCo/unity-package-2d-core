@@ -48,6 +48,7 @@ namespace GGemCo2DCore
         public TableQuest TableQuest { get; private set; } = new TableQuest();
         public TableLicense TableLicense { get; private set; } = new TableLicense();
         public TableProjectile TableProjectile { get; private set; } = new TableProjectile();
+        public TableLaser TableLaser { get; private set; } = new TableLaser();
         public TableProjectileLinear TableProjectileLinear { get; private set; } = new TableProjectileLinear();
         public TableProjectileArc TableProjectileArc { get; private set; } = new TableProjectileArc();
         public TableProjectilePath TableProjectilePath { get; private set; } = new TableProjectilePath();
@@ -107,6 +108,7 @@ namespace GGemCo2DCore
                 registry.Register(TableQuest);
                 registry.Register(TableLicense);
                 registry.Register(TableProjectile);
+                registry.Register(TableLaser);
                 registry.Register(TableProjectileLinear);
                 registry.Register(TableProjectileArc);
                 registry.Register(TableProjectilePath);
@@ -386,6 +388,25 @@ namespace GGemCo2DCore
             data = GetLicenseDataByKey(key, logIfMissing);
             return data != null;
         }
+
+        /// <summary>
+        /// laser.txt 정적 데이터를 조회합니다.
+        /// </summary>
+        /// <param name="uid">조회할 레이저 UID입니다.</param>
+        /// <param name="logIfMissing">조회 실패 시 경고 로그를 남길지 여부입니다.</param>
+        /// <returns>찾은 레이저 데이터입니다. 없으면 null을 반환합니다.</returns>
+        public StruckTableLaser GetLaserData(int uid, bool logIfMissing = true)
+            => GetData(TableLaser, uid, "Laser", (t, i) => t.GetDataByUid(i), logIfMissing);
+
+        /// <summary>
+        /// laser.txt 정적 데이터 조회를 시도합니다.
+        /// </summary>
+        /// <param name="uid">조회할 레이저 UID입니다.</param>
+        /// <param name="data">조회에 성공하면 레이저 데이터가 설정됩니다.</param>
+        /// <param name="logIfMissing">조회 실패 시 경고 로그를 남길지 여부입니다.</param>
+        /// <returns>레이저 데이터를 찾으면 true를 반환합니다.</returns>
+        public bool TryGetLaserData(int uid, out StruckTableLaser data, bool logIfMissing = false)
+            => TryGetData(TableLaser, uid, out data, "Laser", (t, i) => t.GetDataByUid(i), logIfMissing);
 
         /// <summary>
         /// projectile.txt 공용 Row와 projectile_linear/arc/path 상세 Row를 병합해 발사체 정의를 조회합니다.
