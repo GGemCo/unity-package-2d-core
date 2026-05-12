@@ -547,10 +547,19 @@ namespace GGemCo2DCore
 
         #region Helpers
 
+        /// <summary>
+        /// 이동 벡터를 기준으로 발사체의 Z축 회전을 갱신합니다.
+        /// - projectile 테이블의 RotateByMoveDirection이 꺼져 있으면 회전을 변경하지 않습니다.
+        /// </summary>
+        /// <param name="delta">이전 위치에서 현재 위치까지 이동한 월드 좌표 변화량입니다.</param>
         protected void ApplyRotationByDelta(Vector2 delta)
         {
-            // 이동 벡터 기준 Z-회전.
-            if (delta.sqrMagnitude <= 0.0001f) return;
+            if (Info != null && !Info.RotateByMoveDirection)
+                return;
+
+            if (delta.sqrMagnitude <= 0.0001f)
+                return;
+
             float angle = Mathf.Atan2(delta.y, delta.x) * Mathf.Rad2Deg;
             transform.rotation = Quaternion.Euler(0f, 0f, angle);
         }

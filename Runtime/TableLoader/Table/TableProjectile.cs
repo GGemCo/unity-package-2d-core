@@ -60,6 +60,12 @@ namespace GGemCo2DCore
         public float SecDelayByOne;
         public ProjectileConstants.DamageApplyMode DamageApplyMode;
 
+        /// <summary>
+        /// 이동 방향을 기준으로 발사체 Transform을 자동 회전할지 여부입니다.
+        /// - 컬럼이 없는 기존 데이터는 true로 보정하여 기존 동작을 유지합니다.
+        /// </summary>
+        public bool RotateByMoveDirection = true;
+
         // ---- Linear detail ----
         public ProjectileConstants.BoundaryMode BoundaryMode;
         public float BoundaryPadding;
@@ -338,21 +344,7 @@ namespace GGemCo2DCore
                 Count = GetInt(data, 1, "Count"),
                 SecDelayByOne = GetFloat(data, 0f, "SecDelayByOne"),
                 DamageApplyMode = GetEnum(data, ProjectileConstants.DamageApplyMode.OnHitDestroy, "DamageApplyMode"),
-
-                // 레거시 projectile.txt가 상세 컬럼까지 들고 있던 경우를 위한 fallback 값입니다.
-                BoundaryMode = GetEnum(data, ProjectileConstants.BoundaryMode.Destroy, "BoundaryMode"),
-                BoundaryPadding = GetFloat(data, 0f, "BoundaryPadding"),
-                BounceMaxCount = GetInt(data, 0, "BounceMaxCount"),
-                BounceSpeedMultiplier = GetFloat(data, 1f, "BounceSpeedMultiplier"),
-                ArcHeightMin = GetInt(data, 0, "ArcHeightMin"),
-                ArcHeightMax = GetInt(data, 0, "ArcHeightMax"),
-                TickDamageInterval = GetFloat(data, 0f, "TickDamageInterval"),
-                TickOnSpawn = GetBool(data, false, "TickOnSpawn"),
-                PathCoordinateMode = GetEnum(data, ProjectileConstants.PathCoordinateMode.StartRelative, "PathCoordinateMode"),
-                PathPoints = GetVector2Array(data, "PathPoints"),
-                PathDuration = GetFloat(data, 0f, "PathDuration"),
-                SegmentDirectionMode = GetEnum(data, ProjectileConstants.SegmentDirectionMode.World, "SegmentDirectionMode"),
-                MoveSegments = GetMoveSegments(data, "MoveSegments", "Segments"),
+                RotateByMoveDirection = GetBool(data, true, "RotateByMoveDirection"),
             };
         }
 
@@ -503,6 +495,7 @@ namespace GGemCo2DCore
                 Count = source.Count,
                 SecDelayByOne = source.SecDelayByOne,
                 DamageApplyMode = source.DamageApplyMode,
+                RotateByMoveDirection = source.RotateByMoveDirection,
                 BoundaryMode = source.BoundaryMode,
                 BoundaryPadding = source.BoundaryPadding,
                 BounceMaxCount = source.BounceMaxCount,
