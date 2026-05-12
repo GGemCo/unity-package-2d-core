@@ -34,6 +34,15 @@ namespace GGemCo2DCore
             return CreateVfx(VfxSpawnRequest.FromAnimationEvent(struckAnimationEventVfx));
         }
 
+        /// <summary>
+        /// VFX 생성 요청을 기준으로 프리팹 인스턴스를 풀에서 가져와 초기화하고 활성화합니다.
+        /// </summary>
+        /// <param name="request">VFX Uid, 위치, 소유자, 지속 시간 등 생성 요청 데이터입니다.</param>
+        /// <returns>생성 및 초기화된 VFX Behaviour입니다. 생성할 수 없으면 null을 반환합니다.</returns>
+        /// <remarks>
+        /// 풀에서 재사용되는 인스턴스는 이전 enabled 상태가 남을 수 있으므로,
+        /// 활성화 전에 필수 컴포넌트의 enabled 상태를 복구합니다.
+        /// </remarks>
         public VfxBehaviourBase CreateVfx(VfxSpawnRequest request)
         {
             if (request.VfxUid <= 0)
@@ -60,8 +69,10 @@ namespace GGemCo2DCore
                 return null;
 
             var spawnPolicy = ResolveSpawnPolicy(info, request);
-            EnsureAnimationController(instance, behaviour, info);
+            IVfxAnimationController animationController = EnsureAnimationController(instance, behaviour, info);
+            EnsureRequiredComponentsEnabled(instance, behaviour, animationController);
             behaviour.Initialize(info, spawnPolicy, ReleaseToPool);
+            EnsureRequiredComponentsEnabled(instance, behaviour, animationController);
             ApplyRequest(instance, behaviour, spawnPolicy, request);
             instance.SetActive(true);
             return behaviour;
@@ -221,10 +232,17 @@ namespace GGemCo2DCore
             return resolved;
         }
 
-        private void EnsureAnimationController(GameObject instance, VfxBehaviourBase behaviour, VfxRuntimeData info)
+        /// <summary>
+        /// VFX 종류에 맞는 애니메이션 컨트롤러를 보장하고 이벤트 리스너를 연결합니다.
+        /// </summary>
+        /// <param name="instance">VFX 인스턴스 GameObject입니다.</param>
+        /// <param name="behaviour">VFX 생명주기를 담당하는 Behaviour입니다.</param>
+        /// <param name="info">VFX 런타임 데이터입니다.</param>
+        /// <returns>연결된 VFX 애니메이션 컨트롤러입니다. 애니메이션 컨트롤러가 필요 없으면 null을 반환합니다.</returns>
+        private IVfxAnimationController EnsureAnimationController(GameObject instance, VfxBehaviourBase behaviour, VfxRuntimeData info)
         {
             if (!(behaviour is VfxBehaviourEffect effectBehaviour) || info == null || info is VfxParticleRuntimeData)
-                return;
+                return null;
 
             IVfxAnimationController vfxAnimationController = null;
 #if GGEMCO_USE_SPINE
@@ -246,6 +264,43 @@ namespace GGemCo2DCore
             }
 
             effectBehaviour.VfxAnimationController = vfxAnimationController;
+            return vfxAnimationController;
+        }
+
+        /// <summary>
+        /// VFX 재생에 필요한 필수 컴포넌트가 비활성화되어 있으면 다시 활성화합니다.
+        /// </summary>
+        /// <param name="instance">VFX 인스턴스 GameObject입니다.</param>
+        /// <param name="behaviour">VFX 생명주기를 담당하는 Behaviour입니다.</param>
+        /// <param name="animationController">VFX 애니메이션 컨트롤러입니다.</param>
+        /// <remarks>
+        /// 풀에서 꺼낸 인스턴스나 프리팹에 남아 있는 disabled 상태를 복구하지 않으면,
+        /// VfxBehaviourBase.OnEnable이 호출되지 않아 시작 애니메이션이 재생되지 않습니다.
+        /// </remarks>
+        private static void EnsureRequiredComponentsEnabled(
+            GameObject instance,
+            VfxBehaviourBase behaviour,
+            IVfxAnimationController animationController)
+        {
+            SetBehaviourEnabled(instance != null ? instance.GetComponent<Animator>() : null);
+            SetBehaviourEnabled(behaviour);
+
+            if (animationController is Behaviour controllerBehaviour)
+                SetBehaviourEnabled(controllerBehaviour);
+
+            SetBehaviourEnabled(instance != null ? instance.GetComponent<VfxFadeController>() : null);
+        }
+
+        /// <summary>
+        /// Behaviour 컴포넌트가 꺼져 있으면 켭니다.
+        /// </summary>
+        /// <param name="behaviour">활성화할 Behaviour 컴포넌트입니다.</param>
+        private static void SetBehaviourEnabled(Behaviour behaviour)
+        {
+            if (behaviour == null || behaviour.enabled)
+                return;
+
+            behaviour.enabled = true;
         }
 
         private static T GetOrAdd<T>(GameObject instance) where T : Component
