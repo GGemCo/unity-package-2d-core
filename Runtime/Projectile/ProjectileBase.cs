@@ -766,6 +766,8 @@ namespace GGemCo2DCore
 
         /// <summary>
         /// 현재 위치에서 히트 Visual 콜백을 실행합니다.
+        /// - 이 호출은 충돌 즉시 반응(예: Hit VFX 생성)만 전달합니다.
+        /// - 발사체 종료 여부와 attached VFX 수명 정리는 별도의 종료 경로가 담당합니다.
         /// </summary>
         /// <param name="hitCollider">히트 대상 Collider입니다.</param>
         protected void NotifyHitVisual(Collider2D hitCollider)
@@ -776,6 +778,7 @@ namespace GGemCo2DCore
         /// <summary>
         /// 지정한 월드 위치에서 히트 Visual 콜백을 실행합니다.
         /// - 스윕 적중처럼 Transform 위치와 실제 적중 지점을 분리해야 할 때 사용합니다.
+        /// - 히트 시점에 attached VFX를 종료하지 않고, 부모 발사체의 실제 종료 시점에 수명을 맞춥니다.
         /// </summary>
         /// <param name="hitCollider">히트 대상 Collider입니다.</param>
         /// <param name="worldPosition">히트 연출을 재생할 월드 위치입니다.</param>

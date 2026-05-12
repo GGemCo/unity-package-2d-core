@@ -21,6 +21,9 @@ namespace GGemCo2DCore
 
         /// <summary>
         /// 타겟/지면 등에 히트했을 때 호출된다.
+        /// - 이 콜백은 "충돌 사실"만 알리며, 발사체 종료 여부를 직접 결정하지 않는다.
+        /// - 시각 구현체는 히트 이펙트 생성 같은 즉시 반응만 담당하고,
+        ///   실제 수명 종료 연출은 OnDespawn / TryPlayEnd 경로를 따른다.
         /// </summary>
         void OnHit(in ProjectileVisualHitContext context);
 

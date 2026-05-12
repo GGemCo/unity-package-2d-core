@@ -68,26 +68,20 @@ namespace GGemCo2DCore
         }
 
         /// <summary>
-        /// Projectile 충돌 시 Hit VFX를 생성하거나 기본 VFX의 종료 애니메이션을 시작합니다.
+        /// Projectile 충돌 시 Hit VFX만 생성합니다.
+        /// - attached VFX의 수명은 충돌 시점이 아니라 부모 Projectile의 실제 종료 시점을 따릅니다.
+        /// - 따라서 HitVfxUid가 없더라도 여기서 attached VFX 종료 애니메이션을 시작하지 않습니다.
         /// </summary>
         /// <param name="context">충돌 위치와 시전자 정보를 담은 컨텍스트입니다.</param>
         public void OnHit(in ProjectileVisualHitContext context)
         {
-            if (SceneGame.Instance == null) return;
+            if (SceneGame.Instance == null)
+                return;
 
-            // HitVfxUid가 있으면 별도 생성, 없으면 End 애니 재생
-            if (_static != null && _static.HitVfxUid > 0)
-            {
-                var hit = SceneGame.Instance.VfxManager.CreateVfx(_static.HitVfxUid);
-                if (hit == null) return;
+            if (_static == null || _static.HitVfxUid <= 0)
+                return;
 
-                hit.SetCreateCharacter(context.FromCharacter);
-                hit.transform.position = context.HitPosition;
-            }
-            else
-            {
-                PlayEndAnimationWithoutWait();
-            }
+            SpawnHitVfx(context);
         }
 
         /// <summary>
@@ -145,15 +139,22 @@ namespace GGemCo2DCore
         }
 
         /// <summary>
-        /// 종료 완료를 기다리지 않는 충돌 처리용 종료 애니메이션을 시작합니다.
+        /// 충돌 지점에 독립적인 Hit VFX를 생성합니다.
+        /// - attached VFX와 분리된 1회성 연출이므로 부모 Projectile 수명과 무관하게 재생됩니다.
         /// </summary>
-        private void PlayEndAnimationWithoutWait()
+        /// <param name="context">충돌 위치와 시전자 정보를 담은 컨텍스트입니다.</param>
+        private void SpawnHitVfx(in ProjectileVisualHitContext context)
         {
-            if (_vfx == null)
+            var vfxManager = SceneGame.Instance != null ? SceneGame.Instance.VfxManager : null;
+            if (vfxManager == null || _static == null || _static.HitVfxUid <= 0)
                 return;
 
-            _isEndAnimationPlaying = true;
-            _vfx.PlayEndAnimation();
+            var hit = vfxManager.CreateVfx(_static.HitVfxUid);
+            if (hit == null)
+                return;
+
+            hit.SetCreateCharacter(context.FromCharacter);
+            hit.transform.position = context.HitPosition;
         }
 
         /// <summary>
