@@ -32,8 +32,11 @@ namespace GGemCo2DCore
         public readonly int VisualVfxUidOverride;
         public readonly bool UseDurationOverride;
         public readonly float DurationOverride;
-        public readonly bool UseTickIntervalOverride;
-        public readonly float TickIntervalOverride;
+        public readonly bool UseDamageTimingOverride;
+        public readonly float DamageStartDelayOverride;
+        public readonly float DamageActiveDurationOverride;
+        public readonly float DamageTickIntervalOverride;
+        public readonly bool DamageTickOnStartOverride;
         public readonly bool UseMaxDistanceOverride;
         public readonly float MaxDistanceOverride;
         public readonly bool UpdateAimContinuously;
@@ -65,8 +68,11 @@ namespace GGemCo2DCore
         /// <param name="elementGaugeApplications">적중 시 추가할 속성 게이지 목록입니다.</param>
         /// <param name="useDurationOverride">지속 시간 오버라이드 사용 여부입니다.</param>
         /// <param name="durationOverride">지속 시간 오버라이드 값입니다.</param>
-        /// <param name="useTickIntervalOverride">틱 간격 오버라이드 사용 여부입니다.</param>
-        /// <param name="tickIntervalOverride">틱 간격 오버라이드 값입니다.</param>
+        /// <param name="useDamageTimingOverride">데미지 타이밍 오버라이드 사용 여부입니다.</param>
+        /// <param name="damageStartDelayOverride">발사 후 데미지 판정을 시작하기까지 대기할 시간입니다.</param>
+        /// <param name="damageActiveDurationOverride">데미지 판정을 유지할 시간입니다. 0 이하이면 레이저 종료까지 유지합니다.</param>
+        /// <param name="damageTickIntervalOverride">같은 대상에게 반복 데미지를 줄 간격입니다. 0이면 진입 시 1회만 적용합니다.</param>
+        /// <param name="damageTickOnStartOverride">데미지 활성 구간에서 처음 감지된 대상에게 즉시 데미지를 줄지 여부입니다.</param>
         /// <param name="useMaxDistanceOverride">최대 사거리 오버라이드 사용 여부입니다.</param>
         /// <param name="maxDistanceOverride">최대 사거리 오버라이드 값입니다.</param>
         /// <param name="updateAimContinuously">지속 시간 동안 에임을 계속 갱신할지 여부입니다.</param>
@@ -95,8 +101,11 @@ namespace GGemCo2DCore
             ElementGaugeApplication[] elementGaugeApplications = null,
             bool useDurationOverride = false,
             float durationOverride = 0.25f,
-            bool useTickIntervalOverride = false,
-            float tickIntervalOverride = 0f,
+            bool useDamageTimingOverride = false,
+            float damageStartDelayOverride = 0f,
+            float damageActiveDurationOverride = -1f,
+            float damageTickIntervalOverride = 0f,
+            bool damageTickOnStartOverride = true,
             bool useMaxDistanceOverride = false,
             float maxDistanceOverride = 0f,
             bool updateAimContinuously = false,
@@ -125,8 +134,11 @@ namespace GGemCo2DCore
             ElementGaugeApplications = elementGaugeApplications;
             UseDurationOverride = useDurationOverride;
             DurationOverride = durationOverride;
-            UseTickIntervalOverride = useTickIntervalOverride;
-            TickIntervalOverride = Mathf.Max(0f, tickIntervalOverride);
+            UseDamageTimingOverride = useDamageTimingOverride;
+            DamageStartDelayOverride = Mathf.Max(0f, damageStartDelayOverride);
+            DamageActiveDurationOverride = damageActiveDurationOverride <= 0f ? -1f : damageActiveDurationOverride;
+            DamageTickIntervalOverride = Mathf.Max(0f, damageTickIntervalOverride);
+            DamageTickOnStartOverride = damageTickOnStartOverride;
             UseMaxDistanceOverride = useMaxDistanceOverride;
             MaxDistanceOverride = Mathf.Max(0f, maxDistanceOverride);
             UpdateAimContinuously = updateAimContinuously;

@@ -31,7 +31,10 @@ namespace GGemCo2DCore
         private bool _launched;
         private bool _isWaitingForEndVisual;
         private float _durationSeconds;
-        private float _tickIntervalSeconds;
+        private float _damageStartDelaySeconds;
+        private float _damageActiveDurationSeconds;
+        private float _damageTickIntervalSeconds;
+        private bool _damageTickOnStart;
         private float _maxDistance;
         private float _elapsed;
         private readonly RaycastHit2D[] _raycastResults = new RaycastHit2D[RaycastBufferSize];
@@ -66,7 +69,10 @@ namespace GGemCo2DCore
             _targetPoint = metadata.TargetPositionOverride;
             _hasTargetPoint = metadata.UseTargetPositionOverride;
             _durationSeconds = ResolveDurationSeconds(info, metadata);
-            _tickIntervalSeconds = ResolveTickIntervalSeconds(info, metadata);
+            _damageStartDelaySeconds = ResolveDamageStartDelaySeconds(info, metadata);
+            _damageActiveDurationSeconds = ResolveDamageActiveDurationSeconds(info, metadata);
+            _damageTickIntervalSeconds = ResolveDamageTickIntervalSeconds(info, metadata);
+            _damageTickOnStart = ResolveDamageTickOnStart(info, metadata);
             _maxDistance = ResolveConfiguredMaxDistance(info, metadata);
 
             if (_owner != null)
@@ -167,7 +173,8 @@ namespace GGemCo2DCore
             ApplyVisualRotation(visualDirection);
 
             RaycastHit2D bestHit = default;
-            bool hasBestHit = TryRaycastNearestValidHit(start, raycastDirection, _maxDistance, out bestHit);
+            bool canApplyDamage = IsDamageWindowActive();
+            bool hasBestHit = TryRaycastNearestValidHit(start, raycastDirection, _maxDistance, canApplyDamage, now, out bestHit);
             float beamDistance = hasBestHit ? Mathf.Max(0f, bestHit.distance) : _maxDistance;
             Vector3 end = start + (Vector3)(visualDirection * beamDistance);
 
@@ -421,6 +428,21 @@ namespace GGemCo2DCore
         }
 
         /// <summary>
+        /// 현재 레이저 생존 시간이 데미지 적용 가능 구간에 포함되는지 확인합니다.
+        /// </summary>
+        /// <returns>데미지 시작 지연을 지났고 활성 지속 시간이 남아 있으면 true를 반환합니다.</returns>
+        private bool IsDamageWindowActive()
+        {
+            if (_elapsed < _damageStartDelaySeconds)
+                return false;
+
+            if (_damageActiveDurationSeconds <= 0f)
+                return true;
+
+            return _elapsed <= _damageStartDelaySeconds + _damageActiveDurationSeconds;
+        }
+
+        /// <summary>
         /// 현재 정책에 맞는 레이캐스트 적중 결과를 찾습니다.
         /// - FirstHitOnly는 가장 가까운 적대 대상 하나만 데미지를 적용합니다.
         /// - PierceHostiles는 사거리 내의 모든 적대 대상을 처리합니다.
@@ -429,9 +451,11 @@ namespace GGemCo2DCore
         /// <param name="start">레이캐스트 시작점입니다.</param>
         /// <param name="direction">레이캐스트 방향입니다.</param>
         /// <param name="distance">최대 사거리입니다.</param>
+        /// <param name="canApplyDamage">이번 평가에서 데미지를 적용할 수 있는지 여부입니다.</param>
+        /// <param name="now">현재 시간입니다.</param>
         /// <param name="bestHit">최종 끝점을 결정하는 유효 적중 결과입니다.</param>
         /// <returns>끝점을 제한하는 유효 적중이 있으면 true를 반환합니다.</returns>
-        private bool TryRaycastNearestValidHit(Vector2 start, Vector2 direction, float distance, out RaycastHit2D bestHit)
+        private bool TryRaycastNearestValidHit(Vector2 start, Vector2 direction, float distance, bool canApplyDamage, float now, out RaycastHit2D bestHit)
         {
             bestHit = default;
 
@@ -496,12 +520,12 @@ namespace GGemCo2DCore
                     nearestHostile = hit;
                 }
 
-                if (hitMode == LaserConstants.HitMode.PierceHostiles)
-                    TryApplyDamage(col, hit.point, Time.time);
+                if (canApplyDamage && hitMode == LaserConstants.HitMode.PierceHostiles)
+                    TryApplyDamage(col, hit.point, now);
             }
 
-            if (hitMode == LaserConstants.HitMode.FirstHitOnly && hasNearestHostile)
-                TryApplyDamage(nearestHostile.collider, nearestHostile.point, Time.time);
+            if (canApplyDamage && hitMode == LaserConstants.HitMode.FirstHitOnly && hasNearestHostile)
+                TryApplyDamage(nearestHostile.collider, nearestHostile.point, now);
 
             switch (blockMode)
             {
@@ -544,8 +568,8 @@ namespace GGemCo2DCore
 
         /// <summary>
         /// 현재 적중한 대상에게 데미지를 적용합니다.
-        /// - tickInterval이 0 이하이면 진입 시 1회만 적용합니다.
-        /// - tickInterval이 0보다 크면 대상별 마지막 적용 시각을 기준으로 주기 데미지를 적용합니다.
+        /// - 데미지 반복 간격이 0 이하이면 진입 시 1회만 적용합니다.
+        /// - 데미지 반복 간격이 0보다 크면 대상별 마지막 적용 시각을 기준으로 주기 데미지를 적용합니다.
         /// </summary>
         /// <param name="col">적중 Collider입니다.</param>
         /// <param name="hitPosition">레이저 적중 지점입니다.</param>
@@ -557,7 +581,7 @@ namespace GGemCo2DCore
 
             _currentTargets.Add(target);
 
-            if (_tickIntervalSeconds <= 0f)
+            if (_damageTickIntervalSeconds <= 0f)
             {
                 if (_latchedTargets.Contains(target))
                     return;
@@ -569,13 +593,13 @@ namespace GGemCo2DCore
 
             if (!_lastTickDamageTimes.TryGetValue(target, out float lastTime))
             {
-                if (_info != null && !_info.TickOnSpawn)
+                if (!_damageTickOnStart)
                 {
                     _lastTickDamageTimes[target] = now;
                     return;
                 }
             }
-            else if (now - lastTime < _tickIntervalSeconds)
+            else if (now - lastTime < _damageTickIntervalSeconds)
             {
                 return;
             }
@@ -715,17 +739,62 @@ namespace GGemCo2DCore
         }
 
         /// <summary>
-        /// 레이저 틱 간격을 해석합니다.
+        /// 레이저 발사 후 데미지 적용을 시작할 지연 시간을 해석합니다.
         /// </summary>
-        private static float ResolveTickIntervalSeconds(StruckTableLaser info, MetadataLaser metadata)
+        /// <param name="info">레이저 테이블 데이터입니다.</param>
+        /// <param name="metadata">레이저 런타임 메타데이터입니다.</param>
+        /// <returns>데미지 시작 지연 시간입니다.</returns>
+        private static float ResolveDamageStartDelaySeconds(StruckTableLaser info, MetadataLaser metadata)
         {
-            if (metadata != null && metadata.UseTickIntervalOverride)
-                return Mathf.Max(0f, metadata.TickIntervalOverride);
+            if (metadata != null && metadata.UseDamageTimingOverride)
+                return Mathf.Max(0f, metadata.DamageStartDelayOverride);
 
-            if (info != null)
-                return Mathf.Max(0f, info.TickInterval);
+            return info != null ? Mathf.Max(0f, info.DamageStartDelay) : 0f;
+        }
 
-            return 0f;
+        /// <summary>
+        /// 데미지 판정을 유지할 시간을 해석합니다.
+        /// </summary>
+        /// <param name="info">레이저 테이블 데이터입니다.</param>
+        /// <param name="metadata">레이저 런타임 메타데이터입니다.</param>
+        /// <returns>데미지 활성 지속 시간입니다. 0 이하이면 레이저 종료까지 유지합니다.</returns>
+        private static float ResolveDamageActiveDurationSeconds(StruckTableLaser info, MetadataLaser metadata)
+        {
+            if (metadata != null && metadata.UseDamageTimingOverride)
+                return metadata.DamageActiveDurationOverride <= 0f ? -1f : metadata.DamageActiveDurationOverride;
+
+            if (info == null)
+                return -1f;
+
+            return info.DamageActiveDuration <= 0f ? -1f : info.DamageActiveDuration;
+        }
+
+        /// <summary>
+        /// 같은 대상에게 반복 데미지를 줄 간격을 해석합니다.
+        /// </summary>
+        /// <param name="info">레이저 테이블 데이터입니다.</param>
+        /// <param name="metadata">레이저 런타임 메타데이터입니다.</param>
+        /// <returns>데미지 틱 간격입니다. 0이면 진입 시 1회만 적용합니다.</returns>
+        private static float ResolveDamageTickIntervalSeconds(StruckTableLaser info, MetadataLaser metadata)
+        {
+            if (metadata != null && metadata.UseDamageTimingOverride)
+                return Mathf.Max(0f, metadata.DamageTickIntervalOverride);
+
+            return info != null ? Mathf.Max(0f, info.DamageTickInterval) : 0f;
+        }
+
+        /// <summary>
+        /// 데미지 활성 구간에서 처음 감지된 대상에게 즉시 데미지를 줄지 해석합니다.
+        /// </summary>
+        /// <param name="info">레이저 테이블 데이터입니다.</param>
+        /// <param name="metadata">레이저 런타임 메타데이터입니다.</param>
+        /// <returns>처음 감지된 대상에게 즉시 데미지를 주면 true를 반환합니다.</returns>
+        private static bool ResolveDamageTickOnStart(StruckTableLaser info, MetadataLaser metadata)
+        {
+            if (metadata != null && metadata.UseDamageTimingOverride)
+                return metadata.DamageTickOnStartOverride;
+
+            return info == null || info.DamageTickOnStart;
         }
 
         /// <summary>

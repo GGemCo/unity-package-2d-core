@@ -21,8 +21,10 @@ namespace GGemCo2DCore
         public bool RotateByMoveDirection = true;
         public float MaxDistance = 10f;
         public float Duration = 0.25f;
-        public float TickInterval;
-        public bool TickOnSpawn = true;
+        public float DamageStartDelay;
+        public float DamageActiveDuration = -1f;
+        public float DamageTickInterval;
+        public bool DamageTickOnStart = true;
         public LaserConstants.BlockMode BlockMode = LaserConstants.BlockMode.StopAtGroundOrHostile;
         public LaserConstants.HitMode HitMode = LaserConstants.HitMode.FirstHitOnly;
         public LaserConstants.AimUpdateMode AimUpdateMode = LaserConstants.AimUpdateMode.Snapshot;
@@ -60,8 +62,10 @@ namespace GGemCo2DCore
                 RotateByMoveDirection = GetBool(data, true, "RotateByMoveDirection"),
                 MaxDistance = Mathf.Max(0.01f, GetFloat(data, 10f, "MaxDistance")),
                 Duration = Mathf.Max(0f, GetFloat(data, 0.25f, "Duration", "DurationSeconds")),
-                TickInterval = Mathf.Max(0f, GetFloat(data, 0f, "TickInterval", "TickIntervalSeconds")),
-                TickOnSpawn = GetBool(data, true, "TickOnSpawn"),
+                DamageStartDelay = Mathf.Max(0f, GetFloat(data, 0f, "DamageStartDelay", "DamageStartDelaySeconds")),
+                DamageActiveDuration = NormalizeDamageActiveDuration(GetFloat(data, -1f, "DamageActiveDuration", "DamageActiveDurationSeconds")),
+                DamageTickInterval = Mathf.Max(0f, GetFloat(data, 0f, "DamageTickInterval", "DamageTickIntervalSeconds")),
+                DamageTickOnStart = GetBool(data, true, "DamageTickOnStart"),
                 BlockMode = GetEnum(data, LaserConstants.BlockMode.StopAtGroundOrHostile, "BlockMode"),
                 HitMode = GetEnum(data, LaserConstants.HitMode.FirstHitOnly, "HitMode"),
                 AimUpdateMode = GetEnum(data, LaserConstants.AimUpdateMode.Snapshot, "AimUpdateMode"),
@@ -69,6 +73,16 @@ namespace GGemCo2DCore
                 RaycastAngleDeg = GetFloat(data, 0f, "RaycastAngleDeg", "RayAngleDeg"),
                 VfxAngleSyncMode = GetEnum(data, LaserConstants.VfxAngleSyncMode.FollowRaycast, "VfxAngleSyncMode"),
             };
+        }
+
+        /// <summary>
+        /// 데미지 활성 지속 시간을 테이블에서 사용하는 값으로 보정합니다.
+        /// </summary>
+        /// <param name="value">테이블에서 읽은 데미지 활성 지속 시간입니다.</param>
+        /// <returns>0 이하이면 레이저 종료까지 유지하는 의미의 -1, 양수이면 해당 값을 반환합니다.</returns>
+        private static float NormalizeDamageActiveDuration(float value)
+        {
+            return value <= 0f ? -1f : value;
         }
 
         /// <summary>

@@ -37,8 +37,10 @@ namespace GGemCo2DCoreEditor
             new("RotateByMoveDirection"),
             new("MaxDistance"),
             new("Duration"),
-            new("TickInterval"),
-            new("TickOnSpawn"),
+            new("DamageStartDelay"),
+            new("DamageActiveDuration"),
+            new("DamageTickInterval"),
+            new("DamageTickOnStart"),
             new("BlockMode"),
             new("HitMode"),
             new("AimUpdateMode"),
@@ -53,8 +55,11 @@ namespace GGemCo2DCoreEditor
         [SerializeField, Tooltip("레이저 비주얼 크기에 곱할 배율입니다.")] private float scaleMultiplier = 1f;
         [SerializeField, Tooltip("체크하면 테이블 Duration 대신 아래 오버라이드 값을 사용합니다.")] private bool useDurationOverride;
         [SerializeField, Tooltip("레이저 지속 시간을 직접 덮어쓸 값입니다.")] private float durationOverride = 0.25f;
-        [SerializeField, Tooltip("체크하면 테이블 TickInterval 대신 아래 오버라이드 값을 사용합니다.")] private bool useTickIntervalOverride;
-        [SerializeField, Tooltip("지속형 레이저의 틱 간격을 직접 덮어쓸 값입니다.")] private float tickIntervalOverride;
+        [SerializeField, Tooltip("체크하면 데미지 시작/활성/틱 타이밍을 직접 덮어씁니다.")] private bool useDamageTimingOverride;
+        [SerializeField, Tooltip("레이저 발사 후 데미지 판정을 시작하기까지 기다릴 시간입니다.")] private float damageStartDelayOverride;
+        [SerializeField, Tooltip("데미지 판정을 유지할 시간입니다. 0 이하이면 레이저 종료까지 유지합니다.")] private float damageActiveDurationOverride = -1f;
+        [SerializeField, Tooltip("같은 대상에게 반복 데미지를 줄 간격입니다. 0이면 진입 시 1회만 적용합니다.")] private float damageTickIntervalOverride;
+        [SerializeField, Tooltip("데미지 활성 구간에서 처음 감지된 대상에게 즉시 데미지를 줄지 여부입니다.")] private bool damageTickOnStartOverride = true;
         [SerializeField, Tooltip("체크하면 테이블 MaxDistance 대신 아래 오버라이드 값을 사용합니다.")] private bool useMaxDistanceOverride;
         [SerializeField, Tooltip("레이저 최대 사거리를 직접 덮어쓸 값입니다.")] private float maxDistanceOverride = 10f;
         [SerializeField, Tooltip("활성 시간 동안 타겟 방향을 계속 추적할지 여부입니다.")] private bool updateAimContinuously;
@@ -206,7 +211,10 @@ namespace GGemCo2DCoreEditor
                     EditorGUILayout.LabelField($"MaxDistance: {_cachedLaserInfo.MaxDistance}");
                     EditorGUILayout.LabelField($"VfxPresentationPolicy: {_cachedLaserInfo.VfxPresentationPolicy}");
                     EditorGUILayout.LabelField($"Duration: {_cachedLaserInfo.Duration}");
-                    EditorGUILayout.LabelField($"TickInterval: {_cachedLaserInfo.TickInterval}");
+                    EditorGUILayout.LabelField($"DamageStartDelay: {_cachedLaserInfo.DamageStartDelay}");
+                    EditorGUILayout.LabelField($"DamageActiveDuration: {_cachedLaserInfo.DamageActiveDuration}");
+                    EditorGUILayout.LabelField($"DamageTickInterval: {_cachedLaserInfo.DamageTickInterval}");
+                    EditorGUILayout.LabelField($"DamageTickOnStart: {_cachedLaserInfo.DamageTickOnStart}");
                     EditorGUILayout.LabelField($"HitMode: {_cachedLaserInfo.HitMode}");
                     EditorGUILayout.LabelField($"BlockMode: {_cachedLaserInfo.BlockMode}");
                     EditorGUILayout.LabelField($"AimUpdateMode: {_cachedLaserInfo.AimUpdateMode}");
@@ -325,8 +333,14 @@ namespace GGemCo2DCoreEditor
                 case nameof(StruckTableLaser.Duration):
                     row.Duration = Mathf.Max(0f, row.Duration);
                     break;
-                case nameof(StruckTableLaser.TickInterval):
-                    row.TickInterval = Mathf.Max(0f, row.TickInterval);
+                case nameof(StruckTableLaser.DamageStartDelay):
+                    row.DamageStartDelay = Mathf.Max(0f, row.DamageStartDelay);
+                    break;
+                case nameof(StruckTableLaser.DamageActiveDuration):
+                    row.DamageActiveDuration = row.DamageActiveDuration <= 0f ? -1f : row.DamageActiveDuration;
+                    break;
+                case nameof(StruckTableLaser.DamageTickInterval):
+                    row.DamageTickInterval = Mathf.Max(0f, row.DamageTickInterval);
                     break;
             }
         }
@@ -391,8 +405,10 @@ namespace GGemCo2DCoreEditor
                     "RotateByMoveDirection" => row.RotateByMoveDirection ? "Y" : "N",
                     "MaxDistance" => MathHelper.FormatFloat(row.MaxDistance),
                     "Duration" => MathHelper.FormatFloat(row.Duration),
-                    "TickInterval" => MathHelper.FormatFloat(row.TickInterval),
-                    "TickOnSpawn" => row.TickOnSpawn ? "Y" : "N",
+                    "DamageStartDelay" => MathHelper.FormatFloat(row.DamageStartDelay),
+                    "DamageActiveDuration" => MathHelper.FormatFloat(row.DamageActiveDuration),
+                    "DamageTickInterval" => MathHelper.FormatFloat(row.DamageTickInterval),
+                    "DamageTickOnStart" => row.DamageTickOnStart ? "Y" : "N",
                     "BlockMode" => row.BlockMode.ToString(),
                     "HitMode" => row.HitMode.ToString(),
                     "AimUpdateMode" => row.AimUpdateMode.ToString(),
@@ -474,9 +490,16 @@ namespace GGemCo2DCoreEditor
                 if (useDurationOverride)
                     durationOverride = Mathf.Max(0f, EditorGUILayout.FloatField(new GUIContent("DurationOverride"), durationOverride));
 
-                useTickIntervalOverride = EditorGUILayout.Toggle(new GUIContent("UseTickIntervalOverride"), useTickIntervalOverride);
-                if (useTickIntervalOverride)
-                    tickIntervalOverride = Mathf.Max(0f, EditorGUILayout.FloatField(new GUIContent("TickIntervalOverride"), tickIntervalOverride));
+                useDamageTimingOverride = EditorGUILayout.Toggle(new GUIContent("UseDamageTimingOverride"), useDamageTimingOverride);
+                if (useDamageTimingOverride)
+                {
+                    damageStartDelayOverride = Mathf.Max(0f, EditorGUILayout.FloatField(new GUIContent("DamageStartDelayOverride"), damageStartDelayOverride));
+                    damageActiveDurationOverride = EditorGUILayout.FloatField(new GUIContent("DamageActiveDurationOverride"), damageActiveDurationOverride);
+                    if (damageActiveDurationOverride <= 0f)
+                        damageActiveDurationOverride = -1f;
+                    damageTickIntervalOverride = Mathf.Max(0f, EditorGUILayout.FloatField(new GUIContent("DamageTickIntervalOverride"), damageTickIntervalOverride));
+                    damageTickOnStartOverride = EditorGUILayout.Toggle(new GUIContent("DamageTickOnStartOverride"), damageTickOnStartOverride);
+                }
 
                 useMaxDistanceOverride = EditorGUILayout.Toggle(new GUIContent("UseMaxDistanceOverride"), useMaxDistanceOverride);
                 if (useMaxDistanceOverride)
@@ -624,8 +647,11 @@ namespace GGemCo2DCoreEditor
                     targetPositionOverride: targetPositionOverride,
                     useDurationOverride: useDurationOverride,
                     durationOverride: durationOverride,
-                    useTickIntervalOverride: useTickIntervalOverride,
-                    tickIntervalOverride: tickIntervalOverride,
+                    useDamageTimingOverride: useDamageTimingOverride,
+                    damageStartDelayOverride: damageStartDelayOverride,
+                    damageActiveDurationOverride: damageActiveDurationOverride,
+                    damageTickIntervalOverride: damageTickIntervalOverride,
+                    damageTickOnStartOverride: damageTickOnStartOverride,
                     useMaxDistanceOverride: useMaxDistanceOverride,
                     maxDistanceOverride: maxDistanceOverride,
                     updateAimContinuously: updateAimContinuously,
