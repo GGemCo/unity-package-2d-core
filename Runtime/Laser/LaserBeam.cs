@@ -98,12 +98,12 @@ namespace GGemCo2DCore
         {
             if (!target)
             {
-                Launch((Vector2)transform.position);
+                Launch(transform.position);
                 return;
             }
 
             _targetObject = target;
-            Launch((Vector2)target.transform.position);
+            Launch(target.transform.position);
         }
 
         /// <summary>
@@ -180,7 +180,7 @@ namespace GGemCo2DCore
             bool canApplyDamage = IsDamageWindowActive();
             bool hasBestHit = TryRaycastNearestValidHit(start, raycastDirection, _maxDistance, canApplyDamage, now, out bestHit);
             float beamDistance = hasBestHit ? Mathf.Max(0f, bestHit.distance) : _maxDistance;
-            Vector3 end = start + (Vector3)(visualDirection * beamDistance);
+            Vector3 end = start + visualDirection * beamDistance;
 
             if (ResolveVfxAngleSyncMode() == LaserConstants.VfxAngleSyncMode.FollowRaycast
                 && hasBestHit
@@ -194,7 +194,7 @@ namespace GGemCo2DCore
 
             transform.position = start;
             _laserVisual?.SetEndpoints(start, end);
-            _visual?.OnUpdate(new ProjectileVisualUpdateContext(start, (Vector2)end, start, Vector2.zero, visualDirection));
+            _visual?.OnUpdate(new ProjectileVisualUpdateContext(start, end, start, Vector2.zero, visualDirection));
         }
 
         /// <summary>
@@ -206,16 +206,14 @@ namespace GGemCo2DCore
         /// <returns>현재 프레임의 레이저 시작점입니다.</returns>
         private Vector2 ResolveCurrentStartPoint()
         {
-            if (_runtime != null
-                && _runtime.StartPointUpdateMode == LaserConstants.StartPointUpdateMode.SnapshotAtLaunch
+            if (_runtime is { StartPointUpdateMode: LaserConstants.StartPointUpdateMode.SnapshotAtLaunch }
                 && _hasCachedStartPoint)
             {
                 return _cachedStartPoint;
             }
 
             Vector2 start = LaserStartPointResolver.ResolveCurrentStartPoint(_info, _runtime, transform.position);
-            if (_runtime != null
-                && _runtime.StartPointUpdateMode == LaserConstants.StartPointUpdateMode.SnapshotAtLaunch)
+            if (_runtime is { StartPointUpdateMode: LaserConstants.StartPointUpdateMode.SnapshotAtLaunch })
             {
                 _cachedStartPoint = start;
                 _hasCachedStartPoint = true;
@@ -285,19 +283,29 @@ namespace GGemCo2DCore
         /// <returns>정규화된 Raycast 방향입니다.</returns>
         private Vector2 ResolveDirectionByRaycastPolicy(Vector2 start, bool allowFallbackToOwnerFacing = true)
         {
-            if (ResolveRaycastDirectionMode() == LaserConstants.RaycastDirectionMode.ByAngle)
-                return ResolveDirectionByConfiguredAngle();
+            bool hasTargetPoint = false;
+            Vector2 targetPoint = default;
 
-            if (_targetObject != null)
-                return ResolveDirection(start, _targetObject.transform.position);
+            if (_runtime is { UseTargetPositionOverride: true })
+            {
+                hasTargetPoint = true;
+                targetPoint = _runtime.TargetPositionOverride;
+            }
+            else if (_hasTargetPoint)
+            {
+                hasTargetPoint = true;
+                targetPoint = _targetPoint;
+            }
 
-            if (_runtime != null && _runtime.UseTargetPositionOverride)
-                return ResolveDirection(start, _runtime.TargetPositionOverride);
-
-            if (_hasTargetPoint)
-                return ResolveDirection(start, _targetPoint);
-
-            return allowFallbackToOwnerFacing ? ResolveOwnerFacingDirection() : Vector2.zero;
+            return LaserAimPolicyUtility.ResolveRaycastDirection(
+                _info,
+                _runtime,
+                _owner,
+                _targetObject,
+                hasTargetPoint,
+                targetPoint,
+                start,
+                allowFallbackToOwnerFacing);
         }
 
         /// <summary>
@@ -306,10 +314,10 @@ namespace GGemCo2DCore
         /// </summary>
         private bool ShouldUpdateAimContinuously()
         {
-            if (_runtime != null && _runtime.UpdateAimContinuously)
+            if (_runtime is { UpdateAimContinuously: true })
                 return true;
 
-            return _info != null && _info.AimUpdateMode == LaserConstants.AimUpdateMode.Continuous;
+            return _info is { AimUpdateMode: LaserConstants.AimUpdateMode.Continuous };
         }
 
         /// <summary>
@@ -319,12 +327,7 @@ namespace GGemCo2DCore
         /// <returns>적용할 Raycast 방향 계산 모드입니다.</returns>
         private LaserConstants.RaycastDirectionMode ResolveRaycastDirectionMode()
         {
-            if (_runtime != null && _runtime.UseRaycastDirectionModeOverride)
-                return _runtime.RaycastDirectionModeOverride;
-
-            return _info != null
-                ? _info.RaycastDirectionMode
-                : LaserConstants.RaycastDirectionMode.TowardTarget;
+            return LaserAimPolicyUtility.ResolveRaycastDirectionMode(_info, _runtime);
         }
 
         /// <summary>
@@ -334,12 +337,7 @@ namespace GGemCo2DCore
         /// <returns>적용할 VFX 각도 동기화 모드입니다.</returns>
         private LaserConstants.VfxAngleSyncMode ResolveVfxAngleSyncMode()
         {
-            if (_runtime != null && _runtime.UseVfxAngleSyncModeOverride)
-                return _runtime.VfxAngleSyncModeOverride;
-
-            return _info != null
-                ? _info.VfxAngleSyncMode
-                : LaserConstants.VfxAngleSyncMode.FollowRaycast;
+            return LaserAimPolicyUtility.ResolveVfxAngleSyncMode(_info, _runtime);
         }
 
         /// <summary>
@@ -349,10 +347,7 @@ namespace GGemCo2DCore
         /// <returns>적용할 Raycast 각도(도)입니다.</returns>
         private float ResolveRaycastAngleDeg()
         {
-            if (_runtime != null && _runtime.UseRaycastAngleOverride)
-                return _runtime.RaycastAngleOverrideDeg;
-
-            return _info != null ? _info.RaycastAngleDeg : 0f;
+            return LaserAimPolicyUtility.ResolveRaycastAngleDeg(_info, _runtime);
         }
 
         /// <summary>
@@ -363,21 +358,7 @@ namespace GGemCo2DCore
         /// <returns>각도 기반 정규화 방향입니다.</returns>
         private Vector2 ResolveDirectionByConfiguredAngle()
         {
-            float angleDeg = ResolveRaycastAngleDeg();
-            float baseAngle = 0f;
-
-            if (_owner != null && _owner.IsFlipped())
-            {
-                baseAngle = 180f;
-                angleDeg = -angleDeg;
-            }
-
-            float worldAngle = (baseAngle + angleDeg) * Mathf.Deg2Rad;
-            Vector2 direction = new Vector2(Mathf.Cos(worldAngle), Mathf.Sin(worldAngle));
-            if (direction.sqrMagnitude <= 1e-6f)
-                return ResolveOwnerFacingDirection();
-
-            return direction.normalized;
+            return LaserAimPolicyUtility.ResolveDirectionByConfiguredAngle(_info, _runtime, _owner);
         }
 
         /// <summary>
@@ -386,10 +367,7 @@ namespace GGemCo2DCore
         /// <returns>시전자 기준 기본 방향(오른쪽/왼쪽)입니다.</returns>
         private Vector2 ResolveOwnerFacingDirection()
         {
-            if (_owner != null && _owner.IsFlipped())
-                return Vector2.left;
-
-            return Vector2.right;
+            return LaserAimPolicyUtility.ResolveOwnerFacingDirection(_owner);
         }
 
         /// <summary>
@@ -400,16 +378,7 @@ namespace GGemCo2DCore
         /// <returns>정규화된 방향 벡터입니다.</returns>
         private Vector2 ResolveDirection(Vector2 start, Vector2 targetPosition)
         {
-            Vector2 direction = (targetPosition - start);
-            if (direction.sqrMagnitude <= 1e-6f)
-            {
-                if (_owner != null && _owner.IsFlipped())
-                    return Vector2.left;
-
-                return Vector2.right;
-            }
-
-            return direction.normalized;
+            return LaserAimPolicyUtility.ResolveDirection(_owner, start, targetPosition);
         }
 
         /// <summary>
@@ -418,7 +387,7 @@ namespace GGemCo2DCore
         /// <param name="direction">적용할 방향 벡터입니다.</param>
         private void ApplyRotation(Vector2 direction)
         {
-            if (_info != null && !_info.RotateByMoveDirection)
+            if (_info is { RotateByMoveDirection: false })
                 return;
 
             if (direction.sqrMagnitude <= 1e-6f)
@@ -491,12 +460,8 @@ namespace GGemCo2DCore
             bool hasNearestHostile = false;
             RaycastHit2D nearestHostile = default;
 
-            LaserConstants.BlockMode blockMode = _info != null
-                ? _info.BlockMode
-                : LaserConstants.BlockMode.StopAtGroundOrHostile;
-            LaserConstants.HitMode hitMode = _info != null
-                ? _info.HitMode
-                : LaserConstants.HitMode.FirstHitOnly;
+            LaserConstants.BlockMode blockMode = _info?.BlockMode ?? LaserConstants.BlockMode.StopAtGroundOrHostile;
+            LaserConstants.HitMode hitMode = _info?.HitMode ?? LaserConstants.HitMode.FirstHitOnly;
 
             for (int i = 0; i < count; i++)
             {
@@ -596,10 +561,9 @@ namespace GGemCo2DCore
 
             if (_damageTickIntervalSeconds <= 0f)
             {
-                if (_latchedTargets.Contains(target))
+                if (!_latchedTargets.Add(target))
                     return;
 
-                _latchedTargets.Add(target);
                 ApplyDamageToTarget(target, col, hitPosition);
                 return;
             }
@@ -641,7 +605,7 @@ namespace GGemCo2DCore
                 damageType = _damageType,
                 SkillUid = _skillUid,
                 AttackId = _attackId,
-                ElementGaugeApplications = _runtime != null ? _runtime.ElementGaugeApplications : null,
+                ElementGaugeApplications = _runtime?.ElementGaugeApplications,
             };
 
             target.TakeDamage(metadataDamage);
@@ -742,7 +706,7 @@ namespace GGemCo2DCore
         /// </summary>
         private static float ResolveDurationSeconds(StruckTableLaser info, MetadataLaser metadata)
         {
-            if (metadata != null && metadata.UseDurationOverride)
+            if (metadata is { UseDurationOverride: true })
                 return metadata.DurationOverride >= 0f ? metadata.DurationOverride : -1f;
 
             if (info != null)
@@ -759,7 +723,7 @@ namespace GGemCo2DCore
         /// <returns>데미지 시작 지연 시간입니다.</returns>
         private static float ResolveDamageStartDelaySeconds(StruckTableLaser info, MetadataLaser metadata)
         {
-            if (metadata != null && metadata.UseDamageTimingOverride)
+            if (metadata is { UseDamageTimingOverride: true })
                 return Mathf.Max(0f, metadata.DamageStartDelayOverride);
 
             return info != null ? Mathf.Max(0f, info.DamageStartDelay) : 0f;
@@ -773,7 +737,7 @@ namespace GGemCo2DCore
         /// <returns>데미지 활성 지속 시간입니다. 0 이하이면 레이저 종료까지 유지합니다.</returns>
         private static float ResolveDamageActiveDurationSeconds(StruckTableLaser info, MetadataLaser metadata)
         {
-            if (metadata != null && metadata.UseDamageTimingOverride)
+            if (metadata is { UseDamageTimingOverride: true })
                 return metadata.DamageActiveDurationOverride <= 0f ? -1f : metadata.DamageActiveDurationOverride;
 
             if (info == null)
@@ -790,7 +754,7 @@ namespace GGemCo2DCore
         /// <returns>데미지 틱 간격입니다. 0이면 진입 시 1회만 적용합니다.</returns>
         private static float ResolveDamageTickIntervalSeconds(StruckTableLaser info, MetadataLaser metadata)
         {
-            if (metadata != null && metadata.UseDamageTimingOverride)
+            if (metadata is { UseDamageTimingOverride: true })
                 return Mathf.Max(0f, metadata.DamageTickIntervalOverride);
 
             return info != null ? Mathf.Max(0f, info.DamageTickInterval) : 0f;
@@ -804,7 +768,7 @@ namespace GGemCo2DCore
         /// <returns>처음 감지된 대상에게 즉시 데미지를 주면 true를 반환합니다.</returns>
         private static bool ResolveDamageTickOnStart(StruckTableLaser info, MetadataLaser metadata)
         {
-            if (metadata != null && metadata.UseDamageTimingOverride)
+            if (metadata is { UseDamageTimingOverride: true })
                 return metadata.DamageTickOnStartOverride;
 
             return info == null || info.DamageTickOnStart;
@@ -815,10 +779,10 @@ namespace GGemCo2DCore
         /// </summary>
         private float ResolveConfiguredMaxDistance(StruckTableLaser info, MetadataLaser metadata)
         {
-            if (metadata != null && metadata.UseMaxDistanceOverride && metadata.MaxDistanceOverride > 0f)
+            if (metadata is { UseMaxDistanceOverride: true, MaxDistanceOverride: > 0f })
                 return metadata.MaxDistanceOverride;
 
-            if (info != null && info.MaxDistance > 0f)
+            if (info is { MaxDistance: > 0f })
                 return info.MaxDistance;
 
             Vector2 start = ResolveCurrentStartPoint();
