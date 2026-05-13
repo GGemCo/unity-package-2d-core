@@ -46,6 +46,9 @@ namespace GGemCo2DCore
         public readonly float RaycastAngleOverrideDeg;
         public readonly bool UseVfxAngleSyncModeOverride;
         public readonly LaserConstants.VfxAngleSyncMode VfxAngleSyncModeOverride;
+        public readonly LaserConstants.StartPositionOverrideMode StartPositionOverrideMode;
+        public readonly Vector2 StartPositionOverride;
+        public readonly LaserConstants.StartPointUpdateMode StartPointUpdateMode;
 
         /// <summary>
         /// 레이저 런타임 메타데이터를 생성합니다.
@@ -82,6 +85,9 @@ namespace GGemCo2DCore
         /// <param name="raycastAngleOverrideDeg">레이캐스트 각도 오버라이드 값(도)입니다.</param>
         /// <param name="useVfxAngleSyncModeOverride">VFX 각도 동기화 모드 오버라이드 사용 여부입니다.</param>
         /// <param name="vfxAngleSyncModeOverride">VFX 각도 동기화 모드 오버라이드 값입니다.</param>
+        /// <param name="startPositionOverrideMode">시작점 오버라이드 해석 방식입니다.</param>
+        /// <param name="startPositionOverride">시작점 오버라이드 값입니다.</param>
+        /// <param name="startPointUpdateMode">시작점 갱신 방식입니다.</param>
         public MetadataLaser(
             int uid,
             ConfigCommon.DamageType damageType,
@@ -114,7 +120,10 @@ namespace GGemCo2DCore
             bool useRaycastAngleOverride = false,
             float raycastAngleOverrideDeg = 0f,
             bool useVfxAngleSyncModeOverride = false,
-            LaserConstants.VfxAngleSyncMode vfxAngleSyncModeOverride = LaserConstants.VfxAngleSyncMode.FollowRaycast)
+            LaserConstants.VfxAngleSyncMode vfxAngleSyncModeOverride = LaserConstants.VfxAngleSyncMode.FollowRaycast,
+            LaserConstants.StartPositionOverrideMode startPositionOverrideMode = LaserConstants.StartPositionOverrideMode.UseLaserTable,
+            Vector2 startPositionOverride = default,
+            LaserConstants.StartPointUpdateMode startPointUpdateMode = LaserConstants.StartPointUpdateMode.FollowOwner)
         {
             Uid = uid;
             DamageType = damageType;
@@ -148,6 +157,9 @@ namespace GGemCo2DCore
             RaycastAngleOverrideDeg = raycastAngleOverrideDeg;
             UseVfxAngleSyncModeOverride = useVfxAngleSyncModeOverride;
             VfxAngleSyncModeOverride = vfxAngleSyncModeOverride;
+            StartPositionOverrideMode = startPositionOverrideMode;
+            StartPositionOverride = startPositionOverride;
+            StartPointUpdateMode = startPointUpdateMode;
         }
 
         /// <summary>

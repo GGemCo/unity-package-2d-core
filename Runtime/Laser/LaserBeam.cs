@@ -37,6 +37,8 @@ namespace GGemCo2DCore
         private bool _damageTickOnStart;
         private float _maxDistance;
         private float _elapsed;
+        private bool _hasCachedStartPoint;
+        private Vector2 _cachedStartPoint;
         private readonly RaycastHit2D[] _raycastResults = new RaycastHit2D[RaycastBufferSize];
         private readonly HashSet<CharacterBase> _latchedTargets = new();
         private readonly HashSet<CharacterBase> _currentTargets = new();
@@ -74,6 +76,8 @@ namespace GGemCo2DCore
             _damageTickIntervalSeconds = ResolveDamageTickIntervalSeconds(info, metadata);
             _damageTickOnStart = ResolveDamageTickOnStart(info, metadata);
             _maxDistance = ResolveConfiguredMaxDistance(info, metadata);
+            _hasCachedStartPoint = false;
+            _cachedStartPoint = default;
 
             if (_owner != null)
                 gameObject.layer = _owner.gameObject.layer;
@@ -195,18 +199,27 @@ namespace GGemCo2DCore
 
         /// <summary>
         /// 현재 시작점을 해석합니다.
-        /// - 시전자가 있으면 매 프레임 시전자 위치를 기준으로 갱신합니다.
-        /// - StartPosition은 테이블 오프셋을 그대로 재사용합니다.
+        /// - 기본은 시전자 위치 + laser 테이블 StartPosition 입니다.
+        /// - 런타임 시작점 오버라이드가 있으면 해당 정책을 우선 적용합니다.
+        /// - SnapshotAtLaunch 모드면 발사 시점의 시작점을 캐시하여 유지합니다.
         /// </summary>
         /// <returns>현재 프레임의 레이저 시작점입니다.</returns>
         private Vector2 ResolveCurrentStartPoint()
         {
-            Vector2 start = transform.position;
-            if (_owner != null)
-                start = _owner.transform.position;
+            if (_runtime != null
+                && _runtime.StartPointUpdateMode == LaserConstants.StartPointUpdateMode.SnapshotAtLaunch
+                && _hasCachedStartPoint)
+            {
+                return _cachedStartPoint;
+            }
 
-            if (_info != null)
-                start += _info.StartPosition;
+            Vector2 start = LaserStartPointResolver.ResolveCurrentStartPoint(_info, _runtime, transform.position);
+            if (_runtime != null
+                && _runtime.StartPointUpdateMode == LaserConstants.StartPointUpdateMode.SnapshotAtLaunch)
+            {
+                _cachedStartPoint = start;
+                _hasCachedStartPoint = true;
+            }
 
             return start;
         }

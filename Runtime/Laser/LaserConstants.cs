@@ -118,5 +118,48 @@ namespace GGemCo2DCore
             /// </summary>
             PreserveShape = 1,
         }
+
+        /// <summary>
+        /// 레이저 시작점을 어떤 방식으로 오버라이드할지 정의합니다.
+        /// </summary>
+        public enum StartPositionOverrideMode
+        {
+            /// <summary>
+            /// laser 테이블의 StartPosition 값을 그대로 사용합니다.
+            /// </summary>
+            UseLaserTable = 0,
+
+            /// <summary>
+            /// laser 테이블의 StartPosition 대신 오버라이드 오프셋을 사용합니다.
+            /// </summary>
+            ReplaceTableOffset = 1,
+
+            /// <summary>
+            /// laser 테이블의 StartPosition에 오버라이드 오프셋을 더해서 사용합니다.
+            /// </summary>
+            AddToTableOffset = 2,
+
+            /// <summary>
+            /// 시전자 위치를 무시하고 월드 좌표를 시작점으로 직접 사용합니다.
+            /// </summary>
+            WorldPosition = 3,
+        }
+
+        /// <summary>
+        /// 레이저 시작점을 언제 갱신할지 정의합니다.
+        /// </summary>
+        public enum StartPointUpdateMode
+        {
+            /// <summary>
+            /// 활성 시간 동안 시전자 기준 시작점을 계속 갱신합니다.
+            /// </summary>
+            FollowOwner = 0,
+
+            /// <summary>
+            /// 발사 시점의 시작점을 고정하여 유지합니다.
+            /// </summary>
+            SnapshotAtLaunch = 1,
+        }
+
     }
 }
