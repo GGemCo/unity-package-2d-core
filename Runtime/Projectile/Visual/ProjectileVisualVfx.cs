@@ -40,22 +40,20 @@ namespace GGemCo2DCore
                 return;
 
             // 충돌 후 End 애니를 돌릴 수 있으므로 무한(-1) 지속
-            _vfx = vfxManager.CreateVfx(vfxUid, -1f);
+            _vfx = vfxManager.CreateVfx(CreateVfxSpawnRequest(vfxUid));
             if (_vfx == null)
                 return;
 
             _vfx.transform.SetParent(transform, false);
             _vfx.transform.localPosition = Vector3.zero;
+            _vfx.transform.localRotation = Quaternion.identity;
 
-            float scale = 1f;
-            if (_static != null && _static.VfxScale > 0)
-                scale = _static.VfxScale;
-
-            if (_runtime != null)
-                scale *= Mathf.Max(0.01f, _runtime.ScaleMultiplier);
-
-            if (scale > 0f)
-                _vfx.SetScale(scale);
+            if (ShouldApplyVfxScale())
+            {
+                float scale = ResolveVfxScale();
+                if (scale > 0f)
+                    _vfx.SetScale(scale);
+            }
         }
 
         /// <summary>
@@ -132,10 +130,66 @@ namespace GGemCo2DCore
         /// <param name="end">레이저 끝 월드 좌표입니다.</param>
         public void SetEndpoints(Vector3 start, Vector3 end)
         {
+            if (!ShouldStretchLaserVfx())
+                return;
+
             if (_vfx is VfxEffectLaser laser)
             {
                 laser.SetEndpoints(start, end);
             }
+        }
+
+        /// <summary>
+        /// 연결할 VFX의 생성 요청을 구성합니다.
+        /// </summary>
+        /// <param name="vfxUid">생성할 VFX 테이블 Uid입니다.</param>
+        /// <returns>레이저 정책이 반영된 VFX 생성 요청입니다.</returns>
+        private VfxSpawnRequest CreateVfxSpawnRequest(int vfxUid)
+        {
+            return new VfxSpawnRequest
+            {
+                VfxUid = vfxUid,
+                DurationOverride = -1f,
+                ForceLaserEffectBehaviour = ShouldStretchLaserVfx(),
+            };
+        }
+
+        /// <summary>
+        /// 현재 Visual이 레이저 길이에 맞춰 VFX를 늘리는 정책인지 확인합니다.
+        /// </summary>
+        /// <returns>레이저 전용 변형 정책이면 true를 반환합니다.</returns>
+        private bool ShouldStretchLaserVfx()
+        {
+            return _static != null
+                   && _static.Type == ProjectileConstants.Type.Laser
+                   && _static.VfxPresentationPolicy == LaserConstants.VfxPresentationPolicy.StretchToBeam;
+        }
+
+        /// <summary>
+        /// VFX 스케일 보정이 필요한지 확인합니다.
+        /// </summary>
+        /// <returns>원본 형태 유지 레이저가 아니면 true를 반환합니다.</returns>
+        private bool ShouldApplyVfxScale()
+        {
+            return _static == null
+                   || _static.Type != ProjectileConstants.Type.Laser
+                   || _static.VfxPresentationPolicy != LaserConstants.VfxPresentationPolicy.PreserveShape;
+        }
+
+        /// <summary>
+        /// 테이블 스케일과 런타임 배율을 합산해 최종 VFX 스케일을 계산합니다.
+        /// </summary>
+        /// <returns>적용할 VFX 스케일입니다.</returns>
+        private float ResolveVfxScale()
+        {
+            float scale = 1f;
+            if (_static != null && _static.VfxScale > 0)
+                scale = _static.VfxScale;
+
+            if (_runtime != null)
+                scale *= Mathf.Max(0.01f, _runtime.ScaleMultiplier);
+
+            return scale;
         }
 
         /// <summary>

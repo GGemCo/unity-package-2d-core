@@ -66,13 +66,14 @@ namespace GGemCo2DCore
         public override bool NeedRotation => EffectNeedRotation;
         public override string Color => EffectColor;
         public override ConfigCommon.DirectionType DefaultDirection => EffectDefaultDirection;
+
+        /// <summary>
+        /// 이펙트 재생 방식은 애니메이션 컨트롤러 기준으로만 결정합니다.
+        /// </summary>
         public override VfxConstants.PlaybackType PlaybackType
         {
             get
             {
-                if (EffectKind == VfxConstants.EffectType.Laser)
-                    return VfxConstants.PlaybackType.Laser;
-
                 return EffectAnimationController == ConfigCommon.AnimationController.Spine
                     ? VfxConstants.PlaybackType.SpineSequence
                     : VfxConstants.PlaybackType.SpriteSequence;

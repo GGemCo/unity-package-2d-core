@@ -13,6 +13,7 @@ namespace GGemCo2DCore
         public string Name;
         public int VfxUid;
         public float VfxScale = 1f;
+        public LaserConstants.VfxPresentationPolicy VfxPresentationPolicy = LaserConstants.VfxPresentationPolicy.StretchToBeam;
         public Vector2 StartPosition;
         public int HitVfxUid;
         public int Count = 1;
@@ -51,6 +52,7 @@ namespace GGemCo2DCore
                 Name = GetString(data, string.Empty, "Name"),
                 VfxUid = GetInt(data, 0, "VfxUid", "EffectUid"),
                 VfxScale = GetFloat(data, 1f, "VfxScale", "EffectScale"),
+                VfxPresentationPolicy = GetEnum(data, LaserConstants.VfxPresentationPolicy.StretchToBeam, "VfxPresentationPolicy", "PresentationPolicy"),
                 StartPosition = GetVector2(data, Vector2.zero, "StartPosition"),
                 HitVfxUid = GetInt(data, 0, "HitVfxUid", "HitEffectUid"),
                 Count = Mathf.Max(1, GetInt(data, 1, "Count")),

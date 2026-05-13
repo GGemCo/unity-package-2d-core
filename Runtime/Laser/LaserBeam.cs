@@ -120,7 +120,7 @@ namespace GGemCo2DCore
                 visualDirectionOnLaunch = raycastDirectionOnLaunch;
 
             transform.position = start;
-            ApplyRotation(visualDirectionOnLaunch);
+            ApplyVisualRotation(visualDirectionOnLaunch);
             _launched = true;
             _elapsed = 0f;
 
@@ -164,7 +164,7 @@ namespace GGemCo2DCore
             if (visualDirection.sqrMagnitude <= 1e-6f)
                 visualDirection = raycastDirection;
 
-            ApplyRotation(visualDirection);
+            ApplyVisualRotation(visualDirection);
 
             RaycastHit2D bestHit = default;
             bool hasBestHit = TryRaycastNearestValidHit(start, raycastDirection, _maxDistance, out bestHit);
@@ -233,13 +233,28 @@ namespace GGemCo2DCore
         /// <returns>해석된 정규화 비주얼 방향입니다.</returns>
         private Vector2 ResolveCurrentVisualDirection(Vector2 raycastDirection)
         {
-            if (ResolveVfxAngleSyncMode() == LaserConstants.VfxAngleSyncMode.FollowRaycast)
-                return raycastDirection;
+            switch (ResolveVfxAngleSyncMode())
+            {
+                case LaserConstants.VfxAngleSyncMode.None:
+                    return ResolveUnrotatedVisualDirection();
+                case LaserConstants.VfxAngleSyncMode.FollowRaycast:
+                    return raycastDirection;
+            }
 
             if (_launchVisualDirection.sqrMagnitude > 1e-6f)
                 return _launchVisualDirection.normalized;
 
             return raycastDirection;
+        }
+
+        /// <summary>
+        /// VFX 각도 미적용 정책에서 사용할 기본 시각 방향을 반환합니다.
+        /// </summary>
+        /// <returns>현재 Transform의 오른쪽 방향입니다. 유효하지 않으면 월드 오른쪽을 반환합니다.</returns>
+        private Vector2 ResolveUnrotatedVisualDirection()
+        {
+            Vector2 direction = transform.right;
+            return direction.sqrMagnitude > 1e-6f ? direction.normalized : Vector2.right;
         }
 
         /// <summary>
@@ -391,6 +406,18 @@ namespace GGemCo2DCore
 
             float angle = Mathf.Atan2(direction.y, direction.x) * Mathf.Rad2Deg;
             transform.rotation = Quaternion.Euler(0f, 0f, angle);
+        }
+
+        /// <summary>
+        /// VfxAngleSyncMode 정책에 따라 레이저 시각 Transform의 회전 적용 여부를 결정합니다.
+        /// </summary>
+        /// <param name="direction">적용할 시각 방향 벡터입니다.</param>
+        private void ApplyVisualRotation(Vector2 direction)
+        {
+            if (ResolveVfxAngleSyncMode() == LaserConstants.VfxAngleSyncMode.None)
+                return;
+
+            ApplyRotation(direction);
         }
 
         /// <summary>
@@ -666,6 +693,7 @@ namespace GGemCo2DCore
                 Name = info.Name,
                 VfxUid = info.VfxUid,
                 VfxScale = info.VfxScale,
+                VfxPresentationPolicy = info.VfxPresentationPolicy,
                 StartPosition = info.StartPosition,
                 HitVfxUid = info.HitVfxUid,
                 RotateByMoveDirection = info.RotateByMoveDirection,

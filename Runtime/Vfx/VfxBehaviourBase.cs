@@ -20,7 +20,7 @@ namespace GGemCo2DCore
         private VfxSpawnPolicy _spawnPolicy;
 
         private bool _releaseOnAnimationComplete;
-        private int _pooledVfxUid;
+        private int _poolKey;
         private Action<int, GameObject> _releaseAction;
         private Coroutine _fadeCoroutine;
         private VfxFadeController _fadeController;
@@ -53,11 +53,18 @@ namespace GGemCo2DCore
             _vfxFadeOutEase = AddressableLoaderSettings.Instance.settings.vfxFadeOutEase;
         }
 
-        public virtual void Initialize(VfxRuntimeData runtimeData, VfxSpawnPolicy spawnPolicy, Action<int, GameObject> releaseAction = null)
+        /// <summary>
+        /// VFX 런타임 데이터와 풀 반환 정보를 초기화합니다.
+        /// </summary>
+        /// <param name="runtimeData">VFX 테이블에서 해석한 런타임 데이터입니다.</param>
+        /// <param name="spawnPolicy">이번 생성 요청에 적용할 생성 정책입니다.</param>
+        /// <param name="releaseAction">수명 종료 시 풀에 반환하기 위한 콜백입니다.</param>
+        /// <param name="poolKeyOverride">동일 VfxUid를 다른 Behaviour 정책으로 분리해 풀링할 때 사용하는 키입니다.</param>
+        public virtual void Initialize(VfxRuntimeData runtimeData, VfxSpawnPolicy spawnPolicy, Action<int, GameObject> releaseAction = null, int poolKeyOverride = 0)
         {
             _runtimeData = runtimeData;
             _spawnPolicy = spawnPolicy ?? runtimeData?.DefaultSpawnPolicy?.Clone() ?? new VfxSpawnPolicy();
-            _pooledVfxUid = runtimeData?.Uid ?? 0;
+            _poolKey = poolKeyOverride != 0 ? poolKeyOverride : runtimeData?.Uid ?? 0;
             _releaseAction = releaseAction;
             _followMode = _spawnPolicy.FollowMode;
             _releaseOnAnimationComplete = false;
@@ -298,11 +305,14 @@ namespace GGemCo2DCore
             ReleaseOrDestroy();
         }
 
+        /// <summary>
+        /// 풀 반환 키가 있으면 풀로 돌려보내고, 없으면 GameObject를 제거합니다.
+        /// </summary>
         private void ReleaseOrDestroy()
         {
-            if (_releaseAction != null && _pooledVfxUid > 0)
+            if (_releaseAction != null && _poolKey != 0)
             {
-                _releaseAction.Invoke(_pooledVfxUid, gameObject);
+                _releaseAction.Invoke(_poolKey, gameObject);
                 return;
             }
 

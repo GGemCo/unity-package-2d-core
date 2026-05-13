@@ -88,6 +88,11 @@ namespace GGemCo2DCore
         public enum VfxAngleSyncMode
         {
             /// <summary>
+            /// VFX 각도를 레이저 진행 방향과 동기화하지 않습니다.
+            /// </summary>
+            None = -1,
+
+            /// <summary>
             /// 매 프레임 레이캐스트 방향을 따라 VFX 각도를 동기화합니다.
             /// </summary>
             FollowRaycast = 0,
@@ -96,6 +101,22 @@ namespace GGemCo2DCore
             /// 발사 시점 각도로 VFX 각도를 고정합니다.
             /// </summary>
             LockAtLaunch = 1,
+        }
+
+        /// <summary>
+        /// 레이저 VFX를 실제 레이저 길이에 맞춰 표현할지, 원본 VFX 모양을 유지할지 정의합니다.
+        /// </summary>
+        public enum VfxPresentationPolicy
+        {
+            /// <summary>
+            /// VfxEffectLaser를 사용하여 레이저 길이와 두께에 맞게 VFX를 변형합니다.
+            /// </summary>
+            StretchToBeam = 0,
+
+            /// <summary>
+            /// VFX의 길이, 두께, 스케일을 변경하지 않고 원본 형태로 재생합니다.
+            /// </summary>
+            PreserveShape = 1,
         }
     }
 }

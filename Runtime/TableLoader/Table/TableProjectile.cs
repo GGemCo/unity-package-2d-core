@@ -43,6 +43,7 @@ namespace GGemCo2DCore
         public string Name;
         public int VfxUid;
         public float VfxScale;
+        public LaserConstants.VfxPresentationPolicy VfxPresentationPolicy = LaserConstants.VfxPresentationPolicy.StretchToBeam;
         public int MoveSpeed;
         public Vector2 StartPosition;
         public Vector2 ColliderSize;
@@ -487,6 +488,7 @@ namespace GGemCo2DCore
                 Name = source.Name,
                 VfxUid = source.VfxUid,
                 VfxScale = source.VfxScale,
+                VfxPresentationPolicy = source.VfxPresentationPolicy,
                 MoveSpeed = source.MoveSpeed,
                 StartPosition = source.StartPosition,
                 ColliderSize = source.ColliderSize,

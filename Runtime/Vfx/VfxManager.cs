@@ -59,19 +59,20 @@ namespace GGemCo2DCore
             if (prefab == null)
                 return null;
 
-            _poolService.Configure(info, prefab);
-            GameObject instance = _poolService.Acquire(info.Uid, prefab);
+            int poolKey = ResolvePoolKey(info, request);
+            _poolService.Configure(info, prefab, poolKey);
+            GameObject instance = _poolService.Acquire(poolKey, prefab);
             if (instance == null)
                 return null;
 
-            var behaviour = EnsureBehaviour(instance, info);
+            var behaviour = EnsureBehaviour(instance, info, request);
             if (behaviour == null)
                 return null;
 
             var spawnPolicy = ResolveSpawnPolicy(info, request);
             IVfxAnimationController animationController = EnsureAnimationController(instance, behaviour, info);
             EnsureRequiredComponentsEnabled(instance, behaviour, animationController);
-            behaviour.Initialize(info, spawnPolicy, ReleaseToPool);
+            behaviour.Initialize(info, spawnPolicy, ReleaseToPool, poolKey);
             EnsureRequiredComponentsEnabled(instance, behaviour, animationController);
             ApplyRequest(instance, behaviour, spawnPolicy, request);
             instance.SetActive(true);
@@ -191,18 +192,39 @@ namespace GGemCo2DCore
             }
         }
 
-        private static VfxBehaviourBase EnsureBehaviour(GameObject instance, VfxRuntimeData info)
+        /// <summary>
+        /// 생성 요청과 VFX 데이터에 맞는 Behaviour 컴포넌트를 보장합니다.
+        /// </summary>
+        /// <param name="instance">VFX 인스턴스 GameObject입니다.</param>
+        /// <param name="info">VFX 테이블에서 해석한 런타임 데이터입니다.</param>
+        /// <param name="request">이번 VFX 생성 요청입니다.</param>
+        /// <returns>생성 또는 조회된 VFX Behaviour입니다. 결정할 수 없으면 null을 반환합니다.</returns>
+        private static VfxBehaviourBase EnsureBehaviour(GameObject instance, VfxRuntimeData info, VfxSpawnRequest request)
         {
             if (info == null)
                 return null;
 
+            if (request.ForceLaserEffectBehaviour)
+                return GetOrAdd<VfxEffectLaser>(instance);
+
             if (info is VfxParticleRuntimeData || info.PlaybackType == VfxConstants.PlaybackType.ParticleSystem)
                 return GetOrAdd<VfxBehaviourParticle>(instance);
 
-            if (info.EffectType == VfxConstants.EffectType.Laser || info.PlaybackType == VfxConstants.PlaybackType.Laser)
-                return GetOrAdd<VfxEffectLaser>(instance);
-
             return GetOrAdd<VfxBehaviourEffect>(instance);
+        }
+
+        /// <summary>
+        /// Behaviour 정책이 다른 동일 VfxUid가 풀 인스턴스를 공유하지 않도록 풀 키를 계산합니다.
+        /// </summary>
+        /// <param name="info">VFX 테이블에서 해석한 런타임 데이터입니다.</param>
+        /// <param name="request">이번 VFX 생성 요청입니다.</param>
+        /// <returns>VfxUid 기본 풀 또는 레이저 전용 풀을 가리키는 키입니다.</returns>
+        private static int ResolvePoolKey(VfxRuntimeData info, VfxSpawnRequest request)
+        {
+            if (info == null)
+                return 0;
+
+            return request.ForceLaserEffectBehaviour ? -info.Uid : info.Uid;
         }
 
         private static VfxConstants.FollowMode ResolveFollowMode(VfxSpawnPolicy spawnPolicy, bool isExplicitFollowRequest)
@@ -309,9 +331,14 @@ namespace GGemCo2DCore
             return found != null ? found : instance.AddComponent<T>();
         }
 
-        private void ReleaseToPool(int vfxUid, GameObject instance)
+        /// <summary>
+        /// 수명이 끝난 VFX 인스턴스를 생성 시점에 결정된 풀 버킷으로 반환합니다.
+        /// </summary>
+        /// <param name="poolKey">반환할 VFX 풀 버킷 키입니다.</param>
+        /// <param name="instance">반환할 VFX 인스턴스입니다.</param>
+        private void ReleaseToPool(int poolKey, GameObject instance)
         {
-            _poolService.Release(vfxUid, instance);
+            _poolService.Release(poolKey, instance);
         }
 
         public void SetAnimationEventMediator(AnimationEventMediator mediator)

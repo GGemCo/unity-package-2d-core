@@ -21,9 +21,16 @@ namespace GGemCo2DCore
             CacheParticleSystems();
         }
 
-        public override void Initialize(VfxRuntimeData runtimeData, VfxSpawnPolicy spawnPolicy, System.Action<int, GameObject> releaseAction = null)
+        /// <summary>
+        /// 파티클 VFX의 루프, 정렬, 풀 반환 정보를 초기화합니다.
+        /// </summary>
+        /// <param name="runtimeData">VFX 테이블에서 해석한 런타임 데이터입니다.</param>
+        /// <param name="spawnPolicy">이번 생성 요청에 적용할 생성 정책입니다.</param>
+        /// <param name="releaseAction">수명 종료 시 풀에 반환하기 위한 콜백입니다.</param>
+        /// <param name="poolKeyOverride">동일 VfxUid를 Behaviour 정책별로 분리해 풀링할 때 사용하는 키입니다.</param>
+        public override void Initialize(VfxRuntimeData runtimeData, VfxSpawnPolicy spawnPolicy, System.Action<int, GameObject> releaseAction = null, int poolKeyOverride = 0)
         {
-            base.Initialize(runtimeData, spawnPolicy, releaseAction);
+            base.Initialize(runtimeData, spawnPolicy, releaseAction, poolKeyOverride);
             CacheParticleSystems();
             CacheRenderers();
             RestoreDefaultSorting();

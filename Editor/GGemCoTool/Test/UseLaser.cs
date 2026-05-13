@@ -29,6 +29,7 @@ namespace GGemCo2DCoreEditor
             new("Name"),
             new("VfxUid"),
             new("VfxScale"),
+            new("VfxPresentationPolicy"),
             new("StartPosition", "StartPosition (x,y)"),
             new("HitVfxUid"),
             new("Count"),
@@ -203,6 +204,7 @@ namespace GGemCo2DCoreEditor
                     EditorGUILayout.Space(4f);
                     EditorGUILayout.LabelField($"Name: {_cachedLaserInfo.Name}");
                     EditorGUILayout.LabelField($"MaxDistance: {_cachedLaserInfo.MaxDistance}");
+                    EditorGUILayout.LabelField($"VfxPresentationPolicy: {_cachedLaserInfo.VfxPresentationPolicy}");
                     EditorGUILayout.LabelField($"Duration: {_cachedLaserInfo.Duration}");
                     EditorGUILayout.LabelField($"TickInterval: {_cachedLaserInfo.TickInterval}");
                     EditorGUILayout.LabelField($"HitMode: {_cachedLaserInfo.HitMode}");
@@ -381,6 +383,7 @@ namespace GGemCo2DCoreEditor
                     "Name" => row.Name ?? string.Empty,
                     "VfxUid" => row.VfxUid.ToString(),
                     "VfxScale" => MathHelper.FormatFloat(row.VfxScale),
+                    "VfxPresentationPolicy" => row.VfxPresentationPolicy.ToString(),
                     "StartPosition" => MathHelper.FormatVector2(row.StartPosition),
                     "HitVfxUid" => row.HitVfxUid.ToString(),
                     "Count" => row.Count.ToString(),

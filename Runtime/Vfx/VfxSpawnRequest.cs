@@ -24,6 +24,11 @@ namespace GGemCo2DCore
         public VfxConstants.AttachType? AttachTypeOverride;
         public VfxConstants.FollowMode? FollowModeOverride;
 
+        /// <summary>
+        /// true이면 VFX 테이블의 EffectType과 무관하게 VfxEffectLaser 컴포넌트를 사용합니다.
+        /// </summary>
+        public bool ForceLaserEffectBehaviour;
+
         public static VfxSpawnRequest FromAnimationEvent(StruckAnimationEventVfx data, GameObject fromObject = null)
         {
             var owner = fromObject != null ? fromObject.GetComponent<CharacterBase>() : null;
