@@ -202,8 +202,9 @@ namespace GGemCo2DCore
 #if GGEMCO_USE_SPINE
             if (controllerType == ConfigCommon.AnimationController.Spine)
             {
-                var ctrl = obj.AddComponent<CharacterAnimationControllerSpine>();
-                animController = ctrl.GetComponent<ICharacterAnimationController>();
+                RemoveAllComponents<CharacterAnimationControllerSprite>(obj);
+                var ctrl = EnsureSingleComponent<CharacterAnimationControllerSpine>(obj);
+                animController = ctrl;
 
                 var spineCtrl = obj.GetComponent<Spine2dController>();
                 if (spineCtrl != null && _animationEventMediator != null)
@@ -214,8 +215,11 @@ namespace GGemCo2DCore
 #endif
             if (controllerType == ConfigCommon.AnimationController.Sprite)
             {
-                var ctrl = obj.AddComponent<CharacterAnimationControllerSprite>();
-                animController = ctrl.GetComponent<ICharacterAnimationController>();
+#if GGEMCO_USE_SPINE
+                RemoveAllComponents<CharacterAnimationControllerSpine>(obj);
+#endif
+                var ctrl = EnsureSingleComponent<CharacterAnimationControllerSprite>(obj);
+                animController = ctrl;
 
                 var animatorCtrl = obj.GetComponent<Animation2dController>();
                 if (animatorCtrl != null && _animationEventMediator != null)
@@ -225,6 +229,200 @@ namespace GGemCo2DCore
             }
 
             return animController;
+        }
+
+        /// <summary>
+        /// 대상 오브젝트에서 지정한 타입의 컴포넌트를 하나만 남기고 정리합니다.
+        /// </summary>
+        /// <typeparam name="T">정리할 컴포넌트 타입입니다.</typeparam>
+        /// <param name="obj">정리 대상 오브젝트입니다.</param>
+        /// <returns>유지된 단일 컴포넌트입니다. 없으면 새로 추가한 컴포넌트를 반환합니다.</returns>
+        private static T EnsureSingleComponent<T>(GameObject obj) where T : Component
+        {
+            if (obj == null)
+                return null;
+
+            var components = obj.GetComponents<T>();
+            if (components == null || components.Length == 0)
+                return obj.AddComponent<T>();
+
+            for (int i = 1; i < components.Length; i++)
+            {
+                if (components[i] != null)
+                    Object.Destroy(components[i]);
+            }
+
+            return components[0];
+        }
+
+        /// <summary>
+        /// 대상 오브젝트에 붙은 지정 타입 컴포넌트를 모두 제거합니다.
+        /// </summary>
+        /// <typeparam name="T">제거할 컴포넌트 타입입니다.</typeparam>
+        /// <param name="obj">제거 대상 오브젝트입니다.</param>
+        private static void RemoveAllComponents<T>(GameObject obj) where T : Component
+        {
+            if (obj == null)
+                return;
+
+            var components = obj.GetComponents<T>();
+            for (int i = 0; i < components.Length; i++)
+            {
+                if (components[i] != null)
+                    Object.Destroy(components[i]);
+            }
+        }
+
+        /// <summary>
+        /// 더미 캐릭터 생성에 필요한 원본 테이블 정보(애니메이션 UID, 스케일)를 조회합니다.
+        /// </summary>
+        /// <param name="sourceType">원본 캐릭터 타입입니다. Monster/Npc만 지원합니다.</param>
+        /// <param name="sourceUid">원본 캐릭터 UID입니다.</param>
+        /// <param name="animationUid">조회된 애니메이션 UID입니다.</param>
+        /// <param name="scale">조회된 스케일 값입니다.</param>
+        /// <returns>조회 성공 시 <see langword="true"/>를 반환합니다.</returns>
+        private bool TryResolveDummySourceProfile(
+            CharacterConstants.Type sourceType,
+            int sourceUid,
+            out int animationUid,
+            out float scale)
+        {
+            animationUid = 0;
+            scale = 1f;
+
+            if (sourceUid <= 0)
+                return false;
+
+            switch (sourceType)
+            {
+                case CharacterConstants.Type.Npc:
+                {
+                    var infoNpc = _tableNpc?.GetDataByUid(sourceUid);
+                    if (infoNpc == null)
+                        return false;
+
+                    animationUid = infoNpc.AnimationUid;
+                    scale = infoNpc.Scale;
+                    return true;
+                }
+                case CharacterConstants.Type.Monster:
+                {
+                    var infoMonster = _tableMonster?.GetDataByUid(sourceUid);
+                    if (infoMonster == null)
+                        return false;
+
+                    animationUid = infoMonster.AnimationUid;
+                    scale = infoMonster.Scale;
+                    return true;
+                }
+                default:
+                    GcLogger.LogWarning($"CreateDummyCharacter failed: unsupported sourceType={sourceType}");
+                    return false;
+            }
+        }
+
+        /// <summary>
+        /// 더미 생성에 사용할 캐릭터 프리팹을 타입과 애니메이션 UID 기준으로 조회합니다.
+        /// </summary>
+        /// <param name="sourceType">원본 캐릭터 타입입니다.</param>
+        /// <param name="animationUid">원본 애니메이션 UID입니다.</param>
+        /// <returns>조회된 프리팹입니다. 없으면 <see langword="null"/>입니다.</returns>
+        private GameObject ResolveDummyPrefab(CharacterConstants.Type sourceType, int animationUid)
+        {
+            if (_addressableLoaderPrefabCharacter == null)
+                return null;
+
+            return sourceType switch
+            {
+                CharacterConstants.Type.Npc => _addressableLoaderPrefabCharacter.GetCharacterNpc(animationUid),
+                CharacterConstants.Type.Monster => _addressableLoaderPrefabCharacter.GetCharacterMonster(animationUid),
+                _ => null
+            };
+        }
+
+        /// <summary>
+        /// 스킬 더미 전용 캐릭터를 생성합니다.
+        /// 더미는 <see cref="CharacterBase"/> 기반이며, 원본 테이블의 애니메이션 컨트롤러 타입을 따라
+        /// Spine/Sprite 중 하나만 유지하도록 구성합니다.
+        /// </summary>
+        /// <param name="sourceType">원본 캐릭터 타입입니다. Monster/Npc만 지원합니다.</param>
+        /// <param name="sourceUid">원본 캐릭터 UID입니다.</param>
+        /// <param name="regenData">생성 위치/리젠 데이터입니다.</param>
+        /// <param name="prefab">외부에서 지정한 프리팹입니다. null이면 테이블 기반으로 조회합니다.</param>
+        /// <returns>생성된 더미 오브젝트입니다. 실패하면 <see langword="null"/>입니다.</returns>
+        public GameObject CreateDummyCharacter(
+            CharacterConstants.Type sourceType,
+            int sourceUid,
+            CharacterRegenData regenData = null,
+            GameObject prefab = null)
+        {
+            if (!TryResolveDummySourceProfile(sourceType, sourceUid, out int animationUid, out float scale))
+                return null;
+
+            var animationInfo = _tableAnimation?.GetDataByUid(animationUid);
+            if (animationInfo == null)
+                return null;
+
+            if (prefab == null)
+            {
+                prefab = ResolveDummyPrefab(sourceType, animationUid);
+                if (prefab == null)
+                {
+                    GcLogger.LogError($"CreateDummyCharacter failed: prefab is null. sourceType={sourceType}, animationUid={animationUid}");
+                    return null;
+                }
+            }
+
+            GameObject dummyObject = Object.Instantiate(prefab);
+            try
+            {
+                CharacterBase characterBase = dummyObject.GetComponent<CharacterBase>();
+                DummyCharacter dummyCharacter = characterBase as DummyCharacter;
+
+                if (characterBase == null)
+                {
+                    dummyCharacter = dummyObject.AddComponent<DummyCharacter>();
+                    characterBase = dummyCharacter;
+                }
+                else if (dummyCharacter == null)
+                {
+                    GcLogger.LogWarning(
+                        $"CreateDummyCharacter: existing CharacterBase detected ({characterBase.GetType().Name}). " +
+                        "Runtime type will be overridden to None.");
+                }
+
+                dummyCharacter?.ConfigureSource(sourceType, sourceUid);
+                characterBase.type = CharacterConstants.Type.None;
+                characterBase.uid = sourceUid;
+                characterBase.CharacterRegenData = regenData;
+                characterBase.SetScale(scale);
+
+                if (regenData != null)
+                {
+                    dummyObject.transform.position = new Vector3(
+                        regenData.x,
+                        regenData.y,
+                        dummyObject.transform.position.z);
+                }
+
+                var iAnim = SetupAnimationController(dummyObject, animationInfo.Controller);
+                if (iAnim == null)
+                {
+                    GcLogger.LogError($"CreateDummyCharacter failed: wrong animation controller. uid:{sourceUid}, controller:{animationInfo.Controller}");
+                    Object.Destroy(dummyObject);
+                    return null;
+                }
+
+                characterBase.CharacterAnimationController = iAnim;
+                _characters.Add(dummyObject);
+                return dummyObject;
+            }
+            catch (Exception ex)
+            {
+                GcLogger.LogException(ex);
+                if (dummyObject) Object.Destroy(dummyObject);
+                return null;
+            }
         }
 
         public async Task<GameObject> CreatePlayer()
