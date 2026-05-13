@@ -37,6 +37,12 @@ namespace GGemCo2DCore
         public readonly bool UseMaxDistanceOverride;
         public readonly float MaxDistanceOverride;
         public readonly bool UpdateAimContinuously;
+        public readonly bool UseRaycastDirectionModeOverride;
+        public readonly LaserConstants.RaycastDirectionMode RaycastDirectionModeOverride;
+        public readonly bool UseRaycastAngleOverride;
+        public readonly float RaycastAngleOverrideDeg;
+        public readonly bool UseVfxAngleSyncModeOverride;
+        public readonly LaserConstants.VfxAngleSyncMode VfxAngleSyncModeOverride;
 
         /// <summary>
         /// 레이저 런타임 메타데이터를 생성합니다.
@@ -64,6 +70,12 @@ namespace GGemCo2DCore
         /// <param name="useMaxDistanceOverride">최대 사거리 오버라이드 사용 여부입니다.</param>
         /// <param name="maxDistanceOverride">최대 사거리 오버라이드 값입니다.</param>
         /// <param name="updateAimContinuously">지속 시간 동안 에임을 계속 갱신할지 여부입니다.</param>
+        /// <param name="useRaycastDirectionModeOverride">레이캐스트 방향 모드 오버라이드 사용 여부입니다.</param>
+        /// <param name="raycastDirectionModeOverride">레이캐스트 방향 모드 오버라이드 값입니다.</param>
+        /// <param name="useRaycastAngleOverride">레이캐스트 각도 오버라이드 사용 여부입니다.</param>
+        /// <param name="raycastAngleOverrideDeg">레이캐스트 각도 오버라이드 값(도)입니다.</param>
+        /// <param name="useVfxAngleSyncModeOverride">VFX 각도 동기화 모드 오버라이드 사용 여부입니다.</param>
+        /// <param name="vfxAngleSyncModeOverride">VFX 각도 동기화 모드 오버라이드 값입니다.</param>
         public MetadataLaser(
             int uid,
             ConfigCommon.DamageType damageType,
@@ -87,7 +99,13 @@ namespace GGemCo2DCore
             float tickIntervalOverride = 0f,
             bool useMaxDistanceOverride = false,
             float maxDistanceOverride = 0f,
-            bool updateAimContinuously = false)
+            bool updateAimContinuously = false,
+            bool useRaycastDirectionModeOverride = false,
+            LaserConstants.RaycastDirectionMode raycastDirectionModeOverride = LaserConstants.RaycastDirectionMode.TowardTarget,
+            bool useRaycastAngleOverride = false,
+            float raycastAngleOverrideDeg = 0f,
+            bool useVfxAngleSyncModeOverride = false,
+            LaserConstants.VfxAngleSyncMode vfxAngleSyncModeOverride = LaserConstants.VfxAngleSyncMode.FollowRaycast)
         {
             Uid = uid;
             DamageType = damageType;
@@ -112,6 +130,12 @@ namespace GGemCo2DCore
             UseMaxDistanceOverride = useMaxDistanceOverride;
             MaxDistanceOverride = Mathf.Max(0f, maxDistanceOverride);
             UpdateAimContinuously = updateAimContinuously;
+            UseRaycastDirectionModeOverride = useRaycastDirectionModeOverride;
+            RaycastDirectionModeOverride = raycastDirectionModeOverride;
+            UseRaycastAngleOverride = useRaycastAngleOverride;
+            RaycastAngleOverrideDeg = raycastAngleOverrideDeg;
+            UseVfxAngleSyncModeOverride = useVfxAngleSyncModeOverride;
+            VfxAngleSyncModeOverride = vfxAngleSyncModeOverride;
         }
 
         /// <summary>

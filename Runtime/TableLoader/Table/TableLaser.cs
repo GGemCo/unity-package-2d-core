@@ -25,6 +25,9 @@ namespace GGemCo2DCore
         public LaserConstants.BlockMode BlockMode = LaserConstants.BlockMode.StopAtGroundOrHostile;
         public LaserConstants.HitMode HitMode = LaserConstants.HitMode.FirstHitOnly;
         public LaserConstants.AimUpdateMode AimUpdateMode = LaserConstants.AimUpdateMode.Snapshot;
+        public LaserConstants.RaycastDirectionMode RaycastDirectionMode = LaserConstants.RaycastDirectionMode.TowardTarget;
+        public float RaycastAngleDeg;
+        public LaserConstants.VfxAngleSyncMode VfxAngleSyncMode = LaserConstants.VfxAngleSyncMode.FollowRaycast;
     }
 
     /// <summary>
@@ -60,6 +63,9 @@ namespace GGemCo2DCore
                 BlockMode = GetEnum(data, LaserConstants.BlockMode.StopAtGroundOrHostile, "BlockMode"),
                 HitMode = GetEnum(data, LaserConstants.HitMode.FirstHitOnly, "HitMode"),
                 AimUpdateMode = GetEnum(data, LaserConstants.AimUpdateMode.Snapshot, "AimUpdateMode"),
+                RaycastDirectionMode = GetEnum(data, LaserConstants.RaycastDirectionMode.TowardTarget, "RaycastDirectionMode"),
+                RaycastAngleDeg = GetFloat(data, 0f, "RaycastAngleDeg", "RayAngleDeg"),
+                VfxAngleSyncMode = GetEnum(data, LaserConstants.VfxAngleSyncMode.FollowRaycast, "VfxAngleSyncMode"),
             };
         }
 

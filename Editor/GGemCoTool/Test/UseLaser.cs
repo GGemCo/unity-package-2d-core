@@ -41,6 +41,9 @@ namespace GGemCo2DCoreEditor
             new("BlockMode"),
             new("HitMode"),
             new("AimUpdateMode"),
+            new("RaycastDirectionMode"),
+            new("RaycastAngleDeg"),
+            new("VfxAngleSyncMode"),
         };
 
         [SerializeField, Tooltip("laser 테이블에서 사용할 레이저 Uid입니다.")] private int laserUid;
@@ -54,6 +57,12 @@ namespace GGemCo2DCoreEditor
         [SerializeField, Tooltip("체크하면 테이블 MaxDistance 대신 아래 오버라이드 값을 사용합니다.")] private bool useMaxDistanceOverride;
         [SerializeField, Tooltip("레이저 최대 사거리를 직접 덮어쓸 값입니다.")] private float maxDistanceOverride = 10f;
         [SerializeField, Tooltip("활성 시간 동안 타겟 방향을 계속 추적할지 여부입니다.")] private bool updateAimContinuously;
+        [SerializeField, Tooltip("체크하면 테이블 RaycastDirectionMode 대신 아래 오버라이드 값을 사용합니다.")] private bool useRaycastDirectionModeOverride;
+        [SerializeField, Tooltip("레이캐스트 방향 계산 모드를 직접 덮어쓸 값입니다.")] private LaserConstants.RaycastDirectionMode raycastDirectionModeOverride = LaserConstants.RaycastDirectionMode.TowardTarget;
+        [SerializeField, Tooltip("체크하면 테이블 RaycastAngleDeg 대신 아래 오버라이드 값을 사용합니다.")] private bool useRaycastAngleOverride;
+        [SerializeField, Tooltip("각도 기반 Raycast 방향에 사용할 각도 오버라이드 값입니다.")] private float raycastAngleOverrideDeg;
+        [SerializeField, Tooltip("체크하면 테이블 VfxAngleSyncMode 대신 아래 오버라이드 값을 사용합니다.")] private bool useVfxAngleSyncModeOverride;
+        [SerializeField, Tooltip("VFX 각도 동기화 모드를 직접 덮어쓸 값입니다.")] private LaserConstants.VfxAngleSyncMode vfxAngleSyncModeOverride = LaserConstants.VfxAngleSyncMode.FollowRaycast;
         [SerializeField, Tooltip("테스트 발사 시 사용할 비주얼 출력 타입입니다.")] private ProjectileConstants.ProjectileVisualType visualType = ProjectileConstants.ProjectileVisualType.Default;
         [SerializeField, Tooltip("테이블 VFX 대신 사용할 비주얼 VFX Uid입니다. 0이면 기본값을 사용합니다.")] private int visualVfxUidOverride;
         [SerializeField, Tooltip("Sprite 비주얼 타입에서 사용할 스프라이트입니다.")] private Sprite visualSprite;
@@ -199,6 +208,9 @@ namespace GGemCo2DCoreEditor
                     EditorGUILayout.LabelField($"HitMode: {_cachedLaserInfo.HitMode}");
                     EditorGUILayout.LabelField($"BlockMode: {_cachedLaserInfo.BlockMode}");
                     EditorGUILayout.LabelField($"AimUpdateMode: {_cachedLaserInfo.AimUpdateMode}");
+                    EditorGUILayout.LabelField($"RaycastDirectionMode: {_cachedLaserInfo.RaycastDirectionMode}");
+                    EditorGUILayout.LabelField($"RaycastAngleDeg: {_cachedLaserInfo.RaycastAngleDeg}");
+                    EditorGUILayout.LabelField($"VfxAngleSyncMode: {_cachedLaserInfo.VfxAngleSyncMode}");
                 }
             }
         }
@@ -381,6 +393,9 @@ namespace GGemCo2DCoreEditor
                     "BlockMode" => row.BlockMode.ToString(),
                     "HitMode" => row.HitMode.ToString(),
                     "AimUpdateMode" => row.AimUpdateMode.ToString(),
+                    "RaycastDirectionMode" => row.RaycastDirectionMode.ToString(),
+                    "RaycastAngleDeg" => MathHelper.FormatFloat(row.RaycastAngleDeg),
+                    "VfxAngleSyncMode" => row.VfxAngleSyncMode.ToString(),
                     _ => string.Empty,
                 };
             }
@@ -463,6 +478,18 @@ namespace GGemCo2DCoreEditor
                 useMaxDistanceOverride = EditorGUILayout.Toggle(new GUIContent("UseMaxDistanceOverride"), useMaxDistanceOverride);
                 if (useMaxDistanceOverride)
                     maxDistanceOverride = Mathf.Max(0.01f, EditorGUILayout.FloatField(new GUIContent("MaxDistanceOverride"), maxDistanceOverride));
+
+                useRaycastDirectionModeOverride = EditorGUILayout.Toggle(new GUIContent("UseRaycastDirectionModeOverride"), useRaycastDirectionModeOverride);
+                if (useRaycastDirectionModeOverride)
+                    raycastDirectionModeOverride = (LaserConstants.RaycastDirectionMode)EditorGUILayout.EnumPopup(new GUIContent("RaycastDirectionModeOverride"), raycastDirectionModeOverride);
+
+                useRaycastAngleOverride = EditorGUILayout.Toggle(new GUIContent("UseRaycastAngleOverride"), useRaycastAngleOverride);
+                if (useRaycastAngleOverride)
+                    raycastAngleOverrideDeg = EditorGUILayout.FloatField(new GUIContent("RaycastAngleOverrideDeg"), raycastAngleOverrideDeg);
+
+                useVfxAngleSyncModeOverride = EditorGUILayout.Toggle(new GUIContent("UseVfxAngleSyncModeOverride"), useVfxAngleSyncModeOverride);
+                if (useVfxAngleSyncModeOverride)
+                    vfxAngleSyncModeOverride = (LaserConstants.VfxAngleSyncMode)EditorGUILayout.EnumPopup(new GUIContent("VfxAngleSyncModeOverride"), vfxAngleSyncModeOverride);
             }
         }
 
@@ -598,7 +625,13 @@ namespace GGemCo2DCoreEditor
                     tickIntervalOverride: tickIntervalOverride,
                     useMaxDistanceOverride: useMaxDistanceOverride,
                     maxDistanceOverride: maxDistanceOverride,
-                    updateAimContinuously: updateAimContinuously);
+                    updateAimContinuously: updateAimContinuously,
+                    useRaycastDirectionModeOverride: useRaycastDirectionModeOverride,
+                    raycastDirectionModeOverride: raycastDirectionModeOverride,
+                    useRaycastAngleOverride: useRaycastAngleOverride,
+                    raycastAngleOverrideDeg: raycastAngleOverrideDeg,
+                    useVfxAngleSyncModeOverride: useVfxAngleSyncModeOverride,
+                    vfxAngleSyncModeOverride: vfxAngleSyncModeOverride);
 
                 _laserController.Launch(meta);
 
@@ -633,23 +666,112 @@ namespace GGemCo2DCoreEditor
 
             SceneGame sceneGame = SceneGame.Instance;
             GameObject player = sceneGame != null ? sceneGame.player : null;
+            CharacterBase owner = player != null && player.TryGetComponent(out CharacterBase character) ? character : null;
             Vector3 start = player != null ? player.transform.position : Vector3.zero;
             start += (Vector3)_cachedLaserInfo.StartPosition;
 
             ResolveTarget(out CharacterBase targetCharacter, out bool useTargetPositionOverride, out Vector2 targetPositionOverride);
-            Vector3 end = targetCharacter != null ? targetCharacter.transform.position : (Vector3)targetPositionOverride;
-
-            Vector3 direction = end - start;
+            Vector3 direction = ResolvePreviewRaycastDirection(owner, start, targetCharacter, useTargetPositionOverride, targetPositionOverride);
             if (direction.sqrMagnitude <= 1e-6f)
-                direction = Vector3.right;
+                direction = ResolvePreviewOwnerFacingDirection(owner);
 
             float distance = useMaxDistanceOverride ? maxDistanceOverride : _cachedLaserInfo.MaxDistance;
-            end = start + direction.normalized * distance;
+            Vector3 end = start + direction.normalized * distance;
 
             Handles.color = Color.cyan;
             Handles.DrawAAPolyLine(4f, start, end);
             Handles.SphereHandleCap(0, start, Quaternion.identity, 0.15f, EventType.Repaint);
             Handles.SphereHandleCap(0, end, Quaternion.identity, 0.12f, EventType.Repaint);
+        }
+
+        /// <summary>
+        /// 현재 UseLaser 설정을 기준으로 SceneView 프리뷰용 Raycast 방향을 계산합니다.
+        /// </summary>
+        /// <param name="owner">레이저를 발사할 시전자입니다.</param>
+        /// <param name="start">프리뷰 시작점입니다.</param>
+        /// <param name="targetCharacter">선택된 타겟 캐릭터입니다.</param>
+        /// <param name="useTargetPositionOverride">좌표 타겟 오버라이드 사용 여부입니다.</param>
+        /// <param name="targetPositionOverride">좌표 타겟 오버라이드 값입니다.</param>
+        /// <returns>프리뷰에 사용할 정규화 Raycast 방향입니다.</returns>
+        private Vector3 ResolvePreviewRaycastDirection(
+            CharacterBase owner,
+            Vector3 start,
+            CharacterBase targetCharacter,
+            bool useTargetPositionOverride,
+            Vector2 targetPositionOverride)
+        {
+            if (ResolveEffectiveRaycastDirectionMode() == LaserConstants.RaycastDirectionMode.ByAngle)
+                return ResolvePreviewDirectionByAngle(owner);
+
+            Vector3 targetPosition = targetCharacter != null
+                ? targetCharacter.transform.position
+                : (Vector3)targetPositionOverride;
+
+            if (!useTargetPositionOverride && targetCharacter == null)
+                return ResolvePreviewOwnerFacingDirection(owner);
+
+            Vector3 direction = targetPosition - start;
+            if (direction.sqrMagnitude <= 1e-6f)
+                return ResolvePreviewOwnerFacingDirection(owner);
+
+            return direction.normalized;
+        }
+
+        /// <summary>
+        /// 현재 UseLaser 설정의 각도 값을 기준으로 SceneView 프리뷰 방향을 계산합니다.
+        /// </summary>
+        /// <param name="owner">레이저를 발사할 시전자입니다.</param>
+        /// <returns>각도 기반 정규화 방향입니다.</returns>
+        private Vector3 ResolvePreviewDirectionByAngle(CharacterBase owner)
+        {
+            float angleDeg = ResolveEffectiveRaycastAngleDeg();
+            float baseAngle = 0f;
+
+            if (owner != null && owner.IsFlipped())
+            {
+                baseAngle = 180f;
+                angleDeg = -angleDeg;
+            }
+
+            float worldAngle = (baseAngle + angleDeg) * Mathf.Deg2Rad;
+            Vector3 direction = new Vector3(Mathf.Cos(worldAngle), Mathf.Sin(worldAngle), 0f);
+            return direction.sqrMagnitude > 1e-6f ? direction.normalized : ResolvePreviewOwnerFacingDirection(owner);
+        }
+
+        /// <summary>
+        /// 현재 UseLaser 설정에서 적용할 RaycastDirectionMode를 해석합니다.
+        /// </summary>
+        /// <returns>오버라이드 또는 테이블 기준 RaycastDirectionMode입니다.</returns>
+        private LaserConstants.RaycastDirectionMode ResolveEffectiveRaycastDirectionMode()
+        {
+            if (useRaycastDirectionModeOverride)
+                return raycastDirectionModeOverride;
+
+            return _cachedLaserInfo != null
+                ? _cachedLaserInfo.RaycastDirectionMode
+                : LaserConstants.RaycastDirectionMode.TowardTarget;
+        }
+
+        /// <summary>
+        /// 현재 UseLaser 설정에서 적용할 Raycast 각도 값을 해석합니다.
+        /// </summary>
+        /// <returns>오버라이드 또는 테이블 기준 Raycast 각도(도)입니다.</returns>
+        private float ResolveEffectiveRaycastAngleDeg()
+        {
+            if (useRaycastAngleOverride)
+                return raycastAngleOverrideDeg;
+
+            return _cachedLaserInfo != null ? _cachedLaserInfo.RaycastAngleDeg : 0f;
+        }
+
+        /// <summary>
+        /// 프리뷰 방향 계산에 사용할 시전자 기본 바라보기 방향을 반환합니다.
+        /// </summary>
+        /// <param name="owner">레이저를 발사할 시전자입니다.</param>
+        /// <returns>시전자 기준 기본 방향입니다.</returns>
+        private static Vector3 ResolvePreviewOwnerFacingDirection(CharacterBase owner)
+        {
+            return owner != null && owner.IsFlipped() ? Vector3.left : Vector3.right;
         }
 
         /// <summary>

@@ -65,5 +65,37 @@ namespace GGemCo2DCore
             /// </summary>
             Continuous = 1,
         }
+
+        /// <summary>
+        /// 레이캐스트 방향을 어떤 기준으로 계산할지 정의합니다.
+        /// </summary>
+        public enum RaycastDirectionMode
+        {
+            /// <summary>
+            /// 시작점에서 타겟(캐릭터/좌표)을 향하는 방향으로 계산합니다.
+            /// </summary>
+            TowardTarget = 0,
+
+            /// <summary>
+            /// 타겟을 무시하고 설정된 각도로 계산합니다.
+            /// </summary>
+            ByAngle = 1,
+        }
+
+        /// <summary>
+        /// VFX 각도를 레이캐스트 각도에 동기화할지 정의합니다.
+        /// </summary>
+        public enum VfxAngleSyncMode
+        {
+            /// <summary>
+            /// 매 프레임 레이캐스트 방향을 따라 VFX 각도를 동기화합니다.
+            /// </summary>
+            FollowRaycast = 0,
+
+            /// <summary>
+            /// 발사 시점 각도로 VFX 각도를 고정합니다.
+            /// </summary>
+            LockAtLaunch = 1,
+        }
     }
 }

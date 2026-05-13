@@ -63,7 +63,13 @@ namespace GGemCo2DCore
                     tickIntervalOverride: metadataLaser.TickIntervalOverride,
                     useMaxDistanceOverride: metadataLaser.UseMaxDistanceOverride,
                     maxDistanceOverride: metadataLaser.MaxDistanceOverride,
-                    updateAimContinuously: metadataLaser.UpdateAimContinuously)
+                    updateAimContinuously: metadataLaser.UpdateAimContinuously,
+                    useRaycastDirectionModeOverride: metadataLaser.UseRaycastDirectionModeOverride,
+                    raycastDirectionModeOverride: metadataLaser.RaycastDirectionModeOverride,
+                    useRaycastAngleOverride: metadataLaser.UseRaycastAngleOverride,
+                    raycastAngleOverrideDeg: metadataLaser.RaycastAngleOverrideDeg,
+                    useVfxAngleSyncModeOverride: metadataLaser.UseVfxAngleSyncModeOverride,
+                    vfxAngleSyncModeOverride: metadataLaser.VfxAngleSyncModeOverride)
                 : metadataLaser;
 
             _character.StartCoroutine(CreateLaserBurst(info, meta));

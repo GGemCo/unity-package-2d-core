@@ -24,7 +24,9 @@ namespace GGemCo2DCore
         private int _skillUid;
         private int _attackId;
         private Vector2 _targetPoint;
-        private Vector2 _launchDirection;
+        private bool _hasTargetPoint;
+        private Vector2 _launchRaycastDirection;
+        private Vector2 _launchVisualDirection;
         private bool _initialized;
         private bool _launched;
         private bool _isWaitingForEndVisual;
@@ -62,6 +64,7 @@ namespace GGemCo2DCore
             _skillUid = metadata.SkillUid;
             _attackId = metadata.AttackId;
             _targetPoint = metadata.TargetPositionOverride;
+            _hasTargetPoint = metadata.UseTargetPositionOverride;
             _durationSeconds = ResolveDurationSeconds(info, metadata);
             _tickIntervalSeconds = ResolveTickIntervalSeconds(info, metadata);
             _maxDistance = ResolveConfiguredMaxDistance(info, metadata);
@@ -103,10 +106,21 @@ namespace GGemCo2DCore
                 return;
 
             _targetPoint = targetPosition;
+            _hasTargetPoint = true;
             Vector2 start = ResolveCurrentStartPoint();
-            _launchDirection = ResolveDirection(start, targetPosition);
+            Vector2 raycastDirectionOnLaunch = ResolveDirectionByRaycastPolicy(start);
+            if (raycastDirectionOnLaunch.sqrMagnitude <= 1e-6f)
+                raycastDirectionOnLaunch = ResolveOwnerFacingDirection();
+
+            _launchRaycastDirection = raycastDirectionOnLaunch;
+            _launchVisualDirection = raycastDirectionOnLaunch;
+
+            Vector2 visualDirectionOnLaunch = ResolveCurrentVisualDirection(raycastDirectionOnLaunch);
+            if (visualDirectionOnLaunch.sqrMagnitude <= 1e-6f)
+                visualDirectionOnLaunch = raycastDirectionOnLaunch;
+
             transform.position = start;
-            ApplyRotation(_launchDirection);
+            ApplyRotation(visualDirectionOnLaunch);
             _launched = true;
             _elapsed = 0f;
 
@@ -134,30 +148,42 @@ namespace GGemCo2DCore
         }
 
         /// <summary>
-        /// 현재 프레임의 레이저 시작점/방향/판정을 갱신합니다.
+        /// 현재 프레임의 레이저 시작점/판정 방향/표현 방향을 갱신합니다.
+        /// - 판정 방향은 RaycastDirectionMode 정책을 따릅니다.
+        /// - 표현 방향은 VfxAngleSyncMode 정책을 따릅니다.
         /// </summary>
         /// <param name="now">현재 시간입니다.</param>
         private void EvaluateLaser(float now)
         {
-            Vector2 start = ResolveCurrentStartPoint();
-            Vector2 direction = ResolveCurrentDirection(start);
-            if (direction.sqrMagnitude <= 1e-6f)
-                direction = Vector2.right;
+            Vector3 start = ResolveCurrentStartPoint();
+            Vector3 raycastDirection = ResolveCurrentRaycastDirection(start);
+            if (raycastDirection.sqrMagnitude <= 1e-6f)
+                raycastDirection = ResolveOwnerFacingDirection();
 
-            ApplyRotation(direction);
+            Vector3 visualDirection = ResolveCurrentVisualDirection(raycastDirection);
+            if (visualDirection.sqrMagnitude <= 1e-6f)
+                visualDirection = raycastDirection;
+
+            ApplyRotation(visualDirection);
 
             RaycastHit2D bestHit = default;
-            bool hasBestHit = TryRaycastNearestValidHit(start, direction, _maxDistance, out bestHit);
-            Vector3 end = hasBestHit
-                ? (bestHit.point != Vector2.zero ? (Vector3)bestHit.point : (Vector3)(start + direction * bestHit.distance))
-                : (Vector3)(start + direction * _maxDistance);
+            bool hasBestHit = TryRaycastNearestValidHit(start, raycastDirection, _maxDistance, out bestHit);
+            float beamDistance = hasBestHit ? Mathf.Max(0f, bestHit.distance) : _maxDistance;
+            Vector3 end = start + (Vector3)(visualDirection * beamDistance);
+
+            if (ResolveVfxAngleSyncMode() == LaserConstants.VfxAngleSyncMode.FollowRaycast
+                && hasBestHit
+                && bestHit.point != Vector2.zero)
+            {
+                end = bestHit.point;
+            }
 
             ReleaseExitedTargets();
             CleanupStaleTickEntries();
 
             transform.position = start;
             _laserVisual?.SetEndpoints(start, end);
-            _visual?.OnUpdate(new ProjectileVisualUpdateContext(start, (Vector2)end, start, Vector2.zero, direction));
+            _visual?.OnUpdate(new ProjectileVisualUpdateContext(start, (Vector2)end, start, Vector2.zero, visualDirection));
         }
 
         /// <summary>
@@ -179,23 +205,53 @@ namespace GGemCo2DCore
         }
 
         /// <summary>
-        /// 현재 프레임의 발사 방향을 해석합니다.
+        /// 현재 프레임의 레이캐스트 방향을 해석합니다.
         /// </summary>
         /// <param name="start">기준 시작점입니다.</param>
-        /// <returns>해석된 정규화 방향입니다.</returns>
-        private Vector2 ResolveCurrentDirection(Vector2 start)
+        /// <returns>해석된 정규화 Raycast 방향입니다.</returns>
+        private Vector2 ResolveCurrentRaycastDirection(Vector2 start)
         {
             if (ShouldUpdateAimContinuously())
             {
-                if (_targetObject != null)
-                    return ResolveDirection(start, _targetObject.transform.position);
-
-                if (_runtime.UseTargetPositionOverride)
-                    return ResolveDirection(start, _runtime.TargetPositionOverride);
+                Vector2 continuousDirection = ResolveDirectionByRaycastPolicy(start, false);
+                if (continuousDirection.sqrMagnitude > 1e-6f)
+                    return continuousDirection.normalized;
             }
 
-            if (_launchDirection.sqrMagnitude > 1e-6f)
-                return _launchDirection.normalized;
+            if (_launchRaycastDirection.sqrMagnitude > 1e-6f)
+                return _launchRaycastDirection.normalized;
+
+            return ResolveDirectionByRaycastPolicy(start);
+        }
+
+        /// <summary>
+        /// 현재 프레임의 비주얼 방향을 해석합니다.
+        /// - FollowRaycast면 판정 방향과 동일하게 갱신합니다.
+        /// - LockAtLaunch면 발사 시점 방향을 유지합니다.
+        /// </summary>
+        /// <param name="raycastDirection">현재 프레임의 Raycast 방향입니다.</param>
+        /// <returns>해석된 정규화 비주얼 방향입니다.</returns>
+        private Vector2 ResolveCurrentVisualDirection(Vector2 raycastDirection)
+        {
+            if (ResolveVfxAngleSyncMode() == LaserConstants.VfxAngleSyncMode.FollowRaycast)
+                return raycastDirection;
+
+            if (_launchVisualDirection.sqrMagnitude > 1e-6f)
+                return _launchVisualDirection.normalized;
+
+            return raycastDirection;
+        }
+
+        /// <summary>
+        /// 현재 정책에 맞춰 Raycast 방향을 즉시 계산합니다.
+        /// </summary>
+        /// <param name="start">기준 시작점입니다.</param>
+        /// <param name="allowFallbackToOwnerFacing">타겟 기반 해석이 불가할 때 소유자 바라보기 방향으로 보정할지 여부입니다.</param>
+        /// <returns>정규화된 Raycast 방향입니다.</returns>
+        private Vector2 ResolveDirectionByRaycastPolicy(Vector2 start, bool allowFallbackToOwnerFacing = true)
+        {
+            if (ResolveRaycastDirectionMode() == LaserConstants.RaycastDirectionMode.ByAngle)
+                return ResolveDirectionByConfiguredAngle();
 
             if (_targetObject != null)
                 return ResolveDirection(start, _targetObject.transform.position);
@@ -203,11 +259,10 @@ namespace GGemCo2DCore
             if (_runtime != null && _runtime.UseTargetPositionOverride)
                 return ResolveDirection(start, _runtime.TargetPositionOverride);
 
-            Vector2 fallback = Vector2.right;
-            if (_owner != null && _owner.IsFlipped())
-                fallback = Vector2.left;
+            if (_hasTargetPoint)
+                return ResolveDirection(start, _targetPoint);
 
-            return fallback;
+            return allowFallbackToOwnerFacing ? ResolveOwnerFacingDirection() : Vector2.zero;
         }
 
         /// <summary>
@@ -220,6 +275,86 @@ namespace GGemCo2DCore
                 return true;
 
             return _info != null && _info.AimUpdateMode == LaserConstants.AimUpdateMode.Continuous;
+        }
+
+        /// <summary>
+        /// Raycast 방향 계산 모드를 해석합니다.
+        /// - 런타임 오버라이드가 우선하며, 없으면 테이블 값을 사용합니다.
+        /// </summary>
+        /// <returns>적용할 Raycast 방향 계산 모드입니다.</returns>
+        private LaserConstants.RaycastDirectionMode ResolveRaycastDirectionMode()
+        {
+            if (_runtime != null && _runtime.UseRaycastDirectionModeOverride)
+                return _runtime.RaycastDirectionModeOverride;
+
+            return _info != null
+                ? _info.RaycastDirectionMode
+                : LaserConstants.RaycastDirectionMode.TowardTarget;
+        }
+
+        /// <summary>
+        /// VFX 각도 동기화 모드를 해석합니다.
+        /// - 런타임 오버라이드가 우선하며, 없으면 테이블 값을 사용합니다.
+        /// </summary>
+        /// <returns>적용할 VFX 각도 동기화 모드입니다.</returns>
+        private LaserConstants.VfxAngleSyncMode ResolveVfxAngleSyncMode()
+        {
+            if (_runtime != null && _runtime.UseVfxAngleSyncModeOverride)
+                return _runtime.VfxAngleSyncModeOverride;
+
+            return _info != null
+                ? _info.VfxAngleSyncMode
+                : LaserConstants.VfxAngleSyncMode.FollowRaycast;
+        }
+
+        /// <summary>
+        /// Raycast 각도 설정값(도)을 해석합니다.
+        /// - 런타임 오버라이드가 우선하며, 없으면 테이블 값을 사용합니다.
+        /// </summary>
+        /// <returns>적용할 Raycast 각도(도)입니다.</returns>
+        private float ResolveRaycastAngleDeg()
+        {
+            if (_runtime != null && _runtime.UseRaycastAngleOverride)
+                return _runtime.RaycastAngleOverrideDeg;
+
+            return _info != null ? _info.RaycastAngleDeg : 0f;
+        }
+
+        /// <summary>
+        /// 설정된 각도를 기준으로 Raycast 방향을 계산합니다.
+        /// - 기본은 +X(오른쪽) 기준입니다.
+        /// - 시전자가 좌우 반전된 상태면 각도 부호를 반전하여 좌우 미러링 일관성을 유지합니다.
+        /// </summary>
+        /// <returns>각도 기반 정규화 방향입니다.</returns>
+        private Vector2 ResolveDirectionByConfiguredAngle()
+        {
+            float angleDeg = ResolveRaycastAngleDeg();
+            float baseAngle = 0f;
+
+            if (_owner != null && _owner.IsFlipped())
+            {
+                baseAngle = 180f;
+                angleDeg = -angleDeg;
+            }
+
+            float worldAngle = (baseAngle + angleDeg) * Mathf.Deg2Rad;
+            Vector2 direction = new Vector2(Mathf.Cos(worldAngle), Mathf.Sin(worldAngle));
+            if (direction.sqrMagnitude <= 1e-6f)
+                return ResolveOwnerFacingDirection();
+
+            return direction.normalized;
+        }
+
+        /// <summary>
+        /// 타겟 정보가 없거나 방향 해석에 실패했을 때 사용할 기본 바라보기 방향을 반환합니다.
+        /// </summary>
+        /// <returns>시전자 기준 기본 방향(오른쪽/왼쪽)입니다.</returns>
+        private Vector2 ResolveOwnerFacingDirection()
+        {
+            if (_owner != null && _owner.IsFlipped())
+                return Vector2.left;
+
+            return Vector2.right;
         }
 
         /// <summary>
