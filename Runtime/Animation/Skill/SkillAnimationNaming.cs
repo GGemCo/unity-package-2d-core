@@ -16,8 +16,12 @@ namespace GGemCo2DCore
             {
                 SkillAnimationPhase.CastingStart => $"skill_{skillUid}_cast_start",
                 SkillAnimationPhase.CastingLoop  => $"skill_{skillUid}_cast_loop",
-                SkillAnimationPhase.CastingEnd   => $"skill_{skillUid}_cast_end",
-                SkillAnimationPhase.Action       => $"skill_{skillUid}_action",
+                SkillAnimationPhase.CastingEnd    => $"skill_{skillUid}_cast_end",
+                SkillAnimationPhase.Action        => $"skill_{skillUid}_action",
+                SkillAnimationPhase.ChargeStart   => $"skill_{skillUid}_charge_start",
+                SkillAnimationPhase.ChargeLoop    => $"skill_{skillUid}_charge_loop",
+                SkillAnimationPhase.ChargeComplete=> $"skill_{skillUid}_charge_complete",
+                SkillAnimationPhase.ChargeFail    => $"skill_{skillUid}_charge_fail",
                 _ => string.Empty
             };
         }
