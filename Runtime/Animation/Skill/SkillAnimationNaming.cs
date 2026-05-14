@@ -20,6 +20,7 @@ namespace GGemCo2DCore
                 SkillAnimationPhase.Action        => $"skill_{skillUid}_action",
                 SkillAnimationPhase.ChargeStart   => $"skill_{skillUid}_charge_start",
                 SkillAnimationPhase.ChargeLoop    => $"skill_{skillUid}_charge_loop",
+                SkillAnimationPhase.ChargeEnd     => $"skill_{skillUid}_charge_end",
                 SkillAnimationPhase.ChargeComplete=> $"skill_{skillUid}_charge_complete",
                 SkillAnimationPhase.ChargeFail    => $"skill_{skillUid}_charge_fail",
                 _ => string.Empty

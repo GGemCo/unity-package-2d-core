@@ -9,7 +9,7 @@ namespace GGemCo2DCore
     /// Sprite/Spine 구현체가 동일한 요청 규격으로 스킬 애니메이션을 재생하게 합니다.
     /// </para>
     /// <para>
-    /// 차징 단계는 기존 캐스팅 단계와 별도로 분리하여, 사용 전 차징 루프/완료/실패 연출을 안전하게 표현합니다.
+    /// 차징 단계는 기존 캐스팅 단계와 별도로 분리하여, 사용 전 차징 시작/루프/종료/완료/실패 연출을 안전하게 표현합니다.
     /// </para>
     /// </remarks>
     public enum SkillAnimationPhase
@@ -36,6 +36,9 @@ namespace GGemCo2DCore
         ChargeComplete,
 
         /// <summary>차징 게이지가 0이 되어 실패했을 때 재생하는 애니메이션 단계입니다.</summary>
-        ChargeFail
+        ChargeFail,
+
+        /// <summary>차징 단계 종료 시 1회 재생하는 애니메이션 단계입니다.</summary>
+        ChargeEnd
     }
 }
