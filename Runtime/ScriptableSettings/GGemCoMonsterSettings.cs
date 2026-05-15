@@ -91,6 +91,11 @@ namespace GGemCo2DCore
         /// </summary>
         public int UseBattleHudGradeMask => useBattleHudGradeMask;
 
+        /// <summary>
+        /// 지정한 몬스터 등급에서 전투 HUD를 사용할 수 있는지 확인합니다.
+        /// </summary>
+        /// <param name="grade">확인할 몬스터 등급입니다.</param>
+        /// <returns>전투 HUD를 사용할 수 있으면 true입니다.</returns>
         public bool IsBattleHudEnabledFor(CharacterConstants.Grade grade)
         {
             if (!useBattleHud) return false;
@@ -98,6 +103,38 @@ namespace GGemCo2DCore
             
             var flag = 1 << (int)grade;
             return (useBattleHudGradeMask & flag) != 0;
+        }
+
+        /// <summary>
+        /// 지정한 몬스터 등급에 머리 위 HP 바 프리팹이 설정되어 있는지 확인합니다.
+        /// </summary>
+        /// <param name="grade">확인할 몬스터 등급입니다.</param>
+        /// <returns>HP 바 프리팹이 설정되어 있으면 true입니다.</returns>
+        public bool HasMonsterHpBar(CharacterConstants.Grade grade)
+        {
+            return GetMonsterHpBar(grade) != null;
+        }
+
+        /// <summary>
+        /// 머리 위 Super Armor UI를 표시할 수 있는지 확인합니다.
+        /// </summary>
+        /// <param name="grade">확인할 몬스터 등급입니다.</param>
+        /// <param name="maxSuperArmor">몬스터가 보유할 수 있는 최대 Super Armor 값입니다.</param>
+        /// <returns>머리 위 Super Armor UI를 표시할 수 있으면 true입니다.</returns>
+        public bool CanShowWorldSuperArmor(CharacterConstants.Grade grade, int maxSuperArmor)
+        {
+            return maxSuperArmor > 0 && HasMonsterHpBar(grade);
+        }
+
+        /// <summary>
+        /// 전투 HUD 안의 Super Armor UI를 표시할 수 있는지 확인합니다.
+        /// </summary>
+        /// <param name="grade">확인할 몬스터 등급입니다.</param>
+        /// <param name="maxSuperArmor">몬스터가 보유할 수 있는 최대 Super Armor 값입니다.</param>
+        /// <returns>전투 HUD Super Armor UI를 표시할 수 있으면 true입니다.</returns>
+        public bool CanShowBattleHudSuperArmor(CharacterConstants.Grade grade, int maxSuperArmor)
+        {
+            return maxSuperArmor > 0 && IsBattleHudEnabledFor(grade);
         }
         
         /// <summary>
@@ -121,10 +158,17 @@ namespace GGemCo2DCore
             return (useCutsceneDieGradeMask & flag) != 0;
         }
 
+        /// <summary>
+        /// 지정한 몬스터 등급에 연결된 머리 위 HP 바 프리팹을 가져옵니다.
+        /// </summary>
+        /// <param name="grade">확인할 몬스터 등급입니다.</param>
+        /// <returns>등급에 연결된 HP 바 프리팹입니다. 없으면 null입니다.</returns>
         public GameObject GetMonsterHpBar(CharacterConstants.Grade grade)
         {
+            if (prefabHpBars == null) return null;
             foreach (var prefabHpBar in prefabHpBars)
             {
+                if (prefabHpBar == null) continue;
                 if (prefabHpBar.grade == grade) return prefabHpBar.prefabSlider;
             }
             return null;

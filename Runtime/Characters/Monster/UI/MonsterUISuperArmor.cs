@@ -20,6 +20,7 @@ namespace GGemCo2DCore
         private void Awake()
         {
             _canvasGroup = GetComponent<CanvasGroup>();
+            _shieldIcons = new List<GameObject>();
             _isStartFade = false;
         }
         public void Initialize(Monster monster)
@@ -44,6 +45,9 @@ namespace GGemCo2DCore
         {
         }
 
+        /// <summary>
+        /// 현재 몬스터가 보유할 수 있는 최대 Super Armor 수만큼 아이콘을 생성합니다.
+        /// </summary>
         private void InitializeSuperArmorIcon()
         {
             if (!_monster)
@@ -56,10 +60,23 @@ namespace GGemCo2DCore
                 GcLogger.LogError($"{nameof(prefabShield)}가 없습니다.");
                 return;
             }
-            int superArmor = _monster.CurrentSuperArmor.Value;
-            if (superArmor <= 0) return;
-            _shieldIcons = new List<GameObject>(superArmor);
-            for (int i = 0; i < superArmor; i++)
+
+            int maxSuperArmor = Mathf.Max(_monster.TotalSuperArmor.Value, _monster.CurrentSuperArmor.Value);
+            if (maxSuperArmor <= 0) return;
+
+            EnsureShieldIconCount(maxSuperArmor);
+            SetValue(_monster.CurrentSuperArmor.Value);
+        }
+
+        /// <summary>
+        /// 필요한 Super Armor 아이콘 개수만큼 풀을 확장합니다.
+        /// </summary>
+        /// <param name="count">필요한 아이콘 개수입니다.</param>
+        private void EnsureShieldIconCount(int count)
+        {
+            if (count <= _shieldIcons.Count) return;
+
+            for (int i = _shieldIcons.Count; i < count; i++)
             {
                 var shield = Instantiate(prefabShield, transform);
                 _shieldIcons.Add(shield);
@@ -71,8 +88,14 @@ namespace GGemCo2DCore
             if (_monster == null) return;
             gameObject.transform.position = _monster.transform.position + new Vector3(0, _monsterHeight + diffY, 0);
         }
+        /// <summary>
+        /// Super Armor 아이콘 활성 상태를 현재 값에 맞춰 갱신합니다.
+        /// </summary>
+        /// <param name="value">현재 Super Armor 값입니다.</param>
         public void SetValue(int value)
         {
+            if (_shieldIcons == null) return;
+
             if (value <= 0)
             {
                 foreach (var shieldIcon in _shieldIcons)
