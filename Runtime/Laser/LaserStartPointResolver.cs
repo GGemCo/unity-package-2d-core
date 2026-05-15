@@ -47,17 +47,34 @@ namespace GGemCo2DCore
             switch (metadata.StartPositionOverrideMode)
             {
                 case LaserConstants.StartPositionOverrideMode.ReplaceTableOffset:
-                    return ownerPosition + metadata.StartPositionOverride;
+                    return ownerPosition + ResolveCasterFlipStartOffset(metadata.StartPositionOverride, metadata);
 
                 case LaserConstants.StartPositionOverrideMode.AddToTableOffset:
-                    return ownerPosition + tableOffset + metadata.StartPositionOverride;
+                    return ownerPosition + ResolveCasterFlipStartOffset(tableOffset + metadata.StartPositionOverride, metadata);
 
                 case LaserConstants.StartPositionOverrideMode.WorldPosition:
                     return metadata.StartPositionOverride;
 
                 default:
-                    return ownerPosition + tableOffset;
+                    return ownerPosition + ResolveCasterFlipStartOffset(tableOffset, metadata);
             }
+        }
+
+        /// <summary>
+        /// 시전자 좌우 반전 상태에 따라 시작점 오프셋의 X 값을 반전합니다.
+        /// </summary>
+        /// <param name="offset">시전자 기준으로 계산된 시작점 오프셋입니다.</param>
+        /// <param name="metadata">런타임 오버라이드 메타데이터입니다.</param>
+        /// <returns>Caster flip 정책이 반영된 시작점 오프셋입니다.</returns>
+        private static Vector2 ResolveCasterFlipStartOffset(Vector2 offset, MetadataLaser metadata)
+        {
+            if (metadata == null || metadata.UseCasterFlipStartOffsetX != true)
+                return offset;
+
+            if (metadata.Owner == null || metadata.Owner.IsFlipped() != true)
+                return offset;
+
+            return new Vector2(-offset.x, offset.y);
         }
     }
 }

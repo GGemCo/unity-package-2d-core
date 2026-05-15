@@ -75,7 +75,8 @@ namespace GGemCo2DCore
                     vfxAngleSyncModeOverride: metadataLaser.VfxAngleSyncModeOverride,
                     startPositionOverrideMode: metadataLaser.StartPositionOverrideMode,
                     startPositionOverride: metadataLaser.StartPositionOverride,
-                    startPointUpdateMode: metadataLaser.StartPointUpdateMode)
+                    startPointUpdateMode: metadataLaser.StartPointUpdateMode,
+                    useCasterFlipStartOffsetX: metadataLaser.UseCasterFlipStartOffsetX)
                 : metadataLaser;
 
             _character.StartCoroutine(CreateLaserBurst(info, meta));

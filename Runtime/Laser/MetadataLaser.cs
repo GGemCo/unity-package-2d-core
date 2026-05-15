@@ -49,6 +49,7 @@ namespace GGemCo2DCore
         public readonly LaserConstants.StartPositionOverrideMode StartPositionOverrideMode;
         public readonly Vector2 StartPositionOverride;
         public readonly LaserConstants.StartPointUpdateMode StartPointUpdateMode;
+        public readonly bool UseCasterFlipStartOffsetX;
 
         /// <summary>
         /// 레이저 런타임 메타데이터를 생성합니다.
@@ -88,6 +89,7 @@ namespace GGemCo2DCore
         /// <param name="startPositionOverrideMode">시작점 오버라이드 해석 방식입니다.</param>
         /// <param name="startPositionOverride">시작점 오버라이드 값입니다.</param>
         /// <param name="startPointUpdateMode">시작점 갱신 방식입니다.</param>
+        /// <param name="useCasterFlipStartOffsetX">시전자 좌우 반전 상태에 따라 시작점 오프셋 X 값을 반전할지 여부입니다.</param>
         public MetadataLaser(
             int uid,
             ConfigCommon.DamageType damageType,
@@ -123,7 +125,8 @@ namespace GGemCo2DCore
             LaserConstants.VfxAngleSyncMode vfxAngleSyncModeOverride = LaserConstants.VfxAngleSyncMode.FollowRaycast,
             LaserConstants.StartPositionOverrideMode startPositionOverrideMode = LaserConstants.StartPositionOverrideMode.UseLaserTable,
             Vector2 startPositionOverride = default,
-            LaserConstants.StartPointUpdateMode startPointUpdateMode = LaserConstants.StartPointUpdateMode.FollowOwner)
+            LaserConstants.StartPointUpdateMode startPointUpdateMode = LaserConstants.StartPointUpdateMode.FollowOwner,
+            bool useCasterFlipStartOffsetX = false)
         {
             Uid = uid;
             DamageType = damageType;
@@ -160,6 +163,7 @@ namespace GGemCo2DCore
             StartPositionOverrideMode = startPositionOverrideMode;
             StartPositionOverride = startPositionOverride;
             StartPointUpdateMode = startPointUpdateMode;
+            UseCasterFlipStartOffsetX = useCasterFlipStartOffsetX;
         }
 
         /// <summary>
