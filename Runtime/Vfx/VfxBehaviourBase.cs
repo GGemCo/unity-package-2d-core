@@ -66,7 +66,13 @@ namespace GGemCo2DCore
             _spawnPolicy = spawnPolicy ?? runtimeData?.DefaultSpawnPolicy?.Clone() ?? new VfxSpawnPolicy();
             _poolKey = poolKeyOverride != 0 ? poolKeyOverride : runtimeData?.Uid ?? 0;
             _releaseAction = releaseAction;
+            _character = null;
+            TargetCharacter = null;
+            _followCharacter = null;
             _followMode = _spawnPolicy.FollowMode;
+            _positionY = 0f;
+            _positionYType = ConfigCommon.PositionYType.None;
+            _duration = 0f;
             _releaseOnAnimationComplete = false;
             _isReleasing = false;
             _lifetimeElapsed = 0f;
@@ -366,6 +372,63 @@ namespace GGemCo2DCore
         public void SetPositionY(float y) => _positionY = y;
         public void SetPositionYType(ConfigCommon.PositionYType type) => _positionYType = type;
 
+        /// <summary>
+        /// 기준 월드 위치에 VFX Y 오프셋 정책을 반영한 최종 위치를 계산합니다.
+        /// </summary>
+        /// <param name="basePosition">오프셋을 적용하기 전 기준 월드 위치입니다.</param>
+        /// <param name="heightOwner">캐릭터 높이 보정 기준입니다. null이면 Follow 대상 또는 생성 캐릭터를 사용합니다.</param>
+        /// <returns>생성 요청의 Y 오프셋과 높이 보정이 적용된 최종 월드 위치입니다.</returns>
+        public Vector3 ResolveSpawnPosition(Vector3 basePosition, CharacterBase heightOwner = null)
+        {
+            Vector3 result = basePosition;
+
+            if (Mathf.Abs(_positionY) > Mathf.Epsilon)
+                result += new Vector3(0f, _positionY, 0f);
+
+            if (_positionYType == ConfigCommon.PositionYType.CharacterHeight)
+            {
+                CharacterBase resolvedHeightOwner = heightOwner != null
+                    ? heightOwner
+                    : (_followCharacter != null ? _followCharacter : _character);
+
+                if (resolvedHeightOwner != null)
+                    result += new Vector3(0f, resolvedHeightOwner.GetHeightByScale(), 0f);
+            }
+
+            return result;
+        }
+
+        /// <summary>
+        /// VFX가 활성화되기 전에 기준 위치와 생성 옵션을 즉시 반영합니다.
+        /// </summary>
+        /// <param name="basePosition">오프셋을 적용하기 전 기준 월드 위치입니다.</param>
+        /// <param name="heightOwner">캐릭터 높이 보정 기준입니다. null이면 Follow 대상 또는 생성 캐릭터를 사용합니다.</param>
+        /// <remarks>
+        /// 풀에서 꺼낸 VFX는 SetActive(true) 직후 OnEnable과 첫 렌더링이 발생할 수 있으므로,
+        /// 생성 프레임에 위치가 튀지 않도록 활성화 전에 최종 Transform을 확정합니다.
+        /// </remarks>
+        public void ApplySpawnPositionImmediate(Vector3 basePosition, CharacterBase heightOwner = null)
+        {
+            transform.position = ResolveSpawnPosition(basePosition, heightOwner);
+
+            if (_followCharacter != null && _followMode == VfxConstants.FollowMode.PositionAndFlip)
+                SetFlip(_followCharacter.IsFlipped());
+        }
+
+        /// <summary>
+        /// 현재 Follow 대상 위치를 즉시 반영합니다.
+        /// </summary>
+        /// <remarks>
+        /// 매 프레임 Follow 처리와 생성 직전 위치 보정이 같은 계산식을 사용하도록 보장합니다.
+        /// </remarks>
+        public void RefreshFollowPositionImmediate()
+        {
+            if (_followCharacter == null || _followMode == VfxConstants.FollowMode.None)
+                return;
+
+            ApplySpawnPositionImmediate(_followCharacter.transform.position, _followCharacter);
+        }
+
         public void SetCreateCharacter(GameObject character)
         {
             SetCreateCharacter(character != null ? character.GetComponent<CharacterBase>() : null);
@@ -377,7 +440,7 @@ namespace GGemCo2DCore
             if (_character == null)
                 return;
 
-            transform.position = character.transform.position;
+            ApplySpawnPositionImmediate(character.transform.position, _character);
             SetFlip(_character.IsFlipped());
         }
 
@@ -388,19 +451,7 @@ namespace GGemCo2DCore
             if (_followCharacter == null || _followMode == VfxConstants.FollowMode.None)
                 return;
 
-            transform.position = _followCharacter.transform.position;
-            if (_positionY > 0f)
-                transform.position += new Vector3(0f, _positionY, 0f);
-
-            if (_positionYType == ConfigCommon.PositionYType.CharacterHeight)
-            {
-                var heightOwner = _followCharacter != null ? _followCharacter : _character;
-                if (heightOwner != null)
-                    transform.position += new Vector3(0f, heightOwner.GetHeightByScale(), 0f);
-            }
-
-            if (_followMode == VfxConstants.FollowMode.PositionAndFlip)
-                SetFlip(_followCharacter.IsFlipped());
+            RefreshFollowPositionImmediate();
         }
 
         protected void EnsureFadeController()

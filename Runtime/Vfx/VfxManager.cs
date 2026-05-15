@@ -133,6 +133,17 @@ namespace GGemCo2DCore
             return null;
         }
 
+        /// <summary>
+        /// 생성 요청에 포함된 소유자, Follow, 위치, 렌더링 옵션을 VFX 인스턴스에 적용합니다.
+        /// </summary>
+        /// <param name="instance">풀에서 가져온 VFX 인스턴스입니다.</param>
+        /// <param name="behaviour">VFX 생명주기를 담당하는 Behaviour입니다.</param>
+        /// <param name="spawnPolicy">이번 생성에 사용할 Spawn 정책입니다.</param>
+        /// <param name="request">이번 VFX 생성 요청입니다.</param>
+        /// <remarks>
+        /// 위치 관련 옵션을 모두 적용한 뒤 SetActive(true) 전에 최종 위치를 확정하여,
+        /// 생성 프레임에 이펙트가 기본 위치에서 보였다가 보정 위치로 이동하는 현상을 방지합니다.
+        /// </remarks>
         private void ApplyRequest(GameObject instance, VfxBehaviourBase behaviour, VfxSpawnPolicy spawnPolicy, VfxSpawnRequest request)
         {
             if (request.Parent != null)
@@ -140,17 +151,12 @@ namespace GGemCo2DCore
             else if (request.ForceUiCanvasParent && _sceneGame != null && _sceneGame.canvasUI != null)
                 instance.transform.SetParent(_sceneGame.canvasUI.transform, false);
 
-            if (request.WorldPosition.HasValue)
-                instance.transform.position = request.WorldPosition.Value;
-
             var owner = request.Owner;
             if (owner == null && request.OwnerGameObject != null)
                 owner = request.OwnerGameObject.GetComponent<CharacterBase>();
-            if (owner != null)
-                behaviour.SetCreateCharacter(owner);
 
-            if (request.FollowTarget != null)
-                behaviour.SetFollowCharacter(request.FollowTarget, ResolveFollowMode(spawnPolicy, true));
+            CharacterBase followCharacter = null;
+            CharacterBase heightOwner = owner != null ? owner : request.Target;
 
             behaviour.SetForceOneShot(request.ForceOneShot);
 
@@ -169,27 +175,79 @@ namespace GGemCo2DCore
             if (request.SortingOrderOverride.HasValue)
                 behaviour.SetSortingOrder(request.SortingOrderOverride.Value);
 
-            if (request.PositionY != 0f)
-                behaviour.SetPositionY(request.PositionY);
-            if (request.PositionYType != ConfigCommon.PositionYType.None)
-                behaviour.SetPositionYType(request.PositionYType);
+            behaviour.SetPositionY(request.PositionY);
+            behaviour.SetPositionYType(request.PositionYType);
+
+            if (owner != null)
+                behaviour.SetCreateCharacter(owner);
+
+            if (request.FollowTarget != null)
+            {
+                followCharacter = request.FollowTarget;
+                heightOwner = followCharacter;
+                behaviour.SetFollowCharacter(followCharacter, ResolveFollowMode(spawnPolicy, true));
+            }
 
             switch (spawnPolicy.AttachType)
             {
                 case VfxConstants.AttachType.Owner:
                     if (owner != null)
-                        behaviour.SetFollowCharacter(owner, ResolveFollowMode(spawnPolicy, false));
+                    {
+                        followCharacter = owner;
+                        heightOwner = followCharacter;
+                        behaviour.SetFollowCharacter(followCharacter, ResolveFollowMode(spawnPolicy, false));
+                    }
                     break;
                 case VfxConstants.AttachType.Target:
                     if (request.Target != null)
-                        behaviour.SetFollowCharacter(request.Target, ResolveFollowMode(spawnPolicy, false));
+                    {
+                        followCharacter = request.Target;
+                        heightOwner = followCharacter;
+                        behaviour.SetFollowCharacter(followCharacter, ResolveFollowMode(spawnPolicy, false));
+                    }
                     break;
                 case VfxConstants.AttachType.UI:
                     if (_sceneGame != null && _sceneGame.canvasUI != null)
                         instance.transform.SetParent(_sceneGame.canvasUI.transform, false);
                     instance.transform.localPosition = Vector3.zero;
-                    break;
+                    return;
             }
+
+            Vector3 basePosition = ResolveInitialBasePosition(instance, owner, followCharacter, request);
+            behaviour.ApplySpawnPositionImmediate(basePosition, heightOwner);
+        }
+
+        /// <summary>
+        /// VFX 활성화 전에 사용할 기준 월드 위치를 결정합니다.
+        /// </summary>
+        /// <param name="instance">풀에서 가져온 VFX 인스턴스입니다.</param>
+        /// <param name="owner">생성 요청의 소유 캐릭터입니다.</param>
+        /// <param name="followCharacter">최종 Follow 대상으로 결정된 캐릭터입니다.</param>
+        /// <param name="request">이번 VFX 생성 요청입니다.</param>
+        /// <returns>Y 오프셋 적용 전 기준 월드 위치입니다.</returns>
+        /// <remarks>
+        /// Follow 대상이 있으면 Follow 기준 위치를 가장 우선 사용합니다.
+        /// Follow가 없으면 명시 위치, 소유자, 타겟, 현재 인스턴스 위치 순서로 fallback합니다.
+        /// </remarks>
+        private static Vector3 ResolveInitialBasePosition(
+            GameObject instance,
+            CharacterBase owner,
+            CharacterBase followCharacter,
+            VfxSpawnRequest request)
+        {
+            if (followCharacter != null)
+                return followCharacter.transform.position;
+
+            if (request.WorldPosition.HasValue)
+                return request.WorldPosition.Value;
+
+            if (owner != null)
+                return owner.transform.position;
+
+            if (request.Target != null)
+                return request.Target.transform.position;
+
+            return instance != null ? instance.transform.position : Vector3.zero;
         }
 
         /// <summary>
