@@ -215,6 +215,24 @@ namespace GGemCo2DCore
 
             Vector3 basePosition = ResolveInitialBasePosition(instance, owner, followCharacter, request);
             behaviour.ApplySpawnPositionImmediate(basePosition, heightOwner);
+            ApplyDirectionVisualIfNeeded(behaviour, request);
+        }
+
+        /// <summary>
+        /// 생성 요청에 방향 정보가 있으면 VFX의 DefaultDirection/NeedRotation 정책을 적용합니다.
+        /// </summary>
+        /// <param name="behaviour">방향 보정을 적용할 VFX Behaviour입니다.</param>
+        /// <param name="request">이번 VFX 생성 요청입니다.</param>
+        private static void ApplyDirectionVisualIfNeeded(VfxBehaviourBase behaviour, VfxSpawnRequest request)
+        {
+            if (behaviour == null || !request.UseDirection)
+                return;
+
+            behaviour.ApplyDirectionVisual(
+                request.Direction,
+                request.SourceDirection,
+                !request.DisableDefaultDirectionFlip,
+                !request.DisableDirectionRotation);
         }
 
         /// <summary>

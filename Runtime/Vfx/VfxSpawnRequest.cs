@@ -25,6 +25,31 @@ namespace GGemCo2DCore
         public VfxConstants.FollowMode? FollowModeOverride;
 
         /// <summary>
+        /// true이면 생성된 VFX가 지정된 방향을 기준으로 좌우 반전과 회전을 계산합니다.
+        /// </summary>
+        public bool UseDirection;
+
+        /// <summary>
+        /// VFX가 바라봐야 하는 월드 기준 2D 방향입니다.
+        /// </summary>
+        public Vector2 Direction;
+
+        /// <summary>
+        /// 수직 방향처럼 Direction.x가 0에 가까울 때 좌우 기준으로 사용할 보조 방향입니다.
+        /// </summary>
+        public Vector2 SourceDirection;
+
+        /// <summary>
+        /// true이면 vfx_effect 테이블의 DefaultDirection 기반 좌우 반전을 건너뜁니다.
+        /// </summary>
+        public bool DisableDefaultDirectionFlip;
+
+        /// <summary>
+        /// true이면 vfx_effect 테이블의 NeedRotation 기반 각도 보정을 건너뜁니다.
+        /// </summary>
+        public bool DisableDirectionRotation;
+
+        /// <summary>
         /// true이면 VFX 테이블의 EffectType과 무관하게 VfxEffectLaser 컴포넌트를 사용합니다.
         /// </summary>
         public bool ForceLaserEffectBehaviour;

@@ -251,16 +251,118 @@ namespace GGemCo2DCore
             _effectRenderer.sortingOrder = sortingOrder;
         }
 
-        public override void SetRotation(Vector2 directionByTarget, Vector2 sourceDirection)
+        /// <summary>
+        /// VFX 방향 정보를 바탕으로 DefaultDirection 반전과 NeedRotation 회전을 순서대로 적용합니다.
+        /// </summary>
+        /// <param name="direction">VFX가 바라볼 주 방향입니다.</param>
+        /// <param name="sourceDirection">주 방향의 X축이 불명확할 때 좌우 기준으로 사용할 보조 방향입니다.</param>
+        /// <param name="applyDefaultDirectionFlip">true이면 vfx_effect.DefaultDirection 기준 좌우 반전을 적용합니다.</param>
+        /// <param name="applyRotation">true이면 vfx_effect.NeedRotation 기준 각도 보정을 적용합니다.</param>
+        public override void ApplyDirectionVisual(
+            Vector2 direction,
+            Vector2 sourceDirection,
+            bool applyDefaultDirectionFlip = true,
+            bool applyRotation = true)
         {
-            if (EffectRuntimeData == null || !EffectRuntimeData.NeedRotation)
+            if (EffectRuntimeData == null)
                 return;
 
-            float angle = Mathf.Atan2(directionByTarget.y, directionByTarget.x) * Mathf.Rad2Deg;
-            if (EffectRuntimeData.DefaultDirection == ConfigCommon.DirectionType.Left && sourceDirection.x < 0f)
-                angle += 180f;
+            Vector2 resolvedDirection = ResolveDirection(direction, sourceDirection);
+            if (resolvedDirection.sqrMagnitude <= 0.0001f)
+                return;
 
-            transform.rotation = Quaternion.Euler(0f, 0f, angle);
+            Vector2 resolvedSourceDirection = ResolveDirection(sourceDirection, resolvedDirection);
+            if (applyDefaultDirectionFlip)
+                ApplyDefaultDirectionFlip(resolvedDirection, resolvedSourceDirection);
+
+            if (applyRotation && EffectRuntimeData.NeedRotation)
+                ApplyRotationAfterFlip(resolvedDirection, resolvedSourceDirection);
+        }
+
+        /// <summary>
+        /// 기존 SetRotation 호출 경로를 방향 시각 보정 API로 연결합니다.
+        /// </summary>
+        /// <param name="directionByTarget">타겟 기준 방향입니다.</param>
+        /// <param name="sourceDirection">좌우 기준으로 사용할 보조 방향입니다.</param>
+        public override void SetRotation(Vector2 directionByTarget, Vector2 sourceDirection)
+        {
+            ApplyDirectionVisual(directionByTarget, sourceDirection, false, true);
+        }
+
+        /// <summary>
+        /// 주 방향이 비어 있을 경우 보조 방향으로 대체하고 정규화합니다.
+        /// </summary>
+        /// <param name="direction">검사할 방향입니다.</param>
+        /// <param name="fallback">대체 방향입니다.</param>
+        /// <returns>정규화된 방향입니다.</returns>
+        private static Vector2 ResolveDirection(Vector2 direction, Vector2 fallback)
+        {
+            if (direction.sqrMagnitude > 0.0001f)
+                return direction.normalized;
+
+            return fallback.sqrMagnitude > 0.0001f ? fallback.normalized : Vector2.zero;
+        }
+
+        /// <summary>
+        /// vfx_effect.DefaultDirection과 실제 진행 방향을 비교하여 좌우 반전을 적용합니다.
+        /// </summary>
+        /// <param name="direction">정규화된 주 방향입니다.</param>
+        /// <param name="sourceDirection">수직 방향일 때 좌우 기준으로 사용할 보조 방향입니다.</param>
+        private void ApplyDefaultDirectionFlip(Vector2 direction, Vector2 sourceDirection)
+        {
+            if (!TryResolveFacingRight(direction, sourceDirection, out bool desiredRight))
+                return;
+
+            bool defaultRight = EffectRuntimeData.DefaultDirection == ConfigCommon.DirectionType.Right;
+            SetFlip(desiredRight != defaultRight);
+        }
+
+        /// <summary>
+        /// 방향 벡터에서 좌우 기준을 해석합니다.
+        /// </summary>
+        /// <param name="direction">정규화된 주 방향입니다.</param>
+        /// <param name="sourceDirection">수직 방향일 때 사용할 보조 방향입니다.</param>
+        /// <param name="facingRight">오른쪽을 향해야 하면 true입니다.</param>
+        /// <returns>좌우 기준을 계산할 수 있으면 true입니다.</returns>
+        private static bool TryResolveFacingRight(Vector2 direction, Vector2 sourceDirection, out bool facingRight)
+        {
+            float x = Mathf.Abs(direction.x) > 0.0001f ? direction.x : sourceDirection.x;
+            if (Mathf.Abs(x) <= 0.0001f)
+            {
+                facingRight = true;
+                return false;
+            }
+
+            facingRight = x > 0f;
+            return true;
+        }
+
+        /// <summary>
+        /// 좌우 반전이 적용된 상태를 기준으로 상하 각도만 보정합니다.
+        /// </summary>
+        /// <param name="direction">정규화된 주 방향입니다.</param>
+        /// <param name="sourceDirection">수직 방향일 때 사용할 보조 방향입니다.</param>
+        private void ApplyRotationAfterFlip(Vector2 direction, Vector2 sourceDirection)
+        {
+            bool hasFacing = TryResolveFacingRight(direction, sourceDirection, out bool facingRight);
+            if (!hasFacing)
+                facingRight = EffectRuntimeData.DefaultDirection == ConfigCommon.DirectionType.Right;
+
+            float angle;
+            if (Mathf.Abs(direction.x) <= 0.0001f)
+            {
+                angle = direction.y >= 0f ? 90f : -90f;
+                if (!facingRight)
+                    angle = -angle;
+            }
+            else
+            {
+                angle = Mathf.Atan2(direction.y, Mathf.Abs(direction.x)) * Mathf.Rad2Deg;
+                if (!facingRight)
+                    angle = -angle;
+            }
+
+            transform.localRotation = Quaternion.Euler(0f, 0f, angle);
         }
 
         public void AnimationEventComplete(StruckAnimationEventComplete struckAnimationEventComplete)

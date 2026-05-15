@@ -62,7 +62,12 @@ namespace GGemCo2DCore
         /// <param name="context">현재 Projectile 위치/이동 정보를 담은 컨텍스트입니다.</param>
         public void OnUpdate(in ProjectileVisualUpdateContext context)
         {
-            if (_vfx == null) return;
+            if (_vfx == null)
+                return;
+
+            Vector2 direction = ResolveVisualDirection(context);
+            bool parentHandlesRotation = _static == null || _static.RotateByMoveDirection;
+            _vfx.ApplyDirectionVisual(direction, context.Direction, true, !parentHandlesRotation);
         }
 
         /// <summary>
@@ -137,6 +142,19 @@ namespace GGemCo2DCore
             {
                 laser.SetEndpoints(start, end);
             }
+        }
+
+        /// <summary>
+        /// 현재 프레임의 이동량을 우선 사용하여 VFX 방향을 계산합니다.
+        /// </summary>
+        /// <param name="context">현재 Projectile 위치/이동 정보를 담은 컨텍스트입니다.</param>
+        /// <returns>정규화된 VFX 진행 방향입니다.</returns>
+        private static Vector2 ResolveVisualDirection(in ProjectileVisualUpdateContext context)
+        {
+            if (context.Delta.sqrMagnitude > 0.0001f)
+                return context.Delta.normalized;
+
+            return context.Direction.sqrMagnitude > 0.0001f ? context.Direction.normalized : Vector2.right;
         }
 
         /// <summary>

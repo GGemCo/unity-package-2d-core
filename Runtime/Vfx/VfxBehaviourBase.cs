@@ -11,6 +11,9 @@ namespace GGemCo2DCore
         private float _duration;
         protected Vector3 Direction;
         private float _originalScaleX;
+        private Vector3 _defaultLocalScale;
+        private Quaternion _defaultLocalRotation;
+        private bool _hasDefaultTransform;
         private CharacterBase _followCharacter;
         private VfxConstants.FollowMode _followMode;
         private float _positionY;
@@ -45,7 +48,7 @@ namespace GGemCo2DCore
 
         protected virtual void Awake()
         {
-            _originalScaleX = transform.localScale.x;
+            CaptureDefaultTransformIfNeeded();
 
             _vfxFadeInSec = AddressableLoaderSettings.Instance.settings.vfxFadeInSec;
             _vfxFadeOutSec = AddressableLoaderSettings.Instance.settings.vfxFadeOutSec;
@@ -78,6 +81,7 @@ namespace GGemCo2DCore
             _lifetimeElapsed = 0f;
             _timelineDurationElapsedHandled = false;
             _useTimelineFade = ShouldUseTimelineFade();
+            RestoreDefaultTransform();
             EnsureFadeController();
             RestoreVisibleState();
         }
@@ -199,12 +203,16 @@ namespace GGemCo2DCore
             BeginReleaseSequence();
         }
 
+        /// <summary>
+        /// VFX 인스턴스의 기준 스케일을 외부 생성 요청 값으로 덮어씁니다.
+        /// </summary>
+        /// <param name="scale">적용할 균일 스케일 값입니다.</param>
         public void SetScale(float scale)
         {
             if (scale <= 0f)
                 return;
 
-            transform.localScale = new Vector2(scale, scale);
+            transform.localScale = new Vector3(scale, scale, transform.localScale.z);
             _originalScaleX = transform.localScale.x;
         }
 
@@ -222,6 +230,31 @@ namespace GGemCo2DCore
 
         protected virtual void OnSetFlip(float dirX)
         {
+        }
+
+        /// <summary>
+        /// 풀에서 처음 생성된 Transform 값을 기준값으로 저장합니다.
+        /// </summary>
+        private void CaptureDefaultTransformIfNeeded()
+        {
+            if (_hasDefaultTransform)
+                return;
+
+            _defaultLocalScale = transform.localScale;
+            _defaultLocalRotation = transform.localRotation;
+            _originalScaleX = _defaultLocalScale.x;
+            _hasDefaultTransform = true;
+        }
+
+        /// <summary>
+        /// 풀에서 재사용되는 VFX에 남아 있을 수 있는 이전 Flip/Rotation 상태를 기본값으로 복구합니다.
+        /// </summary>
+        private void RestoreDefaultTransform()
+        {
+            CaptureDefaultTransformIfNeeded();
+            transform.localScale = _defaultLocalScale;
+            transform.localRotation = _defaultLocalRotation;
+            _originalScaleX = transform.localScale.x;
         }
 
         public virtual void OnEndAnimationComplete()
@@ -359,8 +392,24 @@ namespace GGemCo2DCore
         {
         }
 
+        /// <summary>
+        /// 지정된 방향을 기준으로 VFX의 좌우 반전과 회전 보정을 적용합니다.
+        /// </summary>
+        /// <param name="direction">VFX가 바라볼 주 방향입니다.</param>
+        /// <param name="sourceDirection">주 방향의 X축이 불명확할 때 사용할 보조 방향입니다.</param>
+        /// <param name="applyDefaultDirectionFlip">true이면 DefaultDirection 기준 좌우 반전을 적용합니다.</param>
+        /// <param name="applyRotation">true이면 NeedRotation 기준 회전 보정을 적용합니다.</param>
+        public virtual void ApplyDirectionVisual(
+            Vector2 direction,
+            Vector2 sourceDirection,
+            bool applyDefaultDirectionFlip = true,
+            bool applyRotation = true)
+        {
+        }
+
         public virtual void SetRotation(Vector2 directionByTarget, Vector2 sourceDirection)
         {
+            ApplyDirectionVisual(directionByTarget, sourceDirection, false, true);
         }
 
         public void SetFollowCharacter(CharacterBase character, VfxConstants.FollowMode followMode = VfxConstants.FollowMode.Position)
