@@ -66,8 +66,33 @@ namespace GGemCo2DCore
                 return;
 
             Vector2 direction = ResolveVisualDirection(context);
+            ResolveDirectionVisualPolicy(out bool applyDefaultDirectionFlip, out bool applyRotation);
+            _vfx.ApplyDirectionVisual(direction, context.Direction, applyDefaultDirectionFlip, applyRotation);
+        }
+
+        /// <summary>
+        /// 프로젝타일 부모 Transform의 회전 사용 여부에 따라 VFX 방향 보정 정책을 결정합니다.
+        /// </summary>
+        /// <param name="applyDefaultDirectionFlip">
+        /// <c>true</c>이면 <c>vfx_effect.DefaultDirection</c> 기준 좌우 반전을 적용합니다.
+        /// </param>
+        /// <param name="applyRotation">
+        /// <c>true</c>이면 <c>vfx_effect.NeedRotation</c> 기반 추가 회전을 적용합니다.
+        /// </param>
+        /// <remarks>
+        /// <para>
+        /// <c>RotateByMoveDirection=true</c>인 경우 부모 프로젝타일이 이미 이동 방향으로 회전하므로
+        /// 자식 VFX에 Flip/추가 회전을 중복 적용하면 시각 방향이 틀어질 수 있습니다.
+        /// </para>
+        /// <para>
+        /// 따라서 부모가 회전을 담당하는 동안에는 VFX 쪽 방향 보정(Flip/회전)을 모두 비활성화합니다.
+        /// </para>
+        /// </remarks>
+        private void ResolveDirectionVisualPolicy(out bool applyDefaultDirectionFlip, out bool applyRotation)
+        {
             bool parentHandlesRotation = _static == null || _static.RotateByMoveDirection;
-            _vfx.ApplyDirectionVisual(direction, context.Direction, true, !parentHandlesRotation);
+            applyDefaultDirectionFlip = !parentHandlesRotation;
+            applyRotation = !parentHandlesRotation;
         }
 
         /// <summary>
