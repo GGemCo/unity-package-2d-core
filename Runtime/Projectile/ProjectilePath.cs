@@ -31,10 +31,12 @@ namespace GGemCo2DCore
         /// <param name="targetPos">발사 목표 월드 좌표입니다.</param>
         public override void Launch(Vector2 targetPos)
         {
-            base.Launch(targetPos);
+            PrepareLaunch(targetPos);
             BuildWorldPath();
             ApplyDurationOverrideIfNeeded();
-            ApplySpawnTickIfNeeded();
+
+            if (CompleteLaunchAfterPositionResolved())
+                ApplySpawnTickIfNeeded();
         }
 
         /// <summary>

@@ -216,12 +216,26 @@ namespace GGemCo2DCore
         }
 
         /// <summary>
-        /// 좌표 타겟으로 발사
+        /// 좌표 타겟으로 발사합니다.
+        /// - 공통 시작/목표 좌표를 먼저 계산합니다.
+        /// - 파생 클래스가 시작 위치나 경로를 다시 보정하지 않는 기본 타입은 즉시 발사 완료 처리를 수행합니다.
         /// </summary>
+        /// <param name="targetPos">발사체가 향할 목표 월드 좌표입니다.</param>
         public virtual void Launch(Vector2 targetPos)
         {
             TargetObject = null;
+            PrepareLaunch(targetPos);
+            CompleteLaunchAfterPositionResolved();
+        }
 
+        /// <summary>
+        /// 발사 공통 좌표와 이동 값을 계산합니다.
+        /// - 이 단계에서는 초기 Overlap 검사를 실행하지 않습니다.
+        /// - Path/Segment 타입처럼 최종 시작 위치를 다시 계산하는 파생 클래스가 안전하게 재사용할 수 있습니다.
+        /// </summary>
+        /// <param name="targetPos">발사체가 향할 목표 월드 좌표입니다.</param>
+        protected void PrepareLaunch(Vector2 targetPos)
+        {
             SetStartPoint();
 
             TargetPoint = targetPos;
@@ -234,16 +248,33 @@ namespace GGemCo2DCore
 
             transform.position = StartPoint;
             PrevPos = StartPoint;
+            Initialized = false;
+        }
 
+        /// <summary>
+        /// 파생 클래스의 최종 시작 위치/경로 보정이 끝난 뒤 발사를 완료합니다.
+        /// - Transform 이동 직후 Physics2D 쿼리를 수행하기 전에 Collider 위치를 물리 엔진에 동기화합니다.
+        /// - 생성 직후 월드 원점 또는 보정 전 시작점에서 InitialOverlap이 처리되는 문제를 방지합니다.
+        /// </summary>
+        /// <returns>초기 Overlap 처리 후에도 발사체가 계속 유효하면 true를 반환합니다.</returns>
+        protected bool CompleteLaunchAfterPositionResolved()
+        {
+            transform.position = StartPoint;
+            PrevPos = StartPoint;
             Initialized = true;
+
+            if (_hitCollider != null)
+                Physics2D.SyncTransforms();
 
             if (ShouldHandleImmediateCollisionDamage || ShouldHandleEnvironmentHit)
             {
                 // 발사 직후 이미 타겟/환경 Collider와 겹쳐 있는 경우를 보정한다.
                 // Trigger Enter / Cast는 "생성 시점의 초기 겹침"을 놓칠 수 있으므로,
-                // Launch 직후 한 번 즉시 overlap 검사를 수행한다.
+                // 최종 시작 위치가 확정된 뒤 한 번 즉시 overlap 검사를 수행한다.
                 TryHandleInitialOverlap();
             }
+
+            return !_isTerminatedByHit;
         }
 
         /// <summary>
@@ -329,13 +360,14 @@ namespace GGemCo2DCore
         }
 
 
+        /// <summary>
+        /// 발사체 충돌 쿼리에 사용할 ContactFilter2D를 구성합니다.
+        /// - Physics2D Layer Collision Matrix 전체를 그대로 쓰지 않고, 현재 발사체가 실제로 조회해야 하는 목적별 레이어만 직접 조합합니다.
+        /// - 데미지 대상은 시전자 진영 기준 HitArea 레이어로 제한하고, 환경 Hit는 별도 환경 레이어 마스크로만 추가합니다.
+        /// </summary>
         private void SetupCastFilter()
         {
-            // Physics2D 레이어 충돌 매트릭스를 기본으로 따르되,
-            // Skill 이벤트가 환경 Hit VFX를 요청한 경우 Ground/Wall 레이어를 후보에 추가합니다.
-            int layerMask = Physics2D.GetLayerCollisionMask(gameObject.layer);
-            if (ShouldHandleEnvironmentHit)
-                layerMask |= ResolveEnvironmentHitLayerMask();
+            int layerMask = ResolveProjectileQueryLayerMask();
 
             _castFilter = new ContactFilter2D
             {
@@ -343,6 +375,70 @@ namespace GGemCo2DCore
                 useLayerMask = true
             };
             _castFilter.SetLayerMask(layerMask);
+        }
+
+        /// <summary>
+        /// 발사체가 실제 쿼리할 레이어 마스크를 반환합니다.
+        /// - 데미지 적용 모드가 켜져 있으면 상대 진영 HitArea 레이어를 포함합니다.
+        /// - 환경 Hit 정책이 켜져 있으면 Ground/Wall 또는 커스텀 환경 레이어를 포함합니다.
+        /// </summary>
+        /// <returns>Cast/Overlap에 사용할 최종 레이어 마스크입니다.</returns>
+        private int ResolveProjectileQueryLayerMask()
+        {
+            int layerMask = 0;
+
+            if (ShouldQueryDamageTargetLayers())
+                layerMask |= ResolveDamageTargetLayerMask();
+
+            if (ShouldHandleEnvironmentHit)
+                layerMask |= ResolveEnvironmentHitLayerMask();
+
+            return layerMask;
+        }
+
+        /// <summary>
+        /// 데미지 대상 레이어를 쿼리해야 하는지 확인합니다.
+        /// - OnHit은 즉시 충돌 판정에 필요합니다.
+        /// - PeriodicOverlap은 Tick 시점의 Overlap 조회에 필요합니다.
+        /// </summary>
+        /// <returns>데미지 대상 HitArea 레이어를 필터에 포함해야 하면 true를 반환합니다.</returns>
+        private bool ShouldQueryDamageTargetLayers()
+        {
+            return EffectiveDamageApplyMode != ProjectileConstants.DamageApplyMode.None;
+        }
+
+        /// <summary>
+        /// 시전자 진영을 기준으로 데미지 대상 HitArea 레이어 마스크를 계산합니다.
+        /// - 플레이어가 발사하면 몬스터 HitArea만 조회합니다.
+        /// - 몬스터가 발사하면 플레이어 HitArea만 조회합니다.
+        /// - 시전자를 알 수 없는 에디터 테스트 상황에서는 양쪽 HitArea를 모두 포함합니다.
+        /// </summary>
+        /// <returns>데미지 대상 후보 HitArea 레이어 마스크입니다.</returns>
+        private int ResolveDamageTargetLayerMask()
+        {
+            bool fromMonster = FromCharacter && FromCharacter.CompareTag(ConfigTags.GetValue(ConfigTags.Keys.Monster));
+            bool fromPlayer = FromCharacter && FromCharacter.CompareTag(ConfigTags.GetValue(ConfigTags.Keys.Player));
+
+            if (fromMonster)
+                return GetLayerMask(ConfigLayer.Keys.HitAreaPlayer);
+
+            if (fromPlayer)
+                return GetLayerMask(ConfigLayer.Keys.HitAreaMonster);
+
+            return GetLayerMask(ConfigLayer.Keys.HitAreaPlayer) |
+                   GetLayerMask(ConfigLayer.Keys.HitAreaMonster);
+        }
+
+        /// <summary>
+        /// ConfigLayer 키에 대응하는 Unity 레이어 마스크를 반환합니다.
+        /// - 레이어 이름이 비어 있거나 프로젝트에 없으면 0을 반환하여 안전하게 제외합니다.
+        /// </summary>
+        /// <param name="key">조회할 ConfigLayer 키입니다.</param>
+        /// <returns>해당 레이어의 비트마스크입니다.</returns>
+        private static int GetLayerMask(ConfigLayer.Keys key)
+        {
+            string layerName = ConfigLayer.GetValue(key);
+            return string.IsNullOrEmpty(layerName) ? 0 : LayerMask.GetMask(layerName);
         }
 
         private bool TrySweepHit(Vector2 delta, out RaycastHit2D bestHit)
@@ -620,6 +716,7 @@ namespace GGemCo2DCore
         /// <returns>발사체가 종료되어 현재 스텝을 중단해야 하면 true를 반환합니다.</returns>
         private bool TryHandleEnvironmentHit(Collider2D other, Vector2 hitWorldPos)
         {
+            GcLogger.Log($"TryHandleEnvironmentHit other: {other.name}");
             if (!ShouldHandleEnvironmentHit || !IsEnvironmentHitCollider(other))
                 return false;
 

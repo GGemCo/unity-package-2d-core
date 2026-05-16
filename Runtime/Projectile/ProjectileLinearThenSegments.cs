@@ -66,11 +66,13 @@ namespace GGemCo2DCore
         /// <param name="targetPos">첫 직선 이동의 목표 월드 좌표입니다.</param>
         public override void Launch(Vector2 targetPos)
         {
-            base.Launch(targetPos);
+            PrepareLaunch(targetPos);
 
             _initialDirection = Direction.sqrMagnitude > 1e-6f ? Direction : Vector2.right;
             BuildRoute();
-            ApplySpawnTickIfNeeded();
+
+            if (CompleteLaunchAfterPositionResolved())
+                ApplySpawnTickIfNeeded();
         }
 
         /// <summary>
