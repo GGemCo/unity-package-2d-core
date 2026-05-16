@@ -1,3 +1,4 @@
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -9,22 +10,181 @@ namespace GGemCo2DCore
     public partial class CharacterBase
     {
         private CharacterConstants.AttackType _attackType;
+        private Coroutine _deathPresentationFreezeCoroutine;
 
         /// <summary>
         /// 캐릭터를 사망 상태로 전환하고 사망 후처리를 실행합니다.
         /// </summary>
         /// <param name="dieReasonType">사망 원인입니다.</param>
         /// <param name="attacker">사망을 유발한 공격자 오브젝트입니다.</param>
-        /// <param name="playDeadAnimation">사망 애니메이션 재생 여부.</param>
+        /// <param name="playDeadAnimation">기본 사망 애니메이션 폴백 허용 여부입니다.</param>
         public void Dead(CharacterConstants.DieReasonType dieReasonType = CharacterConstants.DieReasonType.None, GameObject attacker = null, bool playDeadAnimation = true)
+        {
+            Dead(dieReasonType, attacker, playDeadAnimation, null);
+        }
+
+        /// <summary>
+        /// 캐릭터를 사망 상태로 전환하고 원인별 사망 연출을 포함한 후처리를 실행합니다.
+        /// </summary>
+        /// <param name="dieReasonType">사망 원인입니다.</param>
+        /// <param name="attacker">사망을 유발한 공격자 오브젝트입니다.</param>
+        /// <param name="playDeadAnimation">기본 사망 애니메이션 폴백 허용 여부입니다.</param>
+        /// <param name="deathPresentation">사망 원인별 전용 연출 요청입니다.</param>
+        /// <remarks>
+        /// Core는 Affect/Skill 같은 상위 패키지를 직접 알지 않고,
+        /// 상위 패키지가 변환해 전달한 <see cref="DeathPresentationRequest"/>만 실행합니다.
+        /// </remarks>
+        public void Dead(
+            CharacterConstants.DieReasonType dieReasonType,
+            GameObject attacker,
+            bool playDeadAnimation,
+            DeathPresentationRequest deathPresentation)
         {
             SetStatusDead();
             SetBattleStatusNone();
-            if (dieReasonType != CharacterConstants.DieReasonType.EndTilemapY && playDeadAnimation)
-                CharacterAnimationController.PlayDeadAnimation();
+
+            if (dieReasonType != CharacterConstants.DieReasonType.EndTilemapY)
+            {
+                PlayDeathPresentation(deathPresentation, playDeadAnimation);
+            }
 
             AffectRuntimeBridge.RemoveAll(gameObject);
             OnDead(dieReasonType, attacker);
+        }
+
+        /// <summary>
+        /// 사망 연출 요청을 해석하여 전용 애니메이션, VFX, 마지막 프레임 고정 정책을 실행합니다.
+        /// </summary>
+        /// <param name="request">실행할 사망 연출 요청입니다.</param>
+        /// <param name="allowDefaultDeathAnimation">전용 애니메이션이 없을 때 기본 사망 애니메이션을 재생할지 여부입니다.</param>
+        /// <remarks>
+        /// 전용 사망 애니메이션이 존재하면 기본 사망 애니메이션보다 우선합니다.
+        /// 전용 애니메이션이 없고 기본 폴백도 금지되어 있으면 애니메이션을 재생하지 않습니다.
+        /// </remarks>
+        private void PlayDeathPresentation(DeathPresentationRequest request, bool allowDefaultDeathAnimation)
+        {
+            string playedAnimationName = null;
+
+            if (request != null && request.IsConfigured)
+            {
+                playedAnimationName = TryPlayDeathPresentationAnimation(request);
+                TryPlayDeathPresentationVfx(request);
+            }
+
+            if (string.IsNullOrWhiteSpace(playedAnimationName) &&
+                allowDefaultDeathAnimation &&
+                (request == null || !request.SuppressDefaultDeathAnimation))
+            {
+                CharacterAnimationController?.PlayDeadAnimation();
+                playedAnimationName = ICharacterAnimationController.DeadAnim;
+            }
+
+            if (request != null && request.FreezeLastFrame && !string.IsNullOrWhiteSpace(playedAnimationName))
+            {
+                StartDeathPresentationFreeze(playedAnimationName);
+            }
+        }
+
+        /// <summary>
+        /// 사망 연출 요청에 지정된 캐릭터 애니메이션을 재생합니다.
+        /// </summary>
+        /// <param name="request">애니메이션 이름을 포함한 사망 연출 요청입니다.</param>
+        /// <returns>실제로 재생한 애니메이션 이름입니다. 재생하지 못하면 빈 값을 반환합니다.</returns>
+        private string TryPlayDeathPresentationAnimation(DeathPresentationRequest request)
+        {
+            if (request == null || CharacterAnimationController == null)
+                return null;
+
+            string animationName = request.AnimationName;
+            if (string.IsNullOrWhiteSpace(animationName))
+                return null;
+
+            if (!CharacterAnimationController.HasAnimation(animationName))
+            {
+                GcLogger.LogWarning($"[DeathPresentation] 사망 애니메이션을 찾을 수 없습니다. character={name}, animation={animationName}");
+                return null;
+            }
+
+            CharacterAnimationController.PlayCharacterAnimation(animationName, loop: false);
+            return animationName;
+        }
+
+        /// <summary>
+        /// 사망 연출 요청에 지정된 VFX를 현재 캐릭터 위치에 재생합니다.
+        /// </summary>
+        /// <param name="request">VFX UID와 위치 정책을 포함한 사망 연출 요청입니다.</param>
+        private void TryPlayDeathPresentationVfx(DeathPresentationRequest request)
+        {
+            if (request == null || request.VfxUid <= 0)
+                return;
+
+            SceneGame scene = SceneGame.Instance;
+            if (scene == null || scene.VfxManager == null)
+                return;
+
+            var spawnRequest = new VfxSpawnRequest
+            {
+                VfxUid = request.VfxUid,
+                Owner = this,
+                Target = this,
+                WorldPosition = transform.position,
+                DurationOverride = request.VfxDurationOverride,
+                ForceOneShot = !request.FollowVfxTarget,
+                ScaleOverride = request.VfxScale,
+                PositionY = request.VfxOffsetY,
+                PositionYType = request.VfxPositionYType,
+            };
+
+            if (request.HasVfxSortingLayerOverride)
+                spawnRequest.SortingLayerOverride = request.VfxSortingLayerKey;
+
+            if (request.FollowVfxTarget)
+            {
+                spawnRequest.FollowTarget = this;
+            }
+            else
+            {
+                spawnRequest.LifecycleTypeOverride = VfxConstants.LifecycleType.AutoRelease;
+            }
+
+            scene.VfxManager.CreateVfx(spawnRequest);
+        }
+
+        /// <summary>
+        /// 사망 애니메이션 재생 길이에 맞춰 마지막 프레임 고정 코루틴을 시작합니다.
+        /// </summary>
+        /// <param name="animationName">마지막 프레임에 고정할 애니메이션 이름입니다.</param>
+        private void StartDeathPresentationFreeze(string animationName)
+        {
+            if (CharacterAnimationController == null || string.IsNullOrWhiteSpace(animationName))
+                return;
+
+            if (_deathPresentationFreezeCoroutine != null)
+            {
+                StopCoroutine(_deathPresentationFreezeCoroutine);
+                _deathPresentationFreezeCoroutine = null;
+            }
+
+            float duration = CharacterAnimationController.GetCharacterAnimationDuration(animationName, isMilliseconds: false);
+            if (duration <= 0f)
+            {
+                CharacterAnimationController.FreezeCurrentAnimationAtLastFrame();
+                return;
+            }
+
+            _deathPresentationFreezeCoroutine = StartCoroutine(FreezeDeathPresentationAtLastFrame(duration));
+        }
+
+        /// <summary>
+        /// 지정한 시간 대기 후 현재 사망 애니메이션을 마지막 프레임으로 고정합니다.
+        /// </summary>
+        /// <param name="delaySeconds">마지막 프레임 고정 전 대기할 시간입니다.</param>
+        /// <returns>코루틴 이터레이터입니다.</returns>
+        private IEnumerator FreezeDeathPresentationAtLastFrame(float delaySeconds)
+        {
+            yield return new WaitForSeconds(delaySeconds);
+            CharacterAnimationController?.FreezeCurrentAnimationAtLastFrame();
+            _deathPresentationFreezeCoroutine = null;
         }
 
         /// <summary>

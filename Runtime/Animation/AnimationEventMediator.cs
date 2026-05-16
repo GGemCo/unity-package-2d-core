@@ -239,6 +239,7 @@ namespace GGemCo2DCore
             if (trail == null) return;
             trail.StopTrail();
         }
+        
         public void OnAnimationEventCaptureAfterimageSnapshot(string json, GameObject fromObject)
         {
             if (fromObject == null)
@@ -266,5 +267,9 @@ namespace GGemCo2DCore
             }
         }
 
+        public void OnAnimationEventDead(string json, GameObject fromObject)
+        {
+            fromObject.GetComponent<CharacterBase>()?.OnAnimationCompleteDead();
+        }
     }
 }

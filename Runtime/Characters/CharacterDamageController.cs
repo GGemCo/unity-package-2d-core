@@ -60,6 +60,24 @@ namespace GGemCo2DCore
         /// </summary>
         public ElementGaugeApplication[] ElementGaugeApplications;
 
+        /// <summary>
+        /// 현재 데미지를 발생시킨 Affect UID입니다.
+        /// </summary>
+        /// <remarks>
+        /// <see cref="affectUid"/>는 피격 대상에게 새로 적용할 Affect UID이므로,
+        /// 데미지 원인 추적용 UID와 의미가 충돌하지 않도록 별도 필드로 분리합니다.
+        /// </remarks>
+        public int SourceAffectUid;
+
+        /// <summary>
+        /// 이번 데미지로 사망했을 때 사용할 사망 연출 요청입니다.
+        /// </summary>
+        /// <remarks>
+        /// Affect, Skill 등 상위 패키지는 Core에 직접 원인 타입을 노출하지 않고
+        /// 이 범용 요청으로 변환해 전달합니다.
+        /// </remarks>
+        public DeathPresentationRequest DeathPresentation;
+
         public List<int> ResolvedOnHitCrowdControls;
     }
     /// <summary>
@@ -306,7 +324,7 @@ namespace GGemCo2DCore
                 {
                     playDeadAnimation = false;
                 }
-                _characterBase.Dead(CharacterConstants.DieReasonType.Battle, attacker, playDeadAnimation);
+                _characterBase.Dead(CharacterConstants.DieReasonType.Battle, attacker, playDeadAnimation, metadataDamage.DeathPresentation);
             }
             else
             {
@@ -384,11 +402,19 @@ namespace GGemCo2DCore
             if (elementGaugeController != null)
             {
                 elementGaugeController.HandleAfterIncomingDamage(metadataDamage);
-                TryFinalizeDeathAfterElementGauge(metadataDamage.attacker);
+                TryFinalizeDeathAfterElementGauge(metadataDamage);
             }
         }
 
-        private void TryFinalizeDeathAfterElementGauge(GameObject attacker)
+        /// <summary>
+        /// 속성 게이지 후처리로 HP가 0 이하가 되었을 때 사망 처리를 확정합니다.
+        /// </summary>
+        /// <param name="metadataDamage">사망 원인과 연출 정보를 포함한 데미지 메타데이터입니다.</param>
+        /// <remarks>
+        /// 일반 데미지 차감이 아니라 속성 게이지 처리에서 사망이 확정되는 경우에도
+        /// 최초 데미지의 사망 연출 요청을 유지해야 전용 사망 연출이 누락되지 않습니다.
+        /// </remarks>
+        private void TryFinalizeDeathAfterElementGauge(MetadataDamage metadataDamage)
         {
             if (_characterBase == null || _characterBase.IsStatusDead())
                 return;
@@ -404,7 +430,11 @@ namespace GGemCo2DCore
 
             NotifyIncomingHitActionCancelers(IncomingHitCancelReason.Death);
             _characterBase.CurrentMp.OnNext(0);
-            _characterBase.Dead(CharacterConstants.DieReasonType.Battle, attacker, playDeadAnimation: true);
+            _characterBase.Dead(
+                CharacterConstants.DieReasonType.Battle,
+                metadataDamage != null ? metadataDamage.attacker : null,
+                playDeadAnimation: true,
+                deathPresentation: metadataDamage != null ? metadataDamage.DeathPresentation : null);
         }
 
 

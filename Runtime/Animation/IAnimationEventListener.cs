@@ -34,5 +34,10 @@ namespace GGemCo2DCore
         /// 현재 프레임의 Sprite를 단발 잔상으로 1회 캡처합니다.
         /// </summary>
         void OnAnimationEventCaptureAfterimageSnapshot(string json, GameObject fromObject);
+        
+        /// <summary>
+        /// 사망 애니메이션 마지막 프레임에서 호출되는 이벤트 입니다.
+        /// </summary>
+        void OnAnimationEventDead(string json, GameObject fromObject);
     }
 }

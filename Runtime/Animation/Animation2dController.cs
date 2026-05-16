@@ -529,6 +529,14 @@ namespace GGemCo2DCore
         {
             EventListener?.OnAnimationEventDash(gameObject, AnimationConstants.EventNameDashEnd);
         }
+        
+        /// <summary>
+        /// 사망 애니메이션 마지막 프레임에서 호출되는 이벤트 입니다.
+        /// </summary>
+        public void GGemCoAniEvenDead(string json)
+        {
+            EventListener?.OnAnimationEventDead(json, gameObject);
+        }
 #endif
 
         /// <summary>
