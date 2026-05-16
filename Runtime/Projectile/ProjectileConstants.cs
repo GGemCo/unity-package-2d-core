@@ -1,4 +1,6 @@
-﻿namespace GGemCo2DCore
+﻿using UnityEngine;
+
+namespace GGemCo2DCore
 {
     public static class ProjectileConstants
     {
@@ -59,6 +61,43 @@
         {
             DestroyOnTargetHit = 0,
             KeepUntilRouteEnd = 1,
+        }
+
+
+        /// <summary>
+        /// 프로젝타일이 캐릭터가 아닌 환경 Collider와 충돌했을 때의 처리 정책입니다.
+        /// - Ignore: 환경 충돌을 별도로 처리하지 않습니다.
+        /// - PlayHitVisualOnly: Hit VFX만 출력하고 발사체 이동/수명은 유지합니다.
+        /// - PlayHitVisualAndFollowHitLifetime: Hit VFX를 출력하고 HitLifetimeMode가 DestroyOnTargetHit이면 제거합니다.
+        /// - PlayHitVisualAndDestroy: HitLifetimeMode와 관계없이 Hit VFX 출력 후 즉시 제거합니다.
+        /// </summary>
+        public enum EnvironmentHitPolicy
+        {
+            Ignore = 0,
+            PlayHitVisualOnly = 1,
+            PlayHitVisualAndFollowHitLifetime = 2,
+            PlayHitVisualAndDestroy = 3,
+        }
+
+        /// <summary>
+        /// 기본 환경 히트 대상으로 사용할 TileMap Ground/Wall 레이어 마스크를 반환합니다.
+        /// - LayerMask.GetMask는 레이어 이름 목록을 비트마스크로 변환하므로 레이어 번호를 직접 더하지 않습니다.
+        /// - 프로젝트 설정에 해당 레이어 이름이 없으면 Unity가 0 비트를 반환하므로 안전하게 무시됩니다.
+        /// </summary>
+        /// <returns>GGemCo_TileMapGround, GGemCo_TileMapWall 레이어를 포함하는 비트마스크입니다.</returns>
+        public static int GetDefaultEnvironmentHitLayerMask()
+        {
+            int mask = 0;
+
+            string groundLayerName = ConfigLayer.GetValue(ConfigLayer.Keys.TileMapGround);
+            if (!string.IsNullOrEmpty(groundLayerName))
+                mask |= LayerMask.GetMask(groundLayerName);
+
+            string wallLayerName = ConfigLayer.GetValue(ConfigLayer.Keys.TileMapWall);
+            if (!string.IsNullOrEmpty(wallLayerName))
+                mask |= LayerMask.GetMask(wallLayerName);
+
+            return mask;
         }
 
         /// <summary>

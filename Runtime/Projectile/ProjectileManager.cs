@@ -45,6 +45,10 @@ namespace GGemCo2DCore
         public readonly ProjectileConstants.DamageApplyMode DamageApplyModeOverride;
         public readonly bool UseTickDamageIntervalOverride;
         public readonly float TickDamageIntervalOverride;
+        public readonly bool UseEnvironmentHitPolicyOverride;
+        public readonly ProjectileConstants.EnvironmentHitPolicy EnvironmentHitPolicyOverride;
+        public readonly bool UseEnvironmentHitLayerMaskOverride;
+        public readonly int EnvironmentHitLayerMaskOverride;
 
         public MetadataProjectile(
             int uid,
@@ -69,7 +73,11 @@ namespace GGemCo2DCore
             bool useDamageApplyModeOverride = false,
             ProjectileConstants.DamageApplyMode damageApplyModeOverride = ProjectileConstants.DamageApplyMode.OnHit,
             bool useTickDamageIntervalOverride = false,
-            float tickDamageIntervalOverride = 0f)
+            float tickDamageIntervalOverride = 0f,
+            bool useEnvironmentHitPolicyOverride = false,
+            ProjectileConstants.EnvironmentHitPolicy environmentHitPolicyOverride = ProjectileConstants.EnvironmentHitPolicy.Ignore,
+            bool useEnvironmentHitLayerMaskOverride = false,
+            int environmentHitLayerMaskOverride = 0)
         {
             Uid = uid;
             DamageType = damageType;
@@ -98,6 +106,10 @@ namespace GGemCo2DCore
             DamageApplyModeOverride = damageApplyModeOverride;
             UseTickDamageIntervalOverride = useTickDamageIntervalOverride;
             TickDamageIntervalOverride = Mathf.Max(0f, tickDamageIntervalOverride);
+            UseEnvironmentHitPolicyOverride = useEnvironmentHitPolicyOverride;
+            EnvironmentHitPolicyOverride = environmentHitPolicyOverride;
+            UseEnvironmentHitLayerMaskOverride = useEnvironmentHitLayerMaskOverride;
+            EnvironmentHitLayerMaskOverride = environmentHitLayerMaskOverride;
         }
     }
 

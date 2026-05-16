@@ -47,6 +47,9 @@ namespace GGemCo2DCore
         private readonly HashSet<CharacterBase> _latchedHitTargets = new();
         private readonly HashSet<CharacterBase> _currentOverlapTargets = new();
         private readonly List<CharacterBase> _releasedHitTargets = new();
+        private readonly HashSet<Collider2D> _latchedEnvironmentHitColliders = new();
+        private readonly HashSet<Collider2D> _currentOverlapEnvironmentHitColliders = new();
+        private readonly List<Collider2D> _releasedEnvironmentHitColliders = new();
         private bool _isTerminatedByHit;
         private bool _isWaitingForEndVisual;
 
@@ -95,6 +98,29 @@ namespace GGemCo2DCore
                 return ProjectileConstants.HitLifetimeMode.DestroyOnTargetHit;
             }
         }
+
+        /// <summary>
+        /// 현재 발사체의 최종 환경 충돌 처리 정책을 반환합니다.
+        /// - 런타임 오버라이드가 켜져 있으면 Skill 이벤트의 정책을 사용합니다.
+        /// - 오버라이드가 없으면 기존 동작 보존을 위해 환경 충돌을 무시합니다.
+        /// </summary>
+        protected ProjectileConstants.EnvironmentHitPolicy EffectiveEnvironmentHitPolicy
+        {
+            get
+            {
+                if (Runtime != null && Runtime.UseEnvironmentHitPolicyOverride)
+                    return Runtime.EnvironmentHitPolicyOverride;
+
+                return ProjectileConstants.EnvironmentHitPolicy.Ignore;
+            }
+        }
+
+        /// <summary>
+        /// 환경 충돌 Hit VFX 정책을 실제로 처리해야 하는지 확인합니다.
+        /// </summary>
+        protected bool ShouldHandleEnvironmentHit
+            => EffectiveEnvironmentHitPolicy != ProjectileConstants.EnvironmentHitPolicy.Ignore &&
+               ResolveEnvironmentHitLayerMask() != 0;
 
         /// <summary>
         /// 현재 발사체의 최종 주기 데미지 간격(초)을 반환합니다.
@@ -160,6 +186,9 @@ namespace GGemCo2DCore
             _latchedHitTargets.Clear();
             _currentOverlapTargets.Clear();
             _releasedHitTargets.Clear();
+            _latchedEnvironmentHitColliders.Clear();
+            _currentOverlapEnvironmentHitColliders.Clear();
+            _releasedEnvironmentHitColliders.Clear();
             _isTerminatedByHit = false;
             _isWaitingForEndVisual = false;
 
@@ -208,9 +237,9 @@ namespace GGemCo2DCore
 
             Initialized = true;
 
-            if (ShouldHandleImmediateCollisionDamage)
+            if (ShouldHandleImmediateCollisionDamage || ShouldHandleEnvironmentHit)
             {
-                // 발사 직후 이미 타겟/지면과 겹쳐 있는 경우를 보정한다.
+                // 발사 직후 이미 타겟/환경 Collider와 겹쳐 있는 경우를 보정한다.
                 // Trigger Enter / Cast는 "생성 시점의 초기 겹침"을 놓칠 수 있으므로,
                 // Launch 직후 한 번 즉시 overlap 검사를 수행한다.
                 TryHandleInitialOverlap();
@@ -252,7 +281,7 @@ namespace GGemCo2DCore
             Vector2 delta = newPos - PrevPos;
 
             // Anti-tunneling: 이동 구간(PrevPos → newPos)을 스윕(Cast)으로 선검출합니다.
-            if (ShouldHandleImmediateCollisionDamage && TrySweepHit(delta, out var sweepHit))
+            if ((ShouldHandleImmediateCollisionDamage || ShouldHandleEnvironmentHit) && TrySweepHit(delta, out var sweepHit))
             {
                 // centroid가 0일 수 있어 point가 유효하면 point를 사용합니다.
                 Vector2 hitPos = sweepHit.point != Vector2.zero ? sweepHit.point : sweepHit.centroid;
@@ -302,13 +331,18 @@ namespace GGemCo2DCore
 
         private void SetupCastFilter()
         {
-            // Physics2D 레이어 충돌 매트릭스를 그대로 따릅니다.
+            // Physics2D 레이어 충돌 매트릭스를 기본으로 따르되,
+            // Skill 이벤트가 환경 Hit VFX를 요청한 경우 Ground/Wall 레이어를 후보에 추가합니다.
+            int layerMask = Physics2D.GetLayerCollisionMask(gameObject.layer);
+            if (ShouldHandleEnvironmentHit)
+                layerMask |= ResolveEnvironmentHitLayerMask();
+
             _castFilter = new ContactFilter2D
             {
                 useTriggers = true,
                 useLayerMask = true
             };
-            _castFilter.SetLayerMask(Physics2D.GetLayerCollisionMask(gameObject.layer));
+            _castFilter.SetLayerMask(layerMask);
         }
 
         private bool TrySweepHit(Vector2 delta, out RaycastHit2D bestHit)
@@ -421,21 +455,16 @@ namespace GGemCo2DCore
         }
 
         /// <summary>
-        /// 충돌 후보가 현재 발사체의 유효한 타겟인지 확인합니다.
-        /// - 지면은 즉시 충돌 정책에서 항상 유효한 대상으로 처리합니다.
+        /// 충돌 후보가 현재 발사체의 유효한 데미지 타겟인지 확인합니다.
+        /// - 환경 Collider는 데미지 대상이 아니므로 별도 환경 히트 정책에서 처리합니다.
         /// - 캐릭터는 시전자와 대상의 태그 조합을 기준으로 판정합니다.
         /// </summary>
         /// <param name="other">판정할 Collider입니다.</param>
-        /// <returns>유효한 충돌 후보이면 true를 반환합니다.</returns>
+        /// <returns>유효한 데미지 타겟이면 true를 반환합니다.</returns>
         protected bool IsValidHitCandidate(Collider2D other)
         {
             if (!other) return false;
 
-            // 지면은 항상 처리
-            if (other.CompareTag(ConfigTags.GetValue(ConfigTags.Keys.MapGround)))
-                return true;
-
-            // 타겟은 "루트 캐릭터" 기준으로 판정
             if (!FromCharacter) return false;
 
             var target = ResolveTargetCharacter(other);
@@ -509,17 +538,11 @@ namespace GGemCo2DCore
 
             Vector2 hitWorldPos = overrideWorldPos ?? (Vector2)transform.position;
 
-            // 지형 충돌은 수명 정책이 즉시 종료일 때만 처리합니다.
-            if (other.CompareTag(ConfigTags.GetValue(ConfigTags.Keys.MapGround)))
-            {
-                if (!ShouldTerminateOnImmediateHit(other))
-                    return false;
-
-                _isTerminatedByHit = true;
-                NotifyHitVisual(other, hitWorldPos);
-                Destroy(gameObject);
+            if (TryHandleEnvironmentHit(other, hitWorldPos))
                 return true;
-            }
+
+            if (!ShouldHandleImmediateCollisionDamage)
+                return false;
 
             if (!TryResolveDamageTarget(other, out CharacterBase target))
                 return false;
@@ -564,9 +587,9 @@ namespace GGemCo2DCore
         }
 
         /// <summary>
-        /// 현재 충돌 후보가 즉시 충돌 데미지 대상으로 유효한지 확인합니다.
-        /// - 지형은 수명 정책이 즉시 종료일 때만 유효합니다.
-        /// - 타겟은 팀 판정과 재적중 잠금 상태를 함께 확인합니다.
+        /// 현재 충돌 후보가 즉시 처리 대상으로 유효한지 확인합니다.
+        /// - 환경 Collider는 환경 Hit VFX 정책이 켜져 있고, 아직 겹침 잠금 상태가 아닐 때 유효합니다.
+        /// - 타겟은 즉시 충돌 데미지 정책이 켜져 있고, 팀 판정과 재적중 잠금 상태를 통과해야 합니다.
         /// </summary>
         /// <param name="other">판정할 Collider입니다.</param>
         /// <returns>즉시 충돌 처리를 진행할 수 있으면 true를 반환합니다.</returns>
@@ -575,13 +598,103 @@ namespace GGemCo2DCore
             if (!other)
                 return false;
 
-            if (other.CompareTag(ConfigTags.GetValue(ConfigTags.Keys.MapGround)))
-                return ShouldTerminateOnImmediateHit(other);
+            if (IsEnvironmentHitCollider(other))
+                return ShouldHandleEnvironmentHit && CanPlayEnvironmentHit(other);
+
+            if (!ShouldHandleImmediateCollisionDamage)
+                return false;
 
             if (!TryResolveDamageTarget(other, out CharacterBase target))
                 return false;
 
             return CanApplyImmediateHitToTarget(target);
+        }
+
+        /// <summary>
+        /// 환경 Collider 충돌에 따른 Hit VFX와 수명 정책을 처리합니다.
+        /// - 환경 충돌은 데미지를 적용하지 않고 ProjectileVisual의 Hit 콜백만 실행합니다.
+        /// - 같은 환경 Collider와 계속 겹쳐 있는 동안에는 중복 Hit VFX를 출력하지 않습니다.
+        /// </summary>
+        /// <param name="other">충돌한 환경 Collider입니다.</param>
+        /// <param name="hitWorldPos">Hit VFX를 출력할 월드 좌표입니다.</param>
+        /// <returns>발사체가 종료되어 현재 스텝을 중단해야 하면 true를 반환합니다.</returns>
+        private bool TryHandleEnvironmentHit(Collider2D other, Vector2 hitWorldPos)
+        {
+            if (!ShouldHandleEnvironmentHit || !IsEnvironmentHitCollider(other))
+                return false;
+
+            if (!CanPlayEnvironmentHit(other))
+                return false;
+
+            MarkEnvironmentHitCollider(other);
+            NotifyHitVisual(other, hitWorldPos);
+
+            ProjectileConstants.EnvironmentHitPolicy policy = EffectiveEnvironmentHitPolicy;
+            bool shouldTerminate = policy == ProjectileConstants.EnvironmentHitPolicy.PlayHitVisualAndDestroy ||
+                                   (policy == ProjectileConstants.EnvironmentHitPolicy.PlayHitVisualAndFollowHitLifetime &&
+                                    ShouldTerminateOnImmediateHit(other));
+
+            if (!shouldTerminate)
+                return false;
+
+            _isTerminatedByHit = true;
+            Destroy(gameObject);
+            return true;
+        }
+
+        /// <summary>
+        /// 환경 Hit VFX를 재생할 수 있는지 확인합니다.
+        /// - 같은 환경 Collider와 겹쳐 있는 동안에는 1회만 허용합니다.
+        /// </summary>
+        /// <param name="other">판정할 환경 Collider입니다.</param>
+        /// <returns>이번 충돌에서 Hit VFX를 출력할 수 있으면 true를 반환합니다.</returns>
+        private bool CanPlayEnvironmentHit(Collider2D other)
+        {
+            return other && !_latchedEnvironmentHitColliders.Contains(other);
+        }
+
+        /// <summary>
+        /// 환경 Hit VFX를 출력한 Collider를 현재 겹침 잠금 상태로 등록합니다.
+        /// </summary>
+        /// <param name="other">잠글 환경 Collider입니다.</param>
+        private void MarkEnvironmentHitCollider(Collider2D other)
+        {
+            if (!other)
+                return;
+
+            _latchedEnvironmentHitColliders.Add(other);
+        }
+
+        /// <summary>
+        /// Collider가 환경 Hit VFX 대상 레이어에 속하는지 확인합니다.
+        /// </summary>
+        /// <param name="other">판정할 Collider입니다.</param>
+        /// <returns>환경 충돌 대상으로 등록된 레이어이면 true를 반환합니다.</returns>
+        private bool IsEnvironmentHitCollider(Collider2D other)
+        {
+            if (!other)
+                return false;
+
+            int mask = ResolveEnvironmentHitLayerMask();
+            if (mask == 0)
+                return false;
+
+            int otherLayerMask = 1 << other.gameObject.layer;
+            return (mask & otherLayerMask) != 0;
+        }
+
+        /// <summary>
+        /// 현재 발사체에서 사용할 환경 Hit VFX 레이어 마스크를 반환합니다.
+        /// - Skill 이벤트가 커스텀 LayerMask를 지정하면 해당 값을 사용합니다.
+        /// - 지정하지 않으면 Core 기본 Ground/Wall 레이어 마스크를 사용합니다.
+        /// </summary>
+        /// <returns>환경 Hit VFX 후보 레이어 마스크입니다.</returns>
+        private int ResolveEnvironmentHitLayerMask()
+        {
+            if (Runtime != null && Runtime.UseEnvironmentHitLayerMaskOverride)
+                return Runtime.EnvironmentHitLayerMaskOverride;
+
+            return ProjectileConstants.GetDefaultEnvironmentHitLayerMask();
         }
 
         /// <summary>
@@ -597,24 +710,31 @@ namespace GGemCo2DCore
         }
 
         /// <summary>
-        /// 현재 발사체 Collider와 실제로 겹치고 있는 타겟 집합을 기준으로 재적중 잠금을 갱신합니다.
-        /// - 같은 타겟의 여러 HitArea 중 일부만 빠졌을 때는 잠금을 유지합니다.
-        /// - 타겟의 모든 HitArea에서 완전히 빠져나간 경우에만 잠금을 해제합니다.
+        /// 현재 발사체 Collider와 실제로 겹치고 있는 대상 집합을 기준으로 재적중 잠금을 갱신합니다.
+        /// - 같은 타겟의 여러 HitArea 중 일부만 빠졌을 때는 타겟 잠금을 유지합니다.
+        /// - 환경 Collider와 완전히 이탈하면 환경 Hit VFX 잠금을 해제해 재충돌 연출을 허용합니다.
         /// </summary>
         private void RefreshImmediateHitLatchState()
         {
-            if (!ShouldHandleImmediateCollisionDamage)
+            if (!ShouldHandleImmediateCollisionDamage && !ShouldHandleEnvironmentHit)
                 return;
 
             Collider2D[] results = GetOverlapResultsBuffer();
             int count = OverlapHitCollider(results);
 
             _currentOverlapTargets.Clear();
+            _currentOverlapEnvironmentHitColliders.Clear();
 
             for (int i = 0; i < count; i++)
             {
                 Collider2D col = results[i];
                 if (!col || col == HitCollider)
+                    continue;
+
+                if (ShouldHandleEnvironmentHit && IsEnvironmentHitCollider(col))
+                    _currentOverlapEnvironmentHitColliders.Add(col);
+
+                if (!ShouldHandleImmediateCollisionDamage)
                     continue;
 
                 if (!TryResolveDamageTarget(col, out CharacterBase target))
@@ -623,6 +743,15 @@ namespace GGemCo2DCore
                 _currentOverlapTargets.Add(target);
             }
 
+            ReleaseDetachedTargetHitLatches();
+            ReleaseDetachedEnvironmentHitLatches();
+        }
+
+        /// <summary>
+        /// 현재 겹침 목록에서 사라진 타겟 재적중 잠금을 해제합니다.
+        /// </summary>
+        private void ReleaseDetachedTargetHitLatches()
+        {
             if (_latchedHitTargets.Count == 0)
                 return;
 
@@ -638,8 +767,27 @@ namespace GGemCo2DCore
         }
 
         /// <summary>
+        /// 현재 겹침 목록에서 사라진 환경 Collider Hit VFX 잠금을 해제합니다.
+        /// </summary>
+        private void ReleaseDetachedEnvironmentHitLatches()
+        {
+            if (_latchedEnvironmentHitColliders.Count == 0)
+                return;
+
+            _releasedEnvironmentHitColliders.Clear();
+            foreach (Collider2D collider in _latchedEnvironmentHitColliders)
+            {
+                if (!collider || !_currentOverlapEnvironmentHitColliders.Contains(collider))
+                    _releasedEnvironmentHitColliders.Add(collider);
+            }
+
+            for (int i = 0; i < _releasedEnvironmentHitColliders.Count; i++)
+                _latchedEnvironmentHitColliders.Remove(_releasedEnvironmentHitColliders[i]);
+        }
+
+        /// <summary>
         /// Collider 기준으로 데미지 대상 캐릭터를 해석합니다.
-        /// - 지면은 데미지 대상이 아니므로 false를 반환합니다.
+        /// - 환경 Collider는 데미지 대상이 아니므로 false를 반환합니다.
         /// - 시전자와 대상의 태그 조합이 유효하지 않으면 false를 반환합니다.
         /// </summary>
         /// <param name="other">대상 후보 Collider입니다.</param>
@@ -875,9 +1023,10 @@ namespace GGemCo2DCore
         {
             if (!Initialized || _isWaitingForEndVisual) return;
             if (_isTerminatedByHit) return;
-            if (!ShouldHandleImmediateCollisionDamage) return;
+            if (!ShouldHandleImmediateCollisionDamage && !ShouldHandleEnvironmentHit) return;
 
-            // 기존 정책을 유지하되, "충돌한 콜라이더의 태그"가 아니라 "루트 캐릭터" 기준으로 판정합니다.
+            // 기존 정책을 유지하되, 타겟 데미지는 "루트 캐릭터" 기준으로 판정하고,
+            // 환경 Hit VFX는 LayerMask 기준으로 별도 처리합니다.
             TryHandleHit(other);
         }
 
@@ -890,7 +1039,16 @@ namespace GGemCo2DCore
         protected virtual void OnTriggerExit2D(Collider2D other)
         {
             if (!Initialized || _isWaitingForEndVisual) return;
-            if (!ShouldHandleImmediateCollisionDamage) return;
+            if (!ShouldHandleImmediateCollisionDamage && !ShouldHandleEnvironmentHit) return;
+
+            if (ShouldHandleEnvironmentHit && IsEnvironmentHitCollider(other))
+            {
+                RefreshImmediateHitLatchState();
+                return;
+            }
+
+            if (!ShouldHandleImmediateCollisionDamage)
+                return;
 
             if (!TryResolveDamageTarget(other, out CharacterBase target))
                 return;

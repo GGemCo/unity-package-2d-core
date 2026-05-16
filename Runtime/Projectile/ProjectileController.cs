@@ -56,7 +56,11 @@ namespace GGemCo2DCore
                     useDamageApplyModeOverride: metadataProjectile.UseDamageApplyModeOverride,
                     damageApplyModeOverride: metadataProjectile.DamageApplyModeOverride,
                     useTickDamageIntervalOverride: metadataProjectile.UseTickDamageIntervalOverride,
-                    tickDamageIntervalOverride: metadataProjectile.TickDamageIntervalOverride)
+                    tickDamageIntervalOverride: metadataProjectile.TickDamageIntervalOverride,
+                    useEnvironmentHitPolicyOverride: metadataProjectile.UseEnvironmentHitPolicyOverride,
+                    environmentHitPolicyOverride: metadataProjectile.EnvironmentHitPolicyOverride,
+                    useEnvironmentHitLayerMaskOverride: metadataProjectile.UseEnvironmentHitLayerMaskOverride,
+                    environmentHitLayerMaskOverride: metadataProjectile.EnvironmentHitLayerMaskOverride)
                 : metadataProjectile;
 
             _character.StartCoroutine(CreateProjectileBurst(info, meta));
