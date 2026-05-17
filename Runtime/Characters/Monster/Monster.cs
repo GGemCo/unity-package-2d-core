@@ -18,6 +18,7 @@ namespace GGemCo2DCore
         
         // 몬스터 행동 처리
         private ControllerMonster _controllerMonster;
+        private MonsterDeathSkillController _deathSkillController;
         private float _delayDestroyMonster;
         private CharacterConstants.Grade _grade;
         public CharacterConstants.Grade Grade => _grade;
@@ -50,6 +51,7 @@ namespace GGemCo2DCore
         public void PrepareForPoolRent(int monsterUid, CharacterRegenData regenData)
         {
             CancelPendingPoolReturn();
+            ClearPendingDeathState();
             CharacterRegenData = regenData;
             uid = monsterUid;
             SetPoolManaged(true);
@@ -96,6 +98,7 @@ namespace GGemCo2DCore
         public void PrepareForPoolReturn()
         {
             CancelPendingPoolReturn();
+            ClearPendingDeathState();
             _controllerMonster?.StopAttackCoroutine();
             _controllerMonster?.StopAllCoroutines();
 
@@ -214,6 +217,13 @@ namespace GGemCo2DCore
             // 순서 중요. ControllerMonster 에서 콜라이더를 사용
             _controllerMonster = gameObject.AddComponent<ControllerMonster>();
             _controllerMonster.Initialize(_collider2Ds);
+
+            _deathSkillController = gameObject.GetComponent<MonsterDeathSkillController>();
+            if (_deathSkillController == null)
+            {
+                _deathSkillController = gameObject.AddComponent<MonsterDeathSkillController>();
+            }
+            _deathSkillController.Initialize(this);
         }
         /// <summary>
         /// regen_data 의 정보 셋팅
@@ -249,6 +259,7 @@ namespace GGemCo2DCore
             CurrentSuperArmor.OnNext(info.StatSuperArmor);
             SetScale(info.Scale);
             SetAttackType(info.AttackType);
+            _deathSkillController?.SetDeathSkillMonsterUid(info.DeathSkillMonsterUid);
         }
 
         protected override bool InitializeByAnimationTable()
@@ -318,6 +329,40 @@ namespace GGemCo2DCore
             GameEventManager.MonsterKilled(data);
             
             PlayDeadCutscene(attacker);
+        }
+
+        /// <summary>
+        /// 몬스터가 실제 사망 상태로 전환되기 전에 사망 스킬 실행을 시도합니다.
+        /// </summary>
+        /// <param name="dieReasonType">사망 원인입니다.</param>
+        /// <param name="attacker">사망을 유발한 공격자 오브젝트입니다.</param>
+        /// <param name="playDeadAnimation">스킬 종료 후 기본 사망 애니메이션을 재생할지 여부입니다.</param>
+        /// <param name="deathPresentation">스킬 종료 후 적용할 사망 연출 요청입니다.</param>
+        /// <returns>사망 처리를 보류하고 사망 스킬을 실행 중이면 <see langword="true"/>입니다.</returns>
+        protected override bool TryBeginPreDeathAction(
+            CharacterConstants.DieReasonType dieReasonType,
+            GameObject attacker,
+            bool playDeadAnimation,
+            DeathPresentationRequest deathPresentation)
+        {
+            return _deathSkillController != null &&
+                   _deathSkillController.TryBeginDeathSkill(dieReasonType, attacker, playDeadAnimation, deathPresentation);
+        }
+
+        /// <summary>
+        /// 사망 스킬 컨트롤러가 스킬 종료 후 기존 사망 처리를 이어가기 위해 호출합니다.
+        /// </summary>
+        /// <param name="dieReasonType">사망 원인입니다.</param>
+        /// <param name="attacker">사망을 유발한 공격자 오브젝트입니다.</param>
+        /// <param name="playDeadAnimation">기본 사망 애니메이션 폴백 허용 여부입니다.</param>
+        /// <param name="deathPresentation">사망 원인별 전용 연출 요청입니다.</param>
+        internal void CompleteDeathSkillAction(
+            CharacterConstants.DieReasonType dieReasonType,
+            GameObject attacker,
+            bool playDeadAnimation,
+            DeathPresentationRequest deathPresentation)
+        {
+            CompleteDeferredDeath(dieReasonType, attacker, playDeadAnimation, deathPresentation);
         }
 
         /// <summary>

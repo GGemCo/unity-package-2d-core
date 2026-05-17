@@ -145,6 +145,7 @@ namespace GGemCo2DCoreEditor
             { "NeedItemUid4", ConfigAddressableTable.Item },
             { "SourceItemUid", ConfigAddressableTable.Item },
             { "MonsterUid", ConfigAddressableTable.Monster },
+            { "DeathSkillMonsterUid", "skill_monster" },
             { "NpcUid", ConfigAddressableTable.Npc },
             { "MapUid", ConfigAddressableTable.Map },
             { "RequestMapUid", ConfigAddressableTable.Map },

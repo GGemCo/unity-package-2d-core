@@ -11,6 +11,12 @@ namespace GGemCo2DCore
     {
         private CharacterConstants.AttackType _attackType;
         private Coroutine _deathPresentationFreezeCoroutine;
+        private bool _isDeathPending;
+
+        /// <summary>
+        /// 사망 확정 전 액션이 실행 중이어서 최종 사망 처리가 잠시 보류되었는지 여부입니다.
+        /// </summary>
+        public bool IsDeathPending => _isDeathPending;
 
         /// <summary>
         /// 캐릭터를 사망 상태로 전환하고 사망 후처리를 실행합니다.
@@ -40,6 +46,71 @@ namespace GGemCo2DCore
             bool playDeadAnimation,
             DeathPresentationRequest deathPresentation)
         {
+            if (IsStatusDead() || _isDeathPending)
+                return;
+
+            if (TryBeginPreDeathAction(dieReasonType, attacker, playDeadAnimation, deathPresentation))
+            {
+                _isDeathPending = true;
+                return;
+            }
+
+            CompleteDeath(dieReasonType, attacker, playDeadAnimation, deathPresentation);
+        }
+
+        /// <summary>
+        /// 보류 중인 사망 처리를 즉시 완료합니다.
+        /// </summary>
+        /// <param name="dieReasonType">사망 원인입니다.</param>
+        /// <param name="attacker">사망을 유발한 공격자 오브젝트입니다.</param>
+        /// <param name="playDeadAnimation">기본 사망 애니메이션 폴백 허용 여부입니다.</param>
+        /// <param name="deathPresentation">사망 원인별 전용 연출 요청입니다.</param>
+        /// <remarks>
+        /// 사망 직전 스킬처럼 비동기 선처리가 필요한 하위 클래스가 액션 완료 후 호출합니다.
+        /// </remarks>
+        protected void CompleteDeferredDeath(
+            CharacterConstants.DieReasonType dieReasonType,
+            GameObject attacker,
+            bool playDeadAnimation,
+            DeathPresentationRequest deathPresentation)
+        {
+            CompleteDeath(dieReasonType, attacker, playDeadAnimation, deathPresentation);
+        }
+
+        /// <summary>
+        /// 사망 확정 전에 실행할 액션을 시작할 수 있는 확장 지점입니다.
+        /// </summary>
+        /// <param name="dieReasonType">사망 원인입니다.</param>
+        /// <param name="attacker">사망을 유발한 공격자 오브젝트입니다.</param>
+        /// <param name="playDeadAnimation">기본 사망 애니메이션 폴백 허용 여부입니다.</param>
+        /// <param name="deathPresentation">사망 원인별 전용 연출 요청입니다.</param>
+        /// <returns>사망 처리를 보류하고 선처리 액션을 기다려야 하면 <see langword="true"/>입니다.</returns>
+        protected virtual bool TryBeginPreDeathAction(
+            CharacterConstants.DieReasonType dieReasonType,
+            GameObject attacker,
+            bool playDeadAnimation,
+            DeathPresentationRequest deathPresentation)
+        {
+            return false;
+        }
+
+        /// <summary>
+        /// 보류 상태와 관계없이 실제 사망 상태 전환, 연출, 후처리를 수행합니다.
+        /// </summary>
+        /// <param name="dieReasonType">사망 원인입니다.</param>
+        /// <param name="attacker">사망을 유발한 공격자 오브젝트입니다.</param>
+        /// <param name="playDeadAnimation">기본 사망 애니메이션 폴백 허용 여부입니다.</param>
+        /// <param name="deathPresentation">사망 원인별 전용 연출 요청입니다.</param>
+        private void CompleteDeath(
+            CharacterConstants.DieReasonType dieReasonType,
+            GameObject attacker,
+            bool playDeadAnimation,
+            DeathPresentationRequest deathPresentation)
+        {
+            if (IsStatusDead())
+                return;
+
+            _isDeathPending = false;
             SetStatusDead();
             SetBattleStatusNone();
 
@@ -50,6 +121,14 @@ namespace GGemCo2DCore
 
             AffectRuntimeBridge.RemoveAll(gameObject);
             OnDead(dieReasonType, attacker);
+        }
+
+        /// <summary>
+        /// 풀 재사용 또는 런타임 초기화 시 사망 보류 플래그를 초기 상태로 되돌립니다.
+        /// </summary>
+        protected void ClearPendingDeathState()
+        {
+            _isDeathPending = false;
         }
 
         /// <summary>

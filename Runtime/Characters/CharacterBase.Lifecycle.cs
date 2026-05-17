@@ -64,6 +64,7 @@ namespace GGemCo2DCore
         /// </summary>
         private void ResetCharacterRuntimeState()
         {
+            ClearPendingDeathState();
             CharacterRegenData = null;
             SetAttackType(CharacterConstants.AttackType.None);
             SetAggro(false);

@@ -161,9 +161,9 @@ namespace GGemCo2DCore
         {
             if (metadataDamage == null) return;
             if (SceneGame.Instance.CutsceneManager.IsPlaying()) return;
-            if (_characterBase.IsStatusDead())
+            if (_characterBase.IsStatusDead() || _characterBase.IsDeathPending)
             {
-                // GcLogger.Log("monster dead");
+                // 사망 전 액션이 진행 중이면 추가 피격으로 사망 플로우가 중복 실행되지 않도록 막습니다.
                 return;
             }
 

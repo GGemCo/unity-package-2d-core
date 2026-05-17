@@ -91,6 +91,7 @@ namespace GGemCo2DCore
         public bool ShouldSuspendBrain =>
             targetCharacter != null &&
             (targetCharacter.IsStatusDead() ||
+             targetCharacter.IsDeathPending ||
              targetCharacter.IsBrainLocked() ||
              targetCharacter.IsDontControl() ||
              targetCharacter.IsStatusDamage());
