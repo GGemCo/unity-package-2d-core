@@ -21,7 +21,7 @@ namespace GGemCo2DCoreEditor
             public string RawValue;
         }
 
-        private static PendingOpenRequest s_pendingOpenRequest;
+        private static PendingOpenRequest _pendingOpenRequest;
         
         private IReadOnlyList<TableEditorTableDefinition> _tables;
         private TableEditorTableDefinition _selectedTable;
@@ -38,6 +38,7 @@ namespace GGemCo2DCoreEditor
         private string _rowSearch = string.Empty;
         private bool _showOnlyValidationRows;
         private bool _showOnlySelectedValidation;
+        private bool _isValidationStale;
 
         private ToolbarSearchField _tableSearchField;
         private PopupField<string> _packagePopup;
@@ -65,7 +66,7 @@ namespace GGemCo2DCoreEditor
             if (string.IsNullOrWhiteSpace(tableKey) || string.IsNullOrWhiteSpace(headerName) || keyValue <= 0)
                 return;
 
-            s_pendingOpenRequest = new PendingOpenRequest
+            _pendingOpenRequest = new PendingOpenRequest
             {
                 TableKey = tableKey,
                 HeaderName = headerName,
@@ -392,6 +393,7 @@ namespace GGemCo2DCoreEditor
                 _document.MergeHeaders(_columns);
                 _selectedRow = _document.GetRows().FirstOrDefault();
                 _validationMessages.Clear();
+                _isValidationStale = false;
                 _undoController?.Initialize(_selectedTable.TableKey, _document);
                 TableEditorReferenceCache.Invalidate(_selectedTable);
                 RefreshAllViews();
@@ -462,7 +464,7 @@ namespace GGemCo2DCoreEditor
 
                 TableEditorReferenceCache.Invalidate(_selectedTable);
                 ValidateCurrentTable();
-                _undoController?.Commit(_selectedTable.TableKey, _document);
+                _undoController?.CommitSnapshot(_selectedTable.TableKey, _document);
                 RefreshStatus();
             }
             catch (Exception ex)
@@ -472,11 +474,16 @@ namespace GGemCo2DCoreEditor
             }
         }
 
+        /// <summary>
+        /// 현재 테이블 전체를 다시 검증하고 검증 UI와 행 필터를 갱신합니다.
+        /// 편집 중에는 검증 결과를 오래된 상태로 표시하고, 이 함수가 호출될 때만 실제 검증 결과를 새로 계산합니다.
+        /// </summary>
         private void ValidateCurrentTable()
         {
             _validationMessages.Clear();
             if (_selectedTable != null && _document != null)
                 _validationMessages.AddRange(TableEditorValidator.Validate(_selectedTable, _document));
+            _isValidationStale = false;
             RebuildValidation();
             RefreshVisibleRows();
         }
@@ -540,6 +547,12 @@ namespace GGemCo2DCoreEditor
             });
         }
 
+        /// <summary>
+        /// Inspector 입력 필드의 셀 값 변경을 처리합니다.
+        /// 일반 셀 편집은 전체 문서 스냅샷, 컬럼 재구성, 검증 목록 전체 재생성을 피하는 경량 경로로 처리합니다.
+        /// </summary>
+        /// <param name="headerName">변경된 컬럼 헤더입니다.</param>
+        /// <param name="nextValue">변경 후 원본 문자열 값입니다.</param>
         private void HandleCellValueChanged(string headerName, string nextValue)
         {
             if (_document == null || _selectedRow == null)
@@ -550,11 +563,17 @@ namespace GGemCo2DCoreEditor
 
             ITableEditorTableRuleProvider ruleProvider = TableEditorRuleProviderRegistry.GetProvider(_selectedTable);
             bool inspectorLayoutChanged = string.Equals(headerName, "Kind", StringComparison.OrdinalIgnoreCase);
-            ApplyDocumentMutation($"Edit {headerName}", () =>
+            if (inspectorLayoutChanged)
             {
-                _document.SetCellValue(_selectedRow, headerName, nextValue);
-                ruleProvider?.OnBeforeCellValueChanged(_document, _selectedRow, headerName, nextValue);
-            }, !inspectorLayoutChanged);
+                ApplyDocumentMutation($"Edit {headerName}", () =>
+                {
+                    _document.SetCellValue(_selectedRow, headerName, nextValue);
+                    ruleProvider?.OnBeforeCellValueChanged(_document, _selectedRow, headerName, nextValue);
+                }, false);
+                return;
+            }
+
+            ApplyCellValueMutation(headerName, nextValue);
         }
 
         private void JumpToReference(TableEditorTableDefinition table, int uid)
@@ -585,14 +604,14 @@ namespace GGemCo2DCoreEditor
 
         private void TryApplyPendingOpenRequest()
         {
-            PendingOpenRequest request = s_pendingOpenRequest;
+            PendingOpenRequest request = _pendingOpenRequest;
             if (request == null || _tables == null || _tables.Count == 0)
                 return;
 
             TableEditorTableDefinition requestTable = TableEditorRegistry.FindByKey(request.TableKey);
             if (requestTable == null)
             {
-                s_pendingOpenRequest = null;
+                _pendingOpenRequest = null;
                 return;
             }
 
@@ -605,7 +624,7 @@ namespace GGemCo2DCoreEditor
             if (_document == null)
                 return;
 
-            s_pendingOpenRequest = null;
+            _pendingOpenRequest = null;
             _selectedRow = _document.GetRows().FirstOrDefault(row =>
                 row != null
                 && row.Values.TryGetValue(request.HeaderName, out string currentValue)
@@ -623,6 +642,13 @@ namespace GGemCo2DCoreEditor
             }
         }
 
+        /// <summary>
+        /// 행 추가/삭제/복제처럼 문서 구조가 바뀌는 작업을 적용합니다.
+        /// 구조 변경은 경량 셀 편집 기록만으로 복원하기 어렵기 때문에 전체 문서 스냅샷을 Undo 기준으로 사용합니다.
+        /// </summary>
+        /// <param name="undoName">Undo 메뉴에 표시될 작업 이름입니다.</param>
+        /// <param name="mutation">실제로 적용할 문서 변경 로직입니다.</param>
+        /// <param name="keepInspectorState">Inspector 재구성을 생략할지 여부입니다.</param>
         private void ApplyDocumentMutation(string undoName, Action mutation, bool keepInspectorState = false)
         {
             if (_selectedTable == null || _document == null || mutation == null)
@@ -630,21 +656,46 @@ namespace GGemCo2DCoreEditor
 
             _undoController?.BeginRecord(undoName);
             mutation();
-            _undoController?.Commit(_selectedTable.TableKey, _document);
-            _selectedTable?.ReloadAction?.Invoke();
-            TableEditorReferenceCache.Invalidate(_selectedTable);
+            _undoController?.CommitSnapshot(_selectedTable.TableKey, _document);
+            MarkValidationStale();
             if (keepInspectorState)
                 RefreshViewsWithoutInspectorRebuild();
             else
                 RefreshAllViews();
         }
 
-        private void HandleUndoRedoRestore(string tableKey, string snapshotJson)
+        /// <summary>
+        /// 일반 셀 값 변경을 경량 경로로 적용합니다.
+        /// 전체 문서 JSON 직렬화, 테이블 ReloadAction, 컬럼 재생성을 생략하여 입력 지연을 줄입니다.
+        /// </summary>
+        /// <param name="headerName">변경된 컬럼 헤더입니다.</param>
+        /// <param name="nextValue">변경 후 원본 문자열 값입니다.</param>
+        private void ApplyCellValueMutation(string headerName, string nextValue)
+        {
+            if (_selectedTable == null || _document == null || _selectedRow == null)
+                return;
+
+            int rowStableId = _selectedRow.stableId;
+            _undoController?.BeginRecord($"Edit {headerName}");
+            if (!_document.SetCellValue(_selectedRow, headerName, nextValue))
+                return;
+
+            _undoController?.CommitCellEdit(_selectedTable.TableKey, rowStableId, headerName, nextValue);
+            MarkValidationStale();
+            RefreshViewsAfterCellValueChanged(headerName);
+        }
+
+        /// <summary>
+        /// Undo/Redo 상태에서 복원된 문서를 현재 창에 반영합니다.
+        /// UndoController가 기준 스냅샷과 셀 편집 기록을 조합한 문서를 전달하므로 창은 선택 행만 다시 연결합니다.
+        /// </summary>
+        /// <param name="tableKey">복원 대상 테이블 식별자입니다.</param>
+        /// <param name="restored">복원된 문서입니다.</param>
+        private void HandleUndoRedoRestore(string tableKey, TableEditorDocument restored)
         {
             if (_selectedTable == null || !string.Equals(_selectedTable.TableKey, tableKey, StringComparison.OrdinalIgnoreCase))
                 return;
 
-            TableEditorDocument restored = TableEditorDocument.FromSnapshotJson(snapshotJson);
             if (restored == null)
                 return;
 
@@ -653,6 +704,7 @@ namespace GGemCo2DCoreEditor
             _columns = _selectedTable.BuildColumns(_document.Headers);
             _document.MergeHeaders(_columns);
             _selectedRow = _document.GetRows().FirstOrDefault(r => r.stableId == selectedStableId) ?? _document.GetRows().FirstOrDefault();
+            MarkValidationStale();
             RefreshAllViews();
         }
 
@@ -666,13 +718,59 @@ namespace GGemCo2DCoreEditor
             RefreshTableList();
         }
 
+        /// <summary>
+        /// Inspector 상태를 유지한 상태로 필요한 뷰만 갱신합니다.
+        /// 컬럼 구조는 변경되지 않았다고 가정하므로 컬럼 재생성을 수행하지 않습니다.
+        /// </summary>
         private void RefreshViewsWithoutInspectorRebuild()
         {
             RefreshStatus();
-            RebuildColumns();
             RefreshVisibleRows();
             RebuildValidation();
-            RefreshTableList();
+        }
+
+        /// <summary>
+        /// 셀 값 변경 후 그리드와 상태 표시만 가볍게 갱신합니다.
+        /// 검색/검증 필터가 켜져 있을 때만 보이는 행 목록을 다시 계산하고, 일반 상황에서는 표시 중인 항목만 새로 바인딩합니다.
+        /// </summary>
+        /// <param name="changedHeaderName">변경된 컬럼 헤더입니다.</param>
+        private void RefreshViewsAfterCellValueChanged(string changedHeaderName)
+        {
+            RefreshStatus();
+
+            if (ShouldRebuildVisibleRowsAfterCellValueChanged(changedHeaderName))
+                RefreshVisibleRows();
+            else
+                RefreshRowListItems();
+
+            if (_isValidationStale)
+                RebuildValidation();
+        }
+
+        /// <summary>
+        /// 셀 변경이 현재 행 필터 결과에 영향을 줄 수 있는지 판단합니다.
+        /// 검색 문자열이나 검증 행 필터가 활성화되어 있으면 보이는 행 목록 자체를 다시 계산해야 합니다.
+        /// </summary>
+        /// <param name="changedHeaderName">변경된 컬럼 헤더입니다.</param>
+        /// <returns>행 목록 재계산이 필요하면 true입니다.</returns>
+        private bool ShouldRebuildVisibleRowsAfterCellValueChanged(string changedHeaderName)
+        {
+            return !string.IsNullOrWhiteSpace(_rowSearch) || _showOnlyValidationRows;
+        }
+
+        /// <summary>
+        /// 행 목록을 재계산하지 않고 현재 MultiColumnListView 항목만 다시 바인딩합니다.
+        /// 컬럼 재구성과 전체 Rebuild보다 비용이 작아 일반 셀 편집에 적합합니다.
+        /// </summary>
+        private void RefreshRowListItems()
+        {
+            _rowListView?.RefreshItems();
+            if (_selectedRow == null)
+                return;
+
+            int index = _visibleRows.IndexOf(_selectedRow);
+            if (index >= 0)
+                _rowListView?.SetSelectionWithoutNotify(new[] { index });
         }
 
         private void RefreshStatus()
@@ -705,13 +803,13 @@ namespace GGemCo2DCoreEditor
             if (_document != null)
             {
                 IEnumerable<TableEditorDocumentRow> rows = _document.GetRows();
-                HashSet<int> invalidRowIds = BuildInvalidRowIdSet();
+                HashSet<int> invalidRowIds = _showOnlyValidationRows ? BuildInvalidRowIdSet() : null;
 
                 foreach (TableEditorDocumentRow row in rows)
                 {
                     if (!string.IsNullOrWhiteSpace(_rowSearch) && !MatchesSearch(row, _rowSearch))
                         continue;
-                    if (_showOnlyValidationRows && !invalidRowIds.Contains(row.stableId))
+                    if (_showOnlyValidationRows && (invalidRowIds == null || !invalidRowIds.Contains(row.stableId)))
                         continue;
                     _visibleRows.Add(row);
                 }
@@ -795,7 +893,17 @@ namespace GGemCo2DCoreEditor
             if (_validationHost == null)
                 return;
             _validationHost.Clear();
-            _validationHost.Add(TableEditorGui.BuildValidationView(_validationMessages, _selectedRow?.stableId ?? -1, _showOnlySelectedValidation));
+            _validationHost.Add(TableEditorGui.BuildValidationView(_validationMessages, _selectedRow?.stableId ?? -1, _showOnlySelectedValidation, _isValidationStale));
+        }
+
+        /// <summary>
+        /// 기존 검증 결과를 오래된 상태로 표시합니다.
+        /// 셀 편집 때마다 전체 검증을 다시 실행하지 않기 위해 Validate 버튼으로 재검증하도록 유도합니다.
+        /// </summary>
+        private void MarkValidationStale()
+        {
+            if (_validationMessages.Count > 0)
+                _isValidationStale = true;
         }
 
         private bool TryConfirmDiscardChanges()

@@ -104,7 +104,16 @@ namespace GGemCo2DCoreEditor
             return root;
         }
 
-        public static VisualElement BuildValidationView(IReadOnlyList<TableEditorValidationMessage> messages, int selectedRowStableId, bool showOnlySelected)
+        /// <summary>
+        /// 검증 결과 패널을 생성합니다.
+        /// 검증 결과가 오래된 상태이면 상세 HelpBox 목록을 만들지 않고 요약만 표시하여 셀 편집 중 UI 재생성 비용을 줄입니다.
+        /// </summary>
+        /// <param name="messages">표시할 검증 메시지 목록입니다.</param>
+        /// <param name="selectedRowStableId">선택된 행의 안정 식별자입니다.</param>
+        /// <param name="showOnlySelected">선택 행 메시지만 표시할지 여부입니다.</param>
+        /// <param name="isStale">검증 결과가 현재 문서보다 오래되었는지 여부입니다.</param>
+        /// <returns>검증 결과 UI 루트입니다.</returns>
+        public static VisualElement BuildValidationView(IReadOnlyList<TableEditorValidationMessage> messages, int selectedRowStableId, bool showOnlySelected, bool isStale = false)
         {
             ScrollView root = new ScrollView(ScrollViewMode.Vertical)
             {
@@ -124,14 +133,13 @@ namespace GGemCo2DCoreEditor
                 return root;
             }
 
-            int errorCount = 0;
-            int warningCount = 0;
-            for (int i = 0; i < messages.Count; i++)
+            CountValidationMessages(messages, out int errorCount, out int warningCount);
+
+            if (isStale)
             {
-                if (messages[i].Severity == TableEditorValidationSeverity.Error)
-                    errorCount++;
-                else if (messages[i].Severity == TableEditorValidationSeverity.Warning)
-                    warningCount++;
+                root.Add(new HelpBox("데이터가 변경되어 기존 검증 결과가 오래되었습니다. Validate 버튼으로 다시 확인하세요.", HelpBoxMessageType.Warning));
+                root.Add(new HelpBox($"이전 검증 결과 - Errors: {errorCount}, Warnings: {warningCount}", errorCount > 0 ? HelpBoxMessageType.Error : HelpBoxMessageType.Warning));
+                return root;
             }
 
             root.Add(new HelpBox($"Errors: {errorCount}, Warnings: {warningCount}", errorCount > 0 ? HelpBoxMessageType.Error : HelpBoxMessageType.Warning));
@@ -149,6 +157,29 @@ namespace GGemCo2DCoreEditor
             }
 
             return root;
+        }
+
+        /// <summary>
+        /// 검증 메시지 목록에서 오류와 경고 개수를 계산합니다.
+        /// 상세 HelpBox를 만들지 않는 오래된 검증 결과 표시에서도 요약을 유지하기 위한 보조 함수입니다.
+        /// </summary>
+        /// <param name="messages">집계할 검증 메시지 목록입니다.</param>
+        /// <param name="errorCount">오류 메시지 개수입니다.</param>
+        /// <param name="warningCount">경고 메시지 개수입니다.</param>
+        private static void CountValidationMessages(IReadOnlyList<TableEditorValidationMessage> messages, out int errorCount, out int warningCount)
+        {
+            errorCount = 0;
+            warningCount = 0;
+            if (messages == null)
+                return;
+
+            for (int i = 0; i < messages.Count; i++)
+            {
+                if (messages[i].Severity == TableEditorValidationSeverity.Error)
+                    errorCount++;
+                else if (messages[i].Severity == TableEditorValidationSeverity.Warning)
+                    warningCount++;
+            }
         }
 
         private static Dictionary<string, TableEditorColumnRule> BuildRuleMap(ITableEditorTableRuleProvider provider)
