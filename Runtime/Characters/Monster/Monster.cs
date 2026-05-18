@@ -509,6 +509,7 @@ namespace GGemCo2DCore
                 _controllerMonster?.RequestClearAggro();
             }
 
+            ResetToRegenPositionOnCullingBrainResetIfNeeded();
             ResetBrainRuntimeForCulling();
         }
 
@@ -519,6 +520,42 @@ namespace GGemCo2DCore
         private bool ShouldResetAggroOnCullingBrainReset()
         {
             return _monsterSettings != null && _monsterSettings.ResetAggroOnCullingBrainReset;
+        }
+
+        /// <summary>
+        /// 컬링 복귀 시 Brain 초기화와 함께 리젠 좌표로 위치를 되돌릴지 여부를 반환합니다.
+        /// </summary>
+        /// <returns>리젠 좌표 리셋을 수행해야 하면 <see langword="true"/>입니다.</returns>
+        private bool ShouldResetToRegenPositionOnCullingBrainReset()
+        {
+            return _monsterSettings != null && _monsterSettings.ResetToRegenPositionOnCullingBrainReset;
+        }
+
+        /// <summary>
+        /// 설정에 따라 몬스터를 원래 리젠 좌표로 되돌립니다.
+        /// </summary>
+        /// <remarks>
+        /// 리젠 데이터가 없으면 위치를 변경하지 않으며, 위치를 되돌린 경우 물리 속도도 함께 정리합니다.
+        /// </remarks>
+        private void ResetToRegenPositionOnCullingBrainResetIfNeeded()
+        {
+            if (!ShouldResetToRegenPositionOnCullingBrainReset())
+            {
+                return;
+            }
+
+            if (CharacterRegenData == null)
+            {
+                return;
+            }
+
+            transform.position = new Vector3(CharacterRegenData.x, CharacterRegenData.y, transform.position.z);
+
+            if (characterRigidbody2D != null)
+            {
+                characterRigidbody2D.linearVelocity = Vector2.zero;
+                characterRigidbody2D.angularVelocity = 0f;
+            }
         }
 
         /// <summary>

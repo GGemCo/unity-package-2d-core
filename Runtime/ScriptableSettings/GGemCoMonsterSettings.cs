@@ -86,6 +86,8 @@ namespace GGemCo2DCore
         [SerializeField] private MonsterCullingBrainResumePolicy cullingBrainResumePolicy = MonsterCullingBrainResumePolicy.Continue;
         [Tooltip("컬링 복귀 시 Brain 초기화를 수행할 때 어그로 판정도 함께 초기화할지 여부입니다.")]
         [SerializeField] private bool resetAggroOnCullingBrainReset = false;
+        [Tooltip("컬링 복귀 시 Brain 초기화를 수행할 때 몬스터 위치를 원래 리젠 좌표로 되돌릴지 여부입니다.")]
+        [SerializeField] private bool resetToRegenPositionOnCullingBrainReset = false;
 
         [Header("Supper Armor")]
         [Tooltip("스택이 깎인 이후, 회복을 시작하기까지 대기 시간(초)")]
@@ -116,6 +118,11 @@ namespace GGemCo2DCore
         /// 컬링 복귀 시 Brain 초기화와 함께 어그로 판정까지 초기화할지 여부입니다.
         /// </summary>
         public bool ResetAggroOnCullingBrainReset => resetAggroOnCullingBrainReset;
+
+        /// <summary>
+        /// 컬링 복귀 시 Brain 초기화와 함께 리젠 좌표로 위치를 되돌릴지 여부입니다.
+        /// </summary>
+        public bool ResetToRegenPositionOnCullingBrainReset => resetToRegenPositionOnCullingBrainReset;
 
         /// <summary>
         /// 전투 HUD 적용 대상 등급(비트 마스크).
@@ -236,6 +243,7 @@ namespace GGemCo2DCore
             spriteWhiteOverlayFlashDuration = 0.08f;
             cullingBrainResumePolicy = MonsterCullingBrainResumePolicy.Continue;
             resetAggroOnCullingBrainReset = false;
+            resetToRegenPositionOnCullingBrainReset = false;
         }
     }
 }
