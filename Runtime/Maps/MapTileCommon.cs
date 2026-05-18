@@ -43,8 +43,7 @@ namespace GGemCo2DCore
         /// </summary>
         protected override void CalculateCullingBounds()
         {
-            if (mainCamera == null || _tilemapRenderer == null) return;
-            if (_cutsceneManager.IsPlaying()) return;
+            if (ShouldSkipCullingUpdate()) return;
 
             // 카메라 크기 계산
             float verticalSize = mainCamera.orthographicSize;
@@ -68,6 +67,20 @@ namespace GGemCo2DCore
             // 오브젝트 활성화/비활성화 처리
             UpdateObjectActivation(Monsters, _cullingBounds);
             UpdateObjectActivation(Npcs, _cullingBounds);
+        }
+
+        /// <summary>
+        /// 컬링 갱신을 중단해야 하는지 판별합니다.
+        /// 컷신 세션(로딩/준비/재생) 동안 월드 UI 컨테이너가 비활성화될 수 있으므로
+        /// 캐릭터 활성 전환을 멈춰 비활성 계층에서 코루틴이 시작되는 문제를 방지합니다.
+        /// </summary>
+        /// <returns>컬링 갱신을 건너뛰어야 하면 <see langword="true"/>를 반환합니다.</returns>
+        private bool ShouldSkipCullingUpdate()
+        {
+            if (mainCamera == null || _tilemapRenderer == null) return true;
+            if (_cutsceneManager == null) return false;
+
+            return _cutsceneManager.IsSessionActive();
         }
 
         /// <summary>

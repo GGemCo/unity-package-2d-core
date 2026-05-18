@@ -70,8 +70,14 @@ namespace GGemCo2DCore
         public void StartFadeIn()
         {
             if (_isStartFade) return;
-            _isStartFade = true;
             gameObject.SetActive(true);
+            if (!CanStartFadeCoroutine())
+            {
+                ApplyImmediateFadeState(true);
+                return;
+            }
+
+            _isStartFade = true;
             StartCoroutine(FadeIn(ConfigCommon.CharacterFadeSec));
         }
 
@@ -81,6 +87,13 @@ namespace GGemCo2DCore
         public void StartFadeOut()
         {
             if (_isStartFade) return;
+            if (!gameObject.activeSelf) return;
+            if (!CanStartFadeCoroutine())
+            {
+                ApplyImmediateFadeState(false);
+                return;
+            }
+
             _isStartFade = true;
             StartCoroutine(FadeOut(ConfigCommon.CharacterFadeSec));
         }
@@ -119,6 +132,35 @@ namespace GGemCo2DCore
         {
             if (textMonsterName == null) return;
             textMonsterName.text = monsterName;
+        }
+
+        /// <summary>
+        /// 페이드 코루틴을 시작할 수 있는 활성 상태인지 확인합니다.
+        /// 부모 컨테이너가 비활성화된 경우 activeInHierarchy가 거짓이므로 코루틴을 시작할 수 없습니다.
+        /// </summary>
+        /// <returns>코루틴 시작이 가능하면 <see langword="true"/>를 반환합니다.</returns>
+        private bool CanStartFadeCoroutine()
+        {
+            return isActiveAndEnabled && gameObject.activeInHierarchy;
+        }
+
+        /// <summary>
+        /// 코루틴을 시작할 수 없는 상황에서 즉시 알파/활성 상태를 반영합니다.
+        /// </summary>
+        /// <param name="visible">표시 상태를 나타냅니다.</param>
+        private void ApplyImmediateFadeState(bool visible)
+        {
+            if (_canvasGroup != null)
+            {
+                _canvasGroup.alpha = visible ? 1f : 0f;
+            }
+
+            if (!visible)
+            {
+                gameObject.SetActive(false);
+            }
+
+            SetIsStartFade(false);
         }
     }
 }
