@@ -9,6 +9,8 @@ namespace GGemCo2DCore
     /// </summary>
     public class ControllerMonster : CharacterBaseController, IMonsterCombatDriver, IMonsterBrainSuspendProvider
     {
+        private const float MoveDirectionEpsilonSqr = 0.000001f;
+
         private Coroutine _coroutineAttack;
         private float _delayTimeAttack;
         private Monster _monster;
@@ -46,12 +48,82 @@ namespace GGemCo2DCore
         /// <inheritdoc />
         public void RequestWait() => Wait();
 
-        /// <inheritdoc />
+        /// <summary>
+        /// 이동 요청을 fire-and-forget 방식으로 전달한다.
+        /// </summary>
+        /// <remarks>
+        /// 거부 사유가 필요한 호출부는 <see cref="TryRequestMove"/>를 사용한다.
+        /// </remarks>
         public void RequestMove(Vector2 direction)
         {
-            if (targetCharacter == null) return;
-            targetCharacter.directionNormalize = GetFilteredDirection(direction);
-            Run();
+            _ = TryRequestMove(direction, out _);
+        }
+
+        /// <summary>
+        /// 이동 요청을 수행하고, 거부 시 원인 코드를 반환한다.
+        /// </summary>
+        /// <param name="direction">월드 기준 이동 방향 벡터.</param>
+        /// <param name="failureReason">거부 사유 코드.</param>
+        /// <returns>이동이 실제로 수행되면 true, 아니면 false.</returns>
+        public bool TryRequestMove(Vector2 direction, out MonsterMoveRequestFailureReason failureReason)
+        {
+            failureReason = MonsterMoveRequestFailureReason.None;
+
+            if (targetCharacter == null)
+            {
+                failureReason = MonsterMoveRequestFailureReason.CharacterMissing;
+                return false;
+            }
+
+            if (direction.sqrMagnitude <= MoveDirectionEpsilonSqr)
+            {
+                failureReason = MonsterMoveRequestFailureReason.ZeroDirection;
+                return false;
+            }
+
+            Vector2 filteredDirection = GetFilteredDirection(direction);
+            if (filteredDirection.sqrMagnitude <= MoveDirectionEpsilonSqr)
+            {
+                failureReason = MonsterMoveRequestFailureReason.AxisLocked;
+                return false;
+            }
+
+            if (targetCharacter.IsStatusDontMove())
+            {
+                failureReason = MonsterMoveRequestFailureReason.StatusDontMove;
+                return false;
+            }
+
+            if (targetCharacter.IsStatusAttack())
+            {
+                failureReason = MonsterMoveRequestFailureReason.StatusAttack;
+                return false;
+            }
+
+            if (targetCharacter.IsStatusDead())
+            {
+                failureReason = MonsterMoveRequestFailureReason.StatusDead;
+                return false;
+            }
+
+            float speed = targetCharacter.currentMoveStep * targetCharacter.GetCurrentMoveSpeed();
+            if (speed <= 0f)
+            {
+                failureReason = MonsterMoveRequestFailureReason.SpeedNonPositive;
+                return false;
+            }
+
+            targetCharacter.directionNormalize = filteredDirection;
+
+            if (!Run())
+            {
+                // 상태 전환 타이밍으로 Run이 직전에 거부될 수 있어, 거부 사유를 재평가한다.
+                if (!TryResolveMoveFailureReason(direction, filteredDirection, out failureReason))
+                    failureReason = MonsterMoveRequestFailureReason.Unknown;
+                return false;
+            }
+
+            return true;
         }
 
         /// <inheritdoc />
@@ -207,6 +279,67 @@ namespace GGemCo2DCore
             StopAttackCoroutine();
             return true;
         }
+
+        /// <summary>
+        /// 이동 거부 사유를 상태/입력 기준으로 재평가한다.
+        /// </summary>
+        /// <param name="rawDirection">요청된 원본 방향.</param>
+        /// <param name="filteredDirection">축 제한이 반영된 방향.</param>
+        /// <param name="failureReason">재평가된 거부 사유.</param>
+        /// <returns>거부 사유를 특정했으면 true, 특정하지 못했으면 false.</returns>
+        private bool TryResolveMoveFailureReason(
+            Vector2 rawDirection,
+            Vector2 filteredDirection,
+            out MonsterMoveRequestFailureReason failureReason)
+        {
+            failureReason = MonsterMoveRequestFailureReason.None;
+
+            if (targetCharacter == null)
+            {
+                failureReason = MonsterMoveRequestFailureReason.CharacterMissing;
+                return true;
+            }
+
+            if (rawDirection.sqrMagnitude <= MoveDirectionEpsilonSqr)
+            {
+                failureReason = MonsterMoveRequestFailureReason.ZeroDirection;
+                return true;
+            }
+
+            if (filteredDirection.sqrMagnitude <= MoveDirectionEpsilonSqr)
+            {
+                failureReason = MonsterMoveRequestFailureReason.AxisLocked;
+                return true;
+            }
+
+            if (targetCharacter.IsStatusDontMove())
+            {
+                failureReason = MonsterMoveRequestFailureReason.StatusDontMove;
+                return true;
+            }
+
+            if (targetCharacter.IsStatusAttack())
+            {
+                failureReason = MonsterMoveRequestFailureReason.StatusAttack;
+                return true;
+            }
+
+            if (targetCharacter.IsStatusDead())
+            {
+                failureReason = MonsterMoveRequestFailureReason.StatusDead;
+                return true;
+            }
+
+            float speed = targetCharacter.currentMoveStep * targetCharacter.GetCurrentMoveSpeed();
+            if (speed <= 0f)
+            {
+                failureReason = MonsterMoveRequestFailureReason.SpeedNonPositive;
+                return true;
+            }
+
+            return false;
+        }
+
         // 축 플래그에 따라 방향을 정제
         private Vector2 GetFilteredDirection(Vector2 dir)
         {
