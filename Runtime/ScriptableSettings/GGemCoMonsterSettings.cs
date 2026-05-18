@@ -1,9 +1,25 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using UnityEngine;
 
 namespace GGemCo2DCore
 {
+    /// <summary>
+    /// 컬링으로 페이드 아웃된 몬스터가 다시 페이드 인될 때 Brain 런타임 복귀 방식을 정의합니다.
+    /// </summary>
+    public enum MonsterCullingBrainResumePolicy : byte
+    {
+        /// <summary>
+        /// 기존 런타임 상태를 유지하고 BT를 이어서 평가합니다.
+        /// </summary>
+        Continue = 0,
+
+        /// <summary>
+        /// 다음 페이드 인 시점에 런타임을 초기화하고 처음부터 BT를 평가합니다.
+        /// </summary>
+        ResetOnNextFadeIn = 1,
+    }
+
     [CreateAssetMenu(fileName = ConfigScriptableObject.Monster.FileName, menuName = ConfigScriptableObject.Monster.MenuName, order = ConfigScriptableObject.Monster.Ordering)]
     public class GGemCoMonsterSettings : ScriptableObject
     {
@@ -65,6 +81,10 @@ namespace GGemCo2DCore
         [Tooltip("사망 연출 Cutscene Uid")]
         [SerializeField] private int cutsceneUidDie = 0;
         
+        [Header("Culling Brain")]
+        [Tooltip("컬링 Fade Out 이후 다음 Fade In에서 Brain 런타임을 어떻게 복귀할지 선택합니다.")]
+        [SerializeField] private MonsterCullingBrainResumePolicy cullingBrainResumePolicy = MonsterCullingBrainResumePolicy.Continue;
+
         [Header("Supper Armor")]
         [Tooltip("스택이 깎인 이후, 회복을 시작하기까지 대기 시간(초)")]
         [Min(0f)] public float regenDelay = 0f;
@@ -84,6 +104,11 @@ namespace GGemCo2DCore
         /// 몬스터 전투 HUD 사용 여부.
         /// </summary>
         public bool UseBattleHud => useBattleHud;
+
+        /// <summary>
+        /// 컬링 페이드 인 시 Brain 런타임 복귀 정책입니다.
+        /// </summary>
+        public MonsterCullingBrainResumePolicy CullingBrainResumePolicy => cullingBrainResumePolicy;
 
         /// <summary>
         /// 전투 HUD 적용 대상 등급(비트 마스크).
@@ -202,6 +227,7 @@ namespace GGemCo2DCore
             spriteWhiteOverlayMaterial = null;
             spriteWhiteOverlayColor = Color.white;
             spriteWhiteOverlayFlashDuration = 0.08f;
+            cullingBrainResumePolicy = MonsterCullingBrainResumePolicy.Continue;
         }
     }
 }

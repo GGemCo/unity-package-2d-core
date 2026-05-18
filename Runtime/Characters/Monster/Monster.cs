@@ -33,6 +33,8 @@ namespace GGemCo2DCore
         private Coroutine _returnToPoolRoutine;
         private GGemCoMonsterSettings _monsterSettings;
         private CutsceneManager _cutsceneManager;
+        private readonly List<IMonsterBrainRuntimeResettable> _brainRuntimeResetters = new(4);
+        private bool _pendingBrainResetOnNextFadeIn;
         
         public void SetPoolManaged(bool value)
         {
@@ -66,6 +68,7 @@ namespace GGemCo2DCore
             SetStatusNone();
             ClearSubStatus();
             SetAttackerTarget(null);
+            _pendingBrainResetOnNextFadeIn = false;
             canMoveX = true;
             canMoveY = true;
 
@@ -120,6 +123,7 @@ namespace GGemCo2DCore
             SetStatusNone();
             ClearSubStatus();
             SetAttackerTarget(null);
+            _pendingBrainResetOnNextFadeIn = false;
             if (characterRigidbody2D != null)
             {
                 characterRigidbody2D.linearVelocity = Vector2.zero;
@@ -436,20 +440,93 @@ namespace GGemCo2DCore
 
         }
 
+        /// <summary>
+        /// 몬스터 페이드 인 시작 시점 처리.
+        /// </summary>
+        /// <remarks>
+        /// 컬링 정책이 런타임 초기화인 경우 Idle/Wait로 정렬한 뒤 Brain 런타임을 초기화한다.
+        /// </remarks>
         protected override void OnStartFadeIn()
         {
+            ApplyBrainResumePolicyOnFadeInIfNeeded();
+
             if (_monsterUIController != null)
             {
                 _monsterUIController.StartFadeIn();
             }
         }
+
+        /// <summary>
+        /// 몬스터 페이드 아웃 시작 시점 처리.
+        /// </summary>
+        /// <remarks>
+        /// 설정된 정책이 "다음 Fade In에서 초기화"인 경우 플래그를 기록한다.
+        /// </remarks>
         protected override void OnStartFadeOut()
         {
+            MarkBrainResetPendingOnFadeOutIfNeeded();
+
             if (_monsterUIController != null)
             {
                 _monsterUIController.StartFadeOut();
             }
         }
+
+        /// <summary>
+        /// Fade Out 이후 정책에 따라 다음 Fade In에서 Brain 초기화가 필요한지 기록한다.
+        /// </summary>
+        private void MarkBrainResetPendingOnFadeOutIfNeeded()
+        {
+            if (_monsterSettings == null)
+            {
+                _pendingBrainResetOnNextFadeIn = false;
+                return;
+            }
+
+            _pendingBrainResetOnNextFadeIn =
+                _monsterSettings.CullingBrainResumePolicy == MonsterCullingBrainResumePolicy.ResetOnNextFadeIn;
+        }
+
+        /// <summary>
+        /// Fade In 시점에 Brain 복귀 정책을 적용한다.
+        /// </summary>
+        /// <remarks>
+        /// 초기화 정책이면 <see cref="CharacterBase.Stop"/>으로 Idle/Wait를 보장하고,
+        /// 드라이버 대기 처리 후 BT 런타임 리셋 인터페이스를 호출한다.
+        /// </remarks>
+        private void ApplyBrainResumePolicyOnFadeInIfNeeded()
+        {
+            if (!_pendingBrainResetOnNextFadeIn)
+            {
+                return;
+            }
+
+            _pendingBrainResetOnNextFadeIn = false;
+            Stop(isForce: true);
+            _controllerMonster?.RequestWait();
+            ResetBrainRuntimeForCulling();
+        }
+
+        /// <summary>
+        /// 몬스터에 부착된 Brain 런타임 리셋 가능 컴포넌트를 찾아 초기화를 요청한다.
+        /// </summary>
+        private void ResetBrainRuntimeForCulling()
+        {
+            _brainRuntimeResetters.Clear();
+            GetComponents(_brainRuntimeResetters);
+
+            for (int i = 0; i < _brainRuntimeResetters.Count; i++)
+            {
+                var resetter = _brainRuntimeResetters[i];
+                if (resetter == null)
+                {
+                    continue;
+                }
+
+                resetter.ResetRuntimeForCulling();
+            }
+        }
+
         public override void OnAnimationCompleteDead()
         {
             base.OnAnimationCompleteDead();
