@@ -29,6 +29,10 @@ namespace GGemCo2DCoreEditor
         {
             return LoadTable<TableMonster>(ConfigAddressableTable.TableMonster.Path, forceReload);
         }
+        public static TableMonsterPhase LoadMonsterPhaseTable(bool forceReload = true)
+        {
+            return LoadTable<TableMonsterPhase>(ConfigAddressableTable.TableMonsterPhase.Path, forceReload);
+        }
         public static TableAnimation LoadSpineTable(bool forceReload = true)
         {
             return LoadTable<TableAnimation>(ConfigAddressableTable.TableAnimation.Path, forceReload);

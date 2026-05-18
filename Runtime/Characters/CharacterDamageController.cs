@@ -289,6 +289,19 @@ namespace GGemCo2DCore
                 remainHp = 1;
             }
 
+            // 외부 시스템(예: 보스 페이즈 전환)이 최종 HP를 보정할 수 있는 확장 지점입니다.
+            long adjustedHp = ResolveFinalHpOnIncomingHit(metadataDamage, remainHp);
+            bool isHpAdjusted = adjustedHp != remainHp;
+            remainHp = adjustedHp;
+
+            // 보정 결과가 현재 HP와 같거나 더 크면 이번 피격은 흡수된 것으로 간주하고 종료합니다.
+            // (연출/상태 반응 중복을 막기 위해 즉시 반환)
+            if (isHpAdjusted && remainHp >= _characterBase.CurrentHp.Value)
+            {
+                _characterBase.CurrentHp.OnNext(remainHp);
+                return;
+            }
+
             // 타격 확정: 공격자에게 OnHit(코팅/부여형 버프 등) 트리거를 전달한다.
             if (attacker != null)
             {
@@ -601,6 +614,33 @@ namespace GGemCo2DCore
                     canceler.CancelActionsOnIncomingHit(reason);
                 }
             }
+        }
+
+        /// <summary>
+        /// 피격 계산으로 도출된 최종 HP에 대해 외부 보정기를 순차 적용합니다.
+        /// </summary>
+        /// <param name="metadataDamage">현재 피격 메타데이터입니다.</param>
+        /// <param name="proposedHp">Core 계산 기준 최종 HP입니다.</param>
+        /// <returns>보정이 반영된 최종 HP입니다.</returns>
+        private long ResolveFinalHpOnIncomingHit(MetadataDamage metadataDamage, long proposedHp)
+        {
+            if (_characterBase == null)
+                return proposedHp;
+
+            long resolvedHp = proposedHp;
+            var behaviours = _characterBase.GetComponents<MonoBehaviour>();
+            if (behaviours == null || behaviours.Length == 0)
+                return resolvedHp;
+
+            for (int i = 0; i < behaviours.Length; i++)
+            {
+                if (behaviours[i] is IIncomingHitFinalHpResolver resolver)
+                {
+                    resolvedHp = resolver.ResolveFinalHpOnIncomingHit(resolvedHp, metadataDamage);
+                }
+            }
+
+            return resolvedHp;
         }
     }
 }

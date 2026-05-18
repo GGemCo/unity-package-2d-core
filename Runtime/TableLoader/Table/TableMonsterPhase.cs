@@ -1,0 +1,130 @@
+﻿using System.Collections.Generic;
+
+namespace GGemCo2DCore
+{
+    /// <summary>
+    /// 몬스터 페이즈 테이블의 1행 데이터입니다.
+    /// </summary>
+    public sealed class StruckTableMonsterPhase
+    {
+        /// <summary>행 UID입니다.</summary>
+        public int Uid;
+        /// <summary>대상 몬스터 UID입니다.</summary>
+        public int MonsterUid;
+        /// <summary>페이즈 순번(1부터 시작)입니다.</summary>
+        public int PhaseIndex;
+        /// <summary>디자이너 메모입니다.</summary>
+        public string Memo;
+        /// <summary>해당 페이즈에서 사용할 BT 파일명입니다.</summary>
+        public string BtFileName;
+        /// <summary>페이즈 종료 기준 HP 비율(0~1)입니다.</summary>
+        public float EndHpPercent;
+        /// <summary>페이즈 종료 기준 고정 HP입니다. 0 이하면 미사용입니다.</summary>
+        public int EndHpFixed;
+        /// <summary>페이즈 전환 시 재생할 컷신 UID입니다. 0이면 미사용입니다.</summary>
+        public int TransitionCutsceneUid;
+        /// <summary>BT 교체 시 상태 보존 모드 문자열입니다.</summary>
+        public string TreeSwitchMode;
+    }
+
+    /// <summary>
+    /// 몬스터 페이즈 테이블입니다.
+    /// </summary>
+    public sealed class TableMonsterPhase : DefaultTable<StruckTableMonsterPhase>
+    {
+        /// <summary>
+        /// 몬스터 UID별 페이즈 목록 인덱스입니다.
+        /// </summary>
+        private readonly Dictionary<int, List<StruckTableMonsterPhase>> _phaseByMonsterUid =
+            new Dictionary<int, List<StruckTableMonsterPhase>>();
+
+        /// <inheritdoc />
+        public override string Key => ConfigAddressableTable.MonsterPhase;
+
+        /// <summary>
+        /// 로드 시작 전에 보조 인덱스를 초기화합니다.
+        /// </summary>
+        protected override void PreLoad()
+        {
+            _phaseByMonsterUid.Clear();
+        }
+
+        /// <summary>
+        /// 로드된 행을 몬스터 UID 인덱스에 누적합니다.
+        /// </summary>
+        /// <param name="data">방금 로드된 행 데이터입니다.</param>
+        protected override void OnLoadedData(StruckTableMonsterPhase data)
+        {
+            if (data == null || data.MonsterUid <= 0)
+                return;
+
+            if (!_phaseByMonsterUid.TryGetValue(data.MonsterUid, out List<StruckTableMonsterPhase> list))
+            {
+                list = new List<StruckTableMonsterPhase>();
+                _phaseByMonsterUid[data.MonsterUid] = list;
+            }
+
+            list.Add(data);
+            list.Sort((a, b) => a.PhaseIndex.CompareTo(b.PhaseIndex));
+        }
+
+        /// <summary>
+        /// 헤더/값 사전으로부터 몬스터 페이즈 행을 생성합니다.
+        /// </summary>
+        /// <param name="data">헤더명 기반 원시 값 사전입니다.</param>
+        /// <returns>파싱된 페이즈 행입니다.</returns>
+        protected override StruckTableMonsterPhase BuildRow(Dictionary<string, string> data)
+        {
+            return new StruckTableMonsterPhase
+            {
+                Uid = MathHelper.ParseInt(data["Uid"]),
+                MonsterUid = MathHelper.ParseInt(data["MonsterUid"]),
+                PhaseIndex = MathHelper.ParseInt(data["PhaseIndex"]),
+                Memo = data.TryGetValue("Memo", out string memo) ? memo : string.Empty,
+                BtFileName = data.TryGetValue("BtFileName", out string btFileName) ? btFileName : string.Empty,
+                EndHpPercent = data.TryGetValue("EndHpPercent", out string endHpPercent)
+                    ? MathHelper.ParseFloat(endHpPercent)
+                    : 0f,
+                EndHpFixed = data.TryGetValue("EndHpFixed", out string endHpFixed)
+                    ? MathHelper.ParseInt(endHpFixed)
+                    : 0,
+                TransitionCutsceneUid = data.TryGetValue("TransitionCutsceneUid", out string transitionCutsceneUid)
+                    ? MathHelper.ParseInt(transitionCutsceneUid)
+                    : 0,
+                TreeSwitchMode = data.TryGetValue("TreeSwitchMode", out string treeSwitchMode)
+                    ? treeSwitchMode
+                    : string.Empty,
+            };
+        }
+
+        /// <summary>
+        /// 몬스터 UID로 페이즈 목록을 조회합니다.
+        /// </summary>
+        /// <param name="monsterUid">조회할 몬스터 UID입니다.</param>
+        /// <returns>해당 몬스터의 페이즈 목록입니다. 없으면 빈 목록입니다.</returns>
+        public IReadOnlyList<StruckTableMonsterPhase> GetDataByMonsterUid(int monsterUid)
+        {
+            return _phaseByMonsterUid.TryGetValue(monsterUid, out List<StruckTableMonsterPhase> list)
+                ? list
+                : System.Array.Empty<StruckTableMonsterPhase>();
+        }
+
+        /// <summary>
+        /// 몬스터 UID로 페이즈 목록 조회를 시도합니다.
+        /// </summary>
+        /// <param name="monsterUid">조회할 몬스터 UID입니다.</param>
+        /// <param name="rows">조회된 페이즈 목록입니다.</param>
+        /// <returns>조회 성공 시 true를 반환합니다.</returns>
+        public bool TryGetDataByMonsterUid(int monsterUid, out IReadOnlyList<StruckTableMonsterPhase> rows)
+        {
+            if (_phaseByMonsterUid.TryGetValue(monsterUid, out List<StruckTableMonsterPhase> list))
+            {
+                rows = list;
+                return true;
+            }
+
+            rows = System.Array.Empty<StruckTableMonsterPhase>();
+            return false;
+        }
+    }
+}

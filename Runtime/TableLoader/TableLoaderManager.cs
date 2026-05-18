@@ -14,6 +14,7 @@ namespace GGemCo2DCore
         public TableMap TableMap { get; private set; } = new TableMap();
         public TableMapEntryRule TableMapEntryRule { get; private set; } = new TableMapEntryRule();
         public TableMonster TableMonster { get; private set; } = new TableMonster();
+        public TableMonsterPhase TableMonsterPhase { get; private set; } = new TableMonsterPhase();
         public TableAnimation TableAnimation { get; private set; } = new TableAnimation();
         public TableItem TableItem { get; private set; } = new TableItem();
         public TableItemVisual TableItemVisual { get; private set; } = new TableItemVisual();
@@ -72,6 +73,7 @@ namespace GGemCo2DCore
                 registry = new TableRegistry();
                 registry.Register(TableAnimation);
                 registry.Register(TableMonster);
+                registry.Register(TableMonsterPhase);
                 registry.Register(TableNpc);
                 registry.Register(TableMap);
                 registry.Register(TableMapEntryRule);
@@ -218,6 +220,41 @@ namespace GGemCo2DCore
             => GetData(TableMonster, uid, "Monster", (t, i) => t.GetDataByUid(i), logIfMissing);
         public bool TryGetMonsterData(int uid, out StruckTableMonster data, bool logIfMissing = false)
             => TryGetData(TableMonster, uid, out data, "Monster", (t, i) => t.GetDataByUid(i), logIfMissing);
+
+        /// <summary>
+        /// 몬스터 UID로 페이즈 행 목록을 조회합니다.
+        /// </summary>
+        /// <param name="monsterUid">조회할 몬스터 UID입니다.</param>
+        /// <param name="logIfMissing">조회 실패 시 경고 로그 출력 여부입니다.</param>
+        /// <returns>해당 몬스터의 페이즈 목록입니다. 없으면 빈 목록입니다.</returns>
+        public IReadOnlyList<StruckTableMonsterPhase> GetMonsterPhaseDataByMonsterUid(int monsterUid, bool logIfMissing = false)
+        {
+            if (TableMonsterPhase == null)
+            {
+                if (logIfMissing)
+                    GcLogger.LogWarning("[Table] MonsterPhase table is null.");
+                return System.Array.Empty<StruckTableMonsterPhase>();
+            }
+
+            IReadOnlyList<StruckTableMonsterPhase> rows = TableMonsterPhase.GetDataByMonsterUid(monsterUid);
+            if ((rows == null || rows.Count == 0) && logIfMissing)
+                GcLogger.LogWarning($"[Table] MonsterPhase not found. monsterUid={monsterUid}");
+
+            return rows ?? System.Array.Empty<StruckTableMonsterPhase>();
+        }
+
+        /// <summary>
+        /// 몬스터 UID로 페이즈 행 목록 조회를 시도합니다.
+        /// </summary>
+        /// <param name="monsterUid">조회할 몬스터 UID입니다.</param>
+        /// <param name="rows">조회된 페이즈 목록입니다.</param>
+        /// <param name="logIfMissing">조회 실패 시 경고 로그 출력 여부입니다.</param>
+        /// <returns>조회 성공 시 true를 반환합니다.</returns>
+        public bool TryGetMonsterPhaseDataByMonsterUid(int monsterUid, out IReadOnlyList<StruckTableMonsterPhase> rows, bool logIfMissing = false)
+        {
+            rows = GetMonsterPhaseDataByMonsterUid(monsterUid, logIfMissing);
+            return rows != null && rows.Count > 0;
+        }
 
         // Animation
         public StruckTableAnimation GetAnimationData(int uid, bool logIfMissing = true)
