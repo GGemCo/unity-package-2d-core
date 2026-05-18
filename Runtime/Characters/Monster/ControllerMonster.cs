@@ -10,11 +10,17 @@ namespace GGemCo2DCore
     public class ControllerMonster : CharacterBaseController, IMonsterCombatDriver, IMonsterBrainSuspendProvider
     {
         private const float MoveDirectionEpsilonSqr = 0.000001f;
+        private const float BtMoveDirectionBlendPerSecond = 0.000001f;
+        private const float BtMoveIntentKeepAliveSeconds = 5f;
 
         private Coroutine _coroutineAttack;
         private float _delayTimeAttack;
         private Monster _monster;
         private Collider2D[] _collider2Ds;
+        private bool _hasBtMoveIntent;
+        private Vector2 _btMoveIntentDirection;
+        private Vector2 _btSmoothedDirection;
+        private float _lastBtMoveIntentTime;
 
         #region IMonsterCombatDriver
 
@@ -56,6 +62,7 @@ namespace GGemCo2DCore
         /// </remarks>
         public void RequestMove(Vector2 direction)
         {
+            RegisterBtMoveIntent(direction);
             _ = TryRequestMove(direction, out _);
         }
 
@@ -72,12 +79,14 @@ namespace GGemCo2DCore
             if (targetCharacter == null)
             {
                 failureReason = MonsterMoveRequestFailureReason.CharacterMissing;
+                ClearBtMoveIntent();
                 return false;
             }
 
             if (direction.sqrMagnitude <= MoveDirectionEpsilonSqr)
             {
                 failureReason = MonsterMoveRequestFailureReason.ZeroDirection;
+                ClearBtMoveIntent();
                 return false;
             }
 
@@ -85,6 +94,7 @@ namespace GGemCo2DCore
             if (filteredDirection.sqrMagnitude <= MoveDirectionEpsilonSqr)
             {
                 failureReason = MonsterMoveRequestFailureReason.AxisLocked;
+                ClearBtMoveIntent();
                 return false;
             }
 
@@ -97,12 +107,14 @@ namespace GGemCo2DCore
             if (targetCharacter.IsStatusAttack())
             {
                 failureReason = MonsterMoveRequestFailureReason.StatusAttack;
+                ClearBtMoveIntent();
                 return false;
             }
 
             if (targetCharacter.IsStatusDead())
             {
                 failureReason = MonsterMoveRequestFailureReason.StatusDead;
+                ClearBtMoveIntent();
                 return false;
             }
 
@@ -110,6 +122,7 @@ namespace GGemCo2DCore
             if (speed <= 0f)
             {
                 failureReason = MonsterMoveRequestFailureReason.SpeedNonPositive;
+                ClearBtMoveIntent();
                 return false;
             }
 
@@ -129,6 +142,7 @@ namespace GGemCo2DCore
         /// <inheritdoc />
         public void RequestFaceToTarget()
         {
+            ClearBtMoveIntent();
             if (targetCharacter == null || targetCharacter.attackerTransform == null) return;
             var raw = (targetCharacter.attackerTransform.position - targetCharacter.transform.position);
             var dir = GetFilteredDirection(raw);
@@ -148,11 +162,16 @@ namespace GGemCo2DCore
         }
 
         /// <inheritdoc />
-        public void RequestAttackOnce() => Attack();
+        public void RequestAttackOnce()
+        {
+            ClearBtMoveIntent();
+            Attack();
+        }
 
         public void RequestClearAggro()
         {
             targetCharacter.SetAggro(false);
+            ClearBtMoveIntent();
         }
 
         #endregion
@@ -174,6 +193,7 @@ namespace GGemCo2DCore
         {
             base.Awake();
             _monster = targetCharacter as Monster;
+            ClearBtMoveIntent();
 
             EnsureLegacyBrain();
         }
@@ -189,6 +209,18 @@ namespace GGemCo2DCore
                         ICharacterAnimationController.AttackAnim, false);
             }
         }
+
+#if GGEMCO_2D_CONTROL
+        private void FixedUpdate()
+        {
+            TickBtMoveIntent(Time.fixedDeltaTime);
+        }
+#else
+        private void Update()
+        {
+            TickBtMoveIntent(Time.deltaTime);
+        }
+#endif
 
         /// <summary>
         /// 레거시 Brain이 존재하지 않고, 외부 Brain도 아직 붙지 않은 경우 기본 레거시 Brain을 보장한다.
@@ -208,7 +240,13 @@ namespace GGemCo2DCore
                 gameObject.AddComponent<MonsterBrainTicker>();
             }
 
-        }public void Initialize(Collider2D[] collider2Ds)
+        }
+
+        /// <summary>
+        /// 공격 범위 판정에 사용할 충돌체 캐시를 초기화한다.
+        /// </summary>
+        /// <param name="collider2Ds">공격 범위 계산에 사용할 충돌체 배열.</param>
+        public void Initialize(Collider2D[] collider2Ds)
         {
             _collider2Ds = collider2Ds;
         }
@@ -277,7 +315,87 @@ namespace GGemCo2DCore
         {
             if (!base.Wait()) return false;
             StopAttackCoroutine();
+            ClearBtMoveIntent();
             return true;
+        }
+
+        /// <summary>
+        /// BT에서 전달한 이동 의도를 등록한다.
+        /// </summary>
+        /// <param name="direction">월드 기준 이동 방향 벡터.</param>
+        /// <remarks>
+        /// BT 평가 주기가 낮아도 연속 이동이 유지되도록 마지막 의도와 입력 시각을 캐시한다.
+        /// </remarks>
+        private void RegisterBtMoveIntent(Vector2 direction)
+        {
+            _hasBtMoveIntent = true;
+            _btMoveIntentDirection = direction;
+            _lastBtMoveIntentTime = Time.time;
+        }
+
+        /// <summary>
+        /// BT 이동 의도 캐시를 비운다.
+        /// </summary>
+        private void ClearBtMoveIntent()
+        {
+            _hasBtMoveIntent = false;
+            _btMoveIntentDirection = Vector2.zero;
+            _btSmoothedDirection = Vector2.zero;
+            _lastBtMoveIntentTime = 0f;
+        }
+
+        /// <summary>
+        /// BT 이동 의도를 프레임 단위로 소비하여 자연스럽게 연속 이동한다.
+        /// </summary>
+        /// <param name="deltaTime">현재 프레임 델타 타임.</param>
+        /// <remarks>
+        /// - BT는 "추적 의도"만 결정하고, 실제 이동 적용은 본 함수가 매 프레임 담당한다.
+        /// - 공격 범위 진입 시 즉시 이동을 멈춰 다음 BT 틱에서 공격 분기로 자연스럽게 전환되게 한다.
+        /// </remarks>
+        private void TickBtMoveIntent(float deltaTime)
+        {
+            if (!_hasBtMoveIntent)
+                return;
+
+            if (targetCharacter == null)
+            {
+                ClearBtMoveIntent();
+                return;
+            }
+
+            if (Time.time - _lastBtMoveIntentTime > BtMoveIntentKeepAliveSeconds)
+            {
+                ClearBtMoveIntent();
+                return;
+            }
+
+            if (SearchAttackerTarget())
+            {
+                Wait();
+                return;
+            }
+
+            Vector2 filteredDirection = GetFilteredDirection(_btMoveIntentDirection);
+            if (filteredDirection.sqrMagnitude <= MoveDirectionEpsilonSqr)
+            {
+                ClearBtMoveIntent();
+                return;
+            }
+
+            float maxDelta = Mathf.Max(0f, BtMoveDirectionBlendPerSecond * deltaTime);
+            _btSmoothedDirection = Vector2.MoveTowards(_btSmoothedDirection, filteredDirection, maxDelta);
+
+            Vector2 moveDirection = _btSmoothedDirection.sqrMagnitude > MoveDirectionEpsilonSqr
+                ? _btSmoothedDirection.normalized
+                : filteredDirection;
+
+            targetCharacter.directionNormalize = moveDirection;
+
+            if (!Run() &&
+                (targetCharacter.IsStatusAttack() || targetCharacter.IsStatusDead() || targetCharacter.IsStatusDontMove()))
+            {
+                ClearBtMoveIntent();
+            }
         }
 
         /// <summary>
@@ -340,7 +458,11 @@ namespace GGemCo2DCore
             return false;
         }
 
-        // 축 플래그에 따라 방향을 정제
+        /// <summary>
+        /// 몬스터 축 이동 제한 설정을 반영해 입력 방향을 정제한다.
+        /// </summary>
+        /// <param name="dir">정제 전 방향 벡터.</param>
+        /// <returns>축 제한이 반영된 정규화 방향. 이동 불가 시 <see cref="Vector2.zero"/>.</returns>
         private Vector2 GetFilteredDirection(Vector2 dir)
         {
             if (!_monster.canMoveX) dir.x = 0f;
@@ -348,8 +470,9 @@ namespace GGemCo2DCore
             return dir.sqrMagnitude > 0f ? dir.normalized : Vector2.zero;
         }
         /// <summary>
-        /// run 
+        /// 현재 방향/속도/상태를 기준으로 실제 이동 프레임을 처리한다.
         /// </summary>
+        /// <returns>이동이 수락되어 처리되면 true, 상태/입력 조건으로 거부되면 false.</returns>
         public override bool Run()
         {
             if (targetCharacter.IsStatusDontMove()) return false;
