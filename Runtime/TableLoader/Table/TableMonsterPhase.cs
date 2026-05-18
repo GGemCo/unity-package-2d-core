@@ -17,9 +17,9 @@ namespace GGemCo2DCore
         public string Memo;
         /// <summary>해당 페이즈에서 사용할 BT 파일명입니다.</summary>
         public string BtFileName;
-        /// <summary>페이즈 종료 기준 HP 비율(0~1)입니다.</summary>
+        /// <summary>해당 페이즈 시작 HP 비율(0~1)입니다. EndHpFixed가 0 이하일 때 사용합니다.</summary>
         public float EndHpPercent;
-        /// <summary>페이즈 종료 기준 고정 HP입니다. 0 이하면 미사용입니다.</summary>
+        /// <summary>해당 페이즈 시작 고정 HP입니다. 0 이하면 EndHpPercent 정책을 사용합니다.</summary>
         public int EndHpFixed;
         /// <summary>페이즈 전환 시 재생할 컷신 UID입니다. 0이면 미사용입니다.</summary>
         public int TransitionCutsceneUid;
