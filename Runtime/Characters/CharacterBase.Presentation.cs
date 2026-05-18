@@ -187,6 +187,14 @@ namespace GGemCo2DCore
         }
 
         /// <summary>
+        /// 페이드 인/아웃 연출이 현재 진행 중인지 반환합니다.
+        /// </summary>
+        /// <remarks>
+        /// 컬링 영역 재진입 시 BT 시작 타이밍을 제어하기 위한 읽기 전용 상태 값입니다.
+        /// </remarks>
+        public bool IsFading => _isStartFade;
+
+        /// <summary>
         /// 페이드 인을 시작하고 시작 훅을 호출합니다.
         /// </summary>
         public void StartFadeIn()

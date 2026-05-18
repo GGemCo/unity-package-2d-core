@@ -183,14 +183,21 @@ namespace GGemCo2DCore
 
         #region IMonsterBrainSuspendProvider
 
-        /// <inheritdoc />
+        /// <summary>
+        /// 몬스터 Brain(BT/레거시) 틱을 일시 정지해야 하는지 반환한다.
+        /// </summary>
+        /// <remarks>
+        /// 컬링 복귀 직후 페이드 연출이 끝나기 전에는 AI 판단을 멈춰
+        /// 시각적 등장 타이밍과 실제 전투 입력 타이밍을 일치시킨다.
+        /// </remarks>
         public bool ShouldSuspendBrain =>
             targetCharacter != null &&
             (targetCharacter.IsStatusDead() ||
              targetCharacter.IsDeathPending ||
              targetCharacter.IsBrainLocked() ||
              targetCharacter.IsDontControl() ||
-             targetCharacter.IsStatusDamage());
+             targetCharacter.IsStatusDamage() ||
+             targetCharacter.IsFading);
 
         #endregion
 
@@ -355,6 +362,7 @@ namespace GGemCo2DCore
         /// <param name="deltaTime">현재 프레임 델타 타임.</param>
         /// <remarks>
         /// - BT는 "추적 의도"만 결정하고, 실제 이동 적용은 본 함수가 매 프레임 담당한다.
+        /// - Brain 정지 조건(사망/락/피격/페이드 등)에 진입하면 이동 의도를 즉시 폐기한다.
         /// - 공격 범위 진입 시 즉시 이동을 멈춰 다음 BT 틱에서 공격 분기로 자연스럽게 전환되게 한다.
         /// </remarks>
         private void TickBtMoveIntent(float deltaTime)
@@ -364,6 +372,13 @@ namespace GGemCo2DCore
 
             if (targetCharacter == null)
             {
+                ClearBtMoveIntent();
+                return;
+            }
+
+            if (ShouldSuspendBrain)
+            {
+                Wait();
                 ClearBtMoveIntent();
                 return;
             }

@@ -8,16 +8,16 @@ namespace GGemCo2DCore
     {
         public Camera mainCamera;
         public float extraTileCount = 200f;
-        private TilemapRenderer tilemapRenderer;
-        private CutsceneManager cutsceneManager;
+        private TilemapRenderer _tilemapRenderer;
+        private CutsceneManager _cutsceneManager;
 
-        private Bounds cullingBounds; // 현재 컬링 범위를 저장할 변수
-        private float mainCameraZ;
+        private Bounds _cullingBounds; // 현재 컬링 범위를 저장할 변수
+        private float _mainCameraZ;
 
         protected override void Awake()
         {
             base.Awake();
-            tilemapRenderer = GetComponent<TilemapRenderer>();
+            _tilemapRenderer = GetComponent<TilemapRenderer>();
         }
 
         private void Start()
@@ -25,10 +25,10 @@ namespace GGemCo2DCore
             if (mainCamera == null && SceneGame.Instance != null)
             {
                 mainCamera = SceneGame.Instance.mainCamera;
-                mainCameraZ = mainCamera.transform.position.z;
+                _mainCameraZ = mainCamera.transform.position.z;
             }
 
-            cutsceneManager = SceneGame.Instance.CutsceneManager;
+            _cutsceneManager = SceneGame.Instance.CutsceneManager;
             CalculateCullingBounds();
         }
 
@@ -37,20 +37,21 @@ namespace GGemCo2DCore
             base.Initialize(uid, mapName, type, subType);
             gameObject.transform.position = new Vector3(0, 0, 0);
         }
+
         /// <summary>
         /// 컬링 처리 
         /// </summary>
         protected override void CalculateCullingBounds()
         {
-            if (mainCamera == null || tilemapRenderer == null) return;
-            if (cutsceneManager.IsPlaying()) return;
+            if (mainCamera == null || _tilemapRenderer == null) return;
+            if (_cutsceneManager.IsPlaying()) return;
 
             // 카메라 크기 계산
             float verticalSize = mainCamera.orthographicSize;
             float horizontalSize = verticalSize * mainCamera.aspect;
 
             // Culling Bounds 설정
-            tilemapRenderer.chunkCullingBounds = new Vector3(
+            _tilemapRenderer.chunkCullingBounds = new Vector3(
                 horizontalSize + extraTileCount,
                 verticalSize + extraTileCount,
                 0
@@ -58,16 +59,17 @@ namespace GGemCo2DCore
 
             // 카메라의 현재 위치를 기준으로 컬링 영역을 갱신
             Vector3 cameraPosition = mainCamera.transform.position;
-            cullingBounds = new Bounds(cameraPosition, new Vector3(
+            _cullingBounds = new Bounds(cameraPosition, new Vector3(
                 (horizontalSize + extraTileCount) * 2,
                 (verticalSize + extraTileCount) * 2,
                 0
             ));
 
             // 오브젝트 활성화/비활성화 처리
-            UpdateObjectActivation(Monsters, cullingBounds);
-            UpdateObjectActivation(Npcs, cullingBounds);
+            UpdateObjectActivation(Monsters, _cullingBounds);
+            UpdateObjectActivation(Npcs, _cullingBounds);
         }
+
         /// <summary>
         /// npc, 몬스터 컬링 처리
         /// </summary>
@@ -100,6 +102,7 @@ namespace GGemCo2DCore
                 }
             }
         }
+
         /// <summary>
         /// 모든 캐릭터 활성화
         /// 연출 시작시 사용
@@ -111,12 +114,14 @@ namespace GGemCo2DCore
                 if (data.Value == null) continue;
                 data.Value.GetComponent<Monster>()?.StartFadeIn();
             }
+
             foreach (var data in Npcs)
             {
                 if (data.Value == null) continue;
                 data.Value.GetComponent<Npc>()?.StartFadeIn();
             }
         }
+
         /// <summary>
         /// 퀘스트 상태가 변경되었을때, npc 에 연결된 퀘스트 버튼 업데이트 해주기 
         /// </summary>
@@ -152,7 +157,7 @@ namespace GGemCo2DCore
 
             // 컬링 영역 시각화 (빨간색)
             Gizmos.color = Color.red;
-            Gizmos.DrawWireCube(cullingBounds.center, cullingBounds.size);
+            Gizmos.DrawWireCube(_cullingBounds.center, _cullingBounds.size);
         }
 #endif
     }
