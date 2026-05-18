@@ -15,14 +15,14 @@ namespace GGemCo2DCore
         private CanvasGroup _canvasGroup;
         private float _monsterHeight;
         private bool _isStartFade;
-        private List<GameObject> _shieldIcons;
+        private readonly List<GameObject> _shieldIcons = new List<GameObject>();
         
         private void Awake()
         {
             _canvasGroup = GetComponent<CanvasGroup>();
-            _shieldIcons = new List<GameObject>();
             _isStartFade = false;
         }
+        
         public void Initialize(Monster monster)
         {
             _monster = monster;
