@@ -173,6 +173,10 @@ namespace GGemCo2DCore
         [Min(0.01f)]
         public float spriteWhiteOverlayFlashDuration = 0.08f;
 
+        [Header("피격 VFX")]
+        [Tooltip("플레이어 피격 시 재생할 VFX 설정입니다.")]
+        public IncomingHitVfxSettings incomingHitVfx = IncomingHitVfxSettings.CreateDisabled();
+
         public enum StatPointAcquirePolicy
         {
             [Tooltip("경험치 레벨업으로만 스탯 포인트를 획득합니다.")]
@@ -206,6 +210,73 @@ namespace GGemCo2DCore
             public ConfigCommon.CalculateType mode;
             [Tooltip("포인트 1당 증가량. Percent는 '퍼센트 값'을 입력합니다. 예) 1.5 = 1.5%")]
             public float valuePerPoint;
+        }
+
+        /// <summary>
+        /// 플레이어가 피격될 때 재생할 VFX 설정입니다.
+        /// </summary>
+        [Serializable]
+        public struct IncomingHitVfxSettings
+        {
+            [Tooltip("플레이어 피격 VFX를 사용할지 여부")]
+            public bool enabled;
+
+            [Tooltip("재생할 vfx_effect 테이블 Uid")]
+            public int vfxUid;
+
+            [Tooltip("VFX를 플레이어를 따라가며 재생할지 여부")]
+            public bool followTarget;
+
+            [Tooltip("피격 VFX의 추가 위치 오프셋(World 기준)")]
+            public Vector3 positionOffset;
+
+            [Tooltip("Y 위치 계산 시 캐릭터 높이 자동 반영 여부")]
+            public ConfigCommon.PositionYType positionYType;
+
+            [Tooltip("VFX 크기 오버라이드 값 (0 이하이면 테이블 기본값 사용)")]
+            public float scaleOverride;
+
+            [Tooltip("VFX 지속 시간 오버라이드 값(초, 0 이하이면 테이블 기본값 사용)")]
+            public float durationOverride;
+
+            [Tooltip("Sorting Layer 오버라이드 사용 여부")]
+            public bool hasSortingLayerOverride;
+
+            [Tooltip("오버라이드할 Sorting Layer 키")]
+            public ConfigSortingLayer.Keys sortingLayerKey;
+
+            [Tooltip("Sorting Order 오버라이드 사용 여부")]
+            public bool hasSortingOrderOverride;
+
+            [Tooltip("오버라이드할 Sorting Order 값")]
+            public int sortingOrder;
+
+            [Tooltip("연속 피격 시 VFX 재생 최소 간격(초, 0 이하이면 제한 없음)")]
+            [Min(0f)]
+            public float minIntervalSeconds;
+
+            /// <summary>
+            /// 비활성 기본 설정을 생성합니다.
+            /// </summary>
+            /// <returns>피격 VFX가 꺼진 기본 설정을 반환합니다.</returns>
+            public static IncomingHitVfxSettings CreateDisabled()
+            {
+                return new IncomingHitVfxSettings
+                {
+                    enabled = false,
+                    vfxUid = 0,
+                    followTarget = false,
+                    positionOffset = Vector3.zero,
+                    positionYType = ConfigCommon.PositionYType.None,
+                    scaleOverride = 0f,
+                    durationOverride = 0f,
+                    hasSortingLayerOverride = false,
+                    sortingLayerKey = ConfigSortingLayer.Keys.CharacterTop,
+                    hasSortingOrderOverride = false,
+                    sortingOrder = 0,
+                    minIntervalSeconds = 0f
+                };
+            }
         }
 
         [Header("스탯 포인트")]
@@ -303,6 +374,7 @@ namespace GGemCo2DCore
             spriteWhiteOverlayMaterial = null;
             spriteWhiteOverlayColor = Color.white;
             spriteWhiteOverlayFlashDuration = 0.08f;
+            incomingHitVfx = IncomingHitVfxSettings.CreateDisabled();
 
             elementGaugeRules = ElementGaugeRuleDefinition.CreateDefaultPlayerRules();
 

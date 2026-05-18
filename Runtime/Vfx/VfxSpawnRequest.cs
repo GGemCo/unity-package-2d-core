@@ -18,6 +18,11 @@ namespace GGemCo2DCore
         public bool ForceUiCanvasParent;
         public ConfigSortingLayer.Keys? SortingLayerOverride;
         public int? SortingOrderOverride;
+        /// <summary>
+        /// 스폰 기준 위치에 더해질 월드 오프셋입니다.
+        /// Follow 대상이 있을 때는 매 프레임 동일한 오프셋 규칙이 유지됩니다.
+        /// </summary>
+        public Vector3 PositionOffset;
         public float PositionY;
         public ConfigCommon.PositionYType PositionYType;
         public VfxConstants.LifecycleType? LifecycleTypeOverride;

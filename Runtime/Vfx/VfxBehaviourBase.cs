@@ -16,6 +16,7 @@ namespace GGemCo2DCore
         private bool _hasDefaultTransform;
         private CharacterBase _followCharacter;
         private VfxConstants.FollowMode _followMode;
+        private Vector3 _positionOffset;
         private float _positionY;
         private ConfigCommon.PositionYType _positionYType;
         protected Coroutine CoroutineTickTimeDamage;
@@ -73,6 +74,7 @@ namespace GGemCo2DCore
             TargetCharacter = null;
             _followCharacter = null;
             _followMode = _spawnPolicy.FollowMode;
+            _positionOffset = Vector3.zero;
             _positionY = 0f;
             _positionYType = ConfigCommon.PositionYType.None;
             _duration = 0f;
@@ -418,6 +420,11 @@ namespace GGemCo2DCore
             _followMode = followMode;
         }
 
+        /// <summary>
+        /// VFX의 추가 위치 오프셋(World 기준)을 설정합니다.
+        /// </summary>
+        /// <param name="offset">적용할 위치 오프셋입니다.</param>
+        public void SetPositionOffset(Vector3 offset) => _positionOffset = offset;
         public void SetPositionY(float y) => _positionY = y;
         public void SetPositionYType(ConfigCommon.PositionYType type) => _positionYType = type;
 
@@ -429,7 +436,7 @@ namespace GGemCo2DCore
         /// <returns>생성 요청의 Y 오프셋과 높이 보정이 적용된 최종 월드 위치입니다.</returns>
         public Vector3 ResolveSpawnPosition(Vector3 basePosition, CharacterBase heightOwner = null)
         {
-            Vector3 result = basePosition;
+            Vector3 result = basePosition + _positionOffset;
 
             if (Mathf.Abs(_positionY) > Mathf.Epsilon)
                 result += new Vector3(0f, _positionY, 0f);

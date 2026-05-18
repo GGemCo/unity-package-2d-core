@@ -175,6 +175,7 @@ namespace GGemCo2DCore
             if (request.SortingOrderOverride.HasValue)
                 behaviour.SetSortingOrder(request.SortingOrderOverride.Value);
 
+            behaviour.SetPositionOffset(request.PositionOffset);
             behaviour.SetPositionY(request.PositionY);
             behaviour.SetPositionYType(request.PositionYType);
 

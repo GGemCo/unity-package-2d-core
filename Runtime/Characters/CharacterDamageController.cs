@@ -93,6 +93,8 @@ namespace GGemCo2DCore
         private Color _textColorDamageMonster;
         private Color _textColorDamagePlayer;
         private Color _textColorHeal;
+        private GGemCoPlayerSettings _playerSettings;
+        private float _nextPlayerHitVfxPlayableTime;
         
         public void Initialize(CharacterBase characterBase)
         {
@@ -119,6 +121,9 @@ namespace GGemCo2DCore
                 _textColorDamagePlayer = AddressableLoaderSettings.Instance.settings.textColorDamagePlayer;
                 _textColorHeal = AddressableLoaderSettings.Instance.settings.textColorHeal;
             }
+
+            _playerSettings = AddressableLoaderSettings.Instance.playerSettings;
+            _nextPlayerHitVfxPlayableTime = 0f;
         }
 
         public void Dispose()
@@ -305,6 +310,7 @@ namespace GGemCo2DCore
             }
 
             _characterBase.TryPlaySpriteWhiteOverlayOnHit();
+            TryPlayPlayerIncomingHitVfx();
             
             if (remainHp <= 0)
             {
@@ -457,6 +463,78 @@ namespace GGemCo2DCore
             }
 
             player.PlayDefaultStaminaDamageFeedback();
+        }
+
+        /// <summary>
+        /// 플레이어 피격 확정 시 설정된 VFX를 재생합니다.
+        /// </summary>
+        /// <remarks>
+        /// 실제 데미지가 0보다 큰 타격에만 호출되며, 설정된 최소 간격을 만족할 때만 재생합니다.
+        /// </remarks>
+        private void TryPlayPlayerIncomingHitVfx()
+        {
+            if (!(_characterBase is Player))
+            {
+                return;
+            }
+
+            if (_playerSettings == null && AddressableLoaderSettings.Instance != null)
+            {
+                _playerSettings = AddressableLoaderSettings.Instance.playerSettings;
+            }
+
+            if (_playerSettings == null)
+            {
+                return;
+            }
+
+            GGemCoPlayerSettings.IncomingHitVfxSettings settings = _playerSettings.incomingHitVfx;
+            if (!settings.enabled || settings.vfxUid <= 0)
+            {
+                return;
+            }
+
+            if (settings.minIntervalSeconds > 0f && Time.time < _nextPlayerHitVfxPlayableTime)
+            {
+                return;
+            }
+
+            SceneGame scene = SceneGame.Instance;
+            if (scene == null || scene.VfxManager == null)
+            {
+                return;
+            }
+
+            var spawnRequest = new VfxSpawnRequest
+            {
+                VfxUid = settings.vfxUid,
+                Owner = _characterBase,
+                Target = _characterBase,
+                FollowTarget = settings.followTarget ? _characterBase : null,
+                WorldPosition = _characterBase.transform.position,
+                PositionOffset = settings.positionOffset,
+                PositionYType = settings.positionYType,
+                ScaleOverride = settings.scaleOverride,
+                DurationOverride = settings.durationOverride,
+                ForceOneShot = !settings.followTarget
+            };
+
+            if (settings.hasSortingLayerOverride)
+            {
+                spawnRequest.SortingLayerOverride = settings.sortingLayerKey;
+            }
+
+            if (settings.hasSortingOrderOverride)
+            {
+                spawnRequest.SortingOrderOverride = settings.sortingOrder;
+            }
+
+            scene.VfxManager.CreateVfx(spawnRequest);
+
+            if (settings.minIntervalSeconds > 0f)
+            {
+                _nextPlayerHitVfxPlayableTime = Time.time + settings.minIntervalSeconds;
+            }
         }
 
         private void TryPlayDamageCameraShake(MetadataDamage metadataDamage)
