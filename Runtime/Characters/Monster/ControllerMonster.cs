@@ -58,11 +58,11 @@ namespace GGemCo2DCore
         /// 이동 요청을 fire-and-forget 방식으로 전달한다.
         /// </summary>
         /// <remarks>
-        /// 거부 사유가 필요한 호출부는 <see cref="TryRequestMove"/>를 사용한다.
+        /// 이동 의도 등록/즉시 1회 이동 시도는 <see cref="TryRequestMove"/>에서 공통 처리한다.
+        /// 거부 사유가 필요한 호출부는 <see cref="TryRequestMove"/>를 직접 사용한다.
         /// </remarks>
         public void RequestMove(Vector2 direction)
         {
-            RegisterBtMoveIntent(direction);
             _ = TryRequestMove(direction, out _);
         }
 
@@ -72,9 +72,14 @@ namespace GGemCo2DCore
         /// <param name="direction">월드 기준 이동 방향 벡터.</param>
         /// <param name="failureReason">거부 사유 코드.</param>
         /// <returns>이동이 실제로 수행되면 true, 아니면 false.</returns>
+        /// <remarks>
+        /// BT가 저주기(예: 1Hz)로 평가되더라도 이동은 프레임 단위로 이어져야 하므로,
+        /// 본 함수 진입 시 이동 의도를 먼저 등록해 <see cref="TickBtMoveIntent"/>가 연속 이동을 유지하도록 한다.
+        /// </remarks>
         public bool TryRequestMove(Vector2 direction, out MonsterMoveRequestFailureReason failureReason)
         {
             failureReason = MonsterMoveRequestFailureReason.None;
+            RegisterBtMoveIntent(direction);
 
             if (targetCharacter == null)
             {
