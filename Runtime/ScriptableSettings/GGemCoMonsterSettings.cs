@@ -84,6 +84,8 @@ namespace GGemCo2DCore
         [Header("Culling Brain")]
         [Tooltip("컬링 Fade Out 이후 다음 Fade In에서 Brain 런타임을 어떻게 복귀할지 선택합니다.")]
         [SerializeField] private MonsterCullingBrainResumePolicy cullingBrainResumePolicy = MonsterCullingBrainResumePolicy.Continue;
+        [Tooltip("컬링 복귀 시 Brain 초기화를 수행할 때 어그로 판정도 함께 초기화할지 여부입니다.")]
+        [SerializeField] private bool resetAggroOnCullingBrainReset = false;
 
         [Header("Supper Armor")]
         [Tooltip("스택이 깎인 이후, 회복을 시작하기까지 대기 시간(초)")]
@@ -109,6 +111,11 @@ namespace GGemCo2DCore
         /// 컬링 페이드 인 시 Brain 런타임 복귀 정책입니다.
         /// </summary>
         public MonsterCullingBrainResumePolicy CullingBrainResumePolicy => cullingBrainResumePolicy;
+
+        /// <summary>
+        /// 컬링 복귀 시 Brain 초기화와 함께 어그로 판정까지 초기화할지 여부입니다.
+        /// </summary>
+        public bool ResetAggroOnCullingBrainReset => resetAggroOnCullingBrainReset;
 
         /// <summary>
         /// 전투 HUD 적용 대상 등급(비트 마스크).
@@ -228,6 +235,7 @@ namespace GGemCo2DCore
             spriteWhiteOverlayColor = Color.white;
             spriteWhiteOverlayFlashDuration = 0.08f;
             cullingBrainResumePolicy = MonsterCullingBrainResumePolicy.Continue;
+            resetAggroOnCullingBrainReset = false;
         }
     }
 }

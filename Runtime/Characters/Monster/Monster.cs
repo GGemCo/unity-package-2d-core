@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using UnityEngine;
 
 namespace GGemCo2DCore
@@ -437,14 +437,13 @@ namespace GGemCo2DCore
                 player.TakeDamage(metadataDamage);
                 break;
             }
-
         }
 
         /// <summary>
         /// 몬스터 페이드 인 시작 시점 처리.
         /// </summary>
         /// <remarks>
-        /// 컬링 정책이 런타임 초기화인 경우 Idle/Wait로 정렬한 뒤 Brain 런타임을 초기화한다.
+        /// 컬링 복귀 정책이 초기화인 경우 Idle/Wait로 정렬한 뒤 Brain 런타임을 초기화합니다.
         /// </remarks>
         protected override void OnStartFadeIn()
         {
@@ -460,7 +459,7 @@ namespace GGemCo2DCore
         /// 몬스터 페이드 아웃 시작 시점 처리.
         /// </summary>
         /// <remarks>
-        /// 설정된 정책이 "다음 Fade In에서 초기화"인 경우 플래그를 기록한다.
+        /// 설정된 정책이 "다음 Fade In에서 초기화"인 경우 플래그를 기록합니다.
         /// </remarks>
         protected override void OnStartFadeOut()
         {
@@ -473,7 +472,7 @@ namespace GGemCo2DCore
         }
 
         /// <summary>
-        /// Fade Out 이후 정책에 따라 다음 Fade In에서 Brain 초기화가 필요한지 기록한다.
+        /// Fade Out 이후 정책에 따라 다음 Fade In에서 Brain 초기화가 필요한지 기록합니다.
         /// </summary>
         private void MarkBrainResetPendingOnFadeOutIfNeeded()
         {
@@ -488,11 +487,11 @@ namespace GGemCo2DCore
         }
 
         /// <summary>
-        /// Fade In 시점에 Brain 복귀 정책을 적용한다.
+        /// Fade In 시점에 Brain 복귀 정책을 적용합니다.
         /// </summary>
         /// <remarks>
         /// 초기화 정책이면 <see cref="CharacterBase.Stop"/>으로 Idle/Wait를 보장하고,
-        /// 드라이버 대기 처리 후 BT 런타임 리셋 인터페이스를 호출한다.
+        /// 설정값에 따라 어그로 판정을 초기화한 뒤 BT 런타임 리셋 인터페이스를 호출합니다.
         /// </remarks>
         private void ApplyBrainResumePolicyOnFadeInIfNeeded()
         {
@@ -504,11 +503,26 @@ namespace GGemCo2DCore
             _pendingBrainResetOnNextFadeIn = false;
             Stop(isForce: true);
             _controllerMonster?.RequestWait();
+
+            if (ShouldResetAggroOnCullingBrainReset())
+            {
+                _controllerMonster?.RequestClearAggro();
+            }
+
             ResetBrainRuntimeForCulling();
         }
 
         /// <summary>
-        /// 몬스터에 부착된 Brain 런타임 리셋 가능 컴포넌트를 찾아 초기화를 요청한다.
+        /// 컬링 복귀 시 Brain 초기화와 함께 어그로 판정을 초기화할지 여부를 반환합니다.
+        /// </summary>
+        /// <returns>어그로 판정도 초기화해야 하면 <see langword="true"/>입니다.</returns>
+        private bool ShouldResetAggroOnCullingBrainReset()
+        {
+            return _monsterSettings != null && _monsterSettings.ResetAggroOnCullingBrainReset;
+        }
+
+        /// <summary>
+        /// 몬스터에 부착된 Brain 런타임 리셋 가능 컴포넌트를 찾아 초기화를 요청합니다.
         /// </summary>
         private void ResetBrainRuntimeForCulling()
         {
@@ -567,3 +581,5 @@ namespace GGemCo2DCore
         }
     }
 }
+
+
