@@ -258,7 +258,7 @@ namespace GGemCo2DCore
         /// </summary>
         private void Reset()
         {
-            _createCharacters.Clear();
+            DestroyTrackedCharacters();
             _playTimer = 0f;
             _currentIndex = 0;
             _hasCapturedTimeScaleState = false;
@@ -815,14 +815,7 @@ namespace GGemCo2DCore
 
             _activeControllers.Clear();
 
-            // 만들었던 캐릭터 지우기
-            foreach (var dic1 in _createCharacters)
-            {
-                foreach (var dic2 in dic1.Value)
-                {
-                    Object.Destroy(dic2.Value);
-                }
-            }
+            DestroyTrackedCharacters();
             
             ClearOverlayTextOverrides();
             _overlayPresenter?.ResetPresentation();
@@ -856,12 +849,37 @@ namespace GGemCo2DCore
         /// <param name="character">등록할 캐릭터 게임 오브젝트입니다.</param>
         public void AddCharacter(CharacterConstants.Type type, int characterUid, GameObject character)
         {
-            if (!_createCharacters.ContainsKey(type))
+            if (character == null)
             {
-                _createCharacters.Add(type, new Dictionary<int, GameObject>());
+                GcLogger.LogWarning(
+                    $"AddCharacter 실패: 대상이 이미 파괴되었거나 null 입니다. type={type}, uid={characterUid}");
+                return;
             }
 
-            _createCharacters[type].Add(characterUid, character);
+            if (!_createCharacters.TryGetValue(type, out Dictionary<int, GameObject> charactersByUid))
+            {
+                charactersByUid = new Dictionary<int, GameObject>();
+                _createCharacters.Add(type, charactersByUid);
+            }
+
+            if (charactersByUid.TryGetValue(characterUid, out GameObject previousCharacter))
+            {
+                if (previousCharacter == character)
+                {
+                    return;
+                }
+
+                // 동일 key로 다른 인스턴스가 등록되면 이전 참조를 회수해 중복 추적을 방지합니다.
+                if (previousCharacter != null)
+                {
+                    Object.Destroy(previousCharacter);
+                }
+
+                charactersByUid[characterUid] = character;
+                return;
+            }
+
+            charactersByUid.Add(characterUid, character);
         }
 
         /// <summary>
@@ -872,7 +890,12 @@ namespace GGemCo2DCore
         /// <returns>해당 캐릭터가 존재하면 Transform을 반환하고, 없으면 <see langword="null"/>을 반환합니다.</returns>
         public Transform GetCharacter(CharacterConstants.Type type, int characterUid)
         {
-            return _createCharacters.GetValueOrDefault(type)?.GetValueOrDefault(characterUid)?.transform;
+            if (!TryGetTrackedCharacter(type, characterUid, out GameObject trackedCharacter))
+            {
+                return null;
+            }
+
+            return trackedCharacter.transform;
         }
 
         /// <summary>
@@ -1273,14 +1296,7 @@ namespace GGemCo2DCore
 
             _activeControllers.Clear();
             
-            // 만들었던 캐릭터 지우기
-            foreach (var dic1 in _createCharacters)
-            {
-                foreach (var dic2 in dic1.Value)
-                {
-                    Object.Destroy(dic2.Value);
-                }
-            }
+            DestroyTrackedCharacters();
 
             ClearOverlayTextOverrides();
             ClearCharacterTargetOverrides();
@@ -1305,6 +1321,65 @@ namespace GGemCo2DCore
 
             ResetDialogueBalloonsAtCutsceneBoundary();
             EndCutsceneSession();
+        }
+
+        /// <summary>
+        /// 추적 중인 캐릭터를 안전하게 조회합니다.
+        /// 파괴된 객체 참조가 남아 있으면 즉시 캐시에서 제거하여 다음 조회부터 예외가 발생하지 않게 합니다.
+        /// </summary>
+        /// <param name="type">조회할 캐릭터 분류 타입입니다.</param>
+        /// <param name="characterUid">조회할 캐릭터의 uid입니다.</param>
+        /// <param name="character">조회에 성공한 캐릭터 오브젝트입니다.</param>
+        /// <returns>유효한 캐릭터를 찾으면 <see langword="true"/>, 없으면 <see langword="false"/>를 반환합니다.</returns>
+        private bool TryGetTrackedCharacter(
+            CharacterConstants.Type type,
+            int characterUid,
+            out GameObject character)
+        {
+            character = null;
+            if (!_createCharacters.TryGetValue(type, out Dictionary<int, GameObject> charactersByUid))
+            {
+                return false;
+            }
+
+            if (!charactersByUid.TryGetValue(characterUid, out character))
+            {
+                return false;
+            }
+
+            if (character != null)
+            {
+                return true;
+            }
+
+            charactersByUid.Remove(characterUid);
+            if (charactersByUid.Count == 0)
+            {
+                _createCharacters.Remove(type);
+            }
+
+            character = null;
+            return false;
+        }
+
+        /// <summary>
+        /// 컷신에서 생성해 추적하던 캐릭터를 모두 파괴하고 캐시를 비웁니다.
+        /// 파괴된 참조가 캐시에 잔존해 다음 연출에서 MissingReferenceException을 유발하는 문제를 방지합니다.
+        /// </summary>
+        private void DestroyTrackedCharacters()
+        {
+            foreach (var charactersByUid in _createCharacters.Values)
+            {
+                foreach (var trackedCharacter in charactersByUid.Values)
+                {
+                    if (trackedCharacter != null)
+                    {
+                        Object.Destroy(trackedCharacter);
+                    }
+                }
+            }
+
+            _createCharacters.Clear();
         }
 
         /// <summary>

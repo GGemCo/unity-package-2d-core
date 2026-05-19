@@ -95,15 +95,17 @@ namespace GGemCo2DCore
                 }
             }
 
-            // 생성 직후 한 프레임을 보장해 내부 초기화(Awake/Start)가 끝난 뒤 연출 시점에 노출되도록 합니다.
+            // 생성 직후 1프레임 대기 중 CharacterBase.Update가 실행되면
+            // 하단 경계 체크로 즉시 Destroy 될 수 있어 먼저 비활성화합니다.
+            created.gameObject.SetActive(false);
+
+            // 생성 직후 최소 1프레임을 확보해 Instantiate 후속 초기화를 마무리합니다.
             yield return null;
 
             if (created == null || created.gameObject == null)
             {
                 yield break;
             }
-
-            created.gameObject.SetActive(false);
 
             if (CutsceneManager.GetCharacter(_data.characterType, _data.characterUid) == null)
             {

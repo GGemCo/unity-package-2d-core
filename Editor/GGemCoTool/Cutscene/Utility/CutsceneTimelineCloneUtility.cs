@@ -207,8 +207,14 @@ namespace GGemCo2DCoreEditor
                 characterUid = source.characterUid,
                 characterScale = source.characterScale,
                 characterMoveSpeed = source.characterMoveSpeed,
+                moveMode = source.moveMode,
                 startPosition = source.startPosition,
                 endPosition = source.endPosition,
+                relativeDirection = source.relativeDirection,
+                relativeDistance = source.relativeDistance,
+                relativeOffset = source.relativeOffset,
+                facingMode = source.facingMode,
+                explicitFacing = source.explicitFacing,
             };
         }
 

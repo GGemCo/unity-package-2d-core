@@ -4,22 +4,24 @@ using UnityEngine;
 namespace GGemCo2DCore
 {
     /// <summary>
-    /// 컷신 중 캐릭터를 지정된 위치까지 이동시키는 컨트롤러입니다.
-    /// 이동 속도, 스텝(step), 방향 및 애니메이션을 함께 제어합니다.
+    /// 컷신 중 캐릭터를 지정된 방식으로 이동시키는 컨트롤러입니다.
+    /// 절대 좌표 이동과 현재 위치 기준 상대 이동을 모두 지원합니다.
     /// </summary>
     public class CharacterMoveController : CutsceneDefaultController, ICutsceneController
     {
-        private Camera _cam;
+        private const float MinimumDistanceEpsilon = 0.001f;
+        private const float FallbackMoveStep = 1f;
+        private const float FallbackMoveSpeedPercent = 100f;
 
-        private Vector2 _startPosition, _endPosition;
+        private Vector2 _startPosition;
+        private Vector2 _endPosition;
         private float _characterMoveStep;
         private float _characterMoveSpeed;
         private float _distance;
         private float _timer;
+        private float _duration;
         private bool _isMoving;
         private bool _isFollowTarget;
-        
-        private float _duration;
 
         private Transform _target;
         private CharacterBase _targetCharacter;
@@ -50,7 +52,6 @@ namespace GGemCo2DCore
             }
         }
 
-
         /// <summary>
         /// 이동 대상 준비 단계를 수행합니다.
         /// 현재 구현에서는 비동기 준비가 필요 없어 즉시 종료됩니다.
@@ -71,93 +72,43 @@ namespace GGemCo2DCore
         public void Trigger(CutsceneEvent evt)
         {
             if (evt.type != CutsceneEventType.CharacterMove)
-                return;
-
-            _duration = evt.duration;
-            var data = evt.characterMove;
-
-            _isFollowTarget = data.isFollowTarget;
-
-            _target = GetTargetTransform(data.characterType, data.characterUid);
-
-            if (_target == null)
             {
-                _target = CutsceneManager.GetCharacter(data.characterType, data.characterUid);
-
-                if (_target == null)
-                {
-                    GcLogger.LogError(
-                        "이동 대상 캐릭터가 없습니다. CharacterSpawn 이벤트를 먼저 실행했는지 확인하세요. type: " +
-                        data.characterType + "/ uid: " + data.characterUid);
-                    return;
-                }
+                return;
             }
 
-            if (_target.gameObject.activeSelf == false)
+            CharacterMoveData data = evt.characterMove ?? new CharacterMoveData();
+            _isFollowTarget = data.isFollowTarget;
+            _target = ResolveMoveTarget(data);
+            if (_target == null)
+            {
+                return;
+            }
+
+            if (!_target.gameObject.activeSelf)
             {
                 _target.gameObject.SetActive(true);
             }
 
-            _startPosition = data.startPosition.ToVector2();
-            _endPosition = data.endPosition.ToVector2();
-
-            // 시작 위치 미지정 시 현재 위치 사용
-            if (_startPosition == Vector2.zero)
-            {
-                _startPosition = _target.position;
-            }
+            _targetCharacter = _target.GetComponent<CharacterBase>();
+            ConfigureMoveAttributes(data);
+            ResolveMoveRange(data);
 
             _distance = Vector2.Distance(_startPosition, _endPosition);
-            
-            if (_target != null)
+            _duration = CalculateMoveDuration();
+            _timer = 0f;
+            _isMoving = false;
+
+            ApplyFacingPolicy(data);
+
+            if (_distance <= MinimumDistanceEpsilon || _duration <= 0f)
             {
-                _targetCharacter = _target.GetComponent<CharacterBase>();
-
-                // 이동 step 설정 (플레이어 vs NPC)
-                _characterMoveStep = AddressableLoaderSettings.Instance.playerSettings.statMoveStep;
-
-                if (data.characterType != CharacterConstants.Type.Player)
-                {
-                    _characterMoveStep =
-                        TableLoaderManager.Instance.GetCharacterMoveStep(
-                            data.characterType,
-                            data.characterUid);
-                }
-
-                // 이동 속도 설정
-                if (data.characterMoveSpeed > 0)
-                {
-                    _targetCharacter?.SetCurrentMoveSpeed(data.characterMoveSpeed);
-                    _characterMoveSpeed = data.characterMoveSpeed;
-                }
-
-                // 크기 설정
-                if (data.characterScale > 0)
-                {
-                    _targetCharacter?.SetScale(data.characterScale);
-                }
-
-                // 카메라 추적 설정
-                if (_isFollowTarget)
-                {
-                    SceneGame.Instance.cameraManager.SetFollowTarget(_target);
-                }
-
-                // 이동 상태 강제 적용
-                _targetCharacter?.SetStatusMoveForce();
-
-                // 이동 애니메이션 실행
-                _targetCharacter?.CharacterAnimationController?.PlayRunAnimation();
+                _target.position = new Vector3(_endPosition.x, _endPosition.y, _target.position.z);
+                _targetCharacter?.Stop();
+                return;
             }
 
-            // 거리 / 속도 기반 이동 시간 계산
-            _duration = _distance / (_characterMoveStep * (_characterMoveSpeed / 100f));
-            
-            _timer = 0f;
-
-            // 이동 방향에 따른 flip 설정
-            UpdateFacing();
-
+            _targetCharacter?.SetStatusMoveForce();
+            _targetCharacter?.CharacterAnimationController?.PlayRunAnimation();
             _isMoving = true;
         }
 
@@ -166,50 +117,24 @@ namespace GGemCo2DCore
         /// </summary>
         public void Update()
         {
-            if (_target == null || !_isMoving) return;
+            if (_target == null || !_isMoving)
+            {
+                return;
+            }
 
             _timer += Time.deltaTime;
-
-            float t = _timer * _characterMoveStep * (_characterMoveSpeed / 100f) / _distance;
-            t = Mathf.Clamp01(t);
+            float t = Mathf.Clamp01(_timer / _duration);
 
             Vector2 interpolated = Vector2.Lerp(_startPosition, _endPosition, t);
-
             _target.position = new Vector3(
                 interpolated.x,
                 interpolated.y,
                 _target.position.z);
 
-            if (_timer > _duration)
+            if (t >= 1f)
             {
                 Stop();
             }
-        }
-
-        /// <summary>
-        /// 이동 방향을 기준으로 캐릭터 좌우 방향(flip)을 설정합니다.
-        /// </summary>
-        private void UpdateFacing()
-        {
-            if (_target == null) return;
-
-            Vector2 direction = _endPosition - _startPosition;
-
-            // 좌우 기준 flip 처리
-            if (Mathf.Abs(direction.x) > Mathf.Abs(direction.y))
-            {
-                bool movingRight = direction.x > 0f;
-
-                bool defaultIsRight =
-                    _targetCharacter?.defaultFacingDirection8 ==
-                    CharacterConstants.FacingDirection8.Right;
-
-                bool shouldFlip = (movingRight != defaultIsRight);
-
-                _targetCharacter?.SetFlip(shouldFlip);
-            }
-
-            // TODO: 상하 방향 처리 필요 시 확장 가능
         }
 
         /// <summary>
@@ -226,6 +151,193 @@ namespace GGemCo2DCore
         /// </summary>
         public void End()
         {
+        }
+
+        /// <summary>
+        /// CharacterMove 이벤트가 제어할 대상 캐릭터를 조회합니다.
+        /// 맵 배치 대상 우선, 컷신에서 생성한 대상을 후순위로 조회합니다.
+        /// </summary>
+        /// <param name="data">대상 조회에 사용할 CharacterMove 데이터입니다.</param>
+        /// <returns>조회한 대상 Transform이며, 없으면 <see langword="null"/>을 반환합니다.</returns>
+        private Transform ResolveMoveTarget(CharacterMoveData data)
+        {
+            Transform target = GetTargetTransform(data.characterType, data.characterUid);
+            if (target != null)
+            {
+                return target;
+            }
+
+            target = CutsceneManager.GetCharacter(data.characterType, data.characterUid);
+            if (target != null)
+            {
+                return target;
+            }
+
+            GcLogger.LogError(
+                "이동 대상 캐릭터가 없습니다. CharacterSpawn 이벤트를 먼저 실행했는지 확인하세요. type: " +
+                data.characterType + "/ uid: " + data.characterUid);
+            return null;
+        }
+
+        /// <summary>
+        /// 이동 속도, 크기, 카메라 추적 등 이동 보조 속성을 설정합니다.
+        /// </summary>
+        /// <param name="data">이동 보조 속성 설정에 사용할 데이터입니다.</param>
+        private void ConfigureMoveAttributes(CharacterMoveData data)
+        {
+            _characterMoveStep = ResolveMoveStep(data);
+            _characterMoveSpeed = ResolveMoveSpeedPercent(data);
+
+            if (_targetCharacter != null && data.characterScale > 0f)
+            {
+                _targetCharacter.SetScale(data.characterScale);
+            }
+
+            if (_isFollowTarget)
+            {
+                SceneGame.Instance?.cameraManager?.SetFollowTarget(_target);
+            }
+        }
+
+        /// <summary>
+        /// 설정된 이동 모드에 따라 시작/종료 좌표를 계산합니다.
+        /// </summary>
+        /// <param name="data">좌표 계산에 사용할 CharacterMove 데이터입니다.</param>
+        private void ResolveMoveRange(CharacterMoveData data)
+        {
+            if (data.moveMode == CutsceneCharacterMoveMode.RelativeFromCurrent)
+            {
+                Vector2 basePosition = _target.position;
+                Vector2 direction = data.relativeDirection == CharacterConstants.FacingDirection8.None
+                    ? Vector2.zero
+                    : CharacterConstants.FacingToVector2(data.relativeDirection);
+                float distance = Mathf.Max(0f, data.relativeDistance);
+                Vector2 offset = data.relativeOffset.ToVector2();
+
+                _startPosition = basePosition;
+                _endPosition = basePosition + (direction * distance) + offset;
+                return;
+            }
+
+            _startPosition = data.startPosition.ToVector2();
+            _endPosition = data.endPosition.ToVector2();
+
+            // 레거시 호환: startPosition이 (0,0)인 경우 "미지정"으로 간주하고 현재 위치를 시작점으로 사용합니다.
+            if (_startPosition == Vector2.zero)
+            {
+                _startPosition = _target.position;
+            }
+        }
+
+        /// <summary>
+        /// 이동 시작 시 바라보기 정책을 적용합니다.
+        /// </summary>
+        /// <param name="data">바라보기 정책 정보를 포함한 CharacterMove 데이터입니다.</param>
+        private void ApplyFacingPolicy(CharacterMoveData data)
+        {
+            if (_targetCharacter == null)
+            {
+                return;
+            }
+
+            switch (data.facingMode)
+            {
+                case CutsceneCharacterMoveFacingMode.KeepCurrent:
+                    return;
+
+                case CutsceneCharacterMoveFacingMode.FaceExplicit:
+                    if (data.explicitFacing != CharacterConstants.FacingDirection8.None)
+                    {
+                        _targetCharacter.SetFacing(data.explicitFacing);
+                    }
+
+                    return;
+
+                case CutsceneCharacterMoveFacingMode.FaceMoveDirection:
+                default:
+                    Vector2 direction = _endPosition - _startPosition;
+                    if (direction.sqrMagnitude > MinimumDistanceEpsilon * MinimumDistanceEpsilon)
+                    {
+                        _targetCharacter.SetFacing(direction.normalized);
+                    }
+
+                    return;
+            }
+        }
+
+        /// <summary>
+        /// 이동 거리를 기준으로 현재 이벤트의 이동 시간을 계산합니다.
+        /// </summary>
+        /// <returns>이동 가능한 경우 계산된 이동 시간(초), 불가능하면 0을 반환합니다.</returns>
+        private float CalculateMoveDuration()
+        {
+            if (_distance <= MinimumDistanceEpsilon)
+            {
+                return 0f;
+            }
+
+            float movePerSecond = _characterMoveStep * (_characterMoveSpeed / 100f);
+            if (movePerSecond <= MinimumDistanceEpsilon)
+            {
+                return 0f;
+            }
+
+            return _distance / movePerSecond;
+        }
+
+        /// <summary>
+        /// 이동 스텝 값을 계산합니다.
+        /// 플레이어는 설정값을 사용하고, NPC/Monster는 테이블 이동 스텝을 우선 적용합니다.
+        /// </summary>
+        /// <param name="data">이동 대상 정보를 포함한 CharacterMove 데이터입니다.</param>
+        /// <returns>최종 이동 스텝 값을 반환합니다.</returns>
+        private static float ResolveMoveStep(CharacterMoveData data)
+        {
+            float step = AddressableLoaderSettings.Instance != null &&
+                         AddressableLoaderSettings.Instance.playerSettings != null
+                ? AddressableLoaderSettings.Instance.playerSettings.statMoveStep
+                : FallbackMoveStep;
+
+            if (data.characterType != CharacterConstants.Type.Player)
+            {
+                float tableStep = TableLoaderManager.Instance != null
+                    ? TableLoaderManager.Instance.GetCharacterMoveStep(data.characterType, data.characterUid)
+                    : 0f;
+
+                if (tableStep > 0f)
+                {
+                    step = tableStep;
+                }
+            }
+
+            return step > 0f ? step : FallbackMoveStep;
+        }
+
+        /// <summary>
+        /// 이동 속도(%)를 계산합니다.
+        /// 이벤트 값이 있으면 우선 적용하고, 없으면 현재 캐릭터 이동 속도를 사용합니다.
+        /// </summary>
+        /// <param name="data">이동 속도 설정을 포함한 CharacterMove 데이터입니다.</param>
+        /// <returns>100 기준 퍼센트 이동 속도 값을 반환합니다.</returns>
+        private float ResolveMoveSpeedPercent(CharacterMoveData data)
+        {
+            if (_targetCharacter != null && data.characterMoveSpeed > 0)
+            {
+                _targetCharacter.SetCurrentMoveSpeed(data.characterMoveSpeed);
+            }
+
+            float speed = _targetCharacter != null
+                ? _targetCharacter.GetCurrentMoveSpeed(isPercent: false)
+                : 0f;
+
+            if (speed > 0f)
+            {
+                return speed;
+            }
+
+            return data.characterMoveSpeed > 0f
+                ? data.characterMoveSpeed
+                : FallbackMoveSpeedPercent;
         }
     }
 }
