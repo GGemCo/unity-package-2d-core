@@ -283,6 +283,8 @@ namespace GGemCo2DCoreEditor
                 thumbnailImage = source.thumbnailImage,
                 offsetImageThumbnailCharacter = source.offsetImageThumbnailCharacter,
                 offsetImageThumbnailCharacterLeft = source.offsetImageThumbnailCharacterLeft,
+                thumbnailFlipPolicy = source.thumbnailFlipPolicy,
+                thumbnailSourceFacing = source.thumbnailSourceFacing,
             };
         }
 

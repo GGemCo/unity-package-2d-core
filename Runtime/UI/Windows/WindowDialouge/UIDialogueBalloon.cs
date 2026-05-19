@@ -23,6 +23,10 @@ namespace GGemCo2DCore
         private ConfigCommon.ThumbnailPositionType _thumbnailPositionType;
         private Vector3 _offsetImageThumbnailCharacter;
         private Vector3 _offsetImageThumbnailCharacterLeft;
+        private DialogueBalloonThumbnailFlipPolicy _thumbnailFlipPolicy = DialogueBalloonThumbnailFlipPolicy.KeepOriginal;
+        private DialogueBalloonThumbnailSourceFacing _thumbnailSourceFacing = DialogueBalloonThumbnailSourceFacing.Right;
+        private Vector3 _thumbnailBaseScale = Vector3.one;
+        private bool _hasThumbnailBaseScale;
         private int _thumbnailRequestVersion;
         private bool _needsRefreshThumbnailPosition;
 
@@ -97,6 +101,8 @@ namespace GGemCo2DCore
             _thumbnailPositionType = data.thumbnailPositionType;
             _offsetImageThumbnailCharacter = data.offsetImageThumbnailCharacter;
             _offsetImageThumbnailCharacterLeft = data.offsetImageThumbnailCharacterLeft;
+            _thumbnailFlipPolicy = data.thumbnailFlipPolicy;
+            _thumbnailSourceFacing = data.thumbnailSourceFacing;
             RequestThumbnailPositionRefresh();
 
             int requestVersion = ++_thumbnailRequestVersion;
@@ -145,6 +151,7 @@ namespace GGemCo2DCore
 
             imageThumbnail.sprite = sprite;
             imageThumbnail.gameObject.SetActive(true);
+            ApplyThumbnailFlip();
             RefreshThumbnailPosition();
         }
 
@@ -171,6 +178,11 @@ namespace GGemCo2DCore
             if (imageThumbnail != null)
             {
                 _thumbnailRectTransform = imageThumbnail.GetComponent<RectTransform>();
+                if (_thumbnailRectTransform != null && !_hasThumbnailBaseScale)
+                {
+                    _thumbnailBaseScale = _thumbnailRectTransform.localScale;
+                    _hasThumbnailBaseScale = true;
+                }
             }
         }
 
@@ -200,6 +212,7 @@ namespace GGemCo2DCore
 
             imageThumbnail.sprite = null;
             imageThumbnail.gameObject.SetActive(false);
+            RestoreThumbnailScaleToBase();
         }
 
         /// <summary>
@@ -230,6 +243,7 @@ namespace GGemCo2DCore
             float x = side * (panelHalfWidth + thumbnailHalfWidth) + offset.x;
             float y = offset.y;
             _thumbnailRectTransform.localPosition = new Vector3(x, y, 0f);
+            ApplyThumbnailFlip();
         }
 
         /// <summary>
@@ -250,6 +264,134 @@ namespace GGemCo2DCore
             _needsRefreshThumbnailPosition = false;
             _revealPlayer.Clear(textMessage);
             ClearThumbnail();
+            RestoreThumbnailScaleToBase();
+        }
+
+        /// <summary>
+        /// 현재 설정된 정책으로 썸네일 좌우 반전을 적용합니다.
+        /// </summary>
+        private void ApplyThumbnailFlip()
+        {
+            if (!TryEnsureThumbnailImage())
+            {
+                return;
+            }
+
+            if (!_hasThumbnailBaseScale)
+            {
+                _thumbnailBaseScale = _thumbnailRectTransform.localScale;
+                _hasThumbnailBaseScale = true;
+            }
+
+            bool shouldFlip = ResolveShouldFlipThumbnail();
+            float baseAbsX = Mathf.Abs(_thumbnailBaseScale.x);
+            if (baseAbsX <= Mathf.Epsilon)
+            {
+                baseAbsX = 1f;
+            }
+
+            float x = shouldFlip ? -baseAbsX : baseAbsX;
+            _thumbnailRectTransform.localScale = new Vector3(
+                x,
+                _thumbnailBaseScale.y,
+                _thumbnailBaseScale.z);
+        }
+
+        /// <summary>
+        /// 정책/배치/화자 방향을 종합해 썸네일 Flip 필요 여부를 계산합니다.
+        /// </summary>
+        /// <returns>좌우 반전이 필요하면 <see langword="true"/>를 반환합니다.</returns>
+        private bool ResolveShouldFlipThumbnail()
+        {
+            switch (_thumbnailFlipPolicy)
+            {
+                case DialogueBalloonThumbnailFlipPolicy.KeepOriginal:
+                    return false;
+
+                case DialogueBalloonThumbnailFlipPolicy.ForceFlip:
+                    return true;
+
+                case DialogueBalloonThumbnailFlipPolicy.AutoBySpeakerFacing:
+                    if (TryResolveSpeakerFacingRight(out bool speakerFacingRight))
+                    {
+                        return ShouldFlipToDesiredFacing(speakerFacingRight);
+                    }
+
+                    // 화자 방향을 판단할 수 없으면 배치 기준 정책으로 안전하게 폴백합니다.
+                    bool desiredFacingByPositionFallback = ResolveDesiredFacingRightByThumbnailPosition();
+                    return ShouldFlipToDesiredFacing(desiredFacingByPositionFallback);
+
+                case DialogueBalloonThumbnailFlipPolicy.AutoByThumbnailPosition:
+                default:
+                    bool desiredFacingByPosition = ResolveDesiredFacingRightByThumbnailPosition();
+                    return ShouldFlipToDesiredFacing(desiredFacingByPosition);
+            }
+        }
+
+        /// <summary>
+        /// 썸네일 배치 위치를 기준으로 말풍선을 향하는 수평 바라보기 방향을 계산합니다.
+        /// </summary>
+        /// <returns>오른쪽을 바라봐야 하면 <see langword="true"/>, 왼쪽이면 <see langword="false"/>를 반환합니다.</returns>
+        private bool ResolveDesiredFacingRightByThumbnailPosition()
+        {
+            return _thumbnailPositionType == ConfigCommon.ThumbnailPositionType.Left;
+        }
+
+        /// <summary>
+        /// 화자의 현재 방향에서 수평(좌/우) 방향을 추출합니다.
+        /// </summary>
+        /// <param name="isFacingRight">오른쪽을 바라보면 <see langword="true"/>를 반환합니다.</param>
+        /// <returns>좌우 방향을 판별할 수 있으면 <see langword="true"/>를 반환합니다.</returns>
+        private bool TryResolveSpeakerFacingRight(out bool isFacingRight)
+        {
+            isFacingRight = false;
+            if (_target == null)
+            {
+                return false;
+            }
+
+            CharacterConstants.FacingDirection8 facing = _target.CurrentFacing;
+            switch (facing)
+            {
+                case CharacterConstants.FacingDirection8.Right:
+                case CharacterConstants.FacingDirection8.UpRight:
+                case CharacterConstants.FacingDirection8.DownRight:
+                    isFacingRight = true;
+                    return true;
+
+                case CharacterConstants.FacingDirection8.Left:
+                case CharacterConstants.FacingDirection8.UpLeft:
+                case CharacterConstants.FacingDirection8.DownLeft:
+                    isFacingRight = false;
+                    return true;
+
+                default:
+                    return false;
+            }
+        }
+
+        /// <summary>
+        /// 목표 수평 바라보기 방향과 원본 썸네일 기준 방향을 비교해 Flip 필요 여부를 계산합니다.
+        /// </summary>
+        /// <param name="desiredFacingRight">목표가 오른쪽 바라보기면 <see langword="true"/>입니다.</param>
+        /// <returns>원본과 목표 방향이 다르면 <see langword="true"/>를 반환합니다.</returns>
+        private bool ShouldFlipToDesiredFacing(bool desiredFacingRight)
+        {
+            bool sourceFacingRight = _thumbnailSourceFacing == DialogueBalloonThumbnailSourceFacing.Right;
+            return sourceFacingRight != desiredFacingRight;
+        }
+
+        /// <summary>
+        /// 썸네일 스케일을 프리팹 기본값으로 복원합니다.
+        /// </summary>
+        private void RestoreThumbnailScaleToBase()
+        {
+            if (_thumbnailRectTransform == null || !_hasThumbnailBaseScale)
+            {
+                return;
+            }
+
+            _thumbnailRectTransform.localScale = _thumbnailBaseScale;
         }
 
         /// <summary>

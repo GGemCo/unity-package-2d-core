@@ -22,6 +22,48 @@ namespace GGemCo2DCore
     }
 
     /// <summary>
+    /// 말풍선 썸네일의 좌우 반전(Flip) 적용 정책을 정의합니다.
+    /// </summary>
+    public enum DialogueBalloonThumbnailFlipPolicy
+    {
+        /// <summary>
+        /// 원본 스프라이트 방향을 유지합니다.
+        /// </summary>
+        KeepOriginal = 0,
+
+        /// <summary>
+        /// 항상 좌우 반전을 적용합니다.
+        /// </summary>
+        ForceFlip = 1,
+
+        /// <summary>
+        /// 썸네일 배치 위치(좌/우)에 따라 말풍선을 향하도록 자동 반전합니다.
+        /// </summary>
+        AutoByThumbnailPosition = 2,
+
+        /// <summary>
+        /// 말풍선 화자의 현재 바라보기 방향을 기준으로 자동 반전합니다.
+        /// </summary>
+        AutoBySpeakerFacing = 3,
+    }
+
+    /// <summary>
+    /// 썸네일 원본 스프라이트가 기본적으로 바라보는 수평 방향을 정의합니다.
+    /// </summary>
+    public enum DialogueBalloonThumbnailSourceFacing
+    {
+        /// <summary>
+        /// 원본 스프라이트가 오른쪽을 바라보는 기준입니다.
+        /// </summary>
+        Right = 0,
+
+        /// <summary>
+        /// 원본 스프라이트가 왼쪽을 바라보는 기준입니다.
+        /// </summary>
+        Left = 1,
+    }
+
+    /// <summary>
     /// 컷신에서 캐릭터 위에 표시할 대사 말풍선 데이터를 정의합니다.
     /// </summary>
     [Serializable]
@@ -79,6 +121,10 @@ namespace GGemCo2DCore
         public Vector3 offsetImageThumbnailCharacter;
         [Tooltip("왼쪽 기준 썸네일 위치 보정값입니다.")]
         public Vector3 offsetImageThumbnailCharacterLeft;
+        [Tooltip("썸네일 Flip 적용 정책입니다.")]
+        public DialogueBalloonThumbnailFlipPolicy thumbnailFlipPolicy = DialogueBalloonThumbnailFlipPolicy.KeepOriginal;
+        [Tooltip("원본 썸네일 이미지의 기본 바라보기 방향입니다.")]
+        public DialogueBalloonThumbnailSourceFacing thumbnailSourceFacing = DialogueBalloonThumbnailSourceFacing.Right;
 
         /// <summary>
         /// 타자 효과 속도가 지정되지 않았으면 기본값으로 보정해서 반환합니다.
