@@ -38,6 +38,18 @@ namespace GGemCo2DCore
         [Tooltip("true이면 유저 입력을 받을 때까지 컷신 타임라인 진행을 대기합니다.")]
         public bool waitForUserInput;
 
+        [Header("말풍선 유지 중 애니메이션")]
+        [Tooltip("true이면 말풍선이 유지되는 동안 대상 캐릭터 애니메이션을 반복 재생합니다.")]
+        public bool useTalkLoopAnimation;
+        [Tooltip("말풍선 유지 중 반복 재생할 애니메이션 이름입니다.")]
+        public string talkLoopAnimationName;
+        [Tooltip("말풍선 유지 중 반복 재생할 애니메이션 대상입니다. 설정되지 않으면 말풍선 화자를 기본 대상으로 사용합니다.")]
+        public CutsceneCharacterReference talkLoopAnimationTarget = new CutsceneCharacterReference();
+        [Tooltip("말풍선 유지 중 반복 재생할 애니메이션 속도입니다.")]
+        public float talkLoopAnimationTimeScale = 1f;
+        [Tooltip("말풍선 종료 시 루프 애니메이션을 대기 애니메이션으로 복원할지 여부입니다.")]
+        public bool restoreTalkLoopAnimationOnStop = true;
+
         [Header("썸네일")]
         [Tooltip("말풍선 썸네일 표시 위치입니다. None이면 썸네일을 표시하지 않습니다.")]
         public ConfigCommon.ThumbnailPositionType thumbnailPositionType = ConfigCommon.ThumbnailPositionType.None;
@@ -57,6 +69,17 @@ namespace GGemCo2DCore
             return typewriterCharactersPerSecond > 0f
                 ? typewriterCharactersPerSecond
                 : DefaultTypewriterCharactersPerSecond;
+        }
+
+        /// <summary>
+        /// 말풍선 루프 애니메이션 속도가 유효하지 않으면 기본값(1.0)으로 보정해서 반환합니다.
+        /// </summary>
+        /// <returns>0보다 큰 유효한 애니메이션 재생 속도입니다.</returns>
+        public float GetSafeTalkLoopAnimationTimeScale()
+        {
+            return talkLoopAnimationTimeScale > 0f
+                ? talkLoopAnimationTimeScale
+                : 1f;
         }
     }
 }

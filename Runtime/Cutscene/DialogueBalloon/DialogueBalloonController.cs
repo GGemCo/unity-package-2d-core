@@ -27,6 +27,9 @@ namespace GGemCo2DCore
         private readonly DialogueBalloonPool _dialogueBalloonPool;
         private GameObject _currentDialogueBalloon;
         private UIDialogueBalloon _currentDialogueBalloonUi;
+        private CharacterBase _talkLoopAnimationCharacter;
+        private float _talkLoopAnimationCapturedPlaybackTimeScale = 1f;
+        private bool _restoreTalkLoopAnimationOnStop;
 
         /// <summary>
         /// 대사 말풍선 연출 컨트롤러를 생성합니다.
@@ -140,6 +143,7 @@ namespace GGemCo2DCore
 
             _timer = 0f;
             _isBalloon = true;
+            TryStartTalkLoopAnimation(data);
 
             if (data.waitForUserInput)
             {
@@ -266,6 +270,7 @@ namespace GGemCo2DCore
         public void Stop()
         {
             ReleaseInputWait();
+            StopTalkLoopAnimation();
             _timer = 0f;
             _inputWaitResumeTime = 0f;
             _isBalloon = false;
@@ -280,6 +285,187 @@ namespace GGemCo2DCore
         public void End()
         {
             Stop();
+        }
+
+        /// <summary>
+        /// 말풍선 데이터에 설정된 루프 애니메이션을 시작합니다.
+        /// 캐릭터별 owner 소유권을 획득한 경우에만 재생하여, 다른 컨트롤러의 상태를 덮어쓰는 문제를 방지합니다.
+        /// </summary>
+        /// <param name="data">현재 말풍선 이벤트 데이터입니다.</param>
+        private void TryStartTalkLoopAnimation(DialogueBalloonData data)
+        {
+            if (data == null || !data.useTalkLoopAnimation)
+            {
+                return;
+            }
+
+            string animationName = data.talkLoopAnimationName;
+            if (string.IsNullOrWhiteSpace(animationName))
+            {
+                return;
+            }
+
+            CharacterBase targetCharacter = ResolveTalkLoopAnimationTarget(data);
+            if (targetCharacter == null)
+            {
+                GcLogger.LogError("말풍선 루프 애니메이션 대상 캐릭터를 찾을 수 없습니다.");
+                return;
+            }
+
+            ICharacterAnimationController animationController = targetCharacter.CharacterAnimationController;
+            if (animationController == null)
+            {
+                GcLogger.LogError(
+                    "말풍선 루프 애니메이션 대상에 ICharacterAnimationController가 없습니다. type: " +
+                    targetCharacter.type + "/ uid: " + targetCharacter.uid);
+                return;
+            }
+
+            if (!animationController.HasAnimation(animationName))
+            {
+                GcLogger.LogError(
+                    "말풍선 루프 애니메이션 클립을 찾을 수 없습니다. type: " +
+                    targetCharacter.type + "/ uid: " + targetCharacter.uid + "/ clip: " + animationName);
+                return;
+            }
+
+            if (!CutsceneDialogueLoopAnimationOwnershipService.TryAcquire(
+                    targetCharacter,
+                    this,
+                    out float capturedPlaybackTimeScale))
+            {
+                GcLogger.Log(
+                    "말풍선 루프 애니메이션 owner 획득에 실패했습니다. type: " +
+                    targetCharacter.type + "/ uid: " + targetCharacter.uid);
+                return;
+            }
+
+            _talkLoopAnimationCharacter = targetCharacter;
+            _talkLoopAnimationCapturedPlaybackTimeScale = capturedPlaybackTimeScale;
+            _restoreTalkLoopAnimationOnStop = data.restoreTalkLoopAnimationOnStop;
+
+            animationController.PlayCharacterAnimation(
+                animationName,
+                loop: true,
+                timeScale: data.GetSafeTalkLoopAnimationTimeScale());
+        }
+
+        /// <summary>
+        /// 현재 컨트롤러가 보유한 말풍선 루프 애니메이션을 종료합니다.
+        /// owner가 일치할 때만 복원 로직을 수행하여, 최신 owner의 애니메이션 상태를 보호합니다.
+        /// </summary>
+        private void StopTalkLoopAnimation()
+        {
+            CharacterBase targetCharacter = _talkLoopAnimationCharacter;
+            if (targetCharacter == null)
+            {
+                CutsceneDialogueLoopAnimationOwnershipService.ReleaseAllByOwner(this);
+                ClearTalkLoopAnimationRuntimeState();
+                return;
+            }
+
+            bool isOwner = CutsceneDialogueLoopAnimationOwnershipService.IsOwnedBy(targetCharacter, this);
+            if (isOwner && _restoreTalkLoopAnimationOnStop)
+            {
+                ICharacterAnimationController animationController = targetCharacter.CharacterAnimationController;
+                if (animationController != null)
+                {
+                    animationController.PlayWaitAnimation();
+                    animationController.SetPlaybackTimeScale(_talkLoopAnimationCapturedPlaybackTimeScale);
+                }
+            }
+
+            CutsceneDialogueLoopAnimationOwnershipService.Release(targetCharacter, this);
+            ClearTalkLoopAnimationRuntimeState();
+        }
+
+        /// <summary>
+        /// 말풍선 루프 애니메이션 대상 캐릭터를 해석합니다.
+        /// 별도 대상이 설정되어 있으면 해당 대상을 사용하고, 없으면 말풍선 화자를 기본 대상으로 사용합니다.
+        /// </summary>
+        /// <param name="data">말풍선 이벤트 데이터입니다.</param>
+        /// <returns>해석된 대상 캐릭터입니다. 찾지 못하면 <see langword="null"/>을 반환합니다.</returns>
+        private CharacterBase ResolveTalkLoopAnimationTarget(DialogueBalloonData data)
+        {
+            CutsceneCharacterReference targetReference = data?.talkLoopAnimationTarget;
+            if (IsTalkLoopAnimationTargetConfigured(targetReference))
+            {
+                CharacterBase configuredTarget = ResolveCharacterReferenceTarget(targetReference);
+                if (configuredTarget != null)
+                {
+                    return configuredTarget;
+                }
+            }
+
+            return _newTargetCharacter;
+        }
+
+        /// <summary>
+        /// 루프 애니메이션 대상 참조가 실제 대상을 해석할 수 있는 상태인지 확인합니다.
+        /// </summary>
+        /// <param name="targetReference">검사할 캐릭터 대상 참조입니다.</param>
+        /// <returns>참조가 유효하면 <see langword="true"/>를 반환합니다.</returns>
+        private static bool IsTalkLoopAnimationTargetConfigured(CutsceneCharacterReference targetReference)
+        {
+            if (targetReference == null)
+            {
+                return false;
+            }
+
+            if (targetReference.sourceMode == CutsceneCharacterTargetSourceMode.RuntimeOverride)
+            {
+                return targetReference.runtimeTargetKey != CutsceneKeyCharacterTarget.None;
+            }
+
+            return targetReference.characterType != CharacterConstants.Type.None;
+        }
+
+        /// <summary>
+        /// <see cref="CutsceneCharacterReference"/>를 실제 캐릭터 인스턴스로 해석합니다.
+        /// Fixed 모드는 type/uid를 사용하고, RuntimeOverride 모드는 CutsceneManager의 런타임 키를 사용합니다.
+        /// </summary>
+        /// <param name="targetReference">해석할 캐릭터 참조입니다.</param>
+        /// <returns>해석된 캐릭터입니다. 찾지 못하면 <see langword="null"/>을 반환합니다.</returns>
+        private CharacterBase ResolveCharacterReferenceTarget(CutsceneCharacterReference targetReference)
+        {
+            if (targetReference == null)
+            {
+                return null;
+            }
+
+            if (targetReference.sourceMode == CutsceneCharacterTargetSourceMode.RuntimeOverride)
+            {
+                if (targetReference.runtimeTargetKey == CutsceneKeyCharacterTarget.None)
+                {
+                    return null;
+                }
+
+                if (CutsceneManager != null &&
+                    CutsceneManager.TryGetCharacterTargetOverride(targetReference.runtimeTargetKey, out CharacterBase runtimeTarget))
+                {
+                    return runtimeTarget;
+                }
+
+                return null;
+            }
+
+            Transform target = GetTargetTransform(targetReference.characterType, targetReference.characterUid);
+            if (target == null && CutsceneManager != null)
+            {
+                target = CutsceneManager.GetCharacter(targetReference.characterType, targetReference.characterUid);
+            }
+
+            return target != null ? target.GetComponent<CharacterBase>() : null;
+        }
+
+        /// <summary>
+        /// 말풍선 루프 애니메이션의 런타임 캐시 상태를 초기화합니다.
+        /// </summary>
+        private void ClearTalkLoopAnimationRuntimeState()
+        {
+            _talkLoopAnimationCharacter = null;
+            _talkLoopAnimationCapturedPlaybackTimeScale = 1f;
+            _restoreTalkLoopAnimationOnStop = false;
         }
     }
 }
