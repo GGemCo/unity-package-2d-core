@@ -112,7 +112,7 @@ namespace GGemCo2DCore
             }
 
             // 말풍선 오브젝트 확보
-            _currentDialogueBalloon = _dialogueBalloonPool?.Get();
+            _currentDialogueBalloon = _dialogueBalloonPool?.Get(this);
             if (_currentDialogueBalloon == null)
             {
                 GcLogger.LogError("말풍선이 만들어지지 않았습니다.");
@@ -274,7 +274,9 @@ namespace GGemCo2DCore
             _timer = 0f;
             _inputWaitResumeTime = 0f;
             _isBalloon = false;
-            _dialogueBalloonPool?.Return(_currentDialogueBalloon);
+            _dialogueBalloonPool?.Return(_currentDialogueBalloon, this);
+            // 현재 참조가 유실된 말풍선까지 owner 기준으로 안전 회수합니다.
+            _dialogueBalloonPool?.ReturnAllByOwner(this);
             _currentDialogueBalloon = null;
             _currentDialogueBalloonUi = null;
         }

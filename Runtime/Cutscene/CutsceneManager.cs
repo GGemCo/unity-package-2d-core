@@ -263,6 +263,7 @@ namespace GGemCo2DCore
         private void BeginCutsceneLoading()
         {
             Reset();
+            ResetDialogueBalloonsAtCutsceneBoundary();
             _currentState = State.Loading;
             BeginCutsceneSession();
         }
@@ -618,6 +619,7 @@ namespace GGemCo2DCore
             _overlayPresenter?.ResetPresentation();
             _uiPanelPresenter?.ResetPresentation();
             _screenFadePresenter?.ResetPresentation();
+            ResetDialogueBalloonsAtCutsceneBoundary();
 
             // 원래 카메라로 되돌리기
             SceneGame.Instance.cameraManager?.ReSetByCutscene();
@@ -1091,7 +1093,17 @@ namespace GGemCo2DCore
                 _screenFadePresenter = null;
             }
 
+            ResetDialogueBalloonsAtCutsceneBoundary();
             EndCutsceneSession();
+        }
+
+        /// <summary>
+        /// 컷신 경계(시작/종료/파괴) 시점에 말풍선 잔여를 정리합니다.
+        /// 강제 종료나 예외 경로로 회수되지 못한 말풍선이 다음 연출에 섞이는 문제를 방지합니다.
+        /// </summary>
+        private void ResetDialogueBalloonsAtCutsceneBoundary()
+        {
+            _dialogueBalloonPool?.ReturnAll();
         }
     }
 }
