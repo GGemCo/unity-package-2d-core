@@ -90,7 +90,12 @@
         /// <summary>
         /// 컷신 중 화면 전체에 글리치 효과를 적용합니다.
         /// </summary>
-        ScreenGlitch = 16
+        ScreenGlitch = 16,
+
+        /// <summary>
+        /// 컷신 중 특정 캐릭터의 Fade In/Out 연출을 적용합니다.
+        /// </summary>
+        CharacterFade = 17
     }
     
     public enum CutsceneKeyTextOverlay

@@ -44,6 +44,7 @@ namespace GGemCo2DCoreEditor
             Register(new CutsceneDefaultEventTypeDrawer(CutsceneEventType.WorldObjectVisibility, "worldObjectVisibility"));
             Register(new CutsceneDefaultEventTypeDrawer(CutsceneEventType.CharacterControlLock, "characterControlLock"));
             Register(new CutsceneDefaultEventTypeDrawer(CutsceneEventType.ScreenGlitch, "screenGlitch"));
+            Register(new CutsceneDefaultEventTypeDrawer(CutsceneEventType.CharacterFade, "characterFade"));
         }
 
         /// <summary>

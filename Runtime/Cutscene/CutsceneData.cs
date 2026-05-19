@@ -86,6 +86,9 @@ namespace GGemCo2DCore
         /// <summary>화면 글리치 효과 데이터입니다.</summary>
         public ScreenGlitchData screenGlitch;
 
+        /// <summary>캐릭터 페이드 효과 데이터입니다.</summary>
+        public CharacterFadeData characterFade;
+
         /// <summary>
         /// 기본 생성자입니다.
         /// 현재 타입에 맞는 데이터만 유효하도록 초기화합니다.
@@ -183,6 +186,10 @@ namespace GGemCo2DCore
                 case CutsceneEventType.ScreenGlitch:
                     screenGlitch ??= new ScreenGlitchData();
                     break;
+
+                case CutsceneEventType.CharacterFade:
+                    characterFade ??= new CharacterFadeData();
+                    break;
             }
         }
 
@@ -276,6 +283,11 @@ namespace GGemCo2DCore
             {
                 screenGlitch = null;
             }
+
+            if (type != CutsceneEventType.CharacterFade)
+            {
+                characterFade = null;
+            }
         }
 
         /// <summary>CameraMove 타입일 때만 cameraMove를 직렬화합니다.</summary>
@@ -331,6 +343,10 @@ namespace GGemCo2DCore
         /// <summary>ScreenGlitch 타입일 때만 screenGlitch를 직렬화합니다.</summary>
         public bool ShouldSerializeScreenGlitch() =>
             type == CutsceneEventType.ScreenGlitch && screenGlitch != null;
+
+        /// <summary>CharacterFade 타입일 때만 characterFade를 직렬화합니다.</summary>
+        public bool ShouldSerializeCharacterFade() =>
+            type == CutsceneEventType.CharacterFade && characterFade != null;
     }
 
     /// <summary>

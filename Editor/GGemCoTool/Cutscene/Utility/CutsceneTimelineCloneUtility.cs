@@ -123,6 +123,10 @@ namespace GGemCo2DCoreEditor
                 case CutsceneEventType.ScreenGlitch:
                     target.screenGlitch = CloneScreenGlitchData(source.screenGlitch);
                     break;
+
+                case CutsceneEventType.CharacterFade:
+                    target.characterFade = CloneCharacterFadeData(source.characterFade);
+                    break;
             }
         }
 
@@ -478,6 +482,31 @@ namespace GGemCo2DCoreEditor
                 useUnscaledTime = source.useUnscaledTime,
                 noiseSpeed = source.noiseSpeed,
                 seed = source.seed,
+                easing = source.easing,
+            };
+        }
+
+        /// <summary>
+        /// 캐릭터 페이드 효과 데이터를 깊은 복사합니다.
+        /// </summary>
+        /// <param name="source">복사할 원본 데이터입니다.</param>
+        /// <returns>복제된 캐릭터 페이드 효과 데이터입니다.</returns>
+        private static CharacterFadeData CloneCharacterFadeData(CharacterFadeData source)
+        {
+            return source == null ? null : new CharacterFadeData
+            {
+                target = CloneCharacterReference(source.target),
+                characterType = source.characterType,
+                characterUid = source.characterUid,
+                fadeMode = source.fadeMode,
+                useCustomAlphaRange = source.useCustomAlphaRange,
+                fromAlpha = source.fromAlpha,
+                toAlpha = source.toAlpha,
+                preserveCurrentRgb = source.preserveCurrentRgb,
+                tintColor = source.tintColor,
+                holdFinalState = source.holdFinalState,
+                deactivateOnFadeOutComplete = source.deactivateOnFadeOutComplete,
+                useUnscaledTime = source.useUnscaledTime,
                 easing = source.easing,
             };
         }

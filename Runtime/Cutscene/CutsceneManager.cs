@@ -1011,6 +1011,7 @@ namespace GGemCo2DCore
                 CutsceneEventType.WorldObjectVisibility => new WorldObjectVisibilityController(this),
                 CutsceneEventType.CharacterControlLock => new CharacterControlLockController(this),
                 CutsceneEventType.ScreenGlitch => new ScreenGlitchController(this),
+                CutsceneEventType.CharacterFade => new CharacterFadeController(this),
 
                 _ => null,
             };
