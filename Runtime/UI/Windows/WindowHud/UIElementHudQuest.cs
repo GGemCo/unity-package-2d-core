@@ -10,22 +10,23 @@ namespace GGemCo2DCore
         [Tooltip("퀘스트 목표")]
         public TextMeshProUGUI textQuestObjective;
         
-        private int uid;
-        private int stepIndex;
-        private SceneGame sceneGame;
-        private QuestManager questManager;
+        private int _uid;
+        private int _stepIndex;
+        private SceneGame _sceneGame;
+        private QuestManager _questManager;
         
-        private TableQuest tableQuest;
-        private TableNpc tableNpc;
-        private TableMonster tableMonster;
-        private TableMap tableMap;
-        private TableItem tableItem;
+        private TableQuest _tableQuest;
+        private TableNpc _tableNpc;
+        private TableMonster _tableMonster;
+        private TableMap _tableMap;
+        private TableItem _tableItem;
+        private TableCutscene _tableCutscene;
 
-        private QuestData questData;
+        private QuestData _questData;
         public void InitializeInfo(int questUid, int questStepIndex)
         {
-            uid = questUid;
-            stepIndex = questStepIndex;
+            _uid = questUid;
+            _stepIndex = questStepIndex;
         }
         private void Start()
         {
@@ -38,14 +39,15 @@ namespace GGemCo2DCore
         /// </summary>
         private void EnsureReferences()
         {
-            sceneGame ??= SceneGame.Instance;
-            questManager ??= sceneGame?.QuestManager;
-            tableQuest ??= TableLoaderManager.Instance?.TableQuest;
-            tableNpc ??= TableLoaderManager.Instance?.TableNpc;
-            tableMonster ??= TableLoaderManager.Instance?.TableMonster;
-            tableMap ??= TableLoaderManager.Instance?.TableMap;
-            tableItem ??= TableLoaderManager.Instance?.TableItem;
-            questData ??= sceneGame?.saveDataManager?.Quest;
+            _sceneGame ??= SceneGame.Instance;
+            _questManager ??= _sceneGame?.QuestManager;
+            _tableQuest ??= TableLoaderManager.Instance?.TableQuest;
+            _tableNpc ??= TableLoaderManager.Instance?.TableNpc;
+            _tableMonster ??= TableLoaderManager.Instance?.TableMonster;
+            _tableMap ??= TableLoaderManager.Instance?.TableMap;
+            _tableItem ??= TableLoaderManager.Instance?.TableItem;
+            _tableCutscene ??= TableLoaderManager.Instance?.TableCutscene;
+            _questData ??= _sceneGame?.saveDataManager?.Quest;
         }
 
         /// <summary>
@@ -54,34 +56,37 @@ namespace GGemCo2DCore
         public void UpdateInfo()
         {
             EnsureReferences();
-            if (questManager == null || tableQuest == null || questData == null) return;
-            if (uid <= 0) return;
-            var info = tableQuest.GetDataByUid(uid);
+            if (_questManager == null || _tableQuest == null || _questData == null) return;
+            if (_uid <= 0) return;
+            var info = _tableQuest.GetDataByUid(_uid);
             if (info == null) return;
             textQuestTitle.text = info.Name;
             
             // objective 별 처리
-            QuestStep questStep = questManager.GetQuestStep(uid, stepIndex);
+            QuestStep questStep = _questManager.GetQuestStep(_uid, _stepIndex);
             if (questStep == null) return;
             switch (questStep.objectiveType)
             {
                 case QuestConstants.ObjectiveType.None:
                     break;
                 case QuestConstants.ObjectiveType.TalkToNpc:
-                    var infoNpc = tableNpc.GetDataByUid(questStep.targetUid);
+                    var infoNpc = _tableNpc.GetDataByUid(questStep.targetUid);
                     textQuestObjective.text = $"Talk to {infoNpc.Name}";//$"{infoNpc.Name}와 대화하기";
                     break;
                 case QuestConstants.ObjectiveType.CollectItem:
                 case QuestConstants.ObjectiveType.KillMonster:
                 case QuestConstants.ObjectiveType.KillMonsterInMap:
-                    int count = questData.GetCount(uid);
+                    int count = _questData.GetCount(_uid);
                     SetCount(count);
                     break;
                 case QuestConstants.ObjectiveType.EnterMap:
                     SetEnterMapObjective(questStep);
                     break;
                 case QuestConstants.ObjectiveType.ReachPosition:
+                    break;
                 case QuestConstants.ObjectiveType.PlayCutscene:
+                    SetPlayCutsceneObjective(questStep);
+                    break;
                 default:
                     break;
             }
@@ -93,12 +98,40 @@ namespace GGemCo2DCore
         /// <param name="questStep">현재 표시할 퀘스트 단계 정보입니다.</param>
         private void SetEnterMapObjective(QuestStep questStep)
         {
-            if (questStep == null || tableMap == null) return;
+            if (questStep == null || _tableMap == null) return;
 
-            var infoMap = tableMap.GetDataByUid(questStep.mapUid);
+            var infoMap = _tableMap.GetDataByUid(questStep.mapUid);
             if (infoMap == null) return;
 
             textQuestObjective.text = $"Enter {infoMap.Name}";
+        }
+
+        /// <summary>
+        /// PlayCutscene 목표의 HUD 문구를 설정합니다.
+        /// </summary>
+        /// <param name="questStep">현재 표시할 퀘스트 단계 정보입니다.</param>
+        private void SetPlayCutsceneObjective(QuestStep questStep)
+        {
+            if (questStep == null) return;
+
+            int cutsceneUid = questStep.GetPlayCutsceneUid();
+            if (cutsceneUid <= 0)
+            {
+                textQuestObjective.text = "Play cutscene";
+                return;
+            }
+
+            StruckTableCutscene cutsceneInfo = _tableCutscene?.GetDataByUid(cutsceneUid);
+            if (cutsceneInfo == null)
+            {
+                textQuestObjective.text = $"Play cutscene ({cutsceneUid})";
+                return;
+            }
+
+            string displayName = string.IsNullOrWhiteSpace(cutsceneInfo.Memo)
+                ? cutsceneInfo.FileName
+                : cutsceneInfo.Memo;
+            textQuestObjective.text = $"Play cutscene: {displayName}";
         }
 
         /// <summary>
@@ -108,23 +141,23 @@ namespace GGemCo2DCore
         public void SetCount(int count)
         {
             EnsureReferences();
-            if (questManager == null) return;
-            QuestStep questStep = questManager.GetQuestStep(uid, stepIndex);
+            if (_questManager == null) return;
+            QuestStep questStep = _questManager.GetQuestStep(_uid, _stepIndex);
             if (questStep == null) return;
             switch (questStep.objectiveType)
             {
                 case QuestConstants.ObjectiveType.KillMonster:
-                    var infoMonster = tableMonster.GetDataByUid(questStep.targetUid);
+                    var infoMonster = _tableMonster.GetDataByUid(questStep.targetUid);
                     if (infoMonster == null) return;
                     textQuestObjective.text = $"Hunt {infoMonster.Name} ({count}/{questStep.count})";//$"({count}/{questStep.count}) {infoMonster.Name} 사냥하기";
                     break;
                 case QuestConstants.ObjectiveType.KillMonsterInMap:
-                    var infoMap = tableMap.GetDataByUid(questStep.mapUid);
+                    var infoMap = _tableMap.GetDataByUid(questStep.mapUid);
                     if (infoMap == null) return;
                     textQuestObjective.text = $"Hunt all monsters in {infoMap.Name} ({count}/{questStep.count})";
                     break;
                 case QuestConstants.ObjectiveType.CollectItem:
-                    var infoItem = tableItem.GetDataByUid(questStep.targetUid);
+                    var infoItem = _tableItem.GetDataByUid(questStep.targetUid);
                     if (infoItem == null) return;
                     textQuestObjective.text = $"Collect {ItemDisplayNameUtility.GetDisplayName(infoItem)} ({count}/{questStep.count})";//$"({count}/{questStep.count}) {infoItem.Name} 수집하기";
                     break;

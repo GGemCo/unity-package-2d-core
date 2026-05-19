@@ -26,6 +26,8 @@ namespace GGemCo2DCore
                     return new ObjectiveHandlerCollectItem();
                 case QuestConstants.ObjectiveType.EnterMap:
                     return new ObjectiveHandlerEnterMap();
+                case QuestConstants.ObjectiveType.PlayCutscene:
+                    return new ObjectiveHandlerPlayCutscene();
                 default:
                     Debug.LogWarning($"Unsupported ObjectiveType: {type}");
                     return null;

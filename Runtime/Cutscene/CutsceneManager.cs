@@ -75,6 +75,7 @@ namespace GGemCo2DCore
         private bool _testToolActive;
         private AddressableLoaderSettings _settings;
         private bool _isCutsceneSessionActive;
+        private int _currentCutsceneUid;
 
         /// <summary>
         /// 컷신 세션이 시작되어 외부 시스템이 연출 상태를 반영해야 할 때 발생합니다.
@@ -87,6 +88,12 @@ namespace GGemCo2DCore
         /// 정상 종료, 로드 실패, 매니저 파괴 경로에서 모두 호출될 수 있습니다.
         /// </summary>
         public event Action CutsceneEnded;
+
+        /// <summary>
+        /// 컷신이 정상적으로 끝났을 때 발생합니다.
+        /// 로드 실패/강제 중단과 구분하기 위해 성공적으로 완료된 컷신 UID를 함께 전달합니다.
+        /// </summary>
+        public event Action<int> CutsceneCompleted;
         
         /// <summary>
         /// 컷신 매니저를 초기화하고 런타임 상태 및 참조를 기본값으로 되돌립니다.
@@ -110,6 +117,7 @@ namespace GGemCo2DCore
             _capturedCharacterAnimationTimeScales.Clear();
             _timelineProgressWaitOwners.Clear();
             _isCutsceneSessionActive = false;
+            _currentCutsceneUid = 0;
             _settings = AddressableLoaderSettings.Instance;
             
             // 기존 컨트롤러 초기화 이후
@@ -300,23 +308,41 @@ namespace GGemCo2DCore
         /// <param name="uid">재생할 컷신 테이블 UID입니다.</param>
         public void PlayCutscene(int uid)
         {
+            _ = TryPlayCutscene(uid);
+        }
+
+        /// <summary>
+        /// 지정한 UID의 컷신 재생을 시도합니다.
+        /// </summary>
+        /// <param name="uid">재생할 컷신 테이블 UID입니다.</param>
+        /// <returns>재생 요청이 수락되면 <see langword="true"/>, 테이블/데이터 누락으로 시작하지 못하면 <see langword="false"/>입니다.</returns>
+        public bool TryPlayCutscene(int uid)
+        {
             var info = TableLoaderManager.Instance.GetCutsceneData(uid);
             if (info == null)
             {
-                return;
+                return false;
             }
+
+            _currentCutsceneUid = info.Uid;
 
             if (!info.PreLoad)
             {
                 _ = PlayCutsceneAsync(uid);
-                return;
+                return true;
             }
+
             string key = $"{ConfigAddressableKey.Cutscene}_{info.Uid}";
             _currentCutscene = AddressableLoaderCutscene.Instance.GetCutsceneDataByKey(key);
-            if (GcLogger.IsNull(_currentCutscene, $"{nameof(TableCutscene)} 테이블에 정보가 없습니다. Uid: {info.Uid}")) return;
+            if (GcLogger.IsNull(_currentCutscene, $"{nameof(TableCutscene)} 테이블에 정보가 없습니다. Uid: {info.Uid}"))
+            {
+                _currentCutsceneUid = 0;
+                return false;
+            }
 
             BeginCutsceneLoading();
             PlayCurrentCutscene();
+            return true;
         }
 
 #if UNITY_EDITOR
@@ -332,6 +358,7 @@ namespace GGemCo2DCore
                 return;
             }
 
+            _currentCutsceneUid = 0;
             _currentCutscene = cutsceneData;
             BeginCutsceneLoading();
             PlayCurrentCutscene();
@@ -352,9 +379,11 @@ namespace GGemCo2DCore
                 var info = TableLoaderManager.Instance.GetCutsceneData(uid);
                 if (info == null)
                 {
+                    _currentCutsceneUid = 0;
                     return;
                 }
 
+                _currentCutsceneUid = info.Uid;
                 BeginCutsceneLoading();
 
                 string key = $"{ConfigAddressableKey.Cutscene}_{info.Uid}";
@@ -392,6 +421,7 @@ namespace GGemCo2DCore
         private void FailCutsceneSession()
         {
             _currentState = State.Finished;
+            _currentCutsceneUid = 0;
             EndCutsceneSession();
         }
 
@@ -563,6 +593,7 @@ namespace GGemCo2DCore
         /// </summary>
         private void OnCutsceneEnd()
         {
+            int completedCutsceneUid = _currentCutsceneUid;
             _currentState = State.Finished;
 
             ForceRestoreCharacterAnimationTimeScale();
@@ -597,6 +628,13 @@ namespace GGemCo2DCore
             }
 
             EndCutsceneSession();
+
+            if (completedCutsceneUid > 0)
+            {
+                CutsceneCompleted?.Invoke(completedCutsceneUid);
+            }
+
+            _currentCutsceneUid = 0;
         }
 
         /// <summary>

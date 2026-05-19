@@ -17,6 +17,7 @@ namespace GGemCo2DCoreEditor
                 { QuestConstants.ObjectiveType.ReachPosition, new StepDrawerReachPosition() },
                 { QuestConstants.ObjectiveType.CollectItem, new StepDrawerCollectItem() },
                 { QuestConstants.ObjectiveType.EnterMap, new StepDrawerEnterMap() },
+                { QuestConstants.ObjectiveType.PlayCutscene, new StepDrawerPlayCutscene() },
                 // 나머지 ObjectiveType들도 여기에 추가
             };
 
