@@ -63,6 +63,17 @@ namespace GGemCo2DCore
             KeepUntilRouteEnd = 1,
         }
 
+        /// <summary>
+        /// 프로젝타일이 경로의 종착 지점에 도달했을 때 처리 정책입니다.
+        /// - DestroyOnArrived: 도착 즉시 End 연출 후 발사체를 제거합니다.
+        /// - ContinueAfterArrived: 도착 제거를 무시하고 마지막 진행 방향으로 계속 이동합니다.
+        /// </summary>
+        public enum ArrivalPolicy
+        {
+            DestroyOnArrived = 0,
+            ContinueAfterArrived = 1,
+        }
+
 
         /// <summary>
         /// 프로젝타일이 캐릭터가 아닌 환경 Collider와 충돌했을 때의 처리 정책입니다.

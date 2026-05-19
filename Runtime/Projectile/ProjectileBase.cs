@@ -100,6 +100,22 @@ namespace GGemCo2DCore
         }
 
         /// <summary>
+        /// 현재 발사체의 최종 도착 정책을 반환합니다.
+        /// - 런타임 오버라이드가 있으면 이를 우선 사용합니다.
+        /// - 오버라이드가 없으면 도착 시 제거를 기본값으로 사용합니다.
+        /// </summary>
+        protected ProjectileConstants.ArrivalPolicy EffectiveArrivalPolicy
+        {
+            get
+            {
+                if (Runtime != null && Runtime.UseArrivalPolicyOverride)
+                    return Runtime.ArrivalPolicyOverride;
+
+                return ProjectileConstants.ArrivalPolicy.DestroyOnArrived;
+            }
+        }
+
+        /// <summary>
         /// 현재 발사체의 최종 환경 충돌 처리 정책을 반환합니다.
         /// - 런타임 오버라이드가 켜져 있으면 Skill 이벤트의 정책을 사용합니다.
         /// - 오버라이드가 없으면 기존 동작 보존을 위해 환경 충돌을 무시합니다.
@@ -307,8 +323,11 @@ namespace GGemCo2DCore
             // 등속 이동: 현재까지 이동 거리 / 전체 거리 => 0..1
             float distCovered = (Time.fixedTime - StartTime) * Speed;
             float t = (JourneyLength > 0f) ? (distCovered / JourneyLength) : 1f;
-
-            Vector2 newPos = ComputePosition(t);
+            bool reachedRouteEnd = t >= 1f;
+            bool continueAfterArrived = reachedRouteEnd && ShouldContinueAfterArrivedByPolicy();
+            Vector2 newPos = continueAfterArrived
+                ? ComputePositionAfterArrived()
+                : ComputePosition(t);
             Vector2 delta = newPos - PrevPos;
 
             // Anti-tunneling: 이동 구간(PrevPos → newPos)을 스윕(Cast)으로 선검출합니다.
@@ -329,7 +348,7 @@ namespace GGemCo2DCore
             UpdateVisual(newPos, delta);
             OnProjectileMoved(newPos, delta, t);
 
-            if (t >= 1f)
+            if (reachedRouteEnd && !continueAfterArrived)
             {
                 OnArrived();
                 return;
@@ -346,6 +365,37 @@ namespace GGemCo2DCore
         /// 파생 클래스가 구현: 진행률(t) → 위치
         /// </summary>
         protected abstract Vector2 ComputePosition(float t);
+
+        /// <summary>
+        /// 도착 처리 정책에 따라 종착점 도달 후에도 계속 이동해야 하는지 확인합니다.
+        /// </summary>
+        /// <returns>
+        /// <see cref="ProjectileConstants.ArrivalPolicy.ContinueAfterArrived"/>가 설정되면
+        /// <see langword="true"/>를 반환합니다.
+        /// </returns>
+        protected bool ShouldContinueAfterArrivedByPolicy()
+        {
+            return EffectiveArrivalPolicy == ProjectileConstants.ArrivalPolicy.ContinueAfterArrived;
+        }
+
+        /// <summary>
+        /// 종착 지점 도달 이후의 다음 이동 위치를 계산합니다.
+        /// - 마지막 진행 방향으로 고정 속도 이동을 이어갑니다.
+        /// - 유효한 방향을 찾지 못하면 시작점→타겟점 방향을 사용하고,
+        ///   그것도 불가능하면 기본값으로 우측 방향을 사용합니다.
+        /// </summary>
+        /// <returns>도착 이후 프레임에서 적용할 월드 좌표입니다.</returns>
+        protected Vector2 ComputePositionAfterArrived()
+        {
+            Vector2 continueDirection = Direction;
+            if (continueDirection.sqrMagnitude <= 1e-6f)
+                continueDirection = (TargetPoint - StartPoint).normalized;
+
+            if (continueDirection.sqrMagnitude <= 1e-6f)
+                continueDirection = Vector2.right;
+
+            return PrevPos + (continueDirection * (Speed * Time.fixedDeltaTime));
+        }
 
         /// <summary>
         /// 프로젝타일이 한 스텝 이동한 직후 호출되는 확장 지점입니다.

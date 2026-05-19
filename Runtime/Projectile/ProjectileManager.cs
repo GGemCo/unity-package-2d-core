@@ -49,6 +49,8 @@ namespace GGemCo2DCore
         public readonly ProjectileConstants.EnvironmentHitPolicy EnvironmentHitPolicyOverride;
         public readonly bool UseEnvironmentHitLayerMaskOverride;
         public readonly int EnvironmentHitLayerMaskOverride;
+        public readonly bool UseArrivalPolicyOverride;
+        public readonly ProjectileConstants.ArrivalPolicy ArrivalPolicyOverride;
 
         public MetadataProjectile(
             int uid,
@@ -77,7 +79,9 @@ namespace GGemCo2DCore
             bool useEnvironmentHitPolicyOverride = false,
             ProjectileConstants.EnvironmentHitPolicy environmentHitPolicyOverride = ProjectileConstants.EnvironmentHitPolicy.Ignore,
             bool useEnvironmentHitLayerMaskOverride = false,
-            int environmentHitLayerMaskOverride = 0)
+            int environmentHitLayerMaskOverride = 0,
+            bool useArrivalPolicyOverride = false,
+            ProjectileConstants.ArrivalPolicy arrivalPolicyOverride = ProjectileConstants.ArrivalPolicy.DestroyOnArrived)
         {
             Uid = uid;
             DamageType = damageType;
@@ -110,6 +114,8 @@ namespace GGemCo2DCore
             EnvironmentHitPolicyOverride = environmentHitPolicyOverride;
             UseEnvironmentHitLayerMaskOverride = useEnvironmentHitLayerMaskOverride;
             EnvironmentHitLayerMaskOverride = environmentHitLayerMaskOverride;
+            UseArrivalPolicyOverride = useArrivalPolicyOverride;
+            ArrivalPolicyOverride = arrivalPolicyOverride;
         }
     }
 
