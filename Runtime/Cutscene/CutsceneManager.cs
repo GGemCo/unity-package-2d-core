@@ -1042,6 +1042,7 @@ namespace GGemCo2DCore
                 CutsceneEventType.ScreenGlitch => new ScreenGlitchController(this),
                 CutsceneEventType.CharacterFade => new CharacterFadeController(this),
                 CutsceneEventType.CharacterAirborne => new CharacterAirborneController(this),
+                CutsceneEventType.CharacterSpawn => new CharacterSpawnController(this),
 
                 _ => null,
             };

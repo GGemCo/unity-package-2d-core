@@ -131,6 +131,10 @@ namespace GGemCo2DCoreEditor
                 case CutsceneEventType.CharacterAirborne:
                     target.characterAirborne = CloneCharacterAirborneData(source.characterAirborne);
                     break;
+
+                case CutsceneEventType.CharacterSpawn:
+                    target.characterSpawn = CloneCharacterSpawnData(source.characterSpawn);
+                    break;
             }
         }
 
@@ -536,6 +540,27 @@ namespace GGemCo2DCoreEditor
                 keepAirborneGravity = source.keepAirborneGravity,
                 restoreHeightOnStop = source.restoreHeightOnStop,
                 restoreHeightOnCutsceneEnd = source.restoreHeightOnCutsceneEnd,
+            };
+        }
+
+        /// <summary>
+        /// 캐릭터 생성 제어 데이터를 깊은 복사합니다.
+        /// </summary>
+        /// <param name="source">복사할 원본 데이터입니다.</param>
+        /// <returns>복제된 캐릭터 생성 제어 데이터입니다.</returns>
+        private static CharacterSpawnData CloneCharacterSpawnData(CharacterSpawnData source)
+        {
+            return source == null ? null : new CharacterSpawnData
+            {
+                characterType = source.characterType,
+                characterUid = source.characterUid,
+                characterScale = source.characterScale,
+                positionMode = source.positionMode,
+                worldPosition = source.worldPosition,
+                playerRelativeDirection = source.playerRelativeDirection,
+                playerRelativeDistance = source.playerRelativeDistance,
+                positionOffset = source.positionOffset,
+                spawnVisible = source.spawnVisible,
             };
         }
     }

@@ -71,6 +71,26 @@ namespace GGemCo2DCoreEditor
                 }
             }
 
+            // CharacterSpawn 이벤트는 Monster/Npc 타입과 유효한 uid가 반드시 필요합니다.
+            if (cutsceneEvent.type == CutsceneEventType.CharacterSpawn &&
+                cutsceneEvent.characterSpawn != null)
+            {
+                var spawnData = cutsceneEvent.characterSpawn;
+                if (!IsValidCharacterSpawnType(spawnData.characterType))
+                {
+                    error = $"type: {cutsceneEvent.type} / CharacterSpawn 타입은 Monster 또는 Npc만 지원합니다.";
+                    Debug.LogError(error);
+                    return false;
+                }
+
+                if (spawnData.characterUid <= 0)
+                {
+                    error = $"type: {cutsceneEvent.type} / CharacterSpawn uid는 1 이상이어야 합니다.";
+                    Debug.LogError(error);
+                    return false;
+                }
+            }
+
             return true;
         }
 
@@ -93,6 +113,17 @@ namespace GGemCo2DCoreEditor
                                   targetReference.characterType != CharacterConstants.Type.None;
             bool hasLegacyTarget = legacyCharacterType != CharacterConstants.Type.None;
             return hasRuntimeTarget || hasFixedTarget || hasLegacyTarget;
+        }
+
+        /// <summary>
+        /// CharacterSpawn에서 지원하는 캐릭터 타입인지 검사합니다.
+        /// </summary>
+        /// <param name="characterType">검사할 캐릭터 타입입니다.</param>
+        /// <returns>Monster 또는 Npc면 <see langword="true"/>를 반환합니다.</returns>
+        private static bool IsValidCharacterSpawnType(CharacterConstants.Type characterType)
+        {
+            return characterType == CharacterConstants.Type.Monster ||
+                   characterType == CharacterConstants.Type.Npc;
         }
     }
 }

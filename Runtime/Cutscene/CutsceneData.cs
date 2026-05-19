@@ -92,6 +92,9 @@ namespace GGemCo2DCore
         /// <summary>캐릭터 공중 상태 제어 데이터입니다.</summary>
         public CharacterAirborneData characterAirborne;
 
+        /// <summary>캐릭터 생성 제어 데이터입니다.</summary>
+        public CharacterSpawnData characterSpawn;
+
         /// <summary>
         /// 기본 생성자입니다.
         /// 현재 타입에 맞는 데이터만 유효하도록 초기화합니다.
@@ -197,6 +200,10 @@ namespace GGemCo2DCore
                 case CutsceneEventType.CharacterAirborne:
                     characterAirborne ??= new CharacterAirborneData();
                     break;
+
+                case CutsceneEventType.CharacterSpawn:
+                    characterSpawn ??= new CharacterSpawnData();
+                    break;
             }
         }
 
@@ -300,6 +307,11 @@ namespace GGemCo2DCore
             {
                 characterAirborne = null;
             }
+
+            if (type != CutsceneEventType.CharacterSpawn)
+            {
+                characterSpawn = null;
+            }
         }
 
         /// <summary>CameraMove 타입일 때만 cameraMove를 직렬화합니다.</summary>
@@ -363,6 +375,10 @@ namespace GGemCo2DCore
         /// <summary>CharacterAirborne 타입일 때만 characterAirborne을 직렬화합니다.</summary>
         public bool ShouldSerializeCharacterAirborne() =>
             type == CutsceneEventType.CharacterAirborne && characterAirborne != null;
+
+        /// <summary>CharacterSpawn 타입일 때만 characterSpawn을 직렬화합니다.</summary>
+        public bool ShouldSerializeCharacterSpawn() =>
+            type == CutsceneEventType.CharacterSpawn && characterSpawn != null;
     }
 
     /// <summary>

@@ -100,7 +100,12 @@
         /// <summary>
         /// 컷신 중 특정 캐릭터의 공중 상태(높이/중력)를 제어합니다.
         /// </summary>
-        CharacterAirborne = 18
+        CharacterAirborne = 18,
+
+        /// <summary>
+        /// 컷신 중 캐릭터를 생성하고 초기 위치/가시성을 설정합니다.
+        /// </summary>
+        CharacterSpawn = 19
     }
     
     public enum CutsceneKeyTextOverlay

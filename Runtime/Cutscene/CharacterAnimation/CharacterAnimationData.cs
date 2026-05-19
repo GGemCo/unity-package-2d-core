@@ -15,7 +15,7 @@ namespace GGemCo2DCore
         public int characterUid;
         [Tooltip("크기")]
         public float characterScale;
-        [Tooltip("스폰 위치. 0 이면 기존 만들어진 위치")]
+        [Tooltip("적용 위치. 0이면 현재 위치를 유지합니다.")]
         public Vec2 spawnPosition;
         [Tooltip("flip")]
         public bool isFlip;
