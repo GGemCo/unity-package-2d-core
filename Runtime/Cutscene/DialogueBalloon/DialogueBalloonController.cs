@@ -19,8 +19,10 @@ namespace GGemCo2DCore
         private bool _isFollowTarget;
         private bool _isBalloon;
         private bool _isWaitingForUserInput;
+        private bool _advanceRequestedWhileWaiting;
         private int _inputWaitStartFrame = -1;
         private float _inputWaitResumeTime;
+        private DialogueBalloonAdvancePolicy _advancePolicy = DialogueBalloonAdvancePolicy.LegacyImmediate;
 
         private Transform _newTarget;
         private CharacterBase _newTargetCharacter;
@@ -90,6 +92,8 @@ namespace GGemCo2DCore
             _isFollowTarget = data.isFollowTarget;
             _duration = evt.duration;
             _inputWaitResumeTime = evt.time + evt.duration;
+            _advancePolicy = data.advancePolicy;
+            _advanceRequestedWhileWaiting = false;
 
             // 말풍선을 표시할 대상 캐릭터 탐색
             _newTarget = GetTargetTransform(data.characterType, data.characterUid);
@@ -158,13 +162,14 @@ namespace GGemCo2DCore
         {
             if (!_isBalloon) return;
 
+            // 입력 대기 상태에서도 실제 경과 시간은 계속 누적해 최소 대기 정책 판단에 사용합니다.
+            _timer += Time.deltaTime;
+
             if (_isWaitingForUserInput)
             {
                 HandleUserInputWait();
                 return;
             }
-            
-            _timer += Time.deltaTime;
 
             if (_timer >= _duration)
             {
@@ -194,6 +199,12 @@ namespace GGemCo2DCore
                 return;
             }
 
+            if (_advanceRequestedWhileWaiting && CanCompleteInputWaitNow())
+            {
+                CompleteInputWait();
+                return;
+            }
+
             if (!TryConsumeAdvanceInput())
             {
                 return;
@@ -205,7 +216,32 @@ namespace GGemCo2DCore
                 return;
             }
 
+            if (!CanCompleteInputWaitNow())
+            {
+                _advanceRequestedWhileWaiting = true;
+                return;
+            }
+
             CompleteInputWait();
+        }
+
+        /// <summary>
+        /// 현재 정책과 클립 경과 시간을 기준으로 다음 연출 진행이 가능한지 판단합니다.
+        /// </summary>
+        /// <returns>즉시 진행이 가능하면 <see langword="true"/>를 반환합니다.</returns>
+        private bool CanCompleteInputWaitNow()
+        {
+            if (_advancePolicy != DialogueBalloonAdvancePolicy.WaitUntilClipDuration)
+            {
+                return true;
+            }
+
+            if (_duration <= 0f)
+            {
+                return true;
+            }
+
+            return _timer >= _duration;
         }
 
         /// <summary>
@@ -272,8 +308,11 @@ namespace GGemCo2DCore
             ReleaseInputWait();
             StopTalkLoopAnimation();
             _timer = 0f;
+            _duration = 0f;
             _inputWaitResumeTime = 0f;
             _isBalloon = false;
+            _advanceRequestedWhileWaiting = false;
+            _advancePolicy = DialogueBalloonAdvancePolicy.LegacyImmediate;
             _dialogueBalloonPool?.Return(_currentDialogueBalloon, this);
             // 현재 참조가 유실된 말풍선까지 owner 기준으로 안전 회수합니다.
             _dialogueBalloonPool?.ReturnAllByOwner(this);

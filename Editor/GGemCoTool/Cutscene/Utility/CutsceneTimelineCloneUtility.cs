@@ -263,6 +263,7 @@ namespace GGemCo2DCoreEditor
                 useTypewriter = source.useTypewriter,
                 typewriterCharactersPerSecond = source.typewriterCharactersPerSecond,
                 waitForUserInput = source.waitForUserInput,
+                advancePolicy = source.advancePolicy,
                 useTalkLoopAnimation = source.useTalkLoopAnimation,
                 talkLoopAnimationName = source.talkLoopAnimationName,
                 talkLoopAnimationTarget = CloneCharacterReference(source.talkLoopAnimationTarget),

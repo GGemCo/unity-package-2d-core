@@ -4,6 +4,24 @@ using UnityEngine;
 namespace GGemCo2DCore
 {
     /// <summary>
+    /// 말풍선 입력 대기 상태에서 다음 연출로 진행하는 정책을 정의합니다.
+    /// </summary>
+    public enum DialogueBalloonAdvancePolicy
+    {
+        /// <summary>
+        /// 기존 정책입니다.
+        /// 유저 입력이 들어오면 즉시 다음 연출로 진행할 수 있습니다.
+        /// </summary>
+        LegacyImmediate = 0,
+
+        /// <summary>
+        /// 말풍선 클립 길이(이벤트 duration)까지는 다음 연출로 진행하지 않습니다.
+        /// 입력이 먼저 들어와도 클립 시간이 충족될 때까지 대기합니다.
+        /// </summary>
+        WaitUntilClipDuration = 1,
+    }
+
+    /// <summary>
     /// 컷신에서 캐릭터 위에 표시할 대사 말풍선 데이터를 정의합니다.
     /// </summary>
     [Serializable]
@@ -37,6 +55,8 @@ namespace GGemCo2DCore
         [Header("진행 대기")]
         [Tooltip("true이면 유저 입력을 받을 때까지 컷신 타임라인 진행을 대기합니다.")]
         public bool waitForUserInput;
+        [Tooltip("Wait For User Input 활성화 시 다음 연출로 넘어가는 정책입니다.")]
+        public DialogueBalloonAdvancePolicy advancePolicy = DialogueBalloonAdvancePolicy.LegacyImmediate;
 
         [Header("말풍선 유지 중 애니메이션")]
         [Tooltip("true이면 말풍선이 유지되는 동안 대상 캐릭터 애니메이션을 반복 재생합니다.")]
@@ -80,6 +100,15 @@ namespace GGemCo2DCore
             return talkLoopAnimationTimeScale > 0f
                 ? talkLoopAnimationTimeScale
                 : 1f;
+        }
+
+        /// <summary>
+        /// Wait For User Input 상황에서 클립 길이만큼 최소 대기를 강제하는지 여부를 반환합니다.
+        /// </summary>
+        /// <returns>클립 길이 게이트 정책이면 <see langword="true"/>를 반환합니다.</returns>
+        public bool ShouldWaitUntilClipDuration()
+        {
+            return advancePolicy == DialogueBalloonAdvancePolicy.WaitUntilClipDuration;
         }
     }
 }
