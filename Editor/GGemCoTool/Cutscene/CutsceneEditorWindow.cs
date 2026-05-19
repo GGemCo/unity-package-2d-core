@@ -197,7 +197,7 @@ namespace GGemCo2DCoreEditor
                 return;
             }
 
-            _state.LastActionMessage = $"최신 Json 프리뷰 재생: {_state.SelectedCutscene.Uid} / {_state.SelectedCutscene.FileName}.json";
+            _state.LastActionMessage = $"재생 중이면 즉시 취소 후 최신 Json 프리뷰 재생: {_state.SelectedCutscene.Uid} / {_state.SelectedCutscene.FileName}.json";
         }
 
         /// <summary>

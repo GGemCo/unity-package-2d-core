@@ -51,6 +51,8 @@ namespace GGemCo2DCoreEditor
                 return false;
             }
 
+            // 이미 재생 중인 컷신이 있으면 즉시 정리하고 최신 JSON 프리뷰를 재시작합니다.
+            sceneGame.CutsceneManager.StopCurrentCutsceneForPreviewRestart();
             sceneGame.CutsceneManager.PlayCutsceneForEditorPreview(cutsceneData);
             return true;
         }

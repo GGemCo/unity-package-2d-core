@@ -594,8 +594,35 @@ namespace GGemCo2DCore
         /// </summary>
         private void OnCutsceneEnd()
         {
-            int completedCutsceneUid = _currentCutsceneUid;
             _currentState = State.Finished;
+            FinalizeCutscenePlayback(emitCompletedEvent: true);
+        }
+
+        /// <summary>
+        /// 연출툴 프리뷰 재시작을 위해 현재 컷신을 즉시 중단하고 정리합니다.
+        /// 이미 재생 중인 컷신이 있으면 완료 이벤트 없이 종료하고, 다음 재생이 깨끗한 상태에서 시작되도록 복구합니다.
+        /// </summary>
+        public void StopCurrentCutsceneForPreviewRestart()
+        {
+            if (_currentState == State.Idle && !_isCutsceneSessionActive)
+            {
+                return;
+            }
+
+            _currentState = State.Finished;
+
+            // 프리뷰 강제 재시작 경로에서는 TimeScale 유지 정책과 무관하게 원본 상태를 먼저 복구합니다.
+            ForceRestoreTimeScale();
+            FinalizeCutscenePlayback(emitCompletedEvent: false);
+        }
+
+        /// <summary>
+        /// 컷신 재생 종료 후 공통 정리 로직을 수행합니다.
+        /// </summary>
+        /// <param name="emitCompletedEvent"><see langword="true"/>이면 정상 완료 이벤트를 발행합니다.</param>
+        private void FinalizeCutscenePlayback(bool emitCompletedEvent)
+        {
+            int completedCutsceneUid = _currentCutsceneUid;
 
             ForceRestoreCharacterAnimationTimeScale();
 
@@ -631,7 +658,7 @@ namespace GGemCo2DCore
 
             EndCutsceneSession();
 
-            if (completedCutsceneUid > 0)
+            if (emitCompletedEvent && completedCutsceneUid > 0)
             {
                 CutsceneCompleted?.Invoke(completedCutsceneUid);
             }
