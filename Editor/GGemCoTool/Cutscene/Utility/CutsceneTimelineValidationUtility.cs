@@ -50,15 +50,7 @@ namespace GGemCo2DCoreEditor
                 cutsceneEvent.characterFade != null)
             {
                 var fadeData = cutsceneEvent.characterFade;
-                bool hasRuntimeTarget = fadeData.target != null &&
-                                        fadeData.target.sourceMode == CutsceneCharacterTargetSourceMode.RuntimeOverride &&
-                                        fadeData.target.runtimeTargetKey != CutsceneKeyCharacterTarget.None;
-                bool hasFixedTarget = fadeData.target != null &&
-                                      fadeData.target.sourceMode == CutsceneCharacterTargetSourceMode.Fixed &&
-                                      fadeData.target.characterType != CharacterConstants.Type.None;
-                bool hasLegacyTarget = fadeData.characterType != CharacterConstants.Type.None;
-
-                if (!hasRuntimeTarget && !hasFixedTarget && !hasLegacyTarget)
+                if (!HasValidCharacterTarget(fadeData.target, fadeData.characterType))
                 {
                     error = $"type: {cutsceneEvent.type} / CharacterFade 대상 캐릭터를 설정하지 않았습니다.";
                     Debug.LogError(error);
@@ -66,7 +58,41 @@ namespace GGemCo2DCoreEditor
                 }
             }
 
+            // CharacterAirborne 이벤트는 RuntimeOverride 또는 Fixed 대상이 반드시 필요합니다.
+            if (cutsceneEvent.type == CutsceneEventType.CharacterAirborne &&
+                cutsceneEvent.characterAirborne != null)
+            {
+                var airborneData = cutsceneEvent.characterAirborne;
+                if (!HasValidCharacterTarget(airborneData.target, airborneData.characterType))
+                {
+                    error = $"type: {cutsceneEvent.type} / CharacterAirborne 대상 캐릭터를 설정하지 않았습니다.";
+                    Debug.LogError(error);
+                    return false;
+                }
+            }
+
             return true;
+        }
+
+        /// <summary>
+        /// 캐릭터 대상 참조가 유효한지 검사합니다.
+        /// RuntimeOverride 키, Fixed 타입, Legacy 타입 중 하나라도 설정되어 있으면 유효합니다.
+        /// </summary>
+        /// <param name="targetReference">신규 대상 참조 데이터입니다.</param>
+        /// <param name="legacyCharacterType">레거시 대상 타입 값입니다.</param>
+        /// <returns>하나 이상의 대상 식별자가 유효하면 <see langword="true"/>를 반환합니다.</returns>
+        private static bool HasValidCharacterTarget(
+            CutsceneCharacterReference targetReference,
+            CharacterConstants.Type legacyCharacterType)
+        {
+            bool hasRuntimeTarget = targetReference != null &&
+                                    targetReference.sourceMode == CutsceneCharacterTargetSourceMode.RuntimeOverride &&
+                                    targetReference.runtimeTargetKey != CutsceneKeyCharacterTarget.None;
+            bool hasFixedTarget = targetReference != null &&
+                                  targetReference.sourceMode == CutsceneCharacterTargetSourceMode.Fixed &&
+                                  targetReference.characterType != CharacterConstants.Type.None;
+            bool hasLegacyTarget = legacyCharacterType != CharacterConstants.Type.None;
+            return hasRuntimeTarget || hasFixedTarget || hasLegacyTarget;
         }
     }
 }

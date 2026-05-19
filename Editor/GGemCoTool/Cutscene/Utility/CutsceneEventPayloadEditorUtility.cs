@@ -42,6 +42,7 @@ namespace GGemCo2DCoreEditor
                 { CutsceneEventType.CharacterControlLock, nameof(CutsceneEvent.characterControlLock) },
                 { CutsceneEventType.ScreenGlitch, nameof(CutsceneEvent.screenGlitch) },
                 { CutsceneEventType.CharacterFade, nameof(CutsceneEvent.characterFade) },
+                { CutsceneEventType.CharacterAirborne, nameof(CutsceneEvent.characterAirborne) },
             };
 
         /// <summary>

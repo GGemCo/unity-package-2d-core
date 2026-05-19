@@ -95,7 +95,12 @@
         /// <summary>
         /// 컷신 중 특정 캐릭터의 Fade In/Out 연출을 적용합니다.
         /// </summary>
-        CharacterFade = 17
+        CharacterFade = 17,
+
+        /// <summary>
+        /// 컷신 중 특정 캐릭터의 공중 상태(높이/중력)를 제어합니다.
+        /// </summary>
+        CharacterAirborne = 18
     }
     
     public enum CutsceneKeyTextOverlay

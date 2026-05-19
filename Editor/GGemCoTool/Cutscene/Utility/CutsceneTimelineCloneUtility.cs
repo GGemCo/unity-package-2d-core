@@ -127,6 +127,10 @@ namespace GGemCo2DCoreEditor
                 case CutsceneEventType.CharacterFade:
                     target.characterFade = CloneCharacterFadeData(source.characterFade);
                     break;
+
+                case CutsceneEventType.CharacterAirborne:
+                    target.characterAirborne = CloneCharacterAirborneData(source.characterAirborne);
+                    break;
             }
         }
 
@@ -508,6 +512,29 @@ namespace GGemCo2DCoreEditor
                 deactivateOnFadeOutComplete = source.deactivateOnFadeOutComplete,
                 useUnscaledTime = source.useUnscaledTime,
                 easing = source.easing,
+            };
+        }
+
+        /// <summary>
+        /// 캐릭터 공중 상태 제어 데이터를 깊은 복사합니다.
+        /// </summary>
+        /// <param name="source">복사할 원본 데이터입니다.</param>
+        /// <returns>복제된 캐릭터 공중 상태 제어 데이터입니다.</returns>
+        private static CharacterAirborneData CloneCharacterAirborneData(CharacterAirborneData source)
+        {
+            return source == null ? null : new CharacterAirborneData
+            {
+                target = CloneCharacterReference(source.target),
+                characterType = source.characterType,
+                characterUid = source.characterUid,
+                airborneEnabled = source.airborneEnabled,
+                targetAirHeight = source.targetAirHeight,
+                allowReplace = source.allowReplace,
+                useUnscaledTime = source.useUnscaledTime,
+                easing = source.easing,
+                keepAirborneGravity = source.keepAirborneGravity,
+                restoreHeightOnStop = source.restoreHeightOnStop,
+                restoreHeightOnCutsceneEnd = source.restoreHeightOnCutsceneEnd,
             };
         }
     }

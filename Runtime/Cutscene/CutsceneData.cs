@@ -89,6 +89,9 @@ namespace GGemCo2DCore
         /// <summary>캐릭터 페이드 효과 데이터입니다.</summary>
         public CharacterFadeData characterFade;
 
+        /// <summary>캐릭터 공중 상태 제어 데이터입니다.</summary>
+        public CharacterAirborneData characterAirborne;
+
         /// <summary>
         /// 기본 생성자입니다.
         /// 현재 타입에 맞는 데이터만 유효하도록 초기화합니다.
@@ -190,6 +193,10 @@ namespace GGemCo2DCore
                 case CutsceneEventType.CharacterFade:
                     characterFade ??= new CharacterFadeData();
                     break;
+
+                case CutsceneEventType.CharacterAirborne:
+                    characterAirborne ??= new CharacterAirborneData();
+                    break;
             }
         }
 
@@ -288,6 +295,11 @@ namespace GGemCo2DCore
             {
                 characterFade = null;
             }
+
+            if (type != CutsceneEventType.CharacterAirborne)
+            {
+                characterAirborne = null;
+            }
         }
 
         /// <summary>CameraMove 타입일 때만 cameraMove를 직렬화합니다.</summary>
@@ -347,6 +359,10 @@ namespace GGemCo2DCore
         /// <summary>CharacterFade 타입일 때만 characterFade를 직렬화합니다.</summary>
         public bool ShouldSerializeCharacterFade() =>
             type == CutsceneEventType.CharacterFade && characterFade != null;
+
+        /// <summary>CharacterAirborne 타입일 때만 characterAirborne을 직렬화합니다.</summary>
+        public bool ShouldSerializeCharacterAirborne() =>
+            type == CutsceneEventType.CharacterAirborne && characterAirborne != null;
     }
 
     /// <summary>
