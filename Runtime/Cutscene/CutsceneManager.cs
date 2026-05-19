@@ -76,6 +76,16 @@ namespace GGemCo2DCore
         private AddressableLoaderSettings _settings;
         private bool _isCutsceneSessionActive;
         private int _currentCutsceneUid;
+        private int _prepareSessionVersion;
+
+        /// <summary>
+        /// 컷신 시작 전 프리팹 사전 로드에 사용할 캐릭터 식별 정보입니다.
+        /// </summary>
+        private struct CharacterPrefabPreloadRequest
+        {
+            public CharacterConstants.Type CharacterType;
+            public int CharacterUid;
+        }
 
         /// <summary>
         /// 컷신 세션이 시작되어 외부 시스템이 연출 상태를 반영해야 할 때 발생합니다.
@@ -118,6 +128,7 @@ namespace GGemCo2DCore
             _timelineProgressWaitOwners.Clear();
             _isCutsceneSessionActive = false;
             _currentCutsceneUid = 0;
+            _prepareSessionVersion = 0;
             _settings = AddressableLoaderSettings.Instance;
             
             // 기존 컨트롤러 초기화 이후
@@ -264,6 +275,7 @@ namespace GGemCo2DCore
         {
             Reset();
             ResetDialogueBalloonsAtCutsceneBoundary();
+            _prepareSessionVersion++;
             _currentState = State.Loading;
             BeginCutsceneSession();
         }
@@ -295,11 +307,179 @@ namespace GGemCo2DCore
                 _testTool.SetActive(false);
             }
 
+            int prepareVersion = _prepareSessionVersion;
+            if (!TryCollectCharacterPrefabPreloadRequests(out List<CharacterPrefabPreloadRequest> preloadRequests))
+            {
+                FailCutsceneSession();
+                return;
+            }
+
+            if (preloadRequests.Count == 0)
+            {
+                StartControllerPreparationFlow();
+                return;
+            }
+
+            _sceneGame.StartCoroutine(PreloadCharacterPrefabsAndPlay(preloadRequests, prepareVersion));
+        }
+
+        /// <summary>
+        /// 프리팹 사전 로드가 끝난 뒤 컨트롤러 준비/재생 단계를 시작합니다.
+        /// </summary>
+        private void StartControllerPreparationFlow()
+        {
             // 즉시 준비 가능한 컷신은 현재 프레임에 바로 재생을 시작합니다.
             if (!TryPrepareAndPlayImmediate())
             {
                 _sceneGame.StartCoroutine(PrepareAndPlay());
             }
+        }
+
+        /// <summary>
+        /// 컷신 시작 전에 CharacterSpawn 이벤트가 요구하는 캐릭터 프리팹을 순차적으로 보장 로드합니다.
+        /// </summary>
+        /// <param name="preloadRequests">사전 로드할 캐릭터 요청 목록입니다.</param>
+        /// <param name="prepareVersion">현재 컷신 준비 세션 버전입니다.</param>
+        /// <returns>프리팹 사전 로드 완료까지 대기하는 코루틴입니다.</returns>
+        private IEnumerator PreloadCharacterPrefabsAndPlay(
+            List<CharacterPrefabPreloadRequest> preloadRequests,
+            int prepareVersion)
+        {
+            AddressableLoaderPrefabCharacter prefabLoader = _sceneGame?.AddressableLoaderPrefabCharacter;
+            if (prefabLoader == null)
+            {
+                GcLogger.LogError("컷신 캐릭터 프리팹 사전 로드를 위한 AddressableLoaderPrefabCharacter가 없습니다.");
+                FailCutsceneSession();
+                yield break;
+            }
+
+            for (int i = 0; i < preloadRequests.Count; i++)
+            {
+                if (!IsCurrentPrepareSession(prepareVersion))
+                {
+                    yield break;
+                }
+
+                CharacterPrefabPreloadRequest request = preloadRequests[i];
+                Task<bool> ensureTask = prefabLoader.EnsureCharacterPrefabLoaded(
+                    request.CharacterType,
+                    request.CharacterUid);
+
+                while (!ensureTask.IsCompleted)
+                {
+                    if (!IsCurrentPrepareSession(prepareVersion))
+                    {
+                        yield break;
+                    }
+
+                    yield return null;
+                }
+
+                if (!IsCurrentPrepareSession(prepareVersion))
+                {
+                    yield break;
+                }
+
+                if (ensureTask.IsFaulted || ensureTask.IsCanceled || !ensureTask.Result)
+                {
+                    GcLogger.LogError(
+                        $"컷신 캐릭터 프리팹 사전 로드에 실패했습니다. type={request.CharacterType}, uid={request.CharacterUid}");
+                    FailCutsceneSession();
+                    yield break;
+                }
+            }
+
+            if (!IsCurrentPrepareSession(prepareVersion))
+            {
+                yield break;
+            }
+
+            StartControllerPreparationFlow();
+        }
+
+        /// <summary>
+        /// 현재 실행 중인 비동기 준비 루틴이 유효한 컷신 세션인지 검사합니다.
+        /// </summary>
+        /// <param name="prepareVersion">검사할 준비 세션 버전입니다.</param>
+        /// <returns>현재 세션과 버전이 일치하고 컷신 세션이 활성 상태면 <see langword="true"/>를 반환합니다.</returns>
+        private bool IsCurrentPrepareSession(int prepareVersion)
+        {
+            return _isCutsceneSessionActive &&
+                   _prepareSessionVersion == prepareVersion &&
+                   (_currentState == State.Loading || _currentState == State.Ready);
+        }
+
+        /// <summary>
+        /// 현재 컷신 이벤트 목록에서 CharacterSpawn 이벤트에 필요한 프리팹 로드 대상을 수집합니다.
+        /// </summary>
+        /// <param name="preloadRequests">수집된 프리팹 로드 요청 목록입니다.</param>
+        /// <returns>수집에 성공하면 <see langword="true"/>를 반환합니다.</returns>
+        private bool TryCollectCharacterPrefabPreloadRequests(
+            out List<CharacterPrefabPreloadRequest> preloadRequests)
+        {
+            preloadRequests = new List<CharacterPrefabPreloadRequest>();
+
+            if (_currentCutscene?.events == null || _currentCutscene.events.Count == 0)
+            {
+                return true;
+            }
+
+            HashSet<string> dedupeKeys = new HashSet<string>(StringComparer.Ordinal);
+
+            for (int i = 0; i < _currentCutscene.events.Count; i++)
+            {
+                CutsceneEvent cutsceneEvent = _currentCutscene.events[i];
+                if (cutsceneEvent == null || cutsceneEvent.type != CutsceneEventType.CharacterSpawn)
+                {
+                    continue;
+                }
+
+                CharacterSpawnData spawnData = cutsceneEvent.characterSpawn;
+                if (spawnData == null)
+                {
+                    GcLogger.LogError("CharacterSpawn 이벤트의 데이터가 비어 있습니다.");
+                    return false;
+                }
+
+                if (!IsSupportedCharacterPrefabPreloadType(spawnData.characterType))
+                {
+                    GcLogger.LogError(
+                        $"CharacterSpawn 프리팹 사전 로드 대상 타입이 유효하지 않습니다. type={spawnData.characterType}, uid={spawnData.characterUid}");
+                    return false;
+                }
+
+                if (spawnData.characterUid <= 0)
+                {
+                    GcLogger.LogError(
+                        $"CharacterSpawn 프리팹 사전 로드 대상 uid가 유효하지 않습니다. type={spawnData.characterType}, uid={spawnData.characterUid}");
+                    return false;
+                }
+
+                string dedupeKey = $"{(int)spawnData.characterType}:{spawnData.characterUid}";
+                if (!dedupeKeys.Add(dedupeKey))
+                {
+                    continue;
+                }
+
+                preloadRequests.Add(new CharacterPrefabPreloadRequest
+                {
+                    CharacterType = spawnData.characterType,
+                    CharacterUid = spawnData.characterUid
+                });
+            }
+
+            return true;
+        }
+
+        /// <summary>
+        /// 컷신 사전 로드에서 지원하는 캐릭터 타입인지 검사합니다.
+        /// </summary>
+        /// <param name="characterType">검사할 캐릭터 타입입니다.</param>
+        /// <returns>Monster 또는 Npc면 <see langword="true"/>를 반환합니다.</returns>
+        private static bool IsSupportedCharacterPrefabPreloadType(CharacterConstants.Type characterType)
+        {
+            return characterType == CharacterConstants.Type.Monster ||
+                   characterType == CharacterConstants.Type.Npc;
         }
 
         /// <summary>
@@ -421,6 +601,7 @@ namespace GGemCo2DCore
         /// </summary>
         private void FailCutsceneSession()
         {
+            _prepareSessionVersion++;
             _currentState = State.Finished;
             _currentCutsceneUid = 0;
             EndCutsceneSession();
@@ -622,6 +803,7 @@ namespace GGemCo2DCore
         /// <param name="emitCompletedEvent"><see langword="true"/>이면 정상 완료 이벤트를 발행합니다.</param>
         private void FinalizeCutscenePlayback(bool emitCompletedEvent)
         {
+            _prepareSessionVersion++;
             int completedCutsceneUid = _currentCutsceneUid;
 
             ForceRestoreCharacterAnimationTimeScale();

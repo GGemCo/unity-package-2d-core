@@ -34,71 +34,33 @@ namespace GGemCo2DCore
         }
 
         /// <summary>
-        /// 이 컨트롤러는 캐릭터 생성 시 한 프레임 대기가 필요할 수 있으므로 즉시 준비를 지원하지 않습니다.
+        /// 캐릭터 생성 책임이 CharacterSpawn 이벤트로 분리되어 즉시 준비를 지원합니다.
         /// </summary>
-        public bool SupportsImmediateReady => false;
+        public bool SupportsImmediateReady => true;
 
         /// <summary>
-        /// 즉시 준비 경로에서는 별도 동작을 수행하지 않습니다.
+        /// 즉시 준비 단계에서 이벤트 타입만 검증합니다.
         /// </summary>
+        /// <param name="evt">준비할 컷신 이벤트입니다.</param>
         public void ReadyImmediate(CutsceneEvent evt)
         {
+            if (evt.type != CutsceneEventType.CharacterMove)
+            {
+                return;
+            }
         }
 
 
         /// <summary>
-        /// 이동 대상 캐릭터를 준비합니다.
-        /// 존재하지 않을 경우 생성 및 초기화를 수행합니다.
+        /// 이동 대상 준비 단계를 수행합니다.
+        /// 현재 구현에서는 비동기 준비가 필요 없어 즉시 종료됩니다.
         /// </summary>
         /// <param name="evt">준비할 컷신 이벤트입니다.</param>
-        /// <returns>캐릭터 생성 및 초기화를 위한 비동기 처리 열거자입니다.</returns>
+        /// <returns>즉시 종료되는 코루틴 열거자입니다.</returns>
         public IEnumerator Ready(CutsceneEvent evt)
         {
-            if (evt.type != CutsceneEventType.CharacterMove)
-                yield break;
-
-            var data = evt.characterMove;
-            
-            Transform character = GetTargetTransform(data.characterType, data.characterUid);
-
-            // 현재 맵에 캐릭터가 없으면 생성
-            if (character == null)
-            {
-                character = CutsceneManager.GetCharacter(data.characterType, data.characterUid);
-
-                if (character == null)
-                {
-                    character = SceneGame.Instance.CharacterManager
-                        .CreateCharacter(data.characterType, data.characterUid)?.transform;
-
-                    if (character == null)
-                        yield break;
-                    
-                    // TODO: startPosition이 아직 설정되지 않았을 수 있음 (Trigger 의존)
-                    character.transform.position = _startPosition;
-
-                    character.transform.SetParent(
-                        SceneGame.Instance.mapManager.GetCurrentMap()?.transform);
-
-                    character.position = _startPosition;
-                    
-                    CharacterBase characterBase = character.GetComponent<CharacterBase>();
-                    characterBase.uid = data.characterUid;
-
-                    // Awake/Start 호출 보장
-                    yield return null;
-
-                    character.gameObject.SetActive(false);
-
-                    // 컷신 매니저 등록
-                    CutsceneManager.AddCharacter(
-                        data.characterType,
-                        data.characterUid,
-                        character.gameObject);
-                }
-            }
-            
-            yield return null;
+            ReadyImmediate(evt);
+            yield break;
         }
 
         /// <summary>
@@ -125,7 +87,7 @@ namespace GGemCo2DCore
                 if (_target == null)
                 {
                     GcLogger.LogError(
-                        "이동 시킬 캐릭터가 없습니다. type: " +
+                        "이동 대상 캐릭터가 없습니다. CharacterSpawn 이벤트를 먼저 실행했는지 확인하세요. type: " +
                         data.characterType + "/ uid: " + data.characterUid);
                     return;
                 }
