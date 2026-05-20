@@ -1248,6 +1248,7 @@ namespace GGemCo2DCore
                 CutsceneEventType.CharacterFade => new CharacterFadeController(this),
                 CutsceneEventType.CharacterAirborne => new CharacterAirborneController(this),
                 CutsceneEventType.CharacterSpawn => new CharacterSpawnController(this),
+                CutsceneEventType.DialogueWindow => new DialogueWindowController(this),
 
                 _ => null,
             };

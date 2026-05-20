@@ -44,6 +44,7 @@ namespace GGemCo2DCoreEditor
                 { CutsceneEventType.CharacterFade, nameof(CutsceneEvent.characterFade) },
                 { CutsceneEventType.CharacterAirborne, nameof(CutsceneEvent.characterAirborne) },
                 { CutsceneEventType.CharacterSpawn, nameof(CutsceneEvent.characterSpawn) },
+                { CutsceneEventType.DialogueWindow, nameof(CutsceneEvent.dialogueWindow) },
             };
 
         /// <summary>

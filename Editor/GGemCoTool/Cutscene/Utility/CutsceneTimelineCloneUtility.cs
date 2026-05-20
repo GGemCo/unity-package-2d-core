@@ -135,6 +135,10 @@ namespace GGemCo2DCoreEditor
                 case CutsceneEventType.CharacterSpawn:
                     target.characterSpawn = CloneCharacterSpawnData(source.characterSpawn);
                     break;
+
+                case CutsceneEventType.DialogueWindow:
+                    target.dialogueWindow = CloneDialogueWindowData(source.dialogueWindow);
+                    break;
             }
         }
 
@@ -548,6 +552,23 @@ namespace GGemCo2DCoreEditor
                 keepAirborneGravity = source.keepAirborneGravity,
                 restoreHeightOnStop = source.restoreHeightOnStop,
                 restoreHeightOnCutsceneEnd = source.restoreHeightOnCutsceneEnd,
+            };
+        }
+
+        /// <summary>
+        /// <see cref="DialogueWindowData"/>를 깊은 복사합니다.
+        /// </summary>
+        /// <param name="source">복사할 원본 데이터입니다.</param>
+        /// <returns>복제된 대화창 컷신 데이터입니다.</returns>
+        private static DialogueWindowData CloneDialogueWindowData(DialogueWindowData source)
+        {
+            return source == null ? null : new DialogueWindowData
+            {
+                dialogueUid = source.dialogueUid,
+                npcUid = source.npcUid,
+                waitUntilEnd = source.waitUntilEnd,
+                releaseWaitOnLoadFailed = source.releaseWaitOnLoadFailed,
+                closeOtherWindows = source.closeOtherWindows,
             };
         }
 

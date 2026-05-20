@@ -95,6 +95,9 @@ namespace GGemCo2DCore
         /// <summary>캐릭터 생성 제어 데이터입니다.</summary>
         public CharacterSpawnData characterSpawn;
 
+        /// <summary>일반 대화창 제어 데이터입니다.</summary>
+        public DialogueWindowData dialogueWindow;
+
         /// <summary>
         /// 기본 생성자입니다.
         /// 현재 타입에 맞는 데이터만 유효하도록 초기화합니다.
@@ -204,6 +207,10 @@ namespace GGemCo2DCore
                 case CutsceneEventType.CharacterSpawn:
                     characterSpawn ??= new CharacterSpawnData();
                     break;
+
+                case CutsceneEventType.DialogueWindow:
+                    dialogueWindow ??= new DialogueWindowData();
+                    break;
             }
         }
 
@@ -312,6 +319,11 @@ namespace GGemCo2DCore
             {
                 characterSpawn = null;
             }
+
+            if (type != CutsceneEventType.DialogueWindow)
+            {
+                dialogueWindow = null;
+            }
         }
 
         /// <summary>CameraMove 타입일 때만 cameraMove를 직렬화합니다.</summary>
@@ -379,6 +391,10 @@ namespace GGemCo2DCore
         /// <summary>CharacterSpawn 타입일 때만 characterSpawn을 직렬화합니다.</summary>
         public bool ShouldSerializeCharacterSpawn() =>
             type == CutsceneEventType.CharacterSpawn && characterSpawn != null;
+
+        /// <summary>DialogueWindow 타입일 때만 dialogueWindow를 직렬화합니다.</summary>
+        public bool ShouldSerializeDialogueWindow() =>
+            type == CutsceneEventType.DialogueWindow && dialogueWindow != null;
     }
 
     /// <summary>

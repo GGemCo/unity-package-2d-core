@@ -105,7 +105,12 @@
         /// <summary>
         /// 컷신 중 캐릭터를 생성하고 초기 위치/가시성을 설정합니다.
         /// </summary>
-        CharacterSpawn = 19
+        CharacterSpawn = 19,
+
+        /// <summary>
+        /// 컷신 중 일반 대화창을 열고 대화 종료까지 타임라인을 대기시킵니다.
+        /// </summary>
+        DialogueWindow = 20
     }
     
     public enum CutsceneKeyTextOverlay

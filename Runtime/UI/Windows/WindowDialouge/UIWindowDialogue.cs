@@ -97,18 +97,24 @@ namespace GGemCo2DCore
         }
 
         /// <summary>
-        /// 대사 json 을 불러옵니다.
+        /// 대사 json 을 불러와 대화창을 시작합니다.
         /// </summary>
         /// <param name="dialogueUid">dialogue 테이블 Uid 입니다.</param>
         /// <param name="npcUid">현재 대화 대상 NPC Uid 입니다.</param>
-        public async Task LoadDialogue(int dialogueUid, int npcUid = 0)
+        /// <returns>대사 데이터를 정상적으로 불러와 시작했으면 true 입니다.</returns>
+        public async Task<bool> LoadDialogue(int dialogueUid, int npcUid = 0)
         {
             DialogueData data = await DialogueLoader.LoadDialogueData(dialogueUid);
-            if (data != null)
+            if (data == null || data.nodes == null || data.nodes.Count == 0)
             {
-                SetDialogue(data);
-                _currentNpcUid = npcUid;
+                return false;
             }
+
+            SetDialogue(data);
+            _currentNpcUid = npcUid;
+            DialogEventData eventData = new DialogEventData(npcUid: _currentNpcUid);
+            GameEventManager.DialogStart(eventData);
+            return true;
         }
 
         /// <summary>
@@ -274,8 +280,7 @@ namespace GGemCo2DCore
         /// </summary>
         public void OnClickCancel()
         {
-            ResetDialogue();
-            gameObject.SetActive(false);
+            EndDialogue();
         }
 
         /// <summary>
