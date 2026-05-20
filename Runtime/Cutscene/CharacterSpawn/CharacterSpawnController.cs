@@ -112,7 +112,8 @@ namespace GGemCo2DCore
                 CutsceneManager.AddCharacter(
                     _data.characterType,
                     _data.characterUid,
-                    created.gameObject);
+                    created.gameObject,
+                    _data.settleToMapOnCutsceneEnd);
             }
         }
 

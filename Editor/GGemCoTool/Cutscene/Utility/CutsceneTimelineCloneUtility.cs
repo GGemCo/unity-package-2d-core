@@ -616,6 +616,7 @@ namespace GGemCo2DCoreEditor
                 playerRelativeDistance = source.playerRelativeDistance,
                 positionOffset = source.positionOffset,
                 spawnVisible = source.spawnVisible,
+                settleToMapOnCutsceneEnd = source.settleToMapOnCutsceneEnd,
             };
         }
     }

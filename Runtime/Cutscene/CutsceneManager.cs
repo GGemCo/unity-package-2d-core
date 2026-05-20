@@ -30,6 +30,10 @@ namespace GGemCo2DCore
         private readonly Dictionary<CharacterConstants.Type, Dictionary<int, GameObject>> _createCharacters =
             new Dictionary<CharacterConstants.Type, Dictionary<int, GameObject>>();
 
+        // 연출 중 동적으로 생성된 캐릭터의 컷신 종료 후 정착 정책을 타입/UID 기준으로 관리합니다.
+        private readonly Dictionary<CharacterConstants.Type, Dictionary<int, bool>> _createCharacterSettlePolicies =
+            new Dictionary<CharacterConstants.Type, Dictionary<int, bool>>();
+
         // OverlayText에서 사용할 런타임 문자열 치환값을 보관합니다.
         private readonly Dictionary<CutsceneKeyTextOverlay, string> _overlayTextOverrides = new();
 
@@ -114,6 +118,7 @@ namespace GGemCo2DCore
         {
             _sceneGame = scene;
             _createCharacters.Clear();
+            _createCharacterSettlePolicies.Clear();
             _overlayTextOverrides.Clear();
             _characterTargetOverrides.Clear();
             _playTimer = 0f;
@@ -868,11 +873,22 @@ namespace GGemCo2DCore
 
             foreach (KeyValuePair<CharacterConstants.Type, Dictionary<int, GameObject>> charactersByType in _createCharacters)
             {
+                CharacterConstants.Type characterType = charactersByType.Key;
                 foreach (KeyValuePair<int, GameObject> trackedPair in charactersByType.Value)
                 {
+                    int characterUid = trackedPair.Key;
                     GameObject trackedCharacter = trackedPair.Value;
                     if (trackedCharacter == null)
                     {
+                        continue;
+                    }
+
+                    bool shouldSettle =
+                        !TryGetTrackedCharacterSettlePolicy(characterType, characterUid, out bool settlePolicy) ||
+                        settlePolicy;
+                    if (!shouldSettle)
+                    {
+                        Object.Destroy(trackedCharacter);
                         continue;
                     }
 
@@ -887,6 +903,7 @@ namespace GGemCo2DCore
             }
 
             _createCharacters.Clear();
+            _createCharacterSettlePolicies.Clear();
         }
 
         /// <summary>
@@ -895,7 +912,12 @@ namespace GGemCo2DCore
         /// <param name="type">캐릭터 분류 타입입니다.</param>
         /// <param name="characterUid">캐릭터의 고유 식별자입니다.</param>
         /// <param name="character">등록할 캐릭터 게임 오브젝트입니다.</param>
-        public void AddCharacter(CharacterConstants.Type type, int characterUid, GameObject character)
+        /// <param name="settleToMapOnCutsceneEnd">컷신 종료 시 맵에 정착시킬지 여부입니다.</param>
+        public void AddCharacter(
+            CharacterConstants.Type type,
+            int characterUid,
+            GameObject character,
+            bool settleToMapOnCutsceneEnd = true)
         {
             if (character == null)
             {
@@ -914,6 +936,7 @@ namespace GGemCo2DCore
             {
                 if (previousCharacter == character)
                 {
+                    SetTrackedCharacterSettlePolicy(type, characterUid, settleToMapOnCutsceneEnd);
                     return;
                 }
 
@@ -924,10 +947,72 @@ namespace GGemCo2DCore
                 }
 
                 charactersByUid[characterUid] = character;
+                SetTrackedCharacterSettlePolicy(type, characterUid, settleToMapOnCutsceneEnd);
                 return;
             }
 
             charactersByUid.Add(characterUid, character);
+            SetTrackedCharacterSettlePolicy(type, characterUid, settleToMapOnCutsceneEnd);
+        }
+
+        /// <summary>
+        /// 추적 캐릭터의 컷신 종료 후 정착 정책을 저장하거나 갱신합니다.
+        /// </summary>
+        /// <param name="type">캐릭터 분류 타입입니다.</param>
+        /// <param name="characterUid">캐릭터 UID입니다.</param>
+        /// <param name="settleToMapOnCutsceneEnd">컷신 종료 후 맵 정착 여부입니다.</param>
+        private void SetTrackedCharacterSettlePolicy(
+            CharacterConstants.Type type,
+            int characterUid,
+            bool settleToMapOnCutsceneEnd)
+        {
+            if (!_createCharacterSettlePolicies.TryGetValue(type, out Dictionary<int, bool> settlePoliciesByUid))
+            {
+                settlePoliciesByUid = new Dictionary<int, bool>();
+                _createCharacterSettlePolicies.Add(type, settlePoliciesByUid);
+            }
+
+            settlePoliciesByUid[characterUid] = settleToMapOnCutsceneEnd;
+        }
+
+        /// <summary>
+        /// 추적 캐릭터의 컷신 종료 후 정착 정책을 조회합니다.
+        /// </summary>
+        /// <param name="type">캐릭터 분류 타입입니다.</param>
+        /// <param name="characterUid">캐릭터 UID입니다.</param>
+        /// <param name="settleToMapOnCutsceneEnd">조회된 정착 정책 값입니다.</param>
+        /// <returns>정책을 찾았으면 <see langword="true"/>를 반환합니다.</returns>
+        private bool TryGetTrackedCharacterSettlePolicy(
+            CharacterConstants.Type type,
+            int characterUid,
+            out bool settleToMapOnCutsceneEnd)
+        {
+            settleToMapOnCutsceneEnd = true;
+            if (!_createCharacterSettlePolicies.TryGetValue(type, out Dictionary<int, bool> settlePoliciesByUid))
+            {
+                return false;
+            }
+
+            return settlePoliciesByUid.TryGetValue(characterUid, out settleToMapOnCutsceneEnd);
+        }
+
+        /// <summary>
+        /// 추적 캐릭터의 정착 정책 정보를 제거합니다.
+        /// </summary>
+        /// <param name="type">캐릭터 분류 타입입니다.</param>
+        /// <param name="characterUid">캐릭터 UID입니다.</param>
+        private void RemoveTrackedCharacterSettlePolicy(CharacterConstants.Type type, int characterUid)
+        {
+            if (!_createCharacterSettlePolicies.TryGetValue(type, out Dictionary<int, bool> settlePoliciesByUid))
+            {
+                return;
+            }
+
+            settlePoliciesByUid.Remove(characterUid);
+            if (settlePoliciesByUid.Count == 0)
+            {
+                _createCharacterSettlePolicies.Remove(type);
+            }
         }
 
         /// <summary>
@@ -1403,6 +1488,7 @@ namespace GGemCo2DCore
             }
 
             charactersByUid.Remove(characterUid);
+            RemoveTrackedCharacterSettlePolicy(type, characterUid);
             if (charactersByUid.Count == 0)
             {
                 _createCharacters.Remove(type);
@@ -1430,6 +1516,7 @@ namespace GGemCo2DCore
             }
 
             _createCharacters.Clear();
+            _createCharacterSettlePolicies.Clear();
         }
 
         /// <summary>
