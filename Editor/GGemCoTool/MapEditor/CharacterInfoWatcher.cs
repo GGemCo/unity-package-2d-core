@@ -22,26 +22,39 @@ namespace GGemCo2DCoreEditor
         {
             // 모든 Npc 컴포넌트를 가진 오브젝트 검사
             var characterBases = CompatObjectFind.FindAll<CharacterBase>();            
-            foreach (var npc in characterBases)
+            foreach (var characterBase in characterBases)
             {
-                Transform npcTransform = npc.transform;
-                if (!PreviousPositions.ContainsKey(npcTransform))
+                Transform characterTransform = characterBase.transform;
+                if (!PreviousPositions.ContainsKey(characterTransform))
                 {
-                    PreviousPositions[npcTransform] = npcTransform.position;
+                    PreviousPositions[characterTransform] = characterTransform.position;
                     continue;
                 }
 
-                if (PreviousPositions[npcTransform] != npcTransform.position)
+                if (PreviousPositions[characterTransform] != characterTransform.position)
                 {
                     // 위치가 바뀌었을 때
-                    UpdateInfoText(npc);
-                    PreviousPositions[npcTransform] = npcTransform.position;
+                    UpdateInfoText(characterBase);
+                    PreviousPositions[characterTransform] = characterTransform.position;
                 }
             }
         }
 
+        /// <summary>
+        /// 캐릭터 오버레이 텍스트를 현재 상태로 갱신합니다.
+        /// NPC는 배치 정책(DefaultVisible/Flip)까지 포함해 출력하고, 그 외 타입은 기존 포맷을 유지합니다.
+        /// </summary>
+        /// <param name="characterBase">텍스트를 갱신할 캐릭터</param>
         private static void UpdateInfoText(CharacterBase characterBase)
         {
+            if (characterBase == null) return;
+            Npc npc = characterBase as Npc;
+            if (npc != null)
+            {
+                NpcPlacementEditorUtility.UpdateInfoText(npc);
+                return;
+            }
+
             var text = characterBase.GetComponentInChildren<TextMeshProUGUI>();
             if (!text) return;
             Vector3 pos = characterBase.transform.position;

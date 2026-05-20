@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.IO;
 using GGemCo2DCore;
 using Newtonsoft.Json;
-using TMPro;
 using UnityEditor;
 using UnityEditor.AddressableAssets;
 using UnityEditor.AddressableAssets.Settings;
@@ -79,8 +78,9 @@ namespace GGemCo2DCoreEditor
 
             GameObject npcPrefab = AssetDatabaseLoaderManager.LoadAsset<GameObject>(npcPath);
             
+            int mapUid = _defaultMap.GetChapterNumber();
             CharacterRegenData characterRegenData =
-                new CharacterRegenData(npcData.Uid, Vector3.zero, false, _defaultMap.GetChapterNumber(), defaultVisible);
+                new CharacterRegenData(npcData.Uid, Vector3.zero, false, mapUid, defaultVisible);
             GameObject npc = _characterManager.CreateNpc(npcData.Uid, characterRegenData, npcPrefab);
             if (!npc)
             {
@@ -93,14 +93,14 @@ namespace GGemCo2DCoreEditor
             if (npcScript)
             {
                 npcScript.uid = npcData.Uid;
-                npcScript.CharacterRegenData = characterRegenData;
                 npcScript.SetScale(npcData.Scale);
                 npcScript.InitTagSortingLayer();
+                NpcPlacementEditorUtility.ApplyPlacementPolicy(npcScript, mapUid, defaultVisible, isFlip: false);
             }
             
             // npc 정보 보여줄 canvas 추가
-            TextMeshProUGUI text = CreateInfoCanvas(npcScript);
-            text.text = $"Uid: {npcData.Uid}\nPos: (0, 0)\nScale: {Math.Abs(npc.transform.localScale.x):F2}\nDefaultVisible: {defaultVisible}";
+            CreateInfoCanvas(npcScript);
+            NpcPlacementEditorUtility.UpdateInfoText(npcScript);
 
             Debug.Log($"{npcData.Name} NPC가 맵에 추가되었습니다.");
         }
@@ -122,8 +122,9 @@ namespace GGemCo2DCoreEditor
                 var npc = child.gameObject.GetComponent<Npc>();
                 if (!npc) continue;
                 
-                bool defaultVisible = ResolveDefaultVisibleFromNpc(npc);
-                saveNpcList.CharacterRegenDatas.Add(new CharacterRegenData(npc.uid, child.position, npc.isFlip,
+                bool defaultVisible = ResolveDefaultVisibleFromNpc(npc, mapUid);
+                bool isFlip = ResolveFlipFromNpc(npc, mapUid);
+                saveNpcList.CharacterRegenDatas.Add(new CharacterRegenData(npc.uid, child.position, isFlip,
                     mapUid, defaultVisible));
                 
                 // map 라벨 붙여주기 
@@ -150,19 +151,37 @@ namespace GGemCo2DCoreEditor
         }
         
         /// <summary>
-        /// 배치된 NPC 컴포넌트에서 기본 보임 정책을 안전하게 조회합니다.
-        /// 과거 데이터(필드 미설정)와의 호환을 위해 값이 없으면 기본값 true를 사용합니다.
+        /// 배치된 NPC 컴포넌트에서 기본 보임 정책을 조회합니다.
+        /// 리젠 데이터가 비어 있으면 현재 상태를 기준으로 보정합니다.
         /// </summary>
         /// <param name="npc">정책을 조회할 NPC 컴포넌트</param>
+        /// <param name="fallbackMapUid">리젠 데이터 보정 시 사용할 대체 맵 UID</param>
         /// <returns>기본 보임 여부</returns>
-        private static bool ResolveDefaultVisibleFromNpc(Npc npc)
+        private static bool ResolveDefaultVisibleFromNpc(Npc npc, int fallbackMapUid)
         {
             if (npc == null)
             {
                 return true;
             }
 
-            return npc.CharacterRegenData?.DefaultVisible ?? true;
+            return NpcPlacementEditorUtility.GetDefaultVisible(npc, fallbackMapUid);
+        }
+
+        /// <summary>
+        /// 배치된 NPC 컴포넌트에서 Flip 정책 값을 조회합니다.
+        /// 리젠 데이터가 비어 있으면 현재 상태를 기준으로 보정합니다.
+        /// </summary>
+        /// <param name="npc">정책을 조회할 NPC 컴포넌트</param>
+        /// <param name="fallbackMapUid">리젠 데이터 보정 시 사용할 대체 맵 UID</param>
+        /// <returns>Flip 여부</returns>
+        private static bool ResolveFlipFromNpc(Npc npc, int fallbackMapUid)
+        {
+            if (npc == null)
+            {
+                return false;
+            }
+
+            return NpcPlacementEditorUtility.GetFlip(npc, fallbackMapUid);
         }
         /// <summary>
         /// json 에서 npc 정보 불러오기
@@ -215,16 +234,17 @@ namespace GGemCo2DCoreEditor
                 {
                     // MapManager.cs:138 도 수정
                     myNpcScript.uid = npcData.Uid;
-                    myNpcScript.CharacterRegenData = npcData;
-                    // SetScale 다음에 처리해야 함
-                    myNpcScript.isFlip = npcData.IsFlip;
-                    myNpcScript.SetFlip(npcData.IsFlip);
                     myNpcScript.InitTagSortingLayer();
+                    NpcPlacementEditorUtility.ApplyPlacementPolicy(
+                        myNpcScript,
+                        _defaultMap.GetChapterNumber(),
+                        npcData.DefaultVisible,
+                        npcData.IsFlip);
                 }
                 
                 // npc 정보 보여줄 canvas 추가
-                TextMeshProUGUI text = CreateInfoCanvas(myNpcScript);
-                text.text = $"Uid: {npcData.Uid}\nPos: ({npcData.x}, {npcData.y})\nScale: {Math.Abs(npc.transform.localScale.x):F2}";
+                CreateInfoCanvas(myNpcScript);
+                NpcPlacementEditorUtility.UpdateInfoText(myNpcScript);
             }
 
             Debug.Log("NPCs spawned successfully.");

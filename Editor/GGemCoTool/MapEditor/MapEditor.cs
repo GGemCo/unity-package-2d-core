@@ -33,6 +33,7 @@ namespace GGemCo2DCoreEditor
         private Vector2 _scrollPos;
         private bool _foldMap = true;
         private bool _foldNpc = true;
+        private bool _foldNpcEdit = true;
         private bool _foldMonster = true;
         private bool _foldWarp = true;
 
@@ -40,6 +41,10 @@ namespace GGemCo2DCoreEditor
         private int _selectedNpcUid;
         private int _selectedMonsterUid;
         private bool _npcSpawnDefaultVisible;
+        private bool _editNpcDefaultVisible;
+        private bool _editNpcFlip;
+        private bool _editNpcApplyToSameUid;
+        private int _editNpcBoundInstanceId;
         private bool _usePatrolMonster;
 
         // ---- Cached options (for SearchableDropdown) ----
@@ -64,6 +69,10 @@ namespace GGemCo2DCoreEditor
             _selectedNpcUid = 0;
             _selectedMonsterUid = 0;
             _npcSpawnDefaultVisible = true;
+            _editNpcDefaultVisible = true;
+            _editNpcFlip = false;
+            _editNpcApplyToSameUid = false;
+            _editNpcBoundInstanceId = 0;
             _usePatrolMonster = false;
 
             // 컴파일/도메인리로드 직후에는 씬 변경 작업을 막습니다.
@@ -234,6 +243,8 @@ namespace GGemCo2DCoreEditor
                 DrawMapSection();
                 GUILayout.Space(12);
                 DrawNpcSection();
+                GUILayout.Space(12);
+                DrawNpcEditSection();
                 GUILayout.Space(12);
                 DrawMonsterSection();
                 GUILayout.Space(12);
@@ -413,9 +424,244 @@ namespace GGemCo2DCoreEditor
             }
         }
 
+        /// <summary>
+        /// 현재 맵에 배치된 NPC의 DefaultVisible/Flip 정책을 편집하는 섹션을 그립니다.
+        /// Hierarchy에서 선택한 NPC를 기준으로 편집하며, 필요 시 동일 UID 대상 일괄 적용을 지원합니다.
+        /// </summary>
+        private void DrawNpcEditSection()
+        {
+            _foldNpcEdit = EditorGUILayout.Foldout(_foldNpcEdit, "3) 배치된 NPC 편집", true);
+            if (!_foldNpcEdit) return;
+
+            using (new EditorGUILayout.VerticalScope(EditorStyles.helpBox))
+            {
+                if (_defaultMap == null || GetSelectedMapUid() <= 0)
+                {
+                    EditorGUILayout.HelpBox("맵을 먼저 불러온 뒤 배치된 NPC를 선택해주세요.", MessageType.Info);
+                    return;
+                }
+
+                if (!TryGetSelectedNpcInCurrentMap(out Npc selectedNpc))
+                {
+                    _editNpcBoundInstanceId = 0;
+                    EditorGUILayout.HelpBox("Hierarchy에서 현재 맵 하위의 NPC 오브젝트를 선택해주세요.", MessageType.Info);
+                    return;
+                }
+
+                BindNpcEditDraftIfNeeded(selectedNpc);
+                DrawSelectedNpcInfo(selectedNpc);
+
+                _editNpcDefaultVisible = HelperEditorUI.ToggleLeft(
+                    "기본 보임(DefaultVisible)",
+                    _editNpcDefaultVisible,
+                    "저장 후 런타임 스폰 시 기본 표시 여부를 결정합니다."
+                );
+
+                _editNpcFlip = HelperEditorUI.ToggleLeft(
+                    "좌우 반전(Flip)",
+                    _editNpcFlip,
+                    "NPC.SetFlip 경로로 적용하며 CharacterRegenData.IsFlip 값도 동기화합니다."
+                );
+
+                _editNpcApplyToSameUid = HelperEditorUI.ToggleLeft(
+                    "동일 UID 일괄 적용",
+                    _editNpcApplyToSameUid,
+                    "체크하면 현재 맵에서 같은 UID를 가진 모든 NPC에 함께 적용합니다."
+                );
+
+                using (new EditorGUILayout.HorizontalScope())
+                {
+                    if (GUILayout.Button("정책 적용", GUILayout.Height(26)))
+                    {
+                        ApplyNpcEditPolicy(selectedNpc);
+                    }
+
+                    if (GUILayout.Button("값 다시읽기", GUILayout.Height(26)))
+                    {
+                        ForceBindNpcEditDraft(selectedNpc);
+                    }
+                }
+            }
+        }
+
+        /// <summary>
+        /// 선택된 NPC의 편집 대상 요약 정보를 표시합니다.
+        /// </summary>
+        /// <param name="selectedNpc">현재 선택된 NPC</param>
+        private static void DrawSelectedNpcInfo(Npc selectedNpc)
+        {
+            if (!selectedNpc)
+            {
+                return;
+            }
+
+            Vector3 position = selectedNpc.transform.position;
+            EditorGUILayout.LabelField("선택 NPC", $"{selectedNpc.name} (Uid: {selectedNpc.uid})");
+            EditorGUILayout.LabelField("위치", $"({position.x:F2}, {position.y:F2}, {position.z:F2})");
+        }
+
+        /// <summary>
+        /// 현재 Selection에서 편집 가능한 NPC를 찾습니다.
+        /// 선택된 오브젝트가 NPC의 자식인 경우 부모 NPC를 함께 탐색합니다.
+        /// </summary>
+        /// <param name="selectedNpc">현재 맵 하위에 존재하는 선택 NPC</param>
+        /// <returns>편집 가능한 NPC를 찾았으면 true</returns>
+        private bool TryGetSelectedNpcInCurrentMap(out Npc selectedNpc)
+        {
+            selectedNpc = null;
+            if (_defaultMap == null)
+            {
+                return false;
+            }
+
+            GameObject selectedObject = Selection.activeGameObject;
+            if (!selectedObject)
+            {
+                return false;
+            }
+
+            Npc npc = selectedObject.GetComponent<Npc>();
+            if (!npc)
+            {
+                npc = selectedObject.GetComponentInParent<Npc>();
+            }
+
+            if (!npc)
+            {
+                return false;
+            }
+
+            if (!npc.transform.IsChildOf(_defaultMap.transform))
+            {
+                return false;
+            }
+
+            selectedNpc = npc;
+            return true;
+        }
+
+        /// <summary>
+        /// 선택 대상이 바뀌었을 때만 편집 드래프트(DefaultVisible/Flip)를 새 대상 값으로 동기화합니다.
+        /// 사용자가 편집 중인 값을 프레임마다 덮어쓰지 않도록 InstanceID 기반으로 바인딩합니다.
+        /// </summary>
+        /// <param name="selectedNpc">현재 선택된 NPC</param>
+        private void BindNpcEditDraftIfNeeded(Npc selectedNpc)
+        {
+            if (!selectedNpc)
+            {
+                _editNpcBoundInstanceId = 0;
+                return;
+            }
+
+            int instanceId = selectedNpc.GetInstanceID();
+            if (_editNpcBoundInstanceId == instanceId)
+            {
+                return;
+            }
+
+            ForceBindNpcEditDraft(selectedNpc);
+        }
+
+        /// <summary>
+        /// 선택된 NPC의 현재 정책값을 편집 드래프트로 강제 동기화합니다.
+        /// </summary>
+        /// <param name="selectedNpc">동기화할 NPC</param>
+        private void ForceBindNpcEditDraft(Npc selectedNpc)
+        {
+            if (!selectedNpc)
+            {
+                return;
+            }
+
+            int mapUid = GetSelectedMapUid();
+            _editNpcDefaultVisible = NpcPlacementEditorUtility.GetDefaultVisible(selectedNpc, mapUid);
+            _editNpcFlip = NpcPlacementEditorUtility.GetFlip(selectedNpc, mapUid);
+            _editNpcBoundInstanceId = selectedNpc.GetInstanceID();
+        }
+
+        /// <summary>
+        /// 편집 드래프트 값을 선택 NPC(또는 동일 UID 집합)에 적용합니다.
+        /// Undo/Dirty/Prefab Override 기록을 함께 처리하여 에디터 편집 이력을 보존합니다.
+        /// </summary>
+        /// <param name="selectedNpc">기준이 되는 선택 NPC</param>
+        private void ApplyNpcEditPolicy(Npc selectedNpc)
+        {
+            if (!selectedNpc)
+            {
+                return;
+            }
+
+            List<Npc> targets = CollectNpcEditTargets(selectedNpc, _editNpcApplyToSameUid);
+            if (targets.Count <= 0)
+            {
+                Debug.LogWarning("적용할 NPC를 찾지 못했습니다.");
+                return;
+            }
+
+            int mapUid = GetSelectedMapUid();
+            int appliedCount = 0;
+            for (int i = 0; i < targets.Count; i++)
+            {
+                Npc targetNpc = targets[i];
+                if (!targetNpc)
+                {
+                    continue;
+                }
+
+                Undo.RecordObject(targetNpc, "Edit NPC Placement Policy");
+                Undo.RecordObject(targetNpc.transform, "Edit NPC Placement Policy");
+
+                NpcPlacementEditorUtility.ApplyPlacementPolicy(targetNpc, mapUid, _editNpcDefaultVisible, _editNpcFlip);
+
+                PrefabUtility.RecordPrefabInstancePropertyModifications(targetNpc);
+                PrefabUtility.RecordPrefabInstancePropertyModifications(targetNpc.transform);
+                EditorUtility.SetDirty(targetNpc);
+                EditorUtility.SetDirty(targetNpc.transform);
+                appliedCount++;
+            }
+
+            if (appliedCount > 0)
+            {
+                Debug.Log($"NPC 정책 적용 완료: {appliedCount}개 / Uid:{selectedNpc.uid}");
+            }
+        }
+
+        /// <summary>
+        /// 정책 적용 대상 NPC 목록을 구성합니다.
+        /// 일괄 옵션이 켜지면 현재 맵 하위에서 동일 UID의 NPC를 모두 수집합니다.
+        /// </summary>
+        /// <param name="selectedNpc">기준 NPC</param>
+        /// <param name="applyToSameUid">동일 UID 일괄 적용 여부</param>
+        /// <returns>정책 적용 대상 목록</returns>
+        private List<Npc> CollectNpcEditTargets(Npc selectedNpc, bool applyToSameUid)
+        {
+            List<Npc> targets = new List<Npc>();
+            if (!selectedNpc)
+            {
+                return targets;
+            }
+
+            if (!applyToSameUid || _defaultMap == null)
+            {
+                targets.Add(selectedNpc);
+                return targets;
+            }
+
+            Npc[] mapNpcs = _defaultMap.GetComponentsInChildren<Npc>(true);
+            for (int i = 0; i < mapNpcs.Length; i++)
+            {
+                Npc mapNpc = mapNpcs[i];
+                if (!mapNpc) continue;
+                if (mapNpc.uid != selectedNpc.uid) continue;
+                targets.Add(mapNpc);
+            }
+
+            return targets;
+        }
+
         private void DrawMonsterSection()
         {
-            _foldMonster = EditorGUILayout.Foldout(_foldMonster, "3) 몬스터 추가", true);
+            _foldMonster = EditorGUILayout.Foldout(_foldMonster, "4) 몬스터 추가", true);
             if (!_foldMonster) return;
 
             using (new EditorGUILayout.VerticalScope(EditorStyles.helpBox))
@@ -450,7 +696,7 @@ namespace GGemCo2DCoreEditor
 
         private void DrawWarpSection()
         {
-            _foldWarp = EditorGUILayout.Foldout(_foldWarp, "4) 워프 추가", true);
+            _foldWarp = EditorGUILayout.Foldout(_foldWarp, "5) 워프 추가", true);
             if (!_foldWarp) return;
 
             using (new EditorGUILayout.VerticalScope(EditorStyles.helpBox))
@@ -652,6 +898,7 @@ namespace GGemCo2DCoreEditor
             _defaultMap.InitComponents();
             _defaultMap.InitTagSortingLayer();
             _defaultMap.Initialize(mapData.Uid, mapData.Name, mapData.Type, mapData.Subtype);
+            _editNpcBoundInstanceId = 0;
 
             _npcExporter.SetDefaultMap(_defaultMap);
             _monsterExporter.SetDefaultMap(_defaultMap);
