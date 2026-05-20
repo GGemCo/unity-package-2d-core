@@ -95,6 +95,11 @@ namespace GGemCo2DCore
                 GameObject obj = info.Value;
                 if (obj == null) continue;
                 
+                if (TryApplyExplicitMapVisibilityPolicy(obj))
+                {
+                    continue;
+                }
+
                 if (ShouldKeepHiddenByDefault(obj))
                 {
                     if (obj.activeSelf)
@@ -136,6 +141,7 @@ namespace GGemCo2DCore
             foreach (var data in Monsters)
             {
                 if (data.Value == null) continue;
+                if (TryApplyExplicitMapVisibilityPolicy(data.Value)) continue;
                 if (ShouldKeepHiddenByDefault(data.Value)) continue;
                 data.Value.GetComponent<Monster>()?.StartFadeIn();
             }
@@ -143,11 +149,56 @@ namespace GGemCo2DCore
             foreach (var data in Npcs)
             {
                 if (data.Value == null) continue;
+                if (TryApplyExplicitMapVisibilityPolicy(data.Value)) continue;
                 if (ShouldKeepHiddenByDefault(data.Value)) continue;
                 data.Value.GetComponent<Npc>()?.StartFadeIn();
             }
         }
         
+        /// <summary>
+        /// 캐릭터에 명시적으로 지정된 맵 표시 정책을 우선 적용합니다.
+        /// DefaultCulling이 아닌 정책은 카메라 컬링과 기본 숨김 규칙보다 우선합니다.
+        /// </summary>
+        /// <param name="obj">정책을 적용할 캐릭터 오브젝트입니다.</param>
+        /// <returns>명시 정책을 처리했으면 <see langword="true"/>를 반환합니다.</returns>
+        private static bool TryApplyExplicitMapVisibilityPolicy(GameObject obj)
+        {
+            if (obj == null)
+            {
+                return false;
+            }
+
+            CharacterBase character = obj.GetComponent<CharacterBase>();
+            if (character == null)
+            {
+                return false;
+            }
+
+            switch (character.MapVisibilityPolicy)
+            {
+                case MapCharacterVisibilityPolicy.KeepVisible:
+                    if (!obj.activeSelf)
+                    {
+                        obj.GetComponent<Npc>()?.StartFadeIn();
+                        obj.GetComponent<Monster>()?.StartFadeIn();
+                    }
+
+                    return true;
+
+                case MapCharacterVisibilityPolicy.KeepHidden:
+                    if (obj.activeSelf)
+                    {
+                        obj.GetComponent<Npc>()?.StartFadeOut();
+                        obj.GetComponent<Monster>()?.StartFadeOut();
+                    }
+
+                    return true;
+
+                default:
+                    return false;
+            }
+        }
+
         /// <summary>
         /// 캐릭터가 "기본 숨김" 정책 대상인지 판별합니다.
         /// 기본 숨김 대상은 컬링/연출 강제 활성화에서도 자동으로 다시 켜지지 않도록 보호합니다.

@@ -59,6 +59,7 @@ namespace GGemCo2DCore
             Transform existingTarget = ResolveTargetTransform(_data.characterType, _data.characterUid);
             if (existingTarget != null)
             {
+                ApplyVisibilityPolicy(existingTarget.GetComponent<CharacterBase>(), _data.visibilityPolicyAfterCutscene);
                 yield return null;
                 yield break;
             }
@@ -89,6 +90,7 @@ namespace GGemCo2DCore
             if (createdCharacter != null)
             {
                 createdCharacter.uid = _data.characterUid;
+                ApplyVisibilityPolicy(createdCharacter, _data.visibilityPolicyAfterCutscene);
                 if (_data.characterScale > 0f)
                 {
                     createdCharacter.SetScale(_data.characterScale);
@@ -113,7 +115,8 @@ namespace GGemCo2DCore
                     _data.characterType,
                     _data.characterUid,
                     created.gameObject,
-                    _data.settleToMapOnCutsceneEnd);
+                    _data.settleToMapOnCutsceneEnd,
+                    _data.visibilityPolicyAfterCutscene);
             }
         }
 
@@ -147,9 +150,13 @@ namespace GGemCo2DCore
             }
 
             CharacterBase characterBase = target.GetComponent<CharacterBase>();
-            if (characterBase != null && _data.characterScale > 0f)
+            if (characterBase != null)
             {
-                characterBase.SetScale(_data.characterScale);
+                ApplyVisibilityPolicy(characterBase, _data.visibilityPolicyAfterCutscene);
+                if (_data.characterScale > 0f)
+                {
+                    characterBase.SetScale(_data.characterScale);
+                }
             }
 
             Vector2 spawnPosition = ResolveSpawnWorldPosition(_data, target.position);
@@ -180,6 +187,16 @@ namespace GGemCo2DCore
         /// </summary>
         public void End()
         {
+        }
+
+        /// <summary>
+        /// 컷신 이후 맵 상주 캐릭터로 정착했을 때 사용할 표시/컬링 정책을 캐릭터에 반영합니다.
+        /// </summary>
+        /// <param name="character">정책을 적용할 캐릭터입니다.</param>
+        /// <param name="policy">적용할 맵 표시 정책입니다.</param>
+        private static void ApplyVisibilityPolicy(CharacterBase character, MapCharacterVisibilityPolicy policy)
+        {
+            character?.SetMapVisibilityPolicy(policy);
         }
 
         /// <summary>

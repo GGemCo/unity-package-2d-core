@@ -617,6 +617,7 @@ namespace GGemCo2DCoreEditor
                 positionOffset = source.positionOffset,
                 spawnVisible = source.spawnVisible,
                 settleToMapOnCutsceneEnd = source.settleToMapOnCutsceneEnd,
+                visibilityPolicyAfterCutscene = source.visibilityPolicyAfterCutscene,
             };
         }
     }

@@ -34,6 +34,10 @@ namespace GGemCo2DCore
         private readonly Dictionary<CharacterConstants.Type, Dictionary<int, bool>> _createCharacterSettlePolicies =
             new Dictionary<CharacterConstants.Type, Dictionary<int, bool>>();
 
+        // 연출 중 동적으로 생성된 캐릭터의 컷신 종료 후 맵 표시 정책을 타입/UID 기준으로 관리합니다.
+        private readonly Dictionary<CharacterConstants.Type, Dictionary<int, MapCharacterVisibilityPolicy>> _createCharacterVisibilityPolicies =
+            new Dictionary<CharacterConstants.Type, Dictionary<int, MapCharacterVisibilityPolicy>>();
+
         // OverlayText에서 사용할 런타임 문자열 치환값을 보관합니다.
         private readonly Dictionary<CutsceneKeyTextOverlay, string> _overlayTextOverrides = new();
 
@@ -119,6 +123,7 @@ namespace GGemCo2DCore
             _sceneGame = scene;
             _createCharacters.Clear();
             _createCharacterSettlePolicies.Clear();
+            _createCharacterVisibilityPolicies.Clear();
             _overlayTextOverrides.Clear();
             _characterTargetOverrides.Clear();
             _playTimer = 0f;
@@ -893,9 +898,20 @@ namespace GGemCo2DCore
                     }
 
                     CharacterBase characterBase = trackedCharacter.GetComponent<CharacterBase>();
-                    if (characterBase != null && mapManager.RegisterCutsceneSpawnedCharacter(characterBase))
+                    if (characterBase != null)
                     {
-                        continue;
+                        MapCharacterVisibilityPolicy visibilityPolicy = TryGetTrackedCharacterVisibilityPolicy(
+                            characterType,
+                            characterUid,
+                            out MapCharacterVisibilityPolicy trackedPolicy)
+                            ? trackedPolicy
+                            : MapCharacterVisibilityPolicy.DefaultCulling;
+                        characterBase.SetMapVisibilityPolicy(visibilityPolicy);
+
+                        if (mapManager.RegisterCutsceneSpawnedCharacter(characterBase))
+                        {
+                            continue;
+                        }
                     }
 
                     Object.Destroy(trackedCharacter);
@@ -904,6 +920,7 @@ namespace GGemCo2DCore
 
             _createCharacters.Clear();
             _createCharacterSettlePolicies.Clear();
+            _createCharacterVisibilityPolicies.Clear();
         }
 
         /// <summary>
@@ -913,11 +930,13 @@ namespace GGemCo2DCore
         /// <param name="characterUid">캐릭터의 고유 식별자입니다.</param>
         /// <param name="character">등록할 캐릭터 게임 오브젝트입니다.</param>
         /// <param name="settleToMapOnCutsceneEnd">컷신 종료 시 맵에 정착시킬지 여부입니다.</param>
+        /// <param name="visibilityPolicyAfterCutscene">컷신 종료 후 맵 정착 캐릭터에 적용할 표시/컬링 정책입니다.</param>
         public void AddCharacter(
             CharacterConstants.Type type,
             int characterUid,
             GameObject character,
-            bool settleToMapOnCutsceneEnd = true)
+            bool settleToMapOnCutsceneEnd = true,
+            MapCharacterVisibilityPolicy visibilityPolicyAfterCutscene = MapCharacterVisibilityPolicy.DefaultCulling)
         {
             if (character == null)
             {
@@ -937,6 +956,7 @@ namespace GGemCo2DCore
                 if (previousCharacter == character)
                 {
                     SetTrackedCharacterSettlePolicy(type, characterUid, settleToMapOnCutsceneEnd);
+                    SetTrackedCharacterVisibilityPolicy(type, characterUid, visibilityPolicyAfterCutscene);
                     return;
                 }
 
@@ -948,11 +968,13 @@ namespace GGemCo2DCore
 
                 charactersByUid[characterUid] = character;
                 SetTrackedCharacterSettlePolicy(type, characterUid, settleToMapOnCutsceneEnd);
+                SetTrackedCharacterVisibilityPolicy(type, characterUid, visibilityPolicyAfterCutscene);
                 return;
             }
 
             charactersByUid.Add(characterUid, character);
             SetTrackedCharacterSettlePolicy(type, characterUid, settleToMapOnCutsceneEnd);
+            SetTrackedCharacterVisibilityPolicy(type, characterUid, visibilityPolicyAfterCutscene);
         }
 
         /// <summary>
@@ -997,21 +1019,77 @@ namespace GGemCo2DCore
         }
 
         /// <summary>
+        /// 추적 캐릭터의 컷신 종료 후 맵 표시/컬링 정책을 저장하거나 갱신합니다.
+        /// </summary>
+        /// <param name="type">캐릭터 분류 타입입니다.</param>
+        /// <param name="characterUid">캐릭터 UID입니다.</param>
+        /// <param name="visibilityPolicyAfterCutscene">컷신 종료 후 적용할 맵 표시 정책입니다.</param>
+        private void SetTrackedCharacterVisibilityPolicy(
+            CharacterConstants.Type type,
+            int characterUid,
+            MapCharacterVisibilityPolicy visibilityPolicyAfterCutscene)
+        {
+            if (!_createCharacterVisibilityPolicies.TryGetValue(
+                    type,
+                    out Dictionary<int, MapCharacterVisibilityPolicy> visibilityPoliciesByUid))
+            {
+                visibilityPoliciesByUid = new Dictionary<int, MapCharacterVisibilityPolicy>();
+                _createCharacterVisibilityPolicies.Add(type, visibilityPoliciesByUid);
+            }
+
+            visibilityPoliciesByUid[characterUid] = visibilityPolicyAfterCutscene;
+        }
+
+        /// <summary>
+        /// 추적 캐릭터의 컷신 종료 후 맵 표시/컬링 정책을 조회합니다.
+        /// </summary>
+        /// <param name="type">캐릭터 분류 타입입니다.</param>
+        /// <param name="characterUid">캐릭터 UID입니다.</param>
+        /// <param name="visibilityPolicyAfterCutscene">조회된 표시/컬링 정책 값입니다.</param>
+        /// <returns>정책을 찾았으면 <see langword="true"/>를 반환합니다.</returns>
+        private bool TryGetTrackedCharacterVisibilityPolicy(
+            CharacterConstants.Type type,
+            int characterUid,
+            out MapCharacterVisibilityPolicy visibilityPolicyAfterCutscene)
+        {
+            visibilityPolicyAfterCutscene = MapCharacterVisibilityPolicy.DefaultCulling;
+            if (!_createCharacterVisibilityPolicies.TryGetValue(
+                    type,
+                    out Dictionary<int, MapCharacterVisibilityPolicy> visibilityPoliciesByUid))
+            {
+                return false;
+            }
+
+            return visibilityPoliciesByUid.TryGetValue(characterUid, out visibilityPolicyAfterCutscene);
+        }
+
+        /// <summary>
         /// 추적 캐릭터의 정착 정책 정보를 제거합니다.
         /// </summary>
         /// <param name="type">캐릭터 분류 타입입니다.</param>
         /// <param name="characterUid">캐릭터 UID입니다.</param>
         private void RemoveTrackedCharacterSettlePolicy(CharacterConstants.Type type, int characterUid)
         {
-            if (!_createCharacterSettlePolicies.TryGetValue(type, out Dictionary<int, bool> settlePoliciesByUid))
+            if (_createCharacterSettlePolicies.TryGetValue(type, out Dictionary<int, bool> settlePoliciesByUid))
+            {
+                settlePoliciesByUid.Remove(characterUid);
+                if (settlePoliciesByUid.Count == 0)
+                {
+                    _createCharacterSettlePolicies.Remove(type);
+                }
+            }
+
+            if (!_createCharacterVisibilityPolicies.TryGetValue(
+                    type,
+                    out Dictionary<int, MapCharacterVisibilityPolicy> visibilityPoliciesByUid))
             {
                 return;
             }
 
-            settlePoliciesByUid.Remove(characterUid);
-            if (settlePoliciesByUid.Count == 0)
+            visibilityPoliciesByUid.Remove(characterUid);
+            if (visibilityPoliciesByUid.Count == 0)
             {
-                _createCharacterSettlePolicies.Remove(type);
+                _createCharacterVisibilityPolicies.Remove(type);
             }
         }
 
@@ -1517,6 +1595,7 @@ namespace GGemCo2DCore
 
             _createCharacters.Clear();
             _createCharacterSettlePolicies.Clear();
+            _createCharacterVisibilityPolicies.Clear();
         }
 
         /// <summary>

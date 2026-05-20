@@ -61,5 +61,11 @@ namespace GGemCo2DCore
         [Header("Lifecycle")]
         [Tooltip("true이면 컷신 종료 후에도 맵 배치 캐릭터로 정착시킵니다. false이면 컷신 종료 시 제거합니다.")]
         public bool settleToMapOnCutsceneEnd = true;
+
+        /// <summary>
+        /// 컷신 종료 후 맵 상주 캐릭터로 정착했을 때 적용할 표시/컬링 정책입니다.
+        /// </summary>
+        [Tooltip("컷신 종료 후 맵 상주 캐릭터로 정착했을 때 적용할 표시/컬링 정책입니다.")]
+        public MapCharacterVisibilityPolicy visibilityPolicyAfterCutscene = MapCharacterVisibilityPolicy.DefaultCulling;
     }
 }

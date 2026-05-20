@@ -66,6 +66,7 @@ namespace GGemCo2DCore
         {
             ClearPendingDeathState();
             CharacterRegenData = null;
+            SetMapVisibilityPolicy(MapCharacterVisibilityPolicy.DefaultCulling);
             SetAttackType(CharacterConstants.AttackType.None);
             SetAggro(false);
             SetSubStatus(CharacterConstants.CharacterSubStatus.None);

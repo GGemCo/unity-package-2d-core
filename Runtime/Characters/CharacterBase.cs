@@ -61,6 +61,16 @@ namespace GGemCo2DCore
         private LaserController _laserController;
         
         public CharacterRegenData CharacterRegenData;
+
+        /// <summary>
+        /// 현재 맵에서 이 캐릭터가 카메라 컬링을 따를지 여부를 나타내는 표시 정책입니다.
+        /// </summary>
+        private MapCharacterVisibilityPolicy _mapVisibilityPolicy = MapCharacterVisibilityPolicy.DefaultCulling;
+
+        /// <summary>
+        /// 현재 맵에서 이 캐릭터에게 적용할 표시/컬링 정책을 반환합니다.
+        /// </summary>
+        public MapCharacterVisibilityPolicy MapVisibilityPolicy => _mapVisibilityPolicy;
         
         private CharacterConstants.CharacterSubStatus _currentSubStatus;
         private bool _isStartFade;
@@ -104,6 +114,15 @@ namespace GGemCo2DCore
         public bool IsCurrentlyGrounded(float maxGroundDistance = CharacterGroundProbeUtility.DefaultGroundedCheckDistance)
         {
             return CharacterGroundProbeUtility.IsCurrentlyGrounded(this, characterRigidbody2D, maxGroundDistance);
+        }
+
+        /// <summary>
+        /// 맵 상주 캐릭터로 등록된 뒤 사용할 표시/컬링 정책을 설정합니다.
+        /// </summary>
+        /// <param name="policy">적용할 맵 표시 정책입니다.</param>
+        public void SetMapVisibilityPolicy(MapCharacterVisibilityPolicy policy)
+        {
+            _mapVisibilityPolicy = policy;
         }
 
         /// <summary>
