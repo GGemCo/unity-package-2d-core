@@ -94,6 +94,17 @@ namespace GGemCo2DCore
             {
                 GameObject obj = info.Value;
                 if (obj == null) continue;
+                
+                if (ShouldKeepHiddenByDefault(obj))
+                {
+                    if (obj.activeSelf)
+                    {
+                        obj.GetComponent<Npc>()?.StartFadeOut();
+                        obj.GetComponent<Monster>()?.StartFadeOut();
+                    }
+
+                    continue;
+                }
 
                 // NPC의 Z 축도 고려하여 활성화 상태 확인
                 Vector3 position = obj.transform.position;
@@ -125,14 +136,38 @@ namespace GGemCo2DCore
             foreach (var data in Monsters)
             {
                 if (data.Value == null) continue;
+                if (ShouldKeepHiddenByDefault(data.Value)) continue;
                 data.Value.GetComponent<Monster>()?.StartFadeIn();
             }
 
             foreach (var data in Npcs)
             {
                 if (data.Value == null) continue;
+                if (ShouldKeepHiddenByDefault(data.Value)) continue;
                 data.Value.GetComponent<Npc>()?.StartFadeIn();
             }
+        }
+        
+        /// <summary>
+        /// 캐릭터가 "기본 숨김" 정책 대상인지 판별합니다.
+        /// 기본 숨김 대상은 컬링/연출 강제 활성화에서도 자동으로 다시 켜지지 않도록 보호합니다.
+        /// </summary>
+        /// <param name="obj">판별할 캐릭터 오브젝트</param>
+        /// <returns>기본 숨김 정책을 유지해야 하면 <see langword="true"/>를 반환합니다.</returns>
+        private static bool ShouldKeepHiddenByDefault(GameObject obj)
+        {
+            if (obj == null)
+            {
+                return false;
+            }
+
+            CharacterBase character = obj.GetComponent<CharacterBase>();
+            if (character == null || character.CharacterRegenData == null)
+            {
+                return false;
+            }
+
+            return character.CharacterRegenData.DefaultVisible == false;
         }
 
         /// <summary>

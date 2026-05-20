@@ -48,7 +48,8 @@ namespace GGemCo2DCoreEditor
         /// 맵에 npc 추가하기
         /// </summary>
         /// <param name="npcUid"></param>
-        public void AddNpcToMap(int npcUid)
+        /// <param name="defaultVisible">런타임 스폰 직후 기본 보임 여부</param>
+        public void AddNpcToMap(int npcUid, bool defaultVisible)
         {
             if (!_defaultMap)
             {
@@ -79,7 +80,7 @@ namespace GGemCo2DCoreEditor
             GameObject npcPrefab = AssetDatabaseLoaderManager.LoadAsset<GameObject>(npcPath);
             
             CharacterRegenData characterRegenData =
-                new CharacterRegenData(npcData.Uid, Vector3.zero, false, _defaultMap.GetChapterNumber(), true);
+                new CharacterRegenData(npcData.Uid, Vector3.zero, false, _defaultMap.GetChapterNumber(), defaultVisible);
             GameObject npc = _characterManager.CreateNpc(npcData.Uid, characterRegenData, npcPrefab);
             if (!npc)
             {
@@ -92,13 +93,14 @@ namespace GGemCo2DCoreEditor
             if (npcScript)
             {
                 npcScript.uid = npcData.Uid;
+                npcScript.CharacterRegenData = characterRegenData;
                 npcScript.SetScale(npcData.Scale);
                 npcScript.InitTagSortingLayer();
             }
             
             // npc 정보 보여줄 canvas 추가
             TextMeshProUGUI text = CreateInfoCanvas(npcScript);
-            text.text = $"Uid: {npcData.Uid}\nPos: (0, 0)\nScale: {Math.Abs(npc.transform.localScale.x):F2}";
+            text.text = $"Uid: {npcData.Uid}\nPos: (0, 0)\nScale: {Math.Abs(npc.transform.localScale.x):F2}\nDefaultVisible: {defaultVisible}";
 
             Debug.Log($"{npcData.Name} NPC가 맵에 추가되었습니다.");
         }
@@ -119,8 +121,10 @@ namespace GGemCo2DCoreEditor
                 if (!child.CompareTag(ConfigTags.GetValue(ConfigTags.Keys.Npc))) continue;
                 var npc = child.gameObject.GetComponent<Npc>();
                 if (!npc) continue;
+                
+                bool defaultVisible = ResolveDefaultVisibleFromNpc(npc);
                 saveNpcList.CharacterRegenDatas.Add(new CharacterRegenData(npc.uid, child.position, npc.isFlip,
-                    mapUid, true));
+                    mapUid, defaultVisible));
                 
                 // map 라벨 붙여주기 
                 // AddressableSettings 가져오기
@@ -143,6 +147,22 @@ namespace GGemCo2DCoreEditor
             string path = Path.Combine(filePath, fileName);
             File.WriteAllText(path, json);
             Debug.Log("NPC data exported to " + path);
+        }
+        
+        /// <summary>
+        /// 배치된 NPC 컴포넌트에서 기본 보임 정책을 안전하게 조회합니다.
+        /// 과거 데이터(필드 미설정)와의 호환을 위해 값이 없으면 기본값 true를 사용합니다.
+        /// </summary>
+        /// <param name="npc">정책을 조회할 NPC 컴포넌트</param>
+        /// <returns>기본 보임 여부</returns>
+        private static bool ResolveDefaultVisibleFromNpc(Npc npc)
+        {
+            if (npc == null)
+            {
+                return true;
+            }
+
+            return npc.CharacterRegenData?.DefaultVisible ?? true;
         }
         /// <summary>
         /// json 에서 npc 정보 불러오기

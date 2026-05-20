@@ -275,8 +275,30 @@ namespace GGemCo2DCore
                 myNpcScript.CharacterRegenData = npcData;
 
                 mapTileCommon.AddNpc(_characterVid, npc);
+                ApplyInitialNpcVisibilityPolicy(npc, npcData);
                 _characterVid++;
             }
+        }
+        
+        /// <summary>
+        /// NPC 스폰 직후 기본 보임 정책을 적용합니다.
+        /// 기본 보임이 false이면 최초 로드 단계에서 비활성화하여 즉시 숨김 상태로 시작합니다.
+        /// </summary>
+        /// <param name="npcObject">생성된 NPC 오브젝트</param>
+        /// <param name="npcData">리젠 데이터</param>
+        private static void ApplyInitialNpcVisibilityPolicy(GameObject npcObject, CharacterRegenData npcData)
+        {
+            if (npcObject == null || npcData == null)
+            {
+                return;
+            }
+
+            if (npcData.DefaultVisible)
+            {
+                return;
+            }
+
+            npcObject.SetActive(false);
         }
 
         #endregion

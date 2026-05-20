@@ -39,6 +39,7 @@ namespace GGemCo2DCoreEditor
         private int _selectedMapUid;
         private int _selectedNpcUid;
         private int _selectedMonsterUid;
+        private bool _npcSpawnDefaultVisible;
         private bool _usePatrolMonster;
 
         // ---- Cached options (for SearchableDropdown) ----
@@ -62,6 +63,7 @@ namespace GGemCo2DCoreEditor
             _selectedMapUid = 0;
             _selectedNpcUid = 0;
             _selectedMonsterUid = 0;
+            _npcSpawnDefaultVisible = true;
             _usePatrolMonster = false;
 
             // 컴파일/도메인리로드 직후에는 씬 변경 작업을 막습니다.
@@ -372,6 +374,10 @@ namespace GGemCo2DCoreEditor
             }
         }
 
+        /// <summary>
+        /// NPC 배치 섹션을 그립니다.
+        /// 배치 시점에 "스폰 후 기본 보임" 정책을 함께 저장할 수 있도록 UI를 제공합니다.
+        /// </summary>
         private void DrawNpcSection()
         {
             _foldNpc = EditorGUILayout.Foldout(_foldNpc, "2) NPC 추가", true);
@@ -386,6 +392,12 @@ namespace GGemCo2DCoreEditor
                     selectedNpcIndex,
                     (_, option) => _selectedNpcUid = option.Data,
                     noneText: "(NPC 선택)");
+                
+                _npcSpawnDefaultVisible = HelperEditorUI.ToggleLeft(
+                    "스폰 후 기본 보임",
+                    _npcSpawnDefaultVisible,
+                    "해제하면 런타임에서 이 NPC는 기본적으로 숨김 상태로 시작합니다."
+                );
 
                 using (new EditorGUILayout.HorizontalScope())
                 {
@@ -393,7 +405,7 @@ namespace GGemCo2DCoreEditor
 
                     if (GUILayout.Button("NPC 추가", GUILayout.Height(26)))
                     {
-                        _npcExporter.AddNpcToMap(_selectedNpcUid);
+                        _npcExporter.AddNpcToMap(_selectedNpcUid, _npcSpawnDefaultVisible);
                     }
 
                     GUI.enabled = true;
