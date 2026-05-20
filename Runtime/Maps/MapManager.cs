@@ -670,9 +670,300 @@ namespace GGemCo2DCore
             return _mapTileCommon?.GetMonsterByUid(uid);
         }
 
+        /// <summary>
+        /// 컷신에서 동적으로 생성한 캐릭터를 현재 맵의 상주 캐릭터로 등록합니다.
+        /// 등록 후에는 컷신 추적 목록과 무관하게 맵 컬링/조회 로직의 관리 대상이 됩니다.
+        /// </summary>
+        /// <param name="character">맵에 정착시킬 캐릭터입니다.</param>
+        /// <returns>정상 등록되면 <see langword="true"/>를 반환합니다.</returns>
+        public bool RegisterCutsceneSpawnedCharacter(CharacterBase character)
+        {
+            if (character == null || _mapTileCommon == null)
+            {
+                return false;
+            }
+
+            if (!IsSupportedMapResidentType(character.type))
+            {
+                return false;
+            }
+
+            if (character.uid <= 0)
+            {
+                GcLogger.LogWarning(
+                    $"맵 정착 등록을 건너뜁니다. uid가 유효하지 않습니다. type={character.type}, uid={character.uid}");
+                return false;
+            }
+
+            Dictionary<int, GameObject> targetMap =
+                character.type == CharacterConstants.Type.Npc
+                    ? _mapTileCommon.GetNpcs()
+                    : _mapTileCommon.GetMonsters();
+
+            if (IsCharacterAlreadyRegistered(targetMap, character.gameObject))
+            {
+                EnsureCharacterRegenDataForMapSettlement(character);
+                RefreshNpcQuestInfoIfNeeded(character);
+                return true;
+            }
+
+            CharacterBase existingByUid = character.type == CharacterConstants.Type.Npc
+                ? _mapTileCommon.GetNpcByUid(character.uid)
+                : _mapTileCommon.GetMonsterByUid(character.uid);
+
+            if (existingByUid != null && !ReferenceEquals(existingByUid, character))
+            {
+                GcLogger.LogWarning(
+                    $"맵 정착 등록을 건너뜁니다. 동일 uid 캐릭터가 이미 맵에 존재합니다. type={character.type}, uid={character.uid}");
+                return false;
+            }
+
+            Transform mapRoot = _mapTileCommon.transform;
+            if (character.transform.parent != mapRoot)
+            {
+                character.transform.SetParent(mapRoot, true);
+            }
+
+            EnsureCharacterRegenDataForMapSettlement(character);
+
+            int registrationVid = ResolveRegistrationVid(character);
+            character.vid = registrationVid;
+
+            if (character.type == CharacterConstants.Type.Npc)
+            {
+                _mapTileCommon.AddNpc(registrationVid, character.gameObject);
+                RefreshNpcQuestInfoIfNeeded(character);
+                return true;
+            }
+
+            _mapTileCommon.AddMonster(registrationVid, character.gameObject);
+            return true;
+        }
+
         public Transform GetCurrentMap()
         {
             return _mapTileCommon != null ? _mapTileCommon.transform : null;
+        }
+
+        /// <summary>
+        /// 맵 상주 캐릭터 등록을 지원하는 타입인지 확인합니다.
+        /// </summary>
+        /// <param name="type">검사할 캐릭터 타입입니다.</param>
+        /// <returns>Npc 또는 Monster면 <see langword="true"/>를 반환합니다.</returns>
+        private static bool IsSupportedMapResidentType(CharacterConstants.Type type)
+        {
+            return type == CharacterConstants.Type.Npc ||
+                   type == CharacterConstants.Type.Monster;
+        }
+
+        /// <summary>
+        /// 등록 대상 캐릭터의 RegenData를 현재 맵 상태 기준으로 보정합니다.
+        /// NPC 퀘스트 아이콘, 몬스터 사망 이벤트 등 맵 로직이 필요한 최소 필드를 보장합니다.
+        /// </summary>
+        /// <param name="character">보정할 캐릭터입니다.</param>
+        private void EnsureCharacterRegenDataForMapSettlement(CharacterBase character)
+        {
+            if (character == null)
+            {
+                return;
+            }
+
+            int mapUid = _currentMapUid;
+            Vector3 position = character.transform.position;
+            bool defaultVisible = character.gameObject.activeSelf;
+            float moveStep = character.GetCurrentMoveStep();
+            float moveSpeed = character.GetCurrentMoveSpeed(isPercent: false);
+
+            bool canMoveX = true;
+            bool canMoveY = true;
+
+            if (character is Monster monster)
+            {
+                canMoveX = monster.canMoveX;
+                canMoveY = monster.canMoveY;
+            }
+
+            if (character.CharacterRegenData == null)
+            {
+                character.CharacterRegenData = new CharacterRegenData(
+                    character.uid,
+                    position,
+                    character.isFlip,
+                    mapUid,
+                    defaultVisible,
+                    moveStep,
+                    moveSpeed,
+                    canMoveX,
+                    canMoveY);
+                return;
+            }
+
+            CharacterRegenData regenData = character.CharacterRegenData;
+            regenData.Uid = character.uid;
+            regenData.MapUid = mapUid;
+            regenData.x = position.x;
+            regenData.y = position.y;
+            regenData.z = position.z;
+            regenData.IsFlip = character.isFlip;
+            regenData.DefaultVisible = defaultVisible;
+            regenData.MoveStep = moveStep;
+            regenData.MoveSpeed = moveSpeed;
+            regenData.CanMoveX = canMoveX;
+            regenData.CanMoveY = canMoveY;
+        }
+
+        /// <summary>
+        /// 맵 딕셔너리에서 사용할 캐릭터 VID를 계산합니다.
+        /// 기존 VID가 비어 있으면 재사용하고, 충돌하면 다음 가용 값을 할당합니다.
+        /// </summary>
+        /// <param name="character">등록할 캐릭터입니다.</param>
+        /// <returns>등록 가능한 VID 값입니다.</returns>
+        private int ResolveRegistrationVid(CharacterBase character)
+        {
+            int preferredVid = character != null ? character.vid : 0;
+            if (preferredVid > 0 && IsCharacterVidAvailable(preferredVid, character != null ? character.gameObject : null))
+            {
+                return preferredVid;
+            }
+
+            return GetNextAvailableCharacterVid();
+        }
+
+        /// <summary>
+        /// 지정한 VID를 맵 캐릭터 딕셔너리에서 사용할 수 있는지 확인합니다.
+        /// </summary>
+        /// <param name="vid">확인할 VID입니다.</param>
+        /// <param name="ownerObject">현재 등록하려는 캐릭터 오브젝트입니다.</param>
+        /// <returns>충돌 없이 사용할 수 있으면 <see langword="true"/>를 반환합니다.</returns>
+        private bool IsCharacterVidAvailable(int vid, GameObject ownerObject)
+        {
+            if (_mapTileCommon == null || vid <= 0)
+            {
+                return false;
+            }
+
+            if (IsVidReservedByAnotherCharacter(_mapTileCommon.GetNpcs(), vid, ownerObject))
+            {
+                return false;
+            }
+
+            if (IsVidReservedByAnotherCharacter(_mapTileCommon.GetMonsters(), vid, ownerObject))
+            {
+                return false;
+            }
+
+            return true;
+        }
+
+        /// <summary>
+        /// 맵의 NPC/몬스터 딕셔너리를 스캔해 다음으로 사용할 VID를 반환합니다.
+        /// </summary>
+        /// <returns>현재 맵에서 비어 있는 다음 VID입니다.</returns>
+        private int GetNextAvailableCharacterVid()
+        {
+            if (_mapTileCommon == null)
+            {
+                return 1;
+            }
+
+            int nextVid = 1;
+
+            nextVid = Mathf.Max(nextVid, GetNextVidFromMap(_mapTileCommon.GetNpcs()));
+            nextVid = Mathf.Max(nextVid, GetNextVidFromMap(_mapTileCommon.GetMonsters()));
+
+            while (!IsCharacterVidAvailable(nextVid, null))
+            {
+                nextVid++;
+            }
+
+            return nextVid;
+        }
+
+        /// <summary>
+        /// 딕셔너리 키 기준으로 다음 후보 VID를 계산합니다.
+        /// </summary>
+        /// <param name="map">VID를 키로 사용하는 캐릭터 맵입니다.</param>
+        /// <returns>해당 맵에서 사용할 다음 후보 VID입니다.</returns>
+        private static int GetNextVidFromMap(Dictionary<int, GameObject> map)
+        {
+            if (map == null || map.Count == 0)
+            {
+                return 1;
+            }
+
+            int maxVid = 0;
+            foreach (int vid in map.Keys)
+            {
+                if (vid > maxVid)
+                {
+                    maxVid = vid;
+                }
+            }
+
+            return maxVid + 1;
+        }
+
+        /// <summary>
+        /// 지정한 VID가 다른 오브젝트에 의해 이미 점유됐는지 확인합니다.
+        /// </summary>
+        /// <param name="map">점유 상태를 확인할 딕셔너리입니다.</param>
+        /// <param name="vid">확인할 VID입니다.</param>
+        /// <param name="ownerObject">현재 등록하려는 오브젝트입니다.</param>
+        /// <returns>다른 오브젝트가 점유 중이면 <see langword="true"/>를 반환합니다.</returns>
+        private static bool IsVidReservedByAnotherCharacter(
+            Dictionary<int, GameObject> map,
+            int vid,
+            GameObject ownerObject)
+        {
+            if (map == null || !map.TryGetValue(vid, out GameObject existingObject))
+            {
+                return false;
+            }
+
+            if (existingObject == null)
+            {
+                return true;
+            }
+
+            return !ReferenceEquals(existingObject, ownerObject);
+        }
+
+        /// <summary>
+        /// 지정 캐릭터가 이미 해당 딕셔너리에 등록되어 있는지 확인합니다.
+        /// </summary>
+        /// <param name="map">검사할 캐릭터 딕셔너리입니다.</param>
+        /// <param name="characterObject">검사할 캐릭터 오브젝트입니다.</param>
+        /// <returns>이미 등록되어 있으면 <see langword="true"/>를 반환합니다.</returns>
+        private static bool IsCharacterAlreadyRegistered(
+            Dictionary<int, GameObject> map,
+            GameObject characterObject)
+        {
+            if (map == null || characterObject == null)
+            {
+                return false;
+            }
+
+            foreach (GameObject mapCharacter in map.Values)
+            {
+                if (ReferenceEquals(mapCharacter, characterObject))
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        /// <summary>
+        /// NPC 등록 직후 퀘스트 상태 아이콘 갱신을 즉시 반영합니다.
+        /// </summary>
+        /// <param name="character">등록된 캐릭터입니다.</param>
+        private static void RefreshNpcQuestInfoIfNeeded(CharacterBase character)
+        {
+            if (character is Npc npc)
+            {
+                npc.UpdateQuestInfo();
+            }
         }
 
         /// <summary>

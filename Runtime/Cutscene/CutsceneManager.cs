@@ -814,8 +814,14 @@ namespace GGemCo2DCore
             }
 
             _activeControllers.Clear();
-
-            DestroyTrackedCharacters();
+            if (emitCompletedEvent)
+            {
+                SettleTrackedCharactersToMap();
+            }
+            else
+            {
+                DestroyTrackedCharacters();
+            }
             
             ClearOverlayTextOverrides();
             _overlayPresenter?.ResetPresentation();
@@ -839,6 +845,48 @@ namespace GGemCo2DCore
             }
 
             _currentCutsceneUid = 0;
+        }
+
+        /// <summary>
+        /// 컷신 중 생성해 추적하던 캐릭터를 현재 맵 캐릭터 목록으로 이관합니다.
+        /// 이관에 실패한 대상만 안전하게 파괴하여 누수와 중복 참조를 방지합니다.
+        /// </summary>
+        private void SettleTrackedCharactersToMap()
+        {
+            if (_createCharacters.Count == 0)
+            {
+                return;
+            }
+
+            MapManager mapManager = SceneGame.Instance != null ? SceneGame.Instance.mapManager : null;
+            if (mapManager == null || !mapManager.IsStateComplete())
+            {
+                // 맵 컨텍스트가 없으면 정착 정책을 적용할 수 없으므로 기존처럼 파괴합니다.
+                DestroyTrackedCharacters();
+                return;
+            }
+
+            foreach (KeyValuePair<CharacterConstants.Type, Dictionary<int, GameObject>> charactersByType in _createCharacters)
+            {
+                foreach (KeyValuePair<int, GameObject> trackedPair in charactersByType.Value)
+                {
+                    GameObject trackedCharacter = trackedPair.Value;
+                    if (trackedCharacter == null)
+                    {
+                        continue;
+                    }
+
+                    CharacterBase characterBase = trackedCharacter.GetComponent<CharacterBase>();
+                    if (characterBase != null && mapManager.RegisterCutsceneSpawnedCharacter(characterBase))
+                    {
+                        continue;
+                    }
+
+                    Object.Destroy(trackedCharacter);
+                }
+            }
+
+            _createCharacters.Clear();
         }
 
         /// <summary>
