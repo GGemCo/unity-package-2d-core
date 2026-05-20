@@ -12,8 +12,8 @@ namespace GGemCo2DCoreEditor
         /// 단일 컷신 이벤트의 필수 설정값을 검증합니다.
         /// </summary>
         /// <param name="cutsceneEvent">검증할 컷신 이벤트입니다.</param>
-        /// <param name="error">검증 실패 시 에러 메시지입니다. 성공 시 <see langword="null"/>입니다.</param>
-        /// <returns>유효한 이벤트이면 <see langword="true"/>를 반환합니다.</returns>
+        /// <param name="error">검증 실패 시 오류 메시지입니다. 성공 시 <see langword="null"/>입니다.</param>
+        /// <returns>유효한 이벤트면 <see langword="true"/>를 반환합니다.</returns>
         public static bool ValidateEvent(CutsceneEvent cutsceneEvent, out string error)
         {
             error = null;
@@ -35,6 +35,16 @@ namespace GGemCo2DCoreEditor
                 return false;
             }
 
+            // CharacterTweenMove 이벤트는 대상 캐릭터 타입이 반드시 필요합니다.
+            if (cutsceneEvent.type == CutsceneEventType.CharacterTweenMove &&
+                cutsceneEvent.characterTweenMove != null &&
+                cutsceneEvent.characterTweenMove.characterType == CharacterConstants.Type.None)
+            {
+                error = $"type: {cutsceneEvent.type} / 캐릭터 타입을 설정하지 않았습니다.";
+                Debug.LogError(error);
+                return false;
+            }
+
             // CameraChangeTarget 이벤트는 대상 캐릭터 타입이 반드시 필요합니다.
             if (cutsceneEvent.type == CutsceneEventType.CameraChangeTarget &&
                 cutsceneEvent.cameraChangeTarget != null &&
@@ -49,7 +59,7 @@ namespace GGemCo2DCoreEditor
             if (cutsceneEvent.type == CutsceneEventType.CharacterFade &&
                 cutsceneEvent.characterFade != null)
             {
-                var fadeData = cutsceneEvent.characterFade;
+                CharacterFadeData fadeData = cutsceneEvent.characterFade;
                 if (!HasValidCharacterTarget(fadeData.target, fadeData.characterType))
                 {
                     error = $"type: {cutsceneEvent.type} / CharacterFade 대상 캐릭터를 설정하지 않았습니다.";
@@ -62,7 +72,7 @@ namespace GGemCo2DCoreEditor
             if (cutsceneEvent.type == CutsceneEventType.CharacterAirborne &&
                 cutsceneEvent.characterAirborne != null)
             {
-                var airborneData = cutsceneEvent.characterAirborne;
+                CharacterAirborneData airborneData = cutsceneEvent.characterAirborne;
                 if (!HasValidCharacterTarget(airborneData.target, airborneData.characterType))
                 {
                     error = $"type: {cutsceneEvent.type} / CharacterAirborne 대상 캐릭터를 설정하지 않았습니다.";
@@ -75,7 +85,7 @@ namespace GGemCo2DCoreEditor
             if (cutsceneEvent.type == CutsceneEventType.CharacterSpawn &&
                 cutsceneEvent.characterSpawn != null)
             {
-                var spawnData = cutsceneEvent.characterSpawn;
+                CharacterSpawnData spawnData = cutsceneEvent.characterSpawn;
                 if (!IsValidCharacterSpawnType(spawnData.characterType))
                 {
                     error = $"type: {cutsceneEvent.type} / CharacterSpawn 타입은 Monster 또는 Npc만 지원합니다.";
@@ -96,11 +106,11 @@ namespace GGemCo2DCoreEditor
 
         /// <summary>
         /// 캐릭터 대상 참조가 유효한지 검사합니다.
-        /// RuntimeOverride 키, Fixed 타입, Legacy 타입 중 하나라도 설정되어 있으면 유효합니다.
+        /// RuntimeOverride, Fixed, Legacy 대상 중 하나라도 설정되어 있으면 유효합니다.
         /// </summary>
-        /// <param name="targetReference">신규 대상 참조 데이터입니다.</param>
+        /// <param name="targetReference">타겟 대상 참조 데이터입니다.</param>
         /// <param name="legacyCharacterType">레거시 대상 타입 값입니다.</param>
-        /// <returns>하나 이상의 대상 식별자가 유효하면 <see langword="true"/>를 반환합니다.</returns>
+        /// <returns>하나 이상의 대상 체계가 유효하면 <see langword="true"/>를 반환합니다.</returns>
         private static bool HasValidCharacterTarget(
             CutsceneCharacterReference targetReference,
             CharacterConstants.Type legacyCharacterType)

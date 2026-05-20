@@ -8,18 +8,18 @@ using UnityEditor;
 namespace GGemCo2DCoreEditor
 {
     /// <summary>
-    /// 컷신 이벤트 Payload의 생성, 검사 및 SerializedProperty 기반 실제 객체 접근을 지원하는 에디터 유틸리티입니다.
+    /// 컷신 이벤트 타입 변경 시 Payload 생성/보정 및 실제 객체 접근을 지원하는 유틸리티입니다.
     /// </summary>
     internal static class CutsceneEventPayloadEditorUtility
     {
         /// <summary>
-        /// Reflection으로 멤버를 조회할 때 사용하는 기본 플래그입니다.
+        /// Reflection으로 인스턴스 멤버를 조회할 때 사용하는 기본 플래그입니다.
         /// </summary>
         private const BindingFlags InstanceMemberFlags =
             BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic;
 
         /// <summary>
-        /// 이벤트 타입과 해당 Payload 필드명을 매핑합니다.
+        /// 이벤트 타입과 대응되는 Payload 필드명을 매핑합니다.
         /// </summary>
         private static readonly IReadOnlyDictionary<CutsceneEventType, string> PayloadFieldNames =
             new Dictionary<CutsceneEventType, string>
@@ -29,6 +29,7 @@ namespace GGemCo2DCoreEditor
                 { CutsceneEventType.CameraShake, nameof(CutsceneEvent.cameraShake) },
                 { CutsceneEventType.CameraChangeTarget, nameof(CutsceneEvent.cameraChangeTarget) },
                 { CutsceneEventType.CharacterMove, nameof(CutsceneEvent.characterMove) },
+                { CutsceneEventType.CharacterTweenMove, nameof(CutsceneEvent.characterTweenMove) },
                 { CutsceneEventType.CharacterAnimation, nameof(CutsceneEvent.characterAnimation) },
                 { CutsceneEventType.CharacterAnimationTimeScale, nameof(CutsceneEvent.characterAnimationTimeScale) },
                 { CutsceneEventType.DialogueBalloon, nameof(CutsceneEvent.dialogueBalloon) },
@@ -48,11 +49,11 @@ namespace GGemCo2DCoreEditor
             };
 
         /// <summary>
-        /// 이벤트 타입 변경 시 해당 타입에 맞는 Payload를 생성 또는 보정합니다.
+        /// 이벤트 타입 변경 시 해당 타입에 필요한 Payload를 생성/보정합니다.
         /// </summary>
         /// <param name="eventProperty">대상 이벤트의 SerializedProperty입니다.</param>
         /// <param name="eventType">변경할 이벤트 타입입니다.</param>
-        /// <returns>Payload를 정상적으로 보정했으면 true, 그렇지 않으면 false입니다.</returns>
+        /// <returns>Payload를 정상적으로 보정했으면 <see langword="true"/>를 반환합니다.</returns>
         public static bool EnsurePayloadForTypeChange(SerializedProperty eventProperty, CutsceneEventType eventType)
         {
             if (eventProperty == null)
@@ -73,10 +74,10 @@ namespace GGemCo2DCoreEditor
         }
 
         /// <summary>
-        /// 클립 내 모든 이벤트의 Payload를 검사하고, 누락된 경우 생성합니다.
+        /// 클립 내부의 모든 이벤트를 순회하며 누락된 Payload를 보정합니다.
         /// </summary>
-        /// <param name="clip">검사 대상 컷신 이벤트 클립입니다.</param>
-        /// <returns>하나 이상의 이벤트가 변경되었으면 true입니다.</returns>
+        /// <param name="clip">검사할 컷신 이벤트 클립입니다.</param>
+        /// <returns>하나 이상 수정되었으면 <see langword="true"/>를 반환합니다.</returns>
         public static bool EnsurePayloadsForClip(CutsceneEventClip clip)
         {
             if (clip == null || clip.events == null)
@@ -88,7 +89,7 @@ namespace GGemCo2DCoreEditor
 
             for (int i = 0; i < clip.events.Count; i++)
             {
-                var cutsceneEvent = clip.events[i];
+                CutsceneEvent cutsceneEvent = clip.events[i];
                 if (cutsceneEvent == null)
                 {
                     cutsceneEvent = new CutsceneEvent();
@@ -114,11 +115,11 @@ namespace GGemCo2DCoreEditor
         }
 
         /// <summary>
-        /// SerializedProperty 기준으로 지정한 이벤트 타입의 Payload가 존재하는지 확인합니다.
+        /// SerializedProperty 기준으로 현재 이벤트 타입의 Payload 존재 여부를 확인합니다.
         /// </summary>
         /// <param name="eventProperty">검사할 이벤트 SerializedProperty입니다.</param>
         /// <param name="eventType">검사할 이벤트 타입입니다.</param>
-        /// <returns>해당 Payload가 존재하면 true입니다.</returns>
+        /// <returns>해당 타입의 Payload가 존재하면 <see langword="true"/>를 반환합니다.</returns>
         public static bool HasActivePayload(SerializedProperty eventProperty, CutsceneEventType eventType)
         {
             if (eventProperty == null)
@@ -126,20 +127,20 @@ namespace GGemCo2DCoreEditor
                 return false;
             }
 
-            if (!TryGetPayloadFieldName(eventType, out var fieldName))
+            if (!TryGetPayloadFieldName(eventType, out string fieldName))
             {
                 return false;
             }
 
-            var payloadProperty = eventProperty.FindPropertyRelative(fieldName);
+            SerializedProperty payloadProperty = eventProperty.FindPropertyRelative(fieldName);
             return payloadProperty != null && payloadProperty.hasVisibleChildren;
         }
 
         /// <summary>
-        /// 런타임 이벤트 객체 기준으로 활성 Payload가 존재하는지 확인합니다.
+        /// 실제 CutsceneEvent 객체 기준으로 현재 타입 Payload 존재 여부를 확인합니다.
         /// </summary>
-        /// <param name="cutsceneEvent">검사할 컷신 이벤트입니다.</param>
-        /// <returns>현재 타입에 대응하는 Payload 필드 값이 존재하면 true입니다.</returns>
+        /// <param name="cutsceneEvent">검사할 컷신 이벤트 객체입니다.</param>
+        /// <returns>현재 타입에 해당하는 Payload 값이 존재하면 <see langword="true"/>를 반환합니다.</returns>
         private static bool HasActivePayload(CutsceneEvent cutsceneEvent)
         {
             if (cutsceneEvent == null)
@@ -147,33 +148,33 @@ namespace GGemCo2DCoreEditor
                 return false;
             }
 
-            if (!TryGetPayloadFieldName(cutsceneEvent.type, out var fieldName))
+            if (!TryGetPayloadFieldName(cutsceneEvent.type, out string fieldName))
             {
                 return false;
             }
 
-            var field = typeof(CutsceneEvent).GetField(fieldName, InstanceMemberFlags);
+            FieldInfo field = typeof(CutsceneEvent).GetField(fieldName, InstanceMemberFlags);
             return field != null && field.GetValue(cutsceneEvent) != null;
         }
 
         /// <summary>
-        /// 이벤트 타입에 대응하는 Payload 필드명을 가져옵니다.
+        /// 이벤트 타입에 대응되는 Payload 필드명을 조회합니다.
         /// </summary>
         /// <param name="eventType">조회할 이벤트 타입입니다.</param>
         /// <param name="fieldName">조회된 Payload 필드명입니다.</param>
-        /// <returns>매핑된 필드명이 존재하면 true입니다.</returns>
+        /// <returns>매핑이 존재하면 <see langword="true"/>를 반환합니다.</returns>
         private static bool TryGetPayloadFieldName(CutsceneEventType eventType, out string fieldName)
         {
             return PayloadFieldNames.TryGetValue(eventType, out fieldName);
         }
 
         /// <summary>
-        /// SerializedProperty로부터 실제 CutsceneEvent 객체와 소유 객체를 추출합니다.
+        /// SerializedProperty에서 실제 CutsceneEvent와 소유 오브젝트를 추출합니다.
         /// </summary>
         /// <param name="property">대상 SerializedProperty입니다.</param>
-        /// <param name="targetObject">속성이 속한 Unity 오브젝트입니다.</param>
-        /// <param name="cutsceneEvent">추출된 컷신 이벤트입니다.</param>
-        /// <returns>추출에 성공하면 true입니다.</returns>
+        /// <param name="targetObject">소유 Unity 오브젝트입니다.</param>
+        /// <param name="cutsceneEvent">추출한 컷신 이벤트 객체입니다.</param>
+        /// <returns>추출에 성공하면 <see langword="true"/>를 반환합니다.</returns>
         private static bool TryGetCutsceneEvent(
             SerializedProperty property,
             out UnityEngine.Object targetObject,
@@ -198,11 +199,11 @@ namespace GGemCo2DCoreEditor
         }
 
         /// <summary>
-        /// SerializedProperty 경로를 따라 실제 객체 그래프를 탐색하여 값을 반환합니다.
+        /// Unity property path를 따라 실제 객체 그래프에서 값을 탐색합니다.
         /// </summary>
         /// <param name="root">탐색 시작 루트 객체입니다.</param>
         /// <param name="propertyPath">Unity SerializedProperty 경로입니다.</param>
-        /// <returns>경로 해석 결과 객체이며, 실패 시 null입니다.</returns>
+        /// <returns>탐색 결과 객체이며, 실패하면 <see langword="null"/>을 반환합니다.</returns>
         private static object GetValueFromPropertyPath(object root, string propertyPath)
         {
             if (root == null || string.IsNullOrWhiteSpace(propertyPath))
@@ -211,7 +212,7 @@ namespace GGemCo2DCoreEditor
             }
 
             object current = root;
-            foreach (var token in EnumeratePropertyPathTokens(propertyPath))
+            foreach (string token in EnumeratePropertyPathTokens(propertyPath))
             {
                 current = GetMemberValue(current, token);
                 if (current == null)
@@ -227,7 +228,7 @@ namespace GGemCo2DCoreEditor
         /// Unity property path를 탐색 가능한 토큰 시퀀스로 변환합니다.
         /// </summary>
         /// <param name="propertyPath">원본 property path입니다.</param>
-        /// <returns>분해된 경로 토큰 열거입니다.</returns>
+        /// <returns>분해된 경로 토큰 목록입니다.</returns>
         private static IEnumerable<string> EnumeratePropertyPathTokens(string propertyPath)
         {
             string normalizedPath = propertyPath.Replace(".Array.data[", "[");
@@ -235,11 +236,11 @@ namespace GGemCo2DCoreEditor
         }
 
         /// <summary>
-        /// 단일 멤버 토큰을 해석하여 필드/프로퍼티 또는 리스트 요소 값을 반환합니다.
+        /// 단일 토큰을 해석하여 필드/프로퍼티 또는 컬렉션 인덱스 값을 반환합니다.
         /// </summary>
-        /// <param name="source">현재 탐색 중인 객체입니다.</param>
+        /// <param name="source">현재 탐색 대상 객체입니다.</param>
         /// <param name="memberToken">멤버 이름 또는 인덱스 토큰입니다.</param>
-        /// <returns>조회된 값이며 실패 시 null입니다.</returns>
+        /// <returns>조회한 값이며, 실패하면 <see langword="null"/>을 반환합니다.</returns>
         private static object GetMemberValue(object source, string memberToken)
         {
             if (source == null || string.IsNullOrWhiteSpace(memberToken))
@@ -247,12 +248,12 @@ namespace GGemCo2DCoreEditor
                 return null;
             }
 
-            if (!TryParseIndexedToken(memberToken, out var memberName, out var index))
+            if (!TryParseIndexedToken(memberToken, out string memberName, out int index))
             {
                 return GetFieldOrPropertyValue(source, memberToken);
             }
 
-            var collectionObject = string.IsNullOrEmpty(memberName)
+            object collectionObject = string.IsNullOrEmpty(memberName)
                 ? source
                 : GetFieldOrPropertyValue(source, memberName);
 
@@ -267,12 +268,12 @@ namespace GGemCo2DCoreEditor
         }
 
         /// <summary>
-        /// 인덱서 형태의 멤버 토큰을 파싱합니다.
+        /// 인덱스 형태 토큰(예: events[0])을 파싱합니다.
         /// </summary>
         /// <param name="memberToken">파싱할 토큰입니다.</param>
-        /// <param name="memberName">인덱서 앞의 멤버명입니다.</param>
+        /// <param name="memberName">인덱스 앞의 멤버명입니다.</param>
         /// <param name="index">파싱된 인덱스입니다.</param>
-        /// <returns>인덱서 토큰 파싱에 성공하면 true입니다.</returns>
+        /// <returns>파싱에 성공하면 <see langword="true"/>를 반환합니다.</returns>
         private static bool TryParseIndexedToken(string memberToken, out string memberName, out int index)
         {
             memberName = null;
@@ -296,11 +297,11 @@ namespace GGemCo2DCoreEditor
         }
 
         /// <summary>
-        /// 지정한 객체에서 필드 또는 프로퍼티 값을 Reflection으로 조회합니다.
+        /// Reflection으로 지정 멤버(필드/프로퍼티) 값을 조회합니다.
         /// </summary>
         /// <param name="source">조회 대상 객체입니다.</param>
-        /// <param name="memberName">조회할 멤버 이름입니다.</param>
-        /// <returns>조회된 값이며, 멤버가 없으면 null입니다.</returns>
+        /// <param name="memberName">조회할 멤버명입니다.</param>
+        /// <returns>조회한 값이며, 실패하면 <see langword="null"/>을 반환합니다.</returns>
         private static object GetFieldOrPropertyValue(object source, string memberName)
         {
             if (source == null || string.IsNullOrWhiteSpace(memberName))
@@ -311,13 +312,13 @@ namespace GGemCo2DCoreEditor
             Type currentType = source.GetType();
             while (currentType != null)
             {
-                var field = currentType.GetField(memberName, InstanceMemberFlags);
+                FieldInfo field = currentType.GetField(memberName, InstanceMemberFlags);
                 if (field != null)
                 {
                     return field.GetValue(source);
                 }
 
-                var property = currentType.GetProperty(memberName, InstanceMemberFlags);
+                PropertyInfo property = currentType.GetProperty(memberName, InstanceMemberFlags);
                 if (property != null)
                 {
                     return property.GetValue(source);

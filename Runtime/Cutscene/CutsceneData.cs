@@ -50,6 +50,9 @@ namespace GGemCo2DCore
         /// <summary>캐릭터 이동 데이터입니다.</summary>
         public CharacterMoveData characterMove;
 
+        /// <summary>캐릭터 트윈 이동 데이터입니다.</summary>
+        public CharacterTweenMoveData characterTweenMove;
+
         /// <summary>캐릭터 애니메이션 데이터입니다.</summary>
         public CharacterAnimationData characterAnimation;
 
@@ -146,6 +149,10 @@ namespace GGemCo2DCore
 
                 case CutsceneEventType.CharacterMove:
                     characterMove ??= new CharacterMoveData();
+                    break;
+
+                case CutsceneEventType.CharacterTweenMove:
+                    characterTweenMove ??= new CharacterTweenMoveData();
                     break;
 
                 case CutsceneEventType.DialogueBalloon:
@@ -245,6 +252,11 @@ namespace GGemCo2DCore
                 characterMove = null;
             }
 
+            if (type != CutsceneEventType.CharacterTweenMove)
+            {
+                characterTweenMove = null;
+            }
+
             if (type != CutsceneEventType.DialogueBalloon)
             {
                 dialogueBalloon = null;
@@ -340,6 +352,10 @@ namespace GGemCo2DCore
 
         /// <summary>CharacterMove 타입일 때만 characterMove를 직렬화합니다.</summary>
         public bool ShouldSerializeCharacterMove() => type == CutsceneEventType.CharacterMove && characterMove != null;
+
+        /// <summary>CharacterTweenMove 타입일 때만 characterTweenMove를 직렬화합니다.</summary>
+        public bool ShouldSerializeCharacterTweenMove() =>
+            type == CutsceneEventType.CharacterTweenMove && characterTweenMove != null;
 
         /// <summary>CharacterAnimation 타입일 때만 characterAnimation을 직렬화합니다.</summary>
         public bool ShouldSerializeCharacterAnimation() => type == CutsceneEventType.CharacterAnimation && characterAnimation != null;

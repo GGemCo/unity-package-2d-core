@@ -1232,6 +1232,7 @@ namespace GGemCo2DCore
                 CutsceneEventType.CameraChangeTarget => new CameraChangeTargetController(this),
 
                 CutsceneEventType.CharacterMove => new CharacterMoveController(this),
+                CutsceneEventType.CharacterTweenMove => new CharacterTweenMoveController(this),
                 CutsceneEventType.CharacterAnimation => new CharacterAnimationController(this),
                 CutsceneEventType.CharacterAnimationTimeScale => new CharacterAnimationTimeScaleController(this),
 

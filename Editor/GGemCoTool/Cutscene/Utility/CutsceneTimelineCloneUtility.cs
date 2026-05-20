@@ -76,6 +76,10 @@ namespace GGemCo2DCoreEditor
                     target.characterMove = CloneCharacterMoveData(source.characterMove);
                     break;
 
+                case CutsceneEventType.CharacterTweenMove:
+                    target.characterTweenMove = CloneCharacterTweenMoveData(source.characterTweenMove);
+                    break;
+
                 case CutsceneEventType.CharacterAnimation:
                     target.characterAnimation = CloneCharacterAnimationData(source.characterAnimation);
                     break;
@@ -212,6 +216,28 @@ namespace GGemCo2DCoreEditor
                 characterScale = source.characterScale,
                 characterMoveSpeed = source.characterMoveSpeed,
                 moveMode = source.moveMode,
+                startPosition = source.startPosition,
+                endPosition = source.endPosition,
+                relativeDirection = source.relativeDirection,
+                relativeDistance = source.relativeDistance,
+                relativeOffset = source.relativeOffset,
+                facingMode = source.facingMode,
+                explicitFacing = source.explicitFacing,
+            };
+        }
+
+        /// <summary>
+        /// <see cref="CharacterTweenMoveData"/>를 깊은 복사합니다.
+        /// </summary>
+        private static CharacterTweenMoveData CloneCharacterTweenMoveData(CharacterTweenMoveData source)
+        {
+            return source == null ? null : new CharacterTweenMoveData
+            {
+                isFollowTarget = source.isFollowTarget,
+                characterType = source.characterType,
+                characterUid = source.characterUid,
+                moveMode = source.moveMode,
+                easing = source.easing,
                 startPosition = source.startPosition,
                 endPosition = source.endPosition,
                 relativeDirection = source.relativeDirection,

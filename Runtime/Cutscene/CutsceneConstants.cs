@@ -110,7 +110,13 @@
         /// <summary>
         /// 컷신 중 일반 대화창을 열고 대화 종료까지 타임라인을 대기시킵니다.
         /// </summary>
-        DialogueWindow = 20
+        DialogueWindow = 20,
+
+        /// <summary>
+        /// 컷신 중 지정한 Duration 동안 캐릭터를 트윈 보간으로 이동시킵니다.
+        /// Run 애니메이션/이동 속도 제어 없이 오브젝트 이동 연출에 사용합니다.
+        /// </summary>
+        CharacterTweenMove = 21
     }
     
     public enum CutsceneKeyTextOverlay

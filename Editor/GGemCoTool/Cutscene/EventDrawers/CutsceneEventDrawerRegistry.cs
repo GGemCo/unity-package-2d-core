@@ -30,6 +30,7 @@ namespace GGemCo2DCoreEditor
             Register(new CutsceneDefaultEventTypeDrawer(CutsceneEventType.CameraShake, "cameraShake"));
             Register(new CutsceneDefaultEventTypeDrawer(CutsceneEventType.CameraChangeTarget, "cameraChangeTarget"));
             Register(new CutsceneDefaultEventTypeDrawer(CutsceneEventType.CharacterMove, "characterMove"));
+            Register(new CutsceneDefaultEventTypeDrawer(CutsceneEventType.CharacterTweenMove, "characterTweenMove"));
             Register(new CutsceneDefaultEventTypeDrawer(CutsceneEventType.CharacterAnimation, "characterAnimation"));
             Register(new CutsceneCharacterAnimationTimeScaleEventTypeDrawer());
             Register(new CutsceneDefaultEventTypeDrawer(CutsceneEventType.DialogueBalloon, "dialogueBalloon"));
