@@ -16,7 +16,8 @@ namespace GGemCo2DCore
         private int _characterUid;
         private float _characterScale;
         private Vec2 _spawnPosition;
-        private bool _isFlip;
+        private CutsceneCharacterAnimationFacingMode _facingMode;
+        private CharacterConstants.FacingDirection8 _explicitFacing;
         
         private string _animationName;
         private bool _animationLoop;
@@ -72,7 +73,8 @@ namespace GGemCo2DCore
             _characterUid = data.characterUid;
             _characterScale = data.characterScale;
             _spawnPosition = data.spawnPosition;
-            _isFlip = data.isFlip;
+            _facingMode = data.facingMode;
+            _explicitFacing = data.explicitFacing;
             
             _animationName = data.animationName;
             _animationLoop = data.animationLoop;
@@ -140,7 +142,7 @@ namespace GGemCo2DCore
                 }
 
                 // 방향 설정
-                _targetCharacter?.SetFlip(_isFlip);
+                ApplyFacingPolicy();
 
                 // 카메라 추적 대상 설정
                 if (_isFollowTarget)
@@ -164,6 +166,81 @@ namespace GGemCo2DCore
 
             _timer = 0f;
             _isAnimation = true;
+        }
+
+        /// <summary>
+        /// CharacterAnimation 이벤트의 바라보기 정책을 적용합니다.
+        /// </summary>
+        private void ApplyFacingPolicy()
+        {
+            if (_targetCharacter == null)
+            {
+                return;
+            }
+
+            switch (_facingMode)
+            {
+                case CutsceneCharacterAnimationFacingMode.FacePlayer:
+                    ApplyFacePlayerPolicy();
+                    return;
+
+                case CutsceneCharacterAnimationFacingMode.FaceExplicit:
+                default:
+                    ApplyExplicitFacingPolicy();
+                    return;
+            }
+        }
+
+        /// <summary>
+        /// 이벤트에 지정된 8방향 값을 기준으로 바라보기 방향을 적용합니다.
+        /// </summary>
+        private void ApplyExplicitFacingPolicy()
+        {
+            if (_explicitFacing == CharacterConstants.FacingDirection8.None)
+            {
+                return;
+            }
+
+            _targetCharacter.SetFacing(_explicitFacing);
+        }
+
+        /// <summary>
+        /// 플레이어 위치를 바라보도록 방향을 계산해 적용합니다.
+        /// 플레이어를 찾지 못했거나 방향 벡터를 계산할 수 없는 경우 explicitFacing으로 폴백합니다.
+        /// </summary>
+        private void ApplyFacePlayerPolicy()
+        {
+            Transform player = ResolvePlayerTransform();
+            if (player == null || player == _target)
+            {
+                ApplyExplicitFacingPolicy();
+                return;
+            }
+
+            Vector2 direction = player.position - _target.position;
+            if (direction.sqrMagnitude <= 0.0001f)
+            {
+                ApplyExplicitFacingPolicy();
+                return;
+            }
+
+            _targetCharacter.SetFacing(direction.normalized);
+        }
+
+        /// <summary>
+        /// 현재 씬에서 플레이어 Transform을 조회합니다.
+        /// 맵 배치 플레이어를 우선 탐색하고, 필요 시 컷신 추적 캐시를 폴백으로 사용합니다.
+        /// </summary>
+        /// <returns>조회된 플레이어 Transform이며, 없으면 <see langword="null"/>을 반환합니다.</returns>
+        private Transform ResolvePlayerTransform()
+        {
+            Transform player = GetTargetTransform(CharacterConstants.Type.Player, 0);
+            if (player != null)
+            {
+                return player;
+            }
+
+            return CutsceneManager.GetCharacter(CharacterConstants.Type.Player, 0);
         }
 
         /// <summary>

@@ -3,6 +3,22 @@ using UnityEngine;
 
 namespace GGemCo2DCore
 {
+    /// <summary>
+    /// CharacterAnimation 이벤트 실행 시 캐릭터의 바라보기 적용 정책입니다.
+    /// </summary>
+    public enum CutsceneCharacterAnimationFacingMode
+    {
+        /// <summary>
+        /// 명시한 8방향 값으로 바라보기를 적용합니다.
+        /// </summary>
+        FaceExplicit = 0,
+
+        /// <summary>
+        /// 플레이어 위치를 바라보도록 방향을 계산해 적용합니다.
+        /// </summary>
+        FacePlayer = 1,
+    }
+
     [Serializable]
     public class CharacterAnimationData
     {
@@ -17,8 +33,12 @@ namespace GGemCo2DCore
         public float characterScale;
         [Tooltip("적용 위치. 0이면 현재 위치를 유지합니다.")]
         public Vec2 spawnPosition;
-        [Tooltip("flip")]
-        public bool isFlip;
+
+        [Header("바라보기")]
+        [Tooltip("바라보기 적용 방식")]
+        public CutsceneCharacterAnimationFacingMode facingMode = CutsceneCharacterAnimationFacingMode.FaceExplicit;
+        [Tooltip("facingMode가 FaceExplicit일 때 사용할 방향")]
+        public CharacterConstants.FacingDirection8 explicitFacing = CharacterConstants.FacingDirection8.Right;
         
         [Header("애니메이션")] 
         [Tooltip("플레이할 애니메이션 이름")]
