@@ -37,8 +37,15 @@ namespace GGemCo2DCore
         /// <param name="duration">표시 시간입니다.</param>
         /// <param name="fontSize">폰트 크기입니다. 0 이하면 프리팹 기본값을 사용합니다.</param>
         /// <param name="interruptCurrent">기존 말풍선을 중단하고 새 말풍선을 표시할지 여부입니다.</param>
+        /// <param name="fadeOutDuration">종료 시 페이드 아웃 시간(초)입니다. 0 이하면 즉시 종료합니다.</param>
         /// <returns>표시 요청을 수락했으면 true입니다.</returns>
-        public bool Say(CharacterBase speaker, string message, float duration = 2f, float fontSize = 0f, bool interruptCurrent = true)
+        public bool Say(
+            CharacterBase speaker,
+            string message,
+            float duration = 2f,
+            float fontSize = 0f,
+            bool interruptCurrent = true,
+            float fadeOutDuration = 0f)
         {
             if (speaker == null || string.IsNullOrWhiteSpace(message) || _pool == null)
             {
@@ -56,7 +63,7 @@ namespace GGemCo2DCore
                 ReturnCurrentBalloon();
             }
 
-            _currentRoutine = StartCoroutine(CoSay(speaker, message, duration, fontSize));
+            _currentRoutine = StartCoroutine(CoSay(speaker, message, duration, fontSize, fadeOutDuration));
             return true;
         }
 
@@ -81,8 +88,14 @@ namespace GGemCo2DCore
         /// <param name="message">표시할 메시지입니다.</param>
         /// <param name="duration">표시 시간입니다.</param>
         /// <param name="fontSize">폰트 크기입니다.</param>
+        /// <param name="fadeOutDuration">종료 시 페이드 아웃 시간(초)입니다.</param>
         /// <returns>말풍선 표시 코루틴입니다.</returns>
-        private IEnumerator CoSay(CharacterBase speaker, string message, float duration, float fontSize)
+        private IEnumerator CoSay(
+            CharacterBase speaker,
+            string message,
+            float duration,
+            float fontSize,
+            float fadeOutDuration)
         {
             _currentBalloon = _pool.Get(this);
             UIDialogueBalloon balloonUi = _currentBalloon != null ? _currentBalloon.GetComponent<UIDialogueBalloon>() : null;
@@ -101,13 +114,63 @@ namespace GGemCo2DCore
                 waitForUserInput = false,
                 thumbnailPositionType = ConfigCommon.ThumbnailPositionType.None
             };
+
+            CanvasGroup canvasGroup = EnsureCanvasGroup(_currentBalloon);
+            if (canvasGroup != null)
+            {
+                canvasGroup.alpha = 1f;
+            }
+
             balloonUi.Initialize(speaker, data);
 
             float waitTime = Mathf.Max(0.1f, duration);
-            yield return new WaitForSeconds(waitTime);
+            float fadeDuration = Mathf.Clamp(fadeOutDuration, 0f, waitTime);
+            float visibleDuration = Mathf.Max(0f, waitTime - fadeDuration);
+
+            if (visibleDuration > 0f)
+            {
+                yield return new WaitForSeconds(visibleDuration);
+            }
+
+            if (fadeDuration > 0f && canvasGroup != null)
+            {
+                float elapsed = 0f;
+                while (elapsed < fadeDuration)
+                {
+                    elapsed += Time.deltaTime;
+                    float t = Mathf.Clamp01(elapsed / fadeDuration);
+                    canvasGroup.alpha = Mathf.Lerp(1f, 0f, t);
+                    yield return null;
+                }
+
+                canvasGroup.alpha = 0f;
+            }
 
             ReturnCurrentBalloon();
             _currentRoutine = null;
+        }
+
+        /// <summary>
+        /// 말풍선 루트 오브젝트에 CanvasGroup을 보장해 알파 페이드 연출에 사용합니다.
+        /// </summary>
+        /// <param name="balloon">대상 말풍선 오브젝트입니다.</param>
+        /// <returns>준비된 CanvasGroup입니다. 대상이 없으면 null입니다.</returns>
+        private static CanvasGroup EnsureCanvasGroup(GameObject balloon)
+        {
+            if (balloon == null)
+            {
+                return null;
+            }
+
+            CanvasGroup canvasGroup = balloon.GetComponent<CanvasGroup>();
+            if (canvasGroup == null)
+            {
+                canvasGroup = balloon.AddComponent<CanvasGroup>();
+            }
+
+            canvasGroup.interactable = false;
+            canvasGroup.blocksRaycasts = false;
+            return canvasGroup;
         }
 
         /// <summary>
@@ -117,6 +180,12 @@ namespace GGemCo2DCore
         {
             if (_currentBalloon != null)
             {
+                CanvasGroup canvasGroup = EnsureCanvasGroup(_currentBalloon);
+                if (canvasGroup != null)
+                {
+                    canvasGroup.alpha = 1f;
+                }
+
                 _pool?.Return(_currentBalloon, this);
             }
 
