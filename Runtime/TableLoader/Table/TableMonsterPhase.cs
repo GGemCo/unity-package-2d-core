@@ -21,7 +21,7 @@ namespace GGemCo2DCore
         public float EndHpPercent;
         /// <summary>해당 페이즈 시작 고정 HP입니다. 0 이하면 EndHpPercent 정책을 사용합니다.</summary>
         public int EndHpFixed;
-        /// <summary>페이즈 전환 시 재생할 컷신 UID입니다. 0이면 미사용입니다.</summary>
+        /// <summary>해당 페이즈가 종료될 때 시작할 전환 컷신 UID입니다. 0이면 미사용입니다.</summary>
         public int TransitionCutsceneUid;
         /// <summary>BT 교체 시 상태 보존 모드 문자열입니다.</summary>
         public string TreeSwitchMode;

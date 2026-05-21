@@ -33,8 +33,20 @@ namespace GGemCo2DCore
         private Coroutine _returnToPoolRoutine;
         private GGemCoMonsterSettings _monsterSettings;
         private CutsceneManager _cutsceneManager;
+        private bool _suppressNextDeadCutscene;
         private readonly List<IMonsterBrainRuntimeResettable> _brainRuntimeResetters = new(4);
         private bool _pendingBrainResetOnNextFadeIn;
+
+        /// <summary>
+        /// 다음 1회 공용 사망 컷신(CutsceneUidDie) 재생을 건너뜁니다.
+        /// </summary>
+        /// <remarks>
+        /// 마지막 페이즈 종료 전용 전환 컷신을 우선 재생할 때 사용합니다.
+        /// </remarks>
+        public void SuppressNextDeadCutsceneOnce()
+        {
+            _suppressNextDeadCutscene = true;
+        }
         
         public void SetPoolManaged(bool value)
         {
@@ -54,6 +66,7 @@ namespace GGemCo2DCore
         {
             CancelPendingPoolReturn();
             ClearPendingDeathState();
+            _suppressNextDeadCutscene = false;
             CharacterRegenData = regenData;
             uid = monsterUid;
             SetPoolManaged(true);
@@ -102,6 +115,7 @@ namespace GGemCo2DCore
         {
             CancelPendingPoolReturn();
             ClearPendingDeathState();
+            _suppressNextDeadCutscene = false;
             _controllerMonster?.StopAttackCoroutine();
             _controllerMonster?.StopAllCoroutines();
 
@@ -375,6 +389,12 @@ namespace GGemCo2DCore
         /// <param name="attacker"></param>
         private void PlayDeadCutscene(GameObject attacker)
         {
+            if (_suppressNextDeadCutscene)
+            {
+                _suppressNextDeadCutscene = false;
+                return;
+            }
+
             if (!_monsterSettings.UseCutsceneDie) return;
             bool useCutscene = _monsterSettings.IsUseCutsceneDieEnabledFor(Grade);
             if (!useCutscene || !attacker) return;
