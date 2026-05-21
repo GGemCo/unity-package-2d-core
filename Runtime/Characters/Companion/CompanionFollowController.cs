@@ -16,6 +16,8 @@ namespace GGemCo2DCore
         private Rigidbody2D _rigidbody2D;
         private bool _isFollowing;
         private bool _isMoving;
+        private bool _isRecoveringToOffset;
+        private Vector2 _recoveryDestination;
 
         /// <summary>
         /// 현재 따라가는 대상 Transform입니다.
@@ -55,6 +57,7 @@ namespace GGemCo2DCore
             settings.Normalize();
             _isFollowing = _target != null;
             _isMoving = false;
+            ResetRecoveryState();
         }
 
         /// <summary>
@@ -64,6 +67,7 @@ namespace GGemCo2DCore
         {
             _isFollowing = false;
             _target = null;
+            ResetRecoveryState();
             SetMoving(false);
         }
 
@@ -74,6 +78,7 @@ namespace GGemCo2DCore
         {
             if (!_isFollowing || _target == null)
             {
+                ResetRecoveryState();
                 SetMoving(false);
                 return;
             }
@@ -87,10 +92,29 @@ namespace GGemCo2DCore
             {
                 MoveTo(desiredPosition);
                 SetFacingByDirection(toDesired);
+                ResetRecoveryState();
                 SetMoving(false);
                 return;
             }
 
+            if (settings.distancePolicy == CompanionFollowDistancePolicy.RecoverOffsetThenRecheck)
+            {
+                UpdateRecoverOffsetThenRecheck(currentPosition, desiredPosition, distance);
+                return;
+            }
+
+            UpdateDefaultFollow(currentPosition, desiredPosition, toDesired, distance);
+        }
+
+        /// <summary>
+        /// 기본 거리 정책에서 Min/Max Distance를 매 프레임 연속적으로 재평가하며 추적 이동을 처리합니다.
+        /// </summary>
+        /// <param name="currentPosition">현재 동행 캐릭터의 위치입니다.</param>
+        /// <param name="desiredPosition">대상 + Follow Offset으로 계산된 목표 위치입니다.</param>
+        /// <param name="toDesired">현재 위치에서 목표 위치로 향하는 벡터입니다.</param>
+        /// <param name="distance">현재 위치와 목표 위치 사이의 거리입니다.</param>
+        private void UpdateDefaultFollow(Vector2 currentPosition, Vector2 desiredPosition, Vector2 toDesired, float distance)
+        {
             if (distance <= settings.minDistance)
             {
                 SetMoving(false);
@@ -111,6 +135,82 @@ namespace GGemCo2DCore
             MoveTo(nextPosition);
             SetFacingByDirection(toDesired);
             SetMoving(true);
+        }
+
+        /// <summary>
+        /// RecoverOffsetThenRecheck 정책을 처리합니다.
+        /// Max Distance를 초과하면 목표점을 고정하고, 도착 완료 전까지 Max Distance 재평가를 보류합니다.
+        /// </summary>
+        /// <param name="currentPosition">현재 동행 캐릭터의 위치입니다.</param>
+        /// <param name="desiredPosition">대상 + Follow Offset으로 계산된 목표 위치입니다.</param>
+        /// <param name="distance">현재 위치와 목표 위치 사이의 거리입니다.</param>
+        private void UpdateRecoverOffsetThenRecheck(Vector2 currentPosition, Vector2 desiredPosition, float distance)
+        {
+            if (_isRecoveringToOffset)
+            {
+                MoveToRecoveryDestination(currentPosition);
+                return;
+            }
+
+            if (distance <= settings.minDistance)
+            {
+                SetMoving(false);
+                return;
+            }
+
+            if (distance < settings.maxDistance)
+            {
+                SetMoving(false);
+                return;
+            }
+
+            StartRecoverToOffset(desiredPosition);
+            MoveToRecoveryDestination(currentPosition);
+        }
+
+        /// <summary>
+        /// RecoverOffsetThenRecheck 정책 진입 시 현재 프레임의 Follow Offset 목표점을 고정합니다.
+        /// </summary>
+        /// <param name="desiredPosition">복귀 완료 시점으로 사용할 고정 목표 위치입니다.</param>
+        private void StartRecoverToOffset(Vector2 desiredPosition)
+        {
+            _recoveryDestination = desiredPosition;
+            _isRecoveringToOffset = true;
+        }
+
+        /// <summary>
+        /// 고정된 복귀 목표점으로 이동하고, 도착 시 복귀 상태를 종료합니다.
+        /// </summary>
+        /// <param name="currentPosition">현재 동행 캐릭터의 위치입니다.</param>
+        private void MoveToRecoveryDestination(Vector2 currentPosition)
+        {
+            Vector2 toRecovery = _recoveryDestination - currentPosition;
+            float recoveryDistance = toRecovery.magnitude;
+            if (recoveryDistance <= settings.offsetArriveThreshold)
+            {
+                MoveTo(_recoveryDestination);
+                ResetRecoveryState();
+                SetMoving(false);
+                return;
+            }
+
+            Vector2 nextPosition = Vector2.MoveTowards(
+                currentPosition,
+                _recoveryDestination,
+                settings.moveSpeed * Time.fixedDeltaTime);
+
+            MoveTo(nextPosition);
+            SetFacingByDirection(toRecovery);
+            SetMoving(true);
+        }
+
+        /// <summary>
+        /// RecoverOffsetThenRecheck 정책의 내부 복귀 상태를 초기화합니다.
+        /// </summary>
+        private void ResetRecoveryState()
+        {
+            _isRecoveringToOffset = false;
+            _recoveryDestination = Vector2.zero;
         }
 
         /// <summary>
