@@ -106,7 +106,8 @@ namespace GGemCo2DCore
         {
             foreach (var data in Monsters)
             {
-                Monster monster = data.Value?.GetComponent<Monster>();
+                if (data.Value == null) continue;
+                Monster monster = data.Value.GetComponent<Monster>();
                 if (monster == null) continue;
                 if (monster.uid == monsterUid)
                 {

@@ -103,7 +103,7 @@ namespace GGemCo2DCore
         void PlayDeadAnimation();
         void PlayDamageAnimation();
         void PlayAnimationGroggy();
-        void PlayCharacterAnimation(string animationName, bool loop = false, float timeScale = 1f);
+        void PlayCharacterAnimation(string animationName, bool loop = false, float timeScale = 1f, bool forceReset = false);
         void PlayAttackEndAnimation();
         bool PlayAttackWaitAnimation();
         

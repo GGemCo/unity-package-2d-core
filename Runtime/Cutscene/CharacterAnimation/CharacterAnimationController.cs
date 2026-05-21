@@ -160,7 +160,7 @@ namespace GGemCo2DCore
                         ?.PlayCharacterAnimation(
                             _animationName,
                             _animationLoop,
-                            _animationTimeScale);
+                            _animationTimeScale, true);
                 }
             }
 

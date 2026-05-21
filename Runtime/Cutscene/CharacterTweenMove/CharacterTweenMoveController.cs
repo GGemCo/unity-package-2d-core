@@ -6,6 +6,7 @@ namespace GGemCo2DCore
     /// <summary>
     /// 컷신 중 캐릭터를 Duration 기반 트윈 보간으로 이동시키는 컨트롤러입니다.
     /// Run 애니메이션과 이동 속도 변경 없이 오브젝트 이동 연출에 집중합니다.
+    /// 상대 좌표 이동은 현재 위치/플레이어 위치 기준을 선택할 수 있습니다.
     /// </summary>
     public sealed class CharacterTweenMoveController : CutsceneDefaultController, ICutsceneController
     {
@@ -183,17 +184,10 @@ namespace GGemCo2DCore
         /// <param name="data">좌표 계산에 사용할 CharacterTweenMove 데이터입니다.</param>
         private void ResolveMoveRange(CharacterTweenMoveData data)
         {
-            if (data.moveMode == CutsceneCharacterMoveMode.RelativeFromCurrent)
+            if (data.moveMode == CutsceneCharacterMoveMode.RelativeFromCurrent ||
+                data.moveMode == CutsceneCharacterMoveMode.RelativeFromPlayer)
             {
-                Vector2 basePosition = _target.position;
-                Vector2 direction = data.relativeDirection == CharacterConstants.FacingDirection8.None
-                    ? Vector2.zero
-                    : CharacterConstants.FacingToVector2(data.relativeDirection);
-                float distance = Mathf.Max(0f, data.relativeDistance);
-                Vector2 offset = data.relativeOffset.ToVector2();
-
-                _startPosition = basePosition;
-                _endPosition = basePosition + (direction * distance) + offset;
+                ResolveRelativeMoveRange(data);
                 return;
             }
 
@@ -205,6 +199,62 @@ namespace GGemCo2DCore
             {
                 _startPosition = _target.position;
             }
+        }
+
+        /// <summary>
+        /// 상대 이동 모드에서 시작/종료 좌표를 계산합니다.
+        /// 시작점은 항상 대상의 현재 위치를 사용하고, 종료점은 선택된 기준점(현재/플레이어)에서 계산합니다.
+        /// </summary>
+        /// <param name="data">상대 이동 계산에 사용할 CharacterTweenMove 데이터입니다.</param>
+        private void ResolveRelativeMoveRange(CharacterTweenMoveData data)
+        {
+            Vector2 basePosition = ResolveRelativeBasePosition(data.moveMode);
+            Vector2 direction = data.relativeDirection == CharacterConstants.FacingDirection8.None
+                ? Vector2.zero
+                : CharacterConstants.FacingToVector2(data.relativeDirection);
+            float distance = Mathf.Max(0f, data.relativeDistance);
+            Vector2 offset = data.relativeOffset.ToVector2();
+
+            _startPosition = _target.position;
+            _endPosition = basePosition + (direction * distance) + offset;
+        }
+
+        /// <summary>
+        /// 상대 이동 모드에 맞는 기준 좌표를 계산합니다.
+        /// </summary>
+        /// <param name="moveMode">상대 이동 기준 모드입니다.</param>
+        /// <returns>상대 이동 계산에 사용할 기준 좌표입니다.</returns>
+        private Vector2 ResolveRelativeBasePosition(CutsceneCharacterMoveMode moveMode)
+        {
+            if (moveMode == CutsceneCharacterMoveMode.RelativeFromPlayer)
+            {
+                Transform player = ResolvePlayerTransform();
+                if (player != null)
+                {
+                    return player.position;
+                }
+
+                GcLogger.Log(
+                    "CharacterTweenMove RelativeFromPlayer 모드에서 플레이어를 찾지 못해 현재 위치 기준으로 대체합니다.");
+            }
+
+            return _target.position;
+        }
+
+        /// <summary>
+        /// 현재 씬 컨텍스트에서 플레이어 Transform을 조회합니다.
+        /// 맵 배치 플레이어를 우선 탐색하고, 필요 시 컷신 런타임 캐시를 폴백으로 사용합니다.
+        /// </summary>
+        /// <returns>조회된 플레이어 Transform이며, 없으면 <see langword="null"/>을 반환합니다.</returns>
+        private Transform ResolvePlayerTransform()
+        {
+            Transform player = GetTargetTransform(CharacterConstants.Type.Player, 0);
+            if (player != null)
+            {
+                return player;
+            }
+
+            return CutsceneManager?.GetCharacter(CharacterConstants.Type.Player, 0);
         }
 
         /// <summary>

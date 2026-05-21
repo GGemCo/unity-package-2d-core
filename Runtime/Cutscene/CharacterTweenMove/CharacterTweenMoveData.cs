@@ -31,11 +31,11 @@ namespace GGemCo2DCore
         public Vec2 endPosition;
 
         [Header("상대 이동")]
-        [Tooltip("현재 위치 기준 이동 방향")]
+        [Tooltip("상대 이동 기준점(현재 위치/플레이어 위치)에서 사용할 이동 방향")]
         public CharacterConstants.FacingDirection8 relativeDirection = CharacterConstants.FacingDirection8.Right;
-        [Tooltip("현재 위치 기준 이동 거리")]
+        [Tooltip("상대 이동 기준점(현재 위치/플레이어 위치)에서 사용할 이동 거리")]
         public float relativeDistance = 0f;
-        [Tooltip("상대 이동 계산 후 추가 보정 오프셋")]
+        [Tooltip("상대 이동 계산 후 최종 위치에 더할 보정 오프셋")]
         public Vec2 relativeOffset;
 
         [Header("바라보기")]

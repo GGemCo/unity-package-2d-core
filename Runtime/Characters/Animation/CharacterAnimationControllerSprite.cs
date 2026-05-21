@@ -350,9 +350,9 @@ namespace GGemCo2DCore
             SetColor(color);
         }
         
-        public void PlayCharacterAnimation(string animationName, bool loop = false, float timeScale = 1)
+        public void PlayCharacterAnimation(string animationName, bool loop = false, float timeScale = 1, bool forceReset = false)
         {
-            PlayAnimation(animationName, loop, timeScale);
+            PlayAnimation(animationName, loop, timeScale, forceReset: forceReset);
         }
 
         public void SetCharacterFillColor(Color color)
