@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System.Collections;
+using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
@@ -19,16 +20,23 @@ namespace GGemCo2DCore
         public TMP_Text textCharacterName;
         public Image imageCharacterName;
         private List<GameObject> _shieldIcons;
+        private readonly Dictionary<GameObject, Coroutine> _pendingShieldHideCoroutines =
+            new Dictionary<GameObject, Coroutine>();
+        private int _lastSuperArmorValue;
+        private int _currentMonsterInstanceId;
         private AddressableLoaderCharacterImageName _addressableLoaderCharacterImageName;
-        
+
         protected override void Awake()
         {
             // uid 를 먼저 지정해야 한다.
             uid = UIWindowConstants.WindowUid.BattleHudMonster;
             base.Awake();
             _shieldIcons = new List<GameObject>();
+            _lastSuperArmorValue = 0;
+            _currentMonsterInstanceId = 0;
             _addressableLoaderCharacterImageName = AddressableLoaderCharacterImageName.Instance;
         }
+
         /// <summary>
         /// 전투 HUD에 표시할 몬스터 정보를 갱신합니다.
         /// </summary>
@@ -37,6 +45,14 @@ namespace GGemCo2DCore
         public void UpdateInfo(Monster monster, bool showSuperArmor)
         {
             if (!monster) return;
+
+            int monsterInstanceId = monster.GetInstanceID();
+            if (_currentMonsterInstanceId != monsterInstanceId)
+            {
+                _currentMonsterInstanceId = monsterInstanceId;
+                SetSuperArmorImmediate(0);
+            }
+
             InitMonsterNameText(monster.uid);
             InitMonsterNameByImage(monster.uid);
             InitSuperArmor(monster, showSuperArmor);
@@ -45,7 +61,7 @@ namespace GGemCo2DCore
         private void InitMonsterNameByImage(int monsterUid)
         {
             if (!imageCharacterName) return;
-            
+
             var info = TableLoaderManager.Instance.GetMonsterData(monsterUid);
             if (info == null) return;
 
@@ -79,22 +95,25 @@ namespace GGemCo2DCore
 
             if (!showSuperArmor)
             {
-                SetSuperArmor(0);
+                SetSuperArmorImmediate(0);
                 return;
             }
 
             int maxSuperArmor = Mathf.Max(monster.TotalSuperArmor.Value, monster.CurrentSuperArmor.Value);
             if (maxSuperArmor <= 0)
             {
-                SetSuperArmor(0);
+                SetSuperArmorImmediate(0);
                 return;
             }
 
-            if (GcLogger.IsNull(containerSuperArmor, $"슈퍼아머 아이콘을 배치할 컨테이너가 없습니다. containerSuperArmor : {containerSuperArmor}")) return;
-            if (GcLogger.IsNull(prefabShield, $"슈퍼아머에 사용할 아이콘 프리팹이 없습니다. prefabShield : {prefabShield}")) return;
+            if (GcLogger.IsNull(containerSuperArmor,
+                    $"슈퍼아머 아이콘을 배치할 컨테이너가 없습니다. containerSuperArmor : {containerSuperArmor}"))
+                return;
+            if (GcLogger.IsNull(prefabShield, $"슈퍼아머에 사용할 아이콘 프리팹이 없습니다. prefabShield : {prefabShield}"))
+                return;
 
             EnsureShieldIconCount(maxSuperArmor);
-            SetSuperArmor(monster.CurrentSuperArmor.Value);
+            SetSuperArmorImmediate(monster.CurrentSuperArmor.Value);
         }
 
         /// <summary>
@@ -124,24 +143,166 @@ namespace GGemCo2DCore
 
         /// <summary>
         /// Battle HUD Super Armor 아이콘 활성 상태를 현재 값에 맞춰 갱신합니다.
+        /// 감소한 아이콘은 VfxEffectUI가 있으면 1회 재생 후 비활성화합니다.
         /// </summary>
         /// <param name="value">현재 Super Armor 값입니다.</param>
         public void SetSuperArmor(int value)
         {
-            if (value <= 0)
+            int clampedValue = Mathf.Max(0, value);
+            if (_shieldIcons == null || _shieldIcons.Count == 0)
             {
-                foreach (var shieldIcon in _shieldIcons)
-                {
-                    shieldIcon.SetActive(false);
-                }
+                _lastSuperArmorValue = clampedValue;
                 return;
             }
+
             int index = 0;
             foreach (var shieldIcon in _shieldIcons)
             {
-                shieldIcon.SetActive(index < value);
+                if (shieldIcon == null)
+                {
+                    index++;
+                    continue;
+                }
+
+                bool shouldBeVisible = index < clampedValue;
+                if (shouldBeVisible)
+                {
+                    CancelPendingShieldHide(shieldIcon);
+                    shieldIcon.SetActive(true);
+                }
+                else
+                {
+                    bool consumedThisTick = index < _lastSuperArmorValue;
+                    if (consumedThisTick)
+                    {
+                        PlayBreakAndHideShieldIcon(shieldIcon);
+                    }
+                    else if (!_pendingShieldHideCoroutines.ContainsKey(shieldIcon))
+                    {
+                        shieldIcon.SetActive(false);
+                    }
+                }
+
                 index++;
             }
+
+            _lastSuperArmorValue = clampedValue;
+        }
+
+        /// <summary>
+        /// 슈퍼아머 아이콘 상태를 즉시 동기화합니다.
+        /// 초기화/몬스터 교체/표시 해제 시에는 연출 없이 즉시 반영합니다.
+        /// </summary>
+        /// <param name="value">표시할 현재 Super Armor 값입니다.</param>
+        private void SetSuperArmorImmediate(int value)
+        {
+            int clampedValue = Mathf.Max(0, value);
+            CancelAllPendingShieldHide();
+
+            if (_shieldIcons != null)
+            {
+                int index = 0;
+                foreach (var shieldIcon in _shieldIcons)
+                {
+                    if (shieldIcon != null)
+                    {
+                        shieldIcon.SetActive(index < clampedValue);
+                    }
+
+                    index++;
+                }
+            }
+
+            _lastSuperArmorValue = clampedValue;
+        }
+
+        /// <summary>
+        /// 슈퍼아머 아이콘 파괴 연출을 재생한 뒤 아이콘을 비활성화합니다.
+        /// prefabShield에 VfxEffectUI가 없으면 즉시 비활성화합니다.
+        /// </summary>
+        /// <param name="shieldIcon">연출 대상 아이콘입니다.</param>
+        private void PlayBreakAndHideShieldIcon(GameObject shieldIcon)
+        {
+            if (shieldIcon == null)
+            {
+                return;
+            }
+
+            CancelPendingShieldHide(shieldIcon);
+            shieldIcon.SetActive(true);
+
+            var vfxEffect = shieldIcon.GetComponent<VfxEffectUI>();
+            if (vfxEffect == null)
+            {
+                shieldIcon.SetActive(false);
+                return;
+            }
+
+            float duration = vfxEffect.PlayOneShotEffect(forceReset: true);
+            if (duration <= 0f)
+            {
+                shieldIcon.SetActive(false);
+                return;
+            }
+
+            Coroutine coroutine = StartCoroutine(HideShieldIconAfterDelay(shieldIcon, duration));
+            _pendingShieldHideCoroutines[shieldIcon] = coroutine;
+        }
+
+        /// <summary>
+        /// 지정한 시간 대기 후 슈퍼아머 아이콘을 비활성화합니다.
+        /// </summary>
+        /// <param name="shieldIcon">비활성화할 아이콘입니다.</param>
+        /// <param name="delay">대기 시간(초)입니다.</param>
+        /// <returns>코루틴 열거자입니다.</returns>
+        private IEnumerator HideShieldIconAfterDelay(GameObject shieldIcon, float delay)
+        {
+            yield return new WaitForSeconds(delay);
+
+            if (shieldIcon != null)
+            {
+                shieldIcon.SetActive(false);
+            }
+
+            _pendingShieldHideCoroutines.Remove(shieldIcon);
+        }
+
+        /// <summary>
+        /// 특정 아이콘에 예약된 숨김 코루틴을 취소합니다.
+        /// </summary>
+        /// <param name="shieldIcon">취소 대상 아이콘입니다.</param>
+        private void CancelPendingShieldHide(GameObject shieldIcon)
+        {
+            if (shieldIcon == null) return;
+            if (!_pendingShieldHideCoroutines.TryGetValue(shieldIcon, out var coroutine)) return;
+
+            if (coroutine != null)
+            {
+                StopCoroutine(coroutine);
+            }
+
+            _pendingShieldHideCoroutines.Remove(shieldIcon);
+        }
+
+        /// <summary>
+        /// 예약된 모든 숨김 코루틴을 취소합니다.
+        /// </summary>
+        private void CancelAllPendingShieldHide()
+        {
+            foreach (var pair in _pendingShieldHideCoroutines)
+            {
+                if (pair.Value != null)
+                {
+                    StopCoroutine(pair.Value);
+                }
+            }
+
+            _pendingShieldHideCoroutines.Clear();
+        }
+
+        private void OnDisable()
+        {
+            CancelAllPendingShieldHide();
         }
     }
 }
