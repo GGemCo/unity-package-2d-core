@@ -23,6 +23,7 @@ namespace GGemCo2DCore
             Sound,
             GameTime,
             WorldMap,
+            DialogueBalloon,
             NpcInteraction
         }
 
@@ -42,7 +43,8 @@ namespace GGemCo2DCore
             SoundSettings = 70,
             GameTimeSettings = 80,
             WorldMapSettings = 90,
-            NpcInteractionSettings = 100
+            DialogueBalloonSettings = 100,
+            NpcInteractionSettings = 110
         }
 
         public const string BasePath = ConfigDefine.NameSDK + "/Settings/";
@@ -167,6 +169,18 @@ namespace GGemCo2DCore
                 (int)ConfigScriptableObjectCommon.PackageOrder.Core +
                 (int)CoreLocalOrder.WorldMapSettings;
         }
+
+        /// <summary>
+        /// 대사 말풍선 설정 메뉴 정보
+        /// </summary>
+        public static class DialogueBalloon
+        {
+            public const string FileName = BaseName + "DialogueBalloonSettings";
+            public const string MenuName = BasePath + FileName;
+            public const int Ordering =
+                (int)ConfigScriptableObjectCommon.PackageOrder.Core +
+                (int)CoreLocalOrder.DialogueBalloonSettings;
+        }
         
         public static class NpcInteraction
         {
@@ -265,6 +279,14 @@ namespace GGemCo2DCore
                         typeof(GGemCoWorldMapSettings))
                 },
                 {
+                    CoreSettingsKey.DialogueBalloon,
+                    new ConfigScriptableObjectCommon.MenuInfo(
+                        DialogueBalloon.FileName,
+                        DialogueBalloon.MenuName,
+                        DialogueBalloon.Ordering,
+                        typeof(GGemCoDialogueBalloonSettings))
+                },
+                {
                     CoreSettingsKey.NpcInteraction,
                     new ConfigScriptableObjectCommon.MenuInfo(
                         NpcInteraction.FileName,
@@ -290,6 +312,7 @@ namespace GGemCo2DCore
                 { Sound.FileName, typeof(GGemCoSoundSettings) },
                 { GameTime.FileName, typeof(GGemCoGameTimeSettings) },
                 { WorldMap.FileName, typeof(GGemCoWorldMapSettings) },
+                { DialogueBalloon.FileName, typeof(GGemCoDialogueBalloonSettings) },
                 { NpcInteraction.FileName, typeof(GGemCoNpcInteractionSettings) },
             };
 

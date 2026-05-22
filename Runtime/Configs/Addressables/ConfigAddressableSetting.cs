@@ -27,6 +27,7 @@ namespace GGemCo2DCore
         public static readonly AddressableAssetInfo GameTimeSettings  = Make(nameof(GameTimeSettings));
         public static readonly AddressableAssetInfo MonsterSettings  = Make(nameof(MonsterSettings));
         public static readonly AddressableAssetInfo WorldMapSettings  = Make(nameof(WorldMapSettings));
+        public static readonly AddressableAssetInfo DialogueBalloonSettings = Make(nameof(DialogueBalloonSettings));
         public static readonly AddressableAssetInfo NpcInteractionSettings = Make(nameof(NpcInteractionSettings));
 
         /// <summary>
@@ -43,6 +44,7 @@ namespace GGemCo2DCore
             SoundSettings,
             MonsterSettings,
             WorldMapSettings,
+            DialogueBalloonSettings,
             NpcInteractionSettings,
 #if GGEMCO_USE_INGAME_TIME
             GameTimeSettings,

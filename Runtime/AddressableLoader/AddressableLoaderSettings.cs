@@ -24,6 +24,7 @@ namespace GGemCo2DCore
         [HideInInspector] public GGemCoGameTimeSettings gameTimeSettings;
         [HideInInspector] public GGemCoMonsterSettings monsterSettings;
         [HideInInspector] public GGemCoWorldMapSettings worldMapSettings;
+        [HideInInspector] public GGemCoDialogueBalloonSettings dialogueBalloonSettings;
         [HideInInspector] public GGemCoNpcInteractionSettings npcInteractionSettings;
 
         public delegate void DelegateLoadSettings(
@@ -85,6 +86,7 @@ namespace GGemCo2DCore
                 Task<GGemCoSoundSettings> soundSettingsTask = LoadSettingsAsync<GGemCoSoundSettings>(ConfigAddressableSetting.SoundSettings.Key);
                 Task<GGemCoMonsterSettings> monsterSettingsTask = LoadSettingsAsync<GGemCoMonsterSettings>(ConfigAddressableSetting.MonsterSettings.Key);
                 Task<GGemCoWorldMapSettings> worldMapSettingsTask = LoadSettingsAsync<GGemCoWorldMapSettings>(ConfigAddressableSetting.WorldMapSettings.Key);
+                Task<GGemCoDialogueBalloonSettings> dialogueBalloonSettingsTask = LoadSettingsAsync<GGemCoDialogueBalloonSettings>(ConfigAddressableSetting.DialogueBalloonSettings.Key);
                 Task<GGemCoNpcInteractionSettings> npcInteractionSettingsTask = LoadSettingsAsync<GGemCoNpcInteractionSettings>(ConfigAddressableSetting.NpcInteractionSettings.Key);
 #if GGEMCO_USE_INGAME_TIME
                 Task<GGemCoGameTimeSettings> gameTimeSettingsTask = LoadSettingsAsync<GGemCoGameTimeSettings>(ConfigAddressableSetting.GameTimeSettings.Key);
@@ -102,6 +104,7 @@ namespace GGemCo2DCore
                     monsterSettingsTask,
                     itemSettingsTask,
                     worldMapSettingsTask,
+                    dialogueBalloonSettingsTask,
                     npcInteractionSettingsTask,
                     gameTimeSettingsTask);
 #else
@@ -116,6 +119,7 @@ namespace GGemCo2DCore
                     monsterSettingsTask,
                     itemSettingsTask,
                     worldMapSettingsTask,
+                    dialogueBalloonSettingsTask,
                     npcInteractionSettingsTask);
 #endif
 
@@ -129,6 +133,7 @@ namespace GGemCo2DCore
                 soundSettings = soundSettingsTask.Result;
                 monsterSettings = monsterSettingsTask.Result;
                 worldMapSettings = worldMapSettingsTask.Result;
+                dialogueBalloonSettings = dialogueBalloonSettingsTask.Result;
                 npcInteractionSettings = npcInteractionSettingsTask.Result;
 #if GGEMCO_USE_INGAME_TIME
                 gameTimeSettings = gameTimeSettingsTask.Result;

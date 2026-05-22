@@ -21,6 +21,7 @@ namespace GGemCo2DCore
         [HideInInspector] public GGemCoOptionSettings optionSettings;
         [HideInInspector] public GGemCoSoundSettings soundSettings;
         [HideInInspector] public GGemCoWorldMapSettings worldMapSettings;
+        [HideInInspector] public GGemCoDialogueBalloonSettings dialogueBalloonSettings;
 
         public delegate void DelegateLoadSettings(
             GGemCoSettings settings,
@@ -74,7 +75,7 @@ namespace GGemCo2DCore
                 _loadProgress = 0f;
 
                 // 1) Core 기본 설정 병렬 Task 구성
-                var tasks = new List<Task<UnityEngine.Object>>(8)
+                var tasks = new List<Task<UnityEngine.Object>>(9)
                 {
                     LoadSettingsAsObjectAsync(ConfigAddressableSetting.Settings.Key),
                     LoadSettingsAsObjectAsync(ConfigAddressableSetting.PlayerSettings.Key),
@@ -82,7 +83,8 @@ namespace GGemCo2DCore
                     LoadSettingsAsObjectAsync(ConfigAddressableSetting.SaveSettings.Key),
                     LoadSettingsAsObjectAsync(ConfigAddressableSetting.OptionSettings.Key),
                     LoadSettingsAsObjectAsync(ConfigAddressableSetting.SoundSettings.Key),
-                    LoadSettingsAsObjectAsync(ConfigAddressableSetting.WorldMapSettings.Key)
+                    LoadSettingsAsObjectAsync(ConfigAddressableSetting.WorldMapSettings.Key),
+                    LoadSettingsAsObjectAsync(ConfigAddressableSetting.DialogueBalloonSettings.Key)
                 };
 
                 // 2) [NEW] 외부 등록 Settings 병렬 Task 추가
@@ -101,6 +103,7 @@ namespace GGemCo2DCore
                 optionSettings = tasks[4].Result as GGemCoOptionSettings;
                 soundSettings  = tasks[5].Result as GGemCoSoundSettings;
                 worldMapSettings = tasks[6].Result as GGemCoWorldMapSettings;
+                dialogueBalloonSettings = tasks[7].Result as GGemCoDialogueBalloonSettings;
 
                 // 5) 이벤트 (기존)
                 OnLoadSettings?.Invoke(settings, playerSettings, mapSettings, saveSettings, optionSettings, soundSettings);

@@ -16,9 +16,9 @@ namespace GGemCo2DCore
         [SerializeField] private Image imageTail;
         [SerializeField] private Transform transformBalloon;
         [Header("말풍선 월드 위치")]
-        [Tooltip("프로젝트 기본 말풍선 월드 오프셋입니다.")]
+        [Tooltip("프로젝트 기본 말풍선 월드 오프셋입니다. ScriptableObject를 찾지 못한 경우 이 값을 사용합니다.")]
         [SerializeField] private Vector3 projectWorldOffset = Vector3.zero;
-        [Tooltip("프로젝트 기본 말풍선 월드 오프셋 X값의 화자 방향 연동 정책입니다.")]
+        [Tooltip("프로젝트 기본 말풍선 월드 오프셋 X값의 화자 방향 연동 정책입니다. ScriptableObject를 찾지 못한 경우 이 값을 사용합니다.")]
         [SerializeField] private DialogueBalloonWorldOffsetXPolicy projectWorldOffsetXPolicy = DialogueBalloonWorldOffsetXPolicy.KeepOriginal;
 
         private readonly DialogueTextRevealPlayer _revealPlayer = new();
@@ -972,12 +972,38 @@ namespace GGemCo2DCore
         }
 
         /// <summary>
+        /// 프로젝트 말풍선 기본값 ScriptableObject를 로더에서 조회합니다.
+        /// </summary>
+        /// <param name="settings">조회된 프로젝트 말풍선 설정입니다.</param>
+        /// <returns>설정을 찾으면 <see langword="true"/>를 반환합니다.</returns>
+        private static bool TryGetProjectDialogueBalloonSettings(out GGemCoDialogueBalloonSettings settings)
+        {
+            settings = null;
+            if (AddressableLoaderSettings.Instance != null &&
+                AddressableLoaderSettings.Instance.dialogueBalloonSettings != null)
+            {
+                settings = AddressableLoaderSettings.Instance.dialogueBalloonSettings;
+                return true;
+            }
+
+            if (AddressableLoaderSettingsRegist.Instance != null &&
+                AddressableLoaderSettingsRegist.Instance.dialogueBalloonSettings != null)
+            {
+                settings = AddressableLoaderSettingsRegist.Instance.dialogueBalloonSettings;
+                return true;
+            }
+
+            return false;
+        }
+
+        /// <summary>
         /// 프로젝트 기본 오프셋 X 정책을 유효 범위로 보정해 반환합니다.
         /// </summary>
+        /// <param name="policy">보정할 프로젝트 기본 오프셋 X 정책입니다.</param>
         /// <returns>유효한 프로젝트 기본 오프셋 X 정책입니다.</returns>
-        private DialogueBalloonWorldOffsetXPolicy GetSafeProjectWorldOffsetXPolicy()
+        private static DialogueBalloonWorldOffsetXPolicy GetSafeProjectWorldOffsetXPolicy(DialogueBalloonWorldOffsetXPolicy policy)
         {
-            return projectWorldOffsetXPolicy switch
+            return policy switch
             {
                 DialogueBalloonWorldOffsetXPolicy.KeepOriginal => DialogueBalloonWorldOffsetXPolicy.KeepOriginal,
                 DialogueBalloonWorldOffsetXPolicy.MirrorBySpeakerFacing => DialogueBalloonWorldOffsetXPolicy.MirrorBySpeakerFacing,
@@ -987,13 +1013,35 @@ namespace GGemCo2DCore
         }
 
         /// <summary>
+        /// 프로젝트 기본 월드 오프셋/정책을 결정합니다.
+        /// ScriptableObject가 로드되어 있으면 해당 값을 우선 적용하고, 없으면 프리팹 직렬화 값을 사용합니다.
+        /// </summary>
+        /// <param name="offset">적용할 프로젝트 기본 월드 오프셋입니다.</param>
+        /// <param name="xPolicy">적용할 프로젝트 기본 X 정책입니다.</param>
+        private void ResolveProjectWorldOffsetDefaults(
+            out Vector3 offset,
+            out DialogueBalloonWorldOffsetXPolicy xPolicy)
+        {
+            offset = projectWorldOffset;
+            xPolicy = GetSafeProjectWorldOffsetXPolicy(projectWorldOffsetXPolicy);
+
+            if (!TryGetProjectDialogueBalloonSettings(out GGemCoDialogueBalloonSettings settings) || settings == null)
+            {
+                return;
+            }
+
+            offset = settings.worldOffset;
+            xPolicy = settings.GetSafeWorldOffsetXPolicy();
+        }
+
+        /// <summary>
         /// 이벤트 정책과 프로젝트 기본 정책을 결합해 실제 오프셋 X 반영 정책을 결정합니다.
         /// </summary>
         /// <returns>실제 적용할 말풍선 월드 오프셋 X 정책입니다.</returns>
-        private DialogueBalloonWorldOffsetXPolicy ResolveWorldOffsetXPolicy()
+        private DialogueBalloonWorldOffsetXPolicy ResolveWorldOffsetXPolicy(DialogueBalloonWorldOffsetXPolicy projectPolicy)
         {
             return _eventWorldOffsetXPolicy == DialogueBalloonWorldOffsetXPolicy.UseProjectPolicy
-                ? GetSafeProjectWorldOffsetXPolicy()
+                ? projectPolicy
                 : _eventWorldOffsetXPolicy;
         }
 
@@ -1031,12 +1079,15 @@ namespace GGemCo2DCore
 
             Vector3 baseWorldPosition = _target.transform.position + new Vector3(0f, _target.GetHeightByScale(), 0f);
             Vector3 configurableOffset = _eventWorldOffset;
+            ResolveProjectWorldOffsetDefaults(
+                out Vector3 resolvedProjectWorldOffset,
+                out DialogueBalloonWorldOffsetXPolicy resolvedProjectWorldOffsetXPolicy);
             if (_useProjectWorldOffset)
             {
-                configurableOffset += projectWorldOffset;
+                configurableOffset += resolvedProjectWorldOffset;
             }
 
-            DialogueBalloonWorldOffsetXPolicy appliedPolicy = ResolveWorldOffsetXPolicy();
+            DialogueBalloonWorldOffsetXPolicy appliedPolicy = ResolveWorldOffsetXPolicy(resolvedProjectWorldOffsetXPolicy);
             configurableOffset.x = ResolveWorldOffsetXByPolicy(configurableOffset.x, appliedPolicy);
             return baseWorldPosition + _diffTextPosition + configurableOffset;
         }
