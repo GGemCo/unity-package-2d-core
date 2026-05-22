@@ -13,6 +13,7 @@ namespace GGemCo2DCore
     {
         [SerializeField] private TextMeshProUGUI textMessage;
         [SerializeField] private Image imageThumbnail;
+        [SerializeField] private Image imageTail;
         [SerializeField] private Transform transformBalloon;
 
         private readonly DialogueTextRevealPlayer _revealPlayer = new();
@@ -38,6 +39,8 @@ namespace GGemCo2DCore
         private float _thumbnailGapPx;
         private Vector3 _thumbnailBaseScale = Vector3.one;
         private bool _hasThumbnailBaseScale;
+        private Vector3 _tailBaseScale = Vector3.one;
+        private bool _hasTailBaseScale;
         private bool _hasDefaultPanelPadding;
         private int _defaultPanelPaddingLeft;
         private int _defaultPanelPaddingRight;
@@ -72,6 +75,7 @@ namespace GGemCo2DCore
             SetFontSize(safeData.fontSize);
             SetMessage(safeData);
             SetThumbnailOptions(safeData);
+            ApplyTailFlip();
         }
 
         /// <summary>
@@ -239,7 +243,26 @@ namespace GGemCo2DCore
                 }
             }
 
-            if (_tailRectTransform == null)
+            if (imageTail == null)
+            {
+                Transform tailTransform = transform.Find("IconTail") ??
+                                          _transformBalloonRectTransform?.Find("IconTail");
+                if (tailTransform != null)
+                {
+                    imageTail = tailTransform.GetComponent<Image>();
+                }
+            }
+
+            if (imageTail != null)
+            {
+                _tailRectTransform = imageTail.GetComponent<RectTransform>();
+                if (_tailRectTransform != null && !_hasTailBaseScale)
+                {
+                    _tailBaseScale = _tailRectTransform.localScale;
+                    _hasTailBaseScale = true;
+                }
+            }
+            else if (_tailRectTransform == null)
             {
                 Transform tailTransform = transform.Find("IconTail") ??
                                           _transformBalloonRectTransform?.Find("IconTail");
@@ -699,6 +722,7 @@ namespace GGemCo2DCore
             _revealPlayer.Clear(textMessage);
             ClearThumbnail();
             RestoreThumbnailScaleToBase();
+            RestoreTailScaleToBase();
             RestorePanelLayoutDefaults();
             SetPanelCenterX(0f);
             SetTransformBalloonCenterX(0f);
@@ -838,6 +862,69 @@ namespace GGemCo2DCore
         }
 
         /// <summary>
+        /// 꼬리 레이아웃/Flip 계산에 필요한 참조가 준비되어 있는지 확인합니다.
+        /// </summary>
+        /// <returns>꼬리 이미지와 RectTransform 참조가 준비되었으면 <see langword="true"/>를 반환합니다.</returns>
+        private bool TryEnsureTailReferences()
+        {
+            if (imageTail == null || _tailRectTransform == null)
+            {
+                CacheLayoutReferences();
+            }
+
+            return imageTail != null && _tailRectTransform != null;
+        }
+
+        /// <summary>
+        /// 캐릭터 바라보기 방향에 맞춰 꼬리 이미지를 좌우 반전합니다.
+        /// 기본 꼬리 리소스 방향은 오른쪽을 바라보는 상태를 기준으로 사용합니다.
+        /// </summary>
+        private void ApplyTailFlip()
+        {
+            if (!TryEnsureTailReferences())
+            {
+                return;
+            }
+
+            if (!_hasTailBaseScale)
+            {
+                _tailBaseScale = _tailRectTransform.localScale;
+                _hasTailBaseScale = true;
+            }
+
+            bool isFacingRight = true;
+            if (TryResolveSpeakerFacingRight(out bool speakerFacingRight))
+            {
+                isFacingRight = speakerFacingRight;
+            }
+
+            float baseAbsX = Mathf.Abs(_tailBaseScale.x);
+            if (baseAbsX <= Mathf.Epsilon)
+            {
+                baseAbsX = 1f;
+            }
+
+            float x = isFacingRight ? baseAbsX : -baseAbsX;
+            _tailRectTransform.localScale = new Vector3(
+                x,
+                _tailBaseScale.y,
+                _tailBaseScale.z);
+        }
+
+        /// <summary>
+        /// 꼬리 스케일을 프리팹 기본값으로 복원합니다.
+        /// </summary>
+        private void RestoreTailScaleToBase()
+        {
+            if (_tailRectTransform == null || !_hasTailBaseScale)
+            {
+                return;
+            }
+
+            _tailRectTransform.localScale = _tailBaseScale;
+        }
+
+        /// <summary>
         /// 매 프레임 타자 효과와 대상 캐릭터 추적 위치를 갱신합니다.
         /// </summary>
         private void LateUpdate()
@@ -860,6 +947,8 @@ namespace GGemCo2DCore
             {
                 RequestThumbnailPositionRefresh();
             }
+
+            ApplyTailFlip();
 
             if (_needsRefreshThumbnailPosition)
             {
