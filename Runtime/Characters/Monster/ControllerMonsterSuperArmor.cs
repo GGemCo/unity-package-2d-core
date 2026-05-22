@@ -99,15 +99,12 @@ namespace GGemCo2DCore
             if (monsterSettings == null) return;
             _config = monsterSettings;
 
-            CharacterConstants.Grade ownerGrade = ResolveOwnerGrade();
-            CharacterConstants.StaggerBreakResetMode resolvedBreakResetMode =
-                monsterSettings.ResolveBreakResetMode(ownerGrade);
-
             InitializeData(
                 regenDelay: monsterSettings.regenDelay,
                 regenInterval: monsterSettings.regenInterval,
                 regenPerTick: monsterSettings.regenPerTick,
-                breakResetMode: resolvedBreakResetMode,
+                // breakResetMode는 브레이크 시점에 현재 Grade로 다시 판정합니다.
+                breakResetMode: monsterSettings.breakResetMode,
                 perAttackConsumeCooldown: monsterSettings.perAttackConsumeCooldown);
         }
 
@@ -136,6 +133,26 @@ namespace GGemCo2DCore
             }
 
             return CharacterConstants.Grade.None;
+        }
+
+        /// <summary>
+        /// 브레이크(스택 0) 시점에 실제 적용할 리셋 모드를 판정합니다.
+        /// </summary>
+        /// <remarks>
+        /// Monster Grade는 런타임 초기화 순서상 Awake 이후에 확정될 수 있으므로,
+        /// 설정 주입 시점이 아니라 브레이크 시점에 Grade 기반 마스크를 재평가합니다.
+        /// </remarks>
+        /// <returns>브레이크 시 Max로 복구해야 하면 true를 반환합니다.</returns>
+        private bool ShouldRestoreToMaxOnBreak()
+        {
+            if (_config != null)
+            {
+                CharacterConstants.StaggerBreakResetMode resolvedMode =
+                    _config.ResolveBreakResetMode(ResolveOwnerGrade());
+                return resolvedMode == CharacterConstants.StaggerBreakResetMode.ResetToMax;
+            }
+
+            return _breakResetMode == CharacterConstants.StaggerBreakResetMode.ResetToMax;
         }
 
         /// <summary>
@@ -227,7 +244,7 @@ namespace GGemCo2DCore
                 {
                     BreakTriggered?.Invoke(hit.ReactionType);
                 
-                    if (_breakResetMode == CharacterConstants.StaggerBreakResetMode.ResetToMax)
+                    if (ShouldRestoreToMaxOnBreak())
                     {
                         RestoreToMax();
                         FireStacksChanged();
