@@ -766,7 +766,6 @@ namespace GGemCo2DCore
         /// <returns>발사체가 종료되어 현재 스텝을 중단해야 하면 true를 반환합니다.</returns>
         private bool TryHandleEnvironmentHit(Collider2D other, Vector2 hitWorldPos)
         {
-            GcLogger.Log($"TryHandleEnvironmentHit other: {other.name}");
             if (!ShouldHandleEnvironmentHit || !IsEnvironmentHitCollider(other))
                 return false;
 

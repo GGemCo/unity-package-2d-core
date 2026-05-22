@@ -100,9 +100,44 @@ namespace GGemCo2DCore
         [Min(1)] public int regenPerTick = 0;
 
         public CharacterConstants.StaggerBreakResetMode breakResetMode = CharacterConstants.StaggerBreakResetMode.KeepZero;
+        [Tooltip("슈퍼아머 브레이크 시 breakResetMode를 적용할 몬스터 등급(멀티 선택). 0이면 모든 등급에 적용됩니다.")]
+        [SerializeField] private int breakResetModeGradeMask = 0;
 
         [Tooltip("같은 AttackId가 매우 짧은 시간에 여러 번 들어올 때 스택이 과도하게 깎이는 것을 방지(초). 0이면 비활성.")]
         [Min(0f)] public float perAttackConsumeCooldown = 0f;
+
+        /// <summary>
+        /// 슈퍼아머 브레이크 리셋 모드 적용 대상 등급(비트 마스크)입니다.
+        /// - <see cref="CharacterConstants.Grade"/> enum index를 비트 위치로 사용합니다.
+        /// - 0이면 하위 호환을 위해 모든 등급에 적용합니다.
+        /// </summary>
+        public int BreakResetModeGradeMask => breakResetModeGradeMask;
+
+        /// <summary>
+        /// 지정한 등급에 breakResetMode를 적용할지 여부를 반환합니다.
+        /// </summary>
+        /// <param name="grade">확인할 몬스터 등급입니다.</param>
+        /// <returns>해당 등급에 breakResetMode를 적용하면 true입니다.</returns>
+        public bool IsBreakResetModeEnabledFor(CharacterConstants.Grade grade)
+        {
+            // 기존 에셋(필드 미직렬화)과의 호환을 위해 0은 "전체 적용"으로 해석합니다.
+            if (breakResetModeGradeMask == 0) return true;
+
+            var flag = 1 << (int)grade;
+            return (breakResetModeGradeMask & flag) != 0;
+        }
+
+        /// <summary>
+        /// 지정한 등급에 맞는 슈퍼아머 브레이크 리셋 모드를 반환합니다.
+        /// </summary>
+        /// <param name="grade">모드를 판정할 몬스터 등급입니다.</param>
+        /// <returns>적용 대상이면 설정 모드, 아니면 KeepZero를 반환합니다.</returns>
+        public CharacterConstants.StaggerBreakResetMode ResolveBreakResetMode(CharacterConstants.Grade grade)
+        {
+            return IsBreakResetModeEnabledFor(grade)
+                ? breakResetMode
+                : CharacterConstants.StaggerBreakResetMode.KeepZero;
+        }
 
         /// <summary>
         /// 몬스터 전투 HUD 사용 여부.

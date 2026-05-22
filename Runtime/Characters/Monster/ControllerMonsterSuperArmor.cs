@@ -99,11 +99,15 @@ namespace GGemCo2DCore
             if (monsterSettings == null) return;
             _config = monsterSettings;
 
+            CharacterConstants.Grade ownerGrade = ResolveOwnerGrade();
+            CharacterConstants.StaggerBreakResetMode resolvedBreakResetMode =
+                monsterSettings.ResolveBreakResetMode(ownerGrade);
+
             InitializeData(
                 regenDelay: monsterSettings.regenDelay,
                 regenInterval: monsterSettings.regenInterval,
                 regenPerTick: monsterSettings.regenPerTick,
-                breakResetMode: monsterSettings.breakResetMode,
+                breakResetMode: resolvedBreakResetMode,
                 perAttackConsumeCooldown: monsterSettings.perAttackConsumeCooldown);
         }
 
@@ -115,6 +119,23 @@ namespace GGemCo2DCore
             InitializeData(regenDelay: 0f, regenInterval: 0f, regenPerTick: 0,
                 breakResetMode: CharacterConstants.StaggerBreakResetMode.KeepZero,
                 perAttackConsumeCooldown: 0f);
+        }
+
+        /// <summary>
+        /// 현재 컨트롤러 소유자의 등급을 반환합니다.
+        /// </summary>
+        /// <returns>
+        /// 소유자가 Monster면 해당 Grade를 반환하고,
+        /// 그 외 타입이면 Grade.None을 반환합니다.
+        /// </returns>
+        private CharacterConstants.Grade ResolveOwnerGrade()
+        {
+            if (_owner is Monster monster)
+            {
+                return monster.Grade;
+            }
+
+            return CharacterConstants.Grade.None;
         }
 
         /// <summary>
