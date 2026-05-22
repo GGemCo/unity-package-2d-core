@@ -15,6 +15,16 @@ namespace GGemCo2DCore
         [SerializeField] private Image imageThumbnail;
         [SerializeField] private Image imageTail;
         [SerializeField] private Transform transformBalloon;
+        [SerializeField] private Image imageEnter;
+        [Header("입력 안내 이미지")]
+        [Tooltip("대사 끝에 표시되는 입력 안내 이미지와 텍스트 사이 간격(px)입니다.")]
+        [SerializeField] private float imageEnterGapPx = 4f;
+        [Tooltip("입력 안내 이미지 깜빡임 속도(Hz)입니다.")]
+        [SerializeField] private float imageEnterBlinkHz = 2.5f;
+        [Tooltip("입력 안내 이미지의 깜빡임 최소 알파값입니다.")]
+        [Range(0f, 1f)]
+        [SerializeField] private float imageEnterMinAlpha = 0.2f;
+        
         [Header("말풍선 월드 위치")]
         [Tooltip("프로젝트 기본 말풍선 월드 오프셋입니다. ScriptableObject를 찾지 못한 경우 이 값을 사용합니다.")]
         [SerializeField] private Vector3 projectWorldOffset = Vector3.zero;
@@ -31,6 +41,7 @@ namespace GGemCo2DCore
         private RectTransform _transformBalloonRectTransform;
         private RectTransform _panelRectTransform;
         private RectTransform _thumbnailRectTransform;
+        private RectTransform _enterRectTransform;
         private RectTransform _tailRectTransform;
         private VerticalLayoutGroup _panelLayoutGroup;
         private LayoutElement _panelLayoutElement;
@@ -52,8 +63,16 @@ namespace GGemCo2DCore
         private bool _hasDefaultPanelPadding;
         private int _defaultPanelPaddingLeft;
         private int _defaultPanelPaddingRight;
+        private int _currentPanelRightPaddingWithoutEnterPx;
         private float _defaultPanelLayoutMinWidth = -1f;
         private bool _hasDefaultPanelLayoutMinWidth;
+        private float _resolvedImageEnterGapPx = 4f;
+        private float _resolvedImageEnterBlinkHz = 2.5f;
+        private float _resolvedImageEnterMinAlpha = 0.2f;
+        private Vector2 _enterBaseAnchoredPosition;
+        private bool _hasEnterBaseAnchoredPosition;
+        private Color _enterBaseColor = Color.white;
+        private bool _hasEnterBaseColor;
         private int _thumbnailRequestVersion;
         private bool _needsRefreshThumbnailPosition;
         private readonly Vector3[] _worldCornersBuffer = new Vector3[4];
@@ -86,6 +105,7 @@ namespace GGemCo2DCore
             _target = characterBase;
             DialogueBalloonData safeData = data ?? new DialogueBalloonData();
             SetWorldPositionOptions(safeData);
+            ApplyProjectEnterIndicatorDefaults();
             BeginBalloonPresentation();
             SetFontSize(safeData.fontSize);
             SetMessage(safeData);
@@ -124,6 +144,36 @@ namespace GGemCo2DCore
             _eventWorldOffsetXPolicy = data != null
                 ? data.GetSafeWorldOffsetXPolicy()
                 : DialogueBalloonWorldOffsetXPolicy.UseProjectPolicy;
+        }
+
+        /// <summary>
+        /// 입력 안내 이미지 표시 옵션의 프로젝트 기본값을 결정해 적용합니다.
+        /// ScriptableObject가 로드되어 있으면 해당 값을 우선 사용하고, 없으면 프리팹 직렬화 값을 사용합니다.
+        /// </summary>
+        private void ApplyProjectEnterIndicatorDefaults()
+        {
+            _resolvedImageEnterGapPx = Mathf.Max(0f, imageEnterGapPx);
+            _resolvedImageEnterBlinkHz = Mathf.Max(0f, imageEnterBlinkHz);
+            _resolvedImageEnterMinAlpha = Mathf.Clamp01(imageEnterMinAlpha);
+
+            if (!TryGetProjectDialogueBalloonSettings(out GGemCoDialogueBalloonSettings settings) || settings == null)
+            {
+                return;
+            }
+
+            _resolvedImageEnterGapPx = settings.GetSafeEnterIndicatorGapPx();
+            _resolvedImageEnterBlinkHz = settings.GetSafeEnterIndicatorBlinkHz();
+            _resolvedImageEnterMinAlpha = settings.GetSafeEnterIndicatorMinAlpha();
+
+            if (imageEnter == null)
+            {
+                CacheLayoutReferences();
+            }
+
+            if (imageEnter != null && settings.enterIndicatorSprite != null)
+            {
+                imageEnter.sprite = settings.enterIndicatorSprite;
+            }
         }
 
         /// <summary>
@@ -297,6 +347,33 @@ namespace GGemCo2DCore
                 }
             }
 
+            if (imageEnter == null)
+            {
+                Transform enterTransform = _panelRectTransform?.Find("ImageEnter") ??
+                                           _transformBalloonRectTransform?.Find("ImageEnter") ??
+                                           transform.Find("ImageEnter");
+                if (enterTransform != null)
+                {
+                    imageEnter = enterTransform.GetComponent<Image>();
+                }
+            }
+
+            if (imageEnter != null)
+            {
+                _enterRectTransform = imageEnter.GetComponent<RectTransform>();
+                if (!_hasEnterBaseColor)
+                {
+                    _enterBaseColor = imageEnter.color;
+                    _hasEnterBaseColor = true;
+                }
+
+                if (_enterRectTransform != null && !_hasEnterBaseAnchoredPosition)
+                {
+                    _enterBaseAnchoredPosition = _enterRectTransform.anchoredPosition;
+                    _hasEnterBaseAnchoredPosition = true;
+                }
+            }
+
             if (imageTail == null)
             {
                 Transform tailTransform = transform.Find("IconTail") ??
@@ -376,6 +453,37 @@ namespace GGemCo2DCore
         }
 
         /// <summary>
+        /// 입력 안내 이미지가 유효하게 설정되어 있는지 반환합니다.
+        /// </summary>
+        /// <returns>이미지 컴포넌트와 스프라이트가 모두 유효하면 <see langword="true"/>를 반환합니다.</returns>
+        private bool HasConfiguredEnterImage()
+        {
+            return imageEnter != null &&
+                   imageEnter.sprite != null &&
+                   _enterRectTransform != null;
+        }
+
+        /// <summary>
+        /// 입력 안내 이미지 폭과 간격을 합친 우측 예약 너비(px)를 반환합니다.
+        /// </summary>
+        /// <returns>예약할 우측 너비(px)입니다.</returns>
+        private float GetEnterReservedWidthPx()
+        {
+            if (!HasConfiguredEnterImage())
+            {
+                return 0f;
+            }
+
+            float enterWidth = Mathf.Max(0f, _enterRectTransform.rect.width);
+            if (enterWidth <= 0f)
+            {
+                return 0f;
+            }
+
+            return enterWidth + _resolvedImageEnterGapPx;
+        }
+
+        /// <summary>
         /// 썸네일 배치 방향을 좌(-1) / 우(+1) 부호로 반환합니다.
         /// </summary>
         /// <returns>왼쪽 배치면 -1, 오른쪽 배치면 +1을 반환합니다.</returns>
@@ -413,6 +521,13 @@ namespace GGemCo2DCore
                     _panelLayoutGroup.padding.right = _defaultPanelPaddingRight;
                 }
 
+                _currentPanelRightPaddingWithoutEnterPx = _panelLayoutGroup.padding.right;
+                float enterReservedWidthWhenNoThumbnail = GetEnterReservedWidthPx();
+                if (enterReservedWidthWhenNoThumbnail > 0f)
+                {
+                    _panelLayoutGroup.padding.right += Mathf.CeilToInt(enterReservedWidthWhenNoThumbnail);
+                }
+
                 return;
             }
 
@@ -423,6 +538,13 @@ namespace GGemCo2DCore
             _panelLayoutGroup.padding.right = isThumbnailLeft
                 ? _textPaddingOnNonThumbnailSidePx
                 : _textPaddingOnThumbnailSidePx;
+            _currentPanelRightPaddingWithoutEnterPx = _panelLayoutGroup.padding.right;
+
+            float enterReservedWidth = GetEnterReservedWidthPx();
+            if (enterReservedWidth > 0f)
+            {
+                _panelLayoutGroup.padding.right += Mathf.CeilToInt(enterReservedWidth);
+            }
         }
 
         /// <summary>
@@ -557,6 +679,45 @@ namespace GGemCo2DCore
             Vector3 worldPoint = _balloonRectTransform.TransformPoint(new Vector3(rootSpaceX, 0f, 0f));
             Vector3 parentLocalPoint = parentRectTransform.InverseTransformPoint(worldPoint);
             return parentLocalPoint.x;
+        }
+
+        /// <summary>
+        /// 루트 말풍선 좌표계의 2D 좌표를 임의 부모 RectTransform 로컬 좌표로 변환합니다.
+        /// </summary>
+        /// <param name="parentRectTransform">변환 기준 부모 RectTransform 입니다.</param>
+        /// <param name="rootSpacePoint">루트 말풍선 좌표계 기준 2D 좌표입니다.</param>
+        /// <returns>부모 로컬 좌표계의 2D 좌표입니다.</returns>
+        private Vector2 ConvertRootSpacePointToParentLocal(RectTransform parentRectTransform, Vector2 rootSpacePoint)
+        {
+            if (_balloonRectTransform == null || parentRectTransform == null)
+            {
+                return rootSpacePoint;
+            }
+
+            Vector3 worldPoint = _balloonRectTransform.TransformPoint(new Vector3(rootSpacePoint.x, rootSpacePoint.y, 0f));
+            Vector3 parentLocalPoint = parentRectTransform.InverseTransformPoint(worldPoint);
+            return new Vector2(parentLocalPoint.x, parentLocalPoint.y);
+        }
+
+        /// <summary>
+        /// 루트 말풍선 좌표계 기준 중심점을 대상 RectTransform의 부모 로컬 좌표로 변환해 localPosition으로 적용합니다.
+        /// anchoredPosition과 달리 앵커 설정의 영향을 받지 않아 좌표 오차를 줄일 수 있습니다.
+        /// </summary>
+        /// <param name="targetRectTransform">위치를 적용할 대상 RectTransform입니다.</param>
+        /// <param name="rootSpaceCenter">루트 말풍선 좌표계 기준 중심점입니다.</param>
+        private void SetRectTransformCenterInRootSpace(RectTransform targetRectTransform, Vector2 rootSpaceCenter)
+        {
+            if (targetRectTransform == null)
+            {
+                return;
+            }
+
+            RectTransform parentRectTransform = targetRectTransform.parent as RectTransform;
+            Vector2 parentLocalPoint = ConvertRootSpacePointToParentLocal(parentRectTransform, rootSpaceCenter);
+            Vector3 localPosition = targetRectTransform.localPosition;
+            localPosition.x = parentLocalPoint.x;
+            localPosition.y = parentLocalPoint.y;
+            targetRectTransform.localPosition = localPosition;
         }
 
         /// <summary>
@@ -701,6 +862,20 @@ namespace GGemCo2DCore
         }
 
         /// <summary>
+        /// 입력 안내 이미지를 초기 상태(숨김, 원본 색상)로 준비합니다.
+        /// </summary>
+        private void PrepareEnterIndicator()
+        {
+            if (imageEnter == null)
+            {
+                return;
+            }
+
+            ApplyEnterNativeSize();
+            SetEnterIndicatorVisible(false, 1f);
+        }
+
+        /// <summary>
         /// 새 말풍선 표시 사이클을 시작하면서 준비 완료 전까지 UI를 숨깁니다.
         /// </summary>
         private void BeginBalloonPresentation()
@@ -709,6 +884,7 @@ namespace GGemCo2DCore
             _isMessagePreparationComplete = false;
             _isThumbnailPreparationComplete = false;
             _isLayoutPreparationComplete = false;
+            PrepareEnterIndicator();
             SetBalloonVisible(false);
         }
 
@@ -768,6 +944,23 @@ namespace GGemCo2DCore
         }
 
         /// <summary>
+        /// 입력 안내 이미지 RectTransform 크기를 스프라이트 원본 크기로 적용합니다.
+        /// </summary>
+        private void ApplyEnterNativeSize()
+        {
+            if (imageEnter == null || imageEnter.sprite == null)
+            {
+                return;
+            }
+
+            imageEnter.SetNativeSize();
+            if (_enterRectTransform == null)
+            {
+                _enterRectTransform = imageEnter.GetComponent<RectTransform>();
+            }
+        }
+
+        /// <summary>
         /// 말꼬리 중심 좌우 대칭 규칙과 썸네일 배치 옵션을 반영해 패널/썸네일 위치를 갱신합니다.
         /// </summary>
         private void RefreshThumbnailPosition()
@@ -822,10 +1015,110 @@ namespace GGemCo2DCore
                 _thumbnailRectTransform.anchoredPosition = thumbnailAnchoredPosition;
             }
 
+            PlaceEnterIndicator(panelCenterX, panelHalfWidth);
+
             ApplyThumbnailFlip();
             RecenterTransformBalloonByVisibleBounds(hasThumbnail);
             _isLayoutPreparationComplete = true;
             TryShowBalloonWhenReady();
+        }
+
+        /// <summary>
+        /// 대사 마지막 글자 위치를 기준으로 입력 안내 이미지를 배치합니다.
+        /// 좌표 계산이 불가능한 경우에는 패널 우하단 영역으로 안전하게 폴백합니다.
+        /// </summary>
+        /// <param name="panelCenterX">루트 좌표계 기준 패널 중심 X입니다.</param>
+        /// <param name="panelHalfWidth">패널 반너비(px)입니다.</param>
+        private void PlaceEnterIndicator(float panelCenterX, float panelHalfWidth)
+        {
+            if (!HasConfiguredEnterImage() || _panelRectTransform == null || _panelLayoutGroup == null)
+            {
+                return;
+            }
+
+            float enterHalfWidth = _enterRectTransform.rect.width * 0.5f;
+            float enterHalfHeight = _enterRectTransform.rect.height * 0.5f;
+            float panelHalfHeight = _panelRectTransform.rect.height * 0.5f;
+            float rightPaddingWithoutEnter = Mathf.Max(0f, _currentPanelRightPaddingWithoutEnterPx);
+            float bottomPadding = Mathf.Max(0f, _panelLayoutGroup.padding.bottom);
+
+            float fallbackCenterXInRootSpace = panelCenterX + panelHalfWidth - rightPaddingWithoutEnter - enterHalfWidth;
+            float fallbackCenterYInRootSpace = -panelHalfHeight + bottomPadding + enterHalfHeight;
+            Vector2 centerInRootSpace = new(fallbackCenterXInRootSpace, fallbackCenterYInRootSpace);
+
+            if (TryResolveEnterCenterByMessageTail(enterHalfWidth, out Vector2 centerByMessageTail))
+            {
+                centerInRootSpace = centerByMessageTail;
+            }
+
+            SetRectTransformCenterInRootSpace(_enterRectTransform, centerInRootSpace);
+        }
+
+        /// <summary>
+        /// 현재 표시 중인 대사 마지막 글자의 우측 위치를 기준으로 입력 안내 이미지 중심 좌표를 계산합니다.
+        /// </summary>
+        /// <param name="enterHalfWidth">입력 안내 이미지 반너비(px)입니다.</param>
+        /// <param name="centerInRootSpace">계산된 루트 좌표계 중심점입니다.</param>
+        /// <returns>계산에 성공하면 <see langword="true"/>를 반환합니다.</returns>
+        private bool TryResolveEnterCenterByMessageTail(float enterHalfWidth, out Vector2 centerInRootSpace)
+        {
+            centerInRootSpace = Vector2.zero;
+            if (textMessage == null || _balloonRectTransform == null)
+            {
+                return false;
+            }
+
+            RectTransform messageRectTransform = textMessage.rectTransform;
+            if (messageRectTransform == null)
+            {
+                return false;
+            }
+
+            textMessage.ForceMeshUpdate();
+            TMP_TextInfo textInfo = textMessage.textInfo;
+            if (textInfo == null || textInfo.characterCount <= 0)
+            {
+                return false;
+            }
+
+            int visibleCharacterCount = textMessage.maxVisibleCharacters == int.MaxValue
+                ? textInfo.characterCount
+                : Mathf.Clamp(textMessage.maxVisibleCharacters, 0, textInfo.characterCount);
+            if (visibleCharacterCount <= 0)
+            {
+                return false;
+            }
+
+            // maxVisibleCharacters로 표시 중인 "현재 마지막 문자 인덱스"를 직접 사용합니다.
+            // isVisible 플래그는 타자 효과 중 신뢰성이 떨어질 수 있어 배제합니다.
+            int lastVisibleIndex = visibleCharacterCount - 1;
+            TMP_CharacterInfo characterInfo = textInfo.characterInfo[lastVisibleIndex];
+
+            // 공백/비가시 문자까지 포함해 마지막 문자 뒤로 붙이기 위해 xAdvance를 사용합니다.
+            float tailX = characterInfo.xAdvance;
+            float tailY;
+            if (characterInfo.isVisible)
+            {
+                tailY = (characterInfo.ascender + characterInfo.descender) * 0.5f;
+            }
+            else if (textInfo.lineCount > 0)
+            {
+                int lineIndex = Mathf.Clamp(characterInfo.lineNumber, 0, textInfo.lineCount - 1);
+                TMP_LineInfo lineInfo = textInfo.lineInfo[lineIndex];
+                tailY = (lineInfo.ascender + lineInfo.descender) * 0.5f;
+            }
+            else
+            {
+                tailY = (characterInfo.ascender + characterInfo.descender) * 0.5f;
+            }
+
+            Vector3 messageTailWorldPosition = messageRectTransform.TransformPoint(new Vector3(tailX, tailY, 0f));
+            Vector3 messageTailRootLocalPosition = _balloonRectTransform.InverseTransformPoint(messageTailWorldPosition);
+
+            centerInRootSpace = new Vector2(
+                messageTailRootLocalPosition.x + _resolvedImageEnterGapPx + enterHalfWidth,
+                messageTailRootLocalPosition.y);
+            return true;
         }
 
         /// <summary>
@@ -853,6 +1146,8 @@ namespace GGemCo2DCore
             _isLayoutPreparationComplete = false;
             _revealPlayer.Clear(textMessage);
             ClearThumbnail();
+            PrepareEnterIndicator();
+            RestoreEnterIndicatorAnchoredPosition();
             RestoreThumbnailScaleToBase();
             RestoreTailScaleToBase();
             RestorePanelLayoutDefaults();
@@ -1198,6 +1493,8 @@ namespace GGemCo2DCore
                 }
             }
 
+            UpdateEnterIndicatorBlink();
+
             if (RefreshTailAnchorPosition())
             {
                 RequestThumbnailPositionRefresh();
@@ -1212,6 +1509,74 @@ namespace GGemCo2DCore
 
             if (_target == null) return;
             transform.position = ResolveBalloonWorldPosition();
+        }
+
+        /// <summary>
+        /// 입력 안내 이미지 활성/비활성 및 알파를 적용합니다.
+        /// </summary>
+        /// <param name="isVisible">표시 상태입니다.</param>
+        /// <param name="alphaMultiplier">원본 알파 대비 배율(0~1)입니다.</param>
+        private void SetEnterIndicatorVisible(bool isVisible, float alphaMultiplier)
+        {
+            if (imageEnter == null)
+            {
+                return;
+            }
+
+            if (!_hasEnterBaseColor)
+            {
+                _enterBaseColor = imageEnter.color;
+                _hasEnterBaseColor = true;
+            }
+
+            float normalizedMultiplier = Mathf.Clamp01(alphaMultiplier);
+            Color color = _enterBaseColor;
+            color.a = _enterBaseColor.a * normalizedMultiplier;
+            imageEnter.color = color;
+
+            if (imageEnter.gameObject.activeSelf != isVisible)
+            {
+                imageEnter.gameObject.SetActive(isVisible);
+            }
+        }
+
+        /// <summary>
+        /// 입력 안내 이미지의 깜빡임 상태를 갱신합니다.
+        /// 대사가 전부 노출되었을 때만 표시합니다.
+        /// </summary>
+        private void UpdateEnterIndicatorBlink()
+        {
+            if (!HasConfiguredEnterImage())
+            {
+                return;
+            }
+
+            if (!_revealPlayer.IsFullyRevealed)
+            {
+                SetEnterIndicatorVisible(false, 1f);
+                return;
+            }
+
+            float minAlpha = _resolvedImageEnterMinAlpha;
+            float blinkHz = _resolvedImageEnterBlinkHz;
+            float alphaMultiplier = blinkHz <= 0f
+                ? 1f
+                : Mathf.Lerp(minAlpha, 1f, Mathf.PingPong(Time.unscaledTime * blinkHz, 1f));
+
+            SetEnterIndicatorVisible(true, alphaMultiplier);
+        }
+
+        /// <summary>
+        /// 입력 안내 이미지 위치를 프리팹 기본값으로 복원합니다.
+        /// </summary>
+        private void RestoreEnterIndicatorAnchoredPosition()
+        {
+            if (_enterRectTransform == null || !_hasEnterBaseAnchoredPosition)
+            {
+                return;
+            }
+
+            _enterRectTransform.anchoredPosition = _enterBaseAnchoredPosition;
         }
     }
 }
