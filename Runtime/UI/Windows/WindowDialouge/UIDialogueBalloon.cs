@@ -13,12 +13,13 @@ namespace GGemCo2DCore
     {
         [SerializeField] private TextMeshProUGUI textMessage;
         [SerializeField] private Image imageThumbnail;
-        [SerializeField] private Image imageTail;
+        [SerializeField] private Transform transformBalloon;
 
         private readonly DialogueTextRevealPlayer _revealPlayer = new();
         private CharacterBase _target;
         private Vector3 _diffTextPosition;
         private RectTransform _balloonRectTransform;
+        private RectTransform _transformBalloonRectTransform;
         private RectTransform _panelRectTransform;
         private RectTransform _thumbnailRectTransform;
         private RectTransform _tailRectTransform;
@@ -44,6 +45,7 @@ namespace GGemCo2DCore
         private bool _hasDefaultPanelLayoutMinWidth;
         private int _thumbnailRequestVersion;
         private bool _needsRefreshThumbnailPosition;
+        private readonly Vector3[] _worldCornersBuffer = new Vector3[4];
 
         /// <summary>
         /// 현재 말풍선 메시지가 모두 표시되었는지 여부를 반환합니다.
@@ -183,9 +185,17 @@ namespace GGemCo2DCore
         private void CacheLayoutReferences()
         {
             _balloonRectTransform = transform as RectTransform;
+            if (transformBalloon == null)
+            {
+                transformBalloon = transform.Find("TransformBalloon");
+            }
 
-            Transform panelTransform = transform.Find("Panel");
-            _panelRectTransform = panelTransform as RectTransform ?? _balloonRectTransform;
+            _transformBalloonRectTransform = transformBalloon as RectTransform;
+
+            Transform panelTransform = _transformBalloonRectTransform?.Find("Panel");
+            _panelRectTransform = panelTransform as RectTransform ??
+                                  _transformBalloonRectTransform ??
+                                  _balloonRectTransform;
             if (_panelRectTransform != null)
             {
                 _panelLayoutGroup = _panelRectTransform.GetComponent<VerticalLayoutGroup>();
@@ -211,7 +221,8 @@ namespace GGemCo2DCore
 
             if (imageThumbnail == null)
             {
-                Transform thumbnailTransform = transform.Find("ImageThumbnail");
+                Transform thumbnailTransform = _transformBalloonRectTransform?.Find("ImageThumbnail") ??
+                                               transform.Find("ImageThumbnail");
                 if (thumbnailTransform != null)
                 {
                     imageThumbnail = thumbnailTransform.GetComponent<Image>();
@@ -230,7 +241,8 @@ namespace GGemCo2DCore
 
             if (_tailRectTransform == null)
             {
-                Transform tailTransform = transform.Find("IconTail");
+                Transform tailTransform = transform.Find("IconTail") ??
+                                          _transformBalloonRectTransform?.Find("IconTail");
                 _tailRectTransform = tailTransform as RectTransform;
             }
         }
@@ -242,6 +254,7 @@ namespace GGemCo2DCore
         private bool TryEnsureLayoutReferences()
         {
             if (imageThumbnail == null ||
+                _transformBalloonRectTransform == null ||
                 _thumbnailRectTransform == null ||
                 _panelRectTransform == null ||
                 _tailRectTransform == null ||
@@ -251,6 +264,7 @@ namespace GGemCo2DCore
             }
 
             return imageThumbnail != null &&
+                   _transformBalloonRectTransform != null &&
                    _thumbnailRectTransform != null &&
                    _panelRectTransform != null &&
                    _tailRectTransform != null &&
@@ -440,6 +454,176 @@ namespace GGemCo2DCore
         }
 
         /// <summary>
+        /// 썸네일이 패널(말풍선 본체) 하위에 배치되어 있는지 확인합니다.
+        /// </summary>
+        /// <returns>썸네일 부모가 패널이면 <see langword="true"/>를 반환합니다.</returns>
+        private bool IsThumbnailChildOfPanel()
+        {
+            return _thumbnailRectTransform != null &&
+                   _panelRectTransform != null &&
+                   _thumbnailRectTransform.parent == _panelRectTransform;
+        }
+
+        /// <summary>
+        /// 루트 말풍선 좌표계 X 값을 임의의 부모 RectTransform 로컬 X 값으로 변환합니다.
+        /// </summary>
+        /// <param name="parentRectTransform">변환 기준 부모 RectTransform 입니다.</param>
+        /// <param name="rootSpaceX">루트 말풍선 좌표계 기준 X 값입니다.</param>
+        /// <returns>부모 로컬 좌표계의 X 값입니다.</returns>
+        private float ConvertRootSpaceXToParentLocalX(RectTransform parentRectTransform, float rootSpaceX)
+        {
+            if (_balloonRectTransform == null || parentRectTransform == null)
+            {
+                return rootSpaceX;
+            }
+
+            Vector3 worldPoint = _balloonRectTransform.TransformPoint(new Vector3(rootSpaceX, 0f, 0f));
+            Vector3 parentLocalPoint = parentRectTransform.InverseTransformPoint(worldPoint);
+            return parentLocalPoint.x;
+        }
+
+        /// <summary>
+        /// RectTransform 의 실제 표시 영역 X 경계를 루트 말풍선 좌표계 기준으로 계산합니다.
+        /// </summary>
+        /// <param name="targetRectTransform">경계를 계산할 대상 RectTransform 입니다.</param>
+        /// <param name="left">계산된 왼쪽 경계 X 입니다.</param>
+        /// <param name="right">계산된 오른쪽 경계 X 입니다.</param>
+        /// <returns>계산에 성공하면 <see langword="true"/>를 반환합니다.</returns>
+        private bool TryGetRectXBoundsInRootSpace(RectTransform targetRectTransform, out float left, out float right)
+        {
+            left = 0f;
+            right = 0f;
+            if (_balloonRectTransform == null || targetRectTransform == null)
+            {
+                return false;
+            }
+
+            targetRectTransform.GetWorldCorners(_worldCornersBuffer);
+
+            float minX = float.PositiveInfinity;
+            float maxX = float.NegativeInfinity;
+            for (int i = 0; i < _worldCornersBuffer.Length; i++)
+            {
+                Vector3 localPoint = _balloonRectTransform.InverseTransformPoint(_worldCornersBuffer[i]);
+                minX = Mathf.Min(minX, localPoint.x);
+                maxX = Mathf.Max(maxX, localPoint.x);
+            }
+
+            left = minX;
+            right = maxX;
+            return true;
+        }
+
+        /// <summary>
+        /// 썸네일 Border/Flip 을 반영한 실제 가시 영역 X 경계를 루트 말풍선 좌표계 기준으로 계산합니다.
+        /// </summary>
+        /// <param name="left">계산된 썸네일 가시영역 왼쪽 경계 X 입니다.</param>
+        /// <param name="right">계산된 썸네일 가시영역 오른쪽 경계 X 입니다.</param>
+        /// <returns>계산에 성공하면 <see langword="true"/>를 반환합니다.</returns>
+        private bool TryGetThumbnailVisibleBoundsInRootSpace(out float left, out float right)
+        {
+            left = 0f;
+            right = 0f;
+            if (_thumbnailRectTransform == null || imageThumbnail == null)
+            {
+                return false;
+            }
+
+            if (!TryGetRectXBoundsInRootSpace(_thumbnailRectTransform, out float fullLeft, out float fullRight))
+            {
+                return false;
+            }
+
+            float fullWidth = fullRight - fullLeft;
+            if (fullWidth <= 0f)
+            {
+                left = fullLeft;
+                right = fullRight;
+                return true;
+            }
+
+            Sprite thumbnailSprite = imageThumbnail.sprite;
+            if (thumbnailSprite == null || thumbnailSprite.rect.width <= 0f)
+            {
+                left = fullLeft;
+                right = fullRight;
+                return true;
+            }
+
+            float spriteWidth = thumbnailSprite.rect.width;
+            float leftTrimRatio = Mathf.Clamp01(thumbnailSprite.border.x / spriteWidth);
+            float rightTrimRatio = Mathf.Clamp01(thumbnailSprite.border.z / spriteWidth);
+
+            bool isFlippedHorizontally = _thumbnailRectTransform.lossyScale.x < 0f;
+            if (isFlippedHorizontally)
+            {
+                float temporaryTrimRatio = leftTrimRatio;
+                leftTrimRatio = rightTrimRatio;
+                rightTrimRatio = temporaryTrimRatio;
+            }
+
+            left = fullLeft + (fullWidth * leftTrimRatio);
+            right = fullRight - (fullWidth * rightTrimRatio);
+            if (right < left)
+            {
+                float center = (left + right) * 0.5f;
+                left = center;
+                right = center;
+            }
+
+            return true;
+        }
+
+        /// <summary>
+        /// 패널과 썸네일의 실제 가시 영역을 합산해 TransformBalloon 중심을 루트 중앙(X=0)으로 재정렬합니다.
+        /// </summary>
+        /// <param name="hasThumbnail">현재 썸네일이 표시 중인지 여부입니다.</param>
+        private void RecenterTransformBalloonByVisibleBounds(bool hasThumbnail)
+        {
+            if (_transformBalloonRectTransform == null || _panelRectTransform == null)
+            {
+                return;
+            }
+
+            if (!TryGetRectXBoundsInRootSpace(_panelRectTransform, out float left, out float right))
+            {
+                return;
+            }
+
+            if (hasThumbnail && TryGetThumbnailVisibleBoundsInRootSpace(out float thumbnailLeft, out float thumbnailRight))
+            {
+                left = Mathf.Min(left, thumbnailLeft);
+                right = Mathf.Max(right, thumbnailRight);
+            }
+
+            float centerOffset = (left + right) * 0.5f;
+            if (Mathf.Abs(centerOffset) <= 0.01f)
+            {
+                return;
+            }
+
+            Vector2 anchoredPosition = _transformBalloonRectTransform.anchoredPosition;
+            anchoredPosition.x -= centerOffset;
+            _transformBalloonRectTransform.anchoredPosition = anchoredPosition;
+        }
+
+        /// <summary>
+        /// TransformBalloon 의 X 중심 좌표를 지정한 값으로 설정합니다.
+        /// </summary>
+        /// <param name="centerX">적용할 로컬 중심 X 값입니다.</param>
+        private void SetTransformBalloonCenterX(float centerX)
+        {
+            if (_transformBalloonRectTransform == null)
+            {
+                return;
+            }
+
+            Vector2 anchoredPosition = _transformBalloonRectTransform.anchoredPosition;
+            anchoredPosition.x = centerX;
+            _transformBalloonRectTransform.anchoredPosition = anchoredPosition;
+        }
+
+        /// <summary>
         /// 말꼬리 중심 좌우 대칭 규칙과 썸네일 배치 옵션을 반영해 패널/썸네일 위치를 갱신합니다.
         /// </summary>
         private void RefreshThumbnailPosition()
@@ -480,14 +664,20 @@ namespace GGemCo2DCore
             if (hasThumbnail)
             {
                 float thumbnailHalfWidth = _thumbnailRectTransform.rect.width * 0.5f;
-                float thumbnailCenterX = panelCenterX + (side * (panelHalfWidth + _thumbnailGapPx + thumbnailHalfWidth)) + thumbnailOffset.x;
-                _thumbnailRectTransform.localPosition = new Vector3(
-                    thumbnailCenterX,
-                    thumbnailOffset.y,
-                    0f);
+                float thumbnailCenterXInRootSpace = panelCenterX + (side * (panelHalfWidth + _thumbnailGapPx + thumbnailHalfWidth)) + thumbnailOffset.x;
+                RectTransform thumbnailParentRectTransform = _thumbnailRectTransform.parent as RectTransform;
+                float thumbnailCenterX = IsThumbnailChildOfPanel()
+                    ? (side * (panelHalfWidth + _thumbnailGapPx + thumbnailHalfWidth)) + thumbnailOffset.x
+                    : ConvertRootSpaceXToParentLocalX(thumbnailParentRectTransform, thumbnailCenterXInRootSpace);
+
+                Vector2 thumbnailAnchoredPosition = _thumbnailRectTransform.anchoredPosition;
+                thumbnailAnchoredPosition.x = thumbnailCenterX;
+                thumbnailAnchoredPosition.y = thumbnailOffset.y;
+                _thumbnailRectTransform.anchoredPosition = thumbnailAnchoredPosition;
             }
 
             ApplyThumbnailFlip();
+            RecenterTransformBalloonByVisibleBounds(hasThumbnail);
         }
 
         /// <summary>
@@ -511,6 +701,7 @@ namespace GGemCo2DCore
             RestoreThumbnailScaleToBase();
             RestorePanelLayoutDefaults();
             SetPanelCenterX(0f);
+            SetTransformBalloonCenterX(0f);
             if (_tailRectTransform != null)
             {
                 Vector2 tailAnchoredPosition = _tailRectTransform.anchoredPosition;
@@ -651,7 +842,20 @@ namespace GGemCo2DCore
         /// </summary>
         private void LateUpdate()
         {
+            int previousVisibleCharacters = textMessage != null ? textMessage.maxVisibleCharacters : 0;
+            bool wasFullyRevealed = _revealPlayer.IsFullyRevealed;
+
             _revealPlayer.Tick(textMessage, Time.deltaTime);
+            if (textMessage != null)
+            {
+                bool didVisibleCharactersChange = previousVisibleCharacters != textMessage.maxVisibleCharacters;
+                bool didCompleteRevealThisFrame = !wasFullyRevealed && _revealPlayer.IsFullyRevealed;
+                if (didVisibleCharactersChange || didCompleteRevealThisFrame)
+                {
+                    RequestThumbnailPositionRefresh();
+                }
+            }
+
             if (RefreshTailAnchorPosition())
             {
                 RequestThumbnailPositionRefresh();
