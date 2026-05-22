@@ -15,10 +15,18 @@ namespace GGemCo2DCore
         [SerializeField] private Image imageThumbnail;
         [SerializeField] private Image imageTail;
         [SerializeField] private Transform transformBalloon;
+        [Header("말풍선 월드 위치")]
+        [Tooltip("프로젝트 기본 말풍선 월드 오프셋입니다.")]
+        [SerializeField] private Vector3 projectWorldOffset = Vector3.zero;
+        [Tooltip("프로젝트 기본 말풍선 월드 오프셋 X값의 화자 방향 연동 정책입니다.")]
+        [SerializeField] private DialogueBalloonWorldOffsetXPolicy projectWorldOffsetXPolicy = DialogueBalloonWorldOffsetXPolicy.KeepOriginal;
 
         private readonly DialogueTextRevealPlayer _revealPlayer = new();
         private CharacterBase _target;
         private Vector3 _diffTextPosition;
+        private bool _useProjectWorldOffset = true;
+        private Vector3 _eventWorldOffset;
+        private DialogueBalloonWorldOffsetXPolicy _eventWorldOffsetXPolicy = DialogueBalloonWorldOffsetXPolicy.UseProjectPolicy;
         private RectTransform _balloonRectTransform;
         private RectTransform _transformBalloonRectTransform;
         private RectTransform _panelRectTransform;
@@ -77,6 +85,7 @@ namespace GGemCo2DCore
         {
             _target = characterBase;
             DialogueBalloonData safeData = data ?? new DialogueBalloonData();
+            SetWorldPositionOptions(safeData);
             BeginBalloonPresentation();
             SetFontSize(safeData.fontSize);
             SetMessage(safeData);
@@ -102,6 +111,19 @@ namespace GGemCo2DCore
             if (textMessage == null) return;
             if (size <= 0) return;
             textMessage.fontSize = size;
+        }
+
+        /// <summary>
+        /// 말풍선 월드 좌표 계산에 사용할 이벤트별 오프셋 정책을 저장합니다.
+        /// </summary>
+        /// <param name="data">현재 말풍선 이벤트 데이터입니다.</param>
+        private void SetWorldPositionOptions(DialogueBalloonData data)
+        {
+            _useProjectWorldOffset = data != null && data.useProjectWorldOffset;
+            _eventWorldOffset = data != null ? data.worldOffset : Vector3.zero;
+            _eventWorldOffsetXPolicy = data != null
+                ? data.GetSafeWorldOffsetXPolicy()
+                : DialogueBalloonWorldOffsetXPolicy.UseProjectPolicy;
         }
 
         /// <summary>
@@ -821,6 +843,9 @@ namespace GGemCo2DCore
         {
             _thumbnailRequestVersion++;
             _target = null;
+            _useProjectWorldOffset = true;
+            _eventWorldOffset = Vector3.zero;
+            _eventWorldOffsetXPolicy = DialogueBalloonWorldOffsetXPolicy.UseProjectPolicy;
             _needsRefreshThumbnailPosition = false;
             _shouldShowBalloonWhenReady = false;
             _isMessagePreparationComplete = false;
@@ -947,6 +972,76 @@ namespace GGemCo2DCore
         }
 
         /// <summary>
+        /// 프로젝트 기본 오프셋 X 정책을 유효 범위로 보정해 반환합니다.
+        /// </summary>
+        /// <returns>유효한 프로젝트 기본 오프셋 X 정책입니다.</returns>
+        private DialogueBalloonWorldOffsetXPolicy GetSafeProjectWorldOffsetXPolicy()
+        {
+            return projectWorldOffsetXPolicy switch
+            {
+                DialogueBalloonWorldOffsetXPolicy.KeepOriginal => DialogueBalloonWorldOffsetXPolicy.KeepOriginal,
+                DialogueBalloonWorldOffsetXPolicy.MirrorBySpeakerFacing => DialogueBalloonWorldOffsetXPolicy.MirrorBySpeakerFacing,
+                DialogueBalloonWorldOffsetXPolicy.UseProjectPolicy => DialogueBalloonWorldOffsetXPolicy.KeepOriginal,
+                _ => DialogueBalloonWorldOffsetXPolicy.KeepOriginal
+            };
+        }
+
+        /// <summary>
+        /// 이벤트 정책과 프로젝트 기본 정책을 결합해 실제 오프셋 X 반영 정책을 결정합니다.
+        /// </summary>
+        /// <returns>실제 적용할 말풍선 월드 오프셋 X 정책입니다.</returns>
+        private DialogueBalloonWorldOffsetXPolicy ResolveWorldOffsetXPolicy()
+        {
+            return _eventWorldOffsetXPolicy == DialogueBalloonWorldOffsetXPolicy.UseProjectPolicy
+                ? GetSafeProjectWorldOffsetXPolicy()
+                : _eventWorldOffsetXPolicy;
+        }
+
+        /// <summary>
+        /// 화자 좌우 방향과 정책을 반영해 월드 오프셋 X 값을 보정합니다.
+        /// </summary>
+        /// <param name="offsetX">기본 오프셋 X 값입니다.</param>
+        /// <param name="policy">적용할 오프셋 X 정책입니다.</param>
+        /// <returns>정책이 반영된 오프셋 X 값입니다.</returns>
+        private float ResolveWorldOffsetXByPolicy(float offsetX, DialogueBalloonWorldOffsetXPolicy policy)
+        {
+            if (policy != DialogueBalloonWorldOffsetXPolicy.MirrorBySpeakerFacing)
+            {
+                return offsetX;
+            }
+
+            if (!TryResolveSpeakerFacingRight(out bool isFacingRight))
+            {
+                return offsetX;
+            }
+
+            return isFacingRight ? offsetX : -offsetX;
+        }
+
+        /// <summary>
+        /// 현재 화자 상태와 이벤트 옵션을 바탕으로 말풍선 최종 월드 좌표를 계산합니다.
+        /// </summary>
+        /// <returns>계산된 말풍선 월드 좌표입니다.</returns>
+        private Vector3 ResolveBalloonWorldPosition()
+        {
+            if (_target == null)
+            {
+                return transform.position;
+            }
+
+            Vector3 baseWorldPosition = _target.transform.position + new Vector3(0f, _target.GetHeightByScale(), 0f);
+            Vector3 configurableOffset = _eventWorldOffset;
+            if (_useProjectWorldOffset)
+            {
+                configurableOffset += projectWorldOffset;
+            }
+
+            DialogueBalloonWorldOffsetXPolicy appliedPolicy = ResolveWorldOffsetXPolicy();
+            configurableOffset.x = ResolveWorldOffsetXByPolicy(configurableOffset.x, appliedPolicy);
+            return baseWorldPosition + _diffTextPosition + configurableOffset;
+        }
+
+        /// <summary>
         /// 목표 수평 바라보기 방향과 원본 썸네일 기준 방향을 비교해 Flip 필요 여부를 계산합니다.
         /// </summary>
         /// <param name="desiredFacingRight">목표가 오른쪽 바라보기면 <see langword="true"/>입니다.</param>
@@ -1065,9 +1160,7 @@ namespace GGemCo2DCore
             }
 
             if (_target == null) return;
-            // 아이템 위 월드 좌표 설정
-            Vector3 npcNameWorldPosition = _target.gameObject.transform.position + new Vector3(0, _target.GetHeightByScale(), 0) + _diffTextPosition;
-            gameObject.transform.position = npcNameWorldPosition;
+            transform.position = ResolveBalloonWorldPosition();
         }
     }
 }

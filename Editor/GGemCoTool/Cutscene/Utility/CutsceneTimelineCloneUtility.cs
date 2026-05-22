@@ -322,6 +322,9 @@ namespace GGemCo2DCoreEditor
                 textPaddingOnNonThumbnailSidePx = source.textPaddingOnNonThumbnailSidePx,
                 textPaddingOnThumbnailSidePx = source.textPaddingOnThumbnailSidePx,
                 thumbnailGapPx = source.thumbnailGapPx,
+                useProjectWorldOffset = source.useProjectWorldOffset,
+                worldOffset = source.worldOffset,
+                worldOffsetXPolicy = source.worldOffsetXPolicy,
             };
         }
 

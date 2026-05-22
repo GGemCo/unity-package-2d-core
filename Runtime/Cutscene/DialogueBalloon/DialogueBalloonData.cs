@@ -64,6 +64,27 @@ namespace GGemCo2DCore
     }
 
     /// <summary>
+    /// 말풍선 월드 좌표 오프셋의 X값을 화자 방향과 연동하는 정책입니다.
+    /// </summary>
+    public enum DialogueBalloonWorldOffsetXPolicy
+    {
+        /// <summary>
+        /// 오프셋 X값을 원본 값 그대로 사용합니다.
+        /// </summary>
+        KeepOriginal = 0,
+
+        /// <summary>
+        /// 화자가 왼쪽을 보면 오프셋 X값의 부호를 반전합니다.
+        /// </summary>
+        MirrorBySpeakerFacing = 1,
+
+        /// <summary>
+        /// 프로젝트 기본 정책을 따릅니다.
+        /// </summary>
+        UseProjectPolicy = 2,
+    }
+
+    /// <summary>
     /// 컷신에서 캐릭터 위에 표시할 대사 말풍선 데이터를 정의합니다.
     /// </summary>
     [Serializable]
@@ -140,6 +161,14 @@ namespace GGemCo2DCore
         [Tooltip("패널과 썸네일 사이 간격(px)입니다.")]
         public float thumbnailGapPx = 0f;
 
+        [Header("말풍선 월드 위치")]
+        [Tooltip("true이면 프로젝트 기본 말풍선 월드 오프셋을 함께 적용합니다.")]
+        public bool useProjectWorldOffset = true;
+        [Tooltip("말풍선 기본 위치(캐릭터 X + 높이) 기준 추가 오프셋입니다.")]
+        public Vector3 worldOffset = Vector3.zero;
+        [Tooltip("말풍선 월드 오프셋 X값의 화자 방향 연동 정책입니다.")]
+        public DialogueBalloonWorldOffsetXPolicy worldOffsetXPolicy = DialogueBalloonWorldOffsetXPolicy.UseProjectPolicy;
+
         /// <summary>
         /// 타자 효과 속도가 지정되지 않았으면 기본값으로 보정해서 반환합니다.
         /// </summary>
@@ -214,6 +243,21 @@ namespace GGemCo2DCore
         public float GetSafeThumbnailGapPx()
         {
             return Mathf.Max(0f, thumbnailGapPx);
+        }
+
+        /// <summary>
+        /// 말풍선 월드 오프셋 X 정책을 유효 범위로 보정해 반환합니다.
+        /// </summary>
+        /// <returns>유효한 오프셋 X 정책입니다.</returns>
+        public DialogueBalloonWorldOffsetXPolicy GetSafeWorldOffsetXPolicy()
+        {
+            return worldOffsetXPolicy switch
+            {
+                DialogueBalloonWorldOffsetXPolicy.KeepOriginal => DialogueBalloonWorldOffsetXPolicy.KeepOriginal,
+                DialogueBalloonWorldOffsetXPolicy.MirrorBySpeakerFacing => DialogueBalloonWorldOffsetXPolicy.MirrorBySpeakerFacing,
+                DialogueBalloonWorldOffsetXPolicy.UseProjectPolicy => DialogueBalloonWorldOffsetXPolicy.UseProjectPolicy,
+                _ => DialogueBalloonWorldOffsetXPolicy.UseProjectPolicy
+            };
         }
     }
 }
