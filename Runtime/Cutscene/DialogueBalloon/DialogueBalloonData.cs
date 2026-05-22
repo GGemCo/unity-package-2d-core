@@ -126,6 +126,20 @@ namespace GGemCo2DCore
         [Tooltip("원본 썸네일 이미지의 기본 바라보기 방향입니다.")]
         public DialogueBalloonThumbnailSourceFacing thumbnailSourceFacing = DialogueBalloonThumbnailSourceFacing.Right;
 
+        [Header("말풍선 레이아웃")]
+        [Tooltip("true이면 말꼬리 X를 기준으로 패널+썸네일 전체를 좌우 대칭 배치합니다.")]
+        public bool useSymmetricLayoutByTail = true;
+        [Tooltip("말꼬리를 화자 얼굴 바라보기 방향의 앞쪽으로 이동할 픽셀 오프셋입니다.")]
+        public float tailForwardOffsetPx = 3f;
+        [Tooltip("말꼬리 중심 기준 최소 반너비(px)입니다. 0 이하면 최소 크기 강제를 사용하지 않습니다.")]
+        public float minHalfExtentByTailPx = 0f;
+        [Tooltip("썸네일이 없는 쪽 텍스트 패딩(px)입니다.")]
+        public int textPaddingOnNonThumbnailSidePx = 7;
+        [Tooltip("썸네일이 있는 쪽 텍스트 패딩(px)입니다.")]
+        public int textPaddingOnThumbnailSidePx = 3;
+        [Tooltip("패널과 썸네일 사이 간격(px)입니다.")]
+        public float thumbnailGapPx = 0f;
+
         /// <summary>
         /// 타자 효과 속도가 지정되지 않았으면 기본값으로 보정해서 반환합니다.
         /// </summary>
@@ -155,6 +169,51 @@ namespace GGemCo2DCore
         public bool ShouldWaitUntilClipDuration()
         {
             return advancePolicy == DialogueBalloonAdvancePolicy.WaitUntilClipDuration;
+        }
+
+        /// <summary>
+        /// 말꼬리 전방 오프셋 값을 0 이상으로 보정해 반환합니다.
+        /// </summary>
+        /// <returns>0 이상인 말꼬리 전방 오프셋(px)입니다.</returns>
+        public float GetSafeTailForwardOffsetPx()
+        {
+            return Mathf.Max(0f, tailForwardOffsetPx);
+        }
+
+        /// <summary>
+        /// 말꼬리 기준 최소 반너비를 0 이상으로 보정해 반환합니다.
+        /// </summary>
+        /// <returns>0 이상인 최소 반너비(px)입니다.</returns>
+        public float GetSafeMinHalfExtentByTailPx()
+        {
+            return Mathf.Max(0f, minHalfExtentByTailPx);
+        }
+
+        /// <summary>
+        /// 썸네일이 없는 쪽 텍스트 패딩을 0 이상으로 보정해 반환합니다.
+        /// </summary>
+        /// <returns>0 이상인 패딩(px)입니다.</returns>
+        public int GetSafeTextPaddingOnNonThumbnailSidePx()
+        {
+            return Mathf.Max(0, textPaddingOnNonThumbnailSidePx);
+        }
+
+        /// <summary>
+        /// 썸네일이 있는 쪽 텍스트 패딩을 0 이상으로 보정해 반환합니다.
+        /// </summary>
+        /// <returns>0 이상인 패딩(px)입니다.</returns>
+        public int GetSafeTextPaddingOnThumbnailSidePx()
+        {
+            return Mathf.Max(0, textPaddingOnThumbnailSidePx);
+        }
+
+        /// <summary>
+        /// 패널과 썸네일 사이 간격 값을 0 이상으로 보정해 반환합니다.
+        /// </summary>
+        /// <returns>0 이상인 간격(px)입니다.</returns>
+        public float GetSafeThumbnailGapPx()
+        {
+            return Mathf.Max(0f, thumbnailGapPx);
         }
     }
 }

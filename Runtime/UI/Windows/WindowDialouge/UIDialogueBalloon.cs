@@ -13,6 +13,7 @@ namespace GGemCo2DCore
     {
         [SerializeField] private TextMeshProUGUI textMessage;
         [SerializeField] private Image imageThumbnail;
+        [SerializeField] private Image imageTail;
 
         private readonly DialogueTextRevealPlayer _revealPlayer = new();
         private CharacterBase _target;
@@ -20,13 +21,27 @@ namespace GGemCo2DCore
         private RectTransform _balloonRectTransform;
         private RectTransform _panelRectTransform;
         private RectTransform _thumbnailRectTransform;
+        private RectTransform _tailRectTransform;
+        private VerticalLayoutGroup _panelLayoutGroup;
+        private LayoutElement _panelLayoutElement;
         private ConfigCommon.ThumbnailPositionType _thumbnailPositionType;
         private Vector3 _offsetImageThumbnailCharacter;
         private Vector3 _offsetImageThumbnailCharacterLeft;
         private DialogueBalloonThumbnailFlipPolicy _thumbnailFlipPolicy = DialogueBalloonThumbnailFlipPolicy.KeepOriginal;
         private DialogueBalloonThumbnailSourceFacing _thumbnailSourceFacing = DialogueBalloonThumbnailSourceFacing.Right;
+        private bool _useSymmetricLayoutByTail = true;
+        private float _tailForwardOffsetPx = 3f;
+        private float _minHalfExtentByTailPx;
+        private int _textPaddingOnNonThumbnailSidePx = 7;
+        private int _textPaddingOnThumbnailSidePx = 3;
+        private float _thumbnailGapPx;
         private Vector3 _thumbnailBaseScale = Vector3.one;
         private bool _hasThumbnailBaseScale;
+        private bool _hasDefaultPanelPadding;
+        private int _defaultPanelPaddingLeft;
+        private int _defaultPanelPaddingRight;
+        private float _defaultPanelLayoutMinWidth = -1f;
+        private bool _hasDefaultPanelLayoutMinWidth;
         private int _thumbnailRequestVersion;
         private bool _needsRefreshThumbnailPosition;
 
@@ -103,10 +118,16 @@ namespace GGemCo2DCore
             _offsetImageThumbnailCharacterLeft = data.offsetImageThumbnailCharacterLeft;
             _thumbnailFlipPolicy = data.thumbnailFlipPolicy;
             _thumbnailSourceFacing = data.thumbnailSourceFacing;
+            _useSymmetricLayoutByTail = data.useSymmetricLayoutByTail;
+            _tailForwardOffsetPx = data.GetSafeTailForwardOffsetPx();
+            _minHalfExtentByTailPx = data.GetSafeMinHalfExtentByTailPx();
+            _textPaddingOnNonThumbnailSidePx = data.GetSafeTextPaddingOnNonThumbnailSidePx();
+            _textPaddingOnThumbnailSidePx = data.GetSafeTextPaddingOnThumbnailSidePx();
+            _thumbnailGapPx = data.GetSafeThumbnailGapPx();
             RequestThumbnailPositionRefresh();
 
             int requestVersion = ++_thumbnailRequestVersion;
-            if (_thumbnailPositionType == ConfigCommon.ThumbnailPositionType.None || !TryEnsureThumbnailImage())
+            if (_thumbnailPositionType == ConfigCommon.ThumbnailPositionType.None || !TryEnsureLayoutReferences())
             {
                 ClearThumbnail();
                 return;
@@ -165,6 +186,28 @@ namespace GGemCo2DCore
 
             Transform panelTransform = transform.Find("Panel");
             _panelRectTransform = panelTransform as RectTransform ?? _balloonRectTransform;
+            if (_panelRectTransform != null)
+            {
+                _panelLayoutGroup = _panelRectTransform.GetComponent<VerticalLayoutGroup>();
+                _panelLayoutElement = _panelRectTransform.GetComponent<LayoutElement>();
+                if (_panelLayoutElement == null)
+                {
+                    _panelLayoutElement = _panelRectTransform.gameObject.AddComponent<LayoutElement>();
+                }
+
+                if (_panelLayoutGroup != null && !_hasDefaultPanelPadding)
+                {
+                    _defaultPanelPaddingLeft = _panelLayoutGroup.padding.left;
+                    _defaultPanelPaddingRight = _panelLayoutGroup.padding.right;
+                    _hasDefaultPanelPadding = true;
+                }
+
+                if (_panelLayoutElement != null && !_hasDefaultPanelLayoutMinWidth)
+                {
+                    _defaultPanelLayoutMinWidth = _panelLayoutElement.minWidth;
+                    _hasDefaultPanelLayoutMinWidth = true;
+                }
+            }
 
             if (imageThumbnail == null)
             {
@@ -184,20 +227,34 @@ namespace GGemCo2DCore
                     _hasThumbnailBaseScale = true;
                 }
             }
+
+            if (_tailRectTransform == null)
+            {
+                Transform tailTransform = transform.Find("IconTail");
+                _tailRectTransform = tailTransform as RectTransform;
+            }
         }
 
         /// <summary>
-        /// 썸네일 이미지 참조가 준비되어 있는지 확인하고, 없으면 캐시를 다시 시도합니다.
+        /// 말풍선 레이아웃 계산에 필요한 참조가 준비되어 있는지 확인하고, 없으면 캐시를 다시 시도합니다.
         /// </summary>
-        /// <returns>썸네일 Image를 사용할 수 있으면 <see langword="true"/>, 없으면 <see langword="false"/>를 반환합니다.</returns>
-        private bool TryEnsureThumbnailImage()
+        /// <returns>패널/꼬리/썸네일 참조가 준비되었으면 <see langword="true"/>를 반환합니다.</returns>
+        private bool TryEnsureLayoutReferences()
         {
-            if (imageThumbnail == null || _thumbnailRectTransform == null || _panelRectTransform == null)
+            if (imageThumbnail == null ||
+                _thumbnailRectTransform == null ||
+                _panelRectTransform == null ||
+                _tailRectTransform == null ||
+                _panelLayoutElement == null)
             {
                 CacheLayoutReferences();
             }
 
-            return imageThumbnail != null && _thumbnailRectTransform != null && _panelRectTransform != null;
+            return imageThumbnail != null &&
+                   _thumbnailRectTransform != null &&
+                   _panelRectTransform != null &&
+                   _tailRectTransform != null &&
+                   _panelLayoutElement != null;
         }
 
         /// <summary>
@@ -205,7 +262,7 @@ namespace GGemCo2DCore
         /// </summary>
         private void ClearThumbnail()
         {
-            if (!TryEnsureThumbnailImage())
+            if (!TryEnsureLayoutReferences())
             {
                 return;
             }
@@ -216,33 +273,220 @@ namespace GGemCo2DCore
         }
 
         /// <summary>
-        /// PopupBubble과 동일한 방식으로 말풍선 패널 크기와 썸네일 크기를 기준으로 썸네일 위치를 갱신합니다.
+        /// 현재 프레임에서 실제로 썸네일을 배치해야 하는지 반환합니다.
+        /// </summary>
+        /// <returns>썸네일이 유효하고 활성화되어 있으면 <see langword="true"/>를 반환합니다.</returns>
+        private bool HasVisibleThumbnail()
+        {
+            return _thumbnailPositionType != ConfigCommon.ThumbnailPositionType.None &&
+                   imageThumbnail != null &&
+                   imageThumbnail.gameObject.activeSelf &&
+                   imageThumbnail.sprite != null;
+        }
+
+        /// <summary>
+        /// 썸네일 배치 방향을 좌(-1) / 우(+1) 부호로 반환합니다.
+        /// </summary>
+        /// <returns>왼쪽 배치면 -1, 오른쪽 배치면 +1을 반환합니다.</returns>
+        private float ResolveThumbnailSideSign()
+        {
+            return _thumbnailPositionType == ConfigCommon.ThumbnailPositionType.Left ? -1f : 1f;
+        }
+
+        /// <summary>
+        /// 썸네일 배치 방향에 맞는 위치 보정값을 반환합니다.
+        /// </summary>
+        /// <returns>좌/우 방향별 썸네일 보정 오프셋입니다.</returns>
+        private Vector3 ResolveThumbnailOffset()
+        {
+            return _thumbnailPositionType == ConfigCommon.ThumbnailPositionType.Left
+                ? _offsetImageThumbnailCharacterLeft
+                : _offsetImageThumbnailCharacter;
+        }
+
+        /// <summary>
+        /// 썸네일 유무/방향에 따라 텍스트 좌우 패딩을 적용합니다.
+        /// </summary>
+        private void ApplyPanelPaddingByThumbnailSide()
+        {
+            if (_panelLayoutGroup == null)
+            {
+                return;
+            }
+
+            if (!HasVisibleThumbnail())
+            {
+                if (_hasDefaultPanelPadding)
+                {
+                    _panelLayoutGroup.padding.left = _defaultPanelPaddingLeft;
+                    _panelLayoutGroup.padding.right = _defaultPanelPaddingRight;
+                }
+
+                return;
+            }
+
+            bool isThumbnailLeft = _thumbnailPositionType == ConfigCommon.ThumbnailPositionType.Left;
+            _panelLayoutGroup.padding.left = isThumbnailLeft
+                ? _textPaddingOnThumbnailSidePx
+                : _textPaddingOnNonThumbnailSidePx;
+            _panelLayoutGroup.padding.right = isThumbnailLeft
+                ? _textPaddingOnNonThumbnailSidePx
+                : _textPaddingOnThumbnailSidePx;
+        }
+
+        /// <summary>
+        /// 풀 반환 시 말풍선 패널 레이아웃 상태를 프리팹 기본값으로 복원합니다.
+        /// </summary>
+        private void RestorePanelLayoutDefaults()
+        {
+            if (_panelLayoutGroup != null && _hasDefaultPanelPadding)
+            {
+                _panelLayoutGroup.padding.left = _defaultPanelPaddingLeft;
+                _panelLayoutGroup.padding.right = _defaultPanelPaddingRight;
+            }
+
+            if (_panelLayoutElement != null && _hasDefaultPanelLayoutMinWidth)
+            {
+                _panelLayoutElement.minWidth = _defaultPanelLayoutMinWidth;
+            }
+        }
+
+        /// <summary>
+        /// 말꼬리 중심 대칭 최소 반너비 조건에 맞도록 패널 최소 가로 크기를 갱신합니다.
+        /// </summary>
+        /// <param name="hasThumbnail">현재 썸네일이 배치되는 상태인지 여부입니다.</param>
+        /// <param name="side">썸네일 배치 방향 부호입니다. 왼쪽 -1, 오른쪽 +1 입니다.</param>
+        /// <param name="thumbnailOffsetX">썸네일 X 보정값입니다.</param>
+        private void UpdatePanelMinimumWidthByTailSymmetry(bool hasThumbnail, float side, float thumbnailOffsetX)
+        {
+            if (_panelLayoutElement == null)
+            {
+                return;
+            }
+
+            if (!_useSymmetricLayoutByTail || _minHalfExtentByTailPx <= 0f)
+            {
+                if (_hasDefaultPanelLayoutMinWidth)
+                {
+                    _panelLayoutElement.minWidth = _defaultPanelLayoutMinWidth;
+                }
+
+                return;
+            }
+
+            float thumbnailWidth = hasThumbnail ? _thumbnailRectTransform.rect.width : 0f;
+            float thumbnailSpan = hasThumbnail ? _thumbnailGapPx + thumbnailWidth : 0f;
+            float requiredPanelWidth = (2f * _minHalfExtentByTailPx) - thumbnailSpan - (side * thumbnailOffsetX);
+            requiredPanelWidth = Mathf.Max(0f, requiredPanelWidth);
+            _panelLayoutElement.minWidth = requiredPanelWidth;
+        }
+
+        /// <summary>
+        /// 화자 방향(좌/우)을 기준으로 말꼬리 X 오프셋을 계산합니다.
+        /// </summary>
+        /// <returns>말꼬리의 목표 anchoredPosition.x 값입니다.</returns>
+        private float ResolveTailAnchorX()
+        {
+            if (_tailForwardOffsetPx <= 0f)
+            {
+                return 0f;
+            }
+
+            if (TryResolveSpeakerFacingRight(out bool isFacingRight))
+            {
+                return isFacingRight ? _tailForwardOffsetPx : -_tailForwardOffsetPx;
+            }
+
+            return 0f;
+        }
+
+        /// <summary>
+        /// 말꼬리의 로컬 X 위치를 갱신하고 변경 여부를 반환합니다.
+        /// </summary>
+        /// <returns>말꼬리 X 값이 바뀌었으면 <see langword="true"/>를 반환합니다.</returns>
+        private bool RefreshTailAnchorPosition()
+        {
+            if (_tailRectTransform == null)
+            {
+                return false;
+            }
+
+            float targetTailX = ResolveTailAnchorX();
+            Vector2 anchoredPosition = _tailRectTransform.anchoredPosition;
+            if (Mathf.Abs(anchoredPosition.x - targetTailX) <= 0.01f)
+            {
+                return false;
+            }
+
+            anchoredPosition.x = targetTailX;
+            _tailRectTransform.anchoredPosition = anchoredPosition;
+            return true;
+        }
+
+        /// <summary>
+        /// 패널의 중심 X를 루트 로컬 좌표계에서 설정합니다.
+        /// </summary>
+        /// <param name="panelCenterX">설정할 패널 중심 X입니다.</param>
+        private void SetPanelCenterX(float panelCenterX)
+        {
+            if (_panelRectTransform == null)
+            {
+                return;
+            }
+
+            Vector2 anchoredPosition = _panelRectTransform.anchoredPosition;
+            anchoredPosition.x = panelCenterX;
+            _panelRectTransform.anchoredPosition = anchoredPosition;
+        }
+
+        /// <summary>
+        /// 말꼬리 중심 좌우 대칭 규칙과 썸네일 배치 옵션을 반영해 패널/썸네일 위치를 갱신합니다.
         /// </summary>
         private void RefreshThumbnailPosition()
         {
             _needsRefreshThumbnailPosition = false;
 
-            if (_thumbnailPositionType == ConfigCommon.ThumbnailPositionType.None || !TryEnsureThumbnailImage())
+            if (!TryEnsureLayoutReferences())
             {
                 return;
             }
 
+            bool hasThumbnail = HasVisibleThumbnail();
+            ApplyPanelPaddingByThumbnailSide();
+
+            float side = ResolveThumbnailSideSign();
+            Vector3 thumbnailOffset = ResolveThumbnailOffset();
+            UpdatePanelMinimumWidthByTailSymmetry(hasThumbnail, side, thumbnailOffset.x);
+
             LayoutRebuilder.ForceRebuildLayoutImmediate(_panelRectTransform);
 
             float panelHalfWidth = _panelRectTransform.rect.width * 0.5f;
-            float thumbnailHalfWidth = _thumbnailRectTransform.rect.width * 0.5f;
-            Vector3 offset = _offsetImageThumbnailCharacter;
-            float side = 1f;
+            float tailX = _tailRectTransform.anchoredPosition.x;
+            float panelCenterX = tailX;
 
-            if (_thumbnailPositionType == ConfigCommon.ThumbnailPositionType.Left)
+            if (_useSymmetricLayoutByTail && hasThumbnail)
             {
-                offset = _offsetImageThumbnailCharacterLeft;
-                side = -1f;
+                float thumbnailWidth = _thumbnailRectTransform.rect.width;
+                float thumbnailSpan = _thumbnailGapPx + thumbnailWidth;
+                panelCenterX = tailX - (side * (thumbnailSpan * 0.5f)) - (thumbnailOffset.x * 0.5f);
+            }
+            else if (!_useSymmetricLayoutByTail)
+            {
+                panelCenterX = 0f;
             }
 
-            float x = side * (panelHalfWidth + thumbnailHalfWidth) + offset.x;
-            float y = offset.y;
-            _thumbnailRectTransform.localPosition = new Vector3(x, y, 0f);
+            SetPanelCenterX(panelCenterX);
+
+            if (hasThumbnail)
+            {
+                float thumbnailHalfWidth = _thumbnailRectTransform.rect.width * 0.5f;
+                float thumbnailCenterX = panelCenterX + (side * (panelHalfWidth + _thumbnailGapPx + thumbnailHalfWidth)) + thumbnailOffset.x;
+                _thumbnailRectTransform.localPosition = new Vector3(
+                    thumbnailCenterX,
+                    thumbnailOffset.y,
+                    0f);
+            }
+
             ApplyThumbnailFlip();
         }
 
@@ -265,6 +509,14 @@ namespace GGemCo2DCore
             _revealPlayer.Clear(textMessage);
             ClearThumbnail();
             RestoreThumbnailScaleToBase();
+            RestorePanelLayoutDefaults();
+            SetPanelCenterX(0f);
+            if (_tailRectTransform != null)
+            {
+                Vector2 tailAnchoredPosition = _tailRectTransform.anchoredPosition;
+                tailAnchoredPosition.x = 0f;
+                _tailRectTransform.anchoredPosition = tailAnchoredPosition;
+            }
         }
 
         /// <summary>
@@ -272,7 +524,7 @@ namespace GGemCo2DCore
         /// </summary>
         private void ApplyThumbnailFlip()
         {
-            if (!TryEnsureThumbnailImage())
+            if (!TryEnsureLayoutReferences() || !HasVisibleThumbnail())
             {
                 return;
             }
@@ -400,6 +652,11 @@ namespace GGemCo2DCore
         private void LateUpdate()
         {
             _revealPlayer.Tick(textMessage, Time.deltaTime);
+            if (RefreshTailAnchorPosition())
+            {
+                RequestThumbnailPositionRefresh();
+            }
+
             if (_needsRefreshThumbnailPosition)
             {
                 RefreshThumbnailPosition();
