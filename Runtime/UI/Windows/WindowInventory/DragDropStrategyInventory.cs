@@ -103,7 +103,10 @@ namespace GGemCo2DCore
                     {
                         // 중첩 가능한지 체크
                         var info = uiWindowInventory.TableItem.GetDataByUid(targetUIIcon.uid);
-                        if (info is { MaxOverlayCount: > 1 })
+                        bool canMergeStack = info is { MaxOverlayCount: > 1 } &&
+                                             dropIconInstanceId <= 0 &&
+                                             targetIconInstanceId <= 0;
+                        if (canMergeStack)
                         {
                             var result = uiWindowInventory.InventoryData.MergeItem(dropIconSlotIndex, targetIconSlotIndex);
                             droppedWindow.SetIcons(result);
@@ -137,12 +140,17 @@ namespace GGemCo2DCore
             }
         }
 
+        /// <summary>
+        /// 인벤토리 아이템을 월드로 드랍합니다.
+        /// 인스턴스 아이템은 기존 InstanceId를 유지하여 월드 오브젝트로 이동시킵니다.
+        /// </summary>
         public void HandleDragOut(UIWindow window, Vector3 worldPosition, GameObject droppedIcon, GameObject targetIcon,
             Vector3 originalPosition)
         {
             UIIcon icon = droppedIcon.GetComponent<UIIcon>();
             // 맵에 드랍하기
-            SceneGame.Instance.ItemManager.MakeDropItem(worldPosition, icon.uid, icon.GetCount());
+            SceneGame.Instance.ItemManager.MakeDropItem(worldPosition, icon.uid, icon.GetCount(),
+                existingInstanceId: icon.instanceId);
             // 윈도우에서 아이콘 정보 지워주기 
             icon.window.DetachIcon(icon.slotIndex);
         }

@@ -32,6 +32,7 @@ namespace GGemCo2DCore
             int targetIconSlotIndex = targetUIIcon.slotIndex;
             int targetIconUid = targetUIIcon.uid;
             int targetIconCount = targetUIIcon.GetCount();
+            long targetIconInstanceId = targetUIIcon.instanceId;
             // 인벤토리에서 창고로 드래그 앤 드랍 했을 때만 처리한다 
             if (droppedWindowUid == UIWindowConstants.WindowUid.Inventory && targetIconSlotIndex < window.maxCountIcon)
             {
@@ -71,7 +72,10 @@ namespace GGemCo2DCore
                         {
                             // 중첩 가능한지 체크
                             var info = uiWindowStash.TableItem.GetDataByUid(targetUIIcon.uid);
-                            if (info is { MaxOverlayCount: > 1 })
+                            bool canMergeStack = info is { MaxOverlayCount: > 1 } &&
+                                                 dropIconInstanceId <= 0 &&
+                                                 targetIconInstanceId <= 0;
+                            if (canMergeStack)
                             {
                                 var result = uiWindowStash.StashData.MergeItem(dropIconSlotIndex, targetIconSlotIndex);
                                 droppedWindow.SetIcons(result);
@@ -85,8 +89,10 @@ namespace GGemCo2DCore
                                     return;
                                 }
 
-                                droppedWindow.SetIconCount(dropIconSlotIndex, targetIconUid, targetIconCount);
-                                targetWindow.SetIconCount(targetIconSlotIndex, dropIconUid, dropIconCount);
+                                droppedWindow.SetIconCount(dropIconSlotIndex, targetIconUid, targetIconCount,
+                                    instanceId: targetIconInstanceId);
+                                targetWindow.SetIconCount(targetIconSlotIndex, dropIconUid, dropIconCount,
+                                    instanceId: dropIconInstanceId);
                             }
                         }
                         else
@@ -98,8 +104,10 @@ namespace GGemCo2DCore
                                 return;
                             }
 
-                            droppedWindow.SetIconCount(dropIconSlotIndex, targetIconUid, targetIconCount);
-                            targetWindow.SetIconCount(targetIconSlotIndex, dropIconUid, dropIconCount);
+                            droppedWindow.SetIconCount(dropIconSlotIndex, targetIconUid, targetIconCount,
+                                instanceId: targetIconInstanceId);
+                            targetWindow.SetIconCount(targetIconSlotIndex, dropIconUid, dropIconCount,
+                                instanceId: dropIconInstanceId);
                         }
                     }
                 }

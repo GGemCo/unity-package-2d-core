@@ -119,23 +119,36 @@ namespace GGemCo2DCore
                 _sceneGame.uIWindowManager?.GetUIWindowByUid<UIWindowInventory>(UIWindowConstants.WindowUid.Inventory);
             _playerData = _sceneGame.saveDataManager.Player;
         }
+        
         /// <summary>
-        /// 아이템 맵에 드랍하기 
+        /// 월드에 드랍 아이템을 생성합니다.
         /// </summary>
-        /// <param name="worldPosition"></param>
-        /// <param name="itemUid"></param>
-        /// <param name="itemCount"></param>
+        /// <param name="worldPosition">드랍될 월드 좌표입니다.</param>
+        /// <param name="itemUid">아이템 UID입니다.</param>
+        /// <param name="itemCount">드랍 수량입니다.</param>
+        /// <param name="rarity">신규 인스턴스 생성 시 사용할 희귀도입니다.</param>
+        /// <param name="dropLevel">신규 인스턴스 생성 시 사용할 드랍 레벨입니다.</param>
+        /// <param name="existingInstanceId">
+        /// 인벤토리/장비 등에서 이미 존재하던 인스턴스를 월드로 되돌릴 때 사용하는 인스턴스 ID입니다.
+        /// 0 이하이면 신규 드랍 규칙으로 인스턴스를 생성합니다.
+        /// </param>
         public void MakeDropItem(Vector3 worldPosition, int itemUid, int itemCount,
-            ItemConstants.Class rarity = ItemConstants.Class.Normal, int dropLevel = 0)
+            ItemConstants.Class rarity = ItemConstants.Class.Normal, int dropLevel = 0, long existingInstanceId = 0)
         {
             var info = _tableItem.GetDataByUid(itemUid);
             if (info == null) return;
 
-            long instanceId = 0;
+            long instanceId = existingInstanceId;
+
+            // 인스턴스 아이템은 반드시 단일 개수로만 취급한다.
+            if (instanceId > 0 && itemCount > 1)
+            {
+                itemCount = 1;
+            }
 
             // 랜덤 옵션 인스턴스 생성(권장: Count=1일 때만 인스턴스로 취급)
             var store = _sceneGame.saveDataManager.ItemInstances;
-            if (store != null && _itemOptionRoller != null && itemCount == 1)
+            if (instanceId <= 0 && store != null && _itemOptionRoller != null && itemCount == 1)
             {
                 int seed = Random.Range(int.MinValue, int.MaxValue);
                 var instance = _itemOptionRoller.CreateInstance(itemUid, rarity, dropLevel, seed);

@@ -79,13 +79,14 @@ namespace GGemCo2DCore
             return ResultCommon.SuccessWithIcons(controls);
         }
 
+        /// <summary>
+        /// 아이템 페이로드를 현재 저장소에 추가합니다.
+        /// 인스턴스 아이템은 빈 슬롯에만 배치하고, 일반 아이템은 기존 스택 우선 정책을 적용합니다.
+        /// </summary>
+        /// <param name="iconPayload">추가할 아이템 정보입니다.</param>
+        /// <returns>적용 결과입니다.</returns>
         public ResultCommon AddItem(IconPayload iconPayload)
         {
-            int emptyIndex = FindEmptySlot();
-            if (emptyIndex == -1)
-            {
-                return ResultCommon.Fail("Inventory_NoSpace");//"인벤토리에 빈 공간이 없습니다."
-            }
             int itemUid = iconPayload.Uid;
             var info = TableLoaderManager.Instance.GetItemData(itemUid);
             if (info == null || info.Uid <= 0)
@@ -110,8 +111,40 @@ namespace GGemCo2DCore
                 SceneGame.Instance.saveDataManager.Player.AddCurrency(currencyType, itemCount);
                 return ResultCommon.Success();
             }
-            
-            return AddItem(emptyIndex, itemUid, itemCount, instanceId);
+
+            int preferredSlotIndex = -1;
+            if (instanceId > 0)
+            {
+                preferredSlotIndex = FindEmptySlot();
+            }
+            else
+            {
+                foreach (var pair in ItemCounts)
+                {
+                    var icon = pair.Value;
+                    if (icon == null || icon.Uid != itemUid || icon.Count <= 0 || icon.InstanceId > 0)
+                        continue;
+
+                    int availableSpace = info.MaxOverlayCount - icon.Count;
+                    if (availableSpace <= 0)
+                        continue;
+
+                    preferredSlotIndex = pair.Key;
+                    break;
+                }
+
+                if (preferredSlotIndex < 0)
+                {
+                    preferredSlotIndex = FindEmptySlot();
+                }
+            }
+
+            if (preferredSlotIndex < 0)
+            {
+                return ResultCommon.Fail("Inventory_NoSpace");//"인벤토리에 빈 공간이 없습니다."
+            }
+
+            return AddItem(preferredSlotIndex, itemUid, itemCount, instanceId);
         }
 
         public ResultCommon AddItem(int slotIndex, IconPayload iconPayload)
@@ -183,7 +216,7 @@ namespace GGemCo2DCore
                 {
                     var slotIndex = structInventoryIcon.Key;
                     var item = structInventoryIcon.Value;
-                    if (item.Uid != itemUid) continue;
+                    if (item.Uid != itemUid || item.InstanceId > 0) continue;
                     int availableSpace = maxOverlayCount - item.Count;
                     if (availableSpace > 0)
                     {
@@ -219,8 +252,14 @@ namespace GGemCo2DCore
         }
 
         /// <summary>
-        /// 특정 슬롯에 아이템 개수 추가
+        /// 특정 슬롯을 우선 기준으로 아이템을 추가합니다.
+        /// 인스턴스 아이템(InstanceId &gt; 0)은 중첩하지 않고 단일 슬롯만 사용합니다.
         /// </summary>
+        /// <param name="slotIndex">우선 배치할 슬롯 인덱스입니다.</param>
+        /// <param name="itemUid">추가할 아이템 UID입니다.</param>
+        /// <param name="itemCount">추가 수량입니다.</param>
+        /// <param name="instanceId">인스턴스 ID입니다. 0 이하면 일반 스택 아이템으로 처리합니다.</param>
+        /// <returns>적용 결과입니다.</returns>
         public ResultCommon AddItem(int slotIndex, int itemUid, int itemCount, long instanceId = 0)
         {
             if (slotIndex < 0 || slotIndex >= MaxSlotCount)
@@ -233,53 +272,82 @@ namespace GGemCo2DCore
             {
                 return ResultCommon.Fail();
             }
-            // 여유 있게 1개의 공간이 남아있는지 체크 
-            int emptyIndex = FindEmptySlot();
-            if (emptyIndex == -1)
+
+            if (itemCount <= 0)
             {
-                return ResultCommon.Fail("Inventory_NoSpace");//"인벤토리에 공간이 부족합니다."
+                return ResultCommon.Fail("Slot_InvalidItemCount", $"itemUid: {itemUid}, itemCount: {itemCount}");
             }
 
             int maxOverlayCount = info.MaxOverlayCount;
             int remainingValue = itemCount;
-
             List<SaveDataIcon> controls = new List<SaveDataIcon>();
 
-            // 1. 기존 중첩 가능한 아이템 채우기
-            if (ItemCounts.TryGetValue(slotIndex, out var item))
+            // 인스턴스 아이템은 항상 단일 개수 + 단일 슬롯만 허용한다.
+            if (instanceId > 0)
             {
-                int availableSpace = maxOverlayCount - item.Count;
-                // todo. InstanceId값이 있으면 중첩 안되도록 처리해야 함
-                if ((item.Uid == itemUid || item.Uid == 0) && availableSpace > 0)
+                if (itemCount != 1)
                 {
-                    int addedAmount = Math.Min(remainingValue, availableSpace);
-                    int count = item.Count + addedAmount;
-                    controls.Add(new SaveDataIcon(slotIndex, itemUid, count, instanceId: instanceId, iconType: IconTypeItem));
+                    return ResultCommon.Fail("Slot_InstanceItemMustBeSingle", $"itemUid: {itemUid}, itemCount: {itemCount}");
+                }
 
-                    remainingValue -= addedAmount;
+                if (ItemCounts.TryGetValue(slotIndex, out var targetItem) &&
+                    targetItem != null &&
+                    targetItem.Uid > 0 &&
+                    targetItem.Count > 0)
+                {
+                    int emptySlotForInstance = FindEmptySlot();
+                    if (emptySlotForInstance < 0)
+                    {
+                        return ResultCommon.Fail("Inventory_NoSpace");//"인벤토리에 공간이 부족합니다."
+                    }
+
+                    slotIndex = emptySlotForInstance;
+                }
+
+                controls.Add(new SaveDataIcon(slotIndex, itemUid, 1, instanceId: instanceId, iconType: IconTypeItem));
+                return ResultCommon.SuccessWithIcons(controls);
+            }
+
+            if (maxOverlayCount <= 0)
+            {
+                return ResultCommon.Fail("Slot_MaxStackZero", $"itemUid: {itemUid}");//최대 중첩 개수가 0 입니다.
+            }
+
+            // 1. 우선 슬롯에 배치 가능한 경우(같은 UID 또는 빈 슬롯) 먼저 채운다.
+            if (ItemCounts.TryGetValue(slotIndex, out var itemInSlot))
+            {
+                int currentCount = itemInSlot?.Uid == itemUid ? itemInSlot.Count : 0;
+                bool canUseTargetSlot = itemInSlot != null &&
+                                        itemInSlot.InstanceId <= 0 &&
+                                        (itemInSlot.Uid == itemUid || itemInSlot.Uid <= 0);
+                if (canUseTargetSlot)
+                {
+                    int availableSpace = maxOverlayCount - currentCount;
+                    if (availableSpace > 0)
+                    {
+                        int addedAmount = Math.Min(remainingValue, availableSpace);
+                        controls.Add(new SaveDataIcon(slotIndex, itemUid, currentCount + addedAmount, iconType: IconTypeItem));
+                        remainingValue -= addedAmount;
+                    }
                 }
             }
-            else
-            {
-                controls.Add(new SaveDataIcon(slotIndex, itemUid, itemCount, instanceId: instanceId, iconType: IconTypeItem));
-                remainingValue -= itemCount;
-            }
-        
+
             TempItemCounts.Clear();
-            // 2. 남은 개수를 새 슬롯에 추가
+            // 2. 남은 개수는 빈 슬롯을 순차적으로 채운다.
             while (remainingValue > 0)
             {
-                emptyIndex = FindEmptySlot();
+                int emptyIndex = FindEmptySlot();
                 if (emptyIndex == -1)
                 {
                     return ResultCommon.Fail("Inventory_NoSpace");//"인벤토리에 공간이 부족합니다."
                 }
 
                 int addedAmount = Math.Min(remainingValue, maxOverlayCount);
-                controls.Add(new SaveDataIcon(emptyIndex, itemUid, addedAmount, instanceId: instanceId, iconType: IconTypeItem));
-                TempItemCounts.TryAdd(emptyIndex, new SaveDataIcon(emptyIndex, itemUid, addedAmount, instanceId: instanceId, iconType: IconTypeItem));
+                controls.Add(new SaveDataIcon(emptyIndex, itemUid, addedAmount, iconType: IconTypeItem));
+                TempItemCounts.TryAdd(emptyIndex, new SaveDataIcon(emptyIndex, itemUid, addedAmount, iconType: IconTypeItem));
                 remainingValue -= addedAmount;
             }
+
             return ResultCommon.SuccessWithIcons(controls);
         }
         /// <summary>
@@ -357,6 +425,12 @@ namespace GGemCo2DCore
             if (fromItem.Uid != toItem.Uid)
             {
                 return ResultCommon.Fail("Slot_MergeDifferentTypes");//"다른 종류의 아이템은 합칠 수 없습니다."
+            }
+
+            // 인스턴스 아이템은 고유 개체이므로 병합을 허용하지 않는다.
+            if (fromItem.InstanceId > 0 || toItem.InstanceId > 0)
+            {
+                return ResultCommon.Fail("Slot_MergeInstanceItemNotAllowed");
             }
 
             // 아이템 정보 가져오기 (최대 중첩 개수 확인)

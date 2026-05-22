@@ -29,79 +29,129 @@ namespace GGemCo2DCore
             return SceneGame.Instance.uIWindowManager?
                 .GetUIWindowByUid<UIWindowInventory>(UIWindowConstants.WindowUid.Inventory)?.maxCountIcon ?? 0;
         }
+        
         /// <summary>
-        /// 인벤토리에 있는 같은 아이템을 작은 인덱스부터 최대 중첩 개수까지 합친다.
+        /// 인벤토리 아이템을 정렬/병합합니다.
+        /// 일반 아이템(InstanceId == 0)은 같은 UID 기준으로 병합하고,
+        /// 인스턴스 아이템(InstanceId &gt; 0)은 고유성을 유지하기 위해 병합하지 않습니다.
         /// </summary>
         public void MergeAllItems()
         {
-            Dictionary<int, List<int>> itemSlotGroups = new Dictionary<int, List<int>>();
-            Dictionary<int, int> itemSubCategoryMap = new Dictionary<int, int>();
-            
             // 1. 기존 아이템 데이터를 백업 (초기화 전에 저장)
             var itemBackup = ItemCounts.ToDictionary(entry => entry.Key, entry => entry.Value);
 
-            // 2. 아이템 정렬을 위해 SubCategory 정보 가져오기
+            // 2. SubCategory와 기존 슬롯 순서를 기준으로 정렬된 원본 목록 생성
             var sortedItems = itemBackup
                 .Where(p => p.Value.Uid > 0) // 빈 슬롯 제외
                 .Select(p =>
                 {
                     var info = TableLoaderManager.GetItemData(p.Value.Uid);
+                    if (info == null || info.Uid <= 0)
+                    {
+                        return null;
+                    }
+
                     return new
                     {
                         SlotIndex = p.Key,
                         ItemUid = p.Value.Uid,
                         ItemCount = p.Value.Count,
+                        InstanceId = p.Value.InstanceId,
                         SubCategory = info.SubCategory == ItemConstants.SubCategory.None ? int.MaxValue : (int)info.SubCategory // SubCategory가 없으면 가장 뒤로 정렬
                     };
                 })
+                .Where(item => item != null)
                 .OrderBy(item => item.SubCategory)  // SubCategory 기준 정렬
                 .ThenBy(item => item.SlotIndex)     // 같은 SubCategory 내에서는 슬롯 인덱스 기준 정렬
                 .ToList();
 
-            // 3. 정렬된 아이템을 그룹화
+            Dictionary<int, int> stackableTotalsByUid = new Dictionary<int, int>();
+            Dictionary<int, int> stackableSubCategoryByUid = new Dictionary<int, int>();
+            Dictionary<int, int> stackableFirstSlotByUid = new Dictionary<int, int>();
+            List<(int ItemUid, int Count, long InstanceId, int SubCategory, int SlotIndex)> instanceEntries =
+                new List<(int ItemUid, int Count, long InstanceId, int SubCategory, int SlotIndex)>();
+
+            // 3. 일반 아이템/인스턴스 아이템을 분리 수집한다.
             foreach (var item in sortedItems)
             {
-                if (!itemSlotGroups.ContainsKey(item.ItemUid))
+                if (item.InstanceId > 0)
                 {
-                    itemSlotGroups[item.ItemUid] = new List<int>();
-                    itemSubCategoryMap[item.ItemUid] = item.SubCategory;
+                    instanceEntries.Add((item.ItemUid, item.ItemCount, item.InstanceId, item.SubCategory, item.SlotIndex));
+                    continue;
                 }
-                itemSlotGroups[item.ItemUid].Add(item.SlotIndex);
+
+                if (!stackableTotalsByUid.ContainsKey(item.ItemUid))
+                {
+                    stackableTotalsByUid[item.ItemUid] = 0;
+                    stackableSubCategoryByUid[item.ItemUid] = item.SubCategory;
+                    stackableFirstSlotByUid[item.ItemUid] = item.SlotIndex;
+                }
+
+                stackableTotalsByUid[item.ItemUid] += item.ItemCount;
             }
 
             // 4. 기존 데이터를 확실히 초기화
             ItemCounts.Clear();
 
-            // 5. 각 아이템 그룹별 병합 후 새로운 정렬된 슬롯에 배치
-            int newSlotIndex = 0;
+            var stackableEntries = stackableTotalsByUid.Keys
+                .Select(uid => new
+                {
+                    Kind = 0, // 0: 스택 아이템, 1: 인스턴스 아이템
+                    ItemUid = uid,
+                    Count = stackableTotalsByUid[uid],
+                    InstanceId = 0L,
+                    SubCategory = stackableSubCategoryByUid[uid],
+                    SlotIndex = stackableFirstSlotByUid[uid]
+                });
 
-            foreach (var group in itemSlotGroups.OrderBy(g => itemSubCategoryMap[g.Key])) // SubCategory 기준으로 병합 순서 결정
+            var instanceOrderedEntries = instanceEntries.Select(item => new
             {
-                int itemUid = group.Key;
-                List<int> slots = group.Value;
+                Kind = 1,
+                ItemUid = item.ItemUid,
+                Count = item.Count,
+                item.InstanceId,
+                item.SubCategory,
+                item.SlotIndex
+            });
 
-                if (slots.Count < 1) continue;
+            // 5. 같은 정렬 축(SubCategory, 기존 슬롯 순서)을 유지한 채로 재배치한다.
+            var orderedEntries = stackableEntries
+                .Concat(instanceOrderedEntries)
+                .OrderBy(item => item.SubCategory)
+                .ThenBy(item => item.SlotIndex)
+                .ThenBy(item => item.Kind)
+                .ToList();
 
-                // 아이템 정보 가져오기
-                var info = TableLoaderManager.GetItemData(itemUid);
+            int newSlotIndex = 0;
+            foreach (var entry in orderedEntries)
+            {
+                // 인스턴스 아이템은 병합하지 않고 원래 Count/InstanceId를 보존한다.
+                if (entry.InstanceId > 0)
+                {
+                    int preservedCount = Math.Max(entry.Count, 1);
+                    ItemCounts[newSlotIndex] = new SaveDataIcon(newSlotIndex, entry.ItemUid, preservedCount,
+                        instanceId: entry.InstanceId, iconType: IconTypeItem);
+                    newSlotIndex++;
+                    continue;
+                }
+
+                var info = TableLoaderManager.GetItemData(entry.ItemUid);
                 if (info == null || info.Uid <= 0) continue;
 
-                int maxOverlayCount = info.MaxOverlayCount; // 최대 중첩 개수
+                int maxOverlayCount = Math.Max(info.MaxOverlayCount, 1);
+                int totalItemCount = entry.Count;
 
-                // 기존 백업 데이터에서 총 개수 가져오기
-                int totalItemCount = slots.Sum(slot => itemBackup.TryGetValue(slot, out var value) ? value.Count : 0);
-
-                // 6. 병합 후 새로운 슬롯에 재배치
+                // 일반 아이템은 최대 중첩 수량 기준으로 병합 배치한다.
                 while (totalItemCount > 0)
                 {
                     int addAmount = Math.Min(totalItemCount, maxOverlayCount);
-                    ItemCounts[newSlotIndex] = new SaveDataIcon(newSlotIndex, itemUid, addAmount, iconType: IconTypeItem);
+                    ItemCounts[newSlotIndex] = new SaveDataIcon(newSlotIndex, entry.ItemUid, addAmount, iconType: IconTypeItem);
                     totalItemCount -= addAmount;
                     newSlotIndex++;
                 }
             }
 
-            // 7. 변경된 데이터 저장
+            // 6. 변경된 데이터 저장
             SaveDatas();
         }
         /// <summary>

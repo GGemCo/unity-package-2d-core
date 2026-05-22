@@ -18,6 +18,7 @@ namespace GGemCo2DCore
             int dropIconSlotIndex = droppedUIIcon.slotIndex;
             int dropIconUid = droppedUIIcon.uid;
             int dropIconCount = droppedUIIcon.GetCount();
+            long dropIconInstanceId = droppedUIIcon.instanceId;
             int dropIconLevel = droppedUIIcon.GetLevel();
             bool dropIconIsLearn = droppedUIIcon.IsLearn();
             bool dropIconSelected = droppedUIIcon.IsSelected();
@@ -36,6 +37,7 @@ namespace GGemCo2DCore
             int targetIconSlotIndex = targetUIIcon.slotIndex;
             int targetIconUid = targetUIIcon.uid;
             int targetIconCount = targetUIIcon.GetCount();
+            long targetIconInstanceId = targetUIIcon.instanceId;
             bool targetIconSelected = targetUIIcon.IsSelected();
 
             if (droppedWindowUid != targetWindowUid)
@@ -69,7 +71,10 @@ namespace GGemCo2DCore
                     {
                         // 중첩 가능한지 체크
                         var info = uiWindowQuickSlotSimulation.tableItem.GetDataByUid(targetUIIcon.uid);
-                        if (info is { MaxOverlayCount: > 1 })
+                        bool canMergeStack = info is { MaxOverlayCount: > 1 } &&
+                                             dropIconInstanceId <= 0 &&
+                                             targetIconInstanceId <= 0;
+                        if (canMergeStack)
                         {
                             var result = uiWindowQuickSlotSimulation.quickSlotSimulationData.MergeItem(dropIconSlotIndex, targetIconSlotIndex);
                             droppedWindow.SetIcons(result);
@@ -127,12 +132,14 @@ namespace GGemCo2DCore
                                 return;
                             }
 
-                            var dropIcon = droppedWindow.SetIconCount(dropIconSlotIndex, targetIconUid, targetIconCount);
+                            var dropIcon = droppedWindow.SetIconCount(dropIconSlotIndex, targetIconUid, targetIconCount,
+                                instanceId: targetIconInstanceId);
                             if (targetIconSelected)
                             {
                                 window.StartCoroutine(UpdateSelected(dropIcon, droppedWindow));
                             }
-                            var targetIcon = targetWindow.SetIconCount(targetIconSlotIndex, dropIconUid, dropIconCount);
+                            var targetIcon = targetWindow.SetIconCount(targetIconSlotIndex, dropIconUid, dropIconCount,
+                                instanceId: dropIconInstanceId);
                             if (dropIconSelected)
                             {
                                 window.StartCoroutine(UpdateSelected(targetIcon, targetWindow));
@@ -148,12 +155,14 @@ namespace GGemCo2DCore
                             return;
                         }
 
-                        var dropIcon = droppedWindow.SetIconCount(dropIconSlotIndex, targetIconUid, targetIconCount);
+                        var dropIcon = droppedWindow.SetIconCount(dropIconSlotIndex, targetIconUid, targetIconCount,
+                            instanceId: targetIconInstanceId);
                         if (targetIconSelected)
                         {
                             window.StartCoroutine(UpdateSelected(dropIcon, droppedWindow));
                         }
-                        var targetIcon = targetWindow.SetIconCount(targetIconSlotIndex, dropIconUid, dropIconCount);
+                        var targetIcon = targetWindow.SetIconCount(targetIconSlotIndex, dropIconUid, dropIconCount,
+                            instanceId: dropIconInstanceId);
                         if (dropIconSelected)
                         {
                             window.StartCoroutine(UpdateSelected(targetIcon, targetWindow));
@@ -169,12 +178,17 @@ namespace GGemCo2DCore
             window.SetSelectedIcon(icon.index);
         }
 
+        /// <summary>
+        /// 퀵슬롯 시뮬레이션 아이템을 월드로 드랍합니다.
+        /// 인스턴스 아이템은 기존 InstanceId를 그대로 전달합니다.
+        /// </summary>
         public void HandleDragOut(UIWindow window, Vector3 worldPosition, GameObject droppedIcon, GameObject targetIcon,
             Vector3 originalPosition)
         {
             UIIcon icon = droppedIcon.GetComponent<UIIcon>();
             // 맵에 드랍하기
-            SceneGame.Instance.ItemManager.MakeDropItem(worldPosition, icon.uid, icon.GetCount());
+            SceneGame.Instance.ItemManager.MakeDropItem(worldPosition, icon.uid, icon.GetCount(),
+                existingInstanceId: icon.instanceId);
             // 윈도우에서 아이콘 정보 지워주기 
             icon.window.DetachIcon(icon.slotIndex);
         }
