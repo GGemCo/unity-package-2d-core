@@ -96,6 +96,14 @@ namespace GGemCo2DCore
         private GGemCoPlayerSettings _playerSettings;
         private float _nextPlayerHitVfxPlayableTime;
         
+        /// <summary>
+        /// 데미지 컨트롤러를 초기화하고, 몬스터 슈퍼아머 설정을 함께 주입합니다.
+        /// </summary>
+        /// <param name="characterBase">데미지 처리를 담당할 대상 캐릭터입니다.</param>
+        /// <remarks>
+        /// 슈퍼아머 컨트롤러 생성 시 설정을 함께 전달하여
+        /// 내부 _config 누락으로 인한 기본값 오동작을 방지합니다.
+        /// </remarks>
         public void Initialize(CharacterBase characterBase)
         {
             _characterBase = characterBase;
@@ -104,8 +112,10 @@ namespace GGemCo2DCore
                 GcLogger.LogError($"CharacterBase가 없습니다.");
                 return;
             }
+            
+            GGemCoMonsterSettings monsterSettings = AddressableLoaderSettings.Instance.monsterSettings;
             _controllerMonsterSuperArmor = new ControllerMonsterSuperArmor();
-            _controllerMonsterSuperArmor.Initialize(_characterBase);
+            _controllerMonsterSuperArmor.Initialize(_characterBase, monsterSettings);
             
             _controllerMonsterSuperArmor.BreakTriggered += OnSuperArmorBreak;
 

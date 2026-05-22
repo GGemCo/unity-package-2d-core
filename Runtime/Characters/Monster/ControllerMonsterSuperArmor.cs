@@ -40,9 +40,19 @@ namespace GGemCo2DCore
         private bool _initialized;
         private bool _isSuperArmorEnabled;
 
-        public void Initialize(CharacterBase owner)
+        /// <summary>
+        /// 소유자와 몬스터 설정을 기준으로 슈퍼아머 컨트롤러를 초기화합니다.
+        /// </summary>
+        /// <param name="owner">슈퍼아머 값을 보유한 캐릭터 인스턴스입니다.</param>
+        /// <param name="config">
+        /// 슈퍼아머 동작 설정입니다.
+        /// null이면 기본값으로 초기화하여 안전하게 동작시킵니다.
+        /// </param>
+        public void Initialize(CharacterBase owner, GGemCoMonsterSettings config = null)
         {
             _owner = owner;
+            _config = config;
+            _initialized = false;
             if (!_owner)
             {
                 GcLogger.LogError($"연결된 몬스터가 없습니다.");
@@ -54,10 +64,7 @@ namespace GGemCo2DCore
             }
             else
             {
-                // config가 없어도 안전하게 기본값으로 동작
-                InitializeData(regenDelay: 0f, regenInterval: 0, regenPerTick: 0,
-                    breakResetMode: CharacterConstants.StaggerBreakResetMode.KeepZero,
-                    perAttackConsumeCooldown: 0f);
+                InitializeDefaultData();
             }
         }
 
@@ -83,9 +90,14 @@ namespace GGemCo2DCore
             FireStacksChanged();
         }
 
+        /// <summary>
+        /// 몬스터 설정 값을 컨트롤러 내부 파라미터로 적용합니다.
+        /// </summary>
+        /// <param name="monsterSettings">슈퍼아머 재생성/회복/브레이크 관련 설정입니다.</param>
         public void ApplyConfig(GGemCoMonsterSettings monsterSettings)
         {
             if (monsterSettings == null) return;
+            _config = monsterSettings;
 
             InitializeData(
                 regenDelay: monsterSettings.regenDelay,
@@ -93,6 +105,16 @@ namespace GGemCo2DCore
                 regenPerTick: monsterSettings.regenPerTick,
                 breakResetMode: monsterSettings.breakResetMode,
                 perAttackConsumeCooldown: monsterSettings.perAttackConsumeCooldown);
+        }
+
+        /// <summary>
+        /// 설정 전달이 누락된 경우에도 런타임 예외 없이 동작하도록 기본값으로 초기화합니다.
+        /// </summary>
+        private void InitializeDefaultData()
+        {
+            InitializeData(regenDelay: 0f, regenInterval: 0f, regenPerTick: 0,
+                breakResetMode: CharacterConstants.StaggerBreakResetMode.KeepZero,
+                perAttackConsumeCooldown: 0f);
         }
 
         /// <summary>
@@ -261,6 +283,9 @@ namespace GGemCo2DCore
 
             _owner.RestoreSuperArmor(delta);
         }
+        /// <summary>
+        /// 지연 초기화가 필요한 상황에서 최소 1회 초기화를 보장합니다.
+        /// </summary>
         private void EnsureInitialized()
         {
             if (!_isSuperArmorEnabled) return;
@@ -277,9 +302,7 @@ namespace GGemCo2DCore
             }
             else
             {
-                InitializeData(regenDelay: 0f, regenInterval: 0f, regenPerTick: 1,
-                    breakResetMode: CharacterConstants.StaggerBreakResetMode.KeepZero,
-                    perAttackConsumeCooldown: 0f);
+                InitializeDefaultData();
             }
         }
         
