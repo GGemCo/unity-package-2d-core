@@ -316,6 +316,12 @@ namespace GGemCo2DCoreEditor
                 offsetImageThumbnailCharacterLeft = source.offsetImageThumbnailCharacterLeft,
                 thumbnailFlipPolicy = source.thumbnailFlipPolicy,
                 thumbnailSourceFacing = source.thumbnailSourceFacing,
+                useSymmetricLayoutByTail = source.useSymmetricLayoutByTail,
+                tailForwardOffsetPx = source.tailForwardOffsetPx,
+                minHalfExtentByTailPx = source.minHalfExtentByTailPx,
+                textPaddingOnNonThumbnailSidePx = source.textPaddingOnNonThumbnailSidePx,
+                textPaddingOnThumbnailSidePx = source.textPaddingOnThumbnailSidePx,
+                thumbnailGapPx = source.thumbnailGapPx,
             };
         }
 

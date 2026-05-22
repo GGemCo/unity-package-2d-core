@@ -49,6 +49,11 @@ namespace GGemCo2DCore
         private int _thumbnailRequestVersion;
         private bool _needsRefreshThumbnailPosition;
         private readonly Vector3[] _worldCornersBuffer = new Vector3[4];
+        private CanvasGroup _balloonCanvasGroup;
+        private bool _shouldShowBalloonWhenReady;
+        private bool _isMessagePreparationComplete;
+        private bool _isThumbnailPreparationComplete;
+        private bool _isLayoutPreparationComplete;
 
         /// <summary>
         /// 현재 말풍선 메시지가 모두 표시되었는지 여부를 반환합니다.
@@ -72,6 +77,7 @@ namespace GGemCo2DCore
         {
             _target = characterBase;
             DialogueBalloonData safeData = data ?? new DialogueBalloonData();
+            BeginBalloonPresentation();
             SetFontSize(safeData.fontSize);
             SetMessage(safeData);
             SetThumbnailOptions(safeData);
@@ -104,13 +110,21 @@ namespace GGemCo2DCore
         /// <param name="data">말풍선 메시지와 타자 효과 설정입니다.</param>
         private void SetMessage(DialogueBalloonData data)
         {
-            if (textMessage == null) return;
+            if (textMessage == null)
+            {
+                _isMessagePreparationComplete = true;
+                TryShowBalloonWhenReady();
+                return;
+            }
+
             _revealPlayer.Configure(
                 textMessage,
                 data.message,
                 data.useTypewriter,
                 data.GetSafeTypewriterCharactersPerSecond());
+            _isMessagePreparationComplete = true;
             RequestThumbnailPositionRefresh();
+            TryShowBalloonWhenReady();
         }
 
         /// <summary>
@@ -130,12 +144,16 @@ namespace GGemCo2DCore
             _textPaddingOnNonThumbnailSidePx = data.GetSafeTextPaddingOnNonThumbnailSidePx();
             _textPaddingOnThumbnailSidePx = data.GetSafeTextPaddingOnThumbnailSidePx();
             _thumbnailGapPx = data.GetSafeThumbnailGapPx();
+            _isThumbnailPreparationComplete = false;
             RequestThumbnailPositionRefresh();
 
             int requestVersion = ++_thumbnailRequestVersion;
             if (_thumbnailPositionType == ConfigCommon.ThumbnailPositionType.None || !TryEnsureLayoutReferences())
             {
                 ClearThumbnail();
+                _isThumbnailPreparationComplete = true;
+                RequestThumbnailPositionRefresh();
+                TryShowBalloonWhenReady();
                 return;
             }
 
@@ -173,11 +191,16 @@ namespace GGemCo2DCore
             if (sprite == null)
             {
                 ClearThumbnail();
+                _isThumbnailPreparationComplete = true;
+                RequestThumbnailPositionRefresh();
+                TryShowBalloonWhenReady();
                 return;
             }
 
             imageThumbnail.sprite = sprite;
+            ApplyThumbnailNativeSize();
             imageThumbnail.gameObject.SetActive(true);
+            _isThumbnailPreparationComplete = true;
             ApplyThumbnailFlip();
             RefreshThumbnailPosition();
         }
@@ -189,6 +212,15 @@ namespace GGemCo2DCore
         private void CacheLayoutReferences()
         {
             _balloonRectTransform = transform as RectTransform;
+            if (_balloonCanvasGroup == null && _balloonRectTransform != null)
+            {
+                _balloonCanvasGroup = _balloonRectTransform.GetComponent<CanvasGroup>();
+                if (_balloonCanvasGroup == null)
+                {
+                    _balloonCanvasGroup = _balloonRectTransform.gameObject.AddComponent<CanvasGroup>();
+                }
+            }
+
             if (transformBalloon == null)
             {
                 transformBalloon = transform.Find("TransformBalloon");
@@ -647,6 +679,73 @@ namespace GGemCo2DCore
         }
 
         /// <summary>
+        /// 새 말풍선 표시 사이클을 시작하면서 준비 완료 전까지 UI를 숨깁니다.
+        /// </summary>
+        private void BeginBalloonPresentation()
+        {
+            _shouldShowBalloonWhenReady = true;
+            _isMessagePreparationComplete = false;
+            _isThumbnailPreparationComplete = false;
+            _isLayoutPreparationComplete = false;
+            SetBalloonVisible(false);
+        }
+
+        /// <summary>
+        /// 말풍선 전체 표시 여부를 CanvasGroup 알파 값으로 제어합니다.
+        /// </summary>
+        /// <param name="isVisible">표시하려면 <see langword="true"/>, 숨기려면 <see langword="false"/>입니다.</param>
+        private void SetBalloonVisible(bool isVisible)
+        {
+            if (_balloonCanvasGroup == null)
+            {
+                CacheLayoutReferences();
+            }
+
+            if (_balloonCanvasGroup == null)
+            {
+                return;
+            }
+
+            _balloonCanvasGroup.alpha = isVisible ? 1f : 0f;
+            _balloonCanvasGroup.interactable = isVisible;
+            _balloonCanvasGroup.blocksRaycasts = isVisible;
+        }
+
+        /// <summary>
+        /// 메시지/썸네일/레이아웃 준비가 모두 완료되었는지 검사하고, 준비 완료 시 말풍선을 표시합니다.
+        /// </summary>
+        private void TryShowBalloonWhenReady()
+        {
+            if (!_shouldShowBalloonWhenReady)
+            {
+                return;
+            }
+
+            if (!_isMessagePreparationComplete ||
+                !_isThumbnailPreparationComplete ||
+                !_isLayoutPreparationComplete)
+            {
+                return;
+            }
+
+            SetBalloonVisible(true);
+            _shouldShowBalloonWhenReady = false;
+        }
+
+        /// <summary>
+        /// 썸네일 RectTransform 크기를 스프라이트 원본 크기로 적용합니다.
+        /// </summary>
+        private void ApplyThumbnailNativeSize()
+        {
+            if (imageThumbnail == null || imageThumbnail.sprite == null)
+            {
+                return;
+            }
+
+            imageThumbnail.SetNativeSize();
+        }
+
+        /// <summary>
         /// 말꼬리 중심 좌우 대칭 규칙과 썸네일 배치 옵션을 반영해 패널/썸네일 위치를 갱신합니다.
         /// </summary>
         private void RefreshThumbnailPosition()
@@ -655,6 +754,8 @@ namespace GGemCo2DCore
 
             if (!TryEnsureLayoutReferences())
             {
+                _isLayoutPreparationComplete = true;
+                TryShowBalloonWhenReady();
                 return;
             }
 
@@ -701,6 +802,8 @@ namespace GGemCo2DCore
 
             ApplyThumbnailFlip();
             RecenterTransformBalloonByVisibleBounds(hasThumbnail);
+            _isLayoutPreparationComplete = true;
+            TryShowBalloonWhenReady();
         }
 
         /// <summary>
@@ -719,6 +822,10 @@ namespace GGemCo2DCore
             _thumbnailRequestVersion++;
             _target = null;
             _needsRefreshThumbnailPosition = false;
+            _shouldShowBalloonWhenReady = false;
+            _isMessagePreparationComplete = false;
+            _isThumbnailPreparationComplete = false;
+            _isLayoutPreparationComplete = false;
             _revealPlayer.Clear(textMessage);
             ClearThumbnail();
             RestoreThumbnailScaleToBase();
@@ -732,6 +839,8 @@ namespace GGemCo2DCore
                 tailAnchoredPosition.x = 0f;
                 _tailRectTransform.anchoredPosition = tailAnchoredPosition;
             }
+
+            SetBalloonVisible(true);
         }
 
         /// <summary>
