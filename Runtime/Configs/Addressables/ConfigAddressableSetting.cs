@@ -29,6 +29,7 @@ namespace GGemCo2DCore
         public static readonly AddressableAssetInfo WorldMapSettings  = Make(nameof(WorldMapSettings));
         public static readonly AddressableAssetInfo DialogueBalloonSettings = Make(nameof(DialogueBalloonSettings));
         public static readonly AddressableAssetInfo NpcInteractionSettings = Make(nameof(NpcInteractionSettings));
+        public static readonly AddressableAssetInfo CharacterCollisionSettings = Make(nameof(CharacterCollisionSettings));
 
         /// <summary>
         /// 로딩 씬에서 로드해야 하는 리스트
@@ -46,6 +47,7 @@ namespace GGemCo2DCore
             WorldMapSettings,
             DialogueBalloonSettings,
             NpcInteractionSettings,
+            CharacterCollisionSettings,
 #if GGEMCO_USE_INGAME_TIME
             GameTimeSettings,
 #endif            

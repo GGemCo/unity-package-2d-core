@@ -557,6 +557,7 @@ namespace GGemCo2DCore
             Vector3 requestedDelta = next - cur;
             targetCharacter.TryResolveCharacterBodyMove(requestedDelta, out Vector3 resolvedDelta);
             targetCharacter.transform.position = cur + resolvedDelta;
+            targetCharacter.TrySeparateCharacterBodyOverlaps();
             
             StopAttackCoroutine();
             return true;

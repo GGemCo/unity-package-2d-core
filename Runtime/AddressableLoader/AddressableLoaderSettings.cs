@@ -26,6 +26,7 @@ namespace GGemCo2DCore
         [HideInInspector] public GGemCoWorldMapSettings worldMapSettings;
         [HideInInspector] public GGemCoDialogueBalloonSettings dialogueBalloonSettings;
         [HideInInspector] public GGemCoNpcInteractionSettings npcInteractionSettings;
+        [HideInInspector] public CharacterCollisionSettings characterCollisionSettings;
 
         public delegate void DelegateLoadSettings(
             GGemCoSettings settings,
@@ -88,6 +89,7 @@ namespace GGemCo2DCore
                 Task<GGemCoWorldMapSettings> worldMapSettingsTask = LoadSettingsAsync<GGemCoWorldMapSettings>(ConfigAddressableSetting.WorldMapSettings.Key);
                 Task<GGemCoDialogueBalloonSettings> dialogueBalloonSettingsTask = LoadSettingsAsync<GGemCoDialogueBalloonSettings>(ConfigAddressableSetting.DialogueBalloonSettings.Key);
                 Task<GGemCoNpcInteractionSettings> npcInteractionSettingsTask = LoadSettingsAsync<GGemCoNpcInteractionSettings>(ConfigAddressableSetting.NpcInteractionSettings.Key);
+                Task<CharacterCollisionSettings> characterCollisionSettingsTask = LoadSettingsAsync<CharacterCollisionSettings>(ConfigAddressableSetting.CharacterCollisionSettings.Key);
 #if GGEMCO_USE_INGAME_TIME
                 Task<GGemCoGameTimeSettings> gameTimeSettingsTask = LoadSettingsAsync<GGemCoGameTimeSettings>(ConfigAddressableSetting.GameTimeSettings.Key);
 #endif
@@ -106,6 +108,7 @@ namespace GGemCo2DCore
                     worldMapSettingsTask,
                     dialogueBalloonSettingsTask,
                     npcInteractionSettingsTask,
+                    characterCollisionSettingsTask,
                     gameTimeSettingsTask);
 #else
                 // 모든 작업이 완료될 때까지 대기
@@ -120,7 +123,8 @@ namespace GGemCo2DCore
                     itemSettingsTask,
                     worldMapSettingsTask,
                     dialogueBalloonSettingsTask,
-                    npcInteractionSettingsTask);
+                    npcInteractionSettingsTask,
+                    characterCollisionSettingsTask);
 #endif
 
                 // 결과 저장
@@ -135,6 +139,7 @@ namespace GGemCo2DCore
                 worldMapSettings = worldMapSettingsTask.Result;
                 dialogueBalloonSettings = dialogueBalloonSettingsTask.Result;
                 npcInteractionSettings = npcInteractionSettingsTask.Result;
+                characterCollisionSettings = characterCollisionSettingsTask.Result;
 #if GGEMCO_USE_INGAME_TIME
                 gameTimeSettings = gameTimeSettingsTask.Result;
 #endif

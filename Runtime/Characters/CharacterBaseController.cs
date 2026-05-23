@@ -174,6 +174,7 @@ namespace GGemCo2DCore
             Vector3 requestedDelta = next - current;
             targetCharacter.TryResolveCharacterBodyMove(requestedDelta, out Vector3 resolvedDelta);
             targetCharacter.transform.position = current + resolvedDelta;
+            targetCharacter.TrySeparateCharacterBodyOverlaps();
             return true;
         }
 

@@ -24,7 +24,8 @@ namespace GGemCo2DCore
             GameTime,
             WorldMap,
             DialogueBalloon,
-            NpcInteraction
+            NpcInteraction,
+            CharacterCollision
         }
 
         /// <summary>
@@ -44,7 +45,8 @@ namespace GGemCo2DCore
             GameTimeSettings = 80,
             WorldMapSettings = 90,
             DialogueBalloonSettings = 100,
-            NpcInteractionSettings = 110
+            NpcInteractionSettings = 110,
+            CharacterCollisionSettings = 120
         }
 
         public const string BasePath = ConfigDefine.NameSDK + "/Settings/";
@@ -192,6 +194,18 @@ namespace GGemCo2DCore
         }
 
         /// <summary>
+        /// 캐릭터 충돌 설정 메뉴 정보
+        /// </summary>
+        public static class CharacterCollision
+        {
+            public const string FileName = BaseName + "CharacterCollisionSettings";
+            public const string MenuName = BasePath + FileName;
+            public const int Ordering =
+                (int)ConfigScriptableObjectCommon.PackageOrder.Core +
+                (int)CoreLocalOrder.CharacterCollisionSettings;
+        }
+
+        /// <summary>
         /// Core 패키지 전체 메뉴 메타데이터
         /// 에디터 툴, 자동 생성, 검증 로직에서 재사용할 수 있다.
         /// </summary>
@@ -294,6 +308,14 @@ namespace GGemCo2DCore
                         NpcInteraction.Ordering,
                         typeof(GGemCoNpcInteractionSettings))
                 },
+                {
+                    CoreSettingsKey.CharacterCollision,
+                    new ConfigScriptableObjectCommon.MenuInfo(
+                        CharacterCollision.FileName,
+                        CharacterCollision.MenuName,
+                        CharacterCollision.Ordering,
+                        typeof(CharacterCollisionSettings))
+                },
             };
 
         /// <summary>
@@ -314,6 +336,7 @@ namespace GGemCo2DCore
                 { WorldMap.FileName, typeof(GGemCoWorldMapSettings) },
                 { DialogueBalloon.FileName, typeof(GGemCoDialogueBalloonSettings) },
                 { NpcInteraction.FileName, typeof(GGemCoNpcInteractionSettings) },
+                { CharacterCollision.FileName, typeof(CharacterCollisionSettings) },
             };
 
         /// <summary>

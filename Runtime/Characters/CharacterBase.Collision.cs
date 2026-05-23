@@ -62,5 +62,33 @@ namespace GGemCo2DCore
 
             return _collisionController == null || _collisionController.TryResolveMove(requestedDelta, out resolvedDelta);
         }
+
+        /// <summary>
+        /// 현재 Body Collider가 다른 캐릭터와 겹친 상태이면 정책에 따라 부드럽게 분리합니다.
+        /// </summary>
+        /// <param name="multiplier">이번 호출에서 적용할 분리 강도 배율입니다.</param>
+        /// <returns>분리 이동을 적용했으면 true입니다.</returns>
+        public bool TrySeparateCharacterBodyOverlaps(float multiplier = 1f)
+        {
+            if (_collisionController == null)
+            {
+                EnsureCharacterCollisionController();
+            }
+
+            return _collisionController != null && _collisionController.TrySeparateOverlaps(multiplier);
+        }
+
+        /// <summary>
+        /// 점프 착지 등 특정 순간에 짧은 시간 동안 강화된 겹침 해소를 요청합니다.
+        /// </summary>
+        public void RequestLandingCharacterBodySeparation()
+        {
+            if (_collisionController == null)
+            {
+                EnsureCharacterCollisionController();
+            }
+
+            _collisionController?.RequestLandingSeparation();
+        }
     }
 }

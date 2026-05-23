@@ -22,6 +22,7 @@ namespace GGemCo2DCore
         [HideInInspector] public GGemCoSoundSettings soundSettings;
         [HideInInspector] public GGemCoWorldMapSettings worldMapSettings;
         [HideInInspector] public GGemCoDialogueBalloonSettings dialogueBalloonSettings;
+        [HideInInspector] public CharacterCollisionSettings characterCollisionSettings;
 
         public delegate void DelegateLoadSettings(
             GGemCoSettings settings,
@@ -84,7 +85,8 @@ namespace GGemCo2DCore
                     LoadSettingsAsObjectAsync(ConfigAddressableSetting.OptionSettings.Key),
                     LoadSettingsAsObjectAsync(ConfigAddressableSetting.SoundSettings.Key),
                     LoadSettingsAsObjectAsync(ConfigAddressableSetting.WorldMapSettings.Key),
-                    LoadSettingsAsObjectAsync(ConfigAddressableSetting.DialogueBalloonSettings.Key)
+                    LoadSettingsAsObjectAsync(ConfigAddressableSetting.DialogueBalloonSettings.Key),
+                    LoadSettingsAsObjectAsync(ConfigAddressableSetting.CharacterCollisionSettings.Key)
                 };
 
                 // 2) [NEW] 외부 등록 Settings 병렬 Task 추가
@@ -104,6 +106,7 @@ namespace GGemCo2DCore
                 soundSettings  = tasks[5].Result as GGemCoSoundSettings;
                 worldMapSettings = tasks[6].Result as GGemCoWorldMapSettings;
                 dialogueBalloonSettings = tasks[7].Result as GGemCoDialogueBalloonSettings;
+                characterCollisionSettings = tasks[8].Result as CharacterCollisionSettings;
 
                 // 5) 이벤트 (기존)
                 OnLoadSettings?.Invoke(settings, playerSettings, mapSettings, saveSettings, optionSettings, soundSettings);
