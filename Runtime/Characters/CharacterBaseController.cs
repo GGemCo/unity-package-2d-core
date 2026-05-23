@@ -170,7 +170,10 @@ namespace GGemCo2DCore
                 maxValue:   maxBounds.y
             );
 
-            targetCharacter.transform.position = next;
+            // 캐릭터 Body Collider 겹침 방지 정책을 적용한 뒤 최종 위치를 반영합니다.
+            Vector3 requestedDelta = next - current;
+            targetCharacter.TryResolveCharacterBodyMove(requestedDelta, out Vector3 resolvedDelta);
+            targetCharacter.transform.position = current + resolvedDelta;
             return true;
         }
 

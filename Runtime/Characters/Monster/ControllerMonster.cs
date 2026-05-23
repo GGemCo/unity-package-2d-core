@@ -553,8 +553,10 @@ namespace GGemCo2DCore
             if (!_monster.canMoveX) next.x = cur.x;
             if (!_monster.canMoveY) next.y = cur.y;
 
-            // 9) 실제 반영
-            targetCharacter.transform.position = next;
+            // 9) 캐릭터 Body Collider 겹침 방지 정책을 적용한 뒤 실제 위치를 반영
+            Vector3 requestedDelta = next - cur;
+            targetCharacter.TryResolveCharacterBodyMove(requestedDelta, out Vector3 resolvedDelta);
+            targetCharacter.transform.position = cur + resolvedDelta;
             
             StopAttackCoroutine();
             return true;

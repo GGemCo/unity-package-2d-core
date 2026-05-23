@@ -56,6 +56,7 @@ namespace GGemCo2DCore
             BindResourcePolicies();
             CacheSceneMetrics();
             Stop(true);
+            RefreshCharacterBodyCollision();
             MarkInitialized();
         }
 
@@ -135,7 +136,8 @@ namespace GGemCo2DCore
                 _physicsOverrideController = gameObject.AddComponent<CharacterPhysicsOverrideController>();
             }
 
-            colliderMapObject = gameObject.GetComponentInChildren<CapsuleCollider2D>();
+            // HitArea/AttackRange Trigger가 아닌 실제 이동 차단용 Body Collider를 우선 선택합니다.
+            colliderMapObject = CharacterCollisionLayerUtility.FindBodyCollider(this);
 
             CharacterAttackRange characterAttackRange = gameObject.GetComponentInChildren<CharacterAttackRange>();
             if (characterAttackRange)
@@ -172,6 +174,8 @@ namespace GGemCo2DCore
             {
                 _motionController = gameObject.AddComponent<CharacterMotionController2D>();
             }
+
+            EnsureCharacterCollisionController();
         }
 
         /// <summary>

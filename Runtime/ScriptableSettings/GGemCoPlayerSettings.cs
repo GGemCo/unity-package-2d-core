@@ -147,6 +147,29 @@ namespace GGemCo2DCore
         [Tooltip("위쪽(천장) 경계를 벗어날 수 없도록 제한합니다.")]
         public bool limitBoundaryTop = true;
 
+        [Header("캐릭터 Body 충돌 정책")]
+        [Tooltip("플레이어/몬스터/NPC Body Collider 사이의 이동 전 겹침 방지 정책을 사용할지 여부입니다.")]
+        public bool useCharacterBodyCollision = true;
+
+        [Tooltip("플레이어와 몬스터 사이의 Body Collider 겹침 방지 정책입니다.")]
+        public CharacterBodyCollisionPolicy characterBodyCollisionPlayerMonster = CharacterBodyCollisionPolicy.BlockMovement;
+
+        [Tooltip("플레이어와 NPC 사이의 Body Collider 겹침 방지 정책입니다.")]
+        public CharacterBodyCollisionPolicy characterBodyCollisionPlayerNpc = CharacterBodyCollisionPolicy.BlockMovement;
+
+        [Tooltip("몬스터끼리의 Body Collider 겹침 방지 정책입니다. 기본값은 군집 이동 정체를 피하기 위해 None입니다.")]
+        public CharacterBodyCollisionPolicy characterBodyCollisionMonsterMonster = CharacterBodyCollisionPolicy.None;
+
+        [Tooltip("몬스터와 NPC 사이의 Body Collider 겹침 방지 정책입니다.")]
+        public CharacterBodyCollisionPolicy characterBodyCollisionMonsterNpc = CharacterBodyCollisionPolicy.None;
+
+        [Tooltip("NPC끼리의 Body Collider 겹침 방지 정책입니다.")]
+        public CharacterBodyCollisionPolicy characterBodyCollisionNpcNpc = CharacterBodyCollisionPolicy.None;
+
+        [Tooltip("충돌 직전에서 멈출 때 Collider 사이에 남길 여유 거리입니다.")]
+        [Min(0f)]
+        public float characterBodyCollisionSkinWidth = 0.02f;
+
 
         [Header("Hit Stop")]
         [Tooltip("자신이 타격을 성공시켰을 때 적용할 기본 경직 시간(초)")]

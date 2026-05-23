@@ -188,6 +188,7 @@ namespace GGemCo2DCore
         public void MoveTeleport(float x, float y)
         {
             transform.position = new Vector3(x, y, transform.position.z);
+            RefreshCharacterBodyCollision();
         }
 
         /// <summary>

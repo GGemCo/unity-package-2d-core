@@ -84,6 +84,48 @@ namespace GGemCo2DCore
             return filter;
         }
 
+
+        /// <summary>
+        /// CapsuleCast 결과를 results 배열에 채우고, 채워진 개수를 반환합니다.
+        /// Unity 6+: CapsuleCast(ContactFilter2D, RaycastHit2D[]) 경로 사용
+        /// 이전: CapsuleCastNonAlloc(layerMask/minDepth/maxDepth) 경로 사용
+        /// </summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static int CapsuleCastNonAlloc(
+            Vector2 origin,
+            Vector2 size,
+            CapsuleDirection2D capsuleDirection,
+            float angle,
+            Vector2 direction,
+            ContactFilter2D contactFilter,
+            RaycastHit2D[] results,
+            float distance = Mathf.Infinity)
+        {
+            if (results == null || results.Length == 0)
+                return 0;
+
+#if UNITY_6000_0_OR_NEWER
+            return Physics2D.CapsuleCast(origin, size, capsuleDirection, angle, direction, contactFilter, results, distance);
+#else
+            int layerMask = contactFilter.useLayerMask ? contactFilter.layerMask : Physics2D.AllLayers;
+
+            float minDepth = contactFilter.useDepth ? contactFilter.minDepth : float.NegativeInfinity;
+            float maxDepth = contactFilter.useDepth ? contactFilter.maxDepth : float.PositiveInfinity;
+
+            return Physics2D.CapsuleCastNonAlloc(
+                origin,
+                size,
+                capsuleDirection,
+                angle,
+                direction,
+                results,
+                distance,
+                layerMask,
+                minDepth,
+                maxDepth);
+#endif
+        }
+
         /// <summary>
         /// BoxCast 결과를 results 배열에 채우고, 채워진 개수를 반환합니다.
         /// Unity 6+: BoxCast(ContactFilter2D, RaycastHit2D[]) 경로 사용

@@ -117,6 +117,7 @@ namespace GGemCo2DCore
                 }
 
                 characterBase.CharacterAnimationController = iAnim;
+                characterBase.RefreshCharacterBodyCollision();
                 TrySetupSpriteWhiteOverlay(characterType, characterObj, characterBase);
 
                 _characters.Add(characterObj);
@@ -501,6 +502,7 @@ namespace GGemCo2DCore
                 characterBase.CharacterAnimationController = iAnim;
                 characterBase.uid = uid;
                 characterBase.SetScale(infoNpc.Scale);
+                characterBase.RefreshCharacterBodyCollision();
 
                 _characters.Add(npcObj);
                 OnCharacterSpawned?.Invoke(characterBase);
@@ -543,6 +545,7 @@ namespace GGemCo2DCore
             {
                 characterBase.uid = uid;
                 characterBase.SetScale(infoMonster.Scale);
+                characterBase.RefreshCharacterBodyCollision();
             }
 
             return monster;
@@ -572,7 +575,9 @@ namespace GGemCo2DCore
             pooledObject.transform.SetParent(null, worldPositionStays: false);
             pooledMonster.PrepareForPoolRent(uid, regenData);
             pooledObject.SetActive(true);
-            pooledObject.GetComponent<CharacterBase>()?.Stop();
+            CharacterBase characterBase = pooledObject.GetComponent<CharacterBase>();
+            characterBase?.RefreshCharacterBodyCollision();
+            characterBase?.Stop();
             return pooledObject;
         }
 

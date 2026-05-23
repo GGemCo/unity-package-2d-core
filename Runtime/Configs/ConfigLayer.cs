@@ -1,7 +1,7 @@
 ﻿namespace GGemCo2DCore
 {
     /// <summary>
-    /// Sorting Layer 에 사용되는 Config 값
+    /// Unity Layer 에 사용되는 Config 값
     /// </summary>
     public abstract class ConfigLayer : DefaultConfig<ConfigLayer.Keys>
     {
@@ -12,7 +12,13 @@
             TileMapGround,
             HitAreaMonster,
             HitAreaPlayer,
-            TileMapOneWayPlatform
+            TileMapOneWayPlatform,
+            // 캐릭터 이동 차단용 Body Collider 레이어 - Player
+            CharacterBodyPlayer,
+            // 캐릭터 이동 차단용 Body Collider 레이어 - Monster
+            CharacterBodyMonster,
+            // 캐릭터 이동 차단용 Body Collider 레이어 - NPC
+            CharacterBodyNpc
         }
     }
 }
