@@ -1,6 +1,5 @@
 ﻿using System.Collections.Generic;
 using UnityEngine;
-using UnityEngine.Tilemaps;
 
 namespace GGemCo2DCore
 {
@@ -134,8 +133,6 @@ namespace GGemCo2DCore
         private ICameraVerticalFollowStateSource _verticalFollowStateSource;
         private bool _hasVerticalFollowAnchor;
         private float _verticalFollowAnchorTargetY;
-        private Bounds _mapWorldBounds;
-        private bool _hasMapWorldBounds;
         private bool _pendingAutoBottomOffsetApply;
 
         private float _width;
@@ -168,7 +165,6 @@ namespace GGemCo2DCore
             _originalOrthographicSize = _currentCamera.orthographicSize;
             _height = _originalOrthographicSize;
             _width = _height * Screen.width / Screen.height;
-            _hasMapWorldBounds = false;
             _pendingAutoBottomOffsetApply = false;
         }
 
@@ -533,25 +529,15 @@ namespace GGemCo2DCore
         }
 
         /// <summary>
-        /// 타일맵 로드 완료 이벤트를 받아 맵의 월드 경계를 기록하고,
-        /// 자동 바텀 정렬 정책이 활성화된 경우 followOffset.y 보정을 시도합니다.
+        /// 타일맵 로드 완료 이벤트를 수신하면 자동 바텀 정렬 적용을 재시도합니다.
+        /// 실제 맵 하단 경계값은 MapManager에서 계산한 월드 경계를 사용합니다.
         /// </summary>
         /// <param name="mapTileCommon">현재 로드된 맵 루트 컴포넌트입니다.</param>
         /// <param name="grid">맵이 배치된 Grid 오브젝트입니다.</param>
         private void OnLoadTilemapCompleteMap(MapTileCommon mapTileCommon, GameObject grid)
         {
+            _ = mapTileCommon;
             _ = grid;
-
-            if (TryGetMapWorldBounds(mapTileCommon, out Bounds worldBounds))
-            {
-                _mapWorldBounds = worldBounds;
-                _hasMapWorldBounds = true;
-            }
-            else
-            {
-                _hasMapWorldBounds = false;
-            }
-
             RequestBottomOffsetApplyIfNeeded();
         }
 
@@ -598,7 +584,12 @@ namespace GGemCo2DCore
                 return;
             }
 
-            float mapBottomY = _hasMapWorldBounds ? _mapWorldBounds.min.y : 0f;
+            MapManager mapManager = SceneGame.Instance != null ? SceneGame.Instance.mapManager : null;
+            if (mapManager == null || !mapManager.TryGetCurrentMapBottomY(out float mapBottomY))
+            {
+                return;
+            }
+
             float desiredCameraCenterY = mapBottomY + _currentCamera.orthographicSize + autoBottomEdgePadding;
             float newFollowOffsetY = desiredCameraCenterY - _followTarget.position.y;
 
@@ -606,116 +597,6 @@ namespace GGemCo2DCore
             _cameraPosition.y = newFollowOffsetY;
             _hasVerticalFollowAnchor = false;
             _pendingAutoBottomOffsetApply = false;
-        }
-
-        /// <summary>
-        /// 맵 루트의 타일맵/스프라이트 렌더러를 기반으로 맵의 월드 경계를 계산합니다.
-        /// </summary>
-        /// <param name="mapTileCommon">경계 계산 대상 맵 루트입니다.</param>
-        /// <param name="totalBounds">계산된 월드 경계입니다.</param>
-        /// <returns>유효한 경계 계산에 성공하면 true를 반환합니다.</returns>
-        private static bool TryGetMapWorldBounds(MapTileCommon mapTileCommon, out Bounds totalBounds)
-        {
-            totalBounds = default;
-            if (mapTileCommon == null)
-            {
-                return false;
-            }
-
-            bool hasBounds = false;
-            AppendTilemapBounds(mapTileCommon, ref totalBounds, ref hasBounds);
-            AppendSpriteRendererBounds(mapTileCommon, ref totalBounds, ref hasBounds);
-            return hasBounds;
-        }
-
-        /// <summary>
-        /// 맵 하위의 모든 타일맵 경계를 수집하여 전체 경계에 합칩니다.
-        /// </summary>
-        private static void AppendTilemapBounds(MapTileCommon mapTileCommon, ref Bounds totalBounds, ref bool hasBounds)
-        {
-            Tilemap[] tilemaps = mapTileCommon.GetComponentsInChildren<Tilemap>(true);
-            foreach (Tilemap tilemap in tilemaps)
-            {
-                if (tilemap == null)
-                {
-                    continue;
-                }
-
-                if (!TryGetTilemapWorldBounds(tilemap, out Bounds tileBounds))
-                {
-                    continue;
-                }
-
-                EncapsulateBounds(ref totalBounds, ref hasBounds, tileBounds);
-            }
-        }
-
-        /// <summary>
-        /// 맵 하위의 모든 스프라이트 렌더러 경계를 수집하여 전체 경계에 합칩니다.
-        /// </summary>
-        private static void AppendSpriteRendererBounds(MapTileCommon mapTileCommon, ref Bounds totalBounds, ref bool hasBounds)
-        {
-            SpriteRenderer[] spriteRenderers = mapTileCommon.GetComponentsInChildren<SpriteRenderer>(true);
-            foreach (SpriteRenderer spriteRenderer in spriteRenderers)
-            {
-                if (spriteRenderer == null || spriteRenderer.sprite == null)
-                {
-                    continue;
-                }
-
-                EncapsulateBounds(ref totalBounds, ref hasBounds, spriteRenderer.bounds);
-            }
-        }
-
-        /// <summary>
-        /// 실제 타일이 존재하는 셀 범위를 기반으로 타일맵의 월드 경계를 계산합니다.
-        /// </summary>
-        private static bool TryGetTilemapWorldBounds(Tilemap tilemap, out Bounds bounds)
-        {
-            Vector3Int minCell = new Vector3Int(int.MaxValue, int.MaxValue, int.MaxValue);
-            Vector3Int maxCell = new Vector3Int(int.MinValue, int.MinValue, int.MinValue);
-
-            foreach (Vector3Int pos in tilemap.cellBounds.allPositionsWithin)
-            {
-                if (!tilemap.HasTile(pos))
-                {
-                    continue;
-                }
-
-                minCell = Vector3Int.Min(minCell, pos);
-                maxCell = Vector3Int.Max(maxCell, pos);
-            }
-
-            if (minCell.x == int.MaxValue)
-            {
-                bounds = default;
-                return false;
-            }
-
-            Vector3 minWorldPos = tilemap.CellToWorld(minCell);
-            Vector3 maxWorldPos = tilemap.CellToWorld(maxCell + Vector3Int.one);
-
-            bounds = new Bounds();
-            bounds.SetMinMax(
-                Vector3.Min(minWorldPos, maxWorldPos),
-                Vector3.Max(minWorldPos, maxWorldPos));
-            return true;
-        }
-
-        /// <summary>
-        /// 새 경계를 기존 전체 경계에 안전하게 합칩니다.
-        /// </summary>
-        private static void EncapsulateBounds(ref Bounds totalBounds, ref bool hasBounds, Bounds bounds)
-        {
-            if (!hasBounds)
-            {
-                totalBounds = bounds;
-                hasBounds = true;
-                return;
-            }
-
-            totalBounds.Encapsulate(bounds.min);
-            totalBounds.Encapsulate(bounds.max);
         }
 
         /// <summary>

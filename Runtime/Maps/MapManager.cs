@@ -994,19 +994,52 @@ namespace GGemCo2DCore
             return _currentState == MapConstants.State.Complete;
         }
 
+        /// <summary>
+        /// 현재 맵의 월드 경계 크기(X, Y)를 반환합니다.
+        /// 경계를 계산할 수 없으면 <see cref="Vector2.zero"/>를 반환합니다.
+        /// </summary>
+        /// <returns>현재 맵의 월드 경계 크기입니다.</returns>
         public Vector2 GetMapSize()
         {
-            if (!HasValidCurrentMap())
-            {
-                return Vector2.zero;
-            }
-
-            if (!TryGetMapWorldBounds(out Bounds bounds))
+            if (!TryGetCurrentMapWorldBounds(out Bounds bounds))
             {
                 return Vector2.zero;
             }
 
             return new Vector2(bounds.size.x, bounds.size.y);
+        }
+
+        /// <summary>
+        /// 현재 로드된 맵의 월드 경계(Bounds)를 반환합니다.
+        /// </summary>
+        /// <param name="bounds">현재 맵의 월드 경계입니다.</param>
+        /// <returns>경계 계산에 성공하면 true를 반환합니다.</returns>
+        public bool TryGetCurrentMapWorldBounds(out Bounds bounds)
+        {
+            bounds = default;
+            if (!HasValidCurrentMap())
+            {
+                return false;
+            }
+
+            return TryGetMapWorldBounds(out bounds);
+        }
+
+        /// <summary>
+        /// 현재 로드된 맵의 하단 월드 경계값(minY)을 반환합니다.
+        /// </summary>
+        /// <param name="bottomY">현재 맵 월드 경계의 최하단 Y 값입니다.</param>
+        /// <returns>하단 경계 계산에 성공하면 true를 반환합니다.</returns>
+        public bool TryGetCurrentMapBottomY(out float bottomY)
+        {
+            bottomY = 0f;
+            if (!TryGetCurrentMapWorldBounds(out Bounds bounds))
+            {
+                return false;
+            }
+
+            bottomY = bounds.min.y;
+            return true;
         }
 
         private bool TryGetMapWorldBounds(out Bounds totalBounds)
