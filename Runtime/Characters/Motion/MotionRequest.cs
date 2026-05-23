@@ -199,6 +199,21 @@ namespace GGemCo2DCore
         /// </summary>
         public GameObject CollisionTarget { get; }
 
+        /// <summary>
+        /// 모션 이동 중 캐릭터 Body 충돌을 어떻게 처리할지 결정하는 정책입니다.
+        /// </summary>
+        public MotionBodyCollisionPolicy BodyCollisionPolicy { get; }
+
+        /// <summary>
+        /// 모션 이동 후 겹침 해소에 사용할 배율입니다. 0 이하이면 설정 기본값을 사용합니다.
+        /// </summary>
+        public float BodySeparationMultiplier { get; }
+
+        /// <summary>
+        /// 모션 이동 후 겹침 해소를 유지할 시간입니다. 0 미만이면 설정 기본값을 사용합니다.
+        /// </summary>
+        public float BodySeparationDuration { get; }
+
         public MotionRequest(
             MotionChannel channel,
             MotionKind kind,
@@ -224,7 +239,10 @@ namespace GGemCo2DCore
             bool stopOnWall = false,
             float wallCollisionSkin = 0.02f,
             MotionCollisionPolicy collisionPolicy = MotionCollisionPolicy.Default,
-            GameObject collisionTarget = null)
+            GameObject collisionTarget = null,
+            MotionBodyCollisionPolicy bodyCollisionPolicy = MotionBodyCollisionPolicy.UseCharacterDefault,
+            float bodySeparationMultiplier = -1f,
+            float bodySeparationDuration = -1f)
         {
             Channel = channel;
             Kind = kind;
@@ -252,6 +270,9 @@ namespace GGemCo2DCore
             WallCollisionSkin = Mathf.Max(0f, wallCollisionSkin);
             CollisionPolicy = collisionPolicy;
             CollisionTarget = collisionTarget;
+            BodyCollisionPolicy = bodyCollisionPolicy;
+            BodySeparationMultiplier = bodySeparationMultiplier;
+            BodySeparationDuration = bodySeparationDuration;
         }
     }
 }

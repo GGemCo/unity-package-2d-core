@@ -20,6 +20,8 @@ namespace GGemCo2DCore
         [SerializeField] private Rigidbody2D rb;
         [SerializeField] private CharacterPhysicsOverrideController physicsOverrideController;
         [SerializeField] private CharacterHitStopController hitStopController;
+        [SerializeField] private CharacterBase character;
+        [SerializeField] private CharacterCollisionController collisionController;
 
         private MotionState _skill;
         private MotionState _crowdControl;
@@ -35,6 +37,8 @@ namespace GGemCo2DCore
             rb = GetComponentInParent<Rigidbody2D>();
             physicsOverrideController = GetComponentInParent<CharacterPhysicsOverrideController>();
             hitStopController = GetComponentInParent<CharacterHitStopController>();
+            character = GetComponentInParent<CharacterBase>();
+            collisionController = GetComponentInParent<CharacterCollisionController>();
         }
 
         private void Awake()
@@ -50,6 +54,12 @@ namespace GGemCo2DCore
 
             if (hitStopController == null)
                 hitStopController = GetComponentInParent<CharacterHitStopController>();
+
+            if (character == null)
+                character = GetComponentInParent<CharacterBase>();
+
+            if (collisionController == null)
+                collisionController = GetComponentInParent<CharacterCollisionController>();
         }
 
         private void OnDisable()
@@ -126,7 +136,10 @@ namespace GGemCo2DCore
                     stopOnWall: request.StopOnWall,
                     wallCollisionSkin: request.WallCollisionSkin,
                     collisionPolicy: request.CollisionPolicy,
-                    collisionTarget: request.CollisionTarget);
+                    collisionTarget: request.CollisionTarget,
+                    bodyCollisionPolicy: request.BodyCollisionPolicy,
+                    bodySeparationMultiplier: request.BodySeparationMultiplier,
+                    bodySeparationDuration: request.BodySeparationDuration);
             }
 
             state.Start(requestToUse);
@@ -340,6 +353,7 @@ namespace GGemCo2DCore
 
                     state.CurrentPosition = snapped;
                     state.AppliedArcY = 0f;
+                    RequestCharacterBodyMotionSeparation(ref state);
                     state.MarkComplete();
                     bool stopAtEnd = state.StopAtEnd;
                     RestoreMotionPhysics(ref state, zeroVerticalVelocity: true);
@@ -399,7 +413,7 @@ namespace GGemCo2DCore
         }
 
         /// <summary>
-        /// 계산된 증분 이동량을 <see cref="Rigidbody2D"/>에 적용합니다.
+        /// 계산된 증분 이동량을 <see cref="Rigidbody2D"/>에 적용하고, 모션 Body 충돌 보정을 요청합니다.
         /// </summary>
         private void ApplyDelta(ref MotionState state, Vector2 delta, bool useMovePosition)
         {
@@ -416,19 +430,102 @@ namespace GGemCo2DCore
             if (appliedDelta.sqrMagnitude <= 1e-12f)
                 return;
 
+            appliedDelta = ResolveCharacterBodyMotionDelta(ref state, appliedDelta);
+            if (appliedDelta.sqrMagnitude <= 1e-12f)
+                return;
+
+            ApplyRigidbodyDelta(appliedDelta, useMovePosition);
+            RequestCharacterBodyMotionSeparation(ref state);
+        }
+
+        /// <summary>
+        /// 모션 전용 Body 충돌 정책에 따라 이동 적용 전 증분 이동량을 보정합니다.
+        /// </summary>
+        /// <param name="state">현재 모션 상태입니다.</param>
+        /// <param name="delta">벽 충돌 보정 이후의 요청 이동량입니다.</param>
+        /// <returns>캐릭터 Body 충돌 정책까지 반영한 이동량입니다.</returns>
+        private Vector2 ResolveCharacterBodyMotionDelta(ref MotionState state, Vector2 delta)
+        {
+            CharacterCollisionController controller = ResolveCharacterCollisionController();
+            if (controller == null)
+                return delta;
+
+            bool canMove = controller.TryResolveMotionMove(
+                new Vector3(delta.x, delta.y, 0f),
+                state.Channel,
+                state.BodyCollisionPolicy,
+                out Vector3 resolvedDelta);
+
+            if (!canMove)
+                return Vector2.zero;
+
+            return new Vector2(resolvedDelta.x, resolvedDelta.y);
+        }
+
+        /// <summary>
+        /// Rigidbody2D의 타입과 모션 설정에 맞춰 최종 이동량을 적용합니다.
+        /// </summary>
+        /// <param name="appliedDelta">실제로 적용할 월드 기준 이동량입니다.</param>
+        /// <param name="useMovePosition">Kinematic Rigidbody에서 MovePosition을 사용할지 여부입니다.</param>
+        private void ApplyRigidbodyDelta(Vector2 appliedDelta, bool useMovePosition)
+        {
             // Kinematic: MovePosition 권장
             if (useMovePosition && rb.bodyType == RigidbodyType2D.Kinematic)
             {
                 rb.MovePosition(rb.position + appliedDelta);
+                return;
             }
-            else
+
+            // Dynamic 또는 정책상 velocity 사용
+            float dt = Time.fixedDeltaTime;
+            float vx = dt > 1e-6f ? (appliedDelta.x / dt) : 0f;
+            float vy = dt > 1e-6f ? (appliedDelta.y / dt) : rb.GetLinearVelocity().y;
+            rb.SetLinearVelocity(new Vector2(vx, vy));
+        }
+
+        /// <summary>
+        /// 모션 이동 후 일정 시간 동안 캐릭터 Body 겹침 해소를 반복하도록 요청합니다.
+        /// </summary>
+        /// <param name="state">현재 모션 상태입니다.</param>
+        private void RequestCharacterBodyMotionSeparation(ref MotionState state)
+        {
+            CharacterCollisionController controller = ResolveCharacterCollisionController();
+            if (controller == null)
+                return;
+
+            controller.RequestMotionSeparation(
+                state.Channel,
+                state.BodyCollisionPolicy,
+                state.BodySeparationDuration,
+                state.BodySeparationMultiplier);
+        }
+
+        /// <summary>
+        /// 캐릭터 충돌 컨트롤러 참조를 지연 해석합니다.
+        /// </summary>
+        /// <returns>현재 캐릭터의 충돌 컨트롤러입니다. 찾을 수 없으면 null입니다.</returns>
+        private CharacterCollisionController ResolveCharacterCollisionController()
+        {
+            if (collisionController != null)
+                return collisionController;
+
+            if (character == null)
+                character = GetComponentInParent<CharacterBase>();
+
+            if (character != null)
             {
-                // Dynamic 또는 정책상 velocity 사용
-                float dt = Time.fixedDeltaTime;
-                float vx = dt > 1e-6f ? (appliedDelta.x / dt) : 0f;
-                float vy = dt > 1e-6f ? (appliedDelta.y / dt) : rb.GetLinearVelocity().y;
-                rb.SetLinearVelocity(new Vector2(vx, vy));
+                collisionController = character.CollisionController;
+                if (collisionController != null)
+                    return collisionController;
+
+                character.RefreshCharacterBodyCollision();
+                collisionController = character.CollisionController;
+                if (collisionController != null)
+                    return collisionController;
             }
+
+            collisionController = GetComponentInParent<CharacterCollisionController>();
+            return collisionController;
         }
 
         private bool TryResolveWallImpact(MotionState state, Vector2 requestedDelta, out MotionWallImpactInfo impactInfo, out Vector2 appliedDelta)
@@ -689,6 +786,9 @@ namespace GGemCo2DCore
 
             public MotionCollisionPolicy CollisionPolicy;
             public GameObject CollisionTarget;
+            public MotionBodyCollisionPolicy BodyCollisionPolicy;
+            public float BodySeparationMultiplier;
+            public float BodySeparationDuration;
             public MotionCollisionIgnoreScope2D CollisionIgnoreScope;
 
             public bool IsGravitySuspended;
@@ -735,6 +835,9 @@ namespace GGemCo2DCore
                 LastWallImpact = default;
                 CollisionPolicy = req.CollisionPolicy;
                 CollisionTarget = req.CollisionTarget;
+                BodyCollisionPolicy = req.BodyCollisionPolicy;
+                BodySeparationMultiplier = req.BodySeparationMultiplier;
+                BodySeparationDuration = req.BodySeparationDuration;
                 CollisionIgnoreScope = null;
 
                 IsGravitySuspended = false;
@@ -801,6 +904,9 @@ namespace GGemCo2DCore
 
                 CollisionPolicy = MotionCollisionPolicy.Default;
                 CollisionTarget = null;
+                BodyCollisionPolicy = MotionBodyCollisionPolicy.UseCharacterDefault;
+                BodySeparationMultiplier = -1f;
+                BodySeparationDuration = -1f;
 
                 IsGravitySuspended = false;
                 HasSavedGravityScale = false;

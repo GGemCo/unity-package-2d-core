@@ -68,6 +68,31 @@ namespace GGemCo2DCore
         [Min(1f)]
         public float landingSeparationMultiplier = 1.5f;
 
+
+        [Header("모션 이동 보정")]
+        [Tooltip("CharacterMotionController2D로 처리되는 스킬/대시/러시/CC 모션 이동에도 Body 충돌 보정을 적용할지 여부입니다.")]
+        public bool useMotionBodyCollision = true;
+
+        [Tooltip("Skill 채널 모션 이동의 기본 Body 충돌 정책입니다.")]
+        public MotionBodyCollisionPolicy skillMotionBodyCollisionPolicy =
+            MotionBodyCollisionPolicy.SeparateAfterMove;
+
+        [Tooltip("CrowdControl 채널 모션 이동의 기본 Body 충돌 정책입니다.")]
+        public MotionBodyCollisionPolicy crowdControlMotionBodyCollisionPolicy =
+            MotionBodyCollisionPolicy.SeparateAfterMove;
+
+        [Tooltip("모션 이동 후 겹침 해소 요청을 유지할 시간입니다.")]
+        [Min(0f)]
+        public float motionSeparationDuration = 0.18f;
+
+        [Tooltip("Skill 채널 모션 이동 중 겹침 해소에 곱할 기본 배율입니다.")]
+        [Min(1f)]
+        public float skillMotionSeparationMultiplier = 1.35f;
+
+        [Tooltip("CrowdControl 채널 모션 이동 중 겹침 해소에 곱할 기본 배율입니다.")]
+        [Min(1f)]
+        public float crowdControlMotionSeparationMultiplier = 1.75f;
+
         [Header("사망 캐릭터 처리")]
         [Tooltip("사망 캐릭터의 Body 충돌 처리 방식입니다.")]
         public DeadCharacterBodyCollisionMode deadCharacterBodyCollisionMode =

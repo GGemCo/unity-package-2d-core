@@ -20,6 +20,8 @@ namespace GGemCo2DCore
         private bool _bodyColliderEnabledBeforeDeath;
         private float _strongSeparationRemainingTime;
         private float _strongSeparationMultiplier = 1f;
+        private float _timedSeparationRemainingTime;
+        private float _timedSeparationMultiplier = 1f;
 
         /// <summary>
         /// 현재 이동 차단과 겹침 해소에 사용할 Body Collider입니다.
@@ -74,11 +76,55 @@ namespace GGemCo2DCore
         /// <returns>일부라도 이동 가능하면 true, 완전히 차단되면 false입니다.</returns>
         public bool TryResolveMove(Vector3 requestedDelta, out Vector3 resolvedDelta)
         {
-            resolvedDelta = requestedDelta;
-
             CharacterCollisionSettings settings = GetSettings();
             if (!IsEnabled(settings) || !CanParticipateInCollision(_owner, settings))
+            {
+                resolvedDelta = requestedDelta;
                 return true;
+            }
+
+            return TryResolveMoveInternal(settings, requestedDelta, out resolvedDelta);
+        }
+
+        /// <summary>
+        /// 모션 이동량을 모션 전용 Body 충돌 정책에 맞게 보정합니다.
+        /// </summary>
+        /// <param name="requestedDelta">월드 기준 요청 이동량입니다.</param>
+        /// <param name="channel">모션 요청 채널입니다.</param>
+        /// <param name="policyOverride">요청 단위에서 지정한 Body 충돌 정책입니다.</param>
+        /// <param name="resolvedDelta">충돌을 고려해 보정된 이동량입니다.</param>
+        /// <returns>일부라도 이동 가능하면 true, 완전히 차단되면 false입니다.</returns>
+        public bool TryResolveMotionMove(
+            Vector3 requestedDelta,
+            MotionChannel channel,
+            MotionBodyCollisionPolicy policyOverride,
+            out Vector3 resolvedDelta)
+        {
+            CharacterCollisionSettings settings = GetSettings();
+            MotionBodyCollisionPolicy policy = ResolveMotionBodyCollisionPolicy(settings, channel, policyOverride);
+
+            if (!CanUseMotionBodyCollision(settings) || !CanParticipateInCollision(_owner, settings) || !ShouldBlockBeforeMove(policy))
+            {
+                resolvedDelta = requestedDelta;
+                return true;
+            }
+
+            return TryResolveMoveInternal(settings, requestedDelta, out resolvedDelta);
+        }
+
+        /// <summary>
+        /// 캐릭터 Body 이동량 보정을 실제로 수행하는 공통 내부 함수입니다.
+        /// </summary>
+        /// <param name="settings">캐릭터 충돌 설정 인스턴스입니다.</param>
+        /// <param name="requestedDelta">월드 기준 요청 이동량입니다.</param>
+        /// <param name="resolvedDelta">충돌을 고려해 보정된 이동량입니다.</param>
+        /// <returns>일부라도 이동 가능하면 true, 완전히 차단되면 false입니다.</returns>
+        private bool TryResolveMoveInternal(
+            CharacterCollisionSettings settings,
+            Vector3 requestedDelta,
+            out Vector3 resolvedDelta)
+        {
+            resolvedDelta = requestedDelta;
 
             Refresh();
 
@@ -170,6 +216,44 @@ namespace GGemCo2DCore
         }
 
         /// <summary>
+        /// 일정 시간 동안 FixedUpdate에서 반복 겹침 해소를 수행하도록 요청합니다.
+        /// </summary>
+        /// <param name="duration">반복 분리 보정을 유지할 시간입니다.</param>
+        /// <param name="multiplier">분리 이동량에 곱할 배율입니다.</param>
+        public void RequestTimedSeparation(float duration, float multiplier)
+        {
+            if (duration <= 0f || multiplier <= 0f)
+                return;
+
+            _timedSeparationRemainingTime = Mathf.Max(_timedSeparationRemainingTime, duration);
+            _timedSeparationMultiplier = Mathf.Max(_timedSeparationMultiplier, multiplier);
+        }
+
+        /// <summary>
+        /// 모션 이동 후 채널별 설정과 요청 오버라이드에 맞춰 반복 겹침 해소를 요청합니다.
+        /// </summary>
+        /// <param name="channel">모션 요청 채널입니다.</param>
+        /// <param name="policyOverride">요청 단위에서 지정한 Body 충돌 정책입니다.</param>
+        /// <param name="durationOverride">반복 분리 지속 시간 오버라이드입니다. 0 미만이면 설정 기본값을 사용합니다.</param>
+        /// <param name="multiplierOverride">분리 배율 오버라이드입니다. 0 이하이면 설정 기본값을 사용합니다.</param>
+        public void RequestMotionSeparation(
+            MotionChannel channel,
+            MotionBodyCollisionPolicy policyOverride,
+            float durationOverride,
+            float multiplierOverride)
+        {
+            CharacterCollisionSettings settings = GetSettings();
+            MotionBodyCollisionPolicy policy = ResolveMotionBodyCollisionPolicy(settings, channel, policyOverride);
+
+            if (!CanUseMotionBodyCollision(settings) || !CanParticipateInCollision(_owner, settings) || !ShouldSeparateAfterMove(policy))
+                return;
+
+            float duration = GetMotionSeparationDuration(settings, durationOverride);
+            float multiplier = GetMotionSeparationMultiplier(settings, channel, multiplierOverride);
+            RequestTimedSeparation(duration, multiplier);
+        }
+
+        /// <summary>
         /// 사망 상태 변경 후 Body Collider의 충돌 참여 상태를 즉시 갱신합니다.
         /// </summary>
         public void ApplyDeathCollisionState()
@@ -212,6 +296,32 @@ namespace GGemCo2DCore
                 return false;
 
             return true;
+        }
+
+        /// <summary>
+        /// 모션 이동 등에서 등록한 시간 기반 겹침 해소 요청을 FixedUpdate 주기로 처리합니다.
+        /// </summary>
+        private void FixedUpdate()
+        {
+            TickTimedSeparation(Time.fixedDeltaTime);
+        }
+
+        /// <summary>
+        /// 남은 시간 기반 분리 요청을 진행하고, 필요 시 현재 겹침 상태를 해소합니다.
+        /// </summary>
+        /// <param name="deltaTime">이번 FixedUpdate의 시간 간격입니다.</param>
+        private void TickTimedSeparation(float deltaTime)
+        {
+            if (_timedSeparationRemainingTime <= 0f)
+                return;
+
+            _timedSeparationRemainingTime = Mathf.Max(0f, _timedSeparationRemainingTime - Mathf.Max(0f, deltaTime));
+            TrySeparateOverlaps(_timedSeparationMultiplier);
+
+            if (_timedSeparationRemainingTime > 0f)
+                return;
+
+            _timedSeparationMultiplier = 1f;
         }
 
         /// <summary>
@@ -291,6 +401,61 @@ namespace GGemCo2DCore
         private static bool CanSeparate(CharacterCollisionSettings settings)
         {
             return IsEnabled(settings) && (settings == null || settings.useCharacterBodySeparation);
+        }
+
+        /// <summary>
+        /// 모션 이동용 캐릭터 Body 충돌 보정 기능을 사용할 수 있는지 반환합니다.
+        /// </summary>
+        /// <param name="settings">캐릭터 충돌 설정 인스턴스입니다.</param>
+        /// <returns>사용 가능하면 true입니다.</returns>
+        private static bool CanUseMotionBodyCollision(CharacterCollisionSettings settings)
+        {
+            return IsEnabled(settings) && (settings == null || settings.useMotionBodyCollision);
+        }
+
+        /// <summary>
+        /// 채널과 요청 오버라이드를 기준으로 실제 적용할 모션 Body 충돌 정책을 반환합니다.
+        /// </summary>
+        /// <param name="settings">캐릭터 충돌 설정 인스턴스입니다.</param>
+        /// <param name="channel">모션 요청 채널입니다.</param>
+        /// <param name="policyOverride">요청 단위 오버라이드 정책입니다.</param>
+        /// <returns>실제로 적용할 모션 Body 충돌 정책입니다.</returns>
+        private static MotionBodyCollisionPolicy ResolveMotionBodyCollisionPolicy(
+            CharacterCollisionSettings settings,
+            MotionChannel channel,
+            MotionBodyCollisionPolicy policyOverride)
+        {
+            if (policyOverride != MotionBodyCollisionPolicy.UseCharacterDefault)
+                return policyOverride;
+
+            if (settings == null)
+                return MotionBodyCollisionPolicy.SeparateAfterMove;
+
+            return channel == MotionChannel.CrowdControl
+                ? settings.crowdControlMotionBodyCollisionPolicy
+                : settings.skillMotionBodyCollisionPolicy;
+        }
+
+        /// <summary>
+        /// 모션 정책이 이동 전 차단을 요구하는지 검사합니다.
+        /// </summary>
+        /// <param name="policy">검사할 모션 Body 충돌 정책입니다.</param>
+        /// <returns>이동 전 차단을 수행해야 하면 true입니다.</returns>
+        private static bool ShouldBlockBeforeMove(MotionBodyCollisionPolicy policy)
+        {
+            return policy == MotionBodyCollisionPolicy.BlockBeforeMove ||
+                   policy == MotionBodyCollisionPolicy.BlockAndSeparate;
+        }
+
+        /// <summary>
+        /// 모션 정책이 이동 후 겹침 해소를 요구하는지 검사합니다.
+        /// </summary>
+        /// <param name="policy">검사할 모션 Body 충돌 정책입니다.</param>
+        /// <returns>이동 후 겹침 해소를 수행해야 하면 true입니다.</returns>
+        private static bool ShouldSeparateAfterMove(MotionBodyCollisionPolicy policy)
+        {
+            return policy == MotionBodyCollisionPolicy.SeparateAfterMove ||
+                   policy == MotionBodyCollisionPolicy.BlockAndSeparate;
         }
 
         /// <summary>
@@ -383,6 +548,43 @@ namespace GGemCo2DCore
         private static float GetLandingSeparationMultiplier(CharacterCollisionSettings settings)
         {
             return settings != null ? Mathf.Max(1f, settings.landingSeparationMultiplier) : 1.5f;
+        }
+
+        /// <summary>
+        /// 모션 이동 후 겹침 해소 요청을 유지할 시간을 반환합니다.
+        /// </summary>
+        /// <param name="settings">캐릭터 충돌 설정 인스턴스입니다.</param>
+        /// <param name="overrideValue">요청 단위 오버라이드 값입니다.</param>
+        /// <returns>0 이상으로 보정된 지속 시간입니다.</returns>
+        private static float GetMotionSeparationDuration(CharacterCollisionSettings settings, float overrideValue)
+        {
+            if (overrideValue >= 0f)
+                return Mathf.Max(0f, overrideValue);
+
+            return settings != null ? Mathf.Max(0f, settings.motionSeparationDuration) : 0.18f;
+        }
+
+        /// <summary>
+        /// 모션 이동 후 겹침 해소에 사용할 채널별 배율을 반환합니다.
+        /// </summary>
+        /// <param name="settings">캐릭터 충돌 설정 인스턴스입니다.</param>
+        /// <param name="channel">모션 요청 채널입니다.</param>
+        /// <param name="overrideValue">요청 단위 오버라이드 값입니다.</param>
+        /// <returns>1 이상으로 보정된 배율입니다.</returns>
+        private static float GetMotionSeparationMultiplier(
+            CharacterCollisionSettings settings,
+            MotionChannel channel,
+            float overrideValue)
+        {
+            if (overrideValue > 0f)
+                return Mathf.Max(1f, overrideValue);
+
+            if (settings == null)
+                return channel == MotionChannel.CrowdControl ? 1.75f : 1.35f;
+
+            return channel == MotionChannel.CrowdControl
+                ? Mathf.Max(1f, settings.crowdControlMotionSeparationMultiplier)
+                : Mathf.Max(1f, settings.skillMotionSeparationMultiplier);
         }
 
         /// <summary>
