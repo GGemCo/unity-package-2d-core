@@ -7,43 +7,45 @@ using UnityEngine.Localization;
 using UnityEngine.Localization.Settings;
 using UnityEngine.Localization.Tables;
 using UnityEngine.ResourceManagement.AsyncOperations;
-using Object = UnityEngine.Object;
 
 namespace GGemCo2DCore
 {
     /// <summary>
-    /// <para>Localization 매니저</para>
+    /// Unity Localization 시스템을 래핑하여 Locale 변경, 문자열 조회, Smart String 평가를 제공하는 기본 매니저입니다.
+    /// 사용자 정의 테이블이 존재하는 경우 기본 테이블보다 우선 조회합니다.
     /// </summary>
     public class LocalizationManagerBase : MonoBehaviour
     {
-        // 언어 변경시 발생하는 이벤트
+        /// <summary>
+        /// 현재 언어가 변경된 뒤 언어 코드와 Locale 인덱스를 전달하는 이벤트입니다.
+        /// </summary>
         public event Action<string, int> OnChangeLocale;
-        // 언어 변경 중인지
-        private bool _isChanging;
-        // 현재 언어 코드
-        private static string CurrentLanguageCode { get; set; }
-        // string table
-        protected LocalizedStringDatabase StringDatabase;
-        // asset table
-        private LocalizedAssetDatabase _assetDatabase;
-        // 사용자 언어 테이블 존재 여부
-        // - 파생 클래스(LocalizationManager)가 체크 결과를 채운다.
-        protected readonly Dictionary<string, bool> UserTableExistsMap = new();
-        // 현재 사용하는 언어 Locale
-        private static readonly Dictionary<string, Locale> Locales = new Dictionary<string, Locale>();
-        // 로드 진행율
-        private float _loadProgress;
 
+        private bool _isChanging;
+
+        private static string CurrentLanguageCode { get; set; }
+
+        protected LocalizedStringDatabase StringDatabase;
+
+        /// <summary>
+        /// 기본 테이블명별 사용자 정의 테이블 존재 여부를 저장하는 캐시입니다.
+        /// </summary>
+        protected readonly Dictionary<string, bool> UserTableExistsMap = new();
+
+        private static readonly Dictionary<string, Locale> Locales = new Dictionary<string, Locale>();
+
+        /// <summary>
+        /// Unity Localization 데이터베이스를 캐시하고 사용 가능한 Locale 목록을 초기화합니다.
+        /// </summary>
         protected virtual void Awake()
         {
-            _loadProgress = 0f;
             StringDatabase = LocalizationSettings.StringDatabase;
-            _assetDatabase = LocalizationSettings.AssetDatabase;
 
             InitializeAvailableLocale();
         }
+
         /// <summary>
-        /// 현재 사용하고 있는 Locale 설정
+        /// Localization Settings에 등록된 Locale 목록을 내부 캐시에 등록합니다.
         /// </summary>
         private void InitializeAvailableLocale()
         {
@@ -52,47 +54,63 @@ namespace GGemCo2DCore
             {
                 Debug.LogWarning("Localization Settings에 등록된 Locale이 없습니다.");
             }
+
             foreach (var locale in locales)
             {
                 Locales.TryAdd(locale.Identifier.Code, locale);
             }
         }
 
+        /// <summary>
+        /// 현재 사용할 수 있는 Locale 목록을 언어 코드 기준으로 반환합니다.
+        /// </summary>
+        /// <returns>언어 코드를 키로 사용하는 Locale 사전입니다.</returns>
         public Dictionary<string, Locale> GetAvailableLocales()
         {
             return Locales;
         }
+
         /// <summary>
-        /// Locale을 받아 언어를 변경합니다.
+        /// 지정한 Locale로 언어 변경 코루틴을 시작합니다.
         /// </summary>
+        /// <param name="locale">변경할 대상 Locale입니다.</param>
+        /// <param name="isSave">변경한 언어 코드를 저장하려면 <c>true</c>입니다.</param>
         public void StartChangeLocale(Locale locale, bool isSave = true)
         {
             if (_isChanging) return;
             StartCoroutine(ChangeLocaleRoutine(locale, isSave));
         }
+
         /// <summary>
-        /// Index를 받아 언어를 변경합니다.
+        /// Locale 인덱스를 기준으로 언어 변경 코루틴을 시작합니다.
         /// </summary>
+        /// <param name="index">사용 가능한 Locale 목록에서 변경할 Locale의 인덱스입니다.</param>
+        /// <param name="isSave">변경한 언어 코드를 저장하려면 <c>true</c>입니다.</param>
         public void StartChangeLocale(int index, bool isSave = true)
         {
             Locale locale = GetLocaleByIndex(index);
             if (_isChanging || locale == null) return;
             StartCoroutine(ChangeLocaleRoutine(locale, isSave));
         }
+
         /// <summary>
-        /// Code를 받아 언어를 변경합니다.
+        /// 언어 코드를 기준으로 Locale을 찾아 언어 변경 코루틴을 실행합니다.
         /// </summary>
+        /// <param name="code">변경할 Locale의 언어 코드입니다.</param>
+        /// <param name="isSave">변경한 언어 코드를 저장하려면 <c>true</c>입니다.</param>
+        /// <returns>Locale 변경 처리를 수행하는 코루틴입니다.</returns>
         public IEnumerator ChangeLocaleRoutine(string code, bool isSave = true)
         {
             Locale locale = GetLocaleByCode(code);
             yield return StartCoroutine(ChangeLocaleRoutine(locale, isSave));
         }
+
         /// <summary>
-        /// 언어 바꾸기
+        /// Localization 초기화 완료 후 선택 Locale을 변경하고, 저장 및 변경 이벤트 처리를 수행합니다.
         /// </summary>
-        /// <param name="locale"></param>
-        /// <param name="isSave"></param>
-        /// <returns></returns>
+        /// <param name="locale">변경할 대상 Locale입니다.</param>
+        /// <param name="isSave">변경한 언어 코드를 저장하려면 <c>true</c>입니다.</param>
+        /// <returns>Locale 변경과 사용자 테이블 확인을 순차 실행하는 코루틴입니다.</returns>
         private IEnumerator ChangeLocaleRoutine(Locale locale, bool isSave = true)
         {
             _isChanging = true;
@@ -102,25 +120,34 @@ namespace GGemCo2DCore
             LocalizationSettings.SelectedLocale = locale;
             CurrentLanguageCode = locale.Identifier.Code;
             _isChanging = false;
-            // GcLogger.Log($"[LocalizationManager] change success. locale index: {index}");
+
             if (isSave)
             {
                 PlayerPrefsManager.SaveLocalizationLocaleCode(locale.Identifier.Code);
             }
 
             OnChangeLocale?.Invoke(CurrentLanguageCode, GetLocaleIndexByCode(CurrentLanguageCode));
-            
+
             yield return StartCoroutine(CheckUserTablesExist());
         }
 
+        /// <summary>
+        /// 사용자 정의 로컬라이즈 테이블 존재 여부를 확인합니다.
+        /// 파생 클래스에서 프로젝트별 테이블 확인 로직을 구현합니다.
+        /// </summary>
+        /// <returns>사용자 테이블 확인 처리를 수행하는 코루틴입니다.</returns>
         protected virtual IEnumerator CheckUserTablesExist()
         {
             yield return null;
         }
 
         /// <summary>
-        /// 지정한 테이블과 키로 로컬라이즈된 문자열을 가져옵니다.
+        /// 지정한 테이블과 키로 현재 Locale에 맞는 로컬라이즈 문자열을 가져옵니다.
+        /// 사용자 정의 테이블이 존재하면 해당 테이블을 먼저 조회합니다.
         /// </summary>
+        /// <param name="table">조회할 기본 문자열 테이블 이름입니다.</param>
+        /// <param name="key">조회할 문자열 엔트리 키입니다.</param>
+        /// <returns>조회된 로컬라이즈 문자열이며, 키가 없으면 빈 문자열입니다.</returns>
         protected string GetString(string table, string key)
         {
             if (string.IsNullOrWhiteSpace(key))
@@ -129,7 +156,6 @@ namespace GGemCo2DCore
                 return "";
             }
 
-            // 유저 테이블 존재 시 우선 조회
             if (UserTableExistsMap.TryGetValue(table, out bool hasUserTable) && hasUserTable)
             {
                 string userTable = $"{table}_User";
@@ -140,7 +166,6 @@ namespace GGemCo2DCore
                 }
             }
 
-            // 유저 테이블에 없으면 기존 테이블 조회
             var tableEntryResult = StringDatabase.GetTableEntry(table, key, LocalizationSettings.SelectedLocale);
             if (tableEntryResult.Entry != null)
                 return tableEntryResult.Entry.Value;
@@ -150,31 +175,38 @@ namespace GGemCo2DCore
         }
 
         /// <summary>
-        /// Smart String 또는 일반 String을 평가하여 반환합니다.
-        /// - UserTable(사용자 커스텀 테이블)이 있으면 우선 적용합니다.
-        /// - 없으면 기본 테이블에서 평가합니다.
+        /// 현재 선택된 Locale을 기준으로 Smart String 또는 일반 문자열을 평가하여 반환합니다.
+        /// 사용자 정의 테이블이 존재하면 해당 테이블을 먼저 조회합니다.
         /// </summary>
+        /// <param name="tableName">조회할 기본 문자열 테이블 이름입니다.</param>
+        /// <param name="key">조회할 문자열 엔트리 키입니다.</param>
+        /// <param name="arguments">Smart String 평가에 사용할 인자 목록입니다.</param>
+        /// <returns>평가된 로컬라이즈 문자열이며, 조회에 실패하면 빈 문자열입니다.</returns>
         public string GetSmartString(string tableName, string key, params object[] arguments)
         {
             return GetSmartString(tableName, key, LocalizationSettings.SelectedLocale, arguments);
         }
+
         /// <summary>
-        /// 지정 Locale로 Smart String 또는 일반 String을 평가하여 반환합니다.
+        /// 지정한 Locale을 기준으로 Smart String 또는 일반 문자열을 평가하여 반환합니다.
+        /// 사용자 정의 테이블이 존재하면 해당 테이블을 먼저 조회합니다.
         /// </summary>
+        /// <param name="tableName">조회할 기본 문자열 테이블 이름입니다.</param>
+        /// <param name="key">조회할 문자열 엔트리 키입니다.</param>
+        /// <param name="locale">문자열 평가에 사용할 Locale입니다.</param>
+        /// <param name="arguments">Smart String 평가에 사용할 인자 목록입니다.</param>
+        /// <returns>평가된 로컬라이즈 문자열이며, 조회에 실패하면 빈 문자열입니다.</returns>
         public string GetSmartString(string tableName, string key, Locale locale, params object[] arguments)
         {
             if (string.IsNullOrEmpty(tableName) || string.IsNullOrEmpty(key))
                 return string.Empty;
 
-            // Localization 초기화가 끝나기 전에 호출될 수 있다면 방어
             if (LocalizationSettings.InitializationOperation.IsValid() &&
                 !LocalizationSettings.InitializationOperation.IsDone)
             {
-                // 필요 시 WaitForCompletion 가능(단, WebGL은 제한) :contentReference[oaicite:2]{index=2}
                 LocalizationSettings.InitializationOperation.WaitForCompletion();
             }
 
-            // 1) UserTable 우선
             if (TryGetUserTableExists(tableName))
             {
                 var userTableName = GetUserTableName(tableName);
@@ -183,25 +215,25 @@ namespace GGemCo2DCore
                     return userValue;
             }
 
-            // 2) 기본 테이블
             var baseValue = GetLocalizedStringByTableAndKey(tableName, key, locale, arguments);
             return baseValue ?? string.Empty;
         }
+
         /// <summary>
-        /// UserTable 이름 규칙(프로젝트 규칙에 맞게 유지)
+        /// 기본 테이블 이름에서 사용자 정의 테이블 이름을 생성합니다.
         /// </summary>
+        /// <param name="baseTableName">사용자 정의 테이블 이름을 만들 기본 테이블 이름입니다.</param>
+        /// <returns>프로젝트 규칙에 따른 사용자 정의 테이블 이름입니다.</returns>
         protected virtual string GetUserTableName(string baseTableName)
         {
-            // 예: "GGemCo_UIWindowSkillInfo" -> "GGemCo_UIWindowSkillInfo_User"
-            // 프로젝트에서 쓰는 규칙이 있다면 그대로 사용하세요.
             return $"{baseTableName}_User";
         }
 
         /// <summary>
-        /// UserTable 존재여부를 캐시에서 확인합니다. (캐시 미존재 시 false 반환)
-        /// - 프로젝트에 이미 "테이블 파일 존재 여부"를 갱신하는 단계가 있다면
-        ///   그 단계에서 _userTableExistsMap을 채우는 방식을 유지하는 것이 가장 안전합니다.
+        /// 사용자 정의 테이블 존재 여부를 내부 캐시에서 확인합니다.
         /// </summary>
+        /// <param name="userTableName">존재 여부를 확인할 테이블 기준 이름입니다.</param>
+        /// <returns>캐시에 존재하고 값이 <c>true</c>이면 <c>true</c>, 그렇지 않으면 <c>false</c>입니다.</returns>
         protected bool TryGetUserTableExists(string userTableName)
         {
             if (string.IsNullOrEmpty(userTableName))
@@ -209,9 +241,16 @@ namespace GGemCo2DCore
 
             return UserTableExistsMap.TryGetValue(userTableName, out var exists) && exists;
         }
+
         /// <summary>
-        /// Unity Localization 정식 오버로드로 문자열을 가져오고(Smart 포함) 즉시 반환합니다.
+        /// Unity Localization API를 사용하여 지정한 테이블과 키의 문자열을 동기적으로 가져옵니다.
+        /// Smart String 인자가 있으면 함께 적용합니다.
         /// </summary>
+        /// <param name="tableName">조회할 문자열 테이블 이름입니다.</param>
+        /// <param name="key">조회할 문자열 엔트리 키입니다.</param>
+        /// <param name="locale">문자열 조회에 사용할 Locale입니다.</param>
+        /// <param name="arguments">Smart String 평가에 사용할 인자 목록입니다.</param>
+        /// <returns>조회된 로컬라이즈 문자열이며, 실패하면 빈 문자열입니다.</returns>
         private static string GetLocalizedStringByTableAndKey(
             string tableName,
             string key,
@@ -220,18 +259,16 @@ namespace GGemCo2DCore
         {
             try
             {
-                // Ability 템플릿(키: uid)을 Smart String으로 평가하고, 인자(Trigger/Target/Value...)를 주입합니다.
                 var smartString = new LocalizedString(tableName, key)
                 {
                     Arguments = arguments,
                     LocaleOverride = locale
                 };
-                // 정식 시그니처:
-                // GetLocalizedStringAsync(TableReference, TableEntryReference, Locale, FallbackBehavior, params object[]) :contentReference[oaicite:3]{index=3}
+
                 AsyncOperationHandle<string> handle = smartString.GetLocalizedStringAsync();
 
                 if (!handle.IsDone)
-                    handle.WaitForCompletion(); // WebGL에서는 제한 가능 :contentReference[oaicite:4]{index=4}
+                    handle.WaitForCompletion();
 
                 return handle.Result;
             }
@@ -241,6 +278,15 @@ namespace GGemCo2DCore
                 return string.Empty;
             }
         }
+
+        /// <summary>
+        /// LocalizedString의 동기 API를 사용하여 지정한 테이블과 키의 문자열을 가져옵니다.
+        /// </summary>
+        /// <param name="tableName">조회할 문자열 테이블 이름입니다.</param>
+        /// <param name="key">조회할 문자열 엔트리 키입니다.</param>
+        /// <param name="locale">문자열 조회에 사용할 Locale입니다.</param>
+        /// <param name="arguments">Smart String 평가에 사용할 인자 목록입니다.</param>
+        /// <returns>조회된 로컬라이즈 문자열입니다.</returns>
         private static string GetLocalizedStringByTableAndKeySync(
             string tableName,
             string key,
@@ -252,34 +298,37 @@ namespace GGemCo2DCore
                 Arguments = arguments,
                 LocaleOverride = locale
             };
-            // GetLocalizedString(...)은 내부적으로 WaitForCompletion을 사용합니다. :contentReference[oaicite:6]{index=6}
+
             return smartString.GetLocalizedString();
         }
 
         /// <summary>
-        /// 현재 언어 코드 (예: "En", "Ko") 반환
+        /// 현재 선택된 언어 코드를 반환합니다.
         /// </summary>
+        /// <returns>현재 언어 코드입니다.</returns>
         public string GetCurrentLanguageCode() => CurrentLanguageCode;
+
         /// <summary>
-        /// Code로 Locale 찾기
+        /// 언어 코드에 해당하는 Locale의 인덱스를 반환합니다.
         /// </summary>
-        /// <param name="code"></param>
-        /// <returns></returns>
+        /// <param name="code">찾을 Locale의 언어 코드입니다.</param>
+        /// <returns>일치하는 Locale 인덱스이며, 찾지 못하면 -1입니다.</returns>
         public int GetLocaleIndexByCode(string code)
         {
             Locale locale = GetLocaleByCode(code);
             if (locale == null) return -1;
             return GetIndexOfLocale(locale);
         }
+
         /// <summary>
-        /// Locale로 Index 찾기
+        /// 지정한 Locale이 내부 Locale 목록에서 몇 번째인지 반환합니다.
         /// </summary>
-        /// <param name="locale"></param>
-        /// <returns></returns>
+        /// <param name="locale">인덱스를 찾을 Locale입니다.</param>
+        /// <returns>일치하는 Locale 인덱스이며, 찾지 못하면 -1입니다.</returns>
         private int GetIndexOfLocale(Locale locale)
         {
             if (Locales == null || locale == null) return -1;
-            // 코드 기준 매칭(ko, ko-KR 등)
+
             var code = locale.Identifier.Code;
             int index = 0;
             foreach (var data in Locales)
@@ -287,27 +336,31 @@ namespace GGemCo2DCore
                 if (data.Key == code) return index;
                 index++;
             }
+
             return -1;
         }
+
         /// <summary>
-        /// Code로 Locale 찾기
+        /// 언어 코드와 일치하는 Locale을 반환합니다.
+        /// 일치하는 코드가 없으면 등록된 첫 번째 Locale을 반환합니다.
         /// </summary>
-        /// <param name="code"></param>
-        /// <returns></returns>
+        /// <param name="code">찾을 Locale의 언어 코드입니다.</param>
+        /// <returns>일치하는 Locale 또는 기본으로 사용할 첫 번째 Locale입니다.</returns>
         public Locale GetLocaleByCode(string code)
         {
             if (string.IsNullOrEmpty(code) || Locales == null) return null;
-            // 완전일치 우선, 없으면 접두 일치(예: "ko"로 저장되어 있고 프로젝트에는 "ko-KR"만 있는 경우)
+
             var exact = Locales.FirstOrDefault(l => l.Key == code);
             if (exact.Value != null) return exact.Value;
 
             return Locales.FirstOrDefault().Value;
         }
+
         /// <summary>
-        /// Index로 Locale 찾기
+        /// 내부 Locale 목록에서 지정한 인덱스의 Locale을 반환합니다.
         /// </summary>
-        /// <param name="index"></param>
-        /// <returns></returns>
+        /// <param name="index">찾을 Locale의 인덱스입니다.</param>
+        /// <returns>인덱스에 해당하는 Locale이며, 범위를 벗어나면 <c>null</c>입니다.</returns>
         private Locale GetLocaleByIndex(int index)
         {
             int i = 0;
@@ -320,13 +373,18 @@ namespace GGemCo2DCore
             return null;
         }
 
+        /// <summary>
+        /// 지정한 문자열 테이블에 특정 키가 존재하는지 확인합니다.
+        /// </summary>
+        /// <param name="tableName">조회할 문자열 테이블 이름입니다.</param>
+        /// <param name="key">존재 여부를 확인할 문자열 엔트리 키입니다.</param>
+        /// <returns>테이블과 키가 모두 존재하면 <c>true</c>, 그렇지 않으면 <c>false</c>입니다.</returns>
         protected bool HasLocalizationKey(string tableName, string key)
         {
             if (string.IsNullOrEmpty(tableName) ||
                 string.IsNullOrEmpty(key))
                 return false;
 
-            // 이미 로드된 테이블만 사용 (동기)
             StringTable table =
                 LocalizationSettings.StringDatabase.GetTable(tableName);
 

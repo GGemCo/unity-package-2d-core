@@ -9,10 +9,7 @@ namespace GGemCo2DCore
 {
     /// <summary>
     /// Unity 프로젝트 전반에서 사용하는 공통 로깅 유틸리티 클래스입니다.
-    /// 
-    /// - Unity Debug 로그를 래핑하여 일관된 로깅 인터페이스를 제공합니다.
-    /// - 필요 시에만 string.Format을 수행하여 GC 할당을 최소화합니다.
-    /// - UnityEngine.Object 컨텍스트를 지원하여 콘솔에서 오브젝트 추적이 가능합니다.
+    /// Unity Debug 로그를 래핑하고, 호출자 정보와 Unity 오브젝트 컨텍스트를 함께 기록할 수 있습니다.
     /// </summary>
     public static class GcLogger
     {
@@ -47,17 +44,17 @@ namespace GGemCo2DCore
         public static void Log(string message) => Debug.Log(message);
 
         /// <summary>
-        /// Unity Object 컨텍스트를 포함하여 일반 로그를 출력합니다.
+        /// Unity 오브젝트 컨텍스트를 포함하여 일반 로그 메시지를 출력합니다.
         /// </summary>
         /// <param name="context">로그와 연결할 Unity 오브젝트입니다.</param>
         /// <param name="message">출력할 메시지입니다.</param>
         public static void Log(UnityEngine.Object context, string message) => Debug.Log(message, context);
 
         /// <summary>
-        /// 포맷 문자열을 사용하여 일반 로그를 출력합니다.
+        /// 포맷 문자열을 적용한 일반 로그 메시지를 출력합니다.
         /// </summary>
-        /// <param name="format">포맷 문자열입니다.</param>
-        /// <param name="args">포맷에 삽입할 인자 목록입니다.</param>
+        /// <param name="format">출력할 메시지 포맷 문자열입니다.</param>
+        /// <param name="args">포맷 문자열에 삽입할 인자 목록입니다.</param>
         public static void LogFormat(string format, params object[] args)
         {
             if (string.IsNullOrEmpty(format)) return;
@@ -65,11 +62,11 @@ namespace GGemCo2DCore
         }
 
         /// <summary>
-        /// Unity Object 컨텍스트를 포함하여 포맷 로그를 출력합니다.
+        /// Unity 오브젝트 컨텍스트를 포함하여 포맷 문자열을 적용한 일반 로그 메시지를 출력합니다.
         /// </summary>
         /// <param name="context">로그와 연결할 Unity 오브젝트입니다.</param>
-        /// <param name="format">포맷 문자열입니다.</param>
-        /// <param name="args">포맷 인자입니다.</param>
+        /// <param name="format">출력할 메시지 포맷 문자열입니다.</param>
+        /// <param name="args">포맷 문자열에 삽입할 인자 목록입니다.</param>
         public static void LogFormat(UnityEngine.Object context, string format, params object[] args)
         {
             if (string.IsNullOrEmpty(format)) return;
@@ -77,36 +74,36 @@ namespace GGemCo2DCore
         }
 
         /// <summary>
-        /// 경고 로그를 출력합니다.
+        /// 경고 로그 메시지를 출력합니다.
         /// </summary>
-        /// <param name="message">출력할 메시지입니다.</param>
+        /// <param name="message">출력할 경고 메시지입니다.</param>
         public static void LogWarning(string message) => Debug.LogWarning(message);
 
         /// <summary>
-        /// Unity Object 컨텍스트를 포함하여 경고 로그를 출력합니다.
+        /// Unity 오브젝트 컨텍스트를 포함하여 경고 로그 메시지를 출력합니다.
         /// </summary>
         /// <param name="context">로그와 연결할 Unity 오브젝트입니다.</param>
-        /// <param name="message">출력할 메시지입니다.</param>
+        /// <param name="message">출력할 경고 메시지입니다.</param>
         public static void LogWarning(UnityEngine.Object context, string message) => Debug.LogWarning(message, context);
 
         /// <summary>
-        /// 에러 로그를 출력합니다.
+        /// 에러 로그 메시지를 출력합니다.
         /// </summary>
-        /// <param name="message">출력할 메시지입니다.</param>
+        /// <param name="message">출력할 에러 메시지입니다.</param>
         public static void LogError(string message) => Debug.LogError(message);
 
         /// <summary>
-        /// Unity Object 컨텍스트를 포함하여 에러 로그를 출력합니다.
+        /// Unity 오브젝트 컨텍스트를 포함하여 에러 로그 메시지를 출력합니다.
         /// </summary>
         /// <param name="context">로그와 연결할 Unity 오브젝트입니다.</param>
-        /// <param name="message">출력할 메시지입니다.</param>
+        /// <param name="message">출력할 에러 메시지입니다.</param>
         public static void LogError(UnityEngine.Object context, string message) => Debug.LogError(message, context);
 
         /// <summary>
         /// 예외 정보를 Unity 콘솔에 출력합니다.
         /// </summary>
         /// <param name="ex">출력할 예외 객체입니다.</param>
-        /// <param name="context">로그 컨텍스트(Unity Object)입니다. null 가능.</param>
+        /// <param name="context">예외 로그와 연결할 Unity 오브젝트입니다.</param>
         public static void LogException(Exception ex, UnityEngine.Object context = null)
         {
             if (context != null) Debug.LogException(ex, context);
@@ -114,20 +111,19 @@ namespace GGemCo2DCore
         }
 
         /// <summary>
-        /// 호출자 정보 및 스택 트레이스를 포함하여 로그를 출력합니다.
+        /// 호출자 정보와 스택 트레이스를 포함한 로그 메시지를 출력합니다.
         /// </summary>
-        /// <param name="message">기본 메시지입니다.</param>
-        /// <param name="context">로그 컨텍스트(Unity Object)입니다.</param>
-        /// <param name="logType">출력할 로그 타입입니다.</param>
+        /// <param name="message">출력할 기본 메시지입니다.</param>
+        /// <param name="context">로그와 연결할 Unity 오브젝트입니다.</param>
+        /// <param name="logType">출력할 Unity 로그 타입입니다.</param>
         /// <param name="skipFrames">스택 트레이스에서 제외할 프레임 수입니다.</param>
-        /// <param name="includeFileInfo">파일 경로 및 라인 번호 포함 여부입니다.</param>
-        /// <param name="memberName">호출한 메서드 이름입니다.</param>
-        /// <param name="filePath">호출한 파일 경로입니다.</param>
-        /// <param name="lineNumber">호출 위치의 라인 번호입니다.</param>
-        /// <returns>없음</returns>
+        /// <param name="includeFileInfo">파일명과 라인 번호를 로그에 포함할지 여부입니다.</param>
+        /// <param name="memberName">컴파일러가 전달하는 호출자 멤버 이름입니다.</param>
+        /// <param name="filePath">컴파일러가 전달하는 호출자 파일 경로입니다.</param>
+        /// <param name="lineNumber">컴파일러가 전달하는 호출자 라인 번호입니다.</param>
         /// <example>
         /// <code>
-        /// GcLogger.LogWithStackTrace("CharacterStop",context: this,logType: LogType.Error,includeFileInfo: true);
+        /// GcLogger.LogWithStackTrace("CharacterStop", context: this, logType: LogType.Error, includeFileInfo: true);
         /// </code>
         /// </example>
         public static void LogWithStackTrace(
@@ -152,11 +148,11 @@ namespace GGemCo2DCore
         }
 
         /// <summary>
-        /// 로그 타입에 따라 적절한 Unity 로그 API를 호출합니다.
+        /// 로그 타입에 따라 적절한 Unity Debug API를 호출합니다.
         /// </summary>
-        /// <param name="logType">로그 타입입니다.</param>
-        /// <param name="message">출력할 메시지입니다.</param>
-        /// <param name="context">로그 컨텍스트입니다.</param>
+        /// <param name="logType">출력할 Unity 로그 타입입니다.</param>
+        /// <param name="message">출력할 로그 메시지입니다.</param>
+        /// <param name="context">로그와 연결할 Unity 오브젝트입니다.</param>
         private static void LogByType(LogType logType, string message, UnityEngine.Object context)
         {
             switch (logType)
@@ -181,15 +177,15 @@ namespace GGemCo2DCore
         }
 
         /// <summary>
-        /// 메시지에 호출자 정보와 스택 트레이스를 결합하여 문자열을 생성합니다.
+        /// 기본 메시지, 호출자 정보, 스택 트레이스를 결합한 로그 문자열을 생성합니다.
         /// </summary>
-        /// <param name="message">기본 메시지입니다.</param>
+        /// <param name="message">출력할 기본 메시지입니다.</param>
         /// <param name="skipFrames">스택 트레이스에서 제외할 프레임 수입니다.</param>
-        /// <param name="includeFileInfo">파일 정보 포함 여부입니다.</param>
-        /// <param name="memberName">호출자 메서드 이름입니다.</param>
-        /// <param name="filePath">파일 경로입니다.</param>
-        /// <param name="lineNumber">라인 번호입니다.</param>
-        /// <returns>포맷팅된 전체 로그 문자열입니다.</returns>
+        /// <param name="includeFileInfo">파일명과 라인 번호를 포함할지 여부입니다.</param>
+        /// <param name="memberName">호출자 멤버 이름입니다.</param>
+        /// <param name="filePath">호출자 파일 경로입니다.</param>
+        /// <param name="lineNumber">호출자 라인 번호입니다.</param>
+        /// <returns>호출자 정보와 스택 트레이스가 포함된 전체 로그 문자열입니다.</returns>
         private static string BuildMessageWithStackTrace(
             string message,
             int skipFrames,
@@ -207,10 +203,10 @@ namespace GGemCo2DCore
             if (includeFileInfo)
             {
                 sb.Append(" (")
-                  .Append(System.IO.Path.GetFileName(filePath))
-                  .Append(':')
-                  .Append(lineNumber)
-                  .Append(')');
+                    .Append(System.IO.Path.GetFileName(filePath))
+                    .Append(':')
+                    .Append(lineNumber)
+                    .Append(')');
             }
 
             sb.AppendLine();
@@ -223,12 +219,12 @@ namespace GGemCo2DCore
         }
 
         /// <summary>
-        /// Unity Object가 null 또는 Destroyed 상태인지 검사합니다.
+        /// Unity 오브젝트가 null이거나 Destroyed 상태인지 검사하고, 문제가 있으면 에러 로그를 출력합니다.
         /// </summary>
-        /// <typeparam name="T">검사할 UnityEngine.Object 타입입니다.</typeparam>
-        /// <param name="obj">검사 대상 객체입니다.</param>
-        /// <param name="paramName">로그에 표시할 이름입니다.</param>
-        /// <returns>null 또는 Destroyed 상태이면 true를 반환합니다.</returns>
+        /// <typeparam name="T">검사할 Unity 오브젝트 타입입니다.</typeparam>
+        /// <param name="obj">검사할 Unity 오브젝트입니다.</param>
+        /// <param name="paramName">로그에 표시할 파라미터 또는 필드 이름입니다.</param>
+        /// <returns>null 또는 Destroyed 상태이면 <c>true</c>, 유효하면 <c>false</c>입니다.</returns>
         public static bool IsNullUnity<T>(T obj, string paramName) where T : UnityEngine.Object
         {
             if (obj) return false;
@@ -237,11 +233,11 @@ namespace GGemCo2DCore
         }
 
         /// <summary>
-        /// GameObject가 null인지 검사하고, null일 경우 에러 로그를 출력합니다.
+        /// GameObject가 null인지 검사하고, null이면 에러 로그를 출력합니다.
         /// </summary>
         /// <param name="value">검사할 GameObject입니다.</param>
-        /// <param name="errorLogMessage">출력할 에러 메시지입니다.</param>
-        /// <returns>null이면 true를 반환합니다.</returns>
+        /// <param name="errorLogMessage">null일 때 출력할 에러 메시지입니다.</param>
+        /// <returns>null이면 <c>true</c>, 유효하면 <c>false</c>입니다.</returns>
         public static bool IsNullGameObject(GameObject value, string errorLogMessage)
         {
             if (value != null) return false;
@@ -250,12 +246,12 @@ namespace GGemCo2DCore
         }
 
         /// <summary>
-        /// 참조 타입이 null인지 검사하고, null이면 에러 로그를 출력합니다.
+        /// 참조 타입 값이 null인지 검사하고, null이면 에러 로그를 출력합니다.
         /// </summary>
         /// <typeparam name="T">검사할 참조 타입입니다.</typeparam>
-        /// <param name="value">검사 대상 값입니다.</param>
-        /// <param name="errorLogMessage">에러 메시지 접두어입니다.</param>
-        /// <returns>null이면 true를 반환합니다.</returns>
+        /// <param name="value">검사할 참조 타입 값입니다.</param>
+        /// <param name="errorLogMessage">에러 로그에 사용할 메시지 접두어입니다.</param>
+        /// <returns>null이면 <c>true</c>, 유효하면 <c>false</c>입니다.</returns>
         public static bool IsNull<T>(T value, string errorLogMessage) where T : class
         {
             if (value != null) return false;
@@ -264,13 +260,13 @@ namespace GGemCo2DCore
         }
 
         /// <summary>
-        /// Inspector에서 필수로 할당되어야 하는 필드의 누락 여부를 검사합니다.
+        /// 컴포넌트가 소유한 Inspector 필드가 미할당 상태인지 검사하고, 미할당이면 에러 로그를 출력합니다.
         /// </summary>
-        /// <typeparam name="T">UnityEngine.Object 타입입니다.</typeparam>
+        /// <typeparam name="T">검사할 Unity 오브젝트 타입입니다.</typeparam>
         /// <param name="owner">필드를 소유한 컴포넌트입니다.</param>
-        /// <param name="field">검사할 필드입니다.</param>
-        /// <param name="fieldName">필드 이름입니다.</param>
-        /// <returns>미할당이면 true를 반환합니다.</returns>
+        /// <param name="field">검사할 Inspector 필드 값입니다.</param>
+        /// <param name="fieldName">로그에 표시할 필드 이름입니다.</param>
+        /// <returns>owner가 없거나 필드가 미할당이면 <c>true</c>, 유효하면 <c>false</c>입니다.</returns>
         public static bool IsUnassigned<T>(Component owner, T field, string fieldName)
             where T : UnityEngine.Object
         {
@@ -289,6 +285,12 @@ namespace GGemCo2DCore
             return true;
         }
 
+        /// <summary>
+        /// 정수 값이 0인지 검사하고, 0이면 에러 로그를 출력합니다.
+        /// </summary>
+        /// <param name="value">검사할 정수 값입니다.</param>
+        /// <param name="errorLogMessage">0일 때 출력할 에러 메시지입니다.</param>
+        /// <returns>값이 0이면 <c>true</c>, 0이 아니면 <c>false</c>입니다.</returns>
         public static bool IsZero(int value, string errorLogMessage)
         {
             if (value != 0) return false;
@@ -297,13 +299,13 @@ namespace GGemCo2DCore
         }
 
         /// <summary>
-        /// GameObject 기준으로 Inspector 필드 미할당 여부를 검사합니다.
+        /// GameObject가 소유한 Inspector 필드가 미할당 상태인지 검사하고, 미할당이면 에러 로그를 출력합니다.
         /// </summary>
-        /// <typeparam name="T">UnityEngine.Object 타입입니다.</typeparam>
-        /// <param name="owner">소유 GameObject입니다.</param>
-        /// <param name="field">검사할 필드입니다.</param>
-        /// <param name="fieldName">필드 이름입니다.</param>
-        /// <returns>미할당이면 true를 반환합니다.</returns>
+        /// <typeparam name="T">검사할 Unity 오브젝트 타입입니다.</typeparam>
+        /// <param name="owner">필드를 소유한 GameObject입니다.</param>
+        /// <param name="field">검사할 Inspector 필드 값입니다.</param>
+        /// <param name="fieldName">로그에 표시할 필드 이름입니다.</param>
+        /// <returns>owner가 없거나 필드가 미할당이면 <c>true</c>, 유효하면 <c>false</c>입니다.</returns>
         public static bool IsUnassigned<T>(GameObject owner, T field, string fieldName)
             where T : UnityEngine.Object
         {
@@ -323,12 +325,13 @@ namespace GGemCo2DCore
         }
 
         /// <summary>
-        /// 여러 Inspector 필드 중 하나라도 미할당인지 검사합니다.
+        /// 여러 Inspector 필드 중 하나라도 미할당 상태인지 검사하고, 미할당 필드마다 에러 로그를 출력합니다.
         /// </summary>
-        /// <param name="owner">필드를 소유한 컴포넌트입니다.</param>
-        /// <param name="fields">검사할 필드 목록입니다.</param>
-        /// <returns>하나라도 미할당이면 true를 반환합니다.</returns>
-        public static bool HasAnyUnassigned(Component owner, params (UnityEngine.Object field, string fieldName)[] fields)
+        /// <param name="owner">필드들을 소유한 컴포넌트입니다.</param>
+        /// <param name="fields">검사할 필드와 필드 이름의 목록입니다.</param>
+        /// <returns>하나 이상의 필드가 미할당이면 <c>true</c>, 모두 유효하면 <c>false</c>입니다.</returns>
+        public static bool HasAnyUnassigned(Component owner,
+            params (UnityEngine.Object field, string fieldName)[] fields)
         {
             if (owner == null)
             {
@@ -350,6 +353,19 @@ namespace GGemCo2DCore
             }
 
             return hasAny;
+        }
+
+        /// <summary>
+        /// 문자열이 null이거나 빈 문자열인지 검사하고, 문제가 있으면 에러 로그를 출력합니다.
+        /// </summary>
+        /// <param name="value">검사할 문자열 값입니다.</param>
+        /// <param name="errorLogMessage">null 또는 빈 문자열일 때 출력할 에러 메시지입니다.</param>
+        /// <returns>문자열이 null이거나 비어 있으면 <c>true</c>, 값이 있으면 <c>false</c>입니다.</returns>
+        public static bool IsNullString(string value, string errorLogMessage)
+        {
+            if (!string.IsNullOrEmpty(value)) return false;
+            LogError(errorLogMessage);
+            return true;
         }
     }
 }

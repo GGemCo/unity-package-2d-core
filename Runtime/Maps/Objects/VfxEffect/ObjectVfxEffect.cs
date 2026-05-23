@@ -26,6 +26,8 @@ namespace GGemCo2DCore
         private void Start()
         {
             if (GcLogger.IsNull(_animator, nameof(Animator))) return;
+            if (GcLogger.IsNullString(animationName, nameof(animationName))) return;
+            if (!autoStart) return;
             
             _animator.speed = timeScale;
             _animator.Play(animationName, 0, 0);
