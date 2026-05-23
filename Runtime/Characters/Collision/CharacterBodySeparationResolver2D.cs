@@ -20,6 +20,7 @@ namespace GGemCo2DCore
         /// <param name="padding">겹침 해소 후 남길 추가 여유 거리입니다.</param>
         /// <param name="horizontalBias">수평 방향 분리 가중치입니다.</param>
         /// <param name="verticalBias">수직 방향 분리 가중치입니다.</param>
+        /// <param name="settings">캐릭터 충돌 설정 인스턴스입니다.</param>
         /// <param name="overlaps">Overlap 결과를 담을 재사용 배열입니다.</param>
         /// <param name="separationDelta">계산된 월드 기준 분리 이동량입니다.</param>
         /// <returns>분리 이동량이 계산되었으면 true입니다.</returns>
@@ -31,6 +32,7 @@ namespace GGemCo2DCore
             float padding,
             float horizontalBias,
             float verticalBias,
+            CharacterCollisionSettings settings,
             Collider2D[] overlaps,
             out Vector2 separationDelta)
         {
@@ -48,7 +50,7 @@ namespace GGemCo2DCore
             for (int i = 0; i < overlapCount; i++)
             {
                 Collider2D otherCollider = overlaps[i];
-                if (ShouldIgnore(owner, otherCollider))
+                if (ShouldIgnore(owner, otherCollider, settings))
                     continue;
 
                 ColliderDistance2D distance = bodyCollider.Distance(otherCollider);
@@ -85,8 +87,9 @@ namespace GGemCo2DCore
         /// </summary>
         /// <param name="owner">분리 이동을 적용할 캐릭터입니다.</param>
         /// <param name="otherCollider">검사할 상대 Collider입니다.</param>
+        /// <param name="settings">캐릭터 충돌 설정 인스턴스입니다.</param>
         /// <returns>겹침 해소 대상에서 제외해야 하면 true입니다.</returns>
-        private static bool ShouldIgnore(CharacterBase owner, Collider2D otherCollider)
+        private static bool ShouldIgnore(CharacterBase owner, Collider2D otherCollider, CharacterCollisionSettings settings)
         {
             if (owner == null || otherCollider == null)
                 return true;
@@ -99,6 +102,9 @@ namespace GGemCo2DCore
 
             CharacterBase other = otherCollider.GetComponentInParent<CharacterBase>();
             if (other == null || ReferenceEquals(owner, other))
+                return true;
+
+            if (!CharacterCollisionController.CanParticipateInCollision(other, settings))
                 return true;
 
             return other.type == CharacterConstants.Type.None;

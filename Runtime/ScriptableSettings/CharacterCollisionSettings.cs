@@ -68,6 +68,14 @@ namespace GGemCo2DCore
         [Min(1f)]
         public float landingSeparationMultiplier = 1.5f;
 
+        [Header("사망 캐릭터 처리")]
+        [Tooltip("사망 캐릭터의 Body 충돌 처리 방식입니다.")]
+        public DeadCharacterBodyCollisionMode deadCharacterBodyCollisionMode =
+            DeadCharacterBodyCollisionMode.IgnoreInCharacterCollision;
+
+        [Tooltip("사망 확정 전 보류 상태인 캐릭터도 Body 충돌 검사에서 제외할지 여부입니다.")]
+        public bool ignoreDeathPendingCharacters = true;
+
         /// <summary>
         /// 지정한 두 캐릭터 타입 사이의 Body 충돌 정책을 반환합니다.
         /// </summary>

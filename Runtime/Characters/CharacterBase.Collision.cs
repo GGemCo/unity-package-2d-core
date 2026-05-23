@@ -90,5 +90,28 @@ namespace GGemCo2DCore
 
             _collisionController?.RequestLandingSeparation();
         }
+
+
+        /// <summary>
+        /// 사망 또는 사망 보류 상태 변경 후 캐릭터 Body 충돌 상태를 갱신합니다.
+        /// </summary>
+        private void NotifyCharacterBodyDeathStateChanged()
+        {
+            if (_collisionController == null)
+                return;
+
+            _collisionController.ApplyDeathCollisionState();
+        }
+
+        /// <summary>
+        /// 풀 재사용 또는 부활 후 사망으로 비활성화된 Body Collider를 복원합니다.
+        /// </summary>
+        private void RestoreCharacterBodyCollisionAliveState()
+        {
+            if (_collisionController == null)
+                return;
+
+            _collisionController.RestoreAliveCollisionState();
+        }
     }
 }

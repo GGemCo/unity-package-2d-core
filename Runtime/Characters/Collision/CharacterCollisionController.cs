@@ -16,6 +16,8 @@ namespace GGemCo2DCore
 
         private CharacterBase _owner;
         private CapsuleCollider2D _bodyCollider;
+        private bool _bodyColliderDisabledByDeath;
+        private bool _bodyColliderEnabledBeforeDeath;
         private float _strongSeparationRemainingTime;
         private float _strongSeparationMultiplier = 1f;
 
@@ -32,12 +34,19 @@ namespace GGemCo2DCore
         public void Initialize(CharacterBase owner, CapsuleCollider2D bodyCollider)
         {
             _owner = owner != null ? owner : GetComponent<CharacterBase>();
-            _bodyCollider = bodyCollider != null ? bodyCollider : CharacterCollisionLayerUtility.FindBodyCollider(_owner);
+            CapsuleCollider2D resolvedCollider = bodyCollider != null ? bodyCollider : CharacterCollisionLayerUtility.FindBodyCollider(_owner);
+            if (!ReferenceEquals(_bodyCollider, resolvedCollider))
+            {
+                _bodyCollider = resolvedCollider;
+                _bodyColliderDisabledByDeath = false;
+                _bodyColliderEnabledBeforeDeath = _bodyCollider == null || _bodyCollider.enabled;
+            }
+
             Refresh();
         }
 
         /// <summary>
-        /// 캐릭터 타입과 현재 Collider 상태를 기준으로 Body Collider 레이어를 다시 적용합니다.
+        /// 캐릭터 타입과 현재 Collider 상태를 기준으로 Body Collider 레이어와 사망 상태를 다시 적용합니다.
         /// </summary>
         public void Refresh()
         {
@@ -49,9 +58,12 @@ namespace GGemCo2DCore
             if (_bodyCollider == null)
             {
                 _bodyCollider = CharacterCollisionLayerUtility.FindBodyCollider(_owner);
+                _bodyColliderDisabledByDeath = false;
+                _bodyColliderEnabledBeforeDeath = _bodyCollider == null || _bodyCollider.enabled;
             }
 
             ApplyBodyLayer();
+            SyncDeathCollisionState();
         }
 
         /// <summary>
@@ -65,7 +77,7 @@ namespace GGemCo2DCore
             resolvedDelta = requestedDelta;
 
             CharacterCollisionSettings settings = GetSettings();
-            if (!IsEnabled(settings))
+            if (!IsEnabled(settings) || !CanParticipateInCollision(_owner, settings))
                 return true;
 
             Refresh();
@@ -83,6 +95,7 @@ namespace GGemCo2DCore
                 (Vector2)requestedDelta,
                 blockingLayerMask,
                 GetSkinWidth(settings),
+                settings,
                 _castHits,
                 out Vector2 resolved2D);
 
@@ -98,7 +111,7 @@ namespace GGemCo2DCore
         public bool TrySeparateOverlaps(float multiplier = 1f)
         {
             CharacterCollisionSettings settings = GetSettings();
-            if (!CanSeparate(settings))
+            if (!CanSeparate(settings) || !CanParticipateInCollision(_owner, settings))
                 return false;
 
             Refresh();
@@ -119,6 +132,7 @@ namespace GGemCo2DCore
                 GetSeparationPadding(settings),
                 GetSeparationHorizontalBias(settings),
                 GetSeparationVerticalBias(settings),
+                settings,
                 _overlaps,
                 out Vector2 separationDelta);
 
@@ -149,10 +163,55 @@ namespace GGemCo2DCore
         public void RequestLandingSeparation()
         {
             CharacterCollisionSettings settings = GetSettings();
-            if (!CanSeparate(settings))
+            if (!CanSeparate(settings) || !CanParticipateInCollision(_owner, settings))
                 return;
 
             RequestStrongSeparation(GetLandingSeparationDuration(settings), GetLandingSeparationMultiplier(settings));
+        }
+
+        /// <summary>
+        /// 사망 상태 변경 후 Body Collider의 충돌 참여 상태를 즉시 갱신합니다.
+        /// </summary>
+        public void ApplyDeathCollisionState()
+        {
+            SyncDeathCollisionState();
+        }
+
+        /// <summary>
+        /// 풀 재사용이나 부활 후 Body Collider의 기존 활성 상태를 복원합니다.
+        /// </summary>
+        public void RestoreAliveCollisionState()
+        {
+            if (_bodyColliderDisabledByDeath && _bodyCollider != null)
+            {
+                _bodyCollider.enabled = _bodyColliderEnabledBeforeDeath;
+                _bodyColliderDisabledByDeath = false;
+            }
+
+            Refresh();
+        }
+
+        /// <summary>
+        /// 특정 캐릭터가 Body 충돌 검사에 참여할 수 있는 상태인지 검사합니다.
+        /// </summary>
+        /// <param name="character">검사할 캐릭터입니다.</param>
+        /// <param name="settings">캐릭터 충돌 설정 인스턴스입니다.</param>
+        /// <returns>이동 차단 또는 겹침 해소 대상으로 사용할 수 있으면 true입니다.</returns>
+        public static bool CanParticipateInCollision(CharacterBase character, CharacterCollisionSettings settings)
+        {
+            if (character == null)
+                return false;
+
+            if (GetDeadCharacterBodyCollisionMode(settings) == DeadCharacterBodyCollisionMode.Keep)
+                return true;
+
+            if (character.IsStatusDead())
+                return false;
+
+            if (ShouldIgnoreDeathPendingCharacters(settings) && character.IsDeathPending)
+                return false;
+
+            return true;
         }
 
         /// <summary>
@@ -168,6 +227,39 @@ namespace GGemCo2DCore
                 return;
 
             _bodyCollider.gameObject.layer = bodyLayer;
+        }
+
+        /// <summary>
+        /// 사망 처리 정책에 따라 Body Collider 활성 상태를 동기화합니다.
+        /// </summary>
+        private void SyncDeathCollisionState()
+        {
+            if (_bodyCollider == null)
+                return;
+
+            CharacterCollisionSettings settings = GetSettings();
+            bool shouldDisable =
+                IsEnabled(settings) &&
+                GetDeadCharacterBodyCollisionMode(settings) == DeadCharacterBodyCollisionMode.DisableBodyCollider &&
+                !CanParticipateInCollision(_owner, settings);
+
+            if (shouldDisable)
+            {
+                if (!_bodyColliderDisabledByDeath)
+                {
+                    _bodyColliderEnabledBeforeDeath = _bodyCollider.enabled;
+                    _bodyColliderDisabledByDeath = true;
+                }
+
+                _bodyCollider.enabled = false;
+                return;
+            }
+
+            if (_bodyColliderDisabledByDeath)
+            {
+                _bodyCollider.enabled = _bodyColliderEnabledBeforeDeath;
+                _bodyColliderDisabledByDeath = false;
+            }
         }
 
         /// <summary>
@@ -199,6 +291,28 @@ namespace GGemCo2DCore
         private static bool CanSeparate(CharacterCollisionSettings settings)
         {
             return IsEnabled(settings) && (settings == null || settings.useCharacterBodySeparation);
+        }
+
+        /// <summary>
+        /// 사망 캐릭터 Body 충돌 처리 방식을 반환합니다.
+        /// </summary>
+        /// <param name="settings">캐릭터 충돌 설정 인스턴스입니다.</param>
+        /// <returns>설정된 사망 캐릭터 처리 방식입니다.</returns>
+        private static DeadCharacterBodyCollisionMode GetDeadCharacterBodyCollisionMode(CharacterCollisionSettings settings)
+        {
+            return settings != null
+                ? settings.deadCharacterBodyCollisionMode
+                : DeadCharacterBodyCollisionMode.IgnoreInCharacterCollision;
+        }
+
+        /// <summary>
+        /// 사망 보류 상태 캐릭터를 Body 충돌 검사에서 제외할지 여부를 반환합니다.
+        /// </summary>
+        /// <param name="settings">캐릭터 충돌 설정 인스턴스입니다.</param>
+        /// <returns>제외해야 하면 true입니다.</returns>
+        private static bool ShouldIgnoreDeathPendingCharacters(CharacterCollisionSettings settings)
+        {
+            return settings == null || settings.ignoreDeathPendingCharacters;
         }
 
         /// <summary>

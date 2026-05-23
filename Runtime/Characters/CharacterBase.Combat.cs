@@ -1,4 +1,4 @@
-using System.Collections;
+﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -52,6 +52,7 @@ namespace GGemCo2DCore
             if (TryBeginPreDeathAction(dieReasonType, attacker, playDeadAnimation, deathPresentation))
             {
                 _isDeathPending = true;
+                NotifyCharacterBodyDeathStateChanged();
                 return;
             }
 
@@ -113,6 +114,7 @@ namespace GGemCo2DCore
             _isDeathPending = false;
             SetStatusDead();
             SetBattleStatusNone();
+            NotifyCharacterBodyDeathStateChanged();
 
             if (dieReasonType != CharacterConstants.DieReasonType.EndTilemapY)
             {
@@ -129,6 +131,7 @@ namespace GGemCo2DCore
         protected void ClearPendingDeathState()
         {
             _isDeathPending = false;
+            RestoreCharacterBodyCollisionAliveState();
         }
 
         /// <summary>
