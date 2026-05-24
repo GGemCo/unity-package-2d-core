@@ -439,11 +439,23 @@ namespace GGemCo2DCore
         }
         
         /// <summary>
-        /// 맵 이동 시작시 stop 처리 
+        /// 맵 이동 시작 시 플레이어 상태를 정리합니다.
+        /// 이동 정지와 함께 진행 중 오토워크를 취소해 이전 맵의 자동 이동 요청이 이어지지 않도록 합니다.
         /// </summary>
         private void OnLoadStartMap()
         {
             Stop();
+            CancelAutoMoveOnMapLoadStart();
+        }
+
+        /// <summary>
+        /// 맵 이동 시작 시 플레이어 오토워크를 취소합니다.
+        /// Control 패키지가 없는 Core 단독 구성에서도 동일하게 동작하도록 Player 쪽에서 직접 정리합니다.
+        /// </summary>
+        private void CancelAutoMoveOnMapLoadStart()
+        {
+            PlayerAutoMoveController autoMoveController = GetComponent<PlayerAutoMoveController>();
+            autoMoveController?.Cancel();
         }
         
         /// <summary>
