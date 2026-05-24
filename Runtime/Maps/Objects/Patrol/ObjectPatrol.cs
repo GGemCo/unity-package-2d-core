@@ -66,6 +66,7 @@ namespace GGemCo2DCore
             Player player = collision.GetComponentInParent<Player>();
             if (player == null) return;
             player.SetBattleStatusInBattle();
+            player.SetAutoMoveTargetMonster(parentMonsterObject);
             
             // 몬스터 전투 상태로
             if (!parentMonsterObject)
@@ -89,6 +90,7 @@ namespace GGemCo2DCore
             Player player = collision.GetComponentInParent<Player>();
             if (player == null) return;
             player.SetBattleStatusNone();
+            player.ClearAutoMoveTargetMonster(parentMonsterObject);
             
             // 몬스터 전투 종료 상태로
             if (!parentMonsterObject)

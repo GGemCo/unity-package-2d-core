@@ -30,6 +30,65 @@ namespace GGemCo2DCore
         private ContactFilter2D _attackHitFilter;
         private int _monsterHitAreaLayerMask;
         private CutsceneManager _cutsceneManager;
+
+        /// <summary>
+        /// 자동 이동의 전투 추적에 사용할 몬스터 타겟을 설정합니다.
+        /// </summary>
+        /// <param name="monster">추적할 몬스터 오브젝트입니다.</param>
+        public void SetAutoMoveTargetMonster(GameObject monster)
+        {
+            if (monster == null)
+            {
+                _targetMonster = null;
+                return;
+            }
+
+            if (!monster.CompareTag(ConfigTags.GetValue(ConfigTags.Keys.Monster)))
+            {
+                return;
+            }
+
+            _targetMonster = monster;
+        }
+
+        /// <summary>
+        /// 자동 이동의 전투 추적 타겟을 해제합니다.
+        /// </summary>
+        /// <param name="monster">특정 타겟만 해제하려는 경우 전달합니다. null이면 무조건 해제합니다.</param>
+        public void ClearAutoMoveTargetMonster(GameObject monster = null)
+        {
+            if (monster == null || _targetMonster == monster)
+            {
+                _targetMonster = null;
+            }
+        }
+
+        /// <summary>
+        /// 자동 이동 전투 추적에 사용할 현재 유효 타겟 Transform을 반환합니다.
+        /// </summary>
+        /// <returns>유효한 타겟이 있으면 Transform, 없으면 null을 반환합니다.</returns>
+        public Transform GetAutoMoveTargetTransform()
+        {
+            if (_targetMonster == null)
+            {
+                return null;
+            }
+
+            CharacterBase targetCharacter = _targetMonster.GetComponent<CharacterBase>();
+            if (targetCharacter != null && targetCharacter.IsStatusDead())
+            {
+                _targetMonster = null;
+                return null;
+            }
+
+            if (!_targetMonster.activeInHierarchy)
+            {
+                _targetMonster = null;
+                return null;
+            }
+
+            return _targetMonster.transform;
+        }
         
         protected override void Awake()
         {
@@ -446,6 +505,7 @@ namespace GGemCo2DCore
         {
             Stop();
             CancelAutoMoveOnMapLoadStart();
+            ClearAutoMoveTargetMonster();
         }
 
         /// <summary>

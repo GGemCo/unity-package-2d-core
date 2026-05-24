@@ -252,6 +252,12 @@ namespace GGemCo2DCore
             {
                 case AutoMoveType.Direction:
                 {
+                    // 전투 중 타겟을 지나친 경우에는 기존 진행 방향 대신 타겟 방향으로 복귀시킨다.
+                    if (TryResolveCombatRecoveryMoveVector(out Vector2 recoveryMoveVector))
+                    {
+                        return recoveryMoveVector;
+                    }
+
                     float dirX = (float)_request.direction;
                     return new Vector2(dirX, 0f).normalized;
                 }
@@ -270,7 +276,176 @@ namespace GGemCo2DCore
             }
         }
 
-        private Vector2? ResolveTargetPosition()
+        /// <summary>
+        /// Direction 자동 이동 중 전투 타겟 지나침 복귀 벡터를 계산합니다.
+        /// </summary>
+        /// <param name="moveVector">복귀 이동 벡터입니다.</param>
+        /// <returns>복귀 이동을 적용해야 하면 true를 반환합니다.</returns>
+        private bool TryResolveCombatRecoveryMoveVector(out Vector2 moveVector)
+        {
+            moveVector = Vector2.zero;
+
+            if (!CanUseCombatTargetRecovery())
+            {
+                return false;
+            }
+
+            if (!TryResolveCombatRecoveryTargetPosition(out Vector2 targetPosition))
+            {
+                return false;
+            }
+
+            Vector2 currentPosition = _character.transform.position;
+            if (!IsPassedCombatTarget(currentPosition, targetPosition))
+            {
+                return false;
+            }
+
+            float deltaX = targetPosition.x - currentPosition.x;
+            if (Mathf.Abs(deltaX) <= 0.0001f)
+            {
+                return false;
+            }
+
+            // 플랫포머 이동 정책을 유지하기 위해 X축 방향만 반전한다.
+            moveVector = new Vector2(Mathf.Sign(deltaX), 0f);
+            return true;
+        }
+
+        /// <summary>
+        /// Direction 자동 이동에서 전투 타겟 복귀 로직을 사용할 수 있는지 확인합니다.
+        /// </summary>
+        /// <returns>복귀 로직 적용 가능 상태이면 true를 반환합니다.</returns>
+        private bool CanUseCombatTargetRecovery()
+        {
+            if (_request == null || _character == null)
+            {
+                return false;
+            }
+
+            if (_request.moveType != AutoMoveType.Direction)
+            {
+                return false;
+            }
+
+            if (!_request.enableCombatTargetRecovery)
+            {
+                return false;
+            }
+
+            // 요구사항: 플레이어 전투 상태에서만 지나침 복귀를 적용한다.
+            if (!_character.IsPlayer() || !_character.IsInBattle())
+            {
+                return false;
+            }
+
+            return true;
+        }
+
+        /// <summary>
+        /// 전투 복귀 판정에 사용할 타겟 월드 좌표를 계산합니다.
+        /// </summary>
+        /// <param name="targetPosition">복귀 기준 타겟 좌표입니다.</param>
+        /// <returns>유효한 타겟을 찾으면 true를 반환합니다.</returns>
+        private bool TryResolveCombatRecoveryTargetPosition(out Vector2 targetPosition)
+        {
+            targetPosition = Vector2.zero;
+
+            Vector2? requestTargetPosition = ResolveRequestTargetPosition();
+            if (requestTargetPosition.HasValue)
+            {
+                targetPosition = requestTargetPosition.Value;
+                return true;
+            }
+
+            Transform targetTransform = ResolveCombatRecoveryTargetTransform();
+            if (targetTransform == null)
+            {
+                return false;
+            }
+
+            targetPosition = targetTransform.position;
+            return true;
+        }
+
+        /// <summary>
+        /// 전투 복귀 기준이 될 타겟 Transform을 해석합니다.
+        /// </summary>
+        /// <returns>유효한 타겟 Transform, 없으면 null입니다.</returns>
+        private Transform ResolveCombatRecoveryTargetTransform()
+        {
+            if (_character is Player player)
+            {
+                Transform playerTarget = player.GetAutoMoveTargetTransform();
+                if (IsValidCombatRecoveryTarget(playerTarget))
+                {
+                    return playerTarget;
+                }
+            }
+
+            Transform attackerTarget = _character.attackerTransform;
+            if (IsValidCombatRecoveryTarget(attackerTarget))
+            {
+                return attackerTarget;
+            }
+
+            return null;
+        }
+
+        /// <summary>
+        /// 전투 복귀 기준 타겟으로 사용할 수 있는지 확인합니다.
+        /// </summary>
+        /// <param name="targetTransform">검증할 타겟 Transform입니다.</param>
+        /// <returns>사용 가능한 타겟이면 true를 반환합니다.</returns>
+        private bool IsValidCombatRecoveryTarget(Transform targetTransform)
+        {
+            if (targetTransform == null || targetTransform == _character.transform)
+            {
+                return false;
+            }
+
+            if (!targetTransform.gameObject.activeInHierarchy)
+            {
+                return false;
+            }
+
+            CharacterBase targetCharacter = targetTransform.GetComponent<CharacterBase>();
+            if (targetCharacter != null && targetCharacter.IsStatusDead())
+            {
+                return false;
+            }
+
+            return true;
+        }
+
+        /// <summary>
+        /// 현재 위치가 진행 방향 기준으로 타겟을 지나쳤는지 판정합니다.
+        /// </summary>
+        /// <param name="currentPosition">현재 플레이어 위치입니다.</param>
+        /// <param name="targetPosition">타겟 위치입니다.</param>
+        /// <returns>지나침이 감지되면 true를 반환합니다.</returns>
+        private bool IsPassedCombatTarget(Vector2 currentPosition, Vector2 targetPosition)
+        {
+            float epsilon = Mathf.Max(0.001f, _request != null ? _request.combatTargetPassedEpsilon : 0.05f);
+
+            switch (_request.direction)
+            {
+                case AutoMoveDirection.Right:
+                    return currentPosition.x > targetPosition.x + epsilon;
+
+                case AutoMoveDirection.Left:
+                    return currentPosition.x < targetPosition.x - epsilon;
+
+                default:
+                    return false;
+            }
+        }
+
+        /// <summary>
+        /// 요청에 직접 지정된 타겟 좌표를 해석합니다.
+        /// </summary>
+        /// <returns>요청 타겟 좌표가 있으면 반환하고, 없으면 null입니다.</returns>
+        private Vector2? ResolveRequestTargetPosition()
         {
             if (_request == null) return null;
             if (_request.targetTransform != null)
@@ -282,6 +457,11 @@ namespace GGemCo2DCore
                 return _request.targetPosition.Value;
             }
             return null;
+        }
+
+        private Vector2? ResolveTargetPosition()
+        {
+            return ResolveRequestTargetPosition();
         }
 
         private void TickCompletion()

@@ -64,6 +64,17 @@ namespace GGemCo2DCore
         public bool infiniteMove = true;
         public float duration = 1.0f;
 
+        // ===== Direction 기반 이동 보정 =====
+        /// <summary>
+        /// 전투 중 타겟을 지나쳤을 때, 타겟 방향으로 자동 복귀할지 여부입니다.
+        /// </summary>
+        public bool enableCombatTargetRecovery = true;
+
+        /// <summary>
+        /// 타겟 지나침 판정에 사용할 X축 오차 허용값입니다.
+        /// </summary>
+        public float combatTargetPassedEpsilon = 0.05f;
+
         // ===== 공통 옵션 =====
         public float speedScale = 1.0f;
         public AutoMoveCancelPolicy cancelPolicy = AutoMoveCancelPolicy.AnyInputCancel;
