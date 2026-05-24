@@ -26,6 +26,12 @@ namespace GGemCo2DCore
         UiWindow = 20,
 
         /// <summary>
+        /// 맵 종료 정책에서 요청한 화면 페이드입니다.
+        /// UI 윈도우보다 높고 컷신보다 낮은 우선순위를 가집니다.
+        /// </summary>
+        MapExit = 30,
+
+        /// <summary>
         /// 컷신 연출에서 요청한 화면 페이드입니다.
         /// UI 윈도우와 스킬보다 높은 우선순위를 가집니다.
         /// </summary>

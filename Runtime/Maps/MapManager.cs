@@ -625,14 +625,54 @@ namespace GGemCo2DCore
         }
 
         /// <summary>
-        /// 맵 전체 몬스터 처치 목표가 진행 중이면 몬스터 리젠 예약을 막아야 하는지 확인합니다.
+        /// 맵 전체 몬스터 처치 목표 또는 맵 종료 정책이 진행 중이면 몬스터 리젠 예약을 막아야 하는지 확인합니다.
         /// </summary>
         /// <returns>현재 맵에서 몬스터 리젠을 막아야 하면 true입니다.</returns>
         private bool ShouldSuppressMonsterRespawn()
         {
-            return SceneGame.Instance?.QuestManager?.HasActiveObjective(
-                _currentMapUid,
-                QuestConstants.ObjectiveType.KillMonsterInMap) == true;
+            if (SceneGame.Instance?.QuestManager?.HasActiveObjective(
+                    _currentMapUid,
+                    QuestConstants.ObjectiveType.KillMonsterInMap) == true)
+            {
+                return true;
+            }
+
+            return SceneGame.Instance?.mapClearExitPolicyController
+                ?.ShouldSuppressMonsterRespawn(_currentMapUid) == true;
+        }
+
+        /// <summary>
+        /// 현재 맵에 살아있는 몬스터 수를 계산합니다.
+        /// 비활성화된 몬스터도 사망 상태가 아니면 맵에 남아있는 대상으로 취급합니다.
+        /// </summary>
+        /// <returns>현재 맵의 살아있는 몬스터 수입니다.</returns>
+        public int CountCurrentMapAliveMonsters()
+        {
+            if (_mapTileCommon == null)
+            {
+                return 0;
+            }
+
+            int count = 0;
+            List<KeyValuePair<int, GameObject>> monsterEntries = _mapTileCommon.GetMonsterEntries();
+            foreach (KeyValuePair<int, GameObject> entry in monsterEntries)
+            {
+                GameObject monsterObject = entry.Value;
+                if (monsterObject == null)
+                {
+                    continue;
+                }
+
+                Monster monster = monsterObject.GetComponent<Monster>();
+                if (monster == null || monster.IsStatusDead())
+                {
+                    continue;
+                }
+
+                count++;
+            }
+
+            return count;
         }
 
         public void OnMonsterReturnedToPool(int monsterVid)

@@ -75,6 +75,7 @@ namespace GGemCo2DCore
         [HideInInspector] public SaveDataManager saveDataManager;
         [HideInInspector] public CalculateManager calculateManager;
         [HideInInspector] public MapManager mapManager;
+        [HideInInspector] public MapClearExitPolicyController mapClearExitPolicyController;
         [HideInInspector] public DamageTextManager damageTextManager;
         [HideInInspector] public UIIconCoolTimeManager uIIconCoolTimeManager;
         [HideInInspector] public GameTimeManager gameTimeManager;
@@ -198,6 +199,12 @@ namespace GGemCo2DCore
             ProjectileManager.Initialize(this);
             LaserManager = new LaserManager();
             LaserManager.Initialize(this);
+
+            if (mapManager != null)
+            {
+                mapClearExitPolicyController = CreateManager<MapClearExitPolicyController>(managerContainer);
+                mapClearExitPolicyController.Initialize(this);
+            }
 
             // AnimationEventMediator 클래스에서 다른 매니저를 사용하고 있기때문에,
             // 매니저가 생성된 후 Initialize를 해야 한다.

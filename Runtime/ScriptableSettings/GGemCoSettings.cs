@@ -1,3 +1,4 @@
+using System;
 using UnityEngine;
 
 namespace GGemCo2DCore
@@ -11,6 +12,97 @@ namespace GGemCo2DCore
         OldInputManager,
         NewInputSystem,
         Both
+    }
+
+
+    /// <summary>
+    /// 맵에 배치된 몬스터가 모두 사망했을 때 실행할 맵 종료 정책 설정입니다.
+    /// 전역 ScriptableObject에는 정책값만 보관하고, 실제 감시와 실행은 런타임 컨트롤러가 담당합니다.
+    /// </summary>
+    [Serializable]
+    public sealed class MapClearExitPolicySettings
+    {
+        [Tooltip("현재 맵의 모든 몬스터가 사망하면 맵 종료 연출을 실행할지 여부입니다.")]
+        public bool enabled;
+
+        [Tooltip("정책이 활성화된 현재 맵에서 몬스터 사망 후 리젠 예약을 막을지 여부입니다.")]
+        public bool suppressMonsterRespawn = true;
+
+        [Tooltip("플레이어가 처치한 몬스터 사망 이벤트만 맵 클리어 판정에 사용할지 여부입니다.")]
+        public bool requirePlayerKill;
+
+        [Tooltip("맵 입장 시 살아있는 몬스터가 없는 맵은 자동 종료 정책에서 제외할지 여부입니다.")]
+        public bool ignoreMapWithoutInitialMonsters = true;
+
+        [Tooltip("모든 몬스터 사망 후 맵 종료 연출을 시작하기 전 대기 시간입니다.")]
+        [Min(0f)] public float exitDelaySeconds = 0.5f;
+
+        [Tooltip("맵 종료 Fade Out 시간입니다.")]
+        [Min(0f)] public float fadeOutDurationSeconds = 0.3f;
+
+        [Tooltip("맵 클리어 후 월드맵 UI를 자동으로 열지 여부입니다.")]
+        public bool openWorldMap = true;
+
+        [Tooltip("월드맵 UI를 연 뒤 맵 종료 Fade 화면을 즉시 정리할지 여부입니다.\n꺼두면 ScreenFadeData의 holdFinalState 설정에 따라 검정 화면이 유지될 수 있습니다.")]
+        public bool clearFadeAfterWorldMapOpen = true;
+
+        [Tooltip("맵 종료 시 사용할 화면 Fade 설정입니다.")]
+        public ScreenFadeData fadeOutData = CreateDefaultFadeOutData();
+
+        /// <summary>
+        /// 기존 설정 자산에 새 필드가 추가되었을 때 안전한 기본값을 보정합니다.
+        /// </summary>
+        public void EnsureDefaults()
+        {
+            if (fadeOutData == null)
+            {
+                fadeOutData = CreateDefaultFadeOutData();
+            }
+
+            exitDelaySeconds = Mathf.Max(0f, exitDelaySeconds);
+            fadeOutDurationSeconds = Mathf.Max(0f, fadeOutDurationSeconds);
+        }
+
+        /// <summary>
+        /// 기본 맵 종료 정책 설정 객체를 생성합니다.
+        /// </summary>
+        /// <returns>기본값이 적용된 맵 종료 정책 설정입니다.</returns>
+        public static MapClearExitPolicySettings CreateDefault()
+        {
+            return new MapClearExitPolicySettings
+            {
+                enabled = false,
+                suppressMonsterRespawn = true,
+                requirePlayerKill = false,
+                ignoreMapWithoutInitialMonsters = true,
+                exitDelaySeconds = 0.5f,
+                fadeOutDurationSeconds = 0.3f,
+                openWorldMap = true,
+                clearFadeAfterWorldMapOpen = true,
+                fadeOutData = CreateDefaultFadeOutData(),
+            };
+        }
+
+        /// <summary>
+        /// 맵 종료 연출에 사용할 기본 Fade Out 데이터를 생성합니다.
+        /// </summary>
+        /// <returns>투명 화면에서 검정 화면으로 전환하는 기본 Fade 데이터입니다.</returns>
+        private static ScreenFadeData CreateDefaultFadeOutData()
+        {
+            return new ScreenFadeData
+            {
+                color = Color.black,
+                fromAlpha = 0f,
+                toAlpha = 1f,
+                holdFinalState = true,
+                useUnscaledTime = true,
+                easing = Easing.EaseType.Linear,
+                renderMode = ScreenFadeRenderMode.OverlayUi,
+                sortingLayerName = nameof(ConfigSortingLayer.Keys.UI),
+                orderInLayer = 0,
+                planeDistance = 10f,
+            };
+        }
     }
 
     [CreateAssetMenu(fileName = ConfigScriptableObject.Main.FileName, menuName = ConfigScriptableObject.Main.MenuName, order = ConfigScriptableObject.Main.Ordering)]
@@ -141,6 +233,11 @@ namespace GGemCo2DCore
         [Tooltip("자동 이동 취소 정책")]
         public AutoMoveCancelPolicy autoMoveCancelPolicy;
         
+
+        [Header("맵 종료 정책")]
+        [Tooltip("맵에 배치된 모든 몬스터가 사망했을 때 Fade Out 후 월드맵 UI를 여는 정책 설정입니다.")]
+        public MapClearExitPolicySettings mapClearExitPolicy = MapClearExitPolicySettings.CreateDefault();
+        
         [Header("VFX")]
         [Tooltip("VFX Fade In 시간")]
         public float vfxFadeInSec = 0.3f;
@@ -170,6 +267,8 @@ namespace GGemCo2DCore
             if (debugHudPhysics2DUpdateInterval <= 0f) debugHudPhysics2DUpdateInterval = 0.5f;
             if (debugHudTilemapUpdateInterval <= 0f) debugHudTilemapUpdateInterval = 1.0f;
             if (debugHudTilemapCellScanBudgetPerAxis <= 0) debugHudTilemapCellScanBudgetPerAxis = 4096;
+            if (mapClearExitPolicy == null) mapClearExitPolicy = MapClearExitPolicySettings.CreateDefault();
+            mapClearExitPolicy.EnsureDefaults();
         }
 
         /// <summary>
@@ -218,6 +317,8 @@ namespace GGemCo2DCore
             autoMoveLockMovementOnly = false;
             autoMoveStartOnMapLoad = false;
             autoMoveStartDirection = AutoMoveDirection.Right;
+
+            mapClearExitPolicy = MapClearExitPolicySettings.CreateDefault();
         }
     }
 }
