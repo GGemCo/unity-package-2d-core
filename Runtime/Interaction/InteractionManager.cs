@@ -13,6 +13,8 @@ namespace GGemCo2DCore
         private UIWindowInteractionDialogue _uiWindowInteractionDialogue;
         private CharacterBase _currentNpc;
         private GGemCoNpcInteractionSettings _npcInteractionSettings;
+        private readonly Dictionary<int, InteractionBlockReason> _interactionBlockReasons = new();
+        private int _nextInteractionBlockTokenId;
 
         public CharacterBase CurrentNpc => _currentNpc;
 
@@ -55,8 +57,8 @@ namespace GGemCo2DCore
         /// <param name="textContext">대사 포맷에 사용할 텍스트 컨텍스트입니다.</param>
         public void SetInfo(CharacterBase characterBase, InteractionDialogueTextContext textContext)
         {
-            // 연출 중이면 실행하지 않는다.
-            if (_sceneGame.CutsceneManager.IsPlaying())
+            // 상호작용 차단 정책이 활성화되어 있으면 대화창을 열지 않습니다.
+            if (IsInteractionBlocked())
             {
                 return;
             }
@@ -148,6 +150,76 @@ namespace GGemCo2DCore
                 textContext);
         }
 
+
+        /// <summary>
+        /// 현재 NPC 상호작용 시작이 차단되어 있는지 확인합니다.
+        /// </summary>
+        /// <returns>컷씬 재생 중이거나 외부 차단 토큰이 하나 이상 있으면 <see langword="true"/>입니다.</returns>
+        public bool IsInteractionBlocked()
+        {
+            return IsCutscenePlaying() || _interactionBlockReasons.Count > 0;
+        }
+
+        /// <summary>
+        /// NPC 상호작용 시작을 일시 차단하는 토큰을 획득합니다.
+        /// </summary>
+        /// <param name="reason">상호작용 차단 사유입니다.</param>
+        /// <param name="endCurrentInteraction">이미 열린 상호작용 창을 즉시 종료할지 여부입니다.</param>
+        /// <returns>해제 시 사용할 상호작용 차단 토큰입니다.</returns>
+        public InteractionBlockToken AcquireInteractionBlock(
+            InteractionBlockReason reason,
+            bool endCurrentInteraction = true)
+        {
+            int id = ++_nextInteractionBlockTokenId;
+            if (id == 0)
+            {
+                id = ++_nextInteractionBlockTokenId;
+            }
+
+            _interactionBlockReasons[id] = reason;
+
+            if (endCurrentInteraction)
+            {
+                EndInteraction();
+            }
+
+            return new InteractionBlockToken(id, reason);
+        }
+
+        /// <summary>
+        /// 이전에 획득한 NPC 상호작용 차단 토큰을 해제합니다.
+        /// </summary>
+        /// <param name="token">해제할 상호작용 차단 토큰입니다.</param>
+        public void ReleaseInteractionBlock(InteractionBlockToken token)
+        {
+            if (!token.IsValid)
+            {
+                return;
+            }
+
+            _interactionBlockReasons.Remove(token.id);
+        }
+
+        /// <summary>
+        /// 모든 NPC 상호작용 차단 토큰을 제거합니다.
+        /// 씬 종료나 매니저 정리처럼 소유자가 더 이상 유효하지 않은 시점에만 사용합니다.
+        /// </summary>
+        public void ClearInteractionBlocks()
+        {
+            _interactionBlockReasons.Clear();
+        }
+
+        /// <summary>
+        /// 현재 컷씬 연출이 재생 중인지 안전하게 확인합니다.
+        /// </summary>
+        /// <returns>컷씬 매니저가 있고 연출이 재생 중이면 <see langword="true"/>입니다.</returns>
+        private bool IsCutscenePlaying()
+        {
+            return _sceneGame != null &&
+                   _sceneGame.CutsceneManager != null &&
+                   _sceneGame.CutsceneManager.IsPlaying();
+        }
+
         /// <summary>
         /// 현재 상호작용 중인 NPC 참조를 제거합니다.
         /// </summary>
@@ -200,6 +272,9 @@ namespace GGemCo2DCore
         /// </summary>
         public void OnDestroy()
         {
+            ClearInteractionBlocks();
+            _currentNpc = null;
+            _uiWindowInteractionDialogue = null;
         }
     }
 }
