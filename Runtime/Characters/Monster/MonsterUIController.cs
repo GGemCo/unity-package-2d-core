@@ -121,6 +121,8 @@ namespace GGemCo2DCore
         /// <remarks>
         /// 윈도우 초기화 순서로 HUD 참조가 늦게 준비될 수 있어,
         /// 표시 갱신 시점에 참조를 한 번 더 복구 시도합니다.
+        /// 비표시 전환 시에는 연출 코루틴이 비활성 오브젝트에서 시작되지 않도록
+        /// Super Armor 아이콘을 먼저 즉시 초기화한 뒤 HUD를 숨깁니다.
         /// </remarks>
         private void SetBattleStatus(CharacterConstants.BattleStatus value)
         {
@@ -133,14 +135,15 @@ namespace GGemCo2DCore
             bool canShowBattleHud = CanShowBattleHud();
             bool isInBattle = value == CharacterConstants.BattleStatus.InBattle;
             bool shouldShow = canShowBattleHud && isInBattle;
-            _uiWindowBattleHudMonster.Show(shouldShow);
 
             if (!shouldShow)
             {
-                _uiWindowBattleHudMonster.SetSuperArmor(0);
+                _uiWindowBattleHudMonster.ResetSuperArmorForHide();
+                _uiWindowBattleHudMonster.Show(false);
                 return;
             }
 
+            _uiWindowBattleHudMonster.Show(true);
             _uiWindowBattleHudMonster.UpdateInfo(_monster, CanShowBattleHudSuperArmor());
             SyncBattleHudHpOnShow();
         }

@@ -161,6 +161,8 @@ namespace GGemCo2DCore
                 return;
             }
 
+            bool canPlayBreakAnimation = CanPlayShieldBreakAnimation();
+
             int index = 0;
             foreach (var shieldIcon in _shieldIcons)
             {
@@ -181,7 +183,15 @@ namespace GGemCo2DCore
                     bool consumedThisTick = index < _lastSuperArmorValue;
                     if (consumedThisTick)
                     {
-                        PlayBreakAndHideShieldIcon(shieldIcon);
+                        if (canPlayBreakAnimation)
+                        {
+                            PlayBreakAndHideShieldIcon(shieldIcon);
+                        }
+                        else
+                        {
+                            CancelPendingShieldHide(shieldIcon);
+                            shieldIcon.SetActive(false);
+                        }
                     }
                     else if (!_pendingShieldHideCoroutines.ContainsKey(shieldIcon))
                     {
@@ -193,6 +203,18 @@ namespace GGemCo2DCore
             }
 
             _lastSuperArmorValue = clampedValue;
+        }
+
+        /// <summary>
+        /// Battle HUD를 숨기기 전에 Super Armor 아이콘을 연출 없이 즉시 초기화합니다.
+        /// </summary>
+        /// <remarks>
+        /// 윈도우 비활성화 이후에는 코루틴/VFX 연출 시작이 불가능하므로
+        /// 숨김 분기에서는 즉시 동기화 경로로 상태를 정리합니다.
+        /// </remarks>
+        public void ResetSuperArmorForHide()
+        {
+            SetSuperArmorImmediate(0);
         }
 
         /// <summary>
@@ -233,9 +255,20 @@ namespace GGemCo2DCore
             {
                 return;
             }
+            if (!CanPlayShieldBreakAnimation())
+            {
+                CancelPendingShieldHide(shieldIcon);
+                shieldIcon.SetActive(false);
+                return;
+            }
 
             CancelPendingShieldHide(shieldIcon);
             shieldIcon.SetActive(true);
+            if (!shieldIcon.activeInHierarchy)
+            {
+                shieldIcon.SetActive(false);
+                return;
+            }
 
             var vfxEffect = shieldIcon.GetComponent<VfxEffectUI>();
             if (vfxEffect == null)
@@ -250,9 +283,28 @@ namespace GGemCo2DCore
                 shieldIcon.SetActive(false);
                 return;
             }
+            if (!CanPlayShieldBreakAnimation())
+            {
+                shieldIcon.SetActive(false);
+                return;
+            }
 
             Coroutine coroutine = StartCoroutine(HideShieldIconAfterDelay(shieldIcon, duration));
             _pendingShieldHideCoroutines[shieldIcon] = coroutine;
+        }
+
+        /// <summary>
+        /// 현재 상태에서 Super Armor 파괴 연출을 안전하게 시작할 수 있는지 확인합니다.
+        /// </summary>
+        /// <returns>
+        /// HUD 오브젝트와 컨테이너가 활성 상태이며 코루틴 실행이 가능하면 true를 반환합니다.
+        /// </returns>
+        private bool CanPlayShieldBreakAnimation()
+        {
+            if (!isActiveAndEnabled) return false;
+            if (!gameObject.activeInHierarchy) return false;
+            if (containerSuperArmor != null && !containerSuperArmor.activeInHierarchy) return false;
+            return true;
         }
 
         /// <summary>
