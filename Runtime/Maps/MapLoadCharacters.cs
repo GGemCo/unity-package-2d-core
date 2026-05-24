@@ -64,13 +64,17 @@ namespace GGemCo2DCore
             }
         }
 
+        /// <summary>
+        /// 맵 로드 직후 전역 설정과 현재 맵 자동 이동 정책을 확인한 뒤 자동 이동 시작 요청을 생성합니다.
+        /// </summary>
+        /// <param name="player">자동 이동을 시작할 플레이어입니다.</param>
         private static void TryStartAutoMoveOnMapLoad(Player player)
         {
             if (player == null) return;
 
             var settings = AddressableLoaderSettings.Instance ? AddressableLoaderSettings.Instance.settings : null;
             if (settings == null) return;
-            if (!settings.enableAutoMove) return;
+            if (!AutoMovePolicyResolver.IsAutoMoveEnabled()) return;
             if (!settings.autoMoveStartOnMapLoad) return;
 
             var autoMove = player.GetComponent<PlayerAutoMoveController>();

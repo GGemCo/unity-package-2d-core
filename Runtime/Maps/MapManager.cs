@@ -1005,6 +1005,13 @@ namespace GGemCo2DCore
 
         public int GetCurrentMapUid() => _currentMapUid;
 
+        /// <summary>
+        /// 현재 로드 중이거나 로드된 맵 테이블 데이터를 반환합니다.
+        /// 맵 로드 중 자동 이동, 카메라, 맵별 정책을 조회해야 하는 시스템에서 사용합니다.
+        /// </summary>
+        /// <returns>현재 맵 테이블 데이터입니다. 아직 로드되지 않았으면 null을 반환합니다.</returns>
+        public StruckTableMap GetCurrentMapTableData() => _currentMapTableData;
+
         public bool IsStateComplete()
         {
             return _currentState == MapConstants.State.Complete;

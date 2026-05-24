@@ -188,13 +188,14 @@ namespace GGemCo2DCore
                 gameObject.AddComponent<PlayerAttackAreaState>();
             }
 
-            if (AddressableLoaderSettings.Instance && AddressableLoaderSettings.Instance.settings &&
-                AddressableLoaderSettings.Instance.settings.enableAutoMove)
+            // 자동 이동(오토 워크)
+            // - map 테이블의 AutoMovePolicy가 런타임 중 맵 단위로 변경될 수 있으므로 컴포넌트는 항상 보유합니다.
+            // - 실제 사용 가능 여부는 PlayerAutoMoveController 내부에서 AutoMovePolicyResolver로 판정합니다.
+            // - Control 패키지 사용 시: InputManager가 IAutoMoveVectorProvider를 통해 이동 벡터를 오버라이드합니다.
+            // - Core 단독 사용 시: PlayerAutoMoveController가 직접 Run() 호출합니다.
+            // 순서 중요.
+            if (gameObject.GetComponent<PlayerAutoMoveController>() == null)
             {
-                // 자동 이동(오토 워크)
-                // - Control 패키지 사용 시: InputManager가 IAutoMoveVectorProvider를 통해 이동 벡터를 오버라이드
-                // - Core 단독 사용 시: PlayerAutoMoveController가 직접 Run() 호출
-                // 순서 중요.
                 gameObject.AddComponent<PlayerAutoMoveController>();
             }
             if (colliderHitArea)

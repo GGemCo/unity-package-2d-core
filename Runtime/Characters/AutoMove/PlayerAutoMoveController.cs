@@ -11,8 +11,15 @@ namespace GGemCo2DCore
     [DisallowMultipleComponent]
     public sealed class PlayerAutoMoveController : MonoBehaviour, IAutoMoveVectorProvider, IAutoMoveSuspendService
     {
-        public bool IsAutoMoveActive => _isActive;
-        public bool IsInputLocked => _isActive && _lockInput;
+        /// <summary>
+        /// 자동 이동 요청이 활성 상태이고 현재 맵 정책상 자동 이동을 사용할 수 있는지 여부입니다.
+        /// </summary>
+        public bool IsAutoMoveActive => _isActive && AutoMovePolicyResolver.IsAutoMoveEnabled();
+
+        /// <summary>
+        /// 자동 이동이 입력 잠금 상태로 동작 중인지 여부입니다.
+        /// </summary>
+        public bool IsInputLocked => IsAutoMoveActive && _lockInput;
 
         public bool IsAutoMoveSuspended => _suspendCount > 0;
 
@@ -53,9 +60,8 @@ namespace GGemCo2DCore
         {
             if (!_isActive) return;
 
-            // 전역 설정이 꺼져 있으면 즉시 중단
-            var settings = AddressableLoaderSettings.Instance ? AddressableLoaderSettings.Instance.settings : null;
-            if (settings != null && !settings.enableAutoMove)
+            // 전역 설정과 현재 맵 정책을 조합한 결과가 꺼져 있으면 즉시 중단합니다.
+            if (!AutoMovePolicyResolver.IsAutoMoveEnabled())
             {
                 Cancel();
                 return;
@@ -148,8 +154,10 @@ namespace GGemCo2DCore
         }
 
         /// <summary>
-        /// 자동 이동을 시작합니다.
+        /// 전역 설정과 현재 맵 정책을 확인한 뒤 자동 이동을 시작합니다.
         /// </summary>
+        /// <param name="request">자동 이동 요청 데이터입니다.</param>
+        /// <param name="lockInput">자동 이동 중 플레이어 입력을 잠글지 여부입니다.</param>
         public void StartAutoMove(AutoMoveRequest request, bool lockInput = true)
         {
             if (request == null)
@@ -158,8 +166,7 @@ namespace GGemCo2DCore
                 return;
             }
 
-            var settings = AddressableLoaderSettings.Instance ? AddressableLoaderSettings.Instance.settings : null;
-            if (settings != null && !settings.enableAutoMove)
+            if (!AutoMovePolicyResolver.IsAutoMoveEnabled())
             {
                 return;
             }
@@ -218,9 +225,14 @@ namespace GGemCo2DCore
         }
 
 
+        /// <summary>
+        /// 자동 이동 중 입력 잠금 정책에 따라 지정한 입력을 차단해야 하는지 확인합니다.
+        /// </summary>
+        /// <param name="inputType">확인할 입력 종류입니다.</param>
+        /// <returns>입력을 차단해야 하면 true를 반환합니다.</returns>
         public bool ShouldBlockInput(AutoMoveInputType inputType)
         {
-            if (!_isActive || !_lockInput) return false;
+            if (!IsAutoMoveActive || !_lockInput) return false;
 
             // 전역 설정: 이동만 잠금(공격/점프/대시/상호작용 허용)
             var settings = AddressableLoaderSettings.Instance ? AddressableLoaderSettings.Instance.settings : null;
@@ -241,9 +253,13 @@ namespace GGemCo2DCore
             }
         }
 
+        /// <summary>
+        /// 현재 자동 이동 요청과 맵 정책을 기준으로 이동 벡터를 계산합니다.
+        /// </summary>
+        /// <returns>자동 이동에 사용할 정규화된 이동 벡터입니다.</returns>
         public Vector2 GetMoveVector()
         {
-            if (!_isActive || _request == null || _character == null) return Vector2.zero;
+            if (!IsAutoMoveActive || _request == null || _character == null) return Vector2.zero;
 
             // Pause 상태에서는 이동 벡터를 제공하지 않는다.
             if (IsAutoMoveSuspended) return Vector2.zero;
@@ -500,9 +516,14 @@ namespace GGemCo2DCore
             }
         }
 
+        /// <summary>
+        /// 플레이어 입력을 자동 이동 취소 정책에 전달합니다.
+        /// </summary>
+        /// <param name="inputType">입력 종류입니다.</param>
+        /// <param name="value">입력 벡터 값입니다.</param>
         public void NotifyPlayerInput(AutoMoveInputType inputType, Vector2 value)
         {
-            if (!_isActive || _request == null) return;
+            if (!IsAutoMoveActive || _request == null) return;
 
             switch (_request.cancelPolicy)
             {
