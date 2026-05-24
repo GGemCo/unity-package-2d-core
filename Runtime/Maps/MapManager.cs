@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Threading.Tasks;
@@ -641,40 +641,6 @@ namespace GGemCo2DCore
                 ?.ShouldSuppressMonsterRespawn(_currentMapUid) == true;
         }
 
-        /// <summary>
-        /// 현재 맵에 살아있는 몬스터 수를 계산합니다.
-        /// 비활성화된 몬스터도 사망 상태가 아니면 맵에 남아있는 대상으로 취급합니다.
-        /// </summary>
-        /// <returns>현재 맵의 살아있는 몬스터 수입니다.</returns>
-        public int CountCurrentMapAliveMonsters()
-        {
-            if (_mapTileCommon == null)
-            {
-                return 0;
-            }
-
-            int count = 0;
-            List<KeyValuePair<int, GameObject>> monsterEntries = _mapTileCommon.GetMonsterEntries();
-            foreach (KeyValuePair<int, GameObject> entry in monsterEntries)
-            {
-                GameObject monsterObject = entry.Value;
-                if (monsterObject == null)
-                {
-                    continue;
-                }
-
-                Monster monster = monsterObject.GetComponent<Monster>();
-                if (monster == null || monster.IsStatusDead())
-                {
-                    continue;
-                }
-
-                count++;
-            }
-
-            return count;
-        }
-
         public void OnMonsterReturnedToPool(int monsterVid)
         {
             if (monsterVid <= 0) return;
@@ -1093,6 +1059,40 @@ namespace GGemCo2DCore
             return _mapTileCommon != null
                 ? _mapTileCommon.GetMonsterEntries()
                 : new List<KeyValuePair<int, GameObject>>();
+        }
+
+        /// <summary>
+        /// 현재 맵에 살아있는 몬스터 수를 계산합니다.
+        /// 비활성화된 몬스터도 사망 상태가 아니면 맵에 남아있는 대상으로 취급합니다.
+        /// </summary>
+        /// <returns>현재 맵의 살아있는 몬스터 수입니다.</returns>
+        public int CountCurrentMapAliveMonsters()
+        {
+            if (_mapTileCommon == null)
+            {
+                return 0;
+            }
+
+            int count = 0;
+            List<KeyValuePair<int, GameObject>> monsterEntries = _mapTileCommon.GetMonsterEntries();
+            foreach (KeyValuePair<int, GameObject> entry in monsterEntries)
+            {
+                GameObject monsterObject = entry.Value;
+                if (monsterObject == null)
+                {
+                    continue;
+                }
+
+                Monster monster = monsterObject.GetComponent<Monster>();
+                if (monster == null || monster.IsStatusDead())
+                {
+                    continue;
+                }
+
+                count++;
+            }
+
+            return count;
         }
 
         /// <summary>

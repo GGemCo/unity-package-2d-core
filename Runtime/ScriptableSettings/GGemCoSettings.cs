@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using UnityEngine;
 
 namespace GGemCo2DCore
@@ -30,6 +30,9 @@ namespace GGemCo2DCore
 
         [Tooltip("플레이어가 처치한 몬스터 사망 이벤트만 맵 클리어 판정에 사용할지 여부입니다.")]
         public bool requirePlayerKill;
+
+        [Tooltip("맵 클리어가 확정되었을 때 플레이어의 자동 이동 요청과 잔여 조작 액션을 취소할지 여부입니다.")]
+        public bool cancelAutoMoveOnClear = true;
 
         [Tooltip("맵 입장 시 살아있는 몬스터가 없는 맵은 자동 종료 정책에서 제외할지 여부입니다.")]
         public bool ignoreMapWithoutInitialMonsters = true;
@@ -74,6 +77,7 @@ namespace GGemCo2DCore
                 enabled = false,
                 suppressMonsterRespawn = true,
                 requirePlayerKill = false,
+                cancelAutoMoveOnClear = true,
                 ignoreMapWithoutInitialMonsters = true,
                 exitDelaySeconds = 0.5f,
                 fadeOutDurationSeconds = 0.3f,

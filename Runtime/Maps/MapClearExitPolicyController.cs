@@ -158,7 +158,44 @@ namespace GGemCo2DCore
             }
 
             _isExecuting = true;
+            CancelPlayerControlOnMapClear(GetPolicy());
             _executeRoutine = StartCoroutine(ExecuteMapClearExitRoutine(_currentMapUid));
+        }
+
+        /// <summary>
+        /// 맵 클리어 확정 시 플레이어의 자동 이동과 잔여 조작 상태를 정리합니다.
+        /// Control 패키지가 설치되어 있으면 <see cref="IMapClearActionCanceler"/> 구현을 우선 호출하고,
+        /// 구현이 없으면 Core 자동 이동 컨트롤러만 직접 취소합니다.
+        /// </summary>
+        /// <param name="policy">현재 맵 종료 정책 설정입니다.</param>
+        private void CancelPlayerControlOnMapClear(MapClearExitPolicySettings policy)
+        {
+            if (policy == null || !policy.cancelAutoMoveOnClear)
+            {
+                return;
+            }
+
+            GameObject playerObject = _sceneGame != null ? _sceneGame.player : null;
+            if (playerObject == null)
+            {
+                return;
+            }
+
+            MonoBehaviour[] behaviours = playerObject.GetComponents<MonoBehaviour>();
+            if (behaviours != null)
+            {
+                for (int i = 0; i < behaviours.Length; i++)
+                {
+                    if (behaviours[i] is IMapClearActionCanceler canceler)
+                    {
+                        canceler.CancelActionsOnMapClear();
+                        return;
+                    }
+                }
+            }
+
+            PlayerAutoMoveController autoMoveController = playerObject.GetComponent<PlayerAutoMoveController>();
+            autoMoveController?.Cancel();
         }
 
         /// <summary>
