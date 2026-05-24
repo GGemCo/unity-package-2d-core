@@ -455,6 +455,8 @@ namespace GGemCo2DCore
                     return;
                 }
 
+                ApplyCameraOverrideFromCurrentMapData();
+
                 string key = ConfigAddressableMap.GetKeyTileMap(_currentMapTableData.FolderName);
                 GameObject prefab = await AddressableLoaderController.LoadByKeyAsync<GameObject>(key);
                 if (!prefab)
@@ -499,6 +501,20 @@ namespace GGemCo2DCore
                 Console.WriteLine(e);
                 throw;
             }
+        }
+
+        /// <summary>
+        /// 현재 로드 대상 맵의 테이블 설정을 기준으로 카메라 오버라이드 값을 적용합니다.
+        /// 맵에서 값을 지정하지 않은 항목은 CameraManager 내부 기본값을 유지합니다.
+        /// </summary>
+        private void ApplyCameraOverrideFromCurrentMapData()
+        {
+            if (_sceneGame?.cameraManager == null)
+            {
+                return;
+            }
+
+            _sceneGame.cameraManager.ApplyMapCameraOverrides(_currentMapTableData);
         }
 
         IEnumerator FadeOut()

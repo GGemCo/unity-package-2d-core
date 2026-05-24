@@ -134,6 +134,8 @@ namespace GGemCo2DCore
         private bool _hasVerticalFollowAnchor;
         private float _verticalFollowAnchorTargetY;
         private bool _pendingAutoBottomOffsetApply;
+        private Vector2 _defaultFollowOffset;
+        private CameraBottomFollowOffsetPolicy _defaultBottomFollowOffsetPolicy;
 
         private float _width;
         private float _height;
@@ -156,6 +158,8 @@ namespace GGemCo2DCore
             _zoomEndSize = 0;
             _zoomEasing = Easing.EaseType.Linear;
             _zoomUseUnscaledTime = false;
+            _defaultFollowOffset = followOffset;
+            _defaultBottomFollowOffsetPolicy = bottomFollowOffsetPolicy;
             _originCameraPosition = Vector3.zero;
             _cameraPosition = new Vector3(followOffset.x, followOffset.y, 0f);
             _basePosition = transform.position;
@@ -480,6 +484,38 @@ namespace GGemCo2DCore
         {
             _mapSize.x = pWidth;
             _mapSize.y = pHeight;
+            RequestBottomOffsetApplyIfNeeded();
+        }
+
+        /// <summary>
+        /// 현재 맵 테이블의 카메라 오버라이드 값을 적용합니다.
+        /// 오버라이드가 지정되지 않은 항목은 인스펙터 기본값으로 복원합니다.
+        /// </summary>
+        /// <param name="mapData">현재 로드 중인 맵 테이블 데이터입니다.</param>
+        public void ApplyMapCameraOverrides(StruckTableMap mapData)
+        {
+            Vector2 resolvedFollowOffset = _defaultFollowOffset;
+            CameraBottomFollowOffsetPolicy resolvedBottomPolicy = _defaultBottomFollowOffsetPolicy;
+
+            if (mapData != null)
+            {
+                if (mapData.UseCameraFollowOffset)
+                {
+                    resolvedFollowOffset = mapData.CameraFollowOffset;
+                }
+
+                if (mapData.UseCameraBottomFollowOffsetPolicy)
+                {
+                    resolvedBottomPolicy = mapData.BottomFollowOffsetPolicy;
+                }
+            }
+
+            followOffset = resolvedFollowOffset;
+            bottomFollowOffsetPolicy = resolvedBottomPolicy;
+            _cameraPosition.x = resolvedFollowOffset.x;
+            _cameraPosition.y = resolvedFollowOffset.y;
+            _hasVerticalFollowAnchor = false;
+            _pendingAutoBottomOffsetApply = false;
             RequestBottomOffsetApplyIfNeeded();
         }
 
