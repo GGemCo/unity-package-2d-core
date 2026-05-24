@@ -55,39 +55,12 @@ namespace GGemCo2DCore
                 scriptPlayer.SetMapSize(_mapManager.GetMapSize());
                 scriptPlayer.Stop(true);
                 SceneGame.Instance.cameraManager?.SetFollowTarget(SceneGame.Instance.player?.transform);
-                TryStartAutoMoveOnMapLoad(scriptPlayer);
             }
             catch (Exception e)
             {
                 Console.WriteLine(e);
                 throw;
             }
-        }
-
-        /// <summary>
-        /// 맵 로드 직후 전역 설정과 현재 맵 자동 이동 정책을 확인한 뒤 자동 이동 시작 요청을 생성합니다.
-        /// </summary>
-        /// <param name="player">자동 이동을 시작할 플레이어입니다.</param>
-        private static void TryStartAutoMoveOnMapLoad(Player player)
-        {
-            if (player == null) return;
-
-            var settings = AddressableLoaderSettings.Instance ? AddressableLoaderSettings.Instance.settings : null;
-            if (settings == null) return;
-            if (!AutoMovePolicyResolver.IsAutoMoveEnabled()) return;
-            if (!settings.autoMoveStartOnMapLoad) return;
-
-            var autoMove = player.GetComponent<PlayerAutoMoveController>();
-            if (autoMove == null) return;
-
-            autoMove.StartAutoMove(new AutoMoveRequest
-            {
-                moveType = AutoMoveType.Direction,
-                direction = settings.autoMoveStartDirection,
-                infiniteMove = settings.autoMoveStartDuration <= 0,
-                duration = Mathf.Max(0.01f, settings.autoMoveStartDuration),
-                cancelPolicy = settings.autoMoveCancelPolicy
-            }, lockInput: true);
         }
 
         #region 몬스터

@@ -39,6 +39,13 @@ namespace GGemCo2DCore
         // 맵 로드 시작되었을때 발생되는 이벤트
         public event Action OnLoadStartMap;
         public static event Action<MapTileCommon, GameObject> OnLoadCompleteMap;
+
+        /// <summary>
+        /// 맵 로드 화면 페이드 아웃이 완료되어 플레이 화면이 다시 노출되었을 때 발생합니다.
+        /// 자동 이동처럼 플레이어가 화면에 보인 뒤 시작해야 하는 시스템에서 사용합니다.
+        /// </summary>
+        public static event Action<MapTileCommon, GameObject> OnMapRevealComplete;
+
         public static event Action<MapTileCommon, GameObject> OnLoadTilemapCompleteMap;
         public static event Action<MapTileCommon, GameObject> OnLoadCompletePlayer;
         public static event Action<MapTileCommon, GameObject> OnLoadCompleteNpc;
@@ -55,6 +62,7 @@ namespace GGemCo2DCore
         private AddressableLoaderPrefabCharacter _addressableLoaderPrefabCharacter;
         private MapEntryRuleResolver _mapEntryRuleResolver;
         private GGemCoMapSettings _mapSettings;
+        private MapAutoMoveLifecycleController _autoMoveLifecycleController;
 
         protected void Awake()
         {
@@ -63,6 +71,7 @@ namespace GGemCo2DCore
 
             _mapLoadCharacters = new MapLoadCharacters();
             _mapLoadCharacters.Initialize(this);
+            _autoMoveLifecycleController = new MapAutoMoveLifecycleController();
 
             CreateGrid();
         }
@@ -103,6 +112,7 @@ namespace GGemCo2DCore
             _addressableLoaderPrefabCharacter = _sceneGame.AddressableLoaderPrefabCharacter;
             _mapEntryRuleResolver = new MapEntryRuleResolver(_tableLoaderManager, _saveDataManager?.LicenseManager);
             _mapSettings = AddressableLoaderSettings.Instance.mapSettings;
+            _autoMoveLifecycleController?.Register(this);
             
             // 저장된 맵 불러오기
             int startMapUid = GetStartMapUid();
@@ -159,6 +169,14 @@ namespace GGemCo2DCore
             }
 
             return startMapUid;
+        }
+
+        /// <summary>
+        /// 맵 매니저가 제거될 때 자동 이동 수명주기 이벤트 구독을 해제합니다.
+        /// </summary>
+        private void OnDestroy()
+        {
+            _autoMoveLifecycleController?.Unregister(this);
         }
 
         protected void Reset()
@@ -301,6 +319,7 @@ namespace GGemCo2DCore
                     case MapConstants.State.FadeOut:
                         yield return StartCoroutineSafe(FadeOut());
                         if (_currentState == MapConstants.State.Failed) yield break;
+                        NotifyMapRevealComplete();
                         _currentState = MapConstants.State.Complete;
                         break;
                 }
@@ -316,6 +335,14 @@ namespace GGemCo2DCore
             {
                 Debug.LogError("맵 로드 실패");
             }
+        }
+
+        /// <summary>
+        /// 맵 화면이 다시 노출된 직후 필요한 후처리 이벤트를 발행합니다.
+        /// </summary>
+        private void NotifyMapRevealComplete()
+        {
+            OnMapRevealComplete?.Invoke(_mapTileCommon, _grid);
         }
 
         /// <summary>

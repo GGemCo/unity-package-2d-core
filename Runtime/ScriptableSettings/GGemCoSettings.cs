@@ -130,7 +130,7 @@ namespace GGemCo2DCore
         [Tooltip("자동 이동 중 입력 잠금이 활성화되어도, 이동 입력만 막고(수동 이동 불가)\n공격/점프/대시/상호작용 입력은 허용합니다.")]
         public bool autoMoveLockMovementOnly;
 
-        [Tooltip("맵 로드 직후(플레이어 스폰 직후) 자동 이동을 시작할지 여부\n- 연출/튜토리얼용 예시 옵션입니다.")]
+        [Tooltip("맵 로드 후 화면이 다시 노출되면 자동 이동을 시작할지 여부\n- 연출/튜토리얼용 예시 옵션입니다.")]
         public bool autoMoveStartOnMapLoad;
 
         [Tooltip("autoMoveStartOnMapLoad가 true일 때 사용할 방향(좌/우)")]
