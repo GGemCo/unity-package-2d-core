@@ -11,51 +11,65 @@ namespace GGemCo2DCore
     {
         public static SceneGame Instance { get; private set; }
 
-        public enum GameState { Begin, Combat, End, DirectionStart, DirectionEnd, QuestDialogueStart, QuestDialogueEnd }
-        public enum GameSubState { Normal, BossChallenge, DialogueStart, DialogueEnd }
+        public enum GameState
+        {
+            Begin,
+            Combat,
+            End,
+            DirectionStart,
+            DirectionEnd,
+            QuestDialogueStart,
+            QuestDialogueEnd
+        }
+
+        public enum GameSubState
+        {
+            Normal,
+            BossChallenge,
+            DialogueStart,
+            DialogueEnd
+        }
 
         private GameState State { get; set; }
         private GameSubState SubState { get; set; }
         private bool _isStateDirty;
 
         [HideInInspector] public GameObject player;
-        
-        [Header(ConfigCommon.TitleHeaderRequired)]
-        [Tooltip("메인으로 사용되는 Camera")]
+
+        [Header(ConfigCommon.TitleHeaderRequired)] [Tooltip("메인으로 사용되는 Camera")]
         public Camera mainCamera;
+
         public void SetMainCamera(Camera value) => mainCamera = value;
-        
-        [Tooltip("UI 에 사용되는 메인 Canvas")]
-        public Canvas canvasUI;
+
+        [Tooltip("UI 에 사용되는 메인 Canvas")] public Canvas canvasUI;
         public void SetCanvasUI(Canvas value) => canvasUI = value;
+
         [Tooltip("드랍 아이템의 이름 text, Npc 이름 text, Npc 퀘스트 마크 오브젝트가 들어갈 오브젝트 입니다.")]
         public GameObject containerDropItemName;
+
         public void SetContainerDropItemName(GameObject value) => containerDropItemName = value;
-        [Tooltip("워프로 맵 이동시 화면을 가려줄 검정화면")]
-        public GameObject bgBlackForMapLoading;
+        [Tooltip("워프로 맵 이동시 화면을 가려줄 검정화면")] public GameObject bgBlackForMapLoading;
         public void SetBgBlackForMapLoading(GameObject value) => bgBlackForMapLoading = value;
+
         [Tooltip("몬스터 Hp Bar 오브젝트가 들어갈 오브젝트 입니다.")]
         public GameObject containerMonsterHpBar;
+
         public void SetContainerMonsterHpBar(GameObject value) => containerMonsterHpBar = value;
-        [Tooltip("연출 말풍선이 들어갈 오브젝트 입니다.")]
-        public GameObject containerDialogueBalloon;
+        [Tooltip("연출 말풍선이 들어갈 오브젝트 입니다.")] public GameObject containerDialogueBalloon;
         public void SetContainerDialogueBalloon(GameObject value) => containerDialogueBalloon = value;
+
         [Tooltip("플레이어 보다 밑에 나와야 나와야 하는 UI를 처리하는 Canvas")]
         public GameObject canvasFromWorldCharacterBottom;
+
         public void SetCanvasFromWorldCharacterBottom(GameObject value) => canvasFromWorldCharacterBottom = value;
-        
-        [Header("매니저")]
-        [Tooltip("윈도우 매니저")]
-        public UIWindowManager uIWindowManager;
+
+        [Header("매니저")] [Tooltip("윈도우 매니저")] public UIWindowManager uIWindowManager;
         public void SetUIWindowManager(UIWindowManager value) => uIWindowManager = value;
-        [Tooltip("시스템 메시지 매니저")]
-        public SystemMessageManager systemMessageManager;
+        [Tooltip("시스템 메시지 매니저")] public SystemMessageManager systemMessageManager;
         public void SetSystemMessageManager(SystemMessageManager value) => systemMessageManager = value;
-        [Tooltip("카메라 매니저")]
-        public CameraManager cameraManager;
+        [Tooltip("카메라 매니저")] public CameraManager cameraManager;
         public void SetCameraManager(CameraManager value) => cameraManager = value;
-        [Tooltip("팝업 매니저")]
-        public PopupManager popupManager;
+        [Tooltip("팝업 매니저")] public PopupManager popupManager;
         public void SetPopupManager(PopupManager value) => popupManager = value;
 
         [HideInInspector] public SaveDataManager saveDataManager;
@@ -66,7 +80,7 @@ namespace GGemCo2DCore
         [HideInInspector] public GameTimeManager gameTimeManager;
         public SoundManager soundManager;
         public void SetSoundManager(SoundManager value) => soundManager = value;
-        
+
         public ItemManager ItemManager;
         public CharacterManager CharacterManager;
         public KeyboardManager KeyboardManager;
@@ -77,7 +91,7 @@ namespace GGemCo2DCore
         public ProjectileManager ProjectileManager;
         public LaserManager LaserManager;
         public AddressableLoaderPrefabCharacter AddressableLoaderPrefabCharacter;
-        
+
         private UIWindowInventory _uiWindowInventory;
         public event Action OnSceneGameDestroyed;
 
@@ -89,6 +103,7 @@ namespace GGemCo2DCore
                 UnityEngine.SceneManagement.SceneManager.LoadScene(ConfigDefine.SceneNamePreIntro);
                 return;
             }
+
             // 게임 신 싱글톤으로 사용하기.
             if (Instance == null)
             {
@@ -100,20 +115,21 @@ namespace GGemCo2DCore
                 Destroy(gameObject);
                 return;
             }
+
             // 로딩 중 보여주는 이미지 활성호 시키기.
             if (bgBlackForMapLoading)
             {
                 bgBlackForMapLoading.SetActive(true);
             }
-            
+
             InitializeManagers();
-            
+
             if (CutsceneManager != null)
             {
                 CutsceneManager.CutsceneStarted += OnCutsceneStarted;
                 CutsceneManager.CutsceneEnded += OnCutsceneEnded;
             }
-            
+
             // GameTimeManager가 있을 때만 어댑터 등록
             if (gameTimeManager != null)
             {
@@ -136,7 +152,7 @@ namespace GGemCo2DCore
             GameObject managerContainer = new GameObject("Managers");
 
             calculateManager = CreateManager<CalculateManager>(managerContainer);
-            
+
             var useMap = AddressableLoaderSettings.Instance.mapSettings.useMap;
             if (useMap)
             {
@@ -149,14 +165,14 @@ namespace GGemCo2DCore
                     bgBlackForMapLoading.SetActive(false);
                 }
             }
-            
+
             saveDataManager = CreateManager<SaveDataManager>(managerContainer);
             uIWindowManager?.RefreshWindowSlotActivationStates();
             damageTextManager = CreateManager<DamageTextManager>(managerContainer);
             uIIconCoolTimeManager = CreateManager<UIIconCoolTimeManager>(managerContainer);
             if (AddressableLoaderSettings.Instance && AddressableLoaderSettings.Instance.settings.useInGameTime)
                 gameTimeManager = CreateManager<GameTimeManager>(managerContainer);
-            
+
             AddressableLoaderPrefabCharacter = new AddressableLoaderPrefabCharacter();
             AddressableLoaderPrefabCharacter.Initialize(this);
             ItemManager = new ItemManager();
@@ -166,7 +182,7 @@ namespace GGemCo2DCore
                 TableLoaderManager.Instance.TableAnimation, AddressableLoaderPrefabCharacter);
             AnimationEventMediator animationEventMediator = new AnimationEventMediator();
             CharacterManager.SetAnimationEventMediator(animationEventMediator);
-            
+
             KeyboardManager = new KeyboardManager();
             KeyboardManager.Initialize(this);
             InteractionManager = new InteractionManager();
@@ -182,7 +198,7 @@ namespace GGemCo2DCore
             ProjectileManager.Initialize(this);
             LaserManager = new LaserManager();
             LaserManager.Initialize(this);
-            
+
             // AnimationEventMediator 클래스에서 다른 매니저를 사용하고 있기때문에,
             // 매니저가 생성된 후 Initialize를 해야 한다.
             animationEventMediator.Initialize(this);
@@ -198,19 +214,20 @@ namespace GGemCo2DCore
         private void Start()
         {
             if (TableLoaderManager.Instance == null) return;
-            
+
             ItemManager?.OnStartBySceneGame();
             QuestManager?.OnStartBySceneGame();
             VfxManager?.OnStartBySceneGame();
-            
+
             _uiWindowInventory = uIWindowManager?.GetUIWindowByUid<UIWindowInventory>(UIWindowConstants.WindowUid
                 .Inventory);
-            
+
             // Awake에서 TableLoaderManager를 셋팅한다.
             soundManager.InitializeSoundSfxPool();
-            
+
             StartCoroutine(UpdateStateRoutine());
         }
+
         private IEnumerator UpdateStateRoutine()
         {
             while (true)
@@ -220,6 +237,7 @@ namespace GGemCo2DCore
                     OnStateChanged();
                     _isStateDirty = false;
                 }
+
                 yield return new WaitForSeconds(0.1f);
             }
         }
@@ -251,6 +269,7 @@ namespace GGemCo2DCore
                     break;
             }
         }
+
         /// <summary>
         /// 플레이어가 죽었을 때 처리 
         /// </summary>
@@ -289,6 +308,7 @@ namespace GGemCo2DCore
                 CutsceneManager.Update();
             }
         }
+
         /// <summary>
         /// 아이템 구매하기
         /// </summary>
@@ -312,6 +332,7 @@ namespace GGemCo2DCore
                 saveDataManager.Player.AddCurrency(currencyType, totalPrice);
                 return addItem;
             }
+
             if (_uiWindowInventory != null)
             {
                 _uiWindowInventory.SetIcons(addItem);
@@ -325,20 +346,31 @@ namespace GGemCo2DCore
             GameEventManager.MonsterKilledEvent += OnMonsterKilled;
         }
 
+        /// <summary>
+        /// 게임 씬이 비활성화될 때 매니저 구독과 전역 서비스를 정리합니다.
+        /// </summary>
         private void OnDisable()
         {
             GameEventManager.MonsterKilledEvent -= OnMonsterKilled;
-            
+
+            if (CutsceneManager != null)
+            {
+                CutsceneManager.CutsceneStarted -= OnCutsceneStarted;
+                CutsceneManager.CutsceneEnded -= OnCutsceneEnded;
+            }
+
             ItemManager?.OnDestroy();
             CharacterManager?.OnDestroy();
             KeyboardManager?.OnDestroy();
             InteractionManager?.OnDestroy();
+            QuestManager?.OnDestroy();
             CutsceneManager?.OnDestroy();
-            
+
             ServiceLocator.UnregisterAll();
-            
+
             OnSceneGameDestroyed?.Invoke();
         }
+
         private void OnMonsterKilled(MonsterKilledEventData e)
         {
             // 플레이어에게 사망했을 때 처리
@@ -350,7 +382,7 @@ namespace GGemCo2DCore
 
             mapManager.OnDeadMonster(e.monsterVid);
         }
-        
+
         /// <summary>
         /// 컷신 세션 시작 시 모바일 HUD를 숨김 사유에 추가합니다.
         /// </summary>
@@ -376,7 +408,7 @@ namespace GGemCo2DCore
             if (canvasFromWorldCharacterBottom)
                 canvasFromWorldCharacterBottom.SetActive(true);
         }
-        
+
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
         private static void InitializeLogging()
         {

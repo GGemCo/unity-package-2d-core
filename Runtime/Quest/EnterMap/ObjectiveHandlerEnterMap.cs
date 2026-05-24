@@ -10,6 +10,21 @@ namespace GGemCo2DCore
         private bool _isRegisteredMapEntered;
 
         /// <summary>
+        /// 기본 맵 입장 목표 처리기를 생성합니다.
+        /// </summary>
+        public ObjectiveHandlerEnterMap()
+        {
+        }
+
+        /// <summary>
+        /// 목표 완료 요청을 전달할 소유자를 지정하여 맵 입장 목표 처리기를 생성합니다.
+        /// </summary>
+        /// <param name="completionSink">목표 완료 요청을 받을 소유자입니다.</param>
+        public ObjectiveHandlerEnterMap(IObjectiveCompletionSink completionSink) : base(completionSink)
+        {
+        }
+
+        /// <summary>
         /// EnterMap 목표를 시작하고 현재 맵 또는 이후 입장 이벤트가 목표 맵과 일치하는지 감시합니다.
         /// </summary>
         /// <param name="questUid">진행 중인 퀘스트 UID입니다.</param>
@@ -77,14 +92,13 @@ namespace GGemCo2DCore
         }
 
         /// <summary>
-        /// EnterMap 목표를 완료하고 다음 퀘스트 단계로 진행합니다.
+        /// EnterMap 목표를 완료하고 소유 퀘스트 매니저에 다음 단계 진행을 요청합니다.
         /// </summary>
         private void CompleteObjective()
         {
-            if (_currentQuestUid <= 0) return;
-
+            int completedQuestUid = _currentQuestUid;
             OnDispose();
-            SceneGame.Instance?.QuestManager?.NextStep(_currentQuestUid);
+            CompleteObjectiveThroughOwner(completedQuestUid);
         }
 
         /// <summary>

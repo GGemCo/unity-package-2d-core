@@ -11,6 +11,21 @@ namespace GGemCo2DCore
         private bool _isRegisteredCutsceneCompleted;
 
         /// <summary>
+        /// 기본 컷신 재생 목표 처리기를 생성합니다.
+        /// </summary>
+        public ObjectiveHandlerPlayCutscene()
+        {
+        }
+
+        /// <summary>
+        /// 목표 완료 요청을 전달할 소유자를 지정하여 컷신 재생 목표 처리기를 생성합니다.
+        /// </summary>
+        /// <param name="completionSink">목표 완료 요청을 받을 소유자입니다.</param>
+        public ObjectiveHandlerPlayCutscene(IObjectiveCompletionSink completionSink) : base(completionSink)
+        {
+        }
+
+        /// <summary>
         /// 컷신 목표를 시작하고 완료 이벤트를 구독합니다.
         /// </summary>
         /// <param name="questUid">진행 중인 퀘스트 UID입니다.</param>
@@ -36,15 +51,12 @@ namespace GGemCo2DCore
             _currentCutsceneUid = step.GetPlayCutsceneUid();
             if (_currentCutsceneUid <= 0)
             {
-                GcLogger.LogError($"[Quest] PlayCutscene 목표에 유효한 cutsceneUid가 없습니다. questUid: {questUid}, stepIndex: {stepIndex}");
+                GcLogger.LogError(
+                    $"[Quest] PlayCutscene 목표에 유효한 cutsceneUid가 없습니다. questUid: {questUid}, stepIndex: {stepIndex}");
                 return;
             }
 
-            if (!_isRegisteredCutsceneCompleted)
-            {
-                cutsceneManager.CutsceneCompleted += OnCutsceneCompleted;
-                _isRegisteredCutsceneCompleted = true;
-            }
+            RegisterCutsceneCompletedEvent(cutsceneManager);
 
             if (!cutsceneManager.TryPlayCutscene(_currentCutsceneUid))
             {
@@ -64,6 +76,18 @@ namespace GGemCo2DCore
         }
 
         /// <summary>
+        /// 컷신 완료 이벤트를 중복 없이 구독합니다.
+        /// </summary>
+        /// <param name="cutsceneManager">이벤트를 제공하는 컷신 매니저입니다.</param>
+        private void RegisterCutsceneCompletedEvent(CutsceneManager cutsceneManager)
+        {
+            if (_isRegisteredCutsceneCompleted || cutsceneManager == null) return;
+
+            cutsceneManager.CutsceneCompleted += OnCutsceneCompleted;
+            _isRegisteredCutsceneCompleted = true;
+        }
+
+        /// <summary>
         /// 컷신 정상 종료 이벤트를 수신하면 현재 단계를 완료 처리합니다.
         /// </summary>
         /// <param name="cutsceneUid">정상 종료된 컷신 UID입니다.</param>
@@ -74,7 +98,7 @@ namespace GGemCo2DCore
 
             int completedQuestUid = _currentQuestUid;
             OnDispose();
-            SceneGame.Instance?.QuestManager?.NextStep(completedQuestUid);
+            CompleteObjectiveThroughOwner(completedQuestUid);
         }
 
         /// <summary>

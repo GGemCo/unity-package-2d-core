@@ -19,6 +19,21 @@ namespace GGemCo2DCore
         private bool _isRegisteredMapEntered;
 
         /// <summary>
+        /// 기본 맵 전체 몬스터 처치 목표 처리기를 생성합니다.
+        /// </summary>
+        public ObjectiveHandlerKillMonsterInMap()
+        {
+        }
+
+        /// <summary>
+        /// 목표 완료 요청을 전달할 소유자를 지정하여 맵 전체 몬스터 처치 목표 처리기를 생성합니다.
+        /// </summary>
+        /// <param name="completionSink">목표 완료 요청을 받을 소유자입니다.</param>
+        public ObjectiveHandlerKillMonsterInMap(IObjectiveCompletionSink completionSink) : base(completionSink)
+        {
+        }
+
+        /// <summary>
         /// 맵 전체 몬스터 처치 목표를 시작하고 현재 맵 상태를 기준으로 대상 몬스터를 수집합니다.
         /// </summary>
         /// <param name="questUid">진행 중인 퀘스트 UID입니다.</param>
@@ -29,8 +44,8 @@ namespace GGemCo2DCore
         {
             _currentQuestUid = questUid;
             _currentStep = step;
-            _questData = SceneGame.Instance.saveDataManager.Quest;
-            _currentCount = _questData.GetCount(_currentQuestUid);
+            _questData = SceneGame.Instance?.saveDataManager?.Quest;
+            _currentCount = _questData != null ? _questData.GetCount(_currentQuestUid) : 0;
 
             RegisterEvents();
             TryCaptureCurrentMapTargets();
@@ -69,7 +84,7 @@ namespace GGemCo2DCore
         /// </summary>
         private void TryCaptureCurrentMapTargets()
         {
-            MapManager mapManager = SceneGame.Instance.mapManager;
+            MapManager mapManager = SceneGame.Instance?.mapManager;
             if (mapManager == null || _currentStep == null) return;
             if (mapManager.GetCurrentMapUid() != _currentStep.mapUid) return;
 
@@ -107,7 +122,7 @@ namespace GGemCo2DCore
 
             _currentStep.count = _targetMonsterVids.Count;
             _currentCount = Mathf.Clamp(_currentCount, 0, _currentStep.count);
-            _questData.SaveCount(_currentQuestUid, _currentCount);
+            _questData?.SaveCount(_currentQuestUid, _currentCount);
 
             if (_currentStep.count <= 0 || _currentCount >= _currentStep.count)
             {
@@ -121,7 +136,7 @@ namespace GGemCo2DCore
         /// <param name="eventData">사망한 몬스터 정보입니다.</param>
         private void OnMonsterKilled(MonsterKilledEventData eventData)
         {
-            if (_currentStep == null) return;
+            if (_currentStep == null || _questData == null) return;
             if (eventData.mapUid != _currentStep.mapUid) return;
             if (!_targetMonsterVids.Contains(eventData.monsterVid)) return;
             if (!_killedMonsterVids.Add(eventData.monsterVid)) return;
@@ -136,12 +151,13 @@ namespace GGemCo2DCore
         }
 
         /// <summary>
-        /// 맵 전체 몬스터 처치 목표를 완료하고 다음 퀘스트 단계로 진행합니다.
+        /// 맵 전체 몬스터 처치 목표를 완료하고 소유 퀘스트 매니저에 다음 단계 진행을 요청합니다.
         /// </summary>
         private void CompleteObjective()
         {
+            int completedQuestUid = _currentQuestUid;
             OnDispose();
-            SceneGame.Instance.QuestManager.NextStep(_currentQuestUid);
+            CompleteObjectiveThroughOwner(completedQuestUid);
         }
 
         /// <summary>

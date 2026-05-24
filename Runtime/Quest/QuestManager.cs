@@ -9,7 +9,7 @@ namespace GGemCo2DCore
     /// <summary>
     /// 퀘스트 매니저
     /// </summary>
-    public class QuestManager
+    public class QuestManager : IObjectiveCompletionSink
     {
         private SceneGame _sceneGame;
         private TableQuest _tableQuest;
@@ -22,21 +22,29 @@ namespace GGemCo2DCore
         private bool _isQuestJsonLoaded;
         private bool _isRegisteredMapEntered;
         private int _pendingMapEnteredUid;
-        
+        private int _objectiveStartDepth;
+        private bool _isFlushingObjectiveCompletions;
+
         private readonly ObjectiveHandlerFactory _handlerFactory = new ObjectiveHandlerFactory();
+        private readonly Queue<int> _pendingObjectiveCompletionQuestUids = new Queue<int>();
+        private readonly HashSet<int> _queuedObjectiveCompletionQuestUids = new HashSet<int>();
 
         // QuestUid → StepIndex → Handler
         private readonly Dictionary<int, Dictionary<int, IObjectiveHandler>> _activeHandlers =
             new Dictionary<int, Dictionary<int, IObjectiveHandler>>();
-        
+
         private readonly Dictionary<int, Quest> _quests = new Dictionary<int, Quest>();
-        
+
         public void Initialize(SceneGame scene)
         {
             _quests.Clear();
             _activeHandlers.Clear();
             _isQuestJsonLoaded = false;
             _pendingMapEnteredUid = 0;
+            _objectiveStartDepth = 0;
+            _isFlushingObjectiveCompletions = false;
+            _pendingObjectiveCompletionQuestUids.Clear();
+            _queuedObjectiveCompletionQuestUids.Clear();
             _sceneGame = scene;
             _tableQuest = TableLoaderManager.Instance.TableQuest;
         }
@@ -52,7 +60,8 @@ namespace GGemCo2DCore
             _uiWindowHudQuest =
                 _sceneGame.uIWindowManager?.GetUIWindowByUid<UIWindowHudQuest>(UIWindowConstants.WindowUid.HudQuest);
             _uiWindowQuestReward =
-                _sceneGame.uIWindowManager?.GetUIWindowByUid<UIWindowQuestReward>(UIWindowConstants.WindowUid.QuestReward);
+                _sceneGame.uIWindowManager?.GetUIWindowByUid<UIWindowQuestReward>(UIWindowConstants.WindowUid
+                    .QuestReward);
             _uiWindowInventory =
                 _sceneGame.uIWindowManager?.GetUIWindowByUid<UIWindowInventory>(UIWindowConstants.WindowUid.Inventory);
             RegisterMapEnteredEvent();
@@ -68,6 +77,7 @@ namespace GGemCo2DCore
             GameEventManager.MapEnteredEvent += OnMapEntered;
             _isRegisteredMapEntered = true;
         }
+
         /// <summary>
         /// 저장되어있는 퀘스트 불러오기
         /// </summary>
@@ -84,6 +94,7 @@ namespace GGemCo2DCore
                 StartObjective(questSaveData.QuestUid, questSaveData.QuestStepIndex);
             }
         }
+
         /// <summary>
         /// 모든 json 파일 읽어두기
         /// </summary>
@@ -94,7 +105,7 @@ namespace GGemCo2DCore
             {
                 await LoadQuestJson(data.Key);
             }
-            
+
             LoadQuestDatas();
             _isQuestJsonLoaded = true;
             await TryStartPendingEnterMapQuests();
@@ -145,6 +156,7 @@ namespace GGemCo2DCore
                 await StartQuest(questUid, 0, false);
             }
         }
+
         /// <summary>
         /// 퀘스트 시작 처리
         /// </summary>
@@ -162,8 +174,9 @@ namespace GGemCo2DCore
             {
                 if (showAlreadyStartedWarning)
                 {
-                    _sceneGame.systemMessageManager.ShowMessageWarning("Quest_InProgress");//"진행중인 퀘스트 입니다."
+                    _sceneGame.systemMessageManager.ShowMessageWarning("Quest_InProgress"); //"진행중인 퀘스트 입니다."
                 }
+
                 return false;
             }
 
@@ -173,7 +186,7 @@ namespace GGemCo2DCore
                 GcLogger.LogError("퀘스트 json 파일을 불러오지 못 했습니다. uid: " + questUid);
                 return false;
             }
-            
+
             // 첫 단계 시작
             int stepIndex = 0;
             StartObjective(quest.uid, stepIndex, npcUid);
@@ -187,8 +200,10 @@ namespace GGemCo2DCore
                 );
                 GameEventManager.DialogStart(data);
             }
+
             return true;
         }
+
         /// <summary>
         /// 퀘스트 json 불러오기
         /// </summary>
@@ -200,14 +215,14 @@ namespace GGemCo2DCore
             // 기존에 불러온 정보가 있으면
             Quest quest = _quests.GetValueOrDefault(questUid);
             if (quest != null) return quest;
-            
+
             var info = _tableQuest.GetDataByUid(questUid);
             if (info == null) return null;
             string key = $"{ConfigAddressableKey.Quest}_{info.Uid}";
             try
             {
                 TextAsset textFile = await AddressableLoaderController.LoadByKeyAsync<TextAsset>(key);
-                
+
                 if (textFile != null)
                 {
                     string content = textFile.text;
@@ -226,8 +241,10 @@ namespace GGemCo2DCore
             {
                 GcLogger.LogError($"퀘스트 json 파일을 불러오는중 오류가 발생했습니다. {key}: {ex.Message}");
             }
+
             return null;
         }
+
         /// <summary>
         /// quest 상태 변경
         /// </summary>
@@ -238,6 +255,7 @@ namespace GGemCo2DCore
         {
             _questData.SaveStatus(questUid, stepIndex, status);
         }
+
         /// <summary>
         /// UIWindowHudQuest 에 element 추가하기 
         /// </summary>
@@ -248,6 +266,61 @@ namespace GGemCo2DCore
             if (questUid <= 0) return;
             _uiWindowHudQuest?.AddQuestElement(questUid, questStepIndex);
         }
+
+        /// <summary>
+        /// 목표 처리기에서 전달한 완료 요청을 처리합니다.
+        /// 목표 시작 중 즉시 완료된 요청은 핸들러 등록이 끝난 뒤 순차 처리합니다.
+        /// </summary>
+        /// <param name="questUid">완료할 퀘스트 UID입니다.</param>
+        public void CompleteObjective(int questUid)
+        {
+            if (questUid <= 0) return;
+
+            if (_objectiveStartDepth > 0 || _isFlushingObjectiveCompletions)
+            {
+                EnqueueObjectiveCompletion(questUid);
+                return;
+            }
+
+            NextStep(questUid);
+        }
+
+        /// <summary>
+        /// 목표 시작 중 발생한 완료 요청을 중복 없이 대기열에 등록합니다.
+        /// </summary>
+        /// <param name="questUid">완료 대기열에 추가할 퀘스트 UID입니다.</param>
+        private void EnqueueObjectiveCompletion(int questUid)
+        {
+            if (questUid <= 0) return;
+            if (!_queuedObjectiveCompletionQuestUids.Add(questUid)) return;
+
+            _pendingObjectiveCompletionQuestUids.Enqueue(questUid);
+        }
+
+        /// <summary>
+        /// 목표 시작이 끝난 뒤 보류된 완료 요청을 순서대로 처리합니다.
+        /// </summary>
+        private void FlushPendingObjectiveCompletions()
+        {
+            if (_isFlushingObjectiveCompletions) return;
+            if (_objectiveStartDepth > 0) return;
+
+            _isFlushingObjectiveCompletions = true;
+            try
+            {
+                while (_pendingObjectiveCompletionQuestUids.Count > 0)
+                {
+                    int questUid = _pendingObjectiveCompletionQuestUids.Dequeue();
+                    _queuedObjectiveCompletionQuestUids.Remove(questUid);
+                    NextStep(questUid);
+                }
+            }
+            finally
+            {
+                _isFlushingObjectiveCompletions = false;
+            }
+        }
+
         /// <summary>
         /// 다음 목표 시작
         /// 다음 목표가 없으면 end 처리 
@@ -258,21 +331,30 @@ namespace GGemCo2DCore
             var quest = _quests.GetValueOrDefault(questUid);
             if (quest == null)
             {
-                GcLogger.LogError("quest 테이블에 없는 퀘스트 입니다. quest uid:"+questUid);
+                GcLogger.LogError("quest 테이블에 없는 퀘스트 입니다. quest uid:" + questUid);
                 return;
             }
-            var stepDict = _activeHandlers.GetValueOrDefault(questUid);
-            if (stepDict == null)
-            {
-                GcLogger.LogError("진행중인 퀘스트가 아닙니다. quest uid:"+questUid);
-                return;
-            }
-            
+
+            if (_questData == null) return;
+
             // 현재 step 가져오기
             QuestSaveData questSaveData = _questData.GetQuestData(questUid);
+            if (questSaveData == null || questSaveData.Status != QuestConstants.Status.InProgress)
+            {
+                DisposeQuestHandlers(questUid);
+                return;
+            }
+
+            var stepDict = _activeHandlers.GetValueOrDefault(questUid);
+            if (stepDict == null || !stepDict.ContainsKey(questSaveData.QuestStepIndex))
+            {
+                GcLogger.LogError("진행중인 퀘스트가 아닙니다. quest uid:" + questUid);
+                return;
+            }
+
             // 현제 handler 지우기
             DisposeQuestStepHandlers(questUid, questSaveData.QuestStepIndex);
-            
+
             int nextStepIndex = questSaveData.QuestStepIndex + 1;
             QuestStep questStep = GetQuestStep(questUid, nextStepIndex);
             // 다음 단계가 없으면 종료 처리
@@ -287,6 +369,7 @@ namespace GGemCo2DCore
                 StartObjective(questUid, nextStepIndex, questStep.targetUid);
             }
         }
+
         /// <summary>
         /// 퀘스트 완료 처리
         /// </summary>
@@ -300,12 +383,13 @@ namespace GGemCo2DCore
             GiveReward(questUid);
             // 인벤토리 공간 부족할때
             _uiWindowQuestReward?.SetRewardInfoByQuestUid(questUid);
-            
+
             // 저장하기
             _questData.SaveStatus(questUid, questSaveData.QuestStepIndex, QuestConstants.Status.End);
-            
+
             // UIWindowHudQuest 에 element 빼기
             _uiWindowHudQuest?.RemoveQuestElement(questUid);
+            DisposeQuestHandlers(questUid);
         }
 
         /// <summary>
@@ -318,13 +402,13 @@ namespace GGemCo2DCore
             Quest quest = _quests.GetValueOrDefault(questUid);
             if (quest == null)
             {
-                GcLogger.LogError("quest json 정보가 없습니다. uid: "+questUid);
+                GcLogger.LogError("quest json 정보가 없습니다. uid: " + questUid);
                 return;
             }
 
             if (quest.reward == null)
             {
-                GcLogger.LogError("quest 보상 정보가 없습니다. uid: "+questUid);
+                GcLogger.LogError("quest 보상 정보가 없습니다. uid: " + questUid);
                 return;
             }
 
@@ -406,25 +490,27 @@ namespace GGemCo2DCore
             QuestStep questStep = GetQuestStep(questUid, stepIndex);
             if (questStep == null)
             {
-                GcLogger.LogError("퀘스트 json에 단계 정보가 없습니다. uid: "+questUid + ", stepIndex: "+stepIndex);
+                GcLogger.LogError("퀘스트 json에 단계 정보가 없습니다. uid: " + questUid + ", stepIndex: " + stepIndex);
                 return;
             }
-            var handler = _handlerFactory.CreateHandler(questStep.objectiveType);
+
+            var handler = _handlerFactory.CreateHandler(questStep.objectiveType, this);
             if (handler == null)
             {
-                GcLogger.LogError("퀘스트 목표 정보가 없습니다. uid: "+questUid + ", stepIndex: "+stepIndex+", objecitve: "+questStep.objectiveType);
+                GcLogger.LogError("퀘스트 목표 정보가 없습니다. uid: " + questUid + ", stepIndex: " + stepIndex + ", objecitve: " +
+                                  questStep.objectiveType);
                 return;
             }
 
             // 퀘스트 진행중으로, stepIndex 업데이트
             // 저장 먼저.
             ChangeStatus(questUid, stepIndex, QuestConstants.Status.InProgress);
-            
+
             if (!_activeHandlers.ContainsKey(questUid))
                 _activeHandlers[questUid] = new Dictionary<int, IObjectiveHandler>();
 
             _activeHandlers[questUid][stepIndex] = handler;
-            
+
             // UIWindowHudQuest 에 element 추가
             AddHudQuestElement(questUid, stepIndex);
 
@@ -433,7 +519,21 @@ namespace GGemCo2DCore
             {
                 npcUid = questStep.targetUid;
             }
-            handler.StartObjective(questUid, questStep, stepIndex, npcUid);
+
+            _objectiveStartDepth++;
+            try
+            {
+                handler.StartObjective(questUid, questStep, stepIndex, npcUid);
+            }
+            finally
+            {
+                _objectiveStartDepth--;
+                if (_objectiveStartDepth <= 0)
+                {
+                    _objectiveStartDepth = 0;
+                    FlushPendingObjectiveCompletions();
+                }
+            }
         }
 
         public void CheckStepComplete(int questUid, int stepIndex, QuestStep step)
@@ -492,6 +592,9 @@ namespace GGemCo2DCore
             _activeHandlers[questUid].Remove(stepIndex);
         }
 
+        /// <summary>
+        /// 퀘스트 매니저가 구독한 이벤트와 진행 중인 목표 처리기를 모두 정리합니다.
+        /// </summary>
         public void OnDestroy()
         {
             if (_isRegisteredMapEntered)
@@ -500,8 +603,15 @@ namespace GGemCo2DCore
                 _isRegisteredMapEntered = false;
             }
 
+            _pendingMapEnteredUid = 0;
+            _objectiveStartDepth = 0;
+            _isFlushingObjectiveCompletions = false;
+            _pendingObjectiveCompletionQuestUids.Clear();
+            _queuedObjectiveCompletionQuestUids.Clear();
+
             DisposeAllHandlers();
         }
+
         private void DisposeAllHandlers()
         {
             foreach (var kvp in _activeHandlers)
