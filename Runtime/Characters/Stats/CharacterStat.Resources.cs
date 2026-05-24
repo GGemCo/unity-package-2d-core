@@ -35,6 +35,36 @@ namespace GGemCo2DCore
             CurrentHp.OnNext(newVale);
         }
 
+        /// <summary>
+        /// 일반 HP를 최대치까지 회복합니다.
+        /// 임시 HP(CurrentHpTemp)는 변경하지 않으므로, 휴식/여관처럼 일반 체력만 채워야 하는 상황에서 사용합니다.
+        /// </summary>
+        /// <param name="reviveIfDead">사망 상태에서도 HP를 회복할지 여부입니다.</param>
+        /// <returns>일반 HP 값이 변경되었으면 <see langword="true"/>입니다.</returns>
+        public bool RestoreNormalHpToMax(bool reviveIfDead = false)
+        {
+            long maxHp = TotalHp.Value;
+            if (maxHp <= 0)
+            {
+                return false;
+            }
+
+            if (!reviveIfDead && CurrentHp.Value <= 0)
+            {
+                return false;
+            }
+
+            long nextHp = maxHp;
+
+            if (CurrentHp.Value == nextHp)
+            {
+                return false;
+            }
+
+            CurrentHp.OnNext(nextHp);
+            return true;
+        }
+
         #endregion
 
         #region 마력
