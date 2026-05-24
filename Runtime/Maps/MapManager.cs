@@ -676,6 +676,41 @@ namespace GGemCo2DCore
             return _mapTileCommon?.GetNearByMonsterDistance(range);
         }
 
+        /// <summary>
+        /// 현재 맵에 등록되어 있고 활성화된 NPC 목록을 반환합니다.
+        /// Intro 종료 후 상호작용 재검사처럼 현재 맵 기준 NPC 후보가 필요한 시스템에서 사용합니다.
+        /// </summary>
+        /// <returns>현재 맵에 등록된 활성 NPC 열거 결과입니다.</returns>
+        public IEnumerable<Npc> GetActiveNpcs()
+        {
+            if (_mapTileCommon == null)
+            {
+                yield break;
+            }
+
+            Dictionary<int, GameObject> npcs = _mapTileCommon.GetNpcs();
+            if (npcs == null || npcs.Count == 0)
+            {
+                yield break;
+            }
+
+            foreach (GameObject npcObject in npcs.Values)
+            {
+                if (npcObject == null || !npcObject.activeInHierarchy)
+                {
+                    continue;
+                }
+
+                Npc npc = npcObject.GetComponent<Npc>();
+                if (npc == null || !npc.isActiveAndEnabled || npc.IsStatusDead())
+                {
+                    continue;
+                }
+
+                yield return npc;
+            }
+        }
+
         public CharacterBase GetNpcByUid(int uid)
         {
             return _mapTileCommon?.GetNpcByUid(uid);

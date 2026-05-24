@@ -125,7 +125,7 @@ namespace GGemCo2DCore
         /// NPC 테이블에 저장된 인터랙션 파라미터 문자열을 대사 텍스트 컨텍스트로 변환합니다.
         /// </summary>
         /// <returns>현재 NPC 인터랙션에 사용할 텍스트 컨텍스트입니다.</returns>
-        private InteractionDialogueTextContext BuildInteractionTextContext()
+        internal InteractionDialogueTextContext BuildInteractionTextContext()
         {
             if (_struckTableNpc == null)
             {

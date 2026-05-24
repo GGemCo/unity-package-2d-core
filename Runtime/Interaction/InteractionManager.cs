@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using UnityEngine;
 
 namespace GGemCo2DCore
 {
@@ -148,6 +149,120 @@ namespace GGemCo2DCore
                 npcInteractionSettings,
                 dialogueSelection,
                 textContext);
+        }
+
+        /// <summary>
+        /// 현재 플레이어와 NPC 공격 범위의 겹침 상태를 1회 검사하고,
+        /// 상호작용 가능한 NPC가 있으면 인터랙션 대화창을 엽니다.
+        /// Trigger 재진입 이벤트가 발생하지 않는 상황에서 Intro 종료 후 후처리로 사용합니다.
+        /// </summary>
+        /// <returns>상호작용을 시작했으면 <see langword="true"/>를 반환합니다.</returns>
+        public bool TryRefreshPlayerNpcInteractionOnce()
+        {
+            if (IsInteractionBlocked() || IsInteractioning())
+            {
+                return false;
+            }
+
+            CharacterBase player = ResolvePlayer();
+            if (player == null || player.colliderHitArea == null || !player.colliderHitArea.enabled)
+            {
+                return false;
+            }
+
+            Npc nearestNpc = FindNearestInteractableNpc(player);
+            if (nearestNpc == null)
+            {
+                return false;
+            }
+
+            SetInfo(nearestNpc, nearestNpc.BuildInteractionTextContext());
+            return true;
+        }
+
+        /// <summary>
+        /// 현재 게임 씬에서 플레이어 캐릭터를 안전하게 찾습니다.
+        /// </summary>
+        /// <returns>현재 플레이어 캐릭터입니다. 없으면 null을 반환합니다.</returns>
+        private CharacterBase ResolvePlayer()
+        {
+            if (_sceneGame == null || _sceneGame.player == null)
+            {
+                return null;
+            }
+
+            CharacterBase player = _sceneGame.player.GetComponent<CharacterBase>();
+            return player != null && player.IsPlayer() && !player.IsStatusDead() ? player : null;
+        }
+
+        /// <summary>
+        /// 현재 플레이어가 상호작용 범위 안에 있는 NPC 중 가장 가까운 NPC를 찾습니다.
+        /// </summary>
+        /// <param name="player">상호작용 기준이 되는 플레이어입니다.</param>
+        /// <returns>상호작용 가능한 가장 가까운 NPC입니다. 없으면 null을 반환합니다.</returns>
+        private Npc FindNearestInteractableNpc(CharacterBase player)
+        {
+            if (player == null || player.colliderHitArea == null)
+            {
+                return null;
+            }
+
+            IEnumerable<Npc> activeNpcs = _sceneGame?.mapManager?.GetActiveNpcs();
+            if (activeNpcs == null)
+            {
+                return null;
+            }
+
+            Npc nearestNpc = null;
+            float nearestDistanceSqr = float.MaxValue;
+            Vector3 playerPosition = player.transform.position;
+
+            foreach (Npc npc in activeNpcs)
+            {
+                if (!IsPlayerInsideNpcInteractionRange(npc, player.colliderHitArea))
+                {
+                    continue;
+                }
+
+                float distanceSqr = (npc.transform.position - playerPosition).sqrMagnitude;
+                if (distanceSqr >= nearestDistanceSqr)
+                {
+                    continue;
+                }
+
+                nearestDistanceSqr = distanceSqr;
+                nearestNpc = npc;
+            }
+
+            return nearestNpc;
+        }
+
+        /// <summary>
+        /// 지정한 NPC의 상호작용 범위와 플레이어 HitArea가 현재 겹쳐 있는지 검사합니다.
+        /// </summary>
+        /// <param name="npc">검사할 NPC입니다.</param>
+        /// <param name="playerHitArea">플레이어 HitArea Collider입니다.</param>
+        /// <returns>현재 겹쳐 있으면 <see langword="true"/>입니다.</returns>
+        private static bool IsPlayerInsideNpcInteractionRange(Npc npc, Collider2D playerHitArea)
+        {
+            if (npc == null || playerHitArea == null)
+            {
+                return false;
+            }
+
+            Collider2D npcAttackRange = npc.colliderAttackRange;
+            if (npcAttackRange == null || !npcAttackRange.enabled || !playerHitArea.enabled)
+            {
+                return false;
+            }
+
+            if (!npcAttackRange.gameObject.activeInHierarchy || !playerHitArea.gameObject.activeInHierarchy)
+            {
+                return false;
+            }
+
+            ColliderDistance2D distance = npcAttackRange.Distance(playerHitArea);
+            return distance.isOverlapped;
         }
 
 
