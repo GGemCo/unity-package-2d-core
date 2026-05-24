@@ -1,5 +1,7 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using UnityEngine;
+using Random = UnityEngine.Random;
 
 namespace GGemCo2DCore
 {
@@ -148,6 +150,23 @@ namespace GGemCo2DCore
         private float _zoomEndSize;
         private Easing.EaseType _zoomEasing;
         private bool _zoomUseUnscaledTime;
+        private bool _isMapCameraProfileResolved;
+
+        /// <summary>
+        /// 현재 맵 카메라 프로필(점프 추적 영향도/Follow Offset/하단 오프셋 정책)의
+        /// 런타임 적용이 완료되었을 때 발생합니다.
+        /// </summary>
+        public event Action<CameraManager> MapCameraProfileResolved;
+
+        /// <summary>
+        /// 현재 맵 카메라 프로필의 런타임 적용 완료 여부를 반환합니다.
+        /// </summary>
+        public bool IsMapCameraProfileResolved => _isMapCameraProfileResolved;
+
+        /// <summary>
+        /// 게임 기본 카메라 orthographicSize(원본 값)를 반환합니다.
+        /// </summary>
+        public float OriginalOrthographicSize => _originalOrthographicSize;
 
         private void Awake()
         {
@@ -170,6 +189,7 @@ namespace GGemCo2DCore
             _height = _originalOrthographicSize;
             _width = _height * Screen.width / Screen.height;
             _pendingAutoBottomOffsetApply = false;
+            _isMapCameraProfileResolved = false;
         }
 
         /// <summary>
@@ -494,6 +514,7 @@ namespace GGemCo2DCore
         /// <param name="mapData">현재 로드 중인 맵 테이블 데이터입니다.</param>
         public void ApplyMapCameraOverrides(StruckTableMap mapData)
         {
+            MarkMapCameraProfileUnresolved();
             Vector2 resolvedFollowOffset = _defaultFollowOffset;
             CameraBottomFollowOffsetPolicy resolvedBottomPolicy = _defaultBottomFollowOffsetPolicy;
 
@@ -586,12 +607,14 @@ namespace GGemCo2DCore
             if (bottomFollowOffsetPolicy != CameraBottomFollowOffsetPolicy.AutoAlignToMapBottomOnMapLoad)
             {
                 _pendingAutoBottomOffsetApply = false;
+                MarkMapCameraProfileResolved();
                 return;
             }
 
             if (useLimitBottom)
             {
                 _pendingAutoBottomOffsetApply = false;
+                MarkMapCameraProfileResolved();
                 return;
             }
 
@@ -633,6 +656,7 @@ namespace GGemCo2DCore
             _cameraPosition.y = newFollowOffsetY;
             _hasVerticalFollowAnchor = false;
             _pendingAutoBottomOffsetApply = false;
+            MarkMapCameraProfileResolved();
         }
 
         /// <summary>
@@ -719,6 +743,33 @@ namespace GGemCo2DCore
         }
 
         /// <summary>
+        /// 카메라의 orthographicSize를 즉시 적용합니다.
+        /// Intro 시작 연출처럼 "프레임 보간 없이 즉시 스냅"이 필요한 경우 사용합니다.
+        /// </summary>
+        /// <param name="size">즉시 적용할 orthographicSize 값입니다.</param>
+        /// <param name="changeOriginalSize">
+        /// true이면 기본(원본) 카메라 사이즈도 함께 갱신합니다.
+        /// false이면 현재 프레임의 표시 사이즈만 변경하고 원본 값은 유지합니다.
+        /// </param>
+        public void SetOrthographicSizeImmediate(float size, bool changeOriginalSize = false)
+        {
+            if (_currentCamera == null || !_currentCamera.orthographic)
+            {
+                return;
+            }
+
+            float safeSize = Mathf.Max(size, 0.0001f);
+            _currentCamera.orthographicSize = safeSize;
+            _height = safeSize;
+            _width = _height * Screen.width / Screen.height;
+
+            if (changeOriginalSize)
+            {
+                _originalOrthographicSize = safeSize;
+            }
+        }
+
+        /// <summary>
         /// 타겟(플레이어) 기준 카메라 기본 오프셋(월드 단위).
         /// Inspector에서 설정한 값은 시작 시 기본값으로 사용되며, 흔들림(Shake)은 이 기본 위치를 기준으로 적용됩니다.
         /// </summary>
@@ -760,6 +811,29 @@ namespace GGemCo2DCore
         public void ChangeOriginalOrthographicSize(float size)
         {
             _originalOrthographicSize = size;
+        }
+
+        /// <summary>
+        /// 맵 카메라 프로필 적용 상태를 "미완료"로 전환합니다.
+        /// 새 맵 로드/오버라이드 반영 시점에 호출됩니다.
+        /// </summary>
+        private void MarkMapCameraProfileUnresolved()
+        {
+            _isMapCameraProfileResolved = false;
+        }
+
+        /// <summary>
+        /// 맵 카메라 프로필 적용 상태를 "완료"로 전환하고 완료 이벤트를 발행합니다.
+        /// </summary>
+        private void MarkMapCameraProfileResolved()
+        {
+            if (_isMapCameraProfileResolved)
+            {
+                return;
+            }
+
+            _isMapCameraProfileResolved = true;
+            MapCameraProfileResolved?.Invoke(this);
         }
 
 #if UNITY_EDITOR
