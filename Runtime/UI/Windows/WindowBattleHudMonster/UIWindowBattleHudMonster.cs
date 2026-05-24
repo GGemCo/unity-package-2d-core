@@ -42,6 +42,10 @@ namespace GGemCo2DCore
         /// </summary>
         /// <param name="monster">표시할 몬스터입니다.</param>
         /// <param name="showSuperArmor">Super Armor 아이콘 표시 여부입니다.</param>
+        /// <remarks>
+        /// HUD가 비활성 상태일 때 누락된 HP 변경 이벤트가 있을 수 있으므로,
+        /// 정보 갱신 시점에 현재 HP/최대 HP를 함께 재동기화합니다.
+        /// </remarks>
         public void UpdateInfo(Monster monster, bool showSuperArmor)
         {
             if (!monster) return;
@@ -56,6 +60,7 @@ namespace GGemCo2DCore
             InitMonsterNameText(monster.uid);
             InitMonsterNameByImage(monster.uid);
             InitSuperArmor(monster, showSuperArmor);
+            SetSliderHp(monster.CurrentHp.Value, monster.TotalHp.Value);
         }
 
         private void InitMonsterNameByImage(int monsterUid)
@@ -138,6 +143,7 @@ namespace GGemCo2DCore
         /// <param name="totalValue">최대 HP 값입니다.</param>
         public void SetSliderHp(long currentValue, long totalValue)
         {
+            if (uiSliderFlip == null) return;
             uiSliderFlip.SetValue(currentValue, totalValue);
         }
 

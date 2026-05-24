@@ -118,9 +118,17 @@ namespace GGemCo2DCore
         /// 전투 상태 변경에 따라 Battle HUD 표시 여부와 표시 데이터를 갱신합니다.
         /// </summary>
         /// <param name="value">현재 몬스터 전투 상태입니다.</param>
+        /// <remarks>
+        /// 윈도우 초기화 순서로 HUD 참조가 늦게 준비될 수 있어,
+        /// 표시 갱신 시점에 참조를 한 번 더 복구 시도합니다.
+        /// </remarks>
         private void SetBattleStatus(CharacterConstants.BattleStatus value)
         {
-            if (_uiWindowBattleHudMonster == null) return;
+            if (_uiWindowBattleHudMonster == null)
+            {
+                RefreshRuntimeReferences();
+                if (_uiWindowBattleHudMonster == null) return;
+            }
 
             bool canShowBattleHud = CanShowBattleHud();
             bool isInBattle = value == CharacterConstants.BattleStatus.InBattle;
@@ -134,18 +142,50 @@ namespace GGemCo2DCore
             }
 
             _uiWindowBattleHudMonster.UpdateInfo(_monster, CanShowBattleHudSuperArmor());
+            SyncBattleHudHpOnShow();
         }
 
+        /// <summary>
+        /// 몬스터 현재 HP를 월드 HP 바와 Battle HUD에 동기화합니다.
+        /// </summary>
+        /// <param name="value">현재 HP 값입니다.</param>
+        /// <remarks>
+        /// Battle HUD가 지연 생성되는 프레임에서도 HP 변경을 누락하지 않도록
+        /// HUD 참조를 재확인한 뒤 슬라이더를 갱신합니다.
+        /// </remarks>
         private void SetSliderHp(long value)
         {
             if (_sliderHpBar != null)
             {
                 _sliderHpBar.GetComponent<MonsterHpBar>().SetValue(value);    
             }
-            if (_uiWindowBattleHudMonster != null) 
+
+            if (_uiWindowBattleHudMonster == null)
+            {
+                RefreshRuntimeReferences();
+            }
+
+            if (_uiWindowBattleHudMonster != null)
             {
                 _uiWindowBattleHudMonster.SetSliderHp(value, _monster.TotalHp.Value);
             }
+        }
+
+        /// <summary>
+        /// Battle HUD가 다시 표시되는 순간 최신 HP를 즉시 반영합니다.
+        /// </summary>
+        /// <remarks>
+        /// HUD가 숨김 상태일 때 발생한 HP 변경 이벤트가 시각적으로 누락될 수 있어,
+        /// 표시 전환 직후 한 번 더 현재 HP/최대 HP를 강제 동기화합니다.
+        /// </remarks>
+        private void SyncBattleHudHpOnShow()
+        {
+            if (_monster == null || _uiWindowBattleHudMonster == null)
+            {
+                return;
+            }
+
+            _uiWindowBattleHudMonster.SetSliderHp(_monster.CurrentHp.Value, _monster.TotalHp.Value);
         }
 
         /// <summary>
