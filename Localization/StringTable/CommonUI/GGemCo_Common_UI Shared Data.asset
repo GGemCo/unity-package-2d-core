@@ -131,6 +131,14 @@ MonoBehaviour:
     m_Key: ui_date_daynumber
     m_Metadata:
       m_Items: []
+  - m_Id: 115246842125664256
+    m_Key: Text_Page_Prev
+    m_Metadata:
+      m_Items: []
+  - m_Id: 115246924824756224
+    m_Key: Text_Page_Next
+    m_Metadata:
+      m_Items: []
   m_Metadata:
     m_Items: []
   m_KeyGenerator:

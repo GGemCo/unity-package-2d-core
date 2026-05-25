@@ -134,6 +134,14 @@ MonoBehaviour:
     m_Localized: Delete
     m_Metadata:
       m_Items: []
+  - m_Id: 115246842125664256
+    m_Localized: Prev
+    m_Metadata:
+      m_Items: []
+  - m_Id: 115246924824756224
+    m_Localized: Next
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []
