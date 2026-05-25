@@ -16,6 +16,7 @@ namespace GGemCo2DCoreEditor
         private GGemCoPlayerSettings _playerSettings;
         private GGemCoMapSettings _mapSettings;
         private GGemCoSaveSettings _saveSettings;
+        private GGemCoCutsceneSettings _cutsceneSettings;
 
         public delegate void DelegateLoadSettings(GGemCoSettings settings, GGemCoPlayerSettings playerSettings,
             GGemCoMapSettings mapSettings, GGemCoSaveSettings saveSettings);
@@ -45,15 +46,17 @@ namespace GGemCo2DCoreEditor
                 var playerSettingsTask = LoadSettingsAsync<GGemCoPlayerSettings>(ConfigAddressableSetting.PlayerSettings.Key);
                 var mapSettingsTask = LoadSettingsAsync<GGemCoMapSettings>(ConfigAddressableSetting.MapSettings.Key);
                 var saveSettingsTask = LoadSettingsAsync<GGemCoSaveSettings>(ConfigAddressableSetting.SaveSettings.Key);
+                var cutsceneSettingsTask = LoadSettingsAsync<GGemCoCutsceneSettings>(ConfigAddressableSetting.CutsceneSettings.Key);
 
                 // 모든 작업이 완료될 때까지 대기
-                await Task.WhenAll(settingsTask, playerSettingsTask, mapSettingsTask, saveSettingsTask);
+                await Task.WhenAll(settingsTask, playerSettingsTask, mapSettingsTask, saveSettingsTask, cutsceneSettingsTask);
 
                 // 결과 저장
                 _settings = settingsTask.Result;
                 _playerSettings = playerSettingsTask.Result;
                 _mapSettings = mapSettingsTask.Result;
                 _saveSettings = saveSettingsTask.Result;
+                _cutsceneSettings = cutsceneSettingsTask.Result;
 
                 // 로그 출력
                 // if (settings != null)

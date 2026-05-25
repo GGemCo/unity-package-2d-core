@@ -25,6 +25,7 @@ namespace GGemCo2DCore
         public static readonly AddressableAssetInfo OptionSettings = Make(nameof(OptionSettings));
         public static readonly AddressableAssetInfo SoundSettings  = Make(nameof(SoundSettings));
         public static readonly AddressableAssetInfo GameTimeSettings  = Make(nameof(GameTimeSettings));
+        public static readonly AddressableAssetInfo CutsceneSettings  = Make(nameof(CutsceneSettings));
         public static readonly AddressableAssetInfo MonsterSettings  = Make(nameof(MonsterSettings));
         public static readonly AddressableAssetInfo WorldMapSettings  = Make(nameof(WorldMapSettings));
         public static readonly AddressableAssetInfo DialogueBalloonSettings = Make(nameof(DialogueBalloonSettings));
@@ -44,6 +45,7 @@ namespace GGemCo2DCore
             OptionSettings,
             SoundSettings,
             MonsterSettings,
+            CutsceneSettings,
             WorldMapSettings,
             DialogueBalloonSettings,
             NpcInteractionSettings,

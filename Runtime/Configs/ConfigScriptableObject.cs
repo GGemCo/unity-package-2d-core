@@ -22,6 +22,7 @@ namespace GGemCo2DCore
             Option,
             Sound,
             GameTime,
+            Cutscene,
             WorldMap,
             DialogueBalloon,
             NpcInteraction,
@@ -43,10 +44,11 @@ namespace GGemCo2DCore
             OptionSettings = 60,
             SoundSettings = 70,
             GameTimeSettings = 80,
-            WorldMapSettings = 90,
-            DialogueBalloonSettings = 100,
-            NpcInteractionSettings = 110,
-            CharacterCollisionSettings = 120
+            CutsceneSettings = 90,
+            WorldMapSettings = 100,
+            DialogueBalloonSettings = 110,
+            NpcInteractionSettings = 120,
+            CharacterCollisionSettings = 130
         }
 
         public const string BasePath = ConfigDefine.NameSDK + "/Settings/";
@@ -158,6 +160,18 @@ namespace GGemCo2DCore
             public const int Ordering =
                 (int)ConfigScriptableObjectCommon.PackageOrder.Core +
                 (int)CoreLocalOrder.GameTimeSettings;
+        }
+
+        /// <summary>
+        /// 컷신 설정 메뉴 정보
+        /// </summary>
+        public static class Cutscene
+        {
+            public const string FileName = BaseName + "CutsceneSettings";
+            public const string MenuName = BasePath + FileName;
+            public const int Ordering =
+                (int)ConfigScriptableObjectCommon.PackageOrder.Core +
+                (int)CoreLocalOrder.CutsceneSettings;
         }
 
         /// <summary>
@@ -285,6 +299,14 @@ namespace GGemCo2DCore
                         typeof(GGemCoGameTimeSettings))
                 },
                 {
+                    CoreSettingsKey.Cutscene,
+                    new ConfigScriptableObjectCommon.MenuInfo(
+                        Cutscene.FileName,
+                        Cutscene.MenuName,
+                        Cutscene.Ordering,
+                        typeof(GGemCoCutsceneSettings))
+                },
+                {
                     CoreSettingsKey.WorldMap,
                     new ConfigScriptableObjectCommon.MenuInfo(
                         WorldMap.FileName,
@@ -333,6 +355,7 @@ namespace GGemCo2DCore
                 { Option.FileName, typeof(GGemCoOptionSettings) },
                 { Sound.FileName, typeof(GGemCoSoundSettings) },
                 { GameTime.FileName, typeof(GGemCoGameTimeSettings) },
+                { Cutscene.FileName, typeof(GGemCoCutsceneSettings) },
                 { WorldMap.FileName, typeof(GGemCoWorldMapSettings) },
                 { DialogueBalloon.FileName, typeof(GGemCoDialogueBalloonSettings) },
                 { NpcInteraction.FileName, typeof(GGemCoNpcInteractionSettings) },

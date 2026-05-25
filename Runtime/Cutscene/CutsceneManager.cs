@@ -84,6 +84,7 @@ namespace GGemCo2DCore
         private AddressableLoaderSettings _settings;
         private bool _isCutsceneSessionActive;
         private int _currentCutsceneUid;
+        private string _currentCutsceneFileName = string.Empty;
         private int _prepareSessionVersion;
 
         /// <summary>
@@ -93,6 +94,19 @@ namespace GGemCo2DCore
         {
             public CharacterConstants.Type CharacterType;
             public int CharacterUid;
+        }
+
+        /// <summary>
+        /// 컷신 디버그 HUD에 출력할 런타임 스냅샷 데이터입니다.
+        /// </summary>
+        public struct CutsceneDebugInfo
+        {
+            public bool IsSessionActive;
+            public bool IsPlaying;
+            public int CutsceneUid;
+            public string JsonFileName;
+            public float ElapsedTime;
+            public float TotalDuration;
         }
 
         /// <summary>
@@ -138,6 +152,7 @@ namespace GGemCo2DCore
             _timelineProgressWaitOwners.Clear();
             _isCutsceneSessionActive = false;
             _currentCutsceneUid = 0;
+            _currentCutsceneFileName = string.Empty;
             _prepareSessionVersion = 0;
             _settings = AddressableLoaderSettings.Instance;
             
@@ -166,6 +181,45 @@ namespace GGemCo2DCore
         /// </summary>
         /// <returns>컷신 세션이 활성 상태이면 <see langword="true"/>를 반환합니다.</returns>
         public bool IsSessionActive() => _isCutsceneSessionActive;
+
+        /// <summary>
+        /// 현재 컷신의 디버그 스냅샷을 조회합니다.
+        /// HUD는 이 값을 사용해 UID, 파일명, 시간 정보를 화면에 표시합니다.
+        /// </summary>
+        /// <param name="debugInfo">조회된 컷신 디버그 정보입니다.</param>
+        /// <returns>표시 가능한 컷신 정보가 있으면 <see langword="true"/>를 반환합니다.</returns>
+        public bool TryGetDebugInfo(out CutsceneDebugInfo debugInfo)
+        {
+            bool hasDebugTarget = _isCutsceneSessionActive ||
+                                  _currentState == State.Playing ||
+                                  _currentCutsceneUid > 0 ||
+                                  !string.IsNullOrWhiteSpace(_currentCutsceneFileName);
+
+            if (!hasDebugTarget)
+            {
+                debugInfo = default;
+                return false;
+            }
+
+            float totalDuration = _currentCutscene != null ? Mathf.Max(0f, _currentCutscene.duration) : 0f;
+            float elapsedTime = Mathf.Max(0f, _playTimer);
+            if (totalDuration > 0f)
+            {
+                elapsedTime = Mathf.Min(elapsedTime, totalDuration);
+            }
+
+            debugInfo = new CutsceneDebugInfo
+            {
+                IsSessionActive = _isCutsceneSessionActive,
+                IsPlaying = _currentState == State.Playing,
+                CutsceneUid = _currentCutsceneUid,
+                JsonFileName = _currentCutsceneFileName ?? string.Empty,
+                ElapsedTime = elapsedTime,
+                TotalDuration = totalDuration
+            };
+
+            return true;
+        }
 
         /// <summary>
         /// Overlay 연출을 위한 Presenter를 반환하거나, 없으면 생성하여 초기화합니다.
@@ -512,10 +566,12 @@ namespace GGemCo2DCore
             var info = TableLoaderManager.Instance.GetCutsceneData(uid);
             if (info == null)
             {
+                _currentCutsceneFileName = string.Empty;
                 return false;
             }
 
             _currentCutsceneUid = info.Uid;
+            _currentCutsceneFileName = info.FileName ?? string.Empty;
 
             if (!info.PreLoad)
             {
@@ -528,6 +584,7 @@ namespace GGemCo2DCore
             if (GcLogger.IsNull(_currentCutscene, $"{nameof(TableCutscene)} 테이블에 정보가 없습니다. Uid: {info.Uid}"))
             {
                 _currentCutsceneUid = 0;
+                _currentCutsceneFileName = string.Empty;
                 return false;
             }
 
@@ -550,6 +607,7 @@ namespace GGemCo2DCore
             }
 
             _currentCutsceneUid = 0;
+            _currentCutsceneFileName = "EditorPreview.json";
             _currentCutscene = cutsceneData;
             BeginCutsceneLoading();
             PlayCurrentCutscene();
@@ -571,10 +629,12 @@ namespace GGemCo2DCore
                 if (info == null)
                 {
                     _currentCutsceneUid = 0;
+                    _currentCutsceneFileName = string.Empty;
                     return;
                 }
 
                 _currentCutsceneUid = info.Uid;
+                _currentCutsceneFileName = info.FileName ?? string.Empty;
                 BeginCutsceneLoading();
 
                 string key = $"{ConfigAddressableKey.Cutscene}_{info.Uid}";
@@ -614,6 +674,7 @@ namespace GGemCo2DCore
             _prepareSessionVersion++;
             _currentState = State.Finished;
             _currentCutsceneUid = 0;
+            _currentCutsceneFileName = string.Empty;
             EndCutsceneSession();
         }
 
@@ -855,6 +916,7 @@ namespace GGemCo2DCore
             }
 
             _currentCutsceneUid = 0;
+            _currentCutsceneFileName = string.Empty;
         }
 
         /// <summary>
@@ -1534,6 +1596,7 @@ namespace GGemCo2DCore
 
             ResetDialogueBalloonsAtCutsceneBoundary();
             EndCutsceneSession();
+            _currentCutsceneFileName = string.Empty;
         }
 
         /// <summary>

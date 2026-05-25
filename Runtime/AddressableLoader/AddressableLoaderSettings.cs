@@ -23,6 +23,7 @@ namespace GGemCo2DCore
         [HideInInspector] public GGemCoSoundSettings soundSettings;
         [HideInInspector] public GGemCoGameTimeSettings gameTimeSettings;
         [HideInInspector] public GGemCoMonsterSettings monsterSettings;
+        [HideInInspector] public GGemCoCutsceneSettings cutsceneSettings;
         [HideInInspector] public GGemCoWorldMapSettings worldMapSettings;
         [HideInInspector] public GGemCoDialogueBalloonSettings dialogueBalloonSettings;
         [HideInInspector] public GGemCoNpcInteractionSettings npcInteractionSettings;
@@ -86,6 +87,7 @@ namespace GGemCo2DCore
                 Task<GGemCoOptionSettings> optionSettingsTask = LoadSettingsAsync<GGemCoOptionSettings>(ConfigAddressableSetting.OptionSettings.Key);
                 Task<GGemCoSoundSettings> soundSettingsTask = LoadSettingsAsync<GGemCoSoundSettings>(ConfigAddressableSetting.SoundSettings.Key);
                 Task<GGemCoMonsterSettings> monsterSettingsTask = LoadSettingsAsync<GGemCoMonsterSettings>(ConfigAddressableSetting.MonsterSettings.Key);
+                Task<GGemCoCutsceneSettings> cutsceneSettingsTask = LoadSettingsAsync<GGemCoCutsceneSettings>(ConfigAddressableSetting.CutsceneSettings.Key);
                 Task<GGemCoWorldMapSettings> worldMapSettingsTask = LoadSettingsAsync<GGemCoWorldMapSettings>(ConfigAddressableSetting.WorldMapSettings.Key);
                 Task<GGemCoDialogueBalloonSettings> dialogueBalloonSettingsTask = LoadSettingsAsync<GGemCoDialogueBalloonSettings>(ConfigAddressableSetting.DialogueBalloonSettings.Key);
                 Task<GGemCoNpcInteractionSettings> npcInteractionSettingsTask = LoadSettingsAsync<GGemCoNpcInteractionSettings>(ConfigAddressableSetting.NpcInteractionSettings.Key);
@@ -104,6 +106,7 @@ namespace GGemCo2DCore
                     optionSettingsTask,
                     soundSettingsTask,
                     monsterSettingsTask,
+                    cutsceneSettingsTask,
                     itemSettingsTask,
                     worldMapSettingsTask,
                     dialogueBalloonSettingsTask,
@@ -120,6 +123,7 @@ namespace GGemCo2DCore
                     optionSettingsTask,
                     soundSettingsTask,
                     monsterSettingsTask,
+                    cutsceneSettingsTask,
                     itemSettingsTask,
                     worldMapSettingsTask,
                     dialogueBalloonSettingsTask,
@@ -136,6 +140,7 @@ namespace GGemCo2DCore
                 optionSettings = optionSettingsTask.Result;
                 soundSettings = soundSettingsTask.Result;
                 monsterSettings = monsterSettingsTask.Result;
+                cutsceneSettings = cutsceneSettingsTask.Result;
                 worldMapSettings = worldMapSettingsTask.Result;
                 dialogueBalloonSettings = dialogueBalloonSettingsTask.Result;
                 npcInteractionSettings = npcInteractionSettingsTask.Result;
