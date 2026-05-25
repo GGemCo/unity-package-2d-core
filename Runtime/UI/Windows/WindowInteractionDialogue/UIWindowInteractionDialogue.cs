@@ -189,6 +189,9 @@ namespace GGemCo2DCore
         private float _defaultPanelMessageMinWidth = -1f;
         private bool _hasDefaultPanelMessageMinWidth;
         private int _lastKnownVisibleCharacters = -1;
+        private CanvasGroup _panelDialogueCanvasGroup;
+        private bool _isInitialRevealPending;
+        private int _initialRevealRequestVersion = -1;
 
         private UIWindowShop _uiWindowShop;
         private UIWindowShopSale _uiWindowShopSale;
@@ -221,6 +224,7 @@ namespace GGemCo2DCore
             }
 
             CacheSpeechBubbleLayoutReferences();
+            CacheInitialRevealCanvasGroupReference();
         }
 
         protected override void Start()

@@ -84,6 +84,7 @@ namespace GGemCo2DCore
             CacheDefaultChoices(_currentQuestDatas, interactionData);
             RestoreNpcPresentation();
 
+            BeginDeferredInitialReveal(_dialogueLoadVersion);
             Show(true);
             RefreshChoiceButtonsVisibility();
             RefreshThumbnailPosition();
@@ -179,6 +180,7 @@ namespace GGemCo2DCore
             ApplyDialogueMessage(ResolveInitialMessage(_currentInteractionData, _currentQuestDatas), revealImmediately: false);
             RefreshChoiceButtonsVisibility();
             RefreshThumbnailPosition();
+            TryCompleteDeferredInitialReveal(_dialogueLoadVersion);
         }
 
         /// <summary>
@@ -208,6 +210,7 @@ namespace GGemCo2DCore
             ApplyDialogueMessage(ResolveDialogueNodeText(node), revealImmediately: false);
             RefreshChoiceButtonsVisibility();
             RefreshThumbnailPosition();
+            TryCompleteDeferredInitialReveal(requestVersion);
         }
 
         /// <summary>
@@ -263,17 +266,20 @@ namespace GGemCo2DCore
                 if (!string.IsNullOrEmpty(followupMessage))
                 {
                     ApplyDialogueMessage(followupMessage, revealImmediately: false);
+                    TryCompleteDeferredInitialReveal(_dialogueLoadVersion);
                 }
                 else
                 {
                     RefreshChoiceButtonsVisibility();
                     RefreshThumbnailPosition();
+                    TryCompleteDeferredInitialReveal(_dialogueLoadVersion);
                 }
 
                 return;
             }
 
             RefreshChoiceButtonsVisibility();
+            TryCompleteDeferredInitialReveal(_dialogueLoadVersion);
         }
 
         /// <summary>
@@ -499,6 +505,11 @@ namespace GGemCo2DCore
         /// <returns>대화 진행 입력을 받을 수 있으면 true입니다.</returns>
         private bool CanAdvanceDialogue()
         {
+            if (_isInitialRevealPending)
+            {
+                return false;
+            }
+
             GGemCoNpcInteractionSettings settings = ResolveNpcInteractionSettings();
             if (settings.page.advanceInputPolicy != InteractionDialogueAdvanceInputPolicy.PointerClickOrTap)
             {
