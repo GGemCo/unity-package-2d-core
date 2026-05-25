@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
-using UnityEngine.Localization.SmartFormat.Utilities;
 using UnityEngine.UI;
 
 namespace GGemCo2DCore
@@ -17,44 +16,47 @@ namespace GGemCo2DCore
         [Tooltip("스탯 라인 프리팹(UIElementStatReset) - 비활성 템플릿으로 두고 런타임에 복제합니다.")]
         [SerializeField] private GameObject prefabElementStat;
 
-        [Tooltip("UIElementStatReset 오브젝트를 넣을 오브젝트")]
+        [Tooltip("UIElementStatReset 오브젝트를 넣을 오브젝트")] 
         [SerializeField] private GameObject containerElement;
 
-        [Header("텍스트 오브젝트")]
-        [Tooltip("미사용 스탯 포인트")]
+        [Header("텍스트 오브젝트")] 
+        [Tooltip("미사용 스탯 포인트")] 
         [SerializeField] private TextMeshProUGUI textUnspent;
-        [Tooltip("미사용 스탯 포인트 옆에 표시할 문구 Localization Key")]
+
+        [Tooltip("미사용 스탯 포인트 옆에 표시할 문구 Localization Key")] 
         [SerializeField] private string localizationKeyUnspentPrefix;
-        
-        [Tooltip("현재 레벨 및 투자 시 추가 레벨 정보를 보여주는 텍스트")]
+
+        [Tooltip("현재 레벨 및 투자 시 추가 레벨 정보를 보여주는 텍스트")] 
         [SerializeField] private TextMeshProUGUI textLevel;
-        
-        [Header("레벨 스타일")]
-        [Tooltip("레벨 텍스트 표시 규칙. 비어 있으면 prefixTextLevel 기반 기본 포맷을 사용합니다.")]
+
+        [Header("레벨 스타일")] 
+        [Tooltip("레벨 텍스트 표시 규칙. 비어 있으면 prefixTextLevel 기반 기본 포맷을 사용합니다.")] 
         [SerializeField] private UIElementStatFormatterAsset levelFormatterAsset;
-        [Tooltip("레벨 숫자 앞에 보여줄 문구")]
+
+        [Tooltip("레벨 숫자 앞에 보여줄 문구")] 
         [SerializeField] private string prefixTextLevel = "LV.";
-        [Tooltip("재화가 부족하지 않을 때 적용할 스타일 키")]
+
+        [Tooltip("재화가 부족하지 않을 때 적용할 스타일 키")] 
         [SerializeField] private string styleKeyPriceNormal;
-        
-        [Header("스탯 정보")]
+
+        [Header("스탯 정보")] 
         [SerializeField] private List<EntityPlayerInfo> playerInfos = new();
 
-        [Header("Apply / Reset")]
-        [Tooltip("드래프트(미적용) 스탯 포인트를 실제 데이터에 반영")]
+        [Header("Apply / Reset")] 
+        [Tooltip("드래프트(미적용) 스탯 포인트를 실제 데이터에 반영")] 
         [SerializeField] private Button buttonApply;
 
-        [Tooltip("스탯 초기화 드래프트를 취소하고 창을 닫습니다.")]
+        [Tooltip("스탯 초기화 드래프트를 취소하고 창을 닫습니다.")] 
         [SerializeField] private Button buttonReset;
 
-        [Header("보여줄 스탯")]
-        [Tooltip("보여줄 스탯 선택(멀티 선택 가능)")]
+        [Header("보여줄 스탯")] 
+        [Tooltip("보여줄 스탯 선택(멀티 선택 가능)")] 
         [SerializeField] private CharacterConstants.PlayerInfoMask useIndexPlayerInfos = CharacterConstants.PlayerInfoMask.All;
-        
-        [Header("팝업")]
-        [Tooltip("분배 해야하는 스탯 포인트가 남았을 때 보여줄 대화박스")]
+
+        [Header("팝업")] 
+        [Tooltip("분배 해야하는 스탯 포인트가 남았을 때 보여줄 대화박스")] 
         [SerializeField] PopupBubble popupBubble;
-        
+
         private readonly Dictionary<CharacterConstants.IndexPlayerInfo, UIElementPlayerStatReset> _playerInfos = new();
         private readonly Dictionary<CharacterConstants.IndexPlayerInfo, string> _labelCache = new();
 
@@ -74,7 +76,7 @@ namespace GGemCo2DCore
 
             if (buttonApply != null) buttonApply.onClick.AddListener(OnClickApply);
             if (buttonReset != null) buttonReset.onClick.AddListener(OnClickReset);
-            
+
             if (popupBubble != null)
                 popupBubble.gameObject.SetActive(false);
         }
@@ -114,7 +116,8 @@ namespace GGemCo2DCore
                 return;
             }
 
-            foreach (CharacterConstants.IndexPlayerInfo indexPlayerInfo in Enum.GetValues(typeof(CharacterConstants.IndexPlayerInfo)))
+            foreach (CharacterConstants.IndexPlayerInfo indexPlayerInfo in Enum.GetValues(
+                         typeof(CharacterConstants.IndexPlayerInfo)))
             {
                 if (!ShouldCreateStatPointLine(indexPlayerInfo))
                     continue;
@@ -216,7 +219,8 @@ namespace GGemCo2DCore
 
             // PlayerData(레벨업 등)로 인해 스탯포인트가 변경될 수 있습니다.
             // 편집 중이 아닌 경우에는 초기화 드래프트를 최신 스냅샷으로 다시 생성합니다.
-            if (_editSession == null || !_editSession.IsSamePlayer(_boundPlayer) || (!_editSession.IsDirty && _editSession.IsStaleSnapshot()))
+            if (_editSession == null || !_editSession.IsSamePlayer(_boundPlayer) ||
+                (!_editSession.IsDirty && _editSession.IsStaleSnapshot()))
             {
                 _editSession = new StatPointResetEditSession(_boundPlayer);
             }
@@ -385,9 +389,11 @@ namespace GGemCo2DCore
             int additionalLevels = 0;
             if (_editSession != null && _editSession.IsDirty && _boundPlayer.DoesStatPointInvestIncreaseLevel())
             {
-                int currentInvested = _boundPlayer.InvestedStatPointAtk + _boundPlayer.InvestedStatPointDef + _boundPlayer.InvestedStatPointHp +
-                                     _boundPlayer.InvestedStatPointMp + _boundPlayer.InvestedStatPointStamina;
-                int draftInvested = _editSession.DraftAtk + _editSession.DraftDef + _editSession.DraftHp + _editSession.DraftMp + _editSession.DraftStamina;
+                int currentInvested = _boundPlayer.InvestedStatPointAtk + _boundPlayer.InvestedStatPointDef +
+                                      _boundPlayer.InvestedStatPointHp +
+                                      _boundPlayer.InvestedStatPointMp + _boundPlayer.InvestedStatPointStamina;
+                int draftInvested = _editSession.DraftAtk + _editSession.DraftDef + _editSession.DraftHp +
+                                    _editSession.DraftMp + _editSession.DraftStamina;
                 // additionalLevels = Mathf.Max(0, draftInvested - currentInvested);
                 additionalLevels = draftInvested;
             }
@@ -414,7 +420,8 @@ namespace GGemCo2DCore
                 : $"{prefixTextLevel} {currentLevel}";
         }
 
-        private static long GetTotalValueByIndex(CharacterConstants.IndexPlayerInfo idx, CharacterStat.CharacterTotals totals)
+        private static long GetTotalValueByIndex(CharacterConstants.IndexPlayerInfo idx,
+            CharacterStat.CharacterTotals totals)
         {
             return idx switch
             {
@@ -434,7 +441,8 @@ namespace GGemCo2DCore
             };
         }
 
-        private static (long BaseValue, int invested) GetStatPointLineData(CharacterConstants.IndexPlayerInfo idx, Player player)
+        private static (long BaseValue, int invested) GetStatPointLineData(CharacterConstants.IndexPlayerInfo idx,
+            Player player)
         {
             // totalValue는 PlayerInfo에 표시되는 모든 라인에서 의미가 있으므로,
             // IndexPlayerInfo 전체를 커버하도록 구성합니다.
@@ -461,8 +469,9 @@ namespace GGemCo2DCore
 
             return (totalValue, invested);
         }
-        
-        private static (long TotalValue, int invested) GetStatPointLineData_bak(CharacterConstants.IndexPlayerInfo idx, Player player)
+
+        private static (long TotalValue, int invested) GetStatPointLineData_bak(CharacterConstants.IndexPlayerInfo idx,
+            Player player)
         {
             // totalValue는 PlayerInfo에 표시되는 모든 라인에서 의미가 있으므로,
             // IndexPlayerInfo 전체를 커버하도록 구성합니다.
