@@ -1313,13 +1313,7 @@ namespace GGemCo2DCore
         /// <returns>유효한 프로젝트 기본 오프셋 X 정책입니다.</returns>
         private static DialogueBalloonWorldOffsetXPolicy GetSafeProjectWorldOffsetXPolicy(DialogueBalloonWorldOffsetXPolicy policy)
         {
-            return policy switch
-            {
-                DialogueBalloonWorldOffsetXPolicy.KeepOriginal => DialogueBalloonWorldOffsetXPolicy.KeepOriginal,
-                DialogueBalloonWorldOffsetXPolicy.MirrorBySpeakerFacing => DialogueBalloonWorldOffsetXPolicy.MirrorBySpeakerFacing,
-                DialogueBalloonWorldOffsetXPolicy.UseProjectPolicy => DialogueBalloonWorldOffsetXPolicy.KeepOriginal,
-                _ => DialogueBalloonWorldOffsetXPolicy.KeepOriginal
-            };
+            return DialogueBalloonWorldOffsetUtility.GetSafeWorldOffsetXPolicy(policy);
         }
 
         /// <summary>
@@ -1363,17 +1357,12 @@ namespace GGemCo2DCore
         /// <returns>정책이 반영된 오프셋 X 값입니다.</returns>
         private float ResolveWorldOffsetXByPolicy(float offsetX, DialogueBalloonWorldOffsetXPolicy policy)
         {
-            if (policy != DialogueBalloonWorldOffsetXPolicy.MirrorBySpeakerFacing)
-            {
-                return offsetX;
-            }
-
-            if (!TryResolveSpeakerFacingRight(out bool isFacingRight))
-            {
-                return offsetX;
-            }
-
-            return isFacingRight ? offsetX : -offsetX;
+            bool hasSpeakerFacing = TryResolveSpeakerFacingRight(out bool isFacingRight);
+            return DialogueBalloonWorldOffsetUtility.ResolveOffsetXByPolicy(
+                offsetX,
+                policy,
+                hasSpeakerFacing,
+                isFacingRight);
         }
 
         /// <summary>

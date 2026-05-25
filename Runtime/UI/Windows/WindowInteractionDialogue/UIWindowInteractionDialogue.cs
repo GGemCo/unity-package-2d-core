@@ -70,9 +70,14 @@ namespace GGemCo2DCore
         [SerializeField]
         private GameObject panelDialogue;
 
-        [Tooltip("말풍선 위치")]
+        [Header("말풍선 월드 위치")]
+        [Tooltip("SpeechBubble 모드에서 캐릭터 머리 위 기본 위치에 추가로 더할 월드 오프셋")]
         [SerializeField]
-        private Vector3 offsetPanelDialogue;
+        private Vector3 speechBubbleWorldOffset = Vector3.zero;
+
+        [Tooltip("SpeechBubble 월드 오프셋 X값을 화자 방향에 따라 보정하는 정책")]
+        [SerializeField]
+        private DialogueBalloonWorldOffsetXPolicy speechBubbleWorldOffsetXPolicy = DialogueBalloonWorldOffsetXPolicy.KeepOriginal;
 
         [Tooltip("캐릭터 썸네일")]
         [SerializeField]

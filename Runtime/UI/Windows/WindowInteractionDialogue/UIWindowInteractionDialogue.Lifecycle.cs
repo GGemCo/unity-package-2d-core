@@ -39,8 +39,49 @@ namespace GGemCo2DCore
             }
 
             panelDialogue.transform.SetParent(sceneGame.containerDialogueBalloon.transform, false);
-            Vector3 worldPosition = speaker.transform.position + new Vector3(0f, speaker.GetHeightByScale(), 0f) + offsetPanelDialogue;
+            Vector3 worldPosition = ResolveCurrentSpeakerTopWorldPosition(speaker);
             panelDialogue.transform.position = worldPosition;
+        }
+
+        /// <summary>
+        /// 현재 화자 캐릭터의 머리 위 기준 위치에 대화창 오프셋을 더해 최종 월드 좌표를 계산합니다.
+        /// SpeechBubble 모드에서는 말풍선 전용 추가 오프셋과 X 방향 보정 정책을 함께 반영합니다.
+        /// </summary>
+        /// <param name="speaker">대화창을 따라갈 화자 캐릭터입니다.</param>
+        /// <returns>대화창을 배치할 최종 월드 좌표입니다.</returns>
+        private Vector3 ResolveCurrentSpeakerTopWorldPosition(CharacterBase speaker)
+        {
+            if (speaker == null)
+            {
+                return transform.position;
+            }
+
+            Vector3 baseWorldPosition = speaker.transform.position + new Vector3(0f, speaker.GetHeightByScale(), 0f);
+            return baseWorldPosition + ResolveInteractionDialogueWorldOffset();
+        }
+
+        /// <summary>
+        /// 인터랙션 대화창에 적용할 월드 오프셋을 계산합니다.
+        /// 기존 offsetPanelDialogue는 항상 유지하고, SpeechBubble 모드에서만 전용 오프셋과 X 정책을 추가합니다.
+        /// </summary>
+        /// <returns>대화창 최종 위치에 더할 월드 오프셋입니다.</returns>
+        private Vector3 ResolveInteractionDialogueWorldOffset()
+        {
+            Vector3 resolvedOffset = Vector3.zero;
+            if (dialogueVisualMode != DialogueVisualMode.SpeechBubble)
+            {
+                return resolvedOffset;
+            }
+
+            Vector3 speechBubbleOffset = speechBubbleWorldOffset;
+            bool hasSpeakerFacing = TryResolveSpeakerFacingRight(out bool isFacingRight);
+            speechBubbleOffset = DialogueBalloonWorldOffsetUtility.ResolveOffsetByPolicy(
+                speechBubbleOffset,
+                speechBubbleWorldOffsetXPolicy,
+                hasSpeakerFacing,
+                isFacingRight);
+
+            return resolvedOffset + speechBubbleOffset;
         }
 
         /// <summary>

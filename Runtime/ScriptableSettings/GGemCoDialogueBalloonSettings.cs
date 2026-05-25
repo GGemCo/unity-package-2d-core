@@ -53,13 +53,7 @@ namespace GGemCo2DCore
         /// <returns>유효한 프로젝트 기본 오프셋 X 정책입니다.</returns>
         public DialogueBalloonWorldOffsetXPolicy GetSafeWorldOffsetXPolicy()
         {
-            return worldOffsetXPolicy switch
-            {
-                DialogueBalloonWorldOffsetXPolicy.KeepOriginal => DialogueBalloonWorldOffsetXPolicy.KeepOriginal,
-                DialogueBalloonWorldOffsetXPolicy.MirrorBySpeakerFacing => DialogueBalloonWorldOffsetXPolicy.MirrorBySpeakerFacing,
-                DialogueBalloonWorldOffsetXPolicy.UseProjectPolicy => DialogueBalloonWorldOffsetXPolicy.KeepOriginal,
-                _ => DialogueBalloonWorldOffsetXPolicy.KeepOriginal
-            };
+            return DialogueBalloonWorldOffsetUtility.GetSafeWorldOffsetXPolicy(worldOffsetXPolicy);
         }
 
         /// <summary>

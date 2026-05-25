@@ -22,6 +22,8 @@ namespace GGemCo2DCoreEditor
         /// </summary>
         private static readonly HashSet<string> SpeechBubbleOnlyPropertyNames = new()
         {
+            "speechBubbleWorldOffset",
+            "speechBubbleWorldOffsetXPolicy",
             "useLegacyThumbnailFallbackForNone",
             "thumbnailGapPx",
             "textPaddingOnNonThumbnailSidePx",
