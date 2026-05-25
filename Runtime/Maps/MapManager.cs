@@ -511,8 +511,7 @@ namespace GGemCo2DCore
                     return;
                 }
 
-                _mapTileCommon.Initialize(_currentMapTableData.Uid, _currentMapTableData.Name,
-                    _currentMapTableData.Type, _currentMapTableData.Subtype);
+                _mapTileCommon.Initialize(_currentMapTableData);
                 var result = GetMapSize();
 
                 // 로드된 맵에 맞게 맵 영역 사이즈 갱신하기 

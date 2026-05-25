@@ -32,9 +32,9 @@ namespace GGemCo2DCore
             CalculateCullingBounds();
         }
 
-        public override void Initialize(int uid, string mapName, MapConstants.Type type, MapConstants.SubType subType)
+        public override void Initialize(StruckTableMap currentMapTableData)
         {
-            base.Initialize(uid, mapName, type, subType);
+            base.Initialize(currentMapTableData);
             gameObject.transform.position = new Vector3(0, 0, 0);
         }
 
@@ -234,6 +234,7 @@ namespace GGemCo2DCore
                 // npcQuestButton.OnChangeQuestStatus();
             }
         }
+        
 #if UNITY_EDITOR
         /// <summary>
         /// 카메라 영역, 컬링 영역 시각화

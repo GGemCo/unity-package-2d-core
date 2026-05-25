@@ -9,10 +9,8 @@ namespace GGemCo2DCore
     /// </summary>
     public class DefaultMap : MonoBehaviour
     {
-        private int _mapUid;
-        private string _mapName;
-        private MapConstants.Type _mapType;
-        private MapConstants.SubType _mapSubType;
+        protected StruckTableMap struckTableMap;
+        
         private Tilemap _tilemap;
         
         // 맵에 배치된 몬스터
@@ -39,30 +37,11 @@ namespace GGemCo2DCore
             GetComponent<TilemapRenderer>().sortingLayerName = ConfigSortingLayer.GetValue(ConfigSortingLayer.Keys.Map_Ground);
         }
 
-        public virtual void Initialize(int uid, string mapName, MapConstants.Type type, MapConstants.SubType subType)
+        public virtual void Initialize(StruckTableMap currentMapTableData)
         {
-            _mapUid = uid;
-            _mapName = mapName;
-            _mapType = type;
-            _mapSubType = subType;
+            struckTableMap = currentMapTableData;
         }
-        /// <summary>
-        /// 같은 장의 맵인지 
-        /// </summary>
-        /// <param name="value"></param>
-        /// <returns></returns>
-        public bool IsSameChapter(int value)
-        {
-            return _mapUid == value;
-        }
-        /// <summary>
-        /// 현재 맵에 연결된 장 가져오기
-        /// </summary>
-        /// <returns></returns>
-        public int GetChapterNumber()
-        {
-            return _mapUid;
-        }
+        
         /// <summary>
         /// vid 값으로 몬스터 찾기  
         /// </summary>
@@ -203,6 +182,10 @@ namespace GGemCo2DCore
             }
             return closeMonster;
         }
-
+        
+        public int GetChapterNumber()
+        {
+            return struckTableMap.Chapter;
+        }
     }
 }

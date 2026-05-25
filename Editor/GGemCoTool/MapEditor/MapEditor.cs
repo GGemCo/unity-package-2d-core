@@ -897,7 +897,7 @@ namespace GGemCo2DCoreEditor
 
             _defaultMap.InitComponents();
             _defaultMap.InitTagSortingLayer();
-            _defaultMap.Initialize(mapData.Uid, mapData.Name, mapData.Type, mapData.Subtype);
+            _defaultMap.Initialize(mapData);
             _editNpcBoundInstanceId = 0;
 
             _npcExporter.SetDefaultMap(_defaultMap);
