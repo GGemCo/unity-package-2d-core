@@ -194,6 +194,8 @@ namespace GGemCo2DCoreEditor
             }
             EditorGUILayout.PropertyField(serializedObject.FindProperty("thumbnailImage"));
             EditorGUILayout.PropertyField(serializedObject.FindProperty("thumbnailPositionType"));
+            EditorGUILayout.PropertyField(serializedObject.FindProperty("thumbnailFlipPolicy"));
+            EditorGUILayout.PropertyField(serializedObject.FindProperty("thumbnailSourceFacing"));
 
             GUILayout.Space(20);
             GUILayout.Label("현재 대화가 끝났을때 시작되는 퀘스트", EditorStyles.boldLabel);

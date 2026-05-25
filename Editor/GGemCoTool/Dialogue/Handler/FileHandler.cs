@@ -171,6 +171,8 @@ namespace GGemCo2DCoreEditor
                     fontSize = node.fontSize,
                     thumbnailImage = node.thumbnailImage,
                     thumbnailPositionType = node.thumbnailPositionType,
+                    thumbnailFlipPolicy = node.thumbnailFlipPolicy,
+                    thumbnailSourceFacing = node.thumbnailSourceFacing,
                     nextNodeGuid = node.nextNodeGuid,
                     startQuestUid = node.startQuestUid,
                     startQuestStep = node.startQuestStep,
@@ -281,6 +283,8 @@ namespace GGemCo2DCoreEditor
                     node.fontSize = nodeData.fontSize;
                     node.thumbnailImage = nodeData.thumbnailImage;
                     node.thumbnailPositionType = nodeData.thumbnailPositionType;
+                    node.thumbnailFlipPolicy = nodeData.thumbnailFlipPolicy;
+                    node.thumbnailSourceFacing = nodeData.thumbnailSourceFacing;
                     node.position = nodeData.position.ToVector2();
                     node.options = nodeData.options ?? new List<DialogueOption>();
                     node.nextNodeGuid = nodeData.nextNodeGuid;

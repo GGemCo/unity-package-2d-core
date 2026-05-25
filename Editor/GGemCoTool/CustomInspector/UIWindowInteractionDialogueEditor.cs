@@ -30,8 +30,6 @@ namespace GGemCo2DCoreEditor
             "tailForwardOffsetPx",
             "minHalfExtentByTailPx",
             "imageTail",
-            "thumbnailFlipPolicy",
-            "thumbnailSourceFacing",
         };
 
         private SerializedProperty _dialogueVisualMode;

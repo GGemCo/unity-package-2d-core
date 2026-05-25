@@ -455,7 +455,7 @@ namespace GGemCo2DCore
         /// <returns>좌우 반전이 필요하면 <see langword="true"/>를 반환합니다.</returns>
         private bool ResolveShouldFlipThumbnail()
         {
-            switch (thumbnailFlipPolicy)
+            switch (ResolveCurrentThumbnailFlipPolicy())
             {
                 case DialogueBalloonThumbnailFlipPolicy.KeepOriginal:
                     return false;
@@ -478,6 +478,30 @@ namespace GGemCo2DCore
         }
 
         /// <summary>
+        /// 현재 출력 중인 대사 노드의 썸네일 Flip 정책을 반환합니다.
+        /// 노드 데이터가 아직 바인딩되지 않은 경우 기존 말풍선 기본 동작을 유지합니다.
+        /// </summary>
+        /// <returns>현재 노드에 적용할 썸네일 Flip 정책입니다.</returns>
+        private DialogueBalloonThumbnailFlipPolicy ResolveCurrentThumbnailFlipPolicy()
+        {
+            return _currentDialogueNode != null
+                ? _currentDialogueNode.thumbnailFlipPolicy
+                : DialogueBalloonThumbnailFlipPolicy.AutoByThumbnailPosition;
+        }
+
+        /// <summary>
+        /// 현재 출력 중인 대사 노드의 원본 썸네일 바라보기 방향을 반환합니다.
+        /// 노드 데이터가 아직 바인딩되지 않은 경우 오른쪽 방향을 기본값으로 사용합니다.
+        /// </summary>
+        /// <returns>현재 노드에 적용할 원본 썸네일 방향입니다.</returns>
+        private DialogueBalloonThumbnailSourceFacing ResolveCurrentThumbnailSourceFacing()
+        {
+            return _currentDialogueNode != null
+                ? _currentDialogueNode.thumbnailSourceFacing
+                : DialogueBalloonThumbnailSourceFacing.Right;
+        }
+
+        /// <summary>
         /// 썸네일 배치 기준으로 목표 바라보기 방향을 계산합니다.
         /// </summary>
         /// <returns>오른쪽을 바라봐야 하면 <see langword="true"/>를 반환합니다.</returns>
@@ -493,7 +517,7 @@ namespace GGemCo2DCore
         /// <returns>Flip 이 필요하면 <see langword="true"/>를 반환합니다.</returns>
         private bool ShouldFlipToDesiredFacing(bool desiredFacingRight)
         {
-            bool sourceFacingRight = thumbnailSourceFacing == DialogueBalloonThumbnailSourceFacing.Right;
+            bool sourceFacingRight = ResolveCurrentThumbnailSourceFacing() == DialogueBalloonThumbnailSourceFacing.Right;
             return sourceFacingRight != desiredFacingRight;
         }
 

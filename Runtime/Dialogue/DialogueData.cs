@@ -30,6 +30,15 @@ namespace GGemCo2DCore
         public float fontSize;
         public string thumbnailImage;
         public ConfigCommon.ThumbnailPositionType thumbnailPositionType;
+        /// <summary>
+        /// 대사 노드 썸네일의 좌우 반전 적용 정책입니다.
+        /// 노드별로 썸네일 배치 또는 화자 방향 기준 반전을 제어할 때 사용합니다.
+        /// </summary>
+        public DialogueBalloonThumbnailFlipPolicy thumbnailFlipPolicy = DialogueBalloonThumbnailFlipPolicy.AutoByThumbnailPosition;
+        /// <summary>
+        /// 원본 썸네일 스프라이트가 기본적으로 바라보는 수평 방향입니다.
+        /// </summary>
+        public DialogueBalloonThumbnailSourceFacing thumbnailSourceFacing = DialogueBalloonThumbnailSourceFacing.Right;
         public List<DialogueOption> options = new List<DialogueOption>();
         public string nextNodeGuid;
         public int startQuestUid;

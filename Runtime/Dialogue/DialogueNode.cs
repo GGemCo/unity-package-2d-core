@@ -31,6 +31,16 @@ namespace GGemCo2DCore
         public string thumbnailImage;
         [Tooltip("썸네일 이미지 위치")]
         public ConfigCommon.ThumbnailPositionType thumbnailPositionType = ConfigCommon.ThumbnailPositionType.Right;
+        /// <summary>
+        /// 대사 노드 썸네일의 좌우 반전 적용 정책입니다.
+        /// </summary>
+        [Tooltip("썸네일 Flip 적용 정책")]
+        public DialogueBalloonThumbnailFlipPolicy thumbnailFlipPolicy = DialogueBalloonThumbnailFlipPolicy.AutoByThumbnailPosition;
+        /// <summary>
+        /// 원본 썸네일 스프라이트가 기본적으로 바라보는 수평 방향입니다.
+        /// </summary>
+        [Tooltip("원본 썸네일 이미지의 기본 바라보기 방향")]
+        public DialogueBalloonThumbnailSourceFacing thumbnailSourceFacing = DialogueBalloonThumbnailSourceFacing.Right;
         public Vector2 cachedSize = Vector2.zero;
         
         [Header("현재 대화가 끝났을때 시작되는 퀘스트 고유번호")]

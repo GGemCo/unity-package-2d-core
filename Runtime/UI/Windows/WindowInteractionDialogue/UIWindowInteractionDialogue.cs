@@ -131,14 +131,6 @@ namespace GGemCo2DCore
         [SerializeField]
         private Image imageTail;
 
-        [Tooltip("썸네일 Flip 적용 정책")]
-        [SerializeField]
-        private DialogueBalloonThumbnailFlipPolicy thumbnailFlipPolicy = DialogueBalloonThumbnailFlipPolicy.AutoByThumbnailPosition;
-
-        [Tooltip("원본 썸네일 이미지의 기본 바라보기 방향")]
-        [SerializeField]
-        private DialogueBalloonThumbnailSourceFacing thumbnailSourceFacing = DialogueBalloonThumbnailSourceFacing.Right;
-
         [Header("선택지 버튼")]
         [Tooltip("선택지 버튼 프리팹")]
         [SerializeField]
