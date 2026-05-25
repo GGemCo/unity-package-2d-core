@@ -246,59 +246,33 @@ namespace GGemCo2DCore
 
         /// <summary>
         /// 대화 그래프가 종료되었을 때 정책에 맞춰 후속 UI를 구성합니다.
+        /// 기본 선택지가 남아 있으면 마지막 대사/말풍선 상태를 유지한 채 선택지만 노출합니다.
         /// </summary>
         private void HandleDialogueSequenceCompleted()
         {
             _dialogueSession.Clear();
-            ClearCurrentDialogueNode();
             BindVisibleChoices(_defaultChoices);
 
             if (_currentInteractionData != null && _currentInteractionData.DialogueEndPolicy == InteractionDialogueEndPolicy.Close)
             {
+                ClearCurrentDialogueNode();
                 CloseInteractionWindow();
                 return;
             }
 
             if (_defaultChoices.Count > 0)
             {
-                RestoreNpcPresentation();
-                string followupMessage = ResolveFollowupMessageAfterDialogue();
-                if (!string.IsNullOrEmpty(followupMessage))
-                {
-                    ApplyDialogueMessage(followupMessage, revealImmediately: false);
-                    TryCompleteDeferredInitialReveal(_dialogueLoadVersion);
-                }
-                else
-                {
-                    RefreshChoiceButtonsVisibility();
-                    RefreshThumbnailPosition();
-                    TryCompleteDeferredInitialReveal(_dialogueLoadVersion);
-                }
-
+                // 선택지가 남아 있는 종료 분기에서는 현재 노드 표시 상태를 유지한다.
+                // (_currentDialogueNode를 유지해야 말풍선 썸네일 좌/우 및 Flip 계산이 초기화되지 않는다.)
+                RefreshChoiceButtonsVisibility();
+                RefreshThumbnailPosition();
+                TryCompleteDeferredInitialReveal(_dialogueLoadVersion);
                 return;
             }
 
+            ClearCurrentDialogueNode();
             RefreshChoiceButtonsVisibility();
             TryCompleteDeferredInitialReveal(_dialogueLoadVersion);
-        }
-
-        /// <summary>
-        /// dialogue 종료 후 기본 선택지를 다시 표시할 때 사용할 후속 메시지를 계산합니다.
-        /// </summary>
-        /// <returns>후속 메시지입니다. 비어 있으면 기존 마지막 대사를 유지합니다.</returns>
-        private string ResolveFollowupMessageAfterDialogue()
-        {
-            if (_currentInteractionData != null && !string.IsNullOrEmpty(_currentInteractionData.Message))
-            {
-                return ResolveInteractionLocalizedMessage(_currentInteractionData.Message);
-            }
-
-            if (_currentQuestDatas != null && _currentQuestDatas.Count > 0)
-            {
-                return FormatInteractionText(messageQuestSelect);
-            }
-
-            return string.Empty;
         }
 
         /// <summary>
