@@ -30,10 +30,12 @@ namespace GGemCo2DCoreEditor
 
             var clone = new CutsceneEvent
             {
+                eventGuid = source.eventGuid,
                 time = source.time,
                 duration = source.duration,
                 type = source.type
             };
+            clone.EnsureEventGuid();
 
             // 타입에 맞는 payload만 복제
             ClonePayloadByType(source, clone);
@@ -300,6 +302,8 @@ namespace GGemCo2DCoreEditor
                 characterType = source.characterType,
                 characterUid = source.characterUid,
                 message = source.message,
+                messageTable = source.messageTable,
+                messageKey = source.messageKey,
                 fontSize = source.fontSize,
                 useTypewriter = source.useTypewriter,
                 typewriterCharactersPerSecond = source.typewriterCharactersPerSecond,

@@ -132,7 +132,8 @@ namespace GGemCo2DCore
                 return;
             }
 
-            _currentDialogueBalloonUi.Initialize(_newTargetCharacter, data);
+            _message = ResolveDialogueBalloonMessage(data);
+            _currentDialogueBalloonUi.Initialize(_newTargetCharacter, data, _message);
             
             // 카메라 추적 대상 설정
             if (_isFollowTarget)
@@ -153,6 +154,23 @@ namespace GGemCo2DCore
             {
                 StartInputWait();
             }
+        }
+
+
+        /// <summary>
+        /// 말풍선 데이터의 Localization table/key를 해석하여 최종 출력 메시지를 반환합니다.
+        /// Localization 정보가 없거나 조회에 실패하면 데이터에 저장된 fallback 메시지를 사용합니다.
+        /// </summary>
+        /// <param name="data">현재 말풍선 이벤트 데이터입니다.</param>
+        /// <returns>말풍선에 표시할 최종 메시지입니다.</returns>
+        private static string ResolveDialogueBalloonMessage(DialogueBalloonData data)
+        {
+            if (data == null)
+            {
+                return string.Empty;
+            }
+
+            return data.ResolveMessage();
         }
 
         /// <summary>

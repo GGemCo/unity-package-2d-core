@@ -13,6 +13,12 @@ namespace GGemCo2DCore
     public class CutsceneEvent
     {
         /// <summary>
+        /// 이벤트 고유 식별자입니다.
+        /// Timeline 순서가 변경되어도 Localization Key가 유지되도록 사용합니다.
+        /// </summary>
+        [HideInInspector] public string eventGuid = CreateEventGuid();
+
+        /// <summary>
         /// 이벤트 시작 시간 (초)입니다.
         /// </summary>
         [HideInInspector] public float time;
@@ -107,7 +113,32 @@ namespace GGemCo2DCore
         /// </summary>
         public CutsceneEvent()
         {
+            EnsureEventGuid();
             EnsureDataForType(type);
+        }
+
+
+        /// <summary>
+        /// 이벤트 GUID가 비어 있으면 새 GUID를 생성하여 보정합니다.
+        /// 기존 JSON에서 eventGuid가 누락된 경우에도 이후 Export에서 안정적인 Localization Key를 만들기 위해 사용합니다.
+        /// </summary>
+        public void EnsureEventGuid()
+        {
+            if (!string.IsNullOrWhiteSpace(eventGuid))
+            {
+                return;
+            }
+
+            eventGuid = CreateEventGuid();
+        }
+
+        /// <summary>
+        /// 컷신 이벤트에 사용할 하이픈 없는 GUID 문자열을 생성합니다.
+        /// </summary>
+        /// <returns>32자리 GUID 문자열입니다.</returns>
+        private static string CreateEventGuid()
+        {
+            return Guid.NewGuid().ToString("N");
         }
 
         /// <summary>
@@ -125,6 +156,7 @@ namespace GGemCo2DCore
         /// <param name="eventType">유효하게 유지할 이벤트 타입입니다.</param>
         public void EnsureDataForType(CutsceneEventType eventType)
         {
+            EnsureEventGuid();
             type = eventType;
 
             ClearUnusedData();

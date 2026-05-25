@@ -1,4 +1,4 @@
-using GGemCo2DCore;
+﻿using GGemCo2DCore;
 using UnityEngine;
 using UnityEngine.Timeline;
 
@@ -46,10 +46,16 @@ namespace GGemCo2DCoreEditor
         /// <param name="jsonPath">생성할 JSON 파일의 저장 경로입니다.</param>
         /// <param name="data">내보내기 과정에서 생성된 컷신 데이터입니다. 실패 시 null일 수 있습니다.</param>
         /// <param name="error">내보내기 실패 시 오류 메시지입니다. 성공 시 null 또는 빈 문자열일 수 있습니다.</param>
+        /// <param name="cutsceneInfo">Localization 컬렉션 이름과 Key 생성에 사용할 컷신 테이블 정보입니다.</param>
         /// <returns>JSON 내보내기에 성공하면 true, 실패하면 false를 반환합니다.</returns>
-        public static bool TryExportTimelineToJson(TimelineAsset timeline, string jsonPath, out CutsceneData data, out string error)
+        public static bool TryExportTimelineToJson(
+            TimelineAsset timeline,
+            string jsonPath,
+            out CutsceneData data,
+            out string error,
+            StruckTableCutscene cutsceneInfo = null)
         {
-            return CutsceneTimelineExportService.TryExportTimelineToJson(timeline, jsonPath, out data, out error);
+            return CutsceneTimelineExportService.TryExportTimelineToJson(timeline, jsonPath, out data, out error, cutsceneInfo);
         }
     }
 }

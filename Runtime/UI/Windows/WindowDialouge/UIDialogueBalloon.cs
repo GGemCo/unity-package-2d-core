@@ -97,10 +97,24 @@ namespace GGemCo2DCore
 
         /// <summary>
         /// 말풍선 대상 캐릭터와 표시할 대사 데이터를 초기화합니다.
+        /// 데이터에 Localization table/key가 있으면 해석된 문자열을 사용하고, 실패하면 fallback 메시지를 사용합니다.
         /// </summary>
         /// <param name="characterBase">말풍선을 따라갈 대상 캐릭터입니다.</param>
         /// <param name="data">말풍선 메시지와 표시 옵션입니다.</param>
         public void Initialize(CharacterBase characterBase, DialogueBalloonData data)
+        {
+            DialogueBalloonData safeData = data ?? new DialogueBalloonData();
+            Initialize(characterBase, safeData, safeData.ResolveMessage());
+        }
+
+        /// <summary>
+        /// 말풍선 대상 캐릭터와 표시할 대사 데이터를 초기화합니다.
+        /// 호출자가 Localization 해석을 완료한 메시지를 전달하면 UI는 표시와 타자 효과만 처리합니다.
+        /// </summary>
+        /// <param name="characterBase">말풍선을 따라갈 대상 캐릭터입니다.</param>
+        /// <param name="data">말풍선 표시 옵션입니다.</param>
+        /// <param name="resolvedMessage">Localization 해석이 끝난 최종 출력 문자열입니다.</param>
+        public void Initialize(CharacterBase characterBase, DialogueBalloonData data, string resolvedMessage)
         {
             _target = characterBase;
             DialogueBalloonData safeData = data ?? new DialogueBalloonData();
@@ -108,7 +122,7 @@ namespace GGemCo2DCore
             ApplyProjectEnterIndicatorDefaults();
             BeginBalloonPresentation();
             SetFontSize(safeData.fontSize);
-            SetMessage(safeData);
+            SetMessage(safeData, resolvedMessage);
             SetThumbnailOptions(safeData);
             ApplyTailFlip();
         }
@@ -179,8 +193,9 @@ namespace GGemCo2DCore
         /// <summary>
         /// 말풍선 메시지를 적용하고 타자 효과 상태를 초기화합니다.
         /// </summary>
-        /// <param name="data">말풍선 메시지와 타자 효과 설정입니다.</param>
-        private void SetMessage(DialogueBalloonData data)
+        /// <param name="data">말풍선 타자 효과 설정입니다.</param>
+        /// <param name="resolvedMessage">Localization 해석이 끝난 최종 출력 문자열입니다.</param>
+        private void SetMessage(DialogueBalloonData data, string resolvedMessage)
         {
             if (textMessage == null)
             {
@@ -191,7 +206,7 @@ namespace GGemCo2DCore
 
             _revealPlayer.Configure(
                 textMessage,
-                data.message,
+                resolvedMessage ?? string.Empty,
                 data.useTypewriter,
                 data.GetSafeTypewriterCharactersPerSecond());
             _isMessagePreparationComplete = true;

@@ -104,8 +104,12 @@ namespace GGemCo2DCore
         public int characterUid;
         
         [Header("메시지 텍스트")]
-        [Tooltip("말풍선 내용")]
+        [Tooltip("말풍선 내용입니다. Localization 조회에 실패하면 fallback 문자열로 사용합니다.")]
         public string message;
+        [Tooltip("말풍선 메시지를 조회할 String Table Collection 이름입니다.")]
+        public string messageTable;
+        [Tooltip("말풍선 메시지를 조회할 String Table Entry Key 입니다.")]
+        public string messageKey;
         [Tooltip("폰트 크기")]
         public float fontSize;
 
@@ -168,6 +172,18 @@ namespace GGemCo2DCore
         public Vector3 worldOffset = Vector3.zero;
         [Tooltip("말풍선 월드 오프셋 X값의 화자 방향 연동 정책입니다.")]
         public DialogueBalloonWorldOffsetXPolicy worldOffsetXPolicy = DialogueBalloonWorldOffsetXPolicy.UseProjectPolicy;
+
+
+        /// <summary>
+        /// 말풍선 메시지를 Localization table/key 기준으로 해석합니다.
+        /// table/key가 비어 있거나 조회에 실패하면 <see cref="message"/> 값을 fallback으로 반환합니다.
+        /// </summary>
+        /// <param name="arguments">Smart String 평가에 사용할 인자입니다.</param>
+        /// <returns>최종 표시 문자열입니다.</returns>
+        public string ResolveMessage(params object[] arguments)
+        {
+            return DialogueLocalizationRuntimeResolver.Resolve(messageTable, messageKey, message, arguments);
+        }
 
         /// <summary>
         /// 타자 효과 속도가 지정되지 않았으면 기본값으로 보정해서 반환합니다.

@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Reflection;
@@ -94,6 +94,13 @@ namespace GGemCo2DCoreEditor
                 {
                     cutsceneEvent = new CutsceneEvent();
                     clip.events[i] = cutsceneEvent;
+                    changed = true;
+                }
+
+                string previousEventGuid = cutsceneEvent.eventGuid;
+                cutsceneEvent.EnsureEventGuid();
+                if (!string.Equals(previousEventGuid, cutsceneEvent.eventGuid, StringComparison.Ordinal))
+                {
                     changed = true;
                 }
 

@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.IO;
 using GGemCo2DCore;
@@ -285,7 +285,12 @@ namespace GGemCo2DCoreEditor
             CutsceneData exportedData;
             string error;
 
-            if (!CutsceneTimelineJsonUtility.TryExportTimelineToJson(_state.SelectedTimelineAsset, jsonPath, out exportedData, out error))
+            if (!CutsceneTimelineJsonUtility.TryExportTimelineToJson(
+                    _state.SelectedTimelineAsset,
+                    jsonPath,
+                    out exportedData,
+                    out error,
+                    _state.SelectedCutscene))
             {
                 EditorUtility.DisplayDialog(Title, error, "OK");
                 return;
