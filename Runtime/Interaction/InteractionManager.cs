@@ -13,11 +13,19 @@ namespace GGemCo2DCore
         private TableInteraction _tableInteraction;
         private UIWindowInteractionDialogue _uiWindowInteractionDialogue;
         private CharacterBase _currentNpc;
+        private CharacterBase _interactionLockedPlayer;
+        private object _interactionControlLockToken;
         private GGemCoNpcInteractionSettings _npcInteractionSettings;
         private readonly Dictionary<int, InteractionBlockReason> _interactionBlockReasons = new();
         private int _nextInteractionBlockTokenId;
 
         public CharacterBase CurrentNpc => _currentNpc;
+
+        /// <summary>
+        /// NPC 인터랙션 활성 상태가 변경될 때 호출됩니다.
+        /// 모바일 HUD, 외부 입력 표시 정책처럼 인터랙션 상태에 반응해야 하는 시스템에서 구독합니다.
+        /// </summary>
+        public event System.Action<bool> InteractionActiveChanged;
 
         /// <summary>
         /// 상호작용 매니저에 씬 의존성을 연결합니다.
@@ -79,6 +87,7 @@ namespace GGemCo2DCore
 
             _currentNpc = characterBase;
             _npcInteractionSettings = ResolveNpcInteractionSettings();
+            BeginPlayerControlLockForInteraction();
 
             // 퀘스트 정보
             Npc npc = _currentNpc as Npc;
@@ -267,6 +276,85 @@ namespace GGemCo2DCore
 
 
         /// <summary>
+        /// NPC 인터랙션 시작에 맞춰 플레이어 조작을 잠그고, 이미 진행 중인 조작 액션을 정리합니다.
+        /// 대화 UI 터치만 남기기 위해 게임플레이 입력은 <see cref="CharacterBase.IsDontControl"/> 경로에서 차단되도록 합니다.
+        /// </summary>
+        private void BeginPlayerControlLockForInteraction()
+        {
+            CharacterBase player = ResolvePlayer();
+            if (player == null)
+            {
+                return;
+            }
+
+            CancelPlayerActionsForInteraction(player);
+
+            bool wasLocked = _interactionControlLockToken != null;
+            if (!wasLocked)
+            {
+                _interactionLockedPlayer = player;
+                _interactionControlLockToken = player.AcquireControlLock(this);
+            }
+            else if (_interactionLockedPlayer != player)
+            {
+                ReleasePlayerControlLockForInteraction();
+                _interactionLockedPlayer = player;
+                _interactionControlLockToken = player.AcquireControlLock(this);
+                wasLocked = false;
+            }
+
+            if (!wasLocked)
+            {
+                InteractionActiveChanged?.Invoke(true);
+            }
+        }
+
+        /// <summary>
+        /// 플레이어에 연결된 Control 패키지 어댑터를 찾아 인터랙션 시작 전 액션 정리를 요청합니다.
+        /// Core는 인터페이스만 호출하여 패키지 의존성 방향을 유지합니다.
+        /// </summary>
+        /// <param name="player">액션을 정리할 플레이어 캐릭터입니다.</param>
+        private static void CancelPlayerActionsForInteraction(CharacterBase player)
+        {
+            if (player == null)
+            {
+                return;
+            }
+
+            MonoBehaviour[] behaviours = player.GetComponentsInChildren<MonoBehaviour>(true);
+            for (int i = 0; i < behaviours.Length; i++)
+            {
+                if (behaviours[i] is IInteractionActionCanceler canceler)
+                {
+                    canceler.CancelActionsOnInteractionStart();
+                    return;
+                }
+            }
+        }
+
+        /// <summary>
+        /// NPC 인터랙션이 종료될 때 플레이어 조작 잠금 토큰을 해제합니다.
+        /// 씬 종료, NPC 범위 이탈, 선택지 종료 등 모든 종료 경로에서 호출되어 잠금 누락을 방지합니다.
+        /// </summary>
+        private void ReleasePlayerControlLockForInteraction()
+        {
+            bool wasLocked = _interactionControlLockToken != null;
+            if (_interactionLockedPlayer != null && _interactionControlLockToken != null)
+            {
+                _interactionLockedPlayer.ReleaseControlLock(_interactionControlLockToken);
+            }
+
+            _interactionLockedPlayer = null;
+            _interactionControlLockToken = null;
+
+            if (wasLocked)
+            {
+                InteractionActiveChanged?.Invoke(false);
+            }
+        }
+
+
+        /// <summary>
         /// 현재 NPC 상호작용 시작이 차단되어 있는지 확인합니다.
         /// </summary>
         /// <returns>컷씬 재생 중이거나 외부 차단 토큰이 하나 이상 있으면 <see langword="true"/>입니다.</returns>
@@ -341,6 +429,7 @@ namespace GGemCo2DCore
         public void RemoveCurrentNpc()
         {
             _currentNpc = null;
+            ReleasePlayerControlLockForInteraction();
         }
 
         /// <summary>
@@ -350,6 +439,7 @@ namespace GGemCo2DCore
         {
             _uiWindowInteractionDialogue?.OnEndInteraction();
             _currentNpc = null;
+            ReleasePlayerControlLockForInteraction();
         }
 
         /// <summary>
@@ -389,6 +479,7 @@ namespace GGemCo2DCore
         {
             ClearInteractionBlocks();
             _currentNpc = null;
+            ReleasePlayerControlLockForInteraction();
             _uiWindowInteractionDialogue = null;
         }
     }
