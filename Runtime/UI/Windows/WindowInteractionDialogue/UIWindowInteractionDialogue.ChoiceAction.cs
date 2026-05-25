@@ -100,6 +100,7 @@ namespace GGemCo2DCore
             if (_dialogueSession.TrySelectOption(optionIndex))
             {
                 int requestVersion = _dialogueLoadVersion;
+                BeginDeferredInitialReveal(requestVersion);
                 await ApplyCurrentDialogueNodeAsync(requestVersion);
                 return;
             }

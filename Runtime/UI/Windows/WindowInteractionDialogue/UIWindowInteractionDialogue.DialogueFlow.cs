@@ -489,6 +489,7 @@ namespace GGemCo2DCore
             if (_dialogueSession.TryMoveNext())
             {
                 int requestVersion = _dialogueLoadVersion;
+                BeginDeferredInitialReveal(requestVersion);
                 _ = ApplyCurrentDialogueNodeAsync(requestVersion);
                 return;
             }
