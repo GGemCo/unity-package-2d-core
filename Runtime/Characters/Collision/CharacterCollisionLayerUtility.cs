@@ -45,6 +45,29 @@ namespace GGemCo2DCore
             return layer >= 0 ? 1 << layer : 0;
         }
 
+
+        /// <summary>
+        /// ConfigLayer 키에 대응하는 Unity 레이어 인덱스를 반환합니다.
+        /// </summary>
+        /// <param name="layerKey">조회할 ConfigLayer 키입니다.</param>
+        /// <returns>Unity 레이어 인덱스입니다. 레이어가 없으면 -1입니다.</returns>
+        public static int GetLayer(ConfigLayer.Keys layerKey)
+        {
+            string layerName = ConfigLayer.GetValue(layerKey);
+            return string.IsNullOrEmpty(layerName) ? -1 : LayerMask.NameToLayer(layerName);
+        }
+
+        /// <summary>
+        /// ConfigLayer 키에 대응하는 Unity 레이어 마스크를 반환합니다.
+        /// </summary>
+        /// <param name="layerKey">조회할 ConfigLayer 키입니다.</param>
+        /// <returns>유효한 레이어이면 해당 레이어 마스크, 아니면 0입니다.</returns>
+        public static int GetLayerMask(ConfigLayer.Keys layerKey)
+        {
+            int layer = GetLayer(layerKey);
+            return layer >= 0 ? 1 << layer : 0;
+        }
+
         /// <summary>
         /// 캐릭터 오브젝트 안에서 이동 차단용 Body Collider를 찾습니다.
         /// </summary>

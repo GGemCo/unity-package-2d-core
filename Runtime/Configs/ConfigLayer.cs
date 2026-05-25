@@ -18,7 +18,9 @@
             // 캐릭터 이동 차단용 Body Collider 레이어 - Monster
             CharacterBodyMonster,
             // 캐릭터 이동 차단용 Body Collider 레이어 - NPC
-            CharacterBodyNpc
+            CharacterBodyNpc,
+            // 사망 캐릭터 Body Collider 지면 유지 전용 레이어
+            CharacterBodyDead
         }
     }
 }

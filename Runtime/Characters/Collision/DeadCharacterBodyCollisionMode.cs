@@ -1,4 +1,4 @@
-namespace GGemCo2DCore
+﻿namespace GGemCo2DCore
 {
     /// <summary>
     /// 사망한 캐릭터의 Body Collider를 캐릭터 충돌 시스템에서 처리하는 방식을 정의합니다.
@@ -21,5 +21,11 @@ namespace GGemCo2DCore
         /// 풀 재사용 또는 부활 시 기존 활성 상태로 복원됩니다.
         /// </summary>
         DisableBodyCollider = 2,
+
+        /// <summary>
+        /// 사망 후 Body Collider를 유지하되 사망 전용 레이어로 변경합니다.
+        /// 지면과의 물리 충돌은 유지하고, 플레이어/몬스터/NPC Body 충돌에서는 제외할 때 사용합니다.
+        /// </summary>
+        GroundOnlyLayer = 3,
     }
 }

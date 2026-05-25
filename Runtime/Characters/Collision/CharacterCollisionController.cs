@@ -1,4 +1,5 @@
-﻿using UnityEngine;
+﻿using System.Collections.Generic;
+using UnityEngine;
 
 namespace GGemCo2DCore
 {
@@ -10,6 +11,8 @@ namespace GGemCo2DCore
     {
         private const int CastHitCapacity = 12;
         private const int OverlapCapacity = 12;
+
+        private static readonly HashSet<int> ConfiguredDeadBodyLayers = new();
 
         private readonly RaycastHit2D[] _castHits = new RaycastHit2D[CastHitCapacity];
         private readonly Collider2D[] _overlaps = new Collider2D[OverlapCapacity];
@@ -340,7 +343,7 @@ namespace GGemCo2DCore
         }
 
         /// <summary>
-        /// 사망 처리 정책에 따라 Body Collider 활성 상태를 동기화합니다.
+        /// 사망 처리 정책에 따라 Body Collider 활성 상태와 레이어를 동기화합니다.
         /// </summary>
         private void SyncDeathCollisionState()
         {
@@ -348,10 +351,9 @@ namespace GGemCo2DCore
                 return;
 
             CharacterCollisionSettings settings = GetSettings();
-            bool shouldDisable =
-                IsEnabled(settings) &&
-                GetDeadCharacterBodyCollisionMode(settings) == DeadCharacterBodyCollisionMode.DisableBodyCollider &&
-                !CanParticipateInCollision(_owner, settings);
+            DeadCharacterBodyCollisionMode mode = GetDeadCharacterBodyCollisionMode(settings);
+            bool isExcludedByDeath = IsEnabled(settings) && !CanParticipateInCollision(_owner, settings);
+            bool shouldDisable = mode == DeadCharacterBodyCollisionMode.DisableBodyCollider && isExcludedByDeath;
 
             if (shouldDisable)
             {
@@ -370,6 +372,86 @@ namespace GGemCo2DCore
                 _bodyCollider.enabled = _bodyColliderEnabledBeforeDeath;
                 _bodyColliderDisabledByDeath = false;
             }
+
+            if (mode == DeadCharacterBodyCollisionMode.GroundOnlyLayer && isExcludedByDeath)
+            {
+                ApplyDeadBodyGroundOnlyLayer(settings);
+            }
+        }
+
+        /// <summary>
+        /// 사망 캐릭터 Body Collider를 지면 유지 전용 레이어로 변경합니다.
+        /// </summary>
+        /// <param name="settings">캐릭터 충돌 설정 인스턴스입니다.</param>
+        /// <remarks>
+        /// Collider를 비활성화하지 않고 레이어만 변경하여, 지면과는 계속 충돌하되
+        /// 플레이어/몬스터/NPC Body Collider와는 충돌하지 않도록 분리합니다.
+        /// </remarks>
+        private void ApplyDeadBodyGroundOnlyLayer(CharacterCollisionSettings settings)
+        {
+            int deadBodyLayer = GetDeadCharacterBodyLayer(settings);
+            if (deadBodyLayer < 0)
+                return;
+
+            EnsureDeadBodyLayerCollisionMatrix(settings, deadBodyLayer);
+            _bodyCollider.gameObject.layer = deadBodyLayer;
+        }
+
+        /// <summary>
+        /// 사망 Body 전용 레이어 인덱스를 반환합니다.
+        /// </summary>
+        /// <param name="settings">캐릭터 충돌 설정 인스턴스입니다.</param>
+        /// <returns>유효한 Unity 레이어이면 인덱스, 없으면 -1입니다.</returns>
+        private static int GetDeadCharacterBodyLayer(CharacterCollisionSettings settings)
+        {
+            if (settings != null)
+            {
+                string layerName = settings.GetDeadCharacterBodyLayerName();
+                return string.IsNullOrEmpty(layerName) ? -1 : LayerMask.NameToLayer(layerName);
+            }
+
+            return CharacterCollisionLayerUtility.GetLayer(ConfigLayer.Keys.CharacterBodyDead);
+        }
+
+        /// <summary>
+        /// 사망 Body 전용 레이어의 런타임 충돌 행렬을 한 번 보정합니다.
+        /// </summary>
+        /// <param name="settings">캐릭터 충돌 설정 인스턴스입니다.</param>
+        /// <param name="deadBodyLayer">사망 Body 전용 Unity 레이어 인덱스입니다.</param>
+        /// <remarks>
+        /// 프로젝트 설정의 Layer Collision Matrix가 아직 정리되지 않은 경우에도
+        /// 사망 몬스터가 플레이어 이동/바닥 체크 Collider를 막지 않도록 런타임에서 안전장치를 적용합니다.
+        /// </remarks>
+        private static void EnsureDeadBodyLayerCollisionMatrix(CharacterCollisionSettings settings, int deadBodyLayer)
+        {
+            if (deadBodyLayer < 0 || !ShouldConfigureDeadBodyLayerCollisionMatrix(settings))
+                return;
+
+            if (!ConfiguredDeadBodyLayers.Add(deadBodyLayer))
+                return;
+
+            SetLayerCollisionIgnored(deadBodyLayer, CharacterCollisionLayerUtility.GetBodyLayer(CharacterConstants.Type.Player), true);
+            SetLayerCollisionIgnored(deadBodyLayer, CharacterCollisionLayerUtility.GetBodyLayer(CharacterConstants.Type.Monster), true);
+            SetLayerCollisionIgnored(deadBodyLayer, CharacterCollisionLayerUtility.GetBodyLayer(CharacterConstants.Type.Npc), true);
+            SetLayerCollisionIgnored(deadBodyLayer, CharacterCollisionLayerUtility.GetLayer(ConfigLayer.Keys.HitAreaPlayer), true);
+            SetLayerCollisionIgnored(deadBodyLayer, CharacterCollisionLayerUtility.GetLayer(ConfigLayer.Keys.HitAreaMonster), true);
+
+            SetLayerCollisionIgnored(deadBodyLayer, CharacterCollisionLayerUtility.GetLayer(ConfigLayer.Keys.TileMapGround), false);
+            SetLayerCollisionIgnored(deadBodyLayer, CharacterCollisionLayerUtility.GetLayer(ConfigLayer.Keys.TileMapOneWayPlatform), false);
+        }
+
+        /// <summary>
+        /// 두 레이어가 모두 유효할 때만 Physics2D 충돌 무시 상태를 적용합니다.
+        /// </summary>
+        /// <param name="a">첫 번째 Unity 레이어 인덱스입니다.</param>
+        /// <param name="b">두 번째 Unity 레이어 인덱스입니다.</param>
+        /// <param name="ignored">충돌을 무시해야 하면 true입니다.</param>
+        private static void SetLayerCollisionIgnored(int a, int b, bool ignored)
+        {
+            if (a < 0 || b < 0 || a == b)
+                return;
+
+            Physics2D.IgnoreLayerCollision(a, b, ignored);
         }
 
         /// <summary>
@@ -467,7 +549,7 @@ namespace GGemCo2DCore
         {
             return settings != null
                 ? settings.deadCharacterBodyCollisionMode
-                : DeadCharacterBodyCollisionMode.IgnoreInCharacterCollision;
+                : DeadCharacterBodyCollisionMode.GroundOnlyLayer;
         }
 
         /// <summary>
@@ -478,6 +560,16 @@ namespace GGemCo2DCore
         private static bool ShouldIgnoreDeathPendingCharacters(CharacterCollisionSettings settings)
         {
             return settings == null || settings.ignoreDeathPendingCharacters;
+        }
+
+        /// <summary>
+        /// 사망 Body 전용 레이어의 런타임 충돌 행렬을 보정할지 여부를 반환합니다.
+        /// </summary>
+        /// <param name="settings">캐릭터 충돌 설정 인스턴스입니다.</param>
+        /// <returns>보정해야 하면 true입니다.</returns>
+        private static bool ShouldConfigureDeadBodyLayerCollisionMatrix(CharacterCollisionSettings settings)
+        {
+            return settings == null || settings.configureDeadCharacterBodyLayerCollisionMatrix;
         }
 
         /// <summary>

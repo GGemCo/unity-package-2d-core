@@ -96,7 +96,13 @@ namespace GGemCo2DCore
         [Header("사망 캐릭터 처리")]
         [Tooltip("사망 캐릭터의 Body 충돌 처리 방식입니다.")]
         public DeadCharacterBodyCollisionMode deadCharacterBodyCollisionMode =
-            DeadCharacterBodyCollisionMode.IgnoreInCharacterCollision;
+            DeadCharacterBodyCollisionMode.GroundOnlyLayer;
+
+        [Tooltip("GroundOnlyLayer 정책에서 사망 캐릭터 Body Collider에 적용할 레이어입니다.")]
+        public ConfigLayer.Keys deadCharacterBodyLayer = ConfigLayer.Keys.CharacterBodyDead;
+
+        [Tooltip("GroundOnlyLayer 정책 적용 시 사망 Body 레이어가 캐릭터 Body/HitArea와 충돌하지 않도록 런타임 Layer Collision Matrix를 보정합니다.")]
+        public bool configureDeadCharacterBodyLayerCollisionMatrix = true;
 
         [Tooltip("사망 확정 전 보류 상태인 캐릭터도 Body 충돌 검사에서 제외할지 여부입니다.")]
         public bool ignoreDeathPendingCharacters = true;
@@ -125,6 +131,15 @@ namespace GGemCo2DCore
                 return npcNpcPolicy;
 
             return CharacterBodyCollisionPolicy.None;
+        }
+
+        /// <summary>
+        /// 사망 캐릭터 Body Collider에 적용할 레이어 이름을 반환합니다.
+        /// </summary>
+        /// <returns>ConfigLayer 규칙으로 구성된 사망 Body 레이어 이름입니다.</returns>
+        public string GetDeadCharacterBodyLayerName()
+        {
+            return ConfigLayer.GetValue(deadCharacterBodyLayer);
         }
 
         /// <summary>
