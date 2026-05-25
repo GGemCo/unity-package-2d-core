@@ -5,48 +5,70 @@ using UnityEngine.Tilemaps;
 namespace GGemCo2DCore
 {
     /// <summary>
-    /// 맵
+    /// 타일맵 기반 맵의 기본 동작을 제공하며, 맵에 배치된 몬스터와 NPC 목록을 관리합니다.
     /// </summary>
     public class DefaultMap : MonoBehaviour
     {
+        /// <summary>
+        /// 현재 맵에 대응되는 테이블 데이터입니다.
+        /// </summary>
         protected StruckTableMap struckTableMap;
-        
+
         private Tilemap _tilemap;
-        
-        // 맵에 배치된 몬스터
+
+        /// <summary>
+        /// 맵에 배치된 몬스터를 VID 기준으로 보관하는 사전입니다.
+        /// </summary>
         protected readonly Dictionary<int, GameObject> Monsters = new Dictionary<int, GameObject>();
-        // 맵에 배치된 npc
+
+        /// <summary>
+        /// 맵에 배치된 NPC를 VID 기준으로 보관하는 사전입니다.
+        /// </summary>
         protected readonly Dictionary<int, GameObject> Npcs = new Dictionary<int, GameObject>();
 
+        /// <summary>
+        /// 타일맵 컴포넌트를 캐시하고 맵 구성 요소 및 태그, 정렬 레이어를 초기화합니다.
+        /// </summary>
         protected virtual void Awake()
         {
             _tilemap = GetComponent<Tilemap>();
-            
+
             InitComponents();
             InitTagSortingLayer();
         }
 
+        /// <summary>
+        /// 파생 클래스에서 맵에 필요한 추가 컴포넌트를 초기화합니다.
+        /// </summary>
         public virtual void InitComponents()
         {
-            
+
         }
 
+        /// <summary>
+        /// 맵 오브젝트의 태그와 타일맵 렌더러의 정렬 레이어를 기본 맵 설정으로 지정합니다.
+        /// </summary>
         public virtual void InitTagSortingLayer()
         {
             tag = ConfigTags.GetValue(ConfigTags.Keys.Map);
-            GetComponent<TilemapRenderer>().sortingLayerName = ConfigSortingLayer.GetValue(ConfigSortingLayer.Keys.Map_Ground);
+            GetComponent<TilemapRenderer>().sortingLayerName =
+                ConfigSortingLayer.GetValue(ConfigSortingLayer.Keys.Map_Ground);
         }
 
+        /// <summary>
+        /// 현재 맵에서 사용할 테이블 데이터를 설정합니다.
+        /// </summary>
+        /// <param name="currentMapTableData">현재 맵에 대응되는 테이블 데이터입니다.</param>
         public virtual void Initialize(StruckTableMap currentMapTableData)
         {
             struckTableMap = currentMapTableData;
         }
-        
+
         /// <summary>
-        /// vid 값으로 몬스터 찾기  
+        /// VID에 해당하는 NPC의 리젠 데이터를 반환합니다.
         /// </summary>
-        /// <param name="vid"></param>
-        /// <returns></returns>
+        /// <param name="vid">조회할 NPC의 VID입니다.</param>
+        /// <returns>NPC의 리젠 데이터이며, 대상이 없거나 NPC 컴포넌트가 없으면 <c>null</c>입니다.</returns>
         public CharacterRegenData GetNpcDataByVid(int vid)
         {
             GameObject npc = Npcs.GetValueOrDefault(vid);
@@ -55,19 +77,30 @@ namespace GGemCo2DCore
             if (myNpc == null) return null;
             return myNpc.CharacterRegenData;
         }
+
+        /// <summary>
+        /// 현재 맵에 등록된 NPC 목록을 반환합니다.
+        /// </summary>
+        /// <returns>VID를 키로 사용하는 NPC GameObject 사전입니다.</returns>
         public Dictionary<int, GameObject> GetNpcs()
         {
             return Npcs;
         }
+
+        /// <summary>
+        /// 현재 맵에 등록된 몬스터 목록을 반환합니다.
+        /// </summary>
+        /// <returns>VID를 키로 사용하는 몬스터 GameObject 사전입니다.</returns>
         public Dictionary<int, GameObject> GetMonsters()
         {
             return Monsters;
         }
+
         /// <summary>
-        /// 맵에 배치된 npc 중에 uid 로 가져오기
+        /// UID가 일치하는 NPC를 현재 맵의 NPC 목록에서 찾아 반환합니다.
         /// </summary>
-        /// <param name="npcUid"></param>
-        /// <returns></returns>
+        /// <param name="npcUid">조회할 NPC의 UID입니다.</param>
+        /// <returns>UID가 일치하는 NPC이며, 찾지 못하면 <c>null</c>입니다.</returns>
         public Npc GetNpcByUid(int npcUid)
         {
             foreach (var data in Npcs)
@@ -79,8 +112,15 @@ namespace GGemCo2DCore
                     return npc;
                 }
             }
+
             return null;
         }
+
+        /// <summary>
+        /// UID가 일치하는 몬스터를 현재 맵의 몬스터 목록에서 찾아 반환합니다.
+        /// </summary>
+        /// <param name="monsterUid">조회할 몬스터의 UID입니다.</param>
+        /// <returns>UID가 일치하는 몬스터이며, 찾지 못하면 <c>null</c>입니다.</returns>
         public Monster GetMonsterByUid(int monsterUid)
         {
             foreach (var data in Monsters)
@@ -93,57 +133,78 @@ namespace GGemCo2DCore
                     return monster;
                 }
             }
+
             return null;
         }
+
+        /// <summary>
+        /// 매 프레임 종료 시점에 카메라 기준 컬링 범위와 오브젝트 상태를 갱신합니다.
+        /// </summary>
         protected void LateUpdate()
         {
-            // 카메라가 이동할 때마다 컬링 범위 및 오브젝트 상태 갱신
             CalculateCullingBounds();
         }
 
+        /// <summary>
+        /// 파생 클래스에서 카메라 위치나 맵 상태에 따른 컬링 범위를 계산합니다.
+        /// </summary>
         protected virtual void CalculateCullingBounds()
         {
         }
+
         /// <summary>
-        /// npc를 스폰하면서 List 에 추가하기
+        /// 생성된 NPC를 VID 기준 목록에 추가합니다.
         /// </summary>
-        /// <param name="vid"></param>
-        /// <param name="npc"></param>
+        /// <param name="vid">등록할 NPC의 VID입니다.</param>
+        /// <param name="npc">등록할 NPC GameObject입니다.</param>
         public void AddNpc(int vid, GameObject npc)
         {
             if (npc == null) return;
-            Npcs.Add(vid, npc);
+            Npcs[vid] = npc;
         }
+
         /// <summary>
-        /// 몬스터를 스폰하면서 List 에 추가하기
+        /// 생성된 몬스터를 VID 기준 목록에 추가하거나 기존 항목을 갱신합니다.
         /// </summary>
-        /// <param name="vid"></param>
-        /// <param name="monster"></param>
+        /// <param name="vid">등록할 몬스터의 VID입니다.</param>
+        /// <param name="monster">등록할 몬스터 GameObject입니다.</param>
         public void AddMonster(int vid, GameObject monster)
         {
             if (monster == null) return;
             Monsters[vid] = monster;
         }
 
+        /// <summary>
+        /// 지정한 VID에 해당하는 몬스터를 목록에서 제거합니다.
+        /// </summary>
+        /// <param name="vid">제거할 몬스터의 VID입니다.</param>
         public void RemoveMonster(int vid)
         {
             Monsters.Remove(vid);
         }
 
+        /// <summary>
+        /// 현재 등록된 몬스터 항목의 복사본 목록을 반환합니다.
+        /// </summary>
+        /// <returns>VID와 몬스터 GameObject 쌍으로 구성된 목록입니다.</returns>
         public List<KeyValuePair<int, GameObject>> GetMonsterEntries()
         {
             return new List<KeyValuePair<int, GameObject>>(Monsters);
         }
 
+        /// <summary>
+        /// 현재 맵에 등록된 모든 몬스터 항목을 제거합니다.
+        /// </summary>
         public void ClearMonsters()
         {
             Monsters.Clear();
         }
+
         /// <summary>
-        /// vid 값으로 몬스터 찾기  
+        /// VID에 해당하는 몬스터의 리젠 데이터를 반환합니다.
         /// </summary>
-        /// <param name="vid"></param>
-        /// <returns></returns>
+        /// <param name="vid">조회할 몬스터의 VID입니다.</param>
+        /// <returns>몬스터의 리젠 데이터이며, 대상이 없거나 몬스터 컴포넌트가 없으면 <c>null</c>입니다.</returns>
         public CharacterRegenData GetMonsterDataByVid(int vid)
         {
             GameObject monster = Monsters.GetValueOrDefault(vid);
@@ -152,13 +213,16 @@ namespace GGemCo2DCore
             if (myMonster == null) return null;
             return myMonster.CharacterRegenData;
         }
+
         /// <summary>
-        /// 플레이어 기준 range 안에서 가장 가까운 몬스터 찾기
+        /// 플레이어를 기준으로 지정 범위 안에 있는 가장 가까운 생존 몬스터를 반환합니다.
         /// </summary>
-        /// <param name="range"></param>
-        /// <returns></returns>
+        /// <param name="range">탐색할 최대 거리입니다.</param>
+        /// <returns>범위 안에서 가장 가까운 몬스터이며, 조건에 맞는 대상이 없으면 <c>null</c>입니다.</returns>
         public Monster GetNearByMonsterDistance(int range)
         {
+            if (!SceneGame.Instance || !SceneGame.Instance.player) return null;
+            
             Monster closeMonster = null;
             float closestDistance = float.MaxValue;
             Vector3 playerPosition = SceneGame.Instance.player.transform.position;
@@ -168,24 +232,38 @@ namespace GGemCo2DCore
                 if (monster == null) continue;
                 Monster myMonster = monster.GetComponent<Monster>();
                 if (myMonster == null || myMonster.IsStatusDead() || !myMonster.gameObject.activeSelf) continue;
-                
-                // 거리 계산
+
                 float distance = Vector2.Distance(playerPosition, monster.transform.position);
                 if (distance > range) continue;
 
-                // 가장 가까운 NPC 업데이트
                 if (distance < closestDistance)
                 {
                     closestDistance = distance;
                     closeMonster = myMonster;
                 }
             }
+
             return closeMonster;
         }
-        
+
+        /// <summary>
+        /// 현재 맵이 속한 챕터 번호를 반환합니다.
+        /// </summary>
+        /// <returns>맵 테이블 데이터가 있으면 챕터 번호, 없으면 0입니다.</returns>
         public int GetChapterNumber()
         {
+            if (struckTableMap == null) return 0;
             return struckTableMap.Chapter;
+        }
+
+        /// <summary>
+        /// 현재 맵의 이름을 반환합니다.
+        /// </summary>
+        /// <returns>맵 테이블 데이터가 있으면 맵 이름, 없으면 빈 문자열입니다.</returns>
+        public string GetMapName()
+        {
+            if (struckTableMap == null) return "";
+            return struckTableMap.Name;
         }
     }
 }
