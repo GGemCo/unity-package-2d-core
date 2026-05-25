@@ -162,6 +162,8 @@ namespace GGemCo2DCoreEditor
             { "CloseWindowUid", ConfigAddressableTable.Window },
             { "SoundUid", ConfigAddressableTable.Sound },
             { "BgmUid", ConfigAddressableTable.Sound },
+            { "TransitionCutsceneUid", ConfigAddressableTable.Cutscene },
+            { "PhaseStartCutsceneUid", ConfigAddressableTable.Cutscene },
             { "ApplyAffectUid", "affect" },
             { "AffectUid", "affect" },
         };

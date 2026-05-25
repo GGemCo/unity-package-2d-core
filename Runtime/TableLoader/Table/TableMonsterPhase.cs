@@ -23,6 +23,8 @@ namespace GGemCo2DCore
         public int EndHpFixed;
         /// <summary>해당 페이즈가 종료될 때 시작할 전환 컷신 UID입니다. 0이면 미사용입니다.</summary>
         public int TransitionCutsceneUid;
+        /// <summary>해당 페이즈가 시작될 때 재생할 컷신 UID입니다. 0이면 미사용입니다.</summary>
+        public int PhaseStartCutsceneUid;
         /// <summary>BT 교체 시 상태 보존 모드 문자열입니다.</summary>
         public string TreeSwitchMode;
     }
@@ -88,13 +90,28 @@ namespace GGemCo2DCore
                 EndHpFixed = data.TryGetValue("EndHpFixed", out string endHpFixed)
                     ? MathHelper.ParseInt(endHpFixed)
                     : 0,
-                TransitionCutsceneUid = data.TryGetValue("TransitionCutsceneUid", out string transitionCutsceneUid)
-                    ? MathHelper.ParseInt(transitionCutsceneUid)
-                    : 0,
+                TransitionCutsceneUid = ParseOptionalCutsceneUid(data, "TransitionCutsceneUid"),
+                PhaseStartCutsceneUid = ParseOptionalCutsceneUid(data, "PhaseStartCutsceneUid"),
                 TreeSwitchMode = data.TryGetValue("TreeSwitchMode", out string treeSwitchMode)
                     ? treeSwitchMode
                     : string.Empty,
             };
+        }
+
+        /// <summary>
+        /// 선택 컷신 UID 컬럼을 정수로 파싱합니다.
+        /// </summary>
+        /// <param name="data">헤더명 기반 원시 값 사전입니다.</param>
+        /// <param name="headerName">조회할 컷신 UID 컬럼명입니다.</param>
+        /// <returns>컬럼이 없거나 파싱에 실패하면 0을 반환합니다.</returns>
+        private static int ParseOptionalCutsceneUid(IReadOnlyDictionary<string, string> data, string headerName)
+        {
+            if (data == null || string.IsNullOrWhiteSpace(headerName))
+                return 0;
+
+            return data.TryGetValue(headerName, out string rawUid)
+                ? MathHelper.ParseInt(rawUid)
+                : 0;
         }
 
         /// <summary>
