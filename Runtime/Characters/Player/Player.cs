@@ -642,26 +642,35 @@ namespace GGemCo2DCore
         }
         
         /// <summary>
-        /// 플레이어 공격 영역에 몬스터가 있을 때, 플레이어의 자동 이동을 멈추도록 InputManager에 요청한다
+        /// 플레이어 공격 영역에 살아있는 몬스터가 들어오면 자동 이동을 일시 정지할 수 있도록 상태를 기록합니다.
         /// </summary>
-        /// <param name="collision"></param>
+        /// <param name="collision">공격 범위에 진입한 Collider입니다.</param>
         public override void OnTriggerEnterByAttackRange(Collider2D collision)
         {
             base.OnTriggerEnterByAttackRange(collision);
-            
+            if (collision == null) return;
+
             if (!collision.gameObject.CompareTag(ConfigTags.GetValue(ConfigTags.Keys.Monster))) return;
             var hitArea = collision.gameObject.GetComponentInChildren<CharacterHitArea>();
-            if (!hitArea) return;
+            if (!hitArea || hitArea.target == null || hitArea.target.IsStatusDead()) return;
 
             PlayerAttackAreaState state = GetComponent<PlayerAttackAreaState>();
             if (state == null) return;
+
             // 플레이어 자동 이동 정지 하기
             state.Enter(hitArea.gameObject);
         }
+
+        /// <summary>
+        /// 플레이어 공격 영역에서 몬스터가 나가면 자동 이동 일시 정지 상태를 해제할 수 있도록 상태를 정리합니다.
+        /// </summary>
+        /// <param name="collision">공격 범위에서 이탈한 Collider입니다.</param>
+        /// <returns>정상적으로 이탈 처리를 수행했으면 <see langword="true"/>를 반환합니다.</returns>
         public override bool OnTriggerExitByAttackRange(Collider2D collision)
         {
-            base.OnTriggerEnterByAttackRange(collision);
-            
+            if (!base.OnTriggerExitByAttackRange(collision)) return false;
+            if (collision == null) return false;
+
             if (!collision.gameObject.CompareTag(ConfigTags.GetValue(ConfigTags.Keys.Monster))) return false;
             var hitArea = collision.gameObject.GetComponentInChildren<CharacterHitArea>();
             if (!hitArea) return false;
@@ -672,6 +681,7 @@ namespace GGemCo2DCore
             state.Exit(hitArea.gameObject);
             return true;
         }
+
 
 
         #region (스탯 포인트)

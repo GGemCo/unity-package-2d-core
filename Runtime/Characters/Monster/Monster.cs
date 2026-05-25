@@ -70,6 +70,7 @@ namespace GGemCo2DCore
             CharacterRegenData = regenData;
             uid = monsterUid;
             SetPoolManaged(true);
+            SetHitAreaColliderEnabled(true);
 
             if (regenData != null)
             {
@@ -325,6 +326,7 @@ namespace GGemCo2DCore
         protected override void OnDead(CharacterConstants.DieReasonType dieReasonType = CharacterConstants.DieReasonType.None, GameObject attacker = null)
         {
             base.OnDead(dieReasonType, attacker);
+            SetHitAreaColliderEnabled(false);
 
             if (_monsterUIController != null)
             {
@@ -347,6 +349,18 @@ namespace GGemCo2DCore
             GameEventManager.MonsterKilled(data);
             
             PlayDeadCutscene(attacker);
+        }
+
+
+        /// <summary>
+        /// 몬스터 HitArea Collider 활성 상태를 변경합니다.
+        /// 사망 직후에는 공격 범위/피격 판정에 남아 자동 이동 정지 상태를 유지하지 않도록 비활성화하고, 풀에서 재사용될 때 다시 활성화합니다.
+        /// </summary>
+        /// <param name="enabled">HitArea Collider 활성화 여부입니다.</param>
+        private void SetHitAreaColliderEnabled(bool enabled)
+        {
+            if (colliderHitArea == null) return;
+            colliderHitArea.enabled = enabled;
         }
 
         /// <summary>
