@@ -44,8 +44,17 @@ namespace GGemCo2DCore
             if (hasThumbnail && _thumbnailRectTransform != null)
             {
                 float thumbnailHalfWidth = _thumbnailRectTransform.rect.width * 0.5f;
+                float thumbnailCenterXInRootSpace =
+                    panelCenterX +
+                    (side * (panelHalfWidth + Mathf.Max(0f, thumbnailGapPx) + thumbnailHalfWidth)) +
+                    thumbnailOffset.x;
+                RectTransform thumbnailParentRectTransform = _thumbnailRectTransform.parent as RectTransform;
+                float thumbnailCenterX = IsThumbnailChildOfPanel()
+                    ? (side * (panelHalfWidth + Mathf.Max(0f, thumbnailGapPx) + thumbnailHalfWidth)) + thumbnailOffset.x
+                    : ConvertRootSpaceXToParentLocalX(thumbnailParentRectTransform, thumbnailCenterXInRootSpace);
+
                 Vector2 thumbnailAnchoredPosition = _thumbnailRectTransform.anchoredPosition;
-                thumbnailAnchoredPosition.x = side * (panelHalfWidth + Mathf.Max(0f, thumbnailGapPx) + thumbnailHalfWidth) + thumbnailOffset.x;
+                thumbnailAnchoredPosition.x = thumbnailCenterX;
                 thumbnailAnchoredPosition.y = thumbnailOffset.y;
                 _thumbnailRectTransform.anchoredPosition = thumbnailAnchoredPosition;
             }
@@ -303,6 +312,37 @@ namespace GGemCo2DCore
         }
 
         /// <summary>
+        /// 썸네일이 텍스트 패널 하위에 배치되어 있는지 확인합니다.
+        /// 텍스트 패널 자식이면 패널 기준 상대 좌표를 사용하고, 다른 부모이면 루트 좌표 변환을 사용합니다.
+        /// </summary>
+        /// <returns>썸네일 부모가 텍스트 패널이면 <see langword="true"/>를 반환합니다.</returns>
+        private bool IsThumbnailChildOfPanel()
+        {
+            return _thumbnailRectTransform != null &&
+                   panelMessage != null &&
+                   _thumbnailRectTransform.parent == panelMessage;
+        }
+
+        /// <summary>
+        /// 말풍선 루트 좌표계의 X 값을 지정한 부모 RectTransform의 로컬 X 값으로 변환합니다.
+        /// 썸네일과 텍스트 패널의 부모가 다를 때 Left/Right 오프셋이 다른 좌표계에 적용되는 문제를 방지합니다.
+        /// </summary>
+        /// <param name="parentRectTransform">변환 기준 부모 RectTransform입니다.</param>
+        /// <param name="rootSpaceX">말풍선 루트 좌표계 기준 X 값입니다.</param>
+        /// <returns>부모 로컬 좌표계의 X 값입니다.</returns>
+        private float ConvertRootSpaceXToParentLocalX(RectTransform parentRectTransform, float rootSpaceX)
+        {
+            if (_panelDialogueRectTransform == null || parentRectTransform == null)
+            {
+                return rootSpaceX;
+            }
+
+            Vector3 worldPoint = _panelDialogueRectTransform.TransformPoint(new Vector3(rootSpaceX, 0f, 0f));
+            Vector3 parentLocalPoint = parentRectTransform.InverseTransformPoint(worldPoint);
+            return parentLocalPoint.x;
+        }
+
+        /// <summary>
         /// 화자 방향을 반영한 말꼬리 X 오프셋을 계산합니다.
         /// </summary>
         /// <returns>말꼬리의 목표 anchoredPosition.x 입니다.</returns>
@@ -458,19 +498,21 @@ namespace GGemCo2DCore
         }
 
         /// <summary>
-        /// 화자의 현재 방향에서 수평(좌/우) 방향을 추출합니다.
+        /// 현재 화자 캐릭터의 방향에서 수평(좌/우) 방향을 추출합니다.
+        /// Player 대사에서는 플레이어 방향을, NPC/Monster 대사에서는 해당 캐릭터 방향을 기준으로 사용합니다.
         /// </summary>
         /// <param name="isFacingRight">오른쪽을 바라보면 <see langword="true"/>를 반환합니다.</param>
         /// <returns>좌우 방향을 판별할 수 있으면 <see langword="true"/>를 반환합니다.</returns>
         private bool TryResolveSpeakerFacingRight(out bool isFacingRight)
         {
             isFacingRight = false;
-            if (_currentNpc == null)
+            CharacterBase speaker = ResolveCurrentSpeakerCharacter();
+            if (speaker == null)
             {
                 return false;
             }
 
-            CharacterConstants.FacingDirection8 facing = _currentNpc.CurrentFacing;
+            CharacterConstants.FacingDirection8 facing = speaker.CurrentFacing;
             switch (facing)
             {
                 case CharacterConstants.FacingDirection8.Right:

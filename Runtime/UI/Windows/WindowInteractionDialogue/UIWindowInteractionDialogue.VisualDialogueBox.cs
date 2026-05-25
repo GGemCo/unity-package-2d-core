@@ -49,7 +49,7 @@ namespace GGemCo2DCore
 
             float x = side * (panelHalfWidth + thumbnailHalfWidth) + offset.x;
             float y = offset.y;
-            imageThumbnail.transform.localPosition = new Vector3(x, y, 0f);
+            SetThumbnailLocalPositionRelativeToPanel(thumbnailRectTransform, new Vector2(x, y));
         }
 
         /// <summary>
@@ -99,6 +99,39 @@ namespace GGemCo2DCore
             return thumbnailPositionType == ConfigCommon.ThumbnailPositionType.Left
                 ? offsetImageThumbnailCharacterLeft
                 : offsetImageThumbnailCharacter;
+        }
+
+        /// <summary>
+        /// 텍스트 패널 기준 좌표를 썸네일 부모 좌표계로 변환해 썸네일 위치에 적용합니다.
+        /// 썸네일이 텍스트 패널의 자식이 아닌 프리팹에서도 좌/우 오프셋이 동일한 기준으로 적용되게 합니다.
+        /// </summary>
+        /// <param name="thumbnailRectTransform">위치를 적용할 썸네일 RectTransform입니다.</param>
+        /// <param name="panelLocalPosition">텍스트 패널 기준 로컬 좌표입니다.</param>
+        private void SetThumbnailLocalPositionRelativeToPanel(
+            RectTransform thumbnailRectTransform,
+            Vector2 panelLocalPosition)
+        {
+            if (thumbnailRectTransform == null)
+            {
+                return;
+            }
+
+            RectTransform thumbnailParentRectTransform = thumbnailRectTransform.parent as RectTransform;
+            if (panelMessage == null || thumbnailParentRectTransform == null)
+            {
+                thumbnailRectTransform.localPosition = new Vector3(
+                    panelLocalPosition.x,
+                    panelLocalPosition.y,
+                    thumbnailRectTransform.localPosition.z);
+                return;
+            }
+
+            Vector3 worldPoint = panelMessage.TransformPoint(new Vector3(panelLocalPosition.x, panelLocalPosition.y, 0f));
+            Vector3 parentLocalPoint = thumbnailParentRectTransform.InverseTransformPoint(worldPoint);
+            thumbnailRectTransform.localPosition = new Vector3(
+                parentLocalPoint.x,
+                parentLocalPoint.y,
+                thumbnailRectTransform.localPosition.z);
         }
     }
 }
