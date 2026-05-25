@@ -11,6 +11,18 @@ namespace GGemCo2DCore
         order = ConfigScriptableObject.Cutscene.Ordering)]
     public class GGemCoCutsceneSettings : ScriptableObject
     {
+        /// <summary>
+        /// 말풍선 입력 대기 시간의 기본값(초)입니다.
+        /// </summary>
+        public const float DefaultDialogueBalloonInputWaitTimeoutSeconds = 5f;
+
+        [Header("Dialogue Balloon")]
+        [SerializeField]
+        [Tooltip("DialogueBalloon.waitForUserInput=true 일 때 유저 입력을 기다리는 최대 시간(초)입니다.")]
+        private float dialogueBalloonInputWaitTimeoutSeconds = DefaultDialogueBalloonInputWaitTimeoutSeconds;
+
+#region 디버그
+        
         [Header("Cutscene Debug")]
         [SerializeField, DebugOption("컷신 디버그 기능 전체 On/Off")]
         private bool enableCutsceneDebug;
@@ -40,6 +52,18 @@ namespace GGemCo2DCore
         [Min(0.05f)]
         public float cutsceneDebugHudUpdateInterval = 0.1f;
 
+#endregion
+        /// <summary>
+        /// 말풍선 유저 입력 대기 최대 시간을 안전한 값으로 반환합니다.
+        /// </summary>
+        /// <returns>0보다 큰 유효한 대기 시간(초)입니다.</returns>
+        public float GetSafeDialogueBalloonInputWaitTimeoutSeconds()
+        {
+            return dialogueBalloonInputWaitTimeoutSeconds > 0f
+                ? dialogueBalloonInputWaitTimeoutSeconds
+                : DefaultDialogueBalloonInputWaitTimeoutSeconds;
+        }
+
         /// <summary>
         /// 에셋이 처음 생성될 때 권장 기본값을 설정합니다.
         /// </summary>
@@ -52,6 +76,7 @@ namespace GGemCo2DCore
             enableCutsceneTime = true;
             showHudOnlyWhilePlaying = true;
             cutsceneDebugHudUpdateInterval = 0.1f;
+            dialogueBalloonInputWaitTimeoutSeconds = DefaultDialogueBalloonInputWaitTimeoutSeconds;
         }
 
         /// <summary>
@@ -62,6 +87,11 @@ namespace GGemCo2DCore
             if (cutsceneDebugHudUpdateInterval <= 0f)
             {
                 cutsceneDebugHudUpdateInterval = 0.1f;
+            }
+
+            if (dialogueBalloonInputWaitTimeoutSeconds <= 0f)
+            {
+                dialogueBalloonInputWaitTimeoutSeconds = DefaultDialogueBalloonInputWaitTimeoutSeconds;
             }
         }
     }

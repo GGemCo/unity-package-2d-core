@@ -181,6 +181,45 @@ namespace GGemCo2DCore
         /// </summary>
         /// <returns>컷신 세션이 활성 상태이면 <see langword="true"/>를 반환합니다.</returns>
         public bool IsSessionActive() => _isCutsceneSessionActive;
+        
+        /// <summary>
+        /// 말풍선 입력 대기 이벤트의 최대 대기 시간을 조회합니다.
+        /// 설정이 없거나 값이 유효하지 않으면 기본값을 반환합니다.
+        /// </summary>
+        /// <returns>0보다 큰 유효한 대기 시간(초)입니다.</returns>
+        public float GetDialogueBalloonInputWaitTimeoutSeconds()
+        {
+            GGemCoCutsceneSettings cutsceneSettings = ResolveCutsceneSettings();
+            if (cutsceneSettings == null)
+            {
+                return GGemCoCutsceneSettings.DefaultDialogueBalloonInputWaitTimeoutSeconds;
+            }
+
+            return cutsceneSettings.GetSafeDialogueBalloonInputWaitTimeoutSeconds();
+        }
+
+        /// <summary>
+        /// 현재 런타임에서 사용 가능한 컷신 설정 에셋을 조회합니다.
+        /// </summary>
+        /// <returns>조회된 설정 에셋입니다. 없으면 <see langword="null"/>을 반환합니다.</returns>
+        private GGemCoCutsceneSettings ResolveCutsceneSettings()
+        {
+            if (_settings != null && _settings.cutsceneSettings != null)
+            {
+                return _settings.cutsceneSettings;
+            }
+
+            AddressableLoaderSettings runtimeSettings = AddressableLoaderSettings.Instance;
+            if (runtimeSettings != null && runtimeSettings.cutsceneSettings != null)
+            {
+                _settings = runtimeSettings;
+                return runtimeSettings.cutsceneSettings;
+            }
+
+            return AddressableLoaderSettingsRegist.Instance != null
+                ? AddressableLoaderSettingsRegist.Instance.cutsceneSettings
+                : null;
+        }
 
         /// <summary>
         /// 현재 컷신의 디버그 스냅샷을 조회합니다.

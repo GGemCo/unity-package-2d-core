@@ -21,6 +21,8 @@ namespace GGemCo2DCore
         private bool _isWaitingForUserInput;
         private bool _advanceRequestedWhileWaiting;
         private int _inputWaitStartFrame = -1;
+        private float _inputWaitStartRealtime;
+        private float _inputWaitTimeoutSeconds;
         private float _inputWaitResumeTime;
         private DialogueBalloonAdvancePolicy _advancePolicy = DialogueBalloonAdvancePolicy.LegacyImmediate;
 
@@ -203,6 +205,10 @@ namespace GGemCo2DCore
         {
             _isWaitingForUserInput = true;
             _inputWaitStartFrame = Time.frameCount;
+            _inputWaitStartRealtime = Time.realtimeSinceStartup;
+            _inputWaitTimeoutSeconds = CutsceneManager != null
+                ? CutsceneManager.GetDialogueBalloonInputWaitTimeoutSeconds()
+                : GGemCoCutsceneSettings.DefaultDialogueBalloonInputWaitTimeoutSeconds;
             CutsceneManager.RequestTimelineProgressWait(this);
         }
 
@@ -212,6 +218,12 @@ namespace GGemCo2DCore
         /// </summary>
         private void HandleUserInputWait()
         {
+            if (HasInputWaitTimedOut())
+            {
+                HandleInputWaitTimeout();
+                return;
+            }
+
             if (Time.frameCount <= _inputWaitStartFrame)
             {
                 return;
@@ -240,6 +252,36 @@ namespace GGemCo2DCore
                 return;
             }
 
+            CompleteInputWait();
+        }
+
+        /// <summary>
+        /// 말풍선 입력 대기 시간이 설정된 최대값을 초과했는지 확인합니다.
+        /// </summary>
+        /// <returns>최대 대기 시간이 경과했으면 <see langword="true"/>를 반환합니다.</returns>
+        private bool HasInputWaitTimedOut()
+        {
+            if (!_isWaitingForUserInput)
+            {
+                return false;
+            }
+
+            if (_inputWaitTimeoutSeconds <= 0f)
+            {
+                return false;
+            }
+
+            float elapsedRealtime = Time.realtimeSinceStartup - _inputWaitStartRealtime;
+            return elapsedRealtime >= _inputWaitTimeoutSeconds;
+        }
+
+        /// <summary>
+        /// 입력 대기 시간 초과 시 경고를 남기고 컷신 타임라인을 자동 진행합니다.
+        /// </summary>
+        private void HandleInputWaitTimeout()
+        {
+            GcLogger.LogWarning(
+                $"[Cutscene][DialogueBalloon] waitForUserInput 대기 시간이 초과되어 자동 진행합니다. timeout={_inputWaitTimeoutSeconds:0.##}초");
             CompleteInputWait();
         }
 
@@ -315,6 +357,8 @@ namespace GGemCo2DCore
 
             _isWaitingForUserInput = false;
             _inputWaitStartFrame = -1;
+            _inputWaitStartRealtime = 0f;
+            _inputWaitTimeoutSeconds = 0f;
             CutsceneManager.ReleaseTimelineProgressWait(this);
         }
 
