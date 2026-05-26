@@ -82,7 +82,6 @@ namespace GGemCo2DCoreEditor
         public static void SyncFromTable(SettingSoundOptions options = null)
         {
             options ??= new SettingSoundOptions();
-            EditorSetupContext ctx = options.Context;
 
             if (options.ShowConfirmDialog)
             {
@@ -91,41 +90,22 @@ namespace GGemCo2DCoreEditor
                     return;
             }
 
-            Dictionary<int, StruckTableSound> dictionary = TableLoaderManager.LoadSoundTable(true).GetDatas();
-
-            AddressableAssetSettings settings = AddressableAssetSettingsDefaultObject.Settings;
-            if (!settings)
-            {
-                HelperLog.Warn("Addressable 설정을 찾을 수 없습니다. 새로 생성합니다.", ctx);
-                settings = new SettingSound(null).CreateAddressableSettings();
-            }
-
-            SettingSound helper = new SettingSound(null);
-            AddressableAssetGroup group = helper.GetOrCreateGroup(settings, helper.targetGroupName);
-            if (!group)
-            {
-                HelperLog.Error($"'{helper.targetGroupName}' 그룹을 설정할 수 없습니다.", ctx);
+            if (!TryPrepareSyncEnvironment(options, out EditorSetupContext ctx, out SettingSound helper, out AddressableAssetSettings settings, out AddressableAssetGroup group))
                 return;
-            }
 
+            Dictionary<int, StruckTableSound> dictionary = TableLoaderManager.LoadSoundTable(true).GetDatas();
             ClearGroupEntries(settings, group);
 
             foreach (KeyValuePair<int, StruckTableSound> outerPair in dictionary)
             {
                 StruckTableSound info = outerPair.Value;
-                if (info == null || info.Uid <= 0)
+                if (info == null || info.Uid <= 0 || string.IsNullOrWhiteSpace(info.FileName))
                     continue;
 
-                string key = $"{ConfigAddressableGroupName.Sound}_{info.FileName}";
-                string assetPath = ResolveAssetPath(info);
-                string label = ConfigAddressableLabel.Sound;
-
-                AddressableAssetEntry entry = helper.Add(settings, group, key, assetPath, label);
-                entry?.SetLabel(ConfigAddressableLabel.SoundIntro, info.UseIntroScene, true);
+                UpsertSoundEntry(helper, settings, group, info);
             }
 
             settings.SetDirty(AddressableAssetSettings.ModificationEvent.EntryMoved, null, true);
-
             if (options.SaveAssets)
                 AssetDatabase.SaveAssets();
 
@@ -137,6 +117,226 @@ namespace GGemCo2DCoreEditor
             {
                 EditorUtility.DisplayDialog(Title, "[Addressable] 사운드 설정 완료", "OK");
             }
+        }
+
+        /// <summary>
+        /// sound 테이블의 변경분만 Addressables에 증분 반영합니다.
+        /// - <paramref name="rowsToUpsert"/>: 등록/갱신 대상
+        /// - <paramref name="rowsToRemove"/>: 삭제 대상
+        /// </summary>
+        /// <param name="rowsToUpsert">등록/갱신 대상 사운드 행입니다.</param>
+        /// <param name="rowsToRemove">삭제 대상 사운드 행입니다.</param>
+        /// <param name="options">동기화 옵션입니다. null이면 기본 옵션으로 실행됩니다.</param>
+        public static void SyncFromTableDelta(
+            IReadOnlyList<StruckTableSound> rowsToUpsert,
+            IReadOnlyList<StruckTableSound> rowsToRemove,
+            SettingSoundOptions options = null)
+        {
+            options ??= new SettingSoundOptions();
+
+            bool hasUpsert = rowsToUpsert != null && rowsToUpsert.Count > 0;
+            bool hasRemove = rowsToRemove != null && rowsToRemove.Count > 0;
+            if (!hasUpsert && !hasRemove)
+                return;
+
+            if (options.ShowConfirmDialog)
+            {
+                bool result = EditorUtility.DisplayDialog(
+                    TextDisplayDialogTitle,
+                    "사운드 Addressables 변경분을 동기화합니다.\n진행하시겠습니까?",
+                    "네",
+                    "아니요");
+                if (!result)
+                    return;
+            }
+
+            if (!TryPrepareSyncEnvironment(options, out EditorSetupContext ctx, out SettingSound helper, out AddressableAssetSettings settings, out AddressableAssetGroup group))
+                return;
+
+            int removedCount = 0;
+            if (hasRemove)
+            {
+                for (int i = 0; i < rowsToRemove.Count; i++)
+                {
+                    StruckTableSound row = rowsToRemove[i];
+                    if (TryRemoveSoundEntry(settings, group, row))
+                        removedCount++;
+                }
+            }
+
+            int upsertCount = 0;
+            if (hasUpsert)
+            {
+                for (int i = 0; i < rowsToUpsert.Count; i++)
+                {
+                    StruckTableSound row = rowsToUpsert[i];
+                    AddressableAssetEntry entry = UpsertSoundEntry(helper, settings, group, row);
+                    if (entry != null)
+                        upsertCount++;
+                }
+            }
+
+            settings.SetDirty(AddressableAssetSettings.ModificationEvent.EntryMoved, null, true);
+            if (options.SaveAssets)
+                AssetDatabase.SaveAssets();
+
+            string completedMessage = $"[Addressable] 사운드 변경분 동기화 완료 (등록/갱신: {upsertCount}, 삭제: {removedCount})";
+            if (ctx != null)
+            {
+                HelperLog.Info(completedMessage, ctx);
+            }
+            else if (options.ShowCompletedDialog)
+            {
+                EditorUtility.DisplayDialog(Title, completedMessage, "OK");
+            }
+        }
+
+        /// <summary>
+        /// 증분/전체 동기화에서 공통으로 사용하는 Addressables 설정/그룹을 준비합니다.
+        /// 설정이 없으면 생성하고, 사운드 그룹이 없으면 생성합니다.
+        /// </summary>
+        /// <param name="options">동기화 옵션입니다.</param>
+        /// <param name="ctx">실행 컨텍스트입니다.</param>
+        /// <param name="helper">사운드 Addressables 헬퍼 인스턴스입니다.</param>
+        /// <param name="settings">Addressables 설정 객체입니다.</param>
+        /// <param name="group">사운드 대상 그룹입니다.</param>
+        /// <returns>동기화 준비에 성공하면 true를 반환합니다.</returns>
+        private static bool TryPrepareSyncEnvironment(
+            SettingSoundOptions options,
+            out EditorSetupContext ctx,
+            out SettingSound helper,
+            out AddressableAssetSettings settings,
+            out AddressableAssetGroup group)
+        {
+            ctx = options?.Context;
+            helper = new SettingSound(null);
+            settings = AddressableAssetSettingsDefaultObject.Settings;
+            group = null;
+
+            if (!settings)
+            {
+                HelperLog.Warn("Addressable 설정을 찾을 수 없습니다. 새로 생성합니다.", ctx);
+                settings = helper.CreateAddressableSettings();
+            }
+
+            group = helper.GetOrCreateGroup(settings, helper.targetGroupName);
+            if (!group)
+            {
+                HelperLog.Error($"'{helper.targetGroupName}' 그룹을 설정할 수 없습니다.", ctx);
+                return false;
+            }
+
+            return true;
+        }
+
+        /// <summary>
+        /// 사운드 행 1건을 Addressables에 등록/갱신합니다.
+        /// 기존 엔트리가 다른 그룹에 있어도 대상 그룹으로 이동되며, 라벨도 함께 갱신됩니다.
+        /// </summary>
+        /// <param name="helper">사운드 Addressables 헬퍼 인스턴스입니다.</param>
+        /// <param name="settings">Addressables 설정 객체입니다.</param>
+        /// <param name="group">등록 대상 그룹입니다.</param>
+        /// <param name="info">등록할 사운드 테이블 행입니다.</param>
+        /// <returns>등록된 엔트리이며, 실패 시 null을 반환합니다.</returns>
+        private static AddressableAssetEntry UpsertSoundEntry(
+            SettingSound helper,
+            AddressableAssetSettings settings,
+            AddressableAssetGroup group,
+            StruckTableSound info)
+        {
+            if (helper == null || settings == null || group == null || info == null || info.Uid <= 0 || string.IsNullOrWhiteSpace(info.FileName))
+                return null;
+
+            string key = BuildAddressKey(info.FileName);
+            string assetPath = ResolveAssetPath(info);
+            AddressableAssetEntry entry = helper.Add(settings, group, key, assetPath, ConfigAddressableLabel.Sound);
+            entry?.SetLabel(ConfigAddressableLabel.SoundIntro, info.UseIntroScene, true);
+            return entry;
+        }
+
+        /// <summary>
+        /// 사운드 행 1건에 대응하는 Addressables 엔트리를 제거합니다.
+        /// 우선 address 키로 제거를 시도하고, 실패하면 GUID 기반 제거를 시도합니다.
+        /// </summary>
+        /// <param name="settings">Addressables 설정 객체입니다.</param>
+        /// <param name="group">삭제 대상 그룹입니다.</param>
+        /// <param name="info">삭제할 사운드 테이블 행입니다.</param>
+        /// <returns>삭제에 성공하면 true를 반환합니다.</returns>
+        private static bool TryRemoveSoundEntry(AddressableAssetSettings settings, AddressableAssetGroup group, StruckTableSound info)
+        {
+            if (settings == null || group == null || info == null || info.Uid <= 0 || string.IsNullOrWhiteSpace(info.FileName))
+                return false;
+
+            string key = BuildAddressKey(info.FileName);
+            if (TryRemoveSoundEntryByAddress(settings, group, key))
+                return true;
+
+            string assetPath = ResolveAssetPath(info);
+            string guid = AssetDatabase.AssetPathToGUID(assetPath);
+            if (string.IsNullOrWhiteSpace(guid))
+                return false;
+
+            if (!ContainsGroupEntryGuid(group, guid))
+                return false;
+
+            return settings.RemoveAssetEntry(guid);
+        }
+
+        /// <summary>
+        /// 주소 키가 일치하는 엔트리를 그룹에서 찾아 제거합니다.
+        /// </summary>
+        /// <param name="settings">Addressables 설정 객체입니다.</param>
+        /// <param name="group">검색 대상 그룹입니다.</param>
+        /// <param name="address">제거할 address 키입니다.</param>
+        /// <returns>삭제에 성공하면 true를 반환합니다.</returns>
+        private static bool TryRemoveSoundEntryByAddress(AddressableAssetSettings settings, AddressableAssetGroup group, string address)
+        {
+            if (settings == null || group == null || string.IsNullOrWhiteSpace(address))
+                return false;
+
+            foreach (AddressableAssetEntry entry in group.entries)
+            {
+                if (entry == null)
+                    continue;
+
+                if (!string.Equals(entry.address, address, StringComparison.OrdinalIgnoreCase))
+                    continue;
+
+                return settings.RemoveAssetEntry(entry.guid);
+            }
+
+            return false;
+        }
+
+        /// <summary>
+        /// 지정한 GUID 엔트리가 현재 그룹에 존재하는지 확인합니다.
+        /// </summary>
+        /// <param name="group">검색 대상 그룹입니다.</param>
+        /// <param name="guid">검사할 에셋 GUID입니다.</param>
+        /// <returns>그룹에 엔트리가 있으면 true를 반환합니다.</returns>
+        private static bool ContainsGroupEntryGuid(AddressableAssetGroup group, string guid)
+        {
+            if (group == null || string.IsNullOrWhiteSpace(guid))
+                return false;
+
+            foreach (AddressableAssetEntry entry in group.entries)
+            {
+                if (entry != null && string.Equals(entry.guid, guid, StringComparison.OrdinalIgnoreCase))
+                    return true;
+            }
+
+            return false;
+        }
+
+        /// <summary>
+        /// 사운드 행에서 사용하는 Addressables address 키를 생성합니다.
+        /// 기존 런타임 조회 규칙(`{SDK}_Sound_{FileName}`)과 동일한 포맷을 유지합니다.
+        /// </summary>
+        /// <param name="fileName">사운드 파일명(또는 상대 경로)입니다.</param>
+        /// <returns>Addressables address 키 문자열입니다.</returns>
+        private static string BuildAddressKey(string fileName)
+        {
+            return $"{ConfigAddressableGroupName.Sound}_{fileName}";
         }
 
         /// <summary>
