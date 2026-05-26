@@ -2,9 +2,10 @@
 
 namespace GGemCo2DCore
 {
-    public class StruckTableSound
+    public class StruckTableSound : IUidName
     {
-        public int Uid;
+        public int Uid { get; set; }
+        public string Name { get; set; }
         public SoundConstants.Type Type;
         public SoundConstants.SubType SubType;
         public string FileName;
@@ -21,6 +22,7 @@ namespace GGemCo2DCore
             return new StruckTableSound
             {
                 Uid = MathHelper.ParseInt(data["Uid"]),
+                Name = data["Name"],
                 Type = EnumHelper.ConvertEnum<SoundConstants.Type>(data["Type"]),
                 SubType = EnumHelper.ConvertEnum<SoundConstants.SubType>(data["SubType"]),
                 FileName = data["FileName"],

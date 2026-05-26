@@ -1,9 +1,10 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using UnityEngine;
 using UnityEngine.AddressableAssets;
 using UnityEngine.ResourceManagement.AsyncOperations;
+using UnityEngine.ResourceManagement.ResourceLocations;
 
 namespace GGemCo2DCore
 {
@@ -195,7 +196,34 @@ namespace GGemCo2DCore
         private static async Task<bool> ExecuteWarmupAsync(string keyOrLabel, WarmupRecord record)
         {
             record.State = WarmupState.Running;
-            record.Handle = Addressables.DownloadDependenciesAsync(keyOrLabel, false);
+
+            bool hasLocation = await HasAnyLocationAsync(keyOrLabel);
+            if (!hasLocation)
+            {
+                record.State = WarmupState.Failed;
+                record.Error = $"Addressables Location 미존재: key={keyOrLabel}";
+                GcLogger.LogWarning($"[AddressableWarmup] 키/라벨에 해당하는 Location이 없어 워밍업을 건너뜁니다. key={keyOrLabel}");
+                return false;
+            }
+
+            try
+            {
+                record.Handle = Addressables.DownloadDependenciesAsync(keyOrLabel, false);
+            }
+            catch (InvalidKeyException ex)
+            {
+                record.State = WarmupState.Failed;
+                record.Error = ex.Message;
+                GcLogger.LogWarning($"[AddressableWarmup] InvalidKeyException으로 워밍업을 건너뜁니다. key={keyOrLabel}, error={record.Error}");
+                return false;
+            }
+            catch (Exception ex)
+            {
+                record.State = WarmupState.Failed;
+                record.Error = ex.Message;
+                GcLogger.LogWarning($"[AddressableWarmup] 예외로 워밍업을 건너뜁니다. key={keyOrLabel}, error={record.Error}");
+                return false;
+            }
 
             while (!record.Handle.IsDone)
                 await Task.Yield();
@@ -209,17 +237,46 @@ namespace GGemCo2DCore
             record.State = WarmupState.Failed;
             record.Error = record.Handle.OperationException != null
                 ? record.Handle.OperationException.Message
-                : "알 수 없는 Addressables 종속성 다운로드 실패";
+                : "원인을 알 수 없는 Addressables 종속성 다운로드 실패";
 
             GcLogger.LogWarning($"[AddressableWarmup] 종속성 다운로드에 실패했습니다. key={keyOrLabel}, error={record.Error}");
             return false;
         }
 
         /// <summary>
-        /// 그룹 진행률을 0~1 범위로 보정하여 저장합니다.
+        /// 지정한 키/라벨로 조회되는 Addressables Location 존재 여부를 확인합니다.
         /// </summary>
-        /// <param name="groupId">진행률 그룹 식별자입니다.</param>
-        /// <param name="progress">저장할 진행률입니다.</param>
+        /// <param name="keyOrLabel">검증할 Addressables 키 또는 라벨입니다.</param>
+        /// <returns>조회 가능한 Location이 하나 이상이면 true를 반환합니다.</returns>
+        private static async Task<bool> HasAnyLocationAsync(string keyOrLabel)
+        {
+            AsyncOperationHandle<IList<IResourceLocation>> locationHandle = default;
+
+            try
+            {
+                locationHandle = Addressables.LoadResourceLocationsAsync(keyOrLabel);
+                await locationHandle.Task;
+
+                if (locationHandle.Status != AsyncOperationStatus.Succeeded)
+                    return false;
+
+                return locationHandle.Result != null && locationHandle.Result.Count > 0;
+            }
+            catch (InvalidKeyException)
+            {
+                return false;
+            }
+            catch (Exception)
+            {
+                return false;
+            }
+            finally
+            {
+                if (locationHandle.IsValid())
+                    Addressables.Release(locationHandle);
+            }
+        }
+
         private void SetGroupProgress(string groupId, float progress)
         {
             if (string.IsNullOrWhiteSpace(groupId))
