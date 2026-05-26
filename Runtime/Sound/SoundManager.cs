@@ -103,7 +103,8 @@ namespace GGemCo2DCore
                 yield break;
             }
 
-            _soundControllerBgm?.Play(task.Result, this);
+            // BGM은 사용자 BGM 볼륨과 별개로, sound 테이블의 행별 Volume 값을 배율로 적용합니다.
+            _soundControllerBgm?.Play(task.Result, this, info.Volume);
         }
 
         /// <summary>
