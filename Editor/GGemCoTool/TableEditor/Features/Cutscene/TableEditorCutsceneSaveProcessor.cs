@@ -52,8 +52,20 @@ namespace GGemCo2DCoreEditor
             ValidateSoundFileNames(context);
         }
 
+        /// <summary>
+        /// sound 테이블 저장 완료 후 Addressables 사운드 그룹을 자동으로 동기화합니다.
+        /// </summary>
+        /// <param name="context">현재 저장 컨텍스트입니다.</param>
         public void AfterSave(TableEditorSaveContext context)
         {
+            // sound 테이블 저장 직후 Addressables 사운드 그룹을 자동 동기화합니다.
+            // 테이블 저장 플로우에서 호출되므로 확인/완료 다이얼로그는 비활성화합니다.
+            SettingSound.SyncFromTable(new SettingSoundOptions
+            {
+                ShowConfirmDialog = false,
+                ShowCompletedDialog = false,
+                SaveAssets = true,
+            });
         }
 
         /// <summary>
