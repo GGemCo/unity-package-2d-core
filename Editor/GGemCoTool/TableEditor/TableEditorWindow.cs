@@ -441,6 +441,8 @@ namespace GGemCo2DCoreEditor
                 TableEditorSaveContext context = new TableEditorSaveContext
                 {
                     TableDefinition = _selectedTable,
+                    // 저장 직전의 편집 행 스냅샷을 전달해 SaveProcessor가 안전하게 검증할 수 있게 합니다.
+                    Rows = _document.GetRows().ToList(),
                 };
 
                 IReadOnlyList<ITableEditorSaveProcessor> processors = TableEditorSaveProcessorRegistry.GetAll();

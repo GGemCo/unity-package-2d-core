@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using GGemCo2DCore;
@@ -67,6 +67,18 @@ namespace GGemCo2DCoreEditor
     public sealed class TableEditorSaveContext
     {
         public TableEditorTableDefinition TableDefinition { get; set; }
+
+        /// <summary>
+        /// 현재 저장 대상 문서의 데이터 행 목록입니다.
+        /// SaveProcessor에서 저장 전후 검증/동기화 로직에 활용합니다.
+        /// </summary>
+        public IReadOnlyList<TableEditorDocumentRow> Rows { get; set; } = Array.Empty<TableEditorDocumentRow>();
+
+        /// <summary>
+        /// 현재 저장 컨텍스트가 특정 테이블 키인지 검사합니다.
+        /// </summary>
+        /// <param name="tableKey">비교할 테이블 키입니다.</param>
+        /// <returns>현재 테이블 키와 일치하면 true를 반환합니다.</returns>
         public bool IsTable(string tableKey)
         {
             return TableDefinition != null

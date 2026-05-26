@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using GGemCo2DCore;
@@ -66,7 +66,7 @@ namespace GGemCo2DCoreEditor
         /// 테이블 타입의 상속 체인에서 DefaultTable&lt;T&gt; 기반 타입을 찾습니다.
         /// </summary>
         /// <param name="type">검사할 테이블 타입입니다.</param>
-        /// <param name="defaultTableType">열린 제네릭 DefaultTable 타입입니다.</param>
+        /// <param name="defaultTableType">비교 기준인 DefaultTable 타입입니다.</param>
         /// <param name="tableBaseType">찾은 DefaultTable&lt;T&gt; 기반 타입입니다.</param>
         /// <returns>DefaultTable&lt;T&gt; 기반 타입을 찾으면 true를 반환합니다.</returns>
         private static bool TryGetDefaultTableBaseType(Type type, Type defaultTableType, out Type tableBaseType)
