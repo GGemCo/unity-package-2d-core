@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 
@@ -142,6 +142,12 @@ namespace GGemCo2DCore
                 // 순서와 무관하게 복원 보장
                 SaveRegistry.ApplyRestore(env);
             }
+
+            // 저장 파일이 없거나 복구할 수 없으면 기본 데이터로 초기화된 현재 상태를 즉시 저장합니다.
+            if (SaveDataLoader.Instance.LastLoadResult?.RequiresNewData == true)
+            {
+                StartSaveData();
+            }
         }
         
         /// <summary>
@@ -181,7 +187,7 @@ namespace GGemCo2DCore
             };
 
             string json = JsonConvert.SerializeObject(saveData);
-            SaveDataFileService.WriteAllText(filePath, json, SaveDataIdentity.Core(currentSaveSlot));
+            saveFileController.WriteSaveJsonWithBackup(currentSaveSlot, json, SaveDataIdentity.Core(currentSaveSlot));
             // GcLogger.Log($"데이터가 저장되었습니다. 슬롯 {currentSaveSlot}");
             
             // 썸네일 캡처 후 저장

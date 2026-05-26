@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections;
-using System.IO;
 using UnityEngine;
 
 namespace GGemCo2DCore
@@ -13,8 +12,14 @@ namespace GGemCo2DCore
         private int _maxSlotCount;
         private string _saveDirectory;
         protected SaveFileController saveFileController;
-        
+
         private float _loadProgress;
+
+        /// <summary>
+        /// 마지막 저장 데이터 로드와 복구 처리 결과입니다.
+        /// </summary>
+        public SaveDataLoadResult LastLoadResult { get; private set; }
+
         protected virtual void Awake()
         {
             if (!AddressableLoaderSettings.Instance) return;
@@ -39,50 +44,79 @@ namespace GGemCo2DCore
         }
 
         /// <summary>
-        /// JSON 파일을 읽어오면서 진행률을 업데이트
+        /// JSON 파일을 읽고, 실패 시 백업 복구 또는 신규 데이터 생성을 위한 상태를 기록합니다.
         /// </summary>
+        /// <param name="onProgressUpdate">로드 진행률 갱신 콜백입니다.</param>
         public IEnumerator LoadData(Action<float> onProgressUpdate)
         {
             int slotIndex = PlayerPrefsManager.LoadSaveDataSlotIndex();
 
-            string filePath = GetSaveFilePath(slotIndex);
-
-            if (!File.Exists(filePath))
-            {
-                // GcLogger.LogError($"저장된 데이터가 없습니다. 슬롯 {slotIndex}");
-                _loadProgress = 1f;
-                onProgressUpdate?.Invoke(_loadProgress);
-                yield break;
-            }
-
-            _loadProgress = 0.2f; // JSON 읽기 시작
+            _loadProgress = 0.2f;
             onProgressUpdate?.Invoke(_loadProgress);
             yield return null;
 
-            string json = SaveDataFileService.ReadAllText(filePath, GetSaveDataIdentity(slotIndex));
-            _loadProgress = 0.6f; // JSON 읽기 완료
+            LastLoadResult = SaveDataRecoveryService.LoadWithRecovery(
+                saveFileController,
+                slotIndex,
+                GetSaveDataIdentity(slotIndex));
+
+            _loadProgress = 0.6f;
             onProgressUpdate?.Invoke(_loadProgress);
             yield return null;
 
-            if (!string.IsNullOrEmpty(json))
+            if (LastLoadResult.HasJson)
             {
                 try
                 {
-                    OnLoaded(json);
+                    OnLoaded(LastLoadResult.Json);
                 }
                 catch (Exception ex)
                 {
                     GcLogger.LogError($"[SaveDataLoader] Failed to deserialize {ex}");
+                    LastLoadResult = new SaveDataLoadResult(
+                        SaveDataLoadStatus.NewDataRequired,
+                        userMessageKey: SaveDataMessageKeys.CannotLoadSaveData,
+                        shouldShowUserMessage: true);
+                    OnLoadFailed(LastLoadResult);
                 }
             }
+            else
+            {
+                OnLoadFailed(LastLoadResult);
+            }
 
-            _loadProgress = 1f; // JSON 파싱 완료
+            _loadProgress = 1f;
             onProgressUpdate?.Invoke(_loadProgress);
-            // GcLogger.Log($"데이터가 불러와졌습니다. 슬롯 {slotIndex}");
+            RequestUserMessageIfNeeded();
         }
 
-        protected virtual void OnLoaded(string json) 
+        /// <summary>
+        /// 저장 데이터 JSON을 실제 런타임 데이터로 변환합니다.
+        /// </summary>
+        /// <param name="json">역직렬화에 사용할 평문 JSON입니다.</param>
+        protected virtual void OnLoaded(string json)
         {
+        }
+
+        /// <summary>
+        /// 저장 데이터 로드 실패 또는 신규 데이터 생성 필요 상태를 하위 클래스에 전달합니다.
+        /// </summary>
+        /// <param name="result">로드와 복구 처리 결과입니다.</param>
+        protected virtual void OnLoadFailed(SaveDataLoadResult result)
+        {
+        }
+
+        /// <summary>
+        /// 로드 결과에 사용자 안내 메시지가 있으면 이벤트 허브로 전달합니다.
+        /// </summary>
+        private void RequestUserMessageIfNeeded()
+        {
+            if (LastLoadResult == null || !LastLoadResult.ShouldShowUserMessage)
+            {
+                return;
+            }
+
+            SaveDataLoadNotificationCenter.RequestMessage(LastLoadResult.UserMessageKey);
         }
     }
 }

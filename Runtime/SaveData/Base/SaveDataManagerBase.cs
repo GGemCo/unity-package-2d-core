@@ -1,4 +1,4 @@
-using System.IO;
+﻿using System.IO;
 using UnityEngine;
 
 namespace GGemCo2DCore
@@ -161,10 +161,9 @@ namespace GGemCo2DCore
         /// </summary>
         public void DeleteData(int slot)
         {
-            string filePath = saveFileController.GetSaveFilePath(slot);
             string thumbnailPath = thumbnailController.GetThumbnailPath(slot);
 
-            if (File.Exists(filePath)) File.Delete(filePath);
+            saveFileController.DeleteData(slot);
             if (File.Exists(thumbnailPath)) File.Delete(thumbnailPath);
             
             slotMetaDatController.DeleteSlot(slot);
