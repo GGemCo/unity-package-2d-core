@@ -75,6 +75,13 @@ namespace GGemCo2DCoreEditor
         public IReadOnlyList<TableEditorDocumentRow> Rows { get; set; } = Array.Empty<TableEditorDocumentRow>();
 
         /// <summary>
+        /// 현재 저장 요청에 실제 문서 변경이 포함되었는지 여부입니다.
+        /// true일 때만 변경 기반 후처리(파일 검증, Addressables 동기화 등)를 수행합니다.
+        /// 기본값은 하위 호환을 위해 true입니다.
+        /// </summary>
+        public bool HasDocumentChanges { get; set; } = true;
+
+        /// <summary>
         /// 현재 저장 컨텍스트가 특정 테이블 키인지 검사합니다.
         /// </summary>
         /// <param name="tableKey">비교할 테이블 키입니다.</param>

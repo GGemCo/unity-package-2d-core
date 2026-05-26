@@ -34,6 +34,9 @@ namespace GGemCo2DCoreEditor
         /// <param name="context">현재 저장 컨텍스트입니다.</param>
         public override void BeforeSave(TableEditorSaveContext context)
         {
+            if (!ShouldRunChangedOnlyProcessing(context))
+                return;
+
             ValidateSoundFileNames(context);
         }
 
@@ -43,6 +46,9 @@ namespace GGemCo2DCoreEditor
         /// <param name="context">현재 저장 컨텍스트입니다.</param>
         public override void AfterSave(TableEditorSaveContext context)
         {
+            if (!ShouldRunChangedOnlyProcessing(context))
+                return;
+
             // 테이블 저장 플로우에서 자동 호출되므로 확인/완료 다이얼로그는 비활성화합니다.
             SettingSound.SyncFromTable(new SettingSoundOptions
             {
@@ -50,6 +56,17 @@ namespace GGemCo2DCoreEditor
                 ShowCompletedDialog = false,
                 SaveAssets = true,
             });
+        }
+
+        /// <summary>
+        /// 현재 저장 요청이 실제 문서 변경을 포함하는지 확인합니다.
+        /// 변경이 없으면 파일 검증과 Addressables 동기화를 모두 생략해 불필요한 후처리를 줄입니다.
+        /// </summary>
+        /// <param name="context">현재 저장 컨텍스트입니다.</param>
+        /// <returns>변경 기반 후처리를 수행해야 하면 true를 반환합니다.</returns>
+        private static bool ShouldRunChangedOnlyProcessing(TableEditorSaveContext context)
+        {
+            return context != null && context.HasDocumentChanges;
         }
 
         /// <summary>
