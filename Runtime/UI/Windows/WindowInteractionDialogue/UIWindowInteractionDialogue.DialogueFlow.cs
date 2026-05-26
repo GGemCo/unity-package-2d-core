@@ -118,6 +118,7 @@ namespace GGemCo2DCore
             }
             _lastKnownVisibleCharacters = -1;
             RestoreSpeechBubbleLayoutDefaults();
+            PrepareSpeechBubbleEnterIndicatorForNewSession();
         }
 
         /// <summary>
@@ -407,6 +408,8 @@ namespace GGemCo2DCore
                     _lastKnownVisibleCharacters = currentVisibleCharacters;
                     RefreshThumbnailPosition();
                 }
+
+                UpdateSpeechBubbleEnterIndicatorRuntime();
             }
         }
 
@@ -841,6 +844,7 @@ namespace GGemCo2DCore
             }
 
             _lastKnownVisibleCharacters = textMessage.maxVisibleCharacters;
+            _lastKnownEnterIndicatorVisibleCharacters = -1;
 
             RefreshChoiceButtonsVisibility();
             RefreshThumbnailPosition();

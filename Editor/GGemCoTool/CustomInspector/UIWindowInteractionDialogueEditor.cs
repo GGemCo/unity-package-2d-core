@@ -7,23 +7,29 @@ namespace GGemCo2DCoreEditor
 {
     /// <summary>
     /// <see cref="UIWindowInteractionDialogue"/> 전용 인스펙터입니다.
-    /// DialogueVisualMode 값에 따라 현재 모드에 필요한 필드만 표시합니다.
+    /// DialogueVisualMode 값에 따라 현재 모드에서 필요한 필드만 표시합니다.
     /// </summary>
     [CustomEditor(typeof(UIWindowInteractionDialogue))]
     public sealed class UIWindowInteractionDialogueEditor : Editor
     {
         /// <summary>
-        /// enum 이름 비교 시 사용할 말풍선 모드 식별자입니다.
+        /// enum 이름 비교에 사용할 말풍선 모드 식별자입니다.
         /// </summary>
         private const string SpeechBubbleModeName = "SpeechBubble";
 
         /// <summary>
-        /// 대화 박스 모드에서 숨길 말풍선 전용 프로퍼티 목록입니다.
+        /// 대화 박스 모드에서 숨겨야 하는 말풍선 전용 프로퍼티 목록입니다.
         /// </summary>
         private static readonly HashSet<string> SpeechBubbleOnlyPropertyNames = new()
         {
             "speechBubbleWorldOffset",
             "speechBubbleWorldOffsetXPolicy",
+            "useProjectEnterIndicatorDefaultsInSpeechBubble",
+            "imageEnter",
+            "enterIndicatorSpriteOverride",
+            "enterIndicatorGapPx",
+            "enterIndicatorBlinkHz",
+            "enterIndicatorMinAlpha",
             "useLegacyThumbnailFallbackForNone",
             "thumbnailGapPx",
             "textPaddingOnNonThumbnailSidePx",
@@ -58,9 +64,9 @@ namespace GGemCo2DCoreEditor
         }
 
         /// <summary>
-        /// 현재 모드에 맞게 표시 대상을 필터링해 모든 직렬화 프로퍼티를 그립니다.
+        /// 현재 모드에 맞는 표시 대상을 필터링해 직렬화된 모든 프로퍼티를 그립니다.
         /// </summary>
-        /// <param name="isSpeechBubbleMode">말풍선 모드 여부입니다.</param>
+        /// <param name="isSpeechBubbleMode">현재 모드가 SpeechBubble인지 여부입니다.</param>
         private void DrawFilteredProperties(bool isSpeechBubbleMode)
         {
             SerializedProperty iterator = serializedObject.GetIterator();
@@ -113,7 +119,7 @@ namespace GGemCo2DCoreEditor
         /// 현재 모드에서 특정 프로퍼티를 숨겨야 하는지 판단합니다.
         /// </summary>
         /// <param name="propertyName">검사할 프로퍼티 이름입니다.</param>
-        /// <param name="isSpeechBubbleMode">말풍선 모드 여부입니다.</param>
+        /// <param name="isSpeechBubbleMode">현재 모드가 SpeechBubble인지 여부입니다.</param>
         /// <returns>숨겨야 하면 <see langword="true"/>를 반환합니다.</returns>
         private static bool ShouldHideProperty(string propertyName, bool isSpeechBubbleMode)
         {

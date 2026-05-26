@@ -166,27 +166,23 @@ namespace GGemCo2DCore
         /// </summary>
         private void ApplyProjectEnterIndicatorDefaults()
         {
-            _resolvedImageEnterGapPx = Mathf.Max(0f, imageEnterGapPx);
-            _resolvedImageEnterBlinkHz = Mathf.Max(0f, imageEnterBlinkHz);
-            _resolvedImageEnterMinAlpha = Mathf.Clamp01(imageEnterMinAlpha);
-
-            if (!TryGetProjectDialogueBalloonSettings(out GGemCoDialogueBalloonSettings settings) || settings == null)
-            {
-                return;
-            }
-
-            _resolvedImageEnterGapPx = settings.GetSafeEnterIndicatorGapPx();
-            _resolvedImageEnterBlinkHz = settings.GetSafeEnterIndicatorBlinkHz();
-            _resolvedImageEnterMinAlpha = settings.GetSafeEnterIndicatorMinAlpha();
+            DialogueBalloonSettingsRuntimeResolver.ResolveEnterIndicatorDefaults(
+                imageEnterGapPx,
+                imageEnterBlinkHz,
+                imageEnterMinAlpha,
+                out _resolvedImageEnterGapPx,
+                out _resolvedImageEnterBlinkHz,
+                out _resolvedImageEnterMinAlpha,
+                out Sprite resolvedSprite);
 
             if (imageEnter == null)
             {
                 CacheLayoutReferences();
             }
 
-            if (imageEnter != null && settings.enterIndicatorSprite != null)
+            if (imageEnter != null && resolvedSprite != null)
             {
-                imageEnter.sprite = settings.enterIndicatorSprite;
+                imageEnter.sprite = resolvedSprite;
             }
         }
 
@@ -1282,41 +1278,6 @@ namespace GGemCo2DCore
         }
 
         /// <summary>
-        /// 프로젝트 말풍선 기본값 ScriptableObject를 로더에서 조회합니다.
-        /// </summary>
-        /// <param name="settings">조회된 프로젝트 말풍선 설정입니다.</param>
-        /// <returns>설정을 찾으면 <see langword="true"/>를 반환합니다.</returns>
-        private static bool TryGetProjectDialogueBalloonSettings(out GGemCoDialogueBalloonSettings settings)
-        {
-            settings = null;
-            if (AddressableLoaderSettings.Instance != null &&
-                AddressableLoaderSettings.Instance.dialogueBalloonSettings != null)
-            {
-                settings = AddressableLoaderSettings.Instance.dialogueBalloonSettings;
-                return true;
-            }
-
-            if (AddressableLoaderSettingsRegist.Instance != null &&
-                AddressableLoaderSettingsRegist.Instance.dialogueBalloonSettings != null)
-            {
-                settings = AddressableLoaderSettingsRegist.Instance.dialogueBalloonSettings;
-                return true;
-            }
-
-            return false;
-        }
-
-        /// <summary>
-        /// 프로젝트 기본 오프셋 X 정책을 유효 범위로 보정해 반환합니다.
-        /// </summary>
-        /// <param name="policy">보정할 프로젝트 기본 오프셋 X 정책입니다.</param>
-        /// <returns>유효한 프로젝트 기본 오프셋 X 정책입니다.</returns>
-        private static DialogueBalloonWorldOffsetXPolicy GetSafeProjectWorldOffsetXPolicy(DialogueBalloonWorldOffsetXPolicy policy)
-        {
-            return DialogueBalloonWorldOffsetUtility.GetSafeWorldOffsetXPolicy(policy);
-        }
-
-        /// <summary>
         /// 프로젝트 기본 월드 오프셋/정책을 결정합니다.
         /// ScriptableObject가 로드되어 있으면 해당 값을 우선 적용하고, 없으면 프리팹 직렬화 값을 사용합니다.
         /// </summary>
@@ -1326,16 +1287,11 @@ namespace GGemCo2DCore
             out Vector3 offset,
             out DialogueBalloonWorldOffsetXPolicy xPolicy)
         {
-            offset = projectWorldOffset;
-            xPolicy = GetSafeProjectWorldOffsetXPolicy(projectWorldOffsetXPolicy);
-
-            if (!TryGetProjectDialogueBalloonSettings(out GGemCoDialogueBalloonSettings settings) || settings == null)
-            {
-                return;
-            }
-
-            offset = settings.worldOffset;
-            xPolicy = settings.GetSafeWorldOffsetXPolicy();
+            DialogueBalloonSettingsRuntimeResolver.ResolveProjectWorldOffsetDefaults(
+                projectWorldOffset,
+                projectWorldOffsetXPolicy,
+                out offset,
+                out xPolicy);
         }
 
         /// <summary>

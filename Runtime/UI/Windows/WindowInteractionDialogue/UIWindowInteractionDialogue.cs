@@ -149,6 +149,32 @@ namespace GGemCo2DCore
         [SerializeField]
         private string messageQuestSelect;
 
+        [Header("말풍선 입력 안내 이미지")]
+        [Tooltip("SpeechBubble 모드에서 프로젝트 공통 입력 안내 이미지 기본값을 사용할지 여부")]
+        [SerializeField]
+        private bool useProjectEnterIndicatorDefaultsInSpeechBubble;
+
+        [Tooltip("입력 안내 이미지 컴포넌트입니다. 비어 있으면 이름(ImageEnter) 기준 자동 탐색을 시도합니다.")]
+        [SerializeField]
+        private Image imageEnter;
+
+        [Tooltip("프로젝트 기본값 미사용 시 적용할 입력 안내 이미지입니다. 비어 있으면 프리팹 기존 이미지를 유지합니다.")]
+        [SerializeField]
+        private Sprite enterIndicatorSpriteOverride;
+
+        [Tooltip("프로젝트 기본값 미사용 시 적용할 대사 마지막 글자와 입력 안내 이미지 사이 간격(px)")]
+        [SerializeField]
+        private float enterIndicatorGapPx = GGemCoDialogueBalloonSettings.DefaultEnterIndicatorGapPx;
+
+        [Tooltip("프로젝트 기본값 미사용 시 적용할 입력 안내 이미지 깜빡임 속도(Hz)")]
+        [SerializeField]
+        private float enterIndicatorBlinkHz = GGemCoDialogueBalloonSettings.DefaultEnterIndicatorBlinkHz;
+
+        [Range(0f, 1f)]
+        [Tooltip("프로젝트 기본값 미사용 시 적용할 입력 안내 이미지 최소 알파값")]
+        [SerializeField]
+        private float enterIndicatorMinAlpha = GGemCoDialogueBalloonSettings.DefaultEnterIndicatorMinAlpha;
+
         private const int ButtonCount = 10;
         private readonly Dictionary<int, Button> _buttonChoices = new();
         private readonly Dictionary<int, InteractionData> _interactionData = new();
@@ -192,6 +218,15 @@ namespace GGemCo2DCore
         private CanvasGroup _panelDialogueCanvasGroup;
         private bool _isInitialRevealPending;
         private int _initialRevealRequestVersion = -1;
+        private RectTransform _enterRectTransform;
+        private bool _hasEnterBaseColor;
+        private Color _enterBaseColor = Color.white;
+        private bool _hasEnterBaseAnchoredPosition;
+        private Vector2 _enterBaseAnchoredPosition;
+        private float _resolvedEnterIndicatorGapPx = GGemCoDialogueBalloonSettings.DefaultEnterIndicatorGapPx;
+        private float _resolvedEnterIndicatorBlinkHz = GGemCoDialogueBalloonSettings.DefaultEnterIndicatorBlinkHz;
+        private float _resolvedEnterIndicatorMinAlpha = GGemCoDialogueBalloonSettings.DefaultEnterIndicatorMinAlpha;
+        private int _lastKnownEnterIndicatorVisibleCharacters = -1;
 
         private UIWindowShop _uiWindowShop;
         private UIWindowShopSale _uiWindowShopSale;

@@ -60,6 +60,7 @@ namespace GGemCo2DCore
             }
 
             ApplyThumbnailFlip();
+            RefreshSpeechBubbleEnterIndicatorPosition();
         }
 
         /// <summary>
@@ -153,6 +154,8 @@ namespace GGemCo2DCore
                     _hasDefaultPanelMessageMinWidth = true;
                 }
             }
+
+            CacheSpeechBubbleEnterIndicatorReferences();
         }
 
         /// <summary>
@@ -240,6 +243,12 @@ namespace GGemCo2DCore
             if (!hasThumbnail)
             {
                 RestoreSpeechBubblePanelPadding();
+                float enterReservedWidthWhenNoThumbnail = GetEnterIndicatorReservedWidthPx();
+                if (enterReservedWidthWhenNoThumbnail > 0f)
+                {
+                    _panelMessageLayoutGroup.padding.right += Mathf.CeilToInt(enterReservedWidthWhenNoThumbnail);
+                }
+
                 return;
             }
 
@@ -250,6 +259,12 @@ namespace GGemCo2DCore
             _panelMessageLayoutGroup.padding.right = isThumbnailLeft
                 ? Mathf.Max(0, textPaddingOnNonThumbnailSidePx)
                 : Mathf.Max(0, textPaddingOnThumbnailSidePx);
+
+            float enterReservedWidth = GetEnterIndicatorReservedWidthPx();
+            if (enterReservedWidth > 0f)
+            {
+                _panelMessageLayoutGroup.padding.right += Mathf.CeilToInt(enterReservedWidth);
+            }
         }
 
         /// <summary>
@@ -603,6 +618,8 @@ namespace GGemCo2DCore
                 anchoredPosition.x = 0f;
                 _tailRectTransform.anchoredPosition = anchoredPosition;
             }
+
+            ResetSpeechBubbleEnterIndicatorState();
         }
 
         /// <summary>
@@ -612,6 +629,7 @@ namespace GGemCo2DCore
         {
             if (dialogueVisualMode != DialogueVisualMode.SpeechBubble)
             {
+                SetSpeechBubbleEnterIndicatorVisible(false, 1f);
                 return;
             }
 
