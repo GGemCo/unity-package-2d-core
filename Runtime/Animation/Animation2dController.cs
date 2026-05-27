@@ -459,6 +459,18 @@ namespace GGemCo2DCore
         }
 
         /// <summary>
+        /// 플레이어 피격 연출 전용(AnimationEvent) 이벤트를 리스너로 전달합니다.
+        /// </summary>
+        /// <remarks>
+        /// 실제 VFX 생성 여부는 런타임 설정(<see cref="GGemCoPlayerSettings.IncomingHitVfxSettings"/>)의
+        /// 트리거 정책을 통해 결정됩니다.
+        /// </remarks>
+        public void GGemCoAniEventPlayerHit()
+        {
+            EventListener?.OnAnimationEventPlayerHit(gameObject);
+        }
+
+        /// <summary>
         /// 백스탭(또는 대시/회피) 트레일 시작 이벤트입니다.
         /// </summary>
         /// <param name="json">

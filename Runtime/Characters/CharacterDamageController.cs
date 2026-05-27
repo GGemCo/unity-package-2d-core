@@ -333,7 +333,7 @@ namespace GGemCo2DCore
             }
 
             _characterBase.TryPlaySpriteWhiteOverlayOnHit();
-            TryPlayPlayerIncomingHitVfx();
+            TryPlayPlayerIncomingHitVfxByTrigger(GGemCoPlayerSettings.IncomingHitVfxTriggerType.OnDamageConfirmed);
             
             if (remainHp <= 0)
             {
@@ -489,12 +489,14 @@ namespace GGemCo2DCore
         }
 
         /// <summary>
-        /// 플레이어 피격 확정 시 설정된 VFX를 재생합니다.
+        /// 설정된 트리거 타입에 따라 플레이어 피격 VFX 재생을 시도합니다.
         /// </summary>
+        /// <param name="triggerType">현재 호출 경로의 트리거 타입입니다.</param>
         /// <remarks>
-        /// 실제 데미지가 0보다 큰 타격에만 호출되며, 설정된 최소 간격을 만족할 때만 재생합니다.
+        /// <see cref="GGemCoPlayerSettings.IncomingHitVfxSettings.triggerType"/>와 일치할 때만 재생하며,
+        /// 최소 간격(<c>minIntervalSeconds</c>) 제한을 동일하게 적용합니다.
         /// </remarks>
-        private void TryPlayPlayerIncomingHitVfx()
+        internal void TryPlayPlayerIncomingHitVfxByTrigger(GGemCoPlayerSettings.IncomingHitVfxTriggerType triggerType)
         {
             if (!(_characterBase is Player))
             {
@@ -513,6 +515,12 @@ namespace GGemCo2DCore
 
             GGemCoPlayerSettings.IncomingHitVfxSettings settings = _playerSettings.incomingHitVfx;
             if (!settings.enabled || settings.vfxUid <= 0)
+            {
+                return;
+            }
+
+            // 설정된 트리거 정책과 현재 호출 경로가 다르면 재생하지 않습니다.
+            if (!IsIncomingHitVfxTriggerMatched(settings.triggerType, triggerType))
             {
                 return;
             }
@@ -557,6 +565,31 @@ namespace GGemCo2DCore
             if (settings.minIntervalSeconds > 0f)
             {
                 _nextPlayerHitVfxPlayableTime = Time.time + settings.minIntervalSeconds;
+            }
+        }
+
+        /// <summary>
+        /// 설정된 피격 VFX 트리거 정책과 현재 호출 트리거의 일치 여부를 반환합니다.
+        /// </summary>
+        /// <param name="configuredTriggerType">설정 자산에 저장된 트리거 정책입니다.</param>
+        /// <param name="currentTriggerType">현재 실행 중인 트리거 경로입니다.</param>
+        /// <returns>정책이 현재 트리거를 허용하면 <see langword="true"/>를 반환합니다.</returns>
+        private static bool IsIncomingHitVfxTriggerMatched(
+            GGemCoPlayerSettings.IncomingHitVfxTriggerType configuredTriggerType,
+            GGemCoPlayerSettings.IncomingHitVfxTriggerType currentTriggerType)
+        {
+            switch (configuredTriggerType)
+            {
+                case GGemCoPlayerSettings.IncomingHitVfxTriggerType.OnDamageConfirmed:
+                    return currentTriggerType == GGemCoPlayerSettings.IncomingHitVfxTriggerType.OnDamageConfirmed;
+                case GGemCoPlayerSettings.IncomingHitVfxTriggerType.OnAnimationEventPlayerHit:
+                    return currentTriggerType == GGemCoPlayerSettings.IncomingHitVfxTriggerType.OnAnimationEventPlayerHit;
+                case GGemCoPlayerSettings.IncomingHitVfxTriggerType.Both:
+                    return currentTriggerType == GGemCoPlayerSettings.IncomingHitVfxTriggerType.OnDamageConfirmed
+                           || currentTriggerType == GGemCoPlayerSettings.IncomingHitVfxTriggerType.OnAnimationEventPlayerHit;
+                default:
+                    // 신규 enum 값이 추가되기 전 구버전 데이터와의 호환을 위해 기본 경로를 유지합니다.
+                    return currentTriggerType == GGemCoPlayerSettings.IncomingHitVfxTriggerType.OnDamageConfirmed;
             }
         }
 

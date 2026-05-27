@@ -214,6 +214,27 @@ namespace GGemCo2DCore
         /// <summary>
         /// 플레이어가 피격될 때 재생할 VFX 설정입니다.
         /// </summary>
+        public enum IncomingHitVfxTriggerType
+        {
+            /// <summary>
+            /// 실제 데미지 확정 시점에 피격 VFX를 재생합니다.
+            /// </summary>
+            OnDamageConfirmed = 0,
+
+            /// <summary>
+            /// 애니메이션 이벤트(<c>GGemCoAniEventPlayerHit</c>) 시점에 피격 VFX를 재생합니다.
+            /// </summary>
+            OnAnimationEventPlayerHit = 1,
+
+            /// <summary>
+            /// 데미지 확정과 애니메이션 이벤트 두 경로 모두에서 피격 VFX를 재생합니다.
+            /// </summary>
+            Both = 2,
+        }
+
+        /// <summary>
+        /// 플레이어 피격 VFX의 재생 트리거 정책입니다.
+        /// </summary>
         [Serializable]
         public struct IncomingHitVfxSettings
         {
@@ -254,6 +275,9 @@ namespace GGemCo2DCore
             [Min(0f)]
             public float minIntervalSeconds;
 
+            [Tooltip("피격 VFX 재생 트리거 방식(데미지 확정/애니메이션 이벤트)을 선택합니다.")]
+            public IncomingHitVfxTriggerType triggerType;
+
             /// <summary>
             /// 비활성 기본 설정을 생성합니다.
             /// </summary>
@@ -273,7 +297,8 @@ namespace GGemCo2DCore
                     sortingLayerKey = ConfigSortingLayer.Keys.CharacterTop,
                     hasSortingOrderOverride = false,
                     sortingOrder = 0,
-                    minIntervalSeconds = 0f
+                    minIntervalSeconds = 0f,
+                    triggerType = IncomingHitVfxTriggerType.OnDamageConfirmed
                 };
             }
         }

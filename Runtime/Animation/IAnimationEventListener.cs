@@ -20,6 +20,12 @@ namespace GGemCo2DCore
         void OnAnimationEventGuardEnd(GameObject gameObject);
 
         /// <summary>
+        /// 플레이어 피격 연출용 애니메이션 이벤트를 전달합니다.
+        /// </summary>
+        /// <param name="fromObject">이벤트를 발생시킨 오브젝트입니다.</param>
+        void OnAnimationEventPlayerHit(GameObject fromObject);
+
+        /// <summary>
         /// 백스탭(또는 대시/회피) 트레일 시작.
         /// - AnimationEvent의 string 파라미터에 JSON을 전달하여 런타임 설정을 오버라이드할 수 있습니다.
         /// </summary>

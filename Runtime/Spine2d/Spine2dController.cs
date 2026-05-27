@@ -74,6 +74,9 @@ namespace GGemCo2DCore
                 case AnimationConstants.EventNameVfx:
                     EventListener?.OnAnimationEventVfx(e.String, gameObject);
                     break;
+                case AnimationConstants.EventNamePlayerHit:
+                    EventListener?.OnAnimationEventPlayerHit(gameObject);
+                    break;
                 case AnimationConstants.EventNameSkill:
                     EventListener?.OnAnimationEventSkill(e.String, gameObject);
                     break;
