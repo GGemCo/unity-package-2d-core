@@ -261,7 +261,17 @@ namespace GGemCo2DCore
             SetColor(color);
         }
 
-        public void PlayCharacterAnimation(string animationName, bool loop = false, float timeScale = 1f)
+        /// <summary>
+        /// 지정한 캐릭터 애니메이션을 재생합니다.
+        /// </summary>
+        /// <param name="animationName">재생할 애니메이션 상태 이름입니다.</param>
+        /// <param name="loop">루프 재생 여부입니다.</param>
+        /// <param name="timeScale">재생 속도 배율입니다.</param>
+        /// <param name="forceReset">
+        /// Spine 구현에서는 SetAnimation 호출 시 기본적으로 트랙이 재시작되므로,
+        /// 현재는 추가 분기 없이 동일하게 처리합니다.
+        /// </param>
+        public void PlayCharacterAnimation(string animationName, bool loop = false, float timeScale = 1f, bool forceReset = false)
         {
             PlayAnimation(animationName, loop, timeScale);
         }

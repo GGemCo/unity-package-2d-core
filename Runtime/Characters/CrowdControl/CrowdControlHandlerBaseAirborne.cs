@@ -129,7 +129,13 @@ namespace GGemCo2DCore
                 return;
 
             bool loop = ShouldLoopPhase(crowdControl, phase);
-            animationController.PlayCharacterAnimation(animationName, loop);
+            // 강제 갱신 모드가 켜져 있으면 phase 전환 시에도 동일 상태를 첫 프레임부터 재생합니다.
+            bool shouldForceReset = force || controller.ForceRefreshAnimationOnCurrentCrowdControl;
+            animationController.PlayCharacterAnimation(
+                animationName,
+                loop,
+                timeScale: 1f,
+                forceReset: shouldForceReset);
             controller.CurrentPhaseAnimationName = animationName;
             controller.CurrentAirborneAnimationPhase = phase;
         }

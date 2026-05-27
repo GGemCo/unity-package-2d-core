@@ -37,6 +37,10 @@ namespace GGemCo2DCore
         private string _currentStaggerAnimationName;
         private string _currentPhaseAnimationName;
         private CrowdControlAirborneAnimationPhase _currentAirborneAnimationPhase;
+        /// <summary>
+        /// 현재 CrowdControl 적용 사이클에서 애니메이션을 강제로 첫 프레임부터 재생할지 여부입니다.
+        /// </summary>
+        private bool _forceRefreshAnimationOnCurrentCrowdControl;
 
         private Coroutine _stopRoutine;
         internal const float Epsilon = 0.0001f;
@@ -113,18 +117,56 @@ namespace GGemCo2DCore
         /// </remarks>
         public void ApplyCrowdControl(StruckTableCrowdControl crowdControl, GameObject source, bool isEndCharacterStop = false)
         {
-            CrowdControlRuntimeData runtimeData = CrowdControlRuntimeDataResolver.Resolve(TableLoaderManager.Instance, crowdControl);
-            runtimeData.IsEndCharacterStop = isEndCharacterStop;
-            ApplyCrowdControl(runtimeData, source);
+            ApplyCrowdControl(crowdControl, source, isEndCharacterStop, forceRefreshAnimation: false);
         }
 
+        /// <summary>
+        /// CrowdControl 테이블 정의를 기반으로 CrowdControl을 적용합니다.
+        /// </summary>
+        /// <param name="crowdControl">적용할 CC(넉백/넉다운/넉업 등) 데이터입니다.</param>
+        /// <param name="source">방향 계산에 사용할 공격/발생 원본 오브젝트입니다(없을 수 있음).</param>
+        /// <param name="isEndCharacterStop">종료 후 Character.Stop 처리 여부.</param>
+        /// <param name="forceRefreshAnimation">
+        /// <see langword="true"/>면 동일한 애니메이션 상태를 재적용할 때도
+        /// 애니메이션을 첫 프레임부터 강제로 다시 재생합니다.
+        /// </param>
+        public void ApplyCrowdControl(StruckTableCrowdControl crowdControl, GameObject source, bool isEndCharacterStop, bool forceRefreshAnimation)
+        {
+            CrowdControlRuntimeData runtimeData = CrowdControlRuntimeDataResolver.Resolve(TableLoaderManager.Instance, crowdControl);
+            if (runtimeData == null) return;
+            runtimeData.IsEndCharacterStop = isEndCharacterStop;
+            ApplyCrowdControl(runtimeData, source, forceRefreshAnimation);
+        }
+
+        /// <summary>
+        /// 런타임 CrowdControl 데이터를 즉시 적용합니다.
+        /// </summary>
+        /// <param name="crowdControl">적용할 런타임 CrowdControl 데이터입니다.</param>
+        /// <param name="source">방향 계산에 사용할 공격/발생 원본 오브젝트입니다(없을 수 있음).</param>
         public void ApplyCrowdControl(CrowdControlRuntimeData crowdControl, GameObject source)
         {
-            ClearQueuedSequence();
-            ApplyCrowdControlInternal(crowdControl, source, forceReplaceCurrent: true);
+            ApplyCrowdControl(crowdControl, source, forceRefreshAnimation: false);
         }
 
-        private void ApplyCrowdControlInternal(CrowdControlRuntimeData crowdControl, GameObject source, bool forceReplaceCurrent)
+        /// <summary>
+        /// 런타임 CrowdControl 데이터를 즉시 적용합니다.
+        /// </summary>
+        /// <param name="crowdControl">적용할 런타임 CrowdControl 데이터입니다.</param>
+        /// <param name="source">방향 계산에 사용할 공격/발생 원본 오브젝트입니다(없을 수 있음).</param>
+        /// <param name="forceRefreshAnimation">
+        /// <see langword="true"/>면 동일 상태명 애니메이션도 강제로 재시작합니다.
+        /// </param>
+        public void ApplyCrowdControl(CrowdControlRuntimeData crowdControl, GameObject source, bool forceRefreshAnimation)
+        {
+            ClearQueuedSequence();
+            ApplyCrowdControlInternal(crowdControl, source, forceReplaceCurrent: true, forceRefreshAnimation: forceRefreshAnimation);
+        }
+
+        private void ApplyCrowdControlInternal(
+            CrowdControlRuntimeData crowdControl,
+            GameObject source,
+            bool forceReplaceCurrent,
+            bool forceRefreshAnimation)
         {
             if (crowdControl == null) return;
             if (_character == null) return;
@@ -138,6 +180,8 @@ namespace GGemCo2DCore
             _activeCrowdControl = crowdControl;
             _activeSource = source;
             _isActive = true;
+            // 이번 CC 적용 사이클 동안 phase/end 애니메이션까지 동일한 강제 재생 정책을 유지합니다.
+            _forceRefreshAnimationOnCurrentCrowdControl = forceRefreshAnimation;
 
             // 방향 결정
             var direction = ResolveDirection(crowdControl, source);
@@ -440,7 +484,11 @@ namespace GGemCo2DCore
             {
                 if (_character.CharacterAnimationController.HasAnimation(initialAnimationName))
                 {
-                    _character.CharacterAnimationController.PlayCharacterAnimation(initialAnimationName, loop);
+                    _character.CharacterAnimationController.PlayCharacterAnimation(
+                        initialAnimationName,
+                        loop,
+                        timeScale: 1f,
+                        forceReset: _forceRefreshAnimationOnCurrentCrowdControl);
                     _currentPhaseAnimationName = initialAnimationName;
                     _currentAirborneAnimationPhase = initialPhase;
                     return;
@@ -451,7 +499,11 @@ namespace GGemCo2DCore
 
             if (_character.CharacterAnimationController.HasAnimation(_currentStaggerAnimationName))
             {
-                _character.CharacterAnimationController.PlayCharacterAnimation(_currentStaggerAnimationName, loop: false);
+                _character.CharacterAnimationController.PlayCharacterAnimation(
+                    _currentStaggerAnimationName,
+                    loop: false,
+                    timeScale: 1f,
+                    forceReset: _forceRefreshAnimationOnCurrentCrowdControl);
             }
         }
 
@@ -490,7 +542,11 @@ namespace GGemCo2DCore
                     endName = ICharacterAnimationController.DeadAnim;
                     if (!string.IsNullOrWhiteSpace(endName) && _character.CharacterAnimationController.HasAnimation(endName))
                     {
-                        _character.CharacterAnimationController.PlayCharacterAnimation(endName, loop: false);
+                        _character.CharacterAnimationController.PlayCharacterAnimation(
+                            endName,
+                            loop: false,
+                            timeScale: 1f,
+                            forceReset: _forceRefreshAnimationOnCurrentCrowdControl);
 
                         float durationSec = _character.CharacterAnimationController.GetCharacterAnimationDuration(endName, isMilliseconds: false);
                         durationSec = Mathf.Max(0f, durationSec);
@@ -509,7 +565,11 @@ namespace GGemCo2DCore
                 endName = ResolveEndAnimationName(crowdControl);
                 if (!string.IsNullOrWhiteSpace(endName) && _character.CharacterAnimationController.HasAnimation(endName))
                 {
-                    _character.CharacterAnimationController.PlayCharacterAnimation(endName, loop: false);
+                    _character.CharacterAnimationController.PlayCharacterAnimation(
+                        endName,
+                        loop: false,
+                        timeScale: 1f,
+                        forceReset: _forceRefreshAnimationOnCurrentCrowdControl);
 
                     float durationSec = _character.CharacterAnimationController.GetCharacterAnimationDuration(endName, isMilliseconds: false);
                     durationSec = Mathf.Max(0f, durationSec);
@@ -540,7 +600,7 @@ namespace GGemCo2DCore
         /// 지정된 시간만큼 대기한 뒤 CC 상태를 강제 해제합니다.
         /// </summary>
         /// <param name="durationSec">대기할 시간(초)입니다.</param>
-        /// <param name="isEndCharacterStop">대기할 시간(초)입니다.</param>
+        /// <param name="isEndCharacterStop">종료 시 Character.Stop을 강제 호출할지 여부입니다.</param>
         /// <returns>코루틴 열거자입니다.</returns>
         private IEnumerator StopAfter(float durationSec, bool isEndCharacterStop)
         {
@@ -610,7 +670,11 @@ namespace GGemCo2DCore
 
             GameObject source = _activeSource;
             ForceStopInternal(clearSequence: false, false);
-            ApplyCrowdControlInternal(followUp, source, forceReplaceCurrent: false);
+            ApplyCrowdControlInternal(
+                followUp,
+                source,
+                forceReplaceCurrent: false,
+                forceRefreshAnimation: _forceRefreshAnimationOnCurrentCrowdControl);
         }
 
         private static bool ShouldTriggerWallImpactReaction(CrowdControlRuntimeData crowdControl, MotionWallImpactInfo wallImpactInfo)
@@ -735,11 +799,16 @@ namespace GGemCo2DCore
             _currentStaggerAnimationName = null;
             _currentPhaseAnimationName = null;
             _currentAirborneAnimationPhase = CrowdControlAirborneAnimationPhase.None;
+            _forceRefreshAnimationOnCurrentCrowdControl = false;
         }
 
 
         internal ICharacterAnimationController AnimationController => _character?.CharacterAnimationController;
         internal string CurrentStaggerAnimationName => _currentStaggerAnimationName;
+        /// <summary>
+        /// 현재 CrowdControl 적용 사이클에 애니메이션 강제 재시작 정책이 활성화되었는지 여부입니다.
+        /// </summary>
+        internal bool ForceRefreshAnimationOnCurrentCrowdControl => _forceRefreshAnimationOnCurrentCrowdControl;
         internal string CurrentPhaseAnimationName
         {
             get => _currentPhaseAnimationName;
@@ -800,7 +869,11 @@ namespace GGemCo2DCore
                 if (next.CrowdControl == null)
                     continue;
 
-                ApplyCrowdControlInternal(next.CrowdControl, _sequenceSource, forceReplaceCurrent: false);
+                ApplyCrowdControlInternal(
+                    next.CrowdControl,
+                    _sequenceSource,
+                    forceReplaceCurrent: false,
+                    forceRefreshAnimation: false);
                 if (_activeCrowdControl != null)
                     return;
             }
@@ -905,14 +978,29 @@ namespace GGemCo2DCore
         /// </summary>
         /// <param name="crowdControlUid">조회할 CC 테이블 UID입니다.</param>
         /// <param name="source">방향 계산에 사용할 공격/발생 원본 오브젝트입니다(없을 수 있음).</param>
+        /// <param name="isEndCharacterStop">종료 시 Character.Stop 강제 호출 여부입니다.</param>
         public void ApplyCrowdControlByUid(int crowdControlUid, GameObject source, bool isEndCharacterStop = false)
+        {
+            ApplyCrowdControlByUid(crowdControlUid, source, isEndCharacterStop, forceRefreshAnimation: false);
+        }
+
+        /// <summary>
+        /// CC UID를 통해 테이블에서 데이터를 조회한 뒤 CrowdControl을 적용합니다.
+        /// </summary>
+        /// <param name="crowdControlUid">조회할 CC 테이블 UID입니다.</param>
+        /// <param name="source">방향 계산에 사용할 공격/발생 원본 오브젝트입니다(없을 수 있음).</param>
+        /// <param name="isEndCharacterStop">종료 시 Character.Stop 강제 호출 여부입니다.</param>
+        /// <param name="forceRefreshAnimation">
+        /// <see langword="true"/>면 같은 상태명 애니메이션도 첫 프레임부터 재시작합니다.
+        /// </param>
+        public void ApplyCrowdControlByUid(int crowdControlUid, GameObject source, bool isEndCharacterStop, bool forceRefreshAnimation)
         {
             CrowdControlRuntimeData info = TableLoaderManager.Instance != null
                 ? TableLoaderManager.Instance.GetCrowdControlRuntimeData(crowdControlUid, logIfMissing: false)
                 : null;
             if (info == null) return;
             info.IsEndCharacterStop = isEndCharacterStop;
-            ApplyCrowdControl(info, source);
+            ApplyCrowdControl(info, source, forceRefreshAnimation);
         }
     }
 }
