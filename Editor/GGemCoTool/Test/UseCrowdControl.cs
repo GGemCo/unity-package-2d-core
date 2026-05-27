@@ -23,6 +23,22 @@ namespace GGemCo2DCoreEditor
     {
         private const string Title = "CrowdControl 사용툴";
 
+        /// <summary>
+        /// Target/Source 자동 연동 프리셋입니다.
+        /// </summary>
+        private enum AutoBindPreset
+        {
+            /// <summary>
+            /// Target은 플레이어, Source는 몬스터로 설정합니다.
+            /// </summary>
+            PlayerTargetMonsterSource = 0,
+
+            /// <summary>
+            /// Target은 몬스터, Source는 플레이어로 설정합니다.
+            /// </summary>
+            MonsterTargetPlayerSource = 1
+        }
+
         [MenuItem(ConfigEditor.NameToolUseCrowdControl, false, (int)ConfigEditor.ToolOrdering.UseCrowdControl)]
         public static void ShowWindow() => GetWindow<UseCrowdControl>(Title);
 
@@ -128,6 +144,23 @@ namespace GGemCo2DCoreEditor
 
                     if (GUILayout.Button("Selection → Source"))
                         _source = Selection.activeGameObject;
+                }
+
+                using (new EditorGUI.DisabledScope(!Application.isPlaying))
+                {
+                    using (new EditorGUILayout.HorizontalScope())
+                    {
+                        if (GUILayout.Button("플레이어, 몬스터"))
+                            TryAutoBindTargetSource(AutoBindPreset.PlayerTargetMonsterSource);
+
+                        if (GUILayout.Button("몬스터, 플레이어"))
+                            TryAutoBindTargetSource(AutoBindPreset.MonsterTargetPlayerSource);
+                    }
+                }
+
+                if (!Application.isPlaying)
+                {
+                    EditorGUILayout.HelpBox("자동 연동 버튼은 플레이 모드에서만 동작합니다.", MessageType.Info);
                 }
 
                 if (_target == null)
@@ -386,6 +419,150 @@ namespace GGemCo2DCoreEditor
         // ==============================
         // Apply / Runtime
         // ==============================
+        /// <summary>
+        /// 지정한 프리셋 기준으로 Target/Source를 자동 연동합니다.
+        /// </summary>
+        /// <param name="preset">자동 연동 프리셋입니다.</param>
+        private void TryAutoBindTargetSource(AutoBindPreset preset)
+        {
+            if (!Application.isPlaying)
+            {
+                EditorUtility.DisplayDialog(Title, "자동 연동은 플레이 모드에서만 사용할 수 있습니다.", "OK");
+                return;
+            }
+
+            if (!TryResolveAutoBindPair(preset, out var targetCharacter, out var sourceCharacter, out var error))
+            {
+                EditorUtility.DisplayDialog(Title, error, "OK");
+                return;
+            }
+
+            _target = targetCharacter.gameObject;
+            _source = sourceCharacter != null ? sourceCharacter.gameObject : null;
+
+            ShowNotification(new GUIContent($"자동 연동 완료: Target={_target.name}, Source={_source?.name ?? "(없음)"}"));
+        }
+
+        /// <summary>
+        /// 프리셋에 필요한 플레이어/몬스터 쌍을 해석합니다.
+        /// </summary>
+        /// <param name="preset">자동 연동 프리셋입니다.</param>
+        /// <param name="targetCharacter">해석된 Target 캐릭터입니다.</param>
+        /// <param name="sourceCharacter">해석된 Source 캐릭터입니다.</param>
+        /// <param name="error">실패 시 오류 메시지입니다.</param>
+        /// <returns>해석 성공 시 <see langword="true"/>를 반환합니다.</returns>
+        private static bool TryResolveAutoBindPair(
+            AutoBindPreset preset,
+            out CharacterBase targetCharacter,
+            out CharacterBase sourceCharacter,
+            out string error)
+        {
+            targetCharacter = null;
+            sourceCharacter = null;
+            error = null;
+
+            CharacterBase player = TryFindPlayerCharacter();
+            if (player == null)
+            {
+                error = "플레이어(CharacterBase)를 찾지 못했습니다.";
+                return false;
+            }
+
+            CharacterBase monster = TryFindMonsterCharacter();
+            if (monster == null)
+            {
+                error = "몬스터(CharacterBase)를 찾지 못했습니다.";
+                return false;
+            }
+
+            // 프리셋에 따라 Target/Source 역할만 교체합니다.
+            if (preset == AutoBindPreset.PlayerTargetMonsterSource)
+            {
+                targetCharacter = player;
+                sourceCharacter = monster;
+            }
+            else
+            {
+                targetCharacter = monster;
+                sourceCharacter = player;
+            }
+
+            if (targetCharacter == null)
+            {
+                error = "자동 연동 결과 Target이 비어있습니다.";
+                return false;
+            }
+
+            return true;
+        }
+
+        /// <summary>
+        /// 현재 씬에서 플레이어 캐릭터를 찾습니다.
+        /// </summary>
+        /// <returns>찾은 플레이어 캐릭터, 없으면 <see langword="null"/>입니다.</returns>
+        private static CharacterBase TryFindPlayerCharacter()
+        {
+            if (!Application.isPlaying)
+                return null;
+
+            // 1차: SceneGame의 player 참조를 우선 사용합니다.
+            var sceneGame = SceneGame.Instance;
+            if (sceneGame != null && sceneGame.player != null)
+            {
+                var playerFromScene = sceneGame.player.GetComponent<CharacterBase>();
+                if (playerFromScene != null)
+                    return playerFromScene;
+            }
+
+            // 2차: 씬의 CharacterBase 목록에서 Player 타입을 검색합니다.
+            CharacterBase[] characters = CompatObjectFind.FindAll<CharacterBase>();
+            for (int i = 0; i < characters.Length; i++)
+            {
+                CharacterBase character = characters[i];
+                if (character == null)
+                    continue;
+
+                if (character is Player || character.IsPlayer())
+                    return character;
+            }
+
+            return null;
+        }
+
+        /// <summary>
+        /// 현재 씬에서 몬스터 캐릭터를 찾습니다.
+        /// </summary>
+        /// <returns>찾은 몬스터 캐릭터, 없으면 <see langword="null"/>입니다.</returns>
+        private static CharacterBase TryFindMonsterCharacter()
+        {
+            if (!Application.isPlaying)
+                return null;
+
+            var sceneGame = SceneGame.Instance;
+
+            // 1차: 현재 플레이어 기준 근접 몬스터를 우선 사용합니다.
+            if (sceneGame != null && sceneGame.mapManager != null)
+            {
+                CharacterBase nearMonster = sceneGame.mapManager.GetNearByMonsterDistance(10000);
+                if (nearMonster != null)
+                    return nearMonster;
+            }
+
+            // 2차: 씬의 CharacterBase 목록에서 Monster 타입을 검색합니다.
+            CharacterBase[] characters = CompatObjectFind.FindAll<CharacterBase>();
+            for (int i = 0; i < characters.Length; i++)
+            {
+                CharacterBase character = characters[i];
+                if (character == null)
+                    continue;
+
+                if (character is Monster || character.IsMonster())
+                    return character;
+            }
+
+            return null;
+        }
+
         private void ApplyCrowdControlToTarget()
         {
             if (!Application.isPlaying)
