@@ -23,6 +23,7 @@ namespace GGemCo2DCoreEditor
         protected override string DropdownLabel => "Vfx Effect";
         protected override string ReloadButtonLabel => "vfx_effect 재로딩";
         protected override IReadOnlyList<TableRowEditorUtility.TableRowEditorField> RowEditorFields => CachedRowEditorFields;
+        protected override bool UseOffsetOverrideField => true;
 
         private static TableRowEditorUtility.TableRowEditorBuildOptions BuildRowEditorOptions()
         {

@@ -22,6 +22,7 @@ namespace GGemCo2DCoreEditor
         private float _duration;
         private string _color = string.Empty;
         private float _positionY;
+        private Vector3 _positionOffset = Vector3.zero;
         private ConfigCommon.PositionYType _positionYType = ConfigCommon.PositionYType.None;
         private bool _overrideLifecycleType;
         private VfxConstants.LifecycleType _lifecycleTypeOverride = VfxConstants.LifecycleType.AutoRelease;
@@ -48,6 +49,7 @@ namespace GGemCo2DCoreEditor
         protected abstract string DropdownLabel { get; }
         protected abstract string ReloadButtonLabel { get; }
         protected abstract IReadOnlyList<TableRowEditorUtility.TableRowEditorField> RowEditorFields { get; }
+        protected virtual bool UseOffsetOverrideField => false;
 
         protected override void OnEnable()
         {
@@ -216,6 +218,8 @@ namespace GGemCo2DCoreEditor
                 EditorGUILayout.Space(4);
                 _followOwner = EditorGUILayout.ToggleLeft("Follow Owner", _followOwner);
                 _followTarget = EditorGUILayout.ToggleLeft("Follow Target", _followTarget);
+                if (UseOffsetOverrideField)
+                    DrawFollowOffsetField();
                 _spawnAtScreenCenter = EditorGUILayout.ToggleLeft("Spawn At Screen Center", _spawnAtScreenCenter);
                 _forceUiCanvasParent = EditorGUILayout.ToggleLeft("Force UI Canvas Parent", _forceUiCanvasParent);
                 _useUiSorting = EditorGUILayout.ToggleLeft("Force UI Sorting", _useUiSorting);
@@ -237,6 +241,15 @@ namespace GGemCo2DCoreEditor
                 if (_overrideSortingOrder)
                     _sortingOrderOverride = EditorGUILayout.IntField("SortingOrder", _sortingOrderOverride);
             }
+        }
+
+        /// <summary>
+        /// Follow Target 기준으로 적용할 VFX 위치 오프셋을 입력합니다.
+        /// Follow 대상이 없더라도 실제 스폰 기준 좌표에 동일한 월드 오프셋이 더해집니다.
+        /// </summary>
+        private void DrawFollowOffsetField()
+        {
+            _positionOffset = EditorGUILayout.Vector3Field("Offset", _positionOffset);
         }
 
         private void DrawPreviewSection()
@@ -262,6 +275,8 @@ namespace GGemCo2DCoreEditor
                 sb.AppendLine($"- PositionYType: {_positionYType}");
                 sb.AppendLine($"- Follow Owner: {_followOwner}");
                 sb.AppendLine($"- Follow Target: {_followTarget}");
+                if (UseOffsetOverrideField)
+                    sb.AppendLine($"- Offset: {_positionOffset}");
                 sb.AppendLine($"- Spawn At Screen Center: {_spawnAtScreenCenter}");
                 sb.AppendLine($"- Force UI Canvas Parent: {_forceUiCanvasParent}");
                 sb.AppendLine($"- Force UI Sorting: {_useUiSorting}");
@@ -418,6 +433,10 @@ namespace GGemCo2DCoreEditor
                 AttachTypeOverride = _overrideAttachType ? _attachTypeOverride : null,
                 FollowModeOverride = _overrideFollowMode ? _followModeOverride : null,
             };
+
+            // Offset은 Follow Target/Owner/월드 스폰 어디서 시작하든 동일하게 월드 좌표에 더해집니다.
+            if (UseOffsetOverrideField)
+                request.PositionOffset = _positionOffset;
 
             if (_spawnAtScreenCenter && SceneGame.Instance.cameraManager != null)
                 request.WorldPosition = SceneGame.Instance.cameraManager.GetPositionCenter();
