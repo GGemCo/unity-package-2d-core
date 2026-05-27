@@ -54,6 +54,8 @@ namespace GGemCo2DCoreEditor
         [Header("대상")]
         [SerializeField] private GameObject _target;
         [SerializeField] private GameObject _source;
+        [Tooltip("CrowdControl 적용 시 동일 애니메이션을 첫 프레임부터 강제로 다시 재생합니다.")]
+        [SerializeField] private bool _forceRefreshAnimationOnApply = true;
 
         // ------------------------------
         // Table
@@ -157,6 +159,10 @@ namespace GGemCo2DCoreEditor
                             TryAutoBindTargetSource(AutoBindPreset.MonsterTargetPlayerSource);
                     }
                 }
+
+                _forceRefreshAnimationOnApply = EditorGUILayout.ToggleLeft(
+                    "CrowdControl 적용 시 애니메이션 강제 새로고침",
+                    _forceRefreshAnimationOnApply);
 
                 if (!Application.isPlaying)
                 {
@@ -584,7 +590,11 @@ namespace GGemCo2DCoreEditor
                 return;
             }
 
-            controller.ApplyCrowdControlByUid(crowdControlUid, _source);
+            controller.ApplyCrowdControlByUid(
+                crowdControlUid,
+                _source,
+                isEndCharacterStop: false,
+                forceRefreshAnimation: _forceRefreshAnimationOnApply);
         }
 
         private static void UpdateInGameTableInfo(StruckTableCrowdControl row)
