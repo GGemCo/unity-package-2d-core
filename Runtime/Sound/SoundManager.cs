@@ -214,12 +214,12 @@ namespace GGemCo2DCore
                 }
             }
 
-            _soundControllerSfx?.InitializeSelective(_tableLoaderManager.TableSoundSfx, introSfxUids, _tableLoaderManager.TableSound);
+            _soundControllerSfx?.InitializeSelective(_tableLoaderManager.TableSoundSfx, introSfxUids);
         }
 
         /// <summary>
         /// 인트로 선로딩 대상 대표 sound 행에서 실제 SFX 리소스 UID 후보를 수집합니다.
-        /// Direct 연결, Variant 후보, 레거시 FileName 행을 모두 고려해 부분 마이그레이션 중에도 누락을 줄입니다.
+        /// Direct 연결과 Variant 후보를 기준으로 실제 SFX 리소스 UID를 수집합니다.
         /// </summary>
         /// <param name="sound">대표 sound 행입니다.</param>
         /// <param name="target">수집 결과 목록입니다.</param>
@@ -248,9 +248,6 @@ namespace GGemCo2DCore
                     AddIntroSfxUid(target, registeredUids, variant.CandidateResourceUid);
                 }
             }
-
-            if (sound.HasLegacyResource() && directResource == null)
-                AddIntroSfxUid(target, registeredUids, sound.Uid);
         }
 
         /// <summary>
@@ -282,7 +279,7 @@ namespace GGemCo2DCore
         /// </summary>
         public void InitializeSoundSfxPool()
         {
-            _soundControllerSfx?.Initialize(_tableLoaderManager?.TableSoundSfx, _tableLoaderManager?.TableSound);
+            _soundControllerSfx?.Initialize(_tableLoaderManager?.TableSoundSfx);
         }
         /// <summary>
         /// 효과음 음소거 

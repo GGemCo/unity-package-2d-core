@@ -5,7 +5,7 @@ namespace GGemCo2DCore
 {
     /// <summary>
     /// 대표 sound UID를 실제 AudioClip 리소스 행으로 해석하는 런타임 서비스입니다.
-    /// Direct/Variant, 신규 리소스 테이블, 레거시 sound.FileName 호환 경로를 한곳에서 처리합니다.
+    /// Direct/Variant 및 실제 리소스 테이블(sound_bgm/sound_ambient/sound_sfx) 해석을 한곳에서 처리합니다.
     /// </summary>
     public sealed class SoundResolver
     {
@@ -50,9 +50,6 @@ namespace GGemCo2DCore
             resolved = default;
             if (TryGetFirstResource(sound, out StruckTableSoundResource resource))
                 return BuildResolved(sound, resource, null, out resolved);
-
-            if (TryBuildLegacyResolved(sound, out resolved))
-                return true;
 
             GcLogger.LogWarning($"[SoundResolver] 직접 연결된 실제 사운드 리소스가 없습니다. soundUid={sound.Uid}, type={sound.Type}");
             return false;
@@ -160,25 +157,6 @@ namespace GGemCo2DCore
             float pitch = Mathf.Approximately(pitchMin, pitchMax) ? pitchMin : Random.Range(pitchMin, pitchMax);
             resolved = new ResolvedSound(sound.Uid, resource.Uid, resource.Type, resource.FileName, volume, pitch,
                 resource.Loop, resource.FadeDuration, sound, resource);
-            return true;
-        }
-
-        /// <summary>
-        /// 신규 실제 리소스 테이블이 아직 없을 때 레거시 sound.txt 행을 직접 재생 정보로 변환합니다.
-        /// </summary>
-        /// <param name="sound">대표 sound 행입니다.</param>
-        /// <param name="resolved">최종 재생 정보입니다.</param>
-        /// <returns>생성에 성공하면 true를 반환합니다.</returns>
-        private static bool TryBuildLegacyResolved(StruckTableSound sound, out ResolvedSound resolved)
-        {
-            resolved = default;
-            if (sound == null || !sound.HasLegacyResource())
-                return false;
-
-            float volume = Mathf.Clamp01(sound.VolumeScale <= 0f ? 1f : sound.VolumeScale)
-                           * Mathf.Clamp01(sound.Volume <= 0f ? 1f : sound.Volume);
-            resolved = new ResolvedSound(sound.Uid, sound.Uid, sound.Type, sound.FileName, volume, 1f,
-                sound.Type != SoundConstants.Type.Sfx, 0.7f, sound, null);
             return true;
         }
     }

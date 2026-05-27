@@ -50,61 +50,13 @@ namespace GGemCo2DCore
         /// 효과음 pool 초기화
         /// </summary>
         /// <param name="table">신규 sound_sfx 실제 리소스 테이블입니다.</param>
-        /// <param name="legacyTable">신규 테이블이 비어 있을 때 사용할 레거시 sound 테이블입니다.</param>
-        public void Initialize(TableSoundSfx table, TableSound legacyTable = null)
+        public void Initialize(TableSoundSfx table)
         {
-            bool hasResourceRows = table != null && table.GetCount() > 0;
-            if (hasResourceRows)
-            {
-                foreach (KeyValuePair<int, StruckTableSoundSfx> pair in table.GetDatas())
-                    RegisterResource(CreateResourceInfo(pair.Value));
-            }
-
-            RegisterLegacyFallbackRows(table, legacyTable);
-        }
-
-
-        /// <summary>
-        /// 신규 sound_sfx에 아직 이관되지 않은 레거시 SFX 행을 추가 등록합니다.
-        /// 부분 마이그레이션 중에도 기존 sound.FileName 행을 계속 재생할 수 있게 합니다.
-        /// </summary>
-        /// <param name="resourceTable">신규 sound_sfx 테이블입니다.</param>
-        /// <param name="legacyTable">레거시 sound 테이블입니다.</param>
-        private void RegisterLegacyFallbackRows(TableSoundSfx resourceTable, TableSound legacyTable)
-        {
-            if (legacyTable == null)
+            if (table == null || table.GetCount() <= 0)
                 return;
 
-            foreach (KeyValuePair<int, StruckTableSound> pair in legacyTable.GetDatas())
-            {
-                StruckTableSound info = pair.Value;
-                if (info == null || info.Type != SoundConstants.Type.Sfx || !info.HasLegacyResource())
-                    continue;
-
-                if (resourceTable != null && resourceTable.GetFirstBySoundUid(info.Uid) != null)
-                    continue;
-
-                RegisterResource(CreateResourceInfo(info));
-            }
-        }
-
-        /// <summary>
-        /// 레거시 sound.txt 기반으로 효과음 pool을 초기화합니다.
-        /// 신규 sound_sfx 테이블이 아직 없을 때 이전 데이터와 동작을 유지합니다.
-        /// </summary>
-        /// <param name="legacyTable">레거시 sound 테이블입니다.</param>
-        private void InitializeLegacy(TableSound legacyTable)
-        {
-            if (legacyTable == null) return;
-
-            foreach (KeyValuePair<int, StruckTableSound> pair in legacyTable.GetDatas())
-            {
-                StruckTableSound info = pair.Value;
-                if (info == null || info.Type != SoundConstants.Type.Sfx || !info.HasLegacyResource())
-                    continue;
-
-                RegisterResource(CreateResourceInfo(info));
-            }
+            foreach (KeyValuePair<int, StruckTableSoundSfx> pair in table.GetDatas())
+                RegisterResource(CreateResourceInfo(pair.Value));
         }
 
         /// <summary>
@@ -145,7 +97,7 @@ namespace GGemCo2DCore
         /// <summary>
         /// 효과음 재생
         /// </summary>
-        /// <param name="uid">실제 sound_sfx 리소스 UID 또는 레거시 sound UID입니다.</param>
+        /// <param name="uid">실제 sound_sfx 리소스 UID입니다.</param>
         /// <param name="coroutineHost">비동기 로드 코루틴 실행자입니다.</param>
         public void Play(int uid, MonoBehaviour coroutineHost)
         {
@@ -334,27 +286,6 @@ namespace GGemCo2DCore
         }
 
         /// <summary>
-        /// 레거시 sound 테이블 행을 런타임 풀 정보로 변환합니다.
-        /// </summary>
-        /// <param name="row">레거시 sound 행입니다.</param>
-        /// <returns>런타임 풀 정보입니다.</returns>
-        private static RuntimeSfxResource CreateResourceInfo(StruckTableSound row)
-        {
-            if (row == null)
-                return null;
-
-            return new RuntimeSfxResource
-            {
-                ResourceUid = row.Uid,
-                FileName = row.FileName,
-                MaxPlayCount = row.MaxPlayCount,
-                Volume = row.Volume,
-                PitchMin = 1f,
-                PitchMax = 1f,
-            };
-        }
-
-        /// <summary>
         /// SFX 볼륨 설정
         /// </summary>
         /// <param name="volume">설정할 SFX 볼륨입니다.</param>
@@ -379,31 +310,16 @@ namespace GGemCo2DCore
         /// </summary>
         /// <param name="table">신규 sound_sfx 실제 리소스 테이블입니다.</param>
         /// <param name="targetUids">풀링 대상 실제 리소스 UID 목록입니다.</param>
-        /// <param name="legacyTable">신규 테이블이 비어 있을 때 사용할 레거시 sound 테이블입니다.</param>
-        public void InitializeSelective(TableSoundSfx table, List<int> targetUids, TableSound legacyTable = null)
+        public void InitializeSelective(TableSoundSfx table, List<int> targetUids)
         {
-            if (targetUids == null || targetUids.Count == 0) return;
+            if (table == null || targetUids == null || targetUids.Count == 0)
+                return;
 
             for (int i = 0; i < targetUids.Count; i++)
             {
                 int uid = targetUids[i];
-                RuntimeSfxResource resource = null;
-
-                if (table != null)
-                {
-                    StruckTableSoundSfx info = table.GetDataByUid(uid);
-                    resource = CreateResourceInfo(info);
-                }
-
-                // 부분 마이그레이션 중에는 신규 sound_sfx와 레거시 sound 행이 함께 존재할 수 있습니다.
-                // 신규 테이블에서 UID를 찾지 못하면 레거시 sound UID로 한 번 더 확인합니다.
-                if (resource == null && legacyTable != null)
-                {
-                    StruckTableSound info = legacyTable.GetDataByUid(uid);
-                    if (info != null && info.Type == SoundConstants.Type.Sfx && info.HasLegacyResource())
-                        resource = CreateResourceInfo(info);
-                }
-
+                StruckTableSoundSfx info = table.GetDataByUid(uid);
+                RuntimeSfxResource resource = CreateResourceInfo(info);
                 RegisterResource(resource);
             }
         }
