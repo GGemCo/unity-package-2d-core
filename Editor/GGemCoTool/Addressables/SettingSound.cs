@@ -85,7 +85,6 @@ namespace GGemCo2DCoreEditor
 
         /// <summary>
         /// sound_bgm/sound_ambient/sound_sfx 실제 리소스 테이블을 기준으로 Addressables 사운드 그룹을 재구성합니다.
-        /// 실제 리소스 테이블이 아직 없으면 레거시 sound.FileName 행을 사용합니다.
         /// </summary>
         /// <param name="options">동기화 옵션입니다. null이면 기본 옵션으로 실행됩니다.</param>
         public static void SyncFromTable(SettingSoundOptions options = null)
@@ -126,21 +125,6 @@ namespace GGemCo2DCoreEditor
             {
                 EditorUtility.DisplayDialog(Title, completedMessage, "OK");
             }
-        }
-
-        /// <summary>
-        /// 레거시 sound 테이블의 변경분만 Addressables에 증분 반영합니다.
-        /// 신규 실제 리소스 테이블을 사용하지 않는 프로젝트의 호환 경로입니다.
-        /// </summary>
-        /// <param name="rowsToUpsert">등록/갱신 대상 사운드 행입니다.</param>
-        /// <param name="rowsToRemove">삭제 대상 사운드 행입니다.</param>
-        /// <param name="options">동기화 옵션입니다. null이면 기본 옵션으로 실행됩니다.</param>
-        public static void SyncFromTableDelta(
-            IReadOnlyList<StruckTableSound> rowsToUpsert,
-            IReadOnlyList<StruckTableSound> rowsToRemove,
-            SettingSoundOptions options = null)
-        {
-            SyncRowsDelta(ConvertLegacyRows(rowsToUpsert), ConvertLegacyRows(rowsToRemove), options);
         }
 
         /// <summary>
@@ -226,7 +210,7 @@ namespace GGemCo2DCoreEditor
         }
 
         /// <summary>
-        /// 신규 실제 리소스 테이블을 우선 수집하고, 비어 있으면 레거시 sound.FileName 행을 수집합니다.
+        /// 실제 리소스 테이블(sound_bgm/sound_ambient/sound_sfx)의 전체 행을 수집합니다.
         /// </summary>
         /// <param name="forceReload">테이블을 강제로 다시 읽을지 여부입니다.</param>
         /// <returns>Addressables에 등록할 사운드 리소스 목록입니다.</returns>
@@ -241,30 +225,6 @@ namespace GGemCo2DCoreEditor
             AppendResourceRows(rows, bgmTable?.GetDatas());
             AppendResourceRows(rows, ambientTable?.GetDatas());
             AppendResourceRows(rows, sfxTable?.GetDatas());
-
-            bool hasBgmResources = bgmTable != null && bgmTable.GetCount() > 0;
-            bool hasAmbientResources = ambientTable != null && ambientTable.GetCount() > 0;
-            bool hasSfxResources = sfxTable != null && sfxTable.GetCount() > 0;
-
-            TableSound legacyTable = TableLoaderManager.LoadSoundTable(forceReload);
-            if (legacyTable == null)
-                return rows;
-
-            foreach (KeyValuePair<int, StruckTableSound> pair in legacyTable.GetDatas())
-            {
-                StruckTableSound legacy = pair.Value;
-                if (legacy == null)
-                    continue;
-
-                if ((legacy.Type == SoundConstants.Type.Bgm && hasBgmResources)
-                    || (legacy.Type == SoundConstants.Type.Ambient && hasAmbientResources)
-                    || (legacy.Type == SoundConstants.Type.Sfx && hasSfxResources))
-                    continue;
-
-                SoundAddressableRow row = ConvertLegacyRow(legacy);
-                if (row != null)
-                    rows.Add(row);
-            }
 
             return rows;
         }
@@ -491,47 +451,6 @@ namespace GGemCo2DCoreEditor
         /// <param name="row">실제 리소스 행입니다.</param>
         /// <returns>Addressables 처리용 DTO입니다.</returns>
         private static SoundAddressableRow ConvertResourceRow(StruckTableSoundResource row)
-        {
-            if (row == null || row.Uid <= 0 || string.IsNullOrWhiteSpace(row.FileName))
-                return null;
-
-            return new SoundAddressableRow
-            {
-                Uid = row.Uid,
-                Type = row.Type,
-                SubType = row.SubType,
-                FileName = row.FileName,
-                UseIntroScene = row.UseIntroScene,
-            };
-        }
-
-        /// <summary>
-        /// 레거시 sound 행 목록을 Addressables 처리용 DTO 목록으로 변환합니다.
-        /// </summary>
-        /// <param name="rows">레거시 sound 행 목록입니다.</param>
-        /// <returns>Addressables 처리용 DTO 목록입니다.</returns>
-        private static List<SoundAddressableRow> ConvertLegacyRows(IReadOnlyList<StruckTableSound> rows)
-        {
-            List<SoundAddressableRow> result = new List<SoundAddressableRow>();
-            if (rows == null)
-                return result;
-
-            for (int i = 0; i < rows.Count; i++)
-            {
-                SoundAddressableRow row = ConvertLegacyRow(rows[i]);
-                if (row != null)
-                    result.Add(row);
-            }
-
-            return result;
-        }
-
-        /// <summary>
-        /// 레거시 sound 행 1건을 Addressables 처리용 DTO로 변환합니다.
-        /// </summary>
-        /// <param name="row">레거시 sound 행입니다.</param>
-        /// <returns>Addressables 처리용 DTO입니다.</returns>
-        private static SoundAddressableRow ConvertLegacyRow(StruckTableSound row)
         {
             if (row == null || row.Uid <= 0 || string.IsNullOrWhiteSpace(row.FileName))
                 return null;
