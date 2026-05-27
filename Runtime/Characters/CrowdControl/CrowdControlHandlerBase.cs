@@ -57,14 +57,14 @@ namespace GGemCo2DCore
 
             if (!string.IsNullOrWhiteSpace(controller.CurrentPhaseAnimationName))
             {
-                string phaseEndName = controller.CurrentPhaseAnimationName + StruckTableCrowdControl.StaggerAnimationEndSuffix;
+                string phaseEndName = controller.CurrentPhaseAnimationName + CrowdControlConstants.StaggerAnimationEndSuffix;
                 if (animationController.HasAnimation(phaseEndName))
                     return phaseEndName;
             }
 
             if (!string.IsNullOrWhiteSpace(controller.CurrentStaggerAnimationName))
             {
-                string defaultEndName = controller.CurrentStaggerAnimationName + StruckTableCrowdControl.StaggerAnimationEndSuffix;
+                string defaultEndName = controller.CurrentStaggerAnimationName + CrowdControlConstants.StaggerAnimationEndSuffix;
                 if (animationController.HasAnimation(defaultEndName))
                     return defaultEndName;
             }

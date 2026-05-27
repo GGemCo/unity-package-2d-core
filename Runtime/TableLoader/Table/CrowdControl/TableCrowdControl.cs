@@ -34,14 +34,6 @@ namespace GGemCo2DCore
 
         public string StaggerAnimationName;
 
-        /// <summary>
-        /// CC 종료 시 재생할 종료 애니메이션의 접미사입니다.
-        /// - Animator에서 Start → Wait 전환을 구성하는 경우, Wait는 자동으로 전환됩니다.
-        /// - End는 본 컨트롤러가 명시적으로 재생합니다.
-        /// </summary>
-        public const string StaggerAnimationWaitSuffix = "_wait";
-        public const string StaggerAnimationEndSuffix = "_end";
-
     }
 
     /// <summary>
