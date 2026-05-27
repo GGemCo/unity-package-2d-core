@@ -56,6 +56,10 @@ namespace GGemCo2DCoreEditor
         [SerializeField] private GameObject _source;
         [Tooltip("CrowdControl 적용 시 동일 애니메이션을 첫 프레임부터 강제로 다시 재생합니다.")]
         [SerializeField] private bool _forceRefreshAnimationOnApply = true;
+        [Tooltip("Target 캐릭터에 재생할 애니메이션 상태 이름입니다.")]
+        [SerializeField] private string _targetAnimationName = string.Empty;
+        [Tooltip("Target 애니메이션 반복 재생 여부입니다.")]
+        [SerializeField] private bool _targetAnimationLoop;
 
         // ------------------------------
         // Table
@@ -163,6 +167,17 @@ namespace GGemCo2DCoreEditor
                 _forceRefreshAnimationOnApply = EditorGUILayout.ToggleLeft(
                     "CrowdControl 적용 시 애니메이션 강제 새로고침",
                     _forceRefreshAnimationOnApply);
+
+                EditorGUILayout.Space(4f);
+                EditorGUILayout.LabelField("Target 애니메이션 테스트", EditorStyles.boldLabel);
+                _targetAnimationName = EditorGUILayout.TextField("Animation Name", _targetAnimationName);
+                _targetAnimationLoop = EditorGUILayout.ToggleLeft("Loop", _targetAnimationLoop);
+
+                using (new EditorGUI.DisabledScope(!Application.isPlaying))
+                {
+                    if (GUILayout.Button("Target 애니메이션 재생"))
+                        PlayTargetAnimation();
+                }
 
                 if (!Application.isPlaying)
                 {
@@ -595,6 +610,80 @@ namespace GGemCo2DCoreEditor
                 _source,
                 isEndCharacterStop: false,
                 forceRefreshAnimation: _forceRefreshAnimationOnApply);
+        }
+
+        /// <summary>
+        /// Target에 지정된 캐릭터의 애니메이션을 수동으로 재생합니다.
+        /// </summary>
+        /// <remarks>
+        /// 테스트 편의성을 위해 버튼 클릭 시 동일 상태명이라도 첫 프레임부터 재시작되도록
+        /// <c>forceReset=true</c>로 재생합니다.
+        /// </remarks>
+        private void PlayTargetAnimation()
+        {
+            if (!Application.isPlaying)
+            {
+                EditorUtility.DisplayDialog(Title, "플레이 모드에서만 애니메이션을 재생할 수 있습니다.", "OK");
+                return;
+            }
+
+            if (!TryResolveTargetCharacter(out var targetCharacter))
+                return;
+
+            if (targetCharacter.CharacterAnimationController == null)
+            {
+                EditorUtility.DisplayDialog(Title, "Target 캐릭터에 CharacterAnimationController가 없습니다.", "OK");
+                return;
+            }
+
+            string animationName = _targetAnimationName?.Trim();
+            if (string.IsNullOrWhiteSpace(animationName))
+            {
+                EditorUtility.DisplayDialog(Title, "재생할 Animation Name을 입력해주세요.", "OK");
+                return;
+            }
+
+            if (!targetCharacter.CharacterAnimationController.HasAnimation(animationName))
+            {
+                EditorUtility.DisplayDialog(Title, $"Target 캐릭터에 '{animationName}' 애니메이션이 없습니다.", "OK");
+                return;
+            }
+
+            targetCharacter.CharacterAnimationController.PlayCharacterAnimation(
+                animationName,
+                loop: _targetAnimationLoop,
+                timeScale: 1f,
+                forceReset: true);
+
+            ShowNotification(new GUIContent($"애니메이션 재생: {animationName} (Loop={_targetAnimationLoop})"));
+        }
+
+        /// <summary>
+        /// 현재 Target 오브젝트에서 <see cref="CharacterBase"/>를 해석합니다.
+        /// </summary>
+        /// <param name="targetCharacter">해석된 Target 캐릭터입니다.</param>
+        /// <returns>해석 성공 시 <see langword="true"/>를 반환합니다.</returns>
+        private bool TryResolveTargetCharacter(out CharacterBase targetCharacter)
+        {
+            targetCharacter = null;
+
+            if (_target == null)
+            {
+                EditorUtility.DisplayDialog(Title, "Target이 비어있습니다.", "OK");
+                return false;
+            }
+
+            // Target에 직접 붙은 경우와 자식/부모 선택 케이스를 모두 허용합니다.
+            if (!_target.TryGetComponent(out targetCharacter))
+                targetCharacter = _target.GetComponentInParent<CharacterBase>();
+
+            if (targetCharacter == null)
+            {
+                EditorUtility.DisplayDialog(Title, "Target에서 CharacterBase를 찾지 못했습니다.", "OK");
+                return false;
+            }
+
+            return true;
         }
 
         private static void UpdateInGameTableInfo(StruckTableCrowdControl row)
