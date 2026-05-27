@@ -80,7 +80,7 @@ namespace GGemCo2DCore
         public void PlayByUid(int uid)
         {
             if (!_tableLoaderManager || !_addressableLoaderSound || _soundResolver == null) return;
-            if (!_soundResolver.TryResolve(uid, out ResolvedSound resolved)) return;
+            if (!TryResolveSound(uid, out ResolvedSound resolved)) return;
             if (!resolved.ShouldPlay) return;
 
             if (resolved.Type == SoundConstants.Type.Bgm)
@@ -89,6 +89,22 @@ namespace GGemCo2DCore
                 _soundControllerAmbient?.Play(resolved, this);
             else if (resolved.Type == SoundConstants.Type.Sfx)
                 _soundControllerSfx?.Play(resolved, this);
+        }
+
+        /// <summary>
+        /// 대표 sound UID를 실제 재생 대상 정보로 해석합니다.
+        /// 커스텀 테스트 툴과 디버그 코드가 실제 게임 재생 경로와 같은 해석 결과를 확인할 때 사용합니다.
+        /// </summary>
+        /// <param name="uid">외부 시스템이 사용하는 대표 sound UID입니다.</param>
+        /// <param name="resolved">해석된 최종 사운드 정보입니다.</param>
+        /// <returns>해석에 성공하면 true를 반환합니다. 무음 후보도 성공 결과로 반환될 수 있습니다.</returns>
+        public bool TryResolveSound(int uid, out ResolvedSound resolved)
+        {
+            resolved = default;
+            if (!_tableLoaderManager || _soundResolver == null)
+                return false;
+
+            return _soundResolver.TryResolve(uid, out resolved);
         }
 
         /// <summary>
@@ -125,6 +141,13 @@ namespace GGemCo2DCore
         /// Ambient 전체 정지
         /// </summary>
         public void StopAmbient() => _soundControllerAmbient?.StopAll();
+
+        /// <summary>
+        /// 특정 Ambient 실제 리소스 UID의 재생을 정지합니다.
+        /// 사운드 테스트 툴에서 개별 환경음 루프를 멈출 때 사용합니다.
+        /// </summary>
+        /// <param name="resourceUid">정지할 sound_ambient 실제 리소스 UID입니다.</param>
+        public void StopAmbientByResourceUid(int resourceUid) => _soundControllerAmbient?.Stop(resourceUid);
 
         /// <summary>
         /// BGM 볼륨 변경
@@ -280,6 +303,15 @@ namespace GGemCo2DCore
         public void InitializeSoundSfxPool()
         {
             _soundControllerSfx?.Initialize(_tableLoaderManager?.TableSoundSfx);
+        }
+
+        /// <summary>
+        /// 게임 씬에서 사용하는 효과음 pool을 현재 sound_sfx 테이블 기준으로 다시 구성합니다.
+        /// 커스텀 테스트 툴에서 SFX 리소스 Row를 수정한 뒤 MaxPlayCount/FileName/Volume 변경을 즉시 반영할 때 사용합니다.
+        /// </summary>
+        public void ReinitializeSoundSfxPool()
+        {
+            _soundControllerSfx?.Reinitialize(_tableLoaderManager?.TableSoundSfx);
         }
         /// <summary>
         /// 효과음 음소거 

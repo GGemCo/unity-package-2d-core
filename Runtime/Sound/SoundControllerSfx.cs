@@ -32,6 +32,7 @@ namespace GGemCo2DCore
         private readonly Dictionary<int, int> _playCount = new();
         private readonly Dictionary<int, int> _maxCount = new();
         private readonly Dictionary<int, RuntimeSfxResource> _infoCache = new();
+        private readonly List<GameObject> _createdAudioSourceObjects = new();
 
         private const int MaxAutoExpandCount = 10; // 자동 확장 허용 개수 제한 (0이면 무제한)
         private readonly Dictionary<int, int> _autoExpandedCount = new();
@@ -57,6 +58,17 @@ namespace GGemCo2DCore
 
             foreach (KeyValuePair<int, StruckTableSoundSfx> pair in table.GetDatas())
                 RegisterResource(CreateResourceInfo(pair.Value));
+        }
+
+        /// <summary>
+        /// 기존 SFX 풀을 정리하고 현재 테이블 기준으로 다시 초기화합니다.
+        /// 테스트 툴에서 sound_sfx Row를 수정한 뒤 풀에 캐시된 FileName/MaxPlayCount/Volume 정보를 갱신할 때 사용합니다.
+        /// </summary>
+        /// <param name="table">신규 sound_sfx 실제 리소스 테이블입니다.</param>
+        public void Reinitialize(TableSoundSfx table)
+        {
+            ClearPool();
+            Initialize(table);
         }
 
         /// <summary>
@@ -252,6 +264,7 @@ namespace GGemCo2DCore
         {
             GameObject obj = new GameObject($"{uid}_sfx");
             obj.transform.SetParent(_owner);
+            _createdAudioSourceObjects.Add(obj);
 
             var src = obj.AddComponent<AudioSource>();
             src.outputAudioMixerGroup = _group;
@@ -302,6 +315,27 @@ namespace GGemCo2DCore
 
         public void OnDestroy()
         {
+            ClearPool();
+        }
+
+        /// <summary>
+        /// 컨트롤러가 생성한 AudioSource 오브젝트와 풀 캐시를 모두 정리합니다.
+        /// </summary>
+        private void ClearPool()
+        {
+            for (int i = 0; i < _createdAudioSourceObjects.Count; i++)
+            {
+                GameObject obj = _createdAudioSourceObjects[i];
+                if (obj != null)
+                    UnityEngine.Object.Destroy(obj);
+            }
+
+            _createdAudioSourceObjects.Clear();
+            _pool.Clear();
+            _playCount.Clear();
+            _maxCount.Clear();
+            _infoCache.Clear();
+            _autoExpandedCount.Clear();
         }
 
         /// <summary>
