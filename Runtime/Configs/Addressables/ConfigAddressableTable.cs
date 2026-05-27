@@ -57,6 +57,10 @@ namespace GGemCo2DCore
         public const string ProjectilePath   = "projectile_path";
         public const string ProjectileLinearThenSegments = "projectile_linear_then_segments";
         public const string Sound            = "sound";
+        public const string SoundBgm         = "sound_bgm";
+        public const string SoundAmbient     = "sound_ambient";
+        public const string SoundSfx         = "sound_sfx";
+        public const string SoundVariant     = "sound_variant";
         public const string SimulationTool   = "simulation_tool";
         public const string SimulationGrowth = "simulation_growth";
         public const string CrowdControl          = "crowd_control";
@@ -108,6 +112,10 @@ namespace GGemCo2DCore
         public static readonly AddressableAssetInfo TableProjectilePath   = Make(ProjectilePath);
         public static readonly AddressableAssetInfo TableProjectileLinearThenSegments = Make(ProjectileLinearThenSegments);
         public static readonly AddressableAssetInfo TableSound           = Make(Sound);
+        public static readonly AddressableAssetInfo TableSoundBgm        = Make(SoundBgm);
+        public static readonly AddressableAssetInfo TableSoundAmbient    = Make(SoundAmbient);
+        public static readonly AddressableAssetInfo TableSoundSfx        = Make(SoundSfx);
+        public static readonly AddressableAssetInfo TableSoundVariant    = Make(SoundVariant);
         public static readonly AddressableAssetInfo TableSimulationTool  = Make(SimulationTool);
         public static readonly AddressableAssetInfo TableSimulationGrowth  = Make(SimulationGrowth);
         public static readonly AddressableAssetInfo TableCrowdControl          = Make(CrowdControl);
@@ -131,7 +139,7 @@ namespace GGemCo2DCore
             TableShop, TableShopItem, TableShopPromotion, TableItemUpgrade, TableItemSalvage, TableItemCraft,
             TableCutscene, TableDialogue, TableQuest, TableLicense,
             TableProjectile, TableLaser, TableProjectileLinear, TableProjectileArc, TableProjectilePath, TableProjectileLinearThenSegments,
-            TableSound, TableSimulationTool,
+            TableSound, TableSoundBgm, TableSoundAmbient, TableSoundSfx, TableSoundVariant, TableSimulationTool,
             TableSimulationGrowth, TableCrowdControl, TableCrowdControlKnockBack, TableCrowdControlKnockDown, TableCrowdControlKnockUp, TableCrowdControlKnockDownAir, TableItemUse, TableItemUseAction
         };
         public static AddressableAssetInfo GetByKey(string key)

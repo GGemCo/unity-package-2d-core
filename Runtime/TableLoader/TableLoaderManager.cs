@@ -55,6 +55,10 @@ namespace GGemCo2DCore
         public TableProjectilePath TableProjectilePath { get; private set; } = new TableProjectilePath();
         public TableProjectileLinearThenSegments TableProjectileLinearThenSegments { get; private set; } = new TableProjectileLinearThenSegments();
         public TableSound TableSound { get; private set; } = new TableSound();
+        public TableSoundBgm TableSoundBgm { get; private set; } = new TableSoundBgm();
+        public TableSoundAmbient TableSoundAmbient { get; private set; } = new TableSoundAmbient();
+        public TableSoundSfx TableSoundSfx { get; private set; } = new TableSoundSfx();
+        public TableSoundVariant TableSoundVariant { get; private set; } = new TableSoundVariant();
         public TableSimulationTool TableSimulationTool { get; private set; } = new TableSimulationTool();
         public TableSimulationGrowth TableSimulationGrowth { get; private set; } = new TableSimulationGrowth();
         public TableItemUse TableItemUse { get; private set; } = new TableItemUse();
@@ -116,6 +120,10 @@ namespace GGemCo2DCore
                 registry.Register(TableProjectilePath);
                 registry.Register(TableProjectileLinearThenSegments);
                 registry.Register(TableSound);
+                registry.Register(TableSoundBgm);
+                registry.Register(TableSoundAmbient);
+                registry.Register(TableSoundSfx);
+                registry.Register(TableSoundVariant);
                 registry.Register(TableSimulationTool);
                 registry.Register(TableSimulationGrowth);
                 registry.Register(TableItemUse);
@@ -508,6 +516,63 @@ namespace GGemCo2DCore
             => GetData(TableSound, uid, "Sound", (t, i) => t.GetDataByUid(i), logIfMissing);
         public bool TryGetSoundData(int uid, out StruckTableSound data, bool logIfMissing = false)
             => TryGetData(TableSound, uid, out data, "Sound", (t, i) => t.GetDataByUid(i), logIfMissing);
+
+        /// <summary>
+        /// sound_bgm 실제 리소스 테이블에서 UID로 BGM 리소스를 조회합니다.
+        /// </summary>
+        /// <param name="uid">조회할 sound_bgm 리소스 UID입니다.</param>
+        /// <param name="logIfMissing">조회 실패 시 경고 로그를 남길지 여부입니다.</param>
+        /// <returns>조회된 BGM 리소스 행입니다. 없으면 null입니다.</returns>
+        public StruckTableSoundBgm GetSoundBgmData(int uid, bool logIfMissing = true)
+            => GetData(TableSoundBgm, uid, "SoundBgm", (t, i) => t.GetDataByUid(i), logIfMissing);
+
+        /// <summary>
+        /// sound_bgm 실제 리소스 테이블에서 UID 조회를 시도합니다.
+        /// </summary>
+        /// <param name="uid">조회할 sound_bgm 리소스 UID입니다.</param>
+        /// <param name="data">조회에 성공하면 BGM 리소스 행이 설정됩니다.</param>
+        /// <param name="logIfMissing">조회 실패 시 경고 로그를 남길지 여부입니다.</param>
+        /// <returns>조회에 성공하면 true를 반환합니다.</returns>
+        public bool TryGetSoundBgmData(int uid, out StruckTableSoundBgm data, bool logIfMissing = false)
+            => TryGetData(TableSoundBgm, uid, out data, "SoundBgm", (t, i) => t.GetDataByUid(i), logIfMissing);
+
+        /// <summary>
+        /// sound_ambient 실제 리소스 테이블에서 UID로 Ambient 리소스를 조회합니다.
+        /// </summary>
+        /// <param name="uid">조회할 sound_ambient 리소스 UID입니다.</param>
+        /// <param name="logIfMissing">조회 실패 시 경고 로그를 남길지 여부입니다.</param>
+        /// <returns>조회된 Ambient 리소스 행입니다. 없으면 null입니다.</returns>
+        public StruckTableSoundAmbient GetSoundAmbientData(int uid, bool logIfMissing = true)
+            => GetData(TableSoundAmbient, uid, "SoundAmbient", (t, i) => t.GetDataByUid(i), logIfMissing);
+
+        /// <summary>
+        /// sound_ambient 실제 리소스 테이블에서 UID 조회를 시도합니다.
+        /// </summary>
+        /// <param name="uid">조회할 sound_ambient 리소스 UID입니다.</param>
+        /// <param name="data">조회에 성공하면 Ambient 리소스 행이 설정됩니다.</param>
+        /// <param name="logIfMissing">조회 실패 시 경고 로그를 남길지 여부입니다.</param>
+        /// <returns>조회에 성공하면 true를 반환합니다.</returns>
+        public bool TryGetSoundAmbientData(int uid, out StruckTableSoundAmbient data, bool logIfMissing = false)
+            => TryGetData(TableSoundAmbient, uid, out data, "SoundAmbient", (t, i) => t.GetDataByUid(i), logIfMissing);
+
+        /// <summary>
+        /// sound_sfx 실제 리소스 테이블에서 UID로 SFX 리소스를 조회합니다.
+        /// </summary>
+        /// <param name="uid">조회할 sound_sfx 리소스 UID입니다.</param>
+        /// <param name="logIfMissing">조회 실패 시 경고 로그를 남길지 여부입니다.</param>
+        /// <returns>조회된 SFX 리소스 행입니다. 없으면 null입니다.</returns>
+        public StruckTableSoundSfx GetSoundSfxData(int uid, bool logIfMissing = true)
+            => GetData(TableSoundSfx, uid, "SoundSfx", (t, i) => t.GetDataByUid(i), logIfMissing);
+
+        /// <summary>
+        /// sound_sfx 실제 리소스 테이블에서 UID 조회를 시도합니다.
+        /// </summary>
+        /// <param name="uid">조회할 sound_sfx 리소스 UID입니다.</param>
+        /// <param name="data">조회에 성공하면 SFX 리소스 행이 설정됩니다.</param>
+        /// <param name="logIfMissing">조회 실패 시 경고 로그를 남길지 여부입니다.</param>
+        /// <returns>조회에 성공하면 true를 반환합니다.</returns>
+        public bool TryGetSoundSfxData(int uid, out StruckTableSoundSfx data, bool logIfMissing = false)
+            => TryGetData(TableSoundSfx, uid, out data, "SoundSfx", (t, i) => t.GetDataByUid(i), logIfMissing);
 
     }
 }

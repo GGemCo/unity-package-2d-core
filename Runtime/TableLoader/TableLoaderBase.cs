@@ -166,7 +166,11 @@ namespace GGemCo2DCore
             return key == ConfigAddressableTable.TableProjectileLinear.Key
                    || key == ConfigAddressableTable.TableProjectileArc.Key
                    || key == ConfigAddressableTable.TableProjectilePath.Key
-                   || key == ConfigAddressableTable.TableProjectileLinearThenSegments.Key;
+                   || key == ConfigAddressableTable.TableProjectileLinearThenSegments.Key
+                   || key == ConfigAddressableTable.TableSoundBgm.Key
+                   || key == ConfigAddressableTable.TableSoundAmbient.Key
+                   || key == ConfigAddressableTable.TableSoundSfx.Key
+                   || key == ConfigAddressableTable.TableSoundVariant.Key;
         }
 
         /// <summary>

@@ -17,12 +17,16 @@ namespace GGemCo2DCore
         public AudioMixerGroup bgmMixerGroup;
         // 메인 Audio Mixer
         public AudioMixerGroup sfxMixerGroup;
+        // 환경음 Audio Mixer. 비어 있으면 BGM 믹서 그룹을 사용합니다.
+        public AudioMixerGroup ambientMixerGroup;
 
         // BGM 페이드 시간
         [SerializeField] private float bgmFadeDuration = 0.7f;
 
         private SoundControllerBgm _soundControllerBgm;
         private SoundControllerSfx _soundControllerSfx;
+        private SoundControllerAmbient _soundControllerAmbient;
+        private SoundResolver _soundResolver;
 
         private TableLoaderManager _tableLoaderManager;
         private AddressableLoaderSound _addressableLoaderSound;
@@ -45,6 +49,8 @@ namespace GGemCo2DCore
 
             _soundControllerBgm = new SoundControllerBgm(gameObject, mainAudioMixer, bgmMixerGroup, SoundConstants.NameExposedParameterBGM, bgmFadeDuration);
             _soundControllerSfx = new SoundControllerSfx(transform, mainAudioMixer, sfxMixerGroup, SoundConstants.NameExposedParameterSfx, _addressableLoaderSound);
+            _soundControllerAmbient = new SoundControllerAmbient(gameObject, ambientMixerGroup != null ? ambientMixerGroup : bgmMixerGroup, _addressableLoaderSound);
+            _soundResolver = new SoundResolver(_tableLoaderManager);
             
             ClickSoundEventDispatcher.OnClickDispatched += OnButtonClicked;
         }
@@ -53,6 +59,7 @@ namespace GGemCo2DCore
         {
             _soundControllerBgm?.OnDestroy();
             _soundControllerSfx?.OnDestroy();
+            _soundControllerAmbient?.OnDestroy();
             // FadeAndSwitch 중지 처리
             StopAllCoroutines();
             ClickSoundEventDispatcher.OnClickDispatched -= OnButtonClicked;
@@ -69,30 +76,32 @@ namespace GGemCo2DCore
         /// <summary>
         /// 사운드 UID 기반으로 재생
         /// </summary>
-        /// <param name="uid"></param>
+        /// <param name="uid">외부 시스템이 사용하는 대표 sound UID입니다.</param>
         public void PlayByUid(int uid)
         {
-            if (!_tableLoaderManager || !_addressableLoaderSound) return;
-            var info = _tableLoaderManager.GetSoundData(uid);
-            if (info == null) return;
+            if (!_tableLoaderManager || !_addressableLoaderSound || _soundResolver == null) return;
+            if (!_soundResolver.TryResolve(uid, out ResolvedSound resolved)) return;
+            if (!resolved.ShouldPlay) return;
 
-            if (info.Type == SoundConstants.Type.Bgm)
-                StartCoroutine(PlayBgmRoutine(info));
-            else if (info.Type == SoundConstants.Type.Sfx)
-                _soundControllerSfx.Play(uid, this);
+            if (resolved.Type == SoundConstants.Type.Bgm)
+                StartCoroutine(PlayBgmRoutine(resolved));
+            else if (resolved.Type == SoundConstants.Type.Ambient)
+                _soundControllerAmbient?.Play(resolved, this);
+            else if (resolved.Type == SoundConstants.Type.Sfx)
+                _soundControllerSfx?.Play(resolved, this);
         }
 
         /// <summary>
         /// BGM 클립을 필요 시점에 비동기로 로드한 뒤 재생합니다.
         /// </summary>
-        /// <param name="info">재생할 BGM 테이블 행입니다.</param>
+        /// <param name="resolved">해석된 BGM 재생 정보입니다.</param>
         /// <returns>Unity 코루틴 실행자에 전달할 열거자입니다.</returns>
-        private IEnumerator PlayBgmRoutine(StruckTableSound info)
+        private IEnumerator PlayBgmRoutine(ResolvedSound resolved)
         {
-            if (info == null || _addressableLoaderSound == null)
+            if (!resolved.ShouldPlay || _addressableLoaderSound == null || string.IsNullOrWhiteSpace(resolved.FileName))
                 yield break;
 
-            string key = $"{ConfigAddressableKey.Sound}_{info.FileName}";
+            string key = $"{ConfigAddressableKey.Sound}_{resolved.FileName}";
             Task<AudioClip> task = _addressableLoaderSound.LoadAudioClipAsync(key);
             while (!task.IsCompleted)
                 yield return null;
@@ -103,14 +112,19 @@ namespace GGemCo2DCore
                 yield break;
             }
 
-            // BGM은 사용자 BGM 볼륨과 별개로, sound 테이블의 행별 Volume 값을 배율로 적용합니다.
-            _soundControllerBgm?.Play(task.Result, this, info.Volume);
+            // BGM은 사용자 BGM 볼륨과 별개로, 테이블별 Volume/VolumeScale 값을 배율로 적용합니다.
+            _soundControllerBgm?.Play(task.Result, this, resolved.Volume);
         }
 
         /// <summary>
         /// BGM 정지
         /// </summary>
         public void StopBgm() => _soundControllerBgm?.Stop();
+
+        /// <summary>
+        /// Ambient 전체 정지
+        /// </summary>
+        public void StopAmbient() => _soundControllerAmbient?.StopAll();
 
         /// <summary>
         /// BGM 볼륨 변경
@@ -178,15 +192,80 @@ namespace GGemCo2DCore
         {
             if (!_tableLoaderManager) return;
             List<int> introSfxUids = new List<int>();
-            var datas = _tableLoaderManager.TableSound.GetDatas();
-            foreach (var data in datas)
+            HashSet<int> registeredUids = new HashSet<int>();
+
+            if (_tableLoaderManager.TableSoundSfx != null)
             {
-                int uid = data.Key;
-                var info = _tableLoaderManager.GetSoundData(uid);
-                if (info is not { UseIntroScene: true }) continue;
-                introSfxUids.Add(info.Uid);
+                foreach (KeyValuePair<int, StruckTableSoundSfx> pair in _tableLoaderManager.TableSoundSfx.GetDatas())
+                {
+                    StruckTableSoundSfx info = pair.Value;
+                    if (info is not { UseIntroScene: true }) continue;
+                    AddIntroSfxUid(introSfxUids, registeredUids, info.Uid);
+                }
             }
-            _soundControllerSfx?.InitializeSelective(_tableLoaderManager.TableSound, introSfxUids);
+
+            if (_tableLoaderManager.TableSound != null)
+            {
+                foreach (KeyValuePair<int, StruckTableSound> pair in _tableLoaderManager.TableSound.GetDatas())
+                {
+                    StruckTableSound sound = pair.Value;
+                    if (sound is not { UseIntroScene: true, Type: SoundConstants.Type.Sfx }) continue;
+                    AddIntroSfxResourceUidsForSound(sound, introSfxUids, registeredUids);
+                }
+            }
+
+            _soundControllerSfx?.InitializeSelective(_tableLoaderManager.TableSoundSfx, introSfxUids, _tableLoaderManager.TableSound);
+        }
+
+        /// <summary>
+        /// 인트로 선로딩 대상 대표 sound 행에서 실제 SFX 리소스 UID 후보를 수집합니다.
+        /// Direct 연결, Variant 후보, 레거시 FileName 행을 모두 고려해 부분 마이그레이션 중에도 누락을 줄입니다.
+        /// </summary>
+        /// <param name="sound">대표 sound 행입니다.</param>
+        /// <param name="target">수집 결과 목록입니다.</param>
+        /// <param name="registeredUids">중복 등록 방지용 UID 집합입니다.</param>
+        private void AddIntroSfxResourceUidsForSound(StruckTableSound sound, List<int> target, HashSet<int> registeredUids)
+        {
+            if (sound == null || target == null || registeredUids == null)
+                return;
+
+            StruckTableSoundSfx directResource = _tableLoaderManager.TableSoundSfx?.GetFirstBySoundUid(sound.Uid);
+            if (directResource != null)
+                AddIntroSfxUid(target, registeredUids, directResource.Uid);
+
+            IReadOnlyList<StruckTableSoundVariant> variants = _tableLoaderManager.TableSoundVariant?.GetVariants(sound.Uid);
+            if (variants != null)
+            {
+                for (int i = 0; i < variants.Count; i++)
+                {
+                    StruckTableSoundVariant variant = variants[i];
+                    if (variant == null || !variant.Enabled || variant.CandidateResourceUid <= 0)
+                        continue;
+
+                    if (_tableLoaderManager.TableSoundSfx?.GetDataByUid(variant.CandidateResourceUid) == null)
+                        continue;
+
+                    AddIntroSfxUid(target, registeredUids, variant.CandidateResourceUid);
+                }
+            }
+
+            if (sound.HasLegacyResource() && directResource == null)
+                AddIntroSfxUid(target, registeredUids, sound.Uid);
+        }
+
+        /// <summary>
+        /// 인트로 선로딩 대상 실제 SFX 리소스 UID를 중복 없이 추가합니다.
+        /// </summary>
+        /// <param name="target">수집 결과 목록입니다.</param>
+        /// <param name="registeredUids">중복 등록 방지용 UID 집합입니다.</param>
+        /// <param name="resourceUid">추가할 실제 SFX 리소스 UID입니다.</param>
+        private static void AddIntroSfxUid(List<int> target, HashSet<int> registeredUids, int resourceUid)
+        {
+            if (target == null || registeredUids == null || resourceUid <= 0)
+                return;
+
+            if (registeredUids.Add(resourceUid))
+                target.Add(resourceUid);
         }
         /// <summary>
         /// Intro 씬 BGM 재생하기
@@ -203,7 +282,7 @@ namespace GGemCo2DCore
         /// </summary>
         public void InitializeSoundSfxPool()
         {
-            _soundControllerSfx?.Initialize(_tableLoaderManager?.TableSound);
+            _soundControllerSfx?.Initialize(_tableLoaderManager?.TableSoundSfx, _tableLoaderManager?.TableSound);
         }
         /// <summary>
         /// 효과음 음소거 

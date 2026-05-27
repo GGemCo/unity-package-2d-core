@@ -2,36 +2,104 @@
 
 namespace GGemCo2DCore
 {
+    /// <summary>
+    /// 외부 시스템이 참조하는 대표 sound 테이블 행입니다.
+    /// 실제 AudioClip은 sound_bgm/sound_ambient/sound_sfx 또는 레거시 FileName을 통해 해석됩니다.
+    /// </summary>
     public class StruckTableSound : IUidName
     {
         public int Uid { get; set; }
         public string Name { get; set; }
         public SoundConstants.Type Type;
         public SoundConstants.SubType SubType;
+        public SoundConstants.ResolveMode ResolveMode;
+        public SoundConstants.SelectionMode SelectionMode;
+        public float VolumeScale;
+        public int NoRepeatRecentCount;
+        public int FallbackResourceUid;
+        public bool UseIntroScene;
+
+        // 레거시 sound.txt 호환용 필드입니다. 신규 구조에서는 실제 리소스 테이블(sound_bgm/ambient/sfx)을 사용합니다.
         public string FileName;
         public int MaxPlayCount;
         public float Volume;
-        public bool UseIntroScene;
+
+        /// <summary>
+        /// 신규 sound_* 리소스 테이블이 없을 때 기존 sound.txt 행을 실제 리소스처럼 사용할 수 있는지 확인합니다.
+        /// </summary>
+        /// <returns>레거시 FileName이 있고 재생 가능한 타입이면 true를 반환합니다.</returns>
+        public bool HasLegacyResource()
+        {
+            return !string.IsNullOrWhiteSpace(FileName)
+                   && (Type == SoundConstants.Type.Bgm || Type == SoundConstants.Type.Ambient || Type == SoundConstants.Type.Sfx);
+        }
     }
+
     public class TableSound : DefaultTable<StruckTableSound>
     {
         public override string Key => ConfigAddressableTable.Sound;
         
         protected override StruckTableSound BuildRow(Dictionary<string, string> data)
         {
+            SoundConstants.Type type = EnumHelper.ConvertEnum<SoundConstants.Type>(GetValue(data, "Type", GetValue(data, "SoundType", "None")));
+            string legacyFileName = GetValue(data, "FileName", string.Empty);
+
             return new StruckTableSound
             {
                 Uid = MathHelper.ParseInt(data["Uid"]),
-                Name = data["Name"],
-                Type = EnumHelper.ConvertEnum<SoundConstants.Type>(data["Type"]),
-                SubType = EnumHelper.ConvertEnum<SoundConstants.SubType>(data["SubType"]),
-                FileName = data["FileName"],
-                MaxPlayCount = MathHelper.ParseInt(data["MaxPlayCount"]),
-                Volume = MathHelper.ParseFloat(data["Volume"]),
-                UseIntroScene = ConvertBoolean(data["UseIntroScene"]),
+                Name = GetValue(data, "Name", string.Empty),
+                Type = type,
+                SubType = EnumHelper.ConvertEnum<SoundConstants.SubType>(GetValue(data, "SubType", "None")),
+                ResolveMode = ResolveModeOrDefault(data, legacyFileName),
+                SelectionMode = EnumHelper.ConvertEnum<SoundConstants.SelectionMode>(GetValue(data, "SelectionMode", "WeightedRandom")),
+                VolumeScale = MathHelper.ParseFloat(GetValue(data, "VolumeScale", "1")),
+                NoRepeatRecentCount = MathHelper.ParseInt(GetValue(data, "NoRepeatRecentCount", "0")),
+                FallbackResourceUid = MathHelper.ParseInt(GetValue(data, "FallbackResourceUid", "0")),
+                FileName = legacyFileName,
+                MaxPlayCount = MathHelper.ParseInt(GetValue(data, "MaxPlayCount", "0")),
+                Volume = MathHelper.ParseFloat(GetValue(data, "Volume", "1")),
+                UseIntroScene = ConvertBoolean(GetValue(data, "UseIntroScene", "N")),
             };
         }
 
+        /// <summary>
+        /// sound 테이블의 ResolveMode를 읽고, 컬럼이 없는 레거시 테이블은 FileName 기준 Direct 재생으로 보정합니다.
+        /// </summary>
+        /// <param name="data">테이블 행 원본 값입니다.</param>
+        /// <param name="legacyFileName">레거시 FileName 값입니다.</param>
+        /// <returns>적용할 사운드 해석 방식입니다.</returns>
+        private static SoundConstants.ResolveMode ResolveModeOrDefault(Dictionary<string, string> data, string legacyFileName)
+        {
+            string raw = GetValue(data, "ResolveMode", string.Empty);
+            if (!string.IsNullOrWhiteSpace(raw))
+                return EnumHelper.ConvertEnum<SoundConstants.ResolveMode>(raw);
+
+            return string.IsNullOrWhiteSpace(legacyFileName)
+                ? SoundConstants.ResolveMode.Variant
+                : SoundConstants.ResolveMode.Direct;
+        }
+
+        /// <summary>
+        /// 헤더가 없을 수 있는 마이그레이션 중간 테이블에서 값을 안전하게 읽습니다.
+        /// </summary>
+        /// <param name="data">헤더명과 값의 사전입니다.</param>
+        /// <param name="key">조회할 헤더명입니다.</param>
+        /// <param name="defaultValue">헤더가 없거나 값이 비어 있을 때 사용할 기본값입니다.</param>
+        /// <returns>조회된 값 또는 기본값입니다.</returns>
+        private static string GetValue(Dictionary<string, string> data, string key, string defaultValue)
+        {
+            if (data == null || string.IsNullOrWhiteSpace(key))
+                return defaultValue;
+
+            return data.TryGetValue(key, out string value) && !string.IsNullOrWhiteSpace(value)
+                ? value
+                : defaultValue;
+        }
+
+        /// <summary>
+        /// Intro 씬에서 자동 재생할 대표 BGM sound UID를 반환합니다.
+        /// </summary>
+        /// <returns>UseIntroScene이 true인 BGM 대표 sound UID입니다. 없으면 0입니다.</returns>
         public int GetBgmIntro()
         {
             var datas = GetDatas();
