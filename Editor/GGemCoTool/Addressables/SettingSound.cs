@@ -24,6 +24,15 @@ namespace GGemCo2DCoreEditor
 
     public class SettingSound : DefaultAddressable
     {
+        private sealed class SoundAddressableRow
+        {
+            public int Uid;
+            public SoundConstants.Type Type;
+            public SoundConstants.SubType SubType;
+            public string FileName;
+            public bool UseIntroScene;
+        }
+
         private const string Title = "사운드 추가하기";
         private readonly AddressableEditor _addressableEditor;
 
@@ -75,8 +84,8 @@ namespace GGemCo2DCoreEditor
         }
 
         /// <summary>
-        /// sound 테이블을 기준으로 Addressables 사운드 그룹을 재구성합니다.
-        /// 기존 엔트리를 비우고, 테이블 행을 다시 순회해 엔트리/라벨을 등록합니다.
+        /// sound_bgm/sound_ambient/sound_sfx 실제 리소스 테이블을 기준으로 Addressables 사운드 그룹을 재구성합니다.
+        /// 실제 리소스 테이블이 아직 없으면 레거시 sound.FileName 행을 사용합니다.
         /// </summary>
         /// <param name="options">동기화 옵션입니다. null이면 기본 옵션으로 실행됩니다.</param>
         public static void SyncFromTable(SettingSoundOptions options = null)
@@ -93,36 +102,35 @@ namespace GGemCo2DCoreEditor
             if (!TryPrepareSyncEnvironment(options, out EditorSetupContext ctx, out SettingSound helper, out AddressableAssetSettings settings, out AddressableAssetGroup group))
                 return;
 
-            Dictionary<int, StruckTableSound> dictionary = TableLoaderManager.LoadSoundTable(true).GetDatas();
+            List<SoundAddressableRow> rows = CollectAllSoundAddressableRows(true);
             ClearGroupEntries(settings, group);
 
-            foreach (KeyValuePair<int, StruckTableSound> outerPair in dictionary)
+            int upsertCount = 0;
+            for (int i = 0; i < rows.Count; i++)
             {
-                StruckTableSound info = outerPair.Value;
-                if (info == null || info.Uid <= 0 || string.IsNullOrWhiteSpace(info.FileName))
-                    continue;
-
-                UpsertSoundEntry(helper, settings, group, info);
+                AddressableAssetEntry entry = UpsertSoundEntry(helper, settings, group, rows[i]);
+                if (entry != null)
+                    upsertCount++;
             }
 
             settings.SetDirty(AddressableAssetSettings.ModificationEvent.EntryMoved, null, true);
             if (options.SaveAssets)
                 AssetDatabase.SaveAssets();
 
+            string completedMessage = $"[Addressable] 사운드 설정 완료 (등록/갱신: {upsertCount})";
             if (ctx != null)
             {
-                HelperLog.Info("[Addressable] 사운드 설정 완료", ctx);
+                HelperLog.Info(completedMessage, ctx);
             }
             else if (options.ShowCompletedDialog)
             {
-                EditorUtility.DisplayDialog(Title, "[Addressable] 사운드 설정 완료", "OK");
+                EditorUtility.DisplayDialog(Title, completedMessage, "OK");
             }
         }
 
         /// <summary>
-        /// sound 테이블의 변경분만 Addressables에 증분 반영합니다.
-        /// - <paramref name="rowsToUpsert"/>: 등록/갱신 대상
-        /// - <paramref name="rowsToRemove"/>: 삭제 대상
+        /// 레거시 sound 테이블의 변경분만 Addressables에 증분 반영합니다.
+        /// 신규 실제 리소스 테이블을 사용하지 않는 프로젝트의 호환 경로입니다.
         /// </summary>
         /// <param name="rowsToUpsert">등록/갱신 대상 사운드 행입니다.</param>
         /// <param name="rowsToRemove">삭제 대상 사운드 행입니다.</param>
@@ -130,6 +138,34 @@ namespace GGemCo2DCoreEditor
         public static void SyncFromTableDelta(
             IReadOnlyList<StruckTableSound> rowsToUpsert,
             IReadOnlyList<StruckTableSound> rowsToRemove,
+            SettingSoundOptions options = null)
+        {
+            SyncRowsDelta(ConvertLegacyRows(rowsToUpsert), ConvertLegacyRows(rowsToRemove), options);
+        }
+
+        /// <summary>
+        /// sound_bgm/sound_ambient/sound_sfx 리소스 테이블의 변경분만 Addressables에 증분 반영합니다.
+        /// </summary>
+        /// <param name="rowsToUpsert">등록/갱신 대상 실제 리소스 행입니다.</param>
+        /// <param name="rowsToRemove">삭제 대상 실제 리소스 행입니다.</param>
+        /// <param name="options">동기화 옵션입니다. null이면 기본 옵션으로 실행됩니다.</param>
+        public static void SyncResourceDelta(
+            IReadOnlyList<StruckTableSoundResource> rowsToUpsert,
+            IReadOnlyList<StruckTableSoundResource> rowsToRemove,
+            SettingSoundOptions options = null)
+        {
+            SyncRowsDelta(ConvertResourceRows(rowsToUpsert), ConvertResourceRows(rowsToRemove), options);
+        }
+
+        /// <summary>
+        /// Addressables 사운드 엔트리 변경분을 공통 DTO 기준으로 반영합니다.
+        /// </summary>
+        /// <param name="rowsToUpsert">등록/갱신 대상 행입니다.</param>
+        /// <param name="rowsToRemove">삭제 대상 행입니다.</param>
+        /// <param name="options">동기화 옵션입니다.</param>
+        private static void SyncRowsDelta(
+            IReadOnlyList<SoundAddressableRow> rowsToUpsert,
+            IReadOnlyList<SoundAddressableRow> rowsToRemove,
             SettingSoundOptions options = null)
         {
             options ??= new SettingSoundOptions();
@@ -158,8 +194,7 @@ namespace GGemCo2DCoreEditor
             {
                 for (int i = 0; i < rowsToRemove.Count; i++)
                 {
-                    StruckTableSound row = rowsToRemove[i];
-                    if (TryRemoveSoundEntry(settings, group, row))
+                    if (TryRemoveSoundEntry(settings, group, rowsToRemove[i]))
                         removedCount++;
                 }
             }
@@ -169,8 +204,7 @@ namespace GGemCo2DCoreEditor
             {
                 for (int i = 0; i < rowsToUpsert.Count; i++)
                 {
-                    StruckTableSound row = rowsToUpsert[i];
-                    AddressableAssetEntry entry = UpsertSoundEntry(helper, settings, group, row);
+                    AddressableAssetEntry entry = UpsertSoundEntry(helper, settings, group, rowsToUpsert[i]);
                     if (entry != null)
                         upsertCount++;
                 }
@@ -188,6 +222,70 @@ namespace GGemCo2DCoreEditor
             else if (options.ShowCompletedDialog)
             {
                 EditorUtility.DisplayDialog(Title, completedMessage, "OK");
+            }
+        }
+
+        /// <summary>
+        /// 신규 실제 리소스 테이블을 우선 수집하고, 비어 있으면 레거시 sound.FileName 행을 수집합니다.
+        /// </summary>
+        /// <param name="forceReload">테이블을 강제로 다시 읽을지 여부입니다.</param>
+        /// <returns>Addressables에 등록할 사운드 리소스 목록입니다.</returns>
+        private static List<SoundAddressableRow> CollectAllSoundAddressableRows(bool forceReload)
+        {
+            List<SoundAddressableRow> rows = new List<SoundAddressableRow>();
+
+            TableSoundBgm bgmTable = TableLoaderManager.LoadSoundBgmTable(forceReload);
+            TableSoundAmbient ambientTable = TableLoaderManager.LoadSoundAmbientTable(forceReload);
+            TableSoundSfx sfxTable = TableLoaderManager.LoadSoundSfxTable(forceReload);
+
+            AppendResourceRows(rows, bgmTable?.GetDatas());
+            AppendResourceRows(rows, ambientTable?.GetDatas());
+            AppendResourceRows(rows, sfxTable?.GetDatas());
+
+            bool hasBgmResources = bgmTable != null && bgmTable.GetCount() > 0;
+            bool hasAmbientResources = ambientTable != null && ambientTable.GetCount() > 0;
+            bool hasSfxResources = sfxTable != null && sfxTable.GetCount() > 0;
+
+            TableSound legacyTable = TableLoaderManager.LoadSoundTable(forceReload);
+            if (legacyTable == null)
+                return rows;
+
+            foreach (KeyValuePair<int, StruckTableSound> pair in legacyTable.GetDatas())
+            {
+                StruckTableSound legacy = pair.Value;
+                if (legacy == null)
+                    continue;
+
+                if ((legacy.Type == SoundConstants.Type.Bgm && hasBgmResources)
+                    || (legacy.Type == SoundConstants.Type.Ambient && hasAmbientResources)
+                    || (legacy.Type == SoundConstants.Type.Sfx && hasSfxResources))
+                    continue;
+
+                SoundAddressableRow row = ConvertLegacyRow(legacy);
+                if (row != null)
+                    rows.Add(row);
+            }
+
+            return rows;
+        }
+
+        /// <summary>
+        /// 실제 리소스 테이블 행 사전을 Addressables 등록 목록에 추가합니다.
+        /// </summary>
+        /// <typeparam name="TResource">사운드 리소스 행 타입입니다.</typeparam>
+        /// <param name="target">결과 목록입니다.</param>
+        /// <param name="source">테이블 행 사전입니다.</param>
+        private static void AppendResourceRows<TResource>(List<SoundAddressableRow> target, IReadOnlyDictionary<int, TResource> source)
+            where TResource : StruckTableSoundResource
+        {
+            if (target == null || source == null)
+                return;
+
+            foreach (KeyValuePair<int, TResource> pair in source)
+            {
+                SoundAddressableRow row = ConvertResourceRow(pair.Value);
+                if (row != null)
+                    target.Add(row);
             }
         }
 
@@ -230,19 +328,19 @@ namespace GGemCo2DCoreEditor
         }
 
         /// <summary>
-        /// 사운드 행 1건을 Addressables에 등록/갱신합니다.
+        /// 사운드 리소스 행 1건을 Addressables에 등록/갱신합니다.
         /// 기존 엔트리가 다른 그룹에 있어도 대상 그룹으로 이동되며, 라벨도 함께 갱신됩니다.
         /// </summary>
         /// <param name="helper">사운드 Addressables 헬퍼 인스턴스입니다.</param>
         /// <param name="settings">Addressables 설정 객체입니다.</param>
         /// <param name="group">등록 대상 그룹입니다.</param>
-        /// <param name="info">등록할 사운드 테이블 행입니다.</param>
+        /// <param name="info">등록할 사운드 리소스 행입니다.</param>
         /// <returns>등록된 엔트리이며, 실패 시 null을 반환합니다.</returns>
         private static AddressableAssetEntry UpsertSoundEntry(
             SettingSound helper,
             AddressableAssetSettings settings,
             AddressableAssetGroup group,
-            StruckTableSound info)
+            SoundAddressableRow info)
         {
             if (helper == null || settings == null || group == null || info == null || info.Uid <= 0 || string.IsNullOrWhiteSpace(info.FileName))
                 return null;
@@ -260,9 +358,9 @@ namespace GGemCo2DCoreEditor
         /// </summary>
         /// <param name="settings">Addressables 설정 객체입니다.</param>
         /// <param name="group">삭제 대상 그룹입니다.</param>
-        /// <param name="info">삭제할 사운드 테이블 행입니다.</param>
+        /// <param name="info">삭제할 사운드 리소스 행입니다.</param>
         /// <returns>삭제에 성공하면 true를 반환합니다.</returns>
-        private static bool TryRemoveSoundEntry(AddressableAssetSettings settings, AddressableAssetGroup group, StruckTableSound info)
+        private static bool TryRemoveSoundEntry(AddressableAssetSettings settings, AddressableAssetGroup group, SoundAddressableRow info)
         {
             if (settings == null || group == null || info == null || info.Uid <= 0 || string.IsNullOrWhiteSpace(info.FileName))
                 return false;
@@ -340,11 +438,11 @@ namespace GGemCo2DCoreEditor
         }
 
         /// <summary>
-        /// 사운드 테이블 행의 FileName 값을 Addressables가 읽을 수 있는 실제 에셋 경로로 해석합니다.
+        /// 사운드 리소스 행의 FileName 값을 Addressables가 읽을 수 있는 실제 에셋 경로로 해석합니다.
         /// </summary>
-        /// <param name="info">사운드 테이블 행 데이터입니다.</param>
+        /// <param name="info">사운드 리소스 행 데이터입니다.</param>
         /// <returns>Assets 기준 정규화된 에셋 경로를 반환합니다.</returns>
-        private static string ResolveAssetPath(StruckTableSound info)
+        private static string ResolveAssetPath(SoundAddressableRow info)
         {
             string rawFileName = info?.FileName ?? string.Empty;
             string normalizedFileName = NormalizePath(rawFileName);
@@ -364,6 +462,88 @@ namespace GGemCo2DCoreEditor
                 basePath = ConfigAddressablePath.Sounds;
 
             return ConfigAddressablePath.Combine(basePath, normalizedFileName);
+        }
+
+        /// <summary>
+        /// 실제 리소스 행 목록을 Addressables 처리용 DTO 목록으로 변환합니다.
+        /// </summary>
+        /// <param name="rows">실제 리소스 행 목록입니다.</param>
+        /// <returns>Addressables 처리용 DTO 목록입니다.</returns>
+        private static List<SoundAddressableRow> ConvertResourceRows(IReadOnlyList<StruckTableSoundResource> rows)
+        {
+            List<SoundAddressableRow> result = new List<SoundAddressableRow>();
+            if (rows == null)
+                return result;
+
+            for (int i = 0; i < rows.Count; i++)
+            {
+                SoundAddressableRow row = ConvertResourceRow(rows[i]);
+                if (row != null)
+                    result.Add(row);
+            }
+
+            return result;
+        }
+
+        /// <summary>
+        /// 실제 리소스 행 1건을 Addressables 처리용 DTO로 변환합니다.
+        /// </summary>
+        /// <param name="row">실제 리소스 행입니다.</param>
+        /// <returns>Addressables 처리용 DTO입니다.</returns>
+        private static SoundAddressableRow ConvertResourceRow(StruckTableSoundResource row)
+        {
+            if (row == null || row.Uid <= 0 || string.IsNullOrWhiteSpace(row.FileName))
+                return null;
+
+            return new SoundAddressableRow
+            {
+                Uid = row.Uid,
+                Type = row.Type,
+                SubType = row.SubType,
+                FileName = row.FileName,
+                UseIntroScene = row.UseIntroScene,
+            };
+        }
+
+        /// <summary>
+        /// 레거시 sound 행 목록을 Addressables 처리용 DTO 목록으로 변환합니다.
+        /// </summary>
+        /// <param name="rows">레거시 sound 행 목록입니다.</param>
+        /// <returns>Addressables 처리용 DTO 목록입니다.</returns>
+        private static List<SoundAddressableRow> ConvertLegacyRows(IReadOnlyList<StruckTableSound> rows)
+        {
+            List<SoundAddressableRow> result = new List<SoundAddressableRow>();
+            if (rows == null)
+                return result;
+
+            for (int i = 0; i < rows.Count; i++)
+            {
+                SoundAddressableRow row = ConvertLegacyRow(rows[i]);
+                if (row != null)
+                    result.Add(row);
+            }
+
+            return result;
+        }
+
+        /// <summary>
+        /// 레거시 sound 행 1건을 Addressables 처리용 DTO로 변환합니다.
+        /// </summary>
+        /// <param name="row">레거시 sound 행입니다.</param>
+        /// <returns>Addressables 처리용 DTO입니다.</returns>
+        private static SoundAddressableRow ConvertLegacyRow(StruckTableSound row)
+        {
+            if (row == null || row.Uid <= 0 || string.IsNullOrWhiteSpace(row.FileName))
+                return null;
+
+            return new SoundAddressableRow
+            {
+                Uid = row.Uid,
+                Type = row.Type,
+                SubType = row.SubType,
+                FileName = row.FileName,
+                UseIntroScene = row.UseIntroScene,
+            };
         }
 
         /// <summary>

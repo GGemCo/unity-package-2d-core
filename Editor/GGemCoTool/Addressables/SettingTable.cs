@@ -62,7 +62,7 @@ namespace GGemCo2DCoreEditor
 
             foreach (var addressableAssetInfo in ConfigAddressableTable.All)
             {
-                if (ShouldSkipMissingOptionalProjectileTable(addressableAssetInfo))
+                if (ShouldSkipMissingOptionalTable(addressableAssetInfo))
                     continue;
 
                 Add(settings, group, addressableAssetInfo.Key, addressableAssetInfo.Path, ConfigAddressableLabel.Table);
@@ -108,23 +108,27 @@ namespace GGemCo2DCoreEditor
         }
 
         /// <summary>
-        /// Projectile 마이그레이션용 선택 테이블이 아직 생성되지 않았는지 확인합니다.
-        /// - projectile.txt는 공용 메인 테이블이므로 필수이고, projectile_linear/arc/path/linear_then_segments 상세 테이블만 없을 때 건너뜁니다.
+        /// 아직 생성되지 않은 선택 테이블인지 확인합니다.
+        /// - Projectile 상세 테이블과 신규 Sound 실제 리소스/variant 테이블은 없을 때 Addressables 등록을 건너뜁니다.
         /// </summary>
         /// <param name="info">검사할 테이블 Addressables 정보입니다.</param>
-        /// <returns>선택 Projectile 테이블이 없어서 건너뛰어야 하면 true를 반환합니다.</returns>
-        private static bool ShouldSkipMissingOptionalProjectileTable(AddressableAssetInfo info)
+        /// <returns>선택 테이블이 없어서 건너뛰어야 하면 true를 반환합니다.</returns>
+        private static bool ShouldSkipMissingOptionalTable(AddressableAssetInfo info)
         {
             if (info == null)
                 return false;
 
-            bool isProjectileTable =
+            bool isOptionalTable =
                 info.Key == ConfigAddressableTable.TableProjectileLinear.Key ||
                 info.Key == ConfigAddressableTable.TableProjectileArc.Key ||
                 info.Key == ConfigAddressableTable.TableProjectilePath.Key ||
-                info.Key == ConfigAddressableTable.TableProjectileLinearThenSegments.Key;
+                info.Key == ConfigAddressableTable.TableProjectileLinearThenSegments.Key ||
+                info.Key == ConfigAddressableTable.TableSoundBgm.Key ||
+                info.Key == ConfigAddressableTable.TableSoundAmbient.Key ||
+                info.Key == ConfigAddressableTable.TableSoundSfx.Key ||
+                info.Key == ConfigAddressableTable.TableSoundVariant.Key;
 
-            return isProjectileTable && string.IsNullOrEmpty(AssetDatabase.AssetPathToGUID(info.Path));
+            return isOptionalTable && string.IsNullOrEmpty(AssetDatabase.AssetPathToGUID(info.Path));
         }
     }
 }

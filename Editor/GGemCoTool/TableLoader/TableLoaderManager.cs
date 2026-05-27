@@ -153,6 +153,39 @@ namespace GGemCo2DCoreEditor
             return LoadTable<TableSound>(ConfigAddressableTable.TableSound.Path, forceReload);
         }
 
+        public static TableSoundBgm LoadSoundBgmTable(bool forceReload = true)
+            => TryLoadOptionalTable<TableSoundBgm>(ConfigAddressableTable.TableSoundBgm.Path, forceReload);
+
+        public static TableSoundAmbient LoadSoundAmbientTable(bool forceReload = true)
+            => TryLoadOptionalTable<TableSoundAmbient>(ConfigAddressableTable.TableSoundAmbient.Path, forceReload);
+
+        public static TableSoundSfx LoadSoundSfxTable(bool forceReload = true)
+            => TryLoadOptionalTable<TableSoundSfx>(ConfigAddressableTable.TableSoundSfx.Path, forceReload);
+
+        public static TableSoundVariant LoadSoundVariantTable(bool forceReload = true)
+            => TryLoadOptionalTable<TableSoundVariant>(ConfigAddressableTable.TableSoundVariant.Path, forceReload);
+
+        /// <summary>
+        /// 아직 생성되지 않은 선택 테이블은 오류 없이 null로 반환합니다.
+        /// </summary>
+        /// <typeparam name="TTable">로드할 테이블 타입입니다.</typeparam>
+        /// <param name="assetPath">Unity 프로젝트 기준 테이블 경로입니다.</param>
+        /// <param name="forceReload">캐시를 무시하고 다시 로드할지 여부입니다.</param>
+        /// <returns>로드된 테이블 또는 null입니다.</returns>
+        private static TTable TryLoadOptionalTable<TTable>(string assetPath, bool forceReload)
+            where TTable : class, ITableParser, new()
+        {
+            if (string.IsNullOrWhiteSpace(assetPath))
+                return null;
+
+            string projectRoot = Path.GetDirectoryName(Application.dataPath);
+            string fullPath = Path.Combine(projectRoot ?? string.Empty, assetPath);
+            if (!File.Exists(fullPath))
+                return null;
+
+            return LoadTable<TTable>(assetPath, forceReload);
+        }
+
         /// <summary>
         /// 에디터 환경에서 projectile.txt 공용 Row와 projectile_linear/arc/path 상세 Row를 하나의 조회 테이블로 병합해 로드합니다.
         /// - 공용 Row가 없으면 상세 Row만으로는 병합하지 않습니다.
