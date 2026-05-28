@@ -1,4 +1,5 @@
 ﻿using UnityEngine;
+using System.IO;
 using UnityEngine.UI;
 
 namespace GGemCo2DCore
@@ -86,14 +87,13 @@ namespace GGemCo2DCore
                 
                 if (_saveDataSettings && _saveDataSettings.UseSaveData)
                 {
-                    // PlayerPrefs 에서 가져온 값이 있는지 체크 
-                    if (PlayerPrefsManager.LoadSaveDataSlotIndex() <= 0)
+                    if (CanShowContinueGameButton())
                     {
-                        OnClickNewGame();
+                        OnClickGameContinue();
                     }
                     else
                     {
-                        OnClickGameContinue();
+                        OnClickNewGame();
                     }
                 }
                 else
@@ -136,7 +136,21 @@ namespace GGemCo2DCore
                 buttonGameContinue?.gameObject.SetActive(false);
                 buttonOpenSaveDataWindow?.gameObject.SetActive(false);
             }
+
+            if (!CanShowContinueGameButton())
+            {
+                buttonGameContinue?.gameObject.SetActive(false);
+            }
+
+            if (!CanShowLoadGameButton())
+            {
+                buttonOpenSaveDataWindow?.gameObject.SetActive(false);
+            }
         }
+        
+        /// <summary>
+        /// 인트로 버튼 표시 상태를 갱신합니다.
+        /// </summary>
         private void UpdateButtons()
         {
             buttonOpenOption?.gameObject.SetActive(true);
@@ -153,9 +167,54 @@ namespace GGemCo2DCore
                 buttonNewGame?.gameObject.SetActive(true);
             }
 
-            buttonGameContinue?.gameObject.SetActive(PlayerPrefsManager.LoadSaveDataSlotIndex() > 0);
-            // slot 데이터가 있는지 채크해서 있으면 buttonOpenSaveDataWindow 버튼 enable 처리 
-            buttonOpenSaveDataWindow?.gameObject.SetActive(_slotMetaDatController.GetExistSlotCounts() > 0);
+            buttonGameContinue?.gameObject.SetActive(CanShowContinueGameButton());
+            // 저장 슬롯 정책과 실제 저장 데이터 존재 여부를 모두 만족할 때만 불러오기 버튼을 노출합니다.
+            bool canShowLoadGameButton = CanShowLoadGameButton();
+            bool hasSavedSlotData = _slotMetaDatController.GetExistSlotCounts() > 0;
+            buttonOpenSaveDataWindow?.gameObject.SetActive(canShowLoadGameButton && hasSavedSlotData);
+        }
+
+        /// <summary>
+        /// 계속하기 버튼 노출 가능 여부를 반환합니다.
+        /// 선택된 슬롯이 존재하고, 메타데이터와 실제 저장 파일이 모두 유효할 때만 true를 반환합니다.
+        /// </summary>
+        /// <returns>계속하기 버튼 노출 가능 여부입니다.</returns>
+        private bool CanShowContinueGameButton()
+        {
+            if (!_saveDataSettings || !_saveDataSettings.UseSaveData || _slotMetaDatController == null)
+            {
+                return false;
+            }
+
+            int selectedSlotIndex = PlayerPrefsManager.LoadSaveDataSlotIndex();
+            if (selectedSlotIndex <= 0)
+            {
+                return false;
+            }
+
+            SlotMetaInfo selectedSlotInfo =
+                _slotMetaDatController.GetMetaDataSlots()?.Find(slot => slot.slotIndex == selectedSlotIndex);
+            if (selectedSlotInfo == null || !selectedSlotInfo.exists)
+            {
+                return false;
+            }
+
+            if (string.IsNullOrEmpty(selectedSlotInfo.filePath))
+            {
+                return false;
+            }
+
+            return File.Exists(selectedSlotInfo.filePath);
+        }
+        
+        /// <summary>
+        /// 불러오기 버튼 노출 가능 여부를 반환합니다.
+        /// saveDataMaxSlotCount가 1 이하인 단일 슬롯 정책에서는 불러오기 버튼을 숨깁니다.
+        /// </summary>
+        /// <returns>불러오기 버튼 노출 가능 여부입니다.</returns>
+        private bool CanShowLoadGameButton()
+        {
+            return _saveDataSettings && _saveDataSettings.saveDataMaxSlotCount > 1;
         }
         
         /// <summary>
@@ -165,8 +224,8 @@ namespace GGemCo2DCore
         {
             if (_saveDataSettings && _saveDataSettings.UseSaveData)
             {
-                // PlayerPrefs 에서 가져온 값이 있는지 체크 
-                if (PlayerPrefsManager.LoadSaveDataSlotIndex() <= 0)
+                // 선택 슬롯과 저장 파일의 실제 유효성을 함께 확인합니다.
+                if (!CanShowContinueGameButton())
                 {
                     popupManager.ShowPopupError("SaveSlot_NotSelected");//"선택된 슬롯이 없습니다.\n불러오기를 해주세요."
                     return;

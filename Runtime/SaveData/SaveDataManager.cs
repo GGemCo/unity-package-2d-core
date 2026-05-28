@@ -143,10 +143,12 @@ namespace GGemCo2DCore
                 SaveRegistry.ApplyRestore(env);
             }
 
-            // 저장 파일이 없거나 복구할 수 없으면 기본 데이터로 초기화된 현재 상태를 즉시 저장합니다.
+            // 저장 파일이 없거나 복구가 필요해 신규 데이터로 시작한 경우,
+            // Intro 단계의 Continue 버튼 오탐을 피하기 위해 즉시 저장하지 않습니다.
             if (SaveDataLoader.Instance.LastLoadResult?.RequiresNewData == true)
             {
-                StartSaveData();
+                // 신규 데이터 생성 직후의 자동 1회 저장은 Intro에서 Continue 버튼이 즉시 노출되는 부작용을 만들 수 있습니다.
+                // 첫 저장은 실제 진행 데이터 변경 시점의 StartSaveData 호출 흐름에 위임합니다.
             }
         }
         
