@@ -301,6 +301,10 @@ namespace GGemCo2DCore
                     if (ShouldOverrideAfterDamageCrowdControlByGuard(guardResult.Outcome))
                     {
                         overrideAfterDamageCrowdControlByGuard = true;
+                        // 가드 판정이 확정된 경우에는 스킬 메타데이터 CC를 비우고,
+                        // GuardAttackType 규칙에서 계산된 CC만 최종 반영합니다.
+                        crowdControlUid = 0;
+                        metadataDamage.crowdControlUid = 0;
                         resolvedOnHitCrowdControls?.Clear();
                         metadataDamage.ResolvedOnHitCrowdControls = resolvedOnHitCrowdControls;
                     }
@@ -332,7 +336,8 @@ namespace GGemCo2DCore
 
             if (overrideAfterDamageCrowdControlByGuard)
             {
-                // 가드/저스트 가드 성공 시에는 SkillDamageClip의 AfterDamage CC 대신
+                // 가드 결과(가드/저스트 가드/가드 브레이크)로 판정이 확정된 경우에는
+                // SkillDamageClip의 AfterDamage CC 대신
                 // GuardAttackType 규칙에서 계산된 CC만 적용합니다.
                 metadataDamage.ResolvedOnHitCrowdControls = resolvedOnHitCrowdControls;
             }
@@ -568,14 +573,17 @@ namespace GGemCo2DCore
         }
 
         /// <summary>
-        /// 가드 성공 결과일 때 AfterDamage Crowd Control을 가드 규칙 결과로 대체할지 여부를 반환합니다.
+        /// 가드 판정 결과일 때 AfterDamage Crowd Control을 가드 규칙 결과로 대체할지 여부를 반환합니다.
         /// </summary>
         /// <param name="outcome">가드 판정 최종 결과입니다.</param>
-        /// <returns>일반 가드/저스트 가드 성공이면 <see langword="true"/>입니다.</returns>
+        /// <returns>
+        /// 일반 가드/저스트 가드/가드 브레이크로 판정이 확정된 경우 <see langword="true"/>입니다.
+        /// </returns>
         private static bool ShouldOverrideAfterDamageCrowdControlByGuard(GuardResolutionOutcome outcome)
         {
             return outcome == GuardResolutionOutcome.Guarded ||
-                   outcome == GuardResolutionOutcome.JustGuarded;
+                   outcome == GuardResolutionOutcome.JustGuarded ||
+                   outcome == GuardResolutionOutcome.GuardBroken;
         }
 
         /// <summary>
