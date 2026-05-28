@@ -336,7 +336,7 @@ namespace GGemCo2DCore
                         CharacterCollision.FileName,
                         CharacterCollision.MenuName,
                         CharacterCollision.Ordering,
-                        typeof(CharacterCollisionSettings))
+                        typeof(GGemCoCharacterCollisionSettings))
                 },
             };
 
@@ -359,7 +359,7 @@ namespace GGemCo2DCore
                 { WorldMap.FileName, typeof(GGemCoWorldMapSettings) },
                 { DialogueBalloon.FileName, typeof(GGemCoDialogueBalloonSettings) },
                 { NpcInteraction.FileName, typeof(GGemCoNpcInteractionSettings) },
-                { CharacterCollision.FileName, typeof(CharacterCollisionSettings) },
+                { CharacterCollision.FileName, typeof(GGemCoCharacterCollisionSettings) },
             };
 
         /// <summary>

@@ -27,7 +27,7 @@ namespace GGemCo2DCore
             Vector2 requestedDelta,
             int blockingLayerMask,
             float skinWidth,
-            CharacterCollisionSettings settings,
+            GGemCoCharacterCollisionSettings settings,
             RaycastHit2D[] hits,
             out Vector2 resolvedDelta)
         {
@@ -135,7 +135,7 @@ namespace GGemCo2DCore
         /// <param name="hitCollider">검사할 충돌체입니다.</param>
         /// <param name="settings">캐릭터 충돌 설정 인스턴스입니다.</param>
         /// <returns>이동 차단 대상에서 제외해야 하면 true입니다.</returns>
-        private static bool ShouldIgnoreHit(CharacterBase owner, Collider2D hitCollider, CharacterCollisionSettings settings)
+        private static bool ShouldIgnoreHit(CharacterBase owner, Collider2D hitCollider, GGemCoCharacterCollisionSettings settings)
         {
             if (owner == null || hitCollider == null)
                 return true;

@@ -6,7 +6,7 @@ namespace GGemCo2DCore
     public enum MotionBodyCollisionPolicy
     {
         /// <summary>
-        /// <see cref="CharacterCollisionSettings"/>에 정의된 채널별 기본 정책을 사용합니다.
+        /// <see cref="GGemCoCharacterCollisionSettings"/>에 정의된 채널별 기본 정책을 사용합니다.
         /// </summary>
         UseCharacterDefault = 0,
 

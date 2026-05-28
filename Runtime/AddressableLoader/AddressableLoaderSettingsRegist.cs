@@ -23,7 +23,7 @@ namespace GGemCo2DCore
         [HideInInspector] public GGemCoCutsceneSettings cutsceneSettings;
         [HideInInspector] public GGemCoWorldMapSettings worldMapSettings;
         [HideInInspector] public GGemCoDialogueBalloonSettings dialogueBalloonSettings;
-        [HideInInspector] public CharacterCollisionSettings characterCollisionSettings;
+        [HideInInspector] public GGemCoCharacterCollisionSettings gGemCoCharacterCollisionSettings;
 
         public delegate void DelegateLoadSettings(
             GGemCoSettings settings,
@@ -109,7 +109,7 @@ namespace GGemCo2DCore
                 cutsceneSettings = tasks[6].Result as GGemCoCutsceneSettings;
                 worldMapSettings = tasks[7].Result as GGemCoWorldMapSettings;
                 dialogueBalloonSettings = tasks[8].Result as GGemCoDialogueBalloonSettings;
-                characterCollisionSettings = tasks[9].Result as CharacterCollisionSettings;
+                gGemCoCharacterCollisionSettings = tasks[9].Result as GGemCoCharacterCollisionSettings;
 
                 // 5) 이벤트 (기존)
                 OnLoadSettings?.Invoke(settings, playerSettings, mapSettings, saveSettings, optionSettings, soundSettings);

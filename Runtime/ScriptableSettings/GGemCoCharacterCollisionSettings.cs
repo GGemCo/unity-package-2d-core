@@ -12,7 +12,7 @@ namespace GGemCo2DCore
         fileName = ConfigScriptableObject.CharacterCollision.FileName,
         menuName = ConfigScriptableObject.CharacterCollision.MenuName,
         order = ConfigScriptableObject.CharacterCollision.Ordering)]
-    public sealed class CharacterCollisionSettings : ScriptableObject
+    public sealed class GGemCoCharacterCollisionSettings : ScriptableObject
     {
         [Header("사용 여부")]
         [Tooltip("플레이어/몬스터/NPC Body Collider 사이의 충돌 정책을 사용할지 여부입니다.")]

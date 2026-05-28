@@ -32,7 +32,7 @@ namespace GGemCo2DCore
             float padding,
             float horizontalBias,
             float verticalBias,
-            CharacterCollisionSettings settings,
+            GGemCoCharacterCollisionSettings settings,
             Collider2D[] overlaps,
             out Vector2 separationDelta)
         {
@@ -89,7 +89,7 @@ namespace GGemCo2DCore
         /// <param name="otherCollider">검사할 상대 Collider입니다.</param>
         /// <param name="settings">캐릭터 충돌 설정 인스턴스입니다.</param>
         /// <returns>겹침 해소 대상에서 제외해야 하면 true입니다.</returns>
-        private static bool ShouldIgnore(CharacterBase owner, Collider2D otherCollider, CharacterCollisionSettings settings)
+        private static bool ShouldIgnore(CharacterBase owner, Collider2D otherCollider, GGemCoCharacterCollisionSettings settings)
         {
             if (owner == null || otherCollider == null)
                 return true;

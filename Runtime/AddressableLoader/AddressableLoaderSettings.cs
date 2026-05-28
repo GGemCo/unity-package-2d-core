@@ -27,7 +27,7 @@ namespace GGemCo2DCore
         [HideInInspector] public GGemCoWorldMapSettings worldMapSettings;
         [HideInInspector] public GGemCoDialogueBalloonSettings dialogueBalloonSettings;
         [HideInInspector] public GGemCoNpcInteractionSettings npcInteractionSettings;
-        [HideInInspector] public CharacterCollisionSettings characterCollisionSettings;
+        [HideInInspector] public GGemCoCharacterCollisionSettings characterCollisionSettings;
 
         public delegate void DelegateLoadSettings(
             GGemCoSettings settings,
@@ -91,7 +91,7 @@ namespace GGemCo2DCore
                 Task<GGemCoWorldMapSettings> worldMapSettingsTask = LoadSettingsAsync<GGemCoWorldMapSettings>(ConfigAddressableSetting.WorldMapSettings.Key);
                 Task<GGemCoDialogueBalloonSettings> dialogueBalloonSettingsTask = LoadSettingsAsync<GGemCoDialogueBalloonSettings>(ConfigAddressableSetting.DialogueBalloonSettings.Key);
                 Task<GGemCoNpcInteractionSettings> npcInteractionSettingsTask = LoadSettingsAsync<GGemCoNpcInteractionSettings>(ConfigAddressableSetting.NpcInteractionSettings.Key);
-                Task<CharacterCollisionSettings> characterCollisionSettingsTask = LoadSettingsAsync<CharacterCollisionSettings>(ConfigAddressableSetting.CharacterCollisionSettings.Key);
+                Task<GGemCoCharacterCollisionSettings> characterCollisionSettingsTask = LoadSettingsAsync<GGemCoCharacterCollisionSettings>(ConfigAddressableSetting.CharacterCollisionSettings.Key);
 #if GGEMCO_USE_INGAME_TIME
                 Task<GGemCoGameTimeSettings> gameTimeSettingsTask = LoadSettingsAsync<GGemCoGameTimeSettings>(ConfigAddressableSetting.GameTimeSettings.Key);
 #endif

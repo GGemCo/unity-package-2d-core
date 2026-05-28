@@ -79,7 +79,7 @@ namespace GGemCo2DCore
         /// <returns>일부라도 이동 가능하면 true, 완전히 차단되면 false입니다.</returns>
         public bool TryResolveMove(Vector3 requestedDelta, out Vector3 resolvedDelta)
         {
-            CharacterCollisionSettings settings = GetSettings();
+            GGemCoCharacterCollisionSettings settings = GetSettings();
             if (!IsEnabled(settings) || !CanParticipateInCollision(_owner, settings))
             {
                 resolvedDelta = requestedDelta;
@@ -103,7 +103,7 @@ namespace GGemCo2DCore
             MotionBodyCollisionPolicy policyOverride,
             out Vector3 resolvedDelta)
         {
-            CharacterCollisionSettings settings = GetSettings();
+            GGemCoCharacterCollisionSettings settings = GetSettings();
             MotionBodyCollisionPolicy policy = ResolveMotionBodyCollisionPolicy(settings, channel, policyOverride);
 
             if (!CanUseMotionBodyCollision(settings) || !CanParticipateInCollision(_owner, settings) || !ShouldBlockBeforeMove(policy))
@@ -123,7 +123,7 @@ namespace GGemCo2DCore
         /// <param name="resolvedDelta">충돌을 고려해 보정된 이동량입니다.</param>
         /// <returns>일부라도 이동 가능하면 true, 완전히 차단되면 false입니다.</returns>
         private bool TryResolveMoveInternal(
-            CharacterCollisionSettings settings,
+            GGemCoCharacterCollisionSettings settings,
             Vector3 requestedDelta,
             out Vector3 resolvedDelta)
         {
@@ -159,7 +159,7 @@ namespace GGemCo2DCore
         /// <returns>분리 이동을 적용했으면 true입니다.</returns>
         public bool TrySeparateOverlaps(float multiplier = 1f)
         {
-            CharacterCollisionSettings settings = GetSettings();
+            GGemCoCharacterCollisionSettings settings = GetSettings();
             if (!CanSeparate(settings) || !CanParticipateInCollision(_owner, settings))
                 return false;
 
@@ -211,7 +211,7 @@ namespace GGemCo2DCore
         /// </summary>
         public void RequestLandingSeparation()
         {
-            CharacterCollisionSettings settings = GetSettings();
+            GGemCoCharacterCollisionSettings settings = GetSettings();
             if (!CanSeparate(settings) || !CanParticipateInCollision(_owner, settings))
                 return;
 
@@ -245,7 +245,7 @@ namespace GGemCo2DCore
             float durationOverride,
             float multiplierOverride)
         {
-            CharacterCollisionSettings settings = GetSettings();
+            GGemCoCharacterCollisionSettings settings = GetSettings();
             MotionBodyCollisionPolicy policy = ResolveMotionBodyCollisionPolicy(settings, channel, policyOverride);
 
             if (!CanUseMotionBodyCollision(settings) || !CanParticipateInCollision(_owner, settings) || !ShouldSeparateAfterMove(policy))
@@ -284,7 +284,7 @@ namespace GGemCo2DCore
         /// <param name="character">검사할 캐릭터입니다.</param>
         /// <param name="settings">캐릭터 충돌 설정 인스턴스입니다.</param>
         /// <returns>이동 차단 또는 겹침 해소 대상으로 사용할 수 있으면 true입니다.</returns>
-        public static bool CanParticipateInCollision(CharacterBase character, CharacterCollisionSettings settings)
+        public static bool CanParticipateInCollision(CharacterBase character, GGemCoCharacterCollisionSettings settings)
         {
             if (character == null)
                 return false;
@@ -350,7 +350,7 @@ namespace GGemCo2DCore
             if (_bodyCollider == null)
                 return;
 
-            CharacterCollisionSettings settings = GetSettings();
+            GGemCoCharacterCollisionSettings settings = GetSettings();
             DeadCharacterBodyCollisionMode mode = GetDeadCharacterBodyCollisionMode(settings);
             bool isExcludedByDeath = IsEnabled(settings) && !CanParticipateInCollision(_owner, settings);
             bool shouldDisable = mode == DeadCharacterBodyCollisionMode.DisableBodyCollider && isExcludedByDeath;
@@ -387,7 +387,7 @@ namespace GGemCo2DCore
         /// Collider를 비활성화하지 않고 레이어만 변경하여, 지면과는 계속 충돌하되
         /// 플레이어/몬스터/NPC Body Collider와는 충돌하지 않도록 분리합니다.
         /// </remarks>
-        private void ApplyDeadBodyGroundOnlyLayer(CharacterCollisionSettings settings)
+        private void ApplyDeadBodyGroundOnlyLayer(GGemCoCharacterCollisionSettings settings)
         {
             int deadBodyLayer = GetDeadCharacterBodyLayer(settings);
             if (deadBodyLayer < 0)
@@ -402,7 +402,7 @@ namespace GGemCo2DCore
         /// </summary>
         /// <param name="settings">캐릭터 충돌 설정 인스턴스입니다.</param>
         /// <returns>유효한 Unity 레이어이면 인덱스, 없으면 -1입니다.</returns>
-        private static int GetDeadCharacterBodyLayer(CharacterCollisionSettings settings)
+        private static int GetDeadCharacterBodyLayer(GGemCoCharacterCollisionSettings settings)
         {
             if (settings != null)
             {
@@ -422,22 +422,91 @@ namespace GGemCo2DCore
         /// 프로젝트 설정의 Layer Collision Matrix가 아직 정리되지 않은 경우에도
         /// 사망 몬스터가 플레이어 이동/바닥 체크 Collider를 막지 않도록 런타임에서 안전장치를 적용합니다.
         /// </remarks>
-        private static void EnsureDeadBodyLayerCollisionMatrix(CharacterCollisionSettings settings, int deadBodyLayer)
+        private static void EnsureDeadBodyLayerCollisionMatrix(GGemCoCharacterCollisionSettings settings, int deadBodyLayer)
         {
             if (deadBodyLayer < 0 || !ShouldConfigureDeadBodyLayerCollisionMatrix(settings))
                 return;
 
-            if (!ConfiguredDeadBodyLayers.Add(deadBodyLayer))
+            int playerBodyLayer = CharacterCollisionLayerUtility.GetBodyLayer(CharacterConstants.Type.Player);
+            int monsterBodyLayer = CharacterCollisionLayerUtility.GetBodyLayer(CharacterConstants.Type.Monster);
+            int npcBodyLayer = CharacterCollisionLayerUtility.GetBodyLayer(CharacterConstants.Type.Npc);
+            int hitAreaPlayerLayer = CharacterCollisionLayerUtility.GetLayer(ConfigLayer.Keys.HitAreaPlayer);
+            int hitAreaMonsterLayer = CharacterCollisionLayerUtility.GetLayer(ConfigLayer.Keys.HitAreaMonster);
+            int tileMapGroundLayer = CharacterCollisionLayerUtility.GetLayer(ConfigLayer.Keys.TileMapGround);
+            int tileMapOneWayPlatformLayer = CharacterCollisionLayerUtility.GetLayer(ConfigLayer.Keys.TileMapOneWayPlatform);
+
+            // Domain Reload 비활성화 환경에서는 static 캐시가 남아 있어도 Physics2D 매트릭스는 초기화될 수 있습니다.
+            // 따라서 "이미 처리한 레이어"인 경우에도 현재 충돌 매트릭스가 기대 상태인지 확인한 뒤, 어긋나면 재적용합니다.
+            if (ConfiguredDeadBodyLayers.Contains(deadBodyLayer) &&
+                IsDeadBodyLayerCollisionMatrixConfigured(
+                    deadBodyLayer,
+                    playerBodyLayer,
+                    monsterBodyLayer,
+                    npcBodyLayer,
+                    hitAreaPlayerLayer,
+                    hitAreaMonsterLayer,
+                    tileMapGroundLayer,
+                    tileMapOneWayPlatformLayer))
+            {
                 return;
+            }
 
-            SetLayerCollisionIgnored(deadBodyLayer, CharacterCollisionLayerUtility.GetBodyLayer(CharacterConstants.Type.Player), true);
-            SetLayerCollisionIgnored(deadBodyLayer, CharacterCollisionLayerUtility.GetBodyLayer(CharacterConstants.Type.Monster), true);
-            SetLayerCollisionIgnored(deadBodyLayer, CharacterCollisionLayerUtility.GetBodyLayer(CharacterConstants.Type.Npc), true);
-            SetLayerCollisionIgnored(deadBodyLayer, CharacterCollisionLayerUtility.GetLayer(ConfigLayer.Keys.HitAreaPlayer), true);
-            SetLayerCollisionIgnored(deadBodyLayer, CharacterCollisionLayerUtility.GetLayer(ConfigLayer.Keys.HitAreaMonster), true);
+            ConfiguredDeadBodyLayers.Add(deadBodyLayer);
 
-            SetLayerCollisionIgnored(deadBodyLayer, CharacterCollisionLayerUtility.GetLayer(ConfigLayer.Keys.TileMapGround), false);
-            SetLayerCollisionIgnored(deadBodyLayer, CharacterCollisionLayerUtility.GetLayer(ConfigLayer.Keys.TileMapOneWayPlatform), false);
+            SetLayerCollisionIgnored(deadBodyLayer, playerBodyLayer, true);
+            SetLayerCollisionIgnored(deadBodyLayer, monsterBodyLayer, true);
+            SetLayerCollisionIgnored(deadBodyLayer, npcBodyLayer, true);
+            SetLayerCollisionIgnored(deadBodyLayer, hitAreaPlayerLayer, true);
+            SetLayerCollisionIgnored(deadBodyLayer, hitAreaMonsterLayer, true);
+
+            SetLayerCollisionIgnored(deadBodyLayer, tileMapGroundLayer, false);
+            SetLayerCollisionIgnored(deadBodyLayer, tileMapOneWayPlatformLayer, false);
+        }
+
+        /// <summary>
+        /// 사망 Body 전용 레이어의 충돌 매트릭스가 기대 상태로 이미 구성되어 있는지 검사합니다.
+        /// </summary>
+        /// <param name="deadBodyLayer">사망 Body 전용 Unity 레이어 인덱스입니다.</param>
+        /// <param name="playerBodyLayer">플레이어 Body Unity 레이어 인덱스입니다.</param>
+        /// <param name="monsterBodyLayer">몬스터 Body Unity 레이어 인덱스입니다.</param>
+        /// <param name="npcBodyLayer">NPC Body Unity 레이어 인덱스입니다.</param>
+        /// <param name="hitAreaPlayerLayer">플레이어 HitArea Unity 레이어 인덱스입니다.</param>
+        /// <param name="hitAreaMonsterLayer">몬스터 HitArea Unity 레이어 인덱스입니다.</param>
+        /// <param name="tileMapGroundLayer">지면 Unity 레이어 인덱스입니다.</param>
+        /// <param name="tileMapOneWayPlatformLayer">원웨이 플랫폼 Unity 레이어 인덱스입니다.</param>
+        /// <returns>모든 대상 레이어의 충돌 상태가 기대값과 같으면 true입니다.</returns>
+        private static bool IsDeadBodyLayerCollisionMatrixConfigured(
+            int deadBodyLayer,
+            int playerBodyLayer,
+            int monsterBodyLayer,
+            int npcBodyLayer,
+            int hitAreaPlayerLayer,
+            int hitAreaMonsterLayer,
+            int tileMapGroundLayer,
+            int tileMapOneWayPlatformLayer)
+        {
+            return IsLayerCollisionIgnoredAsExpected(deadBodyLayer, playerBodyLayer, true) &&
+                   IsLayerCollisionIgnoredAsExpected(deadBodyLayer, monsterBodyLayer, true) &&
+                   IsLayerCollisionIgnoredAsExpected(deadBodyLayer, npcBodyLayer, true) &&
+                   IsLayerCollisionIgnoredAsExpected(deadBodyLayer, hitAreaPlayerLayer, true) &&
+                   IsLayerCollisionIgnoredAsExpected(deadBodyLayer, hitAreaMonsterLayer, true) &&
+                   IsLayerCollisionIgnoredAsExpected(deadBodyLayer, tileMapGroundLayer, false) &&
+                   IsLayerCollisionIgnoredAsExpected(deadBodyLayer, tileMapOneWayPlatformLayer, false);
+        }
+
+        /// <summary>
+        /// 두 레이어 쌍의 현재 Ignore 상태가 기대값과 일치하는지 확인합니다.
+        /// </summary>
+        /// <param name="a">첫 번째 Unity 레이어 인덱스입니다.</param>
+        /// <param name="b">두 번째 Unity 레이어 인덱스입니다.</param>
+        /// <param name="expectedIgnored">기대하는 Ignore 상태입니다.</param>
+        /// <returns>유효한 레이어 쌍이고 현재 상태가 기대값과 같으면 true입니다.</returns>
+        private static bool IsLayerCollisionIgnoredAsExpected(int a, int b, bool expectedIgnored)
+        {
+            if (a < 0 || b < 0 || a == b)
+                return true;
+
+            return Physics2D.GetIgnoreLayerCollision(a, b) == expectedIgnored;
         }
 
         /// <summary>
@@ -458,7 +527,7 @@ namespace GGemCo2DCore
         /// 현재 로드된 캐릭터 충돌 설정을 가져옵니다.
         /// </summary>
         /// <returns>설정 인스턴스입니다. 로딩 전이면 null입니다.</returns>
-        private static CharacterCollisionSettings GetSettings()
+        private static GGemCoCharacterCollisionSettings GetSettings()
         {
             return AddressableLoaderSettings.Instance != null
                 ? AddressableLoaderSettings.Instance.characterCollisionSettings
@@ -470,7 +539,7 @@ namespace GGemCo2DCore
         /// </summary>
         /// <param name="settings">캐릭터 충돌 설정 인스턴스입니다.</param>
         /// <returns>사용 가능하면 true입니다.</returns>
-        private static bool IsEnabled(CharacterCollisionSettings settings)
+        private static bool IsEnabled(GGemCoCharacterCollisionSettings settings)
         {
             return settings == null || settings.useCharacterBodyCollision;
         }
@@ -480,7 +549,7 @@ namespace GGemCo2DCore
         /// </summary>
         /// <param name="settings">캐릭터 충돌 설정 인스턴스입니다.</param>
         /// <returns>사용 가능하면 true입니다.</returns>
-        private static bool CanSeparate(CharacterCollisionSettings settings)
+        private static bool CanSeparate(GGemCoCharacterCollisionSettings settings)
         {
             return IsEnabled(settings) && (settings == null || settings.useCharacterBodySeparation);
         }
@@ -490,7 +559,7 @@ namespace GGemCo2DCore
         /// </summary>
         /// <param name="settings">캐릭터 충돌 설정 인스턴스입니다.</param>
         /// <returns>사용 가능하면 true입니다.</returns>
-        private static bool CanUseMotionBodyCollision(CharacterCollisionSettings settings)
+        private static bool CanUseMotionBodyCollision(GGemCoCharacterCollisionSettings settings)
         {
             return IsEnabled(settings) && (settings == null || settings.useMotionBodyCollision);
         }
@@ -503,7 +572,7 @@ namespace GGemCo2DCore
         /// <param name="policyOverride">요청 단위 오버라이드 정책입니다.</param>
         /// <returns>실제로 적용할 모션 Body 충돌 정책입니다.</returns>
         private static MotionBodyCollisionPolicy ResolveMotionBodyCollisionPolicy(
-            CharacterCollisionSettings settings,
+            GGemCoCharacterCollisionSettings settings,
             MotionChannel channel,
             MotionBodyCollisionPolicy policyOverride)
         {
@@ -545,7 +614,7 @@ namespace GGemCo2DCore
         /// </summary>
         /// <param name="settings">캐릭터 충돌 설정 인스턴스입니다.</param>
         /// <returns>설정된 사망 캐릭터 처리 방식입니다.</returns>
-        private static DeadCharacterBodyCollisionMode GetDeadCharacterBodyCollisionMode(CharacterCollisionSettings settings)
+        private static DeadCharacterBodyCollisionMode GetDeadCharacterBodyCollisionMode(GGemCoCharacterCollisionSettings settings)
         {
             return settings != null
                 ? settings.deadCharacterBodyCollisionMode
@@ -557,7 +626,7 @@ namespace GGemCo2DCore
         /// </summary>
         /// <param name="settings">캐릭터 충돌 설정 인스턴스입니다.</param>
         /// <returns>제외해야 하면 true입니다.</returns>
-        private static bool ShouldIgnoreDeathPendingCharacters(CharacterCollisionSettings settings)
+        private static bool ShouldIgnoreDeathPendingCharacters(GGemCoCharacterCollisionSettings settings)
         {
             return settings == null || settings.ignoreDeathPendingCharacters;
         }
@@ -567,7 +636,7 @@ namespace GGemCo2DCore
         /// </summary>
         /// <param name="settings">캐릭터 충돌 설정 인스턴스입니다.</param>
         /// <returns>보정해야 하면 true입니다.</returns>
-        private static bool ShouldConfigureDeadBodyLayerCollisionMatrix(CharacterCollisionSettings settings)
+        private static bool ShouldConfigureDeadBodyLayerCollisionMatrix(GGemCoCharacterCollisionSettings settings)
         {
             return settings == null || settings.configureDeadCharacterBodyLayerCollisionMatrix;
         }
@@ -577,7 +646,7 @@ namespace GGemCo2DCore
         /// </summary>
         /// <param name="settings">캐릭터 충돌 설정 인스턴스입니다.</param>
         /// <returns>0 이상으로 보정된 Skin Width 값입니다.</returns>
-        private static float GetSkinWidth(CharacterCollisionSettings settings)
+        private static float GetSkinWidth(GGemCoCharacterCollisionSettings settings)
         {
             return settings != null ? Mathf.Max(0f, settings.collisionSkinWidth) : 0.02f;
         }
@@ -587,7 +656,7 @@ namespace GGemCo2DCore
         /// </summary>
         /// <param name="settings">캐릭터 충돌 설정 인스턴스입니다.</param>
         /// <returns>0 이상으로 보정된 최대 이동량입니다.</returns>
-        private static float GetSeparationMaxStep(CharacterCollisionSettings settings)
+        private static float GetSeparationMaxStep(GGemCoCharacterCollisionSettings settings)
         {
             return settings != null ? Mathf.Max(0f, settings.separationMaxStep) : 0.06f;
         }
@@ -597,7 +666,7 @@ namespace GGemCo2DCore
         /// </summary>
         /// <param name="settings">캐릭터 충돌 설정 인스턴스입니다.</param>
         /// <returns>0 이상으로 보정된 여유 거리입니다.</returns>
-        private static float GetSeparationPadding(CharacterCollisionSettings settings)
+        private static float GetSeparationPadding(GGemCoCharacterCollisionSettings settings)
         {
             return settings != null ? Mathf.Max(0f, settings.separationPadding) : 0.03f;
         }
@@ -607,7 +676,7 @@ namespace GGemCo2DCore
         /// </summary>
         /// <param name="settings">캐릭터 충돌 설정 인스턴스입니다.</param>
         /// <returns>0 이상으로 보정된 수평 가중치입니다.</returns>
-        private static float GetSeparationHorizontalBias(CharacterCollisionSettings settings)
+        private static float GetSeparationHorizontalBias(GGemCoCharacterCollisionSettings settings)
         {
             return settings != null ? Mathf.Max(0f, settings.separationHorizontalBias) : 1f;
         }
@@ -617,7 +686,7 @@ namespace GGemCo2DCore
         /// </summary>
         /// <param name="settings">캐릭터 충돌 설정 인스턴스입니다.</param>
         /// <returns>0 이상으로 보정된 수직 가중치입니다.</returns>
-        private static float GetSeparationVerticalBias(CharacterCollisionSettings settings)
+        private static float GetSeparationVerticalBias(GGemCoCharacterCollisionSettings settings)
         {
             return settings != null ? Mathf.Max(0f, settings.separationVerticalBias) : 0.2f;
         }
@@ -627,7 +696,7 @@ namespace GGemCo2DCore
         /// </summary>
         /// <param name="settings">캐릭터 충돌 설정 인스턴스입니다.</param>
         /// <returns>0 이상으로 보정된 지속 시간입니다.</returns>
-        private static float GetLandingSeparationDuration(CharacterCollisionSettings settings)
+        private static float GetLandingSeparationDuration(GGemCoCharacterCollisionSettings settings)
         {
             return settings != null ? Mathf.Max(0f, settings.landingSeparationDuration) : 0.2f;
         }
@@ -637,7 +706,7 @@ namespace GGemCo2DCore
         /// </summary>
         /// <param name="settings">캐릭터 충돌 설정 인스턴스입니다.</param>
         /// <returns>1 이상으로 보정된 배율입니다.</returns>
-        private static float GetLandingSeparationMultiplier(CharacterCollisionSettings settings)
+        private static float GetLandingSeparationMultiplier(GGemCoCharacterCollisionSettings settings)
         {
             return settings != null ? Mathf.Max(1f, settings.landingSeparationMultiplier) : 1.5f;
         }
@@ -648,7 +717,7 @@ namespace GGemCo2DCore
         /// <param name="settings">캐릭터 충돌 설정 인스턴스입니다.</param>
         /// <param name="overrideValue">요청 단위 오버라이드 값입니다.</param>
         /// <returns>0 이상으로 보정된 지속 시간입니다.</returns>
-        private static float GetMotionSeparationDuration(CharacterCollisionSettings settings, float overrideValue)
+        private static float GetMotionSeparationDuration(GGemCoCharacterCollisionSettings settings, float overrideValue)
         {
             if (overrideValue >= 0f)
                 return Mathf.Max(0f, overrideValue);
@@ -664,7 +733,7 @@ namespace GGemCo2DCore
         /// <param name="overrideValue">요청 단위 오버라이드 값입니다.</param>
         /// <returns>1 이상으로 보정된 배율입니다.</returns>
         private static float GetMotionSeparationMultiplier(
-            CharacterCollisionSettings settings,
+            GGemCoCharacterCollisionSettings settings,
             MotionChannel channel,
             float overrideValue)
         {
@@ -708,7 +777,7 @@ namespace GGemCo2DCore
         /// <param name="settings">캐릭터 충돌 설정 인스턴스입니다.</param>
         /// <param name="ownerType">이동 주체 캐릭터 타입입니다.</param>
         /// <returns>차단 대상으로 사용할 LayerMask 정수값입니다.</returns>
-        private static int BuildBlockingLayerMask(CharacterCollisionSettings settings, CharacterConstants.Type ownerType)
+        private static int BuildBlockingLayerMask(GGemCoCharacterCollisionSettings settings, CharacterConstants.Type ownerType)
         {
             int mask = 0;
             AppendIfBlocking(settings, ownerType, CharacterConstants.Type.Player, ref mask);
@@ -723,7 +792,7 @@ namespace GGemCo2DCore
         /// <param name="settings">캐릭터 충돌 설정 인스턴스입니다.</param>
         /// <param name="ownerType">이동 주체 캐릭터 타입입니다.</param>
         /// <returns>겹침 해소 대상으로 사용할 LayerMask 정수값입니다.</returns>
-        private static int BuildSeparationLayerMask(CharacterCollisionSettings settings, CharacterConstants.Type ownerType)
+        private static int BuildSeparationLayerMask(GGemCoCharacterCollisionSettings settings, CharacterConstants.Type ownerType)
         {
             int mask = 0;
             AppendIfSeparating(settings, ownerType, CharacterConstants.Type.Player, ref mask);
@@ -740,7 +809,7 @@ namespace GGemCo2DCore
         /// <param name="otherType">검사할 상대 타입입니다.</param>
         /// <param name="mask">누적 레이어 마스크입니다.</param>
         private static void AppendIfBlocking(
-            CharacterCollisionSettings settings,
+            GGemCoCharacterCollisionSettings settings,
             CharacterConstants.Type ownerType,
             CharacterConstants.Type otherType,
             ref int mask)
@@ -763,7 +832,7 @@ namespace GGemCo2DCore
         /// <param name="otherType">검사할 상대 타입입니다.</param>
         /// <param name="mask">누적 레이어 마스크입니다.</param>
         private static void AppendIfSeparating(
-            CharacterCollisionSettings settings,
+            GGemCoCharacterCollisionSettings settings,
             CharacterConstants.Type ownerType,
             CharacterConstants.Type otherType,
             ref int mask)
@@ -786,7 +855,7 @@ namespace GGemCo2DCore
         /// <param name="b">두 번째 캐릭터 타입입니다.</param>
         /// <returns>적용할 Body 충돌 정책입니다.</returns>
         private static CharacterBodyCollisionPolicy GetPolicy(
-            CharacterCollisionSettings settings,
+            GGemCoCharacterCollisionSettings settings,
             CharacterConstants.Type a,
             CharacterConstants.Type b)
         {
