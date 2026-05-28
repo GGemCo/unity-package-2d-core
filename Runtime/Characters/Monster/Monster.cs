@@ -23,8 +23,8 @@ namespace GGemCo2DCore
         private CharacterConstants.Grade _grade;
         public CharacterConstants.Grade Grade => _grade;
 
-        // 충돌 체크할 플레이어 수  
-        private const int CountCollider = 10;
+        // 공격 범위 안에 트리거/연출/보조 Collider가 함께 들어와도 HitArea가 잘리지 않도록 여유 있게 확보한다.
+        private const int CountCollider = 32;
         private Collider2D[] _collider2Ds;
         
         private MonsterUIController _monsterUIController;

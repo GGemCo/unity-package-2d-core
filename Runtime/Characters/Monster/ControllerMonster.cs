@@ -12,11 +12,13 @@ namespace GGemCo2DCore
         private const float MoveDirectionEpsilonSqr = 0.000001f;
         private const float BtMoveDirectionBlendPerSecond = 0.000001f;
         private const float BtMoveIntentKeepAliveSeconds = 5f;
+        private const int AttackRangeColliderFallbackCapacity = 32;
 
         private Coroutine _coroutineAttack;
         private float _delayTimeAttack;
         private Monster _monster;
         private Collider2D[] _collider2Ds;
+        private ContactFilter2D _attackTargetHitAreaFilter;
         private bool _hasBtMoveIntent;
         private Vector2 _btMoveIntentDirection;
         private Vector2 _btSmoothedDirection;
@@ -54,6 +56,9 @@ namespace GGemCo2DCore
         /// <inheritdoc />
         public void RequestWait() => Wait();
 
+        /// <inheritdoc />
+        public void RequestStopMoveIntent() => ClearBtMoveIntent();
+
         /// <summary>
         /// 이동 요청을 fire-and-forget 방식으로 전달한다.
         /// </summary>
@@ -74,12 +79,12 @@ namespace GGemCo2DCore
         /// <returns>이동이 실제로 수행되면 true, 아니면 false.</returns>
         /// <remarks>
         /// BT가 저주기(예: 1Hz)로 평가되더라도 이동은 프레임 단위로 이어져야 하므로,
-        /// 본 함수 진입 시 이동 의도를 먼저 등록해 <see cref="TickBtMoveIntent"/>가 연속 이동을 유지하도록 한다.
+        /// 이동 가능 조건을 모두 통과한 뒤에만 <see cref="TickBtMoveIntent"/>가 소비할 이동 의도를 등록한다.
+        /// 실패한 요청이 이전 이동 의도를 갱신하면 공격 범위 진입/스킬 실행 중에도 계속 이동할 수 있다.
         /// </remarks>
         public bool TryRequestMove(Vector2 direction, out MonsterMoveRequestFailureReason failureReason)
         {
             failureReason = MonsterMoveRequestFailureReason.None;
-            RegisterBtMoveIntent(direction);
 
             if (targetCharacter == null)
             {
@@ -106,6 +111,7 @@ namespace GGemCo2DCore
             if (targetCharacter.IsStatusDontMove())
             {
                 failureReason = MonsterMoveRequestFailureReason.StatusDontMove;
+                ClearBtMoveIntent();
                 return false;
             }
 
@@ -131,10 +137,13 @@ namespace GGemCo2DCore
                 return false;
             }
 
+            RegisterBtMoveIntent(filteredDirection);
             targetCharacter.directionNormalize = filteredDirection;
 
             if (!Run())
             {
+                ClearBtMoveIntent();
+
                 // 상태 전환 타이밍으로 Run이 직전에 거부될 수 있어, 거부 사유를 재평가한다.
                 if (!TryResolveMoveFailureReason(direction, filteredDirection, out failureReason))
                     failureReason = MonsterMoveRequestFailureReason.Unknown;
@@ -260,7 +269,10 @@ namespace GGemCo2DCore
         /// <param name="collider2Ds">공격 범위 계산에 사용할 충돌체 배열.</param>
         public void Initialize(Collider2D[] collider2Ds)
         {
-            _collider2Ds = collider2Ds;
+            _collider2Ds = collider2Ds != null && collider2Ds.Length > 0
+                ? collider2Ds
+                : new Collider2D[AttackRangeColliderFallbackCapacity];
+            RebuildAttackTargetHitAreaFilter();
         }
         /// <summary>
         /// 입력 처리 - 공격자 방향 계산
@@ -564,30 +576,100 @@ namespace GGemCo2DCore
         }
         
         /// <summary>
-        /// 주위에서 공격자를 검색
+        /// 현재 공격 대상이 몬스터의 공격 범위 안에 있는지 검색한다.
         /// </summary>
+        /// <returns>공격 대상의 <see cref="CharacterHitArea"/>가 공격 범위 안에서 발견되면 <see langword="true"/>입니다.</returns>
+        /// <remarks>
+        /// 전체 Collider를 검색하면 공격 범위 안의 보조 Trigger가 결과 버퍼를 먼저 채워
+        /// 실제 플레이어 HitArea가 누락될 수 있으므로, 플레이어 HitArea 레이어만 필터링한다.
+        /// 또한 태그만 비교하지 않고 <see cref="CharacterHitArea.target"/>으로 실제 공격 대상과 일치하는지 확인한다.
+        /// </remarks>
         private bool SearchAttackerTarget()
         {
-            if (targetCharacter.attackerTransform == null) return false;
+            if (targetCharacter == null || targetCharacter.attackerTransform == null) return false;
             if (targetCharacter.IsStatusAttack() || targetCharacter.IsStatusDead()) return false;
-            Vector2 size = new Vector2(capsuleColliderSize.x * Mathf.Abs(transform.localScale.x), capsuleColliderSize.y * transform.localScale.y);
-            // 캡슐 콜라이더 2D와 충돌 중인 모든 콜라이더를 검색
+            EnsureAttackRangeColliderBuffer();
+
+            CharacterBase attackTarget = ResolveCurrentAttackTargetCharacter();
+            Vector2 size = new Vector2(
+                capsuleColliderSize.x * Mathf.Abs(transform.localScale.x),
+                capsuleColliderSize.y * Mathf.Abs(transform.localScale.y));
             Vector2 point = (Vector2)transform.position + capsuleColliderOffset * transform.localScale;
 
-            // ContactFilter2D.noFilter 사용 (필요하면 레이어/트리거 정책을 별도 생성해서 전달)
             int hitCount = CompatPhysics2D.OverlapCapsuleNonAlloc(
-                point, size, capsuleDirection2D, 0f,
+                point,
+                size,
+                capsuleDirection2D,
+                0f,
+                _attackTargetHitAreaFilter,
                 _collider2Ds);
-            
+
             for (int i = 0; i < hitCount; i++)
             {
                 Collider2D hit = _collider2Ds[i];
-                if (hit.CompareTag(targetCharacter.attackerTransform.tag) && hit.GetComponent<CharacterHitArea>() != null)
+                if (!hit) continue;
+
+                CharacterHitArea characterHitArea = hit.GetComponent<CharacterHitArea>();
+                if (characterHitArea == null || characterHitArea.target == null) continue;
+
+                if (attackTarget != null)
                 {
-                    return true;
+                    if (characterHitArea.target == attackTarget)
+                        return true;
+
+                    continue;
                 }
+
+                if (hit.CompareTag(targetCharacter.attackerTransform.tag))
+                    return true;
             }
+
             return false;
+        }
+
+        /// <summary>
+        /// 공격 범위 검색에 사용할 플레이어 HitArea 전용 필터를 재구성한다.
+        /// </summary>
+        /// <remarks>
+        /// 레이어 이름을 찾지 못한 경우에는 기존 동작과의 호환을 위해 전체 검색으로 폴백한다.
+        /// 정상 설정에서는 <see cref="ConfigLayer.Keys.HitAreaPlayer"/> 레이어만 검색해 버퍼 포화와 오검출을 줄인다.
+        /// </remarks>
+        private void RebuildAttackTargetHitAreaFilter()
+        {
+            string hitAreaLayerName = ConfigLayer.GetValue(ConfigLayer.Keys.HitAreaPlayer);
+            int layerMask = LayerMask.GetMask(hitAreaLayerName);
+            _attackTargetHitAreaFilter = layerMask != 0
+                ? CompatPhysics2D.CreateLayerFilter(layerMask, useTriggers: true)
+                : CompatContactFilter2D.CreateNoFilter();
+        }
+
+        /// <summary>
+        /// 공격 범위 검색 결과를 저장할 Collider 배열이 유효한지 보장한다.
+        /// </summary>
+        /// <remarks>
+        /// 런타임 AddComponent나 테스트 환경에서 <see cref="Initialize"/>가 호출되지 않은 경우에도
+        /// 공격 범위 판정이 NullReference 없이 동작하도록 최소 버퍼를 생성한다.
+        /// </remarks>
+        private void EnsureAttackRangeColliderBuffer()
+        {
+            if (_collider2Ds != null && _collider2Ds.Length > 0) return;
+            _collider2Ds = new Collider2D[AttackRangeColliderFallbackCapacity];
+        }
+
+        /// <summary>
+        /// 현재 공격 대상으로 기록된 Transform에서 실제 <see cref="CharacterBase"/>를 해석한다.
+        /// </summary>
+        /// <returns>공격 대상 CharacterBase가 있으면 반환하고, 없으면 <see langword="null"/>을 반환한다.</returns>
+        /// <remarks>
+        /// Trigger 진입 경로에 따라 루트 Transform 대신 HitArea Transform이 기록될 수 있으므로
+        /// 부모 방향까지 검색해 실제 캐릭터를 복원한다.
+        /// </remarks>
+        private CharacterBase ResolveCurrentAttackTargetCharacter()
+        {
+            Transform attacker = targetCharacter != null ? targetCharacter.attackerTransform : null;
+            if (attacker == null) return null;
+
+            return attacker.GetComponent<CharacterBase>() ?? attacker.GetComponentInParent<CharacterBase>();
         }
         /// <summary>
         /// DelayTimeAttack 시간 후에 공격하기

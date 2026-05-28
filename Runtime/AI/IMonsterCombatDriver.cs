@@ -88,6 +88,15 @@ namespace GGemCo2DCore
         bool TryRequestMove(Vector2 direction, out MonsterMoveRequestFailureReason failureReason);
 
         /// <summary>
+        /// BT가 등록한 이동 의도 캐시만 중단한다.
+        /// </summary>
+        /// <remarks>
+        /// 스킬 실행 중, 타겟 소실, 이동 거부처럼 대기 애니메이션으로 전환하면 안 되는 상황에서
+        /// 이전 추적 입력이 프레임 루프에 남아 계속 이동하는 것을 방지하기 위해 사용한다.
+        /// </remarks>
+        void RequestStopMoveIntent();
+
+        /// <summary>
         /// 현재 타겟 방향을 바라보도록 한다.
         /// </summary>
         void RequestFaceToTarget();
