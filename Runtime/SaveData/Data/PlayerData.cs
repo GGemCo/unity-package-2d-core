@@ -43,6 +43,8 @@ namespace GGemCo2DCore
 
         // 일괄 업데이트 중(Apply 버튼 등) 자동 저장/이벤트 폭주를 줄이기 위한 플래그
         private bool _isBatchUpdating;
+        // 구독 초기화 직후 BehaviorSubject의 초기 1회 발행으로 저장이 호출되는 것을 막기 위한 플래그
+        private bool _isInitializingAutoSaveSubscriptions;
         private static long ClampLong(long value, long min, long max)
         {
             if (value < min) return min;
@@ -196,24 +198,33 @@ namespace GGemCo2DCore
         /// </summary>
         private void InitializeSubscriptions()
         {
-            Observable.Merge(
-                    _currentLevel.DistinctUntilChanged().Select(_ => Unit.Default),
-                    _currentMapUid.DistinctUntilChanged().Select(_ => Unit.Default),
-                    _currentExp.DistinctUntilChanged().Select(_ => Unit.Default),
-                    _currentGold.DistinctUntilChanged().Select(_ => Unit.Default),
-                    _currentSilver.DistinctUntilChanged().Select(_ => Unit.Default),
-                    _unspentStatPoints.DistinctUntilChanged().Select(_ => Unit.Default),
-                    _investedStatPointAtk.DistinctUntilChanged().Select(_ => Unit.Default),
-                    _investedStatPointDef.DistinctUntilChanged().Select(_ => Unit.Default),
-                    _investedStatPointHp.DistinctUntilChanged().Select(_ => Unit.Default),
-                    _investedStatPointMp.DistinctUntilChanged().Select(_ => Unit.Default),
-                    _investedStatPointStamina.DistinctUntilChanged().Select(_ => Unit.Default))
-                .Subscribe(_ =>
-                {
-                    if (_isBatchUpdating) return;
-                    SavePlayerData();
-                })
-                .AddTo(_disposables);
+            _isInitializingAutoSaveSubscriptions = true;
+            try
+            {
+                Observable.Merge(
+                        // BehaviorSubject는 구독 직후 현재값 1회를 즉시 발행하므로 Skip(1)으로 초기 발행을 무시합니다.
+                        _currentLevel.DistinctUntilChanged().Skip(1).Select(_ => Unit.Default),
+                        _currentMapUid.DistinctUntilChanged().Skip(1).Select(_ => Unit.Default),
+                        _currentExp.DistinctUntilChanged().Skip(1).Select(_ => Unit.Default),
+                        _currentGold.DistinctUntilChanged().Skip(1).Select(_ => Unit.Default),
+                        _currentSilver.DistinctUntilChanged().Skip(1).Select(_ => Unit.Default),
+                        _unspentStatPoints.DistinctUntilChanged().Skip(1).Select(_ => Unit.Default),
+                        _investedStatPointAtk.DistinctUntilChanged().Skip(1).Select(_ => Unit.Default),
+                        _investedStatPointDef.DistinctUntilChanged().Skip(1).Select(_ => Unit.Default),
+                        _investedStatPointHp.DistinctUntilChanged().Skip(1).Select(_ => Unit.Default),
+                        _investedStatPointMp.DistinctUntilChanged().Skip(1).Select(_ => Unit.Default),
+                        _investedStatPointStamina.DistinctUntilChanged().Skip(1).Select(_ => Unit.Default))
+                    .Subscribe(_ =>
+                    {
+                        if (_isBatchUpdating || _isInitializingAutoSaveSubscriptions) return;
+                        SavePlayerData();
+                    })
+                    .AddTo(_disposables);
+            }
+            finally
+            {
+                _isInitializingAutoSaveSubscriptions = false;
+            }
         }
 
         /// <summary>
@@ -221,7 +232,7 @@ namespace GGemCo2DCore
         /// </summary>
         private void SavePlayerData()
         {
-            if (_isBatchUpdating) return;
+            if (_isBatchUpdating || _isInitializingAutoSaveSubscriptions) return;
             _saveDataManager.StartSaveData();
         }
 
