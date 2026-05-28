@@ -1,4 +1,4 @@
-﻿using UnityEngine;
+using UnityEngine;
 
 namespace GGemCo2DCore
 {
@@ -18,6 +18,8 @@ namespace GGemCo2DCore
                 return;
 
             if (!HasPhasedAnimation(crowdControl))
+                return;
+            if (crowdControl.AnimationOverride.SuppressRuntimePhaseAnimations)
                 return;
 
             if (!controller.TryGetCrowdControlMotionProgress(out float progress01))

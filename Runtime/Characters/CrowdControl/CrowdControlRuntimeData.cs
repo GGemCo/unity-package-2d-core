@@ -1,4 +1,4 @@
-﻿using UnityEngine;
+using UnityEngine;
 
 namespace GGemCo2DCore
 {
@@ -55,6 +55,11 @@ namespace GGemCo2DCore
         // CC 처리 후 Character.Stop 처리를 할지 여부
         public bool IsEndCharacterStop;
 
+        /// <summary>
+        /// 이 Crowd Control 적용 1회에 사용할 초기 애니메이션 오버라이드입니다.
+        /// </summary>
+        public CrowdControlAnimationOverride AnimationOverride;
+
         public CrowdControlRuntimeData Clone()
         {
             return (CrowdControlRuntimeData)MemberwiseClone();
@@ -101,7 +106,8 @@ namespace GGemCo2DCore
                 UseWallImpactReaction = false,
                 WallImpactMinSpeed = 0f,
                 WallImpactCrowdControlUid = 0,
-                IsEndCharacterStop = false
+                IsEndCharacterStop = false,
+                AnimationOverride = default
             };
         }
     }

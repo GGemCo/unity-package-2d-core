@@ -43,6 +43,7 @@ namespace GGemCo2DCore
         private bool _forceRefreshAnimationOnCurrentCrowdControl;
 
         private Coroutine _stopRoutine;
+        private Coroutine _animationEaseRoutine;
         internal const float Epsilon = 0.0001f;
         private const float GroundProbeDefaultHeight = 2f;
         private const float GroundProbeDefaultDistance = 12f;
@@ -479,11 +480,15 @@ namespace GGemCo2DCore
             _currentPhaseAnimationName = _currentStaggerAnimationName;
             _currentAirborneAnimationPhase = CrowdControlAirborneAnimationPhase.None;
 
+            if (TryPlayInitialAnimationOverride(crowdControl))
+                return;
+
             var handler = GetHandler(crowdControl);
             if (handler != null && handler.TryGetInitialAnimation(this, crowdControl, out string initialAnimationName, out bool loop, out CrowdControlAirborneAnimationPhase initialPhase))
             {
                 if (_character.CharacterAnimationController.HasAnimation(initialAnimationName))
                 {
+                    StopAnimationEaseRoutine(resetPlaybackTimeScale: false);
                     _character.CharacterAnimationController.PlayCharacterAnimation(
                         initialAnimationName,
                         loop,
@@ -499,12 +504,132 @@ namespace GGemCo2DCore
 
             if (_character.CharacterAnimationController.HasAnimation(_currentStaggerAnimationName))
             {
+                StopAnimationEaseRoutine(resetPlaybackTimeScale: false);
                 _character.CharacterAnimationController.PlayCharacterAnimation(
                     _currentStaggerAnimationName,
                     loop: false,
                     timeScale: 1f,
                     forceReset: _forceRefreshAnimationOnCurrentCrowdControl);
             }
+        }
+
+        /// <summary>
+        /// Crowd Control에 1회성 초기 애니메이션 오버라이드가 설정되어 있으면 재생합니다.
+        /// </summary>
+        /// <param name="crowdControl">현재 적용 중인 Crowd Control 데이터입니다.</param>
+        /// <returns>오버라이드 애니메이션을 재생했으면 <see langword="true"/>입니다.</returns>
+        private bool TryPlayInitialAnimationOverride(CrowdControlRuntimeData crowdControl)
+        {
+            if (crowdControl == null)
+                return false;
+
+            CrowdControlAnimationOverride animationOverride = crowdControl.AnimationOverride;
+            if (!animationOverride.IsValid)
+                return false;
+
+            ICharacterAnimationController animationController = _character?.CharacterAnimationController;
+            if (animationController == null)
+                return false;
+            if (!animationController.HasAnimation(animationOverride.InitialAnimationName))
+                return false;
+
+            float clipDurationSeconds = Mathf.Max(
+                0f,
+                animationController.GetCharacterAnimationDuration(animationOverride.InitialAnimationName, isMilliseconds: false));
+            float timeScale = animationOverride.ResolveTimeScale(clipDurationSeconds);
+
+            StopAnimationEaseRoutine(resetPlaybackTimeScale: false);
+            animationController.PlayCharacterAnimation(
+                animationOverride.InitialAnimationName,
+                animationOverride.Loop,
+                timeScale,
+                forceReset: animationOverride.ForceReset || _forceRefreshAnimationOnCurrentCrowdControl);
+
+            _currentStaggerAnimationName = animationOverride.InitialAnimationName;
+            _currentPhaseAnimationName = animationOverride.InitialAnimationName;
+            _currentAirborneAnimationPhase = animationOverride.SuppressRuntimePhaseAnimations
+                ? CrowdControlAirborneAnimationPhase.None
+                : _currentAirborneAnimationPhase;
+
+            if (animationOverride.UseEasing && !animationOverride.Loop)
+            {
+                float playbackDurationSeconds = animationOverride.ResolvePlaybackDuration(clipDurationSeconds);
+                if (playbackDurationSeconds > Epsilon)
+                {
+                    _animationEaseRoutine = StartCoroutine(ApplyAnimationEaseRoutine(
+                        animationController,
+                        playbackDurationSeconds,
+                        timeScale,
+                        animationOverride.EaseType));
+                }
+            }
+
+            return true;
+        }
+
+        /// <summary>
+        /// 현재 재생 중인 애니메이션에 CC Easing과 같은 속도감을 주도록 TimeScale을 동적으로 보정합니다.
+        /// </summary>
+        /// <param name="animationController">재생 속도를 보정할 애니메이션 컨트롤러입니다.</param>
+        /// <param name="playbackDurationSeconds">보정 재생 시간입니다.</param>
+        /// <param name="baseTimeScale">Duration 맞춤으로 계산된 기본 TimeScale입니다.</param>
+        /// <param name="easeType">적용할 Easing 타입입니다.</param>
+        /// <returns>코루틴 열거자입니다.</returns>
+        private IEnumerator ApplyAnimationEaseRoutine(
+            ICharacterAnimationController animationController,
+            float playbackDurationSeconds,
+            float baseTimeScale,
+            Easing.EaseType easeType)
+        {
+            if (animationController == null)
+                yield break;
+
+            float duration = Mathf.Max(Epsilon, playbackDurationSeconds);
+            float elapsed = 0f;
+            float previousEased = 0f;
+            float safeBaseTimeScale = Mathf.Max(0.0001f, baseTimeScale);
+
+            while (elapsed < duration)
+            {
+                float deltaTime = Mathf.Max(0f, Time.deltaTime);
+                if (deltaTime <= 0f)
+                {
+                    yield return null;
+                    continue;
+                }
+
+                float previousNormalized = Mathf.Clamp01(elapsed / duration);
+                elapsed = Mathf.Min(duration, elapsed + deltaTime);
+                float normalized = Mathf.Clamp01(elapsed / duration);
+                float eased = Mathf.Clamp01(Easing.Apply(normalized, easeType));
+
+                float normalizedDelta = Mathf.Max(Epsilon, normalized - previousNormalized);
+                float easedDelta = Mathf.Max(0f, eased - previousEased);
+                float easeSpeedScale = easedDelta / normalizedDelta;
+                animationController.SetPlaybackTimeScale(safeBaseTimeScale * Mathf.Max(0f, easeSpeedScale));
+                previousEased = eased;
+
+                yield return null;
+            }
+
+            animationController.SetPlaybackTimeScale(safeBaseTimeScale);
+            _animationEaseRoutine = null;
+        }
+
+        /// <summary>
+        /// 진행 중인 애니메이션 Easing 보정 코루틴을 중지하고 필요 시 기본 재생 속도로 복구합니다.
+        /// </summary>
+        /// <param name="resetPlaybackTimeScale">true이면 현재 애니메이션 재생 속도를 1로 되돌립니다.</param>
+        private void StopAnimationEaseRoutine(bool resetPlaybackTimeScale)
+        {
+            if (_animationEaseRoutine != null)
+            {
+                StopCoroutine(_animationEaseRoutine);
+                _animationEaseRoutine = null;
+            }
+
+            if (resetPlaybackTimeScale)
+                _character?.CharacterAnimationController?.SetPlaybackTimeScale(1f);
         }
 
         /// <summary>
@@ -521,6 +646,8 @@ namespace GGemCo2DCore
         /// </remarks>
         private void PlayEndAndStop(CrowdControlRuntimeData crowdControl = null)
         {
+            StopAnimationEaseRoutine(resetPlaybackTimeScale: true);
+
             if (_stopRoutine != null)
             {
                 StopCoroutine(_stopRoutine);
@@ -796,6 +923,7 @@ namespace GGemCo2DCore
 
         private void ResetAnimationState()
         {
+            StopAnimationEaseRoutine(resetPlaybackTimeScale: true);
             _currentStaggerAnimationName = null;
             _currentPhaseAnimationName = null;
             _currentAirborneAnimationPhase = CrowdControlAirborneAnimationPhase.None;

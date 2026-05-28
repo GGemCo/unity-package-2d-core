@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using UnityEngine;
 
 namespace GGemCo2DCore
@@ -287,6 +287,7 @@ namespace GGemCo2DCore
             bool hasGuardFeedbackText = false;
             bool isGuardResolved = false;
             bool overrideAfterDamageCrowdControlByGuard = false;
+            List<CrowdControlRuntimeData> guardCrowdControlRuntimeList = null;
             var guardResolver = _characterBase.GetComponent<IIncomingHitGuardResolver>();
 
             if (guardResolver != null)
@@ -311,6 +312,7 @@ namespace GGemCo2DCore
 
                     if (guardResult.CrowdControlUid > 0)
                     {
+                        AppendGuardCrowdControlRuntimeData(ref guardCrowdControlRuntimeList, guardResult);
                         AppendCrowdControlUid(ref resolvedOnHitCrowdControls, guardResult.CrowdControlUid);
                         metadataDamage.ResolvedOnHitCrowdControls = resolvedOnHitCrowdControls;
                     }
@@ -349,6 +351,7 @@ namespace GGemCo2DCore
                     attacker,
                     crowdControlUid,
                     resolvedOnHitCrowdControls,
+                    guardCrowdControlRuntimeList,
                     isGuardResolved);
                 return;
             }
@@ -487,7 +490,12 @@ namespace GGemCo2DCore
             {
                 isEndCharacterStop = true;
             }
-            _characterBase.ApplyCrowdControlSequence(resolvedOnHitCrowdControls, metadataDamage.attacker, isEndCharacterStop);
+            ApplyResolvedCrowdControlSequence(
+                metadataDamage,
+                metadataDamage.attacker,
+                resolvedOnHitCrowdControls,
+                guardCrowdControlRuntimeList,
+                isEndCharacterStop);
             
             _characterBase.CurrentHp.OnNext(remainHp);
 
@@ -512,13 +520,15 @@ namespace GGemCo2DCore
         /// <param name="metadataDamage">원본 피격 메타데이터입니다.</param>
         /// <param name="attacker">공격자 오브젝트입니다.</param>
         /// <param name="crowdControlUid">데미지 메타데이터에 직접 지정된 단일 Crowd Control UID입니다.</param>
-        /// <param name="resolvedOnHitCrowdControls">OnHit 또는 가드 결과로 수집된 Crowd Control 목록입니다.</param>
+        /// <param name="resolvedOnHitCrowdControls">OnHit 또는 가드 결과로 수집된 Crowd Control UID 목록입니다.</param>
+        /// <param name="guardCrowdControlRuntimeList">가드 결과에서 생성한 1회성 Crowd Control 런타임 데이터 목록입니다.</param>
         /// <param name="isGuardResolved">이번 피격이 가드 시스템에서 처리되었는지 여부입니다.</param>
         private void ApplyZeroDamageGuardCrowdControls(
             MetadataDamage metadataDamage,
             GameObject attacker,
             int crowdControlUid,
             List<int> resolvedOnHitCrowdControls,
+            List<CrowdControlRuntimeData> guardCrowdControlRuntimeList,
             bool isGuardResolved)
         {
             if (!isGuardResolved)
@@ -529,11 +539,66 @@ namespace GGemCo2DCore
                 _characterBase.ApplyCrowdControl(crowdControlUid, attacker);
             }
 
+            ApplyResolvedCrowdControlSequence(
+                metadataDamage,
+                attacker,
+                resolvedOnHitCrowdControls,
+                guardCrowdControlRuntimeList,
+                isEndCharacterStop: true);
+        }
+
+        /// <summary>
+        /// 가드 결과 CC를 테이블 원본에서 복제하고 1회성 애니메이션 오버라이드를 적용해 목록에 추가합니다.
+        /// </summary>
+        /// <param name="guardCrowdControlRuntimeList">생성된 런타임 CC 목록입니다.</param>
+        /// <param name="guardResult">가드 판정 결과입니다.</param>
+        private static void AppendGuardCrowdControlRuntimeData(
+            ref List<CrowdControlRuntimeData> guardCrowdControlRuntimeList,
+            GuardResolutionResult guardResult)
+        {
+            if (guardResult.CrowdControlUid <= 0)
+                return;
+
+            CrowdControlRuntimeData source = TableLoaderManager.Instance != null
+                ? TableLoaderManager.Instance.GetCrowdControlRuntimeData(guardResult.CrowdControlUid, logIfMissing: false)
+                : null;
+            if (source == null)
+                return;
+
+            CrowdControlRuntimeData cloned = source.Clone();
+            cloned.AnimationOverride = guardResult.CrowdControlAnimationOverride;
+
+            guardCrowdControlRuntimeList ??= new List<CrowdControlRuntimeData>(1);
+            guardCrowdControlRuntimeList.Add(cloned);
+        }
+
+        /// <summary>
+        /// 가드 결과 CC가 있으면 런타임 데이터 목록을 우선 적용하고, 없으면 기존 UID 목록을 적용합니다.
+        /// </summary>
+        /// <param name="metadataDamage">원본 피격 메타데이터입니다.</param>
+        /// <param name="attacker">공격자 오브젝트입니다.</param>
+        /// <param name="resolvedOnHitCrowdControls">UID 기반 Crowd Control 목록입니다.</param>
+        /// <param name="guardCrowdControlRuntimeList">가드 결과에서 생성한 런타임 Crowd Control 목록입니다.</param>
+        /// <param name="isEndCharacterStop">CC 완료 후 CharacterBase.Stop 호출 여부입니다.</param>
+        private void ApplyResolvedCrowdControlSequence(
+            MetadataDamage metadataDamage,
+            GameObject attacker,
+            List<int> resolvedOnHitCrowdControls,
+            List<CrowdControlRuntimeData> guardCrowdControlRuntimeList,
+            bool isEndCharacterStop)
+        {
+            if (guardCrowdControlRuntimeList != null && guardCrowdControlRuntimeList.Count > 0)
+            {
+                metadataDamage.ResolvedOnHitCrowdControls = resolvedOnHitCrowdControls;
+                _characterBase.ApplyCrowdControlSequence(guardCrowdControlRuntimeList, attacker, isEndCharacterStop);
+                return;
+            }
+
             if (resolvedOnHitCrowdControls == null || resolvedOnHitCrowdControls.Count == 0)
                 return;
 
             metadataDamage.ResolvedOnHitCrowdControls = resolvedOnHitCrowdControls;
-            _characterBase.ApplyCrowdControlSequence(resolvedOnHitCrowdControls, attacker, true);
+            _characterBase.ApplyCrowdControlSequence(resolvedOnHitCrowdControls, attacker, isEndCharacterStop);
         }
 
         /// <summary>

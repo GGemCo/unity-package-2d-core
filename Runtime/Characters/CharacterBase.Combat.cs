@@ -1,4 +1,4 @@
-﻿using System.Collections;
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -399,6 +399,18 @@ namespace GGemCo2DCore
         {
             if (GcLogger.IsNull(_crowdControlController, nameof(CharacterCrowdControlController))) return;
             _crowdControlController.ApplyCrowdControlSequenceByUid(crowdControlUids, metadataDamageAttacker, gameObject, isEndCharacterStop);
+        }
+
+        /// <summary>
+        /// 런타임에서 조립된 Crowd Control 효과를 순차적으로 현재 캐릭터에 적용합니다.
+        /// </summary>
+        /// <param name="crowdControls">테이블 원본을 복제하거나 1회성 오버라이드를 포함한 Crowd Control 데이터 목록입니다.</param>
+        /// <param name="metadataDamageAttacker">원인 공격자 오브젝트입니다.</param>
+        /// <param name="isEndCharacterStop">CC 완료 후 CharacterBase.Stop 호출 여부입니다.</param>
+        public void ApplyCrowdControlSequence(IReadOnlyList<CrowdControlRuntimeData> crowdControls, GameObject metadataDamageAttacker, bool isEndCharacterStop)
+        {
+            if (GcLogger.IsNull(_crowdControlController, nameof(CharacterCrowdControlController))) return;
+            _crowdControlController.ApplyCrowdControlSequence(crowdControls, metadataDamageAttacker, gameObject, isEndCharacterStop);
         }
     }
 }

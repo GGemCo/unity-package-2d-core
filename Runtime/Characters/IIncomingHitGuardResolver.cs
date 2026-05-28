@@ -37,6 +37,12 @@ namespace GGemCo2DCore
         /// <summary>가드 판정 결과로 추가 적용할 Crowd Control UID입니다. 0이면 적용하지 않습니다.</summary>
         public int CrowdControlUid;
 
+        /// <summary>
+        /// 가드 결과 CC에 1회성으로 적용할 초기 애니메이션 오버라이드입니다.
+        /// 가드 브레이크 애니메이션을 CC Duration/Easing에 맞출 때 사용합니다.
+        /// </summary>
+        public CrowdControlAnimationOverride CrowdControlAnimationOverride;
+
         /// <summary>표시용 텍스트. 비우면 기본 데미지 텍스트를 사용합니다.</summary>
         public string FeedbackText;
 
