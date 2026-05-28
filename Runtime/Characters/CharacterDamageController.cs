@@ -78,6 +78,37 @@ namespace GGemCo2DCore
         /// </remarks>
         public DeathPresentationRequest DeathPresentation;
 
+        /// <summary>
+        /// 이번 공격이 가드와 상호작용하는 방식입니다.
+        /// </summary>
+        public GuardInteractionMode GuardInteractionMode = GuardInteractionMode.Normal;
+
+        /// <summary>
+        /// 가드 브레이크 공격이 저스트 가드 타이밍에 들어왔을 때의 처리 정책입니다.
+        /// </summary>
+        public GuardBreakJustGuardPolicy GuardBreakJustGuardPolicy = GuardBreakJustGuardPolicy.JustGuardCanBlock;
+
+        /// <summary>
+        /// 가드 브레이크 시 실제 HP에 적용할 데미지 배율입니다.
+        /// 0이면 HP 피해 없이 가드만 파괴하고, 1이면 원래 데미지를 모두 적용합니다.
+        /// </summary>
+        public float GuardBreakDamageMultiplier;
+
+        /// <summary>
+        /// 가드 브레이크 시 추가로 차감할 스태미나입니다. 0이면 추가 차감하지 않습니다.
+        /// </summary>
+        public long GuardBreakStaminaCost;
+
+        /// <summary>
+        /// 가드 브레이크 시 우선 재생할 VFX UID입니다. 0이면 방어 설정의 기본 VFX를 사용합니다.
+        /// </summary>
+        public int GuardBreakVfxUid;
+
+        /// <summary>
+        /// 가드 브레이크 시 표시할 피드백 텍스트입니다. 비어 있으면 기본 텍스트를 사용합니다.
+        /// </summary>
+        public string GuardBreakFeedbackText;
+
         public List<int> ResolvedOnHitCrowdControls;
     }
     /// <summary>
@@ -274,7 +305,7 @@ namespace GGemCo2DCore
 
                     NotifyIncomingHitCombatFeedback(
                         metadataDamage,
-                        guardResult.IsJustGuard ? MonsterSkillCombatOutcome.JustGuarded : MonsterSkillCombatOutcome.Guarded);
+                        ResolveCombatOutcomeByGuardResult(guardResult));
                 }
             }
 
@@ -432,6 +463,29 @@ namespace GGemCo2DCore
             {
                 elementGaugeController.HandleAfterIncomingDamage(metadataDamage);
                 TryFinalizeDeathAfterElementGauge(metadataDamage);
+            }
+        }
+
+
+        /// <summary>
+        /// 가드 판정 결과를 공격자에게 전달할 전투 결과로 변환합니다.
+        /// </summary>
+        /// <param name="guardResult">가드 판정 결과입니다.</param>
+        /// <returns>공격자 측 시스템이 소비할 전투 결과입니다.</returns>
+        private static MonsterSkillCombatOutcome ResolveCombatOutcomeByGuardResult(GuardResolutionResult guardResult)
+        {
+            switch (guardResult.Outcome)
+            {
+                case GuardResolutionOutcome.GuardBroken:
+                    return MonsterSkillCombatOutcome.GuardBroken;
+                case GuardResolutionOutcome.JustGuarded:
+                    return MonsterSkillCombatOutcome.JustGuarded;
+                case GuardResolutionOutcome.Guarded:
+                    return MonsterSkillCombatOutcome.Guarded;
+                default:
+                    return guardResult.IsJustGuard
+                        ? MonsterSkillCombatOutcome.JustGuarded
+                        : MonsterSkillCombatOutcome.Guarded;
             }
         }
 

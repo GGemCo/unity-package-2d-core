@@ -25,6 +25,9 @@ namespace GGemCo2DCore
         /// <summary>저스트 가드 성공 여부</summary>
         public bool IsJustGuard;
 
+        /// <summary>가드 판정의 최종 결과 타입</summary>
+        public GuardResolutionOutcome Outcome;
+
         /// <summary>가드 적용 후 실제 남는 데미지</summary>
         public long RemainingDamage;
 

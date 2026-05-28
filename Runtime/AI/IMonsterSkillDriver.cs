@@ -1,4 +1,4 @@
-﻿using UnityEngine;
+using UnityEngine;
 
 namespace GGemCo2DCore
 {
@@ -74,6 +74,7 @@ namespace GGemCo2DCore
         Missed = 3,
         Immune = 4,
         Evaded = 5,
+        GuardBroken = 6,
     }
 
     /// <summary>
