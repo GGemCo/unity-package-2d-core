@@ -286,6 +286,7 @@ namespace GGemCo2DCore
             bool suppressHitReactionByGuard = false;
             bool hasGuardFeedbackText = false;
             bool isGuardResolved = false;
+            bool overrideAfterDamageCrowdControlByGuard = false;
             var guardResolver = _characterBase.GetComponent<IIncomingHitGuardResolver>();
 
             if (guardResolver != null)
@@ -296,6 +297,13 @@ namespace GGemCo2DCore
                     damage = guardResult.RemainingDamage < 0 ? 0 : guardResult.RemainingDamage;
                     suppressHitReactionByGuard = guardResult.SuppressHitReaction;
                     isGuardResolved = true;
+
+                    if (ShouldOverrideAfterDamageCrowdControlByGuard(guardResult.Outcome))
+                    {
+                        overrideAfterDamageCrowdControlByGuard = true;
+                        resolvedOnHitCrowdControls?.Clear();
+                        metadataDamage.ResolvedOnHitCrowdControls = resolvedOnHitCrowdControls;
+                    }
 
                     if (guardResult.CrowdControlUid > 0)
                     {
@@ -320,6 +328,13 @@ namespace GGemCo2DCore
                         metadataDamage,
                         ResolveCombatOutcomeByGuardResult(guardResult));
                 }
+            }
+
+            if (overrideAfterDamageCrowdControlByGuard)
+            {
+                // 가드/저스트 가드 성공 시에는 SkillDamageClip의 AfterDamage CC 대신
+                // GuardAttackType 규칙에서 계산된 CC만 적용합니다.
+                metadataDamage.ResolvedOnHitCrowdControls = resolvedOnHitCrowdControls;
             }
 
             if (damage <= 0)
@@ -550,6 +565,17 @@ namespace GGemCo2DCore
                         ? MonsterSkillCombatOutcome.JustGuarded
                         : MonsterSkillCombatOutcome.Guarded;
             }
+        }
+
+        /// <summary>
+        /// 가드 성공 결과일 때 AfterDamage Crowd Control을 가드 규칙 결과로 대체할지 여부를 반환합니다.
+        /// </summary>
+        /// <param name="outcome">가드 판정 최종 결과입니다.</param>
+        /// <returns>일반 가드/저스트 가드 성공이면 <see langword="true"/>입니다.</returns>
+        private static bool ShouldOverrideAfterDamageCrowdControlByGuard(GuardResolutionOutcome outcome)
+        {
+            return outcome == GuardResolutionOutcome.Guarded ||
+                   outcome == GuardResolutionOutcome.JustGuarded;
         }
 
         /// <summary>
