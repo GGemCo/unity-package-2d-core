@@ -34,6 +34,9 @@ namespace GGemCo2DCore
         /// <summary>피격 리액션(데미지 모션/CC)을 막을지 여부</summary>
         public bool SuppressHitReaction;
 
+        /// <summary>가드 판정 결과로 추가 적용할 Crowd Control UID입니다. 0이면 적용하지 않습니다.</summary>
+        public int CrowdControlUid;
+
         /// <summary>표시용 텍스트. 비우면 기본 데미지 텍스트를 사용합니다.</summary>
         public string FeedbackText;
 

@@ -1,5 +1,31 @@
 namespace GGemCo2DCore
 {
+
+    /// <summary>
+    /// 스킬 타격이 가드 시스템에서 어떤 방어 압박 등급으로 처리될지 정의합니다.
+    /// </summary>
+    public enum GuardAttackType
+    {
+        /// <summary>
+        /// 일반 공격입니다. 기본 가드 규칙으로 처리합니다.
+        /// </summary>
+        Normal = 0,
+
+        /// <summary>
+        /// 중간 강도의 공격입니다. 설정에 따라 가드 성공, 밀림, 브레이크 등을 분기할 수 있습니다.
+        /// </summary>
+        Medium = 1,
+
+        /// <summary>
+        /// 강한 공격입니다. 설정에 따라 가드 브레이크 후보로 사용할 수 있습니다.
+        /// </summary>
+        Heavy = 2,
+
+        /// <summary>
+        /// 필살기 또는 특수 공격입니다. 설정에 따라 강제 가드 브레이크 후보로 사용할 수 있습니다.
+        /// </summary>
+        Ultimate = 3,
+    }
     /// <summary>
     /// 들어오는 공격이 가드 상태와 상호작용하는 방식을 정의합니다.
     /// </summary>

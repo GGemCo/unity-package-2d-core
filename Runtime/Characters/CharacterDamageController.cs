@@ -84,6 +84,11 @@ namespace GGemCo2DCore
         public GuardInteractionMode GuardInteractionMode = GuardInteractionMode.Normal;
 
         /// <summary>
+        /// 공격 방어 타입별 가드 설정을 조회할 때 사용하는 공격 등급입니다.
+        /// </summary>
+        public GuardAttackType GuardAttackType = GuardAttackType.Normal;
+
+        /// <summary>
         /// 가드 브레이크 공격이 저스트 가드 타이밍에 들어왔을 때의 처리 정책입니다.
         /// </summary>
         public GuardBreakJustGuardPolicy GuardBreakJustGuardPolicy = GuardBreakJustGuardPolicy.JustGuardCanBlock;
@@ -280,6 +285,7 @@ namespace GGemCo2DCore
 
             bool suppressHitReactionByGuard = false;
             bool hasGuardFeedbackText = false;
+            bool isGuardResolved = false;
             var guardResolver = _characterBase.GetComponent<IIncomingHitGuardResolver>();
 
             if (guardResolver != null)
@@ -289,6 +295,13 @@ namespace GGemCo2DCore
                 {
                     damage = guardResult.RemainingDamage < 0 ? 0 : guardResult.RemainingDamage;
                     suppressHitReactionByGuard = guardResult.SuppressHitReaction;
+                    isGuardResolved = true;
+
+                    if (guardResult.CrowdControlUid > 0)
+                    {
+                        AppendCrowdControlUid(ref resolvedOnHitCrowdControls, guardResult.CrowdControlUid);
+                        metadataDamage.ResolvedOnHitCrowdControls = resolvedOnHitCrowdControls;
+                    }
 
                     if (!string.IsNullOrEmpty(guardResult.FeedbackText))
                     {
@@ -311,6 +324,12 @@ namespace GGemCo2DCore
 
             if (damage <= 0)
             {
+                ApplyZeroDamageGuardCrowdControls(
+                    metadataDamage,
+                    attacker,
+                    crowdControlUid,
+                    resolvedOnHitCrowdControls,
+                    isGuardResolved);
                 return;
             }
 
@@ -466,6 +485,50 @@ namespace GGemCo2DCore
             }
         }
 
+
+        /// <summary>
+        /// 가드 결과로 데미지가 0이 되었을 때도 설정된 Crowd Control을 적용합니다.
+        /// </summary>
+        /// <param name="metadataDamage">원본 피격 메타데이터입니다.</param>
+        /// <param name="attacker">공격자 오브젝트입니다.</param>
+        /// <param name="crowdControlUid">데미지 메타데이터에 직접 지정된 단일 Crowd Control UID입니다.</param>
+        /// <param name="resolvedOnHitCrowdControls">OnHit 또는 가드 결과로 수집된 Crowd Control 목록입니다.</param>
+        /// <param name="isGuardResolved">이번 피격이 가드 시스템에서 처리되었는지 여부입니다.</param>
+        private void ApplyZeroDamageGuardCrowdControls(
+            MetadataDamage metadataDamage,
+            GameObject attacker,
+            int crowdControlUid,
+            List<int> resolvedOnHitCrowdControls,
+            bool isGuardResolved)
+        {
+            if (!isGuardResolved)
+                return;
+
+            if (crowdControlUid > 0)
+            {
+                _characterBase.ApplyCrowdControl(crowdControlUid, attacker);
+            }
+
+            if (resolvedOnHitCrowdControls == null || resolvedOnHitCrowdControls.Count == 0)
+                return;
+
+            metadataDamage.ResolvedOnHitCrowdControls = resolvedOnHitCrowdControls;
+            _characterBase.ApplyCrowdControlSequence(resolvedOnHitCrowdControls, attacker, true);
+        }
+
+        /// <summary>
+        /// Crowd Control UID를 결과 목록에 추가합니다.
+        /// </summary>
+        /// <param name="resolvedOnHitCrowdControls">UID를 추가할 결과 목록입니다.</param>
+        /// <param name="crowdControlUid">추가할 Crowd Control UID입니다.</param>
+        private static void AppendCrowdControlUid(ref List<int> resolvedOnHitCrowdControls, int crowdControlUid)
+        {
+            if (crowdControlUid <= 0)
+                return;
+
+            resolvedOnHitCrowdControls ??= new List<int>(1);
+            resolvedOnHitCrowdControls.Add(crowdControlUid);
+        }
 
         /// <summary>
         /// 가드 판정 결과를 공격자에게 전달할 전투 결과로 변환합니다.
