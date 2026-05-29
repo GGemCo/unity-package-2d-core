@@ -28,7 +28,7 @@ namespace GGemCo2DCoreEditor
                 return;
             }
 
-            if (TryValidateReleaseBuild(out string message))
+            if (TryValidateReleaseBuild(report.summary.platformGroup, out string message))
             {
                 return;
             }
@@ -43,15 +43,27 @@ namespace GGemCo2DCoreEditor
         /// <returns>릴리즈 빌드 안전 조건을 만족하면 true입니다.</returns>
         public static bool TryValidateReleaseBuild(out string message)
         {
+            return TryValidateReleaseBuild(EditorUserBuildSettings.selectedBuildTargetGroup, out message);
+        }
+
+        /// <summary>
+        /// 지정한 빌드 타겟 그룹 기준으로 서비스용 Settings, 개발용 Settings 포함 위험, 금지 Scripting Define Symbol을 검사합니다.
+        /// </summary>
+        /// <param name="buildTargetGroup">검사할 빌드 타겟 그룹입니다.</param>
+        /// <param name="message">검증 성공 또는 실패 안내 메시지입니다.</param>
+        /// <returns>릴리즈 빌드 안전 조건을 만족하면 true입니다.</returns>
+        public static bool TryValidateReleaseBuild(BuildTargetGroup buildTargetGroup, out string message)
+        {
             List<DebugOptionAssetScanner.DebugOptionEntry> enabledEntries = DebugOptionAssetScanner.FindEnabledDebugOptions(DebugOptionScanScope.ReleaseBuildCandidates);
             List<DevelopmentSettingsBuildInclusionScanner.DevelopmentSettingsBuildInclusionEntry> developmentRisks = DevelopmentSettingsBuildInclusionScanner.FindBuildInclusionRisks();
-            if (enabledEntries.Count == 0 && developmentRisks.Count == 0)
+            List<BuildProfileScriptingDefineUtility.ScriptingDefineRiskEntry> scriptingDefineRisks = BuildProfileScriptingDefineUtility.FindReleaseBlockingSymbols(buildTargetGroup);
+            if (enabledEntries.Count == 0 && developmentRisks.Count == 0 && scriptingDefineRisks.Count == 0)
             {
                 message = "Release Build 안전 검증을 통과했습니다.";
                 return true;
             }
 
-            message = BuildFailureMessage(enabledEntries, developmentRisks);
+            message = BuildFailureMessage(enabledEntries, developmentRisks, scriptingDefineRisks);
             return false;
         }
 
@@ -60,10 +72,12 @@ namespace GGemCo2DCoreEditor
         /// </summary>
         /// <param name="enabledEntries">서비스용 빌드 후보에서 발견된 활성 디버그 옵션 목록입니다.</param>
         /// <param name="developmentRisks">개발용 Settings 빌드 포함 위험 요소 목록입니다.</param>
+        /// <param name="scriptingDefineRisks">릴리즈 빌드를 차단해야 하는 Scripting Define Symbol 목록입니다.</param>
         /// <returns>빌드 실패 안내 메시지입니다.</returns>
         private static string BuildFailureMessage(
             IReadOnlyList<DebugOptionAssetScanner.DebugOptionEntry> enabledEntries,
-            IReadOnlyList<DevelopmentSettingsBuildInclusionScanner.DevelopmentSettingsBuildInclusionEntry> developmentRisks)
+            IReadOnlyList<DevelopmentSettingsBuildInclusionScanner.DevelopmentSettingsBuildInclusionEntry> developmentRisks,
+            IReadOnlyList<BuildProfileScriptingDefineUtility.ScriptingDefineRiskEntry> scriptingDefineRisks)
         {
             StringBuilder builder = new StringBuilder();
             builder.AppendLine("[GGemCo] Release Build 안전 검증에 실패했습니다.");
@@ -83,6 +97,14 @@ namespace GGemCo2DCoreEditor
                 builder.AppendLine("Addressables 등록을 제거하거나 Resources 폴더 밖으로 이동해주세요.");
                 builder.AppendLine();
                 builder.AppendLine(DevelopmentSettingsBuildInclusionScanner.BuildSummaryMessage(developmentRisks));
+            }
+
+            if (scriptingDefineRisks != null && scriptingDefineRisks.Count > 0)
+            {
+                builder.AppendLine("릴리즈 빌드에서 금지된 Scripting Define Symbol이 포함되어 있습니다.");
+                builder.AppendLine($"{GGemCo2DCore.GGemCoScriptingDefineSymbols.EnableCheatTools} 심볼은 Development 모드에서만 사용하고, Release Simulation/Release 모드에서는 제거해주세요.");
+                builder.AppendLine();
+                builder.AppendLine(BuildProfileScriptingDefineUtility.BuildSummaryMessage(scriptingDefineRisks));
             }
 
             return builder.ToString();

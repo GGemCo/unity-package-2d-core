@@ -36,6 +36,7 @@ namespace GGemCo2DCoreEditor
                 DrawHeader();
                 DrawCurrentStatus();
                 DrawModeButtons();
+                DrawCheatToolsOptions();
                 DrawValidationButtons();
                 DrawPlayModeButton();
                 DrawValidationMessage();
@@ -69,6 +70,8 @@ namespace GGemCo2DCoreEditor
                 EditorGUILayout.EnumPopup("Settings Profile", SettingsProfileEditorPrefs.CurrentProfile);
                 EditorGUILayout.Toggle("Allow Debug Features", GGemCoBuildFlags.AllowDebugFeatures);
                 EditorGUILayout.Toggle("Unity Development Build", EditorUserBuildSettings.development);
+                EditorGUILayout.LabelField("Active Build Target", BuildProfileScriptingDefineUtility.GetActiveBuildTargetGroupName());
+                EditorGUILayout.Toggle("Cheat Tools Symbol", BuildProfileScriptingDefineUtility.HasCheatToolsSymbolInActiveTarget());
             }
         }
 
@@ -93,6 +96,58 @@ namespace GGemCo2DCoreEditor
             if (GUILayout.Button("Release 모드 적용", GUILayout.Height(28f)))
             {
                 ApplyMode(GGemCoBuildMode.Release);
+            }
+        }
+
+
+        /// <summary>
+        /// 치트 도구 컴파일 심볼 관리 UI를 그립니다.
+        /// Development 모드에서만 사용자가 활성화할 수 있고, 릴리즈 계열 모드에서는 자동 제거됩니다.
+        /// </summary>
+        private void DrawCheatToolsOptions()
+        {
+            EditorGUILayout.Space(8f);
+            EditorGUILayout.LabelField("Cheat Tools", EditorStyles.boldLabel);
+
+            bool isDevelopmentMode = BuildProfileEditorPrefs.CurrentMode == GGemCoBuildMode.Development;
+            bool requestedEnabled = BuildProfileEditorPrefs.CheatToolsEnabled;
+            bool actualEnabled = BuildProfileScriptingDefineUtility.HasCheatToolsSymbolInActiveTarget();
+
+            EditorGUILayout.HelpBox(
+                $"{GGemCoScriptingDefineSymbols.EnableCheatTools} 심볼은 골드 추가, 레벨업, 데이터 초기화 같은 치트/QA 도구 코드를 컴파일에 포함할 때만 사용합니다. " +
+                "Release Simulation과 Release 모드에서는 자동으로 제거되며, 릴리즈 검증에서도 금지 심볼로 검사됩니다.",
+                MessageType.Info);
+
+            using (new EditorGUI.DisabledScope(!isDevelopmentMode))
+            {
+                bool nextValue = EditorGUILayout.ToggleLeft(
+                    $"{GGemCoScriptingDefineSymbols.EnableCheatTools} 컴파일 포함",
+                    isDevelopmentMode && requestedEnabled);
+
+                if (isDevelopmentMode && nextValue != requestedEnabled)
+                {
+                    ApplyCheatToolsEnabled(nextValue);
+                }
+            }
+
+            using (new EditorGUI.DisabledScope(true))
+            {
+                EditorGUILayout.Toggle("현재 타겟 심볼 등록 상태", actualEnabled);
+            }
+
+            if (!isDevelopmentMode && actualEnabled)
+            {
+                EditorGUILayout.HelpBox(
+                    "현재 모드는 릴리즈 계열이지만 활성 빌드 타겟에 치트 도구 심볼이 남아 있습니다. 모드 적용 버튼을 다시 누르거나 아래 제거 버튼을 실행해주세요.",
+                    MessageType.Warning);
+            }
+
+            using (new EditorGUI.DisabledScope(!actualEnabled))
+            {
+                if (GUILayout.Button("Cheat Tools 심볼 제거", GUILayout.Height(24f)))
+                {
+                    ApplyCheatToolsEnabled(false);
+                }
             }
         }
 
@@ -158,6 +213,23 @@ namespace GGemCo2DCoreEditor
             _lastValidationMessage = $"{mode} 모드를 적용했습니다.";
             _lastValidationMessageType = MessageType.Info;
             Debug.Log($"[GGemCo] Build Profile 적용: mode={mode}, settingsProfile={SettingsProfileEditorPrefs.CurrentProfile}, developmentBuild={EditorUserBuildSettings.development}");
+            Repaint();
+        }
+
+
+        /// <summary>
+        /// 치트 도구 컴파일 심볼 사용 여부를 적용하고 안내 메시지를 갱신합니다.
+        /// </summary>
+        /// <param name="enabled">치트 도구 심볼을 활성화하려면 true입니다.</param>
+        private void ApplyCheatToolsEnabled(bool enabled)
+        {
+            BuildProfileApplier.SetCheatToolsEnabled(enabled);
+            bool actualEnabled = BuildProfileScriptingDefineUtility.HasCheatToolsSymbolInActiveTarget();
+            _lastValidationMessage = actualEnabled
+                ? $"{GGemCoScriptingDefineSymbols.EnableCheatTools} 심볼을 현재 빌드 타겟에 추가했습니다. 스크립트 재컴파일 후 치트 도구 코드가 활성화됩니다."
+                : $"{GGemCoScriptingDefineSymbols.EnableCheatTools} 심볼을 현재 빌드 타겟에서 제거했습니다.";
+            _lastValidationMessageType = actualEnabled ? MessageType.Warning : MessageType.Info;
+            Debug.Log($"[GGemCo] Cheat Tools 심볼 상태 변경: requested={enabled}, actual={actualEnabled}, target={BuildProfileScriptingDefineUtility.GetActiveBuildTargetGroupName()}");
             Repaint();
         }
 

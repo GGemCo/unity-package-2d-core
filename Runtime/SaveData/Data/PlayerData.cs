@@ -298,9 +298,17 @@ namespace GGemCo2DCore
             ApplyLevelDelta(deltaLevel, PlayerLevelChangeReason.Exp);
             CurrentExp = CurrentLevel < _maxPlayerLevel ? newExp : 0;
         }
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
+#if GGEMCO_ENABLE_CHEAT_TOOLS
+        /// <summary>
+        /// 치트 도구에서 플레이어 레벨을 1단계 상승시킵니다.
+        /// <see cref="GGemCoScriptingDefineSymbols.EnableCheatTools"/> 심볼이 활성화된 Development 환경에서만 컴파일되며, 실행 시에도 디버그 기능 허용 여부를 다시 확인합니다.
+        /// </summary>
         public void AddLevelUp()
         {
+            if (!GGemCoBuildFlags.AllowDebugFeatures)
+            {
+                return;
+            }
             if (_maxPlayerLevel <= 0)
             {
                 GcLogger.LogError($"{nameof(GGemCoPlayerSettings)}에 max level 값을 설정해주세요.");
