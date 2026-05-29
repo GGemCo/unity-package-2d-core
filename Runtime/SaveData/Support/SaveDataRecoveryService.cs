@@ -21,6 +21,28 @@ namespace GGemCo2DCore
             int slot,
             SaveDataIdentity identity)
         {
+            // 슬롯 유효성 검사는 하위 오버로드에서 수행하므로,
+            // 여기서는 경로를 사전 계산하지 않고 기본 경로 사용(null)으로 위임합니다.
+            return LoadWithRecovery(saveFileController, slot, identity, null, null);
+        }
+
+        /// <summary>
+        /// 지정한 주 저장/백업 파일 경로를 기준으로 저장 데이터를 로드하고 복구를 시도합니다.
+        /// 파생 로더가 Core 기본 파일명 외의 전용 파일명을 사용할 때 이 경로를 전달합니다.
+        /// </summary>
+        /// <param name="saveFileController">저장 파일 경로와 invalid 격리를 담당하는 컨트롤러입니다.</param>
+        /// <param name="slot">로드할 저장 슬롯 번호입니다.</param>
+        /// <param name="identity">암호화 AAD에 사용할 논리 저장 식별자입니다.</param>
+        /// <param name="primaryPath">우선 로드할 주 저장 파일 경로입니다.</param>
+        /// <param name="backupPath">주 저장 파일 실패 시 사용할 백업 파일 경로입니다.</param>
+        /// <returns>로드 또는 복구 처리 결과입니다.</returns>
+        public static SaveDataLoadResult LoadWithRecovery(
+            SaveFileController saveFileController,
+            int slot,
+            SaveDataIdentity identity,
+            string primaryPath,
+            string backupPath)
+        {
             if (saveFileController == null)
             {
                 GcLogger.LogError("[SaveDataRecoveryService] 저장 파일 컨트롤러가 없습니다.");
@@ -40,26 +62,30 @@ namespace GGemCo2DCore
             }
 
             SaveDataIdentity resolvedIdentity = identity ?? SaveDataIdentity.Core(slot);
-            string primaryPath = saveFileController.GetSaveFilePath(slot);
-            string backupPath = saveFileController.GetBackupFilePath(slot);
-            bool hadPrimaryFile = File.Exists(primaryPath);
-            bool hadBackupFile = File.Exists(backupPath);
+            string resolvedPrimaryPath = string.IsNullOrWhiteSpace(primaryPath)
+                ? saveFileController.GetSaveFilePath(slot)
+                : primaryPath;
+            string resolvedBackupPath = string.IsNullOrWhiteSpace(backupPath)
+                ? saveFileController.GetBackupFilePath(slot)
+                : backupPath;
+            bool hadPrimaryFile = File.Exists(resolvedPrimaryPath);
+            bool hadBackupFile = File.Exists(resolvedBackupPath);
 
-            if (TryLoadSaveJson(primaryPath, resolvedIdentity, out string primaryJson, out Exception primaryException))
+            if (TryLoadSaveJson(resolvedPrimaryPath, resolvedIdentity, out string primaryJson, out Exception primaryException))
             {
                 return new SaveDataLoadResult(SaveDataLoadStatus.LoadedPrimary, primaryJson);
             }
 
-            if (File.Exists(primaryPath))
+            if (File.Exists(resolvedPrimaryPath))
             {
                 string primaryReason = ResolveInvalidReason(primaryException);
                 GcLogger.LogWarning($"[SaveDataRecoveryService] 기본 저장 파일 로드 실패. 백업 복구를 시도합니다. 원인: {primaryException?.Message}");
-                saveFileController.MoveToInvalid(primaryPath, slot, primaryReason);
+                saveFileController.MoveToInvalid(resolvedPrimaryPath, slot, primaryReason);
             }
 
-            if (TryLoadSaveJson(backupPath, resolvedIdentity, out string backupJson, out Exception backupException))
+            if (TryLoadSaveJson(resolvedBackupPath, resolvedIdentity, out string backupJson, out Exception backupException))
             {
-                RestoreBackupToPrimary(backupPath, primaryPath);
+                RestoreBackupToPrimary(resolvedBackupPath, resolvedPrimaryPath);
                 GcLogger.LogWarning($"[SaveDataRecoveryService] 백업 저장 파일로 복구했습니다. 슬롯 {slot}");
                 return new SaveDataLoadResult(
                     SaveDataLoadStatus.RestoredFromBackup,
@@ -68,11 +94,11 @@ namespace GGemCo2DCore
                     true);
             }
 
-            if (File.Exists(backupPath))
+            if (File.Exists(resolvedBackupPath))
             {
                 string backupReason = ResolveInvalidReason(backupException);
                 GcLogger.LogWarning($"[SaveDataRecoveryService] 백업 저장 파일 로드도 실패했습니다. 원인: {backupException?.Message}");
-                saveFileController.MoveToInvalid(backupPath, slot, backupReason);
+                saveFileController.MoveToInvalid(resolvedBackupPath, slot, backupReason);
             }
 
             if (!hadPrimaryFile && !hadBackupFile)

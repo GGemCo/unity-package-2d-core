@@ -78,6 +78,18 @@ namespace GGemCo2DCore
             InitializeData();
         }
 
+        /// <summary>
+        /// PlayerPrefs에 저장된 현재 슬롯 선택값을 런타임 슬롯 상태와 동기화합니다.
+        /// Intro에서 새 게임/불러오기로 슬롯이 바뀐 직후, 이미 생성된 SaveDataManager 인스턴스가
+        /// 이전 슬롯 값을 유지하는 문제를 방지하기 위해 저장 진입 시마다 호출합니다.
+        /// </summary>
+        protected void SyncCurrentSaveSlotFromPlayerPrefs()
+        {
+            // 슬롯 선택은 Intro/UI에서 PlayerPrefs로 갱신되므로,
+            // 저장 직전에는 항상 최신 선택값을 다시 읽어 런타임 상태와 맞춥니다.
+            currentSaveSlot = PlayerPrefsManager.LoadSaveDataSlotIndex();
+        }
+
         protected virtual void InitializeData()
         {
             
@@ -100,8 +112,14 @@ namespace GGemCo2DCore
                 return;
             }
 
-            // 데이터가 없으면 강제로 한번 저장하기 
-            SaveDataContainer saveDataContainer = SaveDataLoader.Instance.GetSaveDataContainer();
+            // 런타임 중 슬롯 선택이 변경될 수 있으므로 저장 시작 전에 최신 슬롯을 반영합니다.
+            SyncCurrentSaveSlotFromPlayerPrefs();
+
+            // 로더 초기화 순서가 늦은 환경(커스텀 로더/테스트 씬)에서는 null일 수 있으므로 방어합니다.
+            SaveDataLoader saveDataLoader = SaveDataLoader.Instance;
+            SaveDataContainer saveDataContainer = saveDataLoader != null
+                ? saveDataLoader.GetSaveDataContainer()
+                : null;
             if (saveDataContainer == null)
             {
                 SaveData();
@@ -140,6 +158,10 @@ namespace GGemCo2DCore
                 GcLogger.LogWarning("저장 데이터 초기화 중에는 저장할 수 없습니다.");
                 return false;
             }
+
+            // 실제 저장 직전에도 슬롯을 한 번 더 동기화해 저장 파일/메타데이터가
+            // 사용자가 마지막으로 선택한 슬롯으로 기록되도록 보장합니다.
+            SyncCurrentSaveSlotFromPlayerPrefs();
 
             if (!_useSaveData)
             {

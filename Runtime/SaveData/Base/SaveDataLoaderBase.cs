@@ -34,6 +34,18 @@ namespace GGemCo2DCore
         }
 
         /// <summary>
+        /// 로더가 사용하는 백업 저장 파일 경로를 반환합니다.
+        /// 기본 구현은 Core 표준 백업 파일 경로를 사용하며,
+        /// 파생 로더는 전용 파일명 정책에 맞게 override 할 수 있습니다.
+        /// </summary>
+        /// <param name="slotIndex">로드할 저장 슬롯 번호입니다.</param>
+        /// <returns>백업 저장 파일 경로입니다.</returns>
+        protected virtual string GetBackupFilePath(int slotIndex)
+        {
+            return saveFileController.GetBackupFilePath(slotIndex);
+        }
+
+        /// <summary>
         /// 현재 로더가 읽는 저장 데이터의 논리 식별자를 반환합니다.
         /// </summary>
         /// <param name="slotIndex">로드할 저장 슬롯 번호입니다.</param>
@@ -50,6 +62,15 @@ namespace GGemCo2DCore
         public IEnumerator LoadData(Action<float> onProgressUpdate)
         {
             int slotIndex = PlayerPrefsManager.LoadSaveDataSlotIndex();
+            string primaryPath = null;
+            string backupPath = null;
+            if (saveFileController != null && saveFileController.IsValidSlot(slotIndex))
+            {
+                // 유효 슬롯에서만 파일 경로를 계산해, 잘못된 슬롯(예: 0)일 때
+                // 불필요한 슬롯 디렉터리 생성 부작용을 방지합니다.
+                primaryPath = GetSaveFilePath(slotIndex);
+                backupPath = GetBackupFilePath(slotIndex);
+            }
 
             _loadProgress = 0.2f;
             onProgressUpdate?.Invoke(_loadProgress);
@@ -58,7 +79,9 @@ namespace GGemCo2DCore
             LastLoadResult = SaveDataRecoveryService.LoadWithRecovery(
                 saveFileController,
                 slotIndex,
-                GetSaveDataIdentity(slotIndex));
+                GetSaveDataIdentity(slotIndex),
+                primaryPath,
+                backupPath);
 
             _loadProgress = 0.6f;
             onProgressUpdate?.Invoke(_loadProgress);
