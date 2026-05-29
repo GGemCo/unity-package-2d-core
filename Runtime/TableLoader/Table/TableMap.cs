@@ -29,6 +29,17 @@ namespace GGemCo2DCore
         public Vector2 CameraFollowOffset;
 
         /// <summary>
+        /// 맵 진입 시 카메라 Follow Dead Zone을 테이블 값으로 덮어쓸지 여부입니다.
+        /// </summary>
+        public bool UseCameraFollowDeadZone;
+
+        /// <summary>
+        /// <see cref="UseCameraFollowDeadZone"/>이 참일 때 적용할 카메라 Follow Dead Zone 반경입니다.
+        /// X 또는 Y 값이 0이면 해당 축의 데드존을 사용하지 않습니다.
+        /// </summary>
+        public Vector2 CameraFollowDeadZone;
+
+        /// <summary>
         /// 맵 진입 시 카메라 하단 Follow Offset 정책을 테이블 값으로 덮어쓸지 여부입니다.
         /// </summary>
         public bool UseCameraBottomFollowOffsetPolicy;
@@ -101,6 +112,8 @@ namespace GGemCo2DCore
                 BgmUid = MathHelper.ParseInt(data["BgmUid"]),
                 UseCameraFollowOffset = ConvertBoolean(data.GetValueOrDefault("UseCameraFollowOffset")),
                 CameraFollowOffset = ConvertVector2(data.GetValueOrDefault("CameraFollowOffset")),
+                UseCameraFollowDeadZone = ConvertBoolean(data.GetValueOrDefault("UseCameraFollowDeadZone")),
+                CameraFollowDeadZone = ConvertVector2(data.GetValueOrDefault("CameraFollowDeadZone")),
                 UseCameraBottomFollowOffsetPolicy =
                     ConvertBoolean(data.GetValueOrDefault("UseCameraBottomFollowOffsetPolicy")),
                 BottomFollowOffsetPolicy =

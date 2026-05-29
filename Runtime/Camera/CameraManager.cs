@@ -109,6 +109,21 @@ namespace GGemCo2DCore
         [SerializeField]
         private Vector2 followOffset = Vector2.zero;
 
+        [Header("Follow Dead Zone")]
+        [Tooltip("타겟이 데드존 안에 있을 때 카메라가 움직이지 않도록 할지 여부입니다.")]
+        [SerializeField]
+        private bool useFollowDeadZone = false;
+
+        [Tooltip("카메라 기준 위치에서 X축으로 허용할 데드존 반경입니다. 0이면 X축 데드존을 사용하지 않습니다.")]
+        [Min(0f)]
+        [SerializeField]
+        private float followDeadZoneX = 0f;
+
+        [Tooltip("카메라 기준 위치에서 Y축으로 허용할 데드존 반경입니다. 0이면 Y축 데드존을 사용하지 않습니다.")]
+        [Min(0f)]
+        [SerializeField]
+        private float followDeadZoneY = 0f;
+
         [Header("Bottom Follow Offset Policy")]
         [Tooltip("아래 경계 제한(useLimitBottom)이 꺼진 경우, 맵 로드 시 followOffset.y 자동 보정 정책을 적용합니다.")]
         [SerializeField]
@@ -137,6 +152,8 @@ namespace GGemCo2DCore
         private float _verticalFollowAnchorTargetY;
         private bool _pendingAutoBottomOffsetApply;
         private Vector2 _defaultFollowOffset;
+        private bool _defaultUseFollowDeadZone;
+        private Vector2 _defaultFollowDeadZone;
         private CameraBottomFollowOffsetPolicy _defaultBottomFollowOffsetPolicy;
 
         private float _width;
@@ -178,6 +195,8 @@ namespace GGemCo2DCore
             _zoomEasing = Easing.EaseType.Linear;
             _zoomUseUnscaledTime = false;
             _defaultFollowOffset = followOffset;
+            _defaultUseFollowDeadZone = useFollowDeadZone;
+            _defaultFollowDeadZone = new Vector2(followDeadZoneX, followDeadZoneY);
             _defaultBottomFollowOffsetPolicy = bottomFollowOffsetPolicy;
             _originCameraPosition = Vector3.zero;
             _cameraPosition = new Vector3(followOffset.x, followOffset.y, 0f);
@@ -214,6 +233,9 @@ namespace GGemCo2DCore
             UpdateZoom();
         }
 
+        /// <summary>
+        /// 카메라의 타겟 추적 위치를 계산하고 데드존, 맵 경계 제한, 흔들림 오프셋을 순서대로 적용합니다.
+        /// </summary>
         private void LimitCameraArea()
         {
             UpdateShakeOffset();
@@ -227,7 +249,8 @@ namespace GGemCo2DCore
             // 플레이어를 따라가는 카메라 위치 계산
             Vector3 targetPos = _followTarget.position + _cameraPosition;
             targetPos.y = EvaluateVerticalFollowTargetY(targetPos.y);
-            targetPos = Vector3.Lerp(transform.position, targetPos, Time.deltaTime * cameraMoveSpeed);
+            targetPos = ApplyFollowDeadZone(_basePosition, targetPos);
+            targetPos = Vector3.Lerp(_basePosition, targetPos, Time.deltaTime * cameraMoveSpeed);
 
             float clampX = targetPos.x;
             float clampY = targetPos.y;
@@ -309,6 +332,68 @@ namespace GGemCo2DCore
 
             float deltaY = targetY - _verticalFollowAnchorTargetY;
             return _verticalFollowAnchorTargetY + (deltaY * jumpVerticalFollowInfluence);
+        }
+
+        /// <summary>
+        /// 타겟 목표 위치가 카메라 데드존 안에 있으면 현재 기준 위치를 유지하고,
+        /// 데드존을 벗어난 축만 초과분만큼 보정합니다.
+        /// </summary>
+        /// <param name="currentBasePosition">흔들림이 적용되기 전의 현재 카메라 기준 위치입니다.</param>
+        /// <param name="targetPosition">타겟 위치, Follow Offset, 세로 추적 정책이 반영된 목표 위치입니다.</param>
+        /// <returns>데드존 정책이 반영된 카메라 목표 위치입니다.</returns>
+        private Vector3 ApplyFollowDeadZone(Vector3 currentBasePosition, Vector3 targetPosition)
+        {
+            if (!useFollowDeadZone)
+            {
+                return targetPosition;
+            }
+
+            float deadZoneX = Mathf.Max(0f, followDeadZoneX);
+            float deadZoneY = Mathf.Max(0f, followDeadZoneY);
+
+            if (deadZoneX <= 0f && deadZoneY <= 0f)
+            {
+                return targetPosition;
+            }
+
+            Vector3 resolvedPosition = currentBasePosition;
+
+            if (deadZoneX <= 0f)
+            {
+                resolvedPosition.x = targetPosition.x;
+            }
+            else
+            {
+                float deltaX = targetPosition.x - currentBasePosition.x;
+                if (deltaX > deadZoneX)
+                {
+                    resolvedPosition.x = targetPosition.x - deadZoneX;
+                }
+                else if (deltaX < -deadZoneX)
+                {
+                    resolvedPosition.x = targetPosition.x + deadZoneX;
+                }
+            }
+
+            if (deadZoneY <= 0f)
+            {
+                resolvedPosition.y = targetPosition.y;
+            }
+            else
+            {
+                float deltaY = targetPosition.y - currentBasePosition.y;
+                if (deltaY > deadZoneY)
+                {
+                    resolvedPosition.y = targetPosition.y - deadZoneY;
+                }
+                else if (deltaY < -deadZoneY)
+                {
+                    resolvedPosition.y = targetPosition.y + deadZoneY;
+                }
+            }
+
+            resolvedPosition.z = targetPosition.z;
+            return resolvedPosition;
         }
 
         /// <summary>
@@ -516,6 +601,8 @@ namespace GGemCo2DCore
         {
             MarkMapCameraProfileUnresolved();
             Vector2 resolvedFollowOffset = _defaultFollowOffset;
+            bool resolvedUseFollowDeadZone = _defaultUseFollowDeadZone;
+            Vector2 resolvedFollowDeadZone = _defaultFollowDeadZone;
             CameraBottomFollowOffsetPolicy resolvedBottomPolicy = _defaultBottomFollowOffsetPolicy;
 
             if (mapData != null)
@@ -525,6 +612,12 @@ namespace GGemCo2DCore
                     resolvedFollowOffset = mapData.CameraFollowOffset;
                 }
 
+                if (mapData.UseCameraFollowDeadZone)
+                {
+                    resolvedFollowDeadZone = mapData.CameraFollowDeadZone;
+                    resolvedUseFollowDeadZone = resolvedFollowDeadZone.sqrMagnitude > 0f;
+                }
+
                 if (mapData.UseCameraBottomFollowOffsetPolicy)
                 {
                     resolvedBottomPolicy = mapData.BottomFollowOffsetPolicy;
@@ -532,6 +625,9 @@ namespace GGemCo2DCore
             }
 
             followOffset = resolvedFollowOffset;
+            useFollowDeadZone = resolvedUseFollowDeadZone;
+            followDeadZoneX = Mathf.Max(0f, resolvedFollowDeadZone.x);
+            followDeadZoneY = Mathf.Max(0f, resolvedFollowDeadZone.y);
             bottomFollowOffsetPolicy = resolvedBottomPolicy;
             _cameraPosition.x = resolvedFollowOffset.x;
             _cameraPosition.y = resolvedFollowOffset.y;
@@ -777,6 +873,21 @@ namespace GGemCo2DCore
         {
             get => new Vector2(_cameraPosition.x, _cameraPosition.y);
             set => _cameraPosition = new Vector3(value.x, value.y, 0f);
+        }
+
+        /// <summary>
+        /// 카메라 Follow Dead Zone 반경을 반환하거나 설정합니다.
+        /// 두 축이 모두 0 이하이면 데드존 추적을 비활성화합니다.
+        /// </summary>
+        public Vector2 FollowDeadZone
+        {
+            get => new Vector2(followDeadZoneX, followDeadZoneY);
+            set
+            {
+                followDeadZoneX = Mathf.Max(0f, value.x);
+                followDeadZoneY = Mathf.Max(0f, value.y);
+                useFollowDeadZone = followDeadZoneX > 0f || followDeadZoneY > 0f;
+            }
         }
 
         public void SetCameraMoveSpeed(float speed)
