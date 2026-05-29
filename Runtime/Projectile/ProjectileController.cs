@@ -62,7 +62,10 @@ namespace GGemCo2DCore
                     useEnvironmentHitLayerMaskOverride: metadataProjectile.UseEnvironmentHitLayerMaskOverride,
                     environmentHitLayerMaskOverride: metadataProjectile.EnvironmentHitLayerMaskOverride,
                     useArrivalPolicyOverride: metadataProjectile.UseArrivalPolicyOverride,
-                    arrivalPolicyOverride: metadataProjectile.ArrivalPolicyOverride)
+                    arrivalPolicyOverride: metadataProjectile.ArrivalPolicyOverride,
+                    hitVfxPositionPolicy: metadataProjectile.HitVfxPositionPolicy,
+                    hitVfxOffset: metadataProjectile.HitVfxOffset,
+                    hitVfxHitAreaNormalized: metadataProjectile.HitVfxHitAreaNormalized)
                 : metadataProjectile;
 
             _character.StartCoroutine(CreateProjectileBurst(info, meta));

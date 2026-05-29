@@ -38,6 +38,11 @@ namespace GGemCo2DCore
         public readonly RuntimeAnimatorController VisualAnimatorController;
         public readonly int VisualVfxUidOverride;
 
+        // --- Hit VFX Position (dynamic) ---
+        public readonly ProjectileConstants.HitVfxPositionPolicy HitVfxPositionPolicy;
+        public readonly Vector2 HitVfxOffset;
+        public readonly Vector2 HitVfxHitAreaNormalized;
+
         // --- Behavior Override (dynamic) ---
         public readonly bool UseHitLifetimeModeOverride;
         public readonly ProjectileConstants.HitLifetimeMode HitLifetimeModeOverride;
@@ -81,7 +86,10 @@ namespace GGemCo2DCore
             bool useEnvironmentHitLayerMaskOverride = false,
             int environmentHitLayerMaskOverride = 0,
             bool useArrivalPolicyOverride = false,
-            ProjectileConstants.ArrivalPolicy arrivalPolicyOverride = ProjectileConstants.ArrivalPolicy.DestroyOnArrived)
+            ProjectileConstants.ArrivalPolicy arrivalPolicyOverride = ProjectileConstants.ArrivalPolicy.DestroyOnArrived,
+            ProjectileConstants.HitVfxPositionPolicy hitVfxPositionPolicy = ProjectileConstants.HitVfxPositionPolicy.CollisionPoint,
+            Vector2 hitVfxOffset = default,
+            Vector2 hitVfxHitAreaNormalized = default)
         {
             Uid = uid;
             DamageType = damageType;
@@ -100,6 +108,10 @@ namespace GGemCo2DCore
             VisualSprite = visualSprite;
             VisualAnimatorController = visualAnimatorController;
             VisualVfxUidOverride = visualVfxUidOverride;
+
+            HitVfxPositionPolicy = hitVfxPositionPolicy;
+            HitVfxOffset = hitVfxOffset;
+            HitVfxHitAreaNormalized = hitVfxHitAreaNormalized;
 
             UseTargetPositionOverride = useTargetPositionOverride;
             TargetPositionOverride = targetPositionOverride;

@@ -20,6 +20,34 @@ namespace GGemCo2DCore
             Sprite = 3,
             Animator = 4,
         }
+
+        /// <summary>
+        /// 프로젝타일이 타겟에게 적중했을 때 Hit VFX를 출력할 월드 좌표 계산 정책입니다.
+        /// </summary>
+        public enum HitVfxPositionPolicy
+        {
+            /// <summary>
+            /// 실제 충돌 처리에서 전달된 좌표를 기준으로 Hit VFX를 출력합니다.
+            /// 기존 발사체 동작을 유지하기 위해 0번 기본값으로 사용합니다.
+            /// </summary>
+            CollisionPoint = 0,
+
+            /// <summary>
+            /// 타겟 캐릭터 중심 좌표에 Hit VFX 오프셋을 더한 위치에 출력합니다.
+            /// </summary>
+            TargetOffset = 1,
+
+            /// <summary>
+            /// 발사체 현재 좌표에 Hit VFX 오프셋을 더한 위치에 출력합니다.
+            /// </summary>
+            ProjectilePosition = 2,
+
+            /// <summary>
+            /// 타겟 HitArea 내부의 정규화 좌표에 Hit VFX 오프셋을 더한 위치에 출력합니다.
+            /// </summary>
+            TargetHitAreaNormalized = 3,
+        }
+
         public enum TargetType
         {
             None,

@@ -968,7 +968,11 @@ namespace GGemCo2DCore
                 return false;
 
             if (playHitVisual)
-                NotifyHitVisual(other);
+            {
+                CharacterHitArea area = ResolveHitArea(other, target);
+                Vector2 hitWorldPosition = ResolveHitVfxWorldPosition(area, other, target, (Vector2)transform.position);
+                NotifyHitVisual(other, hitWorldPosition);
+            }
 
             ApplyDamageToTarget(target);
             return true;
@@ -1056,6 +1060,108 @@ namespace GGemCo2DCore
                 _overlapResults = new Collider2D[16];
 
             return _overlapResults;
+        }
+
+        /// <summary>
+        /// 현재 발사체의 Hit VFX 위치 정책을 기준으로 타겟 적중 연출 좌표를 계산합니다.
+        /// - CollisionPoint는 기존 충돌 처리에서 전달된 좌표를 그대로 사용합니다.
+        /// - TargetOffset은 타겟 중심 좌표를 기준으로 오프셋을 적용합니다.
+        /// - ProjectilePosition은 발사체 현재 좌표를 기준으로 오프셋을 적용합니다.
+        /// - TargetHitAreaNormalized는 타겟 HitArea 내부 정규화 좌표를 월드 좌표로 변환합니다.
+        /// </summary>
+        /// <param name="area">적중한 HitArea입니다. 없을 수 있습니다.</param>
+        /// <param name="hitCollider">충돌한 Collider입니다.</param>
+        /// <param name="target">데미지를 받을 최종 타겟 캐릭터입니다.</param>
+        /// <param name="collisionWorldPosition">충돌 처리에서 계산된 월드 좌표입니다.</param>
+        /// <returns>Hit VFX를 출력할 최종 월드 좌표입니다.</returns>
+        private Vector2 ResolveHitVfxWorldPosition(
+            CharacterHitArea area,
+            Collider2D hitCollider,
+            CharacterBase target,
+            Vector2 collisionWorldPosition)
+        {
+            if (Runtime == null)
+                return collisionWorldPosition;
+
+            Vector2 offset = Runtime.HitVfxOffset;
+            switch (Runtime.HitVfxPositionPolicy)
+            {
+                case ProjectileConstants.HitVfxPositionPolicy.TargetOffset:
+                    if (target)
+                        return (Vector2)target.transform.position + offset;
+
+                    return collisionWorldPosition + offset;
+
+                case ProjectileConstants.HitVfxPositionPolicy.ProjectilePosition:
+                    return (Vector2)transform.position + offset;
+
+                case ProjectileConstants.HitVfxPositionPolicy.TargetHitAreaNormalized:
+                    if (TryResolveTargetHitAreaNormalizedPoint(
+                            area,
+                            hitCollider,
+                            target,
+                            Runtime.HitVfxHitAreaNormalized,
+                            out Vector2 hitAreaPoint))
+                    {
+                        return hitAreaPoint + offset;
+                    }
+
+                    if (target)
+                        return (Vector2)target.transform.position + offset;
+
+                    return collisionWorldPosition + offset;
+
+                case ProjectileConstants.HitVfxPositionPolicy.CollisionPoint:
+                default:
+                    return collisionWorldPosition + offset;
+            }
+        }
+
+        /// <summary>
+        /// 타겟 HitArea 정규화 좌표(0~1)를 월드 좌표로 변환합니다.
+        /// - 타겟의 대표 HitArea Collider를 우선 사용하고, 없으면 충돌 Collider를 대체 기준으로 사용합니다.
+        /// - Collider Bounds 기준으로 계산하여 Capsule/Box 등 Collider 종류에 관계없이 동작합니다.
+        /// </summary>
+        /// <param name="area">충돌 Collider에서 찾은 HitArea 컴포넌트입니다.</param>
+        /// <param name="hitCollider">실제 충돌한 Collider입니다.</param>
+        /// <param name="target">데미지를 받을 최종 타겟 캐릭터입니다.</param>
+        /// <param name="normalizedPoint">HitArea 내부 정규화 좌표입니다. (0,0)=좌하단, (1,1)=우상단입니다.</param>
+        /// <param name="worldPoint">변환된 월드 좌표입니다.</param>
+        /// <returns>좌표 계산에 성공했으면 <see langword="true"/>입니다.</returns>
+        private static bool TryResolveTargetHitAreaNormalizedPoint(
+            CharacterHitArea area,
+            Collider2D hitCollider,
+            CharacterBase target,
+            Vector2 normalizedPoint,
+            out Vector2 worldPoint)
+        {
+            worldPoint = default;
+
+            Collider2D referenceCollider = null;
+            if (target != null && target.colliderHitArea != null)
+                referenceCollider = target.colliderHitArea;
+
+            if (referenceCollider == null && area != null)
+                referenceCollider = area.GetComponent<Collider2D>();
+
+            if (referenceCollider == null && hitCollider != null)
+                referenceCollider = hitCollider;
+
+            if (referenceCollider == null)
+                return false;
+
+            Bounds bounds = referenceCollider.bounds;
+            if (bounds.size.sqrMagnitude <= 1e-8f)
+                return false;
+
+            Vector2 clamped = new Vector2(
+                Mathf.Clamp01(normalizedPoint.x),
+                Mathf.Clamp01(normalizedPoint.y));
+
+            worldPoint = new Vector2(
+                Mathf.Lerp(bounds.min.x, bounds.max.x, clamped.x),
+                Mathf.Lerp(bounds.min.y, bounds.max.y, clamped.y));
+            return true;
         }
 
         /// <summary>
@@ -1215,7 +1321,8 @@ namespace GGemCo2DCore
         /// <param name="hitWorldPosition">히트 연출을 재생할 월드 위치입니다.</param>
         protected virtual void OnHitTarget(CharacterHitArea area, Collider2D hitCollider, CharacterBase target, Vector2 hitWorldPosition)
         {
-            NotifyHitVisual(hitCollider, hitWorldPosition);
+            Vector2 hitVfxWorldPosition = ResolveHitVfxWorldPosition(area, hitCollider, target, hitWorldPosition);
+            NotifyHitVisual(hitCollider, hitVfxWorldPosition);
             ApplyDamageToTarget(target);
         }
 
