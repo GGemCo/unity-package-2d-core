@@ -21,8 +21,8 @@ namespace GGemCo2DCoreEditor
         }
 
         /// <summary>
-        /// Development 모드에서 치트 도구 컴파일 심볼을 활성화할지 여부를 가져오거나 저장합니다.
-        /// Release Simulation과 Release 모드에서는 이 값과 관계없이 심볼을 제거합니다.
+        /// 치트 도구 컴파일 심볼을 사용자가 명시적으로 활성화했는지 여부를 가져오거나 저장합니다.
+        /// 모드 전환 중에는 이 값을 기준으로 심볼을 자동 변경하지 않으며, Release 빌드 준비 단계에서만 제거합니다.
         /// </summary>
         public static bool CheatToolsEnabled
         {

@@ -102,7 +102,7 @@ namespace GGemCo2DCoreEditor
             if (scriptingDefineRisks != null && scriptingDefineRisks.Count > 0)
             {
                 builder.AppendLine("릴리즈 빌드에서 금지된 Scripting Define Symbol이 포함되어 있습니다.");
-                builder.AppendLine($"{GGemCo2DCore.GGemCoScriptingDefineSymbols.EnableCheatTools} 심볼은 Development 모드에서만 사용하고, Release Simulation/Release 모드에서는 제거해주세요.");
+                builder.AppendLine($"{GGemCo2DCore.GGemCoScriptingDefineSymbols.EnableCheatTools} 심볼은 Development/Release Simulation 반복 테스트 중에는 유지할 수 있지만, 실제 Release 빌드 전에는 제거해야 합니다.");
                 builder.AppendLine();
                 builder.AppendLine(BuildProfileScriptingDefineUtility.BuildSummaryMessage(scriptingDefineRisks));
             }

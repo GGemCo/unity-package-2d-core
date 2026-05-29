@@ -76,6 +76,7 @@ namespace GGemCo2DCore
         }
         private void SelectFirstTab()
         {
+            if (_tabToggles.Count <= 0) return;
             var first = _listPanelOptionBase.FirstOrDefault();
             if (first== null) return;
             _tabToggles[first.PanelIndex].SetIsOnWithoutNotify(true);
@@ -119,6 +120,7 @@ namespace GGemCo2DCore
         {
             if (!tabTogglePanel) return;
             if (!tabToggleGroup) return;
+            if (!tabTogglePrefab) return;
 
             // 기존 자식 정리(필요 시)
             for (int i = tabTogglePanel.childCount - 1; i >= 0; i--)
