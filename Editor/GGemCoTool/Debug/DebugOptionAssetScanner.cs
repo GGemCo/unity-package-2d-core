@@ -23,11 +23,26 @@ namespace GGemCo2DCoreEditor
         /// <returns>활성화된 디버그 옵션 메타데이터 목록입니다.</returns>
         public static List<DebugOptionEntry> FindEnabledDebugOptions()
         {
+            return FindEnabledDebugOptions(DebugOptionScanScope.AllProjectAssets);
+        }
+
+        /// <summary>
+        /// 지정한 검색 범위에서 활성화된 디버그 옵션 목록을 찾습니다.
+        /// </summary>
+        /// <param name="scanScope">디버그 옵션 검색 범위입니다.</param>
+        /// <returns>활성화된 디버그 옵션 메타데이터 목록입니다.</returns>
+        public static List<DebugOptionEntry> FindEnabledDebugOptions(DebugOptionScanScope scanScope)
+        {
             List<DebugOptionEntry> results = new List<DebugOptionEntry>();
 
             foreach (string guid in AssetDatabase.FindAssets("t:ScriptableObject"))
             {
                 string assetPath = AssetDatabase.GUIDToAssetPath(guid);
+                if (ShouldSkipAsset(assetPath, scanScope))
+                {
+                    continue;
+                }
+
                 ScriptableObject asset = AssetDatabase.LoadAssetAtPath<ScriptableObject>(assetPath);
                 if (asset == null)
                 {
@@ -46,12 +61,27 @@ namespace GGemCo2DCoreEditor
         /// <returns>실제로 변경된 항목 수입니다.</returns>
         public static int DisableAllDebugOptions()
         {
+            return DisableAllDebugOptions(DebugOptionScanScope.AllProjectAssets);
+        }
+
+        /// <summary>
+        /// 지정한 검색 범위의 디버그 옵션 필드를 false 로 비활성화합니다.
+        /// </summary>
+        /// <param name="scanScope">디버그 옵션 검색 범위입니다.</param>
+        /// <returns>실제로 변경된 항목 수입니다.</returns>
+        public static int DisableAllDebugOptions(DebugOptionScanScope scanScope)
+        {
             int changedFieldCount = 0;
             HashSet<UnityEngine.Object> dirtyAssets = new HashSet<UnityEngine.Object>();
 
             foreach (string guid in AssetDatabase.FindAssets("t:ScriptableObject"))
             {
                 string assetPath = AssetDatabase.GUIDToAssetPath(guid);
+                if (ShouldSkipAsset(assetPath, scanScope))
+                {
+                    continue;
+                }
+
                 ScriptableObject asset = AssetDatabase.LoadAssetAtPath<ScriptableObject>(assetPath);
                 if (asset == null)
                 {
@@ -113,6 +143,42 @@ namespace GGemCo2DCoreEditor
             }
 
             return builder.ToString();
+        }
+
+        /// <summary>
+        /// 검색 범위에 따라 검사에서 제외해야 하는 에셋인지 판단합니다.
+        /// </summary>
+        /// <param name="assetPath">검사 대상 에셋 경로입니다.</param>
+        /// <param name="scanScope">디버그 옵션 검색 범위입니다.</param>
+        /// <returns>검사에서 제외해야 하면 true입니다.</returns>
+        private static bool ShouldSkipAsset(string assetPath, DebugOptionScanScope scanScope)
+        {
+            if (scanScope != DebugOptionScanScope.ReleaseBuildCandidates)
+                return false;
+
+            if (DevelopmentSettingsBuildInclusionScanner.IsDevelopmentSettingsAssetPath(assetPath))
+                return true;
+
+            if (DevelopmentSettingsBuildInclusionScanner.IsLocalAssetPath(assetPath))
+                return true;
+
+            return IsEditorOnlyAssetPath(assetPath);
+        }
+
+        /// <summary>
+        /// 에디터 전용 경로에 위치한 에셋인지 확인합니다.
+        /// </summary>
+        /// <param name="assetPath">검사 대상 에셋 경로입니다.</param>
+        /// <returns>에디터 전용 경로이면 true입니다.</returns>
+        private static bool IsEditorOnlyAssetPath(string assetPath)
+        {
+            if (string.IsNullOrWhiteSpace(assetPath))
+                return false;
+
+            string normalizedPath = assetPath.Replace('\\', '/');
+            return normalizedPath.Contains("/Editor/") ||
+                   normalizedPath.StartsWith("Assets/Editor/", StringComparison.OrdinalIgnoreCase) ||
+                   normalizedPath.Contains("/EditorResource/");
         }
 
         private static void CollectEnabledDebugFields(ScriptableObject asset, string assetPath, ICollection<DebugOptionEntry> results)

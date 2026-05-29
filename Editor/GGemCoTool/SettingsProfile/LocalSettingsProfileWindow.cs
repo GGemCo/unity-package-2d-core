@@ -71,9 +71,9 @@ namespace GGemCo2DCoreEditor
 
             using (new EditorGUILayout.HorizontalScope())
             {
-                if (GUILayout.Button("Addressables 등록 여부 검사", GUILayout.Height(24f)))
+                if (GUILayout.Button("빌드 포함 위험 검사", GUILayout.Height(24f)))
                 {
-                    ValidateLocalSettingsAreNotAddressable();
+                    ValidateLocalSettingsBuildInclusionRisks();
                 }
 
                 if (GUILayout.Button("메시지 지우기", GUILayout.Height(24f), GUILayout.Width(110f)))
@@ -204,42 +204,28 @@ namespace GGemCo2DCoreEditor
         }
 
         /// <summary>
-        /// 현재 작업자 로컬 Settings가 실수로 Addressables에 등록되어 있는지 검사합니다.
+        /// 현재 작업자 로컬 Settings가 릴리즈 빌드 콘텐츠에 포함될 수 있는지 검사합니다.
         /// </summary>
-        private void ValidateLocalSettingsAreNotAddressable()
+        private void ValidateLocalSettingsBuildInclusionRisks()
         {
             _messages.Clear();
-            AddressableAssetSettings addressableSettings = AddressableAssetSettingsDefaultObject.Settings;
-            if (!addressableSettings)
+
+            List<DevelopmentSettingsBuildInclusionScanner.DevelopmentSettingsBuildInclusionEntry> entries = DevelopmentSettingsBuildInclusionScanner.FindBuildInclusionRisks();
+            if (entries.Count == 0)
             {
-                AddMessage("Addressable 설정을 찾을 수 없습니다.", MessageType.Error);
+                AddMessage("검사 완료: 릴리즈 빌드에 포함될 수 있는 개발용 Settings 위험 요소가 없습니다.", MessageType.Info);
                 return;
             }
 
-            string root = SettingsProfileEditorPrefs.GetCurrentWorkerRoot();
-            if (!AssetDatabase.IsValidFolder(root))
+            foreach (DevelopmentSettingsBuildInclusionScanner.DevelopmentSettingsBuildInclusionEntry entry in entries)
             {
-                AddMessage("개발용 Settings 폴더가 없습니다.", MessageType.Warning);
-                return;
-            }
+                string message = $"{entry.AssetPath} | {entry.Reason}";
+                if (!string.IsNullOrWhiteSpace(entry.AddressableAddress))
+                {
+                    message += $" | address={entry.AddressableAddress}";
+                }
 
-            int checkedCount = 0;
-            int registeredCount = 0;
-            string[] guids = AssetDatabase.FindAssets("t:ScriptableObject", new[] { root });
-            foreach (string guid in guids)
-            {
-                checkedCount++;
-                AddressableAssetEntry entry = addressableSettings.FindAssetEntry(guid);
-                if (entry == null)
-                    continue;
-
-                registeredCount++;
-                AddMessage($"개발용 Settings가 Addressables에 등록되어 있습니다. address={entry.address}, path={AssetDatabase.GUIDToAssetPath(guid)}", MessageType.Error);
-            }
-
-            if (registeredCount == 0)
-            {
-                AddMessage($"검사 완료: 개발용 Settings {checkedCount}개 모두 Addressables에 등록되어 있지 않습니다.", MessageType.Info);
+                AddMessage(message, MessageType.Error);
             }
         }
 

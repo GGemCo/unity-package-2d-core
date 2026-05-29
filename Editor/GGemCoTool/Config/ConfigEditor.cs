@@ -51,6 +51,9 @@ namespace GGemCo2DCoreEditor
             DebugMemory,
             ListEnabledDebugOptions,
             DisableAllDebugOptions,
+            ListReleaseBuildDebugOptions,
+            DisableReleaseBuildDebugOptions,
+            ValidateDevelopmentSettingsBuildInclusion,
             Etc = 900,
             PlayerPrefs,
             OpenSaveDataFolder,
@@ -120,6 +123,9 @@ namespace GGemCo2DCoreEditor
         public const string NameToolMemory = NameToolDebug + "메모리 HUD";
         public const string NameToolListEnabledDebugOptions = NameToolDebug + "디버그 설정 리스트 보기";
         public const string NameToolDisableAllDebugOptions = NameToolDebug + "디버그 설정 모두 false 변경하기";
+        public const string NameToolListReleaseBuildDebugOptions = NameToolDebug + "릴리즈 후보 디버그 설정 리스트 보기";
+        public const string NameToolDisableReleaseBuildDebugOptions = NameToolDebug + "릴리즈 후보 디버그 설정 모두 false 변경하기";
+        public const string NameToolValidateDevelopmentSettingsBuildInclusion = NameToolDebug + "Development Settings 빌드 포함 위험 검사";
         
         // etc
         private const string NameToolEtc = NameToolGGemCo + "기타/";
