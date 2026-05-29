@@ -28,14 +28,31 @@ namespace GGemCo2DCoreEditor
                 return;
             }
 
-            List<DebugOptionAssetScanner.DebugOptionEntry> enabledEntries = DebugOptionAssetScanner.FindEnabledDebugOptions(DebugOptionScanScope.ReleaseBuildCandidates);
-            List<DevelopmentSettingsBuildInclusionScanner.DevelopmentSettingsBuildInclusionEntry> developmentRisks = DevelopmentSettingsBuildInclusionScanner.FindBuildInclusionRisks();
-            if (enabledEntries.Count == 0 && developmentRisks.Count == 0)
+            if (TryValidateReleaseBuild(out string message))
             {
                 return;
             }
 
-            throw new BuildFailedException(BuildFailureMessage(enabledEntries, developmentRisks));
+            throw new BuildFailedException(message);
+        }
+
+        /// <summary>
+        /// 서비스용 Settings와 개발용 Settings 포함 위험을 검사하여 릴리즈 빌드 가능 여부를 반환합니다.
+        /// </summary>
+        /// <param name="message">검증 성공 또는 실패 안내 메시지입니다.</param>
+        /// <returns>릴리즈 빌드 안전 조건을 만족하면 true입니다.</returns>
+        public static bool TryValidateReleaseBuild(out string message)
+        {
+            List<DebugOptionAssetScanner.DebugOptionEntry> enabledEntries = DebugOptionAssetScanner.FindEnabledDebugOptions(DebugOptionScanScope.ReleaseBuildCandidates);
+            List<DevelopmentSettingsBuildInclusionScanner.DevelopmentSettingsBuildInclusionEntry> developmentRisks = DevelopmentSettingsBuildInclusionScanner.FindBuildInclusionRisks();
+            if (enabledEntries.Count == 0 && developmentRisks.Count == 0)
+            {
+                message = "Release Build 안전 검증을 통과했습니다.";
+                return true;
+            }
+
+            message = BuildFailureMessage(enabledEntries, developmentRisks);
+            return false;
         }
 
         /// <summary>

@@ -419,21 +419,24 @@ namespace GGemCo2DCore
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
         private static void InitializeLogging()
         {
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
-            GcLogger.ConfigureStackTraceLogging(
-                log: StackTraceLogType.ScriptOnly,
-                warning: StackTraceLogType.ScriptOnly,
-                error: StackTraceLogType.Full,
-                exception: StackTraceLogType.Full,
-                assert: StackTraceLogType.Full);
-#else
-            GcLogger.ConfigureStackTraceLogging(
-                log: StackTraceLogType.None,
-                warning: StackTraceLogType.None,
-                error: StackTraceLogType.ScriptOnly,
-                exception: StackTraceLogType.ScriptOnly,
-                assert: StackTraceLogType.ScriptOnly);
-#endif
+            if (GGemCoBuildFlags.AllowDebugFeatures)
+            {
+                GcLogger.ConfigureStackTraceLogging(
+                    log: StackTraceLogType.ScriptOnly,
+                    warning: StackTraceLogType.ScriptOnly,
+                    error: StackTraceLogType.Full,
+                    exception: StackTraceLogType.Full,
+                    assert: StackTraceLogType.Full);
+            }
+            else
+            {
+                GcLogger.ConfigureStackTraceLogging(
+                    log: StackTraceLogType.None,
+                    warning: StackTraceLogType.None,
+                    error: StackTraceLogType.ScriptOnly,
+                    exception: StackTraceLogType.ScriptOnly,
+                    assert: StackTraceLogType.ScriptOnly);
+            }
         }
     }
 }

@@ -1,4 +1,3 @@
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
 using System.Text;
 using UnityEngine;
 
@@ -20,6 +19,10 @@ namespace GGemCo2DCore
         /// <returns>전역 HUD와 컷신 HUD가 모두 활성화되어 있으면 <see langword="true"/>를 반환합니다.</returns>
         public bool IsEnabled(GGemCoSettings settings)
         {
+            if (!GGemCoBuildFlags.AllowDebugFeatures)
+            {
+                return false;
+            }
             if (settings == null || !settings.EnableDebugHud)
             {
                 return false;
@@ -153,4 +156,3 @@ namespace GGemCo2DCore
         }
     }
 }
-#endif

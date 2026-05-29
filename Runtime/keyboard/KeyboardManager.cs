@@ -85,14 +85,16 @@ namespace GGemCo2DCore
             if (sceneGame == null) return;
 
             // 안드로이드에서 뒤로가기 버튼을 누르면, ESC 처리가 된다.
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
-            if (sceneGame.InteractionManager != null && sceneGame.InteractionManager.IsInteractioning())
+            if (GGemCoBuildFlags.AllowDebugFeatures)
             {
-                sceneGame.InteractionManager.EndInteraction();
-                return;
+                if (sceneGame.InteractionManager != null && sceneGame.InteractionManager.IsInteractioning())
+                {
+                    sceneGame.InteractionManager.EndInteraction();
+                    return;
+                }
+
+                sceneGame.uIWindowManager.CloseAll();
             }
-            sceneGame.uIWindowManager.CloseAll();
-#endif
         }
 
         public void OnDestroy()

@@ -14,6 +14,7 @@ namespace GGemCo2DCoreEditor
             SettingSceneLoading,
             SettingSceneGame,
             SettingWindow,
+            BuildProfile = 99,
             Development = 100,
             MapExporter = 101,
             TableEditor,
@@ -78,6 +79,7 @@ namespace GGemCo2DCoreEditor
         
         // 개발툴
         private const string NameToolDevelopment = NameToolGGemCo + "개발툴/";
+        public const string NameToolBuildProfile = NameToolDevelopment + "Build 프로파일";
         public const string NameToolMapExporter = NameToolDevelopment + "맵배치툴";
         
         public const string NameToolQuest = NameToolDevelopment + "퀘스트 생성툴";

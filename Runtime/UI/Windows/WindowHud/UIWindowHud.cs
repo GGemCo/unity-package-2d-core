@@ -37,12 +37,11 @@ namespace GGemCo2DCore
         [Tooltip("중독 게이지")]
         public UISliderElementCharge poisonCharge;
 
-#if UNITY_EDITOR || DEVELOPMENT_BUILD        
         [Tooltip("전투 상태")]
         public TMP_Text textBattleStatus;
         [Tooltip("맵 이름 표시 오브젝트")]
         [SerializeField] private TMP_Text textMapName;
-#endif        
+
         private Vector3 _prevPositionHp;
 
         /// <summary>
@@ -65,6 +64,12 @@ namespace GGemCo2DCore
             if (gameObjectHp)
                 _prevPositionHp = gameObjectHp.transform.localPosition;
             MapManager.OnLoadCompleteMap += OnLoadCompleteMap;
+            
+            if (!GGemCoBuildFlags.AllowDebugFeatures)
+            {
+                textBattleStatus?.gameObject.SetActive(false);
+                textMapName?.gameObject.SetActive(false);
+            }
         }
 
         private void OnDestroy()
@@ -174,10 +179,11 @@ namespace GGemCo2DCore
         /// <param name="value">표시할 전투 상태 값입니다.</param>
         public void SetBattleStatus(CharacterConstants.BattleStatus value)
         {
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
-            if (!textBattleStatus) return;
-            textBattleStatus.text = value.ToString();
-#endif
+            if (GGemCoBuildFlags.AllowDebugFeatures)
+            {
+                if (!textBattleStatus) return;
+                textBattleStatus.text = value.ToString();   
+            }
         }
 
         /// <summary>
@@ -229,10 +235,11 @@ namespace GGemCo2DCore
 
         private void OnLoadCompleteMap(MapTileCommon mapTileCommon, GameObject grid)
         {
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
-            if (!textMapName) return;
-            textMapName.text = SceneGame.mapManager.GetCurrentMapName();
-#endif
+            if (GGemCoBuildFlags.AllowDebugFeatures)
+            {
+                if (!textMapName) return;
+                textMapName.text = SceneGame.mapManager.GetCurrentMapName();
+            }
         }
     }
 }

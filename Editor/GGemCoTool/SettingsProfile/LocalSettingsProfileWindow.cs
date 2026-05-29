@@ -36,7 +36,7 @@ namespace GGemCo2DCoreEditor
         {
             EditorGUILayout.LabelField("Settings 프로파일", EditorStyles.boldLabel);
             EditorGUILayout.HelpBox(
-                "Service는 Addressables에 등록된 서비스용 Settings를 사용합니다. Development는 현재 작업자 로컬 Settings가 있으면 우선 사용하고, 없으면 서비스용으로 fallback 합니다.",
+                "Service는 Addressables에 등록된 서비스용 Settings를 사용합니다. Development는 현재 작업자 로컬 Settings가 있으면 우선 사용하고, 없으면 서비스용으로 fallback 합니다. 단, Build Profile이 Release Simulation 또는 Release이면 개발용 Settings Override는 항상 차단됩니다.",
                 MessageType.Info);
 
             EditorGUI.BeginChangeCheck();

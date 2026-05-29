@@ -10,7 +10,7 @@ namespace GGemCo2DCoreEditor
     public sealed class LocalSettingsOverrideProvider : ISettingsOverrideProvider
     {
         /// <summary>
-        /// 현재 선택된 프로파일이 Development이면 작업자 로컬 Settings 에셋을 조회합니다.
+        /// 현재 Build Profile과 Settings 프로파일이 모두 Development이면 작업자 로컬 Settings 에셋을 조회합니다.
         /// </summary>
         /// <typeparam name="T">요청하는 Settings ScriptableObject 타입입니다.</typeparam>
         /// <param name="key">서비스용 Settings Addressables Key입니다.</param>
@@ -19,6 +19,9 @@ namespace GGemCo2DCoreEditor
         public bool TryGet<T>(string key, out T settings) where T : ScriptableObject
         {
             settings = null;
+            if (BuildProfileEditorPrefs.CurrentMode != GGemCoBuildMode.Development)
+                return false;
+
             if (SettingsProfileEditorPrefs.CurrentProfile != SettingsProfileKind.Development)
                 return false;
 
