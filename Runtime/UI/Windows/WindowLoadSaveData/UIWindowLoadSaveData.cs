@@ -68,16 +68,15 @@ namespace GGemCo2DCore
                 UIElementSaveDataSlot uiElementSaveDataSlot = slot.GetComponent<UIElementSaveDataSlot>();
                 if (uiElementSaveDataSlot == null) continue;
                 _uiElementSaveDataSlots.Add(uiElementSaveDataSlot);
+                if (slotMetaInfos.Count <= i) continue;
                 SlotMetaInfo slotMetaInfo = slotMetaInfos[i];
-                if (slotMetaInfo != null)
+                if (slotMetaInfo == null) continue;
+                bool isCheck = slotMetaInfo.slotIndex == PlayerPrefsManager.LoadSaveDataSlotIndex();
+                if (isCheck)
                 {
-                    bool isCheck = slotMetaInfo.slotIndex == PlayerPrefsManager.LoadSaveDataSlotIndex();
-                    if (isCheck)
-                    {
-                        _currentCheckSlotIndex = slotMetaInfo.slotIndex;
-                    }
-                    uiElementSaveDataSlot.Initialize(slotMetaInfo, isCheck, this);
+                    _currentCheckSlotIndex = slotMetaInfo.slotIndex;
                 }
+                uiElementSaveDataSlot.Initialize(slotMetaInfo, isCheck, this);
             }
         }
         public void Show(bool show)
