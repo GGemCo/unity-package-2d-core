@@ -174,6 +174,12 @@ namespace GGemCo2DCore
         /// <returns>로드된 설정 에셋입니다.</returns>
         private async Task<T> LoadSettingsAsync<T>(string key) where T : ScriptableObject
         {
+            // 에디터 Play Mode에서 작업자별 개발용 Settings가 등록되어 있으면 서비스용 Addressables보다 먼저 사용합니다.
+            if (SettingsRuntimeResolver.TryGetOverride(key, out T overrideSettings))
+            {
+                return overrideSettings;
+            }
+
             // 키가 Addressables에 등록되어 있는지 확인
             AsyncOperationHandle<IList<UnityEngine.ResourceManagement.ResourceLocations.IResourceLocation>> locationsHandle =
                 Addressables.LoadResourceLocationsAsync(key);
