@@ -553,9 +553,9 @@ namespace GGemCo2DCoreEditor
                 return false;
             }
 
-            if (_start.sprites.Count == 0 || _play.sprites.Count == 0 || _end.sprites.Count == 0)
+            if (!HasAnyClipSpriteInput())
             {
-                error = "start/play/end 각각 최소 1개의 스프라이트가 필요합니다.";
+                error = "start/play(loop)/end 중 최소 1개 클립에는 스프라이트가 필요합니다.";
                 return false;
             }
 
@@ -584,11 +584,23 @@ namespace GGemCo2DCoreEditor
             return false;
         }
 
+        /// <summary>
+        /// start/play/end 클립 중 실제 빌드 대상으로 사용할 스프라이트가 하나 이상 있는지 검사합니다.
+        /// </summary>
+        /// <returns>세 클립 중 하나라도 스프라이트가 존재하면 true를 반환합니다.</returns>
+        private bool HasAnyClipSpriteInput()
+        {
+            return _start.sprites.Count > 0
+                || _play.sprites.Count > 0
+                || _end.sprites.Count > 0;
+        }
+
         // -------------------------
         // Build
         // -------------------------
         /// <summary>
-        /// 입력된 start/play/end 스프라이트로 AnimationClip 3개와 AnimatorController, Prefab을 생성합니다.
+        /// 입력된 start/play/end 스프라이트 중 값이 있는 클립만 AnimationClip으로 생성하고,
+        /// 이를 참조하는 AnimatorController 및 Prefab을 생성합니다.
         /// </summary>
         /// <exception cref="ArgumentOutOfRangeException">
         /// 지원하지 않는 <see cref="EffectTargetType"/> 값이 들어왔을 때 발생합니다.
@@ -604,22 +616,36 @@ namespace GGemCo2DCoreEditor
             ApplySort(_end.sprites,   _end.sortMode);
 
             // 1) Clips (name 고정: start/play/end)
-            var startClip = CreateSpriteSwapClip(ClipNameStart, _start.sprites, _fps, loop: false, _targetType);
-            var playClip  = CreateSpriteSwapClip(ClipNamePlay,  _play.sprites,  _fps, loop: true,  _targetType);
-            var endClip   = CreateSpriteSwapClip(ClipNameEnd,   _end.sprites,   _fps, loop: false, _targetType);
+            // 스프라이트가 있는 클립만 생성하여 start/loop(play)/end 단독 입력도 허용합니다.
+            AnimationClip? startClip = null;
+            AnimationClip? playClip  = null;
+            AnimationClip? endClip   = null;
 
-            // 2) start/end 마지막 프레임에 이벤트 추가
-            AddCompleteEventAtLastFrame(startClip, _start.sprites.Count, _fps);
-            AddCompleteEventAtLastFrame(endClip,   _end.sprites.Count,   _fps);
+            if (_start.sprites.Count > 0)
+            {
+                startClip = CreateSpriteSwapClip(ClipNameStart, _start.sprites, _fps, loop: false, _targetType);
+                AddCompleteEventAtLastFrame(startClip, _start.sprites.Count, _fps);
 
-            // 클립 name은 고정
-            var startPath = AssetDatabase.GenerateUniqueAssetPath($"{animFolderPath}/{ClipNameStart}.anim");
-            var playPath  = AssetDatabase.GenerateUniqueAssetPath($"{animFolderPath}/{ClipNamePlay}.anim");
-            var endPath   = AssetDatabase.GenerateUniqueAssetPath($"{animFolderPath}/{ClipNameEnd}.anim");
+                var startPath = AssetDatabase.GenerateUniqueAssetPath($"{animFolderPath}/{ClipNameStart}.anim");
+                AssetDatabase.CreateAsset(startClip, startPath);
+            }
 
-            AssetDatabase.CreateAsset(startClip, startPath);
-            AssetDatabase.CreateAsset(playClip,  playPath);
-            AssetDatabase.CreateAsset(endClip,   endPath);
+            if (_play.sprites.Count > 0)
+            {
+                playClip = CreateSpriteSwapClip(ClipNamePlay, _play.sprites, _fps, loop: true, _targetType);
+
+                var playPath = AssetDatabase.GenerateUniqueAssetPath($"{animFolderPath}/{ClipNamePlay}.anim");
+                AssetDatabase.CreateAsset(playClip, playPath);
+            }
+
+            if (_end.sprites.Count > 0)
+            {
+                endClip = CreateSpriteSwapClip(ClipNameEnd, _end.sprites, _fps, loop: false, _targetType);
+                AddCompleteEventAtLastFrame(endClip, _end.sprites.Count, _fps);
+
+                var endPath = AssetDatabase.GenerateUniqueAssetPath($"{animFolderPath}/{ClipNameEnd}.anim");
+                AssetDatabase.CreateAsset(endClip, endPath);
+            }
 
             // 3) AnimatorController 생성
             var controllerPath = AssetDatabase.GenerateUniqueAssetPath($"{animFolderPath}/{_prefabName}.controller");
@@ -631,15 +657,24 @@ namespace GGemCo2DCoreEditor
             stEmpty.motion = null;
             sm.defaultState = stEmpty;
 
-            // 3-2) start/play/end State만 추가 (Transition은 생성하지 않음)
-            var stStart = sm.AddState(ClipNameStart);
-            stStart.motion = startClip;
+            // 3-2) 생성된 start/play/end State만 추가 (Transition은 생성하지 않음)
+            if (startClip != null)
+            {
+                var stStart = sm.AddState(ClipNameStart);
+                stStart.motion = startClip;
+            }
 
-            var stPlay = sm.AddState(ClipNamePlay);
-            stPlay.motion = playClip;
+            if (playClip != null)
+            {
+                var stPlay = sm.AddState(ClipNamePlay);
+                stPlay.motion = playClip;
+            }
 
-            var stEnd = sm.AddState(ClipNameEnd);
-            stEnd.motion = endClip;
+            if (endClip != null)
+            {
+                var stEnd = sm.AddState(ClipNameEnd);
+                stEnd.motion = endClip;
+            }
 
             // 4) Prefab 생성(Animator는 Controller만 연결)
             var root = new GameObject(_prefabName);
