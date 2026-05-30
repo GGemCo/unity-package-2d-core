@@ -125,14 +125,81 @@ namespace GGemCo2DCore
             GameObject fromObject,
             CharacterBase owner)
         {
-            if (data != null
-                && data.PositionBasis == AnimationEventVfxPositionBasis.CharacterHitArea
-                && owner != null)
+            if (data != null)
             {
-                return owner.GetRandomWorldPositionInHitArea();
+                switch (data.PositionBasis)
+                {
+                    case AnimationEventVfxPositionBasis.CharacterHitArea:
+                        if (owner != null)
+                            return owner.GetRandomWorldPositionInHitArea();
+                        break;
+                    case AnimationEventVfxPositionBasis.CharacterHitAreaCenter:
+                        return ResolveAnimationEventObjectCenter(fromObject);
+                }
             }
 
             return fromObject != null ? fromObject.transform.position : (Vector3?)null;
+        }
+
+        /// <summary>
+        /// AnimationEvent를 발생시킨 오브젝트의 중앙 월드 위치를 계산합니다.
+        /// </summary>
+        /// <param name="fromObject">AnimationEvent를 발생시킨 오브젝트입니다.</param>
+        /// <returns>오브젝트 중앙 월드 위치입니다. 기준 오브젝트가 없으면 null을 반환합니다.</returns>
+        /// <remarks>
+        /// Renderer, Collider2D, Collider Bounds를 모두 합산한 중심을 우선 사용합니다.
+        /// 표시/충돌 기준 Bounds가 없으면 Transform 위치를 fallback으로 사용합니다.
+        /// </remarks>
+        private static Vector3? ResolveAnimationEventObjectCenter(GameObject fromObject)
+        {
+            if (fromObject == null)
+                return null;
+
+            return TryResolveObjectBoundsCenter(fromObject, out Vector3 center)
+                ? center
+                : fromObject.transform.position;
+        }
+
+        /// <summary>
+        /// 오브젝트와 하위 오브젝트의 표시/충돌 Bounds를 합산해 중앙 위치를 계산합니다.
+        /// </summary>
+        /// <param name="fromObject">중앙 위치를 계산할 기준 오브젝트입니다.</param>
+        /// <param name="center">계산된 Bounds 중앙 월드 위치입니다.</param>
+        /// <returns>유효한 Bounds를 찾으면 <see langword="true"/>를 반환합니다.</returns>
+        private static bool TryResolveObjectBoundsCenter(GameObject fromObject, out Vector3 center)
+        {
+            bool hasBounds = false;
+            Bounds totalBounds = default;
+
+            var characterHitAreas = fromObject.GetComponentsInChildren<CharacterHitArea>(false);
+            foreach (var hitArea in characterHitAreas)
+            {
+                var collider = hitArea.GetComponent<Collider2D>();
+                if (collider == null)
+                    continue;
+                EncapsulateBounds(ref totalBounds, collider.bounds, ref hasBounds);
+            }
+
+            center = hasBounds ? totalBounds.center : Vector3.zero;
+            return hasBounds;
+        }
+
+        /// <summary>
+        /// 누적 Bounds에 후보 Bounds를 병합합니다.
+        /// </summary>
+        /// <param name="totalBounds">누적 중인 전체 Bounds입니다.</param>
+        /// <param name="candidateBounds">새로 병합할 후보 Bounds입니다.</param>
+        /// <param name="hasBounds">이미 유효한 Bounds를 보유하고 있는지 여부입니다.</param>
+        private static void EncapsulateBounds(ref Bounds totalBounds, Bounds candidateBounds, ref bool hasBounds)
+        {
+            if (!hasBounds)
+            {
+                totalBounds = candidateBounds;
+                hasBounds = true;
+                return;
+            }
+
+            totalBounds.Encapsulate(candidateBounds);
         }
 
         /// <summary>
