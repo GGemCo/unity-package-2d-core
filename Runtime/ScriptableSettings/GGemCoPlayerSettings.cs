@@ -247,6 +247,15 @@ namespace GGemCo2DCore
             [Tooltip("VFX를 플레이어를 따라가며 재생할지 여부")]
             public bool followTarget;
 
+            /// <summary>
+            /// 피격 VFX가 플레이어를 따라가는 방식을 정의합니다.
+            /// </summary>
+            /// <remarks>
+            /// <see cref="VfxConstants.FollowMode.None"/>이면 기존 <see cref="followTarget"/> 값을 기준으로 Follow 여부를 해석합니다.
+            /// </remarks>
+            [Tooltip("피격 VFX Follow 모드입니다. None이면 기존 Follow Target 값을 기준으로 해석합니다.")]
+            public VfxConstants.FollowMode followMode;
+
             [Tooltip("피격 VFX의 추가 위치 오프셋(World 기준)")]
             public Vector3 positionOffset;
 
@@ -289,6 +298,7 @@ namespace GGemCo2DCore
                     enabled = false,
                     vfxUid = 0,
                     followTarget = false,
+                    followMode = VfxConstants.FollowMode.None,
                     positionOffset = Vector3.zero,
                     positionYType = ConfigCommon.PositionYType.None,
                     scaleOverride = 0f,
@@ -300,6 +310,26 @@ namespace GGemCo2DCore
                     minIntervalSeconds = 0f,
                     triggerType = IncomingHitVfxTriggerType.OnDamageConfirmed
                 };
+            }
+
+            /// <summary>
+            /// 현재 플레이어 피격 VFX 설정에 적용할 실제 Follow 모드를 반환합니다.
+            /// </summary>
+            /// <returns>런타임 VFX 생성 요청에 적용할 Follow 모드입니다.</returns>
+            /// <remarks>
+            /// 신규 <see cref="followMode"/> 값이 있으면 우선 사용하고,
+            /// 기본값인 <see cref="VfxConstants.FollowMode.None"/>이면 기존 <see cref="followTarget"/> bool 설정을 호환 처리합니다.
+            /// </remarks>
+            public VfxConstants.FollowMode GetRuntimeFollowMode()
+            {
+                if (followMode != VfxConstants.FollowMode.None)
+                {
+                    return followMode;
+                }
+
+                return followTarget
+                    ? VfxConstants.FollowMode.PositionAndFlip
+                    : VfxConstants.FollowMode.None;
             }
         }
 

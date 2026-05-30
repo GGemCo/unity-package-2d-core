@@ -48,6 +48,16 @@ namespace GGemCo2DCore
         [Tooltip("실제 재생할 VFX 정보입니다. AnimationEvent VFX와 같은 위치/Flip/Offset 정책을 사용합니다.")]
         public StruckAnimationEventVfx vfx;
 
+        /// <summary>
+        /// 피격 VFX가 캐릭터를 따라가는 방식을 정의합니다.
+        /// </summary>
+        /// <remarks>
+        /// <see cref="VfxConstants.FollowMode.None"/>이면 <see cref="StruckAnimationEventVfx.FlipPolicy"/>의
+        /// <see cref="AnimationEventVfxFlipPolicy.EventCharacterFollow"/> 설정을 기존 호환 Follow 정책으로 사용합니다.
+        /// </remarks>
+        [Tooltip("피격 VFX Follow 모드입니다. None이면 VFX FlipPolicy의 Follow 설정을 기존 호환 정책으로 사용합니다.")]
+        public VfxConstants.FollowMode followMode;
+
         [SerializeField, HideInInspector] private int vfxUid;
         [SerializeField, HideInInspector] private bool followTarget;
         [SerializeField, HideInInspector] private Vector3 positionOffset;
@@ -71,6 +81,7 @@ namespace GGemCo2DCore
                 triggerType = IncomingHitVfxTriggerType.OnDamageConfirmed,
                 minIntervalSeconds = 0f,
                 vfx = CreateDefaultVfxPayload(),
+                followMode = VfxConstants.FollowMode.None,
             };
         }
 
@@ -101,6 +112,7 @@ namespace GGemCo2DCore
                     settings.sortingLayerKey,
                     settings.hasSortingOrderOverride,
                     settings.sortingOrder),
+                followMode = settings.GetRuntimeFollowMode(),
             };
         }
 
@@ -136,9 +148,46 @@ namespace GGemCo2DCore
             {
                 // 이전 버전의 평면 필드 데이터를 신규 공용 VFX payload로 복사합니다.
                 vfx = CreateVfxPayloadFromLegacyFields();
+
+                if (followTarget && followMode == VfxConstants.FollowMode.None)
+                {
+                    followMode = VfxConstants.FollowMode.PositionAndFlip;
+                }
             }
 
             return this;
+        }
+
+        /// <summary>
+        /// 현재 설정과 VFX payload를 기준으로 실제 Follow 모드를 반환합니다.
+        /// </summary>
+        /// <param name="payload">검사할 VFX payload입니다.</param>
+        /// <returns>런타임 VFX 생성 요청에 적용할 Follow 모드입니다.</returns>
+        /// <remarks>
+        /// 신규 <see cref="followMode"/> 값이 지정되어 있으면 우선 사용합니다.
+        /// 값이 <see cref="VfxConstants.FollowMode.None"/>이면 기존 에셋 호환을 위해
+        /// <see cref="AnimationEventVfxFlipPolicy.EventCharacterFollow"/>를 <see cref="VfxConstants.FollowMode.PositionAndFlip"/>으로 해석합니다.
+        /// </remarks>
+        public VfxConstants.FollowMode GetRuntimeFollowMode(StruckAnimationEventVfx payload)
+        {
+            if (followMode != VfxConstants.FollowMode.None)
+            {
+                return followMode;
+            }
+
+            return IsFollowVfx(payload)
+                ? VfxConstants.FollowMode.PositionAndFlip
+                : VfxConstants.FollowMode.None;
+        }
+
+        /// <summary>
+        /// 현재 설정과 VFX payload가 지속형 Follow 정책인지 확인합니다.
+        /// </summary>
+        /// <param name="payload">검사할 VFX payload입니다.</param>
+        /// <returns>캐릭터를 따라가는 VFX이면 <see langword="true"/>입니다.</returns>
+        public bool IsRuntimeFollowVfx(StruckAnimationEventVfx payload)
+        {
+            return GetRuntimeFollowMode(payload) != VfxConstants.FollowMode.None;
         }
 
         /// <summary>

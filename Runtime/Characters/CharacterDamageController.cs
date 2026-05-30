@@ -913,6 +913,7 @@ namespace GGemCo2DCore
             spawnRequest.Target = _characterBase;
             spawnRequest.OwnerGameObject = _characterBase.gameObject;
             spawnRequest.ForceOneShot = !IncomingHitVfxSettings.IsFollowVfx(vfxPayload);
+            ApplyIncomingHitVfxFollowMode(ref spawnRequest, settings, vfxPayload);
 
             scene.VfxManager.CreateVfx(spawnRequest);
 
@@ -922,6 +923,33 @@ namespace GGemCo2DCore
             }
 
             return true;
+        }
+
+        /// <summary>
+        /// 피격 VFX 설정에 지정된 Follow 모드를 생성 요청에 반영합니다.
+        /// </summary>
+        /// <param name="spawnRequest">수정할 VFX 생성 요청입니다.</param>
+        /// <param name="settings">현재 피격 VFX 설정입니다.</param>
+        /// <param name="vfxPayload">실제 재생에 사용할 VFX payload입니다.</param>
+        /// <remarks>
+        /// <see cref="IncomingHitVfxSettings.followMode"/>가 지정되어 있으면 해당 값을 우선 사용하고,
+        /// 값이 없으면 기존 <see cref="AnimationEventVfxFlipPolicy.EventCharacterFollow"/> 정책을 호환 처리합니다.
+        /// </remarks>
+        private void ApplyIncomingHitVfxFollowMode(
+            ref VfxSpawnRequest spawnRequest,
+            IncomingHitVfxSettings settings,
+            StruckAnimationEventVfx vfxPayload)
+        {
+            VfxConstants.FollowMode resolvedFollowMode = settings.GetRuntimeFollowMode(vfxPayload);
+            if (resolvedFollowMode == VfxConstants.FollowMode.None)
+            {
+                spawnRequest.ForceOneShot = true;
+                return;
+            }
+
+            spawnRequest.FollowTarget = _characterBase;
+            spawnRequest.FollowModeOverride = resolvedFollowMode;
+            spawnRequest.ForceOneShot = false;
         }
 
         /// <summary>
