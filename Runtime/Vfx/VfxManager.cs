@@ -37,6 +37,20 @@ namespace GGemCo2DCore
         }
 
         /// <summary>
+        /// AnimationEvent VFX 데이터를 이벤트 발생 오브젝트 기준으로 해석하여 VFX를 생성합니다.
+        /// </summary>
+        /// <param name="struckAnimationEventVfx">AnimationEvent에서 전달된 VFX 데이터입니다.</param>
+        /// <param name="fromObject">AnimationEvent를 발생시킨 오브젝트입니다.</param>
+        /// <returns>생성 및 초기화된 VFX Behaviour입니다. 생성할 수 없으면 null을 반환합니다.</returns>
+        public VfxBehaviourBase CreateVfx(StruckAnimationEventVfx struckAnimationEventVfx, GameObject fromObject)
+        {
+            if (struckAnimationEventVfx == null)
+                return null;
+
+            return CreateVfx(VfxSpawnRequest.FromAnimationEvent(struckAnimationEventVfx, fromObject));
+        }
+
+        /// <summary>
         /// VFX 생성 요청을 기준으로 프리팹 인스턴스를 풀에서 가져와 초기화하고 활성화합니다.
         /// </summary>
         /// <param name="request">VFX Uid, 위치, 소유자, 지속 시간 등 생성 요청 데이터입니다.</param>
@@ -203,6 +217,7 @@ namespace GGemCo2DCore
             if (owner == null && request.OwnerGameObject != null)
                 owner = request.OwnerGameObject.GetComponent<CharacterBase>();
 
+            CharacterBase attachOwner = request.IgnoreOwnerAttachPolicy ? null : owner;
             CharacterBase followCharacter = null;
             CharacterBase heightOwner = owner != null ? owner : request.Target;
 
@@ -228,7 +243,7 @@ namespace GGemCo2DCore
             behaviour.SetPositionYType(request.PositionYType);
 
             if (owner != null)
-                behaviour.SetCreateCharacter(owner);
+                behaviour.SetCreateCharacter(owner, !request.DisableOwnerFlipOnSpawn);
 
             if (request.FollowTarget != null)
             {
@@ -240,9 +255,9 @@ namespace GGemCo2DCore
             switch (spawnPolicy.AttachType)
             {
                 case VfxConstants.AttachType.Owner:
-                    if (owner != null)
+                    if (attachOwner != null)
                     {
-                        followCharacter = owner;
+                        followCharacter = attachOwner;
                         heightOwner = followCharacter;
                         behaviour.SetFollowCharacter(followCharacter, ResolveFollowMode(spawnPolicy, false));
                     }

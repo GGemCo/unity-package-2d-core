@@ -9,6 +9,11 @@ namespace GGemCo2DCore
         public CharacterBase Target;
         public CharacterBase FollowTarget;
         public GameObject OwnerGameObject;
+        /// <summary>
+        /// true이면 Owner/OwnerGameObject에서 해석한 캐릭터를 AttachType.Owner 정책에는 사용하지 않습니다.
+        /// AnimationEvent VFX처럼 생성 위치와 Flip 기준으로만 캐릭터가 필요한 경우 사용합니다.
+        /// </summary>
+        public bool IgnoreOwnerAttachPolicy;
         public Vector3? WorldPosition;
         public Transform Parent;
         public float DurationOverride;
@@ -59,18 +64,134 @@ namespace GGemCo2DCore
         /// </summary>
         public bool ForceLaserEffectBehaviour;
 
+        /// <summary>
+        /// true이면 생성 캐릭터를 기록하되 생성 시점의 좌우 Flip 적용은 건너뜁니다.
+        /// </summary>
+        public bool DisableOwnerFlipOnSpawn;
+
+        /// <summary>
+        /// AnimationEvent VFX JSON 데이터를 VFX 생성 요청으로 변환합니다.
+        /// </summary>
+        /// <param name="data">AnimationEvent에서 전달된 VFX 데이터입니다.</param>
+        /// <param name="fromObject">AnimationEvent를 발생시킨 오브젝트입니다.</param>
+        /// <returns>VFX 생성 요청입니다.</returns>
         public static VfxSpawnRequest FromAnimationEvent(StruckAnimationEventVfx data, GameObject fromObject = null)
         {
-            var owner = fromObject != null ? fromObject.GetComponent<CharacterBase>() : null;
-            return new VfxSpawnRequest
+            CharacterBase owner = ResolveAnimationEventCharacter(fromObject);
+            Vector3? worldPosition = fromObject != null ? fromObject.transform.position : (Vector3?)null;
+            Vector3 offset = BuildAnimationEventOffset(data, owner);
+
+            var request = new VfxSpawnRequest
             {
                 VfxUid = data?.Uid ?? 0,
                 Owner = owner,
                 OwnerGameObject = fromObject,
+                IgnoreOwnerAttachPolicy = true,
+                WorldPosition = worldPosition,
                 DurationOverride = data?.Duration ?? 0f,
                 ScaleOverride = data?.Scale ?? 0f,
                 ColorOverride = data != null ? data.Color : string.Empty,
+                PositionOffset = offset,
+                PositionYType = ResolveAnimationEventPositionYType(data, owner),
             };
+
+            ApplyAnimationEventFlipPolicy(ref request, data, owner);
+            return request;
+        }
+
+        /// <summary>
+        /// AnimationEvent를 발생시킨 오브젝트에서 캐릭터 기준을 찾습니다.
+        /// </summary>
+        /// <param name="fromObject">AnimationEvent를 발생시킨 오브젝트입니다.</param>
+        /// <returns>찾은 캐릭터입니다. 없으면 null을 반환합니다.</returns>
+        private static CharacterBase ResolveAnimationEventCharacter(GameObject fromObject)
+        {
+            if (fromObject == null)
+                return null;
+
+            CharacterBase owner = fromObject.GetComponent<CharacterBase>();
+            return owner != null ? owner : fromObject.GetComponentInParent<CharacterBase>();
+        }
+
+        /// <summary>
+        /// AnimationEvent VFX의 월드 오프셋을 계산합니다.
+        /// </summary>
+        /// <param name="data">AnimationEvent에서 전달된 VFX 데이터입니다.</param>
+        /// <param name="owner">이벤트 발생 캐릭터입니다.</param>
+        /// <returns>캐릭터 Flip 정책이 반영된 월드 오프셋입니다.</returns>
+        private static Vector3 BuildAnimationEventOffset(StruckAnimationEventVfx data, CharacterBase owner)
+        {
+            if (data == null)
+                return Vector3.zero;
+
+            Vector3 offset = new Vector3(data.OffsetX, data.OffsetY, data.OffsetZ);
+            if (ShouldMirrorAnimationEventOffsetX(data, owner))
+                offset.x = -offset.x;
+
+            return offset;
+        }
+
+        /// <summary>
+        /// AnimationEvent VFX의 X축 오프셋을 캐릭터 Flip 상태로 반전해야 하는지 확인합니다.
+        /// </summary>
+        /// <param name="data">AnimationEvent에서 전달된 VFX 데이터입니다.</param>
+        /// <param name="owner">이벤트 발생 캐릭터입니다.</param>
+        /// <returns>반전이 필요하면 true입니다.</returns>
+        private static bool ShouldMirrorAnimationEventOffsetX(StruckAnimationEventVfx data, CharacterBase owner)
+        {
+            return data != null
+                   && data.MirrorOffsetXByCharacterFlip
+                   && owner != null
+                   && owner.IsFlipped();
+        }
+
+        /// <summary>
+        /// AnimationEvent VFX의 위치 기준을 기존 VFX Y 위치 정책으로 변환합니다.
+        /// </summary>
+        /// <param name="data">AnimationEvent에서 전달된 VFX 데이터입니다.</param>
+        /// <param name="owner">이벤트 발생 캐릭터입니다.</param>
+        /// <returns>VFX 생성 요청에 적용할 Y 위치 정책입니다.</returns>
+        private static ConfigCommon.PositionYType ResolveAnimationEventPositionYType(StruckAnimationEventVfx data, CharacterBase owner)
+        {
+            if (data == null || owner == null)
+                return ConfigCommon.PositionYType.None;
+
+            return data.PositionBasis == AnimationEventVfxPositionBasis.EventCharacterHead
+                ? ConfigCommon.PositionYType.CharacterHeight
+                : ConfigCommon.PositionYType.None;
+        }
+
+        /// <summary>
+        /// AnimationEvent VFX의 캐릭터 Flip 반영 정책을 생성 요청에 적용합니다.
+        /// </summary>
+        /// <param name="request">수정할 VFX 생성 요청입니다.</param>
+        /// <param name="data">AnimationEvent에서 전달된 VFX 데이터입니다.</param>
+        /// <param name="owner">이벤트 발생 캐릭터입니다.</param>
+        private static void ApplyAnimationEventFlipPolicy(
+            ref VfxSpawnRequest request,
+            StruckAnimationEventVfx data,
+            CharacterBase owner)
+        {
+            AnimationEventVfxFlipPolicy flipPolicy = data?.FlipPolicy ?? AnimationEventVfxFlipPolicy.EventCharacterOnSpawn;
+
+            switch (flipPolicy)
+            {
+                case AnimationEventVfxFlipPolicy.None:
+                    request.DisableOwnerFlipOnSpawn = true;
+                    break;
+                case AnimationEventVfxFlipPolicy.EventCharacterFollow:
+                    request.DisableOwnerFlipOnSpawn = false;
+                    if (owner != null)
+                    {
+                        request.FollowTarget = owner;
+                        request.FollowModeOverride = VfxConstants.FollowMode.PositionAndFlip;
+                    }
+                    break;
+                case AnimationEventVfxFlipPolicy.EventCharacterOnSpawn:
+                default:
+                    request.DisableOwnerFlipOnSpawn = false;
+                    break;
+            }
         }
     }
 }

@@ -5,12 +5,84 @@
         public bool ForceStop { get; set; } = false;
     }
     
+    /// <summary>
+    /// AnimationEvent VFX 생성 위치 기준입니다.
+    /// </summary>
+    public enum AnimationEventVfxPositionBasis
+    {
+        /// <summary>
+        /// 이벤트를 발생시킨 오브젝트의 월드 위치를 기준으로 VFX를 생성합니다.
+        /// 기존 AnimationEvent VFX와 가장 가까운 기본값입니다.
+        /// </summary>
+        EventObject = 0,
+
+        /// <summary>
+        /// 이벤트를 발생시킨 캐릭터의 머리 높이를 기준으로 VFX를 생성합니다.
+        /// 캐릭터를 찾을 수 없으면 EventObject와 동일하게 동작합니다.
+        /// </summary>
+        EventCharacterHead = 1,
+    }
+
+    /// <summary>
+    /// AnimationEvent VFX가 이벤트 발생 캐릭터의 Flip 상태를 반영하는 방식입니다.
+    /// </summary>
+    public enum AnimationEventVfxFlipPolicy
+    {
+        /// <summary>
+        /// 캐릭터 Flip 상태를 VFX에 반영하지 않습니다.
+        /// </summary>
+        None = 0,
+
+        /// <summary>
+        /// VFX 생성 시점에만 캐릭터 Flip 상태를 반영합니다.
+        /// 기존 AnimationEvent VFX와 가장 가까운 기본값입니다.
+        /// </summary>
+        EventCharacterOnSpawn = 1,
+
+        /// <summary>
+        /// VFX가 이벤트 발생 캐릭터의 위치와 Flip 상태를 계속 따라갑니다.
+        /// 지속형 또는 부착형 VFX에 사용하는 것을 권장합니다.
+        /// </summary>
+        EventCharacterFollow = 2,
+    }
+
+    /// <summary>
+    /// AnimationEvent에서 VFX를 생성할 때 사용하는 JSON 데이터입니다.
+    /// </summary>
     public class StruckAnimationEventVfx
     {
+        /// <summary>생성할 VFX 대표 Uid입니다.</summary>
         public int Uid { get; set; }
+
+        /// <summary>VFX 스케일 오버라이드입니다. 0보다 클 때만 적용됩니다.</summary>
         public float Scale { get; set; } = 1.0f;
+
+        /// <summary>VFX 지속 시간 오버라이드입니다. 0이면 VFX 데이터 기본 정책을 사용합니다.</summary>
         public float Duration { get; set; } = 0;
+
+        /// <summary>VFX 색상 오버라이드입니다. RRGGBB 또는 RRGGBBAA 형식을 사용합니다.</summary>
         public string Color { get; set; } = "FFFFFF";
+
+        /// <summary>VFX를 생성할 위치 기준입니다.</summary>
+        public AnimationEventVfxPositionBasis PositionBasis { get; set; } = AnimationEventVfxPositionBasis.EventObject;
+
+        /// <summary>기준 위치에 더할 X축 월드 오프셋입니다.</summary>
+        public float OffsetX { get; set; } = 0f;
+
+        /// <summary>기준 위치에 더할 Y축 월드 오프셋입니다.</summary>
+        public float OffsetY { get; set; } = 0f;
+
+        /// <summary>기준 위치에 더할 Z축 월드 오프셋입니다.</summary>
+        public float OffsetZ { get; set; } = 0f;
+
+        /// <summary>
+        /// true이면 이벤트 발생 캐릭터가 좌우 반전된 상태일 때 OffsetX도 반전합니다.
+        /// 캐릭터 기준 오른쪽/왼쪽 배치가 필요한 VFX에서 사용합니다.
+        /// </summary>
+        public bool MirrorOffsetXByCharacterFlip { get; set; } = true;
+
+        /// <summary>이벤트 발생 캐릭터의 Flip 상태를 VFX에 반영하는 방식입니다.</summary>
+        public AnimationEventVfxFlipPolicy FlipPolicy { get; set; } = AnimationEventVfxFlipPolicy.EventCharacterOnSpawn;
     }
     public class StruckAnimationEventCameraShake
     {

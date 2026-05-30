@@ -485,19 +485,52 @@ namespace GGemCo2DCore
             ApplySpawnPositionImmediate(_followCharacter.transform.position, _followCharacter);
         }
 
+        /// <summary>
+        /// VFX를 생성한 오브젝트를 캐릭터로 해석하고 위치와 Flip을 즉시 반영합니다.
+        /// </summary>
+        /// <param name="character">VFX를 생성한 오브젝트입니다.</param>
         public void SetCreateCharacter(GameObject character)
         {
             SetCreateCharacter(character != null ? character.GetComponent<CharacterBase>() : null);
         }
 
+        /// <summary>
+        /// VFX를 생성한 캐릭터를 기록하고 위치와 Flip을 즉시 반영합니다.
+        /// </summary>
+        /// <param name="character">VFX를 생성한 캐릭터입니다.</param>
         public void SetCreateCharacter(CharacterBase character)
+        {
+            SetCreateCharacter(character, true);
+        }
+
+        /// <summary>
+        /// VFX를 생성한 오브젝트를 캐릭터로 해석하고 요청한 시각 보정만 즉시 반영합니다.
+        /// </summary>
+        /// <param name="character">VFX를 생성한 오브젝트입니다.</param>
+        /// <param name="applyFlip">true이면 캐릭터의 현재 Flip 상태를 VFX에 적용합니다.</param>
+        /// <param name="applyPosition">true이면 캐릭터 위치를 기준으로 VFX 위치를 즉시 보정합니다.</param>
+        public void SetCreateCharacter(GameObject character, bool applyFlip, bool applyPosition = true)
+        {
+            SetCreateCharacter(character != null ? character.GetComponent<CharacterBase>() : null, applyFlip, applyPosition);
+        }
+
+        /// <summary>
+        /// VFX를 생성한 캐릭터를 기록하고 요청한 시각 보정만 즉시 반영합니다.
+        /// </summary>
+        /// <param name="character">VFX를 생성한 캐릭터입니다.</param>
+        /// <param name="applyFlip">true이면 캐릭터의 현재 Flip 상태를 VFX에 적용합니다.</param>
+        /// <param name="applyPosition">true이면 캐릭터 위치를 기준으로 VFX 위치를 즉시 보정합니다.</param>
+        public void SetCreateCharacter(CharacterBase character, bool applyFlip, bool applyPosition = true)
         {
             _character = character;
             if (_character == null)
                 return;
 
-            ApplySpawnPositionImmediate(character.transform.position, _character);
-            SetFlip(_character.IsFlipped());
+            if (applyPosition)
+                ApplySpawnPositionImmediate(character.transform.position, _character);
+
+            if (applyFlip)
+                SetFlip(_character.IsFlipped());
         }
 
         protected virtual void Update()

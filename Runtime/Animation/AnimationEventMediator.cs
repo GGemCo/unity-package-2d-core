@@ -40,9 +40,7 @@ namespace GGemCo2DCore
             try
             {
                 var data = JsonConvert.DeserializeObject<StruckAnimationEventVfx>(json);
-                var vfx = _vfxManager.CreateVfx(data);
-                if (vfx == null) return;
-                vfx.SetCreateCharacter(fromObject);
+                _vfxManager.CreateVfx(data, fromObject);
             }
             catch (Exception e)
             {

@@ -356,7 +356,7 @@ namespace GGemCo2DCore
                 SetColor(color);
             }
         }
-
+        
         /// <summary>
         /// 애니메이션 완료 이벤트 콜백입니다.
         /// </summary>
