@@ -629,7 +629,9 @@ namespace GGemCo2DCore
             }
 
             if (resetPlaybackTimeScale)
+            {
                 _character?.CharacterAnimationController?.SetPlaybackTimeScale(1f);
+            }
         }
 
         /// <summary>
@@ -1085,17 +1087,31 @@ namespace GGemCo2DCore
             TryStartNextQueuedCrowdControl();
         }
 
+        /// <summary>
+        /// 몬스터가 풀로 반납되거나 다시 대여될 때 Crowd Control 런타임 상태를 초기화합니다.
+        /// </summary>
+        /// <remarks>
+        /// <see cref="ForceStopInternal(bool, bool)"/> 내부에서 모션, 코루틴, 애니메이션 보정 상태를 함께 정리하므로
+        /// 동일한 프레임에 애니메이션 초기화가 중복 실행되지 않도록 별도의 <c>ResetAnimationState</c> 호출은 수행하지 않습니다.
+        /// </remarks>
         public void ResetForPoolReturn()
         {
             ForceStopInternal(clearSequence: true);
-            ResetAnimationState();
         }
 
+        /// <summary>
+        /// 몬스터가 풀에서 다시 대여될 때 Crowd Control 잔여 상태를 제거합니다.
+        /// </summary>
+        /// <param name="owner">풀에서 대여되는 몬스터입니다.</param>
         public void OnPoolRent(Monster owner)
         {
             ResetForPoolReturn();
         }
 
+        /// <summary>
+        /// 몬스터가 풀로 반환될 때 Crowd Control 잔여 상태를 제거합니다.
+        /// </summary>
+        /// <param name="owner">풀로 반환되는 몬스터입니다.</param>
         public void OnPoolReturn(Monster owner)
         {
             ResetForPoolReturn();

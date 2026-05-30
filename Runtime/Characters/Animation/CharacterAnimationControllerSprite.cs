@@ -326,6 +326,14 @@ namespace GGemCo2DCore
             SetPlaybackTimeScale(value);
         }
 
+        /// <summary>
+        /// 현재 Animator의 전체 재생 속도를 변경합니다.
+        /// </summary>
+        /// <param name="value">적용할 재생 속도입니다. 0보다 작은 값은 0으로 보정됩니다.</param>
+        /// <remarks>
+        /// 풀링된 캐릭터처럼 비활성 상태에서 호출될 수 있으므로, 속도 값은 기록하되
+        /// Animator 즉시 평가는 실제 계층에서 활성화된 경우에만 수행합니다.
+        /// </remarks>
         public void SetPlaybackTimeScale(float value)
         {
             if (Animator == null)
@@ -334,7 +342,7 @@ namespace GGemCo2DCore
             }
 
             Animator.speed = Mathf.Max(0f, value);
-            Animator.Update(0f);
+            EvaluateAnimatorImmediatelyIfActive();
         }
 
         public float GetPlaybackTimeScale()
@@ -408,20 +416,49 @@ namespace GGemCo2DCore
             PlayWaitAnimation();
         }
 
+        /// <summary>
+        /// 현재 재생 중인 애니메이션을 마지막 프레임에 고정합니다.
+        /// </summary>
+        /// <remarks>
+        /// 사망 연출이나 정지 연출에서 사용할 수 있으며, 비활성 풀링 오브젝트에서는
+        /// Animator 즉시 평가를 건너뛰어 Unity 경고 로그가 발생하지 않도록 합니다.
+        /// </remarks>
         public void FreezeCurrentAnimationAtLastFrame()
         {
             if (Animator == null)
+            {
                 return;
+            }
 
             var clips = Animator.GetCurrentAnimatorClipInfo(0);
             if (clips == null || clips.Length == 0 || clips[0].clip == null)
+            {
                 return;
+            }
 
             string clipName = clips[0].clip.name;
             Animator.speed = 1f;
             Animator.Play(clipName, 0, 0.999f);
-            Animator.Update(0f);
+            EvaluateAnimatorImmediatelyIfActive();
             Animator.speed = 0f;
+        }
+
+        /// <summary>
+        /// Animator가 실제 씬 계층에서 활성화되어 있을 때만 즉시 평가합니다.
+        /// </summary>
+        /// <remarks>
+        /// <c>Animator.Update(0f)</c>는 비활성 GameObject에서 호출하면 경고를 출력할 수 있습니다.
+        /// 풀에서 대여되기 전의 몬스터처럼 부모 또는 자기 자신이 비활성화된 상태를 고려하기 위해
+        /// <c>activeInHierarchy</c>와 <c>isActiveAndEnabled</c>를 함께 확인합니다.
+        /// </remarks>
+        private void EvaluateAnimatorImmediatelyIfActive()
+        {
+            if (Animator == null || !Animator.isActiveAndEnabled || !Animator.gameObject.activeInHierarchy)
+            {
+                return;
+            }
+
+            Animator.Update(0f);
         }
     }
 }

@@ -62,6 +62,11 @@ namespace GGemCo2DCore
             }
         }
 
+        /// <summary>
+        /// 풀에서 다시 대여된 몬스터를 새 스폰 정보 기준으로 재초기화합니다.
+        /// </summary>
+        /// <param name="monsterUid">대여된 몬스터에 적용할 몬스터 테이블 UID입니다.</param>
+        /// <param name="regenData">몬스터를 배치하고 초기화할 리젠 데이터입니다.</param>
         public void PrepareForPoolRent(int monsterUid, CharacterRegenData regenData)
         {
             CancelPendingPoolReturn();
@@ -86,9 +91,6 @@ namespace GGemCo2DCore
             canMoveX = true;
             canMoveY = true;
 
-            var crowdControl = GetComponent<CharacterCrowdControlController>();
-            crowdControl?.ResetForPoolReturn();
-
             var motion = GetComponent<ICharacterMotionController>();
             motion?.CancelMotion(MotionChannel.Skill, reason: 9901);
             motion?.CancelMotion(MotionChannel.CrowdControl, reason: 9902);
@@ -112,6 +114,9 @@ namespace GGemCo2DCore
             EnableSuperArmor(CurrentSuperArmor.Value > 0);
         }
 
+        /// <summary>
+        /// 몬스터를 풀로 반환하기 전에 런타임 상태와 전투 잔여 효과를 정리합니다.
+        /// </summary>
         public void PrepareForPoolReturn()
         {
             CancelPendingPoolReturn();
@@ -119,9 +124,6 @@ namespace GGemCo2DCore
             _suppressNextDeadCutscene = false;
             _controllerMonster?.StopAttackCoroutine();
             _controllerMonster?.StopAllCoroutines();
-
-            var crowdControl = GetComponent<CharacterCrowdControlController>();
-            crowdControl?.ResetForPoolReturn();
 
             var motion = GetComponent<ICharacterMotionController>();
             motion?.CancelMotion(MotionChannel.Skill, reason: 9911);
@@ -154,6 +156,13 @@ namespace GGemCo2DCore
             _monsterUIController?.Dispose();
         }
 
+        /// <summary>
+        /// 풀 대여 생명주기를 구독한 컴포넌트에 대여 시점 초기화를 알립니다.
+        /// </summary>
+        /// <remarks>
+        /// Crowd Control 같은 하위 컴포넌트 초기화도 이 생명주기 포트에서 처리하여
+        /// 직접 호출과 생명주기 호출이 중복되지 않도록 합니다.
+        /// </remarks>
         private void NotifyPoolRentLifecycles()
         {
             CollectPoolLifecycles();
@@ -167,6 +176,9 @@ namespace GGemCo2DCore
             }
         }
 
+        /// <summary>
+        /// 풀 반납 생명주기를 구독한 컴포넌트에 반납 시점 정리를 알립니다.
+        /// </summary>
         private void NotifyPoolReturnLifecycles()
         {
             CollectPoolLifecycles();
@@ -180,6 +192,9 @@ namespace GGemCo2DCore
             }
         }
 
+        /// <summary>
+        /// 현재 몬스터 오브젝트에 연결된 풀 생명주기 컴포넌트를 수집합니다.
+        /// </summary>
         private void CollectPoolLifecycles()
         {
             _poolLifecycles.Clear();
