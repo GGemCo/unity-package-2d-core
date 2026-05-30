@@ -41,6 +41,8 @@ namespace GGemCo2DCoreEditor
             options.GroupByMemberName[nameof(StruckTableVfxEffect.NeedRotation)] = "표현";
             options.GroupByMemberName[nameof(StruckTableVfxEffect.Color)] = "표현";
             options.GroupByMemberName[nameof(StruckTableVfxEffect.DefaultDirection)] = "표현";
+            options.GroupByMemberName[nameof(StruckTableVfxEffect.SortingLayer)] = "표현";
+            options.GroupByMemberName[nameof(StruckTableVfxEffect.SortingOrder)] = "표현";
             options.GroupByMemberName[nameof(StruckTableVfxEffect.LifecycleType)] = "Spawn Policy";
             options.GroupByMemberName[nameof(StruckTableVfxEffect.AttachType)] = "Spawn Policy";
             options.GroupByMemberName[nameof(StruckTableVfxEffect.FollowMode)] = "Spawn Policy";
@@ -97,6 +99,10 @@ namespace GGemCo2DCoreEditor
                 case nameof(StruckTableVfxEffect.ColliderSize):
                     row.ColliderSize = new Vector2(Mathf.Max(0f, row.ColliderSize.x), Mathf.Max(0f, row.ColliderSize.y));
                     break;
+                case nameof(StruckTableVfxEffect.SortingLayer):
+                    if (string.IsNullOrWhiteSpace(row.SortingLayer))
+                        row.SortingLayer = "None";
+                    break;
                 case nameof(StruckTableVfxEffect.PoolPrewarmCount):
                     if (row.PoolPrewarmCount < 0) row.PoolPrewarmCount = 0;
                     break;
@@ -119,6 +125,8 @@ namespace GGemCo2DCoreEditor
             sb.AppendLine($"- NeedRotation: {row.NeedRotation}");
             sb.AppendLine($"- Color: {row.Color}");
             sb.AppendLine($"- DefaultDirection: {row.DefaultDirection}");
+            sb.AppendLine($"- SortingLayer: {row.SortingLayer}");
+            sb.AppendLine($"- SortingOrder: {row.SortingOrder}");
             sb.AppendLine($"- LifecycleType: {row.LifecycleType}");
             sb.AppendLine($"- AttachType: {row.AttachType}");
             sb.AppendLine($"- FollowMode: {row.FollowMode}");
@@ -183,6 +191,8 @@ namespace GGemCo2DCoreEditor
                     "NeedRotation" => MathHelper.FormatBool(row.NeedRotation),
                     "Color" => row.Color ?? string.Empty,
                     "DefaultDirection" => row.DefaultDirection.ToString(),
+                    "SortingLayer" => string.IsNullOrWhiteSpace(row.SortingLayer) ? "None" : row.SortingLayer,
+                    "SortingOrder" => row.SortingOrder.ToString(),
                     "LifecycleType" => row.LifecycleType.ToString(),
                     "AttachType" => row.AttachType.ToString(),
                     "FollowMode" => row.FollowMode.ToString(),

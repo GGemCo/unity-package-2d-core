@@ -40,6 +40,14 @@ namespace GGemCo2DCore
         public virtual bool NeedRotation => false;
         public virtual string Color => string.Empty;
         public virtual ConfigCommon.DirectionType DefaultDirection => ConfigCommon.DirectionType.Right;
+        /// <summary>
+        /// 기본 Sorting Layer 문자열입니다. "None"이면 런타임 기본 정렬 정책을 사용합니다.
+        /// </summary>
+        public virtual string SortingLayer => "None";
+        /// <summary>
+        /// 기본 Sorting Order 값입니다. 0이면 런타임 기본 정렬 정책을 사용합니다.
+        /// </summary>
+        public virtual int SortingOrder => 0;
         public virtual bool Loop => false;
     }
 
@@ -55,6 +63,8 @@ namespace GGemCo2DCore
         public bool EffectNeedRotation;
         public string EffectColor;
         public ConfigCommon.DirectionType EffectDefaultDirection;
+        public string EffectSortingLayer = "None";
+        public int EffectSortingOrder;
 
         public override VfxConstants.AssetKind AssetKind => VfxConstants.AssetKind.Effect;
         public override VfxConstants.Category Category => EffectCategory;
@@ -66,6 +76,8 @@ namespace GGemCo2DCore
         public override bool NeedRotation => EffectNeedRotation;
         public override string Color => EffectColor;
         public override ConfigCommon.DirectionType DefaultDirection => EffectDefaultDirection;
+        public override string SortingLayer => EffectSortingLayer;
+        public override int SortingOrder => EffectSortingOrder;
 
         /// <summary>
         /// 이펙트 재생 방식은 애니메이션 컨트롤러 기준으로만 결정합니다.

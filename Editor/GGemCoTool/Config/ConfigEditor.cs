@@ -61,6 +61,7 @@ namespace GGemCo2DCoreEditor
             OpenSaveDataFolder,
             LoadAddressable,
             SpriteSlicerExporter,
+            SpriteSliceFlipExporter,
             AnimatedTileBatchCreator,
             AnimationEventNameChanger,
             CreateSpriteComposer
@@ -137,6 +138,7 @@ namespace GGemCo2DCoreEditor
         public const string NameToolOpenSaveDataFolder = NameToolEtc + "게임 데이터 관리";
         public const string NameToolLoadAddressable = NameToolEtc + "Addressable 로더 툴";
         public const string NameToolSpriteSlicerExporter = NameToolEtc + "이미지 자르기";
+        public const string NameToolSpriteSliceFlipExporter = NameToolEtc + "Sprite Slice 좌우 반전";
         public const string NameToolAnimatedTileBatchCreator = NameToolEtc + "애니메이션 타일 일괄생성기";
         public const string NameToolAnimationEventNameChanger = NameToolEtc + "애니메이션 Event 이름 변경 툴";
         public const string NameToolCreateSpriteComposer = NameToolEtc + "이미지 합성 툴";

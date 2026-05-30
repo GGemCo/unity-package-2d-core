@@ -18,6 +18,8 @@ namespace GGemCo2DCore
         public bool NeedRotation;
         public string Color;
         public ConfigCommon.DirectionType DefaultDirection;
+        public string SortingLayer;
+        public int SortingOrder;
         public VfxConstants.LifecycleType LifecycleType;
         public VfxConstants.AttachType AttachType;
         public VfxConstants.FollowMode FollowMode;
@@ -46,6 +48,10 @@ namespace GGemCo2DCore
                 NeedRotation = ConvertBoolean(data.GetValueOrDefault("NeedRotation")),
                 Color = data.GetValueOrDefault("Color"),
                 DefaultDirection = ConfigCommon.GetDirectionType(data.GetValueOrDefault("DefaultDirection", "Left")),
+                // SortingLayer: None/빈 값이면 기존 런타임 기본 정렬 정책(기존 동작)을 사용합니다.
+                SortingLayer = ParseSortingLayer(data.GetValueOrDefault("SortingLayer", "None")),
+                // SortingOrder: 0이면 기존 런타임 기본 정렬 정책(기존 동작)을 사용합니다.
+                SortingOrder = MathHelper.ParseInt(data.GetValueOrDefault("SortingOrder", "0")),
                 LifecycleType = ParseLifecycleType(data.GetValueOrDefault("LifecycleType")),
                 AttachType = ParseAttachType(data.GetValueOrDefault("AttachType")),
                 FollowMode = ParseFollowMode(data.GetValueOrDefault("FollowMode")),
@@ -94,6 +100,18 @@ namespace GGemCo2DCore
             return string.IsNullOrWhiteSpace(value)
                 ? VfxConstants.FollowMode.None
                 : EnumHelper.ConvertEnum<VfxConstants.FollowMode>(value);
+        }
+
+        /// <summary>
+        /// vfx_effect.SortingLayer 원본 문자열을 런타임 기본값 규칙에 맞춰 정규화합니다.
+        /// </summary>
+        /// <param name="value">테이블에서 읽은 SortingLayer 문자열입니다.</param>
+        /// <returns>빈 값이면 "None", 아니면 Trim된 원본 값을 반환합니다.</returns>
+        private static string ParseSortingLayer(string value)
+        {
+            return string.IsNullOrWhiteSpace(value)
+                ? "None"
+                : value.Trim();
         }
     }
 }

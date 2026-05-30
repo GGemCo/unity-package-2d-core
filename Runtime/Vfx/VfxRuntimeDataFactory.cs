@@ -21,6 +21,8 @@ namespace GGemCo2DCore
                 EffectNeedRotation = row.NeedRotation,
                 EffectColor = row.Color,
                 EffectDefaultDirection = row.DefaultDirection,
+                EffectSortingLayer = row.SortingLayer,
+                EffectSortingOrder = row.SortingOrder,
                 PoolPrewarmCount = row.PoolPrewarmCount,
                 PoolMaxSize = row.PoolMaxSize,
                 UseUnscaledTime = row.UseUnscaledTime,

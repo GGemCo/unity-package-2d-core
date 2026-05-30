@@ -1,3 +1,4 @@
+using System;
 using UnityEngine;
 
 namespace GGemCo2DCore
@@ -151,8 +152,71 @@ namespace GGemCo2DCore
             if (_animator != null)
                 _animator.updateMode = UseUnscaledTime() ? AnimatorUpdateMode.UnscaledTime : AnimatorUpdateMode.Normal;
 
+            // 테이블 기본 정렬값이 있으면 먼저 적용하고,
+            // 그 외(기본값)에는 기존 동적 정렬 정책을 유지합니다.
+            ApplyTableDefaultSortingIfNeeded();
             UpdateSortingOrder();
             RefreshFadeControllerVisualBaseline();
+        }
+
+        /// <summary>
+        /// vfx_effect 테이블 기본 정렬값(SortingLayer, SortingOrder)을 적용합니다.
+        /// </summary>
+        /// <remarks>
+        /// - SortingLayer가 "None"(또는 빈 값)이면 기존 런타임 기본 정렬을 유지합니다.
+        /// - SortingOrder가 0이면 기존 런타임 기본 정렬을 유지합니다.
+        /// - 외부 스폰 요청 override가 이미 있으면 테이블 기본값은 적용하지 않습니다.
+        /// </remarks>
+        private void ApplyTableDefaultSortingIfNeeded()
+        {
+            if (EffectRuntimeData == null)
+                return;
+
+            if (!_hasSortingLayerOverride &&
+                TryResolveSortingLayerKey(EffectRuntimeData.SortingLayer, out ConfigSortingLayer.Keys sortingLayerKey))
+            {
+                SetSortingLayer(sortingLayerKey);
+            }
+
+            if (!_hasSortingOrderOverride && EffectRuntimeData.SortingOrder != 0)
+                SetSortingOrder(EffectRuntimeData.SortingOrder);
+        }
+
+        /// <summary>
+        /// 테이블 문자열에서 실제 적용 가능한 Sorting Layer 키를 해석합니다.
+        /// </summary>
+        /// <param name="rawValue">테이블의 SortingLayer 원본 문자열입니다.</param>
+        /// <param name="sortingLayerKey">해석 성공 시 반환할 Sorting Layer 키입니다.</param>
+        /// <returns>해석 성공 시 true, "None"/빈 값/미등록 값이면 false를 반환합니다.</returns>
+        private static bool TryResolveSortingLayerKey(string rawValue, out ConfigSortingLayer.Keys sortingLayerKey)
+        {
+            sortingLayerKey = default;
+
+            if (string.IsNullOrWhiteSpace(rawValue))
+                return false;
+
+            string normalized = rawValue.Trim();
+            if (normalized.Equals("None", StringComparison.OrdinalIgnoreCase))
+                return false;
+
+            if (Enum.TryParse(normalized, true, out ConfigSortingLayer.Keys parsedByKey)
+                && Enum.IsDefined(typeof(ConfigSortingLayer.Keys), parsedByKey))
+            {
+                sortingLayerKey = parsedByKey;
+                return true;
+            }
+
+            foreach (ConfigSortingLayer.Keys candidate in Enum.GetValues(typeof(ConfigSortingLayer.Keys)))
+            {
+                string layerName = ConfigSortingLayer.GetValue(candidate);
+                if (string.Equals(layerName, normalized, StringComparison.Ordinal))
+                {
+                    sortingLayerKey = candidate;
+                    return true;
+                }
+            }
+
+            return false;
         }
 
         protected static string NormalizeColorHex(string color)
