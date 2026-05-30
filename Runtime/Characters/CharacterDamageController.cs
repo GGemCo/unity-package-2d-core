@@ -79,6 +79,16 @@ namespace GGemCo2DCore
         public DeathPresentationRequest DeathPresentation;
 
         /// <summary>
+        /// 이번 데미지 확정 후 적용할 공격 HitStop 설정이 있는지 여부입니다.
+        /// </summary>
+        public bool HasAttackHitStopSettings;
+
+        /// <summary>
+        /// 이번 데미지 확정 후 공격자와 피격 대상에게 적용할 HitStop 설정입니다.
+        /// </summary>
+        public AttackHitStopSettings AttackHitStopSettings;
+
+        /// <summary>
         /// 이번 공격이 가드와 상호작용하는 방식입니다.
         /// </summary>
         public GuardInteractionMode GuardInteractionMode = GuardInteractionMode.Normal;
@@ -517,8 +527,65 @@ namespace GGemCo2DCore
                 elementGaugeController.HandleAfterIncomingDamage(metadataDamage);
                 TryFinalizeDeathAfterElementGauge(metadataDamage);
             }
+
+            ApplyConfirmedAttackHitStop(metadataDamage);
         }
 
+
+        /// <summary>
+        /// 데미지가 실제로 확정된 뒤 공격 메타데이터에 포함된 HitStop 설정을 적용합니다.
+        /// </summary>
+        /// <param name="metadataDamage">이번 피격 처리에 사용한 데미지 메타데이터입니다.</param>
+        /// <remarks>
+        /// 공격 애니메이션 시작 시점이 아니라 실제 데미지 확정 이후에 호출하여,
+        /// 빗맞은 공격이나 무효 처리된 공격에서 HitStop이 발생하지 않도록 합니다.
+        /// </remarks>
+        private void ApplyConfirmedAttackHitStop(MetadataDamage metadataDamage)
+        {
+            if (metadataDamage == null || !metadataDamage.HasAttackHitStopSettings)
+                return;
+
+            AttackHitStopSettings hitStopSettings = metadataDamage.AttackHitStopSettings;
+            if (!hitStopSettings.HasAnyHitStop)
+                return;
+
+            CharacterBase attackerCharacter = metadataDamage.attacker != null
+                ? metadataDamage.attacker.GetComponent<CharacterBase>()
+                : null;
+            if (attackerCharacter == null)
+                return;
+
+            CharacterBase.HitStopConfig hitStopConfig = attackerCharacter.GetResolvedHitStopConfig();
+            if (!hitStopConfig.Enabled)
+                return;
+
+            int sourceSkillUid = metadataDamage.SkillUid;
+            if (hitStopSettings.useHitStopSelf)
+            {
+                float selfSeconds = hitStopSettings.ResolveSelfSeconds(hitStopConfig);
+                if (selfSeconds > 0f)
+                {
+                    attackerCharacter.ApplyHitStop(new HitStopRequest(
+                        selfSeconds,
+                        pauseAnimation: hitStopConfig.PauseAnimation,
+                        freezePhysics: hitStopConfig.FreezePhysics,
+                        sourceSkillUid: sourceSkillUid));
+                }
+            }
+
+            if (hitStopSettings.useHitStopTarget && _characterBase != null)
+            {
+                float targetSeconds = hitStopSettings.ResolveTargetSeconds(hitStopConfig);
+                if (targetSeconds > 0f)
+                {
+                    _characterBase.ApplyHitStop(new HitStopRequest(
+                        targetSeconds,
+                        pauseAnimation: hitStopConfig.PauseAnimation,
+                        freezePhysics: hitStopConfig.FreezePhysics,
+                        sourceSkillUid: sourceSkillUid));
+                }
+            }
+        }
 
         /// <summary>
         /// 가드 결과로 데미지가 0이 되었을 때도 설정된 Crowd Control을 적용합니다.
