@@ -323,15 +323,24 @@ namespace GGemCo2DCore
         }
 
         /// <summary>
-        /// 플레이어 피격 애니메이션 이벤트를 캐릭터 런타임으로 전달합니다.
+        /// 캐릭터 피격 애니메이션 이벤트를 캐릭터 런타임으로 전달합니다.
         /// </summary>
         /// <param name="fromObject">이벤트를 발생시킨 오브젝트입니다.</param>
-        public void OnAnimationEventPlayerHit(GameObject fromObject)
+        public void OnAnimationEventHit(GameObject fromObject)
         {
             if (fromObject == null)
                 return;
 
-            fromObject.GetComponent<CharacterBase>()?.AnimationEventPlayerHit();
+            fromObject.GetComponent<CharacterBase>()?.AnimationEventHit();
+        }
+
+        /// <summary>
+        /// 기존 플레이어 피격 애니메이션 이벤트를 캐릭터 공통 피격 이벤트로 전달합니다.
+        /// </summary>
+        /// <param name="fromObject">이벤트를 발생시킨 오브젝트입니다.</param>
+        public void OnAnimationEventPlayerHit(GameObject fromObject)
+        {
+            OnAnimationEventHit(fromObject);
         }
 
         public void OnAnimationEventStartBackstepTrail(string json, GameObject fromObject)

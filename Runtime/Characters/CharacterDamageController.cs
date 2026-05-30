@@ -121,6 +121,8 @@ namespace GGemCo2DCore
     /// </summary>
     public class CharacterDamageController
     {
+        private const int PlayerIncomingHitVfxCooldownKey = -1;
+
         private CharacterBase _characterBase;
         private ControllerMonsterSuperArmor _controllerMonsterSuperArmor;
         private float _monsterGroggyAffectDuration;
@@ -130,7 +132,8 @@ namespace GGemCo2DCore
         private Color _textColorDamagePlayer;
         private Color _textColorHeal;
         private GGemCoPlayerSettings _playerSettings;
-        private float _nextPlayerHitVfxPlayableTime;
+        private GGemCoMonsterSettings _monsterSettings;
+        private readonly Dictionary<int, float> _nextIncomingHitVfxPlayableTimesByKey = new Dictionary<int, float>();
         
         /// <summary>
         /// 데미지 컨트롤러를 초기화하고, 몬스터 슈퍼아머 설정을 함께 주입합니다.
@@ -149,27 +152,30 @@ namespace GGemCo2DCore
                 return;
             }
             
-            GGemCoMonsterSettings monsterSettings = AddressableLoaderSettings.Instance.monsterSettings;
+            AddressableLoaderSettings loaderSettings = AddressableLoaderSettings.Instance;
+            GGemCoMonsterSettings monsterSettings = loaderSettings != null ? loaderSettings.monsterSettings : null;
+            _monsterSettings = monsterSettings;
+
             _controllerMonsterSuperArmor = new ControllerMonsterSuperArmor();
             _controllerMonsterSuperArmor.Initialize(_characterBase, monsterSettings);
             
             _controllerMonsterSuperArmor.BreakTriggered += OnSuperArmorBreak;
 
-            if (AddressableLoaderSettings.Instance.monsterSettings)
+            if (monsterSettings)
             {
-                _monsterGroggyAffectDuration = AddressableLoaderSettings.Instance.monsterSettings.monsterGroggyAffectDuration;
-                _monsterGroggyAffectUid = AddressableLoaderSettings.Instance.monsterSettings.monsterGroggyAffectUid;
+                _monsterGroggyAffectDuration = monsterSettings.monsterGroggyAffectDuration;
+                _monsterGroggyAffectUid = monsterSettings.monsterGroggyAffectUid;
             }
 
-            if (AddressableLoaderSettings.Instance.settings)
+            if (loaderSettings != null && loaderSettings.settings)
             {
-                _textColorDamageMonster = AddressableLoaderSettings.Instance.settings.textColorDamageMonster;
-                _textColorDamagePlayer = AddressableLoaderSettings.Instance.settings.textColorDamagePlayer;
-                _textColorHeal = AddressableLoaderSettings.Instance.settings.textColorHeal;
+                _textColorDamageMonster = loaderSettings.settings.textColorDamageMonster;
+                _textColorDamagePlayer = loaderSettings.settings.textColorDamagePlayer;
+                _textColorHeal = loaderSettings.settings.textColorHeal;
             }
 
-            _playerSettings = AddressableLoaderSettings.Instance.playerSettings;
-            _nextPlayerHitVfxPlayableTime = 0f;
+            _playerSettings = loaderSettings != null ? loaderSettings.playerSettings : null;
+            _nextIncomingHitVfxPlayableTimesByKey.Clear();
         }
 
         public void Dispose()
@@ -406,7 +412,7 @@ namespace GGemCo2DCore
             }
 
             _characterBase.TryPlaySpriteWhiteOverlayOnHit();
-            TryPlayPlayerIncomingHitVfxByTrigger(GGemCoPlayerSettings.IncomingHitVfxTriggerType.OnDamageConfirmed);
+            TryPlayIncomingHitVfxByTrigger(IncomingHitVfxTriggerType.OnDamageConfirmed);
             
             if (remainHp <= 0)
             {
@@ -705,20 +711,53 @@ namespace GGemCo2DCore
         }
 
         /// <summary>
-        /// 설정된 트리거 타입에 따라 플레이어 피격 VFX 재생을 시도합니다.
+        /// 기존 플레이어 전용 피격 VFX 재생 API와의 호환을 유지합니다.
         /// </summary>
-        /// <param name="triggerType">현재 호출 경로의 트리거 타입입니다.</param>
+        /// <param name="triggerType">기존 플레이어 설정 기준의 호출 트리거 타입입니다.</param>
         /// <remarks>
-        /// <see cref="GGemCoPlayerSettings.IncomingHitVfxSettings.triggerType"/>와 일치할 때만 재생하며,
-        /// 최소 간격(<c>minIntervalSeconds</c>) 제한을 동일하게 적용합니다.
+        /// 내부에서는 캐릭터 공통 피격 VFX 트리거 타입으로 변환한 뒤 같은 재생 경로를 사용합니다.
         /// </remarks>
         internal void TryPlayPlayerIncomingHitVfxByTrigger(GGemCoPlayerSettings.IncomingHitVfxTriggerType triggerType)
         {
-            if (!(_characterBase is Player))
+            TryPlayIncomingHitVfxByTrigger(IncomingHitVfxSettings.ConvertTriggerType(triggerType));
+        }
+
+        /// <summary>
+        /// 설정된 트리거 타입에 따라 캐릭터 피격 VFX 재생을 시도합니다.
+        /// </summary>
+        /// <param name="triggerType">현재 호출 경로의 트리거 타입입니다.</param>
+        /// <remarks>
+        /// 플레이어는 기존 단일 설정을 사용하고, 몬스터는 <see cref="GGemCoMonsterSettings.incomingHitVfxList"/>에
+        /// 등록된 여러 설정을 순서대로 검사하여 조건에 맞는 VFX를 재생합니다.
+        /// </remarks>
+        internal void TryPlayIncomingHitVfxByTrigger(IncomingHitVfxTriggerType triggerType)
+        {
+            if (_characterBase == null)
             {
                 return;
             }
 
+            if (_characterBase is Player)
+            {
+                TryPlayPlayerIncomingHitVfx(triggerType);
+                return;
+            }
+
+            if (_characterBase is Monster)
+            {
+                TryPlayMonsterIncomingHitVfx(triggerType);
+            }
+        }
+
+        /// <summary>
+        /// 플레이어 설정에 저장된 단일 피격 VFX 재생을 시도합니다.
+        /// </summary>
+        /// <param name="triggerType">현재 호출 경로의 트리거 타입입니다.</param>
+        /// <remarks>
+        /// 플레이어 ScriptableObject의 기존 직렬화 타입을 유지하기 위해 런타임에서 공통 설정 타입으로 변환합니다.
+        /// </remarks>
+        private void TryPlayPlayerIncomingHitVfx(IncomingHitVfxTriggerType triggerType)
+        {
             if (_playerSettings == null && AddressableLoaderSettings.Instance != null)
             {
                 _playerSettings = AddressableLoaderSettings.Instance.playerSettings;
@@ -729,27 +768,70 @@ namespace GGemCo2DCore
                 return;
             }
 
-            GGemCoPlayerSettings.IncomingHitVfxSettings settings = _playerSettings.incomingHitVfx;
-            if (!settings.enabled || settings.vfxUid <= 0)
+            IncomingHitVfxSettings settings = IncomingHitVfxSettings.FromPlayerSettings(_playerSettings.incomingHitVfx);
+            TryPlayIncomingHitVfxSettings(settings, PlayerIncomingHitVfxCooldownKey, triggerType);
+        }
+
+        /// <summary>
+        /// 몬스터 설정에 등록된 피격 VFX 목록을 순회하며 재생을 시도합니다.
+        /// </summary>
+        /// <param name="triggerType">현재 호출 경로의 트리거 타입입니다.</param>
+        /// <remarks>
+        /// 각 VFX 항목은 독립된 최소 재생 간격을 가집니다.
+        /// 따라서 한 VFX가 쿨타임 중이어도 다른 VFX는 조건이 맞으면 재생될 수 있습니다.
+        /// </remarks>
+        private void TryPlayMonsterIncomingHitVfx(IncomingHitVfxTriggerType triggerType)
+        {
+            if (_monsterSettings == null && AddressableLoaderSettings.Instance != null)
+            {
+                _monsterSettings = AddressableLoaderSettings.Instance.monsterSettings;
+            }
+
+            if (_monsterSettings == null || _monsterSettings.incomingHitVfxList == null)
             {
                 return;
+            }
+
+            for (int i = 0; i < _monsterSettings.incomingHitVfxList.Count; i++)
+            {
+                TryPlayIncomingHitVfxSettings(_monsterSettings.incomingHitVfxList[i], i, triggerType);
+            }
+        }
+
+        /// <summary>
+        /// 피격 VFX 설정 1개에 대한 조건을 검사하고 실제 VFX 생성을 요청합니다.
+        /// </summary>
+        /// <param name="settings">검사할 피격 VFX 설정입니다.</param>
+        /// <param name="cooldownKey">최소 재생 간격을 구분하기 위한 키입니다.</param>
+        /// <param name="triggerType">현재 호출 경로의 트리거 타입입니다.</param>
+        /// <returns>VFX 생성 요청을 보냈으면 <see langword="true"/>를 반환합니다.</returns>
+        private bool TryPlayIncomingHitVfxSettings(
+            IncomingHitVfxSettings settings,
+            int cooldownKey,
+            IncomingHitVfxTriggerType triggerType)
+        {
+            if (!settings.enabled || settings.vfxUid <= 0)
+            {
+                return false;
             }
 
             // 설정된 트리거 정책과 현재 호출 경로가 다르면 재생하지 않습니다.
             if (!IsIncomingHitVfxTriggerMatched(settings.triggerType, triggerType))
             {
-                return;
+                return false;
             }
 
-            if (settings.minIntervalSeconds > 0f && Time.time < _nextPlayerHitVfxPlayableTime)
+            if (settings.minIntervalSeconds > 0f &&
+                _nextIncomingHitVfxPlayableTimesByKey.TryGetValue(cooldownKey, out float nextPlayableTime) &&
+                Time.time < nextPlayableTime)
             {
-                return;
+                return false;
             }
 
             SceneGame scene = SceneGame.Instance;
             if (scene == null || scene.VfxManager == null)
             {
-                return;
+                return false;
             }
 
             var spawnRequest = new VfxSpawnRequest
@@ -780,8 +862,10 @@ namespace GGemCo2DCore
 
             if (settings.minIntervalSeconds > 0f)
             {
-                _nextPlayerHitVfxPlayableTime = Time.time + settings.minIntervalSeconds;
+                _nextIncomingHitVfxPlayableTimesByKey[cooldownKey] = Time.time + settings.minIntervalSeconds;
             }
+
+            return true;
         }
 
         /// <summary>
@@ -791,21 +875,21 @@ namespace GGemCo2DCore
         /// <param name="currentTriggerType">현재 실행 중인 트리거 경로입니다.</param>
         /// <returns>정책이 현재 트리거를 허용하면 <see langword="true"/>를 반환합니다.</returns>
         private static bool IsIncomingHitVfxTriggerMatched(
-            GGemCoPlayerSettings.IncomingHitVfxTriggerType configuredTriggerType,
-            GGemCoPlayerSettings.IncomingHitVfxTriggerType currentTriggerType)
+            IncomingHitVfxTriggerType configuredTriggerType,
+            IncomingHitVfxTriggerType currentTriggerType)
         {
             switch (configuredTriggerType)
             {
-                case GGemCoPlayerSettings.IncomingHitVfxTriggerType.OnDamageConfirmed:
-                    return currentTriggerType == GGemCoPlayerSettings.IncomingHitVfxTriggerType.OnDamageConfirmed;
-                case GGemCoPlayerSettings.IncomingHitVfxTriggerType.OnAnimationEventPlayerHit:
-                    return currentTriggerType == GGemCoPlayerSettings.IncomingHitVfxTriggerType.OnAnimationEventPlayerHit;
-                case GGemCoPlayerSettings.IncomingHitVfxTriggerType.Both:
-                    return currentTriggerType == GGemCoPlayerSettings.IncomingHitVfxTriggerType.OnDamageConfirmed
-                           || currentTriggerType == GGemCoPlayerSettings.IncomingHitVfxTriggerType.OnAnimationEventPlayerHit;
+                case IncomingHitVfxTriggerType.OnDamageConfirmed:
+                    return currentTriggerType == IncomingHitVfxTriggerType.OnDamageConfirmed;
+                case IncomingHitVfxTriggerType.OnAnimationEventHit:
+                    return currentTriggerType == IncomingHitVfxTriggerType.OnAnimationEventHit;
+                case IncomingHitVfxTriggerType.Both:
+                    return currentTriggerType == IncomingHitVfxTriggerType.OnDamageConfirmed
+                           || currentTriggerType == IncomingHitVfxTriggerType.OnAnimationEventHit;
                 default:
                     // 신규 enum 값이 추가되기 전 구버전 데이터와의 호환을 위해 기본 경로를 유지합니다.
-                    return currentTriggerType == GGemCoPlayerSettings.IncomingHitVfxTriggerType.OnDamageConfirmed;
+                    return currentTriggerType == IncomingHitVfxTriggerType.OnDamageConfirmed;
             }
         }
 

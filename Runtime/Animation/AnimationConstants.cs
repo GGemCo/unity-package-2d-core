@@ -242,6 +242,7 @@ namespace GGemCo2DCore
         public const string EventNameSound = Prefix+"Sound";
         public const string EventNameCameraShake = Prefix+"CameraShake";
         public const string EventNameVfx = Prefix+"Vfx";
+        public const string EventNameHit = Prefix+"Hit";
         public const string EventNamePlayerHit = Prefix+"PlayerHit";
         public const string EventNameSkill = Prefix+"Skill";
         

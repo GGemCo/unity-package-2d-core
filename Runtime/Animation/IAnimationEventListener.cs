@@ -20,7 +20,13 @@ namespace GGemCo2DCore
         void OnAnimationEventGuardEnd(GameObject gameObject);
 
         /// <summary>
-        /// 플레이어 피격 연출용 애니메이션 이벤트를 전달합니다.
+        /// 캐릭터 피격 연출용 공통 애니메이션 이벤트를 전달합니다.
+        /// </summary>
+        /// <param name="fromObject">이벤트를 발생시킨 오브젝트입니다.</param>
+        void OnAnimationEventHit(GameObject fromObject);
+
+        /// <summary>
+        /// 기존 플레이어 피격 연출용 애니메이션 이벤트를 전달합니다.
         /// </summary>
         /// <param name="fromObject">이벤트를 발생시킨 오브젝트입니다.</param>
         void OnAnimationEventPlayerHit(GameObject fromObject);

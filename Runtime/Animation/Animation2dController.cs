@@ -459,11 +459,21 @@ namespace GGemCo2DCore
         }
 
         /// <summary>
-        /// 플레이어 피격 연출 전용(AnimationEvent) 이벤트를 리스너로 전달합니다.
+        /// 캐릭터 피격 연출 공통(AnimationEvent) 이벤트를 리스너로 전달합니다.
         /// </summary>
         /// <remarks>
-        /// 실제 VFX 생성 여부는 런타임 설정(<see cref="GGemCoPlayerSettings.IncomingHitVfxSettings"/>)의
-        /// 트리거 정책을 통해 결정됩니다.
+        /// 실제 VFX 생성 여부는 캐릭터별 피격 VFX 설정의 트리거 정책을 통해 결정됩니다.
+        /// </remarks>
+        public void GGemCoAniEventHit()
+        {
+            EventListener?.OnAnimationEventHit(gameObject);
+        }
+
+        /// <summary>
+        /// 기존 플레이어 피격 연출 전용(AnimationEvent) 이벤트와의 호환을 유지합니다.
+        /// </summary>
+        /// <remarks>
+        /// 신규 애니메이션 클립에는 <see cref="GGemCoAniEventHit"/> 사용을 권장합니다.
         /// </remarks>
         public void GGemCoAniEventPlayerHit()
         {

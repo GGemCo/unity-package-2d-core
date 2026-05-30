@@ -67,6 +67,10 @@ namespace GGemCo2DCore
         [Min(0.01f)]
         public float spriteWhiteOverlayFlashDuration = 0.08f;
 
+        [Header("피격 VFX")]
+        [Tooltip("몬스터 피격 시 재생할 VFX 설정 목록입니다. 여러 항목을 등록하면 조건에 맞는 VFX를 순서대로 재생합니다.")]
+        public List<IncomingHitVfxSettings> incomingHitVfxList;
+
         [Header("Battle HUD")]
         [Tooltip("몬스터 전투 HUD 사용 여부")]
         [SerializeField] private bool useBattleHud = true;
