@@ -89,6 +89,26 @@ namespace GGemCo2DCore
         public AttackHitStopSettings AttackHitStopSettings;
 
         /// <summary>
+        /// 이번 데미지가 플레이어 기본 공격 콤보에서 발생했는지 여부입니다.
+        /// </summary>
+        public bool IsBasicAttackCombo;
+
+        /// <summary>
+        /// 이번 데미지를 발생시킨 기본 공격 콤보 인덱스입니다.
+        /// </summary>
+        public int BasicAttackComboIndex = -1;
+
+        /// <summary>
+        /// 기본 공격 콤보 전체 개수입니다.
+        /// </summary>
+        public int BasicAttackComboCount;
+
+        /// <summary>
+        /// 이번 데미지가 기본 공격 콤보의 마지막 단계에서 발생했는지 여부입니다.
+        /// </summary>
+        public bool IsLastBasicAttackCombo;
+
+        /// <summary>
         /// 이번 공격이 가드와 상호작용하는 방식입니다.
         /// </summary>
         public GuardInteractionMode GuardInteractionMode = GuardInteractionMode.Normal;
@@ -220,6 +240,40 @@ namespace GGemCo2DCore
                 if (behaviours[i] is IIncomingHitCombatFeedbackSink sink)
                 {
                     sink.NotifyIncomingHitResolved(in feedback);
+                }
+            }
+        }
+
+        /// <summary>
+        /// 실제 타격 확정 결과를 공격자 오브젝트에 되돌려줍니다.
+        /// </summary>
+        /// <param name="metadataDamage">타격에 사용된 데미지 메타데이터입니다.</param>
+        /// <param name="outcome">최종 전투 결과입니다.</param>
+        private void NotifyOutgoingAttackHitFeedback(MetadataDamage metadataDamage, MonsterSkillCombatOutcome outcome)
+        {
+            if (metadataDamage == null)
+                return;
+
+            GameObject attacker = metadataDamage.attacker;
+            if (attacker == null)
+                return;
+
+            var feedback = new OutgoingAttackHitFeedback(
+                attacker,
+                _characterBase != null ? _characterBase.gameObject : null,
+                metadataDamage,
+                outcome,
+                Time.time);
+
+            var behaviours = attacker.GetComponents<MonoBehaviour>();
+            if (behaviours == null || behaviours.Length == 0)
+                return;
+
+            for (int i = 0; i < behaviours.Length; i++)
+            {
+                if (behaviours[i] is IOutgoingAttackHitFeedbackSink sink)
+                {
+                    sink.NotifyOutgoingAttackHitResolved(in feedback);
                 }
             }
         }
@@ -408,6 +462,7 @@ namespace GGemCo2DCore
             }
 
             NotifyIncomingHitCombatFeedback(metadataDamage, MonsterSkillCombatOutcome.Hit);
+            NotifyOutgoingAttackHitFeedback(metadataDamage, MonsterSkillCombatOutcome.Hit);
             TryPlayDamageCameraShake(metadataDamage);
 
             if (!hasGuardFeedbackText)

@@ -31,6 +31,7 @@ namespace GGemCo2DCore
         private int _monsterHitAreaLayerMask;
         private CutsceneManager _cutsceneManager;
         private IAttackHitStopProvider _attackHitStopProvider;
+        private IAttackComboStateProvider _attackComboStateProvider;
 
         /// <summary>
         /// 자동 이동의 전투 추적에 사용할 몬스터 타겟을 설정합니다.
@@ -417,6 +418,7 @@ namespace GGemCo2DCore
             
             int countDamageMonster = 0;
             bool hasAttackHitStopSettings = TryResolveCurrentAttackHitStopSettings(out AttackHitStopSettings attackHitStopSettings);
+            bool hasAttackComboState = TryResolveCurrentAttackComboState(out AttackComboRuntimeState attackComboState);
             
             // 몬스터의 HitArea를 체크하기 위해 _monsterHitAreaLayerMask 적용 중
             int hitCount = CompatPhysics2D.OverlapCapsuleNonAlloc(point, size, colliderAttackRange.direction,
@@ -444,7 +446,11 @@ namespace GGemCo2DCore
                     StaggerStackDamage = 1,
                     HitReactionType = CharacterConstants.HitReactionType.Flinch,
                     HasAttackHitStopSettings = hasAttackHitStopSettings,
-                    AttackHitStopSettings = attackHitStopSettings
+                    AttackHitStopSettings = attackHitStopSettings,
+                    IsBasicAttackCombo = hasAttackComboState,
+                    BasicAttackComboIndex = hasAttackComboState ? attackComboState.ComboIndex : -1,
+                    BasicAttackComboCount = hasAttackComboState ? attackComboState.ComboCount : 0,
+                    IsLastBasicAttackCombo = hasAttackComboState && attackComboState.IsLastCombo
                 };
 
                 // 몬스터와 마주보고 있으면 공격 
@@ -501,6 +507,22 @@ namespace GGemCo2DCore
                 return false;
 
             return _attackHitStopProvider.TryGetCurrentAttackHitStopSettings(out settings);
+        }
+
+        /// <summary>
+        /// 현재 기본 공격 콤보 단계 정보를 조회합니다.
+        /// </summary>
+        /// <param name="state">현재 기본 공격 콤보 단계 정보입니다.</param>
+        /// <returns>유효한 기본 공격 콤보 상태가 있으면 <see langword="true"/>를 반환합니다.</returns>
+        private bool TryResolveCurrentAttackComboState(out AttackComboRuntimeState state)
+        {
+            state = default;
+
+            _attackComboStateProvider ??= GetComponent<IAttackComboStateProvider>();
+            if (_attackComboStateProvider == null)
+                return false;
+
+            return _attackComboStateProvider.TryGetCurrentAttackComboState(out state);
         }
         
         public bool IsRequireLevel(int compareLevel)
