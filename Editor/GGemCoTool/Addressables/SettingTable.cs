@@ -109,7 +109,7 @@ namespace GGemCo2DCoreEditor
 
         /// <summary>
         /// 아직 생성되지 않은 선택 테이블인지 확인합니다.
-        /// - Projectile 상세 테이블과 신규 Sound 실제 리소스/variant 테이블은 없을 때 Addressables 등록을 건너뜁니다.
+        /// - Projectile 상세 테이블, 신규 Sound 실제 리소스/variant 테이블, 신규 VFX 대표/variant 테이블은 없을 때 Addressables 등록을 건너뜁니다.
         /// </summary>
         /// <param name="info">검사할 테이블 Addressables 정보입니다.</param>
         /// <returns>선택 테이블이 없어서 건너뛰어야 하면 true를 반환합니다.</returns>
@@ -126,7 +126,9 @@ namespace GGemCo2DCoreEditor
                 info.Key == ConfigAddressableTable.TableSoundBgm.Key ||
                 info.Key == ConfigAddressableTable.TableSoundAmbient.Key ||
                 info.Key == ConfigAddressableTable.TableSoundSfx.Key ||
-                info.Key == ConfigAddressableTable.TableSoundVariant.Key;
+                info.Key == ConfigAddressableTable.TableSoundVariant.Key ||
+                info.Key == ConfigAddressableTable.TableVfx.Key ||
+                info.Key == ConfigAddressableTable.TableVfxVariant.Key;
 
             return isOptionalTable && string.IsNullOrEmpty(AssetDatabase.AssetPathToGUID(info.Path));
         }

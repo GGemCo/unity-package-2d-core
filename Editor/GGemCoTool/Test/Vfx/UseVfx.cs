@@ -9,9 +9,6 @@ namespace GGemCo2DCoreEditor
 {
     public abstract class UseVfxWindowBase<TRow> : DefaultEditorWindow where TRow : class, new()
     {
-        [Header("대상")]
-        private CharacterBase _targetCharacter;
-
         [Header("Override")]
         private bool _followOwner;
         private bool _followTarget;
@@ -79,16 +76,13 @@ namespace GGemCo2DCoreEditor
                 DrawTableSection();
                 EditorGUILayout.Space(6);
 
+                DrawBottomButtons();
+                EditorGUILayout.Space(6);
+
                 DrawRowEditorSection();
                 EditorGUILayout.Space(6);
 
                 DrawOverrideSection();
-                EditorGUILayout.Space(6);
-
-                DrawPreviewSection();
-                EditorGUILayout.Space(8);
-
-                DrawBottomButtons();
                 EditorGUILayout.Space(6);
 
                 DrawReloadSection();
@@ -99,28 +93,6 @@ namespace GGemCo2DCoreEditor
         private void DrawTargetSection()
         {
             DrawCharacterSelectionSection(WindowTitle, "Owner 캐릭터");
-
-            using (new EditorGUILayout.VerticalScope(EditorStyles.helpBox))
-            {
-                EditorGUILayout.LabelField("Target 캐릭터", EditorStyles.boldLabel);
-                _targetCharacter = (CharacterBase)EditorGUILayout.ObjectField("Target", _targetCharacter, typeof(CharacterBase), true);
-
-                using (new EditorGUILayout.HorizontalScope())
-                {
-                    if (GUILayout.Button("Selection → Target", GUILayout.Height(22)))
-                    {
-                        var go = Selection.activeGameObject;
-                        if (go != null)
-                            _targetCharacter = go.GetComponent<CharacterBase>() ?? go.GetComponentInParent<CharacterBase>();
-                    }
-
-                    using (new EditorGUI.DisabledScope(selectedCharacter == null))
-                    {
-                        if (GUILayout.Button("Owner → Target", GUILayout.Height(22)))
-                            _targetCharacter = selectedCharacter;
-                    }
-                }
-            }
         }
 
         private void DrawTableSection()
@@ -201,6 +173,28 @@ namespace GGemCo2DCoreEditor
                         }
                     }
                 }
+                
+                EditorGUILayout.Space(4);
+                using (new EditorGUILayout.HorizontalScope())
+                {
+                    using (new EditorGUI.DisabledScope(!CanApplyToRuntime()))
+                    {
+                        if (GUILayout.Button("인게임 테이블 적용", GUILayout.Height(24)))
+                        {
+                            CommitEditingIfNeeded();
+                            ApplyRowToRuntime(_cachedRow);
+                        }
+                    }
+
+                    using (new EditorGUI.DisabledScope(_cachedRow == null))
+                    {
+                        if (GUILayout.Button("테이블 파일 저장", GUILayout.Height(24)))
+                        {
+                            CommitEditingIfNeeded();
+                            TrySaveTable();
+                        }
+                    }
+                }
             }
         }
 
@@ -252,75 +246,11 @@ namespace GGemCo2DCoreEditor
             _positionOffset = EditorGUILayout.Vector3Field("Offset", _positionOffset);
         }
 
-        private void DrawPreviewSection()
-        {
-            EditorGUILayout.LabelField("미리보기", EditorStyles.boldLabel);
-            using (new EditorGUILayout.VerticalScope("box"))
-            {
-                if (_editingRow == null)
-                {
-                    EditorGUILayout.HelpBox("Row를 선택하면 미리보기를 확인할 수 있습니다.", MessageType.Info);
-                    return;
-                }
-
-                var sb = new StringBuilder();
-                AppendRowPreview(sb, _editingRow);
-
-                sb.AppendLine();
-                sb.AppendLine("[Override]");
-                sb.AppendLine($"- Scale: {_scale}");
-                sb.AppendLine($"- Duration: {_duration}");
-                sb.AppendLine($"- Color: {_color}");
-                sb.AppendLine($"- PositionY: {_positionY}");
-                sb.AppendLine($"- PositionYType: {_positionYType}");
-                sb.AppendLine($"- Follow Owner: {_followOwner}");
-                sb.AppendLine($"- Follow Target: {_followTarget}");
-                if (UseOffsetOverrideField)
-                    sb.AppendLine($"- Offset: {_positionOffset}");
-                sb.AppendLine($"- Spawn At Screen Center: {_spawnAtScreenCenter}");
-                sb.AppendLine($"- Force UI Canvas Parent: {_forceUiCanvasParent}");
-                sb.AppendLine($"- Force UI Sorting: {_useUiSorting}");
-                sb.AppendLine($"- LifecycleType Override: {(_overrideLifecycleType ? _lifecycleTypeOverride.ToString() : "(none)")}");
-                sb.AppendLine($"- AttachType Override: {(_overrideAttachType ? _attachTypeOverride.ToString() : "(none)")}");
-                sb.AppendLine($"- FollowMode Override: {(_overrideFollowMode ? _followModeOverride.ToString() : "(none)")}");
-                sb.AppendLine($"- SortingOrder Override: {(_overrideSortingOrder ? _sortingOrderOverride.ToString() : "(none)")}");
-                sb.AppendLine($"- Owner: {(selectedCharacter != null ? selectedCharacter.name : "(none)")}");
-                sb.AppendLine($"- Target: {(_targetCharacter != null ? _targetCharacter.name : "(none)")}");
-
-                _previewScroll = EditorGUILayout.BeginScrollView(_previewScroll, GUILayout.MinHeight(_minPreviewScroll.y));
-                EditorGUILayout.TextArea(sb.ToString());
-                EditorGUILayout.EndScrollView();
-            }
-        }
-
         private void DrawBottomButtons()
         {
             EditorGUILayout.LabelField("실행 / 저장", EditorStyles.boldLabel);
             using (new EditorGUILayout.VerticalScope("box"))
             {
-                using (new EditorGUILayout.HorizontalScope())
-                {
-                    using (new EditorGUI.DisabledScope(!CanApplyToRuntime()))
-                    {
-                        if (GUILayout.Button("인게임 테이블 적용", GUILayout.Height(24)))
-                        {
-                            CommitEditingIfNeeded();
-                            ApplyRowToRuntime(_cachedRow);
-                        }
-                    }
-
-                    using (new EditorGUI.DisabledScope(_cachedRow == null))
-                    {
-                        if (GUILayout.Button("테이블 파일 저장", GUILayout.Height(24)))
-                        {
-                            CommitEditingIfNeeded();
-                            TrySaveTable();
-                        }
-                    }
-                }
-
-                EditorGUILayout.Space(4);
-
                 using (new EditorGUI.DisabledScope(!CanExecute()))
                 {
                     if (GUILayout.Button("VFX 실행", GUILayout.Height(28)))
@@ -419,8 +349,8 @@ namespace GGemCo2DCoreEditor
             {
                 VfxUid = GetRowUid(_cachedRow),
                 Owner = selectedCharacter,
-                Target = _targetCharacter,
-                FollowTarget = _followOwner ? selectedCharacter : (_followTarget ? _targetCharacter : null),
+                Target = null,
+                FollowTarget = _followOwner ? selectedCharacter : null,
                 ForceUiCanvasParent = _forceUiCanvasParent || UseDefaultUiCanvasParent(_cachedRow),
                 DurationOverride = _duration,
                 ScaleOverride = _scale,

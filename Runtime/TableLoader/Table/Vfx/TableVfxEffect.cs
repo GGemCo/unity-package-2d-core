@@ -7,6 +7,7 @@ namespace GGemCo2DCore
     {
         public int Uid;
         public string Name;
+        public int VfxUid;
         public VfxConstants.Category Category;
         public VfxConstants.EffectType EffectType;
         public string PrefabPath;
@@ -34,6 +35,7 @@ namespace GGemCo2DCore
             {
                 Uid = MathHelper.ParseInt(data.GetValueOrDefault("Uid")),
                 Name = data.GetValueOrDefault("Name"),
+                VfxUid = MathHelper.ParseInt(data.GetValueOrDefault("VfxUid", "0")),
                 Category = EnumHelper.ConvertEnum<VfxConstants.Category>(data.GetValueOrDefault("Category")),
                 EffectType = EnumHelper.ConvertEnum<VfxConstants.EffectType>(data.GetValueOrDefault("EffectType")),
                 PrefabPath = data.GetValueOrDefault("PrefabPath"),
@@ -51,6 +53,26 @@ namespace GGemCo2DCore
                 PoolMaxSize = MathHelper.ParseInt(data.GetValueOrDefault("PoolMaxSize")),
                 UseUnscaledTime = ConvertBoolean(data.GetValueOrDefault("UseUnscaledTime")),
             };
+        }
+
+
+        /// <summary>
+        /// 대표 VFX UID에 직접 연결된 첫 번째 Effect 리소스를 반환합니다.
+        /// </summary>
+        /// <param name="vfxUid">대표 VFX UID입니다.</param>
+        /// <returns>연결된 Effect 행입니다. 없으면 null입니다.</returns>
+        public StruckTableVfxEffect GetFirstByVfxUid(int vfxUid)
+        {
+            foreach (KeyValuePair<int, StruckTableVfxEffect> pair in GetDatas())
+            {
+                if (pair.Value == null)
+                    continue;
+
+                if (pair.Value.VfxUid == vfxUid)
+                    return pair.Value;
+            }
+
+            return null;
         }
 
         private static VfxConstants.LifecycleType ParseLifecycleType(string value)

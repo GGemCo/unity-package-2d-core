@@ -7,12 +7,14 @@ namespace GGemCo2DCore
         private SceneGame _sceneGame;
         private AnimationEventMediator _animationEventMediator;
         private VfxPoolService _poolService;
+        private VfxResolver _vfxResolver;
         private bool _didInitialPrewarm;
 
         public void Initialize(SceneGame sceneGame)
         {
             _sceneGame = sceneGame;
             _poolService = new VfxPoolService();
+            _vfxResolver = new VfxResolver(TableLoaderManager.Instance);
             TryPrewarmAllConfiguredVfx();
         }
 
@@ -48,12 +50,19 @@ namespace GGemCo2DCore
             if (request.VfxUid <= 0)
                 return null;
 
-            var info = TableLoaderManager.Instance.GetVfxData(request.VfxUid);
-            if (info == null)
+            if (!TryResolveVfx(request.VfxUid, out ResolvedVfx resolved))
             {
                 GcLogger.LogError("vfx 테이블에 없는 데이터 입니다. vfx Uid: " + request.VfxUid);
                 return null;
             }
+
+            if (!resolved.ShouldPlay)
+                return null;
+
+            ApplyResolvedOverrides(ref request, resolved);
+            VfxRuntimeData info = resolved.RuntimeData;
+            if (info == null)
+                return null;
 
             GameObject prefab = ResolvePrefab(info);
             if (prefab == null)
@@ -77,6 +86,45 @@ namespace GGemCo2DCore
             ApplyRequest(instance, behaviour, spawnPolicy, request);
             instance.SetActive(true);
             return behaviour;
+        }
+
+
+        /// <summary>
+        /// 대표 VFX UID를 실제 생성 대상 정보로 해석합니다.
+        /// 커스텀 테스트 툴과 디버그 코드가 실제 게임 생성 경로와 같은 해석 결과를 확인할 때 사용합니다.
+        /// </summary>
+        /// <param name="vfxUid">외부 시스템이 사용하는 대표 VFX UID입니다.</param>
+        /// <param name="resolved">해석된 최종 VFX 정보입니다.</param>
+        /// <returns>해석에 성공하면 true를 반환합니다. 무출력 후보도 성공 결과로 반환될 수 있습니다.</returns>
+        public bool TryResolveVfx(int vfxUid, out ResolvedVfx resolved)
+        {
+            resolved = default;
+            TableLoaderManager tableLoader = TableLoaderManager.Instance;
+            if (tableLoader == null)
+                return false;
+
+            if (_vfxResolver == null)
+                _vfxResolver = new VfxResolver(tableLoader);
+
+            return _vfxResolver.TryResolve(vfxUid, out resolved);
+        }
+
+        /// <summary>
+        /// Variant 후보에서 지정한 요청 보정값을 실제 생성 요청에 병합합니다.
+        /// 명시 요청 값이 이미 있으면 호출부의 요청을 우선합니다.
+        /// </summary>
+        /// <param name="request">생성 요청입니다.</param>
+        /// <param name="resolved">VFX 해석 결과입니다.</param>
+        private static void ApplyResolvedOverrides(ref VfxSpawnRequest request, ResolvedVfx resolved)
+        {
+            if (request.ScaleOverride <= 0f && resolved.ScaleOverride > 0f)
+                request.ScaleOverride = resolved.ScaleOverride;
+
+            if (request.DurationOverride == 0f && resolved.DurationOverride > 0f)
+                request.DurationOverride = resolved.DurationOverride;
+
+            if (string.IsNullOrWhiteSpace(request.ColorOverride) && !string.IsNullOrWhiteSpace(resolved.ColorOverride))
+                request.ColorOverride = resolved.ColorOverride;
         }
 
         private void TryPrewarmAllConfiguredVfx()
@@ -291,11 +339,11 @@ namespace GGemCo2DCore
         }
 
         /// <summary>
-        /// Behaviour 정책이 다른 동일 VfxUid가 풀 인스턴스를 공유하지 않도록 풀 키를 계산합니다.
+        /// Behaviour 정책이 다른 동일 실제 VFX 리소스가 풀 인스턴스를 공유하지 않도록 풀 키를 계산합니다.
         /// </summary>
         /// <param name="info">VFX 테이블에서 해석한 런타임 데이터입니다.</param>
         /// <param name="request">이번 VFX 생성 요청입니다.</param>
-        /// <returns>VfxUid 기본 풀 또는 레이저 전용 풀을 가리키는 키입니다.</returns>
+        /// <returns>실제 리소스 UID 기본 풀 또는 레이저 전용 풀을 가리키는 키입니다.</returns>
         private static int ResolvePoolKey(VfxRuntimeData info, VfxSpawnRequest request)
         {
             if (info == null)

@@ -30,6 +30,7 @@ namespace GGemCo2DCoreEditor
             var options = new TableRowEditorUtility.TableRowEditorBuildOptions();
             options.ReadOnlyMembers.Add(nameof(StruckTableVfxEffect.Uid));
             options.GroupByMemberName[nameof(StruckTableVfxEffect.Name)] = "기본";
+            options.GroupByMemberName[nameof(StruckTableVfxEffect.VfxUid)] = "기본";
             options.GroupByMemberName[nameof(StruckTableVfxEffect.Category)] = "기본";
             options.GroupByMemberName[nameof(StruckTableVfxEffect.EffectType)] = "기본";
             options.GroupByMemberName[nameof(StruckTableVfxEffect.PrefabPath)] = "에셋";
@@ -108,6 +109,7 @@ namespace GGemCo2DCoreEditor
         protected override void AppendRowPreview(StringBuilder sb, StruckTableVfxEffect row)
         {
             sb.AppendLine($"[Effect] {row.Uid} - {row.Name}");
+            sb.AppendLine($"- VfxUid: {row.VfxUid}");
             sb.AppendLine($"- Category: {row.Category}");
             sb.AppendLine($"- EffectType: {row.EffectType}");
             sb.AppendLine($"- PrefabPath: {row.PrefabPath}");
@@ -170,6 +172,7 @@ namespace GGemCo2DCoreEditor
                 {
                     "Uid" => row.Uid.ToString(),
                     "Name" => row.Name ?? string.Empty,
+                    "VfxUid" => row.VfxUid.ToString(),
                     "Category" => row.Category.ToString(),
                     "EffectType" => row.EffectType.ToString(),
                     "PrefabPath" => row.PrefabPath ?? string.Empty,

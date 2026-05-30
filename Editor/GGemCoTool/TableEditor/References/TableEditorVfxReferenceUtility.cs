@@ -26,8 +26,18 @@ namespace GGemCo2DCoreEditor
             if (string.IsNullOrWhiteSpace(headerName))
                 return false;
 
-            return string.Equals(headerName, "VfxUid", StringComparison.OrdinalIgnoreCase)
-                || string.Equals(headerName, "HitVfxUid", StringComparison.OrdinalIgnoreCase);
+            if (string.Equals(headerName, "CandidateVfxResourceUid", StringComparison.OrdinalIgnoreCase))
+                return true;
+
+            if (string.Equals(headerName, "VfxUid", StringComparison.OrdinalIgnoreCase)
+                || string.Equals(headerName, "HitVfxUid", StringComparison.OrdinalIgnoreCase))
+            {
+                // 신규 vfx 대표 테이블이 준비된 프로젝트는 대표 UID를 일반 참조로 표시합니다.
+                // 아직 마이그레이션 전인 프로젝트는 기존 vfx_effect/vfx_particle 탭 선택 UX를 유지합니다.
+                return !HasRootVfxItems();
+            }
+
+            return false;
         }
 
         public static IReadOnlyList<SearchableDropdownUtility.OptionTab<TableEditorVfxReferenceOption>> BuildTabs()
@@ -137,6 +147,18 @@ namespace GGemCo2DCoreEditor
 
             if (TryFindItem(uid, out _, out TableEditorTableDefinition table))
                 onJumpToReference.Invoke(table, uid);
+        }
+
+
+        /// <summary>
+        /// 대표 vfx 테이블에 표시 가능한 행이 있는지 확인합니다.
+        /// </summary>
+        /// <returns>대표 VFX 행이 1개 이상 있으면 true를 반환합니다.</returns>
+        private static bool HasRootVfxItems()
+        {
+            TableEditorTableDefinition rootTable = TableEditorRegistry.FindByKey(ConfigAddressableTable.Vfx);
+            IReadOnlyList<TableEditorReferenceItem> items = TableEditorReferenceCache.GetItems(rootTable);
+            return items != null && items.Count > 0;
         }
 
         private static TableEditorTableDefinition GetEffectTable()

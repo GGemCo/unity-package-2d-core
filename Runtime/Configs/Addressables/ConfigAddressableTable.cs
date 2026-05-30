@@ -37,8 +37,10 @@ namespace GGemCo2DCore
         public const string Stat             = "stat";
         public const string DamageType       = "damage_type";
         public const string State            = "state";
+        public const string Vfx              = "vfx";
         public const string VfxEffect        = "vfx_effect";
         public const string VfxParticle      = "vfx_particle";
+        public const string VfxVariant       = "vfx_variant";
         public const string Interaction      = "interaction";
         public const string Shop             = "shop";
         public const string ShopItem         = "shop_item";
@@ -92,8 +94,10 @@ namespace GGemCo2DCore
         public static readonly AddressableAssetInfo TableStat            = Make(Stat);
         public static readonly AddressableAssetInfo TableDamageType      = Make(DamageType);
         public static readonly AddressableAssetInfo TableState           = Make(State);
+        public static readonly AddressableAssetInfo TableVfx             = Make(Vfx);
         public static readonly AddressableAssetInfo TableVfxEffect       = Make(VfxEffect);
         public static readonly AddressableAssetInfo TableVfxParticle     = Make(VfxParticle);
+        public static readonly AddressableAssetInfo TableVfxVariant      = Make(VfxVariant);
         public static readonly AddressableAssetInfo TableInteraction     = Make(Interaction);
         public static readonly AddressableAssetInfo TableShop            = Make(Shop);
         public static readonly AddressableAssetInfo TableShopItem        = Make(ShopItem);
@@ -135,7 +139,7 @@ namespace GGemCo2DCore
             // Status 3분리 테이블
             TableStat, TableDamageType, TableState,
             // Others
-            TableVfxEffect, TableVfxParticle, TableInteraction,
+            TableVfx, TableVfxEffect, TableVfxParticle, TableVfxVariant, TableInteraction,
             TableShop, TableShopItem, TableShopPromotion, TableItemUpgrade, TableItemSalvage, TableItemCraft,
             TableCutscene, TableDialogue, TableQuest, TableLicense,
             TableProjectile, TableLaser, TableProjectileLinear, TableProjectileArc, TableProjectilePath, TableProjectileLinearThenSegments,

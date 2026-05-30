@@ -35,8 +35,10 @@ namespace GGemCo2DCore
         public TableCrowdControlKnockDown TableCrowdControlKnockDown { get; private set; } = new TableCrowdControlKnockDown();
         public TableCrowdControlKnockUp TableCrowdControlKnockUp { get; private set; } = new TableCrowdControlKnockUp();
         public TableCrowdControlKnockDownAir TableCrowdControlKnockDownAir { get; private set; } = new TableCrowdControlKnockDownAir();
+        public TableVfx TableVfx { get; private set; } = new TableVfx();
         public TableVfxEffect TableVfxEffect { get; private set; } = new TableVfxEffect();
         public TableVfxParticle TableVfxParticle { get; private set; } = new TableVfxParticle();
+        public TableVfxVariant TableVfxVariant { get; private set; } = new TableVfxVariant();
         public TableInteraction TableInteraction { get; private set; } = new TableInteraction();
         public TableShop TableShop { get; private set; } = new TableShop();
         public TableShopItem TableShopItem { get; private set; } = new TableShopItem();
@@ -100,8 +102,10 @@ namespace GGemCo2DCore
                 registry.Register(TableCrowdControlKnockDown);
                 registry.Register(TableCrowdControlKnockUp);
                 registry.Register(TableCrowdControlKnockDownAir);
+                registry.Register(TableVfx);
                 registry.Register(TableVfxEffect);
                 registry.Register(TableVfxParticle);
+                registry.Register(TableVfxVariant);
                 registry.Register(TableInteraction);
                 registry.Register(TableShop);
                 registry.Register(TableShopItem);

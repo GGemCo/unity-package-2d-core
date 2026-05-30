@@ -170,7 +170,9 @@ namespace GGemCo2DCore
                    || key == ConfigAddressableTable.TableSoundBgm.Key
                    || key == ConfigAddressableTable.TableSoundAmbient.Key
                    || key == ConfigAddressableTable.TableSoundSfx.Key
-                   || key == ConfigAddressableTable.TableSoundVariant.Key;
+                   || key == ConfigAddressableTable.TableSoundVariant.Key
+                   || key == ConfigAddressableTable.TableVfx.Key
+                   || key == ConfigAddressableTable.TableVfxVariant.Key;
         }
 
         /// <summary>

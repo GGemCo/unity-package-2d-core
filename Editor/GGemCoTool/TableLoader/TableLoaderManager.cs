@@ -83,11 +83,17 @@ namespace GGemCo2DCoreEditor
             return LoadTable<TableLicense>(ConfigAddressableTable.TableLicense.Path, forceReload);
         }
 
+        public static TableVfx LoadVfxTable(bool forceReload = true)
+            => TryLoadOptionalTable<TableVfx>(ConfigAddressableTable.TableVfx.Path, forceReload);
+
         public static TableVfxEffect LoadVfxEffectTable(bool forceReload = true)
             => LoadTable<TableVfxEffect>(ConfigAddressableTable.TableVfxEffect.Path, forceReload);
 
         public static TableVfxParticle LoadVfxParticleTable(bool forceReload = true)
             => LoadTable<TableVfxParticle>(ConfigAddressableTable.TableVfxParticle.Path, forceReload);
+
+        public static TableVfxVariant LoadVfxVariantTable(bool forceReload = true)
+            => TryLoadOptionalTable<TableVfxVariant>(ConfigAddressableTable.TableVfxVariant.Path, forceReload);
 
         /// <summary>
         /// 에디터 환경에서 laser 테이블을 로드합니다.

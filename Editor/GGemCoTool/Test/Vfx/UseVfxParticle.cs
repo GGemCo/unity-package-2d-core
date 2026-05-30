@@ -29,6 +29,7 @@ namespace GGemCo2DCoreEditor
             var options = new TableRowEditorUtility.TableRowEditorBuildOptions();
             options.ReadOnlyMembers.Add(nameof(StruckTableVfxParticle.Uid));
             options.GroupByMemberName[nameof(StruckTableVfxParticle.Name)] = "기본";
+            options.GroupByMemberName[nameof(StruckTableVfxParticle.VfxUid)] = "기본";
             options.GroupByMemberName[nameof(StruckTableVfxParticle.PrefabPath)] = "기본";
             options.GroupByMemberName[nameof(StruckTableVfxParticle.LifecycleType)] = "Spawn Policy";
             options.GroupByMemberName[nameof(StruckTableVfxParticle.AttachType)] = "Spawn Policy";
@@ -90,6 +91,7 @@ namespace GGemCo2DCoreEditor
         protected override void AppendRowPreview(StringBuilder sb, StruckTableVfxParticle row)
         {
             sb.AppendLine($"[Particle] {row.Uid} - {row.Name}");
+            sb.AppendLine($"- VfxUid: {row.VfxUid}");
             sb.AppendLine($"- PrefabPath: {row.PrefabPath}");
             sb.AppendLine($"- LifecycleType: {row.LifecycleType}");
             sb.AppendLine($"- AttachType: {row.AttachType}");
@@ -138,6 +140,7 @@ namespace GGemCo2DCoreEditor
                 {
                     "Uid" => row.Uid.ToString(),
                     "Name" => row.Name ?? string.Empty,
+                    "VfxUid" => row.VfxUid.ToString(),
                     "PrefabPath" => row.PrefabPath ?? string.Empty,
                     "LifecycleType" => row.LifecycleType.ToString(),
                     "AttachType" => row.AttachType.ToString(),
