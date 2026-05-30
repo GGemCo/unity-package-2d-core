@@ -69,7 +69,7 @@ namespace GGemCo2DCore
 
         [Header("피격 VFX")]
         [Tooltip("몬스터 피격 시 재생할 VFX 설정 목록입니다. 여러 항목을 등록하면 조건에 맞는 VFX를 순서대로 재생합니다.")]
-        public List<IncomingHitVfxSettings> incomingHitVfxList;
+        public List<IncomingHitVfxSettings> incomingHitVfxList = new();
 
         [Header("Battle HUD")]
         [Tooltip("몬스터 전투 HUD 사용 여부")]
@@ -253,6 +253,37 @@ namespace GGemCo2DCore
         }
         
         /// <summary>
+        /// Inspector 값이 변경되거나 에셋이 로드될 때 피격 VFX 레거시 데이터를 신규 구조로 보정합니다.
+        /// </summary>
+        /// <remarks>
+        /// 이전 버전의 <see cref="IncomingHitVfxSettings"/>는 VFX 생성 필드를 직접 가지고 있었습니다.
+        /// 현재는 <see cref="StruckAnimationEventVfx"/>를 함께 사용하므로, 기존 에셋을 열었을 때 값이 유실되지 않도록
+        /// 숨김 레거시 필드 값을 신규 payload로 복사합니다.
+        /// </remarks>
+        private void OnValidate()
+        {
+            MigrateIncomingHitVfxList();
+        }
+
+        /// <summary>
+        /// 몬스터 피격 VFX 목록의 레거시 저장 데이터를 신규 VFX payload 구조로 변환합니다.
+        /// </summary>
+        private void MigrateIncomingHitVfxList()
+        {
+            if (incomingHitVfxList == null)
+            {
+                return;
+            }
+
+            // List 안의 struct는 값을 직접 수정할 수 없으므로 복사 후 다시 대입합니다.
+            for (int i = 0; i < incomingHitVfxList.Count; i++)
+            {
+                IncomingHitVfxSettings migrated = incomingHitVfxList[i].MigrateLegacyVfxIfNeeded();
+                incomingHitVfxList[i] = migrated;
+            }
+        }
+
+        /// <summary>
         /// 처음 생성 시 한 번만 실행됨
         /// </summary>
         private void Reset()
@@ -280,6 +311,7 @@ namespace GGemCo2DCore
             spriteWhiteOverlayMaterial = null;
             spriteWhiteOverlayColor = Color.white;
             spriteWhiteOverlayFlashDuration = 0.08f;
+            incomingHitVfxList = new List<IncomingHitVfxSettings>();
             cullingBrainResumePolicy = MonsterCullingBrainResumePolicy.Continue;
             resetAggroOnCullingBrainReset = false;
             resetToRegenPositionOnCullingBrainReset = false;

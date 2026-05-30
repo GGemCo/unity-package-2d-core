@@ -96,6 +96,7 @@ namespace GGemCo2DCore
             };
 
             ApplyAnimationEventFlipPolicy(ref request, data, owner);
+            ApplyAnimationEventSortingOverrides(ref request, data);
             return request;
         }
 
@@ -248,6 +249,28 @@ namespace GGemCo2DCore
             return data.PositionBasis == AnimationEventVfxPositionBasis.EventCharacterHead
                 ? ConfigCommon.PositionYType.CharacterHeight
                 : ConfigCommon.PositionYType.None;
+        }
+
+        /// <summary>
+        /// AnimationEvent VFX의 Sorting 오버라이드를 생성 요청에 적용합니다.
+        /// </summary>
+        /// <param name="request">수정할 VFX 생성 요청입니다.</param>
+        /// <param name="data">AnimationEvent 또는 피격 설정에서 전달된 VFX 데이터입니다.</param>
+        private static void ApplyAnimationEventSortingOverrides(ref VfxSpawnRequest request, StruckAnimationEventVfx data)
+        {
+            if (data == null)
+                return;
+
+            // 피격 VFX와 AnimationEvent VFX가 같은 payload를 쓰도록 Sorting 보정도 공통 데이터에서 처리합니다.
+            if (data.HasSortingLayerOverride)
+            {
+                request.SortingLayerOverride = data.SortingLayerKey;
+            }
+
+            if (data.HasSortingOrderOverride)
+            {
+                request.SortingOrderOverride = data.SortingOrder;
+            }
         }
 
         /// <summary>

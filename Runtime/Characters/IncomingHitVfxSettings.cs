@@ -28,8 +28,9 @@ namespace GGemCo2DCore
     /// 캐릭터 피격 VFX의 재생 옵션을 정의합니다.
     /// </summary>
     /// <remarks>
-    /// 플레이어 전용 설정과 몬스터 전용 설정이 동일한 실행 로직을 사용할 수 있도록
-    /// 캐릭터 공통 설정 타입으로 분리합니다.
+    /// 피격 시스템 고유 정책은 이 구조가 담당하고, 실제 VFX 생성 정보는
+    /// <see cref="StruckAnimationEventVfx"/>를 재사용합니다.
+    /// 이전 버전의 단일 필드 저장 데이터를 잃지 않도록 레거시 필드를 숨김 상태로 유지합니다.
     /// </remarks>
     [Serializable]
     public struct IncomingHitVfxSettings
@@ -37,42 +38,26 @@ namespace GGemCo2DCore
         [Tooltip("피격 VFX를 사용할지 여부")]
         public bool enabled;
 
-        [Tooltip("재생할 vfx_effect 테이블 Uid")]
-        public int vfxUid;
-
-        [Tooltip("VFX를 피격 캐릭터를 따라가며 재생할지 여부")]
-        public bool followTarget;
-
-        [Tooltip("피격 VFX의 추가 위치 오프셋(World 기준)")]
-        public Vector3 positionOffset;
-
-        [Tooltip("Y 위치 계산 시 캐릭터 높이 자동 반영 여부")]
-        public ConfigCommon.PositionYType positionYType;
-
-        [Tooltip("VFX 크기 오버라이드 값 (0 이하이면 테이블 기본값 사용)")]
-        public float scaleOverride;
-
-        [Tooltip("VFX 지속 시간 오버라이드 값(초, 0 이하이면 테이블 기본값 사용)")]
-        public float durationOverride;
-
-        [Tooltip("Sorting Layer 오버라이드 사용 여부")]
-        public bool hasSortingLayerOverride;
-
-        [Tooltip("오버라이드할 Sorting Layer 키")]
-        public ConfigSortingLayer.Keys sortingLayerKey;
-
-        [Tooltip("Sorting Order 오버라이드 사용 여부")]
-        public bool hasSortingOrderOverride;
-
-        [Tooltip("오버라이드할 Sorting Order 값")]
-        public int sortingOrder;
+        [Tooltip("피격 VFX 재생 트리거 방식(데미지 확정/애니메이션 이벤트)을 선택합니다.")]
+        public IncomingHitVfxTriggerType triggerType;
 
         [Tooltip("연속 피격 시 VFX 재생 최소 간격(초, 0 이하이면 제한 없음)")]
         [Min(0f)]
         public float minIntervalSeconds;
 
-        [Tooltip("피격 VFX 재생 트리거 방식(데미지 확정/애니메이션 이벤트)을 선택합니다.")]
-        public IncomingHitVfxTriggerType triggerType;
+        [Tooltip("실제 재생할 VFX 정보입니다. AnimationEvent VFX와 같은 위치/Flip/Offset 정책을 사용합니다.")]
+        public StruckAnimationEventVfx vfx;
+
+        [SerializeField, HideInInspector] private int vfxUid;
+        [SerializeField, HideInInspector] private bool followTarget;
+        [SerializeField, HideInInspector] private Vector3 positionOffset;
+        [SerializeField, HideInInspector] private ConfigCommon.PositionYType positionYType;
+        [SerializeField, HideInInspector] private float scaleOverride;
+        [SerializeField, HideInInspector] private float durationOverride;
+        [SerializeField, HideInInspector] private bool hasSortingLayerOverride;
+        [SerializeField, HideInInspector] private ConfigSortingLayer.Keys sortingLayerKey;
+        [SerializeField, HideInInspector] private bool hasSortingOrderOverride;
+        [SerializeField, HideInInspector] private int sortingOrder;
 
         /// <summary>
         /// 비활성 기본 설정을 생성합니다.
@@ -83,18 +68,9 @@ namespace GGemCo2DCore
             return new IncomingHitVfxSettings
             {
                 enabled = false,
-                vfxUid = 0,
-                followTarget = false,
-                positionOffset = Vector3.zero,
-                positionYType = ConfigCommon.PositionYType.None,
-                scaleOverride = 0f,
-                durationOverride = 0f,
-                hasSortingLayerOverride = false,
-                sortingLayerKey = ConfigSortingLayer.Keys.CharacterTop,
-                hasSortingOrderOverride = false,
-                sortingOrder = 0,
-                minIntervalSeconds = 0f,
                 triggerType = IncomingHitVfxTriggerType.OnDamageConfirmed,
+                minIntervalSeconds = 0f,
+                vfx = CreateDefaultVfxPayload(),
             };
         }
 
@@ -112,19 +88,67 @@ namespace GGemCo2DCore
             return new IncomingHitVfxSettings
             {
                 enabled = settings.enabled,
-                vfxUid = settings.vfxUid,
-                followTarget = settings.followTarget,
-                positionOffset = settings.positionOffset,
-                positionYType = settings.positionYType,
-                scaleOverride = settings.scaleOverride,
-                durationOverride = settings.durationOverride,
-                hasSortingLayerOverride = settings.hasSortingLayerOverride,
-                sortingLayerKey = settings.sortingLayerKey,
-                hasSortingOrderOverride = settings.hasSortingOrderOverride,
-                sortingOrder = settings.sortingOrder,
-                minIntervalSeconds = settings.minIntervalSeconds,
                 triggerType = ConvertTriggerType(settings.triggerType),
+                minIntervalSeconds = settings.minIntervalSeconds,
+                vfx = CreateVfxPayload(
+                    settings.vfxUid,
+                    settings.followTarget,
+                    settings.positionOffset,
+                    settings.positionYType,
+                    settings.scaleOverride,
+                    settings.durationOverride,
+                    settings.hasSortingLayerOverride,
+                    settings.sortingLayerKey,
+                    settings.hasSortingOrderOverride,
+                    settings.sortingOrder),
             };
+        }
+
+        /// <summary>
+        /// 실제 재생에 사용할 VFX payload를 반환합니다.
+        /// </summary>
+        /// <returns>현재 설정의 VFX payload입니다. 신규 필드가 비어 있고 레거시 값이 있으면 레거시 값으로 생성합니다.</returns>
+        /// <remarks>
+        /// 이전 버전에서 저장된 <c>vfxUid</c>, <c>positionOffset</c> 등의 값이 있는 에셋도
+        /// 런타임에서 즉시 동작하도록 fallback 변환을 제공합니다.
+        /// </remarks>
+        public StruckAnimationEventVfx GetRuntimeVfx()
+        {
+            if (vfx != null && vfx.Uid > 0)
+            {
+                return vfx;
+            }
+
+            return vfxUid > 0 ? CreateVfxPayloadFromLegacyFields() : vfx;
+        }
+
+        /// <summary>
+        /// 레거시 필드에 저장된 값을 신규 <see cref="vfx"/> 필드로 이전합니다.
+        /// </summary>
+        /// <returns>마이그레이션이 반영된 설정입니다.</returns>
+        /// <remarks>
+        /// Unity Inspector에서 기존 에셋을 열었을 때 신규 구조에 값이 표시되도록 사용합니다.
+        /// 런타임에서는 <see cref="GetRuntimeVfx"/>가 별도로 fallback을 제공하므로 저장 전에도 안전합니다.
+        /// </remarks>
+        public IncomingHitVfxSettings MigrateLegacyVfxIfNeeded()
+        {
+            if ((vfx == null || vfx.Uid <= 0) && vfxUid > 0)
+            {
+                // 이전 버전의 평면 필드 데이터를 신규 공용 VFX payload로 복사합니다.
+                vfx = CreateVfxPayloadFromLegacyFields();
+            }
+
+            return this;
+        }
+
+        /// <summary>
+        /// 현재 VFX payload가 지속형 Follow 정책인지 확인합니다.
+        /// </summary>
+        /// <param name="payload">검사할 VFX payload입니다.</param>
+        /// <returns>캐릭터를 따라가는 VFX이면 <see langword="true"/>입니다.</returns>
+        public static bool IsFollowVfx(StruckAnimationEventVfx payload)
+        {
+            return payload != null && payload.FlipPolicy == AnimationEventVfxFlipPolicy.EventCharacterFollow;
         }
 
         /// <summary>
@@ -144,6 +168,96 @@ namespace GGemCo2DCore
                 default:
                     return IncomingHitVfxTriggerType.OnDamageConfirmed;
             }
+        }
+
+        /// <summary>
+        /// 기본 VFX payload를 생성합니다.
+        /// </summary>
+        /// <returns>기본값으로 초기화된 VFX payload입니다.</returns>
+        private static StruckAnimationEventVfx CreateDefaultVfxPayload()
+        {
+            return new StruckAnimationEventVfx
+            {
+                Uid = 0,
+                Scale = 1f,
+                Duration = 0f,
+                Color = "FFFFFF",
+                PositionBasis = AnimationEventVfxPositionBasis.EventObject,
+                OffsetX = 0f,
+                OffsetY = 0f,
+                OffsetZ = 0f,
+                MirrorOffsetXByCharacterFlip = true,
+                FlipPolicy = AnimationEventVfxFlipPolicy.EventCharacterOnSpawn,
+                HasSortingLayerOverride = false,
+                SortingLayerKey = ConfigSortingLayer.Keys.CharacterTop,
+                HasSortingOrderOverride = false,
+                SortingOrder = 0,
+            };
+        }
+
+        /// <summary>
+        /// 기존 피격 VFX 평면 필드 값을 공용 AnimationEvent VFX payload로 변환합니다.
+        /// </summary>
+        /// <param name="uid">재생할 VFX Uid입니다.</param>
+        /// <param name="follow">캐릭터를 따라갈지 여부입니다.</param>
+        /// <param name="offset">월드 오프셋입니다.</param>
+        /// <param name="yType">기존 Y 위치 정책입니다.</param>
+        /// <param name="scale">스케일 오버라이드입니다.</param>
+        /// <param name="duration">지속 시간 오버라이드입니다.</param>
+        /// <param name="useSortingLayerOverride">Sorting Layer 오버라이드 사용 여부입니다.</param>
+        /// <param name="sortingLayer">Sorting Layer 키입니다.</param>
+        /// <param name="useSortingOrderOverride">Sorting Order 오버라이드 사용 여부입니다.</param>
+        /// <param name="order">Sorting Order 값입니다.</param>
+        /// <returns>변환된 VFX payload입니다.</returns>
+        private static StruckAnimationEventVfx CreateVfxPayload(
+            int uid,
+            bool follow,
+            Vector3 offset,
+            ConfigCommon.PositionYType yType,
+            float scale,
+            float duration,
+            bool useSortingLayerOverride,
+            ConfigSortingLayer.Keys sortingLayer,
+            bool useSortingOrderOverride,
+            int order)
+        {
+            StruckAnimationEventVfx payload = CreateDefaultVfxPayload();
+            payload.Uid = uid;
+            payload.Scale = scale > 0f ? scale : 0f;
+            payload.Duration = Mathf.Max(0f, duration);
+            payload.PositionBasis = yType == ConfigCommon.PositionYType.CharacterHeight
+                ? AnimationEventVfxPositionBasis.EventCharacterHead
+                : AnimationEventVfxPositionBasis.EventObject;
+            payload.OffsetX = offset.x;
+            payload.OffsetY = offset.y;
+            payload.OffsetZ = offset.z;
+            payload.FlipPolicy = follow
+                ? AnimationEventVfxFlipPolicy.EventCharacterFollow
+                : AnimationEventVfxFlipPolicy.EventCharacterOnSpawn;
+            payload.HasSortingLayerOverride = useSortingLayerOverride;
+            payload.SortingLayerKey = sortingLayer;
+            payload.HasSortingOrderOverride = useSortingOrderOverride;
+            payload.SortingOrder = order;
+            return payload;
+        }
+
+        /// <summary>
+        /// 숨김 레거시 필드 값을 공용 VFX payload로 변환합니다.
+        /// </summary>
+        /// <returns>레거시 필드 기반 VFX payload입니다.</returns>
+        private StruckAnimationEventVfx CreateVfxPayloadFromLegacyFields()
+        {
+            return CreateVfxPayload(
+                vfxUid,
+                followTarget,
+                positionOffset,
+                positionYType,
+                scaleOverride,
+                durationOverride,
+                hasSortingLayerOverride,
+                sortingLayerKey,
+                hasSortingOrderOverride,
+                sortingOrder);
         }
     }
 }

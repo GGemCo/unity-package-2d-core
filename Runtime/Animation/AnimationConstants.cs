@@ -1,3 +1,6 @@
+﻿using System;
+using UnityEngine;
+
 namespace GGemCo2DCore
 {
     public class StruckAnimationEventComplete
@@ -59,42 +62,73 @@ namespace GGemCo2DCore
     }
 
     /// <summary>
-    /// AnimationEvent에서 VFX를 생성할 때 사용하는 JSON 데이터입니다.
+    /// AnimationEvent와 캐릭터 피격 설정에서 공통으로 사용하는 VFX 생성 데이터입니다.
     /// </summary>
+    /// <remarks>
+    /// Unity ScriptableObject 안에서도 저장할 수 있도록 public field 기반으로 구성합니다.
+    /// Newtonsoft.Json은 public field도 처리하므로 기존 AnimationEvent JSON 역직렬화와 함께 사용할 수 있습니다.
+    /// </remarks>
+    [Serializable]
     public class StruckAnimationEventVfx
     {
         /// <summary>생성할 VFX 대표 Uid입니다.</summary>
-        public int Uid { get; set; }
+        [Tooltip("생성할 VFX 대표 Uid입니다.")]
+        public int Uid;
 
         /// <summary>VFX 스케일 오버라이드입니다. 0보다 클 때만 적용됩니다.</summary>
-        public float Scale { get; set; } = 1.0f;
+        [Tooltip("VFX 스케일 오버라이드입니다. 0보다 클 때만 적용됩니다.")]
+        public float Scale = 1.0f;
 
         /// <summary>VFX 지속 시간 오버라이드입니다. 0이면 VFX 데이터 기본 정책을 사용합니다.</summary>
-        public float Duration { get; set; } = 0;
+        [Tooltip("VFX 지속 시간 오버라이드입니다. 0이면 VFX 데이터 기본 정책을 사용합니다.")]
+        public float Duration = 0f;
 
         /// <summary>VFX 색상 오버라이드입니다. RRGGBB 또는 RRGGBBAA 형식을 사용합니다.</summary>
-        public string Color { get; set; } = "FFFFFF";
+        [Tooltip("VFX 색상 오버라이드입니다. RRGGBB 또는 RRGGBBAA 형식을 사용합니다.")]
+        public string Color = "FFFFFF";
 
         /// <summary>VFX를 생성할 위치 기준입니다.</summary>
-        public AnimationEventVfxPositionBasis PositionBasis { get; set; } = AnimationEventVfxPositionBasis.EventObject;
+        [Tooltip("VFX를 생성할 위치 기준입니다.")]
+        public AnimationEventVfxPositionBasis PositionBasis = AnimationEventVfxPositionBasis.EventObject;
 
         /// <summary>기준 위치에 더할 X축 월드 오프셋입니다.</summary>
-        public float OffsetX { get; set; } = 0f;
+        [Tooltip("기준 위치에 더할 X축 월드 오프셋입니다.")]
+        public float OffsetX = 0f;
 
         /// <summary>기준 위치에 더할 Y축 월드 오프셋입니다.</summary>
-        public float OffsetY { get; set; } = 0f;
+        [Tooltip("기준 위치에 더할 Y축 월드 오프셋입니다.")]
+        public float OffsetY = 0f;
 
         /// <summary>기준 위치에 더할 Z축 월드 오프셋입니다.</summary>
-        public float OffsetZ { get; set; } = 0f;
+        [Tooltip("기준 위치에 더할 Z축 월드 오프셋입니다.")]
+        public float OffsetZ = 0f;
 
         /// <summary>
         /// true이면 이벤트 발생 캐릭터가 좌우 반전된 상태일 때 OffsetX도 반전합니다.
         /// 캐릭터 기준 오른쪽/왼쪽 배치가 필요한 VFX에서 사용합니다.
         /// </summary>
-        public bool MirrorOffsetXByCharacterFlip { get; set; } = true;
+        [Tooltip("true이면 이벤트 발생 캐릭터가 좌우 반전된 상태일 때 OffsetX도 반전합니다.")]
+        public bool MirrorOffsetXByCharacterFlip = true;
 
         /// <summary>이벤트 발생 캐릭터의 Flip 상태를 VFX에 반영하는 방식입니다.</summary>
-        public AnimationEventVfxFlipPolicy FlipPolicy { get; set; } = AnimationEventVfxFlipPolicy.EventCharacterOnSpawn;
+        [Tooltip("이벤트 발생 캐릭터의 Flip 상태를 VFX에 반영하는 방식입니다.")]
+        public AnimationEventVfxFlipPolicy FlipPolicy = AnimationEventVfxFlipPolicy.EventCharacterOnSpawn;
+
+        /// <summary>Sorting Layer 오버라이드 사용 여부입니다.</summary>
+        [Tooltip("Sorting Layer 오버라이드 사용 여부입니다.")]
+        public bool HasSortingLayerOverride = false;
+
+        /// <summary>오버라이드할 Sorting Layer 키입니다.</summary>
+        [Tooltip("오버라이드할 Sorting Layer 키입니다.")]
+        public ConfigSortingLayer.Keys SortingLayerKey = ConfigSortingLayer.Keys.CharacterTop;
+
+        /// <summary>Sorting Order 오버라이드 사용 여부입니다.</summary>
+        [Tooltip("Sorting Order 오버라이드 사용 여부입니다.")]
+        public bool HasSortingOrderOverride = false;
+
+        /// <summary>오버라이드할 Sorting Order 값입니다.</summary>
+        [Tooltip("오버라이드할 Sorting Order 값입니다.")]
+        public int SortingOrder = 0;
     }
     public class StruckAnimationEventCameraShake
     {

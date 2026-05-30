@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using UnityEngine;
 
 namespace GGemCo2DCore
@@ -810,7 +810,13 @@ namespace GGemCo2DCore
             int cooldownKey,
             IncomingHitVfxTriggerType triggerType)
         {
-            if (!settings.enabled || settings.vfxUid <= 0)
+            if (!settings.enabled)
+            {
+                return false;
+            }
+
+            StruckAnimationEventVfx vfxPayload = settings.GetRuntimeVfx();
+            if (vfxPayload == null || vfxPayload.Uid <= 0)
             {
                 return false;
             }
@@ -834,29 +840,12 @@ namespace GGemCo2DCore
                 return false;
             }
 
-            var spawnRequest = new VfxSpawnRequest
-            {
-                VfxUid = settings.vfxUid,
-                Owner = _characterBase,
-                Target = _characterBase,
-                FollowTarget = settings.followTarget ? _characterBase : null,
-                WorldPosition = _characterBase.transform.position,
-                PositionOffset = settings.positionOffset,
-                PositionYType = settings.positionYType,
-                ScaleOverride = settings.scaleOverride,
-                DurationOverride = settings.durationOverride,
-                ForceOneShot = !settings.followTarget
-            };
-
-            if (settings.hasSortingLayerOverride)
-            {
-                spawnRequest.SortingLayerOverride = settings.sortingLayerKey;
-            }
-
-            if (settings.hasSortingOrderOverride)
-            {
-                spawnRequest.SortingOrderOverride = settings.sortingOrder;
-            }
+            // AnimationEvent VFX와 동일한 payload 변환 경로를 사용해 위치/Flip/Offset 정책 중복을 제거합니다.
+            VfxSpawnRequest spawnRequest = VfxSpawnRequest.FromAnimationEvent(vfxPayload, _characterBase.gameObject);
+            spawnRequest.Owner = _characterBase;
+            spawnRequest.Target = _characterBase;
+            spawnRequest.OwnerGameObject = _characterBase.gameObject;
+            spawnRequest.ForceOneShot = !IncomingHitVfxSettings.IsFollowVfx(vfxPayload);
 
             scene.VfxManager.CreateVfx(spawnRequest);
 
