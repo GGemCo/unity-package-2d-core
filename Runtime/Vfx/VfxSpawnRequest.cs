@@ -1,4 +1,4 @@
-using UnityEngine;
+﻿using UnityEngine;
 
 namespace GGemCo2DCore
 {
@@ -78,7 +78,7 @@ namespace GGemCo2DCore
         public static VfxSpawnRequest FromAnimationEvent(StruckAnimationEventVfx data, GameObject fromObject = null)
         {
             CharacterBase owner = ResolveAnimationEventCharacter(fromObject);
-            Vector3? worldPosition = fromObject != null ? fromObject.transform.position : (Vector3?)null;
+            Vector3? worldPosition = ResolveAnimationEventWorldPosition(data, fromObject, owner);
             Vector3 offset = BuildAnimationEventOffset(data, owner);
 
             var request = new VfxSpawnRequest
@@ -111,6 +111,28 @@ namespace GGemCo2DCore
 
             CharacterBase owner = fromObject.GetComponent<CharacterBase>();
             return owner != null ? owner : fromObject.GetComponentInParent<CharacterBase>();
+        }
+
+        /// <summary>
+        /// AnimationEvent VFX가 사용할 기준 월드 위치를 위치 정책에 맞게 계산합니다.
+        /// </summary>
+        /// <param name="data">AnimationEvent에서 전달된 VFX 데이터입니다.</param>
+        /// <param name="fromObject">AnimationEvent를 발생시킨 오브젝트입니다.</param>
+        /// <param name="owner">이벤트 발생 오브젝트에서 해석한 캐릭터입니다.</param>
+        /// <returns>명시 기준 위치입니다. 기준 오브젝트가 없으면 null을 반환합니다.</returns>
+        private static Vector3? ResolveAnimationEventWorldPosition(
+            StruckAnimationEventVfx data,
+            GameObject fromObject,
+            CharacterBase owner)
+        {
+            if (data != null
+                && data.PositionBasis == AnimationEventVfxPositionBasis.CharacterHitArea
+                && owner != null)
+            {
+                return owner.GetRandomWorldPositionInHitArea();
+            }
+
+            return fromObject != null ? fromObject.transform.position : (Vector3?)null;
         }
 
         /// <summary>

@@ -21,6 +21,12 @@
         /// 캐릭터를 찾을 수 없으면 EventObject와 동일하게 동작합니다.
         /// </summary>
         EventCharacterHead = 1,
+
+        /// <summary>
+        /// 이벤트를 발생시킨 캐릭터의 HitArea 내부에서 임의 월드 위치를 선택해 VFX를 생성합니다.
+        /// 캐릭터 또는 HitArea를 찾을 수 없으면 EventObject와 동일하게 동작합니다.
+        /// </summary>
+        CharacterHitArea = 2,
     }
 
     /// <summary>

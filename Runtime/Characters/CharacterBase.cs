@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using R3;
 using UnityEngine;
 using Random = UnityEngine.Random;
@@ -243,6 +243,62 @@ namespace GGemCo2DCore
             Vector2 localPoint = new Vector2(0f, randomLocalY);
             Vector2 worldPoint = transform.TransformPoint(localPoint);
             return worldPoint.y;
+        }
+
+        /// <summary>
+        /// HitArea Collider 내부의 임의 월드 좌표를 반환합니다.
+        /// </summary>
+        /// <returns>HitArea 내부에서 선택된 임의 월드 좌표입니다. HitArea가 없으면 캐릭터 위치를 반환합니다.</returns>
+        public Vector3 GetRandomWorldPositionInHitArea()
+        {
+            if (!colliderHitArea)
+            {
+                return transform.position;
+            }
+
+            return TryGetRandomWorldPositionInHitArea(colliderHitArea, out Vector3 randomPosition)
+                ? randomPosition
+                : ResolveHitAreaFallbackWorldPosition(colliderHitArea);
+        }
+
+        /// <summary>
+        /// 지정한 HitArea Collider의 월드 Bounds 안에서 실제 Collider 내부에 포함되는 임의 좌표를 찾습니다.
+        /// </summary>
+        /// <param name="hitArea">임의 좌표를 선택할 HitArea Collider입니다.</param>
+        /// <param name="worldPosition">선택된 월드 좌표입니다.</param>
+        /// <returns>유효한 내부 좌표를 찾으면 <see langword="true"/>를 반환합니다.</returns>
+        private bool TryGetRandomWorldPositionInHitArea(CapsuleCollider2D hitArea, out Vector3 worldPosition)
+        {
+            const int maxAttempts = 16;
+
+            Bounds bounds = hitArea.bounds;
+            for (int i = 0; i < maxAttempts; i++)
+            {
+                Vector2 candidate = new Vector2(
+                    Random.Range(bounds.min.x, bounds.max.x),
+                    Random.Range(bounds.min.y, bounds.max.y));
+
+                if (!hitArea.OverlapPoint(candidate))
+                    continue;
+
+                worldPosition = new Vector3(candidate.x, candidate.y, transform.position.z);
+                return true;
+            }
+
+            worldPosition = Vector3.zero;
+            return false;
+        }
+
+        /// <summary>
+        /// HitArea 내부 임의 좌표를 찾지 못했을 때 사용할 안전한 기준 위치를 반환합니다.
+        /// </summary>
+        /// <param name="hitArea">Fallback 기준으로 사용할 HitArea Collider입니다.</param>
+        /// <returns>HitArea Bounds 중심을 캐릭터 Z 좌표와 결합한 월드 좌표입니다.</returns>
+        private Vector3 ResolveHitAreaFallbackWorldPosition(CapsuleCollider2D hitArea)
+        {
+            Vector3 center = hitArea.bounds.center;
+            center.z = transform.position.z;
+            return center;
         }
 
         // todo. 스킬 시스템 분리 시 전용 구현체로 이동 검토
