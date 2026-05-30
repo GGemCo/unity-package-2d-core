@@ -1,5 +1,7 @@
 ﻿using System;
+using System.Collections.Generic;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using UnityEngine;
 
 namespace GGemCo2DCore
@@ -35,16 +37,60 @@ namespace GGemCo2DCore
             }
         }
         
+        /// <summary>
+        /// 애니메이션 이벤트로 전달된 VFX JSON을 해석해 VFX를 생성합니다.
+        /// </summary>
+        /// <param name="json">단일 VFX 객체 또는 VFX 객체 배열 JSON 문자열입니다.</param>
+        /// <param name="fromObject">애니메이션 이벤트를 발생시킨 오브젝트입니다.</param>
         public void OnAnimationEventVfx(string json, GameObject fromObject)
         {
+            if (string.IsNullOrWhiteSpace(json))
+                return;
+
             try
             {
-                var data = JsonConvert.DeserializeObject<StruckAnimationEventVfx>(json);
-                _vfxManager.CreateVfx(data, fromObject);
+                foreach (StruckAnimationEventVfx data in EnumerateAnimationEventVfxPayloads(json))
+                {
+                    if (data == null)
+                        continue;
+
+                    _vfxManager.CreateVfx(data, fromObject);
+                }
             }
             catch (Exception e)
             {
                 GcLogger.LogError($"animation vfx event, json parsing error: {e.Message} / json: {json}");
+            }
+        }
+
+        /// <summary>
+        /// AnimationEvent VFX JSON을 단일 실행 목록으로 변환합니다.
+        /// </summary>
+        /// <param name="json">단일 VFX 객체 또는 VFX 객체 배열 JSON 문자열입니다.</param>
+        /// <returns>이벤트에서 생성해야 할 VFX 데이터 목록입니다.</returns>
+        /// <exception cref="JsonSerializationException">객체 또는 배열 형식이 아닌 JSON이 전달되면 발생합니다.</exception>
+        private static IEnumerable<StruckAnimationEventVfx> EnumerateAnimationEventVfxPayloads(string json)
+        {
+            JToken rootToken = JToken.Parse(json);
+            switch (rootToken.Type)
+            {
+                case JTokenType.Object:
+                    yield return rootToken.ToObject<StruckAnimationEventVfx>();
+                    yield break;
+
+                case JTokenType.Array:
+                    foreach (JToken itemToken in rootToken.Children())
+                    {
+                        if (itemToken.Type == JTokenType.Null)
+                            continue;
+
+                        yield return itemToken.ToObject<StruckAnimationEventVfx>();
+                    }
+                    yield break;
+
+                default:
+                    throw new JsonSerializationException(
+                        $"AnimationEvent VFX JSON은 객체 또는 배열 형식이어야 합니다. 현재 형식: {rootToken.Type}");
             }
         }
 
