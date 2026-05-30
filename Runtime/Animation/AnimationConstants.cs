@@ -114,6 +114,10 @@ namespace GGemCo2DCore
         [Tooltip("이벤트 발생 캐릭터의 Flip 상태를 VFX에 반영하는 방식입니다.")]
         public AnimationEventVfxFlipPolicy FlipPolicy = AnimationEventVfxFlipPolicy.EventCharacterOnSpawn;
 
+        /// <summary>Follow 대상이 있을 때 위치를 갱신하는 기준점 정책입니다.</summary>
+        [Tooltip("Follow 대상이 있을 때 위치를 갱신하는 기준점 정책입니다.")]
+        public VfxConstants.FollowAnchorMode FollowAnchorMode = VfxConstants.FollowAnchorMode.FollowTargetOrigin;
+
         /// <summary>Sorting Layer 오버라이드 사용 여부입니다.</summary>
         [Tooltip("Sorting Layer 오버라이드 사용 여부입니다.")]
         public bool HasSortingLayerOverride = false;

@@ -8,6 +8,11 @@ namespace GGemCo2DCore
         public VfxConstants.AttachType AttachType = VfxConstants.AttachType.World;
         public VfxConstants.FollowMode FollowMode = VfxConstants.FollowMode.None;
 
+        /// <summary>
+        /// Follow 대상이 있을 때 위치 갱신 기준으로 사용할 정책입니다.
+        /// </summary>
+        public VfxConstants.FollowAnchorMode FollowAnchorMode = VfxConstants.FollowAnchorMode.FollowTargetOrigin;
+
         public VfxSpawnPolicy Clone()
         {
             return new VfxSpawnPolicy
@@ -15,6 +20,7 @@ namespace GGemCo2DCore
                 LifecycleType = LifecycleType,
                 AttachType = AttachType,
                 FollowMode = FollowMode,
+                FollowAnchorMode = FollowAnchorMode,
             };
         }
     }

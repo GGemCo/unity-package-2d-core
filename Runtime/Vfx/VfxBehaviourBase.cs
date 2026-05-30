@@ -16,6 +16,9 @@ namespace GGemCo2DCore
         private bool _hasDefaultTransform;
         private CharacterBase _followCharacter;
         private VfxConstants.FollowMode _followMode;
+        private VfxConstants.FollowAnchorMode _followAnchorMode;
+        private bool _hasFollowSpawnOffset;
+        private Vector3 _followSpawnOffset;
         private Vector3 _positionOffset;
         private float _positionY;
         private ConfigCommon.PositionYType _positionYType;
@@ -74,6 +77,9 @@ namespace GGemCo2DCore
             TargetCharacter = null;
             _followCharacter = null;
             _followMode = _spawnPolicy.FollowMode;
+            _followAnchorMode = _spawnPolicy.FollowAnchorMode;
+            _hasFollowSpawnOffset = false;
+            _followSpawnOffset = Vector3.zero;
             _positionOffset = Vector3.zero;
             _positionY = 0f;
             _positionYType = ConfigCommon.PositionYType.None;
@@ -414,10 +420,22 @@ namespace GGemCo2DCore
             ApplyDirectionVisual(directionByTarget, sourceDirection, false, true);
         }
 
-        public void SetFollowCharacter(CharacterBase character, VfxConstants.FollowMode followMode = VfxConstants.FollowMode.Position)
+        /// <summary>
+        /// VFX가 따라갈 캐릭터와 Follow 위치 기준 정책을 설정합니다.
+        /// </summary>
+        /// <param name="character">따라갈 캐릭터입니다.</param>
+        /// <param name="followMode">위치/Flip 갱신 방식입니다.</param>
+        /// <param name="followAnchorMode">Follow 위치를 계산할 기준점 정책입니다.</param>
+        public void SetFollowCharacter(
+            CharacterBase character,
+            VfxConstants.FollowMode followMode = VfxConstants.FollowMode.Position,
+            VfxConstants.FollowAnchorMode followAnchorMode = VfxConstants.FollowAnchorMode.FollowTargetOrigin)
         {
             _followCharacter = character;
             _followMode = followMode;
+            _followAnchorMode = followAnchorMode;
+            _hasFollowSpawnOffset = false;
+            _followSpawnOffset = Vector3.zero;
         }
 
         /// <summary>
@@ -465,7 +483,9 @@ namespace GGemCo2DCore
         /// </remarks>
         public void ApplySpawnPositionImmediate(Vector3 basePosition, CharacterBase heightOwner = null)
         {
-            transform.position = ResolveSpawnPosition(basePosition, heightOwner);
+            Vector3 spawnPosition = ResolveSpawnPosition(basePosition, heightOwner);
+            transform.position = spawnPosition;
+            CaptureFollowSpawnOffsetIfNeeded(spawnPosition);
 
             if (_followCharacter != null && _followMode == VfxConstants.FollowMode.PositionAndFlip)
                 SetFlip(_followCharacter.IsFlipped());
@@ -482,7 +502,37 @@ namespace GGemCo2DCore
             if (_followCharacter == null || _followMode == VfxConstants.FollowMode.None)
                 return;
 
+            if (_followAnchorMode == VfxConstants.FollowAnchorMode.SpawnPosition && _hasFollowSpawnOffset)
+            {
+                transform.position = _followCharacter.transform.position + _followSpawnOffset;
+
+                if (_followMode == VfxConstants.FollowMode.PositionAndFlip)
+                    SetFlip(_followCharacter.IsFlipped());
+
+                return;
+            }
+
             ApplySpawnPositionImmediate(_followCharacter.transform.position, _followCharacter);
+        }
+
+        /// <summary>
+        /// 최초 스폰 위치 기준 Follow 정책에서 사용할 월드 오프셋을 저장합니다.
+        /// </summary>
+        /// <param name="spawnPosition">모든 위치 보정이 적용된 최종 스폰 월드 위치입니다.</param>
+        /// <remarks>
+        /// <see cref="VfxConstants.FollowAnchorMode.SpawnPosition"/>은 HitArea 랜덤 위치처럼
+        /// 스폰 시점에만 계산되는 위치를 Follow 중에도 유지하기 위해 사용합니다.
+        /// </remarks>
+        private void CaptureFollowSpawnOffsetIfNeeded(Vector3 spawnPosition)
+        {
+            if (_followCharacter == null || _followMode == VfxConstants.FollowMode.None)
+                return;
+
+            if (_followAnchorMode != VfxConstants.FollowAnchorMode.SpawnPosition || _hasFollowSpawnOffset)
+                return;
+
+            _followSpawnOffset = spawnPosition - _followCharacter.transform.position;
+            _hasFollowSpawnOffset = true;
         }
 
         /// <summary>

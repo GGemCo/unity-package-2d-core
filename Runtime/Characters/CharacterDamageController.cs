@@ -926,7 +926,7 @@ namespace GGemCo2DCore
         }
 
         /// <summary>
-        /// 피격 VFX 설정에 지정된 Follow 모드를 생성 요청에 반영합니다.
+        /// 피격 VFX 설정에 지정된 Follow 모드와 Follow 위치 기준 정책을 생성 요청에 반영합니다.
         /// </summary>
         /// <param name="spawnRequest">수정할 VFX 생성 요청입니다.</param>
         /// <param name="settings">현재 피격 VFX 설정입니다.</param>
@@ -934,6 +934,7 @@ namespace GGemCo2DCore
         /// <remarks>
         /// <see cref="IncomingHitVfxSettings.followMode"/>가 지정되어 있으면 해당 값을 우선 사용하고,
         /// 값이 없으면 기존 <see cref="AnimationEventVfxFlipPolicy.EventCharacterFollow"/> 정책을 호환 처리합니다.
+        /// Follow 위치 기준은 피격 설정 값을 우선 사용하고, 기본값이면 VFX payload 값을 사용합니다.
         /// </remarks>
         private void ApplyIncomingHitVfxFollowMode(
             ref VfxSpawnRequest spawnRequest,
@@ -949,6 +950,7 @@ namespace GGemCo2DCore
 
             spawnRequest.FollowTarget = _characterBase;
             spawnRequest.FollowModeOverride = resolvedFollowMode;
+            spawnRequest.FollowAnchorModeOverride = settings.GetRuntimeFollowAnchorMode(vfxPayload);
             spawnRequest.ForceOneShot = false;
         }
 

@@ -23,6 +23,7 @@ namespace GGemCo2DCore
         public VfxConstants.LifecycleType LifecycleType;
         public VfxConstants.AttachType AttachType;
         public VfxConstants.FollowMode FollowMode;
+        public VfxConstants.FollowAnchorMode FollowAnchorMode;
         public int PoolPrewarmCount;
         public int PoolMaxSize;
         public bool UseUnscaledTime;
@@ -55,6 +56,7 @@ namespace GGemCo2DCore
                 LifecycleType = ParseLifecycleType(data.GetValueOrDefault("LifecycleType")),
                 AttachType = ParseAttachType(data.GetValueOrDefault("AttachType")),
                 FollowMode = ParseFollowMode(data.GetValueOrDefault("FollowMode")),
+                FollowAnchorMode = ParseFollowAnchorMode(data.GetValueOrDefault("FollowAnchorMode")),
                 PoolPrewarmCount = MathHelper.ParseInt(data.GetValueOrDefault("PoolPrewarmCount")),
                 PoolMaxSize = MathHelper.ParseInt(data.GetValueOrDefault("PoolMaxSize")),
                 UseUnscaledTime = ConvertBoolean(data.GetValueOrDefault("UseUnscaledTime")),
@@ -100,6 +102,18 @@ namespace GGemCo2DCore
             return string.IsNullOrWhiteSpace(value)
                 ? VfxConstants.FollowMode.None
                 : EnumHelper.ConvertEnum<VfxConstants.FollowMode>(value);
+        }
+
+        /// <summary>
+        /// Follow 위치 기준 정책을 테이블 문자열에서 변환합니다.
+        /// </summary>
+        /// <param name="value">vfx_effect.FollowAnchorMode 값입니다.</param>
+        /// <returns>런타임 Follow 위치 기준 정책입니다.</returns>
+        private static VfxConstants.FollowAnchorMode ParseFollowAnchorMode(string value)
+        {
+            return string.IsNullOrWhiteSpace(value)
+                ? VfxConstants.FollowAnchorMode.FollowTargetOrigin
+                : EnumHelper.ConvertEnum<VfxConstants.FollowAnchorMode>(value);
         }
 
         /// <summary>

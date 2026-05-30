@@ -27,6 +27,8 @@ namespace GGemCo2DCoreEditor
         private VfxConstants.AttachType _attachTypeOverride = VfxConstants.AttachType.World;
         private bool _overrideFollowMode;
         private VfxConstants.FollowMode _followModeOverride = VfxConstants.FollowMode.None;
+        private bool _overrideFollowAnchorMode;
+        private VfxConstants.FollowAnchorMode _followAnchorModeOverride = VfxConstants.FollowAnchorMode.FollowTargetOrigin;
         private bool _overrideSortingOrder;
         private int _sortingOrderOverride;
 
@@ -231,6 +233,10 @@ namespace GGemCo2DCoreEditor
                 if (_overrideFollowMode)
                     _followModeOverride = (VfxConstants.FollowMode)EditorGUILayout.EnumPopup("FollowMode", _followModeOverride);
 
+                _overrideFollowAnchorMode = EditorGUILayout.ToggleLeft("FollowAnchorMode Override 사용", _overrideFollowAnchorMode);
+                if (_overrideFollowAnchorMode)
+                    _followAnchorModeOverride = (VfxConstants.FollowAnchorMode)EditorGUILayout.EnumPopup("FollowAnchorMode", _followAnchorModeOverride);
+
                 _overrideSortingOrder = EditorGUILayout.ToggleLeft("SortingOrder Override 사용", _overrideSortingOrder);
                 if (_overrideSortingOrder)
                     _sortingOrderOverride = EditorGUILayout.IntField("SortingOrder", _sortingOrderOverride);
@@ -349,7 +355,7 @@ namespace GGemCo2DCoreEditor
             {
                 VfxUid = GetRowUid(_cachedRow),
                 Owner = selectedCharacter,
-                Target = null,
+                Target = _followTarget ? selectedCharacter : null,
                 FollowTarget = _followOwner ? selectedCharacter : null,
                 ForceUiCanvasParent = _forceUiCanvasParent || UseDefaultUiCanvasParent(_cachedRow),
                 DurationOverride = _duration,
@@ -362,6 +368,7 @@ namespace GGemCo2DCoreEditor
                 LifecycleTypeOverride = _overrideLifecycleType ? _lifecycleTypeOverride : null,
                 AttachTypeOverride = _overrideAttachType ? _attachTypeOverride : null,
                 FollowModeOverride = _overrideFollowMode ? _followModeOverride : null,
+                FollowAnchorModeOverride = _overrideFollowAnchorMode ? _followAnchorModeOverride : null,
             };
 
             // Offset은 Follow Target/Owner/월드 스폰 어디서 시작하든 동일하게 월드 좌표에 더해집니다.

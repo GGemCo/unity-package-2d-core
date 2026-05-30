@@ -46,6 +46,7 @@ namespace GGemCo2DCoreEditor
             options.GroupByMemberName[nameof(StruckTableVfxEffect.LifecycleType)] = "Spawn Policy";
             options.GroupByMemberName[nameof(StruckTableVfxEffect.AttachType)] = "Spawn Policy";
             options.GroupByMemberName[nameof(StruckTableVfxEffect.FollowMode)] = "Spawn Policy";
+            options.GroupByMemberName[nameof(StruckTableVfxEffect.FollowAnchorMode)] = "Spawn Policy";
             options.GroupByMemberName[nameof(StruckTableVfxEffect.PoolPrewarmCount)] = "Pool";
             options.GroupByMemberName[nameof(StruckTableVfxEffect.PoolMaxSize)] = "Pool";
             options.GroupByMemberName[nameof(StruckTableVfxEffect.UseUnscaledTime)] = "Pool";
@@ -130,6 +131,7 @@ namespace GGemCo2DCoreEditor
             sb.AppendLine($"- LifecycleType: {row.LifecycleType}");
             sb.AppendLine($"- AttachType: {row.AttachType}");
             sb.AppendLine($"- FollowMode: {row.FollowMode}");
+            sb.AppendLine($"- FollowAnchorMode: {row.FollowAnchorMode}");
             sb.AppendLine($"- PoolPrewarmCount: {row.PoolPrewarmCount}");
             sb.AppendLine($"- PoolMaxSize: {row.PoolMaxSize}");
             sb.AppendLine($"- UseUnscaledTime: {row.UseUnscaledTime}");
@@ -196,6 +198,7 @@ namespace GGemCo2DCoreEditor
                     "LifecycleType" => row.LifecycleType.ToString(),
                     "AttachType" => row.AttachType.ToString(),
                     "FollowMode" => row.FollowMode.ToString(),
+                    "FollowAnchorMode" => row.FollowAnchorMode.ToString(),
                     "PoolPrewarmCount" => row.PoolPrewarmCount.ToString(),
                     "PoolMaxSize" => row.PoolMaxSize.ToString(),
                     "UseUnscaledTime" => MathHelper.FormatBool(row.UseUnscaledTime),

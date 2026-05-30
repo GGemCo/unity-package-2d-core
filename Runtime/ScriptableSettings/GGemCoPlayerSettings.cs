@@ -256,6 +256,12 @@ namespace GGemCo2DCore
             [Tooltip("피격 VFX Follow 모드입니다. None이면 기존 Follow Target 값을 기준으로 해석합니다.")]
             public VfxConstants.FollowMode followMode;
 
+            /// <summary>
+            /// 피격 VFX가 Follow 중 유지할 위치 기준 정책입니다.
+            /// </summary>
+            [Tooltip("피격 VFX Follow 위치 기준입니다. SpawnPosition이면 최초 스폰 위치의 상대 오프셋을 유지합니다.")]
+            public VfxConstants.FollowAnchorMode followAnchorMode;
+
             [Tooltip("피격 VFX의 추가 위치 오프셋(World 기준)")]
             public Vector3 positionOffset;
 
@@ -299,6 +305,7 @@ namespace GGemCo2DCore
                     vfxUid = 0,
                     followTarget = false,
                     followMode = VfxConstants.FollowMode.None,
+                    followAnchorMode = VfxConstants.FollowAnchorMode.FollowTargetOrigin,
                     positionOffset = Vector3.zero,
                     positionYType = ConfigCommon.PositionYType.None,
                     scaleOverride = 0f,
@@ -330,6 +337,15 @@ namespace GGemCo2DCore
                 return followTarget
                     ? VfxConstants.FollowMode.PositionAndFlip
                     : VfxConstants.FollowMode.None;
+            }
+
+            /// <summary>
+            /// 현재 플레이어 피격 VFX 설정에 적용할 실제 Follow 위치 기준 정책을 반환합니다.
+            /// </summary>
+            /// <returns>런타임 VFX 생성 요청에 적용할 Follow 위치 기준 정책입니다.</returns>
+            public VfxConstants.FollowAnchorMode GetRuntimeFollowAnchorMode()
+            {
+                return followAnchorMode;
             }
         }
 

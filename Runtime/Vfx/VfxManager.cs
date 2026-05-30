@@ -249,7 +249,10 @@ namespace GGemCo2DCore
             {
                 followCharacter = request.FollowTarget;
                 heightOwner = followCharacter;
-                behaviour.SetFollowCharacter(followCharacter, ResolveFollowMode(spawnPolicy, true));
+                behaviour.SetFollowCharacter(
+                    followCharacter,
+                    ResolveFollowMode(spawnPolicy, true),
+                    ResolveFollowAnchorMode(spawnPolicy));
             }
 
             switch (spawnPolicy.AttachType)
@@ -259,7 +262,10 @@ namespace GGemCo2DCore
                     {
                         followCharacter = attachOwner;
                         heightOwner = followCharacter;
-                        behaviour.SetFollowCharacter(followCharacter, ResolveFollowMode(spawnPolicy, false));
+                        behaviour.SetFollowCharacter(
+                            followCharacter,
+                            ResolveFollowMode(spawnPolicy, false),
+                            ResolveFollowAnchorMode(spawnPolicy));
                     }
                     break;
                 case VfxConstants.AttachType.Target:
@@ -267,7 +273,10 @@ namespace GGemCo2DCore
                     {
                         followCharacter = request.Target;
                         heightOwner = followCharacter;
-                        behaviour.SetFollowCharacter(followCharacter, ResolveFollowMode(spawnPolicy, false));
+                        behaviour.SetFollowCharacter(
+                            followCharacter,
+                            ResolveFollowMode(spawnPolicy, false),
+                            ResolveFollowAnchorMode(spawnPolicy));
                     }
                     break;
                 case VfxConstants.AttachType.UI:
@@ -277,7 +286,12 @@ namespace GGemCo2DCore
                     return;
             }
 
-            Vector3 basePosition = ResolveInitialBasePosition(instance, owner, followCharacter, request);
+            Vector3 basePosition = ResolveInitialBasePosition(
+                instance,
+                owner,
+                followCharacter,
+                request,
+                ResolveFollowAnchorMode(spawnPolicy));
             behaviour.ApplySpawnPositionImmediate(basePosition, heightOwner);
             ApplyDirectionVisualIfNeeded(behaviour, request);
         }
@@ -306,22 +320,28 @@ namespace GGemCo2DCore
         /// <param name="owner">생성 요청의 소유 캐릭터입니다.</param>
         /// <param name="followCharacter">최종 Follow 대상으로 결정된 캐릭터입니다.</param>
         /// <param name="request">이번 VFX 생성 요청입니다.</param>
+        /// <param name="followAnchorMode">Follow 대상이 있을 때 사용할 위치 기준 정책입니다.</param>
         /// <returns>Y 오프셋 적용 전 기준 월드 위치입니다.</returns>
         /// <remarks>
-        /// Follow 대상이 있으면 Follow 기준 위치를 가장 우선 사용합니다.
-        /// Follow가 없으면 명시 위치, 소유자, 타겟, 현재 인스턴스 위치 순서로 fallback합니다.
+        /// 기본 Follow는 기존 호환성을 위해 Follow 대상 위치를 우선 사용합니다.
+        /// SpawnPosition Follow는 명시 위치가 있으면 그 위치를 우선 사용해, HitArea 랜덤 위치처럼
+        /// 스폰 시점에 계산된 위치를 Follow 오프셋으로 저장할 수 있게 합니다.
         /// </remarks>
         private static Vector3 ResolveInitialBasePosition(
             GameObject instance,
             CharacterBase owner,
             CharacterBase followCharacter,
-            VfxSpawnRequest request)
+            VfxSpawnRequest request,
+            VfxConstants.FollowAnchorMode followAnchorMode)
         {
-            if (followCharacter != null)
+            if (followAnchorMode != VfxConstants.FollowAnchorMode.SpawnPosition && followCharacter != null)
                 return followCharacter.transform.position;
 
             if (request.WorldPosition.HasValue)
                 return request.WorldPosition.Value;
+
+            if (followCharacter != null)
+                return followCharacter.transform.position;
 
             if (owner != null)
                 return owner.transform.position;
@@ -367,6 +387,12 @@ namespace GGemCo2DCore
             return request.ForceLaserEffectBehaviour ? -info.Uid : info.Uid;
         }
 
+        /// <summary>
+        /// Spawn 정책과 명시 Follow 요청 여부를 기준으로 실제 Follow 모드를 해석합니다.
+        /// </summary>
+        /// <param name="spawnPolicy">이번 생성에 적용된 Spawn 정책입니다.</param>
+        /// <param name="isExplicitFollowRequest">요청 객체가 직접 FollowTarget을 지정했는지 여부입니다.</param>
+        /// <returns>런타임 Follow 모드입니다.</returns>
         private static VfxConstants.FollowMode ResolveFollowMode(VfxSpawnPolicy spawnPolicy, bool isExplicitFollowRequest)
         {
             if (spawnPolicy == null)
@@ -376,6 +402,18 @@ namespace GGemCo2DCore
                 return spawnPolicy.FollowMode;
 
             return VfxConstants.FollowMode.Position;
+        }
+
+        /// <summary>
+        /// Spawn 정책에서 Follow 위치 기준 정책을 해석합니다.
+        /// </summary>
+        /// <param name="spawnPolicy">이번 생성에 적용된 Spawn 정책입니다.</param>
+        /// <returns>Follow 위치 기준 정책입니다.</returns>
+        private static VfxConstants.FollowAnchorMode ResolveFollowAnchorMode(VfxSpawnPolicy spawnPolicy)
+        {
+            return spawnPolicy != null
+                ? spawnPolicy.FollowAnchorMode
+                : VfxConstants.FollowAnchorMode.FollowTargetOrigin;
         }
 
         private static VfxSpawnPolicy ResolveSpawnPolicy(VfxRuntimeData info, VfxSpawnRequest request)
@@ -390,6 +428,9 @@ namespace GGemCo2DCore
 
             if (request.FollowModeOverride.HasValue)
                 resolved.FollowMode = request.FollowModeOverride.Value;
+
+            if (request.FollowAnchorModeOverride.HasValue)
+                resolved.FollowAnchorMode = request.FollowAnchorModeOverride.Value;
 
             return resolved;
         }

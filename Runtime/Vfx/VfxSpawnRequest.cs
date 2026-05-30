@@ -35,6 +35,11 @@ namespace GGemCo2DCore
         public VfxConstants.FollowMode? FollowModeOverride;
 
         /// <summary>
+        /// VFX 데이터의 기본 Follow 위치 기준 정책을 요청 단위로 덮어씁니다.
+        /// </summary>
+        public VfxConstants.FollowAnchorMode? FollowAnchorModeOverride;
+
+        /// <summary>
         /// true이면 생성된 VFX가 지정된 방향을 기준으로 좌우 반전과 회전을 계산합니다.
         /// </summary>
         public bool UseDirection;
@@ -297,6 +302,7 @@ namespace GGemCo2DCore
                     {
                         request.FollowTarget = owner;
                         request.FollowModeOverride = VfxConstants.FollowMode.PositionAndFlip;
+                        request.FollowAnchorModeOverride = data.FollowAnchorMode;
                     }
                     break;
                 case AnimationEventVfxFlipPolicy.EventCharacterOnSpawn:

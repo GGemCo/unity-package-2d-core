@@ -45,9 +45,6 @@ namespace GGemCo2DCore
         [Min(0f)]
         public float minIntervalSeconds;
 
-        [Tooltip("실제 재생할 VFX 정보입니다. AnimationEvent VFX와 같은 위치/Flip/Offset 정책을 사용합니다.")]
-        public StruckAnimationEventVfx vfx;
-
         /// <summary>
         /// 피격 VFX가 캐릭터를 따라가는 방식을 정의합니다.
         /// </summary>
@@ -57,6 +54,15 @@ namespace GGemCo2DCore
         /// </remarks>
         [Tooltip("피격 VFX Follow 모드입니다. None이면 VFX FlipPolicy의 Follow 설정을 기존 호환 정책으로 사용합니다.")]
         public VfxConstants.FollowMode followMode;
+
+        /// <summary>
+        /// 피격 VFX가 Follow 중 유지할 위치 기준 정책입니다.
+        /// </summary>
+        [Tooltip("피격 VFX Follow 위치 기준입니다. SpawnPosition이면 최초 스폰 위치의 상대 오프셋을 유지합니다.")]
+        public VfxConstants.FollowAnchorMode followAnchorMode;
+
+        [Tooltip("실제 재생할 VFX 정보입니다. AnimationEvent VFX와 같은 위치/Flip/Offset 정책을 사용합니다.")]
+        public StruckAnimationEventVfx vfx;
 
         [SerializeField, HideInInspector] private int vfxUid;
         [SerializeField, HideInInspector] private bool followTarget;
@@ -82,6 +88,7 @@ namespace GGemCo2DCore
                 minIntervalSeconds = 0f,
                 vfx = CreateDefaultVfxPayload(),
                 followMode = VfxConstants.FollowMode.None,
+                followAnchorMode = VfxConstants.FollowAnchorMode.FollowTargetOrigin,
             };
         }
 
@@ -113,6 +120,7 @@ namespace GGemCo2DCore
                     settings.hasSortingOrderOverride,
                     settings.sortingOrder),
                 followMode = settings.GetRuntimeFollowMode(),
+                followAnchorMode = settings.GetRuntimeFollowAnchorMode(),
             };
         }
 
@@ -191,6 +199,23 @@ namespace GGemCo2DCore
         }
 
         /// <summary>
+        /// 현재 설정과 VFX payload를 기준으로 실제 Follow 위치 기준 정책을 반환합니다.
+        /// </summary>
+        /// <param name="payload">검사할 VFX payload입니다.</param>
+        /// <returns>런타임 VFX 생성 요청에 적용할 Follow 위치 기준 정책입니다.</returns>
+        public VfxConstants.FollowAnchorMode GetRuntimeFollowAnchorMode(StruckAnimationEventVfx payload)
+        {
+            if (followAnchorMode != VfxConstants.FollowAnchorMode.FollowTargetOrigin)
+            {
+                return followAnchorMode;
+            }
+
+            return payload != null
+                ? payload.FollowAnchorMode
+                : VfxConstants.FollowAnchorMode.FollowTargetOrigin;
+        }
+
+        /// <summary>
         /// 현재 VFX payload가 지속형 Follow 정책인지 확인합니다.
         /// </summary>
         /// <param name="payload">검사할 VFX payload입니다.</param>
@@ -237,6 +262,7 @@ namespace GGemCo2DCore
                 OffsetZ = 0f,
                 MirrorOffsetXByCharacterFlip = true,
                 FlipPolicy = AnimationEventVfxFlipPolicy.EventCharacterOnSpawn,
+                FollowAnchorMode = VfxConstants.FollowAnchorMode.FollowTargetOrigin,
                 HasSortingLayerOverride = false,
                 SortingLayerKey = ConfigSortingLayer.Keys.CharacterTop,
                 HasSortingOrderOverride = false,

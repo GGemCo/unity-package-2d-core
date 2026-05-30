@@ -79,5 +79,23 @@ namespace GGemCo2DCore
             Position,
             PositionAndFlip,
         }
+
+        /// <summary>
+        /// VFX가 Follow 대상을 따라갈 때 기준 위치를 계산하는 방식입니다.
+        /// </summary>
+        public enum FollowAnchorMode
+        {
+            /// <summary>
+            /// 매 프레임 Follow 대상의 현재 Transform 위치를 기준으로 위치를 다시 계산합니다.
+            /// 기존 Follow 동작과 동일한 기본값입니다.
+            /// </summary>
+            FollowTargetOrigin = 0,
+
+            /// <summary>
+            /// 최초 스폰 위치와 Follow 대상 위치의 월드 오프셋을 저장한 뒤,
+            /// 이후에는 저장된 오프셋을 유지하며 Follow 대상을 따라갑니다.
+            /// </summary>
+            SpawnPosition = 1,
+        }
     }
 }

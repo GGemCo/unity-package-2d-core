@@ -31,6 +31,7 @@ namespace GGemCo2DCore
                     LifecycleType = row.LifecycleType,
                     AttachType = row.AttachType,
                     FollowMode = row.FollowMode,
+                    FollowAnchorMode = row.FollowAnchorMode,
                 },
             };
         }
@@ -54,6 +55,7 @@ namespace GGemCo2DCore
                     LifecycleType = row.LifecycleType,
                     AttachType = row.AttachType,
                     FollowMode = row.FollowMode,
+                    FollowAnchorMode = row.FollowAnchorMode,
                 },
             };
         }
