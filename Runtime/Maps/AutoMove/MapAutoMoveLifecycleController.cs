@@ -110,7 +110,8 @@ namespace GGemCo2DCore
                 combatTargetPassedEpsilon = settings.combatTargetPassedEpsilon,
                 combatTargetRecoveryStopDistance = settings.combatTargetRecoveryStopDistance,
                 combatTargetRecoveryCooldownSeconds = settings.combatTargetRecoveryCooldownSeconds,
-                stopAutoMoveOnCombatTargetRecovered = !settings.continueAutoMoveAfterCombatTargetRecovered
+                stopAutoMoveOnCombatTargetRecovered = !settings.continueAutoMoveAfterCombatTargetRecovered,
+                flipDirectionOnCombatTargetPassed = settings.flipCombatAutoMoveDirectionOnTargetPassed
             };
         }
 

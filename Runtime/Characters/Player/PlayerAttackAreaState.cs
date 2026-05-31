@@ -27,6 +27,19 @@ namespace GGemCo2DCore
         }
 
         /// <summary>
+        /// 현재 플레이어 공격 영역 안에 자동 이동을 멈출 수 있는 몬스터 HitArea가 있는지 반환합니다.
+        /// 공중 몬스터 제외 설정이 켜져 있으면 지상에 있는 몬스터만 정지 대상으로 판단합니다.
+        /// </summary>
+        public bool IsInAutoMoveBlockingAttackArea
+        {
+            get
+            {
+                RemoveInvalidTargets();
+                return HasAutoMoveBlockingAreas();
+            }
+        }
+
+        /// <summary>
         /// IsInAttackArea 상태 변경 이벤트입니다.
         /// </summary>
         public event Action<bool> Changed;
@@ -36,6 +49,23 @@ namespace GGemCo2DCore
         private readonly List<int> _removeBuffer = new List<int>();
 
         private bool HasTrackedAreas => _overlapAreas.Count > 0;
+
+        /// <summary>
+        /// 현재 추적 중인 HitArea 중 자동 이동을 실제로 멈춰야 하는 대상이 있는지 확인합니다.
+        /// </summary>
+        /// <returns>자동 이동을 멈춰야 하는 HitArea가 있으면 <see langword="true"/>를 반환합니다.</returns>
+        private bool HasAutoMoveBlockingAreas()
+        {
+            foreach (KeyValuePair<int, CharacterHitArea> pair in _overlapAreas)
+            {
+                if (IsAutoMoveBlockingHitArea(pair.Value))
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
 
         /// <summary>
         /// 몬스터 HitArea 영역에 진입했음을 기록합니다.
@@ -149,6 +179,28 @@ namespace GGemCo2DCore
             if (target.IsStatusDead()) return false;
 
             return true;
+        }
+
+        /// <summary>
+        /// 추적 중인 HitArea가 자동 이동을 멈춰야 하는 대상인지 확인합니다.
+        /// </summary>
+        /// <param name="hitArea">검증할 HitArea입니다.</param>
+        /// <returns>자동 이동을 멈춰야 하는 대상이면 <see langword="true"/>를 반환합니다.</returns>
+        private static bool IsAutoMoveBlockingHitArea(CharacterHitArea hitArea)
+        {
+            if (!IsValidHitArea(hitArea)) return false;
+
+            GGemCoSettings settings = AddressableLoaderSettings.Instance != null
+                ? AddressableLoaderSettings.Instance.settings
+                : null;
+
+            if (settings == null || !settings.ignoreAirborneAttackAreaForAutoMoveSuspend)
+            {
+                return true;
+            }
+
+            CharacterBase target = hitArea.target;
+            return target != null && target.IsCurrentlyGrounded();
         }
 
         /// <summary>

@@ -41,6 +41,7 @@ namespace GGemCo2DCore
         private Transform _combatRecoveryTargetTransform;
         private float _combatRecoveryCooldownUntil;
         private bool _pendingCompleteAfterCombatTargetRecovery;
+        private float _runtimeDirectionX;
 
         private void Awake()
         {
@@ -185,6 +186,7 @@ namespace GGemCo2DCore
             _elapsed = 0f;
             _isActive = true;
             _lockInput = lockInput;
+            InitializeRuntimeDirection(request.direction);
             ResetCombatTargetRecovery();
 
             if (_character != null)
@@ -288,7 +290,7 @@ namespace GGemCo2DCore
                         return recoveryMoveVector;
                     }
 
-                    float dirX = (float)_request.direction;
+                    float dirX = GetRuntimeDirectionX();
                     return new Vector2(dirX, 0f).normalized;
                 }
 
@@ -349,7 +351,7 @@ namespace GGemCo2DCore
                 return false;
             }
 
-            BeginCombatTargetRecovery(targetTransform);
+            BeginCombatTargetRecovery(targetTransform, flipRuntimeDirection: true);
             return TickCombatTargetRecovery(targetTransform, currentPosition, targetPosition, out moveVector);
         }
 
@@ -412,14 +414,52 @@ namespace GGemCo2DCore
             return false;
         }
 
+
+        /// <summary>
+        /// Direction 자동 이동 요청이 시작될 때 사용할 런타임 진행 방향을 초기화합니다.
+        /// </summary>
+        /// <param name="direction">자동 이동 요청에 설정된 초기 방향입니다.</param>
+        private void InitializeRuntimeDirection(AutoMoveDirection direction)
+        {
+            _runtimeDirectionX = direction == AutoMoveDirection.Left ? -1f : 1f;
+        }
+
+        /// <summary>
+        /// 현재 Direction 자동 이동에서 사용할 런타임 진행 방향을 반환합니다.
+        /// </summary>
+        /// <returns>왼쪽이면 -1, 오른쪽이면 1을 반환합니다.</returns>
+        private float GetRuntimeDirectionX()
+        {
+            if (Mathf.Abs(_runtimeDirectionX) <= 0.0001f)
+            {
+                InitializeRuntimeDirection(_request != null ? _request.direction : AutoMoveDirection.Right);
+            }
+
+            return _runtimeDirectionX < 0f ? -1f : 1f;
+        }
+
+        /// <summary>
+        /// 전투 타겟을 지나쳤을 때 다음 자동 이동 기준 방향을 반전합니다.
+        /// </summary>
+        private void FlipRuntimeDirection()
+        {
+            _runtimeDirectionX = -GetRuntimeDirectionX();
+        }
+
         /// <summary>
         /// 전투 타겟 복귀 상태를 시작합니다.
         /// </summary>
         /// <param name="targetTransform">복귀 기준 타겟 Transform입니다.</param>
-        private void BeginCombatTargetRecovery(Transform targetTransform)
+        /// <param name="flipRuntimeDirection">지나침 확정에 따라 런타임 진행 방향을 반전할지 여부입니다.</param>
+        private void BeginCombatTargetRecovery(Transform targetTransform, bool flipRuntimeDirection)
         {
             _isCombatTargetRecovering = true;
             _combatRecoveryTargetTransform = targetTransform;
+
+            if (flipRuntimeDirection && _request != null && _request.flipDirectionOnCombatTargetPassed)
+            {
+                FlipRuntimeDirection();
+            }
         }
 
         /// <summary>
@@ -436,7 +476,7 @@ namespace GGemCo2DCore
 
             if (_combatRecoveryTargetTransform != null && targetTransform != null && _combatRecoveryTargetTransform != targetTransform)
             {
-                BeginCombatTargetRecovery(targetTransform);
+                BeginCombatTargetRecovery(targetTransform, flipRuntimeDirection: false);
             }
 
             if (IsWithinCombatRecoveryStopDistance(currentPosition, targetPosition))
@@ -573,17 +613,18 @@ namespace GGemCo2DCore
         {
             float epsilon = Mathf.Max(0.001f, _request != null ? _request.combatTargetPassedEpsilon : 0.05f);
 
-            switch (_request.direction)
+            float directionX = GetRuntimeDirectionX();
+            if (directionX > 0f)
             {
-                case AutoMoveDirection.Right:
-                    return currentPosition.x > targetPosition.x + epsilon;
-
-                case AutoMoveDirection.Left:
-                    return currentPosition.x < targetPosition.x - epsilon;
-
-                default:
-                    return false;
+                return currentPosition.x > targetPosition.x + epsilon;
             }
+
+            if (directionX < 0f)
+            {
+                return currentPosition.x < targetPosition.x - epsilon;
+            }
+
+            return false;
         }
 
         /// <summary>

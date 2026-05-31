@@ -246,6 +246,12 @@ namespace GGemCo2DCore
         public float combatTargetRecoveryCooldownSeconds;
         [Tooltip("전투 타겟 복귀가 완료된 뒤에도 Direction 자동 이동을 계속 유지할지 여부입니다. 끄면 복귀 완료 시 자동 이동을 종료합니다.")]
         public bool continueAutoMoveAfterCombatTargetRecovered;
+
+        [Tooltip("전투 타겟을 지나쳤을 때 Direction 자동 이동의 런타임 진행 방향을 반전할지 여부입니다.")]
+        public bool flipCombatAutoMoveDirectionOnTargetPassed;
+
+        [Tooltip("플레이어 공격 범위 안에 있는 몬스터가 공중 상태이면 자동 이동 정지 대상에서 제외할지 여부입니다.")]
+        public bool ignoreAirborneAttackAreaForAutoMoveSuspend;
         
         [Header("맵 종료 정책")]
         [Tooltip("맵에 배치된 모든 몬스터가 사망했을 때 Fade Out 후 월드맵 UI를 여는 정책 설정입니다.")]
@@ -336,7 +342,9 @@ namespace GGemCo2DCore
             combatTargetPassedEpsilon = 0.05f;
             combatTargetRecoveryStopDistance = 0.35f;
             combatTargetRecoveryCooldownSeconds = 0.2f;
-            continueAutoMoveAfterCombatTargetRecovered = false;
+            continueAutoMoveAfterCombatTargetRecovered = true;
+            flipCombatAutoMoveDirectionOnTargetPassed = true;
+            ignoreAirborneAttackAreaForAutoMoveSuspend = true;
 
             mapClearExitPolicy = MapClearExitPolicySettings.CreateDefault();
         }

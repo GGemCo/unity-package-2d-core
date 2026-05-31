@@ -90,6 +90,11 @@ namespace GGemCo2DCore
         /// </summary>
         public bool stopAutoMoveOnCombatTargetRecovered = true;
 
+        /// <summary>
+        /// 전투 타겟을 지나쳤을 때 Direction 자동 이동의 런타임 진행 방향을 반전할지 여부입니다.
+        /// </summary>
+        public bool flipDirectionOnCombatTargetPassed = true;
+
         // ===== 공통 옵션 =====
         public float speedScale = 1.0f;
         public AutoMoveCancelPolicy cancelPolicy = AutoMoveCancelPolicy.AnyInputCancel;
