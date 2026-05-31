@@ -105,7 +105,9 @@ namespace GGemCo2DCore
                 direction = settings.autoMoveStartDirection,
                 infiniteMove = settings.autoMoveStartDuration <= 0f,
                 duration = Mathf.Max(0.01f, settings.autoMoveStartDuration),
-                cancelPolicy = settings.autoMoveCancelPolicy
+                cancelPolicy = settings.autoMoveCancelPolicy,
+                enableCombatTargetRecovery = settings.enableCombatTargetRecovery,
+                combatTargetPassedEpsilon = settings.combatTargetPassedEpsilon
             };
         }
 

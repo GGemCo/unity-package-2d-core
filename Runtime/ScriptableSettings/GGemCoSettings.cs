@@ -236,8 +236,11 @@ namespace GGemCo2DCore
         public float autoMoveStartDuration;
         [Tooltip("자동 이동 취소 정책")]
         public AutoMoveCancelPolicy autoMoveCancelPolicy;
+        [Tooltip("전투 중 타겟을 지나쳤을 때, 타겟 방향으로 자동 복귀할지 여부입니다.")]
+        public bool enableCombatTargetRecovery;
+        [Tooltip("타겟 지나침 판정에 사용할 X축 오차 허용값입니다.")]
+        public float combatTargetPassedEpsilon;
         
-
         [Header("맵 종료 정책")]
         [Tooltip("맵에 배치된 모든 몬스터가 사망했을 때 Fade Out 후 월드맵 UI를 여는 정책 설정입니다.")]
         public MapClearExitPolicySettings mapClearExitPolicy = MapClearExitPolicySettings.CreateDefault();
