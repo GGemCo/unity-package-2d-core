@@ -107,7 +107,10 @@ namespace GGemCo2DCore
                 duration = Mathf.Max(0.01f, settings.autoMoveStartDuration),
                 cancelPolicy = settings.autoMoveCancelPolicy,
                 enableCombatTargetRecovery = settings.enableCombatTargetRecovery,
-                combatTargetPassedEpsilon = settings.combatTargetPassedEpsilon
+                combatTargetPassedEpsilon = settings.combatTargetPassedEpsilon,
+                combatTargetRecoveryStopDistance = settings.combatTargetRecoveryStopDistance,
+                combatTargetRecoveryCooldownSeconds = settings.combatTargetRecoveryCooldownSeconds,
+                stopAutoMoveOnCombatTargetRecovered = !settings.continueAutoMoveAfterCombatTargetRecovered
             };
         }
 

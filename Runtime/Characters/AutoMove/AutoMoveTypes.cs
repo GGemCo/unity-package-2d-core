@@ -75,6 +75,21 @@ namespace GGemCo2DCore
         /// </summary>
         public float combatTargetPassedEpsilon = 0.05f;
 
+        /// <summary>
+        /// 전투 타겟 복귀 완료로 판단할 X축 거리입니다.
+        /// </summary>
+        public float combatTargetRecoveryStopDistance = 0.35f;
+
+        /// <summary>
+        /// 전투 타겟 복귀 종료 후 재진입을 막는 시간입니다.
+        /// </summary>
+        public float combatTargetRecoveryCooldownSeconds = 0.2f;
+
+        /// <summary>
+        /// 전투 타겟 복귀가 완료되면 자동 이동을 종료할지 여부입니다.
+        /// </summary>
+        public bool stopAutoMoveOnCombatTargetRecovered = true;
+
         // ===== 공통 옵션 =====
         public float speedScale = 1.0f;
         public AutoMoveCancelPolicy cancelPolicy = AutoMoveCancelPolicy.AnyInputCancel;

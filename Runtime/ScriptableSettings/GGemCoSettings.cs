@@ -240,6 +240,12 @@ namespace GGemCo2DCore
         public bool enableCombatTargetRecovery;
         [Tooltip("타겟 지나침 판정에 사용할 X축 오차 허용값입니다.")]
         public float combatTargetPassedEpsilon;
+        [Tooltip("전투 타겟 복귀 완료로 판단할 X축 거리입니다.")]
+        public float combatTargetRecoveryStopDistance;
+        [Tooltip("전투 타겟 복귀 종료 후 재진입을 막는 시간입니다.")]
+        public float combatTargetRecoveryCooldownSeconds;
+        [Tooltip("전투 타겟 복귀가 완료된 뒤에도 Direction 자동 이동을 계속 유지할지 여부입니다. 끄면 복귀 완료 시 자동 이동을 종료합니다.")]
+        public bool continueAutoMoveAfterCombatTargetRecovered;
         
         [Header("맵 종료 정책")]
         [Tooltip("맵에 배치된 모든 몬스터가 사망했을 때 Fade Out 후 월드맵 UI를 여는 정책 설정입니다.")]
@@ -274,6 +280,9 @@ namespace GGemCo2DCore
             if (debugHudPhysics2DUpdateInterval <= 0f) debugHudPhysics2DUpdateInterval = 0.5f;
             if (debugHudTilemapUpdateInterval <= 0f) debugHudTilemapUpdateInterval = 1.0f;
             if (debugHudTilemapCellScanBudgetPerAxis <= 0) debugHudTilemapCellScanBudgetPerAxis = 4096;
+            if (combatTargetPassedEpsilon <= 0f) combatTargetPassedEpsilon = 0.05f;
+            if (combatTargetRecoveryStopDistance <= 0f) combatTargetRecoveryStopDistance = 0.35f;
+            if (combatTargetRecoveryCooldownSeconds <= 0f) combatTargetRecoveryCooldownSeconds = 0.2f;
             if (mapClearExitPolicy == null) mapClearExitPolicy = MapClearExitPolicySettings.CreateDefault();
             mapClearExitPolicy.EnsureDefaults();
         }
@@ -324,6 +333,10 @@ namespace GGemCo2DCore
             autoMoveLockMovementOnly = false;
             autoMoveStartOnMapLoad = false;
             autoMoveStartDirection = AutoMoveDirection.Right;
+            combatTargetPassedEpsilon = 0.05f;
+            combatTargetRecoveryStopDistance = 0.35f;
+            combatTargetRecoveryCooldownSeconds = 0.2f;
+            continueAutoMoveAfterCombatTargetRecovered = false;
 
             mapClearExitPolicy = MapClearExitPolicySettings.CreateDefault();
         }

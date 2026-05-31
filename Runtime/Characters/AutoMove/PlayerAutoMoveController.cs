@@ -37,6 +37,10 @@ namespace GGemCo2DCore
         private AutoMoveSuspendToken[] _suspendTokens;
         private float _elapsed;
         private float _originalMoveStep;
+        private bool _isCombatTargetRecovering;
+        private Transform _combatRecoveryTargetTransform;
+        private float _combatRecoveryCooldownUntil;
+        private bool _pendingCompleteAfterCombatTargetRecovery;
 
         private void Awake()
         {
@@ -102,6 +106,12 @@ namespace GGemCo2DCore
                 {
                     _character.Stop();
                 }
+            }
+
+            if (_pendingCompleteAfterCombatTargetRecovery)
+            {
+                Complete();
+                return;
             }
 
             TickCompletion();
@@ -175,6 +185,7 @@ namespace GGemCo2DCore
             _elapsed = 0f;
             _isActive = true;
             _lockInput = lockInput;
+            ResetCombatTargetRecovery();
 
             if (_character != null)
             {
@@ -192,6 +203,7 @@ namespace GGemCo2DCore
             if (!_isActive) return;
             _isActive = false;
             _lockInput = false;
+            ResetCombatTargetRecovery();
 
             RestoreMoveStep();
 
@@ -206,6 +218,7 @@ namespace GGemCo2DCore
             if (!_isActive) return;
             _isActive = false;
             _lockInput = false;
+            ResetCombatTargetRecovery();
 
             RestoreMoveStep();
 
@@ -260,6 +273,7 @@ namespace GGemCo2DCore
         public Vector2 GetMoveVector()
         {
             if (!IsAutoMoveActive || _request == null || _character == null) return Vector2.zero;
+            if (_pendingCompleteAfterCombatTargetRecovery) return Vector2.zero;
 
             // Pause 상태에서는 이동 벡터를 제공하지 않는다.
             if (IsAutoMoveSuspended) return Vector2.zero;
@@ -296,36 +310,47 @@ namespace GGemCo2DCore
         /// Direction 자동 이동 중 전투 타겟 지나침 복귀 벡터를 계산합니다.
         /// </summary>
         /// <param name="moveVector">복귀 이동 벡터입니다.</param>
-        /// <returns>복귀 이동을 적용해야 하면 true를 반환합니다.</returns>
+        /// <returns>복귀 이동 또는 정지 처리를 적용해야 하면 true를 반환합니다.</returns>
         private bool TryResolveCombatRecoveryMoveVector(out Vector2 moveVector)
         {
             moveVector = Vector2.zero;
 
             if (!CanUseCombatTargetRecovery())
             {
+                ResetCombatTargetRecovery();
                 return false;
             }
 
-            if (!TryResolveCombatRecoveryTargetPosition(out Vector2 targetPosition))
+            if (!TryResolveCombatRecoveryTarget(out Transform targetTransform, out Vector2 targetPosition))
             {
+                ResetCombatTargetRecovery();
                 return false;
             }
 
             Vector2 currentPosition = _character.transform.position;
+            if (_isCombatTargetRecovering)
+            {
+                return TickCombatTargetRecovery(targetTransform, currentPosition, targetPosition, out moveVector);
+            }
+
+            if (Time.time < _combatRecoveryCooldownUntil)
+            {
+                // 복귀 종료 직후에는 목표 지점 근처에서 원래 진행 방향으로 즉시 재출발하지 않도록 정지 벡터를 유지합니다.
+                if (IsWithinCombatRecoveryStopDistance(currentPosition, targetPosition))
+                {
+                    return true;
+                }
+
+                return false;
+            }
+
             if (!IsPassedCombatTarget(currentPosition, targetPosition))
             {
                 return false;
             }
 
-            float deltaX = targetPosition.x - currentPosition.x;
-            if (Mathf.Abs(deltaX) <= 0.0001f)
-            {
-                return false;
-            }
-
-            // 플랫포머 이동 정책을 유지하기 위해 X축 방향만 반전한다.
-            moveVector = new Vector2(Mathf.Sign(deltaX), 0f);
-            return true;
+            BeginCombatTargetRecovery(targetTransform);
+            return TickCombatTargetRecovery(targetTransform, currentPosition, targetPosition, out moveVector);
         }
 
         /// <summary>
@@ -359,13 +384,23 @@ namespace GGemCo2DCore
         }
 
         /// <summary>
-        /// 전투 복귀 판정에 사용할 타겟 월드 좌표를 계산합니다.
+        /// 전투 복귀 판정에 사용할 타겟을 계산합니다.
         /// </summary>
+        /// <param name="targetTransform">복귀 기준 타겟 Transform입니다.</param>
         /// <param name="targetPosition">복귀 기준 타겟 좌표입니다.</param>
         /// <returns>유효한 타겟을 찾으면 true를 반환합니다.</returns>
-        private bool TryResolveCombatRecoveryTargetPosition(out Vector2 targetPosition)
+        private bool TryResolveCombatRecoveryTarget(out Transform targetTransform, out Vector2 targetPosition)
         {
+            targetTransform = null;
             targetPosition = Vector2.zero;
+
+            Transform resolvedTransform = ResolveCombatRecoveryTargetTransform();
+            if (resolvedTransform != null)
+            {
+                targetTransform = resolvedTransform;
+                targetPosition = resolvedTransform.position;
+                return true;
+            }
 
             Vector2? requestTargetPosition = ResolveRequestTargetPosition();
             if (requestTargetPosition.HasValue)
@@ -374,14 +409,108 @@ namespace GGemCo2DCore
                 return true;
             }
 
-            Transform targetTransform = ResolveCombatRecoveryTargetTransform();
-            if (targetTransform == null)
+            return false;
+        }
+
+        /// <summary>
+        /// 전투 타겟 복귀 상태를 시작합니다.
+        /// </summary>
+        /// <param name="targetTransform">복귀 기준 타겟 Transform입니다.</param>
+        private void BeginCombatTargetRecovery(Transform targetTransform)
+        {
+            _isCombatTargetRecovering = true;
+            _combatRecoveryTargetTransform = targetTransform;
+        }
+
+        /// <summary>
+        /// 전투 타겟 복귀 중 이동 방향 또는 완료 상태를 갱신합니다.
+        /// </summary>
+        /// <param name="targetTransform">현재 복귀 기준 타겟 Transform입니다.</param>
+        /// <param name="currentPosition">현재 플레이어 위치입니다.</param>
+        /// <param name="targetPosition">현재 타겟 위치입니다.</param>
+        /// <param name="moveVector">계산된 복귀 이동 벡터입니다.</param>
+        /// <returns>복귀 상태가 이동 벡터를 처리했으면 true를 반환합니다.</returns>
+        private bool TickCombatTargetRecovery(Transform targetTransform, Vector2 currentPosition, Vector2 targetPosition, out Vector2 moveVector)
+        {
+            moveVector = Vector2.zero;
+
+            if (_combatRecoveryTargetTransform != null && targetTransform != null && _combatRecoveryTargetTransform != targetTransform)
             {
-                return false;
+                BeginCombatTargetRecovery(targetTransform);
             }
 
-            targetPosition = targetTransform.position;
+            if (IsWithinCombatRecoveryStopDistance(currentPosition, targetPosition))
+            {
+                EndCombatTargetRecovery();
+                return true;
+            }
+
+            float deltaX = targetPosition.x - currentPosition.x;
+            if (Mathf.Abs(deltaX) <= 0.0001f)
+            {
+                EndCombatTargetRecovery();
+                return true;
+            }
+
+            // 플랫포머 이동 정책을 유지하기 위해 X축 방향만 반전한다.
+            moveVector = new Vector2(Mathf.Sign(deltaX), 0f);
             return true;
+        }
+
+        /// <summary>
+        /// 전투 타겟 복귀를 종료하고 설정에 따라 자동 이동 완료를 예약합니다.
+        /// </summary>
+        private void EndCombatTargetRecovery()
+        {
+            _isCombatTargetRecovering = false;
+            _combatRecoveryTargetTransform = null;
+            _combatRecoveryCooldownUntil = Time.time + GetCombatTargetRecoveryCooldownSeconds();
+
+            if (_request != null && _request.stopAutoMoveOnCombatTargetRecovered)
+            {
+                _pendingCompleteAfterCombatTargetRecovery = true;
+            }
+        }
+
+        /// <summary>
+        /// 자동 이동 상태 변경 시 전투 타겟 복귀 상태를 초기화합니다.
+        /// </summary>
+        private void ResetCombatTargetRecovery()
+        {
+            _isCombatTargetRecovering = false;
+            _combatRecoveryTargetTransform = null;
+            _combatRecoveryCooldownUntil = 0f;
+            _pendingCompleteAfterCombatTargetRecovery = false;
+        }
+
+        /// <summary>
+        /// 전투 타겟 복귀 완료 거리 안에 들어왔는지 확인합니다.
+        /// </summary>
+        /// <param name="currentPosition">현재 플레이어 위치입니다.</param>
+        /// <param name="targetPosition">현재 타겟 위치입니다.</param>
+        /// <returns>복귀 완료 거리 이내이면 true를 반환합니다.</returns>
+        private bool IsWithinCombatRecoveryStopDistance(Vector2 currentPosition, Vector2 targetPosition)
+        {
+            float stopDistance = GetCombatTargetRecoveryStopDistance();
+            return Mathf.Abs(targetPosition.x - currentPosition.x) <= stopDistance;
+        }
+
+        /// <summary>
+        /// 전투 타겟 복귀 완료 거리 설정값을 안전한 값으로 보정해 반환합니다.
+        /// </summary>
+        /// <returns>복귀 완료 X축 거리입니다.</returns>
+        private float GetCombatTargetRecoveryStopDistance()
+        {
+            return Mathf.Max(0.01f, _request != null ? _request.combatTargetRecoveryStopDistance : 0.35f);
+        }
+
+        /// <summary>
+        /// 전투 타겟 복귀 종료 후 재진입 방지 시간을 안전한 값으로 보정해 반환합니다.
+        /// </summary>
+        /// <returns>복귀 재진입 방지 시간입니다.</returns>
+        private float GetCombatTargetRecoveryCooldownSeconds()
+        {
+            return Mathf.Max(0f, _request != null ? _request.combatTargetRecoveryCooldownSeconds : 0.2f);
         }
 
         /// <summary>
@@ -483,6 +612,12 @@ namespace GGemCo2DCore
         private void TickCompletion()
         {
             if (_request == null || _character == null) return;
+
+            if (_pendingCompleteAfterCombatTargetRecovery)
+            {
+                Complete();
+                return;
+            }
 
             // Pause 상태에서는 완료 조건을 진행하지 않는다.
             if (IsAutoMoveSuspended) return;
