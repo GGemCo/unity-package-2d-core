@@ -61,61 +61,84 @@ namespace GGemCo2DCore
         }
 
         /// <summary>
-        /// 플레이어가 살아있는 몬스터의 패트롤 영역에 들어오면 전투 상태와 자동 이동 추적 대상을 설정합니다.
+        /// 플레이어가 패트롤 영역에 들어오면 소유 몬스터에게 감지 사실만 전달합니다.
         /// </summary>
         /// <param name="collision">패트롤 영역에 진입한 Collider입니다.</param>
+        /// <remarks>
+        /// 패트롤 오브젝트는 감지 역할만 담당합니다.
+        /// 선공/후공 전투 시작 여부는 몬스터의 <see cref="CharacterConstants.AttackType"/> 정책에서 결정합니다.
+        /// </remarks>
         public void OnTriggerEnter2D(Collider2D collision)
         {
-            if (collision == null) return;
-            if (_parentMonster == null || _parentMonster.IsStatusDead()) return;
+            if (!TryGetDetectedPlayer(collision, out Player player)) return;
+            if (!TryGetParentMonster(out Monster monster)) return;
 
-            if (!collision.gameObject.CompareTag(ConfigTags.GetValue(ConfigTags.Keys.Player))) return;
-            var hitArea = collision.gameObject.GetComponentInChildren<CharacterHitArea>();
-            if (!hitArea) return;
-            
-            // Player 전투 상태로
-            Player player = collision.GetComponentInParent<Player>();
-            if (player == null) return;
-            player.SetBattleStatusInBattle();
-            player.SetAutoMoveTargetMonster(parentMonsterObject);
-            
-            // 몬스터 전투 상태로
-            if (!parentMonsterObject)
-            {
-                GcLogger.LogError($"연결된 몬스터가 없습니다. ");
-                return;
-            }
-            // 몬스터가 데미지를 입었을 때와 같은 처리를 한다.
-            _parentMonster.OnDamage(player.gameObject);
+            monster.OnDetectedPlayerByPatrol(player);
         }
 
         /// <summary>
-        /// 플레이어가 패트롤 영역에서 나가면 플레이어 쪽 전투/자동이동 추적 상태를 우선 정리합니다.
-        /// 몬스터가 이미 사망한 뒤에도 플레이어 상태는 반드시 정리되어야 하므로, 몬스터 사망 여부는 플레이어 정리 이후에만 사용합니다.
+        /// 플레이어가 패트롤 영역에서 나가면 소유 몬스터에게 감지 이탈 사실만 전달합니다.
         /// </summary>
         /// <param name="collision">패트롤 영역에서 이탈한 Collider입니다.</param>
+        /// <remarks>
+        /// 전투 종료 여부는 몬스터가 전투 시작 원인을 기준으로 판단합니다.
+        /// 플레이어가 몬스터를 공격해서 시작된 전투는 패트롤 영역 이탈만으로 종료하지 않습니다.
+        /// </remarks>
         public void OnTriggerExit2D(Collider2D collision)
         {
-            if (collision == null) return;
+            if (!TryGetDetectedPlayer(collision, out Player player)) return;
+            if (!TryGetParentMonster(out Monster monster, allowDeadMonster: true)) return;
 
-            if (!collision.gameObject.CompareTag(ConfigTags.GetValue(ConfigTags.Keys.Player))) return;
+            monster.OnLostPlayerByPatrol(player);
+        }
+
+        /// <summary>
+        /// 패트롤 Trigger와 충돌한 Collider에서 플레이어를 찾습니다.
+        /// </summary>
+        /// <param name="collision">패트롤 영역과 충돌한 Collider입니다.</param>
+        /// <param name="player">찾은 플레이어 컴포넌트입니다.</param>
+        /// <returns>유효한 플레이어를 찾으면 <see langword="true"/>입니다.</returns>
+        private static bool TryGetDetectedPlayer(Collider2D collision, out Player player)
+        {
+            player = null;
+            if (collision == null) return false;
+
+            if (!collision.gameObject.CompareTag(ConfigTags.GetValue(ConfigTags.Keys.Player))) return false;
+
             var hitArea = collision.gameObject.GetComponentInChildren<CharacterHitArea>();
-            if (!hitArea) return;
-            
-            // 플레이어 전투 종료 상태로
-            Player player = collision.GetComponentInParent<Player>();
-            if (player == null) return;
-            player.SetBattleStatusNone();
-            player.ClearAutoMoveTargetMonster(parentMonsterObject);
-            
-            // 몬스터가 이미 사망했거나 연결이 끊긴 경우, 플레이어 상태 정리까지만 수행한다.
-            if (_parentMonster == null || _parentMonster.IsStatusDead()) return;
-            if (!parentMonsterObject)
+            if (!hitArea) return false;
+
+            player = collision.GetComponentInParent<Player>();
+            return player != null;
+        }
+
+        /// <summary>
+        /// 패트롤 영역을 소유한 몬스터를 반환합니다.
+        /// </summary>
+        /// <param name="monster">패트롤 영역을 소유한 몬스터입니다.</param>
+        /// <param name="allowDeadMonster">사망한 몬스터도 반환할지 여부입니다.</param>
+        /// <returns>유효한 몬스터를 찾으면 <see langword="true"/>입니다.</returns>
+        private bool TryGetParentMonster(out Monster monster, bool allowDeadMonster = false)
+        {
+            monster = _parentMonster;
+            if (monster == null && parentMonsterObject != null)
+            {
+                monster = parentMonsterObject.GetComponent<Monster>();
+                _parentMonster = monster;
+            }
+
+            if (monster == null)
             {
                 GcLogger.LogError($"연결된 몬스터가 없습니다. ");
-                return;
+                return false;
             }
-            _parentMonster.SetAggro(false);
+
+            if (!allowDeadMonster && monster.IsStatusDead())
+            {
+                return false;
+            }
+
+            return true;
         }
 #if UNITY_EDITOR
         private void OnDrawGizmos()

@@ -36,6 +36,7 @@ namespace GGemCo2DCore
         private bool _suppressNextDeadCutscene;
         private readonly List<IMonsterBrainRuntimeResettable> _brainRuntimeResetters = new(4);
         private bool _pendingBrainResetOnNextFadeIn;
+        private CharacterConstants.CombatStartReason _combatStartReason = CharacterConstants.CombatStartReason.None;
 
         /// <summary>
         /// 다음 1회 공용 사망 컷신(CutsceneUidDie) 재생을 건너뜁니다.
@@ -87,6 +88,7 @@ namespace GGemCo2DCore
             SetStatusNone();
             ClearSubStatus();
             SetAttackerTarget(null);
+            _combatStartReason = CharacterConstants.CombatStartReason.None;
             _pendingBrainResetOnNextFadeIn = false;
             canMoveX = true;
             canMoveY = true;
@@ -122,6 +124,7 @@ namespace GGemCo2DCore
             CancelPendingPoolReturn();
             ClearPendingDeathState();
             _suppressNextDeadCutscene = false;
+            _combatStartReason = CharacterConstants.CombatStartReason.None;
             _controllerMonster?.StopAttackCoroutine();
             _controllerMonster?.StopAllCoroutines();
 
@@ -322,17 +325,146 @@ namespace GGemCo2DCore
 
 
         /// <summary>
-        /// 데미지 받으면 어그로 on. 공격자 등록하기
+        /// 패트롤 감지 영역에서 플레이어를 발견했을 때 몬스터의 교전 정책을 적용합니다.
         /// </summary>
-        /// <param name="attacker"></param>
+        /// <param name="player">패트롤 영역에 진입한 플레이어입니다.</param>
+        /// <remarks>
+        /// <see cref="CharacterConstants.AttackType.AggroFirst"/> 몬스터는 감지 즉시 전투를 시작하고,
+        /// <see cref="CharacterConstants.AttackType.PassiveDefense"/> 몬스터는 감지만 기록하며 전투를 시작하지 않습니다.
+        /// </remarks>
+        public void OnDetectedPlayerByPatrol(Player player)
+        {
+            if (!CanBeginCombatWithPlayer(player)) return;
+
+            if (GetAttackType() != CharacterConstants.AttackType.AggroFirst)
+            {
+                return;
+            }
+
+            BeginCombatWithPlayer(player, CharacterConstants.CombatStartReason.DetectedByPatrol);
+        }
+
+        /// <summary>
+        /// 패트롤 감지 영역에서 플레이어가 이탈했을 때 패트롤 감지로 시작된 전투만 정리합니다.
+        /// </summary>
+        /// <param name="player">패트롤 영역에서 이탈한 플레이어입니다.</param>
+        /// <remarks>
+        /// 플레이어가 몬스터를 공격해서 전투가 시작된 상태는 패트롤 영역 이탈만으로 종료하지 않습니다.
+        /// 이 처리를 통해 후공 몬스터가 피격으로 전투에 들어간 뒤 즉시 전투가 꺼지는 문제를 방지합니다.
+        /// </remarks>
+        public void OnLostPlayerByPatrol(Player player)
+        {
+            if (player == null) return;
+            if (_combatStartReason != CharacterConstants.CombatStartReason.DetectedByPatrol) return;
+            if (attackerTransform != player.transform) return;
+
+            _controllerMonster?.StopAttackCoroutine();
+            SetAggro(false);
+            _combatStartReason = CharacterConstants.CombatStartReason.None;
+
+            player.ClearAutoMoveTargetMonster(gameObject);
+            player.SetBattleStatusNone();
+        }
+
+        /// <summary>
+        /// 공격 범위 Trigger에서 플레이어를 발견했을 때 선공 몬스터의 전투를 시작합니다.
+        /// </summary>
+        /// <param name="player">공격 범위에 진입한 플레이어입니다.</param>
+        /// <remarks>
+        /// 레거시 Brain의 공격 범위 감지는 패트롤 오브젝트가 없는 몬스터의 기본 선공 진입점으로 사용됩니다.
+        /// </remarks>
+        public void OnDetectedPlayerByAttackRange(Player player)
+        {
+            if (!CanBeginCombatWithPlayer(player)) return;
+
+            if (GetAttackType() != CharacterConstants.AttackType.AggroFirst)
+            {
+                return;
+            }
+
+            BeginCombatWithPlayer(player, CharacterConstants.CombatStartReason.DetectedByAttackRange);
+        }
+
+        /// <summary>
+        /// 데미지를 받으면 공격자를 기준으로 전투 상태와 어그로 대상을 갱신합니다.
+        /// </summary>
+        /// <param name="attacker">데미지를 발생시킨 공격자 오브젝트입니다.</param>
         public override void OnDamage(GameObject attacker)
         {
             base.OnDamage(attacker);
-            if (IsAggro() == false)
+
+            if (attacker == null || IsStatusDead())
+            {
+                return;
+            }
+
+            if (TryGetPlayerFromAttacker(attacker, out Player player))
+            {
+                BeginCombatWithPlayer(player, CharacterConstants.CombatStartReason.DamagedByPlayer);
+                return;
+            }
+
+            BeginCombatWithAttacker(attacker.transform, CharacterConstants.CombatStartReason.DamagedByNonPlayer);
+        }
+
+        /// <summary>
+        /// 플레이어를 대상으로 전투를 시작할 수 있는지 확인합니다.
+        /// </summary>
+        /// <param name="player">전투 대상 플레이어입니다.</param>
+        /// <returns>전투를 시작할 수 있으면 <see langword="true"/>입니다.</returns>
+        private bool CanBeginCombatWithPlayer(Player player)
+        {
+            return player != null && !IsStatusDead() && !player.IsStatusDead();
+        }
+
+        /// <summary>
+        /// 공격자 오브젝트에서 플레이어 컴포넌트를 찾습니다.
+        /// </summary>
+        /// <param name="attacker">데미지를 발생시킨 공격자 오브젝트입니다.</param>
+        /// <param name="player">찾은 플레이어 컴포넌트입니다.</param>
+        /// <returns>플레이어를 찾으면 <see langword="true"/>입니다.</returns>
+        private static bool TryGetPlayerFromAttacker(GameObject attacker, out Player player)
+        {
+            player = null;
+            if (attacker == null) return false;
+
+            player = attacker.GetComponent<Player>();
+            if (player != null) return true;
+
+            player = attacker.GetComponentInParent<Player>();
+            return player != null;
+        }
+
+        /// <summary>
+        /// 플레이어를 대상으로 몬스터와 플레이어의 전투 상태를 함께 시작합니다.
+        /// </summary>
+        /// <param name="player">전투 대상 플레이어입니다.</param>
+        /// <param name="reason">전투가 시작된 원인입니다.</param>
+        private void BeginCombatWithPlayer(Player player, CharacterConstants.CombatStartReason reason)
+        {
+            if (!CanBeginCombatWithPlayer(player)) return;
+
+            BeginCombatWithAttacker(player.transform, reason);
+            player.SetBattleStatusInBattle();
+            player.SetAutoMoveTargetMonster(gameObject);
+        }
+
+        /// <summary>
+        /// 지정한 공격자를 대상으로 몬스터 전투 상태와 어그로 대상을 설정합니다.
+        /// </summary>
+        /// <param name="attacker">전투 대상으로 기록할 공격자 Transform입니다.</param>
+        /// <param name="reason">전투가 시작된 원인입니다.</param>
+        private void BeginCombatWithAttacker(Transform attacker, CharacterConstants.CombatStartReason reason)
+        {
+            if (attacker == null || IsStatusDead()) return;
+
+            _combatStartReason = reason;
+            if (!IsAggro())
             {
                 SetAggro(true);
             }
-            SetAttackerTarget(attacker.transform);
+
+            SetAttackerTarget(attacker);
             _controllerMonster?.StopAttackCoroutine();
         }
         /// <summary>

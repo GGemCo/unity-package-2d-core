@@ -108,11 +108,45 @@ namespace GGemCo2DCore
             Fixed
         }
 
+        /// <summary>
+        /// 몬스터의 기본 교전 성향입니다.
+        /// </summary>
         public enum AttackType
         {
             None,
             PassiveDefense, // 후공
             AggroFirst // 선공
+        }
+
+        /// <summary>
+        /// 캐릭터 전투가 시작된 원인을 나타냅니다.
+        /// </summary>
+        public enum CombatStartReason
+        {
+            /// <summary>
+            /// 전투 시작 원인이 없습니다.
+            /// </summary>
+            None = 0,
+
+            /// <summary>
+            /// 패트롤 감지 영역에서 플레이어를 발견하여 전투가 시작되었습니다.
+            /// </summary>
+            DetectedByPatrol = 1,
+
+            /// <summary>
+            /// 공격 범위 Trigger에서 플레이어를 발견하여 전투가 시작되었습니다.
+            /// </summary>
+            DetectedByAttackRange = 2,
+
+            /// <summary>
+            /// 플레이어에게 실제 데미지를 받아 전투가 시작되었습니다.
+            /// </summary>
+            DamagedByPlayer = 3,
+
+            /// <summary>
+            /// 플레이어가 아닌 대상에게 실제 데미지를 받아 전투가 시작되었습니다.
+            /// </summary>
+            DamagedByNonPlayer = 4,
         }
 
         public static FacingDirection8 ToFacingDirection8(Vector2 dir)

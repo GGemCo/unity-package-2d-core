@@ -46,30 +46,37 @@ namespace GGemCo2DCore
             _controller.TickLegacy();
         }
 
+        /// <summary>
+        /// 몬스터 공격 범위 Trigger에 플레이어가 진입했을 때 선공 전투 시작 정책을 몬스터에게 위임합니다.
+        /// </summary>
+        /// <param name="collision">공격 범위에 진입한 Collider입니다.</param>
         public void OnCharacterTriggerEnter(Collider2D collision)
         {
             if (!IsActive) return;
+            if (collision == null) return;
 
-            if (collision.CompareTag(ConfigTags.GetValue(ConfigTags.Keys.Player)))
+            if (!collision.CompareTag(ConfigTags.GetValue(ConfigTags.Keys.Player))) return;
+            if (_controller.targetCharacter == null || _controller.targetCharacter.IsStatusDead()) return;
+
+            if (_controller.targetCharacter.IsAggro() && _controller.targetCharacter.attackerTransform != null)
             {
-                if (_controller.targetCharacter.IsStatusDead()) return;
-
-                if (_controller.targetCharacter.IsAggro() && _controller.targetCharacter.attackerTransform != null)
-                {
-                    // Trigger 진입은 감지만 담당한다.
-                    // 실제 공격 시작은 TickLegacy()에서 공통 제어 가능 여부를 확인한 뒤 결정한다.
-                    return;
-                }
-                // 선공
-                else if (_controller.targetCharacter.GetAttackType() == CharacterConstants.AttackType.AggroFirst &&
-                         _controller.targetCharacter.IsAggro() == false)
-                {
-                    _controller.targetCharacter.SetAggro(true);
-                    _controller.targetCharacter.SetAttackerTarget(collision.gameObject.transform);
-                }
+                // Trigger 진입은 감지만 담당한다.
+                // 실제 공격 시작은 TickLegacy()에서 공통 제어 가능 여부를 확인한 뒤 결정한다.
+                return;
             }
+
+            if (_controller.targetCharacter is not Monster monster) return;
+
+            Player player = collision.GetComponentInParent<Player>();
+            if (player == null) return;
+
+            monster.OnDetectedPlayerByAttackRange(player);
         }
 
+        /// <summary>
+        /// 몬스터 공격 범위 Trigger에서 플레이어가 이탈했을 때 진행 중인 기본 공격 코루틴을 정리합니다.
+        /// </summary>
+        /// <param name="collision">공격 범위에서 이탈한 Collider입니다.</param>
         public void OnCharacterTriggerExit(Collider2D collision)
         {
             if (!IsActive) return;
