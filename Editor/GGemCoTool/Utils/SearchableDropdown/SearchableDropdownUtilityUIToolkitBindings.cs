@@ -14,6 +14,8 @@ namespace GGemCo2DCoreEditor
         /// UI Toolkit Button에 검색 드롭다운을 바인딩합니다.
         /// 버튼 텍스트는 호출부에서 필요 시 갱신하세요.
         /// </summary>
+        /// <param name="initialScrollPolicy">드롭다운이 처음 열릴 때 적용할 선택 항목 기준 스크롤 정책입니다.</param>
+        /// <param name="getSelectedKey">UID처럼 옵션 index가 아닌 <see cref="Option{T}.Key"/> 기준 선택 값을 반환하는 함수입니다.</param>
         public static void BindUiToolkitButton<T>(
             EditorWindow owner,
             Button button,
@@ -25,7 +27,8 @@ namespace GGemCo2DCoreEditor
             float popupWidth = EditorConstants.SearchableDropdownUtility.PopupWidth,
             SearchMode defaultSearchMode = SearchMode.Both,
             float verticalOffset = EditorConstants.SearchableDropdownUtility.VerticalOffset,
-            InitialScrollPolicy initialScrollPolicy = InitialScrollPolicy.PageStart)
+            InitialScrollPolicy initialScrollPolicy = InitialScrollPolicy.PageStart,
+            Func<string>? getSelectedKey = null)
         {
             if (owner == null) throw new ArgumentNullException(nameof(owner));
             if (button == null) throw new ArgumentNullException(nameof(button));
@@ -36,6 +39,7 @@ namespace GGemCo2DCoreEditor
             button.clicked += () =>
             {
                 int selectedIndex = getSelectedIndex.Invoke();
+                string selectedKey = getSelectedKey?.Invoke() ?? string.Empty;
                 Rect screenRect = GetScreenRect(owner, button);
 
                 ShowUiToolkit(
@@ -49,13 +53,16 @@ namespace GGemCo2DCoreEditor
                     popupWidth,
                     defaultSearchMode,
                     verticalOffset,
-                    initialScrollPolicy);
+                    initialScrollPolicy,
+                    selectedKey);
             };
         }
 
         /// <summary>
         /// UI Toolkit Button에 탭 기반 검색 드롭다운을 바인딩합니다.
         /// </summary>
+        /// <param name="initialScrollPolicy">드롭다운이 처음 열릴 때 적용할 선택 항목 기준 스크롤 정책입니다.</param>
+        /// <param name="getSelectedKey">탭 ID를 받아 <see cref="Option{T}.Key"/> 기준 선택 값을 반환하는 함수입니다.</param>
         public static void BindUiToolkitButton<T>(
             EditorWindow owner,
             Button button,
@@ -68,7 +75,8 @@ namespace GGemCo2DCoreEditor
             float popupWidth = EditorConstants.SearchableDropdownUtility.PopupWidth,
             SearchMode defaultSearchMode = SearchMode.Both,
             float verticalOffset = EditorConstants.SearchableDropdownUtility.VerticalOffset,
-            InitialScrollPolicy initialScrollPolicy = InitialScrollPolicy.PageStart)
+            InitialScrollPolicy initialScrollPolicy = InitialScrollPolicy.PageStart,
+            Func<string, string>? getSelectedKey = null)
         {
             if (owner == null) throw new ArgumentNullException(nameof(owner));
             if (button == null) throw new ArgumentNullException(nameof(button));
@@ -81,6 +89,7 @@ namespace GGemCo2DCoreEditor
             {
                 string selectedTabId = getSelectedTabId.Invoke();
                 int selectedIndex = getSelectedIndex.Invoke(selectedTabId);
+                string selectedKey = getSelectedKey?.Invoke(selectedTabId) ?? string.Empty;
                 Rect screenRect = GetScreenRect(owner, button);
 
                 ShowUiToolkit(
@@ -95,13 +104,16 @@ namespace GGemCo2DCoreEditor
                     popupWidth,
                     defaultSearchMode,
                     verticalOffset,
-                    initialScrollPolicy);
+                    initialScrollPolicy,
+                    selectedKey);
             };
         }
 
         /// <summary>
         /// UI Toolkit VisualElement(예: clickable container)에 검색 드롭다운을 바인딩합니다.
         /// </summary>
+        /// <param name="initialScrollPolicy">드롭다운이 처음 열릴 때 적용할 선택 항목 기준 스크롤 정책입니다.</param>
+        /// <param name="getSelectedKey">UID처럼 옵션 index가 아닌 <see cref="Option{T}.Key"/> 기준 선택 값을 반환하는 함수입니다.</param>
         public static void BindUiToolkitClickable<T>(
             EditorWindow owner,
             VisualElement element,
@@ -113,7 +125,8 @@ namespace GGemCo2DCoreEditor
             float popupWidth = EditorConstants.SearchableDropdownUtility.PopupWidth,
             SearchMode defaultSearchMode = SearchMode.Both,
             float verticalOffset = EditorConstants.SearchableDropdownUtility.VerticalOffset,
-            InitialScrollPolicy initialScrollPolicy = InitialScrollPolicy.PageStart)
+            InitialScrollPolicy initialScrollPolicy = InitialScrollPolicy.PageStart,
+            Func<string>? getSelectedKey = null)
         {
             if (owner == null) throw new ArgumentNullException(nameof(owner));
             if (element == null) throw new ArgumentNullException(nameof(element));
@@ -127,6 +140,7 @@ namespace GGemCo2DCoreEditor
                     return;
 
                 int selectedIndex = getSelectedIndex.Invoke();
+                string selectedKey = getSelectedKey?.Invoke() ?? string.Empty;
                 Rect screenRect = GetScreenRect(owner, element);
 
                 ShowUiToolkit(
@@ -140,7 +154,8 @@ namespace GGemCo2DCoreEditor
                     popupWidth,
                     defaultSearchMode,
                     verticalOffset,
-                    initialScrollPolicy);
+                    initialScrollPolicy,
+                    selectedKey);
 
                 evt.StopPropagation();
             });

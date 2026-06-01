@@ -78,7 +78,7 @@ namespace GGemCo2DCoreEditor
         }
 
         /// <summary>
-        /// 드롭다운이 처음 열릴 때 선택 항목을 기준으로 스크롤 위치를 정하는 정책입니다.
+        /// 드롭다운이 처음 열릴 때 현재 선택 항목을 기준으로 적용할 초기 스크롤 정책입니다.
         /// </summary>
         public enum InitialScrollPolicy
         {
@@ -88,30 +88,30 @@ namespace GGemCo2DCoreEditor
             None = 0,
 
             /// <summary>
-            /// 선택 항목이 보이도록 필요한 만큼만 스크롤합니다.
+            /// 선택 항목이 화면 안에 들어오도록 최소 범위로만 스크롤합니다.
             /// </summary>
             EnsureSelectedVisible = 1,
 
             /// <summary>
-            /// 선택 항목이 포함된 MaxVisibleItems 단위 페이지의 시작 위치로 스크롤합니다.
-            /// 예: MaxVisibleItems가 10이고 13번째 항목이 선택되어 있으면 11번째 항목부터 표시합니다.
+            /// 선택 항목이 포함된 <c>maxVisibleItems</c> 단위 페이지의 시작 항목으로 스크롤합니다.
+            /// 예: 10개 표시, 13번째 선택 시 11번째 항목부터 표시합니다.
             /// </summary>
             PageStart = 2,
 
             /// <summary>
-            /// 선택 항목이 가능한 한 중앙에 오도록 스크롤합니다.
+            /// 선택 항목이 리스트 중앙에 가깝게 보이도록 스크롤합니다.
             /// </summary>
-            Center = 3
+            Center = 3,
         }
 
         /// <summary>
-        /// 선택 항목과 표시 개수를 기준으로 드롭다운이 처음 보여줄 첫 번째 항목 인덱스를 계산합니다.
+        /// 선택 항목이 포함된 위치를 기준으로 처음 보여줄 항목 인덱스를 계산합니다.
         /// </summary>
         /// <param name="selectedFilteredIndex">필터링된 목록 기준 선택 항목 인덱스입니다.</param>
         /// <param name="filteredCount">필터링된 항목 개수입니다.</param>
-        /// <param name="maxVisibleItems">한 번에 보여줄 최대 항목 개수입니다.</param>
+        /// <param name="maxVisibleItems">한 번에 표시할 최대 항목 개수입니다.</param>
         /// <param name="policy">초기 스크롤 정책입니다.</param>
-        /// <returns>처음 표시할 항목 인덱스입니다.</returns>
+        /// <returns>처음 보여줄 항목의 필터링 목록 기준 인덱스입니다.</returns>
         private static int CalculateInitialFirstVisibleIndex(
             int selectedFilteredIndex,
             int filteredCount,
@@ -134,7 +134,7 @@ namespace GGemCo2DCoreEditor
                 InitialScrollPolicy.EnsureSelectedVisible =>
                     selectedFilteredIndex - maxVisibleItems + 1,
 
-                _ => 0
+                _ => 0,
             };
 
             return Mathf.Clamp(firstVisibleIndex, 0, maxFirstVisibleIndex);
@@ -151,7 +151,8 @@ namespace GGemCo2DCoreEditor
         /// <param name="rowHeight">항목 높이</param>
         /// <param name="popupWidth">팝업 너비</param>
         /// <param name="defaultSearchMode">기본 검색 모드</param>
-        /// <param name="initialScrollPolicy">드롭다운이 처음 열릴 때 적용할 선택 항목 기준 스크롤 정책</param>
+        /// <param name="initialScrollPolicy">드롭다운이 처음 열릴 때 적용할 선택 항목 기준 스크롤 정책입니다.</param>
+        /// <param name="selectedKey">UID처럼 옵션 index가 아닌 <see cref="Option{T}.Key"/> 기준으로 선택 항목을 찾을 때 사용하는 값입니다.</param>
         public static void Show<T>(
             Rect activatorRectScreen,
             IReadOnlyList<Option<T>> options,
@@ -161,7 +162,8 @@ namespace GGemCo2DCoreEditor
             float rowHeight = EditorConstants.SearchableDropdownUtility.RowHeight,
             float popupWidth = EditorConstants.SearchableDropdownUtility.PopupWidth,
             SearchMode defaultSearchMode = SearchMode.Both,
-            InitialScrollPolicy initialScrollPolicy = InitialScrollPolicy.PageStart)
+            InitialScrollPolicy initialScrollPolicy = InitialScrollPolicy.PageStart,
+            string? selectedKey = null)
         {
             if (options == null) throw new ArgumentNullException(nameof(options));
             if (onSelected == null) throw new ArgumentNullException(nameof(onSelected));
@@ -180,7 +182,8 @@ namespace GGemCo2DCoreEditor
                     rowHeight,
                     popupWidth,
                     defaultSearchMode,
-                    initialScrollPolicy));
+                    initialScrollPolicy,
+                    selectedKey));
         }
 
         private sealed class SearchableDropdownPopup<T> : PopupWindowContent
@@ -191,10 +194,11 @@ namespace GGemCo2DCoreEditor
             private readonly int _maxVisibleItems;
             private readonly float _rowHeight;
             private readonly float _popupWidth;
-            private readonly InitialScrollPolicy _initialScrollPolicy;
 
             private readonly SearchField _searchField = new SearchField();
             private readonly List<int> _filtered = new List<int>(256);
+            private readonly InitialScrollPolicy _initialScrollPolicy;
+            private readonly string _selectedKey;
 
             private int _selectedIndex;
             private int _hoverIndexInFiltered = -1;
@@ -216,7 +220,8 @@ namespace GGemCo2DCoreEditor
                 float rowHeight,
                 float popupWidth,
                 SearchMode defaultMode,
-                InitialScrollPolicy initialScrollPolicy)
+                InitialScrollPolicy initialScrollPolicy,
+                string? selectedKey)
             {
                 _options = options;
                 _selectedIndex = selectedIndex;
@@ -226,6 +231,7 @@ namespace GGemCo2DCoreEditor
                 _rowHeight = rowHeight;
                 _popupWidth = popupWidth;
                 _initialScrollPolicy = initialScrollPolicy;
+                _selectedKey = selectedKey ?? string.Empty;
 
                 _mode = defaultMode;
 
@@ -330,7 +336,7 @@ namespace GGemCo2DCoreEditor
 
                     Rect rowRect = GUILayoutUtility.GetRect(0, _rowHeight, GUILayout.ExpandWidth(true));
 
-                    bool isSelected = optionIndex == _selectedIndex;
+                    bool isSelected = IsSelectedOption(optionIndex, option);
                     bool isHover = i == _hoverIndexInFiltered;
 
                     if (Event.current.type == EventType.Repaint)
@@ -356,7 +362,7 @@ namespace GGemCo2DCoreEditor
 
             /// <summary>
             /// 드롭다운 최초 표시 시 현재 선택 항목이 포함된 위치로 스크롤을 보정합니다.
-            /// 검색어/검색 모드 변경 이후에는 사용자의 스크롤 조작을 방해하지 않도록 한 번만 실행합니다.
+            /// 검색어/검색 모드 변경 후에는 사용자의 스크롤 조작을 방해하지 않도록 한 번만 실행합니다.
             /// </summary>
             private void ApplyInitialScrollIfNeeded()
             {
@@ -365,7 +371,7 @@ namespace GGemCo2DCoreEditor
 
                 _initialScrollApplied = true;
 
-                int selectedFilteredIndex = FindFilteredIndexByOptionIndex(_selectedIndex);
+                int selectedFilteredIndex = FindSelectedFilteredIndex();
                 if (selectedFilteredIndex < 0)
                     return;
 
@@ -381,22 +387,36 @@ namespace GGemCo2DCoreEditor
             }
 
             /// <summary>
-            /// 원본 옵션 인덱스를 필터링된 목록 기준 인덱스로 변환합니다.
+            /// 현재 선택 항목을 필터링된 목록 기준 인덱스로 찾습니다.
+            /// <c>selectedKey</c>가 있으면 옵션 Key 기준으로 비교하고, 없으면 기존 0-based index 기준으로 비교합니다.
             /// </summary>
-            /// <param name="optionIndex">원본 옵션 인덱스입니다.</param>
-            /// <returns>필터링된 목록 기준 인덱스입니다. 찾지 못하면 -1을 반환합니다.</returns>
-            private int FindFilteredIndexByOptionIndex(int optionIndex)
+            /// <returns>필터링된 목록 기준 선택 인덱스입니다. 찾지 못하면 -1을 반환합니다.</returns>
+            private int FindSelectedFilteredIndex()
             {
-                if (optionIndex < 0)
-                    return -1;
-
                 for (int i = 0; i < _filtered.Count; i++)
                 {
-                    if (_filtered[i] == optionIndex)
+                    int optionIndex = _filtered[i];
+                    Option<T> option = _options[optionIndex];
+                    if (IsSelectedOption(optionIndex, option))
                         return i;
                 }
 
                 return -1;
+            }
+
+            /// <summary>
+            /// 지정한 옵션이 현재 선택 항목인지 확인합니다.
+            /// UID 같은 고유 식별자는 Option.Key로 비교하고, 기존 호출부는 optionIndex로 비교합니다.
+            /// </summary>
+            /// <param name="optionIndex">원본 옵션 목록 기준 0-based index입니다.</param>
+            /// <param name="option">비교할 옵션입니다.</param>
+            /// <returns>현재 선택 항목이면 true입니다.</returns>
+            private bool IsSelectedOption(int optionIndex, Option<T> option)
+            {
+                if (!string.IsNullOrEmpty(_selectedKey))
+                    return string.Equals(option.Key, _selectedKey, StringComparison.Ordinal);
+
+                return optionIndex == _selectedIndex;
             }
 
             private static GUIStyle GetRowBackgroundStyle(bool selected, bool hover)

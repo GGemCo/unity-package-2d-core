@@ -25,6 +25,8 @@ namespace GGemCo2DCoreEditor
         /// <summary>
         /// UI Toolkit용 검색 드롭다운을 DropDown EditorWindow로 표시합니다.
         /// </summary>
+        /// <param name="initialScrollPolicy">드롭다운이 처음 열릴 때 적용할 선택 항목 기준 스크롤 정책입니다.</param>
+        /// <param name="selectedKey">UID처럼 옵션 index가 아닌 <see cref="Option{T}.Key"/> 기준으로 선택 항목을 찾을 때 사용하는 값입니다.</param>
         public static void ShowUiToolkit<T>(
             EditorWindow owner,
             Rect activatorRectScreen,
@@ -36,7 +38,8 @@ namespace GGemCo2DCoreEditor
             float popupWidth = EditorConstants.SearchableDropdownUtility.PopupWidth,
             SearchMode defaultSearchMode = SearchMode.Both,
             float verticalOffset = EditorConstants.SearchableDropdownUtility.VerticalOffset,
-            InitialScrollPolicy initialScrollPolicy = InitialScrollPolicy.PageStart)
+            InitialScrollPolicy initialScrollPolicy = InitialScrollPolicy.PageStart,
+            string? selectedKey = null)
         {
             if (owner == null) throw new ArgumentNullException(nameof(owner));
             if (options == null) throw new ArgumentNullException(nameof(options));
@@ -59,12 +62,15 @@ namespace GGemCo2DCoreEditor
                 popupWidth,
                 defaultSearchMode,
                 verticalOffset,
-                initialScrollPolicy);
+                initialScrollPolicy,
+                selectedKey);
         }
 
         /// <summary>
         /// UI Toolkit용 검색 드롭다운을 탭 기반으로 표시합니다.
         /// </summary>
+        /// <param name="initialScrollPolicy">드롭다운이 처음 열릴 때 적용할 선택 항목 기준 스크롤 정책입니다.</param>
+        /// <param name="selectedKey">UID처럼 옵션 index가 아닌 <see cref="Option{T}.Key"/> 기준으로 선택 항목을 찾을 때 사용하는 값입니다.</param>
         public static void ShowUiToolkit<T>(
             EditorWindow owner,
             Rect activatorRectScreen,
@@ -77,7 +83,8 @@ namespace GGemCo2DCoreEditor
             float popupWidth = EditorConstants.SearchableDropdownUtility.PopupWidth,
             SearchMode defaultSearchMode = SearchMode.Both,
             float verticalOffset = EditorConstants.SearchableDropdownUtility.VerticalOffset,
-            InitialScrollPolicy initialScrollPolicy = InitialScrollPolicy.PageStart)
+            InitialScrollPolicy initialScrollPolicy = InitialScrollPolicy.PageStart,
+            string? selectedKey = null)
         {
             if (owner == null) throw new ArgumentNullException(nameof(owner));
             if (tabs == null) throw new ArgumentNullException(nameof(tabs));
@@ -142,7 +149,8 @@ namespace GGemCo2DCoreEditor
                 popupWidth: popupWidth,
                 defaultMode: defaultSearchMode,
                 showTabs: tabInfos.Count > 1,
-                initialScrollPolicy: initialScrollPolicy);
+                initialScrollPolicy: initialScrollPolicy,
+                selectedKey: selectedKey);
 
             int visibleCount = Mathf.Min(entries.Count, maxVisibleItems);
             visibleCount = Mathf.Max(visibleCount, 3);
@@ -248,16 +256,17 @@ namespace GGemCo2DCoreEditor
             private Action<Entry>? _onSelectedEntry;
 
             private string _selectedTabId = DefaultTabId;
+            private string _selectedKey = string.Empty;
             private int _selectedOptionIndex;
             private int _maxVisibleItems;
             private float _rowHeight;
             private float _popupWidth;
             private SearchMode _mode;
-            private bool _showTabs;
             private InitialScrollPolicy _initialScrollPolicy;
-            private bool _initialScrollApplied;
+            private bool _showTabs;
 
             private string _query = string.Empty;
+            private bool _initialScrollApplied;
 
             private readonly List<int> _filteredEntryIndices = new(256);
             private readonly List<string> _display = new(256);
@@ -284,19 +293,21 @@ namespace GGemCo2DCoreEditor
                 float popupWidth,
                 SearchMode defaultMode,
                 bool showTabs,
-                InitialScrollPolicy initialScrollPolicy)
+                InitialScrollPolicy initialScrollPolicy,
+                string? selectedKey)
             {
                 _entries = entries ?? new List<Entry>();
                 _tabs = tabs ?? new List<TabInfo>();
                 _selectedTabId = string.IsNullOrWhiteSpace(selectedTabId) ? ResolveDefaultTabId(_tabs) : selectedTabId;
+                _selectedKey = selectedKey ?? string.Empty;
                 _selectedOptionIndex = selectedOptionIndex;
                 _onSelectedEntry = onSelectedEntry ?? throw new ArgumentNullException(nameof(onSelectedEntry));
                 _maxVisibleItems = maxVisibleItems;
                 _rowHeight = rowHeight;
                 _popupWidth = popupWidth;
                 _mode = defaultMode;
-                _showTabs = showTabs && _tabs.Count > 1;
                 _initialScrollPolicy = initialScrollPolicy;
+                _showTabs = showTabs && _tabs.Count > 1;
 
                 RebuildFilter();
             }
@@ -482,6 +493,7 @@ namespace GGemCo2DCoreEditor
                     return;
 
                 _selectedTabId = tabId;
+                _selectedKey = string.Empty;
                 _selectedOptionIndex = -1;
                 _query = string.Empty;
                 if (_searchField != null)
@@ -538,15 +550,12 @@ namespace GGemCo2DCoreEditor
 
                 _listView?.Rebuild();
 
-                int idxInFiltered = FindFilteredIndex(_selectedTabId, _selectedOptionIndex);
-                int targetSelection =
-                    idxInFiltered >= 0 ? idxInFiltered :
-                    (_filteredEntryIndices.Count > 0 ? 0 : -1);
+                int idxInFiltered = FindSelectedFilteredIndex();
 
-                if (_listView != null && targetSelection >= 0 && _selectedOptionIndex > -1)
+                if (_listView != null && idxInFiltered >= 0 && HasSelectedOption())
                 {
-                    SetSelectionWithoutNotifySafe(_listView, targetSelection);
-                    ApplyInitialScrollToListViewIfNeeded(targetSelection);
+                    SetSelectionWithoutNotifySafe(_listView, idxInFiltered);
+                    ApplyInitialScrollToListViewIfNeeded(idxInFiltered);
                 }
 
                 int visibleCount = Mathf.Min(_filteredEntryIndices.Count, _maxVisibleItems);
@@ -569,10 +578,53 @@ namespace GGemCo2DCoreEditor
             }
 
             /// <summary>
-            /// UI Toolkit ListView가 생성/갱신된 뒤 선택 항목이 포함된 페이지 시작 위치로 초기 스크롤합니다.
-            /// 레이아웃 반영 직후에는 스크롤 값이 무시될 수 있으므로 다음 UI 틱에 한 번만 실행합니다.
+            /// 현재 선택 항목을 필터링된 Entry 목록 기준 인덱스로 찾습니다.
+            /// <c>selectedKey</c>가 있으면 Entry.Key 기준으로 비교하고, 없으면 기존 optionIndex 기준으로 비교합니다.
             /// </summary>
-            /// <param name="selectedFilteredIndex">필터링된 목록 기준 선택 항목 인덱스입니다.</param>
+            /// <returns>필터링된 Entry 목록 기준 선택 인덱스입니다. 찾지 못하면 -1을 반환합니다.</returns>
+            private int FindSelectedFilteredIndex()
+            {
+                for (int i = 0; i < _filteredEntryIndices.Count; i++)
+                {
+                    Entry entry = _entries[_filteredEntryIndices[i]];
+                    if (!string.Equals(entry.TabId, _selectedTabId, StringComparison.OrdinalIgnoreCase))
+                        continue;
+
+                    if (IsSelectedEntry(entry))
+                        return i;
+                }
+
+                return -1;
+            }
+
+            /// <summary>
+            /// 현재 비교 가능한 선택 값이 있는지 확인합니다.
+            /// </summary>
+            /// <returns>선택 Key 또는 선택 index가 있으면 true입니다.</returns>
+            private bool HasSelectedOption()
+            {
+                return !string.IsNullOrEmpty(_selectedKey) || _selectedOptionIndex > -1;
+            }
+
+            /// <summary>
+            /// Entry가 현재 선택 항목인지 확인합니다.
+            /// UID 같은 고유 식별자는 Key로 비교하고, 기존 호출부는 optionIndex로 비교합니다.
+            /// </summary>
+            /// <param name="entry">비교할 Entry입니다.</param>
+            /// <returns>현재 선택 항목이면 true입니다.</returns>
+            private bool IsSelectedEntry(Entry entry)
+            {
+                if (!string.IsNullOrEmpty(_selectedKey))
+                    return string.Equals(entry.Key, _selectedKey, StringComparison.Ordinal);
+
+                return entry.OptionIndex == _selectedOptionIndex;
+            }
+
+            /// <summary>
+            /// ListView가 처음 표시될 때 현재 선택 항목이 포함된 페이지 시작 위치로 스크롤합니다.
+            /// 검색/탭 변경 이후에는 사용자의 스크롤 조작을 방해하지 않도록 한 번만 실행합니다.
+            /// </summary>
+            /// <param name="selectedFilteredIndex">필터링된 Entry 목록 기준 선택 인덱스입니다.</param>
             private void ApplyInitialScrollToListViewIfNeeded(int selectedFilteredIndex)
             {
                 if (_initialScrollApplied || _listView == null || selectedFilteredIndex < 0)
@@ -586,48 +638,23 @@ namespace GGemCo2DCoreEditor
                     _maxVisibleItems,
                     _initialScrollPolicy);
 
+                float targetScrollY = firstVisibleIndex * _rowHeight;
+
+                // ListView 내부 ScrollView는 레이아웃 확정 뒤 생성/갱신되므로 다음 UI 틱에 스크롤을 적용합니다.
                 _listView.schedule.Execute(() =>
                 {
-                    if (this == null || _listView == null)
+                    if (_listView == null)
                         return;
 
-                    SetSelectionWithoutNotifySafe(_listView, selectedFilteredIndex);
-                    ScrollListViewToFirstVisibleIndex(firstVisibleIndex);
-                    _listView.Focus();
+                    ScrollView? scrollView = _listView.Q<ScrollView>();
+                    if (scrollView != null)
+                    {
+                        scrollView.scrollOffset = new Vector2(scrollView.scrollOffset.x, targetScrollY);
+                        return;
+                    }
+
+                    _listView.ScrollToItem(firstVisibleIndex);
                 }).ExecuteLater(0);
-            }
-
-            /// <summary>
-            /// ListView 내부 ScrollView를 찾아 지정한 항목이 첫 줄에 오도록 스크롤합니다.
-            /// 내부 ScrollView를 찾지 못한 Unity 버전에서는 ScrollToItem으로 안전하게 대체합니다.
-            /// </summary>
-            /// <param name="firstVisibleIndex">첫 번째로 보여줄 필터링 목록 기준 인덱스입니다.</param>
-            private void ScrollListViewToFirstVisibleIndex(int firstVisibleIndex)
-            {
-                if (_listView == null)
-                    return;
-
-                int clampedIndex = Mathf.Clamp(firstVisibleIndex, 0, Mathf.Max(0, _filteredEntryIndices.Count - 1));
-                ScrollView? scrollView = _listView.Q<ScrollView>();
-                if (scrollView == null)
-                {
-                    _listView.ScrollToItem(clampedIndex);
-                    return;
-                }
-
-                scrollView.scrollOffset = new Vector2(scrollView.scrollOffset.x, clampedIndex * _rowHeight);
-            }
-
-            private int FindFilteredIndex(string tabId, int optionIndex)
-            {
-                for (int i = 0; i < _filteredEntryIndices.Count; i++)
-                {
-                    Entry entry = _entries[_filteredEntryIndices[i]];
-                    if (string.Equals(entry.TabId, tabId, StringComparison.OrdinalIgnoreCase) && entry.OptionIndex == optionIndex)
-                        return i;
-                }
-
-                return -1;
             }
 
             private void SetSelectionWithoutNotifySafe(ListView listView, int index)
@@ -660,6 +687,7 @@ namespace GGemCo2DCoreEditor
             private void Select(Entry entry)
             {
                 _selectedTabId = entry.TabId;
+                _selectedKey = entry.Key;
                 _selectedOptionIndex = entry.OptionIndex;
                 _onSelectedEntry?.Invoke(entry);
                 DelayClose();

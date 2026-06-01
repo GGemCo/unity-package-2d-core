@@ -13,6 +13,8 @@ namespace GGemCo2DCoreEditor
         /// 버튼을 그리고, 클릭 시 검색 가능한 드롭다운 팝업을 버튼 바로 아래에 표시합니다.
         /// (GUILayout 기반 Rect 계산/이벤트 단계 이슈를 유틸 내부에서 해결)
         /// </summary>
+        /// <param name="initialScrollPolicy">드롭다운이 처음 열릴 때 적용할 선택 항목 기준 스크롤 정책입니다.</param>
+        /// <param name="selectedKey">UID처럼 옵션 index가 아닌 <see cref="Option{T}.Key"/> 기준으로 선택 항목을 찾을 때 사용하는 값입니다.</param>
         private static bool DrawButtonAndShow<T>(
             GUIContent buttonLabel,
             IReadOnlyList<Option<T>> options,
@@ -26,7 +28,8 @@ namespace GGemCo2DCoreEditor
             SearchMode defaultSearchMode = SearchMode.Both,
             float verticalOffset = EditorConstants.SearchableDropdownUtility.VerticalOffset,
             bool disabled = false,
-            InitialScrollPolicy initialScrollPolicy = InitialScrollPolicy.PageStart)
+            InitialScrollPolicy initialScrollPolicy = InitialScrollPolicy.PageStart,
+            string? selectedKey = null)
         {
             if (buttonLabel == null) throw new ArgumentNullException(nameof(buttonLabel));
             if (options == null) throw new ArgumentNullException(nameof(options));
@@ -62,12 +65,17 @@ namespace GGemCo2DCoreEditor
                     rowHeight: rowHeight,
                     popupWidth: popupWidth,
                     defaultSearchMode: defaultSearchMode,
-                    initialScrollPolicy: initialScrollPolicy);
+                    initialScrollPolicy: initialScrollPolicy,
+                    selectedKey: selectedKey);
 
                 return true;
             }
         }
 
+        /// <summary>
+        /// 문자열 라벨 버튼을 그리고, 클릭 시 검색 가능한 드롭다운 팝업을 표시합니다.
+        /// </summary>
+        /// <param name="selectedKey">UID처럼 옵션 index가 아닌 <see cref="Option{T}.Key"/> 기준으로 선택 항목을 찾을 때 사용하는 값입니다.</param>
         public static bool DrawButtonAndShow<T>(
             string buttonText,
             IReadOnlyList<Option<T>> options,
@@ -81,7 +89,8 @@ namespace GGemCo2DCoreEditor
             SearchMode defaultSearchMode = SearchMode.Both,
             float verticalOffset = EditorConstants.SearchableDropdownUtility.VerticalOffset,
             bool disabled = false,
-            InitialScrollPolicy initialScrollPolicy = InitialScrollPolicy.PageStart)
+            InitialScrollPolicy initialScrollPolicy = InitialScrollPolicy.PageStart,
+            string? selectedKey = null)
         {
             return DrawButtonAndShow(
                 new GUIContent(buttonText ?? string.Empty),
@@ -96,7 +105,8 @@ namespace GGemCo2DCoreEditor
                 defaultSearchMode,
                 verticalOffset,
                 disabled,
-                initialScrollPolicy);
+                initialScrollPolicy,
+                selectedKey);
         }
     }
 }
