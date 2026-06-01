@@ -27,7 +27,8 @@ namespace GGemCo2DCoreEditor
             float popupWidth = EditorConstants.SearchableDropdownUtility.PopupWidth,
             SearchMode defaultSearchMode = SearchMode.Both,
             float verticalOffset = EditorConstants.SearchableDropdownUtility.VerticalOffset,
-            bool disabled = false)
+            bool disabled = false,
+            InitialScrollPolicy initialScrollPolicy = InitialScrollPolicy.PageStart)
         {
             if (label == null) throw new ArgumentNullException(nameof(label));
             if (fieldContent == null) throw new ArgumentNullException(nameof(fieldContent));
@@ -59,7 +60,8 @@ namespace GGemCo2DCoreEditor
                     maxVisibleItems: maxVisibleItems,
                     rowHeight: rowHeight,
                     popupWidth: popupWidth,
-                    defaultSearchMode: defaultSearchMode);
+                    defaultSearchMode: defaultSearchMode,
+                    initialScrollPolicy: initialScrollPolicy);
 
                 return true;
             }
@@ -82,7 +84,8 @@ namespace GGemCo2DCoreEditor
             float popupWidth = EditorConstants.SearchableDropdownUtility.PopupWidth,
             SearchMode defaultSearchMode = SearchMode.Both,
             float verticalOffset = EditorConstants.SearchableDropdownUtility.VerticalOffset,
-            bool disabled = false)
+            bool disabled = false,
+            InitialScrollPolicy initialScrollPolicy = InitialScrollPolicy.PageStart)
         {
             string text = (selectedIndex >= 0 && selectedIndex < options.Count)
                 ? options[selectedIndex].ToString()
@@ -102,7 +105,8 @@ namespace GGemCo2DCoreEditor
                 popupWidth,
                 defaultSearchMode,
                 verticalOffset,
-                disabled);
+                disabled,
+                initialScrollPolicy);
         }
 
         public static bool DrawLabeledFieldAndShow<T>(
@@ -119,7 +123,8 @@ namespace GGemCo2DCoreEditor
             float popupWidth = EditorConstants.SearchableDropdownUtility.PopupWidth,
             SearchMode defaultSearchMode = SearchMode.Both,
             float verticalOffset = EditorConstants.SearchableDropdownUtility.VerticalOffset,
-            bool disabled = false)
+            bool disabled = false,
+            InitialScrollPolicy initialScrollPolicy = InitialScrollPolicy.PageStart)
         {
             return DrawLabeledFieldAndShow(
                 new GUIContent(labelText ?? string.Empty),
@@ -135,7 +140,8 @@ namespace GGemCo2DCoreEditor
                 popupWidth,
                 defaultSearchMode,
                 verticalOffset,
-                disabled);
+                disabled,
+                initialScrollPolicy);
         }
     }
 }

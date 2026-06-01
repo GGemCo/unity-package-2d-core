@@ -24,7 +24,8 @@ namespace GGemCo2DCoreEditor
             float rowHeight = EditorConstants.SearchableDropdownUtility.RowHeight,
             float popupWidth = EditorConstants.SearchableDropdownUtility.PopupWidth,
             SearchMode defaultSearchMode = SearchMode.Both,
-            float verticalOffset = EditorConstants.SearchableDropdownUtility.VerticalOffset)
+            float verticalOffset = EditorConstants.SearchableDropdownUtility.VerticalOffset,
+            InitialScrollPolicy initialScrollPolicy = InitialScrollPolicy.PageStart)
         {
             if (owner == null) throw new ArgumentNullException(nameof(owner));
             if (button == null) throw new ArgumentNullException(nameof(button));
@@ -47,7 +48,8 @@ namespace GGemCo2DCoreEditor
                     rowHeight,
                     popupWidth,
                     defaultSearchMode,
-                    verticalOffset);
+                    verticalOffset,
+                    initialScrollPolicy);
             };
         }
 
@@ -65,7 +67,8 @@ namespace GGemCo2DCoreEditor
             float rowHeight = EditorConstants.SearchableDropdownUtility.RowHeight,
             float popupWidth = EditorConstants.SearchableDropdownUtility.PopupWidth,
             SearchMode defaultSearchMode = SearchMode.Both,
-            float verticalOffset = EditorConstants.SearchableDropdownUtility.VerticalOffset)
+            float verticalOffset = EditorConstants.SearchableDropdownUtility.VerticalOffset,
+            InitialScrollPolicy initialScrollPolicy = InitialScrollPolicy.PageStart)
         {
             if (owner == null) throw new ArgumentNullException(nameof(owner));
             if (button == null) throw new ArgumentNullException(nameof(button));
@@ -91,7 +94,8 @@ namespace GGemCo2DCoreEditor
                     rowHeight,
                     popupWidth,
                     defaultSearchMode,
-                    verticalOffset);
+                    verticalOffset,
+                    initialScrollPolicy);
             };
         }
 
@@ -108,7 +112,8 @@ namespace GGemCo2DCoreEditor
             float rowHeight = EditorConstants.SearchableDropdownUtility.RowHeight,
             float popupWidth = EditorConstants.SearchableDropdownUtility.PopupWidth,
             SearchMode defaultSearchMode = SearchMode.Both,
-            float verticalOffset = EditorConstants.SearchableDropdownUtility.VerticalOffset)
+            float verticalOffset = EditorConstants.SearchableDropdownUtility.VerticalOffset,
+            InitialScrollPolicy initialScrollPolicy = InitialScrollPolicy.PageStart)
         {
             if (owner == null) throw new ArgumentNullException(nameof(owner));
             if (element == null) throw new ArgumentNullException(nameof(element));
@@ -134,7 +139,8 @@ namespace GGemCo2DCoreEditor
                     rowHeight,
                     popupWidth,
                     defaultSearchMode,
-                    verticalOffset);
+                    verticalOffset,
+                    initialScrollPolicy);
 
                 evt.StopPropagation();
             });

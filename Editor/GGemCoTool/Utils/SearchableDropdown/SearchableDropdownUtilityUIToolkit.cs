@@ -35,7 +35,8 @@ namespace GGemCo2DCoreEditor
             float rowHeight = EditorConstants.SearchableDropdownUtility.RowHeight,
             float popupWidth = EditorConstants.SearchableDropdownUtility.PopupWidth,
             SearchMode defaultSearchMode = SearchMode.Both,
-            float verticalOffset = EditorConstants.SearchableDropdownUtility.VerticalOffset)
+            float verticalOffset = EditorConstants.SearchableDropdownUtility.VerticalOffset,
+            InitialScrollPolicy initialScrollPolicy = InitialScrollPolicy.PageStart)
         {
             if (owner == null) throw new ArgumentNullException(nameof(owner));
             if (options == null) throw new ArgumentNullException(nameof(options));
@@ -57,7 +58,8 @@ namespace GGemCo2DCoreEditor
                 rowHeight,
                 popupWidth,
                 defaultSearchMode,
-                verticalOffset);
+                verticalOffset,
+                initialScrollPolicy);
         }
 
         /// <summary>
@@ -74,7 +76,8 @@ namespace GGemCo2DCoreEditor
             float rowHeight = EditorConstants.SearchableDropdownUtility.RowHeight,
             float popupWidth = EditorConstants.SearchableDropdownUtility.PopupWidth,
             SearchMode defaultSearchMode = SearchMode.Both,
-            float verticalOffset = EditorConstants.SearchableDropdownUtility.VerticalOffset)
+            float verticalOffset = EditorConstants.SearchableDropdownUtility.VerticalOffset,
+            InitialScrollPolicy initialScrollPolicy = InitialScrollPolicy.PageStart)
         {
             if (owner == null) throw new ArgumentNullException(nameof(owner));
             if (tabs == null) throw new ArgumentNullException(nameof(tabs));
@@ -138,7 +141,8 @@ namespace GGemCo2DCoreEditor
                 rowHeight: rowHeight,
                 popupWidth: popupWidth,
                 defaultMode: defaultSearchMode,
-                showTabs: tabInfos.Count > 1);
+                showTabs: tabInfos.Count > 1,
+                initialScrollPolicy: initialScrollPolicy);
 
             int visibleCount = Mathf.Min(entries.Count, maxVisibleItems);
             visibleCount = Mathf.Max(visibleCount, 3);
@@ -250,6 +254,8 @@ namespace GGemCo2DCoreEditor
             private float _popupWidth;
             private SearchMode _mode;
             private bool _showTabs;
+            private InitialScrollPolicy _initialScrollPolicy;
+            private bool _initialScrollApplied;
 
             private string _query = string.Empty;
 
@@ -277,7 +283,8 @@ namespace GGemCo2DCoreEditor
                 float rowHeight,
                 float popupWidth,
                 SearchMode defaultMode,
-                bool showTabs)
+                bool showTabs,
+                InitialScrollPolicy initialScrollPolicy)
             {
                 _entries = entries ?? new List<Entry>();
                 _tabs = tabs ?? new List<TabInfo>();
@@ -289,6 +296,7 @@ namespace GGemCo2DCoreEditor
                 _popupWidth = popupWidth;
                 _mode = defaultMode;
                 _showTabs = showTabs && _tabs.Count > 1;
+                _initialScrollPolicy = initialScrollPolicy;
 
                 RebuildFilter();
             }
@@ -536,7 +544,10 @@ namespace GGemCo2DCoreEditor
                     (_filteredEntryIndices.Count > 0 ? 0 : -1);
 
                 if (_listView != null && targetSelection >= 0 && _selectedOptionIndex > -1)
+                {
                     SetSelectionWithoutNotifySafe(_listView, targetSelection);
+                    ApplyInitialScrollToListViewIfNeeded(targetSelection);
+                }
 
                 int visibleCount = Mathf.Min(_filteredEntryIndices.Count, _maxVisibleItems);
                 visibleCount = Mathf.Max(visibleCount, 3);
@@ -555,6 +566,56 @@ namespace GGemCo2DCoreEditor
                         return;
                     minSize = maxSize = new Vector2(_popupWidth, height);
                 };
+            }
+
+            /// <summary>
+            /// UI Toolkit ListView가 생성/갱신된 뒤 선택 항목이 포함된 페이지 시작 위치로 초기 스크롤합니다.
+            /// 레이아웃 반영 직후에는 스크롤 값이 무시될 수 있으므로 다음 UI 틱에 한 번만 실행합니다.
+            /// </summary>
+            /// <param name="selectedFilteredIndex">필터링된 목록 기준 선택 항목 인덱스입니다.</param>
+            private void ApplyInitialScrollToListViewIfNeeded(int selectedFilteredIndex)
+            {
+                if (_initialScrollApplied || _listView == null || selectedFilteredIndex < 0)
+                    return;
+
+                _initialScrollApplied = true;
+
+                int firstVisibleIndex = CalculateInitialFirstVisibleIndex(
+                    selectedFilteredIndex,
+                    _filteredEntryIndices.Count,
+                    _maxVisibleItems,
+                    _initialScrollPolicy);
+
+                _listView.schedule.Execute(() =>
+                {
+                    if (this == null || _listView == null)
+                        return;
+
+                    SetSelectionWithoutNotifySafe(_listView, selectedFilteredIndex);
+                    ScrollListViewToFirstVisibleIndex(firstVisibleIndex);
+                    _listView.Focus();
+                }).ExecuteLater(0);
+            }
+
+            /// <summary>
+            /// ListView 내부 ScrollView를 찾아 지정한 항목이 첫 줄에 오도록 스크롤합니다.
+            /// 내부 ScrollView를 찾지 못한 Unity 버전에서는 ScrollToItem으로 안전하게 대체합니다.
+            /// </summary>
+            /// <param name="firstVisibleIndex">첫 번째로 보여줄 필터링 목록 기준 인덱스입니다.</param>
+            private void ScrollListViewToFirstVisibleIndex(int firstVisibleIndex)
+            {
+                if (_listView == null)
+                    return;
+
+                int clampedIndex = Mathf.Clamp(firstVisibleIndex, 0, Mathf.Max(0, _filteredEntryIndices.Count - 1));
+                ScrollView? scrollView = _listView.Q<ScrollView>();
+                if (scrollView == null)
+                {
+                    _listView.ScrollToItem(clampedIndex);
+                    return;
+                }
+
+                scrollView.scrollOffset = new Vector2(scrollView.scrollOffset.x, clampedIndex * _rowHeight);
             }
 
             private int FindFilteredIndex(string tabId, int optionIndex)
