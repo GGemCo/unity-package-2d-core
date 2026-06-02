@@ -1,4 +1,5 @@
 ﻿using TMPro;
+using System.Threading.Tasks;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
@@ -110,6 +111,7 @@ namespace GGemCo2DCore
         private UIDragHandler _dragHandler;
         private RectTransform _rectTransform;
         private UIWindowManager _uiWindowManager;
+        private int _iconImageRequestVersion;
         
         private Vector2 _slotSize;
         private UIIconCoolTimeManager _iconCoolTimeManager;
@@ -556,6 +558,7 @@ namespace GGemCo2DCore
         protected virtual void UpdateIconImage()
         {
             if (ImageIcon == null) return;
+            int requestVersion = ++_iconImageRequestVersion;
             string path = GetIconImagePath();
             if (string.IsNullOrEmpty(path))
             {
@@ -564,9 +567,45 @@ namespace GGemCo2DCore
                 return;
             }
 
-            Sprite sprite = AddressableLoaderItem.Instance.GetImageIconItemByName(path);
-            ImageIcon.sprite = sprite;
-            CacheNormalIconSprite(sprite);
+            AddressableIconSpriteRequest request =
+                new AddressableIconSpriteRequest(AddressableIconAtlasType.ItemIcon, path);
+
+            if (AddressableIconSpriteService.TryGetCachedSprite(request, out Sprite sprite))
+            {
+                ImageIcon.sprite = sprite;
+                CacheNormalIconSprite(sprite);
+                return;
+            }
+
+            ImageIcon.sprite = null;
+            CacheNormalIconSprite(null);
+            _ = UpdateIconImageAsync(requestVersion, request);
+        }
+
+        /// <summary>
+        /// 아이템 아이콘 아틀라스가 아직 준비되지 않은 경우 비동기 로드 후 현재 요청에만 Sprite를 적용합니다.
+        /// </summary>
+        /// <param name="requestVersion">아이콘 요청 버전입니다.</param>
+        /// <param name="request">아이콘 Sprite 요청 정보입니다.</param>
+        private async Task UpdateIconImageAsync(
+            int requestVersion,
+            AddressableIconSpriteRequest request)
+        {
+            try
+            {
+                Sprite sprite = await AddressableIconSpriteService.LoadSpriteAsync(request);
+                if (this == null || requestVersion != _iconImageRequestVersion || ImageIcon == null)
+                {
+                    return;
+                }
+
+                ImageIcon.sprite = sprite;
+                CacheNormalIconSprite(sprite);
+            }
+            catch (System.Exception ex)
+            {
+                GcLogger.LogWarning($"UIIcon 아이콘 비동기 갱신 중 오류가 발생했습니다. sprite={request.SpriteName}, error={ex.Message}");
+            }
         }
 
         public void ChangeIconImage(Sprite sprite)

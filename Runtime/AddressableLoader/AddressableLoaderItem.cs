@@ -19,6 +19,7 @@ namespace GGemCo2DCore
         private readonly Dictionary<string, SpriteAtlas> _dicImageEquip = new Dictionary<string, SpriteAtlas>();
         private readonly HashSet<AsyncOperationHandle> _activeHandles = new HashSet<AsyncOperationHandle>();
         private readonly HashSet<string> _loadingAtlasKeys = new HashSet<string>();
+        private readonly HashSet<string> _missingSpriteWarningKeys = new HashSet<string>();
         private const string WarmupGroupId = "core.item";
         private float _prefabLoadProgress;
         private bool _isLoadingPrefabs;
@@ -52,6 +53,7 @@ namespace GGemCo2DCore
             _dicImageIcon.Clear();
             _dicImageEquip.Clear();
             _loadingAtlasKeys.Clear();
+            _missingSpriteWarningKeys.Clear();
         }
 
         /// <summary>
@@ -268,40 +270,184 @@ namespace GGemCo2DCore
             }
         }
 
+        /// <summary>
+        /// 아이템 아이콘 Sprite를 캐시에서 조회하고, 아틀라스가 아직 준비되지 않았으면 지연 로드를 요청합니다.
+        /// </summary>
+        /// <param name="prefabName">아틀라스 내부 Sprite 이름입니다.</param>
+        /// <returns>즉시 조회 가능한 Sprite입니다. 캐시가 준비되지 않았으면 <see langword="null"/>입니다.</returns>
         public Sprite GetImageIconItemByName(string prefabName)
         {
-            if (_dicImageIcon.TryGetValue(ConfigAddressableLabel.ImageItemIcon, out var prefab))
-            {
-                return prefab.GetSprite(prefabName);
-            }
-
-            RequestAtlasLoad(ConfigAddressableLabel.ImageItemIcon, _dicImageIcon);
-            GcLogger.LogWarning($"Addressables에서 아이템 아이콘 아틀라스를 찾을 수 없어 비동기 로드를 요청했습니다. sprite={prefabName}");
+            Sprite sprite = GetCachedImageIconItemByName(prefabName);
+            if (sprite != null) return sprite;
+            if (_dicImageIcon.ContainsKey(ConfigAddressableLabel.ImageItemIcon))
+                LogMissingSpriteOnce(ConfigAddressableLabel.ImageItemIcon, prefabName);
+            else
+                RequestAtlasLoad(ConfigAddressableLabel.ImageItemIcon, _dicImageIcon);
             return null;
         }
+
+        /// <summary>
+        /// 아이템 아이콘 아틀라스 캐시에서 Sprite를 즉시 조회합니다.
+        /// </summary>
+        /// <param name="prefabName">아틀라스 내부 Sprite 이름입니다.</param>
+        /// <returns>캐시에 있으면 Sprite, 없으면 <see langword="null"/>입니다.</returns>
+        public Sprite GetCachedImageIconItemByName(string prefabName)
+        {
+            return GetCachedSprite(ConfigAddressableLabel.ImageItemIcon, _dicImageIcon, prefabName);
+        }
+
+        /// <summary>
+        /// 아이템 아이콘 아틀라스를 필요 시 로드한 뒤 Sprite를 조회합니다.
+        /// </summary>
+        /// <param name="prefabName">아틀라스 내부 Sprite 이름입니다.</param>
+        /// <returns>로드 후 찾은 Sprite입니다.</returns>
+        public async Task<Sprite> LoadImageIconItemByNameAsync(string prefabName)
+        {
+            return await LoadSpriteAsync(ConfigAddressableLabel.ImageItemIcon, _dicImageIcon, prefabName);
+        }
+
+        /// <summary>
+        /// 아이템 드랍 Sprite를 캐시에서 조회하고, 아틀라스가 아직 준비되지 않았으면 지연 로드를 요청합니다.
+        /// </summary>
+        /// <param name="prefabName">아틀라스 내부 Sprite 이름입니다.</param>
+        /// <returns>즉시 조회 가능한 Sprite입니다. 캐시가 준비되지 않았으면 <see langword="null"/>입니다.</returns>
         public Sprite GetImageDropByName(string prefabName)
         {
-            if (_dicImageDrop.TryGetValue(ConfigAddressableLabel.ImageItemDrop, out var prefab))
-            {
-                return prefab.GetSprite(prefabName);
-            }
-
-            RequestAtlasLoad(ConfigAddressableLabel.ImageItemDrop, _dicImageDrop);
-            GcLogger.LogWarning($"Addressables에서 아이템 드랍 아틀라스를 찾을 수 없어 비동기 로드를 요청했습니다. sprite={prefabName}");
+            Sprite sprite = GetCachedImageDropByName(prefabName);
+            if (sprite != null) return sprite;
+            if (_dicImageDrop.ContainsKey(ConfigAddressableLabel.ImageItemDrop))
+                LogMissingSpriteOnce(ConfigAddressableLabel.ImageItemDrop, prefabName);
+            else
+                RequestAtlasLoad(ConfigAddressableLabel.ImageItemDrop, _dicImageDrop);
             return null;
         }
 
+        /// <summary>
+        /// 아이템 드랍 아틀라스 캐시에서 Sprite를 즉시 조회합니다.
+        /// </summary>
+        /// <param name="prefabName">아틀라스 내부 Sprite 이름입니다.</param>
+        /// <returns>캐시에 있으면 Sprite, 없으면 <see langword="null"/>입니다.</returns>
+        public Sprite GetCachedImageDropByName(string prefabName)
+        {
+            return GetCachedSprite(ConfigAddressableLabel.ImageItemDrop, _dicImageDrop, prefabName);
+        }
+
+        /// <summary>
+        /// 아이템 드랍 아틀라스를 필요 시 로드한 뒤 Sprite를 조회합니다.
+        /// </summary>
+        /// <param name="prefabName">아틀라스 내부 Sprite 이름입니다.</param>
+        /// <returns>로드 후 찾은 Sprite입니다.</returns>
+        public async Task<Sprite> LoadImageDropByNameAsync(string prefabName)
+        {
+            return await LoadSpriteAsync(ConfigAddressableLabel.ImageItemDrop, _dicImageDrop, prefabName);
+        }
+
+        /// <summary>
+        /// 아이템 장착 Sprite를 캐시에서 조회하고, 아틀라스가 아직 준비되지 않았으면 지연 로드를 요청합니다.
+        /// </summary>
+        /// <param name="prefabName">아틀라스 내부 Sprite 이름입니다.</param>
+        /// <returns>즉시 조회 가능한 Sprite입니다. 캐시가 준비되지 않았으면 <see langword="null"/>입니다.</returns>
         public Sprite GetImageEquipByName(string prefabName)
         {
-            if (_dicImageEquip.TryGetValue(ConfigAddressableLabel.ImageItemEquip, out var prefab))
-            {
-                return prefab.GetSprite(prefabName);
-            }
-
-            RequestAtlasLoad(ConfigAddressableLabel.ImageItemEquip, _dicImageEquip);
-            GcLogger.LogWarning($"Addressables에서 아이템 장착 아틀라스를 찾을 수 없어 비동기 로드를 요청했습니다. sprite={prefabName}");
+            Sprite sprite = GetCachedImageEquipByName(prefabName);
+            if (sprite != null) return sprite;
+            if (_dicImageEquip.ContainsKey(ConfigAddressableLabel.ImageItemEquip))
+                LogMissingSpriteOnce(ConfigAddressableLabel.ImageItemEquip, prefabName);
+            else
+                RequestAtlasLoad(ConfigAddressableLabel.ImageItemEquip, _dicImageEquip);
             return null;
         }
+
+        /// <summary>
+        /// 아이템 장착 아틀라스 캐시에서 Sprite를 즉시 조회합니다.
+        /// </summary>
+        /// <param name="prefabName">아틀라스 내부 Sprite 이름입니다.</param>
+        /// <returns>캐시에 있으면 Sprite, 없으면 <see langword="null"/>입니다.</returns>
+        public Sprite GetCachedImageEquipByName(string prefabName)
+        {
+            return GetCachedSprite(ConfigAddressableLabel.ImageItemEquip, _dicImageEquip, prefabName);
+        }
+
+        /// <summary>
+        /// 아이템 장착 아틀라스를 필요 시 로드한 뒤 Sprite를 조회합니다.
+        /// </summary>
+        /// <param name="prefabName">아틀라스 내부 Sprite 이름입니다.</param>
+        /// <returns>로드 후 찾은 Sprite입니다.</returns>
+        public async Task<Sprite> LoadImageEquipByNameAsync(string prefabName)
+        {
+            return await LoadSpriteAsync(ConfigAddressableLabel.ImageItemEquip, _dicImageEquip, prefabName);
+        }
+
+        /// <summary>
+        /// 지정한 아틀라스 캐시에서 Sprite를 조회합니다.
+        /// </summary>
+        /// <param name="atlasKey">Addressables 아틀라스 키입니다.</param>
+        /// <param name="atlasCache">조회할 아틀라스 캐시입니다.</param>
+        /// <param name="spriteName">아틀라스 내부 Sprite 이름입니다.</param>
+        /// <returns>찾은 Sprite입니다.</returns>
+        private Sprite GetCachedSprite(
+            string atlasKey,
+            Dictionary<string, SpriteAtlas> atlasCache,
+            string spriteName)
+        {
+            if (string.IsNullOrWhiteSpace(spriteName) || atlasCache == null)
+            {
+                return null;
+            }
+
+            return atlasCache.TryGetValue(atlasKey, out SpriteAtlas atlas) && atlas != null
+                ? atlas.GetSprite(spriteName)
+                : null;
+        }
+
+        /// <summary>
+        /// 지정한 아틀라스를 필요 시 로드한 뒤 Sprite를 조회합니다.
+        /// </summary>
+        /// <param name="atlasKey">Addressables 아틀라스 키입니다.</param>
+        /// <param name="atlasCache">로드 결과를 저장할 캐시입니다.</param>
+        /// <param name="spriteName">아틀라스 내부 Sprite 이름입니다.</param>
+        /// <returns>로드 후 찾은 Sprite입니다.</returns>
+        private async Task<Sprite> LoadSpriteAsync(
+            string atlasKey,
+            Dictionary<string, SpriteAtlas> atlasCache,
+            string spriteName)
+        {
+            if (string.IsNullOrWhiteSpace(spriteName))
+            {
+                return null;
+            }
+
+            SpriteAtlas atlas = await LoadAtlasAsync(atlasKey, atlasCache);
+            if (atlas == null)
+            {
+                return null;
+            }
+
+            Sprite sprite = atlas.GetSprite(spriteName);
+            if (sprite == null)
+            {
+                LogMissingSpriteOnce(atlasKey, spriteName);
+            }
+
+            return sprite;
+        }
+
+        /// <summary>
+        /// 아틀라스 안에서 Sprite를 찾지 못한 경우 같은 키에 대해 한 번만 경고를 남깁니다.
+        /// </summary>
+        /// <param name="atlasKey">Addressables 아틀라스 키입니다.</param>
+        /// <param name="spriteName">찾지 못한 Sprite 이름입니다.</param>
+        private void LogMissingSpriteOnce(string atlasKey, string spriteName)
+        {
+            string warningKey = $"{atlasKey}:{spriteName}";
+            if (!_missingSpriteWarningKeys.Add(warningKey))
+            {
+                return;
+            }
+
+            GcLogger.LogWarning($"아이템 아틀라스에서 Sprite를 찾을 수 없습니다. atlas={atlasKey}, sprite={spriteName}");
+        }
+
         public float GetPrefabLoadProgress() => _prefabLoadProgress;
 
     }
