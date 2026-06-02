@@ -14,6 +14,22 @@ namespace GGemCo2DCore
     }
 
     /// <summary>
+    /// 카메라 Shake 파형의 시작 위상을 결정하는 정책입니다.
+    /// </summary>
+    public enum CameraShakePhaseMode
+    {
+        /// <summary>
+        /// 매 재생마다 임의 위상에서 시작합니다.
+        /// </summary>
+        Random = 0,
+
+        /// <summary>
+        /// 프리셋 또는 요청에 지정된 고정 위상에서 시작합니다.
+        /// </summary>
+        Fixed = 1,
+    }
+
+    /// <summary>
     /// 맵 로드 시점에 카메라의 Y 오프셋을 자동 보정할지 결정하는 정책입니다.
     /// </summary>
     public enum CameraBottomFollowOffsetPolicy
@@ -39,6 +55,8 @@ namespace GGemCo2DCore
         public int RepeatCount;
         public CameraShakeChannel Channel;
         public bool UseUnscaledTime;
+        public CameraShakePhaseMode PhaseMode;
+        public float FixedPhaseRadians;
 
         public bool IsValid
         {
@@ -75,6 +93,8 @@ namespace GGemCo2DCore
                 RepeatCount = Mathf.Max(1, repeatCount),
                 Channel = channel,
                 UseUnscaledTime = useUnscaledTime,
+                PhaseMode = CameraShakePhaseMode.Random,
+                FixedPhaseRadians = 0f,
             };
         }
     }
@@ -546,8 +566,24 @@ namespace GGemCo2DCore
             {
                 Request = request,
                 Elapsed = 0f,
-                PhaseOffset = Random.Range(0f, Mathf.PI * 2f),
+                PhaseOffset = ResolveShakePhaseOffset(request),
             });
+        }
+
+        /// <summary>
+        /// Shake 요청의 시작 위상 정책에 따라 실제 파형 시작 위상을 계산합니다.
+        /// </summary>
+        /// <param name="request">재생할 Shake 요청 데이터입니다.</param>
+        /// <returns>사인/코사인 파형 계산에 사용할 라디안 단위 시작 위상입니다.</returns>
+        private static float ResolveShakePhaseOffset(CameraShakeRequest request)
+        {
+            if (request.PhaseMode == CameraShakePhaseMode.Fixed)
+            {
+                // 고정 위상은 0~2π 범위로 보정해 큰 값이나 음수 입력도 같은 파형 위치로 해석합니다.
+                return Mathf.Repeat(request.FixedPhaseRadians, Mathf.PI * 2f);
+            }
+
+            return Random.Range(0f, Mathf.PI * 2f);
         }
 
         public void PlayShake(CameraShakePreset preset, CameraShakeChannel channel = CameraShakeChannel.Default)

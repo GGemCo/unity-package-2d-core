@@ -81,6 +81,8 @@ namespace GGemCo2DCore
                 UpStrength = direction.y > 0f ? preset.UpStrength * yWeight : 0f,
                 Channel = channel,
                 UseUnscaledTime = preset.UseUnscaledTime,
+                PhaseMode = preset.PhaseMode,
+                FixedPhaseRadians = preset.FixedPhaseRadians,
             };
         }
     }
