@@ -53,7 +53,17 @@ namespace GGemCo2DCore
         /// <summary>
         /// 시전자/대상 기준 방향을 어떤 방식으로 카메라 Shake 요청으로 변환할지 지정합니다.
         /// </summary>
-        public DirectionalCameraShakeMode DamageCameraShakeDirectionMode = DirectionalCameraShakeMode.PresetRaw;
+        public CameraShakeDirectionSource DamageCameraShakeDirectionSource = CameraShakeDirectionSource.Preset;
+
+        /// <summary>
+        /// 고정 방향 카메라 Shake에서 사용할 방향입니다.
+        /// </summary>
+        public Vector2 DamageCameraShakeFixedDirection = Vector2.right;
+
+        /// <summary>
+        /// 방향 계산 시 Y축을 제거하고 좌우 방향만 사용할지 여부입니다.
+        /// </summary>
+        public bool DamageCameraShakeHorizontalOnly = true;
 
         /// <summary>
         /// 이번 타격이 추가로 누적할 속성 게이지 목록입니다.
@@ -1057,7 +1067,9 @@ namespace GGemCo2DCore
                 metadataDamage.DamageCameraShakePreset,
                 attackerTransform,
                 _characterBase != null ? _characterBase.transform : null,
-                metadataDamage.DamageCameraShakeDirectionMode,
+                metadataDamage.DamageCameraShakeDirectionSource,
+                metadataDamage.DamageCameraShakeFixedDirection,
+                metadataDamage.DamageCameraShakeHorizontalOnly,
                 CameraShakeChannel.SkillDamage);
 
             cameraManager.PlayShake(request);

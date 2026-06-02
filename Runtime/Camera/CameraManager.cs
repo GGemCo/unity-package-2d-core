@@ -14,22 +14,6 @@ namespace GGemCo2DCore
     }
 
     /// <summary>
-    /// 카메라 Shake 파형의 시작 위상을 결정하는 정책입니다.
-    /// </summary>
-    public enum CameraShakePhaseMode
-    {
-        /// <summary>
-        /// 매 재생마다 임의 위상에서 시작합니다.
-        /// </summary>
-        Random = 0,
-
-        /// <summary>
-        /// 프리셋 또는 요청에 지정된 고정 위상에서 시작합니다.
-        /// </summary>
-        Fixed = 1,
-    }
-
-    /// <summary>
     /// 맵 로드 시점에 카메라의 Y 오프셋을 자동 보정할지 결정하는 정책입니다.
     /// </summary>
     public enum CameraBottomFollowOffsetPolicy
@@ -45,18 +29,26 @@ namespace GGemCo2DCore
         AutoAlignToMapBottomOnMapLoad = 1,
     }
 
+    /// <summary>
+    /// 카메라 Shake 재생에 필요한 런타임 요청 데이터입니다.
+    /// </summary>
     public struct CameraShakeRequest
     {
+        public CameraShakeType ShakeType;
         public float Duration;
+        public float Strength;
+        public Vector2 AxisStrength;
+        public Vector2 Direction;
         public float LeftStrength;
         public float RightStrength;
         public float DownStrength;
         public float UpStrength;
         public int RepeatCount;
+        public bool RandomStartPhase;
         public CameraShakeChannel Channel;
         public bool UseUnscaledTime;
-        public CameraShakePhaseMode PhaseMode;
-        public float FixedPhaseRadians;
+        public AnimationCurve ImpulseCurve;
+        public CameraShakeDecayMode DecayMode;
 
         public bool IsValid
         {
@@ -67,15 +59,24 @@ namespace GGemCo2DCore
                     return false;
                 }
 
-                if (RepeatCount <= 0)
+                if (Strength > 0f)
                 {
-                    return false;
+                    return true;
                 }
 
                 return LeftStrength > 0f || RightStrength > 0f || DownStrength > 0f || UpStrength > 0f;
             }
         }
 
+        /// <summary>
+        /// 모든 방향의 세기가 같은 일반 카메라 Shake 요청을 생성합니다.
+        /// </summary>
+        /// <param name="duration">Shake 재생 시간입니다.</param>
+        /// <param name="magnitude">좌우/상하 공통 세기입니다.</param>
+        /// <param name="repeatCount">반복 횟수입니다.</param>
+        /// <param name="channel">Shake 채널입니다.</param>
+        /// <param name="useUnscaledTime">Time.timeScale 영향을 무시할지 여부입니다.</param>
+        /// <returns>일반 Shake 요청 데이터입니다.</returns>
         public static CameraShakeRequest CreateSymmetric(
             float duration,
             float magnitude,
@@ -83,18 +84,23 @@ namespace GGemCo2DCore
             CameraShakeChannel channel,
             bool useUnscaledTime = false)
         {
+            float safeMagnitude = Mathf.Max(0f, magnitude);
             return new CameraShakeRequest
             {
+                ShakeType = CameraShakeType.Common,
                 Duration = duration,
-                LeftStrength = magnitude,
-                RightStrength = magnitude,
-                DownStrength = magnitude,
-                UpStrength = magnitude,
+                Strength = safeMagnitude,
+                AxisStrength = Vector2.one,
+                LeftStrength = safeMagnitude,
+                RightStrength = safeMagnitude,
+                DownStrength = safeMagnitude,
+                UpStrength = safeMagnitude,
                 RepeatCount = Mathf.Max(1, repeatCount),
+                RandomStartPhase = true,
+                Direction = Vector2.right,
                 Channel = channel,
                 UseUnscaledTime = useUnscaledTime,
-                PhaseMode = CameraShakePhaseMode.Random,
-                FixedPhaseRadians = 0f,
+                DecayMode = CameraShakeDecayMode.Linear,
             };
         }
     }
@@ -494,22 +500,146 @@ namespace GGemCo2DCore
             _shakeOffset = totalOffset;
         }
 
+        /// <summary>
+        /// 요청 타입에 맞는 카메라 Shake 위치 오프셋을 계산합니다.
+        /// </summary>
+        /// <param name="shake">현재 재생 중인 Shake 상태입니다.</param>
+        /// <returns>카메라에 더할 월드 위치 오프셋입니다.</returns>
         private static Vector3 EvaluateShakeOffset(ActiveCameraShake shake)
         {
-            float normalized = Mathf.Clamp01(shake.Elapsed / shake.Request.Duration);
-            float attenuation = 1f - normalized;
+            switch (shake.Request.ShakeType)
+            {
+                case CameraShakeType.DirectionalImpulse:
+                    return EvaluateDirectionalImpulseOffset(shake);
+                case CameraShakeType.DirectionalOscillation:
+                    return EvaluateDirectionalOscillationOffset(shake);
+                case CameraShakeType.Common:
+                default:
+                    return EvaluateCommonShakeOffset(shake);
+            }
+        }
 
-            float phase = shake.PhaseOffset + (normalized * shake.Request.RepeatCount * Mathf.PI * 2f);
+        /// <summary>
+        /// 일반적인 좌우/상하 진동형 카메라 Shake 오프셋을 계산합니다.
+        /// </summary>
+        /// <param name="shake">현재 재생 중인 Shake 상태입니다.</param>
+        /// <returns>카메라에 더할 월드 위치 오프셋입니다.</returns>
+        private static Vector3 EvaluateCommonShakeOffset(ActiveCameraShake shake)
+        {
+            float normalized = Mathf.Clamp01(shake.Elapsed / shake.Request.Duration);
+            float attenuation = EvaluateShakeAttenuation(shake.Request, normalized);
+
+            float phase = shake.PhaseOffset + (normalized * Mathf.Max(1, shake.Request.RepeatCount) * Mathf.PI * 2f);
             float signedX = Mathf.Sin(phase);
             float signedY = Mathf.Cos(phase + (Mathf.PI * 0.5f));
 
-            float amplitudeX = signedX >= 0f ? shake.Request.RightStrength : shake.Request.LeftStrength;
-            float amplitudeY = signedY >= 0f ? shake.Request.UpStrength : shake.Request.DownStrength;
+            float rightStrength = ResolveDirectionalStrength(shake.Request.RightStrength, shake.Request.Strength, shake.Request.AxisStrength.x);
+            float leftStrength = ResolveDirectionalStrength(shake.Request.LeftStrength, shake.Request.Strength, shake.Request.AxisStrength.x);
+            float upStrength = ResolveDirectionalStrength(shake.Request.UpStrength, shake.Request.Strength, shake.Request.AxisStrength.y);
+            float downStrength = ResolveDirectionalStrength(shake.Request.DownStrength, shake.Request.Strength, shake.Request.AxisStrength.y);
+
+            float amplitudeX = signedX >= 0f ? rightStrength : leftStrength;
+            float amplitudeY = signedY >= 0f ? upStrength : downStrength;
 
             return new Vector3(
                 signedX * amplitudeX * attenuation,
                 signedY * amplitudeY * attenuation,
                 0f);
+        }
+
+        /// <summary>
+        /// 지정된 방향으로 한 번 밀렸다가 복귀하는 카메라 Shake 오프셋을 계산합니다.
+        /// </summary>
+        /// <param name="shake">현재 재생 중인 Shake 상태입니다.</param>
+        /// <returns>카메라에 더할 월드 위치 오프셋입니다.</returns>
+        private static Vector3 EvaluateDirectionalImpulseOffset(ActiveCameraShake shake)
+        {
+            float normalized = Mathf.Clamp01(shake.Elapsed / shake.Request.Duration);
+            Vector2 direction = ResolveShakeDirection(shake.Request.Direction);
+            float weight = EvaluateImpulseWeight(shake.Request, normalized);
+            Vector2 offset = direction * Mathf.Max(0f, shake.Request.Strength) * weight;
+            return new Vector3(offset.x, offset.y, 0f);
+        }
+
+        /// <summary>
+        /// 지정된 방향 축을 기준으로 여러 번 진동하는 카메라 Shake 오프셋을 계산합니다.
+        /// </summary>
+        /// <param name="shake">현재 재생 중인 Shake 상태입니다.</param>
+        /// <returns>카메라에 더할 월드 위치 오프셋입니다.</returns>
+        private static Vector3 EvaluateDirectionalOscillationOffset(ActiveCameraShake shake)
+        {
+            float normalized = Mathf.Clamp01(shake.Elapsed / shake.Request.Duration);
+            float attenuation = EvaluateShakeAttenuation(shake.Request, normalized);
+            float phase = shake.PhaseOffset + (normalized * Mathf.Max(1, shake.Request.RepeatCount) * Mathf.PI * 2f);
+            float signed = Mathf.Sin(phase);
+            Vector2 direction = ResolveShakeDirection(shake.Request.Direction);
+            Vector2 offset = direction * signed * Mathf.Max(0f, shake.Request.Strength) * attenuation;
+            return new Vector3(offset.x, offset.y, 0f);
+        }
+
+        /// <summary>
+        /// 방향별 세기 값이 없을 때 기본 세기와 축 비율로 대체합니다.
+        /// </summary>
+        /// <param name="directionalStrength">방향별로 직접 지정된 세기입니다.</param>
+        /// <param name="baseStrength">프리셋의 기본 세기입니다.</param>
+        /// <param name="axisWeight">축별 세기 비율입니다.</param>
+        /// <returns>최종 세기 값입니다.</returns>
+        private static float ResolveDirectionalStrength(float directionalStrength, float baseStrength, float axisWeight)
+        {
+            if (directionalStrength > 0f)
+            {
+                return directionalStrength;
+            }
+
+            return Mathf.Max(0f, baseStrength) * Mathf.Max(0f, axisWeight);
+        }
+
+        /// <summary>
+        /// 진행도에 따른 진동형 Shake 감쇠 값을 계산합니다.
+        /// </summary>
+        /// <param name="request">Shake 요청 데이터입니다.</param>
+        /// <param name="normalized">0~1 사이의 진행도입니다.</param>
+        /// <returns>감쇠 가중치입니다.</returns>
+        private static float EvaluateShakeAttenuation(CameraShakeRequest request, float normalized)
+        {
+            float linear = 1f - normalized;
+            if (request.DecayMode == CameraShakeDecayMode.Smooth)
+            {
+                return Mathf.SmoothStep(1f, 0f, normalized);
+            }
+
+            return linear;
+        }
+
+        /// <summary>
+        /// DirectionalImpulse 타입에서 사용할 시간별 세기 가중치를 계산합니다.
+        /// </summary>
+        /// <param name="request">Shake 요청 데이터입니다.</param>
+        /// <param name="normalized">0~1 사이의 진행도입니다.</param>
+        /// <returns>곡선 평가 결과입니다.</returns>
+        private static float EvaluateImpulseWeight(CameraShakeRequest request, float normalized)
+        {
+            if (request.ImpulseCurve != null && request.ImpulseCurve.length > 0)
+            {
+                return Mathf.Max(0f, request.ImpulseCurve.Evaluate(normalized));
+            }
+
+            return Mathf.SmoothStep(1f, 0f, normalized);
+        }
+
+        /// <summary>
+        /// Shake 방향 벡터를 안전하게 정규화합니다.
+        /// </summary>
+        /// <param name="direction">외부에서 전달된 방향 벡터입니다.</param>
+        /// <returns>정규화된 방향 벡터입니다.</returns>
+        private static Vector2 ResolveShakeDirection(Vector2 direction)
+        {
+            if (direction.sqrMagnitude <= 0.0001f)
+            {
+                return Vector2.right;
+            }
+
+            return direction.normalized;
         }
 
         /// <summary>
@@ -544,17 +674,27 @@ namespace GGemCo2DCore
         {
             PlayShake(new CameraShakeRequest
             {
+                ShakeType = CameraShakeType.Common,
                 Duration = duration,
+                Strength = Mathf.Max(Mathf.Max(leftStrength, rightStrength), Mathf.Max(downStrength, upStrength)),
+                AxisStrength = Vector2.one,
                 LeftStrength = Mathf.Max(0f, leftStrength),
                 RightStrength = Mathf.Max(0f, rightStrength),
                 DownStrength = Mathf.Max(0f, downStrength),
                 UpStrength = Mathf.Max(0f, upStrength),
                 RepeatCount = Mathf.Max(1, repeatCount),
+                RandomStartPhase = true,
+                Direction = Vector2.right,
                 Channel = channel,
                 UseUnscaledTime = useUnscaledTime,
+                DecayMode = CameraShakeDecayMode.Linear,
             });
         }
 
+        /// <summary>
+        /// 카메라 Shake 요청을 현재 카메라에 재생합니다.
+        /// </summary>
+        /// <param name="request">재생할 Shake 요청 데이터입니다.</param>
         public void PlayShake(CameraShakeRequest request)
         {
             if (!request.IsValid)
@@ -571,19 +711,13 @@ namespace GGemCo2DCore
         }
 
         /// <summary>
-        /// Shake 요청의 시작 위상 정책에 따라 실제 파형 시작 위상을 계산합니다.
+        /// Shake 요청의 시작 위치를 계산합니다.
         /// </summary>
         /// <param name="request">재생할 Shake 요청 데이터입니다.</param>
-        /// <returns>사인/코사인 파형 계산에 사용할 라디안 단위 시작 위상입니다.</returns>
+        /// <returns>사인 파형 계산에 사용할 라디안 단위 시작 위치입니다.</returns>
         private static float ResolveShakePhaseOffset(CameraShakeRequest request)
         {
-            if (request.PhaseMode == CameraShakePhaseMode.Fixed)
-            {
-                // 고정 위상은 0~2π 범위로 보정해 큰 값이나 음수 입력도 같은 파형 위치로 해석합니다.
-                return Mathf.Repeat(request.FixedPhaseRadians, Mathf.PI * 2f);
-            }
-
-            return Random.Range(0f, Mathf.PI * 2f);
+            return request.RandomStartPhase ? Random.Range(0f, Mathf.PI * 2f) : 0f;
         }
 
         public void PlayShake(CameraShakePreset preset, CameraShakeChannel channel = CameraShakeChannel.Default)
