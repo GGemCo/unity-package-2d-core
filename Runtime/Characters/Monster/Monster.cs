@@ -468,12 +468,17 @@ namespace GGemCo2DCore
             _controllerMonster?.StopAttackCoroutine();
         }
         /// <summary>
-        /// 몬스터가 죽었을때 처리 
+        /// 몬스터 사망 시 전투 상태, UI, 이벤트, 컷신 후처리를 수행합니다.
         /// </summary>
+        /// <param name="dieReasonType">사망 원인입니다.</param>
+        /// <param name="attacker">사망을 유발한 공격자 오브젝트입니다.</param>
         protected override void OnDead(CharacterConstants.DieReasonType dieReasonType = CharacterConstants.DieReasonType.None, GameObject attacker = null)
         {
             base.OnDead(dieReasonType, attacker);
             SetHitAreaColliderEnabled(false);
+            EndPlayerCombatOnDeath(attacker);
+            SetAggro(false);
+            _combatStartReason = CharacterConstants.CombatStartReason.None;
 
             if (_monsterUIController != null)
             {
@@ -498,6 +503,51 @@ namespace GGemCo2DCore
             PlayDeadCutscene(attacker);
         }
 
+        /// <summary>
+        /// 몬스터 사망 시 플레이어에게 남아 있는 현재 전투 타겟과 전투 상태를 정리합니다.
+        /// </summary>
+        /// <param name="attacker">사망을 유발한 공격자 오브젝트입니다.</param>
+        /// <remarks>
+        /// BT 몬스터와 레거시 몬스터 모두 전투 시작은 Core의 몬스터 어그로/공격자 기록을 사용합니다.
+        /// 따라서 사망 후처리도 Brain 종류와 무관하게 Core 몬스터 공통 로직에서 처리해야 합니다.
+        /// </remarks>
+        private void EndPlayerCombatOnDeath(GameObject attacker)
+        {
+            Player player = ResolvePlayerCombatTargetOnDeath(attacker);
+            if (player == null)
+            {
+                return;
+            }
+
+            player.ClearAutoMoveTargetMonster(gameObject);
+            player.SetBattleStatusNone();
+        }
+
+        /// <summary>
+        /// 사망 시 전투 종료를 알려야 할 플레이어를 공격자와 현재 어그로 대상에서 해석합니다.
+        /// </summary>
+        /// <param name="attacker">사망을 유발한 공격자 오브젝트입니다.</param>
+        /// <returns>전투 종료 처리를 적용할 플레이어입니다. 찾지 못하면 <see langword="null"/>입니다.</returns>
+        private Player ResolvePlayerCombatTargetOnDeath(GameObject attacker)
+        {
+            if (TryGetPlayerFromAttacker(attacker, out Player playerFromAttacker))
+            {
+                return playerFromAttacker;
+            }
+
+            if (attackerTransform == null)
+            {
+                return null;
+            }
+
+            Player playerFromTarget = attackerTransform.GetComponent<Player>();
+            if (playerFromTarget != null)
+            {
+                return playerFromTarget;
+            }
+
+            return attackerTransform.GetComponentInParent<Player>();
+        }
 
         /// <summary>
         /// 몬스터 HitArea Collider 활성 상태를 변경합니다.
