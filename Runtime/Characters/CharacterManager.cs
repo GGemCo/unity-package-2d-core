@@ -15,6 +15,13 @@ namespace GGemCo2DCore
     public class CharacterManager
     {
         public static event Action<CharacterBase> OnCharacterSpawned;
+
+        /// <summary>
+        /// 캐릭터가 테이블/애니메이션/리젠 데이터 기반 초기화를 마친 뒤 발생하는 이벤트입니다.
+        /// Skill, Affect, AI_BT 처럼 캐릭터 완성 상태가 필요한 상위 패키지는 이 이벤트를 기준으로 연결합니다.
+        /// </summary>
+        public static event Action<CharacterBase> OnCharacterActivated;
+
         public static event Action<CharacterBase> OnCharacterDestroyed;
 
         private readonly List<GameObject> _characters = new List<GameObject>();
@@ -121,7 +128,7 @@ namespace GGemCo2DCore
                 TrySetupSpriteWhiteOverlay(characterType, characterObj, characterBase);
 
                 _characters.Add(characterObj);
-                OnCharacterSpawned?.Invoke(characterBase);
+                NotifyCharacterSpawned(characterBase);
                 return characterObj;
             }
             catch (Exception ex)
@@ -130,6 +137,45 @@ namespace GGemCo2DCore
                 if (characterObj) Object.Destroy(characterObj);
                 return null;
             }
+        }
+
+
+        /// <summary>
+        /// 캐릭터 생성 직후 이벤트를 발행하고, 캐릭터 초기화 완료 시점의 활성화 이벤트를 예약합니다.
+        /// </summary>
+        /// <param name="characterBase">생성된 캐릭터 인스턴스입니다.</param>
+        private static void NotifyCharacterSpawned(CharacterBase characterBase)
+        {
+            if (characterBase == null)
+                return;
+
+            OnCharacterSpawned?.Invoke(characterBase);
+            NotifyCharacterActivatedWhenReady(characterBase);
+        }
+
+        /// <summary>
+        /// 캐릭터가 이미 초기화되었으면 즉시 활성화 이벤트를 발행하고,
+        /// 아직 초기화 전이면 <see cref="CharacterBase.Initialized"/> 이후 한 번만 발행하도록 예약합니다.
+        /// </summary>
+        /// <param name="characterBase">활성화 이벤트를 발행할 캐릭터 인스턴스입니다.</param>
+        private static void NotifyCharacterActivatedWhenReady(CharacterBase characterBase)
+        {
+            if (characterBase == null)
+                return;
+
+            if (characterBase.IsInitialized)
+            {
+                OnCharacterActivated?.Invoke(characterBase);
+                return;
+            }
+
+            void HandleInitialized()
+            {
+                characterBase.Initialized -= HandleInitialized;
+                OnCharacterActivated?.Invoke(characterBase);
+            }
+
+            characterBase.Initialized += HandleInitialized;
         }
 
         private void TrySetupSpriteWhiteOverlay(
@@ -505,7 +551,7 @@ namespace GGemCo2DCore
                 characterBase.RefreshCharacterBodyCollision();
 
                 _characters.Add(npcObj);
-                OnCharacterSpawned?.Invoke(characterBase);
+                NotifyCharacterSpawned(characterBase);
                 return npcObj;
             }
             catch (Exception ex)
@@ -578,6 +624,7 @@ namespace GGemCo2DCore
             CharacterBase characterBase = pooledObject.GetComponent<CharacterBase>();
             characterBase?.RefreshCharacterBodyCollision();
             characterBase?.Stop();
+            NotifyCharacterActivatedWhenReady(characterBase);
             return pooledObject;
         }
 

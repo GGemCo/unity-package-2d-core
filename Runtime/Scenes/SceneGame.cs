@@ -34,7 +34,7 @@ namespace GGemCo2DCore
         /// 게임 씬 초기화 순서입니다.
         /// SceneGame의 Core 매니저 생성 단계에서 명시적으로 호출됩니다.
         /// </summary>
-        public int InitializeOrder => 1;
+        public int InitializeOrder => 0;
         
         private GameState State { get; set; }
         private GameSubState SubState { get; set; }
