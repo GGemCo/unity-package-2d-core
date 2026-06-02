@@ -113,6 +113,9 @@ namespace GGemCo2DCore
     public class GGemCoSettings : ScriptableObject
     {
         [Header("기본 설정")]
+        [Tooltip("디폴트 FPS")]
+        public int defaultFps;
+        
         [Tooltip("스파인2D 사용 여부.\n체크 시 #define GGEMCO_USE_SPINE 이 추가되며, Spine2D 패키지가 필요합니다.\n(Unity 6에서는 Build Profile에서 확인 가능)")]
         public bool useSpine2d;
 
@@ -298,6 +301,7 @@ namespace GGemCo2DCore
         /// </summary>
         private void Reset()
         {
+            defaultFps = 30;
             useSpine2d = false;
             inputSystemType = InputSystemType.None;
 

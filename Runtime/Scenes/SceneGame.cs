@@ -141,6 +141,7 @@ namespace GGemCo2DCore
                 }
             }
 
+            Application.targetFrameRate = AddressableLoaderSettings.Instance.settings.defaultFps;
             _isStateDirty = false;
             SetState(GameState.Begin);
         }

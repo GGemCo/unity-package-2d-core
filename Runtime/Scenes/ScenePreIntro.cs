@@ -36,8 +36,12 @@ namespace GGemCo2DCore
         [Header("입력 모드 (로컬 오버라이드)")]
         [Tooltip("전역 설정(GGemCoSettings)이 있으면 전역 값을 사용하고,\n없으면 이 값을 적용")]
         [SerializeField] private InputSystemType inputModeOverride = InputSystemType.Both;
-
-        [Header("Localization (정식 테이블)")] 
+        
+        [Header("프레임")]
+        [Tooltip("디폴트 FPS")]
+        [SerializeField] private int defaultFps = 30;
+        
+        // Localization (정식 테이블)") 
         private const string TableName = "GGemCo_PreIntro";
         private const string KeyPressAnyKey = "Text_PressAnyKey";
         private const string KeyLoading = "Text_Loading";
@@ -50,6 +54,7 @@ namespace GGemCo2DCore
 
         private void Awake()
         {
+            Application.targetFrameRate = defaultFps;
             _waitingForInput = true;
             _gameLoaderManager = GameLoaderManager.Instance;
             if (_gameLoaderManager == null) 
