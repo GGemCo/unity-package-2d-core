@@ -247,6 +247,47 @@ namespace GGemCo2DCore
         }
 
         /// <summary>
+        /// 지정 위치를 기준으로 현재 맵에 등록된 가장 가까운 생존 몬스터를 검색합니다.
+        /// </summary>
+        /// <param name="origin">검색 기준 위치입니다.</param>
+        /// <param name="includeInactive">비활성화된 몬스터를 검색 대상에 포함할지 여부입니다.</param>
+        /// <param name="maxDistance">검색 최대 거리입니다. 0 이하이면 거리 제한 없이 검색합니다.</param>
+        /// <param name="monster">검색된 가장 가까운 생존 몬스터입니다.</param>
+        /// <returns>조건에 맞는 몬스터를 찾으면 <see langword="true"/>를 반환합니다.</returns>
+        public bool TryFindNearestAliveMonster(
+            Vector2 origin,
+            bool includeInactive,
+            float maxDistance,
+            out Monster monster)
+        {
+            monster = null;
+            float closestSqrDistance = float.MaxValue;
+            float maxSqrDistance = maxDistance > 0f ? maxDistance * maxDistance : float.MaxValue;
+
+            foreach (var data in Monsters)
+            {
+                GameObject monsterObject = data.Value;
+                if (monsterObject == null) continue;
+                if (!includeInactive && !monsterObject.activeInHierarchy) continue;
+
+                Monster candidate = monsterObject.GetComponent<Monster>();
+                if (candidate == null || candidate.IsStatusDead()) continue;
+
+                Vector2 delta = (Vector2)candidate.transform.position - origin;
+                float sqrDistance = delta.sqrMagnitude;
+                if (sqrDistance > maxSqrDistance || sqrDistance >= closestSqrDistance)
+                {
+                    continue;
+                }
+
+                closestSqrDistance = sqrDistance;
+                monster = candidate;
+            }
+
+            return monster != null;
+        }
+
+        /// <summary>
         /// 현재 맵이 속한 챕터 번호를 반환합니다.
         /// </summary>
         /// <returns>맵 테이블 데이터가 있으면 챕터 번호, 없으면 0입니다.</returns>

@@ -1095,6 +1095,25 @@ namespace GGemCo2DCore
         }
 
         /// <summary>
+        /// 현재 맵에 배치된 생존 몬스터 중 지정 위치에서 가장 가까운 몬스터를 검색합니다.
+        /// </summary>
+        /// <param name="origin">검색 기준 위치입니다.</param>
+        /// <param name="includeInactive">Culling 등으로 비활성화된 몬스터를 포함할지 여부입니다.</param>
+        /// <param name="maxDistance">검색 최대 거리입니다. 0 이하이면 거리 제한 없이 검색합니다.</param>
+        /// <param name="monster">검색된 가장 가까운 생존 몬스터입니다.</param>
+        /// <returns>조건에 맞는 몬스터를 찾으면 <see langword="true"/>를 반환합니다.</returns>
+        public bool TryFindNearestAliveMonster(
+            Vector2 origin,
+            bool includeInactive,
+            float maxDistance,
+            out Monster monster)
+        {
+            monster = null;
+            return _mapTileCommon != null &&
+                   _mapTileCommon.TryFindNearestAliveMonster(origin, includeInactive, maxDistance, out monster);
+        }
+
+        /// <summary>
         /// 모든 캐릭터 활성화
         /// 연출 시작시 사용
         /// </summary>

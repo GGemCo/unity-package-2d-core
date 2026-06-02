@@ -255,6 +255,15 @@ namespace GGemCo2DCore
 
         [Tooltip("플레이어 공격 범위 안에 있는 몬스터가 공중 상태이면 자동 이동 정지 대상에서 제외할지 여부입니다.")]
         public bool ignoreAirborneAttackAreaForAutoMoveSuspend;
+
+        [Tooltip("자동 이동 중 전투가 종료되고 현재 타겟이 사라졌을 때, 현재 맵의 다음 생존 몬스터 방향으로 자동 이동을 이어갈지 여부입니다.")]
+        public bool enableAutoMoveNextCombatTargetSearch;
+
+        [Tooltip("다음 전투 타겟을 찾을 최대 거리입니다. 0 이하이면 거리 제한 없이 현재 맵 전체에서 검색합니다.")]
+        public float autoMoveNextCombatTargetSearchRange;
+
+        [Tooltip("다음 전투 타겟 검색 시 Culling 등으로 비활성화된 몬스터도 포함할지 여부입니다.")]
+        public bool autoMoveNextCombatTargetIncludeInactive = true;
         
         [Header("맵 종료 정책")]
         [Tooltip("맵에 배치된 모든 몬스터가 사망했을 때 Fade Out 후 월드맵 UI를 여는 정책 설정입니다.")]
@@ -349,6 +358,9 @@ namespace GGemCo2DCore
             continueAutoMoveAfterCombatTargetRecovered = true;
             flipCombatAutoMoveDirectionOnTargetPassed = true;
             ignoreAirborneAttackAreaForAutoMoveSuspend = true;
+            enableAutoMoveNextCombatTargetSearch = false;
+            autoMoveNextCombatTargetSearchRange = 0f;
+            autoMoveNextCombatTargetIncludeInactive = true;
 
             mapClearExitPolicy = MapClearExitPolicySettings.CreateDefault();
         }

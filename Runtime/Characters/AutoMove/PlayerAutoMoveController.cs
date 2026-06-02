@@ -1,4 +1,5 @@
 using System;
+using R3;
 using UnityEngine;
 
 namespace GGemCo2DCore
@@ -42,6 +43,8 @@ namespace GGemCo2DCore
         private float _combatRecoveryCooldownUntil;
         private bool _pendingCompleteAfterCombatTargetRecovery;
         private float _runtimeDirectionX;
+        private CharacterConstants.BattleStatus _lastObservedBattleStatus;
+        private bool _searchedNextTargetAfterCombatEnd;
 
         private void Awake()
         {
@@ -59,6 +62,7 @@ namespace GGemCo2DCore
         private void Start()
         {
             _movementDriver = GetComponent<IAutoMoveMovementDriver>();
+            BindBattleStatusChanged();
         }
 
         private void FixedUpdate()
@@ -188,6 +192,7 @@ namespace GGemCo2DCore
             _lockInput = lockInput;
             InitializeRuntimeDirection(request.direction);
             ResetCombatTargetRecovery();
+            ResetNextTargetSearchStateForCurrentBattleStatus();
 
             if (_character != null)
             {
@@ -206,6 +211,7 @@ namespace GGemCo2DCore
             _isActive = false;
             _lockInput = false;
             ResetCombatTargetRecovery();
+            _searchedNextTargetAfterCombatEnd = false;
 
             RestoreMoveStep();
 
@@ -221,6 +227,7 @@ namespace GGemCo2DCore
             _isActive = false;
             _lockInput = false;
             ResetCombatTargetRecovery();
+            _searchedNextTargetAfterCombatEnd = false;
 
             RestoreMoveStep();
 
@@ -266,6 +273,174 @@ namespace GGemCo2DCore
             {
                 _character.currentMoveStep = _originalMoveStep;
             }
+        }
+
+        /// <summary>
+        /// 플레이어 전투 상태 변경을 구독하여 전투 종료 시 다음 자동 이동 방향 검색을 1회 실행할 수 있도록 준비합니다.
+        /// </summary>
+        private void BindBattleStatusChanged()
+        {
+            if (_character == null)
+            {
+                return;
+            }
+
+            _lastObservedBattleStatus = _character.GetBattleStatus();
+            _character.CurrentBattleStatus
+                .Subscribe(OnBattleStatusChanged)
+                .AddTo(this);
+        }
+
+        /// <summary>
+        /// 현재 전투 상태를 기준으로 다음 타겟 검색 래치를 초기화합니다.
+        /// </summary>
+        private void ResetNextTargetSearchStateForCurrentBattleStatus()
+        {
+            if (_character == null)
+            {
+                _searchedNextTargetAfterCombatEnd = false;
+                return;
+            }
+
+            _lastObservedBattleStatus = _character.GetBattleStatus();
+            _searchedNextTargetAfterCombatEnd =
+                _lastObservedBattleStatus != CharacterConstants.BattleStatus.InBattle;
+        }
+
+        /// <summary>
+        /// 플레이어 전투 상태 전환을 감지하고, 전투 종료 시 다음 생존 몬스터 방향으로 자동 이동을 이어갈지 판단합니다.
+        /// </summary>
+        /// <param name="battleStatus">변경된 전투 상태입니다.</param>
+        private void OnBattleStatusChanged(CharacterConstants.BattleStatus battleStatus)
+        {
+            CharacterConstants.BattleStatus previousStatus = _lastObservedBattleStatus;
+            _lastObservedBattleStatus = battleStatus;
+
+            if (battleStatus == CharacterConstants.BattleStatus.InBattle)
+            {
+                _searchedNextTargetAfterCombatEnd = false;
+                return;
+            }
+
+            if (previousStatus != CharacterConstants.BattleStatus.InBattle)
+            {
+                return;
+            }
+
+            TrySearchNextCombatTargetDirectionOnce();
+        }
+
+        /// <summary>
+        /// 전투 종료 후 현재 타겟이 없을 때 다음 생존 몬스터를 한 번만 검색하고 자동 이동 방향을 갱신합니다.
+        /// </summary>
+        private void TrySearchNextCombatTargetDirectionOnce()
+        {
+            if (_searchedNextTargetAfterCombatEnd)
+            {
+                return;
+            }
+
+            _searchedNextTargetAfterCombatEnd = true;
+
+            if (!CanSearchNextCombatTargetDirection())
+            {
+                return;
+            }
+
+            if (HasValidCombatTargetForNextSearch())
+            {
+                return;
+            }
+
+            GGemCoSettings settings = GetSettings();
+            MapManager mapManager = SceneGame.Instance != null ? SceneGame.Instance.mapManager : null;
+            if (settings == null || mapManager == null)
+            {
+                return;
+            }
+
+            Vector2 origin = _character.transform.position;
+            if (!mapManager.TryFindNearestAliveMonster(
+                    origin,
+                    settings.autoMoveNextCombatTargetIncludeInactive,
+                    settings.autoMoveNextCombatTargetSearchRange,
+                    out Monster nextMonster))
+            {
+                return;
+            }
+
+            SetRuntimeDirectionTowards(nextMonster.transform.position);
+        }
+
+        /// <summary>
+        /// 다음 전투 타겟 방향 검색 정책을 사용할 수 있는지 확인합니다.
+        /// </summary>
+        /// <returns>정책을 사용할 수 있으면 <see langword="true"/>를 반환합니다.</returns>
+        private bool CanSearchNextCombatTargetDirection()
+        {
+            if (!_isActive || _request == null || _character == null)
+            {
+                return false;
+            }
+
+            if (!_character.IsPlayer() || _character.IsInBattle())
+            {
+                return false;
+            }
+
+            if (_request.moveType != AutoMoveType.Direction)
+            {
+                return false;
+            }
+
+            if (!AutoMovePolicyResolver.IsAutoMoveEnabled())
+            {
+                return false;
+            }
+
+            GGemCoSettings settings = GetSettings();
+            return settings != null && settings.enableAutoMoveNextCombatTargetSearch;
+        }
+
+        /// <summary>
+        /// 전투 종료 직후에도 유지할 수 있는 현재 전투 타겟이 있는지 확인합니다.
+        /// </summary>
+        /// <returns>유효한 현재 타겟이 있으면 <see langword="true"/>를 반환합니다.</returns>
+        private bool HasValidCombatTargetForNextSearch()
+        {
+            Transform targetTransform = ResolveCombatRecoveryTargetTransform();
+            return targetTransform != null;
+        }
+
+        /// <summary>
+        /// 지정한 위치가 있는 방향으로 Direction 자동 이동의 런타임 방향을 갱신합니다.
+        /// </summary>
+        /// <param name="targetPosition">다음 타겟 위치입니다.</param>
+        private void SetRuntimeDirectionTowards(Vector3 targetPosition)
+        {
+            if (_character == null)
+            {
+                return;
+            }
+
+            float deltaX = targetPosition.x - _character.transform.position.x;
+            if (Mathf.Abs(deltaX) <= 0.0001f)
+            {
+                return;
+            }
+
+            _runtimeDirectionX = deltaX < 0f ? -1f : 1f;
+        }
+
+        /// <summary>
+        /// 자동 이동 관련 전역 설정을 반환합니다.
+        /// </summary>
+        /// <returns>로드된 메인 설정입니다. 아직 로드되지 않았으면 null입니다.</returns>
+        private static GGemCoSettings GetSettings()
+        {
+            return AddressableLoaderSettings.Instance != null
+                ? AddressableLoaderSettings.Instance.settings
+                : null;
         }
 
         /// <summary>
