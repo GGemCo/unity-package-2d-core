@@ -68,6 +68,9 @@ namespace GGemCo2DCore
     {
         [Tooltip("대화 시작 시 InteractionDialogue를 제외한 다른 UI를 닫을지 여부입니다.")]
         public bool hideOtherUiOnStart;
+
+        [Tooltip("NPC 상호작용 대화가 시작될 때 플레이어 조작을 잠글지 여부입니다.")]
+        public bool lockPlayerControlOnStart;
     }
 
     /// <summary>
@@ -169,6 +172,7 @@ namespace GGemCo2DCore
             page.advanceInputPolicy = InteractionDialogueAdvanceInputPolicy.PointerClickOrTap;
 
             ui.hideOtherUiOnStart = true;
+            ui.lockPlayerControlOnStart = false;
 
             reveal.revealPolicy = InteractionDialogueRevealPolicy.Instant;
             reveal.charactersPerSecond = 30f;

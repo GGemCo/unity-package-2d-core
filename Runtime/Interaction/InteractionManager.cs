@@ -87,7 +87,10 @@ namespace GGemCo2DCore
 
             _currentNpc = characterBase;
             _npcInteractionSettings = ResolveNpcInteractionSettings();
-            BeginPlayerControlLockForInteraction();
+            if (ShouldLockPlayerControlOnInteractionStart(_npcInteractionSettings))
+            {
+                BeginPlayerControlLockForInteraction();
+            }
 
             // 퀘스트 정보
             Npc npc = _currentNpc as Npc;
@@ -272,6 +275,16 @@ namespace GGemCo2DCore
 
             ColliderDistance2D distance = npcAttackRange.Distance(playerHitArea);
             return distance.isOverlapped;
+        }
+
+        /// <summary>
+        /// NPC 상호작용 시작 시 플레이어 조작을 잠글지 여부를 설정에서 확인합니다.
+        /// </summary>
+        /// <param name="settings">현재 NPC 상호작용 설정입니다.</param>
+        /// <returns>플레이어 조작 잠금이 필요하면 <see langword="true"/>입니다.</returns>
+        private static bool ShouldLockPlayerControlOnInteractionStart(GGemCoNpcInteractionSettings settings)
+        {
+            return settings != null && settings.ui.lockPlayerControlOnStart;
         }
 
 
