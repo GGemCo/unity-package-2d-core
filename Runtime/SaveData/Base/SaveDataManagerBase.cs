@@ -6,7 +6,7 @@ namespace GGemCo2DCore
     /// <summary>
     /// 세이브 데이터 메인 매니저
     /// </summary>
-    public class SaveDataManagerBase : MonoBehaviour
+    public class SaveDataManagerBase : MonoBehaviour, IGameInitializable
     {
         protected TableLoaderManager tableLoaderManager;
         protected SlotMetaDatController slotMetaDatController;
@@ -34,29 +34,79 @@ namespace GGemCo2DCore
         private bool _useSaveData;
         private bool _useGameTime;
         private bool _isResetInProgress;
+        private bool _isInitialized;
+
+        /// <summary>
+        /// 저장 데이터 매니저 초기화 순서입니다.
+        /// SceneGame의 Core 매니저 생성 단계에서 명시적으로 호출됩니다.
+        /// </summary>
+        public int InitializeOrder => 200;
+
+        /// <summary>
+        /// 저장 데이터 매니저가 초기화되었는지 확인합니다.
+        /// </summary>
+        public bool IsInitialized => _isInitialized;
 
         protected virtual void Awake()
         {
-            tableLoaderManager = TableLoaderManager.Instance;
-            if (tableLoaderManager == null) return;
+            // Awake에서는 Unity 오브젝트 생성만 허용합니다.
+            // 테이블/설정/저장 경로 초기화는 Initialize 단계에서 명시적으로 처리합니다.
+        }
 
-            InitializeSaveDirectory();
+        /// <summary>
+        /// 저장 데이터 매니저에 필요한 테이블과 설정을 주입받아 초기화합니다.
+        /// Awake/Start 순서에 의존하지 않도록 SceneGame 초기화 파이프라인에서 호출합니다.
+        /// </summary>
+        /// <param name="context">Core 초기화 컨텍스트입니다.</param>
+        public void Initialize(GameInitContext context)
+        {
+            if (_isInitialized)
+            {
+                return;
+            }
+
+            if (context == null || context.TableLoader == null || context.SettingsLoader == null || context.SettingsLoader.saveSettings == null)
+            {
+                GcLogger.LogError("[SaveDataManagerBase] 저장 데이터 초기화에 필요한 테이블 또는 설정이 준비되지 않았습니다.");
+                return;
+            }
+
+            tableLoaderManager = context.TableLoader;
+            InitializeSaveDirectory(context.SettingsLoader);
             InitializeController();
+            _isInitialized = true;
+        }
+
+        /// <summary>
+        /// 레거시 테스트 씬처럼 명시적 초기화 파이프라인을 거치지 않은 경우 싱글톤 상태를 이용해 초기화를 시도합니다.
+        /// 신규 런타임 경로에서는 SceneGame.Initialize 단계에서 Initialize(GameInitContext)가 먼저 호출됩니다.
+        /// </summary>
+        /// <returns>초기화에 성공하면 true입니다.</returns>
+        private bool TryInitializeFromSingletons()
+        {
+            if (_isInitialized)
+            {
+                return true;
+            }
+
+            var context = new GameInitContext(SceneGame.Instance, TableLoaderManager.Instance, AddressableLoaderSettings.Instance);
+            Initialize(context);
+            return _isInitialized;
         }
 
         /// <summary>
         /// 기본 정보를 GGemCo Settings 에서 불러온다.
         /// </summary>
-        private void InitializeSaveDirectory()
+        private void InitializeSaveDirectory(AddressableLoaderSettings settingsLoader)
         {
-            GGemCoSaveSettings saveSettings = AddressableLoaderSettings.Instance.saveSettings;
+            GGemCoSaveSettings saveSettings = settingsLoader.saveSettings;
             _useSaveData = saveSettings.UseSaveData;
             _saveDelay = saveSettings.saveDataDelay;
             _forceSaveInterval = saveSettings.saveDataForceSaveInterval;
             thumbnailWidth = saveSettings.saveDataThumbnailWidth;
             _maxSaveSlotCount = saveSettings.saveDataMaxSlotCount;
 
-            _useGameTime = AddressableLoaderSettings.Instance.settings.useInGameTime;
+            _useGameTime = settingsLoader.settings.useInGameTime;
 
             _saveDirectory = saveSettings.SaveDataFolderName;
             _thumbnailDirectory = saveSettings.SaveDataThumnailFolderName;
@@ -97,9 +147,18 @@ namespace GGemCo2DCore
 
         protected virtual void Start()
         {
+            if (!TryInitializeFromSingletons())
+            {
+                return;
+            }
+
             _lastSaveTime = Time.time;
-            // 강제 저장 시작 
-            InvokeRepeating(nameof(ForceSave), _forceSaveInterval, _forceSaveInterval);
+
+            // 강제 저장 시작. 저장 기능이 비활성화되었거나 간격이 0 이하이면 예약하지 않습니다.
+            if (_useSaveData && _forceSaveInterval > 0f)
+            {
+                InvokeRepeating(nameof(ForceSave), _forceSaveInterval, _forceSaveInterval);
+            }
         }
 
         /// <summary>

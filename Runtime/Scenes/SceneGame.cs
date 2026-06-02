@@ -7,7 +7,7 @@ namespace GGemCo2DCore
     /// <summary>
     /// 게임 씬 관리 클래스
     /// </summary>
-    public class SceneGame : DefaultScene
+    public class SceneGame : DefaultScene, IGameInitializable, IGameActivatable, IGameDeinitializable
     {
         public static SceneGame Instance { get; private set; }
 
@@ -30,6 +30,12 @@ namespace GGemCo2DCore
             DialogueEnd
         }
 
+        /// <summary>
+        /// 게임 씬 초기화 순서입니다.
+        /// SceneGame의 Core 매니저 생성 단계에서 명시적으로 호출됩니다.
+        /// </summary>
+        public int InitializeOrder => 1;
+        
         private GameState State { get; set; }
         private GameSubState SubState { get; set; }
         private bool _isStateDirty;
@@ -96,66 +102,161 @@ namespace GGemCo2DCore
         private UIWindowInventory _uiWindowInventory;
         public event Action OnSceneGameDestroyed;
 
+        private GameInitializationRunner _initializationRunner;
+        private GameInitContext _initContext;
+        private Coroutine _updateStateCoroutine;
+        private bool _isInitialized;
+        private bool _isActivated;
+        private bool _isMonsterKilledSubscribed;
+
         private void Awake()
         {
-            // 테이블이 로드 되지 않았다면, Intro 씬으로 이동 하기.
+            // 테이블이 로드 되지 않았다면, PreIntro 씬으로 이동합니다.
+            // 실제 게임 초기화는 GameInitializationRunner가 명시적인 Initialize/Activate 단계로 처리합니다.
             if (TableLoaderManager.Instance == null)
             {
                 UnityEngine.SceneManagement.SceneManager.LoadScene(ConfigDefine.SceneNamePreIntro);
                 return;
             }
 
-            // 게임 신 싱글톤으로 사용하기.
+            if (!TryRegisterSingleton())
+            {
+                return;
+            }
+
+            _initializationRunner = gameObject.GetComponent<GameInitializationRunner>();
+            if (_initializationRunner == null)
+            {
+                _initializationRunner = gameObject.AddComponent<GameInitializationRunner>();
+            }
+
+            _initializationRunner.RunCoreScene(this);
+        }
+
+        /// <summary>
+        /// 게임 씬 싱글톤을 등록합니다.
+        /// Awake에서는 다른 시스템을 초기화하지 않고, 자기 오브젝트의 중복 여부만 판단합니다.
+        /// </summary>
+        /// <returns>현재 인스턴스가 유효한 게임 씬 싱글톤이면 true입니다.</returns>
+        private bool TryRegisterSingleton()
+        {
             if (Instance == null)
             {
                 Instance = this;
                 DontDestroyOnLoad(gameObject);
+                return true;
             }
-            else
+
+            Destroy(gameObject);
+            return false;
+        }
+
+        /// <summary>
+        /// Core 게임 씬에 필요한 매니저와 런타임 서비스를 초기화합니다.
+        /// Awake/Start에 흩어져 있던 게임 필수 초기화를 명시적인 Initialize 단계로 모으기 위한 진입점입니다.
+        /// </summary>
+        /// <param name="context">Core 초기화 컨텍스트입니다.</param>
+        public void Initialize(GameInitContext context)
+        {
+            if (_isInitialized)
             {
-                Destroy(gameObject);
                 return;
             }
 
-            // 로딩 중 보여주는 이미지 활성호 시키기.
+            if (context == null || !context.ValidateCoreDependencies(nameof(SceneGame)))
+            {
+                return;
+            }
+
+            _initContext = context;
+
+            // 로딩 중 보여주는 이미지를 활성화합니다.
             if (bgBlackForMapLoading)
             {
                 bgBlackForMapLoading.SetActive(true);
             }
 
-            InitializeManagers();
+            InitializeManagers(context);
+            RegisterCutsceneEvents();
+            RegisterGameTimeProvider(context);
 
-            if (CutsceneManager != null)
-            {
-                CutsceneManager.CutsceneStarted += OnCutsceneStarted;
-                CutsceneManager.CutsceneEnded += OnCutsceneEnded;
-            }
-
-            // GameTimeManager가 있을 때만 어댑터 등록
-            if (gameTimeManager != null)
-            {
-                if (AddressableLoaderSettings.Instance && AddressableLoaderSettings.Instance.settings.useInGameTime)
-                {
-                    var timeProvider = new GameTimeProviderAdapter(gameTimeManager);
-                    ServiceLocator.Register<IGameTimeProvider>(timeProvider);
-                }
-            }
-
-            Application.targetFrameRate = AddressableLoaderSettings.Instance.settings.defaultFps;
+            Application.targetFrameRate = context.SettingsLoader.settings.defaultFps;
             _isStateDirty = false;
             SetState(GameState.Begin);
+
+            _isInitialized = true;
+        }
+
+        /// <summary>
+        /// 초기화가 완료된 뒤 실제 게임 동작을 활성화합니다.
+        /// 이벤트 구독, 상태 갱신 코루틴, 사운드 풀 초기화처럼 다른 시스템 준비가 필요한 처리를 이 단계에서 실행합니다.
+        /// </summary>
+        /// <param name="context">Core 초기화 컨텍스트입니다.</param>
+        public void Activate(GameInitContext context)
+        {
+            if (_isActivated || !_isInitialized)
+            {
+                return;
+            }
+
+            ItemManager?.OnStartBySceneGame();
+            QuestManager?.OnStartBySceneGame();
+            VfxManager?.OnStartBySceneGame();
+
+            _uiWindowInventory = uIWindowManager?.GetUIWindowByUid<UIWindowInventory>(UIWindowConstants.WindowUid.Inventory);
+
+            soundManager?.InitializeSoundSfxPool();
+            SubscribeMonsterKilledEvent();
+
+            if (_updateStateCoroutine == null)
+            {
+                _updateStateCoroutine = StartCoroutine(UpdateStateRoutine());
+            }
+
+            _isActivated = true;
+        }
+
+        /// <summary>
+        /// 컷신 시작/종료 이벤트를 중복 없이 구독합니다.
+        /// </summary>
+        private void RegisterCutsceneEvents()
+        {
+            if (CutsceneManager == null)
+            {
+                return;
+            }
+
+            CutsceneManager.CutsceneStarted -= OnCutsceneStarted;
+            CutsceneManager.CutsceneEnded -= OnCutsceneEnded;
+            CutsceneManager.CutsceneStarted += OnCutsceneStarted;
+            CutsceneManager.CutsceneEnded += OnCutsceneEnded;
+        }
+
+        /// <summary>
+        /// 인게임 시간 설정이 활성화되어 있을 때 시간 제공자 어댑터를 등록합니다.
+        /// </summary>
+        /// <param name="context">Core 초기화 컨텍스트입니다.</param>
+        private void RegisterGameTimeProvider(GameInitContext context)
+        {
+            if (gameTimeManager == null || context.SettingsLoader == null || !context.SettingsLoader.settings.useInGameTime)
+            {
+                return;
+            }
+
+            var timeProvider = new GameTimeProviderAdapter(gameTimeManager);
+            ServiceLocator.Register<IGameTimeProvider>(timeProvider);
         }
 
         /// <summary>
         /// <para>매니저 초기화 하기</para>
         /// </summary>
-        private void InitializeManagers()
+        private void InitializeManagers(GameInitContext context)
         {
             GameObject managerContainer = new GameObject("Managers");
 
             calculateManager = CreateManager<CalculateManager>(managerContainer);
 
-            var useMap = AddressableLoaderSettings.Instance.mapSettings.useMap;
+            var useMap = context.SettingsLoader.mapSettings.useMap;
             if (useMap)
             {
                 mapManager = CreateManager<MapManager>(managerContainer);
@@ -169,10 +270,12 @@ namespace GGemCo2DCore
             }
 
             saveDataManager = CreateManager<SaveDataManager>(managerContainer);
+            context.SetSaveDataManager(saveDataManager);
+            saveDataManager.Initialize(context);
             uIWindowManager?.RefreshWindowSlotActivationStates();
             damageTextManager = CreateManager<DamageTextManager>(managerContainer);
             uIIconCoolTimeManager = CreateManager<UIIconCoolTimeManager>(managerContainer);
-            if (AddressableLoaderSettings.Instance && AddressableLoaderSettings.Instance.settings.useInGameTime)
+            if (context.SettingsLoader != null && context.SettingsLoader.settings.useInGameTime)
                 gameTimeManager = CreateManager<GameTimeManager>(managerContainer);
 
             AddressableLoaderPrefabCharacter = new AddressableLoaderPrefabCharacter();
@@ -180,8 +283,8 @@ namespace GGemCo2DCore
             ItemManager = new ItemManager();
             ItemManager.Initialize(this);
             CharacterManager = new CharacterManager();
-            CharacterManager.Initialize(TableLoaderManager.Instance.TableNpc, TableLoaderManager.Instance.TableMonster,
-                TableLoaderManager.Instance.TableAnimation, AddressableLoaderPrefabCharacter);
+            CharacterManager.Initialize(context.TableLoader.TableNpc, context.TableLoader.TableMonster,
+                context.TableLoader.TableAnimation, AddressableLoaderPrefabCharacter);
             AnimationEventMediator animationEventMediator = new AnimationEventMediator();
             CharacterManager.SetAnimationEventMediator(animationEventMediator);
 
@@ -221,19 +324,20 @@ namespace GGemCo2DCore
 
         private void Start()
         {
-            if (TableLoaderManager.Instance == null) return;
+            // 레거시/테스트 씬에서 Awake 시점 초기화가 지연된 경우를 위한 호환 처리입니다.
+            // 신규 코드는 GameInitializationRunner의 Initialize/Activate 경로를 사용합니다.
+            if (_isActivated)
+            {
+                return;
+            }
 
-            ItemManager?.OnStartBySceneGame();
-            QuestManager?.OnStartBySceneGame();
-            VfxManager?.OnStartBySceneGame();
+            if (_initContext == null)
+            {
+                _initContext = new GameInitContext(this, TableLoaderManager.Instance, AddressableLoaderSettings.Instance);
+            }
 
-            _uiWindowInventory = uIWindowManager?.GetUIWindowByUid<UIWindowInventory>(UIWindowConstants.WindowUid
-                .Inventory);
-
-            // Awake에서 TableLoaderManager를 셋팅한다.
-            soundManager.InitializeSoundSfxPool();
-
-            StartCoroutine(UpdateStateRoutine());
+            Initialize(_initContext);
+            Activate(_initContext);
         }
 
         private IEnumerator UpdateStateRoutine()
@@ -351,7 +455,39 @@ namespace GGemCo2DCore
 
         private void OnEnable()
         {
+            if (_isActivated)
+            {
+                SubscribeMonsterKilledEvent();
+            }
+        }
+
+        /// <summary>
+        /// 몬스터 처치 이벤트를 중복 없이 구독합니다.
+        /// 이벤트 구독은 초기화 완료 이후 Activate 단계에서 수행합니다.
+        /// </summary>
+        private void SubscribeMonsterKilledEvent()
+        {
+            if (_isMonsterKilledSubscribed)
+            {
+                return;
+            }
+
             GameEventManager.MonsterKilledEvent += OnMonsterKilled;
+            _isMonsterKilledSubscribed = true;
+        }
+
+        /// <summary>
+        /// 몬스터 처치 이벤트 구독을 해제합니다.
+        /// </summary>
+        private void UnsubscribeMonsterKilledEvent()
+        {
+            if (!_isMonsterKilledSubscribed)
+            {
+                return;
+            }
+
+            GameEventManager.MonsterKilledEvent -= OnMonsterKilled;
+            _isMonsterKilledSubscribed = false;
         }
 
         /// <summary>
@@ -359,7 +495,21 @@ namespace GGemCo2DCore
         /// </summary>
         private void OnDisable()
         {
-            GameEventManager.MonsterKilledEvent -= OnMonsterKilled;
+            Deinitialize();
+        }
+
+        /// <summary>
+        /// 게임 씬 비활성화 또는 종료 시 Core 매니저와 전역 서비스를 정리합니다.
+        /// </summary>
+        public void Deinitialize()
+        {
+            UnsubscribeMonsterKilledEvent();
+
+            if (_updateStateCoroutine != null)
+            {
+                StopCoroutine(_updateStateCoroutine);
+                _updateStateCoroutine = null;
+            }
 
             if (CutsceneManager != null)
             {
@@ -375,6 +525,9 @@ namespace GGemCo2DCore
             CutsceneManager?.OnDestroy();
 
             ServiceLocator.UnregisterAll();
+
+            _isActivated = false;
+            _isInitialized = false;
 
             OnSceneGameDestroyed?.Invoke();
         }
