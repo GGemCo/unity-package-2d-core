@@ -39,7 +39,8 @@ namespace GGemCo2DCore
 
         protected override StruckTableNpc BuildRow(Dictionary<string, string> data)
         {
-            var result = CharacterConstantsNpc.TryParseAndValidate(data["Type"], data["Category"], data["SubCategory"],
+            TableRowReader reader = ReadRow(data);
+            var result = CharacterConstantsNpc.TryParseAndValidate(reader.String("Type"), reader.String("Category"), reader.String("SubCategory"),
                 out var npcType, out var npcCategory, out var npcSub);
             if (!result)
             {
@@ -48,23 +49,23 @@ namespace GGemCo2DCore
 
             return new StruckTableNpc
             {
-                Uid = MathHelper.ParseInt(data["Uid"]),
-                Name = data["Name"],
-                AnimationUid = MathHelper.ParseInt(data["AnimationUid"]),
-                DefaultSkin = data["DefaultSkin"],
+                Uid = reader.Int("Uid"),
+                Name = reader.String("Name"),
+                AnimationUid = reader.Int("AnimationUid"),
+                DefaultSkin = reader.String("DefaultSkin"),
                 Type = npcType,
                 Category = npcCategory,
                 SubCategory = npcSub,
-                Scale = MathHelper.ParseFloat(data["Scale"]),
-                Grade = EnumHelper.ConvertEnum<CharacterConstants.Grade>(data["Grade"]),
-                StatMoveSpeed = MathHelper.ParseInt(data["StatMoveSpeed"]),
-                InteractionUid = MathHelper.ParseInt(data["InteractionUid"]),
-                InteractionParameters = data.GetValueOrDefault("InteractionParameters"),
-                InteractionDynamicParameterKey = data.GetValueOrDefault("InteractionDynamicParameterKey"),
-                ImageThumbnailFileName = data["ImageThumbnailFileName"],
-                StatHp = MathHelper.ParseInt(data["StatHp"]),
-                ShowHpBar = ConvertBoolean(data["ShowHpBar"]),
-                ShowNameTag = ConvertBoolean(data["ShowNameTag"]),
+                Scale = reader.Float("Scale"),
+                Grade = reader.Enum<CharacterConstants.Grade>("Grade"),
+                StatMoveSpeed = reader.Int("StatMoveSpeed"),
+                InteractionUid = reader.Int("InteractionUid"),
+                InteractionParameters = reader.String("InteractionParameters"),
+                InteractionDynamicParameterKey = reader.String("InteractionDynamicParameterKey"),
+                ImageThumbnailFileName = reader.String("ImageThumbnailFileName"),
+                StatHp = reader.Int("StatHp"),
+                ShowHpBar = reader.BoolYN("ShowHpBar"),
+                ShowNameTag = reader.BoolYN("ShowNameTag"),
             };
         }
     }

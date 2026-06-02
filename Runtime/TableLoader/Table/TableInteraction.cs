@@ -41,26 +41,27 @@ namespace GGemCo2DCore
         /// <returns>변환된 interaction row입니다.</returns>
         protected override StruckTableInteraction BuildRow(Dictionary<string, string> data)
         {
+            TableRowReader reader = ReadRow(data);
             return new StruckTableInteraction
             {
-                Uid = MathHelper.ParseInt(data.GetValueOrDefault("Uid")),
-                Memo = data.GetValueOrDefault("Memo"),
-                Message = data.GetValueOrDefault("Message"),
-                DialogueUid = MathHelper.ParseInt(data.GetValueOrDefault("DialogueUid")),
-                DialogueStartNodeGuid = data.GetValueOrDefault("DialogueStartNodeGuid"),
-                DialogueUidRandomList = data.GetValueOrDefault("DialogueUidRandomList"),
-                DialogueStartNodeGuidRandomList = data.GetValueOrDefault("DialogueStartNodeGuidRandomList"),
+                Uid = reader.Int("Uid"),
+                Memo = reader.String("Memo"),
+                Message = reader.String("Message"),
+                DialogueUid = reader.Int("DialogueUid"),
+                DialogueStartNodeGuid = reader.String("DialogueStartNodeGuid"),
+                DialogueUidRandomList = reader.String("DialogueUidRandomList"),
+                DialogueStartNodeGuidRandomList = reader.String("DialogueStartNodeGuidRandomList"),
                 DialogueEndPolicy = EnumHelper.ConvertEnum<InteractionDialogueEndPolicy>(
-                    data.GetValueOrDefault("DialogueEndPolicy")),
-                Type1 = EnumHelper.ConvertEnum<InteractionConstants.Type>(data.GetValueOrDefault("Type1")),
-                Value1 = MathHelper.ParseInt(data.GetValueOrDefault("Value1")),
-                CustomTypeKey1 = data.GetValueOrDefault("CustomTypeKey1"),
-                Type2 = EnumHelper.ConvertEnum<InteractionConstants.Type>(data.GetValueOrDefault("Type2")),
-                Value2 = MathHelper.ParseInt(data.GetValueOrDefault("Value2")),
-                CustomTypeKey2 = data.GetValueOrDefault("CustomTypeKey2"),
-                Type3 = EnumHelper.ConvertEnum<InteractionConstants.Type>(data.GetValueOrDefault("Type3")),
-                Value3 = MathHelper.ParseInt(data.GetValueOrDefault("Value3")),
-                CustomTypeKey3 = data.GetValueOrDefault("CustomTypeKey3"),
+                    reader.String("DialogueEndPolicy")),
+                Type1 = reader.Enum<InteractionConstants.Type>("Type1"),
+                Value1 = reader.Int("Value1"),
+                CustomTypeKey1 = reader.String("CustomTypeKey1"),
+                Type2 = reader.Enum<InteractionConstants.Type>("Type2"),
+                Value2 = reader.Int("Value2"),
+                CustomTypeKey2 = reader.String("CustomTypeKey2"),
+                Type3 = reader.Enum<InteractionConstants.Type>("Type3"),
+                Value3 = reader.Int("Value3"),
+                CustomTypeKey3 = reader.String("CustomTypeKey3"),
             };
         }
     }

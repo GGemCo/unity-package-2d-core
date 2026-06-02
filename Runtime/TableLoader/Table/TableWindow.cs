@@ -26,17 +26,18 @@ namespace GGemCo2DCore
         public override string Key => ConfigAddressableTable.Window;
         protected override StruckTableWindow BuildRow(Dictionary<string, string> data)
         {
+            TableRowReader reader = ReadRow(data);
             return new StruckTableWindow
             {
-                Uid = MathHelper.ParseInt(data["Uid"]),
-                Name = data["Name"],
-                UseInGame = ConvertBoolean(data["UseInGame"]),
-                DefaultActive = ConvertBoolean(data["DefaultActive"]),
-                Ordering = MathHelper.ParseInt(data["Ordering"]),
-                IsInteraction = ConvertBoolean(data["IsInteraction"]),
-                OpenWindowUid = ConvertIntArray(data["OpenWindowUid"]),
-                CloseWindowUid = ConvertIntArray(data["CloseWindowUid"]),
-                PrefabName = data["PrefabName"],
+                Uid = reader.Int("Uid"),
+                Name = reader.String("Name"),
+                UseInGame = reader.BoolYN("UseInGame"),
+                DefaultActive = reader.BoolYN("DefaultActive"),
+                Ordering = reader.Int("Ordering"),
+                IsInteraction = reader.BoolYN("IsInteraction"),
+                OpenWindowUid = reader.IntArray("OpenWindowUid"),
+                CloseWindowUid = reader.IntArray("CloseWindowUid"),
+                PrefabName = reader.String("PrefabName"),
             };
         }
     }

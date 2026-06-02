@@ -16,6 +16,7 @@ namespace GGemCo2DCore
 
         protected override StruckTableSoundAmbient BuildRow(Dictionary<string, string> data)
         {
+            TableRowReader reader = ReadRow(data);
             return TableSoundResourceParser.BuildResourceRow<StruckTableSoundAmbient>(data, SoundConstants.Type.Ambient);
         }
 

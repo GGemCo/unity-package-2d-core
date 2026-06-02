@@ -20,11 +20,12 @@ namespace GGemCo2DCore
         public override string Key => ConfigAddressableTable.Dialogue;
         protected override StruckTableDialogue BuildRow(Dictionary<string, string> data)
         {
+            TableRowReader reader = ReadRow(data);
             return new StruckTableDialogue
             {
-                Uid = MathHelper.ParseInt(data["Uid"]),
-                Memo = data["Memo"],
-                FileName = data["FileName"],
+                Uid = reader.Int("Uid"),
+                Memo = reader.String("Memo"),
+                FileName = reader.String("FileName"),
             };
         }
     }

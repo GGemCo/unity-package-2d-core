@@ -151,13 +151,13 @@ namespace GGemCo2DCore
         /// <summary>
         /// 여러 후보 컬럼명 중 첫 번째로 발견된 문자열 값을 반환합니다.
         /// </summary>
-        /// <param name="data">헤더명 → 값 사전입니다.</param>
+        /// <param name="reader">테이블 행 파서입니다.</param>
         /// <param name="fallback">값이 없을 때 사용할 기본값입니다.</param>
         /// <param name="keys">확인할 컬럼명 목록입니다.</param>
         /// <returns>컬럼 값 또는 기본값입니다.</returns>
-        protected static string GetString(Dictionary<string, string> data, string fallback, params string[] keys)
+        protected static string GetString(TableRowReader reader, string fallback, params string[] keys)
         {
-            if (data == null || keys == null)
+            if (keys == null)
                 return fallback;
 
             for (int i = 0; i < keys.Length; i++)
@@ -166,7 +166,8 @@ namespace GGemCo2DCore
                 if (string.IsNullOrWhiteSpace(key))
                     continue;
 
-                if (data.TryGetValue(key, out string value) && !string.IsNullOrWhiteSpace(value))
+                string value = reader.String(key);
+                if (!string.IsNullOrWhiteSpace(value))
                     return value;
             }
 
@@ -176,39 +177,39 @@ namespace GGemCo2DCore
         /// <summary>
         /// 여러 후보 컬럼명 중 첫 번째 값을 정수로 변환합니다.
         /// </summary>
-        /// <param name="data">헤더명 → 값 사전입니다.</param>
+        /// <param name="reader">테이블 행 파서입니다.</param>
         /// <param name="fallback">값이 없을 때 사용할 기본값입니다.</param>
         /// <param name="keys">확인할 컬럼명 목록입니다.</param>
         /// <returns>정수 값 또는 기본값입니다.</returns>
-        protected static int GetInt(Dictionary<string, string> data, int fallback, params string[] keys)
+        protected static int GetInt(TableRowReader reader, int fallback, params string[] keys)
         {
-            string value = GetString(data, null, keys);
+            string value = GetString(reader, null, keys);
             return string.IsNullOrWhiteSpace(value) ? fallback : MathHelper.ParseInt(value);
         }
 
         /// <summary>
         /// 여러 후보 컬럼명 중 첫 번째 값을 실수로 변환합니다.
         /// </summary>
-        /// <param name="data">헤더명 → 값 사전입니다.</param>
+        /// <param name="reader">테이블 행 파서입니다.</param>
         /// <param name="fallback">값이 없을 때 사용할 기본값입니다.</param>
         /// <param name="keys">확인할 컬럼명 목록입니다.</param>
         /// <returns>실수 값 또는 기본값입니다.</returns>
-        protected static float GetFloat(Dictionary<string, string> data, float fallback, params string[] keys)
+        protected static float GetFloat(TableRowReader reader, float fallback, params string[] keys)
         {
-            string value = GetString(data, null, keys);
+            string value = GetString(reader, null, keys);
             return string.IsNullOrWhiteSpace(value) ? fallback : MathHelper.ParseFloat(value);
         }
 
         /// <summary>
         /// 여러 후보 컬럼명 중 첫 번째 값을 bool로 변환합니다.
         /// </summary>
-        /// <param name="data">헤더명 → 값 사전입니다.</param>
+        /// <param name="reader">테이블 행 파서입니다.</param>
         /// <param name="fallback">값이 없을 때 사용할 기본값입니다.</param>
         /// <param name="keys">확인할 컬럼명 목록입니다.</param>
         /// <returns>bool 값 또는 기본값입니다.</returns>
-        protected static bool GetBool(Dictionary<string, string> data, bool fallback, params string[] keys)
+        protected static bool GetBool(TableRowReader reader, bool fallback, params string[] keys)
         {
-            string value = GetString(data, null, keys);
+            string value = GetString(reader, null, keys);
             if (string.IsNullOrWhiteSpace(value))
                 return fallback;
 
@@ -221,27 +222,27 @@ namespace GGemCo2DCore
         /// 여러 후보 컬럼명 중 첫 번째 값을 enum으로 변환합니다.
         /// </summary>
         /// <typeparam name="TEnum">변환할 enum 타입입니다.</typeparam>
-        /// <param name="data">헤더명 → 값 사전입니다.</param>
+        /// <param name="reader">테이블 행 파서입니다.</param>
         /// <param name="fallback">값이 없을 때 사용할 기본값입니다.</param>
         /// <param name="keys">확인할 컬럼명 목록입니다.</param>
         /// <returns>enum 값 또는 기본값입니다.</returns>
-        protected static TEnum GetEnum<TEnum>(Dictionary<string, string> data, TEnum fallback, params string[] keys)
+        protected static TEnum GetEnum<TEnum>(TableRowReader reader, TEnum fallback, params string[] keys)
             where TEnum : struct, Enum
         {
-            string value = GetString(data, null, keys);
+            string value = GetString(reader, null, keys);
             return string.IsNullOrWhiteSpace(value) ? fallback : EnumHelper.ConvertEnum<TEnum>(value);
         }
 
         /// <summary>
         /// 여러 후보 컬럼명 중 첫 번째 값을 Vector2로 변환합니다.
         /// </summary>
-        /// <param name="data">헤더명 → 값 사전입니다.</param>
+        /// <param name="reader">테이블 행 파서입니다.</param>
         /// <param name="fallback">값이 없을 때 사용할 기본값입니다.</param>
         /// <param name="keys">확인할 컬럼명 목록입니다.</param>
         /// <returns>Vector2 값 또는 기본값입니다.</returns>
-        protected static Vector2 GetVector2(Dictionary<string, string> data, Vector2 fallback, params string[] keys)
+        protected static Vector2 GetVector2(TableRowReader reader, Vector2 fallback, params string[] keys)
         {
-            string value = GetString(data, null, keys);
+            string value = GetString(reader, null, keys);
             return string.IsNullOrWhiteSpace(value) ? fallback : ConvertVector2(value);
         }
 
@@ -249,12 +250,12 @@ namespace GGemCo2DCore
         /// PathPoints 컬럼을 Vector2 배열로 변환합니다.
         /// - 구분자는 "|" 또는 ";"를 사용할 수 있습니다. 예: "0,0|120,40|240,0".
         /// </summary>
-        /// <param name="data">헤더명 → 값 사전입니다.</param>
+        /// <param name="reader">테이블 행 파서입니다.</param>
         /// <param name="key">PathPoints 컬럼명입니다.</param>
         /// <returns>파싱된 경로 점 배열입니다.</returns>
-        protected static Vector2[] GetVector2Array(Dictionary<string, string> data, string key)
+        protected static Vector2[] GetVector2Array(TableRowReader reader, string key)
         {
-            string value = GetString(data, null, key);
+            string value = GetString(reader, null, key);
             if (string.IsNullOrWhiteSpace(value))
                 return Array.Empty<Vector2>();
 
@@ -274,12 +275,12 @@ namespace GGemCo2DCore
         /// - 세그먼트 구분자는 "|" 또는 ";"를 사용합니다.
         /// - 각 세그먼트는 "dirX,dirY,speed,distance" 형식으로 작성합니다.
         /// </summary>
-        /// <param name="data">헤더명과 값으로 구성된 Row 데이터입니다.</param>
+        /// <param name="reader">테이블 행 파서입니다.</param>
         /// <param name="keys">확인할 컬럼명 목록입니다.</param>
         /// <returns>파싱된 이동 세그먼트 배열입니다.</returns>
-        protected static ProjectileMoveSegment[] GetMoveSegments(Dictionary<string, string> data, params string[] keys)
+        protected static ProjectileMoveSegment[] GetMoveSegments(TableRowReader reader, params string[] keys)
         {
-            string value = GetString(data, null, keys);
+            string value = GetString(reader, null, keys);
             if (string.IsNullOrWhiteSpace(value))
                 return Array.Empty<ProjectileMoveSegment>();
 
@@ -326,28 +327,29 @@ namespace GGemCo2DCore
         /// <summary>
         /// projectile.txt의 공통 Row를 파싱합니다.
         /// </summary>
-        /// <param name="data">헤더명 → 값 사전입니다.</param>
+        /// <param name="reader">테이블 행 파서입니다.</param>
         /// <returns>공통 Projectile Row입니다.</returns>
         protected override StruckTableProjectile BuildRow(Dictionary<string, string> data)
         {
+            TableRowReader reader = ReadRow(data);
             return new StruckTableProjectile
             {
-                Uid = GetInt(data, 0, "Uid"),
-                Type = GetEnum(data, ProjectileConstants.Type.Default, "Type"),
-                Name = GetString(data, string.Empty, "Name"),
-                VfxUid = GetInt(data, 0, "VfxUid", "EffectUid"),
-                VfxScale = GetFloat(data, 1f, "VfxScale", "EffectScale"),
-                MoveSpeed = GetInt(data, 0, "MoveSpeed"),
-                StartPosition = GetVector2(data, Vector2.zero, "StartPosition"),
-                ColliderSize = GetVector2(data, Vector2.zero, "ColliderSize"),
-                ColliderOffset = GetVector2(data, Vector2.zero, "ColliderOffset"),
-                HitVfxUid = GetInt(data, 0, "HitVfxUid", "HitEffectUid"),
-                TargetType = GetEnum(data, ProjectileConstants.TargetType.None, "TargetType"),
-                TargetPositionRangeX = GetInt(data, 0, "TargetPositionRangeX"),
-                Count = GetInt(data, 1, "Count"),
-                SecDelayByOne = GetFloat(data, 0f, "SecDelayByOne"),
-                DamageApplyMode = GetEnum(data, ProjectileConstants.DamageApplyMode.OnHit, "DamageApplyMode"),
-                RotateByMoveDirection = GetBool(data, true, "RotateByMoveDirection"),
+                Uid = GetInt(reader, 0, "Uid"),
+                Type = GetEnum(reader, ProjectileConstants.Type.Default, "Type"),
+                Name = GetString(reader, string.Empty, "Name"),
+                VfxUid = GetInt(reader, 0, "VfxUid", "EffectUid"),
+                VfxScale = GetFloat(reader, 1f, "VfxScale", "EffectScale"),
+                MoveSpeed = GetInt(reader, 0, "MoveSpeed"),
+                StartPosition = GetVector2(reader, Vector2.zero, "StartPosition"),
+                ColliderSize = GetVector2(reader, Vector2.zero, "ColliderSize"),
+                ColliderOffset = GetVector2(reader, Vector2.zero, "ColliderOffset"),
+                HitVfxUid = GetInt(reader, 0, "HitVfxUid", "HitEffectUid"),
+                TargetType = GetEnum(reader, ProjectileConstants.TargetType.None, "TargetType"),
+                TargetPositionRangeX = GetInt(reader, 0, "TargetPositionRangeX"),
+                Count = GetInt(reader, 1, "Count"),
+                SecDelayByOne = GetFloat(reader, 0f, "SecDelayByOne"),
+                DamageApplyMode = GetEnum(reader, ProjectileConstants.DamageApplyMode.OnHit, "DamageApplyMode"),
+                RotateByMoveDirection = GetBool(reader, true, "RotateByMoveDirection"),
             };
         }
 
@@ -617,17 +619,18 @@ namespace GGemCo2DCore
         /// <summary>
         /// projectile_linear.txt의 상세 Row를 파싱합니다.
         /// </summary>
-        /// <param name="data">헤더명 → 값 사전입니다.</param>
+        /// <param name="reader">테이블 행 파서입니다.</param>
         /// <returns>linear 상세 Row입니다.</returns>
         protected override StruckTableProjectileLinear BuildRow(Dictionary<string, string> data)
         {
+            TableRowReader reader = ReadRow(data);
             return new StruckTableProjectileLinear
             {
-                Uid = GetInt(data, 0, "Uid"),
-                BoundaryMode = GetEnum(data, ProjectileConstants.BoundaryMode.Destroy, "BoundaryMode"),
-                BoundaryPadding = GetFloat(data, 0f, "BoundaryPadding"),
-                BounceMaxCount = GetInt(data, 0, "BounceMaxCount"),
-                BounceSpeedMultiplier = GetFloat(data, 1f, "BounceSpeedMultiplier"),
+                Uid = GetInt(reader, 0, "Uid"),
+                BoundaryMode = GetEnum(reader, ProjectileConstants.BoundaryMode.Destroy, "BoundaryMode"),
+                BoundaryPadding = GetFloat(reader, 0f, "BoundaryPadding"),
+                BounceMaxCount = GetInt(reader, 0, "BounceMaxCount"),
+                BounceSpeedMultiplier = GetFloat(reader, 1f, "BounceSpeedMultiplier"),
             };
         }
 
@@ -654,15 +657,16 @@ namespace GGemCo2DCore
         /// <summary>
         /// projectile_arc.txt의 상세 Row를 파싱합니다.
         /// </summary>
-        /// <param name="data">헤더명 → 값 사전입니다.</param>
+        /// <param name="reader">테이블 행 파서입니다.</param>
         /// <returns>arc 상세 Row입니다.</returns>
         protected override StruckTableProjectileArc BuildRow(Dictionary<string, string> data)
         {
+            TableRowReader reader = ReadRow(data);
             return new StruckTableProjectileArc
             {
-                Uid = GetInt(data, 0, "Uid"),
-                ArcHeightMin = GetInt(data, 0, "ArcHeightMin"),
-                ArcHeightMax = GetInt(data, 0, "ArcHeightMax"),
+                Uid = GetInt(reader, 0, "Uid"),
+                ArcHeightMin = GetInt(reader, 0, "ArcHeightMin"),
+                ArcHeightMax = GetInt(reader, 0, "ArcHeightMax"),
             };
         }
 
@@ -689,18 +693,19 @@ namespace GGemCo2DCore
         /// <summary>
         /// projectile_path.txt의 상세 Row를 파싱합니다.
         /// </summary>
-        /// <param name="data">헤더명 → 값 사전입니다.</param>
+        /// <param name="reader">테이블 행 파서입니다.</param>
         /// <returns>path 상세 Row입니다.</returns>
         protected override StruckTableProjectilePath BuildRow(Dictionary<string, string> data)
         {
+            TableRowReader reader = ReadRow(data);
             return new StruckTableProjectilePath
             {
-                Uid = GetInt(data, 0, "Uid"),
-                TickDamageInterval = GetFloat(data, 0f, "TickDamageInterval"),
-                TickOnSpawn = GetBool(data, false, "TickOnSpawn"),
-                PathCoordinateMode = GetEnum(data, ProjectileConstants.PathCoordinateMode.StartRelative, "PathCoordinateMode"),
-                PathPoints = GetVector2Array(data, "PathPoints"),
-                PathDuration = GetFloat(data, 0f, "PathDuration"),
+                Uid = GetInt(reader, 0, "Uid"),
+                TickDamageInterval = GetFloat(reader, 0f, "TickDamageInterval"),
+                TickOnSpawn = GetBool(reader, false, "TickOnSpawn"),
+                PathCoordinateMode = GetEnum(reader, ProjectileConstants.PathCoordinateMode.StartRelative, "PathCoordinateMode"),
+                PathPoints = GetVector2Array(reader, "PathPoints"),
+                PathDuration = GetFloat(reader, 0f, "PathDuration"),
             };
         }
 
@@ -727,16 +732,17 @@ namespace GGemCo2DCore
         /// <summary>
         /// projectile_linear_then_segments.txt의 상세 Row를 파싱합니다.
         /// </summary>
-        /// <param name="data">헤더명과 값으로 구성된 Row 데이터입니다.</param>
+        /// <param name="reader">테이블 행 파서입니다.</param>
         /// <returns>linear_then_segments 상세 Row입니다.</returns>
         protected override StruckTableProjectileLinearThenSegments BuildRow(Dictionary<string, string> data)
         {
+            TableRowReader reader = ReadRow(data);
             return new StruckTableProjectileLinearThenSegments
             {
-                Uid = GetInt(data, 0, "Uid"),
-                SegmentDirectionMode = GetEnum(data, ProjectileConstants.SegmentDirectionMode.World, "SegmentDirectionMode"),
-                SegmentRelativeAxesMode = GetEnum(data, ProjectileConstants.SegmentRelativeAxesMode.Full2D, "SegmentRelativeAxesMode"),
-                MoveSegments = GetMoveSegments(data, "MoveSegments", "Segments"),
+                Uid = GetInt(reader, 0, "Uid"),
+                SegmentDirectionMode = GetEnum(reader, ProjectileConstants.SegmentDirectionMode.World, "SegmentDirectionMode"),
+                SegmentRelativeAxesMode = GetEnum(reader, ProjectileConstants.SegmentRelativeAxesMode.Full2D, "SegmentRelativeAxesMode"),
+                MoveSegments = GetMoveSegments(reader, "MoveSegments", "Segments"),
             };
         }
 

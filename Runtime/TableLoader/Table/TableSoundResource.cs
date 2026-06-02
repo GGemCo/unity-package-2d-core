@@ -63,57 +63,24 @@ namespace GGemCo2DCore
         public static TResource BuildResourceRow<TResource>(Dictionary<string, string> data, SoundConstants.Type type)
             where TResource : StruckTableSoundResource, new()
         {
+            TableRowReader reader = new TableRowReader(data, nameof(TableSoundResourceParser));
+
             return new TResource
             {
-                Uid = MathHelper.ParseInt(data["Uid"]),
-                Name = GetValue(data, "Name", string.Empty),
-                SoundUid = MathHelper.ParseInt(GetValue(data, "SoundUid", "0")),
-                SubType = EnumHelper.ConvertEnum<SoundConstants.SubType>(GetValue(data, "SubType", "None")),
-                FileName = GetValue(data, "FileName", string.Empty),
-                MaxPlayCount = MathHelper.ParseInt(GetValue(data, "MaxPlayCount", "0")),
-                Volume = MathHelper.ParseFloat(GetValue(data, "Volume", "1")),
-                PitchMin = MathHelper.ParseFloat(GetValue(data, "PitchMin", "1")),
-                PitchMax = MathHelper.ParseFloat(GetValue(data, "PitchMax", "1")),
-                Loop = ConvertBooleanLoose(GetValue(data, "Loop", type == SoundConstants.Type.Sfx ? "N" : "Y")),
-                FadeDuration = MathHelper.ParseFloat(GetValue(data, "FadeDuration", "0.7")),
-                UseIntroScene = ConvertBooleanLoose(GetValue(data, "UseIntroScene", "N")),
+                Uid = reader.Int("Uid"),
+                Name = reader.String("Name", string.Empty),
+                SoundUid = reader.Int("SoundUid", 0),
+                SubType = reader.Enum<SoundConstants.SubType>("SubType"),
+                FileName = reader.String("FileName", string.Empty),
+                MaxPlayCount = reader.Int("MaxPlayCount", 0),
+                Volume = reader.Float("Volume", 1f),
+                PitchMin = reader.Float("PitchMin", 1f),
+                PitchMax = reader.Float("PitchMax", 1f),
+                Loop = reader.BoolYN("Loop"),
+                FadeDuration = reader.Float("FadeDuration", 0.7f),
+                UseIntroScene = reader.BoolYN("UseIntroScene"),
                 Type = type,
             };
-        }
-
-        /// <summary>
-        /// 헤더가 없을 수 있는 테이블에서 값을 안전하게 읽습니다.
-        /// </summary>
-        /// <param name="data">헤더명과 값의 사전입니다.</param>
-        /// <param name="key">조회할 헤더명입니다.</param>
-        /// <param name="defaultValue">헤더가 없거나 값이 비어 있을 때 사용할 기본값입니다.</param>
-        /// <returns>조회된 값 또는 기본값입니다.</returns>
-        private static string GetValue(Dictionary<string, string> data, string key, string defaultValue)
-        {
-            if (data == null || string.IsNullOrWhiteSpace(key))
-                return defaultValue;
-
-            return data.TryGetValue(key, out string value) && !string.IsNullOrWhiteSpace(value)
-                ? value
-                : defaultValue;
-        }
-
-        /// <summary>
-        /// Y/N, true/false, 1/0 형식의 bool 값을 느슨하게 파싱합니다.
-        /// </summary>
-        /// <param name="value">원본 문자열입니다.</param>
-        /// <returns>true로 해석되는 값이면 true를 반환합니다.</returns>
-        private static bool ConvertBooleanLoose(string value)
-        {
-            if (string.IsNullOrWhiteSpace(value))
-                return false;
-
-            string trimmed = value.Trim();
-            return trimmed == "Y"
-                   || trimmed == "1"
-                   || string.Equals(trimmed, "true", System.StringComparison.OrdinalIgnoreCase)
-                   || string.Equals(trimmed, "yes", System.StringComparison.OrdinalIgnoreCase)
-                   || string.Equals(trimmed, "on", System.StringComparison.OrdinalIgnoreCase);
         }
     }
 }

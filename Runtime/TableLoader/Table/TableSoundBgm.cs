@@ -16,6 +16,7 @@ namespace GGemCo2DCore
 
         protected override StruckTableSoundBgm BuildRow(Dictionary<string, string> data)
         {
+            TableRowReader reader = ReadRow(data);
             return TableSoundResourceParser.BuildResourceRow<StruckTableSoundBgm>(data, SoundConstants.Type.Bgm);
         }
 

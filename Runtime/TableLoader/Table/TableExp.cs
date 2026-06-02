@@ -58,6 +58,7 @@ namespace GGemCo2DCore
 
         protected override StruckTableExp BuildRow(Dictionary<string, string> data)
         {
+            TableRowReader reader = ReadRow(data);
             data.TryGetValue("Uid", out string uid);
             data.TryGetValue("Level", out string level);
             data.TryGetValue("NeedExp", out string needExp);

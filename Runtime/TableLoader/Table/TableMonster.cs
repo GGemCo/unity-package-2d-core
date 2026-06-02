@@ -45,34 +45,35 @@ namespace GGemCo2DCore
         }
         protected override StruckTableMonster BuildRow(Dictionary<string, string> data)
         {
+            TableRowReader reader = ReadRow(data);
             return new StruckTableMonster
             {
-                Uid = MathHelper.ParseInt(data["Uid"]),
-                Name = data["Name"],
-                ImageThumbnailFileName = data["ImageThumbnailFileName"],
-                AnimationUid = MathHelper.ParseInt(data["AnimationUid"]),
-                DefaultSkin = data["DefaultSkin"],
-                AttackType = EnumHelper.ConvertEnum<CharacterConstants.AttackType>(data["AttackType"]),
-                Scale = MathHelper.ParseFloat(data["Scale"]),
-                Grade = EnumHelper.ConvertEnum<CharacterConstants.Grade>(data["Grade"]),
-                Level = MathHelper.ParseInt(data["Level"]),
-                StatHp = MathHelper.ParseInt(data["StatHp"]),
-                StatAtk = MathHelper.ParseInt(data["StatAtk"]),
-                StatDef = MathHelper.ParseInt(data["StatDef"]),
-                StatSuperArmor = MathHelper.ParseInt(data["StatSuperArmor"]),
-                StatMoveSpeed = MathHelper.ParseInt(data["StatMoveSpeed"]),
-                StatAttackSpeed = MathHelper.ParseInt(data["StatAttackSpeed"]),
-                RewardExp = MathHelper.ParseLong(data["RewardExp"]),
-                RegistFire = MathHelper.ParseInt(data["RegistFire"]),
-                RegistCold = MathHelper.ParseInt(data["RegistCold"]),
-                RegistLightning = MathHelper.ParseInt(data["RegistLightning"]),
-                RegistPoison = MathHelper.ParseInt(data["RegistPoison"]),
-                RewardGold = MathHelper.ParseInt(data["RewardGold"]),
-                SkillMonsterUid = ConvertIntArray(data["SkillMonsterUid"]),
+                Uid = reader.Int("Uid"),
+                Name = reader.String("Name"),
+                ImageThumbnailFileName = reader.String("ImageThumbnailFileName"),
+                AnimationUid = reader.Int("AnimationUid"),
+                DefaultSkin = reader.String("DefaultSkin"),
+                AttackType = reader.Enum<CharacterConstants.AttackType>("AttackType"),
+                Scale = reader.Float("Scale"),
+                Grade = reader.Enum<CharacterConstants.Grade>("Grade"),
+                Level = reader.Int("Level"),
+                StatHp = reader.Int("StatHp"),
+                StatAtk = reader.Int("StatAtk"),
+                StatDef = reader.Int("StatDef"),
+                StatSuperArmor = reader.Int("StatSuperArmor"),
+                StatMoveSpeed = reader.Int("StatMoveSpeed"),
+                StatAttackSpeed = reader.Int("StatAttackSpeed"),
+                RewardExp = reader.Long("RewardExp"),
+                RegistFire = reader.Int("RegistFire"),
+                RegistCold = reader.Int("RegistCold"),
+                RegistLightning = reader.Int("RegistLightning"),
+                RegistPoison = reader.Int("RegistPoison"),
+                RewardGold = reader.Int("RewardGold"),
+                SkillMonsterUid = reader.IntArray("SkillMonsterUid"),
                 DeathSkillMonsterUid = data.TryGetValue("DeathSkillMonsterUid", out string deathSkillMonsterUid)
                     ? MathHelper.ParseInt(deathSkillMonsterUid)
                     : 0,
-                BtFileName = (data["BtFileName"]),
+                BtFileName = (reader.String("BtFileName")),
             };
         }
     }

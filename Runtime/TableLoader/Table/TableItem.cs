@@ -68,26 +68,27 @@ namespace GGemCo2DCore
 
         protected override StruckTableItem BuildRow(Dictionary<string, string> d)
         {
+            TableRowReader reader = ReadRow(d);
             // 기본 값 파싱
-            int uid            = MathHelper.ParseInt(d.GetValueOrDefault("Uid"));
-            int upgrade        = MathHelper.ParseInt(d.GetValueOrDefault("Upgrade"));
-            int overlay        = MathHelper.ParseInt(d.GetValueOrDefault("MaxOverlayCount"));
-            float coolTime     = MathHelper.ParseFloat(d.GetValueOrDefault("CoolTime"));
-            int saleValue      = MathHelper.ParseInt(d.GetValueOrDefault("SaleCurrencyValue"));
+            int uid            = reader.Int("Uid");
+            int upgrade        = reader.Int("Upgrade");
+            int overlay        = reader.Int("MaxOverlayCount");
+            float coolTime     = reader.Float("CoolTime");
+            int saleValue      = reader.Int("SaleCurrencyValue");
 
             // Enum 변환(대소문자 무시)
-            var type           = EnumHelper.ConvertEnum<ItemConstants.Type>(d.GetValueOrDefault("Type"));
-            var category       = EnumHelper.ConvertEnum<ItemConstants.Category>(d.GetValueOrDefault("Category"));
-            var parts          = EnumHelper.ConvertEnum<ItemConstants.PartsType>(d.GetValueOrDefault("PartsID"));
-            var klass          = EnumHelper.ConvertEnum<ItemConstants.Class>(d.GetValueOrDefault("Class"));
-            var saleCurrency   = ConvertCurrencyType(d.GetValueOrDefault("SaleCurrencyType"));
+            var type           = reader.Enum<ItemConstants.Type>("Type");
+            var category       = reader.Enum<ItemConstants.Category>("Category");
+            var parts          = reader.Enum<ItemConstants.PartsType>("PartsID");
+            var klass          = reader.Enum<ItemConstants.Class>("Class");
+            var saleCurrency   = ConvertCurrencyType(reader.String("SaleCurrencyType"));
 
             // SubCategory는 카테고리 유효성 검사 포함
-            var subCategory    = ConvertSubCategoryValidated(d, category);
+            var subCategory    = ConvertSubCategoryValidated(reader, category);
 
             // 로컬라이즈된 이름/설명
-            string name = d.GetValueOrDefault("Name");
-            string desc = d.GetValueOrDefault("Description");
+            string name = reader.String("Name");
+            string desc = reader.String("Description");
             if (LocalizationManager.Instance != null)
             {
                 name = LocalizationManager.Instance.GetItemNameByKey(uid.ToString());
@@ -100,14 +101,14 @@ namespace GGemCo2DCore
             desc = ParsePlaceholders(desc, d);
 
             // 이미지 경로
-            string imagePath        = d.GetValueOrDefault("ImagePath");
-            string partsImagePath   = BuildPartsImagePath(d, parts);
-            string finalIconPath    = BuildItemIconPath(d, type, category, subCategory, imagePath);
+            string imagePath        = reader.String("ImagePath");
+            string partsImagePath   = BuildPartsImagePath(reader, parts);
+            string finalIconPath    = BuildItemIconPath(reader, type, category, subCategory, imagePath);
             string finalItemPath    = finalIconPath.Replace("/Icon/Item/", "/Item/");
             string fileName         = imagePath; // 원래 파일명 보존
 
             // AntiFlag[]
-            var antiFlags = ConvertAntiFlags(d.GetValueOrDefault("AntiFlag"));
+            var antiFlags = ConvertAntiFlags(reader.String("AntiFlag"));
             string antiFlagText = BuildAntiFlagText(antiFlags);
 
             // 옵션/스탯
@@ -157,25 +158,25 @@ namespace GGemCo2DCore
 
         // ------------ 내부 유틸(원 코드 로직 보존/정리) ------------
 
-        private static string BuildPartsImagePath(Dictionary<string, string> d, ItemConstants.PartsType parts)
+        private static string BuildPartsImagePath(TableRowReader reader, ItemConstants.PartsType parts)
         {
             // PartsID가 비어있다면 "Images/Parts/<ImagePath>" 사용
-            string imagePath = d.GetValueOrDefault("ImagePath");
-            string pid = d.GetValueOrDefault("PartsID");
+            string imagePath = reader.String("ImagePath");
+            string pid = reader.String("PartsID");
             if (string.IsNullOrEmpty(pid))
                 return $"Images/Parts/{imagePath}";
             return $"Images/Parts/{pid}/{imagePath}";
         }
 
-        private static string BuildItemIconPath(Dictionary<string, string> d,
+        private static string BuildItemIconPath(TableRowReader reader,
             ItemConstants.Type type,
             ItemConstants.Category category,
             ItemConstants.SubCategory subCategory,
             string imagePath)
         {
-            string typeStr = d.GetValueOrDefault("Type");
-            string catStr  = d.GetValueOrDefault("Category");
-            string subStr  = d.GetValueOrDefault("SubCategory");
+            string typeStr = reader.String("Type");
+            string catStr  = reader.String("Category");
+            string subStr  = reader.String("SubCategory");
 
             // 카테고리/서브카테고리 유무에 따라 경로를 다르게 생성
             if (category == ItemConstants.Category.None && subCategory == ItemConstants.SubCategory.None)
@@ -185,9 +186,9 @@ namespace GGemCo2DCore
             return $"Images/Icon/Item/{typeStr}/{catStr}/{subStr}/{imagePath}";
         }
 
-        private static ItemConstants.SubCategory ConvertSubCategoryValidated(Dictionary<string, string> d, ItemConstants.Category category)
+        private static ItemConstants.SubCategory ConvertSubCategoryValidated(TableRowReader reader, ItemConstants.Category category)
         {
-            var sub = EnumHelper.ConvertEnum<ItemConstants.SubCategory>(d.GetValueOrDefault("SubCategory"));
+            var sub = reader.Enum<ItemConstants.SubCategory>("SubCategory");
 
             if (sub == ItemConstants.SubCategory.None)
                 return ItemConstants.SubCategory.None;
@@ -195,7 +196,7 @@ namespace GGemCo2DCore
             if (ItemConstants.IsValidSubCategory(category, sub))
                 return sub;
 
-            GcLogger.LogError($"Category/SubCategory mismatch. Uid:{d.GetValueOrDefault("Uid")}, Category:{category}, Sub:{sub}");
+            GcLogger.LogError($"Category/SubCategory mismatch. Uid:{reader.String("Uid")}, Category:{category}, Sub:{sub}");
             return ItemConstants.SubCategory.None;
         }
 

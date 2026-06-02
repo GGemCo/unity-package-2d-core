@@ -60,11 +60,12 @@ namespace GGemCo2DCore
 
         protected override StruckTableState BuildRow(Dictionary<string, string> data)
         {
+            TableRowReader reader = ReadRow(data);
             return new StruckTableState
             {
-                Uid = MathHelper.ParseInt(data["Uid"]),
-                ID = data.GetValueOrDefault("ID"),
-                Name = data.GetValueOrDefault("Name")
+                Uid = reader.Int("Uid"),
+                ID = reader.String("ID"),
+                Name = reader.String("Name")
             };
         }
     }

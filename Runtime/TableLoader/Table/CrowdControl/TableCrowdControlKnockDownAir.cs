@@ -8,28 +8,29 @@ namespace GGemCo2DCore
 
         protected override StruckTableCrowdControlKnockDownAir BuildRow(Dictionary<string, string> data)
         {
+            TableRowReader reader = ReadRow(data);
             var row = new StruckTableCrowdControlKnockDownAir
             {
-                CrowdControlUid = MathHelper.ParseInt(data.GetValueOrDefault("CrowdControlUid")),
-                Height = MathHelper.ParseFloat(data.GetValueOrDefault("Height")),
-                RiseTime = MathHelper.ParseFloat(data.GetValueOrDefault("RiseTime")),
-                AirTime = MathHelper.ParseFloat(data.GetValueOrDefault("AirTime")),
-                FallSpeed = MathHelper.ParseFloat(data.GetValueOrDefault("FallSpeed")),
-                LandEndWaitTime = MathHelper.ParseFloat(data.GetValueOrDefault("LandEndWaitTime")),
-                AirAnimationIsLoop = ConvertBoolean(data.GetValueOrDefault("AirAnimationIsLoop")),
-                RiseAnimationName = data.GetValueOrDefault("RiseAnimationName"),
-                AirAnimationName = data.GetValueOrDefault("AirAnimationName"),
-                FallAnimationName = data.GetValueOrDefault("FallAnimationName"),
-                LandEndAnimationName = data.GetValueOrDefault("LandEndAnimationName"),
-                RiseEaseType = EnumHelper.ConvertEnum<Easing.EaseType>(data.GetValueOrDefault("RiseEaseType")),
-                FallEaseType = EnumHelper.ConvertEnum<Easing.EaseType>(data.GetValueOrDefault("FallEaseType")),
-                EndYMode = EnumHelper.ConvertEnum<CrowdControlConstants.EndYMode>(data.GetValueOrDefault("EndYMode")),
-                EndYOffset = MathHelper.ParseFloat(data.GetValueOrDefault("EndYOffset")),
-                EndYAbsolute = MathHelper.ParseFloat(data.GetValueOrDefault("EndYAbsolute")),
-                RecoverTime = MathHelper.ParseFloat(data.GetValueOrDefault("RecoverTime")),
-                IsStopOnWall = ConvertBoolean(data.GetValueOrDefault("IsStopOnWall")),
-                IsGroundOnly = ConvertBoolean(data.GetValueOrDefault("IsGroundOnly")),
-                IsAirOnly = ConvertBoolean(data.GetValueOrDefault("IsAirOnly")),
+                CrowdControlUid = reader.Int("CrowdControlUid"),
+                Height = reader.Float("Height"),
+                RiseTime = reader.Float("RiseTime"),
+                AirTime = reader.Float("AirTime"),
+                FallSpeed = reader.Float("FallSpeed"),
+                LandEndWaitTime = reader.Float("LandEndWaitTime"),
+                AirAnimationIsLoop = reader.BoolYN("AirAnimationIsLoop"),
+                RiseAnimationName = reader.String("RiseAnimationName"),
+                AirAnimationName = reader.String("AirAnimationName"),
+                FallAnimationName = reader.String("FallAnimationName"),
+                LandEndAnimationName = reader.String("LandEndAnimationName"),
+                RiseEaseType = reader.Enum<Easing.EaseType>("RiseEaseType"),
+                FallEaseType = reader.Enum<Easing.EaseType>("FallEaseType"),
+                EndYMode = reader.Enum<CrowdControlConstants.EndYMode>("EndYMode"),
+                EndYOffset = reader.Float("EndYOffset"),
+                EndYAbsolute = reader.Float("EndYAbsolute"),
+                RecoverTime = reader.Float("RecoverTime"),
+                IsStopOnWall = reader.BoolYN("IsStopOnWall"),
+                IsGroundOnly = reader.BoolYN("IsGroundOnly"),
+                IsAirOnly = reader.BoolYN("IsAirOnly"),
             };
 
             return row.CrowdControlUid > 0 ? row : null;

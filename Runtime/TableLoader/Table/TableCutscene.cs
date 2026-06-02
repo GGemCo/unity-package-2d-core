@@ -20,12 +20,13 @@ namespace GGemCo2DCore
         public override string Key => ConfigAddressableTable.Cutscene;
         protected override StruckTableCutscene BuildRow(Dictionary<string, string> data)
         {
+            TableRowReader reader = ReadRow(data);
             return new StruckTableCutscene
             {
-                Uid = MathHelper.ParseInt(data["Uid"]),
-                PreLoad = ConvertBoolean(data["PreLoad"]),
-                Memo = data["Memo"],
-                FileName = data["FileName"],
+                Uid = reader.Int("Uid"),
+                PreLoad = reader.BoolYN("PreLoad"),
+                Memo = reader.String("Memo"),
+                FileName = reader.String("FileName"),
             };
         }
     }

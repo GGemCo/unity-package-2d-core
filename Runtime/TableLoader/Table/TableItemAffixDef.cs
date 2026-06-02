@@ -50,7 +50,8 @@ namespace GGemCo2DCore
 
         protected override StruckTableItemAffixDef BuildRow(Dictionary<string, string> data)
         {
-            var groupToken = data.GetValueOrDefault("GroupId");
+            TableRowReader reader = ReadRow(data);
+            var groupToken = reader.String("GroupId");
             var groupId = MathHelper.ParseInt(groupToken);
             if (groupId == 0 && !string.IsNullOrEmpty(groupToken))
             {
@@ -60,16 +61,16 @@ namespace GGemCo2DCore
             }
             return new StruckTableItemAffixDef
             {
-                AffixUid = MathHelper.ParseInt(data.GetValueOrDefault("AffixUid")),
-                AffixType = EnumHelper.ConvertEnum<ItemAffixType>(data.GetValueOrDefault("AffixType")),
-                Kind = EnumHelper.ConvertEnum<ItemOptionKind>(data.GetValueOrDefault("Kind")),
-                TargetId = data.GetValueOrDefault("TargetId"),
-                Op = EnumHelper.ConvertEnum<ConfigCommon.SuffixType>(data.GetValueOrDefault("Op")),
-                MinValue = MathHelper.ParseFloat(data.GetValueOrDefault("MinValue")),
-                MaxValue = MathHelper.ParseFloat(data.GetValueOrDefault("MaxValue")),
-                MinLevel = MathHelper.ParseInt(data.GetValueOrDefault("MinLevel")),
+                AffixUid = reader.Int("AffixUid"),
+                AffixType = reader.Enum<ItemAffixType>("AffixType"),
+                Kind = reader.Enum<ItemOptionKind>("Kind"),
+                TargetId = reader.String("TargetId"),
+                Op = reader.Enum<ConfigCommon.SuffixType>("Op"),
+                MinValue = reader.Float("MinValue"),
+                MaxValue = reader.Float("MaxValue"),
+                MinLevel = reader.Int("MinLevel"),
                 GroupId = groupId,
-                Weight = MathHelper.ParseInt(data.GetValueOrDefault("Weight")),
+                Weight = reader.Int("Weight"),
             };
         }
         

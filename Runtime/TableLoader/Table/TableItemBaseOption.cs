@@ -48,16 +48,17 @@ namespace GGemCo2DCore
 
         protected override StruckTableItemBaseOption BuildRow(Dictionary<string, string> data)
         {
+            TableRowReader reader = ReadRow(data);
             return new StruckTableItemBaseOption
             {
-                Uid = MathHelper.ParseInt(data.GetValueOrDefault("Uid")),
-                ItemUid = MathHelper.ParseInt(data.GetValueOrDefault("ItemUid")),
-                Kind = EnumHelper.ConvertEnum<ItemOptionKind>(data.GetValueOrDefault("Kind")),
-                TargetId = data.GetValueOrDefault("TargetId"),
-                Op = EnumHelper.ConvertEnum<ConfigCommon.SuffixType>(data.GetValueOrDefault("Op")),
-                Value = MathHelper.ParseFloat(data.GetValueOrDefault("Value")),
-                Chance = MathHelper.ParseInt(data.GetValueOrDefault("Chance")),
-                Duration = MathHelper.ParseFloat(data.GetValueOrDefault("Duration")),
+                Uid = reader.Int("Uid"),
+                ItemUid = reader.Int("ItemUid"),
+                Kind = reader.Enum<ItemOptionKind>("Kind"),
+                TargetId = reader.String("TargetId"),
+                Op = reader.Enum<ConfigCommon.SuffixType>("Op"),
+                Value = reader.Float("Value"),
+                Chance = reader.Int("Chance"),
+                Duration = reader.Float("Duration"),
             };
         }
     }

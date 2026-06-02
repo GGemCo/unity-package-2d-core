@@ -66,18 +66,19 @@ namespace GGemCo2DCore
         /// <returns>변환된 맵 입장 규칙 행입니다.</returns>
         protected override StruckTableMapEntryRule BuildRow(Dictionary<string, string> data)
         {
+            TableRowReader reader = ReadRow(data);
             return new StruckTableMapEntryRule
             {
-                Uid = MathHelper.ParseInt(data.GetValueOrDefault("Uid")),
-                Name = data.GetValueOrDefault("Name"),
-                Enabled = ConvertBoolean(data["Enabled"]),
-                Priority = MathHelper.ParseInt(data.GetValueOrDefault("Priority")),
-                RequestMapUid = MathHelper.ParseInt(data.GetValueOrDefault("RequestMapUid")),
-                ConditionLicenseUid = MathHelper.ParseInt(data.GetValueOrDefault("ConditionLicenseUid")),
-                CompareType = EnumHelper.ConvertEnum<MapEntryRuleConstants.CompareType>(data.GetValueOrDefault("CompareType")),
-                CompareValue = data.GetValueOrDefault("CompareValue"),
-                TargetMapUid = MathHelper.ParseInt(data.GetValueOrDefault("TargetMapUid")),
-                Memo = data.GetValueOrDefault("Memo"),
+                Uid = reader.Int("Uid"),
+                Name = reader.String("Name"),
+                Enabled = reader.BoolYN("Enabled"),
+                Priority = reader.Int("Priority"),
+                RequestMapUid = reader.Int("RequestMapUid"),
+                ConditionLicenseUid = reader.Int("ConditionLicenseUid"),
+                CompareType = reader.Enum<MapEntryRuleConstants.CompareType>("CompareType"),
+                CompareValue = reader.String("CompareValue"),
+                TargetMapUid = reader.Int("TargetMapUid"),
+                Memo = reader.String("Memo"),
             };
         }
 

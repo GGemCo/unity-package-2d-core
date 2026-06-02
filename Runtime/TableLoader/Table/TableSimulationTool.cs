@@ -17,12 +17,13 @@ namespace GGemCo2DCore
         public override string Key => ConfigAddressableTable.SimulationTool;
         protected override StruckTableSimulationTool BuildRow(Dictionary<string, string> data)
         {
+            TableRowReader reader = ReadRow(data);
             if (data == null) return null;
             return new StruckTableSimulationTool
             {
-                Uid = MathHelper.ParseInt(data["Uid"]),
-                ItemUid = MathHelper.ParseInt(data["ItemUid"]),
-                DefinitionFileName = data["DefinitionFileName"],
+                Uid = reader.Int("Uid"),
+                ItemUid = reader.Int("ItemUid"),
+                DefinitionFileName = reader.String("DefinitionFileName"),
             };
         }
     }

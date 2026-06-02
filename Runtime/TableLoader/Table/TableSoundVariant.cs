@@ -31,17 +31,18 @@ namespace GGemCo2DCore
 
         protected override StruckTableSoundVariant BuildRow(Dictionary<string, string> data)
         {
+            TableRowReader reader = ReadRow(data);
             return new StruckTableSoundVariant
             {
-                Uid = MathHelper.ParseInt(data["Uid"]),
-                Name = GetValue(data, "Name", string.Empty),
-                SoundUid = MathHelper.ParseInt(GetValue(data, "SoundUid", "0")),
-                CandidateResourceUid = MathHelper.ParseInt(GetValue(data, "CandidateResourceUid", GetValue(data, "CandidateUid", "0"))),
-                Weight = MathHelper.ParseInt(GetValue(data, "Weight", "1")),
-                VolumeScale = MathHelper.ParseFloat(GetValue(data, "VolumeScale", "1")),
-                PitchMinOverride = MathHelper.ParseFloat(GetValue(data, "PitchMinOverride", "0")),
-                PitchMaxOverride = MathHelper.ParseFloat(GetValue(data, "PitchMaxOverride", "0")),
-                Enabled = ConvertBooleanLoose(GetValue(data, "Enabled", "Y")),
+                Uid = reader.Int("Uid"),
+                Name = reader.String("Name", string.Empty),
+                SoundUid = reader.Int("SoundUid", 0),
+                CandidateResourceUid = reader.Int("CandidateResourceUid", reader.Int("CandidateUid", 0)),
+                Weight = reader.Int("Weight", 1),
+                VolumeScale = reader.Float("VolumeScale", 1f),
+                PitchMinOverride = reader.Float("PitchMinOverride", 0f),
+                PitchMaxOverride = reader.Float("PitchMaxOverride", 0f),
+                Enabled = reader.BoolLoose("Enabled", true),
             };
         }
 
@@ -69,41 +70,6 @@ namespace GGemCo2DCore
             return _variantsBySoundUid.TryGetValue(soundUid, out List<StruckTableSoundVariant> variants)
                 ? variants
                 : System.Array.Empty<StruckTableSoundVariant>();
-        }
-
-        /// <summary>
-        /// 헤더가 없을 수 있는 테이블에서 값을 안전하게 읽습니다.
-        /// </summary>
-        /// <param name="data">헤더명과 값의 사전입니다.</param>
-        /// <param name="key">조회할 헤더명입니다.</param>
-        /// <param name="defaultValue">헤더가 없거나 값이 비어 있을 때 사용할 기본값입니다.</param>
-        /// <returns>조회된 값 또는 기본값입니다.</returns>
-        private static string GetValue(Dictionary<string, string> data, string key, string defaultValue)
-        {
-            if (data == null || string.IsNullOrWhiteSpace(key))
-                return defaultValue;
-
-            return data.TryGetValue(key, out string value) && !string.IsNullOrWhiteSpace(value)
-                ? value
-                : defaultValue;
-        }
-
-        /// <summary>
-        /// Y/N, true/false, 1/0 형식의 bool 값을 느슨하게 파싱합니다.
-        /// </summary>
-        /// <param name="value">원본 문자열입니다.</param>
-        /// <returns>true로 해석되는 값이면 true를 반환합니다.</returns>
-        private static bool ConvertBooleanLoose(string value)
-        {
-            if (string.IsNullOrWhiteSpace(value))
-                return false;
-
-            string trimmed = value.Trim();
-            return trimmed == "Y"
-                   || trimmed == "1"
-                   || string.Equals(trimmed, "true", System.StringComparison.OrdinalIgnoreCase)
-                   || string.Equals(trimmed, "yes", System.StringComparison.OrdinalIgnoreCase)
-                   || string.Equals(trimmed, "on", System.StringComparison.OrdinalIgnoreCase);
         }
     }
 }

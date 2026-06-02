@@ -46,25 +46,26 @@ namespace GGemCo2DCore
 
         protected override StruckTableItemUpgrade BuildRow(Dictionary<string, string> data)
         {
+            TableRowReader reader = ReadRow(data);
             return new StruckTableItemUpgrade
             {
-                Uid = MathHelper.ParseInt(data["Uid"]),
-                Memo = data["Memo"],
-                SourceItemUid = MathHelper.ParseInt(data["SourceItemUid"]),
-                ResultItemUid = MathHelper.ParseInt(data["ResultItemUid"]),
-                Upgrade = MathHelper.ParseInt(data["Upgrade"]),
-                MaxUpgrade = MathHelper.ParseInt(data["MaxUpgrade"]),
-                Rate = MathHelper.ParseInt(data["Rate"]),
-                NeedCurrencyType = ConvertCurrencyType(data["NeedCurrencyType"]),
-                NeedCurrencyValue = MathHelper.ParseInt(data["NeedCurrencyValue"]),
-                NeedItemUid1 = MathHelper.ParseInt(data["NeedItemUid1"]),
-                NeedItemCount1 = MathHelper.ParseInt(data["NeedItemCount1"]),
-                NeedItemUid2 = MathHelper.ParseInt(data["NeedItemUid2"]),
-                NeedItemCount2 = MathHelper.ParseInt(data["NeedItemCount2"]),
-                NeedItemUid3 = MathHelper.ParseInt(data["NeedItemUid3"]),
-                NeedItemCount3 = MathHelper.ParseInt(data["NeedItemCount3"]),
-                NeedItemUid4 = MathHelper.ParseInt(data["NeedItemUid4"]),
-                NeedItemCount4 = MathHelper.ParseInt(data["NeedItemCount4"]),
+                Uid = reader.Int("Uid"),
+                Memo = reader.String("Memo"),
+                SourceItemUid = reader.Int("SourceItemUid"),
+                ResultItemUid = reader.Int("ResultItemUid"),
+                Upgrade = reader.Int("Upgrade"),
+                MaxUpgrade = reader.Int("MaxUpgrade"),
+                Rate = reader.Int("Rate"),
+                NeedCurrencyType = ConvertCurrencyType(reader.String("NeedCurrencyType")),
+                NeedCurrencyValue = reader.Int("NeedCurrencyValue"),
+                NeedItemUid1 = reader.Int("NeedItemUid1"),
+                NeedItemCount1 = reader.Int("NeedItemCount1"),
+                NeedItemUid2 = reader.Int("NeedItemUid2"),
+                NeedItemCount2 = reader.Int("NeedItemCount2"),
+                NeedItemUid3 = reader.Int("NeedItemUid3"),
+                NeedItemCount3 = reader.Int("NeedItemCount3"),
+                NeedItemUid4 = reader.Int("NeedItemUid4"),
+                NeedItemCount4 = reader.Int("NeedItemCount4"),
             };
         }
     }

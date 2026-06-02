@@ -36,15 +36,16 @@ namespace GGemCo2DCore
 
         protected override StruckTableItemSalvage BuildRow(Dictionary<string, string> data)
         {
+            TableRowReader reader = ReadRow(data);
             return new StruckTableItemSalvage
             {
-                Uid = MathHelper.ParseInt(data["Uid"]),
-                Memo = data["Memo"],
-                SourceItemUid = MathHelper.ParseInt(data["SourceItemUid"]),
-                NeedCurrencyType = ConvertCurrencyType(data["NeedCurrencyType"]),
-                NeedCurrencyValue = MathHelper.ParseInt(data["NeedCurrencyValue"]),
-                ResultItemUid = MathHelper.ParseInt(data["ResultItemUid"]),
-                ResultItemCount = MathHelper.ParseInt(data["ResultItemCount"]),
+                Uid = reader.Int("Uid"),
+                Memo = reader.String("Memo"),
+                SourceItemUid = reader.Int("SourceItemUid"),
+                NeedCurrencyType = ConvertCurrencyType(reader.String("NeedCurrencyType")),
+                NeedCurrencyValue = reader.Int("NeedCurrencyValue"),
+                ResultItemUid = reader.Int("ResultItemUid"),
+                ResultItemCount = reader.Int("ResultItemCount"),
             };
         }
     }

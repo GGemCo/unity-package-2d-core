@@ -17,12 +17,13 @@ namespace GGemCo2DCore
         public override string Key => ConfigAddressableTable.SimulationGrowth;
         protected override StruckTableSimulationGrowth BuildRow(Dictionary<string, string> data)
         {
+            TableRowReader reader = ReadRow(data);
             if (data == null) return null;
             return new StruckTableSimulationGrowth
             {
-                Uid = MathHelper.ParseInt(data["Uid"]),
-                ItemUid = MathHelper.ParseInt(data["ItemUid"]),
-                GrowthFileName = data["GrowthFileName"],
+                Uid = reader.Int("Uid"),
+                ItemUid = reader.Int("ItemUid"),
+                GrowthFileName = reader.String("GrowthFileName"),
             };
         }
     }

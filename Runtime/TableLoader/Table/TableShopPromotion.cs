@@ -42,16 +42,17 @@ namespace GGemCo2DCore
 
         protected override StruckTableShopPromotion BuildRow(Dictionary<string, string> data)
         {
-            string isEnabled = data.GetValueOrDefault("IsEnabled");
+            TableRowReader reader = ReadRow(data);
+            string isEnabled = reader.String("IsEnabled");
             return new StruckTableShopPromotion
             {
-                Uid = MathHelper.ParseInt(data.GetValueOrDefault("Uid")),
-                ShopItemUid = MathHelper.ParseInt(data.GetValueOrDefault("ShopItemUid")),
-                Memo = data.GetValueOrDefault("Memo"),
-                StrategyType = EnumHelper.ConvertEnum<ShopPromotionStrategyType>(data.GetValueOrDefault("StrategyType")),
-                TriggerExposureCount = Math.Max(0, MathHelper.ParseInt(data.GetValueOrDefault("TriggerExposureCount"))),
-                DiscountRate = Math.Min(100, Math.Max(0, MathHelper.ParseInt(data.GetValueOrDefault("DiscountRate")))),
-                Priority = MathHelper.ParseInt(data.GetValueOrDefault("Priority")),
+                Uid = reader.Int("Uid"),
+                ShopItemUid = reader.Int("ShopItemUid"),
+                Memo = reader.String("Memo"),
+                StrategyType = reader.Enum<ShopPromotionStrategyType>("StrategyType"),
+                TriggerExposureCount = Math.Max(0, reader.Int("TriggerExposureCount")),
+                DiscountRate = Math.Min(100, Math.Max(0, reader.Int("DiscountRate"))),
+                Priority = reader.Int("Priority"),
                 IsEnabled = string.IsNullOrWhiteSpace(isEnabled) || ConvertBoolean(isEnabled),
             };
         }

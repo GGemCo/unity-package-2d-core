@@ -26,17 +26,18 @@ namespace GGemCo2DCore
         
         protected override StruckTableAnimation BuildRow(Dictionary<string, string> data)
         {
+            TableRowReader reader = ReadRow(data);
             return new StruckTableAnimation
             {
-                Uid = MathHelper.ParseInt(data["Uid"]),
-                Name = data["Name"],
-                Type = EnumHelper.ConvertEnum<CharacterConstants.Type>(data["Type"]),
-                Controller = ConvertAnimationController(data["Controller"]),
-                PrefabName = data["PrefabName"],
-                DefaultFacingDirection8 = ConvertFacing(data["DefaultFacingDirection8"]),
-                Width = MathHelper.ParseFloat(data["Width"]),
-                Height = MathHelper.ParseFloat(data["Height"]),
-                MoveStep = MathHelper.ParseFloat(data["MoveStep"]),
+                Uid = reader.Int("Uid"),
+                Name = reader.String("Name"),
+                Type = reader.Enum<CharacterConstants.Type>("Type"),
+                Controller = ConvertAnimationController(reader.String("Controller")),
+                PrefabName = reader.String("PrefabName"),
+                DefaultFacingDirection8 = ConvertFacing(reader.String("DefaultFacingDirection8")),
+                Width = reader.Float("Width"),
+                Height = reader.Float("Height"),
+                MoveStep = reader.Float("MoveStep"),
             };
         }
     }

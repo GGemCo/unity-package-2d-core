@@ -8,17 +8,18 @@ namespace GGemCo2DCore
 
         protected override StruckTableCrowdControlKnockDown BuildRow(Dictionary<string, string> data)
         {
+            TableRowReader reader = ReadRow(data);
             var row = new StruckTableCrowdControlKnockDown
             {
-                CrowdControlUid = MathHelper.ParseInt(data.GetValueOrDefault("CrowdControlUid")),
-                DownWaitTime = MathHelper.ParseFloat(data.GetValueOrDefault("DownWaitTime")),
-                EndYMode = EnumHelper.ConvertEnum<CrowdControlConstants.EndYMode>(data.GetValueOrDefault("EndYMode")),
-                EndYOffset = MathHelper.ParseFloat(data.GetValueOrDefault("EndYOffset")),
-                EndYAbsolute = MathHelper.ParseFloat(data.GetValueOrDefault("EndYAbsolute")),
-                RecoverTime = MathHelper.ParseFloat(data.GetValueOrDefault("RecoverTime")),
-                IsStopOnWall = ConvertBoolean(data.GetValueOrDefault("IsStopOnWall")),
-                IsGroundOnly = ConvertBoolean(data.GetValueOrDefault("IsGroundOnly")),
-                IsAirOnly = ConvertBoolean(data.GetValueOrDefault("IsAirOnly")),
+                CrowdControlUid = reader.Int("CrowdControlUid"),
+                DownWaitTime = reader.Float("DownWaitTime"),
+                EndYMode = reader.Enum<CrowdControlConstants.EndYMode>("EndYMode"),
+                EndYOffset = reader.Float("EndYOffset"),
+                EndYAbsolute = reader.Float("EndYAbsolute"),
+                RecoverTime = reader.Float("RecoverTime"),
+                IsStopOnWall = reader.BoolYN("IsStopOnWall"),
+                IsGroundOnly = reader.BoolYN("IsGroundOnly"),
+                IsAirOnly = reader.BoolYN("IsAirOnly"),
             };
 
             return row.CrowdControlUid > 0 ? row : null;

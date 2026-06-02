@@ -112,34 +112,17 @@ namespace GGemCo2DCore
         /// <returns>변환된 퀘스트 테이블 행입니다.</returns>
         protected override StruckTableQuest BuildRow(Dictionary<string, string> data)
         {
+            TableRowReader reader = ReadRow(data);
             return new StruckTableQuest
             {
-                Uid = MathHelper.ParseInt(data["Uid"]),
-                Type = EnumHelper.ConvertEnum<QuestConstants.Type>(data["Type"]),
-                TriggerType = GetTriggerType(data),
-                Name = data["Name"],
-                FileName = data["FileName"],
-                MapUid = MathHelper.ParseInt(data["MapUid"]),
-                NpcUid = MathHelper.ParseInt(data["NpcUid"]),
+                Uid = reader.Int("Uid"),
+                Type = reader.Enum<QuestConstants.Type>("Type"),
+                TriggerType = reader.Enum<QuestConstants.TriggerType>("TriggerType"),
+                Name = reader.String("Name"),
+                FileName = reader.String("FileName"),
+                MapUid = reader.Int("MapUid"),
+                NpcUid = reader.Int("NpcUid"),
             };
-        }
-
-        /// <summary>
-        /// 테이블의 TriggerType 문자열을 퀘스트 시작 조건 enum으로 변환합니다.
-        /// </summary>
-        /// <param name="data">퀘스트 테이블 행 사전입니다.</param>
-        /// <returns>파싱된 시작 조건입니다.</returns>
-        private static QuestConstants.TriggerType GetTriggerType(Dictionary<string, string> data)
-        {
-            if (!data.ContainsKey("TriggerType"))
-            {
-                return QuestConstants.TriggerType.TalkToNpc;
-            }
-
-            string triggerType = data.GetValueOrDefault("TriggerType");
-            return string.IsNullOrWhiteSpace(triggerType)
-                ? QuestConstants.TriggerType.None
-                : EnumHelper.ConvertEnum<QuestConstants.TriggerType>(triggerType);
         }
 
         /// <summary>

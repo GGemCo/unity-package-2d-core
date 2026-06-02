@@ -34,32 +34,33 @@ namespace GGemCo2DCore
 
         protected override StruckTableVfxEffect BuildRow(Dictionary<string, string> data)
         {
+            TableRowReader reader = ReadRow(data);
             return new StruckTableVfxEffect
             {
-                Uid = MathHelper.ParseInt(data.GetValueOrDefault("Uid")),
-                Name = data.GetValueOrDefault("Name"),
-                VfxUid = MathHelper.ParseInt(data.GetValueOrDefault("VfxUid", "0")),
-                Category = EnumHelper.ConvertEnum<VfxConstants.Category>(data.GetValueOrDefault("Category")),
-                EffectType = EnumHelper.ConvertEnum<VfxConstants.EffectType>(data.GetValueOrDefault("EffectType")),
-                PrefabPath = data.GetValueOrDefault("PrefabPath"),
-                AnimationController = EnumHelper.ConvertEnum<ConfigCommon.AnimationController>(data.GetValueOrDefault("AnimationController")),
-                Width = MathHelper.ParseInt(data.GetValueOrDefault("Width")),
-                Height = MathHelper.ParseInt(data.GetValueOrDefault("Height")),
-                ColliderSize = ConvertVector2(data.GetValueOrDefault("ColliderSize")),
-                NeedRotation = ConvertBoolean(data.GetValueOrDefault("NeedRotation")),
-                Color = data.GetValueOrDefault("Color"),
-                DefaultDirection = ConfigCommon.GetDirectionType(data.GetValueOrDefault("DefaultDirection", "Left")),
+                Uid = reader.Int("Uid"),
+                Name = reader.String("Name"),
+                VfxUid = reader.Int("VfxUid", 0),
+                Category = reader.Enum<VfxConstants.Category>("Category"),
+                EffectType = reader.Enum<VfxConstants.EffectType>("EffectType"),
+                PrefabPath = reader.String("PrefabPath"),
+                AnimationController = reader.Enum<ConfigCommon.AnimationController>("AnimationController"),
+                Width = reader.Int("Width"),
+                Height = reader.Int("Height"),
+                ColliderSize = reader.Vector2("ColliderSize"),
+                NeedRotation = reader.BoolYN("NeedRotation"),
+                Color = reader.String("Color"),
+                DefaultDirection = ConfigCommon.GetDirectionType(reader.String("DefaultDirection", "Left")),
                 // SortingLayer: None/빈 값이면 기존 런타임 기본 정렬 정책(기존 동작)을 사용합니다.
-                SortingLayer = ParseSortingLayer(data.GetValueOrDefault("SortingLayer", "None")),
+                SortingLayer = ParseSortingLayer(reader.String("SortingLayer", "None")),
                 // SortingOrder: 0이면 기존 런타임 기본 정렬 정책(기존 동작)을 사용합니다.
-                SortingOrder = MathHelper.ParseInt(data.GetValueOrDefault("SortingOrder", "0")),
-                LifecycleType = ParseLifecycleType(data.GetValueOrDefault("LifecycleType")),
-                AttachType = ParseAttachType(data.GetValueOrDefault("AttachType")),
-                FollowMode = ParseFollowMode(data.GetValueOrDefault("FollowMode")),
-                FollowAnchorMode = ParseFollowAnchorMode(data.GetValueOrDefault("FollowAnchorMode")),
-                PoolPrewarmCount = MathHelper.ParseInt(data.GetValueOrDefault("PoolPrewarmCount")),
-                PoolMaxSize = MathHelper.ParseInt(data.GetValueOrDefault("PoolMaxSize")),
-                UseUnscaledTime = ConvertBoolean(data.GetValueOrDefault("UseUnscaledTime")),
+                SortingOrder = reader.Int("SortingOrder", 0),
+                LifecycleType = ParseLifecycleType(reader.String("LifecycleType")),
+                AttachType = ParseAttachType(reader.String("AttachType")),
+                FollowMode = ParseFollowMode(reader.String("FollowMode")),
+                FollowAnchorMode = ParseFollowAnchorMode(reader.String("FollowAnchorMode")),
+                PoolPrewarmCount = reader.Int("PoolPrewarmCount"),
+                PoolMaxSize = reader.Int("PoolMaxSize"),
+                UseUnscaledTime = reader.BoolYN("UseUnscaledTime"),
             };
         }
 

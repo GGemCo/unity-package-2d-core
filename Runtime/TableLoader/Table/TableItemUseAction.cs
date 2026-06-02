@@ -44,12 +44,13 @@ namespace GGemCo2DCore
 
         protected override StruckTableItemUseAction BuildRow(Dictionary<string, string> d)
         {
-            int uid = MathHelper.ParseInt(d.GetValueOrDefault("Uid"));
-            int itemUseUid = MathHelper.ParseInt(d.GetValueOrDefault("ItemUseUid"));
-            int order = MathHelper.ParseInt(d.GetValueOrDefault("Order"));
-            var type = EnumHelper.ConvertEnum<ItemUseActionType>(d.GetValueOrDefault("ActionType"));
+            TableRowReader reader = ReadRow(d);
+            int uid = reader.Int("Uid");
+            int itemUseUid = reader.Int("ItemUseUid");
+            int order = reader.Int("Order");
+            var type = reader.Enum<ItemUseActionType>("ActionType");
 
-            string name = d.GetValueOrDefault("Name");
+            string name = reader.String("Name");
             if (string.IsNullOrWhiteSpace(name))
             {
                 name = $"ItemUseAction_{uid}";
@@ -62,12 +63,12 @@ namespace GGemCo2DCore
                 ItemUseUid = itemUseUid,
                 Order = order,
                 ActionType = type,
-                ParamIntA = MathHelper.ParseInt(d.GetValueOrDefault("ParamIntA")),
-                ParamIntB = MathHelper.ParseInt(d.GetValueOrDefault("ParamIntB")),
-                ParamFloatA = MathHelper.ParseFloat(d.GetValueOrDefault("ParamFloatA")),
-                ParamFloatB = MathHelper.ParseFloat(d.GetValueOrDefault("ParamFloatB")),
-                ParamStringA = d.GetValueOrDefault("ParamStringA"),
-                ParamStringB = d.GetValueOrDefault("ParamStringB"),
+                ParamIntA = reader.Int("ParamIntA"),
+                ParamIntB = reader.Int("ParamIntB"),
+                ParamFloatA = reader.Float("ParamFloatA"),
+                ParamFloatB = reader.Float("ParamFloatB"),
+                ParamStringA = reader.String("ParamStringA"),
+                ParamStringB = reader.String("ParamStringB"),
             };
         }
 

@@ -133,6 +133,16 @@ namespace GGemCo2DCore
         protected abstract TRow BuildRow(Dictionary<string, string> data);
 
         /// <summary>
+        /// BuildRow에서 사용할 테이블 행 파서를 생성합니다.
+        /// </summary>
+        /// <param name="data">컬럼명과 문자열 값으로 구성된 테이블 행 데이터입니다.</param>
+        /// <returns>강타입 값을 안전하게 읽기 위한 행 파서입니다.</returns>
+        protected TableRowReader ReadRow(IReadOnlyDictionary<string, string> data)
+        {
+            return new TableRowReader(data, GetType().Name);
+        }
+
+        /// <summary>
         /// 내부 캐시에서 UID로 행을 조회합니다. 없으면 경고 로그 후 null 반환.
         /// </summary>
         /// <param name="uid">행 UID</param>

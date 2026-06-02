@@ -41,8 +41,9 @@ namespace GGemCo2DCore
 
         protected override StruckTableItemRollRule BuildRow(Dictionary<string, string> data)
         {
+            TableRowReader reader = ReadRow(data);
             bool allowDup = false;
-            var token = data.GetValueOrDefault("AllowDuplicateGroup");
+            var token = reader.String("AllowDuplicateGroup");
             if (!string.IsNullOrWhiteSpace(token))
             {
                 // true/false 또는 0/1 모두 허용
@@ -52,12 +53,12 @@ namespace GGemCo2DCore
 
             return new StruckTableItemRollRule
             {
-                Uid = MathHelper.ParseInt(data["Uid"]),
-                Rarity = EnumHelper.ConvertEnum<ItemConstants.Class>(data.GetValueOrDefault("Rarity")),
-                MinAffixCount = MathHelper.ParseInt(data.GetValueOrDefault("MinAffixCount")),
-                MaxAffixCount = MathHelper.ParseInt(data.GetValueOrDefault("MaxAffixCount")),
-                MaxPrefix = MathHelper.ParseInt(data.GetValueOrDefault("MaxPrefix")),
-                MaxSuffix = MathHelper.ParseInt(data.GetValueOrDefault("MaxSuffix")),
+                Uid = reader.Int("Uid"),
+                Rarity = reader.Enum<ItemConstants.Class>("Rarity"),
+                MinAffixCount = reader.Int("MinAffixCount"),
+                MaxAffixCount = reader.Int("MaxAffixCount"),
+                MaxPrefix = reader.Int("MaxPrefix"),
+                MaxSuffix = reader.Int("MaxSuffix"),
                 AllowDuplicateGroup = allowDup,
             };
         }

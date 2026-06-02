@@ -70,14 +70,15 @@ namespace GGemCo2DCore
 
         protected override StruckTableItemAffixPool BuildRow(Dictionary<string, string> data)
         {
+            TableRowReader reader = ReadRow(data);
             return new StruckTableItemAffixPool
             {
-                Uid = MathHelper.ParseInt(data.GetValueOrDefault("Uid")),
-                Category = EnumHelper.ConvertEnum<ItemConstants.Category>(data.GetValueOrDefault("Category")),
-                SubCategory = EnumHelper.ConvertEnum<ItemConstants.SubCategory>(data.GetValueOrDefault("SubCategory")),
-                ItemUid = MathHelper.ParseInt(data.GetValueOrDefault("ItemUid")),
-                AffixUid = MathHelper.ParseInt(data.GetValueOrDefault("AffixUid")),
-                WeightOverride = MathHelper.ParseInt(data.GetValueOrDefault("WeightOverride")),
+                Uid = reader.Int("Uid"),
+                Category = reader.Enum<ItemConstants.Category>("Category"),
+                SubCategory = reader.Enum<ItemConstants.SubCategory>("SubCategory"),
+                ItemUid = reader.Int("ItemUid"),
+                AffixUid = reader.Int("AffixUid"),
+                WeightOverride = reader.Int("WeightOverride"),
             };
         }
     }

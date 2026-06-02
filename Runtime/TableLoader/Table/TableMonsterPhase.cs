@@ -77,11 +77,12 @@ namespace GGemCo2DCore
         /// <returns>파싱된 페이즈 행입니다.</returns>
         protected override StruckTableMonsterPhase BuildRow(Dictionary<string, string> data)
         {
+            TableRowReader reader = ReadRow(data);
             return new StruckTableMonsterPhase
             {
-                Uid = MathHelper.ParseInt(data["Uid"]),
-                MonsterUid = MathHelper.ParseInt(data["MonsterUid"]),
-                PhaseIndex = MathHelper.ParseInt(data["PhaseIndex"]),
+                Uid = reader.Int("Uid"),
+                MonsterUid = reader.Int("MonsterUid"),
+                PhaseIndex = reader.Int("PhaseIndex"),
                 Memo = data.TryGetValue("Memo", out string memo) ? memo : string.Empty,
                 BtFileName = data.TryGetValue("BtFileName", out string btFileName) ? btFileName : string.Empty,
                 EndHpPercent = data.TryGetValue("EndHpPercent", out string endHpPercent)

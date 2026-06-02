@@ -28,16 +28,17 @@ namespace GGemCo2DCore
         
         protected override StruckTableItemVisual BuildRow(Dictionary<string, string> data)
         {
-            int uid = MathHelper.ParseInt(data.GetValueOrDefault("Uid"));
+            TableRowReader reader = ReadRow(data);
+            int uid = reader.Int("Uid");
             return new StruckTableItemVisual
             {
                 Uid = uid,
-                Name = data.GetValueOrDefault("Name"),
-                ItemUid = MathHelper.ParseInt(data.GetValueOrDefault("ItemUid")),
-                VisualType = EnumHelper.ConvertEnum<ItemConstants.DropVisualType>(data.GetValueOrDefault("VisualType")),
-                VfxUid = MathHelper.ParseInt(data.GetValueOrDefault("VfxUid")),
-                Scale = MathHelper.ParseFloat(data.GetValueOrDefault("Scale")),
-                OffsetY = MathHelper.ParseFloat(data.GetValueOrDefault("OffsetY")),
+                Name = reader.String("Name"),
+                ItemUid = reader.Int("ItemUid"),
+                VisualType = reader.Enum<ItemConstants.DropVisualType>("VisualType"),
+                VfxUid = reader.Int("VfxUid"),
+                Scale = reader.Float("Scale"),
+                OffsetY = reader.Float("OffsetY"),
             };
         }
         

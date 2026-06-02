@@ -16,6 +16,7 @@ namespace GGemCo2DCore
 
         protected override StruckTableSoundSfx BuildRow(Dictionary<string, string> data)
         {
+            TableRowReader reader = ReadRow(data);
             return TableSoundResourceParser.BuildResourceRow<StruckTableSoundSfx>(data, SoundConstants.Type.Sfx);
         }
 

@@ -45,34 +45,35 @@ namespace GGemCo2DCore
 
         protected override StruckTableCrowdControl BuildRow(Dictionary<string, string> data)
         {
+            TableRowReader reader = ReadRow(data);
             // 필수
             var row = new StruckTableCrowdControl
             {
-                Uid = MathHelper.ParseInt(data.GetValueOrDefault("Uid")),
-                Name = data.GetValueOrDefault("Name"),
+                Uid = reader.Int("Uid"),
+                Name = reader.String("Name"),
 
-                Type = EnumHelper.ConvertEnum<CrowdControlConstants.Type>(data.GetValueOrDefault("Type")),
-                DirectionType = EnumHelper.ConvertEnum<CrowdControlConstants.DirectionType>(data.GetValueOrDefault("DirectionType")),
+                Type = reader.Enum<CrowdControlConstants.Type>("Type"),
+                DirectionType = reader.Enum<CrowdControlConstants.DirectionType>("DirectionType"),
 
-                FixedDirectionX = MathHelper.ParseFloat(data.GetValueOrDefault("FixedDirectionX")),
-                FixedDirectionY = MathHelper.ParseFloat(data.GetValueOrDefault("FixedDirectionY")),
+                FixedDirectionX = reader.Float("FixedDirectionX"),
+                FixedDirectionY = reader.Float("FixedDirectionY"),
 
-                Distance = MathHelper.ParseFloat(data.GetValueOrDefault("Distance")),
-                EaseType = EnumHelper.ConvertEnum<Easing.EaseType>(data.GetValueOrDefault("EaseType")),
+                Distance = reader.Float("Distance"),
+                EaseType = reader.Enum<Easing.EaseType>("EaseType"),
 
-                Duration = MathHelper.ParseFloat(data.GetValueOrDefault("Duration")),
+                Duration = reader.Float("Duration"),
 
-                IsUseKnockbackStatus = ConvertBoolean(data.GetValueOrDefault("IsUseKnockbackStatus")),
-                IsUseDontControlStatus = ConvertBoolean(data.GetValueOrDefault("IsUseDontControlStatus")),
+                IsUseKnockbackStatus = reader.BoolYN("IsUseKnockbackStatus"),
+                IsUseDontControlStatus = reader.BoolYN("IsUseDontControlStatus"),
 
-                StaggerAnimationName = data.GetValueOrDefault("StaggerAnimationName"),
+                StaggerAnimationName = reader.String("StaggerAnimationName"),
             };
 
             // 유효성 최소 보정
             if (row.Uid <= 0) return null;
 
             // 누락 시 기본값 보정
-            if (string.IsNullOrWhiteSpace(data.GetValueOrDefault("EaseType")))
+            if (string.IsNullOrWhiteSpace(reader.String("EaseType")))
                 row.EaseType = Easing.EaseType.Linear;
 
             return row;

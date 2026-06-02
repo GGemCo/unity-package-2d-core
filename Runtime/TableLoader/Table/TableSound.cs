@@ -26,51 +26,21 @@ namespace GGemCo2DCore
         
         protected override StruckTableSound BuildRow(Dictionary<string, string> data)
         {
-            SoundConstants.Type type = EnumHelper.ConvertEnum<SoundConstants.Type>(GetValue(data, "Type", GetValue(data, "SoundType", "None")));
+            TableRowReader reader = ReadRow(data);
+            SoundConstants.Type type = reader.Enum<SoundConstants.Type>("Type", reader.Enum<SoundConstants.Type>("SoundType"));
             return new StruckTableSound
             {
-                Uid = MathHelper.ParseInt(data["Uid"]),
-                Name = GetValue(data, "Name", string.Empty),
+                Uid = reader.Int("Uid"),
+                Name = reader.String("Name", string.Empty),
                 Type = type,
-                SubType = EnumHelper.ConvertEnum<SoundConstants.SubType>(GetValue(data, "SubType", "None")),
-                ResolveMode = ResolveModeOrDefault(data),
-                SelectionMode = EnumHelper.ConvertEnum<SoundConstants.SelectionMode>(GetValue(data, "SelectionMode", "WeightedRandom")),
-                VolumeScale = MathHelper.ParseFloat(GetValue(data, "VolumeScale", "1")),
-                NoRepeatRecentCount = MathHelper.ParseInt(GetValue(data, "NoRepeatRecentCount", "0")),
-                FallbackResourceUid = MathHelper.ParseInt(GetValue(data, "FallbackResourceUid", "0")),
-                UseIntroScene = ConvertBoolean(GetValue(data, "UseIntroScene", "N")),
+                SubType = reader.Enum<SoundConstants.SubType>("SubType"),
+                ResolveMode = reader.Enum<SoundConstants.ResolveMode>("ResolveMode"),
+                SelectionMode = reader.Enum<SoundConstants.SelectionMode>("SelectionMode", SoundConstants.SelectionMode.WeightedRandom),
+                VolumeScale = reader.Float("VolumeScale", 1f),
+                NoRepeatRecentCount = reader.Int("NoRepeatRecentCount", 0),
+                FallbackResourceUid = reader.Int("FallbackResourceUid", 0),
+                UseIntroScene = reader.BoolYN("UseIntroScene"),
             };
-        }
-
-        /// <summary>
-        /// sound 테이블의 ResolveMode를 읽고 비어 있으면 Variant를 기본값으로 사용합니다.
-        /// </summary>
-        /// <param name="data">테이블 행 원본 값입니다.</param>
-        /// <returns>적용할 사운드 해석 방식입니다.</returns>
-        private static SoundConstants.ResolveMode ResolveModeOrDefault(Dictionary<string, string> data)
-        {
-            string raw = GetValue(data, "ResolveMode", string.Empty);
-            if (!string.IsNullOrWhiteSpace(raw))
-                return EnumHelper.ConvertEnum<SoundConstants.ResolveMode>(raw);
-
-            return SoundConstants.ResolveMode.Variant;
-        }
-
-        /// <summary>
-        /// 헤더가 없을 수 있는 마이그레이션 중간 테이블에서 값을 안전하게 읽습니다.
-        /// </summary>
-        /// <param name="data">헤더명과 값의 사전입니다.</param>
-        /// <param name="key">조회할 헤더명입니다.</param>
-        /// <param name="defaultValue">헤더가 없거나 값이 비어 있을 때 사용할 기본값입니다.</param>
-        /// <returns>조회된 값 또는 기본값입니다.</returns>
-        private static string GetValue(Dictionary<string, string> data, string key, string defaultValue)
-        {
-            if (data == null || string.IsNullOrWhiteSpace(key))
-                return defaultValue;
-
-            return data.TryGetValue(key, out string value) && !string.IsNullOrWhiteSpace(value)
-                ? value
-                : defaultValue;
         }
 
         /// <summary>

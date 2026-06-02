@@ -42,15 +42,16 @@ namespace GGemCo2DCore
 
         protected override StruckTableItemUse BuildRow(Dictionary<string, string> d)
         {
-            int uid = MathHelper.ParseInt(d.GetValueOrDefault("Uid"));
-            int itemUid = MathHelper.ParseInt(d.GetValueOrDefault("ItemUid"));
-            int consume = Math.Max(1, MathHelper.ParseInt(d.GetValueOrDefault("ConsumeCount")));
-            float cd = MathHelper.ParseFloat(d.GetValueOrDefault("CooldownOverride"));
+            TableRowReader reader = ReadRow(d);
+            int uid = reader.Int("Uid");
+            int itemUid = reader.Int("ItemUid");
+            int consume = Math.Max(1, reader.Int("ConsumeCount"));
+            float cd = reader.Float("CooldownOverride");
 
-            var failPolicy = EnumHelper.ConvertEnum<ItemUseFailPolicy>(d.GetValueOrDefault("FailPolicy"));
+            var failPolicy = reader.Enum<ItemUseFailPolicy>("FailPolicy");
 
             // Name은 선택
-            string name = d.GetValueOrDefault("Name");
+            string name = reader.String("Name");
             if (string.IsNullOrWhiteSpace(name))
             {
                 name = $"ItemUse_{uid}";

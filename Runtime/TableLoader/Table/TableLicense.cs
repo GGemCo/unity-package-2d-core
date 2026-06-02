@@ -68,15 +68,16 @@ namespace GGemCo2DCore
         /// <returns>변환된 라이센스 테이블 행입니다.</returns>
         protected override StruckTableLicense BuildRow(Dictionary<string, string> data)
         {
+            TableRowReader reader = ReadRow(data);
             return new StruckTableLicense
             {
-                Uid = MathHelper.ParseInt(data.GetValueOrDefault("Uid")),
-                Key = NormalizeKey(data.GetValueOrDefault("Key")),
-                Name = data.GetValueOrDefault("Name"),
-                ValueType = GetValueType(data.GetValueOrDefault("ValueType")),
-                DefaultValue = data.GetValueOrDefault("DefaultValue"),
-                Category = data.GetValueOrDefault("Category"),
-                Memo = data.GetValueOrDefault("Memo"),
+                Uid = reader.Int("Uid"),
+                Key = NormalizeKey(reader.String("Key")),
+                Name = reader.String("Name"),
+                ValueType = GetValueType(reader.String("ValueType")),
+                DefaultValue = reader.String("DefaultValue"),
+                Category = reader.String("Category"),
+                Memo = reader.String("Memo"),
             };
         }
 

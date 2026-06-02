@@ -93,20 +93,21 @@ namespace GGemCo2DCore
 
         protected override StruckTableShopItem BuildRow(Dictionary<string, string> data)
         {
+            TableRowReader reader = ReadRow(data);
             return new StruckTableShopItem
             {
-                Uid = MathHelper.ParseInt(data.GetValueOrDefault("Uid")),
-                ShopUid = MathHelper.ParseInt(data.GetValueOrDefault("ShopUid")),
-                Memo = data.GetValueOrDefault("Memo"),
-                SlotIndex = MathHelper.ParseInt(data.GetValueOrDefault("SlotIndex"), -1),
-                ItemUid = MathHelper.ParseInt(data.GetValueOrDefault("ItemUid")),
-                CurrencyType = ConvertCurrencyType(data.GetValueOrDefault("CurrencyType")),
-                CurrencyValue = MathHelper.ParseInt(data.GetValueOrDefault("CurrencyValue")),
-                MaxBuyCount = MathHelper.ParseInt(data.GetValueOrDefault("MaxBuyCount"), 1),
-                Rate = MathHelper.ParseInt(data.GetValueOrDefault("Rate"), 100),
-                UniqueGroup = MathHelper.ParseInt(data.GetValueOrDefault("UniqueGroup")),
-                PurchaseLimitCount = MathHelper.ParseInt(data.GetValueOrDefault("PurchaseLimitCount")),
-                SoldOutDisplayType = EnumHelper.ConvertEnum<ShopSoldOutDisplayType>(data.GetValueOrDefault("SoldOutDisplayType")),
+                Uid = reader.Int("Uid"),
+                ShopUid = reader.Int("ShopUid"),
+                Memo = reader.String("Memo"),
+                SlotIndex = reader.Int("SlotIndex", -1),
+                ItemUid = reader.Int("ItemUid"),
+                CurrencyType = ConvertCurrencyType(reader.String("CurrencyType")),
+                CurrencyValue = reader.Int("CurrencyValue"),
+                MaxBuyCount = reader.Int("MaxBuyCount", 1),
+                Rate = reader.Int("Rate", 100),
+                UniqueGroup = reader.Int("UniqueGroup"),
+                PurchaseLimitCount = reader.Int("PurchaseLimitCount"),
+                SoldOutDisplayType = reader.Enum<ShopSoldOutDisplayType>("SoldOutDisplayType"),
             };
         }
 

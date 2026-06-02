@@ -48,30 +48,31 @@ namespace GGemCo2DCore
         /// <returns>파싱된 레이저 정적 데이터입니다.</returns>
         protected override StruckTableLaser BuildRow(Dictionary<string, string> data)
         {
+            TableRowReader reader = ReadRow(data);
             return new StruckTableLaser
             {
-                Uid = GetInt(data, 0, "Uid"),
-                Name = GetString(data, string.Empty, "Name"),
-                VfxUid = GetInt(data, 0, "VfxUid", "EffectUid"),
-                VfxScale = GetFloat(data, 1f, "VfxScale", "EffectScale"),
-                VfxPresentationPolicy = GetEnum(data, LaserConstants.VfxPresentationPolicy.StretchToBeam, "VfxPresentationPolicy", "PresentationPolicy"),
-                StartPosition = GetVector2(data, Vector2.zero, "StartPosition"),
-                HitVfxUid = GetInt(data, 0, "HitVfxUid", "HitEffectUid"),
-                Count = Mathf.Max(1, GetInt(data, 1, "Count")),
-                SecDelayByOne = Mathf.Max(0f, GetFloat(data, 0f, "SecDelayByOne")),
-                RotateByMoveDirection = GetBool(data, true, "RotateByMoveDirection"),
-                MaxDistance = Mathf.Max(0.01f, GetFloat(data, 10f, "MaxDistance")),
-                Duration = Mathf.Max(0f, GetFloat(data, 0.25f, "Duration", "DurationSeconds")),
-                DamageStartDelay = Mathf.Max(0f, GetFloat(data, 0f, "DamageStartDelay", "DamageStartDelaySeconds")),
-                DamageActiveDuration = NormalizeDamageActiveDuration(GetFloat(data, -1f, "DamageActiveDuration", "DamageActiveDurationSeconds")),
-                DamageTickInterval = Mathf.Max(0f, GetFloat(data, 0f, "DamageTickInterval", "DamageTickIntervalSeconds")),
-                DamageTickOnStart = GetBool(data, true, "DamageTickOnStart"),
-                BlockMode = GetEnum(data, LaserConstants.BlockMode.StopAtGroundOrHostile, "BlockMode"),
-                HitMode = GetEnum(data, LaserConstants.HitMode.FirstHitOnly, "HitMode"),
-                AimUpdateMode = GetEnum(data, LaserConstants.AimUpdateMode.Snapshot, "AimUpdateMode"),
-                RaycastDirectionMode = GetEnum(data, LaserConstants.RaycastDirectionMode.TowardTarget, "RaycastDirectionMode"),
-                RaycastAngleDeg = GetFloat(data, 0f, "RaycastAngleDeg", "RayAngleDeg"),
-                VfxAngleSyncMode = GetEnum(data, LaserConstants.VfxAngleSyncMode.FollowRaycast, "VfxAngleSyncMode"),
+                Uid = GetInt(reader, 0, "Uid"),
+                Name = GetString(reader, string.Empty, "Name"),
+                VfxUid = GetInt(reader, 0, "VfxUid", "EffectUid"),
+                VfxScale = GetFloat(reader, 1f, "VfxScale", "EffectScale"),
+                VfxPresentationPolicy = GetEnum(reader, LaserConstants.VfxPresentationPolicy.StretchToBeam, "VfxPresentationPolicy", "PresentationPolicy"),
+                StartPosition = GetVector2(reader, Vector2.zero, "StartPosition"),
+                HitVfxUid = GetInt(reader, 0, "HitVfxUid", "HitEffectUid"),
+                Count = Mathf.Max(1, GetInt(reader, 1, "Count")),
+                SecDelayByOne = Mathf.Max(0f, GetFloat(reader, 0f, "SecDelayByOne")),
+                RotateByMoveDirection = GetBool(reader, true, "RotateByMoveDirection"),
+                MaxDistance = Mathf.Max(0.01f, GetFloat(reader, 10f, "MaxDistance")),
+                Duration = Mathf.Max(0f, GetFloat(reader, 0.25f, "Duration", "DurationSeconds")),
+                DamageStartDelay = Mathf.Max(0f, GetFloat(reader, 0f, "DamageStartDelay", "DamageStartDelaySeconds")),
+                DamageActiveDuration = NormalizeDamageActiveDuration(GetFloat(reader, -1f, "DamageActiveDuration", "DamageActiveDurationSeconds")),
+                DamageTickInterval = Mathf.Max(0f, GetFloat(reader, 0f, "DamageTickInterval", "DamageTickIntervalSeconds")),
+                DamageTickOnStart = GetBool(reader, true, "DamageTickOnStart"),
+                BlockMode = GetEnum(reader, LaserConstants.BlockMode.StopAtGroundOrHostile, "BlockMode"),
+                HitMode = GetEnum(reader, LaserConstants.HitMode.FirstHitOnly, "HitMode"),
+                AimUpdateMode = GetEnum(reader, LaserConstants.AimUpdateMode.Snapshot, "AimUpdateMode"),
+                RaycastDirectionMode = GetEnum(reader, LaserConstants.RaycastDirectionMode.TowardTarget, "RaycastDirectionMode"),
+                RaycastAngleDeg = GetFloat(reader, 0f, "RaycastAngleDeg", "RayAngleDeg"),
+                VfxAngleSyncMode = GetEnum(reader, LaserConstants.VfxAngleSyncMode.FollowRaycast, "VfxAngleSyncMode"),
             };
         }
 
@@ -101,27 +102,27 @@ namespace GGemCo2DCore
         /// <summary>
         /// 문자열 값을 정수로 변환합니다.
         /// </summary>
-        private static int GetInt(Dictionary<string, string> data, int fallback, params string[] keys)
+        private static int GetInt(TableRowReader reader, int fallback, params string[] keys)
         {
-            string value = GetString(data, null, keys);
+            string value = GetString(reader, null, keys);
             return string.IsNullOrWhiteSpace(value) ? fallback : MathHelper.ParseInt(value);
         }
 
         /// <summary>
         /// 문자열 값을 실수로 변환합니다.
         /// </summary>
-        private static float GetFloat(Dictionary<string, string> data, float fallback, params string[] keys)
+        private static float GetFloat(TableRowReader reader, float fallback, params string[] keys)
         {
-            string value = GetString(data, null, keys);
+            string value = GetString(reader, null, keys);
             return string.IsNullOrWhiteSpace(value) ? fallback : MathHelper.ParseFloat(value);
         }
 
         /// <summary>
         /// 문자열 값을 bool로 변환합니다.
         /// </summary>
-        private static bool GetBool(Dictionary<string, string> data, bool fallback, params string[] keys)
+        private static bool GetBool(TableRowReader reader, bool fallback, params string[] keys)
         {
-            string value = GetString(data, null, keys);
+            string value = GetString(reader, null, keys);
             if (string.IsNullOrWhiteSpace(value))
                 return fallback;
 
@@ -133,28 +134,28 @@ namespace GGemCo2DCore
         /// <summary>
         /// 문자열 값을 enum으로 변환합니다.
         /// </summary>
-        private static TEnum GetEnum<TEnum>(Dictionary<string, string> data, TEnum fallback, params string[] keys)
+        private static TEnum GetEnum<TEnum>(TableRowReader reader, TEnum fallback, params string[] keys)
             where TEnum : struct, Enum
         {
-            string value = GetString(data, null, keys);
+            string value = GetString(reader, null, keys);
             return string.IsNullOrWhiteSpace(value) ? fallback : EnumHelper.ConvertEnum<TEnum>(value);
         }
 
         /// <summary>
         /// 문자열 값을 Vector2로 변환합니다.
         /// </summary>
-        private static Vector2 GetVector2(Dictionary<string, string> data, Vector2 fallback, params string[] keys)
+        private static Vector2 GetVector2(TableRowReader reader, Vector2 fallback, params string[] keys)
         {
-            string value = GetString(data, null, keys);
+            string value = GetString(reader, null, keys);
             return string.IsNullOrWhiteSpace(value) ? fallback : DefaultTable<StruckTableLaser>.ConvertVector2(value);
         }
 
         /// <summary>
         /// 여러 후보 키 중 첫 번째 문자열 값을 반환합니다.
         /// </summary>
-        private static string GetString(Dictionary<string, string> data, string fallback, params string[] keys)
+        private static string GetString(TableRowReader reader, string fallback, params string[] keys)
         {
-            if (data == null || keys == null)
+            if (keys == null)
                 return fallback;
 
             for (int i = 0; i < keys.Length; i++)
@@ -163,7 +164,8 @@ namespace GGemCo2DCore
                 if (string.IsNullOrWhiteSpace(key))
                     continue;
 
-                if (data.TryGetValue(key, out string value) && !string.IsNullOrWhiteSpace(value))
+                string value = reader.String(key);
+                if (!string.IsNullOrWhiteSpace(value))
                     return value;
             }
 

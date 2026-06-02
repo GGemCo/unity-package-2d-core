@@ -34,13 +34,14 @@ namespace GGemCo2DCore
 
         protected override StruckTableItemDropGroup BuildRow(Dictionary<string, string> data)
         {
+            TableRowReader reader = ReadRow(data);
             return new StruckTableItemDropGroup
             {
-                Uid = MathHelper.ParseInt(data["Uid"]),
-                Memo = data["Memo"],
-                Type = EnumHelper.ConvertEnum<ItemManager.ItemDropGroup>(data["Type"]),
-                Value = data["Value"],
-                Rate = MathHelper.ParseInt(data["Rate"]),
+                Uid = reader.Int("Uid"),
+                Memo = reader.String("Memo"),
+                Type = reader.Enum<ItemManager.ItemDropGroup>("Type"),
+                Value = reader.String("Value"),
+                Rate = reader.Int("Rate"),
             };
         }
         public Dictionary<int, List<StruckTableItemDropGroup>> GetDropGroups()

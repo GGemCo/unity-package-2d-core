@@ -99,26 +99,27 @@ namespace GGemCo2DCore
         /// <returns>파싱된 맵 테이블 행 데이터입니다.</returns>
         protected override StruckTableMap BuildRow(Dictionary<string, string> data)
         {
+            TableRowReader reader = ReadRow(data);
             return new StruckTableMap
             {
-                Uid = MathHelper.ParseInt(data["Uid"]),
-                Name = data["Name"],
-                Chapter = MathHelper.ParseInt(data["Chapter"]),
-                Type = EnumHelper.ConvertEnum<MapConstants.Type>(data["Type"]),
-                Subtype = EnumHelper.ConvertEnum<MapConstants.SubType>(data["Subtype"]),
-                FolderName = data["FolderName"],
-                PlayerSpawnPosition = ConvertPlayerSpawnPosition(data["PlayerSpawnPosition"]),
-                PlayerDeadSpawnUid = MathHelper.ParseInt(data["PlayerDeadSpawnUid"]),
-                BgmUid = MathHelper.ParseInt(data["BgmUid"]),
-                UseCameraFollowOffset = ConvertBoolean(data.GetValueOrDefault("UseCameraFollowOffset")),
-                CameraFollowOffset = ConvertVector2(data.GetValueOrDefault("CameraFollowOffset")),
-                UseCameraFollowDeadZone = ConvertBoolean(data.GetValueOrDefault("UseCameraFollowDeadZone")),
-                CameraFollowDeadZone = ConvertVector2(data.GetValueOrDefault("CameraFollowDeadZone")),
+                Uid = reader.Int("Uid"),
+                Name = reader.String("Name"),
+                Chapter = reader.Int("Chapter"),
+                Type = reader.Enum<MapConstants.Type>("Type"),
+                Subtype = reader.Enum<MapConstants.SubType>("Subtype"),
+                FolderName = reader.String("FolderName"),
+                PlayerSpawnPosition = ConvertPlayerSpawnPosition(reader.String("PlayerSpawnPosition")),
+                PlayerDeadSpawnUid = reader.Int("PlayerDeadSpawnUid"),
+                BgmUid = reader.Int("BgmUid"),
+                UseCameraFollowOffset = reader.BoolYN("UseCameraFollowOffset"),
+                CameraFollowOffset = reader.Vector2("CameraFollowOffset"),
+                UseCameraFollowDeadZone = reader.BoolYN("UseCameraFollowDeadZone"),
+                CameraFollowDeadZone = reader.Vector2("CameraFollowDeadZone"),
                 UseCameraBottomFollowOffsetPolicy =
-                    ConvertBoolean(data.GetValueOrDefault("UseCameraBottomFollowOffsetPolicy")),
+                    reader.BoolYN("UseCameraBottomFollowOffsetPolicy"),
                 BottomFollowOffsetPolicy =
-                    ConvertCameraBottomFollowOffsetPolicy(data.GetValueOrDefault("BottomFollowOffsetPolicy")),
-                AutoMovePolicy = ConvertAutoMovePolicy(data.GetValueOrDefault("AutoMovePolicy")),
+                    ConvertCameraBottomFollowOffsetPolicy(reader.String("BottomFollowOffsetPolicy")),
+                AutoMovePolicy = ConvertAutoMovePolicy(reader.String("AutoMovePolicy")),
             };
         }
 

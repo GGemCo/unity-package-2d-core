@@ -44,22 +44,23 @@ namespace GGemCo2DCore
         }
         protected override StruckTableItemCraft BuildRow(Dictionary<string, string> data)
         {
+            TableRowReader reader = ReadRow(data);
             return new StruckTableItemCraft
             {
-                Uid = MathHelper.ParseInt(data["Uid"]),
-                Memo = data["Memo"],
-                ResultItemUid = MathHelper.ParseInt(data["ResultItemUid"]),
-                Rate = MathHelper.ParseInt(data["Rate"]),
-                NeedCurrencyType = ConvertCurrencyType(data["NeedCurrencyType"]),
-                NeedCurrencyValue = MathHelper.ParseInt(data["NeedCurrencyValue"]),
-                NeedItemUid1 = MathHelper.ParseInt(data["NeedItemUid1"]),
-                NeedItemCount1 = MathHelper.ParseInt(data["NeedItemCount1"]),
-                NeedItemUid2 = MathHelper.ParseInt(data["NeedItemUid2"]),
-                NeedItemCount2 = MathHelper.ParseInt(data["NeedItemCount2"]),
-                NeedItemUid3 = MathHelper.ParseInt(data["NeedItemUid3"]),
-                NeedItemCount3 = MathHelper.ParseInt(data["NeedItemCount3"]),
-                NeedItemUid4 = MathHelper.ParseInt(data["NeedItemUid4"]),
-                NeedItemCount4 = MathHelper.ParseInt(data["NeedItemCount4"]),
+                Uid = reader.Int("Uid"),
+                Memo = reader.String("Memo"),
+                ResultItemUid = reader.Int("ResultItemUid"),
+                Rate = reader.Int("Rate"),
+                NeedCurrencyType = ConvertCurrencyType(reader.String("NeedCurrencyType")),
+                NeedCurrencyValue = reader.Int("NeedCurrencyValue"),
+                NeedItemUid1 = reader.Int("NeedItemUid1"),
+                NeedItemCount1 = reader.Int("NeedItemCount1"),
+                NeedItemUid2 = reader.Int("NeedItemUid2"),
+                NeedItemCount2 = reader.Int("NeedItemCount2"),
+                NeedItemUid3 = reader.Int("NeedItemUid3"),
+                NeedItemCount3 = reader.Int("NeedItemCount3"),
+                NeedItemUid4 = reader.Int("NeedItemUid4"),
+                NeedItemCount4 = reader.Int("NeedItemCount4"),
             };
         }
         public List<StruckTableItemCraft> GetItemsByUid(int uid)

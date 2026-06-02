@@ -23,20 +23,21 @@ namespace GGemCo2DCore
 
         protected override StruckTableVfxParticle BuildRow(Dictionary<string, string> data)
         {
+            TableRowReader reader = ReadRow(data);
             return new StruckTableVfxParticle
             {
-                Uid = MathHelper.ParseInt(data.GetValueOrDefault("Uid")),
-                Name = data.GetValueOrDefault("Name"),
-                VfxUid = MathHelper.ParseInt(data.GetValueOrDefault("VfxUid", "0")),
-                PrefabPath = data.GetValueOrDefault("PrefabPath"),
-                LifecycleType = ParseLifecycleType(data.GetValueOrDefault("LifecycleType")),
-                AttachType = ParseAttachType(data.GetValueOrDefault("AttachType")),
-                FollowMode = ParseFollowMode(data.GetValueOrDefault("FollowMode")),
-                FollowAnchorMode = ParseFollowAnchorMode(data.GetValueOrDefault("FollowAnchorMode")),
-                PoolPrewarmCount = MathHelper.ParseInt(data.GetValueOrDefault("PoolPrewarmCount")),
-                PoolMaxSize = MathHelper.ParseInt(data.GetValueOrDefault("PoolMaxSize")),
-                Loop = ConvertBoolean(data.GetValueOrDefault("Loop")),
-                UseUnscaledTime = ConvertBoolean(data.GetValueOrDefault("UseUnscaledTime")),
+                Uid = reader.Int("Uid"),
+                Name = reader.String("Name"),
+                VfxUid = reader.Int("VfxUid", 0),
+                PrefabPath = reader.String("PrefabPath"),
+                LifecycleType = ParseLifecycleType(reader.String("LifecycleType")),
+                AttachType = ParseAttachType(reader.String("AttachType")),
+                FollowMode = ParseFollowMode(reader.String("FollowMode")),
+                FollowAnchorMode = ParseFollowAnchorMode(reader.String("FollowAnchorMode")),
+                PoolPrewarmCount = reader.Int("PoolPrewarmCount"),
+                PoolMaxSize = reader.Int("PoolMaxSize"),
+                Loop = reader.BoolYN("Loop"),
+                UseUnscaledTime = reader.BoolYN("UseUnscaledTime"),
             };
         }
 

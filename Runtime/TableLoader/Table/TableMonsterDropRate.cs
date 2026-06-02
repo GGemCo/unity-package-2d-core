@@ -42,14 +42,15 @@ namespace GGemCo2DCore
 
         protected override StruckTableMonsterDropRate BuildRow(Dictionary<string, string> data)
         {
+            TableRowReader reader = ReadRow(data);
             return new StruckTableMonsterDropRate
             {
-                Uid = int.Parse(data["Uid"]),
-                Memo = data["Memo"],
-                MonsterUid = int.Parse(data["MonsterUid"]),
-                Type = EnumHelper.ConvertEnum<ItemManager.DropRateType>(data["Type"]),
-                Value = int.Parse(data["Value"]),
-                Rate = int.Parse(data["Rate"]),
+                Uid = reader.Int("Uid"),
+                Memo = reader.String("Memo"),
+                MonsterUid = reader.Int("MonsterUid"),
+                Type = reader.Enum<ItemManager.DropRateType>("Type"),
+                Value = reader.Int("Value"),
+                Rate = reader.Int("Rate"),
             };
         }
     }

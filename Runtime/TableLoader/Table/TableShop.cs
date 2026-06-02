@@ -50,21 +50,22 @@ namespace GGemCo2DCore
         }
         protected override StruckTableShop BuildRow(Dictionary<string, string> data)
         {
+            TableRowReader reader = ReadRow(data);
             return new StruckTableShop
             {
-                Uid = MathHelper.ParseInt(data.GetValueOrDefault("Uid")),
-                Memo = data.GetValueOrDefault("Memo"),
-                Name = data.GetValueOrDefault("Name"),
+                Uid = reader.Int("Uid"),
+                Memo = reader.String("Memo"),
+                Name = reader.String("Name"),
                 IsLegacyItemRow = data.ContainsKey("ItemUid") || data.ContainsKey("SlotIndex"),
-                SlotIndex = MathHelper.ParseInt(data.GetValueOrDefault("SlotIndex"), -1),
-                ItemUid = MathHelper.ParseInt(data.GetValueOrDefault("ItemUid")),
+                SlotIndex = reader.Int("SlotIndex", -1),
+                ItemUid = reader.Int("ItemUid"),
                 CurrencyType = data.ContainsKey("CurrencyType")
-                    ? ConvertCurrencyType(data.GetValueOrDefault("CurrencyType"))
+                    ? ConvertCurrencyType(reader.String("CurrencyType"))
                     : CurrencyConstants.Type.None,
-                CurrencyValue = MathHelper.ParseInt(data.GetValueOrDefault("CurrencyValue")),
-                MaxBuyCount = MathHelper.ParseInt(data.GetValueOrDefault("MaxBuyCount")),
-                Rate = MathHelper.ParseInt(data.GetValueOrDefault("Rate"), 100),
-                UniqueGroup = MathHelper.ParseInt(data.GetValueOrDefault("UniqueGroup")),
+                CurrencyValue = reader.Int("CurrencyValue"),
+                MaxBuyCount = reader.Int("MaxBuyCount"),
+                Rate = reader.Int("Rate", 100),
+                UniqueGroup = reader.Int("UniqueGroup"),
             };
         }
         public List<StruckTableShop> GetItemByUid(int uid)
