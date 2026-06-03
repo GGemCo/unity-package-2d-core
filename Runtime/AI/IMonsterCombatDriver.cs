@@ -111,4 +111,23 @@ namespace GGemCo2DCore
         /// </summary>
         void RequestClearAggro();
     }
+
+    /// <summary>
+    /// 몬스터 추적 이동 정지 판정을 공격 가능 판정과 분리해서 제공하는 선택 인터페이스.
+    /// </summary>
+    /// <remarks>
+    /// 기존 <see cref="IMonsterCombatDriver"/> 구현체와의 하위 호환성을 유지하기 위해 별도 인터페이스로 분리한다.
+    /// 구현체가 이 인터페이스를 제공하지 않으면 상위 AI는 기존 공격 범위 판정을 이동 정지 판정으로 사용한다.
+    /// </remarks>
+    public interface IMonsterMoveStopRangeProvider
+    {
+        /// <summary>
+        /// 타겟이 추적 이동을 멈출 범위 안인지 반환한다.
+        /// </summary>
+        /// <remarks>
+        /// 실제 공격 가능 판정과 이동 정지 판정은 다를 수 있다.
+        /// 예를 들어 공중 타겟을 계속 추적해야 하는 몬스터는 공격 범위에 닿아도 이동 정지를 보류할 수 있다.
+        /// </remarks>
+        bool IsTargetInMoveStopRange();
+    }
 }

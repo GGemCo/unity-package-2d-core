@@ -7,7 +7,7 @@ namespace GGemCo2DCore
     /// <summary>
     /// 몬스터 선공, 후공 처리 
     /// </summary>
-    public class ControllerMonster : CharacterBaseController, IMonsterCombatDriver, IMonsterBrainSuspendProvider
+    public class ControllerMonster : CharacterBaseController, IMonsterCombatDriver, IMonsterMoveStopRangeProvider, IMonsterBrainSuspendProvider
     {
         private const float MoveDirectionEpsilonSqr = 0.000001f;
         private const float BtMoveDirectionBlendPerSecond = 0.000001f;
@@ -52,6 +52,9 @@ namespace GGemCo2DCore
 
         /// <inheritdoc />
         public bool IsTargetInAttackRange() => SearchAttackerTarget();
+
+        /// <inheritdoc />
+        public bool IsTargetInMoveStopRange() => SearchAttackerTargetForMoveStop();
 
         /// <inheritdoc />
         public void RequestWait() => Wait();
@@ -401,7 +404,7 @@ namespace GGemCo2DCore
                 return;
             }
 
-            if (SearchAttackerTarget())
+            if (SearchAttackerTargetForMoveStop())
             {
                 Wait();
                 return;
@@ -586,6 +589,29 @@ namespace GGemCo2DCore
         /// </remarks>
         private bool SearchAttackerTarget()
         {
+            return SearchAttackerTarget(ignoreAirborneTarget: false);
+        }
+
+        /// <summary>
+        /// 현재 공격 대상이 몬스터의 추적 이동을 멈출 범위 안에 있는지 검색한다.
+        /// </summary>
+        /// <returns>이동 정지 대상이 공격 범위 안에서 발견되면 <see langword="true"/>입니다.</returns>
+        /// <remarks>
+        /// 실제 공격 가능 범위와 추적 이동 정지 범위는 설정에 따라 달라질 수 있다.
+        /// 공중 플레이어를 이동 정지 대상에서 제외하면, 지상형 몬스터가 점프한 플레이어 아래에서 너무 일찍 멈추는 상황을 줄일 수 있다.
+        /// </remarks>
+        private bool SearchAttackerTargetForMoveStop()
+        {
+            return SearchAttackerTarget(ShouldIgnoreAirborneTargetForMonsterMoveStop());
+        }
+
+        /// <summary>
+        /// 현재 공격 대상이 몬스터의 공격 범위 안에 있는지 검색한다.
+        /// </summary>
+        /// <param name="ignoreAirborneTarget">공중 상태인 타겟을 결과에서 제외할지 여부입니다.</param>
+        /// <returns>공격 대상의 <see cref="CharacterHitArea"/>가 조건에 맞게 발견되면 <see langword="true"/>입니다.</returns>
+        private bool SearchAttackerTarget(bool ignoreAirborneTarget)
+        {
             if (targetCharacter == null || targetCharacter.attackerTransform == null) return false;
             if (targetCharacter.IsStatusAttack() || targetCharacter.IsStatusDead()) return false;
             EnsureAttackRangeColliderBuffer();
@@ -614,17 +640,48 @@ namespace GGemCo2DCore
 
                 if (attackTarget != null)
                 {
-                    if (characterHitArea.target == attackTarget)
+                    if (characterHitArea.target == attackTarget && IsValidAttackRangeTargetForMoveStop(characterHitArea.target, ignoreAirborneTarget))
                         return true;
 
                     continue;
                 }
 
-                if (hit.CompareTag(targetCharacter.attackerTransform.tag))
+                if (hit.CompareTag(targetCharacter.attackerTransform.tag) &&
+                    IsValidAttackRangeTargetForMoveStop(characterHitArea.target, ignoreAirborneTarget))
+                {
                     return true;
+                }
             }
 
             return false;
+        }
+
+        /// <summary>
+        /// 공격 범위에서 발견한 타겟을 이동 정지 판정에 사용할 수 있는지 확인한다.
+        /// </summary>
+        /// <param name="target">공격 범위에서 발견한 타겟 캐릭터입니다.</param>
+        /// <param name="ignoreAirborneTarget">공중 상태인 타겟을 제외할지 여부입니다.</param>
+        /// <returns>이동 정지 판정에 사용할 수 있으면 <see langword="true"/>입니다.</returns>
+        private static bool IsValidAttackRangeTargetForMoveStop(CharacterBase target, bool ignoreAirborneTarget)
+        {
+            if (target == null) return false;
+            if (!ignoreAirborneTarget) return true;
+
+            // 공격 판정 자체는 유지하되, 이동 정지 판정에서만 공중 타겟을 통과 대상으로 본다.
+            return target.IsCurrentlyGrounded();
+        }
+
+        /// <summary>
+        /// 몬스터 추적 이동 정지 판정에서 공중 타겟을 제외할지 확인한다.
+        /// </summary>
+        /// <returns>설정에서 공중 타겟 제외가 활성화되어 있으면 <see langword="true"/>입니다.</returns>
+        private static bool ShouldIgnoreAirborneTargetForMonsterMoveStop()
+        {
+            GGemCoSettings settings = AddressableLoaderSettings.Instance != null
+                ? AddressableLoaderSettings.Instance.settings
+                : null;
+
+            return settings != null && settings.ignoreAirborneTargetForMonsterMoveStop;
         }
 
         /// <summary>

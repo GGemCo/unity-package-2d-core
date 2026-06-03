@@ -256,6 +256,9 @@ namespace GGemCo2DCore
         [Tooltip("플레이어 공격 범위 안에 있는 몬스터가 공중 상태이면 자동 이동 정지 대상에서 제외할지 여부입니다.")]
         public bool ignoreAirborneAttackAreaForAutoMoveSuspend;
 
+        [Tooltip("몬스터 BT MoveToTarget 중 공격 범위 안에 있는 플레이어가 공중 상태이면 이동 정지 대상에서 제외할지 여부입니다.")]
+        public bool ignoreAirborneTargetForMonsterMoveStop;
+
         [Tooltip("자동 이동 중 전투가 종료되고 현재 타겟이 사라졌을 때, 현재 맵의 다음 생존 몬스터 방향으로 자동 이동을 이어갈지 여부입니다.")]
         public bool enableAutoMoveNextCombatTargetSearch;
 
@@ -358,6 +361,7 @@ namespace GGemCo2DCore
             continueAutoMoveAfterCombatTargetRecovered = true;
             flipCombatAutoMoveDirectionOnTargetPassed = true;
             ignoreAirborneAttackAreaForAutoMoveSuspend = true;
+            ignoreAirborneTargetForMonsterMoveStop = false;
             enableAutoMoveNextCombatTargetSearch = false;
             autoMoveNextCombatTargetSearchRange = 0f;
             autoMoveNextCombatTargetIncludeInactive = true;

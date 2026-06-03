@@ -180,7 +180,8 @@ namespace GGemCo2DCore
             RegisterCutsceneEvents();
             RegisterGameTimeProvider(context);
 
-            Application.targetFrameRate = context.SettingsLoader.settings.defaultFps;
+            if (context.SettingsLoader.settings.defaultFps > 0)
+                Application.targetFrameRate = context.SettingsLoader.settings.defaultFps;
             _isStateDirty = false;
             SetState(GameState.Begin);
 
