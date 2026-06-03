@@ -32,6 +32,7 @@ namespace GGemCo2DCore
         private CutsceneManager _cutsceneManager;
         private IAttackHitStopProvider _attackHitStopProvider;
         private IAttackComboStateProvider _attackComboStateProvider;
+        private IAttackCameraShakeProvider _attackCameraShakeProvider;
 
         /// <summary>
         /// 자동 이동의 전투 추적에 사용할 몬스터 타겟을 설정합니다.
@@ -419,6 +420,7 @@ namespace GGemCo2DCore
             int countDamageMonster = 0;
             bool hasAttackHitStopSettings = TryResolveCurrentAttackHitStopSettings(out AttackHitStopSettings attackHitStopSettings);
             bool hasAttackComboState = TryResolveCurrentAttackComboState(out AttackComboRuntimeState attackComboState);
+            bool hasAttackCameraShakeSettings = TryResolveCurrentAttackCameraShakeSettings(out AttackCameraShakeSettings attackCameraShakeSettings);
             
             // 몬스터의 HitArea를 체크하기 위해 _monsterHitAreaLayerMask 적용 중
             int hitCount = CompatPhysics2D.OverlapCapsuleNonAlloc(point, size, colliderAttackRange.direction,
@@ -447,6 +449,11 @@ namespace GGemCo2DCore
                     HitReactionType = CharacterConstants.HitReactionType.Flinch,
                     HasAttackHitStopSettings = hasAttackHitStopSettings,
                     AttackHitStopSettings = attackHitStopSettings,
+                    DamageCameraShakePreset = hasAttackCameraShakeSettings ? attackCameraShakeSettings.cameraShakePreset : null,
+                    DamageCameraShakeDirectionSource = attackCameraShakeSettings.cameraShakeDirectionSource,
+                    DamageCameraShakeFixedDirection = attackCameraShakeSettings.cameraShakeFixedDirection,
+                    DamageCameraShakeHorizontalOnly = attackCameraShakeSettings.cameraShakeHorizontalOnly,
+                    DamageCameraShakeChannel = attackCameraShakeSettings.ResolvedChannel,
                     IsBasicAttackCombo = hasAttackComboState,
                     BasicAttackComboIndex = hasAttackComboState ? attackComboState.ComboIndex : -1,
                     BasicAttackComboCount = hasAttackComboState ? attackComboState.ComboCount : 0,
@@ -507,6 +514,22 @@ namespace GGemCo2DCore
                 return false;
 
             return _attackHitStopProvider.TryGetCurrentAttackHitStopSettings(out settings);
+        }
+
+        /// <summary>
+        /// 현재 기본 공격 콤보에 설정된 카메라 Shake 정책을 조회합니다.
+        /// </summary>
+        /// <param name="settings">현재 공격 콤보에서 사용할 카메라 Shake 설정입니다.</param>
+        /// <returns>사용 가능한 카메라 Shake 설정이 있으면 <see langword="true"/>를 반환합니다.</returns>
+        private bool TryResolveCurrentAttackCameraShakeSettings(out AttackCameraShakeSettings settings)
+        {
+            settings = AttackCameraShakeSettings.Disabled;
+
+            _attackCameraShakeProvider ??= GetComponent<IAttackCameraShakeProvider>();
+            if (_attackCameraShakeProvider == null)
+                return false;
+
+            return _attackCameraShakeProvider.TryGetCurrentAttackCameraShakeSettings(out settings);
         }
 
         /// <summary>

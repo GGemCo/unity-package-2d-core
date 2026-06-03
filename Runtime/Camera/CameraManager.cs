@@ -11,6 +11,7 @@ namespace GGemCo2DCore
         AnimationEvent = 1,
         Cutscene = 2,
         SkillDamage = 3,
+        BasicAttack = 4,
     }
 
     /// <summary>

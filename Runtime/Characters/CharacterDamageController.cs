@@ -66,6 +66,11 @@ namespace GGemCo2DCore
         public bool DamageCameraShakeHorizontalOnly = true;
 
         /// <summary>
+        /// 데미지 카메라 Shake를 재생할 채널입니다.
+        /// </summary>
+        public CameraShakeChannel DamageCameraShakeChannel = CameraShakeChannel.SkillDamage;
+
+        /// <summary>
         /// 이번 타격이 추가로 누적할 속성 게이지 목록입니다.
         /// </summary>
         public ElementGaugeApplication[] ElementGaugeApplications;
@@ -1070,7 +1075,7 @@ namespace GGemCo2DCore
                 metadataDamage.DamageCameraShakeDirectionSource,
                 metadataDamage.DamageCameraShakeFixedDirection,
                 metadataDamage.DamageCameraShakeHorizontalOnly,
-                CameraShakeChannel.SkillDamage);
+                metadataDamage.DamageCameraShakeChannel);
 
             cameraManager.PlayShake(request);
         }
