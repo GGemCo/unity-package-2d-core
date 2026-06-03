@@ -57,15 +57,8 @@ namespace GGemCo2DCore
             base.Start();
             // 인트로 씬에서는 window 데이터가 없어서, 여기서 SetActive 처리 한다.
             gameObject.SetActive(false);
-            
-            if (popupManager == null)
-            {
-                popupManager = SceneGame.Instance.popupManager;
-            }
-            if (soundManager == null)
-            {
-                soundManager = SceneGame.Instance.soundManager;
-            }
+
+            ResolveManagers();
 
             foreach (var uiPanelOptionBase in _listPanelOptionBase)
             {
@@ -73,6 +66,35 @@ namespace GGemCo2DCore
             }
             
             SelectFirstTab();
+        }
+
+        /// <summary>
+        /// 옵션 윈도우가 사용할 팝업/사운드 매니저를 안전하게 해석합니다.
+        /// Intro 씬처럼 SceneGame이 아직 준비되지 않은 상황에서는 인스펙터에 연결된 값을 우선 사용하고,
+        /// Game 씬에서는 SceneGame 매니저를 fallback으로 사용합니다.
+        /// </summary>
+        private void ResolveManagers()
+        {
+            if (popupManager != null && soundManager != null)
+            {
+                return;
+            }
+
+            SceneGame sceneGame = SceneGame.Instance;
+            if (sceneGame == null)
+            {
+                return;
+            }
+
+            if (popupManager == null)
+            {
+                popupManager = sceneGame.popupManager;
+            }
+
+            if (soundManager == null)
+            {
+                soundManager = sceneGame.soundManager;
+            }
         }
         private void SelectFirstTab()
         {
@@ -188,7 +210,10 @@ namespace GGemCo2DCore
                         },
                         ShowCancelButton = true
                     };
-                    popupManager.ShowPopup(popupMetadata);
+                    if (popupManager != null)
+                    {
+                        popupManager.ShowPopup(popupMetadata);
+                    }
                     return;
                 }
             }
@@ -239,7 +264,8 @@ namespace GGemCo2DCore
                             MessageColor = Color.red,
                             Title = "Popup_Title_Save", //슬롯 삭제
                             Message = "Popup_Message_Save",
-                            OnConfirm = () => {
+                            OnConfirm = () =>
+                            {
                                 uiPanelOptionBase.TryApply();
                                 uiPanelOptionBase.MarkDirty(false);
                                 Show(false);
@@ -252,7 +278,11 @@ namespace GGemCo2DCore
                             },
                             ShowCancelButton = true
                         };
-                        popupManager.ShowPopup(popupMetadata);
+                        
+                        if (popupManager != null)
+                        {
+                            popupManager.ShowPopup(popupMetadata);
+                        }
                         return false;
                     }
                 }

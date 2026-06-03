@@ -306,7 +306,8 @@ namespace GGemCo2DCore
                 if (s.Status == UnityEngine.ResourceManagement.AsyncOperations.AsyncOperationStatus.Succeeded)
                 {
                     textPressAnyKey.text = s.Result;
-                    textPressAnyKey.gameObject.SetActive(true);
+                    if (!autoStart)
+                        textPressAnyKey.gameObject.SetActive(true);
                 }
             }
             if (textLoadingPercent != null)
