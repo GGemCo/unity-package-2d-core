@@ -412,8 +412,9 @@ namespace GGemCo2DCore
                             SpecialDamageText = guardResult.FeedbackText,
                             ImageSprite = guardResult.FeedbackSprite,
                             ImageSize = guardResult.FeedbackSpriteSize,
-                            WorldPosition = damageTextPosition,
+                            WorldPosition = ResolveGuardFeedbackWorldPosition(damageTextPosition, guardResult),
                         };
+                        ApplyGuardFeedbackRandomXRange(guardText, guardResult);
                         SceneGame.Instance.damageTextManager.ShowDamageText(guardText);
                         hasGuardFeedback = true;
                     }
@@ -809,6 +810,39 @@ namespace GGemCo2DCore
         private static bool HasGuardFeedbackPresentation(GuardResolutionResult guardResult)
         {
             return !string.IsNullOrEmpty(guardResult.FeedbackText) || guardResult.FeedbackSprite != null;
+        }
+
+        /// <summary>
+        /// 가드 피드백 표시 위치를 가드 판정 결과의 X 좌표 정책에 맞춰 계산합니다.
+        /// </summary>
+        /// <param name="defaultWorldPosition">기존 데미지 텍스트가 사용하던 기본 월드 위치입니다.</param>
+        /// <param name="guardResult">가드 판정 결과와 피드백 위치 정책입니다.</param>
+        /// <returns>최종 가드 피드백 표시 월드 위치입니다.</returns>
+        private Vector3 ResolveGuardFeedbackWorldPosition(
+            Vector3 defaultWorldPosition,
+            GuardResolutionResult guardResult)
+        {
+            if (!guardResult.UseDefenderXForFeedback || _characterBase == null)
+                return defaultWorldPosition;
+
+            // Y/Z는 기존 피격 위치 기준을 유지하고, X만 방어자 위치 기준으로 고정합니다.
+            defaultWorldPosition.x = _characterBase.transform.position.x + guardResult.FeedbackDefenderXOffset;
+            return defaultWorldPosition;
+        }
+
+        /// <summary>
+        /// 가드 피드백 전용 랜덤 X 범위 오버라이드를 플로팅 표시 요청에 적용합니다.
+        /// </summary>
+        /// <param name="request">플로팅 표시 요청입니다.</param>
+        /// <param name="guardResult">가드 판정 결과와 랜덤 X 범위 정책입니다.</param>
+        private static void ApplyGuardFeedbackRandomXRange(
+            MetadataDamageText request,
+            GuardResolutionResult guardResult)
+        {
+            if (request == null || !guardResult.OverrideFeedbackRandomXRange)
+                return;
+
+            request.RandomXRange = Mathf.Max(0f, guardResult.FeedbackRandomXRange);
         }
 
         /// <summary>

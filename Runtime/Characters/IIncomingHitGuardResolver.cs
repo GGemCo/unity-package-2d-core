@@ -54,5 +54,17 @@ namespace GGemCo2DCore
 
         /// <summary>표시용 스프라이트 크기입니다. 0 이하면 스프라이트 원본 크기를 사용합니다.</summary>
         public Vector2 FeedbackSpriteSize;
+
+        /// <summary>가드 피드백 표시 위치의 X 좌표를 방어자 X 좌표 기준으로 고정할지 여부입니다.</summary>
+        public bool UseDefenderXForFeedback;
+
+        /// <summary>방어자 X 좌표 기준으로 피드백을 표시할 때 더할 X 오프셋입니다.</summary>
+        public float FeedbackDefenderXOffset;
+
+        /// <summary>가드 피드백 표시 요청의 랜덤 X 범위를 직접 지정할지 여부입니다.</summary>
+        public bool OverrideFeedbackRandomXRange;
+
+        /// <summary>가드 피드백 표시 요청에 적용할 랜덤 X 범위입니다.</summary>
+        public float FeedbackRandomXRange;
     }
 }
