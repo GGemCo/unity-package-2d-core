@@ -165,6 +165,66 @@ namespace GGemCo2DCore
     }
 
     /// <summary>
+    /// 스킬 실행 시 1회성으로 적용할 옵션 스냅샷입니다.
+    /// </summary>
+    public readonly struct SkillExecutionOptions
+    {
+        /// <summary>옵션이 없는 기본 실행 옵션입니다.</summary>
+        public static SkillExecutionOptions None => new SkillExecutionOptions(1f, 0f, 0L, 0);
+
+        /// <summary>스킬 데미지에 곱할 최종 배율입니다.</summary>
+        public readonly float DamageMultiplier;
+
+        /// <summary>스킬이 적용하는 상태 지속시간에 더할 초 단위 보너스입니다.</summary>
+        public readonly float StatusDurationBonusSeconds;
+
+        /// <summary>스킬 시작 시 캐스터에게 부여할 런타임 Temp HP 값입니다.</summary>
+        public readonly long RuntimeTempHpOnStart;
+
+        /// <summary>런타임 Temp HP source key를 직접 지정할 때 사용하는 값입니다. 0이면 스킬 UID를 사용합니다.</summary>
+        public readonly int RuntimeTempHpSourceKeyOverride;
+
+        /// <summary>
+        /// 스킬 실행 옵션 스냅샷을 생성합니다.
+        /// </summary>
+        /// <param name="damageMultiplier">스킬 데미지에 곱할 배율입니다. 0 이하이면 1로 보정합니다.</param>
+        /// <param name="statusDurationBonusSeconds">상태 지속시간에 더할 초 단위 보너스입니다.</param>
+        /// <param name="runtimeTempHpOnStart">스킬 시작 시 부여할 런타임 Temp HP 값입니다.</param>
+        /// <param name="runtimeTempHpSourceKeyOverride">Temp HP source key 오버라이드입니다. 0이면 스킬 UID를 사용합니다.</param>
+        public SkillExecutionOptions(
+            float damageMultiplier,
+            float statusDurationBonusSeconds,
+            long runtimeTempHpOnStart,
+            int runtimeTempHpSourceKeyOverride = 0)
+        {
+            DamageMultiplier = damageMultiplier > 0f ? damageMultiplier : 1f;
+            StatusDurationBonusSeconds = statusDurationBonusSeconds > 0f ? statusDurationBonusSeconds : 0f;
+            RuntimeTempHpOnStart = runtimeTempHpOnStart > 0L ? runtimeTempHpOnStart : 0L;
+            RuntimeTempHpSourceKeyOverride = runtimeTempHpSourceKeyOverride;
+        }
+
+        /// <summary>
+        /// 현재 옵션에 다른 옵션을 누적해 새 스냅샷을 반환합니다.
+        /// </summary>
+        /// <param name="other">누적할 추가 옵션입니다.</param>
+        /// <returns>두 옵션이 병합된 스냅샷입니다.</returns>
+        public SkillExecutionOptions Combine(in SkillExecutionOptions other)
+        {
+            float baseDamageMultiplier = DamageMultiplier > 0f ? DamageMultiplier : 1f;
+            float otherDamageMultiplier = other.DamageMultiplier > 0f ? other.DamageMultiplier : 1f;
+            int sourceKey = other.RuntimeTempHpSourceKeyOverride != 0
+                ? other.RuntimeTempHpSourceKeyOverride
+                : RuntimeTempHpSourceKeyOverride;
+
+            return new SkillExecutionOptions(
+                baseDamageMultiplier * otherDamageMultiplier,
+                StatusDurationBonusSeconds + other.StatusDurationBonusSeconds,
+                RuntimeTempHpOnStart + other.RuntimeTempHpOnStart,
+                sourceKey);
+        }
+    }
+
+    /// <summary>
     /// 공용 스킬 드라이버가 스킬 실행 계층으로 전달하는 최소 요청 컨텍스트입니다.
     /// </summary>
     public readonly struct SkillDriverRequest
@@ -173,22 +233,52 @@ namespace GGemCo2DCore
         public readonly Vector3 GroundPoint;
         public readonly Vector2 Forward;
         public readonly ConfigCommon.SkillTableSource Source;
+        public readonly SkillExecutionOptions ExecutionOptions;
 
         public SkillDriverRequest(
             Transform lockedTarget,
             Vector3 groundPoint,
             Vector2 forward,
             ConfigCommon.SkillTableSource source)
+            : this(lockedTarget, groundPoint, forward, source, SkillExecutionOptions.None)
+        {
+        }
+
+        /// <summary>
+        /// 스킬 드라이버 요청 컨텍스트를 생성합니다.
+        /// </summary>
+        /// <param name="lockedTarget">락온 대상입니다.</param>
+        /// <param name="groundPoint">지면 대상 좌표입니다.</param>
+        /// <param name="forward">전방 방향입니다.</param>
+        /// <param name="source">스킬 테이블 출처입니다.</param>
+        /// <param name="executionOptions">이번 스킬 실행에만 적용할 옵션 스냅샷입니다.</param>
+        public SkillDriverRequest(
+            Transform lockedTarget,
+            Vector3 groundPoint,
+            Vector2 forward,
+            ConfigCommon.SkillTableSource source,
+            SkillExecutionOptions executionOptions)
         {
             LockedTarget = lockedTarget;
             GroundPoint = groundPoint;
             Forward = forward.sqrMagnitude < 1e-6f ? Vector2.right : forward.normalized;
             Source = source;
+            ExecutionOptions = executionOptions;
         }
 
         public SkillDriverRequest(in MonsterSkillTarget target, ConfigCommon.SkillTableSource source)
             : this(target.LockedTarget, target.GroundPoint, target.Forward, source)
         {
+        }
+
+        /// <summary>
+        /// 기존 타겟팅 정보는 유지하고 실행 옵션만 교체한 요청을 반환합니다.
+        /// </summary>
+        /// <param name="executionOptions">새로 적용할 실행 옵션입니다.</param>
+        /// <returns>실행 옵션이 교체된 요청입니다.</returns>
+        public SkillDriverRequest WithExecutionOptions(in SkillExecutionOptions executionOptions)
+        {
+            return new SkillDriverRequest(LockedTarget, GroundPoint, Forward, Source, executionOptions);
         }
     }
 

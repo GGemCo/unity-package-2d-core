@@ -149,7 +149,12 @@ namespace GGemCo2DCore
             method.Invoke(affectComp, new[] { (object)affectUid, ctx });
         }
 
-        internal static void ApplyAffect(GameObject go, int affectUid, GameObject source, float durationOverrideSeconds)
+        internal static void ApplyAffect(
+            GameObject go,
+            int affectUid,
+            GameObject source,
+            float durationOverrideSeconds,
+            float durationBonusSeconds = 0f)
         {
             if (affectUid <= 0) return;
             if (go == null) return;
@@ -166,7 +171,7 @@ namespace GGemCo2DCore
             object ctx = null;
 
             // Source 또는 DurationOverride 중 하나라도 있으면 컨텍스트를 생성한다.
-            if (source != null || durationOverrideSeconds > 0f)
+            if (source != null || durationOverrideSeconds > 0f || durationBonusSeconds > 0f)
             {
                 var ctxType = ResolveType(TypeNameAffectApplyContext);
                 if (ctxType != null)
@@ -189,6 +194,20 @@ namespace GGemCo2DCore
                         {
                             var field = ctxType.GetField("DurationOverride", BindingFlags.Instance | BindingFlags.Public);
                             field?.SetValue(ctx, durationOverrideSeconds);
+                        }
+                    }
+
+                    if (durationBonusSeconds > 0f)
+                    {
+                        var prop = ctxType.GetProperty("DurationBonusSeconds", BindingFlags.Instance | BindingFlags.Public);
+                        if (prop != null && prop.CanWrite)
+                        {
+                            prop.SetValue(ctx, durationBonusSeconds);
+                        }
+                        else
+                        {
+                            var field = ctxType.GetField("DurationBonusSeconds", BindingFlags.Instance | BindingFlags.Public);
+                            field?.SetValue(ctx, durationBonusSeconds);
                         }
                     }
                 }

@@ -30,9 +30,19 @@ namespace GGemCo2DCore
         /// 대상에게 Affect를 적용합니다.
         /// - Affect 미설치 시 아무 일도 하지 않습니다.
         /// </summary>
-        public static void Apply(GameObject target, int affectUid, GameObject source = null, float durationOverrideSeconds = 0f)
+        /// <param name="target">Affect를 적용할 대상입니다.</param>
+        /// <param name="affectUid">적용할 Affect UID입니다.</param>
+        /// <param name="source">Affect 발생 원천입니다.</param>
+        /// <param name="durationOverrideSeconds">기본 지속시간을 대체할 초 단위 값입니다. 0 이하이면 Affect 기본값을 사용합니다.</param>
+        /// <param name="durationBonusSeconds">기본 또는 오버라이드 지속시간에 추가할 초 단위 보너스입니다.</param>
+        public static void Apply(
+            GameObject target,
+            int affectUid,
+            GameObject source = null,
+            float durationOverrideSeconds = 0f,
+            float durationBonusSeconds = 0f)
         {
-            AffectRuntimeBridge.ApplyAffect(target, affectUid, source, durationOverrideSeconds);
+            AffectRuntimeBridge.ApplyAffect(target, affectUid, source, durationOverrideSeconds, durationBonusSeconds);
         }
 
         /// <summary>
