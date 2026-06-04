@@ -213,5 +213,31 @@ namespace GGemCo2DCore
         {
             return string.Equals(value, "None", StringComparison.OrdinalIgnoreCase);
         }
+        
+        /// <summary>
+        /// 테이블 행에서 DamageType 컬럼을 읽어 <see cref="ConfigCommon.DamageType"/> 값으로 변환합니다.
+        /// </summary>
+        /// <param name="columnName">읽을 컬럼 이름입니다.</param>
+        /// <returns>파싱된 데미지 타입입니다. 값이 비어 있으면 물리 데미지를 반환합니다.</returns>
+        public ConfigCommon.DamageType DamageType(string columnName)
+        {
+            string value = String(columnName);
+            if (string.IsNullOrWhiteSpace(value))
+                return ConfigCommon.DamageType.Physic;
+
+            value = value.Trim();
+            if (value.StartsWith("DT_", StringComparison.OrdinalIgnoreCase))
+            {
+                value = value.Substring(3);
+            }
+
+            if (int.TryParse(value, out int rawValue) &&
+                System.Enum.IsDefined(typeof(ConfigCommon.DamageType), rawValue))
+            {
+                return (ConfigCommon.DamageType)rawValue;
+            }
+
+            return EnumHelper.ConvertEnum<ConfigCommon.DamageType>(value);
+        }
     }
 }
