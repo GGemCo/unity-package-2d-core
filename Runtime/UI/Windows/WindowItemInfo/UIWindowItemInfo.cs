@@ -12,13 +12,17 @@ namespace GGemCo2DCore
     /// </summary>
     public class UIWindowItemInfo : UIWindow
     {
+        /// <summary>
+        /// 아이템 정보창을 표시할 위치 계산 방식입니다.
+        /// </summary>
         public enum PositionType
         {
             None,
             Left,
             Right,
+
             /// <summary>
-            /// 배치한 위치에 고정
+            /// 외부에서 전달한 위치에 고정합니다.
             /// </summary>
             Fixed
         }
@@ -56,6 +60,8 @@ namespace GGemCo2DCore
         private StruckTableItem _currentStruckTableItem;
         private long _currentInstanceId;
         private LocalizationManager _localizationManager;
+        // 아이템 정보창 아이콘 이미지를 Addressables Sprite로 바인딩하는 컴포넌트
+        private UIAddressableIconBinder _iconImageBinder;
 
         protected override void Awake()
         {
@@ -162,12 +168,48 @@ namespace GGemCo2DCore
         }
 
         /// <summary>
-        /// 아이템 아이콘 이미지 설정
+        /// 아이템 정보창의 아이콘 이미지를 Addressables 아이콘 바인더로 설정합니다.
         /// </summary>
         private void SetSpriteIcon()
         {
-            if (_currentStruckTableItem == null || !imageIcon) return;
-            imageIcon.sprite = AddressableLoaderItem.Instance.GetImageIconItemByName(_currentStruckTableItem.FileName);
+            UIAddressableIconBinder binder = ResolveIconImageBinder();
+            if (_currentStruckTableItem == null || binder == null)
+            {
+                binder?.Clear();
+                return;
+            }
+
+            AddressableIconSpriteRequest request =
+                new AddressableIconSpriteRequest(AddressableIconAtlasType.ItemIcon, _currentStruckTableItem.FileName);
+
+            // 캐시가 준비된 경우 즉시 반영되고, 아직 로딩 전이면 완료 시점에 현재 정보창 이미지가 갱신됩니다.
+            binder.Bind(request);
+        }
+
+        /// <summary>
+        /// 아이템 정보창 아이콘 이미지에 사용할 Addressables 바인더를 반환합니다.
+        /// 프리팹에 명시적으로 연결되지 않은 경우 아이콘 Image 오브젝트에서 찾아 자동으로 추가합니다.
+        /// </summary>
+        /// <returns>사용 가능한 아이콘 Sprite 바인더입니다.</returns>
+        private UIAddressableIconBinder ResolveIconImageBinder()
+        {
+            if (_iconImageBinder != null)
+            {
+                return _iconImageBinder;
+            }
+
+            if (imageIcon == null)
+            {
+                return null;
+            }
+
+            _iconImageBinder = imageIcon.GetComponent<UIAddressableIconBinder>();
+            if (_iconImageBinder == null)
+            {
+                _iconImageBinder = imageIcon.gameObject.AddComponent<UIAddressableIconBinder>();
+            }
+
+            return _iconImageBinder;
         }
 
         private void SetSalePrice()

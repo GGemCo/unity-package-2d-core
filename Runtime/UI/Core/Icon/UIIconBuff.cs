@@ -242,8 +242,8 @@ namespace GGemCo2DCore
             string key = GetIconImagePath();
             if (string.IsNullOrEmpty(key))
             {
-                ImageIcon.sprite = null;
-                CacheNormalIconSprite(null);
+                ImageIcon.sprite = spriteBlank;
+                CacheNormalIconSprite(spriteBlank);
                 return;
             }
 
