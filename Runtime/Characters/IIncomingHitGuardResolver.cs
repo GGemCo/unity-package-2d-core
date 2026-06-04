@@ -48,5 +48,11 @@ namespace GGemCo2DCore
 
         /// <summary>표시용 텍스트 색상. 설정되지 않으면 default(Color)입니다.</summary>
         public Color FeedbackColor;
+
+        /// <summary>표시용 스프라이트. 설정되면 텍스트 대신 이미지 플로팅 피드백으로 표시할 수 있습니다.</summary>
+        public Sprite FeedbackSprite;
+
+        /// <summary>표시용 스프라이트 크기입니다. 0 이하면 스프라이트 원본 크기를 사용합니다.</summary>
+        public Vector2 FeedbackSpriteSize;
     }
 }

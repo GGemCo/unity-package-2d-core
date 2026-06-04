@@ -369,7 +369,7 @@ namespace GGemCo2DCore
             }
 
             bool suppressHitReactionByGuard = false;
-            bool hasGuardFeedbackText = false;
+            bool hasGuardFeedback = false;
             bool isGuardResolved = false;
             bool overrideAfterDamageCrowdControlByGuard = false;
             bool hasRequestedPlayerHudStaminaFeedback = false;
@@ -403,17 +403,19 @@ namespace GGemCo2DCore
                         metadataDamage.ResolvedOnHitCrowdControls = resolvedOnHitCrowdControls;
                     }
 
-                    if (!string.IsNullOrEmpty(guardResult.FeedbackText))
+                    if (HasGuardFeedbackPresentation(guardResult))
                     {
                         MetadataDamageText guardText = new MetadataDamageText
                         {
                             Damage = 0,
                             Color = guardResult.FeedbackColor == default ? Color.cyan : guardResult.FeedbackColor,
                             SpecialDamageText = guardResult.FeedbackText,
+                            ImageSprite = guardResult.FeedbackSprite,
+                            ImageSize = guardResult.FeedbackSpriteSize,
                             WorldPosition = damageTextPosition,
                         };
                         SceneGame.Instance.damageTextManager.ShowDamageText(guardText);
-                        hasGuardFeedbackText = true;
+                        hasGuardFeedback = true;
                     }
 
                     NotifyIncomingHitCombatFeedback(
@@ -484,7 +486,7 @@ namespace GGemCo2DCore
             NotifyOutgoingAttackHitFeedback(metadataDamage, MonsterSkillCombatOutcome.Hit);
             TryPlayDamageCameraShake(metadataDamage);
 
-            if (!hasGuardFeedbackText)
+            if (!hasGuardFeedback)
             {
                 MetadataDamageText metadataDamageText2 = new MetadataDamageText
                 {
@@ -797,6 +799,16 @@ namespace GGemCo2DCore
             return outcome == GuardResolutionOutcome.Guarded ||
                    outcome == GuardResolutionOutcome.JustGuarded ||
                    outcome == GuardResolutionOutcome.GuardBroken;
+        }
+
+        /// <summary>
+        /// 가드 판정 결과에 화면에 표시할 텍스트 또는 스프라이트 피드백이 있는지 확인합니다.
+        /// </summary>
+        /// <param name="guardResult">가드 판정 결과입니다.</param>
+        /// <returns>텍스트 또는 스프라이트 피드백이 있으면 <see langword="true"/>입니다.</returns>
+        private static bool HasGuardFeedbackPresentation(GuardResolutionResult guardResult)
+        {
+            return !string.IsNullOrEmpty(guardResult.FeedbackText) || guardResult.FeedbackSprite != null;
         }
 
         /// <summary>
