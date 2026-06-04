@@ -257,6 +257,18 @@ namespace GGemCo2DCore
             Easing.EaseType easeType = request.EaseType ?? _defaultEaseType;
             Color originalColor = graphic.color;
 
+            if (request.MoveAndFadeOutTogether)
+            {
+                yield return AnimateFloatingGraphicMoveAndFadeTogether(
+                    graphic,
+                    startPos,
+                    endPos,
+                    fadeOutTime,
+                    easeType,
+                    originalColor);
+                yield break;
+            }
+
             float elapsedTime = 0f;
             while (elapsedTime < moveUpTime)
             {
@@ -273,6 +285,44 @@ namespace GGemCo2DCore
             {
                 graphic.color = new Color(originalColor.r, originalColor.g, originalColor.b,
                     1f - (elapsedTime / Mathf.Max(0.0001f, fadeOutTime)));
+                elapsedTime += Time.deltaTime;
+                yield return null;
+            }
+
+            graphic.transform.position = startPos;
+            graphic.color = originalColor;
+        }
+
+        /// <summary>
+        /// 지정한 Fade Out 시간 안에 목표 위치 이동과 알파 페이드를 동시에 완료합니다.
+        /// </summary>
+        /// <param name="graphic">애니메이션을 적용할 UI Graphic입니다.</param>
+        /// <param name="startPos">시작 위치입니다.</param>
+        /// <param name="endPos">목표 위치입니다.</param>
+        /// <param name="duration">이동과 페이드를 완료할 시간입니다.</param>
+        /// <param name="easeType">위치 보간에 사용할 이징 타입입니다.</param>
+        /// <param name="originalColor">복원할 원본 색상입니다.</param>
+        private static IEnumerator AnimateFloatingGraphicMoveAndFadeTogether(
+            Graphic graphic,
+            Vector3 startPos,
+            Vector3 endPos,
+            float duration,
+            Easing.EaseType easeType,
+            Color originalColor)
+        {
+            float safeDuration = Mathf.Max(0.0001f, duration);
+            float elapsedTime = 0f;
+            while (elapsedTime < duration)
+            {
+                float t = Mathf.Clamp01(elapsedTime / safeDuration);
+                float easedT = Easing.Apply(t, easeType);
+
+                graphic.transform.position = Vector3.Lerp(startPos, endPos, easedT);
+                graphic.color = new Color(
+                    originalColor.r,
+                    originalColor.g,
+                    originalColor.b,
+                    originalColor.a * (1f - t));
                 elapsedTime += Time.deltaTime;
                 yield return null;
             }

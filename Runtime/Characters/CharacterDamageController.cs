@@ -415,6 +415,7 @@ namespace GGemCo2DCore
                             WorldPosition = ResolveGuardFeedbackWorldPosition(damageTextPosition, guardResult),
                         };
                         ApplyGuardFeedbackRandomXRange(guardText, guardResult);
+                        ApplyGuardFeedbackMotion(guardText, guardResult);
                         SceneGame.Instance.damageTextManager.ShowDamageText(guardText);
                         hasGuardFeedback = true;
                     }
@@ -843,6 +844,27 @@ namespace GGemCo2DCore
                 return;
 
             request.RandomXRange = Mathf.Max(0f, guardResult.FeedbackRandomXRange);
+        }
+
+        /// <summary>
+        /// 가드 피드백 전용 이동/페이드 연출 값을 플로팅 표시 요청에 적용합니다.
+        /// </summary>
+        /// <param name="request">플로팅 표시 요청입니다.</param>
+        /// <param name="guardResult">가드 판정 결과와 연출 정책입니다.</param>
+        private static void ApplyGuardFeedbackMotion(
+            MetadataDamageText request,
+            GuardResolutionResult guardResult)
+        {
+            if (request == null || !guardResult.OverrideFeedbackMotion)
+                return;
+
+            request.MoveUpDistance = Mathf.Max(0f, guardResult.FeedbackMoveUpDistance);
+            request.FadeOutTime = Mathf.Max(0.0001f, guardResult.FeedbackFadeOutTime);
+            request.EaseType = guardResult.FeedbackEaseType;
+            request.MoveAndFadeOutTogether = guardResult.MoveFeedbackDuringFadeOut;
+
+            if (guardResult.MoveFeedbackDuringFadeOut)
+                request.MoveUpTime = request.FadeOutTime;
         }
 
         /// <summary>

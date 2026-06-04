@@ -66,5 +66,20 @@ namespace GGemCo2DCore
 
         /// <summary>가드 피드백 표시 요청에 적용할 랜덤 X 범위입니다.</summary>
         public float FeedbackRandomXRange;
+
+        /// <summary>가드 피드백 표시 연출 값을 직접 지정할지 여부입니다.</summary>
+        public bool OverrideFeedbackMotion;
+
+        /// <summary>가드 피드백 오브젝트가 위로 이동할 높이입니다.</summary>
+        public float FeedbackMoveUpDistance;
+
+        /// <summary>가드 피드백 오브젝트가 페이드 아웃되는 시간입니다.</summary>
+        public float FeedbackFadeOutTime;
+
+        /// <summary>가드 피드백 오브젝트 이동에 사용할 이징 타입입니다.</summary>
+        public Easing.EaseType FeedbackEaseType;
+
+        /// <summary>Fade Out 시간 안에 목표 위치까지 이동해야 하는지 여부입니다.</summary>
+        public bool MoveFeedbackDuringFadeOut;
     }
 }

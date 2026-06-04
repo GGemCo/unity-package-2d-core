@@ -20,6 +20,7 @@ namespace GGemCo2DCore
         public float FadeOutTime;
         public float RandomXRange = -1f;
         public Easing.EaseType? EaseType;
+        public bool MoveAndFadeOutTogether;
 
         /// <summary>
         /// 플로팅 표시 요청이 스프라이트 이미지를 포함하는지 확인합니다.
