@@ -11,6 +11,7 @@ namespace GGemCo2DCore
     {
         private readonly CharacterStateTracker _stateTracker = new();
         private readonly HashSet<object> _controlLockTokens = new();
+        private readonly HashSet<object> _movementLockTokens = new();
         private readonly HashSet<object> _brainLockTokens = new();
         private bool _isAggro;
 
@@ -38,6 +39,42 @@ namespace GGemCo2DCore
             }
 
             _controlLockTokens.Remove(token);
+        }
+
+        /// <summary>
+        /// 이동 입력과 이동 실행만 일시적으로 막기 위한 이동 잠금 토큰을 획득합니다.
+        /// 전체 조작 잠금과 달리 공격, 가드, 상호작용 같은 비이동 입력은 차단하지 않습니다.
+        /// </summary>
+        /// <param name="owner">잠금 요청 소유자입니다. null이면 새 토큰을 생성합니다.</param>
+        /// <returns>해제 시 사용할 이동 잠금 토큰입니다.</returns>
+        public object AcquireMovementLock(object owner = null)
+        {
+            object token = owner ?? new object();
+            _movementLockTokens.Add(token);
+            return token;
+        }
+
+        /// <summary>
+        /// 이전에 획득한 이동 잠금 토큰을 해제합니다.
+        /// </summary>
+        /// <param name="token">해제할 이동 잠금 토큰입니다.</param>
+        public void ReleaseMovementLock(object token)
+        {
+            if (token == null)
+            {
+                return;
+            }
+
+            _movementLockTokens.Remove(token);
+        }
+
+        /// <summary>
+        /// 이동 전용 잠금 또는 전체 제어 잠금으로 이동 조작이 막혀 있는지 확인합니다.
+        /// </summary>
+        /// <returns>이동 조작이 막혀 있으면 <see langword="true"/>입니다.</returns>
+        public bool IsMovementLocked()
+        {
+            return _movementLockTokens.Count > 0 || _controlLockTokens.Count > 0;
         }
 
         /// <summary>
