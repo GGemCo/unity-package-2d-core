@@ -13,7 +13,8 @@ namespace GGemCo2DCore
         UiModal,
         GuardAction,
         PlayerAttackRange,
-        ControlLocked
+        ControlLocked,
+        Skill
     }
 
     /// <summary>
