@@ -908,6 +908,53 @@ namespace GGemCo2DCore
         }
 
         /// <summary>
+        /// 맵 전환을 시작하기 전에 진행 중인 컷신과 대화 UI를 강제로 취소합니다.
+        /// 완료 이벤트는 발행하지 않고, 말풍선/일반 대화창/연출 상태만 안전하게 정리합니다.
+        /// </summary>
+        public void CancelCurrentCutsceneForMapTransition()
+        {
+            bool hasCutsceneToCancel =
+                _isCutsceneSessionActive ||
+                _currentState == State.Loading ||
+                _currentState == State.Ready ||
+                _currentState == State.Playing;
+
+            if (hasCutsceneToCancel)
+            {
+                _currentState = State.Finished;
+            }
+
+            // 일반 대화창은 대화 완료 이벤트 없이 닫고, 컷신 대기는 아래 Finalize 단계에서 컨트롤러 End()로 해제합니다.
+            CloseDialogueWindowForMapTransition();
+
+            if (!hasCutsceneToCancel)
+            {
+                return;
+            }
+
+            // 맵 이동 중에는 이전 맵 연출의 TimeScale, 말풍선, 카메라 상태가 새 맵으로 넘어가지 않아야 합니다.
+            ForceRestoreTimeScale();
+            FinalizeCutscenePlayback(emitCompletedEvent: false);
+        }
+
+        /// <summary>
+        /// 맵 전환 중 열려 있는 일반 대화창을 종료 이벤트 없이 닫습니다.
+        /// 맵 이동은 대화 완료가 아니므로 대화 종료 이벤트는 발행하지 않습니다.
+        /// </summary>
+        private static void CloseDialogueWindowForMapTransition()
+        {
+            UIWindowDialogue dialogueWindow =
+                SceneGame.Instance?.uIWindowManager?.GetUIWindowByUid<UIWindowDialogue>(UIWindowConstants.WindowUid.Dialogue);
+
+            if (dialogueWindow == null || !dialogueWindow.gameObject.activeSelf)
+            {
+                return;
+            }
+
+            dialogueWindow.CancelDialogue();
+        }
+
+        /// <summary>
         /// 컷신 재생 종료 후 공통 정리 로직을 수행합니다.
         /// </summary>
         /// <param name="emitCompletedEvent"><see langword="true"/>이면 정상 완료 이벤트를 발행합니다.</param>

@@ -284,6 +284,16 @@ namespace GGemCo2DCore
         }
 
         /// <summary>
+        /// 맵 전환처럼 대화를 완료로 처리하면 안 되는 상황에서 대화창을 강제로 닫습니다.
+        /// 대화 종료 이벤트는 발행하지 않고 UI 상태만 초기화합니다.
+        /// </summary>
+        public void CancelDialogue()
+        {
+            ResetDialogue();
+            gameObject.SetActive(false);
+        }
+
+        /// <summary>
         /// 일반 대화 종료 후 종료 이벤트를 발행합니다.
         /// </summary>
         private void EndDialogue()

@@ -219,6 +219,7 @@ namespace GGemCo2DCore
             }
 
             mapUid = ResolveMapEntryTargetMapUid(mapUid);
+            CancelCutsceneBeforeMapLoad();
             // GcLogger.Log("LoadMap start");
             Reset();
             _currentState = MapConstants.State.FadeIn;
@@ -227,6 +228,19 @@ namespace GGemCo2DCore
             OnLoadStartMap?.Invoke();
 
             StartCoroutine(UpdateState());
+        }
+
+        /// <summary>
+        /// 맵 로드가 확정되었을 때 이전 맵에서 진행 중이던 컷신과 대화 연출을 정리합니다.
+        /// 맵 오브젝트를 제거하기 전에 호출하여 컷신 컨트롤러가 기존 대상 참조를 사용해 복원 처리를 완료할 수 있게 합니다.
+        /// </summary>
+        private void CancelCutsceneBeforeMapLoad()
+        {
+            CutsceneManager cutsceneManager = _sceneGame != null
+                ? _sceneGame.CutsceneManager
+                : SceneGame.Instance?.CutsceneManager;
+
+            cutsceneManager?.CancelCurrentCutsceneForMapTransition();
         }
 
         /// <summary>
