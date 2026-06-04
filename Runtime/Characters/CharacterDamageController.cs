@@ -372,6 +372,7 @@ namespace GGemCo2DCore
             bool hasGuardFeedbackText = false;
             bool isGuardResolved = false;
             bool overrideAfterDamageCrowdControlByGuard = false;
+            bool hasRequestedPlayerHudStaminaFeedback = false;
             List<CrowdControlRuntimeData> guardCrowdControlRuntimeList = null;
             var guardResolver = _characterBase.GetComponent<IIncomingHitGuardResolver>();
 
@@ -418,6 +419,9 @@ namespace GGemCo2DCore
                     NotifyIncomingHitCombatFeedback(
                         metadataDamage,
                         ResolveCombatOutcomeByGuardResult(guardResult));
+
+                    hasRequestedPlayerHudStaminaFeedback =
+                        TryPlayPlayerHudGuardSuccessFeedback(metadataDamage, guardResult);
                 }
             }
 
@@ -516,7 +520,8 @@ namespace GGemCo2DCore
             }
             else
             {
-                TryPlayPlayerHudDamageFeedback(metadataDamage);
+                if (!hasRequestedPlayerHudStaminaFeedback)
+                    TryPlayPlayerHudDamageFeedback(metadataDamage);
                 
                 bool shouldPlayDamageReaction = !suppressHitReactionByGuard;
                 CharacterConstants.HitReactionType hitReactionType = CharacterConstants.HitReactionType.None;
@@ -826,25 +831,61 @@ namespace GGemCo2DCore
         }
 
 
-        private void TryPlayPlayerHudDamageFeedback(MetadataDamage metadataDamage)
+        /// <summary>
+        /// 플레이어의 가드 성공 결과에 맞춰 스테미나 HUD 충격 피드백을 재생합니다.
+        /// </summary>
+        /// <param name="metadataDamage">가드 판정에 사용된 타격 메타데이터입니다.</param>
+        /// <param name="guardResult">가드 판정 결과입니다.</param>
+        /// <returns>스테미나 HUD 피드백 재생을 요청했으면 <see langword="true"/>를 반환합니다.</returns>
+        private bool TryPlayPlayerHudGuardSuccessFeedback(
+            MetadataDamage metadataDamage,
+            GuardResolutionResult guardResult)
+        {
+            if (!ShouldPlayPlayerHudGuardSuccessFeedback(guardResult))
+                return false;
+
+            return TryPlayPlayerHudDamageFeedback(metadataDamage);
+        }
+
+        /// <summary>
+        /// 플레이어 스테미나 HUD에 가드 성공 충격 피드백을 재생해야 하는 결과인지 확인합니다.
+        /// </summary>
+        /// <param name="guardResult">가드 판정 결과입니다.</param>
+        /// <returns>일반 가드 또는 가드 브레이크 성공이면 <see langword="true"/>를 반환합니다.</returns>
+        private static bool ShouldPlayPlayerHudGuardSuccessFeedback(GuardResolutionResult guardResult)
+        {
+            if (!guardResult.IsResolved)
+                return false;
+
+            return guardResult.Outcome == GuardResolutionOutcome.Guarded ||
+                   guardResult.Outcome == GuardResolutionOutcome.GuardBroken;
+        }
+
+        /// <summary>
+        /// 플레이어 스테미나 HUD의 충격 피드백을 공격자 방향 기준으로 재생합니다.
+        /// </summary>
+        /// <param name="metadataDamage">공격자 정보를 포함한 타격 메타데이터입니다.</param>
+        /// <returns>스테미나 HUD 피드백 재생을 요청했으면 <see langword="true"/>를 반환합니다.</returns>
+        private bool TryPlayPlayerHudDamageFeedback(MetadataDamage metadataDamage)
         {
             if (metadataDamage == null)
             {
-                return;
+                return false;
             }
 
             if (!(_characterBase is Player player))
             {
-                return;
+                return false;
             }
 
             if (metadataDamage.attacker != null)
             {
                 player.PlayStaminaDamageFeedbackFromAttacker(metadataDamage.attacker.transform);
-                return;
+                return true;
             }
 
             player.PlayDefaultStaminaDamageFeedback();
+            return true;
         }
 
         /// <summary>
