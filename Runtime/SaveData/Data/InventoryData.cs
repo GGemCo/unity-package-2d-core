@@ -208,6 +208,153 @@ namespace GGemCo2DCore
         }
 
         /// <summary>
+        /// 지정한 아이템 카테고리와 서브 카테고리에 해당하는 모든 아이템을 인벤토리에 추가합니다.
+        /// 서브 카테고리 목록이 비어 있으면 카테고리만 기준으로 필터링합니다.
+        /// </summary>
+        /// <param name="category">생성할 아이템의 카테고리입니다.</param>
+        /// <param name="subCategories">생성할 아이템의 서브 카테고리 목록입니다. null 또는 빈 목록이면 전체 서브 카테고리를 허용합니다.</param>
+        /// <param name="itemCount">아이템별로 추가할 수량입니다.</param>
+        /// <returns>추가된 아이콘 변경 목록을 포함한 처리 결과입니다.</returns>
+        public ResultCommon AddItemsByCategory(
+            ItemConstants.Category category,
+            IReadOnlyList<ItemConstants.SubCategory> subCategories,
+            int itemCount = 1)
+        {
+            if (category == ItemConstants.Category.None)
+            {
+                return ResultCommon.Fail("Inventory_InvalidCategory");
+            }
+
+            if (itemCount <= 0)
+            {
+                return ResultCommon.Fail("Slot_InvalidItemCount", $"itemCount: {itemCount}");
+            }
+
+            TableItem tableItem = TableLoaderManager?.TableItem;
+            if (tableItem == null)
+            {
+                return ResultCommon.Fail("Inventory_ItemTableNotReady");
+            }
+
+            List<SaveDataIcon> resultIcons = new List<SaveDataIcon>();
+            int addedItemTypeCount = 0;
+
+            foreach (StruckTableItem itemData in tableItem.GetAll().Values)
+            {
+                if (itemData == null ||
+                    itemData.Uid <= 0 ||
+                    itemData.Category != category ||
+                    !ContainsSubCategory(subCategories, itemData.SubCategory))
+                {
+                    continue;
+                }
+
+                ResultCommon addResult = AddItem(itemData.Uid, itemCount);
+                if (addResult == null || addResult.Result != ResultCommon.ResultType.Success)
+                {
+                    return addResult ?? ResultCommon.Fail("Inventory_AddItemByCategoryFailed");
+                }
+
+                // AddItem은 변경될 아이콘 목록만 반환하므로, 다음 아이템 배치 계산을 위해 임시로 저장 데이터에 반영한다.
+                ApplyResultIconsToItemCounts(addResult.ResultIcons, resultIcons);
+                addedItemTypeCount++;
+            }
+
+            if (addedItemTypeCount <= 0)
+            {
+                return ResultCommon.Fail(
+                    "Inventory_NoMatchedItemCategory",
+                    $"category: {category}, subCategories: {FormatSubCategories(subCategories)}");
+            }
+
+            SaveDatas();
+            return ResultCommon.SuccessWithIcons(resultIcons);
+        }
+
+        /// <summary>
+        /// 서브 카테고리 필터에 지정한 값이 포함되어 있는지 확인합니다.
+        /// 필터가 비어 있으면 모든 서브 카테고리를 허용합니다.
+        /// </summary>
+        /// <param name="subCategories">허용할 서브 카테고리 목록입니다.</param>
+        /// <param name="subCategory">검사할 서브 카테고리입니다.</param>
+        /// <returns>허용 목록에 포함되거나 허용 목록이 비어 있으면 true입니다.</returns>
+        private static bool ContainsSubCategory(
+            IReadOnlyList<ItemConstants.SubCategory> subCategories,
+            ItemConstants.SubCategory subCategory)
+        {
+            if (subCategories == null || subCategories.Count == 0)
+            {
+                return true;
+            }
+
+            for (int i = 0; i < subCategories.Count; i++)
+            {
+                if (subCategories[i] == subCategory)
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        /// <summary>
+        /// 아이템 추가 결과를 인벤토리 저장 데이터에 반영하고, UI 갱신용 결과 목록에 누적합니다.
+        /// </summary>
+        /// <param name="sourceIcons">현재 아이템 추가로 변경된 아이콘 목록입니다.</param>
+        /// <param name="destinationIcons">외부로 반환할 누적 아이콘 목록입니다.</param>
+        private void ApplyResultIconsToItemCounts(
+            IReadOnlyList<SaveDataIcon> sourceIcons,
+            List<SaveDataIcon> destinationIcons)
+        {
+            if (sourceIcons == null)
+            {
+                return;
+            }
+
+            for (int i = 0; i < sourceIcons.Count; i++)
+            {
+                SaveDataIcon icon = sourceIcons[i];
+                if (icon == null)
+                {
+                    continue;
+                }
+
+                ItemCounts[icon.SlotIndex] = new SaveDataIcon(
+                    icon.SlotIndex,
+                    icon.Uid,
+                    icon.Count,
+                    icon.Level,
+                    icon.IsLearned,
+                    icon.InstanceId,
+                    icon.IconType);
+
+                destinationIcons?.Add(icon);
+            }
+        }
+
+        /// <summary>
+        /// 디버그 로그에 사용할 서브 카테고리 목록 문자열을 생성합니다.
+        /// </summary>
+        /// <param name="subCategories">표시할 서브 카테고리 목록입니다.</param>
+        /// <returns>쉼표로 연결한 서브 카테고리 문자열입니다.</returns>
+        private static string FormatSubCategories(IReadOnlyList<ItemConstants.SubCategory> subCategories)
+        {
+            if (subCategories == null || subCategories.Count == 0)
+            {
+                return "All";
+            }
+
+            string result = subCategories[0].ToString();
+            for (int i = 1; i < subCategories.Count; i++)
+            {
+                result += $",{subCategories[i]}";
+            }
+
+            return result;
+        }
+
+        /// <summary>
         /// 퀵슬롯이 참조할 실제 인벤토리 슬롯을 찾습니다.
         /// 인스턴스 아이템은 instanceId 를 우선 매칭하고,
         /// 그렇지 않으면 같은 itemUid 를 가진 첫 번째 점유 슬롯을 사용합니다.
