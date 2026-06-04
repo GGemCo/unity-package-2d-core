@@ -90,8 +90,16 @@ namespace GGemCo2DCore
         private ICharacterMotionController _motionController;
         private CharacterPhysicsOverrideController _physicsOverrideController;
         private CharacterElementGaugeController _elementGaugeController;
+        private bool _isMoveForceActive;
+        private int _moveForceVersion;
+        private Vector2 _moveForceTargetPosition;
 
         public CharacterElementGaugeController ElementGaugeController => _elementGaugeController;
+
+        /// <summary>
+        /// 현재 캐릭터가 강제 이동 보간을 진행 중인지 여부입니다.
+        /// </summary>
+        public bool IsMoveForceActive => _isMoveForceActive;
         
         public event EventHandlerAnimationCompleteAttack AnimationCompleteAttack;
         public event EventHandlerAnimationCompleteAttackEnd AnimationCompleteAttackEnd;
@@ -350,7 +358,8 @@ namespace GGemCo2DCore
             if (duration > 0)
             {
                 Vector3 newPosition = transform.position + new Vector3(x, y, 0);
-                StartCoroutine(MoveForceRoutine(newPosition, duration));
+                int version = ++_moveForceVersion;
+                StartCoroutine(MoveForceRoutine(newPosition, duration, version));
             }
             else
             {
@@ -359,19 +368,43 @@ namespace GGemCo2DCore
         }
 
         /// <summary>
+        /// 현재 강제 이동 목표까지 남은 거리를 조회합니다.
+        /// </summary>
+        /// <param name="remainingDistance">강제 이동 목표까지 남은 월드 거리입니다.</param>
+        /// <returns>진행 중인 강제 이동이 있으면 <see langword="true"/>를 반환합니다.</returns>
+        public bool TryGetRemainingMoveForceDistance(out float remainingDistance)
+        {
+            remainingDistance = 0f;
+            if (!_isMoveForceActive)
+            {
+                return false;
+            }
+
+            remainingDistance = Vector2.Distance(transform.position, _moveForceTargetPosition);
+            return true;
+        }
+
+        /// <summary>
         /// 지정한 위치까지 강제 이동을 시간에 따라 보간합니다.
         /// </summary>
         /// <param name="position">이동 목표 위치입니다.</param>
         /// <param name="duration">보간에 사용할 이동 시간입니다.</param>
+        /// <param name="version">가장 최근 강제 이동 요청인지 판정하기 위한 버전 값입니다.</param>
         /// <returns>강제 이동이 완료될 때까지 진행되는 코루틴입니다.</returns>
-        private System.Collections.IEnumerator MoveForceRoutine(Vector3 position, float duration = 0)
+        private System.Collections.IEnumerator MoveForceRoutine(Vector3 position, float duration, int version)
         {
             if (!characterRigidbody2D) yield break;
-            if (duration == 0) yield break;
+            if (duration <= 0f) yield break;
             
             Vector2 startPosition = transform.position;
             Vector2 targetPosition = position;
             float elapsed = 0f;
+
+            if (version == _moveForceVersion)
+            {
+                _isMoveForceActive = true;
+                _moveForceTargetPosition = targetPosition;
+            }
 
             while (elapsed < duration)
             {
@@ -380,11 +413,22 @@ namespace GGemCo2DCore
                 Vector2 newPosition = Vector2.Lerp(startPosition, targetPosition, easedT);
                 characterRigidbody2D.MovePosition(newPosition);
 
+                // HitStop 중에는 Rigidbody가 정지될 수 있으므로 남은 이동 시간이 소모되지 않도록 보존합니다.
+                if (IsHitStopped)
+                {
+                    yield return null;
+                    continue;
+                }
+
                 elapsed += Time.deltaTime;
                 yield return null;
             }
 
             characterRigidbody2D.MovePosition(targetPosition);
+            if (version == _moveForceVersion)
+            {
+                _isMoveForceActive = false;
+            }
         }
 
         /// <summary>
