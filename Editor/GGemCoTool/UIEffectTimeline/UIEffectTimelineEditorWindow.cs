@@ -23,6 +23,9 @@ namespace GGemCo2DCoreEditor
         private StruckTableUIEffect _editingData;
         private TimelineAsset _timelineAsset;
         private UIEffectRuntimeSequence _runtimeSequence;
+        private UIEffectTarget _previewOverrideTarget;
+        private bool _overrideAllPreviewTargets = true;
+        private string _previewOverrideTargetKey;
         private Vector2 _scrollPosition;
         private readonly List<string> _messages = new List<string>();
         private string _timelineAutoSelectMessage;
@@ -196,28 +199,6 @@ namespace GGemCo2DCoreEditor
                     ReloadTable();
                 }
             }
-
-            DrawExpectedPathInfo();
-        }
-
-        /// <summary>
-        /// 선택한 UI 효과의 UID 기반 Timeline/RuntimeSequence 경로를 표시합니다.
-        /// </summary>
-        private void DrawExpectedPathInfo()
-        {
-            int uid = GetSelectedUid();
-            if (uid <= 0)
-            {
-                EditorGUILayout.HelpBox("UI Effect를 선택하면 UID 기반 경로가 표시됩니다.", MessageType.Info);
-                return;
-            }
-
-            EditorGUILayout.LabelField("권장 Timeline 경로");
-            EditorGUILayout.SelectableLabel(UIEffectTimelineAuthoringPath.GetTimelineAssetPath(uid), EditorStyles.textField, GUILayout.Height(EditorGUIUtility.singleLineHeight));
-            EditorGUILayout.LabelField("RuntimeSequence 경로");
-            EditorGUILayout.SelectableLabel(UIEffectTimelineAuthoringPath.GetRuntimeSequenceAssetPath(uid), EditorStyles.textField, GUILayout.Height(EditorGUIUtility.singleLineHeight));
-            EditorGUILayout.LabelField("RuntimeSequence Key");
-            EditorGUILayout.SelectableLabel(UIEffectTimelineAuthoringPath.GetRuntimeSequenceKey(uid), EditorStyles.textField, GUILayout.Height(EditorGUIUtility.singleLineHeight));
         }
 
         /// <summary>
@@ -311,7 +292,47 @@ namespace GGemCo2DCoreEditor
         private void DrawPreviewPanel()
         {
             EditorGUILayout.LabelField("Play Mode Preview", EditorStyles.boldLabel);
-            EditorGUILayout.HelpBox("씬에 UIEffectTimelineTargetRegistry를 배치하고 targetKey를 등록하면 Play Mode에서 실제 UI에 재생할 수 있습니다.", MessageType.Info);
+            EditorGUILayout.HelpBox("기본 재생은 UIEffectTimelineTargetRegistry의 targetKey를 사용합니다. Preview Target을 지정하면 Play Mode 테스트에서만 Hierarchy 오브젝트를 우선 사용합니다.", MessageType.Info);
+
+            _overrideAllPreviewTargets = EditorGUILayout.Toggle("모든 TargetKey Override", _overrideAllPreviewTargets);
+            using (new EditorGUI.DisabledScope(_overrideAllPreviewTargets))
+            {
+                _previewOverrideTargetKey = EditorGUILayout.TextField("Override TargetKey", _previewOverrideTargetKey ?? string.Empty);
+            }
+
+            _previewOverrideTarget = (UIEffectTarget)EditorGUILayout.ObjectField("Preview Target", _previewOverrideTarget, typeof(UIEffectTarget), true);
+
+            using (new EditorGUILayout.HorizontalScope())
+            {
+                if (GUILayout.Button("Hierarchy 선택 사용"))
+                {
+                    UseHierarchySelectionAsPreviewTarget();
+                }
+
+                using (new EditorGUI.DisabledScope(Selection.activeGameObject == null))
+                {
+                    if (GUILayout.Button("선택 오브젝트에 Target 추가"))
+                    {
+                        AddPreviewTargetToHierarchySelection();
+                    }
+                }
+            }
+
+            using (new EditorGUILayout.HorizontalScope())
+            {
+                using (new EditorGUI.DisabledScope(_editingData == null || string.IsNullOrWhiteSpace(_editingData.TargetKey)))
+                {
+                    if (GUILayout.Button("Row TargetKey를 Override Key로 사용"))
+                    {
+                        _previewOverrideTargetKey = _editingData.TargetKey;
+                    }
+
+                    if (GUILayout.Button("빈 Clip TargetKey 채우기"))
+                    {
+                        FillEmptyClipTargetKeysFromRow();
+                    }
+                }
+            }
 
             using (new EditorGUI.DisabledScope(!EditorApplication.isPlaying || _runtimeSequence == null))
             {
@@ -554,6 +575,12 @@ namespace GGemCo2DCoreEditor
         /// </summary>
         private void PreviewPlay()
         {
+            _messages.Clear();
+            if (!ValidatePreviewReady())
+            {
+                return;
+            }
+
             UIEffectTimelinePlayer player = Object.FindObjectOfType<UIEffectTimelinePlayer>();
             if (player == null)
             {
@@ -561,7 +588,9 @@ namespace GGemCo2DCoreEditor
                 player = playerObject.AddComponent<UIEffectTimelinePlayer>();
             }
 
+            player.SetResolver(CreatePreviewResolver());
             player.Play(_runtimeSequence);
+            _messages.Add("Preview 재생을 시작했습니다.");
         }
 
         /// <summary>
@@ -573,7 +602,176 @@ namespace GGemCo2DCoreEditor
             if (player != null)
             {
                 player.Stop();
+                player.SetResolver(null);
+                _messages.Add("Preview 재생을 중지했습니다.");
             }
+        }
+
+        /// <summary>
+        /// Play Mode Preview에서 사용할 targetKey 해석기를 생성합니다.
+        /// </summary>
+        /// <returns>프리뷰 Override 규칙을 포함한 targetKey 해석기입니다.</returns>
+        private IUIEffectTimelineTargetResolver CreatePreviewResolver()
+        {
+            return new UIEffectTimelinePreviewTargetResolver(
+                _previewOverrideTarget,
+                _previewOverrideTargetKey,
+                _overrideAllPreviewTargets,
+                new UIEffectTimelineSceneTargetResolver());
+        }
+
+        /// <summary>
+        /// Preview 재생에 필요한 기본 조건을 검사합니다.
+        /// </summary>
+        /// <returns>Preview 재생이 가능하면 true입니다.</returns>
+        private bool ValidatePreviewReady()
+        {
+            if (!EditorApplication.isPlaying)
+            {
+                _messages.Add("Preview는 Play Mode에서만 실행할 수 있습니다.");
+                return false;
+            }
+
+            if (_runtimeSequence == null)
+            {
+                _messages.Add("Runtime Sequence를 먼저 선택하거나 Bake를 실행하세요.");
+                return false;
+            }
+
+            if (_previewOverrideTarget != null && !_overrideAllPreviewTargets && string.IsNullOrWhiteSpace(_previewOverrideTargetKey))
+            {
+                _messages.Add("특정 TargetKey만 Override하려면 Override TargetKey를 입력하세요.");
+                return false;
+            }
+
+            return true;
+        }
+
+        /// <summary>
+        /// Hierarchy에서 선택한 오브젝트를 Preview Target으로 설정합니다.
+        /// </summary>
+        private void UseHierarchySelectionAsPreviewTarget()
+        {
+            _messages.Clear();
+            GameObject selectedObject = Selection.activeGameObject;
+            if (selectedObject == null)
+            {
+                _messages.Add("Hierarchy에서 UIEffectTarget 또는 UI 오브젝트를 선택하세요.");
+                return;
+            }
+
+            UIEffectTarget target = FindUIEffectTargetFromSelection(selectedObject);
+            if (target == null)
+            {
+                _messages.Add($"선택한 오브젝트에서 UIEffectTarget을 찾지 못했습니다. 필요하면 '선택 오브젝트에 Target 추가' 버튼을 사용하세요. object={selectedObject.name}");
+                return;
+            }
+
+            target.AutoBind();
+            _previewOverrideTarget = target;
+            _messages.Add($"Preview Target 선택 완료: {target.name}");
+        }
+
+        /// <summary>
+        /// Hierarchy에서 선택한 오브젝트에 UIEffectTarget을 추가하고 Preview Target으로 설정합니다.
+        /// </summary>
+        private void AddPreviewTargetToHierarchySelection()
+        {
+            _messages.Clear();
+            GameObject selectedObject = Selection.activeGameObject;
+            if (selectedObject == null)
+            {
+                _messages.Add("UIEffectTarget을 추가할 Hierarchy 오브젝트를 선택하세요.");
+                return;
+            }
+
+            UIEffectTarget target = selectedObject.GetComponent<UIEffectTarget>();
+            if (target == null)
+            {
+                target = Undo.AddComponent<UIEffectTarget>(selectedObject);
+            }
+
+            target.AutoBind();
+            EditorUtility.SetDirty(target);
+            _previewOverrideTarget = target;
+            _messages.Add($"UIEffectTarget 추가 및 Preview Target 설정 완료: {selectedObject.name}");
+        }
+
+        /// <summary>
+        /// 선택 오브젝트, 부모, 자식 순서로 UIEffectTarget을 검색합니다.
+        /// </summary>
+        /// <param name="selectedObject">Hierarchy에서 선택한 오브젝트입니다.</param>
+        /// <returns>찾은 UIEffectTarget입니다. 없으면 null입니다.</returns>
+        private static UIEffectTarget FindUIEffectTargetFromSelection(GameObject selectedObject)
+        {
+            if (selectedObject == null)
+            {
+                return null;
+            }
+
+            UIEffectTarget target = selectedObject.GetComponent<UIEffectTarget>();
+            if (target != null)
+            {
+                return target;
+            }
+
+            target = selectedObject.GetComponentInParent<UIEffectTarget>();
+            if (target != null)
+            {
+                return target;
+            }
+
+            UIEffectTarget[] children = selectedObject.GetComponentsInChildren<UIEffectTarget>(true);
+            return children.Length > 0 ? children[0] : null;
+        }
+
+        /// <summary>
+        /// 현재 Row의 TargetKey를 Timeline 안의 비어 있는 UI 효과 Clip targetKey에 채웁니다.
+        /// </summary>
+        private void FillEmptyClipTargetKeysFromRow()
+        {
+            _messages.Clear();
+            if (_timelineAsset == null)
+            {
+                _messages.Add("Timeline Asset을 먼저 선택하세요.");
+                return;
+            }
+
+            if (_editingData == null || string.IsNullOrWhiteSpace(_editingData.TargetKey))
+            {
+                _messages.Add("Row TargetKey가 비어 있어 Clip에 채울 수 없습니다.");
+                return;
+            }
+
+            int changedCount = 0;
+            foreach (TrackAsset track in _timelineAsset.GetOutputTracks())
+            {
+                if (track is not UIEffectTrack)
+                {
+                    continue;
+                }
+
+                foreach (TimelineClip timelineClip in track.GetClips())
+                {
+                    if (timelineClip.asset is not UIEffectClipBase clip || !string.IsNullOrWhiteSpace(clip.targetKey))
+                    {
+                        continue;
+                    }
+
+                    Undo.RecordObject(clip, "Fill UI Effect TargetKey");
+                    clip.targetKey = _editingData.TargetKey;
+                    EditorUtility.SetDirty(clip);
+                    changedCount++;
+                }
+            }
+
+            if (changedCount > 0)
+            {
+                EditorUtility.SetDirty(_timelineAsset);
+                AssetDatabase.SaveAssets();
+            }
+
+            _messages.Add($"빈 Clip TargetKey 채우기 완료: {changedCount}개 변경");
         }
 
         /// <summary>
