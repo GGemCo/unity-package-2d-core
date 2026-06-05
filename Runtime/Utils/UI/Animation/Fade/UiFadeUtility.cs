@@ -157,7 +157,7 @@ namespace GGemCo2DCore
         /// <param name="ensureCanvasGroup">CanvasGroup 자동 생성 여부.</param>
         /// <returns>실행된 Fade 코루틴.</returns>
         /// <exception cref="ArgumentNullException">runner가 null일 경우.</exception>
-        private static Coroutine FadeTo(
+        public static Coroutine FadeTo(
             MonoBehaviour runner,
             GameObject target,
             float toAlpha,
