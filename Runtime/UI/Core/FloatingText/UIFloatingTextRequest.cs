@@ -23,6 +23,11 @@ namespace GGemCo2DCore
         public bool MoveAndFadeOutTogether;
 
         /// <summary>
+        /// 플로팅 UI 생성 후 재생할 ui_effect 데이터 테이블 UID입니다. 0이면 기본 플로팅 연출을 사용합니다.
+        /// </summary>
+        public int UiEffectUid;
+
+        /// <summary>
         /// 플로팅 표시 요청이 스프라이트 이미지를 포함하는지 확인합니다.
         /// </summary>
         /// <returns>표시할 이미지 스프라이트가 있으면 <see langword="true"/>입니다.</returns>

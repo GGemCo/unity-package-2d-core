@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using TMPro;
@@ -173,6 +174,12 @@ namespace GGemCo2DCore
             text.transform.position = worldPosition;
             text.gameObject.SetActive(true);
 
+            if (request.UiEffectUid > 0)
+            {
+                StartCoroutine(PlayFloatingGraphicUiEffect(text, request, ReturnFloatingText));
+                return;
+            }
+
             StartCoroutine(AnimateFloatingText(text, request));
         }
 
@@ -201,6 +208,12 @@ namespace GGemCo2DCore
             image.transform.position = worldPosition;
             image.gameObject.SetActive(true);
 
+            if (request.UiEffectUid > 0)
+            {
+                StartCoroutine(PlayFloatingGraphicUiEffect(image, request, ReturnFloatingImage));
+                return;
+            }
+
             StartCoroutine(AnimateFloatingImage(image, request));
         }
 
@@ -213,9 +226,24 @@ namespace GGemCo2DCore
 
             yield return AnimateFloatingGraphic(text, request);
 
-            text.gameObject.SetActive(false);
-            text.text = string.Empty;
-            _textPool.Enqueue(text);
+            ReturnFloatingText(text);
+        }
+
+        /// <summary>
+        /// 플로팅 텍스트 오브젝트를 초기화한 뒤 풀에 반환합니다.
+        /// </summary>
+        /// <param name="text">반환할 텍스트 컴포넌트입니다.</param>
+        private void ReturnFloatingText(Graphic text)
+        {
+            var textComponent = text as TextMeshProUGUI;
+            if (textComponent == null)
+            {
+                return;
+            }
+
+            textComponent.gameObject.SetActive(false);
+            textComponent.text = string.Empty;
+            _textPool.Enqueue(textComponent);
         }
 
         /// <summary>
@@ -232,9 +260,97 @@ namespace GGemCo2DCore
 
             yield return AnimateFloatingGraphic(image, request);
 
-            image.sprite = null;
-            image.gameObject.SetActive(false);
-            _imagePool.Enqueue(image);
+            ReturnFloatingImage(image);
+        }
+
+        /// <summary>
+        /// 플로팅 이미지 오브젝트를 초기화한 뒤 풀에 반환합니다.
+        /// </summary>
+        /// <param name="image">반환할 이미지 컴포넌트입니다.</param>
+        private void ReturnFloatingImage(Graphic image)
+        {
+            var imageComponent = image as Image;
+            if (imageComponent == null)
+            {
+                return;
+            }
+
+            imageComponent.sprite = null;
+            imageComponent.gameObject.SetActive(false);
+            _imagePool.Enqueue(imageComponent);
+        }
+
+
+        /// <summary>
+        /// ui_effect 데이터 테이블 UID로 플로팅 UI 효과를 재생한 뒤 풀 반환 콜백을 실행합니다.
+        /// </summary>
+        /// <param name="graphic">효과를 적용할 플로팅 UI Graphic입니다.</param>
+        /// <param name="request">UI 효과 UID와 표시 정보를 포함한 요청입니다.</param>
+        /// <param name="onComplete">효과 종료 후 풀에 반환하기 위한 콜백입니다.</param>
+        private IEnumerator PlayFloatingGraphicUiEffect(
+            Graphic graphic,
+            UIFloatingTextRequest request,
+            Action<Graphic> onComplete)
+        {
+            if (graphic == null || request == null)
+            {
+                yield break;
+            }
+
+            UIEffectRuntimeSequence sequence = null;
+            yield return UIEffectRuntimeSequenceCache.LoadAsync(request.UiEffectUid, loaded => sequence = loaded);
+
+            if (sequence == null)
+            {
+                yield return AnimateFloatingGraphic(graphic, request);
+                onComplete?.Invoke(graphic);
+                yield break;
+            }
+
+            Vector3 originalPosition = graphic.transform.position;
+            Vector3 originalScale = graphic.transform.localScale;
+            Color originalColor = graphic.color;
+            RectTransform rectTransform = graphic.rectTransform;
+            Vector2 originalAnchoredPosition = rectTransform != null ? rectTransform.anchoredPosition : Vector2.zero;
+
+            CanvasGroup canvasGroup = graphic.GetComponent<CanvasGroup>();
+            if (canvasGroup == null)
+            {
+                canvasGroup = graphic.gameObject.AddComponent<CanvasGroup>();
+            }
+
+            float originalAlpha = canvasGroup.alpha;
+            canvasGroup.alpha = 1f;
+
+            UIEffectTarget target = UIEffectTarget.GetOrAdd(graphic.gameObject);
+            UIEffectTimelinePlayer player = graphic.GetComponent<UIEffectTimelinePlayer>();
+            if (player == null)
+            {
+                player = graphic.gameObject.AddComponent<UIEffectTimelinePlayer>();
+            }
+
+            player.Stop();
+            player.SetResolver(new UIEffectFixedTargetResolver(target));
+            player.Play(sequence, UIEffectTimelineContext.Default);
+
+            float remaining = Mathf.Max(0f, sequence.duration);
+            while (remaining > 0f)
+            {
+                remaining -= Time.unscaledDeltaTime;
+                yield return null;
+            }
+
+            player.Stop();
+            graphic.transform.position = originalPosition;
+            graphic.transform.localScale = originalScale;
+            graphic.color = originalColor;
+            if (rectTransform != null)
+            {
+                rectTransform.anchoredPosition = originalAnchoredPosition;
+            }
+            canvasGroup.alpha = originalAlpha;
+
+            onComplete?.Invoke(graphic);
         }
 
         /// <summary>
