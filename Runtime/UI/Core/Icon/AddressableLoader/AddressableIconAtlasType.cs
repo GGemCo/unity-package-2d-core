@@ -20,5 +20,11 @@ namespace GGemCo2DCore
         /// 장착 파츠 아이템 아틀라스입니다.
         /// </summary>
         ItemEquip = 2,
+
+        /// <summary>
+        /// Affect 버프/디버프 아이콘 아틀라스입니다.
+        /// 상위 Affect 패키지가 Provider를 등록하여 처리합니다.
+        /// </summary>
+        AffectIcon = 3,
     }
 }

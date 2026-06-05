@@ -581,7 +581,7 @@ namespace GGemCo2DCoreEditor
                 return;
             }
 
-            UIEffectTimelinePlayer player = Object.FindObjectOfType<UIEffectTimelinePlayer>();
+            UIEffectTimelinePlayer player = CompatObjectFind.FindFirst<UIEffectTimelinePlayer>();
             if (player == null)
             {
                 var playerObject = new GameObject("UIEffectTimelinePlayer_Preview");
@@ -598,7 +598,7 @@ namespace GGemCo2DCoreEditor
         /// </summary>
         private void PreviewStop()
         {
-            UIEffectTimelinePlayer player = Object.FindObjectOfType<UIEffectTimelinePlayer>();
+            UIEffectTimelinePlayer player = CompatObjectFind.FindFirst<UIEffectTimelinePlayer>();
             if (player != null)
             {
                 player.Stop();

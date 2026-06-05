@@ -1,4 +1,5 @@
-﻿using UnityEngine;
+﻿using System.Threading.Tasks;
+using UnityEngine;
 using UnityEngine.UI;
 
 namespace GGemCo2DCore
@@ -18,6 +19,7 @@ namespace GGemCo2DCore
         private float _totalDuration;
         private float _remainingTime;
         private AffectUiDecoratorData _currentDecorator;
+        private int _buffIconImageRequestVersion;
 
         // --- Caches (avoid repeating static UI work on every snapshot refresh) ---
         private int _cachedAffectUid;
@@ -142,6 +144,7 @@ namespace GGemCo2DCore
         /// </summary>
         public void ResetBindingCache()
         {
+            _buffIconImageRequestVersion++;
             _cachedAffectUid = 0;
             _cachedIconKey = null;
             _cachedStacks = 0;
@@ -239,6 +242,7 @@ namespace GGemCo2DCore
         {
             if (ImageIcon == null) return;
 
+            int requestVersion = ++_buffIconImageRequestVersion;
             string key = GetIconImagePath();
             if (string.IsNullOrEmpty(key))
             {
@@ -247,10 +251,44 @@ namespace GGemCo2DCore
                 return;
             }
 
-            // Affect 패키지가 설치되어 있으면 아이콘을 로드한다. (Core는 Affect를 직접 참조하지 않는다.)
-            Sprite sprite = AffectRuntimeBridge.TryLoadIconSprite(key);
-            ImageIcon.sprite = sprite;
-            CacheNormalIconSprite(sprite);
+            var request = new AddressableIconSpriteRequest(AddressableIconAtlasType.AffectIcon, key);
+            if (AddressableIconSpriteService.TryGetCachedSprite(request, out Sprite cachedSprite))
+            {
+                ImageIcon.sprite = cachedSprite;
+                CacheNormalIconSprite(cachedSprite);
+                return;
+            }
+
+            // Affect Atlas는 시작 로딩에서 제외될 수 있으므로 공용 Provider 경로로 비동기 로딩한다.
+            ImageIcon.sprite = spriteBlank;
+            CacheNormalIconSprite(spriteBlank);
+            _ = UpdateBuffIconImageAsync(requestVersion, request);
+        }
+
+        /// <summary>
+        /// Affect 아이콘 Atlas가 아직 준비되지 않은 경우 비동기 로드 후 현재 요청에만 Sprite를 적용합니다.
+        /// </summary>
+        /// <param name="requestVersion">아이콘 요청 버전입니다.</param>
+        /// <param name="request">Affect 아이콘 Sprite 요청 정보입니다.</param>
+        private async Task UpdateBuffIconImageAsync(
+            int requestVersion,
+            AddressableIconSpriteRequest request)
+        {
+            try
+            {
+                Sprite sprite = await AddressableIconSpriteService.LoadSpriteAsync(request);
+                if (this == null || requestVersion != _buffIconImageRequestVersion || ImageIcon == null)
+                {
+                    return;
+                }
+
+                ImageIcon.sprite = sprite != null ? sprite : spriteBlank;
+                CacheNormalIconSprite(ImageIcon.sprite);
+            }
+            catch (System.Exception ex)
+            {
+                GcLogger.LogWarning($"버프 아이콘 비동기 갱신 중 오류가 발생했습니다. sprite={request.SpriteName}, error={ex.Message}");
+            }
         }
     }
 }
