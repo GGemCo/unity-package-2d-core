@@ -638,7 +638,7 @@ namespace GGemCo2DCore
             if (IsStatusDead()) return;
             
             // GcLogger.Log(@event);
-            long totalDamage = TotalAtk.Value;
+            long totalDamage = CalculateFinalAttack();
         
             // 캡슐 콜라이더 2D와 충돌 중인 모든 콜라이더를 검색
             Vector2 size = new Vector2(colliderAttackRange.size.x * Mathf.Abs(transform.localScale.x), colliderAttackRange.size.y * transform.localScale.y);

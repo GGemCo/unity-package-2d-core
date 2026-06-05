@@ -16,8 +16,13 @@ namespace GGemCo2DCore
         /// <summary>
         /// 현재 Total 값을 기준으로 1회 공격의 최종 데미지를 계산합니다(크리티컬 포함).
         /// </summary>
+        /// <returns>전역 계산 정책이 반영된 일반 공격 데미지입니다.</returns>
         protected long CalculateFinalAttack()
         {
+            CalculateManager calculateManager = CalculateManager.GetActive();
+            if (calculateManager != null)
+                return calculateManager.CalculateBasicAttackDamage(this);
+
             long baseAttack = TotalAtk.Value;
             if (baseAttack <= 0) return 0;
 

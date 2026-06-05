@@ -293,6 +293,29 @@ namespace GGemCo2DCore
             }
         }
 
+        /// <summary>
+        /// 데미지 타입에 따라 데미지 텍스트 색상을 결정합니다.
+        /// </summary>
+        /// <param name="damageType">데미지 타입입니다.</param>
+        /// <param name="defaultColor">타입 색상이 없을 때 사용할 기본 색상입니다.</param>
+        /// <returns>데미지 텍스트에 사용할 색상입니다.</returns>
+        private static Color ResolveDamageTextColor(ConfigCommon.DamageType damageType, Color defaultColor)
+        {
+            switch (damageType)
+            {
+                case ConfigCommon.DamageType.Fire:
+                    return Color.red;
+                case ConfigCommon.DamageType.Cold:
+                    return Color.blue;
+                case ConfigCommon.DamageType.Lightning:
+                    return Color.yellow;
+                case ConfigCommon.DamageType.Poison:
+                    return Color.green;
+                default:
+                    return defaultColor;
+            }
+        }
+
         public void TakeDamage(MetadataDamage metadataDamage)
         {
             if (metadataDamage == null) return;
@@ -318,31 +341,16 @@ namespace GGemCo2DCore
             }
             Vector3 damageTextPosition = _characterBase.transform.position + new Vector3(0,
                 _characterBase.GetHeight() * Mathf.Abs(_characterBase.originalScaleX), 0);
-            // 속성 데미지일때, 저항값 처리
-            if (damageType != ConfigCommon.DamageType.None)
-            {
-                if (damageType == ConfigCommon.DamageType.Fire)
-                {
-                    damage = (long)(damage * ((100f - _characterBase.TotalRegistFire.Value) / 100f));
-                    damageTextColor = Color.red;
-                }
-                else if (damageType == ConfigCommon.DamageType.Cold)
-                {
-                    damage = (long)(damage * ((100f - _characterBase.TotalRegistCold.Value) / 100f));
-                    damageTextColor = Color.blue;
-                }
-                else if (damageType == ConfigCommon.DamageType.Lightning)
-                {
-                    damage = (long)(damage * ((100f - _characterBase.TotalRegistLightning.Value) / 100f));
-                    damageTextColor = Color.yellow;
-                }
-                else if (damageType == ConfigCommon.DamageType.Poison)
-                {
-                    damage = (long)(damage * ((100f - _characterBase.TotalRegistPoison.Value) / 100f));
-                    damageTextColor = Color.green;
-                }
+            damageTextColor = ResolveDamageTextColor(damageType, damageTextColor);
 
-                if (damage <= 0)
+            CalculateManager calculateManager = CalculateManager.GetActive();
+            if (calculateManager != null)
+            {
+                DamageCalculationResult damageCalculationResult = calculateManager.CalculateIncomingDamage(damage, damageType, _characterBase);
+                damage = damageCalculationResult.FinalDamage;
+                metadataDamage.damage = damage;
+
+                if (damageCalculationResult.IsImmune && damageType != ConfigCommon.DamageType.None)
                 {
                     MetadataDamageText metadataDamageText = new MetadataDamageText
                     {
@@ -355,6 +363,11 @@ namespace GGemCo2DCore
                     SceneGame.Instance.damageTextManager.ShowDamageText(metadataDamageText);
                     NotifyIncomingHitCombatFeedback(metadataDamage, MonsterSkillCombatOutcome.Immune);
                 }
+            }
+            else
+            {
+                damage = damage > 0L ? damage : 0L;
+                metadataDamage.damage = damage;
             }
 
             var incomingHitActionCanceler = _characterBase.GetComponent<IIncomingHitActionCanceler>();

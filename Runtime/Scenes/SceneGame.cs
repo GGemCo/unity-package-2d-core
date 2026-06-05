@@ -256,6 +256,7 @@ namespace GGemCo2DCore
             GameObject managerContainer = new GameObject("Managers");
 
             calculateManager = CreateManager<CalculateManager>(managerContainer);
+            calculateManager.Initialize(context.SettingsLoader != null ? context.SettingsLoader.settings : null);
 
             var useMap = context.SettingsLoader.mapSettings.useMap;
             if (useMap)

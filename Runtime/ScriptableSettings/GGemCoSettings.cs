@@ -128,6 +128,11 @@ namespace GGemCo2DCore
         [Tooltip("공격 시 동시에 피해를 줄 수 있는 최대 몬스터 수")]
         public int maxEnemyValue;
 
+        [Header("전투 계산 설정")]
+        [Tooltip("최종 데미지가 0 이하일 때 적용할 기본 데미지입니다. 0이면 보정하지 않습니다.")]
+        [Min(0)]
+        public int defaultFinalDamageWhenZeroOrLess = 1;
+
         [Tooltip("몬스터가 죽은 뒤, 삭제되기까지의 지연 시간 (초 단위)")]
         public float delayDestroyMonster;
 
@@ -289,6 +294,7 @@ namespace GGemCo2DCore
         {
             if (defaultMonsterRegenTimeSec <= 0) defaultMonsterRegenTimeSec = 7.0f;
             if (maxEnemyValue <= 0f) maxEnemyValue = 10;
+            if (defaultFinalDamageWhenZeroOrLess <= 0) defaultFinalDamageWhenZeroOrLess = 1;
             if (delayDestroyMonster <= 0f) delayDestroyMonster = 2;
             if (damageTextMoveUpTime <= 0f) damageTextMoveUpTime = 0.3f;
             if (damageTextFadeOutTime <= 0f) damageTextFadeOutTime = 0.1f;
@@ -319,6 +325,7 @@ namespace GGemCo2DCore
 
             defaultMonsterRegenTimeSec = 7.0f;
             maxEnemyValue = 10;
+            defaultFinalDamageWhenZeroOrLess = 1;
             delayDestroyMonster = 2f;
             dropItemDestroyTimeSec = 10;
 
