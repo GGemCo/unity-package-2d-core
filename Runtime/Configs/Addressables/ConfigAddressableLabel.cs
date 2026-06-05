@@ -7,6 +7,7 @@ namespace GGemCo2DCore
         public const string Table = ConfigDefine.NameSDK+"_Table";
         public const string TablePack = ConfigDefine.NameSDK+"_TablePack";
         public const string Vfx = ConfigDefine.NameSDK+"_Vfx";
+        public const string UIEffectRuntimeSequence = ConfigDefine.NameSDK+"_UIEffect_RuntimeSequence";
         public const string ImageItemDrop = ConfigDefine.NameSDK+"_Item_Drop";
         public const string ImageItemEquip = ConfigDefine.NameSDK+"_Item_Equip";
         public const string ImageItemIcon = ConfigDefine.NameSDK+"_Item_Icon";

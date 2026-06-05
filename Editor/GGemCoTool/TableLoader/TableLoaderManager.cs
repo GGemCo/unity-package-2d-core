@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.IO;
 using GGemCo2DCore;
@@ -62,6 +62,16 @@ namespace GGemCo2DCoreEditor
         public static TableCutscene LoadCutsceneTable(bool forceReload = true)
         {
             return LoadTable<TableCutscene>(ConfigAddressableTable.TableCutscene.Path, forceReload);
+        }
+
+        /// <summary>
+        /// 에디터 환경에서 ui_effect 테이블을 로드합니다.
+        /// </summary>
+        /// <param name="forceReload">캐시를 무시하고 다시 로드할지 여부입니다.</param>
+        /// <returns>로드된 UI 효과 테이블입니다.</returns>
+        public static TableUIEffect LoadUIEffectTable(bool forceReload = true)
+        {
+            return LoadTable<TableUIEffect>(ConfigAddressableTable.TableUIEffect.Path, forceReload);
         }
 
         public static TableDialogue LoadDialogueTable(bool forceReload = true)

@@ -137,6 +137,18 @@ namespace GGemCo2DCore
         }
 
         // -------------------------
+        // UI Effect Timeline
+        // -------------------------
+        public static class UIEffect
+        {
+            /// <summary>Assets/{SDK}/DataAddressable/UIEffect</summary>
+            private static string RootUIEffect => Combine(Root, "UIEffect");
+
+            /// <summary>Assets/{SDK}/DataAddressable/UIEffect/RuntimeSequences</summary>
+            public static string RuntimeSequence => Combine(RootUIEffect, "RuntimeSequences");
+        }
+
+        // -------------------------
         // Dialogue / Quest / Cutscene
         // -------------------------
         public static class Narrative

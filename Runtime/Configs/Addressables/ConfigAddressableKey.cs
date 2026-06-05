@@ -32,6 +32,9 @@
 
         // Sound
         public const string Sound = ConfigDefine.NameSDK + "_Sound";
+
+        // UI Effect Timeline
+        public const string UIEffectRuntimeSequence = ConfigDefine.NameSDK + "_UIEffect_RuntimeSequence";
         
         public const string Table = ConfigDefine.NameSDK + "_Table";
         public const string TablePack = ConfigDefine.NameSDK + "_TablePack";
@@ -40,6 +43,16 @@
         public const string SimulationGrowth = ConfigDefine.NameSDK + "_SimulationGrowth";
         // 씨앗 심는 도구에 사용
         public const string SimulationSeed = ConfigDefine.NameSDK + "_SimulationSeed";
+
+        /// <summary>
+        /// UI Effect UID를 기준으로 RuntimeSequence Addressables Key를 생성합니다.
+        /// </summary>
+        /// <param name="uid">UI Effect UID입니다.</param>
+        /// <returns>RuntimeSequence Addressables Key입니다.</returns>
+        public static string GetUIEffectRuntimeSequenceKey(int uid)
+        {
+            return $"{UIEffectRuntimeSequence}_{uid}";
+        }
 
         public static string GetKeyThumbnailNpc(string npcThumbnailFileName)
         {

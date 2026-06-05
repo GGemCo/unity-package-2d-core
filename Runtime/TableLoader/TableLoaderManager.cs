@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using UnityEngine;
 
 namespace GGemCo2DCore
@@ -27,6 +27,7 @@ namespace GGemCo2DCore
         public TableItemDropGroup TableItemDropGroup { get; private set; } = new TableItemDropGroup();
         public TableExp TableExp { get; private set; } = new TableExp();
         public TableWindow TableWindow { get; private set; } = new TableWindow();
+        public TableUIEffect TableUIEffect { get; private set; } = new TableUIEffect();
         public TableStat TableStat { get; private set; } = new TableStat();
         public TableDamageType TableDamageType { get; private set; } = new TableDamageType();
         public TableState TableState { get; private set; } = new TableState();
@@ -94,6 +95,7 @@ namespace GGemCo2DCore
                 registry.Register(TableItemDropGroup);
                 registry.Register(TableExp);
                 registry.Register(TableWindow);
+                registry.Register(TableUIEffect);
                 registry.Register(TableStat);
                 registry.Register(TableDamageType);
                 registry.Register(TableState);
@@ -285,6 +287,25 @@ namespace GGemCo2DCore
             => GetData(TableWindow, uid, "Window", (t, i) => t.GetDataByUid(i), logIfMissing);
         public bool TryGetWindowData(int uid, out StruckTableWindow data, bool logIfMissing = false)
             => TryGetData(TableWindow, uid, out data, "Window", (t, i) => t.GetDataByUid(i), logIfMissing);
+
+        /// <summary>
+        /// ui_effect 테이블에서 UID로 UI 효과 정의를 조회합니다.
+        /// </summary>
+        /// <param name="uid">조회할 UI 효과 UID입니다.</param>
+        /// <param name="logIfMissing">조회 실패 시 경고 로그를 남길지 여부입니다.</param>
+        /// <returns>조회된 UI 효과 정의입니다. 없으면 null입니다.</returns>
+        public StruckTableUIEffect GetUIEffectData(int uid, bool logIfMissing = true)
+            => GetData(TableUIEffect, uid, "UIEffect", (t, i) => t.GetDataByUid(i), logIfMissing);
+
+        /// <summary>
+        /// ui_effect 테이블에서 UID로 UI 효과 정의 조회를 시도합니다.
+        /// </summary>
+        /// <param name="uid">조회할 UI 효과 UID입니다.</param>
+        /// <param name="data">조회에 성공하면 UI 효과 정의가 설정됩니다.</param>
+        /// <param name="logIfMissing">조회 실패 시 경고 로그를 남길지 여부입니다.</param>
+        /// <returns>UI 효과 정의를 찾으면 true를 반환합니다.</returns>
+        public bool TryGetUIEffectData(int uid, out StruckTableUIEffect data, bool logIfMissing = false)
+            => TryGetData(TableUIEffect, uid, out data, "UIEffect", (t, i) => t.GetDataByUid(i), logIfMissing);
 
         // CrowdControl
         public StruckTableCrowdControl GetCrowdControlData(int uid, bool logIfMissing = true)

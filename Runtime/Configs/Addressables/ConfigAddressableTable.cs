@@ -34,6 +34,7 @@ namespace GGemCo2DCore
         public const string ItemDropGroup    = "item_drop_group";
         public const string Exp              = "exp";
         public const string Window           = "window";
+        public const string UIEffect         = "ui_effect";
         public const string Stat             = "stat";
         public const string DamageType       = "damage_type";
         public const string State            = "state";
@@ -91,6 +92,7 @@ namespace GGemCo2DCore
         public static readonly AddressableAssetInfo TableItemDropGroup   = Make(ItemDropGroup);
         public static readonly AddressableAssetInfo TableExp             = Make(Exp);
         public static readonly AddressableAssetInfo TableWindow          = Make(Window);
+        public static readonly AddressableAssetInfo TableUIEffect        = Make(UIEffect);
         public static readonly AddressableAssetInfo TableStat            = Make(Stat);
         public static readonly AddressableAssetInfo TableDamageType      = Make(DamageType);
         public static readonly AddressableAssetInfo TableState           = Make(State);
@@ -135,7 +137,7 @@ namespace GGemCo2DCore
         {
             TableMap, TableMapEntryRule, TableMonster, TableMonsterPhase, TableNpc, TableAnimation, TableItem, TableItemVisual,
             TableItemBaseOption, TableItemAffixDef, TableItemAffixPool, TableItemRollRule,
-            TableMonsterDropRate, TableNpcDropRate, TableItemDropGroup, TableExp, TableWindow,
+            TableMonsterDropRate, TableNpcDropRate, TableItemDropGroup, TableExp, TableWindow, TableUIEffect,
             // Status 3분리 테이블
             TableStat, TableDamageType, TableState,
             // Others

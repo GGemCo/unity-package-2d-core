@@ -18,6 +18,9 @@
         // Vfxs
         public const string Vfx = ConfigDefine.NameSDK + "_Vfx";
 
+        // UI Effect Timeline
+        public const string UIEffectRuntimeSequence = ConfigDefine.NameSDK + "_UIEffect_RuntimeSequence";
+
         // Items (하위 그룹 형태로 구조화)
         public const string Item = ConfigDefine.NameSDK + "_Item";
         public static class ItemGroup
