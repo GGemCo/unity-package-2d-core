@@ -22,7 +22,7 @@ namespace GGemCo2DCore
         private UIWindowHud _uiWindowHud;
         private UIWindowPlayerInfo _uiWindowPlayerInfo;
         private UIWindowPlayerStatReset _uiWindowPlayerStatReset;
-        private UIWindowPlayerBuffInfo _uiWindowPlayerBuffInfo;
+        private UIWindow _uiWindowPlayerBuffInfo;
         private GGemCoPlayerSettings _playerSettings;
 
         private long _lastObservedHp;
@@ -77,7 +77,7 @@ namespace GGemCo2DCore
             _uiWindowPlayerStatReset =
                 _sceneGame.uIWindowManager?.GetUIWindowByUid<UIWindowPlayerStatReset>(UIWindowConstants.WindowUid.PlayerStatReset);
             _uiWindowPlayerBuffInfo =
-                _sceneGame.uIWindowManager?.GetUIWindowByUid<UIWindowPlayerBuffInfo>(
+                _sceneGame.uIWindowManager?.GetUIWindowByUid<UIWindow>(
                     UIWindowConstants.WindowUid.PlayerBuffInfo);
 
             // Affect UI 바인딩(단일 진실 소스: AffectComponent)
