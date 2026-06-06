@@ -129,7 +129,11 @@ namespace GGemCo2DCore
 
             if (string.IsNullOrWhiteSpace(request.FormulaKey) || !_polyFormulaRegistry.TryGet(request.FormulaKey, out formula))
             {
-                return CalculateAttackDamage(request.BaseDamage, (float)request.EventMultiplier, (float)request.OptionMultiplier);
+                // Poly 공식이 없을 때도 DamageFormulaRequest의 의미를 유지합니다.
+                // BaseDamage는 순수 기준값, SkillDamageRate는 skill/skill_monster 테이블의 Damage 비율입니다.
+                float skillDamageRate = request.SkillDamageRate > 0d ? (float)request.SkillDamageRate : 1f;
+                float eventMultiplier = request.EventMultiplier > 0d ? (float)request.EventMultiplier : 1f;
+                return CalculateAttackDamage(request.BaseDamage, skillDamageRate * eventMultiplier, (float)request.OptionMultiplier);
             }
 
             BuildPolyVariables(request, _polyVariables);
