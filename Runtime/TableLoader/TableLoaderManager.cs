@@ -30,6 +30,8 @@ namespace GGemCo2DCore
         public TableUIEffect TableUIEffect { get; private set; } = new TableUIEffect();
         public TableStat TableStat { get; private set; } = new TableStat();
         public TableDamageType TableDamageType { get; private set; } = new TableDamageType();
+        public TableDamageFormula TableDamageFormula { get; private set; } = new TableDamageFormula();
+        public TableDamageLevelMultiplier TableDamageLevelMultiplier { get; private set; } = new TableDamageLevelMultiplier();
         public TableState TableState { get; private set; } = new TableState();
         public TableCrowdControl TableCrowdControl { get; private set; } = new TableCrowdControl();
         public TableCrowdControlKnockBack TableCrowdControlKnockBack { get; private set; } = new TableCrowdControlKnockBack();
@@ -98,6 +100,8 @@ namespace GGemCo2DCore
                 registry.Register(TableUIEffect);
                 registry.Register(TableStat);
                 registry.Register(TableDamageType);
+                registry.Register(TableDamageFormula);
+                registry.Register(TableDamageLevelMultiplier);
                 registry.Register(TableState);
                 registry.Register(TableCrowdControl);
                 registry.Register(TableCrowdControlKnockBack);

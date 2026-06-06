@@ -37,6 +37,8 @@ namespace GGemCo2DCore
         public const string UIEffect         = "ui_effect";
         public const string Stat             = "stat";
         public const string DamageType       = "damage_type";
+        public const string DamageFormula    = "damage_formula";
+        public const string DamageLevelMultiplier = "damage_level_multiplier";
         public const string State            = "state";
         public const string Vfx              = "vfx";
         public const string VfxEffect        = "vfx_effect";
@@ -95,6 +97,8 @@ namespace GGemCo2DCore
         public static readonly AddressableAssetInfo TableUIEffect        = Make(UIEffect);
         public static readonly AddressableAssetInfo TableStat            = Make(Stat);
         public static readonly AddressableAssetInfo TableDamageType      = Make(DamageType);
+        public static readonly AddressableAssetInfo TableDamageFormula   = Make(DamageFormula);
+        public static readonly AddressableAssetInfo TableDamageLevelMultiplier = Make(DamageLevelMultiplier);
         public static readonly AddressableAssetInfo TableState           = Make(State);
         public static readonly AddressableAssetInfo TableVfx             = Make(Vfx);
         public static readonly AddressableAssetInfo TableVfxEffect       = Make(VfxEffect);
@@ -139,7 +143,7 @@ namespace GGemCo2DCore
             TableItemBaseOption, TableItemAffixDef, TableItemAffixPool, TableItemRollRule,
             TableMonsterDropRate, TableNpcDropRate, TableItemDropGroup, TableExp, TableWindow, TableUIEffect,
             // Status 3분리 테이블
-            TableStat, TableDamageType, TableState,
+            TableStat, TableDamageType, TableDamageFormula, TableDamageLevelMultiplier, TableState,
             // Others
             TableVfx, TableVfxEffect, TableVfxParticle, TableVfxVariant, TableInteraction,
             TableShop, TableShopItem, TableShopPromotion, TableItemUpgrade, TableItemSalvage, TableItemCraft,

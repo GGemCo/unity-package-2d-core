@@ -13,6 +13,8 @@ namespace GGemCo2DCore
         private GGemCoSettings _settings;
         private readonly IDamageFormula _basicPhysicalFormula = new BasicPhysicalDamageFormula();
         private readonly IDamageFormula _multiplierOnlyFormula = new MultiplierOnlyDamageFormula();
+        private readonly DamageFormulaRegistry _polyFormulaRegistry = new DamageFormulaRegistry();
+        private readonly DamageFormulaVariableBag _polyVariables = new DamageFormulaVariableBag();
 
         /// <summary>
         /// 계산 매니저 인스턴스를 등록합니다.
@@ -38,6 +40,15 @@ namespace GGemCo2DCore
         public void Initialize(GGemCoSettings settings)
         {
             _settings = settings;
+            RebuildDamageFormulaRegistry();
+        }
+
+        /// <summary>
+        /// 현재 로드된 damage_formula 테이블을 기준으로 Poly 공식 캐시를 다시 구성합니다.
+        /// </summary>
+        public void RebuildDamageFormulaRegistry()
+        {
+            _polyFormulaRegistry.Rebuild(TableLoaderManager.Instance != null ? TableLoaderManager.Instance.TableDamageFormula : null);
         }
 
         /// <summary>
@@ -105,6 +116,30 @@ namespace GGemCo2DCore
         }
 
         /// <summary>
+        /// 스킬/이벤트/버프/레벨 차이 값을 포함해 최종 공격 데미지를 계산합니다.
+        /// </summary>
+        /// <param name="request">스킬 데미지 계산 요청입니다.</param>
+        /// <returns>저항 적용 전 공격 데미지입니다.</returns>
+        public long CalculateSkillDamage(in DamageFormulaRequest request)
+        {
+            if (string.IsNullOrWhiteSpace(request.FormulaKey) || !_polyFormulaRegistry.TryGet(request.FormulaKey, out PolyDamageFormula formula))
+            {
+                RebuildDamageFormulaRegistry();
+            }
+
+            if (string.IsNullOrWhiteSpace(request.FormulaKey) || !_polyFormulaRegistry.TryGet(request.FormulaKey, out formula))
+            {
+                return CalculateAttackDamage(request.BaseDamage, (float)request.EventMultiplier, (float)request.OptionMultiplier);
+            }
+
+            BuildPolyVariables(request, _polyVariables);
+            double resolved = formula.Evaluate(_polyVariables);
+            resolved = ApplyCriticalIfNeeded(resolved, request.Attacker, request.RollCritical);
+            long rounded = RoundToLong(resolved);
+            return ResolveDefaultFinalDamage(rounded, request.DamageType).FinalDamage;
+        }
+
+        /// <summary>
         /// 지정된 데미지 공식을 실행하고 0 이하 기본 데미지 정책을 적용합니다.
         /// </summary>
         /// <param name="formulaType">실행할 데미지 공식 타입입니다.</param>
@@ -132,6 +167,122 @@ namespace GGemCo2DCore
                 default:
                     return _basicPhysicalFormula;
             }
+        }
+
+        /// <summary>
+        /// Poly 공식 계산에 사용할 기본 변수를 구성합니다.
+        /// </summary>
+        /// <param name="request">데미지 공식 요청입니다.</param>
+        /// <param name="variables">변수를 채울 컨테이너입니다.</param>
+        private void BuildPolyVariables(in DamageFormulaRequest request, DamageFormulaVariableBag variables)
+        {
+            variables.Clear();
+
+            CharacterBase attacker = request.Attacker;
+            CharacterBase target = request.Target;
+            int attackerLevel = ResolveCharacterLevel(attacker);
+            int targetLevel = ResolveCharacterLevel(target);
+            int levelDiff = attackerLevel - targetLevel;
+            double levelRate = ResolveLevelRate(levelDiff);
+
+            variables.Set("BaseDamage", System.Math.Max(0d, request.BaseDamage));
+            variables.Set("SkillDamageRate", request.SkillDamageRate > 0d ? request.SkillDamageRate : 1d);
+            variables.Set("EventMultiplier", request.EventMultiplier > 0d ? request.EventMultiplier : 1d);
+            variables.Set("OptionMultiplier", request.OptionMultiplier > 0d ? request.OptionMultiplier : 1d);
+            variables.Set("BuffRate", request.BuffRate > 0d ? request.BuffRate : 0d);
+            variables.Set("LevelRate", levelRate);
+            variables.Set("AttackerLevel", attackerLevel);
+            variables.Set("TargetLevel", targetLevel);
+            variables.Set("LevelDiff", levelDiff);
+
+            variables.Set("BaseAtk", attacker != null ? attacker.TotalBaseAtk.Value : 0d);
+            variables.Set("BaseDef", target != null ? target.TotalBaseDef.Value : 0d);
+            variables.Set("StatAtk", attacker != null ? attacker.TotalStatAtk.Value : 0d);
+            variables.Set("StatStrength", attacker != null ? attacker.TotalStatAtk.Value : 0d);
+            variables.Set("StatDef", target != null ? target.TotalStatDef.Value : 0d);
+            variables.Set("TotalAtk", attacker != null ? attacker.TotalAtk.Value : 0d);
+            variables.Set("TotalDef", target != null ? target.TotalDef.Value : 0d);
+            variables.Set("CriticalRate", attacker != null ? attacker.TotalCriticalProbability.Value / 100d : 0d);
+            variables.Set("CriticalDamageRate", attacker != null ? attacker.TotalCriticalDamage.Value / 100d : 1d);
+
+            FillVariablesFromProviders(attacker, attacker, target, variables);
+            FillVariablesFromProviders(target, attacker, target, variables);
+        }
+
+        /// <summary>
+        /// 캐릭터에 부착된 공식 변수 제공자에게 추가 변수를 요청합니다.
+        /// </summary>
+        /// <param name="owner">변수 제공자를 검색할 캐릭터입니다.</param>
+        /// <param name="attacker">공격자 캐릭터입니다.</param>
+        /// <param name="target">피격 대상 캐릭터입니다.</param>
+        /// <param name="variables">변수 컨테이너입니다.</param>
+        private static void FillVariablesFromProviders(CharacterBase owner, CharacterBase attacker, CharacterBase target, DamageFormulaVariableBag variables)
+        {
+            if (owner == null)
+                return;
+
+            IDamageFormulaVariableProvider[] providers = owner.GetComponents<IDamageFormulaVariableProvider>();
+            if (providers == null || providers.Length == 0)
+                return;
+
+            for (int i = 0; i < providers.Length; i++)
+            {
+                providers[i]?.FillDamageFormulaVariables(attacker, target, variables);
+            }
+        }
+
+        /// <summary>
+        /// 캐릭터 타입에 맞는 현재 레벨을 반환합니다.
+        /// </summary>
+        /// <param name="character">레벨을 확인할 캐릭터입니다.</param>
+        /// <returns>계산에 사용할 레벨입니다.</returns>
+        private static int ResolveCharacterLevel(CharacterBase character)
+        {
+            if (character == null)
+                return 1;
+
+            if (character is Player player)
+                return System.Math.Max(1, player.CurrentLevel);
+
+            if (character is Monster monster && TableLoaderManager.Instance != null)
+            {
+                StruckTableMonster row = TableLoaderManager.Instance.TableMonster.GetDataByUid(monster.uid);
+                if (row != null)
+                    return System.Math.Max(1, row.Level);
+            }
+
+            return 1;
+        }
+
+        /// <summary>
+        /// 레벨 차이에 따른 데미지 배율을 테이블에서 조회합니다.
+        /// </summary>
+        /// <param name="levelDiff">공격자 레벨 - 대상 레벨입니다.</param>
+        /// <returns>레벨 차이 배율입니다.</returns>
+        private static float ResolveLevelRate(int levelDiff)
+        {
+            TableDamageLevelMultiplier table = TableLoaderManager.Instance != null ? TableLoaderManager.Instance.TableDamageLevelMultiplier : null;
+            return table != null ? table.ResolveMultiplier(levelDiff) : 1f;
+        }
+
+        /// <summary>
+        /// 크리티컬 판정을 적용합니다.
+        /// </summary>
+        /// <param name="damage">크리티컬 적용 전 데미지입니다.</param>
+        /// <param name="attacker">공격자 캐릭터입니다.</param>
+        /// <param name="rollCritical">크리티컬 판정 여부입니다.</param>
+        /// <returns>크리티컬이 반영된 데미지입니다.</returns>
+        private static double ApplyCriticalIfNeeded(double damage, CharacterStat attacker, bool rollCritical)
+        {
+            if (!rollCritical || attacker == null || damage <= 0d)
+                return damage;
+
+            float criticalChance = Mathf.Clamp01(attacker.TotalCriticalProbability.Value / 100f);
+            if (!(Random.value < criticalChance))
+                return damage;
+
+            float criticalMultiplier = Mathf.Max(1f, attacker.TotalCriticalDamage.Value / 100f);
+            return damage * criticalMultiplier;
         }
 
         /// <summary>

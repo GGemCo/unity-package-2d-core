@@ -123,6 +123,8 @@ namespace GGemCo2DCoreEditor
                 info.Key == ConfigAddressableTable.TableProjectileArc.Key ||
                 info.Key == ConfigAddressableTable.TableProjectilePath.Key ||
                 info.Key == ConfigAddressableTable.TableProjectileLinearThenSegments.Key ||
+                info.Key == ConfigAddressableTable.TableDamageFormula.Key ||
+                info.Key == ConfigAddressableTable.TableDamageLevelMultiplier.Key ||
                 info.Key == ConfigAddressableTable.TableSoundBgm.Key ||
                 info.Key == ConfigAddressableTable.TableSoundAmbient.Key ||
                 info.Key == ConfigAddressableTable.TableSoundSfx.Key ||
