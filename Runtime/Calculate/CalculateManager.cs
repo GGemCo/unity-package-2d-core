@@ -11,6 +11,8 @@ namespace GGemCo2DCore
         public static CalculateManager Instance { get; private set; }
 
         private GGemCoSettings _settings;
+        private readonly IDamageFormula _basicPhysicalFormula = new BasicPhysicalDamageFormula();
+        private readonly IDamageFormula _multiplierOnlyFormula = new MultiplierOnlyDamageFormula();
 
         /// <summary>
         /// 계산 매니저 인스턴스를 등록합니다.
@@ -57,22 +59,16 @@ namespace GGemCo2DCore
         /// <returns>크리티컬과 기본 데미지 보정이 반영된 일반 공격 데미지입니다.</returns>
         public long CalculateBasicAttackDamage(CharacterStat attacker)
         {
-            if (attacker == null)
-                return ResolveDefaultFinalDamage(0L).FinalDamage;
+            var context = new DamageFormulaContext(
+                attacker,
+                null,
+                0d,
+                1f,
+                1f,
+                ConfigCommon.DamageType.Physic,
+                true);
 
-            long baseAttack = attacker.TotalAtk.Value;
-            double finalDamage = baseAttack;
-            if (baseAttack > 0L)
-            {
-                float criticalChance = Mathf.Clamp01(attacker.TotalCriticalProbability.Value / 100f);
-                if (Random.value < criticalChance)
-                {
-                    float criticalMultiplier = Mathf.Max(1f, attacker.TotalCriticalDamage.Value / 100f);
-                    finalDamage *= criticalMultiplier;
-                }
-            }
-
-            return ResolveDefaultFinalDamage(RoundToLong(finalDamage)).FinalDamage;
+            return CalculateDamage(DamageFormulaType.BasicPhysical, context).FinalDamage;
         }
 
         /// <summary>
@@ -96,10 +92,46 @@ namespace GGemCo2DCore
         /// <returns>배율과 기본 데미지 보정이 반영된 공격 데미지입니다.</returns>
         public long CalculateAttackDamage(double baseDamage, float eventMultiplier = 1f, float optionMultiplier = 1f)
         {
-            float safeEventMultiplier = Mathf.Max(0f, eventMultiplier);
-            float safeOptionMultiplier = optionMultiplier > 0f ? optionMultiplier : 1f;
-            double resolved = System.Math.Max(0d, baseDamage) * safeEventMultiplier * safeOptionMultiplier;
-            return ResolveDefaultFinalDamage(RoundToLong(resolved)).FinalDamage;
+            var context = new DamageFormulaContext(
+                null,
+                null,
+                baseDamage,
+                eventMultiplier,
+                optionMultiplier,
+                ConfigCommon.DamageType.None,
+                false);
+
+            return CalculateDamage(DamageFormulaType.MultiplierOnly, context).FinalDamage;
+        }
+
+        /// <summary>
+        /// 지정된 데미지 공식을 실행하고 0 이하 기본 데미지 정책을 적용합니다.
+        /// </summary>
+        /// <param name="formulaType">실행할 데미지 공식 타입입니다.</param>
+        /// <param name="context">데미지 계산 입력값입니다.</param>
+        /// <returns>기본 데미지 정책이 반영된 데미지 계산 결과입니다.</returns>
+        public DamageCalculationResult CalculateDamage(DamageFormulaType formulaType, in DamageFormulaContext context)
+        {
+            IDamageFormula formula = ResolveFormula(formulaType);
+            long calculatedDamage = formula != null ? formula.Calculate(context) : 0L;
+            return ResolveDefaultFinalDamage(calculatedDamage, context.DamageType);
+        }
+
+        /// <summary>
+        /// 공식 타입에 맞는 데미지 공식 인스턴스를 반환합니다.
+        /// </summary>
+        /// <param name="formulaType">조회할 공식 타입입니다.</param>
+        /// <returns>데미지 공식 인스턴스입니다.</returns>
+        private IDamageFormula ResolveFormula(DamageFormulaType formulaType)
+        {
+            switch (formulaType)
+            {
+                case DamageFormulaType.MultiplierOnly:
+                    return _multiplierOnlyFormula;
+                case DamageFormulaType.BasicPhysical:
+                default:
+                    return _basicPhysicalFormula;
+            }
         }
 
         /// <summary>

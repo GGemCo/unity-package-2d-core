@@ -16,6 +16,20 @@ namespace GGemCo2DCore
         public float Scale;
         public CharacterConstants.Grade Grade;
         public int Level;
+        public int BaseHp;
+        public int BaseAtk;
+        public int BaseDef;
+        public int BaseMp;
+        public int BaseStamina;
+        public int BaseSuperArmor;
+        public int BaseMoveSpeed;
+        public int BaseAttackSpeed;
+        public int BaseCriticalDamage;
+        public int BaseCriticalProbability;
+        public int BaseRegistFire;
+        public int BaseRegistCold;
+        public int BaseRegistLightning;
+        public int BaseRegistPoison;
         public int StatHp;
         public int StatAtk;
         public int StatDef;
@@ -57,6 +71,20 @@ namespace GGemCo2DCore
                 Scale = reader.Float("Scale"),
                 Grade = reader.Enum<CharacterConstants.Grade>("Grade"),
                 Level = reader.Int("Level"),
+                BaseHp = ReadOptionalInt(data, "BaseHp", 0),
+                BaseAtk = ReadOptionalInt(data, "BaseAtk", 0),
+                BaseDef = ReadOptionalInt(data, "BaseDef", 0),
+                BaseMp = ReadOptionalInt(data, "BaseMp", 0),
+                BaseStamina = ReadOptionalInt(data, "BaseStamina", 0),
+                BaseSuperArmor = ReadOptionalInt(data, "BaseSuperArmor", 0),
+                BaseMoveSpeed = ReadOptionalInt(data, "BaseMoveSpeed", 0),
+                BaseAttackSpeed = ReadOptionalInt(data, "BaseAttackSpeed", 0),
+                BaseCriticalDamage = ReadOptionalInt(data, "BaseCriticalDamage", 0),
+                BaseCriticalProbability = ReadOptionalInt(data, "BaseCriticalProbability", 0),
+                BaseRegistFire = ReadOptionalInt(data, "BaseRegistFire", 0),
+                BaseRegistCold = ReadOptionalInt(data, "BaseRegistCold", 0),
+                BaseRegistLightning = ReadOptionalInt(data, "BaseRegistLightning", 0),
+                BaseRegistPoison = ReadOptionalInt(data, "BaseRegistPoison", 0),
                 StatHp = reader.Int("StatHp"),
                 StatAtk = reader.Int("StatAtk"),
                 StatDef = reader.Int("StatDef"),
@@ -75,6 +103,21 @@ namespace GGemCo2DCore
                     : 0,
                 BtFileName = (reader.String("BtFileName")),
             };
+        }
+
+        /// <summary>
+        /// 신규 컬럼이 없는 기존 테이블을 읽을 수 있도록 선택 컬럼을 안전하게 파싱합니다.
+        /// </summary>
+        /// <param name="data">테이블 row 데이터입니다.</param>
+        /// <param name="columnName">읽을 컬럼 이름입니다.</param>
+        /// <param name="fallback">컬럼이 없거나 비어있을 때 사용할 값입니다.</param>
+        /// <returns>파싱된 정수 값입니다.</returns>
+        private static int ReadOptionalInt(Dictionary<string, string> data, string columnName, int fallback)
+        {
+            if (data == null) return fallback;
+            return data.TryGetValue(columnName, out string value) && !string.IsNullOrWhiteSpace(value)
+                ? MathHelper.ParseInt(value)
+                : fallback;
         }
     }
 }

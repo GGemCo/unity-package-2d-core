@@ -221,10 +221,24 @@ namespace GGemCo2DCore
                 SetItemBonusHpBonuses(_playerData.TotalItemBonusHpNormal, _playerData.TotalItemBonusHpTemp, raiseEvent: true);
             }
             
-            SetBaseInfos(_playerSettings.statAtk, _playerSettings.statDef, _playerSettings.statHp,
-                _playerSettings.statMp, _playerSettings.statStamina, 0,
-                _playerSettings.statMoveSpeed, _playerSettings.statAttackSpeed, _playerSettings.statRegistFire,
-                _playerSettings.statRegistCold, _playerSettings.statRegistLightning, _playerSettings.statRegistPoison);
+            CharacterBaseAttributeValues baseAttributes = _playerSettings.baseAttributes;
+            baseAttributes.moveSpeed = baseAttributes.moveSpeed != 0 ? baseAttributes.moveSpeed : _playerSettings.statMoveSpeed;
+            baseAttributes.attackSpeed = baseAttributes.attackSpeed != 0 ? baseAttributes.attackSpeed : _playerSettings.statAttackSpeed;
+            baseAttributes.resistanceFire = baseAttributes.resistanceFire != 0 ? baseAttributes.resistanceFire : _playerSettings.statRegistFire;
+            baseAttributes.resistanceCold = baseAttributes.resistanceCold != 0 ? baseAttributes.resistanceCold : _playerSettings.statRegistCold;
+            baseAttributes.resistanceLightning = baseAttributes.resistanceLightning != 0 ? baseAttributes.resistanceLightning : _playerSettings.statRegistLightning;
+            baseAttributes.resistancePoison = baseAttributes.resistancePoison != 0 ? baseAttributes.resistancePoison : _playerSettings.statRegistPoison;
+
+            var growthStats = new CharacterGrowthStatValues
+            {
+                atk = _playerSettings.statAtk,
+                def = _playerSettings.statDef,
+                hp = _playerSettings.statHp,
+                mp = _playerSettings.statMp,
+                stamina = _playerSettings.statStamina,
+            };
+
+            SetBaseAndGrowthStatInfos(baseAttributes, growthStats);
             // 시작 자원 값은 '최대치'가 아니라, 설정에 따라 별도로 초기화할 수 있다.
             // (예: HP=최대치의 50%, MP=0, Stamina=최대치의 50% 등)
             CurrentHp.OnNext(_playerSettings.startHp.Evaluate(TotalHp.Value));

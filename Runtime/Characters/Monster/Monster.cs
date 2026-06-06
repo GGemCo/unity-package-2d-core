@@ -290,10 +290,34 @@ namespace GGemCo2DCore
             if (info.Uid <= 0) return;
             _grade = info.Grade;
             characterName = info.Name;
-            SetBaseInfos(info.StatAtk, info.StatDef, info.StatHp, 0, 0, info.StatSuperArmor, info.StatMoveSpeed, info.StatAttackSpeed,
-                info.RegistFire, info.RegistCold, info.RegistLightning, info.RegistPoison);
-            CurrentHp.OnNext(info.StatHp);
-            CurrentSuperArmor.OnNext(info.StatSuperArmor);
+            var baseAttributes = new CharacterBaseAttributeValues
+            {
+                atk = info.BaseAtk,
+                def = info.BaseDef,
+                hp = info.BaseHp,
+                mp = info.BaseMp,
+                stamina = info.BaseStamina,
+                superArmor = info.BaseSuperArmor,
+                moveSpeed = info.BaseMoveSpeed != 0 ? info.BaseMoveSpeed : info.StatMoveSpeed,
+                attackSpeed = info.BaseAttackSpeed != 0 ? info.BaseAttackSpeed : info.StatAttackSpeed,
+                criticalDamage = info.BaseCriticalDamage,
+                criticalProbability = info.BaseCriticalProbability,
+                resistanceFire = info.BaseRegistFire != 0 ? info.BaseRegistFire : info.RegistFire,
+                resistanceCold = info.BaseRegistCold != 0 ? info.BaseRegistCold : info.RegistCold,
+                resistanceLightning = info.BaseRegistLightning != 0 ? info.BaseRegistLightning : info.RegistLightning,
+                resistancePoison = info.BaseRegistPoison != 0 ? info.BaseRegistPoison : info.RegistPoison,
+            };
+
+            var growthStats = new CharacterGrowthStatValues
+            {
+                atk = info.StatAtk,
+                def = info.StatDef,
+                hp = info.StatHp,
+            };
+
+            SetBaseAndGrowthStatInfos(baseAttributes, growthStats);
+            CurrentHp.OnNext(TotalHp.Value);
+            CurrentSuperArmor.OnNext(TotalSuperArmor.Value);
             SetScale(info.Scale);
             SetAttackType(info.AttackType);
             _deathSkillController?.SetDeathSkillMonsterUid(info.DeathSkillMonsterUid);

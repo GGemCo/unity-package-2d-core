@@ -26,6 +26,20 @@ namespace GGemCo2DCore
             PercentOfMax = 1,
         }
         
+        public const string BaseStatAtk = "BASE_ATK";
+        public const string BaseStatDef = "BASE_DEF";
+        public const string BaseStatHp = "BASE_HP";
+        public const string BaseStatMp = "BASE_MP";
+        public const string BaseStatStamina = "BASE_STAMINA";
+        public const string BaseStatSuperArmor = "BASE_SUPER_ARMOR";
+        public const string BaseStatMoveSpeed = "BASE_MOVE_SPEED";
+        public const string BaseStatAttackSpeed = "BASE_ATTACK_SPEED";
+        public const string BaseStatCriticalDamage = "BASE_CRITICAL_DAMAGE";
+        public const string BaseStatCriticalProbability = "BASE_CRITICAL_PROBABILITY";
+        public const string BaseStatResistanceFire = "BASE_RESISTANCE_FIRE";
+        public const string BaseStatResistanceCold = "BASE_RESISTANCE_COLD";
+        public const string BaseStatResistanceLightning = "BASE_RESISTANCE_LIGHTNING";
+        public const string BaseStatResistancePoison = "BASE_RESISTANCE_POISON";
         public const string StatusStatAtk = "STAT_ATK";
         public const string StatusStatDef = "STAT_DEF";
         public const string StatusStatHp = "STAT_HP";

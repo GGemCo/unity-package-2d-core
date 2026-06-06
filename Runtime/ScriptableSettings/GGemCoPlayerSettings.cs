@@ -86,16 +86,20 @@ namespace GGemCo2DCore
         [Tooltip("플레이어의 시작 스케일 값 (1 = 100%)")]
         public float startScale;
 
-        [Header("스탯 기본값")]
-        [Tooltip("플레이어의 기본 공격력")]
+        [Header("기본 항목 시작값")]
+        [Tooltip("장비/패시브의 BASE_* 옵션이 누적되는 플레이어 기본 항목 시작값입니다.")]
+        public CharacterBaseAttributeValues baseAttributes;
+
+        [Header("스탯 항목 시작값")]
+        [Tooltip("플레이어의 공격 스탯 시작값입니다. 스탯 포인트와 STAT_ATK 옵션이 누적됩니다.")]
         public int statAtk;
-        [Tooltip("플레이어의 기본 방어력")]
+        [Tooltip("플레이어의 방어 스탯 시작값입니다. 스탯 포인트와 STAT_DEF 옵션이 누적됩니다.")]
         public int statDef;
-        [Tooltip("플레이어의 기본 생명력")]
+        [Tooltip("플레이어의 HP 스탯 시작값입니다. 스탯 포인트와 STAT_HP 옵션이 누적됩니다.")]
         public int statHp;
-        [Tooltip("플레이어의 기본 마력")]
+        [Tooltip("플레이어의 MP 스탯 시작값입니다. 스탯 포인트와 STAT_MP 옵션이 누적됩니다.")]
         public int statMp;
-        [Tooltip("플레이어의 기본 스테미나")]
+        [Tooltip("플레이어의 스태미나 스탯 시작값입니다. 스탯 포인트와 STAT_STAMINA 옵션이 누적됩니다.")]
         public int statStamina;
         [Tooltip("애니메이션 1스텝당 이동 거리 (픽셀 단위)")]
         public int statMoveStep;

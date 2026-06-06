@@ -50,6 +50,16 @@ namespace GGemCo2DCore
             public readonly long RegistCold;
             public readonly long RegistLightning;
             public readonly long RegistPoison;
+            public readonly long BaseAtk;
+            public readonly long BaseDef;
+            public readonly long BaseHp;
+            public readonly long BaseMp;
+            public readonly long BaseStamina;
+            public readonly long StatAtk;
+            public readonly long StatDef;
+            public readonly long StatHp;
+            public readonly long StatMp;
+            public readonly long StatStamina;
 
             /// <summary>
             /// 모든 스탯 총합 값을 받아 스냅샷을 생성합니다.
@@ -75,10 +85,46 @@ namespace GGemCo2DCore
                 RegistCold = registCold;
                 RegistLightning = registLightning;
                 RegistPoison = registPoison;
+                BaseAtk = atk;
+                BaseDef = def;
+                BaseHp = hp;
+                BaseMp = mp;
+                BaseStamina = stamina;
+                StatAtk = 0;
+                StatDef = 0;
+                StatHp = 0;
+                StatMp = 0;
+                StatStamina = 0;
+            }
+
+            /// <summary>
+            /// 호환 Total과 분리 Total 값을 모두 받아 스냅샷을 생성합니다.
+            /// </summary>
+            public CharacterTotals(
+                long atk, long def, long hp, long mp, long stamina,
+                int superArmor,
+                long moveSpeed, long attackSpeed,
+                long criticalDamage, long criticalProbability,
+                long registFire, long registCold, long registLightning, long registPoison,
+                long baseAtk, long baseDef, long baseHp, long baseMp, long baseStamina,
+                long statAtk, long statDef, long statHp, long statMp, long statStamina)
+                : this(atk, def, hp, mp, stamina, superArmor, moveSpeed, attackSpeed, criticalDamage,
+                    criticalProbability, registFire, registCold, registLightning, registPoison)
+            {
+                BaseAtk = baseAtk;
+                BaseDef = baseDef;
+                BaseHp = baseHp;
+                BaseMp = baseMp;
+                BaseStamina = baseStamina;
+                StatAtk = statAtk;
+                StatDef = statDef;
+                StatHp = statHp;
+                StatMp = statMp;
+                StatStamina = statStamina;
             }
         }
 
-        // 기본 스탯(베이스 값). Provider의 modifier들이 이 값에 누적되어 최종값이 계산됩니다.
+        // 기본 항목 시작값입니다. BASE_* modifier들이 이 값에 누적되어 TotalBase*가 계산됩니다.
         public int BaseAtk { get; set; }
         public int BaseDef { get; set; }
 
@@ -89,6 +135,14 @@ namespace GGemCo2DCore
 
         public int BaseMp { get; set; }
         public int BaseStamina { get; set; }
+
+        // 스탯 항목 시작값입니다. STAT_* modifier와 스탯 포인트가 이 값에 누적되어 TotalStat*가 계산됩니다.
+        public int BaseStatAtk { get; set; }
+        public int BaseStatDef { get; set; }
+        public int BaseStatHp { get; set; }
+        public int BaseStatMp { get; set; }
+        public int BaseStatStamina { get; set; }
+
         private int BaseSuperArmor { get; set; }
         private int BaseMoveSpeed { get; set; }
         private int BaseAttackSpeed { get; set; }
@@ -122,6 +176,16 @@ namespace GGemCo2DCore
             _totalHpTemp,
             _totalMp,
             _totalStamina,
+            _totalBaseAtk,
+            _totalBaseDef,
+            _totalBaseHp,
+            _totalBaseMp,
+            _totalBaseStamina,
+            _totalStatAtk,
+            _totalStatDef,
+            _totalStatHp,
+            _totalStatMp,
+            _totalStatStamina,
             _totalMoveSpeed,
             _totalAttackSpeed,
             _totalCriticalDamage,
@@ -156,6 +220,56 @@ namespace GGemCo2DCore
         /// 최종 스태미나(계산 결과)를 스트림으로 제공합니다.
         /// </summary>
         public readonly BehaviorSubject<long> TotalStamina = new(100);
+
+        /// <summary>
+        /// 기본 항목으로 계산된 최종 공격력입니다.
+        /// </summary>
+        public readonly BehaviorSubject<long> TotalBaseAtk = new(0);
+
+        /// <summary>
+        /// 기본 항목으로 계산된 최종 방어력입니다.
+        /// </summary>
+        public readonly BehaviorSubject<long> TotalBaseDef = new(0);
+
+        /// <summary>
+        /// 기본 항목으로 계산된 최종 HP입니다.
+        /// </summary>
+        public readonly BehaviorSubject<long> TotalBaseHp = new(0);
+
+        /// <summary>
+        /// 기본 항목으로 계산된 최종 MP입니다.
+        /// </summary>
+        public readonly BehaviorSubject<long> TotalBaseMp = new(0);
+
+        /// <summary>
+        /// 기본 항목으로 계산된 최종 스태미나입니다.
+        /// </summary>
+        public readonly BehaviorSubject<long> TotalBaseStamina = new(0);
+
+        /// <summary>
+        /// 스탯 항목으로 계산된 최종 공격 스탯입니다.
+        /// </summary>
+        public readonly BehaviorSubject<long> TotalStatAtk = new(0);
+
+        /// <summary>
+        /// 스탯 항목으로 계산된 최종 방어 스탯입니다.
+        /// </summary>
+        public readonly BehaviorSubject<long> TotalStatDef = new(0);
+
+        /// <summary>
+        /// 스탯 항목으로 계산된 최종 HP 스탯입니다.
+        /// </summary>
+        public readonly BehaviorSubject<long> TotalStatHp = new(0);
+
+        /// <summary>
+        /// 스탯 항목으로 계산된 최종 MP 스탯입니다.
+        /// </summary>
+        public readonly BehaviorSubject<long> TotalStatMp = new(0);
+
+        /// <summary>
+        /// 스탯 항목으로 계산된 최종 스태미나 스탯입니다.
+        /// </summary>
+        public readonly BehaviorSubject<long> TotalStatStamina = new(0);
 
         /// <summary>
         /// 최종 슈퍼아머(계산 결과)를 스트림으로 제공합니다.
@@ -306,36 +420,65 @@ namespace GGemCo2DCore
         }
 
         /// <summary>
-        /// 스크립터블 오브젝트 등에 정의된 기본 스탯 값을 설정하고 즉시 재계산합니다.
+        /// 스크립터블 오브젝트 등에 정의된 기본 항목 값을 설정하고 즉시 재계산합니다.
         /// </summary>
-        /// <param name="statAtk">기본 공격력입니다.</param>
-        /// <param name="statDef">기본 방어력입니다.</param>
-        /// <param name="statHp">기본 HP입니다.</param>
-        /// <param name="statMp">기본 MP입니다.</param>
-        /// <param name="statStamina">기본 스태미나입니다.</param>
-        /// <param name="statSuperArmor">기본 슈퍼아머입니다.</param>
-        /// <param name="statMoveSpeed">기본 이동속도입니다.</param>
-        /// <param name="statAttackSpeed">기본 공격속도입니다.</param>
-        /// <param name="statRegistFire">기본 화염 저항입니다.</param>
-        /// <param name="statRegistCold">기본 냉기 저항입니다.</param>
-        /// <param name="statRegistLightning">기본 번개 저항입니다.</param>
-        /// <param name="statRegistPoison">기본 독 저항입니다.</param>
+        /// <remarks>
+        /// 기존 호출부 호환용 메서드입니다. 전달된 값은 기본 항목으로만 반영되며,
+        /// 스탯 항목은 0으로 초기화됩니다. 플레이어/몬스터처럼 스탯 항목을 따로 가진 대상은
+        /// <see cref="SetBaseAndGrowthStatInfos"/>를 사용합니다.
+        /// </remarks>
         protected void SetBaseInfos(int statAtk, int statDef, int statHp, int statMp, int statStamina,
             int statSuperArmor, int statMoveSpeed,
             int statAttackSpeed, int statRegistFire, int statRegistCold, int statRegistLightning, int statRegistPoison)
         {
-            BaseAtk = statAtk;
-            BaseDef = statDef;
-            BaseHp = statHp;
-            BaseMp = statMp;
-            BaseStamina = statStamina;
-            BaseSuperArmor = statSuperArmor;
-            BaseMoveSpeed = statMoveSpeed;
-            BaseAttackSpeed = statAttackSpeed;
-            BaseRegistFire = statRegistFire;
-            BaseRegistCold = statRegistCold;
-            BaseRegistLightning = statRegistLightning;
-            BaseRegistPoison = statRegistPoison;
+            var baseAttributes = new CharacterBaseAttributeValues
+            {
+                atk = statAtk,
+                def = statDef,
+                hp = statHp,
+                mp = statMp,
+                stamina = statStamina,
+                superArmor = statSuperArmor,
+                moveSpeed = statMoveSpeed,
+                attackSpeed = statAttackSpeed,
+                resistanceFire = statRegistFire,
+                resistanceCold = statRegistCold,
+                resistanceLightning = statRegistLightning,
+                resistancePoison = statRegistPoison,
+            };
+
+            SetBaseAndGrowthStatInfos(baseAttributes, default);
+        }
+
+        /// <summary>
+        /// 기본 항목과 스탯 항목의 시작값을 분리해서 설정하고 즉시 재계산합니다.
+        /// </summary>
+        /// <param name="baseAttributes">전투 계산의 원천이 되는 기본 항목 시작값입니다.</param>
+        /// <param name="growthStats">스탯 포인트와 성장 옵션이 누적되는 스탯 항목 시작값입니다.</param>
+        protected void SetBaseAndGrowthStatInfos(
+            CharacterBaseAttributeValues baseAttributes,
+            CharacterGrowthStatValues growthStats)
+        {
+            BaseAtk = baseAttributes.atk;
+            BaseDef = baseAttributes.def;
+            BaseHp = baseAttributes.hp;
+            BaseMp = baseAttributes.mp;
+            BaseStamina = baseAttributes.stamina;
+            BaseSuperArmor = baseAttributes.superArmor;
+            BaseMoveSpeed = baseAttributes.moveSpeed;
+            BaseAttackSpeed = baseAttributes.attackSpeed;
+            BaseCriticalDamage = baseAttributes.criticalDamage;
+            BaseCriticalProbability = baseAttributes.criticalProbability;
+            BaseRegistFire = baseAttributes.resistanceFire;
+            BaseRegistCold = baseAttributes.resistanceCold;
+            BaseRegistLightning = baseAttributes.resistanceLightning;
+            BaseRegistPoison = baseAttributes.resistancePoison;
+
+            BaseStatAtk = growthStats.atk;
+            BaseStatDef = growthStats.def;
+            BaseStatHp = growthStats.hp;
+            BaseStatMp = growthStats.mp;
+            BaseStatStamina = growthStats.stamina;
 
             RecalculateStats();
         }
@@ -431,43 +574,61 @@ namespace GGemCo2DCore
             Dictionary<string, int> flatPersistentProjected,
             Dictionary<string, float> percentPersistentProjected)
         {
-            long atk = StatCalculator.CalculateFinalProjected(ConfigCommon.StatusStatAtk, BaseAtk,
+            long baseAtk = StatCalculator.CalculateFinalProjected(ConfigCommon.BaseStatAtk, BaseAtk,
                 flatPersistentProjected, percentPersistentProjected, _providersWithoutPersistent);
-            long def = StatCalculator.CalculateFinalProjected(ConfigCommon.StatusStatDef, BaseDef,
+            long baseDef = StatCalculator.CalculateFinalProjected(ConfigCommon.BaseStatDef, BaseDef,
                 flatPersistentProjected, percentPersistentProjected, _providersWithoutPersistent);
-            long hp = StatCalculator.CalculateFinalProjected(ConfigCommon.StatusStatHp, BaseHp,
+            long baseHp = StatCalculator.CalculateFinalProjected(ConfigCommon.BaseStatHp, BaseHp,
                 flatPersistentProjected, percentPersistentProjected, _providersWithoutPersistent);
-            long mp = StatCalculator.CalculateFinalProjected(ConfigCommon.StatusStatMp, BaseMp,
+            long baseMp = StatCalculator.CalculateFinalProjected(ConfigCommon.BaseStatMp, BaseMp,
                 flatPersistentProjected, percentPersistentProjected, _providersWithoutPersistent);
-            long stamina = StatCalculator.CalculateFinalProjected(ConfigCommon.StatusStatStamina, BaseStamina,
+            long baseStamina = StatCalculator.CalculateFinalProjected(ConfigCommon.BaseStatStamina, BaseStamina,
                 flatPersistentProjected, percentPersistentProjected, _providersWithoutPersistent);
-            int superArmor = (int)StatCalculator.CalculateFinalProjected(ConfigCommon.StatusStatSuperArmor,
+
+            long statAtk = StatCalculator.CalculateFinalProjected(ConfigCommon.StatusStatAtk, BaseStatAtk,
+                flatPersistentProjected, percentPersistentProjected, _providersWithoutPersistent);
+            long statDef = StatCalculator.CalculateFinalProjected(ConfigCommon.StatusStatDef, BaseStatDef,
+                flatPersistentProjected, percentPersistentProjected, _providersWithoutPersistent);
+            long statHp = StatCalculator.CalculateFinalProjected(ConfigCommon.StatusStatHp, BaseStatHp,
+                flatPersistentProjected, percentPersistentProjected, _providersWithoutPersistent);
+            long statMp = StatCalculator.CalculateFinalProjected(ConfigCommon.StatusStatMp, BaseStatMp,
+                flatPersistentProjected, percentPersistentProjected, _providersWithoutPersistent);
+            long statStamina = StatCalculator.CalculateFinalProjected(ConfigCommon.StatusStatStamina, BaseStatStamina,
+                flatPersistentProjected, percentPersistentProjected, _providersWithoutPersistent);
+
+            long atk = baseAtk + statAtk;
+            long def = baseDef + statDef;
+            long hp = baseHp + statHp;
+            long mp = baseMp + statMp;
+            long stamina = baseStamina + statStamina;
+
+            int superArmor = (int)StatCalculator.CalculateFinalProjected(ConfigCommon.BaseStatSuperArmor,
                 BaseSuperArmor,
                 flatPersistentProjected, percentPersistentProjected, _providersWithoutPersistent);
 
-            long moveSpeed = StatCalculator.CalculateFinalProjected(ConfigCommon.StatusStatMoveSpeed, BaseMoveSpeed,
+            long moveSpeed = StatCalculator.CalculateFinalProjected(ConfigCommon.BaseStatMoveSpeed, BaseMoveSpeed,
                 flatPersistentProjected, percentPersistentProjected, _providersWithoutPersistent);
-            long attackSpeed = StatCalculator.CalculateFinalProjected(ConfigCommon.StatusStatAttackSpeed,
+            long attackSpeed = StatCalculator.CalculateFinalProjected(ConfigCommon.BaseStatAttackSpeed,
                 BaseAttackSpeed,
                 flatPersistentProjected, percentPersistentProjected, _providersWithoutPersistent);
 
-            long criticalDamage = StatCalculator.CalculateFinalProjected(ConfigCommon.StatusStatCriticalDamage,
+            long criticalDamage = StatCalculator.CalculateFinalProjected(ConfigCommon.BaseStatCriticalDamage,
                 BaseCriticalDamage,
                 flatPersistentProjected, percentPersistentProjected, _providersWithoutPersistent);
             long criticalProbability = StatCalculator.CalculateFinalProjected(
-                ConfigCommon.StatusStatCriticalProbability, BaseCriticalProbability,
+                ConfigCommon.BaseStatCriticalProbability, BaseCriticalProbability,
                 flatPersistentProjected, percentPersistentProjected, _providersWithoutPersistent);
 
-            long registFire = StatCalculator.CalculateFinalProjected(ConfigCommon.StatusStatResistanceFire,
+            long registFire = StatCalculator.CalculateFinalProjected(ConfigCommon.BaseStatResistanceFire,
                 BaseRegistFire,
                 flatPersistentProjected, percentPersistentProjected, _providersWithoutPersistent);
-            long registCold = StatCalculator.CalculateFinalProjected(ConfigCommon.StatusStatResistanceCold,
+            long registCold = StatCalculator.CalculateFinalProjected(ConfigCommon.BaseStatResistanceCold,
                 BaseRegistCold,
                 flatPersistentProjected, percentPersistentProjected, _providersWithoutPersistent);
-            long registLightning = StatCalculator.CalculateFinalProjected(ConfigCommon.StatusStatResistanceLightning,
+            long registLightning = StatCalculator.CalculateFinalProjected(ConfigCommon.BaseStatResistanceLightning,
                 BaseRegistLightning,
                 flatPersistentProjected, percentPersistentProjected, _providersWithoutPersistent);
-            long registPoison = StatCalculator.CalculateFinalProjected(ConfigCommon.StatusStatResistancePoison,
+            long registPoison = StatCalculator.CalculateFinalProjected(ConfigCommon.BaseStatResistancePoison,
                 BaseRegistPoison,
                 flatPersistentProjected, percentPersistentProjected, _providersWithoutPersistent);
 
@@ -476,7 +637,9 @@ namespace GGemCo2DCore
                 superArmor,
                 moveSpeed, attackSpeed,
                 criticalDamage, criticalProbability,
-                registFire, registCold, registLightning, registPoison);
+                registFire, registCold, registLightning, registPoison,
+                baseAtk, baseDef, baseHp, baseMp, baseStamina,
+                statAtk, statDef, statHp, statMp, statStamina);
         }
 
         /// <summary>
