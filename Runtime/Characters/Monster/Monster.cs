@@ -37,6 +37,12 @@ namespace GGemCo2DCore
         private readonly List<IMonsterBrainRuntimeResettable> _brainRuntimeResetters = new(4);
         private bool _pendingBrainResetOnNextFadeIn;
         private CharacterConstants.CombatStartReason _combatStartReason = CharacterConstants.CombatStartReason.None;
+        private int _currentLevel = 1;
+
+        /// <summary>
+        /// 현재 스폰된 몬스터 인스턴스에 적용된 레벨입니다.
+        /// </summary>
+        public int CurrentLevel => _currentLevel;
 
         /// <summary>
         /// 다음 1회 공용 사망 컷신(CutsceneUidDie) 재생을 건너뜁니다.
@@ -289,6 +295,7 @@ namespace GGemCo2DCore
             // GcLogger.Log("InitializationStat uid: "+uid+" / info.uid: "+info.uid+" / StatMoveSpeed: "+info.statMoveSpeed);
             if (info.Uid <= 0) return;
             _grade = info.Grade;
+            _currentLevel = ResolveSpawnLevel(info);
             characterName = info.Name;
             var baseAttributes = new CharacterBaseAttributeValues
             {
@@ -321,6 +328,25 @@ namespace GGemCo2DCore
             SetScale(info.Scale);
             SetAttackType(info.AttackType);
             _deathSkillController?.SetDeathSkillMonsterUid(info.DeathSkillMonsterUid);
+        }
+
+        /// <summary>
+        /// 몬스터 테이블의 레벨 범위에서 이번 스폰에 사용할 레벨을 결정합니다.
+        /// </summary>
+        /// <param name="info">몬스터 테이블 row 데이터입니다.</param>
+        /// <returns>이번 스폰에 적용할 몬스터 레벨입니다.</returns>
+        private static int ResolveSpawnLevel(StruckTableMonster info)
+        {
+            if (info == null)
+                return 1;
+
+            int minLevel = Mathf.Max(1, info.MinLevel);
+            int maxLevel = Mathf.Max(minLevel, info.MaxLevel);
+            if (minLevel == maxLevel)
+                return minLevel;
+
+            // UnityEngine.Random.Range(int, int)는 최대값이 exclusive 이므로 +1 하여 테이블 범위를 포함합니다.
+            return Random.Range(minLevel, maxLevel + 1);
         }
 
         protected override bool InitializeByAnimationTable()
@@ -873,5 +899,4 @@ namespace GGemCo2DCore
         }
     }
 }
-
 

@@ -15,7 +15,8 @@ namespace GGemCo2DCore
         public CharacterConstants.AttackType AttackType;
         public float Scale;
         public CharacterConstants.Grade Grade;
-        public int Level;
+        public int MinLevel;
+        public int MaxLevel;
         public int BaseHp;
         public int BaseAtk;
         public int BaseDef;
@@ -60,6 +61,8 @@ namespace GGemCo2DCore
         protected override StruckTableMonster BuildRow(Dictionary<string, string> data)
         {
             TableRowReader reader = ReadRow(data);
+            int minLevel = ReadMonsterMinLevel(data);
+            int maxLevel = ReadMonsterMaxLevel(data, minLevel);
             return new StruckTableMonster
             {
                 Uid = reader.Int("Uid"),
@@ -70,7 +73,8 @@ namespace GGemCo2DCore
                 AttackType = reader.Enum<CharacterConstants.AttackType>("AttackType"),
                 Scale = reader.Float("Scale"),
                 Grade = reader.Enum<CharacterConstants.Grade>("Grade"),
-                Level = reader.Int("Level"),
+                MinLevel = minLevel,
+                MaxLevel = maxLevel,
                 BaseHp = ReadOptionalInt(data, "BaseHp", 0),
                 BaseAtk = ReadOptionalInt(data, "BaseAtk", 0),
                 BaseDef = ReadOptionalInt(data, "BaseDef", 0),
@@ -103,6 +107,29 @@ namespace GGemCo2DCore
                     : 0,
                 BtFileName = (reader.String("BtFileName")),
             };
+        }
+
+        /// <summary>
+        /// monster 테이블의 최소 레벨 컬럼을 읽습니다.
+        /// </summary>
+        /// <param name="data">테이블 row 데이터입니다.</param>
+        /// <returns>몬스터 스폰 시 사용할 최소 레벨입니다.</returns>
+        private static int ReadMonsterMinLevel(Dictionary<string, string> data)
+        {
+            int legacyLevel = ReadOptionalInt(data, "Level", 1);
+            return System.Math.Max(1, ReadOptionalInt(data, "MinLevel", legacyLevel));
+        }
+
+        /// <summary>
+        /// monster 테이블의 최대 레벨 컬럼을 읽고 최소 레벨보다 낮으면 최소 레벨로 보정합니다.
+        /// </summary>
+        /// <param name="data">테이블 row 데이터입니다.</param>
+        /// <param name="minLevel">이미 파싱한 최소 레벨입니다.</param>
+        /// <returns>몬스터 스폰 시 사용할 최대 레벨입니다.</returns>
+        private static int ReadMonsterMaxLevel(Dictionary<string, string> data, int minLevel)
+        {
+            int maxLevel = ReadOptionalInt(data, "MaxLevel", minLevel);
+            return System.Math.Max(minLevel, maxLevel);
         }
 
         /// <summary>

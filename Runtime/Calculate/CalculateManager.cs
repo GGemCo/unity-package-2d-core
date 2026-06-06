@@ -244,12 +244,8 @@ namespace GGemCo2DCore
             if (character is Player player)
                 return System.Math.Max(1, player.CurrentLevel);
 
-            if (character is Monster monster && TableLoaderManager.Instance != null)
-            {
-                StruckTableMonster row = TableLoaderManager.Instance.TableMonster.GetDataByUid(monster.uid);
-                if (row != null)
-                    return System.Math.Max(1, row.Level);
-            }
+            if (character is Monster monster)
+                return System.Math.Max(1, monster.CurrentLevel);
 
             return 1;
         }
