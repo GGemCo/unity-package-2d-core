@@ -1,1 +1,1 @@
-Uid	Name	ImageThumbnailFileName	AnimationUid	DefaultSkin	Type	Scale	Grade	Level	StatHp	StatAtk	StatDef	StatMoveSpeed	StatAttackSpeed	RewardExp	RewardGold	RegistFire	RegistCold	RegistLightning
+Uid	Name	ImageThumbnailFileName	AnimationUid	DefaultSkin	Type	Scale	Grade	MinLevel	MaxLevel	StatHp	StatAtk	StatDef	StatMoveSpeed	StatAttackSpeed	RewardExp	RewardGold	RegistFire	RegistCold	RegistLightning
