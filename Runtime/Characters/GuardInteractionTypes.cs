@@ -7,6 +7,11 @@ namespace GGemCo2DCore
     public enum GuardAttackType
     {
         /// <summary>
+        /// 가드 불가능
+        /// </summary>
+        None = -1,
+        
+        /// <summary>
         /// 일반 공격입니다. 기본 가드 규칙으로 처리합니다.
         /// </summary>
         Normal = 0,
@@ -27,7 +32,7 @@ namespace GGemCo2DCore
         Ultimate = 3,
         
         /// <summary>
-        /// 필살기 공격입니다. 저스트 가드만 가능
+        /// 필살기 공격입니다. 카운터로만 가능
         /// </summary>
         Special = 4,
     }
