@@ -13,7 +13,7 @@ namespace GGemCo2DCore
 
         /// <summary>
         /// 대상 ID.
-        /// - Kind=Stat   : STAT_* (TableStat.Id)
+        /// - Kind=Stat   : BASE_* 또는 STAT_* (TableStat.Id)
         /// - Kind=State  : STATE_* (TableState.Id)
         /// - Kind=DamageType: DT_* (TableDamageType.Id)
         /// - Kind=Affect : AffectUid 또는 AffectId(정책에 맞게 사용)

@@ -7,7 +7,7 @@ namespace GGemCo2DCore
     /// Flat/Percent Modifier 딕셔너리 1쌍을 관리하는 경량 컨테이너입니다.
     /// </summary>
     /// <remarks>
-    /// - Key: 스탯 키 문자열(예: STAT_ATK 등)
+    /// - Key: 스탯 키 문자열(예: BASE_ATK, STAT_ATK 등)
     /// - Flat: 고정(가산) 값
     /// - Percent: 100 기준 퍼센트 값(예: 10 = +10%)
     /// - 값이 0이 되면 내부 딕셔너리에서 제거하여 메모리 및 조회 비용을 최소화합니다.

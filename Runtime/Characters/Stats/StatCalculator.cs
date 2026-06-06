@@ -17,7 +17,7 @@ namespace GGemCo2DCore
         /// <summary>
         /// 지정한 스탯 키에 대해 Base 값과 Provider들의 modifier를 합산하여 최종값을 계산합니다.
         /// </summary>
-        /// <param name="statKey">계산할 스탯 키(예: STAT_ATK 등)입니다.</param>
+        /// <param name="statKey">계산할 스탯 키(예: BASE_ATK, STAT_ATK 등)입니다.</param>
         /// <param name="baseValue">기본(Base) 스탯 값입니다.</param>
         /// <param name="providers">Flat/Percent modifier를 제공하는 Provider 목록입니다.</param>
         /// <returns>(Base + Flat합) * (1 + Percent합/100) 규칙으로 계산된 최종값입니다.</returns>
@@ -48,7 +48,7 @@ namespace GGemCo2DCore
         /// 특정 “가정(프로젝션) 버킷”의 modifier를 추가로 반영했을 때의 최종값을 계산합니다.
         /// - 실제 Provider 상태는 변경하지 않습니다.
         /// </summary>
-        /// <param name="statKey">계산할 스탯 키(예: STAT_ATK 등)입니다.</param>
+        /// <param name="statKey">계산할 스탯 키(예: BASE_ATK, STAT_ATK 등)입니다.</param>
         /// <param name="baseValue">기본(Base) 스탯 값입니다.</param>
         /// <param name="flatProjected">추가로 가정할 Flat(가산) modifier 사전입니다.</param>
         /// <param name="percentProjected">추가로 가정할 Percent(%) modifier 사전입니다.</param>

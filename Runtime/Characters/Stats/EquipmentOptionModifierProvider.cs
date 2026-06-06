@@ -120,7 +120,7 @@ namespace GGemCo2DCore
                 switch (op.Kind)
                 {
                     case ItemOptionKind.Stat:
-                        // CharacterStat은 기존처럼 STAT_* key를 받아서 처리
+                        // CharacterStat은 BASE_*/STAT_* 스탯 키를 그대로 받아 계산 모듈별 버킷에 반영합니다.
                         outStatModifiers.Add(new ConfigCommon.StruckStatus(op.TargetId, op.Op, op.Value));
                         break;
 
@@ -224,7 +224,7 @@ namespace GGemCo2DCore
         /// <summary>
         /// 접미사(SuffixType)에 따라 Flat 또는 Percent 버킷에 값을 추가/제거합니다.
         /// </summary>
-        /// <param name="statType">스탯 키(예: STAT_ATK 등)입니다.</param>
+        /// <param name="statType">스탯 키(예: BASE_ATK, STAT_ATK 등)입니다.</param>
         /// <param name="struckStatus">옵션으로부터 전달된 스탯 변경 정보입니다.</param>
         /// <param name="isAdding">true이면 적용, false이면 제거(역적용)합니다.</param>
         private void ModifyStat(string statType, ConfigCommon.StruckStatus struckStatus, bool isAdding)

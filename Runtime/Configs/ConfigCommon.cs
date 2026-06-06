@@ -25,6 +25,32 @@ namespace GGemCo2DCore
             Flat = 0,
             PercentOfMax = 1,
         }
+
+        /// <summary>
+        /// stat 테이블 항목의 사용 분류입니다.
+        /// </summary>
+        public enum StatGroup
+        {
+            /// <summary>
+            /// 분류가 지정되지 않은 항목입니다.
+            /// </summary>
+            None = 0,
+
+            /// <summary>
+            /// BASE_* 계열 기본 항목입니다. 장비, 아이템, Affect로 보정할 수 있습니다.
+            /// </summary>
+            Base = 1,
+
+            /// <summary>
+            /// STAT_* 계열 성장 스탯 항목입니다. 스탯 포인트와 성장형 옵션에서 사용합니다.
+            /// </summary>
+            Growth = 2,
+
+            /// <summary>
+            /// 런타임에서만 누적되는 특수 스탯 항목입니다.
+            /// </summary>
+            Runtime = 3,
+        }
         
         public const string BaseStatAtk = "BASE_ATK";
         public const string BaseStatDef = "BASE_DEF";
@@ -59,6 +85,37 @@ namespace GGemCo2DCore
         public const string StatusStatResistanceCold = "STAT_RESISTANCE_COLD";
         public const string StatusStatResistanceLightning = "STAT_RESISTANCE_LIGHTNING";
         public const string StatusStatResistancePoison = "STAT_RESISTANCE_POISON";
+
+        /// <summary>
+        /// 스탯 ID가 BASE_* 계열 기본 항목인지 확인합니다.
+        /// </summary>
+        /// <param name="statId">확인할 스탯 ID입니다.</param>
+        /// <returns>BASE_* 계열이면 true입니다.</returns>
+        public static bool IsBaseStatId(string statId) =>
+            !string.IsNullOrWhiteSpace(statId) && statId.StartsWith("BASE_", System.StringComparison.Ordinal);
+
+        /// <summary>
+        /// 스탯 ID가 STAT_* 계열 성장/런타임 항목인지 확인합니다.
+        /// </summary>
+        /// <param name="statId">확인할 스탯 ID입니다.</param>
+        /// <returns>STAT_* 계열이면 true입니다.</returns>
+        public static bool IsStatusStatId(string statId) =>
+            !string.IsNullOrWhiteSpace(statId) && statId.StartsWith("STAT_", System.StringComparison.Ordinal);
+
+        /// <summary>
+        /// stat 테이블의 Group 컬럼이 비어 있을 때, ID prefix 기준으로 기본 분류를 추론합니다.
+        /// </summary>
+        /// <param name="statId">분류를 추론할 스탯 ID입니다.</param>
+        /// <returns>추론된 스탯 분류입니다.</returns>
+        public static StatGroup ResolveStatGroupById(string statId)
+        {
+            if (string.IsNullOrWhiteSpace(statId)) return StatGroup.None;
+            if (statId == StatusStatHpTemp) return StatGroup.Runtime;
+            if (IsBaseStatId(statId)) return StatGroup.Base;
+            if (IsStatusStatId(statId)) return StatGroup.Growth;
+            return StatGroup.None;
+        }
+
         public const string StatusAffectId = "AFFECT_UID";
         public const string StatusKnockBack = "KNOCK_BACK";
         public class StruckStatus

@@ -10,6 +10,15 @@ namespace GGemCo2DCore
         public int Uid;
         public string ID;
         public string Name;
+
+        /// <summary>
+        /// 스탯 항목의 사용 분류입니다.
+        /// - Base: BASE_* 기본 항목
+        /// - Growth: STAT_* 성장 스탯 항목
+        /// - Runtime: 런타임 전용 특수 항목
+        /// </summary>
+        public ConfigCommon.StatGroup Group;
+
         public float DefaultValue;
     }
 
@@ -21,10 +30,12 @@ namespace GGemCo2DCore
         public override string Key => ConfigAddressableTable.Stat;
 
         private readonly Dictionary<string, StruckTableStat> _byId = new();
+        private readonly Dictionary<ConfigCommon.StatGroup, List<StruckTableStat>> _byGroup = new();
 
         protected override void PreLoad()
         {
             _byId.Clear();
+            _byGroup.Clear();
         }
 
         protected override void OnLoadedData(StruckTableStat data)
@@ -36,6 +47,14 @@ namespace GGemCo2DCore
 
             if (!string.IsNullOrWhiteSpace(data.ID))
                 _byId[data.ID] = data;
+
+            if (!_byGroup.TryGetValue(data.Group, out var groupRows))
+            {
+                groupRows = new List<StruckTableStat>();
+                _byGroup[data.Group] = groupRows;
+            }
+
+            groupRows.Add(data);
         }
 
         /// <summary>
@@ -68,14 +87,40 @@ namespace GGemCo2DCore
             return _byId.GetValueOrDefault(id);
         }
 
+        /// <summary>
+        /// 지정한 분류에 해당하는 stat 테이블 행 목록을 반환합니다.
+        /// </summary>
+        /// <param name="group">조회할 스탯 분류입니다.</param>
+        /// <returns>해당 분류의 행 목록입니다. 없으면 빈 목록입니다.</returns>
+        public IReadOnlyList<StruckTableStat> GetDataByGroup(ConfigCommon.StatGroup group)
+        {
+            return _byGroup.TryGetValue(group, out var rows) ? rows : System.Array.Empty<StruckTableStat>();
+        }
+
+        /// <summary>
+        /// stat 테이블 행의 Group 컬럼을 읽습니다.
+        /// - 기존 테이블처럼 Group 컬럼이 없거나 비어 있으면 ID prefix(BASE_*/STAT_*)로 분류를 추론합니다.
+        /// </summary>
+        /// <param name="reader">현재 행 파서입니다.</param>
+        /// <param name="statId">현재 행의 스탯 ID입니다.</param>
+        /// <returns>파싱 또는 추론된 스탯 분류입니다.</returns>
+        private static ConfigCommon.StatGroup ReadGroup(TableRowReader reader, string statId)
+        {
+            ConfigCommon.StatGroup fallback = ConfigCommon.ResolveStatGroupById(statId);
+            return reader.Enum("Group", fallback);
+        }
+
         protected override StruckTableStat BuildRow(Dictionary<string, string> data)
         {
             TableRowReader reader = ReadRow(data);
+            string id = reader.String("ID");
+
             return new StruckTableStat
             {
                 Uid = reader.Int("Uid"),
-                ID = reader.String("ID"),
+                ID = id,
                 Name = reader.String("Name"),
+                Group = ReadGroup(reader, id),
                 DefaultValue = reader.Float("DefaultValue")
             };
         }

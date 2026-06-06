@@ -14,7 +14,7 @@ namespace GGemCo2DCore
         /// Flat(가산) Modifier 사전입니다.
         /// </summary>
         /// <remarks>
-        /// Key: 스탯 키(예: STAT_ATK 등), Value: 누적 가산 값입니다.
+        /// Key: 스탯 키(예: BASE_ATK, STAT_ATK 등), Value: 누적 가산 값입니다.
         /// </remarks>
         IReadOnlyDictionary<string, int> Flat { get; }
 
@@ -22,7 +22,7 @@ namespace GGemCo2DCore
         /// Percent(%) Modifier 사전입니다.
         /// </summary>
         /// <remarks>
-        /// Key: 스탯 키(예: STAT_ATK 등), Value: 누적 비율 값(예: 10 = +10%)입니다.
+        /// Key: 스탯 키(예: BASE_ATK, STAT_ATK 등), Value: 누적 비율 값(예: 10 = +10%)입니다.
         /// </remarks>
         IReadOnlyDictionary<string, float> Percent { get; }
 
