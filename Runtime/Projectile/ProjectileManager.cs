@@ -3,6 +3,55 @@
 namespace GGemCo2DCore
 {
     /// <summary>
+    /// 프로젝타일 적중 시 Crowd Control 후보를 적용할 시점입니다.
+    /// </summary>
+    public enum ProjectileOnHitCrowdControlTiming
+    {
+        /// <summary>데미지 처리 후 적용할 후보입니다.</summary>
+        AfterDamage = 0,
+
+        /// <summary>데미지 처리 전 적용할 후보입니다.</summary>
+        BeforeDamage = 1,
+    }
+
+    /// <summary>
+    /// 프로젝타일 적중 시 대상에게 적용할 Crowd Control 후보입니다.
+    /// </summary>
+    public readonly struct ProjectileOnHitCrowdControlEntry
+    {
+        /// <summary>crowd_control 테이블 UID입니다.</summary>
+        public readonly int CrowdControlUid;
+
+        /// <summary>적용 확률입니다. 0~1 범위로 보정됩니다.</summary>
+        public readonly float Chance;
+
+        /// <summary>실제 데미지 적용이 예정된 경우에만 후보로 사용할지 여부입니다.</summary>
+        public readonly bool RequireDamageDealt;
+
+        /// <summary>프로젝타일 데미지 파이프라인에서 적용할 시점입니다.</summary>
+        public readonly ProjectileOnHitCrowdControlTiming Timing;
+
+        /// <summary>
+        /// Crowd Control 후보 값을 생성합니다.
+        /// </summary>
+        /// <param name="crowdControlUid">crowd_control 테이블 UID입니다.</param>
+        /// <param name="chance">적용 확률입니다.</param>
+        /// <param name="requireDamageDealt">실제 데미지 적용이 예정된 경우에만 후보로 사용할지 여부입니다.</param>
+        /// <param name="timing">적용 시점입니다.</param>
+        public ProjectileOnHitCrowdControlEntry(
+            int crowdControlUid,
+            float chance,
+            bool requireDamageDealt,
+            ProjectileOnHitCrowdControlTiming timing)
+        {
+            CrowdControlUid = crowdControlUid;
+            Chance = Mathf.Clamp01(chance);
+            RequireDamageDealt = requireDamageDealt;
+            Timing = timing;
+        }
+    }
+
+    /// <summary>
     /// 발사체 발사 시점의 런타임 파라미터.
     /// - Projectile 테이블: 정적인 정의(형태/기본 옵션)
     /// - MetadataProjectile: 상황에 따라 변하는 값(데미지 타입/배율/속도/크기/표현 방식 등)
@@ -27,6 +76,9 @@ namespace GGemCo2DCore
         public readonly int AttackId;
         public readonly bool AllowSkillChainOnConfirmedDamage;
         public readonly ElementGaugeApplication[] ElementGaugeApplications;
+        public readonly ProjectileOnHitCrowdControlEntry[] OnHitCrowdControls;
+        public readonly GuardAttackType GuardAttackType;
+        public readonly GuardInteractionMode GuardInteractionMode;
 
         // --- Movement/Scale (dynamic) ---
         public readonly float SpeedMultiplier;
@@ -75,6 +127,9 @@ namespace GGemCo2DCore
             int attackId = 0,
             bool allowSkillChainOnConfirmedDamage = false,
             ElementGaugeApplication[] elementGaugeApplications = null,
+            ProjectileOnHitCrowdControlEntry[] onHitCrowdControls = null,
+            GuardAttackType guardAttackType = GuardAttackType.Normal,
+            GuardInteractionMode guardInteractionMode = GuardInteractionMode.Normal,
             bool useHitLifetimeModeOverride = false,
             ProjectileConstants.HitLifetimeMode hitLifetimeModeOverride = ProjectileConstants.HitLifetimeMode.DestroyOnTargetHit,
             bool useDamageApplyModeOverride = false,
@@ -98,6 +153,9 @@ namespace GGemCo2DCore
             AttackId = attackId;
             AllowSkillChainOnConfirmedDamage = allowSkillChainOnConfirmedDamage;
             ElementGaugeApplications = elementGaugeApplications;
+            OnHitCrowdControls = onHitCrowdControls;
+            GuardAttackType = guardAttackType;
+            GuardInteractionMode = guardInteractionMode;
             Target = target;
             Owner = owner;
 
