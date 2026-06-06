@@ -25,6 +25,11 @@ namespace GGemCo2DCore
         public readonly int AttackId;
         public readonly bool AllowSkillChainOnConfirmedDamage;
         public readonly ElementGaugeApplication[] ElementGaugeApplications;
+
+        /// <summary>
+        /// 레이저 적중 시 대상에게 적용할 Crowd Control 후보 목록입니다.
+        /// </summary>
+        public readonly ProjectileOnHitCrowdControlEntry[] OnHitCrowdControls;
         public readonly float ScaleMultiplier;
         public readonly ProjectileConstants.ProjectileVisualType VisualType;
         public readonly Sprite VisualSprite;
@@ -70,6 +75,7 @@ namespace GGemCo2DCore
         /// <param name="attackId">연계/피격 추적용 공격 ID입니다.</param>
         /// <param name="allowSkillChainOnConfirmedDamage">실제 데미지 확정 시 스킬 연계를 열지 여부입니다.</param>
         /// <param name="elementGaugeApplications">적중 시 추가할 속성 게이지 목록입니다.</param>
+        /// <param name="onHitCrowdControls">적중 시 적용할 Crowd Control 후보 목록입니다.</param>
         /// <param name="useDurationOverride">지속 시간 오버라이드 사용 여부입니다.</param>
         /// <param name="durationOverride">지속 시간 오버라이드 값입니다.</param>
         /// <param name="useDamageTimingOverride">데미지 타이밍 오버라이드 사용 여부입니다.</param>
@@ -107,6 +113,7 @@ namespace GGemCo2DCore
             int attackId = 0,
             bool allowSkillChainOnConfirmedDamage = false,
             ElementGaugeApplication[] elementGaugeApplications = null,
+            ProjectileOnHitCrowdControlEntry[] onHitCrowdControls = null,
             bool useDurationOverride = false,
             float durationOverride = 0.25f,
             bool useDamageTimingOverride = false,
@@ -144,6 +151,7 @@ namespace GGemCo2DCore
             AttackId = attackId;
             AllowSkillChainOnConfirmedDamage = allowSkillChainOnConfirmedDamage;
             ElementGaugeApplications = elementGaugeApplications;
+            OnHitCrowdControls = onHitCrowdControls;
             UseDurationOverride = useDurationOverride;
             DurationOverride = durationOverride;
             UseDamageTimingOverride = useDamageTimingOverride;
@@ -189,7 +197,8 @@ namespace GGemCo2DCore
                 skillUid: SkillUid,
                 attackId: AttackId,
                 allowSkillChainOnConfirmedDamage: AllowSkillChainOnConfirmedDamage,
-                elementGaugeApplications: ElementGaugeApplications);
+                elementGaugeApplications: ElementGaugeApplications,
+                onHitCrowdControls: OnHitCrowdControls);
         }
     }
 }

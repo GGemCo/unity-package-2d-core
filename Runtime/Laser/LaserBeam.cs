@@ -598,17 +598,166 @@ namespace GGemCo2DCore
 
             _visual?.OnHit(new ProjectileVisualHitContext(hitPosition, _owner, hitCollider));
 
+            bool damageApplied = _damage > 0L;
+            int crowdControlUid = ResolveOnHitCrowdControlUid(
+                _runtime != null ? _runtime.OnHitCrowdControls : null,
+                damageApplied,
+                ProjectileOnHitCrowdControlTiming.BeforeDamage);
+            List<int> resolvedOnHitCrowdControls = CollectOnHitCrowdControlUids(
+                _runtime != null ? _runtime.OnHitCrowdControls : null,
+                damageApplied,
+                ProjectileOnHitCrowdControlTiming.AfterDamage);
+
             MetadataDamage metadataDamage = new MetadataDamage
             {
                 damage = _damage,
                 attacker = _owner ? _owner.gameObject : gameObject,
                 damageType = _damageType,
+                crowdControlUid = crowdControlUid,
                 SkillUid = _skillUid,
                 AttackId = _attackId,
                 ElementGaugeApplications = _runtime?.ElementGaugeApplications,
+                ResolvedOnHitCrowdControls = resolvedOnHitCrowdControls,
+                HasPendingAfterDamageCrowdControl = HasPendingOnHitCrowdControl(
+                    _runtime != null ? _runtime.OnHitCrowdControls : null,
+                    damageApplied,
+                    ProjectileOnHitCrowdControlTiming.AfterDamage),
             };
 
             target.TakeDamage(metadataDamage);
+        }
+
+        /// <summary>
+        /// 레이저 적중 시점에 적용할 Crowd Control UID 하나를 선택합니다.
+        /// </summary>
+        /// <param name="entries">레이저 런타임 Crowd Control 후보 목록입니다.</param>
+        /// <param name="damageApplied">데미지가 적용될 수 있는 상황인지 여부입니다.</param>
+        /// <param name="timing">조회할 적용 시점입니다.</param>
+        /// <returns>선택된 Crowd Control UID입니다. 없으면 0입니다.</returns>
+        private static int ResolveOnHitCrowdControlUid(
+            ProjectileOnHitCrowdControlEntry[] entries,
+            bool damageApplied,
+            ProjectileOnHitCrowdControlTiming timing)
+        {
+            if (entries == null || entries.Length == 0)
+            {
+                return 0;
+            }
+
+            for (int i = 0; i < entries.Length; i++)
+            {
+                ProjectileOnHitCrowdControlEntry entry = entries[i];
+                if (!CanUseOnHitCrowdControl(entry, damageApplied, timing))
+                {
+                    continue;
+                }
+
+                return entry.CrowdControlUid;
+            }
+
+            return 0;
+        }
+
+        /// <summary>
+        /// 레이저 적중 후 데미지 파이프라인으로 전달할 Crowd Control UID 목록을 수집합니다.
+        /// </summary>
+        /// <param name="entries">레이저 런타임 Crowd Control 후보 목록입니다.</param>
+        /// <param name="damageApplied">데미지가 적용될 수 있는 상황인지 여부입니다.</param>
+        /// <param name="timing">조회할 적용 시점입니다.</param>
+        /// <returns>선택된 Crowd Control UID 목록입니다. 없으면 null입니다.</returns>
+        private static List<int> CollectOnHitCrowdControlUids(
+            ProjectileOnHitCrowdControlEntry[] entries,
+            bool damageApplied,
+            ProjectileOnHitCrowdControlTiming timing)
+        {
+            if (entries == null || entries.Length == 0)
+            {
+                return null;
+            }
+
+            List<int> result = null;
+            for (int i = 0; i < entries.Length; i++)
+            {
+                ProjectileOnHitCrowdControlEntry entry = entries[i];
+                if (!CanUseOnHitCrowdControl(entry, damageApplied, timing))
+                {
+                    continue;
+                }
+
+                result ??= new List<int>(entries.Length);
+                result.Add(entry.CrowdControlUid);
+            }
+
+            return result;
+        }
+
+        /// <summary>
+        /// 조건상 나중에 Crowd Control이 적용될 가능성이 있는지 확인합니다.
+        /// </summary>
+        /// <remarks>
+        /// 실제 확률 판정은 데미지 메타데이터 생성 시 수행하지만, 피격 반응 억제 여부 판단에는 후보 존재 여부가 필요합니다.
+        /// </remarks>
+        /// <param name="entries">레이저 런타임 Crowd Control 후보 목록입니다.</param>
+        /// <param name="damageApplied">데미지가 적용될 수 있는 상황인지 여부입니다.</param>
+        /// <param name="timing">조회할 적용 시점입니다.</param>
+        /// <returns>조건을 만족하는 후보가 있으면 true입니다.</returns>
+        private static bool HasPendingOnHitCrowdControl(
+            ProjectileOnHitCrowdControlEntry[] entries,
+            bool damageApplied,
+            ProjectileOnHitCrowdControlTiming timing)
+        {
+            if (entries == null || entries.Length == 0)
+            {
+                return false;
+            }
+
+            for (int i = 0; i < entries.Length; i++)
+            {
+                ProjectileOnHitCrowdControlEntry entry = entries[i];
+                if (entry.CrowdControlUid <= 0 || entry.Chance <= 0f || entry.Timing != timing)
+                {
+                    continue;
+                }
+
+                if (entry.RequireDamageDealt && !damageApplied)
+                {
+                    continue;
+                }
+
+                return true;
+            }
+
+            return false;
+        }
+
+        /// <summary>
+        /// Crowd Control 후보가 현재 적중 조건에서 사용할 수 있는지 확인합니다.
+        /// </summary>
+        /// <param name="entry">검사할 Crowd Control 후보입니다.</param>
+        /// <param name="damageApplied">데미지가 적용될 수 있는 상황인지 여부입니다.</param>
+        /// <param name="timing">조회할 적용 시점입니다.</param>
+        /// <returns>조건과 확률 판정을 모두 통과하면 true입니다.</returns>
+        private static bool CanUseOnHitCrowdControl(
+            ProjectileOnHitCrowdControlEntry entry,
+            bool damageApplied,
+            ProjectileOnHitCrowdControlTiming timing)
+        {
+            if (entry.CrowdControlUid <= 0 || entry.Timing != timing)
+            {
+                return false;
+            }
+
+            if (entry.RequireDamageDealt && !damageApplied)
+            {
+                return false;
+            }
+
+            if (entry.Chance <= 0f)
+            {
+                return false;
+            }
+
+            return entry.Chance >= 1f || Random.value <= entry.Chance;
         }
 
         /// <summary>

@@ -57,6 +57,7 @@ namespace GGemCo2DCore
                     attackId: metadataLaser.AttackId,
                     allowSkillChainOnConfirmedDamage: metadataLaser.AllowSkillChainOnConfirmedDamage,
                     elementGaugeApplications: metadataLaser.ElementGaugeApplications,
+                    onHitCrowdControls: metadataLaser.OnHitCrowdControls,
                     useDurationOverride: metadataLaser.UseDurationOverride,
                     durationOverride: metadataLaser.DurationOverride,
                     useDamageTimingOverride: metadataLaser.UseDamageTimingOverride,
