@@ -30,6 +30,11 @@ namespace GGemCo2DCore
         /// 레이저 적중 시 대상에게 적용할 Crowd Control 후보 목록입니다.
         /// </summary>
         public readonly ProjectileOnHitCrowdControlEntry[] OnHitCrowdControls;
+
+        /// <summary>
+        /// 가드 성공/브레이크/추가 Crowd Control 규칙을 결정할 공격 방어 타입입니다.
+        /// </summary>
+        public readonly GuardAttackType GuardAttackType;
         public readonly float ScaleMultiplier;
         public readonly ProjectileConstants.ProjectileVisualType VisualType;
         public readonly Sprite VisualSprite;
@@ -76,6 +81,7 @@ namespace GGemCo2DCore
         /// <param name="allowSkillChainOnConfirmedDamage">실제 데미지 확정 시 스킬 연계를 열지 여부입니다.</param>
         /// <param name="elementGaugeApplications">적중 시 추가할 속성 게이지 목록입니다.</param>
         /// <param name="onHitCrowdControls">적중 시 적용할 Crowd Control 후보 목록입니다.</param>
+        /// <param name="guardAttackType">가드 설정에서 사용할 공격 방어 타입입니다.</param>
         /// <param name="useDurationOverride">지속 시간 오버라이드 사용 여부입니다.</param>
         /// <param name="durationOverride">지속 시간 오버라이드 값입니다.</param>
         /// <param name="useDamageTimingOverride">데미지 타이밍 오버라이드 사용 여부입니다.</param>
@@ -114,6 +120,7 @@ namespace GGemCo2DCore
             bool allowSkillChainOnConfirmedDamage = false,
             ElementGaugeApplication[] elementGaugeApplications = null,
             ProjectileOnHitCrowdControlEntry[] onHitCrowdControls = null,
+            GuardAttackType guardAttackType = GuardAttackType.Normal,
             bool useDurationOverride = false,
             float durationOverride = 0.25f,
             bool useDamageTimingOverride = false,
@@ -152,6 +159,7 @@ namespace GGemCo2DCore
             AllowSkillChainOnConfirmedDamage = allowSkillChainOnConfirmedDamage;
             ElementGaugeApplications = elementGaugeApplications;
             OnHitCrowdControls = onHitCrowdControls;
+            GuardAttackType = guardAttackType;
             UseDurationOverride = useDurationOverride;
             DurationOverride = durationOverride;
             UseDamageTimingOverride = useDamageTimingOverride;
@@ -198,7 +206,8 @@ namespace GGemCo2DCore
                 attackId: AttackId,
                 allowSkillChainOnConfirmedDamage: AllowSkillChainOnConfirmedDamage,
                 elementGaugeApplications: ElementGaugeApplications,
-                onHitCrowdControls: OnHitCrowdControls);
+                onHitCrowdControls: OnHitCrowdControls,
+                guardAttackType: GuardAttackType);
         }
     }
 }

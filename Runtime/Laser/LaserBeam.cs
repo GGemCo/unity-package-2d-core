@@ -622,6 +622,7 @@ namespace GGemCo2DCore
                     _runtime != null ? _runtime.OnHitCrowdControls : null,
                     damageApplied,
                     ProjectileOnHitCrowdControlTiming.AfterDamage),
+                GuardAttackType = _runtime != null ? _runtime.GuardAttackType : GuardAttackType.Normal,
             };
 
             target.TakeDamage(metadataDamage);
