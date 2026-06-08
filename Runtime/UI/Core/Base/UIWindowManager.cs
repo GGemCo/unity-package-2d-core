@@ -32,6 +32,7 @@ namespace GGemCo2DCore
         private UIWindowOrderService _windowOrderService;
         private UIWindowVisibilityStateStack _visibilityStateStack;
         private UIWindowVisibilityService _windowVisibilityService;
+        private UIWindowInitialVisibilityService _initialVisibilityService;
         private UIWindowSlotActivationService _slotActivationService;
         private UIWindowIconTransferService _iconTransferService;
         private UIWindowIconVisualPresenter _iconVisualPresenter;
@@ -76,6 +77,7 @@ namespace GGemCo2DCore
             ConfigureIconVisualPresenter();
             MakeIconOver();
             MakeIconSelected();
+            StartCoroutine(_initialVisibilityService.ApplyDefaultInactiveAfterInitialLayout());
         }
 
         /// <summary>
@@ -95,6 +97,7 @@ namespace GGemCo2DCore
                 windowUid => GetUIWindowByUid<UIWindow>(windowUid),
                 GetManagedWindows,
                 _visibilityStateStack);
+            _initialVisibilityService = new UIWindowInitialVisibilityService(GetManagedWindows);
             _slotActivationService = new UIWindowSlotActivationService(
                 windowUid => GetUIWindowByUid<UIWindow>(windowUid),
                 GetManagedWindows);
@@ -150,6 +153,7 @@ namespace GGemCo2DCore
             EnsureServices();
             _windowTableBinder.Initialize(windowKeys);
             RefreshWindowOrder();
+            _initialVisibilityService.PrepareDefaultInactiveWindows();
         }
 
         /// <summary>

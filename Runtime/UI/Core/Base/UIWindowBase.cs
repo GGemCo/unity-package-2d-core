@@ -63,11 +63,6 @@ namespace GGemCo2DCore
 
         protected virtual void Start()
         {
-            if (_struckTableWindow is { DefaultActive: false })
-            {
-                gameObject.SetActive(false);
-            }
-
             if (!SceneGame.Instance)
             {
                 var scene = UnityEngine.SceneManagement.SceneManager.GetActiveScene();
@@ -78,6 +73,28 @@ namespace GGemCo2DCore
 
             SceneGame = SceneGame.Instance;
             _interactionManager = SceneGame.InteractionManager;
+        }
+
+        /// <summary>
+        /// 기본 비활성 윈도우가 초기 레이아웃 계산을 통과할 수 있도록 GameObject를 유지한 채 시각적으로 숨깁니다.
+        /// </summary>
+        internal void PrepareDefaultInactiveBeforeInitialLayout()
+        {
+            if (gameObject == null)
+            {
+                return;
+            }
+
+            gameObject.SetActive(true);
+            UiFadeUtility.SetVisible(gameObject, false, ensureCanvasGroup: true, updateInput: true);
+        }
+
+        /// <summary>
+        /// 초기 Transform/Layout 갱신이 끝난 기본 비활성 윈도우를 최종 비활성 상태로 전환합니다.
+        /// </summary>
+        internal void ApplyDefaultInactiveAfterInitialLayout()
+        {
+            SetVisibleImmediate(false, invokeOnShow: false, followLinkedWindows: false);
         }
 
         /// <summary>
