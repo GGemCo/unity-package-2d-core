@@ -15,6 +15,12 @@ namespace GGemCo2DCoreEditor
         private SerializedProperty _useBattleHud;
         private SerializedProperty _useBattleHudGradeMask;
 
+        private SerializedProperty _enableMonsterDebug;
+        private SerializedProperty _enableMonsterSpawnLevelText;
+        private SerializedProperty _monsterSpawnLevelTextOffset;
+        private SerializedProperty _monsterSpawnLevelTextFontSize;
+        private SerializedProperty _monsterSpawnLevelTextColor;
+
         private SerializedProperty _useCutsceneDie;
         private SerializedProperty _useCutsceneDieGradeMask;
         private SerializedProperty _cutsceneUidDie;
@@ -34,6 +40,12 @@ namespace GGemCo2DCoreEditor
             _useBattleHud = serializedObject.FindProperty("useBattleHud");
             _useBattleHudGradeMask = serializedObject.FindProperty("useBattleHudGradeMask");
 
+            _enableMonsterDebug = serializedObject.FindProperty("enableMonsterDebug");
+            _enableMonsterSpawnLevelText = serializedObject.FindProperty("enableMonsterSpawnLevelText");
+            _monsterSpawnLevelTextOffset = serializedObject.FindProperty("monsterSpawnLevelTextOffset");
+            _monsterSpawnLevelTextFontSize = serializedObject.FindProperty("monsterSpawnLevelTextFontSize");
+            _monsterSpawnLevelTextColor = serializedObject.FindProperty("monsterSpawnLevelTextColor");
+
             _useCutsceneDie = serializedObject.FindProperty("useCutsceneDie");
             _useCutsceneDieGradeMask = serializedObject.FindProperty("useCutsceneDieGradeMask");
             _cutsceneUidDie = serializedObject.FindProperty("cutsceneUidDie");
@@ -47,6 +59,7 @@ namespace GGemCo2DCoreEditor
             serializedObject.Update();
 
             DrawPropertiesExcluding(serializedObject, "m_Script", "breakResetMode", "breakResetModeGradeMask", "perAttackConsumeCooldown", "useBattleHud", "useBattleHudGradeMask",
+                "enableMonsterDebug", "enableMonsterSpawnLevelText", "monsterSpawnLevelTextOffset", "monsterSpawnLevelTextFontSize", "monsterSpawnLevelTextColor",
                 "useCutsceneDie", "useCutsceneDieGradeMask", "cutsceneUidDie");
 
             if (_breakResetMode != null)
@@ -87,6 +100,8 @@ namespace GGemCo2DCoreEditor
                 }
             }
 
+            DrawMonsterDebugProperties();
+
             if (_useCutsceneDie != null)
                 EditorGUILayout.PropertyField(_useCutsceneDie);
 
@@ -109,6 +124,44 @@ namespace GGemCo2DCoreEditor
             }
 
             serializedObject.ApplyModifiedProperties();
+        }
+
+        /// <summary>
+        /// 몬스터 디버그 설정 필드를 표시하고 전체 디버그가 꺼져 있을 때 하위 옵션을 비활성화합니다.
+        /// </summary>
+        private void DrawMonsterDebugProperties()
+        {
+            EditorGUILayout.Space();
+            EditorGUILayout.LabelField("Monster Debug", EditorStyles.boldLabel);
+
+            if (_enableMonsterDebug != null)
+                EditorGUILayout.PropertyField(_enableMonsterDebug);
+
+            using (new EditorGUI.DisabledScope(_enableMonsterDebug != null && !_enableMonsterDebug.boolValue))
+            {
+                if (_enableMonsterSpawnLevelText != null)
+                    EditorGUILayout.PropertyField(_enableMonsterSpawnLevelText);
+
+                using (new EditorGUI.DisabledScope(_enableMonsterSpawnLevelText != null && !_enableMonsterSpawnLevelText.boolValue))
+                {
+                    DrawSpawnLevelTextProperties();
+                }
+            }
+        }
+
+        /// <summary>
+        /// 몬스터 레벨 디버그 텍스트의 표시 위치와 스타일 설정을 표시합니다.
+        /// </summary>
+        private void DrawSpawnLevelTextProperties()
+        {
+            if (_monsterSpawnLevelTextOffset != null)
+                EditorGUILayout.PropertyField(_monsterSpawnLevelTextOffset);
+
+            if (_monsterSpawnLevelTextFontSize != null)
+                EditorGUILayout.PropertyField(_monsterSpawnLevelTextFontSize);
+
+            if (_monsterSpawnLevelTextColor != null)
+                EditorGUILayout.PropertyField(_monsterSpawnLevelTextColor);
         }
     }
 }
