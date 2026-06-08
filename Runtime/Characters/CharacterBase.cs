@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using R3;
 using UnityEngine;
 using Random = UnityEngine.Random;
@@ -368,6 +368,25 @@ namespace GGemCo2DCore
         }
 
         /// <summary>
+        /// 진행 중인 강제 이동 보간을 취소합니다.
+        /// </summary>
+        /// <returns>취소할 강제 이동이 있었으면 <see langword="true"/>를 반환합니다.</returns>
+        /// <remarks>
+        /// 기본 공격 전진, 연출 이동처럼 <see cref="AddMoveForce(float, float, float)"/>로 시작된 보간을 즉시 무효화합니다.
+        /// 버전 값을 증가시켜 이전 보간 코루틴이 다음 프레임에 더 이상 위치를 갱신하지 않도록 차단합니다.
+        /// </remarks>
+        public bool CancelMoveForce()
+        {
+            if (!_isMoveForceActive)
+                return false;
+
+            _moveForceVersion++;
+            _isMoveForceActive = false;
+            _moveForceTargetPosition = transform.position;
+            return true;
+        }
+
+        /// <summary>
         /// 현재 강제 이동 목표까지 남은 거리를 조회합니다.
         /// </summary>
         /// <param name="remainingDistance">강제 이동 목표까지 남은 월드 거리입니다.</param>
@@ -408,6 +427,9 @@ namespace GGemCo2DCore
 
             while (elapsed < duration)
             {
+                if (version != _moveForceVersion)
+                    yield break;
+
                 float t = elapsed / duration;
                 float easedT = Easing.EaseOutQuad(t);
                 Vector2 newPosition = Vector2.Lerp(startPosition, targetPosition, easedT);
@@ -424,11 +446,11 @@ namespace GGemCo2DCore
                 yield return null;
             }
 
+            if (version != _moveForceVersion)
+                yield break;
+
             characterRigidbody2D.MovePosition(targetPosition);
-            if (version == _moveForceVersion)
-            {
-                _isMoveForceActive = false;
-            }
+            _isMoveForceActive = false;
         }
 
         /// <summary>
