@@ -77,6 +77,30 @@ namespace GGemCo2DCore
         [Tooltip("전투 HUD를 사용할 몬스터 등급(멀티 선택)")]
         [SerializeField] private int useBattleHudGradeMask = 0;
 
+        [Header("Monster Debug")]
+        [SerializeField, DebugOption("몬스터 디버그 기능 전체 On/Off")]
+        private bool enableMonsterDebug;
+
+        /// <summary>
+        /// 몬스터 디버그 기능 전체 사용 여부입니다.
+        /// </summary>
+        public bool EnableMonsterDebug => DebugOptionRuntimeUtility.Resolve(enableMonsterDebug);
+
+        [SerializeField, DebugOption("스폰된 몬스터의 레벨 텍스트 출력")]
+        private bool enableMonsterSpawnLevelText;
+
+        /// <summary>
+        /// 스폰된 몬스터의 레벨 텍스트 표시 여부입니다.
+        /// </summary>
+        public bool EnableMonsterSpawnLevelText => EnableMonsterDebug && DebugOptionRuntimeUtility.Resolve(enableMonsterSpawnLevelText);
+
+        [Tooltip("몬스터 레벨 디버그 텍스트의 머리 위 기준 위치 보정값입니다.")]
+        public Vector3 monsterSpawnLevelTextOffset = new Vector3(0f, 1.25f, 0f);
+        [Tooltip("몬스터 레벨 디버그 텍스트 폰트 크기입니다.")]
+        [Min(1)] public int monsterSpawnLevelTextFontSize = 18;
+        [Tooltip("몬스터 레벨 디버그 텍스트 색상입니다.")]
+        public Color monsterSpawnLevelTextColor = Color.yellow;
+
         [Header("사망 연출")]
         [Tooltip("사망 연출 사용 여부")]
         [SerializeField] private bool useCutsceneDie = true;
@@ -214,6 +238,15 @@ namespace GGemCo2DCore
         {
             return maxSuperArmor > 0 && IsBattleHudEnabledFor(grade);
         }
+
+        /// <summary>
+        /// 스폰된 몬스터의 레벨 디버그 텍스트를 표시할 수 있는지 확인합니다.
+        /// </summary>
+        /// <returns>레벨 디버그 텍스트를 표시할 수 있으면 true입니다.</returns>
+        public bool CanShowSpawnLevelDebugText()
+        {
+            return EnableMonsterSpawnLevelText;
+        }
         
         /// <summary>
         /// 몬스터 사망 연출 사용 여부.
@@ -263,6 +296,15 @@ namespace GGemCo2DCore
         private void OnValidate()
         {
             MigrateIncomingHitVfxList();
+            NormalizeMonsterDebugSettings();
+        }
+
+        /// <summary>
+        /// 설정 에셋이 로드될 때 몬스터 디버그 표시 설정의 기본 유효 범위를 보정합니다.
+        /// </summary>
+        private void OnEnable()
+        {
+            NormalizeMonsterDebugSettings();
         }
 
         /// <summary>
@@ -280,6 +322,17 @@ namespace GGemCo2DCore
             {
                 IncomingHitVfxSettings migrated = incomingHitVfxList[i].MigrateLegacyVfxIfNeeded();
                 incomingHitVfxList[i] = migrated;
+            }
+        }
+
+        /// <summary>
+        /// 몬스터 디버그 표시 설정이 유효한 범위를 벗어나지 않도록 보정합니다.
+        /// </summary>
+        private void NormalizeMonsterDebugSettings()
+        {
+            if (monsterSpawnLevelTextFontSize <= 0)
+            {
+                monsterSpawnLevelTextFontSize = 18;
             }
         }
 
@@ -315,6 +368,11 @@ namespace GGemCo2DCore
             cullingBrainResumePolicy = MonsterCullingBrainResumePolicy.Continue;
             resetAggroOnCullingBrainReset = false;
             resetToRegenPositionOnCullingBrainReset = false;
+            enableMonsterDebug = false;
+            enableMonsterSpawnLevelText = false;
+            monsterSpawnLevelTextOffset = new Vector3(0f, 1.25f, 0f);
+            monsterSpawnLevelTextFontSize = 18;
+            monsterSpawnLevelTextColor = Color.yellow;
         }
     }
 }

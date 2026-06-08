@@ -1,4 +1,5 @@
 using R3;
+using TMPro;
 using UnityEngine;
 
 namespace GGemCo2DCore
@@ -18,6 +19,7 @@ namespace GGemCo2DCore
         private GameObject _prefabPanelMonsterSuperArmor;
         private GameObject _sliderHpBar;
         private GameObject _monsterUISuperArmor;
+        private GameObject _monsterDebugLevelText;
         private GGemCoMonsterSettings _monsterSettings;
         
         public void Initialize(Monster monster)
@@ -39,6 +41,7 @@ namespace GGemCo2DCore
                 UnityEngine.Object.Destroy(_monsterUISuperArmor);
                 _monsterUISuperArmor = null;
             }
+            DestroyDebugLevelText();
             if (_uiWindowBattleHudMonster != null)
                 _uiWindowBattleHudMonster.Show(false);
         }
@@ -64,6 +67,7 @@ namespace GGemCo2DCore
                 DestroySuperArmor();
             }
 
+            RefreshDebugLevelText();
             SetSliderHp(_monster.CurrentHp.Value);
             SetSuperArmor(_monster.CurrentSuperArmor.Value);
             SetBattleStatus(_monster.CurrentBattleStatus.Value);
@@ -82,6 +86,8 @@ namespace GGemCo2DCore
             {
                 CreateSuperArmor();
             }
+
+            RefreshDebugLevelText();
 
             _monster.CurrentHp
                 .Subscribe(SetSliderHp)
@@ -265,6 +271,17 @@ namespace GGemCo2DCore
         }
 
         /// <summary>
+        /// 몬스터 레벨 디버그 텍스트 표시 가능 여부를 확인합니다.
+        /// </summary>
+        /// <returns>레벨 디버그 텍스트를 표시할 수 있으면 true입니다.</returns>
+        private bool CanShowDebugLevelText()
+        {
+            return _monsterSettings != null
+                   && _monster != null
+                   && _monsterSettings.CanShowSpawnLevelDebugText();
+        }
+
+        /// <summary>
         /// 생성되어 있는 머리 위 Super Armor UI를 제거합니다.
         /// </summary>
         private void DestroySuperArmor()
@@ -272,6 +289,56 @@ namespace GGemCo2DCore
             if (_monsterUISuperArmor == null) return;
             UnityEngine.Object.Destroy(_monsterUISuperArmor);
             _monsterUISuperArmor = null;
+        }
+
+        /// <summary>
+        /// 몬스터 디버그 설정에 따라 레벨 텍스트를 생성하거나 제거합니다.
+        /// </summary>
+        private void RefreshDebugLevelText()
+        {
+            if (CanShowDebugLevelText())
+            {
+                CreateDebugLevelText();
+                return;
+            }
+
+            DestroyDebugLevelText();
+        }
+
+        /// <summary>
+        /// 스폰된 몬스터의 현재 레벨을 표시하는 디버그 텍스트 오브젝트를 생성합니다.
+        /// </summary>
+        private void CreateDebugLevelText()
+        {
+            if (_monsterDebugLevelText != null) return;
+            if (!CanShowDebugLevelText()) return;
+            if (!TryGetMonsterUiContainer(out Transform container)) return;
+
+            _containerMonsterHpBar = container;
+            _monsterDebugLevelText = new GameObject(
+                "MonsterDebugLevelText",
+                typeof(RectTransform),
+                typeof(CanvasRenderer),
+                typeof(TextMeshProUGUI),
+                typeof(CanvasGroup),
+                typeof(MonsterDebugLevelText));
+            _monsterDebugLevelText.transform.SetParent(_containerMonsterHpBar, false);
+
+            RectTransform rectTransform = _monsterDebugLevelText.GetComponent<RectTransform>();
+            rectTransform.sizeDelta = new Vector2(120f, 32f);
+
+            MonsterDebugLevelText levelText = _monsterDebugLevelText.GetComponent<MonsterDebugLevelText>();
+            levelText.Initialize(_monster, _monsterSettings);
+        }
+
+        /// <summary>
+        /// 생성되어 있는 몬스터 레벨 디버그 텍스트를 제거합니다.
+        /// </summary>
+        private void DestroyDebugLevelText()
+        {
+            if (_monsterDebugLevelText == null) return;
+            UnityEngine.Object.Destroy(_monsterDebugLevelText);
+            _monsterDebugLevelText = null;
         }
 
         public void StartFadeIn()
@@ -285,6 +352,11 @@ namespace GGemCo2DCore
             {
                 _monsterUISuperArmor.GetComponent<MonsterUISuperArmor>().StartFadeIn();
             }
+
+            if (_monsterDebugLevelText != null)
+            {
+                _monsterDebugLevelText.GetComponent<MonsterDebugLevelText>().StartFadeIn();
+            }
         }
 
         public void StartFadeOut()
@@ -296,6 +368,10 @@ namespace GGemCo2DCore
             if (_monsterUISuperArmor != null)
             {
                 _monsterUISuperArmor.GetComponent<MonsterUISuperArmor>().StartFadeOut();
+            }
+            if (_monsterDebugLevelText != null)
+            {
+                _monsterDebugLevelText.GetComponent<MonsterDebugLevelText>().StartFadeOut();
             }
         }
         
