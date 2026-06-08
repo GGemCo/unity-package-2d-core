@@ -54,9 +54,17 @@ namespace GGemCo2DCore
         [Tooltip("아이템 판매가")]
         [SerializeField] private TextMeshProUGUI textSalePrice;
 
+        [Header("스킬 아이템일 경우")]
+        [Tooltip("스킬 Need Mp를 보여줄 이미지 오브젝트")]
+        [SerializeField] private Image imageSkillMp;
+        [Tooltip("스킬 Need Mp를 보여줄 스프라이트")]
+        [SerializeField] private Sprite[] spriteSkillMp;
+
         private Dictionary<ItemConstants.Category, Action> _categoryUIHandlers;
 
         private TableItem _tableItem;
+        private TableItemUse _tableItemUse;
+        private TableItemUseAction _tableItemUseAction;
         private StruckTableItem _currentStruckTableItem;
         private long _currentInstanceId;
         private LocalizationManager _localizationManager;
@@ -68,6 +76,8 @@ namespace GGemCo2DCore
             uid = UIWindowConstants.WindowUid.ItemInfo;
             if (TableLoaderManager.Instance == null) return;
             _tableItem = TableLoaderManager.Instance.TableItem;
+            _tableItemUse = TableLoaderManager.Instance.TableItemUse;
+            _tableItemUseAction = TableLoaderManager.Instance.TableItemUseAction;
             base.Awake();
             InitializeCategoryUIHandlers();
         }
@@ -138,6 +148,7 @@ namespace GGemCo2DCore
             SetSpriteIcon();
             RefreshTexts();
             SetCategoryUI();
+            SetImageSkillMp();
             Show(true);
 
             Vector2 finalPivot = request.Pivot ?? Vector2.zero;
@@ -339,6 +350,97 @@ namespace GGemCo2DCore
             {
                 SetDefaultUI();
             }
+        }
+
+        /// <summary>
+        /// 현재 아이템이 액티브 스킬 지급 아이템이면 스킬 NeedMp 값에 맞는 이미지를 표시합니다.
+        /// </summary>
+        private void SetImageSkillMp()
+        {
+            ResetImageSkillMp();
+            if (!imageSkillMp || _currentStruckTableItem == null)
+                return;
+
+            if (!TryResolveSkillNeedMp(_currentStruckTableItem.Uid, out int needMp))
+                return;
+
+            if (!TryGetSkillMpSprite(needMp, out Sprite sprite))
+                return;
+
+            imageSkillMp.sprite = sprite;
+            imageSkillMp.gameObject.SetActive(true);
+        }
+
+        /// <summary>
+        /// 스킬 MP 표시 이미지를 숨기고 스프라이트 참조를 초기화합니다.
+        /// </summary>
+        private void ResetImageSkillMp()
+        {
+            if (!imageSkillMp)
+                return;
+
+            imageSkillMp.sprite = null;
+            imageSkillMp.gameObject.SetActive(false);
+        }
+
+        /// <summary>
+        /// 아이템 사용 테이블 연결을 따라 액티브 스킬 UID를 찾고, Skill Bridge에서 NeedMp 값을 조회합니다.
+        /// </summary>
+        /// <param name="itemUid">현재 표시 중인 아이템 UID입니다.</param>
+        /// <param name="needMp">조회된 스킬 NeedMp 값입니다.</param>
+        /// <returns>스킬 NeedMp 값을 찾았으면 <see langword="true"/>입니다.</returns>
+        private bool TryResolveSkillNeedMp(int itemUid, out int needMp)
+        {
+            needMp = 0;
+            if (!TryResolveGrantSkillUid(itemUid, out int skillUid))
+                return false;
+
+            return SkillBridge.NeedMpProvider.TryGetNeedMp(skillUid, out needMp);
+        }
+
+        /// <summary>
+        /// item_use와 item_use_action 테이블에서 현재 아이템이 지급하는 액티브 스킬 UID를 조회합니다.
+        /// </summary>
+        /// <param name="itemUid">조회할 아이템 UID입니다.</param>
+        /// <param name="skillUid">조회된 액티브 스킬 UID입니다.</param>
+        /// <returns>액티브 스킬 지급 액션을 찾았으면 <see langword="true"/>입니다.</returns>
+        private bool TryResolveGrantSkillUid(int itemUid, out int skillUid)
+        {
+            skillUid = 0;
+            if (_tableItemUse == null || _tableItemUseAction == null)
+                return false;
+
+            if (!_tableItemUse.TryGetByItemUid(itemUid, out StruckTableItemUse itemUseInfo) || itemUseInfo == null)
+                return false;
+
+            IReadOnlyList<StruckTableItemUseAction> actions = _tableItemUseAction.GetActions(itemUseInfo.Uid);
+            for (int i = 0; i < actions.Count; i++)
+            {
+                StruckTableItemUseAction action = actions[i];
+                if (action == null || action.ActionType != ItemUseActionType.GrantSkill)
+                    continue;
+
+                skillUid = action.ParamIntA;
+                return skillUid > 0;
+            }
+
+            return false;
+        }
+
+        /// <summary>
+        /// NeedMp 값을 spriteSkillMp 배열 인덱스로 사용해 표시할 스프라이트를 조회합니다.
+        /// </summary>
+        /// <param name="needMp">스킬 사용에 필요한 MP 값입니다.</param>
+        /// <param name="sprite">표시할 스프라이트입니다.</param>
+        /// <returns>표시 가능한 스프라이트가 있으면 <see langword="true"/>입니다.</returns>
+        private bool TryGetSkillMpSprite(int needMp, out Sprite sprite)
+        {
+            sprite = null;
+            if (needMp <= 0 || spriteSkillMp == null || needMp >= spriteSkillMp.Length)
+                return false;
+
+            sprite = spriteSkillMp[needMp];
+            return sprite != null;
         }
 
         /// <summary>
