@@ -24,6 +24,22 @@ namespace GGemCo2DCore
         [Tooltip("preview 값이 감소했을 때 사용하는 템플릿")]
         [SerializeField] private string decreaseValueTemplate = "{current} → {preview} (-{deltaAbs})";
 
+        [Header("Base Templates")]
+        [Tooltip("BaseText에 현재 Base 값을 표시할 때 사용하는 템플릿")]
+        [SerializeField] private string normalBaseValueTemplate = "Base {currentBase}";
+
+        [Tooltip("BaseText에 Base 미리보기 값을 표시할 때 사용하는 공통 템플릿")]
+        [SerializeField] private string changedBaseValueTemplate = "Base {currentBase} → {previewBase}";
+
+        [Tooltip("BaseText 미리보기 값이 증가했을 때 사용하는 템플릿")]
+        [SerializeField] private string increaseBaseValueTemplate = "Base {currentBase} → {previewBase} (+{baseDeltaAbs})";
+
+        [Tooltip("BaseText 미리보기 값이 감소했을 때 사용하는 템플릿")]
+        [SerializeField] private string decreaseBaseValueTemplate = "Base {currentBase} → {previewBase} (-{baseDeltaAbs})";
+
+        [Tooltip("BaseText가 있지만 표시할 Base 값이 없을 때 사용하는 텍스트")]
+        [SerializeField] private string nonTargetBaseText = string.Empty;
+
         [Header("Invested Templates")]
         [Tooltip("투자 대상 스탯의 기본 투자 포인트 표현 템플릿")]
         [SerializeField] private string investedTemplate = "(+{draftInvested})";
@@ -37,6 +53,20 @@ namespace GGemCo2DCore
         public virtual string FormatValue(in UIElementStatRenderData data)
         {
             string template = ResolveValueTemplate(data);
+            return ReplaceCommonTokens(template, data);
+        }
+
+        /// <summary>
+        /// BaseText에 표시할 Base 값을 포맷합니다.
+        /// </summary>
+        /// <param name="data">스탯 라인 렌더 데이터입니다.</param>
+        /// <returns>BaseText에 표시할 문자열입니다.</returns>
+        public virtual string FormatBaseValue(in UIElementStatRenderData data)
+        {
+            if (!data.HasBaseValue)
+                return nonTargetBaseText;
+
+            string template = ResolveBaseValueTemplate(data);
             return ReplaceCommonTokens(template, data);
         }
 
@@ -66,6 +96,20 @@ namespace GGemCo2DCore
             return changedValueTemplate;
         }
 
+        private string ResolveBaseValueTemplate(in UIElementStatRenderData data)
+        {
+            if (!data.HasBasePreview || !data.IsBaseChanged)
+                return normalBaseValueTemplate;
+
+            if (data.IsBaseIncrease)
+                return increaseBaseValueTemplate;
+
+            if (data.IsBaseDecrease)
+                return decreaseBaseValueTemplate;
+
+            return changedBaseValueTemplate;
+        }
+
         private static string ReplaceCommonTokens(string template, in UIElementStatRenderData data)
         {
             if (string.IsNullOrEmpty(template))
@@ -81,7 +125,12 @@ namespace GGemCo2DCore
                 .Replace("{draftInvested}", data.DraftInvested.ToString())
                 .Replace("{investedDelta}", data.InvestedDelta.ToString())
                 .Replace("{investedDeltaSigned}", FormatSigned(data.InvestedDelta))
-                .Replace("{investedDeltaAbs}", System.Math.Abs(data.InvestedDelta).ToString());
+                .Replace("{investedDeltaAbs}", System.Math.Abs(data.InvestedDelta).ToString())
+                .Replace("{currentBase}", data.CurrentBaseValue.ToString())
+                .Replace("{previewBase}", data.PreviewBaseValue.ToString())
+                .Replace("{baseDelta}", data.BaseValueDelta.ToString())
+                .Replace("{baseDeltaSigned}", FormatSigned(data.BaseValueDelta))
+                .Replace("{baseDeltaAbs}", System.Math.Abs(data.BaseValueDelta).ToString());
         }
 
         private static string FormatSigned(long value)

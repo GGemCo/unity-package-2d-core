@@ -18,6 +18,9 @@ namespace GGemCo2DCore
         [Tooltip("표시할 스탯 총합 텍스트")]
         [SerializeField] private TextMeshProUGUI textValue;
 
+        [Tooltip("스탯 포인트 투자로 보정되는 Base 값을 표시할 텍스트입니다. 비어 있으면 표시하지 않습니다.")]
+        [SerializeField] private TextMeshProUGUI textBase;
+
         [Tooltip("투자 포인트 텍스트")]
         [SerializeField] private TextMeshProUGUI textInvested;
 
@@ -70,6 +73,10 @@ namespace GGemCo2DCore
             formatterAsset = formatter;
         }
 
+        /// <summary>
+        /// 외부에서 계산한 렌더 데이터를 실제 UI 텍스트와 버튼 상태에 반영합니다.
+        /// </summary>
+        /// <param name="data">PlayerInfo 윈도우가 계산한 표시 전용 데이터입니다.</param>
         public void Render(in UIElementStatRenderData data)
         {
             if (textName != null)
@@ -77,6 +84,8 @@ namespace GGemCo2DCore
 
             if (textValue != null)
                 textValue.text = FormatValue(data);
+
+            RenderBaseText(data);
 
             if (textInvested != null)
                 textInvested.text = FormatInvested(data);
@@ -87,6 +96,10 @@ namespace GGemCo2DCore
         private void SetupStaticUi()
         {
             bool isTarget = CharacterConstants.IsStatPointTarget(_indexPlayerInfo);
+
+            // BaseText는 스탯 포인트가 실제로 Base*를 보정하는 대상 라인에서만 사용합니다.
+            if (textBase != null)
+                textBase.gameObject.SetActive(isTarget);
 
             if (buttonPlus != null)
                 buttonPlus.gameObject.SetActive(isTarget);
@@ -125,6 +138,25 @@ namespace GGemCo2DCore
                 buttonMinus.interactable = data.IsStatPointTarget && data.CanDecrease;
         }
 
+        /// <summary>
+        /// BaseText 오브젝트가 연결된 경우 Base* 현재값과 미리보기 값을 표시합니다.
+        /// </summary>
+        /// <param name="data">PlayerInfo 윈도우가 계산한 표시 전용 데이터입니다.</param>
+        private void RenderBaseText(in UIElementStatRenderData data)
+        {
+            if (textBase == null)
+                return;
+
+            textBase.gameObject.SetActive(data.HasBaseValue);
+            if (!data.HasBaseValue)
+            {
+                textBase.text = string.Empty;
+                return;
+            }
+
+            textBase.text = FormatBaseValue(data);
+        }
+
         private string FormatValue(in UIElementStatRenderData data)
         {
             if (formatterAsset != null)
@@ -133,6 +165,16 @@ namespace GGemCo2DCore
             return data.IsChanged
                 ? $"{data.CurrentValue} → {data.PreviewValue}"
                 : data.CurrentValue.ToString();
+        }
+
+        private string FormatBaseValue(in UIElementStatRenderData data)
+        {
+            if (formatterAsset != null)
+                return formatterAsset.FormatBaseValue(data);
+
+            return data.IsBaseChanged
+                ? $"Base {data.CurrentBaseValue} → {data.PreviewBaseValue}"
+                : $"Base {data.CurrentBaseValue}";
         }
 
         private string FormatInvested(in UIElementStatRenderData data)
