@@ -101,6 +101,23 @@ namespace GGemCo2DCore
         [Tooltip("몬스터 레벨 디버그 텍스트 색상입니다.")]
         public Color monsterSpawnLevelTextColor = Color.yellow;
 
+        [SerializeField, DebugOption("스폰된 몬스터의 HP 숫자 텍스트 출력")]
+        private bool enableMonsterSpawnHpText;
+
+        /// <summary>
+        /// 스폰된 몬스터의 HP 숫자 텍스트 표시 여부입니다.
+        /// </summary>
+        public bool EnableMonsterSpawnHpText => EnableMonsterDebug && DebugOptionRuntimeUtility.Resolve(enableMonsterSpawnHpText);
+
+        [Tooltip("몬스터 HP 디버그 텍스트의 머리 위 기준 위치 보정값입니다.")]
+        public Vector3 monsterSpawnHpTextOffset = new Vector3(0f, 0.95f, 0f);
+        [Tooltip("몬스터 HP 디버그 텍스트 폰트 크기입니다.")]
+        [Min(1)] public int monsterSpawnHpTextFontSize = 16;
+        [Tooltip("몬스터 HP 디버그 텍스트 색상입니다.")]
+        public Color monsterSpawnHpTextColor = Color.white;
+        [Tooltip("몬스터 HP 디버그 텍스트 형식입니다. {0}=현재 HP, {1}=최대 HP")]
+        public string monsterSpawnHpTextFormat = "{0} / {1}";
+
         [Header("사망 연출")]
         [Tooltip("사망 연출 사용 여부")]
         [SerializeField] private bool useCutsceneDie = true;
@@ -247,6 +264,15 @@ namespace GGemCo2DCore
         {
             return EnableMonsterSpawnLevelText;
         }
+
+        /// <summary>
+        /// 스폰된 몬스터의 HP 숫자 디버그 텍스트를 표시할 수 있는지 확인합니다.
+        /// </summary>
+        /// <returns>HP 숫자 디버그 텍스트를 표시할 수 있으면 true입니다.</returns>
+        public bool CanShowSpawnHpDebugText()
+        {
+            return EnableMonsterSpawnHpText;
+        }
         
         /// <summary>
         /// 몬스터 사망 연출 사용 여부.
@@ -334,6 +360,16 @@ namespace GGemCo2DCore
             {
                 monsterSpawnLevelTextFontSize = 18;
             }
+
+            if (monsterSpawnHpTextFontSize <= 0)
+            {
+                monsterSpawnHpTextFontSize = 16;
+            }
+
+            if (string.IsNullOrWhiteSpace(monsterSpawnHpTextFormat))
+            {
+                monsterSpawnHpTextFormat = "{0} / {1}";
+            }
         }
 
         /// <summary>
@@ -373,6 +409,11 @@ namespace GGemCo2DCore
             monsterSpawnLevelTextOffset = new Vector3(0f, 1.25f, 0f);
             monsterSpawnLevelTextFontSize = 18;
             monsterSpawnLevelTextColor = Color.yellow;
+            enableMonsterSpawnHpText = false;
+            monsterSpawnHpTextOffset = new Vector3(0f, 0.95f, 0f);
+            monsterSpawnHpTextFontSize = 16;
+            monsterSpawnHpTextColor = Color.white;
+            monsterSpawnHpTextFormat = "{0} / {1}";
         }
     }
 }

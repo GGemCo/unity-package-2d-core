@@ -15,12 +15,6 @@ namespace GGemCo2DCoreEditor
         private SerializedProperty _useBattleHud;
         private SerializedProperty _useBattleHudGradeMask;
 
-        private SerializedProperty _enableMonsterDebug;
-        private SerializedProperty _enableMonsterSpawnLevelText;
-        private SerializedProperty _monsterSpawnLevelTextOffset;
-        private SerializedProperty _monsterSpawnLevelTextFontSize;
-        private SerializedProperty _monsterSpawnLevelTextColor;
-
         private SerializedProperty _useCutsceneDie;
         private SerializedProperty _useCutsceneDieGradeMask;
         private SerializedProperty _cutsceneUidDie;
@@ -28,6 +22,19 @@ namespace GGemCo2DCoreEditor
         private SerializedProperty _breakResetMode;
         private SerializedProperty _breakResetModeGradeMask;
         private SerializedProperty _perAttackConsumeCooldown;
+
+        // 디버그
+        private SerializedProperty _enableMonsterDebug;
+        private SerializedProperty _enableMonsterSpawnLevelText;
+        private SerializedProperty _monsterSpawnLevelTextOffset;
+        private SerializedProperty _monsterSpawnLevelTextFontSize;
+        private SerializedProperty _monsterSpawnLevelTextColor;
+        
+        private SerializedProperty _enableMonsterSpawnHpText;
+        private SerializedProperty _monsterSpawnHpTextOffset;
+        private SerializedProperty _monsterSpawnHpTextFontSize;
+        private SerializedProperty _monsterSpawnHpTextColor;
+        private SerializedProperty _monsterSpawnHpTextFormat;
 
         private static readonly string[] GradeNames = Enum.GetNames(typeof(CharacterConstants.Grade));
 
@@ -40,15 +47,21 @@ namespace GGemCo2DCoreEditor
             _useBattleHud = serializedObject.FindProperty("useBattleHud");
             _useBattleHudGradeMask = serializedObject.FindProperty("useBattleHudGradeMask");
 
+            _useCutsceneDie = serializedObject.FindProperty("useCutsceneDie");
+            _useCutsceneDieGradeMask = serializedObject.FindProperty("useCutsceneDieGradeMask");
+            _cutsceneUidDie = serializedObject.FindProperty("cutsceneUidDie");
+
             _enableMonsterDebug = serializedObject.FindProperty("enableMonsterDebug");
             _enableMonsterSpawnLevelText = serializedObject.FindProperty("enableMonsterSpawnLevelText");
             _monsterSpawnLevelTextOffset = serializedObject.FindProperty("monsterSpawnLevelTextOffset");
             _monsterSpawnLevelTextFontSize = serializedObject.FindProperty("monsterSpawnLevelTextFontSize");
             _monsterSpawnLevelTextColor = serializedObject.FindProperty("monsterSpawnLevelTextColor");
-
-            _useCutsceneDie = serializedObject.FindProperty("useCutsceneDie");
-            _useCutsceneDieGradeMask = serializedObject.FindProperty("useCutsceneDieGradeMask");
-            _cutsceneUidDie = serializedObject.FindProperty("cutsceneUidDie");
+            
+            _enableMonsterSpawnHpText = serializedObject.FindProperty("enableMonsterSpawnHpText");
+            _monsterSpawnHpTextOffset = serializedObject.FindProperty("monsterSpawnHpTextOffset");
+            _monsterSpawnHpTextFontSize = serializedObject.FindProperty("monsterSpawnHpTextFontSize");
+            _monsterSpawnHpTextColor = serializedObject.FindProperty("monsterSpawnHpTextColor");
+            _monsterSpawnHpTextFormat = serializedObject.FindProperty("monsterSpawnHpTextFormat");
         }
 
         /// <summary>
@@ -139,12 +152,22 @@ namespace GGemCo2DCoreEditor
 
             using (new EditorGUI.DisabledScope(_enableMonsterDebug != null && !_enableMonsterDebug.boolValue))
             {
+                // 레벨 
                 if (_enableMonsterSpawnLevelText != null)
                     EditorGUILayout.PropertyField(_enableMonsterSpawnLevelText);
 
                 using (new EditorGUI.DisabledScope(_enableMonsterSpawnLevelText != null && !_enableMonsterSpawnLevelText.boolValue))
                 {
                     DrawSpawnLevelTextProperties();
+                }
+                
+                // HP 표시
+                if (_enableMonsterSpawnHpText != null)
+                    EditorGUILayout.PropertyField(_enableMonsterSpawnHpText);
+                
+                using (new EditorGUI.DisabledScope(_enableMonsterSpawnHpText != null && !_enableMonsterSpawnHpText.boolValue))
+                {
+                    DrawSpawnHpTextProperties();
                 }
             }
         }
@@ -162,6 +185,24 @@ namespace GGemCo2DCoreEditor
 
             if (_monsterSpawnLevelTextColor != null)
                 EditorGUILayout.PropertyField(_monsterSpawnLevelTextColor);
+        }
+
+        /// <summary>
+        /// 몬스터 HP 디버그 텍스트의 표시 위치와 스타일 설정을 표시합니다.
+        /// </summary>
+        private void DrawSpawnHpTextProperties()
+        {
+            if (_monsterSpawnHpTextOffset != null)
+                EditorGUILayout.PropertyField(_monsterSpawnHpTextOffset);
+
+            if (_monsterSpawnHpTextFontSize != null)
+                EditorGUILayout.PropertyField(_monsterSpawnHpTextFontSize);
+
+            if (_monsterSpawnHpTextColor != null)
+                EditorGUILayout.PropertyField(_monsterSpawnHpTextColor);
+            
+            if (_monsterSpawnHpTextFormat != null)
+                EditorGUILayout.PropertyField(_monsterSpawnHpTextFormat);
         }
     }
 }

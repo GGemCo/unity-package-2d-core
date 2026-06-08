@@ -20,6 +20,7 @@ namespace GGemCo2DCore
         private GameObject _sliderHpBar;
         private GameObject _monsterUISuperArmor;
         private GameObject _monsterDebugLevelText;
+        private GameObject _monsterDebugHpText;
         private GGemCoMonsterSettings _monsterSettings;
         
         public void Initialize(Monster monster)
@@ -42,6 +43,7 @@ namespace GGemCo2DCore
                 _monsterUISuperArmor = null;
             }
             DestroyDebugLevelText();
+            DestroyDebugHpText();
             if (_uiWindowBattleHudMonster != null)
                 _uiWindowBattleHudMonster.Show(false);
         }
@@ -68,6 +70,7 @@ namespace GGemCo2DCore
             }
 
             RefreshDebugLevelText();
+            RefreshDebugHpText();
             SetSliderHp(_monster.CurrentHp.Value);
             SetSuperArmor(_monster.CurrentSuperArmor.Value);
             SetBattleStatus(_monster.CurrentBattleStatus.Value);
@@ -88,9 +91,14 @@ namespace GGemCo2DCore
             }
 
             RefreshDebugLevelText();
+            RefreshDebugHpText();
 
             _monster.CurrentHp
                 .Subscribe(SetSliderHp)
+                .AddTo(_monster);
+
+            _monster.TotalHp
+                .Subscribe(_ => SetSliderHp(_monster.CurrentHp.Value))
                 .AddTo(_monster);
 
             _monster.CurrentSuperArmor
@@ -178,6 +186,8 @@ namespace GGemCo2DCore
             {
                 _uiWindowBattleHudMonster.SetSliderHp(value, _monster.TotalHp.Value);
             }
+
+            UpdateDebugHpText(value);
         }
 
         /// <summary>
@@ -282,6 +292,17 @@ namespace GGemCo2DCore
         }
 
         /// <summary>
+        /// 몬스터 HP 숫자 디버그 텍스트 표시 가능 여부를 확인합니다.
+        /// </summary>
+        /// <returns>HP 숫자 디버그 텍스트를 표시할 수 있으면 true입니다.</returns>
+        private bool CanShowDebugHpText()
+        {
+            return _monsterSettings != null
+                   && _monster != null
+                   && _monsterSettings.CanShowSpawnHpDebugText();
+        }
+
+        /// <summary>
         /// 생성되어 있는 머리 위 Super Armor UI를 제거합니다.
         /// </summary>
         private void DestroySuperArmor()
@@ -341,6 +362,68 @@ namespace GGemCo2DCore
             _monsterDebugLevelText = null;
         }
 
+        /// <summary>
+        /// 몬스터 디버그 설정에 따라 HP 숫자 텍스트를 생성하거나 제거합니다.
+        /// </summary>
+        private void RefreshDebugHpText()
+        {
+            if (CanShowDebugHpText())
+            {
+                CreateDebugHpText();
+                UpdateDebugHpText(_monster.CurrentHp.Value);
+                return;
+            }
+
+            DestroyDebugHpText();
+        }
+
+        /// <summary>
+        /// 스폰된 몬스터의 현재 HP와 최대 HP를 표시하는 디버그 텍스트 오브젝트를 생성합니다.
+        /// </summary>
+        private void CreateDebugHpText()
+        {
+            if (_monsterDebugHpText != null) return;
+            if (!CanShowDebugHpText()) return;
+            if (!TryGetMonsterUiContainer(out Transform container)) return;
+
+            _containerMonsterHpBar = container;
+            _monsterDebugHpText = new GameObject(
+                "MonsterDebugHpText",
+                typeof(RectTransform),
+                typeof(CanvasRenderer),
+                typeof(TextMeshProUGUI),
+                typeof(CanvasGroup),
+                typeof(MonsterDebugHpText));
+            _monsterDebugHpText.transform.SetParent(_containerMonsterHpBar, false);
+
+            RectTransform rectTransform = _monsterDebugHpText.GetComponent<RectTransform>();
+            rectTransform.sizeDelta = new Vector2(160f, 32f);
+
+            MonsterDebugHpText hpText = _monsterDebugHpText.GetComponent<MonsterDebugHpText>();
+            hpText.Initialize(_monster, _monsterSettings);
+        }
+
+        /// <summary>
+        /// 생성되어 있는 몬스터 HP 숫자 디버그 텍스트를 제거합니다.
+        /// </summary>
+        private void DestroyDebugHpText()
+        {
+            if (_monsterDebugHpText == null) return;
+            UnityEngine.Object.Destroy(_monsterDebugHpText);
+            _monsterDebugHpText = null;
+        }
+
+        /// <summary>
+        /// 생성되어 있는 몬스터 HP 숫자 디버그 텍스트 값을 갱신합니다.
+        /// </summary>
+        /// <param name="currentHp">현재 HP 값입니다.</param>
+        private void UpdateDebugHpText(long currentHp)
+        {
+            if (_monsterDebugHpText == null) return;
+            MonsterDebugHpText hpText = _monsterDebugHpText.GetComponent<MonsterDebugHpText>();
+            hpText.SetValue(currentHp, _monster.TotalHp.Value);
+        }
+
         public void StartFadeIn()
         {
             if (_sliderHpBar != null)
@@ -357,6 +440,11 @@ namespace GGemCo2DCore
             {
                 _monsterDebugLevelText.GetComponent<MonsterDebugLevelText>().StartFadeIn();
             }
+
+            if (_monsterDebugHpText != null)
+            {
+                _monsterDebugHpText.GetComponent<MonsterDebugHpText>().StartFadeIn();
+            }
         }
 
         public void StartFadeOut()
@@ -372,6 +460,11 @@ namespace GGemCo2DCore
             if (_monsterDebugLevelText != null)
             {
                 _monsterDebugLevelText.GetComponent<MonsterDebugLevelText>().StartFadeOut();
+            }
+
+            if (_monsterDebugHpText != null)
+            {
+                _monsterDebugHpText.GetComponent<MonsterDebugHpText>().StartFadeOut();
             }
         }
         
