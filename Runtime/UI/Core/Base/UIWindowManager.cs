@@ -1,4 +1,6 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections;
+using System.Collections.Generic;
 using UnityEngine;
 
 namespace GGemCo2DCore
@@ -36,6 +38,16 @@ namespace GGemCo2DCore
         private UIWindowSlotActivationService _slotActivationService;
         private UIWindowIconTransferService _iconTransferService;
         private UIWindowIconVisualPresenter _iconVisualPresenter;
+
+        /// <summary>
+        /// 모든 UIWindow의 초기 표시 상태와 기본 비활성 처리가 끝났을 때 발생합니다.
+        /// </summary>
+        public event Action<UIWindowManager> OnInitialWindowVisibilityApplied;
+
+        /// <summary>
+        /// UIWindowManager의 초기 표시 상태 적용이 완료되었는지 여부입니다.
+        /// </summary>
+        public bool IsInitialWindowVisibilityApplied { get; private set; }
 
         /// <summary>
         /// 외부 UIWindow를 core UIWindow 정렬 목록에 삽입할 위치 규칙입니다.
@@ -77,7 +89,19 @@ namespace GGemCo2DCore
             ConfigureIconVisualPresenter();
             MakeIconOver();
             MakeIconSelected();
-            StartCoroutine(_initialVisibilityService.ApplyDefaultInactiveAfterInitialLayout());
+            StartCoroutine(ApplyInitialWindowVisibilityRoutine());
+        }
+
+        /// <summary>
+        /// 기본 비활성 UIWindow의 초기 Transform/Layout 갱신을 끝낸 뒤 외부 구독자에게 완료 시점을 알립니다.
+        /// </summary>
+        /// <returns>초기 UI 표시 상태 적용을 지연 처리하는 코루틴입니다.</returns>
+        private IEnumerator ApplyInitialWindowVisibilityRoutine()
+        {
+            yield return _initialVisibilityService.ApplyDefaultInactiveAfterInitialLayout();
+
+            IsInitialWindowVisibilityApplied = true;
+            OnInitialWindowVisibilityApplied?.Invoke(this);
         }
 
         /// <summary>
