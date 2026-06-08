@@ -15,6 +15,8 @@ namespace GGemCo2DCore
     [DisallowMultipleComponent]
     public sealed class CharacterCrowdControlController : MonoBehaviour, IMonsterPoolLifecycle
     {
+        private static readonly List<CharacterCrowdControlController> ActiveControllers = new();
+
         private CharacterBase _character;
         private Rigidbody2D _rigidbody2D;
         private ICharacterMotionController _motionController;
@@ -83,6 +85,26 @@ namespace GGemCo2DCore
             }
         }
 
+        /// <summary>
+        /// 활성화된 Crowd Control 컨트롤러를 전역 조회 목록에 등록합니다.
+        /// </summary>
+        /// <remarks>
+        /// 공격자 피격 시, 해당 공격자가 적용한 CC를 다른 대상에서 찾아 중단하기 위해 사용합니다.
+        /// </remarks>
+        private void OnEnable()
+        {
+            if (!ActiveControllers.Contains(this))
+                ActiveControllers.Add(this);
+        }
+
+        /// <summary>
+        /// 비활성화된 Crowd Control 컨트롤러를 전역 조회 목록에서 제거합니다.
+        /// </summary>
+        private void OnDisable()
+        {
+            ActiveControllers.Remove(this);
+        }
+
         
         private void Awake()
         {
@@ -101,6 +123,8 @@ namespace GGemCo2DCore
 
         private void OnDestroy()
         {
+            ActiveControllers.Remove(this);
+
             if (_motionController2D != null)
                 _motionController2D.WallImpacted -= OnMotionWallImpacted;
         }
@@ -740,6 +764,98 @@ namespace GGemCo2DCore
             ResetAnimationState();
             _stopRoutine = null;
             TryStartNextQueuedCrowdControl();
+        }
+
+        /// <summary>
+        /// 지정한 원본 오브젝트가 적용한 Crowd Control을 모든 활성 캐릭터에서 찾아 중단합니다.
+        /// </summary>
+        /// <param name="source">Crowd Control을 발생시킨 공격자 또는 원본 오브젝트입니다.</param>
+        /// <param name="reason">Crowd Control 중단 요청 사유입니다.</param>
+        /// <param name="isEndCharacterStop">중단 후 대상 캐릭터의 <see cref="CharacterBase.Stop(bool)"/>을 강제로 호출할지 여부입니다.</param>
+        /// <returns>하나 이상의 Crowd Control을 중단했으면 <see langword="true"/>를 반환합니다.</returns>
+        /// <remarks>
+        /// 기본 공격 콤보 중 공격자가 피격되었을 때, 공격자가 몬스터에게 적용해 둔 넉백/넉업 같은 CC를
+        /// 대상 캐릭터 쪽 컨트롤러에서 안전하게 회수하기 위한 표준 진입점입니다.
+        /// </remarks>
+        public static bool TryStopCrowdControlsBySource(GameObject source, CrowdControlStopReason reason, bool isEndCharacterStop = false)
+        {
+            if (source == null)
+                return false;
+
+            bool stoppedAny = false;
+            for (int i = ActiveControllers.Count - 1; i >= 0; i--)
+            {
+                CharacterCrowdControlController controller = ActiveControllers[i];
+                if (controller == null)
+                {
+                    ActiveControllers.RemoveAt(i);
+                    continue;
+                }
+
+                if (!controller.IsControlledBySource(source))
+                    continue;
+
+                stoppedAny |= controller.TryStopCrowdControl(reason, isEndCharacterStop);
+            }
+
+            return stoppedAny;
+        }
+
+        /// <summary>
+        /// 현재 컨트롤러의 활성 또는 예약된 Crowd Control이 지정한 원본 오브젝트에서 발생했는지 확인합니다.
+        /// </summary>
+        /// <param name="source">비교할 Crowd Control 원본 오브젝트입니다.</param>
+        /// <returns>같은 원본 오브젝트가 적용한 Crowd Control이면 <see langword="true"/>를 반환합니다.</returns>
+        private bool IsControlledBySource(GameObject source)
+        {
+            if (source == null)
+                return false;
+
+            return IsSameSourceOrChild(_activeSource, source) || IsSameSourceOrChild(_sequenceSource, source);
+        }
+
+        /// <summary>
+        /// 두 원본 오브젝트가 같거나, 한쪽이 다른 쪽의 하위 오브젝트인지 확인합니다.
+        /// </summary>
+        /// <param name="candidate">현재 Crowd Control에 기록된 원본 오브젝트입니다.</param>
+        /// <param name="source">중단 요청에서 전달된 기준 원본 오브젝트입니다.</param>
+        /// <returns>동일 원본으로 볼 수 있으면 <see langword="true"/>를 반환합니다.</returns>
+        /// <remarks>
+        /// 실제 데미지 메타데이터가 플레이어 루트가 아니라 공격 판정용 하위 오브젝트를 전달하는 경우도
+        /// 같은 공격자에서 발생한 Crowd Control로 판단하기 위해 Transform 부모 관계까지 확인합니다.
+        /// </remarks>
+        private static bool IsSameSourceOrChild(GameObject candidate, GameObject source)
+        {
+            if (candidate == null || source == null)
+                return false;
+
+            if (candidate == source)
+                return true;
+
+            Transform candidateTransform = candidate.transform;
+            Transform sourceTransform = source.transform;
+            return candidateTransform.IsChildOf(sourceTransform) || sourceTransform.IsChildOf(candidateTransform);
+        }
+
+        /// <summary>
+        /// 진행 중인 Crowd Control 또는 예약된 Crowd Control 시퀀스를 외부 요청으로 즉시 중단합니다.
+        /// </summary>
+        /// <param name="reason">Crowd Control 중단 요청 사유입니다.</param>
+        /// <param name="isEndCharacterStop">중단 후 <see cref="CharacterBase.Stop(bool)"/>을 강제로 호출할지 여부입니다.</param>
+        /// <returns>중단할 Crowd Control 상태가 존재하여 정리를 수행했으면 <see langword="true"/>를 반환합니다.</returns>
+        /// <remarks>
+        /// Control, Skill, Affect 같은 상위 계층은 CC 내부 모션/코루틴 구현을 직접 알지 않고
+        /// 이 함수만 호출하여 Core가 소유한 Crowd Control 상태를 안전하게 정리합니다.
+        /// </remarks>
+        public bool TryStopCrowdControl(CrowdControlStopReason reason, bool isEndCharacterStop = false)
+        {
+            bool hasActiveCrowdControl = _isActive || _activeCrowdControl != null || _stopRoutine != null;
+            bool hasQueuedCrowdControl = _isSequenceRunning || _queuedCrowdControls.Count > 0;
+            if (!hasActiveCrowdControl && !hasQueuedCrowdControl)
+                return false;
+
+            ForceStopInternal(clearSequence: true, isEndCharacterStop);
+            return true;
         }
 
         /// <summary>

@@ -412,5 +412,23 @@ namespace GGemCo2DCore
             if (GcLogger.IsNull(_crowdControlController, nameof(CharacterCrowdControlController))) return;
             _crowdControlController.ApplyCrowdControlSequence(crowdControls, metadataDamageAttacker, gameObject, isEndCharacterStop);
         }
+
+        /// <summary>
+        /// 현재 캐릭터에 적용 중이거나 예약된 Crowd Control을 즉시 중단합니다.
+        /// </summary>
+        /// <param name="reason">Crowd Control 중단 요청 사유입니다.</param>
+        /// <param name="isEndCharacterStop">중단 후 <see cref="Stop(bool)"/>을 강제로 호출할지 여부입니다.</param>
+        /// <returns>중단할 Crowd Control 상태가 존재하여 정리를 수행했으면 <see langword="true"/>를 반환합니다.</returns>
+        /// <remarks>
+        /// 상위 패키지는 <see cref="CharacterCrowdControlController"/>의 내부 구현을 직접 다루지 않고,
+        /// 캐릭터 표준 API를 통해 Crowd Control 중단만 요청합니다.
+        /// </remarks>
+        public bool TryStopCrowdControl(CrowdControlStopReason reason, bool isEndCharacterStop = false)
+        {
+            if (GcLogger.IsNull(_crowdControlController, nameof(CharacterCrowdControlController)))
+                return false;
+
+            return _crowdControlController.TryStopCrowdControl(reason, isEndCharacterStop);
+        }
     }
 }
