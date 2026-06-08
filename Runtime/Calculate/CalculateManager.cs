@@ -1,4 +1,4 @@
-﻿using UnityEngine;
+using UnityEngine;
 
 namespace GGemCo2DCore
 {
@@ -122,12 +122,12 @@ namespace GGemCo2DCore
         /// <returns>저항 적용 전 공격 데미지입니다.</returns>
         public long CalculateSkillDamage(in DamageFormulaRequest request)
         {
-            if (string.IsNullOrWhiteSpace(request.FormulaKey) || !_polyFormulaRegistry.TryGet(request.FormulaKey, out PolyDamageFormula formula))
+            if (string.IsNullOrWhiteSpace(request.FormulaKey) || !_polyFormulaRegistry.TryGet(request.FormulaKey, out DamageFormulaEntry formulaEntry))
             {
                 RebuildDamageFormulaRegistry();
             }
 
-            if (string.IsNullOrWhiteSpace(request.FormulaKey) || !_polyFormulaRegistry.TryGet(request.FormulaKey, out formula))
+            if (string.IsNullOrWhiteSpace(request.FormulaKey) || !_polyFormulaRegistry.TryGet(request.FormulaKey, out formulaEntry))
             {
                 // Poly 공식이 없을 때도 DamageFormulaRequest의 의미를 유지합니다.
                 // BaseDamage는 순수 기준값, SkillDamageRate는 skill/skill_monster 테이블의 Damage 비율입니다.
@@ -137,9 +137,9 @@ namespace GGemCo2DCore
             }
 
             BuildPolyVariables(request, _polyVariables);
-            double resolved = formula.Evaluate(_polyVariables);
+            double resolved = formulaEntry.Formula.Evaluate(_polyVariables);
             resolved = ApplyCriticalIfNeeded(resolved, request.Attacker, request.RollCritical);
-            long rounded = RoundToLong(resolved);
+            long rounded = RoundToLong(resolved, formulaEntry.RoundingMode, formulaEntry.MinDamage);
             return ResolveDefaultFinalDamage(rounded, request.DamageType).FinalDamage;
         }
 
@@ -199,6 +199,7 @@ namespace GGemCo2DCore
             variables.Set("TargetLevel", targetLevel);
             variables.Set("LevelDiff", levelDiff);
 
+            // 기존 공식 호환용 변수입니다. 공격자는 Atk, 피격 대상은 Def 기준으로 유지합니다.
             variables.Set("BaseAtk", attacker != null ? attacker.TotalBaseAtk.Value : 0d);
             variables.Set("BaseDef", target != null ? target.TotalBaseDef.Value : 0d);
             variables.Set("StatAtk", attacker != null ? attacker.TotalStatAtk.Value : 0d);
@@ -206,6 +207,21 @@ namespace GGemCo2DCore
             variables.Set("StatDef", target != null ? target.TotalStatDef.Value : 0d);
             variables.Set("TotalAtk", attacker != null ? attacker.TotalAtk.Value : 0d);
             variables.Set("TotalDef", target != null ? target.TotalDef.Value : 0d);
+
+            // 공격자/피격 대상이 명확히 드러나는 공식 작성용 변수입니다.
+            variables.Set("AttackerBaseAtk", attacker != null ? attacker.TotalBaseAtk.Value : 0d);
+            variables.Set("AttackerStatAtk", attacker != null ? attacker.TotalStatAtk.Value : 0d);
+            variables.Set("AttackerTotalAtk", attacker != null ? attacker.TotalAtk.Value : 0d);
+            variables.Set("AttackerBaseDef", attacker != null ? attacker.TotalBaseDef.Value : 0d);
+            variables.Set("AttackerStatDef", attacker != null ? attacker.TotalStatDef.Value : 0d);
+            variables.Set("AttackerTotalDef", attacker != null ? attacker.TotalDef.Value : 0d);
+            variables.Set("TargetBaseAtk", target != null ? target.TotalBaseAtk.Value : 0d);
+            variables.Set("TargetStatAtk", target != null ? target.TotalStatAtk.Value : 0d);
+            variables.Set("TargetTotalAtk", target != null ? target.TotalAtk.Value : 0d);
+            variables.Set("TargetBaseDef", target != null ? target.TotalBaseDef.Value : 0d);
+            variables.Set("TargetStatDef", target != null ? target.TotalStatDef.Value : 0d);
+            variables.Set("TargetTotalDef", target != null ? target.TotalDef.Value : 0d);
+
             variables.Set("CriticalRate", attacker != null ? attacker.TotalCriticalProbability.Value / 100d : 0d);
             variables.Set("CriticalDamageRate", attacker != null ? attacker.TotalCriticalDamage.Value / 100d : 1d);
 
@@ -398,18 +414,44 @@ namespace GGemCo2DCore
         }
 
         /// <summary>
-        /// 실수 계산 결과를 데미지 정수 값으로 안전하게 변환합니다.
+        /// 실수 계산 결과를 테이블 반올림 정책과 최소 데미지 정책에 따라 정수 데미지로 변환합니다.
         /// </summary>
         /// <param name="value">계산된 실수 값입니다.</param>
+        /// <param name="roundingMode">damage_formula 테이블의 RoundingMode 값입니다.</param>
+        /// <param name="minDamage">공식 결과가 0보다 클 때 보장할 최소 데미지입니다.</param>
         /// <returns>0 이상 long 범위로 보정된 데미지 값입니다.</returns>
-        private static long RoundToLong(double value)
+        private static long RoundToLong(double value, string roundingMode, long minDamage)
         {
             if (value <= 0d)
                 return 0L;
             if (value >= long.MaxValue)
                 return long.MaxValue;
 
-            return (long)System.Math.Round(value);
+            double rounded;
+            switch ((roundingMode ?? string.Empty).Trim().ToLowerInvariant())
+            {
+                case "floor":
+                    rounded = System.Math.Floor(value);
+                    break;
+                case "ceil":
+                case "ceiling":
+                    rounded = System.Math.Ceiling(value);
+                    break;
+                case "truncate":
+                case "trunc":
+                    rounded = System.Math.Truncate(value);
+                    break;
+                case "round":
+                default:
+                    rounded = System.Math.Round(value);
+                    break;
+            }
+
+            if (rounded <= 0d)
+                return 0L;
+
+            long damage = rounded >= long.MaxValue ? long.MaxValue : (long)rounded;
+            return minDamage > 0L && damage < minDamage ? minDamage : damage;
         }
     }
 }
