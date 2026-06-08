@@ -291,13 +291,16 @@ namespace GGemCo2DCore
             var lineData = GetStatPointLineData(index, _boundPlayer);
 
             bool hasPreview = _editSession != null && _editSession.IsDirty;
-            long previewValue = hasPreview
-                ? GetDisplayValueByIndex(index, projectedTotals)
-                : lineData.displayValue;
-
             bool isTarget = CharacterConstants.IsStatPointTarget(index);
             int draftInvested = isTarget && _editSession != null ? _editSession.GetDraftInvested(index) : 0;
             int investedDelta = isTarget ? draftInvested - lineData.invested : 0;
+
+            // 스탯 포인트 투자 대상 라인은 메인 값(textValue)에 Stat* 총합이 아니라
+            // 현재 투자 포인트와 드래프트 투자 포인트를 표시합니다.
+            // 실제 전투 수치 변화는 BaseText에서 Base* 현재/미리보기 값으로 분리해 보여줍니다.
+            long currentValue = isTarget ? lineData.invested : lineData.displayValue;
+            long previewValue = GetPreviewDisplayValue(index, projectedTotals, hasPreview, isTarget, draftInvested, lineData.displayValue);
+
             bool canIncrease = isTarget && _editSession != null && _editSession.CanIncrease(index);
             bool canDecrease = isTarget && _editSession != null && _editSession.CanDecrease(index);
             bool hasBaseValue = isTarget;
@@ -307,7 +310,7 @@ namespace GGemCo2DCore
 
             return new UIElementStatRenderData(
                 label,
-                lineData.displayValue,
+                currentValue,
                 hasPreview,
                 previewValue,
                 isTarget,
@@ -463,16 +466,46 @@ namespace GGemCo2DCore
         }
 
         /// <summary>
+        /// PlayerInfo 메인 값 영역의 미리보기 값을 조회합니다.
+        /// </summary>
+        /// <param name="idx">표시할 PlayerInfo 스탯 인덱스입니다.</param>
+        /// <param name="projectedTotals">드래프트 투자 포인트를 반영한 미리보기 총합입니다.</param>
+        /// <param name="hasPreview">드래프트 미리보기 사용 여부입니다.</param>
+        /// <param name="isTarget">스탯 포인트 투자 대상 여부입니다.</param>
+        /// <param name="draftInvested">드래프트 기준 투자 포인트입니다.</param>
+        /// <param name="currentDisplayValue">미리보기가 없을 때 사용할 현재 표시값입니다.</param>
+        /// <returns>메인 값 영역에 표시할 미리보기 값입니다.</returns>
+        private static long GetPreviewDisplayValue(
+            CharacterConstants.IndexPlayerInfo idx,
+            CharacterStat.CharacterTotals projectedTotals,
+            bool hasPreview,
+            bool isTarget,
+            int draftInvested,
+            long currentDisplayValue)
+        {
+            if (!hasPreview)
+                return currentDisplayValue;
+
+            // 스탯 포인트 투자 대상은 메인 값에 투자 포인트 자체를 표시합니다.
+            // Base* 보정 결과는 BaseText가 담당하므로 여기서는 드래프트 투자량만 반환합니다.
+            if (isTarget)
+                return draftInvested;
+
+            return GetDisplayValueByIndex(idx, projectedTotals);
+        }
+
+        /// <summary>
         /// PlayerInfo 메인 값 영역에 표시할 값을 조회합니다.
         /// </summary>
         /// <param name="idx">표시할 PlayerInfo 스탯 인덱스입니다.</param>
         /// <param name="totals">조회할 총합 스냅샷입니다.</param>
-        /// <returns>메인 값 영역에 표시할 Stat* 또는 일반 총합 값입니다.</returns>
+        /// <returns>비투자 스탯 미리보기에 사용할 일반 총합 값입니다.</returns>
         private static long GetDisplayValueByIndex(CharacterConstants.IndexPlayerInfo idx, CharacterStat.CharacterTotals totals)
         {
             return idx switch
             {
-                // 스탯 포인트 투자 대상은 Stat* 값으로 표시하고, 실제 보정 대상 Base*는 BaseText에 별도 표시합니다.
+                // 투자 대상 라인은 BuildRenderData에서 투자 포인트로 대체되지만,
+                // 직접 조회되는 상황을 대비해 Stat* 값을 유지합니다.
                 CharacterConstants.IndexPlayerInfo.Atk => totals.StatAtk,
                 CharacterConstants.IndexPlayerInfo.Def => totals.StatDef,
                 CharacterConstants.IndexPlayerInfo.Hp => totals.StatHp,
@@ -513,11 +546,11 @@ namespace GGemCo2DCore
         /// </summary>
         /// <param name="idx">표시할 PlayerInfo 스탯 인덱스입니다.</param>
         /// <param name="player">값을 조회할 플레이어입니다.</param>
-        /// <returns>메인 표시값, BaseText 표시값, 현재 투자 포인트입니다.</returns>
+        /// <returns>비투자 스탯 표시값, BaseText 표시값, 현재 투자 포인트입니다.</returns>
         private static (long displayValue, long baseValue, int invested) GetStatPointLineData(CharacterConstants.IndexPlayerInfo idx, Player player)
         {
-            // displayValue는 스탯 포인트 투자 대상의 경우 Stat* 값을 표시합니다.
-            // Base*는 별도 BaseText에서 보여주어 투자 결과와 기본 값을 분리합니다.
+            // displayValue는 비투자 스탯의 메인 표시값으로 사용합니다.
+            // 투자 대상 라인은 BuildRenderData에서 현재 투자 포인트 값으로 대체합니다.
             long displayValue = idx switch
             {
                 CharacterConstants.IndexPlayerInfo.Atk => player.TotalStatAtk.Value,

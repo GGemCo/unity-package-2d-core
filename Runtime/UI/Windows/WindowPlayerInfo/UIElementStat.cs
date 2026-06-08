@@ -15,7 +15,7 @@ namespace GGemCo2DCore
         [Tooltip("스탯 설명")]
         [SerializeField] private TextMeshProUGUI textDescription;
 
-        [Tooltip("표시할 스탯 총합 텍스트")]
+        [Tooltip("표시할 메인 값 텍스트. 스탯 포인트 투자 대상은 투자 포인트 값을 표시합니다.")]
         [SerializeField] private TextMeshProUGUI textValue;
 
         [Tooltip("스탯 포인트 투자로 보정되는 Base 값을 표시할 텍스트입니다. 비어 있으면 표시하지 않습니다.")]

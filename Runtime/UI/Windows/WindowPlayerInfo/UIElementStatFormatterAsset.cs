@@ -12,10 +12,10 @@ namespace GGemCo2DCore
     public class UIElementStatFormatterAsset : ScriptableObject
     {
         [Header("Value Templates")]
-        [Tooltip("preview가 없거나 변경되지 않았을 때 사용하는 템플릿")]
+        [Tooltip("preview가 없거나 변경되지 않았을 때 사용하는 템플릿. 투자 대상 라인의 {current}는 현재 투자 포인트입니다.")]
         [SerializeField] private string normalValueTemplate = "{current}";
 
-        [Tooltip("preview가 있으나 증감 방향과 무관하게 공통 표현을 사용할 때의 템플릿")]
+        [Tooltip("preview가 있으나 증감 방향과 무관하게 공통 표현을 사용할 때의 템플릿. 투자 대상 라인의 {preview}는 드래프트 투자 포인트입니다.")]
         [SerializeField] private string changedValueTemplate = "{current} → {preview}";
 
         [Tooltip("preview 값이 증가했을 때 사용하는 템플릿")]
