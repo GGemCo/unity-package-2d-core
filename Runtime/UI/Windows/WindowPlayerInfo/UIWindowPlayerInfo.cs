@@ -277,6 +277,12 @@ namespace GGemCo2DCore
                 buttonReset.interactable = _editSession.IsDirty;
         }
 
+        /// <summary>
+        /// 단일 스탯 라인에 필요한 표시 값과 투자 상태를 구성합니다.
+        /// </summary>
+        /// <param name="index">렌더링할 PlayerInfo 항목입니다.</param>
+        /// <param name="projectedTotals">드래프트 투자값을 반영한 미리보기 스탯 스냅샷입니다.</param>
+        /// <returns>UIElementStat가 표시할 렌더 데이터입니다.</returns>
         private UIElementStatRenderData BuildRenderData(
             CharacterConstants.IndexPlayerInfo index,
             CharacterStat.CharacterTotals projectedTotals)
@@ -286,7 +292,7 @@ namespace GGemCo2DCore
 
             bool hasPreview = _editSession != null && _editSession.IsDirty;
             long previewValue = hasPreview
-                ? GetTotalValueByIndex(index, projectedTotals)
+                ? GetDisplayValueByIndex(index, projectedTotals)
                 : currentValue;
 
             bool isTarget = CharacterConstants.IsStatPointTarget(index);
@@ -448,15 +454,24 @@ namespace GGemCo2DCore
             textGold.text = string.Format("{0}: <style={1}>{2}</style> / {3} (+{4}pt)", currencyName, styleKey, currentCurrency, needCurrency, amount);
         }
 
-        private static long GetTotalValueByIndex(CharacterConstants.IndexPlayerInfo idx, CharacterStat.CharacterTotals totals)
+        /// <summary>
+        /// 미리보기 스냅샷에서 PlayerInfo에 표시할 값을 가져옵니다.
+        /// </summary>
+        /// <param name="idx">표시 대상 PlayerInfo 항목입니다.</param>
+        /// <param name="totals">드래프트 투자값을 반영한 계산 결과입니다.</param>
+        /// <returns>PlayerInfo에 표시할 미리보기 값입니다.</returns>
+        private static long GetDisplayValueByIndex(CharacterConstants.IndexPlayerInfo idx, CharacterStat.CharacterTotals totals)
         {
             return idx switch
             {
-                CharacterConstants.IndexPlayerInfo.Atk => totals.Atk,
-                CharacterConstants.IndexPlayerInfo.Def => totals.Def,
-                CharacterConstants.IndexPlayerInfo.Hp => totals.Hp,
-                CharacterConstants.IndexPlayerInfo.Mp => totals.Mp,
-                CharacterConstants.IndexPlayerInfo.Stamina => totals.Stamina,
+                // 스탯 포인트 투자 대상은 Base*가 아닌 Stat* 계층만 표시합니다.
+                CharacterConstants.IndexPlayerInfo.Atk => totals.StatAtk,
+                CharacterConstants.IndexPlayerInfo.Def => totals.StatDef,
+                CharacterConstants.IndexPlayerInfo.Hp => totals.StatHp,
+                CharacterConstants.IndexPlayerInfo.Mp => totals.StatMp,
+                CharacterConstants.IndexPlayerInfo.Stamina => totals.StatStamina,
+
+                // 투자 대상이 아닌 파생/전투 보조 값은 기존 최종 표시값을 유지합니다.
                 CharacterConstants.IndexPlayerInfo.MoveSpeed => totals.MoveSpeed,
                 CharacterConstants.IndexPlayerInfo.AttackSpeed => totals.AttackSpeed,
                 CharacterConstants.IndexPlayerInfo.CriticalDamage => totals.CriticalDamage,
@@ -464,21 +479,30 @@ namespace GGemCo2DCore
                 CharacterConstants.IndexPlayerInfo.RegistFire => totals.RegistFire,
                 CharacterConstants.IndexPlayerInfo.RegistCold => totals.RegistCold,
                 CharacterConstants.IndexPlayerInfo.RegistLightning => totals.RegistLightning,
+                CharacterConstants.IndexPlayerInfo.RegistPoison => totals.RegistPoison,
                 _ => 0
             };
         }
 
-        private static (long totalValue, int invested) GetStatPointLineData(CharacterConstants.IndexPlayerInfo idx, Player player)
+        /// <summary>
+        /// 현재 플레이어에서 PlayerInfo 스탯 라인의 표시값과 투자 포인트를 조회합니다.
+        /// </summary>
+        /// <param name="idx">표시 대상 PlayerInfo 항목입니다.</param>
+        /// <param name="player">현재 바인딩된 플레이어입니다.</param>
+        /// <returns>현재 표시값과 실제 투자 포인트입니다.</returns>
+        private static (long displayValue, int invested) GetStatPointLineData(CharacterConstants.IndexPlayerInfo idx, Player player)
         {
-            // totalValue는 PlayerInfo에 표시되는 모든 라인에서 의미가 있으므로,
-            // IndexPlayerInfo 전체를 커버하도록 구성합니다.
-            long totalValue = idx switch
+            // 투자 가능한 기본 5개 항목은 Base*나 Base+Stat 합산값이 아니라
+            // 스탯 포인트/STAT_* modifier가 반영된 TotalStat* 값을 표시합니다.
+            long displayValue = idx switch
             {
-                CharacterConstants.IndexPlayerInfo.Atk => player.TotalAtk.Value,
-                CharacterConstants.IndexPlayerInfo.Def => player.TotalDef.Value,
-                CharacterConstants.IndexPlayerInfo.Hp => player.TotalHp.Value,
-                CharacterConstants.IndexPlayerInfo.Mp => player.TotalMp.Value,
-                CharacterConstants.IndexPlayerInfo.Stamina => player.TotalStamina.Value,
+                CharacterConstants.IndexPlayerInfo.Atk => player.TotalStatAtk.Value,
+                CharacterConstants.IndexPlayerInfo.Def => player.TotalStatDef.Value,
+                CharacterConstants.IndexPlayerInfo.Hp => player.TotalStatHp.Value,
+                CharacterConstants.IndexPlayerInfo.Mp => player.TotalStatMp.Value,
+                CharacterConstants.IndexPlayerInfo.Stamina => player.TotalStatStamina.Value,
+
+                // 투자 대상이 아닌 항목은 기존 PlayerInfo 표시 정책을 유지합니다.
                 CharacterConstants.IndexPlayerInfo.MoveSpeed => player.TotalMoveSpeed.Value,
                 CharacterConstants.IndexPlayerInfo.AttackSpeed => player.TotalAttackSpeed.Value,
                 CharacterConstants.IndexPlayerInfo.CriticalDamage => player.TotalCriticalDamage.Value,
@@ -486,6 +510,7 @@ namespace GGemCo2DCore
                 CharacterConstants.IndexPlayerInfo.RegistFire => player.TotalRegistFire.Value,
                 CharacterConstants.IndexPlayerInfo.RegistCold => player.TotalRegistCold.Value,
                 CharacterConstants.IndexPlayerInfo.RegistLightning => player.TotalRegistLightning.Value,
+                CharacterConstants.IndexPlayerInfo.RegistPoison => player.TotalRegistPoison.Value,
                 _ => 0
             };
 
@@ -500,9 +525,14 @@ namespace GGemCo2DCore
                 _ => 0
             };
 
-            return (totalValue, invested);
+            return (displayValue, invested);
         }
 
+        /// <summary>
+        /// 캐시된 스탯 이름이 있으면 반환하고, 없으면 enum 이름을 대체 표시명으로 사용합니다.
+        /// </summary>
+        /// <param name="idx">표시 대상 PlayerInfo 항목입니다.</param>
+        /// <returns>UI에 표시할 스탯 이름입니다.</returns>
         private string GetCachedLabelOrFallback(CharacterConstants.IndexPlayerInfo idx)
         {
             if (_labelCache.TryGetValue(idx, out var label) && !string.IsNullOrEmpty(label))
@@ -511,6 +541,12 @@ namespace GGemCo2DCore
             return idx.ToString();
         }
 
+        /// <summary>
+        /// PlayerInfo 항목에 대응하는 STAT_* 로컬라이즈 이름을 조회합니다.
+        /// </summary>
+        /// <param name="loc">로컬라이즈 매니저입니다.</param>
+        /// <param name="idx">표시 대상 PlayerInfo 항목입니다.</param>
+        /// <returns>로컬라이즈된 표시명 또는 enum fallback 이름입니다.</returns>
         private static string ResolveLabel(LocalizationManager loc, CharacterConstants.IndexPlayerInfo idx)
         {
             // StatusName 테이블 기반(이미 프로젝트에서 사용 중)

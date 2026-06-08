@@ -241,7 +241,7 @@ namespace GGemCo2DCore
         }
 
         /// <summary>
-        /// Player 클래스에서 subscribe를 위해 사용중
+        /// Player 클래스에서 subscribe를 위해 사용중. 스탯 index
         /// </summary>
         public enum IndexPlayerInfo
         {
