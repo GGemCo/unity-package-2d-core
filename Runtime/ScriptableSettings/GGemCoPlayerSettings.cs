@@ -187,9 +187,10 @@ namespace GGemCo2DCore
         [Serializable]
         public struct StatPointBonus
         {
-            [Tooltip("포인트 1당 증가 방식 (Flat: 고정값, Percent: % 증가)")]
+            [Tooltip("TotalStat* 1당 Base* 계열에 더할 변환 방식입니다. Flat은 고정값, PercentOfMax는 TotalBase* 기준 % 보너스입니다.")]
             public ConfigCommon.CalculateType mode;
-            [Tooltip("포인트 1당 증가량. Percent는 '퍼센트 값'을 입력합니다. 예) 1.5 = 1.5%")]
+            [Tooltip("TotalStat* 1당 Base* 계열에 더할 값입니다. Flat 예) 10 = TotalStat 1당 +10, PercentOfMax 예) 1.5 = TotalBase의 1.5%")]
+
             public float valuePerPoint;
         }
 
@@ -350,15 +351,15 @@ namespace GGemCo2DCore
         [Tooltip("레벨업 1회당 지급되는 스탯 포인트")]
         public int statPointPerLevel;
 
-        [Tooltip("공격력 포인트 1당 증가량")]
+        [Tooltip("TotalStatAtk 1당 ResolvedAtk에 더할 BaseAtk 계열 변환량입니다.")]
         public StatPointBonus statPointAtk;
-        [Tooltip("방어력 포인트 1당 증가량")]
+        [Tooltip("TotalStatDef 1당 ResolvedDef에 더할 BaseDef 계열 변환량입니다.")]
         public StatPointBonus statPointDef;
-        [Tooltip("체력 포인트 1당 증가량")]
+        [Tooltip("TotalStatHp 1당 MaxHp에 더할 BaseHp 계열 변환량입니다.")]
         public StatPointBonus statPointHp;
-        [Tooltip("마력 포인트 1당 증가량")]
+        [Tooltip("TotalStatMp 1당 MaxMp에 더할 BaseMp 계열 변환량입니다.")]
         public StatPointBonus statPointMp;
-        [Tooltip("스테미나 포인트 1당 증가량")]
+        [Tooltip("TotalStatStamina 1당 MaxStamina에 더할 BaseStamina 계열 변환량입니다.")]
         public StatPointBonus statPointStamina;
 
         [Header("Element Gauge")]

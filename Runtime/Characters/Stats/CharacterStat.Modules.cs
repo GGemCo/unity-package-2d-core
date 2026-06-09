@@ -68,10 +68,10 @@ namespace GGemCo2DCore
                 _owner._totalStatHp = StatCalculator.CalculateFinal(ConfigCommon.StatusStatHp, _owner.StatHp, _owner._allProviders);
                 _owner._totalStatMp = StatCalculator.CalculateFinal(ConfigCommon.StatusStatMp, _owner.StatMp, _owner._allProviders);
                 _owner._totalStatStamina = StatCalculator.CalculateFinal(ConfigCommon.StatusStatStamina, _owner.StatStamina, _owner._allProviders);
-                _owner._maxHp = _owner._totalBaseHp + _owner._totalStatHp;
+                _owner._maxHp = _owner.CalculateMaxHpValue(_owner._totalBaseHp, _owner._totalStatHp);
                 _owner._totalHpTemp = StatCalculator.CalculateFinal(ConfigCommon.StatusStatHpTemp, 0, _owner._allProviders);
-                _owner._maxMp = _owner._totalBaseMp + _owner._totalStatMp;
-                _owner._maxStamina = _owner._totalBaseStamina + _owner._totalStatStamina;
+                _owner._maxMp = _owner.CalculateMaxMpValue(_owner._totalBaseMp, _owner._totalStatMp);
+                _owner._maxStamina = _owner.CalculateMaxStaminaValue(_owner._totalBaseStamina, _owner._totalStatStamina);
                 _owner._totalSuperArmor = (int)StatCalculator.CalculateFinal(ConfigCommon.BaseStatSuperArmor, _owner.BaseSuperArmor, _owner._allProviders);
             }
 
@@ -121,8 +121,8 @@ namespace GGemCo2DCore
                 _owner._totalBaseDef = StatCalculator.CalculateFinal(ConfigCommon.BaseStatDef, _owner.BaseDef, _owner._allProviders);
                 _owner._totalStatAtk = StatCalculator.CalculateFinal(ConfigCommon.StatusStatAtk, _owner.StatAtk, _owner._allProviders);
                 _owner._totalStatDef = StatCalculator.CalculateFinal(ConfigCommon.StatusStatDef, _owner.StatDef, _owner._allProviders);
-                _owner._resolvedAtk = _owner._totalBaseAtk + _owner._totalStatAtk;
-                _owner._resolvedDef = _owner._totalBaseDef + _owner._totalStatDef;
+                _owner._resolvedAtk = _owner.CalculateResolvedAtkValue(_owner._totalBaseAtk, _owner._totalStatAtk);
+                _owner._resolvedDef = _owner.CalculateResolvedDefValue(_owner._totalBaseDef, _owner._totalStatDef);
                 _owner._totalCriticalDamage = StatCalculator.CalculateFinal(ConfigCommon.BaseStatCriticalDamage, _owner.BaseCriticalDamage, _owner._allProviders);
                 _owner._totalCriticalProbability = StatCalculator.CalculateFinal(ConfigCommon.BaseStatCriticalProbability, _owner.BaseCriticalProbability, _owner._allProviders);
             }

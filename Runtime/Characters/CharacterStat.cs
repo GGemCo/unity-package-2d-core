@@ -58,11 +58,11 @@ namespace GGemCo2DCore
             public readonly long TotalStatMp;
             public readonly long TotalStatStamina;
 
-            public long ResolvedAtk => TotalBaseAtk + TotalStatAtk;
-            public long ResolvedDef => TotalBaseDef + TotalStatDef;
-            public long MaxHp => TotalBaseHp + TotalStatHp;
-            public long MaxMp => TotalBaseMp + TotalStatMp;
-            public long MaxStamina => TotalBaseStamina + TotalStatStamina;
+            public readonly long ResolvedAtk;
+            public readonly long ResolvedDef;
+            public readonly long MaxHp;
+            public readonly long MaxMp;
+            public readonly long MaxStamina;
 
             /// <summary>
             /// Base/Stat 분리 총합 값을 받아 스냅샷을 생성합니다.
@@ -73,7 +73,9 @@ namespace GGemCo2DCore
                 int superArmor,
                 long moveSpeed, long attackSpeed,
                 long criticalDamage, long criticalProbability,
-                long registFire, long registCold, long registLightning, long registPoison)
+                long registFire, long registCold, long registLightning, long registPoison,
+                long? resolvedAtk = null, long? resolvedDef = null,
+                long? maxHp = null, long? maxMp = null, long? maxStamina = null)
             {
                 TotalBaseAtk = totalBaseAtk;
                 TotalBaseDef = totalBaseDef;
@@ -85,6 +87,11 @@ namespace GGemCo2DCore
                 TotalStatHp = totalStatHp;
                 TotalStatMp = totalStatMp;
                 TotalStatStamina = totalStatStamina;
+                ResolvedAtk = resolvedAtk ?? totalBaseAtk + totalStatAtk;
+                ResolvedDef = resolvedDef ?? totalBaseDef + totalStatDef;
+                MaxHp = maxHp ?? totalBaseHp + totalStatHp;
+                MaxMp = maxMp ?? totalBaseMp + totalStatMp;
+                MaxStamina = maxStamina ?? totalBaseStamina + totalStatStamina;
                 SuperArmor = superArmor;
                 MoveSpeed = moveSpeed;
                 AttackSpeed = attackSpeed;
@@ -112,7 +119,9 @@ namespace GGemCo2DCore
                     stat.TotalSuperArmor.Value,
                     stat.TotalMoveSpeed.Value, stat.TotalAttackSpeed.Value,
                     stat.TotalCriticalDamage.Value, stat.TotalCriticalProbability.Value,
-                    stat.TotalRegistFire.Value, stat.TotalRegistCold.Value, stat.TotalRegistLightning.Value, stat.TotalRegistPoison.Value);
+                    stat.TotalRegistFire.Value, stat.TotalRegistCold.Value, stat.TotalRegistLightning.Value, stat.TotalRegistPoison.Value,
+                    stat.ResolvedAtk.Value, stat.ResolvedDef.Value,
+                    stat.MaxHp.Value, stat.MaxMp.Value, stat.MaxStamina.Value);
             }
         }
 
@@ -570,11 +579,65 @@ namespace GGemCo2DCore
         #endregion
 
         /// <summary>
-        /// (부작용 없음) 현재 장비/패시브 modifier는 유지한 채,
-        /// 영구 modifier(스탯 포인트 등)만 특정 값으로 가정했을 때의 총합을 계산합니다.
+        /// TotalBaseAtk와 TotalStatAtk를 사용하여 최종 공격력 파생값을 계산합니다.
         /// </summary>
-        /// <param name="flatPersistentProjected">가정할 영구 Flat 증가량(스탯 키 기준)입니다.</param>
-        /// <param name="percentPersistentProjected">가정할 영구 Percent 증가율(스탯 키 기준)입니다.</param>
+        /// <param name="totalBaseAtk">BASE_ATK 보정이 반영된 최종 기본 공격력입니다.</param>
+        /// <param name="totalStatAtk">STAT_ATK 보정이 반영된 최종 공격 스탯입니다.</param>
+        /// <returns>공식 계산과 UI 표시에 사용할 최종 공격력 파생값입니다.</returns>
+        protected virtual long CalculateResolvedAtkValue(long totalBaseAtk, long totalStatAtk)
+        {
+            return totalBaseAtk + totalStatAtk;
+        }
+
+        /// <summary>
+        /// TotalBaseDef와 TotalStatDef를 사용하여 최종 방어력 파생값을 계산합니다.
+        /// </summary>
+        /// <param name="totalBaseDef">BASE_DEF 보정이 반영된 최종 기본 방어력입니다.</param>
+        /// <param name="totalStatDef">STAT_DEF 보정이 반영된 최종 방어 스탯입니다.</param>
+        /// <returns>공식 계산과 UI 표시에 사용할 최종 방어력 파생값입니다.</returns>
+        protected virtual long CalculateResolvedDefValue(long totalBaseDef, long totalStatDef)
+        {
+            return totalBaseDef + totalStatDef;
+        }
+
+        /// <summary>
+        /// TotalBaseHp와 TotalStatHp를 사용하여 최대 HP 파생값을 계산합니다.
+        /// </summary>
+        /// <param name="totalBaseHp">BASE_HP 보정이 반영된 최종 기본 HP입니다.</param>
+        /// <param name="totalStatHp">STAT_HP 보정이 반영된 최종 HP 스탯입니다.</param>
+        /// <returns>현재 HP 클램프와 UI 표시에 사용할 최대 HP입니다.</returns>
+        protected virtual long CalculateMaxHpValue(long totalBaseHp, long totalStatHp)
+        {
+            return totalBaseHp + totalStatHp;
+        }
+
+        /// <summary>
+        /// TotalBaseMp와 TotalStatMp를 사용하여 최대 MP 파생값을 계산합니다.
+        /// </summary>
+        /// <param name="totalBaseMp">BASE_MP 보정이 반영된 최종 기본 MP입니다.</param>
+        /// <param name="totalStatMp">STAT_MP 보정이 반영된 최종 MP 스탯입니다.</param>
+        /// <returns>현재 MP 클램프와 UI 표시에 사용할 최대 MP입니다.</returns>
+        protected virtual long CalculateMaxMpValue(long totalBaseMp, long totalStatMp)
+        {
+            return totalBaseMp + totalStatMp;
+        }
+
+        /// <summary>
+        /// TotalBaseStamina와 TotalStatStamina를 사용하여 최대 스태미나 파생값을 계산합니다.
+        /// </summary>
+        /// <param name="totalBaseStamina">BASE_STAMINA 보정이 반영된 최종 기본 스태미나입니다.</param>
+        /// <param name="totalStatStamina">STAT_STAMINA 보정이 반영된 최종 스태미나 스탯입니다.</param>
+        /// <returns>현재 스태미나 클램프와 UI 표시에 사용할 최대 스태미나입니다.</returns>
+        protected virtual long CalculateMaxStaminaValue(long totalBaseStamina, long totalStatStamina)
+        {
+            return totalBaseStamina + totalStatStamina;
+        }
+
+        /// <summary>
+        /// 현재 장비/패시브 modifier는 유지한 채, 영구 modifier만 특정 값으로 가정했을 때의 총합을 계산합니다.
+        /// </summary>
+        /// <param name="flatPersistentProjected">가정할 영구 Flat 증가량입니다.</param>
+        /// <param name="percentPersistentProjected">가정할 영구 Percent 증가율입니다.</param>
         /// <returns>가정값을 반영하여 계산된 스탯 총합 스냅샷입니다.</returns>
         public CharacterTotals CalculateTotalsWithPersistentModifiers(
             Dictionary<string, int> flatPersistentProjected,
@@ -638,7 +701,12 @@ namespace GGemCo2DCore
                 superArmor,
                 moveSpeed, attackSpeed,
                 criticalDamage, criticalProbability,
-                registFire, registCold, registLightning, registPoison);
+                registFire, registCold, registLightning, registPoison,
+                CalculateResolvedAtkValue(baseAtk, statAtk),
+                CalculateResolvedDefValue(baseDef, statDef),
+                CalculateMaxHpValue(baseHp, statHp),
+                CalculateMaxMpValue(baseMp, statMp),
+                CalculateMaxStaminaValue(baseStamina, statStamina));
         }
 
         /// <summary>
