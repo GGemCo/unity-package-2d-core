@@ -12,10 +12,10 @@ namespace GGemCo2DCore
     public class UIElementStatFormatterAsset : ScriptableObject
     {
         [Header("Value Templates")]
-        [Tooltip("preview가 없거나 변경되지 않았을 때 사용하는 템플릿. 투자 대상 라인의 {current}는 현재 투자 포인트입니다.")]
+        [Tooltip("preview가 없거나 변경되지 않았을 때 사용하는 템플릿. 투자 대상 라인의 {current}는 TotalStat* 값입니다.")]
         [SerializeField] private string normalValueTemplate = "{current}";
 
-        [Tooltip("preview가 있으나 증감 방향과 무관하게 공통 표현을 사용할 때의 템플릿. 투자 대상 라인의 {preview}는 드래프트 투자 포인트입니다.")]
+        [Tooltip("preview가 있으나 증감 방향과 무관하게 공통 표현을 사용할 때의 템플릿. 투자 대상 라인의 {preview}는 미리보기 TotalStat* 값입니다.")]
         [SerializeField] private string changedValueTemplate = "{current} → {preview}";
 
         [Tooltip("preview 값이 증가했을 때 사용하는 템플릿")]
@@ -25,10 +25,10 @@ namespace GGemCo2DCore
         [SerializeField] private string decreaseValueTemplate = "{current} → {preview} (-{deltaAbs})";
 
         [Header("Base Templates")]
-        [Tooltip("BaseText에 현재 Base 값을 표시할 때 사용하는 템플릿")]
+        [Tooltip("BaseText에 현재 TotalBase* 값을 표시할 때 사용하는 템플릿")]
         [SerializeField] private string normalBaseValueTemplate = "Base {currentBase}";
 
-        [Tooltip("BaseText에 Base 미리보기 값을 표시할 때 사용하는 공통 템플릿")]
+        [Tooltip("BaseText에 TotalBase* 미리보기 값을 표시할 때 사용하는 공통 템플릿")]
         [SerializeField] private string changedBaseValueTemplate = "Base {currentBase} → {previewBase}";
 
         [Tooltip("BaseText 미리보기 값이 증가했을 때 사용하는 템플릿")]
@@ -37,7 +37,7 @@ namespace GGemCo2DCore
         [Tooltip("BaseText 미리보기 값이 감소했을 때 사용하는 템플릿")]
         [SerializeField] private string decreaseBaseValueTemplate = "Base {currentBase} → {previewBase} (-{baseDeltaAbs})";
 
-        [Tooltip("BaseText가 있지만 표시할 Base 값이 없을 때 사용하는 텍스트")]
+        [Tooltip("BaseText가 있지만 표시할 TotalBase* 값이 없을 때 사용하는 텍스트")]
         [SerializeField] private string nonTargetBaseText = string.Empty;
 
         [Header("Invested Templates")]
@@ -57,10 +57,10 @@ namespace GGemCo2DCore
         }
 
         /// <summary>
-        /// BaseText에 표시할 Base 값을 포맷합니다.
+        /// BaseText에 표시할 TotalBase* 값을 포맷합니다.
         /// </summary>
         /// <param name="data">스탯 라인 렌더 데이터입니다.</param>
-        /// <returns>BaseText에 표시할 문자열입니다.</returns>
+        /// <returns>BaseText에 표시할 TotalBase* 문자열입니다.</returns>
         public virtual string FormatBaseValue(in UIElementStatRenderData data)
         {
             if (!data.HasBaseValue)
