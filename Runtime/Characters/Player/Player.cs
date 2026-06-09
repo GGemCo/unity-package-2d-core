@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using R3;
 using UnityEngine;
@@ -33,6 +33,7 @@ namespace GGemCo2DCore
         private IAttackHitStopProvider _attackHitStopProvider;
         private IAttackComboStateProvider _attackComboStateProvider;
         private IAttackCameraShakeProvider _attackCameraShakeProvider;
+        private IAttackComboDamageFormulaProvider _attackComboDamageFormulaProvider;
 
         /// <summary>
         /// 자동 이동의 전투 추적에 사용할 몬스터 타겟을 설정합니다.
@@ -419,7 +420,6 @@ namespace GGemCo2DCore
             if (IsStatusDead()) return;
             
             // GcLogger.Log(@event);
-            long totalDamage = CalculateFinalAttack();
 
             if (!colliderAttackRange)
             {
@@ -435,6 +435,7 @@ namespace GGemCo2DCore
             bool hasAttackHitStopSettings = TryResolveCurrentAttackHitStopSettings(out AttackHitStopSettings attackHitStopSettings);
             bool hasAttackComboState = TryResolveCurrentAttackComboState(out AttackComboRuntimeState attackComboState);
             bool hasAttackCameraShakeSettings = TryResolveCurrentAttackCameraShakeSettings(out AttackCameraShakeSettings attackCameraShakeSettings);
+            bool hasAttackDamageFormulaSettings = TryResolveCurrentAttackComboDamageFormula(out AttackComboDamageFormulaSettings attackDamageFormulaSettings);
             
             // 몬스터의 HitArea를 체크하기 위해 _monsterHitAreaLayerMask 적용 중
             int hitCount = CompatPhysics2D.OverlapCapsuleNonAlloc(point, size, colliderAttackRange.direction,
@@ -451,59 +452,60 @@ namespace GGemCo2DCore
                 
                 // GcLogger.Log("Player attacked the monster after animation!");
                 CharacterBase monster = characterHitArea.target;
-                
-                MetadataDamage metadataDamage = new MetadataDamage
-                {
-                    damage = totalDamage,
-                    attacker = gameObject,
-                    damageType = ConfigCommon.DamageType.Physic,
-                    affectUid = struckAnimationEventAttack.TargetAffectUid,
-                    crowdControlUid = struckAnimationEventAttack.TargetCrowdControlUid,
-                    StaggerStackDamage = 1,
-                    HitReactionType = CharacterConstants.HitReactionType.Flinch,
-                    HasAttackHitStopSettings = hasAttackHitStopSettings,
-                    AttackHitStopSettings = attackHitStopSettings,
-                    DamageCameraShakePreset = hasAttackCameraShakeSettings ? attackCameraShakeSettings.cameraShakePreset : null,
-                    DamageCameraShakeDirectionSource = attackCameraShakeSettings.cameraShakeDirectionSource,
-                    DamageCameraShakeFixedDirection = attackCameraShakeSettings.cameraShakeFixedDirection,
-                    DamageCameraShakeHorizontalOnly = attackCameraShakeSettings.cameraShakeHorizontalOnly,
-                    DamageCameraShakeChannel = attackCameraShakeSettings.ResolvedChannel,
-                    IsBasicAttackCombo = hasAttackComboState,
-                    BasicAttackComboIndex = hasAttackComboState ? attackComboState.ComboIndex : -1,
-                    BasicAttackComboCount = hasAttackComboState ? attackComboState.ComboCount : 0,
-                    IsLastBasicAttackCombo = hasAttackComboState && attackComboState.IsLastCombo
-                };
+                bool shouldApplyDamage = false;
 
-                // 몬스터와 마주보고 있으면 공격 
+                // 몬스터와 마주보고 있으면 공격
                 if (AreFacingEachOther(monster))
                 {
-                    monster.TakeDamage(metadataDamage);
-                    ++countDamageMonster;
+                    shouldApplyDamage = true;
                 }
-                // 몬스터와 같은 곳을 바라보고 있으면,
+                // 몬스터와 같은 곳을 바라보고 있으면, 플레이어 전방에 있는 대상만 공격합니다.
                 else if (CurrentFacing == monster.CurrentFacing)
                 {
                     switch (CurrentFacing)
                     {
                         case CharacterConstants.FacingDirection8.Right:
-                        {
-                            if (monster.transform.position.x >= transform.position.x)
-                            {
-                                monster.TakeDamage(metadataDamage);
-                                ++countDamageMonster;
-                            }
+                            shouldApplyDamage = monster.transform.position.x >= transform.position.x;
                             break;
-                        }
                         case CharacterConstants.FacingDirection8.Left:
-                        {
-                            if (monster.transform.position.x <= transform.position.x)
-                            {
-                                monster.TakeDamage(metadataDamage);
-                                ++countDamageMonster;
-                            }
+                            shouldApplyDamage = monster.transform.position.x <= transform.position.x;
                             break;
-                        }
                     }
+                }
+
+                if (shouldApplyDamage)
+                {
+                    long totalDamage = hasAttackDamageFormulaSettings
+                        ? CalculateFinalAttack(monster, attackDamageFormulaSettings)
+                        : CalculateFinalAttack();
+                    ConfigCommon.DamageType resolvedDamageType = hasAttackDamageFormulaSettings
+                        ? attackDamageFormulaSettings.ResolveDamageType()
+                        : ConfigCommon.DamageType.Physic;
+
+                    MetadataDamage metadataDamage = new MetadataDamage
+                    {
+                        damage = totalDamage,
+                        attacker = gameObject,
+                        damageType = resolvedDamageType,
+                        affectUid = struckAnimationEventAttack.TargetAffectUid,
+                        crowdControlUid = struckAnimationEventAttack.TargetCrowdControlUid,
+                        StaggerStackDamage = 1,
+                        HitReactionType = CharacterConstants.HitReactionType.Flinch,
+                        HasAttackHitStopSettings = hasAttackHitStopSettings,
+                        AttackHitStopSettings = attackHitStopSettings,
+                        DamageCameraShakePreset = hasAttackCameraShakeSettings ? attackCameraShakeSettings.cameraShakePreset : null,
+                        DamageCameraShakeDirectionSource = attackCameraShakeSettings.cameraShakeDirectionSource,
+                        DamageCameraShakeFixedDirection = attackCameraShakeSettings.cameraShakeFixedDirection,
+                        DamageCameraShakeHorizontalOnly = attackCameraShakeSettings.cameraShakeHorizontalOnly,
+                        DamageCameraShakeChannel = attackCameraShakeSettings.ResolvedChannel,
+                        IsBasicAttackCombo = hasAttackComboState,
+                        BasicAttackComboIndex = hasAttackComboState ? attackComboState.ComboIndex : -1,
+                        BasicAttackComboCount = hasAttackComboState ? attackComboState.ComboCount : 0,
+                        IsLastBasicAttackCombo = hasAttackComboState && attackComboState.IsLastCombo
+                    };
+
+                    monster.TakeDamage(metadataDamage);
+                    ++countDamageMonster;
                 }
                         
                 // CountCollider 마리 한테만 데미지 준다 
@@ -560,6 +562,22 @@ namespace GGemCo2DCore
                 return false;
 
             return _attackComboStateProvider.TryGetCurrentAttackComboState(out state);
+        }
+
+        /// <summary>
+        /// 현재 기본 공격 콤보에 설정된 데미지 공식 정책을 조회합니다.
+        /// </summary>
+        /// <param name="settings">현재 공격 콤보에서 사용할 데미지 공식 설정입니다.</param>
+        /// <returns>사용 가능한 공식 설정이 있으면 <see langword="true"/>를 반환합니다.</returns>
+        private bool TryResolveCurrentAttackComboDamageFormula(out AttackComboDamageFormulaSettings settings)
+        {
+            settings = AttackComboDamageFormulaSettings.Default;
+
+            _attackComboDamageFormulaProvider ??= GetComponent<IAttackComboDamageFormulaProvider>();
+            if (_attackComboDamageFormulaProvider == null)
+                return false;
+
+            return _attackComboDamageFormulaProvider.TryGetCurrentAttackComboDamageFormula(out settings);
         }
         
         public bool IsRequireLevel(int compareLevel)

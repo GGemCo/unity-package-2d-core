@@ -83,6 +83,98 @@ namespace GGemCo2DCore
         }
 
         /// <summary>
+        /// 기본 콤보 공격 단계에 설정된 공식 정보를 기준으로 일반 공격 데미지를 계산합니다.
+        /// </summary>
+        /// <param name="attacker">공격자 스탯입니다.</param>
+        /// <param name="target">피격 대상 캐릭터입니다. Poly 공식에서 대상 방어력과 레벨 변수에 사용됩니다.</param>
+        /// <param name="settings">현재 콤보 단계의 데미지 공식 설정입니다.</param>
+        /// <returns>크리티컬과 기본 데미지 보정이 반영된 일반 공격 데미지입니다.</returns>
+        public long CalculateBasicAttackDamage(
+            CharacterStat attacker,
+            CharacterBase target,
+            in AttackComboDamageFormulaSettings settings)
+        {
+            if (!settings.useCustomFormula)
+                return CalculateBasicAttackDamage(attacker);
+
+            CharacterBase attackerCharacter = attacker as CharacterBase;
+            double baseDamage = settings.ResolveBaseDamage(attacker);
+            double damageRate = settings.ResolveDamageRate();
+            double eventMultiplier = settings.ResolveEventMultiplier();
+            double optionMultiplier = settings.ResolveOptionMultiplier();
+            ConfigCommon.DamageType damageType = settings.ResolveDamageType();
+
+            if (!settings.HasFormulaKey())
+            {
+                return CalculateAttackComboMultiplierDamage(
+                    attacker,
+                    baseDamage,
+                    damageRate,
+                    eventMultiplier,
+                    optionMultiplier,
+                    damageType,
+                    settings.rollCritical);
+            }
+
+            if (!_polyFormulaRegistry.TryGet(settings.formulaKey, out _))
+            {
+                RebuildDamageFormulaRegistry();
+            }
+
+            if (!_polyFormulaRegistry.TryGet(settings.formulaKey, out _))
+            {
+                return CalculateAttackComboMultiplierDamage(
+                    attacker,
+                    baseDamage,
+                    damageRate,
+                    eventMultiplier,
+                    optionMultiplier,
+                    damageType,
+                    settings.rollCritical);
+            }
+
+            var request = new DamageFormulaRequest(
+                attackerCharacter,
+                target,
+                settings.formulaKey,
+                baseDamage,
+                damageRate,
+                eventMultiplier,
+                optionMultiplier,
+                settings.ResolveBuffRate(),
+                damageType,
+                settings.rollCritical);
+
+            return CalculateSkillDamage(request);
+        }
+
+        /// <summary>
+        /// 기본 콤보 공격의 커스텀 공식 키가 없거나 유효하지 않을 때 사용할 배율 기반 데미지를 계산합니다.
+        /// </summary>
+        /// <param name="attacker">공격자 스탯입니다.</param>
+        /// <param name="baseDamage">기준 데미지입니다.</param>
+        /// <param name="damageRate">기본 공격 데미지 배율입니다.</param>
+        /// <param name="eventMultiplier">이벤트 단위 배율입니다.</param>
+        /// <param name="optionMultiplier">실행 옵션 단위 배율입니다.</param>
+        /// <param name="damageType">데미지 타입입니다.</param>
+        /// <param name="rollCritical">크리티컬 판정 여부입니다.</param>
+        /// <returns>크리티컬과 기본 데미지 보정이 반영된 배율 기반 데미지입니다.</returns>
+        private long CalculateAttackComboMultiplierDamage(
+            CharacterStat attacker,
+            double baseDamage,
+            double damageRate,
+            double eventMultiplier,
+            double optionMultiplier,
+            ConfigCommon.DamageType damageType,
+            bool rollCritical)
+        {
+            double resolved = System.Math.Max(0d, baseDamage) * damageRate * eventMultiplier * optionMultiplier;
+            resolved = ApplyCriticalIfNeeded(resolved, attacker, rollCritical);
+            long rounded = RoundToLong(resolved, "round", 0L);
+            return ResolveDefaultFinalDamage(rounded, damageType).FinalDamage;
+        }
+
+        /// <summary>
         /// 기본 데미지에 이벤트 배율과 실행 옵션 배율을 적용해 공격 데미지를 계산합니다.
         /// </summary>
         /// <param name="baseDamage">배율 적용 전 기본 데미지입니다.</param>
