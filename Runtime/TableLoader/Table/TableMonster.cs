@@ -31,7 +31,6 @@ namespace GGemCo2DCore
         public int BaseRegistCold;
         public int BaseRegistLightning;
         public int BaseRegistPoison;
-        public int BaseMoveStep;
         public int StatHp;
         public int StatAtk;
         public int StatDef;
@@ -85,7 +84,6 @@ namespace GGemCo2DCore
                 BaseRegistCold = ReadOptionalInt(data, "BaseRegistCold", 0),
                 BaseRegistLightning = ReadOptionalInt(data, "BaseRegistLightning", 0),
                 BaseRegistPoison = ReadOptionalInt(data, "BaseRegistPoison", 0),
-                BaseMoveStep = ReadOptionalInt(data, "BaseMoveStep", 0),
                 StatHp = reader.Int("StatHp"),
                 StatAtk = reader.Int("StatAtk"),
                 StatDef = reader.Int("StatDef"),

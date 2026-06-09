@@ -313,7 +313,7 @@ namespace GGemCo2DCore
                 registCold = info.BaseRegistCold,
                 registLightning = info.BaseRegistLightning,
                 registPoison = info.BaseRegistPoison,
-                moveStep = info.BaseMoveStep,
+                moveStep = ResolveMonsterMoveStep(info, tableLoaderManager),
             };
 
             var growthStats = new CharacterGrowthStatValues
@@ -337,6 +337,34 @@ namespace GGemCo2DCore
             SetScale(info.Scale);
             SetAttackType(info.AttackType);
             _deathSkillController?.SetDeathSkillMonsterUid(info.DeathSkillMonsterUid);
+        }
+
+
+        /// <summary>
+        /// 몬스터의 이동 스텝을 animation 테이블의 MoveStep 컬럼에서 조회합니다.
+        /// </summary>
+        /// <param name="info">몬스터 테이블 row 데이터입니다.</param>
+        /// <param name="tableLoaderManager">테이블 데이터 접근 관리자입니다.</param>
+        /// <returns>animation 테이블에 설정된 이동 스텝입니다. 유효하지 않으면 0을 반환합니다.</returns>
+        private static int ResolveMonsterMoveStep(StruckTableMonster info, TableLoaderManager tableLoaderManager)
+        {
+            if (info == null || tableLoaderManager == null)
+            {
+                return 0;
+            }
+
+            if (info.AnimationUid <= 0)
+            {
+                return 0;
+            }
+
+            StruckTableAnimation animationInfo = tableLoaderManager.GetAnimationData(info.AnimationUid);
+            if (animationInfo is not { Uid: > 0 })
+            {
+                return 0;
+            }
+
+            return Mathf.Max(0, Mathf.RoundToInt(animationInfo.MoveStep));
         }
 
         /// <summary>
