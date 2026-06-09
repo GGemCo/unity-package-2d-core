@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using R3;
 using UnityEngine;
@@ -111,7 +111,7 @@ namespace GGemCo2DCore
             }
 
             // 최대 HP/현재 HP 중 어느 값이 바뀌어도 HUD HP 표시를 다시 계산한다.
-            _player.TotalHp
+            _player.MaxHp
                 .Subscribe(_ => SetWindowHudHp())
                 .AddTo(_player);
 
@@ -126,7 +126,7 @@ namespace GGemCo2DCore
                 .Subscribe(OnPlayerHpChangedForFloatingText)
                 .AddTo(_player);
 
-            _player.TotalMp
+            _player.MaxMp
                 .Subscribe(_ => SetWindowHudSliderMp(_player.CurrentMp.Value))
                 .AddTo(_player);
 
@@ -211,7 +211,7 @@ namespace GGemCo2DCore
 
             if (_player.CurrentHp.Value <= 0) return;
             
-            _uiWindowHud.SetHp(_player.CurrentHp.Value, _player.TotalHp.Value);
+            _uiWindowHud.SetHp(_player.CurrentHp.Value, _player.MaxHp.Value);
         }
 
         /// <summary>
@@ -250,7 +250,7 @@ namespace GGemCo2DCore
                 return;
             }
 
-            _uiWindowHud.SetMp(value, _player.TotalMp.Value);
+            _uiWindowHud.SetMp(value, _player.MaxMp.Value);
         }
 
         /// <summary>
@@ -264,7 +264,7 @@ namespace GGemCo2DCore
                 return;
             }
 
-            _uiWindowHud.SetStamina(value, _player.TotalStamina.Value);
+            _uiWindowHud.SetStamina(value, _player.MaxStamina.Value);
         }
 
         /// <summary>
@@ -289,11 +289,11 @@ namespace GGemCo2DCore
         {
             _statBindings.AddRange(new[]
             {
-                new StatUIBinding { textUI = CharacterConstants.IndexPlayerInfo.Atk, GetStat = p => p.TotalAtk },
-                new StatUIBinding { textUI = CharacterConstants.IndexPlayerInfo.Def, GetStat = p => p.TotalDef },
-                new StatUIBinding { textUI = CharacterConstants.IndexPlayerInfo.Hp, GetStat = p => p.TotalHp },
-                new StatUIBinding { textUI = CharacterConstants.IndexPlayerInfo.Mp, GetStat = p => p.TotalMp },
-                new StatUIBinding { textUI = CharacterConstants.IndexPlayerInfo.Stamina, GetStat = p => p.TotalStamina },
+                new StatUIBinding { textUI = CharacterConstants.IndexPlayerInfo.Atk, GetStat = p => p.ResolvedAtk },
+                new StatUIBinding { textUI = CharacterConstants.IndexPlayerInfo.Def, GetStat = p => p.ResolvedDef },
+                new StatUIBinding { textUI = CharacterConstants.IndexPlayerInfo.Hp, GetStat = p => p.MaxHp },
+                new StatUIBinding { textUI = CharacterConstants.IndexPlayerInfo.Mp, GetStat = p => p.MaxMp },
+                new StatUIBinding { textUI = CharacterConstants.IndexPlayerInfo.Stamina, GetStat = p => p.MaxStamina },
                 new StatUIBinding { textUI = CharacterConstants.IndexPlayerInfo.MoveSpeed, GetStat = p => p.TotalMoveSpeed },
                 new StatUIBinding { textUI = CharacterConstants.IndexPlayerInfo.AttackSpeed, GetStat = p => p.TotalAttackSpeed },
                 new StatUIBinding { textUI = CharacterConstants.IndexPlayerInfo.CriticalDamage, GetStat = p => p.TotalCriticalDamage },

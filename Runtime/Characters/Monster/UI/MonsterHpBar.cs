@@ -1,4 +1,4 @@
-﻿using System.Collections;
+using System.Collections;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
@@ -56,7 +56,7 @@ namespace GGemCo2DCore
         {
             if (_hpSlider != null)
             {
-                _hpSlider.value = (float)value / _monster.TotalHp.Value;    
+                _hpSlider.value = (float)value / _monster.MaxHp.Value;    
             }
 
             if (textMonsterName != null)

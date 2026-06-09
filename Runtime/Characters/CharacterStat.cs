@@ -32,7 +32,7 @@ namespace GGemCo2DCore
 
         /// <summary>
         /// 캐릭터의 계산된 스탯 총합 스냅샷(읽기 전용)입니다.
-        /// - UI 미리보기/시뮬레이션 등에서 특정 시점의 값을 전달하기 위해 사용합니다.
+        /// - Base와 Stat의 누적 결과를 분리하여 UI 미리보기와 공식 계산에서 동일한 기준을 사용합니다.
         /// </summary>
         public readonly struct CharacterTotals
         {
@@ -45,27 +45,46 @@ namespace GGemCo2DCore
             public readonly long RegistCold;
             public readonly long RegistLightning;
             public readonly long RegistPoison;
-            public readonly long BaseAtk;
-            public readonly long BaseDef;
-            public readonly long BaseHp;
-            public readonly long BaseMp;
-            public readonly long BaseStamina;
-            public readonly long StatAtk;
-            public readonly long StatDef;
-            public readonly long StatHp;
-            public readonly long StatMp;
-            public readonly long StatStamina;
+
+            public readonly long TotalBaseAtk;
+            public readonly long TotalBaseDef;
+            public readonly long TotalBaseHp;
+            public readonly long TotalBaseMp;
+            public readonly long TotalBaseStamina;
+
+            public readonly long TotalStatAtk;
+            public readonly long TotalStatDef;
+            public readonly long TotalStatHp;
+            public readonly long TotalStatMp;
+            public readonly long TotalStatStamina;
+
+            public long ResolvedAtk => TotalBaseAtk + TotalStatAtk;
+            public long ResolvedDef => TotalBaseDef + TotalStatDef;
+            public long MaxHp => TotalBaseHp + TotalStatHp;
+            public long MaxMp => TotalBaseMp + TotalStatMp;
+            public long MaxStamina => TotalBaseStamina + TotalStatStamina;
 
             /// <summary>
-            /// 모든 스탯 총합 값을 받아 스냅샷을 생성합니다.
+            /// Base/Stat 분리 총합 값을 받아 스냅샷을 생성합니다.
             /// </summary>
             public CharacterTotals(
-                long atk, long def, long hp, long mp, long stamina,
+                long totalBaseAtk, long totalBaseDef, long totalBaseHp, long totalBaseMp, long totalBaseStamina,
+                long totalStatAtk, long totalStatDef, long totalStatHp, long totalStatMp, long totalStatStamina,
                 int superArmor,
                 long moveSpeed, long attackSpeed,
                 long criticalDamage, long criticalProbability,
                 long registFire, long registCold, long registLightning, long registPoison)
             {
+                TotalBaseAtk = totalBaseAtk;
+                TotalBaseDef = totalBaseDef;
+                TotalBaseHp = totalBaseHp;
+                TotalBaseMp = totalBaseMp;
+                TotalBaseStamina = totalBaseStamina;
+                TotalStatAtk = totalStatAtk;
+                TotalStatDef = totalStatDef;
+                TotalStatHp = totalStatHp;
+                TotalStatMp = totalStatMp;
+                TotalStatStamina = totalStatStamina;
                 SuperArmor = superArmor;
                 MoveSpeed = moveSpeed;
                 AttackSpeed = attackSpeed;
@@ -75,42 +94,25 @@ namespace GGemCo2DCore
                 RegistCold = registCold;
                 RegistLightning = registLightning;
                 RegistPoison = registPoison;
-                BaseAtk = atk;
-                BaseDef = def;
-                BaseHp = hp;
-                BaseMp = mp;
-                BaseStamina = stamina;
-                StatAtk = 0;
-                StatDef = 0;
-                StatHp = 0;
-                StatMp = 0;
-                StatStamina = 0;
             }
 
             /// <summary>
-            /// 호환 Total과 분리 Total 값을 모두 받아 스냅샷을 생성합니다.
+            /// 현재 캐릭터 스탯 스트림 값을 기반으로 스냅샷을 생성합니다.
             /// </summary>
-            public CharacterTotals(
-                long atk, long def, long hp, long mp, long stamina,
-                int superArmor,
-                long moveSpeed, long attackSpeed,
-                long criticalDamage, long criticalProbability,
-                long registFire, long registCold, long registLightning, long registPoison,
-                long baseAtk, long baseDef, long baseHp, long baseMp, long baseStamina,
-                long statAtk, long statDef, long statHp, long statMp, long statStamina)
-                : this(atk, def, hp, mp, stamina, superArmor, moveSpeed, attackSpeed, criticalDamage,
-                    criticalProbability, registFire, registCold, registLightning, registPoison)
+            /// <param name="stat">스냅샷을 생성할 캐릭터 스탯입니다.</param>
+            /// <returns>현재 계산 결과를 복사한 스탯 총합 스냅샷입니다.</returns>
+            public static CharacterTotals FromCurrent(CharacterStat stat)
             {
-                BaseAtk = baseAtk;
-                BaseDef = baseDef;
-                BaseHp = baseHp;
-                BaseMp = baseMp;
-                BaseStamina = baseStamina;
-                StatAtk = statAtk;
-                StatDef = statDef;
-                StatHp = statHp;
-                StatMp = statMp;
-                StatStamina = statStamina;
+                if (stat == null)
+                    return default;
+
+                return new CharacterTotals(
+                    stat.TotalBaseAtk.Value, stat.TotalBaseDef.Value, stat.TotalBaseHp.Value, stat.TotalBaseMp.Value, stat.TotalBaseStamina.Value,
+                    stat.TotalStatAtk.Value, stat.TotalStatDef.Value, stat.TotalStatHp.Value, stat.TotalStatMp.Value, stat.TotalStatStamina.Value,
+                    stat.TotalSuperArmor.Value,
+                    stat.TotalMoveSpeed.Value, stat.TotalAttackSpeed.Value,
+                    stat.TotalCriticalDamage.Value, stat.TotalCriticalProbability.Value,
+                    stat.TotalRegistFire.Value, stat.TotalRegistCold.Value, stat.TotalRegistLightning.Value, stat.TotalRegistPoison.Value);
             }
         }
 
@@ -161,12 +163,12 @@ namespace GGemCo2DCore
         /// </summary>
         private readonly List<IStatModifierProvider> _providersWithoutPersistent = new(3);
         // 내부 캐시(마지막으로 계산된 최종값)
-        private long _totalAtk,
-            _totalDef,
-            _totalHp,
+        private long _resolvedAtk,
+            _resolvedDef,
+            _maxHp,
             _totalHpTemp,
-            _totalMp,
-            _totalStamina,
+            _maxMp,
+            _maxStamina,
             _totalBaseAtk,
             _totalBaseDef,
             _totalBaseHp,
@@ -193,26 +195,26 @@ namespace GGemCo2DCore
         /// <summary>
         /// 최종 공격력(계산 결과)을 스트림으로 제공합니다.
         /// </summary>
-        public readonly BehaviorSubject<long> TotalAtk = new(1);
+        public readonly BehaviorSubject<long> ResolvedAtk = new(1);
 
         /// <summary>
         /// 최종 방어력(계산 결과)을 스트림으로 제공합니다.
         /// </summary>
-        public readonly BehaviorSubject<long> TotalDef = new(1);
+        public readonly BehaviorSubject<long> ResolvedDef = new(1);
 
         /// <summary>
         /// 최종 HP(계산 결과)를 스트림으로 제공합니다.
         /// </summary>
-        public readonly BehaviorSubject<long> TotalHp = new(100);
+        public readonly BehaviorSubject<long> MaxHp = new(100);
         /// <summary>
         /// 최종 MP(계산 결과)를 스트림으로 제공합니다.
         /// </summary>
-        public readonly BehaviorSubject<long> TotalMp = new(100);
+        public readonly BehaviorSubject<long> MaxMp = new(100);
 
         /// <summary>
         /// 최종 스태미나(계산 결과)를 스트림으로 제공합니다.
         /// </summary>
-        public readonly BehaviorSubject<long> TotalStamina = new(100);
+        public readonly BehaviorSubject<long> MaxStamina = new(100);
 
         /// <summary>
         /// 기본 항목으로 계산된 최종 공격력입니다.
@@ -600,12 +602,6 @@ namespace GGemCo2DCore
             long statStamina = StatCalculator.CalculateFinalProjected(ConfigCommon.StatusStatStamina, StatStamina,
                 flatPersistentProjected, percentPersistentProjected, _providersWithoutPersistent);
 
-            long atk = baseAtk + statAtk;
-            long def = baseDef + statDef;
-            long hp = baseHp + statHp;
-            long mp = baseMp + statMp;
-            long stamina = baseStamina + statStamina;
-
             int superArmor = (int)StatCalculator.CalculateFinalProjected(ConfigCommon.BaseStatSuperArmor,
                 BaseSuperArmor,
                 flatPersistentProjected, percentPersistentProjected, _providersWithoutPersistent);
@@ -637,13 +633,12 @@ namespace GGemCo2DCore
                 flatPersistentProjected, percentPersistentProjected, _providersWithoutPersistent);
 
             return new CharacterTotals(
-                atk, def, hp, mp, stamina,
+                baseAtk, baseDef, baseHp, baseMp, baseStamina,
+                statAtk, statDef, statHp, statMp, statStamina,
                 superArmor,
                 moveSpeed, attackSpeed,
                 criticalDamage, criticalProbability,
-                registFire, registCold, registLightning, registPoison,
-                baseAtk, baseDef, baseHp, baseMp, baseStamina,
-                statAtk, statDef, statHp, statMp, statStamina);
+                registFire, registCold, registLightning, registPoison);
         }
 
         /// <summary>

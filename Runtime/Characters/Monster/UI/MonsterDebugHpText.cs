@@ -48,7 +48,7 @@ namespace GGemCo2DCore
             _textHp.raycastTarget = false;
             _isStartFade = false;
 
-            SetValue(_monster.CurrentHp.Value, _monster.TotalHp.Value);
+            SetValue(_monster.CurrentHp.Value, _monster.MaxHp.Value);
         }
 
         private void Update()

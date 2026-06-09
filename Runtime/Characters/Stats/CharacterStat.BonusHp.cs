@@ -153,7 +153,7 @@ namespace GGemCo2DCore
         private void SetCurrentHpTempItem(long value, bool invokeDepleted)
         {
             value = System.Math.Max(0, value);
-            // 임시 최대 HP(TotalTempHp)를 초과하지 않도록 클램프
+            // 임시 최대 HP(TotalHpTemp)를 초과하지 않도록 클램프
             long tempMax = TotalHpTempItem;
             if (tempMax > 0)
                 value = System.Math.Min(value, tempMax);
@@ -167,9 +167,9 @@ namespace GGemCo2DCore
             if (invokeDepleted)
             {
                 // ItemBonus가 0이 되는 순간: 최대치(표시) 변화에 따른 클램프/리빌드 트리거
-                if (CurrentHp.Value > TotalHp.Value)
+                if (CurrentHp.Value > MaxHp.Value)
                 {
-                    CurrentHp.OnNext(TotalHp.Value);
+                    CurrentHp.OnNext(MaxHp.Value);
                 }
             }
         }

@@ -18,7 +18,7 @@ namespace GGemCo2DCore
         /// <returns></returns>
         public bool IsMaxHp()
         {
-            return CurrentHp.Value >= TotalHp.Value;
+            return CurrentHp.Value >= MaxHp.Value;
         }
         /// <summary>
         /// 현재 생명력 더하기
@@ -27,9 +27,9 @@ namespace GGemCo2DCore
         public void AddHp(int value)
         {
             long newVale = CurrentHp.Value + value;
-            if (newVale > TotalHp.Value)
+            if (newVale > MaxHp.Value)
             {
-                newVale = TotalHp.Value;
+                newVale = MaxHp.Value;
             }
             if (CurrentHp.Value == newVale) return;
             CurrentHp.OnNext(newVale);
@@ -43,7 +43,7 @@ namespace GGemCo2DCore
         /// <returns>일반 HP 값이 변경되었으면 <see langword="true"/>입니다.</returns>
         public bool RestoreNormalHpToMax(bool reviveIfDead = false)
         {
-            long maxHp = TotalHp.Value;
+            long maxHp = MaxHp.Value;
             if (maxHp <= 0)
             {
                 return false;
@@ -76,9 +76,9 @@ namespace GGemCo2DCore
         public void AddMp(int value)
         {
             long newVale = CurrentMp.Value + value;
-            if (newVale > TotalMp.Value)
+            if (newVale > MaxMp.Value)
             {
-                newVale = TotalMp.Value;
+                newVale = MaxMp.Value;
             }
             if (CurrentMp.Value == newVale) return;
             CurrentMp.OnNext(newVale);
@@ -104,7 +104,7 @@ namespace GGemCo2DCore
         /// <returns></returns>
         public bool IsMaxMp()
         {
-            return CurrentMp.Value >= TotalMp.Value;
+            return CurrentMp.Value >= MaxMp.Value;
         }
         /// <summary>
         /// 현재 마력이 최대치 인지
@@ -178,7 +178,7 @@ namespace GGemCo2DCore
         /// <summary>
         /// 스테미나를 즉시 차감합니다.
         /// - 부족하면 차감하지 않고 false
-        /// - 성공 시 0~TotalStamina로 Clamp 합니다.
+        /// - 성공 시 0~MaxStamina로 Clamp 합니다.
         /// </summary>
         public bool TrySpendStamina(long amount)
         {
@@ -203,7 +203,7 @@ namespace GGemCo2DCore
 
         private void SetCurrentStaminaInternal(long value)
         {
-            long max = TotalStamina.Value;
+            long max = MaxStamina.Value;
             if (max < 0) max = 0;
 
             if (value < 0) value = 0;

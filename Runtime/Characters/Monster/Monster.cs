@@ -326,9 +326,9 @@ namespace GGemCo2DCore
             };
 
             SetBaseAndGrowthStatInfos(baseAttributes, growthStats);
-            CurrentHp.OnNext(TotalHp.Value);
-            CurrentMp.OnNext(TotalMp.Value);
-            CurrentStamina.OnNext(TotalStamina.Value);
+            CurrentHp.OnNext(MaxHp.Value);
+            CurrentMp.OnNext(MaxMp.Value);
+            CurrentStamina.OnNext(MaxStamina.Value);
             CurrentSuperArmor.OnNext(TotalSuperArmor.Value);
             if (baseAttributes.moveStep > 0)
             {

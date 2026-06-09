@@ -1,4 +1,4 @@
-﻿using System.Collections;
+using System.Collections;
 using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
@@ -60,7 +60,7 @@ namespace GGemCo2DCore
             InitMonsterNameText(monster.uid);
             InitMonsterNameByImage(monster.uid);
             InitSuperArmor(monster, showSuperArmor);
-            SetSliderHp(monster.CurrentHp.Value, monster.TotalHp.Value);
+            SetSliderHp(monster.CurrentHp.Value, monster.MaxHp.Value);
         }
 
         private void InitMonsterNameByImage(int monsterUid)

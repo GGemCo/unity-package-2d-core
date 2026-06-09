@@ -506,11 +506,11 @@ namespace GGemCo2DCore
             {
                 // 투자 대상 라인은 BuildRenderData에서 투자 포인트로 대체되지만,
                 // 직접 조회되는 상황을 대비해 Stat* 값을 유지합니다.
-                CharacterConstants.IndexPlayerInfo.Atk => totals.StatAtk,
-                CharacterConstants.IndexPlayerInfo.Def => totals.StatDef,
-                CharacterConstants.IndexPlayerInfo.Hp => totals.StatHp,
-                CharacterConstants.IndexPlayerInfo.Mp => totals.StatMp,
-                CharacterConstants.IndexPlayerInfo.Stamina => totals.StatStamina,
+                CharacterConstants.IndexPlayerInfo.Atk => totals.TotalStatAtk,
+                CharacterConstants.IndexPlayerInfo.Def => totals.TotalStatDef,
+                CharacterConstants.IndexPlayerInfo.Hp => totals.TotalStatHp,
+                CharacterConstants.IndexPlayerInfo.Mp => totals.TotalStatMp,
+                CharacterConstants.IndexPlayerInfo.Stamina => totals.TotalStatStamina,
                 CharacterConstants.IndexPlayerInfo.MoveSpeed => totals.MoveSpeed,
                 CharacterConstants.IndexPlayerInfo.AttackSpeed => totals.AttackSpeed,
                 CharacterConstants.IndexPlayerInfo.CriticalDamage => totals.CriticalDamage,
@@ -532,11 +532,11 @@ namespace GGemCo2DCore
         {
             return idx switch
             {
-                CharacterConstants.IndexPlayerInfo.Atk => totals.StatAtk,
-                CharacterConstants.IndexPlayerInfo.Def => totals.StatDef,
-                CharacterConstants.IndexPlayerInfo.Hp => totals.StatHp,
-                CharacterConstants.IndexPlayerInfo.Mp => totals.StatMp,
-                CharacterConstants.IndexPlayerInfo.Stamina => totals.StatStamina,
+                CharacterConstants.IndexPlayerInfo.Atk => totals.TotalStatAtk,
+                CharacterConstants.IndexPlayerInfo.Def => totals.TotalStatDef,
+                CharacterConstants.IndexPlayerInfo.Hp => totals.TotalStatHp,
+                CharacterConstants.IndexPlayerInfo.Mp => totals.TotalStatMp,
+                CharacterConstants.IndexPlayerInfo.Stamina => totals.TotalStatStamina,
                 _ => 0
             };
         }

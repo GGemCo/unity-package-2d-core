@@ -292,7 +292,7 @@ namespace GGemCo2DCore
             variables.Set("LevelDiff", levelDiff);
             
             // 공격자/피격 대상이 명확히 드러나는 공식 작성용 변수입니다.
-            // Base*는 TotalBase*, Stat*은 TotalStat*, Total*은 최종 합산 값을 기준으로 등록합니다.
+            // Base*는 TotalBase*, Stat*은 TotalStat*, 합산 파생값은 Resolved*/Max* 기준으로 등록합니다.
             FillCharacterStatVariables("Attacker", attacker, variables);
             FillCharacterStatVariables("Target", target, variables);
 
@@ -321,12 +321,17 @@ namespace GGemCo2DCore
             }
 
             // Base* 변수는 기본 항목의 최종 계산값(TotalBase*)을 의미합니다.
-            // 별도 Stat* 항목이 없는 기본 계열 수치는 해당 Total* 값을 Base* 별칭으로 함께 제공합니다.
+            // TotalBase* 변수도 함께 제공하여 공식 작성 시 Base/Stat 분리 의미를 명확하게 사용할 수 있게 합니다.
             variables.Set(prefix + "BaseAtk", character.TotalBaseAtk.Value);
             variables.Set(prefix + "BaseDef", character.TotalBaseDef.Value);
             variables.Set(prefix + "BaseHp", character.TotalBaseHp.Value);
             variables.Set(prefix + "BaseMp", character.TotalBaseMp.Value);
             variables.Set(prefix + "BaseStamina", character.TotalBaseStamina.Value);
+            variables.Set(prefix + "TotalBaseAtk", character.TotalBaseAtk.Value);
+            variables.Set(prefix + "TotalBaseDef", character.TotalBaseDef.Value);
+            variables.Set(prefix + "TotalBaseHp", character.TotalBaseHp.Value);
+            variables.Set(prefix + "TotalBaseMp", character.TotalBaseMp.Value);
+            variables.Set(prefix + "TotalBaseStamina", character.TotalBaseStamina.Value);
             variables.Set(prefix + "BaseSuperArmor", character.TotalSuperArmor.Value);
             variables.Set(prefix + "BaseMoveSpeed", character.TotalMoveSpeed.Value);
             variables.Set(prefix + "BaseMoveStep", character.TotalBaseMoveStep.Value);
@@ -344,14 +349,19 @@ namespace GGemCo2DCore
             variables.Set(prefix + "StatHp", character.TotalStatHp.Value);
             variables.Set(prefix + "StatMp", character.TotalStatMp.Value);
             variables.Set(prefix + "StatStamina", character.TotalStatStamina.Value);
+            variables.Set(prefix + "TotalStatAtk", character.TotalStatAtk.Value);
+            variables.Set(prefix + "TotalStatDef", character.TotalStatDef.Value);
+            variables.Set(prefix + "TotalStatHp", character.TotalStatHp.Value);
+            variables.Set(prefix + "TotalStatMp", character.TotalStatMp.Value);
+            variables.Set(prefix + "TotalStatStamina", character.TotalStatStamina.Value);
 
-            // Total* 변수는 Base*와 Stat*을 포함한 실제 최종 수치입니다.
-            variables.Set(prefix + "TotalAtk", character.TotalAtk.Value);
-            variables.Set(prefix + "TotalDef", character.TotalDef.Value);
-            variables.Set(prefix + "TotalHp", character.TotalHp.Value);
+            // Resolved*/Max* 변수는 Base와 Stat을 합산한 파생값입니다.
+            variables.Set(prefix + "ResolvedAtk", character.ResolvedAtk.Value);
+            variables.Set(prefix + "ResolvedDef", character.ResolvedDef.Value);
+            variables.Set(prefix + "MaxHp", character.MaxHp.Value);
             variables.Set(prefix + "TotalHpTemp", character.TotalHpTemp.Value);
-            variables.Set(prefix + "TotalMp", character.TotalMp.Value);
-            variables.Set(prefix + "TotalStamina", character.TotalStamina.Value);
+            variables.Set(prefix + "MaxMp", character.MaxMp.Value);
+            variables.Set(prefix + "MaxStamina", character.MaxStamina.Value);
             variables.Set(prefix + "TotalSuperArmor", character.TotalSuperArmor.Value);
             variables.Set(prefix + "TotalMoveSpeed", character.TotalMoveSpeed.Value);
             variables.Set(prefix + "TotalMoveStep", character.TotalMoveStep.Value);
@@ -376,6 +386,11 @@ namespace GGemCo2DCore
             variables.Set(prefix + "BaseHp", 0d);
             variables.Set(prefix + "BaseMp", 0d);
             variables.Set(prefix + "BaseStamina", 0d);
+            variables.Set(prefix + "TotalBaseAtk", 0d);
+            variables.Set(prefix + "TotalBaseDef", 0d);
+            variables.Set(prefix + "TotalBaseHp", 0d);
+            variables.Set(prefix + "TotalBaseMp", 0d);
+            variables.Set(prefix + "TotalBaseStamina", 0d);
             variables.Set(prefix + "BaseSuperArmor", 0d);
             variables.Set(prefix + "BaseMoveSpeed", 0d);
             variables.Set(prefix + "BaseMoveStep", 0d);
@@ -391,12 +406,17 @@ namespace GGemCo2DCore
             variables.Set(prefix + "StatHp", 0d);
             variables.Set(prefix + "StatMp", 0d);
             variables.Set(prefix + "StatStamina", 0d);
-            variables.Set(prefix + "TotalAtk", 0d);
-            variables.Set(prefix + "TotalDef", 0d);
-            variables.Set(prefix + "TotalHp", 0d);
+            variables.Set(prefix + "TotalStatAtk", 0d);
+            variables.Set(prefix + "TotalStatDef", 0d);
+            variables.Set(prefix + "TotalStatHp", 0d);
+            variables.Set(prefix + "TotalStatMp", 0d);
+            variables.Set(prefix + "TotalStatStamina", 0d);
+            variables.Set(prefix + "ResolvedAtk", 0d);
+            variables.Set(prefix + "ResolvedDef", 0d);
+            variables.Set(prefix + "MaxHp", 0d);
             variables.Set(prefix + "TotalHpTemp", 0d);
-            variables.Set(prefix + "TotalMp", 0d);
-            variables.Set(prefix + "TotalStamina", 0d);
+            variables.Set(prefix + "MaxMp", 0d);
+            variables.Set(prefix + "MaxStamina", 0d);
             variables.Set(prefix + "TotalSuperArmor", 0d);
             variables.Set(prefix + "TotalMoveSpeed", 0d);
             variables.Set(prefix + "TotalMoveStep", 0d);

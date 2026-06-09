@@ -1,4 +1,4 @@
-﻿using System.Collections;
+using System.Collections;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
@@ -56,7 +56,7 @@ namespace GGemCo2DCore
         public void SetValue(long value)
         {
             if (_hpSlider == null) return;
-            _hpSlider.value = (float)value / _npc.TotalHp.Value;
+            _hpSlider.value = (float)value / _npc.MaxHp.Value;
 
             if (textNpcName == null) return;
             textNpcName.color = _hpSlider.value < _hpSlider.maxValue * 0.5f ? Color.black : Color.white;

@@ -1,4 +1,4 @@
-﻿using R3;
+using R3;
 using UnityEngine;
 
 namespace GGemCo2DCore
@@ -198,16 +198,16 @@ namespace GGemCo2DCore
             var settings = GetPlayerSettingsForResourcePolicy();
             if (settings == null)
             {
-                SubscribeResourceMaxChange(TotalHp, CurrentHp, CharacterConstants.ResourceMaxChangePolicy.KeepCurrent);
-                SubscribeResourceMaxChange(TotalMp, CurrentMp, CharacterConstants.ResourceMaxChangePolicy.KeepCurrent);
-                SubscribeResourceMaxChange(TotalStamina, CurrentStamina, CharacterConstants.ResourceMaxChangePolicy.KeepCurrent);
+                SubscribeResourceMaxChange(MaxHp, CurrentHp, CharacterConstants.ResourceMaxChangePolicy.KeepCurrent);
+                SubscribeResourceMaxChange(MaxMp, CurrentMp, CharacterConstants.ResourceMaxChangePolicy.KeepCurrent);
+                SubscribeResourceMaxChange(MaxStamina, CurrentStamina, CharacterConstants.ResourceMaxChangePolicy.KeepCurrent);
                 SubscribeResourceMaxChange(TotalHpTemp, CurrentHpTemp, CharacterConstants.ResourceMaxChangePolicy.KeepCurrent);
                 return;
             }
 
-            SubscribeResourceMaxChange(TotalHp, CurrentHp, settings.hpMaxChangePolicy);
-            SubscribeResourceMaxChange(TotalMp, CurrentMp, settings.mpMaxChangePolicy);
-            SubscribeResourceMaxChange(TotalStamina, CurrentStamina, settings.staminaMaxChangePolicy);
+            SubscribeResourceMaxChange(MaxHp, CurrentHp, settings.hpMaxChangePolicy);
+            SubscribeResourceMaxChange(MaxMp, CurrentMp, settings.mpMaxChangePolicy);
+            SubscribeResourceMaxChange(MaxStamina, CurrentStamina, settings.staminaMaxChangePolicy);
             SubscribeResourceMaxChange(TotalHpTemp, CurrentHpTemp, CharacterConstants.ResourceMaxChangePolicy.KeepCurrent);
         }
 

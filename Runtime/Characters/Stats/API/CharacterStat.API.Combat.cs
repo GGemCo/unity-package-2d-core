@@ -65,10 +65,10 @@ namespace GGemCo2DCore
         /// <summary>
         /// CalculateManager가 준비되지 않은 초기 타이밍에서 사용할 기본 공격 데미지 폴백을 계산합니다.
         /// </summary>
-        /// <returns>현재 TotalAtk와 크리티컬 스탯만 반영한 기본 공격 데미지입니다.</returns>
+        /// <returns>현재 ResolvedAtk와 크리티컬 스탯만 반영한 기본 공격 데미지입니다.</returns>
         private long CalculateFinalAttackFallback()
         {
-            long baseAttack = TotalAtk.Value;
+            long baseAttack = ResolvedAtk.Value;
             if (baseAttack <= 0) return 0;
 
             float finalDamage = baseAttack;
@@ -87,7 +87,7 @@ namespace GGemCo2DCore
         /// </summary>
         public float CalculateExpectedAttack()
         {
-            long baseAttack = TotalAtk.Value;
+            long baseAttack = ResolvedAtk.Value;
             if (baseAttack <= 0) return 0;
 
             float criticalChance = Mathf.Clamp01(TotalCriticalProbability.Value / 100f);

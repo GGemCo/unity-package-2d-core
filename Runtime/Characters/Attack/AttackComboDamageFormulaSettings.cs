@@ -19,7 +19,7 @@ namespace GGemCo2DCore
         [Tooltip("damage_formula 테이블에 등록된 Poly 공식 키입니다. 비어 있으면 기본 배율 공식을 사용합니다.")]
         public string formulaKey;
 
-        [Tooltip("공식에 전달할 기준 데미지입니다. 0 이하이면 공격자의 TotalAtk를 사용합니다.")]
+        [Tooltip("공식에 전달할 기준 데미지입니다. 0 이하이면 공격자의 ResolvedAtk를 사용합니다.")]
         public float baseDamage;
 
         [Tooltip("기본 공격 데미지 배율입니다. 1은 100%입니다.")]
@@ -66,7 +66,7 @@ namespace GGemCo2DCore
             if (baseDamage > 0f)
                 return baseDamage;
 
-            return attacker != null ? Math.Max(0d, attacker.TotalAtk.Value) : 0d;
+            return attacker != null ? Math.Max(0d, attacker.ResolvedAtk.Value) : 0d;
         }
 
         /// <summary>

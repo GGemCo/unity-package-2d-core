@@ -214,7 +214,7 @@ namespace GGemCo2DCore
             if (AddressableLoaderSettings.Instance == null) return;
             
             // 저장된 Item Bonus Max HP(일반/임시) 복원
-            // - PlayerData에 저장된 누적치를 Stat Provider(ItemBonusModifierProvider)에 다시 주입해야 TotalHp/TotalTempHp에 반영됩니다.
+            // - PlayerData에 저장된 누적치를 Stat Provider(ItemBonusModifierProvider)에 다시 주입해야 MaxHp/TotalHpTemp에 반영됩니다.
             // - 이 시점에 먼저 반영해두면, 아래의 startHp/startMp/startStamina 초기화가 "복원된 최대치" 기준으로 계산됩니다.
             if (_playerData != null)
             {
@@ -222,15 +222,19 @@ namespace GGemCo2DCore
                 SetItemBonusHpBonuses(_playerData.TotalItemBonusHpNormal, _playerData.TotalItemBonusHpTemp, raiseEvent: true);
             }
             
+            // 저장된 스탯 포인트 투자량을 먼저 영구 Modifier에 반영합니다.
+            // SetBaseAndGrowthStatInfos 내부 재계산 시점부터 TotalStat* 값에 포함되도록 순서를 보장합니다.
+            SetCurrentStatPointModifiersFromPlayerData(recalculate: false);
+
             CharacterBaseAttributeValues baseAttributes = _playerSettings.baseAttributes;
             CharacterGrowthStatValues growthStats = _playerSettings.stats;
 
             SetBaseAndGrowthStatInfos(baseAttributes, growthStats);
             // 시작 자원 값은 '최대치'가 아니라, 설정에 따라 별도로 초기화할 수 있다.
             // (예: HP=최대치의 50%, MP=0, Stamina=최대치의 50% 등)
-            CurrentHp.OnNext(_playerSettings.startHp.Evaluate(TotalHp.Value));
-            CurrentMp.OnNext(_playerSettings.startMp.Evaluate(TotalMp.Value));
-            CurrentStamina.OnNext(_playerSettings.startStamina.Evaluate(TotalStamina.Value));
+            CurrentHp.OnNext(_playerSettings.startHp.Evaluate(MaxHp.Value));
+            CurrentMp.OnNext(_playerSettings.startMp.Evaluate(MaxMp.Value));
+            CurrentStamina.OnNext(_playerSettings.startStamina.Evaluate(MaxStamina.Value));
             CurrentSuperArmor.OnNext(0);
 
             currentMoveStep = _playerSettings.baseAttributes.moveStep;
@@ -951,12 +955,7 @@ namespace GGemCo2DCore
             if (settings == null)
             {
                 // settings가 없으면 현재 totals로 fallback
-                return new CharacterTotals(
-                    TotalAtk.Value, TotalDef.Value, TotalHp.Value, TotalMp.Value, TotalStamina.Value,
-                    TotalSuperArmor.Value,
-                    TotalMoveSpeed.Value, TotalAttackSpeed.Value,
-                    TotalCriticalDamage.Value, TotalCriticalProbability.Value,
-                    TotalRegistFire.Value, TotalRegistCold.Value, TotalRegistLightning.Value, TotalRegistPoison.Value);
+                return CharacterTotals.FromCurrent(this);
             }
 
             var flat = new Dictionary<string, int>(8);
@@ -990,45 +989,84 @@ namespace GGemCo2DCore
         private void ApplyStatPointModifiersPreserveResources()
         {
             // 최대치 변경 시 현재값(HP/MP/Stamina)은 비율 유지
-            long oldHpMax = TotalHp.Value;
-            long oldMpMax = TotalMp.Value;
-            long oldStaminaMax = TotalStamina.Value;
+            long oldHpMax = MaxHp.Value;
+            long oldMpMax = MaxMp.Value;
+            long oldStaminaMax = MaxStamina.Value;
 
             long oldHpCur = CurrentHp.Value;
             long oldMpCur = CurrentMp.Value;
             long oldStaminaCur = CurrentStamina.Value;
 
-            var settings = _playerSettings != null ? _playerSettings : AddressableLoaderSettings.Instance.playerSettings;
-            if (settings == null) return;
+            using (SuppressAutoResourceSync())
+            {
+                SetCurrentStatPointModifiersFromPlayerData(recalculate: true);
+            }
 
-            var flat = new Dictionary<string, int>(8);
-            var percent = new Dictionary<string, float>(8);
+            // 비율 유지(0/0 케이스는 무시)
+            if (oldHpMax > 0 && MaxHp.Value > 0)
+            {
+                CurrentHp.OnNext(PreserveRatio(oldHpCur, oldHpMax, MaxHp.Value));
+            }
+            if (oldMpMax > 0 && MaxMp.Value > 0)
+            {
+                CurrentMp.OnNext(PreserveRatio(oldMpCur, oldMpMax, MaxMp.Value));
+            }
+            if (oldStaminaMax > 0 && MaxStamina.Value > 0)
+            {
+                CurrentStamina.OnNext(PreserveRatio(oldStaminaCur, oldStaminaMax, MaxStamina.Value));
+            }
+        }
+
+        /// <summary>
+        /// 현재 <see cref="PlayerData"/>에 저장된 스탯 포인트 투자량을 영구 Modifier로 설정합니다.
+        /// </summary>
+        /// <param name="recalculate">true이면 설정 직후 전체 스탯을 재계산합니다.</param>
+        /// <remarks>
+        /// 저장 데이터의 InvestedStatPoint* 값은 STAT_* 키로 변환됩니다.
+        /// 따라서 계산 결과는 TotalStat*에 반영되고, Resolved*/Max* 파생값은 TotalBase* + TotalStat* 규칙으로 갱신됩니다.
+        /// </remarks>
+        private void SetCurrentStatPointModifiersFromPlayerData(bool recalculate)
+        {
+            if (!TryBuildCurrentStatPointModifierBuckets(out var flat, out var percent))
+            {
+                // PlayerData 또는 PlayerSettings가 아직 준비되지 않은 경우에는 기존 값을 유지합니다.
+                // 저장 복원 흐름에서 일시적으로 settings가 null인 상황에 modifier를 비우면 TotalStat*가 잘못 낮아질 수 있습니다.
+                if (recalculate)
+                    RecalculateStats();
+                return;
+            }
+
+            SetStatPointModifiers(flat, percent);
+
+            if (recalculate)
+                RecalculateStats();
+        }
+
+        /// <summary>
+        /// 현재 저장 데이터 기준의 스탯 포인트 Modifier 버킷을 생성합니다.
+        /// </summary>
+        /// <param name="flat">STAT_* 키별 Flat 보정값 버킷입니다.</param>
+        /// <param name="percent">STAT_* 키별 Percent 보정값 버킷입니다.</param>
+        /// <returns>PlayerData와 PlayerSettings를 모두 찾으면 true를 반환합니다.</returns>
+        private bool TryBuildCurrentStatPointModifierBuckets(out Dictionary<string, int> flat, out Dictionary<string, float> percent)
+        {
+            flat = new Dictionary<string, int>(8);
+            percent = new Dictionary<string, float>(8);
+
+            if (_playerData == null)
+                return false;
+
+            var loader = AddressableLoaderSettings.Instance;
+            var settings = _playerSettings != null ? _playerSettings : (loader != null ? loader.playerSettings : null);
+            if (settings == null)
+                return false;
 
             AddStatPointBonus(settings.statPointAtk, _playerData.InvestedStatPointAtk, ConfigCommon.StatusStatAtk, flat, percent);
             AddStatPointBonus(settings.statPointDef, _playerData.InvestedStatPointDef, ConfigCommon.StatusStatDef, flat, percent);
             AddStatPointBonus(settings.statPointHp, _playerData.InvestedStatPointHp, ConfigCommon.StatusStatHp, flat, percent);
             AddStatPointBonus(settings.statPointMp, _playerData.InvestedStatPointMp, ConfigCommon.StatusStatMp, flat, percent);
             AddStatPointBonus(settings.statPointStamina, _playerData.InvestedStatPointStamina, ConfigCommon.StatusStatStamina, flat, percent);
-
-            using (SuppressAutoResourceSync())
-            {
-                SetStatPointModifiers(flat, percent);
-                RecalculateStats();
-            }
-
-            // 비율 유지(0/0 케이스는 무시)
-            if (oldHpMax > 0 && TotalHp.Value > 0)
-            {
-                CurrentHp.OnNext(PreserveRatio(oldHpCur, oldHpMax, TotalHp.Value));
-            }
-            if (oldMpMax > 0 && TotalMp.Value > 0)
-            {
-                CurrentMp.OnNext(PreserveRatio(oldMpCur, oldMpMax, TotalMp.Value));
-            }
-            if (oldStaminaMax > 0 && TotalStamina.Value > 0)
-            {
-                CurrentStamina.OnNext(PreserveRatio(oldStaminaCur, oldStaminaMax, TotalStamina.Value));
-            }
+            return true;
         }
 
         private static long PreserveRatio(long current, long oldMax, long newMax)

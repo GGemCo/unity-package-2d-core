@@ -97,7 +97,7 @@ namespace GGemCo2DCore
                 .Subscribe(SetSliderHp)
                 .AddTo(_monster);
 
-            _monster.TotalHp
+            _monster.MaxHp
                 .Subscribe(_ => SetSliderHp(_monster.CurrentHp.Value))
                 .AddTo(_monster);
 
@@ -184,7 +184,7 @@ namespace GGemCo2DCore
 
             if (_uiWindowBattleHudMonster != null)
             {
-                _uiWindowBattleHudMonster.SetSliderHp(value, _monster.TotalHp.Value);
+                _uiWindowBattleHudMonster.SetSliderHp(value, _monster.MaxHp.Value);
             }
 
             UpdateDebugHpText(value);
@@ -204,7 +204,7 @@ namespace GGemCo2DCore
                 return;
             }
 
-            _uiWindowBattleHudMonster.SetSliderHp(_monster.CurrentHp.Value, _monster.TotalHp.Value);
+            _uiWindowBattleHudMonster.SetSliderHp(_monster.CurrentHp.Value, _monster.MaxHp.Value);
         }
 
         /// <summary>
@@ -421,7 +421,7 @@ namespace GGemCo2DCore
         {
             if (_monsterDebugHpText == null) return;
             MonsterDebugHpText hpText = _monsterDebugHpText.GetComponent<MonsterDebugHpText>();
-            hpText.SetValue(currentHp, _monster.TotalHp.Value);
+            hpText.SetValue(currentHp, _monster.MaxHp.Value);
         }
 
         public void StartFadeIn()

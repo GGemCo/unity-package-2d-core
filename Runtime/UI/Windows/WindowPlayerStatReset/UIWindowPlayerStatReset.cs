@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
@@ -425,9 +425,9 @@ namespace GGemCo2DCore
         {
             return idx switch
             {
-                CharacterConstants.IndexPlayerInfo.Atk => totals.StatAtk,
-                CharacterConstants.IndexPlayerInfo.Def => totals.StatDef,
-                CharacterConstants.IndexPlayerInfo.Stamina => totals.StatStamina,
+                CharacterConstants.IndexPlayerInfo.Atk => totals.TotalStatAtk,
+                CharacterConstants.IndexPlayerInfo.Def => totals.TotalStatDef,
+                CharacterConstants.IndexPlayerInfo.Stamina => totals.TotalStatStamina,
                 _ => 0
             };
         }
@@ -439,9 +439,9 @@ namespace GGemCo2DCore
             // IndexPlayerInfo 전체를 커버하도록 구성합니다.
             long totalValue = idx switch
             {
-                CharacterConstants.IndexPlayerInfo.Atk => player.StatAtk,
-                CharacterConstants.IndexPlayerInfo.Def => player.StatDef,
-                CharacterConstants.IndexPlayerInfo.Stamina => player.StatStamina,
+                CharacterConstants.IndexPlayerInfo.Atk => player.TotalStatAtk.Value,
+                CharacterConstants.IndexPlayerInfo.Def => player.TotalStatDef.Value,
+                CharacterConstants.IndexPlayerInfo.Stamina => player.TotalStatStamina.Value,
                 _ => 0
             };
 
@@ -464,9 +464,9 @@ namespace GGemCo2DCore
             // IndexPlayerInfo 전체를 커버하도록 구성합니다.
             long totalValue = idx switch
             {
-                CharacterConstants.IndexPlayerInfo.Atk => player.TotalAtk.Value,
-                CharacterConstants.IndexPlayerInfo.Def => player.TotalDef.Value,
-                CharacterConstants.IndexPlayerInfo.Stamina => player.TotalStamina.Value,
+                CharacterConstants.IndexPlayerInfo.Atk => player.ResolvedAtk.Value,
+                CharacterConstants.IndexPlayerInfo.Def => player.ResolvedDef.Value,
+                CharacterConstants.IndexPlayerInfo.Stamina => player.MaxStamina.Value,
                 _ => 0
             };
 
