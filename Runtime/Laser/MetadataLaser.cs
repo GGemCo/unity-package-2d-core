@@ -21,6 +21,12 @@ namespace GGemCo2DCore
         public readonly Vector2 TargetPositionOverride;
         public readonly ConfigCommon.DamageType DamageType;
         public readonly long Damage;
+
+        /// <summary>
+        /// 실제 레이저 적중 대상 기준으로 데미지를 다시 계산하기 위한 공식 입력 스냅샷입니다.
+        /// </summary>
+        public readonly DamageFormulaRuntimeContext DamageFormulaContext;
+
         public readonly int SkillUid;
         public readonly int AttackId;
         public readonly bool AllowSkillChainOnConfirmedDamage;
@@ -66,7 +72,7 @@ namespace GGemCo2DCore
         /// </summary>
         /// <param name="uid">laser 테이블 UID입니다.</param>
         /// <param name="damageType">적용할 데미지 타입입니다.</param>
-        /// <param name="damage">적용할 데미지 값입니다.</param>
+        /// <param name="damage">적용할 데미지 값입니다. 공식 컨텍스트가 없을 때 fallback 값으로 사용합니다.</param>
         /// <param name="target">고정 타겟 캐릭터입니다.</param>
         /// <param name="owner">레이저 시전자입니다.</param>
         /// <param name="scaleMultiplier">비주얼 스케일 배율입니다.</param>
@@ -102,6 +108,7 @@ namespace GGemCo2DCore
         /// <param name="startPositionOverride">시작점 오버라이드 값입니다.</param>
         /// <param name="startPointUpdateMode">시작점 갱신 방식입니다.</param>
         /// <param name="useCasterFlipStartOffsetX">시전자 좌우 반전 상태에 따라 시작점 오프셋 X 값을 반전할지 여부입니다.</param>
+        /// <param name="damageFormulaContext">실제 적중 대상 기준 재계산에 사용할 공식 입력 스냅샷입니다.</param>
         public MetadataLaser(
             int uid,
             ConfigCommon.DamageType damageType,
@@ -140,11 +147,13 @@ namespace GGemCo2DCore
             LaserConstants.StartPositionOverrideMode startPositionOverrideMode = LaserConstants.StartPositionOverrideMode.UseLaserTable,
             Vector2 startPositionOverride = default,
             LaserConstants.StartPointUpdateMode startPointUpdateMode = LaserConstants.StartPointUpdateMode.FollowOwner,
-            bool useCasterFlipStartOffsetX = false)
+            bool useCasterFlipStartOffsetX = false,
+            DamageFormulaRuntimeContext damageFormulaContext = null)
         {
             Uid = uid;
             DamageType = damageType;
             Damage = damage;
+            DamageFormulaContext = damageFormulaContext;
             Target = target;
             Owner = owner;
             ScaleMultiplier = Mathf.Max(0.01f, scaleMultiplier);

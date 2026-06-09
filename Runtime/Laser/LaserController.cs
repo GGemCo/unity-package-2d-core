@@ -44,6 +44,7 @@ namespace GGemCo2DCore
                     uid: metadataLaser.Uid,
                     damageType: metadataLaser.DamageType,
                     damage: metadataLaser.Damage,
+                    damageFormulaContext: metadataLaser.DamageFormulaContext,
                     target: metadataLaser.Target,
                     owner: _character,
                     scaleMultiplier: metadataLaser.ScaleMultiplier,

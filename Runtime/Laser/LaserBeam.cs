@@ -598,7 +598,9 @@ namespace GGemCo2DCore
 
             _visual?.OnHit(new ProjectileVisualHitContext(hitPosition, _owner, hitCollider));
 
-            bool damageApplied = _damage > 0L;
+            long resolvedDamage = ResolveDamageOnHit(target);
+            ConfigCommon.DamageType resolvedDamageType = ResolveDamageTypeOnHit();
+            bool damageApplied = resolvedDamage > 0L;
             int crowdControlUid = ResolveOnHitCrowdControlUid(
                 _runtime != null ? _runtime.OnHitCrowdControls : null,
                 damageApplied,
@@ -610,9 +612,9 @@ namespace GGemCo2DCore
 
             MetadataDamage metadataDamage = new MetadataDamage
             {
-                damage = _damage,
+                damage = resolvedDamage,
                 attacker = _owner ? _owner.gameObject : gameObject,
-                damageType = _damageType,
+                damageType = resolvedDamageType,
                 crowdControlUid = crowdControlUid,
                 SkillUid = _skillUid,
                 AttackId = _attackId,
@@ -626,6 +628,59 @@ namespace GGemCo2DCore
             };
 
             target.TakeDamage(metadataDamage);
+        }
+
+        /// <summary>
+        /// 레이저가 실제 대상에 적중한 시점에 대상 기준 데미지를 계산합니다.
+        /// </summary>
+        /// <remarks>
+        /// 레이저는 Raycast 결과에 따라 발사 시점의 락온 대상과 실제 피격 대상이 달라질 수 있습니다.
+        /// 공식 컨텍스트가 있으면 실제 target을 DamageFormulaRequest.Target으로 전달해 대상별 레벨, 방어력, 스탯을 반영합니다.
+        /// </remarks>
+        /// <param name="target">실제 피격 대상 캐릭터입니다.</param>
+        /// <returns>저항/가드 적용 전의 공격 데미지입니다.</returns>
+        private long ResolveDamageOnHit(CharacterBase target)
+        {
+            DamageFormulaRuntimeContext context = _runtime != null ? _runtime.DamageFormulaContext : null;
+            if (context == null)
+            {
+                return _damage;
+            }
+
+            CalculateManager calculateManager = CalculateManager.GetActive();
+            if (calculateManager == null)
+            {
+                return _damage;
+            }
+
+            var request = new DamageFormulaRequest(
+                _owner,
+                target,
+                context.FormulaKey,
+                context.BaseDamage,
+                context.SkillDamageRate,
+                context.EventMultiplier,
+                context.OptionMultiplier,
+                context.BuffRate,
+                context.DamageType,
+                context.RollCritical);
+
+            return calculateManager.CalculateSkillDamage(request);
+        }
+
+        /// <summary>
+        /// 실제 적중 시점에 사용할 데미지 타입을 반환합니다.
+        /// </summary>
+        /// <returns>공식 컨텍스트의 데미지 타입이 유효하면 해당 값을, 아니면 레이저 메타데이터의 데미지 타입을 반환합니다.</returns>
+        private ConfigCommon.DamageType ResolveDamageTypeOnHit()
+        {
+            DamageFormulaRuntimeContext context = _runtime != null ? _runtime.DamageFormulaContext : null;
+            if (context != null && context.DamageType != ConfigCommon.DamageType.None)
+            {
+                return context.DamageType;
+            }
+
+            return _damageType;
         }
 
         /// <summary>
