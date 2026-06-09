@@ -8,7 +8,7 @@ namespace GGemCo2DCore
     /// 런타임 전용 Temp HP(보호막/임시 하트) 최대치를 source key 단위로 관리하는 Provider입니다.
     /// - 저장하지 않습니다.
     /// - 같은 source key가 다시 설정되면 누적하지 않고 해당 값으로 교체합니다.
-    /// - CharacterStat에서는 Current 값만 별도로 관리하고, 이 Provider는 최종 Temp HP 최대치 계산에만 참여합니다.
+    /// - CharacterStat에서는 Current 값만 별도로 관리하고, 이 Provider는 BASE_HP_TEMP 기반 최종 Temp HP 최대치 계산에만 참여합니다.
     /// </summary>
     public sealed class RuntimeTempHpModifierProvider : IStatModifierProvider
     {
@@ -20,7 +20,7 @@ namespace GGemCo2DCore
 
         public event Action Changed;
 
-        public long GetHpBonusTemp() => GetFlatAsLong(ConfigCommon.StatusStatHpTemp);
+        public long GetHpBonusTemp() => GetFlatAsLong(ConfigCommon.BaseStatHpTemp);
 
         public void SetHpBonusTempBySource(int sourceKey, long value, bool raiseEvent = true)
         {
@@ -78,7 +78,7 @@ namespace GGemCo2DCore
                 }
             }
 
-            _bucket.SetFlat(ConfigCommon.StatusStatHpTemp, ClampToIntNonNegative(totalTempHp));
+            _bucket.SetFlat(ConfigCommon.BaseStatHpTemp, ClampToIntNonNegative(totalTempHp));
         }
 
         private long GetFlatAsLong(string statKey)

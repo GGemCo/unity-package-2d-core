@@ -71,10 +71,24 @@ namespace GGemCo2DCore
         public const string StatusStatDef = "STAT_DEF";
         public const string StatusStatHp = "STAT_HP";
         /// <summary>
-        /// 임시(Temporary) 최대 HP(추가 하트/보호막 등) 스탯 키
-        /// - 기본값(Base)은 0이며, Provider를 통해서만 증가합니다.
+        /// 임시(Temporary) 최대 HP(추가 하트/보호막 등)의 Base 계열 스탯 키입니다.
+        /// - 일반 HP의 <see cref="BaseStatHp"/>와 합산하지 않고, <c>TotalHpTemp</c> 계산에만 사용합니다.
+        /// - 아이템, 패시브, 런타임 보호막 Provider가 이 키를 통해 보호막 하트 최대치를 증가시킵니다.
         /// </summary>
-        public const string StatusStatHpTemp = "STAT_HP_TEMP";
+        public const string BaseStatHpTemp = "BASE_HP_TEMP";
+
+        /// <summary>
+        /// 기존 STAT_HP_TEMP 데이터와 코드 참조를 위한 마이그레이션 호환 키입니다.
+        /// - 신규 데이터는 <see cref="BaseStatHpTemp"/>를 사용해야 합니다.
+        /// </summary>
+        public const string LegacyStatusStatHpTemp = "STAT_HP_TEMP";
+
+        /// <summary>
+        /// 임시 HP 스탯 키의 이전 이름입니다.
+        /// - 컴파일 호환을 위해 유지하되, 실제 값은 <see cref="BaseStatHpTemp"/>로 연결합니다.
+        /// </summary>
+        [System.Obsolete("STAT_HP_TEMP는 BASE_HP_TEMP로 변경되었습니다. 신규 코드는 BaseStatHpTemp를 사용해주세요.")]
+        public const string StatusStatHpTemp = BaseStatHpTemp;
         public const string StatusStatMp = "STAT_MP";
         public const string StatusStatStamina = "STAT_STAMINA";
 
@@ -83,16 +97,36 @@ namespace GGemCo2DCore
         /// </summary>
         /// <param name="statId">확인할 스탯 ID입니다.</param>
         /// <returns>BASE_* 계열이면 true입니다.</returns>
-        public static bool IsBaseStatId(string statId) =>
-            !string.IsNullOrWhiteSpace(statId) && statId.StartsWith("BASE_", System.StringComparison.Ordinal);
+        public static bool IsBaseStatId(string statId)
+        {
+            string normalized = NormalizeStatId(statId);
+            return !string.IsNullOrWhiteSpace(normalized) && normalized.StartsWith("BASE_", System.StringComparison.Ordinal);
+        }
 
         /// <summary>
         /// 스탯 ID가 STAT_* 계열 성장/런타임 항목인지 확인합니다.
         /// </summary>
         /// <param name="statId">확인할 스탯 ID입니다.</param>
         /// <returns>STAT_* 계열이면 true입니다.</returns>
-        public static bool IsStatusStatId(string statId) =>
-            !string.IsNullOrWhiteSpace(statId) && statId.StartsWith("STAT_", System.StringComparison.Ordinal);
+        public static bool IsStatusStatId(string statId)
+        {
+            string normalized = NormalizeStatId(statId);
+            return !string.IsNullOrWhiteSpace(normalized) && normalized.StartsWith("STAT_", System.StringComparison.Ordinal);
+        }
+
+        /// <summary>
+        /// 스탯 ID를 현재 런타임에서 사용하는 표준 ID로 정규화합니다.
+        /// </summary>
+        /// <param name="statId">정규화할 스탯 ID입니다.</param>
+        /// <returns>마이그레이션 키가 있으면 현재 표준 ID를, 그렇지 않으면 trim 처리된 원본 ID를 반환합니다.</returns>
+        public static string NormalizeStatId(string statId)
+        {
+            if (string.IsNullOrWhiteSpace(statId)) return string.Empty;
+
+            string normalized = statId.Trim();
+            if (normalized == LegacyStatusStatHpTemp) return BaseStatHpTemp;
+            return normalized;
+        }
 
         /// <summary>
         /// stat 테이블의 Group 컬럼이 비어 있을 때, ID prefix 기준으로 기본 분류를 추론합니다.
@@ -102,10 +136,23 @@ namespace GGemCo2DCore
         public static StatGroup ResolveStatGroupById(string statId)
         {
             if (string.IsNullOrWhiteSpace(statId)) return StatGroup.None;
-            if (statId == StatusStatHpTemp) return StatGroup.Runtime;
+            statId = NormalizeStatId(statId);
+            if (IsHpTempStatId(statId)) return StatGroup.Base;
             if (IsBaseStatId(statId)) return StatGroup.Base;
             if (IsStatusStatId(statId)) return StatGroup.Growth;
             return StatGroup.None;
+        }
+
+        /// <summary>
+        /// 임시 HP(보호막 하트) 최대치에 사용되는 스탯 키인지 확인합니다.
+        /// </summary>
+        /// <param name="statId">확인할 스탯 ID입니다.</param>
+        /// <returns><see cref="BaseStatHpTemp"/> 또는 마이그레이션 호환 키이면 true입니다.</returns>
+        public static bool IsHpTempStatId(string statId)
+        {
+            if (string.IsNullOrWhiteSpace(statId)) return false;
+            string normalized = NormalizeStatId(statId);
+            return normalized == BaseStatHpTemp;
         }
 
         public const string StatusAffectId = "AFFECT_UID";

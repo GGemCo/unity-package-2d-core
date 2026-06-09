@@ -69,7 +69,7 @@ namespace GGemCo2DCore
                 _owner._totalStatMp = StatCalculator.CalculateFinal(ConfigCommon.StatusStatMp, _owner.StatMp, _owner._allProviders);
                 _owner._totalStatStamina = StatCalculator.CalculateFinal(ConfigCommon.StatusStatStamina, _owner.StatStamina, _owner._allProviders);
                 _owner._maxHp = _owner.CalculateMaxHpValue(_owner._totalBaseHp, _owner._totalStatHp);
-                _owner._totalHpTemp = StatCalculator.CalculateFinal(ConfigCommon.StatusStatHpTemp, 0, _owner._allProviders);
+                _owner._totalHpTemp = StatCalculator.CalculateFinal(ConfigCommon.BaseStatHpTemp, 0, _owner._allProviders);
                 _owner._maxMp = _owner.CalculateMaxMpValue(_owner._totalBaseMp, _owner._totalStatMp);
                 _owner._maxStamina = _owner.CalculateMaxStaminaValue(_owner._totalBaseStamina, _owner._totalStatStamina);
                 _owner._totalSuperArmor = (int)StatCalculator.CalculateFinal(ConfigCommon.BaseStatSuperArmor, _owner.BaseSuperArmor, _owner._allProviders);

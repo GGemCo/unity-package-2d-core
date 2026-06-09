@@ -53,6 +53,7 @@ namespace GGemCo2DCore
         /// </remarks>
         public void SetFlat(string statKey, int value)
         {
+            statKey = ConfigCommon.NormalizeStatId(statKey);
             if (string.IsNullOrEmpty(statKey)) return;
 
             if (value == 0)
@@ -71,6 +72,7 @@ namespace GGemCo2DCore
         /// </remarks>
         public void SetPercent(string statKey, float value)
         {
+            statKey = ConfigCommon.NormalizeStatId(statKey);
             if (string.IsNullOrEmpty(statKey)) return;
 
             if (Mathf.Approximately(value, 0f))
@@ -90,6 +92,7 @@ namespace GGemCo2DCore
         /// </remarks>
         public void AddFlat(string statKey, int delta)
         {
+            statKey = ConfigCommon.NormalizeStatId(statKey);
             if (string.IsNullOrEmpty(statKey) || delta == 0) return;
 
             _flat.TryGetValue(statKey, out var v);
@@ -112,6 +115,7 @@ namespace GGemCo2DCore
         /// </remarks>
         public void AddPercent(string statKey, float delta)
         {
+            statKey = ConfigCommon.NormalizeStatId(statKey);
             if (string.IsNullOrEmpty(statKey) || Mathf.Approximately(delta, 0f)) return;
 
             _percent.TryGetValue(statKey, out var v);
@@ -130,6 +134,7 @@ namespace GGemCo2DCore
         /// <returns>존재하면 해당 값, 없으면 0입니다.</returns>
         public int GetFlatOrZero(string statKey)
         {
+            statKey = ConfigCommon.NormalizeStatId(statKey);
             if (string.IsNullOrEmpty(statKey)) return 0;
             return _flat.GetValueOrDefault(statKey, 0);
         }
@@ -141,6 +146,7 @@ namespace GGemCo2DCore
         /// <returns>존재하면 해당 값, 없으면 0f입니다.</returns>
         public float GetPercentOrZero(string statKey)
         {
+            statKey = ConfigCommon.NormalizeStatId(statKey);
             if (string.IsNullOrEmpty(statKey)) return 0f;
             return _percent.GetValueOrDefault(statKey, 0f);
         }

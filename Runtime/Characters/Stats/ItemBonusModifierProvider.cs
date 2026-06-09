@@ -8,6 +8,7 @@ namespace GGemCo2DCore
     /// 아이템 사용으로 인해 증가하는 modifier Provider입니다.
     /// - 저장/로드 대상(플레이어 기준)이며, 런타임에 누적될 수 있습니다.
     /// - 현재는 HP(일반/임시) 확장을 우선 지원합니다.
+    /// - 임시 HP 최대치는 BASE_HP_TEMP 키에 누적하여 일반 MaxHp 계산과 분리합니다.
     /// </summary>
     public sealed class ItemBonusModifierProvider : IStatModifierProvider
     {
@@ -25,14 +26,14 @@ namespace GGemCo2DCore
         {
             // 다른 스탯 키가 이후 확장될 수 있으므로, 현재는 HP 관련 키만 선택적으로 갱신합니다.
             SetFlatInternal(ConfigCommon.StatusStatHp, normalHpDelta);
-            SetFlatInternal(ConfigCommon.StatusStatHpTemp, tempHpDelta);
+            SetFlatInternal(ConfigCommon.BaseStatHpTemp, tempHpDelta);
 
             if (raiseEvent)
                 Changed?.Invoke();
         }
 
         public long GetHpBonusNormal() => GetFlatAsLong(ConfigCommon.StatusStatHp);
-        public long GetHpBonusTemp() => GetFlatAsLong(ConfigCommon.StatusStatHpTemp);
+        public long GetHpBonusTemp() => GetFlatAsLong(ConfigCommon.BaseStatHpTemp);
 
         public void AddHpBonusNormal(long add, bool raiseEvent = true)
         {
@@ -50,7 +51,7 @@ namespace GGemCo2DCore
         public void AddHpBonusTemp(long add, bool raiseEvent = true)
         {
             if (add <= 0) return;
-            AddFlatInternal(ConfigCommon.StatusStatHpTemp, add);
+            AddFlatInternal(ConfigCommon.BaseStatHpTemp, add);
             // Changed 는 CharacterStat.OnProviderChanged 호출 
             // TotalHpTemp 가 업데이트 된다.
             if (raiseEvent) Changed?.Invoke();
@@ -58,7 +59,7 @@ namespace GGemCo2DCore
         public void SetHpBonusTemp(long value, bool raiseEvent = true)
         {
             if (value <= 0) return;
-            SetFlatInternal(ConfigCommon.StatusStatHpTemp, value);
+            SetFlatInternal(ConfigCommon.BaseStatHpTemp, value);
             // Changed 는 CharacterStat.OnProviderChanged 호출 
             // TotalHpTemp 가 업데이트 된다.
             if (raiseEvent) Changed?.Invoke();

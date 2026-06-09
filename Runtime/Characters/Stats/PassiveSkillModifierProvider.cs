@@ -45,7 +45,12 @@ namespace GGemCo2DCore
         public event Action Changed;
 
         public long GetHpBonusNormal() => GetFlatAsLong(ConfigCommon.StatusStatHp);
-        public long GetHpBonusTemp() => GetFlatAsLong(ConfigCommon.StatusStatHpTemp);
+
+        /// <summary>
+        /// 패시브 스킬로 증가한 보호막/임시 하트 최대치를 반환합니다.
+        /// </summary>
+        /// <returns>BASE_HP_TEMP에 누적된 Flat 증가량입니다.</returns>
+        public long GetHpBonusTemp() => GetFlatAsLong(ConfigCommon.BaseStatHpTemp);
         
         /// <summary>
         /// 패시브 스킬 modifier를 “전체 재구성” 방식으로 설정합니다.
