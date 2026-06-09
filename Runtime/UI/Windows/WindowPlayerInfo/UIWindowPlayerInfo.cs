@@ -297,7 +297,7 @@ namespace GGemCo2DCore
 
             // 스탯 포인트 투자 대상 라인은 메인 값(textValue)에 Stat* 총합이 아니라
             // 현재 투자 포인트와 드래프트 투자 포인트를 표시합니다.
-            // 실제 전투 수치 변화는 BaseText에서 Base* 현재/미리보기 값으로 분리해 보여줍니다.
+            // 실제 스탯 수치 변화는 보조 값 영역에서 TotalStat* 현재/미리보기 값으로 분리해 보여줍니다.
             long currentValue = isTarget ? lineData.invested : lineData.displayValue;
             long previewValue = GetPreviewDisplayValue(index, projectedTotals, hasPreview, isTarget, draftInvested, lineData.displayValue);
 
@@ -487,7 +487,7 @@ namespace GGemCo2DCore
                 return currentDisplayValue;
 
             // 스탯 포인트 투자 대상은 메인 값에 투자 포인트 자체를 표시합니다.
-            // Base* 보정 결과는 BaseText가 담당하므로 여기서는 드래프트 투자량만 반환합니다.
+            // TotalStat* 보정 결과는 보조 값 영역이 담당하므로 여기서는 드래프트 투자량만 반환합니다.
             if (isTarget)
                 return draftInvested;
 
@@ -523,20 +523,20 @@ namespace GGemCo2DCore
         }
 
         /// <summary>
-        /// 스탯 포인트 투자 대상 라인에서 BaseText에 표시할 Base* 값을 조회합니다.
+        /// 스탯 포인트 투자 대상 라인에서 보조 값 영역에 표시할 TotalStat* 값을 조회합니다.
         /// </summary>
         /// <param name="idx">표시할 PlayerInfo 스탯 인덱스입니다.</param>
         /// <param name="totals">조회할 총합 스냅샷입니다.</param>
-        /// <returns>BaseText에 표시할 Base* 값입니다.</returns>
+        /// <returns>보조 값 영역에 표시할 TotalStat* 값입니다.</returns>
         private static long GetBaseValueByIndex(CharacterConstants.IndexPlayerInfo idx, CharacterStat.CharacterTotals totals)
         {
             return idx switch
             {
-                CharacterConstants.IndexPlayerInfo.Atk => totals.BaseAtk,
-                CharacterConstants.IndexPlayerInfo.Def => totals.BaseDef,
-                CharacterConstants.IndexPlayerInfo.Hp => totals.BaseHp,
-                CharacterConstants.IndexPlayerInfo.Mp => totals.BaseMp,
-                CharacterConstants.IndexPlayerInfo.Stamina => totals.BaseStamina,
+                CharacterConstants.IndexPlayerInfo.Atk => totals.StatAtk,
+                CharacterConstants.IndexPlayerInfo.Def => totals.StatDef,
+                CharacterConstants.IndexPlayerInfo.Hp => totals.StatHp,
+                CharacterConstants.IndexPlayerInfo.Mp => totals.StatMp,
+                CharacterConstants.IndexPlayerInfo.Stamina => totals.StatStamina,
                 _ => 0
             };
         }
@@ -546,7 +546,7 @@ namespace GGemCo2DCore
         /// </summary>
         /// <param name="idx">표시할 PlayerInfo 스탯 인덱스입니다.</param>
         /// <param name="player">값을 조회할 플레이어입니다.</param>
-        /// <returns>비투자 스탯 표시값, BaseText 표시값, 현재 투자 포인트입니다.</returns>
+        /// <returns>비투자 스탯 표시값, 보조 값 표시값, 현재 투자 포인트입니다.</returns>
         private static (long displayValue, long baseValue, int invested) GetStatPointLineData(CharacterConstants.IndexPlayerInfo idx, Player player)
         {
             // displayValue는 비투자 스탯의 메인 표시값으로 사용합니다.
@@ -568,14 +568,14 @@ namespace GGemCo2DCore
                 _ => 0
             };
 
-            // baseValue는 스탯 포인트가 실제로 보정하는 Base* 표시용 값입니다.
+            // baseValue는 스탯 포인트가 실제로 보정하는 TotalStat* 표시용 값입니다.
             long baseValue = idx switch
             {
-                CharacterConstants.IndexPlayerInfo.Atk => player.TotalBaseAtk.Value,
-                CharacterConstants.IndexPlayerInfo.Def => player.TotalBaseDef.Value,
-                CharacterConstants.IndexPlayerInfo.Hp => player.TotalBaseHp.Value,
-                CharacterConstants.IndexPlayerInfo.Mp => player.TotalBaseMp.Value,
-                CharacterConstants.IndexPlayerInfo.Stamina => player.TotalBaseStamina.Value,
+                CharacterConstants.IndexPlayerInfo.Atk => player.TotalStatAtk.Value,
+                CharacterConstants.IndexPlayerInfo.Def => player.TotalStatDef.Value,
+                CharacterConstants.IndexPlayerInfo.Hp => player.TotalStatHp.Value,
+                CharacterConstants.IndexPlayerInfo.Mp => player.TotalStatMp.Value,
+                CharacterConstants.IndexPlayerInfo.Stamina => player.TotalStatStamina.Value,
                 _ => 0
             };
 
@@ -611,14 +611,14 @@ namespace GGemCo2DCore
                 CharacterConstants.IndexPlayerInfo.Hp => ConfigCommon.StatusStatHp,
                 CharacterConstants.IndexPlayerInfo.Mp => ConfigCommon.StatusStatMp,
                 CharacterConstants.IndexPlayerInfo.Stamina => ConfigCommon.StatusStatStamina,
-                CharacterConstants.IndexPlayerInfo.MoveSpeed => ConfigCommon.StatusStatMoveSpeed,
-                CharacterConstants.IndexPlayerInfo.AttackSpeed => ConfigCommon.StatusStatAttackSpeed,
-                CharacterConstants.IndexPlayerInfo.CriticalDamage => ConfigCommon.StatusStatCriticalDamage,
-                CharacterConstants.IndexPlayerInfo.CriticalProbability => ConfigCommon.StatusStatCriticalProbability,
-                CharacterConstants.IndexPlayerInfo.RegistFire => ConfigCommon.StatusStatResistanceFire,
-                CharacterConstants.IndexPlayerInfo.RegistCold => ConfigCommon.StatusStatResistanceCold,
-                CharacterConstants.IndexPlayerInfo.RegistLightning => ConfigCommon.StatusStatResistanceLightning,
-                CharacterConstants.IndexPlayerInfo.RegistPoison => ConfigCommon.StatusStatResistancePoison,
+                CharacterConstants.IndexPlayerInfo.MoveSpeed => ConfigCommon.BaseStatMoveSpeed,
+                CharacterConstants.IndexPlayerInfo.AttackSpeed => ConfigCommon.BaseStatAttackSpeed,
+                CharacterConstants.IndexPlayerInfo.CriticalDamage => ConfigCommon.BaseStatCriticalDamage,
+                CharacterConstants.IndexPlayerInfo.CriticalProbability => ConfigCommon.BaseStatCriticalProbability,
+                CharacterConstants.IndexPlayerInfo.RegistFire => ConfigCommon.BaseStatRegistFire,
+                CharacterConstants.IndexPlayerInfo.RegistCold => ConfigCommon.BaseStatRegistCold,
+                CharacterConstants.IndexPlayerInfo.RegistLightning => ConfigCommon.BaseStatRegistLightning,
+                CharacterConstants.IndexPlayerInfo.RegistPoison => ConfigCommon.BaseStatRegistPoison,
                 _ => string.Empty
             };
 

@@ -524,14 +524,14 @@ namespace GGemCo2DCore
                 CharacterConstants.IndexPlayerInfo.Hp => ConfigCommon.StatusStatHp,
                 CharacterConstants.IndexPlayerInfo.Mp => ConfigCommon.StatusStatMp,
                 CharacterConstants.IndexPlayerInfo.Stamina => ConfigCommon.StatusStatStamina,
-                CharacterConstants.IndexPlayerInfo.MoveSpeed => ConfigCommon.StatusStatMoveSpeed,
-                CharacterConstants.IndexPlayerInfo.AttackSpeed => ConfigCommon.StatusStatAttackSpeed,
-                CharacterConstants.IndexPlayerInfo.CriticalDamage => ConfigCommon.StatusStatCriticalDamage,
-                CharacterConstants.IndexPlayerInfo.CriticalProbability => ConfigCommon.StatusStatCriticalProbability,
-                CharacterConstants.IndexPlayerInfo.RegistFire => ConfigCommon.StatusStatResistanceFire,
-                CharacterConstants.IndexPlayerInfo.RegistCold => ConfigCommon.StatusStatResistanceCold,
-                CharacterConstants.IndexPlayerInfo.RegistLightning => ConfigCommon.StatusStatResistanceLightning,
-                CharacterConstants.IndexPlayerInfo.RegistPoison => ConfigCommon.StatusStatResistancePoison,
+                CharacterConstants.IndexPlayerInfo.MoveSpeed => ConfigCommon.BaseStatMoveSpeed,
+                CharacterConstants.IndexPlayerInfo.AttackSpeed => ConfigCommon.BaseStatAttackSpeed,
+                CharacterConstants.IndexPlayerInfo.CriticalDamage => ConfigCommon.BaseStatCriticalDamage,
+                CharacterConstants.IndexPlayerInfo.CriticalProbability => ConfigCommon.BaseStatCriticalProbability,
+                CharacterConstants.IndexPlayerInfo.RegistFire => ConfigCommon.BaseStatRegistFire,
+                CharacterConstants.IndexPlayerInfo.RegistCold => ConfigCommon.BaseStatRegistCold,
+                CharacterConstants.IndexPlayerInfo.RegistLightning => ConfigCommon.BaseStatRegistLightning,
+                CharacterConstants.IndexPlayerInfo.RegistPoison => ConfigCommon.BaseStatRegistPoison,
                 _ => string.Empty
             };
 

@@ -344,7 +344,7 @@ namespace GGemCo2DCore
         {
             float step = AddressableLoaderSettings.Instance != null &&
                          AddressableLoaderSettings.Instance.playerSettings != null
-                ? AddressableLoaderSettings.Instance.playerSettings.statMoveStep
+                ? AddressableLoaderSettings.Instance.playerSettings.baseAttributes.moveStep
                 : FallbackMoveStep;
 
             if (data.characterType != CharacterConstants.Type.Player)

@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Serialization;
@@ -91,30 +91,8 @@ namespace GGemCo2DCore
         public CharacterBaseAttributeValues baseAttributes;
 
         [Header("스탯 항목 시작값")]
-        [Tooltip("플레이어의 공격 스탯 시작값입니다. 스탯 포인트와 STAT_ATK 옵션이 누적됩니다.")]
-        public int statAtk;
-        [Tooltip("플레이어의 방어 스탯 시작값입니다. 스탯 포인트와 STAT_DEF 옵션이 누적됩니다.")]
-        public int statDef;
-        [Tooltip("플레이어의 HP 스탯 시작값입니다. 스탯 포인트와 STAT_HP 옵션이 누적됩니다.")]
-        public int statHp;
-        [Tooltip("플레이어의 MP 스탯 시작값입니다. 스탯 포인트와 STAT_MP 옵션이 누적됩니다.")]
-        public int statMp;
-        [Tooltip("플레이어의 스태미나 스탯 시작값입니다. 스탯 포인트와 STAT_STAMINA 옵션이 누적됩니다.")]
-        public int statStamina;
-        [Tooltip("애니메이션 1스텝당 이동 거리 (픽셀 단위)")]
-        public int statMoveStep;
-        [Tooltip("공격 속도 (100 → 1배속)")]
-        public int statAttackSpeed;
-        [Tooltip("이동 속도 (100 → 1배속)")]
-        public int statMoveSpeed;
-        [Tooltip("불 속성 저항 (100 → 1배 = 면역)")]
-        public int statRegistFire;
-        [Tooltip("얼음 속성 저항 (100 → 1배 = 면역)")]
-        public int statRegistCold;
-        [Tooltip("전기 속성 저항 (100 → 1배 = 면역)")]
-        public int statRegistLightning;
-        [Tooltip("독 속성 저항 (100 → 1배 = 면역)")]
-        public int statRegistPoison;
+        [Tooltip("스탯 포인트와 STAT_* 옵션이 누적되는 플레이어 스탯 항목 시작값입니다.")]
+        public CharacterGrowthStatValues stats;
 
         [Header("시작 자원 값")]
         [Tooltip("게임 시작 시 현재 HP 값 설정")]
@@ -414,17 +392,33 @@ namespace GGemCo2DCore
             hitStopLockMovement = true;
             animationController = ConfigCommon.AnimationController.Sprite;
             startScale = 1;
-            statAtk = 100;
-            statDef = 100;
-            statHp = 100;
-            statMp = 100;
-            statStamina = 100;
-            statAttackSpeed = 100;
-            statMoveStep = 100;
-            statMoveSpeed = 100;
-            statRegistFire = 0;
-            statRegistCold = 0;
-            statRegistLightning = 0;
+            baseAttributes = new CharacterBaseAttributeValues
+            {
+                atk = 100,
+                def = 100,
+                hp = 100,
+                mp = 100,
+                stamina = 100,
+                superArmor = 0,
+                moveSpeed = 100,
+                attackSpeed = 100,
+                criticalDamage = 100,
+                criticalProbability = 0,
+                registFire = 0,
+                registCold = 0,
+                registLightning = 0,
+                registPoison = 0,
+                moveStep = 100,
+            };
+
+            stats = new CharacterGrowthStatValues
+            {
+                atk = 100,
+                def = 100,
+                hp = 100,
+                mp = 100,
+                stamina = 100,
+            };
 
             statPointAcquirePolicy = StatPointAcquirePolicy.LevelUpOnly;
             statPointLevelUpOnInvestPolicy = StatPointLevelUpOnInvestPolicy.None;

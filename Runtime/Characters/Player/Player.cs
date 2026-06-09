@@ -223,21 +223,7 @@ namespace GGemCo2DCore
             }
             
             CharacterBaseAttributeValues baseAttributes = _playerSettings.baseAttributes;
-            baseAttributes.moveSpeed = baseAttributes.moveSpeed != 0 ? baseAttributes.moveSpeed : _playerSettings.statMoveSpeed;
-            baseAttributes.attackSpeed = baseAttributes.attackSpeed != 0 ? baseAttributes.attackSpeed : _playerSettings.statAttackSpeed;
-            baseAttributes.resistanceFire = baseAttributes.resistanceFire != 0 ? baseAttributes.resistanceFire : _playerSettings.statRegistFire;
-            baseAttributes.resistanceCold = baseAttributes.resistanceCold != 0 ? baseAttributes.resistanceCold : _playerSettings.statRegistCold;
-            baseAttributes.resistanceLightning = baseAttributes.resistanceLightning != 0 ? baseAttributes.resistanceLightning : _playerSettings.statRegistLightning;
-            baseAttributes.resistancePoison = baseAttributes.resistancePoison != 0 ? baseAttributes.resistancePoison : _playerSettings.statRegistPoison;
-
-            var growthStats = new CharacterGrowthStatValues
-            {
-                atk = _playerSettings.statAtk,
-                def = _playerSettings.statDef,
-                hp = _playerSettings.statHp,
-                mp = _playerSettings.statMp,
-                stamina = _playerSettings.statStamina,
-            };
+            CharacterGrowthStatValues growthStats = _playerSettings.stats;
 
             SetBaseAndGrowthStatInfos(baseAttributes, growthStats);
             // 시작 자원 값은 '최대치'가 아니라, 설정에 따라 별도로 초기화할 수 있다.
@@ -247,7 +233,7 @@ namespace GGemCo2DCore
             CurrentStamina.OnNext(_playerSettings.startStamina.Evaluate(TotalStamina.Value));
             CurrentSuperArmor.OnNext(0);
 
-            currentMoveStep = _playerSettings.statMoveStep;
+            currentMoveStep = _playerSettings.baseAttributes.moveStep;
             originalScaleX = transform.localScale.x;
             SetScale(_playerSettings.startScale);
             SetWidth(_playerSettings.size.x);
@@ -952,7 +938,7 @@ namespace GGemCo2DCore
         /// <summary>
         /// 특정 스탯 포인트 투자 상태를 가정했을 때의 총합 스탯을 계산합니다.
         /// - UIWindowPlayerInfo 미리보기 용도입니다.
-        /// - 스탯 포인트는 Stat* 투자량으로 저장하지만, 설정된 보너스는 Base* 항목에 적용합니다.
+        /// - 스탯 포인트는 Stat* 투자량으로 저장하지만, 설정된 보너스는 STAT_* 항목에 적용합니다.
         /// </summary>
         public CharacterTotals CalculateProjectedTotalsForStatPoints(
             int investedAtk,
@@ -976,11 +962,11 @@ namespace GGemCo2DCore
             var flat = new Dictionary<string, int>(8);
             var percent = new Dictionary<string, float>(8);
 
-            AddStatPointBonus(settings.statPointAtk, investedAtk, ConfigCommon.BaseStatAtk, flat, percent);
-            AddStatPointBonus(settings.statPointDef, investedDef, ConfigCommon.BaseStatDef, flat, percent);
-            AddStatPointBonus(settings.statPointHp, investedHp, ConfigCommon.BaseStatHp, flat, percent);
-            AddStatPointBonus(settings.statPointMp, investedMp, ConfigCommon.BaseStatMp, flat, percent);
-            AddStatPointBonus(settings.statPointStamina, investedStamina, ConfigCommon.BaseStatStamina, flat, percent);
+            AddStatPointBonus(settings.statPointAtk, investedAtk, ConfigCommon.StatusStatAtk, flat, percent);
+            AddStatPointBonus(settings.statPointDef, investedDef, ConfigCommon.StatusStatDef, flat, percent);
+            AddStatPointBonus(settings.statPointHp, investedHp, ConfigCommon.StatusStatHp, flat, percent);
+            AddStatPointBonus(settings.statPointMp, investedMp, ConfigCommon.StatusStatMp, flat, percent);
+            AddStatPointBonus(settings.statPointStamina, investedStamina, ConfigCommon.StatusStatStamina, flat, percent);
 
             return CalculateTotalsWithPersistentModifiers(flat, percent);
         }
@@ -999,7 +985,7 @@ namespace GGemCo2DCore
         }
 
         /// <summary>
-        /// 저장된 스탯 포인트 투자량을 Base* 보정 modifier로 변환하고, 리소스 현재값 비율을 보존한 채 재계산합니다.
+        /// 저장된 스탯 포인트 투자량을 STAT_* 보정 modifier로 변환하고, 리소스 현재값 비율을 보존한 채 재계산합니다.
         /// </summary>
         private void ApplyStatPointModifiersPreserveResources()
         {
@@ -1018,11 +1004,11 @@ namespace GGemCo2DCore
             var flat = new Dictionary<string, int>(8);
             var percent = new Dictionary<string, float>(8);
 
-            AddStatPointBonus(settings.statPointAtk, _playerData.InvestedStatPointAtk, ConfigCommon.BaseStatAtk, flat, percent);
-            AddStatPointBonus(settings.statPointDef, _playerData.InvestedStatPointDef, ConfigCommon.BaseStatDef, flat, percent);
-            AddStatPointBonus(settings.statPointHp, _playerData.InvestedStatPointHp, ConfigCommon.BaseStatHp, flat, percent);
-            AddStatPointBonus(settings.statPointMp, _playerData.InvestedStatPointMp, ConfigCommon.BaseStatMp, flat, percent);
-            AddStatPointBonus(settings.statPointStamina, _playerData.InvestedStatPointStamina, ConfigCommon.BaseStatStamina, flat, percent);
+            AddStatPointBonus(settings.statPointAtk, _playerData.InvestedStatPointAtk, ConfigCommon.StatusStatAtk, flat, percent);
+            AddStatPointBonus(settings.statPointDef, _playerData.InvestedStatPointDef, ConfigCommon.StatusStatDef, flat, percent);
+            AddStatPointBonus(settings.statPointHp, _playerData.InvestedStatPointHp, ConfigCommon.StatusStatHp, flat, percent);
+            AddStatPointBonus(settings.statPointMp, _playerData.InvestedStatPointMp, ConfigCommon.StatusStatMp, flat, percent);
+            AddStatPointBonus(settings.statPointStamina, _playerData.InvestedStatPointStamina, ConfigCommon.StatusStatStamina, flat, percent);
 
             using (SuppressAutoResourceSync())
             {
@@ -1058,7 +1044,7 @@ namespace GGemCo2DCore
         /// </summary>
         /// <param name="bonus">스탯 포인트 1개당 적용할 보정 규칙입니다.</param>
         /// <param name="investedPoints">현재 투자된 스탯 포인트 수입니다.</param>
-        /// <param name="statKey">보정 대상 스탯 키입니다. 스탯 포인트 규칙에서는 Base* 키를 전달합니다.</param>
+        /// <param name="statKey">보정 대상 스탯 키입니다. 스탯 포인트 규칙에서는 STAT_* 키를 전달합니다.</param>
         /// <param name="flatOut">Flat 보정값 누적 Dictionary입니다.</param>
         /// <param name="percentOut">Percent 보정값 누적 Dictionary입니다.</param>
         private static void AddStatPointBonus(GGemCoPlayerSettings.StatPointBonus bonus, int investedPoints, string statKey,

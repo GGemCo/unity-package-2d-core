@@ -1,4 +1,4 @@
-﻿using GGemCo2DCore;
+using GGemCo2DCore;
 using UnityEditor;
 using UnityEngine;
 
@@ -72,8 +72,8 @@ namespace GGemCo2DCoreEditor
                 playerSettings.startScale = 0.3f;
                 playerSettings.maxLevel = 10;
                 playerSettings.size = new Vector2(128, 128);
-                playerSettings.statHp = 10000;
-                playerSettings.statMp = 10000;
+                playerSettings.stats.hp = 10000;
+                playerSettings.stats.mp = 10000;
 
                 if (playerSettings.elementGaugeRules == null || playerSettings.elementGaugeRules.Count == 0)
                 {

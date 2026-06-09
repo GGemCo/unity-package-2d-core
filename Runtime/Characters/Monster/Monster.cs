@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using UnityEngine;
 
 namespace GGemCo2DCore
@@ -292,7 +292,7 @@ namespace GGemCo2DCore
             TableLoaderManager tableLoaderManager = TableLoaderManager.Instance;
             // monster 테이블 정보 셋팅
             var info = tableLoaderManager.GetMonsterData(uid);
-            // GcLogger.Log("InitializationStat uid: "+uid+" / info.uid: "+info.uid+" / StatMoveSpeed: "+info.statMoveSpeed);
+            // GcLogger.Log("InitializationStat uid: "+uid+" / info.uid: "+info.uid+" / BaseMoveSpeed: "+info.statMoveSpeed);
             if (info.Uid <= 0) return;
             _grade = info.Grade;
             _currentLevel = ResolveSpawnLevel(info);
@@ -305,14 +305,15 @@ namespace GGemCo2DCore
                 mp = info.BaseMp,
                 stamina = info.BaseStamina,
                 superArmor = info.BaseSuperArmor,
-                moveSpeed = info.BaseMoveSpeed != 0 ? info.BaseMoveSpeed : info.StatMoveSpeed,
-                attackSpeed = info.BaseAttackSpeed != 0 ? info.BaseAttackSpeed : info.StatAttackSpeed,
+                moveSpeed = info.BaseMoveSpeed,
+                attackSpeed = info.BaseAttackSpeed,
                 criticalDamage = info.BaseCriticalDamage,
                 criticalProbability = info.BaseCriticalProbability,
-                resistanceFire = info.BaseRegistFire != 0 ? info.BaseRegistFire : info.RegistFire,
-                resistanceCold = info.BaseRegistCold != 0 ? info.BaseRegistCold : info.RegistCold,
-                resistanceLightning = info.BaseRegistLightning != 0 ? info.BaseRegistLightning : info.RegistLightning,
-                resistancePoison = info.BaseRegistPoison != 0 ? info.BaseRegistPoison : info.RegistPoison,
+                registFire = info.BaseRegistFire,
+                registCold = info.BaseRegistCold,
+                registLightning = info.BaseRegistLightning,
+                registPoison = info.BaseRegistPoison,
+                moveStep = info.BaseMoveStep,
             };
 
             var growthStats = new CharacterGrowthStatValues
@@ -320,11 +321,19 @@ namespace GGemCo2DCore
                 atk = info.StatAtk,
                 def = info.StatDef,
                 hp = info.StatHp,
+                mp = info.StatMp,
+                stamina = info.StatStamina,
             };
 
             SetBaseAndGrowthStatInfos(baseAttributes, growthStats);
             CurrentHp.OnNext(TotalHp.Value);
+            CurrentMp.OnNext(TotalMp.Value);
+            CurrentStamina.OnNext(TotalStamina.Value);
             CurrentSuperArmor.OnNext(TotalSuperArmor.Value);
+            if (baseAttributes.moveStep > 0)
+            {
+                currentMoveStep = baseAttributes.moveStep;
+            }
             SetScale(info.Scale);
             SetAttackType(info.AttackType);
             _deathSkillController?.SetDeathSkillMonsterUid(info.DeathSkillMonsterUid);

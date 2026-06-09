@@ -137,14 +137,15 @@ namespace GGemCo2DCore
         public int BaseStamina { get; set; }
 
         // 스탯 항목 시작값입니다. STAT_* modifier와 스탯 포인트가 이 값에 누적되어 TotalStat*가 계산됩니다.
-        public int BaseStatAtk { get; set; }
-        public int BaseStatDef { get; set; }
-        public int BaseStatHp { get; set; }
-        public int BaseStatMp { get; set; }
-        public int BaseStatStamina { get; set; }
+        public int StatAtk { get; set; }
+        public int StatDef { get; set; }
+        public int StatHp { get; set; }
+        public int StatMp { get; set; }
+        public int StatStamina { get; set; }
 
         private int BaseSuperArmor { get; set; }
         private int BaseMoveSpeed { get; set; }
+        private int BaseMoveStep { get; set; }
         private int BaseAttackSpeed { get; set; }
         private int BaseCriticalDamage { get; set; }
         private int BaseCriticalProbability { get; set; }
@@ -181,12 +182,14 @@ namespace GGemCo2DCore
             _totalBaseHp,
             _totalBaseMp,
             _totalBaseStamina,
+            _totalBaseMoveStep,
             _totalStatAtk,
             _totalStatDef,
             _totalStatHp,
             _totalStatMp,
             _totalStatStamina,
             _totalMoveSpeed,
+            _totalMoveStep,
             _totalAttackSpeed,
             _totalCriticalDamage,
             _totalCriticalProbability,
@@ -247,6 +250,11 @@ namespace GGemCo2DCore
         public readonly BehaviorSubject<long> TotalBaseStamina = new(0);
 
         /// <summary>
+        /// 기본 항목으로 계산된 최종 이동 스텝입니다.
+        /// </summary>
+        public readonly BehaviorSubject<long> TotalBaseMoveStep = new(0);
+
+        /// <summary>
         /// 스탯 항목으로 계산된 최종 공격 스탯입니다.
         /// </summary>
         public readonly BehaviorSubject<long> TotalStatAtk = new(0);
@@ -280,6 +288,11 @@ namespace GGemCo2DCore
         /// 최종 이동속도(계산 결과)를 스트림으로 제공합니다.
         /// </summary>
         public readonly BehaviorSubject<long> TotalMoveSpeed = new(100);
+
+        /// <summary>
+        /// 최종 이동 스텝(계산 결과)을 스트림으로 제공합니다.
+        /// </summary>
+        public readonly BehaviorSubject<long> TotalMoveStep = new(0);
 
         /// <summary>
         /// 최종 공격속도(계산 결과)를 스트림으로 제공합니다.
@@ -441,10 +454,10 @@ namespace GGemCo2DCore
                 superArmor = statSuperArmor,
                 moveSpeed = statMoveSpeed,
                 attackSpeed = statAttackSpeed,
-                resistanceFire = statRegistFire,
-                resistanceCold = statRegistCold,
-                resistanceLightning = statRegistLightning,
-                resistancePoison = statRegistPoison,
+                registFire = statRegistFire,
+                registCold = statRegistCold,
+                registLightning = statRegistLightning,
+                registPoison = statRegistPoison,
             };
 
             SetBaseAndGrowthStatInfos(baseAttributes, default);
@@ -466,19 +479,20 @@ namespace GGemCo2DCore
             BaseStamina = baseAttributes.stamina;
             BaseSuperArmor = baseAttributes.superArmor;
             BaseMoveSpeed = baseAttributes.moveSpeed;
+            BaseMoveStep = baseAttributes.moveStep;
             BaseAttackSpeed = baseAttributes.attackSpeed;
             BaseCriticalDamage = baseAttributes.criticalDamage;
             BaseCriticalProbability = baseAttributes.criticalProbability;
-            BaseRegistFire = baseAttributes.resistanceFire;
-            BaseRegistCold = baseAttributes.resistanceCold;
-            BaseRegistLightning = baseAttributes.resistanceLightning;
-            BaseRegistPoison = baseAttributes.resistancePoison;
+            BaseRegistFire = baseAttributes.registFire;
+            BaseRegistCold = baseAttributes.registCold;
+            BaseRegistLightning = baseAttributes.registLightning;
+            BaseRegistPoison = baseAttributes.registPoison;
 
-            BaseStatAtk = growthStats.atk;
-            BaseStatDef = growthStats.def;
-            BaseStatHp = growthStats.hp;
-            BaseStatMp = growthStats.mp;
-            BaseStatStamina = growthStats.stamina;
+            StatAtk = growthStats.atk;
+            StatDef = growthStats.def;
+            StatHp = growthStats.hp;
+            StatMp = growthStats.mp;
+            StatStamina = growthStats.stamina;
 
             RecalculateStats();
         }
@@ -585,15 +599,15 @@ namespace GGemCo2DCore
             long baseStamina = StatCalculator.CalculateFinalProjected(ConfigCommon.BaseStatStamina, BaseStamina,
                 flatPersistentProjected, percentPersistentProjected, _providersWithoutPersistent);
 
-            long statAtk = StatCalculator.CalculateFinalProjected(ConfigCommon.StatusStatAtk, BaseStatAtk,
+            long statAtk = StatCalculator.CalculateFinalProjected(ConfigCommon.StatusStatAtk, StatAtk,
                 flatPersistentProjected, percentPersistentProjected, _providersWithoutPersistent);
-            long statDef = StatCalculator.CalculateFinalProjected(ConfigCommon.StatusStatDef, BaseStatDef,
+            long statDef = StatCalculator.CalculateFinalProjected(ConfigCommon.StatusStatDef, StatDef,
                 flatPersistentProjected, percentPersistentProjected, _providersWithoutPersistent);
-            long statHp = StatCalculator.CalculateFinalProjected(ConfigCommon.StatusStatHp, BaseStatHp,
+            long statHp = StatCalculator.CalculateFinalProjected(ConfigCommon.StatusStatHp, StatHp,
                 flatPersistentProjected, percentPersistentProjected, _providersWithoutPersistent);
-            long statMp = StatCalculator.CalculateFinalProjected(ConfigCommon.StatusStatMp, BaseStatMp,
+            long statMp = StatCalculator.CalculateFinalProjected(ConfigCommon.StatusStatMp, StatMp,
                 flatPersistentProjected, percentPersistentProjected, _providersWithoutPersistent);
-            long statStamina = StatCalculator.CalculateFinalProjected(ConfigCommon.StatusStatStamina, BaseStatStamina,
+            long statStamina = StatCalculator.CalculateFinalProjected(ConfigCommon.StatusStatStamina, StatStamina,
                 flatPersistentProjected, percentPersistentProjected, _providersWithoutPersistent);
 
             long atk = baseAtk + statAtk;
@@ -619,16 +633,16 @@ namespace GGemCo2DCore
                 ConfigCommon.BaseStatCriticalProbability, BaseCriticalProbability,
                 flatPersistentProjected, percentPersistentProjected, _providersWithoutPersistent);
 
-            long registFire = StatCalculator.CalculateFinalProjected(ConfigCommon.BaseStatResistanceFire,
+            long registFire = StatCalculator.CalculateFinalProjected(ConfigCommon.BaseStatRegistFire,
                 BaseRegistFire,
                 flatPersistentProjected, percentPersistentProjected, _providersWithoutPersistent);
-            long registCold = StatCalculator.CalculateFinalProjected(ConfigCommon.BaseStatResistanceCold,
+            long registCold = StatCalculator.CalculateFinalProjected(ConfigCommon.BaseStatRegistCold,
                 BaseRegistCold,
                 flatPersistentProjected, percentPersistentProjected, _providersWithoutPersistent);
-            long registLightning = StatCalculator.CalculateFinalProjected(ConfigCommon.BaseStatResistanceLightning,
+            long registLightning = StatCalculator.CalculateFinalProjected(ConfigCommon.BaseStatRegistLightning,
                 BaseRegistLightning,
                 flatPersistentProjected, percentPersistentProjected, _providersWithoutPersistent);
-            long registPoison = StatCalculator.CalculateFinalProjected(ConfigCommon.BaseStatResistancePoison,
+            long registPoison = StatCalculator.CalculateFinalProjected(ConfigCommon.BaseStatRegistPoison,
                 BaseRegistPoison,
                 flatPersistentProjected, percentPersistentProjected, _providersWithoutPersistent);
 

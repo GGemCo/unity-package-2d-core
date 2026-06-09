@@ -62,10 +62,11 @@ namespace GGemCo2DCore
         public const string BaseStatAttackSpeed = "BASE_ATTACK_SPEED";
         public const string BaseStatCriticalDamage = "BASE_CRITICAL_DAMAGE";
         public const string BaseStatCriticalProbability = "BASE_CRITICAL_PROBABILITY";
-        public const string BaseStatResistanceFire = "BASE_RESISTANCE_FIRE";
-        public const string BaseStatResistanceCold = "BASE_RESISTANCE_COLD";
-        public const string BaseStatResistanceLightning = "BASE_RESISTANCE_LIGHTNING";
-        public const string BaseStatResistancePoison = "BASE_RESISTANCE_POISON";
+        public const string BaseStatRegistFire = "BASE_REGIST_FIRE";
+        public const string BaseStatRegistCold = "BASE_REGIST_COLD";
+        public const string BaseStatRegistLightning = "BASE_REGIST_LIGHTNING";
+        public const string BaseStatRegistPoison = "BASE_REGIST_POISON";
+        public const string BaseStatMoveStep = "BASE_MOVE_STEP";
         public const string StatusStatAtk = "STAT_ATK";
         public const string StatusStatDef = "STAT_DEF";
         public const string StatusStatHp = "STAT_HP";
@@ -76,15 +77,6 @@ namespace GGemCo2DCore
         public const string StatusStatHpTemp = "STAT_HP_TEMP";
         public const string StatusStatMp = "STAT_MP";
         public const string StatusStatStamina = "STAT_STAMINA";
-        public const string StatusStatSuperArmor = "STAT_SUPER_ARMOR";
-        public const string StatusStatMoveSpeed = "STAT_MOVE_SPEED";
-        public const string StatusStatAttackSpeed = "STAT_ATTACK_SPEED";
-        public const string StatusStatCriticalDamage = "STAT_CRITICAL_DAMAGE";
-        public const string StatusStatCriticalProbability = "STAT_CRITICAL_PROBABILITY";
-        public const string StatusStatResistanceFire = "STAT_RESISTANCE_FIRE";
-        public const string StatusStatResistanceCold = "STAT_RESISTANCE_COLD";
-        public const string StatusStatResistanceLightning = "STAT_RESISTANCE_LIGHTNING";
-        public const string StatusStatResistancePoison = "STAT_RESISTANCE_POISON";
 
         /// <summary>
         /// 스탯 ID가 BASE_* 계열 기본 항목인지 확인합니다.

@@ -290,16 +290,7 @@ namespace GGemCo2DCore
             variables.Set("AttackerLevel", attackerLevel);
             variables.Set("TargetLevel", targetLevel);
             variables.Set("LevelDiff", levelDiff);
-
-            // 기존 공식 호환용 변수입니다. 공격자는 Atk, 피격 대상은 Def 기준으로 유지합니다.
-            variables.Set("BaseAtk", attacker != null ? attacker.TotalBaseAtk.Value : 0d);
-            variables.Set("BaseDef", target != null ? target.TotalBaseDef.Value : 0d);
-            variables.Set("StatAtk", attacker != null ? attacker.TotalStatAtk.Value : 0d);
-            variables.Set("StatStrength", attacker != null ? attacker.TotalStatAtk.Value : 0d);
-            variables.Set("StatDef", target != null ? target.TotalStatDef.Value : 0d);
-            variables.Set("TotalAtk", attacker != null ? attacker.TotalAtk.Value : 0d);
-            variables.Set("TotalDef", target != null ? target.TotalDef.Value : 0d);
-
+            
             // 공격자/피격 대상이 명확히 드러나는 공식 작성용 변수입니다.
             variables.Set("AttackerBaseAtk", attacker != null ? attacker.TotalBaseAtk.Value : 0d);
             variables.Set("AttackerStatAtk", attacker != null ? attacker.TotalStatAtk.Value : 0d);

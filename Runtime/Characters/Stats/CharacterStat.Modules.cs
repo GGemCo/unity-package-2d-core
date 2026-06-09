@@ -59,9 +59,9 @@ namespace GGemCo2DCore
                 _owner._totalBaseHp = StatCalculator.CalculateFinal(ConfigCommon.BaseStatHp, _owner.BaseHp, _owner._allProviders);
                 _owner._totalBaseMp = StatCalculator.CalculateFinal(ConfigCommon.BaseStatMp, _owner.BaseMp, _owner._allProviders);
                 _owner._totalBaseStamina = StatCalculator.CalculateFinal(ConfigCommon.BaseStatStamina, _owner.BaseStamina, _owner._allProviders);
-                _owner._totalStatHp = StatCalculator.CalculateFinal(ConfigCommon.StatusStatHp, _owner.BaseStatHp, _owner._allProviders);
-                _owner._totalStatMp = StatCalculator.CalculateFinal(ConfigCommon.StatusStatMp, _owner.BaseStatMp, _owner._allProviders);
-                _owner._totalStatStamina = StatCalculator.CalculateFinal(ConfigCommon.StatusStatStamina, _owner.BaseStatStamina, _owner._allProviders);
+                _owner._totalStatHp = StatCalculator.CalculateFinal(ConfigCommon.StatusStatHp, _owner.StatHp, _owner._allProviders);
+                _owner._totalStatMp = StatCalculator.CalculateFinal(ConfigCommon.StatusStatMp, _owner.StatMp, _owner._allProviders);
+                _owner._totalStatStamina = StatCalculator.CalculateFinal(ConfigCommon.StatusStatStamina, _owner.StatStamina, _owner._allProviders);
                 _owner._totalHp = _owner._totalBaseHp + _owner._totalStatHp;
                 _owner._totalHpTemp = StatCalculator.CalculateFinal(ConfigCommon.StatusStatHpTemp, 0, _owner._allProviders);
                 _owner._totalMp = _owner._totalBaseMp + _owner._totalStatMp;
@@ -111,8 +111,8 @@ namespace GGemCo2DCore
             {
                 _owner._totalBaseAtk = StatCalculator.CalculateFinal(ConfigCommon.BaseStatAtk, _owner.BaseAtk, _owner._allProviders);
                 _owner._totalBaseDef = StatCalculator.CalculateFinal(ConfigCommon.BaseStatDef, _owner.BaseDef, _owner._allProviders);
-                _owner._totalStatAtk = StatCalculator.CalculateFinal(ConfigCommon.StatusStatAtk, _owner.BaseStatAtk, _owner._allProviders);
-                _owner._totalStatDef = StatCalculator.CalculateFinal(ConfigCommon.StatusStatDef, _owner.BaseStatDef, _owner._allProviders);
+                _owner._totalStatAtk = StatCalculator.CalculateFinal(ConfigCommon.StatusStatAtk, _owner.StatAtk, _owner._allProviders);
+                _owner._totalStatDef = StatCalculator.CalculateFinal(ConfigCommon.StatusStatDef, _owner.StatDef, _owner._allProviders);
                 _owner._totalAtk = _owner._totalBaseAtk + _owner._totalStatAtk;
                 _owner._totalDef = _owner._totalBaseDef + _owner._totalStatDef;
                 _owner._totalCriticalDamage = StatCalculator.CalculateFinal(ConfigCommon.BaseStatCriticalDamage, _owner.BaseCriticalDamage, _owner._allProviders);
@@ -138,6 +138,10 @@ namespace GGemCo2DCore
             
             private bool _hasTotalMoveSpeed;
             private long _lastTotalMoveSpeed;
+            private bool _hasTotalMoveStep;
+            private long _lastTotalMoveStep;
+            private bool _hasTotalBaseMoveStep;
+            private long _lastTotalBaseMoveStep;
             private bool _hasTotalAttackSpeed;
             private long _lastTotalAttackSpeed;
             public MovementStatModule(CharacterStat owner) => _owner = owner;
@@ -145,12 +149,16 @@ namespace GGemCo2DCore
             public void Recalculate()
             {
                 _owner._totalMoveSpeed = StatCalculator.CalculateFinal(ConfigCommon.BaseStatMoveSpeed, _owner.BaseMoveSpeed, _owner._allProviders);
+                _owner._totalBaseMoveStep = StatCalculator.CalculateFinal(ConfigCommon.BaseStatMoveStep, _owner.BaseMoveStep, _owner._allProviders);
+                _owner._totalMoveStep = _owner._totalBaseMoveStep;
                 _owner._totalAttackSpeed = StatCalculator.CalculateFinal(ConfigCommon.BaseStatAttackSpeed, _owner.BaseAttackSpeed, _owner._allProviders);
             }
 
             public void Publish()
             {
                 PublishIfChanged(_owner.TotalMoveSpeed, ref _hasTotalMoveSpeed, ref _lastTotalMoveSpeed, _owner._totalMoveSpeed);
+                PublishIfChanged(_owner.TotalBaseMoveStep, ref _hasTotalBaseMoveStep, ref _lastTotalBaseMoveStep, _owner._totalBaseMoveStep);
+                PublishIfChanged(_owner.TotalMoveStep, ref _hasTotalMoveStep, ref _lastTotalMoveStep, _owner._totalMoveStep);
                 PublishIfChanged(_owner.TotalAttackSpeed, ref _hasTotalAttackSpeed, ref _lastTotalAttackSpeed, _owner._totalAttackSpeed);
             }
         }
@@ -171,10 +179,10 @@ namespace GGemCo2DCore
 
             public void Recalculate()
             {
-                _owner._totalRegistFire = StatCalculator.CalculateFinal(ConfigCommon.BaseStatResistanceFire, _owner.BaseRegistFire, _owner._allProviders);
-                _owner._totalRegistCold = StatCalculator.CalculateFinal(ConfigCommon.BaseStatResistanceCold, _owner.BaseRegistCold, _owner._allProviders);
-                _owner._totalRegistLightning = StatCalculator.CalculateFinal(ConfigCommon.BaseStatResistanceLightning, _owner.BaseRegistLightning, _owner._allProviders);
-                _owner._totalRegistPoison = StatCalculator.CalculateFinal(ConfigCommon.BaseStatResistancePoison, _owner.BaseRegistPoison, _owner._allProviders);
+                _owner._totalRegistFire = StatCalculator.CalculateFinal(ConfigCommon.BaseStatRegistFire, _owner.BaseRegistFire, _owner._allProviders);
+                _owner._totalRegistCold = StatCalculator.CalculateFinal(ConfigCommon.BaseStatRegistCold, _owner.BaseRegistCold, _owner._allProviders);
+                _owner._totalRegistLightning = StatCalculator.CalculateFinal(ConfigCommon.BaseStatRegistLightning, _owner.BaseRegistLightning, _owner._allProviders);
+                _owner._totalRegistPoison = StatCalculator.CalculateFinal(ConfigCommon.BaseStatRegistPoison, _owner.BaseRegistPoison, _owner._allProviders);
             }
 
             public void Publish()

@@ -50,13 +50,15 @@ namespace GGemCo2DCore
         [Tooltip("기본 크리티컬 확률")]
         public int criticalProbability;
         [Tooltip("기본 화염 저항")]
-        public int resistanceFire;
+        public int registFire;
         [Tooltip("기본 냉기 저항")]
-        public int resistanceCold;
+        public int registCold;
         [Tooltip("기본 번개 저항")]
-        public int resistanceLightning;
+        public int registLightning;
         [Tooltip("기본 독 저항")]
-        public int resistancePoison;
+        public int registPoison;
+        [Tooltip("기본 이동 스텝")]
+        public int moveStep;
     }
 
     /// <summary>

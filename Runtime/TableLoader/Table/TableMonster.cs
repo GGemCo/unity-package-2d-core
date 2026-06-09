@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 
 namespace GGemCo2DCore
 {
@@ -31,18 +31,14 @@ namespace GGemCo2DCore
         public int BaseRegistCold;
         public int BaseRegistLightning;
         public int BaseRegistPoison;
+        public int BaseMoveStep;
         public int StatHp;
         public int StatAtk;
         public int StatDef;
-        public int StatSuperArmor;
-        public int StatMoveSpeed;
-        public int StatAttackSpeed;
+        public int StatMp;
+        public int StatStamina;
         public long RewardExp;
         public int RewardGold;
-        public int RegistFire;
-        public int RegistCold;
-        public int RegistLightning;
-        public int RegistPoison;
         public int[] SkillMonsterUid;
         public int DeathSkillMonsterUid;
         public string BtFileName;
@@ -89,17 +85,13 @@ namespace GGemCo2DCore
                 BaseRegistCold = ReadOptionalInt(data, "BaseRegistCold", 0),
                 BaseRegistLightning = ReadOptionalInt(data, "BaseRegistLightning", 0),
                 BaseRegistPoison = ReadOptionalInt(data, "BaseRegistPoison", 0),
+                BaseMoveStep = ReadOptionalInt(data, "BaseMoveStep", 0),
                 StatHp = reader.Int("StatHp"),
                 StatAtk = reader.Int("StatAtk"),
                 StatDef = reader.Int("StatDef"),
-                StatSuperArmor = reader.Int("StatSuperArmor"),
-                StatMoveSpeed = reader.Int("StatMoveSpeed"),
-                StatAttackSpeed = reader.Int("StatAttackSpeed"),
+                StatMp = reader.Int("StatMp"),
+                StatStamina = reader.Int("StatStamina"),
                 RewardExp = reader.Long("RewardExp"),
-                RegistFire = reader.Int("RegistFire"),
-                RegistCold = reader.Int("RegistCold"),
-                RegistLightning = reader.Int("RegistLightning"),
-                RegistPoison = reader.Int("RegistPoison"),
                 RewardGold = reader.Int("RewardGold"),
                 SkillMonsterUid = reader.IntArray("SkillMonsterUid"),
                 DeathSkillMonsterUid = data.TryGetValue("DeathSkillMonsterUid", out string deathSkillMonsterUid)

@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Threading.Tasks;
 using GGemCo2DCore;
 using UnityEngine;
@@ -62,7 +62,7 @@ namespace GGemCo2DCoreEditor
                 // if (settings != null)
                 //     Debug.Log("Spine2d 사용여부 : " + settings.useSpine2d);
                 // if (playerSettings != null)
-                //     Debug.Log("Player statAtk : " + playerSettings.statAtk);
+                //     Debug.Log("Player statAtk : " + playerSettings.stats.atk);
                 // if (mapSettings != null)
                 //     Debug.Log("Tilemap 크기 : " + mapSettings.tilemapGridCellSize);
                 // if (saveSettings != null)
