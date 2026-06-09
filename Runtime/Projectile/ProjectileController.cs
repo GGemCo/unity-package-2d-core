@@ -1,4 +1,4 @@
-﻿using System.Collections;
+using System.Collections;
 using UnityEngine;
 
 namespace GGemCo2DCore
@@ -68,7 +68,8 @@ namespace GGemCo2DCore
                     arrivalPolicyOverride: metadataProjectile.ArrivalPolicyOverride,
                     hitVfxPositionPolicy: metadataProjectile.HitVfxPositionPolicy,
                     hitVfxOffset: metadataProjectile.HitVfxOffset,
-                    hitVfxHitAreaNormalized: metadataProjectile.HitVfxHitAreaNormalized)
+                    hitVfxHitAreaNormalized: metadataProjectile.HitVfxHitAreaNormalized,
+                    damageFormulaContext: metadataProjectile.DamageFormulaContext)
                 : metadataProjectile;
 
             _character.StartCoroutine(CreateProjectileBurst(info, meta));

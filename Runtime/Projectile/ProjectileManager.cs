@@ -1,4 +1,4 @@
-﻿using UnityEngine;
+using UnityEngine;
 
 namespace GGemCo2DCore
 {
@@ -79,6 +79,7 @@ namespace GGemCo2DCore
         public readonly ProjectileOnHitCrowdControlEntry[] OnHitCrowdControls;
         public readonly GuardAttackType GuardAttackType;
         public readonly GuardInteractionMode GuardInteractionMode;
+        public readonly ProjectileDamageFormulaContext DamageFormulaContext;
 
         // --- Movement/Scale (dynamic) ---
         public readonly float SpeedMultiplier;
@@ -144,7 +145,8 @@ namespace GGemCo2DCore
             ProjectileConstants.ArrivalPolicy arrivalPolicyOverride = ProjectileConstants.ArrivalPolicy.DestroyOnArrived,
             ProjectileConstants.HitVfxPositionPolicy hitVfxPositionPolicy = ProjectileConstants.HitVfxPositionPolicy.CollisionPoint,
             Vector2 hitVfxOffset = default,
-            Vector2 hitVfxHitAreaNormalized = default)
+            Vector2 hitVfxHitAreaNormalized = default,
+            ProjectileDamageFormulaContext damageFormulaContext = null)
         {
             Uid = uid;
             DamageType = damageType;
@@ -156,6 +158,7 @@ namespace GGemCo2DCore
             OnHitCrowdControls = onHitCrowdControls;
             GuardAttackType = guardAttackType;
             GuardInteractionMode = guardInteractionMode;
+            DamageFormulaContext = damageFormulaContext;
             Target = target;
             Owner = owner;
 

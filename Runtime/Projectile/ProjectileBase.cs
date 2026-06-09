@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using UnityEngine;
 
 namespace GGemCo2DCore
@@ -1188,12 +1188,14 @@ namespace GGemCo2DCore
         }
 
         /// <summary>
-        /// 현재 발사체의 런타임 정보를 바탕으로 데미지 메타데이터를 생성합니다.
+        /// 현재 발사체의 런타임 정보와 실제 피격 대상을 바탕으로 데미지 메타데이터를 생성합니다.
         /// </summary>
+        /// <param name="target">실제 피격 대상 캐릭터입니다.</param>
         /// <returns>대상에게 전달할 데미지 메타데이터입니다.</returns>
-        protected MetadataDamage CreateDamageMetadata()
+        protected MetadataDamage CreateDamageMetadata(CharacterBase target)
         {
-            bool damageApplied = Damage > 0L;
+            long resolvedDamage = ResolveDamageOnHit(target);
+            bool damageApplied = resolvedDamage > 0L;
             int crowdControlUid = ResolveOnHitCrowdControlUid(
                 Runtime != null ? Runtime.OnHitCrowdControls : null,
                 damageApplied,
@@ -1205,9 +1207,9 @@ namespace GGemCo2DCore
 
             return new MetadataDamage
             {
-                damage = Damage,
+                damage = resolvedDamage,
                 attacker = FromCharacter ? FromCharacter.gameObject : null,
-                damageType = DamageType,
+                damageType = ResolveDamageTypeOnHit(),
                 crowdControlUid = crowdControlUid,
                 SkillUid = SkillUid,
                 AttackId = AttackId,
@@ -1220,6 +1222,56 @@ namespace GGemCo2DCore
                 GuardAttackType = Runtime != null ? Runtime.GuardAttackType : GuardAttackType.Normal,
                 GuardInteractionMode = Runtime != null ? Runtime.GuardInteractionMode : GuardInteractionMode.Normal,
             };
+        }
+
+        /// <summary>
+        /// 프로젝타일이 실제 대상에 적중한 시점에 적용할 데미지를 계산합니다.
+        /// </summary>
+        /// <remarks>
+        /// 스킬 프로젝타일에서 공식 컨텍스트가 전달된 경우 실제 피격 대상의 레벨, 방어력, 스탯을 반영하기 위해
+        /// 적중 시점에 <see cref="CalculateManager.CalculateSkillDamage"/>를 다시 호출합니다.
+        /// </remarks>
+        /// <param name="target">실제 피격 대상 캐릭터입니다.</param>
+        /// <returns>저항과 가드 적용 전의 프로젝타일 데미지입니다.</returns>
+        protected long ResolveDamageOnHit(CharacterBase target)
+        {
+            ProjectileDamageFormulaContext context = Runtime != null
+                ? Runtime.DamageFormulaContext
+                : null;
+            if (context == null)
+            {
+                return Damage;
+            }
+
+            CalculateManager calculateManager = CalculateManager.GetActive();
+            if (calculateManager == null)
+            {
+                return Damage;
+            }
+
+            var request = new DamageFormulaRequest(
+                FromCharacter,
+                target,
+                context.FormulaKey,
+                context.BaseDamage,
+                context.SkillDamageRate,
+                context.EventMultiplier,
+                context.OptionMultiplier,
+                context.BuffRate,
+                context.DamageType,
+                context.RollCritical);
+            return calculateManager.CalculateSkillDamage(request);
+        }
+
+        /// <summary>
+        /// 적중 시점에 사용할 데미지 타입을 반환합니다.
+        /// </summary>
+        /// <returns>공식 컨텍스트가 있으면 컨텍스트의 데미지 타입, 없으면 발사체 기본 데미지 타입입니다.</returns>
+        protected ConfigCommon.DamageType ResolveDamageTypeOnHit()
+        {
+            return Runtime != null && Runtime.DamageFormulaContext != null
+                ? Runtime.DamageFormulaContext.DamageType
+                : DamageType;
         }
 
         /// <summary>
@@ -1364,7 +1416,7 @@ namespace GGemCo2DCore
             if (!target)
                 return;
 
-            target.TakeDamage(CreateDamageMetadata());
+            target.TakeDamage(CreateDamageMetadata(target));
         }
 
         protected void UpdateVisual(Vector2 newPos, Vector2 delta)
