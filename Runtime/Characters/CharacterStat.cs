@@ -36,11 +36,6 @@ namespace GGemCo2DCore
         /// </summary>
         public readonly struct CharacterTotals
         {
-            public readonly long Atk;
-            public readonly long Def;
-            public readonly long Hp;
-            public readonly long Mp;
-            public readonly long Stamina;
             public readonly int SuperArmor;
             public readonly long MoveSpeed;
             public readonly long AttackSpeed;
@@ -71,11 +66,6 @@ namespace GGemCo2DCore
                 long criticalDamage, long criticalProbability,
                 long registFire, long registCold, long registLightning, long registPoison)
             {
-                Atk = atk;
-                Def = def;
-                Hp = hp;
-                Mp = mp;
-                Stamina = stamina;
                 SuperArmor = superArmor;
                 MoveSpeed = moveSpeed;
                 AttackSpeed = attackSpeed;

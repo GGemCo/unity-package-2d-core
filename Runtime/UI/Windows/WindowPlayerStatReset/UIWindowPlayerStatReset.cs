@@ -425,18 +425,9 @@ namespace GGemCo2DCore
         {
             return idx switch
             {
-                CharacterConstants.IndexPlayerInfo.Atk => totals.Atk,
-                CharacterConstants.IndexPlayerInfo.Def => totals.Def,
-                CharacterConstants.IndexPlayerInfo.Hp => totals.Hp,
-                CharacterConstants.IndexPlayerInfo.Mp => totals.Mp,
-                CharacterConstants.IndexPlayerInfo.Stamina => totals.Stamina,
-                CharacterConstants.IndexPlayerInfo.MoveSpeed => totals.MoveSpeed,
-                CharacterConstants.IndexPlayerInfo.AttackSpeed => totals.AttackSpeed,
-                CharacterConstants.IndexPlayerInfo.CriticalDamage => totals.CriticalDamage,
-                CharacterConstants.IndexPlayerInfo.CriticalProbability => totals.CriticalProbability,
-                CharacterConstants.IndexPlayerInfo.RegistFire => totals.RegistFire,
-                CharacterConstants.IndexPlayerInfo.RegistCold => totals.RegistCold,
-                CharacterConstants.IndexPlayerInfo.RegistLightning => totals.RegistLightning,
+                CharacterConstants.IndexPlayerInfo.Atk => totals.StatAtk,
+                CharacterConstants.IndexPlayerInfo.Def => totals.StatDef,
+                CharacterConstants.IndexPlayerInfo.Stamina => totals.StatStamina,
                 _ => 0
             };
         }
@@ -448,11 +439,9 @@ namespace GGemCo2DCore
             // IndexPlayerInfo 전체를 커버하도록 구성합니다.
             long totalValue = idx switch
             {
-                CharacterConstants.IndexPlayerInfo.Atk => player.BaseAtk,
-                CharacterConstants.IndexPlayerInfo.Def => player.BaseDef,
-                CharacterConstants.IndexPlayerInfo.Hp => player.BaseHp,
-                CharacterConstants.IndexPlayerInfo.Mp => player.BaseMp,
-                CharacterConstants.IndexPlayerInfo.Stamina => player.BaseStamina,
+                CharacterConstants.IndexPlayerInfo.Atk => player.StatAtk,
+                CharacterConstants.IndexPlayerInfo.Def => player.StatDef,
+                CharacterConstants.IndexPlayerInfo.Stamina => player.StatStamina,
                 _ => 0
             };
 
@@ -461,8 +450,6 @@ namespace GGemCo2DCore
             {
                 CharacterConstants.IndexPlayerInfo.Atk => player.InvestedStatPointAtk,
                 CharacterConstants.IndexPlayerInfo.Def => player.InvestedStatPointDef,
-                CharacterConstants.IndexPlayerInfo.Hp => player.InvestedStatPointHp,
-                CharacterConstants.IndexPlayerInfo.Mp => player.InvestedStatPointMp,
                 CharacterConstants.IndexPlayerInfo.Stamina => player.InvestedStatPointStamina,
                 _ => 0
             };
@@ -479,16 +466,7 @@ namespace GGemCo2DCore
             {
                 CharacterConstants.IndexPlayerInfo.Atk => player.TotalAtk.Value,
                 CharacterConstants.IndexPlayerInfo.Def => player.TotalDef.Value,
-                CharacterConstants.IndexPlayerInfo.Hp => player.TotalHp.Value,
-                CharacterConstants.IndexPlayerInfo.Mp => player.TotalMp.Value,
                 CharacterConstants.IndexPlayerInfo.Stamina => player.TotalStamina.Value,
-                CharacterConstants.IndexPlayerInfo.MoveSpeed => player.TotalMoveSpeed.Value,
-                CharacterConstants.IndexPlayerInfo.AttackSpeed => player.TotalAttackSpeed.Value,
-                CharacterConstants.IndexPlayerInfo.CriticalDamage => player.TotalCriticalDamage.Value,
-                CharacterConstants.IndexPlayerInfo.CriticalProbability => player.TotalCriticalProbability.Value,
-                CharacterConstants.IndexPlayerInfo.RegistFire => player.TotalRegistFire.Value,
-                CharacterConstants.IndexPlayerInfo.RegistCold => player.TotalRegistCold.Value,
-                CharacterConstants.IndexPlayerInfo.RegistLightning => player.TotalRegistLightning.Value,
                 _ => 0
             };
 
@@ -497,8 +475,6 @@ namespace GGemCo2DCore
             {
                 CharacterConstants.IndexPlayerInfo.Atk => player.InvestedStatPointAtk,
                 CharacterConstants.IndexPlayerInfo.Def => player.InvestedStatPointDef,
-                CharacterConstants.IndexPlayerInfo.Hp => player.InvestedStatPointHp,
-                CharacterConstants.IndexPlayerInfo.Mp => player.InvestedStatPointMp,
                 CharacterConstants.IndexPlayerInfo.Stamina => player.InvestedStatPointStamina,
                 _ => 0
             };
@@ -521,17 +497,7 @@ namespace GGemCo2DCore
             {
                 CharacterConstants.IndexPlayerInfo.Atk => ConfigCommon.StatusStatAtk,
                 CharacterConstants.IndexPlayerInfo.Def => ConfigCommon.StatusStatDef,
-                CharacterConstants.IndexPlayerInfo.Hp => ConfigCommon.StatusStatHp,
-                CharacterConstants.IndexPlayerInfo.Mp => ConfigCommon.StatusStatMp,
                 CharacterConstants.IndexPlayerInfo.Stamina => ConfigCommon.StatusStatStamina,
-                CharacterConstants.IndexPlayerInfo.MoveSpeed => ConfigCommon.BaseStatMoveSpeed,
-                CharacterConstants.IndexPlayerInfo.AttackSpeed => ConfigCommon.BaseStatAttackSpeed,
-                CharacterConstants.IndexPlayerInfo.CriticalDamage => ConfigCommon.BaseStatCriticalDamage,
-                CharacterConstants.IndexPlayerInfo.CriticalProbability => ConfigCommon.BaseStatCriticalProbability,
-                CharacterConstants.IndexPlayerInfo.RegistFire => ConfigCommon.BaseStatRegistFire,
-                CharacterConstants.IndexPlayerInfo.RegistCold => ConfigCommon.BaseStatRegistCold,
-                CharacterConstants.IndexPlayerInfo.RegistLightning => ConfigCommon.BaseStatRegistLightning,
-                CharacterConstants.IndexPlayerInfo.RegistPoison => ConfigCommon.BaseStatRegistPoison,
                 _ => string.Empty
             };
 

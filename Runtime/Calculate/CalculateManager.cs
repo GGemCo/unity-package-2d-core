@@ -292,24 +292,121 @@ namespace GGemCo2DCore
             variables.Set("LevelDiff", levelDiff);
             
             // 공격자/피격 대상이 명확히 드러나는 공식 작성용 변수입니다.
-            variables.Set("AttackerBaseAtk", attacker != null ? attacker.TotalBaseAtk.Value : 0d);
-            variables.Set("AttackerStatAtk", attacker != null ? attacker.TotalStatAtk.Value : 0d);
-            variables.Set("AttackerTotalAtk", attacker != null ? attacker.TotalAtk.Value : 0d);
-            variables.Set("AttackerBaseDef", attacker != null ? attacker.TotalBaseDef.Value : 0d);
-            variables.Set("AttackerStatDef", attacker != null ? attacker.TotalStatDef.Value : 0d);
-            variables.Set("AttackerTotalDef", attacker != null ? attacker.TotalDef.Value : 0d);
-            variables.Set("TargetBaseAtk", target != null ? target.TotalBaseAtk.Value : 0d);
-            variables.Set("TargetStatAtk", target != null ? target.TotalStatAtk.Value : 0d);
-            variables.Set("TargetTotalAtk", target != null ? target.TotalAtk.Value : 0d);
-            variables.Set("TargetBaseDef", target != null ? target.TotalBaseDef.Value : 0d);
-            variables.Set("TargetStatDef", target != null ? target.TotalStatDef.Value : 0d);
-            variables.Set("TargetTotalDef", target != null ? target.TotalDef.Value : 0d);
+            // Base*는 TotalBase*, Stat*은 TotalStat*, Total*은 최종 합산 값을 기준으로 등록합니다.
+            FillCharacterStatVariables("Attacker", attacker, variables);
+            FillCharacterStatVariables("Target", target, variables);
 
             variables.Set("CriticalRate", attacker != null ? attacker.TotalCriticalProbability.Value / 100d : 0d);
             variables.Set("CriticalDamageRate", attacker != null ? attacker.TotalCriticalDamage.Value / 100d : 1d);
 
             FillVariablesFromProviders(attacker, attacker, target, variables);
             FillVariablesFromProviders(target, attacker, target, variables);
+        }
+
+        /// <summary>
+        /// 캐릭터의 기본 항목, 스탯 항목, 최종 합산 항목을 Poly 공식 변수로 등록합니다.
+        /// </summary>
+        /// <param name="prefix">공식 변수 접두어입니다. 예: Attacker, Target.</param>
+        /// <param name="character">변수로 변환할 캐릭터입니다.</param>
+        /// <param name="variables">변수를 등록할 컨테이너입니다.</param>
+        private static void FillCharacterStatVariables(string prefix, CharacterBase character, DamageFormulaVariableBag variables)
+        {
+            if (string.IsNullOrWhiteSpace(prefix) || variables == null)
+                return;
+
+            if (character == null)
+            {
+                FillEmptyCharacterStatVariables(prefix, variables);
+                return;
+            }
+
+            // Base* 변수는 기본 항목의 최종 계산값(TotalBase*)을 의미합니다.
+            // 별도 Stat* 항목이 없는 기본 계열 수치는 해당 Total* 값을 Base* 별칭으로 함께 제공합니다.
+            variables.Set(prefix + "BaseAtk", character.TotalBaseAtk.Value);
+            variables.Set(prefix + "BaseDef", character.TotalBaseDef.Value);
+            variables.Set(prefix + "BaseHp", character.TotalBaseHp.Value);
+            variables.Set(prefix + "BaseMp", character.TotalBaseMp.Value);
+            variables.Set(prefix + "BaseStamina", character.TotalBaseStamina.Value);
+            variables.Set(prefix + "BaseSuperArmor", character.TotalSuperArmor.Value);
+            variables.Set(prefix + "BaseMoveSpeed", character.TotalMoveSpeed.Value);
+            variables.Set(prefix + "BaseMoveStep", character.TotalBaseMoveStep.Value);
+            variables.Set(prefix + "BaseAttackSpeed", character.TotalAttackSpeed.Value);
+            variables.Set(prefix + "BaseCriticalDamage", character.TotalCriticalDamage.Value);
+            variables.Set(prefix + "BaseCriticalProbability", character.TotalCriticalProbability.Value);
+            variables.Set(prefix + "BaseRegistFire", character.TotalRegistFire.Value);
+            variables.Set(prefix + "BaseRegistCold", character.TotalRegistCold.Value);
+            variables.Set(prefix + "BaseRegistLightning", character.TotalRegistLightning.Value);
+            variables.Set(prefix + "BaseRegistPoison", character.TotalRegistPoison.Value);
+
+            // Stat* 변수는 스탯 항목의 최종 계산값(TotalStat*)을 의미합니다.
+            variables.Set(prefix + "StatAtk", character.TotalStatAtk.Value);
+            variables.Set(prefix + "StatDef", character.TotalStatDef.Value);
+            variables.Set(prefix + "StatHp", character.TotalStatHp.Value);
+            variables.Set(prefix + "StatMp", character.TotalStatMp.Value);
+            variables.Set(prefix + "StatStamina", character.TotalStatStamina.Value);
+
+            // Total* 변수는 Base*와 Stat*을 포함한 실제 최종 수치입니다.
+            variables.Set(prefix + "TotalAtk", character.TotalAtk.Value);
+            variables.Set(prefix + "TotalDef", character.TotalDef.Value);
+            variables.Set(prefix + "TotalHp", character.TotalHp.Value);
+            variables.Set(prefix + "TotalHpTemp", character.TotalHpTemp.Value);
+            variables.Set(prefix + "TotalMp", character.TotalMp.Value);
+            variables.Set(prefix + "TotalStamina", character.TotalStamina.Value);
+            variables.Set(prefix + "TotalSuperArmor", character.TotalSuperArmor.Value);
+            variables.Set(prefix + "TotalMoveSpeed", character.TotalMoveSpeed.Value);
+            variables.Set(prefix + "TotalMoveStep", character.TotalMoveStep.Value);
+            variables.Set(prefix + "TotalAttackSpeed", character.TotalAttackSpeed.Value);
+            variables.Set(prefix + "TotalCriticalDamage", character.TotalCriticalDamage.Value);
+            variables.Set(prefix + "TotalCriticalProbability", character.TotalCriticalProbability.Value);
+            variables.Set(prefix + "TotalRegistFire", character.TotalRegistFire.Value);
+            variables.Set(prefix + "TotalRegistCold", character.TotalRegistCold.Value);
+            variables.Set(prefix + "TotalRegistLightning", character.TotalRegistLightning.Value);
+            variables.Set(prefix + "TotalRegistPoison", character.TotalRegistPoison.Value);
+        }
+
+        /// <summary>
+        /// 캐릭터가 없는 경우에도 공식 변수가 항상 존재하도록 0 값을 등록합니다.
+        /// </summary>
+        /// <param name="prefix">공식 변수 접두어입니다. 예: Attacker, Target.</param>
+        /// <param name="variables">변수를 등록할 컨테이너입니다.</param>
+        private static void FillEmptyCharacterStatVariables(string prefix, DamageFormulaVariableBag variables)
+        {
+            variables.Set(prefix + "BaseAtk", 0d);
+            variables.Set(prefix + "BaseDef", 0d);
+            variables.Set(prefix + "BaseHp", 0d);
+            variables.Set(prefix + "BaseMp", 0d);
+            variables.Set(prefix + "BaseStamina", 0d);
+            variables.Set(prefix + "BaseSuperArmor", 0d);
+            variables.Set(prefix + "BaseMoveSpeed", 0d);
+            variables.Set(prefix + "BaseMoveStep", 0d);
+            variables.Set(prefix + "BaseAttackSpeed", 0d);
+            variables.Set(prefix + "BaseCriticalDamage", 0d);
+            variables.Set(prefix + "BaseCriticalProbability", 0d);
+            variables.Set(prefix + "BaseRegistFire", 0d);
+            variables.Set(prefix + "BaseRegistCold", 0d);
+            variables.Set(prefix + "BaseRegistLightning", 0d);
+            variables.Set(prefix + "BaseRegistPoison", 0d);
+            variables.Set(prefix + "StatAtk", 0d);
+            variables.Set(prefix + "StatDef", 0d);
+            variables.Set(prefix + "StatHp", 0d);
+            variables.Set(prefix + "StatMp", 0d);
+            variables.Set(prefix + "StatStamina", 0d);
+            variables.Set(prefix + "TotalAtk", 0d);
+            variables.Set(prefix + "TotalDef", 0d);
+            variables.Set(prefix + "TotalHp", 0d);
+            variables.Set(prefix + "TotalHpTemp", 0d);
+            variables.Set(prefix + "TotalMp", 0d);
+            variables.Set(prefix + "TotalStamina", 0d);
+            variables.Set(prefix + "TotalSuperArmor", 0d);
+            variables.Set(prefix + "TotalMoveSpeed", 0d);
+            variables.Set(prefix + "TotalMoveStep", 0d);
+            variables.Set(prefix + "TotalAttackSpeed", 0d);
+            variables.Set(prefix + "TotalCriticalDamage", 0d);
+            variables.Set(prefix + "TotalCriticalProbability", 0d);
+            variables.Set(prefix + "TotalRegistFire", 0d);
+            variables.Set(prefix + "TotalRegistCold", 0d);
+            variables.Set(prefix + "TotalRegistLightning", 0d);
+            variables.Set(prefix + "TotalRegistPoison", 0d);
         }
 
         /// <summary>
