@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using UnityEngine;
 
 namespace GGemCo2DCore
@@ -84,6 +85,45 @@ namespace GGemCo2DCore
             return ResultCommon.SuccessWithIcons(null);
         }
 #endif
+        /// <summary>
+        /// 인벤토리에 추가하지 않고 아이템 사용 효과를 즉시 실행합니다.
+        /// 상점의 즉시 사용 구매처럼 아이템 획득과 소비를 분리하지 않는 흐름에서 사용합니다.
+        /// </summary>
+        /// <param name="sceneGame">현재 게임 씬입니다.</param>
+        /// <param name="itemUid">즉시 사용할 아이템 UID입니다.</param>
+        /// <param name="cooldownSeconds">아이템 사용 후 적용할 쿨타임입니다.</param>
+        /// <param name="targetObject">효과 적용 대상입니다. null이면 플레이어를 대상으로 사용합니다.</param>
+        /// <returns>아이템 사용 효과 실행 결과입니다.</returns>
+        public static ResultCommon TryUseItemDirect(
+            SceneGame sceneGame,
+            int itemUid,
+            out float cooldownSeconds,
+            GameObject targetObject = null)
+        {
+            cooldownSeconds = 0;
+            if (sceneGame == null || itemUid <= 0)
+            {
+                return ResultCommon.Fail("ItemUse_InvalidContext");
+            }
+
+            if (!TryBuildContext(
+                    sceneGame,
+                    inventory: null,
+                    slotIndex: -1,
+                    itemUid: itemUid,
+                    targetObject: targetObject,
+                    out ItemUseContext context,
+                    out StruckTableItemUse useGroup,
+                    out var actions,
+                    out cooldownSeconds,
+                    out ResultCommon failResult))
+            {
+                return failResult;
+            }
+
+            return ExecuteActionsWithoutInventoryConsume(context, actions);
+        }
+
         public static ResultCommon TryUseInventoryItem(SceneGame sceneGame, InventoryData inventory, int slotIndex,
             out float cooldownSeconds)
         {
@@ -94,13 +134,6 @@ namespace GGemCo2DCore
             if (TableLoaderManager.Instance == null)
                 return ResultCommon.Fail("ItemUse_NoTableLoader");
 
-            var tableItem = TableLoaderManager.Instance.TableItem;
-            var tableItemUse = TableLoaderManager.Instance.TableItemUse;
-            var tableItemUseAction = TableLoaderManager.Instance.TableItemUseAction;
-
-            if (tableItem == null || tableItemUse == null || tableItemUseAction == null)
-                return ResultCommon.Fail("ItemUse_NoTables");
-
             if (!inventory.ItemCounts.TryGetValue(slotIndex, out var icon))
                 return ResultCommon.Fail("Item_NoUsableCount");
 
@@ -109,45 +142,25 @@ namespace GGemCo2DCore
             if (itemUid <= 0 || itemCount <= 0)
                 return ResultCommon.Fail("Item_NoUsableCount");
 
-            if (!tableItemUse.TryGetByItemUid(itemUid, out var useGroup) || useGroup == null)
-                return ResultCommon.Fail("Item_NotUsable");
+            if (!TryBuildContext(
+                    sceneGame,
+                    inventory,
+                    slotIndex,
+                    itemUid,
+                    targetObject: null,
+                    out ItemUseContext ctx,
+                    out StruckTableItemUse useGroup,
+                    out var actions,
+                    out cooldownSeconds,
+                    out ResultCommon failResult))
+            {
+                return failResult;
+            }
 
             // consume
             int consumeCount = Mathf.Max(1, useGroup.ConsumeCount);
             if (itemCount < consumeCount)
                 return ResultCommon.Fail("Item_NoUsableCount");
-
-            // cooldown
-            var itemRow = tableItem.GetDataByUid(itemUid);
-            float cd = useGroup.CooldownOverride > 0 ? useGroup.CooldownOverride : (itemRow != null ? itemRow.CoolTime : 0);
-            cooldownSeconds = Mathf.Max(0, cd);
-
-            // action list
-            var actions = tableItemUseAction.GetActions(useGroup.Uid);
-            if (actions == null || actions.Count == 0)
-                return ResultCommon.Fail("ItemUse_NoActions");
-
-            // context
-            var player = sceneGame.player != null ? sceneGame.player.GetComponent<Player>() : null;
-            var playerData = sceneGame.saveDataManager != null ? sceneGame.saveDataManager.Player : null;
-            if (playerData == null)
-                return ResultCommon.Fail("ItemUse_NoPlayerData");
-
-            ResolveSkillReceivers(
-                sceneGame.player,
-                out IItemUseSkillReceiver skillReceiver,
-                out IItemUseSkillPassiveReceiver skillPassiveReceiver);
-
-            var ctx = new ItemUseContext(
-                sceneGame,
-                player,
-                playerData,
-                inventory,
-                slotIndex,
-                itemUid,
-                consumeCount,
-                skillReceiver,
-                skillPassiveReceiver: skillPassiveReceiver);
 
             // 1) CanExecute: 전체 사전 검증
             foreach (var row in actions)
@@ -182,6 +195,137 @@ namespace GGemCo2DCore
                 return minus ?? ResultCommon.Fail("ItemUse_Consume_Fail");
 
             return minus;
+        }
+
+        /// <summary>
+        /// 아이템 사용에 필요한 테이블, 대상, 액션 목록, 쿨타임 정보를 구성합니다.
+        /// </summary>
+        /// <param name="sceneGame">현재 게임 씬입니다.</param>
+        /// <param name="inventory">인벤토리 소모가 필요한 경우 사용할 저장 데이터입니다.</param>
+        /// <param name="slotIndex">인벤토리 슬롯 인덱스입니다. 직접 사용이면 -1입니다.</param>
+        /// <param name="itemUid">사용할 아이템 UID입니다.</param>
+        /// <param name="targetObject">효과 적용 대상입니다.</param>
+        /// <param name="context">구성된 아이템 사용 컨텍스트입니다.</param>
+        /// <param name="useGroup">item_use 테이블의 사용 그룹입니다.</param>
+        /// <param name="actions">실행할 item_use_action 목록입니다.</param>
+        /// <param name="cooldownSeconds">사용 후 적용할 쿨타임입니다.</param>
+        /// <param name="failResult">구성 실패 시 반환할 결과입니다.</param>
+        /// <returns>컨텍스트 구성이 완료되면 true입니다.</returns>
+        private static bool TryBuildContext(
+            SceneGame sceneGame,
+            InventoryData inventory,
+            int slotIndex,
+            int itemUid,
+            GameObject targetObject,
+            out ItemUseContext context,
+            out StruckTableItemUse useGroup,
+            out List<StruckTableItemUseAction> actions,
+            out float cooldownSeconds,
+            out ResultCommon failResult)
+        {
+            context = null;
+            useGroup = null;
+            actions = null;
+            cooldownSeconds = 0;
+            failResult = null;
+
+            if (TableLoaderManager.Instance == null)
+            {
+                failResult = ResultCommon.Fail("ItemUse_NoTableLoader");
+                return false;
+            }
+
+            var tableItem = TableLoaderManager.Instance.TableItem;
+            var tableItemUse = TableLoaderManager.Instance.TableItemUse;
+            var tableItemUseAction = TableLoaderManager.Instance.TableItemUseAction;
+
+            if (tableItem == null || tableItemUse == null || tableItemUseAction == null)
+            {
+                failResult = ResultCommon.Fail("ItemUse_NoTables");
+                return false;
+            }
+
+            if (!tableItemUse.TryGetByItemUid(itemUid, out useGroup) || useGroup == null)
+            {
+                failResult = ResultCommon.Fail("Item_NotUsable");
+                return false;
+            }
+
+            int consumeCount = Mathf.Max(1, useGroup.ConsumeCount);
+            var itemRow = tableItem.GetDataByUid(itemUid);
+            float cd = useGroup.CooldownOverride > 0 ? useGroup.CooldownOverride : (itemRow != null ? itemRow.CoolTime : 0);
+            cooldownSeconds = Mathf.Max(0, cd);
+
+            actions = tableItemUseAction.GetActions(useGroup.Uid);
+            if (actions == null || actions.Count == 0)
+            {
+                failResult = ResultCommon.Fail("ItemUse_NoActions");
+                return false;
+            }
+
+            var player = sceneGame.player != null ? sceneGame.player.GetComponent<Player>() : null;
+            var playerData = sceneGame.saveDataManager != null ? sceneGame.saveDataManager.Player : null;
+            if (playerData == null)
+            {
+                failResult = ResultCommon.Fail("ItemUse_NoPlayerData");
+                return false;
+            }
+
+            ResolveSkillReceivers(
+                sceneGame.player,
+                out IItemUseSkillReceiver skillReceiver,
+                out IItemUseSkillPassiveReceiver skillPassiveReceiver);
+
+            context = new ItemUseContext(
+                sceneGame,
+                player,
+                playerData,
+                inventory,
+                slotIndex,
+                itemUid,
+                consumeCount,
+                skillReceiver,
+                targetObject: targetObject,
+                skillPassiveReceiver: skillPassiveReceiver);
+
+            return true;
+        }
+
+        /// <summary>
+        /// 인벤토리 소모 없이 아이템 사용 액션을 검증하고 실행합니다.
+        /// </summary>
+        /// <param name="context">아이템 사용 컨텍스트입니다.</param>
+        /// <param name="actions">실행할 액션 목록입니다.</param>
+        /// <returns>액션 실행 결과입니다.</returns>
+        private static ResultCommon ExecuteActionsWithoutInventoryConsume(
+            ItemUseContext context,
+            System.Collections.Generic.List<StruckTableItemUseAction> actions)
+        {
+            foreach (var row in actions)
+            {
+                var action = ItemUseActionFactory.Create(row);
+                if (action == null) return ResultCommon.Fail("ItemUse_InvalidAction");
+
+                var can = action.CanExecute(context);
+                if (can == null || !can.IsSuccess())
+                {
+                    return can ?? ResultCommon.Fail("ItemUse_CannotExecute");
+                }
+            }
+
+            foreach (var row in actions)
+            {
+                var action = ItemUseActionFactory.Create(row);
+                if (action == null) return ResultCommon.Fail("ItemUse_InvalidAction");
+
+                var exec = action.Execute(context);
+                if (exec == null || !exec.IsSuccess())
+                {
+                    return exec ?? ResultCommon.Fail("ItemUse_Execute_Fail");
+                }
+            }
+
+            return ResultCommon.Success();
         }
 
         /// <summary>

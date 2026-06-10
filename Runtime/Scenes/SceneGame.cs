@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections;
 using UnityEngine;
 
@@ -424,22 +424,74 @@ namespace GGemCo2DCore
         }
 
         /// <summary>
-        /// 아이템 구매하기
+        /// 상점 표시 데이터를 기준으로 아이템 구매를 처리합니다.
+        /// shop_item 테이블의 구매 후 사용 정책까지 함께 적용하기 위해 상점 UI에서는 이 오버로드를 우선 사용합니다.
         /// </summary>
-        /// <param name="itemUid"></param>
-        /// <param name="currencyType"></param>
-        /// <param name="price"></param>
-        /// <param name="itemCount"></param>
-        public ResultCommon BuyItem(int itemUid, CurrencyConstants.Type currencyType, int price, int itemCount = 1)
+        /// <param name="shopDisplayItem">구매할 상점 아이템 표시 데이터입니다.</param>
+        /// <param name="itemCount">구매 수량입니다.</param>
+        /// <returns>구매 처리 결과입니다.</returns>
+        public ResultCommon BuyItem(ShopDisplayItem shopDisplayItem, int itemCount = 1)
+        {
+            if (shopDisplayItem == null || shopDisplayItem.ItemUid <= 0)
+            {
+                return ResultCommon.Fail("Shop_InvalidItem");
+            }
+
+            return BuyItem(
+                shopDisplayItem.ItemUid,
+                shopDisplayItem.CurrencyType,
+                shopDisplayItem.CurrencyValue,
+                itemCount,
+                shopDisplayItem.BuyUsePolicy);
+        }
+
+        /// <summary>
+        /// 아이템 구매를 처리합니다.
+        /// 구매 후 처리 정책에 따라 인벤토리에 추가하거나 즉시 사용합니다.
+        /// </summary>
+        /// <param name="itemUid">구매할 아이템 UID입니다.</param>
+        /// <param name="currencyType">구매에 사용할 재화 타입입니다.</param>
+        /// <param name="price">아이템 1개 가격입니다.</param>
+        /// <param name="itemCount">구매 수량입니다.</param>
+        /// <param name="buyUsePolicy">구매 성공 후 처리 정책입니다.</param>
+        /// <returns>구매 처리 결과입니다.</returns>
+        public ResultCommon BuyItem(
+            int itemUid,
+            CurrencyConstants.Type currencyType,
+            int price,
+            int itemCount = 1,
+            ShopBuyUsePolicy buyUsePolicy = ShopBuyUsePolicy.AddToInventory)
+        {
+            if (itemCount <= 0)
+            {
+                return ResultCommon.Fail("Slot_InvalidItemCount", $"itemUid: {itemUid}, itemCount: {itemCount}");
+            }
+
+            return buyUsePolicy switch
+            {
+                ShopBuyUsePolicy.UseImmediately => BuyAndUseItemImmediately(itemUid, currencyType, price, itemCount),
+                _ => BuyItemToInventory(itemUid, currencyType, price, itemCount),
+            };
+        }
+
+        /// <summary>
+        /// 구매한 아이템을 인벤토리에 추가합니다.
+        /// 구매 실패 시 차감된 재화를 되돌립니다.
+        /// </summary>
+        /// <param name="itemUid">구매할 아이템 UID입니다.</param>
+        /// <param name="currencyType">구매에 사용할 재화 타입입니다.</param>
+        /// <param name="price">아이템 1개 가격입니다.</param>
+        /// <param name="itemCount">구매 수량입니다.</param>
+        /// <returns>구매 처리 결과입니다.</returns>
+        private ResultCommon BuyItemToInventory(int itemUid, CurrencyConstants.Type currencyType, int price, int itemCount)
         {
             int totalPrice = price * itemCount;
-            // 가지고 있는 재화가 충분하지 체크
             var checkNeedCurrency = saveDataManager.Player.CheckNeedCurrency(currencyType, totalPrice);
             if (checkNeedCurrency.Result == ResultCommon.ResultType.Fail) return checkNeedCurrency;
-            // 재화 빼주기
+
             var minusCurrency = saveDataManager.Player.MinusCurrency(currencyType, totalPrice);
             if (minusCurrency.Result == ResultCommon.ResultType.Fail) return minusCurrency;
-            // 인벤토리에 아이템 넣을 수 있는지 체크
+
             var addItem = saveDataManager.Inventory.AddItem(itemUid, itemCount);
             if (addItem.Result == ResultCommon.ResultType.Fail)
             {
@@ -453,6 +505,42 @@ namespace GGemCo2DCore
             }
 
             return addItem;
+        }
+
+        /// <summary>
+        /// 구매한 아이템을 인벤토리에 넣지 않고 즉시 사용합니다.
+        /// 즉시 사용은 사용 결과와 구매 기록을 명확하게 맞추기 위해 단일 구매만 허용합니다.
+        /// </summary>
+        /// <param name="itemUid">구매 후 즉시 사용할 아이템 UID입니다.</param>
+        /// <param name="currencyType">구매에 사용할 재화 타입입니다.</param>
+        /// <param name="price">아이템 1개 가격입니다.</param>
+        /// <param name="itemCount">구매 수량입니다.</param>
+        /// <returns>구매 및 즉시 사용 처리 결과입니다.</returns>
+        private ResultCommon BuyAndUseItemImmediately(
+            int itemUid,
+            CurrencyConstants.Type currencyType,
+            int price,
+            int itemCount)
+        {
+            if (itemCount != 1)
+            {
+                return ResultCommon.Fail("Shop_ImmediateUseSingleOnly", $"itemUid: {itemUid}, itemCount: {itemCount}");
+            }
+
+            var checkNeedCurrency = saveDataManager.Player.CheckNeedCurrency(currencyType, price);
+            if (checkNeedCurrency.Result == ResultCommon.ResultType.Fail) return checkNeedCurrency;
+
+            var minusCurrency = saveDataManager.Player.MinusCurrency(currencyType, price);
+            if (minusCurrency.Result == ResultCommon.ResultType.Fail) return minusCurrency;
+
+            ResultCommon useResult = ItemUseService.TryUseItemDirect(this, itemUid, out _);
+            if (useResult == null || useResult.Result == ResultCommon.ResultType.Fail)
+            {
+                saveDataManager.Player.AddCurrency(currencyType, price);
+                return useResult ?? ResultCommon.Fail("ItemUse_Execute_Fail");
+            }
+
+            return useResult;
         }
 
         private void OnEnable()

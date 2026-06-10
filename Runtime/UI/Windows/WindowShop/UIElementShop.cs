@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using TMPro;
 using UnityEngine;
 using UnityEngine.EventSystems;
@@ -254,7 +254,8 @@ namespace GGemCo2DCore
             }
 
             // 다중 구매 처리
-            if (_shopDisplayItem.MaxBuyCount > 1)
+            // 즉시 사용 정책은 구매 결과와 사용 결과를 1:1로 맞추기 위해 단일 구매로 처리합니다.
+            if (_shopDisplayItem.MaxBuyCount > 1 && _shopDisplayItem.BuyUsePolicy != ShopBuyUsePolicy.UseImmediately)
             {
                 int count = (int)_playerData.GetPossibleBuyCount(
                     _shopDisplayItem.CurrencyType,
@@ -298,10 +299,7 @@ namespace GGemCo2DCore
             // 단일 구매
             else
             {
-                var result = _sceneGame.BuyItem(
-                    _shopDisplayItem.ItemUid,
-                    _shopDisplayItem.CurrencyType,
-                    _shopDisplayItem.CurrencyValue);
+                var result = _sceneGame.BuyItem(_shopDisplayItem);
 
                 if (result is { Result: ResultCommon.ResultType.Success })
                 {

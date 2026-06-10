@@ -87,11 +87,11 @@ namespace GGemCo2DCore
         /// <summary>
         /// UseGroupUid에 해당하는 Action 목록을 Order 기준으로 정렬하여 반환합니다.
         /// </summary>
-        public IReadOnlyList<StruckTableItemUseAction> GetActions(int useGroupUid)
+        public List<StruckTableItemUseAction> GetActions(int useGroupUid)
         {
             if (!_byUseGroupUid.TryGetValue(useGroupUid, out var list) || list == null || list.Count == 0)
             {
-                return Array.Empty<StruckTableItemUseAction>();
+                return null;
             }
             // 로드 후 정렬 비용을 줄이기 위해 호출 시점에만 정렬(리스트 복사)
             return list.OrderBy(x => x.Order).ToList();

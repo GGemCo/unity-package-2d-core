@@ -9,6 +9,18 @@ namespace GGemCo2DCore
     }
 
     /// <summary>
+    /// 상점 아이템 구매 후 처리 정책입니다.
+    /// </summary>
+    public enum ShopBuyUsePolicy
+    {
+        /// <summary>구매한 아이템을 인벤토리에 추가합니다.</summary>
+        AddToInventory = 0,
+
+        /// <summary>구매한 아이템을 인벤토리에 넣지 않고 즉시 사용합니다.</summary>
+        UseImmediately = 1,
+    }
+
+    /// <summary>
     /// Sale item row displayed by a shop.
     /// </summary>
     public sealed class StruckTableShopItem
@@ -25,6 +37,11 @@ namespace GGemCo2DCore
         public int UniqueGroup;
         public int PurchaseLimitCount;
         public ShopSoldOutDisplayType SoldOutDisplayType;
+
+        /// <summary>
+        /// 구매 성공 후 아이템을 인벤토리에 넣을지, 즉시 사용할지 결정하는 정책입니다.
+        /// </summary>
+        public ShopBuyUsePolicy BuyUsePolicy;
 
         public static StruckTableShopItem FromLegacyShopRow(StruckTableShop row)
         {
@@ -44,6 +61,7 @@ namespace GGemCo2DCore
                 UniqueGroup = row.UniqueGroup,
                 PurchaseLimitCount = 0,
                 SoldOutDisplayType = ShopSoldOutDisplayType.Disable,
+                BuyUsePolicy = ShopBuyUsePolicy.AddToInventory,
             };
         }
 
@@ -108,6 +126,7 @@ namespace GGemCo2DCore
                 UniqueGroup = reader.Int("UniqueGroup"),
                 PurchaseLimitCount = reader.Int("PurchaseLimitCount"),
                 SoldOutDisplayType = reader.Enum<ShopSoldOutDisplayType>("SoldOutDisplayType"),
+                BuyUsePolicy = reader.Enum<ShopBuyUsePolicy>("BuyUsePolicy"),
             };
         }
 

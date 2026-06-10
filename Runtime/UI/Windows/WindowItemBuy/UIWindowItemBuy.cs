@@ -1,4 +1,4 @@
-﻿using TMPro;
+using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -115,9 +115,13 @@ namespace GGemCo2DCore
             }
 
             // 구매 하기
-            int price = _shopDisplayItem?.CurrencyValue ?? _struckTableShop.CurrencyValue;
-            var result = SceneGame.Instance.BuyItem(_struckTableShop.ItemUid, _struckTableShop.CurrencyType,
-                price, _buyItemCount);
+            ResultCommon result = _shopDisplayItem != null
+                ? SceneGame.Instance.BuyItem(_shopDisplayItem, _buyItemCount)
+                : SceneGame.Instance.BuyItem(
+                    _struckTableShop.ItemUid,
+                    _struckTableShop.CurrencyType,
+                    _struckTableShop.CurrencyValue,
+                    _buyItemCount);
             if (result is { Result: ResultCommon.ResultType.Success })
             {
                 SceneGame.saveDataManager?.ShopPurchase?.AddBoughtCount(_shopDisplayItem, _buyItemCount);

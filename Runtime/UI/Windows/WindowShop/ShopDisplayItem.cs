@@ -18,6 +18,11 @@ namespace GGemCo2DCore
         public int MaxBuyCount => Source?.MaxBuyCount ?? 0;
         public int PurchaseLimitCount => Source?.PurchaseLimitCount ?? 0;
         public ShopSoldOutDisplayType SoldOutDisplayType => Source?.SoldOutDisplayType ?? ShopSoldOutDisplayType.Disable;
+
+        /// <summary>
+        /// 구매 성공 후 아이템을 인벤토리에 넣을지, 즉시 사용할지 결정하는 정책입니다.
+        /// </summary>
+        public ShopBuyUsePolicy BuyUsePolicy => Source?.BuyUsePolicy ?? ShopBuyUsePolicy.AddToInventory;
         public bool IsBuyable { get; private set; } = true;
         public string DisabledReason { get; private set; }
         public ShopPromotionResult Promotion { get; private set; }
