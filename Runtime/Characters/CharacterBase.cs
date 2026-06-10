@@ -130,6 +130,89 @@ namespace GGemCo2DCore
         }
 
         /// <summary>
+        /// 공중 상태를 관리하는 공용 컨트롤러입니다.
+        /// 필요 시 현재 캐릭터 오브젝트에 자동으로 추가합니다.
+        /// </summary>
+        private CharacterAirborneStateController _airborneStateController;
+
+        /// <summary>
+        /// 공중 상태 컨트롤러를 반환합니다.
+        /// Jump, Crowd Control, Skill Lunge 등 여러 시스템이 같은 기준으로 공중 상태를 등록/조회할 때 사용합니다.
+        /// </summary>
+        public CharacterAirborneStateController AirborneStateController
+        {
+            get
+            {
+                if (_airborneStateController == null)
+                {
+                    _airborneStateController = GetComponent<CharacterAirborneStateController>();
+                    if (_airborneStateController == null)
+                        _airborneStateController = gameObject.AddComponent<CharacterAirborneStateController>();
+                }
+
+                return _airborneStateController;
+            }
+        }
+
+        /// <summary>
+        /// 강제 공중 상태를 등록하고 해제용 핸들을 반환합니다.
+        /// 각 시스템은 반환된 핸들을 보관했다가 자신이 등록한 상태만 해제해야 합니다.
+        /// </summary>
+        /// <param name="source">공중 상태를 등록한 원인입니다.</param>
+        /// <param name="reason">디버그 확인용 사유 문자열입니다.</param>
+        /// <returns>등록된 공중 상태 핸들입니다.</returns>
+        public CharacterAirborneHandle AcquireAirborne(CharacterAirborneSource source, string reason = null)
+        {
+            return AirborneStateController.AcquireAirborne(source, reason);
+        }
+
+        /// <summary>
+        /// 이전에 등록한 강제 공중 상태를 해제합니다.
+        /// </summary>
+        /// <param name="handle">해제할 공중 상태 핸들입니다.</param>
+        /// <returns>실제로 해제되었으면 <see langword="true"/>를 반환합니다.</returns>
+        public bool ReleaseAirborne(CharacterAirborneHandle handle)
+        {
+            if (_airborneStateController == null)
+                return false;
+
+            return _airborneStateController.ReleaseAirborne(handle);
+        }
+
+        /// <summary>
+        /// Ground Probe와 강제 공중 토큰을 합산하여 현재 캐릭터가 공중 상태인지 반환합니다.
+        /// </summary>
+        /// <param name="maxGroundDistance">지면 판정에 사용할 최대 거리입니다.</param>
+        /// <returns>공중 상태이면 <see langword="true"/>를 반환합니다.</returns>
+        public bool IsAirborne(float maxGroundDistance = CharacterGroundProbeUtility.DefaultGroundedCheckDistance)
+        {
+            return TryGetAirborneInfo(out CharacterAirborneInfo info, maxGroundDistance) && info.IsAirborne;
+        }
+
+        /// <summary>
+        /// 지정한 원인으로 인해 현재 캐릭터가 공중 상태인지 확인합니다.
+        /// </summary>
+        /// <param name="source">확인할 공중 상태 원인입니다.</param>
+        /// <param name="maxGroundDistance">지면 판정에 사용할 최대 거리입니다.</param>
+        /// <returns>지정한 원인이 활성화되어 있으면 <see langword="true"/>를 반환합니다.</returns>
+        public bool IsAirborneBy(CharacterAirborneSource source, float maxGroundDistance = CharacterGroundProbeUtility.DefaultGroundedCheckDistance)
+        {
+            return TryGetAirborneInfo(out CharacterAirborneInfo info, maxGroundDistance) && (info.Source & source) != 0;
+        }
+
+        /// <summary>
+        /// 현재 캐릭터의 공중 상태 스냅샷을 조회합니다.
+        /// </summary>
+        /// <param name="info">계산된 공중 상태 정보입니다.</param>
+        /// <param name="maxGroundDistance">지면 판정에 사용할 최대 거리입니다.</param>
+        /// <returns>공중 상태 컨트롤러를 통해 정보를 계산했으면 <see langword="true"/>를 반환합니다.</returns>
+        public bool TryGetAirborneInfo(out CharacterAirborneInfo info, float maxGroundDistance = CharacterGroundProbeUtility.DefaultGroundedCheckDistance)
+        {
+            info = AirborneStateController.GetAirborneInfo(maxGroundDistance);
+            return true;
+        }
+
+        /// <summary>
         /// 맵 상주 캐릭터로 등록된 뒤 사용할 표시/컬링 정책을 설정합니다.
         /// </summary>
         /// <param name="policy">적용할 맵 표시 정책입니다.</param>

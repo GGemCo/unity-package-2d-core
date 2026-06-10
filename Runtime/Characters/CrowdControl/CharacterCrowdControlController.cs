@@ -22,6 +22,7 @@ namespace GGemCo2DCore
         private ICharacterMotionController _motionController;
         private CharacterMotionController2D _motionController2D;
         private GameObject _activeSource;
+        private CharacterAirborneHandle _crowdControlAirborneHandle;
         private bool _isActive;
         public bool IsActive => _isActive;
 
@@ -205,6 +206,7 @@ namespace GGemCo2DCore
             _activeCrowdControl = crowdControl;
             _activeSource = source;
             _isActive = true;
+            AcquireCrowdControlAirborneState(crowdControl);
             // 이번 CC 적용 사이클 동안 phase/end 애니메이션까지 동일한 강제 재생 정책을 유지합니다.
             _forceRefreshAnimationOnCurrentCrowdControl = forceRefreshAnimation;
 
@@ -310,6 +312,7 @@ namespace GGemCo2DCore
                 _activeCrowdControl = null;
                 _activeSource = null;
                 _isActive = false;
+                ReleaseCrowdControlAirborneState();
                 TryStartNextQueuedCrowdControl();
                 return;
             }
@@ -659,6 +662,48 @@ namespace GGemCo2DCore
         }
 
         /// <summary>
+        /// 공중형 Crowd Control이 시작될 때 공통 공중 상태를 등록합니다.
+        /// </summary>
+        /// <param name="crowdControl">현재 적용할 Crowd Control 데이터입니다.</param>
+        private void AcquireCrowdControlAirborneState(CrowdControlRuntimeData crowdControl)
+        {
+            if (_character == null || crowdControl == null)
+                return;
+
+            if (!IsAirborneCrowdControl(crowdControl))
+                return;
+
+            ReleaseCrowdControlAirborneState();
+            _crowdControlAirborneHandle = _character.AcquireAirborne(
+                CharacterAirborneSource.CrowdControl,
+                $"CrowdControl:{crowdControl.Type}");
+        }
+
+        /// <summary>
+        /// 현재 Crowd Control이 등록한 공통 공중 상태를 해제합니다.
+        /// </summary>
+        private void ReleaseCrowdControlAirborneState()
+        {
+            if (!_crowdControlAirborneHandle.IsValid || _character == null)
+                return;
+
+            _character.ReleaseAirborne(_crowdControlAirborneHandle);
+            _crowdControlAirborneHandle = default;
+        }
+
+        /// <summary>
+        /// 지정한 Crowd Control이 캐릭터를 공중 상태로 취급해야 하는지 확인합니다.
+        /// </summary>
+        /// <param name="crowdControl">확인할 Crowd Control 데이터입니다.</param>
+        /// <returns>공중형 Crowd Control이면 <see langword="true"/>를 반환합니다.</returns>
+        private static bool IsAirborneCrowdControl(CrowdControlRuntimeData crowdControl)
+        {
+            return crowdControl != null
+                   && (crowdControl.Type == CrowdControlConstants.Type.KnockUp
+                       || crowdControl.Type == CrowdControlConstants.Type.KnockDownAir);
+        }
+
+        /// <summary>
         /// CC 종료 애니메이션(있다면)을 재생하고, 최종적으로 CC 상태를 정리합니다.
         /// </summary>
         /// <param name="crowdControl">종료 대기 시간 보정에 사용할 CC 데이터입니다(없을 수 있음).</param>
@@ -740,6 +785,7 @@ namespace GGemCo2DCore
 
             // End 애니메이션이 없으면 즉시 정리
             CharacterStop(crowdControl is { IsEndCharacterStop: true });
+            ReleaseCrowdControlAirborneState();
             ResetAnimationState();
             TryStartNextQueuedCrowdControl();
         }
@@ -761,6 +807,7 @@ namespace GGemCo2DCore
                 yield return new WaitForSeconds(durationSec);
 
             CharacterStop(isEndCharacterStop);
+            ReleaseCrowdControlAirborneState();
             ResetAnimationState();
             _stopRoutine = null;
             TryStartNextQueuedCrowdControl();
@@ -877,6 +924,7 @@ namespace GGemCo2DCore
 
             // 진행 중인 CC를 강제 해제
             CharacterStop(isEndCharacterStop);
+            ReleaseCrowdControlAirborneState();
             ResetAnimationState();
             _activeCrowdControl = null;
             _activeSource = null;
