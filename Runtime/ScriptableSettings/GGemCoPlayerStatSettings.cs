@@ -137,6 +137,12 @@ namespace GGemCo2DCore
         /// <summary>공식 변수의 출처별 증가량을 표시할지 여부입니다.</summary>
         public bool EnableFormulaVariableContributionDebug => EnableFormulaVariableDebug && DebugOptionRuntimeUtility.Resolve(enableFormulaVariableContributionDebug);
 
+        [SerializeField, Tooltip("플레이어 점프/공중 상태 출력")]
+        private bool enablePlayerJumpStateDebug;
+
+        /// <summary>플레이어의 점프 및 공중 상태를 표시할지 여부입니다.</summary>
+        public bool EnablePlayerJumpStateDebug => EnablePlayerStatDebugHud && DebugOptionRuntimeUtility.Resolve(enablePlayerJumpStateDebug);
+
         [SerializeField, Tooltip("마지막 최종 데미지 계산 결과 출력")]
         private bool enablePlayerFinalDamageDebug;
 
@@ -180,6 +186,7 @@ namespace GGemCo2DCore
             enablePlayerStatContributionDebug = true;
             enableFormulaVariableDebug = true;
             enableFormulaVariableContributionDebug = true;
+            enablePlayerJumpStateDebug = true;
             enablePlayerFinalDamageDebug = true;
             enableLastDamageFormulaVariableDebug = true;
             playerStatDebugHudUpdateInterval = 0.2f;

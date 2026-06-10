@@ -67,6 +67,11 @@ namespace GGemCo2DCore
                 AppendFormulaVariableLines("[Formula Variables]", snapshot.FormulaVariables, statSettings.EnableFormulaVariableContributionDebug);
             }
 
+            if (statSettings.EnablePlayerJumpStateDebug)
+            {
+                AppendJumpStateLine(player);
+            }
+
             if (statSettings.EnablePlayerFinalDamageDebug)
             {
                 AppendDamageLine(statSettings);
@@ -105,6 +110,29 @@ namespace GGemCo2DCore
             _builder.Append("  Item:").Append(FormatSigned(line.ItemContribution))
                 .Append(" Skill:").Append(FormatSigned(line.SkillContribution))
                 .Append(" Affect:").AppendLine(FormatSigned(line.AffectContribution));
+        }
+
+        /// <summary>
+        /// 플레이어의 점프 및 공중 상태를 HUD 문자열로 추가합니다.
+        /// </summary>
+        /// <param name="player">상태를 확인할 플레이어입니다.</param>
+        private void AppendJumpStateLine(Player player)
+        {
+            if (player == null || !player.TryGetAirborneInfo(out CharacterAirborneInfo airborneInfo))
+            {
+                _builder.AppendLine("Jump State: -");
+                return;
+            }
+
+            bool isJumpAirborne = (airborneInfo.Source & CharacterAirborneSource.Jump) != 0;
+            _builder.Append("Jump State: ")
+                .Append(isJumpAirborne ? "Jump" : "NotJump")
+                .Append(" / Grounded:").Append(airborneInfo.IsGrounded ? "Y" : "N")
+                .Append(" / Airborne:").Append(airborneInfo.IsAirborne ? "Y" : "N")
+                .Append(" / Forced:").Append(airborneInfo.IsForcedAirborne ? "Y" : "N")
+                .Append(" / Source:").Append(airborneInfo.Source)
+                .Append(" / Vy:").Append(FormatDouble(airborneInfo.VerticalVelocity))
+                .Append(" / GroundDist:").AppendLine(FormatDouble(airborneInfo.DistanceToGround));
         }
 
         /// <summary>
