@@ -125,11 +125,29 @@ namespace GGemCo2DCore
         /// <summary>스탯 출처별 증가량을 표시할지 여부입니다.</summary>
         public bool EnablePlayerStatContributionDebug => EnablePlayerStatDebugHud && DebugOptionRuntimeUtility.Resolve(enablePlayerStatContributionDebug);
 
+        [SerializeField, Tooltip("어펙트/패시브 스킬 공식 변수 출력")]
+        private bool enableFormulaVariableDebug;
+
+        /// <summary>현재 적용 중인 공식 변수를 표시할지 여부입니다.</summary>
+        public bool EnableFormulaVariableDebug => EnablePlayerStatDebugHud && DebugOptionRuntimeUtility.Resolve(enableFormulaVariableDebug);
+
+        [SerializeField, Tooltip("공식 변수의 Item/Skill/Affect 출처별 증가량 출력")]
+        private bool enableFormulaVariableContributionDebug;
+
+        /// <summary>공식 변수의 출처별 증가량을 표시할지 여부입니다.</summary>
+        public bool EnableFormulaVariableContributionDebug => EnableFormulaVariableDebug && DebugOptionRuntimeUtility.Resolve(enableFormulaVariableContributionDebug);
+
         [SerializeField, Tooltip("마지막 최종 데미지 계산 결과 출력")]
         private bool enablePlayerFinalDamageDebug;
 
         /// <summary>마지막 최종 데미지 결과를 표시할지 여부입니다.</summary>
         public bool EnablePlayerFinalDamageDebug => EnablePlayerStatDebugHud && DebugOptionRuntimeUtility.Resolve(enablePlayerFinalDamageDebug);
+
+        [SerializeField, Tooltip("마지막 최종 데미지에 사용된 공식 변수 출력")]
+        private bool enableLastDamageFormulaVariableDebug;
+
+        /// <summary>마지막 데미지 계산에 실제 사용된 공식 변수를 표시할지 여부입니다.</summary>
+        public bool EnableLastDamageFormulaVariableDebug => EnablePlayerFinalDamageDebug && DebugOptionRuntimeUtility.Resolve(enableLastDamageFormulaVariableDebug);
 
         [Tooltip("플레이어 스탯 디버그 HUD 갱신 주기입니다.")]
         [Min(0.05f)]
@@ -160,7 +178,10 @@ namespace GGemCo2DCore
             enablePlayerStatDebug = false;
             enablePlayerStatDebugHud = false;
             enablePlayerStatContributionDebug = true;
+            enableFormulaVariableDebug = true;
+            enableFormulaVariableContributionDebug = true;
             enablePlayerFinalDamageDebug = true;
+            enableLastDamageFormulaVariableDebug = true;
             playerStatDebugHudUpdateInterval = 0.2f;
         }
 

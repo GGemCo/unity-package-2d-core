@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System.Text;
 using UnityEngine;
 
@@ -61,9 +62,14 @@ namespace GGemCo2DCore
             AppendStatLine(snapshot.Def, statSettings);
             AppendStatLine(snapshot.Stamina, statSettings);
 
+            if (statSettings.EnableFormulaVariableDebug)
+            {
+                AppendFormulaVariableLines("[Formula Variables]", snapshot.FormulaVariables, statSettings.EnableFormulaVariableContributionDebug);
+            }
+
             if (statSettings.EnablePlayerFinalDamageDebug)
             {
-                AppendDamageLine();
+                AppendDamageLine(statSettings);
             }
 
             _hasSnapshot = _builder.Length > 0;
@@ -104,7 +110,7 @@ namespace GGemCo2DCore
         /// <summary>
         /// 마지막 데미지 계산 결과를 HUD 문자열로 추가합니다.
         /// </summary>
-        private void AppendDamageLine()
+        private void AppendDamageLine(GGemCoPlayerStatSettings settings)
         {
             CalculateManager manager = CalculateManager.GetActive();
             if (manager == null || !manager.TryGetLastDamageDebugSnapshot(out DamageCalculationDebugSnapshot damage))
@@ -124,6 +130,46 @@ namespace GGemCo2DCore
                 _builder.Append(" Immune");
 
             _builder.AppendLine();
+
+            if (settings != null && settings.EnableLastDamageFormulaVariableDebug)
+            {
+                AppendFormulaVariableLines("Used Variables", damage.UsedFormulaVariables, settings.EnableFormulaVariableContributionDebug);
+            }
+        }
+
+        /// <summary>
+        /// 공식 변수 목록을 HUD 문자열로 추가합니다.
+        /// </summary>
+        /// <param name="title">섹션 제목입니다.</param>
+        /// <param name="lines">출력할 공식 변수 목록입니다.</param>
+        /// <param name="showContributions">출처별 기여도를 함께 표시할지 여부입니다.</param>
+        private void AppendFormulaVariableLines(
+            string title,
+            IReadOnlyList<DamageFormulaVariableDebugLine> lines,
+            bool showContributions)
+        {
+            if (lines == null || lines.Count == 0)
+                return;
+
+            _builder.AppendLine(title);
+            for (int i = 0; i < lines.Count; i++)
+            {
+                DamageFormulaVariableDebugLine line = lines[i];
+                if (string.IsNullOrWhiteSpace(line.VariableKey))
+                    continue;
+
+                _builder.Append("  ")
+                    .Append(line.VariableKey)
+                    .Append(" Final:")
+                    .AppendLine(FormatDouble(line.FinalValue));
+
+                if (!showContributions)
+                    continue;
+
+                _builder.Append("    Item:").Append(FormatSigned(line.ItemValue))
+                    .Append(" Skill:").Append(FormatSigned(line.SkillValue))
+                    .Append(" Affect:").AppendLine(FormatSigned(line.AffectValue));
+            }
         }
 
         /// <summary>
@@ -132,6 +178,27 @@ namespace GGemCo2DCore
         private static string FormatSigned(long value)
         {
             return value > 0 ? "+" + value : value.ToString();
+        }
+
+        /// <summary>
+        /// 부호가 포함된 실수 문자열을 반환합니다.
+        /// </summary>
+        private static string FormatSigned(double value)
+        {
+            return value > 0d ? "+" + FormatDouble(value) : FormatDouble(value);
+        }
+
+        /// <summary>
+        /// HUD 표시용 실수 문자열을 반환합니다.
+        /// </summary>
+        private static string FormatDouble(double value)
+        {
+            if (double.IsNaN(value) || double.IsInfinity(value))
+                return "0";
+
+            return System.Math.Abs(value % 1d) < 0.0001d
+                ? ((long)System.Math.Round(value)).ToString()
+                : value.ToString("0.###");
         }
 
         /// <summary>

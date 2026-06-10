@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 
 namespace GGemCo2DCore
@@ -42,16 +43,19 @@ namespace GGemCo2DCore
         /// </summary>
         public readonly struct Snapshot
         {
-            public Snapshot(StatLine atk, StatLine def, StatLine stamina)
+            public Snapshot(StatLine atk, StatLine def, StatLine stamina,
+                IReadOnlyList<DamageFormulaVariableDebugLine> formulaVariables)
             {
                 Atk = atk;
                 Def = def;
                 Stamina = stamina;
+                FormulaVariables = formulaVariables ?? Array.Empty<DamageFormulaVariableDebugLine>();
             }
 
             public StatLine Atk { get; }
             public StatLine Def { get; }
             public StatLine Stamina { get; }
+            public IReadOnlyList<DamageFormulaVariableDebugLine> FormulaVariables { get; }
         }
 
         /// <summary>
@@ -72,7 +76,8 @@ namespace GGemCo2DCore
                 BuildLine("DEF", stat.BaseDef, stat.StatDef, ConfigCommon.BaseStatDef, ConfigCommon.StatusStatDef,
                     stat.TotalBaseDef.Value, stat.TotalStatDef.Value, stat.ResolvedDef.Value, providers),
                 BuildLine("STAMINA", stat.BaseStamina, stat.StatStamina, ConfigCommon.BaseStatStamina, ConfigCommon.StatusStatStamina,
-                    stat.TotalBaseStamina.Value, stat.TotalStatStamina.Value, stat.MaxStamina.Value, providers));
+                    stat.TotalBaseStamina.Value, stat.TotalStatStamina.Value, stat.MaxStamina.Value, providers),
+                BuildFormulaVariableLines(stat));
         }
 
         /// <summary>
@@ -137,5 +142,89 @@ namespace GGemCo2DCore
 
             return (long)System.Math.Round(resolved);
         }
+
+        /// <summary>
+        /// 현재 캐릭터에 부착된 공식 변수 Provider를 출처별 합산 표시 항목으로 변환합니다.
+        /// </summary>
+        /// <param name="stat">공식 변수를 수집할 캐릭터 스탯입니다.</param>
+        /// <returns>공식 변수 ID별 출처 합산 목록입니다.</returns>
+        private static IReadOnlyList<DamageFormulaVariableDebugLine> BuildFormulaVariableLines(CharacterStat stat)
+        {
+            CharacterBase character = stat as CharacterBase;
+            if (character == null)
+                return Array.Empty<DamageFormulaVariableDebugLine>();
+
+            var records = new List<DamageFormulaVariableDebugRecord>(8);
+            IDamageFormulaVariableDebugProvider[] providers = character.GetComponents<IDamageFormulaVariableDebugProvider>();
+            if (providers == null || providers.Length == 0)
+                return Array.Empty<DamageFormulaVariableDebugLine>();
+
+            for (int i = 0; i < providers.Length; i++)
+            {
+                providers[i]?.CollectDamageFormulaVariableDebugRecords(character, null, records);
+            }
+
+            if (records.Count == 0)
+                return Array.Empty<DamageFormulaVariableDebugLine>();
+
+            Dictionary<string, FormulaVariableAggregate> aggregates = new(StringComparer.OrdinalIgnoreCase);
+            for (int i = 0; i < records.Count; i++)
+            {
+                DamageFormulaVariableDebugRecord record = records[i];
+                if (string.IsNullOrWhiteSpace(record.VariableKey))
+                    continue;
+
+                if (!aggregates.TryGetValue(record.VariableKey, out FormulaVariableAggregate aggregate))
+                    aggregate = default;
+
+                aggregate.Add(record.SourceType, record.Value);
+                aggregates[record.VariableKey] = aggregate;
+            }
+
+            var lines = new List<DamageFormulaVariableDebugLine>(aggregates.Count);
+            foreach (KeyValuePair<string, FormulaVariableAggregate> pair in aggregates)
+            {
+                FormulaVariableAggregate aggregate = pair.Value;
+                lines.Add(new DamageFormulaVariableDebugLine(
+                    pair.Key,
+                    aggregate.Item,
+                    aggregate.Skill,
+                    aggregate.Affect,
+                    aggregate.Item + aggregate.Skill + aggregate.Affect));
+            }
+
+            lines.Sort((left, right) => string.Compare(left.VariableKey, right.VariableKey, StringComparison.OrdinalIgnoreCase));
+            return lines;
+        }
+
+        /// <summary>
+        /// 공식 변수 출처별 합산값을 임시로 보관합니다.
+        /// </summary>
+        private struct FormulaVariableAggregate
+        {
+            public double Item;
+            public double Skill;
+            public double Affect;
+
+            /// <summary>
+            /// 출처 타입에 맞는 버킷에 값을 더합니다.
+            /// </summary>
+            public void Add(StatModifierDebugSourceType sourceType, double value)
+            {
+                switch (sourceType)
+                {
+                    case StatModifierDebugSourceType.Item:
+                        Item += value;
+                        break;
+                    case StatModifierDebugSourceType.Skill:
+                        Skill += value;
+                        break;
+                    case StatModifierDebugSourceType.Affect:
+                        Affect += value;
+                        break;
+                }
+            }
+        }
+
     }
 }

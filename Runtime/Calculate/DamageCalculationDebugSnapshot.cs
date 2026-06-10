@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 
 namespace GGemCo2DCore
 {
@@ -22,7 +23,8 @@ namespace GGemCo2DCore
             long finalDamage,
             bool appliedDefaultDamage,
             bool isImmune,
-            DateTime recordedAt)
+            DateTime recordedAt,
+            IReadOnlyList<DamageFormulaVariableDebugLine> usedFormulaVariables = null)
         {
             FormulaKey = string.IsNullOrWhiteSpace(formulaKey) ? "-" : formulaKey;
             FormulaType = string.IsNullOrWhiteSpace(formulaType) ? "-" : formulaType;
@@ -36,6 +38,7 @@ namespace GGemCo2DCore
             AppliedDefaultDamage = appliedDefaultDamage;
             IsImmune = isImmune;
             RecordedAt = recordedAt;
+            UsedFormulaVariables = usedFormulaVariables ?? Array.Empty<DamageFormulaVariableDebugLine>();
         }
 
         /// <summary>공식 키입니다. Poly 공식이 아니면 '-'입니다.</summary>
@@ -73,5 +76,8 @@ namespace GGemCo2DCore
 
         /// <summary>스냅샷 기록 시각입니다.</summary>
         public DateTime RecordedAt { get; }
+
+        /// <summary>마지막 데미지 계산에 실제 사용된 공식 변수 기여도입니다.</summary>
+        public IReadOnlyList<DamageFormulaVariableDebugLine> UsedFormulaVariables { get; }
     }
 }

@@ -1,4 +1,7 @@
+using System;
+using System.Collections.Generic;
 using UnityEngine;
+using Random = UnityEngine.Random;
 
 namespace GGemCo2DCore
 {
@@ -245,11 +248,12 @@ namespace GGemCo2DCore
             }
 
             BuildPolyVariables(request, _polyVariables);
+            IReadOnlyList<DamageFormulaVariableDebugLine> usedFormulaVariables = BuildFormulaVariableDebugLines(request.Attacker, request.Target);
             double resolved = formulaEntry.Formula.Evaluate(_polyVariables);
             resolved = ApplyCriticalIfNeeded(resolved, request.Attacker, request.RollCritical);
             long rounded = RoundToLong(resolved, formulaEntry.RoundingMode, formulaEntry.MinDamage);
             DamageCalculationResult result = ResolveDefaultFinalDamage(rounded, request.DamageType);
-            RecordDamageDebug(request.FormulaKey, "Poly", request.BaseDamage, request.SkillDamageRate, request.EventMultiplier, request.OptionMultiplier, request.DamageType, rounded, result);
+            RecordDamageDebug(request.FormulaKey, "Poly", request.BaseDamage, request.SkillDamageRate, request.EventMultiplier, request.OptionMultiplier, request.DamageType, rounded, result, usedFormulaVariables);
             return result.FinalDamage;
         }
 
@@ -635,6 +639,111 @@ namespace GGemCo2DCore
             return _settings != null ? Mathf.Max(0, _settings.defaultFinalDamageWhenZeroOrLess) : 0L;
         }
 
+
+
+        /// <summary>
+        /// 공격자와 피격 대상의 공식 변수 Provider에서 마지막 데미지 계산에 사용된 변수 기여도를 수집합니다.
+        /// </summary>
+        /// <param name="attacker">공격자 캐릭터입니다.</param>
+        /// <param name="target">피격 대상 캐릭터입니다.</param>
+        /// <returns>공식 변수 ID별 출처 합산 목록입니다.</returns>
+        private static IReadOnlyList<DamageFormulaVariableDebugLine> BuildFormulaVariableDebugLines(CharacterBase attacker, CharacterBase target)
+        {
+            var records = new List<DamageFormulaVariableDebugRecord>(8);
+            CollectFormulaVariableDebugRecords(attacker, attacker, target, records);
+            if (target != null && !ReferenceEquals(attacker, target))
+            {
+                CollectFormulaVariableDebugRecords(target, attacker, target, records);
+            }
+
+            if (records.Count == 0)
+                return Array.Empty<DamageFormulaVariableDebugLine>();
+
+            Dictionary<string, FormulaVariableAggregate> aggregates = new(StringComparer.OrdinalIgnoreCase);
+            for (int i = 0; i < records.Count; i++)
+            {
+                DamageFormulaVariableDebugRecord record = records[i];
+                if (string.IsNullOrWhiteSpace(record.VariableKey))
+                    continue;
+
+                string displayKey = string.IsNullOrWhiteSpace(record.OwnerRole)
+                    ? record.VariableKey
+                    : record.OwnerRole + "." + record.VariableKey;
+
+                if (!aggregates.TryGetValue(displayKey, out FormulaVariableAggregate aggregate))
+                    aggregate = default;
+
+                aggregate.Add(record.SourceType, record.Value);
+                aggregates[displayKey] = aggregate;
+            }
+
+            var lines = new List<DamageFormulaVariableDebugLine>(aggregates.Count);
+            foreach (KeyValuePair<string, FormulaVariableAggregate> pair in aggregates)
+            {
+                FormulaVariableAggregate aggregate = pair.Value;
+                lines.Add(new DamageFormulaVariableDebugLine(
+                    pair.Key,
+                    aggregate.Item,
+                    aggregate.Skill,
+                    aggregate.Affect,
+                    aggregate.Item + aggregate.Skill + aggregate.Affect));
+            }
+
+            lines.Sort((left, right) => string.Compare(left.VariableKey, right.VariableKey, StringComparison.OrdinalIgnoreCase));
+            return lines;
+        }
+
+        /// <summary>
+        /// 지정 캐릭터에 부착된 공식 변수 디버그 Provider에서 레코드를 수집합니다.
+        /// </summary>
+        private static void CollectFormulaVariableDebugRecords(
+            CharacterBase owner,
+            CharacterBase attacker,
+            CharacterBase target,
+            List<DamageFormulaVariableDebugRecord> results)
+        {
+            if (owner == null || results == null)
+                return;
+
+            IDamageFormulaVariableDebugProvider[] providers = owner.GetComponents<IDamageFormulaVariableDebugProvider>();
+            if (providers == null || providers.Length == 0)
+                return;
+
+            for (int i = 0; i < providers.Length; i++)
+            {
+                providers[i]?.CollectDamageFormulaVariableDebugRecords(attacker, target, results);
+            }
+        }
+
+        /// <summary>
+        /// 공식 변수 출처별 합산값을 임시로 보관합니다.
+        /// </summary>
+        private struct FormulaVariableAggregate
+        {
+            public double Item;
+            public double Skill;
+            public double Affect;
+
+            /// <summary>
+            /// 출처 타입에 맞는 버킷에 값을 더합니다.
+            /// </summary>
+            public void Add(StatModifierDebugSourceType sourceType, double value)
+            {
+                switch (sourceType)
+                {
+                    case StatModifierDebugSourceType.Item:
+                        Item += value;
+                        break;
+                    case StatModifierDebugSourceType.Skill:
+                        Skill += value;
+                        break;
+                    case StatModifierDebugSourceType.Affect:
+                        Affect += value;
+                        break;
+                }
+            }
+        }
+
         /// <summary>
         /// 마지막 데미지 계산 결과를 디버그 HUD용 스냅샷으로 저장합니다.
         /// </summary>
@@ -647,8 +756,10 @@ namespace GGemCo2DCore
         /// <param name="damageType">데미지 타입입니다.</param>
         /// <param name="rawDamage">기본 데미지 정책 적용 전 데미지입니다.</param>
         /// <param name="result">최종 데미지 계산 결과입니다.</param>
+        /// <param name="usedFormulaVariables">마지막 데미지 계산에 실제로 사용된 공식 변수 기여도입니다.</param>
         private void RecordDamageDebug(string formulaKey, string formulaType, double baseDamage, double skillDamageRate,
-            double eventMultiplier, double optionMultiplier, ConfigCommon.DamageType damageType, long rawDamage, DamageCalculationResult result)
+            double eventMultiplier, double optionMultiplier, ConfigCommon.DamageType damageType, long rawDamage,
+            DamageCalculationResult result, IReadOnlyList<DamageFormulaVariableDebugLine> usedFormulaVariables = null)
         {
             _lastDamageDebugSnapshot = new DamageCalculationDebugSnapshot(
                 formulaKey,
@@ -662,7 +773,8 @@ namespace GGemCo2DCore
                 result.FinalDamage,
                 result.AppliedDefaultDamage,
                 result.IsImmune,
-                System.DateTime.Now);
+                System.DateTime.Now,
+                usedFormulaVariables);
             _hasLastDamageDebugSnapshot = true;
         }
 
