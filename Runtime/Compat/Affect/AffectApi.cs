@@ -35,14 +35,25 @@ namespace GGemCo2DCore
         /// <param name="source">Affect 발생 원천입니다.</param>
         /// <param name="durationOverrideSeconds">기본 지속시간을 대체할 초 단위 값입니다. 0 이하이면 Affect 기본값을 사용합니다.</param>
         /// <param name="durationBonusSeconds">기본 또는 오버라이드 지속시간에 추가할 초 단위 보너스입니다.</param>
+        /// <param name="healHpBonus">힐 계열 Modifier가 실제 회복을 실행할 때 최종 회복량에 더할 HP 값입니다.</param>
+        /// <param name="healHpMultiplier">힐 계열 Modifier가 실제 회복을 실행할 때 최종 회복량에 곱할 배율입니다.</param>
         public static void Apply(
             GameObject target,
             int affectUid,
             GameObject source = null,
             float durationOverrideSeconds = 0f,
-            float durationBonusSeconds = 0f)
+            float durationBonusSeconds = 0f,
+            long healHpBonus = 0L,
+            float healHpMultiplier = 1f)
         {
-            AffectRuntimeBridge.ApplyAffect(target, affectUid, source, durationOverrideSeconds, durationBonusSeconds);
+            AffectRuntimeBridge.ApplyAffect(
+                target,
+                affectUid,
+                source,
+                durationOverrideSeconds,
+                durationBonusSeconds,
+                healHpBonus,
+                healHpMultiplier);
         }
 
         /// <summary>

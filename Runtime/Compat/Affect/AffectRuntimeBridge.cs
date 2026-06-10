@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Reflection;
 using UnityEngine;
@@ -145,12 +145,16 @@ namespace GGemCo2DCore
         /// <param name="source">어펙트 출처 GameObject입니다.</param>
         /// <param name="durationOverrideSeconds">0보다 크면 지속 시간을 덮어쓸 값입니다.</param>
         /// <param name="durationBonusSeconds">0보다 크면 지속 시간에 더할 값입니다.</param>
+        /// <param name="healHpBonus">힐 Modifier 최종 회복량에 더할 HP 값입니다.</param>
+        /// <param name="healHpMultiplier">힐 Modifier 최종 회복량에 곱할 배율입니다.</param>
         internal static void ApplyAffect(
             GameObject go,
             int affectUid,
             GameObject source,
             float durationOverrideSeconds,
-            float durationBonusSeconds = 0f)
+            float durationBonusSeconds = 0f,
+            long healHpBonus = 0L,
+            float healHpMultiplier = 1f)
         {
             if (affectUid <= 0 || go == null) return;
 
@@ -162,7 +166,12 @@ namespace GGemCo2DCore
             MethodInfo method = affectComp.GetType().GetMethod("ApplyAffect", BindingFlags.Instance | BindingFlags.Public);
             if (method == null) return;
 
-            object context = CreateApplyContext(source, durationOverrideSeconds, durationBonusSeconds);
+            object context = CreateApplyContext(
+                source,
+                durationOverrideSeconds,
+                durationBonusSeconds,
+                healHpBonus,
+                healHpMultiplier);
             method.Invoke(affectComp, new[] { (object)affectUid, context });
         }
 
@@ -367,10 +376,21 @@ namespace GGemCo2DCore
         /// <param name="source">어펙트 출처 GameObject입니다.</param>
         /// <param name="durationOverrideSeconds">0보다 크면 지속 시간을 덮어쓸 값입니다.</param>
         /// <param name="durationBonusSeconds">0보다 크면 지속 시간에 더할 값입니다.</param>
+        /// <param name="healHpBonus">힐 Modifier 최종 회복량에 더할 HP 값입니다.</param>
+        /// <param name="healHpMultiplier">힐 Modifier 최종 회복량에 곱할 배율입니다.</param>
         /// <returns>생성된 AffectApplyContext입니다. 추가 정보가 없거나 타입이 없으면 null입니다.</returns>
-        private static object CreateApplyContext(GameObject source, float durationOverrideSeconds, float durationBonusSeconds)
+        private static object CreateApplyContext(
+            GameObject source,
+            float durationOverrideSeconds,
+            float durationBonusSeconds,
+            long healHpBonus = 0L,
+            float healHpMultiplier = 1f)
         {
-            if (source == null && durationOverrideSeconds <= 0f && durationBonusSeconds <= 0f)
+            if (source == null &&
+                durationOverrideSeconds <= 0f &&
+                durationBonusSeconds <= 0f &&
+                healHpBonus <= 0L &&
+                Mathf.Approximately(healHpMultiplier, 1f))
             {
                 return null;
             }
@@ -392,6 +412,16 @@ namespace GGemCo2DCore
             if (durationBonusSeconds > 0f)
             {
                 SetMemberValue(contextType, context, "DurationBonusSeconds", durationBonusSeconds);
+            }
+
+            if (healHpBonus > 0L)
+            {
+                SetMemberValue(contextType, context, "HealHpBonus", healHpBonus);
+            }
+
+            if (healHpMultiplier > 0f && !Mathf.Approximately(healHpMultiplier, 1f))
+            {
+                SetMemberValue(contextType, context, "HealHpMultiplier", healHpMultiplier);
             }
 
             return context;

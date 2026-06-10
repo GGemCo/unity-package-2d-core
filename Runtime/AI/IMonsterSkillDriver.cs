@@ -170,7 +170,7 @@ namespace GGemCo2DCore
     public readonly struct SkillExecutionOptions
     {
         /// <summary>옵션이 없는 기본 실행 옵션입니다.</summary>
-        public static SkillExecutionOptions None => new SkillExecutionOptions(1f, 0f, 0L, 0);
+        public static SkillExecutionOptions None => new SkillExecutionOptions(1f, 0f, 0L, 0, 0L, 1f);
 
         /// <summary>스킬 데미지에 곱할 최종 배율입니다.</summary>
         public readonly float DamageMultiplier;
@@ -184,6 +184,12 @@ namespace GGemCo2DCore
         /// <summary>런타임 Temp HP source key를 직접 지정할 때 사용하는 값입니다. 0이면 스킬 UID를 사용합니다.</summary>
         public readonly int RuntimeTempHpSourceKeyOverride;
 
+        /// <summary>힐 계열 Affect가 실제 회복을 실행할 때 최종 회복량에 더할 HP 값입니다.</summary>
+        public readonly long HealHpBonus;
+
+        /// <summary>힐 계열 Affect가 실제 회복을 실행할 때 최종 회복량에 곱할 배율입니다.</summary>
+        public readonly float HealHpMultiplier;
+
         /// <summary>
         /// 스킬 실행 옵션 스냅샷을 생성합니다.
         /// </summary>
@@ -191,16 +197,22 @@ namespace GGemCo2DCore
         /// <param name="statusDurationBonusSeconds">상태 지속시간에 더할 초 단위 보너스입니다.</param>
         /// <param name="runtimeTempHpOnStart">스킬 시작 시 부여할 런타임 Temp HP 값입니다.</param>
         /// <param name="runtimeTempHpSourceKeyOverride">Temp HP source key 오버라이드입니다. 0이면 스킬 UID를 사용합니다.</param>
+        /// <param name="healHpBonus">힐 계열 Affect가 실제 회복을 실행할 때 최종 회복량에 더할 HP 값입니다.</param>
+        /// <param name="healHpMultiplier">힐 계열 Affect가 실제 회복을 실행할 때 최종 회복량에 곱할 배율입니다.</param>
         public SkillExecutionOptions(
             float damageMultiplier,
             float statusDurationBonusSeconds,
             long runtimeTempHpOnStart,
-            int runtimeTempHpSourceKeyOverride = 0)
+            int runtimeTempHpSourceKeyOverride = 0,
+            long healHpBonus = 0L,
+            float healHpMultiplier = 1f)
         {
             DamageMultiplier = damageMultiplier > 0f ? damageMultiplier : 1f;
             StatusDurationBonusSeconds = statusDurationBonusSeconds > 0f ? statusDurationBonusSeconds : 0f;
             RuntimeTempHpOnStart = runtimeTempHpOnStart > 0L ? runtimeTempHpOnStart : 0L;
             RuntimeTempHpSourceKeyOverride = runtimeTempHpSourceKeyOverride;
+            HealHpBonus = healHpBonus > 0L ? healHpBonus : 0L;
+            HealHpMultiplier = healHpMultiplier > 0f ? healHpMultiplier : 1f;
         }
 
         /// <summary>
@@ -216,11 +228,16 @@ namespace GGemCo2DCore
                 ? other.RuntimeTempHpSourceKeyOverride
                 : RuntimeTempHpSourceKeyOverride;
 
+            float baseHealHpMultiplier = HealHpMultiplier > 0f ? HealHpMultiplier : 1f;
+            float otherHealHpMultiplier = other.HealHpMultiplier > 0f ? other.HealHpMultiplier : 1f;
+
             return new SkillExecutionOptions(
                 baseDamageMultiplier * otherDamageMultiplier,
                 StatusDurationBonusSeconds + other.StatusDurationBonusSeconds,
                 RuntimeTempHpOnStart + other.RuntimeTempHpOnStart,
-                sourceKey);
+                sourceKey,
+                HealHpBonus + other.HealHpBonus,
+                baseHealHpMultiplier * otherHealHpMultiplier);
         }
     }
 
