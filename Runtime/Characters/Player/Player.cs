@@ -328,16 +328,53 @@ namespace GGemCo2DCore
         }
 
         /// <summary>
-        /// 아이템 사용으로 "일반 최대 HP" 누적치를 증가시킵니다(저장 + 스탯 반영).
+        /// 아이템 사용으로 일반 최대 HP 누적치를 증가시키고, 최대치 변경 정책에 맞게 현재 HP를 보정합니다.
         /// </summary>
+        /// <param name="amount">추가할 일반 최대 HP 값입니다.</param>
+        /// <param name="raiseEvent">스탯 재계산 이벤트를 발생시킬지 여부입니다.</param>
         public override void AddItemBonusMaxHpNormal(long amount, bool raiseEvent = true)
         {
-            if (amount <= 0) return;
+            if (amount <= 0)
+            {
+                return;
+            }
 
-            // ItemBonusModifierProvider를 통해서 TotalHpTemp 를 증가 시킨다.
+            long oldMaxHp = MaxHp.Value;
+            long oldCurrentHp = CurrentHp.Value;
+
+            // ItemBonusModifierProvider를 통해 일반 최대 HP(BASE_HP) 보너스를 반영합니다.
             base.AddItemBonusMaxHpNormal(amount, raiseEvent);
+
             // 저장값 갱신
             _playerData?.AddTotalItemBonusHpNormal(amount);
+
+            ApplyCurrentHpByItemBonusMaxHpPolicy(oldMaxHp, oldCurrentHp);
+        }
+
+        /// <summary>
+        /// 아이템 보너스로 일반 최대 HP가 변경된 후 현재 HP를 플레이어 설정 정책에 맞게 보정합니다.
+        /// </summary>
+        /// <param name="oldMaxHp">아이템 보너스 적용 전 최대 HP입니다.</param>
+        /// <param name="oldCurrentHp">아이템 보너스 적용 전 현재 HP입니다.</param>
+        private void ApplyCurrentHpByItemBonusMaxHpPolicy(long oldMaxHp, long oldCurrentHp)
+        {
+            long newMaxHp = MaxHp.Value;
+            if (newMaxHp == oldMaxHp)
+            {
+                return;
+            }
+
+            CharacterConstants.ResourceMaxChangePolicy policy = _playerSettings != null
+                ? _playerSettings.hpMaxChangePolicy
+                : CharacterConstants.ResourceMaxChangePolicy.KeepCurrent;
+
+            long expectedCurrentHp = EvaluateCurrentOnMaxChanged(oldCurrentHp, oldMaxHp, newMaxHp, policy);
+            if (CurrentHp.Value == expectedCurrentHp)
+            {
+                return;
+            }
+
+            CurrentHp.OnNext(expectedCurrentHp);
         }
 
         public override void AddItemBonusMaxHpTemp(long amount, bool raiseEvent = true, bool fillCurrent = true)

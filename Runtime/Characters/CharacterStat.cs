@@ -851,7 +851,15 @@ namespace GGemCo2DCore
                 .AddTo(this);
         }
         
-        private static long EvaluateCurrentOnMaxChanged(long current, long oldMax, long newMax,
+        /// <summary>
+        /// 최대 리소스 값이 변경되었을 때 현재 리소스 값을 지정된 정책에 따라 계산합니다.
+        /// </summary>
+        /// <param name="current">최대치 변경 전 현재 리소스 값입니다.</param>
+        /// <param name="oldMax">변경 전 최대 리소스 값입니다.</param>
+        /// <param name="newMax">변경 후 최대 리소스 값입니다.</param>
+        /// <param name="policy">현재 리소스 보정에 사용할 최대치 변경 정책입니다.</param>
+        /// <returns>정책과 새 최대치 범위가 반영된 현재 리소스 값입니다.</returns>
+        protected static long EvaluateCurrentOnMaxChanged(long current, long oldMax, long newMax,
             CharacterConstants.ResourceMaxChangePolicy policy)
         {
             if (newMax < 0) newMax = 0;
