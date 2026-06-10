@@ -15,6 +15,8 @@ namespace GGemCo2DCore
         private readonly IDamageFormula _multiplierOnlyFormula = new MultiplierOnlyDamageFormula();
         private readonly DamageFormulaRegistry _polyFormulaRegistry = new DamageFormulaRegistry();
         private readonly DamageFormulaVariableBag _polyVariables = new DamageFormulaVariableBag();
+        private DamageCalculationDebugSnapshot _lastDamageDebugSnapshot;
+        private bool _hasLastDamageDebugSnapshot;
 
         /// <summary>
         /// 계산 매니저 인스턴스를 등록합니다.
@@ -61,6 +63,17 @@ namespace GGemCo2DCore
                 return Instance;
 
             return SceneGame.Instance != null ? SceneGame.Instance.calculateManager : null;
+        }
+
+        /// <summary>
+        /// 마지막 데미지 계산 디버그 스냅샷을 조회합니다.
+        /// </summary>
+        /// <param name="snapshot">마지막 데미지 계산 결과입니다.</param>
+        /// <returns>기록된 데미지 계산 결과가 있으면 <see langword="true"/>입니다.</returns>
+        public bool TryGetLastDamageDebugSnapshot(out DamageCalculationDebugSnapshot snapshot)
+        {
+            snapshot = _lastDamageDebugSnapshot;
+            return _hasLastDamageDebugSnapshot;
         }
 
         /// <summary>
@@ -171,7 +184,9 @@ namespace GGemCo2DCore
             double resolved = System.Math.Max(0d, baseDamage) * damageRate * eventMultiplier * optionMultiplier;
             resolved = ApplyCriticalIfNeeded(resolved, attacker, rollCritical);
             long rounded = RoundToLong(resolved, "round", 0L);
-            return ResolveDefaultFinalDamage(rounded, damageType).FinalDamage;
+            DamageCalculationResult result = ResolveDefaultFinalDamage(rounded, damageType);
+            RecordDamageDebug("-", "AttackComboMultiplier", baseDamage, damageRate, eventMultiplier, optionMultiplier, damageType, rounded, result);
+            return result.FinalDamage;
         }
 
         /// <summary>
@@ -225,14 +240,17 @@ namespace GGemCo2DCore
                 // BaseDamage는 순수 기준값, SkillDamageRate는 skill/skill_monster 테이블의 Damage 비율입니다.
                 float skillDamageRate = request.SkillDamageRate > 0d ? (float)request.SkillDamageRate : 1f;
                 float eventMultiplier = request.EventMultiplier > 0d ? (float)request.EventMultiplier : 1f;
-                return CalculateAttackDamage(request.BaseDamage, skillDamageRate * eventMultiplier, (float)request.OptionMultiplier);
+                long fallbackDamage = CalculateAttackDamage(request.BaseDamage, skillDamageRate * eventMultiplier, (float)request.OptionMultiplier);
+                return fallbackDamage;
             }
 
             BuildPolyVariables(request, _polyVariables);
             double resolved = formulaEntry.Formula.Evaluate(_polyVariables);
             resolved = ApplyCriticalIfNeeded(resolved, request.Attacker, request.RollCritical);
             long rounded = RoundToLong(resolved, formulaEntry.RoundingMode, formulaEntry.MinDamage);
-            return ResolveDefaultFinalDamage(rounded, request.DamageType).FinalDamage;
+            DamageCalculationResult result = ResolveDefaultFinalDamage(rounded, request.DamageType);
+            RecordDamageDebug(request.FormulaKey, "Poly", request.BaseDamage, request.SkillDamageRate, request.EventMultiplier, request.OptionMultiplier, request.DamageType, rounded, result);
+            return result.FinalDamage;
         }
 
         /// <summary>
@@ -245,7 +263,9 @@ namespace GGemCo2DCore
         {
             IDamageFormula formula = ResolveFormula(formulaType);
             long calculatedDamage = formula != null ? formula.Calculate(context) : 0L;
-            return ResolveDefaultFinalDamage(calculatedDamage, context.DamageType);
+            DamageCalculationResult result = ResolveDefaultFinalDamage(calculatedDamage, context.DamageType);
+            RecordDamageDebug("-", formulaType.ToString(), context.BaseDamage, 1d, context.EventMultiplier, context.OptionMultiplier, context.DamageType, calculatedDamage, result);
+            return result;
         }
 
         /// <summary>
@@ -517,13 +537,15 @@ namespace GGemCo2DCore
             long resolvedDamage = ApplyDamageTypeResistance(damage, damageType, target);
             DamageCalculationResult defaultResolved = ResolveDefaultFinalDamage(resolvedDamage, damageType);
 
-            return new DamageCalculationResult(
+            DamageCalculationResult result = new DamageCalculationResult(
                 originalDamage,
                 defaultResolved.FinalDamage,
                 resolvedDamage <= 0L,
                 defaultResolved.AppliedDefaultDamage,
                 defaultResolved.IsImmune,
                 damageType);
+            RecordDamageDebug("-", "Incoming", originalDamage, 1d, 1d, 1d, damageType, resolvedDamage, result);
+            return result;
         }
 
         /// <summary>
@@ -611,6 +633,37 @@ namespace GGemCo2DCore
             }
 
             return _settings != null ? Mathf.Max(0, _settings.defaultFinalDamageWhenZeroOrLess) : 0L;
+        }
+
+        /// <summary>
+        /// 마지막 데미지 계산 결과를 디버그 HUD용 스냅샷으로 저장합니다.
+        /// </summary>
+        /// <param name="formulaKey">공식 키입니다.</param>
+        /// <param name="formulaType">공식 타입입니다.</param>
+        /// <param name="baseDamage">기준 데미지입니다.</param>
+        /// <param name="skillDamageRate">스킬/기본 공격 데미지 배율입니다.</param>
+        /// <param name="eventMultiplier">이벤트 단위 배율입니다.</param>
+        /// <param name="optionMultiplier">실행 옵션 단위 배율입니다.</param>
+        /// <param name="damageType">데미지 타입입니다.</param>
+        /// <param name="rawDamage">기본 데미지 정책 적용 전 데미지입니다.</param>
+        /// <param name="result">최종 데미지 계산 결과입니다.</param>
+        private void RecordDamageDebug(string formulaKey, string formulaType, double baseDamage, double skillDamageRate,
+            double eventMultiplier, double optionMultiplier, ConfigCommon.DamageType damageType, long rawDamage, DamageCalculationResult result)
+        {
+            _lastDamageDebugSnapshot = new DamageCalculationDebugSnapshot(
+                formulaKey,
+                formulaType,
+                baseDamage,
+                skillDamageRate,
+                eventMultiplier,
+                optionMultiplier,
+                damageType,
+                rawDamage,
+                result.FinalDamage,
+                result.AppliedDefaultDamage,
+                result.IsImmune,
+                System.DateTime.Now);
+            _hasLastDamageDebugSnapshot = true;
         }
 
         /// <summary>

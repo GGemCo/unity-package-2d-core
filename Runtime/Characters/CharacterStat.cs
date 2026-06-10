@@ -161,6 +161,7 @@ namespace GGemCo2DCore
         private PassiveSkillModifierProvider _passiveProvider;
         private ItemBonusModifierProvider _itemBonusProvider;
         private RuntimeTempHpModifierProvider _runtimeTempHpProvider;
+        private RuntimeStatModifierProvider _affectProvider;
 
         /// <summary>
         /// 최종 계산에 포함되는 전체 Provider 목록입니다.
@@ -370,12 +371,14 @@ namespace GGemCo2DCore
             _passiveProvider = new PassiveSkillModifierProvider();
             _itemBonusProvider = new ItemBonusModifierProvider();
             _runtimeTempHpProvider = new RuntimeTempHpModifierProvider();
+            _affectProvider = new RuntimeStatModifierProvider(StatModifierDebugSourceType.Affect, "Affect");
 
             _equipmentProvider.Changed += OnProviderChanged;
             _persistentProvider.Changed += OnProviderChanged;
             _passiveProvider.Changed += OnProviderChanged;
             _itemBonusProvider.Changed += OnProviderChanged;
             _runtimeTempHpProvider.Changed += OnProviderChanged;
+            _affectProvider.Changed += OnProviderChanged;
 
             _allProviders.Clear();
             _allProviders.Add(_equipmentProvider);
@@ -383,12 +386,14 @@ namespace GGemCo2DCore
             _allProviders.Add(_passiveProvider);
             _allProviders.Add(_itemBonusProvider);
             _allProviders.Add(_runtimeTempHpProvider);
+            _allProviders.Add(_affectProvider);
 
             _providersWithoutPersistent.Clear();
             _providersWithoutPersistent.Add(_equipmentProvider);
             _providersWithoutPersistent.Add(_passiveProvider);
             _providersWithoutPersistent.Add(_itemBonusProvider);
             _providersWithoutPersistent.Add(_runtimeTempHpProvider);
+            _providersWithoutPersistent.Add(_affectProvider);
             
             EnsureStatModules();
         }
@@ -415,6 +420,7 @@ namespace GGemCo2DCore
             if (_passiveProvider != null) _passiveProvider.Changed -= OnProviderChanged;
             if (_itemBonusProvider != null) _itemBonusProvider.Changed -= OnProviderChanged;
             if (_runtimeTempHpProvider != null) _runtimeTempHpProvider.Changed -= OnProviderChanged;
+            if (_affectProvider != null) _affectProvider.Changed -= OnProviderChanged;
         }
 
         /// <summary>
@@ -526,6 +532,33 @@ namespace GGemCo2DCore
         public void RemoveStatModifiers(List<ConfigCommon.StruckStatus> modifiers)
         {
             _equipmentProvider.RemoveStatModifiers(modifiers);
+        }
+
+        /// <summary>
+        /// Affect/버프/디버프에서 전달된 스탯 Modifier를 전용 Provider에 적용합니다.
+        /// </summary>
+        /// <param name="modifiers">적용할 스탯 변경 목록입니다.</param>
+        public void ApplyAffectStatModifiers(List<ConfigCommon.StruckStatus> modifiers)
+        {
+            _affectProvider?.ApplyStatModifiers(modifiers, raiseEvent: false);
+        }
+
+        /// <summary>
+        /// Affect/버프/디버프에서 적용했던 스탯 Modifier를 전용 Provider에서 제거합니다.
+        /// </summary>
+        /// <param name="modifiers">제거할 스탯 변경 목록입니다.</param>
+        public void RemoveAffectStatModifiers(List<ConfigCommon.StruckStatus> modifiers)
+        {
+            _affectProvider?.RemoveStatModifiers(modifiers, raiseEvent: false);
+        }
+
+        /// <summary>
+        /// 디버그 수집기가 출처별 스탯 Modifier를 읽을 수 있도록 현재 Provider 목록을 반환합니다.
+        /// </summary>
+        /// <returns>현재 스탯 계산에 참여하는 Provider 목록입니다.</returns>
+        public IReadOnlyList<IStatModifierProvider> GetStatModifierProvidersForDebug()
+        {
+            return _allProviders;
         }
 
         /// <summary>

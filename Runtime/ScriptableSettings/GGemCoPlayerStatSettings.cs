@@ -106,6 +106,35 @@ namespace GGemCo2DCore
         [Tooltip("TotalStatStamina 1당 MaxStamina에 더할 BaseStamina 계열 변환량입니다.")]
         public StatPointBonus statPointStamina;
 
+        [Header("Player Stat Debug")]
+        [SerializeField, Tooltip("플레이어 스탯 디버그 기능 전체 On/Off")]
+        private bool enablePlayerStatDebug;
+
+        /// <summary>플레이어 스탯 디버그 기능 전체 사용 여부입니다.</summary>
+        public bool EnablePlayerStatDebug => DebugOptionRuntimeUtility.Resolve(enablePlayerStatDebug);
+
+        [SerializeField, Tooltip("플레이어 스탯 디버그 HUD 출력 On/Off")]
+        private bool enablePlayerStatDebugHud;
+
+        /// <summary>디버그 HUD에 플레이어 스탯 정보를 표시할지 여부입니다.</summary>
+        public bool EnablePlayerStatDebugHud => EnablePlayerStatDebug && DebugOptionRuntimeUtility.Resolve(enablePlayerStatDebugHud);
+
+        [SerializeField, Tooltip("공격력/방어력/스태미나의 Item/Skill/Affect 증가량 출력")]
+        private bool enablePlayerStatContributionDebug;
+
+        /// <summary>스탯 출처별 증가량을 표시할지 여부입니다.</summary>
+        public bool EnablePlayerStatContributionDebug => EnablePlayerStatDebugHud && DebugOptionRuntimeUtility.Resolve(enablePlayerStatContributionDebug);
+
+        [SerializeField, Tooltip("마지막 최종 데미지 계산 결과 출력")]
+        private bool enablePlayerFinalDamageDebug;
+
+        /// <summary>마지막 최종 데미지 결과를 표시할지 여부입니다.</summary>
+        public bool EnablePlayerFinalDamageDebug => EnablePlayerStatDebugHud && DebugOptionRuntimeUtility.Resolve(enablePlayerFinalDamageDebug);
+
+        [Tooltip("플레이어 스탯 디버그 HUD 갱신 주기입니다.")]
+        [Min(0.05f)]
+        public float playerStatDebugHudUpdateInterval = 0.2f;
+
         /// <summary>
         /// 생성 직후 기본 스탯 값을 초기화합니다.
         /// </summary>
@@ -127,6 +156,12 @@ namespace GGemCo2DCore
             statPointHp = new StatPointBonus { mode = ConfigCommon.CalculateType.Flat, valuePerPoint = 10f };
             statPointMp = new StatPointBonus { mode = ConfigCommon.CalculateType.Flat, valuePerPoint = 5f };
             statPointStamina = new StatPointBonus { mode = ConfigCommon.CalculateType.Flat, valuePerPoint = 5f };
+
+            enablePlayerStatDebug = false;
+            enablePlayerStatDebugHud = false;
+            enablePlayerStatContributionDebug = true;
+            enablePlayerFinalDamageDebug = true;
+            playerStatDebugHudUpdateInterval = 0.2f;
         }
 
         /// <summary>

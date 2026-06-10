@@ -22,7 +22,7 @@ namespace GGemCo2DCore
     /// - 장착/해제/레벨 변경 시 “전체를 재구성(Set)”하는 방식으로 갱신하는 것을 권장합니다.
     /// - Flat/Percent 버킷을 유지하며, 변경 시 <see cref="Changed"/> 이벤트로 상위(<see cref="CharacterStat"/>) 재계산을 트리거합니다.
     /// </summary>
-    public sealed class PassiveSkillModifierProvider : IStatModifierProvider
+    public sealed class PassiveSkillModifierProvider : IStatModifierProvider, IStatModifierDebugSource
     {
         /// <summary>
         /// 패시브 스킬로부터 누적되는 스탯 변경 버킷(Flat/Percent)입니다.
@@ -43,6 +43,12 @@ namespace GGemCo2DCore
         /// 버킷(Flat/Percent)이 변경되었을 때 발생합니다.
         /// </summary>
         public event Action Changed;
+
+        /// <summary>패시브 스킬로 인한 스탯 증가임을 표시합니다.</summary>
+        public StatModifierDebugSourceType DebugSourceType => StatModifierDebugSourceType.Skill;
+
+        /// <summary>디버그 HUD에 표시할 Provider 이름입니다.</summary>
+        public string DebugSourceName => "Skill";
 
         public long GetHpBonusNormal() => GetFlatAsLong(ConfigCommon.StatusStatHp);
 

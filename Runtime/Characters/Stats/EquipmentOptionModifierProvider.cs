@@ -10,7 +10,7 @@ namespace GGemCo2DCore
     /// - 장비 갱신(<see cref="UpdateFromEquippedItems"/>) 시 장비 옵션을 다시 계산하여 버킷(Flat/Percent)에 반영합니다.
     /// - 장비로 부여되는 착용 지속 Affect의 apply/remove 동기화도 함께 처리합니다.
     /// </summary>
-    public sealed class EquipmentOptionModifierProvider : IStatModifierProvider
+    public sealed class EquipmentOptionModifierProvider : IStatModifierProvider, IStatModifierDebugSource
     {
         /// <summary>
         /// Affect/State 적용 대상 오브젝트입니다.
@@ -41,6 +41,12 @@ namespace GGemCo2DCore
         /// 버킷(Flat/Percent) 또는 장비 Affect 동기화 결과가 변경되었을 때 발생합니다.
         /// </summary>
         public event Action Changed;
+
+        /// <summary>장비/아이템 옵션으로 인한 스탯 증가임을 표시합니다.</summary>
+        public StatModifierDebugSourceType DebugSourceType => StatModifierDebugSourceType.Item;
+
+        /// <summary>디버그 HUD에 표시할 Provider 이름입니다.</summary>
+        public string DebugSourceName => "Item";
 
         /// <summary>
         /// 장비 옵션 Provider를 생성합니다.

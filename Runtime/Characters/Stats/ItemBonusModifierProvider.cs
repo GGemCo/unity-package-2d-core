@@ -10,7 +10,7 @@ namespace GGemCo2DCore
     /// - 현재는 HP(일반/임시) 확장을 우선 지원합니다.
     /// - 임시 HP 최대치는 BASE_HP_TEMP 키에 누적하여 일반 MaxHp 계산과 분리합니다.
     /// </summary>
-    public sealed class ItemBonusModifierProvider : IStatModifierProvider
+    public sealed class ItemBonusModifierProvider : IStatModifierProvider, IStatModifierDebugSource
     {
         private readonly StatModifierBucket _bucket = new();
 
@@ -18,6 +18,12 @@ namespace GGemCo2DCore
         public IReadOnlyDictionary<string, float> Percent => _bucket.Percent;
 
         public event Action Changed;
+
+        /// <summary>아이템 사용 보너스로 인한 스탯 증가임을 표시합니다.</summary>
+        public StatModifierDebugSourceType DebugSourceType => StatModifierDebugSourceType.Item;
+
+        /// <summary>디버그 HUD에 표시할 Provider 이름입니다.</summary>
+        public string DebugSourceName => "Item";
 
         /// <summary>
         /// 아이템 보너스 HP(일반/임시)를 "전체 재구성" 방식으로 설정합니다.

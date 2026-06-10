@@ -9,7 +9,7 @@ namespace GGemCo2DCore
     /// - 스탯 포인트/영구 성장 등, 장비 갱신과 무관하게 유지되는 modifier 출처를 담당합니다.
     /// - Flat/Percent 버킷을 유지하며, 변경 시 <see cref="Changed"/> 이벤트로 상위(<see cref="CharacterStat"/>) 재계산을 트리거합니다.
     /// </summary>
-    public sealed class PersistentModifierProvider : IStatModifierProvider
+    public sealed class PersistentModifierProvider : IStatModifierProvider, IStatModifierDebugSource
     {
         /// <summary>
         /// 영구 성장으로부터 누적되는 스탯 변경 버킷(Flat/Percent)입니다.
@@ -30,6 +30,12 @@ namespace GGemCo2DCore
         /// 버킷(Flat/Percent)이 변경되었을 때 발생합니다.
         /// </summary>
         public event Action Changed;
+
+        /// <summary>영구 성장/스탯 포인트로 인한 스탯 증가임을 표시합니다.</summary>
+        public StatModifierDebugSourceType DebugSourceType => StatModifierDebugSourceType.Persistent;
+
+        /// <summary>디버그 HUD에 표시할 Provider 이름입니다.</summary>
+        public string DebugSourceName => "Persistent";
 
         /// <summary>
         /// 영구 modifier를 “전체 재구성” 방식으로 설정합니다.
