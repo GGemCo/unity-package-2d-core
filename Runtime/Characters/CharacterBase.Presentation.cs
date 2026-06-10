@@ -165,10 +165,13 @@ namespace GGemCo2DCore
 
         /// <summary>
         /// 하단 경계 이탈 여부를 확인하고 필요 시 즉시 사망 처리합니다.
+        /// 맵 이동 중에는 이전 맵 제거와 새 스폰 좌표 적용 사이에 캐릭터가 임시로 경계 밖에 있을 수 있으므로,
+        /// <see cref="SetEndTilemapYDeathSuppressed"/>로 보호 중이면 사망 처리를 건너뜁니다.
         /// </summary>
         /// <returns>경계 이탈로 사망 처리를 수행했으면 <see langword="true"/>를 반환합니다.</returns>
         private bool CheckEndGround()
         {
+            if (_suppressEndTilemapYDeath) return false;
             if (transform.position.y > 0) return false;
             if (_limitBoundaryBottom) return false;
 

@@ -702,9 +702,11 @@ namespace GGemCo2DCore
         /// <summary>
         /// 맵 이동 시작 시 플레이어 상태를 정리합니다.
         /// 이동 정지와 함께 진행 중 오토워크를 취소해 이전 맵의 자동 이동 요청이 이어지지 않도록 합니다.
+        /// 새 맵의 스폰 좌표가 적용되기 전까지 하단 경계 사망 처리를 중지하여, 이전 맵 언로드 중 플레이어가 제거되지 않도록 보호합니다.
         /// </summary>
         private void OnLoadStartMap()
         {
+            SetEndTilemapYDeathSuppressed(true);
             Stop();
             CancelAutoMoveOnMapLoadStart();
             ClearAutoMoveTargetMonster();

@@ -39,6 +39,11 @@ namespace GGemCo2DCore
         public CharacterConstants.FacingDirection8 CurrentFacing => _currentFacing;
 
         private bool _limitBoundaryBottom;
+
+        /// <summary>
+        /// 맵 전환 등 의도적으로 플레이어를 재배치하는 동안 하단 경계 사망 처리를 일시 중지할지 여부입니다.
+        /// </summary>
+        private bool _suppressEndTilemapYDeath;
         
         // 좌우 플립 여부
         public bool isFlip;
@@ -186,6 +191,26 @@ namespace GGemCo2DCore
 
                 return _physicsOverrideController;
             }
+        }
+
+        /// <summary>
+        /// 하단 경계 이탈 사망 처리를 일시적으로 중지하거나 다시 활성화합니다.
+        /// 맵 이동처럼 이전 맵을 제거한 뒤 새 스폰 좌표로 재배치하는 동안,
+        /// 캐릭터가 아직 이전 좌표에 남아 있어 <see cref="CharacterConstants.DieReasonType.EndTilemapY"/>로 제거되는 상황을 방지합니다.
+        /// </summary>
+        /// <param name="isSuppressed"><see langword="true"/>이면 하단 경계 사망 처리를 중지하고, <see langword="false"/>이면 다시 활성화합니다.</param>
+        public void SetEndTilemapYDeathSuppressed(bool isSuppressed)
+        {
+            _suppressEndTilemapYDeath = isSuppressed;
+        }
+
+        /// <summary>
+        /// 현재 하단 경계 이탈 사망 처리가 일시 중지되어 있는지 반환합니다.
+        /// </summary>
+        /// <returns>하단 경계 사망 처리가 중지되어 있으면 <see langword="true"/>를 반환합니다.</returns>
+        public bool IsEndTilemapYDeathSuppressed()
+        {
+            return _suppressEndTilemapYDeath;
         }
 
         /// <summary>

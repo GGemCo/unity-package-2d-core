@@ -53,6 +53,7 @@ namespace GGemCo2DCore
                 Player scriptPlayer = SceneGame.Instance.player.GetComponent<Player>();
                 scriptPlayer.MoveTeleport(spawnPosition.x, spawnPosition.y);
                 scriptPlayer.SetMapSize(_mapManager.GetMapSize());
+                scriptPlayer.SetEndTilemapYDeathSuppressed(false);
                 scriptPlayer.Stop(true);
                 SceneGame.Instance.cameraManager?.SetFollowTarget(SceneGame.Instance.player?.transform);
             }
