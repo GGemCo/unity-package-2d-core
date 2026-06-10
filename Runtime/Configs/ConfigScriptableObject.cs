@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 
 namespace GGemCo2DCore
@@ -15,6 +15,7 @@ namespace GGemCo2DCore
         {
             Main,
             Player,
+            PlayerStat,
             Monster,
             Item,
             Map,
@@ -37,6 +38,7 @@ namespace GGemCo2DCore
         {
             MainSettings = 0,
             PlayerSettings = 10,
+            PlayerStatSettings = 15,
             MonsterSettings = 20,
             ItemSettings = 30,
             MapSettings = 40,
@@ -76,6 +78,18 @@ namespace GGemCo2DCore
             public const int Ordering =
                 (int)ConfigScriptableObjectCommon.PackageOrder.Core +
                 (int)CoreLocalOrder.PlayerSettings;
+        }
+
+        /// <summary>
+        /// 플레이어 스탯 설정 메뉴 정보
+        /// </summary>
+        public static class PlayerStat
+        {
+            public const string FileName = BaseName + "PlayerStatSettings";
+            public const string MenuName = BasePath + FileName;
+            public const int Ordering =
+                (int)ConfigScriptableObjectCommon.PackageOrder.Core +
+                (int)CoreLocalOrder.PlayerStatSettings;
         }
 
         /// <summary>
@@ -243,6 +257,14 @@ namespace GGemCo2DCore
                         typeof(GGemCoPlayerSettings))
                 },
                 {
+                    CoreSettingsKey.PlayerStat,
+                    new ConfigScriptableObjectCommon.MenuInfo(
+                        PlayerStat.FileName,
+                        PlayerStat.MenuName,
+                        PlayerStat.Ordering,
+                        typeof(GGemCoPlayerStatSettings))
+                },
+                {
                     CoreSettingsKey.Monster,
                     new ConfigScriptableObjectCommon.MenuInfo(
                         Monster.FileName,
@@ -348,6 +370,7 @@ namespace GGemCo2DCore
             {
                 { Main.FileName, typeof(GGemCoSettings) },
                 { Player.FileName, typeof(GGemCoPlayerSettings) },
+                { PlayerStat.FileName, typeof(GGemCoPlayerStatSettings) },
                 { Monster.FileName, typeof(GGemCoMonsterSettings) },
                 { Item.FileName, typeof(GGemCoItemSettings) },
                 { Map.FileName, typeof(GGemCoMapSettings) },

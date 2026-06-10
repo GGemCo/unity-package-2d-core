@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
@@ -241,7 +241,7 @@ namespace GGemCo2DCore
         private QuestManager _questManager;
         private LocalizationManager _localizationManager;
         private AddressableLoaderCharacterThumbnail _addressableLoaderCharacterThumbnail;
-        private GGemCoPlayerSettings _playerSettings;
+        private GGemCoPlayerStatSettings _playerStatSettings;
         private GGemCoNpcInteractionSettings _npcInteractionSettings;
         private PlayerData _playerData;
         private PopupManager _popupManager;
@@ -278,7 +278,7 @@ namespace GGemCo2DCore
             _questManager = SceneGame.QuestManager;
             _localizationManager = LocalizationManager.Instance;
             _addressableLoaderCharacterThumbnail = AddressableLoaderCharacterThumbnail.Instance;
-            _playerSettings = AddressableLoaderSettings.Instance.playerSettings;
+            _playerStatSettings = AddressableLoaderSettings.Instance.playerStatSettings;
             _npcInteractionSettings = ResolveNpcInteractionSettings();
             _playerData = SceneGame.saveDataManager.Player;
             _popupManager = SceneGame.popupManager;

@@ -1,4 +1,4 @@
-﻿using System.Collections;
+using System.Collections;
 using UnityEngine;
 
 namespace GGemCo2DCore
@@ -343,8 +343,8 @@ namespace GGemCo2DCore
         private static float ResolveMoveStep(CharacterMoveData data)
         {
             float step = AddressableLoaderSettings.Instance != null &&
-                         AddressableLoaderSettings.Instance.playerSettings != null
-                ? AddressableLoaderSettings.Instance.playerSettings.baseAttributes.moveStep
+                         AddressableLoaderSettings.Instance.playerStatSettings != null
+                ? AddressableLoaderSettings.Instance.playerStatSettings.baseAttributes.moveStep
                 : FallbackMoveStep;
 
             if (data.characterType != CharacterConstants.Type.Player)

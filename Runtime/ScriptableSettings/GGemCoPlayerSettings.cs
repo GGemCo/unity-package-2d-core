@@ -86,14 +86,6 @@ namespace GGemCo2DCore
         [Tooltip("플레이어의 시작 스케일 값 (1 = 100%)")]
         public float startScale;
 
-        [Header("기본 항목 시작값")]
-        [Tooltip("장비/패시브의 BASE_* 옵션이 누적되는 플레이어 기본 항목 시작값입니다.")]
-        public CharacterBaseAttributeValues baseAttributes;
-
-        [Header("스탯 항목 시작값")]
-        [Tooltip("스탯 포인트와 STAT_* 옵션이 누적되는 플레이어 스탯 항목 시작값입니다.")]
-        public CharacterGrowthStatValues stats;
-
         [Header("시작 자원 값")]
         [Tooltip("게임 시작 시 현재 HP 값 설정")]
         public ResourceStartSetting startHp = ResourceStartSetting.CreateMax();
@@ -157,42 +149,6 @@ namespace GGemCo2DCore
         [Header("피격 VFX")]
         [Tooltip("플레이어 피격 시 재생할 VFX 설정입니다.")]
         public IncomingHitVfxSettings incomingHitVfx = IncomingHitVfxSettings.CreateDisabled();
-
-        public enum StatPointAcquirePolicy
-        {
-            [Tooltip("경험치 레벨업으로만 스탯 포인트를 획득합니다.")]
-            LevelUpOnly = 0,
-            [Tooltip("골드 구매로만 스탯 포인트를 획득합니다.")]
-            GoldPurchaseOnly = 1,
-            [Tooltip("경험치 레벨업과 골드 구매를 모두 허용합니다.")]
-            LevelUpAndGoldPurchase = 2,
-        }
-
-        public enum StatPointLevelUpOnInvestPolicy
-        {
-            [Tooltip("스탯 포인트를 투자해도 플레이어 레벨은 오르지 않습니다.")]
-            None = 0,
-            [Tooltip("스탯 포인트를 1 투자할 때마다 플레이어 레벨을 1 올립니다.")]
-            IncreaseLevelByInvestedPoints = 1,
-        }
-
-        public enum StatPointRefundPolicy
-        {
-            [Tooltip("이미 커밋된 스탯 포인트를 다시 회수할 수 있습니다.")]
-            AllowCommittedRefund = 0,
-            [Tooltip("이미 커밋된 스탯 포인트는 회수할 수 없고, 이번 드래프트에서 새로 넣은 포인트만 취소할 수 있습니다.")]
-            DisallowCommittedRefund = 1,
-        }
-
-        [Serializable]
-        public struct StatPointBonus
-        {
-            [Tooltip("TotalStat* 1당 Base* 계열에 더할 변환 방식입니다. Flat은 고정값, PercentOfMax는 TotalBase* 기준 % 보너스입니다.")]
-            public ConfigCommon.CalculateType mode;
-            [Tooltip("TotalStat* 1당 Base* 계열에 더할 값입니다. Flat 예) 10 = TotalStat 1당 +10, PercentOfMax 예) 1.5 = TotalBase의 1.5%")]
-
-            public float valuePerPoint;
-        }
 
         /// <summary>
         /// 플레이어가 피격될 때 재생할 VFX 설정입니다.
@@ -332,36 +288,6 @@ namespace GGemCo2DCore
             }
         }
 
-        [Header("스탯 포인트")]
-        [Tooltip("스탯 포인트 리셋 비용")]
-        public int statPointResetCost;
-        [Tooltip("스탯 포인트 획득 경로 정책입니다.")]
-        public StatPointAcquirePolicy statPointAcquirePolicy = StatPointAcquirePolicy.LevelUpOnly;
-        [Tooltip("스탯 포인트 투자 시 플레이어 레벨 증가 정책입니다.")]
-        public StatPointLevelUpOnInvestPolicy statPointLevelUpOnInvestPolicy = StatPointLevelUpOnInvestPolicy.None;
-        [Tooltip("이미 적용된 스탯 포인트를 다시 회수할 수 있는지 결정합니다.")]
-        public StatPointRefundPolicy statPointRefundPolicy = StatPointRefundPolicy.AllowCommittedRefund;
-        [Tooltip("GoldPurchaseOnly 정책에서는 런타임에서 Gold로 고정됩니다. LevelUpAndGoldPurchase 정책의 직접 구매 버튼에서 사용할 재화 타입입니다.")]
-        public CurrencyConstants.Type statPointPurchaseCurrencyType = CurrencyConstants.Type.Gold;
-        [Tooltip("LevelUpAndGoldPurchase의 직접 구매 버튼 기본 가격입니다. GoldPurchaseOnly에서는 exp 테이블의 NeedStatPointGold 값을 우선 사용하고, 값이 없을 때 fallback으로 사용합니다.")]
-        [Min(0)]
-        public int statPointPurchaseCurrencyValue = 0;
-        [Tooltip("새 게임 시작 시 지급되는 스탯 포인트")]
-        public int statPointInitial;
-        [Tooltip("레벨업 1회당 지급되는 스탯 포인트")]
-        public int statPointPerLevel;
-
-        [Tooltip("TotalStatAtk 1당 ResolvedAtk에 더할 BaseAtk 계열 변환량입니다.")]
-        public StatPointBonus statPointAtk;
-        [Tooltip("TotalStatDef 1당 ResolvedDef에 더할 BaseDef 계열 변환량입니다.")]
-        public StatPointBonus statPointDef;
-        [Tooltip("TotalStatHp 1당 MaxHp에 더할 BaseHp 계열 변환량입니다.")]
-        public StatPointBonus statPointHp;
-        [Tooltip("TotalStatMp 1당 MaxMp에 더할 BaseMp 계열 변환량입니다.")]
-        public StatPointBonus statPointMp;
-        [Tooltip("TotalStatStamina 1당 MaxStamina에 더할 BaseStamina 계열 변환량입니다.")]
-        public StatPointBonus statPointStamina;
-
         [Header("Element Gauge")]
         [Tooltip("플레이어에게 적용할 속성 게이지 규칙 목록입니다. 비어 있으면 런타임 기본값을 사용합니다.")]
         public List<ElementGaugeRuleDefinition> elementGaugeRules = new();
@@ -393,49 +319,6 @@ namespace GGemCo2DCore
             hitStopLockMovement = true;
             animationController = ConfigCommon.AnimationController.Sprite;
             startScale = 1;
-            baseAttributes = new CharacterBaseAttributeValues
-            {
-                atk = 100,
-                def = 100,
-                hp = 100,
-                mp = 100,
-                stamina = 100,
-                superArmor = 0,
-                moveSpeed = 100,
-                attackSpeed = 100,
-                criticalDamage = 100,
-                criticalProbability = 0,
-                registFire = 0,
-                registCold = 0,
-                registLightning = 0,
-                registPoison = 0,
-                moveStep = 100,
-            };
-
-            stats = new CharacterGrowthStatValues
-            {
-                atk = 100,
-                def = 100,
-                hp = 100,
-                mp = 100,
-                stamina = 100,
-            };
-
-            statPointAcquirePolicy = StatPointAcquirePolicy.LevelUpOnly;
-            statPointLevelUpOnInvestPolicy = StatPointLevelUpOnInvestPolicy.None;
-            statPointRefundPolicy = StatPointRefundPolicy.AllowCommittedRefund;
-            statPointPurchaseCurrencyType = CurrencyConstants.Type.Gold;
-            statPointPurchaseCurrencyValue = 0;
-
-            statPointInitial = 0;
-            statPointPerLevel = 0;
-
-            statPointAtk = new StatPointBonus { mode = ConfigCommon.CalculateType.Flat, valuePerPoint = 1f };
-            statPointDef = new StatPointBonus { mode = ConfigCommon.CalculateType.Flat, valuePerPoint = 1f };
-            statPointHp = new StatPointBonus { mode = ConfigCommon.CalculateType.Flat, valuePerPoint = 10f };
-            statPointMp = new StatPointBonus { mode = ConfigCommon.CalculateType.Flat, valuePerPoint = 5f };
-            statPointStamina = new StatPointBonus { mode = ConfigCommon.CalculateType.Flat, valuePerPoint = 5f };
-
             itemBonusTempHpPerPiece = 100;
             itemBonusTempPiecesPerHeart = 4;
 

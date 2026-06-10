@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 
 namespace GGemCo2DCore
 {
@@ -19,6 +19,7 @@ namespace GGemCo2DCore
 
         public static readonly AddressableAssetInfo Settings       = Make(nameof(Settings));
         public static readonly AddressableAssetInfo PlayerSettings = Make(nameof(PlayerSettings));
+        public static readonly AddressableAssetInfo PlayerStatSettings = Make(nameof(PlayerStatSettings));
         public static readonly AddressableAssetInfo ItemSettings   = Make(nameof(ItemSettings));
         public static readonly AddressableAssetInfo MapSettings    = Make(nameof(MapSettings));
         public static readonly AddressableAssetInfo SaveSettings   = Make(nameof(SaveSettings));
@@ -39,6 +40,7 @@ namespace GGemCo2DCore
         {
             Settings,
             PlayerSettings,
+            PlayerStatSettings,
             ItemSettings,
             MapSettings,
             SaveSettings,

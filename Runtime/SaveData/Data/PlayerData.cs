@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using R3;
 using UnityEngine;
 
@@ -176,7 +176,9 @@ namespace GGemCo2DCore
         {
             _saveDataManager = saveDataManager;
             _tableLoaderManager = loader;
-            _maxPlayerLevel = AddressableLoaderSettings.Instance.playerSettings.maxLevel;
+            _maxPlayerLevel = AddressableLoaderSettings.Instance != null && AddressableLoaderSettings.Instance.playerSettings != null
+                ? AddressableLoaderSettings.Instance.playerSettings.maxLevel
+                : 0;
             // 최대 레벨이 없을때는 경험치 테이블에서 가져온다
             if (_maxPlayerLevel <= 0)
             {
@@ -261,7 +263,7 @@ namespace GGemCo2DCore
             else
             {
                 // 새 게임(세이브 없음) 초기 포인트 지급
-                var settings = AddressableLoaderSettings.Instance.playerSettings;
+                var settings = AddressableLoaderSettings.Instance.playerStatSettings;
                 if (settings != null && settings.statPointInitial > 0)
                 {
                     UnspentStatPoints = settings.statPointInitial;
@@ -335,44 +337,44 @@ namespace GGemCo2DCore
         }
 #endif
 
-        private GGemCoPlayerSettings GetPlayerSettings()
+        private GGemCoPlayerStatSettings GetPlayerStatSettings()
         {
-            return AddressableLoaderSettings.Instance != null ? AddressableLoaderSettings.Instance.playerSettings : null;
+            return AddressableLoaderSettings.Instance != null ? AddressableLoaderSettings.Instance.playerStatSettings : null;
         }
 
-        private static bool CanAcquireStatPointsFromLevelUp(GGemCoPlayerSettings settings)
-        {
-            if (settings == null) return true;
-            return settings.statPointAcquirePolicy == GGemCoPlayerSettings.StatPointAcquirePolicy.LevelUpOnly
-                   || settings.statPointAcquirePolicy == GGemCoPlayerSettings.StatPointAcquirePolicy.LevelUpAndGoldPurchase;
-        }
-
-        private static bool CanAcquireStatPointsFromGoldPurchase(GGemCoPlayerSettings settings)
-        {
-            if (settings == null) return false;
-            return settings.statPointAcquirePolicy == GGemCoPlayerSettings.StatPointAcquirePolicy.GoldPurchaseOnly
-                   || settings.statPointAcquirePolicy == GGemCoPlayerSettings.StatPointAcquirePolicy.LevelUpAndGoldPurchase;
-        }
-
-        private static bool ShouldIncreaseLevelOnStatPointInvest(GGemCoPlayerSettings settings)
-        {
-            if (settings == null) return false;
-            return settings.statPointLevelUpOnInvestPolicy == GGemCoPlayerSettings.StatPointLevelUpOnInvestPolicy.IncreaseLevelByInvestedPoints;
-        }
-
-        private static bool AllowCommittedStatPointRefund(GGemCoPlayerSettings settings)
+        private static bool CanAcquireStatPointsFromLevelUp(GGemCoPlayerStatSettings settings)
         {
             if (settings == null) return true;
-            return settings.statPointRefundPolicy == GGemCoPlayerSettings.StatPointRefundPolicy.AllowCommittedRefund;
+            return settings.statPointAcquirePolicy == GGemCoPlayerStatSettings.StatPointAcquirePolicy.LevelUpOnly
+                   || settings.statPointAcquirePolicy == GGemCoPlayerStatSettings.StatPointAcquirePolicy.LevelUpAndGoldPurchase;
         }
 
-        private static bool UseReservedGoldDraftBudget(GGemCoPlayerSettings settings)
+        private static bool CanAcquireStatPointsFromGoldPurchase(GGemCoPlayerStatSettings settings)
         {
             if (settings == null) return false;
-            return settings.statPointAcquirePolicy == GGemCoPlayerSettings.StatPointAcquirePolicy.GoldPurchaseOnly;
+            return settings.statPointAcquirePolicy == GGemCoPlayerStatSettings.StatPointAcquirePolicy.GoldPurchaseOnly
+                   || settings.statPointAcquirePolicy == GGemCoPlayerStatSettings.StatPointAcquirePolicy.LevelUpAndGoldPurchase;
         }
 
-        private CurrencyConstants.Type GetReservedDraftCurrencyType(GGemCoPlayerSettings settings)
+        private static bool ShouldIncreaseLevelOnStatPointInvest(GGemCoPlayerStatSettings settings)
+        {
+            if (settings == null) return false;
+            return settings.statPointLevelUpOnInvestPolicy == GGemCoPlayerStatSettings.StatPointLevelUpOnInvestPolicy.IncreaseLevelByInvestedPoints;
+        }
+
+        private static bool AllowCommittedStatPointRefund(GGemCoPlayerStatSettings settings)
+        {
+            if (settings == null) return true;
+            return settings.statPointRefundPolicy == GGemCoPlayerStatSettings.StatPointRefundPolicy.AllowCommittedRefund;
+        }
+
+        private static bool UseReservedGoldDraftBudget(GGemCoPlayerStatSettings settings)
+        {
+            if (settings == null) return false;
+            return settings.statPointAcquirePolicy == GGemCoPlayerStatSettings.StatPointAcquirePolicy.GoldPurchaseOnly;
+        }
+
+        private CurrencyConstants.Type GetReservedDraftCurrencyType(GGemCoPlayerStatSettings settings)
         {
             if (!UseReservedGoldDraftBudget(settings))
             {
@@ -382,16 +384,16 @@ namespace GGemCo2DCore
             return CurrencyConstants.Type.Gold;
         }
 
-        private long GetStatPointPurchaseFallbackPrice(GGemCoPlayerSettings settings)
+        private long GetStatPointPurchaseFallbackPrice(GGemCoPlayerStatSettings settings)
         {
             if (settings == null) return 0;
             return settings.statPointPurchaseCurrencyValue > 0 ? settings.statPointPurchaseCurrencyValue : 0;
         }
 
-        private long GetStatPointInvestPriceForAdditionalInvestCount(int additionalInvestCount, GGemCoPlayerSettings settings = null)
+        private long GetStatPointInvestPriceForAdditionalInvestCount(int additionalInvestCount, GGemCoPlayerStatSettings settings = null)
         {
             if (additionalInvestCount <= 0) return 0;
-            settings ??= GetPlayerSettings();
+            settings ??= GetPlayerStatSettings();
 
             int targetLevel = CurrentLevel + additionalInvestCount;
             long tablePrice = _tableExp != null ? _tableExp.GetNeedStatPointGold(targetLevel) : 0;
@@ -405,7 +407,7 @@ namespace GGemCo2DCore
 
         private long CalculateReservedDraftGoldCost(int originalUnspent, int originalInvestedTotal, int draftInvestedTotal)
         {
-            var settings = GetPlayerSettings();
+            var settings = GetPlayerStatSettings();
             if (!UseReservedGoldDraftBudget(settings))
             {
                 return 0;
@@ -454,7 +456,7 @@ namespace GGemCo2DCore
                 return;
             }
 
-            var settings = GetPlayerSettings();
+            var settings = GetPlayerStatSettings();
             if (!CanAcquireStatPointsFromLevelUp(settings))
             {
                 return;
@@ -469,7 +471,7 @@ namespace GGemCo2DCore
 
         public bool CanPurchaseStatPoints()
         {
-            var settings = GetPlayerSettings();
+            var settings = GetPlayerStatSettings();
             if (!CanAcquireStatPointsFromGoldPurchase(settings)) return false;
             if (settings == null) return false;
 
@@ -485,12 +487,12 @@ namespace GGemCo2DCore
 
         public bool UsesReservedGoldBudgetForStatPointDraft()
         {
-            return UseReservedGoldDraftBudget(GetPlayerSettings());
+            return UseReservedGoldDraftBudget(GetPlayerStatSettings());
         }
 
         public CurrencyConstants.Type GetStatPointPurchaseCurrencyType()
         {
-            var settings = GetPlayerSettings();
+            var settings = GetPlayerStatSettings();
             if (UseReservedGoldDraftBudget(settings))
             {
                 return CurrencyConstants.Type.Gold;
@@ -502,7 +504,7 @@ namespace GGemCo2DCore
         public long GetStatPointPurchasePrice(int amount = 1)
         {
             if (amount <= 0) return 0;
-            var settings = GetPlayerSettings();
+            var settings = GetPlayerStatSettings();
             if (settings == null) return 0;
             if (!CanAcquireStatPointsFromGoldPurchase(settings)) return 0;
             if (settings.statPointPurchaseCurrencyValue <= 0) return 0;
@@ -516,7 +518,7 @@ namespace GGemCo2DCore
         /// </summary>
         public long GetReservedStatPointDraftPriceForAdditionalInvestCount(int additionalInvestCount)
         {
-            return GetStatPointInvestPriceForAdditionalInvestCount(additionalInvestCount, GetPlayerSettings());
+            return GetStatPointInvestPriceForAdditionalInvestCount(additionalInvestCount, GetPlayerStatSettings());
         }
 
         public long CalculateReservedStatPointDraftGoldCost(int originalUnspent, int originalInvestedTotal, int draftInvestedTotal)
@@ -537,7 +539,7 @@ namespace GGemCo2DCore
         /// <returns>스탯 초기화 비용입니다. 설정이 없거나 음수이면 0을 반환합니다.</returns>
         public long GetStatPointResetGoldCost()
         {
-            var settings = GetPlayerSettings();
+            var settings = GetPlayerStatSettings();
             if (settings == null) return 0;
             return settings.statPointResetCost > 0 ? settings.statPointResetCost : 0;
         }
@@ -557,7 +559,7 @@ namespace GGemCo2DCore
             if (!CanPurchaseStatPoints()) return false;
             if (amount <= 0) return false;
 
-            var settings = GetPlayerSettings();
+            var settings = GetPlayerStatSettings();
             if (settings == null) return false;
 
             ResultCommon result = CheckNeedCurrency(settings.statPointPurchaseCurrencyType, settings.statPointPurchaseCurrencyValue, amount);
@@ -569,7 +571,7 @@ namespace GGemCo2DCore
             if (!CanPurchaseStatPoints()) return false;
             if (amount <= 0) return false;
 
-            var settings = GetPlayerSettings();
+            var settings = GetPlayerStatSettings();
             if (settings == null) return false;
             if (!CanAffordStatPointPurchase(amount)) return false;
 
@@ -597,7 +599,7 @@ namespace GGemCo2DCore
 
         public bool CanRefundCommittedStatPoints()
         {
-            return AllowCommittedStatPointRefund(GetPlayerSettings());
+            return AllowCommittedStatPointRefund(GetPlayerStatSettings());
         }
 
         /// <summary>
@@ -609,7 +611,7 @@ namespace GGemCo2DCore
             if (amount <= 0) return false;
             if (UnspentStatPoints < amount) return false;
 
-            var settings = GetPlayerSettings();
+            var settings = GetPlayerStatSettings();
 
             switch (type)
             {
@@ -733,7 +735,7 @@ namespace GGemCo2DCore
             if (investedAtk < 0 || investedDef < 0 || investedHp < 0 || investedMp < 0 || investedStamina < 0)
                 return false;
 
-            var settings = GetPlayerSettings();
+            var settings = GetPlayerStatSettings();
             bool useReservedBudget = useReservedDraftGold && UseReservedGoldDraftBudget(settings);
             if (useReservedDraftGold && !useReservedBudget)
             {
@@ -846,7 +848,7 @@ namespace GGemCo2DCore
             if (investedAtk < 0 || investedDef < 0 || investedHp < 0 || investedMp < 0 || investedStamina < 0)
                 return false;
 
-            var settings = GetPlayerSettings();
+            var settings = GetPlayerStatSettings();
             int currentInvestedTotal = GetInvestedStatPointTotal();
             int currentTotal = UnspentStatPoints + currentInvestedTotal;
             int newInvestedTotal = investedAtk + investedDef + investedHp + investedMp + investedStamina;

@@ -14,6 +14,7 @@ namespace GGemCo2DCoreEditor
     {
         private GGemCoSettings _settings;
         private GGemCoPlayerSettings _playerSettings;
+        private GGemCoPlayerStatSettings _playerStatSettings;
         private GGemCoMapSettings _mapSettings;
         private GGemCoSaveSettings _saveSettings;
         private GGemCoCutsceneSettings _cutsceneSettings;
@@ -44,16 +45,18 @@ namespace GGemCo2DCoreEditor
                 // 여러 개의 설정을 병렬적으로 로드
                 var settingsTask = LoadSettingsAsync<GGemCoSettings>(ConfigAddressableSetting.Settings.Key);
                 var playerSettingsTask = LoadSettingsAsync<GGemCoPlayerSettings>(ConfigAddressableSetting.PlayerSettings.Key);
+                var playerStatSettingsTask = LoadSettingsAsync<GGemCoPlayerStatSettings>(ConfigAddressableSetting.PlayerStatSettings.Key);
                 var mapSettingsTask = LoadSettingsAsync<GGemCoMapSettings>(ConfigAddressableSetting.MapSettings.Key);
                 var saveSettingsTask = LoadSettingsAsync<GGemCoSaveSettings>(ConfigAddressableSetting.SaveSettings.Key);
                 var cutsceneSettingsTask = LoadSettingsAsync<GGemCoCutsceneSettings>(ConfigAddressableSetting.CutsceneSettings.Key);
 
                 // 모든 작업이 완료될 때까지 대기
-                await Task.WhenAll(settingsTask, playerSettingsTask, mapSettingsTask, saveSettingsTask, cutsceneSettingsTask);
+                await Task.WhenAll(settingsTask, playerSettingsTask, playerStatSettingsTask, mapSettingsTask, saveSettingsTask, cutsceneSettingsTask);
 
                 // 결과 저장
                 _settings = settingsTask.Result;
                 _playerSettings = playerSettingsTask.Result;
+                _playerStatSettings = playerStatSettingsTask.Result;
                 _mapSettings = mapSettingsTask.Result;
                 _saveSettings = saveSettingsTask.Result;
                 _cutsceneSettings = cutsceneSettingsTask.Result;
@@ -62,7 +65,7 @@ namespace GGemCo2DCoreEditor
                 // if (settings != null)
                 //     Debug.Log("Spine2d 사용여부 : " + settings.useSpine2d);
                 // if (playerSettings != null)
-                //     Debug.Log("Player statAtk : " + playerSettings.stats.atk);
+                //     Debug.Log("Player statAtk : " + _playerStatSettings.stats.atk);
                 // if (mapSettings != null)
                 //     Debug.Log("Tilemap 크기 : " + mapSettings.tilemapGridCellSize);
                 // if (saveSettings != null)

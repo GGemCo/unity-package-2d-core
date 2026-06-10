@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using UnityEngine;
@@ -16,6 +16,7 @@ namespace GGemCo2DCore
 
         [HideInInspector] public GGemCoSettings settings;
         [HideInInspector] public GGemCoPlayerSettings playerSettings;
+        [HideInInspector] public GGemCoPlayerStatSettings playerStatSettings;
         [HideInInspector] public GGemCoMapSettings mapSettings;
         [HideInInspector] public GGemCoSaveSettings saveSettings;
         [HideInInspector] public GGemCoOptionSettings optionSettings;
@@ -77,10 +78,11 @@ namespace GGemCo2DCore
                 _loadProgress = 0f;
 
                 // 1) Core 기본 설정 병렬 Task 구성
-                var tasks = new List<Task<UnityEngine.Object>>(10)
+                var tasks = new List<Task<UnityEngine.Object>>(11)
                 {
                     LoadSettingsAsObjectAsync(ConfigAddressableSetting.Settings.Key),
                     LoadSettingsAsObjectAsync(ConfigAddressableSetting.PlayerSettings.Key),
+                    LoadSettingsAsObjectAsync(ConfigAddressableSetting.PlayerStatSettings.Key),
                     LoadSettingsAsObjectAsync(ConfigAddressableSetting.MapSettings.Key),
                     LoadSettingsAsObjectAsync(ConfigAddressableSetting.SaveSettings.Key),
                     LoadSettingsAsObjectAsync(ConfigAddressableSetting.OptionSettings.Key),
@@ -102,14 +104,15 @@ namespace GGemCo2DCore
                 // 4) Core 기본 설정 할당 (null 안전 캐스팅)
                 settings       = tasks[0].Result as GGemCoSettings;
                 playerSettings = tasks[1].Result as GGemCoPlayerSettings;
-                mapSettings    = tasks[2].Result as GGemCoMapSettings;
-                saveSettings   = tasks[3].Result as GGemCoSaveSettings;
-                optionSettings = tasks[4].Result as GGemCoOptionSettings;
-                soundSettings  = tasks[5].Result as GGemCoSoundSettings;
-                cutsceneSettings = tasks[6].Result as GGemCoCutsceneSettings;
-                worldMapSettings = tasks[7].Result as GGemCoWorldMapSettings;
-                dialogueBalloonSettings = tasks[8].Result as GGemCoDialogueBalloonSettings;
-                gGemCoCharacterCollisionSettings = tasks[9].Result as GGemCoCharacterCollisionSettings;
+                playerStatSettings = tasks[2].Result as GGemCoPlayerStatSettings;
+                mapSettings    = tasks[3].Result as GGemCoMapSettings;
+                saveSettings   = tasks[4].Result as GGemCoSaveSettings;
+                optionSettings = tasks[5].Result as GGemCoOptionSettings;
+                soundSettings  = tasks[6].Result as GGemCoSoundSettings;
+                cutsceneSettings = tasks[7].Result as GGemCoCutsceneSettings;
+                worldMapSettings = tasks[8].Result as GGemCoWorldMapSettings;
+                dialogueBalloonSettings = tasks[9].Result as GGemCoDialogueBalloonSettings;
+                gGemCoCharacterCollisionSettings = tasks[10].Result as GGemCoCharacterCollisionSettings;
 
                 // 5) 이벤트 (기존)
                 OnLoadSettings?.Invoke(settings, playerSettings, mapSettings, saveSettings, optionSettings, soundSettings);

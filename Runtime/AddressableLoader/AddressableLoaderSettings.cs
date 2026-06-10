@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using UnityEngine;
@@ -16,6 +16,7 @@ namespace GGemCo2DCore
 
         [HideInInspector] public GGemCoSettings settings;
         [HideInInspector] public GGemCoPlayerSettings playerSettings;
+        [HideInInspector] public GGemCoPlayerStatSettings playerStatSettings;
         [HideInInspector] public GGemCoMapSettings mapSettings;
         [HideInInspector] public GGemCoItemSettings itemSettings;
         [HideInInspector] public GGemCoSaveSettings saveSettings;
@@ -81,6 +82,7 @@ namespace GGemCo2DCore
                 // 여러 개의 설정을 병렬적으로 로드
                 Task<GGemCoSettings> settingsTask = LoadSettingsAsync<GGemCoSettings>(ConfigAddressableSetting.Settings.Key);
                 Task<GGemCoPlayerSettings> playerSettingsTask = LoadSettingsAsync<GGemCoPlayerSettings>(ConfigAddressableSetting.PlayerSettings.Key);
+                Task<GGemCoPlayerStatSettings> playerStatSettingsTask = LoadSettingsAsync<GGemCoPlayerStatSettings>(ConfigAddressableSetting.PlayerStatSettings.Key);
                 Task<GGemCoMapSettings> mapSettingsTask = LoadSettingsAsync<GGemCoMapSettings>(ConfigAddressableSetting.MapSettings.Key);
                 Task<GGemCoItemSettings> itemSettingsTask = LoadSettingsAsync<GGemCoItemSettings>(ConfigAddressableSetting.ItemSettings.Key);
                 Task<GGemCoSaveSettings> saveSettingsTask = LoadSettingsAsync<GGemCoSaveSettings>(ConfigAddressableSetting.SaveSettings.Key);
@@ -101,6 +103,7 @@ namespace GGemCo2DCore
                 await Task.WhenAll(
                     settingsTask,
                     playerSettingsTask,
+                    playerStatSettingsTask,
                     mapSettingsTask,
                     saveSettingsTask,
                     optionSettingsTask,
@@ -118,6 +121,7 @@ namespace GGemCo2DCore
                 await Task.WhenAll(
                     settingsTask,
                     playerSettingsTask,
+                    playerStatSettingsTask,
                     mapSettingsTask,
                     saveSettingsTask,
                     optionSettingsTask,
@@ -134,6 +138,7 @@ namespace GGemCo2DCore
                 // 결과 저장
                 settings = settingsTask.Result;
                 playerSettings = playerSettingsTask.Result;
+                playerStatSettings = playerStatSettingsTask.Result;
                 mapSettings = mapSettingsTask.Result;
                 saveSettings = saveSettingsTask.Result;
                 itemSettings = itemSettingsTask.Result;

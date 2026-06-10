@@ -34,16 +34,16 @@ namespace GGemCo2DCore
         /// <returns>스탯 초기화 비용이 들어있는 텍스트 컨텍스트입니다.</returns>
         private static InteractionDialogueTextContext ResolvePlayerStatPointResetCost()
         {
-            GGemCoPlayerSettings playerSettings = AddressableLoaderSettings.Instance != null
-                ? AddressableLoaderSettings.Instance.playerSettings
+            GGemCoPlayerStatSettings playerStatSettings = AddressableLoaderSettings.Instance != null
+                ? AddressableLoaderSettings.Instance.playerStatSettings
                 : null;
 
-            if (playerSettings == null)
+            if (playerStatSettings == null)
             {
                 return InteractionDialogueTextContext.Empty;
             }
 
-            return InteractionDialogueTextContext.FromArgs(playerSettings.statPointResetCost);
+            return InteractionDialogueTextContext.FromArgs(playerStatSettings.statPointResetCost);
         }
     }
 }

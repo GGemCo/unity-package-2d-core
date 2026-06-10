@@ -24,6 +24,7 @@ namespace GGemCo2DCore
         private const int CountCollider = 10;
         private Collider2D[] _collider2Ds;
         private GGemCoPlayerSettings _playerSettings;
+        private GGemCoPlayerStatSettings _playerStatSettings;
 
         private PlayerUIController _playerUIController;
 
@@ -100,6 +101,7 @@ namespace GGemCo2DCore
             // 먼저 선언한다.
             IsUseSkill = true;
             _playerSettings = AddressableLoaderSettings.Instance.playerSettings;
+            _playerStatSettings = AddressableLoaderSettings.Instance.playerStatSettings;
             _collider2Ds = new Collider2D[CountCollider];
         
             _monsterHitAreaLayerMask = LayerMask.GetMask(
@@ -150,7 +152,7 @@ namespace GGemCo2DCore
         }
 
         /// <summary>
-        /// 플레이어 공격 스탯을 GGemCoPlayerSettings.statPointAtk 규칙으로 기본 공격력 보너스로 변환합니다.
+        /// 플레이어 공격 스탯을 GGemCoPlayerStatSettings.statPointAtk 규칙으로 기본 공격력 보너스로 변환합니다.
         /// </summary>
         /// <param name="totalBaseAtk">BASE_ATK 보정이 반영된 최종 기본 공격력입니다.</param>
         /// <param name="totalStatAtk">STAT_ATK 보정과 저장된 투자 포인트가 반영된 최종 공격 스탯입니다.</param>
@@ -164,7 +166,7 @@ namespace GGemCo2DCore
         }
 
         /// <summary>
-        /// 플레이어 방어 스탯을 GGemCoPlayerSettings.statPointDef 규칙으로 기본 방어력 보너스로 변환합니다.
+        /// 플레이어 방어 스탯을 GGemCoPlayerStatSettings.statPointDef 규칙으로 기본 방어력 보너스로 변환합니다.
         /// </summary>
         /// <param name="totalBaseDef">BASE_DEF 보정이 반영된 최종 기본 방어력입니다.</param>
         /// <param name="totalStatDef">STAT_DEF 보정과 저장된 투자 포인트가 반영된 최종 방어 스탯입니다.</param>
@@ -178,7 +180,7 @@ namespace GGemCo2DCore
         }
 
         /// <summary>
-        /// 플레이어 HP 스탯을 GGemCoPlayerSettings.statPointHp 규칙으로 기본 HP 보너스로 변환합니다.
+        /// 플레이어 HP 스탯을 GGemCoPlayerStatSettings.statPointHp 규칙으로 기본 HP 보너스로 변환합니다.
         /// </summary>
         /// <param name="totalBaseHp">BASE_HP 보정이 반영된 최종 기본 HP입니다.</param>
         /// <param name="totalStatHp">STAT_HP 보정과 저장된 투자 포인트가 반영된 최종 HP 스탯입니다.</param>
@@ -192,7 +194,7 @@ namespace GGemCo2DCore
         }
 
         /// <summary>
-        /// 플레이어 MP 스탯을 GGemCoPlayerSettings.statPointMp 규칙으로 기본 MP 보너스로 변환합니다.
+        /// 플레이어 MP 스탯을 GGemCoPlayerStatSettings.statPointMp 규칙으로 기본 MP 보너스로 변환합니다.
         /// </summary>
         /// <param name="totalBaseMp">BASE_MP 보정이 반영된 최종 기본 MP입니다.</param>
         /// <param name="totalStatMp">STAT_MP 보정과 저장된 투자 포인트가 반영된 최종 MP 스탯입니다.</param>
@@ -206,7 +208,7 @@ namespace GGemCo2DCore
         }
 
         /// <summary>
-        /// 플레이어 스태미나 스탯을 GGemCoPlayerSettings.statPointStamina 규칙으로 기본 스태미나 보너스로 변환합니다.
+        /// 플레이어 스태미나 스탯을 GGemCoPlayerStatSettings.statPointStamina 규칙으로 기본 스태미나 보너스로 변환합니다.
         /// </summary>
         /// <param name="totalBaseStamina">BASE_STAMINA 보정이 반영된 최종 기본 스태미나입니다.</param>
         /// <param name="totalStatStamina">STAT_STAMINA 보정과 저장된 투자 포인트가 반영된 최종 스태미나 스탯입니다.</param>
@@ -296,8 +298,13 @@ namespace GGemCo2DCore
             // SetBaseAndGrowthStatInfos 내부 재계산 시점부터 TotalStat* 값에 포함되도록 순서를 보장합니다.
             RefreshSavedStatPointModifiers(preserveResources: false, recalculate: false);
 
-            CharacterBaseAttributeValues baseAttributes = _playerSettings.baseAttributes;
-            CharacterGrowthStatValues growthStats = _playerSettings.stats;
+            GGemCoPlayerStatSettings statSettings = GetPlayerStatSettings();
+            CharacterBaseAttributeValues baseAttributes = statSettings != null
+                ? statSettings.baseAttributes
+                : GGemCoPlayerStatSettings.CreateDefaultBaseAttributes();
+            CharacterGrowthStatValues growthStats = statSettings != null
+                ? statSettings.stats
+                : GGemCoPlayerStatSettings.CreateDefaultGrowthStats();
 
             SetBaseAndGrowthStatInfos(baseAttributes, growthStats);
             // 시작 자원 값은 '최대치'가 아니라, 설정에 따라 별도로 초기화할 수 있다.
@@ -307,7 +314,7 @@ namespace GGemCo2DCore
             CurrentStamina.OnNext(_playerSettings.startStamina.Evaluate(MaxStamina.Value));
             CurrentSuperArmor.OnNext(0);
 
-            currentMoveStep = _playerSettings.baseAttributes.moveStep;
+            currentMoveStep = baseAttributes.moveStep;
             originalScaleX = transform.localScale.x;
             SetScale(_playerSettings.startScale);
             SetWidth(_playerSettings.size.x);
@@ -963,9 +970,9 @@ namespace GGemCo2DCore
 
         public bool DoesStatPointInvestIncreaseLevel()
         {
-            var settings = _playerSettings != null ? _playerSettings : AddressableLoaderSettings.Instance.playerSettings;
+            var settings = _playerStatSettings != null ? _playerStatSettings : AddressableLoaderSettings.Instance.playerStatSettings;
             if (settings == null) return false;
-            return settings.statPointLevelUpOnInvestPolicy == GGemCoPlayerSettings.StatPointLevelUpOnInvestPolicy.IncreaseLevelByInvestedPoints;
+            return settings.statPointLevelUpOnInvestPolicy == GGemCoPlayerStatSettings.StatPointLevelUpOnInvestPolicy.IncreaseLevelByInvestedPoints;
         }
 
         /// <summary>
@@ -1033,7 +1040,7 @@ namespace GGemCo2DCore
         /// 특정 스탯 포인트 투자 상태를 가정했을 때의 총합 스탯을 계산합니다.
         /// - UIWindowPlayerInfo 미리보기 용도입니다.
         /// - InvestedStatPoint* 값은 STAT_*에 1:1 Flat 값으로 반영합니다.
-        /// - GGemCoPlayerSettings.statPoint* 규칙은 계산된 TotalStat*를 Resolved*/Max* 파생값으로 변환할 때 사용합니다.
+        /// - GGemCoPlayerStatSettings.statPoint* 규칙은 계산된 TotalStat*를 Resolved*/Max* 파생값으로 변환할 때 사용합니다.
         /// </summary>
         public CharacterTotals CalculateProjectedTotalsForStatPoints(
             int investedAtk,
@@ -1123,7 +1130,7 @@ namespace GGemCo2DCore
         /// <param name="recalculate">true이면 설정 직후 전체 스탯을 재계산합니다.</param>
         /// <remarks>
         /// 저장 데이터의 InvestedStatPoint* 값은 STAT_* 키로 변환됩니다.
-        /// 따라서 계산 결과는 TotalStat*에 반영되고, Resolved*/Max* 파생값은 PlayerSettings.statPoint* 규칙으로 갱신됩니다.
+        /// 따라서 계산 결과는 TotalStat*에 반영되고, Resolved*/Max* 파생값은 PlayerStatSettings.statPoint* 규칙으로 갱신됩니다.
         /// </remarks>
         private void SetCurrentStatPointModifiersFromPlayerData(bool recalculate)
         {
@@ -1183,34 +1190,43 @@ namespace GGemCo2DCore
             if (investedPoints <= 0) return;
             if (string.IsNullOrEmpty(statKey)) return;
 
-            // InvestedStatPoint*는 성장 스탯 자체의 투자량이므로 PlayerSettings.statPoint* 배율을 곱하지 않습니다.
+            // InvestedStatPoint*는 성장 스탯 자체의 투자량이므로 PlayerStatSettings.statPoint* 배율을 곱하지 않습니다.
             flatOut[statKey] = flatOut.GetValueOrDefault(statKey, 0) + investedPoints;
         }
 
         /// <summary>
         /// 플레이어 스탯 포인트 변환 설정을 반환합니다.
         /// </summary>
-        /// <returns>현재 플레이어 설정이 있으면 해당 설정, 없으면 기본 설정 인스턴스를 반환합니다.</returns>
-        private GGemCoPlayerSettings GetStatPointSettings()
+        /// <returns>현재 플레이어 스탯 설정이 있으면 해당 설정, 없으면 null을 반환합니다.</returns>
+        private GGemCoPlayerStatSettings GetPlayerStatSettings()
         {
-            if (_playerSettings != null)
-                return _playerSettings;
+            if (_playerStatSettings != null)
+                return _playerStatSettings;
 
             var loader = AddressableLoaderSettings.Instance;
-            if (loader != null && loader.playerSettings != null)
-                return loader.playerSettings;
+            if (loader != null && loader.playerStatSettings != null)
+                return loader.playerStatSettings;
 
             return null;
         }
 
         /// <summary>
-        /// TotalStat* 값을 GGemCoPlayerSettings.statPoint* 규칙에 따라 Base 계열 파생 보너스로 변환합니다.
+        /// 플레이어 스탯 포인트 변환 설정을 반환합니다.
+        /// </summary>
+        /// <returns>현재 플레이어 스탯 설정이 있으면 해당 설정, 없으면 null을 반환합니다.</returns>
+        private GGemCoPlayerStatSettings GetStatPointSettings()
+        {
+            return GetPlayerStatSettings();
+        }
+
+        /// <summary>
+        /// TotalStat* 값을 GGemCoPlayerStatSettings.statPoint* 규칙에 따라 Base 계열 파생 보너스로 변환합니다.
         /// </summary>
         /// <param name="totalBaseValue">BASE_* 보정이 반영된 최종 기본 항목 값입니다.</param>
         /// <param name="totalStatValue">STAT_* 보정과 저장된 투자 포인트가 반영된 최종 스탯 항목 값입니다.</param>
         /// <param name="bonus">TotalStat* 1당 Base 계열에 더할 변환 규칙입니다.</param>
         /// <returns>TotalBase*에 스탯 변환 보너스를 더한 Resolved*/Max* 값입니다.</returns>
-        private static long CalculatePlayerDerivedBaseValue(long totalBaseValue, long totalStatValue, GGemCoPlayerSettings.StatPointBonus bonus)
+        private static long CalculatePlayerDerivedBaseValue(long totalBaseValue, long totalStatValue, GGemCoPlayerStatSettings.StatPointBonus bonus)
         {
             double bonusValue = CalculatePlayerStatPointBonus(totalBaseValue, totalStatValue, bonus);
             double result = totalBaseValue + bonusValue;
@@ -1226,7 +1242,7 @@ namespace GGemCo2DCore
         /// <param name="totalStatValue">변환 대상 최종 스탯 항목 값입니다.</param>
         /// <param name="bonus">Flat 또는 PercentOfMax 변환 규칙입니다.</param>
         /// <returns>Base 계열에 더할 보너스 값입니다.</returns>
-        private static double CalculatePlayerStatPointBonus(long totalBaseValue, long totalStatValue, GGemCoPlayerSettings.StatPointBonus bonus)
+        private static double CalculatePlayerStatPointBonus(long totalBaseValue, long totalStatValue, GGemCoPlayerStatSettings.StatPointBonus bonus)
         {
             if (totalStatValue == 0L || Mathf.Approximately(bonus.valuePerPoint, 0f))
                 return 0d;

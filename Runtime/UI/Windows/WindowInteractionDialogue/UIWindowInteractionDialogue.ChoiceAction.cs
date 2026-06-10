@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Threading.Tasks;
 using TMPro;
 using UnityEngine.UI;
@@ -221,12 +221,12 @@ namespace GGemCo2DCore
         /// <returns>창을 열었으면 true입니다.</returns>
         private bool OpenPlayerStatReset()
         {
-            if (_playerSettings.statPointResetCost > 0)
+            if (_playerStatSettings != null && _playerStatSettings.statPointResetCost > 0)
             {
                 long playerGold = _playerData.CurrentGold;
-                if (playerGold < _playerSettings.statPointResetCost)
+                if (playerGold < _playerStatSettings.statPointResetCost)
                 {
-                    ShowLocalizedInteractionFeedbackMessage("Text_Not_Enough_Gold", _playerSettings.statPointResetCost);
+                    ShowLocalizedInteractionFeedbackMessage("Text_Not_Enough_Gold", _playerStatSettings.statPointResetCost);
                     return false;
                 }
             }

@@ -72,8 +72,6 @@ namespace GGemCo2DCoreEditor
                 playerSettings.startScale = 0.3f;
                 playerSettings.maxLevel = 10;
                 playerSettings.size = new Vector2(128, 128);
-                playerSettings.stats.hp = 10000;
-                playerSettings.stats.mp = 10000;
 
                 if (playerSettings.elementGaugeRules == null || playerSettings.elementGaugeRules.Count == 0)
                 {
@@ -81,6 +79,20 @@ namespace GGemCo2DCoreEditor
                 }
 
                 EditorUtility.SetDirty(playerSettings);
+            }
+
+
+            // GGemCoPlayerStatSettings: 플레이어 기본 항목/성장 스탯/스탯 포인트 정책 샘플값 적용
+            var playerStatSettings = FindSettingsAsset<GGemCoPlayerStatSettings>();
+            if (playerStatSettings == null)
+            {
+                HelperLog.Warn($"[{nameof(StepSetSceneRequireObject)}] GGemCoPlayerStatSettings asset not found.", ctx);
+            }
+            else
+            {
+                playerStatSettings.stats.hp = 10000;
+                playerStatSettings.stats.mp = 10000;
+                EditorUtility.SetDirty(playerStatSettings);
             }
 
             // GGemCoSaveSettings: 저장 데이터 사용 여부 기본값 적용
