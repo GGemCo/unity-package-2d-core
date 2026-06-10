@@ -30,11 +30,15 @@ namespace GGemCo2DCore
         /// <summary>패시브 스킬 지급 연동(없으면 GrantSkillPassive Action은 실패 처리)</summary>
         public IItemUseSkillPassiveReceiver SkillPassiveReceiver { get; }
 
+        /// <summary>MP 회복 규칙 연동(없으면 Core 기본 MP 회복 정책 사용)</summary>
+        public IItemUseMpReceiver MpReceiver { get; }
+
         public ItemUseContext(SceneGame sceneGame, Player player, PlayerData playerData,
             InventoryData inventory, int slotIndex, int itemUid, int consumeCount,
             IItemUseSkillReceiver skillReceiver,
             GameObject targetObject = null,
-            IItemUseSkillPassiveReceiver skillPassiveReceiver = null)
+            IItemUseSkillPassiveReceiver skillPassiveReceiver = null,
+            IItemUseMpReceiver mpReceiver = null)
         {
             SceneGame = sceneGame;
             Player = player;
@@ -48,7 +52,32 @@ namespace GGemCo2DCore
             ConsumeCount = consumeCount;
             SkillReceiver = skillReceiver;
             SkillPassiveReceiver = skillPassiveReceiver;
+            MpReceiver = mpReceiver;
         }
+    }
+
+    /// <summary>
+    /// 아이템 사용으로 MP를 회복할 때 게임별 MP 상한 규칙을 적용하기 위한 수신자 인터페이스입니다.
+    /// </summary>
+    /// <remarks>
+    /// <para>Core는 기본적으로 <see cref="CharacterStat.MaxMp"/> 기준으로 MP를 회복합니다.</para>
+    /// <para>게임별로 하트 개수, 전투 규칙, 임시 자원 등 별도 상한을 사용해야 하는 경우 플레이어 오브젝트의 컴포넌트가 이 인터페이스를 구현합니다.</para>
+    /// </remarks>
+    public interface IItemUseMpReceiver
+    {
+        /// <summary>
+        /// 지정한 양만큼 MP를 회복할 수 있는지 확인합니다.
+        /// </summary>
+        /// <param name="amount">회복하려는 MP 양입니다.</param>
+        /// <returns>회복 가능하면 true입니다.</returns>
+        bool CanAddMp(int amount);
+
+        /// <summary>
+        /// 지정한 양만큼 MP 회복을 시도합니다.
+        /// </summary>
+        /// <param name="amount">회복하려는 MP 양입니다.</param>
+        /// <returns>실제로 MP가 변경되면 true입니다.</returns>
+        bool TryAddMp(int amount);
     }
 
     /// <summary>
