@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using UnityEngine;
@@ -118,6 +118,103 @@ namespace GGemCo2DCore
             catch (Exception ex)
             {
                 GcLogger.LogError($"사운드 로딩 중 오류 발생: {ex.Message}");
+            }
+        }
+
+
+        /// <summary>
+        /// 사운드 리소스 테이블에서 PreLoad가 활성화된 AudioClip을 실제 객체로 미리 로드합니다.
+        /// </summary>
+        /// <param name="tableLoaderManager">사운드 리소스 테이블을 보유한 테이블 로더입니다.</param>
+        /// <param name="introOnly">true이면 Intro 씬에서 사용하는 사운드 리소스만 선로드합니다.</param>
+        public async Task PreloadMarkedSoundsAsync(TableLoaderManager tableLoaderManager, bool introOnly = false)
+        {
+            List<string> keys = CollectPreloadSoundKeys(tableLoaderManager, introOnly);
+            await PreloadAudioClipsAsync(keys);
+        }
+
+        /// <summary>
+        /// 선로드 대상 Addressables 키 목록을 순서대로 실제 AudioClip로 로드합니다.
+        /// </summary>
+        /// <param name="keys">로드할 사운드 Addressables 키 목록입니다.</param>
+        private async Task PreloadAudioClipsAsync(IReadOnlyList<string> keys)
+        {
+            _prefabLoadProgress = 0f;
+            if (keys == null || keys.Count == 0)
+            {
+                _prefabLoadProgress = 1f;
+                return;
+            }
+
+            for (int i = 0; i < keys.Count; i++)
+            {
+                string key = keys[i];
+                try
+                {
+                    await LoadAudioClipAsync(key);
+                }
+                catch (Exception ex)
+                {
+                    GcLogger.LogWarning($"[AddressableLoaderSound] 선로드 중 예외가 발생했습니다. key={key}, error={ex.Message}");
+                }
+
+                _prefabLoadProgress = (float)(i + 1) / keys.Count;
+            }
+
+            _prefabLoadProgress = 1f;
+        }
+
+        /// <summary>
+        /// sound_bgm/sound_ambient/sound_sfx 테이블에서 PreLoad가 활성화된 Addressables 키를 수집합니다.
+        /// </summary>
+        /// <param name="tableLoaderManager">사운드 리소스 테이블을 보유한 테이블 로더입니다.</param>
+        /// <param name="introOnly">true이면 UseIntroScene도 활성화된 행만 수집합니다.</param>
+        /// <returns>중복이 제거된 선로드 대상 Addressables 키 목록입니다.</returns>
+        private static List<string> CollectPreloadSoundKeys(TableLoaderManager tableLoaderManager, bool introOnly)
+        {
+            List<string> result = new List<string>();
+            HashSet<string> registeredKeys = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            if (tableLoaderManager == null)
+                return result;
+
+            AppendPreloadSoundKeys(result, registeredKeys, tableLoaderManager.TableSoundBgm?.GetDatas(), introOnly);
+            AppendPreloadSoundKeys(result, registeredKeys, tableLoaderManager.TableSoundAmbient?.GetDatas(), introOnly);
+            AppendPreloadSoundKeys(result, registeredKeys, tableLoaderManager.TableSoundSfx?.GetDatas(), introOnly);
+            return result;
+        }
+
+        /// <summary>
+        /// 지정한 사운드 리소스 테이블에서 선로드 대상 키를 결과 목록에 추가합니다.
+        /// </summary>
+        /// <typeparam name="TResource">사운드 리소스 행 타입입니다.</typeparam>
+        /// <param name="target">수집 결과 목록입니다.</param>
+        /// <param name="registeredKeys">중복 추가를 방지하기 위한 키 집합입니다.</param>
+        /// <param name="rows">검사할 사운드 리소스 행 사전입니다.</param>
+        /// <param name="introOnly">true이면 UseIntroScene도 활성화된 행만 추가합니다.</param>
+        private static void AppendPreloadSoundKeys<TResource>(
+            List<string> target,
+            HashSet<string> registeredKeys,
+            IReadOnlyDictionary<int, TResource> rows,
+            bool introOnly)
+            where TResource : StruckTableSoundResource
+        {
+            if (target == null || registeredKeys == null || rows == null)
+                return;
+
+            foreach (KeyValuePair<int, TResource> pair in rows)
+            {
+                TResource resource = pair.Value;
+                if (resource == null || !resource.PreLoad)
+                    continue;
+
+                if (introOnly && !resource.UseIntroScene)
+                    continue;
+
+                string key = resource.BuildAddressKey();
+                if (string.IsNullOrWhiteSpace(key) || !registeredKeys.Add(key))
+                    continue;
+
+                target.Add(key);
             }
         }
 

@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 
 namespace GGemCo2DCore
 {
@@ -20,6 +20,7 @@ namespace GGemCo2DCore
         public bool Loop;
         public float FadeDuration;
         public bool UseIntroScene;
+        public bool PreLoad;
 
         /// <summary>
         /// 실제 AudioClip Addressables 키를 생성합니다.
@@ -79,6 +80,7 @@ namespace GGemCo2DCore
                 Loop = reader.BoolYN("Loop"),
                 FadeDuration = reader.Float("FadeDuration", 0.7f),
                 UseIntroScene = reader.BoolYN("UseIntroScene"),
+                PreLoad = reader.BoolYN("PreLoad"),
                 Type = type,
             };
         }

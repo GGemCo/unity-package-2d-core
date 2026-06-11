@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
@@ -248,6 +248,14 @@ namespace GGemCo2DCore
                 startTask: () => addrSound.PrepareDependenciesAsync(ConfigAddressableLabel.Sound),
                 getProgress: () => addrSound.GetLoadProgress()
             ));
+
+            Register(new AddressableTaskStep(
+                id: "core.sound.preload",
+                order: 351,
+                localizedKey: LocalizationConstants.Keys.Loading.TextTypeSound(),
+                startTask: () => addrSound.PreloadMarkedSoundsAsync(tableLoader),
+                getProgress: () => addrSound.GetLoadProgress()
+            ));
             
             // 시작 직후 반드시 필요하지 않은 자산은 선로드 대상에서 제외합니다.
             // 실제 사용 시 각 AddressableLoader가 지연 로드합니다.
@@ -279,8 +287,14 @@ namespace GGemCo2DCore
 
             
             
-            var soundTable = ConfigAddressableTable.GetByKey(ConfigAddressableTable.KeySoundTable());
-            var targetTables = new List<AddressableAssetInfo> { soundTable };
+            var targetTables = new List<AddressableAssetInfo>
+            {
+                ConfigAddressableTable.TableSound,
+                ConfigAddressableTable.TableSoundBgm,
+                ConfigAddressableTable.TableSoundAmbient,
+                ConfigAddressableTable.TableSoundSfx,
+                ConfigAddressableTable.TableSoundVariant,
+            };
             
             Register(new AddressableTaskStep(
                 id: "core.settings",
@@ -309,6 +323,14 @@ namespace GGemCo2DCore
                 order: 355,
                 localizedKey: LocalizationConstants.Keys.Loading.TextTypeSound(),
                 startTask: () => addrSound.PrepareDependenciesAsync(ConfigAddressableLabel.SoundIntro),
+                getProgress: () => addrSound.GetLoadProgress()
+            ));
+
+            Register(new AddressableTaskStep(
+                id: "core.sound.intro.preload",
+                order: 356,
+                localizedKey: LocalizationConstants.Keys.Loading.TextTypeSound(),
+                startTask: () => addrSound.PreloadMarkedSoundsAsync(tableLoader, true),
                 getProgress: () => addrSound.GetLoadProgress()
             ));
             StartLoading();

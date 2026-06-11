@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using GGemCo2DCore;
@@ -20,6 +20,7 @@ namespace GGemCo2DCoreEditor
         private const string HeaderSubType = "SubType";
         private const string HeaderFileName = "FileName";
         private const string HeaderUseIntroScene = "UseIntroScene";
+        private const string HeaderPreLoad = "PreLoad";
 
         private readonly List<StruckTableSoundResource> _rowsToValidate = new List<StruckTableSoundResource>();
         private readonly List<StruckTableSoundResource> _rowsToUpsert = new List<StruckTableSoundResource>();
@@ -289,6 +290,7 @@ namespace GGemCo2DCoreEditor
                 SubType = ParseEnumOrDefault<SoundConstants.SubType>(GetTrimmedValue(row, HeaderSubType)),
                 FileName = GetTrimmedValue(row, HeaderFileName),
                 UseIntroScene = ParseBooleanOrDefault(GetTrimmedValue(row, HeaderUseIntroScene)),
+                PreLoad = ParseBooleanOrDefault(GetTrimmedValue(row, HeaderPreLoad)),
             };
 
             return true;

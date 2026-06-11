@@ -73,6 +73,7 @@ namespace GGemCo2DCoreEditor
             new(nameof(StruckTableSoundResource.Loop), group: "재생"),
             new(nameof(StruckTableSoundResource.FadeDuration), group: "재생"),
             new(nameof(StruckTableSoundResource.UseIntroScene), group: "Flags"),
+            new(nameof(StruckTableSoundResource.PreLoad), group: "Flags"),
         };
 
         private static readonly TableRowEditorUtility.TableRowEditorField[] VariantRowEditorFields =
@@ -1148,6 +1149,7 @@ namespace GGemCo2DCoreEditor
                     "Loop" => MathHelper.FormatBool(row.Loop),
                     "FadeDuration" => MathHelper.FormatFloat(row.FadeDuration),
                     "UseIntroScene" => MathHelper.FormatBool(row.UseIntroScene),
+                    "PreLoad" => MathHelper.FormatBool(row.PreLoad),
                     _ => string.Empty,
                 };
             }
@@ -1214,6 +1216,7 @@ namespace GGemCo2DCoreEditor
                 sb.AppendLine($"- Addressables Key: {_editingResource.BuildAddressKey()}");
                 sb.AppendLine($"- Volume/Pitch: {_editingResource.Volume} / {_editingResource.PitchMin}~{_editingResource.PitchMax}");
                 sb.AppendLine($"- Loop/Fade: {_editingResource.Loop} / {_editingResource.FadeDuration}");
+                sb.AppendLine($"- UseIntroScene/PreLoad: {_editingResource.UseIntroScene} / {_editingResource.PreLoad}");
             }
             else
             {
@@ -1392,6 +1395,7 @@ namespace GGemCo2DCoreEditor
             destination.Loop = source.Loop;
             destination.FadeDuration = source.FadeDuration;
             destination.UseIntroScene = source.UseIntroScene;
+            destination.PreLoad = source.PreLoad;
         }
 
         /// <summary>
