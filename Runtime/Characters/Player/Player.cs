@@ -698,6 +698,17 @@ namespace GGemCo2DCore
         {
             _controllerPlayer?.ChangeMapSize(mapSize);
         }
+
+        /// <summary>
+        /// 현재 맵의 Parallax 사용 여부에 따라 플레이어의 맵 경계 제한 정책을 적용합니다.
+        /// 이동 컨트롤러와 플레이어 본체의 하단 경계 처리 값을 함께 갱신합니다.
+        /// </summary>
+        /// <param name="mapData">현재 적용할 맵 테이블 데이터입니다.</param>
+        public void ApplyMapBoundaryOverrides(StruckTableMap mapData)
+        {
+            _controllerPlayer?.ApplyMapBoundaryOverrides(mapData);
+            ApplyMapBoundaryBottomOverride(mapData);
+        }
         
         /// <summary>
         /// 맵 이동 시작 시 플레이어 상태를 정리합니다.

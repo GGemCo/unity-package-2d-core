@@ -1,4 +1,4 @@
-﻿using UnityEngine;
+using UnityEngine;
 
 namespace GGemCo2DCore
 {
@@ -24,15 +24,63 @@ namespace GGemCo2DCore
         [Tooltip("오른쪽 경계 제한 활성화")] protected bool LimitRight = true;
         [Tooltip("아래(바닥) 경계 제한 활성화")] protected bool LimitBottom = true;
         [Tooltip("위(천장) 경계 제한 활성화")] protected bool LimitTop = true;
+        private bool _defaultLimitLeft = true;
+        private bool _defaultLimitRight = true;
+        private bool _defaultLimitBottom = true;
+        private bool _defaultLimitTop = true;
 
         protected virtual void Awake()
         {
             targetCharacter = GetComponent<CharacterBase>();
+            InitializeBoundaryDefaults();
+        }
+
+        /// <summary>
+        /// 플레이어 설정에 정의된 기본 맵 경계 제한 값을 런타임 기본값으로 저장하고 현재 컨트롤러에 적용합니다.
+        /// 맵별 정책이 해제될 때 이 값으로 복원됩니다.
+        /// </summary>
+        private void InitializeBoundaryDefaults()
+        {
             if (!AddressableLoaderSettings.Instance?.playerSettings) return;
-            LimitLeft = AddressableLoaderSettings.Instance.playerSettings.limitBoundaryLeft;
-            LimitRight = AddressableLoaderSettings.Instance.playerSettings.limitBoundaryRight;
-            LimitBottom = AddressableLoaderSettings.Instance.playerSettings.limitBoundaryBottom;
-            LimitTop = AddressableLoaderSettings.Instance.playerSettings.limitBoundaryTop;
+
+            _defaultLimitLeft = AddressableLoaderSettings.Instance.playerSettings.limitBoundaryLeft;
+            _defaultLimitRight = AddressableLoaderSettings.Instance.playerSettings.limitBoundaryRight;
+            _defaultLimitBottom = AddressableLoaderSettings.Instance.playerSettings.limitBoundaryBottom;
+            _defaultLimitTop = AddressableLoaderSettings.Instance.playerSettings.limitBoundaryTop;
+            RestoreBoundaryDefaults();
+        }
+
+        /// <summary>
+        /// 현재 맵의 Parallax 사용 여부에 따라 캐릭터 이동 경계 제한을 적용합니다.
+        /// Parallax 맵에서는 모든 방향 제한을 해제하고, 일반 맵에서는 플레이어 설정의 원본 값으로 복원합니다.
+        /// </summary>
+        /// <param name="mapData">현재 적용할 맵 테이블 데이터입니다.</param>
+        public virtual void ApplyMapBoundaryOverrides(StruckTableMap mapData)
+        {
+            if (mapData != null && mapData.UseParallax)
+            {
+                LimitLeft = false;
+                LimitRight = false;
+                LimitBottom = false;
+                LimitTop = false;
+            }
+            else
+            {
+                RestoreBoundaryDefaults();
+            }
+
+            UpdateCheckMaxBounds();
+        }
+
+        /// <summary>
+        /// 캐릭터 이동 경계 제한 값을 플레이어 설정에서 읽은 기본값으로 복원합니다.
+        /// </summary>
+        private void RestoreBoundaryDefaults()
+        {
+            LimitLeft = _defaultLimitLeft;
+            LimitRight = _defaultLimitRight;
+            LimitBottom = _defaultLimitBottom;
+            LimitTop = _defaultLimitTop;
         }
 
         protected virtual void Start()

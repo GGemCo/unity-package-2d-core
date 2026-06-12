@@ -101,7 +101,7 @@ namespace GGemCo2DCore
             }
 
             defaultFacingDirection8 = AddressableLoaderSettings.Instance.playerSettings.facingDirection8;
-            _limitBoundaryBottom = AddressableLoaderSettings.Instance.playerSettings.limitBoundaryBottom;
+            SetDefaultBoundaryBottomLimit(AddressableLoaderSettings.Instance.playerSettings.limitBoundaryBottom);
         }
 
         /// <summary>

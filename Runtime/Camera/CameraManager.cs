@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using UnityEngine;
 using Random = UnityEngine.Random;
@@ -182,6 +182,10 @@ namespace GGemCo2DCore
         private bool _defaultUseFollowDeadZone;
         private Vector2 _defaultFollowDeadZone;
         private CameraBottomFollowOffsetPolicy _defaultBottomFollowOffsetPolicy;
+        private bool _defaultUseLimitLeft;
+        private bool _defaultUseLimitRight;
+        private bool _defaultUseLimitTop;
+        private bool _defaultUseLimitBottom;
 
         private float _width;
         private float _height;
@@ -225,6 +229,10 @@ namespace GGemCo2DCore
             _defaultUseFollowDeadZone = useFollowDeadZone;
             _defaultFollowDeadZone = new Vector2(followDeadZoneX, followDeadZoneY);
             _defaultBottomFollowOffsetPolicy = bottomFollowOffsetPolicy;
+            _defaultUseLimitLeft = useLimitLeft;
+            _defaultUseLimitRight = useLimitRight;
+            _defaultUseLimitTop = useLimitTop;
+            _defaultUseLimitBottom = useLimitBottom;
             _originCameraPosition = Vector3.zero;
             _cameraPosition = new Vector3(followOffset.x, followOffset.y, 0f);
             _basePosition = transform.position;
@@ -775,6 +783,10 @@ namespace GGemCo2DCore
             bool resolvedUseFollowDeadZone = _defaultUseFollowDeadZone;
             Vector2 resolvedFollowDeadZone = _defaultFollowDeadZone;
             CameraBottomFollowOffsetPolicy resolvedBottomPolicy = _defaultBottomFollowOffsetPolicy;
+            bool resolvedUseLimitLeft = _defaultUseLimitLeft;
+            bool resolvedUseLimitRight = _defaultUseLimitRight;
+            bool resolvedUseLimitTop = _defaultUseLimitTop;
+            bool resolvedUseLimitBottom = _defaultUseLimitBottom;
 
             if (mapData != null)
             {
@@ -793,6 +805,15 @@ namespace GGemCo2DCore
                 {
                     resolvedBottomPolicy = mapData.BottomFollowOffsetPolicy;
                 }
+
+                if (mapData.UseParallax)
+                {
+                    // Parallax 맵은 배경 이동 범위를 열어 두기 위해 카메라 경계 제한을 모두 해제합니다.
+                    resolvedUseLimitLeft = false;
+                    resolvedUseLimitRight = false;
+                    resolvedUseLimitTop = false;
+                    resolvedUseLimitBottom = false;
+                }
             }
 
             followOffset = resolvedFollowOffset;
@@ -800,6 +821,10 @@ namespace GGemCo2DCore
             followDeadZoneX = Mathf.Max(0f, resolvedFollowDeadZone.x);
             followDeadZoneY = Mathf.Max(0f, resolvedFollowDeadZone.y);
             bottomFollowOffsetPolicy = resolvedBottomPolicy;
+            useLimitLeft = resolvedUseLimitLeft;
+            useLimitRight = resolvedUseLimitRight;
+            useLimitTop = resolvedUseLimitTop;
+            useLimitBottom = resolvedUseLimitBottom;
             _cameraPosition.x = resolvedFollowOffset.x;
             _cameraPosition.y = resolvedFollowOffset.y;
             _hasVerticalFollowAnchor = false;

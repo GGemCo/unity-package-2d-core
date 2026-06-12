@@ -39,11 +39,35 @@ namespace GGemCo2DCore
         public CharacterConstants.FacingDirection8 CurrentFacing => _currentFacing;
 
         private bool _limitBoundaryBottom;
+        private bool _defaultLimitBoundaryBottom;
 
         /// <summary>
         /// 맵 전환 등 의도적으로 플레이어를 재배치하는 동안 하단 경계 사망 처리를 일시 중지할지 여부입니다.
         /// </summary>
         private bool _suppressEndTilemapYDeath;
+
+        /// <summary>
+        /// 플레이어 설정에서 읽은 하단 맵 경계 제한 기본값을 저장합니다.
+        /// 맵별 Parallax 정책이 해제될 때 원본 설정으로 되돌리기 위해 사용합니다.
+        /// </summary>
+        /// <param name="isEnabled">플레이어 설정에 정의된 하단 경계 제한 활성화 여부입니다.</param>
+        protected void SetDefaultBoundaryBottomLimit(bool isEnabled)
+        {
+            _defaultLimitBoundaryBottom = isEnabled;
+            _limitBoundaryBottom = isEnabled;
+        }
+
+        /// <summary>
+        /// 현재 맵의 Parallax 사용 여부에 따라 하단 맵 경계 제한을 적용합니다.
+        /// Parallax 맵에서는 제한을 해제하고, 일반 맵에서는 플레이어 설정의 원본 값으로 복원합니다.
+        /// </summary>
+        /// <param name="mapData">현재 적용할 맵 테이블 데이터입니다.</param>
+        public void ApplyMapBoundaryBottomOverride(StruckTableMap mapData)
+        {
+            _limitBoundaryBottom = mapData != null && mapData.UseParallax
+                ? false
+                : _defaultLimitBoundaryBottom;
+        }
         
         // 좌우 플립 여부
         public bool isFlip;

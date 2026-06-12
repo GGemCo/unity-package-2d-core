@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using UnityEngine;
 
 namespace GGemCo2DCore
@@ -53,6 +53,12 @@ namespace GGemCo2DCore
         /// 현재 맵에서 자동 이동 사용 여부를 전역 설정 기준으로 덮어쓸 정책입니다.
         /// </summary>
         public MapAutoMovePolicy AutoMovePolicy;
+
+        /// <summary>
+        /// 현재 맵에서 Parallax 배경 연출을 사용할지 여부입니다.
+        /// 활성화된 맵은 카메라와 플레이어의 맵 경계 제한을 런타임에서 해제합니다.
+        /// </summary>
+        public bool UseParallax;
     }
 
     /// <summary>
@@ -120,6 +126,7 @@ namespace GGemCo2DCore
                 BottomFollowOffsetPolicy =
                     ConvertCameraBottomFollowOffsetPolicy(reader.String("BottomFollowOffsetPolicy")),
                 AutoMovePolicy = ConvertAutoMovePolicy(reader.String("AutoMovePolicy")),
+                UseParallax = reader.BoolYN("UseParallax"),
             };
         }
 
