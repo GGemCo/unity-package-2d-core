@@ -1,4 +1,4 @@
-﻿using System.Collections;
+using System.Collections;
 using UnityEngine;
 
 namespace GGemCo2DCore
@@ -10,11 +10,15 @@ namespace GGemCo2DCore
     public class CameraMoveController : CutsceneDefaultController, ICutsceneController
     {
         private readonly Camera _cam;
+        private readonly CameraManager _cameraManager;
         private Vector2 _startPosition, _endPosition;
         private float _duration;
         private float _timer;
         private bool _isMoving;
         private bool _endTargetPlayer;
+        private bool _useExclusiveControl;
+        private bool _holdEndPositionUntilCutsceneEnd;
+        private bool _isHoldingEndPosition;
         private Easing.EaseType _easing;
 
         /// <summary>
@@ -25,6 +29,7 @@ namespace GGemCo2DCore
         {
             CutsceneManager = manager;
             _cam = SceneGame.Instance.mainCamera;
+            _cameraManager = SceneGame.Instance.cameraManager;
         }
 
         /// <summary>
@@ -71,10 +76,17 @@ namespace GGemCo2DCore
             _endPosition = data.endPosition.ToVector2();
             _easing = data.easing;
             _endTargetPlayer = data.endTargetPlayer;
+            _useExclusiveControl = data.controlPolicy == CameraMoveControlPolicy.Exclusive;
+            _holdEndPositionUntilCutsceneEnd = data.holdEndPositionUntilCutsceneEnd;
+            _isHoldingEndPosition = false;
 
             _timer = 0f;
             _isMoving = true;
-            SceneGame.Instance.cameraManager.RemoveFollowTarget();
+            _cameraManager?.RemoveFollowTarget();
+            if (_useExclusiveControl && _cameraManager != null)
+            {
+                _cameraManager.BeginCutsceneCameraOverride(this, _startPosition);
+            }
         }
 
         /// <summary>
@@ -86,16 +98,33 @@ namespace GGemCo2DCore
             if (!_isMoving) return;
 
             _timer += Time.deltaTime;
-            float t = Mathf.Clamp01(_timer / _duration);
+            float duration = Mathf.Max(_duration, 0.0001f);
+            float t = Mathf.Clamp01(_timer / duration);
             float easedT = Easing.Apply(t, _easing);
 
             Vector2 basePos = Vector2.Lerp(_startPosition, _endPosition, easedT);
-            _cam.transform.position = new Vector3(basePos.x, basePos.y, _cam.transform.position.z);
+            ApplyCameraPosition(basePos);
 
             if (t >= 1f)
             {
                 Stop();
             }
+        }
+
+        /// <summary>
+        /// 현재 CameraMove 정책에 맞춰 카메라 위치를 적용합니다.
+        /// 독점 제어 모드에서는 CameraManager를 통해 일반 카메라 계산을 차단한 상태로 위치를 고정합니다.
+        /// </summary>
+        /// <param name="position">적용할 카메라 월드 좌표입니다.</param>
+        private void ApplyCameraPosition(Vector2 position)
+        {
+            if (_useExclusiveControl && _cameraManager != null)
+            {
+                _cameraManager.SetCutsceneCameraOverridePosition(this, position);
+                return;
+            }
+
+            _cam.transform.position = new Vector3(position.x, position.y, _cam.transform.position.z);
         }
 
         /// <summary>
@@ -105,9 +134,21 @@ namespace GGemCo2DCore
         {
             _isMoving = false;
 
+            if (_useExclusiveControl && _cameraManager != null)
+            {
+                if (_holdEndPositionUntilCutsceneEnd)
+                {
+                    _isHoldingEndPosition = true;
+                    _cameraManager.SetCutsceneCameraOverridePosition(this, _endPosition);
+                    return;
+                }
+
+                _cameraManager.EndCutsceneCameraOverride(this);
+            }
+
             if (_endTargetPlayer)
             {
-                SceneGame.Instance.cameraManager.SetFollowPlayer();
+                _cameraManager?.SetFollowPlayer();
             }
         }
 
@@ -117,6 +158,22 @@ namespace GGemCo2DCore
         public void End()
         {
             _isMoving = false;
+            if (_useExclusiveControl && _cameraManager != null)
+            {
+                if (_isHoldingEndPosition)
+                {
+                    _cameraManager.SetCutsceneCameraOverridePosition(this, _endPosition);
+                }
+
+                _cameraManager.EndCutsceneCameraOverride(this);
+            }
+
+            if (_endTargetPlayer)
+            {
+                _cameraManager?.SetFollowPlayer();
+            }
+
+            _isHoldingEndPosition = false;
         }
     }
 }

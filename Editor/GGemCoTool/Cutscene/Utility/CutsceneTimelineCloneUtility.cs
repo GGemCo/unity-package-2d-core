@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using GGemCo2DCore;
 
 namespace GGemCo2DCoreEditor
@@ -158,6 +158,8 @@ namespace GGemCo2DCoreEditor
                 startPosition = source.startPosition,
                 endPosition = source.endPosition,
                 endTargetPlayer = source.endTargetPlayer,
+                controlPolicy = source.controlPolicy,
+                holdEndPositionUntilCutsceneEnd = source.holdEndPositionUntilCutsceneEnd,
                 easing = source.easing,
             };
         }

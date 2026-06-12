@@ -199,6 +199,9 @@ namespace GGemCo2DCore
         private Easing.EaseType _zoomEasing;
         private bool _zoomUseUnscaledTime;
         private bool _isMapCameraProfileResolved;
+        private object _cutsceneCameraOverrideOwner;
+        private bool _isCutsceneCameraOverrideActive;
+        private Vector3 _cutsceneCameraOverridePosition;
 
         /// <summary>
         /// 현재 맵 카메라 프로필(점프 추적 영향도/Follow Offset/하단 오프셋 정책)의
@@ -210,6 +213,11 @@ namespace GGemCo2DCore
         /// 현재 맵 카메라 프로필의 런타임 적용 완료 여부를 반환합니다.
         /// </summary>
         public bool IsMapCameraProfileResolved => _isMapCameraProfileResolved;
+
+        /// <summary>
+        /// 컷신 카메라 독점 제어 모드가 활성화되어 있는지 반환합니다.
+        /// </summary>
+        public bool IsCutsceneCameraOverrideActive => _isCutsceneCameraOverrideActive;
 
         /// <summary>
         /// 게임 기본 카메라 orthographicSize(원본 값)를 반환합니다.
@@ -244,6 +252,9 @@ namespace GGemCo2DCore
             _width = _height * Screen.width / Screen.height;
             _pendingAutoBottomOffsetApply = false;
             _isMapCameraProfileResolved = false;
+            _cutsceneCameraOverrideOwner = null;
+            _isCutsceneCameraOverrideActive = false;
+            _cutsceneCameraOverridePosition = transform.position;
         }
 
         /// <summary>
@@ -264,8 +275,25 @@ namespace GGemCo2DCore
 
         private void Update()
         {
+            if (_isCutsceneCameraOverrideActive)
+            {
+                ApplyCutsceneCameraOverridePosition();
+                return;
+            }
+
             LimitCameraArea();
             UpdateZoom();
+        }
+
+        /// <summary>
+        /// 컷신 카메라 독점 제어 모드에서 지정된 위치를 카메라에 즉시 적용합니다.
+        /// 일반 추적, 경계 제한, Dead Zone, Shake, Zoom 계산은 이 모드에서 실행하지 않습니다.
+        /// </summary>
+        private void ApplyCutsceneCameraOverridePosition()
+        {
+            _basePosition = _cutsceneCameraOverridePosition;
+            _shakeOffset = Vector3.zero;
+            transform.position = _basePosition;
         }
 
         /// <summary>
@@ -706,6 +734,11 @@ namespace GGemCo2DCore
         /// <param name="request">재생할 Shake 요청 데이터입니다.</param>
         public void PlayShake(CameraShakeRequest request)
         {
+            if (_isCutsceneCameraOverrideActive)
+            {
+                return;
+            }
+
             if (!request.IsValid)
             {
                 return;
@@ -833,8 +866,76 @@ namespace GGemCo2DCore
         }
 
         /// <summary>
-        /// 카메라 강제로 이동시키기
+        /// 컷신 카메라 독점 제어 모드를 시작하고 일반 카메라 계산과 다른 카메라 효과를 차단합니다.
+        /// 기존 독점 소유자가 있더라도 새 소유자가 호출하면 제어권을 넘겨받습니다.
         /// </summary>
+        /// <param name="owner">독점 제어를 요청한 컷신 컨트롤러입니다.</param>
+        /// <param name="position">독점 모드 시작 시 적용할 월드 좌표입니다.</param>
+        /// <returns>유효한 소유자로 독점 모드가 시작되었으면 <see langword="true"/>를 반환합니다.</returns>
+        public bool BeginCutsceneCameraOverride(object owner, Vector2 position)
+        {
+            if (owner == null)
+            {
+                return false;
+            }
+
+            _cutsceneCameraOverrideOwner = owner;
+            _isCutsceneCameraOverrideActive = true;
+            StopAllShakes();
+            StopZoom();
+            _hasVerticalFollowAnchor = false;
+            _pendingAutoBottomOffsetApply = false;
+            SetCutsceneCameraOverridePosition(owner, position);
+            return true;
+        }
+
+        /// <summary>
+        /// 컷신 카메라 독점 제어 모드에서 사용할 카메라 위치를 갱신합니다.
+        /// 현재 소유자가 아닌 요청은 무시합니다.
+        /// </summary>
+        /// <param name="owner">독점 제어를 보유한 컷신 컨트롤러입니다.</param>
+        /// <param name="position">적용할 월드 좌표입니다.</param>
+        /// <returns>위치가 갱신되었으면 <see langword="true"/>를 반환합니다.</returns>
+        public bool SetCutsceneCameraOverridePosition(object owner, Vector2 position)
+        {
+            if (!_isCutsceneCameraOverrideActive || !ReferenceEquals(_cutsceneCameraOverrideOwner, owner))
+            {
+                return false;
+            }
+
+            float z = transform.position.z;
+            _cutsceneCameraOverridePosition = new Vector3(position.x, position.y, z);
+            ApplyCutsceneCameraOverridePosition();
+            return true;
+        }
+
+        /// <summary>
+        /// 컷신 카메라 독점 제어 모드를 종료합니다.
+        /// 현재 소유자가 아닌 요청은 무시하여 겹친 CameraMove 이벤트의 상태 훼손을 방지합니다.
+        /// </summary>
+        /// <param name="owner">독점 제어를 해제하려는 컷신 컨트롤러입니다.</param>
+        /// <returns>독점 모드가 해제되었으면 <see langword="true"/>를 반환합니다.</returns>
+        public bool EndCutsceneCameraOverride(object owner)
+        {
+            if (!_isCutsceneCameraOverrideActive || !ReferenceEquals(_cutsceneCameraOverrideOwner, owner))
+            {
+                return false;
+            }
+
+            _isCutsceneCameraOverrideActive = false;
+            _cutsceneCameraOverrideOwner = null;
+            _basePosition = transform.position;
+            _cutsceneCameraOverridePosition = _basePosition;
+            _shakeOffset = Vector3.zero;
+            _hasVerticalFollowAnchor = false;
+            return true;
+        }
+
+        /// <summary>
+        /// 카메라를 지정한 월드 좌표로 즉시 이동합니다.
+        /// </summary>
+        /// <param name="x">이동할 월드 X 좌표입니다.</param>
+        /// <param name="y">이동할 월드 Y 좌표입니다.</param>
         public void MoveCameraPosition(float x, float y)
         {
             transform.position = new Vector3(x, y, -10f) + _cameraPosition;
@@ -970,6 +1071,11 @@ namespace GGemCo2DCore
             bool useUnscaledTime = false,
             bool changeOriginalSize = false)
         {
+            if (_isCutsceneCameraOverrideActive)
+            {
+                return;
+            }
+
             if (_currentCamera == null || !_currentCamera.orthographic)
             {
                 return;
@@ -1012,9 +1118,24 @@ namespace GGemCo2DCore
         /// </summary>
         public void ReSetByCutscene()
         {
+            ClearCutsceneCameraOverride();
             SetFollowPlayer();
             StopShake(CameraShakeChannel.Cutscene);
             ReSetZoom();
+        }
+
+        /// <summary>
+        /// 컷신 종료 정리 과정에서 소유자와 관계없이 카메라 독점 제어 모드를 강제로 해제합니다.
+        /// 비정상 종료나 컷신 강제 종료 후에도 일반 카메라 계산이 다시 동작하도록 보장합니다.
+        /// </summary>
+        private void ClearCutsceneCameraOverride()
+        {
+            _isCutsceneCameraOverrideActive = false;
+            _cutsceneCameraOverrideOwner = null;
+            _basePosition = transform.position;
+            _cutsceneCameraOverridePosition = _basePosition;
+            _shakeOffset = Vector3.zero;
+            _hasVerticalFollowAnchor = false;
         }
 
         public void StopZoom(bool snapToTarget = false)
