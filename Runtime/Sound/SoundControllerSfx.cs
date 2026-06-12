@@ -120,7 +120,7 @@ namespace GGemCo2DCore
         /// <param name="durationSeconds">루프 효과음을 유지할 시간입니다. 0 이하이면 클립 길이를 사용합니다.</param>
         public void Play(ResolvedSound resolved, MonoBehaviour coroutineHost, float durationSeconds)
         {
-            PlayWithHandle(resolved, coroutineHost, durationSeconds);
+            PlayWithHandle(resolved, coroutineHost, durationSeconds, SoundPlaybackStopPolicy.Auto);
         }
 
         /// <summary>
@@ -129,13 +129,26 @@ namespace GGemCo2DCore
         /// <param name="resolved">최종 재생할 효과음 정보입니다.</param>
         /// <param name="coroutineHost">비동기 로드 코루틴 실행자입니다.</param>
         /// <param name="durationSeconds">루프 효과음을 유지할 시간입니다. 0 이하이면 클립 길이를 사용합니다.</param>
+        /// <param name="stopPolicy">사운드 정지 정책입니다.</param>
         /// <returns>재생 정지 핸들입니다. 재생할 수 없으면 null입니다.</returns>
-        public SoundPlaybackHandle PlayWithHandle(ResolvedSound resolved, MonoBehaviour coroutineHost, float durationSeconds)
+        public SoundPlaybackHandle PlayWithHandle(
+            ResolvedSound resolved,
+            MonoBehaviour coroutineHost,
+            float durationSeconds,
+            SoundPlaybackStopPolicy stopPolicy)
         {
             if (!resolved.ShouldPlay)
                 return null;
 
-            return Play(resolved.ResourceUid, coroutineHost, resolved.Volume, resolved.Pitch, true, resolved.Loop, durationSeconds);
+            return Play(
+                resolved.ResourceUid,
+                coroutineHost,
+                resolved.Volume,
+                resolved.Pitch,
+                true,
+                resolved.Loop,
+                durationSeconds,
+                stopPolicy);
         }
 
         /// <summary>
@@ -145,7 +158,7 @@ namespace GGemCo2DCore
         /// <param name="coroutineHost">비동기 로드 코루틴 실행자입니다.</param>
         public void Play(int uid, MonoBehaviour coroutineHost)
         {
-            Play(uid, coroutineHost, 1f, 1f, false, false, 0f);
+            Play(uid, coroutineHost, 1f, 1f, false, false, 0f, SoundPlaybackStopPolicy.Auto);
         }
 
         /// <summary>
@@ -158,7 +171,16 @@ namespace GGemCo2DCore
         /// <param name="useFinalVolume">true면 volume 값을 최종 볼륨으로 사용하고, false면 리소스 기본 볼륨과 곱합니다.</param>
         /// <param name="loop">AudioSource 루프 재생 여부입니다.</param>
         /// <param name="durationSeconds">루프 효과음을 유지할 시간입니다. 0 이하이면 클립 길이를 사용합니다.</param>
-        private SoundPlaybackHandle Play(int uid, MonoBehaviour coroutineHost, float volume, float pitch, bool useFinalVolume, bool loop, float durationSeconds)
+        /// <param name="stopPolicy">사운드 정지 정책입니다.</param>
+        private SoundPlaybackHandle Play(
+            int uid,
+            MonoBehaviour coroutineHost,
+            float volume,
+            float pitch,
+            bool useFinalVolume,
+            bool loop,
+            float durationSeconds,
+            SoundPlaybackStopPolicy stopPolicy)
         {
             if (coroutineHost == null)
                 return null;
@@ -185,7 +207,7 @@ namespace GGemCo2DCore
                 CoroutineHost = coroutineHost,
             };
             var handle = new SoundPlaybackHandle(() => StopPlayback(playback));
-            playback.Routine = coroutineHost.StartCoroutine(PlayWhenClipReady(playback, volume, pitch, useFinalVolume, loop, durationSeconds));
+            playback.Routine = coroutineHost.StartCoroutine(PlayWhenClipReady(playback, volume, pitch, useFinalVolume, loop, durationSeconds, stopPolicy));
             return handle;
         }
 
@@ -198,8 +220,16 @@ namespace GGemCo2DCore
         /// <param name="useFinalVolume">true면 volume 값을 최종 볼륨으로 사용하고, false면 리소스 기본 볼륨과 곱합니다.</param>
         /// <param name="loop">AudioSource 루프 재생 여부입니다.</param>
         /// <param name="durationSeconds">루프 효과음을 유지할 시간입니다. 0 이하이면 클립 길이를 사용합니다.</param>
+        /// <param name="stopPolicy">사운드 정지 정책입니다.</param>
         /// <returns>Unity 코루틴 실행자에 전달할 열거자입니다.</returns>
-        private IEnumerator PlayWhenClipReady(ActiveSfxPlayback playback, float volume, float pitch, bool useFinalVolume, bool loop, float durationSeconds)
+        private IEnumerator PlayWhenClipReady(
+            ActiveSfxPlayback playback,
+            float volume,
+            float pitch,
+            bool useFinalVolume,
+            bool loop,
+            float durationSeconds,
+            SoundPlaybackStopPolicy stopPolicy)
         {
             int uid = playback != null ? playback.Uid : 0;
             GameObject obj = playback != null ? playback.Object : null;
@@ -258,8 +288,11 @@ namespace GGemCo2DCore
             obj.SetActive(true);
             src.Play();
 
+            if (stopPolicy == SoundPlaybackStopPolicy.ByHandle)
+                yield break;
+
             // 루프 요청은 Timeline 이벤트 길이만큼 유지하고, 길이가 없으면 기존 1회 재생 길이로 정리합니다.
-            float releaseDelay = loop && durationSeconds > 0f
+            float releaseDelay = (stopPolicy == SoundPlaybackStopPolicy.ByDuration || loop) && durationSeconds > 0f
                 ? durationSeconds
                 : src.clip.length / Mathf.Max(0.01f, Mathf.Abs(src.pitch));
             yield return ReleaseAfter(playback, releaseDelay);

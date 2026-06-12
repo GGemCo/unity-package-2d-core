@@ -79,7 +79,7 @@ namespace GGemCo2DCore
         /// <param name="uid">외부 시스템이 사용하는 대표 sound UID입니다.</param>
         public void PlayByUid(int uid)
         {
-            PlayByUidInternal(uid, null, 0f);
+            PlayByUidInternal(uid, null, 0f, SoundPlaybackStopPolicy.Auto);
         }
 
         /// <summary>
@@ -90,7 +90,7 @@ namespace GGemCo2DCore
         /// <param name="durationSeconds">루프 SFX를 자동 정리할 요청 지속 시간입니다. 0 이하이면 클립 길이를 사용합니다.</param>
         public void PlayByUid(int uid, bool? loopOverride, float durationSeconds = 0f)
         {
-            PlayByUidInternal(uid, loopOverride, durationSeconds);
+            PlayByUidInternal(uid, loopOverride, durationSeconds, SoundPlaybackStopPolicy.Auto);
         }
 
         /// <summary>
@@ -106,7 +106,8 @@ namespace GGemCo2DCore
             return PlayByUidInternal(
                 request.soundUid,
                 request.ResolveLoopOverride(),
-                request.ResolveDuration());
+                request.ResolveDuration(),
+                request.stopPolicy);
         }
 
         /// <summary>
@@ -115,8 +116,13 @@ namespace GGemCo2DCore
         /// <param name="uid">외부 시스템이 사용하는 대표 sound UID입니다.</param>
         /// <param name="loopOverride">null이면 테이블의 Loop 값을 사용하고, 값이 있으면 해당 루프 여부를 사용합니다.</param>
         /// <param name="durationSeconds">루프 SFX를 자동 정리할 요청 지속 시간입니다. 0 이하이면 클립 길이를 사용합니다.</param>
+        /// <param name="stopPolicy">사운드 정지 정책입니다.</param>
         /// <returns>SFX처럼 정지 가능한 재생이면 핸들, 아니면 null입니다.</returns>
-        private SoundPlaybackHandle PlayByUidInternal(int uid, bool? loopOverride, float durationSeconds)
+        private SoundPlaybackHandle PlayByUidInternal(
+            int uid,
+            bool? loopOverride,
+            float durationSeconds,
+            SoundPlaybackStopPolicy stopPolicy)
         {
             if (!_tableLoaderManager || !_addressableLoaderSound || _soundResolver == null) return null;
             if (!TryResolveSound(uid, out ResolvedSound resolved)) return null;
@@ -134,7 +140,7 @@ namespace GGemCo2DCore
             }
             else if (resolved.Type == SoundConstants.Type.Sfx)
             {
-                return _soundControllerSfx?.PlayWithHandle(resolved, this, durationSeconds);
+                return _soundControllerSfx?.PlayWithHandle(resolved, this, durationSeconds, stopPolicy);
             }
 
             return null;

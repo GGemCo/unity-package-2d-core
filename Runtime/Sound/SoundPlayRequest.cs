@@ -36,6 +36,11 @@ namespace GGemCo2DCore
         public float durationSeconds;
 
         /// <summary>
+        /// 이 요청으로 시작한 사운드를 어떤 기준으로 정지할지 결정합니다.
+        /// </summary>
+        public SoundPlaybackStopPolicy stopPolicy = SoundPlaybackStopPolicy.Auto;
+
+        /// <summary>
         /// 요청에 유효한 sound UID가 들어 있는지 확인합니다.
         /// </summary>
         public bool IsValid => soundUid > 0;
@@ -48,13 +53,15 @@ namespace GGemCo2DCore
         /// <param name="useLoopOverride">테이블의 Loop 값 대신 요청의 루프 값을 사용할지 여부입니다.</param>
         /// <param name="durationSeconds">재생 유지 시간(초)입니다.</param>
         /// <param name="useDurationOverride">요청의 재생 유지 시간을 사용할지 여부입니다.</param>
+        /// <param name="stopPolicy">사운드 정지 정책입니다.</param>
         /// <returns>생성된 사운드 재생 요청입니다.</returns>
         public static SoundPlayRequest Create(
             int soundUid,
             bool loop = false,
             bool useLoopOverride = false,
             float durationSeconds = 0f,
-            bool useDurationOverride = false)
+            bool useDurationOverride = false,
+            SoundPlaybackStopPolicy stopPolicy = SoundPlaybackStopPolicy.Auto)
         {
             return new SoundPlayRequest
             {
@@ -63,6 +70,7 @@ namespace GGemCo2DCore
                 loop = loop,
                 useDurationOverride = useDurationOverride,
                 durationSeconds = Mathf.Max(0f, durationSeconds),
+                stopPolicy = stopPolicy,
             };
         }
 
@@ -72,7 +80,7 @@ namespace GGemCo2DCore
         /// <returns>동일한 값을 가진 새 요청 인스턴스입니다.</returns>
         public SoundPlayRequest Clone()
         {
-            return Create(soundUid, loop, useLoopOverride, durationSeconds, useDurationOverride);
+            return Create(soundUid, loop, useLoopOverride, durationSeconds, useDurationOverride, stopPolicy);
         }
 
         /// <summary>
@@ -82,7 +90,22 @@ namespace GGemCo2DCore
         /// <returns>지속 시간이 덮어써진 새 요청 인스턴스입니다.</returns>
         public SoundPlayRequest CloneWithDuration(float duration)
         {
-            return Create(soundUid, loop, useLoopOverride, duration, useDurationOverride: true);
+            return Create(soundUid, loop, useLoopOverride, duration, useDurationOverride: true, stopPolicy);
+        }
+
+        /// <summary>
+        /// 외부 핸들 정지 전까지 루프 재생되는 요청 복사본을 생성합니다.
+        /// </summary>
+        /// <returns>루프와 핸들 정지 정책이 적용된 새 요청 인스턴스입니다.</returns>
+        public SoundPlayRequest CloneLoopUntilHandleStopped()
+        {
+            return Create(
+                soundUid,
+                loop: true,
+                useLoopOverride: true,
+                durationSeconds: 0f,
+                useDurationOverride: false,
+                stopPolicy: SoundPlaybackStopPolicy.ByHandle);
         }
 
         /// <summary>

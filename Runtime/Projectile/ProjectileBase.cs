@@ -984,7 +984,8 @@ namespace GGemCo2DCore
 
         protected virtual void OnArrived()
         {
-            StopFlightSound();
+            if (ShouldStopFlightSoundOnArrived())
+                StopFlightSound();
 
             if (TryPlayEndAndDestroy())
                 return;
@@ -1548,7 +1549,7 @@ namespace GGemCo2DCore
         /// </summary>
         private void StartFlightSound()
         {
-            SoundPlayRequest request = Runtime != null ? Runtime.FlightSound : null;
+            SoundPlayRequest request = ResolveFlightSoundRequest();
             if (request == null || !request.IsValid)
                 return;
 
@@ -1558,6 +1559,32 @@ namespace GGemCo2DCore
 
             // 비행 사운드는 프로젝타일 수명 종료 시 StopFlightSound에서 정리합니다.
             _flightSoundHandle = soundManager.Play(request);
+        }
+
+        /// <summary>
+        /// 프로젝타일 비행 사운드 수명 정책을 반영한 최종 사운드 요청을 계산합니다.
+        /// </summary>
+        /// <returns>사운드 매니저에 전달할 요청입니다. 재생할 사운드가 없으면 null입니다.</returns>
+        private SoundPlayRequest ResolveFlightSoundRequest()
+        {
+            SoundPlayRequest request = Runtime != null ? Runtime.FlightSound : null;
+            if (request == null || !request.IsValid)
+                return null;
+
+            if (Runtime.FlightSoundLifetimePolicy == ProjectileFlightSoundLifetimePolicy.LoopUntilProjectileDestroyed)
+                return request.CloneLoopUntilHandleStopped();
+
+            return request.Clone();
+        }
+
+        /// <summary>
+        /// 도착 시점에 비행 사운드를 정지해야 하는지 확인합니다.
+        /// </summary>
+        /// <returns>프로젝타일 파괴 전에도 도착 시 정지해야 하면 true입니다.</returns>
+        private bool ShouldStopFlightSoundOnArrived()
+        {
+            return Runtime == null ||
+                   Runtime.FlightSoundLifetimePolicy != ProjectileFlightSoundLifetimePolicy.LoopUntilProjectileDestroyed;
         }
 
         /// <summary>

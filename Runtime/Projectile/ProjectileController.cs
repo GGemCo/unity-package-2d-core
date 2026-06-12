@@ -46,6 +46,7 @@ namespace GGemCo2DCore
                     visualAnimatorController: metadataProjectile.VisualAnimatorController,
                     visualVfxUidOverride: metadataProjectile.VisualVfxUidOverride,
                     flightSound: metadataProjectile.FlightSound,
+                    flightSoundLifetimePolicy: metadataProjectile.FlightSoundLifetimePolicy,
                     useTargetPositionOverride: metadataProjectile.UseTargetPositionOverride,
                     targetPositionOverride: metadataProjectile.TargetPositionOverride,
                     skillUid: metadataProjectile.SkillUid,
