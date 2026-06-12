@@ -17,6 +17,7 @@ namespace GGemCo2DCore
         private readonly HashSet<AsyncOperationHandle> _activeHandles = new HashSet<AsyncOperationHandle>();
         private readonly HashSet<string> _loadingClipKeys = new HashSet<string>();
         private const string WarmupGroupPrefix = "core.sound";
+        private const int DefaultPreloadConcurrentRequestCount = 3;
         private float _prefabLoadProgress;
 
         private void Awake()
@@ -134,7 +135,8 @@ namespace GGemCo2DCore
         }
 
         /// <summary>
-        /// 선로드 대상 Addressables 키 목록을 순서대로 실제 AudioClip로 로드합니다.
+        /// 선로드 대상 Addressables 키 목록을 제한된 개수만큼 병렬로 실제 AudioClip로 로드합니다.
+        /// 무제한 병렬 요청으로 인한 메모리 및 압축 해제 부하를 방지하기 위해 배치 단위로 처리합니다.
         /// </summary>
         /// <param name="keys">로드할 사운드 Addressables 키 목록입니다.</param>
         private async Task PreloadAudioClipsAsync(IReadOnlyList<string> keys)
@@ -146,22 +148,55 @@ namespace GGemCo2DCore
                 return;
             }
 
-            for (int i = 0; i < keys.Count; i++)
+            int concurrentRequestCount = ResolvePreloadConcurrentRequestCount();
+            int completedCount = 0;
+
+            for (int startIndex = 0; startIndex < keys.Count; startIndex += concurrentRequestCount)
             {
-                string key = keys[i];
-                try
+                int batchCount = Math.Min(concurrentRequestCount, keys.Count - startIndex);
+                List<Task> loadTasks = new List<Task>(batchCount);
+
+                for (int offset = 0; offset < batchCount; offset++)
                 {
-                    await LoadAudioClipAsync(key);
-                }
-                catch (Exception ex)
-                {
-                    GcLogger.LogWarning($"[AddressableLoaderSound] 선로드 중 예외가 발생했습니다. key={key}, error={ex.Message}");
+                    string key = keys[startIndex + offset];
+                    loadTasks.Add(PreloadAudioClipSafeAsync(key));
                 }
 
-                _prefabLoadProgress = (float)(i + 1) / keys.Count;
+                await Task.WhenAll(loadTasks);
+                completedCount += batchCount;
+                _prefabLoadProgress = (float)completedCount / keys.Count;
             }
 
             _prefabLoadProgress = 1f;
+        }
+
+        /// <summary>
+        /// 단일 AudioClip 선로드 요청을 예외로부터 보호하여 전체 선로드 흐름이 중단되지 않도록 처리합니다.
+        /// </summary>
+        /// <param name="key">로드할 사운드 Addressables 키입니다.</param>
+        private async Task PreloadAudioClipSafeAsync(string key)
+        {
+            try
+            {
+                await LoadAudioClipAsync(key);
+            }
+            catch (Exception ex)
+            {
+                GcLogger.LogWarning($"[AddressableLoaderSound] 선로드 중 예외가 발생했습니다. key={key}, error={ex.Message}");
+            }
+        }
+
+        /// <summary>
+        /// 사운드 설정에서 선로드 동시 요청 개수를 조회합니다.
+        /// 설정이 아직 로드되지 않은 경우에는 안전한 기본값을 사용합니다.
+        /// </summary>
+        /// <returns>동시에 요청할 최대 AudioClip 개수입니다.</returns>
+        private static int ResolvePreloadConcurrentRequestCount()
+        {
+            GGemCoSoundSettings soundSettings = AddressableLoaderSettings.Instance?.soundSettings;
+            return soundSettings != null
+                ? soundSettings.GetPreloadConcurrentRequestCount()
+                : DefaultPreloadConcurrentRequestCount;
         }
 
         /// <summary>

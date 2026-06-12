@@ -43,8 +43,8 @@ namespace GGemCo2DCore
         private readonly Dictionary<int, RuntimeSfxResource> _infoCache = new();
         private readonly List<GameObject> _createdAudioSourceObjects = new();
 
-        private const int MaxAutoExpandCount = 10; // 자동 확장 허용 개수 제한 (0이면 무제한)
-        private readonly Dictionary<int, int> _autoExpandedCount = new();
+        private const int MaxUnlimitedAudioSourceCount = 10;
+        private readonly Dictionary<int, int> _createdCount = new();
 
         public SoundControllerSfx(Transform owner, AudioMixer mixer, AudioMixerGroup group, string volumeParam, AddressableLoaderSound loader)
         {
@@ -57,7 +57,8 @@ namespace GGemCo2DCore
         }
 
         /// <summary>
-        /// 효과음 pool 초기화
+        /// 효과음 리소스 메타데이터와 빈 풀을 초기화합니다.
+        /// AudioSource는 시작 시 일괄 생성하지 않고 최초 재생 요청 시 필요한 수만 생성합니다.
         /// </summary>
         /// <param name="table">신규 sound_sfx 실제 리소스 테이블입니다.</param>
         public void Initialize(TableSoundSfx table)
@@ -82,6 +83,7 @@ namespace GGemCo2DCore
 
         /// <summary>
         /// 실제 SFX 리소스 행을 풀 관리 대상으로 등록합니다.
+        /// 기존 Intro 풀을 유지하면서 메타데이터만 갱신하고, AudioSource 생성은 재생 시점까지 지연합니다.
         /// </summary>
         /// <param name="info">등록할 런타임 리소스 정보입니다.</param>
         private void RegisterResource(RuntimeSfxResource info)
@@ -91,15 +93,16 @@ namespace GGemCo2DCore
 
             int uid = info.ResourceUid;
             _infoCache[uid] = info;
-            _playCount[uid] = 0;
             _maxCount[uid] = Mathf.Max(0, info.MaxPlayCount);
 
-            Queue<GameObject> pool = new();
-            for (int i = 0; i < Mathf.Max(0, info.MaxPlayCount); i++)
-                pool.Enqueue(CreateAudioSourceObject(uid, info));
+            if (!_pool.ContainsKey(uid))
+                _pool[uid] = new Queue<GameObject>();
 
-            _pool[uid] = pool;
-            _autoExpandedCount[uid] = 0;
+            if (!_playCount.ContainsKey(uid))
+                _playCount[uid] = 0;
+
+            if (!_createdCount.ContainsKey(uid))
+                _createdCount[uid] = 0;
         }
 
         /// <summary>
@@ -356,23 +359,33 @@ namespace GGemCo2DCore
         }
 
         /// <summary>
-        /// 사용 가능한 AudioSource 또는 자동 생성
+        /// 풀에서 사용 가능한 AudioSource를 가져오거나 최초 사용 시 새로 생성합니다.
+        /// MaxPlayCount가 0인 무제한 리소스는 과도한 오브젝트 생성을 막기 위해 별도 안전 상한을 적용합니다.
         /// </summary>
         /// <param name="uid">효과음 리소스 UID입니다.</param>
         /// <returns>사용 가능한 AudioSource GameObject입니다.</returns>
         private GameObject GetOrCreateAudioSource(int uid)
         {
-            if (_pool[uid].Count > 0)
-                return _pool[uid].Dequeue();
-
-            if (!_infoCache.ContainsKey(uid)) return null;
-
-            // 자동 확장 허용 여부 확인
-            if (MaxAutoExpandCount > 0 && _autoExpandedCount[uid] >= MaxAutoExpandCount)
+            if (!_pool.TryGetValue(uid, out Queue<GameObject> pool))
                 return null;
 
-            _autoExpandedCount[uid]++;
-            return CreateAudioSourceObject(uid, _infoCache[uid]);
+            if (pool.Count > 0)
+                return pool.Dequeue();
+
+            if (!_infoCache.TryGetValue(uid, out RuntimeSfxResource info))
+                return null;
+
+            int createdCount = _createdCount.TryGetValue(uid, out int count) ? count : 0;
+            int maxPlayCount = _maxCount.TryGetValue(uid, out int maxCount) ? maxCount : 0;
+            int creationLimit = maxPlayCount > 0 ? maxPlayCount : MaxUnlimitedAudioSourceCount;
+            if (creationLimit > 0 && createdCount >= creationLimit)
+                return null;
+
+            GameObject audioSourceObject = CreateAudioSourceObject(uid, info);
+            if (audioSourceObject != null)
+                _createdCount[uid] = createdCount + 1;
+
+            return audioSourceObject;
         }
 
         /// <summary>
@@ -457,15 +470,15 @@ namespace GGemCo2DCore
             _playCount.Clear();
             _maxCount.Clear();
             _infoCache.Clear();
-            _autoExpandedCount.Clear();
+            _createdCount.Clear();
         }
 
         /// <summary>
-        /// 지정한 실제 SFX 리소스 UID만 풀링합니다.
-        /// 인트로 씬처럼 일부 사운드만 미리 준비해야 할 때 사용합니다.
+        /// 지정한 실제 SFX 리소스 UID만 풀 관리 대상으로 등록합니다.
+        /// 인트로 씬처럼 일부 사운드의 메타데이터만 먼저 준비해야 할 때 사용합니다.
         /// </summary>
         /// <param name="table">신규 sound_sfx 실제 리소스 테이블입니다.</param>
-        /// <param name="targetUids">풀링 대상 실제 리소스 UID 목록입니다.</param>
+        /// <param name="targetUids">풀 관리 대상으로 등록할 실제 리소스 UID 목록입니다.</param>
         public void InitializeSelective(TableSoundSfx table, List<int> targetUids)
         {
             if (table == null || targetUids == null || targetUids.Count == 0)

@@ -102,17 +102,14 @@ namespace GGemCo2DCoreEditor
         private StruckTableSound _selectedSound;
         private StruckTableSound _cachedSound;
         private StruckTableSound _editingSound;
-        private bool _editingSoundDirty;
 
         private StruckTableSoundResource _selectedResource;
         private StruckTableSoundResource _cachedResource;
         private StruckTableSoundResource _editingResource;
-        private bool _editingResourceDirty;
 
         private StruckTableSoundVariant _selectedVariant;
         private StruckTableSoundVariant _cachedVariant;
         private StruckTableSoundVariant _editingVariant;
-        private bool _editingVariantDirty;
 
         private SoundTypeFilter _typeFilter = SoundTypeFilter.All;
         private ResolveModeFilter _resolveModeFilter = ResolveModeFilter.All;
@@ -277,7 +274,6 @@ namespace GGemCo2DCoreEditor
                 TableRowEditorUtility.DrawResult result = TableRowEditorUtility.DrawObjectEditor(_editingSound, SoundRowEditorFields, NormalizeSoundFieldValue);
                 if (result.Changed)
                 {
-                    _editingSoundDirty = true;
                     CacheResourceAndVariantForCurrentSound();
                 }
 
@@ -314,8 +310,6 @@ namespace GGemCo2DCoreEditor
                     return;
 
                 TableRowEditorUtility.DrawResult result = TableRowEditorUtility.DrawObjectEditor(_editingResource, ResourceRowEditorFields, NormalizeResourceFieldValue);
-                if (result.Changed)
-                    _editingResourceDirty = true;
 
                 EditorGUILayout.Space(4);
                 EditorGUILayout.LabelField("Addressables Key", _editingResource.BuildAddressKey());
@@ -381,8 +375,6 @@ namespace GGemCo2DCoreEditor
                 if (_foldVariantRow && _editingVariant != null)
                 {
                     TableRowEditorUtility.DrawResult result = TableRowEditorUtility.DrawObjectEditor(_editingVariant, VariantRowEditorFields, NormalizeVariantFieldValue);
-                    if (result.Changed)
-                        _editingVariantDirty = true;
 
                     using (new EditorGUILayout.HorizontalScope())
                     {
@@ -704,7 +696,6 @@ namespace GGemCo2DCoreEditor
             _editingSound = CloneSound(_selectedSound);
             NormalizeSoundRow(_cachedSound);
             NormalizeSoundRow(_editingSound);
-            _editingSoundDirty = false;
         }
 
         /// <summary>
@@ -716,7 +707,6 @@ namespace GGemCo2DCoreEditor
             _editingResource = CloneResource(_selectedResource);
             NormalizeResourceRow(_cachedResource);
             NormalizeResourceRow(_editingResource);
-            _editingResourceDirty = false;
         }
 
         /// <summary>
@@ -728,7 +718,6 @@ namespace GGemCo2DCoreEditor
             _editingVariant = CloneVariant(_selectedVariant);
             NormalizeVariantRow(_cachedVariant);
             NormalizeVariantRow(_editingVariant);
-            _editingVariantDirty = false;
         }
 
         /// <summary>
@@ -741,7 +730,6 @@ namespace GGemCo2DCoreEditor
 
             TableRowEditorUtility.CopyMembers(_editingSound, _cachedSound, SoundRowEditorFields);
             NormalizeSoundRow(_cachedSound);
-            _editingSoundDirty = false;
         }
 
         /// <summary>
@@ -754,7 +742,6 @@ namespace GGemCo2DCoreEditor
 
             CopyResourceMembers(_editingResource, _cachedResource);
             NormalizeResourceRow(_cachedResource);
-            _editingResourceDirty = false;
         }
 
         /// <summary>
@@ -767,7 +754,6 @@ namespace GGemCo2DCoreEditor
 
             TableRowEditorUtility.CopyMembers(_editingVariant, _cachedVariant, VariantRowEditorFields);
             NormalizeVariantRow(_cachedVariant);
-            _editingVariantDirty = false;
         }
 
         /// <summary>

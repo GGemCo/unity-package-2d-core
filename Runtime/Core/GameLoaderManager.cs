@@ -241,17 +241,11 @@ namespace GGemCo2DCore
                 getProgress: () => addrItem.GetPrefabLoadProgress()
             ));
 
-            Register(new AddressableTaskStep(
-                id: "core.sound",
-                order: 350,
-                localizedKey: LocalizationConstants.Keys.Loading.TextTypeSound(),
-                startTask: () => addrSound.PrepareDependenciesAsync(ConfigAddressableLabel.Sound),
-                getProgress: () => addrSound.GetLoadProgress()
-            ));
-
+            // 전체 Sound 라벨을 먼저 워밍하지 않고 PreLoad 대상 AudioClip만 직접 로드합니다.
+            // Addressables는 개별 AudioClip 로드 시 필요한 종속성을 함께 준비하므로 중복 다운로드 단계를 피할 수 있습니다.
             Register(new AddressableTaskStep(
                 id: "core.sound.preload",
-                order: 351,
+                order: 350,
                 localizedKey: LocalizationConstants.Keys.Loading.TextTypeSound(),
                 startTask: () => addrSound.PreloadMarkedSoundsAsync(tableLoader),
                 getProgress: () => addrSound.GetLoadProgress()
@@ -283,10 +277,7 @@ namespace GGemCo2DCore
             var addrSound = CompatObjectFind.FindFirst<AddressableLoaderSound>() ?? new GameObject("AddressableLoaderSound").AddComponent<AddressableLoaderSound>();
             var addrSettings = CompatObjectFind.FindFirst<AddressableLoaderSettings>() ?? new GameObject("AddressableLoaderSettings").AddComponent<AddressableLoaderSettings>();
             var loc = CompatObjectFind.FindFirst<LocalizationManager>() ?? new GameObject("LocalizationManager").AddComponent<LocalizationManager>();
-            _ = AddressableDependencyWarmupService.GetOrCreate();
 
-            
-            
             var targetTables = new List<AddressableAssetInfo>
             {
                 ConfigAddressableTable.TableSound,
@@ -318,17 +309,10 @@ namespace GGemCo2DCore
                 tableLoader: tableLoader,
                 tables: targetTables
             ));
-            Register(new AddressableTaskStep(
-                id: "core.sound.intro",
-                order: 355,
-                localizedKey: LocalizationConstants.Keys.Loading.TextTypeSound(),
-                startTask: () => addrSound.PrepareDependenciesAsync(ConfigAddressableLabel.SoundIntro),
-                getProgress: () => addrSound.GetLoadProgress()
-            ));
-
+            // Intro 전체 라벨 대신 UseIntroScene과 PreLoad가 모두 활성화된 AudioClip만 직접 로드합니다.
             Register(new AddressableTaskStep(
                 id: "core.sound.intro.preload",
-                order: 356,
+                order: 355,
                 localizedKey: LocalizationConstants.Keys.Loading.TextTypeSound(),
                 startTask: () => addrSound.PreloadMarkedSoundsAsync(tableLoader, true),
                 getProgress: () => addrSound.GetLoadProgress()
