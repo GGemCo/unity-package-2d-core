@@ -38,6 +38,7 @@ namespace GGemCo2DCore
 
         // ---- Visual ----
         private IProjectileVisual _visual;
+        private SoundPlaybackHandle _flightSoundHandle;
 
         // ---- Collision Sweep (anti-tunneling) ----
         private CapsuleCollider2D _hitCollider;
@@ -289,6 +290,9 @@ namespace GGemCo2DCore
                 // 최종 시작 위치가 확정된 뒤 한 번 즉시 overlap 검사를 수행한다.
                 TryHandleInitialOverlap();
             }
+
+            if (!_isTerminatedByHit)
+                StartFlightSound();
 
             return !_isTerminatedByHit;
         }
@@ -980,6 +984,8 @@ namespace GGemCo2DCore
 
         protected virtual void OnArrived()
         {
+            StopFlightSound();
+
             if (TryPlayEndAndDestroy())
                 return;
 
@@ -1533,7 +1539,37 @@ namespace GGemCo2DCore
 
         protected virtual void OnDestroy()
         {
+            StopFlightSound();
             _visual?.OnDespawn();
+        }
+
+        /// <summary>
+        /// 프로젝타일 비행 사운드를 시작합니다.
+        /// </summary>
+        private void StartFlightSound()
+        {
+            SoundPlayRequest request = Runtime != null ? Runtime.FlightSound : null;
+            if (request == null || !request.IsValid)
+                return;
+
+            SoundManager soundManager = SceneGame.Instance != null ? SceneGame.Instance.soundManager : null;
+            if (soundManager == null)
+                return;
+
+            // 비행 사운드는 프로젝타일 수명 종료 시 StopFlightSound에서 정리합니다.
+            _flightSoundHandle = soundManager.Play(request);
+        }
+
+        /// <summary>
+        /// 프로젝타일 비행 사운드를 정지하고 핸들을 해제합니다.
+        /// </summary>
+        private void StopFlightSound()
+        {
+            if (_flightSoundHandle == null)
+                return;
+
+            _flightSoundHandle.Stop();
+            _flightSoundHandle = null;
         }
     }
 }

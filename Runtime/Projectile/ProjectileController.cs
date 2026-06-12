@@ -45,6 +45,7 @@ namespace GGemCo2DCore
                     visualSprite: metadataProjectile.VisualSprite,
                     visualAnimatorController: metadataProjectile.VisualAnimatorController,
                     visualVfxUidOverride: metadataProjectile.VisualVfxUidOverride,
+                    flightSound: metadataProjectile.FlightSound,
                     useTargetPositionOverride: metadataProjectile.UseTargetPositionOverride,
                     targetPositionOverride: metadataProjectile.TargetPositionOverride,
                     skillUid: metadataProjectile.SkillUid,

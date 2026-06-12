@@ -90,6 +90,7 @@ namespace GGemCo2DCore
         public readonly Sprite VisualSprite;
         public readonly RuntimeAnimatorController VisualAnimatorController;
         public readonly int VisualVfxUidOverride;
+        public readonly SoundPlayRequest FlightSound;
 
         // --- Hit VFX Position (dynamic) ---
         public readonly ProjectileConstants.HitVfxPositionPolicy HitVfxPositionPolicy;
@@ -122,6 +123,7 @@ namespace GGemCo2DCore
             Sprite visualSprite = null,
             RuntimeAnimatorController visualAnimatorController = null,
             int visualVfxUidOverride = 0,
+            SoundPlayRequest flightSound = null,
             bool useTargetPositionOverride = false,
             Vector2 targetPositionOverride = default,
             int skillUid = 0,
@@ -169,6 +171,7 @@ namespace GGemCo2DCore
             VisualSprite = visualSprite;
             VisualAnimatorController = visualAnimatorController;
             VisualVfxUidOverride = visualVfxUidOverride;
+            FlightSound = flightSound != null && flightSound.IsValid ? flightSound.Clone() : null;
 
             HitVfxPositionPolicy = hitVfxPositionPolicy;
             HitVfxOffset = hitVfxOffset;

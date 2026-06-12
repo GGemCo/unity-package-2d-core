@@ -79,7 +79,7 @@ namespace GGemCo2DCore
         /// <param name="uid">외부 시스템이 사용하는 대표 sound UID입니다.</param>
         public void PlayByUid(int uid)
         {
-            PlayByUid(uid, null, 0f);
+            PlayByUidInternal(uid, null, 0f);
         }
 
         /// <summary>
@@ -90,18 +90,54 @@ namespace GGemCo2DCore
         /// <param name="durationSeconds">루프 SFX를 자동 정리할 요청 지속 시간입니다. 0 이하이면 클립 길이를 사용합니다.</param>
         public void PlayByUid(int uid, bool? loopOverride, float durationSeconds = 0f)
         {
-            if (!_tableLoaderManager || !_addressableLoaderSound || _soundResolver == null) return;
-            if (!TryResolveSound(uid, out ResolvedSound resolved)) return;
+            PlayByUidInternal(uid, loopOverride, durationSeconds);
+        }
+
+        /// <summary>
+        /// 공용 사운드 재생 요청을 기반으로 사운드를 재생합니다.
+        /// </summary>
+        /// <param name="request">사운드 UID, 루프, 지속 시간 옵션을 담은 요청입니다.</param>
+        /// <returns>정지 가능한 재생이면 핸들을 반환하고, 아니면 null을 반환합니다.</returns>
+        public SoundPlaybackHandle Play(SoundPlayRequest request)
+        {
+            if (request == null || !request.IsValid)
+                return null;
+
+            return PlayByUidInternal(
+                request.soundUid,
+                request.ResolveLoopOverride(),
+                request.ResolveDuration());
+        }
+
+        /// <summary>
+        /// 사운드 UID 기반 재생을 처리하고, 정지 가능한 재생이면 핸들을 반환합니다.
+        /// </summary>
+        /// <param name="uid">외부 시스템이 사용하는 대표 sound UID입니다.</param>
+        /// <param name="loopOverride">null이면 테이블의 Loop 값을 사용하고, 값이 있으면 해당 루프 여부를 사용합니다.</param>
+        /// <param name="durationSeconds">루프 SFX를 자동 정리할 요청 지속 시간입니다. 0 이하이면 클립 길이를 사용합니다.</param>
+        /// <returns>SFX처럼 정지 가능한 재생이면 핸들, 아니면 null입니다.</returns>
+        private SoundPlaybackHandle PlayByUidInternal(int uid, bool? loopOverride, float durationSeconds)
+        {
+            if (!_tableLoaderManager || !_addressableLoaderSound || _soundResolver == null) return null;
+            if (!TryResolveSound(uid, out ResolvedSound resolved)) return null;
             if (loopOverride.HasValue)
                 resolved = resolved.WithLoop(loopOverride.Value);
-            if (!resolved.ShouldPlay) return;
+            if (!resolved.ShouldPlay) return null;
 
             if (resolved.Type == SoundConstants.Type.Bgm)
+            {
                 StartCoroutine(PlayBgmRoutine(resolved));
+            }
             else if (resolved.Type == SoundConstants.Type.Ambient)
+            {
                 _soundControllerAmbient?.Play(resolved, this);
+            }
             else if (resolved.Type == SoundConstants.Type.Sfx)
-                _soundControllerSfx?.Play(resolved, this, durationSeconds);
+            {
+                return _soundControllerSfx?.PlayWithHandle(resolved, this, durationSeconds);
+            }
+
+            return null;
         }
 
         /// <summary>
