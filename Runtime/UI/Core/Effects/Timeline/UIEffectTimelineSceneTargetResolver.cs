@@ -1,5 +1,3 @@
-using UnityEngine;
-
 namespace GGemCo2DCore
 {
     /// <summary>
@@ -21,7 +19,7 @@ namespace GGemCo2DCore
                 return false;
             }
 
-            var registries = Object.FindObjectsOfType<UIEffectTimelineTargetRegistry>(true);
+            var registries = CompatObjectFind.FindAll<UIEffectTimelineTargetRegistry>();
             foreach (var registry in registries)
             {
                 if (registry != null && registry.TryResolve(targetKey, out target))

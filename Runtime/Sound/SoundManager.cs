@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using System.Collections;
 using System.Threading.Tasks;
 using UnityEngine;
@@ -79,8 +79,21 @@ namespace GGemCo2DCore
         /// <param name="uid">외부 시스템이 사용하는 대표 sound UID입니다.</param>
         public void PlayByUid(int uid)
         {
+            PlayByUid(uid, null, 0f);
+        }
+
+        /// <summary>
+        /// 사운드 UID 기반으로 재생하며, 요청 단위 재생 옵션을 일부 덮어씁니다.
+        /// </summary>
+        /// <param name="uid">외부 시스템이 사용하는 대표 sound UID입니다.</param>
+        /// <param name="loopOverride">null이면 테이블의 Loop 값을 사용하고, 값이 있으면 해당 루프 여부를 사용합니다.</param>
+        /// <param name="durationSeconds">루프 SFX를 자동 정리할 요청 지속 시간입니다. 0 이하이면 클립 길이를 사용합니다.</param>
+        public void PlayByUid(int uid, bool? loopOverride, float durationSeconds = 0f)
+        {
             if (!_tableLoaderManager || !_addressableLoaderSound || _soundResolver == null) return;
             if (!TryResolveSound(uid, out ResolvedSound resolved)) return;
+            if (loopOverride.HasValue)
+                resolved = resolved.WithLoop(loopOverride.Value);
             if (!resolved.ShouldPlay) return;
 
             if (resolved.Type == SoundConstants.Type.Bgm)
@@ -88,7 +101,7 @@ namespace GGemCo2DCore
             else if (resolved.Type == SoundConstants.Type.Ambient)
                 _soundControllerAmbient?.Play(resolved, this);
             else if (resolved.Type == SoundConstants.Type.Sfx)
-                _soundControllerSfx?.Play(resolved, this);
+                _soundControllerSfx?.Play(resolved, this, durationSeconds);
         }
 
         /// <summary>

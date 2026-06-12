@@ -1,4 +1,4 @@
-﻿namespace GGemCo2DCore
+namespace GGemCo2DCore
 {
     /// <summary>
     /// SoundResolver가 선택한 최종 재생 대상과 요청별 보정값을 담는 읽기 전용 결과 구조체입니다.
@@ -67,6 +67,17 @@
         {
             return new ResolvedSound(requestedSoundUid, 0, sound != null ? sound.Type : SoundConstants.Type.None,
                 string.Empty, 0f, 1f, false, 0f, sound, null, false);
+        }
+
+        /// <summary>
+        /// 기존 해석 결과의 루프 재생 여부만 요청 단위 값으로 교체합니다.
+        /// </summary>
+        /// <param name="loop">요청 단위로 적용할 루프 재생 여부입니다.</param>
+        /// <returns>루프 재생 여부가 교체된 새 해석 결과입니다.</returns>
+        public ResolvedSound WithLoop(bool loop)
+        {
+            return new ResolvedSound(RequestedSoundUid, ResourceUid, Type, FileName, Volume, Pitch,
+                loop, FadeDuration, Sound, Resource, ShouldPlay);
         }
     }
 }

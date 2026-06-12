@@ -1,4 +1,4 @@
-﻿using System.Collections;
+using System.Collections;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using UnityEngine;
@@ -100,10 +100,21 @@ namespace GGemCo2DCore
         /// <param name="coroutineHost">비동기 로드 코루틴 실행자입니다.</param>
         public void Play(ResolvedSound resolved, MonoBehaviour coroutineHost)
         {
+            Play(resolved, coroutineHost, 0f);
+        }
+
+        /// <summary>
+        /// 해석된 효과음 정보를 기준으로 재생하며, 루프 효과음의 자동 정리 시간을 지정합니다.
+        /// </summary>
+        /// <param name="resolved">최종 재생할 효과음 정보입니다.</param>
+        /// <param name="coroutineHost">비동기 로드 코루틴 실행자입니다.</param>
+        /// <param name="durationSeconds">루프 효과음을 유지할 시간입니다. 0 이하이면 클립 길이를 사용합니다.</param>
+        public void Play(ResolvedSound resolved, MonoBehaviour coroutineHost, float durationSeconds)
+        {
             if (!resolved.ShouldPlay)
                 return;
 
-            Play(resolved.ResourceUid, coroutineHost, resolved.Volume, resolved.Pitch, true);
+            Play(resolved.ResourceUid, coroutineHost, resolved.Volume, resolved.Pitch, true, resolved.Loop, durationSeconds);
         }
 
         /// <summary>
@@ -113,7 +124,7 @@ namespace GGemCo2DCore
         /// <param name="coroutineHost">비동기 로드 코루틴 실행자입니다.</param>
         public void Play(int uid, MonoBehaviour coroutineHost)
         {
-            Play(uid, coroutineHost, 1f, 1f, false);
+            Play(uid, coroutineHost, 1f, 1f, false, false, 0f);
         }
 
         /// <summary>
@@ -124,7 +135,9 @@ namespace GGemCo2DCore
         /// <param name="volume">요청별 볼륨 값입니다.</param>
         /// <param name="pitch">요청별 피치입니다.</param>
         /// <param name="useFinalVolume">true면 volume 값을 최종 볼륨으로 사용하고, false면 리소스 기본 볼륨과 곱합니다.</param>
-        private void Play(int uid, MonoBehaviour coroutineHost, float volume, float pitch, bool useFinalVolume)
+        /// <param name="loop">AudioSource 루프 재생 여부입니다.</param>
+        /// <param name="durationSeconds">루프 효과음을 유지할 시간입니다. 0 이하이면 클립 길이를 사용합니다.</param>
+        private void Play(int uid, MonoBehaviour coroutineHost, float volume, float pitch, bool useFinalVolume, bool loop, float durationSeconds)
         {
             if (coroutineHost == null)
                 return;
@@ -144,7 +157,7 @@ namespace GGemCo2DCore
             if (obj == null) return;
 
             _playCount[uid]++;
-            coroutineHost.StartCoroutine(PlayWhenClipReady(uid, obj, volume, pitch, useFinalVolume));
+            coroutineHost.StartCoroutine(PlayWhenClipReady(uid, obj, volume, pitch, useFinalVolume, loop, durationSeconds));
         }
 
         /// <summary>
@@ -155,8 +168,10 @@ namespace GGemCo2DCore
         /// <param name="volume">요청별 볼륨 값입니다.</param>
         /// <param name="pitch">요청별 피치입니다.</param>
         /// <param name="useFinalVolume">true면 volume 값을 최종 볼륨으로 사용하고, false면 리소스 기본 볼륨과 곱합니다.</param>
+        /// <param name="loop">AudioSource 루프 재생 여부입니다.</param>
+        /// <param name="durationSeconds">루프 효과음을 유지할 시간입니다. 0 이하이면 클립 길이를 사용합니다.</param>
         /// <returns>Unity 코루틴 실행자에 전달할 열거자입니다.</returns>
-        private IEnumerator PlayWhenClipReady(int uid, GameObject obj, float volume, float pitch, bool useFinalVolume)
+        private IEnumerator PlayWhenClipReady(int uid, GameObject obj, float volume, float pitch, bool useFinalVolume, bool loop, float durationSeconds)
         {
             if (obj == null || !_infoCache.TryGetValue(uid, out RuntimeSfxResource info))
             {
@@ -198,10 +213,14 @@ namespace GGemCo2DCore
                 ? Mathf.Clamp01(volume <= 0f ? 1f : volume)
                 : Mathf.Clamp01((info.Volume <= 0f ? 1f : info.Volume) * Mathf.Clamp01(volume <= 0f ? 1f : volume));
             src.pitch = Mathf.Approximately(pitch, 0f) ? 1f : pitch;
+            src.loop = loop;
             obj.SetActive(true);
             src.Play();
 
-            float releaseDelay = src.clip.length / Mathf.Max(0.01f, Mathf.Abs(src.pitch));
+            // 루프 요청은 Timeline 이벤트 길이만큼 유지하고, 길이가 없으면 기존 1회 재생 길이로 정리합니다.
+            float releaseDelay = loop && durationSeconds > 0f
+                ? durationSeconds
+                : src.clip.length / Mathf.Max(0.01f, Mathf.Abs(src.pitch));
             yield return ReleaseAfter(obj, releaseDelay, uid);
         }
 
@@ -225,7 +244,16 @@ namespace GGemCo2DCore
         private void ReturnToPool(int uid, GameObject obj)
         {
             if (obj != null)
+            {
+                AudioSource source = obj.GetComponent<AudioSource>();
+                if (source != null)
+                {
+                    source.Stop();
+                    source.loop = false;
+                }
+
                 obj.SetActive(false);
+            }
 
             if (obj != null && _pool.TryGetValue(uid, out Queue<GameObject> queue))
                 queue.Enqueue(obj);
@@ -270,6 +298,7 @@ namespace GGemCo2DCore
             src.outputAudioMixerGroup = _group;
             src.volume = Mathf.Clamp01(info.Volume <= 0f ? 1f : info.Volume);
             src.pitch = 1f;
+            src.loop = false;
             if (_loader != null && _loader.TryGetAudioClip($"{ConfigAddressableGroupName.Sound}_{info.FileName}", out AudioClip cachedClip))
                 src.clip = cachedClip;
             obj.SetActive(false);
