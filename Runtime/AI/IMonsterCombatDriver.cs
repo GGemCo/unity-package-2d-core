@@ -34,6 +34,9 @@ namespace GGemCo2DCore
         /// <summary>현재 계산된 이동 속도가 0 이하임.</summary>
         SpeedNonPositive,
 
+        /// <summary>Leash 홈 복귀가 일반 AI 이동보다 우선하는 상태임.</summary>
+        LeashReturning,
+
         /// <summary>알 수 없는 이유로 이동 요청이 거부됨.</summary>
         Unknown,
     }
@@ -198,6 +201,30 @@ namespace GGemCo2DCore
         /// </summary>
         /// <returns>유효한 타겟을 선택했으면 <see langword="true"/>입니다.</returns>
         bool RefreshCombatTarget();
+    }
+
+    /// <summary>
+    /// 몬스터의 홈 및 Leash 상태를 상위 AI에 제공하는 선택 인터페이스입니다.
+    /// </summary>
+    public interface IMonsterLeashProvider
+    {
+        /// <summary>현재 Leash 런타임 상태입니다.</summary>
+        MonsterLeashState LeashState { get; }
+
+        /// <summary>홈 복귀 또는 재활성 대기 중인지 여부입니다.</summary>
+        bool IsReturningHome { get; }
+
+        /// <summary>현재 몬스터와 홈 사이의 2D 거리입니다.</summary>
+        float DistanceFromHome { get; }
+
+        /// <summary>현재 전투 타겟과 홈 사이의 2D 거리입니다.</summary>
+        float TargetDistanceFromHome { get; }
+
+        /// <summary>현재 홈 위치를 조회합니다.</summary>
+        bool TryGetHomePosition(out Vector3 homePosition);
+
+        /// <summary>외부 AI 또는 전투 규칙에서 홈 복귀를 명시적으로 시작합니다.</summary>
+        bool RequestBeginEvade(MonsterLeashTrigger trigger = MonsterLeashTrigger.Manual);
     }
 
 }

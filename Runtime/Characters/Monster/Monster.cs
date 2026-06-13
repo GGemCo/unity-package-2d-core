@@ -40,6 +40,8 @@ namespace GGemCo2DCore
         private MonsterDetectionSensor2D _detectionSensor;
         private MonsterCombatRangeProfile _combatRangeProfile;
         private MonsterThreatProfile _threatProfile;
+        private MonsterHomeLeashController _homeLeashController;
+        private MonsterLeashProfile _leashProfile;
         private int _currentLevel = 1;
 
         /// <summary>
@@ -55,6 +57,27 @@ namespace GGemCo2DCore
 
         /// <summary>현재 기억 중인 유효 Threat 대상 수입니다.</summary>
         public int ThreatTargetCount => _threatController != null ? _threatController.TargetCount : 0;
+
+        /// <summary>현재 몬스터에 적용된 홈 및 Leash 정책입니다.</summary>
+        public MonsterLeashProfile LeashProfile => _leashProfile;
+
+        /// <summary>현재 Leash 런타임 상태입니다.</summary>
+        public MonsterLeashState LeashState =>
+            _homeLeashController != null ? _homeLeashController.State : MonsterLeashState.Disabled;
+
+        /// <summary>홈 복귀 또는 재활성 대기 중인지 여부입니다.</summary>
+        public bool IsLeashReturnLocked => _homeLeashController != null && _homeLeashController.IsReturnLocked;
+
+        /// <summary>현재 홈 복귀 정책으로 피해를 무시해야 하는지 여부입니다.</summary>
+        public bool IsLeashDamageImmune => _homeLeashController != null && _homeLeashController.IsDamageImmune;
+
+        /// <summary>현재 몬스터와 홈 위치 사이의 2D 거리입니다.</summary>
+        public float DistanceFromHome =>
+            _homeLeashController != null ? _homeLeashController.GetOwnerDistanceFromHome() : 0f;
+
+        /// <summary>현재 전투 타겟과 홈 위치 사이의 2D 거리입니다.</summary>
+        public float TargetDistanceFromHome =>
+            _homeLeashController != null ? _homeLeashController.GetCurrentTargetDistanceFromHome() : 0f;
 
         /// <summary>
         /// 현재 스폰된 몬스터 인스턴스에 적용된 레벨입니다.
@@ -288,6 +311,13 @@ namespace GGemCo2DCore
             _controllerMonster = gameObject.AddComponent<ControllerMonster>();
             _controllerMonster.Initialize(_collider2Ds);
 
+            _homeLeashController = gameObject.GetComponent<MonsterHomeLeashController>();
+            if (_homeLeashController == null)
+            {
+                _homeLeashController = gameObject.AddComponent<MonsterHomeLeashController>();
+            }
+            _homeLeashController.Initialize(this, _controllerMonster);
+
             _detectionSensor = gameObject.GetComponent<MonsterDetectionSensor2D>();
             if (_detectionSensor == null)
             {
@@ -314,6 +344,7 @@ namespace GGemCo2DCore
             SetFlip(CharacterRegenData.IsFlip);
             canMoveX = CharacterRegenData.CanMoveX;
             canMoveY = CharacterRegenData.CanMoveY;
+            _homeLeashController?.CaptureHome(CharacterRegenData);
         }
         /// <summary>
         /// 테이블에서 가져온 몬스터 정보 셋팅
@@ -382,7 +413,9 @@ namespace GGemCo2DCore
 
             _combatRangeProfile = MonsterCombatRangeProfile.Create(combatProfileData, colliderAttackRange);
             _threatProfile = MonsterThreatProfile.Create(combatProfileData);
+            _leashProfile = MonsterLeashProfile.Create(combatProfileData);
             _threatController?.Configure(_threatProfile);
+            _homeLeashController?.Configure(_leashProfile);
             _deathSkillController?.SetDeathSkillMonsterUid(info.DeathSkillMonsterUid);
         }
 
@@ -538,7 +571,8 @@ namespace GGemCo2DCore
         /// <param name="attacker">피격을 발생시킨 공격자 오브젝트입니다.</param>
         public override void OnDamage(GameObject attacker)
         {
-            if (!TryResolveCharacterFromAttacker(attacker, out CharacterBase target))
+            if (!TryResolveCharacterFromAttacker(attacker, out CharacterBase target) ||
+                !CanTrackThreatTarget(target))
             {
                 return;
             }
@@ -553,12 +587,23 @@ namespace GGemCo2DCore
         public override void OnDamageResolved(MetadataDamage metadataDamage)
         {
             if (metadataDamage == null ||
-                !TryResolveCharacterFromAttacker(metadataDamage.attacker, out CharacterBase target))
+                !TryResolveCharacterFromAttacker(metadataDamage.attacker, out CharacterBase target) ||
+                !CanTrackThreatTarget(target))
             {
                 return;
             }
 
             _threatController?.AddDamageThreat(target, metadataDamage.damage);
+        }
+
+        /// <summary>
+        /// Leash 귀환 중 무적 정책을 포함하여 현재 몬스터가 피해를 받을 수 있는지 확인합니다.
+        /// </summary>
+        /// <param name="metadataDamage">적용 예정인 데미지 메타데이터입니다.</param>
+        /// <returns>피해 처리를 계속할 수 있으면 <see langword="true"/>입니다.</returns>
+        public override bool CanReceiveDamage(MetadataDamage metadataDamage)
+        {
+            return !IsLeashDamageImmune && base.CanReceiveDamage(metadataDamage);
         }
 
         /// <summary>
@@ -618,7 +663,8 @@ namespace GGemCo2DCore
         /// <returns>Threat가 추가되었으면 <see langword="true"/>입니다.</returns>
         public bool AddExternalThreat(CharacterBase target, float amount)
         {
-            return _threatController != null &&
+            return CanTrackThreatTarget(target) &&
+                   _threatController != null &&
                    _threatController.AddThreat(target, amount, MonsterThreatSource.External);
         }
 
@@ -630,7 +676,9 @@ namespace GGemCo2DCore
         /// <returns>강제 타겟을 적용했으면 <see langword="true"/>입니다.</returns>
         public bool ForceCombatTarget(CharacterBase target, float durationSeconds)
         {
-            return _threatController != null && _threatController.ForceTarget(target, durationSeconds);
+            return CanTrackThreatTarget(target) &&
+                   _threatController != null &&
+                   _threatController.ForceTarget(target, durationSeconds);
         }
 
         /// <summary>
@@ -639,6 +687,50 @@ namespace GGemCo2DCore
         public void ClearForcedCombatTarget()
         {
             _threatController?.ClearForcedTarget();
+        }
+
+        /// <summary>
+        /// 현재 몬스터의 홈 위치를 조회합니다.
+        /// </summary>
+        /// <param name="homePosition">설정된 홈 월드 좌표입니다.</param>
+        /// <returns>유효한 홈 정보가 있으면 <see langword="true"/>입니다.</returns>
+        public bool TryGetHomePosition(out Vector3 homePosition)
+        {
+            if (_homeLeashController != null && _homeLeashController.Home.IsValid)
+            {
+                homePosition = _homeLeashController.Home.Position;
+                return true;
+            }
+
+            homePosition = default;
+            return false;
+        }
+
+        /// <summary>
+        /// 외부 전투 규칙에서 몬스터의 Leash Evade와 홈 복귀를 시작합니다.
+        /// </summary>
+        /// <param name="trigger">홈 복귀를 시작한 원인입니다.</param>
+        /// <returns>새로운 Evade가 시작되었으면 <see langword="true"/>입니다.</returns>
+        public bool BeginLeashEvade(MonsterLeashTrigger trigger = MonsterLeashTrigger.Manual)
+        {
+            return _homeLeashController != null && _homeLeashController.BeginEvade(trigger);
+        }
+
+        /// <summary>
+        /// Leash Evade 정책에 따라 몬스터의 전투 자원을 현재 최대값으로 회복합니다.
+        /// </summary>
+        internal void RestoreResourcesForLeash()
+        {
+            if (IsStatusDead())
+            {
+                return;
+            }
+
+            CurrentHp.OnNext(MaxHp.Value);
+            CurrentMp.OnNext(MaxMp.Value);
+            CurrentStamina.OnNext(MaxStamina.Value);
+            CurrentSuperArmor.OnNext(TotalSuperArmor.Value);
+            EnableSuperArmor(CurrentSuperArmor.Value > 0);
         }
 
         /// <summary>
@@ -716,7 +808,11 @@ namespace GGemCo2DCore
         /// </summary>
         private bool CanTrackThreatTarget(CharacterBase target)
         {
-            return target != null && target != this && !IsStatusDead() && !target.IsStatusDead();
+            return target != null &&
+                   target != this &&
+                   !IsStatusDead() &&
+                   !target.IsStatusDead() &&
+                   !IsLeashReturnLocked;
         }
 
         /// <summary>

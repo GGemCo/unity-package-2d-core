@@ -19,6 +19,19 @@ namespace GGemCo2DCore
         public bool IsDeathPending => _isDeathPending;
 
         /// <summary>
+        /// 현재 캐릭터가 지정한 데미지를 받을 수 있는지 확인합니다.
+        /// </summary>
+        /// <param name="metadataDamage">적용 예정인 데미지 메타데이터입니다.</param>
+        /// <returns>피해 처리를 계속할 수 있으면 <see langword="true"/>입니다.</returns>
+        /// <remarks>
+        /// 몬스터 Evade 무적처럼 캐릭터 종류별 피해 차단 정책을 데미지 컨트롤러와 분리하기 위한 확장 지점입니다.
+        /// </remarks>
+        public virtual bool CanReceiveDamage(MetadataDamage metadataDamage)
+        {
+            return metadataDamage != null;
+        }
+
+        /// <summary>
         /// 캐릭터를 사망 상태로 전환하고 사망 후처리를 실행합니다.
         /// </summary>
         /// <param name="dieReasonType">사망 원인입니다.</param>

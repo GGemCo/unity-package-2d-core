@@ -57,6 +57,13 @@ namespace GGemCo2DCore
                 return;
             }
 
+            if (_owner.IsLeashReturnLocked)
+            {
+                // 귀환 및 재활성 대기 중에는 기존 감지 캐시만 제거하고 새로운 Threat를 등록하지 않습니다.
+                ClearDetectedPlayer(notifyOwner: false);
+                return;
+            }
+
             if (_owner.GetAttackType() != CharacterConstants.AttackType.AggroFirst)
             {
                 // 선공 정책이 아닌 몬스터는 주기적인 물리 검색을 수행하지 않습니다.

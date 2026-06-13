@@ -7,7 +7,7 @@ namespace GGemCo2DCore
     /// <summary>
     /// 몬스터 선공, 후공 처리 
     /// </summary>
-    public class ControllerMonster : CharacterBaseController, IMonsterCombatDriver, IMonsterMoveStopRangeProvider, IMonsterCombatRangeProvider, IMonsterThreatProvider, IMonsterBrainSuspendProvider
+    public class ControllerMonster : CharacterBaseController, IMonsterCombatDriver, IMonsterMoveStopRangeProvider, IMonsterCombatRangeProvider, IMonsterThreatProvider, IMonsterLeashProvider, IMonsterBrainSuspendProvider
     {
         private const float MoveDirectionEpsilonSqr = 0.000001f;
         private const float BtMoveDirectionBlendPerSecond = 0.000001f;
@@ -19,6 +19,8 @@ namespace GGemCo2DCore
         private Vector2 _btMoveIntentDirection;
         private Vector2 _btSmoothedDirection;
         private float _lastBtMoveIntentTime;
+        private float _btMoveIntentSpeedMultiplier = 1f;
+        private bool _isLeashMoveIntent;
 
         #region IMonsterCombatDriver
 
@@ -76,6 +78,38 @@ namespace GGemCo2DCore
         public bool RefreshCombatTarget()
         {
             return _monster != null && _monster.RefreshCombatTarget();
+        }
+
+        /// <inheritdoc />
+        public MonsterLeashState LeashState =>
+            _monster != null ? _monster.LeashState : MonsterLeashState.Disabled;
+
+        /// <inheritdoc />
+        public bool IsReturningHome => _monster != null && _monster.IsLeashReturnLocked;
+
+        /// <inheritdoc />
+        public float DistanceFromHome => _monster != null ? _monster.DistanceFromHome : 0f;
+
+        /// <inheritdoc />
+        public float TargetDistanceFromHome =>
+            _monster != null ? _monster.TargetDistanceFromHome : 0f;
+
+        /// <inheritdoc />
+        public bool TryGetHomePosition(out Vector3 homePosition)
+        {
+            if (_monster != null && _monster.TryGetHomePosition(out homePosition))
+            {
+                return true;
+            }
+
+            homePosition = default;
+            return false;
+        }
+
+        /// <inheritdoc />
+        public bool RequestBeginEvade(MonsterLeashTrigger trigger = MonsterLeashTrigger.Manual)
+        {
+            return _monster != null && _monster.BeginLeashEvade(trigger);
         }
 
         /// <inheritdoc />
@@ -158,11 +192,60 @@ namespace GGemCo2DCore
         /// </remarks>
         public bool TryRequestMove(Vector2 direction, out MonsterMoveRequestFailureReason failureReason)
         {
+            if (IsReturningHome)
+            {
+                failureReason = MonsterMoveRequestFailureReason.LeashReturning;
+                ClearBtMoveIntent();
+                return false;
+            }
+
+            return TryRequestMoveCore(
+                direction,
+                speedMultiplier: 1f,
+                allowDuringLeashReturn: false,
+                out failureReason);
+        }
+
+        /// <summary>
+        /// Leash 컨트롤러가 홈 복귀를 위해 일반 AI보다 높은 우선순위의 이동을 요청합니다.
+        /// </summary>
+        /// <param name="direction">홈을 향한 월드 기준 방향 벡터입니다.</param>
+        /// <param name="speedMultiplier">기본 이동 속도에 적용할 0보다 큰 배율입니다.</param>
+        /// <param name="failureReason">이동 요청이 거부된 원인입니다.</param>
+        /// <returns>홈 복귀 이동 의도가 등록되고 즉시 이동이 수행되면 <see langword="true"/>입니다.</returns>
+        internal bool TryRequestLeashMove(
+            Vector2 direction,
+            float speedMultiplier,
+            out MonsterMoveRequestFailureReason failureReason)
+        {
+            return TryRequestMoveCore(
+                direction,
+                Mathf.Max(0.01f, speedMultiplier),
+                allowDuringLeashReturn: true,
+                out failureReason);
+        }
+
+        /// <summary>
+        /// 일반 BT 이동과 Leash 귀환 이동이 공유하는 검증 및 이동 의도 등록 로직입니다.
+        /// </summary>
+        private bool TryRequestMoveCore(
+            Vector2 direction,
+            float speedMultiplier,
+            bool allowDuringLeashReturn,
+            out MonsterMoveRequestFailureReason failureReason)
+        {
             failureReason = MonsterMoveRequestFailureReason.None;
 
             if (targetCharacter == null)
             {
                 failureReason = MonsterMoveRequestFailureReason.CharacterMissing;
+                ClearBtMoveIntent();
+                return false;
+            }
+
+            if (!allowDuringLeashReturn && IsReturningHome)
+            {
+                failureReason = MonsterMoveRequestFailureReason.LeashReturning;
                 ClearBtMoveIntent();
                 return false;
             }
@@ -203,7 +286,9 @@ namespace GGemCo2DCore
                 return false;
             }
 
-            float speed = targetCharacter.currentMoveStep * targetCharacter.GetCurrentMoveSpeed();
+            float speed = targetCharacter.currentMoveStep *
+                          targetCharacter.GetCurrentMoveSpeed() *
+                          Mathf.Max(0.01f, speedMultiplier);
             if (speed <= 0f)
             {
                 failureReason = MonsterMoveRequestFailureReason.SpeedNonPositive;
@@ -211,16 +296,18 @@ namespace GGemCo2DCore
                 return false;
             }
 
-            RegisterBtMoveIntent(filteredDirection);
+            RegisterBtMoveIntent(filteredDirection, speedMultiplier, allowDuringLeashReturn);
             targetCharacter.directionNormalize = filteredDirection;
 
             if (!Run())
             {
                 ClearBtMoveIntent();
 
-                // 상태 전환 타이밍으로 Run이 직전에 거부될 수 있어, 거부 사유를 재평가한다.
+                // 상태 전환 타이밍으로 Run이 직전에 거부될 수 있어, 거부 사유를 재평가합니다.
                 if (!TryResolveMoveFailureReason(direction, filteredDirection, out failureReason))
+                {
                     failureReason = MonsterMoveRequestFailureReason.Unknown;
+                }
                 return false;
             }
 
@@ -286,6 +373,7 @@ namespace GGemCo2DCore
             targetCharacter != null &&
             (targetCharacter.IsStatusDead() ||
              targetCharacter.IsDeathPending ||
+             IsReturningHome ||
              targetCharacter.IsBrainLocked() ||
              targetCharacter.IsDontControl() ||
              targetCharacter.IsStatusDamage() ||
@@ -431,13 +519,20 @@ namespace GGemCo2DCore
         /// BT에서 전달한 이동 의도를 등록한다.
         /// </summary>
         /// <param name="direction">월드 기준 이동 방향 벡터.</param>
+        /// <param name="speedMultiplier"></param>
+        /// <param name="isLeashMoveIntent"></param>
         /// <remarks>
         /// BT 평가 주기가 낮아도 연속 이동이 유지되도록 마지막 의도와 입력 시각을 캐시한다.
         /// </remarks>
-        private void RegisterBtMoveIntent(Vector2 direction)
+        private void RegisterBtMoveIntent(
+            Vector2 direction,
+            float speedMultiplier,
+            bool isLeashMoveIntent)
         {
             _hasBtMoveIntent = true;
             _btMoveIntentDirection = direction;
+            _btMoveIntentSpeedMultiplier = Mathf.Max(0.01f, speedMultiplier);
+            _isLeashMoveIntent = isLeashMoveIntent;
             _lastBtMoveIntentTime = Time.time;
         }
 
@@ -449,6 +544,8 @@ namespace GGemCo2DCore
             _hasBtMoveIntent = false;
             _btMoveIntentDirection = Vector2.zero;
             _btSmoothedDirection = Vector2.zero;
+            _btMoveIntentSpeedMultiplier = 1f;
+            _isLeashMoveIntent = false;
             _lastBtMoveIntentTime = 0f;
         }
 
@@ -472,9 +569,15 @@ namespace GGemCo2DCore
                 return;
             }
 
-            if (ShouldSuspendBrain)
+            if (ShouldSuspendBrain && !_isLeashMoveIntent)
             {
                 Wait();
+                ClearBtMoveIntent();
+                return;
+            }
+
+            if (_isLeashMoveIntent && !IsReturningHome)
+            {
                 ClearBtMoveIntent();
                 return;
             }
@@ -612,7 +715,9 @@ namespace GGemCo2DCore
             }
             
             // 4) 이동 벡터 계산
-            float speed = targetCharacter.currentMoveStep * targetCharacter.GetCurrentMoveSpeed();
+            float speed = targetCharacter.currentMoveStep *
+                          targetCharacter.GetCurrentMoveSpeed() *
+                          Mathf.Max(0.01f, _btMoveIntentSpeedMultiplier);
             if (speed <= 0) return false;
             
             iCharacterAnimationController?.PlayRunAnimation();

@@ -46,8 +46,32 @@ namespace GGemCo2DCore
         /// <summary>홈 위치 기준 소프트 리시 거리입니다. 0 이하면 아직 사용하지 않습니다.</summary>
         public float SoftLeashRange;
 
-        /// <summary>홈 위치 기준 하드 리시 거리입니다. 0 이하면 아직 사용하지 않습니다.</summary>
+        /// <summary>홈 위치 기준 하드 리시 거리입니다. 0 이하면 비활성입니다.</summary>
         public float HardLeashRange;
+
+        /// <summary>소프트 Leash 범위를 벗어난 뒤 Evade를 시작하기 전 유예 시간입니다.</summary>
+        public float SoftLeashGraceSeconds;
+
+        /// <summary>홈 도착으로 판정할 거리입니다.</summary>
+        public float ReturnStopDistance;
+
+        /// <summary>홈 도착 후 감지와 AI를 다시 활성화하기 전 대기 시간입니다.</summary>
+        public float ReturnDelaySeconds;
+
+        /// <summary>홈 복귀 이동에 적용할 이동 속도 배율입니다.</summary>
+        public float ReturnMoveSpeedMultiplier;
+
+        /// <summary>귀환 이동 제한 시간입니다. 초과하면 홈 위치로 안전하게 보정합니다.</summary>
+        public float ReturnTimeoutSeconds;
+
+        /// <summary>Evade 중 자원을 회복할 시점입니다.</summary>
+        public MonsterLeashRecoveryPolicy LeashRecoveryPolicy;
+
+        /// <summary>귀환 및 재활성 대기 중 피해를 무시할지 여부입니다.</summary>
+        public bool InvulnerableDuringReturn = true;
+
+        /// <summary>Evade 시작 시 현재 적용 중인 Affect를 모두 제거할지 여부입니다.</summary>
+        public bool ClearAffectsOnEvade = true;
 
         /// <summary>감지 범위 진입 시 유지할 기본 Threat입니다. 0 이하면 기본값 1을 사용합니다.</summary>
         public float DetectionThreat;
@@ -105,6 +129,17 @@ namespace GGemCo2DCore
                 ChaseRange = ReadOptionalFloat(data, "ChaseRange"),
                 SoftLeashRange = ReadOptionalFloat(data, "SoftLeashRange"),
                 HardLeashRange = ReadOptionalFloat(data, "HardLeashRange"),
+                SoftLeashGraceSeconds = ReadOptionalFloat(data, "SoftLeashGraceSeconds"),
+                ReturnStopDistance = ReadOptionalFloat(data, "ReturnStopDistance"),
+                ReturnDelaySeconds = ReadOptionalFloat(data, "ReturnDelaySeconds"),
+                ReturnMoveSpeedMultiplier = ReadOptionalFloat(data, "ReturnMoveSpeedMultiplier"),
+                ReturnTimeoutSeconds = ReadOptionalFloat(data, "ReturnTimeoutSeconds"),
+                LeashRecoveryPolicy = ReadOptionalEnum(
+                    data,
+                    "LeashRecoveryPolicy",
+                    MonsterLeashRecoveryPolicy.OnHomeReached),
+                InvulnerableDuringReturn = ReadOptionalBool(data, "InvulnerableDuringReturn", true),
+                ClearAffectsOnEvade = ReadOptionalBool(data, "ClearAffectsOnEvade", true),
                 DetectionThreat = ReadOptionalFloat(data, "DetectionThreat"),
                 PatrolThreat = ReadOptionalFloat(data, "PatrolThreat"),
                 DamageThreatMultiplier = ReadOptionalFloat(data, "DamageThreatMultiplier"),
@@ -133,6 +168,54 @@ namespace GGemCo2DCore
 
             return MathHelper.ParseFloat(value, fallback);
         }
+
+        /// <summary>
+        /// 신규 컬럼이 없는 마이그레이션 데이터도 읽을 수 있도록 선택 열거형 컬럼을 안전하게 파싱합니다.
+        /// </summary>
+        private static TEnum ReadOptionalEnum<TEnum>(
+            IReadOnlyDictionary<string, string> data,
+            string columnName,
+            TEnum fallback) where TEnum : struct, System.Enum
+        {
+            if (data == null || !data.TryGetValue(columnName, out string value) || string.IsNullOrWhiteSpace(value))
+            {
+                return fallback;
+            }
+
+            return EnumHelper.ConvertEnum<TEnum>(value);
+        }
+
+        /// <summary>
+        /// 신규 컬럼이 없는 마이그레이션 데이터도 읽을 수 있도록 선택 불리언 컬럼을 안전하게 파싱합니다.
+        /// </summary>
+        private static bool ReadOptionalBool(
+            IReadOnlyDictionary<string, string> data,
+            string columnName,
+            bool fallback)
+        {
+            if (data == null || !data.TryGetValue(columnName, out string value) || string.IsNullOrWhiteSpace(value))
+            {
+                return fallback;
+            }
+
+            string normalized = value.Trim();
+            if (string.Equals(normalized, "Y", System.StringComparison.OrdinalIgnoreCase) ||
+                string.Equals(normalized, "true", System.StringComparison.OrdinalIgnoreCase) ||
+                normalized == "1")
+            {
+                return true;
+            }
+
+            if (string.Equals(normalized, "N", System.StringComparison.OrdinalIgnoreCase) ||
+                string.Equals(normalized, "false", System.StringComparison.OrdinalIgnoreCase) ||
+                normalized == "0")
+            {
+                return false;
+            }
+
+            return fallback;
+        }
+
         /// <summary>
         /// 신규 컬럼이 없는 마이그레이션 데이터도 읽을 수 있도록 선택 정수 컬럼을 안전하게 파싱합니다.
         /// </summary>

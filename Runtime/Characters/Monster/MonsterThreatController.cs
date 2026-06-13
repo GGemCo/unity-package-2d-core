@@ -748,6 +748,7 @@ namespace GGemCo2DCore
         {
             return target != null &&
                    target != _owner &&
+                   (_owner == null || !_owner.IsLeashReturnLocked) &&
                    target.gameObject.activeInHierarchy &&
                    !target.IsStatusDead();
         }

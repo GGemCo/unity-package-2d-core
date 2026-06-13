@@ -326,6 +326,13 @@ namespace GGemCo2DCore
                 return;
             }
 
+            if (!_characterBase.CanReceiveDamage(metadataDamage))
+            {
+                NotifyIncomingHitCombatFeedback(metadataDamage, MonsterSkillCombatOutcome.Immune);
+                NotifyOutgoingAttackHitFeedback(metadataDamage, MonsterSkillCombatOutcome.Immune);
+                return;
+            }
+
             long damage = metadataDamage.damage;
             ConfigCommon.DamageType damageType = metadataDamage.damageType;
             GameObject attacker = metadataDamage.attacker;
