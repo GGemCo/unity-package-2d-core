@@ -9,7 +9,7 @@ using UnityEditor;
 namespace GGemCo2DCoreEditor
 {
     /// <summary>
-    /// 맵 배치 캐릭터와 UI 프리팹을 분석하여 sound_usage_manifest.txt를 생성합니다.
+    /// Core 기본 사용처와 설치된 상위 패키지 확장 사용처를 분석하여 sound_usage_manifest.txt를 생성합니다.
     /// </summary>
     public static class SoundUsageManifestBuilder
     {
@@ -17,7 +17,7 @@ namespace GGemCo2DCoreEditor
             "Uid\tName\tScopeType\tScopeUid\tSoundUid\tSourceType\tSourceUid\tSourcePath\tMemo\tEnabled";
 
         /// <summary>
-        /// 전체 맵과 UI 윈도우 사운드 사용처를 분석하고 매니페스트 테이블을 생성합니다.
+        /// 전체 맵, UI 윈도우 및 외부 패키지 사운드 사용처를 분석하고 매니페스트 테이블을 생성합니다.
         /// </summary>
         /// <param name="rebuildRuntimeTablePack">
         /// true이면 생성 직후 Core 런타임 테이블 팩도 다시 생성합니다.
@@ -53,16 +53,23 @@ namespace GGemCo2DCoreEditor
 
                 List<SoundUsageManifestBuildRecord> rawRecords =
                     new List<SoundUsageManifestBuildRecord>();
+                SoundUsageManifestBuildContext context = new SoundUsageManifestBuildContext(
+                    rawRecords,
+                    result,
+                    tableMap,
+                    tableMonster);
 
                 MapSoundUsageScanner mapScanner = new MapSoundUsageScanner(
                     tableMap,
                     tableMonster,
                     tableNpc,
                     tableAnimation);
-                mapScanner.Scan(rawRecords, result);
+                mapScanner.Scan(rawRecords, result, context);
 
                 UiSoundUsageScanner uiScanner = new UiSoundUsageScanner(tableWindow);
                 uiScanner.Scan(rawRecords, result);
+
+                ExecuteContributors(context, result);
 
                 List<SoundUsageManifestBuildRecord> records =
                     NormalizeAndValidateRecords(rawRecords, tableSound, result);
@@ -96,7 +103,7 @@ namespace GGemCo2DCoreEditor
                 AssetDatabase.SaveAssets();
                 result.Succeeded = true;
                 result.AddMessage(
-                    $"매니페스트 생성 완료: records={result.RecordCount}, maps={result.MapScopeCount}, uiWindows={result.UiWindowScopeCount}");
+                    $"매니페스트 생성 완료: records={result.RecordCount}, maps={result.MapScopeCount}, uiWindows={result.UiWindowScopeCount}, contributors={result.ContributorCount}");
             }
             catch (Exception ex)
             {
@@ -104,6 +111,62 @@ namespace GGemCo2DCoreEditor
             }
 
             return result;
+        }
+
+        /// <summary>
+        /// 설치된 상위 패키지의 사운드 사용처 확장기를 검색하여 순서대로 실행합니다.
+        /// 개별 확장기의 실패는 전체 Core 기본 분석을 중단하지 않고 경고로 격리합니다.
+        /// </summary>
+        /// <param name="context">기본 맵/UI 분석 결과와 레코드 추가 API를 제공하는 컨텍스트입니다.</param>
+        /// <param name="result">확장기 실행 결과와 경고를 기록할 생성 결과입니다.</param>
+        private static void ExecuteContributors(
+            SoundUsageManifestBuildContext context,
+            SoundUsageManifestBuildResult result)
+        {
+            List<ISoundUsageManifestContributor> contributors =
+                new List<ISoundUsageManifestContributor>();
+
+            foreach (Type type in TypeCache.GetTypesDerivedFrom<ISoundUsageManifestContributor>())
+            {
+                if (type == null || type.IsAbstract || type.IsInterface || type.ContainsGenericParameters)
+                    continue;
+
+                try
+                {
+                    if (Activator.CreateInstance(type) is ISoundUsageManifestContributor contributor)
+                        contributors.Add(contributor);
+                }
+                catch (Exception ex)
+                {
+                    result?.AddWarning(
+                        $"사운드 매니페스트 확장기를 생성하지 못했습니다. type={type.FullName}, error={ex.Message}");
+                }
+            }
+
+            contributors = contributors
+                .OrderBy(contributor => contributor.Order)
+                .ThenBy(contributor => contributor.GetType().FullName, StringComparer.Ordinal)
+                .ToList();
+
+            for (int i = 0; i < contributors.Count; i++)
+            {
+                ISoundUsageManifestContributor contributor = contributors[i];
+                string displayName = string.IsNullOrWhiteSpace(contributor.DisplayName)
+                    ? contributor.GetType().FullName
+                    : contributor.DisplayName;
+
+                try
+                {
+                    contributor.Collect(context);
+                    result.ContributorCount++;
+                    result.AddMessage($"외부 사운드 분석기 완료: {displayName}");
+                }
+                catch (Exception ex)
+                {
+                    result.AddWarning(
+                        $"외부 사운드 분석기 실행 중 오류가 발생했습니다. contributor={displayName}, error={ex}");
+                }
+            }
         }
 
         /// <summary>

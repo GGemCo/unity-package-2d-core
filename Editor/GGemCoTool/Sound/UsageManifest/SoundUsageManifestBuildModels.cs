@@ -56,6 +56,7 @@ namespace GGemCo2DCoreEditor
         public int RecordCount { get; internal set; }
         public int MapScopeCount { get; internal set; }
         public int UiWindowScopeCount { get; internal set; }
+        public int ContributorCount { get; internal set; }
         public int WarningCount { get; internal set; }
         public bool RuntimeTablePackRebuilt { get; internal set; }
 

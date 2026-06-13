@@ -44,7 +44,11 @@ namespace GGemCo2DCoreEditor
         /// </summary>
         /// <param name="target">발견한 사용처를 추가할 결과 목록입니다.</param>
         /// <param name="result">진단 메시지를 기록할 생성 결과입니다.</param>
-        public void Scan(List<SoundUsageManifestBuildRecord> target, SoundUsageManifestBuildResult result)
+        /// <param name="context">외부 패키지 분석에 전달할 맵 몬스터 배치 정보를 기록하는 컨텍스트입니다.</param>
+        public void Scan(
+            List<SoundUsageManifestBuildRecord> target,
+            SoundUsageManifestBuildResult result,
+            SoundUsageManifestBuildContext context)
         {
             if (target == null || _tableMap == null)
                 return;
@@ -59,7 +63,7 @@ namespace GGemCo2DCoreEditor
                 if (map == null || map.Uid <= 0 || string.IsNullOrWhiteSpace(map.FolderName))
                     continue;
 
-                ScanMonsterPlacements(map, target, result);
+                ScanMonsterPlacements(map, target, result, context);
                 ScanNpcPlacements(map, target, result);
             }
         }
@@ -67,10 +71,15 @@ namespace GGemCo2DCoreEditor
         /// <summary>
         /// 지정한 맵의 regen_monster.json에서 몬스터 UID를 수집하고 캐릭터 프리팹을 분석합니다.
         /// </summary>
+        /// <param name="map">분석할 맵 테이블 행입니다.</param>
+        /// <param name="target">발견한 애니메이션 사운드 사용처를 추가할 목록입니다.</param>
+        /// <param name="result">누락된 데이터와 에셋 경고를 기록할 결과입니다.</param>
+        /// <param name="context">외부 패키지 분석에 전달할 맵 몬스터 배치를 등록할 컨텍스트입니다.</param>
         private void ScanMonsterPlacements(
             StruckTableMap map,
             List<SoundUsageManifestBuildRecord> target,
-            SoundUsageManifestBuildResult result)
+            SoundUsageManifestBuildResult result,
+            SoundUsageManifestBuildContext context)
         {
             string jsonPath = ConfigAddressableMap.GetAssetPathRegenMonster(map.FolderName);
             IReadOnlyList<int> monsterUids = LoadPlacementUids(jsonPath, "몬스터", map.Uid, result);
@@ -78,6 +87,8 @@ namespace GGemCo2DCoreEditor
 
             foreach (int monsterUid in uniqueMonsterUids.OrderBy(uid => uid))
             {
+                context?.RegisterMapMonsterPlacement(map.Uid, monsterUid);
+
                 if (!_tableMonster.TryGetDataByUid(monsterUid, out StruckTableMonster monster) || monster == null)
                 {
                     result?.AddWarning(

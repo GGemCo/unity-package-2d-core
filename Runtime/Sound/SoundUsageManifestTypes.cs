@@ -38,5 +38,17 @@ namespace GGemCo2DCore
 
         /// <summary>UIWindowSoundUsageDeclaration에 직접 등록된 사운드 UID입니다.</summary>
         UiDeclaration = 5,
+
+        /// <summary>몬스터 스킬 테이블에 직접 등록된 차징 전체 사운드입니다.</summary>
+        MonsterSkillCharge = 6,
+
+        /// <summary>몬스터 스킬 차징 단계 테이블에 등록된 진입 또는 루프 사운드입니다.</summary>
+        MonsterSkillChargeStage = 7,
+
+        /// <summary>몬스터 스킬 RuntimeSequence의 오디오 재생 이벤트입니다.</summary>
+        MonsterSkillTimelineAudio = 8,
+
+        /// <summary>몬스터 스킬 RuntimeSequence의 프로젝타일 비행 사운드입니다.</summary>
+        MonsterSkillProjectileFlight = 9,
     }
 }

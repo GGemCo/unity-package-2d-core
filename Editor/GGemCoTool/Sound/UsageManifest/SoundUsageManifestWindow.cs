@@ -6,7 +6,7 @@ using UnityEngine;
 namespace GGemCo2DCoreEditor
 {
     /// <summary>
-    /// 맵 배치 캐릭터와 UI 프리팹의 사운드 사용처를 분석하고 매니페스트를 생성하는 에디터 창입니다.
+    /// Core 기본 사용처와 설치된 패키지 확장 사용처를 분석하고 매니페스트를 생성하는 에디터 창입니다.
     /// </summary>
     public sealed class SoundUsageManifestWindow : EditorWindow
     {
@@ -39,7 +39,8 @@ namespace GGemCo2DCoreEditor
             EditorGUILayout.Space(4f);
             EditorGUILayout.HelpBox(
                 "map의 regen_monster/regen_npc JSON, 캐릭터 애니메이션 이벤트, window 테이블의 UI 프리팹을 분석해 " +
-                "sound_usage_manifest.txt를 생성합니다. 스킬 사운드는 다음 단계의 Skill 패키지 분석기가 추가합니다.",
+                "sound_usage_manifest.txt를 생성합니다. 설치된 상위 패키지 분석기도 자동으로 실행되며, " +
+                "Skill 패키지가 있으면 맵 몬스터의 스킬 사운드도 함께 수집합니다.",
                 MessageType.Info);
 
             _rebuildRuntimeTablePack = EditorGUILayout.ToggleLeft(
@@ -73,7 +74,7 @@ namespace GGemCo2DCoreEditor
             if (_lastResult.Succeeded)
             {
                 Debug.Log(
-                    $"[SoundUsageManifest] 생성 완료. path={_lastResult.OutputPath}, records={_lastResult.RecordCount}, warnings={_lastResult.WarningCount}");
+                    $"[SoundUsageManifest] 생성 완료. path={_lastResult.OutputPath}, records={_lastResult.RecordCount}, contributors={_lastResult.ContributorCount}, warnings={_lastResult.WarningCount}");
                 ShowNotification(new GUIContent("사운드 사용 매니페스트 생성 완료"));
             }
             else
@@ -123,6 +124,7 @@ namespace GGemCo2DCoreEditor
                 $"행 수: {_lastResult.RecordCount}\n" +
                 $"맵 범위 수: {_lastResult.MapScopeCount}\n" +
                 $"UI 윈도우 범위 수: {_lastResult.UiWindowScopeCount}\n" +
+                $"외부 분석기 수: {_lastResult.ContributorCount}\n" +
                 $"경고 수: {_lastResult.WarningCount}\n" +
                 $"런타임 테이블 팩 재생성: {_lastResult.RuntimeTablePackRebuilt}",
                 resultType);
