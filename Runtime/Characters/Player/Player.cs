@@ -13,8 +13,9 @@ namespace GGemCo2DCore
     {
         public UnityEvent onEventDeadByEndGround;
         
-        // 공격할 몬스터 
+        // 자동 이동 및 공격 복귀에 사용할 현재 선택 몬스터입니다.
         private GameObject _targetMonster;
+        private PlayerCombatEngagementTracker _combatEngagementTracker;
         private EquipController _equipController;
         private ToolController _toolController;
         private ControllerPlayer _controllerPlayer;
@@ -35,6 +36,73 @@ namespace GGemCo2DCore
         private IAttackComboStateProvider _attackComboStateProvider;
         private IAttackCameraShakeProvider _attackCameraShakeProvider;
         private IAttackComboDamageFormulaProvider _attackComboDamageFormulaProvider;
+
+        /// <summary>
+        /// 현재 플레이어와 교전 중인 몬스터 수를 반환합니다.
+        /// </summary>
+        public int EngagedMonsterCount => EnsureCombatEngagementTracker().EngagedCount;
+
+        /// <summary>
+        /// 현재 하나 이상의 몬스터와 교전 중인지 여부를 반환합니다.
+        /// </summary>
+        public bool HasCombatEngagements => EnsureCombatEngagementTracker().HasEngagements;
+
+        /// <summary>
+        /// 플레이어 전투 참여 목록을 관리하는 컴포넌트를 반환합니다.
+        /// </summary>
+        public PlayerCombatEngagementTracker CombatEngagementTracker => EnsureCombatEngagementTracker();
+
+        /// <summary>
+        /// 플레이어와 교전을 시작한 몬스터를 참여 목록에 등록합니다.
+        /// </summary>
+        /// <param name="monster">교전을 시작한 몬스터입니다.</param>
+        /// <returns>새로운 몬스터가 등록되었으면 <see langword="true"/>를 반환합니다.</returns>
+        public bool RegisterCombatEngagement(Monster monster)
+        {
+            return EnsureCombatEngagementTracker().Register(monster);
+        }
+
+        /// <summary>
+        /// 지정한 몬스터를 플레이어 전투 참여 목록에서 해제합니다.
+        /// 현재 자동 이동 타겟이 해제되면 남아 있는 교전 대상 중 가장 가까운 몬스터를 후속 타겟으로 선택합니다.
+        /// </summary>
+        /// <param name="monster">교전을 종료한 몬스터입니다.</param>
+        /// <returns>등록된 몬스터가 실제로 해제되었으면 <see langword="true"/>를 반환합니다.</returns>
+        public bool UnregisterCombatEngagement(Monster monster)
+        {
+            bool removed = EnsureCombatEngagementTracker().Unregister(monster);
+            if (!removed)
+            {
+                return false;
+            }
+
+            if (monster != null && _targetMonster == monster.gameObject)
+            {
+                _targetMonster = null;
+                TrySelectNearestEngagedMonsterAsAutoMoveTarget();
+            }
+
+            return true;
+        }
+
+        /// <summary>
+        /// 모든 전투 참여 몬스터와 현재 자동 이동 전투 타겟을 초기화합니다.
+        /// </summary>
+        public void ClearCombatEngagements()
+        {
+            EnsureCombatEngagementTracker().Clear();
+            ClearAutoMoveTargetMonster();
+        }
+
+        /// <summary>
+        /// 지정한 몬스터가 현재 플레이어와 교전 중인지 확인합니다.
+        /// </summary>
+        /// <param name="monster">확인할 몬스터입니다.</param>
+        /// <returns>전투 참여 목록에 등록되어 있으면 <see langword="true"/>를 반환합니다.</returns>
+        public bool IsEngagedWith(Monster monster)
+        {
+            return EnsureCombatEngagementTracker().Contains(monster);
+        }
 
         /// <summary>
         /// 자동 이동의 전투 추적에 사용할 몬스터 타겟을 설정합니다.
@@ -76,23 +144,61 @@ namespace GGemCo2DCore
         {
             if (_targetMonster == null)
             {
-                return null;
+                TrySelectNearestEngagedMonsterAsAutoMoveTarget();
+                return _targetMonster != null ? _targetMonster.transform : null;
             }
 
+            Monster targetMonster = _targetMonster.GetComponent<Monster>();
             CharacterBase targetCharacter = _targetMonster.GetComponent<CharacterBase>();
-            if (targetCharacter != null && targetCharacter.IsStatusDead())
+            bool isInvalidTarget = !_targetMonster.activeInHierarchy ||
+                                   (targetCharacter != null && targetCharacter.IsStatusDead());
+            if (!isInvalidTarget)
             {
-                _targetMonster = null;
-                return null;
+                return _targetMonster.transform;
             }
 
-            if (!_targetMonster.activeInHierarchy)
+            _targetMonster = null;
+            if (targetMonster != null)
             {
-                _targetMonster = null;
-                return null;
+                EnsureCombatEngagementTracker().Unregister(targetMonster);
             }
 
-            return _targetMonster.transform;
+            TrySelectNearestEngagedMonsterAsAutoMoveTarget();
+            return _targetMonster != null ? _targetMonster.transform : null;
+        }
+
+        /// <summary>
+        /// 전투 참여 목록에서 현재 플레이어와 가장 가까운 몬스터를 자동 이동 타겟으로 선택합니다.
+        /// </summary>
+        /// <returns>후속 타겟을 선택했으면 <see langword="true"/>를 반환합니다.</returns>
+        private bool TrySelectNearestEngagedMonsterAsAutoMoveTarget()
+        {
+            if (!EnsureCombatEngagementTracker().TryGetNearestEngagedMonster(transform.position, out Monster monster))
+            {
+                return false;
+            }
+
+            _targetMonster = monster.gameObject;
+            return true;
+        }
+
+        /// <summary>
+        /// 플레이어 전투 참여 목록 컴포넌트를 찾거나 생성하고 현재 플레이어를 소유자로 연결합니다.
+        /// </summary>
+        /// <returns>초기화된 전투 참여 목록 컴포넌트입니다.</returns>
+        private PlayerCombatEngagementTracker EnsureCombatEngagementTracker()
+        {
+            if (_combatEngagementTracker == null)
+            {
+                _combatEngagementTracker = GetComponent<PlayerCombatEngagementTracker>();
+                if (_combatEngagementTracker == null)
+                {
+                    _combatEngagementTracker = gameObject.AddComponent<PlayerCombatEngagementTracker>();
+                }
+            }
+
+            _combatEngagementTracker.Initialize(this);
+            return _combatEngagementTracker;
         }
         
         protected override void Awake()
@@ -111,6 +217,7 @@ namespace GGemCo2DCore
                 _monsterHitAreaLayerMask,
                 true);
             base.Awake();
+            EnsureCombatEngagementTracker();
             _playerUIController = new PlayerUIController();
             _playerUIController.Initialize(this);
         }
@@ -720,7 +827,7 @@ namespace GGemCo2DCore
             SetEndTilemapYDeathSuppressed(true);
             Stop();
             CancelAutoMoveOnMapLoadStart();
-            ClearAutoMoveTargetMonster();
+            ClearCombatEngagements();
         }
 
         /// <summary>
@@ -749,6 +856,9 @@ namespace GGemCo2DCore
         protected override void OnDead(CharacterConstants.DieReasonType dieReasonType = CharacterConstants.DieReasonType.None,
             GameObject attacker = null)
         {
+            // 사망한 플레이어가 전투 참여 목록을 유지하지 않도록 모든 교전 관계를 먼저 정리합니다.
+            ClearCombatEngagements();
+
             // 먼저 ItemBonus를 0으로 초기화(저장 구독이 연결되어 있다면 즉시 저장 반영)
             SetItemBonusHpCurrent(0);
 
@@ -851,8 +961,16 @@ namespace GGemCo2DCore
 
         protected override void OnDestroy()
         {
+            // 컴포넌트 파괴 순서 중 새 컴포넌트를 생성하지 않도록 이미 연결된 참여 목록만 정리합니다.
+            _combatEngagementTracker?.Clear();
+            _targetMonster = null;
+
+            if (_sceneGame != null && _sceneGame.mapManager != null)
+            {
+                _sceneGame.mapManager.OnLoadStartMap -= OnLoadStartMap;
+            }
+
             base.OnDestroy();
-            _sceneGame.mapManager.OnLoadStartMap -= OnLoadStartMap;
         }
         
         /// <summary>

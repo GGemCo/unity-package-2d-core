@@ -1,4 +1,4 @@
-﻿using System.Collections;
+using System.Collections;
 using UnityEngine;
 using Event = UnityEngine.Event;
 
@@ -748,8 +748,8 @@ namespace GGemCo2DCore
             // 공격자가 죽었을 때
             if (targetCharacter.IsAttackerStatusDead())
             {
-                targetCharacter.SetAttackerTarget(null);
                 StopAttackCoroutine();
+                // Stop()에서 어그로 해제 훅이 현재 타겟을 기준으로 전투 참여 목록을 먼저 정리합니다.
                 Stop();
                 return;
             }

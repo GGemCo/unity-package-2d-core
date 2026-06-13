@@ -448,9 +448,6 @@ namespace GGemCo2DCore
             _controllerMonster?.StopAttackCoroutine();
             SetAggro(false);
             _combatStartReason = CharacterConstants.CombatStartReason.None;
-
-            player.ClearAutoMoveTargetMonster(gameObject);
-            player.SetBattleStatusNone();
         }
 
         /// <summary>
@@ -532,7 +529,7 @@ namespace GGemCo2DCore
             if (!CanBeginCombatWithPlayer(player)) return;
 
             BeginCombatWithAttacker(player.transform, reason);
-            player.SetBattleStatusInBattle();
+            player.RegisterCombatEngagement(this);
             player.SetAutoMoveTargetMonster(gameObject);
         }
 
@@ -545,6 +542,13 @@ namespace GGemCo2DCore
         {
             if (attacker == null || IsStatusDead()) return;
 
+            Player previousPlayer = ResolvePlayerFromTarget(attackerTransform);
+            Player nextPlayer = ResolvePlayerFromTarget(attacker);
+            if (previousPlayer != null && previousPlayer != nextPlayer)
+            {
+                previousPlayer.UnregisterCombatEngagement(this);
+            }
+
             _combatStartReason = reason;
             if (!IsAggro())
             {
@@ -553,6 +557,23 @@ namespace GGemCo2DCore
 
             SetAttackerTarget(attacker);
             _controllerMonster?.StopAttackCoroutine();
+        }
+
+        /// <summary>
+        /// 어그로가 해제되기 전에 현재 플레이어 타겟과의 전투 참여 관계를 정리합니다.
+        /// </summary>
+        /// <param name="isAggro">변경된 어그로 활성 여부입니다.</param>
+        protected override void OnAggroStateChanged(bool isAggro)
+        {
+            base.OnAggroStateChanged(isAggro);
+            if (isAggro)
+            {
+                return;
+            }
+
+            Player player = ResolvePlayerFromTarget(attackerTransform);
+            player?.UnregisterCombatEngagement(this);
+            _combatStartReason = CharacterConstants.CombatStartReason.None;
         }
         /// <summary>
         /// 몬스터 사망 시 전투 상태, UI, 이벤트, 컷신 후처리를 수행합니다.
@@ -606,8 +627,7 @@ namespace GGemCo2DCore
                 return;
             }
 
-            player.ClearAutoMoveTargetMonster(gameObject);
-            player.SetBattleStatusNone();
+            player.UnregisterCombatEngagement(this);
         }
 
         /// <summary>
@@ -622,18 +642,23 @@ namespace GGemCo2DCore
                 return playerFromAttacker;
             }
 
-            if (attackerTransform == null)
+            return ResolvePlayerFromTarget(attackerTransform);
+        }
+
+        /// <summary>
+        /// 지정한 Transform 또는 부모 계층에서 플레이어 컴포넌트를 찾습니다.
+        /// </summary>
+        /// <param name="target">플레이어 여부를 해석할 대상 Transform입니다.</param>
+        /// <returns>찾은 플레이어이며, 대상이 없거나 플레이어가 아니면 <see langword="null"/>입니다.</returns>
+        private static Player ResolvePlayerFromTarget(Transform target)
+        {
+            if (target == null)
             {
                 return null;
             }
 
-            Player playerFromTarget = attackerTransform.GetComponent<Player>();
-            if (playerFromTarget != null)
-            {
-                return playerFromTarget;
-            }
-
-            return attackerTransform.GetComponentInParent<Player>();
+            Player player = target.GetComponent<Player>();
+            return player != null ? player : target.GetComponentInParent<Player>();
         }
 
         /// <summary>
@@ -706,6 +731,8 @@ namespace GGemCo2DCore
 
         protected override void OnDestroy()
         {
+            // 비풀링 제거 경로에서도 플레이어 전투 참여 목록에 몬스터 참조가 남지 않도록 정리합니다.
+            SetAggro(false);
             base.OnDestroy();
             if (_monsterUIController != null)
             {

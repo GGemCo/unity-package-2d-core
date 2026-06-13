@@ -265,7 +265,7 @@ namespace GGemCo2DCore
         /// </summary>
         protected virtual void Stop()
         {
-            targetCharacter.SetAttackerTarget(null);
+            // SetAggro(false)가 현재 공격 대상을 기준으로 전투 참여 관계를 먼저 정리한 뒤 타겟을 비웁니다.
             targetCharacter.SetAggro(false);
             targetCharacter.SetStatusIdle();
             iCharacterAnimationController?.PlayWaitAnimation();

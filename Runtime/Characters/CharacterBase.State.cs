@@ -376,16 +376,36 @@ namespace GGemCo2DCore
         /// <param name="set">적용할 어그로 여부입니다.</param>
         public void SetAggro(bool set)
         {
+            bool shouldNotifyStateChanged = _isAggro != set || (!set && attackerTransform != null);
             _isAggro = set;
+
             if (set)
             {
                 SetBattleStatusInBattle();
+                if (shouldNotifyStateChanged)
+                {
+                    OnAggroStateChanged(true);
+                }
+
+                return;
             }
-            else
+
+            // 어그로 대상이 지워지기 전에 파생 클래스가 전투 참여 관계를 정리할 수 있도록 알립니다.
+            if (shouldNotifyStateChanged)
             {
-                SetBattleStatusNone();
-                SetAttackerTarget(null);
+                OnAggroStateChanged(false);
             }
+
+            SetBattleStatusNone();
+            SetAttackerTarget(null);
+        }
+
+        /// <summary>
+        /// 어그로 상태 변경 직후 파생 클래스가 추가 전투 관계를 동기화할 수 있는 확장 지점입니다.
+        /// </summary>
+        /// <param name="isAggro">변경된 어그로 활성 여부입니다.</param>
+        protected virtual void OnAggroStateChanged(bool isAggro)
+        {
         }
 
         /// <summary>
