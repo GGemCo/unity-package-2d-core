@@ -1,4 +1,4 @@
-﻿using GGemCo2DCore;
+using GGemCo2DCore;
 
 namespace GGemCo2DCoreEditor
 {
@@ -29,6 +29,7 @@ namespace GGemCo2DCoreEditor
             LocalizationFind,
             LocalizationCsvSync,
             SoundUIButton = 140,
+            SoundUsageManifest,
             CreateHubWindow,
             Test = 200,
             CreateItem,
@@ -68,7 +69,7 @@ namespace GGemCo2DCoreEditor
             CreateSpriteComposer
         }
         private const string NameToolGGemCo = ConfigDefine.NameSDK+"Tool/";
-        
+
         // 기본 셋팅하기
         private const string NameToolSettings = NameToolGGemCo + "설정하기/";
         public const string NameToolSettingAuto = NameToolSettings + "자동 셋팅하기";
@@ -79,30 +80,31 @@ namespace GGemCo2DCoreEditor
         public const string NameToolSettingSceneLoading = NameToolSettings + "로딩 씬 셋팅하기";
         public const string NameToolSettingSceneGame = NameToolSettings + "게임 씬 셋팅하기";
         public const string NameToolSettingWindow = NameToolSettings + "UI 윈도우 셋팅하기";
-        
+
         // 개발툴
         private const string NameToolDevelopment = NameToolGGemCo + "개발툴/";
         public const string NameToolBuildProfile = NameToolDevelopment + "Build 프로파일";
         public const string NameToolMapExporter = NameToolDevelopment + "맵배치툴";
-        
+
         public const string NameToolQuest = NameToolDevelopment + "퀘스트 생성툴";
         public const string NameToolCreateDialogue = NameToolDevelopment + "대사 생성툴";
-        
+
         public const string NameToolCutscene = NameToolDevelopment + "연출툴";
         public const string NameToolCreateVfxEffectPrefab = NameToolDevelopment + "이팩트 프리팹 생성툴";
         public const string NameToolCreateUIEffectPreset = NameToolDevelopment + "UI 효과 프리셋 편집툴";
         public const string NameToolUIEffectTimeline = NameToolDevelopment + "UI 효과 타임라인 편집툴";
-        
+
         public const string NameToolLocalizationUpdate = NameToolDevelopment + "Localize 업데이트툴";
         public const string NameToolLocalizationFind = NameToolDevelopment + "Localize 검색기";
         public const string NameToolLocalizationCsvSync = NameToolDevelopment + "Localization CSV 동기화 툴";
-        
+
         public const string NameToolSoundUIButton = NameToolDevelopment + "UI 버튼 사운드 적용툴";
-        
+        public const string NameToolSoundUsageManifest = NameToolDevelopment + "사운드 사용 매니페스트 생성툴";
+
         public const string NameToolCreateHubWindow = NameToolDevelopment + "오브젝트 생성툴";
         public const string NameToolTableEditor = NameToolDevelopment + "데이터 테이블 에디터";
         public const string NameToolWorldMapGraph = NameToolDevelopment + "월드맵 그래프 에디터";
-        
+
         // 테스트
         private const string NameToolTest = NameToolGGemCo + "테스트툴/";
         public const string NameToolDropItemRate = NameToolTest + "아이템 드랍 확률";
@@ -121,7 +123,7 @@ namespace GGemCo2DCoreEditor
         public const string NameToolUseItem = NameToolTest + "아이템 사용툴";
         public const string NameToolOpenWindow = NameToolTest + "윈도우 열기";
         public const string NameToolUseCameraShake = NameToolTest + "카메라 Shake 사용툴";
-        
+
         // 디버그
         private const string NameToolDebug = NameToolGGemCo + "디버그툴/";
         public const string NameToolTilemapDrawCall = NameToolDebug + "타일맵 드로우콜 HUD";
@@ -133,7 +135,7 @@ namespace GGemCo2DCoreEditor
         public const string NameToolListReleaseBuildDebugOptions = NameToolDebug + "릴리즈 후보 디버그 설정 리스트 보기";
         public const string NameToolDisableReleaseBuildDebugOptions = NameToolDebug + "릴리즈 후보 디버그 설정 모두 false 변경하기";
         public const string NameToolValidateDevelopmentSettingsBuildInclusion = NameToolDebug + "Development Settings 빌드 포함 위험 검사";
-        
+
         // etc
         private const string NameToolEtc = NameToolGGemCo + "기타/";
         public const string NameToolPlayerPrefs = NameToolEtc + "PlayerPrefs 데이터 관리";
@@ -155,7 +157,7 @@ namespace GGemCo2DCoreEditor
         public const string PathPrefabCanvasBlack = PathPrefab+"/UI/CanvasBlack.prefab";
         public const string PathPrefabSystemMessageManager = PathPrefab+"/UI/SystemMessageManager.prefab";
         public const string PathPrefabPopupManager = PathPrefab+"/UI/PopupManager.prefab";
-        
+
         // 윈도우 경로
         public const string PathUIWindow = "Assets/GGemCo/UIWindows";
     }

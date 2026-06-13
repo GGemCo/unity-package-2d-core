@@ -120,6 +120,7 @@ namespace GGemCo2DCoreEditor
 
             bool isOptionalTable =
                 info.Key == ConfigAddressableTable.TableMapSound.Key ||
+                info.Key == ConfigAddressableTable.TableSoundUsageManifest.Key ||
                 info.Key == ConfigAddressableTable.TableProjectileLinear.Key ||
                 info.Key == ConfigAddressableTable.TableProjectileArc.Key ||
                 info.Key == ConfigAddressableTable.TableProjectilePath.Key ||

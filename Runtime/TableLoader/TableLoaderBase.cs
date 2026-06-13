@@ -164,6 +164,7 @@ namespace GGemCo2DCore
         private static bool IsOptionalMissingTable(string key)
         {
             return key == ConfigAddressableTable.TableMapSound.Key
+                   || key == ConfigAddressableTable.TableSoundUsageManifest.Key
                    || key == ConfigAddressableTable.TableProjectileLinear.Key
                    || key == ConfigAddressableTable.TableProjectileArc.Key
                    || key == ConfigAddressableTable.TableProjectilePath.Key

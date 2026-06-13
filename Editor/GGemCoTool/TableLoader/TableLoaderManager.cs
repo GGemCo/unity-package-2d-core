@@ -190,6 +190,16 @@ namespace GGemCo2DCoreEditor
             => TryLoadOptionalTable<TableSoundVariant>(ConfigAddressableTable.TableSoundVariant.Path, forceReload);
 
         /// <summary>
+        /// 에디터 자동 분석으로 생성된 sound_usage_manifest 테이블을 선택적으로 로드합니다.
+        /// </summary>
+        /// <param name="forceReload">캐시를 무시하고 다시 로드할지 여부입니다.</param>
+        /// <returns>로드된 사운드 사용 매니페스트 테이블이며, 파일이 없으면 null입니다.</returns>
+        public static TableSoundUsageManifest LoadSoundUsageManifestTable(bool forceReload = true)
+            => TryLoadOptionalTable<TableSoundUsageManifest>(
+                ConfigAddressableTable.TableSoundUsageManifest.Path,
+                forceReload);
+
+        /// <summary>
         /// 아직 생성되지 않은 선택 테이블은 오류 없이 null로 반환합니다.
         /// </summary>
         /// <typeparam name="TTable">로드할 테이블 타입입니다.</typeparam>

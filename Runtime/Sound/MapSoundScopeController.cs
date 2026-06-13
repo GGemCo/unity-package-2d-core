@@ -65,6 +65,8 @@ namespace GGemCo2DCore
                 hasConfiguredBgm |= ResolveRole(row) == MapSoundRole.Bgm;
             }
 
+            AppendGeneratedManifestSoundUids(mapUid, soundUids);
+
             if (!hasConfiguredBgm && legacyBgmUid > 0)
                 soundUids.Add(legacyBgmUid);
 
@@ -203,6 +205,30 @@ namespace GGemCo2DCore
             ReleasePendingLease();
             _activeLease?.Dispose();
             _activeLease = null;
+        }
+
+
+        /// <summary>
+        /// 에디터 자동 분석으로 생성된 맵 사운드 사용 매니페스트를 현재 범위에 합칩니다.
+        /// 매니페스트가 아직 생성되지 않았거나 로드되지 않은 프로젝트에서는 아무 작업도 하지 않습니다.
+        /// </summary>
+        /// <param name="mapUid">사운드 사용처를 조회할 맵 UID입니다.</param>
+        /// <param name="target">대표 sound UID를 추가할 목록입니다.</param>
+        private void AppendGeneratedManifestSoundUids(int mapUid, List<int> target)
+        {
+            if (mapUid <= 0 || target == null)
+                return;
+
+            IReadOnlyList<int> generatedSoundUids = _tableLoaderManager?.TableSoundUsageManifest?.GetSoundUids(
+                SoundUsageManifestScopeType.Map,
+                mapUid) ?? Array.Empty<int>();
+
+            for (int i = 0; i < generatedSoundUids.Count; i++)
+            {
+                int soundUid = generatedSoundUids[i];
+                if (soundUid > 0)
+                    target.Add(soundUid);
+            }
         }
 
         /// <summary>

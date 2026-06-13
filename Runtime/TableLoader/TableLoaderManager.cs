@@ -65,6 +65,7 @@ namespace GGemCo2DCore
         public TableSoundAmbient TableSoundAmbient { get; private set; } = new TableSoundAmbient();
         public TableSoundSfx TableSoundSfx { get; private set; } = new TableSoundSfx();
         public TableSoundVariant TableSoundVariant { get; private set; } = new TableSoundVariant();
+        public TableSoundUsageManifest TableSoundUsageManifest { get; private set; } = new TableSoundUsageManifest();
         public TableSimulationTool TableSimulationTool { get; private set; } = new TableSimulationTool();
         public TableSimulationGrowth TableSimulationGrowth { get; private set; } = new TableSimulationGrowth();
         public TableItemUse TableItemUse { get; private set; } = new TableItemUse();
@@ -136,6 +137,7 @@ namespace GGemCo2DCore
                 registry.Register(TableSoundAmbient);
                 registry.Register(TableSoundSfx);
                 registry.Register(TableSoundVariant);
+                registry.Register(TableSoundUsageManifest);
                 registry.Register(TableSimulationTool);
                 registry.Register(TableSimulationGrowth);
                 registry.Register(TableItemUse);

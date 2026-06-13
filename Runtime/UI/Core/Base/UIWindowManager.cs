@@ -177,7 +177,27 @@ namespace GGemCo2DCore
             EnsureServices();
             _windowTableBinder.Initialize(windowKeys);
             RefreshWindowOrder();
+            EnsureWindowSoundUsageDeclarations();
             _initialVisibilityService.PrepareDefaultInactiveWindows();
+        }
+
+        /// <summary>
+        /// TableWindow에 정상 연결된 모든 UIWindow에 범위 사운드 관리 컴포넌트를 보장합니다.
+        /// 프리팹에 컴포넌트가 없어도 자동 생성 매니페스트를 런타임에서 사용할 수 있게 합니다.
+        /// </summary>
+        private void EnsureWindowSoundUsageDeclarations()
+        {
+            foreach (int uid in _windowTableBinder.WindowUids)
+            {
+                if (uid <= 0)
+                    continue;
+
+                UIWindow window = _windowRegistry.GetWindowReferenceByUid(uid);
+                if (window == null)
+                    continue;
+
+                UIWindowSoundUsageDeclaration.EnsureAttached(window, uid);
+            }
         }
 
         /// <summary>
@@ -194,7 +214,11 @@ namespace GGemCo2DCore
                 windowKeys = new List<WindowKey>();
             }
 
-            return _windowRegistry.UpsertWindowKey(windowKeys, uid, window);
+            bool changed = _windowRegistry.UpsertWindowKey(windowKeys, uid, window);
+            if (Application.isPlaying && window != null && uid > 0)
+                UIWindowSoundUsageDeclaration.EnsureAttached(window, uid);
+
+            return changed;
         }
 
         /// <summary>
