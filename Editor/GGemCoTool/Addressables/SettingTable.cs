@@ -1,4 +1,4 @@
-﻿using GGemCo2DCore;
+using GGemCo2DCore;
 using UnityEditor;
 using UnityEditor.AddressableAssets;
 using UnityEditor.AddressableAssets.Settings;
@@ -34,7 +34,7 @@ namespace GGemCo2DCoreEditor
                 }
             }
         }
-        
+
         /// <summary>
         /// Core 테이블 원본과 런타임 테이블 팩을 Addressables에 등록합니다.
         /// </summary>
@@ -79,7 +79,7 @@ namespace GGemCo2DCoreEditor
             else
             {
                 AssetDatabase.SaveAssets();
-                EditorUtility.DisplayDialog(Title, "Addressable 설정 완료", "OK");    
+                EditorUtility.DisplayDialog(Title, "Addressable 설정 완료", "OK");
             }
         }
 
@@ -109,7 +109,7 @@ namespace GGemCo2DCoreEditor
 
         /// <summary>
         /// 아직 생성되지 않은 선택 테이블인지 확인합니다.
-        /// - Projectile 상세 테이블, 신규 Sound 실제 리소스/variant 테이블, 신규 VFX 대표/variant 테이블은 없을 때 Addressables 등록을 건너뜁니다.
+        /// - map_sound, Projectile 상세, Sound 실제 리소스/variant, VFX 대표/variant 테이블은 없을 때 Addressables 등록을 건너뜁니다.
         /// </summary>
         /// <param name="info">검사할 테이블 Addressables 정보입니다.</param>
         /// <returns>선택 테이블이 없어서 건너뛰어야 하면 true를 반환합니다.</returns>
@@ -119,6 +119,7 @@ namespace GGemCo2DCoreEditor
                 return false;
 
             bool isOptionalTable =
+                info.Key == ConfigAddressableTable.TableMapSound.Key ||
                 info.Key == ConfigAddressableTable.TableProjectileLinear.Key ||
                 info.Key == ConfigAddressableTable.TableProjectileArc.Key ||
                 info.Key == ConfigAddressableTable.TableProjectilePath.Key ||

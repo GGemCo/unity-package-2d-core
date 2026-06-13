@@ -69,7 +69,23 @@ namespace GGemCo2DCore
         /// <param name="clipVolume">클립별 볼륨 배율입니다.</param>
         public void Play(AudioClip clip, MonoBehaviour coroutineHost, float clipVolume)
         {
-            BeginPlay(clip, null, coroutineHost, clipVolume);
+            BeginPlay(clip, null, coroutineHost, clipVolume, _fadeDuration);
+        }
+
+        /// <summary>
+        /// 외부에서 직접 전달한 BGM 클립을 지정한 볼륨과 페이드 시간으로 재생합니다.
+        /// </summary>
+        /// <param name="clip">재생할 BGM 클립입니다.</param>
+        /// <param name="coroutineHost">페이드 코루틴을 실행할 MonoBehaviour입니다.</param>
+        /// <param name="clipVolume">클립별 볼륨 배율입니다.</param>
+        /// <param name="fadeDuration">이번 교체 요청에 적용할 페이드 시간입니다.</param>
+        public void Play(
+            AudioClip clip,
+            MonoBehaviour coroutineHost,
+            float clipVolume,
+            float fadeDuration)
+        {
+            BeginPlay(clip, null, coroutineHost, clipVolume, fadeDuration);
         }
 
         /// <summary>
@@ -84,13 +100,34 @@ namespace GGemCo2DCore
             MonoBehaviour coroutineHost,
             float clipVolume)
         {
+            Play(playbackLease, coroutineHost, clipVolume, _fadeDuration);
+        }
+
+        /// <summary>
+        /// Addressables 재생 참조 임대 객체가 유지하는 BGM을 지정한 페이드 시간으로 재생합니다.
+        /// </summary>
+        /// <param name="playbackLease">재생 중 Addressables 참조를 유지할 임대 객체입니다.</param>
+        /// <param name="coroutineHost">페이드 코루틴을 실행할 MonoBehaviour입니다.</param>
+        /// <param name="clipVolume">클립별 볼륨 배율입니다.</param>
+        /// <param name="fadeDuration">이번 교체 요청에 적용할 페이드 시간입니다.</param>
+        public void Play(
+            SoundPlaybackLease playbackLease,
+            MonoBehaviour coroutineHost,
+            float clipVolume,
+            float fadeDuration)
+        {
             if (playbackLease == null || playbackLease.Clip == null)
             {
                 playbackLease?.Dispose();
                 return;
             }
 
-            BeginPlay(playbackLease.Clip, playbackLease, coroutineHost, clipVolume);
+            BeginPlay(
+                playbackLease.Clip,
+                playbackLease,
+                coroutineHost,
+                clipVolume,
+                fadeDuration);
         }
 
         /// <summary>
@@ -100,11 +137,13 @@ namespace GGemCo2DCore
         /// <param name="playbackLease">클립의 Addressables 재생 참조 임대 객체입니다.</param>
         /// <param name="coroutineHost">페이드 코루틴 실행자입니다.</param>
         /// <param name="clipVolume">클립별 볼륨 배율입니다.</param>
+        /// <param name="fadeDuration">이번 교체 요청에 적용할 페이드 시간입니다.</param>
         private void BeginPlay(
             AudioClip clip,
             SoundPlaybackLease playbackLease,
             MonoBehaviour coroutineHost,
-            float clipVolume)
+            float clipVolume,
+            float fadeDuration)
         {
             if (clip == null || coroutineHost == null)
             {
@@ -119,7 +158,8 @@ namespace GGemCo2DCore
                 clip,
                 Mathf.Clamp01(clipVolume),
                 playbackLease,
-                _playVersion));
+                _playVersion,
+                Mathf.Max(0f, fadeDuration)));
         }
 
         /// <summary>
@@ -130,12 +170,14 @@ namespace GGemCo2DCore
         /// <param name="clipVolume">클립별 볼륨 배율입니다.</param>
         /// <param name="playbackLease">새 클립의 재생 참조 임대 객체입니다.</param>
         /// <param name="version">요청 순서를 식별하는 버전입니다.</param>
+        /// <param name="fadeDuration">이번 교체 요청에 적용할 페이드 시간입니다.</param>
         /// <returns>페이드 실행 열거자입니다.</returns>
         private IEnumerator FadeAndSwitch(
             AudioClip newClip,
             float clipVolume,
             SoundPlaybackLease playbackLease,
-            int version)
+            int version,
+            float fadeDuration)
         {
             float savedVolume = PlayerPrefsManager.LoadSoundVolumeBGM();
             float dbTarget = Mathf.Log10(Mathf.Max(savedVolume, 0.0001f)) * 20f;
@@ -144,7 +186,7 @@ namespace GGemCo2DCore
             float currentVolume = Mathf.Pow(10f, currentDb / 20f);
 
             float t = 0f;
-            while (t < _fadeDuration)
+            while (t < fadeDuration)
             {
                 if (version != _playVersion)
                 {
@@ -153,7 +195,7 @@ namespace GGemCo2DCore
                 }
 
                 t += Time.deltaTime;
-                float v = Mathf.Lerp(currentVolume, 0f, _fadeDuration > 0f ? t / _fadeDuration : 1f);
+                float v = Mathf.Lerp(currentVolume, 0f, fadeDuration > 0f ? t / fadeDuration : 1f);
                 _mixer.SetFloat(_volumeParam, Mathf.Log10(Mathf.Max(v, 0.0001f)) * 20f);
                 yield return null;
             }
@@ -176,13 +218,13 @@ namespace GGemCo2DCore
             _current.Play();
 
             t = 0f;
-            while (t < _fadeDuration)
+            while (t < fadeDuration)
             {
                 if (version != _playVersion)
                     yield break;
 
                 t += Time.deltaTime;
-                float v = Mathf.Lerp(0f, savedVolume, _fadeDuration > 0f ? t / _fadeDuration : 1f);
+                float v = Mathf.Lerp(0f, savedVolume, fadeDuration > 0f ? t / fadeDuration : 1f);
                 _mixer.SetFloat(_volumeParam, Mathf.Log10(Mathf.Max(v, 0.0001f)) * 20f);
                 yield return null;
             }

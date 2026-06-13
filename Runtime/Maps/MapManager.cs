@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Threading.Tasks;
@@ -63,6 +63,7 @@ namespace GGemCo2DCore
         private MapEntryRuleResolver _mapEntryRuleResolver;
         private GGemCoMapSettings _mapSettings;
         private MapAutoMoveLifecycleController _autoMoveLifecycleController;
+        private MapSoundScopeController _mapSoundScopeController;
 
         protected void Awake()
         {
@@ -113,7 +114,8 @@ namespace GGemCo2DCore
             _mapEntryRuleResolver = new MapEntryRuleResolver(_tableLoaderManager, _saveDataManager?.LicenseManager);
             _mapSettings = AddressableLoaderSettings.Instance.mapSettings;
             _autoMoveLifecycleController?.Register(this);
-            
+            _mapSoundScopeController = new MapSoundScopeController(_tableLoaderManager, AddressableLoaderSound.Instance);
+
             // 저장된 맵 불러오기
             int startMapUid = GetStartMapUid();
 
@@ -150,9 +152,9 @@ namespace GGemCo2DCore
                 var info = TableLoaderManager.Instance.GetMapData(startMapUid);
                 if (GcLogger.IsNull(info,
                         $"맵 테이블에 없는 고유번호 입니다. mapUid:{startMapUid}")) return 0;
-                // 마을 타입에서 시작하는 설정이 되어있으면 
+                // 마을 타입에서 시작하는 설정이 되어있으면
                 if (_mapSettings != null && _mapSettings.useStartMapTown && info.Type != _mapSettings.typeMapTown &&
-                    _saveDataManager.MapProgress.LastTownMapUid > 0) 
+                    _saveDataManager.MapProgress.LastTownMapUid > 0)
                 {
                     info = TableLoaderManager.Instance.GetMapData(_saveDataManager.MapProgress.LastTownMapUid);
                     if (info != null && info.Type != _mapSettings.typeMapTown)
@@ -177,6 +179,8 @@ namespace GGemCo2DCore
         private void OnDestroy()
         {
             _autoMoveLifecycleController?.Unregister(this);
+            _mapSoundScopeController?.Dispose();
+            _mapSoundScopeController = null;
         }
 
         protected void Reset()
@@ -266,7 +270,7 @@ namespace GGemCo2DCore
         }
 
         /// <summary>
-        /// 맵 로드 상태별 처리 
+        /// 맵 로드 상태별 처리
         /// </summary>
         /// <returns></returns>
         private IEnumerator UpdateState()
@@ -277,6 +281,12 @@ namespace GGemCo2DCore
                 {
                     case MapConstants.State.FadeIn:
                         yield return StartCoroutineSafe(FadeIn());
+                        if (_currentState == MapConstants.State.Failed) yield break;
+                        _currentState = MapConstants.State.LoadSoundScope;
+                        break;
+
+                    case MapConstants.State.LoadSoundScope:
+                        yield return StartCoroutineSafe(AwaitTask(PrepareCurrentMapSoundScopeAsync()));
                         if (_currentState == MapConstants.State.Failed) yield break;
                         _currentState = MapConstants.State.UnloadPreviousStage;
                         break;
@@ -376,13 +386,14 @@ namespace GGemCo2DCore
         /// </summary>
         private void SetLoadFailed(string errorMessage)
         {
+            _mapSoundScopeController?.CancelPending();
             Debug.LogError($"맵 로드 실패: {errorMessage}");
             StartCoroutine(FadeOut());
             _currentState = MapConstants.State.Failed;
         }
 
         /// <summary>
-        /// 로딩시 보여주는 검은 화면 fade in 처리 
+        /// 로딩시 보여주는 검은 화면 fade in 처리
         /// </summary>
         /// <returns></returns>
         IEnumerator FadeIn()
@@ -431,6 +442,33 @@ namespace GGemCo2DCore
                 if (!map) continue;
                 Destroy(map);
             }
+        }
+
+        /// <summary>
+        /// 현재 로드 대상 맵의 map_sound 및 기존 BgmUid를 기준으로 다음 맵 사운드 범위를 준비합니다.
+        /// 타일맵과 캐릭터를 제거하기 전에 로드를 시작하여 맵 전환 중 필요한 AudioClip을 확보합니다.
+        /// </summary>
+        private async Task PrepareCurrentMapSoundScopeAsync()
+        {
+            if (_currentMapUid <= 0 || _tableLoaderManager == null)
+                return;
+
+            StruckTableMap targetMapData = _tableLoaderManager.GetMapData(_currentMapUid);
+            if (targetMapData == null)
+            {
+                SetLoadFailed($"맵 테이블에서 찾을 수 없습니다. Uid: {_currentMapUid}");
+                return;
+            }
+
+            if (_mapSoundScopeController == null && AddressableLoaderSound.Instance != null)
+            {
+                _mapSoundScopeController = new MapSoundScopeController(
+                    _tableLoaderManager,
+                    AddressableLoaderSound.Instance);
+            }
+
+            if (_mapSoundScopeController != null)
+                await _mapSoundScopeController.PrepareAsync(_currentMapUid, targetMapData.BgmUid);
         }
 
         /// <summary>
@@ -506,16 +544,6 @@ namespace GGemCo2DCore
                     return;
                 }
 
-                // bgm 플레이
-                if (_currentMapTableData.BgmUid > 0)
-                {
-                    _sceneGame.soundManager?.PlayByUid(_currentMapTableData.BgmUid);
-                }
-                else
-                {
-                    _sceneGame.soundManager?.StopBgm();
-                }
-
                 GameObject currentMap = Instantiate(prefab, _grid.transform);
                 _mapTileCommon = currentMap.GetComponent<MapTileCommon>();
                 if (_mapTileCommon == null)
@@ -528,8 +556,27 @@ namespace GGemCo2DCore
                 _mapTileCommon.Initialize(_currentMapTableData);
                 var result = GetMapSize();
 
-                // 로드된 맵에 맞게 맵 영역 사이즈 갱신하기 
+                // 로드된 맵에 맞게 맵 영역 사이즈 갱신하기
                 SceneGame.Instance.cameraManager?.ChangeMapSize(result.x, result.y);
+
+                // 타일맵 검증과 초기화가 끝난 뒤 새 맵 사운드를 활성화하고 이전 맵 범위를 해제합니다.
+                if (_mapSoundScopeController != null)
+                {
+                    _mapSoundScopeController.Activate(
+                        _sceneGame.soundManager,
+                        _currentMapUid,
+                        _currentMapTableData.BgmUid);
+                }
+                else if (_currentMapTableData.BgmUid > 0)
+                {
+                    // AddressableLoaderSound가 없는 특수 테스트 환경에서는 기존 BGM 동작을 유지합니다.
+                    _sceneGame.soundManager?.PlayByUid(_currentMapTableData.BgmUid);
+                }
+                else
+                {
+                    _sceneGame.soundManager?.StopBgm();
+                    _sceneGame.soundManager?.StopAmbient();
+                }
 
                 OnLoadTilemapCompleteMap?.Invoke(_mapTileCommon, _grid);
 
@@ -594,7 +641,7 @@ namespace GGemCo2DCore
 
             _sceneGame.saveDataManager.Player.CurrentMapUid = _currentMapUid;
             // 마지막으로 있었던 마을 저장
-            if (_mapSettings != null && _mapSettings.useStartMapTown && _currentMapTableData.Type == _mapSettings.typeMapTown) 
+            if (_mapSettings != null && _mapSettings.useStartMapTown && _currentMapTableData.Type == _mapSettings.typeMapTown)
             {
                 _sceneGame.saveDataManager.MapProgress.SaveLastTownMapUid(_currentMapUid);
             }
@@ -624,7 +671,7 @@ namespace GGemCo2DCore
         }
 
         /// <summary>
-        /// 몬스터 죽었을때 리젠 처리 
+        /// 몬스터 죽었을때 리젠 처리
         /// </summary>
         /// <param name="monsterVid"></param>
         public void OnDeadMonster(int monsterVid)

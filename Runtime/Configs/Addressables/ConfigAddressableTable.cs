@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 
 namespace GGemCo2DCore
 {
@@ -18,6 +18,7 @@ namespace GGemCo2DCore
         // 테이블 이름들 (필요 시 enum으로 승격 가능)
         public const string None             = "None";
         public const string Map              = "map";
+        public const string MapSound         = "map_sound";
         public const string MapEntryRule     = "map_entry_rule";
         public const string Monster          = "monster";
         public const string MonsterPhase     = "monster_phase";
@@ -78,6 +79,7 @@ namespace GGemCo2DCore
 
         // 개별 항목
         public static readonly AddressableAssetInfo TableMap             = Make(Map);
+        public static readonly AddressableAssetInfo TableMapSound        = Make(MapSound);
         public static readonly AddressableAssetInfo TableMapEntryRule    = Make(MapEntryRule);
         public static readonly AddressableAssetInfo TableMonster         = Make(Monster);
         public static readonly AddressableAssetInfo TableMonsterPhase    = Make(MonsterPhase);
@@ -139,7 +141,7 @@ namespace GGemCo2DCore
         // 전체 목록 + 읽기 전용 뷰
         public static readonly List<AddressableAssetInfo> All = new()
         {
-            TableMap, TableMapEntryRule, TableMonster, TableMonsterPhase, TableNpc, TableAnimation, TableItem, TableItemVisual,
+            TableMap, TableMapSound, TableMapEntryRule, TableMonster, TableMonsterPhase, TableNpc, TableAnimation, TableItem, TableItemVisual,
             TableItemBaseOption, TableItemAffixDef, TableItemAffixPool, TableItemRollRule,
             TableMonsterDropRate, TableNpcDropRate, TableItemDropGroup, TableExp, TableWindow, TableUIEffect,
             // Status 3분리 테이블

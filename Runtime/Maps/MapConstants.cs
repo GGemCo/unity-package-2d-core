@@ -1,4 +1,4 @@
-﻿namespace GGemCo2DCore
+namespace GGemCo2DCore
 {
     public static class MapConstants
     {
@@ -24,6 +24,7 @@
         {
             None,
             FadeIn,               // 검정색 스프라이트 페이드 인
+            LoadSoundScope,        // 다음 맵에서 사용할 BGM, 환경음 및 선로드 사운드 범위 준비
             UnloadPreviousStage,  // 이전 스테이지의 몬스터 인스턴스를 제거하고 메모리 정리를 진행
             LoadTilemapPrefab,    // 맵에 필요한 타일맵 프리팹 불러오기
             LoadCharacterPrefabs,   // 맵에 배치되는 몬스터, Npc 프리팹 불러오기
@@ -35,7 +36,7 @@
             Complete,             // 완료
             Failed,                // 실패
         }
-        
+
         public const float FadeDuration = 0.7f;
 
     }

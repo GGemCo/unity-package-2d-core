@@ -77,8 +77,32 @@ namespace GGemCo2DCore
         /// <returns>연결된 대표 사운드 UID이며, 설정이 없으면 0입니다.</returns>
         public int GetSoundButtonClickUid(SoundConstants.UIButtonType buttonType)
         {
-            var info = buttonClickSounds.Find(x => x.type == buttonType);
+            MappingButtonClickSound info = buttonClickSounds?.Find(x => x != null && x.type == buttonType);
             return info?.soundUid ?? 0;
+        }
+
+        /// <summary>
+        /// 게임 시작 시 전역 UI 공용 범위로 미리 로드할 버튼 사운드 UID를 반환합니다.
+        /// 같은 UID와 0 이하 값은 제거합니다.
+        /// </summary>
+        /// <returns>중복이 제거된 대표 sound UID 목록입니다.</returns>
+        public IReadOnlyList<int> GetCommonUiSoundUids()
+        {
+            List<int> result = new List<int>();
+            HashSet<int> registered = new HashSet<int>();
+            if (buttonClickSounds == null)
+                return result;
+
+            for (int i = 0; i < buttonClickSounds.Count; i++)
+            {
+                MappingButtonClickSound mapping = buttonClickSounds[i];
+                if (mapping == null || mapping.soundUid <= 0 || !registered.Add(mapping.soundUid))
+                    continue;
+
+                result.Add(mapping.soundUid);
+            }
+
+            return result;
         }
 
         /// <summary>

@@ -16,7 +16,7 @@ namespace GGemCo2DCore
     public class GameLoaderManager : MonoBehaviour
     {
         public static GameLoaderManager Instance { get; private set; }
-        
+
         public sealed class EventArgsBeforeLoadStart : EventArgs
         {
             public bool Handled { get; set; } // 외부에서 처리했으면 true
@@ -24,7 +24,7 @@ namespace GGemCo2DCore
 
         public static Action<GameLoaderManager, EventArgsBeforeLoadStart> BeforeLoadStart;
         public static Action<GameLoaderManager, EventArgsBeforeLoadStart> BeforeLoadStartInLoadingScene;
-        
+
         private TextMeshProUGUI _textLoadingPercent;
         public void SetTextLoadingPercent(TextMeshProUGUI value) => _textLoadingPercent = value;
 
@@ -80,7 +80,7 @@ namespace GGemCo2DCore
         private void StartLoading(IEnumerable<string> allowedIds = null)
         {
             if (_isStarted) return;
-            
+
             var e = new EventArgsBeforeLoadStart { Handled = false };
 
             // 모든 구독자에게 알림
@@ -89,12 +89,12 @@ namespace GGemCo2DCore
             // 아무도 처리하지 않았을때
             if (!e.Handled)
             {
-                
+
             }
-            
+
             _isStarted = true;
             _isLoadComplete = false;
-            
+
             // 필터 + 정렬
             var targetSteps = (allowedIds == null)
                 ? _steps.OrderBy(s => s.Order).ToList()
@@ -177,12 +177,12 @@ namespace GGemCo2DCore
 
         public bool RegistryTable()
         {
-            
+
             return true;
         }
 
         public void StartLoadingInSceneLoading()
-        { 
+        {
             // 필요한 로더/매니저 찾기(또는 생성)
             var tableLoader = CompatObjectFind.FindFirst<TableLoaderManager>() ?? new GameObject("TableLoaderManager").AddComponent<TableLoaderManager>();
             var addrPrefabCommon = CompatObjectFind.FindFirst<AddressableLoaderPrefabCommon>() ?? new GameObject("AddressableLoaderPrefabCommon").AddComponent<AddressableLoaderPrefabCommon>();
@@ -196,7 +196,7 @@ namespace GGemCo2DCore
             var addressableLoaderCutscene = CompatObjectFind.FindFirst<AddressableLoaderCutscene>() ?? new GameObject("AddressableLoaderCutscene").AddComponent<AddressableLoaderCutscene>();
             var addressableLoaderWorldMap = CompatObjectFind.FindFirst<AddressableLoaderWorldMap>() ?? new GameObject("AddressableLoaderWorldMap").AddComponent<AddressableLoaderWorldMap>();
             var addressableLoaderCharacterThumbnail = CompatObjectFind.FindFirst<AddressableLoaderCharacterThumbnail>() ?? new GameObject("AddressableLoaderCharacterThumbnail").AddComponent<AddressableLoaderCharacterThumbnail>();
-            
+
             // 테이블 대상 목록은 프로젝트/씬에 따라 별도 주입(예: ScriptableObject나 Config에서)
             var targetTables = ConfigAddressableTable.All; // 사용 중인 곳에서 구현(예시)
 
@@ -247,10 +247,10 @@ namespace GGemCo2DCore
                 id: "core.sound.preload",
                 order: 350,
                 localizedKey: LocalizationConstants.Keys.Loading.TextTypeSound(),
-                startTask: () => addrSound.PreloadMarkedSoundsAsync(tableLoader),
+                startTask: () => addrSound.PreloadStartupSoundsAsync(tableLoader),
                 getProgress: () => addrSound.GetLoadProgress()
             ));
-            
+
             // 시작 직후 반드시 필요하지 않은 자산은 선로드 대상에서 제외합니다.
             // 실제 사용 시 각 AddressableLoader가 지연 로드합니다.
             _ = addressableLoaderCharacterImageName;
@@ -264,10 +264,10 @@ namespace GGemCo2DCore
                 localizedKey: LocalizationConstants.Keys.Loading.TextTypeSaveData(),
                 saveDataLoader: saveData
             ));
-            
+
             var e = new EventArgsBeforeLoadStart { Handled = false };
             BeforeLoadStartInLoadingScene?.Invoke(this, e);
-            
+
             StartLoading();
         }
 
@@ -286,7 +286,7 @@ namespace GGemCo2DCore
                 ConfigAddressableTable.TableSoundSfx,
                 ConfigAddressableTable.TableSoundVariant,
             };
-            
+
             Register(new AddressableTaskStep(
                 id: "core.settings",
                 order: 200,
@@ -301,7 +301,7 @@ namespace GGemCo2DCore
                 localizationManager: loc,
                 localeCode: PlayerPrefsManager.LoadLocalizationLocaleCode()
             ));
-            
+
             Register(new TableLoadStep(
                 id: "core.table",
                 order: 240,
@@ -314,7 +314,7 @@ namespace GGemCo2DCore
                 id: "core.sound.intro.preload",
                 order: 355,
                 localizedKey: LocalizationConstants.Keys.Loading.TextTypeSound(),
-                startTask: () => addrSound.PreloadMarkedSoundsAsync(tableLoader, true),
+                startTask: () => addrSound.PreloadStartupSoundsAsync(tableLoader, true),
                 getProgress: () => addrSound.GetLoadProgress()
             ));
             StartLoading();

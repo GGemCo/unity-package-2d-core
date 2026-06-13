@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using GGemCo2DCore;
@@ -12,6 +12,14 @@ namespace GGemCo2DCoreEditor
             => LoadTable<TableMap>(ConfigAddressableTable.TableMap.Path, forceReload);
 
         /// <summary>
+        /// 에디터 환경에서 선택 사항인 map_sound 테이블을 로드합니다.
+        /// </summary>
+        /// <param name="forceReload">캐시를 무시하고 다시 로드할지 여부입니다.</param>
+        /// <returns>로드된 맵 사운드 테이블이며, 파일이 없으면 빈 테이블입니다.</returns>
+        public static TableMapSound LoadMapSoundTable(bool forceReload = true)
+            => TryLoadOptionalTable<TableMapSound>(ConfigAddressableTable.TableMapSound.Path, forceReload);
+
+        /// <summary>
         /// 에디터 환경에서 map_entry_rule 테이블을 로드합니다.
         /// </summary>
         /// <param name="forceReload">캐시를 무시하고 다시 로드할지 여부입니다.</param>
@@ -20,7 +28,7 @@ namespace GGemCo2DCoreEditor
         {
             return LoadTable<TableMapEntryRule>(ConfigAddressableTable.TableMapEntryRule.Path, forceReload);
         }
-        
+
         public static TableNpc LoadNpcTable(bool forceReload = true)
         {
             return LoadTable<TableNpc>(ConfigAddressableTable.TableNpc.Path, forceReload);
@@ -44,7 +52,7 @@ namespace GGemCo2DCoreEditor
 
         public static TableItemVisual LoadItemVisualTable(bool forceReload = true)
             => LoadTable<TableItemVisual>(ConfigAddressableTable.TableItemVisual.Path, forceReload);
-        
+
         public static TableItemUse LoadItemUseTable(bool forceReload = true)
             => LoadTable<TableItemUse>(ConfigAddressableTable.TableItemUse.Path, forceReload);
 

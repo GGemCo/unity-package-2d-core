@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Threading.Tasks;
 using UnityEngine;
 using UnityEngine.AddressableAssets;
@@ -9,7 +9,7 @@ namespace GGemCo2DCore
     public class TableLoaderBase : MonoBehaviour
     {
         protected TableRegistry registry;
-        
+
         private bool EnsureInitialized()
         {
             if (registry != null) return true;
@@ -157,13 +157,14 @@ namespace GGemCo2DCore
 
         /// <summary>
         /// 마이그레이션 중 누락되어도 로딩 오류로 취급하지 않을 테이블인지 확인합니다.
-        /// - projectile.txt는 공용 메인 테이블이므로 필수이고, projectile_linear/arc/path/linear_then_segments 상세 테이블만 선택 사항입니다.
+        /// map_sound와 신규 상세/variant 테이블은 데이터 파일이 생성되기 전까지 선택 사항으로 처리합니다.
         /// </summary>
         /// <param name="key">Addressables 테이블 키입니다.</param>
         /// <returns>누락을 허용하면 true를 반환합니다.</returns>
         private static bool IsOptionalMissingTable(string key)
         {
-            return key == ConfigAddressableTable.TableProjectileLinear.Key
+            return key == ConfigAddressableTable.TableMapSound.Key
+                   || key == ConfigAddressableTable.TableProjectileLinear.Key
                    || key == ConfigAddressableTable.TableProjectileArc.Key
                    || key == ConfigAddressableTable.TableProjectilePath.Key
                    || key == ConfigAddressableTable.TableProjectileLinearThenSegments.Key

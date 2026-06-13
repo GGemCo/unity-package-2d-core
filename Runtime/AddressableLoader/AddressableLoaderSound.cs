@@ -30,10 +30,13 @@ namespace GGemCo2DCore
 
         private const string WarmupGroupPrefix = "core.sound";
         private const int DefaultPreloadConcurrentRequestCount = 3;
+        private const string GlobalUiCommonScopeId = "UICommon";
 
         private SoundScopeManager _scopeManager;
         private float _prefabLoadProgress;
         private bool _isDestroying;
+        private SoundScopeLease _globalUiCommonScopeLease;
+        private int _globalUiCommonRequestVersion;
 
         /// <summary>
         /// 맵, UI 윈도우 등 사용 범위별 사운드 참조를 관리하는 매니저입니다.
@@ -74,6 +77,10 @@ namespace GGemCo2DCore
         /// </summary>
         private void ReleaseAll()
         {
+            _globalUiCommonRequestVersion++;
+            _globalUiCommonScopeLease?.Dispose();
+            _globalUiCommonScopeLease = null;
+
             _scopeManager?.Dispose();
             _scopeManager = null;
 
@@ -172,6 +179,58 @@ namespace GGemCo2DCore
         {
             List<string> keys = CollectPreloadSoundKeys(tableLoaderManager, introOnly);
             await PreloadAudioClipsAsync(keys);
+        }
+
+        /// <summary>
+        /// PreLoad가 활성화된 사운드와 공용 UI 버튼 사운드를 게임 시작 범위에 준비합니다.
+        /// 공용 UI 범위는 새 임대를 먼저 획득한 뒤 기존 임대를 교체하여 갱신 중 참조 공백을 방지합니다.
+        /// </summary>
+        /// <param name="tableLoaderManager">사운드 테이블을 보유한 테이블 로더입니다.</param>
+        /// <param name="introOnly">true이면 PreLoad 행은 Intro용만 선별하되 공용 UI 버튼 사운드는 함께 준비합니다.</param>
+        public async Task PreloadStartupSoundsAsync(TableLoaderManager tableLoaderManager, bool introOnly = false)
+        {
+            await PreloadMarkedSoundsAsync(tableLoaderManager, introOnly);
+            await RefreshGlobalUiCommonScopeAsync(tableLoaderManager);
+            _prefabLoadProgress = 1f;
+        }
+
+        /// <summary>
+        /// 사운드 설정에 등록된 공용 UI 버튼 사운드를 전역 범위로 획득합니다.
+        /// </summary>
+        /// <param name="tableLoaderManager">대표 사운드를 실제 AudioClip 키로 해석할 테이블 로더입니다.</param>
+        private async Task RefreshGlobalUiCommonScopeAsync(TableLoaderManager tableLoaderManager)
+        {
+            int requestVersion = ++_globalUiCommonRequestVersion;
+            GGemCoSoundSettings soundSettings = AddressableLoaderSettings.Instance?.soundSettings;
+            IReadOnlyList<int> soundUids = soundSettings?.GetCommonUiSoundUids() ?? Array.Empty<int>();
+            SoundUsageAddressKeyResolver resolver = new SoundUsageAddressKeyResolver(tableLoaderManager);
+            IReadOnlyList<string> addressKeys = resolver.ResolveAddressKeys(soundUids);
+
+            SoundScopeLease acquiredLease = null;
+            if (addressKeys.Count > 0 && !_isDestroying)
+            {
+                try
+                {
+                    acquiredLease = await AcquireScopeAsync(
+                        SoundUsageScopeKey.Global(GlobalUiCommonScopeId),
+                        addressKeys);
+                }
+                catch (Exception ex)
+                {
+                    GcLogger.LogWarning(
+                        $"[AddressableLoaderSound] 공용 UI 사운드 범위를 준비하지 못했습니다. error={ex.Message}");
+                }
+            }
+
+            if (_isDestroying || requestVersion != _globalUiCommonRequestVersion)
+            {
+                acquiredLease?.Dispose();
+                return;
+            }
+
+            SoundScopeLease previousLease = _globalUiCommonScopeLease;
+            _globalUiCommonScopeLease = acquiredLease;
+            previousLease?.Dispose();
         }
 
         /// <summary>

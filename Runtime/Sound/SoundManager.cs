@@ -99,7 +99,7 @@ namespace GGemCo2DCore
         /// <param name="uid">외부 시스템이 사용하는 대표 sound UID입니다.</param>
         public void PlayByUid(int uid)
         {
-            PlayByUidInternal(uid, null, 0f, SoundPlaybackStopPolicy.Auto);
+            PlayByUidInternal(uid, null, 0f, SoundPlaybackStopPolicy.Auto, 0f);
         }
 
         /// <summary>
@@ -110,7 +110,7 @@ namespace GGemCo2DCore
         /// <param name="durationSeconds">루프 SFX를 자동 정리할 요청 지속 시간입니다. 0 이하이면 클립 길이를 사용합니다.</param>
         public void PlayByUid(int uid, bool? loopOverride, float durationSeconds = 0f)
         {
-            PlayByUidInternal(uid, loopOverride, durationSeconds, SoundPlaybackStopPolicy.Auto);
+            PlayByUidInternal(uid, loopOverride, durationSeconds, SoundPlaybackStopPolicy.Auto, 0f);
         }
 
         /// <summary>
@@ -127,7 +127,8 @@ namespace GGemCo2DCore
                 request.soundUid,
                 request.ResolveLoopOverride(),
                 request.ResolveDuration(),
-                request.stopPolicy);
+                request.stopPolicy,
+                0f);
         }
 
         /// <summary>
@@ -137,12 +138,14 @@ namespace GGemCo2DCore
         /// <param name="loopOverride">null이면 테이블의 Loop 값을 사용하고, 값이 있으면 해당 루프 여부를 사용합니다.</param>
         /// <param name="durationSeconds">루프 SFX를 자동 정리할 요청 지속 시간입니다. 0 이하이면 클립 길이를 사용합니다.</param>
         /// <param name="stopPolicy">사운드 정지 정책입니다.</param>
+        /// <param name="bgmFadeDurationOverride">BGM일 때 적용할 요청 단위 페이드 시간입니다.</param>
         /// <returns>SFX처럼 정지 가능한 재생이면 핸들, 아니면 null입니다.</returns>
         private SoundPlaybackHandle PlayByUidInternal(
             int uid,
             bool? loopOverride,
             float durationSeconds,
-            SoundPlaybackStopPolicy stopPolicy)
+            SoundPlaybackStopPolicy stopPolicy,
+            float bgmFadeDurationOverride)
         {
             if (!_tableLoaderManager || !_addressableLoaderSound || _soundResolver == null) return null;
             if (!TryResolveSound(uid, out ResolvedSound resolved)) return null;
@@ -153,7 +156,7 @@ namespace GGemCo2DCore
             if (resolved.Type == SoundConstants.Type.Bgm)
             {
                 int requestVersion = ++_bgmRequestVersion;
-                PlayBgmAsync(resolved, requestVersion);
+                PlayBgmAsync(resolved, requestVersion, bgmFadeDurationOverride);
             }
             else if (resolved.Type == SoundConstants.Type.Ambient)
             {
@@ -189,7 +192,11 @@ namespace GGemCo2DCore
         /// </summary>
         /// <param name="resolved">해석된 BGM 재생 정보입니다.</param>
         /// <param name="requestVersion">최신 BGM 요청을 식별하는 버전입니다.</param>
-        private async void PlayBgmAsync(ResolvedSound resolved, int requestVersion)
+        /// <param name="fadeDurationOverride">0보다 크면 리소스 FadeDuration보다 우선할 페이드 시간입니다.</param>
+        private async void PlayBgmAsync(
+            ResolvedSound resolved,
+            int requestVersion,
+            float fadeDurationOverride)
         {
             if (!resolved.ShouldPlay || _addressableLoaderSound == null || string.IsNullOrWhiteSpace(resolved.FileName))
                 return;
@@ -218,7 +225,27 @@ namespace GGemCo2DCore
             }
 
             // BGM은 사용자 BGM 볼륨과 별개로, 테이블별 Volume/VolumeScale 값을 배율로 적용합니다.
-            _soundControllerBgm.Play(lease, this, resolved.Volume);
+            _soundControllerBgm.Play(lease, this, resolved.Volume, fadeDurationOverride > 0f ? fadeDurationOverride : resolved.FadeDuration);
+        }
+
+        /// <summary>
+        /// 대표 sound UID를 BGM으로 재생하고 선택적으로 페이드 시간을 덮어씁니다.
+        /// BGM 타입이 아닌 UID는 재생하지 않습니다.
+        /// </summary>
+        /// <param name="uid">재생할 대표 sound UID입니다.</param>
+        /// <param name="fadeDurationOverride">0보다 크면 실제 BGM 리소스의 FadeDuration 대신 사용할 시간입니다.</param>
+        public void PlayBgmByUid(int uid, float fadeDurationOverride = 0f)
+        {
+            if (!TryResolveSound(uid, out ResolvedSound resolved) ||
+                !resolved.ShouldPlay ||
+                resolved.Type != SoundConstants.Type.Bgm)
+            {
+                GcLogger.LogWarning($"[SoundManager] BGM으로 해석할 수 없는 sound UID입니다. uid={uid}");
+                return;
+            }
+
+            int requestVersion = ++_bgmRequestVersion;
+            PlayBgmAsync(resolved, requestVersion, Mathf.Max(0f, fadeDurationOverride));
         }
 
         /// <summary>
@@ -327,21 +354,30 @@ namespace GGemCo2DCore
                 {
                     StruckTableSound sound = pair.Value;
                     if (sound is not { UseIntroScene: true, Type: SoundConstants.Type.Sfx }) continue;
-                    AddIntroSfxResourceUidsForSound(sound, introSfxUids, registeredUids);
+                    AddSfxResourceUidsForSound(sound, introSfxUids, registeredUids);
                 }
+            }
+
+            GGemCoSoundSettings soundSettings = AddressableLoaderSettings.Instance?.soundSettings;
+            IReadOnlyList<int> commonUiSoundUids = soundSettings?.GetCommonUiSoundUids() ?? Array.Empty<int>();
+            for (int i = 0; i < commonUiSoundUids.Count; i++)
+            {
+                StruckTableSound sound = _tableLoaderManager.GetSoundData(commonUiSoundUids[i], false);
+                if (sound is { Type: SoundConstants.Type.Sfx })
+                    AddSfxResourceUidsForSound(sound, introSfxUids, registeredUids);
             }
 
             _soundControllerSfx?.InitializeSelective(_tableLoaderManager.TableSoundSfx, introSfxUids);
         }
 
         /// <summary>
-        /// 인트로 선로딩 대상 대표 sound 행에서 실제 SFX 리소스 UID 후보를 수집합니다.
-        /// Direct 연결과 Variant 후보를 기준으로 실제 SFX 리소스 UID를 수집합니다.
+        /// 대표 sound 행에서 실제 SFX 리소스 UID 후보를 수집합니다.
+        /// Direct 연결, 활성 Variant 후보 및 폴백 리소스를 모두 포함합니다.
         /// </summary>
         /// <param name="sound">대표 sound 행입니다.</param>
         /// <param name="target">수집 결과 목록입니다.</param>
         /// <param name="registeredUids">중복 등록 방지용 UID 집합입니다.</param>
-        private void AddIntroSfxResourceUidsForSound(StruckTableSound sound, List<int> target, HashSet<int> registeredUids)
+        private void AddSfxResourceUidsForSound(StruckTableSound sound, List<int> target, HashSet<int> registeredUids)
         {
             if (sound == null || target == null || registeredUids == null)
                 return;
@@ -364,6 +400,12 @@ namespace GGemCo2DCore
 
                     AddIntroSfxUid(target, registeredUids, variant.CandidateResourceUid);
                 }
+            }
+
+            if (sound.FallbackResourceUid > 0 &&
+                _tableLoaderManager.TableSoundSfx?.GetDataByUid(sound.FallbackResourceUid) != null)
+            {
+                AddIntroSfxUid(target, registeredUids, sound.FallbackResourceUid);
             }
         }
 

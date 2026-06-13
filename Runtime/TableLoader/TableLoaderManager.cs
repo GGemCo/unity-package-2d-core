@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using UnityEngine;
 
 namespace GGemCo2DCore
@@ -12,6 +12,7 @@ namespace GGemCo2DCore
 
         public TableNpc TableNpc { get; private set; } = new TableNpc();
         public TableMap TableMap { get; private set; } = new TableMap();
+        public TableMapSound TableMapSound { get; private set; } = new TableMapSound();
         public TableMapEntryRule TableMapEntryRule { get; private set; } = new TableMapEntryRule();
         public TableMonster TableMonster { get; private set; } = new TableMonster();
         public TableMonsterPhase TableMonsterPhase { get; private set; } = new TableMonsterPhase();
@@ -68,7 +69,7 @@ namespace GGemCo2DCore
         public TableSimulationGrowth TableSimulationGrowth { get; private set; } = new TableSimulationGrowth();
         public TableItemUse TableItemUse { get; private set; } = new TableItemUse();
         public TableItemUseAction TableItemUseAction { get; private set; } = new TableItemUseAction();
-        
+
         protected void Awake()
         {
             if (!Instance)
@@ -85,6 +86,7 @@ namespace GGemCo2DCore
                 registry.Register(TableMonsterPhase);
                 registry.Register(TableNpc);
                 registry.Register(TableMap);
+                registry.Register(TableMapSound);
                 registry.Register(TableMapEntryRule);
                 registry.Register(TableItem);
                 registry.Register(TableItemVisual);
@@ -168,7 +170,7 @@ namespace GGemCo2DCore
             return 0;
         }
 
-        
+
 
         /// <summary>
         /// Locale 변경 등으로 인해, 로드 시점에 캐시된 표시용 Name 필드를 다시 로컬라이즈합니다.
