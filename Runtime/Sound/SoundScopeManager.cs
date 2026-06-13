@@ -1,6 +1,8 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Threading.Tasks;
+using UnityEngine;
 
 namespace GGemCo2DCore
 {
@@ -14,6 +16,9 @@ namespace GGemCo2DCore
             public SoundUsageScopeKey ScopeKey;
             public string[] LoadedKeys;
             public SoundScopeLease Lease;
+            public double LoadDurationMilliseconds;
+            public float AcquiredRealtimeSeconds;
+            public int FailedKeyCount;
         }
 
         private readonly AddressableLoaderSound _loader;
@@ -52,6 +57,7 @@ namespace GGemCo2DCore
             if (!scopeKey.IsValid)
                 throw new ArgumentException("사운드 범위 키가 비어 있습니다.", nameof(scopeKey));
 
+            Stopwatch stopwatch = Stopwatch.StartNew();
             string[] normalizedKeys = NormalizeKeys(addressKeys);
             List<string> loadedKeys = new List<string>(normalizedKeys.Length);
             List<string> failedKeys = new List<string>();
@@ -80,6 +86,7 @@ namespace GGemCo2DCore
                 throw new ObjectDisposedException(nameof(SoundScopeManager));
             }
 
+            stopwatch.Stop();
             long leaseId = ++_nextLeaseId;
             string[] loadedKeyArray = loadedKeys.ToArray();
             string[] failedKeyArray = failedKeys.ToArray();
@@ -95,6 +102,9 @@ namespace GGemCo2DCore
                 ScopeKey = scopeKey,
                 LoadedKeys = loadedKeyArray,
                 Lease = lease,
+                LoadDurationMilliseconds = stopwatch.Elapsed.TotalMilliseconds,
+                AcquiredRealtimeSeconds = Time.realtimeSinceStartup,
+                FailedKeyCount = failedKeyArray.Length,
             });
 
             return lease;
@@ -132,6 +142,38 @@ namespace GGemCo2DCore
             _activeScopes.Remove(leaseId);
             ReleaseKeys(activeScope.LoadedKeys);
             activeScope.Lease?.MarkReleasedByOwner();
+        }
+
+
+        /// <summary>
+        /// 현재 활성 범위 임대 목록을 진단용 스냅샷으로 복사합니다.
+        /// 반환된 목록은 원본 수명과 독립적이므로 에디터 디버그 창에서 안전하게 사용할 수 있습니다.
+        /// </summary>
+        /// <returns>활성 범위별 로드 결과와 소요 시간 목록입니다.</returns>
+        internal IReadOnlyList<SoundScopeDiagnosticsEntry> CreateDiagnosticsSnapshot()
+        {
+            if (_activeScopes.Count == 0)
+                return Array.Empty<SoundScopeDiagnosticsEntry>();
+
+            List<SoundScopeDiagnosticsEntry> result = new List<SoundScopeDiagnosticsEntry>(_activeScopes.Count);
+            foreach (KeyValuePair<long, ActiveScope> pair in _activeScopes)
+            {
+                ActiveScope scope = pair.Value;
+                if (scope == null)
+                    continue;
+
+                result.Add(new SoundScopeDiagnosticsEntry
+                {
+                    ScopeKey = scope.ScopeKey.ToString(),
+                    LoadedKeyCount = scope.LoadedKeys?.Length ?? 0,
+                    FailedKeyCount = scope.FailedKeyCount,
+                    LoadDurationMilliseconds = scope.LoadDurationMilliseconds,
+                    AcquiredRealtimeSeconds = scope.AcquiredRealtimeSeconds,
+                });
+            }
+
+            result.Sort((left, right) => string.Compare(left.ScopeKey, right.ScopeKey, StringComparison.Ordinal));
+            return result;
         }
 
         /// <summary>

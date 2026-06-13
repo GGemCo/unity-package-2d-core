@@ -15,6 +15,7 @@ namespace GGemCo2DCoreEditor
         private bool _rebuildRuntimeTablePack = true;
         private Vector2 _scrollPosition;
         private SoundUsageManifestBuildResult _lastResult;
+        private SoundUsageManifestValidationResult _lastValidationResult;
 
         /// <summary>
         /// 사운드 사용 매니페스트 생성 도구를 엽니다.
@@ -53,6 +54,9 @@ namespace GGemCo2DCoreEditor
                 if (GUILayout.Button("전체 분석 및 매니페스트 생성", GUILayout.Height(34f)))
                     BuildManifest();
 
+                if (GUILayout.Button("현재 매니페스트 검증", GUILayout.Width(150f), GUILayout.Height(34f)))
+                    ValidateManifest();
+
                 using (new EditorGUI.DisabledScope(
                            string.IsNullOrWhiteSpace(ConfigAddressableTable.TableSoundUsageManifest.Path)))
                 {
@@ -63,6 +67,7 @@ namespace GGemCo2DCoreEditor
 
             EditorGUILayout.Space(10f);
             DrawResult();
+            DrawValidationResult();
         }
 
         /// <summary>
@@ -73,14 +78,41 @@ namespace GGemCo2DCoreEditor
             _lastResult = SoundUsageManifestBuilder.Build(_rebuildRuntimeTablePack);
             if (_lastResult.Succeeded)
             {
+                _lastValidationResult = SoundUsageManifestValidator.Validate(checkStaleness: true);
                 Debug.Log(
-                    $"[SoundUsageManifest] 생성 완료. path={_lastResult.OutputPath}, records={_lastResult.RecordCount}, contributors={_lastResult.ContributorCount}, warnings={_lastResult.WarningCount}");
-                ShowNotification(new GUIContent("사운드 사용 매니페스트 생성 완료"));
+                    $"[SoundUsageManifest] 생성 완료. path={_lastResult.OutputPath}, records={_lastResult.RecordCount}, contributors={_lastResult.ContributorCount}, warnings={_lastResult.WarningCount}, validationErrors={_lastValidationResult.ErrorCount}");
+                ShowNotification(new GUIContent(
+                    _lastValidationResult.IsValid
+                        ? "사운드 사용 매니페스트 생성 및 검증 완료"
+                        : "생성 완료, 검증 오류 확인 필요"));
             }
             else
             {
                 Debug.LogError("[SoundUsageManifest] 생성에 실패했습니다. 도구 창의 진단 메시지를 확인해주세요.");
                 ShowNotification(new GUIContent("사운드 사용 매니페스트 생성 실패"));
+            }
+
+            Repaint();
+        }
+
+
+        /// <summary>
+        /// 현재 매니페스트, 실제 AudioClip 및 Addressables 연결을 검사합니다.
+        /// </summary>
+        private void ValidateManifest()
+        {
+            _lastValidationResult = SoundUsageManifestValidator.Validate(checkStaleness: true);
+            if (_lastValidationResult.IsValid)
+            {
+                Debug.Log(
+                    $"[SoundUsageManifest] 검증 통과. rows={_lastValidationResult.ManifestRowCount}, resources={_lastValidationResult.ResourceCount}, warnings={_lastValidationResult.WarningCount}");
+                ShowNotification(new GUIContent("사운드 매니페스트 검증 통과"));
+            }
+            else
+            {
+                Debug.LogError(
+                    $"[SoundUsageManifest] 검증 실패. errors={_lastValidationResult.ErrorCount}, warnings={_lastValidationResult.WarningCount}");
+                ShowNotification(new GUIContent("사운드 매니페스트 검증 실패"));
             }
 
             Repaint();
@@ -135,6 +167,36 @@ namespace GGemCo2DCoreEditor
             for (int i = 0; i < messages.Count; i++)
                 EditorGUILayout.SelectableLabel(messages[i], GUILayout.MinHeight(18f));
             EditorGUILayout.EndScrollView();
+        }
+
+        /// <summary>
+        /// 마지막 매니페스트 검증 결과를 심각도와 함께 표시합니다.
+        /// </summary>
+        private void DrawValidationResult()
+        {
+            if (_lastValidationResult == null)
+                return;
+
+            EditorGUILayout.Space(10f);
+            EditorGUILayout.LabelField("매니페스트 검증 결과", EditorStyles.boldLabel);
+            EditorGUILayout.HelpBox(
+                $"통과: {_lastValidationResult.IsValid}\n" +
+                $"행 수: {_lastValidationResult.ManifestRowCount}, 리소스 수: {_lastValidationResult.ResourceCount}\n" +
+                $"오류: {_lastValidationResult.ErrorCount}, 경고: {_lastValidationResult.WarningCount}",
+                _lastValidationResult.IsValid ? MessageType.Info : MessageType.Error);
+
+            IReadOnlyList<SoundUsageValidationMessage> messages = _lastValidationResult.Messages;
+            for (int i = 0; i < messages.Count; i++)
+            {
+                SoundUsageValidationMessage message = messages[i];
+                MessageType type = message.Severity switch
+                {
+                    SoundUsageValidationSeverity.Error => MessageType.Error,
+                    SoundUsageValidationSeverity.Warning => MessageType.Warning,
+                    _ => MessageType.None,
+                };
+                EditorGUILayout.HelpBox(message.Message, type);
+            }
         }
     }
 }

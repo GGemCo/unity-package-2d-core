@@ -30,6 +30,7 @@ namespace GGemCo2DCoreEditor
             LocalizationCsvSync,
             SoundUIButton = 140,
             SoundUsageManifest,
+            SoundAudioImportPolicy,
             CreateHubWindow,
             Test = 200,
             CreateItem,
@@ -53,6 +54,7 @@ namespace GGemCo2DCoreEditor
             DebugFps,
             DebugPhysics2D,
             DebugMemory,
+            DebugSoundRuntime,
             ListEnabledDebugOptions,
             DisableAllDebugOptions,
             ListReleaseBuildDebugOptions,
@@ -100,6 +102,7 @@ namespace GGemCo2DCoreEditor
 
         public const string NameToolSoundUIButton = NameToolDevelopment + "UI 버튼 사운드 적용툴";
         public const string NameToolSoundUsageManifest = NameToolDevelopment + "사운드 사용 매니페스트 생성툴";
+        public const string NameToolSoundAudioImportPolicy = NameToolDevelopment + "사운드 Import 정책 검사툴";
 
         public const string NameToolCreateHubWindow = NameToolDevelopment + "오브젝트 생성툴";
         public const string NameToolTableEditor = NameToolDevelopment + "데이터 테이블 에디터";
@@ -130,6 +133,7 @@ namespace GGemCo2DCoreEditor
         public const string NameToolFps = NameToolDebug + "FPS HUD";
         public const string NameToolPhysics2D = NameToolDebug + "Physics2D HUD";
         public const string NameToolMemory = NameToolDebug + "메모리 HUD";
+        public const string NameToolSoundRuntimeDiagnostics = NameToolDebug + "사운드 런타임 진단";
         public const string NameToolListEnabledDebugOptions = NameToolDebug + "디버그 설정 리스트 보기";
         public const string NameToolDisableAllDebugOptions = NameToolDebug + "디버그 설정 모두 false 변경하기";
         public const string NameToolListReleaseBuildDebugOptions = NameToolDebug + "릴리즈 후보 디버그 설정 리스트 보기";

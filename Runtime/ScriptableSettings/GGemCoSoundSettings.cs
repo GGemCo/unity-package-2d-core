@@ -25,6 +25,15 @@ namespace GGemCo2DCore
         [SerializeField, Range(1, MaxPreloadConcurrentRequestCount)]
         private int preloadConcurrentRequestCount = DefaultPreloadConcurrentRequestCount;
 
+        [Header("사운드 진단")]
+        [Tooltip("맵 사운드 범위의 로드 시간과 개발 빌드 메모리 추정값을 로그로 출력합니다.")]
+        [SerializeField]
+        private bool enableMapScopeProfiling;
+
+        [Tooltip("이 시간 이상 걸린 맵 사운드 범위 로드는 경고로 출력합니다.")]
+        [SerializeField, Min(0f)]
+        private float slowMapScopeLoadThresholdSeconds = 0.25f;
+
         /// <summary>
         /// 처음 생성 시 한 번만 실행됨
         /// </summary>
@@ -68,6 +77,25 @@ namespace GGemCo2DCore
                 ? preloadConcurrentRequestCount
                 : DefaultPreloadConcurrentRequestCount;
             return Mathf.Clamp(resolvedCount, 1, MaxPreloadConcurrentRequestCount);
+        }
+
+
+        /// <summary>
+        /// 맵 사운드 범위 로드 시간과 메모리 진단 로그를 출력할지 여부를 반환합니다.
+        /// </summary>
+        /// <returns>진단 로그가 활성화되어 있으면 true입니다.</returns>
+        public bool IsMapScopeProfilingEnabled()
+        {
+            return enableMapScopeProfiling;
+        }
+
+        /// <summary>
+        /// 느린 맵 사운드 범위 로드로 판단할 기준 시간을 반환합니다.
+        /// </summary>
+        /// <returns>0 이상으로 보정된 초 단위 기준 시간입니다.</returns>
+        public float GetSlowMapScopeLoadThresholdSeconds()
+        {
+            return Mathf.Max(0f, slowMapScopeLoadThresholdSeconds);
         }
 
         /// <summary>

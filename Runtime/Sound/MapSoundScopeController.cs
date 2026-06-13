@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Threading.Tasks;
 
 namespace GGemCo2DCore
@@ -47,6 +48,7 @@ namespace GGemCo2DCore
             if (_isDisposed || mapUid <= 0)
                 return;
 
+            Stopwatch stopwatch = Stopwatch.StartNew();
             int requestVersion = ++_prepareVersion;
             ReleasePendingLease();
 
@@ -92,6 +94,9 @@ namespace GGemCo2DCore
                 acquiredLease?.Dispose();
                 return;
             }
+
+            stopwatch.Stop();
+            LogPrepareMetrics(mapUid, addressKeys, acquiredLease, stopwatch.Elapsed.TotalSeconds);
 
             _pendingLease = acquiredLease;
             _pendingRows = rows;
@@ -229,6 +234,57 @@ namespace GGemCo2DCore
                 if (soundUid > 0)
                     target.Add(soundUid);
             }
+        }
+
+
+        /// <summary>
+        /// 설정이 활성화된 경우 맵 사운드 범위의 로드 시간, 성공/실패 키 수 및 메모리 추정값을 출력합니다.
+        /// </summary>
+        /// <param name="mapUid">프로파일링 대상 맵 UID입니다.</param>
+        /// <param name="requestedKeys">요청한 Addressables 키 목록입니다.</param>
+        /// <param name="lease">획득된 범위 임대 객체입니다.</param>
+        /// <param name="elapsedSeconds">범위 준비에 걸린 전체 시간입니다.</param>
+        private void LogPrepareMetrics(
+            int mapUid,
+            IReadOnlyList<string> requestedKeys,
+            SoundScopeLease lease,
+            double elapsedSeconds)
+        {
+            GGemCoSoundSettings settings = AddressableLoaderSettings.Instance?.soundSettings;
+            if (settings == null || !settings.IsMapScopeProfilingEnabled())
+                return;
+
+            int requestedCount = requestedKeys?.Count ?? 0;
+            int loadedCount = lease?.LoadedKeys?.Count ?? 0;
+            int failedCount = lease?.FailedKeys?.Count ?? 0;
+            long memoryBytes = _addressableLoaderSound?.GetRuntimeMemoryBytes(lease?.LoadedKeys) ?? 0L;
+            string message =
+                $"[MapSoundProfile] mapUid={mapUid}, elapsed={elapsedSeconds * 1000d:0.###}ms, " +
+                $"requested={requestedCount}, loaded={loadedCount}, failed={failedCount}, " +
+                $"runtimeMemory={FormatBytes(memoryBytes)}";
+
+            float slowThreshold = settings.GetSlowMapScopeLoadThresholdSeconds();
+            if (slowThreshold > 0f && elapsedSeconds >= slowThreshold)
+                GcLogger.LogWarning(message);
+            else
+                GcLogger.Log(message);
+        }
+
+        /// <summary>
+        /// 바이트 값을 사운드 프로파일 로그에서 읽기 쉬운 단위로 변환합니다.
+        /// </summary>
+        /// <param name="bytes">변환할 바이트 값입니다.</param>
+        /// <returns>B, KB 또는 MB 단위 문자열입니다.</returns>
+        private static string FormatBytes(long bytes)
+        {
+            if (bytes <= 0L)
+                return "0 B";
+            if (bytes < 1024L)
+                return $"{bytes} B";
+            if (bytes < 1024L * 1024L)
+                return $"{bytes / 1024d:0.##} KB";
+
+            return $"{bytes / (1024d * 1024d):0.##} MB";
         }
 
         /// <summary>

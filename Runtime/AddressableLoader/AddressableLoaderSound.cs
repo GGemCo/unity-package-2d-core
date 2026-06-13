@@ -4,6 +4,9 @@ using System.Threading.Tasks;
 using UnityEngine;
 using UnityEngine.AddressableAssets;
 using UnityEngine.ResourceManagement.AsyncOperations;
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+using UnityEngine.Profiling;
+#endif
 
 namespace GGemCo2DCore
 {
@@ -362,6 +365,110 @@ namespace GGemCo2DCore
             scopeReferenceCount = entry.ScopeReferenceCount;
             playbackReferenceCount = entry.PlaybackReferenceCount;
             return true;
+        }
+
+        /// <summary>
+        /// 현재 로드 엔트리와 활성 범위의 진단 스냅샷을 생성합니다.
+        /// 메모리 크기 계산은 비용이 있으므로 에디터 디버그 창의 수동 새로고침처럼 제한된 시점에만 요청해야 합니다.
+        /// </summary>
+        /// <param name="includeRuntimeMemorySize">AudioClip 네이티브 메모리 추정값을 계산할지 여부입니다.</param>
+        /// <returns>현재 참조 카운트, 로드 상태 및 범위 목록의 복사본입니다.</returns>
+        public SoundRuntimeDiagnosticsSnapshot CreateDiagnosticsSnapshot(bool includeRuntimeMemorySize = false)
+        {
+            List<SoundClipDiagnosticsEntry> clips = new List<SoundClipDiagnosticsEntry>(_entries.Count);
+            HashSet<int> measuredClipIds = new HashSet<int>();
+            long totalRuntimeMemoryBytes = 0L;
+            int loadedClipCount = 0;
+            int loadingClipCount = 0;
+            int legacyPinnedClipCount = 0;
+            int totalScopeReferenceCount = 0;
+            int totalPlaybackReferenceCount = 0;
+
+            foreach (KeyValuePair<string, SoundClipEntry> pair in _entries)
+            {
+                SoundClipEntry entry = pair.Value;
+                if (entry == null)
+                    continue;
+
+                AudioClip clip = entry.Clip;
+                long runtimeMemoryBytes = 0L;
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                if (includeRuntimeMemorySize && clip != null && measuredClipIds.Add(clip.GetInstanceID()))
+                    runtimeMemoryBytes = Profiler.GetRuntimeMemorySizeLong(clip);
+#endif
+                if (clip != null)
+                    loadedClipCount++;
+                if (entry.LoadingSource != null)
+                    loadingClipCount++;
+                if (entry.IsLegacyPinned)
+                    legacyPinnedClipCount++;
+
+                totalScopeReferenceCount += entry.ScopeReferenceCount;
+                totalPlaybackReferenceCount += entry.PlaybackReferenceCount;
+                totalRuntimeMemoryBytes += runtimeMemoryBytes;
+
+                clips.Add(new SoundClipDiagnosticsEntry
+                {
+                    AddressKey = entry.AddressKey,
+                    ClipName = clip != null ? clip.name : string.Empty,
+                    ScopeReferenceCount = entry.ScopeReferenceCount,
+                    PlaybackReferenceCount = entry.PlaybackReferenceCount,
+                    IsLegacyPinned = entry.IsLegacyPinned,
+                    IsLoaded = clip != null,
+                    IsLoading = entry.LoadingSource != null,
+                    LengthSeconds = clip != null ? clip.length : 0f,
+                    RuntimeMemoryBytes = runtimeMemoryBytes,
+                });
+            }
+
+            clips.Sort((left, right) => string.Compare(left.AddressKey, right.AddressKey, StringComparison.OrdinalIgnoreCase));
+            return new SoundRuntimeDiagnosticsSnapshot
+            {
+                CapturedAtUtc = DateTime.UtcNow,
+                LoadedClipCount = loadedClipCount,
+                LoadingClipCount = loadingClipCount,
+                LegacyPinnedClipCount = legacyPinnedClipCount,
+                TotalScopeReferenceCount = totalScopeReferenceCount,
+                TotalPlaybackReferenceCount = totalPlaybackReferenceCount,
+                TotalRuntimeMemoryBytes = totalRuntimeMemoryBytes,
+                Clips = clips,
+                Scopes = _scopeManager?.CreateDiagnosticsSnapshot() ?? Array.Empty<SoundScopeDiagnosticsEntry>(),
+            };
+        }
+
+        /// <summary>
+        /// 지정한 Addressables 키 목록에 현재 로드된 AudioClip의 런타임 메모리 추정값을 합산합니다.
+        /// 개발 빌드와 에디터에서만 실제 메모리 크기를 계산하며 일반 릴리즈에서는 0을 반환합니다.
+        /// </summary>
+        /// <param name="addressKeys">메모리 크기를 조회할 AudioClip 키 목록입니다.</param>
+        /// <returns>중복 AudioClip을 한 번만 계산한 바이트 합계입니다.</returns>
+        public long GetRuntimeMemoryBytes(IEnumerable<string> addressKeys)
+        {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            if (addressKeys == null)
+                return 0L;
+
+            long totalBytes = 0L;
+            HashSet<string> visitedKeys = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            HashSet<int> measuredClipIds = new HashSet<int>();
+            foreach (string rawKey in addressKeys)
+            {
+                string key = rawKey?.Trim();
+                if (string.IsNullOrWhiteSpace(key) || !visitedKeys.Add(key))
+                    continue;
+
+                if (!_entries.TryGetValue(key, out SoundClipEntry entry) || entry?.Clip == null)
+                    continue;
+
+                AudioClip clip = entry.Clip;
+                if (measuredClipIds.Add(clip.GetInstanceID()))
+                    totalBytes += Profiler.GetRuntimeMemorySizeLong(clip);
+            }
+
+            return totalBytes;
+#else
+            return 0L;
+#endif
         }
 
         /// <summary>

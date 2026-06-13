@@ -74,6 +74,11 @@ namespace GGemCo2DCoreEditor
                 List<SoundUsageManifestBuildRecord> records =
                     NormalizeAndValidateRecords(rawRecords, tableSound, result);
                 WriteManifest(records, result.OutputPath);
+                SoundUsageManifestBuildMetadata metadata =
+                    SoundUsageManifestSourceFingerprint.CreateMetadata();
+                SoundUsageManifestSourceFingerprint.WriteMetadata(metadata);
+                result.AddMessage(
+                    $"원본 지문 저장 완료: sources={metadata.SourceCount}, fingerprint={metadata.SourceFingerprint}");
 
                 result.RecordCount = records.Count;
                 result.MapScopeCount = records
