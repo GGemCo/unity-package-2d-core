@@ -36,15 +36,25 @@ namespace GGemCo2DCore
         private bool _suppressNextDeadCutscene;
         private readonly List<IMonsterBrainRuntimeResettable> _brainRuntimeResetters = new(4);
         private bool _pendingBrainResetOnNextFadeIn;
-        private CharacterConstants.CombatStartReason _combatStartReason = CharacterConstants.CombatStartReason.None;
+        private MonsterThreatController _threatController;
         private MonsterDetectionSensor2D _detectionSensor;
         private MonsterCombatRangeProfile _combatRangeProfile;
+        private MonsterThreatProfile _threatProfile;
         private int _currentLevel = 1;
 
         /// <summary>
         /// 현재 몬스터에 적용된 감지, 기본 공격 시작, 선호 거리, 추적 한계 프로필입니다.
         /// </summary>
         public MonsterCombatRangeProfile CombatRangeProfile => _combatRangeProfile;
+
+        /// <summary>현재 몬스터에 적용된 Threat 누적 및 타겟 전환 프로필입니다.</summary>
+        public MonsterThreatProfile ThreatProfile => _threatProfile;
+
+        /// <summary>현재 Threat 순위로 선택된 전투 타겟입니다.</summary>
+        public CharacterBase CurrentCombatTarget => _threatController != null ? _threatController.CurrentTarget : null;
+
+        /// <summary>현재 기억 중인 유효 Threat 대상 수입니다.</summary>
+        public int ThreatTargetCount => _threatController != null ? _threatController.TargetCount : 0;
 
         /// <summary>
         /// 현재 스폰된 몬스터 인스턴스에 적용된 레벨입니다.
@@ -96,12 +106,12 @@ namespace GGemCo2DCore
                 transform.position = new Vector3(regenData.x, regenData.y, transform.position.z);
             }
 
+            _threatController?.ClearAllThreats();
             SetAggro(false);
             SetBattleStatusNone();
             SetStatusNone();
             ClearSubStatus();
             SetAttackerTarget(null);
-            _combatStartReason = CharacterConstants.CombatStartReason.None;
             _pendingBrainResetOnNextFadeIn = false;
             canMoveX = true;
             canMoveY = true;
@@ -137,7 +147,7 @@ namespace GGemCo2DCore
             CancelPendingPoolReturn();
             ClearPendingDeathState();
             _suppressNextDeadCutscene = false;
-            _combatStartReason = CharacterConstants.CombatStartReason.None;
+            _threatController?.ClearAllThreats();
             _controllerMonster?.StopAttackCoroutine();
             _controllerMonster?.StopAllCoroutines();
 
@@ -264,7 +274,17 @@ namespace GGemCo2DCore
             if (colliderHitArea)
                 colliderHitArea.gameObject.layer = LayerMask.NameToLayer(ConfigLayer.GetValue(ConfigLayer.Keys.HitAreaMonster));
             
-            // 순서 중요. ControllerMonster 에서 콜라이더를 사용
+            _threatController = gameObject.GetComponent<MonsterThreatController>();
+            if (_threatController == null)
+            {
+                _threatController = gameObject.AddComponent<MonsterThreatController>();
+            }
+            _threatController.Initialize(this);
+            _threatController.ThreatTargetRegistered += OnThreatTargetRegistered;
+            _threatController.ThreatTargetUnregistered += OnThreatTargetUnregistered;
+            _threatController.CurrentTargetChanged += OnCurrentThreatTargetChanged;
+
+            // 순서 중요. ControllerMonster 에서 콜라이더와 Threat 타겟을 사용합니다.
             _controllerMonster = gameObject.AddComponent<ControllerMonster>();
             _controllerMonster.Initialize(_collider2Ds);
 
@@ -361,6 +381,8 @@ namespace GGemCo2DCore
             }
 
             _combatRangeProfile = MonsterCombatRangeProfile.Create(combatProfileData, colliderAttackRange);
+            _threatProfile = MonsterThreatProfile.Create(combatProfileData);
+            _threatController?.Configure(_threatProfile);
             _deathSkillController?.SetDeathSkillMonsterUid(info.DeathSkillMonsterUid);
         }
 
@@ -437,74 +459,64 @@ namespace GGemCo2DCore
 
 
         /// <summary>
-        /// monster_combat_profile의 논리 감지 범위에서 플레이어를 발견했을 때 선공 정책을 적용합니다.
+        /// monster_combat_profile의 논리 감지 범위에서 플레이어를 발견했을 때 감지 Threat를 등록합니다.
         /// </summary>
         /// <param name="player">감지 범위에서 발견한 플레이어입니다.</param>
         public void OnDetectedPlayerByDetectionRange(Player player)
         {
-            if (!CanBeginCombatWithPlayer(player)) return;
+            if (!CanTrackThreatTarget(player)) return;
             if (GetAttackType() != CharacterConstants.AttackType.AggroFirst) return;
 
-            BeginCombatWithPlayer(player, CharacterConstants.CombatStartReason.DetectedByRange);
+            _threatController?.SetPresenceThreat(
+                player,
+                MonsterThreatSource.DetectionRange,
+                isActive: true,
+                _threatProfile.DetectionThreat);
         }
 
         /// <summary>
-        /// 플레이어가 감지 이탈 범위 또는 추적 한계를 벗어났을 때 논리 감지로 시작된 전투만 정리합니다.
+        /// 플레이어가 감지 이탈 범위 또는 추적 한계를 벗어났을 때 감지 원인의 Threat만 제거합니다.
         /// </summary>
         /// <param name="player">감지 및 추적 유지 범위를 벗어난 플레이어입니다.</param>
+        /// <remarks>
+        /// 같은 대상에게 피해 또는 외부 원인의 Threat가 남아 있으면 현재 전투와 타겟을 유지합니다.
+        /// </remarks>
         public void OnLostPlayerByDetectionRange(Player player)
         {
-            if (player == null) return;
-            if (_combatStartReason != CharacterConstants.CombatStartReason.DetectedByRange &&
-                _combatStartReason != CharacterConstants.CombatStartReason.DetectedByAttackRange)
-            {
-                return;
-            }
-
-            if (attackerTransform != player.transform) return;
-
-            _controllerMonster?.StopAttackCoroutine();
-            SetAggro(false);
-            _combatStartReason = CharacterConstants.CombatStartReason.None;
+            _threatController?.SetPresenceThreat(
+                player,
+                MonsterThreatSource.DetectionRange,
+                isActive: false,
+                threatValue: 0f);
         }
 
         /// <summary>
-        /// 패트롤 감지 영역에서 플레이어를 발견했을 때 몬스터의 교전 정책을 적용합니다.
+        /// 패트롤 또는 Encounter 영역에서 플레이어를 발견했을 때 패트롤 Threat를 등록합니다.
         /// </summary>
         /// <param name="player">패트롤 영역에 진입한 플레이어입니다.</param>
-        /// <remarks>
-        /// <see cref="CharacterConstants.AttackType.AggroFirst"/> 몬스터는 감지 즉시 전투를 시작하고,
-        /// <see cref="CharacterConstants.AttackType.PassiveDefense"/> 몬스터는 감지만 기록하며 전투를 시작하지 않습니다.
-        /// </remarks>
         public void OnDetectedPlayerByPatrol(Player player)
         {
-            if (!CanBeginCombatWithPlayer(player)) return;
+            if (!CanTrackThreatTarget(player)) return;
+            if (GetAttackType() != CharacterConstants.AttackType.AggroFirst) return;
 
-            if (GetAttackType() != CharacterConstants.AttackType.AggroFirst)
-            {
-                return;
-            }
-
-            BeginCombatWithPlayer(player, CharacterConstants.CombatStartReason.DetectedByPatrol);
+            _threatController?.SetPresenceThreat(
+                player,
+                MonsterThreatSource.Patrol,
+                isActive: true,
+                _threatProfile.PatrolThreat);
         }
 
         /// <summary>
-        /// 패트롤 감지 영역에서 플레이어가 이탈했을 때 패트롤 감지로 시작된 전투만 정리합니다.
+        /// 패트롤 또는 Encounter 영역에서 플레이어가 이탈했을 때 패트롤 원인의 Threat만 제거합니다.
         /// </summary>
         /// <param name="player">패트롤 영역에서 이탈한 플레이어입니다.</param>
-        /// <remarks>
-        /// 플레이어가 몬스터를 공격해서 전투가 시작된 상태는 패트롤 영역 이탈만으로 종료하지 않습니다.
-        /// 이 처리를 통해 후공 몬스터가 피격으로 전투에 들어간 뒤 즉시 전투가 꺼지는 문제를 방지합니다.
-        /// </remarks>
         public void OnLostPlayerByPatrol(Player player)
         {
-            if (player == null) return;
-            if (_combatStartReason != CharacterConstants.CombatStartReason.DetectedByPatrol) return;
-            if (attackerTransform != player.transform) return;
-
-            _controllerMonster?.StopAttackCoroutine();
-            SetAggro(false);
-            _combatStartReason = CharacterConstants.CombatStartReason.None;
+            _threatController?.SetPresenceThreat(
+                player,
+                MonsterThreatSource.Patrol,
+                isActive: false,
+                threatValue: 0f);
         }
 
         /// <summary>
@@ -517,118 +529,222 @@ namespace GGemCo2DCore
         /// </remarks>
         public void OnDetectedPlayerByAttackRange(Player player)
         {
-            // 구형 프리팹/외부 호출 호환용 진입점입니다. 신규 전투는 논리 감지 센서를 사용합니다.
             OnDetectedPlayerByDetectionRange(player);
         }
 
         /// <summary>
-        /// 데미지를 받으면 공격자를 기준으로 전투 상태와 어그로 대상을 갱신합니다.
+        /// 기존 공격자 기반 피격 확장점으로 호출된 경우 최소 피해 Threat를 등록합니다.
         /// </summary>
-        /// <param name="attacker">데미지를 발생시킨 공격자 오브젝트입니다.</param>
+        /// <param name="attacker">피격을 발생시킨 공격자 오브젝트입니다.</param>
         public override void OnDamage(GameObject attacker)
         {
-            base.OnDamage(attacker);
-
-            if (attacker == null || IsStatusDead())
+            if (!TryResolveCharacterFromAttacker(attacker, out CharacterBase target))
             {
                 return;
             }
 
-            if (TryGetPlayerFromAttacker(attacker, out Player player))
+            _threatController?.AddDamageThreat(target, confirmedDamage: 1L);
+        }
+
+        /// <summary>
+        /// 확정된 피해량을 공격자 Threat로 변환하여 누적합니다.
+        /// </summary>
+        /// <param name="metadataDamage">방어력과 가드 판정 이후 확정된 데미지 정보입니다.</param>
+        public override void OnDamageResolved(MetadataDamage metadataDamage)
+        {
+            if (metadataDamage == null ||
+                !TryResolveCharacterFromAttacker(metadataDamage.attacker, out CharacterBase target))
             {
-                BeginCombatWithPlayer(player, CharacterConstants.CombatStartReason.DamagedByPlayer);
                 return;
             }
 
-            BeginCombatWithAttacker(attacker.transform, CharacterConstants.CombatStartReason.DamagedByNonPlayer);
+            _threatController?.AddDamageThreat(target, metadataDamage.damage);
         }
 
         /// <summary>
-        /// 플레이어를 대상으로 전투를 시작할 수 있는지 확인합니다.
+        /// 현재 선택된 전투 타겟을 반환합니다.
         /// </summary>
-        /// <param name="player">전투 대상 플레이어입니다.</param>
-        /// <returns>전투를 시작할 수 있으면 <see langword="true"/>입니다.</returns>
-        private bool CanBeginCombatWithPlayer(Player player)
+        /// <param name="target">현재 Threat 순위로 선택된 캐릭터입니다.</param>
+        /// <returns>유효한 타겟이 있으면 <see langword="true"/>입니다.</returns>
+        public bool TryGetCurrentCombatTarget(out CharacterBase target)
         {
-            return player != null && !IsStatusDead() && !player.IsStatusDead();
-        }
-
-        /// <summary>
-        /// 공격자 오브젝트에서 플레이어 컴포넌트를 찾습니다.
-        /// </summary>
-        /// <param name="attacker">데미지를 발생시킨 공격자 오브젝트입니다.</param>
-        /// <param name="player">찾은 플레이어 컴포넌트입니다.</param>
-        /// <returns>플레이어를 찾으면 <see langword="true"/>입니다.</returns>
-        private static bool TryGetPlayerFromAttacker(GameObject attacker, out Player player)
-        {
-            player = null;
-            if (attacker == null) return false;
-
-            player = attacker.GetComponent<Player>();
-            if (player != null) return true;
-
-            player = attacker.GetComponentInParent<Player>();
-            return player != null;
-        }
-
-        /// <summary>
-        /// 플레이어를 대상으로 몬스터와 플레이어의 전투 상태를 함께 시작합니다.
-        /// </summary>
-        /// <param name="player">전투 대상 플레이어입니다.</param>
-        /// <param name="reason">전투가 시작된 원인입니다.</param>
-        private void BeginCombatWithPlayer(Player player, CharacterConstants.CombatStartReason reason)
-        {
-            if (!CanBeginCombatWithPlayer(player)) return;
-
-            BeginCombatWithAttacker(player.transform, reason);
-            player.RegisterCombatEngagement(this);
-            player.SetAutoMoveTargetMonster(gameObject);
-        }
-
-        /// <summary>
-        /// 지정한 공격자를 대상으로 몬스터 전투 상태와 어그로 대상을 설정합니다.
-        /// </summary>
-        /// <param name="attacker">전투 대상으로 기록할 공격자 Transform입니다.</param>
-        /// <param name="reason">전투가 시작된 원인입니다.</param>
-        private void BeginCombatWithAttacker(Transform attacker, CharacterConstants.CombatStartReason reason)
-        {
-            if (attacker == null || IsStatusDead()) return;
-
-            Player previousPlayer = ResolvePlayerFromTarget(attackerTransform);
-            Player nextPlayer = ResolvePlayerFromTarget(attacker);
-            if (previousPlayer != null && previousPlayer != nextPlayer)
+            if (_threatController != null && _threatController.TryGetCurrentTarget(out target))
             {
-                previousPlayer.UnregisterCombatEngagement(this);
+                return true;
             }
 
-            _combatStartReason = reason;
-            if (!IsAggro())
-            {
-                SetAggro(true);
-            }
-
-            SetAttackerTarget(attacker);
-            _controllerMonster?.StopAttackCoroutine();
+            target = null;
+            return false;
         }
 
         /// <summary>
-        /// 어그로가 해제되기 전에 현재 플레이어 타겟과의 전투 참여 관계를 정리합니다.
+        /// 지정한 대상에게 특정 원인의 Threat가 남아 있는지 확인합니다.
+        /// </summary>
+        /// <param name="target">확인할 캐릭터입니다.</param>
+        /// <param name="source">확인할 Threat 원인입니다.</param>
+        /// <returns>해당 원인의 Threat가 남아 있으면 <see langword="true"/>입니다.</returns>
+        public bool HasThreatSource(CharacterBase target, MonsterThreatSource source)
+        {
+            return _threatController != null && _threatController.HasThreatSource(target, source);
+        }
+
+        /// <summary>
+        /// 지정한 Transform에 대응하는 대상의 현재 총 Threat를 조회합니다.
+        /// </summary>
+        /// <param name="targetTransform">조회할 캐릭터 Transform 또는 하위 Transform입니다.</param>
+        /// <param name="threat">누적된 총 Threat입니다.</param>
+        /// <returns>대상이 Threat 목록에 있으면 <see langword="true"/>입니다.</returns>
+        public bool TryGetThreat(Transform targetTransform, out float threat)
+        {
+            threat = 0f;
+            CharacterBase target = ResolveCharacterFromTarget(targetTransform);
+            return target != null && _threatController != null && _threatController.TryGetThreat(target, out threat);
+        }
+
+        /// <summary>
+        /// 현재 Threat 목록을 다시 평가하여 최종 전투 타겟을 갱신합니다.
+        /// </summary>
+        /// <returns>유효한 전투 타겟이 선택되었으면 <see langword="true"/>입니다.</returns>
+        public bool RefreshCombatTarget()
+        {
+            return _threatController != null && _threatController.RefreshCurrentTarget();
+        }
+
+        /// <summary>
+        /// 도발, 보스 패턴, 지원 어그로 등 외부 시스템에서 지정한 Threat를 추가합니다.
+        /// </summary>
+        /// <param name="target">Threat를 추가할 캐릭터입니다.</param>
+        /// <param name="amount">추가할 0보다 큰 Threat 값입니다.</param>
+        /// <returns>Threat가 추가되었으면 <see langword="true"/>입니다.</returns>
+        public bool AddExternalThreat(CharacterBase target, float amount)
+        {
+            return _threatController != null &&
+                   _threatController.AddThreat(target, amount, MonsterThreatSource.External);
+        }
+
+        /// <summary>
+        /// 도발과 같은 외부 효과로 지정한 대상을 일정 시간 동안 최우선 타겟으로 고정합니다.
+        /// </summary>
+        /// <param name="target">강제로 선택할 캐릭터입니다.</param>
+        /// <param name="durationSeconds">고정 시간입니다. 0 이하면 명시적으로 해제할 때까지 유지합니다.</param>
+        /// <returns>강제 타겟을 적용했으면 <see langword="true"/>입니다.</returns>
+        public bool ForceCombatTarget(CharacterBase target, float durationSeconds)
+        {
+            return _threatController != null && _threatController.ForceTarget(target, durationSeconds);
+        }
+
+        /// <summary>
+        /// 외부 시스템에서 적용한 강제 타겟을 해제합니다.
+        /// </summary>
+        public void ClearForcedCombatTarget()
+        {
+            _threatController?.ClearForcedTarget();
+        }
+
+        /// <summary>
+        /// 현재 몬스터가 기억하는 모든 Threat와 전투 참여 관계를 제거합니다.
+        /// </summary>
+        public void ClearAllThreats()
+        {
+            _threatController?.ClearAllThreats();
+            if (_threatController == null)
+            {
+                SetAggro(false);
+            }
+        }
+
+        /// <summary>
+        /// 어그로가 외부 경로에서 해제되면 남아 있는 Threat 목록도 함께 정리합니다.
         /// </summary>
         /// <param name="isAggro">변경된 어그로 활성 여부입니다.</param>
         protected override void OnAggroStateChanged(bool isAggro)
         {
             base.OnAggroStateChanged(isAggro);
-            if (isAggro)
+            if (!isAggro && _threatController != null && _threatController.HasTargets)
             {
+                _threatController.ClearAllThreats();
+            }
+        }
+
+        /// <summary>
+        /// Threat 목록에 플레이어가 처음 등록되면 플레이어의 전투 참여 목록에도 이 몬스터를 등록합니다.
+        /// </summary>
+        private void OnThreatTargetRegistered(CharacterBase target)
+        {
+            if (target is Player player)
+            {
+                player.RegisterCombatEngagement(this);
+            }
+        }
+
+        /// <summary>
+        /// 플레이어의 모든 Threat 원인이 제거되면 플레이어 전투 참여 목록에서 이 몬스터를 해제합니다.
+        /// </summary>
+        private void OnThreatTargetUnregistered(CharacterBase target)
+        {
+            if (target is Player player)
+            {
+                player.UnregisterCombatEngagement(this);
+            }
+        }
+
+        /// <summary>
+        /// Threat 선택 결과를 기존 공격 대상 필드와 어그로 상태에 동기화합니다.
+        /// </summary>
+        private void OnCurrentThreatTargetChanged(CharacterBase previousTarget, CharacterBase currentTarget)
+        {
+            _controllerMonster?.StopAttackCoroutine();
+            SetAttackerTarget(currentTarget != null ? currentTarget.transform : null);
+
+            if (currentTarget != null)
+            {
+                if (!IsAggro())
+                {
+                    SetAggro(true);
+                }
                 return;
             }
 
-            Player player = ResolvePlayerFromTarget(attackerTransform);
-            player?.UnregisterCombatEngagement(this);
-            _combatStartReason = CharacterConstants.CombatStartReason.None;
+            if (IsAggro())
+            {
+                SetAggro(false);
+            }
         }
+
         /// <summary>
-        /// 몬스터 사망 시 전투 상태, UI, 이벤트, 컷신 후처리를 수행합니다.
+        /// 지정한 캐릭터를 Threat 대상으로 등록할 수 있는지 확인합니다.
+        /// </summary>
+        private bool CanTrackThreatTarget(CharacterBase target)
+        {
+            return target != null && target != this && !IsStatusDead() && !target.IsStatusDead();
+        }
+
+        /// <summary>
+        /// 공격자 오브젝트 또는 부모 계층에서 실제 캐릭터를 찾습니다.
+        /// </summary>
+        private static bool TryResolveCharacterFromAttacker(GameObject attacker, out CharacterBase target)
+        {
+            target = attacker != null
+                ? attacker.GetComponent<CharacterBase>() ?? attacker.GetComponentInParent<CharacterBase>()
+                : null;
+            return target != null;
+        }
+
+        /// <summary>
+        /// 지정한 Transform 또는 부모 계층에서 실제 캐릭터를 찾습니다.
+        /// </summary>
+        private static CharacterBase ResolveCharacterFromTarget(Transform target)
+        {
+            if (target == null)
+            {
+                return null;
+            }
+
+            return target.GetComponent<CharacterBase>() ?? target.GetComponentInParent<CharacterBase>();
+        }
+
+        /// <summary>
+        /// 몬스터 사망 시 모든 Threat, 전투 상태, UI와 후속 이벤트를 정리합니다.
         /// </summary>
         /// <param name="dieReasonType">사망 원인입니다.</param>
         /// <param name="attacker">사망을 유발한 공격자 오브젝트입니다.</param>
@@ -636,9 +752,8 @@ namespace GGemCo2DCore
         {
             base.OnDead(dieReasonType, attacker);
             SetHitAreaColliderEnabled(false);
-            EndPlayerCombatOnDeath(attacker);
+            ClearAllThreats();
             SetAggro(false);
-            _combatStartReason = CharacterConstants.CombatStartReason.None;
 
             if (_monsterUIController != null)
             {
@@ -661,56 +776,6 @@ namespace GGemCo2DCore
             GameEventManager.MonsterKilled(data);
             
             PlayDeadCutscene(attacker);
-        }
-
-        /// <summary>
-        /// 몬스터 사망 시 플레이어에게 남아 있는 현재 전투 타겟과 전투 상태를 정리합니다.
-        /// </summary>
-        /// <param name="attacker">사망을 유발한 공격자 오브젝트입니다.</param>
-        /// <remarks>
-        /// BT 몬스터와 레거시 몬스터 모두 전투 시작은 Core의 몬스터 어그로/공격자 기록을 사용합니다.
-        /// 따라서 사망 후처리도 Brain 종류와 무관하게 Core 몬스터 공통 로직에서 처리해야 합니다.
-        /// </remarks>
-        private void EndPlayerCombatOnDeath(GameObject attacker)
-        {
-            Player player = ResolvePlayerCombatTargetOnDeath(attacker);
-            if (player == null)
-            {
-                return;
-            }
-
-            player.UnregisterCombatEngagement(this);
-        }
-
-        /// <summary>
-        /// 사망 시 전투 종료를 알려야 할 플레이어를 공격자와 현재 어그로 대상에서 해석합니다.
-        /// </summary>
-        /// <param name="attacker">사망을 유발한 공격자 오브젝트입니다.</param>
-        /// <returns>전투 종료 처리를 적용할 플레이어입니다. 찾지 못하면 <see langword="null"/>입니다.</returns>
-        private Player ResolvePlayerCombatTargetOnDeath(GameObject attacker)
-        {
-            if (TryGetPlayerFromAttacker(attacker, out Player playerFromAttacker))
-            {
-                return playerFromAttacker;
-            }
-
-            return ResolvePlayerFromTarget(attackerTransform);
-        }
-
-        /// <summary>
-        /// 지정한 Transform 또는 부모 계층에서 플레이어 컴포넌트를 찾습니다.
-        /// </summary>
-        /// <param name="target">플레이어 여부를 해석할 대상 Transform입니다.</param>
-        /// <returns>찾은 플레이어이며, 대상이 없거나 플레이어가 아니면 <see langword="null"/>입니다.</returns>
-        private static Player ResolvePlayerFromTarget(Transform target)
-        {
-            if (target == null)
-            {
-                return null;
-            }
-
-            Player player = target.GetComponent<Player>();
-            return player != null ? player : target.GetComponentInParent<Player>();
         }
 
         /// <summary>
@@ -783,8 +848,15 @@ namespace GGemCo2DCore
 
         protected override void OnDestroy()
         {
-            // 비풀링 제거 경로에서도 플레이어 전투 참여 목록에 몬스터 참조가 남지 않도록 정리합니다.
+            // 비풀링 제거 경로에서도 모든 대상의 Threat와 전투 참여 관계가 남지 않도록 정리합니다.
+            ClearAllThreats();
             SetAggro(false);
+            if (_threatController != null)
+            {
+                _threatController.ThreatTargetRegistered -= OnThreatTargetRegistered;
+                _threatController.ThreatTargetUnregistered -= OnThreatTargetUnregistered;
+                _threatController.CurrentTargetChanged -= OnCurrentThreatTargetChanged;
+            }
             base.OnDestroy();
             if (_monsterUIController != null)
             {

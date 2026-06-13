@@ -83,10 +83,11 @@ namespace GGemCo2DCore
                 }
 
                 _detectedPlayer = player;
-                bool needsCombatRefresh = !_owner.IsAggro() || _owner.attackerTransform != player.transform;
-                if (needsCombatRefresh)
+                bool needsDetectionThreat =
+                    !_owner.HasThreatSource(player, MonsterThreatSource.DetectionRange);
+                if (needsDetectionThreat)
                 {
-                    // 이미 같은 플레이어와 피격/패트롤 원인으로 교전 중이면 기존 전투 시작 원인을 보존합니다.
+                    // 감지 원인만 별도로 등록하며, 피격/패트롤 Threat와 독립적으로 누적합니다.
                     _owner.OnDetectedPlayerByDetectionRange(player);
                 }
                 return;
@@ -108,7 +109,7 @@ namespace GGemCo2DCore
             if (!_detectedPlayer.IsStatusDead())
             {
                 bool isCurrentCombatTarget =
-                    _owner.IsAggro() && _owner.attackerTransform == _detectedPlayer.transform;
+                    _owner.IsAggro() && _owner.CurrentCombatTarget == _detectedPlayer;
 
                 if (profile.HasChaseLimit && isCurrentCombatTarget)
                 {
@@ -145,7 +146,7 @@ namespace GGemCo2DCore
                 return false;
             }
 
-            if (!_owner.IsAggro() || _owner.attackerTransform != player.transform)
+            if (!_owner.IsAggro() || _owner.CurrentCombatTarget != player)
             {
                 return false;
             }

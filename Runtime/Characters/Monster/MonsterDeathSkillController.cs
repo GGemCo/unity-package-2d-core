@@ -159,7 +159,11 @@ namespace GGemCo2DCore
         /// <returns>몬스터 스킬 드라이버에 전달할 타겟 정보입니다.</returns>
         private MonsterSkillTarget BuildDeathSkillTarget(GameObject attacker)
         {
-            Transform lockedTarget = attacker != null ? attacker.transform : _owner != null ? _owner.attackerTransform : null;
+            Transform lockedTarget = attacker != null
+                ? attacker.transform
+                : _owner != null && _owner.CurrentCombatTarget != null
+                    ? _owner.CurrentCombatTarget.transform
+                    : null;
             Vector2 forward = ResolveForward(lockedTarget);
             Vector3 groundPoint = _owner != null ? _owner.transform.position : transform.position;
             return new MonsterSkillTarget(lockedTarget, groundPoint, forward);

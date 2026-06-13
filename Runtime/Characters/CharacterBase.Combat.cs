@@ -300,6 +300,19 @@ namespace GGemCo2DCore
         }
 
         /// <summary>
+        /// 확정된 데미지 메타데이터를 전달받아 파생 캐릭터의 추가 피격 처리를 수행합니다.
+        /// </summary>
+        /// <param name="metadataDamage">방어력과 가드 판정 이후 확정된 데미지 정보입니다.</param>
+        /// <remarks>
+        /// 기존 <see cref="OnDamage(GameObject)"/> 확장점을 유지하기 위해 기본 구현은 공격자만 전달합니다.
+        /// Threat처럼 확정 피해량이 필요한 파생 클래스는 이 함수를 재정의합니다.
+        /// </remarks>
+        public virtual void OnDamageResolved(MetadataDamage metadataDamage)
+        {
+            OnDamage(metadataDamage?.attacker);
+        }
+
+        /// <summary>
         /// 마지막 공격 대상을 기록합니다.
         /// </summary>
         /// <param name="attacker">기록할 공격자 Transform입니다.</param>

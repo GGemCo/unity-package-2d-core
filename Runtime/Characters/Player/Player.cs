@@ -59,7 +59,13 @@ namespace GGemCo2DCore
         /// <returns>새로운 몬스터가 등록되었으면 <see langword="true"/>를 반환합니다.</returns>
         public bool RegisterCombatEngagement(Monster monster)
         {
-            return EnsureCombatEngagementTracker().Register(monster);
+            bool registered = EnsureCombatEngagementTracker().Register(monster);
+            if (registered)
+            {
+                RefreshAutoMoveCombatTarget();
+            }
+
+            return registered;
         }
 
         /// <summary>
@@ -102,6 +108,22 @@ namespace GGemCo2DCore
         public bool IsEngagedWith(Monster monster)
         {
             return EnsureCombatEngagementTracker().Contains(monster);
+        }
+
+        /// <summary>
+        /// 현재 전투 참여 목록에서 플레이어와 가장 가까운 몬스터를 자동 이동 타겟으로 다시 선택합니다.
+        /// </summary>
+        /// <returns>유효한 자동 이동 타겟을 선택했으면 <see langword="true"/>입니다.</returns>
+        public bool RefreshAutoMoveCombatTarget()
+        {
+            if (!EnsureCombatEngagementTracker().TryGetNearestEngagedMonster(transform.position, out Monster monster))
+            {
+                _targetMonster = null;
+                return false;
+            }
+
+            _targetMonster = monster.gameObject;
+            return true;
         }
 
         /// <summary>
@@ -173,13 +195,7 @@ namespace GGemCo2DCore
         /// <returns>후속 타겟을 선택했으면 <see langword="true"/>를 반환합니다.</returns>
         private bool TrySelectNearestEngagedMonsterAsAutoMoveTarget()
         {
-            if (!EnsureCombatEngagementTracker().TryGetNearestEngagedMonster(transform.position, out Monster monster))
-            {
-                return false;
-            }
-
-            _targetMonster = monster.gameObject;
-            return true;
+            return RefreshAutoMoveCombatTarget();
         }
 
         /// <summary>

@@ -7,7 +7,7 @@ namespace GGemCo2DCore
     /// <summary>
     /// 몬스터 선공, 후공 처리 
     /// </summary>
-    public class ControllerMonster : CharacterBaseController, IMonsterCombatDriver, IMonsterMoveStopRangeProvider, IMonsterCombatRangeProvider, IMonsterBrainSuspendProvider
+    public class ControllerMonster : CharacterBaseController, IMonsterCombatDriver, IMonsterMoveStopRangeProvider, IMonsterCombatRangeProvider, IMonsterThreatProvider, IMonsterBrainSuspendProvider
     {
         private const float MoveDirectionEpsilonSqr = 0.000001f;
         private const float BtMoveDirectionBlendPerSecond = 0.000001f;
@@ -42,8 +42,40 @@ namespace GGemCo2DCore
         /// <inheritdoc />
         public bool TryGetTarget(out Transform target)
         {
+            if (_monster != null && _monster.TryGetCurrentCombatTarget(out CharacterBase currentTarget))
+            {
+                target = currentTarget.transform;
+                return true;
+            }
+
             target = targetCharacter != null ? targetCharacter.attackerTransform : null;
             return target != null;
+        }
+
+        /// <inheritdoc />
+        public int ThreatTargetCount => _monster != null ? _monster.ThreatTargetCount : 0;
+
+        /// <inheritdoc />
+        public bool TryGetCurrentTargetThreat(out float threat)
+        {
+            threat = 0f;
+            return TryGetTarget(out Transform target) &&
+                   target != null &&
+                   _monster != null &&
+                   _monster.TryGetThreat(target, out threat);
+        }
+
+        /// <inheritdoc />
+        public bool TryGetThreat(Transform target, out float threat)
+        {
+            threat = 0f;
+            return _monster != null && _monster.TryGetThreat(target, out threat);
+        }
+
+        /// <inheritdoc />
+        public bool RefreshCombatTarget()
+        {
+            return _monster != null && _monster.RefreshCombatTarget();
         }
 
         /// <inheritdoc />
@@ -199,8 +231,8 @@ namespace GGemCo2DCore
         public void RequestFaceToTarget()
         {
             ClearBtMoveIntent();
-            if (targetCharacter == null || targetCharacter.attackerTransform == null) return;
-            var raw = (targetCharacter.attackerTransform.position - targetCharacter.transform.position);
+            if (targetCharacter == null || !TryGetTarget(out Transform target) || target == null) return;
+            var raw = target.position - targetCharacter.transform.position;
             var dir = GetFilteredDirection(raw);
             if (dir == Vector2.zero) return;
 
@@ -224,9 +256,18 @@ namespace GGemCo2DCore
             Attack();
         }
 
+        /// <inheritdoc />
         public void RequestClearAggro()
         {
-            targetCharacter.SetAggro(false);
+            if (_monster != null)
+            {
+                _monster.ClearAllThreats();
+            }
+            else
+            {
+                targetCharacter?.SetAggro(false);
+            }
+
             ClearBtMoveIntent();
         }
 
@@ -322,9 +363,9 @@ namespace GGemCo2DCore
         /// </summary>
         private void HandleInput()
         {
-            if (!targetCharacter.IsAggro() || targetCharacter.attackerTransform == null ||
-                targetCharacter.IsStatusDead()) return;
-            var raw = (targetCharacter.attackerTransform.position - targetCharacter.transform.position);
+            if (!targetCharacter.IsAggro() || targetCharacter.IsStatusDead() ||
+                !TryGetTarget(out Transform target) || target == null) return;
+            var raw = target.position - targetCharacter.transform.position;
             targetCharacter.directionNormalize = GetFilteredDirection(raw);
         }
 
@@ -627,7 +668,7 @@ namespace GGemCo2DCore
         /// </remarks>
         private bool SearchAttackerTarget()
         {
-            if (targetCharacter == null || targetCharacter.attackerTransform == null) return false;
+            if (targetCharacter == null || !TryGetTarget(out Transform target) || target == null) return false;
             if (targetCharacter.IsStatusAttack() || targetCharacter.IsStatusDead()) return false;
 
             return TryGetTargetDistances(
@@ -647,7 +688,7 @@ namespace GGemCo2DCore
         /// </remarks>
         private bool SearchAttackerTargetForMoveStop()
         {
-            if (targetCharacter == null || targetCharacter.attackerTransform == null) return false;
+            if (targetCharacter == null || !TryGetTarget(out Transform target) || target == null) return false;
             if (targetCharacter.IsStatusAttack() || targetCharacter.IsStatusDead()) return false;
 
             CharacterBase attackTarget = ResolveCurrentAttackTargetCharacter();
@@ -694,10 +735,18 @@ namespace GGemCo2DCore
         /// <returns>공격 대상 CharacterBase가 있으면 반환하고, 없으면 <see langword="null"/>을 반환합니다.</returns>
         private CharacterBase ResolveCurrentAttackTargetCharacter()
         {
-            Transform attacker = targetCharacter != null ? targetCharacter.attackerTransform : null;
-            if (attacker == null) return null;
+            if (_monster != null && _monster.TryGetCurrentCombatTarget(out CharacterBase target))
+            {
+                return target;
+            }
 
-            return attacker.GetComponent<CharacterBase>() ?? attacker.GetComponentInParent<CharacterBase>();
+            if (!TryGetTarget(out Transform targetTransform) || targetTransform == null)
+            {
+                return null;
+            }
+
+            return targetTransform.GetComponent<CharacterBase>() ??
+                   targetTransform.GetComponentInParent<CharacterBase>();
         }
         /// <summary>
         /// DelayTimeAttack 시간 후에 공격하기
@@ -716,13 +765,16 @@ namespace GGemCo2DCore
         /// </summary>
         public override void Attack()
         {
-            // 공격자가 죽었을 때
+            // 현재 공격 대상이 사망했으면 Threat 목록에서 다음 유효 대상을 다시 선택합니다.
             if (targetCharacter.IsAttackerStatusDead())
             {
                 StopAttackCoroutine();
-                // Stop()에서 어그로 해제 훅이 현재 타겟을 기준으로 전투 참여 목록을 먼저 정리합니다.
-                Stop();
-                return;
+                if (!RefreshCombatTarget())
+                {
+                    RequestClearAggro();
+                    Wait();
+                    return;
+                }
             }
             if (!CanStartAttackAction()) return;
 

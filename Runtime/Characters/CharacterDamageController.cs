@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using UnityEngine;
 
 namespace GGemCo2DCore
@@ -584,7 +584,7 @@ namespace GGemCo2DCore
                         _characterBase.CharacterAnimationController.PlayDamageAnimation();
                     }
                 }
-                _characterBase.OnDamage(attacker);
+                _characterBase.OnDamageResolved(metadataDamage);
                 
                 if (affectUid > 0)
                 {

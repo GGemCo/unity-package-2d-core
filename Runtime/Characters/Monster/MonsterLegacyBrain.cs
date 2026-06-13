@@ -58,7 +58,9 @@ namespace GGemCo2DCore
             if (!collision.CompareTag(ConfigTags.GetValue(ConfigTags.Keys.Player))) return;
             if (_controller.targetCharacter == null || _controller.targetCharacter.IsStatusDead()) return;
 
-            if (_controller.targetCharacter.IsAggro() && _controller.targetCharacter.attackerTransform != null)
+            if (_controller.IsAggro &&
+                _controller.TryGetTarget(out Transform currentTarget) &&
+                currentTarget != null)
             {
                 // Trigger 진입은 감지만 담당한다.
                 // 실제 공격 시작은 TickLegacy()에서 공통 제어 가능 여부를 확인한 뒤 결정한다.

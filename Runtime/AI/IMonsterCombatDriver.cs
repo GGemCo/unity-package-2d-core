@@ -166,4 +166,38 @@ namespace GGemCo2DCore
         bool IsTargetBeyondChaseRange();
     }
 
+    /// <summary>
+    /// 몬스터의 Threat 목록과 현재 타겟 선택 결과를 상위 AI에 제공하는 선택 인터페이스입니다.
+    /// </summary>
+    /// <remarks>
+    /// 기존 <see cref="IMonsterCombatDriver"/> 구현체와의 하위 호환성을 유지하기 위해 별도 인터페이스로 분리합니다.
+    /// AI는 이 인터페이스가 없으면 기존 <see cref="IMonsterCombatDriver.TryGetTarget"/> 결과만 사용합니다.
+    /// </remarks>
+    public interface IMonsterThreatProvider
+    {
+        /// <summary>현재 기억 중인 유효 Threat 대상 수입니다.</summary>
+        int ThreatTargetCount { get; }
+
+        /// <summary>
+        /// 현재 선택된 타겟에 누적된 총 Threat를 조회합니다.
+        /// </summary>
+        /// <param name="threat">현재 타겟의 총 Threat입니다.</param>
+        /// <returns>유효한 현재 타겟과 Threat가 있으면 <see langword="true"/>입니다.</returns>
+        bool TryGetCurrentTargetThreat(out float threat);
+
+        /// <summary>
+        /// 지정한 Transform에 대응하는 Threat 값을 조회합니다.
+        /// </summary>
+        /// <param name="target">조회할 캐릭터 Transform 또는 하위 Transform입니다.</param>
+        /// <param name="threat">대상에게 누적된 총 Threat입니다.</param>
+        /// <returns>대상이 Threat 목록에 있으면 <see langword="true"/>입니다.</returns>
+        bool TryGetThreat(Transform target, out float threat);
+
+        /// <summary>
+        /// 현재 Threat 목록을 다시 평가하여 최종 전투 타겟을 갱신합니다.
+        /// </summary>
+        /// <returns>유효한 타겟을 선택했으면 <see langword="true"/>입니다.</returns>
+        bool RefreshCombatTarget();
+    }
+
 }
