@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using GGemCo2DCore;
@@ -131,9 +131,16 @@ namespace GGemCo2DCoreEditor
                 PatrolData patrolData = null;
                 if (monster.patrolObject)
                 {
-                    patrolData = new PatrolData(monster.patrolObject.transform.position, 
-                        monster.patrolObject.transform.eulerAngles, monster.patrolObject.GetComponent<BoxCollider2D>().size,
-                        monster.patrolObject.GetComponent<BoxCollider2D>().offset);
+                    ObjectPatrol patrolObject = monster.patrolObject.GetComponent<ObjectPatrol>();
+                    PatrolData existingData = patrolObject != null ? patrolObject.PatrolData : null;
+                    BoxCollider2D patrolCollider = monster.patrolObject.GetComponent<BoxCollider2D>();
+                    patrolData = new PatrolData(
+                        monster.patrolObject.transform.position,
+                        monster.patrolObject.transform.eulerAngles,
+                        patrolCollider != null ? patrolCollider.size : Vector2.one,
+                        patrolCollider != null ? patrolCollider.offset : Vector2.zero,
+                        existingData != null ? existingData.EncounterId : 0,
+                        existingData != null && existingData.ReleaseEncounterThreatOnExit);
                 }
 
                 saveMonsterList.CharacterRegenDatas.Add(new CharacterRegenData(monster.uid, child.position,

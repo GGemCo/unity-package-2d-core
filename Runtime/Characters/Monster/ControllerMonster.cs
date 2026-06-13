@@ -7,7 +7,7 @@ namespace GGemCo2DCore
     /// <summary>
     /// 몬스터 선공, 후공 처리 
     /// </summary>
-    public class ControllerMonster : CharacterBaseController, IMonsterCombatDriver, IMonsterMoveStopRangeProvider, IMonsterCombatRangeProvider, IMonsterThreatProvider, IMonsterLeashProvider, IMonsterBrainSuspendProvider
+    public class ControllerMonster : CharacterBaseController, IMonsterCombatDriver, IMonsterMoveStopRangeProvider, IMonsterCombatRangeProvider, IMonsterThreatProvider, IMonsterLeashProvider, IMonsterAttackSlotProvider, IMonsterBrainSuspendProvider
     {
         private const float MoveDirectionEpsilonSqr = 0.000001f;
         private const float BtMoveDirectionBlendPerSecond = 0.000001f;
@@ -110,6 +110,33 @@ namespace GGemCo2DCore
         public bool RequestBeginEvade(MonsterLeashTrigger trigger = MonsterLeashTrigger.Manual)
         {
             return _monster != null && _monster.BeginLeashEvade(trigger);
+        }
+
+        /// <inheritdoc />
+        public bool IsAttackSlotEnabled => _monster != null && _monster.AttackSlotProfile.IsEnabled;
+
+        /// <inheritdoc />
+        public bool HasAttackSlotReservation => _monster != null && _monster.HasAttackSlotReservation;
+
+        /// <inheritdoc />
+        public int ReservedAttackSlotIndex => _monster != null ? _monster.ReservedAttackSlotIndex : -1;
+
+        /// <inheritdoc />
+        public bool CanReserveAttackSlot()
+        {
+            return _monster == null || _monster.CanReserveAttackSlot();
+        }
+
+        /// <inheritdoc />
+        public bool TryReserveAttackSlot()
+        {
+            return _monster == null || _monster.TryReserveAttackSlot();
+        }
+
+        /// <inheritdoc />
+        public void ReleaseAttackSlot()
+        {
+            _monster?.ReleaseAttackSlot();
         }
 
         /// <inheritdoc />
@@ -340,6 +367,11 @@ namespace GGemCo2DCore
         public void RequestAttackOnce()
         {
             ClearBtMoveIntent();
+            if (_monster != null && !_monster.TryReserveAttackSlot())
+            {
+                return;
+            }
+
             Attack();
         }
 
@@ -882,12 +914,14 @@ namespace GGemCo2DCore
                 }
             }
             if (!CanStartAttackAction()) return;
+            if (_monster != null && !_monster.TryReserveAttackSlot()) return;
 
             // 공격자 방향 찾기
             HandleInput();
             CharacterConstants.FacingDirection8 facing = CharacterConstants.ToFacingDirection8(targetCharacter.directionNormalize);
             targetCharacter.SetFacing(facing);
             
+            _monster?.NotifyAttackSlotActionStarted();
             targetCharacter.SetStatusAttack();
             iCharacterAnimationController?.PlayAttackAnimation();
         }

@@ -23,6 +23,9 @@ namespace GGemCo2DCore
 
         /// <summary>도발, 스크립트, 보스 패턴 등 외부 시스템에서 추가한 Threat입니다.</summary>
         External = 1 << 3,
+
+        /// <summary>Encounter 그룹 활성화 또는 동료 지원으로 등록된 Threat입니다.</summary>
+        Encounter = 1 << 4,
     }
 
     /// <summary>

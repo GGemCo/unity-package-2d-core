@@ -25,6 +25,7 @@ namespace GGemCo2DCore
             public float PatrolThreat;
             public float DamageThreat;
             public float ExternalThreat;
+            public float EncounterThreat;
             public float LastUpdatedTime;
             public Vector3 LastKnownPosition;
 
@@ -32,7 +33,8 @@ namespace GGemCo2DCore
                 DetectionThreat +
                 PatrolThreat +
                 DamageThreat +
-                ExternalThreat;
+                ExternalThreat +
+                EncounterThreat;
 
             public MonsterThreatSource Sources
             {
@@ -43,6 +45,7 @@ namespace GGemCo2DCore
                     if (PatrolThreat > ThreatEpsilon) sources |= MonsterThreatSource.Patrol;
                     if (DamageThreat > ThreatEpsilon) sources |= MonsterThreatSource.Damage;
                     if (ExternalThreat > ThreatEpsilon) sources |= MonsterThreatSource.External;
+                    if (EncounterThreat > ThreatEpsilon) sources |= MonsterThreatSource.Encounter;
                     return sources;
                 }
             }
@@ -129,7 +132,9 @@ namespace GGemCo2DCore
             bool isActive,
             float threatValue)
         {
-            if (source != MonsterThreatSource.DetectionRange && source != MonsterThreatSource.Patrol)
+            if (source != MonsterThreatSource.DetectionRange &&
+                source != MonsterThreatSource.Patrol &&
+                source != MonsterThreatSource.Encounter)
             {
                 return false;
             }
@@ -151,9 +156,13 @@ namespace GGemCo2DCore
             }
 
             float normalizedThreat = Mathf.Max(ThreatEpsilon, threatValue);
-            float previousThreat = source == MonsterThreatSource.DetectionRange
-                ? entry.DetectionThreat
-                : entry.PatrolThreat;
+            float previousThreat = source switch
+            {
+                MonsterThreatSource.DetectionRange => entry.DetectionThreat,
+                MonsterThreatSource.Patrol => entry.PatrolThreat,
+                MonsterThreatSource.Encounter => entry.EncounterThreat,
+                _ => 0f,
+            };
 
             if (Mathf.Approximately(previousThreat, normalizedThreat))
             {
@@ -161,13 +170,17 @@ namespace GGemCo2DCore
                 return false;
             }
 
-            if (source == MonsterThreatSource.DetectionRange)
+            switch (source)
             {
-                entry.DetectionThreat = normalizedThreat;
-            }
-            else
-            {
-                entry.PatrolThreat = normalizedThreat;
+                case MonsterThreatSource.DetectionRange:
+                    entry.DetectionThreat = normalizedThreat;
+                    break;
+                case MonsterThreatSource.Patrol:
+                    entry.PatrolThreat = normalizedThreat;
+                    break;
+                case MonsterThreatSource.Encounter:
+                    entry.EncounterThreat = normalizedThreat;
+                    break;
             }
 
             RefreshEntryObservation(entry);
@@ -445,15 +458,22 @@ namespace GGemCo2DCore
             }
 
             bool changed;
-            if (source == MonsterThreatSource.DetectionRange)
+            switch (source)
             {
-                changed = entry.DetectionThreat > ThreatEpsilon;
-                entry.DetectionThreat = 0f;
-            }
-            else
-            {
-                changed = entry.PatrolThreat > ThreatEpsilon;
-                entry.PatrolThreat = 0f;
+                case MonsterThreatSource.DetectionRange:
+                    changed = entry.DetectionThreat > ThreatEpsilon;
+                    entry.DetectionThreat = 0f;
+                    break;
+                case MonsterThreatSource.Patrol:
+                    changed = entry.PatrolThreat > ThreatEpsilon;
+                    entry.PatrolThreat = 0f;
+                    break;
+                case MonsterThreatSource.Encounter:
+                    changed = entry.EncounterThreat > ThreatEpsilon;
+                    entry.EncounterThreat = 0f;
+                    break;
+                default:
+                    return false;
             }
 
             if (!changed)

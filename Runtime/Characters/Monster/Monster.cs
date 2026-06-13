@@ -42,6 +42,10 @@ namespace GGemCo2DCore
         private MonsterThreatProfile _threatProfile;
         private MonsterHomeLeashController _homeLeashController;
         private MonsterLeashProfile _leashProfile;
+        private MonsterEncounterMember _encounterMember;
+        private MonsterEncounterProfile _encounterProfile;
+        private MonsterAttackSlotController _attackSlotController;
+        private MonsterAttackSlotProfile _attackSlotProfile;
         private int _currentLevel = 1;
 
         /// <summary>
@@ -60,6 +64,21 @@ namespace GGemCo2DCore
 
         /// <summary>현재 몬스터에 적용된 홈 및 Leash 정책입니다.</summary>
         public MonsterLeashProfile LeashProfile => _leashProfile;
+
+        /// <summary>현재 몬스터의 Encounter 그룹 멤버 컴포넌트입니다.</summary>
+        public MonsterEncounterMember EncounterMember => _encounterMember;
+
+        /// <summary>현재 몬스터에 적용된 Encounter 활성화 및 지원 어그로 정책입니다.</summary>
+        public MonsterEncounterProfile EncounterProfile => _encounterProfile;
+
+        /// <summary>현재 몬스터에 적용된 다수 공격 슬롯 정책입니다.</summary>
+        public MonsterAttackSlotProfile AttackSlotProfile => _attackSlotProfile;
+
+        /// <summary>현재 유효한 공격 슬롯을 예약했는지 여부입니다.</summary>
+        public bool HasAttackSlotReservation => _attackSlotController != null && _attackSlotController.HasReservation;
+
+        /// <summary>현재 예약된 공격 슬롯 인덱스입니다. 예약이 없으면 -1입니다.</summary>
+        public int ReservedAttackSlotIndex => _attackSlotController != null ? _attackSlotController.ReservedSlotIndex : -1;
 
         /// <summary>현재 Leash 런타임 상태입니다.</summary>
         public MonsterLeashState LeashState =>
@@ -123,6 +142,7 @@ namespace GGemCo2DCore
             uid = monsterUid;
             SetPoolManaged(true);
             SetHitAreaColliderEnabled(true);
+            _attackSlotController?.ReleaseReservation();
 
             if (regenData != null)
             {
@@ -170,6 +190,7 @@ namespace GGemCo2DCore
             CancelPendingPoolReturn();
             ClearPendingDeathState();
             _suppressNextDeadCutscene = false;
+            _attackSlotController?.ReleaseReservation();
             _threatController?.ClearAllThreats();
             _controllerMonster?.StopAttackCoroutine();
             _controllerMonster?.StopAllCoroutines();
@@ -318,6 +339,20 @@ namespace GGemCo2DCore
             }
             _homeLeashController.Initialize(this, _controllerMonster);
 
+            _encounterMember = gameObject.GetComponent<MonsterEncounterMember>();
+            if (_encounterMember == null)
+            {
+                _encounterMember = gameObject.AddComponent<MonsterEncounterMember>();
+            }
+            _encounterMember.Initialize(this);
+
+            _attackSlotController = gameObject.GetComponent<MonsterAttackSlotController>();
+            if (_attackSlotController == null)
+            {
+                _attackSlotController = gameObject.AddComponent<MonsterAttackSlotController>();
+            }
+            _attackSlotController.Initialize(this);
+
             _detectionSensor = gameObject.GetComponent<MonsterDetectionSensor2D>();
             if (_detectionSensor == null)
             {
@@ -414,8 +449,12 @@ namespace GGemCo2DCore
             _combatRangeProfile = MonsterCombatRangeProfile.Create(combatProfileData, colliderAttackRange);
             _threatProfile = MonsterThreatProfile.Create(combatProfileData);
             _leashProfile = MonsterLeashProfile.Create(combatProfileData);
+            _encounterProfile = MonsterEncounterProfile.Create(combatProfileData);
+            _attackSlotProfile = MonsterAttackSlotProfile.Create(combatProfileData);
             _threatController?.Configure(_threatProfile);
             _homeLeashController?.Configure(_leashProfile);
+            _encounterMember?.Configure(CharacterRegenData?.patrolData, _encounterProfile);
+            _attackSlotController?.Configure(_attackSlotProfile);
             _deathSkillController?.SetDeathSkillMonsterUid(info.DeathSkillMonsterUid);
         }
 
@@ -690,6 +729,81 @@ namespace GGemCo2DCore
         }
 
         /// <summary>
+        /// 맵 패트롤 데이터에 설정된 Encounter 그룹을 현재 몬스터에 연결합니다.
+        /// </summary>
+        /// <param name="patrolData">Encounter ID를 포함할 수 있는 맵 배치 데이터입니다.</param>
+        public void ConfigureEncounter(PatrolData patrolData)
+        {
+            _encounterMember?.Configure(patrolData, _encounterProfile);
+        }
+
+        /// <summary>
+        /// Encounter 그룹 활성화 또는 지원 어그로 대상을 등록합니다.
+        /// </summary>
+        /// <param name="target">그룹이 함께 교전할 대상입니다.</param>
+        /// <param name="threatValue">등록할 Encounter Threat입니다.</param>
+        /// <returns>Threat가 새로 등록되거나 변경되었으면 <see langword="true"/>입니다.</returns>
+        public bool OnDetectedTargetByEncounter(CharacterBase target, float threatValue)
+        {
+            if (!CanTrackThreatTarget(target) || _threatController == null)
+            {
+                return false;
+            }
+
+            return _threatController.SetPresenceThreat(
+                target,
+                MonsterThreatSource.Encounter,
+                isActive: true,
+                threatValue);
+        }
+
+        /// <summary>
+        /// Encounter 그룹 이탈 정책에 따라 지정 대상의 Encounter Threat만 제거합니다.
+        /// </summary>
+        /// <param name="target">Encounter Threat를 제거할 전투 대상입니다.</param>
+        /// <returns>해당 원인의 Threat가 실제로 제거되었으면 <see langword="true"/>입니다.</returns>
+        public bool OnLostTargetByEncounter(CharacterBase target)
+        {
+            return _threatController != null &&
+                   _threatController.SetPresenceThreat(
+                       target,
+                       MonsterThreatSource.Encounter,
+                       isActive: false,
+                       threatValue: 0f);
+        }
+
+        /// <summary>현재 대상의 공격 슬롯을 예약할 수 있는지 확인합니다.</summary>
+        public bool CanReserveAttackSlot()
+        {
+            return _attackSlotController == null || _attackSlotController.CanReserveCurrentTarget();
+        }
+
+        /// <summary>현재 대상의 공격 슬롯을 예약합니다.</summary>
+        public bool TryReserveAttackSlot()
+        {
+            return _attackSlotController == null || _attackSlotController.TryReserveCurrentTarget();
+        }
+
+        /// <summary>공격 또는 스킬 행동 시작을 공격 슬롯 컨트롤러에 알립니다.</summary>
+        /// <param name="waitForExplicitCompletion">명시적 완료 이벤트가 올 때까지 예약을 유지할지 여부입니다.</param>
+        public void NotifyAttackSlotActionStarted(bool waitForExplicitCompletion = false)
+        {
+            _attackSlotController?.NotifyCombatActionStarted(waitForExplicitCompletion);
+        }
+
+        /// <summary>공격 또는 스킬 행동 완료를 공격 슬롯 컨트롤러에 알립니다.</summary>
+        public void NotifyAttackSlotActionCompleted()
+        {
+            _attackSlotController?.NotifyCombatActionCompleted();
+        }
+
+        /// <summary>현재 보유한 공격 슬롯을 즉시 반환합니다.</summary>
+        public void ReleaseAttackSlot()
+        {
+            _attackSlotController?.ReleaseReservation();
+        }
+
+        /// <summary>
         /// 현재 몬스터의 홈 위치를 조회합니다.
         /// </summary>
         /// <param name="homePosition">설정된 홈 월드 좌표입니다.</param>
@@ -738,6 +852,7 @@ namespace GGemCo2DCore
         /// </summary>
         public void ClearAllThreats()
         {
+            _attackSlotController?.ReleaseReservation();
             _threatController?.ClearAllThreats();
             if (_threatController == null)
             {
@@ -767,6 +882,8 @@ namespace GGemCo2DCore
             {
                 player.RegisterCombatEngagement(this);
             }
+
+            _encounterMember?.NotifyOwnerEngaged(target);
         }
 
         /// <summary>
@@ -786,6 +903,7 @@ namespace GGemCo2DCore
         private void OnCurrentThreatTargetChanged(CharacterBase previousTarget, CharacterBase currentTarget)
         {
             _controllerMonster?.StopAttackCoroutine();
+            _attackSlotController?.OnCombatTargetChanged(previousTarget, currentTarget);
             SetAttackerTarget(currentTarget != null ? currentTarget.transform : null);
 
             if (currentTarget != null)
@@ -848,6 +966,7 @@ namespace GGemCo2DCore
         {
             base.OnDead(dieReasonType, attacker);
             SetHitAreaColliderEnabled(false);
+            _attackSlotController?.ReleaseReservation();
             ClearAllThreats();
             SetAggro(false);
 

@@ -90,6 +90,27 @@ namespace GGemCo2DCore
 
         /// <summary>동시에 기억할 최대 Threat 대상 수입니다. 0 이하면 기본값 16을 사용합니다.</summary>
         public int MaxThreatTargets;
+
+        /// <summary>Encounter 볼륨 또는 동료 지원으로 등록할 기본 Threat입니다.</summary>
+        public float EncounterThreat;
+
+        /// <summary>같은 Encounter 그룹에 지원 어그로를 전달할 최대 거리입니다. 0 이하면 거리 제한을 사용하지 않습니다.</summary>
+        public float EncounterAssistRadius;
+
+        /// <summary>한 번의 지원 요청으로 활성화할 최대 Encounter 동료 수입니다. 0 이하면 제한하지 않습니다.</summary>
+        public int MaxEncounterAssistCount;
+
+        /// <summary>다수 공격 제한에 사용할 슬롯 종류입니다.</summary>
+        public MonsterAttackSlotType AttackSlotType;
+
+        /// <summary>동일 대상에 동시에 공격 행동을 예약할 수 있는 최대 몬스터 수입니다.</summary>
+        public int MaxConcurrentAttackers;
+
+        /// <summary>갱신되지 않은 공격 슬롯 예약을 자동 반환할 시간입니다.</summary>
+        public float AttackSlotReservationSeconds;
+
+        /// <summary>공격 또는 스킬 종료 후 슬롯을 추가로 유지할 시간입니다.</summary>
+        public float AttackSlotPostActionHoldSeconds;
     }
 
     /// <summary>
@@ -146,6 +167,16 @@ namespace GGemCo2DCore
                 MinimumDamageThreat = ReadOptionalFloat(data, "MinimumDamageThreat"),
                 TargetSwitchThreatRatio = ReadOptionalFloat(data, "TargetSwitchThreatRatio"),
                 MaxThreatTargets = ReadOptionalInt(data, "MaxThreatTargets"),
+                EncounterThreat = ReadOptionalFloat(data, "EncounterThreat"),
+                EncounterAssistRadius = ReadOptionalFloat(data, "EncounterAssistRadius"),
+                MaxEncounterAssistCount = ReadOptionalInt(data, "MaxEncounterAssistCount"),
+                AttackSlotType = ReadOptionalEnum(
+                    data,
+                    "AttackSlotType",
+                    MonsterAttackSlotType.None),
+                MaxConcurrentAttackers = ReadOptionalInt(data, "MaxConcurrentAttackers"),
+                AttackSlotReservationSeconds = ReadOptionalFloat(data, "AttackSlotReservationSeconds"),
+                AttackSlotPostActionHoldSeconds = ReadOptionalFloat(data, "AttackSlotPostActionHoldSeconds", -1f),
             };
         }
 

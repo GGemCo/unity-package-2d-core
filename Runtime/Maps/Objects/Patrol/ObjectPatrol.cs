@@ -1,4 +1,4 @@
-﻿using UnityEngine;
+using UnityEngine;
 
 namespace GGemCo2DCore
 {
@@ -16,8 +16,9 @@ namespace GGemCo2DCore
         /// <param name="value">패트롤 영역과 연결할 몬스터 오브젝트입니다.</param>
         public void SetParentMonster(GameObject value)
         {
-            parentMonsterObject = value;  
+            parentMonsterObject = value;
             _parentMonster = parentMonsterObject != null ? parentMonsterObject.GetComponent<Monster>() : null;
+            _parentMonster?.ConfigureEncounter(PatrolData);
         } 
         protected override void InitTagSortingLayer()
         {
@@ -51,6 +52,9 @@ namespace GGemCo2DCore
             transform.eulerAngles = new Vector3(PatrolData.RotationX, PatrolData.RotationY, PatrolData.RotationZ);
             _boxCollider2D.size = new Vector2(PatrolData.BoxColliderSizeX, PatrolData.BoxColliderSizeY);
             _boxCollider2D.offset = new Vector2(PatrolData.BoxColliderOffsetX, PatrolData.BoxColliderOffsetY);
+
+            // 런타임 로더가 부모 연결 이후 PatrolData를 주입하는 경우에도 최신 Encounter ID를 반영합니다.
+            _parentMonster?.ConfigureEncounter(PatrolData);
         }
         
         public void InitializeByMapEditor()
@@ -61,7 +65,7 @@ namespace GGemCo2DCore
         }
 
         /// <summary>
-        /// 플레이어가 패트롤 영역에 들어오면 소유 몬스터에게 감지 사실만 전달합니다.
+        /// 플레이어가 패트롤 또는 Encounter 활성화 영역에 들어오면 소유 몬스터나 그룹에 감지 사실을 전달합니다.
         /// </summary>
         /// <param name="collision">패트롤 영역에 진입한 Collider입니다.</param>
         /// <remarks>
@@ -73,11 +77,20 @@ namespace GGemCo2DCore
             if (!TryGetDetectedPlayer(collision, out Player player)) return;
             if (!TryGetParentMonster(out Monster monster)) return;
 
+            if (PatrolData != null && PatrolData.EncounterId > 0)
+            {
+                MonsterEncounterRegistry.Activate(
+                    PatrolData.EncounterId,
+                    player,
+                    monster.EncounterMember);
+                return;
+            }
+
             monster.OnDetectedPlayerByPatrol(player);
         }
 
         /// <summary>
-        /// 플레이어가 패트롤 영역에서 나가면 소유 몬스터에게 감지 이탈 사실만 전달합니다.
+        /// 플레이어가 패트롤 또는 Encounter 활성화 영역에서 나가면 설정된 이탈 정책을 적용합니다.
         /// </summary>
         /// <param name="collision">패트롤 영역에서 이탈한 Collider입니다.</param>
         /// <remarks>
@@ -88,6 +101,15 @@ namespace GGemCo2DCore
         {
             if (!TryGetDetectedPlayer(collision, out Player player)) return;
             if (!TryGetParentMonster(out Monster monster, allowDeadMonster: true)) return;
+
+            if (PatrolData != null && PatrolData.EncounterId > 0)
+            {
+                if (PatrolData.ReleaseEncounterThreatOnExit)
+                {
+                    MonsterEncounterRegistry.Deactivate(PatrolData.EncounterId, player);
+                }
+                return;
+            }
 
             monster.OnLostPlayerByPatrol(player);
         }

@@ -227,4 +227,29 @@ namespace GGemCo2DCore
         bool RequestBeginEvade(MonsterLeashTrigger trigger = MonsterLeashTrigger.Manual);
     }
 
+
+    /// <summary>
+    /// 몬스터의 다수 공격 슬롯 예약 상태와 제어 API를 상위 AI에 제공하는 선택 인터페이스입니다.
+    /// </summary>
+    public interface IMonsterAttackSlotProvider
+    {
+        /// <summary>현재 공격 슬롯 정책이 활성화되어 있는지 여부입니다.</summary>
+        bool IsAttackSlotEnabled { get; }
+
+        /// <summary>현재 유효한 공격 슬롯 예약을 보유하는지 여부입니다.</summary>
+        bool HasAttackSlotReservation { get; }
+
+        /// <summary>현재 예약된 0 기반 슬롯 인덱스입니다. 예약이 없으면 -1입니다.</summary>
+        int ReservedAttackSlotIndex { get; }
+
+        /// <summary>현재 전투 대상의 슬롯을 예약할 수 있는지 확인합니다.</summary>
+        bool CanReserveAttackSlot();
+
+        /// <summary>현재 전투 대상의 공격 슬롯을 예약합니다.</summary>
+        bool TryReserveAttackSlot();
+
+        /// <summary>현재 보유한 공격 슬롯을 즉시 반환합니다.</summary>
+        void ReleaseAttackSlot();
+    }
+
 }
