@@ -1,13 +1,13 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Threading.Tasks;
 using UnityEngine;
 using UnityEngine.Audio;
 
 namespace GGemCo2DCore
 {
     /// <summary>
-    /// 효과음 컨트롤러 (풀 자동 확장 + 무제한 UID 지원)
+    /// 효과음 AudioSource 풀과 재생 중 AudioClip 참조 수명을 관리합니다.
     /// </summary>
     public class SoundControllerSfx
     {
@@ -27,6 +27,7 @@ namespace GGemCo2DCore
             public GameObject Object;
             public MonoBehaviour CoroutineHost;
             public Coroutine Routine;
+            public SoundPlaybackLease ClipLease;
             public bool IsReturned;
         }
 
@@ -37,18 +38,33 @@ namespace GGemCo2DCore
         private readonly string _volumeParam;
         private readonly AddressableLoaderSound _loader;
 
-        private readonly Dictionary<int, Queue<GameObject>> _pool = new();
-        private readonly Dictionary<int, int> _playCount = new();
-        private readonly Dictionary<int, int> _maxCount = new();
-        private readonly Dictionary<int, RuntimeSfxResource> _infoCache = new();
-        private readonly List<GameObject> _createdAudioSourceObjects = new();
+        private readonly Dictionary<int, Queue<GameObject>> _pool = new Dictionary<int, Queue<GameObject>>();
+        private readonly Dictionary<int, int> _playCount = new Dictionary<int, int>();
+        private readonly Dictionary<int, int> _maxCount = new Dictionary<int, int>();
+        private readonly Dictionary<int, RuntimeSfxResource> _infoCache = new Dictionary<int, RuntimeSfxResource>();
+        private readonly Dictionary<int, int> _createdCount = new Dictionary<int, int>();
+        private readonly HashSet<ActiveSfxPlayback> _activePlaybacks = new HashSet<ActiveSfxPlayback>();
+        private readonly List<GameObject> _createdAudioSourceObjects = new List<GameObject>();
 
         private const int MaxUnlimitedAudioSourceCount = 10;
-        private readonly Dictionary<int, int> _createdCount = new();
+        private bool _isDestroyed;
 
-        public SoundControllerSfx(Transform owner, AudioMixer mixer, AudioMixerGroup group, string volumeParam, AddressableLoaderSound loader)
+        /// <summary>
+        /// SFX 풀에 사용할 소유 Transform, 믹서, 사운드 로더를 설정합니다.
+        /// </summary>
+        /// <param name="owner">생성한 AudioSource 오브젝트의 부모입니다.</param>
+        /// <param name="mixer">SFX 볼륨을 제어할 AudioMixer입니다.</param>
+        /// <param name="group">SFX 출력 AudioMixerGroup입니다.</param>
+        /// <param name="volumeParam">SFX 볼륨 Exposed Parameter 이름입니다.</param>
+        /// <param name="loader">AudioClip 재생 참조를 관리할 로더입니다.</param>
+        public SoundControllerSfx(
+            Transform owner,
+            AudioMixer mixer,
+            AudioMixerGroup group,
+            string volumeParam,
+            AddressableLoaderSound loader)
         {
-            _preVolume = 0;
+            _preVolume = 0f;
             _owner = owner;
             _mixer = mixer;
             _group = group;
@@ -72,7 +88,6 @@ namespace GGemCo2DCore
 
         /// <summary>
         /// 기존 SFX 풀을 정리하고 현재 테이블 기준으로 다시 초기화합니다.
-        /// 테스트 툴에서 sound_sfx Row를 수정한 뒤 풀에 캐시된 FileName/MaxPlayCount/Volume 정보를 갱신할 때 사용합니다.
         /// </summary>
         /// <param name="table">신규 sound_sfx 실제 리소스 테이블입니다.</param>
         public void Reinitialize(TableSoundSfx table)
@@ -83,7 +98,6 @@ namespace GGemCo2DCore
 
         /// <summary>
         /// 실제 SFX 리소스 행을 풀 관리 대상으로 등록합니다.
-        /// 기존 Intro 풀을 유지하면서 메타데이터만 갱신하고, AudioSource 생성은 재생 시점까지 지연합니다.
         /// </summary>
         /// <param name="info">등록할 런타임 리소스 정보입니다.</param>
         private void RegisterResource(RuntimeSfxResource info)
@@ -109,29 +123,29 @@ namespace GGemCo2DCore
         /// 해석된 효과음 정보를 기준으로 재생합니다.
         /// </summary>
         /// <param name="resolved">최종 재생할 효과음 정보입니다.</param>
-        /// <param name="coroutineHost">비동기 로드 코루틴 실행자입니다.</param>
+        /// <param name="coroutineHost">자동 반환 코루틴 실행자입니다.</param>
         public void Play(ResolvedSound resolved, MonoBehaviour coroutineHost)
         {
             Play(resolved, coroutineHost, 0f);
         }
 
         /// <summary>
-        /// 해석된 효과음 정보를 기준으로 재생하며, 루프 효과음의 자동 정리 시간을 지정합니다.
+        /// 해석된 효과음 정보를 기준으로 재생하며 루프 효과음의 자동 정리 시간을 지정합니다.
         /// </summary>
         /// <param name="resolved">최종 재생할 효과음 정보입니다.</param>
-        /// <param name="coroutineHost">비동기 로드 코루틴 실행자입니다.</param>
-        /// <param name="durationSeconds">루프 효과음을 유지할 시간입니다. 0 이하이면 클립 길이를 사용합니다.</param>
+        /// <param name="coroutineHost">자동 반환 코루틴 실행자입니다.</param>
+        /// <param name="durationSeconds">루프 효과음을 유지할 시간입니다.</param>
         public void Play(ResolvedSound resolved, MonoBehaviour coroutineHost, float durationSeconds)
         {
             PlayWithHandle(resolved, coroutineHost, durationSeconds, SoundPlaybackStopPolicy.Auto);
         }
 
         /// <summary>
-        /// 해석된 효과음을 재생하고, 외부에서 정지할 수 있는 핸들을 반환합니다.
+        /// 해석된 효과음을 재생하고 외부에서 정지할 수 있는 핸들을 반환합니다.
         /// </summary>
         /// <param name="resolved">최종 재생할 효과음 정보입니다.</param>
-        /// <param name="coroutineHost">비동기 로드 코루틴 실행자입니다.</param>
-        /// <param name="durationSeconds">루프 효과음을 유지할 시간입니다. 0 이하이면 클립 길이를 사용합니다.</param>
+        /// <param name="coroutineHost">자동 반환 코루틴 실행자입니다.</param>
+        /// <param name="durationSeconds">루프 효과음을 유지할 시간입니다.</param>
         /// <param name="stopPolicy">사운드 정지 정책입니다.</param>
         /// <returns>재생 정지 핸들입니다. 재생할 수 없으면 null입니다.</returns>
         public SoundPlaybackHandle PlayWithHandle(
@@ -155,26 +169,27 @@ namespace GGemCo2DCore
         }
 
         /// <summary>
-        /// 효과음 재생
+        /// 실제 SFX 리소스 UID를 재생합니다.
         /// </summary>
         /// <param name="uid">실제 sound_sfx 리소스 UID입니다.</param>
-        /// <param name="coroutineHost">비동기 로드 코루틴 실행자입니다.</param>
+        /// <param name="coroutineHost">자동 반환 코루틴 실행자입니다.</param>
         public void Play(int uid, MonoBehaviour coroutineHost)
         {
             Play(uid, coroutineHost, 1f, 1f, false, false, 0f, SoundPlaybackStopPolicy.Auto);
         }
 
         /// <summary>
-        /// 효과음 재생 요청을 처리하고, 재생 가능한 AudioSource를 확보합니다.
+        /// 효과음 재생 요청을 처리하고 재생 가능한 AudioSource를 확보합니다.
         /// </summary>
         /// <param name="uid">실제 SFX 리소스 UID입니다.</param>
-        /// <param name="coroutineHost">비동기 로드 코루틴 실행자입니다.</param>
+        /// <param name="coroutineHost">자동 반환 코루틴 실행자입니다.</param>
         /// <param name="volume">요청별 볼륨 값입니다.</param>
         /// <param name="pitch">요청별 피치입니다.</param>
-        /// <param name="useFinalVolume">true면 volume 값을 최종 볼륨으로 사용하고, false면 리소스 기본 볼륨과 곱합니다.</param>
+        /// <param name="useFinalVolume">volume을 최종 볼륨으로 사용할지 여부입니다.</param>
         /// <param name="loop">AudioSource 루프 재생 여부입니다.</param>
-        /// <param name="durationSeconds">루프 효과음을 유지할 시간입니다. 0 이하이면 클립 길이를 사용합니다.</param>
+        /// <param name="durationSeconds">루프 효과음을 유지할 시간입니다.</param>
         /// <param name="stopPolicy">사운드 정지 정책입니다.</param>
+        /// <returns>재생 정지 핸들입니다.</returns>
         private SoundPlaybackHandle Play(
             int uid,
             MonoBehaviour coroutineHost,
@@ -185,7 +200,7 @@ namespace GGemCo2DCore
             float durationSeconds,
             SoundPlaybackStopPolicy stopPolicy)
         {
-            if (coroutineHost == null)
+            if (_isDestroyed || coroutineHost == null)
                 return null;
 
             if (!_pool.ContainsKey(uid))
@@ -196,36 +211,39 @@ namespace GGemCo2DCore
 
             bool isUnlimited = !_maxCount.ContainsKey(uid) || _maxCount[uid] == 0;
             bool canPlay = isUnlimited || _playCount[uid] < _maxCount[uid];
-
-            if (!canPlay) return null;
+            if (!canPlay)
+                return null;
 
             GameObject obj = GetOrCreateAudioSource(uid);
-            if (obj == null) return null;
+            if (obj == null)
+                return null;
 
             _playCount[uid]++;
-            var playback = new ActiveSfxPlayback
+            ActiveSfxPlayback playback = new ActiveSfxPlayback
             {
                 Uid = uid,
                 Object = obj,
                 CoroutineHost = coroutineHost,
             };
-            var handle = new SoundPlaybackHandle(() => StopPlayback(playback));
-            playback.Routine = coroutineHost.StartCoroutine(PlayWhenClipReady(playback, volume, pitch, useFinalVolume, loop, durationSeconds, stopPolicy));
+            _activePlaybacks.Add(playback);
+
+            SoundPlaybackHandle handle = new SoundPlaybackHandle(() => StopPlayback(playback));
+            BeginPlaybackAsync(playback, volume, pitch, useFinalVolume, loop, durationSeconds, stopPolicy);
             return handle;
         }
 
         /// <summary>
-        /// AudioClip이 아직 캐시에 없으면 비동기로 로드한 뒤 효과음을 재생합니다.
+        /// AudioClip 재생 참조를 비동기로 획득한 뒤 AudioSource 재생을 시작합니다.
+        /// 로드 중 정지되면 획득된 참조만 해제하고 풀 오브젝트를 다시 건드리지 않습니다.
         /// </summary>
-        /// <param name="playback">재생 중인 SFX 상태입니다.</param>
+        /// <param name="playback">재생 상태입니다.</param>
         /// <param name="volume">요청별 볼륨 값입니다.</param>
         /// <param name="pitch">요청별 피치입니다.</param>
-        /// <param name="useFinalVolume">true면 volume 값을 최종 볼륨으로 사용하고, false면 리소스 기본 볼륨과 곱합니다.</param>
-        /// <param name="loop">AudioSource 루프 재생 여부입니다.</param>
-        /// <param name="durationSeconds">루프 효과음을 유지할 시간입니다. 0 이하이면 클립 길이를 사용합니다.</param>
+        /// <param name="useFinalVolume">volume을 최종 볼륨으로 사용할지 여부입니다.</param>
+        /// <param name="loop">루프 재생 여부입니다.</param>
+        /// <param name="durationSeconds">자동 정리 시간입니다.</param>
         /// <param name="stopPolicy">사운드 정지 정책입니다.</param>
-        /// <returns>Unity 코루틴 실행자에 전달할 열거자입니다.</returns>
-        private IEnumerator PlayWhenClipReady(
+        private async void BeginPlaybackAsync(
             ActiveSfxPlayback playback,
             float volume,
             float pitch,
@@ -234,81 +252,69 @@ namespace GGemCo2DCore
             float durationSeconds,
             SoundPlaybackStopPolicy stopPolicy)
         {
-            int uid = playback != null ? playback.Uid : 0;
-            GameObject obj = playback != null ? playback.Object : null;
-            if (obj == null || !_infoCache.TryGetValue(uid, out RuntimeSfxResource info))
+            if (playback == null || !_infoCache.TryGetValue(playback.Uid, out RuntimeSfxResource info))
             {
                 ReturnToPool(playback);
-                yield break;
+                return;
             }
 
-            AudioSource src = obj.GetComponent<AudioSource>();
-            if (src == null)
+            string key = $"{ConfigAddressableGroupName.Sound}_{info.FileName}";
+            SoundPlaybackLease lease = null;
+            try
             {
+                lease = await _loader.AcquirePlaybackAsync(key);
+            }
+            catch (Exception ex)
+            {
+                GcLogger.LogWarning($"SFX 클립 로드 중 예외가 발생했습니다. uid={playback.Uid}, error={ex.Message}");
+            }
+
+            if (_isDestroyed || playback.IsReturned || playback.CoroutineHost == null || lease == null)
+            {
+                lease?.Dispose();
+                if (!playback.IsReturned)
+                    ReturnToPool(playback);
+                return;
+            }
+
+            AudioSource source = playback.Object != null
+                ? playback.Object.GetComponent<AudioSource>()
+                : null;
+            if (source == null)
+            {
+                lease.Dispose();
                 ReturnToPool(playback);
-                yield break;
+                return;
             }
 
-            if (playback.IsReturned)
-                yield break;
-
-            if (src.clip == null)
-            {
-                string key = $"{ConfigAddressableGroupName.Sound}_{info.FileName}";
-                Task<AudioClip> task = _loader?.LoadAudioClipAsync(key);
-                if (task == null)
-                {
-                    ReturnToPool(playback);
-                    yield break;
-                }
-
-                while (!task.IsCompleted)
-                {
-                    if (playback.IsReturned)
-                        yield break;
-
-                    yield return null;
-                }
-
-                if (task.IsCanceled || task.IsFaulted || task.Result == null)
-                {
-                    GcLogger.LogWarning($"SFX 클립을 로드하지 못했습니다. uid={uid}");
-                    ReturnToPool(playback);
-                    yield break;
-                }
-
-                if (playback.IsReturned)
-                    yield break;
-
-                src.clip = task.Result;
-            }
-
-            src.volume = useFinalVolume
+            playback.ClipLease = lease;
+            source.clip = lease.Clip;
+            source.volume = useFinalVolume
                 ? Mathf.Clamp01(volume <= 0f ? 1f : volume)
                 : Mathf.Clamp01((info.Volume <= 0f ? 1f : info.Volume) * Mathf.Clamp01(volume <= 0f ? 1f : volume));
-            src.pitch = Mathf.Approximately(pitch, 0f) ? 1f : pitch;
-            src.loop = loop;
-            obj.SetActive(true);
-            src.Play();
+            source.pitch = Mathf.Approximately(pitch, 0f) ? 1f : pitch;
+            source.loop = loop;
+            playback.Object.SetActive(true);
+            source.Play();
 
             if (stopPolicy == SoundPlaybackStopPolicy.ByHandle)
-                yield break;
+                return;
 
-            // 루프 요청은 Timeline 이벤트 길이만큼 유지하고, 길이가 없으면 기존 1회 재생 길이로 정리합니다.
             float releaseDelay = (stopPolicy == SoundPlaybackStopPolicy.ByDuration || loop) && durationSeconds > 0f
                 ? durationSeconds
-                : src.clip.length / Mathf.Max(0.01f, Mathf.Abs(src.pitch));
-            yield return ReleaseAfter(playback, releaseDelay);
+                : source.clip.length / Mathf.Max(0.01f, Mathf.Abs(source.pitch));
+            playback.Routine = playback.CoroutineHost.StartCoroutine(ReleaseAfter(playback, releaseDelay));
         }
 
         /// <summary>
-        /// AudioSource 오브젝트 반환
+        /// 지정한 시간 후 효과음 재생 상태를 풀에 반환합니다.
         /// </summary>
         /// <param name="playback">반환할 SFX 재생 상태입니다.</param>
         /// <param name="delay">반환 지연 시간입니다.</param>
+        /// <returns>지연 실행 열거자입니다.</returns>
         private IEnumerator ReleaseAfter(ActiveSfxPlayback playback, float delay)
         {
-            yield return new WaitForSeconds(delay);
+            yield return new WaitForSeconds(Mathf.Max(0f, delay));
             ReturnToPool(playback);
         }
 
@@ -322,13 +328,16 @@ namespace GGemCo2DCore
                 return;
 
             if (playback.CoroutineHost != null && playback.Routine != null)
+            {
                 playback.CoroutineHost.StopCoroutine(playback.Routine);
+                playback.Routine = null;
+            }
 
             ReturnToPool(playback);
         }
 
         /// <summary>
-        /// 사용이 끝난 AudioSource 오브젝트를 풀에 되돌립니다.
+        /// 사용이 끝난 AudioSource를 정지하고 Clip 참조를 제거한 뒤 풀에 되돌립니다.
         /// </summary>
         /// <param name="playback">반환할 SFX 재생 상태입니다.</param>
         private void ReturnToPool(ActiveSfxPlayback playback)
@@ -337,6 +346,8 @@ namespace GGemCo2DCore
                 return;
 
             playback.IsReturned = true;
+            _activePlaybacks.Remove(playback);
+
             int uid = playback.Uid;
             GameObject obj = playback.Object;
             if (obj != null)
@@ -346,12 +357,17 @@ namespace GGemCo2DCore
                 {
                     source.Stop();
                     source.loop = false;
+                    source.clip = null;
                 }
 
                 obj.SetActive(false);
             }
 
-            if (obj != null && _pool.TryGetValue(uid, out Queue<GameObject> queue))
+            playback.ClipLease?.Dispose();
+            playback.ClipLease = null;
+            playback.Routine = null;
+
+            if (!_isDestroyed && obj != null && _pool.TryGetValue(uid, out Queue<GameObject> queue))
                 queue.Enqueue(obj);
 
             if (_playCount.ContainsKey(uid))
@@ -360,7 +376,6 @@ namespace GGemCo2DCore
 
         /// <summary>
         /// 풀에서 사용 가능한 AudioSource를 가져오거나 최초 사용 시 새로 생성합니다.
-        /// MaxPlayCount가 0인 무제한 리소스는 과도한 오브젝트 생성을 막기 위해 별도 안전 상한을 적용합니다.
         /// </summary>
         /// <param name="uid">효과음 리소스 UID입니다.</param>
         /// <returns>사용 가능한 AudioSource GameObject입니다.</returns>
@@ -389,7 +404,8 @@ namespace GGemCo2DCore
         }
 
         /// <summary>
-        /// AudioSource GameObject 생성
+        /// 효과음 재생용 AudioSource GameObject를 생성합니다.
+        /// Clip은 재생 참조 임대 객체를 획득한 시점에만 연결합니다.
         /// </summary>
         /// <param name="uid">효과음 리소스 UID입니다.</param>
         /// <param name="info">효과음 리소스 정보입니다.</param>
@@ -400,13 +416,12 @@ namespace GGemCo2DCore
             obj.transform.SetParent(_owner);
             _createdAudioSourceObjects.Add(obj);
 
-            var src = obj.AddComponent<AudioSource>();
-            src.outputAudioMixerGroup = _group;
-            src.volume = Mathf.Clamp01(info.Volume <= 0f ? 1f : info.Volume);
-            src.pitch = 1f;
-            src.loop = false;
-            if (_loader != null && _loader.TryGetAudioClip($"{ConfigAddressableGroupName.Sound}_{info.FileName}", out AudioClip cachedClip))
-                src.clip = cachedClip;
+            AudioSource source = obj.AddComponent<AudioSource>();
+            source.outputAudioMixerGroup = _group;
+            source.volume = Mathf.Clamp01(info.Volume <= 0f ? 1f : info.Volume);
+            source.pitch = 1f;
+            source.loop = false;
+            source.clip = null;
             obj.SetActive(false);
 
             return obj;
@@ -434,30 +449,42 @@ namespace GGemCo2DCore
         }
 
         /// <summary>
-        /// SFX 볼륨 설정
+        /// SFX 믹서 볼륨을 변경합니다.
         /// </summary>
-        /// <param name="volume">설정할 SFX 볼륨입니다.</param>
-        /// <param name="save">저장 여부입니다.</param>
+        /// <param name="volume">0~1 범위의 볼륨입니다.</param>
+        /// <param name="save">PlayerPrefs에 저장할지 여부입니다.</param>
         public void SetVolume(float volume, bool save = true)
         {
             float db = Mathf.Log10(Mathf.Max(volume, 0.0001f)) * 20f;
             _mixer.SetFloat(_volumeParam, db);
             if (save)
-            {
                 PlayerPrefsManager.SaveSoundVolumeSfx(volume);
-            }
         }
 
+        /// <summary>
+        /// 컨트롤러가 생성한 AudioSource 풀과 재생 참조를 정리합니다.
+        /// </summary>
         public void OnDestroy()
         {
+            if (_isDestroyed)
+                return;
+
+            _isDestroyed = true;
             ClearPool();
         }
 
         /// <summary>
-        /// 컨트롤러가 생성한 AudioSource 오브젝트와 풀 캐시를 모두 정리합니다.
+        /// 활성 재생을 모두 정지한 뒤 생성한 AudioSource와 풀 캐시를 정리합니다.
         /// </summary>
         private void ClearPool()
         {
+            if (_activePlaybacks.Count > 0)
+            {
+                List<ActiveSfxPlayback> activePlaybacks = new List<ActiveSfxPlayback>(_activePlaybacks);
+                for (int i = 0; i < activePlaybacks.Count; i++)
+                    StopPlayback(activePlaybacks[i]);
+            }
+
             for (int i = 0; i < _createdAudioSourceObjects.Count; i++)
             {
                 GameObject obj = _createdAudioSourceObjects[i];
@@ -465,6 +492,7 @@ namespace GGemCo2DCore
                     UnityEngine.Object.Destroy(obj);
             }
 
+            _activePlaybacks.Clear();
             _createdAudioSourceObjects.Clear();
             _pool.Clear();
             _playCount.Clear();
@@ -475,7 +503,6 @@ namespace GGemCo2DCore
 
         /// <summary>
         /// 지정한 실제 SFX 리소스 UID만 풀 관리 대상으로 등록합니다.
-        /// 인트로 씬처럼 일부 사운드의 메타데이터만 먼저 준비해야 할 때 사용합니다.
         /// </summary>
         /// <param name="table">신규 sound_sfx 실제 리소스 테이블입니다.</param>
         /// <param name="targetUids">풀 관리 대상으로 등록할 실제 리소스 UID 목록입니다.</param>
@@ -488,26 +515,25 @@ namespace GGemCo2DCore
             {
                 int uid = targetUids[i];
                 StruckTableSoundSfx info = table.GetDataByUid(uid);
-                RuntimeSfxResource resource = CreateResourceInfo(info);
-                RegisterResource(resource);
+                RegisterResource(CreateResourceInfo(info));
             }
         }
 
         /// <summary>
-        /// 음소거 처리
+        /// 효과음 음소거 상태를 변경합니다.
         /// </summary>
-        /// <param name="set">true면 음소거하고, false면 이전 볼륨으로 복원합니다.</param>
+        /// <param name="set">true면 음소거하고 false면 이전 볼륨으로 복원합니다.</param>
         public void Mute(bool set)
         {
             if (set)
             {
                 _preVolume = PlayerPrefsManager.LoadSoundVolumeSfx();
-                SetVolume(0);
+                SetVolume(0f);
             }
             else
             {
                 SetVolume(_preVolume);
-                _preVolume = 0;
+                _preVolume = 0f;
             }
         }
     }

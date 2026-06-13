@@ -1,6 +1,5 @@
+using System;
 using System.Collections.Generic;
-using System.Collections;
-using System.Threading.Tasks;
 using UnityEngine;
 using UnityEngine.Audio;
 
@@ -30,7 +29,11 @@ namespace GGemCo2DCore
 
         private TableLoaderManager _tableLoaderManager;
         private AddressableLoaderSound _addressableLoaderSound;
+        private int _bgmRequestVersion;
 
+        /// <summary>
+        /// 사운드 컨트롤러와 테이블 기반 해석기를 초기화합니다.
+        /// </summary>
         private void Awake()
         {
             if (mainAudioMixer == null)
@@ -47,16 +50,33 @@ namespace GGemCo2DCore
                 _addressableLoaderSound = AddressableLoaderSound.Instance;
             }
 
-            _soundControllerBgm = new SoundControllerBgm(gameObject, mainAudioMixer, bgmMixerGroup, SoundConstants.NameExposedParameterBGM, bgmFadeDuration);
-            _soundControllerSfx = new SoundControllerSfx(transform, mainAudioMixer, sfxMixerGroup, SoundConstants.NameExposedParameterSfx, _addressableLoaderSound);
-            _soundControllerAmbient = new SoundControllerAmbient(gameObject, ambientMixerGroup != null ? ambientMixerGroup : bgmMixerGroup, _addressableLoaderSound);
+            _soundControllerBgm = new SoundControllerBgm(
+                gameObject,
+                mainAudioMixer,
+                bgmMixerGroup,
+                SoundConstants.NameExposedParameterBGM,
+                bgmFadeDuration);
+            _soundControllerSfx = new SoundControllerSfx(
+                transform,
+                mainAudioMixer,
+                sfxMixerGroup,
+                SoundConstants.NameExposedParameterSfx,
+                _addressableLoaderSound);
+            _soundControllerAmbient = new SoundControllerAmbient(
+                gameObject,
+                ambientMixerGroup != null ? ambientMixerGroup : bgmMixerGroup,
+                _addressableLoaderSound);
             _soundResolver = new SoundResolver(_tableLoaderManager);
-            
+
             ClickSoundEventDispatcher.OnClickDispatched += OnButtonClicked;
         }
 
+        /// <summary>
+        /// 모든 재생 컨트롤러와 이벤트 구독을 정리합니다.
+        /// </summary>
         private void OnDestroy()
         {
+            _bgmRequestVersion++;
             _soundControllerBgm?.OnDestroy();
             _soundControllerSfx?.OnDestroy();
             _soundControllerAmbient?.OnDestroy();
@@ -132,7 +152,8 @@ namespace GGemCo2DCore
 
             if (resolved.Type == SoundConstants.Type.Bgm)
             {
-                StartCoroutine(PlayBgmRoutine(resolved));
+                int requestVersion = ++_bgmRequestVersion;
+                PlayBgmAsync(resolved, requestVersion);
             }
             else if (resolved.Type == SoundConstants.Type.Ambient)
             {
@@ -163,34 +184,51 @@ namespace GGemCo2DCore
         }
 
         /// <summary>
-        /// BGM 클립을 필요 시점에 비동기로 로드한 뒤 재생합니다.
+        /// BGM 클립의 재생 참조를 비동기로 획득한 뒤 최신 SoundManager가 유효할 때 재생합니다.
+        /// SoundManager가 파괴된 뒤 로드가 완료되면 AudioSource에 연결하지 않고 참조를 즉시 해제합니다.
         /// </summary>
         /// <param name="resolved">해석된 BGM 재생 정보입니다.</param>
-        /// <returns>Unity 코루틴 실행자에 전달할 열거자입니다.</returns>
-        private IEnumerator PlayBgmRoutine(ResolvedSound resolved)
+        /// <param name="requestVersion">최신 BGM 요청을 식별하는 버전입니다.</param>
+        private async void PlayBgmAsync(ResolvedSound resolved, int requestVersion)
         {
             if (!resolved.ShouldPlay || _addressableLoaderSound == null || string.IsNullOrWhiteSpace(resolved.FileName))
-                yield break;
+                return;
 
             string key = $"{ConfigAddressableKey.Sound}_{resolved.FileName}";
-            Task<AudioClip> task = _addressableLoaderSound.LoadAudioClipAsync(key);
-            while (!task.IsCompleted)
-                yield return null;
+            SoundPlaybackLease lease = null;
+            try
+            {
+                lease = await _addressableLoaderSound.AcquirePlaybackAsync(key);
+            }
+            catch (Exception ex)
+            {
+                GcLogger.LogWarning($"BGM 클립 로드 중 예외가 발생했습니다. key={key}, error={ex.Message}");
+            }
 
-            if (task.IsCanceled || task.IsFaulted || task.Result == null)
+            if (lease == null)
             {
                 GcLogger.LogWarning($"BGM 클립을 로드하지 못했습니다. key={key}");
-                yield break;
+                return;
+            }
+
+            if (this == null || _soundControllerBgm == null || requestVersion != _bgmRequestVersion)
+            {
+                lease.Dispose();
+                return;
             }
 
             // BGM은 사용자 BGM 볼륨과 별개로, 테이블별 Volume/VolumeScale 값을 배율로 적용합니다.
-            _soundControllerBgm?.Play(task.Result, this, resolved.Volume);
+            _soundControllerBgm.Play(lease, this, resolved.Volume);
         }
 
         /// <summary>
         /// BGM 정지
         /// </summary>
-        public void StopBgm() => _soundControllerBgm?.Stop();
+        public void StopBgm()
+        {
+            _bgmRequestVersion++;
+            _soundControllerBgm?.Stop();
+        }
 
         /// <summary>
         /// Ambient 전체 정지
@@ -210,7 +248,7 @@ namespace GGemCo2DCore
         /// <param name="value"></param>
         /// <param name="save"></param>
         public void SetBgmVolume(float value, bool save = true) => _soundControllerBgm?.SetVolume(value, save);
-        
+
         /// <summary>
         /// SFX 볼륨 변경
         /// </summary>
@@ -238,6 +276,7 @@ namespace GGemCo2DCore
         /// <param name="clip"></param>
         public void ChangeBackgroundMusic(AudioClip clip)
         {
+            _bgmRequestVersion++;
             _soundControllerBgm?.Play(clip, this);
         }
 
@@ -251,7 +290,7 @@ namespace GGemCo2DCore
                 PlayByUid(uid);
             }
             // 2. 고유 ID가 없거나 찾지 못했을 경우 Enum 기준 조회
-            else if (AddressableLoaderSettings.Instance != null) 
+            else if (AddressableLoaderSettings.Instance != null)
             {
                 SoundConstants.UIButtonType buttonType = broadcaster.GetSoundType();
                 uid = AddressableLoaderSettings.Instance.soundSettings.GetSoundButtonClickUid(buttonType);
@@ -369,7 +408,7 @@ namespace GGemCo2DCore
             _soundControllerSfx?.Reinitialize(_tableLoaderManager?.TableSoundSfx);
         }
         /// <summary>
-        /// 효과음 음소거 
+        /// 효과음 음소거
         /// </summary>
         private void SetMuteSfx(bool set)
         {

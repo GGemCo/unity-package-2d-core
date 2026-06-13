@@ -1,11 +1,11 @@
-﻿using System.Collections;
+using System.Collections;
 using UnityEngine;
 using UnityEngine.Audio;
 
 namespace GGemCo2DCore
 {
     /// <summary>
-    /// BGM 컨트롤러
+    /// BGM 교체, 페이드, AudioClip 재생 참조 수명을 관리합니다.
     /// </summary>
     public class SoundControllerBgm
     {
@@ -17,12 +17,28 @@ namespace GGemCo2DCore
         private AudioSource _sourceB;
         private AudioSource _current;
         private AudioSource _next;
+        private SoundPlaybackLease _currentLease;
+        private SoundPlaybackLease _pendingLease;
+        private int _playVersion;
 
-        public SoundControllerBgm(GameObject owner, AudioMixer mixer, AudioMixerGroup group, string volumeParam, float fadeDuration)
+        /// <summary>
+        /// BGM 재생에 사용할 AudioSource와 믹서 설정을 초기화합니다.
+        /// </summary>
+        /// <param name="owner">AudioSource를 추가할 소유 GameObject입니다.</param>
+        /// <param name="mixer">BGM 볼륨을 제어할 AudioMixer입니다.</param>
+        /// <param name="group">BGM 출력 AudioMixerGroup입니다.</param>
+        /// <param name="volumeParam">BGM 볼륨 Exposed Parameter 이름입니다.</param>
+        /// <param name="fadeDuration">BGM 교체 페이드 시간입니다.</param>
+        public SoundControllerBgm(
+            GameObject owner,
+            AudioMixer mixer,
+            AudioMixerGroup group,
+            string volumeParam,
+            float fadeDuration)
         {
             _mixer = mixer;
             _volumeParam = volumeParam;
-            _fadeDuration = fadeDuration;
+            _fadeDuration = Mathf.Max(0f, fadeDuration);
 
             _sourceA = owner.AddComponent<AudioSource>();
             _sourceB = owner.AddComponent<AudioSource>();
@@ -35,8 +51,8 @@ namespace GGemCo2DCore
         }
 
         /// <summary>
-        /// BGM 클립을 재생합니다.
-        /// 테이블 볼륨을 사용하지 않는 일반 경로(기존 호출)는 기본 볼륨 1.0으로 재생됩니다.
+        /// 외부에서 직접 전달한 BGM 클립을 재생합니다.
+        /// 이 경로는 Addressables 재생 참조 임대 객체를 보유하지 않습니다.
         /// </summary>
         /// <param name="clip">재생할 BGM 클립입니다.</param>
         /// <param name="coroutineHost">페이드 코루틴을 실행할 MonoBehaviour입니다.</param>
@@ -46,28 +62,83 @@ namespace GGemCo2DCore
         }
 
         /// <summary>
-        /// BGM 클립을 재생합니다.
-        /// 사용자 BGM 볼륨(PlayerPrefs)과 별개로, 클립별 볼륨 배율을 함께 적용합니다.
+        /// 외부에서 직접 전달한 BGM 클립을 지정한 볼륨 배율로 재생합니다.
         /// </summary>
         /// <param name="clip">재생할 BGM 클립입니다.</param>
         /// <param name="coroutineHost">페이드 코루틴을 실행할 MonoBehaviour입니다.</param>
-        /// <param name="clipVolume">클립별 볼륨(0~1)입니다.</param>
+        /// <param name="clipVolume">클립별 볼륨 배율입니다.</param>
         public void Play(AudioClip clip, MonoBehaviour coroutineHost, float clipVolume)
         {
-            coroutineHost.StartCoroutine(FadeAndSwitch(clip, clipVolume));
+            BeginPlay(clip, null, coroutineHost, clipVolume);
+        }
+
+        /// <summary>
+        /// Addressables 재생 참조 임대 객체가 유지하는 BGM 클립을 재생합니다.
+        /// 교체되거나 정지될 때 AudioSource의 Clip을 먼저 제거한 뒤 임대 객체를 해제합니다.
+        /// </summary>
+        /// <param name="playbackLease">재생 중 Addressables 참조를 유지할 임대 객체입니다.</param>
+        /// <param name="coroutineHost">페이드 코루틴을 실행할 MonoBehaviour입니다.</param>
+        /// <param name="clipVolume">클립별 볼륨 배율입니다.</param>
+        public void Play(
+            SoundPlaybackLease playbackLease,
+            MonoBehaviour coroutineHost,
+            float clipVolume)
+        {
+            if (playbackLease == null || playbackLease.Clip == null)
+            {
+                playbackLease?.Dispose();
+                return;
+            }
+
+            BeginPlay(playbackLease.Clip, playbackLease, coroutineHost, clipVolume);
+        }
+
+        /// <summary>
+        /// 새로운 BGM 교체 요청을 등록하고 이전 대기 중인 요청을 취소합니다.
+        /// </summary>
+        /// <param name="clip">재생할 AudioClip입니다.</param>
+        /// <param name="playbackLease">클립의 Addressables 재생 참조 임대 객체입니다.</param>
+        /// <param name="coroutineHost">페이드 코루틴 실행자입니다.</param>
+        /// <param name="clipVolume">클립별 볼륨 배율입니다.</param>
+        private void BeginPlay(
+            AudioClip clip,
+            SoundPlaybackLease playbackLease,
+            MonoBehaviour coroutineHost,
+            float clipVolume)
+        {
+            if (clip == null || coroutineHost == null)
+            {
+                playbackLease?.Dispose();
+                return;
+            }
+
+            _playVersion++;
+            ReleasePendingLease();
+            _pendingLease = playbackLease;
+            coroutineHost.StartCoroutine(FadeAndSwitch(
+                clip,
+                Mathf.Clamp01(clipVolume),
+                playbackLease,
+                _playVersion));
         }
 
         /// <summary>
         /// 현재 BGM을 페이드아웃한 뒤 새 BGM으로 교체하고 페이드인합니다.
-        /// 믹서 BGM 볼륨은 사용자 설정값을 유지하고, AudioSource 볼륨에는 클립별 배율을 적용합니다.
+        /// 최신 요청이 아닌 코루틴은 보유한 대기 임대 객체를 해제하고 종료합니다.
         /// </summary>
         /// <param name="newClip">교체할 BGM 클립입니다.</param>
-        /// <param name="clipVolume">클립별 볼륨(0~1)입니다.</param>
-        private IEnumerator FadeAndSwitch(AudioClip newClip, float clipVolume)
+        /// <param name="clipVolume">클립별 볼륨 배율입니다.</param>
+        /// <param name="playbackLease">새 클립의 재생 참조 임대 객체입니다.</param>
+        /// <param name="version">요청 순서를 식별하는 버전입니다.</param>
+        /// <returns>페이드 실행 열거자입니다.</returns>
+        private IEnumerator FadeAndSwitch(
+            AudioClip newClip,
+            float clipVolume,
+            SoundPlaybackLease playbackLease,
+            int version)
         {
             float savedVolume = PlayerPrefsManager.LoadSoundVolumeBGM();
             float dbTarget = Mathf.Log10(Mathf.Max(savedVolume, 0.0001f)) * 20f;
-            float normalizedClipVolume = Mathf.Clamp01(clipVolume);
 
             _mixer.GetFloat(_volumeParam, out float currentDb);
             float currentVolume = Mathf.Pow(10f, currentDb / 20f);
@@ -75,49 +146,126 @@ namespace GGemCo2DCore
             float t = 0f;
             while (t < _fadeDuration)
             {
+                if (version != _playVersion)
+                {
+                    ReleasePendingLeaseIfSame(playbackLease);
+                    yield break;
+                }
+
                 t += Time.deltaTime;
-                float v = Mathf.Lerp(currentVolume, 0f, t / _fadeDuration);
+                float v = Mathf.Lerp(currentVolume, 0f, _fadeDuration > 0f ? t / _fadeDuration : 1f);
                 _mixer.SetFloat(_volumeParam, Mathf.Log10(Mathf.Max(v, 0.0001f)) * 20f);
                 yield return null;
             }
 
-            _current.Stop();
+            if (version != _playVersion)
+            {
+                ReleasePendingLeaseIfSame(playbackLease);
+                yield break;
+            }
+
+            ClearCurrentSourceAndLease();
             (_current, _next) = (_next, _current);
 
             _current.clip = newClip;
             _current.loop = true;
-            _current.volume = normalizedClipVolume;
+            _current.volume = clipVolume;
+            _currentLease = playbackLease;
+            if (ReferenceEquals(_pendingLease, playbackLease))
+                _pendingLease = null;
             _current.Play();
 
             t = 0f;
             while (t < _fadeDuration)
             {
+                if (version != _playVersion)
+                    yield break;
+
                 t += Time.deltaTime;
-                float v = Mathf.Lerp(0f, savedVolume, t / _fadeDuration);
+                float v = Mathf.Lerp(0f, savedVolume, _fadeDuration > 0f ? t / _fadeDuration : 1f);
                 _mixer.SetFloat(_volumeParam, Mathf.Log10(Mathf.Max(v, 0.0001f)) * 20f);
                 yield return null;
             }
 
-            _mixer.SetFloat(_volumeParam, dbTarget);
+            if (version == _playVersion)
+                _mixer.SetFloat(_volumeParam, dbTarget);
         }
 
+        /// <summary>
+        /// 현재 BGM 재생을 정지하고 AudioSource와 Addressables 참조를 정리합니다.
+        /// </summary>
         public void Stop()
         {
-            _current?.Stop();
+            _playVersion++;
+            ReleasePendingLease();
+            ClearCurrentSourceAndLease();
+            ClearAudioSource(_next);
         }
 
+        /// <summary>
+        /// BGM 믹서 볼륨을 변경합니다.
+        /// </summary>
+        /// <param name="volume">0~1 범위의 볼륨입니다.</param>
+        /// <param name="save">PlayerPrefs에 저장할지 여부입니다.</param>
         public void SetVolume(float volume, bool save = true)
         {
             float db = Mathf.Log10(Mathf.Max(volume, 0.0001f)) * 20f;
             _mixer.SetFloat(_volumeParam, db);
             if (save)
-            {
                 PlayerPrefsManager.SaveSoundVolumeBGM(volume);
-            }
         }
 
+        /// <summary>
+        /// 컨트롤러가 보유한 AudioSource와 재생 참조를 정리합니다.
+        /// </summary>
         public void OnDestroy()
         {
+            Stop();
+        }
+
+        /// <summary>
+        /// 현재 AudioSource의 Clip 참조를 제거하고 재생 임대 객체를 해제합니다.
+        /// </summary>
+        private void ClearCurrentSourceAndLease()
+        {
+            ClearAudioSource(_current);
+            _currentLease?.Dispose();
+            _currentLease = null;
+        }
+
+        /// <summary>
+        /// 대기 중인 BGM 재생 임대 객체를 해제합니다.
+        /// </summary>
+        private void ReleasePendingLease()
+        {
+            _pendingLease?.Dispose();
+            _pendingLease = null;
+        }
+
+        /// <summary>
+        /// 전달된 임대 객체가 현재 대기 요청과 같을 때만 해제합니다.
+        /// </summary>
+        /// <param name="playbackLease">검사할 재생 임대 객체입니다.</param>
+        private void ReleasePendingLeaseIfSame(SoundPlaybackLease playbackLease)
+        {
+            if (!ReferenceEquals(_pendingLease, playbackLease))
+                return;
+
+            ReleasePendingLease();
+        }
+
+        /// <summary>
+        /// AudioSource를 정지하고 AudioClip 참조를 제거합니다.
+        /// </summary>
+        /// <param name="source">정리할 AudioSource입니다.</param>
+        private static void ClearAudioSource(AudioSource source)
+        {
+            if (source == null)
+                return;
+
+            source.Stop();
+            source.loop = false;
+            source.clip = null;
         }
     }
 }
