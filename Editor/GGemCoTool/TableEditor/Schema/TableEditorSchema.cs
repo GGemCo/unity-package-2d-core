@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
@@ -145,6 +145,7 @@ namespace GGemCo2DCoreEditor
             { "NeedItemUid4", ConfigAddressableTable.Item },
             { "SourceItemUid", ConfigAddressableTable.Item },
             { "MonsterUid", ConfigAddressableTable.Monster },
+            { "CombatProfileUid", ConfigAddressableTable.MonsterCombatProfile },
             { "DeathSkillMonsterUid", "skill_monster" },
             { "NpcUid", ConfigAddressableTable.Npc },
             { "MapUid", ConfigAddressableTable.Map },

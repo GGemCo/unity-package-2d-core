@@ -8,10 +8,6 @@ namespace GGemCo2DCore
         protected ICharacterAnimationController iCharacterAnimationController;
 
         // Collider & Bounds
-        protected Vector2 capsuleColliderOffset;
-        protected Vector2 capsuleColliderSize;
-        protected CapsuleDirection2D capsuleDirection2D;
-
         // 맵 경계(좌하단/우상단)
         protected Vector2 minBounds;
         protected Vector2 maxBounds;
@@ -92,15 +88,6 @@ namespace GGemCo2DCore
             RefreshMapBounds(force: true);
 
             iCharacterAnimationController = targetCharacter.CharacterAnimationController;
-
-            // Awake에서 콜라이더가 붙으므로 Start에서 참조
-            capsuleColliderSize = Vector2.zero;
-            if (targetCharacter != null && targetCharacter.colliderAttackRange != null)
-            {
-                capsuleColliderOffset   = targetCharacter.colliderAttackRange.offset;
-                capsuleColliderSize     = targetCharacter.colliderAttackRange.size;
-                capsuleDirection2D      = targetCharacter.colliderAttackRange.direction;
-            }
 
             // 최초 1회 계산
             UpdateCheckMaxBounds();

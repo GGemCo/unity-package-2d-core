@@ -1,4 +1,4 @@
-﻿using UnityEngine;
+using UnityEngine;
 
 namespace GGemCo2DCore
 {
@@ -130,4 +130,40 @@ namespace GGemCo2DCore
         /// </remarks>
         bool IsTargetInMoveStopRange();
     }
+
+    /// <summary>
+    /// 몬스터 전투 범위 프로필과 현재 타겟 거리 정보를 상위 AI에 제공하는 선택 인터페이스입니다.
+    /// </summary>
+    /// <remarks>
+    /// 실제 피해 판정 Collider와 AI 의사결정용 거리를 분리하기 위해 사용합니다.
+    /// 구현체가 이 인터페이스를 제공하지 않으면 상위 AI는 기존 노드 파라미터와 블랙보드 값을 사용합니다.
+    /// </remarks>
+    public interface IMonsterCombatRangeProvider
+    {
+        /// <summary>현재 몬스터에 적용된 전투 범위 프로필입니다.</summary>
+        MonsterCombatRangeProfile CombatRangeProfile { get; }
+
+        /// <summary>
+        /// 현재 타겟과의 축별 거리 및 2D 중심 거리를 조회합니다.
+        /// </summary>
+        /// <param name="horizontalDistance">타겟 HitArea 가장자리까지의 X축 거리입니다.</param>
+        /// <param name="verticalDistance">타겟 HitArea 가장자리까지의 Y축 거리입니다.</param>
+        /// <param name="distance2D">몬스터와 타겟 중심 사이의 2D 거리입니다.</param>
+        /// <returns>유효한 타겟과 거리를 계산했으면 <see langword="true"/>입니다.</returns>
+        bool TryGetTargetDistances(
+            out float horizontalDistance,
+            out float verticalDistance,
+            out float distance2D);
+
+        /// <summary>
+        /// 현재 타겟이 선호 전투 거리 구간 안인지 반환합니다.
+        /// </summary>
+        bool IsTargetInPreferredCombatRange();
+
+        /// <summary>
+        /// 현재 타겟이 추적 거리 한계를 초과했는지 반환합니다.
+        /// </summary>
+        bool IsTargetBeyondChaseRange();
+    }
+
 }

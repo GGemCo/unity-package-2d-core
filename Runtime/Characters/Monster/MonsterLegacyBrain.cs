@@ -67,6 +67,10 @@ namespace GGemCo2DCore
 
             if (_controller.targetCharacter is not Monster monster) return;
 
+            // 신규 전투 범위 프로필이 활성화된 몬스터는 MonsterDetectionSensor2D가 선공 감지를 전담합니다.
+            // 이 Trigger는 구형 프리팹에서 논리 감지 범위를 만들 수 없는 경우에만 호환 경로로 사용합니다.
+            if (monster.CombatRangeProfile.IsDetectionEnabled) return;
+
             Player player = collision.GetComponentInParent<Player>();
             if (player == null) return;
 
@@ -74,12 +78,17 @@ namespace GGemCo2DCore
         }
 
         /// <summary>
-        /// 몬스터 공격 범위 Trigger에서 플레이어가 이탈했을 때 진행 중인 기본 공격 코루틴을 정리합니다.
+        /// 구형 공격 범위 Trigger에서 플레이어가 이탈했을 때 레거시 공격 코루틴을 정리합니다.
         /// </summary>
-        /// <param name="collision">공격 범위에서 이탈한 Collider입니다.</param>
+        /// <param name="collision">구형 공격 범위에서 이탈한 Collider입니다.</param>
+        /// <remarks>
+        /// 신규 범위 프로필에서는 실제 피해 판정 Collider 이탈이 AI 공격 상태를 변경하지 않습니다.
+        /// 논리 기본 공격 범위 이탈은 <see cref="ControllerMonster.TickLegacy"/>에서 처리합니다.
+        /// </remarks>
         public void OnCharacterTriggerExit(Collider2D collision)
         {
-            if (!IsActive) return;
+            if (!IsActive || collision == null) return;
+            if (_controller.targetCharacter is Monster monster && monster.CombatRangeProfile.IsDetectionEnabled) return;
 
             if (collision.CompareTag(ConfigTags.GetValue(ConfigTags.Keys.Player)))
             {

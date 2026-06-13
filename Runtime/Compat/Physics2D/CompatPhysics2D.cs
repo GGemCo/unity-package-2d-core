@@ -1,4 +1,4 @@
-﻿using System.Runtime.CompilerServices;
+using System.Runtime.CompilerServices;
 using UnityEngine;
 
 namespace GGemCo2DCore
@@ -67,6 +67,37 @@ namespace GGemCo2DCore
                 layerMask,
                 minDepth,
                 maxDepth);
+#endif
+        }
+
+        /// <summary>
+        /// Box Overlap 결과를 results 배열에 채우고, 채워진 개수를 반환합니다.
+        /// ContactFilter2D를 통해 Layer / Depth / Trigger 정책을 전달할 수 있습니다.
+        /// </summary>
+        /// <param name="point">Box 중심 월드 좌표입니다.</param>
+        /// <param name="size">Box 월드 크기입니다.</param>
+        /// <param name="angle">Z축 회전 각도입니다.</param>
+        /// <param name="contactFilter">검색 필터입니다.</param>
+        /// <param name="results">검색 결과를 저장할 재사용 배열입니다.</param>
+        /// <returns>배열에 기록된 Collider 수입니다.</returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static int OverlapBoxNonAlloc(
+            Vector2 point,
+            Vector2 size,
+            float angle,
+            ContactFilter2D contactFilter,
+            Collider2D[] results)
+        {
+            if (results == null || results.Length == 0)
+                return 0;
+
+#if UNITY_6000_0_OR_NEWER
+            return Physics2D.OverlapBox(point, size, angle, contactFilter, results);
+#else
+            int layerMask = contactFilter.useLayerMask ? contactFilter.layerMask : Physics2D.AllLayers;
+            float minDepth = contactFilter.useDepth ? contactFilter.minDepth : float.NegativeInfinity;
+            float maxDepth = contactFilter.useDepth ? contactFilter.maxDepth : float.PositiveInfinity;
+            return Physics2D.OverlapBoxNonAlloc(point, size, angle, results, layerMask, minDepth, maxDepth);
 #endif
         }
 

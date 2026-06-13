@@ -15,6 +15,7 @@ namespace GGemCo2DCore
         public TableMapSound TableMapSound { get; private set; } = new TableMapSound();
         public TableMapEntryRule TableMapEntryRule { get; private set; } = new TableMapEntryRule();
         public TableMonster TableMonster { get; private set; } = new TableMonster();
+        public TableMonsterCombatProfile TableMonsterCombatProfile { get; private set; } = new TableMonsterCombatProfile();
         public TableMonsterPhase TableMonsterPhase { get; private set; } = new TableMonsterPhase();
         public TableAnimation TableAnimation { get; private set; } = new TableAnimation();
         public TableItem TableItem { get; private set; } = new TableItem();
@@ -84,6 +85,7 @@ namespace GGemCo2DCore
                 registry = new TableRegistry();
                 registry.Register(TableAnimation);
                 registry.Register(TableMonster);
+                registry.Register(TableMonsterCombatProfile);
                 registry.Register(TableMonsterPhase);
                 registry.Register(TableNpc);
                 registry.Register(TableMap);
@@ -242,6 +244,39 @@ namespace GGemCo2DCore
             => GetData(TableMonster, uid, "Monster", (t, i) => t.GetDataByUid(i), logIfMissing);
         public bool TryGetMonsterData(int uid, out StruckTableMonster data, bool logIfMissing = false)
             => TryGetData(TableMonster, uid, out data, "Monster", (t, i) => t.GetDataByUid(i), logIfMissing);
+
+        /// <summary>
+        /// 몬스터 전투 범위 프로필 UID로 데이터를 조회합니다.
+        /// </summary>
+        /// <param name="uid">monster_combat_profile 테이블 UID입니다.</param>
+        /// <param name="logIfMissing">조회 실패 시 경고 로그를 출력할지 여부입니다.</param>
+        /// <returns>조회한 전투 범위 프로필이며, 찾지 못하면 <see langword="null"/>입니다.</returns>
+        public StruckTableMonsterCombatProfile GetMonsterCombatProfileData(int uid, bool logIfMissing = true)
+            => GetData(
+                TableMonsterCombatProfile,
+                uid,
+                "MonsterCombatProfile",
+                (table, rowUid) => table.GetDataByUid(rowUid),
+                logIfMissing);
+
+        /// <summary>
+        /// 몬스터 전투 범위 프로필 UID로 데이터 조회를 시도합니다.
+        /// </summary>
+        /// <param name="uid">monster_combat_profile 테이블 UID입니다.</param>
+        /// <param name="data">조회한 전투 범위 프로필입니다.</param>
+        /// <param name="logIfMissing">조회 실패 시 경고 로그를 출력할지 여부입니다.</param>
+        /// <returns>프로필을 찾으면 <see langword="true"/>입니다.</returns>
+        public bool TryGetMonsterCombatProfileData(
+            int uid,
+            out StruckTableMonsterCombatProfile data,
+            bool logIfMissing = false)
+            => TryGetData(
+                TableMonsterCombatProfile,
+                uid,
+                out data,
+                "MonsterCombatProfile",
+                (table, rowUid) => table.GetDataByUid(rowUid),
+                logIfMissing);
 
         /// <summary>
         /// 몬스터 UID로 페이즈 행 목록을 조회합니다.

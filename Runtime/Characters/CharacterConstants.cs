@@ -134,8 +134,9 @@ namespace GGemCo2DCore
             DetectedByPatrol = 1,
 
             /// <summary>
-            /// 공격 범위 Trigger에서 플레이어를 발견하여 전투가 시작되었습니다.
+            /// 구형 공격 범위 Trigger에서 플레이어를 발견하여 전투가 시작되었습니다.
             /// </summary>
+            /// <remarks>신규 선공 감지는 <see cref="DetectedByRange"/>를 사용합니다.</remarks>
             DetectedByAttackRange = 2,
 
             /// <summary>
@@ -147,6 +148,11 @@ namespace GGemCo2DCore
             /// 플레이어가 아닌 대상에게 실제 데미지를 받아 전투가 시작되었습니다.
             /// </summary>
             DamagedByNonPlayer = 4,
+
+            /// <summary>
+            /// monster_combat_profile의 논리 감지 범위에서 플레이어를 발견하여 전투가 시작되었습니다.
+            /// </summary>
+            DetectedByRange = 5,
         }
 
         public static FacingDirection8 ToFacingDirection8(Vector2 dir)

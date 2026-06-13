@@ -7,18 +7,14 @@ namespace GGemCo2DCore
     /// <summary>
     /// 몬스터 선공, 후공 처리 
     /// </summary>
-    public class ControllerMonster : CharacterBaseController, IMonsterCombatDriver, IMonsterMoveStopRangeProvider, IMonsterBrainSuspendProvider
+    public class ControllerMonster : CharacterBaseController, IMonsterCombatDriver, IMonsterMoveStopRangeProvider, IMonsterCombatRangeProvider, IMonsterBrainSuspendProvider
     {
         private const float MoveDirectionEpsilonSqr = 0.000001f;
         private const float BtMoveDirectionBlendPerSecond = 0.000001f;
         private const float BtMoveIntentKeepAliveSeconds = 5f;
-        private const int AttackRangeColliderFallbackCapacity = 32;
-
         private Coroutine _coroutineAttack;
         private float _delayTimeAttack;
         private Monster _monster;
-        private Collider2D[] _collider2Ds;
-        private ContactFilter2D _attackTargetHitAreaFilter;
         private bool _hasBtMoveIntent;
         private Vector2 _btMoveIntentDirection;
         private Vector2 _btSmoothedDirection;
@@ -55,6 +51,49 @@ namespace GGemCo2DCore
 
         /// <inheritdoc />
         public bool IsTargetInMoveStopRange() => SearchAttackerTargetForMoveStop();
+
+        /// <inheritdoc />
+        public MonsterCombatRangeProfile CombatRangeProfile =>
+            _monster != null ? _monster.CombatRangeProfile : default;
+
+        /// <inheritdoc />
+        public bool TryGetTargetDistances(
+            out float horizontalDistance,
+            out float verticalDistance,
+            out float distance2D)
+        {
+            horizontalDistance = -1f;
+            verticalDistance = -1f;
+            distance2D = -1f;
+            if (!TryGetTarget(out Transform target) || target == null || targetCharacter == null)
+            {
+                return false;
+            }
+
+            return MonsterCombatRangeMath.TryGetDistances(
+                targetCharacter.transform,
+                target,
+                out horizontalDistance,
+                out verticalDistance,
+                out distance2D);
+        }
+
+        /// <inheritdoc />
+        public bool IsTargetInPreferredCombatRange()
+        {
+            return TryGetTargetDistances(
+                       out float horizontalDistance,
+                       out float verticalDistance,
+                       out _) &&
+                   CombatRangeProfile.IsWithinPreferredRange(horizontalDistance, verticalDistance);
+        }
+
+        /// <inheritdoc />
+        public bool IsTargetBeyondChaseRange()
+        {
+            return TryGetTargetDistances(out _, out _, out float distance2D) &&
+                   CombatRangeProfile.IsBeyondChaseRange(distance2D);
+        }
 
         /// <inheritdoc />
         public void RequestWait() => Wait();
@@ -267,15 +306,16 @@ namespace GGemCo2DCore
         }
 
         /// <summary>
-        /// 공격 범위 판정에 사용할 충돌체 캐시를 초기화한다.
+        /// 몬스터 실행 드라이버를 초기화합니다.
         /// </summary>
-        /// <param name="collider2Ds">공격 범위 계산에 사용할 충돌체 배열.</param>
-        public void Initialize(Collider2D[] collider2Ds)
+        /// <param name="legacyColliderBuffer">구형 호출부 호환을 위해 유지하는 미사용 Collider 배열입니다.</param>
+        /// <remarks>
+        /// 실제 피해 판정은 Monster.OnEventAttack의 공격 Collider가 담당하고,
+        /// AI 공격 시작/이동 정지 판정은 <see cref="MonsterCombatRangeProfile"/>을 사용합니다.
+        /// </remarks>
+        public void Initialize(Collider2D[] legacyColliderBuffer)
         {
-            _collider2Ds = collider2Ds != null && collider2Ds.Length > 0
-                ? collider2Ds
-                : new Collider2D[AttackRangeColliderFallbackCapacity];
-            RebuildAttackTargetHitAreaFilter();
+            _ = legacyColliderBuffer;
         }
         /// <summary>
         /// 입력 처리 - 공격자 방향 계산
@@ -579,100 +619,64 @@ namespace GGemCo2DCore
         }
         
         /// <summary>
-        /// 현재 공격 대상이 몬스터의 공격 범위 안에 있는지 검색한다.
+        /// 현재 공격 대상이 논리 기본 공격 시작 범위 안에 있는지 확인합니다.
         /// </summary>
-        /// <returns>공격 대상의 <see cref="CharacterHitArea"/>가 공격 범위 안에서 발견되면 <see langword="true"/>입니다.</returns>
+        /// <returns>타겟 HitArea 가장자리까지의 X/Y축 거리가 기본 공격 범위 안이면 <see langword="true"/>입니다.</returns>
         /// <remarks>
-        /// 전체 Collider를 검색하면 공격 범위 안의 보조 Trigger가 결과 버퍼를 먼저 채워
-        /// 실제 플레이어 HitArea가 누락될 수 있으므로, 플레이어 HitArea 레이어만 필터링한다.
-        /// 또한 태그만 비교하지 않고 <see cref="CharacterHitArea.target"/>으로 실제 공격 대상과 일치하는지 확인한다.
+        /// 실제 피해 적용 여부는 공격 애니메이션 이벤트 시점의 Collider 오버랩으로 별도 판정합니다.
         /// </remarks>
         private bool SearchAttackerTarget()
         {
-            return SearchAttackerTarget(ignoreAirborneTarget: false);
+            if (targetCharacter == null || targetCharacter.attackerTransform == null) return false;
+            if (targetCharacter.IsStatusAttack() || targetCharacter.IsStatusDead()) return false;
+
+            return TryGetTargetDistances(
+                       out float horizontalDistance,
+                       out float verticalDistance,
+                       out _) &&
+                   CombatRangeProfile.IsWithinBasicAttackRange(horizontalDistance, verticalDistance);
         }
 
         /// <summary>
-        /// 현재 공격 대상이 몬스터의 추적 이동을 멈출 범위 안에 있는지 검색한다.
+        /// 현재 공격 대상이 추적 이동을 멈출 기본 공격 시작 범위 안에 있는지 확인합니다.
         /// </summary>
-        /// <returns>이동 정지 대상이 공격 범위 안에서 발견되면 <see langword="true"/>입니다.</returns>
+        /// <returns>기본 공격 시작 범위와 공중 타겟 정책을 모두 만족하면 <see langword="true"/>입니다.</returns>
         /// <remarks>
-        /// 실제 공격 가능 범위와 추적 이동 정지 범위는 설정에 따라 달라질 수 있다.
-        /// 공중 플레이어를 이동 정지 대상에서 제외하면, 지상형 몬스터가 점프한 플레이어 아래에서 너무 일찍 멈추는 상황을 줄일 수 있다.
+        /// 선호 전투 거리는 후퇴·재배치 같은 별도 AI 정책에서 사용하며,
+        /// 기존 MoveToTarget의 접근 정지 기준에는 적용하지 않아 근접 몬스터가 공격 범위 밖에서 멈추지 않도록 합니다.
         /// </remarks>
         private bool SearchAttackerTargetForMoveStop()
         {
-            return SearchAttackerTarget(ShouldIgnoreAirborneTargetForMonsterMoveStop());
-        }
-
-        /// <summary>
-        /// 현재 공격 대상이 몬스터의 공격 범위 안에 있는지 검색한다.
-        /// </summary>
-        /// <param name="ignoreAirborneTarget">공중 상태인 타겟을 결과에서 제외할지 여부입니다.</param>
-        /// <returns>공격 대상의 <see cref="CharacterHitArea"/>가 조건에 맞게 발견되면 <see langword="true"/>입니다.</returns>
-        private bool SearchAttackerTarget(bool ignoreAirborneTarget)
-        {
             if (targetCharacter == null || targetCharacter.attackerTransform == null) return false;
             if (targetCharacter.IsStatusAttack() || targetCharacter.IsStatusDead()) return false;
-            EnsureAttackRangeColliderBuffer();
 
             CharacterBase attackTarget = ResolveCurrentAttackTargetCharacter();
-            Vector2 size = new Vector2(
-                capsuleColliderSize.x * Mathf.Abs(transform.localScale.x),
-                capsuleColliderSize.y * Mathf.Abs(transform.localScale.y));
-            Vector2 point = (Vector2)transform.position + capsuleColliderOffset * transform.localScale;
-
-            int hitCount = CompatPhysics2D.OverlapCapsuleNonAlloc(
-                point,
-                size,
-                capsuleDirection2D,
-                0f,
-                _attackTargetHitAreaFilter,
-                _collider2Ds);
-
-            for (int i = 0; i < hitCount; i++)
+            if (!IsValidMoveStopTarget(attackTarget, ShouldIgnoreAirborneTargetForMonsterMoveStop()))
             {
-                Collider2D hit = _collider2Ds[i];
-                if (!hit) continue;
-
-                CharacterHitArea characterHitArea = hit.GetComponent<CharacterHitArea>();
-                if (characterHitArea == null || characterHitArea.target == null) continue;
-
-                if (attackTarget != null)
-                {
-                    if (characterHitArea.target == attackTarget && IsValidAttackRangeTargetForMoveStop(characterHitArea.target, ignoreAirborneTarget))
-                        return true;
-
-                    continue;
-                }
-
-                if (hit.CompareTag(targetCharacter.attackerTransform.tag) &&
-                    IsValidAttackRangeTargetForMoveStop(characterHitArea.target, ignoreAirborneTarget))
-                {
-                    return true;
-                }
+                return false;
             }
 
-            return false;
+            return TryGetTargetDistances(
+                       out float horizontalDistance,
+                       out float verticalDistance,
+                       out _) &&
+                   CombatRangeProfile.IsWithinBasicAttackRange(horizontalDistance, verticalDistance);
         }
 
         /// <summary>
-        /// 공격 범위에서 발견한 타겟을 이동 정지 판정에 사용할 수 있는지 확인한다.
+        /// 현재 타겟을 추적 이동 정지 판정에 사용할 수 있는지 확인합니다.
         /// </summary>
-        /// <param name="target">공격 범위에서 발견한 타겟 캐릭터입니다.</param>
+        /// <param name="target">현재 공격 대상 캐릭터입니다.</param>
         /// <param name="ignoreAirborneTarget">공중 상태인 타겟을 제외할지 여부입니다.</param>
-        /// <returns>이동 정지 판정에 사용할 수 있으면 <see langword="true"/>입니다.</returns>
-        private static bool IsValidAttackRangeTargetForMoveStop(CharacterBase target, bool ignoreAirborneTarget)
+        /// <returns>이동 정지 대상으로 사용할 수 있으면 <see langword="true"/>입니다.</returns>
+        private static bool IsValidMoveStopTarget(CharacterBase target, bool ignoreAirborneTarget)
         {
             if (target == null) return false;
-            if (!ignoreAirborneTarget) return true;
-
-            // 공격 판정 자체는 유지하되, 이동 정지 판정에서만 공중 타겟을 통과 대상으로 본다.
-            return target.IsCurrentlyGrounded();
+            return !ignoreAirborneTarget || target.IsCurrentlyGrounded();
         }
 
         /// <summary>
-        /// 몬스터 추적 이동 정지 판정에서 공중 타겟을 제외할지 확인한다.
+        /// 몬스터 추적 이동 정지 판정에서 공중 타겟을 제외할지 확인합니다.
         /// </summary>
         /// <returns>설정에서 공중 타겟 제외가 활성화되어 있으면 <see langword="true"/>입니다.</returns>
         private static bool ShouldIgnoreAirborneTargetForMonsterMoveStop()
@@ -685,42 +689,9 @@ namespace GGemCo2DCore
         }
 
         /// <summary>
-        /// 공격 범위 검색에 사용할 플레이어 HitArea 전용 필터를 재구성한다.
+        /// 현재 공격 대상으로 기록된 Transform에서 실제 <see cref="CharacterBase"/>를 해석합니다.
         /// </summary>
-        /// <remarks>
-        /// 레이어 이름을 찾지 못한 경우에는 기존 동작과의 호환을 위해 전체 검색으로 폴백한다.
-        /// 정상 설정에서는 <see cref="ConfigLayer.Keys.HitAreaPlayer"/> 레이어만 검색해 버퍼 포화와 오검출을 줄인다.
-        /// </remarks>
-        private void RebuildAttackTargetHitAreaFilter()
-        {
-            string hitAreaLayerName = ConfigLayer.GetValue(ConfigLayer.Keys.HitAreaPlayer);
-            int layerMask = LayerMask.GetMask(hitAreaLayerName);
-            _attackTargetHitAreaFilter = layerMask != 0
-                ? CompatPhysics2D.CreateLayerFilter(layerMask, useTriggers: true)
-                : CompatContactFilter2D.CreateNoFilter();
-        }
-
-        /// <summary>
-        /// 공격 범위 검색 결과를 저장할 Collider 배열이 유효한지 보장한다.
-        /// </summary>
-        /// <remarks>
-        /// 런타임 AddComponent나 테스트 환경에서 <see cref="Initialize"/>가 호출되지 않은 경우에도
-        /// 공격 범위 판정이 NullReference 없이 동작하도록 최소 버퍼를 생성한다.
-        /// </remarks>
-        private void EnsureAttackRangeColliderBuffer()
-        {
-            if (_collider2Ds != null && _collider2Ds.Length > 0) return;
-            _collider2Ds = new Collider2D[AttackRangeColliderFallbackCapacity];
-        }
-
-        /// <summary>
-        /// 현재 공격 대상으로 기록된 Transform에서 실제 <see cref="CharacterBase"/>를 해석한다.
-        /// </summary>
-        /// <returns>공격 대상 CharacterBase가 있으면 반환하고, 없으면 <see langword="null"/>을 반환한다.</returns>
-        /// <remarks>
-        /// Trigger 진입 경로에 따라 루트 Transform 대신 HitArea Transform이 기록될 수 있으므로
-        /// 부모 방향까지 검색해 실제 캐릭터를 복원한다.
-        /// </remarks>
+        /// <returns>공격 대상 CharacterBase가 있으면 반환하고, 없으면 <see langword="null"/>을 반환합니다.</returns>
         private CharacterBase ResolveCurrentAttackTargetCharacter()
         {
             Transform attacker = targetCharacter != null ? targetCharacter.attackerTransform : null;

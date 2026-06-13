@@ -37,7 +37,14 @@ namespace GGemCo2DCore
         private readonly List<IMonsterBrainRuntimeResettable> _brainRuntimeResetters = new(4);
         private bool _pendingBrainResetOnNextFadeIn;
         private CharacterConstants.CombatStartReason _combatStartReason = CharacterConstants.CombatStartReason.None;
+        private MonsterDetectionSensor2D _detectionSensor;
+        private MonsterCombatRangeProfile _combatRangeProfile;
         private int _currentLevel = 1;
+
+        /// <summary>
+        /// 현재 몬스터에 적용된 감지, 기본 공격 시작, 선호 거리, 추적 한계 프로필입니다.
+        /// </summary>
+        public MonsterCombatRangeProfile CombatRangeProfile => _combatRangeProfile;
 
         /// <summary>
         /// 현재 스폰된 몬스터 인스턴스에 적용된 레벨입니다.
@@ -261,6 +268,13 @@ namespace GGemCo2DCore
             _controllerMonster = gameObject.AddComponent<ControllerMonster>();
             _controllerMonster.Initialize(_collider2Ds);
 
+            _detectionSensor = gameObject.GetComponent<MonsterDetectionSensor2D>();
+            if (_detectionSensor == null)
+            {
+                _detectionSensor = gameObject.AddComponent<MonsterDetectionSensor2D>();
+            }
+            _detectionSensor.Initialize(this);
+
             _deathSkillController = gameObject.GetComponent<MonsterDeathSkillController>();
             if (_deathSkillController == null)
             {
@@ -336,6 +350,17 @@ namespace GGemCo2DCore
             }
             SetScale(info.Scale);
             SetAttackType(info.AttackType);
+
+            StruckTableMonsterCombatProfile combatProfileData = null;
+            if (info.CombatProfileUid > 0)
+            {
+                tableLoaderManager.TryGetMonsterCombatProfileData(
+                    info.CombatProfileUid,
+                    out combatProfileData,
+                    logIfMissing: true);
+            }
+
+            _combatRangeProfile = MonsterCombatRangeProfile.Create(combatProfileData, colliderAttackRange);
             _deathSkillController?.SetDeathSkillMonsterUid(info.DeathSkillMonsterUid);
         }
 
@@ -412,6 +437,38 @@ namespace GGemCo2DCore
 
 
         /// <summary>
+        /// monster_combat_profile의 논리 감지 범위에서 플레이어를 발견했을 때 선공 정책을 적용합니다.
+        /// </summary>
+        /// <param name="player">감지 범위에서 발견한 플레이어입니다.</param>
+        public void OnDetectedPlayerByDetectionRange(Player player)
+        {
+            if (!CanBeginCombatWithPlayer(player)) return;
+            if (GetAttackType() != CharacterConstants.AttackType.AggroFirst) return;
+
+            BeginCombatWithPlayer(player, CharacterConstants.CombatStartReason.DetectedByRange);
+        }
+
+        /// <summary>
+        /// 플레이어가 감지 이탈 범위 또는 추적 한계를 벗어났을 때 논리 감지로 시작된 전투만 정리합니다.
+        /// </summary>
+        /// <param name="player">감지 및 추적 유지 범위를 벗어난 플레이어입니다.</param>
+        public void OnLostPlayerByDetectionRange(Player player)
+        {
+            if (player == null) return;
+            if (_combatStartReason != CharacterConstants.CombatStartReason.DetectedByRange &&
+                _combatStartReason != CharacterConstants.CombatStartReason.DetectedByAttackRange)
+            {
+                return;
+            }
+
+            if (attackerTransform != player.transform) return;
+
+            _controllerMonster?.StopAttackCoroutine();
+            SetAggro(false);
+            _combatStartReason = CharacterConstants.CombatStartReason.None;
+        }
+
+        /// <summary>
         /// 패트롤 감지 영역에서 플레이어를 발견했을 때 몬스터의 교전 정책을 적용합니다.
         /// </summary>
         /// <param name="player">패트롤 영역에 진입한 플레이어입니다.</param>
@@ -451,22 +508,17 @@ namespace GGemCo2DCore
         }
 
         /// <summary>
-        /// 공격 범위 Trigger에서 플레이어를 발견했을 때 선공 몬스터의 전투를 시작합니다.
+        /// 구형 공격 범위 Trigger 호출을 논리 감지 범위 진입 처리로 전달합니다.
         /// </summary>
-        /// <param name="player">공격 범위에 진입한 플레이어입니다.</param>
+        /// <param name="player">구형 공격 범위 Trigger에서 전달된 플레이어입니다.</param>
         /// <remarks>
-        /// 레거시 Brain의 공격 범위 감지는 패트롤 오브젝트가 없는 몬스터의 기본 선공 진입점으로 사용됩니다.
+        /// 신규 전투 진입은 <see cref="MonsterDetectionSensor2D"/>가 담당합니다.
+        /// 기존 프리팹과 외부 호출의 호환성을 위해 이 진입점만 유지합니다.
         /// </remarks>
         public void OnDetectedPlayerByAttackRange(Player player)
         {
-            if (!CanBeginCombatWithPlayer(player)) return;
-
-            if (GetAttackType() != CharacterConstants.AttackType.AggroFirst)
-            {
-                return;
-            }
-
-            BeginCombatWithPlayer(player, CharacterConstants.CombatStartReason.DetectedByAttackRange);
+            // 구형 프리팹/외부 호출 호환용 진입점입니다. 신규 전투는 논리 감지 센서를 사용합니다.
+            OnDetectedPlayerByDetectionRange(player);
         }
 
         /// <summary>

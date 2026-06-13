@@ -21,6 +21,7 @@ namespace GGemCo2DCore
         public const string MapSound         = "map_sound";
         public const string MapEntryRule     = "map_entry_rule";
         public const string Monster          = "monster";
+        public const string MonsterCombatProfile = "monster_combat_profile";
         public const string MonsterPhase     = "monster_phase";
         public const string Npc              = "npc";
         public const string Animation        = "animation";
@@ -83,6 +84,7 @@ namespace GGemCo2DCore
         public static readonly AddressableAssetInfo TableMapSound        = Make(MapSound);
         public static readonly AddressableAssetInfo TableMapEntryRule    = Make(MapEntryRule);
         public static readonly AddressableAssetInfo TableMonster         = Make(Monster);
+        public static readonly AddressableAssetInfo TableMonsterCombatProfile = Make(MonsterCombatProfile);
         public static readonly AddressableAssetInfo TableMonsterPhase    = Make(MonsterPhase);
         public static readonly AddressableAssetInfo TableNpc             = Make(Npc);
         public static readonly AddressableAssetInfo TableAnimation       = Make(Animation);
@@ -143,7 +145,7 @@ namespace GGemCo2DCore
         // 전체 목록 + 읽기 전용 뷰
         public static readonly List<AddressableAssetInfo> All = new()
         {
-            TableMap, TableMapSound, TableMapEntryRule, TableMonster, TableMonsterPhase, TableNpc, TableAnimation, TableItem, TableItemVisual,
+            TableMap, TableMapSound, TableMapEntryRule, TableMonster, TableMonsterCombatProfile, TableMonsterPhase, TableNpc, TableAnimation, TableItem, TableItemVisual,
             TableItemBaseOption, TableItemAffixDef, TableItemAffixPool, TableItemRollRule,
             TableMonsterDropRate, TableNpcDropRate, TableItemDropGroup, TableExp, TableWindow, TableUIEffect,
             // Status 3분리 테이블

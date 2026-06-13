@@ -13,6 +13,8 @@ namespace GGemCo2DCore
         public int AnimationUid;
         public string DefaultSkin;
         public CharacterConstants.AttackType AttackType;
+        /// <summary>monster_combat_profile 테이블에서 사용할 전투 범위 프로필 UID입니다.</summary>
+        public int CombatProfileUid;
         public float Scale;
         public CharacterConstants.Grade Grade;
         public int MinLevel;
@@ -66,6 +68,7 @@ namespace GGemCo2DCore
                 AnimationUid = reader.Int("AnimationUid"),
                 DefaultSkin = reader.String("DefaultSkin"),
                 AttackType = reader.Enum<CharacterConstants.AttackType>("AttackType"),
+                CombatProfileUid = ReadOptionalInt(data, "CombatProfileUid", 0),
                 Scale = reader.Float("Scale"),
                 Grade = reader.Enum<CharacterConstants.Grade>("Grade"),
                 MinLevel = minLevel,
