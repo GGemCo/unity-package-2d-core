@@ -1,4 +1,3 @@
-﻿
 namespace GGemCo2DCore
 {
     public static class CrowdControlConstants
@@ -74,6 +73,45 @@ namespace GGemCo2DCore
             /// 종료 X 위치에서 바닥을 다시 탐색한 뒤, 탐지된 지면 Y에 <c>EndYOffset</c>를 더해 사용합니다.
             /// </summary>
             GroundAtEndX = 4,
+        }
+
+
+        /// <summary>
+        /// CrowdControl 종료 위치를 현재 카메라 화면 안쪽으로 보정하는 정책입니다.
+        /// </summary>
+        public enum EndViewportPolicy
+        {
+            /// <summary>
+            /// 화면 경계 보정을 적용하지 않습니다.
+            /// </summary>
+            None = 0,
+
+            /// <summary>
+            /// 플레이어의 최종 위치가 화면을 벗어나면 화면 안쪽으로 보정합니다.
+            /// </summary>
+            ClampPlayerToViewport = 1,
+
+            /// <summary>
+            /// 플레이어의 최종 위치를 화면 안쪽으로 보정하되,
+            /// UseParallax 맵에서 게임 카메라가 플레이어를 정상 추적할 수 있으면 보정하지 않습니다.
+            /// </summary>
+            ClampPlayerExceptFreeCameraFollow = 2,
+        }
+
+        /// <summary>
+        /// CrowdControl 종료 위치의 화면 경계 보정 축을 정의합니다.
+        /// </summary>
+        public enum EndViewportClampAxis
+        {
+            /// <summary>
+            /// 횡스크롤 이동에 필요한 X축만 보정합니다.
+            /// </summary>
+            Horizontal = 0,
+
+            /// <summary>
+            /// X축과 Y축을 모두 보정합니다.
+            /// </summary>
+            Both = 1,
         }
 
         /// <summary>

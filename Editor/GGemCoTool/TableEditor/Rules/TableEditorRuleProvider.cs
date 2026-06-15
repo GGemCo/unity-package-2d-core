@@ -576,6 +576,7 @@ namespace GGemCo2DCoreEditor
             _rules = new List<TableEditorColumnRule>();
             AddRuleGroup(new[] { "Uid", "Name", "Type" }, "Common");
             AddRuleGroup(new[] { "DirectionType", "FixedDirectionX", "FixedDirectionY", "Distance", "EaseType", "Duration" }, "Motion");
+            AddRuleGroup(new[] { "EndViewportPolicy", "EndViewportClampAxis", "EndViewportPadding" }, "End Viewport");
             AddRuleGroup(new[] { "IsUseKnockbackStatus", "IsUseDontControlStatus", "StaggerAnimationName" }, "State / Animation");
         }
 
@@ -605,6 +606,9 @@ namespace GGemCo2DCoreEditor
 
             ValidatePositiveOrZero(row, messages, "Distance");
             ValidatePositiveOrZero(row, messages, "Duration");
+            ValidatePositiveOrZero(row, messages, "EndViewportPadding");
+            ValidateEnumValue<CrowdControlConstants.EndViewportPolicy>(row, messages, "EndViewportPolicy");
+            ValidateEnumValue<CrowdControlConstants.EndViewportClampAxis>(row, messages, "EndViewportClampAxis");
         }
 
         private void AddRuleGroup(IEnumerable<string> columns, string section)
@@ -654,6 +658,35 @@ namespace GGemCo2DCoreEditor
             {
                 Severity = TableEditorValidationSeverity.Warning,
                 Message = $"{headerName} 는 0 이상이어야 합니다.",
+                RowStableId = row.stableId,
+            });
+        }
+
+        /// <summary>
+        /// 지정한 테이블 컬럼 값이 대상 Enum으로 변환 가능한지 검사합니다.
+        /// 컬럼이 없거나 값이 비어 있으면 기존 데이터 호환을 위해 검사를 생략합니다.
+        /// </summary>
+        /// <typeparam name="TEnum">검사할 Enum 타입입니다.</typeparam>
+        /// <param name="row">검사할 테이블 행입니다.</param>
+        /// <param name="messages">검증 메시지를 추가할 목록입니다.</param>
+        /// <param name="headerName">검사할 컬럼 이름입니다.</param>
+        private static void ValidateEnumValue<TEnum>(
+            TableEditorDocumentRow row,
+            List<TableEditorValidationMessage> messages,
+            string headerName)
+            where TEnum : struct, Enum
+        {
+            string raw = GetRaw(row, headerName);
+            if (string.IsNullOrWhiteSpace(raw))
+                return;
+
+            if (Enum.TryParse(raw, true, out TEnum _))
+                return;
+
+            messages.Add(new TableEditorValidationMessage
+            {
+                Severity = TableEditorValidationSeverity.Warning,
+                Message = $"{headerName} 값을 확인해주세요.",
                 RowStableId = row.stableId,
             });
         }

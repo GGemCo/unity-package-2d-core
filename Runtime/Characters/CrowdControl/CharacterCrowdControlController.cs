@@ -371,30 +371,56 @@ namespace GGemCo2DCore
 
         /// <summary>
         /// 시작 위치와 원시 종료 위치를 기반으로 최종 종료 위치를 계산합니다.
+        /// 플레이어 화면 경계 정책이 활성화된 경우 X축을 먼저 보정하여
+        /// GroundAtEndX 지면 탐색도 보정된 X 좌표를 사용하도록 처리합니다.
         /// </summary>
+        /// <param name="crowdControl">종료 위치 정책이 포함된 CrowdControl 런타임 데이터입니다.</param>
+        /// <param name="startPos">CrowdControl 시작 시점의 캐릭터 위치입니다.</param>
+        /// <param name="rawEndPos">방향과 거리를 적용한 원시 종료 위치입니다.</param>
+        /// <returns>Y 위치 정책과 화면 경계 정책이 반영된 최종 종료 위치입니다.</returns>
         private Vector2 ResolveEndPosition(CrowdControlRuntimeData crowdControl, Vector2 startPos, Vector2 rawEndPos)
         {
+            bool useViewportClamp = CrowdControlEndViewportResolver.TryCreateContext(
+                _character,
+                _rigidbody2D,
+                crowdControl,
+                out CrowdControlViewportClampContext viewportContext);
+
+            Vector2 adjustedRawEndPos = useViewportClamp
+                ? viewportContext.ClampHorizontal(rawEndPos)
+                : rawEndPos;
+
+            Vector2 resolvedEndPos;
             switch (crowdControl.EndYMode)
             {
                 case CrowdControlConstants.EndYMode.KeepStartY:
-                    return new Vector2(rawEndPos.x, startPos.y);
+                    resolvedEndPos = new Vector2(adjustedRawEndPos.x, startPos.y);
+                    break;
 
                 case CrowdControlConstants.EndYMode.AddOffsetFromStart:
-                    return new Vector2(rawEndPos.x, startPos.y + crowdControl.EndYOffset);
+                    resolvedEndPos = new Vector2(adjustedRawEndPos.x, startPos.y + crowdControl.EndYOffset);
+                    break;
 
                 case CrowdControlConstants.EndYMode.Absolute:
-                    return new Vector2(rawEndPos.x, crowdControl.EndYAbsolute);
+                    resolvedEndPos = new Vector2(adjustedRawEndPos.x, crowdControl.EndYAbsolute);
+                    break;
 
                 case CrowdControlConstants.EndYMode.GroundAtEndX:
                 {
-                    float groundY = ResolveGroundYAtEndX(rawEndPos, startPos.y);
-                    return new Vector2(rawEndPos.x, groundY + crowdControl.EndYOffset);
+                    float groundY = ResolveGroundYAtEndX(adjustedRawEndPos, startPos.y);
+                    resolvedEndPos = new Vector2(adjustedRawEndPos.x, groundY + crowdControl.EndYOffset);
+                    break;
                 }
 
                 case CrowdControlConstants.EndYMode.None:
                 default:
-                    return rawEndPos;
+                    resolvedEndPos = adjustedRawEndPos;
+                    break;
             }
+
+            return useViewportClamp
+                ? viewportContext.ClampVertical(resolvedEndPos)
+                : resolvedEndPos;
         }
 
         /// <summary>

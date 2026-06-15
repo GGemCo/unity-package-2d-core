@@ -1,4 +1,6 @@
-﻿using System.Collections.Generic;
+using System;
+using System.Collections.Generic;
+using UnityEngine;
 
 namespace GGemCo2DCore
 {
@@ -28,6 +30,21 @@ namespace GGemCo2DCore
         public Easing.EaseType EaseType;
 
         public float Duration;
+
+        /// <summary>
+        /// 플레이어에게 적용된 CrowdControl의 최종 위치를 카메라 화면 안쪽으로 보정하는 정책입니다.
+        /// </summary>
+        public CrowdControlConstants.EndViewportPolicy EndViewportPolicy;
+
+        /// <summary>
+        /// 화면 경계 보정을 적용할 축입니다.
+        /// </summary>
+        public CrowdControlConstants.EndViewportClampAxis EndViewportClampAxis;
+
+        /// <summary>
+        /// 캐릭터 Collider와 화면 경계 사이에 확보할 월드 단위 여백입니다.
+        /// </summary>
+        public float EndViewportPadding;
 
         public bool IsUseKnockbackStatus;
         public bool IsUseDontControlStatus;
@@ -62,6 +79,16 @@ namespace GGemCo2DCore
                 EaseType = reader.Enum<Easing.EaseType>("EaseType"),
 
                 Duration = reader.Float("Duration"),
+
+                // 기존 테이블에 신규 컬럼이 아직 추가되지 않은 경우에도
+                // 플레이어가 일반 맵 화면 밖으로 밀려나지 않도록 안전한 기본 정책을 사용합니다.
+                EndViewportPolicy = reader.Enum(
+                    "EndViewportPolicy",
+                    CrowdControlConstants.EndViewportPolicy.ClampPlayerExceptFreeCameraFollow),
+                EndViewportClampAxis = reader.Enum(
+                    "EndViewportClampAxis",
+                    CrowdControlConstants.EndViewportClampAxis.Horizontal),
+                EndViewportPadding = Mathf.Max(0f, reader.Float("EndViewportPadding", 0.3f)),
 
                 IsUseKnockbackStatus = reader.BoolYN("IsUseKnockbackStatus"),
                 IsUseDontControlStatus = reader.BoolYN("IsUseDontControlStatus"),

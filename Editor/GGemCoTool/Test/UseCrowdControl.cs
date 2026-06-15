@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using UnityEditor;
 using UnityEngine;
 using GGemCo2DCore;
@@ -91,6 +91,9 @@ namespace GGemCo2DCoreEditor
         {
             var options = new TableRowEditorUtility.TableRowEditorBuildOptions();
             options.ReadOnlyMembers.Add(nameof(StruckTableCrowdControl.Uid));
+            options.GroupByMemberName[nameof(StruckTableCrowdControl.EndViewportPolicy)] = "End Viewport";
+            options.GroupByMemberName[nameof(StruckTableCrowdControl.EndViewportClampAxis)] = "End Viewport";
+            options.GroupByMemberName[nameof(StruckTableCrowdControl.EndViewportPadding)] = "End Viewport";
             options.GroupByMemberName[nameof(StruckTableCrowdControl.StaggerAnimationName)] = null;
             return options;
         }
@@ -428,6 +431,10 @@ namespace GGemCo2DCoreEditor
                 case nameof(StruckTableCrowdControl.Duration):
                     if (_editingRow.Duration < 0f) _editingRow.Duration = 0f;
                     break;
+
+                case nameof(StruckTableCrowdControl.EndViewportPadding):
+                    if (_editingRow.EndViewportPadding < 0f) _editingRow.EndViewportPadding = 0f;
+                    break;
             }
         }
 
@@ -435,6 +442,7 @@ namespace GGemCo2DCoreEditor
         {
             NormalizeEditingFieldValue(_editingRow, nameof(StruckTableCrowdControl.Distance));
             NormalizeEditingFieldValue(_editingRow, nameof(StruckTableCrowdControl.Duration));
+            NormalizeEditingFieldValue(_editingRow, nameof(StruckTableCrowdControl.EndViewportPadding));
         }
 
         // ==============================
@@ -719,6 +727,9 @@ namespace GGemCo2DCoreEditor
                     "Distance" => MathHelper.FormatFloat(row.Distance),
                     "EaseType" => row.EaseType.ToString(),
                     "Duration" => MathHelper.FormatFloat(row.Duration),
+                    "EndViewportPolicy" => row.EndViewportPolicy.ToString(),
+                    "EndViewportClampAxis" => row.EndViewportClampAxis.ToString(),
+                    "EndViewportPadding" => MathHelper.FormatFloat(row.EndViewportPadding),
                     "IsUseKnockbackStatus" => MathHelper.FormatBool(row.IsUseKnockbackStatus),
                     "IsUseDontControlStatus" => MathHelper.FormatBool(row.IsUseDontControlStatus),
                     "StaggerAnimationName" => row.StaggerAnimationName ?? string.Empty,

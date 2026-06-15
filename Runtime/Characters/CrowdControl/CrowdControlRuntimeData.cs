@@ -21,6 +21,9 @@ namespace GGemCo2DCore
         public float Distance;
         public Easing.EaseType EaseType;
         public float Duration;
+        public CrowdControlConstants.EndViewportPolicy EndViewportPolicy;
+        public CrowdControlConstants.EndViewportClampAxis EndViewportClampAxis;
+        public float EndViewportPadding;
 
         public float Height;
         public float KnockUpRiseTime;
@@ -80,6 +83,9 @@ namespace GGemCo2DCore
                 Distance = row.Distance,
                 EaseType = row.EaseType,
                 Duration = row.Duration,
+                EndViewportPolicy = row.EndViewportPolicy,
+                EndViewportClampAxis = row.EndViewportClampAxis,
+                EndViewportPadding = Mathf.Max(0f, row.EndViewportPadding),
                 Height = 0f,
                 KnockUpRiseTime = 0f,
                 KnockUpAirTime = 0f,

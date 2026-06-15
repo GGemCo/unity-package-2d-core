@@ -979,6 +979,61 @@ namespace GGemCo2DCore
         }
 
         /// <summary>
+        /// 지정한 타겟을 게임 플레이 카메라가 정상적으로 추적할 수 있는지 확인합니다.
+        /// </summary>
+        /// <param name="target">카메라 추적 가능 여부를 확인할 대상 Transform입니다.</param>
+        /// <returns>
+        /// 카메라와 맵 프로필이 준비되어 있고, 컷신 독점 상태가 아니며,
+        /// 현재 Follow 타겟이 지정한 대상과 일치하면 <see langword="true"/>를 반환합니다.
+        /// </returns>
+        public bool CanGameplayFollowTarget(Transform target)
+        {
+            if (!isActiveAndEnabled || target == null || !target.gameObject.activeInHierarchy)
+                return false;
+
+            if (_isCutsceneCameraOverrideActive || !_isMapCameraProfileResolved)
+                return false;
+
+            if (_followTarget != target)
+                return false;
+
+            if (_currentCamera == null || !_currentCamera.isActiveAndEnabled || !_currentCamera.orthographic)
+                return false;
+
+            if (_mapSize.x <= 0f || _mapSize.y <= 0f)
+                return false;
+
+            return cameraMoveSpeed > 0.0001f;
+        }
+
+        /// <summary>
+        /// 카메라 Shake가 적용되기 전 기본 위치를 기준으로 Orthographic 화면의 월드 Rect를 계산합니다.
+        /// </summary>
+        /// <param name="worldRect">계산된 카메라 화면 월드 Rect입니다.</param>
+        /// <returns>활성 Orthographic 카메라에서 유효한 Rect를 계산했으면 <see langword="true"/>를 반환합니다.</returns>
+        public bool TryGetBaseViewportWorldRect(out Rect worldRect)
+        {
+            worldRect = default;
+
+            if (_currentCamera == null || !_currentCamera.isActiveAndEnabled || !_currentCamera.orthographic)
+                return false;
+
+            float halfHeight = _currentCamera.orthographicSize;
+            float aspect = _currentCamera.aspect;
+            if (halfHeight <= 0f || aspect <= 0f || float.IsNaN(aspect) || float.IsInfinity(aspect))
+                return false;
+
+            float halfWidth = halfHeight * aspect;
+            Vector3 center = GetBaseWorldPosition();
+            worldRect = Rect.MinMaxRect(
+                center.x - halfWidth,
+                center.y - halfHeight,
+                center.x + halfWidth,
+                center.y + halfHeight);
+            return worldRect.width > 0f && worldRect.height > 0f;
+        }
+
+        /// <summary>
         /// 타일맵 로드 완료 이벤트를 수신하면 자동 바텀 정렬 적용을 재시도합니다.
         /// 실제 맵 하단 경계값은 MapManager에서 계산한 월드 경계를 사용합니다.
         /// </summary>
