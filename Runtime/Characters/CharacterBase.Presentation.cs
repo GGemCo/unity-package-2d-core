@@ -175,6 +175,7 @@ namespace GGemCo2DCore
             if (transform.position.y > 0) return false;
             if (_limitBoundaryBottom) return false;
 
+            GcLogger.LogWarning($"Dead by EndTilemapY. {name}");
             Dead(CharacterConstants.DieReasonType.EndTilemapY);
             return true;
         }
