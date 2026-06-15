@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.IO;
 using GGemCo2DCore;
 using Newtonsoft.Json;
-using TMPro;
 using UnityEditor;
 using UnityEditor.AddressableAssets;
 using UnityEditor.AddressableAssets.Settings;
@@ -45,11 +44,15 @@ namespace GGemCo2DCoreEditor
             _defaultMap = pDefaultMap;
         }
         /// <summary>
-        /// 맵에 몬스터 추가하기
+        /// 선택한 몬스터를 현재 맵에 추가하고 배치 표시 정책을 초기화합니다.
         /// </summary>
-        /// <param name="monsterUid"></param>
-        /// <param name="usePatrolMonster"></param>
-        public void AddMonsterToMap(int monsterUid, bool usePatrolMonster)
+        /// <param name="monsterUid">추가할 몬스터 UID입니다.</param>
+        /// <param name="usePatrolMonster">패트롤 영역을 함께 생성할지 여부입니다.</param>
+        /// <param name="mapVisibilityPolicy">카메라 컬링보다 우선 적용할 맵 표시 정책입니다.</param>
+        public void AddMonsterToMap(
+            int monsterUid,
+            bool usePatrolMonster,
+            MapCharacterVisibilityPolicy mapVisibilityPolicy)
         {
             if (!_defaultMap)
             {
@@ -76,13 +79,18 @@ namespace GGemCo2DCoreEditor
             // Addressable 에 등록되어있는지 체크 
             if (!HelperEditorUI.ExistAddressableByPath(ConfigAddressableMap.GetPathCharacter(infoAnimation, true))) return;
             
-            GameObject npcPrefab = AssetDatabaseLoaderManager.LoadAsset<GameObject>(monsterPath);
+            GameObject monsterPrefab = AssetDatabaseLoaderManager.LoadAsset<GameObject>(monsterPath);
 
-            CharacterRegenData characterRegenData =
-                new CharacterRegenData(monsterData.Uid, Vector3.zero, false, _defaultMap.GetChapterNumber(), true,
-                    patrolData: new PatrolData(Vector3.zero, Vector3.zero, Vector2.one, Vector2.zero));
+            CharacterRegenData characterRegenData = new CharacterRegenData(
+                monsterData.Uid,
+                Vector3.zero,
+                false,
+                _defaultMap.GetChapterNumber(),
+                true,
+                patrolData: new PatrolData(Vector3.zero, Vector3.zero, Vector2.one, Vector2.zero),
+                mapVisibilityPolicy: mapVisibilityPolicy);
             
-            GameObject monster = _characterManager.CreateMonster(monsterData.Uid, characterRegenData, npcPrefab);
+            GameObject monster = _characterManager.CreateMonster(monsterData.Uid, characterRegenData, monsterPrefab);
             if (!monster)
             {
                 Debug.LogError("몬스터 데이터가 없습니다.");
@@ -96,11 +104,15 @@ namespace GGemCo2DCoreEditor
                 monsterScript.uid = monsterData.Uid;
                 monsterScript.SetScale(monsterData.Scale);
                 monsterScript.InitTagSortingLayer();
+                MonsterPlacementEditorUtility.ApplyMapVisibilityPolicy(
+                    monsterScript,
+                    _defaultMap.GetChapterNumber(),
+                    mapVisibilityPolicy);
             }
             
-            // npc 정보 보여줄 canvas 추가
-            TextMeshProUGUI text = CreateInfoCanvas(monsterScript);
-            text.text = $"Uid: {monsterData.Uid}\nPos: (0, 0)\nScale: {Math.Abs(monster.transform.localScale.x):F2}";
+            // 몬스터 정보 보여줄 canvas 추가
+            CreateInfoCanvas(monsterScript);
+            MonsterPlacementEditorUtility.UpdateInfoText(monsterScript);
 
             if (usePatrolMonster)
             {
@@ -142,9 +154,18 @@ namespace GGemCo2DCoreEditor
                         existingData != null ? existingData.encounterId : 0);
                 }
 
-                saveMonsterList.CharacterRegenDatas.Add(new CharacterRegenData(monster.uid, child.position,
-                    monster.isFlip, mapUid, true, 0, 0, monster.canMoveX, monster.canMoveY, patrolData,
-                    monster.MapVisibilityPolicy));
+                MapCharacterVisibilityPolicy mapVisibilityPolicy =
+                    MonsterPlacementEditorUtility.GetMapVisibilityPolicy(monster, mapUid);
+                saveMonsterList.CharacterRegenDatas.Add(new CharacterRegenData(
+                    monster.uid,
+                    child.position,
+                    monster.isFlip,
+                    mapUid,
+                    true,
+                    canMoveX: monster.canMoveX,
+                    canMoveY: monster.canMoveY,
+                    patrolData: patrolData,
+                    mapVisibilityPolicy: mapVisibilityPolicy));
                 
                 // map 라벨 붙여주기 
                 // AddressableSettings 가져오기
@@ -226,10 +247,14 @@ namespace GGemCo2DCoreEditor
                     myMonsterScript.canMoveX = monsterData.CanMoveX;
                     myMonsterScript.canMoveY = monsterData.CanMoveY;
                     myMonsterScript.InitTagSortingLayer();
+                    MonsterPlacementEditorUtility.ApplyMapVisibilityPolicy(
+                        myMonsterScript,
+                        _defaultMap.GetChapterNumber(),
+                        monsterData.MapVisibilityPolicy);
                 }
-                // npc 정보 보여줄 canvas 추가
-                TextMeshProUGUI text = CreateInfoCanvas(myMonsterScript);
-                text.text = $"Uid: {monsterData.Uid}\nPos: ({monsterData.x}, {monsterData.y})\nScale: {Math.Abs(monster.transform.localScale.x):F2}";
+                // 몬스터 정보 보여줄 canvas 추가
+                CreateInfoCanvas(myMonsterScript);
+                MonsterPlacementEditorUtility.UpdateInfoText(myMonsterScript);
 
                 var patrol = PatrolEditorFactory.CreateOrLinkPatrol(_defaultMap, myMonsterScript, monsterData.patrolData);
                 if (patrol)

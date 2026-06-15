@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using GGemCo2DCore;
@@ -44,11 +44,15 @@ namespace GGemCo2DCoreEditor
             _defaultMap = pDefaultMap;
         }
         /// <summary>
-        /// 맵에 npc 추가하기
+        /// 선택한 NPC를 현재 맵에 추가하고 배치 표시 정책을 초기화합니다.
         /// </summary>
-        /// <param name="npcUid"></param>
-        /// <param name="defaultVisible">런타임 스폰 직후 기본 보임 여부</param>
-        public void AddNpcToMap(int npcUid, bool defaultVisible)
+        /// <param name="npcUid">추가할 NPC UID입니다.</param>
+        /// <param name="defaultVisible">런타임 스폰 직후 기본 보임 여부입니다.</param>
+        /// <param name="mapVisibilityPolicy">카메라 컬링보다 우선 적용할 맵 표시 정책입니다.</param>
+        public void AddNpcToMap(
+            int npcUid,
+            bool defaultVisible,
+            MapCharacterVisibilityPolicy mapVisibilityPolicy)
         {
             if (!_defaultMap)
             {
@@ -79,8 +83,13 @@ namespace GGemCo2DCoreEditor
             GameObject npcPrefab = AssetDatabaseLoaderManager.LoadAsset<GameObject>(npcPath);
             
             int mapUid = _defaultMap.GetChapterNumber();
-            CharacterRegenData characterRegenData =
-                new CharacterRegenData(npcData.Uid, Vector3.zero, false, mapUid, defaultVisible);
+            CharacterRegenData characterRegenData = new CharacterRegenData(
+                npcData.Uid,
+                Vector3.zero,
+                false,
+                mapUid,
+                defaultVisible,
+                mapVisibilityPolicy: mapVisibilityPolicy);
             GameObject npc = _characterManager.CreateNpc(npcData.Uid, characterRegenData, npcPrefab);
             if (!npc)
             {
@@ -95,7 +104,12 @@ namespace GGemCo2DCoreEditor
                 npcScript.uid = npcData.Uid;
                 npcScript.SetScale(npcData.Scale);
                 npcScript.InitTagSortingLayer();
-                NpcPlacementEditorUtility.ApplyPlacementPolicy(npcScript, mapUid, defaultVisible, isFlip: false);
+                NpcPlacementEditorUtility.ApplyPlacementPolicy(
+                    npcScript,
+                    mapUid,
+                    defaultVisible,
+                    isFlip: false,
+                    mapVisibilityPolicy: mapVisibilityPolicy);
             }
             
             // npc 정보 보여줄 canvas 추가
@@ -124,8 +138,15 @@ namespace GGemCo2DCoreEditor
                 
                 bool defaultVisible = ResolveDefaultVisibleFromNpc(npc, mapUid);
                 bool isFlip = ResolveFlipFromNpc(npc, mapUid);
-                saveNpcList.CharacterRegenDatas.Add(new CharacterRegenData(npc.uid, child.position, isFlip,
-                    mapUid, defaultVisible));
+                MapCharacterVisibilityPolicy mapVisibilityPolicy =
+                    ResolveMapVisibilityPolicyFromNpc(npc, mapUid);
+                saveNpcList.CharacterRegenDatas.Add(new CharacterRegenData(
+                    npc.uid,
+                    child.position,
+                    isFlip,
+                    mapUid,
+                    defaultVisible,
+                    mapVisibilityPolicy: mapVisibilityPolicy));
                 
                 // map 라벨 붙여주기 
                 // AddressableSettings 가져오기
@@ -183,6 +204,26 @@ namespace GGemCo2DCoreEditor
 
             return NpcPlacementEditorUtility.GetFlip(npc, fallbackMapUid);
         }
+
+        /// <summary>
+        /// 배치된 NPC 컴포넌트에서 맵 표시 정책을 조회합니다.
+        /// 리젠 데이터가 비어 있으면 현재 런타임 상태를 기준으로 보정합니다.
+        /// </summary>
+        /// <param name="npc">정책을 조회할 NPC 컴포넌트입니다.</param>
+        /// <param name="fallbackMapUid">리젠 데이터 보정 시 사용할 대체 맵 UID입니다.</param>
+        /// <returns>현재 맵 표시 정책입니다.</returns>
+        private static MapCharacterVisibilityPolicy ResolveMapVisibilityPolicyFromNpc(
+            Npc npc,
+            int fallbackMapUid)
+        {
+            if (npc == null)
+            {
+                return MapCharacterVisibilityPolicy.DefaultCulling;
+            }
+
+            return NpcPlacementEditorUtility.GetMapVisibilityPolicy(npc, fallbackMapUid);
+        }
+
         /// <summary>
         /// json 에서 npc 정보 불러오기
         /// </summary>
@@ -239,7 +280,8 @@ namespace GGemCo2DCoreEditor
                         myNpcScript,
                         _defaultMap.GetChapterNumber(),
                         npcData.DefaultVisible,
-                        npcData.IsFlip);
+                        npcData.IsFlip,
+                        npcData.MapVisibilityPolicy);
                 }
                 
                 // npc 정보 보여줄 canvas 추가

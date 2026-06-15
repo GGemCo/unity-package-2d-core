@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using GGemCo2DCore;
 using UnityEditor;
@@ -35,17 +35,24 @@ namespace GGemCo2DCoreEditor
         private bool _foldNpc = true;
         private bool _foldNpcEdit = true;
         private bool _foldMonster = true;
+        private bool _foldMonsterEdit = true;
         private bool _foldWarp = true;
 
         private int _selectedMapUid;
         private int _selectedNpcUid;
         private int _selectedMonsterUid;
         private bool _npcSpawnDefaultVisible;
+        private MapCharacterVisibilityPolicy _npcSpawnMapVisibilityPolicy;
         private bool _editNpcDefaultVisible;
         private bool _editNpcFlip;
+        private MapCharacterVisibilityPolicy _editNpcMapVisibilityPolicy;
         private bool _editNpcApplyToSameUid;
         private int _editNpcBoundInstanceId;
         private bool _usePatrolMonster;
+        private MapCharacterVisibilityPolicy _monsterSpawnMapVisibilityPolicy;
+        private MapCharacterVisibilityPolicy _editMonsterMapVisibilityPolicy;
+        private bool _editMonsterApplyToSameUid;
+        private int _editMonsterBoundInstanceId;
 
         // ---- Cached options (for SearchableDropdown) ----
         private readonly List<SearchableDropdownUtility.Option<int>> _mapOptions = new List<SearchableDropdownUtility.Option<int>>();
@@ -69,11 +76,17 @@ namespace GGemCo2DCoreEditor
             _selectedNpcUid = 0;
             _selectedMonsterUid = 0;
             _npcSpawnDefaultVisible = true;
+            _npcSpawnMapVisibilityPolicy = MapCharacterVisibilityPolicy.DefaultCulling;
             _editNpcDefaultVisible = true;
             _editNpcFlip = false;
+            _editNpcMapVisibilityPolicy = MapCharacterVisibilityPolicy.DefaultCulling;
             _editNpcApplyToSameUid = false;
             _editNpcBoundInstanceId = 0;
             _usePatrolMonster = false;
+            _monsterSpawnMapVisibilityPolicy = MapCharacterVisibilityPolicy.DefaultCulling;
+            _editMonsterMapVisibilityPolicy = MapCharacterVisibilityPolicy.DefaultCulling;
+            _editMonsterApplyToSameUid = false;
+            _editMonsterBoundInstanceId = 0;
 
             // 컴파일/도메인리로드 직후에는 씬 변경 작업을 막습니다.
             // (아래 2)에서 더 정교하게 처리)
@@ -248,6 +261,8 @@ namespace GGemCo2DCoreEditor
                 GUILayout.Space(12);
                 DrawMonsterSection();
                 GUILayout.Space(12);
+                DrawMonsterEditSection();
+                GUILayout.Space(12);
                 DrawWarpSection();
             }
             EditorGUILayout.EndScrollView();
@@ -386,8 +401,24 @@ namespace GGemCo2DCoreEditor
         }
 
         /// <summary>
+        /// 캐릭터 배치에 사용할 맵 표시 정책 선택 필드를 그립니다.
+        /// </summary>
+        /// <param name="label">필드에 표시할 라벨입니다.</param>
+        /// <param name="currentValue">현재 선택된 정책입니다.</param>
+        /// <returns>사용자가 선택한 맵 표시 정책입니다.</returns>
+        private static MapCharacterVisibilityPolicy DrawMapVisibilityPolicyField(
+            string label,
+            MapCharacterVisibilityPolicy currentValue)
+        {
+            GUIContent content = new GUIContent(
+                label,
+                "DefaultCulling은 카메라 컬링을 따르고, KeepVisible/KeepHidden은 명시 상태를 우선합니다.");
+            return (MapCharacterVisibilityPolicy)EditorGUILayout.EnumPopup(content, currentValue);
+        }
+
+        /// <summary>
         /// NPC 배치 섹션을 그립니다.
-        /// 배치 시점에 "스폰 후 기본 보임" 정책을 함께 저장할 수 있도록 UI를 제공합니다.
+        /// 배치 시점에 기본 보임 값과 맵 표시 정책을 함께 저장할 수 있도록 UI를 제공합니다.
         /// </summary>
         private void DrawNpcSection()
         {
@@ -403,12 +434,27 @@ namespace GGemCo2DCoreEditor
                     selectedNpcIndex,
                     (_, option) => _selectedNpcUid = option.Data,
                     noneText: "(NPC 선택)");
-                
-                _npcSpawnDefaultVisible = HelperEditorUI.ToggleLeft(
-                    "스폰 후 기본 보임",
-                    _npcSpawnDefaultVisible,
-                    "해제하면 런타임에서 이 NPC는 기본적으로 숨김 상태로 시작합니다."
-                );
+
+                _npcSpawnMapVisibilityPolicy = DrawMapVisibilityPolicyField(
+                    "맵 표시 정책",
+                    _npcSpawnMapVisibilityPolicy);
+
+                bool usesDefaultVisible =
+                    _npcSpawnMapVisibilityPolicy == MapCharacterVisibilityPolicy.DefaultCulling;
+                using (new EditorGUI.DisabledScope(!usesDefaultVisible))
+                {
+                    _npcSpawnDefaultVisible = HelperEditorUI.ToggleLeft(
+                        "스폰 후 기본 보임",
+                        _npcSpawnDefaultVisible,
+                        "DefaultCulling 정책에서 런타임 스폰 직후 기본 표시 여부를 결정합니다.");
+                }
+
+                if (!usesDefaultVisible)
+                {
+                    EditorGUILayout.HelpBox(
+                        "KeepVisible/KeepHidden 정책에서는 명시 표시 정책이 DefaultVisible보다 우선합니다.",
+                        MessageType.Info);
+                }
 
                 using (new EditorGUILayout.HorizontalScope())
                 {
@@ -416,7 +462,10 @@ namespace GGemCo2DCoreEditor
 
                     if (GUILayout.Button("NPC 추가", GUILayout.Height(26)))
                     {
-                        _npcExporter.AddNpcToMap(_selectedNpcUid, _npcSpawnDefaultVisible);
+                        _npcExporter.AddNpcToMap(
+                            _selectedNpcUid,
+                            _npcSpawnDefaultVisible,
+                            _npcSpawnMapVisibilityPolicy);
                     }
 
                     GUI.enabled = true;
@@ -425,7 +474,7 @@ namespace GGemCo2DCoreEditor
         }
 
         /// <summary>
-        /// 현재 맵에 배치된 NPC의 DefaultVisible/Flip 정책을 편집하는 섹션을 그립니다.
+        /// 현재 맵에 배치된 NPC의 DefaultVisible/Flip/MapVisibilityPolicy를 편집하는 섹션을 그립니다.
         /// Hierarchy에서 선택한 NPC를 기준으로 편집하며, 필요 시 동일 UID 대상 일괄 적용을 지원합니다.
         /// </summary>
         private void DrawNpcEditSection()
@@ -451,23 +500,36 @@ namespace GGemCo2DCoreEditor
                 BindNpcEditDraftIfNeeded(selectedNpc);
                 DrawSelectedNpcInfo(selectedNpc);
 
-                _editNpcDefaultVisible = HelperEditorUI.ToggleLeft(
-                    "기본 보임(DefaultVisible)",
-                    _editNpcDefaultVisible,
-                    "저장 후 런타임 스폰 시 기본 표시 여부를 결정합니다."
-                );
+                _editNpcMapVisibilityPolicy = DrawMapVisibilityPolicyField(
+                    "맵 표시 정책",
+                    _editNpcMapVisibilityPolicy);
+
+                bool usesDefaultVisible =
+                    _editNpcMapVisibilityPolicy == MapCharacterVisibilityPolicy.DefaultCulling;
+                using (new EditorGUI.DisabledScope(!usesDefaultVisible))
+                {
+                    _editNpcDefaultVisible = HelperEditorUI.ToggleLeft(
+                        "기본 보임(DefaultVisible)",
+                        _editNpcDefaultVisible,
+                        "DefaultCulling 정책에서 저장 후 런타임 스폰 시 기본 표시 여부를 결정합니다.");
+                }
+
+                if (!usesDefaultVisible)
+                {
+                    EditorGUILayout.HelpBox(
+                        "KeepVisible/KeepHidden 정책에서는 명시 표시 정책이 DefaultVisible보다 우선합니다.",
+                        MessageType.Info);
+                }
 
                 _editNpcFlip = HelperEditorUI.ToggleLeft(
                     "좌우 반전(Flip)",
                     _editNpcFlip,
-                    "NPC.SetFlip 경로로 적용하며 CharacterRegenData.IsFlip 값도 동기화합니다."
-                );
+                    "NPC.SetFlip 경로로 적용하며 CharacterRegenData.IsFlip 값도 동기화합니다.");
 
                 _editNpcApplyToSameUid = HelperEditorUI.ToggleLeft(
                     "동일 UID 일괄 적용",
                     _editNpcApplyToSameUid,
-                    "체크하면 현재 맵에서 같은 UID를 가진 모든 NPC에 함께 적용합니다."
-                );
+                    "체크하면 현재 맵에서 같은 UID를 가진 모든 NPC에 함께 적용합니다.");
 
                 using (new EditorGUILayout.HorizontalScope())
                 {
@@ -541,7 +603,7 @@ namespace GGemCo2DCoreEditor
         }
 
         /// <summary>
-        /// 선택 대상이 바뀌었을 때만 편집 드래프트(DefaultVisible/Flip)를 새 대상 값으로 동기화합니다.
+        /// 선택 대상이 바뀌었을 때만 편집 드래프트를 새 대상의 배치 정책 값으로 동기화합니다.
         /// 사용자가 편집 중인 값을 프레임마다 덮어쓰지 않도록 InstanceID 기반으로 바인딩합니다.
         /// </summary>
         /// <param name="selectedNpc">현재 선택된 NPC</param>
@@ -576,6 +638,8 @@ namespace GGemCo2DCoreEditor
             int mapUid = GetSelectedMapUid();
             _editNpcDefaultVisible = NpcPlacementEditorUtility.GetDefaultVisible(selectedNpc, mapUid);
             _editNpcFlip = NpcPlacementEditorUtility.GetFlip(selectedNpc, mapUid);
+            _editNpcMapVisibilityPolicy =
+                NpcPlacementEditorUtility.GetMapVisibilityPolicy(selectedNpc, mapUid);
             _editNpcBoundInstanceId = selectedNpc.GetInstanceID();
         }
 
@@ -611,7 +675,12 @@ namespace GGemCo2DCoreEditor
                 Undo.RecordObject(targetNpc, "Edit NPC Placement Policy");
                 Undo.RecordObject(targetNpc.transform, "Edit NPC Placement Policy");
 
-                NpcPlacementEditorUtility.ApplyPlacementPolicy(targetNpc, mapUid, _editNpcDefaultVisible, _editNpcFlip);
+                NpcPlacementEditorUtility.ApplyPlacementPolicy(
+                    targetNpc,
+                    mapUid,
+                    _editNpcDefaultVisible,
+                    _editNpcFlip,
+                    _editNpcMapVisibilityPolicy);
 
                 PrefabUtility.RecordPrefabInstancePropertyModifications(targetNpc);
                 PrefabUtility.RecordPrefabInstancePropertyModifications(targetNpc.transform);
@@ -659,6 +728,9 @@ namespace GGemCo2DCoreEditor
             return targets;
         }
 
+        /// <summary>
+        /// 몬스터 배치 섹션을 그리고 신규 몬스터의 맵 표시 정책을 설정합니다.
+        /// </summary>
         private void DrawMonsterSection()
         {
             _foldMonster = EditorGUILayout.Foldout(_foldMonster, "4) 몬스터 추가", true);
@@ -674,11 +746,14 @@ namespace GGemCo2DCoreEditor
                     (_, option) => _selectedMonsterUid = option.Data,
                     noneText: "(몬스터 선택)");
 
+                _monsterSpawnMapVisibilityPolicy = DrawMapVisibilityPolicyField(
+                    "맵 표시 정책",
+                    _monsterSpawnMapVisibilityPolicy);
+
                 _usePatrolMonster = HelperEditorUI.ToggleLeft(
                     "패트롤 영역 생성",
                     _usePatrolMonster,
-                    "몬스터 추가와 함께 패트롤 영역 오브젝트를 생성합니다."
-                );
+                    "몬스터 추가와 함께 패트롤 영역 오브젝트를 생성합니다.");
 
                 using (new EditorGUILayout.HorizontalScope())
                 {
@@ -686,7 +761,10 @@ namespace GGemCo2DCoreEditor
 
                     if (GUILayout.Button("몬스터 추가", GUILayout.Height(26)))
                     {
-                        _monsterExporter.AddMonsterToMap(_selectedMonsterUid, _usePatrolMonster);
+                        _monsterExporter.AddMonsterToMap(
+                            _selectedMonsterUid,
+                            _usePatrolMonster,
+                            _monsterSpawnMapVisibilityPolicy);
                     }
 
                     GUI.enabled = true;
@@ -694,9 +772,243 @@ namespace GGemCo2DCoreEditor
             }
         }
 
+        /// <summary>
+        /// 현재 맵에 배치된 몬스터의 맵 표시 정책을 편집하는 섹션을 그립니다.
+        /// Hierarchy에서 선택한 몬스터를 기준으로 동일 UID 일괄 적용을 지원합니다.
+        /// </summary>
+        private void DrawMonsterEditSection()
+        {
+            _foldMonsterEdit = EditorGUILayout.Foldout(_foldMonsterEdit, "5) 배치된 몬스터 편집", true);
+            if (!_foldMonsterEdit) return;
+
+            using (new EditorGUILayout.VerticalScope(EditorStyles.helpBox))
+            {
+                if (_defaultMap == null || GetSelectedMapUid() <= 0)
+                {
+                    EditorGUILayout.HelpBox("맵을 먼저 불러온 뒤 배치된 몬스터를 선택해주세요.", MessageType.Info);
+                    return;
+                }
+
+                if (!TryGetSelectedMonsterInCurrentMap(out Monster selectedMonster))
+                {
+                    _editMonsterBoundInstanceId = 0;
+                    EditorGUILayout.HelpBox(
+                        "Hierarchy에서 현재 맵 하위의 몬스터 오브젝트를 선택해주세요.",
+                        MessageType.Info);
+                    return;
+                }
+
+                BindMonsterEditDraftIfNeeded(selectedMonster);
+                DrawSelectedMonsterInfo(selectedMonster);
+
+                _editMonsterMapVisibilityPolicy = DrawMapVisibilityPolicyField(
+                    "맵 표시 정책",
+                    _editMonsterMapVisibilityPolicy);
+
+                _editMonsterApplyToSameUid = HelperEditorUI.ToggleLeft(
+                    "동일 UID 일괄 적용",
+                    _editMonsterApplyToSameUid,
+                    "체크하면 현재 맵에서 같은 UID를 가진 모든 몬스터에 함께 적용합니다.");
+
+                using (new EditorGUILayout.HorizontalScope())
+                {
+                    if (GUILayout.Button("정책 적용", GUILayout.Height(26)))
+                    {
+                        ApplyMonsterEditPolicy(selectedMonster);
+                    }
+
+                    if (GUILayout.Button("값 다시읽기", GUILayout.Height(26)))
+                    {
+                        ForceBindMonsterEditDraft(selectedMonster);
+                    }
+                }
+            }
+        }
+
+        /// <summary>
+        /// 선택된 몬스터의 편집 대상 요약 정보를 표시합니다.
+        /// </summary>
+        /// <param name="selectedMonster">현재 선택된 몬스터입니다.</param>
+        private static void DrawSelectedMonsterInfo(Monster selectedMonster)
+        {
+            if (!selectedMonster)
+            {
+                return;
+            }
+
+            Vector3 position = selectedMonster.transform.position;
+            EditorGUILayout.LabelField(
+                "선택 몬스터",
+                $"{selectedMonster.name} (Uid: {selectedMonster.uid})");
+            EditorGUILayout.LabelField(
+                "위치",
+                $"({position.x:F2}, {position.y:F2}, {position.z:F2})");
+        }
+
+        /// <summary>
+        /// 현재 Selection에서 편집 가능한 몬스터를 찾습니다.
+        /// 선택된 오브젝트가 몬스터의 자식인 경우 부모 몬스터를 함께 탐색합니다.
+        /// </summary>
+        /// <param name="selectedMonster">현재 맵 하위에 존재하는 선택 몬스터입니다.</param>
+        /// <returns>편집 가능한 몬스터를 찾았으면 <see langword="true"/>를 반환합니다.</returns>
+        private bool TryGetSelectedMonsterInCurrentMap(out Monster selectedMonster)
+        {
+            selectedMonster = null;
+            if (_defaultMap == null)
+            {
+                return false;
+            }
+
+            GameObject selectedObject = Selection.activeGameObject;
+            if (!selectedObject)
+            {
+                return false;
+            }
+
+            Monster monster = selectedObject.GetComponent<Monster>();
+            if (!monster)
+            {
+                monster = selectedObject.GetComponentInParent<Monster>();
+            }
+
+            if (!monster || !monster.transform.IsChildOf(_defaultMap.transform))
+            {
+                return false;
+            }
+
+            selectedMonster = monster;
+            return true;
+        }
+
+        /// <summary>
+        /// 선택 대상이 바뀌었을 때만 몬스터 편집 드래프트를 현재 값으로 동기화합니다.
+        /// </summary>
+        /// <param name="selectedMonster">현재 선택된 몬스터입니다.</param>
+        private void BindMonsterEditDraftIfNeeded(Monster selectedMonster)
+        {
+            if (!selectedMonster)
+            {
+                _editMonsterBoundInstanceId = 0;
+                return;
+            }
+
+            int instanceId = selectedMonster.GetInstanceID();
+            if (_editMonsterBoundInstanceId == instanceId)
+            {
+                return;
+            }
+
+            ForceBindMonsterEditDraft(selectedMonster);
+        }
+
+        /// <summary>
+        /// 선택된 몬스터의 현재 맵 표시 정책을 편집 드래프트로 강제 동기화합니다.
+        /// </summary>
+        /// <param name="selectedMonster">동기화할 몬스터입니다.</param>
+        private void ForceBindMonsterEditDraft(Monster selectedMonster)
+        {
+            if (!selectedMonster)
+            {
+                return;
+            }
+
+            _editMonsterMapVisibilityPolicy =
+                MonsterPlacementEditorUtility.GetMapVisibilityPolicy(
+                    selectedMonster,
+                    GetSelectedMapUid());
+            _editMonsterBoundInstanceId = selectedMonster.GetInstanceID();
+        }
+
+        /// <summary>
+        /// 편집 드래프트 값을 선택 몬스터 또는 같은 UID의 몬스터 집합에 적용합니다.
+        /// </summary>
+        /// <param name="selectedMonster">기준이 되는 선택 몬스터입니다.</param>
+        private void ApplyMonsterEditPolicy(Monster selectedMonster)
+        {
+            if (!selectedMonster)
+            {
+                return;
+            }
+
+            List<Monster> targets = CollectMonsterEditTargets(
+                selectedMonster,
+                _editMonsterApplyToSameUid);
+            if (targets.Count <= 0)
+            {
+                Debug.LogWarning("적용할 몬스터를 찾지 못했습니다.");
+                return;
+            }
+
+            int mapUid = GetSelectedMapUid();
+            int appliedCount = 0;
+            for (int i = 0; i < targets.Count; i++)
+            {
+                Monster targetMonster = targets[i];
+                if (!targetMonster)
+                {
+                    continue;
+                }
+
+                Undo.RecordObject(targetMonster, "Edit Monster Map Visibility Policy");
+                MonsterPlacementEditorUtility.ApplyMapVisibilityPolicy(
+                    targetMonster,
+                    mapUid,
+                    _editMonsterMapVisibilityPolicy);
+
+                PrefabUtility.RecordPrefabInstancePropertyModifications(targetMonster);
+                EditorUtility.SetDirty(targetMonster);
+                appliedCount++;
+            }
+
+            if (appliedCount > 0)
+            {
+                Debug.Log($"몬스터 표시 정책 적용 완료: {appliedCount}개 / Uid:{selectedMonster.uid}");
+            }
+        }
+
+        /// <summary>
+        /// 몬스터 표시 정책 적용 대상 목록을 구성합니다.
+        /// </summary>
+        /// <param name="selectedMonster">기준 몬스터입니다.</param>
+        /// <param name="applyToSameUid">동일 UID 일괄 적용 여부입니다.</param>
+        /// <returns>정책을 적용할 몬스터 목록입니다.</returns>
+        private List<Monster> CollectMonsterEditTargets(
+            Monster selectedMonster,
+            bool applyToSameUid)
+        {
+            List<Monster> targets = new List<Monster>();
+            if (!selectedMonster)
+            {
+                return targets;
+            }
+
+            if (!applyToSameUid || _defaultMap == null)
+            {
+                targets.Add(selectedMonster);
+                return targets;
+            }
+
+            Monster[] mapMonsters = _defaultMap.GetComponentsInChildren<Monster>(true);
+            for (int i = 0; i < mapMonsters.Length; i++)
+            {
+                Monster mapMonster = mapMonsters[i];
+                if (!mapMonster || mapMonster.uid != selectedMonster.uid)
+                {
+                    continue;
+                }
+
+                targets.Add(mapMonster);
+            }
+
+            return targets;
+        }
+
+        /// <summary>
+        /// 워프 배치 섹션을 그립니다.
+        /// </summary>
         private void DrawWarpSection()
         {
-            _foldWarp = EditorGUILayout.Foldout(_foldWarp, "5) 워프 추가", true);
+            _foldWarp = EditorGUILayout.Foldout(_foldWarp, "6) 워프 추가", true);
             if (!_foldWarp) return;
 
             using (new EditorGUILayout.VerticalScope(EditorStyles.helpBox))

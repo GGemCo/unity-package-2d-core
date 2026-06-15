@@ -1,4 +1,4 @@
-﻿#if UNITY_EDITOR
+#if UNITY_EDITOR
 using System.Collections.Generic;
 using GGemCo2DCore;
 using TMPro;
@@ -20,7 +20,7 @@ namespace GGemCo2DCoreEditor
 
         private static void OnEditorUpdate()
         {
-            // 모든 Npc 컴포넌트를 가진 오브젝트 검사
+            // 모든 캐릭터 컴포넌트를 가진 오브젝트 검사
             var characterBases = CompatObjectFind.FindAll<CharacterBase>();            
             foreach (var characterBase in characterBases)
             {
@@ -42,9 +42,9 @@ namespace GGemCo2DCoreEditor
 
         /// <summary>
         /// 캐릭터 오버레이 텍스트를 현재 상태로 갱신합니다.
-        /// NPC는 배치 정책(DefaultVisible/Flip)까지 포함해 출력하고, 그 외 타입은 기존 포맷을 유지합니다.
+        /// NPC와 몬스터는 맵 배치 표시 정책을 포함해 출력하고, 그 외 타입은 기존 포맷을 유지합니다.
         /// </summary>
-        /// <param name="characterBase">텍스트를 갱신할 캐릭터</param>
+        /// <param name="characterBase">텍스트를 갱신할 캐릭터입니다.</param>
         private static void UpdateInfoText(CharacterBase characterBase)
         {
             if (characterBase == null) return;
@@ -52,6 +52,13 @@ namespace GGemCo2DCoreEditor
             if (npc != null)
             {
                 NpcPlacementEditorUtility.UpdateInfoText(npc);
+                return;
+            }
+
+            Monster monster = characterBase as Monster;
+            if (monster != null)
+            {
+                MonsterPlacementEditorUtility.UpdateInfoText(monster);
                 return;
             }
 

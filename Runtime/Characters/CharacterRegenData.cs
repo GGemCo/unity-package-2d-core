@@ -6,6 +6,7 @@ namespace GGemCo2DCore
     /// <summary>
     /// 맵에 배치되는 캐릭터의 리젠 및 초기 배치 정보를 보관합니다.
     /// </summary>
+    [System.Serializable]
     public class CharacterRegenData
     {
         public int Uid;

@@ -262,11 +262,10 @@ namespace GGemCo2DCore
         }
         
         /// <summary>
-        /// NPC 스폰 직후 기본 보임 정책을 적용합니다.
-        /// 기본 보임이 false이면 최초 로드 단계에서 비활성화하여 즉시 숨김 상태로 시작합니다.
+        /// NPC 스폰 직후 명시 표시 정책과 기본 보임 값을 우선순위에 따라 적용합니다.
         /// </summary>
-        /// <param name="npcObject">생성된 NPC 오브젝트</param>
-        /// <param name="npcData">리젠 데이터</param>
+        /// <param name="npcObject">생성된 NPC 오브젝트입니다.</param>
+        /// <param name="npcData">맵 배치 리젠 데이터입니다.</param>
         private static void ApplyInitialNpcVisibilityPolicy(GameObject npcObject, CharacterRegenData npcData)
         {
             if (npcObject == null || npcData == null)
@@ -274,12 +273,29 @@ namespace GGemCo2DCore
                 return;
             }
 
-            if (npcData.DefaultVisible)
+            switch (npcData.MapVisibilityPolicy)
             {
-                return;
-            }
+                case MapCharacterVisibilityPolicy.KeepVisible:
+                    if (!npcObject.activeSelf)
+                    {
+                        npcObject.GetComponent<Npc>()?.StartFadeIn();
+                    }
 
-            npcObject.SetActive(false);
+                    return;
+
+                case MapCharacterVisibilityPolicy.KeepHidden:
+                    npcObject.SetActive(false);
+                    return;
+
+                case MapCharacterVisibilityPolicy.DefaultCulling:
+                default:
+                    if (!npcData.DefaultVisible)
+                    {
+                        npcObject.SetActive(false);
+                    }
+
+                    return;
+            }
         }
 
         /// <summary>

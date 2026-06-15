@@ -5,7 +5,7 @@ using UnityEngine;
 namespace GGemCo2DCoreEditor
 {
     /// <summary>
-    /// 맵 배치툴에서 NPC 배치 정책(DefaultVisible/Flip) 편집을 일관되게 처리하는 유틸리티입니다.
+    /// 맵 배치툴에서 NPC 배치 정책(DefaultVisible/Flip/MapVisibilityPolicy) 편집을 일관되게 처리하는 유틸리티입니다.
     /// 에디터와 JSON 내보내기 경로가 동일한 기준값(CharacterRegenData)을 사용하도록 보장합니다.
     /// </summary>
     public static class NpcPlacementEditorUtility
@@ -34,7 +34,8 @@ namespace GGemCo2DCoreEditor
                 npc.transform.position,
                 npc.isFlip,
                 mapUid,
-                defaultVisible: true);
+                defaultVisible: true,
+                mapVisibilityPolicy: npc.MapVisibilityPolicy);
 
             npc.CharacterRegenData = regenData;
             return regenData;
@@ -77,14 +78,38 @@ namespace GGemCo2DCoreEditor
         }
 
         /// <summary>
-        /// NPC의 배치 정책(DefaultVisible/Flip)을 한 번에 적용하고 오버레이 텍스트를 갱신합니다.
-        /// Flip은 NPC.SetFlip을 통해 적용하여 에디터/런타임 표시 상태를 일치시킵니다.
+        /// NPC의 현재 맵 표시 정책을 조회합니다.
+        /// 리젠 데이터가 비어 있으면 현재 NPC의 런타임 정책을 기준으로 생성합니다.
         /// </summary>
-        /// <param name="npc">적용 대상 NPC</param>
-        /// <param name="fallbackMapUid">리젠 데이터 보정 시 사용할 대체 맵 UID</param>
-        /// <param name="defaultVisible">기본 보임 여부</param>
-        /// <param name="isFlip">Flip 여부</param>
-        public static void ApplyPlacementPolicy(Npc npc, int fallbackMapUid, bool defaultVisible, bool isFlip)
+        /// <param name="npc">조회할 NPC입니다.</param>
+        /// <param name="fallbackMapUid">리젠 데이터 보정 시 사용할 대체 맵 UID입니다.</param>
+        /// <returns>현재 맵 표시 정책입니다.</returns>
+        public static MapCharacterVisibilityPolicy GetMapVisibilityPolicy(Npc npc, int fallbackMapUid)
+        {
+            CharacterRegenData regenData = EnsureRegenData(npc, fallbackMapUid);
+            if (regenData == null)
+            {
+                return MapCharacterVisibilityPolicy.DefaultCulling;
+            }
+
+            return regenData.MapVisibilityPolicy;
+        }
+
+        /// <summary>
+        /// NPC의 배치 정책을 한 번에 적용하고 오버레이 텍스트를 갱신합니다.
+        /// Flip과 맵 표시 정책은 NPC 런타임 상태에도 즉시 반영합니다.
+        /// </summary>
+        /// <param name="npc">적용 대상 NPC입니다.</param>
+        /// <param name="fallbackMapUid">리젠 데이터 보정 시 사용할 대체 맵 UID입니다.</param>
+        /// <param name="defaultVisible">기본 보임 여부입니다.</param>
+        /// <param name="isFlip">Flip 여부입니다.</param>
+        /// <param name="mapVisibilityPolicy">맵 표시 정책입니다.</param>
+        public static void ApplyPlacementPolicy(
+            Npc npc,
+            int fallbackMapUid,
+            bool defaultVisible,
+            bool isFlip,
+            MapCharacterVisibilityPolicy mapVisibilityPolicy)
         {
             if (!npc)
             {
@@ -100,11 +125,13 @@ namespace GGemCo2DCoreEditor
             regenData.MapUid = ResolveMapUid(npc, fallbackMapUid);
             regenData.DefaultVisible = defaultVisible;
             regenData.IsFlip = isFlip;
+            regenData.MapVisibilityPolicy = mapVisibilityPolicy;
             regenData.x = npc.transform.position.x;
             regenData.y = npc.transform.position.y;
             regenData.z = npc.transform.position.z;
 
             npc.SetFlip(isFlip);
+            npc.SetMapVisibilityPolicy(mapVisibilityPolicy);
             UpdateInfoText(npc);
         }
 
@@ -128,10 +155,13 @@ namespace GGemCo2DCoreEditor
             CharacterRegenData regenData = npc.CharacterRegenData;
             bool defaultVisible = regenData == null || regenData.DefaultVisible;
             bool isFlip = regenData != null ? regenData.IsFlip : npc.isFlip;
+            MapCharacterVisibilityPolicy mapVisibilityPolicy = regenData != null
+                ? regenData.MapVisibilityPolicy
+                : npc.MapVisibilityPolicy;
             Vector3 pos = npc.transform.position;
             float scaleX = npc.transform.localScale.x;
             text.text =
-                $"Uid: {npc.uid}\nPos: ({pos.x:F2}, {pos.y:F2})\nScale: {scaleX:F2}\nFlip: {isFlip}\nDefaultVisible: {defaultVisible}";
+                $"Uid: {npc.uid}\nPos: ({pos.x:F2}, {pos.y:F2})\nScale: {scaleX:F2}\nFlip: {isFlip}\nDefaultVisible: {defaultVisible}\nVisibilityPolicy: {mapVisibilityPolicy}";
         }
 
         /// <summary>
