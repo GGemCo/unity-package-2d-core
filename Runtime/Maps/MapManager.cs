@@ -847,6 +847,7 @@ namespace GGemCo2DCore
             if (IsCharacterAlreadyRegistered(targetMap, character.gameObject))
             {
                 EnsureCharacterRegenDataForMapSettlement(character);
+                ApplyMonsterMapBoundaryOverrides(character);
                 RefreshNpcQuestInfoIfNeeded(character);
                 return true;
             }
@@ -869,6 +870,7 @@ namespace GGemCo2DCore
             }
 
             EnsureCharacterRegenDataForMapSettlement(character);
+            ApplyMonsterMapBoundaryOverrides(character);
 
             int registrationVid = ResolveRegistrationVid(character);
             character.vid = registrationVid;
@@ -882,6 +884,22 @@ namespace GGemCo2DCore
 
             _mapTileCommon.AddMonster(registrationVid, character.gameObject);
             return true;
+        }
+
+        /// <summary>
+        /// 맵에 등록되는 몬스터에게 현재 맵의 이동 경계 정책을 적용합니다.
+        /// </summary>
+        /// <param name="character">맵 등록 대상 캐릭터입니다.</param>
+        private void ApplyMonsterMapBoundaryOverrides(CharacterBase character)
+        {
+            Monster monster = character as Monster;
+            if (monster == null)
+            {
+                return;
+            }
+
+            // 런타임 동적 스폰 몬스터도 일반 맵 로드 몬스터와 동일하게 Parallax 경계 해제 정책을 따릅니다.
+            monster.ApplyMapBoundaryOverrides(_currentMapTableData);
         }
 
         public Transform GetCurrentMap()

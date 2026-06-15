@@ -80,7 +80,7 @@ namespace GGemCo2DCore
                     if (!string.IsNullOrEmpty(content))
                     {
                         CharacterRegenDataList characterRegenDataList = JsonConvert.DeserializeObject<CharacterRegenDataList>(content);
-                        SpawnMonsters(characterRegenDataList.CharacterRegenDatas, mapTileCommon);
+                        SpawnMonsters(characterRegenDataList.CharacterRegenDatas, mapTileCommon, currentMapTableData);
                     }
                 }
             }
@@ -90,7 +90,16 @@ namespace GGemCo2DCore
             }
         }
 
-        private void SpawnMonsters(List<CharacterRegenData> monsterList, MapTileCommon mapTileCommon)
+        /// <summary>
+        /// 리젠 데이터 목록을 기준으로 현재 맵에 몬스터를 생성합니다.
+        /// </summary>
+        /// <param name="monsterList">몬스터 리젠 데이터 목록입니다.</param>
+        /// <param name="mapTileCommon">몬스터를 배치할 맵 루트입니다.</param>
+        /// <param name="currentMapTableData">현재 맵 테이블 데이터입니다.</param>
+        private void SpawnMonsters(
+            List<CharacterRegenData> monsterList,
+            MapTileCommon mapTileCommon,
+            StruckTableMap currentMapTableData)
         {
             if (monsterList == null) return;
 
@@ -100,11 +109,24 @@ namespace GGemCo2DCore
                 if (uid <= 0) continue;
                 var info = _tableMonster.GetDataByUid(uid);
                 if (info.Uid <= 0 || info.AnimationUid <= 0) continue;
-                SpawnMonster(uid, monsterData, mapTileCommon);
+                SpawnMonster(uid, monsterData, mapTileCommon, currentMapTableData);
             }
         }
 
-        private void SpawnMonster(int monsterUid, CharacterRegenData monsterData, MapTileCommon mapTileCommon, int forcedVid = 0)
+        /// <summary>
+        /// 단일 몬스터를 생성하거나 풀에서 가져와 현재 맵 정책을 적용합니다.
+        /// </summary>
+        /// <param name="monsterUid">생성할 몬스터 UID입니다.</param>
+        /// <param name="monsterData">몬스터 리젠 데이터입니다.</param>
+        /// <param name="mapTileCommon">몬스터를 배치할 맵 루트입니다.</param>
+        /// <param name="currentMapTableData">현재 맵 테이블 데이터입니다.</param>
+        /// <param name="forcedVid">리스폰처럼 기존 VID를 유지해야 할 때 사용할 VID입니다.</param>
+        private void SpawnMonster(
+            int monsterUid,
+            CharacterRegenData monsterData,
+            MapTileCommon mapTileCommon,
+            StruckTableMap currentMapTableData,
+            int forcedVid = 0)
         {
             GameObject monster = SceneGame.Instance.CharacterManager.RentMonster(monsterUid, monsterData);
             if (!monster) return;
@@ -120,6 +142,7 @@ namespace GGemCo2DCore
 
             myMonsterScript.vid = spawnVid;
             ApplyMapVisibilityPolicy(monster, monsterData);
+            ApplyMonsterMapBoundaryOverrides(myMonsterScript, currentMapTableData);
             mapTileCommon.AddMonster(spawnVid, monster);
             _monsterRegenDataByVid[spawnVid] = monsterData;
             _monsterRespawnPending.Remove(spawnVid);
@@ -210,7 +233,7 @@ namespace GGemCo2DCore
             if (uid <= 0) yield break;
             if (mapTileCommon == null) yield break;
 
-            SpawnMonster(uid, monsterData, mapTileCommon, monsterVid);
+            SpawnMonster(uid, monsterData, mapTileCommon, _mapManager?.GetCurrentMapTableData(), monsterVid);
         }
         #endregion
 
@@ -318,6 +341,22 @@ namespace GGemCo2DCore
 
             // 맵 컬링 계산은 CharacterBase의 정책을 기준으로 처리하므로 스폰 직후 동기화합니다.
             character.SetMapVisibilityPolicy(regenData.MapVisibilityPolicy);
+        }
+
+        /// <summary>
+        /// 현재 맵의 Parallax 정책을 몬스터 이동 경계 제한에 반영합니다.
+        /// </summary>
+        /// <param name="monster">경계 정책을 적용할 몬스터입니다.</param>
+        /// <param name="currentMapTableData">현재 맵 테이블 데이터입니다.</param>
+        private static void ApplyMonsterMapBoundaryOverrides(Monster monster, StruckTableMap currentMapTableData)
+        {
+            if (monster == null)
+            {
+                return;
+            }
+
+            // UseParallax 맵에서는 플레이어와 동일하게 몬스터의 좌/우/상/하 경계 제한도 해제합니다.
+            monster.ApplyMapBoundaryOverrides(currentMapTableData);
         }
 
         #endregion

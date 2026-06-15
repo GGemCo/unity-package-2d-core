@@ -384,6 +384,21 @@ namespace GGemCo2DCore
             canMoveY = CharacterRegenData.CanMoveY;
             _homeLeashController?.CaptureHome(CharacterRegenData);
         }
+
+        /// <summary>
+        /// 현재 맵의 Parallax 사용 여부에 따라 몬스터 이동 경계 제한 정책을 적용합니다.
+        /// </summary>
+        /// <param name="mapData">현재 적용할 맵 테이블 데이터입니다.</param>
+        public void ApplyMapBoundaryOverrides(StruckTableMap mapData)
+        {
+            if (_controllerMonster == null)
+            {
+                _controllerMonster = GetComponent<ControllerMonster>();
+            }
+
+            // 실제 X/Y 좌표 Clamp는 ControllerMonster가 담당하므로 컨트롤러 정책만 갱신합니다.
+            _controllerMonster?.ApplyMapBoundaryOverrides(mapData);
+        }
         /// <summary>
         /// 테이블에서 가져온 몬스터 정보 셋팅
         /// </summary>
