@@ -1,4 +1,4 @@
-﻿using UnityEngine;
+using UnityEngine;
 
 namespace GGemCo2DCore
 {
@@ -84,7 +84,7 @@ namespace GGemCo2DCore
             }
 
             Vector2 currentPosition = _rigidbody2D != null ? _rigidbody2D.position : (Vector2)transform.position;
-            Vector2 desiredPosition = (Vector2)_target.position + settings.followOffset;
+            Vector2 desiredPosition = ApplyYPositionConstraint((Vector2)_target.position + settings.followOffset);
             Vector2 toDesired = desiredPosition - currentPosition;
             float distance = toDesired.magnitude;
 
@@ -174,7 +174,7 @@ namespace GGemCo2DCore
         /// <param name="desiredPosition">복귀 완료 시점으로 사용할 고정 목표 위치입니다.</param>
         private void StartRecoverToOffset(Vector2 desiredPosition)
         {
-            _recoveryDestination = desiredPosition;
+            _recoveryDestination = ApplyYPositionConstraint(desiredPosition);
             _isRecoveringToOffset = true;
         }
 
@@ -219,6 +219,8 @@ namespace GGemCo2DCore
         /// <param name="position">이동할 월드 좌표입니다.</param>
         private void MoveTo(Vector2 position)
         {
+            position = ApplyYPositionConstraint(position);
+
             if (_rigidbody2D != null)
             {
                 _rigidbody2D.MovePosition(position);
@@ -226,6 +228,23 @@ namespace GGemCo2DCore
             }
 
             transform.position = new Vector3(position.x, position.y, transform.position.z);
+        }
+
+        /// <summary>
+        /// 설정에 따라 이동 목표의 Y좌표를 고정합니다.
+        /// 동행 캐릭터가 대상의 점프, 낙하, 연출 이동에 끌려 같은 Y축으로 이동하지 않아야 할 때 사용합니다.
+        /// </summary>
+        /// <param name="position">보정 전 이동 목표 위치입니다.</param>
+        /// <returns>Y좌표 제한이 반영된 이동 목표 위치입니다.</returns>
+        private Vector2 ApplyYPositionConstraint(Vector2 position)
+        {
+            if (settings == null || !settings.useFixedYPosition)
+            {
+                return position;
+            }
+
+            position.y = settings.fixedYPosition;
+            return position;
         }
 
         /// <summary>

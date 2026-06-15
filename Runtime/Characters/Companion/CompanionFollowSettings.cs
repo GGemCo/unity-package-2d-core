@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using UnityEngine;
 
 namespace GGemCo2DCore
@@ -33,6 +33,12 @@ namespace GGemCo2DCore
 
         [Tooltip("대상 기준으로 유지할 상대 위치입니다.")]
         public Vector2 followOffset = new(-2f, 0f);
+
+        [Tooltip("켜면 동행 캐릭터의 이동 목표 Y좌표를 fixedYPosition으로 고정합니다.")]
+        public bool useFixedYPosition;
+
+        [Tooltip("useFixedYPosition이 켜져 있을 때 동행 캐릭터가 이동 가능한 고정 Y좌표입니다.")]
+        public float fixedYPosition;
 
         [Tooltip("동행 캐릭터 이동 속도입니다.")]
         public float moveSpeed = 4f;
