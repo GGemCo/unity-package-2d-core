@@ -48,7 +48,7 @@ namespace GGemCo2DCore
         /// <param name="profile">그룹 활성화와 지원 어그로 정책입니다.</param>
         public void Configure(PatrolData patrolData, MonsterEncounterProfile profile)
         {
-            int nextEncounterId = patrolData != null ? Mathf.Max(0, patrolData.EncounterId) : 0;
+            int nextEncounterId = patrolData != null ? Mathf.Max(0, patrolData.encounterId) : 0;
             if (_registered && _encounterId != nextEncounterId)
             {
                 MonsterEncounterRegistry.Unregister(this);

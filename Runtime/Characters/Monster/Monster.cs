@@ -563,35 +563,6 @@ namespace GGemCo2DCore
         }
 
         /// <summary>
-        /// 패트롤 또는 Encounter 영역에서 플레이어를 발견했을 때 패트롤 Threat를 등록합니다.
-        /// </summary>
-        /// <param name="player">패트롤 영역에 진입한 플레이어입니다.</param>
-        public void OnDetectedPlayerByPatrol(Player player)
-        {
-            if (!CanTrackThreatTarget(player)) return;
-            if (GetAttackType() != CharacterConstants.AttackType.AggroFirst) return;
-
-            _threatController?.SetPresenceThreat(
-                player,
-                MonsterThreatSource.Patrol,
-                isActive: true,
-                _threatProfile.PatrolThreat);
-        }
-
-        /// <summary>
-        /// 패트롤 또는 Encounter 영역에서 플레이어가 이탈했을 때 패트롤 원인의 Threat만 제거합니다.
-        /// </summary>
-        /// <param name="player">패트롤 영역에서 이탈한 플레이어입니다.</param>
-        public void OnLostPlayerByPatrol(Player player)
-        {
-            _threatController?.SetPresenceThreat(
-                player,
-                MonsterThreatSource.Patrol,
-                isActive: false,
-                threatValue: 0f);
-        }
-
-        /// <summary>
         /// 구형 공격 범위 Trigger 호출을 논리 감지 범위 진입 처리로 전달합니다.
         /// </summary>
         /// <param name="player">구형 공격 범위 Trigger에서 전달된 플레이어입니다.</param>
@@ -1302,4 +1273,3 @@ namespace GGemCo2DCore
         }
     }
 }
-

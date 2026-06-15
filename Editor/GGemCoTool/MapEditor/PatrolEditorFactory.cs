@@ -30,7 +30,7 @@ namespace GGemCo2DCoreEditor
             if (!patrol) return null;
 
             Undo.RecordObject(patrol, "Init Patrol");
-            patrol.PatrolData = patrolData;
+            patrol.patrolData = patrolData;
             patrol.InitializeByMapEditor();
             patrol.SetParentMonster(monster.gameObject);
 

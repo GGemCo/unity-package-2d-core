@@ -8,7 +8,7 @@ namespace GGemCo2DCore
     /// 몬스터가 인식한 대상별 Threat를 누적하고 현재 전투 타겟을 선택합니다.
     /// </summary>
     /// <remarks>
-    /// 감지, 패트롤, 피격 원인을 대상별로 독립 보관하므로 한 원인이 해제되어도
+    /// 감지, Encounter, 피격 원인을 대상별로 독립 보관하므로 한 원인이 해제되어도
     /// 다른 원인으로 남은 Threat가 있으면 전투 관계와 현재 타겟을 유지합니다.
     /// </remarks>
     [DisallowMultipleComponent]
@@ -22,7 +22,6 @@ namespace GGemCo2DCore
             public int InstanceId;
             public CharacterBase Target;
             public float DetectionThreat;
-            public float PatrolThreat;
             public float DamageThreat;
             public float ExternalThreat;
             public float EncounterThreat;
@@ -31,7 +30,6 @@ namespace GGemCo2DCore
 
             public float TotalThreat =>
                 DetectionThreat +
-                PatrolThreat +
                 DamageThreat +
                 ExternalThreat +
                 EncounterThreat;
@@ -42,7 +40,6 @@ namespace GGemCo2DCore
                 {
                     MonsterThreatSource sources = MonsterThreatSource.None;
                     if (DetectionThreat > ThreatEpsilon) sources |= MonsterThreatSource.DetectionRange;
-                    if (PatrolThreat > ThreatEpsilon) sources |= MonsterThreatSource.Patrol;
                     if (DamageThreat > ThreatEpsilon) sources |= MonsterThreatSource.Damage;
                     if (ExternalThreat > ThreatEpsilon) sources |= MonsterThreatSource.External;
                     if (EncounterThreat > ThreatEpsilon) sources |= MonsterThreatSource.Encounter;
@@ -119,10 +116,10 @@ namespace GGemCo2DCore
         }
 
         /// <summary>
-        /// 감지 또는 패트롤처럼 범위 안에 있는 동안 유지되는 Threat 원인을 설정합니다.
+        /// 감지 또는 Encounter처럼 범위·관계가 유지되는 동안 적용되는 Threat 원인을 설정합니다.
         /// </summary>
         /// <param name="target">Threat 대상으로 등록할 캐릭터입니다.</param>
-        /// <param name="source">감지 범위 또는 패트롤 원인입니다.</param>
+        /// <param name="source">감지 범위 또는 Encounter 원인입니다.</param>
         /// <param name="isActive">원인을 활성화할지 제거할지 여부입니다.</param>
         /// <param name="threatValue">활성화 시 유지할 Threat 값입니다.</param>
         /// <returns>Threat 목록 또는 점수가 실제로 변경되었으면 <see langword="true"/>입니다.</returns>
@@ -133,7 +130,6 @@ namespace GGemCo2DCore
             float threatValue)
         {
             if (source != MonsterThreatSource.DetectionRange &&
-                source != MonsterThreatSource.Patrol &&
                 source != MonsterThreatSource.Encounter)
             {
                 return false;
@@ -159,7 +155,6 @@ namespace GGemCo2DCore
             float previousThreat = source switch
             {
                 MonsterThreatSource.DetectionRange => entry.DetectionThreat,
-                MonsterThreatSource.Patrol => entry.PatrolThreat,
                 MonsterThreatSource.Encounter => entry.EncounterThreat,
                 _ => 0f,
             };
@@ -174,9 +169,6 @@ namespace GGemCo2DCore
             {
                 case MonsterThreatSource.DetectionRange:
                     entry.DetectionThreat = normalizedThreat;
-                    break;
-                case MonsterThreatSource.Patrol:
-                    entry.PatrolThreat = normalizedThreat;
                     break;
                 case MonsterThreatSource.Encounter:
                     entry.EncounterThreat = normalizedThreat;
@@ -448,7 +440,7 @@ namespace GGemCo2DCore
         }
 
         /// <summary>
-        /// 감지 또는 패트롤 원인만 제거하고 다른 원인의 Threat는 유지합니다.
+        /// 감지 또는 Encounter 원인만 제거하고 다른 원인의 Threat는 유지합니다.
         /// </summary>
         private bool RemovePresenceThreat(CharacterBase target, MonsterThreatSource source)
         {
@@ -463,10 +455,6 @@ namespace GGemCo2DCore
                 case MonsterThreatSource.DetectionRange:
                     changed = entry.DetectionThreat > ThreatEpsilon;
                     entry.DetectionThreat = 0f;
-                    break;
-                case MonsterThreatSource.Patrol:
-                    changed = entry.PatrolThreat > ThreatEpsilon;
-                    entry.PatrolThreat = 0f;
                     break;
                 case MonsterThreatSource.Encounter:
                     changed = entry.EncounterThreat > ThreatEpsilon;

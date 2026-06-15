@@ -15,17 +15,14 @@ namespace GGemCo2DCore
         /// <summary>몬스터 중심 감지 범위에서 발견된 대상입니다.</summary>
         DetectionRange = 1 << 0,
 
-        /// <summary>맵의 패트롤 또는 Encounter 영역에서 발견된 대상입니다.</summary>
-        Patrol = 1 << 1,
-
         /// <summary>몬스터에게 확정 피해를 준 대상입니다.</summary>
-        Damage = 1 << 2,
+        Damage = 1 << 1,
 
         /// <summary>도발, 스크립트, 보스 패턴 등 외부 시스템에서 추가한 Threat입니다.</summary>
-        External = 1 << 3,
+        External = 1 << 2,
 
         /// <summary>Encounter 그룹 활성화 또는 동료 지원으로 등록된 Threat입니다.</summary>
-        Encounter = 1 << 4,
+        Encounter = 1 << 3,
     }
 
     /// <summary>
@@ -38,7 +35,6 @@ namespace GGemCo2DCore
     public readonly struct MonsterThreatProfile
     {
         private const float DefaultDetectionThreat = 1f;
-        private const float DefaultPatrolThreat = 1f;
         private const float DefaultDamageThreatMultiplier = 1f;
         private const float DefaultMinimumDamageThreat = 1f;
         private const float DefaultTargetSwitchThreatRatio = 1.1f;
@@ -47,9 +43,6 @@ namespace GGemCo2DCore
 
         /// <summary>감지 범위 진입 시 유지할 기본 Threat입니다.</summary>
         public float DetectionThreat { get; }
-
-        /// <summary>패트롤 또는 Encounter 영역 진입 시 유지할 기본 Threat입니다.</summary>
-        public float PatrolThreat { get; }
 
         /// <summary>확정 피해량을 Threat로 변환할 때 적용하는 배율입니다.</summary>
         public float DamageThreatMultiplier { get; }
@@ -74,7 +67,6 @@ namespace GGemCo2DCore
         private MonsterThreatProfile(
             bool isConfigured,
             float detectionThreat,
-            float patrolThreat,
             float damageThreatMultiplier,
             float minimumDamageThreat,
             float targetSwitchThreatRatio,
@@ -82,7 +74,6 @@ namespace GGemCo2DCore
         {
             IsConfigured = isConfigured;
             DetectionThreat = detectionThreat;
-            PatrolThreat = patrolThreat;
             DamageThreatMultiplier = damageThreatMultiplier;
             MinimumDamageThreat = minimumDamageThreat;
             TargetSwitchThreatRatio = targetSwitchThreatRatio;
@@ -99,7 +90,6 @@ namespace GGemCo2DCore
             return new MonsterThreatProfile(
                 tableData != null,
                 ResolvePositive(tableData?.DetectionThreat ?? 0f, DefaultDetectionThreat),
-                ResolvePositive(tableData?.PatrolThreat ?? 0f, DefaultPatrolThreat),
                 ResolvePositive(tableData?.DamageThreatMultiplier ?? 0f, DefaultDamageThreatMultiplier),
                 ResolvePositive(tableData?.MinimumDamageThreat ?? 0f, DefaultMinimumDamageThreat),
                 ResolveThreatSwitchRatio(tableData?.TargetSwitchThreatRatio ?? 0f),

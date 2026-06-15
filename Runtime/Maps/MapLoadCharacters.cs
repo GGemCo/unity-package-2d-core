@@ -133,13 +133,13 @@ namespace GGemCo2DCore
                 if (prefabPatrol)
                 {
                     GameObject warp = Object.Instantiate(prefabPatrol,
-                        new Vector3(patrolData.X, patrolData.Y, patrolData.Z), Quaternion.identity,
+                        new Vector3(patrolData.x, patrolData.y, patrolData.z), Quaternion.identity,
                         mapTileCommon.gameObject.transform);
 
                     ObjectPatrol objectPatrol = warp.GetComponent<ObjectPatrol>();
                     if (objectPatrol)
                     {
-                        objectPatrol.PatrolData = patrolData;
+                        objectPatrol.patrolData = patrolData;
                         objectPatrol.SetParentMonster(monster);
                         myMonsterScript.SetPatrolObject(objectPatrol.gameObject);
                     }

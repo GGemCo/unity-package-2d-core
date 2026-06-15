@@ -76,9 +76,6 @@ namespace GGemCo2DCore
         /// <summary>감지 범위 진입 시 유지할 기본 Threat입니다. 0 이하면 기본값 1을 사용합니다.</summary>
         public float DetectionThreat;
 
-        /// <summary>패트롤 또는 Encounter 영역 진입 시 유지할 기본 Threat입니다. 0 이하면 기본값 1을 사용합니다.</summary>
-        public float PatrolThreat;
-
         /// <summary>확정 피해량을 Threat로 변환할 때 적용하는 배율입니다. 0 이하면 기본값 1을 사용합니다.</summary>
         public float DamageThreatMultiplier;
 
@@ -162,7 +159,6 @@ namespace GGemCo2DCore
                 InvulnerableDuringReturn = ReadOptionalBool(data, "InvulnerableDuringReturn", true),
                 ClearAffectsOnEvade = ReadOptionalBool(data, "ClearAffectsOnEvade", true),
                 DetectionThreat = ReadOptionalFloat(data, "DetectionThreat"),
-                PatrolThreat = ReadOptionalFloat(data, "PatrolThreat"),
                 DamageThreatMultiplier = ReadOptionalFloat(data, "DamageThreatMultiplier"),
                 MinimumDamageThreat = ReadOptionalFloat(data, "MinimumDamageThreat"),
                 TargetSwitchThreatRatio = ReadOptionalFloat(data, "TargetSwitchThreatRatio"),
