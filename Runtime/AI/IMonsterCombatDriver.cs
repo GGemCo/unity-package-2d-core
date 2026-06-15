@@ -116,6 +116,24 @@ namespace GGemCo2DCore
     }
 
     /// <summary>
+    /// 선호 전투 거리 이동처럼 일반 추적 이동과 다른 정지 정책이 필요한 이동 요청을 제공하는 선택 인터페이스입니다.
+    /// </summary>
+    /// <remarks>
+    /// 기존 <see cref="IMonsterCombatDriver"/> 구현체와의 하위 호환성을 유지하기 위해 별도 인터페이스로 분리합니다.
+    /// 구현체가 이 인터페이스를 제공하지 않으면 상위 AI는 기존 <see cref="IMonsterCombatDriver.TryRequestMove"/> 경로를 사용합니다.
+    /// </remarks>
+    public interface IMonsterPreferredRangeMoveDriver
+    {
+        /// <summary>
+        /// 선호 전투 거리 도달 여부를 프레임 단위 정지 기준으로 사용하는 이동을 요청합니다.
+        /// </summary>
+        /// <param name="direction">월드 기준 이동 방향 벡터입니다.</param>
+        /// <param name="failureReason">이동 요청이 거부된 원인입니다.</param>
+        /// <returns>이동 의도가 등록되고 즉시 이동이 수행되면 <see langword="true"/>입니다.</returns>
+        bool TryRequestPreferredRangeMove(Vector2 direction, out MonsterMoveRequestFailureReason failureReason);
+    }
+
+    /// <summary>
     /// 몬스터 추적 이동 정지 판정을 공격 가능 판정과 분리해서 제공하는 선택 인터페이스.
     /// </summary>
     /// <remarks>

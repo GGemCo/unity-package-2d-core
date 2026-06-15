@@ -7,8 +7,20 @@ namespace GGemCo2DCore
     /// <summary>
     /// 몬스터 선공, 후공 처리 
     /// </summary>
-    public class ControllerMonster : CharacterBaseController, IMonsterCombatDriver, IMonsterMoveStopRangeProvider, IMonsterCombatRangeProvider, IMonsterThreatProvider, IMonsterLeashProvider, IMonsterAttackSlotProvider, IMonsterBrainSuspendProvider
+    public class ControllerMonster : CharacterBaseController, IMonsterCombatDriver, IMonsterPreferredRangeMoveDriver, IMonsterMoveStopRangeProvider, IMonsterCombatRangeProvider, IMonsterThreatProvider, IMonsterLeashProvider, IMonsterAttackSlotProvider, IMonsterBrainSuspendProvider
     {
+        /// <summary>
+        /// BT 이동 의도가 매 프레임 어떤 거리 기준으로 정지할지 나타냅니다.
+        /// </summary>
+        private enum BtMoveIntentStopPolicy
+        {
+            /// <summary>기존 추적 이동처럼 기본 공격 시작 범위를 정지 기준으로 사용합니다.</summary>
+            DefaultMoveStopRange = 0,
+
+            /// <summary>전투 범위 프로필의 선호 거리 구간을 정지 기준으로 사용합니다.</summary>
+            PreferredCombatRange = 1,
+        }
+
         private const float MoveDirectionEpsilonSqr = 0.000001f;
         private const float BtMoveDirectionBlendPerSecond = 0.000001f;
         private const float BtMoveIntentKeepAliveSeconds = 5f;
@@ -21,6 +33,7 @@ namespace GGemCo2DCore
         private float _lastBtMoveIntentTime;
         private float _btMoveIntentSpeedMultiplier = 1f;
         private bool _isLeashMoveIntent;
+        private BtMoveIntentStopPolicy _btMoveIntentStopPolicy;
 
         #region IMonsterCombatDriver
 
@@ -228,8 +241,38 @@ namespace GGemCo2DCore
 
             return TryRequestMoveCore(
                 direction,
-                speedMultiplier: 1f,
-                allowDuringLeashReturn: false,
+                1f,
+                false,
+                BtMoveIntentStopPolicy.DefaultMoveStopRange,
+                out failureReason);
+        }
+
+        /// <summary>
+        /// 선호 전투 거리 도달 여부를 프레임 단위 정지 기준으로 사용하는 이동을 요청합니다.
+        /// </summary>
+        /// <param name="direction">월드 기준 이동 방향 벡터입니다.</param>
+        /// <param name="failureReason">이동 요청이 거부된 원인입니다.</param>
+        /// <returns>이동 의도가 등록되고 즉시 이동이 수행되면 <see langword="true"/>입니다.</returns>
+        /// <remarks>
+        /// 일반 추적 이동은 기본 공격 시작 범위를 정지 기준으로 쓰지만,
+        /// 선호 거리 이동은 전투 범위 프로필의 선호 구간에 들어오면 다음 BT 틱을 기다리지 않고 정지합니다.
+        /// </remarks>
+        public bool TryRequestPreferredRangeMove(
+            Vector2 direction,
+            out MonsterMoveRequestFailureReason failureReason)
+        {
+            if (IsReturningHome)
+            {
+                failureReason = MonsterMoveRequestFailureReason.LeashReturning;
+                ClearBtMoveIntent();
+                return false;
+            }
+
+            return TryRequestMoveCore(
+                direction,
+                1f,
+                false,
+                BtMoveIntentStopPolicy.PreferredCombatRange,
                 out failureReason);
         }
 
@@ -248,17 +291,25 @@ namespace GGemCo2DCore
             return TryRequestMoveCore(
                 direction,
                 Mathf.Max(0.01f, speedMultiplier),
-                allowDuringLeashReturn: true,
+                true,
+                BtMoveIntentStopPolicy.DefaultMoveStopRange,
                 out failureReason);
         }
 
         /// <summary>
         /// 일반 BT 이동과 Leash 귀환 이동이 공유하는 검증 및 이동 의도 등록 로직입니다.
         /// </summary>
+        /// <param name="direction">월드 기준 이동 방향 벡터입니다.</param>
+        /// <param name="speedMultiplier">기본 이동 속도에 적용할 0보다 큰 배율입니다.</param>
+        /// <param name="allowDuringLeashReturn">홈 복귀 락 상태에서도 이동을 허용할지 여부입니다.</param>
+        /// <param name="stopPolicy">프레임 단위 이동 의도가 사용할 거리 정지 정책입니다.</param>
+        /// <param name="failureReason">이동 요청이 거부된 원인입니다.</param>
+        /// <returns>이동 의도가 등록되고 즉시 이동이 수행되면 <see langword="true"/>입니다.</returns>
         private bool TryRequestMoveCore(
             Vector2 direction,
             float speedMultiplier,
             bool allowDuringLeashReturn,
+            BtMoveIntentStopPolicy stopPolicy,
             out MonsterMoveRequestFailureReason failureReason)
         {
             failureReason = MonsterMoveRequestFailureReason.None;
@@ -323,7 +374,7 @@ namespace GGemCo2DCore
                 return false;
             }
 
-            RegisterBtMoveIntent(filteredDirection, speedMultiplier, allowDuringLeashReturn);
+            RegisterBtMoveIntent(filteredDirection, speedMultiplier, allowDuringLeashReturn, stopPolicy);
             targetCharacter.directionNormalize = filteredDirection;
 
             if (!Run())
@@ -551,20 +602,23 @@ namespace GGemCo2DCore
         /// BT에서 전달한 이동 의도를 등록한다.
         /// </summary>
         /// <param name="direction">월드 기준 이동 방향 벡터.</param>
-        /// <param name="speedMultiplier"></param>
-        /// <param name="isLeashMoveIntent"></param>
+        /// <param name="speedMultiplier">기본 이동 속도에 적용할 0보다 큰 배율입니다.</param>
+        /// <param name="isLeashMoveIntent">Leash 홈 복귀 이동 의도인지 여부입니다.</param>
+        /// <param name="stopPolicy">프레임 단위 이동 의도가 사용할 거리 정지 정책입니다.</param>
         /// <remarks>
         /// BT 평가 주기가 낮아도 연속 이동이 유지되도록 마지막 의도와 입력 시각을 캐시한다.
         /// </remarks>
         private void RegisterBtMoveIntent(
             Vector2 direction,
             float speedMultiplier,
-            bool isLeashMoveIntent)
+            bool isLeashMoveIntent,
+            BtMoveIntentStopPolicy stopPolicy)
         {
             _hasBtMoveIntent = true;
             _btMoveIntentDirection = direction;
             _btMoveIntentSpeedMultiplier = Mathf.Max(0.01f, speedMultiplier);
             _isLeashMoveIntent = isLeashMoveIntent;
+            _btMoveIntentStopPolicy = stopPolicy;
             _lastBtMoveIntentTime = Time.time;
         }
 
@@ -578,6 +632,7 @@ namespace GGemCo2DCore
             _btSmoothedDirection = Vector2.zero;
             _btMoveIntentSpeedMultiplier = 1f;
             _isLeashMoveIntent = false;
+            _btMoveIntentStopPolicy = BtMoveIntentStopPolicy.DefaultMoveStopRange;
             _lastBtMoveIntentTime = 0f;
         }
 
@@ -588,7 +643,7 @@ namespace GGemCo2DCore
         /// <remarks>
         /// - BT는 "추적 의도"만 결정하고, 실제 이동 적용은 본 함수가 매 프레임 담당한다.
         /// - Brain 정지 조건(사망/락/피격/페이드 등)에 진입하면 이동 의도를 즉시 폐기한다.
-        /// - 공격 범위 진입 시 즉시 이동을 멈춰 다음 BT 틱에서 공격 분기로 자연스럽게 전환되게 한다.
+        /// - 이동 의도별 거리 기준에 진입하면 즉시 이동을 멈춰 다음 BT 틱에서 자연스럽게 전환되게 한다.
         /// </remarks>
         private void TickBtMoveIntent(float deltaTime)
         {
@@ -620,7 +675,7 @@ namespace GGemCo2DCore
                 return;
             }
 
-            if (SearchAttackerTargetForMoveStop())
+            if (ShouldStopBtMoveIntentByRange())
             {
                 Wait();
                 return;
@@ -646,6 +701,26 @@ namespace GGemCo2DCore
                 (targetCharacter.IsStatusAttack() || targetCharacter.IsStatusDead() || targetCharacter.IsStatusDontMove()))
             {
                 ClearBtMoveIntent();
+            }
+        }
+
+        /// <summary>
+        /// 현재 BT 이동 의도에 등록된 거리 정책 기준으로 이동을 멈춰야 하는지 확인합니다.
+        /// </summary>
+        /// <returns>정지 기준에 도달했으면 <see langword="true"/>입니다.</returns>
+        /// <remarks>
+        /// MoveToPreferredRange는 BT 틱보다 빠른 물리/프레임 루프에서도 선호 거리 진입을 감지해야 합니다.
+        /// 이 판정이 없으면 다음 BT 틱까지 같은 방향으로 계속 이동하여 TooClose/TooFar가 반복될 수 있습니다.
+        /// </remarks>
+        private bool ShouldStopBtMoveIntentByRange()
+        {
+            switch (_btMoveIntentStopPolicy)
+            {
+                case BtMoveIntentStopPolicy.PreferredCombatRange:
+                    return IsTargetInPreferredCombatRange();
+                case BtMoveIntentStopPolicy.DefaultMoveStopRange:
+                default:
+                    return SearchAttackerTargetForMoveStop();
             }
         }
 
