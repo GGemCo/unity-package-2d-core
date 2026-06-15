@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using UnityEngine;
 
 namespace GGemCo2DCore
@@ -21,6 +21,11 @@ namespace GGemCo2DCore
         [SerializeField] private bool useCameraRelativeLoopDirection = true;
         [SerializeField, Min(0f)] private float cameraRelativeDirectionThreshold = 0.001f;
 
+        [Header("Actor Residency")]
+        [SerializeField] private bool useActorResidencyAnchors = true;
+        [SerializeField, Min(0f)] private float actorResidencyPadding = 2f;
+        [SerializeField] private bool includeInactiveActorResidencyAnchors;
+
         [Header("Debug")]
         [SerializeField] private bool enableDebugLog = false;
         [SerializeField] private Camera debugCamera;
@@ -30,6 +35,7 @@ namespace GGemCo2DCore
 
         private readonly List<Transform> _segments = new();
         private readonly List<GameObject> _runtimeClones = new();
+        private readonly List<Transform> _actorResidencyAnchors = new();
 
         private float _debugElapsedTime;
         private bool _isRuntimeClone;
@@ -37,6 +43,7 @@ namespace GGemCo2DCore
         private bool _hasPreviousLoopCameraPosition;
         private Camera _previousLoopCamera;
         private Vector3 _previousLoopCameraPosition;
+        private MapTileCommon _mapTileCommon;
 
         /// <summary>
         /// 인스펙터에서 반복 배경 설정값이 유효 범위를 벗어나지 않도록 보정합니다.
@@ -47,6 +54,29 @@ namespace GGemCo2DCore
             segmentSpacing = Mathf.Max(0f, segmentSpacing);
             recyclePadding = Mathf.Max(0f, recyclePadding);
             cameraRelativeDirectionThreshold = Mathf.Max(0f, cameraRelativeDirectionThreshold);
+            actorResidencyPadding = Mathf.Max(0f, actorResidencyPadding);
+        }
+
+        /// <summary>
+        /// 현재 맵 로딩 이벤트를 구독하고, 이미 로드된 맵이 있으면 Parallax 유지 앵커 조회 대상으로 캐싱합니다.
+        /// </summary>
+        private void OnEnable()
+        {
+            if (_isRuntimeClone)
+            {
+                return;
+            }
+
+            MapManager.OnLoadCompleteMap += OnLoadCompleteMap;
+            ResolveCurrentMapTileCommon();
+        }
+
+        /// <summary>
+        /// 현재 맵 로딩 이벤트 구독을 해제합니다.
+        /// </summary>
+        private void OnDisable()
+        {
+            MapManager.OnLoadCompleteMap -= OnLoadCompleteMap;
         }
 
         /// <summary>
@@ -199,7 +229,7 @@ namespace GGemCo2DCore
             }
 
             Vector3 recycleAxis = ResolveRecycleAxis(moveAxis, cameraDelta);
-            if (!TryGetCameraProjection(targetCamera, recycleAxis, out _, out float cameraForwardEdge))
+            if (!TryGetLoopResidencyProjection(targetCamera, recycleAxis, out _, out float residencyForwardEdge))
             {
                 return;
             }
@@ -218,7 +248,7 @@ namespace GGemCo2DCore
                     continue;
                 }
 
-                if (segmentBackEdge <= cameraForwardEdge + recyclePadding)
+                if (segmentBackEdge <= residencyForwardEdge + recyclePadding)
                 {
                     continue;
                 }
@@ -365,6 +395,65 @@ namespace GGemCo2DCore
         }
 
         /// <summary>
+        /// 반복 배경 유지에 사용할 전체 기준 범위를 계산합니다.
+        /// 기본 카메라 화면 범위에 현재 맵의 물리 캐릭터 앵커 범위를 합쳐,
+        /// 플레이어와 멀어진 캐릭터가 딛고 있는 세그먼트가 즉시 재배치되지 않도록 보호합니다.
+        /// </summary>
+        /// <param name="targetCamera">반복 배경 판정에 사용할 카메라입니다.</param>
+        /// <param name="axis">투영 기준이 되는 월드 방향입니다.</param>
+        /// <param name="min">카메라와 캐릭터 앵커를 포함한 최소 투영값입니다.</param>
+        /// <param name="max">카메라와 캐릭터 앵커를 포함한 최대 투영값입니다.</param>
+        /// <returns>기준 범위를 계산할 수 있으면 <see langword="true"/>를 반환합니다.</returns>
+        private bool TryGetLoopResidencyProjection(Camera targetCamera, Vector3 axis, out float min, out float max)
+        {
+            if (!TryGetCameraProjection(targetCamera, axis, out min, out max))
+            {
+                return false;
+            }
+
+            AppendActorResidencyProjection(axis, ref min, ref max);
+            return min <= max;
+        }
+
+        /// <summary>
+        /// 현재 맵의 물리 캐릭터 앵커를 투영 범위에 추가합니다.
+        /// </summary>
+        /// <param name="axis">투영 기준이 되는 월드 방향입니다.</param>
+        /// <param name="min">현재까지의 최소 투영값입니다.</param>
+        /// <param name="max">현재까지의 최대 투영값입니다.</param>
+        private void AppendActorResidencyProjection(Vector3 axis, ref float min, ref float max)
+        {
+            if (!useActorResidencyAnchors)
+            {
+                return;
+            }
+
+            ResolveCurrentMapTileCommon();
+            if (_mapTileCommon == null)
+            {
+                return;
+            }
+
+            _actorResidencyAnchors.Clear();
+            _mapTileCommon.AppendParallaxActorAnchors(
+                _actorResidencyAnchors,
+                includeInactiveActorResidencyAnchors);
+
+            for (int i = 0; i < _actorResidencyAnchors.Count; i++)
+            {
+                Transform actorAnchor = _actorResidencyAnchors[i];
+                if (actorAnchor == null)
+                {
+                    continue;
+                }
+
+                float projection = Vector3.Dot(actorAnchor.position, axis);
+                min = Mathf.Min(min, projection - actorResidencyPadding);
+                max = Mathf.Max(max, projection + actorResidencyPadding);
+            }
+        }
+
+        /// <summary>
         /// 카메라 뷰포트 좌표 하나를 월드 좌표로 변환한 뒤 지정 축에 투영합니다.
         /// </summary>
         /// <param name="targetCamera">기준으로 사용할 카메라입니다.</param>
@@ -383,6 +472,40 @@ namespace GGemCo2DCore
             float projection = Vector3.Dot(worldPoint, axis);
             min = Mathf.Min(min, projection);
             max = Mathf.Max(max, projection);
+        }
+
+        /// <summary>
+        /// 맵 로딩 완료 시 Parallax 유지 앵커를 조회할 현재 맵을 갱신합니다.
+        /// </summary>
+        /// <param name="mapTileCommon">현재 로드가 완료된 맵 타일 루트입니다.</param>
+        /// <param name="grid">현재 맵이 배치된 Grid 오브젝트입니다.</param>
+        private void OnLoadCompleteMap(MapTileCommon mapTileCommon, GameObject grid)
+        {
+            _ = grid;
+            _mapTileCommon = mapTileCommon;
+        }
+
+        /// <summary>
+        /// 현재 로드된 맵 타일 루트를 찾아 캐싱합니다.
+        /// 이벤트 수신 전에 활성화된 Parallax 오브젝트도 앵커 기반 유지 판정을 사용할 수 있도록 보완합니다.
+        /// </summary>
+        private void ResolveCurrentMapTileCommon()
+        {
+            if (_mapTileCommon != null)
+            {
+                return;
+            }
+
+            MapManager mapManager = SceneGame.Instance != null
+                ? SceneGame.Instance.mapManager
+                : null;
+            Transform currentMap = mapManager != null
+                ? mapManager.GetCurrentMap()
+                : null;
+
+            _mapTileCommon = currentMap != null
+                ? currentMap.GetComponent<MapTileCommon>()
+                : null;
         }
 
         /// <summary>

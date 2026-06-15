@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Tilemaps;
 
@@ -130,6 +130,96 @@ namespace GGemCo2DCore
                     }
                 }
             }
+        }
+
+        /// <summary>
+        /// Parallax 타일 유지 기준에 포함할 물리 캐릭터 앵커를 수집합니다.
+        /// 플레이어 기준으로만 반복 타일을 재배치하면 멀리 떨어진 몬스터의 바닥이 사라질 수 있으므로,
+        /// 현재 맵에 등록된 생존 캐릭터의 Transform을 함께 전달합니다.
+        /// </summary>
+        /// <param name="anchors">수집한 Transform을 추가할 목록입니다. 호출자가 목록을 초기화합니다.</param>
+        /// <param name="includeInactive">비활성 캐릭터도 앵커로 포함할지 여부입니다.</param>
+        public void AppendParallaxActorAnchors(List<Transform> anchors, bool includeInactive)
+        {
+            if (anchors == null)
+            {
+                return;
+            }
+
+            AppendPlayerParallaxActorAnchor(anchors, includeInactive);
+            AppendCharacterParallaxActorAnchors(Monsters, anchors, includeInactive);
+            AppendCharacterParallaxActorAnchors(Npcs, anchors, includeInactive);
+        }
+
+        /// <summary>
+        /// 현재 플레이어를 Parallax 유지 앵커 목록에 추가합니다.
+        /// </summary>
+        /// <param name="anchors">수집한 Transform을 추가할 목록입니다.</param>
+        /// <param name="includeInactive">비활성 플레이어도 앵커로 포함할지 여부입니다.</param>
+        private static void AppendPlayerParallaxActorAnchor(List<Transform> anchors, bool includeInactive)
+        {
+            GameObject playerObject = SceneGame.Instance != null
+                ? SceneGame.Instance.player
+                : null;
+
+            if (playerObject == null)
+            {
+                return;
+            }
+
+            AppendCharacterParallaxActorAnchor(playerObject, anchors, includeInactive);
+        }
+
+        /// <summary>
+        /// 맵에 등록된 캐릭터 목록에서 Parallax 유지 앵커로 사용할 Transform을 수집합니다.
+        /// </summary>
+        /// <param name="objects">VID 기준으로 관리되는 캐릭터 오브젝트 목록입니다.</param>
+        /// <param name="anchors">수집한 Transform을 추가할 목록입니다.</param>
+        /// <param name="includeInactive">비활성 캐릭터도 앵커로 포함할지 여부입니다.</param>
+        private static void AppendCharacterParallaxActorAnchors(
+            Dictionary<int, GameObject> objects,
+            List<Transform> anchors,
+            bool includeInactive)
+        {
+            if (objects == null)
+            {
+                return;
+            }
+
+            foreach (KeyValuePair<int, GameObject> info in objects)
+            {
+                AppendCharacterParallaxActorAnchor(info.Value, anchors, includeInactive);
+            }
+        }
+
+        /// <summary>
+        /// 지정한 캐릭터가 Parallax 유지 기준으로 유효하면 Transform을 앵커 목록에 추가합니다.
+        /// </summary>
+        /// <param name="characterObject">검사할 캐릭터 오브젝트입니다.</param>
+        /// <param name="anchors">수집한 Transform을 추가할 목록입니다.</param>
+        /// <param name="includeInactive">비활성 캐릭터도 앵커로 포함할지 여부입니다.</param>
+        private static void AppendCharacterParallaxActorAnchor(
+            GameObject characterObject,
+            List<Transform> anchors,
+            bool includeInactive)
+        {
+            if (characterObject == null)
+            {
+                return;
+            }
+
+            if (!includeInactive && !characterObject.activeInHierarchy)
+            {
+                return;
+            }
+
+            CharacterBase character = characterObject.GetComponent<CharacterBase>();
+            if (character == null || character.IsStatusDead())
+            {
+                return;
+            }
+
+            anchors.Add(character.transform);
         }
 
         /// <summary>
