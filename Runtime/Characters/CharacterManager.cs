@@ -121,6 +121,8 @@ namespace GGemCo2DCore
                     characterBase.uid = regenData.Uid;
                     characterObj.transform.position = new Vector3(
                         regenData.x, regenData.y, characterObj.transform.position.z);
+                    // 생성 이벤트가 발행되기 전에 리젠 데이터의 맵 표시 정책을 먼저 반영합니다.
+                    characterBase.SetMapVisibilityPolicy(regenData.MapVisibilityPolicy);
                 }
 
                 characterBase.CharacterAnimationController = iAnim;
@@ -450,6 +452,8 @@ namespace GGemCo2DCore
                         regenData.x,
                         regenData.y,
                         dummyObject.transform.position.z);
+                    // 더미 캐릭터도 컷신/스킬 연출에서 맵 표시 정책을 일관되게 따르도록 동기화합니다.
+                    characterBase.SetMapVisibilityPolicy(regenData.MapVisibilityPolicy);
                 }
 
                 var iAnim = SetupAnimationController(dummyObject, animationInfo.Controller);
@@ -535,6 +539,8 @@ namespace GGemCo2DCore
                 {
                     npcObj.transform.position = new Vector3(
                         regenData.x, regenData.y, npcObj.transform.position.z);
+                    // 리젠 데이터에 명시된 맵 표시 정책을 생성 직후 캐릭터 상태에 반영합니다.
+                    characterBase.SetMapVisibilityPolicy(regenData.MapVisibilityPolicy);
                 }
 
                 var iAnim = SetupAnimationController(npcObj, animationInfo.Controller);
@@ -590,6 +596,11 @@ namespace GGemCo2DCore
             if (characterBase)
             {
                 characterBase.uid = uid;
+                if (regenData != null)
+                {
+                    // 신규 생성 몬스터도 풀 재사용 몬스터와 동일하게 리젠 데이터의 표시 정책을 따릅니다.
+                    characterBase.SetMapVisibilityPolicy(regenData.MapVisibilityPolicy);
+                }
                 characterBase.SetScale(infoMonster.Scale);
                 characterBase.RefreshCharacterBodyCollision();
             }

@@ -101,12 +101,15 @@ namespace GGemCo2DCore
         }
 
         /// <summary>
-        /// regen_data 의 정보 셋팅
+        /// 리젠 데이터에 저장된 맵 배치 정보를 NPC 런타임 상태에 반영합니다.
         /// </summary>
         protected override void InitializeByRegenData()
         {
             // 맵 배치툴로 저장한 정보가 있을 경우 
             if (CharacterRegenData == null) return;
+
+            // NPC도 같은 리젠 데이터 구조를 사용하므로 명시 표시 정책을 동일하게 반영합니다.
+            SetMapVisibilityPolicy(CharacterRegenData.MapVisibilityPolicy);
             // UpdateDirection() 에서 초기 방향 처리를 위해 추가
             directionNormalize = new Vector3(CharacterRegenData.IsFlip?1:-1, 0, 0);
             SetFlip(CharacterRegenData.IsFlip);

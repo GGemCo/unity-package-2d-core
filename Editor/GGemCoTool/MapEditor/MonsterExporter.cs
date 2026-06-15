@@ -143,7 +143,8 @@ namespace GGemCo2DCoreEditor
                 }
 
                 saveMonsterList.CharacterRegenDatas.Add(new CharacterRegenData(monster.uid, child.position,
-                    monster.isFlip, mapUid, true, 0, 0, monster.canMoveX, monster.canMoveY, patrolData));
+                    monster.isFlip, mapUid, true, 0, 0, monster.canMoveX, monster.canMoveY, patrolData,
+                    monster.MapVisibilityPolicy));
                 
                 // map 라벨 붙여주기 
                 // AddressableSettings 가져오기

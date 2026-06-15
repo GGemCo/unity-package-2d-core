@@ -938,7 +938,8 @@ namespace GGemCo2DCore
                     moveStep,
                     moveSpeed,
                     canMoveX,
-                    canMoveY);
+                    canMoveY,
+                    mapVisibilityPolicy: character.MapVisibilityPolicy);
                 return;
             }
 
@@ -954,6 +955,7 @@ namespace GGemCo2DCore
             regenData.MoveSpeed = moveSpeed;
             regenData.CanMoveX = canMoveX;
             regenData.CanMoveY = canMoveY;
+            regenData.MapVisibilityPolicy = character.MapVisibilityPolicy;
         }
 
         /// <summary>

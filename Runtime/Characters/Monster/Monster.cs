@@ -368,12 +368,15 @@ namespace GGemCo2DCore
             _deathSkillController.Initialize(this);
         }
         /// <summary>
-        /// regen_data 의 정보 셋팅
+        /// 리젠 데이터에 저장된 맵 배치 정보를 몬스터 런타임 상태에 반영합니다.
         /// </summary>
         protected override void InitializeByRegenData()
         {
             // 맵 배치툴로 저장한 정보가 있을 경우 
             if (CharacterRegenData == null) return;
+
+            // 맵 컬링 정책은 풀 재사용 시 이전 몬스터의 정책이 남지 않도록 리젠 데이터 기준으로 매번 갱신합니다.
+            SetMapVisibilityPolicy(CharacterRegenData.MapVisibilityPolicy);
             // UpdateDirection() 에서 초기 방향 처리를 위해 추가
             directionNormalize = new Vector3(CharacterRegenData.IsFlip?1:-1, 0, 0);
             SetFlip(CharacterRegenData.IsFlip);

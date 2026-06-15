@@ -119,6 +119,7 @@ namespace GGemCo2DCore
                 _characterVid = spawnVid;
 
             myMonsterScript.vid = spawnVid;
+            ApplyMapVisibilityPolicy(monster, monsterData);
             mapTileCommon.AddMonster(spawnVid, monster);
             _monsterRegenDataByVid[spawnVid] = monsterData;
             _monsterRespawnPending.Remove(spawnVid);
@@ -252,6 +253,7 @@ namespace GGemCo2DCore
                 myNpcScript.vid = _characterVid;
                 myNpcScript.uid = npcData.Uid;
                 myNpcScript.CharacterRegenData = npcData;
+                ApplyMapVisibilityPolicy(npc, npcData);
 
                 mapTileCommon.AddNpc(_characterVid, npc);
                 ApplyInitialNpcVisibilityPolicy(npc, npcData);
@@ -278,6 +280,28 @@ namespace GGemCo2DCore
             }
 
             npcObject.SetActive(false);
+        }
+
+        /// <summary>
+        /// 리젠 데이터에 저장된 맵 표시 정책을 캐릭터 런타임 상태에 반영합니다.
+        /// </summary>
+        /// <param name="characterObject">정책을 적용할 캐릭터 오브젝트입니다.</param>
+        /// <param name="regenData">맵 배치 리젠 데이터입니다.</param>
+        private static void ApplyMapVisibilityPolicy(GameObject characterObject, CharacterRegenData regenData)
+        {
+            if (characterObject == null || regenData == null)
+            {
+                return;
+            }
+
+            CharacterBase character = characterObject.GetComponent<CharacterBase>();
+            if (character == null)
+            {
+                return;
+            }
+
+            // 맵 컬링 계산은 CharacterBase의 정책을 기준으로 처리하므로 스폰 직후 동기화합니다.
+            character.SetMapVisibilityPolicy(regenData.MapVisibilityPolicy);
         }
 
         #endregion
