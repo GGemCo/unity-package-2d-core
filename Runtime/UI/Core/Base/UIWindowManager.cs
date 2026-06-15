@@ -560,6 +560,41 @@ namespace GGemCo2DCore
         }
 
         /// <summary>
+        /// 지정한 UIWindow UID 목록에 표시 억제 토큰을 발급합니다.
+        /// 억제 중인 창은 다른 런타임 로직이 표시를 요청해도 토큰 해제 전까지 다시 켜지지 않습니다.
+        /// </summary>
+        /// <param name="windowUids">표시 요청을 억제할 UIWindow UID 목록입니다.</param>
+        /// <returns>해제에 사용할 토큰입니다. 억제 대상이 없으면 0을 반환합니다.</returns>
+        public int AcquireVisibilitySuppression(IEnumerable<UIWindowConstants.WindowUid> windowUids)
+        {
+            EnsureServices();
+            return _windowVisibilityService.AcquireVisibilitySuppression(windowUids);
+        }
+
+        /// <summary>
+        /// 지정한 표시 억제 토큰을 해제합니다.
+        /// 같은 창을 여러 토큰이 억제 중이면 마지막 토큰이 해제된 뒤 표시 요청이 허용됩니다.
+        /// </summary>
+        /// <param name="token">해제할 표시 억제 토큰입니다.</param>
+        /// <returns>토큰을 찾아 해제했으면 true입니다.</returns>
+        public bool ReleaseVisibilitySuppression(int token)
+        {
+            EnsureServices();
+            return _windowVisibilityService.ReleaseVisibilitySuppression(token);
+        }
+
+        /// <summary>
+        /// 지정한 UIWindow UID가 현재 표시 억제 대상인지 확인합니다.
+        /// </summary>
+        /// <param name="windowUid">확인할 UIWindow UID입니다.</param>
+        /// <returns>표시 요청이 억제 중이면 true입니다.</returns>
+        public bool IsWindowVisibilitySuppressed(UIWindowConstants.WindowUid windowUid)
+        {
+            EnsureServices();
+            return _windowVisibilityService.IsWindowVisibilitySuppressed(windowUid);
+        }
+
+        /// <summary>
         /// 지정한 UIWindow UID 목록을 기본 모드로 일괄 표시하거나 숨깁니다.
         /// </summary>
         /// <param name="windowUids">표시 상태를 변경할 UIWindow UID 목록입니다.</param>

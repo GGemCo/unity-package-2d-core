@@ -25,6 +25,11 @@ namespace GGemCo2DCore
         private bool _hasPushedVisibilityState;
 
         /// <summary>
+        /// 숨김 이벤트 동안 외부 표시 요청을 막기 위해 UIWindowManager에서 발급받은 억제 토큰입니다.
+        /// </summary>
+        private int _visibilitySuppressionToken;
+
+        /// <summary>
         /// UI 창 표시 상태를 제어하는 컷신 컨트롤러를 초기화합니다.
         /// </summary>
         /// <param name="manager">이 컨트롤러를 관리하는 컷신 매니저입니다.</param>
@@ -88,6 +93,11 @@ namespace GGemCo2DCore
                 _hasPushedVisibilityState = _windowManager.PushVisibilityState(targetWindows);
             }
 
+            if (!_data.show)
+            {
+                _visibilitySuppressionToken = _windowManager.AcquireVisibilitySuppression(targetWindows);
+            }
+
             _windowManager.SetWindowsVisible(targetWindows, _data.show);
         }
 
@@ -108,7 +118,15 @@ namespace GGemCo2DCore
             if (_data is { restoreOnStop: true })
             {
                 RestoreSnapshot();
+                return;
             }
+
+            if (_data is { restoreOnCutsceneEnd: true })
+            {
+                return;
+            }
+
+            ReleaseVisibilitySuppression();
         }
 
         /// <summary>
@@ -120,7 +138,10 @@ namespace GGemCo2DCore
             if (_data is { restoreOnCutsceneEnd: true })
             {
                 RestoreSnapshot();
+                return;
             }
+
+            ReleaseVisibilitySuppression();
         }
 
         /// <summary>
@@ -129,6 +150,8 @@ namespace GGemCo2DCore
         /// </summary>
         private void RestoreSnapshot()
         {
+            ReleaseVisibilitySuppression();
+
             if (!_hasPushedVisibilityState || _windowManager == null)
             {
                 return;
@@ -138,6 +161,22 @@ namespace GGemCo2DCore
             {
                 _hasPushedVisibilityState = false;
             }
+        }
+
+        /// <summary>
+        /// 숨김 이벤트 동안 잡아둔 UI 창 표시 억제 토큰을 해제합니다.
+        /// 복원 시점보다 먼저 해제해야 이전에 표시 중이던 창을 정상적으로 다시 켤 수 있습니다.
+        /// </summary>
+        private void ReleaseVisibilitySuppression()
+        {
+            if (_visibilitySuppressionToken == 0 || _windowManager == null)
+            {
+                _visibilitySuppressionToken = 0;
+                return;
+            }
+
+            _windowManager.ReleaseVisibilitySuppression(_visibilitySuppressionToken);
+            _visibilitySuppressionToken = 0;
         }
 
         /// <summary>

@@ -11,6 +11,11 @@ namespace GGemCo2DCore
         private readonly Func<UIWindowConstants.WindowUid, UIWindow> _getWindowByUid;
         private readonly Func<List<UIWindow>> _getManagedWindows;
         private readonly UIWindowVisibilityStateStack _stateStack;
+        private readonly Dictionary<int, List<UIWindowConstants.WindowUid>> _suppressedWindowsByToken =
+            new Dictionary<int, List<UIWindowConstants.WindowUid>>();
+        private readonly Dictionary<UIWindowConstants.WindowUid, int> _suppressedWindowRefCounts =
+            new Dictionary<UIWindowConstants.WindowUid, int>();
+        private int _nextSuppressionToken = 1;
 
         /// <summary>
         /// UIWindow 표시 상태 서비스를 생성합니다.
@@ -49,6 +54,11 @@ namespace GGemCo2DCore
             bool show,
             UIWindowConstants.UIWindowVisibilityApplyMode mode)
         {
+            if (show && IsWindowVisibilitySuppressed(uid))
+            {
+                return;
+            }
+
             UIWindow uiWindow = _getWindowByUid?.Invoke(uid);
             if (uiWindow == null)
             {
@@ -229,6 +239,83 @@ namespace GGemCo2DCore
         }
 
         /// <summary>
+        /// 지정한 UIWindow UID 목록에 표시 억제 토큰을 발급합니다.
+        /// 억제 중인 창은 외부에서 표시 요청이 들어와도 토큰이 해제될 때까지 다시 켜지지 않습니다.
+        /// </summary>
+        /// <param name="windowUids">표시 요청을 억제할 UIWindow UID 목록입니다.</param>
+        /// <returns>해제에 사용할 토큰입니다. 억제 대상이 없으면 0을 반환합니다.</returns>
+        public int AcquireVisibilitySuppression(IEnumerable<UIWindowConstants.WindowUid> windowUids)
+        {
+            List<UIWindowConstants.WindowUid> normalizedWindowUids = NormalizeSuppressionTargets(windowUids);
+            if (normalizedWindowUids.Count <= 0)
+            {
+                return 0;
+            }
+
+            int token = _nextSuppressionToken++;
+            if (_nextSuppressionToken <= 0)
+            {
+                _nextSuppressionToken = 1;
+            }
+
+            _suppressedWindowsByToken[token] = normalizedWindowUids;
+            for (int i = 0; i < normalizedWindowUids.Count; i++)
+            {
+                UIWindowConstants.WindowUid windowUid = normalizedWindowUids[i];
+                _suppressedWindowRefCounts.TryGetValue(windowUid, out int count);
+                _suppressedWindowRefCounts[windowUid] = count + 1;
+            }
+
+            return token;
+        }
+
+        /// <summary>
+        /// 지정한 표시 억제 토큰을 해제합니다.
+        /// 같은 창을 여러 토큰이 억제 중이면 마지막 토큰이 해제될 때 표시 요청이 다시 허용됩니다.
+        /// </summary>
+        /// <param name="token">해제할 표시 억제 토큰입니다.</param>
+        /// <returns>토큰을 찾아 해제했으면 true입니다.</returns>
+        public bool ReleaseVisibilitySuppression(int token)
+        {
+            if (token == 0 || !_suppressedWindowsByToken.TryGetValue(token, out List<UIWindowConstants.WindowUid> windowUids))
+            {
+                return false;
+            }
+
+            _suppressedWindowsByToken.Remove(token);
+            for (int i = 0; i < windowUids.Count; i++)
+            {
+                UIWindowConstants.WindowUid windowUid = windowUids[i];
+                if (!_suppressedWindowRefCounts.TryGetValue(windowUid, out int count))
+                {
+                    continue;
+                }
+
+                count--;
+                if (count <= 0)
+                {
+                    _suppressedWindowRefCounts.Remove(windowUid);
+                    continue;
+                }
+
+                _suppressedWindowRefCounts[windowUid] = count;
+            }
+
+            return true;
+        }
+
+        /// <summary>
+        /// 지정한 UIWindow UID가 현재 표시 억제 대상인지 확인합니다.
+        /// </summary>
+        /// <param name="windowUid">확인할 UIWindow UID입니다.</param>
+        /// <returns>표시 요청이 억제 중이면 true입니다.</returns>
+        public bool IsWindowVisibilitySuppressed(UIWindowConstants.WindowUid windowUid)
+        {
+            return windowUid != UIWindowConstants.WindowUid.None &&
+                   _suppressedWindowRefCounts.ContainsKey(windowUid);
+        }
+
+        /// <summary>
         /// 지정한 UIWindow UID 목록을 기본 모드로 일괄 표시하거나 숨깁니다.
         /// </summary>
         /// <param name="windowUids">표시 상태를 변경할 UIWindow UID 목록입니다.</param>
@@ -278,6 +365,11 @@ namespace GGemCo2DCore
 
             foreach (UIWindow window in windows)
             {
+                if (show && window != null && IsWindowVisibilitySuppressed(window.uid))
+                {
+                    continue;
+                }
+
                 UIWindowVisibilityStateStack.ApplyVisibility(window, show, mode);
             }
         }
@@ -314,6 +406,34 @@ namespace GGemCo2DCore
 
                 window.Show(false);
             }
+        }
+
+        /// <summary>
+        /// 표시 억제 대상 목록에서 None과 중복 값을 제거합니다.
+        /// </summary>
+        /// <param name="windowUids">정규화할 UIWindow UID 목록입니다.</param>
+        /// <returns>중복 없이 정리된 표시 억제 대상 목록입니다.</returns>
+        private static List<UIWindowConstants.WindowUid> NormalizeSuppressionTargets(
+            IEnumerable<UIWindowConstants.WindowUid> windowUids)
+        {
+            List<UIWindowConstants.WindowUid> result = new List<UIWindowConstants.WindowUid>();
+            if (windowUids == null)
+            {
+                return result;
+            }
+
+            HashSet<UIWindowConstants.WindowUid> seen = new HashSet<UIWindowConstants.WindowUid>();
+            foreach (UIWindowConstants.WindowUid windowUid in windowUids)
+            {
+                if (windowUid == UIWindowConstants.WindowUid.None || !seen.Add(windowUid))
+                {
+                    continue;
+                }
+
+                result.Add(windowUid);
+            }
+
+            return result;
         }
     }
 }

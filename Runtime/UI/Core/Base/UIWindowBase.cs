@@ -133,6 +133,7 @@ namespace GGemCo2DCore
                 UIWindowConstants.WindowUid windowUid = (UIWindowConstants.WindowUid)openWindowUid;
                 UIWindow uiWindow = ResolveLinkedWindow(windowUid);
                 if (uiWindow == null) continue;
+                if (show && uiWindow.IsVisibilitySuppressedByManager()) continue;
 
                 if (uiWindow._uiWindowFade == null)
                 {
@@ -179,6 +180,11 @@ namespace GGemCo2DCore
         /// </summary>
         public virtual bool Show(bool show)
         {
+            if (show && IsVisibilitySuppressedByManager())
+            {
+                return false;
+            }
+
             if (_uiWindowFade == null)
             {
                 if (gameObject == null) return false;
@@ -207,6 +213,11 @@ namespace GGemCo2DCore
         /// </summary>
         public virtual void SetVisibleImmediate(bool show, bool invokeOnShow = false, bool followLinkedWindows = false)
         {
+            if (show && IsVisibilitySuppressedByManager())
+            {
+                return;
+            }
+
             if (_uiWindowFade == null)
             {
                 if (show)
@@ -236,6 +247,19 @@ namespace GGemCo2DCore
             {
                 SetVisibleByTableImmediate(_struckTableWindow.CloseWindowUid, false, invokeOnShow);
             }
+        }
+
+        /// <summary>
+        /// 현재 윈도우가 UIWindowManager의 표시 억제 정책에 의해 열림 요청을 막아야 하는지 확인합니다.
+        /// 컷신처럼 일정 구간 동안 UI를 숨기는 시스템이 직접 Show 호출까지 일관되게 제어할 때 사용됩니다.
+        /// </summary>
+        /// <returns>표시 요청을 무시해야 하면 true입니다.</returns>
+        private bool IsVisibilitySuppressedByManager()
+        {
+            SceneGame sceneGame = SceneGame != null ? SceneGame : global::GGemCo2DCore.SceneGame.Instance;
+            return sceneGame != null &&
+                   sceneGame.uIWindowManager != null &&
+                   sceneGame.uIWindowManager.IsWindowVisibilitySuppressed(uid);
         }
 
         /// <summary>
