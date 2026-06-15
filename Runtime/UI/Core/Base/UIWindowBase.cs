@@ -85,6 +85,11 @@ namespace GGemCo2DCore
                 return;
             }
 
+            if (!useFade)
+            {
+                return;
+            }
+
             gameObject.SetActive(true);
             UiFadeUtility.SetVisible(gameObject, false, ensureCanvasGroup: true, updateInput: true);
         }
@@ -132,8 +137,7 @@ namespace GGemCo2DCore
                 if (uiWindow._uiWindowFade == null)
                 {
                     if (uiWindow.gameObject == null) continue;
-                    uiWindow.gameObject.SetActive(show);
-                    uiWindow.OnShow(show);
+                    uiWindow.SetNonFadeVisible(show, true);
                     continue;
                 }
 
@@ -178,8 +182,7 @@ namespace GGemCo2DCore
             if (_uiWindowFade == null)
             {
                 if (gameObject == null) return false;
-                gameObject.SetActive(show);
-                OnShow(show);
+                SetNonFadeVisible(show, true);
                 return false;
             }
 
@@ -208,23 +211,11 @@ namespace GGemCo2DCore
             {
                 if (show)
                 {
-                    gameObject.SetActive(true);
-                    UiFadeUtility.SetVisible(gameObject, true, useFade, true);
-
-                    if (invokeOnShow)
-                    {
-                        OnShow(true);
-                    }
+                    SetNonFadeVisible(true, invokeOnShow);
                 }
                 else
                 {
-                    if (invokeOnShow)
-                    {
-                        OnShow(false);
-                    }
-
-                    UiFadeUtility.SetVisible(gameObject, false, useFade, true);
-                    gameObject.SetActive(false);
+                    SetNonFadeVisible(false, invokeOnShow);
                 }
             }
             else
@@ -245,6 +236,49 @@ namespace GGemCo2DCore
             {
                 SetVisibleByTableImmediate(_struckTableWindow.CloseWindowUid, false, invokeOnShow);
             }
+        }
+
+        /// <summary>
+        /// Fade를 사용하지 않는 윈도우의 표시 상태를 즉시 변경합니다.
+        /// </summary>
+        /// <param name="show">true면 윈도우를 표시하고, false면 비활성화합니다.</param>
+        /// <param name="invokeOnShow">표시 상태 변경 콜백을 호출할지 여부입니다.</param>
+        private void SetNonFadeVisible(bool show, bool invokeOnShow)
+        {
+            if (gameObject == null)
+            {
+                return;
+            }
+
+            if (show)
+            {
+                gameObject.SetActive(true);
+                RestoreExistingCanvasGroupVisibility();
+
+                if (invokeOnShow)
+                {
+                    OnShow(true);
+                }
+
+                return;
+            }
+
+            if (invokeOnShow)
+            {
+                OnShow(false);
+            }
+
+            // Fade 미사용 윈도우는 CanvasGroup 숨김 상태를 남기지 않고 GameObject 비활성화만 사용합니다.
+            gameObject.SetActive(false);
+        }
+
+        /// <summary>
+        /// 이미 존재하는 CanvasGroup이 숨김 상태로 남아 있을 때 표시 상태로 복구합니다.
+        /// </summary>
+        private void RestoreExistingCanvasGroupVisibility()
+        {
+            // 새 CanvasGroup은 만들지 않고, 프리팹 또는 이전 로직으로 남은 CanvasGroup만 정상화합니다.
+            UiFadeUtility.SetVisible(gameObject, true, ensureCanvasGroup: false, updateInput: true);
         }
 
         /// <summary>

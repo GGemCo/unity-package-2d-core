@@ -18,10 +18,23 @@ namespace GGemCo2DCore
             if (_uiWindow == null)
                 _uiWindow = GetComponent<UIWindowBase>();
 
+            if (_uiWindow != null && !_uiWindow.useFade)
+            {
+                enabled = false;
+                return;
+            }
+
             if (_effectTarget == null)
                 _effectTarget = UIEffectTarget.GetOrAdd(gameObject);
         }
 
+        /// <summary>
+        /// 윈도우 Fade 전환에 필요한 참조와 프리셋을 초기화합니다.
+        /// </summary>
+        /// <param name="windowBase">Fade 전환을 소유한 윈도우입니다.</param>
+        /// <param name="effectTarget">UI Effect 실행 대상입니다.</param>
+        /// <param name="openPreset">윈도우 열기 효과 프리셋입니다.</param>
+        /// <param name="closePreset">윈도우 닫기 효과 프리셋입니다.</param>
         public void Initialize(UIWindowBase windowBase, UIEffectTarget effectTarget, UIEffectPreset openPreset, UIEffectPreset closePreset)
         {
             _uiWindow = windowBase;
