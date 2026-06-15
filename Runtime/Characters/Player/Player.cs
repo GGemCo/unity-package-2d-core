@@ -16,6 +16,7 @@ namespace GGemCo2DCore
         // 자동 이동 및 공격 복귀에 사용할 현재 선택 몬스터입니다.
         private GameObject _targetMonster;
         private PlayerCombatEngagementTracker _combatEngagementTracker;
+        private PlayerMonsterBattleHudPresenter _monsterBattleHudPresenter;
         private EquipController _equipController;
         private ToolController _toolController;
         private ControllerPlayer _controllerPlayer;
@@ -214,7 +215,28 @@ namespace GGemCo2DCore
             }
 
             _combatEngagementTracker.Initialize(this);
+            EnsureMonsterBattleHudPresenter(_combatEngagementTracker);
             return _combatEngagementTracker;
+        }
+
+        /// <summary>
+        /// 플레이어 교전 목록 기반 몬스터 전투 HUD Presenter를 찾거나 생성합니다.
+        /// </summary>
+        /// <param name="tracker">Presenter가 관찰할 전투 참여 목록입니다.</param>
+        /// <returns>초기화된 몬스터 전투 HUD Presenter입니다.</returns>
+        private PlayerMonsterBattleHudPresenter EnsureMonsterBattleHudPresenter(PlayerCombatEngagementTracker tracker)
+        {
+            if (_monsterBattleHudPresenter == null)
+            {
+                _monsterBattleHudPresenter = GetComponent<PlayerMonsterBattleHudPresenter>();
+                if (_monsterBattleHudPresenter == null)
+                {
+                    _monsterBattleHudPresenter = gameObject.AddComponent<PlayerMonsterBattleHudPresenter>();
+                }
+            }
+
+            _monsterBattleHudPresenter.Initialize(this, tracker);
+            return _monsterBattleHudPresenter;
         }
         
         protected override void Awake()

@@ -11,8 +11,6 @@ namespace GGemCo2DCore
     {
         private Monster _monster;
         private SceneGame _sceneGame;
-
-        private UIWindowBattleHudMonster _uiWindowBattleHudMonster;
         
         private GameObject _prefabSliderHpBar;
         private Transform _containerMonsterHpBar;
@@ -44,8 +42,6 @@ namespace GGemCo2DCore
             }
             DestroyDebugLevelText();
             DestroyDebugHpText();
-            if (_uiWindowBattleHudMonster != null)
-                _uiWindowBattleHudMonster.Show(false);
         }
 
         /// <summary>
@@ -73,11 +69,10 @@ namespace GGemCo2DCore
             RefreshDebugHpText();
             SetSliderHp(_monster.CurrentHp.Value);
             SetSuperArmor(_monster.CurrentSuperArmor.Value);
-            SetBattleStatus(_monster.CurrentBattleStatus.Value);
         }
 
         /// <summary>
-        /// 몬스터 리소스와 전투 상태 변경 이벤트를 UI 갱신 함수에 연결합니다.
+        /// 몬스터 리소스 변경 이벤트를 머리 위 UI 갱신 함수에 연결합니다.
         /// </summary>
         public void InitSubscribe()
         {
@@ -104,10 +99,6 @@ namespace GGemCo2DCore
             _monster.CurrentSuperArmor
                 .Subscribe(SetSuperArmor)
                 .AddTo(_monster);
-            
-            _monster.CurrentBattleStatus
-                .Subscribe(_ => SetBattleStatus(_monster.CurrentBattleStatus.Value))
-                .AddTo(_monster);
 
         }
 
@@ -129,46 +120,11 @@ namespace GGemCo2DCore
             monsterHpBar.Initialize(_monster);
         }
         /// <summary>
-        /// 전투 상태 변경에 따라 Battle HUD 표시 여부와 표시 데이터를 갱신합니다.
-        /// </summary>
-        /// <param name="value">현재 몬스터 전투 상태입니다.</param>
-        /// <remarks>
-        /// 윈도우 초기화 순서로 HUD 참조가 늦게 준비될 수 있어,
-        /// 표시 갱신 시점에 참조를 한 번 더 복구 시도합니다.
-        /// 비표시 전환 시에는 연출 코루틴이 비활성 오브젝트에서 시작되지 않도록
-        /// Super Armor 아이콘을 먼저 즉시 초기화한 뒤 HUD를 숨깁니다.
-        /// </remarks>
-        private void SetBattleStatus(CharacterConstants.BattleStatus value)
-        {
-            if (_uiWindowBattleHudMonster == null)
-            {
-                RefreshRuntimeReferences();
-                if (_uiWindowBattleHudMonster == null) return;
-            }
-
-            bool canShowBattleHud = CanShowBattleHud();
-            bool isInBattle = value == CharacterConstants.BattleStatus.InBattle;
-            bool shouldShow = canShowBattleHud && isInBattle;
-
-            if (!shouldShow)
-            {
-                _uiWindowBattleHudMonster.ResetSuperArmorForHide();
-                _uiWindowBattleHudMonster.Show(false);
-                return;
-            }
-
-            _uiWindowBattleHudMonster.Show(true);
-            _uiWindowBattleHudMonster.UpdateInfo(_monster, CanShowBattleHudSuperArmor());
-            SyncBattleHudHpOnShow();
-        }
-
-        /// <summary>
-        /// 몬스터 현재 HP를 월드 HP 바와 Battle HUD에 동기화합니다.
+        /// 몬스터 현재 HP를 머리 위 HP 바와 디버그 텍스트에 동기화합니다.
         /// </summary>
         /// <param name="value">현재 HP 값입니다.</param>
         /// <remarks>
-        /// Battle HUD가 지연 생성되는 프레임에서도 HP 변경을 누락하지 않도록
-        /// HUD 참조를 재확인한 뒤 슬라이더를 갱신합니다.
+        /// 전역 Battle HUD는 플레이어 교전 목록 기반 Presenter가 별도로 갱신합니다.
         /// </remarks>
         private void SetSliderHp(long value)
         {
@@ -177,45 +133,16 @@ namespace GGemCo2DCore
                 _sliderHpBar.GetComponent<MonsterHpBar>().SetValue(value);    
             }
 
-            if (_uiWindowBattleHudMonster == null)
-            {
-                RefreshRuntimeReferences();
-            }
-
-            if (_uiWindowBattleHudMonster != null)
-            {
-                _uiWindowBattleHudMonster.SetSliderHp(value, _monster.MaxHp.Value);
-            }
-
             UpdateDebugHpText(value);
         }
 
         /// <summary>
-        /// Battle HUD가 다시 표시되는 순간 최신 HP를 즉시 반영합니다.
-        /// </summary>
-        /// <remarks>
-        /// HUD가 숨김 상태일 때 발생한 HP 변경 이벤트가 시각적으로 누락될 수 있어,
-        /// 표시 전환 직후 한 번 더 현재 HP/최대 HP를 강제 동기화합니다.
-        /// </remarks>
-        private void SyncBattleHudHpOnShow()
-        {
-            if (_monster == null || _uiWindowBattleHudMonster == null)
-            {
-                return;
-            }
-
-            _uiWindowBattleHudMonster.SetSliderHp(_monster.CurrentHp.Value, _monster.MaxHp.Value);
-        }
-
-        /// <summary>
-        /// 런타임에서 필요한 씬, 설정, HUD 참조를 최신 상태로 갱신합니다.
+        /// 런타임에서 필요한 씬과 몬스터 설정 참조를 최신 상태로 갱신합니다.
         /// </summary>
         private void RefreshRuntimeReferences()
         {
             _sceneGame ??= SceneGame.Instance;
             _monsterSettings ??= AddressableLoaderSettings.Instance.monsterSettings;
-            _uiWindowBattleHudMonster =
-                _sceneGame?.uIWindowManager?.GetUIWindowByUid<UIWindowBattleHudMonster>(UIWindowConstants.WindowUid.BattleHudMonster);
         }
 
         /// <summary>
@@ -256,28 +183,6 @@ namespace GGemCo2DCore
             return _monsterSettings != null
                    && _monster != null
                    && _monsterSettings.CanShowWorldSuperArmor(_monster.Grade, GetMaxSuperArmor());
-        }
-
-        /// <summary>
-        /// Battle HUD를 표시할 수 있는지 확인합니다.
-        /// </summary>
-        /// <returns>Battle HUD를 표시할 수 있으면 true입니다.</returns>
-        private bool CanShowBattleHud()
-        {
-            return _monsterSettings != null
-                   && _monster != null
-                   && _monsterSettings.IsBattleHudEnabledFor(_monster.Grade);
-        }
-
-        /// <summary>
-        /// Battle HUD 안의 Super Armor UI를 표시할 수 있는지 확인합니다.
-        /// </summary>
-        /// <returns>Battle HUD Super Armor UI를 표시할 수 있으면 true입니다.</returns>
-        private bool CanShowBattleHudSuperArmor()
-        {
-            return _monsterSettings != null
-                   && _monster != null
-                   && _monsterSettings.CanShowBattleHudSuperArmor(_monster.Grade, GetMaxSuperArmor());
         }
 
         /// <summary>
@@ -488,7 +393,7 @@ namespace GGemCo2DCore
         }
         
         /// <summary>
-        /// Super Armor 값 변경을 머리 위 UI와 Battle HUD UI에 반영합니다.
+        /// Super Armor 값 변경을 머리 위 UI에 반영합니다.
         /// </summary>
         /// <param name="value">현재 Super Armor 값입니다.</param>
         public void SetSuperArmor(int value)
@@ -504,11 +409,6 @@ namespace GGemCo2DCore
             else
             {
                 DestroySuperArmor();
-            }
-
-            if (_uiWindowBattleHudMonster != null) 
-            {
-                _uiWindowBattleHudMonster.SetSuperArmor(CanShowBattleHudSuperArmor() ? value : 0);
             }
         }
     }

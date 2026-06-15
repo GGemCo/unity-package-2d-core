@@ -1,5 +1,7 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
+using R3;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
@@ -25,6 +27,11 @@ namespace GGemCo2DCore
         private int _lastSuperArmorValue;
         private int _currentMonsterInstanceId;
         private AddressableLoaderCharacterImageName _addressableLoaderCharacterImageName;
+        private Monster _boundMonster;
+        private bool _boundShowSuperArmor;
+        private IDisposable _currentHpSubscription;
+        private IDisposable _maxHpSubscription;
+        private IDisposable _currentSuperArmorSubscription;
 
         protected override void Awake()
         {
@@ -61,6 +68,72 @@ namespace GGemCo2DCore
             InitMonsterNameByImage(monster.uid);
             InitSuperArmor(monster, showSuperArmor);
             SetSliderHp(monster.CurrentHp.Value, monster.MaxHp.Value);
+        }
+
+        /// <summary>
+        /// 전투 HUD를 지정한 몬스터에 바인딩하고 리소스 변경 이벤트를 구독합니다.
+        /// </summary>
+        /// <param name="monster">표시할 몬스터입니다.</param>
+        /// <param name="showSuperArmor">슈퍼아머 UI 표시 여부입니다.</param>
+        /// <remarks>
+        /// 전역 전투 HUD는 한 번에 하나의 몬스터만 표시하므로 새 몬스터를 바인딩하기 전에 이전 구독을 정리합니다.
+        /// </remarks>
+        public void Bind(Monster monster, bool showSuperArmor)
+        {
+            Unbind();
+            if (!monster)
+            {
+                return;
+            }
+
+            _boundMonster = monster;
+            _boundShowSuperArmor = showSuperArmor;
+            UpdateInfo(monster, showSuperArmor);
+
+            _currentHpSubscription = monster.CurrentHp.Subscribe(OnBoundCurrentHpChanged);
+            _maxHpSubscription = monster.MaxHp.Subscribe(OnBoundMaxHpChanged);
+            _currentSuperArmorSubscription = monster.CurrentSuperArmor.Subscribe(OnBoundCurrentSuperArmorChanged);
+        }
+
+        /// <summary>
+        /// 현재 전투 HUD에 바인딩된 몬스터와 리소스 변경 구독을 해제합니다.
+        /// </summary>
+        public void Unbind()
+        {
+            DisposeBindingSubscriptions();
+            _boundMonster = null;
+            _boundShowSuperArmor = false;
+            _currentMonsterInstanceId = 0;
+            ResetSuperArmorForHide();
+        }
+
+        /// <summary>
+        /// 바인딩된 몬스터의 현재 HP 변경을 HUD에 반영합니다.
+        /// </summary>
+        /// <param name="value">변경된 현재 HP입니다.</param>
+        private void OnBoundCurrentHpChanged(long value)
+        {
+            if (!_boundMonster) return;
+            SetSliderHp(value, _boundMonster.MaxHp.Value);
+        }
+
+        /// <summary>
+        /// 바인딩된 몬스터의 최대 HP 변경을 HUD에 반영합니다.
+        /// </summary>
+        /// <param name="value">변경된 최대 HP입니다.</param>
+        private void OnBoundMaxHpChanged(long value)
+        {
+            if (!_boundMonster) return;
+            SetSliderHp(_boundMonster.CurrentHp.Value, value);
+        }
+
+        /// <summary>
+        /// 바인딩된 몬스터의 현재 슈퍼아머 변경을 HUD에 반영합니다.
+        /// </summary>
+        /// <param name="value">변경된 현재 슈퍼아머 값입니다.</param>
+        private void OnBoundCurrentSuperArmorChanged(int value)
+        {
+            SetSuperArmor(_boundShowSuperArmor ? value : 0);
         }
 
         private void InitMonsterNameByImage(int monsterUid)
@@ -358,9 +431,27 @@ namespace GGemCo2DCore
             _pendingShieldHideCoroutines.Clear();
         }
 
+        /// <summary>
+        /// 바인딩된 몬스터 리소스 구독을 모두 해제합니다.
+        /// </summary>
+        private void DisposeBindingSubscriptions()
+        {
+            _currentHpSubscription?.Dispose();
+            _maxHpSubscription?.Dispose();
+            _currentSuperArmorSubscription?.Dispose();
+            _currentHpSubscription = null;
+            _maxHpSubscription = null;
+            _currentSuperArmorSubscription = null;
+        }
+
         private void OnDisable()
         {
             CancelAllPendingShieldHide();
+        }
+
+        private void OnDestroy()
+        {
+            Unbind();
         }
     }
 }

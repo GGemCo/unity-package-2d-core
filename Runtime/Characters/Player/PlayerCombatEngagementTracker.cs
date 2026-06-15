@@ -176,6 +176,36 @@ namespace GGemCo2DCore
         }
 
         /// <summary>
+        /// 현재 유효한 전투 참여 몬스터 목록을 호출자가 제공한 리스트에 복사합니다.
+        /// </summary>
+        /// <param name="results">복사 결과를 받을 리스트입니다. 호출 시 기존 내용은 제거됩니다.</param>
+        /// <returns>복사된 유효 몬스터 수입니다.</returns>
+        /// <remarks>
+        /// 전역 전투 HUD처럼 교전 목록을 순회해야 하는 시스템에서 내부 Dictionary를 직접 노출하지 않기 위해 사용합니다.
+        /// 호출자가 리스트를 재사용하면 전투 중 반복 할당 없이 후보를 평가할 수 있습니다.
+        /// </remarks>
+        public int CopyEngagedMonsters(List<Monster> results)
+        {
+            if (results == null)
+            {
+                return 0;
+            }
+
+            PruneInvalidEngagements();
+            results.Clear();
+            foreach (KeyValuePair<int, Monster> pair in _engagedMonsters)
+            {
+                Monster monster = pair.Value;
+                if (IsValidEngagement(monster))
+                {
+                    results.Add(monster);
+                }
+            }
+
+            return results.Count;
+        }
+
+        /// <summary>
         /// 사망, 비활성화 또는 제거된 몬스터를 참여 목록에서 정리합니다.
         /// </summary>
         private void PruneInvalidEngagements()
