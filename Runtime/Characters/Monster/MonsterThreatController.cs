@@ -22,6 +22,7 @@ namespace GGemCo2DCore
             public int InstanceId;
             public CharacterBase Target;
             public float DetectionThreat;
+            public float DetectionRetentionThreat;
             public float DamageThreat;
             public float ExternalThreat;
             public float EncounterThreat;
@@ -30,6 +31,7 @@ namespace GGemCo2DCore
 
             public float TotalThreat =>
                 DetectionThreat +
+                DetectionRetentionThreat +
                 DamageThreat +
                 ExternalThreat +
                 EncounterThreat;
@@ -40,6 +42,7 @@ namespace GGemCo2DCore
                 {
                     MonsterThreatSource sources = MonsterThreatSource.None;
                     if (DetectionThreat > ThreatEpsilon) sources |= MonsterThreatSource.DetectionRange;
+                    if (DetectionRetentionThreat > ThreatEpsilon) sources |= MonsterThreatSource.DetectionRetention;
                     if (DamageThreat > ThreatEpsilon) sources |= MonsterThreatSource.Damage;
                     if (ExternalThreat > ThreatEpsilon) sources |= MonsterThreatSource.External;
                     if (EncounterThreat > ThreatEpsilon) sources |= MonsterThreatSource.Encounter;
@@ -116,10 +119,10 @@ namespace GGemCo2DCore
         }
 
         /// <summary>
-        /// 감지 또는 Encounter처럼 범위·관계가 유지되는 동안 적용되는 Threat 원인을 설정합니다.
+        /// 감지, 감지 유지 또는 Encounter처럼 관계가 유지되는 동안 적용되는 Threat 원인을 설정합니다.
         /// </summary>
         /// <param name="target">Threat 대상으로 등록할 캐릭터입니다.</param>
-        /// <param name="source">감지 범위 또는 Encounter 원인입니다.</param>
+        /// <param name="source">감지 범위, 감지 유지 또는 Encounter 원인입니다.</param>
         /// <param name="isActive">원인을 활성화할지 제거할지 여부입니다.</param>
         /// <param name="threatValue">활성화 시 유지할 Threat 값입니다.</param>
         /// <returns>Threat 목록 또는 점수가 실제로 변경되었으면 <see langword="true"/>입니다.</returns>
@@ -130,6 +133,7 @@ namespace GGemCo2DCore
             float threatValue)
         {
             if (source != MonsterThreatSource.DetectionRange &&
+                source != MonsterThreatSource.DetectionRetention &&
                 source != MonsterThreatSource.Encounter)
             {
                 return false;
@@ -155,11 +159,22 @@ namespace GGemCo2DCore
             float previousThreat = source switch
             {
                 MonsterThreatSource.DetectionRange => entry.DetectionThreat,
+                MonsterThreatSource.DetectionRetention => entry.DetectionRetentionThreat,
                 MonsterThreatSource.Encounter => entry.EncounterThreat,
                 _ => 0f,
             };
 
-            if (Mathf.Approximately(previousThreat, normalizedThreat))
+            bool hasConflictingDetectionThreat = source switch
+            {
+                MonsterThreatSource.DetectionRange =>
+                    entry.DetectionRetentionThreat > ThreatEpsilon,
+                MonsterThreatSource.DetectionRetention =>
+                    entry.DetectionThreat > ThreatEpsilon,
+                _ => false,
+            };
+
+            if (Mathf.Approximately(previousThreat, normalizedThreat) &&
+                !hasConflictingDetectionThreat)
             {
                 RefreshEntryObservation(entry);
                 return false;
@@ -169,6 +184,11 @@ namespace GGemCo2DCore
             {
                 case MonsterThreatSource.DetectionRange:
                     entry.DetectionThreat = normalizedThreat;
+                    entry.DetectionRetentionThreat = 0f;
+                    break;
+                case MonsterThreatSource.DetectionRetention:
+                    entry.DetectionRetentionThreat = normalizedThreat;
+                    entry.DetectionThreat = 0f;
                     break;
                 case MonsterThreatSource.Encounter:
                     entry.EncounterThreat = normalizedThreat;
@@ -178,6 +198,60 @@ namespace GGemCo2DCore
             RefreshEntryObservation(entry);
             RefreshCurrentTarget();
             return true;
+        }
+
+        /// <summary>
+        /// 플레이어 감지 상태에 맞춰 감지 Threat와 감지 유지 Threat를 원자적으로 전환합니다.
+        /// </summary>
+        /// <param name="target">감지 상태를 갱신할 전투 대상입니다.</param>
+        /// <param name="isDetected">현재 감지 범위 또는 추적 유지 범위 안에 있는지 여부입니다.</param>
+        /// <param name="retainWhenLost">감지 이탈 후에도 명시적인 전투 종료까지 Threat를 유지할지 여부입니다.</param>
+        /// <param name="threatValue">활성 상태에 유지할 Threat 값입니다.</param>
+        /// <returns>Threat 원인 또는 값이 실제로 변경되었으면 <see langword="true"/>입니다.</returns>
+        public bool SetDetectionThreatState(
+            CharacterBase target,
+            bool isDetected,
+            bool retainWhenLost,
+            float threatValue)
+        {
+            if (target == null)
+            {
+                return false;
+            }
+
+            if (!isDetected && !retainWhenLost)
+            {
+                return RemoveDetectionThreats(target);
+            }
+
+            if (!IsValidTarget(target))
+            {
+                return false;
+            }
+
+            ThreatEntry entry = GetOrCreateEntry(target);
+            if (entry == null)
+            {
+                return false;
+            }
+
+            float normalizedThreat = Mathf.Max(ThreatEpsilon, threatValue);
+            float nextDetectionThreat = isDetected ? normalizedThreat : 0f;
+            float nextRetentionThreat = !isDetected && retainWhenLost ? normalizedThreat : 0f;
+            bool changed =
+                !Mathf.Approximately(entry.DetectionThreat, nextDetectionThreat) ||
+                !Mathf.Approximately(entry.DetectionRetentionThreat, nextRetentionThreat);
+
+            entry.DetectionThreat = nextDetectionThreat;
+            entry.DetectionRetentionThreat = nextRetentionThreat;
+            RefreshEntryObservation(entry);
+
+            if (changed)
+            {
+                RefreshCurrentTarget();
+            }
+
+            return changed;
         }
 
         /// <summary>
@@ -440,7 +514,7 @@ namespace GGemCo2DCore
         }
 
         /// <summary>
-        /// 감지 또는 Encounter 원인만 제거하고 다른 원인의 Threat는 유지합니다.
+        /// 감지 계열 또는 Encounter 원인만 제거하고 다른 원인의 Threat는 유지합니다.
         /// </summary>
         private bool RemovePresenceThreat(CharacterBase target, MonsterThreatSource source)
         {
@@ -456,6 +530,10 @@ namespace GGemCo2DCore
                     changed = entry.DetectionThreat > ThreatEpsilon;
                     entry.DetectionThreat = 0f;
                     break;
+                case MonsterThreatSource.DetectionRetention:
+                    changed = entry.DetectionRetentionThreat > ThreatEpsilon;
+                    entry.DetectionRetentionThreat = 0f;
+                    break;
                 case MonsterThreatSource.Encounter:
                     changed = entry.EncounterThreat > ThreatEpsilon;
                     entry.EncounterThreat = 0f;
@@ -469,6 +547,41 @@ namespace GGemCo2DCore
                 return false;
             }
 
+            if (entry.TotalThreat <= ThreatEpsilon)
+            {
+                RemoveEntry(entry);
+            }
+            else
+            {
+                RefreshEntryObservation(entry);
+            }
+
+            RefreshCurrentTarget();
+            return true;
+        }
+
+        /// <summary>
+        /// 지정한 대상의 감지 Threat와 감지 유지 Threat를 함께 제거합니다.
+        /// </summary>
+        /// <param name="target">감지 계열 Threat를 제거할 대상입니다.</param>
+        /// <returns>하나 이상의 감지 계열 Threat가 제거되었으면 <see langword="true"/>입니다.</returns>
+        private bool RemoveDetectionThreats(CharacterBase target)
+        {
+            if (target == null || !_entries.TryGetValue(target.GetInstanceID(), out ThreatEntry entry))
+            {
+                return false;
+            }
+
+            bool changed =
+                entry.DetectionThreat > ThreatEpsilon ||
+                entry.DetectionRetentionThreat > ThreatEpsilon;
+            if (!changed)
+            {
+                return false;
+            }
+
+            entry.DetectionThreat = 0f;
+            entry.DetectionRetentionThreat = 0f;
             if (entry.TotalThreat <= ThreatEpsilon)
             {
                 RemoveEntry(entry);

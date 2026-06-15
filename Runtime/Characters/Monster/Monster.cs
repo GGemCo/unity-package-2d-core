@@ -542,27 +542,31 @@ namespace GGemCo2DCore
             if (!CanTrackThreatTarget(player)) return;
             if (GetAttackType() != CharacterConstants.AttackType.AggroFirst) return;
 
-            _threatController?.SetPresenceThreat(
+            _threatController?.SetDetectionThreatState(
                 player,
-                MonsterThreatSource.DetectionRange,
-                isActive: true,
-                _threatProfile.DetectionThreat);
+                isDetected: true,
+                retainWhenLost: false,
+                threatValue: _threatProfile.DetectionThreat);
         }
 
         /// <summary>
-        /// 플레이어가 감지 이탈 범위 또는 추적 한계를 벗어났을 때 감지 원인의 Threat만 제거합니다.
+        /// 플레이어가 감지 이탈 범위 또는 추적 한계를 벗어났을 때 프로필 정책에 따라 감지 Threat를 전환합니다.
         /// </summary>
         /// <param name="player">감지 및 추적 유지 범위를 벗어난 플레이어입니다.</param>
         /// <remarks>
-        /// 같은 대상에게 피해 또는 외부 원인의 Threat가 남아 있으면 현재 전투와 타겟을 유지합니다.
+        /// DistanceBased 정책은 감지 계열 Threat를 제거하고,
+        /// UntilCombatReleased 정책은 현재 전투 타겟을 감지 유지 Threat로 전환하여
+        /// 명시적인 전투 종료까지 타겟을 유지합니다.
         /// </remarks>
         public void OnLostPlayerByDetectionRange(Player player)
         {
-            _threatController?.SetPresenceThreat(
+            _threatController?.SetDetectionThreatState(
                 player,
-                MonsterThreatSource.DetectionRange,
-                isActive: false,
-                threatValue: 0f);
+                isDetected: false,
+                retainWhenLost:
+                    _threatProfile.RetainDetectedTargetUntilCombatReleased &&
+                    CurrentCombatTarget == player,
+                threatValue: _threatProfile.DetectionThreat);
         }
 
         /// <summary>

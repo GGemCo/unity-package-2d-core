@@ -73,6 +73,10 @@ namespace GGemCo2DCore
         /// <summary>Evade 시작 시 현재 적용 중인 Affect를 모두 제거할지 여부입니다.</summary>
         public bool ClearAffectsOnEvade = true;
 
+        /// <summary>감지 이탈 후 전투 타겟을 유지할 정책입니다.</summary>
+        public MonsterDetectionTargetRetentionPolicy DetectionTargetRetentionPolicy =
+            MonsterDetectionTargetRetentionPolicy.DistanceBased;
+
         /// <summary>감지 범위 진입 시 유지할 기본 Threat입니다. 0 이하면 기본값 1을 사용합니다.</summary>
         public float DetectionThreat;
 
@@ -158,6 +162,10 @@ namespace GGemCo2DCore
                     MonsterLeashRecoveryPolicy.OnHomeReached),
                 InvulnerableDuringReturn = ReadOptionalBool(data, "InvulnerableDuringReturn", true),
                 ClearAffectsOnEvade = ReadOptionalBool(data, "ClearAffectsOnEvade", true),
+                DetectionTargetRetentionPolicy = ReadOptionalEnum(
+                    data,
+                    "DetectionTargetRetentionPolicy",
+                    MonsterDetectionTargetRetentionPolicy.DistanceBased),
                 DetectionThreat = ReadOptionalFloat(data, "DetectionThreat"),
                 DamageThreatMultiplier = ReadOptionalFloat(data, "DamageThreatMultiplier"),
                 MinimumDamageThreat = ReadOptionalFloat(data, "MinimumDamageThreat"),

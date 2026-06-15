@@ -90,11 +90,12 @@ namespace GGemCo2DCore
                 }
 
                 _detectedPlayer = player;
-                bool needsDetectionThreat =
-                    !_owner.HasThreatSource(player, MonsterThreatSource.DetectionRange);
-                if (needsDetectionThreat)
+                bool needsDetectionStateRefresh =
+                    !_owner.HasThreatSource(player, MonsterThreatSource.DetectionRange) ||
+                    _owner.HasThreatSource(player, MonsterThreatSource.DetectionRetention);
+                if (needsDetectionStateRefresh)
                 {
-                    // 감지 원인만 별도로 등록하며, 피격/패트롤 Threat와 독립적으로 누적합니다.
+                    // 재진입 시 감지 유지 Threat를 실제 감지 Threat로 원자적으로 전환합니다.
                     _owner.OnDetectedPlayerByDetectionRange(player);
                 }
                 return;
