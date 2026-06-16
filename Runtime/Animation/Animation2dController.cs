@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -145,12 +145,6 @@ namespace GGemCo2DCore
         {
             if (!Animator) return;
 
-            if (!CanPlayAnimatorNow())
-            {
-                GcLogger.LogError($"애니메이션을 플레이할 수 없습니다. clip name: {animationName}");
-                return;
-            }
-
             if (!GetClipByName(animationName))
             {
                 GcLogger.LogError($"애니메이션 clip 이 없습니다. clip name: {animationName}");
@@ -185,17 +179,6 @@ namespace GGemCo2DCore
             {
                 _addAnimationCoroutine = StartCoroutine(PlayAddAnimations(animationName, addAnimations));
             }
-        }
-
-        /// <summary>
-        /// 현재 Animator에 재생 명령을 내려도 안전한 활성 상태인지 확인합니다.
-        /// Unity는 비활성 GameObject의 Animator에 Play 또는 Update를 호출하면 경고를 출력하므로,
-        /// 풀 반환이나 부모 비활성화 이후의 애니메이션 재생 요청은 여기서 무시합니다.
-        /// </summary>
-        /// <returns>Animator가 활성 계층 안에 있고 컨트롤러 컴포넌트도 활성화되어 있으면 true를 반환합니다.</returns>
-        private bool CanPlayAnimatorNow()
-        {
-            return Animator != null && Animator.gameObject.activeInHierarchy && isActiveAndEnabled;
         }
 
         /// <summary>
