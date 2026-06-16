@@ -75,6 +75,8 @@ namespace GGemCo2DCore
         public readonly int SkillUid;
         public readonly int AttackId;
         public readonly bool AllowSkillChainOnConfirmedDamage;
+        public readonly int SkillHitMpGain;
+        public readonly bool AllowMultipleSkillHitMpGainPerAttack;
         public readonly ElementGaugeApplication[] ElementGaugeApplications;
         public readonly ProjectileOnHitCrowdControlEntry[] OnHitCrowdControls;
         public readonly GuardAttackType GuardAttackType;
@@ -150,7 +152,9 @@ namespace GGemCo2DCore
             ProjectileConstants.HitVfxPositionPolicy hitVfxPositionPolicy = ProjectileConstants.HitVfxPositionPolicy.CollisionPoint,
             Vector2 hitVfxOffset = default,
             Vector2 hitVfxHitAreaNormalized = default,
-            ProjectileDamageFormulaContext damageFormulaContext = null)
+            ProjectileDamageFormulaContext damageFormulaContext = null,
+            int skillHitMpGain = 0,
+            bool allowMultipleSkillHitMpGainPerAttack = false)
         {
             Uid = uid;
             DamageType = damageType;
@@ -158,6 +162,8 @@ namespace GGemCo2DCore
             SkillUid = skillUid;
             AttackId = attackId;
             AllowSkillChainOnConfirmedDamage = allowSkillChainOnConfirmedDamage;
+            SkillHitMpGain = Mathf.Max(0, skillHitMpGain);
+            AllowMultipleSkillHitMpGainPerAttack = allowMultipleSkillHitMpGainPerAttack;
             ElementGaugeApplications = elementGaugeApplications;
             OnHitCrowdControls = onHitCrowdControls;
             GuardAttackType = guardAttackType;

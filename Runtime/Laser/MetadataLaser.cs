@@ -30,6 +30,8 @@ namespace GGemCo2DCore
         public readonly int SkillUid;
         public readonly int AttackId;
         public readonly bool AllowSkillChainOnConfirmedDamage;
+        public readonly int SkillHitMpGain;
+        public readonly bool AllowMultipleSkillHitMpGainPerAttack;
         public readonly ElementGaugeApplication[] ElementGaugeApplications;
 
         /// <summary>
@@ -148,7 +150,9 @@ namespace GGemCo2DCore
             Vector2 startPositionOverride = default,
             LaserConstants.StartPointUpdateMode startPointUpdateMode = LaserConstants.StartPointUpdateMode.FollowOwner,
             bool useCasterFlipStartOffsetX = false,
-            DamageFormulaRuntimeContext damageFormulaContext = null)
+            DamageFormulaRuntimeContext damageFormulaContext = null,
+            int skillHitMpGain = 0,
+            bool allowMultipleSkillHitMpGainPerAttack = false)
         {
             Uid = uid;
             DamageType = damageType;
@@ -166,6 +170,8 @@ namespace GGemCo2DCore
             SkillUid = skillUid;
             AttackId = attackId;
             AllowSkillChainOnConfirmedDamage = allowSkillChainOnConfirmedDamage;
+            SkillHitMpGain = Mathf.Max(0, skillHitMpGain);
+            AllowMultipleSkillHitMpGainPerAttack = allowMultipleSkillHitMpGainPerAttack;
             ElementGaugeApplications = elementGaugeApplications;
             OnHitCrowdControls = onHitCrowdControls;
             GuardAttackType = guardAttackType;
@@ -214,6 +220,8 @@ namespace GGemCo2DCore
                 skillUid: SkillUid,
                 attackId: AttackId,
                 allowSkillChainOnConfirmedDamage: AllowSkillChainOnConfirmedDamage,
+                skillHitMpGain: SkillHitMpGain,
+                allowMultipleSkillHitMpGainPerAttack: AllowMultipleSkillHitMpGainPerAttack,
                 elementGaugeApplications: ElementGaugeApplications,
                 onHitCrowdControls: OnHitCrowdControls,
                 guardAttackType: GuardAttackType);

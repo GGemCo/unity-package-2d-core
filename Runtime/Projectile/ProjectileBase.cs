@@ -1220,6 +1220,8 @@ namespace GGemCo2DCore
                 crowdControlUid = crowdControlUid,
                 SkillUid = SkillUid,
                 AttackId = AttackId,
+                SkillHitMpGain = Runtime != null ? Runtime.SkillHitMpGain : 0,
+                AllowMultipleSkillHitMpGainPerAttack = Runtime != null && Runtime.AllowMultipleSkillHitMpGainPerAttack,
                 ElementGaugeApplications = Runtime != null ? Runtime.ElementGaugeApplications : null,
                 ResolvedOnHitCrowdControls = resolvedOnHitCrowdControls,
                 HasPendingAfterDamageCrowdControl = HasPendingOnHitCrowdControl(

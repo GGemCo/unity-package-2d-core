@@ -52,6 +52,8 @@ namespace GGemCo2DCore
                     skillUid: metadataProjectile.SkillUid,
                     attackId: metadataProjectile.AttackId,
                     allowSkillChainOnConfirmedDamage: metadataProjectile.AllowSkillChainOnConfirmedDamage,
+                    skillHitMpGain: metadataProjectile.SkillHitMpGain,
+                    allowMultipleSkillHitMpGainPerAttack: metadataProjectile.AllowMultipleSkillHitMpGainPerAttack,
                     elementGaugeApplications: metadataProjectile.ElementGaugeApplications,
                     onHitCrowdControls: metadataProjectile.OnHitCrowdControls,
                     guardAttackType: metadataProjectile.GuardAttackType,

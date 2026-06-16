@@ -40,6 +40,20 @@ namespace GGemCo2DCore
         public int SkillUid;
 
         /// <summary>
+        /// 스킬 타격이 실제로 적중했을 때 지급할 MP입니다.
+        /// </summary>
+        /// <remarks>
+        /// Skill 패키지의 개별 타격 이벤트가 값을 채우고, Core의 MP 획득 Provider가 이 값을 읽어 보상을 지급합니다.
+        /// 0 이하이면 스킬 타격 MP 보상을 지급하지 않습니다.
+        /// </remarks>
+        public int SkillHitMpGain;
+
+        /// <summary>
+        /// 같은 AttackId 안에서 스킬 타격 MP 보상을 반복 지급할지 여부입니다.
+        /// </summary>
+        public bool AllowMultipleSkillHitMpGainPerAttack;
+
+        /// <summary>
         /// 즉시 CC는 아니지만, 데미지 처리 직후 AfterDamage CC가 이어질 예정인지 여부입니다.
         /// 일반 피격 모션을 먼저 재생하면 HitStop/CC 전환이 어색해질 수 있을 때 사용합니다.
         /// </summary>
