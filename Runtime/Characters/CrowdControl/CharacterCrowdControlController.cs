@@ -1152,6 +1152,39 @@ namespace GGemCo2DCore
             _motionController?.CancelMotion(MotionChannel.CrowdControl, reason);
         }
 
+        /// <summary>
+        /// 착지 기반 Crowd Control이 Arc 모션 완료 후에도 공중에 남아있을 때 전용 하강 모션을 시작합니다.
+        /// </summary>
+        /// <param name="fallSpeed">하강 속도입니다.</param>
+        /// <param name="stopOnWall">하강 중 벽 충돌 시 모션을 중단할지 여부입니다.</param>
+        /// <returns>하강 모션을 시작했으면 <see langword="true"/>입니다.</returns>
+        /// <remarks>
+        /// KnockUp의 FallTime은 Arc 보간 시간이므로 실제 지형 높이가 맞지 않으면 모션 종료 후 공중에 남을 수 있습니다.
+        /// 이 경우 Unity 중력에만 의존하지 않고 동일한 CrowdControl 채널에서 아래 방향 모션을 이어서 실행하여,
+        /// Kinematic Rigidbody 캐릭터도 Ground Probe 기반 착지까지 안정적으로 내려오게 합니다.
+        /// </remarks>
+        internal bool TryStartCrowdControlLandingFall(float fallSpeed, bool stopOnWall)
+        {
+            if (_motionController == null)
+                return false;
+
+            float safeFallSpeed = Mathf.Max(Epsilon, fallSpeed);
+            var request = new MotionRequest(
+                MotionChannel.CrowdControl,
+                MotionKind.KnockDownAir,
+                Vector2.down,
+                durationSeconds: 0f,
+                distance: 0f,
+                easeType: Easing.EaseType.Linear,
+                stopAtEnd: true,
+                useMovePosition: true,
+                allowReplace: true,
+                fallSpeed: safeFallSpeed,
+                stopOnWall: stopOnWall);
+
+            return _motionController.TryStartMotion(in request);
+        }
+
         private ICrowdControlHandler GetHandler(CrowdControlRuntimeData crowdControl)
         {
             if (crowdControl == null || _handlers == null)

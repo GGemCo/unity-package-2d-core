@@ -29,6 +29,16 @@ namespace GGemCo2DCore
             PlayPhaseAnimation(controller, crowdControl, nextPhase, force: false);
         }
 
+        /// <summary>
+        /// 공중형 Crowd Control 진행 중 FallLoop 단계에서 실제 착지 여부를 확인합니다.
+        /// </summary>
+        /// <param name="controller">착지 판정을 수행할 Crowd Control 컨트롤러입니다.</param>
+        /// <param name="crowdControl">현재 적용 중인 Crowd Control 데이터입니다.</param>
+        /// <returns>지면에 충분히 가까워져 착지 처리를 완료했으면 <see langword="true"/>입니다.</returns>
+        /// <remarks>
+        /// 착지로 인정되는 짧은 거리 안에서만 지면 스냅과 모션 취소를 수행하여,
+        /// FallTime 진행 중 멀리 있는 바닥을 감지해 공중에서 종료되는 상황을 방지합니다.
+        /// </remarks>
         public override bool TryHandleActiveLanding(CharacterCrowdControlController controller, CrowdControlRuntimeData crowdControl)
         {
             if (controller == null || crowdControl == null)
@@ -37,15 +47,11 @@ namespace GGemCo2DCore
             if (!IsLandingPhase(controller, crowdControl))
                 return false;
 
-            if (!controller.TryProbeGroundBelow(out float groundY, out float bottomY))
+            if (!TrySnapLandingWithinDistance(
+                    controller,
+                    CharacterCrowdControlController.KnockUpLandingTriggerDistance))
                 return false;
 
-            float distanceToGround = bottomY - groundY;
-            if (distanceToGround < -CharacterCrowdControlController.KnockUpLandingProbeUpOffset ||
-                distanceToGround > CharacterCrowdControlController.KnockUpLandingTriggerDistance)
-                return false;
-
-            controller.SnapCharacterBottomToGround(groundY, bottomY);
             controller.CancelCrowdControlMotion(reason: 201);
             return true;
         }
@@ -71,6 +77,36 @@ namespace GGemCo2DCore
             }
 
             return controller.IsCurrentlyGrounded(CharacterCrowdControlController.KnockUpLandingTriggerDistance);
+        }
+
+        /// <summary>
+        /// 캐릭터 하단과 지면 사이의 거리가 지정된 범위 안에 있을 때만 착지 스냅을 수행합니다.
+        /// </summary>
+        /// <param name="controller">착지 판정을 수행할 Crowd Control 컨트롤러입니다.</param>
+        /// <param name="maxLandingDistance">착지로 인정할 최대 거리입니다.</param>
+        /// <returns>지면을 찾고 허용 거리 안에서 스냅을 완료했으면 <see langword="true"/>입니다.</returns>
+        /// <remarks>
+        /// 공중형 CC가 멀리 떨어진 지면을 잘못 잡아 공중에서 LandEnd로 전환되는 문제를 막기 위해,
+        /// Raycast 탐색 거리와 최종 허용 거리를 같은 기준으로 제한합니다.
+        /// </remarks>
+        protected static bool TrySnapLandingWithinDistance(
+            CharacterCrowdControlController controller,
+            float maxLandingDistance)
+        {
+            if (controller == null)
+                return false;
+
+            float safeLandingDistance = Mathf.Max(0f, maxLandingDistance);
+            if (!controller.TryProbeGroundBelow(safeLandingDistance, out float groundY, out float bottomY))
+                return false;
+
+            float distanceToGround = bottomY - groundY;
+            if (distanceToGround < -CharacterCrowdControlController.KnockUpLandingProbeUpOffset ||
+                distanceToGround > safeLandingDistance)
+                return false;
+
+            controller.SnapCharacterBottomToGround(groundY, bottomY);
+            return true;
         }
 
         public override bool TryGetInitialAnimation(
