@@ -13,6 +13,7 @@ namespace GGemCo2DCore
         private readonly HashSet<object> _controlLockTokens = new();
         private readonly HashSet<object> _movementLockTokens = new();
         private readonly HashSet<object> _brainLockTokens = new();
+        private readonly Dictionary<object, CharacterInputAllowMask> _inputAllowLockTokens = new();
         private bool _isAggro;
 
         /// <summary>
@@ -66,6 +67,79 @@ namespace GGemCo2DCore
             }
 
             _movementLockTokens.Remove(token);
+        }
+
+        /// <summary>
+        /// 지정한 입력만 허용하고 나머지 입력을 차단하는 잠금 토큰을 획득합니다.
+        /// </summary>
+        /// <param name="allowedInputs">잠금 중 허용할 입력 마스크입니다.</param>
+        /// <param name="owner">잠금 요청 소유자입니다. null이면 새 토큰을 생성합니다.</param>
+        /// <returns>해제 시 사용할 입력 잠금 토큰입니다.</returns>
+        public object AcquireInputAllowLock(CharacterInputAllowMask allowedInputs, object owner = null)
+        {
+            object token = owner ?? new object();
+            _inputAllowLockTokens[token] = allowedInputs;
+            return token;
+        }
+
+        /// <summary>
+        /// 이전에 획득한 입력 허용 잠금 토큰을 해제합니다.
+        /// </summary>
+        /// <param name="token">해제할 입력 잠금 토큰입니다.</param>
+        public void ReleaseInputAllowLock(object token)
+        {
+            if (token == null)
+            {
+                return;
+            }
+
+            _inputAllowLockTokens.Remove(token);
+        }
+
+        /// <summary>
+        /// 현재 입력 허용 잠금 상태에서 지정한 입력을 차단해야 하는지 확인합니다.
+        /// </summary>
+        /// <param name="inputType">검사할 플레이어 입력 타입입니다.</param>
+        /// <returns>하나 이상의 입력 잠금이 해당 입력을 허용하지 않으면 <see langword="true"/>입니다.</returns>
+        public bool ShouldBlockInputByInputAllowLock(AutoMoveInputType inputType)
+        {
+            if (_inputAllowLockTokens.Count == 0)
+            {
+                return false;
+            }
+
+            CharacterInputAllowMask inputMask = ResolveInputAllowMask(inputType);
+            foreach (var pair in _inputAllowLockTokens)
+            {
+                if ((pair.Value & inputMask) != 0)
+                {
+                    continue;
+                }
+
+                return true;
+            }
+
+            return false;
+        }
+
+        /// <summary>
+        /// 자동 이동 입력 타입을 캐릭터 입력 허용 마스크로 변환합니다.
+        /// </summary>
+        /// <param name="inputType">변환할 입력 타입입니다.</param>
+        /// <returns>입력 타입에 대응하는 허용 마스크입니다.</returns>
+        private static CharacterInputAllowMask ResolveInputAllowMask(AutoMoveInputType inputType)
+        {
+            return inputType switch
+            {
+                AutoMoveInputType.Move => CharacterInputAllowMask.Move,
+                AutoMoveInputType.Attack => CharacterInputAllowMask.Attack,
+                AutoMoveInputType.Guard => CharacterInputAllowMask.Guard,
+                AutoMoveInputType.Jump => CharacterInputAllowMask.Jump,
+                AutoMoveInputType.Dash => CharacterInputAllowMask.Dash,
+                AutoMoveInputType.Interaction => CharacterInputAllowMask.Interaction,
+                AutoMoveInputType.SimulationTool => CharacterInputAllowMask.SimulationTool,
+                _ => CharacterInputAllowMask.Other,
+            };
         }
 
         /// <summary>

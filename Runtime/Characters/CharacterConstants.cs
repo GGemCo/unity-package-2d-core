@@ -4,6 +4,43 @@ using UnityEngine;
 
 namespace GGemCo2DCore
 {
+    /// <summary>
+    /// 외부 입력 잠금이 허용할 플레이어 입력 종류를 비트 마스크로 정의합니다.
+    /// </summary>
+    [Flags]
+    public enum CharacterInputAllowMask
+    {
+        /// <summary>어떤 입력도 허용하지 않습니다.</summary>
+        None = 0,
+
+        /// <summary>이동 입력을 허용합니다.</summary>
+        Move = 1 << 0,
+
+        /// <summary>공격 입력을 허용합니다.</summary>
+        Attack = 1 << 1,
+
+        /// <summary>방어 입력을 허용합니다.</summary>
+        Guard = 1 << 2,
+
+        /// <summary>점프 입력을 허용합니다.</summary>
+        Jump = 1 << 3,
+
+        /// <summary>대시 입력을 허용합니다.</summary>
+        Dash = 1 << 4,
+
+        /// <summary>상호작용 입력을 허용합니다.</summary>
+        Interaction = 1 << 5,
+
+        /// <summary>시뮬레이션 도구 입력을 허용합니다.</summary>
+        SimulationTool = 1 << 6,
+
+        /// <summary>분류되지 않은 기타 입력을 허용합니다.</summary>
+        Other = 1 << 7,
+
+        /// <summary>모든 입력을 허용합니다.</summary>
+        All = Move | Attack | Guard | Jump | Dash | Interaction | SimulationTool | Other,
+    }
+
     public static class CharacterConstants
     {
         public enum Type
