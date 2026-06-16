@@ -34,12 +34,8 @@ namespace GGemCo2DCore
         private readonly DialogueTextRevealPlayer _revealPlayer = new();
         private bool _useTypewriterSound;
         private int _typewriterSoundUid;
-        private float _typewriterSoundIntervalSeconds;
-        private int _typewriterSoundCharactersPerPlay = 1;
-        private bool _skipTypewriterSoundOnWhitespace = true;
         private float _typewriterSoundPitchMultiplier = 1f;
-        private float _nextTypewriterSoundRealtime;
-        private int _pendingTypewriterSoundCharacterCount;
+        private SoundPlaybackHandle _typewriterSoundHandle;
         private CharacterBase _target;
         private Vector3 _diffTextPosition;
         private bool _useProjectWorldOffset = true;
@@ -128,7 +124,7 @@ namespace GGemCo2DCore
             DialogueBalloonData safeData = data ?? new DialogueBalloonData();
             SetWorldPositionOptions(safeData);
             ApplyProjectEnterIndicatorDefaults();
-            ApplyProjectTypewriterSoundDefaults(safeData);
+            ApplyProjectTypewriterSoundDefaults();
             BeginBalloonPresentation();
             SetFontSize(safeData.fontSize);
             SetMessage(safeData, resolvedMessage);
@@ -142,6 +138,7 @@ namespace GGemCo2DCore
         public void RevealAll()
         {
             _revealPlayer.RevealAll(textMessage);
+            StopTypewriterSound();
             RequestThumbnailPositionRefresh();
         }
 
@@ -199,58 +196,13 @@ namespace GGemCo2DCore
         /// 프로젝트 전역 말풍선 설정에서 타자 효과 사운드 재생 옵션을 가져와 적용합니다.
         /// 개별 말풍선 이벤트 Override가 추가되기 전까지는 ScriptableObject 설정만 사용합니다.
         /// </summary>
-        private void ApplyProjectTypewriterSoundDefaults(DialogueBalloonData data)
+        private void ApplyProjectTypewriterSoundDefaults()
         {
             DialogueBalloonSettingsRuntimeResolver.ResolveTypewriterSoundDefaults(
                 out _useTypewriterSound,
                 out _typewriterSoundUid,
-                out _typewriterSoundIntervalSeconds,
-                out _typewriterSoundCharactersPerPlay,
-                out _skipTypewriterSoundOnWhitespace,
-                out bool scalePitchBySpeed,
-                out float referenceCharactersPerSecond,
-                out float minPitchMultiplier,
-                out float maxPitchMultiplier);
-
-            _typewriterSoundPitchMultiplier = ResolveTypewriterSoundPitchMultiplier(
-                data,
-                scalePitchBySpeed,
-                referenceCharactersPerSecond,
-                minPitchMultiplier,
-                maxPitchMultiplier);
-            ResetTypewriterSoundRuntimeState();
-        }
-
-        /// <summary>
-        /// 말풍선 타자 효과 속도와 글로벌 설정을 기준으로 SFX 재생 속도 배율을 계산합니다.
-        /// 기준 초당 글자 수를 1배율로 보고, 현재 타자 속도와의 비율을 최소/최대 배율 안으로 제한합니다.
-        /// </summary>
-        /// <param name="data">현재 말풍선 이벤트 데이터입니다.</param>
-        /// <param name="scalePitchBySpeed">타자 효과 속도에 맞춰 사운드 재생 속도를 변경할지 여부입니다.</param>
-        /// <param name="referenceCharactersPerSecond">1배율 기준 초당 글자 수입니다.</param>
-        /// <param name="minPitchMultiplier">허용할 최소 재생 속도 배율입니다.</param>
-        /// <param name="maxPitchMultiplier">허용할 최대 재생 속도 배율입니다.</param>
-        /// <returns>AudioSource pitch에 곱할 재생 속도 배율입니다.</returns>
-        private static float ResolveTypewriterSoundPitchMultiplier(
-            DialogueBalloonData data,
-            bool scalePitchBySpeed,
-            float referenceCharactersPerSecond,
-            float minPitchMultiplier,
-            float maxPitchMultiplier)
-        {
-            if (!scalePitchBySpeed || data == null)
-            {
-                return 1f;
-            }
-
-            float safeReferenceCharactersPerSecond = referenceCharactersPerSecond > 0f
-                ? referenceCharactersPerSecond
-                : DialogueBalloonData.DefaultTypewriterCharactersPerSecond;
-            float currentCharactersPerSecond = data.GetSafeTypewriterCharactersPerSecond();
-            float safeMinPitchMultiplier = minPitchMultiplier > 0f ? minPitchMultiplier : 1f;
-            float safeMaxPitchMultiplier = Mathf.Max(safeMinPitchMultiplier, maxPitchMultiplier);
-            float pitchMultiplier = currentCharactersPerSecond / safeReferenceCharactersPerSecond;
-            return Mathf.Clamp(pitchMultiplier, safeMinPitchMultiplier, safeMaxPitchMultiplier);
+                out _typewriterSoundPitchMultiplier);
+            StopTypewriterSound();
         }
 
         /// <summary>
@@ -272,6 +224,7 @@ namespace GGemCo2DCore
                 resolvedMessage ?? string.Empty,
                 data.useTypewriter,
                 data.GetSafeTypewriterCharactersPerSecond());
+            TryStartTypewriterSound();
             _isMessagePreparationComplete = true;
             RequestThumbnailPositionRefresh();
             TryShowBalloonWhenReady();
@@ -1212,6 +1165,7 @@ namespace GGemCo2DCore
         /// </summary>
         private void OnDisable()
         {
+            StopTypewriterSound();
             _thumbnailRequestVersion++;
             _target = null;
             _useProjectWorldOffset = true;
@@ -1224,11 +1178,7 @@ namespace GGemCo2DCore
             _isLayoutPreparationComplete = false;
             _useTypewriterSound = false;
             _typewriterSoundUid = 0;
-            _typewriterSoundIntervalSeconds = 0f;
-            _typewriterSoundCharactersPerPlay = 1;
-            _skipTypewriterSoundOnWhitespace = true;
             _typewriterSoundPitchMultiplier = 1f;
-            ResetTypewriterSoundRuntimeState();
             _revealPlayer.Clear(textMessage);
             ClearThumbnail();
             PrepareEnterIndicator();
@@ -1509,18 +1459,8 @@ namespace GGemCo2DCore
         }
 
         /// <summary>
-        /// 타자 효과 사운드 재생에 사용하는 런타임 누적 상태를 초기화합니다.
-        /// 새 메시지 시작, 풀 반환, 비활성화 시 이전 메시지의 재생 간격과 누적 글자 수가 이어지지 않도록 합니다.
-        /// </summary>
-        private void ResetTypewriterSoundRuntimeState()
-        {
-            _nextTypewriterSoundRealtime = 0f;
-            _pendingTypewriterSoundCharacterCount = 0;
-        }
-
-        /// <summary>
         /// TextMeshPro의 현재 표시 글자 수를 실제 문자 수 범위 안으로 보정해 반환합니다.
-        /// RevealAll이 <see cref="int.MaxValue"/>를 사용하더라도 사운드 계산은 실제 문자 수를 기준으로 수행합니다.
+        /// RevealAll이 <see cref="int.MaxValue"/>를 사용하더라도 타자 효과 완료 판정은 실제 문자 수를 기준으로 수행합니다.
         /// </summary>
         /// <returns>0 이상 전체 문자 수 이하로 보정된 표시 글자 수입니다.</returns>
         private int GetClampedVisibleCharacterCount()
@@ -1535,66 +1475,16 @@ namespace GGemCo2DCore
         }
 
         /// <summary>
-        /// 이번 프레임에 새로 노출된 글자 수를 계산합니다.
-        /// 설정에 따라 공백/줄바꿈은 사운드 재생 기준에서 제외합니다.
+        /// 타자 효과 사운드를 루프 재생으로 시작합니다.
+        /// 사운드는 타자 효과가 실제로 진행 중인 메시지에서만 시작하며, 이미 재생 중이면 중복 재생하지 않습니다.
         /// </summary>
-        /// <param name="previousVisibleCharacters">이전 프레임에 표시된 글자 수입니다.</param>
-        /// <param name="currentVisibleCharacters">현재 프레임에 표시된 글자 수입니다.</param>
-        /// <returns>사운드 재생 기준에 포함되는 신규 노출 글자 수입니다.</returns>
-        private int CountNewTypewriterSoundCharacters(int previousVisibleCharacters, int currentVisibleCharacters)
+        private void TryStartTypewriterSound()
         {
-            if (textMessage == null || currentVisibleCharacters <= previousVisibleCharacters)
-            {
-                return 0;
-            }
-
-            TMP_TextInfo textInfo = textMessage.textInfo;
-            int totalCharacterCount = textInfo.characterCount;
-            int startIndex = Mathf.Clamp(previousVisibleCharacters, 0, totalCharacterCount);
-            int endIndex = Mathf.Clamp(currentVisibleCharacters, 0, totalCharacterCount);
-            int count = 0;
-
-            for (int i = startIndex; i < endIndex; i++)
-            {
-                TMP_CharacterInfo characterInfo = textInfo.characterInfo[i];
-                if (_skipTypewriterSoundOnWhitespace && char.IsWhiteSpace(characterInfo.character))
-                {
-                    continue;
-                }
-
-                count++;
-            }
-
-            return count;
-        }
-
-        /// <summary>
-        /// 타자 효과로 새 글자가 노출된 양에 맞춰 사운드를 재생합니다.
-        /// 빠른 타자 속도에서도 최소 간격과 글자 수 단위 조건을 적용해 SFX 중첩을 제한합니다.
-        /// </summary>
-        /// <param name="previousVisibleCharacters">이전 프레임에 표시된 글자 수입니다.</param>
-        /// <param name="currentVisibleCharacters">현재 프레임에 표시된 글자 수입니다.</param>
-        private void TryPlayTypewriterSound(int previousVisibleCharacters, int currentVisibleCharacters)
-        {
-            if (!_useTypewriterSound || _typewriterSoundUid <= 0 || !_revealPlayer.IsTypewriterMode)
-            {
-                return;
-            }
-
-            int newCharacterCount = CountNewTypewriterSoundCharacters(previousVisibleCharacters, currentVisibleCharacters);
-            if (newCharacterCount <= 0)
-            {
-                return;
-            }
-
-            _pendingTypewriterSoundCharacterCount += newCharacterCount;
-            if (_pendingTypewriterSoundCharacterCount < _typewriterSoundCharactersPerPlay)
-            {
-                return;
-            }
-
-            float realtime = Time.unscaledTime;
-            if (realtime < _nextTypewriterSoundRealtime)
+            if (!_useTypewriterSound ||
+                _typewriterSoundUid <= 0 ||
+                !_revealPlayer.IsTypewriterMode ||
+                _revealPlayer.IsFullyRevealed ||
+                (_typewriterSoundHandle != null && !_typewriterSoundHandle.IsStopped))
             {
                 return;
             }
@@ -1605,9 +1495,24 @@ namespace GGemCo2DCore
                 return;
             }
 
-            soundManager.PlaySfxByUidWithPitchMultiplier(_typewriterSoundUid, _typewriterSoundPitchMultiplier);
-            _pendingTypewriterSoundCharacterCount = 0;
-            _nextTypewriterSoundRealtime = realtime + _typewriterSoundIntervalSeconds;
+            _typewriterSoundHandle = soundManager.PlayLoopingSfxByUidWithPitchMultiplier(
+                _typewriterSoundUid,
+                _typewriterSoundPitchMultiplier);
+        }
+
+        /// <summary>
+        /// 타자 효과 사운드 루프 재생을 정지하고 핸들 참조를 해제합니다.
+        /// 타자 효과가 끝나거나 말풍선이 풀로 반환될 때 AudioSource가 계속 남지 않도록 보장합니다.
+        /// </summary>
+        private void StopTypewriterSound()
+        {
+            if (_typewriterSoundHandle == null)
+            {
+                return;
+            }
+
+            _typewriterSoundHandle.Stop();
+            _typewriterSoundHandle = null;
         }
 
         /// <summary>
@@ -1629,9 +1534,9 @@ namespace GGemCo2DCore
                     RequestThumbnailPositionRefresh();
                 }
 
-                if (didVisibleCharactersChange)
+                if (didCompleteRevealThisFrame)
                 {
-                    TryPlayTypewriterSound(previousVisibleCharacters, currentVisibleCharacters);
+                    StopTypewriterSound();
                 }
             }
 

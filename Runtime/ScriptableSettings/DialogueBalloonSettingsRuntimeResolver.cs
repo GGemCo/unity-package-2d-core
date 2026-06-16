@@ -72,33 +72,15 @@ namespace GGemCo2DCore
         /// </summary>
         /// <param name="useSound">타자 효과 사운드를 사용할지 여부입니다.</param>
         /// <param name="soundUid">재생할 sound 테이블 대표 UID입니다.</param>
-        /// <param name="intervalSeconds">사운드 최소 재생 간격(초)입니다.</param>
-        /// <param name="charactersPerPlay">사운드 1회 재생에 필요한 노출 글자 수입니다.</param>
-        /// <param name="skipWhitespace">공백 문자를 사운드 재생 기준에서 제외할지 여부입니다.</param>
-        /// <param name="scalePitchBySpeed">타자 효과 속도에 맞춰 사운드 재생 속도를 변경할지 여부입니다.</param>
-        /// <param name="referenceCharactersPerSecond">사운드 재생 속도 1배율로 취급할 기준 초당 글자 수입니다.</param>
-        /// <param name="minPitchMultiplier">타자 효과 속도 기반 사운드 재생 속도 최소 배율입니다.</param>
-        /// <param name="maxPitchMultiplier">타자 효과 속도 기반 사운드 재생 속도 최대 배율입니다.</param>
+        /// <param name="pitchMultiplier">사운드 재생 속도 배율입니다.</param>
         public static void ResolveTypewriterSoundDefaults(
             out bool useSound,
             out int soundUid,
-            out float intervalSeconds,
-            out int charactersPerPlay,
-            out bool skipWhitespace,
-            out bool scalePitchBySpeed,
-            out float referenceCharactersPerSecond,
-            out float minPitchMultiplier,
-            out float maxPitchMultiplier)
+            out float pitchMultiplier)
         {
             useSound = false;
             soundUid = 0;
-            intervalSeconds = GGemCoDialogueBalloonSettings.DefaultTypewriterSoundIntervalSeconds;
-            charactersPerPlay = GGemCoDialogueBalloonSettings.DefaultTypewriterSoundCharactersPerPlay;
-            skipWhitespace = true;
-            scalePitchBySpeed = false;
-            referenceCharactersPerSecond = GGemCoDialogueBalloonSettings.DefaultTypewriterSoundReferenceCharactersPerSecond;
-            minPitchMultiplier = GGemCoDialogueBalloonSettings.DefaultTypewriterSoundMinPitchMultiplier;
-            maxPitchMultiplier = GGemCoDialogueBalloonSettings.DefaultTypewriterSoundMaxPitchMultiplier;
+            pitchMultiplier = GGemCoDialogueBalloonSettings.DefaultTypewriterSoundPitchMultiplier;
 
             if (!TryGetSettings(out GGemCoDialogueBalloonSettings settings) || settings == null)
             {
@@ -107,13 +89,7 @@ namespace GGemCo2DCore
 
             useSound = settings.useTypewriterSound && settings.typewriterSoundUid > 0;
             soundUid = settings.typewriterSoundUid;
-            intervalSeconds = settings.GetSafeTypewriterSoundIntervalSeconds();
-            charactersPerPlay = settings.GetSafeTypewriterSoundCharactersPerPlay();
-            skipWhitespace = settings.skipTypewriterSoundOnWhitespace;
-            scalePitchBySpeed = settings.scaleTypewriterSoundPitchBySpeed;
-            referenceCharactersPerSecond = settings.GetSafeTypewriterSoundReferenceCharactersPerSecond();
-            minPitchMultiplier = settings.GetSafeTypewriterSoundMinPitchMultiplier();
-            maxPitchMultiplier = settings.GetSafeTypewriterSoundMaxPitchMultiplier();
+            pitchMultiplier = settings.GetSafeTypewriterSoundPitchMultiplier();
         }
 
         /// <summary>

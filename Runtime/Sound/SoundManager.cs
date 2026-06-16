@@ -114,19 +114,19 @@ namespace GGemCo2DCore
         }
 
         /// <summary>
-        /// SFX sound UID를 요청 단위 재생 속도 배율과 함께 재생합니다.
-        /// BGM/Ambient로 해석되는 UID는 이 메서드에서 재생하지 않습니다.
+        /// SFX sound UID를 루프 재생하고 요청 단위 재생 속도 배율을 적용합니다.
+        /// BGM/Ambient로 해석되는 UID는 이 메서드에서 재생하지 않으며, 반환된 핸들을 통해 호출자가 직접 정지해야 합니다.
         /// </summary>
         /// <param name="uid">재생할 sound 테이블의 대표 UID입니다.</param>
         /// <param name="pitchMultiplier">요청 단위 재생 속도 배율입니다. 0 이하이면 1로 보정합니다.</param>
         /// <returns>재생 정지 핸들입니다. SFX로 재생하지 못하면 null을 반환합니다.</returns>
-        public SoundPlaybackHandle PlaySfxByUidWithPitchMultiplier(int uid, float pitchMultiplier)
+        public SoundPlaybackHandle PlayLoopingSfxByUidWithPitchMultiplier(int uid, float pitchMultiplier)
         {
             return PlayByUidInternal(
                 uid,
-                null,
+                true,
                 0f,
-                SoundPlaybackStopPolicy.Auto,
+                SoundPlaybackStopPolicy.ByHandle,
                 0f,
                 pitchMultiplier,
                 sfxOnly: true);
