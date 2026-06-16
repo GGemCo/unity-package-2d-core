@@ -36,6 +36,21 @@ namespace GGemCo2DCore
         /// </summary>
         public const int DefaultTypewriterSoundCharactersPerPlay = 1;
 
+        /// <summary>
+        /// 타자 효과 사운드 재생 속도 계산에 사용할 기본 기준 초당 글자 수입니다.
+        /// </summary>
+        public const float DefaultTypewriterSoundReferenceCharactersPerSecond = DialogueBalloonData.DefaultTypewriterCharactersPerSecond;
+
+        /// <summary>
+        /// 타자 효과 사운드 재생 속도 기본 최소 배율입니다.
+        /// </summary>
+        public const float DefaultTypewriterSoundMinPitchMultiplier = 0.75f;
+
+        /// <summary>
+        /// 타자 효과 사운드 재생 속도 기본 최대 배율입니다.
+        /// </summary>
+        public const float DefaultTypewriterSoundMaxPitchMultiplier = 1.5f;
+
         [Header("말풍선 월드 위치 기본값")]
         [Tooltip("말풍선 기본 위치(캐릭터 X + 높이) 기준 프로젝트 전역 오프셋입니다.")]
         public Vector3 worldOffset = Vector3.zero;
@@ -72,6 +87,18 @@ namespace GGemCo2DCore
 
         [Tooltip("true이면 공백/줄바꿈 문자는 타자 효과 사운드 재생 기준에서 제외합니다.")]
         public bool skipTypewriterSoundOnWhitespace = true;
+
+        [Tooltip("true이면 말풍선 타자 효과 속도에 맞춰 사운드 재생 속도도 변경합니다.")]
+        public bool scaleTypewriterSoundPitchBySpeed;
+
+        [Tooltip("사운드 재생 속도 1배율로 취급할 타자 효과 기준 초당 글자 수입니다.")]
+        public float typewriterSoundReferenceCharactersPerSecond = DefaultTypewriterSoundReferenceCharactersPerSecond;
+
+        [Tooltip("타자 효과 속도 기반 사운드 재생 속도 최소 배율입니다.")]
+        public float typewriterSoundMinPitchMultiplier = DefaultTypewriterSoundMinPitchMultiplier;
+
+        [Tooltip("타자 효과 속도 기반 사운드 재생 속도 최대 배율입니다.")]
+        public float typewriterSoundMaxPitchMultiplier = DefaultTypewriterSoundMaxPitchMultiplier;
 
         /// <summary>
         /// 프로젝트 기본 오프셋 X 정책을 유효 범위로 보정해 반환합니다.
@@ -136,6 +163,42 @@ namespace GGemCo2DCore
         }
 
         /// <summary>
+        /// 타자 효과 사운드 재생 속도 계산 기준 초당 글자 수를 안전한 값으로 보정해 반환합니다.
+        /// </summary>
+        /// <returns>0보다 큰 기준 초당 글자 수입니다.</returns>
+        public float GetSafeTypewriterSoundReferenceCharactersPerSecond()
+        {
+            return typewriterSoundReferenceCharactersPerSecond > 0f
+                ? typewriterSoundReferenceCharactersPerSecond
+                : DefaultTypewriterSoundReferenceCharactersPerSecond;
+        }
+
+        /// <summary>
+        /// 타자 효과 사운드 재생 속도 최소 배율을 안전한 값으로 보정해 반환합니다.
+        /// </summary>
+        /// <returns>0보다 큰 최소 재생 속도 배율입니다.</returns>
+        public float GetSafeTypewriterSoundMinPitchMultiplier()
+        {
+            return typewriterSoundMinPitchMultiplier > 0f
+                ? typewriterSoundMinPitchMultiplier
+                : DefaultTypewriterSoundMinPitchMultiplier;
+        }
+
+        /// <summary>
+        /// 타자 효과 사운드 재생 속도 최대 배율을 안전한 값으로 보정해 반환합니다.
+        /// 최소 배율보다 작으면 최소 배율과 같은 값으로 보정합니다.
+        /// </summary>
+        /// <returns>최소 배율 이상인 최대 재생 속도 배율입니다.</returns>
+        public float GetSafeTypewriterSoundMaxPitchMultiplier()
+        {
+            float minMultiplier = GetSafeTypewriterSoundMinPitchMultiplier();
+            float maxMultiplier = typewriterSoundMaxPitchMultiplier > 0f
+                ? typewriterSoundMaxPitchMultiplier
+                : DefaultTypewriterSoundMaxPitchMultiplier;
+            return Mathf.Max(minMultiplier, maxMultiplier);
+        }
+
+        /// <summary>
         /// 에셋 생성 시 프로젝트 기본값을 초기화합니다.
         /// </summary>
         private void Reset()
@@ -151,6 +214,10 @@ namespace GGemCo2DCore
             typewriterSoundIntervalSeconds = DefaultTypewriterSoundIntervalSeconds;
             typewriterSoundCharactersPerPlay = DefaultTypewriterSoundCharactersPerPlay;
             skipTypewriterSoundOnWhitespace = true;
+            scaleTypewriterSoundPitchBySpeed = false;
+            typewriterSoundReferenceCharactersPerSecond = DefaultTypewriterSoundReferenceCharactersPerSecond;
+            typewriterSoundMinPitchMultiplier = DefaultTypewriterSoundMinPitchMultiplier;
+            typewriterSoundMaxPitchMultiplier = DefaultTypewriterSoundMaxPitchMultiplier;
         }
     }
 }

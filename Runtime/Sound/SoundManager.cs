@@ -114,6 +114,25 @@ namespace GGemCo2DCore
         }
 
         /// <summary>
+        /// SFX sound UID를 요청 단위 재생 속도 배율과 함께 재생합니다.
+        /// BGM/Ambient로 해석되는 UID는 이 메서드에서 재생하지 않습니다.
+        /// </summary>
+        /// <param name="uid">재생할 sound 테이블의 대표 UID입니다.</param>
+        /// <param name="pitchMultiplier">요청 단위 재생 속도 배율입니다. 0 이하이면 1로 보정합니다.</param>
+        /// <returns>재생 정지 핸들입니다. SFX로 재생하지 못하면 null을 반환합니다.</returns>
+        public SoundPlaybackHandle PlaySfxByUidWithPitchMultiplier(int uid, float pitchMultiplier)
+        {
+            return PlayByUidInternal(
+                uid,
+                null,
+                0f,
+                SoundPlaybackStopPolicy.Auto,
+                0f,
+                pitchMultiplier,
+                sfxOnly: true);
+        }
+
+        /// <summary>
         /// 공용 사운드 재생 요청을 기반으로 사운드를 재생합니다.
         /// </summary>
         /// <param name="request">사운드 UID, 루프, 지속 시간 옵션을 담은 요청입니다.</param>
@@ -145,13 +164,16 @@ namespace GGemCo2DCore
             bool? loopOverride,
             float durationSeconds,
             SoundPlaybackStopPolicy stopPolicy,
-            float bgmFadeDurationOverride)
+            float bgmFadeDurationOverride,
+            float sfxPitchMultiplier = 1f,
+            bool sfxOnly = false)
         {
             if (!_tableLoaderManager || !_addressableLoaderSound || _soundResolver == null) return null;
             if (!TryResolveSound(uid, out ResolvedSound resolved)) return null;
             if (loopOverride.HasValue)
                 resolved = resolved.WithLoop(loopOverride.Value);
             if (!resolved.ShouldPlay) return null;
+            if (sfxOnly && resolved.Type != SoundConstants.Type.Sfx) return null;
 
             if (resolved.Type == SoundConstants.Type.Bgm)
             {
@@ -164,7 +186,12 @@ namespace GGemCo2DCore
             }
             else if (resolved.Type == SoundConstants.Type.Sfx)
             {
-                return _soundControllerSfx?.PlayWithHandle(resolved, this, durationSeconds, stopPolicy);
+                return _soundControllerSfx?.PlayWithHandle(
+                    resolved,
+                    this,
+                    durationSeconds,
+                    stopPolicy,
+                    sfxPitchMultiplier);
             }
 
             return null;

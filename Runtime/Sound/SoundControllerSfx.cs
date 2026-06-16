@@ -154,14 +154,35 @@ namespace GGemCo2DCore
             float durationSeconds,
             SoundPlaybackStopPolicy stopPolicy)
         {
+            return PlayWithHandle(resolved, coroutineHost, durationSeconds, stopPolicy, 1f);
+        }
+
+        /// <summary>
+        /// 해석된 효과음을 요청 단위 재생 속도 배율과 함께 재생하고, 호출자가 정지할 수 있는 핸들을 반환합니다.
+        /// 테이블에 정의된 pitch에 요청 배율을 곱해 최종 AudioSource pitch로 사용합니다.
+        /// </summary>
+        /// <param name="resolved">최종 재생할 효과음 정보입니다.</param>
+        /// <param name="coroutineHost">자동 반환 코루틴을 실행할 호스트입니다.</param>
+        /// <param name="durationSeconds">루프 효과음을 유지할 시간입니다.</param>
+        /// <param name="stopPolicy">사운드 정지 정책입니다.</param>
+        /// <param name="pitchMultiplier">요청 단위 재생 속도 배율입니다. 0 이하이면 1로 보정합니다.</param>
+        /// <returns>재생 정지 핸들입니다. 재생하지 못하면 null을 반환합니다.</returns>
+        public SoundPlaybackHandle PlayWithHandle(
+            ResolvedSound resolved,
+            MonoBehaviour coroutineHost,
+            float durationSeconds,
+            SoundPlaybackStopPolicy stopPolicy,
+            float pitchMultiplier)
+        {
             if (!resolved.ShouldPlay)
                 return null;
 
+            float safePitchMultiplier = pitchMultiplier > 0f ? pitchMultiplier : 1f;
             return Play(
                 resolved.ResourceUid,
                 coroutineHost,
                 resolved.Volume,
-                resolved.Pitch,
+                resolved.Pitch * safePitchMultiplier,
                 true,
                 resolved.Loop,
                 durationSeconds,

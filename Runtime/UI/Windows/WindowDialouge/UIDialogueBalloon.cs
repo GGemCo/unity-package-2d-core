@@ -37,6 +37,7 @@ namespace GGemCo2DCore
         private float _typewriterSoundIntervalSeconds;
         private int _typewriterSoundCharactersPerPlay = 1;
         private bool _skipTypewriterSoundOnWhitespace = true;
+        private float _typewriterSoundPitchMultiplier = 1f;
         private float _nextTypewriterSoundRealtime;
         private int _pendingTypewriterSoundCharacterCount;
         private CharacterBase _target;
@@ -127,7 +128,7 @@ namespace GGemCo2DCore
             DialogueBalloonData safeData = data ?? new DialogueBalloonData();
             SetWorldPositionOptions(safeData);
             ApplyProjectEnterIndicatorDefaults();
-            ApplyProjectTypewriterSoundDefaults();
+            ApplyProjectTypewriterSoundDefaults(safeData);
             BeginBalloonPresentation();
             SetFontSize(safeData.fontSize);
             SetMessage(safeData, resolvedMessage);
@@ -198,16 +199,58 @@ namespace GGemCo2DCore
         /// 프로젝트 전역 말풍선 설정에서 타자 효과 사운드 재생 옵션을 가져와 적용합니다.
         /// 개별 말풍선 이벤트 Override가 추가되기 전까지는 ScriptableObject 설정만 사용합니다.
         /// </summary>
-        private void ApplyProjectTypewriterSoundDefaults()
+        private void ApplyProjectTypewriterSoundDefaults(DialogueBalloonData data)
         {
             DialogueBalloonSettingsRuntimeResolver.ResolveTypewriterSoundDefaults(
                 out _useTypewriterSound,
                 out _typewriterSoundUid,
                 out _typewriterSoundIntervalSeconds,
                 out _typewriterSoundCharactersPerPlay,
-                out _skipTypewriterSoundOnWhitespace);
+                out _skipTypewriterSoundOnWhitespace,
+                out bool scalePitchBySpeed,
+                out float referenceCharactersPerSecond,
+                out float minPitchMultiplier,
+                out float maxPitchMultiplier);
 
+            _typewriterSoundPitchMultiplier = ResolveTypewriterSoundPitchMultiplier(
+                data,
+                scalePitchBySpeed,
+                referenceCharactersPerSecond,
+                minPitchMultiplier,
+                maxPitchMultiplier);
             ResetTypewriterSoundRuntimeState();
+        }
+
+        /// <summary>
+        /// 말풍선 타자 효과 속도와 글로벌 설정을 기준으로 SFX 재생 속도 배율을 계산합니다.
+        /// 기준 초당 글자 수를 1배율로 보고, 현재 타자 속도와의 비율을 최소/최대 배율 안으로 제한합니다.
+        /// </summary>
+        /// <param name="data">현재 말풍선 이벤트 데이터입니다.</param>
+        /// <param name="scalePitchBySpeed">타자 효과 속도에 맞춰 사운드 재생 속도를 변경할지 여부입니다.</param>
+        /// <param name="referenceCharactersPerSecond">1배율 기준 초당 글자 수입니다.</param>
+        /// <param name="minPitchMultiplier">허용할 최소 재생 속도 배율입니다.</param>
+        /// <param name="maxPitchMultiplier">허용할 최대 재생 속도 배율입니다.</param>
+        /// <returns>AudioSource pitch에 곱할 재생 속도 배율입니다.</returns>
+        private static float ResolveTypewriterSoundPitchMultiplier(
+            DialogueBalloonData data,
+            bool scalePitchBySpeed,
+            float referenceCharactersPerSecond,
+            float minPitchMultiplier,
+            float maxPitchMultiplier)
+        {
+            if (!scalePitchBySpeed || data == null)
+            {
+                return 1f;
+            }
+
+            float safeReferenceCharactersPerSecond = referenceCharactersPerSecond > 0f
+                ? referenceCharactersPerSecond
+                : DialogueBalloonData.DefaultTypewriterCharactersPerSecond;
+            float currentCharactersPerSecond = data.GetSafeTypewriterCharactersPerSecond();
+            float safeMinPitchMultiplier = minPitchMultiplier > 0f ? minPitchMultiplier : 1f;
+            float safeMaxPitchMultiplier = Mathf.Max(safeMinPitchMultiplier, maxPitchMultiplier);
+            float pitchMultiplier = currentCharactersPerSecond / safeReferenceCharactersPerSecond;
+            return Mathf.Clamp(pitchMultiplier, safeMinPitchMultiplier, safeMaxPitchMultiplier);
         }
 
         /// <summary>
@@ -1184,6 +1227,7 @@ namespace GGemCo2DCore
             _typewriterSoundIntervalSeconds = 0f;
             _typewriterSoundCharactersPerPlay = 1;
             _skipTypewriterSoundOnWhitespace = true;
+            _typewriterSoundPitchMultiplier = 1f;
             ResetTypewriterSoundRuntimeState();
             _revealPlayer.Clear(textMessage);
             ClearThumbnail();
@@ -1561,7 +1605,7 @@ namespace GGemCo2DCore
                 return;
             }
 
-            soundManager.PlayByUid(_typewriterSoundUid);
+            soundManager.PlaySfxByUidWithPitchMultiplier(_typewriterSoundUid, _typewriterSoundPitchMultiplier);
             _pendingTypewriterSoundCharacterCount = 0;
             _nextTypewriterSoundRealtime = realtime + _typewriterSoundIntervalSeconds;
         }
