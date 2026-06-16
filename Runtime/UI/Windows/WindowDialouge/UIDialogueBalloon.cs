@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Threading.Tasks;
 using TMPro;
 using UnityEngine;
@@ -32,6 +32,13 @@ namespace GGemCo2DCore
         [SerializeField] private DialogueBalloonWorldOffsetXPolicy projectWorldOffsetXPolicy = DialogueBalloonWorldOffsetXPolicy.KeepOriginal;
 
         private readonly DialogueTextRevealPlayer _revealPlayer = new();
+        private bool _useTypewriterSound;
+        private int _typewriterSoundUid;
+        private float _typewriterSoundIntervalSeconds;
+        private int _typewriterSoundCharactersPerPlay = 1;
+        private bool _skipTypewriterSoundOnWhitespace = true;
+        private float _nextTypewriterSoundRealtime;
+        private int _pendingTypewriterSoundCharacterCount;
         private CharacterBase _target;
         private Vector3 _diffTextPosition;
         private bool _useProjectWorldOffset = true;
@@ -120,6 +127,7 @@ namespace GGemCo2DCore
             DialogueBalloonData safeData = data ?? new DialogueBalloonData();
             SetWorldPositionOptions(safeData);
             ApplyProjectEnterIndicatorDefaults();
+            ApplyProjectTypewriterSoundDefaults();
             BeginBalloonPresentation();
             SetFontSize(safeData.fontSize);
             SetMessage(safeData, resolvedMessage);
@@ -184,6 +192,22 @@ namespace GGemCo2DCore
             {
                 imageEnter.sprite = resolvedSprite;
             }
+        }
+
+        /// <summary>
+        /// 프로젝트 전역 말풍선 설정에서 타자 효과 사운드 재생 옵션을 가져와 적용합니다.
+        /// 개별 말풍선 이벤트 Override가 추가되기 전까지는 ScriptableObject 설정만 사용합니다.
+        /// </summary>
+        private void ApplyProjectTypewriterSoundDefaults()
+        {
+            DialogueBalloonSettingsRuntimeResolver.ResolveTypewriterSoundDefaults(
+                out _useTypewriterSound,
+                out _typewriterSoundUid,
+                out _typewriterSoundIntervalSeconds,
+                out _typewriterSoundCharactersPerPlay,
+                out _skipTypewriterSoundOnWhitespace);
+
+            ResetTypewriterSoundRuntimeState();
         }
 
         /// <summary>
@@ -1155,6 +1179,12 @@ namespace GGemCo2DCore
             _isMessagePreparationComplete = false;
             _isThumbnailPreparationComplete = false;
             _isLayoutPreparationComplete = false;
+            _useTypewriterSound = false;
+            _typewriterSoundUid = 0;
+            _typewriterSoundIntervalSeconds = 0f;
+            _typewriterSoundCharactersPerPlay = 1;
+            _skipTypewriterSoundOnWhitespace = true;
+            ResetTypewriterSoundRuntimeState();
             _revealPlayer.Clear(textMessage);
             ClearThumbnail();
             PrepareEnterIndicator();
@@ -1435,21 +1465,129 @@ namespace GGemCo2DCore
         }
 
         /// <summary>
+        /// 타자 효과 사운드 재생에 사용하는 런타임 누적 상태를 초기화합니다.
+        /// 새 메시지 시작, 풀 반환, 비활성화 시 이전 메시지의 재생 간격과 누적 글자 수가 이어지지 않도록 합니다.
+        /// </summary>
+        private void ResetTypewriterSoundRuntimeState()
+        {
+            _nextTypewriterSoundRealtime = 0f;
+            _pendingTypewriterSoundCharacterCount = 0;
+        }
+
+        /// <summary>
+        /// TextMeshPro의 현재 표시 글자 수를 실제 문자 수 범위 안으로 보정해 반환합니다.
+        /// RevealAll이 <see cref="int.MaxValue"/>를 사용하더라도 사운드 계산은 실제 문자 수를 기준으로 수행합니다.
+        /// </summary>
+        /// <returns>0 이상 전체 문자 수 이하로 보정된 표시 글자 수입니다.</returns>
+        private int GetClampedVisibleCharacterCount()
+        {
+            if (textMessage == null)
+            {
+                return 0;
+            }
+
+            int totalCharacterCount = textMessage.textInfo.characterCount;
+            return Mathf.Clamp(textMessage.maxVisibleCharacters, 0, totalCharacterCount);
+        }
+
+        /// <summary>
+        /// 이번 프레임에 새로 노출된 글자 수를 계산합니다.
+        /// 설정에 따라 공백/줄바꿈은 사운드 재생 기준에서 제외합니다.
+        /// </summary>
+        /// <param name="previousVisibleCharacters">이전 프레임에 표시된 글자 수입니다.</param>
+        /// <param name="currentVisibleCharacters">현재 프레임에 표시된 글자 수입니다.</param>
+        /// <returns>사운드 재생 기준에 포함되는 신규 노출 글자 수입니다.</returns>
+        private int CountNewTypewriterSoundCharacters(int previousVisibleCharacters, int currentVisibleCharacters)
+        {
+            if (textMessage == null || currentVisibleCharacters <= previousVisibleCharacters)
+            {
+                return 0;
+            }
+
+            TMP_TextInfo textInfo = textMessage.textInfo;
+            int totalCharacterCount = textInfo.characterCount;
+            int startIndex = Mathf.Clamp(previousVisibleCharacters, 0, totalCharacterCount);
+            int endIndex = Mathf.Clamp(currentVisibleCharacters, 0, totalCharacterCount);
+            int count = 0;
+
+            for (int i = startIndex; i < endIndex; i++)
+            {
+                TMP_CharacterInfo characterInfo = textInfo.characterInfo[i];
+                if (_skipTypewriterSoundOnWhitespace && char.IsWhiteSpace(characterInfo.character))
+                {
+                    continue;
+                }
+
+                count++;
+            }
+
+            return count;
+        }
+
+        /// <summary>
+        /// 타자 효과로 새 글자가 노출된 양에 맞춰 사운드를 재생합니다.
+        /// 빠른 타자 속도에서도 최소 간격과 글자 수 단위 조건을 적용해 SFX 중첩을 제한합니다.
+        /// </summary>
+        /// <param name="previousVisibleCharacters">이전 프레임에 표시된 글자 수입니다.</param>
+        /// <param name="currentVisibleCharacters">현재 프레임에 표시된 글자 수입니다.</param>
+        private void TryPlayTypewriterSound(int previousVisibleCharacters, int currentVisibleCharacters)
+        {
+            if (!_useTypewriterSound || _typewriterSoundUid <= 0 || !_revealPlayer.IsTypewriterMode)
+            {
+                return;
+            }
+
+            int newCharacterCount = CountNewTypewriterSoundCharacters(previousVisibleCharacters, currentVisibleCharacters);
+            if (newCharacterCount <= 0)
+            {
+                return;
+            }
+
+            _pendingTypewriterSoundCharacterCount += newCharacterCount;
+            if (_pendingTypewriterSoundCharacterCount < _typewriterSoundCharactersPerPlay)
+            {
+                return;
+            }
+
+            float realtime = Time.unscaledTime;
+            if (realtime < _nextTypewriterSoundRealtime)
+            {
+                return;
+            }
+
+            SoundManager soundManager = SceneGame.Instance != null ? SceneGame.Instance.soundManager : null;
+            if (soundManager == null)
+            {
+                return;
+            }
+
+            soundManager.PlayByUid(_typewriterSoundUid);
+            _pendingTypewriterSoundCharacterCount = 0;
+            _nextTypewriterSoundRealtime = realtime + _typewriterSoundIntervalSeconds;
+        }
+
+        /// <summary>
         /// 매 프레임 타자 효과와 대상 캐릭터 추적 위치를 갱신합니다.
         /// </summary>
         private void LateUpdate()
         {
-            int previousVisibleCharacters = textMessage != null ? textMessage.maxVisibleCharacters : 0;
+            int previousVisibleCharacters = GetClampedVisibleCharacterCount();
             bool wasFullyRevealed = _revealPlayer.IsFullyRevealed;
 
             _revealPlayer.Tick(textMessage, Time.deltaTime);
             if (textMessage != null)
             {
-                bool didVisibleCharactersChange = previousVisibleCharacters != textMessage.maxVisibleCharacters;
+                int currentVisibleCharacters = GetClampedVisibleCharacterCount();
+                bool didVisibleCharactersChange = previousVisibleCharacters != currentVisibleCharacters;
                 bool didCompleteRevealThisFrame = !wasFullyRevealed && _revealPlayer.IsFullyRevealed;
                 if (didVisibleCharactersChange || didCompleteRevealThisFrame)
                 {
                     RequestThumbnailPositionRefresh();
+                }
+
+                if (didVisibleCharactersChange)
+                {
+                    TryPlayTypewriterSound(previousVisibleCharacters, currentVisibleCharacters);
                 }
             }
 

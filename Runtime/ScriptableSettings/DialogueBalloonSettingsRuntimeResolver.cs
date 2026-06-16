@@ -3,7 +3,7 @@ using UnityEngine;
 namespace GGemCo2DCore
 {
     /// <summary>
-    /// 말풍선 관련 ScriptableObject 기본값을 런타임에서 안전하게 조회/보정하는 유틸리티입니다.
+    /// 말풍선 관련 ScriptableObject 기본값을 런타임에서 안전하게 조회하고 보정하는 유틸리티입니다.
     /// </summary>
     public static class DialogueBalloonSettingsRuntimeResolver
     {
@@ -65,6 +65,39 @@ namespace GGemCo2DCore
             resolvedBlinkHz = settings.GetSafeEnterIndicatorBlinkHz();
             resolvedMinAlpha = settings.GetSafeEnterIndicatorMinAlpha();
             resolvedSprite = settings.enterIndicatorSprite;
+        }
+
+        /// <summary>
+        /// 타자 효과 사운드 기본값을 프로젝트 설정 기준으로 결정합니다.
+        /// </summary>
+        /// <param name="useSound">타자 효과 사운드를 사용할지 여부입니다.</param>
+        /// <param name="soundUid">재생할 sound 테이블 대표 UID입니다.</param>
+        /// <param name="intervalSeconds">사운드 최소 재생 간격(초)입니다.</param>
+        /// <param name="charactersPerPlay">사운드 1회 재생에 필요한 노출 글자 수입니다.</param>
+        /// <param name="skipWhitespace">공백 문자를 사운드 재생 기준에서 제외할지 여부입니다.</param>
+        public static void ResolveTypewriterSoundDefaults(
+            out bool useSound,
+            out int soundUid,
+            out float intervalSeconds,
+            out int charactersPerPlay,
+            out bool skipWhitespace)
+        {
+            useSound = false;
+            soundUid = 0;
+            intervalSeconds = GGemCoDialogueBalloonSettings.DefaultTypewriterSoundIntervalSeconds;
+            charactersPerPlay = GGemCoDialogueBalloonSettings.DefaultTypewriterSoundCharactersPerPlay;
+            skipWhitespace = true;
+
+            if (!TryGetSettings(out GGemCoDialogueBalloonSettings settings) || settings == null)
+            {
+                return;
+            }
+
+            useSound = settings.useTypewriterSound && settings.typewriterSoundUid > 0;
+            soundUid = settings.typewriterSoundUid;
+            intervalSeconds = settings.GetSafeTypewriterSoundIntervalSeconds();
+            charactersPerPlay = settings.GetSafeTypewriterSoundCharactersPerPlay();
+            skipWhitespace = settings.skipTypewriterSoundOnWhitespace;
         }
 
         /// <summary>
