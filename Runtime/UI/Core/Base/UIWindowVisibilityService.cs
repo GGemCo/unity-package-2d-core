@@ -15,7 +15,55 @@ namespace GGemCo2DCore
             new Dictionary<int, List<UIWindowConstants.WindowUid>>();
         private readonly Dictionary<UIWindowConstants.WindowUid, int> _suppressedWindowRefCounts =
             new Dictionary<UIWindowConstants.WindowUid, int>();
+        private readonly Dictionary<UIWindowConstants.WindowUid, DeferredVisibilityRequest> _deferredVisibilityRequests =
+            new Dictionary<UIWindowConstants.WindowUid, DeferredVisibilityRequest>();
         private int _nextSuppressionToken = 1;
+
+        /// <summary>
+        /// 표시 억제 중 들어온 UIWindow 표시 요청을 저장하는 내부 요청 정보입니다.
+        /// 억제 해제 후 같은 UID에 대한 마지막 요청만 적용하여 중복 표시를 방지합니다.
+        /// </summary>
+        private sealed class DeferredVisibilityRequest
+        {
+            /// <summary>
+            /// 표시 상태를 변경할 UIWindow UID입니다.
+            /// </summary>
+            public UIWindowConstants.WindowUid WindowUid { get; }
+
+            /// <summary>
+            /// 표시하면 true, 숨기면 false입니다.
+            /// </summary>
+            public bool Show { get; }
+
+            /// <summary>
+            /// 표시 상태 적용 모드입니다.
+            /// </summary>
+            public UIWindowConstants.UIWindowVisibilityApplyMode Mode { get; }
+
+            /// <summary>
+            /// 요청을 등록한 소유자입니다. 맵 전환이나 씬 종료 시 소유자 단위 취소에 사용합니다.
+            /// </summary>
+            public object Owner { get; }
+
+            /// <summary>
+            /// 지연 표시 요청 정보를 생성합니다.
+            /// </summary>
+            /// <param name="windowUid">표시 상태를 변경할 UIWindow UID입니다.</param>
+            /// <param name="show">표시하면 true, 숨기면 false입니다.</param>
+            /// <param name="mode">표시 상태 적용 모드입니다.</param>
+            /// <param name="owner">요청을 등록한 소유자입니다.</param>
+            public DeferredVisibilityRequest(
+                UIWindowConstants.WindowUid windowUid,
+                bool show,
+                UIWindowConstants.UIWindowVisibilityApplyMode mode,
+                object owner)
+            {
+                WindowUid = windowUid;
+                Show = show;
+                Mode = mode;
+                Owner = owner;
+            }
+        }
 
         /// <summary>
         /// UIWindow 표시 상태 서비스를 생성합니다.
@@ -54,19 +102,208 @@ namespace GGemCo2DCore
             bool show,
             UIWindowConstants.UIWindowVisibilityApplyMode mode)
         {
-            if (show && IsWindowVisibilitySuppressed(uid))
+            TryApplyWindowVisibility(uid, show, mode, deferIfSuppressed: false, owner: null);
+        }
+
+        /// <summary>
+        /// 지정한 UIWindow의 표시 상태를 기본 모드로 변경합니다.
+        /// 표시 요청이 현재 억제 중이면 요청을 버리지 않고 억제 해제 후 적용되도록 보류합니다.
+        /// </summary>
+        /// <param name="uid">표시 상태를 변경할 UIWindow UID입니다.</param>
+        /// <param name="show">표시하면 true, 숨기면 false입니다.</param>
+        public void ShowWindowWhenAllowed(UIWindowConstants.WindowUid uid, bool show)
+        {
+            ShowWindowWhenAllowed(uid, show, UIWindowConstants.UIWindowVisibilityApplyMode.Normal, owner: null);
+        }
+
+        /// <summary>
+        /// 지정한 UIWindow의 표시 상태를 지정한 모드로 변경합니다.
+        /// 표시 요청이 현재 억제 중이면 요청을 버리지 않고 억제 해제 후 적용되도록 보류합니다.
+        /// </summary>
+        /// <param name="uid">표시 상태를 변경할 UIWindow UID입니다.</param>
+        /// <param name="show">표시하면 true, 숨기면 false입니다.</param>
+        /// <param name="mode">표시 상태 적용 모드입니다.</param>
+        /// <param name="owner">요청을 등록한 소유자입니다. null이면 소유자 없이 등록합니다.</param>
+        public void ShowWindowWhenAllowed(
+            UIWindowConstants.WindowUid uid,
+            bool show,
+            UIWindowConstants.UIWindowVisibilityApplyMode mode,
+            object owner = null)
+        {
+            TryApplyWindowVisibility(uid, show, mode, deferIfSuppressed: true, owner: owner);
+        }
+
+        /// <summary>
+        /// 보류 중인 UIWindow 표시 요청 중 현재 억제가 해제된 요청을 적용합니다.
+        /// UIWindowManager의 LateUpdate에서 호출하여 컷신 스냅샷 복원 이후 안전하게 처리합니다.
+        /// </summary>
+        /// <returns>하나 이상의 보류 요청을 적용했으면 true입니다.</returns>
+        public bool FlushDeferredVisibilityRequests()
+        {
+            if (_deferredVisibilityRequests.Count <= 0)
             {
-                return;
+                return false;
+            }
+
+            List<UIWindowConstants.WindowUid> readyWindowUids = new List<UIWindowConstants.WindowUid>();
+            foreach (KeyValuePair<UIWindowConstants.WindowUid, DeferredVisibilityRequest> pair in _deferredVisibilityRequests)
+            {
+                DeferredVisibilityRequest request = pair.Value;
+                if (request == null || !request.Show || !IsWindowVisibilitySuppressed(pair.Key))
+                {
+                    readyWindowUids.Add(pair.Key);
+                }
+            }
+
+            bool applied = false;
+            for (int i = 0; i < readyWindowUids.Count; i++)
+            {
+                UIWindowConstants.WindowUid windowUid = readyWindowUids[i];
+                if (!_deferredVisibilityRequests.TryGetValue(windowUid, out DeferredVisibilityRequest request))
+                {
+                    continue;
+                }
+
+                _deferredVisibilityRequests.Remove(windowUid);
+                if (request == null)
+                {
+                    continue;
+                }
+
+                applied |= TryApplyWindowVisibility(
+                    request.WindowUid,
+                    request.Show,
+                    request.Mode,
+                    deferIfSuppressed: false,
+                    owner: request.Owner);
+            }
+
+            return applied;
+        }
+
+        /// <summary>
+        /// 지정한 UIWindow UID의 보류 중인 표시 요청을 취소합니다.
+        /// owner를 전달하면 같은 소유자가 등록한 요청일 때만 취소합니다.
+        /// </summary>
+        /// <param name="uid">취소할 UIWindow UID입니다.</param>
+        /// <param name="owner">요청 소유자입니다. null이면 UID가 같은 요청을 소유자와 무관하게 취소합니다.</param>
+        /// <returns>보류 요청을 취소했으면 true입니다.</returns>
+        public bool CancelDeferredWindowVisibilityRequest(UIWindowConstants.WindowUid uid, object owner = null)
+        {
+            if (uid == UIWindowConstants.WindowUid.None ||
+                !_deferredVisibilityRequests.TryGetValue(uid, out DeferredVisibilityRequest request))
+            {
+                return false;
+            }
+
+            if (owner != null && !ReferenceEquals(request.Owner, owner))
+            {
+                return false;
+            }
+
+            _deferredVisibilityRequests.Remove(uid);
+            return true;
+        }
+
+        /// <summary>
+        /// 지정한 소유자가 등록한 모든 보류 표시 요청을 취소합니다.
+        /// 맵 전환, 씬 종료, 루틴 중단처럼 요청 주체가 더 이상 유효하지 않을 때 사용합니다.
+        /// </summary>
+        /// <param name="owner">취소할 요청 소유자입니다.</param>
+        /// <returns>취소한 보류 요청 개수입니다.</returns>
+        public int CancelDeferredWindowVisibilityRequests(object owner)
+        {
+            if (owner == null || _deferredVisibilityRequests.Count <= 0)
+            {
+                return 0;
+            }
+
+            List<UIWindowConstants.WindowUid> removeWindowUids = new List<UIWindowConstants.WindowUid>();
+            foreach (KeyValuePair<UIWindowConstants.WindowUid, DeferredVisibilityRequest> pair in _deferredVisibilityRequests)
+            {
+                if (pair.Value != null && ReferenceEquals(pair.Value.Owner, owner))
+                {
+                    removeWindowUids.Add(pair.Key);
+                }
+            }
+
+            for (int i = 0; i < removeWindowUids.Count; i++)
+            {
+                _deferredVisibilityRequests.Remove(removeWindowUids[i]);
+            }
+
+            return removeWindowUids.Count;
+        }
+
+        /// <summary>
+        /// 보류 중인 모든 UIWindow 표시 요청을 취소합니다.
+        /// 씬 종료처럼 기존 UI 표시 요청이 더 이상 의미 없을 때 사용합니다.
+        /// </summary>
+        public void ClearDeferredWindowVisibilityRequests()
+        {
+            _deferredVisibilityRequests.Clear();
+        }
+
+        /// <summary>
+        /// 지정한 UIWindow UID에 보류 중인 표시 요청이 있는지 확인합니다.
+        /// owner를 전달하면 같은 소유자의 요청만 확인합니다.
+        /// </summary>
+        /// <param name="uid">확인할 UIWindow UID입니다.</param>
+        /// <param name="owner">요청 소유자입니다. null이면 소유자와 무관하게 확인합니다.</param>
+        /// <returns>보류 요청이 있으면 true입니다.</returns>
+        public bool HasDeferredWindowVisibilityRequest(UIWindowConstants.WindowUid uid, object owner = null)
+        {
+            if (uid == UIWindowConstants.WindowUid.None ||
+                !_deferredVisibilityRequests.TryGetValue(uid, out DeferredVisibilityRequest request))
+            {
+                return false;
+            }
+
+            return owner == null || ReferenceEquals(request.Owner, owner);
+        }
+
+        /// <summary>
+        /// UIWindow 표시 상태 변경을 실제 적용하거나, 표시 억제 중인 요청을 보류합니다.
+        /// 일반 ShowWindow 호출은 기존 동작을 유지하기 위해 보류하지 않고 반환합니다.
+        /// </summary>
+        /// <param name="uid">표시 상태를 변경할 UIWindow UID입니다.</param>
+        /// <param name="show">표시하면 true, 숨기면 false입니다.</param>
+        /// <param name="mode">표시 상태 적용 모드입니다.</param>
+        /// <param name="deferIfSuppressed">표시 억제 중이면 요청을 보류할지 여부입니다.</param>
+        /// <param name="owner">요청을 등록한 소유자입니다.</param>
+        /// <returns>표시 상태를 즉시 적용했으면 true입니다.</returns>
+        private bool TryApplyWindowVisibility(
+            UIWindowConstants.WindowUid uid,
+            bool show,
+            UIWindowConstants.UIWindowVisibilityApplyMode mode,
+            bool deferIfSuppressed,
+            object owner)
+        {
+            if (uid == UIWindowConstants.WindowUid.None)
+            {
+                return false;
             }
 
             UIWindow uiWindow = _getWindowByUid?.Invoke(uid);
             if (uiWindow == null)
             {
                 GcLogger.LogError($"{nameof(UIWindow)} 컴포넌트가 없습니다. uid:" + uid);
-                return;
+                return false;
             }
 
+            if (show && IsWindowVisibilitySuppressed(uid))
+            {
+                if (deferIfSuppressed)
+                {
+                    _deferredVisibilityRequests[uid] = new DeferredVisibilityRequest(uid, show, mode, owner);
+                }
+
+                return false;
+            }
+
+            _deferredVisibilityRequests.Remove(uid);
             UIWindowVisibilityStateStack.ApplyVisibility(uiWindow, show, mode);
+            return true;
         }
 
         /// <summary>

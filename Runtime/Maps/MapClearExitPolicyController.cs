@@ -1,4 +1,4 @@
-﻿using System.Collections;
+using System.Collections;
 using UnityEngine;
 
 namespace GGemCo2DCore
@@ -51,6 +51,7 @@ namespace GGemCo2DCore
         {
             UnregisterEvents();
             StopExecuteRoutine();
+            CancelPendingWorldMapOpen();
         }
 
         /// <summary>
@@ -91,6 +92,7 @@ namespace GGemCo2DCore
         {
             bool hadRunningExitPolicy = _isExecuting || _executeRoutine != null;
             StopExecuteRoutine();
+            CancelPendingWorldMapOpen();
             if (hadRunningExitPolicy)
             {
                 ClearMapExitFade(GetPolicy(), forceClear: true);
@@ -243,7 +245,15 @@ namespace GGemCo2DCore
 
             if (policy.clearFadeAfterWorldMapOpen)
             {
-                yield return null;
+                if (policy.openWorldMap)
+                {
+                    yield return WaitForWorldMapOpenBeforeFadeClear();
+                }
+                else
+                {
+                    yield return null;
+                }
+
                 ClearMapExitFade(policy, forceClear: false);
             }
 
@@ -329,6 +339,7 @@ namespace GGemCo2DCore
 
         /// <summary>
         /// 월드맵 UI를 엽니다.
+        /// 사망 연출이나 컷신으로 월드맵 표시가 억제 중이면 요청을 보류하고, 억제 해제 후 자동으로 열리게 합니다.
         /// </summary>
         private void OpenWorldMapWindow()
         {
@@ -338,7 +349,45 @@ namespace GGemCo2DCore
                 return;
             }
 
-            _sceneGame.uIWindowManager.ShowWindow(UIWindowConstants.WindowUid.WorldMap, true);
+            _sceneGame.uIWindowManager.ShowWindowWhenAllowed(
+                UIWindowConstants.WindowUid.WorldMap,
+                true,
+                UIWindowConstants.UIWindowVisibilityApplyMode.Normal,
+                this);
+        }
+
+        /// <summary>
+        /// 월드맵 표시 요청이 UI 표시 억제에 막힌 경우, 억제 해제 후 LateUpdate에서 보류 요청이 적용될 시간을 확보합니다.
+        /// Fade 화면을 월드맵 오픈 전에 먼저 정리하지 않도록 맵 클리어 루틴에서 사용합니다.
+        /// </summary>
+        /// <returns>월드맵 표시 적용 가능 시점까지 대기하는 코루틴 열거자입니다.</returns>
+        private IEnumerator WaitForWorldMapOpenBeforeFadeClear()
+        {
+            UIWindowManager windowManager = _sceneGame?.uIWindowManager;
+            if (windowManager == null || !windowManager.HasManagedWindow(UIWindowConstants.WindowUid.WorldMap))
+            {
+                yield return null;
+                yield break;
+            }
+
+            while (windowManager.IsWindowVisibilitySuppressed(UIWindowConstants.WindowUid.WorldMap))
+            {
+                yield return null;
+            }
+
+            // 표시 억제 해제 프레임의 LateUpdate에서 지연 요청이 적용될 수 있도록 한 프레임을 양보합니다.
+            yield return null;
+        }
+
+        /// <summary>
+        /// 맵 종료 루틴에서 예약한 월드맵 표시 요청을 취소합니다.
+        /// 맵 전환이나 컨트롤러 파괴 시 이전 맵의 지연 요청이 다음 맵에서 실행되는 것을 방지합니다.
+        /// </summary>
+        private void CancelPendingWorldMapOpen()
+        {
+            _sceneGame?.uIWindowManager?.CancelDeferredWindowVisibilityRequest(
+                UIWindowConstants.WindowUid.WorldMap,
+                this);
         }
 
         /// <summary>

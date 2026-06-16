@@ -93,6 +93,16 @@ namespace GGemCo2DCore
         }
 
         /// <summary>
+        /// 표시 억제 해제 후 보류된 UIWindow 표시 요청을 적용합니다.
+        /// 컷신 컨트롤러의 Stop/End와 스냅샷 복원 처리가 끝난 뒤 실행되도록 LateUpdate에서 처리합니다.
+        /// </summary>
+        private void LateUpdate()
+        {
+            EnsureServices();
+            _windowVisibilityService.FlushDeferredVisibilityRequests();
+        }
+
+        /// <summary>
         /// 기본 비활성 UIWindow의 초기 Transform/Layout 갱신을 끝낸 뒤 외부 구독자에게 완료 시점을 알립니다.
         /// </summary>
         /// <returns>초기 UI 표시 상태 적용을 지연 처리하는 코루틴입니다.</returns>
@@ -285,6 +295,84 @@ namespace GGemCo2DCore
         {
             EnsureServices();
             _windowVisibilityService.ShowWindow(uid, show, mode);
+        }
+
+        /// <summary>
+        /// 지정한 UIWindow의 표시 상태를 기본 모드로 변경합니다.
+        /// 현재 표시 억제 중이면 요청을 보류하고, 억제 해제 후 LateUpdate에서 자동 적용합니다.
+        /// </summary>
+        /// <param name="uid">표시 상태를 변경할 UIWindow UID입니다.</param>
+        /// <param name="show">표시하면 true, 숨기면 false입니다.</param>
+        public void ShowWindowWhenAllowed(UIWindowConstants.WindowUid uid, bool show)
+        {
+            EnsureServices();
+            _windowVisibilityService.ShowWindowWhenAllowed(uid, show);
+        }
+
+        /// <summary>
+        /// 지정한 UIWindow의 표시 상태를 지정한 모드로 변경합니다.
+        /// 현재 표시 억제 중이면 요청을 보류하고, 억제 해제 후 LateUpdate에서 자동 적용합니다.
+        /// </summary>
+        /// <param name="uid">표시 상태를 변경할 UIWindow UID입니다.</param>
+        /// <param name="show">표시하면 true, 숨기면 false입니다.</param>
+        /// <param name="mode">표시 상태 적용 모드입니다.</param>
+        /// <param name="owner">요청을 등록한 소유자입니다. null이면 소유자 없이 등록합니다.</param>
+        public void ShowWindowWhenAllowed(
+            UIWindowConstants.WindowUid uid,
+            bool show,
+            UIWindowConstants.UIWindowVisibilityApplyMode mode,
+            object owner = null)
+        {
+            EnsureServices();
+            _windowVisibilityService.ShowWindowWhenAllowed(uid, show, mode, owner);
+        }
+
+        /// <summary>
+        /// 지정한 UIWindow UID의 보류 중인 표시 요청을 취소합니다.
+        /// owner를 전달하면 같은 소유자가 등록한 요청일 때만 취소합니다.
+        /// </summary>
+        /// <param name="uid">취소할 UIWindow UID입니다.</param>
+        /// <param name="owner">요청 소유자입니다. null이면 UID가 같은 요청을 소유자와 무관하게 취소합니다.</param>
+        /// <returns>보류 요청을 취소했으면 true입니다.</returns>
+        public bool CancelDeferredWindowVisibilityRequest(UIWindowConstants.WindowUid uid, object owner = null)
+        {
+            EnsureServices();
+            return _windowVisibilityService.CancelDeferredWindowVisibilityRequest(uid, owner);
+        }
+
+        /// <summary>
+        /// 지정한 소유자가 등록한 모든 보류 표시 요청을 취소합니다.
+        /// 맵 전환, 씬 종료, 루틴 중단처럼 요청 주체가 더 이상 유효하지 않을 때 사용합니다.
+        /// </summary>
+        /// <param name="owner">취소할 요청 소유자입니다.</param>
+        /// <returns>취소한 보류 요청 개수입니다.</returns>
+        public int CancelDeferredWindowVisibilityRequests(object owner)
+        {
+            EnsureServices();
+            return _windowVisibilityService.CancelDeferredWindowVisibilityRequests(owner);
+        }
+
+        /// <summary>
+        /// 보류 중인 모든 UIWindow 표시 요청을 취소합니다.
+        /// 씬 종료처럼 기존 UI 표시 요청이 더 이상 의미 없을 때 사용합니다.
+        /// </summary>
+        public void ClearDeferredWindowVisibilityRequests()
+        {
+            EnsureServices();
+            _windowVisibilityService.ClearDeferredWindowVisibilityRequests();
+        }
+
+        /// <summary>
+        /// 지정한 UIWindow UID에 보류 중인 표시 요청이 있는지 확인합니다.
+        /// owner를 전달하면 같은 소유자의 요청만 확인합니다.
+        /// </summary>
+        /// <param name="uid">확인할 UIWindow UID입니다.</param>
+        /// <param name="owner">요청 소유자입니다. null이면 소유자와 무관하게 확인합니다.</param>
+        /// <returns>보류 요청이 있으면 true입니다.</returns>
+        public bool HasDeferredWindowVisibilityRequest(UIWindowConstants.WindowUid uid, object owner = null)
+        {
+            EnsureServices();
+            return _windowVisibilityService.HasDeferredWindowVisibilityRequest(uid, owner);
         }
 
         /// <summary>
