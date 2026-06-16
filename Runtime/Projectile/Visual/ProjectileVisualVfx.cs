@@ -135,6 +135,9 @@ namespace GGemCo2DCore
                 return false;
 
             var targetVfx = _vfx;
+            if (!CanPlayEndAnimation(targetVfx))
+                return false;
+
             ClearEndDestroyHandler(targetVfx);
 
             _endCompleteCallback = onComplete;
@@ -151,6 +154,23 @@ namespace GGemCo2DCore
                 _isEndAnimationPlaying = true;
 
             return true;
+        }
+
+        /// <summary>
+        /// 연결된 VFX가 현재 End 애니메이션을 재생할 수 있는 활성 상태인지 확인합니다.
+        /// VFX가 이미 풀로 반환되어 비활성화된 경우 Animator 경고를 피하기 위해 End 재생을 시도하지 않습니다.
+        /// </summary>
+        /// <param name="targetVfx">검사할 VFX 동작 컴포넌트입니다.</param>
+        /// <returns>End 애니메이션을 안전하게 시작할 수 있으면 true를 반환합니다.</returns>
+        private static bool CanPlayEndAnimation(VfxBehaviourBase targetVfx)
+        {
+            if (targetVfx == null || targetVfx.gameObject == null)
+            {
+                GcLogger.LogError($"targetVfx || targetVfx.gameObect가 Null 입니다.");
+                return false;                
+            }
+
+            return targetVfx.gameObject.activeInHierarchy && targetVfx.isActiveAndEnabled;
         }
 
         /// <summary>

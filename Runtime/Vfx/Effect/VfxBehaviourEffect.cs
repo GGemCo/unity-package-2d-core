@@ -256,7 +256,7 @@ namespace GGemCo2DCore
 
         public override bool TryPlayEndAnimation(DelegateEffectDestroy onEffectDestroy = null)
         {
-            if (VfxAnimationController == null || !VfxAnimationController.HasEndAnimation())
+            if (!CanPlayEndAnimationNow())
                 return false;
 
             if (onEffectDestroy != null)
@@ -264,6 +264,19 @@ namespace GGemCo2DCore
 
             PlayEndAnimation();
             return true;
+        }
+
+        /// <summary>
+        /// 현재 Effect VFX가 End 애니메이션을 실제로 재생할 수 있는 상태인지 확인합니다.
+        /// 풀 반환이나 비활성화가 먼저 일어난 VFX는 Animator 재생 호출 시 Unity 경고가 발생하므로 재생 대상에서 제외합니다.
+        /// </summary>
+        /// <returns>End 애니메이션을 안전하게 재생할 수 있으면 true를 반환합니다.</returns>
+        private bool CanPlayEndAnimationNow()
+        {
+            if (!gameObject.activeInHierarchy || !isActiveAndEnabled)
+                return false;
+
+            return VfxAnimationController != null && VfxAnimationController.HasEndAnimation();
         }
 
         public override void PlayEndAnimation()
