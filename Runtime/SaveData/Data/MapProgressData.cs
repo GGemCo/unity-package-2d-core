@@ -79,6 +79,39 @@ namespace GGemCo2DCore
         }
 
         /// <summary>
+        /// 지정한 실제 게임 맵 목록을 클리어 기록으로 저장합니다.
+        /// </summary>
+        /// <param name="mapUids">클리어한 TableMap UID 목록입니다.</param>
+        /// <returns>하나 이상의 맵 클리어 기록이 변경되면 true를 반환합니다.</returns>
+        public bool ClearMaps(IEnumerable<int> mapUids)
+        {
+            if (mapUids == null)
+            {
+                return false;
+            }
+
+            bool changed = false;
+            HashSet<int> appliedMapUids = new HashSet<int>();
+            foreach (int mapUid in mapUids)
+            {
+                if (mapUid <= 0 || !appliedMapUids.Add(mapUid))
+                {
+                    continue;
+                }
+
+                // 여러 맵 보상을 한 번에 적용할 때 저장 호출을 한 번으로 묶기 위해 기록 갱신만 먼저 수행합니다.
+                changed |= AddOrUpdateClearRecord(mapUid);
+            }
+
+            if (changed)
+            {
+                SaveDatas();
+            }
+
+            return changed;
+        }
+
+        /// <summary>
         /// 지정한 실제 게임 맵이 클리어되었는지 확인합니다.
         /// </summary>
         /// <param name="mapUid">확인할 TableMap UID입니다.</param>

@@ -58,6 +58,45 @@ namespace GGemCo2DCore
         }
 
         /// <summary>
+        /// 실제 게임 맵 목록을 클리어로 기록하고, 함께 전달된 월드맵 노드를 표시 또는 활성화합니다.
+        /// </summary>
+        /// <param name="mapUids">클리어한 TableMap UID 목록입니다.</param>
+        /// <param name="activateWorldMapNodeIds">클리어 보상으로 활성화할 월드맵 nodeId 목록입니다.</param>
+        /// <param name="visibleWorldMapNodeIds">표시만 켤 월드맵 nodeId 목록입니다.</param>
+        /// <returns>맵 클리어, 노드 표시, 노드 활성 상태 중 하나라도 변경되면 true를 반환합니다.</returns>
+        public bool ClearMaps(
+            IEnumerable<int> mapUids,
+            IEnumerable<string> activateWorldMapNodeIds = null,
+            IEnumerable<string> visibleWorldMapNodeIds = null)
+        {
+            MapProgressData progressData = GetProgressData();
+            if (progressData == null)
+            {
+                return false;
+            }
+
+            bool changed = progressData.ClearMaps(mapUids);
+            if (activateWorldMapNodeIds != null)
+            {
+                foreach (string nodeId in activateWorldMapNodeIds)
+                {
+                    changed |= progressData.ActivateWorldMapNode(nodeId);
+                }
+            }
+
+            if (visibleWorldMapNodeIds != null)
+            {
+                foreach (string nodeId in visibleWorldMapNodeIds)
+                {
+                    changed |= progressData.SetWorldMapNodeVisible(nodeId);
+                }
+            }
+
+            RefreshWorldMapWindow();
+            return changed;
+        }
+
+        /// <summary>
         /// 지정한 실제 게임 맵이 클리어되었는지 확인합니다.
         /// </summary>
         /// <param name="mapUid">확인할 TableMap UID입니다.</param>

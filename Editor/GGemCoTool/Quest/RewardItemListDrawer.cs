@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using GGemCo2DCore;
 using UnityEditor;
 using UnityEditorInternal;
@@ -11,11 +11,11 @@ namespace GGemCo2DCoreEditor
         private readonly QuestReward _reward;
         private readonly MetadataQuestStepListDrawer _metadataQuestStepListDrawer;
         private readonly ReorderableList _list;
+        private readonly ReorderableList _clearMapList;
         private readonly ReorderableList _visibleMapNodeIdList;
         private readonly ReorderableList _mapNodeIdList;
         private readonly ReorderableList _licenseList;
         private int _selectedIndexItem = 0;
-        private int _selectedIndexClearMap = 0;
         
         /// <summary>
         /// 퀘스트 보상 입력 UI를 초기화합니다.
@@ -28,6 +28,7 @@ namespace GGemCo2DCoreEditor
             _metadataQuestStepListDrawer = metadataQuestStepListDrawer;
             _reward.items ??= new List<RewardItem>();
             _reward.mapProgress ??= new QuestRewardMapProgress();
+            _reward.mapProgress.clearMapUids ??= new List<int>();
             _reward.mapProgress.visibleWorldMapNodeIds ??= new List<string>();
             _reward.mapProgress.activateWorldMapNodeIds ??= new List<string>();
             _reward.licenses ??= new List<QuestRewardLicense>();
@@ -51,6 +52,23 @@ namespace GGemCo2DCoreEditor
                 item.itemUid = metadataQuestStepListDrawer.StruckTableItems.GetValueOrDefault(_selectedIndexItem)?.Uid ?? 0;
                 
                 item.amount = EditorGUI.IntField(new Rect(rect.x + half + 5, rect.y + 2, half - 5, 18), "수량", item.amount);
+            };
+
+            _clearMapList = new ReorderableList(
+                _reward.mapProgress.clearMapUids,
+                typeof(int),
+                true,
+                true,
+                true,
+                true)
+            {
+                drawHeaderCallback = rect =>
+                    EditorGUI.LabelField(rect, "클리어 처리할 맵 목록"),
+                elementHeight = 24,
+                drawElementCallback = (rect, index, isActive, isFocused) =>
+                {
+                    DrawClearMapElement(_reward.mapProgress.clearMapUids, rect, index);
+                }
             };
 
             _visibleMapNodeIdList = new ReorderableList(
@@ -127,9 +145,47 @@ namespace GGemCo2DCoreEditor
         private void DrawMapProgressReward()
         {
             EditorGUILayout.LabelField("맵 진행 보상");
-            DrawClearMapPopup();
+            _clearMapList.DoLayoutList();
             _visibleMapNodeIdList.DoLayoutList();
             _mapNodeIdList.DoLayoutList();
+        }
+
+        /// <summary>
+        /// 클리어 처리할 맵 목록의 한 줄 선택 UI를 그립니다.
+        /// </summary>
+        /// <param name="clearMapUids">수정할 클리어 맵 UID 목록입니다.</param>
+        /// <param name="rect">그릴 영역입니다.</param>
+        /// <param name="index">수정할 목록 인덱스입니다.</param>
+        private void DrawClearMapElement(List<int> clearMapUids, Rect rect, int index)
+        {
+            if (clearMapUids == null || index < 0 || index >= clearMapUids.Count)
+            {
+                return;
+            }
+
+            List<string> mapOptions = new List<string> { "없음" };
+            if (_metadataQuestStepListDrawer.NameMap != null)
+            {
+                mapOptions.AddRange(_metadataQuestStepListDrawer.NameMap);
+            }
+
+            int selectedIndex = 0;
+            int mapUid = clearMapUids[index];
+            if (mapUid > 0 && _metadataQuestStepListDrawer.NameMap != null)
+            {
+                int mapIndex = _metadataQuestStepListDrawer.NameMap.FindIndex(
+                    x => x.StartsWith($"{mapUid} - "));
+                selectedIndex = mapIndex >= 0 ? mapIndex + 1 : 0;
+            }
+
+            selectedIndex = EditorGUI.Popup(
+                new Rect(rect.x, rect.y + 2, rect.width, 18),
+                selectedIndex,
+                mapOptions.ToArray());
+
+            clearMapUids[index] = selectedIndex <= 0
+                ? 0
+                : _metadataQuestStepListDrawer.StruckTableMaps?.GetValueOrDefault(selectedIndex - 1)?.Uid ?? 0;
         }
 
         /// <summary>
@@ -149,36 +205,6 @@ namespace GGemCo2DCoreEditor
             nodeIds[index] = EditorGUI.TextField(
                 new Rect(rect.x, rect.y + 2, rect.width, 18),
                 nodeIds[index]);
-        }
-
-        /// <summary>
-        /// 클리어 처리할 맵을 선택하는 팝업 UI를 그립니다.
-        /// </summary>
-        private void DrawClearMapPopup()
-        {
-            List<string> mapOptions = new List<string> { "없음" };
-            mapOptions.AddRange(_metadataQuestStepListDrawer.NameMap);
-
-            if (_reward.mapProgress.clearMapUid > 0)
-            {
-                int mapIndex = _metadataQuestStepListDrawer.NameMap.FindIndex(
-                    x => x.Contains(_reward.mapProgress.clearMapUid.ToString()));
-                _selectedIndexClearMap = mapIndex >= 0 ? mapIndex + 1 : 0;
-            }
-            else
-            {
-                _selectedIndexClearMap = 0;
-            }
-
-            _selectedIndexClearMap = EditorGUILayout.Popup("클리어 맵", _selectedIndexClearMap, mapOptions.ToArray());
-            if (_selectedIndexClearMap <= 0)
-            {
-                _reward.mapProgress.clearMapUid = 0;
-                return;
-            }
-
-            _reward.mapProgress.clearMapUid =
-                _metadataQuestStepListDrawer.StruckTableMaps.GetValueOrDefault(_selectedIndexClearMap - 1)?.Uid ?? 0;
         }
 
         /// <summary>

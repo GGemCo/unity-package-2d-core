@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 
 namespace GGemCo2DCore
 {
@@ -20,8 +20,10 @@ namespace GGemCo2DCore
     [System.Serializable]
     public class QuestRewardMapProgress
     {
-        /// <summary>퀘스트 완료 시 클리어 처리할 실제 게임 맵 UID입니다.</summary>
-        public int clearMapUid;
+        /// <summary>
+        /// 퀘스트 완료 시 클리어 처리할 실제 게임 맵 UID 목록입니다.
+        /// </summary>
+        public List<int> clearMapUids = new List<int>();
 
         /// <summary>
         /// 퀘스트 완료 시 월드맵에서 표시만 켤 노드 ID 목록입니다.

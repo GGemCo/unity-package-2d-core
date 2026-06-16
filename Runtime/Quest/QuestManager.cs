@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Newtonsoft.Json;
@@ -444,17 +444,37 @@ namespace GGemCo2DCore
         {
             if (mapProgress == null) return;
 
-            bool hasClearMapReward = mapProgress.clearMapUid > 0;
+            bool hasClearMapReward = HasValidClearMapReward(mapProgress.clearMapUids);
             bool hasVisibleWorldMapNodes = mapProgress.visibleWorldMapNodeIds != null &&
                                            mapProgress.visibleWorldMapNodeIds.Count > 0;
             bool hasWorldMapNodes = mapProgress.activateWorldMapNodeIds != null &&
                                     mapProgress.activateWorldMapNodeIds.Count > 0;
             if (!hasClearMapReward && !hasVisibleWorldMapNodes && !hasWorldMapNodes) return;
 
-            _sceneGame.saveDataManager.MapProgressController.ClearMap(
-                mapProgress.clearMapUid,
+            _sceneGame.saveDataManager.MapProgressController.ClearMaps(
+                mapProgress.clearMapUids,
                 mapProgress.activateWorldMapNodeIds,
                 mapProgress.visibleWorldMapNodeIds);
+        }
+
+        /// <summary>
+        /// 퀘스트 보상에 실제로 적용 가능한 클리어 맵 UID가 포함되어 있는지 확인합니다.
+        /// </summary>
+        /// <param name="clearMapUids">퀘스트 보상에 설정된 클리어 맵 UID 목록입니다.</param>
+        /// <returns>0보다 큰 맵 UID가 하나 이상 있으면 true를 반환합니다.</returns>
+        private static bool HasValidClearMapReward(List<int> clearMapUids)
+        {
+            if (clearMapUids == null || clearMapUids.Count <= 0) return false;
+
+            foreach (int clearMapUid in clearMapUids)
+            {
+                if (clearMapUid > 0)
+                {
+                    return true;
+                }
+            }
+
+            return false;
         }
 
         /// <summary>
