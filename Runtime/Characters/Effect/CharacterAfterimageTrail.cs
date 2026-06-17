@@ -11,7 +11,7 @@ namespace GGemCo2DCore
     /// - AnimationEvent(string json)로 런타임 오버라이드 설정을 적용할 수 있습니다.
     /// </summary>
     [DisallowMultipleComponent]
-    public sealed class CharacterAfterimageTrail : MonoBehaviour
+    public sealed class CharacterAfterimageTrail : MonoBehaviour, IMonsterPoolLifecycle
     {
         [Header("Source")]
         [SerializeField] private SpriteRenderer source;
@@ -27,6 +27,7 @@ namespace GGemCo2DCore
 
         private readonly Queue<SpriteRenderer> _pool = new();
         private readonly List<Ghost> _active = new(32);
+        private Transform _ghostRoot;
 
         private bool _running;
         private float _nextSpawnTime;
@@ -52,6 +53,7 @@ namespace GGemCo2DCore
                 source = GetComponent<SpriteRenderer>();
 
             ApplyDefaults();
+            EnsureGhostRoot();
 
             for (int i = 0; i < prewarmCount; i++)
             {
@@ -65,11 +67,56 @@ namespace GGemCo2DCore
 
         private void OnDestroy()
         {
+            for (int i = 0; i < _active.Count; i++)
+            {
+                DestroyGhostRenderer(_active[i].Sr);
+            }
+            _active.Clear();
+
             foreach (var sr in _pool)
             {
-                if (sr == null) continue;
-                Destroy(sr.gameObject);
+                DestroyGhostRenderer(sr);
             }
+            _pool.Clear();
+
+            if (_ghostRoot != null)
+            {
+                Destroy(_ghostRoot.gameObject);
+                _ghostRoot = null;
+            }
+        }
+
+        /// <summary>
+        /// 캐릭터 GameObject가 비활성화되는 예외 경로에서도 월드 루트에 분리된 활성 잔상을 즉시 회수합니다.
+        /// </summary>
+        private void OnDisable()
+        {
+            if (!_running && _active.Count == 0)
+                return;
+
+            _running = false;
+            _stopTime = 0f;
+            ReturnAllActiveGhosts();
+        }
+
+        /// <summary>
+        /// 몬스터가 풀에서 다시 대여될 때 잔상 풀 컨테이너를 재사용 가능한 상태로 전환합니다.
+        /// </summary>
+        /// <param name="owner">현재 풀에서 대여된 몬스터입니다.</param>
+        public void OnPoolRent(Monster owner)
+        {
+            EnsureGhostRoot();
+            if (_ghostRoot != null)
+                _ghostRoot.gameObject.SetActive(true);
+        }
+
+        /// <summary>
+        /// 몬스터가 풀로 반환되기 직전에 활성 잔상을 즉시 회수하고 잔상 풀을 비활성화합니다.
+        /// </summary>
+        /// <param name="owner">현재 풀로 반환되는 몬스터입니다.</param>
+        public void OnPoolReturn(Monster owner)
+        {
+            ResetForPoolReturn();
         }
 
         private void ApplyDefaults()
@@ -125,6 +172,21 @@ namespace GGemCo2DCore
             _stopTime = 0f;
             if (_active.Count > 0)
                 enabled = true;
+        }
+
+        /// <summary>
+        /// 풀 반환 또는 강제 비활성화 시 잔상 트레일 실행 상태와 활성 잔상을 모두 초기화합니다.
+        /// </summary>
+        public void ResetForPoolReturn()
+        {
+            _running = false;
+            _stopTime = 0f;
+            ReturnAllActiveGhosts();
+
+            if (_ghostRoot != null)
+                _ghostRoot.gameObject.SetActive(false);
+
+            enabled = false;
         }
 
         private void StartInternal(float durationSeconds)
@@ -274,15 +336,18 @@ namespace GGemCo2DCore
 
         private SpriteRenderer Rent()
         {
-            if (_pool.Count > 0)
+            while (_pool.Count > 0)
             {
                 var sr = _pool.Dequeue();
-                sr.gameObject.SetActive(true);
+                if (sr == null)
+                    continue;
+
+                PrepareRentedGhost(sr);
                 return sr;
             }
 
             var created = CreateGhostRenderer();
-            created.gameObject.SetActive(true);
+            PrepareRentedGhost(created);
             return created;
         }
 
@@ -293,15 +358,73 @@ namespace GGemCo2DCore
 
             sr.gameObject.SetActive(false);
             sr.sprite = null;
+            sr.flipX = false;
+            sr.flipY = false;
+            sr.color = Color.white;
+
+            EnsureGhostRoot();
+            if (_ghostRoot != null)
+                sr.transform.SetParent(_ghostRoot, worldPositionStays: false);
+
             _pool.Enqueue(sr);
         }
 
         private SpriteRenderer CreateGhostRenderer()
         {
             var go = new GameObject("AfterimageGhost");
-            go.transform.SetParent(null, false);
+            EnsureGhostRoot();
+            if (_ghostRoot != null)
+                go.transform.SetParent(_ghostRoot, false);
+
             var sr = go.AddComponent<SpriteRenderer>();
             return sr;
+        }
+
+        /// <summary>
+        /// 비활성 잔상 오브젝트를 보관할 캐릭터 하위 컨테이너를 생성하거나 반환합니다.
+        /// </summary>
+        private void EnsureGhostRoot()
+        {
+            if (_ghostRoot != null)
+                return;
+
+            var root = new GameObject("AfterimageGhostPool");
+            root.transform.SetParent(transform, false);
+            _ghostRoot = root.transform;
+        }
+
+        /// <summary>
+        /// 풀에서 꺼낸 잔상을 월드 루트로 분리하여 캐릭터 이동의 영향을 받지 않게 준비합니다.
+        /// </summary>
+        /// <param name="sr">활성화할 잔상 SpriteRenderer입니다.</param>
+        private static void PrepareRentedGhost(SpriteRenderer sr)
+        {
+            sr.transform.SetParent(null, worldPositionStays: true);
+            sr.gameObject.SetActive(true);
+        }
+
+        /// <summary>
+        /// 현재 화면에 남아 있는 활성 잔상을 모두 즉시 비활성 풀로 반환합니다.
+        /// </summary>
+        private void ReturnAllActiveGhosts()
+        {
+            for (int i = _active.Count - 1; i >= 0; i--)
+            {
+                Return(_active[i].Sr);
+            }
+            _active.Clear();
+        }
+
+        /// <summary>
+        /// 잔상 SpriteRenderer 오브젝트를 안전하게 제거합니다.
+        /// </summary>
+        /// <param name="sr">제거할 잔상 SpriteRenderer입니다.</param>
+        private static void DestroyGhostRenderer(SpriteRenderer sr)
+        {
+            if (sr == null)
+                return;
+
+            UnityEngine.Object.Destroy(sr.gameObject);
         }
 
         private static string NormalizeHtmlColor(string hex)
