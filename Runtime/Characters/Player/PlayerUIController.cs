@@ -96,20 +96,6 @@ namespace GGemCo2DCore
             {
                 _uiWindowHud.BindElementGauge(_player.ElementGaugeController);
             }
-            if (_player != null && _uiWindowHud != null && _player.ElementGaugeController != null)
-            {
-                if (_uiWindowHud.gameObjectHp is IElementTriggeredHpHudReceiver triggeredHpReceiver)
-                {
-                    triggeredHpReceiver.SetTriggeredHpStates(_player.ElementGaugeController.CurrentTriggeredHpStates);
-                    _player.ElementGaugeController.TriggeredHpChanged += triggeredHpReceiver.SetTriggeredHpStates;
-                }
-                else if (_uiWindowHud.gameObjectHp is IHpCorruptionHudReceiver corruptionReceiver)
-                {
-                    corruptionReceiver.SetHpCorruption(_player.ElementGaugeController.CurrentCorruption);
-                    _player.ElementGaugeController.CorruptionChanged += corruptionReceiver.SetHpCorruption;
-                }
-            }
-
             // 최대 HP/현재 HP 중 어느 값이 바뀌어도 HUD HP 표시를 다시 계산한다.
             _player.MaxHp
                 .Subscribe(_ => SetWindowHudHp())

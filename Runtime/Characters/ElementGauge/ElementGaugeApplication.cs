@@ -1,45 +1,112 @@
 using System;
+using UnityEngine;
 
 namespace GGemCo2DCore
 {
     /// <summary>
-    /// 타격/버프 등으로 인해 누적될 속성 게이지 1건을 표현합니다.
+    /// 속성 데미지 누적 처리에 사용할 입력 컨텍스트입니다.
     /// </summary>
-    [Serializable]
-    public struct ElementGaugeApplication
+    /// <remarks>
+    /// Core는 누적 상태와 이벤트만 관리하고, 임계 도달 후 실제 효과는 프로젝트별 핸들러가 이 컨텍스트를 해석하여 처리합니다.
+    /// </remarks>
+    public readonly struct ElementGaugeAccumulationContext
     {
         /// <summary>
-        /// 누적할 속성 타입입니다.
+        /// 속성 게이지를 소유한 캐릭터입니다.
         /// </summary>
-        public ConfigCommon.DamageType damageType;
+        public CharacterBase Owner { get; }
 
         /// <summary>
-        /// 누적할 게이지 값입니다.
+        /// 데미지를 발생시킨 오브젝트입니다.
         /// </summary>
-        public float gaugeValue;
+        public GameObject Source { get; }
 
         /// <summary>
-        /// 실제 데미지가 적용된 경우에만 게이지를 누적할지 여부입니다.
+        /// 원본 데미지 메타데이터입니다.
         /// </summary>
-        public bool requireDamageDealt;
+        public MetadataDamage MetadataDamage { get; }
 
         /// <summary>
-        /// 속성 게이지 적용 정보를 생성합니다.
+        /// 누적 대상 속성 타입입니다.
         /// </summary>
-        /// <param name="damageType">누적할 속성 타입입니다.</param>
-        /// <param name="gaugeValue">누적할 게이지 값입니다.</param>
-        /// <param name="requireDamageDealt">실제 데미지가 적용된 경우에만 게이지를 누적할지 여부입니다.</param>
-        public ElementGaugeApplication(ConfigCommon.DamageType damageType, float gaugeValue, bool requireDamageDealt = false)
+        public ConfigCommon.DamageType DamageType { get; }
+
+        /// <summary>
+        /// 게이지에 누적한 실제 속성 데미지량입니다.
+        /// </summary>
+        public long DamageAmount { get; }
+
+        /// <summary>
+        /// 속성 게이지 누적 컨텍스트를 생성합니다.
+        /// </summary>
+        /// <param name="owner">속성 게이지를 소유한 캐릭터입니다.</param>
+        /// <param name="source">데미지를 발생시킨 오브젝트입니다.</param>
+        /// <param name="metadataDamage">원본 데미지 메타데이터입니다.</param>
+        /// <param name="damageType">누적 대상 속성 타입입니다.</param>
+        /// <param name="damageAmount">게이지에 누적할 실제 속성 데미지량입니다.</param>
+        public ElementGaugeAccumulationContext(
+            CharacterBase owner,
+            GameObject source,
+            MetadataDamage metadataDamage,
+            ConfigCommon.DamageType damageType,
+            long damageAmount)
         {
-            this.damageType = damageType;
-            this.gaugeValue = gaugeValue;
-            this.requireDamageDealt = requireDamageDealt;
+            Owner = owner;
+            Source = source;
+            MetadataDamage = metadataDamage;
+            DamageType = damageType;
+            DamageAmount = Math.Max(0L, damageAmount);
+        }
+    }
+
+    /// <summary>
+    /// 속성 게이지 누적 처리 결과입니다.
+    /// </summary>
+    public readonly struct ElementGaugeAccumulationResult
+    {
+        /// <summary>
+        /// 값이 변경되지 않은 기본 결과입니다.
+        /// </summary>
+        public static ElementGaugeAccumulationResult None => new(false, false, false, default);
+
+        /// <summary>
+        /// 누적 결과를 생성합니다.
+        /// </summary>
+        /// <param name="gaugeChanged">게이지 표시 값이 변경되었는지 여부입니다.</param>
+        /// <param name="thresholdReached">이번 누적으로 임계점에 처음 도달했는지 여부입니다.</param>
+        /// <param name="repeatedElementDamage">이미 임계 상태인 속성에 같은 속성 데미지가 다시 들어왔는지 여부입니다.</param>
+        /// <param name="snapshot">처리 후 스냅샷입니다.</param>
+        public ElementGaugeAccumulationResult(
+            bool gaugeChanged,
+            bool thresholdReached,
+            bool repeatedElementDamage,
+            ElementGaugeSnapshot snapshot)
+        {
+            GaugeChanged = gaugeChanged;
+            ThresholdReached = thresholdReached;
+            RepeatedElementDamage = repeatedElementDamage;
+            Snapshot = snapshot;
         }
 
         /// <summary>
-        /// 속성 게이지 적용 정보가 실제 누적 가능한 값인지 반환합니다.
+        /// 게이지 표시 값이 변경되었는지 여부입니다.
         /// </summary>
-        public bool IsValid => damageType != ConfigCommon.DamageType.None && damageType != ConfigCommon.DamageType.Physic && gaugeValue > 0f;
+        public bool GaugeChanged { get; }
+
+        /// <summary>
+        /// 이번 누적으로 임계점에 처음 도달했는지 여부입니다.
+        /// </summary>
+        public bool ThresholdReached { get; }
+
+        /// <summary>
+        /// 이미 임계 상태인 속성에 같은 속성 데미지가 다시 들어왔는지 여부입니다.
+        /// </summary>
+        public bool RepeatedElementDamage { get; }
+
+        /// <summary>
+        /// 처리 후 스냅샷입니다.
+        /// </summary>
+        public ElementGaugeSnapshot Snapshot { get; }
     }
 
     /// <summary>
@@ -47,151 +114,72 @@ namespace GGemCo2DCore
     /// </summary>
     public readonly struct ElementGaugeSnapshot
     {
-        public ElementGaugeSnapshot(ConfigCommon.DamageType damageType, float currentValue, float maxValue, bool isBlockedByTriggeredState)
+        /// <summary>
+        /// 속성 게이지 스냅샷을 생성합니다.
+        /// </summary>
+        /// <param name="damageType">속성 데미지 타입입니다.</param>
+        /// <param name="currentValue">현재 누적 값입니다.</param>
+        /// <param name="maxValue">최대 누적 값입니다.</param>
+        /// <param name="isThresholdReached">임계 도달 상태인지 여부입니다.</param>
+        public ElementGaugeSnapshot(ConfigCommon.DamageType damageType, float currentValue, float maxValue, bool isThresholdReached)
         {
             DamageType = damageType;
-            CurrentValue = currentValue;
-            MaxValue = maxValue;
-            IsBlockedByTriggeredState = isBlockedByTriggeredState;
+            CurrentValue = Mathf.Max(0f, currentValue);
+            MaxValue = Mathf.Max(1f, maxValue);
+            IsThresholdReached = isThresholdReached;
         }
 
+        /// <summary>
+        /// 속성 데미지 타입입니다.
+        /// </summary>
         public ConfigCommon.DamageType DamageType { get; }
+
+        /// <summary>
+        /// 현재 누적 값입니다.
+        /// </summary>
         public float CurrentValue { get; }
+
+        /// <summary>
+        /// 최대 누적 값입니다.
+        /// </summary>
         public float MaxValue { get; }
-        public bool IsBlockedByTriggeredState { get; }
+
+        /// <summary>
+        /// 임계 도달 상태인지 여부입니다.
+        /// </summary>
+        public bool IsThresholdReached { get; }
+
+        /// <summary>
+        /// 기존 UI의 차단 오버레이 바인딩과 호환하기 위한 별칭입니다.
+        /// </summary>
+        public bool IsBlockedByTriggeredState => IsThresholdReached;
     }
 
     /// <summary>
-    /// 특정 속성 임계 반응으로 표시 중인 HP 구간 스냅샷입니다.
+    /// 이전 직접 게이지 누적 API와의 컴파일 호환을 위한 구조체입니다.
+    /// 신규 로직은 실제 속성 데미지를 통해 자동 누적되므로 직접 사용하지 않습니다.
     /// </summary>
-    public readonly struct ElementTriggeredHpSnapshot
+    [Obsolete("속성 게이지는 실제 속성 데미지로 자동 누적됩니다. CharacterElementGaugeController.AccumulateFromDamage를 사용하세요.")]
+    [Serializable]
+    public struct ElementGaugeApplication
     {
-        public ElementTriggeredHpSnapshot(
-            ConfigCommon.DamageType damageType,
-            string visualStateKey,
-            long triggeredBaseHp,
-            long triggeredTempItemHp,
-            long triggeredTempRuntimeHp,
-            long triggeredTempPassiveHp)
+        public ConfigCommon.DamageType damageType;
+        public float gaugeValue;
+        public bool requireDamageDealt;
+
+        /// <summary>
+        /// 이전 직접 게이지 누적 데이터를 생성합니다.
+        /// </summary>
+        /// <param name="damageType">속성 타입입니다.</param>
+        /// <param name="gaugeValue">게이지 누적 값입니다.</param>
+        /// <param name="requireDamageDealt">실제 데미지 필요 여부입니다.</param>
+        public ElementGaugeApplication(ConfigCommon.DamageType damageType, float gaugeValue, bool requireDamageDealt = false)
         {
-            DamageType = damageType;
-            VisualStateKey = visualStateKey;
-            TriggeredBaseHp = triggeredBaseHp;
-            TriggeredTempItemHp = triggeredTempItemHp;
-            TriggeredTempRuntimeHp = triggeredTempRuntimeHp;
-            TriggeredTempPassiveHp = triggeredTempPassiveHp;
+            this.damageType = damageType;
+            this.gaugeValue = gaugeValue;
+            this.requireDamageDealt = requireDamageDealt;
         }
 
-        public ConfigCommon.DamageType DamageType { get; }
-        public string VisualStateKey { get; }
-        public long TriggeredBaseHp { get; }
-        public long TriggeredTempItemHp { get; }
-        public long TriggeredTempRuntimeHp { get; }
-        public long TriggeredTempPassiveHp { get; }
-        public long TotalTriggeredTempHp => TriggeredTempItemHp + TriggeredTempRuntimeHp + TriggeredTempPassiveHp;
-        public long TotalTriggeredHp => TriggeredBaseHp + TotalTriggeredTempHp;
-        public bool HasAny => TotalTriggeredHp > 0;
-
-        public HpCorruptionSnapshot ToLegacyCorruptionSnapshot()
-        {
-            return new HpCorruptionSnapshot(
-                TriggeredBaseHp,
-                TriggeredTempItemHp,
-                TriggeredTempRuntimeHp,
-                TriggeredTempPassiveHp);
-        }
-    }
-
-    /// <summary>
-    /// HUD 등 외부 시스템에서 참조할 수 있는 전체 속성 임계 HP 스냅샷입니다.
-    /// </summary>
-    public readonly struct ElementTriggeredHpCollectionSnapshot
-    {
-        private readonly ElementTriggeredHpSnapshot[] _entries;
-
-        public ElementTriggeredHpCollectionSnapshot(ElementTriggeredHpSnapshot[] entries)
-        {
-            _entries = entries ?? Array.Empty<ElementTriggeredHpSnapshot>();
-        }
-
-        public static ElementTriggeredHpCollectionSnapshot Empty => new(Array.Empty<ElementTriggeredHpSnapshot>());
-
-        public ElementTriggeredHpSnapshot[] Entries => _entries ?? Array.Empty<ElementTriggeredHpSnapshot>();
-        public int Count => _entries?.Length ?? 0;
-        public bool HasAny
-        {
-            get
-            {
-                if (_entries == null || _entries.Length == 0)
-                    return false;
-
-                for (int i = 0; i < _entries.Length; i++)
-                {
-                    if (_entries[i].HasAny)
-                        return true;
-                }
-
-                return false;
-            }
-        }
-
-        public bool TryGet(ConfigCommon.DamageType damageType, out ElementTriggeredHpSnapshot snapshot)
-        {
-            if (_entries != null)
-            {
-                for (int i = 0; i < _entries.Length; i++)
-                {
-                    if (_entries[i].DamageType != damageType)
-                        continue;
-
-                    snapshot = _entries[i];
-                    return true;
-                }
-            }
-
-            snapshot = default;
-            return false;
-        }
-
-        public HpCorruptionSnapshot GetLegacyCorruptionSnapshot(ConfigCommon.DamageType damageType)
-        {
-            return TryGet(damageType, out var snapshot)
-                ? snapshot.ToLegacyCorruptionSnapshot()
-                : default;
-        }
-    }
-
-    /// <summary>
-    /// 독 하트 오염 상태 스냅샷입니다.
-    /// 레거시 HUD 바인딩 호환을 위해 유지합니다.
-    /// </summary>
-    public readonly struct HpCorruptionSnapshot
-    {
-        public HpCorruptionSnapshot(long corruptedBaseHp, long corruptedTempItemHp, long corruptedTempRuntimeHp, long corruptedTempPassiveHp)
-        {
-            CorruptedBaseHp = corruptedBaseHp;
-            CorruptedTempItemHp = corruptedTempItemHp;
-            CorruptedTempRuntimeHp = corruptedTempRuntimeHp;
-            CorruptedTempPassiveHp = corruptedTempPassiveHp;
-        }
-
-        public long CorruptedBaseHp { get; }
-        public long CorruptedTempItemHp { get; }
-        public long CorruptedTempRuntimeHp { get; }
-        public long CorruptedTempPassiveHp { get; }
-        public long TotalCorruptedTempHp => CorruptedTempItemHp + CorruptedTempRuntimeHp + CorruptedTempPassiveHp;
-        public long TotalCorruptedHp => CorruptedBaseHp + TotalCorruptedTempHp;
-        public bool HasAny => TotalCorruptedHp > 0;
-
-        public ElementTriggeredHpSnapshot ToTriggeredHpSnapshot(string visualStateKey = "poison")
-        {
-            return new ElementTriggeredHpSnapshot(
-                ConfigCommon.DamageType.Poison,
-                visualStateKey,
-                CorruptedBaseHp,
-                CorruptedTempItemHp,
-                CorruptedTempRuntimeHp,
-                CorruptedTempPassiveHp);
-        }
+        public bool IsValid => damageType != ConfigCommon.DamageType.None && damageType != ConfigCommon.DamageType.Physic && gaugeValue > 0f;
     }
 }

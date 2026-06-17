@@ -32,7 +32,6 @@ namespace GGemCo2DCore
         public readonly bool AllowSkillChainOnConfirmedDamage;
         public readonly int SkillHitMpGain;
         public readonly bool AllowMultipleSkillHitMpGainPerAttack;
-        public readonly ElementGaugeApplication[] ElementGaugeApplications;
 
         /// <summary>
         /// 레이저 적중 시 대상에게 적용할 Crowd Control 후보 목록입니다.
@@ -87,7 +86,6 @@ namespace GGemCo2DCore
         /// <param name="skillUid">발생시킨 스킬 UID입니다.</param>
         /// <param name="attackId">연계/피격 추적용 공격 ID입니다.</param>
         /// <param name="allowSkillChainOnConfirmedDamage">실제 데미지 확정 시 스킬 연계를 열지 여부입니다.</param>
-        /// <param name="elementGaugeApplications">적중 시 추가할 속성 게이지 목록입니다.</param>
         /// <param name="onHitCrowdControls">적중 시 적용할 Crowd Control 후보 목록입니다.</param>
         /// <param name="guardAttackType">가드 설정에서 사용할 공격 방어 타입입니다.</param>
         /// <param name="useDurationOverride">지속 시간 오버라이드 사용 여부입니다.</param>
@@ -127,7 +125,6 @@ namespace GGemCo2DCore
             int skillUid = 0,
             int attackId = 0,
             bool allowSkillChainOnConfirmedDamage = false,
-            ElementGaugeApplication[] elementGaugeApplications = null,
             ProjectileOnHitCrowdControlEntry[] onHitCrowdControls = null,
             GuardAttackType guardAttackType = GuardAttackType.Normal,
             bool useDurationOverride = false,
@@ -172,7 +169,6 @@ namespace GGemCo2DCore
             AllowSkillChainOnConfirmedDamage = allowSkillChainOnConfirmedDamage;
             SkillHitMpGain = Mathf.Max(0, skillHitMpGain);
             AllowMultipleSkillHitMpGainPerAttack = allowMultipleSkillHitMpGainPerAttack;
-            ElementGaugeApplications = elementGaugeApplications;
             OnHitCrowdControls = onHitCrowdControls;
             GuardAttackType = guardAttackType;
             UseDurationOverride = useDurationOverride;
@@ -222,7 +218,6 @@ namespace GGemCo2DCore
                 allowSkillChainOnConfirmedDamage: AllowSkillChainOnConfirmedDamage,
                 skillHitMpGain: SkillHitMpGain,
                 allowMultipleSkillHitMpGainPerAttack: AllowMultipleSkillHitMpGainPerAttack,
-                elementGaugeApplications: ElementGaugeApplications,
                 onHitCrowdControls: OnHitCrowdControls,
                 guardAttackType: GuardAttackType);
         }

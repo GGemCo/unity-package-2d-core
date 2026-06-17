@@ -154,14 +154,10 @@ namespace GGemCo2DCore
             }
 
             _crowdControlController = gameObject.AddComponent<CharacterCrowdControlController>();
-            _elementGaugeController = null;
-            if (this is Player)
+            _elementGaugeController = gameObject.GetComponent<CharacterElementGaugeController>();
+            if (_elementGaugeController == null)
             {
-                _elementGaugeController = gameObject.GetComponent<CharacterElementGaugeController>();
-                if (_elementGaugeController == null)
-                {
-                    _elementGaugeController = gameObject.AddComponent<CharacterElementGaugeController>();
-                }
+                _elementGaugeController = gameObject.AddComponent<CharacterElementGaugeController>();
             }
             _hitStopController = gameObject.GetComponent<CharacterHitStopController>();
             if (_hitStopController == null)

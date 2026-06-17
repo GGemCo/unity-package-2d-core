@@ -1222,9 +1222,6 @@ namespace GGemCo2DCore
                 AttackId = AttackId,
                 SkillHitMpGain = Runtime != null ? Runtime.SkillHitMpGain : 0,
                 AllowMultipleSkillHitMpGainPerAttack = Runtime != null && Runtime.AllowMultipleSkillHitMpGainPerAttack,
-                ElementGaugeApplications = ResolveElementGaugeApplications(
-                    Runtime != null ? Runtime.ElementGaugeApplications : null,
-                    damageApplied),
                 ResolvedOnHitCrowdControls = resolvedOnHitCrowdControls,
                 HasPendingAfterDamageCrowdControl = HasPendingOnHitCrowdControl(
                     Runtime != null ? Runtime.OnHitCrowdControls : null,
@@ -1233,48 +1230,6 @@ namespace GGemCo2DCore
                 GuardAttackType = Runtime != null ? Runtime.GuardAttackType : GuardAttackType.Normal,
                 GuardInteractionMode = Runtime != null ? Runtime.GuardInteractionMode : GuardInteractionMode.Normal,
             };
-        }
-
-        /// <summary>
-        /// 프로젝타일의 실제 적중 결과에 맞춰 속성 게이지 적용 목록을 필터링합니다.
-        /// </summary>
-        /// <param name="applications">발사 시점에 전달된 속성 게이지 후보 목록입니다.</param>
-        /// <param name="damageApplied">이번 적중에서 실제 데미지가 적용될 수 있는지 여부입니다.</param>
-        /// <returns>대상에게 전달할 최종 속성 게이지 목록입니다. 적용할 항목이 없으면 <see langword="null"/>입니다.</returns>
-        private static ElementGaugeApplication[] ResolveElementGaugeApplications(
-            ElementGaugeApplication[] applications,
-            bool damageApplied)
-        {
-            if (applications == null || applications.Length == 0)
-                return null;
-
-            bool requiresFiltering = false;
-            for (int i = 0; i < applications.Length; i++)
-            {
-                ElementGaugeApplication application = applications[i];
-                if (!application.IsValid || (application.requireDamageDealt && !damageApplied))
-                {
-                    requiresFiltering = true;
-                    break;
-                }
-            }
-
-            if (!requiresFiltering)
-                return applications;
-
-            var filtered = new List<ElementGaugeApplication>(applications.Length);
-            for (int i = 0; i < applications.Length; i++)
-            {
-                ElementGaugeApplication application = applications[i];
-                if (!application.IsValid)
-                    continue;
-                if (application.requireDamageDealt && !damageApplied)
-                    continue;
-
-                filtered.Add(application);
-            }
-
-            return filtered.Count > 0 ? filtered.ToArray() : null;
         }
 
         /// <summary>

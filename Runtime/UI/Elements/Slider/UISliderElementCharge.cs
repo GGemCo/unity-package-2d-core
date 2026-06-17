@@ -1,14 +1,17 @@
 using TMPro;
 using UnityEngine;
+using UnityEngine.Serialization;
 using UnityEngine.UI;
 
 namespace GGemCo2DCore
 {
     /// <summary>
-    /// 특정 속성 게이지 1종을 Slider로 표시하는 HUD View 입니다.
-    /// 실제 게이지 계산은 CharacterElementGaugeController가 담당하고,
-    /// 이 클래스는 바인딩된 컨트롤러의 스냅샷만 화면에 반영합니다.
+    /// 특정 속성 데미지 누적 게이지 1종을 Slider로 표시하는 HUD View입니다.
     /// </summary>
+    /// <remarks>
+    /// 실제 누적 계산은 <see cref="CharacterElementGaugeController"/>가 담당하고,
+    /// 이 클래스는 바인딩된 컨트롤러의 <see cref="ElementGaugeSnapshot"/>만 화면에 반영합니다.
+    /// </remarks>
     [DisallowMultipleComponent]
     [RequireComponent(typeof(Slider))]
     public sealed class UISliderElementCharge : MonoBehaviour
@@ -20,18 +23,18 @@ namespace GGemCo2DCore
         [SerializeField] private Slider slider;
         [SerializeField] private TextMeshProUGUI textValue;
         [SerializeField] private CanvasGroup canvasGroup;
-        [SerializeField] private GameObject blockedOverlay;
+        [FormerlySerializedAs("blockedOverlay")]
+        [SerializeField] private GameObject thresholdOverlay;
 
         [Header("Policy")]
         [SerializeField] private bool hideWhenEmpty = false;
-        [Tooltip("오염 HP가 모두 사라져 차단 상태가 해제되고 게이지가 비어 있으면 UI를 숨길지 여부입니다.")]
-        [SerializeField] private bool hideWhenTriggeredHpCleared = true;
         [SerializeField] private bool showNumericText = false;
+        [SerializeField] private bool showWhenThresholdReached = true;
 
         private CharacterElementGaugeController _controller;
         private bool _isSubscribed;
         private float _lastNormalized = -1f;
-        private bool _lastBlocked;
+        private bool _lastThresholdReached;
 
         private void Awake()
         {
@@ -63,6 +66,10 @@ namespace GGemCo2DCore
             UnsubscribeIfNeeded();
         }
 
+        /// <summary>
+        /// 게이지 컨트롤러를 바인딩하고 즉시 표시 상태를 갱신합니다.
+        /// </summary>
+        /// <param name="controller">표시할 속성 게이지 컨트롤러입니다.</param>
         public void Bind(CharacterElementGaugeController controller)
         {
             if (ReferenceEquals(_controller, controller))
@@ -77,6 +84,9 @@ namespace GGemCo2DCore
             RefreshView();
         }
 
+        /// <summary>
+        /// 현재 컨트롤러 바인딩을 해제하고 빈 상태로 표시합니다.
+        /// </summary>
         public void Unbind()
         {
             UnsubscribeIfNeeded();
@@ -90,7 +100,6 @@ namespace GGemCo2DCore
                 return;
 
             _controller.GaugeChanged += OnGaugeChanged;
-            _controller.TriggeredHpChanged += OnTriggeredHpChanged;
             _isSubscribed = true;
         }
 
@@ -100,7 +109,6 @@ namespace GGemCo2DCore
                 return;
 
             _controller.GaugeChanged -= OnGaugeChanged;
-            _controller.TriggeredHpChanged -= OnTriggeredHpChanged;
             _isSubscribed = false;
         }
 
@@ -110,14 +118,8 @@ namespace GGemCo2DCore
         }
 
         /// <summary>
-        /// 오염 HP가 0이 되어 차단 상태가 해제되면 게이지 UI 표시 여부도 즉시 갱신합니다.
+        /// 현재 스냅샷을 기준으로 Slider, 텍스트, 임계 오버레이 표시를 갱신합니다.
         /// </summary>
-        /// <param name="snapshot">현재 오염 HP 스냅샷입니다.</param>
-        private void OnTriggeredHpChanged(ElementTriggeredHpCollectionSnapshot snapshot)
-        {
-            RefreshView();
-        }
-
         private void RefreshView()
         {
             if (_controller == null)
@@ -126,31 +128,16 @@ namespace GGemCo2DCore
                 return;
             }
 
-            var snapshots = _controller.GetGaugeSnapshots();
-            bool found = false;
-            ElementGaugeSnapshot snapshot = default;
-
-            for (int i = 0; i < snapshots.Count; i++)
-            {
-                if (snapshots[i].DamageType != damageType)
-                    continue;
-
-                snapshot = snapshots[i];
-                found = true;
-                break;
-            }
-
-            if (!found)
+            if (!_controller.TryGetGaugeSnapshot(damageType, out ElementGaugeSnapshot snapshot))
             {
                 ApplyEmptyView();
                 return;
             }
 
-            float maxValue = Mathf.Max(1f, snapshot.MaxValue);
-            float normalized = Mathf.Clamp01(snapshot.CurrentValue / maxValue);
-            bool blocked = snapshot.IsBlockedByTriggeredState;
+            float normalized = Mathf.Clamp01(snapshot.CurrentValue / Mathf.Max(1f, snapshot.MaxValue));
+            bool thresholdReached = snapshot.IsThresholdReached;
 
-            if (Mathf.Approximately(_lastNormalized, normalized) && _lastBlocked == blocked)
+            if (Mathf.Approximately(_lastNormalized, normalized) && _lastThresholdReached == thresholdReached)
                 return;
 
             if (slider != null)
@@ -158,27 +145,29 @@ namespace GGemCo2DCore
 
             if (textValue != null)
             {
-                if (showNumericText)
-                    textValue.text = $"{Mathf.RoundToInt(snapshot.CurrentValue)} / {Mathf.RoundToInt(snapshot.MaxValue)}";
-                else
-                    textValue.text = string.Empty;
+                textValue.text = showNumericText
+                    ? $"{Mathf.RoundToInt(snapshot.CurrentValue)} / {Mathf.RoundToInt(snapshot.MaxValue)}"
+                    : string.Empty;
             }
 
-            if (blockedOverlay != null)
-                blockedOverlay.SetActive(blocked);
+            if (thresholdOverlay != null)
+                thresholdOverlay.SetActive(thresholdReached);
 
-            if (canvasGroup != null && (hideWhenEmpty || hideWhenTriggeredHpCleared))
+            if (canvasGroup != null && hideWhenEmpty)
             {
-                bool visible = normalized > 0f || blocked;
+                bool visible = normalized > 0f || (showWhenThresholdReached && thresholdReached);
                 canvasGroup.alpha = visible ? 1f : 0f;
                 canvasGroup.blocksRaycasts = false;
                 canvasGroup.interactable = false;
             }
 
             _lastNormalized = normalized;
-            _lastBlocked = blocked;
+            _lastThresholdReached = thresholdReached;
         }
 
+        /// <summary>
+        /// 연결된 데이터가 없을 때 UI를 빈 상태로 초기화합니다.
+        /// </summary>
         private void ApplyEmptyView()
         {
             if (slider != null)
@@ -187,10 +176,10 @@ namespace GGemCo2DCore
             if (textValue != null)
                 textValue.text = showNumericText ? "0 / 0" : string.Empty;
 
-            if (blockedOverlay != null)
-                blockedOverlay.SetActive(false);
+            if (thresholdOverlay != null)
+                thresholdOverlay.SetActive(false);
 
-            if (canvasGroup != null && (hideWhenEmpty || hideWhenTriggeredHpCleared))
+            if (canvasGroup != null && hideWhenEmpty)
             {
                 canvasGroup.alpha = 0f;
                 canvasGroup.blocksRaycasts = false;
@@ -198,7 +187,7 @@ namespace GGemCo2DCore
             }
 
             _lastNormalized = 0f;
-            _lastBlocked = false;
+            _lastThresholdReached = false;
         }
     }
 }

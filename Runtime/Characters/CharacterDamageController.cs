@@ -101,11 +101,6 @@ namespace GGemCo2DCore
         public CameraShakeChannel DamageCameraShakeChannel = CameraShakeChannel.SkillDamage;
 
         /// <summary>
-        /// 이번 타격이 추가로 누적할 속성 게이지 목록입니다.
-        /// </summary>
-        public ElementGaugeApplication[] ElementGaugeApplications;
-
-        /// <summary>
         /// 현재 데미지를 발생시킨 Affect UID입니다.
         /// </summary>
         /// <remarks>
@@ -648,17 +643,8 @@ namespace GGemCo2DCore
             _characterBase.CurrentHp.OnNext(remainHp);
 
             // 속성 데미지 게이지 처리
-            var elementGaugeController = _characterBase.ElementGaugeController;
-            if (elementGaugeController != null && metadataDamage.ElementGaugeApplications != null && metadataDamage.ElementGaugeApplications.Length > 0)
-            {
-                elementGaugeController.ApplyGauge(metadataDamage.ElementGaugeApplications, metadataDamage.attacker);
-            }
-
-            if (elementGaugeController != null)
-            {
-                elementGaugeController.HandleAfterIncomingDamage(metadataDamage);
-                TryFinalizeDeathAfterElementGauge(metadataDamage);
-            }
+            // 실제 피격이 확정된 뒤, 최종 데미지 타입과 데미지량을 기준으로 Core 공통 게이지에 누적합니다.
+            _characterBase.ElementGaugeController?.AccumulateFromDamage(metadataDamage, damage);
 
             ApplyConfirmedAttackHitStop(metadataDamage);
         }
@@ -898,38 +884,6 @@ namespace GGemCo2DCore
 
             request.RandomXRange = Mathf.Max(0f, guardResult.FeedbackRandomXRange);
         }
-
-        /// <summary>
-        /// 속성 게이지 후처리로 HP가 0 이하가 되었을 때 사망 처리를 확정합니다.
-        /// </summary>
-        /// <param name="metadataDamage">사망 원인과 연출 정보를 포함한 데미지 메타데이터입니다.</param>
-        /// <remarks>
-        /// 일반 데미지 차감이 아니라 속성 게이지 처리에서 사망이 확정되는 경우에도
-        /// 최초 데미지의 사망 연출 요청을 유지해야 전용 사망 연출이 누락되지 않습니다.
-        /// </remarks>
-        private void TryFinalizeDeathAfterElementGauge(MetadataDamage metadataDamage)
-        {
-            if (_characterBase == null || _characterBase.IsStatusDead())
-                return;
-
-            if (_characterBase.BaseHp < 0 && _characterBase.CurrentHp.Value <= 0)
-            {
-                _characterBase.CurrentHp.OnNext(1);
-                return;
-            }
-
-            if (_characterBase.CurrentHp.Value > 0)
-                return;
-
-            NotifyIncomingHitActionCancelers(IncomingHitCancelReason.Death);
-            _characterBase.CurrentMp.OnNext(0);
-            _characterBase.Dead(
-                CharacterConstants.DieReasonType.Battle,
-                metadataDamage != null ? metadataDamage.attacker : null,
-                playDeadAnimation: true,
-                deathPresentation: metadataDamage != null ? metadataDamage.DeathPresentation : null);
-        }
-
 
         /// <summary>
         /// 플레이어의 가드 성공 결과에 맞춰 스테미나 HUD 충격 피드백을 재생합니다.

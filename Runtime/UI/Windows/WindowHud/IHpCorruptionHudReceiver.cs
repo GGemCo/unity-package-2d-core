@@ -1,18 +1,16 @@
+using System.Collections.Generic;
+
 namespace GGemCo2DCore
 {
     /// <summary>
-    /// HP HUD가 속성 임계 반응으로 표시 중인 HP 상태를 수신할 수 있을 때 구현하는 인터페이스입니다.
+    /// HUD가 속성 게이지 스냅샷 목록을 직접 수신할 때 구현하는 선택 인터페이스입니다.
     /// </summary>
-    public interface IElementTriggeredHpHudReceiver
+    public interface IElementGaugeHudReceiver
     {
-        void SetTriggeredHpStates(ElementTriggeredHpCollectionSnapshot snapshot);
-    }
-
-    /// <summary>
-    /// HP HUD가 독 하트 오염 상태를 수신할 수 있을 때 구현하는 레거시 인터페이스입니다.
-    /// </summary>
-    public interface IHpCorruptionHudReceiver
-    {
-        void SetHpCorruption(HpCorruptionSnapshot snapshot);
+        /// <summary>
+        /// 현재 속성별 게이지 스냅샷 목록을 HUD에 반영합니다.
+        /// </summary>
+        /// <param name="snapshots">속성별 게이지 스냅샷 목록입니다.</param>
+        void SetElementGaugeSnapshots(IReadOnlyList<ElementGaugeSnapshot> snapshots);
     }
 }

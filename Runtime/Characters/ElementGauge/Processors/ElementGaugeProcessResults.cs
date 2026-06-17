@@ -2,18 +2,27 @@ namespace GGemCo2DCore
 {
     internal readonly struct ElementGaugeApplyResult
     {
-        public static ElementGaugeApplyResult None => new(false, false, ConfigCommon.DamageType.None);
+        public static ElementGaugeApplyResult None => new(false, false, false, ConfigCommon.DamageType.None, default);
 
-        public ElementGaugeApplyResult(bool gaugeChanged, bool thresholdReached, ConfigCommon.DamageType damageType)
+        public ElementGaugeApplyResult(
+            bool gaugeChanged,
+            bool thresholdReached,
+            bool repeatedElementDamage,
+            ConfigCommon.DamageType damageType,
+            ElementGaugeSnapshot snapshot)
         {
             GaugeChanged = gaugeChanged;
             ThresholdReached = thresholdReached;
+            RepeatedElementDamage = repeatedElementDamage;
             DamageType = damageType;
+            Snapshot = snapshot;
         }
 
         public bool GaugeChanged { get; }
         public bool ThresholdReached { get; }
+        public bool RepeatedElementDamage { get; }
         public ConfigCommon.DamageType DamageType { get; }
+        public ElementGaugeSnapshot Snapshot { get; }
     }
 
     internal readonly struct ElementGaugeDecayResult

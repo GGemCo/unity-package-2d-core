@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
@@ -6,7 +7,7 @@ namespace GGemCo2DCore
 {
     /// <summary>
     /// 플레이어의 주요 상태 정보와 각종 UI 창 진입 버튼을 표시하는 HUD 창입니다.
-    /// 생명력, 마력, 스테미나, 중독 게이지와 전투 상태를 화면에 반영합니다.
+    /// 생명력, 마력, 스테미나, 속성 게이지와 전투 상태를 화면에 반영합니다.
     /// </summary>
     public class UIWindowHud : UIWindow
     {
@@ -34,7 +35,10 @@ namespace GGemCo2DCore
         [Tooltip("현재 플레이어 스테미나 수치")]
         public TextMeshProUGUI textStamina;
 
-        [Tooltip("중독 게이지")]
+        [Tooltip("속성 게이지 Slider 목록입니다. 비어 있으면 레거시 poisonCharge만 사용합니다.")]
+        public List<UISliderElementCharge> elementGaugeSliders = new();
+
+        [Tooltip("(레거시) 중독 게이지 Slider입니다. elementGaugeSliders가 비어 있을 때만 사용합니다.")]
         public UISliderElementCharge poisonCharge;
 
         [Tooltip("전투 상태")]
@@ -45,12 +49,27 @@ namespace GGemCo2DCore
         private Vector3 _prevPositionHp;
 
         /// <summary>
-        /// 중독 게이지 UI를 원소/상태 이상 게이지 컨트롤러에 바인딩합니다.
+        /// HUD에 배치된 모든 속성 게이지 UI를 컨트롤러에 바인딩합니다.
         /// </summary>
-        /// <param name="controller">중독 게이지와 연결할 컨트롤러입니다.</param>
+        /// <param name="controller">속성 게이지와 연결할 컨트롤러입니다.</param>
         public void BindElementGauge(CharacterElementGaugeController controller)
         {
-            poisonCharge?.Bind(controller);
+            bool boundAny = false;
+            if (elementGaugeSliders != null)
+            {
+                for (int i = 0; i < elementGaugeSliders.Count; i++)
+                {
+                    UISliderElementCharge slider = elementGaugeSliders[i];
+                    if (slider == null)
+                        continue;
+
+                    slider.Bind(controller);
+                    boundAny = true;
+                }
+            }
+
+            if (!boundAny)
+                poisonCharge?.Bind(controller);
         }
 
         /// <summary>

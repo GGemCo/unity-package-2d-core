@@ -77,7 +77,6 @@ namespace GGemCo2DCore
         public readonly bool AllowSkillChainOnConfirmedDamage;
         public readonly int SkillHitMpGain;
         public readonly bool AllowMultipleSkillHitMpGainPerAttack;
-        public readonly ElementGaugeApplication[] ElementGaugeApplications;
         public readonly ProjectileOnHitCrowdControlEntry[] OnHitCrowdControls;
         public readonly GuardAttackType GuardAttackType;
         public readonly GuardInteractionMode GuardInteractionMode;
@@ -133,7 +132,6 @@ namespace GGemCo2DCore
             int skillUid = 0,
             int attackId = 0,
             bool allowSkillChainOnConfirmedDamage = false,
-            ElementGaugeApplication[] elementGaugeApplications = null,
             ProjectileOnHitCrowdControlEntry[] onHitCrowdControls = null,
             GuardAttackType guardAttackType = GuardAttackType.Normal,
             GuardInteractionMode guardInteractionMode = GuardInteractionMode.Normal,
@@ -164,7 +162,6 @@ namespace GGemCo2DCore
             AllowSkillChainOnConfirmedDamage = allowSkillChainOnConfirmedDamage;
             SkillHitMpGain = Mathf.Max(0, skillHitMpGain);
             AllowMultipleSkillHitMpGainPerAttack = allowMultipleSkillHitMpGainPerAttack;
-            ElementGaugeApplications = elementGaugeApplications;
             OnHitCrowdControls = onHitCrowdControls;
             GuardAttackType = guardAttackType;
             GuardInteractionMode = guardInteractionMode;
