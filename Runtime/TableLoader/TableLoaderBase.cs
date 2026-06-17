@@ -156,8 +156,8 @@ namespace GGemCo2DCore
         }
 
         /// <summary>
-        /// 마이그레이션 중 누락되어도 로딩 오류로 취급하지 않을 테이블인지 확인합니다.
-        /// map_sound, monster_combat_profile과 신규 상세/variant 테이블은 데이터 파일이 생성되기 전까지 선택 사항으로 처리합니다.
+        /// 누락되어도 로딩 오류로 취급하지 않을 선택 테이블인지 확인합니다.
+        /// map_sound, monster_combat_profile과 일부 신규 variant 테이블은 데이터 파일이 생성되기 전까지 선택 사항으로 처리합니다.
         /// </summary>
         /// <param name="key">Addressables 테이블 키입니다.</param>
         /// <returns>누락을 허용하면 true를 반환합니다.</returns>
@@ -175,28 +175,7 @@ namespace GGemCo2DCore
                    || key == ConfigAddressableTable.TableSoundSfx.Key
                    || key == ConfigAddressableTable.TableSoundVariant.Key
                    || key == ConfigAddressableTable.TableVfx.Key
-                   || key == ConfigAddressableTable.TableVfxVariant.Key
-                   || IsOptionalAffectModifierDetailTable(key);
-        }
-
-        /// <summary>
-        /// Affect Modifier 리팩터링 중 누락되어도 오류로 취급하지 않을 상세 테이블인지 확인합니다.
-        /// </summary>
-        /// <param name="key">Addressables 테이블 키입니다.</param>
-        /// <returns>Affect Modifier 상세 테이블이면 true를 반환합니다.</returns>
-        /// <remarks>
-        /// Core Runtime은 Affect 패키지를 참조할 수 없으므로, 패키지 의존성 규칙을 지키기 위해 문자열 키만 비교합니다.
-        /// 상세 테이블은 마이그레이션 기간 동안 legacy affect_modifier 테이블과 병행되므로 파일이 없어도 로딩을 계속 진행해야 합니다.
-        /// </remarks>
-        private static bool IsOptionalAffectModifierDetailTable(string key)
-        {
-            return string.Equals(key, "affect_modifier_stat", StringComparison.OrdinalIgnoreCase)
-                   || string.Equals(key, "affect_modifier_damage", StringComparison.OrdinalIgnoreCase)
-                   || string.Equals(key, "affect_modifier_heal", StringComparison.OrdinalIgnoreCase)
-                   || string.Equals(key, "affect_modifier_state", StringComparison.OrdinalIgnoreCase)
-                   || string.Equals(key, "affect_modifier_crowd_control", StringComparison.OrdinalIgnoreCase)
-                   || string.Equals(key, "affect_modifier_apply_affect", StringComparison.OrdinalIgnoreCase)
-                   || string.Equals(key, "affect_modifier_formula_variable", StringComparison.OrdinalIgnoreCase);
+                   || key == ConfigAddressableTable.TableVfxVariant.Key;
         }
 
         /// <summary>
