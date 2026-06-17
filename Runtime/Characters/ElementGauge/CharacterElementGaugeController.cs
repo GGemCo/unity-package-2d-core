@@ -208,6 +208,66 @@ namespace GGemCo2DCore
         }
 
         /// <summary>
+        /// 데미지 처리 없이 지정한 속성 게이지를 직접 누적합니다.
+        /// </summary>
+        /// <param name="damageType">누적할 속성 타입입니다.</param>
+        /// <param name="gaugeAmount">속성 게이지에 직접 더할 수치입니다.</param>
+        /// <param name="source">게이지를 발생시킨 원인 GameObject입니다.</param>
+        /// <param name="metadataDamage">게이지 원인을 설명하는 데미지 메타데이터입니다. 데미지가 없는 누적이면 null을 허용합니다.</param>
+        /// <returns>누적 처리 결과입니다.</returns>
+        /// <remarks>
+        /// Affect의 ElementGauge Modifier처럼 HP 피해와 분리된 게이지 전용 효과에서 사용합니다.
+        /// 이 메서드는 <see cref="CharacterBase.TakeDamage"/>를 호출하지 않으므로 피격 반응, Hit VFX, 사망 처리를 발생시키지 않습니다.
+        /// </remarks>
+        public ElementGaugeAccumulationResult AccumulateDirect(
+            ConfigCommon.DamageType damageType,
+            float gaugeAmount,
+            GameObject source,
+            MetadataDamage metadataDamage = null)
+        {
+            if (!CanProcessRuntime() || gaugeAmount <= 0f)
+                return ElementGaugeAccumulationResult.None;
+
+            if (damageType == ConfigCommon.DamageType.None || damageType == ConfigCommon.DamageType.Physic)
+                return ElementGaugeAccumulationResult.None;
+
+            if (!_runtime.TryGetRule(damageType, out ElementGaugeRuleDefinition rule) || rule == null)
+                return ElementGaugeAccumulationResult.None;
+
+            ElementGaugeApplyResult result = _gaugeProcessor.AccumulateDamage(_runtime, damageType, gaugeAmount, Time.time);
+            if (!result.GaugeChanged && !result.ThresholdReached && !result.RepeatedElementDamage)
+                return ElementGaugeAccumulationResult.None;
+
+            var context = new ElementGaugeAccumulationContext(
+                _owner,
+                source,
+                metadataDamage,
+                damageType,
+                0L,
+                gaugeAmount);
+
+            if (result.GaugeChanged)
+                RaiseGaugeChanged();
+
+            if (result.ThresholdReached)
+            {
+                ThresholdReached?.Invoke(result.Snapshot, context);
+                _thresholdHandler.OnThresholdReached(result.Snapshot, context);
+            }
+            else if (result.RepeatedElementDamage)
+            {
+                RepeatedElementDamageReceived?.Invoke(result.Snapshot, context);
+                _repeatedHitHandler.OnRepeatedElementDamage(result.Snapshot, context);
+            }
+
+            return new ElementGaugeAccumulationResult(
+                result.GaugeChanged,
+                result.ThresholdReached,
+                result.RepeatedElementDamage,
+                result.Snapshot);
+        }
+
+        /// <summary>
         /// 지정한 속성 게이지를 초기화합니다.
         /// </summary>
         /// <param name="damageType">초기화할 속성 타입입니다.</param>

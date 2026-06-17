@@ -91,7 +91,7 @@ namespace GGemCo2DCoreEditor
         {
             "Stat",
             "Damage",
-            "ElementDamage",
+            "ElementGauge",
             "Heal",
             "State",
             "CrowdControl",
