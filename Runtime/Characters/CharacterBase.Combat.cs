@@ -128,6 +128,7 @@ namespace GGemCo2DCore
             SetStatusDead();
             SetBattleStatusNone();
             NotifyCharacterBodyDeathStateChanged();
+            AffectRuntimeBridge.NotifySourceDead(gameObject);
 
             if (dieReasonType != CharacterConstants.DieReasonType.EndTilemapY)
             {

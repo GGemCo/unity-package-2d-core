@@ -127,6 +127,21 @@ namespace GGemCo2DCore
         }
 
         /// <summary>
+        /// 지정한 GameObject가 Source인 어펙트를 Source 사망 사유로 제거하도록 Affect 런타임에 알립니다.
+        /// </summary>
+        /// <param name="source">사망한 Source GameObject입니다.</param>
+        public static void NotifySourceDead(GameObject source)
+        {
+            if (source == null) return;
+
+            Type affectCompType = ResolveType(TypeNameAffectComponent);
+            if (affectCompType == null) return;
+
+            MethodInfo method = affectCompType.GetMethod("RemoveBySource", BindingFlags.Static | BindingFlags.Public);
+            method?.Invoke(null, new object[] { source, 0 });
+        }
+
+        /// <summary>
         /// 대상 GameObject에 어펙트를 적용합니다.
         /// </summary>
         /// <param name="go">대상 GameObject입니다.</param>
