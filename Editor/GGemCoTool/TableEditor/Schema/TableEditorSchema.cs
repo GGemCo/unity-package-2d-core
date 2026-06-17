@@ -258,12 +258,12 @@ namespace GGemCo2DCoreEditor
                 else if (string.Equals(headerName, "DamageTypeId", StringComparison.OrdinalIgnoreCase))
                 {
                     rules.Clear();
-                    rules.Add(CreateConditionalStringIdRule(ConfigAddressableTable.DamageType, "Damage"));
+                    rules.Add(CreateConditionalStringIdRule(ConfigAddressableTable.DamageType, "Damage", "ElementDamage"));
                 }
                 else if (string.Equals(headerName, "ScalingStatId", StringComparison.OrdinalIgnoreCase))
                 {
                     rules.Clear();
-                    rules.Add(CreateConditionalStringIdRule(ConfigAddressableTable.Stat, "Damage"));
+                    rules.Add(CreateConditionalStringIdRule(ConfigAddressableTable.Stat, "Damage", "ElementDamage"));
                 }
                 else if (string.Equals(headerName, "HealScalingStatId", StringComparison.OrdinalIgnoreCase))
                 {
@@ -285,6 +285,16 @@ namespace GGemCo2DCoreEditor
                         IsEnabledForRow = _ => true,
                     });
                 }
+                else if (string.Equals(headerName, "CrowdControlUid", StringComparison.OrdinalIgnoreCase))
+                {
+                    rules.Clear();
+                    rules.Add(new TableEditorReferenceRule
+                    {
+                        TargetTableKey = ConfigAddressableTable.CrowdControl,
+                        ValueKind = TableEditorReferenceValueKind.Uid,
+                        IsEnabledForRow = row => IsAnyKind(row, "CrowdControl"),
+                    });
+                }
                 else if (string.Equals(headerName, "ApplyAffectUid", StringComparison.OrdinalIgnoreCase))
                 {
                     rules.Clear();
@@ -292,7 +302,7 @@ namespace GGemCo2DCoreEditor
                     {
                         TargetTableKey = "affect",
                         ValueKind = TableEditorReferenceValueKind.Uid,
-                        IsEnabledForRow = row => string.Equals(row != null && row.Values.TryGetValue("Kind", out string kind) ? kind : string.Empty, "ApplyAffectToTarget", StringComparison.OrdinalIgnoreCase),
+                        IsEnabledForRow = row => IsAnyKind(row, "ApplyAffectToTarget"),
                     });
                 }
             }
@@ -300,14 +310,43 @@ namespace GGemCo2DCoreEditor
             return rules;
         }
 
-        private static TableEditorReferenceRule CreateConditionalStringIdRule(string tableKey, string kindValue)
+        /// <summary>
+        /// affect_modifier의 Kind 값에 따라 활성화되는 문자열 ID 참조 규칙을 생성합니다.
+        /// Damage와 ElementDamage처럼 같은 참조 컬럼을 공유하는 Kind를 함께 지정할 수 있습니다.
+        /// </summary>
+        /// <param name="tableKey">참조 대상 테이블 키입니다.</param>
+        /// <param name="kindValues">참조를 활성화할 Kind 이름 목록입니다.</param>
+        /// <returns>Kind 조건이 포함된 참조 규칙입니다.</returns>
+        private static TableEditorReferenceRule CreateConditionalStringIdRule(string tableKey, params string[] kindValues)
         {
             return new TableEditorReferenceRule
             {
                 TargetTableKey = tableKey,
                 ValueKind = TableEditorReferenceValueKind.StringId,
-                IsEnabledForRow = row => string.Equals(row != null && row.Values.TryGetValue("Kind", out string kind) ? kind : string.Empty, kindValue, StringComparison.OrdinalIgnoreCase),
+                IsEnabledForRow = row => IsAnyKind(row, kindValues),
             };
+        }
+
+        /// <summary>
+        /// 행의 Kind 값이 지정한 Kind 목록 중 하나와 일치하는지 확인합니다.
+        /// 조건부 참조 버튼이 잘못된 Modifier 타입에서 활성화되지 않도록 제한합니다.
+        /// </summary>
+        /// <param name="row">검사할 테이블 행입니다.</param>
+        /// <param name="kindValues">허용할 Kind 이름 목록입니다.</param>
+        /// <returns>Kind가 허용 목록에 포함되면 true입니다.</returns>
+        private static bool IsAnyKind(TableEditorDocumentRow row, params string[] kindValues)
+        {
+            if (row == null || kindValues == null || kindValues.Length == 0)
+                return false;
+
+            string kindRaw = row.Values.TryGetValue("Kind", out string kind) ? kind ?? string.Empty : string.Empty;
+            for (int i = 0; i < kindValues.Length; i++)
+            {
+                if (string.Equals(kindRaw, kindValues[i], StringComparison.OrdinalIgnoreCase))
+                    return true;
+            }
+
+            return false;
         }
 
         private static void EnsureModules()
