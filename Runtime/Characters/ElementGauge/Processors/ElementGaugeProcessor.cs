@@ -9,20 +9,20 @@ namespace GGemCo2DCore
     internal sealed class ElementGaugeProcessor
     {
         /// <summary>
-        /// 실제로 받은 속성 데미지를 게이지에 누적합니다.
+        /// 규칙으로 변환된 속성 게이지 값을 누적합니다.
         /// </summary>
         /// <param name="runtime">속성 게이지 런타임 저장소입니다.</param>
         /// <param name="damageType">누적할 속성 타입입니다.</param>
-        /// <param name="damageAmount">실제로 받은 데미지량입니다.</param>
+        /// <param name="gaugeAmount">실제로 게이지에 더할 값입니다.</param>
         /// <param name="now">현재 시간입니다.</param>
         /// <returns>누적 처리 결과입니다.</returns>
         public ElementGaugeApplyResult AccumulateDamage(
             ElementGaugeRuntime runtime,
             ConfigCommon.DamageType damageType,
-            long damageAmount,
+            float gaugeAmount,
             float now)
         {
-            if (runtime == null || damageAmount <= 0L)
+            if (runtime == null || gaugeAmount <= 0f)
                 return ElementGaugeApplyResult.None;
 
             if (damageType == ConfigCommon.DamageType.None || damageType == ConfigCommon.DamageType.Physic)
@@ -45,7 +45,7 @@ namespace GGemCo2DCore
             }
 
             float previousValue = gaugeState.CurrentValue;
-            gaugeState.CurrentValue = Mathf.Clamp(gaugeState.CurrentValue + damageAmount, 0f, maxValue);
+            gaugeState.CurrentValue = Mathf.Clamp(gaugeState.CurrentValue + gaugeAmount, 0f, maxValue);
 
             bool reachedNow = !wasThresholdReached && gaugeState.CurrentValue >= maxValue;
             if (reachedNow)

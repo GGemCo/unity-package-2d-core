@@ -5,6 +5,27 @@ using UnityEngine;
 namespace GGemCo2DCore
 {
     /// <summary>
+    /// 속성 게이지를 채울 때 사용할 원본 수치 선택 정책입니다.
+    /// </summary>
+    public enum ElementGaugeFillSourcePolicy
+    {
+        /// <summary>
+        /// 공격자 기본 속성 데미지가 있으면 우선 사용하고, 없으면 최종 HP 데미지량을 사용합니다.
+        /// </summary>
+        AttackerElementDamageOrFinalDamage = 0,
+
+        /// <summary>
+        /// 최종 HP 데미지량을 그대로 게이지 변환 원본으로 사용합니다.
+        /// </summary>
+        FinalDamage = 1,
+
+        /// <summary>
+        /// 공격자가 보유한 현재 기본 속성 데미지 값을 게이지 변환 원본으로 사용합니다.
+        /// </summary>
+        AttackerElementDamage = 2,
+    }
+
+    /// <summary>
     /// 속성 데미지 누적 게이지 규칙 1건입니다.
     /// </summary>
     /// <remarks>
@@ -18,8 +39,27 @@ namespace GGemCo2DCore
         public ConfigCommon.DamageType damageType = ConfigCommon.DamageType.None;
 
         [Min(1f)]
-        [Tooltip("게이지 최대값입니다. 실제로 받은 같은 속성 데미지가 이 값까지 누적되면 임계 이벤트가 발생합니다.")]
+        [Tooltip("게이지 최대값입니다. 같은 속성의 게이지 누적량이 이 값까지 누적되면 임계 이벤트가 발생합니다.")]
         public float gaugeMax = 100f;
+
+        [Tooltip("게이지 누적량을 계산할 때 사용할 원본 수치 선택 정책입니다.")]
+        public ElementGaugeFillSourcePolicy fillSourcePolicy = ElementGaugeFillSourcePolicy.AttackerElementDamageOrFinalDamage;
+
+        [Min(0f)]
+        [Tooltip("원본 수치 1당 게이지를 얼마나 채울지 결정하는 배율입니다. 예: 0.5이면 원본 100으로 게이지 50을 채웁니다.")]
+        public float gaugeFillPerElementDamage = 1f;
+
+        [Min(0f)]
+        [Tooltip("원본 수치가 0보다 클 때 매 피격마다 추가로 더할 고정 게이지 값입니다.")]
+        public float flatGaugeFillOnElementHit = 0f;
+
+        [Min(0f)]
+        [Tooltip("한 번의 피격으로 채울 최소 게이지 값입니다. 0이면 최소 제한을 사용하지 않습니다.")]
+        public float minGaugeFillPerHit = 0f;
+
+        [Min(0f)]
+        [Tooltip("한 번의 피격으로 채울 최대 게이지 값입니다. 0이면 최대 제한을 사용하지 않습니다.")]
+        public float maxGaugeFillPerHit = 0f;
 
         [Min(0f)]
         [Tooltip("마지막 누적 이후 감소가 시작되기까지의 지연 시간(초)입니다.")]
@@ -43,6 +83,11 @@ namespace GGemCo2DCore
             {
                 damageType = damageType,
                 gaugeMax = gaugeMax,
+                fillSourcePolicy = fillSourcePolicy,
+                gaugeFillPerElementDamage = gaugeFillPerElementDamage,
+                flatGaugeFillOnElementHit = flatGaugeFillOnElementHit,
+                minGaugeFillPerHit = minGaugeFillPerHit,
+                maxGaugeFillPerHit = maxGaugeFillPerHit,
                 decayDelaySeconds = decayDelaySeconds,
                 decayTickSeconds = decayTickSeconds,
                 decayPercentPerTick = decayPercentPerTick,
@@ -75,6 +120,11 @@ namespace GGemCo2DCore
             {
                 damageType = damageType,
                 gaugeMax = 100f,
+                fillSourcePolicy = ElementGaugeFillSourcePolicy.AttackerElementDamageOrFinalDamage,
+                gaugeFillPerElementDamage = 1f,
+                flatGaugeFillOnElementHit = 0f,
+                minGaugeFillPerHit = 0f,
+                maxGaugeFillPerHit = 0f,
                 decayDelaySeconds = 2f,
                 decayTickSeconds = 0.1f,
                 decayPercentPerTick = 0.5f,

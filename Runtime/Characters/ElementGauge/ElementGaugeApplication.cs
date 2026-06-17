@@ -32,9 +32,14 @@ namespace GGemCo2DCore
         public ConfigCommon.DamageType DamageType { get; }
 
         /// <summary>
-        /// 게이지에 누적한 실제 속성 데미지량입니다.
+        /// 게이지 변환에 사용한 원본 수치입니다.
         /// </summary>
         public long DamageAmount { get; }
+
+        /// <summary>
+        /// 규칙 변환 후 실제 게이지에 누적한 값입니다.
+        /// </summary>
+        public float GaugeAmount { get; }
 
         /// <summary>
         /// 속성 게이지 누적 컨텍스트를 생성합니다.
@@ -43,19 +48,22 @@ namespace GGemCo2DCore
         /// <param name="source">데미지를 발생시킨 오브젝트입니다.</param>
         /// <param name="metadataDamage">원본 데미지 메타데이터입니다.</param>
         /// <param name="damageType">누적 대상 속성 타입입니다.</param>
-        /// <param name="damageAmount">게이지에 누적할 실제 속성 데미지량입니다.</param>
+        /// <param name="damageAmount">게이지 변환에 사용한 원본 수치입니다.</param>
+        /// <param name="gaugeAmount">규칙 변환 후 실제 게이지에 누적한 값입니다.</param>
         public ElementGaugeAccumulationContext(
             CharacterBase owner,
             GameObject source,
             MetadataDamage metadataDamage,
             ConfigCommon.DamageType damageType,
-            long damageAmount)
+            long damageAmount,
+            float gaugeAmount = -1f)
         {
             Owner = owner;
             Source = source;
             MetadataDamage = metadataDamage;
             DamageType = damageType;
             DamageAmount = Math.Max(0L, damageAmount);
+            GaugeAmount = gaugeAmount >= 0f ? gaugeAmount : DamageAmount;
         }
     }
 
