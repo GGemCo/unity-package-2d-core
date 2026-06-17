@@ -214,6 +214,10 @@ namespace GGemCo2DCore
                 registCold = 0,
                 registLightning = 0,
                 registPoison = 0,
+                damageFire = 0,
+                damageCold = 0,
+                damageLightning = 0,
+                damagePoison = 0,
                 moveStep = 100,
             };
         }

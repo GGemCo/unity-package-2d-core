@@ -57,6 +57,14 @@ namespace GGemCo2DCore
         public int registLightning;
         [Tooltip("기본 독 저항")]
         public int registPoison;
+        [Tooltip("기본 화염 데미지")]
+        public int damageFire;
+        [Tooltip("기본 냉기 데미지")]
+        public int damageCold;
+        [Tooltip("기본 번개 데미지")]
+        public int damageLightning;
+        [Tooltip("기본 독 데미지")]
+        public int damagePoison;
         [Tooltip("기본 이동 스텝")]
         public int moveStep;
     }

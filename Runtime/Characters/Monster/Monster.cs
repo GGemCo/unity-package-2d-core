@@ -431,6 +431,10 @@ namespace GGemCo2DCore
                 registCold = info.BaseRegistCold,
                 registLightning = info.BaseRegistLightning,
                 registPoison = info.BaseRegistPoison,
+                damageFire = info.BaseDamageFire,
+                damageCold = info.BaseDamageCold,
+                damageLightning = info.BaseDamageLightning,
+                damagePoison = info.BaseDamagePoison,
                 moveStep = ResolveMonsterMoveStep(info, tableLoaderManager),
             };
 

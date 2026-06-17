@@ -27,7 +27,7 @@ namespace GGemCo2DCore
         private int _batchUpdateCount;
         private bool _batchPublishPending;
         // 스탯 계산/발행 로직 모듈(군별 분리)
-        private readonly List<ICharacterStatModule> _statModules = new(4);
+        private readonly List<ICharacterStatModule> _statModules = new(5);
         private bool _statModulesInitialized;
 
         /// <summary>
@@ -45,6 +45,10 @@ namespace GGemCo2DCore
             public readonly long RegistCold;
             public readonly long RegistLightning;
             public readonly long RegistPoison;
+            public readonly long DamageFire;
+            public readonly long DamageCold;
+            public readonly long DamageLightning;
+            public readonly long DamagePoison;
 
             public readonly long TotalBaseAtk;
             public readonly long TotalBaseDef;
@@ -74,6 +78,7 @@ namespace GGemCo2DCore
                 long moveSpeed, long attackSpeed,
                 long criticalDamage, long criticalProbability,
                 long registFire, long registCold, long registLightning, long registPoison,
+                long damageFire, long damageCold, long damageLightning, long damagePoison,
                 long? resolvedAtk = null, long? resolvedDef = null,
                 long? maxHp = null, long? maxMp = null, long? maxStamina = null)
             {
@@ -101,6 +106,10 @@ namespace GGemCo2DCore
                 RegistCold = registCold;
                 RegistLightning = registLightning;
                 RegistPoison = registPoison;
+                DamageFire = damageFire;
+                DamageCold = damageCold;
+                DamageLightning = damageLightning;
+                DamagePoison = damagePoison;
             }
 
             /// <summary>
@@ -120,6 +129,7 @@ namespace GGemCo2DCore
                     stat.TotalMoveSpeed.Value, stat.TotalAttackSpeed.Value,
                     stat.TotalCriticalDamage.Value, stat.TotalCriticalProbability.Value,
                     stat.TotalRegistFire.Value, stat.TotalRegistCold.Value, stat.TotalRegistLightning.Value, stat.TotalRegistPoison.Value,
+                    stat.TotalDamageFire.Value, stat.TotalDamageCold.Value, stat.TotalDamageLightning.Value, stat.TotalDamagePoison.Value,
                     stat.ResolvedAtk.Value, stat.ResolvedDef.Value,
                     stat.MaxHp.Value, stat.MaxMp.Value, stat.MaxStamina.Value);
             }
@@ -154,6 +164,10 @@ namespace GGemCo2DCore
         private int BaseRegistCold { get; set; }
         private int BaseRegistLightning { get; set; }
         private int BaseRegistPoison { get; set; }
+        private int BaseDamageFire { get; set; }
+        private int BaseDamageCold { get; set; }
+        private int BaseDamageLightning { get; set; }
+        private int BaseDamagePoison { get; set; }
 
         // Provider 분리(장비/영구/패시브)
         private EquipmentOptionModifierProvider _equipmentProvider;
@@ -166,12 +180,12 @@ namespace GGemCo2DCore
         /// <summary>
         /// 최종 계산에 포함되는 전체 Provider 목록입니다.
         /// </summary>
-        private readonly List<IStatModifierProvider> _allProviders = new(4);
+        private readonly List<IStatModifierProvider> _allProviders = new(6);
 
         /// <summary>
         /// 영구 Provider를 제외한 Provider 목록입니다(영구 modifier 가정 계산에 사용).
         /// </summary>
-        private readonly List<IStatModifierProvider> _providersWithoutPersistent = new(3);
+        private readonly List<IStatModifierProvider> _providersWithoutPersistent = new(5);
         // 내부 캐시(마지막으로 계산된 최종값)
         private long _resolvedAtk,
             _resolvedDef,
@@ -198,7 +212,11 @@ namespace GGemCo2DCore
             _totalRegistFire,
             _totalRegistCold,
             _totalRegistLightning,
-            _totalRegistPoison;
+            _totalRegistPoison,
+            _totalDamageFire,
+            _totalDamageCold,
+            _totalDamageLightning,
+            _totalDamagePoison;
 
         private int _totalSuperArmor;
 
@@ -332,6 +350,26 @@ namespace GGemCo2DCore
         public readonly BehaviorSubject<long> TotalRegistPoison = new(100);
 
         /// <summary>
+        /// 최종 화염 속성 데미지(계산 결과)를 스트림으로 제공합니다.
+        /// </summary>
+        public readonly BehaviorSubject<long> TotalDamageFire = new(0);
+
+        /// <summary>
+        /// 최종 냉기 속성 데미지(계산 결과)를 스트림으로 제공합니다.
+        /// </summary>
+        public readonly BehaviorSubject<long> TotalDamageCold = new(0);
+
+        /// <summary>
+        /// 최종 번개 속성 데미지(계산 결과)를 스트림으로 제공합니다.
+        /// </summary>
+        public readonly BehaviorSubject<long> TotalDamageLightning = new(0);
+
+        /// <summary>
+        /// 최종 독 속성 데미지(계산 결과)를 스트림으로 제공합니다.
+        /// </summary>
+        public readonly BehaviorSubject<long> TotalDamagePoison = new(0);
+
+        /// <summary>
         /// 리소스 동기화(최대치 변경 시 현재값 보정)
         /// 특정 구간에서 Current 값을 직접 세팅하는 경우, 자동 보정을 잠시 비활성화할 수 있습니다.
         /// </summary>
@@ -408,6 +446,7 @@ namespace GGemCo2DCore
             _statModules.Add(new CombatStatModule(this));
             _statModules.Add(new MovementStatModule(this));
             _statModules.Add(new ResistanceStatModule(this));
+            _statModules.Add(new ElementDamageStatModule(this));
         }
 
         /// <summary>
@@ -465,6 +504,10 @@ namespace GGemCo2DCore
                 registCold = statRegistCold,
                 registLightning = statRegistLightning,
                 registPoison = statRegistPoison,
+                damageFire = 0,
+                damageCold = 0,
+                damageLightning = 0,
+                damagePoison = 0,
             };
 
             SetBaseAndGrowthStatInfos(baseAttributes, default);
@@ -494,6 +537,10 @@ namespace GGemCo2DCore
             BaseRegistCold = baseAttributes.registCold;
             BaseRegistLightning = baseAttributes.registLightning;
             BaseRegistPoison = baseAttributes.registPoison;
+            BaseDamageFire = baseAttributes.damageFire;
+            BaseDamageCold = baseAttributes.damageCold;
+            BaseDamageLightning = baseAttributes.damageLightning;
+            BaseDamagePoison = baseAttributes.damagePoison;
 
             StatAtk = growthStats.atk;
             StatDef = growthStats.def;
@@ -728,6 +775,19 @@ namespace GGemCo2DCore
                 BaseRegistPoison,
                 flatPersistentProjected, percentPersistentProjected, _providersWithoutPersistent);
 
+            long damageFire = StatCalculator.CalculateFinalProjected(ConfigCommon.BaseStatDamageFire,
+                BaseDamageFire,
+                flatPersistentProjected, percentPersistentProjected, _providersWithoutPersistent);
+            long damageCold = StatCalculator.CalculateFinalProjected(ConfigCommon.BaseStatDamageCold,
+                BaseDamageCold,
+                flatPersistentProjected, percentPersistentProjected, _providersWithoutPersistent);
+            long damageLightning = StatCalculator.CalculateFinalProjected(ConfigCommon.BaseStatDamageLightning,
+                BaseDamageLightning,
+                flatPersistentProjected, percentPersistentProjected, _providersWithoutPersistent);
+            long damagePoison = StatCalculator.CalculateFinalProjected(ConfigCommon.BaseStatDamagePoison,
+                BaseDamagePoison,
+                flatPersistentProjected, percentPersistentProjected, _providersWithoutPersistent);
+
             return new CharacterTotals(
                 baseAtk, baseDef, baseHp, baseMp, baseStamina,
                 statAtk, statDef, statHp, statMp, statStamina,
@@ -735,6 +795,7 @@ namespace GGemCo2DCore
                 moveSpeed, attackSpeed,
                 criticalDamage, criticalProbability,
                 registFire, registCold, registLightning, registPoison,
+                damageFire, damageCold, damageLightning, damagePoison,
                 CalculateResolvedAtkValue(baseAtk, statAtk),
                 CalculateResolvedDefValue(baseDef, statDef),
                 CalculateMaxHpValue(baseHp, statHp),

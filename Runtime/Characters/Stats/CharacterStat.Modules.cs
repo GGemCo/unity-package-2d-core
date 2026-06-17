@@ -201,5 +201,51 @@ namespace GGemCo2DCore
                 PublishIfChanged(_owner.TotalRegistPoison, ref _hasTotalRegistPoison, ref _lastTotalRegistPoison, _owner._totalRegistPoison);
             }
         }
+
+        /// <summary>
+        /// 기본 속성 데미지(BASE_DAMAGE_*) 계산과 스트림 발행을 담당하는 모듈입니다.
+        /// </summary>
+        /// <remarks>
+        /// 속성 데미지는 최종 데미지 공식에서 사용할 수 있는 보유 수치입니다.
+        /// 공식에서 사용하지 않으면 HP 데미지에는 직접 반영되지 않고, 별도 속성 게이지 계산에서만 참조할 수 있습니다.
+        /// </remarks>
+        private sealed class ElementDamageStatModule : ICharacterStatModule
+        {
+            private readonly CharacterStat _owner;
+
+            private bool _hasTotalDamageFire;
+            private long _lastTotalDamageFire;
+            private bool _hasTotalDamageCold;
+            private long _lastTotalDamageCold;
+            private bool _hasTotalDamageLightning;
+            private long _lastTotalDamageLightning;
+            private bool _hasTotalDamagePoison;
+            private long _lastTotalDamagePoison;
+
+            public ElementDamageStatModule(CharacterStat owner) => _owner = owner;
+
+            /// <summary>
+            /// 기본값과 모든 Provider의 Flat/Percent modifier를 합산해 최종 속성 데미지를 계산합니다.
+            /// </summary>
+            public void Recalculate()
+            {
+                _owner._totalDamageFire = StatCalculator.CalculateFinal(ConfigCommon.BaseStatDamageFire, _owner.BaseDamageFire, _owner._allProviders);
+                _owner._totalDamageCold = StatCalculator.CalculateFinal(ConfigCommon.BaseStatDamageCold, _owner.BaseDamageCold, _owner._allProviders);
+                _owner._totalDamageLightning = StatCalculator.CalculateFinal(ConfigCommon.BaseStatDamageLightning, _owner.BaseDamageLightning, _owner._allProviders);
+                _owner._totalDamagePoison = StatCalculator.CalculateFinal(ConfigCommon.BaseStatDamagePoison, _owner.BaseDamagePoison, _owner._allProviders);
+            }
+
+            /// <summary>
+            /// 계산된 속성 데미지가 변경된 경우에만 구독자에게 발행합니다.
+            /// </summary>
+            public void Publish()
+            {
+                PublishIfChanged(_owner.TotalDamageFire, ref _hasTotalDamageFire, ref _lastTotalDamageFire, _owner._totalDamageFire);
+                PublishIfChanged(_owner.TotalDamageCold, ref _hasTotalDamageCold, ref _lastTotalDamageCold, _owner._totalDamageCold);
+                PublishIfChanged(_owner.TotalDamageLightning, ref _hasTotalDamageLightning, ref _lastTotalDamageLightning, _owner._totalDamageLightning);
+                PublishIfChanged(_owner.TotalDamagePoison, ref _hasTotalDamagePoison, ref _lastTotalDamagePoison, _owner._totalDamagePoison);
+            }
+        }
+
     }
 }

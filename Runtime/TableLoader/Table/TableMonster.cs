@@ -33,6 +33,10 @@ namespace GGemCo2DCore
         public int BaseRegistCold;
         public int BaseRegistLightning;
         public int BaseRegistPoison;
+        public int BaseDamageFire;
+        public int BaseDamageCold;
+        public int BaseDamageLightning;
+        public int BaseDamagePoison;
         public int StatHp;
         public int StatAtk;
         public int StatDef;
@@ -87,6 +91,10 @@ namespace GGemCo2DCore
                 BaseRegistCold = ReadOptionalInt(data, "BaseRegistCold", 0),
                 BaseRegistLightning = ReadOptionalInt(data, "BaseRegistLightning", 0),
                 BaseRegistPoison = ReadOptionalInt(data, "BaseRegistPoison", 0),
+                BaseDamageFire = ReadOptionalInt(data, "BaseDamageFire", 0),
+                BaseDamageCold = ReadOptionalInt(data, "BaseDamageCold", 0),
+                BaseDamageLightning = ReadOptionalInt(data, "BaseDamageLightning", 0),
+                BaseDamagePoison = ReadOptionalInt(data, "BaseDamagePoison", 0),
                 StatHp = reader.Int("StatHp"),
                 StatAtk = reader.Int("StatAtk"),
                 StatDef = reader.Int("StatDef"),

@@ -66,6 +66,10 @@ namespace GGemCo2DCore
         public const string BaseStatRegistCold = "BASE_REGIST_COLD";
         public const string BaseStatRegistLightning = "BASE_REGIST_LIGHTNING";
         public const string BaseStatRegistPoison = "BASE_REGIST_POISON";
+        public const string BaseStatDamageFire = "BASE_DAMAGE_FIRE";
+        public const string BaseStatDamageCold = "BASE_DAMAGE_COLD";
+        public const string BaseStatDamageLightning = "BASE_DAMAGE_LIGHTNING";
+        public const string BaseStatDamagePoison = "BASE_DAMAGE_POISON";
         public const string BaseStatMoveStep = "BASE_MOVE_STEP";
         public const string StatusStatAtk = "STAT_ATK";
         public const string StatusStatDef = "STAT_DEF";
@@ -153,6 +157,38 @@ namespace GGemCo2DCore
             if (string.IsNullOrWhiteSpace(statId)) return false;
             string normalized = NormalizeStatId(statId);
             return normalized == BaseStatHpTemp;
+        }
+
+        /// <summary>
+        /// 기본 속성 데미지에 사용되는 스탯 키인지 확인합니다.
+        /// </summary>
+        /// <param name="statId">확인할 스탯 ID입니다.</param>
+        /// <returns>화염/냉기/번개/독 기본 속성 데미지 키이면 true입니다.</returns>
+        public static bool IsElementDamageStatId(string statId)
+        {
+            if (string.IsNullOrWhiteSpace(statId)) return false;
+            string normalized = NormalizeStatId(statId);
+            return normalized == BaseStatDamageFire
+                   || normalized == BaseStatDamageCold
+                   || normalized == BaseStatDamageLightning
+                   || normalized == BaseStatDamagePoison;
+        }
+
+        /// <summary>
+        /// 데미지 타입에 대응되는 기본 속성 데미지 스탯 키를 반환합니다.
+        /// </summary>
+        /// <param name="damageType">조회할 데미지 타입입니다.</param>
+        /// <returns>지원되는 속성 데미지 타입이면 BASE_DAMAGE_* 키를, 아니면 빈 문자열을 반환합니다.</returns>
+        public static string GetElementDamageStatId(DamageType damageType)
+        {
+            return damageType switch
+            {
+                DamageType.Fire => BaseStatDamageFire,
+                DamageType.Cold => BaseStatDamageCold,
+                DamageType.Lightning => BaseStatDamageLightning,
+                DamageType.Poison => BaseStatDamagePoison,
+                _ => string.Empty
+            };
         }
 
         public const string StatusAffectId = "AFFECT_UID";

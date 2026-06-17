@@ -366,6 +366,10 @@ namespace GGemCo2DCore
             variables.Set(prefix + "BaseRegistCold", character.TotalRegistCold.Value);
             variables.Set(prefix + "BaseRegistLightning", character.TotalRegistLightning.Value);
             variables.Set(prefix + "BaseRegistPoison", character.TotalRegistPoison.Value);
+            variables.Set(prefix + "BaseDamageFire", character.TotalDamageFire.Value);
+            variables.Set(prefix + "BaseDamageCold", character.TotalDamageCold.Value);
+            variables.Set(prefix + "BaseDamageLightning", character.TotalDamageLightning.Value);
+            variables.Set(prefix + "BaseDamagePoison", character.TotalDamagePoison.Value);
 
             // Stat* 변수는 스탯 항목의 최종 계산값(TotalStat*)을 의미합니다.
             variables.Set(prefix + "StatAtk", character.TotalStatAtk.Value);
@@ -396,6 +400,10 @@ namespace GGemCo2DCore
             variables.Set(prefix + "TotalRegistCold", character.TotalRegistCold.Value);
             variables.Set(prefix + "TotalRegistLightning", character.TotalRegistLightning.Value);
             variables.Set(prefix + "TotalRegistPoison", character.TotalRegistPoison.Value);
+            variables.Set(prefix + "TotalDamageFire", character.TotalDamageFire.Value);
+            variables.Set(prefix + "TotalDamageCold", character.TotalDamageCold.Value);
+            variables.Set(prefix + "TotalDamageLightning", character.TotalDamageLightning.Value);
+            variables.Set(prefix + "TotalDamagePoison", character.TotalDamagePoison.Value);
         }
 
         /// <summary>
@@ -425,6 +433,10 @@ namespace GGemCo2DCore
             variables.Set(prefix + "BaseRegistCold", 0d);
             variables.Set(prefix + "BaseRegistLightning", 0d);
             variables.Set(prefix + "BaseRegistPoison", 0d);
+            variables.Set(prefix + "BaseDamageFire", 0d);
+            variables.Set(prefix + "BaseDamageCold", 0d);
+            variables.Set(prefix + "BaseDamageLightning", 0d);
+            variables.Set(prefix + "BaseDamagePoison", 0d);
             variables.Set(prefix + "StatAtk", 0d);
             variables.Set(prefix + "StatDef", 0d);
             variables.Set(prefix + "StatHp", 0d);
@@ -451,6 +463,10 @@ namespace GGemCo2DCore
             variables.Set(prefix + "TotalRegistCold", 0d);
             variables.Set(prefix + "TotalRegistLightning", 0d);
             variables.Set(prefix + "TotalRegistPoison", 0d);
+            variables.Set(prefix + "TotalDamageFire", 0d);
+            variables.Set(prefix + "TotalDamageCold", 0d);
+            variables.Set(prefix + "TotalDamageLightning", 0d);
+            variables.Set(prefix + "TotalDamagePoison", 0d);
         }
 
         /// <summary>
