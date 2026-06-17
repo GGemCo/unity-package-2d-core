@@ -22,6 +22,7 @@ namespace GGemCo2DCore
         private ElementGaugeProcessor _gaugeProcessor;
         private IElementGaugeThresholdHandler _thresholdHandler = NullElementGaugeThresholdHandler.Instance;
         private IElementGaugeRepeatedHitHandler _repeatedHitHandler = NullElementGaugeRepeatedHitHandler.Instance;
+        private IElementGaugeAccumulationPolicy _accumulationPolicy = AllowAllElementGaugeAccumulationPolicy.Instance;
 
         /// <summary>
         /// 전역 기본 임계 도달 핸들러입니다.
@@ -34,6 +35,12 @@ namespace GGemCo2DCore
         /// 프로젝트 부트스트랩에서 설정하면 이후 생성되는 컨트롤러의 기본 핸들러로 사용합니다.
         /// </summary>
         public static IElementGaugeRepeatedHitHandler DefaultRepeatedHitHandler { get; set; } = NullElementGaugeRepeatedHitHandler.Instance;
+
+        /// <summary>
+        /// 전역 기본 속성 게이지 누적 정책입니다.
+        /// 프로젝트 부트스트랩에서 설정하면 이후 생성되는 컨트롤러의 기본 정책으로 사용합니다.
+        /// </summary>
+        public static IElementGaugeAccumulationPolicy DefaultAccumulationPolicy { get; set; } = AllowAllElementGaugeAccumulationPolicy.Instance;
 
         /// <summary>
         /// 속성 게이지 표시 상태가 변경되었을 때 발생합니다.
@@ -58,6 +65,7 @@ namespace GGemCo2DCore
             _gaugeProcessor = new ElementGaugeProcessor();
             _thresholdHandler = DefaultThresholdHandler ?? NullElementGaugeThresholdHandler.Instance;
             _repeatedHitHandler = DefaultRepeatedHitHandler ?? NullElementGaugeRepeatedHitHandler.Instance;
+            _accumulationPolicy = DefaultAccumulationPolicy ?? AllowAllElementGaugeAccumulationPolicy.Instance;
         }
 
         private void Update()
@@ -86,6 +94,15 @@ namespace GGemCo2DCore
         public void SetRepeatedHitHandler(IElementGaugeRepeatedHitHandler handler)
         {
             _repeatedHitHandler = handler ?? NullElementGaugeRepeatedHitHandler.Instance;
+        }
+
+        /// <summary>
+        /// 속성 게이지 누적 가능 여부를 판정하는 정책을 교체합니다.
+        /// </summary>
+        /// <param name="policy">프로젝트별 누적 정책입니다. null이면 모든 누적을 허용하는 기본 정책을 사용합니다.</param>
+        public void SetAccumulationPolicy(IElementGaugeAccumulationPolicy policy)
+        {
+            _accumulationPolicy = policy ?? AllowAllElementGaugeAccumulationPolicy.Instance;
         }
 
         /// <summary>
@@ -133,7 +150,7 @@ namespace GGemCo2DCore
                 return ElementGaugeAccumulationResult.None;
 
             ConfigCommon.DamageType damageType = metadataDamage.damageType;
-            if (!CanAccumulateDamageType(damageType))
+            if (!CanAccumulateDamageType(damageType) || !CanAccumulateByPolicy(damageType))
                 return ElementGaugeAccumulationResult.None;
 
             if (!_runtime.TryGetRule(damageType, out ElementGaugeRuleDefinition rule) || rule == null)
@@ -174,7 +191,7 @@ namespace GGemCo2DCore
             for (int i = 0; i < parts.Count; i++)
             {
                 DamagePartResult part = parts[i];
-                if (!CanAccumulateDamageType(part.DamageType))
+                if (!CanAccumulateDamageType(part.DamageType) || !CanAccumulateByPolicy(part.DamageType))
                     continue;
 
                 ElementGaugeAccumulationResult result = AccumulateFromDamagePart(metadataDamage, part);
@@ -206,7 +223,7 @@ namespace GGemCo2DCore
             if (!CanProcessRuntime() || gaugeAmount <= 0f)
                 return ElementGaugeAccumulationResult.None;
 
-            if (!CanAccumulateDamageType(damageType))
+            if (!CanAccumulateDamageType(damageType) || !CanAccumulateByPolicy(damageType))
                 return ElementGaugeAccumulationResult.None;
 
             if (!_runtime.TryGetRule(damageType, out ElementGaugeRuleDefinition rule) || rule == null)
@@ -267,6 +284,16 @@ namespace GGemCo2DCore
         private static bool CanAccumulateDamageType(ConfigCommon.DamageType damageType)
         {
             return damageType != ConfigCommon.DamageType.None && damageType != ConfigCommon.DamageType.Physic;
+        }
+
+        /// <summary>
+        /// 외부 정책을 통해 현재 속성 게이지 누적이 허용되는지 확인합니다.
+        /// </summary>
+        /// <param name="damageType">누적하려는 속성 타입입니다.</param>
+        /// <returns>정책이 없거나 정책이 허용하면 <see langword="true"/>입니다.</returns>
+        private bool CanAccumulateByPolicy(ConfigCommon.DamageType damageType)
+        {
+            return _accumulationPolicy == null || _accumulationPolicy.CanAccumulateElementGauge(_owner, damageType);
         }
 
         /// <summary>
