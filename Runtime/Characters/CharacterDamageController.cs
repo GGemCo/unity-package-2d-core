@@ -54,6 +54,14 @@ namespace GGemCo2DCore
         public bool AllowMultipleSkillHitMpGainPerAttack;
 
         /// <summary>
+        /// 이번 데미지에서 일반 피격 상태 전환과 피격 애니메이션을 억제할지 여부입니다.
+        /// </summary>
+        /// <remarks>
+        /// 지속 피해나 환경 피해처럼 HP 변화는 필요하지만 캐릭터가 매 틱 피격 모션을 재생하면 어색한 경우에 사용합니다.
+        /// </remarks>
+        public bool SuppressDamageReaction;
+
+        /// <summary>
         /// 즉시 CC는 아니지만, 데미지 처리 직후 AfterDamage CC가 이어질 예정인지 여부입니다.
         /// 일반 피격 모션을 먼저 재생하면 HitStop/CC 전환이 어색해질 수 있을 때 사용합니다.
         /// </summary>
@@ -561,7 +569,7 @@ namespace GGemCo2DCore
                 if (!hasRequestedPlayerHudStaminaFeedback)
                     TryPlayPlayerHudDamageFeedback(metadataDamage);
                 
-                bool shouldPlayDamageReaction = !suppressHitReactionByGuard;
+                bool shouldPlayDamageReaction = !suppressHitReactionByGuard && !metadataDamage.SuppressDamageReaction;
                 CharacterConstants.HitReactionType hitReactionType = CharacterConstants.HitReactionType.None;
                 
                 // StaggerResistanceController가 있고, 이번 타격이 스태거 판정에 관여하는 경우에만
