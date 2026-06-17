@@ -94,7 +94,17 @@ namespace GGemCo2DCoreEditor
 
         private static readonly string[] CommonColumns = { "AffectUid", "ModifierId", "Phase", "Kind" };
         private static readonly string[] StatColumns = { "StatId", "StatValue", "StatValueType", "StatOperation" };
-        private static readonly string[] DamageColumns = { "DamageTypeId", "DamageBaseValue", "ScalingStatId", "ScalingCoefficient", "CanCrit", "IsDot" };
+        private static readonly string[] DamageColumns =
+        {
+            "DamageTypeId",
+            "DamageBaseValue",
+            "ScalingStatId",
+            "ScalingCoefficient",
+            "CanCrit",
+            "IsDot",
+            "SuppressDamageReaction",
+            "ShowHitEffect"
+        };
         private static readonly string[] StateColumns = { "StateId", "StateChance", "StateDurationOverride" };
         private static readonly string[] ApplyAffectColumns = { "ApplyAffectUid", "ApplyAffectChance", "ApplyAffectDurationOverride", "ConsumeOnProc" };
         private static readonly string[] HealColumns = { "HealBaseValue","HealScalingStatId","HealScalingCoefficient" };
@@ -156,8 +166,10 @@ namespace GGemCo2DCoreEditor
             {
                 ValidateReference(row, columnMap, messages, "DamageTypeId", true, "DamageTypeId는 damage_type.ID를 참조해야 합니다.");
                 ValidateOptionalReference(row, columnMap, messages, "ScalingStatId", "ScalingStatId는 stat.ID를 참조해야 합니다.");
-                ValidateBoolean01(row, messages, "CanCrit");
-                ValidateBoolean01(row, messages, "IsDot");
+                ValidateBooleanYN(row, messages, "CanCrit");
+                ValidateBooleanYN(row, messages, "IsDot");
+                ValidateBooleanYN(row, messages, "SuppressDamageReaction");
+                ValidateBooleanYN(row, messages, "ShowHitEffect");
                 ValidateInactiveColumnsEmpty(row, messages, StatColumns.Concat(StateColumns).Concat(ApplyAffectColumns), KindDamage);
             }
             else if (IsKind(row, KindState))
@@ -172,7 +184,7 @@ namespace GGemCo2DCoreEditor
                 ValidateReference(row, columnMap, messages, "ApplyAffectUid", true, "ApplyAffectUid는 affect 테이블 Uid를 참조해야 합니다.");
                 ValidateRange01(row, messages, "ApplyAffectChance");
                 ValidateNonNegative(row, messages, "ApplyAffectDurationOverride");
-                ValidateBoolean01(row, messages, "ConsumeOnProc");
+                ValidateBooleanYN(row, messages, "ConsumeOnProc");
                 ValidateInactiveColumnsEmpty(row, messages, StatColumns.Concat(DamageColumns).Concat(StateColumns), KindApplyAffectToTarget);
             }
             else if (IsKind(row, KindHeal))
@@ -388,19 +400,26 @@ namespace GGemCo2DCoreEditor
             });
         }
 
-        private static void ValidateBoolean01(TableEditorDocumentRow row, List<TableEditorValidationMessage> messages, string headerName)
+        /// <summary>
+        /// Y/N 형식의 불리언 테이블 값이 유효한지 검증합니다.
+        /// </summary>
+        /// <param name="row">검증할 테이블 행입니다.</param>
+        /// <param name="messages">검증 메시지를 추가할 컬렉션입니다.</param>
+        /// <param name="headerName">검증할 컬럼 이름입니다.</param>
+        private static void ValidateBooleanYN(TableEditorDocumentRow row, List<TableEditorValidationMessage> messages, string headerName)
         {
             string raw = GetRaw(row, headerName);
             if (string.IsNullOrWhiteSpace(raw))
                 return;
 
-            if (string.Equals(raw, "0", StringComparison.Ordinal) || string.Equals(raw, "1", StringComparison.Ordinal))
+            if (string.Equals(raw, "Y", StringComparison.OrdinalIgnoreCase) ||
+                string.Equals(raw, "N", StringComparison.OrdinalIgnoreCase))
                 return;
 
             messages.Add(new TableEditorValidationMessage
             {
                 Severity = TableEditorValidationSeverity.Warning,
-                Message = $"{headerName} 는 0 또는 1 이어야 합니다.",
+                Message = $"{headerName} 는 Y 또는 N 이어야 합니다.",
                 RowStableId = row.stableId,
             });
         }

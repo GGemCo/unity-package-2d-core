@@ -62,6 +62,14 @@ namespace GGemCo2DCore
         public bool SuppressDamageReaction;
 
         /// <summary>
+        /// 이번 데미지에서 피격 시각 효과를 억제할지 여부입니다.
+        /// </summary>
+        /// <remarks>
+        /// 지속 피해처럼 피격 이펙트가 매 틱 반복되면 과한 경우에 사용합니다. 데미지 텍스트와 HP 처리는 유지됩니다.
+        /// </remarks>
+        public bool SuppressHitEffect;
+
+        /// <summary>
         /// 즉시 CC는 아니지만, 데미지 처리 직후 AfterDamage CC가 이어질 예정인지 여부입니다.
         /// 일반 피격 모션을 먼저 재생하면 HitStop/CC 전환이 어색해질 수 있을 때 사용합니다.
         /// </summary>
@@ -201,6 +209,7 @@ namespace GGemCo2DCore
         private GGemCoPlayerSettings _playerSettings;
         private GGemCoMonsterSettings _monsterSettings;
         private readonly Dictionary<int, float> _nextIncomingHitVfxPlayableTimesByKey = new Dictionary<int, float>();
+        private bool _suppressNextIncomingHitAnimationEventVfx;
         
         /// <summary>
         /// 데미지 컨트롤러를 초기화하고, 몬스터 슈퍼아머 설정을 함께 주입합니다.
@@ -341,6 +350,8 @@ namespace GGemCo2DCore
         public void TakeDamage(MetadataDamage metadataDamage)
         {
             if (metadataDamage == null) return;
+            _suppressNextIncomingHitAnimationEventVfx = false;
+
             if (SceneGame.Instance.CutsceneManager.IsPlaying()) return;
             if (_characterBase.IsStatusDead() || _characterBase.IsDeathPending)
             {
@@ -541,8 +552,7 @@ namespace GGemCo2DCore
                 SceneGame.Instance.damageTextManager.ShowDamageText(metadataDamageText2);
             }
 
-            _characterBase.TryPlaySpriteWhiteOverlayOnHit();
-            TryPlayIncomingHitVfxByTrigger(IncomingHitVfxTriggerType.OnDamageConfirmed);
+            TryPlayIncomingHitEffects(metadataDamage);
             
             if (remainHp <= 0)
             {
@@ -610,6 +620,7 @@ namespace GGemCo2DCore
                     {
                         // 순서 중요.
                         _characterBase.SetStatusDamage();
+                        _suppressNextIncomingHitAnimationEventVfx = metadataDamage.SuppressHitEffect;
                         _characterBase.CharacterAnimationController.PlayDamageAnimation();
                     }
                 }
@@ -978,6 +989,23 @@ namespace GGemCo2DCore
         }
 
         /// <summary>
+        /// 확정 데미지에 대한 피격 시각 효과를 재생합니다.
+        /// </summary>
+        /// <param name="metadataDamage">현재 피격 처리에 사용한 데미지 메타데이터입니다.</param>
+        /// <remarks>
+        /// Affect Damage Modifier처럼 HP 변화만 필요하고 피격 플래시/VFX는 생략해야 하는 경우
+        /// <see cref="MetadataDamage.SuppressHitEffect"/>를 통해 이 경로를 차단합니다.
+        /// </remarks>
+        private void TryPlayIncomingHitEffects(MetadataDamage metadataDamage)
+        {
+            if (metadataDamage != null && metadataDamage.SuppressHitEffect)
+                return;
+
+            _characterBase.TryPlaySpriteWhiteOverlayOnHit();
+            TryPlayIncomingHitVfxByTrigger(IncomingHitVfxTriggerType.OnDamageConfirmed);
+        }
+
+        /// <summary>
         /// 기존 플레이어 전용 피격 VFX 재생 API와의 호환을 유지합니다.
         /// </summary>
         /// <param name="triggerType">기존 플레이어 설정 기준의 호출 트리거 타입입니다.</param>
@@ -1001,6 +1029,13 @@ namespace GGemCo2DCore
         {
             if (_characterBase == null)
             {
+                return;
+            }
+
+            if (triggerType == IncomingHitVfxTriggerType.OnAnimationEventHit &&
+                _suppressNextIncomingHitAnimationEventVfx)
+            {
+                _suppressNextIncomingHitAnimationEventVfx = false;
                 return;
             }
 
