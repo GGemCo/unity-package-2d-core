@@ -598,7 +598,8 @@ namespace GGemCo2DCore
 
             _visual?.OnHit(new ProjectileVisualHitContext(hitPosition, _owner, hitCollider));
 
-            long resolvedDamage = ResolveDamageOnHit(target);
+            DamageCalculationBreakdown damageBreakdown = ResolveDamageBreakdownOnHit(target);
+            long resolvedDamage = damageBreakdown != null ? damageBreakdown.TotalFinalDamage : ResolveDamageOnHit(target);
             ConfigCommon.DamageType resolvedDamageType = ResolveDamageTypeOnHit();
             bool damageApplied = resolvedDamage > 0L;
             int crowdControlUid = ResolveOnHitCrowdControlUid(
@@ -615,6 +616,7 @@ namespace GGemCo2DCore
                 damage = resolvedDamage,
                 attacker = _owner ? _owner.gameObject : gameObject,
                 damageType = resolvedDamageType,
+                DamageBreakdown = damageBreakdown,
                 crowdControlUid = crowdControlUid,
                 SkillUid = _skillUid,
                 AttackId = _attackId,
@@ -667,6 +669,46 @@ namespace GGemCo2DCore
                 context.RollCritical);
 
             return calculateManager.CalculateSkillDamage(request);
+        }
+
+        /// <summary>
+        /// 레이저가 실제 대상에게 적중한 시점의 데미지를 속성별 파트로 계산합니다.
+        /// </summary>
+        /// <param name="target">실제 피격 대상 캐릭터입니다.</param>
+        /// <returns>대상 저항 적용 전의 레이저 데미지 분해 결과입니다.</returns>
+        /// <remarks>
+        /// Raycast 결과에 따라 발사 시점 target과 실제 피격 target이 달라질 수 있으므로 적중 시점에 다시 계산합니다.
+        /// </remarks>
+        private DamageCalculationBreakdown ResolveDamageBreakdownOnHit(CharacterBase target)
+        {
+            DamageFormulaRuntimeContext context = _runtime != null ? _runtime.DamageFormulaContext : null;
+
+            CalculateManager calculateManager = CalculateManager.GetActive();
+            if (calculateManager == null)
+                return null;
+
+            if (context == null)
+            {
+                return calculateManager.CreateOutgoingDamageBreakdown(
+                    _damage,
+                    _damageType,
+                    _owner,
+                    includeAttackerElementDamageParts: false);
+            }
+
+            var request = new DamageFormulaRequest(
+                _owner,
+                target,
+                context.FormulaKey,
+                context.BaseDamage,
+                context.SkillDamageRate,
+                context.EventMultiplier,
+                context.OptionMultiplier,
+                context.BuffRate,
+                context.DamageType,
+                context.RollCritical);
+
+            return calculateManager.CalculateSkillDamageBreakdown(request);
         }
 
         /// <summary>

@@ -1,4 +1,4 @@
-﻿using UnityEngine;
+using UnityEngine;
 
 namespace GGemCo2DCore
 {
@@ -129,15 +129,33 @@ namespace GGemCo2DCore
 
         private void DealDamage(CharacterHitArea area)
         {
+            DamageCalculationBreakdown damageBreakdown = ResolveDamageBreakdown();
             var md = new MetadataDamage
             {
-                damage = Damage,
+                damage = damageBreakdown != null ? damageBreakdown.TotalFinalDamage : Damage,
                 attacker = FromCharacter ? FromCharacter.gameObject : gameObject,
                 damageType = DamageType,
+                DamageBreakdown = damageBreakdown,
                 SkillUid = SkillUid,
                 AttackId = AttackId
             };
             area.target?.TakeDamage(md);
+        }
+
+        /// <summary>
+        /// 레거시 프로젝타일 레이저의 단일 데미지를 속성별 분해 결과로 변환합니다.
+        /// </summary>
+        /// <returns>대상 저항 적용 전의 데미지 분해 결과입니다.</returns>
+        private DamageCalculationBreakdown ResolveDamageBreakdown()
+        {
+            CalculateManager calculateManager = CalculateManager.GetActive();
+            return calculateManager != null
+                ? calculateManager.CreateOutgoingDamageBreakdown(
+                    Damage,
+                    DamageType,
+                    FromCharacter,
+                    includeAttackerElementDamageParts: false)
+                : null;
         }
 
         /// <summary>

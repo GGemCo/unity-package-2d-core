@@ -304,6 +304,28 @@ namespace GGemCo2DCore
         }
 
         /// <summary>
+        /// 스킬 공식 기반 공격 데미지를 속성별 파트가 포함된 원본 데미지 분해 결과로 계산합니다.
+        /// </summary>
+        /// <param name="request">스킬 데미지 계산 요청입니다.</param>
+        /// <param name="includeAttackerElementDamageParts">공격자의 추가 속성 데미지 스탯을 별도 파트로 포함할지 여부입니다.</param>
+        /// <returns>대상 저항 적용 전의 스킬 데미지 분해 결과입니다.</returns>
+        /// <remarks>
+        /// 이 결과는 발신 데미지 기준입니다. 실제 피격 대상의 저항/면역/기본 데미지 보정은
+        /// <see cref="CalculateIncomingDamageBreakdown"/>에서 다시 적용합니다.
+        /// </remarks>
+        public DamageCalculationBreakdown CalculateSkillDamageBreakdown(
+            in DamageFormulaRequest request,
+            bool includeAttackerElementDamageParts = false)
+        {
+            long baseDamage = CalculateSkillDamage(request);
+            return CreateOutgoingDamageBreakdown(
+                baseDamage,
+                request.DamageType,
+                request.Attacker,
+                includeAttackerElementDamageParts);
+        }
+
+        /// <summary>
         /// 지정된 데미지 공식을 실행하고 0 이하 기본 데미지 정책을 적용합니다.
         /// </summary>
         /// <param name="formulaType">실행할 데미지 공식 타입입니다.</param>

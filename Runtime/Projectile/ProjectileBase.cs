@@ -1201,7 +1201,8 @@ namespace GGemCo2DCore
         /// <returns>대상에게 전달할 데미지 메타데이터입니다.</returns>
         protected MetadataDamage CreateDamageMetadata(CharacterBase target)
         {
-            long resolvedDamage = ResolveDamageOnHit(target);
+            DamageCalculationBreakdown damageBreakdown = ResolveDamageBreakdownOnHit(target);
+            long resolvedDamage = damageBreakdown != null ? damageBreakdown.TotalFinalDamage : ResolveDamageOnHit(target);
             bool damageApplied = resolvedDamage > 0L;
             int crowdControlUid = ResolveOnHitCrowdControlUid(
                 Runtime != null ? Runtime.OnHitCrowdControls : null,
@@ -1217,6 +1218,7 @@ namespace GGemCo2DCore
                 damage = resolvedDamage,
                 attacker = FromCharacter ? FromCharacter.gameObject : null,
                 damageType = ResolveDamageTypeOnHit(),
+                DamageBreakdown = damageBreakdown,
                 crowdControlUid = crowdControlUid,
                 SkillUid = SkillUid,
                 AttackId = AttackId,
@@ -1280,6 +1282,47 @@ namespace GGemCo2DCore
             return Runtime != null && Runtime.DamageFormulaContext != null
                 ? Runtime.DamageFormulaContext.DamageType
                 : DamageType;
+        }
+
+        /// <summary>
+        /// 프로젝타일이 실제 대상에게 적중한 시점의 데미지를 속성별 파트로 계산합니다.
+        /// </summary>
+        /// <param name="target">실제 피격 대상 캐릭터입니다.</param>
+        /// <returns>대상 저항 적용 전의 프로젝타일 데미지 분해 결과입니다.</returns>
+        /// <remarks>
+        /// 발사 시점에는 대상이 바뀔 수 있으므로, 공식 컨텍스트가 있으면 적중 시점 target을 넣어 다시 계산합니다.
+        /// </remarks>
+        protected DamageCalculationBreakdown ResolveDamageBreakdownOnHit(CharacterBase target)
+        {
+            ProjectileDamageFormulaContext context = Runtime != null
+                ? Runtime.DamageFormulaContext
+                : null;
+
+            CalculateManager calculateManager = CalculateManager.GetActive();
+            if (calculateManager == null)
+                return null;
+
+            if (context == null)
+            {
+                return calculateManager.CreateOutgoingDamageBreakdown(
+                    Damage,
+                    DamageType,
+                    FromCharacter,
+                    includeAttackerElementDamageParts: false);
+            }
+
+            var request = new DamageFormulaRequest(
+                FromCharacter,
+                target,
+                context.FormulaKey,
+                context.BaseDamage,
+                context.SkillDamageRate,
+                context.EventMultiplier,
+                context.OptionMultiplier,
+                context.BuffRate,
+                context.DamageType,
+                context.RollCritical);
+            return calculateManager.CalculateSkillDamageBreakdown(request);
         }
 
         /// <summary>
