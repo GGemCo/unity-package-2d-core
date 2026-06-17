@@ -20,19 +20,19 @@ namespace GGemCo2DCore
             if (_owner == null || _owner.IsStatusDead() || runtime == null || !application.IsValid)
                 return ElementGaugeApplyResult.None;
 
-            if (!runtime.TryGetRule(application.DamageType, out ElementGaugeRuleDefinition rule) || rule == null)
+            if (!runtime.TryGetRule(application.damageType, out ElementGaugeRuleDefinition rule) || rule == null)
                 return ElementGaugeApplyResult.None;
 
             if (rule.blockAccumulationWhileTriggered &&
-                runtime.TryGetTriggeredHpState(application.DamageType, out TriggeredHpState triggeredState) &&
+                runtime.TryGetTriggeredHpState(application.damageType, out TriggeredHpState triggeredState) &&
                 triggeredState != null &&
                 triggeredState.TotalHp > 0)
             {
                 return ElementGaugeApplyResult.None;
             }
 
-            RuntimeGaugeState gaugeState = runtime.GetOrCreateGaugeState(application.DamageType);
-            float appliedValue = Mathf.Max(0f, application.GaugeValue * ResolveResistanceMultiplier(application.DamageType));
+            RuntimeGaugeState gaugeState = runtime.GetOrCreateGaugeState(application.damageType);
+            float appliedValue = Mathf.Max(0f, application.gaugeValue * ResolveResistanceMultiplier(application.damageType));
             if (appliedValue <= 0f)
                 return ElementGaugeApplyResult.None;
 
@@ -44,10 +44,10 @@ namespace GGemCo2DCore
             {
                 gaugeState.CurrentValue = 0f;
                 gaugeState.DecayElapsed = 0f;
-                return new ElementGaugeApplyResult(true, true, application.DamageType);
+                return new ElementGaugeApplyResult(true, true, application.damageType);
             }
 
-            return new ElementGaugeApplyResult(true, false, application.DamageType);
+            return new ElementGaugeApplyResult(true, false, application.damageType);
         }
 
         public ElementGaugeDecayResult UpdateDecay(ElementGaugeRuntime runtime, float now, float deltaTime)

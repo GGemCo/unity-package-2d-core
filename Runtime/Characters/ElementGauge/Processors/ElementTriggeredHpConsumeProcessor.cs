@@ -126,7 +126,7 @@ namespace GGemCo2DCore
 
             for (int i = 0; i < applications.Length; i++)
             {
-                if (applications[i].DamageType == damageType && applications[i].GaugeValue > 0f)
+                if (applications[i].damageType == damageType && applications[i].gaugeValue > 0f)
                     return true;
             }
 

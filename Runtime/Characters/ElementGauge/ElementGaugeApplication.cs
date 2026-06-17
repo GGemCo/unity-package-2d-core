@@ -8,16 +8,38 @@ namespace GGemCo2DCore
     [Serializable]
     public struct ElementGaugeApplication
     {
-        public ConfigCommon.DamageType DamageType;
-        public float GaugeValue;
+        /// <summary>
+        /// 누적할 속성 타입입니다.
+        /// </summary>
+        public ConfigCommon.DamageType damageType;
 
-        public ElementGaugeApplication(ConfigCommon.DamageType damageType, float gaugeValue)
+        /// <summary>
+        /// 누적할 게이지 값입니다.
+        /// </summary>
+        public float gaugeValue;
+
+        /// <summary>
+        /// 실제 데미지가 적용된 경우에만 게이지를 누적할지 여부입니다.
+        /// </summary>
+        public bool requireDamageDealt;
+
+        /// <summary>
+        /// 속성 게이지 적용 정보를 생성합니다.
+        /// </summary>
+        /// <param name="damageType">누적할 속성 타입입니다.</param>
+        /// <param name="gaugeValue">누적할 게이지 값입니다.</param>
+        /// <param name="requireDamageDealt">실제 데미지가 적용된 경우에만 게이지를 누적할지 여부입니다.</param>
+        public ElementGaugeApplication(ConfigCommon.DamageType damageType, float gaugeValue, bool requireDamageDealt = false)
         {
-            DamageType = damageType;
-            GaugeValue = gaugeValue;
+            this.damageType = damageType;
+            this.gaugeValue = gaugeValue;
+            this.requireDamageDealt = requireDamageDealt;
         }
 
-        public bool IsValid => DamageType != ConfigCommon.DamageType.None && DamageType != ConfigCommon.DamageType.Physic && GaugeValue > 0f;
+        /// <summary>
+        /// 속성 게이지 적용 정보가 실제 누적 가능한 값인지 반환합니다.
+        /// </summary>
+        public bool IsValid => damageType != ConfigCommon.DamageType.None && damageType != ConfigCommon.DamageType.Physic && gaugeValue > 0f;
     }
 
     /// <summary>
