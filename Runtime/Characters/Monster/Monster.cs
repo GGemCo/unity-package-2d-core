@@ -1113,6 +1113,7 @@ namespace GGemCo2DCore
                     damage = totalDamage,
                     attacker = gameObject,
                     damageType = ConfigCommon.DamageType.Physic,
+                    IncludeAttackerElementDamageParts = true,
                     affectUid = struckAnimationEventAttack.TargetAffectUid
                 };
                 player.TakeDamage(metadataDamage);

@@ -736,6 +736,7 @@ namespace GGemCo2DCore
                         damage = totalDamage,
                         attacker = gameObject,
                         damageType = resolvedDamageType,
+                        IncludeAttackerElementDamageParts = true,
                         affectUid = struckAnimationEventAttack.TargetAffectUid,
                         crowdControlUid = struckAnimationEventAttack.TargetCrowdControlUid,
                         StaggerStackDamage = 1,

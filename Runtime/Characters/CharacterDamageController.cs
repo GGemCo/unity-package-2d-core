@@ -8,6 +8,24 @@ namespace GGemCo2DCore
         public long damage;
         public GameObject attacker;
         public ConfigCommon.DamageType damageType;
+
+        /// <summary>
+        /// 전체 데미지를 구성하는 속성별 데미지 분해 결과입니다.
+        /// </summary>
+        /// <remarks>
+        /// 기존 호환 필드인 <see cref="damage"/>는 최종 전체 데미지 합계를 유지하고,
+        /// 속성 게이지와 속성별 후처리는 이 분해 결과의 파트를 기준으로 처리합니다.
+        /// </remarks>
+        public DamageCalculationBreakdown DamageBreakdown;
+
+        /// <summary>
+        /// 공격자의 기본 속성 데미지 스탯을 별도 데미지 파트로 포함할지 여부입니다.
+        /// </summary>
+        /// <remarks>
+        /// 일반 공격처럼 물리 기본 피해에 화염/냉기/번개/독 추가 피해가 얹히는 공격에서 사용합니다.
+        /// DOT, Affect 직접 피해, 이미 속성 파트가 명시된 스킬은 중복 적용을 피하기 위해 기본값 false를 유지합니다.
+        /// </remarks>
+        public bool IncludeAttackerElementDamageParts;
         // 데미지 받는 대상에 적용되는 어펙트 uid 
         public int affectUid;
         // 데미지 받는 대상에 적용되는 CC uid
@@ -381,11 +399,21 @@ namespace GGemCo2DCore
             CalculateManager calculateManager = CalculateManager.GetActive();
             if (calculateManager != null)
             {
-                DamageCalculationResult damageCalculationResult = calculateManager.CalculateIncomingDamage(damage, damageType, _characterBase);
-                damage = damageCalculationResult.FinalDamage;
+                CharacterBase attackerCharacter = attacker != null ? attacker.GetComponentInParent<CharacterBase>() : null;
+                DamageCalculationBreakdown outgoingBreakdown = metadataDamage.DamageBreakdown ??
+                                                               calculateManager.CreateOutgoingDamageBreakdown(
+                                                                   damage,
+                                                                   damageType,
+                                                                   attackerCharacter,
+                                                                   metadataDamage.IncludeAttackerElementDamageParts);
+                DamageCalculationBreakdown incomingBreakdown = calculateManager.CalculateIncomingDamageBreakdown(outgoingBreakdown, _characterBase);
+                metadataDamage.DamageBreakdown = incomingBreakdown;
+                damage = incomingBreakdown.TotalFinalDamage;
+                damageType = incomingBreakdown.RepresentativeDamageType;
                 metadataDamage.damage = damage;
+                metadataDamage.damageType = damageType;
 
-                if (damageCalculationResult.IsImmune && damageType != ConfigCommon.DamageType.None)
+                if (damage <= 0L && HasAnyImmuneDamagePart(incomingBreakdown))
                 {
                     MetadataDamageText metadataDamageText = new MetadataDamageText
                     {
@@ -430,6 +458,8 @@ namespace GGemCo2DCore
                 if (guardResolver.TryResolveIncomingHit(metadataDamage, out var guardResult) && guardResult.IsResolved)
                 {
                     damage = guardResult.RemainingDamage < 0 ? 0 : guardResult.RemainingDamage;
+                    metadataDamage.damage = damage;
+                    metadataDamage.DamageBreakdown = ScaleDamageBreakdownFinalDamage(metadataDamage.DamageBreakdown, damage);
                     suppressHitReactionByGuard = guardResult.SuppressHitReaction;
                     isGuardResolved = true;
 
@@ -643,10 +673,131 @@ namespace GGemCo2DCore
             _characterBase.CurrentHp.OnNext(remainHp);
 
             // 속성 데미지 게이지 처리
-            // 실제 피격이 확정된 뒤, 최종 데미지 타입과 데미지량을 기준으로 Core 공통 게이지에 누적합니다.
-            _characterBase.ElementGaugeController?.AccumulateFromDamage(metadataDamage, damage);
+            // 실제 피격이 확정된 뒤, 속성별 최종 데미지 파트를 기준으로 Core 공통 게이지에 누적합니다.
+            _characterBase.ElementGaugeController?.AccumulateFromDamageBreakdown(metadataDamage, metadataDamage.DamageBreakdown);
 
             ApplyConfirmedAttackHitStop(metadataDamage);
+        }
+
+        /// <summary>
+        /// 데미지 분해 결과에 면역 처리된 파트가 포함되어 있는지 확인합니다.
+        /// </summary>
+        /// <param name="breakdown">확인할 데미지 분해 결과입니다.</param>
+        /// <returns>면역 처리된 데미지 파트가 하나 이상 있으면 true입니다.</returns>
+        private static bool HasAnyImmuneDamagePart(DamageCalculationBreakdown breakdown)
+        {
+            if (breakdown == null || !breakdown.HasParts)
+                return false;
+
+            IReadOnlyList<DamagePartResult> parts = breakdown.Parts;
+            for (int i = 0; i < parts.Count; i++)
+            {
+                if (parts[i].IsImmune)
+                    return true;
+            }
+
+            return false;
+        }
+
+        /// <summary>
+        /// 가드 등 후처리로 변경된 최종 데미지에 맞춰 파트별 최종 데미지를 비례 보정합니다.
+        /// </summary>
+        /// <param name="source">보정 전 데미지 분해 결과입니다.</param>
+        /// <param name="targetFinalDamage">후처리까지 반영된 전체 최종 데미지입니다.</param>
+        /// <returns>전체 최종 데미지에 맞춰 보정된 데미지 분해 결과입니다.</returns>
+        /// <remarks>
+        /// 가드가 총 피해만 줄이는 현재 구조에서 속성 게이지가 가드 전 피해량으로 누적되지 않도록 보정합니다.
+        /// 마지막 유효 파트에는 반올림 오차를 몰아 전체 합계가 정확히 맞도록 합니다.
+        /// </remarks>
+        private static DamageCalculationBreakdown ScaleDamageBreakdownFinalDamage(
+            DamageCalculationBreakdown source,
+            long targetFinalDamage)
+        {
+            if (source == null || !source.HasParts)
+                return source;
+
+            long sourceFinalDamage = source.TotalFinalDamage;
+            if (sourceFinalDamage == targetFinalDamage)
+                return source;
+
+            var scaled = new DamageCalculationBreakdown();
+            IReadOnlyList<DamagePartResult> parts = source.Parts;
+            long safeTargetFinalDamage = targetFinalDamage > 0L ? targetFinalDamage : 0L;
+            long assignedFinalDamage = 0L;
+            int lastPositivePartIndex = FindLastPositiveDamagePartIndex(parts);
+
+            for (int i = 0; i < parts.Count; i++)
+            {
+                DamagePartResult part = parts[i];
+                long scaledFinalDamage = 0L;
+
+                if (sourceFinalDamage > 0L && part.FinalDamage > 0L && safeTargetFinalDamage > 0L)
+                {
+                    scaledFinalDamage = i == lastPositivePartIndex
+                        ? safeTargetFinalDamage - assignedFinalDamage
+                        : (long)System.Math.Round(part.FinalDamage * (double)safeTargetFinalDamage / sourceFinalDamage);
+                    if (scaledFinalDamage < 0L)
+                        scaledFinalDamage = 0L;
+                    assignedFinalDamage += scaledFinalDamage;
+                }
+
+                scaled.AddPart(new DamagePartResult(
+                    part.RawDamage,
+                    scaledFinalDamage,
+                    part.DamageType,
+                    ScalePartAttackerElementDamage(part, scaledFinalDamage),
+                    part.IsImmune,
+                    part.AppliedDefaultDamage,
+                    part.IsDot));
+            }
+
+            return scaled;
+        }
+
+        /// <summary>
+        /// 가드 후 최종 파트 데미지에 맞춰 공격자 속성 데미지 기준값도 함께 보정합니다.
+        /// </summary>
+        /// <param name="part">보정 전 데미지 파트입니다.</param>
+        /// <param name="scaledFinalDamage">보정된 최종 파트 데미지입니다.</param>
+        /// <returns>게이지 누적 기준으로 사용할 보정된 공격자 속성 데미지입니다.</returns>
+        private static long ScalePartAttackerElementDamage(in DamagePartResult part, long scaledFinalDamage)
+        {
+            if (part.AttackerElementDamage <= 0L)
+                return 0L;
+
+            if (part.FinalDamage <= 0L)
+                return scaledFinalDamage > 0L ? part.AttackerElementDamage : 0L;
+
+            if (scaledFinalDamage <= 0L)
+                return 0L;
+
+            double ratio = scaledFinalDamage / (double)part.FinalDamage;
+            double scaled = part.AttackerElementDamage * ratio;
+            if (scaled <= 0d)
+                return 0L;
+            if (scaled >= long.MaxValue)
+                return long.MaxValue;
+
+            return (long)System.Math.Round(scaled);
+        }
+
+        /// <summary>
+        /// 최종 데미지가 있는 마지막 파트 인덱스를 찾습니다.
+        /// </summary>
+        /// <param name="parts">검색할 데미지 파트 목록입니다.</param>
+        /// <returns>최종 데미지가 있는 마지막 파트 인덱스입니다. 없으면 -1입니다.</returns>
+        private static int FindLastPositiveDamagePartIndex(IReadOnlyList<DamagePartResult> parts)
+        {
+            if (parts == null)
+                return -1;
+
+            for (int i = parts.Count - 1; i >= 0; i--)
+            {
+                if (parts[i].FinalDamage > 0L)
+                    return i;
+            }
+
+            return -1;
         }
 
 

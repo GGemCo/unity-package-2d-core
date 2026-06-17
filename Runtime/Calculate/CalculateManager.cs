@@ -99,6 +99,25 @@ namespace GGemCo2DCore
         }
 
         /// <summary>
+        /// 캐릭터의 일반 공격 데미지를 물리 기본 피해와 공격자 속성 피해 파트로 분해해 계산합니다.
+        /// </summary>
+        /// <param name="attacker">공격자 스탯입니다.</param>
+        /// <returns>일반 공격의 속성별 데미지 분해 결과입니다.</returns>
+        /// <remarks>
+        /// 이 단계에서는 대상 저항을 적용하지 않습니다. 실제 피격 대상이 확정된 뒤
+        /// <see cref="CalculateIncomingDamageBreakdown"/>에서 파트별 저항과 면역 정책을 적용합니다.
+        /// </remarks>
+        public DamageCalculationBreakdown CalculateBasicAttackDamageBreakdown(CharacterStat attacker)
+        {
+            long physicalDamage = CalculateBasicAttackDamage(attacker);
+            return CreateOutgoingDamageBreakdown(
+                physicalDamage,
+                ConfigCommon.DamageType.Physic,
+                attacker,
+                includeAttackerElementDamageParts: true);
+        }
+
+        /// <summary>
         /// 기본 콤보 공격 단계에 설정된 공식 정보를 기준으로 일반 공격 데미지를 계산합니다.
         /// </summary>
         /// <param name="attacker">공격자 스탯입니다.</param>
@@ -162,6 +181,33 @@ namespace GGemCo2DCore
                 settings.rollCritical);
 
             return CalculateSkillDamage(request);
+        }
+
+        /// <summary>
+        /// 기본 콤보 공격 설정을 반영한 데미지를 속성별 파트로 분해해 계산합니다.
+        /// </summary>
+        /// <param name="attacker">공격자 스탯입니다.</param>
+        /// <param name="target">공격 대상 캐릭터입니다. Poly 공식 변수 계산에 사용합니다.</param>
+        /// <param name="settings">현재 기본 콤보 공격 단계의 공식 설정입니다.</param>
+        /// <returns>기본 콤보 공격의 속성별 데미지 분해 결과입니다.</returns>
+        /// <remarks>
+        /// 반환 결과는 공격자가 만든 원본 데미지 파트입니다. 대상 저항은 실제 피격 처리 단계에서 별도로 적용합니다.
+        /// </remarks>
+        public DamageCalculationBreakdown CalculateBasicAttackDamageBreakdown(
+            CharacterStat attacker,
+            CharacterBase target,
+            in AttackComboDamageFormulaSettings settings)
+        {
+            long baseDamage = CalculateBasicAttackDamage(attacker, target, settings);
+            ConfigCommon.DamageType damageType = settings.useCustomFormula
+                ? settings.ResolveDamageType()
+                : ConfigCommon.DamageType.Physic;
+
+            return CreateOutgoingDamageBreakdown(
+                baseDamage,
+                damageType,
+                attacker,
+                includeAttackerElementDamageParts: true);
         }
 
         /// <summary>
@@ -542,6 +588,115 @@ namespace GGemCo2DCore
         }
 
         /// <summary>
+        /// 공격자가 만든 원본 데미지를 속성별 데미지 파트로 구성합니다.
+        /// </summary>
+        /// <param name="baseDamage">공격의 기본 데미지입니다.</param>
+        /// <param name="baseDamageType">기본 데미지 타입입니다.</param>
+        /// <param name="attacker">공격자 스탯입니다.</param>
+        /// <param name="includeAttackerElementDamageParts">공격자의 기본 속성 데미지 스탯을 별도 파트로 포함할지 여부입니다.</param>
+        /// <returns>대상 저항 적용 전의 데미지 분해 결과입니다.</returns>
+        /// <remarks>
+        /// 이 메서드는 공격자 기준의 원본 파트만 만듭니다.
+        /// 실제 피격 대상의 저항/면역/기본 데미지 보정은 <see cref="CalculateIncomingDamageBreakdown"/>에서 처리합니다.
+        /// </remarks>
+        public DamageCalculationBreakdown CreateOutgoingDamageBreakdown(
+            long baseDamage,
+            ConfigCommon.DamageType baseDamageType,
+            CharacterStat attacker,
+            bool includeAttackerElementDamageParts)
+        {
+            var breakdown = new DamageCalculationBreakdown();
+            ConfigCommon.DamageType resolvedBaseType = baseDamageType == ConfigCommon.DamageType.None
+                ? ConfigCommon.DamageType.Physic
+                : baseDamageType;
+
+            if (baseDamage > 0L)
+            {
+                breakdown.AddPart(new DamagePartResult(
+                    baseDamage,
+                    baseDamage,
+                    resolvedBaseType));
+            }
+
+            if (includeAttackerElementDamageParts)
+            {
+                AddAttackerElementDamagePart(breakdown, attacker, ConfigCommon.DamageType.Fire);
+                AddAttackerElementDamagePart(breakdown, attacker, ConfigCommon.DamageType.Cold);
+                AddAttackerElementDamagePart(breakdown, attacker, ConfigCommon.DamageType.Lightning);
+                AddAttackerElementDamagePart(breakdown, attacker, ConfigCommon.DamageType.Poison);
+            }
+
+            if (!breakdown.HasParts)
+            {
+                breakdown.AddPart(new DamagePartResult(
+                    baseDamage,
+                    baseDamage,
+                    resolvedBaseType));
+            }
+
+            return breakdown;
+        }
+
+        /// <summary>
+        /// 대상에게 실제로 들어오는 데미지 분해 결과를 계산합니다.
+        /// </summary>
+        /// <param name="outgoingBreakdown">공격자가 만든 원본 데미지 분해 결과입니다.</param>
+        /// <param name="target">피격 대상 캐릭터입니다.</param>
+        /// <returns>대상 저항과 기본 데미지 보정을 반영한 데미지 분해 결과입니다.</returns>
+        /// <remarks>
+        /// 파트별 저항은 각 속성 파트에만 적용하고, 전체 결과가 0 이하일 때만 기존 기본 데미지 보정 정책을 한 번 적용합니다.
+        /// 이를 통해 추가 속성 파트가 0인 경우에도 파트마다 기본 데미지가 중복 적용되지 않도록 합니다.
+        /// </remarks>
+        public DamageCalculationBreakdown CalculateIncomingDamageBreakdown(
+            DamageCalculationBreakdown outgoingBreakdown,
+            CharacterBase target)
+        {
+            if (outgoingBreakdown == null || !outgoingBreakdown.HasParts)
+            {
+                DamageCalculationResult emptyResult = ResolveDefaultFinalDamage(0L);
+                return DamageCalculationBreakdown.FromSingle(emptyResult);
+            }
+
+            var incomingBreakdown = new DamageCalculationBreakdown();
+            IReadOnlyList<DamagePartResult> parts = outgoingBreakdown.Parts;
+            long resolvedTotal = 0L;
+
+            for (int i = 0; i < parts.Count; i++)
+            {
+                DamagePartResult sourcePart = parts[i];
+                long resolvedDamage = ApplyDamageTypeResistance(sourcePart.RawDamage, sourcePart.DamageType, target);
+                if (resolvedDamage > 0L)
+                    resolvedTotal = AddClamped(resolvedTotal, resolvedDamage);
+
+                incomingBreakdown.AddPart(new DamagePartResult(
+                    sourcePart.RawDamage,
+                    resolvedDamage > 0L ? resolvedDamage : 0L,
+                    sourcePart.DamageType,
+                    sourcePart.AttackerElementDamage,
+                    sourcePart.RawDamage > 0L && resolvedDamage <= 0L,
+                    false,
+                    sourcePart.IsDot));
+            }
+
+            if (resolvedTotal > 0L)
+                return incomingBreakdown;
+
+            DamageCalculationResult defaultResult = ResolveDefaultFinalDamage(resolvedTotal, outgoingBreakdown.RepresentativeDamageType);
+            if (!defaultResult.AppliedDefaultDamage)
+                return incomingBreakdown;
+
+            var defaultBreakdown = new DamageCalculationBreakdown();
+            defaultBreakdown.AddPart(new DamagePartResult(
+                defaultResult.OriginalDamage,
+                defaultResult.FinalDamage,
+                defaultResult.DamageType,
+                0L,
+                false,
+                true));
+            return defaultBreakdown;
+        }
+
+        /// <summary>
         /// 피격 대상의 속성 저항과 기본 데미지 정책을 적용한 최종 피격 데미지를 계산합니다.
         /// </summary>
         /// <param name="damage">저항 적용 전 데미지입니다.</param>
@@ -639,6 +794,48 @@ namespace GGemCo2DCore
                 return long.MaxValue;
 
             return (long)resolved;
+        }
+
+        /// <summary>
+        /// 공격자가 보유한 속성 데미지 스탯을 데미지 분해 파트에 추가합니다.
+        /// </summary>
+        /// <param name="breakdown">데미지 파트를 누적할 분해 결과입니다.</param>
+        /// <param name="attacker">공격자 스탯입니다.</param>
+        /// <param name="damageType">추가할 속성 데미지 타입입니다.</param>
+        private static void AddAttackerElementDamagePart(
+            DamageCalculationBreakdown breakdown,
+            CharacterStat attacker,
+            ConfigCommon.DamageType damageType)
+        {
+            if (breakdown == null || attacker == null)
+                return;
+
+            long elementDamage = attacker.GetElementDamageValue(damageType);
+            if (elementDamage <= 0L)
+                return;
+
+            breakdown.AddPart(new DamagePartResult(
+                elementDamage,
+                elementDamage,
+                damageType,
+                elementDamage));
+        }
+
+        /// <summary>
+        /// long 범위를 넘지 않도록 두 값을 더합니다.
+        /// </summary>
+        /// <param name="a">첫 번째 값입니다.</param>
+        /// <param name="b">두 번째 값입니다.</param>
+        /// <returns>오버플로우를 방지해 보정한 합산 값입니다.</returns>
+        private static long AddClamped(long a, long b)
+        {
+            if (b > 0L && a > long.MaxValue - b)
+                return long.MaxValue;
+
+            if (b < 0L && a < long.MinValue - b)
+                return long.MinValue;
+
+            return a + b;
         }
 
         /// <summary>
